@@ -115,6 +115,21 @@ goto 0x312
 EOF
 RUN
 
+NAME=M68k extended and packed FPU operand analysis
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=68040
+e asm.lines=false
+wx f23c48003fff00008000000000000000f23c4c00002500012345678901234567f2104c00f2116c7bf2127d30
+aoj 5~{.[]\|{bytes,size,opcode,type,family,refptr,opex}}
+EOF
+EXPECT=<<EOF
+[{"bytes":"f23c48003fff00008000000000000000","size":16,"opcode":"fmove.x 0e1, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_extended","sign_exp":16383,"reserved":0,"significand":-9223372036854775808},{"type":"reg","value":"fp0"}]}},{"bytes":"f23c4c00002500012345678901234567","size":16,"opcode":"fmove.p 0e1.2345678901234567e+025, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_packed","header":2424833,"fraction":2541551402847782247},{"type":"reg","value":"fp0"}]}},{"bytes":"f2104c00","size":4,"opcode":"fmove.p (a0), fp0","type":"load","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"fp0"}]}},{"bytes":"f2116c7b","size":4,"opcode":"fmove.p fp0, (a1){-5}","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"mem","address_mode":3,"base_reg":"a1","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"imm","value":-5}]}},{"bytes":"f2127d30","size":4,"opcode":"fmove.p fp2, (a2){d3}","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp2"},{"type":"mem","address_mode":3,"base_reg":"a2","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"d3"}]}}]
+EOF
+RUN
+
 NAME=m68k regs
 FILE=
 CMDS=<<EOF
@@ -139,21 +154,12 @@ a5 = 0x00000000
 a6 = 0x00000000
 a7 = 0x00000000
 pc = 0x00000000
-fp0 = 0x00000000
-fp1 = 0x00000000
-fp2 = 0x00000000
-fp3 = 0x00000000
-fp4 = 0x00000000
-fp5 = 0x00000000
-fp6 = 0x00000000
-fp7 = 0x00000000
 fpcr = 0x00000000
 fpsr = 0x00000000
 fpiar = 0x00000000
 sr = 0x0000
 sfc = 0x00000000
 dfc = 0x00000000
-usp = 0x00000000
 vbr = 0x00000000
 cacr = 0x00000000
 caar = 0x00000000
@@ -166,10 +172,10 @@ dtt0 = 0x00000000
 dtt1 = 0x00000000
 mmusr = 0x00000000
 urp = 0x00000000
-srp = 0x00000000
+srp = 0x0000000000000000
 tt0 = 0x00000000
 tt1 = 0x00000000
-crp = 0x00000000
+crp = 0x0000000000000000
 acc = 0x00000000
 acc0 = 0x00000000
 acc1 = 0x00000000
@@ -179,6 +185,8 @@ accext01 = 0x00000000
 accext23 = 0x00000000
 macsr = 0x00000000
 mask = 0x00000000
+usp = 0x00000000
+cp_external_data = 0x00000000
 EOF
 RUN
 
@@ -189,1210 +197,625 @@ e asm.arch=m68k
 e asm.bits=32
 e asm.cpu=cfv4e
 e asm.lines=false
+(pdjp n;echo `pdj ${n}~{.[]\|{offset,bytes,size,opcode,family,type,jump,fail}}`~{})
 wx d080d1c00680000000015280d180c080028000000001e180e080660260fe61ff000000104ac0b080b1c00c80000000014c4028024c402401b1800a800000000148c049c04ed04e904ebafffc4eb9000000104ef9000000104e500004e188e08841d048502000204048d000037001c1c0c0c0448040804e71468080800080000000014e754e7350c0908091c00480000000015380918048404e404a804e58731071c04c80a293a2a900c002c104c2f42840e746fc04d2fb10fbd0000351fcfcc00050fc802123fd802123fc000e00e358e258
-pdj 74~{}
+.(pdjp 74)
+echo -- operand helper opex --
+s 0
+wx 4c4028024c40240150c051c0fc802123fd802123fc000e00
+aoj 7~{.[]\|{offset,bytes,size,opcode,type,family,stackop,stackptr,opex}}
 EOF
 EXPECT=<<EOF
 [
   {
     "offset": 0,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "d080",
     "size": 2,
     "opcode": "add.l d0, d0",
-    "disasm": "add.l d0, d0",
-    "bytes": "d080",
     "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 2,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "d1c0",
     "size": 2,
     "opcode": "adda.l d0, a0",
-    "disasm": "adda.l d0, a0",
-    "bytes": "d1c0",
     "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 4,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "068000000001",
     "size": 6,
     "opcode": "addi.l 0x1, d0",
-    "disasm": "addi.l 0x1, d0",
-    "bytes": "068000000001",
     "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 10,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "5280",
     "size": 2,
     "opcode": "addq.l 0x1, d0",
-    "disasm": "addq.l 0x1, d0",
-    "bytes": "5280",
     "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 12,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "d180",
     "size": 2,
     "opcode": "addx.l d0, d0",
-    "disasm": "addx.l d0, d0",
-    "bytes": "d180",
     "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 14,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "c080",
     "size": 2,
     "opcode": "and.l d0, d0",
-    "disasm": "and.l d0, d0",
-    "bytes": "c080",
     "family": "cpu",
-    "type": "and",
-    "reloc": false,
-    "type_num": 27,
-    "type2_num": 0
+    "type": "and"
   },
   {
     "offset": 16,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "028000000001",
     "size": 6,
     "opcode": "andi.l 0x1, d0",
-    "disasm": "andi.l 0x1, d0",
-    "bytes": "028000000001",
     "family": "cpu",
-    "type": "and",
-    "reloc": false,
-    "type_num": 27,
-    "type2_num": 0
+    "type": "and"
   },
   {
     "offset": 22,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e180",
     "size": 2,
     "opcode": "asl.l 0x8, d0",
-    "disasm": "asl.l 0x8, d0",
-    "bytes": "e180",
     "family": "cpu",
-    "type": "shl",
-    "reloc": false,
-    "type_num": 23,
-    "type2_num": 0
+    "type": "shl"
   },
   {
     "offset": 24,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e080",
     "size": 2,
     "opcode": "asr.l 0x8, d0",
-    "disasm": "asr.l 0x8, d0",
-    "bytes": "e080",
     "family": "cpu",
-    "type": "shr",
-    "reloc": false,
-    "type_num": 22,
-    "type2_num": 0
+    "type": "sar"
   },
   {
     "offset": 26,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "6602",
     "size": 2,
     "opcode": "bne.b 0x1e",
-    "disasm": "bne.b 0x1e",
-    "bytes": "6602",
     "family": "cpu",
     "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
     "jump": 30,
     "fail": 28
   },
   {
     "offset": 28,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "60fe",
     "size": 2,
     "opcode": "bra.b 0x1c",
-    "disasm": "bra.b 0x1c",
-    "bytes": "60fe",
     "family": "cpu",
     "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
     "jump": 28,
     "fail": 30
   },
   {
     "offset": 30,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "61ff00000010",
     "size": 6,
     "opcode": "bsr.l 0x30",
-    "disasm": "bsr.l 0x30",
-    "bytes": "61ff00000010",
     "family": "cpu",
     "type": "call",
-    "reloc": false,
-    "type_num": 3,
-    "type2_num": 0,
     "jump": 48,
     "fail": 36
   },
   {
     "offset": 36,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4ac0",
     "size": 2,
     "opcode": "tas.b d0",
-    "disasm": "tas.b d0",
-    "bytes": "4ac0",
     "family": "cpu",
-    "type": "null",
-    "reloc": false,
-    "type_num": 0,
-    "type2_num": 0
+    "type": "or"
   },
   {
     "offset": 38,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "b080",
     "size": 2,
     "opcode": "cmp.l d0, d0",
-    "disasm": "cmp.l d0, d0",
-    "bytes": "b080",
     "family": "cpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 40,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "b1c0",
     "size": 2,
     "opcode": "cmpa.l d0, a0",
-    "disasm": "cmpa.l d0, a0",
-    "bytes": "b1c0",
     "family": "cpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 42,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "0c8000000001",
     "size": 6,
     "opcode": "cmpi.l 0x1, d0",
-    "disasm": "cmpi.l 0x1, d0",
-    "bytes": "0c8000000001",
     "family": "cpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 48,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4c402802",
     "size": 4,
     "opcode": "divs.l d0, d2",
-    "disasm": "divs.l d0, d2",
-    "bytes": "4c402802",
     "family": "cpu",
-    "type": "div",
-    "reloc": false,
-    "type_num": 21,
-    "type2_num": 0
+    "type": "div"
   },
   {
     "offset": 52,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4c402401",
     "size": 4,
     "opcode": "divu.l d0, d1:d2",
-    "disasm": "divu.l d0, d1:d2",
-    "bytes": "4c402401",
     "family": "cpu",
-    "type": "div",
-    "reloc": false,
-    "type_num": 21,
-    "type2_num": 0
+    "type": "div"
   },
   {
     "offset": 56,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "b180",
     "size": 2,
     "opcode": "eor.l d0, d0",
-    "disasm": "eor.l d0, d0",
-    "bytes": "b180",
     "family": "cpu",
-    "type": "xor",
-    "reloc": false,
-    "type_num": 28,
-    "type2_num": 0
+    "type": "xor"
   },
   {
     "offset": 58,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "0a8000000001",
     "size": 6,
     "opcode": "eori.l 0x1, d0",
-    "disasm": "eori.l 0x1, d0",
-    "bytes": "0a8000000001",
     "family": "cpu",
-    "type": "xor",
-    "reloc": false,
-    "type_num": 28,
-    "type2_num": 0
+    "type": "xor"
   },
   {
     "offset": 64,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "48c0",
     "size": 2,
     "opcode": "ext.l d0",
-    "disasm": "ext.l d0",
-    "bytes": "48c0",
     "family": "cpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 66,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "49c0",
     "size": 2,
     "opcode": "extb.l d0",
-    "disasm": "extb.l d0",
-    "bytes": "49c0",
     "family": "cpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 68,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4ed0",
     "size": 2,
     "opcode": "jmp (a0)",
-    "disasm": "jmp (a0)",
-    "bytes": "4ed0",
     "family": "cpu",
-    "type": "ijmp",
-    "reloc": false,
-    "type_num": 134217730,
-    "type2_num": 0
+    "type": "ijmp"
   },
   {
     "offset": 70,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e90",
     "size": 2,
     "opcode": "jsr (a0)",
-    "disasm": "jsr (a0)",
-    "bytes": "4e90",
     "family": "cpu",
-    "type": "icall",
-    "reloc": false,
-    "type_num": 134217732,
-    "type2_num": 0
+    "type": "icall"
   },
   {
     "offset": 72,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4ebafffc",
     "size": 4,
     "opcode": "jsr 0x46(pc)",
-    "disasm": "jsr 0x46(pc)",
-    "bytes": "4ebafffc",
     "family": "cpu",
     "type": "call",
-    "reloc": false,
-    "type_num": 3,
-    "type2_num": 0,
     "jump": 70,
     "fail": 76
   },
   {
     "offset": 76,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4eb900000010",
     "size": 6,
     "opcode": "jsr 0x10.l",
-    "disasm": "jsr 0x10.l",
-    "bytes": "4eb900000010",
     "family": "cpu",
     "type": "call",
-    "reloc": false,
-    "type_num": 3,
-    "type2_num": 0,
     "jump": 16,
     "fail": 82
   },
   {
     "offset": 82,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4ef900000010",
     "size": 6,
     "opcode": "jmp 0x10.l",
-    "disasm": "jmp 0x10.l",
-    "bytes": "4ef900000010",
     "family": "cpu",
     "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
     "jump": 16,
     "fail": 88
   },
   {
     "offset": 88,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e500004",
     "size": 4,
     "opcode": "link.w a0, 0x4",
-    "disasm": "link.w a0, 0x4",
-    "bytes": "4e500004",
     "family": "cpu",
-    "type": "push",
-    "reloc": false,
-    "type_num": 13,
-    "type2_num": 0
+    "type": "push"
   },
   {
     "offset": 92,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e188",
     "size": 2,
     "opcode": "lsl.l 0x8, d0",
-    "disasm": "lsl.l 0x8, d0",
-    "bytes": "e188",
     "family": "cpu",
-    "type": "shl",
-    "reloc": false,
-    "type_num": 23,
-    "type2_num": 0
+    "type": "shl"
   },
   {
     "offset": 94,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e088",
     "size": 2,
     "opcode": "lsr.l 0x8, d0",
-    "disasm": "lsr.l 0x8, d0",
-    "bytes": "e088",
     "family": "cpu",
-    "type": "shr",
-    "reloc": false,
-    "type_num": 22,
-    "type2_num": 0
+    "type": "shr"
   },
   {
     "offset": 96,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "41d0",
     "size": 2,
     "opcode": "lea.l (a0), a0",
-    "disasm": "lea.l (a0), a0",
-    "bytes": "41d0",
     "family": "cpu",
-    "type": "lea",
-    "reloc": false,
-    "type_num": 33,
-    "type2_num": 0
+    "type": "lea"
   },
   {
     "offset": 98,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4850",
     "size": 2,
     "opcode": "pea.l (a0)",
-    "disasm": "pea.l (a0)",
-    "bytes": "4850",
     "family": "cpu",
-    "type": "lea",
-    "reloc": false,
-    "type_num": 33,
-    "type2_num": 0
+    "type": "lea"
   },
   {
     "offset": 100,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "2000",
     "size": 2,
     "opcode": "move.l d0, d0",
-    "disasm": "move.l d0, d0",
-    "bytes": "2000",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 102,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "2040",
     "size": 2,
     "opcode": "movea.l d0, a0",
-    "disasm": "movea.l d0, a0",
-    "bytes": "2040",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 104,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "48d00003",
     "size": 4,
     "opcode": "movem.l d0-d1, (a0)",
-    "disasm": "movem.l d0-d1, (a0)",
-    "bytes": "48d00003",
     "family": "cpu",
-    "type": "store",
-    "reloc": false,
-    "type_num": 31,
-    "type2_num": 0
+    "type": "store"
   },
   {
     "offset": 108,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "7001",
     "size": 2,
     "opcode": "moveq 0x1, d0",
-    "disasm": "moveq 0x1, d0",
-    "bytes": "7001",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 110,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "c1c0",
     "size": 2,
     "opcode": "muls.w d0, d0",
-    "disasm": "muls.w d0, d0",
-    "bytes": "c1c0",
     "family": "cpu",
-    "type": "mul",
-    "reloc": false,
-    "type_num": 20,
-    "type2_num": 0
+    "type": "mul"
   },
   {
     "offset": 112,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "c0c0",
     "size": 2,
     "opcode": "mulu.w d0, d0",
-    "disasm": "mulu.w d0, d0",
-    "bytes": "c0c0",
     "family": "cpu",
-    "type": "mul",
-    "reloc": false,
-    "type_num": 20,
-    "type2_num": 0
+    "type": "mul"
   },
   {
     "offset": 114,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4480",
     "size": 2,
     "opcode": "neg.l d0",
-    "disasm": "neg.l d0",
-    "bytes": "4480",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 116,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4080",
     "size": 2,
     "opcode": "negx.l d0",
-    "disasm": "negx.l d0",
-    "bytes": "4080",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 118,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e71",
     "size": 2,
     "opcode": "nop",
-    "disasm": "nop",
-    "bytes": "4e71",
     "family": "cpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0
+    "type": "nop"
   },
   {
     "offset": 120,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4680",
     "size": 2,
     "opcode": "not.l d0",
-    "disasm": "not.l d0",
-    "bytes": "4680",
     "family": "cpu",
-    "type": "not",
-    "reloc": false,
-    "type_num": 30,
-    "type2_num": 0
+    "type": "not"
   },
   {
     "offset": 122,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "8080",
     "size": 2,
     "opcode": "or.l d0, d0",
-    "disasm": "or.l d0, d0",
-    "bytes": "8080",
     "family": "cpu",
-    "type": "or",
-    "reloc": false,
-    "type_num": 26,
-    "type2_num": 0
+    "type": "or"
   },
   {
     "offset": 124,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "008000000001",
     "size": 6,
     "opcode": "ori.l 0x1, d0",
-    "disasm": "ori.l 0x1, d0",
-    "bytes": "008000000001",
     "family": "cpu",
-    "type": "or",
-    "reloc": false,
-    "type_num": 26,
-    "type2_num": 0
+    "type": "or"
   },
   {
     "offset": 130,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e75",
     "size": 2,
     "opcode": "rts",
-    "disasm": "rts",
-    "bytes": "4e75",
     "family": "cpu",
-    "type": "ret",
-    "reloc": false,
-    "type_num": 5,
-    "type2_num": 0
+    "type": "ret"
   },
   {
     "offset": 132,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e73",
     "size": 2,
     "opcode": "rte",
-    "disasm": "rte",
-    "bytes": "4e73",
     "family": "cpu",
-    "type": "ret",
-    "reloc": false,
-    "type_num": 5,
-    "type2_num": 0
+    "type": "ret"
   },
   {
     "offset": 134,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "50c0",
     "size": 2,
     "opcode": "st.b d0",
-    "disasm": "st.b d0",
-    "bytes": "50c0",
     "family": "cpu",
-    "type": "null",
-    "reloc": false,
-    "type_num": 0,
-    "type2_num": 0
+    "type": "cmov"
   },
   {
     "offset": 136,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "9080",
     "size": 2,
     "opcode": "sub.l d0, d0",
-    "disasm": "sub.l d0, d0",
-    "bytes": "9080",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 138,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "91c0",
     "size": 2,
     "opcode": "suba.l d0, a0",
-    "disasm": "suba.l d0, a0",
-    "bytes": "91c0",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 140,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "048000000001",
     "size": 6,
     "opcode": "subi.l 0x1, d0",
-    "disasm": "subi.l 0x1, d0",
-    "bytes": "048000000001",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 146,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "5380",
     "size": 2,
     "opcode": "subq.l 0x1, d0",
-    "disasm": "subq.l 0x1, d0",
-    "bytes": "5380",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 148,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "9180",
     "size": 2,
     "opcode": "subx.l d0, d0",
-    "disasm": "subx.l d0, d0",
-    "bytes": "9180",
     "family": "cpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 150,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4840",
     "size": 2,
     "opcode": "swap d0",
-    "disasm": "swap d0",
-    "bytes": "4840",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 152,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e40",
     "size": 2,
     "opcode": "trap 0x0",
-    "disasm": "trap 0x0",
-    "bytes": "4e40",
     "family": "cpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 154,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4a80",
     "size": 2,
     "opcode": "tst.l d0",
-    "disasm": "tst.l d0",
-    "bytes": "4a80",
     "family": "cpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 156,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4e58",
     "size": 2,
     "opcode": "unlk a0",
-    "disasm": "unlk a0",
-    "bytes": "4e58",
     "family": "cpu",
-    "type": "pop",
-    "reloc": false,
-    "type_num": 14,
-    "type2_num": 0
+    "type": "pop"
   },
   {
     "offset": 158,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "7310",
     "size": 2,
     "opcode": "mvs.b (a0), d1",
-    "disasm": "mvs.b (a0), d1",
-    "bytes": "7310",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 160,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "71c0",
     "size": 2,
     "opcode": "mvz.w d0, d0",
-    "disasm": "mvz.w d0, d0",
-    "bytes": "71c0",
     "family": "cpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 162,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4c80",
     "size": 2,
     "opcode": "sats.l d0",
-    "disasm": "sats.l d0",
-    "bytes": "4c80",
     "family": "cpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 164,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "a293a2a9",
     "size": 4,
     "opcode": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
-    "disasm": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
-    "bytes": "a293a2a9",
     "family": "cpu",
-    "type": "mul",
-    "reloc": false,
-    "type_num": 20,
-    "type2_num": 0
+    "type": "mul"
   },
   {
     "offset": 168,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "00c0",
     "size": 2,
     "opcode": "bitrev d0",
-    "disasm": "bitrev d0",
-    "bytes": "00c0",
     "family": "cpu",
-    "type": "undefined",
-    "reloc": false,
-    "type_num": 49,
-    "type2_num": 0
+    "type": "undefined"
   },
   {
     "offset": 170,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "02c1",
     "size": 2,
     "opcode": "byterev d1",
-    "disasm": "byterev d1",
-    "bytes": "02c1",
     "family": "cpu",
-    "type": "undefined",
-    "reloc": false,
-    "type_num": 49,
-    "type2_num": 0
+    "type": "undefined"
   },
   {
     "offset": 172,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "04c2",
     "size": 2,
     "opcode": "ff1 d2",
-    "disasm": "ff1 d2",
-    "bytes": "04c2",
     "family": "cpu",
-    "type": "undefined",
-    "reloc": false,
-    "type_num": 48,
-    "type2_num": 0
+    "type": "undefined"
   },
   {
     "offset": 174,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f428",
     "size": 2,
     "opcode": "intouch (a0)",
-    "disasm": "intouch (a0)",
-    "bytes": "f428",
     "family": "cpu",
-    "type": "sync",
-    "reloc": false,
-    "type_num": 47,
-    "type2_num": 0
+    "type": "sync"
   },
   {
     "offset": 176,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "40e746fc04d2",
     "size": 6,
     "opcode": "strldsr.w 0x4d2",
-    "disasm": "strldsr.w 0x4d2",
-    "bytes": "40e746fc04d2",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 182,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fb10",
     "size": 2,
     "opcode": "wddata.b (a0)",
-    "disasm": "wddata.b (a0)",
-    "bytes": "fb10",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 184,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fbd00003",
     "size": 4,
     "opcode": "wdebug.l (a0)",
-    "disasm": "wdebug.l (a0)",
-    "bytes": "fbd00003",
     "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 188,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "51fc",
     "size": 2,
     "opcode": "tpf",
-    "disasm": "tpf",
-    "bytes": "51fc",
     "family": "cpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 190,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fcc00050",
     "size": 4,
     "opcode": "cp0bcbusy 0x110",
-    "disasm": "cp0bcbusy 0x110",
-    "bytes": "fcc00050",
     "family": "cpu",
     "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
     "jump": 272,
     "fail": 194
   },
   {
     "offset": 194,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fc802123",
     "size": 4,
     "opcode": "cp0ld.l d0, d2, 0x1, 0x123",
-    "disasm": "cp0ld.l d0, d2, 0x1, 0x123",
-    "bytes": "fc802123",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 198,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fd802123",
     "size": 4,
     "opcode": "cp0st.l d2, d0, 0x1, 0x123",
-    "disasm": "cp0st.l d2, d0, 0x1, 0x123",
-    "bytes": "fd802123",
     "family": "cpu",
-    "type": "store",
-    "reloc": false,
-    "type_num": 31,
-    "type2_num": 0
+    "type": "store"
   },
   {
     "offset": 202,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "fc000e00",
     "size": 4,
     "opcode": "cp0nop 0x8",
-    "disasm": "cp0nop 0x8",
-    "bytes": "fc000e00",
     "family": "cpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0
+    "type": "nop"
   },
   {
     "offset": 206,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e358",
     "size": 2,
     "opcode": "rol.w 0x1, d0",
-    "disasm": "rol.w 0x1, d0",
-    "bytes": "e358",
     "family": "cpu",
-    "type": "rol",
-    "reloc": false,
-    "type_num": 36,
-    "type2_num": 0
+    "type": "rol"
   },
   {
     "offset": 208,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "e258",
     "size": 2,
     "opcode": "ror.w 0x1, d0",
-    "disasm": "ror.w 0x1, d0",
-    "bytes": "e258",
     "family": "cpu",
-    "type": "ror",
-    "reloc": false,
-    "type_num": 35,
-    "type2_num": 0
+    "type": "ror"
   }
 ]
+-- operand helper opex --
+[{"bytes":"4c402802","size":4,"opcode":"divs.l d0, d2","type":"div","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"d2"}]}},{"bytes":"4c402401","size":4,"opcode":"divu.l d0, d1:d2","type":"div","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg_pair","reg_0":"d1","reg_1":"d2"}]}},{"bytes":"50c0","size":2,"opcode":"st.b d0","type":"cmov","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"51c0","size":2,"opcode":"sf.b d0","type":"cmov","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"fc802123","size":4,"opcode":"cp0ld.l d0, d2, 0x1, 0x123","type":"load","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"d2"},{"type":"imm","value":1},{"type":"imm","value":291}]}},{"bytes":"fd802123","size":4,"opcode":"cp0st.l d2, d0, 0x1, 0x123","type":"store","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d2"},{"type":"reg","value":"d0"},{"type":"imm","value":1},{"type":"imm","value":291}]}},{"bytes":"fc000e00","size":4,"opcode":"cp0nop 0x8","type":"nop","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"imm","value":8}]}}]
 EOF
 RUN
 
@@ -1403,514 +826,288 @@ e asm.arch=m68k
 e asm.bits=32
 e asm.cpu=cfv4e
 e asm.lines=false
+(pdjp n;echo `pdj ${n}~{.[]\|{offset,bytes,size,opcode,family,type,jump,fail}}`~{})
 wx f2004000f2006000f23c44803f800000f23c5480400921fb54442d18f2105000f2106400f210d003f210f003f2800000f2800010f2c000000010f24800000010f2500000f27c0000f27a00001234f27b000012345678f200053af2000522f2000a28f2000523f2000520f2000521f2000525f2000538f2000518f200051af2000501f2000503f310f350f200051d
-pdj 31~{}
+.(pdjp 31)
+echo -- fpu operand opex --
+s 0
+wx f2004000f23c44803f800000f200053af2000522f2000520f2000521f2000525f2000538f2000518f200051af310f350f200051d
+aoj 13~{.[]\|{offset,bytes,size,opcode,type,family,direction,refptr,opex}}
 EOF
 EXPECT=<<EOF
 [
   {
     "offset": 0,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2004000",
     "size": 4,
     "opcode": "fmove.l d0, fp0",
-    "disasm": "fmove.l d0, fp0",
-    "bytes": "f2004000",
     "family": "fpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 4,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2006000",
     "size": 4,
     "opcode": "fmove.l fp0, d0",
-    "disasm": "fmove.l fp0, d0",
-    "bytes": "f2006000",
     "family": "fpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 8,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f23c44803f800000",
     "size": 8,
     "opcode": "fmove.s 1.000000, fp1",
-    "disasm": "fmove.s 1.000000, fp1",
-    "bytes": "f23c44803f800000",
     "family": "fpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 16,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f23c5480400921fb54442d18",
     "size": 12,
     "opcode": "fmove.d 3.141593, fp1",
-    "disasm": "fmove.d 3.141593, fp1",
-    "bytes": "f23c5480400921fb54442d18",
     "family": "fpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 28,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2105000",
     "size": 4,
     "opcode": "fmove.w (a0), fp0",
-    "disasm": "fmove.w (a0), fp0",
-    "bytes": "f2105000",
     "family": "fpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 32,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2106400",
     "size": 4,
     "opcode": "fmove.s fp0, (a0)",
-    "disasm": "fmove.s fp0, (a0)",
-    "bytes": "f2106400",
     "family": "fpu",
-    "type": "store",
-    "reloc": false,
-    "type_num": 31,
-    "type2_num": 0
+    "type": "store"
   },
   {
     "offset": 36,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f210d003",
     "size": 4,
     "opcode": "fmovem (a0), fp6-fp7",
-    "disasm": "fmovem (a0), fp6-fp7",
-    "bytes": "f210d003",
     "family": "fpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 40,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f210f003",
     "size": 4,
     "opcode": "fmovem fp6-fp7, (a0)",
-    "disasm": "fmovem fp6-fp7, (a0)",
-    "bytes": "f210f003",
     "family": "fpu",
-    "type": "store",
-    "reloc": false,
-    "type_num": 31,
-    "type2_num": 0
+    "type": "store"
   },
   {
     "offset": 44,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2800000",
     "size": 4,
     "opcode": "fnop",
-    "disasm": "fnop",
-    "bytes": "f2800000",
     "family": "fpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0
+    "type": "nop"
   },
   {
     "offset": 48,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2800010",
     "size": 4,
     "opcode": "fbf.w 0x42",
-    "disasm": "fbf.w 0x42",
-    "bytes": "f2800010",
     "family": "fpu",
     "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
     "jump": 66,
     "fail": 52
   },
   {
     "offset": 52,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2c000000010",
     "size": 6,
     "opcode": "fbf.l 0x46",
-    "disasm": "fbf.l 0x46",
-    "bytes": "f2c000000010",
     "family": "fpu",
     "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
     "jump": 70,
     "fail": 58
   },
   {
     "offset": 58,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f24800000010",
     "size": 6,
     "opcode": "fdbf d0, 0x4e",
-    "disasm": "fdbf d0, 0x4e",
-    "bytes": "f24800000010",
     "family": "fpu",
     "type": "cjmp",
-    "reloc": false,
-    "type_num": 2147483649,
-    "type2_num": 0,
     "jump": 78,
     "fail": 64
   },
   {
     "offset": 64,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2500000",
     "size": 4,
     "opcode": "fsf.b (a0)",
-    "disasm": "fsf.b (a0)",
-    "bytes": "f2500000",
     "family": "fpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
+    "type": "mov"
   },
   {
     "offset": 68,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f27c0000",
     "size": 4,
     "opcode": "ftrapf",
-    "disasm": "ftrapf",
-    "bytes": "f27c0000",
     "family": "fpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 72,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f27a00001234",
     "size": 6,
     "opcode": "ftrapf.w 0x1234",
-    "disasm": "ftrapf.w 0x1234",
-    "bytes": "f27a00001234",
     "family": "fpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 78,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f27b000012345678",
     "size": 8,
     "opcode": "ftrapf.l 0x12345678",
-    "disasm": "ftrapf.l 0x12345678",
-    "bytes": "f27b000012345678",
     "family": "fpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 86,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f200053a",
     "size": 4,
     "opcode": "ftst fp1, fp2",
-    "disasm": "ftst fp1, fp2",
-    "bytes": "f200053a",
     "family": "fpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 90,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000522",
     "size": 4,
     "opcode": "fadd fp1, fp2",
-    "disasm": "fadd fp1, fp2",
-    "bytes": "f2000522",
     "family": "fpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0
+    "type": "add"
   },
   {
     "offset": 94,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000a28",
     "size": 4,
     "opcode": "fsub fp2, fp4",
-    "disasm": "fsub fp2, fp4",
-    "bytes": "f2000a28",
     "family": "fpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 98,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000523",
     "size": 4,
     "opcode": "fmul fp1, fp2",
-    "disasm": "fmul fp1, fp2",
-    "bytes": "f2000523",
     "family": "fpu",
-    "type": "mul",
-    "reloc": false,
-    "type_num": 20,
-    "type2_num": 0
+    "type": "mul"
   },
   {
     "offset": 102,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000520",
     "size": 4,
     "opcode": "fdiv fp1, fp2",
-    "disasm": "fdiv fp1, fp2",
-    "bytes": "f2000520",
     "family": "fpu",
-    "type": "div",
-    "reloc": false,
-    "type_num": 21,
-    "type2_num": 0
+    "type": "div"
   },
   {
     "offset": 106,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000521",
     "size": 4,
     "opcode": "fmod fp1, fp2",
-    "disasm": "fmod fp1, fp2",
-    "bytes": "f2000521",
     "family": "fpu",
-    "type": "mod",
-    "reloc": false,
-    "type_num": 38,
-    "type2_num": 0
+    "type": "mod"
   },
   {
     "offset": 110,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000525",
     "size": 4,
     "opcode": "frem fp1, fp2",
-    "disasm": "frem fp1, fp2",
-    "bytes": "f2000525",
     "family": "fpu",
-    "type": "mod",
-    "reloc": false,
-    "type_num": 38,
-    "type2_num": 0
+    "type": "mod"
   },
   {
     "offset": 114,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000538",
     "size": 4,
     "opcode": "fcmp fp1, fp2",
-    "disasm": "fcmp fp1, fp2",
-    "bytes": "f2000538",
     "family": "fpu",
-    "type": "cmp",
-    "reloc": false,
-    "type_num": 15,
-    "type2_num": 0
+    "type": "cmp"
   },
   {
     "offset": 118,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000518",
     "size": 4,
     "opcode": "fabs fp1, fp2",
-    "disasm": "fabs fp1, fp2",
-    "bytes": "f2000518",
     "family": "fpu",
-    "type": "undefined",
-    "reloc": false,
-    "type_num": 44,
-    "type2_num": 0
+    "type": "undefined"
   },
   {
     "offset": 122,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f200051a",
     "size": 4,
     "opcode": "fneg fp1, fp2",
-    "disasm": "fneg fp1, fp2",
-    "bytes": "f200051a",
     "family": "fpu",
-    "type": "sub",
-    "reloc": false,
-    "type_num": 18,
-    "type2_num": 0
+    "type": "sub"
   },
   {
     "offset": 126,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000501",
     "size": 4,
     "opcode": "fint fp1, fp2",
-    "disasm": "fint fp1, fp2",
-    "bytes": "f2000501",
     "family": "fpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 130,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f2000503",
     "size": 4,
     "opcode": "fintrz fp1, fp2",
-    "disasm": "fintrz fp1, fp2",
-    "bytes": "f2000503",
     "family": "fpu",
-    "type": "cast",
-    "reloc": false,
-    "type_num": 42,
-    "type2_num": 0
+    "type": "cast"
   },
   {
     "offset": 134,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f310",
     "size": 2,
     "opcode": "fsave (a0)",
-    "disasm": "fsave (a0)",
-    "bytes": "f310",
     "family": "fpu",
-    "type": "store",
-    "reloc": false,
-    "type_num": 31,
-    "type2_num": 0
+    "type": "store"
   },
   {
     "offset": 136,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f350",
     "size": 2,
     "opcode": "frestore (a0)",
-    "disasm": "frestore (a0)",
-    "bytes": "f350",
     "family": "fpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 138,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f200051d",
     "size": 4,
     "opcode": "fcos fp1, fp2",
-    "disasm": "fcos fp1, fp2",
-    "bytes": "f200051d",
     "family": "fpu",
-    "type": "unk",
-    "reloc": false,
-    "type_num": 7,
-    "type2_num": 0
+    "type": "mov"
   }
 ]
+-- fpu operand opex --
+[{"bytes":"f2004000","size":4,"opcode":"fmove.l d0, fp0","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f23c44803f800000","size":8,"opcode":"fmove.s 1.000000, fp1","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"fp_single","value":1.000000},{"type":"reg","value":"fp1"}]}},{"bytes":"f200053a","size":4,"opcode":"ftst fp1, fp2","type":"cmp","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000522","size":4,"opcode":"fadd fp1, fp2","type":"add","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000520","size":4,"opcode":"fdiv fp1, fp2","type":"div","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000521","size":4,"opcode":"fmod fp1, fp2","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000525","size":4,"opcode":"frem fp1, fp2","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000538","size":4,"opcode":"fcmp fp1, fp2","type":"cmp","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f2000518","size":4,"opcode":"fabs fp1, fp2","type":"undefined","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f200051a","size":4,"opcode":"fneg fp1, fp2","type":"sub","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}},{"bytes":"f310","size":2,"opcode":"fsave (a0)","type":"store","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"f350","size":2,"opcode":"frestore (a0)","type":"load","family":"fpu","refptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"f200051d","size":4,"opcode":"fcos fp1, fp2","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
+EOF
+RUN
+
+NAME=M68k collapsed and packed FPU operand opex
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=68020
+e asm.lines=false
+wx f2000025f2007fff
+aoj 2~{.[]\|{bytes,size,opcode,type,family,refptr,opex}}
+EOF
+EXPECT=<<EOF
+[{"bytes":"f2000025","size":4,"opcode":"frem fp0","type":"mod","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f2007fff","size":4,"opcode":"fmove.p fp7, d0{d7}","type":"mov","family":"fpu","refptr":0,"opex":{"operands":[{"type":"reg","value":"fp7"},{"type":"reg","value":"d0"},{"type":"reg","value":"d7"}]}}]
 EOF
 RUN
 
@@ -1921,198 +1118,125 @@ e asm.arch=m68k
 e asm.bits=32
 e asm.cpu=cpu32
 e asm.lines=false
+(pdjp n;echo `pdj ${n}~{.[]\|{offset,bytes,size,opcode,family,type,jump,fail}}`~{})
 wx 4afaf8100140f8123980f8112500f8145d40
-pdj 5~{}
+.(pdjp 5)
 EOF
 EXPECT=<<EOF
 [
   {
     "offset": 0,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "4afa",
     "size": 2,
     "opcode": "bgnd",
-    "disasm": "bgnd",
-    "bytes": "4afa",
     "family": "cpu",
-    "type": "trap",
-    "reloc": false,
-    "type_num": 10,
-    "type2_num": 0
+    "type": "trap"
   },
   {
     "offset": 2,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f8100140",
     "size": 4,
     "opcode": "tblu.w (a0), d0",
-    "disasm": "tblu.w (a0), d0",
-    "bytes": "f8100140",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 6,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f8123980",
     "size": 4,
     "opcode": "tbls.l (a2), d3",
-    "disasm": "tbls.l (a2), d3",
-    "bytes": "f8123980",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 10,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f8112500",
     "size": 4,
     "opcode": "tblun.b (a1), d2",
-    "disasm": "tblun.b (a1), d2",
-    "bytes": "f8112500",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   },
   {
     "offset": 14,
-    "esil": "",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 0,
+    "bytes": "f8145d40",
     "size": 4,
     "opcode": "tblsn.w (a4), d5",
-    "disasm": "tblsn.w (a4), d5",
-    "bytes": "f8145d40",
     "family": "cpu",
-    "type": "load",
-    "reloc": false,
-    "type_num": 32,
-    "type2_num": 0
+    "type": "load"
   }
 ]
 EOF
 RUN
-
 NAME=M68k CPU variant analysis
 FILE==
 CMDS=<<EOF
 e asm.arch=m68k
 e asm.bits=32
 e asm.lines=false
+(aojp;echo `aoj~{.[]\|{opcode,bytes,size,type,family,jump,fail}}`~{})
 e asm.cpu=coldfire
 wx 7310
 echo -- coldfire --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv1
 wx a554
 echo -- cfv1 --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv2
 wx 4c402802
 echo -- cfv2 --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv3
 wx f4e8
 echo -- cfv3 --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv4
 wx 60ff00000010
 echo -- cfv4 --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv4e
 wx a900
 echo -- cfv4e --
-aoj~{}
+.(aojp)
 wx 71c0
 echo -- cfv4e mvz --
-aoj~{}
+.(aojp)
 wx 4c80
 echo -- cfv4e sats --
-aoj~{}
+.(aojp)
 wx a293a2a9
 echo -- cfv4e mac-shift --
-aoj~{}
+.(aojp)
 wx 4ebafffc
 echo -- cfv4e pc-relative --
-aoj~{}
+.(aojp)
 wx 4ed0
 echo -- cfv4e indirect --
-aoj~{}
+.(aojp)
 wx f23c44803f800000
 echo -- cfv4e fpu-single --
-aoj~{}
+.(aojp)
 e asm.cpu=cfv5
 wx a0010000
 echo -- cfv5 --
-aoj~{}
+.(aojp)
 e asm.cpu=68040
 wx 4eb912345678
 echo -- 68040 absolute --
-aoj~{}
+.(aojp)
+e asm.cpu=68020
+wx f2408170f24800000001f27a00001234f27c0000f2800001f2c000000001
+echo -- 68020 fpu branch opex --
+aoj 6~{.[]\|{offset,bytes,size,opcode,type,family,jump,fail,opex}}
 EOF
 EXPECT=<<EOF
 -- coldfire --
 [
   {
     "opcode": "mvs.b (a0), d1",
-    "disasm": "mvs.b (a0), d1",
-    "pseudo": "asm(\"mvs (a0), d1\")",
-    "mnemonic": "mvs.b",
-    "mask": "ffff",
-    "sign": true,
-    "prefix": 0,
-    "id": 299,
-    "opex": {
-      "operands": [
-        {
-          "type": "mem",
-          "address_mode": 3,
-          "base_reg": "a0",
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        },
-        {
-          "type": "reg",
-          "value": "d1"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "7310",
     "size": 2,
     "type": "load",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2120,47 +1244,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "mov3q.l 0x2, (a4)",
-    "disasm": "mov3q.l 0x2, (a4)",
-    "pseudo": "asm(\"mov3q 0x2, (a4)\")",
-    "mnemonic": "mov3q.l",
-    "mask": "ffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 294,
-    "opex": {
-      "operands": [
-        {
-          "type": "imm",
-          "value": 2
-        },
-        {
-          "type": "mem",
-          "address_mode": 3,
-          "base_reg": "a4",
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "a554",
     "size": 2,
     "type": "store",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2168,35 +1254,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "divs.l d0, d2",
-    "disasm": "divs.l d0, d2",
-    "pseudo": "asm(\"divs d0, d2\")",
-    "mnemonic": "divs.l",
-    "mask": "ffffffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 78,
-    "opex": {
-      "operands": [
-        {
-          "type": "reg",
-          "value": "d0"
-        },
-        {
-          "type": "reg",
-          "value": "d2"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "4c402802",
     "size": 4,
     "type": "div",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2204,47 +1264,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "cpushl bc, (a0)",
-    "disasm": "cpushl bc, (a0)",
-    "pseudo": "asm(\"cpushl bc, (a0)\")",
-    "mnemonic": "cpushl",
-    "mask": "ffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 58,
-    "opex": {
-      "operands": [
-        {
-          "type": "imm",
-          "value": 3
-        },
-        {
-          "type": "mem",
-          "address_mode": 3,
-          "base_reg": "a0",
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "f4e8",
     "size": 2,
     "type": "sync",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2252,70 +1274,21 @@ EXPECT=<<EOF
 [
   {
     "opcode": "bra.l 0x12",
-    "disasm": "bra.l 0x12",
-    "pseudo": "goto 0x12",
-    "mnemonic": "bra.l",
-    "mask": "ff0000000000",
-    "jump": 18,
-    "fail": 6,
-    "sign": false,
-    "prefix": 0,
-    "id": 27,
-    "opex": {
-      "operands": [
-        {
-          "type": "br_disp",
-          "disp": 16,
-          "disp_size": 4
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "60ff00000010",
     "size": 6,
     "type": "jmp",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
-    "family": "cpu"
+    "family": "cpu",
+    "jump": 18,
+    "fail": 6
   }
 ]
 -- cfv4e --
 [
   {
     "opcode": "move.l d0, macsr",
-    "disasm": "move.l d0, macsr",
-    "pseudo": "macsr = d0",
-    "mnemonic": "move.l",
-    "mask": "ffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 286,
-    "opex": {
-      "operands": [
-        {
-          "type": "reg",
-          "value": "d0"
-        },
-        {
-          "type": "reg",
-          "value": "macsr"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "a900",
     "size": 2,
     "type": "mov",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2323,35 +1296,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "mvz.w d0, d0",
-    "disasm": "mvz.w d0, d0",
-    "pseudo": "asm(\"mvz d0, d0\")",
-    "mnemonic": "mvz.w",
-    "mask": "ffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 300,
-    "opex": {
-      "operands": [
-        {
-          "type": "reg",
-          "value": "d0"
-        },
-        {
-          "type": "reg",
-          "value": "d0"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "71c0",
     "size": 2,
     "type": "cast",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2359,31 +1306,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "sats.l d0",
-    "disasm": "sats.l d0",
-    "pseudo": "asm(\"sats d0\")",
-    "mnemonic": "sats.l",
-    "mask": "ffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 335,
-    "opex": {
-      "operands": [
-        {
-          "type": "reg",
-          "value": "d0"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "4c80",
     "size": 2,
     "type": "cast",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2391,66 +1316,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
-    "disasm": "mac.w a1l, a2u, <<, (a3)&, d1, acc0",
-    "pseudo": "asm(\"mac a1l, a2u, <<, (a3)&, d1, acc0\")",
-    "mnemonic": "mac.w",
-    "mask": "ffffffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 285,
-    "opex": {
-      "operands": [
-        {
-          "flags": 1,
-          "type": "reg",
-          "value": "a1"
-        },
-        {
-          "flags": 2,
-          "type": "reg",
-          "value": "a2"
-        },
-        {
-          "flags": 4,
-          "type": "shift"
-        },
-        {
-          "flags": 16,
-          "type": "mem",
-          "address_mode": 3,
-          "base_reg": "a3",
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        },
-        {
-          "type": "reg",
-          "value": "d1"
-        },
-        {
-          "type": "reg",
-          "value": "acc0"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "a293a2a9",
     "size": 4,
     "type": "mul",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2458,128 +1326,32 @@ EXPECT=<<EOF
 [
   {
     "opcode": "jsr 0xfffffffe(pc)",
-    "disasm": "jsr 0xfffffffe(pc)",
-    "pseudo": "call 0xfffffffe(pc)",
-    "description": "jump to subroutine",
-    "mnemonic": "jsr",
-    "mask": "ff000000",
-    "jump": 4294967294,
-    "fail": 4,
-    "sign": false,
-    "prefix": 0,
-    "id": 279,
-    "opex": {
-      "operands": [
-        {
-          "type": "mem",
-          "address_mode": 11,
-          "address": 0,
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": -4,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 1
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "4ebafffc",
     "size": 4,
     "type": "call",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
-    "family": "cpu"
+    "family": "cpu",
+    "jump": 4294967294,
+    "fail": 4
   }
 ]
 -- cfv4e indirect --
 [
   {
     "opcode": "jmp (a0)",
-    "disasm": "jmp (a0)",
-    "pseudo": "goto (a0)",
-    "description": "jump",
-    "mnemonic": "jmp",
-    "mask": "ffff",
-    "fail": 2,
-    "sign": false,
-    "prefix": 0,
-    "id": 278,
-    "opex": {
-      "operands": [
-        {
-          "type": "mem",
-          "address_mode": 3,
-          "base_reg": "a0",
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "4ed0",
     "size": 2,
     "type": "ijmp",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
-    "family": "cpu"
+    "family": "cpu",
+    "fail": 2
   }
 ]
 -- cfv4e fpu-single --
 [
   {
     "opcode": "fmove.s 1.000000, fp1",
-    "disasm": "fmove.s 1.000000, fp1",
-    "pseudo": "asm(\"fmove.s 1.000000, fp1\")",
-    "mnemonic": "fmove.s",
-    "mask": "ffffffffffffffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 179,
-    "opex": {
-      "operands": [
-        {
-          "type": "fp_single",
-          "value": 1.000000
-        },
-        {
-          "type": "reg",
-          "value": "fp1"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "f23c44803f800000",
     "size": 8,
     "type": "mov",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "fpu"
   }
 ]
@@ -2587,41 +1359,9 @@ EXPECT=<<EOF
 [
   {
     "opcode": "mac.w d1l, d0l, acc0",
-    "disasm": "mac.w d1l, d0l, acc0",
-    "pseudo": "asm(\"mac d1l, d0l, acc0\")",
-    "mnemonic": "mac.w",
-    "mask": "ffffffff",
-    "sign": false,
-    "prefix": 0,
-    "id": 285,
-    "opex": {
-      "operands": [
-        {
-          "flags": 1,
-          "type": "reg",
-          "value": "d1"
-        },
-        {
-          "flags": 1,
-          "type": "reg",
-          "value": "d0"
-        },
-        {
-          "type": "reg",
-          "value": "acc0"
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "a0010000",
     "size": 4,
     "type": "mul",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
     "family": "cpu"
   }
 ]
@@ -2629,48 +1369,482 @@ EXPECT=<<EOF
 [
   {
     "opcode": "jsr 0x12345678.l",
-    "disasm": "jsr 0x12345678.l",
-    "pseudo": "call 0x12345678",
-    "description": "jump to subroutine",
-    "mnemonic": "jsr",
-    "mask": "ff0000000000",
-    "jump": 305419896,
-    "fail": 6,
-    "sign": false,
-    "prefix": 0,
-    "id": 279,
-    "opex": {
-      "operands": [
-        {
-          "type": "mem",
-          "address_mode": 17,
-          "address": 305419896,
-          "in_disp": 0,
-          "out_disp": 0,
-          "disp": 0,
-          "scale": 0,
-          "bitfield": 0,
-          "width": 0,
-          "offset": 0,
-          "index_size": 0,
-          "in_disp_size": 0,
-          "out_disp_size": 0,
-          "disp_size": 0
-        }
-      ]
-    },
-    "addr": 0,
     "bytes": "4eb912345678",
     "size": 6,
     "type": "call",
-    "scale": 0,
-    "refptr": 0,
-    "cycles": 0,
-    "failcycles": 0,
-    "delay": 0,
-    "stackptr": 0,
-    "family": "cpu"
+    "family": "cpu",
+    "jump": 305419896,
+    "fail": 6
   }
 ]
+-- 68020 fpu branch opex --
+[{"bytes":"f2408170","size":4,"opcode":"fssf.b d0","type":"mov","family":"fpu","opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"f24800000001","size":6,"opcode":"fdbf d0, 0x9","type":"cjmp","family":"fpu","jump":9,"fail":10,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"br_disp","disp":3,"disp_size":2}]}},{"bytes":"f27a00001234","size":6,"opcode":"ftrapf.w 0x1234","type":"trap","family":"fpu","opex":{"operands":[{"type":"imm","value":4660}]}},{"bytes":"f27c0000","size":4,"opcode":"ftrapf","type":"trap","family":"fpu","opex":{"operands":[]}},{"bytes":"f2800001","size":4,"opcode":"fbf.w 0x17","type":"cjmp","family":"fpu","jump":23,"fail":24,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":2}]}},{"bytes":"f2c000000001","size":6,"opcode":"fbf.l 0x1b","type":"cjmp","family":"fpu","jump":27,"fail":30,"opex":{"operands":[{"type":"br_disp","disp":1,"disp_size":4}]}}]
+EOF
+RUN
+
+NAME=M68k analysis val and opex sweep
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.lines=false
+(pdjp n;echo `pdj ${n}~{.[]\|{offset,bytes,size,opcode,family,type,jump,fail}}`~{})
+e asm.cpu=68000
+s 0
+wx 4280448050c04ed04ebafffc4eb9000000104e5000044e5841d048d00003700166024ac04afc4e764e704e720000e190c1008100c1404800
+echo -- 68000 pd --
+pd 22
+echo -- 68000 pdj --
+.(pdjp 22)
+echo -- 68000 aoj opex --
+s 0
+wx 4280448050c04ed04ebafffc4eb9000000104e5000044e5841d048d00003700166024ac0
+aoj 13~{.[]\|{offset,bytes,size,opcode,type,family,stackop,stackptr,opex}}
+e asm.cpu=68020
+s 0
+wx 06d00000f2004000f23c44803f800000f23c5480400921fb54442d18f20005224c402401f310f350
+echo -- 68020 pd --
+pd 8
+echo -- 68020 pdj --
+.(pdjp 8)
+echo -- 68020 aoj opex --
+s 0
+wx 06d00000f2004000f23c44803f800000f23c5480400921fb54442d18f2000522
+aoj 5~{.[]\|{offset,bytes,size,opcode,type,family,opex}}
+e asm.cpu=cfv1
+s 0
+wx 40e746fc04d2fc802123fd802123
+echo -- cfv1 pd --
+pd 3
+echo -- cfv1 pdj --
+.(pdjp 3)
+echo -- cfv1 aoj --
+s 0
+wx 40e746fc04d2fc802123fd802123
+aoj 3~{.[]\|{offset,bytes,size,opcode,type,family,stackop,stackptr,opex}}
+e asm.cpu=cfv4e
+s 0
+wx 731071c0
+echo -- cfv4e pd --
+pd 2
+echo -- cfv4e pdj --
+.(pdjp 2)
+echo -- cfv4e aoj --
+s 0
+wx 731071c0
+aoj 2~{.[]\|{offset,bytes,size,opcode,type,family,opex}}
+EOF
+EXPECT=<<EOF
+-- 68000 pd --
+0x00000000      clr.l d0
+0x00000002      neg.l d0
+0x00000004      st.b  d0
+0x00000006      jmp   (a0)
+0x00000008      jsr   0x6(pc)
+0x0000000c      jsr   0x10.l
+0x00000012      link.w a0, 0x4
+0x00000016      unlk  a0
+0x00000018      lea.l (a0), a0
+0x0000001a      movem.l d0-d1, (a0)
+0x0000001e      moveq 0x1, d0
+0x00000020      bne.b 0x24
+0x00000022      tas.b d0
+0x00000024      illegal 0x4afc
+0x00000026      trapv
+0x00000028      reset
+0x0000002a      stop  0x0
+0x0000002e      roxl.l 0x8, d0
+0x00000030      abcd.b d0, d0
+0x00000032      sbcd.b d0, d0
+0x00000034      exg.l d0, d0
+0x00000036      nbcd.b d0
+-- 68000 pdj --
+[
+  {
+    "offset": 0,
+    "bytes": "4280",
+    "size": 2,
+    "opcode": "clr.l d0",
+    "family": "cpu",
+    "type": "mov"
+  },
+  {
+    "offset": 2,
+    "bytes": "4480",
+    "size": 2,
+    "opcode": "neg.l d0",
+    "family": "cpu",
+    "type": "sub"
+  },
+  {
+    "offset": 4,
+    "bytes": "50c0",
+    "size": 2,
+    "opcode": "st.b d0",
+    "family": "cpu",
+    "type": "cmov"
+  },
+  {
+    "offset": 6,
+    "bytes": "4ed0",
+    "size": 2,
+    "opcode": "jmp (a0)",
+    "family": "cpu",
+    "type": "ijmp"
+  },
+  {
+    "offset": 8,
+    "bytes": "4ebafffc",
+    "size": 4,
+    "opcode": "jsr 0x6(pc)",
+    "family": "cpu",
+    "type": "call",
+    "jump": 6,
+    "fail": 12
+  },
+  {
+    "offset": 12,
+    "bytes": "4eb900000010",
+    "size": 6,
+    "opcode": "jsr 0x10.l",
+    "family": "cpu",
+    "type": "call",
+    "jump": 16,
+    "fail": 18
+  },
+  {
+    "offset": 18,
+    "bytes": "4e500004",
+    "size": 4,
+    "opcode": "link.w a0, 0x4",
+    "family": "cpu",
+    "type": "push"
+  },
+  {
+    "offset": 22,
+    "bytes": "4e58",
+    "size": 2,
+    "opcode": "unlk a0",
+    "family": "cpu",
+    "type": "pop"
+  },
+  {
+    "offset": 24,
+    "bytes": "41d0",
+    "size": 2,
+    "opcode": "lea.l (a0), a0",
+    "family": "cpu",
+    "type": "lea"
+  },
+  {
+    "offset": 26,
+    "bytes": "48d00003",
+    "size": 4,
+    "opcode": "movem.l d0-d1, (a0)",
+    "family": "cpu",
+    "type": "store"
+  },
+  {
+    "offset": 30,
+    "bytes": "7001",
+    "size": 2,
+    "opcode": "moveq 0x1, d0",
+    "family": "cpu",
+    "type": "mov"
+  },
+  {
+    "offset": 32,
+    "bytes": "6602",
+    "size": 2,
+    "opcode": "bne.b 0x24",
+    "family": "cpu",
+    "type": "cjmp",
+    "jump": 36,
+    "fail": 34
+  },
+  {
+    "offset": 34,
+    "bytes": "4ac0",
+    "size": 2,
+    "opcode": "tas.b d0",
+    "family": "cpu",
+    "type": "or"
+  },
+  {
+    "offset": 36,
+    "bytes": "4afc",
+    "size": 1,
+    "opcode": "invalid"
+  },
+  {
+    "offset": 38,
+    "bytes": "4e76",
+    "size": 2,
+    "opcode": "trapv",
+    "family": "cpu",
+    "type": "trap"
+  },
+  {
+    "offset": 40,
+    "bytes": "4e70",
+    "size": 2,
+    "opcode": "reset",
+    "family": "cpu",
+    "type": "null"
+  },
+  {
+    "offset": 42,
+    "bytes": "4e720000",
+    "size": 4,
+    "opcode": "stop 0x0",
+    "family": "cpu",
+    "type": "null"
+  },
+  {
+    "offset": 46,
+    "bytes": "e190",
+    "size": 2,
+    "opcode": "roxl.l 0x8, d0",
+    "family": "cpu",
+    "type": "null"
+  },
+  {
+    "offset": 48,
+    "bytes": "c100",
+    "size": 2,
+    "opcode": "abcd.b d0, d0",
+    "family": "cpu",
+    "type": "add"
+  },
+  {
+    "offset": 50,
+    "bytes": "8100",
+    "size": 2,
+    "opcode": "sbcd.b d0, d0",
+    "family": "cpu",
+    "type": "sub"
+  },
+  {
+    "offset": 52,
+    "bytes": "c140",
+    "size": 2,
+    "opcode": "exg.l d0, d0",
+    "family": "cpu",
+    "type": "xchg"
+  },
+  {
+    "offset": 54,
+    "bytes": "4800",
+    "size": 2,
+    "opcode": "nbcd.b d0",
+    "family": "cpu",
+    "type": "sub"
+  }
+]
+-- 68000 aoj opex --
+[{"bytes":"4280","size":2,"opcode":"clr.l d0","type":"mov","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"4480","size":2,"opcode":"neg.l d0","type":"sub","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"50c0","size":2,"opcode":"st.b d0","type":"cmov","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}},{"bytes":"4ed0","size":2,"opcode":"jmp (a0)","type":"ijmp","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"4ebafffc","size":4,"opcode":"jsr 0x6(pc)","type":"call","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"mem","address_mode":11,"address":0,"in_disp":0,"out_disp":0,"disp":-4,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":1}]}},{"bytes":"4eb900000010","size":6,"opcode":"jsr 0x10.l","type":"call","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"mem","address_mode":17,"address":16,"in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"4e500004","size":4,"opcode":"link.w a0, 0x4","type":"push","family":"cpu","stackptr":-4,"opex":{"operands":[{"type":"reg","value":"a0"},{"type":"imm","value":4}]}},{"bytes":"4e58","size":2,"opcode":"unlk a0","type":"pop","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"a0"}]}},{"bytes":"41d0","size":2,"opcode":"lea.l (a0), a0","type":"lea","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"a0"}]}},{"bytes":"48d00003","size":4,"opcode":"movem.l d0-d1, (a0)","type":"store","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg_bits","value":3},{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"7001","size":2,"opcode":"moveq 0x1, d0","type":"mov","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"imm","value":1},{"type":"reg","value":"d0"}]}},{"bytes":"6602","size":2,"opcode":"bne.b 0x24","type":"cjmp","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"br_disp","disp":2,"disp_size":1}]}},{"bytes":"4ac0","size":2,"opcode":"tas.b d0","type":"or","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"}]}}]
+-- 68020 pd --
+0x00000000      callm 0x0, (a0)
+0x00000004      fmove.l d0, fp0
+0x00000008      fmove.s 1.000000, fp1
+0x00000010      fmove.d 3.141593, fp1
+0x0000001c      fadd  fp1, fp2
+0x00000020      divu.l d0, d1:d2
+0x00000024      fsave (a0)
+0x00000026      frestore (a0)
+-- 68020 pdj --
+[
+  {
+    "offset": 0,
+    "bytes": "06d00000",
+    "size": 4,
+    "opcode": "callm 0x0, (a0)",
+    "family": "cpu",
+    "type": "icall"
+  },
+  {
+    "offset": 4,
+    "bytes": "f2004000",
+    "size": 4,
+    "opcode": "fmove.l d0, fp0",
+    "family": "fpu",
+    "type": "mov"
+  },
+  {
+    "offset": 8,
+    "bytes": "f23c44803f800000",
+    "size": 8,
+    "opcode": "fmove.s 1.000000, fp1",
+    "family": "fpu",
+    "type": "mov"
+  },
+  {
+    "offset": 16,
+    "bytes": "f23c5480400921fb54442d18",
+    "size": 12,
+    "opcode": "fmove.d 3.141593, fp1",
+    "family": "fpu",
+    "type": "mov"
+  },
+  {
+    "offset": 28,
+    "bytes": "f2000522",
+    "size": 4,
+    "opcode": "fadd fp1, fp2",
+    "family": "fpu",
+    "type": "add"
+  },
+  {
+    "offset": 32,
+    "bytes": "4c402401",
+    "size": 4,
+    "opcode": "divu.l d0, d1:d2",
+    "family": "cpu",
+    "type": "div"
+  },
+  {
+    "offset": 36,
+    "bytes": "f310",
+    "size": 2,
+    "opcode": "fsave (a0)",
+    "family": "fpu",
+    "type": "store"
+  },
+  {
+    "offset": 38,
+    "bytes": "f350",
+    "size": 2,
+    "opcode": "frestore (a0)",
+    "family": "fpu",
+    "type": "load"
+  }
+]
+-- 68020 aoj opex --
+[{"bytes":"06d00000","size":4,"opcode":"callm 0x0, (a0)","type":"icall","family":"cpu","opex":{"operands":[{"type":"imm","value":0},{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}},{"bytes":"f2004000","size":4,"opcode":"fmove.l d0, fp0","type":"mov","family":"fpu","opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"fp0"}]}},{"bytes":"f23c44803f800000","size":8,"opcode":"fmove.s 1.000000, fp1","type":"mov","family":"fpu","opex":{"operands":[{"type":"fp_single","value":1.000000},{"type":"reg","value":"fp1"}]}},{"bytes":"f23c5480400921fb54442d18","size":12,"opcode":"fmove.d 3.141593, fp1","type":"mov","family":"fpu","opex":{"operands":[{"type":"fp_double","value":3.141593},{"type":"reg","value":"fp1"}]}},{"bytes":"f2000522","size":4,"opcode":"fadd fp1, fp2","type":"add","family":"fpu","opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
+-- cfv1 pd --
+0x00000000      strldsr.w 0x4d2
+0x00000006      cp0ld.l d0, d2, 0x1, 0x123
+0x0000000a      cp0st.l d2, d0, 0x1, 0x123
+-- cfv1 pdj --
+[
+  {
+    "offset": 0,
+    "bytes": "40e746fc04d2",
+    "size": 6,
+    "opcode": "strldsr.w 0x4d2",
+    "family": "cpu",
+    "type": "mov"
+  },
+  {
+    "offset": 6,
+    "bytes": "fc802123",
+    "size": 4,
+    "opcode": "cp0ld.l d0, d2, 0x1, 0x123",
+    "family": "cpu",
+    "type": "load"
+  },
+  {
+    "offset": 10,
+    "bytes": "fd802123",
+    "size": 4,
+    "opcode": "cp0st.l d2, d0, 0x1, 0x123",
+    "family": "cpu",
+    "type": "store"
+  }
+]
+-- cfv1 aoj --
+[{"bytes":"40e746fc04d2","size":6,"opcode":"strldsr.w 0x4d2","type":"mov","family":"cpu","stackptr":-4,"opex":{"operands":[{"type":"imm","value":1234}]}},{"bytes":"fc802123","size":4,"opcode":"cp0ld.l d0, d2, 0x1, 0x123","type":"load","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"d2"},{"type":"imm","value":1},{"type":"imm","value":291}]}},{"bytes":"fd802123","size":4,"opcode":"cp0st.l d2, d0, 0x1, 0x123","type":"store","family":"cpu","stackptr":0,"opex":{"operands":[{"type":"reg","value":"d2"},{"type":"reg","value":"d0"},{"type":"imm","value":1},{"type":"imm","value":291}]}}]
+-- cfv4e pd --
+0x00000000      mvs.b (a0), d1
+0x00000002      mvz.w d0, d0
+-- cfv4e pdj --
+[
+  {
+    "offset": 0,
+    "bytes": "7310",
+    "size": 2,
+    "opcode": "mvs.b (a0), d1",
+    "family": "cpu",
+    "type": "load"
+  },
+  {
+    "offset": 2,
+    "bytes": "71c0",
+    "size": 2,
+    "opcode": "mvz.w d0, d0",
+    "family": "cpu",
+    "type": "cast"
+  }
+]
+-- cfv4e aoj --
+[{"bytes":"7310","size":2,"opcode":"mvs.b (a0), d1","type":"load","family":"cpu","opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0},{"type":"reg","value":"d1"}]}},{"bytes":"71c0","size":2,"opcode":"mvz.w d0, d0","type":"cast","family":"cpu","opex":{"operands":[{"type":"reg","value":"d0"},{"type":"reg","value":"d0"}]}}]
+EOF
+RUN
+
+NAME=M68k analysis edge ops
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+e asm.cpu=68000
+wx 4afc
+ao~type
+echo ---
+iI~minopsz
+iI~maxopsz
+iI~pcalign
+EOF
+EXPECT=<<EOF
+type: ill
+    - type: "imm"
+---
+minopsz  2
+maxopsz  22
+pcalign  2
+EOF
+RUN
+
+NAME=M68k default CPU decoding matches 68040
+FILE=malloc://16
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+wx f61000000001
+echo -- implicit CPU --
+pdj 1~{[0].opcode}
+aoj 1~{[0].opcode}
+aoj 1~{[0].size}
+e asm.cpu=
+echo -- empty CPU --
+pdj 1~{[0].opcode}
+aoj 1~{[0].opcode}
+aoj 1~{[0].size}
+e asm.cpu=default
+echo -- default CPU --
+pdj 1~{[0].opcode}
+aoj 1~{[0].opcode}
+aoj 1~{[0].size}
+e asm.cpu=68040
+echo -- 68040 CPU --
+pdj 1~{[0].opcode}
+aoj 1~{[0].opcode}
+aoj 1~{[0].size}
+EOF
+EXPECT=<<EOF
+-- implicit CPU --
+move16 (a0), 0x1.l
+move16 (a0), 0x1.l
+6
+-- empty CPU --
+move16 (a0), 0x1.l
+move16 (a0), 0x1.l
+6
+-- default CPU --
+move16 (a0), 0x1.l
+move16 (a0), 0x1.l
+6
+-- 68040 CPU --
+move16 (a0), 0x1.l
+move16 (a0), 0x1.l
+6
 EOF
 RUN
