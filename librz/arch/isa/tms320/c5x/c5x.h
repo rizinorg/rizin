@@ -88,8 +88,8 @@ enum {
 	C5X_INS_BD, ///< delayed branch
 	C5X_INS_CALLD, ///< delayed call
 	C5X_INS_BANZD, ///< delayed branch on AR not zero
-	C5X_INS_LST, ///< load status register STn (C5x #n, mem form)
-	C5X_INS_SST, ///< store status register STn (C5x #n, mem form)
+	C5X_INS_LST, ///< load status register STn (C5x `#n`, mem form)
+	C5X_INS_SST, ///< store status register STn (C5x `#n`, mem form)
 };
 
 RZ_IPI int c5x_decode(const ut8 *buf, int len, C55Insn *out);

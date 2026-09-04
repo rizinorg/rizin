@@ -6,7 +6,7 @@
  * Shared, arch-independent layer of the TMS320 decode IR (see c55_ir.h):
  *   - c55_decode():        the table-walking decode engine
  *   - c55_x_*():           the operand extractors the per-arch tables reference
- *   - c55_generic_ea() etc: RzIL primitives consumed by each arch's ::lift
+ *   - c55_generic_ea() etc: RzIL primitives consumed by each arch's `lift`
  *   - c55_format / c55_fill_analysis / c55_lift: the three pure consumers
  *
  * Per-arch specifics (encoding tables, register set, mnemonic/op-type/lift

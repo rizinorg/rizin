@@ -226,7 +226,7 @@ static void print_bitvector(const RzNumValue *v, RzStrBuf *sb, bool utf8) {
  *   BIG        decimal + hex (lossless)
  *   BITVECTOR  bit-width / hex / binary
  *
- * On a value with v->err != RZ_NUM_ERR_OK, a single 'error <category>'
+ * On a value with v->err != RZ_NUM_ERR_OK, a single `error <category>`
  * line is appended instead.
  *
  * \param v   The value to format.
@@ -250,7 +250,7 @@ static void print_bigdecimal(const RzNumValue *v, RzStrBuf *sb) {
  *
  * With opts->utf8 set, a bit-vector additionally renders a compact
  * Unicode form (hex value with the bit-width as a subscript, e.g.
- * 0x2c\u2088), mirroring how RzIL renders bit-vectors in its Unicode
+ * `0x2c\u2088`), mirroring how RzIL renders bit-vectors in its Unicode
  * export. Other kinds are unaffected for now.
  *
  * \param v    The value to format. Must be a valid RzNumValue.

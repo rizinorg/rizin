@@ -1,4 +1,4 @@
-# Type database and `pf` format engine
+# Type database and pf format engine
 
 This library owns Rizin's representation of C-style types (structs, unions,
 enums, typedefs, callables) and the `pf` print-format language for decoding

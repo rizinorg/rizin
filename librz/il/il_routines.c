@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Implements common bit operation perfomed on values.
+ * \file
+ * Implements common bit operation perfomed on values.
  */
 
 #include <rz_util/rz_assert.h>

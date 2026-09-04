@@ -234,7 +234,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 /**
  * \brief Represents the RzBaseType as a `pf` format string
  *
- * Produces the pair of of <format> <fields>. If the type
+ * Produces the pair of of `<format> <fields>`. If the type
  * is atomic it searches if the type database has predefined
  * format assigned to it and uses it.
  *
@@ -258,7 +258,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 /**
  * \brief Represents the RzBaseType as a `pf` format string
  *
- * Produces the pair of of <format> <fields>. If the type
+ * Produces the pair of of `<format> <fields>`. If the type
  * is atomic it searches if the type database has predefined
  * format assigned to it and uses it.
  *
@@ -554,8 +554,8 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
  * \brief Represents the RzType as a `pf` format string
  *
  * Different from the similar function for the RzBaseType,
- * since the latter shows the pair of <format> <fields>,
- * while this implementation produces only the <format> part.
+ * since the latter shows the pair of `<format> <fields>`,
+ * while this implementation produces only the `<format>` part.
  *
  * \param typedb Types Database instance
  * \param type RzType type
@@ -636,7 +636,7 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
  *
  * Different from the similar `rz_type_as_format` and similar
  * to the `rz_base_type_as_format` since the latter shows
- * the pair of <format> <fields>.
+ * the pair of `<format> <fields>`.
  *
  * \param typedb Types Database instance
  * \param type RzType type

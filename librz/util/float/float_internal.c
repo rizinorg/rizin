@@ -4,8 +4,8 @@
 #include <rz_util.h>
 
 /**
- * \file : Internal function for float
- * \brief : Should be included directly in float.c
+ * \file
+ * \brief Internal functions for float, included directly in float.c
  */
 static inline ut32 rz_float_info_bin16(RzFloatInfo which_info) {
 	switch (which_info) {

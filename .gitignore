@@ -119,6 +119,7 @@ test/.tmp/*
 test/.sync_disk_db
 subprojects/.wraplock
 subprojects/capstone-*/
+subprojects/doxygen-awesome-css-*/
 subprojects/pcre2*/
 subprojects/libzip-*/
 subprojects/lz4-*/

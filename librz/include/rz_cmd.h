@@ -175,7 +175,7 @@ typedef struct rz_cmd_alias_t {
  * a command, variables, etc.).
  *
  * Displayed as:
- * | <text><arg_str> # <comment>
+ * | `<text><arg_str> # <comment>`
  */
 typedef struct rz_cmd_desc_detail_entry_t {
 	/**

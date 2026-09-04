@@ -941,6 +941,7 @@ endif
 
 subdir('test')
 subdir('examples')
+subdir('doc')
 
 
 install_data(

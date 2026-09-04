@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Disassembler for the MIL-STD-1750A instruction set architecture.
+ * \file
+ * Disassembler for the MIL-STD-1750A instruction set architecture.
  *
  * MIL-STD-1750A is a 16-bit military standard ISA originally developed by
  * the US Department of Defense for airborne embedded computers. It features
