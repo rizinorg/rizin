@@ -1,13 +1,77 @@
-d "pmove (a0), tc" f0104000
-d "pmove tc, (a0)" f0104200
-d "pmove (a1), srp" f0114800
-d "pmove (a2), crp" f0124c00
-d "pmove (a0), mmusr" f0106000
+d "bftst 0x1.w{0:32}" e8f800000001
+d "pmove d0, tt0" f0000800
+d "ploadw sfc, d0" f0002000
+d "pflusha" f0002400
+d "pflush sfc, 0x0, d0" f0003000
+d "pflush 0xf, 0x7, d0" f0003fff
+d "pmove a0, tt0" f0080800
+d "ploadw sfc, a0" f0082000
+d "pflush sfc, 0x0, a0" f0083000
+d "pflush 0xf, 0x7, a0" f0083fff
+d "ptestw sfc, a0, 0x0" f0088000
 d "pmove (a0), tt0" f0100800
 d "pmove (a0), tt1" f0100c00
-d "pflush sfc, 0x0, (a0)" f0103800
-d "pflusha" f0002400
 d "ploadw sfc, (a0)" f0102000
 d "ploadr sfc, (a0)" f0102200
+d "pflush sfc, 0x0, (a0)" f0103800
+d "pflush 0xf, 0x7, (a0)" f0103fff
+d "pmove (a0), tc" f0104000
+d "pmovefd (a0), tc" f0104100
+d "pmove tc, (a0)" f0104200
+d "pmovefd tc, (a0)" f0104300
+d "pmovefd (a0), srp" f0104900
+d "pmovefd srp, (a0)" f0104b00
+d "pmovefd (a0), crp" f0104d00
+d "pmovefd crp, (a0)" f0104f00
+d "pmove (a0), mmusr" f0106000
 d "ptestw sfc, (a0), 0x7" f0109c00
 d "ptestr sfc, (a0), 0x7" f0109e00
+d "pmove (a1), srp" f0114800
+d "pmove (a2), crp" f0124c00
+d "pmove (a0)+, tt0" f0180800
+d "ploadw sfc, (a0)+" f0182000
+d "pflush sfc, 0x0, (a0)+" f0183000
+d "pflush 0xf, 0x7, (a0)+" f0183fff
+d "ptestw sfc, (a0)+, 0x0" f0188000
+d "pmove -(a0), tt0" f0200800
+d "ploadw sfc, -(a0)" f0202000
+d "pflush sfc, 0x0, -(a0)" f0203000
+d "pflush 0xf, 0x7, -(a0)" f0203fff
+d "ptestw sfc, -(a0), 0x0" f0208000
+d "pmove 0xfff(a0), tt0" f02808000fff
+d "ploadw sfc, 0x2fff(a0)" f02820002fff
+d "pflush sfc, 0x0, 0x3fff(a0)" f02830003fff
+d "pflush 0xf, 0x7, 0x4000(a0)" f0283fff4000
+d "ptestw sfc, -0x7f00(a0), 0x0" f02880008100
+d "pmove ([0x10001fff], 0x20002fff), tt0" f03008000fff10001fff20002fff
+d "ploadw sfc, ([0x30003fff], 0x40004fff)" f03020002fff30003fff40004fff
+d "pflush sfc, 0x0, ([0x40004fff], 0x50005fff)" f03030003fff40004fff50005fff
+d "pflush 0xf, 0x7, 0x0(a0, d4.w)" f0303fff4000
+d "ptestw sfc, (a0, a0.w), 0x0" f03080008100
+d "pmove 0xfff.w, tt0" f03808000fff
+d "ploadw sfc, 0x2fff.w" f03820002fff
+d "pflush sfc, 0x0, 0x3fff.w" f03830003fff
+d "pflush 0xf, 0x7, 0x4000.w" f0383fff4000
+d "ptestw sfc, 0x8100.w, 0x0" f03880008100
+d "pmove 0xfff1000.l, tt0" f03908000fff1000
+d "ploadw sfc, 0x2fff3000.l" f03920002fff3000
+d "pflush sfc, 0x0, 0x3fff4000.l" f03930003fff4000
+d "pflush 0xf, 0x7, 0x40004fff.l" f0393fff40004fff
+d "ptestw sfc, 0x81008170.l, 0x0" f039800081008170
+d "pmove 0x1003(pc), tt0" f03a08000fff
+d "ploadw sfc, 0x3003(pc)" f03a20002fff
+d "pflush sfc, 0x0, 0x4003(pc)" f03a30003fff
+d "pflush 0xf, 0x7, 0x4004(pc)" f03a3fff4000
+d "ptestw sfc, 0xffff8104(pc), 0x0" f03a80008100
+d "pmove ([0x10002003], 0x20002fff), tt0" f03b08000fff10001fff20002fff
+d "ploadw sfc, ([0x30004003], 0x40004fff)" f03b20002fff30003fff40004fff
+d "pflush sfc, 0x0, ([0x40005003], 0x50005fff)" f03b30003fff40004fff50005fff
+d "pflush 0xf, 0x7, 0x4(pc, d4.w)" f03b3fff4000
+d "ptestw sfc, 0x4(pc, a0.w), 0x0" f03b80008100
+d "pmove 0xfff1000, tt0" f03c08000fff1000
+d "ploadw sfc, 0xff" f03c20002fff
+d "pflush sfc, 0x0, 0xff" f03c30003fff
+d "pflush 0xf, 0x7, 0x0" f03c3fff4000
+d "ptestw sfc, 0x0, 0x0" f03c80008100
+d "rte" 4e73
+d "movem.l a0, -(a0)" 48e00080

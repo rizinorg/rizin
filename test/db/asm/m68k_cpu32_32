@@ -1,7 +1,72 @@
 d "bgnd" 4afa
-d "tblu.w (a0), d0" f8100140
-d "tbls.l (a2), d3" f8123980
-d "tblun.b (a1), d2" f8112500
-d "tblsn.w (a4), d5" f8145d40
+d "fbf.w 0x3" f2800001
+d "fbeq.w 0x2" f2810000
+d "fbogt.w 0x2" f2820000
+d "fboge.w 0x2" f2830000
+d "fbolt.w 0x2" f2840000
+d "fbole.w 0x2" f2850000
+d "fbogl.w 0x2" f2860000
+d "fbor.w 0x2" f2870000
+d "fbun.w 0x2" f2880000
+d "fbueq.w 0x2" f2890000
+d "fbugt.w 0x2" f28a0000
+d "fbuge.w 0x2" f28b0000
+d "fbult.w 0x2" f28c0000
+d "fbule.w 0x2" f28d0000
+d "fbne.w 0x2" f28e0000
+d "fbt.w 0x2" f28f0000
+d "fbf.l 0x3" f2c000000001
+d "fbeq.l 0x3" f2c100000001
+d "fbogt.l 0x3" f2c200000001
+d "fboge.l 0x3" f2c300000001
+d "fbolt.l 0x3" f2c400000001
+d "fbole.l 0x3" f2c500000001
+d "fbogl.l 0x3" f2c600000001
+d "fbor.l 0x3" f2c700000001
+d "fbun.l 0x3" f2c800000001
+d "fbueq.l 0x3" f2c900000001
+d "fbugt.l 0x3" f2ca00000001
+d "fbuge.l 0x3" f2cb00000001
+d "fbult.l 0x3" f2cc00000001
+d "fbule.l 0x3" f2cd00000001
+d "fbne.l 0x3" f2ce00000001
+d "fbt.l 0x3" f2cf00000001
+d "tblu.b d0:d0, d0" f8000000
+d "tblu.l d0:d0, d0" f8000080
 d "tblu.w d1:d2, d3" f8013042
 d "tbls.b d4:d5, d6" f8046805
+d "tblu.b (a0), d0" f8100100
+d "tblu.w (a0), d0" f8100140
+d "tblu.l (a0), d0" f8100180
+d "tblun.b (a1), d2" f8112500
+d "tbls.l (a2), d3" f8123980
+d "tblsn.w (a4), d5" f8145d40
+d "tblu.b (a0)+, d0" f8180100
+d "tblu.w (a0)+, d0" f818017f
+d "tblu.l (a0)+, d0" f8180180
+d "tblu.b -(a0), d0" f8200100
+d "tblu.w -(a0), d0" f820017f
+d "tblu.l -(a0), d0" f8200180
+d "tblu.b 0x17f(a0), d0" f8280100017f
+d "tblu.w 0x180(a0), d0" f828017f0180
+d "tblu.l 0x1ff(a0), d0" f828018001ff
+d "tblu.b ([0x18001ff, a0], 0x8000fff), d0" f8300100017f018001ff08000fff
+d "tblu.w (d0.w), d0" f830017f0180
+d "tblu.l ([0x8000fff], 0x10001fff), d0" f830018001ff08000fff10001fff
+d "tblu.b 0x17f.w, d0" f8380100017f
+d "tblu.w 0x180.w, d0" f838017f0180
+d "tblu.l 0x1ff.w, d0" f838018001ff
+d "tblu.b 0x17f0180.l, d0" f8390100017f0180
+d "tblu.w 0x18001ff.l, d0" f839017f018001ff
+d "tblu.l 0x1ff0800.l, d0" f839018001ff0800
+d "tblu.b 0x183(pc), d0" f83a0100017f
+d "tblu.w 0x184(pc), d0" f83a017f0180
+d "tblu.l 0x203(pc), d0" f83a018001ff
+d "tblu.b ([0x1800203, pc], 0x8000fff), d0" f83b0100017f018001ff08000fff
+d "tblu.w 0x4(pc, d0.w), d0" f83b017f0180
+d "tblu.l ([0x8001003], 0x10001fff), d0" f83b018001ff08000fff10001fff
+d "tblu.b 0x7f, d0" f83c0100017f
+d "tblu.w 0x180, d0" f83c017f0180
+d "tblu.l 0x1ff0800, d0" f83c018001ff0800
+d "rte" 4e73
+d "movem.l a0, -(a0)" 48e00080

@@ -1,105 +1,276 @@
-d "mov3q.l 0x2, (a4)" a554
-d "mvs.b d0, d0" 7100
-d "mvs.w d0, d0" 7140
-d "mvz.b d0, d0" 7180
-d "mvz.w d0, d0" 71c0
-d "mvs.b d0, d1" 7300
-d "mov3q.l 0xffffffff, d0" a140
-d "mvs.b (a0), d1" 7310
-d "mvz.w (a0), d1" 73d0
-d "move.l d0, d0" 2000
-d "movea.l d0, a0" 2040
-d "moveq 0x1, d0" 7001
-d "movem.l d0-d1, (a0)" 48d00003
-d "lea.l (a0), a0" 41d0
-d "link.w a0, 0x4" 4e500004
-d "pea.l (a0)" 4850
-d "unlk a0" 4e58
-d "tpf" 51fc
-d "tpf.w 0x1234" 51fa1234
-d "tpf.l 0x12345678" 51fb12345678
-d "bra.l 0x12" 60ff00000010
-d "bsr.l 0x12" 61ff00000010
-d "bne.l 0x12" 66ff00000010
-d "st.b d0" 50c0
-d "jmp (a0)" 4ed0
-d "jsr (a0)" 4e90
-d "nop" 4e71
-d "rts" 4e75
-d "tas.b d0" 4ac0
-d "tst.l d0" 4a80
-d "sats.l d0" 4c80
-d "add.l d0, d0" d080
-d "adda.l d0, a0" d1c0
-d "addi.l 0x1, d0" 068000000001
-d "addq.l 0x1, d0" 5280
-d "addx.l d0, d0" d180
-d "clr.l d0" 4280
-d "cmp.l d0, d0" b080
-d "cmpa.l d0, a0" b1c0
-d "cmpi.l 0x1, d0" 0c8000000001
-d "ext.l d0" 48c0
-d "extb.l d0" 49c0
-d "muls.w d0, d0" c1c0
-d "mulu.w d0, d0" c0c0
-d "neg.l d0" 4480
-d "negx.l d0" 4080
-d "sub.l d0, d0" 9080
-d "suba.l d0, a0" 91c0
-d "subi.l 0x1, d0" 048000000001
-d "subq.l 0x1, d0" 5380
-d "subx.l d0, d0" 9180
-d "and.l d0, d0" c080
-d "andi.l 0x1, d0" 028000000001
-d "eor.l d0, d0" b180
-d "eori.l 0x1, d0" 0a8000000001
-d "not.l d0" 4680
-d "or.l d0, d0" 8080
-d "ori.l 0x1, d0" 008000000001
-d "asl.l 0x8, d0" e180
-d "asr.l 0x8, d0" e080
-d "lsl.l 0x8, d0" e188
-d "lsr.l 0x8, d0" e088
-d "swap d0" 4840
 d "bitrev d0" 00c0
 d "byterev d1" 02c1
 d "ff1 d2" 04c2
-d "bchg.b d0, d0" 0140
-d "bclr.b d0, d0" 0180
-d "bset.b d0, d0" 01c0
-d "btst.b d0, d0" 0100
-d "halt" 4ac8
 d "strldsr.w 0x4d2" 40e746fc04d2
-d "wddata.b (a0)" fb10
-d "wdebug.l (a0)" fbd00003
+d "strldsr.w 0x24d2" 40e746fc24d2
 d "move.w ccr, d3" 42c3
-d "move usp, a0" 4e68
-d "move a0, usp" 4e60
-d "pulse" 4acc
-d "movec d0, cacr" 4e7b0002
-d "movec cacr, d1" 4e7a1002
-d "wddata.w (a0)" fb50
-d "wddata.l (a0)" fb90
-d "move.w d0, ccr" 44c0
-d "move.w sr, d0" 40c0
 d "move.w d0, sr" 46c0
-d "illegal 0x4afc" 4afc
-d "rte" 4e73
+d "movem.l d0-d1, (a0)" 48d00003
+d "sats.l d0" 4c80
+d "link.w a0, 0x4" 4e500004
+d "move usp, a0" 4e68
 d "stop 0x2700" 4e722700
-d "trap 0x0" 4e40
+d "movec cacr, d1" 4e7a1002
+d "movec d0, cacr" 4e7b0002
+d "tpf.w 0x1234" 51fa1234
+d "tpf.l 0x12345678" 51fb12345678
+d "tpf" 51fc
+d "addq.l 0x1, d0" 5280
+d "subq.l 0x1, d0" 5380
+d "bra.l 0x12" 60ff00000010
+d "bsr.l 0x12" 61ff00000010
+d "bne.l 0x12" 66ff00000010
+d "mvs.b d0, d0" 7100
+d "mvs.b (a0)+, d0" 7118
+d "mvs.b -(a0), d0" 7120
+d "mvs.b 0x0(a0), d0" 71280000
+d "mvs.b 0x0(a0, d0.w), d0" 71300000
+d "mvs.b (a0, d0.w), d0" 71300100
+d "mvs.b ([0x18001ff, a0], 0x8000fff), d0" 7130017f018001ff08000fff
+d "mvs.b 0x0.w, d0" 71380000
+d "mvs.b 0x1.l, d0" 713900000001
+d "mvs.b 0x2(pc), d0" 713a0000
+d "mvs.b 0x2(pc, d0.w), d0" 713b0000
+d "mvs.b ([0x1800201, pc], 0x8000fff), d0" 713b017f018001ff08000fff
+d "mvs.b 0x0, d0" 713c0000
+d "mvs.w d0, d0" 7140
+d "mvs.w a0, d0" 7148
+d "mvs.w (a0), d0" 7150
+d "mvs.w (a0)+, d0" 7158
+d "mvs.w -(a0), d0" 7160
+d "mvs.w 0x0(a0), d0" 71680000
+d "mvs.w 0x0(a0, d0.w), d0" 71700000
+d "mvs.w (a0, d0.w), d0" 71700100
+d "mvs.w ([0x18001ff, a0], 0x8000fff), d0" 7170017f018001ff08000fff
+d "mvs.w 0x0.w, d0" 71780000
+d "mvs.w 0x1.l, d0" 717900000001
+d "mvs.w 0x2(pc), d0" 717a0000
+d "mvs.w 0x2(pc, d0.w), d0" 717b0000
+d "mvs.w ([0x1800201, pc], 0x8000fff), d0" 717b017f018001ff08000fff
+d "mvs.w 0x0, d0" 717c0000
+d "mvz.b d0, d0" 7180
+d "mvz.b (a0), d0" 7190
+d "mvz.b (a0)+, d0" 7198
+d "mvz.b -(a0), d0" 71a0
+d "mvz.b 0x0(a0), d0" 71a80000
+d "mvz.b 0x0(a0, d0.w), d0" 71b00000
+d "mvz.b (a0, d0.w), d0" 71b00100
+d "mvz.b ([0x18001ff, a0], 0x8000fff), d0" 71b0017f018001ff08000fff
+d "mvz.b 0x0.w, d0" 71b80000
+d "mvz.b 0x1.l, d0" 71b900000001
+d "mvz.b 0x2(pc), d0" 71ba0000
+d "mvz.b 0x2(pc, d0.w), d0" 71bb0000
+d "mvz.b ([0x1800201, pc], 0x8000fff), d0" 71bb017f018001ff08000fff
+d "mvz.b 0x0, d0" 71bc0000
+d "mvz.w d0, d0" 71c0
+d "mvz.w a0, d0" 71c8
+d "mvz.w (a0)+, d0" 71d8
+d "mvz.w -(a0), d0" 71e0
+d "mvz.w 0x0(a0), d0" 71e80000
+d "mvz.w 0x0(a0, d0.w), d0" 71f00000
+d "mvz.w (a0, d0.w), d0" 71f00100
+d "mvz.w ([0x18001ff, a0], 0x8000fff), d0" 71f0017f018001ff08000fff
+d "mvz.w 0x0.w, d0" 71f80000
+d "mvz.w 0x1.l, d0" 71f900000001
+d "mvz.w 0x2(pc), d0" 71fa0000
+d "mvz.w 0x2(pc, d0.w), d0" 71fb0000
+d "mvz.w ([0x1800201, pc], 0x8000fff), d0" 71fb017f018001ff08000fff
+d "mvz.w 0x0, d0" 71fc0000
+d "mvs.b d0, d1" 7300
+d "mvs.b (a0), d1" 7310
+d "mvz.w (a0), d1" 73d0
+d "mov3q.l 0xffffffff, d0" a140
+d "mov3q.l 0xffffffff, a0" a148
+d "mov3q.l 0xffffffff, (a0)+" a158
+d "mov3q.l 0xffffffff, -(a0)" a160
+d "mov3q.l 0xffffffff, 0x0(a0)" a1680000
+d "mov3q.l 0xffffffff, 0x0(a0, d0.w)" a1700000
+d "mov3q.l 0xffffffff, (a0, d0.w)" a1700100
+d "mov3q.l 0xffffffff, ([0x18001ff, a0], 0x8000fff)" a170017f018001ff08000fff
+d "mov3q.l 0xffffffff, 0x0.w" a1780000
+d "mov3q.l 0xffffffff, 0x1.l" a17900000001
+d "mov3q.l 0xffffffff, 0x2(pc)" a17a0000
+d "mov3q.l 0xffffffff, 0x2(pc, d0.w)" a17b0000
+d "mov3q.l 0xffffffff, ([0x1800201, pc], 0x8000fff)" a17b017f018001ff08000fff
+d "mov3q.l 0xffffffff, 0x1" a17c00000001
+d "mov3q.l 0x2, (a4)" a554
 d "intouch (a0)" f428
 d "cpushl bc, (a0)" f4e8
-d "cp0bcbusy 0x52" fcc00050
-d "cp0ld.l d0, d2, 0x1, 0x123" fc802123
-d "cp0ld.w (a0), a2, 0x3, 0x1" fc50a401
-d "cp0ld.b (a0)+, a2, 0x6, 0x1" fc18aa01
-d "cp0ld.l 0x10(a0), a2, 0x8, 0x1" fca8ae010010
-d "cp0st.l d2, d0, 0x1, 0x123" fd802123
-d "cp0st.w a2, (a0), 0x3, 0x1" fd50a401
+d "wddata.b (a0)" fb10
+d "wddata.b (a0)+" fb18
+d "wddata.b -(a0)" fb20
+d "wddata.b 0x0(a0)" fb280000
+d "wddata.b 0x0(a0, d0.w)" fb300000
+d "wddata.b (a0, d0.w)" fb300100
+d "wddata.b ([0x18001ff, a0], 0x8000fff)" fb30017f018001ff08000fff
+d "wddata.b 0x0.w" fb380000
+d "wddata.b 0x1.l" fb3900000001
+d "wddata.w (a0)" fb50
+d "wddata.w (a0)+" fb58
+d "wddata.w -(a0)" fb60
+d "wddata.w 0x0(a0)" fb680000
+d "wddata.w 0x0(a0, d0.w)" fb700000
+d "wddata.w (a0, d0.w)" fb700100
+d "wddata.w ([0x18001ff, a0], 0x8000fff)" fb70017f018001ff08000fff
+d "wddata.w 0x0.w" fb780000
+d "wddata.w 0x1.l" fb7900000001
+d "wddata.l (a0)" fb90
+d "wddata.l (a0)+" fb98
+d "wddata.l -(a0)" fba0
+d "wddata.l 0x0(a0)" fba80000
+d "wddata.l 0x0(a0, d0.w)" fbb00000
+d "wddata.l (a0, d0.w)" fbb00100
+d "wddata.l ([0x18001ff, a0], 0x8000fff)" fbb0017f018001ff08000fff
+d "wddata.l 0x0.w" fbb80000
+d "wddata.l 0x1.l" fbb900000001
+d "wdebug.l (a0)" fbd00003
+d "cp0ld.b d0, d0, 0x1, 0x1" fc000001
 d "cp0nop 0x8" fc000e00
+d "cp0ld.b d0, a0, 0x1, 0x0" fc008000
+d "cp0ld.b a0, d0, 0x1, 0x0" fc080000
+d "cp0ld.b a0, a0, 0x1, 0x0" fc088000
+d "cp0ld.b (a0), d0, 0x1, 0x0" fc100000
+d "cp0ld.b (a0), a0, 0x1, 0x0" fc108000
+d "cp0ld.b (a0)+, d0, 0x1, 0x0" fc180000
+d "cp0ld.b (a0)+, a2, 0x6, 0x1" fc18aa01
+d "cp0ld.b -(a0), d0, 0x1, 0x0" fc200000
+d "cp0ld.b -(a0), a0, 0x1, 0x0" fc208000
+d "cp0ld.b 0x1(a0), d0, 0x1, 0x0" fc2800000001
+d "cp0ld.b -0x7f00(a0), a0, 0x1, 0x0" fc2880008100
+d "cp0ld.w d0, d0, 0x1, 0x1" fc400001
+d "cp0ld.w d0, a0, 0x1, 0x0" fc408000
+d "cp0ld.w a0, d0, 0x1, 0x0" fc480000
+d "cp0ld.w a0, a0, 0x1, 0x0" fc488000
+d "cp0ld.w (a0), d0, 0x1, 0x0" fc500000
+d "cp0ld.w (a0), a2, 0x3, 0x1" fc50a401
+d "cp0ld.w (a0)+, d0, 0x1, 0x0" fc580000
+d "cp0ld.w (a0)+, a0, 0x1, 0x0" fc588000
+d "cp0ld.w -(a0), d0, 0x1, 0x0" fc600000
+d "cp0ld.w -(a0), a0, 0x1, 0x0" fc608000
+d "cp0ld.w 0x1(a0), d0, 0x1, 0x0" fc6800000001
+d "cp0ld.w -0x7f00(a0), a0, 0x1, 0x0" fc6880008100
 d "cp0nop 0x3" fc800400
 d "cp0ld.l d0, d1, 0x3, 0x0" fc801400
-d "cp1bcbusy 0x52" fec00050
-d "cp1ld.l d0, d2, 0x1, 0x123" fe802123
-d "cp1st.l d2, d0, 0x1, 0x123" ff802123
+d "cp0ld.l d0, d2, 0x1, 0x123" fc802123
+d "cp0ld.l d0, a0, 0x1, 0x0" fc808000
+d "cp0ld.l a0, d0, 0x1, 0x0" fc880000
+d "cp0ld.l a0, a0, 0x1, 0x0" fc888000
+d "cp0ld.l (a0), d0, 0x1, 0x0" fc900000
+d "cp0ld.l (a0), a0, 0x1, 0x0" fc908000
+d "cp0ld.l (a0)+, d0, 0x1, 0x0" fc980000
+d "cp0ld.l (a0)+, a0, 0x1, 0x0" fc988000
+d "cp0ld.l -(a0), d0, 0x1, 0x0" fca00000
+d "cp0ld.l -(a0), a0, 0x1, 0x0" fca08000
+d "cp0ld.l 0x1(a0), d0, 0x1, 0x0" fca800000001
+d "cp0ld.l 0x10(a0), a2, 0x8, 0x1" fca8ae010010
+d "cp0bcbusy 0x52" fcc00050
+d "cp0st.b d0, d0, 0x1, 0x0" fd000000
+d "cp0st.b a0, d0, 0x1, 0x0" fd008000
+d "cp0st.b d0, a0, 0x1, 0x0" fd080000
+d "cp0st.b a0, a0, 0x1, 0x0" fd088000
+d "cp0st.b d0, (a0), 0x1, 0x0" fd100000
+d "cp0st.b a0, (a0), 0x1, 0x0" fd108000
+d "cp0st.b d0, (a0)+, 0x1, 0x0" fd180000
+d "cp0st.b a0, (a0)+, 0x1, 0x0" fd188000
+d "cp0st.b d0, -(a0), 0x1, 0x0" fd200000
+d "cp0st.b a0, -(a0), 0x1, 0x0" fd208000
+d "cp0st.b d0, 0x1(a0), 0x1, 0x0" fd2800000001
+d "cp0st.b a0, -0x7f00(a0), 0x1, 0x0" fd2880008100
+d "cp0st.w d0, d0, 0x1, 0x0" fd400000
+d "cp0st.w a0, d0, 0x1, 0x0" fd408000
+d "cp0st.w d0, a0, 0x1, 0x0" fd480000
+d "cp0st.w a0, a0, 0x1, 0x0" fd488000
+d "cp0st.w d0, (a0), 0x1, 0x0" fd500000
+d "cp0st.w a2, (a0), 0x3, 0x1" fd50a401
+d "cp0st.w d0, (a0)+, 0x1, 0x0" fd580000
+d "cp0st.w a0, (a0)+, 0x1, 0x0" fd588000
+d "cp0st.w d0, -(a0), 0x1, 0x0" fd600000
+d "cp0st.w a0, -(a0), 0x1, 0x0" fd608000
+d "cp0st.w d0, 0x1(a0), 0x1, 0x0" fd6800000001
+d "cp0st.w a0, -0x7f00(a0), 0x1, 0x0" fd6880008100
+d "cp0st.l d2, d0, 0x1, 0x123" fd802123
+d "cp0st.l a0, d0, 0x1, 0x0" fd808000
+d "cp0st.l d0, a0, 0x1, 0x0" fd880000
+d "cp0st.l a0, a0, 0x1, 0x0" fd888000
+d "cp0st.l d0, (a0), 0x1, 0x0" fd900000
+d "cp0st.l a0, (a0), 0x1, 0x0" fd908000
+d "cp0st.l d0, (a0)+, 0x1, 0x0" fd980000
+d "cp0st.l a0, (a0)+, 0x1, 0x0" fd988000
+d "cp0st.l d0, -(a0), 0x1, 0x0" fda00000
+d "cp0st.l a0, -(a0), 0x1, 0x0" fda08000
+d "cp0st.l d0, 0x1(a0), 0x1, 0x0" fda800000001
+d "cp0st.l a0, -0x7f00(a0), 0x1, 0x0" fda880008100
+d "cp1ld.b d0, d0, 0x1, 0x1" fe000001
 d "cp1nop 0x8" fe000e00
+d "cp1ld.b d0, a0, 0x1, 0x0" fe008000
+d "cp1ld.b a0, d0, 0x1, 0x0" fe080000
+d "cp1ld.b a0, a0, 0x1, 0x0" fe088000
+d "cp1ld.b (a0), d0, 0x1, 0x0" fe100000
+d "cp1ld.b (a0), a0, 0x1, 0x0" fe108000
+d "cp1ld.b (a0)+, d0, 0x1, 0x0" fe180000
+d "cp1ld.b (a0)+, a0, 0x1, 0x0" fe188000
+d "cp1ld.b -(a0), d0, 0x1, 0x0" fe200000
+d "cp1ld.b -(a0), a0, 0x1, 0x0" fe208000
+d "cp1ld.b 0x1(a0), d0, 0x1, 0x0" fe2800000001
+d "cp1ld.b -0x7f00(a0), a0, 0x1, 0x0" fe2880008100
+d "cp1ld.w d0, d0, 0x1, 0x1" fe400001
+d "cp1ld.w d0, a0, 0x1, 0x0" fe408000
+d "cp1ld.w a0, d0, 0x1, 0x0" fe480000
+d "cp1ld.w a0, a0, 0x1, 0x0" fe488000
+d "cp1ld.w (a0), d0, 0x1, 0x0" fe500000
+d "cp1ld.w (a0), a0, 0x1, 0x0" fe508000
+d "cp1ld.w (a0)+, d0, 0x1, 0x0" fe580000
+d "cp1ld.w (a0)+, a0, 0x1, 0x0" fe588000
+d "cp1ld.w -(a0), d0, 0x1, 0x0" fe600000
+d "cp1ld.w -(a0), a0, 0x1, 0x0" fe608000
+d "cp1ld.w 0x1(a0), d0, 0x1, 0x0" fe6800000001
+d "cp1ld.w -0x7f00(a0), a0, 0x1, 0x0" fe6880008100
+d "cp1ld.l d0, d2, 0x1, 0x123" fe802123
+d "cp1ld.l d0, a0, 0x1, 0x0" fe808000
+d "cp1ld.l a0, d0, 0x1, 0x0" fe880000
+d "cp1ld.l a0, a0, 0x1, 0x0" fe888000
+d "cp1ld.l (a0), d0, 0x1, 0x0" fe900000
+d "cp1ld.l (a0), a0, 0x1, 0x0" fe908000
+d "cp1ld.l (a0)+, d0, 0x1, 0x0" fe980000
+d "cp1ld.l (a0)+, a0, 0x1, 0x0" fe988000
+d "cp1ld.l -(a0), d0, 0x1, 0x0" fea00000
+d "cp1ld.l -(a0), a0, 0x1, 0x0" fea08000
+d "cp1ld.l 0x1(a0), d0, 0x1, 0x0" fea800000001
+d "cp1ld.l -0x7f00(a0), a0, 0x1, 0x0" fea880008100
+d "cp1bcbusy 0x52" fec00050
+d "cp1st.b d0, d0, 0x1, 0x0" ff000000
+d "cp1st.b a0, d0, 0x1, 0x0" ff008000
+d "cp1st.b d0, a0, 0x1, 0x0" ff080000
+d "cp1st.b a0, a0, 0x1, 0x0" ff088000
+d "cp1st.b d0, (a0), 0x1, 0x0" ff100000
+d "cp1st.b a0, (a0), 0x1, 0x0" ff108000
+d "cp1st.b d0, (a0)+, 0x1, 0x0" ff180000
+d "cp1st.b a0, (a0)+, 0x1, 0x0" ff188000
+d "cp1st.b d0, -(a0), 0x1, 0x0" ff200000
+d "cp1st.b a0, -(a0), 0x1, 0x0" ff208000
+d "cp1st.b d0, 0x1(a0), 0x1, 0x0" ff2800000001
+d "cp1st.b a0, -0x7f00(a0), 0x1, 0x0" ff2880008100
+d "cp1st.w d0, d0, 0x1, 0x0" ff400000
+d "cp1st.w a0, d0, 0x1, 0x0" ff408000
+d "cp1st.w d0, a0, 0x1, 0x0" ff480000
+d "cp1st.w a0, a0, 0x1, 0x0" ff488000
+d "cp1st.w d0, (a0), 0x1, 0x0" ff500000
+d "cp1st.w a0, (a0), 0x1, 0x0" ff508000
+d "cp1st.w d0, (a0)+, 0x1, 0x0" ff580000
+d "cp1st.w a0, (a0)+, 0x1, 0x0" ff588000
+d "cp1st.w d0, -(a0), 0x1, 0x0" ff600000
+d "cp1st.w a0, -(a0), 0x1, 0x0" ff608000
+d "cp1st.w d0, 0x1(a0), 0x1, 0x0" ff6800000001
+d "cp1st.w a0, -0x7f00(a0), 0x1, 0x0" ff6880008100
+d "cp1st.l d2, d0, 0x1, 0x123" ff802123
+d "cp1st.l a0, d0, 0x1, 0x0" ff808000
+d "cp1st.l d0, a0, 0x1, 0x0" ff880000
+d "cp1st.l a0, a0, 0x1, 0x0" ff888000
+d "cp1st.l d0, (a0), 0x1, 0x0" ff900000
+d "cp1st.l a0, (a0), 0x1, 0x0" ff908000
+d "cp1st.l d0, (a0)+, 0x1, 0x0" ff980000
+d "cp1st.l a0, (a0)+, 0x1, 0x0" ff988000
+d "cp1st.l d0, -(a0), 0x1, 0x0" ffa00000
+d "cp1st.l a0, -(a0), 0x1, 0x0" ffa08000
+d "cp1st.l d0, 0x1(a0), 0x1, 0x0" ffa800000001
+d "cp1st.l a0, -0x7f00(a0), 0x1, 0x0" ffa880008100

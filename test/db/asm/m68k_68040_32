@@ -1,0 +1,44 @@
+d "add fp0" f200007f
+d "add fp0, fp1" f20000ff
+d "fsmove fp1, fp2" f2000540
+d "fssqrt fp1, fp2" f2000541
+d "fdmove fp1, fp2" f2000544
+d "fdsqrt fp1, fp2" f2000545
+d "fsabs fp1, fp2" f2000558
+d "fsneg fp1, fp2" f200055a
+d "fdabs fp1, fp2" f200055c
+d "fdneg fp1, fp2" f200055e
+d "fsdiv fp1, fp2" f2000560
+d "fsadd fp1, fp2" f2000562
+d "fsmul fp1, fp2" f2000563
+d "fddiv fp1, fp2" f2000564
+d "fdadd fp1, fp2" f2000566
+d "fdmul fp1, fp2" f2000567
+d "fssub fp1, fp2" f2000568
+d "fdsub fp1, fp2" f200056c
+d "cinvl nc, (a0)" f408
+d "cinvp nc, (a0)" f410
+d "cinva nc" f418
+d "cpushp nc, (a0)" f430
+d "cpusha nc" f438
+d "cpushl dc, (a0)" f468
+d "pflushn (a0)" f500
+d "pflush (a0)" f508
+d "pflushan" f510
+d "pflusha" f518
+d "ptestw (a0)" f548
+d "ptestr (a0)" f568
+d "move16 (a0)+, 0x1.l" f60000000001
+d "move16 0x1.l, (a0)+" f60800000001
+d "move16 (a0), 0x1.l" f61000000001
+d "move16 0x1.l, (a0)" f61800000001
+d "move16 (a0)+, (a0)+" f6208000
+d "rte" 4e73
+d "movem.l a0, -(a0)" 48e00080
+d "fmove.x 0e1, fp0" f23c48003fff00008000000000000000
+d "fmove.p 0e1.2345678901234567e+025, fp0" f23c4c00002500012345678901234567
+d "fmove.p (a0), fp0" f2104c00
+d "fmove.p fp0, (a1){-5}" f2116c7b
+d "fmove.p fp2, (a2){d3}" f2127d30
+d "fmove.p (a0)+, fp0" f2184c00
+d "fmove.p fp0, -(a0){17}" f2206c11

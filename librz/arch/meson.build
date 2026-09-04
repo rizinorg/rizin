@@ -248,6 +248,7 @@ arch_isa_sources = [
   'isa/luac/luajit/asm_2.1.c',
   'isa/luac/luajit/opcode_2.1.c',
   'isa/mcore/mcore.c',
+  'isa/m68k/m68k_cs.c',
   'isa/milstd1750/milstd1750_disas.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',
