@@ -1,1 +1,1 @@
-d "move.l accext01, d0" ab80
+d "move.l accext01, d0" ab80 0x0 (seq (set src (var accext01)) (set d0 (cast 32 false (var src))))

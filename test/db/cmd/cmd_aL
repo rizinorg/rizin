@@ -35,7 +35,7 @@ _d___ 32         lm32        BSD     Lattice Micro 32 ISA disassembler (by Felix
 _dA__ 32 64      loongarch   LGPL3   Loongson LoongArch disassembler
 adA__ 32         luac        LGPL3   Lua bytecode (LUAC) disassembler
 _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
-_dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
+_dA_I 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
 _dA__ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
