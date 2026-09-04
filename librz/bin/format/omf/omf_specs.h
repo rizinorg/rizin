@@ -118,6 +118,9 @@
 #define OMF166_UNKNOWN4 0x64
 #define OMF166_UNKNOWN5 0x65
 
+#define OMF51_PEDATA     0x94
+#define OMF51_ENTRYPOINT 0xCA // Base address (entry point)
+
 typedef struct {
 	ut8 type;
 	ut16 size;
