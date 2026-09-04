@@ -40,9 +40,8 @@ cmd_descs_yaml = files(
 )
 cmd_descs_src_c = files('cmd_descs.c', 'cmd_descs.h')
 
-r = run_command(py3_exe, '-c', 'import yaml', check: false)
 cmd_option = get_option('regenerate_cmds')
-has_pyyaml = r.returncode() == 0
+has_pyyaml = have_python and run_command(py3_exe, '-c', 'import yaml', check: false).returncode() == 0
 if (cmd_option.auto() or cmd_option.enabled()) and has_pyyaml
   cmd_descs_ch = custom_target(
     'cmd_descs.[ch]',
