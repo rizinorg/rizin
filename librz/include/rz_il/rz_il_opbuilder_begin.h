@@ -209,6 +209,10 @@
 #define DEPOSIT64(value, start, length, fieldval) rz_il_deposit64(value, start, length, fieldval)
 #define BSWAP16(t)                                rz_il_bswap16(t)
 #define BSWAP32(t)                                rz_il_bswap32(t)
+#define BITREV32(x)                               rz_il_bitrev32(x)
+#define POPCOUNT_BYTES32(x)                       rz_il_popcount_bytes32(x)
+#define DEINTERLEAVE32(x)                         rz_il_deinterleave32(x)
+#define INTERLEAVE32(x)                           rz_il_interleave32(x)
 #define BSWAP64(t)                                rz_il_bswap64(t)
 
 #endif
