@@ -146,5 +146,5 @@ d "move.l d0, mask" ad00 0x0 (seq (set src (var d0)) (set masked (| (& (var src)
 d "move.l 0x7, mask" ad3c00000007 0x0 (seq (set src (bv 32 0x7)) (set masked (| (& (var src) (bv 32 0xffff)) (bv 32 0xffff0000))) (set mask (cast 32 false (var masked))))
 d "move.l mask, d0" ad80 0x0 (seq (set src (var mask)) (set masked (| (& (var src) (bv 32 0xffff)) (bv 32 0xffff0000))) (set d0 (cast 32 false (var masked))))
 d "move.l d0, accext23" af00 0x0 (seq (set src (var d0)) (set accext23 (cast 32 false (var src))))
-d "fbf.w 0x12" f2800010
-d "fbf.l 0x12" f2c000000010
+d "fbf.w 0x12" f2800010 0x0 (seq (set fpu_state (bv 32 0x0)) (branch false (jmp (bv 32 0x12)) empty))
+d "fbf.l 0x12" f2c000000010 0x0 (seq (set fpu_state (bv 32 0x0)) (branch false (jmp (bv 32 0x12)) empty))
