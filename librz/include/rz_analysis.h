@@ -357,6 +357,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), // It fills RzAnalysisop->opex info
 	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
 	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
+	RZ_ANALYSIS_OP_MASK_INSN_PKT = (1 << 6), // Set op.size to the size of the instruction packet, not the single instruction.
 	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
 } RzAnalysisOpMask;
 
@@ -955,10 +956,18 @@ typedef struct rz_analysis_task_item {
 
 typedef enum {
 	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
-	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', ///< Unspecified code reference.
 	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', ///< Unspecified data memory access.
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's', ///< String reference
+	/**
+	 * \brief Memory read reference.
+	 * Currently only an alias for data as that is commonly in use for generic
+	 * memory references. Code where it is known that the access is a read can
+	 * use this to explicitly state the intent and ease future changes.
+	 */
+	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
+	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
