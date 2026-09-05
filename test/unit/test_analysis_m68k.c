@@ -659,6 +659,221 @@ static bool test_m68k_address_metadata(void) {
 	mu_end;
 }
 
+static bool m68k_fp_load_pair(RzCore *core, ut16 exp0, ut64 mant0, ut16 exp1, ut64 mant1) {
+	rz_return_val_if_fail(core, false);
+	ut8 data[24] = { 0 };
+	rz_write_be16(data, exp0);
+	rz_write_be64(data + 4, mant0);
+	rz_write_be16(data + 12, exp1);
+	rz_write_be64(data + 16, mant1);
+	m68k_reset(core, 0, 0, 0x2010);
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	rz_reg_setv(reg, "fpcr", 0);
+	rz_reg_setv(reg, "fpsr", 0);
+	return rz_io_write_at(core->io, 0x400, data, sizeof(data)) && m68k_step(core, "f210d0c0");
+}
+
+static bool m68k_fp_matches(RzCore *core, const char *name, ut16 exp, ut64 mant) {
+	rz_return_val_if_fail(core && name, false);
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	RzRegItem *item = rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "FP register");
+	RzBitVector *value = rz_reg_get_bv(reg, item);
+	mu_assert_notnull(value, "FP register bits");
+	bool matches = rz_bv_len(value) == 80;
+	for (ut32 bit = 0; matches && bit < 80; bit++) {
+		matches = rz_bv_get(value, bit) == (bool)((bit < 64 ? mant >> bit : exp >> (bit - 64)) & 1);
+	}
+	if (!matches) {
+		char *actual = rz_bv_as_hex_string(value, true);
+		fprintf(stderr, "%s: expected 0x%04x%016" PFMT64x ", got %s\n", name, exp, mant, actual);
+		free(actual);
+	}
+	rz_bv_free(value);
+	return matches;
+}
+
+static bool test_m68k_fpu_single_data_register(void) {
+	RzCore *core = m68k_core_new("68040");
+	mu_assert_notnull(core, "M68K core");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	const struct {
+		ut32 single;
+		ut16 exp;
+		ut64 mant;
+	} cases[] = {
+		{ 0x3fc00000, 0x3fff, 0xc000000000000000ULL }, /* 1.5, not an integer conversion */
+		{ 0x80000000, 0x8000, 0 },
+		{ 0x00000001, 0x3f6a, 0x8000000000000000ULL }, /* smallest single subnormal */
+		{ 0x7f800000, 0x7fff, 0x8000000000000000ULL },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		m68k_reset(core, cases[i].single, 0, 0x2010);
+		rz_reg_setv(reg, "fpcr", 0);
+		mu_assert_true(m68k_step(core, "f2004400"), "FMOVE.S D0,FP0 executes");
+		mu_assert_true(m68k_fp_matches(core, "fp0", cases[i].exp, cases[i].mant), "single register source keeps IEEE bits");
+		mu_assert_eq(rz_reg_getv(reg, "d0"), cases[i].single, "D0 is preserved");
+		mu_assert_eq(rz_reg_getv(reg, "pc"), 0x104, "single register instruction is not illegal");
+	}
+	mu_assert_true(m68k_fp_load_pair(core, 0xc000, 0x9000000000000000ULL, 0, 0), "load -2.25");
+	rz_reg_setv(reg, "d2", 0x3fc00000);
+	mu_assert_true(m68k_step(core, "f2024422"), "FADD.S D2,FP0 executes");
+	mu_assert_true(m68k_fp_matches(core, "fp0", 0xbffe, 0xc000000000000000ULL), "-2.25 + 1.5 = -0.75");
+	const ut8 invalid[][4] = { { 0xf2, 0, 0x48, 0 }, { 0xf2, 0, 0x54, 0 } };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(invalid); i++) {
+		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
+		mu_assert_eq(rz_analysis_op(core->analysis, &op, 0x100, invalid[i], 4, RZ_ANALYSIS_OP_MASK_IL), 4, "decode wider data-register operand");
+		mu_assert_notnull(op.il_op, "illegal instruction effect");
+		RzStrBuf text;
+		rz_strbuf_init(&text);
+		rz_il_op_effect_stringify(op.il_op, &text, false);
+		bool illegal = strstr(rz_strbuf_get(&text), "m68k_illegal") != NULL;
+		rz_strbuf_fini(&text);
+		rz_analysis_op_fini(&op);
+		mu_assert_true(illegal, "extended and double register sources remain illegal");
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_m68k_fpu_binary_rounding(void) {
+	/* Exact rational results lie just below/above 1 + 2^-precision, within
+	 * half an FP80 ulp. RNE-to-FP80 therefore erases the side of the midpoint.
+	 * Opcodes are ADD, SUB, MUL, DIV. Check signs, all rounding modes, and
+	 * both FPCR precision and explicit FS/FD instructions. */
+	const struct {
+		ut8 precision, operation;
+		bool above;
+		ut16 exp0;
+		ut64 mant0;
+		ut16 exp1;
+		ut64 mant1;
+	} cases[] = {
+		{ 24, 0, false, 0x3fff, 0x8000008000000000ULL, 0xbfbe, 0x8000000000000000ULL },
+		{ 24, 0, true, 0x3fff, 0x8000008000000000ULL, 0x3fbe, 0x8000000000000000ULL },
+		{ 24, 1, false, 0x3fff, 0x8000008000000000ULL, 0x3fbe, 0x8000000000000000ULL },
+		{ 24, 1, true, 0x3fff, 0x8000008000000000ULL, 0xbfbe, 0x8000000000000000ULL },
+		{ 24, 2, false, 0x3fff, 0x9000000000000000ULL, 0x3ffe, 0xe38e39c71c71c71cULL },
+		{ 24, 2, true, 0x3fff, 0x9000000000000000ULL, 0x3ffe, 0xe38e39c71c71c71dULL },
+		{ 24, 3, false, 0x3fff, 0x900123d568acf134ULL, 0x3fff, 0x900123456789abcdULL },
+		{ 24, 3, true, 0x3fff, 0x900123d568acf135ULL, 0x3fff, 0x900123456789abcdULL },
+		{ 53, 0, false, 0x3fff, 0x8000000000000400ULL, 0xbfbe, 0x8000000000000000ULL },
+		{ 53, 0, true, 0x3fff, 0x8000000000000400ULL, 0x3fbe, 0x8000000000000000ULL },
+		{ 53, 1, false, 0x3fff, 0x8000000000000400ULL, 0x3fbe, 0x8000000000000000ULL },
+		{ 53, 1, true, 0x3fff, 0x8000000000000400ULL, 0xbfbe, 0x8000000000000000ULL },
+		{ 53, 2, false, 0x3fff, 0x9000000000000000ULL, 0x3ffe, 0xe38e38e38e38eaaaULL },
+		{ 53, 2, true, 0x3fff, 0x9000000000000000ULL, 0x3ffe, 0xe38e38e38e38eaabULL },
+		{ 53, 3, false, 0x3fff, 0x900123456789b04dULL, 0x3fff, 0x900123456789abcdULL },
+		{ 53, 3, true, 0x3fff, 0x900eca8641fdbdeaULL, 0x3fff, 0x900eca8641fdb969ULL },
+	};
+	const ut8 opcodes[][4] = { { 0x22, 0x28, 0x23, 0x20 }, { 0x62, 0x68, 0x63, 0x60 }, { 0x66, 0x6c, 0x67, 0x64 } };
+	RzCore *core = m68k_core_new("68040");
+	mu_assert_notnull(core, "M68K core");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		for (ut32 sign = 0; sign < 2; sign++) {
+			for (ut32 mode = 0; mode < 4; mode++) {
+				for (ut32 explicit = 0; explicit < 2; explicit++) {
+					ut32 prec = cases[i].precision == 24 ? 1 : 2;
+					ut16 exp0 = cases[i].exp0 ^ (sign << 15);
+					ut16 exp1 = cases[i].exp1 ^ (cases[i].operation < 2 ? sign << 15 : 0);
+					mu_assert_true(m68k_fp_load_pair(core, exp0, cases[i].mant0, exp1, cases[i].mant1), "load exact FP80 operands");
+					rz_reg_setv(reg, "fpcr", (explicit ? 0 : prec << 6) | mode << 4);
+					char hex[9];
+					snprintf(hex, sizeof(hex), "f20004%02x", opcodes[explicit ? prec : 0][cases[i].operation]);
+					mu_assert_true(m68k_step(core, hex), "binary FPU operation executes");
+					bool up = mode == 0 ? cases[i].above : mode == (sign ? 2 : 3);
+					ut64 expected = 0x8000000000000000ULL | (up ? 1ULL << (64 - cases[i].precision) : 0);
+					mu_assert_true(m68k_fp_matches(core, "fp0", 0x3fff | sign << 15, expected), "round exact result once at selected precision");
+					mu_assert_eq(rz_reg_getv(reg, "fpsr") & 0x208, 0x208, "inexact result sets INEX2 and accrued INEX");
+				}
+			}
+		}
+	}
+	for (ut32 mode = 0; mode < 4; mode++) {
+		mu_assert_true(m68k_fp_load_pair(core, 0x3fff, 0x8000000000000000ULL, 0xbfff, 0x8000000000000000ULL), "load cancellation operands");
+		rz_reg_setv(reg, "fpcr", 0x40 | mode << 4);
+		mu_assert_true(m68k_step(core, "f2000422"), "exact cancellation");
+		mu_assert_true(m68k_fp_matches(core, "fp0", mode == 2 ? 0x8000 : 0, 0), "rounding mode determines sign of exact zero");
+		mu_assert_eq(rz_reg_getv(reg, "fpsr") & 0x208, 0, "exact cancellation is not inexact");
+	}
+	/* Halfway to the smallest subnormal, and halfway from the largest
+	 * finite value to overflow. Keep the side of these midpoints too. */
+	for (ut32 prec = 1; prec <= 2; prec++) {
+		ut32 precision = prec == 1 ? 24 : 53;
+		for (ut32 overflow = 0; overflow < 2; overflow++) {
+			ut16 exp = overflow ? (prec == 1 ? 0x407e : 0x43fe) : (prec == 1 ? 0x3f69 : 0x3bcc);
+			ut64 mant = overflow ? UT64_MAX << (63 - precision) : 0x8000000000000000ULL;
+			for (ut32 above = 0; above < 2; above++) {
+				for (ut32 sign = 0; sign < 2; sign++) {
+					for (ut32 mode = 0; mode < 4; mode++) {
+						mu_assert_true(m68k_fp_load_pair(core, exp | sign << 15, mant,
+								       (exp - 65) | ((sign ^ !above) << 15), 0x8000000000000000ULL),
+							"load exponent boundary operands");
+						rz_reg_setv(reg, "fpcr", prec << 6 | mode << 4);
+						mu_assert_true(m68k_step(core, "f2000422"), "add at target exponent boundary");
+						bool up = mode == 0 ? above : mode == (sign ? 2 : 3);
+						ut16 expected_exp = overflow ? (up ? 0x7fff : exp) : (up ? exp + 1 : 0);
+						ut64 expected_mant = overflow ? (up ? 0x8000000000000000ULL : UT64_MAX << (64 - precision)) : (up ? 0x8000000000000000ULL : 0);
+						mu_assert_true(m68k_fp_matches(core, "fp0", expected_exp | sign << 15, expected_mant), "round once at underflow/overflow boundary");
+					}
+				}
+			}
+		}
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_m68k_fpu_nan_payload(void) {
+	const ut64 finite = 0x8000000000000000ULL;
+	const ut64 nan0 = 0xc123456789abcdefULL, nan1 = 0xc23456789abcdef1ULL;
+	const struct {
+		ut16 exp0, exp1;
+		ut64 mant0, mant1;
+		bool src_nan, snan;
+	} cases[] = {
+		{ 0x7fff, 0x3fff, nan0, finite, false, false },
+		{ 0x3fff, 0xffff, finite, nan1, true, false },
+		{ 0xffff, 0x7fff, nan0, nan1, false, false },
+		{ 0xffff, 0x7fff, nan0, nan1 & ~0x4000000000000000ULL, false, true },
+		{ 0x7fff, 0xffff, nan0 & ~0x4000000000000000ULL, nan1, false, true },
+		{ 0x3fff, 0xffff, finite, nan1 & ~0x4000000000000000ULL, true, true },
+	};
+	const char *opcodes[] = { "f2000422", "f2000428", "f2000423", "f2000420", "f2000421", "f2000425" };
+	RzCore *core = m68k_core_new("68040");
+	mu_assert_notnull(core, "M68K core");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		for (size_t op = 0; op < RZ_ARRAY_SIZE(opcodes); op++) {
+			for (ut32 prec = 0; prec < 3; prec++) {
+				mu_assert_true(m68k_fp_load_pair(core, cases[i].exp0, cases[i].mant0, cases[i].exp1, cases[i].mant1), "FMOVEM loads original NaN bits");
+				rz_reg_setv(reg, "fpcr", prec << 6);
+				mu_assert_true(m68k_step(core, opcodes[op]), "arithmetic with NaN executes");
+				ut16 exp = cases[i].src_nan ? cases[i].exp1 : cases[i].exp0;
+				ut64 mant = (cases[i].src_nan ? cases[i].mant1 : cases[i].mant0) | 0x4000000000000000ULL;
+				mu_assert_true(m68k_fp_matches(core, "fp0", exp, mant), "propagate selected NaN sign and payload, quieting SNAN");
+				mu_assert_eq(rz_reg_getv(reg, "fpsr") & 0x01004080, 0x01000000 | (cases[i].snan ? 0x4080 : 0), "NaN condition and signaling exception");
+			}
+		}
+	}
+	mu_assert_true(m68k_fp_load_pair(core, 0x3fff, finite, 0, 0), "load finite destination");
+	rz_reg_setv(reg, "d2", 0xff812345);
+	mu_assert_true(m68k_step(core, "f2024422"), "single SNAN data-register source");
+	mu_assert_true(m68k_fp_matches(core, "fp0", 0xffff, 0xc123450000000000ULL), "single payload widens and quiets without canonicalizing");
+	mu_assert_eq(rz_reg_getv(reg, "fpsr") & 0x4080, 0x4080, "single SNAN is detected before widening");
+	mu_assert_true(m68k_fp_load_pair(core, 0x3fff, finite, 0, 0), "load finite destination for double source");
+	ut8 double_nan[8];
+	rz_write_be64(double_nan, 0xfff0123456789abcULL);
+	mu_assert_true(rz_io_write_at(core->io, 0x400, double_nan, sizeof(double_nan)), "store double SNAN");
+	mu_assert_true(m68k_step(core, "f2105422"), "double SNAN memory source");
+	mu_assert_true(m68k_fp_matches(core, "fp0", 0xffff, 0xc091a2b3c4d5e000ULL), "double payload widens and quiets without canonicalizing");
+	mu_assert_eq(rz_reg_getv(reg, "fpsr") & 0x4080, 0x4080, "double SNAN is detected before widening");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test(test_m68k_hidden_fpu_destination);
 #ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
@@ -676,6 +891,9 @@ int all_tests(void) {
 	mu_run_test(test_m68k_coldfire_values);
 #endif
 	mu_run_test(test_m68k_address_metadata);
+	mu_run_test(test_m68k_fpu_single_data_register);
+	mu_run_test(test_m68k_fpu_binary_rounding);
+	mu_run_test(test_m68k_fpu_nan_payload);
 	return tests_passed != tests_run;
 }
 
