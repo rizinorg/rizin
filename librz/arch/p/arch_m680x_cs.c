@@ -5,6 +5,8 @@
 #include <deprecated_arch_helper.h>
 #include <capstone/capstone.h>
 
+#define CAPSTONE6ALPHA9 (CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE >= CS_VERSION_ALPHA9)
+
 static inline cs_mode m680x_mode(const char *str) {
 	if (!str) {
 		return CS_MODE_M680X_6800;
@@ -31,7 +33,7 @@ static inline cs_mode m680x_mode(const char *str) {
 	} else if (rz_str_casestr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
 	}
-#ifdef RZ_CAPSTONE_HAS_M680X_HCS12X
+#if CAPSTONE6ALPHA9
 	else if (rz_str_casestr(str, "rs08")) {
 		return CS_MODE_M680X_RS08;
 	} else if (rz_str_casestr(str, "hcs12x")) {
