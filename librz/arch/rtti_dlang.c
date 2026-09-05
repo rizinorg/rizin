@@ -245,7 +245,7 @@ static void info_add(RVTableContext *context, RzList /*<DlangClassInfo *>*/ *inf
 	}
 }
 
-static void discover_symbols(RVTableContext *context, RzBinObject *obj, RzList *infos, HtUP *by_addr) {
+static void discover_symbols(RVTableContext *context, RzBinObject *obj, RzList /*<DlangClassInfo *>*/ *infos, HtUP *by_addr) {
 	const RzPVector *symbols = rz_bin_object_get_symbols(obj);
 	void **iter;
 	rz_pvector_foreach (symbols, iter) {
@@ -268,7 +268,7 @@ static bool read_u32(RzAnalysis *analysis, ut64 addr, RZ_OUT ut32 *value) {
 	return true;
 }
 
-static void discover_module(RVTableContext *context, RzList *infos, HtUP *by_addr, ut64 addr) {
+static void discover_module(RVTableContext *context, RzList /*<DlangClassInfo *>*/ *infos, HtUP *by_addr, ut64 addr) {
 	ut32 flags = 0;
 	if (!read_u32(context->analysis, addr, &flags) || !(flags & DLANG_MODULE_FLAG_LOCAL_CLASSES)) {
 		return;
@@ -307,7 +307,7 @@ static void discover_module(RVTableContext *context, RzList *infos, HtUP *by_add
 	}
 }
 
-static void discover_modules(RVTableContext *context, RzBinObject *obj, RzList *infos, HtUP *by_addr) {
+static void discover_modules(RVTableContext *context, RzBinObject *obj, RzList /*<DlangClassInfo *>*/ *infos, HtUP *by_addr) {
 	const RzPVector *sections = context->analysis->binb.get_sections(obj);
 	void **iter;
 	rz_pvector_foreach (sections, iter) {
@@ -457,7 +457,7 @@ static void apply_interfaces(RVTableContext *context, HtUP *by_addr, DlangClassI
 	rz_set_u_free(offsets);
 }
 
-static void apply(RVTableContext *context, RzList *infos, HtUP *by_addr) {
+static void apply(RVTableContext *context, RzList /*<DlangClassInfo *>*/ *infos, HtUP *by_addr) {
 	RzListIter *iter;
 	DlangClassInfo *info;
 	rz_list_foreach (infos, iter, info) {
