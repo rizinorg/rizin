@@ -361,6 +361,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_VIDEOCORE3, "vc4" },
 	{ EM_VIDEOCORE4, "vc4" },
 	{ EM_MSP430, "msp430" },
+	{ EM_TI_C6000, "tms320" },
 	{ EM_SH, "sh" },
 	{ EM_V810, "v810" },
 	{ EM_V800, "v850" },
@@ -924,6 +925,10 @@ static inline bool arch_is_arcompact(ELFOBJ *bin) {
 
 static inline bool arch_is_parisc(ELFOBJ *bin) {
 	return arch_is(bin, EM_PARISC);
+}
+
+static inline bool arch_is_c6x(ELFOBJ *bin) {
+	return arch_is(bin, EM_TI_C6000);
 }
 
 static inline bool arch_is_riscv(ELFOBJ *bin) {
@@ -1498,6 +1503,14 @@ static char *get_cpu_hppa(ELFOBJ *bin) {
 	}
 
 	return strdup("Unknown HP PARISC ISA");
+}
+
+// EM_TI_C6000 objects (COFF ABI and the C6000 EABI, SPRAB89) do not record the
+// exact C6x ISA variant in the ELF header, so default to the C674x superset (the
+// unified C64x+/C67x+ ISA the EABI targets); a narrower variant can be forced
+// with -c on the shared tms320 c6x decoder.
+static char *get_cpu_c6x(ELFOBJ *bin) {
+	return rz_str_dup("c674x");
 }
 
 static char *get_cpu_h8xx(ELFOBJ *bin) {
@@ -2125,6 +2138,8 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
 	} else if (arch_is_parisc(bin)) {
 		return get_cpu_hppa(bin);
+	} else if (arch_is_c6x(bin)) {
+		return get_cpu_c6x(bin);
 	} else if (arch_is_arm(bin)) {
 		return get_cpu_arm(bin);
 	} else if (arch_is_h8xx(bin)) {

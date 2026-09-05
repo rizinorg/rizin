@@ -144,8 +144,209 @@ static ut8 handle_arm64_relocs(struct rz_bin_coff_obj *bin, RzBinReloc *reloc, u
 	return 0;
 }
 
+// Store `value` into the field of the little-endian word at `paddr` that a TI
+// C6000 field spec describes: bits [start, start + size) of a `container`-bit
+// word, other bits preserved. The patched word is written to patch_buf; returns
+// the byte count (container / 8), or 0 if the spec or read is invalid.
+static size_t ti_c6000_store_field(struct rz_bin_coff_obj *bin, ut64 paddr, ut32 fldspec, ut64 value, ut8 *patch_buf) {
+	ut8 start = fldspec & 0xff;
+	ut8 size = (fldspec >> 8) & 0xff;
+	ut8 container = (fldspec >> 16) & 0xff;
+	if (!size || size > container || start + size > container) {
+		return 0;
+	}
+	ut64 mask = size >= 64 ? UT64_MAX : (((ut64)1 << size) - 1);
+	ut64 field = (value & mask) << start;
+	ut64 clear = mask << start;
+	switch (container) {
+	case 32: {
+		ut32 word;
+		if (!rz_buf_read_le32_at(bin->b, paddr, &word)) {
+			return 0;
+		}
+		word = (word & ~(ut32)clear) | (ut32)field;
+		rz_write_le32(patch_buf, word);
+		return 4;
+	}
+	case 16: {
+		ut16 hw;
+		if (!rz_buf_read_le16_at(bin->b, paddr, &hw)) {
+			return 0;
+		}
+		hw = (hw & ~(ut16)clear) | (ut16)field;
+		rz_write_le16(patch_buf, hw);
+		return 2;
+	}
+	case 8: {
+		ut8 b;
+		if (rz_buf_read_at(bin->b, paddr, &b, 1) != 1) {
+			return 0;
+		}
+		patch_buf[0] = (b & ~(ut8)clear) | (ut8)field;
+		return 1;
+	}
+	default:
+		return 0;
+	}
+}
+
+// Evaluate the TI TMS320C6000 relocation expressions of every section. Each
+// field is patched by a contiguous RPN sequence (operators in coff_specs.h)
+// that ends in a store; the running stack is reset at each store so the next
+// field starts clean. One RzBinReloc is emitted per store, carrying the field
+// width and the symbol the expression referenced.
+static void ti_c6000_relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void *user) {
+	size_t i = 0;
+	CoffScnHdr *scn_hdr = NULL;
+	rz_vector_enumerate (bin->scn_hdrs, scn_hdr, i) {
+		if (!scn_hdr->s_nreloc || !bin->scn_va) {
+			continue;
+		}
+		if (scn_hdr->s_relptr > bin->size ||
+			scn_hdr->s_relptr + (ut64)scn_hdr->s_nreloc * RZ_COFF_TI_RELOC_SIZE > bin->size) {
+			continue;
+		}
+		ut64 off = scn_hdr->s_relptr;
+		ut64 stack[16];
+		int sp = 0;
+		RzBinSymbol *cur_sym = NULL;
+		for (ut32 j = 0; j < scn_hdr->s_nreloc; j++) {
+			ut32 r_vaddr, r_symndx;
+			ut16 r_disp, r_type;
+			if (!rz_buf_read_le32_offset(bin->b, &off, &r_vaddr) ||
+				!rz_buf_read_le32_offset(bin->b, &off, &r_symndx) ||
+				!rz_buf_read_le16_offset(bin->b, &off, &r_disp) ||
+				!rz_buf_read_le16_offset(bin->b, &off, &r_type)) {
+				break;
+			}
+#define C6000_BINOP(expr) \
+	do { \
+		if (sp >= 2) { \
+			ut64 b = stack[--sp], a = stack[sp - 1]; \
+			stack[sp - 1] = (expr); \
+		} \
+	} while (0)
+			switch (r_type) {
+			case COFF_REL_C6000_PUSH: {
+				RzBinSymbol *sym = ht_up_find(bin->sym_ht, (ut64)r_symndx, NULL);
+				if (sp < 16) {
+					stack[sp++] = sym ? sym->vaddr : 0;
+				}
+				if (sym) {
+					cur_sym = sym;
+				}
+				break;
+			}
+			case COFF_REL_C6000_PUSHUK:
+				if (sp < 16) {
+					stack[sp++] = r_symndx;
+				}
+				break;
+			case COFF_REL_C6000_PUSHSK:
+				if (sp < 16) {
+					stack[sp++] = (ut64)(st64)(st32)r_symndx;
+				}
+				break;
+			case COFF_REL_C6000_ADD: C6000_BINOP(a + b); break;
+			case COFF_REL_C6000_SUB: C6000_BINOP(a - b); break;
+			case COFF_REL_C6000_MPY: C6000_BINOP(a * b); break;
+			case COFF_REL_C6000_DIV: C6000_BINOP(b ? a / b : 0); break;
+			case COFF_REL_C6000_MOD: C6000_BINOP(b ? a % b : 0); break;
+			case COFF_REL_C6000_SR: C6000_BINOP(b < 64 ? a >> b : 0); break;
+			case COFF_REL_C6000_ASR: C6000_BINOP(b < 64 ? (ut64)((st64)a >> b) : 0); break;
+			case COFF_REL_C6000_SL: C6000_BINOP(b < 64 ? a << b : 0); break;
+			case COFF_REL_C6000_AND: C6000_BINOP(a & b); break;
+			case COFF_REL_C6000_OR: C6000_BINOP(a | b); break;
+			case COFF_REL_C6000_XOR: C6000_BINOP(a ^ b); break;
+			case COFF_REL_C6000_NEG:
+				if (sp >= 1) {
+					stack[sp - 1] = (ut64)(-(st64)stack[sp - 1]);
+				}
+				break;
+			case COFF_REL_C6000_NOTB:
+				if (sp >= 1) {
+					stack[sp - 1] = ~stack[sp - 1];
+				}
+				break;
+			case COFF_REL_C6000_USTFLD:
+			case COFF_REL_C6000_SSTFLD:
+			case COFF_REL_C6000_XSTFLD: {
+				if (sp < 1) {
+					break;
+				}
+				ut64 value = stack[--sp];
+				ut8 patch_buf[8];
+				ut8 container = (r_symndx >> 16) & 0xff;
+				RzBinReloc reloc = { 0 };
+				reloc.paddr = scn_hdr->s_scnptr + r_vaddr;
+				reloc.vaddr = bin->scn_va[i] + r_vaddr;
+				reloc.symbol = cur_sym;
+				reloc.target_vaddr = cur_sym ? cur_sym->vaddr : value;
+				reloc.type = container == 16 ? RZ_BIN_RELOC_16 : (container == 8 ? RZ_BIN_RELOC_8 : RZ_BIN_RELOC_32);
+				reloc.print_name = "R_C6000_STFLD";
+				size_t plen = ti_c6000_store_field(bin, reloc.paddr, r_symndx, value, patch_buf);
+				cb(&reloc, plen ? patch_buf : NULL, plen, user);
+				sp = 0;
+				cur_sym = NULL;
+				break;
+			}
+			case COFF_REL_C6000_RELBYTE:
+			case COFF_REL_C6000_RELWORD:
+			case COFF_REL_C6000_RELLONG: {
+				// classic direct relocations: add the symbol value to the
+				// in-place field, no stack involved
+				RzBinSymbol *sym = ht_up_find(bin->sym_ht, (ut64)r_symndx, NULL);
+				sp = 0;
+				cur_sym = NULL;
+				if (!sym) {
+					break;
+				}
+				ut8 width = r_type == COFF_REL_C6000_RELLONG ? 32 : (r_type == COFF_REL_C6000_RELWORD ? 16 : 8);
+				ut8 patch_buf[8];
+				RzBinReloc reloc = { 0 };
+				reloc.paddr = scn_hdr->s_scnptr + r_vaddr;
+				reloc.vaddr = bin->scn_va[i] + r_vaddr;
+				reloc.symbol = sym;
+				reloc.additive = 1;
+				reloc.type = width == 32 ? RZ_BIN_RELOC_32 : (width == 16 ? RZ_BIN_RELOC_16 : RZ_BIN_RELOC_8);
+				reloc.print_name = r_type == COFF_REL_C6000_RELLONG ? "R_C6000_RELLONG" : (r_type == COFF_REL_C6000_RELWORD ? "R_C6000_RELWORD" : "R_C6000_RELBYTE");
+				ut32 fldspec = ((ut32)width << 16) | ((ut32)width << 8);
+				ut64 addend = 0;
+				if (width == 32) {
+					ut32 v;
+					addend = rz_buf_read_le32_at(bin->b, reloc.paddr, &v) ? v : 0;
+				} else if (width == 16) {
+					ut16 v;
+					addend = rz_buf_read_le16_at(bin->b, reloc.paddr, &v) ? v : 0;
+				} else {
+					ut8 v;
+					addend = rz_buf_read_at(bin->b, reloc.paddr, &v, 1) == 1 ? v : 0;
+				}
+				reloc.addend = addend;
+				reloc.target_vaddr = sym->vaddr;
+				size_t plen = ti_c6000_store_field(bin, reloc.paddr, fldspec, sym->vaddr + addend, patch_buf);
+				cb(&reloc, plen ? patch_buf : NULL, plen, user);
+				break;
+			}
+			default:
+				// framing/attribute relocations (alignment, fetch-packet
+				// header, no-compact): no operand, and they terminate any
+				// field expression, so drop the stack
+				sp = 0;
+				cur_sym = NULL;
+				break;
+			}
+#undef C6000_BINOP
+		}
+	}
+}
+
 static void relocs_foreach(struct rz_bin_coff_obj *bin, RelocsForeachCb cb, void *user) {
 	if (!bin->scn_hdrs) {
+		return;
+	}
+	if (bin->target_id == COFF_FILE_TARGET_TI_TMS320C6000) {
+		ti_c6000_relocs_foreach(bin, cb, user);
 		return;
 	}
 
