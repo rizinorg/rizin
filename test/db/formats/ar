@@ -337,3 +337,33 @@ EXPECT=<<EOF
 554889e5534883ec2848897dd8488b45
 EOF
 RUN
+
+NAME=bin_ar: iI on a real archive with ELF objects
+FILE=bins/ar/libgdbr.a
+CMDS=iI~bintype,class,arch,bits,os
+EXPECT=<<EOF
+arch     x86
+bintype  ar
+bits     64
+class    archive
+os       linux
+EOF
+RUN
+
+NAME=bin_ar: iS sections mapped from archive members
+FILE=bins/ar/libgdbr.a
+CMDS=iS
+EXPECT=<<EOF
+     paddr    size      vaddr   vsize align perm name          type flags 
+--------------------------------------------------------------------------
+0x00000670  0x36c0 0x00000670  0x36c0   0x0 -rwx libgdbr.o_0        
+0x00003d6c  0x48d8 0x00003d6c  0x48d8   0x0 -rwx packet.o_1         
+0x00008680  0x4388 0x00008680  0x4388   0x0 -rwx arch.o_2           
+0x0000ca44  0x42e0 0x0000ca44  0x42e0   0x0 -rwx common.o_3         
+0x00010d60  0x3008 0x00010d60  0x3008   0x0 -rwx utils.o_4          
+0x00013da4  0x8b10 0x00013da4  0x8b10   0x0 -rwx core.o_5           
+0x0001c8f0  0x6e30 0x0001c8f0  0x6e30   0x0 -rwx xml.o_6            
+0x0002375c 0x1b898 0x0002375c 0x1b898   0x0 -rwx core.o_7           
+0x0003f030 0x13b38 0x0003f030 0x13b38   0x0 -rwx responses.o_8      
+EOF
+RUN
