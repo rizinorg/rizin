@@ -4608,6 +4608,42 @@ ARM32 relocations:
 #define R_AVR_PORT5          35
 #define R_AVR_32_PCREL       36
 
+/* TMS320C6000 (C6000 EABI) Relocations */
+#define R_C6000_NONE          0
+#define R_C6000_ABS32         1
+#define R_C6000_ABS16         2
+#define R_C6000_ABS8          3
+#define R_C6000_PCR_S21       4 /* 21-bit PC-relative branch displacement */
+#define R_C6000_PCR_S12       5
+#define R_C6000_PCR_S10       6
+#define R_C6000_PCR_S7        7
+#define R_C6000_ABS_S16       8
+#define R_C6000_ABS_L16       9 /* low 16 bits, MVKL */
+#define R_C6000_ABS_H16       10 /* high 16 bits, MVKH */
+#define R_C6000_SBR_U15_B     11 /* static-base-relative, unsigned, byte */
+#define R_C6000_SBR_U15_H     12 /* halfword */
+#define R_C6000_SBR_U15_W     13 /* word */
+#define R_C6000_SBR_S16       14
+#define R_C6000_SBR_L16_B     15
+#define R_C6000_SBR_L16_H     16
+#define R_C6000_SBR_L16_W     17
+#define R_C6000_SBR_H16_B     18
+#define R_C6000_SBR_H16_H     19
+#define R_C6000_SBR_H16_W     20
+#define R_C6000_SBR_GOT_U15_W 21
+#define R_C6000_SBR_GOT_L16_W 22
+#define R_C6000_SBR_GOT_H16_W 23
+#define R_C6000_DSBT_INDEX    24
+#define R_C6000_PREL31        25
+#define R_C6000_COPY          26
+#define R_C6000_JUMP_SLOT     27
+#define R_C6000_EHTYPE        28
+#define R_C6000_PCR_H16       29
+#define R_C6000_PCR_L16       30
+#define R_C6000_ALIGN         253
+#define R_C6000_FPHEAD        254
+#define R_C6000_NOCMP         255
+
 /* Dynamic array tags */
 
 #define DT_HEXAGON_SYMSZ 0x70000000

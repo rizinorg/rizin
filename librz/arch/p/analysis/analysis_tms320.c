@@ -11,20 +11,316 @@
 #include <tms320/c54x/c54x.h>
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
-#include <tms320/c64x/c64x.h>
+#include <tms320/c6x/c6x.h>
 
 typedef struct tms320_ctx_t {
-	void *c64x;
+	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
+	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
 } Tms320Context;
+
+// Read image bytes for packet reconstruction; the buffer the analysis op is
+// handed starts at the instruction and is too short during IL VM stepping.
+static bool c6x_read_io(void *user, ut64 addr, ut8 *buf, size_t len) {
+	RzAnalysis *analysis = user;
+	if (!analysis->iob.read_at) {
+		return false;
+	}
+	return analysis->iob.read_at(analysis->iob.io, addr, buf, len);
+}
+
+// Decode every slot of the execute packet at \p addr. Returns 0 unless all of
+// them decoded, so a caller can fall back rather than lift half a packet.
+static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 addr,
+	RZ_OUT C6xInsn *out, RZ_OUT C6xPacketRef *pkt) {
+	if (!c6x_packet_at(c6x_read_io, analysis, addr, analysis->big_endian, pkt)) {
+		return 0;
+	}
+	for (size_t i = 0; i < pkt->n; i++) {
+		// A compact slot is only decodable with its fetch-packet header, which
+		// sits at the end of the packet, so hand the decoder everything from the
+		// slot to past that header rather than the slot's own bytes: four bytes
+		// of a 16-bit slot decode as an unrelated 32-bit instruction.
+		ut8 raw[C6X_FETCH_PACKET_SIZE * 2];
+		size_t want = sizeof(raw);
+		if (!c6x_read_io(analysis, pkt->slots[i].addr, raw, want)) {
+			want = C6X_FETCH_PACKET_SIZE;
+			if (!c6x_read_io(analysis, pkt->slots[i].addr, raw, want)) {
+				return 0;
+			}
+		}
+		if (!c6x_decode(c6x, raw, want, pkt->slots[i].addr,
+			    analysis->big_endian, &out[i])) {
+			return 0;
+		}
+		if (out[i].size != pkt->slots[i].size) {
+			return 0; // decode disagrees with the packet; do not guess
+		}
+	}
+	return pkt->n;
+}
+
+// The branch in a packet, if it opens delay slots.
+static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx, RZ_OUT ut8 *slots) {
+	for (size_t i = 0; i < n; i++) {
+		ut8 s = c6x_branch_slots(&insns[i]);
+		if (s) {
+			*idx = i;
+			*slots = s;
+			return true;
+		}
+	}
+	return false;
+}
+
+// Does any packet up to \p depth ahead read \p reg?
+static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 from,
+	ut8 depth, const C6xOperand *reg, RZ_OUT ut64 *end) {
+	ut64 at = from;
+	for (ut8 k = 0; k < depth; k++) {
+		C6xPacketRef p;
+		C6xInsn ins[C6X_FP_SLOTS];
+		size_t n = c6x_decode_packet(analysis, c6x, at, ins, &p);
+		if (!n) {
+			return false;
+		}
+		size_t bi;
+		ut8 bs;
+		if (c6x_packet_branch(ins, n, &bi, &bs)) {
+			return false; // a branch owns its own window; leave it alone
+		}
+		for (size_t i = 0; i < n; i++) {
+			for (ut8 o = 0; o + 1 < ins[i].nops; o++) {
+				const C6xOperand *s = &ins[i].ops[o];
+				if (c6x_same_reg(s, reg)) {
+					*end = C6X_PACKET_END(p);
+					return true;
+				}
+			}
+		}
+		at = C6X_PACKET_END(p);
+	}
+	return false;
+}
+
+/**
+ * A result that lands late only matters when something reads it too soon. In
+ * straight-line code the compiler normally schedules the consumer far enough
+ * away and fills the gap with NOPs, in which case the write can stay where the
+ * instruction sits. Where it does not -- a register reused across a load, say --
+ * the packets in between have to run before the write becomes visible, so lift
+ * them as a window with the write held to the end.
+ *
+ * \return NULL when no result of this packet is read too soon.
+ */
+static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArchDesc *c6x,
+	const C6xInsn *slots, size_t n, const C6xPacketRef *pkt) {
+	ut32 hold = 0;
+	ut64 window_end = 0;
+	ut64 after = C6X_PACKET_END(*pkt);
+	for (size_t i = 0; i < n; i++) {
+		ut8 lat = c6x_result_latency(&slots[i]);
+		if (!lat || !slots[i].nops) {
+			continue;
+		}
+		const C6xOperand *d = &slots[i].ops[slots[i].nops - 1];
+		if (d->kind != C6X_OP_REG) {
+			continue; // pairs and stores are left to the plain path
+		}
+		ut64 end = 0;
+		if (c6x_reads_reg_ahead(analysis, c6x, after, lat, d, &end)) {
+			hold |= 1u << i;
+			window_end = end > window_end ? end : window_end;
+		}
+	}
+	if (!hold) {
+		return NULL;
+	}
+	RzILOpEffect *eff = c6x_lift_packet(slots, n, pkt->addr, hold);
+	ut64 at = after;
+	while (at < window_end) {
+		C6xPacketRef p;
+		C6xInsn ins[C6X_FP_SLOTS];
+		size_t pn = c6x_decode_packet(analysis, c6x, at, ins, &p);
+		if (!pn) {
+			break;
+		}
+		RzILOpEffect *pe = c6x_lift_packet(ins, pn, p.addr, 0);
+		if (pe) {
+			eff = eff ? rz_il_op_new_seq(eff, pe) : pe;
+		}
+		at = C6X_PACKET_END(p);
+	}
+	for (size_t i = 0; i < n; i++) {
+		if (!(hold & (1u << i))) {
+			continue;
+		}
+		RzILOpEffect *held = c6x_lift(&slots[i], pkt->slots[i].addr);
+		if (held) {
+			eff = eff ? rz_il_op_new_seq(eff, held) : held;
+		}
+	}
+	// the window ran the packets in between, so leave the pc past them
+	return eff ? rz_il_op_new_seq(eff, c6x_jump_to(at)) : NULL;
+}
+
+/**
+ * Lift the IL for \p addr.
+ *
+ * A C6000 branch resolves five execute packets after it issues, and the packets
+ * in between still execute. So a branch is lifted as a window: its own packet,
+ * then the packets filling its delay slots, then the transfer. The addresses
+ * inside that window lift to nothing, since the window already covers them --
+ * which is why every address looks back far enough to notice it is inside one.
+ *
+ * Without a branch a packet is lifted on its own, and a packet of one slot takes
+ * the plain per-instruction path.
+ */
+static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
+	const C6xInsn *insn, ut64 addr) {
+	C6xPacketRef pkt;
+	C6xInsn slots[C6X_FP_SLOTS];
+	size_t n = c6x_decode_packet(analysis, c6x, addr, slots, &pkt);
+	if (!n) {
+		return c6x_lift(insn, addr);
+	}
+	if (addr != pkt.addr) {
+		return rz_il_op_new_nop(); // lifted at the packet's first address
+	}
+	// inside an earlier branch's window?
+	ut64 probe = pkt.addr;
+	for (ut8 back = 0; back < 5 && probe; back++) {
+		C6xPacketRef prev;
+		C6xInsn pins[C6X_FP_SLOTS];
+		if (probe < C6X_COMPACT_SIZE) {
+			break;
+		}
+		size_t pn = c6x_decode_packet(analysis, c6x, probe - C6X_COMPACT_SIZE, pins, &prev);
+		if (!pn || prev.addr >= probe) {
+			break;
+		}
+		size_t bi;
+		ut8 bs;
+		if (c6x_packet_branch(pins, pn, &bi, &bs) && bs > back) {
+			return rz_il_op_new_nop(); // covered by that branch's window
+		}
+		probe = prev.addr;
+	}
+	size_t bidx;
+	ut8 bslots;
+	if (!c6x_packet_branch(slots, n, &bidx, &bslots)) {
+		RzILOpEffect *lat = c6x_lift_latency_window(analysis, c6x, slots, n, &pkt);
+		if (lat) {
+			return lat;
+		}
+		if (n > 1) {
+			RzILOpEffect *pe = c6x_lift_packet(slots, n, addr, 0);
+			if (pe) {
+				return pe;
+			}
+			// a slot the packet pass cannot stage, e.g. a destination shape it
+			// does not model; per-instruction IL is better than none
+		}
+		return c6x_lift(insn, addr);
+	}
+	// The branch's own packet, with the transfer held back. Slots whose result
+	// lands beyond the last delay-slot packet are held back too and emitted
+	// after the transfer: a load issued in slot k writes four packets later, so
+	// with k + 4 > bslots the write happens once control has already moved. jmp
+	// only sets the program counter, so an effect sequenced after it still runs.
+	// The transfer happens after instructions that may overwrite the register
+	// the branch tests, so sample the predicate now and carry the answer.
+	RzILOpEffect *sample = c6x_sample_predicate(&slots[bidx]);
+	// Hold back the branch itself, and any slot of its own packet whose result
+	// lands after the transfer: a load beside the branch writes four packets on,
+	// so with fewer delay slots than that the write belongs after the jump. Real
+	// code relies on it -- "[!a0] ldw *b5,b4 || bnop" beside "[!a0] b .s2 b4"
+	// wants the branch to read the b4 the load is replacing.
+	ut32 hold = 1u << bidx;
+	for (size_t i = 0; i < n; i++) {
+		if (i != bidx && c6x_result_latency(&slots[i]) > bslots) {
+			hold |= 1u << i;
+		}
+	}
+	RzILOpEffect *eff = c6x_lift_packet(slots, n, addr, hold);
+	if (sample) {
+		eff = eff ? rz_il_op_new_seq(sample, eff) : sample;
+	}
+	RzILOpEffect *late = NULL;
+	ut64 next = C6X_PACKET_END(pkt);
+	for (ut8 k = 1; k <= bslots; k++) {
+		C6xPacketRef dp;
+		C6xInsn dins[C6X_FP_SLOTS];
+		size_t dn = c6x_decode_packet(analysis, c6x, next, dins, &dp);
+		if (!dn) {
+			break;
+		}
+		// does anything in this packet write after the branch resolves?
+		bool crosses = false;
+		for (size_t i = 0; i < dn; i++) {
+			crosses |= k + c6x_result_latency(&dins[i]) > bslots;
+		}
+		RzILOpEffect *de = c6x_lift_packet(dins, dn, dp.addr, 0);
+		if (de) {
+			if (crosses) {
+				late = late ? rz_il_op_new_seq(late, de) : de;
+			} else {
+				eff = eff ? rz_il_op_new_seq(eff, de) : de;
+			}
+		}
+		next = C6X_PACKET_END(dp);
+	}
+	// "next" now sits just past the last delay-slot packet
+	RzILOpEffect *xfer = c6x_deferred_transfer(&slots[bidx], pkt.slots[bidx].addr, sample != NULL, next);
+	if (xfer) {
+		eff = eff ? rz_il_op_new_seq(eff, xfer) : xfer;
+	}
+	for (size_t i = 0; i < n; i++) {
+		if (i == bidx || !(hold & (1u << i))) {
+			continue;
+		}
+		RzILOpEffect *held = c6x_lift(&slots[i], pkt.slots[i].addr);
+		if (held) {
+			late = late ? rz_il_op_new_seq(late, held) : held;
+		}
+	}
+	if (late) {
+		eff = eff ? rz_il_op_new_seq(eff, late) : late;
+	}
+	return eff ? eff : c6x_lift(insn, addr);
+}
 
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	Tms320Context *context = (Tms320Context *)analysis->plugin_data;
 
 	const char *cpu = rz_analysis_get_cpu(analysis);
+	const C6xArchDesc *c6x = c6x_desc_from_cpu(cpu);
+	if (c6x) {
+		C6xInsn insn;
+		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, &insn)) {
+			return -1;
+		}
+		c6x_fill_analysis(c6x, &insn, addr, op);
+		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par);
+		// The look-back only knows about the previous call, so seeking into the
+		// middle of an execute packet loses the "||". Rebuilding the packet from
+		// the image settles it for any address.
+		bool cont = false;
+		if (c6x_continues_packet(c6x_read_io, analysis, addr, analysis->big_endian, &cont)) {
+			insn.cont = cont;
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c6x_opex(&insn);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = c6x_lift_il(analysis, c6x, &insn, addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c6x_format(c6x, &insn, addr);
+		}
+		return op->size;
+	}
 	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
-	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
-		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
 		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
@@ -41,7 +337,6 @@ static bool tms320_analysis_init(void **user) {
 		return false;
 	}
 
-	context->c64x = tms320_c64x_new();
 	*user = context;
 	return true;
 }
@@ -50,7 +345,6 @@ static bool tms320_analysis_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	Tms320Context *context = (Tms320Context *)user;
 
-	tms320_c64x_free(context->c64x);
 	free(context);
 	return true;
 }
@@ -65,6 +359,14 @@ static bool is_c5000(const char *cpu) {
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p;
 	const char *cpu0 = rz_analysis_get_cpu(a);
+	// The tms320 arch has one cc sdb per bit width. Only the 32-bit file is
+	// ours to steer: its default (c55x) is wrong for the C6000 family, so point
+	// it at the C6000 EABI convention when a c6x cpu is selected. This callback
+	// runs on every cpu change, so switching back to a C5000 cpu restores c55x.
+	// The 16-bit file carries its own default for c2x/c5x and is left alone.
+	if (a->bits == 32) {
+		rz_analysis_set_cc_default(a, c6x_desc_from_cpu(cpu0) ? "c6x" : "c55x");
+	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
 		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
 		// 8-bit guard slices overlapping their parent), eight 16-bit auxiliary
@@ -315,12 +617,22 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr ac6    .40 674 0 # Accumulator 6\n"
 			"ctr ac7    .40 679 0 # Accumulator 7\n";
 	} else {
-		p =
+		// C6000: C62x/C67x expose 16 general registers per side (A0-A15,
+		// B0-B15); C64x and later widen this to 32 and add the C64x+ control-
+		// register file. Emit the extended half only for the variants that own
+		// it, so `arp` on a C62x/C67x reads back the true 16-register machine.
+		bool wide = !(cpu0 && (rz_str_casecmp(cpu0, "c62x") == 0 || rz_str_casecmp(cpu0, "c67x") == 0));
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_strbuf_append(&sb,
 			"=PC	pce1\n"
+			"=SP	b15\n"
+			"=BP	a15\n"
+			"=SR	csr\n"
 			"=A0	a4\n"
 			"=A1	b4\n"
 			"=A2	a6\n"
-			"=A3	a6\n"
+			"=A3	b6\n"
 			"=A4	a8\n"
 			"=A5	b8\n"
 			"=A6	a10\n"
@@ -343,25 +655,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	a12	.32	48 		0\n"
 			"gpr	a13	.32	52 		0\n"
 			"gpr	a14	.32	56 		0\n"
-			"gpr	a15	.32	60 		0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16	.32	64 		0\n"
-			"gpr	a17	.32	68 		0\n"
-			"gpr	a18	.32	72 		0\n"
-			"gpr	a19	.32	76 		0\n"
-			"gpr	a20	.32	80 		0\n"
-			"gpr	a21	.32	84 		0\n"
-			"gpr	a22	.32	88 		0\n"
-			"gpr	a23	.32	92 		0\n"
-			"gpr	a24	.32	96 		0\n"
-			"gpr	a25	.32	100 	0\n"
-			"gpr	a26	.32	104 	0\n"
-			"gpr	a27	.32	108 	0\n"
-			"gpr	a28	.32	112 	0\n"
-			"gpr	a29	.32	116 	0\n"
-			"gpr	a30	.32	120 	0\n"
-			"gpr	a31	.32	124 	0\n"
-#endif
+			"gpr	a15	.32	60 		0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16	.32	64 		0\n"
+				"gpr	a17	.32	68 		0\n"
+				"gpr	a18	.32	72 		0\n"
+				"gpr	a19	.32	76 		0\n"
+				"gpr	a20	.32	80 		0\n"
+				"gpr	a21	.32	84 		0\n"
+				"gpr	a22	.32	88 		0\n"
+				"gpr	a23	.32	92 		0\n"
+				"gpr	a24	.32	96 		0\n"
+				"gpr	a25	.32	100 	0\n"
+				"gpr	a26	.32	104 	0\n"
+				"gpr	a27	.32	108 	0\n"
+				"gpr	a28	.32	112 	0\n"
+				"gpr	a29	.32	116 	0\n"
+				"gpr	a30	.32	120 	0\n"
+				"gpr	a31	.32	124 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"gpr	b0	.32	128 	0\n"
 			"gpr	b1	.32	132 	0\n"
 			"gpr	b2	.32	136 	0\n"
@@ -377,25 +691,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	b12	.32	176 	0\n"
 			"gpr	b13	.32	180 	0\n"
 			"gpr	b14	.32	184 	0\n"
-			"gpr	b15	.32	188 	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16	.32	192 	0\n"
-			"gpr	b17	.32	196 	0\n"
-			"gpr	b18	.32	200 	0\n"
-			"gpr	b19	.32	204 	0\n"
-			"gpr	b20	.32	208 	0\n"
-			"gpr	b21	.32	212 	0\n"
-			"gpr	b22	.32	216 	0\n"
-			"gpr	b23	.32	220 	0\n"
-			"gpr	b24	.32	224 	0\n"
-			"gpr	b25	.32	228 	0\n"
-			"gpr	b26	.32	232 	0\n"
-			"gpr	b27	.32	236 	0\n"
-			"gpr	b28	.32	240 	0\n"
-			"gpr	b29	.32	244 	0\n"
-			"gpr	b30	.32	248 	0\n"
-			"gpr	b31	.32	252 	0\n"
-#endif
+			"gpr	b15	.32	188 	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16	.32	192 	0\n"
+				"gpr	b17	.32	196 	0\n"
+				"gpr	b18	.32	200 	0\n"
+				"gpr	b19	.32	204 	0\n"
+				"gpr	b20	.32	208 	0\n"
+				"gpr	b21	.32	212 	0\n"
+				"gpr	b22	.32	216 	0\n"
+				"gpr	b23	.32	220 	0\n"
+				"gpr	b24	.32	224 	0\n"
+				"gpr	b25	.32	228 	0\n"
+				"gpr	b26	.32	232 	0\n"
+				"gpr	b27	.32	236 	0\n"
+				"gpr	b28	.32	240 	0\n"
+				"gpr	b29	.32	244 	0\n"
+				"gpr	b30	.32	248 	0\n"
+				"gpr	b31	.32	252 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"ctr amr     .32 256 0  # Addressing mode register\n"
 			"ctr csr     .32 260 0  # Control status register\n"
 			"ctr gfpgfr  .32 264 0  # Galois field multiply control register\n"
@@ -406,63 +722,68 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr isr     .32 284 0  # Interrupt set register\n"
 			"ctr istp    .32 288 0  # Interrupt service table pointer register\n"
 			"ctr nrp     .32 292 0  # Nonmaskable interrupt return pointer register\n"
-			"ctr pce1    .32 296 0  # Program counter, E1 phase\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			// Control Register File Extensions (C64x+ DSP)
-			"ctr dier    .32 300 0  # (C64x+ only) Debug interrupt enable register\n"
-			"ctr dnum    .32 304 0  # (C64x+ only) DSP core number register\n"
-			"ctr ecr     .32 308 0  # (C64x+ only) Exception clear register\n"
-			"ctr efr     .32 312 0  # (C64x+ only) Exception flag register\n"
-			"ctr gplya   .32 316 0  # (C64x+ only) GMPY A-side polynomial register\n"
-			"ctr gplyb   .32 320 0  # (C64x+ only) GMPY B-side polynomial register\n"
-			"ctr ierr    .32 324 0  # (C64x+ only) Internal exception report register\n"
-			"ctr ilc     .32 328 0  # (C64x+ only) Inner loop count register\n"
-			"ctr itsr    .32 332 0  # (C64x+ only) Interrupt task state register\n"
-			"ctr ntsr    .32 336 0  # (C64x+ only) NMI/Exception task state register\n"
-			"ctr rep     .32 340 0  # (C64x+ only) Restricted entry point address register\n"
-			"ctr rilc    .32 344 0  # (C64x+ only) Reload inner loop count register\n"
-			"ctr ssr     .32 348 0  # (C64x+ only) Saturation status register\n"
-			"ctr tsch    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register\n"
-			"ctr tscl    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register\n"
-			"ctr tsr     .32 360 0  # (C64x+ only) Task state register\n"
-#endif
-			"gpr	a0:a1 	.64	364	0\n"
-			"gpr	a2:a3 	.64	368	0\n"
-			"gpr	a4:a5 	.64	372	0\n"
-			"gpr	a6:a7 	.64	376	0\n"
-			"gpr	a8:a9 	.64	380	0\n"
-			"gpr	a10:a11	.64	384	0\n"
-			"gpr	a12:a13	.64	388	0\n"
-			"gpr	a14:a15	.64	392	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16:a17	.64	396	0\n"
-			"gpr	a18:a19	.64	400	0\n"
-			"gpr	a20:a21	.64	404	0\n"
-			"gpr	a22:a23	.64	408	0\n"
-			"gpr	a24:a25	.64	412	0\n"
-			"gpr	a26:a27	.64	416	0\n"
-			"gpr	a28:a29	.64	420	0\n"
-			"gpr	a30:a31	.64	424	0\n"
-#endif
-			"gpr	b0:b1 	.64	428	0\n"
-			"gpr	b2:b3 	.64	432	0\n"
-			"gpr	b4:b5 	.64	436	0\n"
-			"gpr	b6:b7 	.64	440	0\n"
-			"gpr	b8:b9 	.64	444	0\n"
-			"gpr	b10:b11	.64	448	0\n"
-			"gpr	b12:b13	.64	452	0\n"
-			"gpr	b14:b15	.64	456	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16:b17	.64	460	0\n"
-			"gpr	b18:b19	.64	464	0\n"
-			"gpr	b20:b21	.64	468	0\n"
-			"gpr	b22:b23	.64	472	0\n"
-			"gpr	b24:b25	.64	476	0\n"
-			"gpr	b26:b27	.64	480	0\n"
-			"gpr	b28:b29	.64	484	0\n"
-			"gpr	b30:b31	.64	488	0\n"
-#endif
-			;
+			"ctr pce1    .32 296 0  # Program counter, E1 phase\n");
+		if (wide) {
+			// Control register file extensions; these exist only on C64x+ and later.
+			rz_strbuf_append(&sb,
+				"ctr dier    .32 300 0  # Debug interrupt enable register\n"
+				"ctr dnum    .32 304 0  # DSP core number register\n"
+				"ctr ecr     .32 308 0  # Exception clear register\n"
+				"ctr efr     .32 312 0  # Exception flag register\n"
+				"ctr gplya   .32 316 0  # GMPY A-side polynomial register\n"
+				"ctr gplyb   .32 320 0  # GMPY B-side polynomial register\n"
+				"ctr ierr    .32 324 0  # Internal exception report register\n"
+				"ctr ilc     .32 328 0  # Inner loop count register\n"
+				"ctr itsr    .32 332 0  # Interrupt task state register\n"
+				"ctr ntsr    .32 336 0  # NMI/Exception task state register\n"
+				"ctr rep     .32 340 0  # Restricted entry point address register\n"
+				"ctr rilc    .32 344 0  # Reload inner loop count register\n"
+				"ctr ssr     .32 348 0  # Saturation status register\n"
+				"ctr tsch    .32 352 0  # Time-stamp counter (high 32) register\n"
+				"ctr tscl    .32 356 0  # Time-stamp counter (low 32) register\n"
+				"ctr tsr     .32 360 0  # Task state register\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	a0:a1  	.64	0	0\n"
+			"gpr	a2:a3  	.64	8	0\n"
+			"gpr	a4:a5  	.64	16	0\n"
+			"gpr	a6:a7  	.64	24	0\n"
+			"gpr	a8:a9  	.64	32	0\n"
+			"gpr	a10:a11	.64	40	0\n"
+			"gpr	a12:a13	.64	48	0\n"
+			"gpr	a14:a15	.64	56	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16:a17	.64	64	0\n"
+				"gpr	a18:a19	.64	72	0\n"
+				"gpr	a20:a21	.64	80	0\n"
+				"gpr	a22:a23	.64	88	0\n"
+				"gpr	a24:a25	.64	96	0\n"
+				"gpr	a26:a27	.64	104	0\n"
+				"gpr	a28:a29	.64	112	0\n"
+				"gpr	a30:a31	.64	120	0\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	b0:b1  	.64	128	0\n"
+			"gpr	b2:b3  	.64	136	0\n"
+			"gpr	b4:b5  	.64	144	0\n"
+			"gpr	b6:b7  	.64	152	0\n"
+			"gpr	b8:b9  	.64	160	0\n"
+			"gpr	b10:b11	.64	168	0\n"
+			"gpr	b12:b13	.64	176	0\n"
+			"gpr	b14:b15	.64	184	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16:b17	.64	192	0\n"
+				"gpr	b18:b19	.64	200	0\n"
+				"gpr	b20:b21	.64	208	0\n"
+				"gpr	b22:b23	.64	216	0\n"
+				"gpr	b24:b25	.64	224	0\n"
+				"gpr	b26:b27	.64	232	0\n"
+				"gpr	b28:b29	.64	240	0\n"
+				"gpr	b30:b31	.64	248	0\n");
+		}
+		return rz_strbuf_drain_nofree(&sb);
 	}
 
 	// C55x+ (Ryujin) has 32 accumulators and 16 (extended) auxiliary registers,
@@ -552,8 +873,8 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 		KW("\x0e\x00\x0e\x00\x0e\x00", 6, "\xff\x00\xff\x00\xff\x00", 6);
 		/* two consecutive C55x+ pushes: 0e ?? 0e ?? */
 		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
-	} else if (cpu && rz_str_casecmp(cpu, "c64x") == 0) {
-		/* C64x VLIW: no reliable fixed prologue; leave to call-graph. */
+	} else if (c6x_desc_from_cpu(cpu)) {
+		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
 	} else {
 		/* plain C55x: two consecutive single pushes (0x38 0x38) */
 		KW("\x38\x38", 2, "\xff\xff", 2);
@@ -563,10 +884,13 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 }
 
 static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
-	// IL is provided for the C55x/C55x+ integer core and the C54x core; other
-	// CPUs (c64x, plain byte-mode) have no IL yet, so return NULL to leave the
-	// VM unconfigured.
+	// IL is provided for the C6000 (c6x) scalar core, the C55x/C55x+ integer
+	// core and the C54x core; other CPUs (plain byte-mode) have no IL yet, so
+	// return NULL to leave the VM unconfigured.
 	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (c6x_desc_from_cpu(cpu)) {
+		return tms320_c6x_il_config(analysis);
+	}
 	if (cpu && (rz_str_casecmp(cpu, "c55x+") == 0 || rz_str_casecmp(cpu, "c55x") == 0)) {
 		return tms320_c55x_plus_il_config(analysis);
 	}

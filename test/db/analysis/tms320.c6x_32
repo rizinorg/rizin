@@ -1,0 +1,500 @@
+NAME=c6x native decode, control-flow and compact-packet analysis (c674x)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c674x
+e scr.color=0
+s 0
+wx 2800000078000401240290011004000062030c0062030c20
+pd 7
+s 0x08
+wx 900a00d0
+ao~jump
+s 0
+wx 000000e1
+ao~^size:
+ao~^type:
+s 0x30
+wx 90ffff0f
+ao~jump
+s 0
+wx 62030c00
+ao~type:0
+wx 62030c20
+ao~type:0
+s 0
+wx 2402900128008002680080026e2cb0a114228c0100600000580f0d00000000e1
+pd 9
+s 0
+wx 2402900128008002680080026e2cb0a114228c0100600000580f0d00000000e1
+s 0x0e
+ao~^size:
+ao~^type:
+s 0
+wx 3c020000000000000000000000000000000000000000000000000000000021e0
+s 0
+ao~^size:
+ao~^type:
+pd 1
+s 0
+wx 326b0000000000000000000000000000000000000000000000000000000020e0
+s 0
+ao~^size:
+ao~^type:
+pd 1
+s 0
+wx baa50000000000000000000000000000000000000000000000000000008020e0
+s 0
+ao~^size:
+ao~^type:
+ao~^jump:
+s 0
+wx ef610000000000000000000000000000000000000000000000000000000020e0
+s 0
+ao~^size:
+ao~^type:
+pd 1
+s 0x38
+wx 21810820
+ao~^type:
+ao~^jump:
+s 0
+wx 004000100060001000000000
+pi 3
+s 0
+wx 016e28b2
+ao~family
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .s1 0x0,a0
+            0x00000004      add   .l1 a0,a1,a2
+            0x00000008      ldb   .d1 *a4,a3
+        ,=< 0x0000000c      b     .s1 0x20
+        |   0x00000010      b     .s2 b3
+        |   0x00000014      [b0]  b .s2 b3
+        |   0x00000018      nop
+jump: 0x00000054
+size: 4
+type: null
+jump: 0x0000001c
+type: ret
+type: cret
+            0x00000000      ldb   .d1 *a4,a3
+            0x00000004      mvk   .s1 0x0,a5
+            0x00000008      mvkh  .s1 0x0,a5
+            0x0000000c      nop   2
+            0x0000000e      add   .l1 a5,a3,a3
+            0x00000010      ldbu  .d1 *+a3[0x1],a3
+            0x00000014      nop   4
+            0x00000018      and   .l1 0x8,a3,a0
+            0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0001000b
+size: 2
+type: add
+size: 2
+type: load
+            0x00000000      ldb   .d1 *a4,a3
+size: 2
+type: mov
+            0x00000000      mvk   .s1 0x2b,a6                          ; '+'
+size: 2
+type: cjmp
+jump: 0x0000002c
+size: 2
+type: ret
+            0x00000000      bnop  .s2 b3,0x3
+type: cjmp
+jump: 0x00000040
+add .l1 a2,a0,a0
+add .l1x a0,b0,a0
+rint
+family: cpu
+EOF
+
+RUN
+
+NAME=c6x compact framing is gated off for c62x
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c62x
+wx 2402900128008002680080026e2cb0a114228c0100600000580f0d00000000e1
+s 0x0c
+ao~size
+EOF
+EXPECT=<<EOF
+size: 4
+EOF
+
+RUN
+
+NAME=c6x c64x branch, stack-pointer and loop analysis
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c64x
+e scr.color=0
+s 0x1c
+wx 217000c0
+ao~^type:
+ao~^jump:
+ao~^fail:
+s 0
+wx 52bcff07
+ao~^type:
+ao~^stackptr:
+EOF
+EXPECT=<<EOF
+type: cjmp
+jump: 0x0000000c
+fail: 0x00000020
+type: add
+stackptr: -136
+EOF
+
+RUN
+
+NAME=c6x mixed compact/32-bit packet: 32-bit p-bit and compact header decode
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c64xp
+e scr.color=0
+e asm.lines=false
+e asm.flags=false
+e asm.comments=false
+wx 4616c636f90400030818a701e2bbe8a5f8cba0c0f8ab8cd020a13690000020e1
+pd 10
+EOF
+EXPECT=<<EOF
+0x00000000      mv    .l1x b4,a0
+0x00000002      mv    .l1x b5,a1
+0x00000004      zero  .l1 a7:a6
+0x00000008      ||    extu .s1 a9,24,24,a3
+0x0000000c      extu  .s1 a7,0x18,0x18,a5
+0x0000000e      cmpeq .l1 a5,a3,a0
+0x00000010      [a0]  cmpltu .l1 a6,a8,a1
+0x00000014      [!a0] cmpltu .l1 a5,a3,a1
+0x00000018      [!a1] bnop .s1 0xd8,0x5
+0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0001001b
+EOF
+
+RUN
+
+NAME=c6x c66x SIMD/complex op decode and classification
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c66x
+e scr.color=0
+s 0
+wx 30a39803b8a09803f0cd9403b0821814f0871814008820160080030000e00100
+pd 8
+s 0
+wx 30a39803b8a09803f0cd9403b0821814f0871814008820160080030000e00100
+ao 8~^type:
+s 0
+wx b0a51804b0821814
+ao 2~family
+EOF
+EXPECT=<<EOF
+            0x00000000      dotp2 .m1 a5,a6,a7
+            0x00000004      add2  .l1 a5,a6,a7
+            0x00000008      shr2  .s1 a5,a6,a7
+            0x0000000c      cmpy  .m1 a4,a6,a9:a8
+            0x00000010      gmpy  .m1 a4,a6,a8
+            0x00000014      qmpy32 .m1 a7:a6:a5:a4,a11:a10:a9:a8,a15:a14:a13:a12
+            0x00000018      sploop 1
+            0x0000001c      idle
+type: mul
+type: add
+type: shr
+type: mul
+type: mul
+type: mul
+type: null
+type: nop
+family: fpu
+family: cpu
+EOF
+
+RUN
+
+NAME=c6x floating-point opcodes gate on the selected cpu
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+wx 000e0401
+e asm.cpu=c674x
+pi 1
+e asm.cpu=c62x
+pi 1
+EOF
+EXPECT=<<EOF
+mpysp .m1 a0,a1,a2
+invalid
+EOF
+RUN
+
+
+NAME=c6x native decode on a real C674x ELF (emulateme)
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+s 0x8138
+e asm.lines=false
+e asm.bytes=false
+pi 6
+EOF
+EXPECT=<<EOF
+mv .l1x b3,a2
+cmpeq .l1 0x2,a4,a0
+.fphead n, l, w, bu, nobr, nosat, 1000010b
+[a0] bnop .s1 sym._C_L11,0x5
+mvk .s2 0x17,b4
+|| mvk .s1 -0x722f,a4
+EOF
+RUN
+
+
+NAME=c6x opex operand detail: registers, pairs, quads, immediates, control and memory
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e scr.color=0
+wx 78000401
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx 28000000
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx e2030402
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx 10040000
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx e6a8041e
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx e4433c06
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+wx b63610c0
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+e analysis.cpu=c66x
+wx 00081014
+ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
+EOF
+EXPECT=<<EOF
+type: add
+opex:
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "a1"
+    - type: "reg"
+      value: "a2"
+type: mov
+opex:
+  operands:
+    - type: "imm"
+      value: 0
+    - type: "reg"
+      value: "a0"
+type: mov
+opex:
+  operands:
+    - type: "ctrl"
+      value: "csr"
+    - type: "reg"
+      value: "b4"
+type: jmp
+opex:
+  operands:
+    - type: "imm"
+      value: 32
+type: load
+opex:
+  operands:
+    - type: "mem"
+      base: "b1"
+      index: "b5"
+      scaled: true
+      mode: "neg-offset"
+    - type: "reg"
+      value: "b28"
+type: load
+opex:
+  operands:
+    - type: "mem"
+      base: "b15"
+      disp: 2
+      scaled: true
+      mode: "pos-offset"
+    - type: "regpair"
+      value: "a13:a12"
+type: store
+opex:
+  operands:
+    - type: "reg"
+      value: "b0"
+    - type: "mem"
+      base: "b4"
+      disp: 1
+      scaled: true
+      mode: "post-inc"
+type: mul
+opex:
+  operands:
+    - type: "regquad"
+      value: "a3:a2:a1:a0"
+    - type: "regquad"
+      value: "a7:a6:a5:a4"
+    - type: "regquad"
+      value: "a11:a10:a9:a8"
+EOF
+RUN
+
+NAME=c6x opex issue detail: functional unit, cross path and predicate
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e scr.color=0
+wx 78000401
+ao~opex:,unit:,cross:,cond_reg:,cond_zero:,operands:,type:,value:
+wx e4433c06
+ao~opex:,unit:,cross:,cond_reg:,cond_zero:,operands:,type:,value:
+wx 78000892
+ao~opex:,unit:,cross:,cond_reg:,cond_zero:,operands:,type:,value:
+wx 78000882
+ao~opex:,unit:,cross:,cond_reg:,cond_zero:,operands:,type:,value:
+e analysis.cpu=c66x
+wx 78100812
+ao~opex:,unit:,cross:,cond_reg:,cond_zero:,operands:,type:,value:
+EOF
+EXPECT=<<EOF
+type: add
+opex:
+  unit: "l1"
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "a1"
+    - type: "reg"
+      value: "a2"
+type: load
+opex:
+  unit: "d2"
+  operands:
+    - type: "mem"
+    - type: "regpair"
+      value: "a13:a12"
+type: add
+opex:
+  unit: "l1"
+  cond_reg: "a1"
+  cond_zero: true
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "a2"
+    - type: "reg"
+      value: "a4"
+type: add
+opex:
+  unit: "l1"
+  cond_reg: "a1"
+  cond_zero: false
+  operands:
+    - type: "reg"
+      value: "a0"
+    - type: "reg"
+      value: "a2"
+    - type: "reg"
+      value: "a4"
+type: add
+opex:
+  unit: "l1"
+  cross: true
+  operands:
+    - type: "regpair"
+      value: "a1:a0"
+    - type: "regpair"
+      value: "b3:b2"
+    - type: "regpair"
+      value: "a5:a4"
+EOF
+RUN
+
+NAME=c6x CALLP resolves its call target
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e scr.color=0
+wx 12080010
+pi 1
+ao~^type:
+ao~^jump:
+wx 90040010
+pi 1
+ao~^type:
+ao~^jump:
+EOF
+EXPECT=<<EOF
+callp .s2 0x40,b3
+type: call
+jump: 0x00000040
+callp .s1 0x24,a3
+type: call
+jump: 0x00000024
+EOF
+RUN
+
+NAME=c6x compact fetch packets from real C674x firmware
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx 58103d0232036e2c2fd64d1212fbde1f4602faa486423f025dbc6e6c2080c6ea @ 0
+s 0
+pd 6
+wx d31ae98620a1ca2e4dac6e6ce652be016e6cefa1f78c45dcb4823c020000a0e6 @ 0
+s 0
+pd 10
+EOF
+EXPECT=<<EOF
+0x00000000      add   .l1x 0x8,b15,a4
+0x00000004      mvk   .s1 0x20,a6
+0x00000006      nop   2
+0x00000008      addk  .s2 0x16,b4
+0x0000000a      ldnw  .d2 *b4,b4
+0x0000000c      ||    callp .s2 0xfffffffffffef7d8,b3
+0x00000000      mvk   .s2 0x58,b5                                      ; 'X'
+0x00000002      cmpeq .l2 b4,b5,b0
+0x00000004      [b0]  bnop .s1 0xfffffffffffffb28,0x5
+0x00000008      ldw   .d2 *+b15[0x1],a4
+0x0000000a      nop   4
+0x0000000c      ldw   .d2 *++b15[0x12],b3
+0x00000010      nop   4
+0x00000012      bnop  .s2 b3,0x5
+0x00000014      subaw .d2 b15,0x4,b15
+0x00000016      stw   .d2 b4,*+b15[0x2]
+EOF
+RUN
+
+NAME=c6x RzIL on a real C674x ELF (emulateme)
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+s 0x8148
+ao~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
+EOF
+RUN

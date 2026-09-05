@@ -233,6 +233,90 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap64(RZ_BORROW RzILOpBitVector *t) {
 	return op_OR_38;
 }
 
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+/**
+ * \brief Reverse the bit order of a 32-bit value.
+ *
+ * \param x The value to reverse.
+ *
+ * \return A pure expression where bit i of the result is bit 31 - i of \p x.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_bitrev32(RZ_OWN RzILOpBitVector *x) {
+#define REVSTAGE(vn, s, m) LOGOR(SHIFTL0(LOGAND(VARLP(vn), U32(m)), U32(s)), LOGAND(SHIFTR0(VARLP(vn), U32(s)), U32(m)))
+	return LET("_r0", x,
+		LET("_r1", REVSTAGE("_r0", 1, 0x55555555),
+			LET("_r2", REVSTAGE("_r1", 2, 0x33333333),
+				LET("_r3", REVSTAGE("_r2", 4, 0x0f0f0f0f),
+					LET("_r4", REVSTAGE("_r3", 8, 0x00ff00ff),
+						REVSTAGE("_r4", 16, 0x0000ffff))))));
+#undef REVSTAGE
+}
+
+/**
+ * \brief Population count of each byte of a 32-bit value.
+ *
+ * \param x The value whose bytes are counted.
+ *
+ * \return A pure expression where each result byte holds the number of set bits in the matching byte of \p x.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_popcount_bytes32(RZ_OWN RzILOpBitVector *x) {
+	return LET("_b0", x,
+		LET("_b1", SUB(VARLP("_b0"), LOGAND(SHIFTR0(VARLP("_b0"), U32(1)), U32(0x55555555))),
+			LET("_b2", ADD(LOGAND(VARLP("_b1"), U32(0x33333333)), LOGAND(SHIFTR0(VARLP("_b1"), U32(2)), U32(0x33333333))),
+				LOGAND(ADD(VARLP("_b2"), SHIFTR0(VARLP("_b2"), U32(4))), U32(0x0f0f0f0f)))));
+}
+
+/**
+ * \brief Deinterleave the bits of a 32-bit value.
+ *
+ * \param x The value to deinterleave.
+ *
+ * \return A pure expression where the even bits of \p x are packed into the low halfword of the result and the odd bits into the high halfword.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_deinterleave32(RZ_OWN RzILOpBitVector *x) {
+#define CMPR(vn, sh, m) LOGAND(LOGOR(VARLP(vn), SHIFTR0(VARLP(vn), U32(sh))), U32(m))
+	return LET("_dx", x,
+		LET("_e0", LOGAND(VARLP("_dx"), U32(0x55555555)),
+			LET("_e1", CMPR("_e0", 1, 0x33333333),
+				LET("_e2", CMPR("_e1", 2, 0x0f0f0f0f),
+					LET("_e3", CMPR("_e2", 4, 0x00ff00ff),
+						LET("_elo", CMPR("_e3", 8, 0x0000ffff),
+							LET("_o0", LOGAND(SHIFTR0(VARLP("_dx"), U32(1)), U32(0x55555555)),
+								LET("_o1", CMPR("_o0", 1, 0x33333333),
+									LET("_o2", CMPR("_o1", 2, 0x0f0f0f0f),
+										LET("_o3", CMPR("_o2", 4, 0x00ff00ff),
+											LET("_ohi", CMPR("_o3", 8, 0x0000ffff),
+												LOGOR(SHIFTL0(VARLP("_ohi"), U32(16)), VARLP("_elo")))))))))))));
+#undef CMPR
+}
+
+/**
+ * \brief Interleave the halfwords of a 32-bit value.
+ *
+ * \param x The value to interleave.
+ *
+ * \return A pure expression where the low halfword of \p x is spread into the even bit positions of the result and the high halfword into the odd ones.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_interleave32(RZ_OWN RzILOpBitVector *x) {
+#define SPRD(vn, sh, m) LOGAND(LOGOR(VARLP(vn), SHIFTL0(VARLP(vn), U32(sh))), U32(m))
+	return LET("_sx", x,
+		LET("_l0", LOGAND(VARLP("_sx"), U32(0x0000ffff)),
+			LET("_l1", SPRD("_l0", 8, 0x00ff00ff),
+				LET("_l2", SPRD("_l1", 4, 0x0f0f0f0f),
+					LET("_l3", SPRD("_l2", 2, 0x33333333),
+						LET("_llo", SPRD("_l3", 1, 0x55555555),
+							LET("_h0", LOGAND(SHIFTR0(VARLP("_sx"), U32(16)), U32(0x0000ffff)),
+								LET("_h1", SPRD("_h0", 8, 0x00ff00ff),
+									LET("_h2", SPRD("_h1", 4, 0x0f0f0f0f),
+										LET("_h3", SPRD("_h2", 2, 0x33333333),
+											LET("_hhi", SPRD("_h3", 1, 0x55555555),
+												LOGOR(SHIFTL0(VARLP("_hhi"), U32(1)), VARLP("_llo")))))))))))));
+#undef SPRD
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
 /**
  *  \brief [NE] not eq x y binary predicate for bitwise equality
  */

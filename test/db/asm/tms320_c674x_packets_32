@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+# Whole execute packets rather than single instructions. The parallel bit is
+# what groups them, so these cover the "||" continuation marker, the compact
+# fetch-packet header that carries the parallel bits for 16-bit slots, and the
+# packets a branch's delay slots are made of.
+
+# a packet that swaps two registers without a temporary
+d "mv .l1 a0,a1;|| mv .s1 a1,a0" d90f8000a0060400
+
+# a store and a load in parallel
+d "stw .d1 a1,*a4;|| ldw .d2 *b4,b1" 75029000e6029000
+
+# a predicate written in the same packet as its test
+d "mvk .l1 0,a0;|| [a0] mvk .s1 0x11,a5" 59a30000a80880c2
+
+# a load in a branch delay slot
+d "b .s1 0x40;nop;nop;nop;ldw .d1 *a4,a3;nop" 100800000000000000000000000000006402900100000000
+
+# a branch whose five delay slots all do work
+d "b .s1 0x40;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;nop" 10080000582084005820840058208400582084005820840000000000
+
+# a compact branch window taken from a C674x image
+d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0001000b" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
+
+# a full 32-byte fetch packet, compact header and mixed widths
+d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x130,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
