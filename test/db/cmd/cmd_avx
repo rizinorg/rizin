@@ -83,3 +83,16 @@ C 0x1000077c0 bl sym.imp.objc_msgSend
 0x1000077c0
 EOF
 RUN
+
+NAME=dlang virtual xrefs
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+avD @ 0x4d8d8
+avx sym.int_class_dlang.Rectangle.area
+EOF
+EXPECT=<<EOF
+Virtual xrefs to sym.int_class_dlang.Rectangle.area
+C 0x0004d8df call qword [rax+0x30]
+EOF
+RUN
