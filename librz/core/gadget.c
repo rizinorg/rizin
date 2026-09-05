@@ -1313,6 +1313,18 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 			asmop_str = new_str;
 		}
 		if (!context->ret_val) {
+			// gh-6359: optionally cap the bytes column. The hex string
+			// has two characters per byte, so a byte limit of N maps to
+			// 2*N hex chars before the truncation marker.
+			ut64 bytes_maxlen = rz_config_get_i(core->config, "gadget.bytes_maxlen");
+			if (bytes_maxlen > 0 && asmop_hex_str) {
+				size_t hex_cap = (size_t)bytes_maxlen * 2;
+				if (strlen(asmop_hex_str) > hex_cap) {
+					char *truncated = rz_str_newf("%.*s...", (int)hex_cap, asmop_hex_str);
+					free(asmop_hex_str);
+					asmop_hex_str = truncated;
+				}
+			}
 			rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
 		}
 		free(asmop_str);
