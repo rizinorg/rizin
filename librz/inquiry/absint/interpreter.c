@@ -47,20 +47,27 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		RzAbsIntVal *aval = val_domain(inst)->val_new_top();
 		if (!aval) {
 			rz_warn_if_reached();
-			ht_up_free(state->globals);
-			free(state);
-			return NULL;
+			goto err_globals;
 		}
 		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
 		if (!ht_up_insert(state->globals, djb2_reg_hash, aval)) {
 			RZ_LOG_ERROR("Failed to add %s to the global variable map.", rname);
-			ht_up_free(state->globals);
-			free(state);
+			goto err_globals;
 		}
 	}
 	state->locals = ht_up_new(NULL, NULL);
 	state->lets = ht_up_new(NULL, NULL);
 	return state;
+	RzIterator *it;
+	RzAbsIntVal **v;
+err_globals:
+	it = ht_up_as_iter(state->globals);
+	rz_iterator_foreach(it, v) {
+		val_domain(inst)->val_free(*v);
+	}
+	ht_up_free(state->globals);
+	free(state);
+	return NULL;
 }
 
 static void var_set_free(RzAbsIntInstance *inst, HtUP *vars) {
@@ -965,7 +972,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	case RZ_IL_OP_LOADW:
 	case RZ_IL_OP_LOAD: {
 		RzILOpPure *key = pure->code == RZ_IL_OP_LOAD ? pure->op.load.key : pure->op.loadw.key;
-		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? 0 : pure->op.loadw.mem;
+		RzILMemIndex mem_idx = pure->code == RZ_IL_OP_LOAD ? pure->op.load.mem : pure->op.loadw.mem;
 		EVAL_SUB_OR_RETURN(key, out);
 
 		// Hint: Instead of supporting only a single constant load addr and mapping all other
@@ -988,7 +995,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		}
 
 		report_yield_xref(ctx, 0, ctx->insn_addr, out, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
-		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? ctx->inst->il_ctx->config->mem_key_size : pure->op.loadw.n_bits;
+		size_t n_bits = pure->code == RZ_IL_OP_LOAD ? 8 : pure->op.loadw.n_bits;
 		EvalResult res = load_abstr_data(ctx->inst, mem_idx, &ld_addr, n_bits, out);
 		rz_bv_fini(&ld_addr);
 		if (res == EVAL_RESULT_BREAK) {
@@ -1061,7 +1068,7 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 }
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
-	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, false);
+	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, EVAL_RESULT_ERROR);
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) \
 	do { \
 		res = eval_effect(ctx, (op), insn_pkt_size); \
@@ -1078,6 +1085,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		dst = val_domain(ctx->inst)->val_new_top(); \
 		if (RZ_UNLIKELY(!(dst))) { \
 			res = EVAL_RESULT_ERROR; \
+			cleanup_local goto cleanup; \
 		} \
 		res = eval_pure(ctx, (op), (dst)); \
 		if (RZ_UNLIKELY(res != EVAL_RESULT_OK)) { \
@@ -1373,7 +1381,7 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 	// Prepare the initial state from the given entry point
 	// Hint: nothing speaks against supporting multiple entry points in a single run
 	RzAbsIntState *estate = rz_absint_state_new(inst);
-	if (!reset_state(inst, estate, entry_point)) {
+	if (!estate || !reset_state(inst, estate, entry_point)) {
 		rz_absint_state_free(inst, estate);
 		goto cleanup;
 	}

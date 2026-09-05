@@ -6441,7 +6441,7 @@ static char *cinquiry_choose_function_name(RzCore *core, ut64 addr) {
 		return rz_str_dup(flag->name);
 	}
 
-	return rz_str_newf("inq.0x%" PFMT64x "\n", addr);
+	return rz_str_newf("inq.0x%" PFMT64x, addr);
 }
 
 static void cinquiry_collect_entrypoints_all(RzCore *core, RzSetU *res) {
@@ -6544,7 +6544,7 @@ RZ_API bool rz_core_inquiry_analyze_at(RZ_NONNULL RzCore *core, ut64 addr) {
 	if (!entry_points) {
 		return false;
 	}
-	rz_set_u_add(entry_points, core->offset);
+	rz_set_u_add(entry_points, addr);
 	bool ret = cinquiry_absint_run(core, entry_points);
 	rz_set_u_free(entry_points);
 	return ret;

@@ -212,7 +212,7 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 		io_req->mem_idx,
 		rz_bv_to_ut64(io_req->addr));
 	RzILMemIndex mem_idx = io_req->mem_idx;
-	if (mem_idx > rz_vector_len(&il_ctx->memory)) {
+	if (mem_idx >= rz_vector_len(&il_ctx->memory)) {
 		rz_warn_if_reached();
 		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}

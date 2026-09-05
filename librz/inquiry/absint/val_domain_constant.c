@@ -143,6 +143,7 @@ static void eval_shift(bool right, RZ_NONNULL RZ_INOUT RzAbsIntVal *x, RZ_NONNUL
 		// - x is either all 1 or all 0 => any shift will produce the same result
 		// - y is 0 => fill_bit may be top and the result is still known to be just x
 		// but not sure if these are worth the extra control flow for practical purposes
+		val_set_top(x);
 		return;
 	}
 	bool (*shift)(RzBitVector *bv, ut32 size, bool fill_bit);
