@@ -1645,6 +1645,7 @@ static bool test_il_validate_pure_fcast_to_int() {
 	RzILOpPure *op = rz_il_op_new_fcast_int(
 		64,
 		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_float_from_f64(12.345));
 	RzILSortPure sort;
 	RzILValidateReport report = NULL;
@@ -1657,6 +1658,7 @@ static bool test_il_validate_pure_fcast_to_int() {
 	op = rz_il_op_new_fcast_int(
 		64,
 		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_bitv_from_ut64(64, 11));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "invalid");
@@ -1666,6 +1668,7 @@ static bool test_il_validate_pure_fcast_to_int() {
 	op = rz_il_op_new_fcast_int(
 		0,
 		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_CAST_OOB_TRUNCATE,
 		rz_il_op_new_float_from_f64(11.11));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "invalid");
@@ -1782,7 +1785,7 @@ static bool test_il_validate_float_rmode_argument() {
 	} while (0)
 
 	CHECK_INVALID_STATIC_RMODE(
-		rz_il_op_new_fcast_int(32, RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f)),
+		rz_il_op_new_fcast_int(32, RZ_FLOAT_RMODE_UNK, RZ_FLOAT_CAST_OOB_TRUNCATE, rz_il_op_new_float_from_f32(1.0f)),
 		"fcast_int");
 	CHECK_INVALID_STATIC_RMODE(
 		rz_il_op_new_fcast_float(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_UNK, rz_il_op_new_bitv_from_ut64(32, 1)),

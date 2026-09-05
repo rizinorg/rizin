@@ -308,7 +308,7 @@ static void il_op_graph_fabs(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL 
 
 static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastint *opx = &op->op.fcast_int;
-	char *value = rz_str_newf("fcast_int: %u", opx->length);
+	char *value = rz_str_newf("fcast_int: %u %d", opx->length, opx->oob_behavior);
 	if (!value) {
 		return;
 	}
@@ -321,7 +321,7 @@ static void il_op_graph_fcast_int(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, 
 
 static void il_op_graph_fcast_sint(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	RzILOpArgsFCastsint *opx = &op->op.fcast_sint;
-	char *value = rz_str_newf("fcast_sint: %u", opx->length);
+	char *value = rz_str_newf("fcast_sint: %u %d", opx->length, opx->oob_behavior);
 	if (!value) {
 		return;
 	}

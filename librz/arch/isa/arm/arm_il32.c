@@ -3682,9 +3682,9 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 		// VCVT.F32.S32/U32 <Sd>, <Sm>
 		RzILOpBitVector *from_val;
 		if (is_f2i) {
-			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ, RZ_FLOAT_CAST_OOB_SATURATE,
 						       BV2F(from_fmt, REG(1)))
-					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ, RZ_FLOAT_CAST_OOB_SATURATE,
 						       BV2F(from_fmt, REG(1)));
 		} else {
 			from_val = is_signed ? F2BV(SINT2F(to_fmt, RZ_FLOAT_RMODE_RNE,
@@ -3700,10 +3700,10 @@ static RzILOpEffect *try_as_int_cvt(cs_insn *insn, bool is_thumb, bool *success)
 	for (int i = 0; i < REG_WIDTH(0) / bv_sz; ++i) {
 		RzILOpBitVector *from_val;
 		if (is_f2i) {
-			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+			from_val = is_signed ? F2SINT(bv_sz, RZ_FLOAT_RMODE_RTZ, RZ_FLOAT_CAST_OOB_SATURATE,
 						       BV2F(from_fmt,
 							       read_reg_lane(REGID(1), i, fl_sz)))
-					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ,
+					     : F2INT(bv_sz, RZ_FLOAT_RMODE_RTZ, RZ_FLOAT_CAST_OOB_SATURATE,
 						       BV2F(from_fmt,
 							       read_reg_lane(REGID(1), i, fl_sz)));
 		} else {

@@ -687,7 +687,7 @@ static RzAnalysisLiftedILOp op_callx12(XtensaContext *ctx) {
 static RzAnalysisLiftedILOp op_ceil_s(XtensaContext *ctx) {
 	return SEQ3(
 		SETL("fres", FMUL(RZ_FLOAT_RMODE_RNA, FLOATV32(IREG(1)), F32(powf(2, IMM(2))))),
-		SETG(REGN(0), F2INT(32, RZ_FLOAT_RMODE_RNA, VARL("fres"))),
+		SETG(REGN(0), F2INT(32, RZ_FLOAT_RMODE_RNA, RZ_FLOAT_CAST_OOB_TRUNCATE, VARL("fres"))),
 		FSR_set(FSR_V | FSR_I, VARL("fres")));
 }
 
@@ -798,7 +798,7 @@ static RzAnalysisLiftedILOp op_float_s(XtensaContext *ctx) {
 static RzAnalysisLiftedILOp op_floor_s(XtensaContext *ctx) {
 	return SEQ3(
 		SETL("fres", FMUL(RZ_FLOAT_RMODE_RNA, FLOATV32(IREG(1)), F32(pow(2, IMM(2))))),
-		SETG(REGN(0), F2SINT(32, RZ_FLOAT_RMODE_RNA, VARL("fres"))),
+		SETG(REGN(0), F2SINT(32, RZ_FLOAT_RMODE_RNA, RZ_FLOAT_CAST_OOB_TRUNCATE, VARL("fres"))),
 		FSR_set(FSR_V | FSR_I, VARL("fres")));
 }
 
@@ -1638,7 +1638,7 @@ static RzAnalysisLiftedILOp op_syscall(XtensaContext *ctx) {
 // statusflags: VI
 static RzAnalysisLiftedILOp op_trunc_s(XtensaContext *ctx) {
 	return SEQ3(SETL("fres", FMUL(RZ_FLOAT_RMODE_RNA, FLOATV32(IREG(1)), F32(pow(2, IMM(2))))),
-		SETG(REGN(0), F2SINT(32, RZ_FLOAT_RMODE_RNA, VARL("fres"))),
+		SETG(REGN(0), F2SINT(32, RZ_FLOAT_RMODE_RNA, RZ_FLOAT_CAST_OOB_TRUNCATE, VARL("fres"))),
 		FSR_set(FSR_V | FSR_I, VARL("fres")));
 }
 
@@ -1682,7 +1682,7 @@ static RzAnalysisLiftedILOp op_un_s(XtensaContext *ctx) {
 // statusflags: VI
 static RzAnalysisLiftedILOp op_utrunc_s(XtensaContext *ctx) {
 	return SEQ3(SETL("fres", FMUL(RZ_FLOAT_RMODE_RNA, FLOATV32(IREG(1)), F32(pow(2, IMM(2))))),
-		SETG(REGN(0), F2INT(32, RZ_FLOAT_RMODE_RNA, VARL("fres"))),
+		SETG(REGN(0), F2INT(32, RZ_FLOAT_RMODE_RNA, RZ_FLOAT_CAST_OOB_TRUNCATE, VARL("fres"))),
 		FSR_set(FSR_V | FSR_I, VARL("fres")));
 }
 

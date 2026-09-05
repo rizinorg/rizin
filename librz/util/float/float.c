@@ -1779,9 +1779,9 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
  * \param mode rounding mode
  * \return unsigned bitvector converted from f
  */
-RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode) {
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
 	rz_return_val_if_fail(f, NULL);
-	return rz_float_cast_sint(f, length, mode);
+	return rz_float_cast_sint(f, length, mode, oob_behavior);
 }
 
 /**
@@ -1792,11 +1792,11 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length,
  * \param mode rounding mode
  * \return signed bitvector in 2's complement
  */
-RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode) {
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzBitVector *ret = rz_bv_new(length);
-	RzBitVector *tmp, *rounded;
+	RzBitVector *tmp = NULL, *rounded = NULL;
 	ut32 exp = float_exponent(f);
 	RzFloatFormat format = f->r;
 	bool sign = get_sign(f->s, format);
@@ -1806,14 +1806,31 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	ut32 total_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_TOTAL_LEN);
 	ut32 man_len = rz_float_get_format_info(format, RZ_FLOAT_INFO_MAN_LEN);
 
+	bool is_nan = rz_float_is_nan(f);
+	bool is_inf = rz_float_is_inf(f);
+
+	bool is_oob = false;
+	bool should_inc = false;
+	bool inexact = false;
+	RzBitVector *sig = NULL;
+	bool is_zero = false;
+
+	if (is_nan || is_inf) {
+		is_oob = true;
+	} else if (exp_no_bias > (st32)(length - 1)) {
+		is_oob = true;
+	}
+
+	if (is_oob && oob_behavior != RZ_FLOAT_CAST_OOB_TRUNCATE) {
+		goto handle_oob;
+	}
+
 	// rounding float to get an integer means
 	// we should try to reserve `exponent` bits of mantissa
 	// drop extra bits or append zeros
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
-	bool should_inc = false;
-	bool inexact = false;
-	RzBitVector *sig = rz_float_get_mantissa(f);
-	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
+	sig = rz_float_get_mantissa(f);
+	is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	// binary80 stores the integer bit explicitly in the mantissa; all other
 	// normal formats use a hidden bit that must be injected here
@@ -1859,6 +1876,46 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	}
 	rz_bv_free(tmp);
 	tmp = NULL;
+
+	if (!is_oob && rz_bv_len(rounded) >= length) {
+		ut32 r_len = rz_bv_len(rounded);
+		for (ut32 i = length; i < r_len; i++) {
+			if (rz_bv_get(rounded, i)) {
+				is_oob = true;
+				break;
+			}
+		}
+		if (!is_oob && rz_bv_get(rounded, length - 1)) {
+			bool lower_zeros = true;
+			for (ut32 i = 0; i < length - 1; i++) {
+				if (rz_bv_get(rounded, i)) {
+					lower_zeros = false;
+					break;
+				}
+			}
+			if (!sign || !lower_zeros) {
+				is_oob = true;
+			}
+		}
+	}
+
+handle_oob:
+	if (is_oob && oob_behavior != RZ_FLOAT_CAST_OOB_TRUNCATE) {
+		rz_bv_set_all(ret, false);
+		if (oob_behavior == RZ_FLOAT_CAST_OOB_INDEFINITE) {
+			rz_bv_set(ret, length - 1, true);
+		} else if (oob_behavior == RZ_FLOAT_CAST_OOB_SATURATE) {
+			if (is_nan) {
+				// NaN saturates to 0 for most architectures (like ARM)
+			} else if (sign) {
+				rz_bv_set(ret, length - 1, true); // min int
+			} else {
+				rz_bv_set_range(ret, 0, length - 2, true); // max int
+			}
+		}
+		if (rounded) { rz_bv_free(rounded); }
+		return ret;
+	}
 
 	// assume we r handling absolute value
 	// now for negative, convert it to 2's complement

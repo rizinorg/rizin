@@ -166,7 +166,7 @@ IL_LIFTER(cvtsi2ss) {
 	do { \
 		RzILOpFloat *f = x86_il_get_scalar_floating_op(ins->operands[1], (fmt), analysis->bits, pc); \
 		ut32 width = ins->operands[0].size * BITS_PER_BYTE; \
-		return x86_il_set_op(0, F2SINT(width, rmode, f)); \
+		return x86_il_set_op(0, F2SINT(width, rmode, RZ_FLOAT_CAST_OOB_INDEFINITE, f)); \
 	} while (0)
 
 /**

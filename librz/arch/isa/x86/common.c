@@ -1165,7 +1165,7 @@ RZ_IPI ILPureEffectPair x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBit
 }
 
 RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat *val) {
-	return F2SINT(width, rmode, val);
+	return F2SINT(width, rmode, RZ_FLOAT_CAST_OOB_INDEFINITE, val);
 }
 
 /**

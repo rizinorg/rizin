@@ -399,6 +399,7 @@ typedef struct rz_il_op_arg_float_rmode_t {
 typedef struct rz_il_op_args_float_cast_int_t {
 	ut32 length;
 	RzILOpArgFloatRMode rmode;
+	RzFloatCastOobBehavior oob_behavior;
 	RzILOpFloat *f;
 } RzILOpArgsFCastInt;
 
@@ -818,12 +819,12 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fneg(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_is_fpos(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fneg(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fabs(RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
-RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RzFloatCastOobBehavior oob_behavior, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float_dyn_rmode(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat_dyn_rmode(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);

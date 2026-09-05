@@ -1634,7 +1634,7 @@ bool f32_ieee_cast_test(void) {
 	// test cast_sint only, since cast_int is a wrapper of cast_sint
 	fval = rz_float_new_from_f32(1.0f);
 	expect_bv = rz_bv_new_one(32);
-	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 1.0f)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1643,7 +1643,7 @@ bool f32_ieee_cast_test(void) {
 	// 2-2. normal
 	fval = rz_float_new_from_f32(12345678.0f);
 	expect_bv = rz_bv_new_from_ut64(32, 12345678);
-	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 12345678.0f)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1651,7 +1651,7 @@ bool f32_ieee_cast_test(void) {
 
 	fval = rz_float_new_from_f32(1.125f);
 	expect_bv = rz_bv_new_from_ut64(32, 2);
-	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RTP);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RTP, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "sticky bit rounds 1.125f toward positive infinity");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1660,7 +1660,7 @@ bool f32_ieee_cast_test(void) {
 	// 2-3. huge
 	fval = rz_float_new_from_f32(1.2345679E8f);
 	expect_bv = rz_bv_new_from_ut64(32, 123456792);
-	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 1.2345679E8)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1669,7 +1669,7 @@ bool f32_ieee_cast_test(void) {
 	// 2-4. negative
 	fval = rz_float_new_from_f32(-1.0f);
 	expect_bv = rz_bv_new_from_ut64(32, 0xFFFFFFFF);
-	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -1.0f)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1678,7 +1678,7 @@ bool f32_ieee_cast_test(void) {
 	// 2-5 normal negative
 	fval = rz_float_new_from_f32(-1234.0f);
 	expect_bv = rz_bv_new_from_ut64(64, 0xFFFFFFFFFFFFFB2E);
-	cast_bv = rz_float_cast_sint(fval, 64, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 64, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -1234.0f)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1687,7 +1687,7 @@ bool f32_ieee_cast_test(void) {
 	// 2-6 pure small number
 	fval = rz_float_new_from_f32(0.119823f);
 	expect_bv = rz_bv_new_zero(16);
-	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 0.119823f), rne");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1695,7 +1695,7 @@ bool f32_ieee_cast_test(void) {
 
 	fval = rz_float_new_from_f32(0.119823f);
 	expect_bv = rz_bv_new_one(16);
-	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RTP);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RTP, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint 0.119823f), rtp");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1705,7 +1705,7 @@ bool f32_ieee_cast_test(void) {
 	fval = rz_float_new_from_f32(-0.119823f);
 	expect_bv = rz_bv_new_zero(16);
 	rz_bv_toggle_all(expect_bv);
-	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RTN);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RTN, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.119823f)");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1714,7 +1714,7 @@ bool f32_ieee_cast_test(void) {
 	// Cast (negative) zero
 	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, true);
 	expect_bv = rz_bv_new_zero(16);
-	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1723,7 +1723,7 @@ bool f32_ieee_cast_test(void) {
 	// Cast zero
 	fval = rz_float_new_zero(RZ_FLOAT_IEEE754_BIN_32, false);
 	expect_bv = rz_bv_new_zero(16);
-	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(fval, 16, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint -0.0f), rne");
 	rz_float_free(fval);
 	rz_bv_free(cast_bv);
@@ -1982,7 +1982,7 @@ bool f80_ieee_cast_sint_test(void) {
 	// explicitly, unlike other IEEE-754 formats where it is implicit for normals
 	RzFloat *f80_val = new_f80_from_bytes("\x40\x00\xc0\x00\x00\x00\x00\x00\x00\x00");
 	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 3);
-	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 
 	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 3.0 in ieee754-bin80");
 
@@ -1996,7 +1996,7 @@ bool f80_ieee_cast_sint_test(void) {
 bool f80_ieee_cast_sint_large_test(void) {
 	RzFloat *f80_val = new_f80_from_bytes("\x40\x1b\x80\x00\x00\x00\x00\x00\x00\x00");
 	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 1ULL << 28);
-	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	RzBitVector *cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^28 in ieee754-bin80");
 	rz_float_free(f80_val);
 	rz_bv_free(expected_bv);
@@ -2004,7 +2004,7 @@ bool f80_ieee_cast_sint_large_test(void) {
 
 	f80_val = new_f80_from_bytes("\x40\x1c\x80\x00\x00\x00\x00\x00\x00\x00");
 	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 29);
-	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^29 in ieee754-bin80");
 	rz_float_free(f80_val);
 	rz_bv_free(expected_bv);
@@ -2012,7 +2012,7 @@ bool f80_ieee_cast_sint_large_test(void) {
 
 	f80_val = new_f80_from_bytes("\x40\x1d\x80\x00\x00\x00\x00\x00\x00\x00");
 	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 30);
-	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^30 in ieee754-bin80");
 	rz_float_free(f80_val);
 	rz_bv_free(expected_bv);
@@ -2020,7 +2020,7 @@ bool f80_ieee_cast_sint_large_test(void) {
 
 	f80_val = new_f80_from_bytes("\x40\x1e\x80\x00\x00\x00\x00\x00\x00\x00");
 	expected_bv = rz_bv_new_from_ut64(32, 1ULL << 31);
-	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE);
+	cast_bv = rz_float_cast_sint(f80_val, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_TRUNCATE);
 	mu_assert_true(rz_bv_eq(expected_bv, cast_bv), "cast-sint preserves 2^31 in ieee754-bin80");
 	rz_float_free(f80_val);
 	rz_bv_free(expected_bv);
