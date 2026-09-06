@@ -159,6 +159,36 @@ bool test_rz_strbuf_initf(void) {
 	mu_end;
 }
 
+bool test_rz_strbuf_append_signed_hex(void) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_append_signed_hex(&sb, 0);
+	mu_assert_streq(rz_strbuf_get(&sb), "0x0", "zero");
+	rz_strbuf_fini(&sb);
+
+	rz_strbuf_init(&sb);
+	rz_strbuf_append_signed_hex(&sb, 0x2a);
+	mu_assert_streq(rz_strbuf_get(&sb), "0x2a", "positive");
+	rz_strbuf_fini(&sb);
+
+	rz_strbuf_init(&sb);
+	rz_strbuf_append_signed_hex(&sb, -8);
+	mu_assert_streq(rz_strbuf_get(&sb), "-0x8", "the sign goes in front of the prefix");
+	rz_strbuf_fini(&sb);
+
+	rz_strbuf_init(&sb);
+	rz_strbuf_append_signed_hex(&sb, ST64_MIN);
+	mu_assert_streq(rz_strbuf_get(&sb), "-0x8000000000000000", "ST64_MIN negates without overflow");
+	rz_strbuf_fini(&sb);
+
+	rz_strbuf_init(&sb);
+	rz_strbuf_append(&sb, "n=");
+	rz_strbuf_append_signed_hex(&sb, -1);
+	mu_assert_streq(rz_strbuf_get(&sb), "n=-0x1", "appends rather than replaces");
+	rz_strbuf_fini(&sb);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_strbuf_append);
 	mu_run_test(test_rz_strbuf_string);
@@ -168,6 +198,7 @@ bool all_tests() {
 	mu_run_test(test_rz_strbuf_set);
 	mu_run_test(test_rz_strbuf_setf);
 	mu_run_test(test_rz_strbuf_initf);
+	mu_run_test(test_rz_strbuf_append_signed_hex);
 	return tests_passed != tests_run;
 }
 

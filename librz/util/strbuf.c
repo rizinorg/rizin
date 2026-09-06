@@ -263,6 +263,24 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 	return true;
 }
 
+/**
+ * \brief Appends a signed number in hex, with the sign in front of the base
+ * prefix so it reads as a number rather than as a two's-complement pattern.
+ *
+ * \param sb The RzStrBuf to append to.
+ * \param n The value to append, e.g. -32 becomes "-0x20".
+ *
+ * \return true if the value was appended.
+ */
+RZ_API bool rz_strbuf_append_signed_hex(RzStrBuf *sb, st64 n) {
+	rz_return_val_if_fail(sb, false);
+	if (n < 0) {
+		// negate as ut64 so ST64_MIN does not overflow
+		return rz_strbuf_appendf(sb, "-0x%" PFMT64x, -(ut64)n);
+	}
+	return rz_strbuf_appendf(sb, "0x%" PFMT64x, (ut64)n);
+}
+
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
