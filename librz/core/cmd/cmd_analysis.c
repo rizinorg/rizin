@@ -396,14 +396,14 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!iter) {
+	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
+	if (!iter.next) {
 		return;
 	}
 	pj_a(pj);
 
 	RzCoreDecodedBytes *cdb;
-	rz_iterator_foreach(iter, cdb) {
+	rz_iterator_foreach(&iter, cdb) {
 		if (!cdb) {
 			break;
 		}
@@ -476,7 +476,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 	pj_end(pj);
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 }
 
 #define PRINTF_LN(k, fmt, arg) \
@@ -506,8 +506,8 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
-	RzIterator *iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!iter) {
+	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
+	if (!iter.next) {
 		return;
 	}
 
@@ -515,7 +515,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 	const char *color = use_color ? core->cons->context->pal.label : "";
 
 	RzCoreDecodedBytes *cdb;
-	rz_iterator_foreach(iter, cdb) {
+	rz_iterator_foreach(&iter, cdb) {
 		RzAnalysisOp *op = &cdb->an_op;
 
 		const char *esilstr = RZ_STRBUF_SAFEGET(&op->esil);
@@ -588,7 +588,7 @@ static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, 
 		PRINTF_LN_STR("stackop", op->stackop != RZ_ANALYSIS_STACK_NULL ? rz_analysis_stackop_tostring(op->stackop) : NULL);
 		PRINTF_LN_NOT("stackptr", "%" PFMT64d "\n", op->stackptr, 0);
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 }
 
 #undef PJ_KS
@@ -5456,13 +5456,13 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
  */
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty, bool unicode) {
 	rz_return_if_fail(core);
-	RzIterator *iter = rz_core_analysis_op_chunk_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
-	if (!iter) {
+	RzIterator iter = rz_core_analysis_op_chunk_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
+	if (!iter.next) {
 		return;
 	}
 
-	rz_core_il_cons_print(core, iter, pretty, unicode);
-	rz_iterator_free(iter);
+	rz_core_il_cons_print(core, &iter, pretty, unicode);
+	rz_iterator_fini(&iter);
 }
 
 RZ_IPI RzCmdStatus rz_analyze_n_ins_il_handler(RzCore *core, int argc, const char **argv) {

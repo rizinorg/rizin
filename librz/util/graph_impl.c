@@ -358,11 +358,16 @@ static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
 	state->cur_id = 0;
 	state->vec = vec;
 
-	RzIterator *iter = rz_iterator_new(
-		(rz_iterator_next_cb)pvecotr_iter_next,
-		NULL,
-		free,
-		state);
+	/**
+	 * RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)pvecotr_iter_next, NULL, free, state);
+	 * Replaced with explicit allocation instead of rz_iterator_new
+	 * because this function must keep returning RzIterator* for graph interface compatibility.
+	 */
+	RzIterator *iter = RZ_NEW0(RzIterator);
+	iter->next = (rz_iterator_next_cb)pvecotr_iter_next;
+	iter->free = NULL;
+	iter->free_u = free;
+	iter->u = state;
 	return iter;
 }
 
@@ -811,11 +816,16 @@ static RzIterator *matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*
 	state->cur = 0;
 	state->scan_out = scan_out;
 
-	RzIterator *iter = rz_iterator_new(
-		(rz_iterator_next_cb)matrix_edge_iter_next,
-		NULL,
-		free,
-		state);
+	/**
+	 * RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)matrix_edge_iter_next, NULL, free, state);
+	 * Replaced with explicit allocation instead of rz_iterator_new
+	 * because of the same reason as pvector_as_iter() above.
+	 */
+	RzIterator *iter = RZ_NEW0(RzIterator);
+	iter->next = (rz_iterator_next_cb)matrix_edge_iter_next;
+	iter->free = NULL;
+	iter->free_u = free;
+	iter->u = state;
 	return iter;
 }
 
@@ -1197,7 +1207,8 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph /*<NodeType *, EdgeType *>*
 					e->data = NULL;
 				}
 			}
-			rz_iterator_free(edge_it);
+			rz_iterator_fini(edge_it);
+			free(edge_it);
 		}
 	}
 
@@ -1270,7 +1281,8 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 					e->data = NULL;
 				}
 			}
-			rz_iterator_free(edge_it);
+			rz_iterator_fini(edge_it);
+			free(edge_it);
 		}
 	}
 
@@ -1711,7 +1723,7 @@ static void neighbour_iter_free(void *user_data) {
 	if (!state) {
 		return;
 	}
-	rz_iterator_free(state->edge_iter);
+	rz_iterator_fini(state->edge_iter);
 	state->edge_iter = NULL;
 	free(state);
 }
@@ -1735,11 +1747,16 @@ static RZ_OWN RzIterator *as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool u
 	state->edge_iter = edge_iter;
 	state->use_from = use_from;
 
-	RzIterator *iter = rz_iterator_new(
-		neighbour_iter_next,
-		NULL,
-		neighbour_iter_free,
-		state);
+	/**
+	 * RzIterator *iter = rz_iterator_new(neighbour_iter_next, NULL, neighbour_iter_free, state);
+	 * Replaced with explicit allocation instead of rz_iterator_new
+	 * because of the same reason as pvector_as_iter() above.
+	 */
+	RzIterator *iter = RZ_NEW0(RzIterator);
+	iter->next = neighbour_iter_next;
+	iter->free = NULL;
+	iter->free_u = neighbour_iter_free;
+	iter->u = state;
 	return iter;
 }
 
@@ -1758,7 +1775,8 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType
 	}
 	RzIterator *iter = as_neighbour_iter(edge_iter, false);
 	if (!iter) {
-		rz_iterator_free(edge_iter);
+		rz_iterator_fini(edge_iter);
+		free(edge_iter);
 		return NULL;
 	}
 	return iter;
@@ -1779,7 +1797,8 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType 
 	}
 	RzIterator *iter = as_neighbour_iter(edge_iter, true);
 	if (!iter) {
-		rz_iterator_free(edge_iter);
+		rz_iterator_fini(edge_iter);
+		free(edge_iter);
 		return NULL;
 	}
 	return iter;
@@ -1808,12 +1827,14 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph /*<NodeType *, EdgeType
 	ut64 i = 0;
 	while ((edge = rz_iterator_next(edge_iter)) != NULL) {
 		if (i == nth) {
-			rz_iterator_free(edge_iter);
+			rz_iterator_fini(edge_iter);
+			free(edge_iter);
 			return out_neighbor ? edge->to : edge->from;
 		}
 		i += 1;
 	}
-	rz_iterator_free(edge_iter);
+	rz_iterator_fini(edge_iter);
+	free(edge_iter);
 	return NULL;
 }
 
@@ -1854,7 +1875,8 @@ RZ_API ut64 rz_graph_out_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, c
 		rz_iterator_foreach(it, e) {
 			count += 1;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 	return count;
 }
@@ -1868,7 +1890,8 @@ RZ_API ut64 rz_graph_in_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, co
 		rz_iterator_foreach(it, e) {
 			count += 1;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 	return count;
 }
@@ -2190,9 +2213,11 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(
 				rz_strbuf_append(sb, "\n");
 			}
 		}
-		rz_iterator_free(out_edges);
+		rz_iterator_fini(out_edges);
+		free(out_edges);
 	}
-	rz_iterator_free(nodes);
+	rz_iterator_fini(nodes);
+	free(nodes);
 	rz_strbuf_append(sb, "}\n");
 	return rz_strbuf_drain(sb);
 }

@@ -137,7 +137,7 @@ RZ_API char *rz_asm_mnemonics(const RzAsm *a, int id, bool json);
 RZ_API int rz_asm_mnemonics_byname(const RzAsm *a, const char *name);
 RZ_API bool rz_asm_plugin_add(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
-RZ_API RZ_OWN RzIterator *rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a);
+RZ_API RZ_OWN RzIterator rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a);
 RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL const RzAsm *a);
 RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);

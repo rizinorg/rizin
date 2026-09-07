@@ -393,12 +393,12 @@ static bool any_get(void *user, void *p) {
 	case RZ_CONFIG_VAR_TYPE_SET: {
 		RzSetS **value = p;
 		RzSetS *dup = rz_set_s_new(HT_STR_DUP);
-		RzIterator *iter = rz_set_s_as_iter(bt->set_val_set);
+		RzIterator iter = rz_set_s_as_iter(bt->set_val_set);
 		const char **elem;
-		rz_iterator_foreach(iter, elem) {
+		rz_iterator_foreach(&iter, elem) {
 			rz_set_s_add(dup, *elem);
 		}
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
 		*value = dup;
 		bt->get++;
 		return true;

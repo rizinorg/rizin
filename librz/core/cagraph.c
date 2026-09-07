@@ -262,7 +262,8 @@ RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 		RzANode *an = rz_graph_node_get_data_mut(gn);
 		rz_core_agraph_add_shortcut(core, ag, an, an->offset, an->title);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 	return true;
 }
 

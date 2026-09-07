@@ -79,12 +79,12 @@ RZ_IPI RZ_OWN RzSetS *rz_config_dup_set(RZ_NULLABLE const RzSetS *set) {
 		return safe_set;
 	}
 
-	RzIterator *it = rz_set_s_as_iter(set);
+	RzIterator it = rz_set_s_as_iter(set);
 	const char **elem;
-	rz_iterator_foreach(it, elem) {
+	rz_iterator_foreach(&it, elem) {
 		rz_set_s_add(safe_set, *elem);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return safe_set;
 }
 
@@ -525,12 +525,12 @@ RZ_API bool rz_config_var_as_json(RZ_NONNULL const RzConfigVar *var, RZ_NONNULL 
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
 		const char **value;
 		RzSetS *set = rz_config_var_get_set(var);
-		RzIterator *it = rz_set_s_as_iter(set);
+		RzIterator it = rz_set_s_as_iter(set);
 		pj_ka(pj, key);
-		rz_iterator_foreach(it, value) {
+		rz_iterator_foreach(&it, value) {
 			pj_s(pj, *value);
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		pj_end(pj);
 		rz_set_s_free(set);
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_ITV)) {
@@ -565,15 +565,15 @@ RZ_API RZ_OWN char *rz_config_var_as_string(RZ_NONNULL const RzConfigVar *var) {
 	} else if (rz_config_var_has_type(var, RZ_CONFIG_VAR_TYPE_SET)) {
 		RzSetS *set = rz_config_var_get_set(var);
 		RzStrBuf *sb = rz_strbuf_new("");
-		RzIterator *it = rz_set_s_as_iter(set);
+		RzIterator it = rz_set_s_as_iter(set);
 		const char **val;
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			if (rz_strbuf_length(sb) > 0) {
 				rz_strbuf_append(sb, ",");
 			}
 			rz_strbuf_append(sb, *val);
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		char *value = rz_strbuf_drain(sb);
 		rz_set_s_free(set);
 		return value;
@@ -887,14 +887,14 @@ static bool config_var_has_option(RzConfigVar *var, const char *value) {
 	value = rz_str_get(value);
 
 	const char **opt;
-	RzIterator *it = rz_set_s_as_iter(var->options);
-	rz_iterator_foreach(it, opt) {
+	RzIterator it = rz_set_s_as_iter(var->options);
+	rz_iterator_foreach(&it, opt) {
 		if (RZ_STR_EQ(*opt, value)) {
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			return true;
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return false;
 }
 

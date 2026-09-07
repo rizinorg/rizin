@@ -104,7 +104,8 @@ static void dfs_push_neighbours(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraph
 		}
 	}
 
-	rz_iterator_free(edge_iter);
+	rz_iterator_fini(edge_iter);
+	free(edge_iter);
 }
 
 /**
@@ -303,14 +304,16 @@ static void find_back_edges_push(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGrap
 	if (cmp) {
 		RzPVector /*<RzGraphEdge *>*/ *edges_vec = rz_pvector_new(NULL);
 		if (!edges_vec) {
-			rz_iterator_free(edge_iter);
+			rz_iterator_fini(edge_iter);
+			free(edge_iter);
 			return;
 		}
 		RzGraphEdge *e;
 		rz_iterator_foreach(edge_iter, e) {
 			rz_pvector_push(edges_vec, e);
 		}
-		rz_iterator_free(edge_iter);
+		rz_iterator_fini(edge_iter);
+		free(edge_iter);
 		if (rz_pvector_len(edges_vec) > 1) {
 			rz_pvector_sort(edges_vec, (RzPVectorComparator)cmp, user);
 		}
@@ -334,7 +337,8 @@ static void find_back_edges_push(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGrap
 				rz_stack_push(stack, entry);
 			}
 		}
-		rz_iterator_free(edge_iter);
+		rz_iterator_fini(edge_iter);
+		free(edge_iter);
 	}
 }
 
@@ -518,7 +522,8 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 			rz_iterator_foreach(it, e) {
 				rz_pvector_push(root_nb, e->to);
 			}
-			rz_iterator_free(it);
+			rz_iterator_fini(it);
+			free(it);
 		}
 		TarjanFrame *rf = tarjan_frame_new(root, root_nb);
 		if (!rf) {
@@ -550,7 +555,8 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 						rz_iterator_foreach(vit, e) {
 							rz_pvector_push(v_nb, e->to);
 						}
-						rz_iterator_free(vit);
+						rz_iterator_fini(vit);
+						free(vit);
 					}
 					TarjanFrame *vf = tarjan_frame_new(v, v_nb);
 					if (!vf) {

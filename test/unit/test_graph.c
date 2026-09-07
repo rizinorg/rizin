@@ -43,7 +43,8 @@ static bool test_legacy_graph(void) {
 			count++;
 		}
 		mu_assert_eq(count, 1, "get_neighbours.1.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 
 	RzGraphNode *gn3 = NULL;
@@ -61,7 +62,8 @@ static bool test_legacy_graph(void) {
 			count++;
 		}
 		mu_assert_eq(count, 2, "get_neighbours.2.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 
 	RzGraphNode *gn4 = NULL;
@@ -90,7 +92,8 @@ static bool test_legacy_graph(void) {
 			count++;
 		}
 		mu_assert_eq(count, 10, "get_all_nodes.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 
 	rz_graph_add_edge(g, gn2, gn3, NULL);
@@ -139,7 +142,8 @@ static bool test_legacy_graph(void) {
 			count++;
 		}
 		mu_assert_eq(count, 2, "in_nodes.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 	}
 
 	// All neighbors of gn3: in={gn, gn2} + out={gn5}
@@ -151,13 +155,15 @@ static bool test_legacy_graph(void) {
 			mu_assert_true(nb == gn || nb == gn2, "all_neighbours.in");
 			count++;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 		it = rz_graph_out_neighbors(g, gn3);
 		rz_iterator_foreach(it, nb) {
 			mu_assert_ptreq(nb, gn5, "all_neighbours.out");
 			count++;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(it);
+		free(it);
 		mu_assert_eq(count, 3, "all_neighbours.count");
 	}
 

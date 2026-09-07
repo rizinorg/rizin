@@ -47,7 +47,8 @@ bool test_inherit_graph_creation() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 1:
@@ -67,7 +68,8 @@ bool test_inherit_graph_creation() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 2:
@@ -87,7 +89,8 @@ bool test_inherit_graph_creation() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 3:
@@ -98,7 +101,9 @@ bool test_inherit_graph_creation() {
 			break;
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(iter);
+	free(iter);
+
 	rz_core_free(core);
 	rz_graph_free(graph);
 	mu_end;

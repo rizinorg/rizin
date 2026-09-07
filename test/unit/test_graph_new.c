@@ -285,7 +285,8 @@ static bool test_graph_in_out_edges(void) {
 		count++;
 	}
 	mu_assert_eq(count, 3, "out_edges.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// in edges
 	rz_graph_add_edge(g, n2, n4, NULL);
@@ -300,7 +301,8 @@ static bool test_graph_in_out_edges(void) {
 		count++;
 	}
 	mu_assert_eq(count, 3, "in_edges.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// clean
 	rz_graph_free(g);
@@ -333,7 +335,8 @@ static bool test_graph_in_out_neighbors(void) {
 	}
 	mu_assert_eq(count, 2, "out_neighbors.count");
 
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// Get in neighbours
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -347,7 +350,8 @@ static bool test_graph_in_out_neighbors(void) {
 		count++;
 	}
 	mu_assert_eq(count, 2, "in_neighbors.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	rz_graph_free(g);
 	mu_end;
@@ -510,7 +514,9 @@ static bool test_graph_get_nodes(void) {
 	}
 	mu_assert_eq(count, 3, "nodes.count");
 
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
+
 	rz_graph_free(g);
 	mu_end;
 }
@@ -838,7 +844,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 		count++;
 	}
 	mu_assert_eq(count, 3, "out_edges.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// in edges
 	rz_graph_add_edge(g, n2, n4, NULL);
@@ -853,7 +860,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 		count++;
 	}
 	mu_assert_eq(count, 3, "in_edges.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// clean
 	rz_graph_free(g);
@@ -886,7 +894,8 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 	}
 	mu_assert_eq(count, 2, "out_neighbors.count");
 
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	// Get in neighbours
 	rz_graph_add_edge(g, n2, n3, NULL);
@@ -899,7 +908,8 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 		count++;
 	}
 	mu_assert_eq(count, 2, "in_neighbors.count");
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 
 	rz_graph_free(g);
 	mu_end;
@@ -1054,7 +1064,9 @@ static bool test_graph_get_nodes_matrix(void) {
 	}
 	mu_assert_eq(count, 3, "nodes.count");
 
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
+
 	rz_graph_free(g);
 	mu_end;
 }
@@ -1314,8 +1326,10 @@ static bool test_graph_impl_equivalence(void) {
 
 	mu_assert_eq(l_count, m_count, "same out-neighbor count");
 
-	rz_iterator_free(l_it);
-	rz_iterator_free(m_it);
+	rz_iterator_fini(l_it);
+	free(l_it);
+	rz_iterator_fini(m_it);
+	free(m_it);
 
 	rz_graph_free(g_list);
 	rz_graph_free(g_matrix);

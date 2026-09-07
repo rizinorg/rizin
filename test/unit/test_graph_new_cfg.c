@@ -301,7 +301,8 @@ static bool test_cfg_foo_function(void) {
 	rz_iterator_foreach(it, neighbor) {
 		count++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 	mu_assert_eq(count, 2, "bb_check_n out-neighbors");
 
 	// verify in-neighbors of bb_check_sum (should have 2: bb_even and bb_odd)
@@ -310,7 +311,8 @@ static bool test_cfg_foo_function(void) {
 	rz_iterator_foreach(it, neighbor) {
 		count++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 	mu_assert_eq(count, 2, "bb_check_sum in-neighbors");
 
 	// verify in-neighbors of bb_loop_cond (should have 2: bb_loop_init and bb_loop_inc)
@@ -319,7 +321,8 @@ static bool test_cfg_foo_function(void) {
 	rz_iterator_foreach(it, neighbor) {
 		count++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(it);
+	free(it);
 	mu_assert_eq(count, 2, "bb_loop_cond in-neighbors (includes back edge)");
 
 	rz_graph_free(cfg);

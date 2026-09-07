@@ -53,7 +53,8 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 1:
@@ -73,7 +74,8 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 2:
@@ -93,7 +95,8 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(out_iter);
+				free(out_iter);
 			}
 			break;
 		case 3:
@@ -104,7 +107,9 @@ bool test_graph_to_agraph() {
 			break;
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(iter);
+	free(iter);
+
 	rz_core_free(core);
 	rz_graph_free(graph);
 	rz_agraph_free(agraph);

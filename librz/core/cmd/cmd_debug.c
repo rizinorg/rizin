@@ -194,9 +194,11 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				}
 			}
 		}
-		rz_iterator_free(it_neighbours);
+		rz_iterator_fini(it_neighbours);
+		free(it_neighbours);
 	}
-	rz_iterator_free(it_nodes);
+	rz_iterator_fini(it_nodes);
+	free(it_nodes);
 
 	if (!fmt) {
 		rz_cons_printf("}\n");
@@ -2359,10 +2361,10 @@ RZ_IPI RzCmdStatus rz_cmd_debug_toggle_bp_trace_index_handler(RzCore *core, int 
 // dbh
 RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const char **argv) {
 	rz_return_val_if_fail(core, RZ_CMD_STATUS_ERROR);
-	RzIterator *iter = rz_asm_plugin_iterator(core->rasm);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = rz_asm_plugin_iterator(core->rasm);
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
 		return RZ_CMD_STATUS_ERROR;
 	}
 
@@ -2378,7 +2380,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_bp_plugin_handler(RzCore *core, int argc, const 
 	}
 
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	return RZ_CMD_STATUS_OK;
 }
 
