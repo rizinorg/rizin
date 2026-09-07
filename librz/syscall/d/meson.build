@@ -22,12 +22,23 @@ sdb_files = [
   'windows-x86-64',
 ]
 
+if have_python
+  syscall_pre_cmd = [py3_exe, syscall_preprocessing_py, '@INPUT@', '@OUTPUT@']
+else
+  # No Python: build a tiny native helper (like sdb_gen) that does the same.
+  syscall_pre_exe = executable('syscall_preprocessing', syscall_preprocessing_c,
+    native: meson.is_cross_build(),
+    install: false,
+  )
+  syscall_pre_cmd = [syscall_pre_exe, '@INPUT@', '@OUTPUT@']
+endif
+
 foreach file : sdb_files
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
   pre_sdb_txt = custom_target(tmp_outfile,
     input: '@0@.sdb.txt'.format(file),
     output: tmp_outfile,
-    command: [py3_exe, syscall_preprocessing_py, '@INPUT@', '@OUTPUT@'],
+    command: syscall_pre_cmd,
     build_by_default: true,
     install: false
   )
