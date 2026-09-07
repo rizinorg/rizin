@@ -40,6 +40,7 @@ bin_plugins_list = [
   'nso',
   'omf',
   'omf166',
+  'omf51',
   'p9',
   'pe',
   'pe64',
@@ -149,6 +150,7 @@ rz_bin_sources = [
   'p/bin_nso.c',
   'p/bin_omf.c',
   'p/bin_omf166.c',
+  'p/bin_omf51.c',
   'p/bin_p9.c',
   'p/bin_pe.c',
   'p/bin_pe64.c',
@@ -176,6 +178,7 @@ rz_bin_sources = [
 
 
   'format/bflt/bflt.c',
+  'format/c166/c166_raw.c',
   'format/coff/coff.c',
   'format/coff/coff_reloc.c',
   'format/dex/dex.c',
@@ -261,6 +264,7 @@ rz_bin_sources = [
   'format/objc/mach0_classes.c',
   'format/omf/omf.c',
   'format/omf/omf166.c',
+  'format/omf/omf51.c',
   'format/p9/p9bin.c',
   'format/pe/dotnet.c',
   'format/pe/pe.c',
