@@ -329,6 +329,9 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			op->opex = c28x_opex(&insn);
 		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = c28x_lift(&insn, addr);
+		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = c28x_format(&insn, addr);
 		}
@@ -1005,6 +1008,9 @@ static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
 	}
 	if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
 		return tms320_c5x_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		return c28x_il_config();
 	}
 	return NULL;
 }

@@ -204,6 +204,10 @@ RZ_IPI RZ_OWN char *c28x_format(const C28xInsn *insn, ut64 pc);
 
 RZ_IPI void c28x_fill_analysis(const C28xInsn *insn, ut64 addr, RZ_OUT RzAnalysisOp *op);
 
+RZ_IPI RZ_OWN RzILOpEffect *c28x_lift(RZ_NONNULL const C28xInsn *insn, ut64 pc);
+
+RZ_IPI RZ_OWN RzAnalysisILConfig *c28x_il_config(void);
+
 RZ_IPI RZ_OWN RzStructuredData *c28x_opex(const C28xInsn *insn);
 
 RZ_IPI const char *c28x_reg_name(C28xReg reg);
