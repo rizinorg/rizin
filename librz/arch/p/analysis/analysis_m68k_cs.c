@@ -160,7 +160,7 @@ static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
 			}
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 			if (rz_m68k_op_is_absolute_mem(op)) {
-				rz_structured_data_map_add_unsigned(operand, "address", op->mem.address, false);
+				rz_structured_data_map_add_unsigned(operand, "address", rz_m68k_op_absolute_mem_address(op), false);
 			}
 #endif
 			if (op->mem.index_reg != M68K_REG_INVALID) {
