@@ -94,7 +94,7 @@ static void str_iterate_wide(RzStrBuf *sb, char *buf, uint64_t len, uint64_t sta
 			rz_strbuf_append(sb, "...");
 			break;
 		}
-		if (i >= len || !buf[i]) {
+		if (i >= len || buf[i]) {
 			break;
 		}
 	}
