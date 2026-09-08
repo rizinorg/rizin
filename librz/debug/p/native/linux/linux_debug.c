@@ -20,10 +20,8 @@
 #endif
 
 #define PROC_NAME_SZ   1024
-#define PROC_REGION_SZ 100
-// PROC_REGION_SZ - 2 (used for `0x`). Due to how RZ_STR_DEF works this can't be
-// computed.
-#define PROC_REGION_LEFT_SZ 98
+// 64 is enough room for two 64-bit hex addrs and the '-' char in between
+#define PROC_REGION_SZ 64
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
 
@@ -1621,17 +1619,13 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 	RzList *list = NULL;
 	RzDebugMap *map;
 	int i, perm, unk = 0;
-	char *pos_c;
 	char path[1024], line[1024], name[PROC_NAME_SZ + 1];
-	char region[PROC_REGION_SZ + 1], region2[PROC_REGION_SZ + 1], perms[PROC_PERM_SZ + 1];
+	char region[PROC_REGION_SZ + 1], perms[PROC_PERM_SZ + 1];
 	FILE *fd;
 	if (dbg->pid == -1) {
 		// eprintf ("rz_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
-	/* prepend 0x prefix */
-	region[0] = region2[0] = '0';
-	region[1] = region2[1] = 'x';
 
 	snprintf(path, sizeof(path), "/proc/%d/maps", dbg->pid);
 
@@ -1670,7 +1664,7 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 
 		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
-		i = sscanf(line, "%" RZ_STR_DEF(PROC_REGION_LEFT_SZ) "s %" RZ_STR_DEF(PROC_PERM_SZ) "s %08" PFMT64x " %*s %*s %" RZ_STR_DEF(PROC_NAME_SZ) "[^\n]", &region[2], perms, &offset, name);
+		i = sscanf(line, "%" RZ_STR_DEF(PROC_REGION_SZ) "s %" RZ_STR_DEF(PROC_PERM_SZ) "s %08" PFMT64x " %*s %*s %" RZ_STR_DEF(PROC_NAME_SZ) "[^\n]", region, perms, &offset, name);
 
 		if (i == 3) {
 			name[0] = '\0';
@@ -1680,18 +1674,6 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 			rz_list_free(list);
 			return NULL;
 		}
-
-		/* split the region in two */
-		pos_c = strchr(&region[2], '-');
-		if (!pos_c) { // should this be an error?
-			continue;
-		}
-		strncpy(&region2[2], pos_c + 1, sizeof(region2) - 2 - 1);
-		// Terminate the start token at the '-'. rz_num_get() now parses
-		// its whole argument strictly, so an un-split "0x<start>-<end>"
-		// would evaluate as a subtraction - with the leading-zero <end>
-		// read as C-style octal - instead of yielding the start address.
-		*pos_c = 0;
 
 		if (!*name) {
 			snprintf(name, sizeof(name), "unk%d", unk++);
@@ -1707,10 +1689,15 @@ RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg) {
 			}
 		}
 
-		map_start = rz_num_get(NULL, region);
-		map_end = rz_num_get(NULL, region2);
+		char *region_end = NULL;
+		map_start = strtoull(region, &region_end, 16);
+		if (!region_end || *region_end != '-') {
+			continue;
+		}
+		region_end++;
+		map_end = strtoull(region_end, NULL, 16);
 		if (map_start == map_end || map_end == 0) {
-			RZ_LOG_WARN("%s: ignoring invalid map size: %s - %s\n", __func__, region, region2);
+			RZ_LOG_WARN("%s: ignoring invalid map size: %s - %s\n", __func__, region, region_end);
 			continue;
 		}
 		map = rz_debug_map_new(name, map_start, map_end, perm, 0);
