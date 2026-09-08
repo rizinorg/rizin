@@ -106,6 +106,36 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 	return "";
 }
 
+/**
+ * \brief Return a stable, machine-readable string code for a \p RzCmdStatus.
+ *
+ * The returned codes are part of the structured error envelope emitted in JSON
+ * output mode (e.g. `"code":"WRONG_ARGS"`) and are meant to be relied upon by
+ * consumers driving Rizin over rzpipe or scripts, so they must not change
+ * lightly.
+ *
+ * \param status The command status to convert.
+ * \return A static, non-owned string describing \p status.
+ */
+RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "OK";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "WRONG_ARGS";
+	case RZ_CMD_STATUS_ERROR:
+		return "ERROR";
+	case RZ_CMD_STATUS_INVALID:
+		return "INVALID";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "NONEXISTINGCMD";
+	case RZ_CMD_STATUS_EXIT:
+		return "EXIT";
+	}
+	rz_warn_if_reached();
+	return "UNKNOWN";
+}
+
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
@@ -721,6 +751,80 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	}
 }
 
+/**
+ * \brief Return a human-readable message describing a non-OK \p RzCmdStatus.
+ *
+ * Used as the `message` field of the structured JSON status envelope. The text
+ * is generic on purpose: it describes the status category, not the specific
+ * failure, and is meant to complement the stable `code` from
+ * \ref rz_cmd_status_tostring.
+ */
+static const char *cmd_status_message(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "Command executed successfully";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "Wrong number or type of arguments";
+	case RZ_CMD_STATUS_ERROR:
+		return "Command execution failed";
+	case RZ_CMD_STATUS_INVALID:
+		return "Invalid command or expression";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "Command does not exist";
+	case RZ_CMD_STATUS_EXIT:
+		return "Command requested to exit the prompt";
+	}
+	rz_warn_if_reached();
+	return "Unknown command status";
+}
+
+static inline bool output_mode_is_json(RzOutputMode mode) {
+	return mode == RZ_OUTPUT_MODE_JSON || mode == RZ_OUTPUT_MODE_LONG_JSON;
+}
+
+/**
+ * \brief Emit a structured JSON status envelope for an executed command.
+ *
+ * When a command is invoked in a JSON output mode and the `cfg.json.status`
+ * config is enabled, this prints a machine-readable status object after the
+ * command's own output so that consumers driving Rizin over rzpipe or
+ * `rizin -c` can reliably tell success from failure (and a failure from an
+ * empty-but-successful result) by always reading the same trailing object. The
+ * shape is, on success:
+ *
+ *     {"error":null}
+ *
+ * and on failure:
+ *
+ *     {"error":{"code":"WRONG_ARGS","message":"...","command":"afl"}}
+ *
+ * The envelope is reported for every command (success and failure alike) so the
+ * presence of the object is consistent; only its `error` field changes.
+ *
+ * \param cmd_name Name of the command that ran (canonical, without the mode suffix).
+ * \param status The status returned by the command handler.
+ */
+static void cmd_print_json_status(RZ_NONNULL const char *cmd_name, RzCmdStatus status) {
+	rz_return_if_fail(cmd_name);
+	PJ *pj = pj_new();
+	if (!pj) {
+		return;
+	}
+	pj_o(pj);
+	if (status == RZ_CMD_STATUS_OK) {
+		pj_knull(pj, "error");
+	} else {
+		pj_ko(pj, "error");
+		pj_ks(pj, "code", rz_cmd_status_tostring(status));
+		pj_ks(pj, "message", cmd_status_message(status));
+		pj_ks(pj, "command", cmd_name);
+		pj_end(pj);
+	}
+	pj_end(pj);
+	rz_cons_println(pj_string(pj));
+	pj_free(pj);
+}
+
 static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	if (!rz_cmd_desc_has_handler(cd)) {
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
@@ -734,9 +838,15 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		RZ_LOG_DEBUG("processed parsed_arg %d: '%s'\n", i, s);
 	}
 
-	RzOutputMode mode;
+	// Output mode of the executed command. It is used after the switch to
+	// decide whether the command's status should be reported as a structured
+	// JSON status envelope (see cmd_print_json_status).
+	RzOutputMode mode = RZ_OUTPUT_MODE_STANDARD;
+	RzCmdStatus res;
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_ARGV:
+		// Plain argv commands have no output mode, so they never emit a JSON
+		// status envelope.
 		if (args->argc < cd->d.argv_data.min_argc || args->argc > cd->d.argv_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
@@ -747,25 +857,28 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
 		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
-			return RZ_CMD_STATUS_WRONG_ARGS;
+			res = RZ_CMD_STATUS_WRONG_ARGS;
+			break;
 		}
-		return cd->d.argv_modes_data.cb(cmd->core, args->argc, (const char **)args->argv, mode);
-	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		res = cd->d.argv_modes_data.cb(cmd->core, args->argc, (const char **)args->argv, mode);
+		break;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE: {
 		mode = cd_suffix2mode(cd, rz_cmd_parsed_args_cmd(args));
 		if (!mode) {
 			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
 		if (args->argc < cd->d.argv_state_data.min_argc || args->argc > cd->d.argv_state_data.max_argc) {
-			return RZ_CMD_STATUS_WRONG_ARGS;
+			res = RZ_CMD_STATUS_WRONG_ARGS;
+			break;
 		}
 		RzCmdStateOutput state;
 		if (!rz_cmd_state_output_init(&state, mode, cmd->core)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
-		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
+		res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
 		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
-			bool res = rz_table_query(state.d.t, args->extra);
-			if (!res) {
+			bool ok = rz_table_query(state.d.t, args->extra);
+			if (!ok) {
 				rz_cmd_state_output_fini(&state);
 				return RZ_CMD_STATUS_INVALID;
 			}
@@ -774,10 +887,16 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 			rz_cmd_state_output_print(&state);
 		}
 		rz_cmd_state_output_fini(&state);
-		return res;
+		break;
+	}
 	default:
 		return RZ_CMD_STATUS_INVALID;
 	}
+
+	if (output_mode_is_json(mode) && core_config_get_b(cmd->core, "cfg.json.status")) {
+		cmd_print_json_status(cd->name, res);
+	}
+	return res;
 }
 
 static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {

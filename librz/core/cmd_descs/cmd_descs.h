@@ -16,6 +16,8 @@ RZ_IPI RzCmdStatus rz_system_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_system_to_cons_handler(RzCore *core, int argc, const char **argv);
 // "_"
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv);
+// "_s"
+RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "#!"
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdDescDetail *rz_hash_bang_details_cb(RzCore *core, int argc, const char **argv);

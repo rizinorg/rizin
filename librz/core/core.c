@@ -1658,6 +1658,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->vmode = false;
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
+	core->last_cmd_status = RZ_CMD_STATUS_OK;
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = true;
