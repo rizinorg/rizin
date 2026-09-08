@@ -339,6 +339,7 @@ arch_isa_sources = [
   'isa/tms320/c28x/c28x_decode.c',
   'isa/tms320/c28x/c28x_format.c',
   'isa/tms320/c28x/c28x_analysis.c',
+  'isa/tms320/c28x/c28x_il.c',
   'isa/tms320/tms320c55x_insn.c',
   'isa/v810/v810_disas.c',
   'isa/v810/v810_il.c',

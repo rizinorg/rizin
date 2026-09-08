@@ -2,45 +2,47 @@
 # Instruction words are little-endian; addresses are byte addresses, i.e.
 # twice the C28x word address, matching the scaling the loaders apply.
 # Every vector below was cross-checked against TI dis2000 (c2000 v6.2.0).
+# Vectors carrying a fourth column also assert the lifted RzIL; the rest decode
+# but are not lifted yet.
 
 # control transfer and stack
-d "lretr" 0600 0x0
+d "lretr" 0600 0x0 (seq (set rt (var rpc)) (set sp (- (var sp) (bv 16 0x1))) (set hi (cast 32 false (loadw 0 16 (* (cast 32 false (var sp)) (bv 32 0x2))))) (set sp (- (var sp) (bv 16 0x1))) (set rpc (& (| (<< (var hi) (bv 6 0x10) false) (cast 32 false (loadw 0 16 (* (cast 32 false (var sp)) (bv 32 0x2))))) (bv 32 0x3fffff))) (jmp (var rt)))
 d "aborti" 0100 0x0
 d "push rpc" 0400 0x0
 d "pop rpc" 0700 0x0
 
 # loc16 addressing modes
-d "mov al, @0x00" 0092 0x0
-d "mov al, *-sp[0]" 4092 0x0
-d "mov al, *xar0++" 8092 0x0
-d "mov al, *+xar0[0]" c092 0x0
+d "mov al, @0x00" 0092 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, *-sp[0]" 4092 0x0 (seq (set _ea (cast 32 false (- (var sp) (bv 16 0x0)))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, *xar0++" 8092 0x0 (seq (set _ea (var xar0)) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))) (set xar0 (+ (var xar0) (bv 32 0x1))))
+d "mov al, *+xar0[0]" c092 0x0 (seq (set _ea (+ (var xar0) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
 d "mov al, *arp0" b092 0x0
-d "mov al, *sp++" bd92 0x0
-d "mov al, *--sp" be92 0x0
-d "mov al, @ar0" a092 0x0
+d "mov al, *sp++" bd92 0x0 (seq (set _ea (cast 32 false (var sp))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))) (set sp (+ (var sp) (bv 16 0x1))))
+d "mov al, *--sp" be92 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (set _ea (cast 32 false (var sp))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, @ar0" a092 0x0 (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (cast 16 false (var xar0)))))
 
 # AX select bit (A=0 is AL)
-d "mov ah, @0x00" 0093 0x0
+d "mov ah, @0x00" 0093 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (bv 6 0x10) false))))
 d "andb ah, #0x0" 0091 0x0
 d "andb ah, #0x1" 0191 0x0
-d "lsr al, 1" c0ff 0x0
-d "lsr ah, 1" d0ff 0x0
+d "lsr al, 1" c0ff 0x0 (seq (set sv (cast 16 false (var acc))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (>> (var sv) (bv 6 0x1) false)))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
+d "lsr ah, 1" d0ff 0x0 (seq (set sv (cast 16 false (>> (var acc) (bv 6 0x10) false))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (>> (var sv) (bv 6 0x1) false)) (bv 6 0x10) false))) (set n (msb (cast 16 false (>> (var acc) (bv 6 0x10) false)))) (set z (is_zero (cast 16 false (>> (var acc) (bv 6 0x10) false)))))
 d "lsr al, t" 62ff 0x0
 d "lsr ah, t" 63ff 0x0
 
 # accumulator and 32-bit moves
-d "movl acc, @acc" a806 0x0
-d "movl acc, @xar0" a006 0x0
-d "movl @xar7, acc" a71e 0x0
-d "cmpl acc, @xar6" a60f 0x0
+d "movl acc, @acc" a806 0x0 (set acc (var acc))
+d "movl acc, @xar0" a006 0x0 (set acc (var xar0))
+d "movl @xar7, acc" a71e 0x0 (set xar7 (var acc))
+d "cmpl acc, @xar6" a60f 0x0 (seq (set cl (var acc)) (set cr (var xar6)) (set cd (- (var cl) (var cr))) (set n (msb (var cd))) (set z (is_zero (var cd))) (set c (! (&& (ule (var cl) (var cr)) (! (== (var cl) (var cr)))))))
 d "mov acc, @0x00" 0085 0x0
 d "dmov @0x00" 00a5 0x0
 
 # two-word immediate forms
-d "movl xar0, #0x7700" 008d0077 0x0
-d "movl xar5, #0x7700" 408f0077 0x0
-d "movl xar6, #0x7700" 80760077 0x0
-d "movl xar7, #0x7700" c0760077 0x0
+d "movl xar0, #0x7700" 008d0077 0x0 (set xar0 (bv 32 0x7700))
+d "movl xar5, #0x7700" 408f0077 0x0 (set xar5 (bv 32 0x7700))
+d "movl xar6, #0x7700" 80760077 0x0 (set xar6 (bv 32 0x7700))
+d "movl xar7, #0x7700" c0760077 0x0 (set xar7 (bv 32 0x7700))
 d "mov @0x00, #0x7700" 00280077 0x0
 d "subcu acc, *-sp[54]" 761f 0x0
 
@@ -51,7 +53,7 @@ d "mpyxu acc, t, @0x00" 0030 0x0
 d "mpyu acc, t, @0x00" 0036 0x0
 
 # 0x56 extended plane
-d "sub acc, @0x0a" 00560a00 0x0
+d "sub acc, @0x0a" 00560a00 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0xa))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set oa (var acc)) (set av (ite (var sxm) (cast 32 (msb (var _val)) (var _val)) (cast 32 false (var _val)))) (set na (- (var oa) (var av))) (set ovf (msb (& (^ (var oa) (var av)) (^ (var oa) (var na))))) (set acc (ite (&& (var ovm) (var ovf)) (ite (msb (var oa)) (bv 32 0x80000000) (bv 32 0x7fffffff)) (var na))) (set v (|| (var v) (var ovf))) (set c (! (&& (ule (var oa) (var av)) (! (== (var oa) (var av)))))) (set ovc (ite (&& (var ovf) (! (var ovm))) (ite (msb (var na)) (+ (var ovc) (bv 6 0x1)) (- (var ovc) (bv 6 0x1))) (var ovc))) (set n (msb (var acc))) (set z (is_zero (var acc))))
 d "addl @0x0a, acc" 01560a00 0x0
 d "asrl acc, t" 1056 0x0
 d "zapa" 3356 0x0
@@ -59,21 +61,21 @@ d "mov pm, al" 3856 0x0
 d "mov pm, ah" 3956 0x0
 
 # shift
-d "lsl acc, 1" 30ff 0x0
-d "asr al, 1" a0ff 0x0
+d "lsl acc, 1" 30ff 0x0 (seq (set sv (var acc)) (set c (lsb (>> (var sv) (bv 6 0x1f) false))) (set acc (<< (var acc) (bv 6 0x1) false)) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "asr al, 1" a0ff 0x0 (seq (set sv (cast 16 false (var acc))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (>> (var sv) (bv 6 0x1) (msb (var sv)))))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
 d "lsrl acc, t" 2256 0x0
 d "lsl al, t" 66ff 0x0
 
 # bit test and mode bits
-d "tbit @0x00, #0x0" 0040 0x0
+d "tbit @0x00, #0x0" 0040 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set tc (lsb (>> (var _val) (bv 5 0x0) false))))
 d "tbit @ar0, #0x0" a040 0x0
-d "clrc sxm|ovm" 0329 0x0
-d "setc sxm|ovm" 033b 0x0
+d "clrc sxm|ovm" 0329 0x0 (seq (set sxm false) (set ovm false))
+d "setc sxm|ovm" 033b 0x0 (seq (set sxm true) (set ovm true))
 
 # branch displacements are relative to the branch's own address
-d "sb 0xac, los" 1369 0x86
-d "sb 0x88, hi" ef66 0xaa
-d "sb 0x6, unc" 036f 0x0
+d "sb 0xac, los" 1369 0x86 (branch (|| (! (var c)) (var z)) (jmp (bv 32 0xac)) nop)
+d "sb 0x88, hi" ef66 0xaa (branch (&& (var c) (! (var z))) (jmp (bv 32 0x88)) nop)
+d "sb 0x6, unc" 036f 0x0 (jmp (bv 32 0x6))
 d "banz 0xee00, ar0" 08000077 0x0
 
 # A program address used as a branch target prints bare; one read as data is
