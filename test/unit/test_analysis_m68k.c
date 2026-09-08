@@ -501,6 +501,39 @@ static bool test_m68k_coldfire_profiles(void) {
 	mu_end;
 }
 
+static bool test_m68k_coldfire_acc_copy(void) {
+	const char *cpus[] = { "coldfire", "cfv4e", "cfv5" };
+	/* Signed integer, unsigned integer, and fractional MACSR modes. */
+	const ut32 modes[] = { 0, 0x40, 0x20 };
+	for (size_t cpu = 0; cpu < RZ_ARRAY_SIZE(cpus); cpu++) {
+		RzCore *core = m68k_core_new(cpus[cpu]);
+		mu_assert_notnull(core, "ColdFire core");
+		RzReg *reg = rz_analysis_get_reg(core->analysis);
+		for (size_t mode = 0; mode < RZ_ARRAY_SIZE(modes); mode++) {
+			for (ut32 ev = 0; ev <= 1; ev++) {
+				m68k_reset(core, 0, 0, 0x201f);
+				rz_reg_setv(reg, "acc0", 0x12345678);
+				rz_reg_setv(reg, "acc1", 0);
+				rz_reg_setv(reg, "accext01", 1);
+				rz_reg_setv(reg, "macsr", 0x100 | modes[mode] | ev);
+				mu_assert_true(m68k_step(core, "a310"), "MOVE ACC0,ACC1 executes and releases its IL tree");
+				mu_assert_eq(rz_reg_getv(reg, "acc0"), 0x12345678, "source accumulator is preserved");
+				mu_assert_eq(rz_reg_getv(reg, "acc1"), 0x12345678, "destination accumulator is copied");
+				mu_assert_eq(rz_reg_getv(reg, "accext01"), 0x00010001, "accumulator extension is copied");
+				/* The value overflows 32-bit integer storage but fits fractional
+				 * storage. EMAC recomputes EV; original MAC preserves it. PAV0
+				 * remains set and is copied to PAV1 and V; N and Z are clear. */
+				ut32 expected_ev = cpu == 0 ? ev : (mode == 2 ? 0 : 1);
+				mu_assert_eq(rz_reg_getv(reg, "macsr"), 0x302 | modes[mode] | expected_ev, "MACSR after accumulator copy");
+				mu_assert_eq(rz_reg_getv(reg, "sr"), 0x201f, "accumulator copy preserves SR");
+				mu_assert_eq(rz_reg_getv(reg, "pc"), 0x102, "accumulator copy advances PC");
+			}
+		}
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
 static bool test_m68k_coldfire_values(void) {
 	RzCore *core = m68k_core_new("cfv1");
 	mu_assert_notnull(core, "ColdFire core");
@@ -639,6 +672,7 @@ int all_tests(void) {
 	mu_run_test(test_m68k_data_transfers);
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 	mu_run_test(test_m68k_coldfire_profiles);
+	mu_run_test(test_m68k_coldfire_acc_copy);
 	mu_run_test(test_m68k_coldfire_values);
 #endif
 	mu_run_test(test_m68k_address_metadata);
