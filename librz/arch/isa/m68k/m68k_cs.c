@@ -326,6 +326,10 @@ RZ_IPI ut64 rz_m68k_op_absolute_mem_address(RZ_NONNULL const cs_m68k_op *operand
 	if (operand->type != M68K_OP_MEM) {
 		return 0;
 	}
+	// M68000PRM 2.2.16: an absolute short address is sign-extended to 32 bits.
+	if (operand->address_mode == M68K_AM_ABSOLUTE_DATA_SHORT) {
+		return rz_m68k_op_absolute_address(operand, true);
+	}
 #ifdef RZ_CAPSTONE_HAS_M68K_COLDFIRE
 	return operand->mem.address;
 #else
