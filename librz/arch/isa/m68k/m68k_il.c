@@ -417,15 +417,15 @@ static RzILOpEffect *mac_update_macsr_acc_copy(cs_mode mode, int src_index, int 
 	RzILOpBool *src_pav = NON_ZERO(LOGAND(VARG("macsr"), U32(pav_src)));
 	RzILOpBool *n = NON_ZERO(LOGAND(UNSIGNED(32, VARL("ext16")), U32(0x8000)));
 	RzILOpBool *z = AND(IS_ZERO(VARL("src")), IS_ZERO(VARL("ext16")));
-	RzILOpBool *int_ev = ITE(macsr_signed(),
-		INV(OR(IS_ZERO(VARL("bits_47_31")), EQ(VARL("bits_47_31"), U32(0x1ffff)))),
-		NON_ZERO(VARL("ext16")));
-	RzILOpBool *frac_ev = INV(OR(IS_ZERO(VARL("bits_47_39")), EQ(VARL("bits_47_39"), U32(0x1ff))));
 	RzILOpPure *flags = LOGAND(VARG("macsr"), U32(~clear));
 	flags = LOGOR(flags, ITE(n, U32(1u << M68K_MACSR_N), U32(0)));
 	flags = LOGOR(flags, ITE(z, U32(1u << M68K_MACSR_Z), U32(0)));
 	flags = LOGOR(flags, ITE(src_pav, U32((1u << M68K_MACSR_V) | pav_dst), U32(0)));
 	if (emac) {
+		RzILOpBool *int_ev = ITE(macsr_signed(),
+			INV(OR(IS_ZERO(VARL("bits_47_31")), EQ(VARL("bits_47_31"), U32(0x1ffff)))),
+			NON_ZERO(VARL("ext16")));
+		RzILOpBool *frac_ev = INV(OR(IS_ZERO(VARL("bits_47_39")), EQ(VARL("bits_47_39"), U32(0x1ff))));
 		flags = LOGOR(flags, ITE(ITE(macsr_flag(M68K_MACSR_FI), frac_ev, int_ev), U32(1u << M68K_MACSR_EV), U32(0)));
 	}
 	return SETG("macsr", flags);
