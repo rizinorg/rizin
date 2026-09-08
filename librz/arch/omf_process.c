@@ -309,7 +309,7 @@ static bool rz_c51_process(RzAnalysis *analysis, const RzBinFile *binfile) {
 }
 
 static bool rz_x86_process(RzAnalysis *analysis, const RzBinFile *binfile) {
-	rz_bin_omf51_obj *omf_obj = (rz_bin_omf51_obj *)binfile->o->bin_obj;
+	rz_bin_omf_obj *omf_obj = (rz_bin_omf_obj *)binfile->o->bin_obj;
 	void **it;
 	rz_pvector_foreach (omf_obj->sections_vec, it) {
 		const OMF_sections *section = (OMF_sections *)*it;
@@ -378,7 +378,8 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 
 	const char *arch = rz_config_get(core->config, "asm.arch");
 	if (!strstr(arch, "c166") &&
-		!strstr(arch, "8051")) {
+		!strstr(arch, "8051") &&
+		!strstr(arch, "x86")) {
 		return false;
 	}
 

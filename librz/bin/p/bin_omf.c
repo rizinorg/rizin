@@ -9,11 +9,19 @@
 #include "omf/omf.h"
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	(void)bf;
+	(void)sdb;
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
-	rz_return_val_if_fail(buf, false);
-	obj->bin_obj = rz_bin_internal_omf_load(buf, size);
-	return obj->bin_obj;
+	if (!buf) {
+		return false;
+	}
+
+	obj->bin_obj = rz_bin_format_omf_load(buf, size);
+	if (!obj->bin_obj) {
+		return false;
+	}
+	return true;
 }
 
 static void destroy(RzBinFile *bf) {

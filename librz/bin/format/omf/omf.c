@@ -702,7 +702,13 @@ void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj) {
 	free(obj);
 }
 
-rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size) {
+#define new_pv_and_check(vec, destructor, ret) \
+	vec = rz_pvector_new((RzPVectorFree)(destructor)); \
+	if (!vec) { \
+		return ret; \
+	}
+
+rz_bin_omf_obj *rz_bin_format_omf_load(const ut8 *buf, ut64 size) {
 	rz_bin_omf_obj *ret = RZ_NEW0(rz_bin_omf_obj);
 	if (!ret) {
 		return NULL;

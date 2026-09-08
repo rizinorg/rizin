@@ -145,7 +145,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 		map->psize = pe->size;
 		map->vsize = pe->size;
 		map->perm = get_perm_by_type(pe->data_type);
-		map->name = rz_str_dup(get_data_type(pe->data_type));
+		map->name = rz_str_dup(get_data_type166(pe->data_type));
 		rz_pvector_push(ret, map);
 	}
 

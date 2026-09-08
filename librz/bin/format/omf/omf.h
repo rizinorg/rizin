@@ -744,8 +744,18 @@ typedef struct {
 #define SP_RESET_VALUE      0xFC00
 #define CPUCON1_RESET_VALUE 0x0000
 
+#define new_pv_and_check2(vec, destructor) \
+	if (!((vec) = rz_pvector_new((RzPVectorFree)(destructor)))) \
+		return false;
+
+
+#define new_pv_and_check(vec, destructor, ret) \
+	vec = rz_pvector_new((RzPVectorFree)(destructor)); \
+	if (!vec) { \
+		return ret; \
+	}
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
-rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size);
+rz_bin_omf_obj *rz_bin_format_omf_load(const ut8 *buf, ut64 size);
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj);
 bool rz_bin_omf_get_entry(const rz_bin_omf_obj *obj, RzBinAddr *addr);
 int rz_bin_omf_get_bits(const rz_bin_omf_obj *obj);

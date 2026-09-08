@@ -176,7 +176,7 @@ const char *name_of_iTyp(ut8 iTyp) {
 	}
 }
 
-const char *get_data_type(ut8 data_type) {
+const char *get_data_type166(ut8 data_type) {
 	switch (data_type) {
 	case 0: {
 		return "BIT";
@@ -1174,11 +1174,7 @@ static void typnew_free(OMF_type *type) {
 	RZ_FREE(type);
 }
 
-#define new_pv_and_check(vec, destructor) \
-	if (!((vec) = rz_pvector_new((RzPVectorFree)(destructor)))) \
-		return false;
-
-static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
+static bool rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 	obj->ht_types = ht_up_new(NULL, (HtUPFreeValue)typnew_free);
 	if (!obj->ht_types) {
 		return false;
@@ -1226,16 +1222,16 @@ static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 		}
 	}
 
-	new_pv_and_check(obj->sections_vec, free);
-	new_pv_and_check(obj->symbols_vec, free);
-	new_pv_and_check(obj->blocks_vec, free);
-	new_pv_and_check(obj->pe_vec, free);
-	new_pv_and_check(obj->lnames_vec, free);
-	new_pv_and_check(obj->deplsts_vec, free);
-	new_pv_and_check(obj->linnums_vec, omf166_linnums_free);
-	new_pv_and_check(obj->coments_vec, free);
-	new_pv_and_check(obj->includes_vec, free);
-	new_pv_and_check(obj->ledatas_vec, free);
+	new_pv_and_check(obj->sections_vec, free, false);
+	new_pv_and_check(obj->symbols_vec, free, false);
+	new_pv_and_check(obj->blocks_vec, free, false);
+	new_pv_and_check(obj->pe_vec, free, false);
+	new_pv_and_check(obj->lnames_vec, free, false);
+	new_pv_and_check(obj->deplsts_vec, free, false);
+	new_pv_and_check(obj->linnums_vec, omf166_linnums_free, false);
+	new_pv_and_check(obj->coments_vec, free, false);
+	new_pv_and_check(obj->includes_vec, free, false);
+	new_pv_and_check(obj->ledatas_vec, free, false);
 	return true;
 }
 
@@ -1261,7 +1257,7 @@ static int find_symbol_by_paddr(const void *paddr, const void *sym, void *user) 
 	return addr == offset;
 }
 
-static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
+static bool rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
 	if (!obj) {
 		return false;
 	}

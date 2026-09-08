@@ -74,5 +74,5 @@ typedef struct {
 rz_bin_omf51_obj *rz_bin_format_omf51_load(const ut8 *buf, ut64 size);
 void rz_bin_format_omf51_fini(rz_bin_omf51_obj *obj);
 bool rz_bin_omf51_get_entry(const rz_bin_omf51_obj *obj, RzBinAddr *addr);
-
+const char *get_data_type51(ut8 data_type);
 #endif // OMF51_H
