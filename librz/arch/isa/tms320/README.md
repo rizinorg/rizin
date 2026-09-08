@@ -59,6 +59,25 @@ agrees on 61641 (98.6%). 782 of the rest are the VCU co-processor set; most of
 the others are spellings `dis2000` prefers, such as `MOVL *SP++,ACC` where this
 engine writes `PUSH ACC`.
 
+Most core instructions are lifted to RzIL. These are not, and leave
+`op->il_op` unset:
+
+- the MAC family and `RPT`/`RPTB`, which act across repeats
+- `IN`, `OUT` and `UOUT`, as the IL has no I/O space
+- `IDLE`, `ABORTI` and `INTR EMUINT`
+- the `NBIO` condition, which tests an input pin
+- `PUSH` and `POP` of memory, `RPC`, `IFR`, `DBGIER`, `T:ST0` and the register
+  pairs
+- `ADDL` and `SUBL loc32,ACC`, `CMP loc16,#16bit`, `TBIT loc16,T`, and `ASR`
+  and `LSR AX,T`
+- `TBIT`, `DMOV`, `MOVAD` and `MOVDL` on a register operand such as `@AR0`
+
+Encodings with a reserved field are not lifted either.
+
+Accumulator arithmetic follows SPRU430's *Flags and Modes*. `V` is sticky, and
+`OVC` counts overflows while `OVM` is clear; with `OVM` set the result
+saturates instead. `SXM` selects sign or zero extension of a 16-bit source.
+
 ## c55x
 
 Variable-length (1-7 byte) instructions, little-endian, 16-bit word.

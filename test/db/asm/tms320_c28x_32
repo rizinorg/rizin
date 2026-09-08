@@ -2,86 +2,88 @@
 # Instruction words are little-endian; addresses are byte addresses, i.e.
 # twice the C28x word address, matching the scaling the loaders apply.
 # Every vector below was cross-checked against TI dis2000 (c2000 v6.2.0).
+# Vectors carrying a fourth column also assert the lifted RzIL; the rest decode
+# but are not lifted yet.
 
 # control transfer and stack
-d "lretr" 0600 0x0
+d "lretr" 0600 0x0 (seq (set rt (var rpc)) (set sp (- (var sp) (bv 16 0x1))) (set hi (cast 32 false (loadw 0 16 (* (cast 32 false (var sp)) (bv 32 0x2))))) (set sp (- (var sp) (bv 16 0x1))) (set np (& (| (<< (var hi) (bv 6 0x10) false) (cast 32 false (loadw 0 16 (* (cast 32 false (var sp)) (bv 32 0x2))))) (bv 32 0x3fffff))) (set rpc (var np)) (jmp (* (cast 32 false (var rt)) (bv 32 0x2))))
 d "aborti" 0100 0x0
 d "push rpc" 0400 0x0
 d "pop rpc" 0700 0x0
-d "lb *xar7" 2076 0x0
-d "lcr *xar4" 643e 0x100
+d "lb *xar7" 2076 0x0 (jmp (* (cast 32 false (& (var xar7) (bv 32 0x3fffff))) (bv 32 0x2)))
+d "lcr *xar4" 643e 0x100 (seq (set ra (var rpc)) (storew 0 (* (cast 32 false (var sp)) (bv 32 0x2)) (cast 16 false (var ra))) (set sp (+ (var sp) (bv 16 0x1))) (storew 0 (* (cast 32 false (var sp)) (bv 32 0x2)) (cast 16 false (>> (var ra) (bv 6 0x10) false))) (set sp (+ (var sp) (bv 16 0x1))) (set rpc (bv 32 0x81)) (jmp (* (cast 32 false (& (var xar4) (bv 32 0x3fffff))) (bv 32 0x2))))
 
 # loc16 addressing modes
-d "mov al, @0x00" 0092 0x0
-d "mov al, *-sp[0]" 4092 0x0
-d "mov al, *xar0++" 8092 0x0
-d "mov al, *+xar0[0]" c092 0x0
-d "mov al, *arp0" b092 0x0
-d "mov al, *sp++" bd92 0x0
-d "mov al, *--sp" be92 0x0
-d "mov al, @ar0" a092 0x0
+d "mov al, @0x00" 0092 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, *-sp[0]" 4092 0x0 (seq (set _ea (cast 32 false (- (var sp) (bv 16 0x0)))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, *xar0++" 8092 0x0 (seq (set _ea (var xar0)) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))) (set xar0 (+ (var xar0) (bv 32 0x1))))
+d "mov al, *+xar0[0]" c092 0x0 (seq (set _ea (+ (var xar0) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, *arp0" b092 0x0 (seq (set _ea (ite (== (var arp) (bv 3 0x0)) (var xar0) (ite (== (var arp) (bv 3 0x1)) (var xar1) (ite (== (var arp) (bv 3 0x2)) (var xar2) (ite (== (var arp) (bv 3 0x3)) (var xar3) (ite (== (var arp) (bv 3 0x4)) (var xar4) (ite (== (var arp) (bv 3 0x5)) (var xar5) (ite (== (var arp) (bv 3 0x6)) (var xar6) (var xar7))))))))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))) (set arp (bv 3 0x0)))
+d "mov al, *sp++" bd92 0x0 (seq (set _ea (cast 32 false (var sp))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))) (set sp (+ (var sp) (bv 16 0x1))))
+d "mov al, *--sp" be92 0x0 (seq (set sp (- (var sp) (bv 16 0x1))) (set _ea (cast 32 false (var sp))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))))
+d "mov al, @ar0" a092 0x0 (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (cast 16 false (var xar0)))))
 
 # AX select bit (A=0 is AL)
-d "mov ah, @0x00" 0093 0x0
-d "andb ah, #0x0" 0091 0x0
-d "andb ah, #0x1" 0191 0x0
-d "lsr al, 1" c0ff 0x0
-d "lsr ah, 1" d0ff 0x0
+d "mov ah, @0x00" 0093 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (bv 6 0x10) false))))
+d "andb ah, #0x0" 0091 0x0 (seq (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (& (cast 16 false (>> (var acc) (bv 6 0x10) false)) (bv 16 0x0))) (bv 6 0x10) false))) (set n (msb (cast 16 false (>> (var acc) (bv 6 0x10) false)))) (set z (is_zero (cast 16 false (>> (var acc) (bv 6 0x10) false)))))
+d "andb ah, #0x1" 0191 0x0 (seq (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (& (cast 16 false (>> (var acc) (bv 6 0x10) false)) (bv 16 0x1))) (bv 6 0x10) false))) (set n (msb (cast 16 false (>> (var acc) (bv 6 0x10) false)))) (set z (is_zero (cast 16 false (>> (var acc) (bv 6 0x10) false)))))
+d "lsr al, 1" c0ff 0x0 (seq (set sv (cast 16 false (var acc))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (>> (var sv) (bv 6 0x1) false)))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
+d "lsr ah, 1" d0ff 0x0 (seq (set sv (cast 16 false (>> (var acc) (bv 6 0x10) false))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff)) (<< (cast 32 false (>> (var sv) (bv 6 0x1) false)) (bv 6 0x10) false))) (set n (msb (cast 16 false (>> (var acc) (bv 6 0x10) false)))) (set z (is_zero (cast 16 false (>> (var acc) (bv 6 0x10) false)))))
 d "lsr al, t" 62ff 0x0
 d "lsr ah, t" 63ff 0x0
 
 # accumulator and 32-bit moves
-d "movl acc, @acc" a806 0x0
-d "movl acc, @xar0" a006 0x0
-d "movl @xar7, acc" a71e 0x0
-d "cmpl acc, @xar6" a60f 0x0
-d "mov acc, @0x00" 0085 0x0
-d "dmov @0x00" 00a5 0x0
+d "movl acc, @acc" a806 0x0 (set acc (var acc))
+d "movl acc, @xar0" a006 0x0 (set acc (var xar0))
+d "movl @xar7, acc" a71e 0x0 (set xar7 (var acc))
+d "cmpl acc, @xar6" a60f 0x0 (seq (set cl (var acc)) (set cr (var xar6)) (set cd (- (var cl) (var cr))) (set n (msb (var cd))) (set z (is_zero (var cd))) (set c (! (&& (ule (var cl) (var cr)) (! (== (var cl) (var cr)))))))
+d "mov acc, @0x00" 0085 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (ite (var sxm) (cast 32 (msb (var _val)) (var _val)) (cast 32 false (var _val)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "dmov @0x00" 00a5 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (storew 0 (* (cast 32 false (+ (var _ea) (bv 32 0x1))) (bv 32 0x2)) (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))))
 
 # two-word immediate forms
-d "movl xar0, #0x7700" 008d0077 0x0
-d "movl xar5, #0x7700" 408f0077 0x0
-d "movl xar6, #0x7700" 80760077 0x0
-d "movl xar7, #0x7700" c0760077 0x0
-d "mov @0x00, #0x7700" 00280077 0x0
-d "subcu acc, *-sp[54]" 761f 0x0
+d "movl xar0, #0x7700" 008d0077 0x0 (set xar0 (bv 32 0x7700))
+d "movl xar5, #0x7700" 408f0077 0x0 (set xar5 (bv 32 0x7700))
+d "movl xar6, #0x7700" 80760077 0x0 (set xar6 (bv 32 0x7700))
+d "movl xar7, #0x7700" c0760077 0x0 (set xar7 (bv 32 0x7700))
+d "mov @0x00, #0x7700" 00280077 0x0 (seq (set mv (bv 16 0x7700)) (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (storew 0 (* (cast 32 false (var _ea)) (bv 32 0x2)) (var mv)) nop)
+d "subcu acc, *-sp[54]" 761f 0x0 (seq (set _ea (cast 32 false (- (var sp) (bv 16 0x36)))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set tq (- (<< (cast 33 false (var acc)) (bv 6 0x1) false) (<< (cast 33 false (var _val)) (bv 6 0x10) false))) (set c (! (msb (var tq)))) (branch (msb (var tq)) (set acc (<< (var acc) (bv 6 0x1) false)) (set acc (+ (cast 32 false (var tq)) (bv 32 0x1)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
 
 # multiply
-d "mpy acc, t, @0x00" 0012 0x0
-d "mpy acc, @0x00, #0x7700" 00340077 0x0
-d "mpyxu acc, t, @0x00" 0030 0x0
-d "mpyu acc, t, @0x00" 0036 0x0
+d "mpy acc, t, @0x00" 0012 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (* (cast 32 (msb (cast 16 false (>> (var xt) (bv 6 0x10) false))) (cast 16 false (>> (var xt) (bv 6 0x10) false))) (cast 32 (msb (var _val)) (var _val)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "mpy acc, @0x00, #0x7700" 00340077 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (* (cast 32 (msb (var _val)) (var _val)) (cast 32 (msb (bv 16 0x7700)) (bv 16 0x7700)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "mpyxu acc, t, @0x00" 0030 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (* (cast 32 (msb (cast 16 false (>> (var xt) (bv 6 0x10) false))) (cast 16 false (>> (var xt) (bv 6 0x10) false))) (cast 32 false (var _val)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "mpyu acc, t, @0x00" 0036 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (* (cast 32 false (cast 16 false (>> (var xt) (bv 6 0x10) false))) (cast 32 false (var _val)))) (set n (msb (var acc))) (set z (is_zero (var acc))))
 
 # 0x56 extended plane
-d "sub acc, @0x0a" 00560a00 0x0
+d "sub acc, @0x0a" 00560a00 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0xa))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set oa (var acc)) (set av (ite (var sxm) (cast 32 (msb (var _val)) (var _val)) (cast 32 false (var _val)))) (set na (- (var oa) (var av))) (set ovf (msb (& (^ (var oa) (var av)) (^ (var oa) (var na))))) (set acc (ite (&& (var ovm) (var ovf)) (ite (msb (var oa)) (bv 32 0x80000000) (bv 32 0x7fffffff)) (var na))) (set v (|| (var v) (var ovf))) (set c (! (&& (ule (var oa) (var av)) (! (== (var oa) (var av)))))) (set ovc (ite (&& (var ovf) (! (var ovm))) (ite (msb (var na)) (+ (var ovc) (bv 6 0x1)) (- (var ovc) (bv 6 0x1))) (var ovc))) (set n (msb (var acc))) (set z (is_zero (var acc))))
 d "addl @0x0a, acc" 01560a00 0x0
-d "asrl acc, t" 1056 0x0
-d "zapa" 3356 0x0
-d "mov pm, al" 3856 0x0
-d "mov pm, ah" 3956 0x0
+d "asrl acc, t" 1056 0x0 (seq (set sv (var acc)) (set sc (cast 32 false (& (cast 16 false (>> (var xt) (bv 6 0x10) false)) (bv 16 0x1f)))) (set sr (ite true (>> (var sv) (var sc) (msb (var sv))) (>> (var sv) (var sc) false))) (set c (ite (is_zero (var sc)) false (lsb (>> (var sv) (- (var sc) (bv 32 0x1)) false)))) (set acc (var sr)) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "zapa" 3356 0x0 (seq (set acc (bv 32 0x0)) (set p (bv 32 0x0)) (set ovc (bv 6 0x0)) (set n false) (set z true))
+d "mov pm, al" 3856 0x0 (set pm (cast 3 false (cast 16 false (var acc))))
+d "mov pm, ah" 3956 0x0 (set pm (cast 3 false (cast 16 false (>> (var acc) (bv 6 0x10) false))))
 
 # shift
-d "lsl acc, 1" 30ff 0x0
-d "asr al, 1" a0ff 0x0
-d "lsrl acc, t" 2256 0x0
-d "lsl al, t" 66ff 0x0
+d "lsl acc, 1" 30ff 0x0 (seq (set sv (var acc)) (set c (lsb (>> (var sv) (bv 6 0x1f) false))) (set acc (<< (var acc) (bv 6 0x1) false)) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "asr al, 1" a0ff 0x0 (seq (set sv (cast 16 false (var acc))) (set c (lsb (>> (var sv) (bv 6 0x0) false))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (>> (var sv) (bv 6 0x1) (msb (var sv)))))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
+d "lsrl acc, t" 2256 0x0 (seq (set sv (var acc)) (set sc (cast 32 false (& (cast 16 false (>> (var xt) (bv 6 0x10) false)) (bv 16 0x1f)))) (set sr (>> (var sv) (var sc) false)) (set c (ite (is_zero (var sc)) false (lsb (>> (var sv) (- (var sc) (bv 32 0x1)) false)))) (set acc (var sr)) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "lsl al, t" 66ff 0x0 (seq (set sv (cast 16 false (var acc))) (set sc (cast 16 false (& (cast 16 false (>> (var xt) (bv 6 0x10) false)) (bv 16 0xf)))) (set sr (<< (var sv) (var sc) false)) (set c (ite (is_zero (var sc)) false (lsb (>> (var sv) (- (bv 16 0x10) (var sc)) false)))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (var sr)))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
 
 # bit test and mode bits
-d "tbit @0x00, #0x0" 0040 0x0
+d "tbit @0x00, #0x0" 0040 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set tc (lsb (>> (var _val) (bv 5 0x0) false))))
 d "tbit @ar0, #0x0" a040 0x0
-d "clrc sxm|ovm" 0329 0x0
-d "setc sxm|ovm" 033b 0x0
+d "clrc sxm|ovm" 0329 0x0 (seq (set sxm false) (set ovm false))
+d "setc sxm|ovm" 033b 0x0 (seq (set sxm true) (set ovm true))
 
 # loops and byte moves with a post-modified pointer
-d "loopz *xar4++, #0x7700" 842c0077 0x0
-d "loopnz *br0--, #0x7700" af2e0077 0x0
-d "movb al.lsb, *br0++" aec6 0x0
+d "loopz *xar4++, #0x7700" 842c0077 0x0 (seq (set _ea (var xar4)) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set lp (is_zero (& (var _val) (bv 16 0x7700)))) (set loop (var lp)) (set xar4 (+ (var xar4) (bv 32 0x1))) (branch (var lp) (jmp (bv 32 0x0)) nop))
+d "loopnz *br0--, #0x7700" af2e0077 0x0 (seq (set _ea (ite (== (var arp) (bv 3 0x0)) (var xar0) (ite (== (var arp) (bv 3 0x1)) (var xar1) (ite (== (var arp) (bv 3 0x2)) (var xar2) (ite (== (var arp) (bv 3 0x3)) (var xar3) (ite (== (var arp) (bv 3 0x4)) (var xar4) (ite (== (var arp) (bv 3 0x5)) (var xar5) (ite (== (var arp) (bv 3 0x6)) (var xar6) (var xar7))))))))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set lp (! (is_zero (& (var _val) (bv 16 0x7700))))) (set loop (var lp)) (set ao (ite (== (var arp) (bv 3 0x0)) (var xar0) (ite (== (var arp) (bv 3 0x1)) (var xar1) (ite (== (var arp) (bv 3 0x2)) (var xar2) (ite (== (var arp) (bv 3 0x3)) (var xar3) (ite (== (var arp) (bv 3 0x4)) (var xar4) (ite (== (var arp) (bv 3 0x5)) (var xar5) (ite (== (var arp) (bv 3 0x6)) (var xar6) (var xar7))))))))) (set rva (cast 16 false (var ao))) (set rv0 (cast 16 false (var xar0))) (set rvs (- (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rva) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rva) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rva) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rva) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rva) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rva) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rva) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rva) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rva) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rva) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rva) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rva) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rva) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rva) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rva) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rva) (bv 16 0x8000)) (bv 4 0xf) false)) (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rv0) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rv0) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rv0) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rv0) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rv0) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rv0) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rv0) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rv0) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rv0) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rv0) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rv0) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rv0) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rv0) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rv0) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rv0) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rv0) (bv 16 0x8000)) (bv 4 0xf) false)))) (set rvn (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rvs) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rvs) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rvs) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rvs) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rvs) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rvs) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rvs) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rvs) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rvs) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rvs) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rvs) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rvs) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rvs) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rvs) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rvs) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rvs) (bv 16 0x8000)) (bv 4 0xf) false))) (set an (| (& (var ao) (bv 32 0xffff0000)) (cast 32 false (var rvn)))) (branch (== (var arp) (bv 3 0x0)) (set xar0 (var an)) (branch (== (var arp) (bv 3 0x1)) (set xar1 (var an)) (branch (== (var arp) (bv 3 0x2)) (set xar2 (var an)) (branch (== (var arp) (bv 3 0x3)) (set xar3 (var an)) (branch (== (var arp) (bv 3 0x4)) (set xar4 (var an)) (branch (== (var arp) (bv 3 0x5)) (set xar5 (var an)) (branch (== (var arp) (bv 3 0x6)) (set xar6 (var an)) (set xar7 (var an))))))))) (branch (var lp) (jmp (bv 32 0x0)) nop))
+d "movb al.lsb, *br0++" aec6 0x0 (seq (set _ea (ite (== (var arp) (bv 3 0x0)) (var xar0) (ite (== (var arp) (bv 3 0x1)) (var xar1) (ite (== (var arp) (bv 3 0x2)) (var xar2) (ite (== (var arp) (bv 3 0x3)) (var xar3) (ite (== (var arp) (bv 3 0x4)) (var xar4) (ite (== (var arp) (bv 3 0x5)) (var xar5) (ite (== (var arp) (bv 3 0x6)) (var xar6) (var xar7))))))))) (set bs false) (set bw (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set av (cast 16 false (var acc))) (set nv (cast 16 false (ite (var bs) (cast 8 false (>> (var bw) (bv 4 0x8) false)) (cast 8 false (var bw))))) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (var nv)))) (set n (msb (var nv))) (set z (is_zero (var nv))) (set ao (ite (== (var arp) (bv 3 0x0)) (var xar0) (ite (== (var arp) (bv 3 0x1)) (var xar1) (ite (== (var arp) (bv 3 0x2)) (var xar2) (ite (== (var arp) (bv 3 0x3)) (var xar3) (ite (== (var arp) (bv 3 0x4)) (var xar4) (ite (== (var arp) (bv 3 0x5)) (var xar5) (ite (== (var arp) (bv 3 0x6)) (var xar6) (var xar7))))))))) (set rva (cast 16 false (var ao))) (set rv0 (cast 16 false (var xar0))) (set rvs (+ (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rva) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rva) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rva) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rva) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rva) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rva) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rva) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rva) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rva) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rva) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rva) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rva) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rva) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rva) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rva) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rva) (bv 16 0x8000)) (bv 4 0xf) false)) (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rv0) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rv0) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rv0) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rv0) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rv0) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rv0) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rv0) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rv0) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rv0) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rv0) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rv0) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rv0) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rv0) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rv0) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rv0) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rv0) (bv 16 0x8000)) (bv 4 0xf) false)))) (set rvn (| (| (| (| (| (| (| (| (| (| (| (| (| (| (| (<< (& (var rvs) (bv 16 0x1)) (bv 4 0xf) false) (<< (& (var rvs) (bv 16 0x2)) (bv 4 0xd) false)) (<< (& (var rvs) (bv 16 0x4)) (bv 4 0xb) false)) (<< (& (var rvs) (bv 16 0x8)) (bv 4 0x9) false)) (<< (& (var rvs) (bv 16 0x10)) (bv 4 0x7) false)) (<< (& (var rvs) (bv 16 0x20)) (bv 4 0x5) false)) (<< (& (var rvs) (bv 16 0x40)) (bv 4 0x3) false)) (<< (& (var rvs) (bv 16 0x80)) (bv 4 0x1) false)) (>> (& (var rvs) (bv 16 0x100)) (bv 4 0x1) false)) (>> (& (var rvs) (bv 16 0x200)) (bv 4 0x3) false)) (>> (& (var rvs) (bv 16 0x400)) (bv 4 0x5) false)) (>> (& (var rvs) (bv 16 0x800)) (bv 4 0x7) false)) (>> (& (var rvs) (bv 16 0x1000)) (bv 4 0x9) false)) (>> (& (var rvs) (bv 16 0x2000)) (bv 4 0xb) false)) (>> (& (var rvs) (bv 16 0x4000)) (bv 4 0xd) false)) (>> (& (var rvs) (bv 16 0x8000)) (bv 4 0xf) false))) (set an (| (& (var ao) (bv 32 0xffff0000)) (cast 32 false (var rvn)))) (branch (== (var arp) (bv 3 0x0)) (set xar0 (var an)) (branch (== (var arp) (bv 3 0x1)) (set xar1 (var an)) (branch (== (var arp) (bv 3 0x2)) (set xar2 (var an)) (branch (== (var arp) (bv 3 0x3)) (set xar3 (var an)) (branch (== (var arp) (bv 3 0x4)) (set xar4 (var an)) (branch (== (var arp) (bv 3 0x5)) (set xar5 (var an)) (branch (== (var arp) (bv 3 0x6)) (set xar6 (var an)) (set xar7 (var an))))))))))
 
 # branch displacements are relative to the branch's own address
-d "sb 0xac, los" 1369 0x86
-d "sb 0x88, hi" ef66 0xaa
-d "sb 0x6, unc" 036f 0x0
-d "banz 0xee00, ar0" 08000077 0x0
+d "sb 0xac, los" 1369 0x86 (branch (|| (! (var c)) (var z)) (jmp (bv 32 0xac)) nop)
+d "sb 0x88, hi" ef66 0xaa (branch (&& (var c) (! (var z))) (jmp (bv 32 0x88)) nop)
+d "sb 0x6, unc" 036f 0x0 (jmp (bv 32 0x6))
+d "banz 0xee00, ar0" 08000077 0x0 (seq (set t (cast 16 false (var xar0))) (set xar0 (| (& (var xar0) (bv 32 0xffff0000)) (cast 32 false (- (var t) (bv 16 0x1))))) (branch (! (is_zero (var t))) (jmp (bv 32 0xee00)) nop))
 
 # A program address used as a branch target prints bare; one read as data is
 # wrapped; MAC qualifies it with the page instead. dis2000 draws the same
@@ -90,27 +92,27 @@ d "banz 0xee00, ar0" 08000077 0x0
 # this engine, so 0x7700 in the encoding prints as 0xee00.
 d "mac p, @0x00, 0:0xee00" 00140077 0x0
 d "xmac p, @0x00, *(0x7eee00)" 00840077 0x0
-d "xpread @0x00, *(0x7eee00)" 00ac0077 0x0
-d "lcr 0xee00" 40760077 0x0
-d "ffc xar7, 0xee00" c0000077 0x0
+d "xpread @0x00, *(0x7eee00)" 00ac0077 0x0 (seq (set mv (loadw 0 16 (bv 32 0x7eee00))) (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (storew 0 (* (cast 32 false (var _ea)) (bv 32 0x2)) (var mv)) nop)
+d "lcr 0xee00" 40760077 0x0 (seq (set ra (var rpc)) (storew 0 (* (cast 32 false (var sp)) (bv 32 0x2)) (cast 16 false (var ra))) (set sp (+ (var sp) (bv 16 0x1))) (storew 0 (* (cast 32 false (var sp)) (bv 32 0x2)) (cast 16 false (>> (var ra) (bv 6 0x10) false))) (set sp (+ (var sp) (bv 16 0x1))) (set rpc (bv 32 0x2)) (jmp (bv 32 0xee00)))
+d "ffc xar7, 0xee00" c0000077 0x0 (seq (set xar7 (bv 32 0x2)) (jmp (bv 32 0xee00)))
 
 # OR ACC,#16bit<<shift sits between the AND and XOR forms of the same block and
 # was the one of the three left out. MAX, MIN and SXTB take the AX select in the
 # low bit; for MAX and MIN the loc16 is the low byte of the second word and the
 # rest of that word is reserved, which dis2000 ignores.
-d "or acc, #0x7700" 103e0077 0x0
-d "or acc, #0x7700 << #15" 1f3e0077 0x0
-d "max al, @0x00" 72560077 0x0
-d "min al, @0x00" 74560077 0x0
-d "sxtb al" 60ff 0x0
-d "mov acc, @0x12 << #3" 03561203 0x0
-d "mov acc, *-sp[2] << #15" 0356420f 0x0
+d "or acc, #0x7700" 103e0077 0x0 (seq (set na (| (var acc) (cast 32 false (bv 16 0x7700)))) (set acc (var na)) (set n (msb (var na))) (set z (is_zero (var na))))
+d "or acc, #0x7700 << #15" 1f3e0077 0x0 (seq (set na (| (var acc) (<< (cast 32 false (bv 16 0x7700)) (bv 6 0xf) false))) (set acc (var na)) (set n (msb (var na))) (set z (is_zero (var na))))
+d "max al, @0x00" 72560077 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set mo (cast 16 false (var acc))) (set rp (&& (sle (var mo) (var _val)) (! (== (var mo) (var _val))))) (set n (&& (sle (var mo) (var _val)) (! (== (var mo) (var _val))))) (set z (== (var mo) (var _val))) (set v (|| (var v) (var rp))) (branch (var rp) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (var _val)))) nop))
+d "min al, @0x00" 74560077 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x0))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set mo (cast 16 false (var acc))) (set rp (&& (sle (var _val) (var mo)) (! (== (var _val) (var mo))))) (set n (&& (sle (var mo) (var _val)) (! (== (var mo) (var _val))))) (set z (== (var mo) (var _val))) (set v (|| (var v) (var rp))) (branch (var rp) (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (var _val)))) nop))
+d "sxtb al" 60ff 0x0 (seq (set acc (| (& (var acc) (bv 32 0xffff0000)) (cast 32 false (cast 16 (msb (cast 8 false (cast 16 false (var acc)))) (cast 8 false (cast 16 false (var acc))))))) (set n (msb (cast 16 false (var acc)))) (set z (is_zero (cast 16 false (var acc)))))
+d "mov acc, @0x12 << #3" 03561203 0x0 (seq (set _ea (| (<< (cast 32 false (var dp)) (bv 32 0x6) false) (bv 32 0x12))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (<< (ite (var sxm) (cast 32 (msb (var _val)) (var _val)) (cast 32 false (var _val))) (bv 6 0x3) false)) (set n (msb (var acc))) (set z (is_zero (var acc))))
+d "mov acc, *-sp[2] << #15" 0356420f 0x0 (seq (set _ea (cast 32 false (- (var sp) (bv 16 0x2)))) (set _val (loadw 0 16 (* (cast 32 false (var _ea)) (bv 32 0x2)))) (set acc (<< (ite (var sxm) (cast 32 (msb (var _val)) (var _val)) (cast 32 false (var _val))) (bv 6 0xf) false)) (set n (msb (var acc))) (set z (is_zero (var acc))))
 d "dmac acc:p, @0x12, *xar7++" 4b561287 0x0
 d "imacl p, *-sp[2], *xar7" 4d5642c7 0x0
 d "qmacl p, *ar6%++, *xar7++" 4f56bf87 0x0
-d "sbf 0x20, eq" 10ec 0x0
-d "sbf 0x20, neq" 10ed 0x0
-d "sbf 0x20, tc" 10ee 0x0
-d "sbf 0x20, ntc" 10ef 0x0
-d "bar 0x0, ar0, ar0, eq" 808f0000 0x0
-d "bar 0x0, ar1, ar1, neq" c98f0000 0x0
+d "sbf 0x20, eq" 10ec 0x0 (branch (var z) (jmp (bv 32 0x20)) nop)
+d "sbf 0x20, neq" 10ed 0x0 (branch (! (var z)) (jmp (bv 32 0x20)) nop)
+d "sbf 0x20, tc" 10ee 0x0 (branch (var tc) (jmp (bv 32 0x20)) nop)
+d "sbf 0x20, ntc" 10ef 0x0 (branch (! (var tc)) (jmp (bv 32 0x20)) nop)
+d "bar 0x0, ar0, ar0, eq" 808f0000 0x0 (branch (== (cast 16 false (var xar0)) (cast 16 false (var xar0))) (jmp (bv 32 0x0)) nop)
+d "bar 0x0, ar1, ar1, neq" c98f0000 0x0 (branch (! (== (cast 16 false (var xar1)) (cast 16 false (var xar1)))) (jmp (bv 32 0x0)) nop)

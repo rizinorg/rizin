@@ -1,0 +1,2114 @@
+NAME=C28x RzIL VM: ALU, bit and shift operations
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 54ff @ 0
+ara0
+ar acc=0x80000000
+ar ovm=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEG ACC, 0x80000000 with OVM
+ar acc
+ar v
+ar c
+ar n
+ar z
+w0 8192 @ 0
+wx 54ff @ 0
+ara0
+ar acc=0x80000000
+aezi
+pi 1
+aezs 1
+echo -- NEG ACC, 0x80000000 without OVM
+ar acc
+ar v
+ar n
+w0 8192 @ 0
+wx 54ff @ 0
+ara0
+ar acc=0x0
+aezi
+pi 1
+aezs 1
+echo -- NEG ACC, 0
+ar acc
+ar c
+ar z
+w0 8192 @ 0
+wx 56ff @ 0
+ara0
+ar acc=0xfffffffe
+ar c=0x1
+aezi
+pi 1
+aezs 1
+echo -- ABS ACC, -2
+ar acc
+ar c
+ar n
+w0 8192 @ 0
+wx 57ff @ 0
+ara0
+ar acc=0x1234
+ar ovc=0x3f
+aezi
+pi 1
+aezs 1
+echo -- SAT ACC, OVC -1
+ar acc
+ar v
+ar ovc
+ar c
+ar n
+w0 8192 @ 0
+wx 57ff @ 0
+ara0
+ar acc=0x1234
+ar v=0x1
+aezi
+pi 1
+aezs 1
+echo -- SAT ACC, OVC 0
+ar acc
+ar v
+w0 8192 @ 0
+wx a90a @ 0
+ara0
+ar acc=0x7fff
+aezi
+pi 1
+aezs 1
+echo -- INC AL, 0x7fff
+ar acc
+ar v
+ar n
+ar c
+ar z
+w0 8192 @ 0
+wx a90b @ 0
+ara0
+ar acc=0x0
+aezi
+pi 1
+aezs 1
+echo -- DEC AL, 0
+ar acc
+ar c
+ar n
+ar v
+w0 8192 @ 0
+wx a90c @ 0
+ara0
+ar acc=0xffffffff
+ar c=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADDCU ACC,AL, C 1
+ar acc
+ar c
+ar v
+ar n
+w0 8192 @ 0
+wx a91d @ 0
+ara0
+ar acc=0x10
+aezi
+pi 1
+aezs 1
+echo -- SBBU ACC,AL, C 0
+ar acc
+ar c
+ar n
+w0 8192 @ 0
+wx 3b56 @ 0
+ara0
+ar acc=0x10000001
+ar xt=0x40000
+aezi
+pi 1
+aezs 1
+echo -- LSLL ACC,T, T 4
+ar acc
+ar c
+w0 8192 @ 0
+wx 53ff @ 0
+ara0
+ar acc=0x80000000
+aezi
+pi 1
+aezs 1
+echo -- ROL ACC, C 0
+ar acc
+ar c
+ar z
+w0 8192 @ 0
+wx 3356 @ 0
+ara0
+ar acc=0x5
+ar p=0x7
+ar ovc=0x3
+aezi
+pi 1
+aezs 1
+echo -- ZAPA
+ar acc
+ar p
+ar ovc
+ar n
+ar z
+w0 8192 @ 0
+wx ae92ae92ae92ae92ae92 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x0
+ar xar0=0x8
+aezi
+pi 1
+aezs 1
+echo -- BR0++ step 1, AR0 8
+ar xar3
+w0 8192 @ 0
+wx ae92ae92ae92ae92ae92 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x0
+ar xar0=0x8
+aezi
+pi 2
+aezs 2
+echo -- BR0++ step 2, AR0 8
+ar xar3
+w0 8192 @ 0
+wx ae92ae92ae92ae92ae92 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x0
+ar xar0=0x8
+aezi
+pi 3
+aezs 3
+echo -- BR0++ step 3, AR0 8
+ar xar3
+w0 8192 @ 0
+wx ae92ae92ae92ae92ae92 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x0
+ar xar0=0x8
+aezi
+pi 4
+aezs 4
+echo -- BR0++ step 4, AR0 8
+ar xar3
+w0 8192 @ 0
+wx ae92ae92ae92ae92ae92 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x0
+ar xar0=0x8
+aezi
+pi 5
+aezs 5
+echo -- BR0++ step 5, AR0 8
+ar xar3
+w0 8192 @ 0
+wx bf92bf92bf92bf92 @ 0
+ara0
+ar xar6=0x100
+ar xar1=0x2
+aezi
+pi 1
+aezs 1
+echo -- AR6++ step 1, AR1 2
+ar xar6
+ar arp
+w0 8192 @ 0
+wx bf92bf92bf92bf92 @ 0
+ara0
+ar xar6=0x100
+ar xar1=0x2
+aezi
+pi 2
+aezs 2
+echo -- AR6++ step 2, AR1 2
+ar xar6
+ar arp
+w0 8192 @ 0
+wx bf92bf92bf92bf92 @ 0
+ara0
+ar xar6=0x100
+ar xar1=0x2
+aezi
+pi 3
+aezs 3
+echo -- AR6++ step 3, AR1 2
+ar xar6
+ar arp
+w0 8192 @ 0
+wx bf92bf92bf92bf92 @ 0
+ara0
+ar xar6=0x100
+ar xar1=0x2
+aezi
+pi 4
+aezs 4
+echo -- AR6++ step 4, AR1 2
+ar xar6
+ar arp
+w0 8192 @ 0
+wx b592 @ 0
+wx 3412 @ 128
+ara0
+ar arp=0x2
+ar xar2=0x40
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,,ARP5 with ARP 2
+ar arp
+ar acc
+EOF
+EXPECT=<<EOF
+neg acc
+-- NEG ACC, 0x80000000 with OVM
+acc = 0x7fffffff
+v = 0x1
+c = 0x0
+n = 0x0
+z = 0x0
+neg acc
+-- NEG ACC, 0x80000000 without OVM
+acc = 0x80000000
+v = 0x1
+n = 0x1
+neg acc
+-- NEG ACC, 0
+acc = 0x00000000
+c = 0x1
+z = 0x1
+abs acc
+-- ABS ACC, -2
+acc = 0x00000002
+c = 0x0
+n = 0x0
+sat acc
+-- SAT ACC, OVC -1
+acc = 0x80000000
+v = 0x1
+ovc = 0x00
+c = 0x0
+n = 0x1
+sat acc
+-- SAT ACC, OVC 0
+acc = 0x00001234
+v = 0x0
+inc @al
+-- INC AL, 0x7fff
+acc = 0x00008000
+v = 0x1
+n = 0x1
+c = 0x0
+z = 0x0
+dec @al
+-- DEC AL, 0
+acc = 0x0000ffff
+c = 0x0
+n = 0x1
+v = 0x0
+addcu acc, @al
+-- ADDCU ACC,AL, C 1
+acc = 0x0000ffff
+c = 0x1
+v = 0x0
+n = 0x0
+sbbu acc, @al
+-- SBBU ACC,AL, C 0
+acc = 0xffffffff
+c = 0x0
+n = 0x1
+lsll acc, t
+-- LSLL ACC,T, T 4
+acc = 0x00000010
+c = 0x1
+rol acc
+-- ROL ACC, C 0
+acc = 0x00000000
+c = 0x1
+z = 0x1
+zapa
+-- ZAPA
+acc = 0x00000000
+p = 0x00000000
+ovc = 0x00
+n = 0x0
+z = 0x1
+mov al, *br0++
+-- BR0++ step 1, AR0 8
+xar3 = 0x00000008
+mov al, *br0++
+mov al, *br0++
+-- BR0++ step 2, AR0 8
+xar3 = 0x00000004
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+-- BR0++ step 3, AR0 8
+xar3 = 0x0000000c
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+-- BR0++ step 4, AR0 8
+xar3 = 0x00000002
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+mov al, *br0++
+-- BR0++ step 5, AR0 8
+xar3 = 0x0000000a
+mov al, *ar6%++
+-- AR6++ step 1, AR1 2
+xar6 = 0x00000101
+arp = 0x6
+mov al, *ar6%++
+mov al, *ar6%++
+-- AR6++ step 2, AR1 2
+xar6 = 0x00000102
+arp = 0x6
+mov al, *ar6%++
+mov al, *ar6%++
+mov al, *ar6%++
+-- AR6++ step 3, AR1 2
+xar6 = 0x00000100
+arp = 0x6
+mov al, *ar6%++
+mov al, *ar6%++
+mov al, *ar6%++
+mov al, *ar6%++
+-- AR6++ step 4, AR1 2
+xar6 = 0x00000101
+arp = 0x6
+mov al, *arp5
+-- MOV AL,,ARP5 with ARP 2
+arp = 0x5
+acc = 0x00001234
+EOF
+RUN
+
+NAME=C28x RzIL VM: moves, AX arithmetic, calls and returns
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx a894 @ 0
+ara0
+ar acc=0x17fff
+aezi
+pi 1
+aezs 1
+echo -- ADD AL,AH overflow
+ar acc
+ar v
+ar n
+ar c
+w0 8192 @ 0
+wx a89e @ 0
+ara0
+ar acc=0x10000
+aezi
+pi 1
+aezs 1
+echo -- SUB AL,AH borrow
+ar acc
+ar c
+ar n
+w0 8192 @ 0
+wx a908ffff @ 0
+ara0
+ar acc=0x1
+ar v=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADD AL,-1 clears V
+ar acc
+ar z
+ar c
+ar v
+w0 8192 @ 0
+wx 0856ff00 @ 0
+ara0
+ar acc=0xffffffff
+aezi
+pi 1
+aezs 1
+echo -- AND ACC,0xff16
+ar acc
+ar n
+ar z
+w0 8192 @ 0
+wx 24ff0080 @ 0
+ara0
+ar sxm=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV ACC,0x80004, SXM
+ar acc
+ar n
+w0 8192 @ 0
+wx 24ff0080 @ 0
+ara0
+ar sxm=0x0
+aezi
+pi 1
+aezs 1
+echo -- MOV ACC,0x80004, no SXM
+ar acc
+ar n
+w0 8192 @ 0
+wx 0256a900 @ 0
+ara0
+ar acc=0xfc00
+aezi
+pi 1
+aezs 1
+echo -- MOV OVC,AL
+ar ovc
+w0 8192 @ 0
+wx 2956a900 @ 0
+ara0
+ar ovc=0x21
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,OVC
+ar acc
+ar n
+w0 8192 @ 0
+wx a9280080 @ 0
+ara0
+ar acc=0x12340000
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,0x8000 sets N
+ar acc
+ar n
+ar z
+w0 8192 @ 0
+wx 50ff @ 0
+ara0
+ar acc=0x80000000
+ar c=0x1
+aezi
+pi 1
+aezs 1
+echo -- LSL ACC,T with T 0
+ar acc
+ar c
+ar n
+w0 8192 @ 0
+wx 2b56a901 @ 0
+ara0
+ar acc=0x12340000
+ar z=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,AH,EQ taken
+ar acc
+w0 8192 @ 0
+wx 2b56a901 @ 0
+ara0
+ar acc=0x12340000
+ar z=0x0
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,AH,EQ not taken
+ar acc
+ar pc
+w0 8192 @ 0
+wx 2b56a90b @ 0
+ara0
+ar acc=0x10000
+ar v=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,AH,OV clears V
+ar acc
+ar v
+w0 8192 @ 0
+wx 40764000 @ 0
+ara0
+ar sp=0x100
+ar rpc=0x123456
+aezi
+pi 1
+aezs 1
+echo -- LCR keeps a word address
+ar rpc
+ar sp
+ar pc
+w0 8192 @ 0
+wx 0600 @ 0
+ara0
+ar rpc=0x3f8000
+ar sp=0x102
+aezi
+pi 1
+aezs 1
+echo -- LRETR into boot ROM
+ar pc
+ar sp
+w0 8192 @ 0
+wx 80004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001476 @ 0
+ara0
+ar sp=0x100
+aezi
+pi 1
+pi 1 @ 0x80
+aezs 2
+echo -- LC 22bit then LRET
+ar pc
+ar sp
+w0 8192 @ 0
+wx 0600 @ 0
+wx 0080 @ 512
+wx 3f00 @ 514
+ara0
+ar rpc=0x40
+ar sp=0x102
+aezi
+pi 1
+aezs 1
+echo -- LRETR reloads RPC from the stack
+ar pc
+ar sp
+ar rpc
+w0 8192 @ 0
+wx c0004000 @ 0
+ara0
+aezi
+pi 1
+aezs 1
+echo -- FFC XAR7,22bit
+ar xar7
+ar pc
+w0 8192 @ 0
+wx ebff1000 @ 0
+ara0
+ar v=0x1
+aezi
+pi 1
+aezs 1
+echo -- B OV clears V
+ar v
+ar pc
+w0 8192 @ 0
+wx 2076 @ 0
+ara0
+ar xar7=0xffc00040
+aezi
+pi 1
+aezs 1
+echo -- LB *XAR7 branches to XAR7(21:0)
+ar pc
+w0 8192 @ 0
+wx 643e @ 0
+ara0
+ar xar4=0x40
+ar rpc=0x123456
+ar sp=0x100
+aezi
+pi 1
+aezs 1
+echo -- LCR *XAR4 pushes RPC and keeps the return word address
+ar rpc
+ar sp
+ar pc
+w0 8192 @ 0
+wx 643e @ 0
+wx 0600 @ 128
+ara0
+ar xar4=0x40
+ar rpc=0x3f8000
+ar sp=0x100
+aezi
+pi 1
+pi 1 @ 0x80
+aezs 2
+echo -- LCR *XAR4 then LRETR returns past the call
+ar pc
+ar sp
+ar rpc
+EOF
+EXPECT=<<EOF
+add al, @ah
+-- ADD AL,AH overflow
+acc = 0x00018000
+v = 0x1
+n = 0x1
+c = 0x0
+sub al, @ah
+-- SUB AL,AH borrow
+acc = 0x0001ffff
+c = 0x0
+n = 0x1
+add @al, #-0x1
+-- ADD AL,-1 clears V
+acc = 0x00000000
+z = 0x1
+c = 0x1
+v = 0x0
+and acc, #0xff << #16
+-- AND ACC,0xff16
+acc = 0x00ff0000
+n = 0x0
+z = 0x0
+mov acc, #0x8000 << #4
+-- MOV ACC,0x80004, SXM
+acc = 0xfff80000
+n = 0x1
+mov acc, #0x8000 << #4
+-- MOV ACC,0x80004, no SXM
+acc = 0x00080000
+n = 0x0
+mov ovc, @al
+-- MOV OVC,AL
+ovc = 0x3f
+mov @al, ovc
+-- MOV AL,OVC
+acc = 0x00008400
+n = 0x1
+mov @al, #0x8000
+-- MOV AL,0x8000 sets N
+acc = 0x12348000
+n = 0x1
+z = 0x0
+lsl acc, t
+-- LSL ACC,T with T 0
+acc = 0x80000000
+c = 0x0
+n = 0x1
+mov @al, ah, eq
+-- MOV AL,AH,EQ taken
+acc = 0x12341234
+mov @al, ah, eq
+-- MOV AL,AH,EQ not taken
+acc = 0x12340000
+pc = 0x00000004
+mov @al, ah, ov
+-- MOV AL,AH,OV clears V
+acc = 0x00010001
+v = 0x0
+lcr 0x80
+-- LCR keeps a word address
+rpc = 0x00000002
+sp = 0x0102
+pc = 0x00000080
+lretr
+-- LRETR into boot ROM
+pc = 0x007f0000
+sp = 0x0100
+lc 0x80
+lret
+-- LC 22bit then LRET
+pc = 0x00000004
+sp = 0x0100
+lretr
+-- LRETR reloads RPC from the stack
+pc = 0x00000080
+sp = 0x0100
+rpc = 0x003f8000
+ffc xar7, 0x80
+-- FFC XAR7,22bit
+xar7 = 0x00000002
+pc = 0x00000080
+b 0x20, ov
+-- B OV clears V
+v = 0x0
+pc = 0x00000020
+lb *xar7
+-- LB *XAR7 branches to XAR7(21:0)
+pc = 0x00000080
+lcr *xar4
+-- LCR *XAR4 pushes RPC and keeps the return word address
+rpc = 0x00000001
+sp = 0x0102
+pc = 0x00000080
+lcr *xar4
+lretr
+-- LCR *XAR4 then LRETR returns past the call
+pc = 0x00000002
+sp = 0x0100
+rpc = 0x003f8000
+EOF
+RUN
+
+NAME=C28x RzIL VM: multiplies and the product shift mode
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx a912 @ 0
+ara0
+ar xt=0xfffd0000
+ar acc=0x7
+aezi
+pi 1
+aezs 1
+echo -- MPY ACC,T,AL signed
+ar acc
+ar n
+w0 8192 @ 0
+wx a937 @ 0
+ara0
+ar xt=0xffff0000
+ar acc=0xffff
+aezi
+pi 1
+aezs 1
+echo -- MPYU P,T,AL
+ar p
+w0 8192 @ 0
+wx a932 @ 0
+ara0
+ar xt=0xffff0000
+ar acc=0xffff
+aezi
+pi 1
+aezs 1
+echo -- MPYXU P,T,AL
+ar p
+w0 8192 @ 0
+wx a917 @ 0
+ara0
+ar acc=0x3
+ar p=0x5
+ar xt=0x20000
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- MPYA P,T,AL, PM 1
+ar acc
+ar p
+w0 8192 @ 0
+wx a917 @ 0
+ara0
+ar acc=0x3
+ar p=0x5
+ar xt=0x20000
+ar pm=0x0
+aezi
+pi 1
+aezs 1
+echo -- MPYA P,T,AL, PM 0 shifts left
+ar acc
+ar p
+w0 8192 @ 0
+wx a913 @ 0
+ara0
+ar acc=0xa
+ar p=0xfffffff8
+ar xt=0x10000
+ar pm=0x2
+aezi
+pi 1
+aezs 1
+echo -- MPYS P,T,AL, PM 2 shifts right
+ar acc
+ar p
+w0 8192 @ 0
+wx a916 @ 0
+ara0
+ar acc=0xabcd
+ar p=0x1
+ar pm=0x5
+ar amode=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVP T,AL, PM 5 with AMODE
+ar acc
+ar xt
+w0 8192 @ 0
+wx a916 @ 0
+ara0
+ar acc=0xabcd
+ar p=0x100
+ar pm=0x5
+aezi
+pi 1
+aezs 1
+echo -- MOVP T,AL, PM 5 without AMODE
+ar acc
+w0 8192 @ 0
+wx 1556a900 @ 0
+ara0
+ar acc=0xfffd
+ar p=0x0
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- SQRA AL
+ar p
+ar xt
+ar acc
+w0 8192 @ 0
+wx 0556a900 @ 0
+ara0
+ar xt=0x10000
+ar acc=0x10000
+ar pm=0x1
+ar p=0x5555
+aezi
+pi 1
+aezs 1
+echo -- IMPYL P,XT,ACC, PM 1
+ar p
+w0 8192 @ 0
+wx 0556a900 @ 0
+ara0
+ar xt=0x10000
+ar acc=0x10000
+ar pm=0x2
+aezi
+pi 1
+aezs 1
+echo -- IMPYL P,XT,ACC, PM 2
+ar p
+w0 8192 @ 0
+wx 6756a900 @ 0
+ara0
+ar xt=0x10000
+ar acc=0x10000
+aezi
+pi 1
+aezs 1
+echo -- QMPYL P,XT,ACC
+ar p
+w0 8192 @ 0
+wx 4756a900 @ 0
+ara0
+ar xt=0xffffffff
+ar acc=0xffffffff
+aezi
+pi 1
+aezs 1
+echo -- QMPYUL P,XT,ACC
+ar p
+w0 8192 @ 0
+wx 4256a900 @ 0
+ara0
+ar xt=0xffffffff
+ar acc=0xffffffff
+aezi
+pi 1
+aezs 1
+echo -- QMPYXUL P,XT,ACC
+ar p
+w0 8192 @ 0
+wx 4c56a400 @ 0
+ara0
+ar acc=0xffffffff
+ar p=0x1
+ar xt=0x2
+ar xar4=0xffffffff
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- IMPYAL P,XT,XAR4 counts OVCU
+ar acc
+ar c
+ar z
+ar ovc
+ar p
+w0 8192 @ 0
+wx 5356a400 @ 0
+ara0
+ar acc=0xffffffff
+ar xar4=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADDUL ACC,XAR4 carry
+ar acc
+ar c
+ar z
+ar ovc
+ar v
+w0 8192 @ 0
+wx 5556a400 @ 0
+ara0
+ar acc=0x0
+ar xar4=0x1
+aezi
+pi 1
+aezs 1
+echo -- SUBUL ACC,XAR4 borrow
+ar acc
+ar c
+ar n
+ar ovc
+w0 8192 @ 0
+wx a93f @ 0
+ara0
+ar p=0x4001
+ar pm=0x0
+aezi
+pi 1
+aezs 1
+echo -- MOV AL,P, PM 0
+ar acc
+ar n
+w0 8192 @ 0
+wx a957 @ 0
+ara0
+ar p=0x12345678
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVH AL,P, PM 1
+ar acc
+w0 8192 @ 0
+wx ac16 @ 0
+ara0
+ar p=0x80000000
+ar pm=0x7
+aezi
+pi 1
+aezs 1
+echo -- MOVL ACC,PPM, PM 7
+ar acc
+ar n
+w0 8192 @ 0
+wx 8035 @ 0
+ara0
+ar xt=0xfffe0000
+ar p=0x1234
+aezi
+pi 1
+aezs 1
+echo -- MPYB ACC,T,0x80 writes ACC
+ar acc
+ar n
+ar p
+w0 8192 @ 0
+wx a9150400 @ 0
+ara0
+ar acc=0x3
+ar p=0x5
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- MPYA P,AL,4
+ar acc
+ar p
+w0 8192 @ 0
+wx ac10 @ 0
+ara0
+ar acc=0x10
+ar p=0x20
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADDL ACC,P << PM, PM 1
+ar acc
+ar c
+ar v
+w0 8192 @ 0
+wx ac10 @ 0
+ara0
+ar acc=0x7fffffff
+ar p=0x1
+ar pm=0x0
+aezi
+pi 1
+aezs 1
+echo -- ADDL ACC,P << PM, PM 0 overflows
+ar acc
+ar v
+ar ovc
+ar c
+ar n
+w0 8192 @ 0
+wx ac11 @ 0
+ara0
+ar acc=0x100
+ar p=0xfffffff0
+ar pm=0x2
+aezi
+pi 1
+aezs 1
+echo -- SUBL ACC,P << PM, PM 2 shifts right
+ar acc
+ar c
+ar v
+w0 8192 @ 0
+wx ac16 @ 0
+ara0
+ar p=0x1234567
+ar pm=0x5
+ar amode=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVL ACC,P << PM, PM 5 with AMODE
+ar acc
+w0 8192 @ 0
+wx 59ff @ 0
+ara0
+ar acc=0x5
+ar p=0x5
+ar pm=0x1
+aezi
+pi 1
+aezs 1
+echo -- CMPL ACC,P << PM, equal
+ar acc
+ar z
+ar c
+w0 8192 @ 0
+wx 59ff @ 0
+ara0
+ar acc=0x1
+ar p=0x1
+ar pm=0x0
+aezi
+pi 1
+aezs 1
+echo -- CMPL ACC,P << PM, PM 0 borrows
+ar acc
+ar n
+ar z
+ar c
+w0 8192 @ 0
+wx 4656c400 @ 0
+wx 08000000 @ 128
+ara0
+ar acc=0x100
+ar p=0x10
+ar pm=0x1
+ar xt=0x40000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- QMPYAL P,XT,*+XAR4[0], PM 1
+ar acc
+ar p
+w0 8192 @ 0
+wx 4556c400 @ 0
+wx 10000000 @ 128
+ara0
+ar acc=0x100
+ar p=0x10
+ar pm=0x0
+ar xt=0xffffffff
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- QMPYSL P,XT,*+XAR4[0], PM 0
+ar acc
+ar p
+ar c
+EOF
+EXPECT=<<EOF
+mpy acc, t, @al
+-- MPY ACC,T,AL signed
+acc = 0xffffffeb
+n = 0x1
+mpyu p, t, @al
+-- MPYU P,T,AL
+p = 0xfffe0001
+mpyxu p, t, @al
+-- MPYXU P,T,AL
+p = 0xffff0001
+mpya p, t, @al
+-- MPYA P,T,AL, PM 1
+acc = 0x00000008
+p = 0x00000006
+mpya p, t, @al
+-- MPYA P,T,AL, PM 0 shifts left
+acc = 0x0000000d
+p = 0x00000006
+mpys p, t, @al
+-- MPYS P,T,AL, PM 2 shifts right
+acc = 0x0000000e
+p = 0x0000000a
+movp t, @al
+-- MOVP T,AL, PM 5 with AMODE
+acc = 0x00000010
+xt = 0xabcd0000
+movp t, @al
+-- MOVP T,AL, PM 5 without AMODE
+acc = 0x00000010
+sqra @al
+-- SQRA AL
+p = 0x00000009
+xt = 0xfffd0000
+acc = 0x0000fffd
+impyl p, xt, @acc
+-- IMPYL P,XT,ACC, PM 1
+p = 0x00000000
+impyl p, xt, @acc
+-- IMPYL P,XT,ACC, PM 2
+p = 0x80000000
+qmpyl p, xt, @acc
+-- QMPYL P,XT,ACC
+p = 0x00000001
+qmpyul p, xt, @acc
+-- QMPYUL P,XT,ACC
+p = 0xfffffffe
+qmpyxul p, xt, @acc
+-- QMPYXUL P,XT,ACC
+p = 0xffffffff
+impyal p, xt, @xar4
+-- IMPYAL P,XT,XAR4 counts OVCU
+acc = 0x00000000
+c = 0x1
+z = 0x1
+ovc = 0x01
+p = 0xfffffffe
+addul acc, @xar4
+-- ADDUL ACC,XAR4 carry
+acc = 0x00000000
+c = 0x1
+z = 0x1
+ovc = 0x01
+v = 0x0
+subul acc, @xar4
+-- SUBUL ACC,XAR4 borrow
+acc = 0xffffffff
+c = 0x0
+n = 0x1
+ovc = 0x3f
+mov @al, p
+-- MOV AL,P, PM 0
+acc = 0x00008002
+n = 0x1
+movh @al, p
+-- MOVH AL,P, PM 1
+acc = 0x00001234
+movl acc, p << pm
+-- MOVL ACC,PPM, PM 7
+acc = 0xfe000000
+n = 0x1
+mpyb acc, t, #0x80
+-- MPYB ACC,T,0x80 writes ACC
+acc = 0xffffff00
+n = 0x1
+p = 0x00001234
+mpya p, @al, #0x4
+-- MPYA P,AL,4
+acc = 0x00000008
+p = 0x0000000c
+addl acc, p << pm
+-- ADDL ACC,P << PM, PM 1
+acc = 0x00000030
+c = 0x0
+v = 0x0
+addl acc, p << pm
+-- ADDL ACC,P << PM, PM 0 overflows
+acc = 0x80000001
+v = 0x1
+ovc = 0x01
+c = 0x0
+n = 0x1
+subl acc, p << pm
+-- SUBL ACC,P << PM, PM 2 shifts right
+acc = 0x00000108
+c = 0x0
+v = 0x0
+movl acc, p << pm
+-- MOVL ACC,P << PM, PM 5 with AMODE
+acc = 0x12345670
+cmpl acc, p << pm
+-- CMPL ACC,P << PM, equal
+acc = 0x00000005
+z = 0x1
+c = 0x1
+cmpl acc, p << pm
+-- CMPL ACC,P << PM, PM 0 borrows
+acc = 0x00000001
+n = 0x1
+z = 0x0
+c = 0x0
+qmpyal p, xt, *+xar4[0]
+-- QMPYAL P,XT,*+XAR4[0], PM 1
+acc = 0x00000110
+p = 0x00000002
+qmpysl p, xt, *+xar4[0]
+-- QMPYSL P,XT,*+XAR4[0], PM 0
+acc = 0x000000e0
+p = 0xffffffff
+c = 0x1
+EOF
+RUN
+
+NAME=C28x RzIL VM: min/max, division steps and status bits
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 7256a800 @ 0
+ara0
+ar acc=0x3fffb
+aezi
+pi 1
+aezs 1
+echo -- MAX AL,AH takes the larger
+ar acc
+ar n
+ar z
+ar v
+w0 8192 @ 0
+wx 7456a800 @ 0
+ara0
+ar acc=0xfffb0003
+aezi
+pi 1
+aezs 1
+echo -- MIN AL,AH takes the smaller
+ar acc
+ar n
+ar v
+w0 8192 @ 0
+wx 6156a400 @ 0
+ara0
+ar acc=0x80000000
+ar xar4=0x1
+aezi
+pi 1
+aezs 1
+echo -- MAXL ACC,XAR4, infinite precision
+ar acc
+ar n
+ar c
+ar v
+ar z
+w0 8192 @ 0
+wx a9eb @ 0
+ara0
+ar acc=0x50001
+aezi
+pi 1
+aezs 1
+echo -- SUBR AL,AH
+ar acc
+ar c
+ar n
+w0 8192 @ 0
+wx 4956a400 @ 0
+ara0
+ar acc=0xa
+ar xar4=0x3
+aezi
+pi 1
+aezs 1
+echo -- SUBRL XAR4,ACC
+ar xar4
+ar acc
+ar c
+ar n
+ar z
+w0 8192 @ 0
+wx a01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01f @ 0
+ara0
+ar acc=0x4
+ar xar0=0x2
+aezi
+pi 16
+aezs 16
+echo -- SUBCU x16: 4 / 2
+ar acc
+w0 8192 @ 0
+wx a01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01fa01f @ 0
+ara0
+ar acc=0x7
+ar xar0=0x2
+aezi
+pi 16
+aezs 16
+echo -- SUBCU x16: 7 / 2
+ar acc
+w0 8192 @ 0
+wx 1756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a4001756a400 @ 0
+ara0
+ar acc=0x0
+ar p=0x64
+ar xar4=0x7
+aezi
+pi 32
+aezs 32
+echo -- SUBCUL x32: 100 / 7
+ar acc
+ar p
+w0 8192 @ 0
+wx 1356a800 @ 0
+ara0
+ar acc=0x12340000
+aezi
+pi 1
+aezs 1
+echo -- ZALR ACC,AH
+ar acc
+ar n
+w0 8192 @ 0
+wx 3556 @ 0
+ara0
+ar acc=0x1234
+aezi
+pi 1
+aezs 1
+echo -- CSB ACC, 19 sign bits
+ar xt
+ar tc
+w0 8192 @ 0
+wx 3556 @ 0
+ara0
+ar acc=0xffffffff
+aezi
+pi 1
+aezs 1
+echo -- CSB ACC, all sign bits
+ar xt
+ar tc
+ar n
+w0 8192 @ 0
+wx 5856 @ 0
+ara0
+ar acc=0x0
+ar p=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEG64 ACC:P
+ar acc
+ar p
+ar n
+ar c
+w0 8192 @ 0
+wx 5e56 @ 0
+ara0
+ar acc=0x80000000
+ar p=0x0
+ar v=0x1
+aezi
+pi 1
+aezs 1
+echo -- CMP64 ACC:P after overflow
+ar n
+ar z
+ar v
+w0 8192 @ 0
+wx 6bff @ 0
+ara0
+ar pm=0x0
+aezi
+pi 1
+aezs 1
+echo -- SPM -2 loads PM 3
+ar pm
+w0 8192 @ 0
+wx 7056 @ 0
+ara0
+ar acc=0x1
+aezi
+pi 1
+aezs 1
+echo -- FLIP AL
+ar acc
+ar n
+w0 8192 @ 0
+wx 84a6 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MOVDL XT,XAR4
+ar xt
+w0 8192 @ 0
+wx a924 @ 0
+wx efbe @ 128
+ara0
+ar xar7=0x40
+aezi
+pi 1
+aezs 1
+echo -- PREAD AL,XAR7
+ar acc
+ar n
+EOF
+EXPECT=<<EOF
+max al, @ah
+-- MAX AL,AH takes the larger
+acc = 0x00030003
+n = 0x1
+z = 0x0
+v = 0x1
+min al, @ah
+-- MIN AL,AH takes the smaller
+acc = 0xfffbfffb
+n = 0x0
+v = 0x1
+maxl acc, @xar4
+-- MAXL ACC,XAR4, infinite precision
+acc = 0x00000001
+n = 0x1
+c = 0x1
+v = 0x1
+z = 0x0
+subr @al, ah
+-- SUBR AL,AH
+acc = 0x00050004
+c = 0x1
+n = 0x0
+subrl @xar4, acc
+-- SUBRL XAR4,ACC
+xar4 = 0x00000007
+acc = 0x0000000a
+c = 0x1
+n = 0x0
+z = 0x0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+-- SUBCU x16: 4 / 2
+acc = 0x00000002
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+subcu acc, @ar0
+-- SUBCU x16: 7 / 2
+acc = 0x00010003
+subcul acc, @xar4
+subcul acc, @xar4
+mpya p, t, @0x00
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+xmacd p, *-sp[22], *(0x7e2e00)
+-- SUBCUL x32: 100 / 7
+acc = 0x00000002
+p = 0x0000000e
+zalr acc, @ah
+-- ZALR ACC,AH
+acc = 0x12348000
+n = 0x0
+csb acc
+-- CSB ACC, 19 sign bits
+xt = 0x00120000
+tc = 0x0
+csb acc
+-- CSB ACC, all sign bits
+xt = 0x001f0000
+tc = 0x1
+n = 0x1
+neg64 acc:p
+-- NEG64 ACC:P
+acc = 0xffffffff
+p = 0xffffffff
+n = 0x1
+c = 0x0
+cmp64 acc:p
+-- CMP64 ACC:P after overflow
+n = 0x0
+z = 0x0
+v = 0x0
+spm #-0x2
+-- SPM -2 loads PM 3
+pm = 0x3
+flip al
+-- FLIP AL
+acc = 0x00008000
+n = 0x1
+movdl xt, *xar4++
+-- MOVDL XT,XAR4
+xt = 0x12345678
+pread @al, *xar7
+-- PREAD AL,XAR7
+acc = 0x0000beef
+n = 0x1
+EOF
+RUN
+
+NAME=C28x RzIL VM: C2xLP control flow, NORM, CMPR and loops
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx d1561000 @ 0
+ara0
+ar z=0x1
+aezi
+pi 1
+aezs 1
+echo -- XB pma,EQ taken into page 0x3F
+ar pc
+w0 8192 @ 0
+wx d1561000 @ 0
+ara0
+ar z=0x0
+aezi
+pi 1
+aezs 1
+echo -- XB pma,EQ not taken stays in page 0x3F
+ar pc
+w0 8192 @ 0
+wx ef561000 @ 0
+ara0
+ar sp=0x100
+aezi
+pi 1
+aezs 1
+echo -- XCALL pma pushes one word
+ar pc
+ar sp
+w0 8192 @ 0
+wx ff56 @ 0
+wx 3412 @ 512
+ara0
+ar sp=0x101
+aezi
+pi 1
+aezs 1
+echo -- XRETC UNC returns into page 0x3F
+ar pc
+ar sp
+w0 8192 @ 0
+wx 0a561000 @ 0
+ara0
+ar arp=0x2
+ar xar2=0x5
+aezi
+pi 1
+aezs 1
+echo -- XBANZ ++ taken
+ar pc
+ar xar2
+w0 8192 @ 0
+wx 0a561000 @ 0
+ara0
+ar arp=0x2
+ar xar2=0x0
+aezi
+pi 1
+aezs 1
+echo -- XBANZ ++ not taken
+ar pc
+ar xar2
+w0 8192 @ 0
+wx 5156a400 @ 0
+ara0
+ar n=0x0
+ar z=0x1
+ar p=0x5
+ar xar4=0x7
+aezi
+pi 1
+aezs 1
+echo -- MAXCUL P, equal high halves
+ar p
+ar v
+w0 8192 @ 0
+wx 5956a400 @ 0
+ara0
+ar n=0x0
+ar z=0x0
+ar p=0x5
+ar xar4=0x7
+aezi
+pi 1
+aezs 1
+echo -- MINCUL P, higher high half
+ar p
+w0 8192 @ 0
+wx 7aff @ 0
+ara0
+ar acc=0x20000000
+ar xar2=0x9
+aezi
+pi 1
+aezs 1
+echo -- NORM ACC,XAR2++ shifts
+ar acc
+ar tc
+ar xar2
+w0 8192 @ 0
+wx 7aff @ 0
+ara0
+ar acc=0x40000000
+ar xar2=0x9
+aezi
+pi 1
+aezs 1
+echo -- NORM ACC,XAR2++ stops
+ar acc
+ar tc
+ar xar2
+w0 8192 @ 0
+wx 1956 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x2
+ar xar0=0x5
+aezi
+pi 1
+aezs 1
+echo -- CMPR 1: ARARP AR0
+ar tc
+w0 8192 @ 0
+wx 1856 @ 0
+ara0
+ar arp=0x3
+ar xar3=0x2
+ar xar0=0x5
+ar tc=0x1
+aezi
+pi 1
+aezs 1
+echo -- CMPR 2: ARARP AR0
+ar tc
+w0 8192 @ 0
+wx a92c0100 @ 0
+ara0
+ar acc=0x0
+aezi
+pi 1
+aezs 1
+echo -- LOOPZ AL,1 loops
+ar pc
+ar loop
+w0 8192 @ 0
+wx a92c0100 @ 0
+ara0
+ar acc=0x1
+aezi
+pi 1
+aezs 1
+echo -- LOOPZ AL,1 exits
+ar pc
+ar loop
+w0 8192 @ 0
+wx 22761a76 @ 0
+ara0
+aezi
+pi 1
+aezs 1
+echo -- EALLOW then EDIS
+ar eallow
+w0 8192 @ 0
+wx 00775b3e @ 0
+ara0
+aezi
+pi 2
+aezs 2
+echo -- MOV XAR3,PC after a NOP
+ar xar3
+w0 8192 @ 0
+wx 842c0100 @ 0
+wx 000000000100 @ 512
+ara0
+ar xar4=0x100
+aezi
+pi 1
+aezs 1
+echo -- LOOPZ *XAR4++,1 steps the pointer while it loops
+ar pc
+ar xar4
+ar loop
+w0 8192 @ 0
+wx 842c0100 @ 0
+wx 000000000100 @ 512
+ara0
+ar xar4=0x100
+aezi
+pi 1
+aezs 3
+echo -- LOOPZ *XAR4++,1 exits past the first word with bit 0 set
+ar pc
+ar xar4
+ar loop
+EOF
+EXPECT=<<EOF
+xb 0x7e0020, eq
+-- XB pma,EQ taken into page 0x3F
+pc = 0x007e0020
+xb 0x7e0020, eq
+-- XB pma,EQ not taken stays in page 0x3F
+pc = 0x007e0004
+xcall 0x7e0020, unc
+-- XCALL pma pushes one word
+pc = 0x007e0020
+sp = 0x0101
+xret
+-- XRETC UNC returns into page 0x3F
+pc = 0x007e2468
+sp = 0x0100
+xbanz 0x7e0020, *++
+-- XBANZ ++ taken
+pc = 0x007e0020
+xar2 = 0x00000006
+xbanz 0x7e0020, *++
+-- XBANZ ++ not taken
+pc = 0x00000004
+xar2 = 0x00000001
+maxcul p, @xar4
+-- MAXCUL P, equal high halves
+p = 0x00000007
+v = 0x1
+mincul p, @xar4
+-- MINCUL P, higher high half
+p = 0x00000007
+norm acc, xar2++
+-- NORM ACC,XAR2++ shifts
+acc = 0x40000000
+tc = 0x0
+xar2 = 0x0000000a
+norm acc, xar2++
+-- NORM ACC,XAR2++ stops
+acc = 0x40000000
+tc = 0x1
+xar2 = 0x00000009
+cmpr #0x1
+-- CMPR 1: ARARP AR0
+tc = 0x1
+cmpr #0x2
+-- CMPR 2: ARARP AR0
+tc = 0x0
+loopz @al, #0x1
+-- LOOPZ AL,1 loops
+pc = 0x00000000
+loop = 0x1
+loopz @al, #0x1
+-- LOOPZ AL,1 exits
+pc = 0x00000004
+loop = 0x0
+eallow
+-- EALLOW then EDIS
+eallow = 0x1
+nop
+mov xar3, pc
+-- MOV XAR3,PC after a NOP
+xar3 = 0x00000001
+loopz *xar4++, #0x1
+-- LOOPZ *XAR4++,1 steps the pointer while it loops
+pc = 0x00000000
+xar4 = 0x00000101
+loop = 0x1
+loopz *xar4++, #0x1
+-- LOOPZ *XAR4++,1 exits past the first word with bit 0 set
+pc = 0x00000004
+xar4 = 0x00000103
+loop = 0x0
+EOF
+RUN
+
+NAME=C28x RzIL VM: interrupts and status saves
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 250000000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033560276 @ 0
+ara0
+ar sp=0x80
+ar vmap=0x0
+aezi
+pi 1
+aezs 1
+echo -- TRAP 5 saves 7 pairs and vectors
+ar pc
+ar sp
+ar intm
+ar dbgm
+w0 8192 @ 0
+wx 250000000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033560276 @ 0
+ara0
+ar sp=0x80
+ar acc=0x12345678
+ar n=0x1
+ar vmap=0x0
+aezi
+pi 1
+pi 2 @ 0x200
+aezs 3
+echo -- TRAP 5, ISR, IRET restores all
+ar pc
+ar sp
+ar acc
+ar n
+ar z
+ar intm
+ar dbgm
+w0 8192 @ 0
+wx 120000000000000000000000000100000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000033560276 @ 0
+ara0
+ar sp=0x80
+ar ier=0xffff
+ar ifr=0x4
+ar vmap=0x0
+aezi
+pi 1
+aezs 1
+echo -- INTR INT3 clears IFR and IER bit 2
+ar pc
+ar ier
+ar ifr
+ar intm
+w0 8192 @ 0
+wx 187633561376 @ 0
+ara0
+ar sp=0x80
+ar acc=0x7
+ar n=0x1
+ar c=0x1
+ar ovc=0x5
+ar pm=0x2
+aezi
+pi 3
+aezs 3
+echo -- PUSH ST0, ZAPA, POP ST0
+ar pc
+ar acc
+ar n
+ar z
+ar c
+ar ovc
+ar pm
+ar sp
+w0 8192 @ 0
+wx 0876227600763356 @ 0
+ara0
+ar sp=0x80
+ar acc=0x7
+ar arp=0x5
+ar intm=0x1
+aezi
+pi 4
+aezs 4
+echo -- PUSH ST1, EALLOW, POP ST1, ZAPA
+ar pc
+ar acc
+ar eallow
+ar arp
+ar intm
+ar sp
+EOF
+EXPECT=<<EOF
+trap #0x5
+-- TRAP 5 saves 7 pairs and vectors
+pc = 0x00000200
+sp = 0x008f
+intm = 0x1
+dbgm = 0x1
+trap #0x5
+zapa
+iret
+-- TRAP 5, ISR, IRET restores all
+pc = 0x00000002
+sp = 0x0080
+acc = 0x12345678
+n = 0x1
+z = 0x0
+intm = 0x0
+dbgm = 0x0
+intr int3
+-- INTR INT3 clears IFR and IER bit 2
+pc = 0x00000200
+ier = 0xfffb
+ifr = 0x0000
+intm = 0x1
+push st0
+zapa
+pop st0
+-- PUSH ST0, ZAPA, POP ST0
+pc = 0x00000006
+acc = 0x00000000
+n = 0x1
+z = 0x0
+c = 0x1
+ovc = 0x05
+pm = 0x2
+sp = 0x0080
+push st1
+eallow
+pop st1
+zapa
+-- PUSH ST1, EALLOW, POP ST1, ZAPA
+pc = 0x00000008
+acc = 0x00000000
+eallow = 0x0
+arp = 0x5
+intm = 0x1
+sp = 0x0080
+EOF
+RUN
+
+NAME=C28x RzIL VM: byte moves, with SPRU430F's byte-swap example
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx dac6cac7d238c239 @ 0
+wx 11223344 @ 128
+ara0
+ar xar2=0x40
+ar acc=0xffffffff
+aezi
+pi 4
+aezs 4
+echo -- MOVB byte swap SPRU430F example
+ar acc
+ar pc
+w0 8192 @ 0
+wx ca3ccac7 @ 0
+wx 11223344 @ 128
+ara0
+ar xar2=0x40
+ar acc=0xab
+aezi
+pi 2
+aezs 2
+echo -- MOVB store to an odd byte, reload
+ar acc
+w0 8192 @ 0
+wx d238 @ 0
+wx 11223344 @ 128
+ara0
+ar xar2=0x40
+ar acc=0xcd
+aezi
+pi 1
+aezs 1
+echo -- MOVB AL.MSB keeps AL.LSB
+ar acc
+ar n
+w0 8192 @ 0
+wx aec6aec7 @ 0
+wx 3412 @ 512
+wx 7856 @ 528
+ara0
+ar arp=0x2
+ar xar2=0x100
+ar xar0=0x8
+ar acc=0x0
+aezi
+pi 2
+aezs 2
+echo -- MOVB AL.LSB then AH.LSB,*BR0++ with AR0 8
+ar acc
+ar xar2
+EOF
+EXPECT=<<EOF
+movb al.lsb, *+xar2[3]
+movb ah.lsb, *+xar2[1]
+movb al.msb, *+xar2[2]
+movb ah.msb, *+xar2[0]
+-- MOVB byte swap SPRU430F example
+acc = 0x11223344
+pc = 0x00000008
+movb *+xar2[1], al.lsb
+movb ah.lsb, *+xar2[1]
+-- MOVB store to an odd byte, reload
+acc = 0x00ab00ab
+movb al.msb, *+xar2[2]
+-- MOVB AL.MSB keeps AL.LSB
+acc = 0x000033cd
+n = 0x0
+movb al.lsb, *br0++
+movb ah.lsb, *br0++
+-- MOVB AL.LSB then AH.LSB,*BR0++ with AR0 8
+acc = 0x00780034
+xar2 = 0x00000104
+EOF
+RUN
