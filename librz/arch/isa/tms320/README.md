@@ -57,6 +57,12 @@ agrees on 61641 (98.6%). 782 of the rest are the VCU co-processor set; most of
 the others are spellings `dis2000` prefers, such as `MOVL *SP++,ACC` where this
 engine writes `PUSH ACC`.
 
+The move, stack, ALU, shift, compare, bit-test, branch and `SETC`/`CLRC` core is
+lifted to RzIL; anything else leaves `op->il_op` unset. Accumulator arithmetic
+follows SPRU430's *Flags and Modes*. `V` is sticky, and `OVC` counts overflows
+while `OVM` is clear; with `OVM` set the result saturates instead. `SXM` selects
+sign or zero extension of a 16-bit source.
+
 ## c55x
 
 Variable-length (1-7 byte) instructions, little-endian, 16-bit word.
