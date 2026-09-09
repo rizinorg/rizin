@@ -11,14 +11,17 @@
 #include <windows.h>
 #endif
 
+#define BUF_SIZE 128
 RZ_API RZ_OWN char *sdb_lock_file(const char *f) {
-	char *buf = calloc(128, sizeof(char));
+	char *buf = calloc(BUF_SIZE, sizeof(char));
 	size_t len;
 	if (!f || !*f) {
+        free(buf);
 		return NULL;
 	}
 	len = strlen(f);
-	if (len + 10 > sizeof buf) {
+	if (len + 10 > BUF_SIZE) {
+        free(buf);
 		return NULL;
 	}
 	memcpy(buf, f, len);
