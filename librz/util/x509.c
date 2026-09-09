@@ -265,7 +265,7 @@ RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RzASN1Obj
 	x509_tbscertificate_parse(&cert->tbsCertificate, object->list.objects[0]);
 
 	if (!rz_x509_algorithmidentifier_parse(&cert->algorithmIdentifier, object->list.objects[1])) {
-		RZ_FREE(cert);
+		rz_x509_certificate_free(cert);
 	}
 fail:
 	rz_asn1_object_free(object);
@@ -338,7 +338,7 @@ RZ_API RZ_OWN RzX509CertificateRevocationList *rz_x509_crl_parse(RZ_NULLABLE RzA
 	if (object->list.length > 4 && object->list.objects[4]) {
 		crl->revokedCertificates = calloc(object->list.objects[4]->list.length, sizeof(RzX509CRLEntry *));
 		if (!crl->revokedCertificates) {
-			free(crl);
+			rz_x509_crl_free(crl);
 			return NULL;
 		}
 		crl->length = object->list.objects[4]->list.length;
