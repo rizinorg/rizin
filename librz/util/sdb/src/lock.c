@@ -16,12 +16,12 @@ RZ_API RZ_OWN char *sdb_lock_file(const char *f) {
 	char *buf = calloc(BUF_SIZE, sizeof(char));
 	size_t len;
 	if (!f || !*f) {
-        free(buf);
+		free(buf);
 		return NULL;
 	}
 	len = strlen(f);
 	if (len + 10 > BUF_SIZE) {
-        free(buf);
+		free(buf);
 		return NULL;
 	}
 	memcpy(buf, f, len);
