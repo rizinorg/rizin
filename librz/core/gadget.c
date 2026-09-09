@@ -1312,7 +1312,17 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 			asmop_str = new_str;
 		}
 		if (!context->ret_val) {
-			rz_table_add_rowf(state->d.t, "Xss", addr, asmop_hex_str, asmop_str);
+			char *bytes_str = asmop_hex_str;
+			char *bytes_trunc = NULL;
+			if (context->bytes_length > 0 && asmop_hex_str &&
+				strlen(asmop_hex_str) > (size_t)context->bytes_length * 2) {
+				bytes_trunc = rz_str_trunc_ellipsis(asmop_hex_str, (int)context->bytes_length * 2);
+				if (bytes_trunc) {
+					bytes_str = bytes_trunc;
+				}
+			}
+			rz_table_add_rowf(state->d.t, "Xss", addr, bytes_str, asmop_str);
+			free(bytes_trunc);
 		}
 		free(asmop_str);
 		free(asmop_hex_str);
