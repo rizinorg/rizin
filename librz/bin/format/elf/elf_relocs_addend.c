@@ -4,7 +4,8 @@
 #include "elf.h"
 
 static ut32 arm_rotr32(ut32 val, ut32 n) {
-	return (val >> n) | (val << (32 - n));
+	n &= 31; // n mod 32
+	return n ? (val >> n) | (val << (32 - n)) : val;
 }
 
 static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch_addr, bool big_endian) {
@@ -84,7 +85,7 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 		opcode = rz_read_ble32(b, big_endian);
 		unsigned_imm = opcode & 0X00FFFFFF;
 		signed_imm = (st32)(unsigned_imm << 8) >> 8;
-		reloc->addend = signed_imm << 2;
+		reloc->addend = signed_imm * 4; // << 2
 		break;
 
 	case R_ARM_MOVW_ABS_NC:
