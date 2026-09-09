@@ -1745,14 +1745,52 @@ static void core_print_raw_buffer(RzStrStringifyOpt *opt) {
 
 static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bool stop_at_unprintable, ut32 offset, RzOutputMode mode, RzStrEnc str_encoding) {
 	const ut8 *buffer = core->block + offset;
-	const ut32 length = core->blocksize - offset;
-	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
-	RzStrStringifyOpt opt = { 0 };
+	ut32 length = core->blocksize - offset;
+	ut8 *grown = NULL;
 
+	// Resolve the encoding from the original in-block buffer *before* any
+	// growth below. Guessing on a much larger, mostly-non-string window
+	// (once grown) makes the heuristic much more likely to misdetect
+	// UTF-16/UTF-32 from incidental zero-padding in the surrounding data,
+	// garbling output that was previously plain ASCII/UTF-8.
+	RzStrEnc encoding = str_encoding == RZ_STRING_ENC_SETTINGS ? core->bin->str_search_cfg.string_encoding : str_encoding;
 	if (encoding == RZ_STRING_ENC_GUESS) {
 		encoding = rz_str_guess_encoding_from_buffer(buffer, length);
 	}
 
+	// When stopping at a delimiter (NUL or first non-printable char), the
+	// string may extend past the current block. Read further directly from
+	// IO, capped at search.str.max_length, instead of silently truncating
+	// at whatever the block size happens to be. `delimiter=block` mode
+	// (stop_at_nil == stop_at_unprintable == false) is left untouched: it
+	// is documented to print exactly the block, on purpose.
+	//
+	// Only do this when core->blocksize is still the untouched default
+	// (RZ_CORE_BLOCKSIZE). If it differs, someone deliberately narrowed (or
+	// widened) it - permanently with `b`, or for one command with `@!N` /
+	// `@@` iteration (e.g. over `iz` hits) - and that choice of "exactly
+	// this many bytes" is respected rather than overridden. There is no
+	// flag distinguishing "ambient default" from "explicit override" at
+	// this point (core->tmpseek covers seek but not blocksize overrides),
+	// so the default-value check is the only available signal.
+	if ((stop_at_nil || stop_at_unprintable) && core->blocksize == RZ_CORE_BLOCKSIZE) {
+		ut64 max_length = core->bin->str_search_cfg.max_length;
+		if (max_length > length && max_length <= UT32_MAX) {
+			grown = malloc((size_t)max_length);
+			if (grown) {
+				int n = rz_io_nread_at(core->io, core->offset + offset, grown, (size_t)max_length);
+				if (n > (int)length) {
+					buffer = grown;
+					length = (ut32)n;
+				} else {
+					RZ_FREE(grown);
+				}
+			}
+		}
+	}
+
+	RzStrStringifyOpt opt = { 0 };
+	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		opt.buffer = buffer;
@@ -1768,9 +1806,11 @@ static RzCmdStatus core_print_string_in_block(RzCore *core, bool stop_at_nil, bo
 		break;
 	default:
 		RZ_LOG_ERROR("core: unsupported output mode\n");
-		return RZ_CMD_STATUS_ERROR;
+		status = RZ_CMD_STATUS_ERROR;
+		break;
 	}
-	return RZ_CMD_STATUS_OK;
+	free(grown);
+	return status;
 }
 
 // "ps"
