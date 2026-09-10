@@ -222,7 +222,8 @@ static bool set_elf_section_aux(ELFOBJ *bin, RzBinElfSection *section, Elf_(Shdr
 		section->rva = bin->baddr + shdr->sh_offset;
 	} else {
 		if (shdr->sh_flags & SHF_ALLOC) {
-			section->rva = shdr->sh_addr;
+			// widen before scaling; see the note in elf_relocs.c
+			section->rva = (ut64)shdr->sh_addr * Elf_(rz_bin_elf_addr_scale)(bin);
 		} else {
 			section->rva = UT64_MAX;
 		}
