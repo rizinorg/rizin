@@ -1,6 +1,6 @@
 # TMS320 architectures
 
-Rizin's `tms320` arch plugin covers three Texas Instruments DSP
+Rizin's `tms320` arch plugin covers four Texas Instruments DSP
 families, selected by `analysis.cpu` / `asm.cpu`:
 
 | cpu                                     | family      | word | endian | typical parts                                   |
@@ -8,6 +8,7 @@ families, selected by `analysis.cpu` / `asm.cpu`:
 | `c55x`                                  | TMS320C55x  | 16   | LE     | C5501, C5502, C5503, C5507, C5509, C5510        |
 | `c55x+`                                 | TMS320C55x+ | 16   | LE     | C5504, C5505, C5514, C5515, C5517, C5535, C5545 |
 | `c62x`, `c64x`, `c67x`, `c674x`, `c66x` | TMS320C6000 | 32   | LE/BE  | C6201..C6748, C6655, KeyStone-II                |
+| `c28x`                                  | TMS320C28x  | 16   | LE     | C280x, C281x, C2833x, F2806x, F2837x, F2838x    |
 
 ## c6x
 
@@ -28,6 +29,33 @@ A whole execute packet is lifted on its first instruction. Every slot reads the
 register file as it stood when the packet issued, through snapshot variables,
 and all the writes land together. A parallel swap such as `mv a0,a1 || mv a1,a0`
 is therefore exact.
+
+## c28x
+
+Fixed-point control core of the C2000 line. An instruction is one 16-bit word,
+optionally followed by a second holding an immediate, a branch displacement or
+another operand field. Most opcodes spend their low byte on `loc16`/`loc32`, the
+8-bit addressing-mode selector shared by nearly the whole instruction set.
+Documented in TI **SPRU430** (*TMS320C28x CPU and Instruction Set Reference
+Guide*, public), with `RPTB` in **SPRUEO2**, the calling convention in
+**SPRU514** and the ELF relocations in **SPRAC71**.
+
+Two encodings come from TI's tools, not the manual. The `A` bit selects `AL`
+when clear and `AH` when set, the reverse of what the operand wording suggests.
+A branch displacement counts from the branch itself, not from the next
+instruction.
+
+Program and data addresses count 16-bit words, while Rizin addresses bytes. The
+COFF and ELF loaders therefore scale C2000 addresses by two, and the decoder
+resolves embedded addresses the same way. TI's `dis2000` prints word addresses,
+so its numbers differ from Rizin's by design. In C2000 ELF, `sh_addr`,
+`st_value` and `r_offset` count words while `sh_size` counts bytes.
+
+Native engine under `c28x/`, decoding from a mask/match table generated against
+TI's `dis2000`: of the 62518 opcode words `dis2000` decodes as instructions, it
+agrees on 61641 (98.6%). 782 of the rest are the VCU co-processor set; most of
+the others are spellings `dis2000` prefers, such as `MOVL *SP++,ACC` where this
+engine writes `PUSH ACC`.
 
 ## c55x
 
@@ -71,10 +99,12 @@ silicon. SWPU086/104 are not redistributed in this tree.
 rizin -a tms320 -e analysis.cpu=c55x   FILE.coff   # baseline C55x
 rizin -a tms320 -e analysis.cpu=c55x+  FILE.coff   # c55x+ (Ryujin / SWPU104)
 rizin -a tms320 -e analysis.cpu=c64x   FILE.elf    # C6000; cpus in the table
+rizin -a tms320 -e analysis.cpu=c28x   FILE.out    # C28x (C2000)
 ```
 
 The COFF loader autodetects `c55x` (TI COFF v2 target_id 0x009c)
-and `c55x+` (target_id 0x00a1) from the file header.
+and `c55x+` (target_id 0x00a1) from the file header. C2000 objects load
+as `c28x`, from COFF and from ELF with `e_machine` set to `EM_TI_C2000`.
 
 ## References
 
@@ -88,6 +118,14 @@ and `c55x+` (target_id 0x00a1) from the file header.
   (public)
 - TI SPRUGH7 -- TMS320C66x DSP CPU and Instruction Set Reference Guide
   (public)
+- TI SPRU430 -- TMS320C28x CPU and Instruction Set Reference Guide
+  (public)
+- TI SPRUEO2 -- TMS320C28x Floating Point Unit and Instruction Set
+  Reference Guide (public; `RPTB`)
+- TI SPRU514 -- TMS320C28x Optimizing C/C++ Compiler User's Guide
+  (public; calling convention)
+- TI SPRAC71 -- C28x embedded application binary interface (public;
+  DWARF register numbers and ELF relocations)
 - TI SWPU086 -- TMS320C55x 'C55x+' CPU Reference Guide, Preliminary,
   May 2005
 - TI SWPU104 -- TMS320C55x+ DSP Algebraic Instruction Set Reference

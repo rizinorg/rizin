@@ -995,6 +995,101 @@ static const C6000RelocField *c6000_reloc_field(ut32 type) {
  * \param big_endian Byte order of the image.
  * \param fs Values the relocation formula is computed from.
  */
+/**
+ * \brief Field layout of a C28x relocation.
+ *
+ * A container is one or two 16-bit words, and \p offset counts bits in the
+ * first. SPRAC71C Table 11-6 covers only some types and omits the DP scaling,
+ * so the layouts were measured: reference an external symbol, link it at a
+ * known address with lnk2000, and diff against the relocatable object.
+ */
+typedef struct {
+	ut8 container; ///< bits of the first word this occupies: 16 or 32
+	ut8 offset; ///< least-significant bit of the field within that word
+	ut8 size; ///< field width in bits
+	ut8 scale; ///< right shift applied to the result before it is deposited
+	bool split22; ///< 22-bit form: high six bits here, low sixteen in the next word
+} C28xRelocField;
+
+/**
+ * \brief The field layout of \p type, or NULL when it has none to patch.
+ *
+ * NEGWORD, NEGBYTE and ABS13_SE16 compute something the generic S+A machinery
+ * does not express, and are left alone rather than patched wrongly.
+ */
+static const C28xRelocField *c28x_reloc_field(ut32 type) {
+	// clang-format off
+	static const C28xRelocField abs32   = { 32, 0, 32, 0, false };
+	static const C28xRelocField abs16   = { 16, 0, 16, 0, false };
+	static const C28xRelocField abs8    = { 16, 0,  8, 0, false };
+	static const C28xRelocField abslo6  = { 16, 0,  6, 0, false };
+	static const C28xRelocField abslo7  = { 16, 0,  7, 0, false };
+	static const C28xRelocField abs22   = { 16, 0,  6, 16, true };
+	// DP holds a page: an address is (DP << 6) | 6bit, so DP is addr >> 6
+	static const C28xRelocField dp_hi16 = { 16, 0, 16, 6, false };
+	static const C28xRelocField pcrel16 = { 16, 0, 16, 0, false };
+	static const C28xRelocField pcrel8  = { 16, 0,  8, 0, false };
+	// clang-format on
+	switch (type) {
+	case R_C28X_ABS32: return &abs32;
+	case R_C28X_ABS16: return &abs16;
+	case R_C28X_ABS8: return &abs8;
+	case R_C28X_ABSLO6: return &abslo6;
+	case R_C28X_ABSLO7: return &abslo7;
+	case R_C28X_ABS22:
+	case R_C28X_ABS22_BR: return &abs22;
+	case R_C28X_DP_HI16: return &dp_hi16;
+	case R_C28X_PCREL16: return &pcrel16;
+	case R_C28X_PCREL8: return &pcrel8;
+	default: return NULL;
+	}
+}
+
+static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
+	const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	const C28xRelocField *f = c28x_reloc_field(rel->type);
+	if (!f) {
+		return;
+	}
+	ut64 result;
+	switch (rel->type) {
+	case R_C28X_PCREL16:
+	case R_C28X_PCREL8:
+		result = fs->S + fs->A - fs->P;
+		break;
+	default:
+		result = fs->S + fs->A;
+		break;
+	}
+	ut64 val = result >> f->scale;
+
+	ut8 buf[4] = { 0 };
+	ut32 nbytes = f->container / 8;
+	if (rz_buf_read_at(buf_patched, patch_addr, buf, nbytes) != (int)nbytes) {
+		return;
+	}
+	ut32 mask = f->size >= 32 ? UT32_MAX : (((ut32)1 << f->size) - 1);
+	if (nbytes == 4) {
+		ut32 word = rz_read_ble32(buf, big_endian);
+		word = (word & ~mask) | ((ut32)val & mask);
+		rz_write_ble32(buf, word, big_endian);
+	} else {
+		ut16 word = rz_read_ble16(buf, big_endian);
+		word = (word & ~(ut16)(mask << f->offset)) |
+			(ut16)(((ut32)val & mask) << f->offset);
+		rz_write_ble16(buf, word, big_endian);
+	}
+	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+
+	if (f->split22) {
+		// the low sixteen bits of the same result live in the following word
+		ut8 lo[2] = { 0 };
+		rz_write_ble16(lo, (ut16)(result & 0xffff), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr + 2, lo, sizeof(lo));
+	}
+}
+
 static void patch_reloc_c6000(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
 	const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
@@ -3794,7 +3889,9 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_TI_C6000:
 		patch_reloc_c6000(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
 		break;
-	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
+	case EM_TI_C2000:
+		patch_reloc_c28x(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
+		break;
 	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
 	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
 	case EM_TI_PRU: ARCH_MISSING("EM_TI_PRU");
