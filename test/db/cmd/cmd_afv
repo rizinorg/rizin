@@ -74,9 +74,9 @@ s sym.single_cond
 afvc var_ch
 EOF
 EXPECT=<<EOF
-var_1ch: > 0x0 && <= 0x9
-> 0x0 && <= 0x9
-[{"name":"var_1ch","constraints":"> 0x0 && <= 0x9","conditions":[{"cond":"gt","value":0},{"cond":"le","value":9}]}]
+var_1ch: (0x0, 0x9]
+(0x0, 0x9]
+[{"name":"var_1ch","constraints":"(0x0, 0x9]","conditions":[{"cond":"gt","value":0},{"cond":"le","value":9}]}]
 > 0xa
 EOF
 RUN
@@ -91,13 +91,19 @@ afvcs var_1ch ">5,<=20"
 afvc var_1ch
 afvcs var_1ch "gt 1,le 10"
 afvc var_1ch
+afvcs var_1ch "[10, 20]"
+afvc var_1ch
+afvcs var_1ch "{10, 20, 30}"
+afvc var_1ch
 afvc- var_1ch
 afvc var_1ch
 echo done
 EOF
 EXPECT=<<EOF
-> 0x5 && <= 0x14
-> 0x1 && <= 0xa
+(0x5, 0x14]
+(0x1, 0xa]
+[0xa, 0x14]
+{0xa, 0x14, 0x1e}
 done
 EOF
 RUN

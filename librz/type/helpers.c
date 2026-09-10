@@ -583,6 +583,10 @@ static bool type_interval_append(RzStrBuf *sb, RZ_NONNULL const TypeInterval *iv
 		rz_strbuf_append(sb, " || ");
 	}
 	*first = false;
+	if (iv->has_low && iv->has_high && iv->low != iv->high) {
+		rz_strbuf_appendf(sb, "%c0x%" PFMT64x ", 0x%" PFMT64x "%c", iv->low_incl ? '[' : '(', iv->low, iv->high, iv->high_incl ? ']' : ')');
+		return true;
+	}
 	if (iv->has_low && iv->has_high && iv->low == iv->high) {
 		// a single allowed value, [x, x] is the same as == x
 		rz_strbuf_appendf(sb, "== 0x%" PFMT64x, iv->low);
@@ -592,9 +596,6 @@ static bool type_interval_append(RzStrBuf *sb, RZ_NONNULL const TypeInterval *iv
 		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->low_incl ? ">=" : ">", iv->low);
 	}
 	if (iv->has_high) {
-		if (iv->has_low) {
-			rz_strbuf_append(sb, " && ");
-		}
 		rz_strbuf_appendf(sb, "%s 0x%" PFMT64x, iv->high_incl ? "<=" : "<", iv->high);
 	}
 	return true;
@@ -625,6 +626,26 @@ RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVe
 	RzStrBuf sb = { 0 };
 	bool first = true; // whether the first term still has to be written
 	TypeInterval cur = { 0 }; // the interval currently being assembled
+	RzVector /*<ut64>*/ eqs;
+	rz_vector_init(&eqs, sizeof(ut64), NULL, NULL);
+
+#define FLUSH_EQS() \
+	do { \
+		if (!rz_vector_empty(&eqs)) { \
+			if (!first) rz_strbuf_append(&sb, " || "); \
+			first = false; \
+			rz_strbuf_append(&sb, "{"); \
+			void *val_it; \
+			bool first_eq = true; \
+			rz_vector_foreach(&eqs, val_it) { \
+				rz_strbuf_appendf(&sb, "%s0x%" PFMT64x, first_eq ? "" : ", ", *(ut64 *)val_it); \
+				first_eq = false; \
+			} \
+			rz_strbuf_append(&sb, "}"); \
+			rz_vector_clear(&eqs); \
+		} \
+	} while (0)
+
 	RzTypeConstraint *c;
 	rz_vector_foreach (constraints, c) {
 		bool is_lower, incl;
@@ -634,19 +655,16 @@ RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVe
 		case RZ_TYPE_COND_LE: is_lower = false, incl = true; break;
 		case RZ_TYPE_COND_LT: is_lower = false, incl = false; break;
 		case RZ_TYPE_COND_EQ:
-			// an exact value is its own complete term: flush the pending
-			// interval and emit the equality as a degenerate interval [x, x]
-			if (!type_interval_append(&sb, &cur, &first)) {
-				goto invalid;
-			}
-			cur = (TypeInterval){ .has_low = true, .low_incl = true, .low = c->val, .has_high = true, .high_incl = true, .high = c->val };
 			if (!type_interval_append(&sb, &cur, &first)) {
 				goto invalid;
 			}
 			cur = (TypeInterval){ 0 };
+			rz_vector_push(&eqs, &c->val);
 			continue;
 		default: continue; // not an interval bound, ignore
 		}
+
+		FLUSH_EQS();
 		// A second bound on the same side cannot extend the current interval.
 		// If the interval is already complete it opens a new alternative,
 		// otherwise the constraints are inconsistent.
@@ -674,13 +692,18 @@ RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVe
 	if (!type_interval_append(&sb, &cur, &first)) {
 		goto invalid;
 	}
+	FLUSH_EQS();
+
 	if (first) {
 		// no interval-style constraint produced any output
+		rz_vector_fini(&eqs);
 		rz_strbuf_fini(&sb);
 		return NULL;
 	}
+	rz_vector_fini(&eqs);
 	return rz_strbuf_drain_nofree(&sb);
 invalid:
+	rz_vector_fini(&eqs);
 	rz_strbuf_fini(&sb);
 	return NULL;
 }
@@ -703,50 +726,160 @@ invalid:
  * \param constraints an initialized vector of \ref RzTypeConstraint to fill
  * \return true on success, false on a parse error (vector may be partially filled)
  */
-RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
-	rz_return_val_if_fail(str && constraints, false);
-	// Group 1 is the operator (a run of <>!= symbols or a mnemonic such as
-	// "ge"), group 2 is the value. rz_type_cond_fromstring() then maps the
-	// operator and rejects anything that is not a comparison condition.
-	RzRegex *re = rz_regex_new("^\\s*([<>!=]+|[a-z]+)\\s*(.+?)\\s*$", RZ_REGEX_DEFAULT, RZ_REGEX_DEFAULT, NULL);
-	if (!re) {
+static void skip_whitespace(const char **p) {
+	while (**p && isspace((unsigned char)**p)) {
+		(*p)++;
+	}
+}
+
+static bool parse_value(const char **p, ut64 *val) {
+	skip_whitespace(p);
+	if (!**p) {
 		return false;
 	}
-	bool ok = true;
-	RzList /*<char *>*/ *tokens = rz_str_split_duplist(str, ",", true);
-	RzListIter *it;
-	char *tok;
-	rz_list_foreach (tokens, it, tok) {
-		if (RZ_STR_ISEMPTY(tok)) {
-			continue;
-		}
-		RzPVector /*<RzRegexMatch *>*/ *matches = rz_regex_match_first(re, tok, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
-		RzRegexMatch *op_match = rz_pvector_at(matches, 1);
-		RzRegexMatch *val_match = rz_pvector_at(matches, 2);
-		char *op = op_match ? rz_str_ndup(tok + op_match->start, op_match->len) : NULL;
-		char *valstr = val_match ? rz_str_ndup(tok + val_match->start, val_match->len) : NULL;
-		RzTypeCond cond = op ? rz_type_cond_fromstring(op) : RZ_TYPE_COND_AL;
-		// Accept the interval bounds (<, <=, >, >=) together with the equality
-		// and inequality conditions (==, !=). Anything else maps to
-		// RZ_TYPE_COND_AL via rz_type_cond_fromstring() and is rejected.
-		if (cond != RZ_TYPE_COND_LE && cond != RZ_TYPE_COND_LT &&
-			cond != RZ_TYPE_COND_GE && cond != RZ_TYPE_COND_GT &&
-			cond != RZ_TYPE_COND_EQ && cond != RZ_TYPE_COND_NE) {
-			RZ_LOG_ERROR("Invalid constraint \"%s\" (expected ==, !=, <, <=, >, >= followed by a value)\n", tok);
-			ok = false;
-		} else {
-			RzTypeConstraint c = { .cond = cond, .val = rz_num_math(NULL, valstr) };
-			rz_vector_push(constraints, &c);
-		}
-		free(op);
-		free(valstr);
-		rz_pvector_free(matches);
-		if (!ok) {
+	const char *start = *p;
+	int parens = 0;
+	while (**p) {
+		if (**p == '(') {
+			parens++;
+		} else if (**p == ')') {
+			if (parens == 0) {
+				break;
+			}
+			parens--;
+		} else if (parens == 0 && (**p == ',' || **p == ']' || **p == '}' || strncmp(*p, "||", 2) == 0)) {
 			break;
 		}
+		(*p)++;
 	}
-	rz_list_free(tokens);
-	rz_regex_free(re);
+	if (*p == start) {
+		return false;
+	}
+	char *valstr = rz_str_ndup(start, *p - start);
+	if (!valstr) {
+		return false;
+	}
+	*val = rz_num_math(NULL, valstr);
+	free(valstr);
+	return true;
+}
+
+static bool parse_set(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	(*p)++;
+	while (**p) {
+		ut64 val;
+		if (!parse_value(p, &val)) {
+			return false;
+		}
+		RzTypeConstraint c = { .cond = RZ_TYPE_COND_EQ, .val = val };
+		rz_vector_push(constraints, &c);
+		skip_whitespace(p);
+		if (**p == '}') {
+			(*p)++;
+			break;
+		} else if (**p == ',') {
+			(*p)++;
+		} else {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool parse_interval(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	char open_bracket = **p;
+	(*p)++;
+	ut64 val1, val2;
+	if (!parse_value(p, &val1)) {
+		return false;
+	}
+	skip_whitespace(p);
+	if (**p != ',') {
+		return false;
+	}
+	(*p)++;
+	if (!parse_value(p, &val2)) {
+		return false;
+	}
+	skip_whitespace(p);
+	char close_bracket = **p;
+	if (close_bracket != ']' && close_bracket != ')') {
+		return false;
+	}
+	(*p)++;
+	RzTypeConstraint c1 = { .cond = open_bracket == '[' ? RZ_TYPE_COND_GE : RZ_TYPE_COND_GT, .val = val1 };
+	RzTypeConstraint c2 = { .cond = close_bracket == ']' ? RZ_TYPE_COND_LE : RZ_TYPE_COND_LT, .val = val2 };
+	rz_vector_push(constraints, &c1);
+	rz_vector_push(constraints, &c2);
+	return true;
+}
+
+static bool parse_operator_constraint(const char **p, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	const char *start = *p;
+	if (**p == '<' || **p == '>' || **p == '=' || **p == '!') {
+		while (**p == '<' || **p == '>' || **p == '=' || **p == '!') {
+			(*p)++;
+		}
+	} else if (isalpha((unsigned char)**p)) {
+		while (isalpha((unsigned char)**p)) {
+			(*p)++;
+		}
+	}
+	if (*p == start) {
+		return false;
+	}
+	char *op = rz_str_ndup(start, *p - start);
+	RzTypeCond cond = rz_type_cond_fromstring(op);
+	free(op);
+	if (cond != RZ_TYPE_COND_LE && cond != RZ_TYPE_COND_LT &&
+		cond != RZ_TYPE_COND_GE && cond != RZ_TYPE_COND_GT &&
+		cond != RZ_TYPE_COND_EQ && cond != RZ_TYPE_COND_NE) {
+		return false;
+	}
+	ut64 val;
+	if (!parse_value(p, &val)) {
+		return false;
+	}
+	RzTypeConstraint c = { .cond = cond, .val = val };
+	rz_vector_push(constraints, &c);
+	return true;
+}
+
+RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints) {
+	rz_return_val_if_fail(str && constraints, false);
+
+	bool ok = true;
+	const char *p = str;
+	while (*p && ok) {
+		skip_whitespace(&p);
+		if (!*p) {
+			break;
+		}
+		if (strncmp(p, "||", 2) == 0) {
+			p += 2;
+			continue;
+		}
+		if (*p == ',') {
+			p++;
+			continue;
+		}
+		if (*p == '{') {
+			if (!parse_set(&p, constraints)) {
+				ok = false;
+				break;
+			}
+		} else if (*p == '[' || *p == '(') {
+			if (!parse_interval(&p, constraints)) {
+				ok = false;
+				break;
+			}
+		} else {
+			if (!parse_operator_constraint(&p, constraints)) {
+				ok = false;
+				break;
+			}
+		}
+	}
 	return ok;
 }
 
