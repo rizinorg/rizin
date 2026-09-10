@@ -64,6 +64,7 @@ static bool output_handler(RzStructuredData *sd, const char *output_file, bool j
 
 	if (!output_file) {
 		printf("%s\n", output);
+		RZ_FREE(output);
 		return true;
 	}
 

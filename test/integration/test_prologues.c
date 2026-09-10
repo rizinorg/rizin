@@ -206,6 +206,7 @@ bool test_prologues_generate() {
 	mu_assert_false(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, processed_files),
 		"Duplicate feed should be skipped");
 	mu_assert_eq(rz_set_s_size(processed_files), 1, "processed file set size should still be 1");
+	rz_prologues_arch_info_fini(&arch_info);
 
 	// arch mismatch
 	RzProloguesArchInfo mips_arch = { 0 };
