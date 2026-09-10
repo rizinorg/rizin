@@ -26,6 +26,7 @@ if get_option('enable_tests') and cli_enabled
     'open_analyse_save_load_project',
     'pdb',
     'project_migrate',
+    'prologues',
     'rzpipe',
     'stabs',
     'str_search',

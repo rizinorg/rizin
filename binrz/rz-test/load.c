@@ -112,6 +112,7 @@ static const char *rz_test_tools[] = {
 	"rz-find",
 	"rz-gg",
 	"rz-hash",
+	"rz-prologues",
 	"rz-run",
 	"rz-sign",
 	"rz-test",
