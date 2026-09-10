@@ -8,6 +8,12 @@ families, selected by `analysis.cpu` / `asm.cpu`:
 | `c55x`  | TMS320C55x         |  16  | LE     | C5501, C5502, C5503, C5507, C5509, C5510       |
 | `c55x+` | TMS320C55x+        |  16  | LE     | C5504, C5505, C5514, C5515, C5517, C5535, C5545|
 | `c64x`  | TMS320C6000 / C64x |  32  | LE     | C6201..C6748, C6655, KeyStone-II               |
+| `c28x`  | TMS320C28x         |  16  | LE     | C280x, C281x, C2833x, F2806x, F2837x, F2838x   |
+
+## c28x
+
+Word-addressed 16-bit fixed-point core with a variable-length (1-2 word)
+encoding. Native engine under `c28x/`; see `c28x/README.md`.
 
 ## c64x
 

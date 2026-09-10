@@ -12,6 +12,7 @@
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
 #include <tms320/c6x/c6x.h>
+#include <tms320/c28x/c28x.h>
 
 typedef struct tms320_ctx_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
@@ -319,6 +320,20 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		}
 		return op->size;
 	}
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		C28xInsn insn;
+		if (!c28x_decode(buf, len, addr, &insn)) {
+			return -1;
+		}
+		c28x_fill_analysis(&insn, addr, op);
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c28x_opex(&insn);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c28x_format(&insn, addr);
+		}
+		return op->size;
+	}
 	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
@@ -365,7 +380,13 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	// runs on every cpu change, so switching back to a C5000 cpu restores c55x.
 	// The 16-bit file carries its own default for c2x/c5x and is left alone.
 	if (a->bits == 32) {
-		rz_analysis_set_cc_default(a, c6x_desc_from_cpu(cpu0) ? "c6x" : "c55x");
+		const char *cc = "c55x";
+		if (c6x_desc_from_cpu(cpu0)) {
+			cc = "c6x";
+		} else if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+			cc = "c28x";
+		}
+		rz_analysis_set_cc_default(a, cc);
 	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
 		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
@@ -466,6 +487,81 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr pm   .2 43.0 0\n" // Product shift mode
 			"gpr arb  .16 44 0\n" // Auxiliary register pointer backup
 			"gpr rptc .16 46 0\n"); // Repeat counter
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+		// TMS320C28x: the 32-bit accumulator ACC (AH:AL), the 32-bit product
+		// register P (PH:PL), the 32-bit multiplicand XT (T:TL), eight 32-bit
+		// auxiliary registers XAR0-XAR7 whose low halves are AR0-AR7, the
+		// 16-bit SP and DP pointers, the ST0/ST1 status words, the interrupt
+		// registers IER/IFR/DBGIER, the return address RPC and a 22-bit PC.
+		// Data addresses are 32-bit; program addresses are 22-bit.
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			// SPRU514AA Table 7-2 and section 7.3.1: remaining 16-bit arguments
+			// go in AL, AH, XAR4, XAR5, and pointer arguments in XAR4 and XAR5
+			"=A0\tal\n"
+			"=A1\tah\n"
+			"=A2\txar4\n"
+			"=A3\txar5\n"
+			"=R0\tacc\n"
+			"ctr acc    .32 0  0\n" // Accumulator
+			"gpr al     .16 0  0\n" // Accumulator low half
+			"gpr ah     .16 2  0\n" // Accumulator high half
+			"ctr p      .32 4  0\n" // Product register
+			"gpr pl     .16 4  0\n" // Product low half
+			"gpr ph     .16 6  0\n" // Product high half
+			"ctr xt     .32 8  0\n" // Multiplicand register
+			"gpr tl     .16 8  0\n" // XT low half
+			"gpr t      .16 10 0\n" // XT high half (shift count)
+			"gpr xar0   .32 12 0\n" // Auxiliary register 0
+			"gpr ar0    .16 12 0\n"
+			"gpr xar1   .32 16 0\n" // Auxiliary register 1
+			"gpr ar1    .16 16 0\n"
+			"gpr xar2   .32 20 0\n" // Auxiliary register 2
+			"gpr ar2    .16 20 0\n"
+			"gpr xar3   .32 24 0\n" // Auxiliary register 3
+			"gpr ar3    .16 24 0\n"
+			"gpr xar4   .32 28 0\n" // Auxiliary register 4
+			"gpr ar4    .16 28 0\n"
+			"gpr xar5   .32 32 0\n" // Auxiliary register 5
+			"gpr ar5    .16 32 0\n"
+			"gpr xar6   .32 36 0\n" // Auxiliary register 6
+			"gpr ar6    .16 36 0\n"
+			"gpr xar7   .32 40 0\n" // Auxiliary register 7
+			"gpr ar7    .16 40 0\n"
+			"ctr sp     .16 44 0\n" // Stack pointer
+			"ctr dp     .16 46 0\n" // Data page pointer
+			"ctr st0    .16 48 0\n" // Status register 0
+			"ctr st1    .16 50 0\n" // Status register 1
+			"ctr ier    .16 52 0\n" // Interrupt enable register
+			"ctr ifr    .16 54 0\n" // Interrupt flag register
+			"ctr dbgier .16 56 0\n" // Debug interrupt enable register
+			"ctr rpc    .32 58 0\n" // Return program counter
+			"ctr pc     .32 62 0\n" // Program counter (22-bit on silicon)
+			// ST0/ST1 bits modelled individually so the analysis layer and a
+			// future lifter can address them by name
+			"flg n      .1 66.0 0\n" // Negative
+			"flg z      .1 67.0 0\n" // Zero
+			"flg c      .1 68.0 0\n" // Carry
+			"flg v      .1 69.0 0\n" // Overflow
+			"flg tc     .1 70.0 0\n" // Test/control
+			"gpr ovm    .1 71.0 0\n" // Overflow mode
+			"gpr sxm    .1 72.0 0\n" // Sign-extension mode
+			"gpr intm   .1 73.0 0\n" // Interrupt mask
+			"gpr dbgm   .1 74.0 0\n" // Debug mask
+			"gpr page0  .1 75.0 0\n" // Direct/stack addressing select
+			"gpr vmap   .1 76.0 0\n" // Vector map
+			"gpr amode  .1 77.0 0\n" // Addressing mode select
+			"gpr objmode .1 78.0 0\n" // Object compatibility mode
+			"gpr m0m1map .1 79.0 0\n" // M0/M1 map
+			"gpr xf     .1 80.0 0\n" // XF external flag
+			"gpr spa    .1 81.0 0\n" // Stack-pointer alignment record
+			"gpr pm     .3 82.0 0\n" // Product shift mode
+			"gpr ovc    .6 83.0 0\n" // Overflow counter
+			"gpr arp    .3 84.0 0\n" // Auxiliary register pointer
+			"gpr rptc   .8 85.0 0\n"); // Repeat counter
 	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c5x") == 0) {
 		// TMS320C5x: the C2x register file plus the C5x additions — the 32-bit
@@ -875,6 +971,13 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
 	} else if (c6x_desc_from_cpu(cpu)) {
 		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
+	} else if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		/* ADDB SP,#7bit -- 1111 1110 0CCC CCCC -- is the C28x frame setup and
+		 * the only instruction in 0xfe00..0xfe7f. In a 128K PIP inverter image
+		 * it occurs 933 times, 871 of them directly after the previous
+		 * function's LRETR. A minority of functions push a register first, so
+		 * those start one instruction earlier than this matches. */
+		KW("\x00\xfe", 2, "\x80\xff", 2);
 	} else {
 		/* plain C55x: two consecutive single pushes (0x38 0x38) */
 		KW("\x38\x38", 2, "\xff\xff", 2);
