@@ -1,0 +1,33 @@
+NAME=dbg.follow.child follows the forked child
+FILE=bins/elf/analysis/x64-fork-test
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e dbg.follow.child=true
+dc
+EOF
+EXPECT=<<EOF
+child in leaf!
+child process terminating!
+main exiting!
+EOF
+RUN
+
+NAME=dbg.follow.child stops at a breakpoint in the child
+FILE=bins/elf/analysis/x64-fork-test
+ARGS=-d
+CMDS=<<EOF
+e scr.color=0
+e dbg.follow.child=true
+db @ sym.break_on_me
+dc
+dr rip
+dc
+EOF
+EXPECT=<<EOF
+rip = 0x000000000040071d
+child in leaf!
+child process terminating!
+main exiting!
+EOF
+RUN
