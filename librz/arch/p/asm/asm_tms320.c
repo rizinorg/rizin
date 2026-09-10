@@ -11,6 +11,7 @@
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
 #include <tms320/c6x/c6x.h>
+#include <tms320/c28x/c28x.h>
 
 typedef struct tms_cs_context_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction disassembled
@@ -36,6 +37,21 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 		rz_asm_op_set_asm(op, "invalid");
 		// an unrecognised word still occupies a full instruction slot
 		return op->size = C6X_WORD_SIZE;
+	}
+	// The C28x has its own native engine (16-bit word-addressed, one or two
+	// words per instruction).
+	if (a->cpu && !rz_str_casecmp(a->cpu, "c28x")) {
+		C28xInsn insn;
+		if (c28x_decode(buf, len, a->pc, &insn)) {
+			char *s = c28x_format(&insn, a->pc);
+			if (s) {
+				rz_asm_op_set_asm(op, s);
+				free(s);
+				return op->size = insn.size;
+			}
+		}
+		rz_asm_op_set_asm(op, "invalid");
+		return op->size = 2;
 	}
 	// C55x / C55x+ / C54x are decoded by the shared decode-IR engine; any other
 	// cpu is unknown.
@@ -93,12 +109,16 @@ static bool tms320_fini(void *user) {
 }
 
 static char *tms320_mnemonics(const RzAsm *a, int id, bool json) {
-	// Only the native C6000 engine can enumerate its instruction set; the
-	// C5000/C54x decode-IR front-ends expose no such listing.
-	if (!c6x_desc_from_cpu(a->cpu)) {
+	// Only the native C6000 and C28x engines can enumerate their instruction
+	// sets; the C5000/C54x decode-IR front-ends expose no such listing.
+	RzPVector *mnems = NULL;
+	if (c6x_desc_from_cpu(a->cpu)) {
+		mnems = c6x_mnemonics();
+	} else if (a->cpu && !rz_str_casecmp(a->cpu, "c28x")) {
+		mnems = c28x_mnemonics();
+	} else {
 		return NULL;
 	}
-	RzPVector *mnems = c6x_mnemonics();
 	if (!mnems) {
 		return NULL;
 	}
@@ -139,6 +159,7 @@ static char **tms320_cpu_descriptions() {
 		"c54x", "Texas Instruments TMS320C54x DSP family",
 		"c2x", "Texas Instruments TMS320C2x legacy fixed-point DSP family",
 		"c5x", "Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)",
+		"c28x", "Texas Instruments TMS320C28x fixed-point DSP family (C2000)",
 		"c55x", "Texas Instruments TMS320C55x DSP family",
 		"c55x+", "Texas Instruments TMS320C55x+ DSP family",
 		"c62x", "Texas Instruments TMS320C62x fixed-point VLIW DSP family",
@@ -154,8 +175,8 @@ static char **tms320_cpu_descriptions() {
 RzAsmPlugin rz_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
-	.cpus = "c54x,c55x,c55x+,c2x,c5x,c62x,c64x,c67x,c674x,c66x",
-	.desc = "Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c5x,c6x) disassembler",
+	.cpus = "c54x,c55x,c55x+,c2x,c5x,c28x,c62x,c64x,c67x,c674x,c66x",
+	.desc = "Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c5x,c28x,c6x) disassembler",
 	.license = "LGPL3",
 	.bits = 16 | 32,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,

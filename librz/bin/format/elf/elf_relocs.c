@@ -121,7 +121,7 @@ static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64
 	fix_elf_rel_mipsel64(bin, &tmp);
 
 	reloc->mode = mode;
-	reloc->offset = tmp.r_offset;
+	reloc->offset = tmp.r_offset * Elf_(rz_bin_elf_addr_scale)(bin);
 	reloc->sym = ELF_R_SYM(tmp.r_info);
 	reloc->type = ELF_R_TYPE(tmp.r_info);
 	reloc->addend = tmp.r_addend;

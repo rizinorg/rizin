@@ -326,6 +326,7 @@ bool Elf_(rz_bin_elf_has_va)(ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
+ut32 Elf_(rz_bin_elf_addr_scale)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
