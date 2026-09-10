@@ -266,6 +266,7 @@ RZ_API RZ_OWN RzX509Certificate *rz_x509_certificate_parse(RZ_NULLABLE RzASN1Obj
 
 	if (!rz_x509_algorithmidentifier_parse(&cert->algorithmIdentifier, object->list.objects[1])) {
 		rz_x509_certificate_free(cert);
+		cert = NULL;
 	}
 fail:
 	rz_asn1_object_free(object);
