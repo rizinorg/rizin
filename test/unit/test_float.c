@@ -1756,6 +1756,74 @@ bool f32_ieee_cast_test(void) {
 	mu_end;
 }
 
+bool f32_ieee_cast_oob_test(void) {
+	RzFloat *fval;
+	RzBitVector *expect_bv, *cast_bv;
+
+	// 1. signed cast OOB saturate
+	fval = rz_float_new_from_f32(4294967296.0f); // out of bounds for signed 32-bit (max is 2147483647)
+	expect_bv = rz_bv_new_from_ut64(32, 0x7FFFFFFF);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_SATURATE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint saturate max)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	fval = rz_float_new_from_f32(-4294967296.0f);
+	expect_bv = rz_bv_new_from_ut64(32, 0x80000000);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_SATURATE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint saturate min)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 2. signed cast OOB indefinite
+	fval = rz_float_new_from_f32(4294967296.0f);
+	expect_bv = rz_bv_new_from_ut64(32, 0x80000000);
+	cast_bv = rz_float_cast_sint(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_INDEFINITE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-sint indefinite max)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 3. unsigned cast OOB saturate
+	fval = rz_float_new_from_f32(8589934592.0f); // out of bounds for unsigned 32-bit (max is 4294967295)
+	expect_bv = rz_bv_new_from_ut64(32, 0xFFFFFFFF);
+	cast_bv = rz_float_cast_int(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_SATURATE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-int saturate max)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	fval = rz_float_new_from_f32(-1.0f); // negative is out of bounds for unsigned
+	expect_bv = rz_bv_new_zero(32);
+	cast_bv = rz_float_cast_int(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_SATURATE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-int saturate min/negative)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 4. unsigned cast in bounds (was previously broken for values >= 2^31)
+	fval = rz_float_new_from_f32(3000000000.0f); // 3*10^9, > 2^31-1 but < 2^32
+	expect_bv = rz_bv_new_from_ut64(32, 3000000000);
+	cast_bv = rz_float_cast_int(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_SATURATE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-int in bounds large unsigned)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	// 5. unsigned cast OOB indefinite
+	fval = rz_float_new_from_f32(8589934592.0f);
+	expect_bv = rz_bv_new_from_ut64(32, 0x80000000);
+	cast_bv = rz_float_cast_int(fval, 32, RZ_FLOAT_RMODE_RNE, RZ_FLOAT_CAST_OOB_INDEFINITE);
+	mu_assert_true(rz_bv_eq(expect_bv, cast_bv), "test (cast-int indefinite max)");
+	rz_float_free(fval);
+	rz_bv_free(cast_bv);
+	rz_bv_free(expect_bv);
+
+	mu_end;
+}
+
 static RzFloat *new_f80_from_bytes(const char *bytes) {
 	RzBitVector *bv = rz_bv_new_from_bytes_be((const unsigned char *)bytes, 0, 80);
 	RzFloat *ret = rz_float_new_from_bv(bv);
@@ -2179,6 +2247,7 @@ bool all_tests() {
 	mu_run_test(f32_new_round_test);
 	mu_run_test(f32_ieee_fround_test);
 	mu_run_test(f32_ieee_cast_test);
+	mu_run_test(f32_ieee_cast_oob_test);
 	mu_run_test(f80_ieee_cast_sint_test);
 	mu_run_test(f80_ieee_cast_sint_large_test);
 	mu_run_test(float_convert_range_test);

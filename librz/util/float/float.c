@@ -1779,20 +1779,10 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
  * \param mode rounding mode
  * \return unsigned bitvector converted from f
  */
-RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
-	rz_return_val_if_fail(f, NULL);
-	return rz_float_cast_sint(f, length, mode, oob_behavior);
-}
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior);
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior);
 
-/**
- * cast_sint s rm x returns an integer closest to x.
- * The resulting bitvector should be interpreted as a signed two-complement integer.
- * \param f float
- * \param length length of returned bitvector
- * \param mode rounding mode
- * \return signed bitvector in 2's complement
- */
-RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
+static RzBitVector *rz_float_cast_int_internal(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior, bool is_signed) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzBitVector *ret = rz_bv_new(length);
@@ -1812,12 +1802,18 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	bool is_oob = false;
 	bool should_inc = false;
 	bool inexact = false;
-	RzBitVector *sig = NULL;
-	bool is_zero = false;
+	RzBitVector *sig = rz_float_get_mantissa(f);
+	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	if (is_nan || is_inf) {
 		is_oob = true;
-	} else if (exp_no_bias > (st32)(length - 1)) {
+	} else if (is_signed && exp_no_bias > (st32)(length - 1)) {
+		is_oob = true;
+	} else if (!is_signed && exp_no_bias >= (st32)length) {
+		is_oob = true;
+	}
+
+	if (!is_signed && sign && !is_zero) {
 		is_oob = true;
 	}
 
@@ -1829,8 +1825,6 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	// we should try to reserve `exponent` bits of mantissa
 	// drop extra bits or append zeros
 	// 1.MM..M * 2^exp = 1MM..M * 2^0 (integer)
-	sig = rz_float_get_mantissa(f);
-	is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	// binary80 stores the integer bit explicitly in the mantissa; all other
 	// normal formats use a hidden bit that must be injected here
@@ -1886,15 +1880,19 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 			}
 		}
 		if (!is_oob && rz_bv_get(rounded, length - 1)) {
-			bool lower_zeros = true;
-			for (ut32 i = 0; i < length - 1; i++) {
-				if (rz_bv_get(rounded, i)) {
-					lower_zeros = false;
-					break;
+			if (is_signed) {
+				bool lower_zeros = true;
+				for (ut32 i = 0; i < length - 1; i++) {
+					if (rz_bv_get(rounded, i)) {
+						lower_zeros = false;
+						break;
+					}
 				}
-			}
-			if (!sign || !lower_zeros) {
-				is_oob = true;
+				if (!sign || !lower_zeros) {
+					is_oob = true;
+				}
+			} else {
+				// the (length-1)th bit is fine to be set for an unsigned integer.
 			}
 		}
 	}
@@ -1905,12 +1903,22 @@ handle_oob:
 		if (oob_behavior == RZ_FLOAT_CAST_OOB_INDEFINITE) {
 			rz_bv_set(ret, length - 1, true);
 		} else if (oob_behavior == RZ_FLOAT_CAST_OOB_SATURATE) {
-			if (is_nan) {
-				// NaN saturates to 0 for most architectures (like ARM)
-			} else if (sign) {
-				rz_bv_set(ret, length - 1, true); // min int
+			if (is_signed) {
+				if (is_nan) {
+					// NaN saturates to 0 for most architectures (like ARM)
+				} else if (sign) {
+					rz_bv_set(ret, length - 1, true); // min int
+				} else {
+					rz_bv_set_range(ret, 0, length - 2, true); // max int
+				}
 			} else {
-				rz_bv_set_range(ret, 0, length - 2, true); // max int
+				if (is_nan) {
+					// NaN saturates to 0
+				} else if (sign) {
+					// negative saturates to 0 (already all false)
+				} else {
+					rz_bv_set_all(ret, true); // max unsigned int
+				}
 			}
 		}
 		if (rounded) { rz_bv_free(rounded); }
@@ -1931,6 +1939,30 @@ handle_oob:
 	rz_bv_copy_nbits(ret, 0, rounded, 0, RZ_MIN(rz_bv_len(rounded), length));
 	rz_bv_free(rounded);
 	return ret;
+}
+
+/**
+ * cast_int s rm x returns an integer closest to x.
+ * The resulting bitvector should be interpreted as an unsigned two-complement integer.
+ * \param f float
+ * \param length length of returned bitvector
+ * \param mode rounding mode
+ * \return unsigned bitvector converted from f
+ */
+RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
+	return rz_float_cast_int_internal(f, length, mode, oob_behavior, false);
+}
+
+/**
+ * cast_sint s rm x returns an integer closest to x.
+ * The resulting bitvector should be interpreted as a signed two-complement integer.
+ * \param f float
+ * \param length length of returned bitvector
+ * \param mode rounding mode
+ * \return signed bitvector in 2's complement
+ */
+RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode, RzFloatCastOobBehavior oob_behavior) {
+	return rz_float_cast_int_internal(f, length, mode, oob_behavior, true);
 }
 
 /* SoftFloat conversion thunks for rz_float_convert. One row per source format
