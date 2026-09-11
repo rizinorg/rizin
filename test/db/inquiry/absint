@@ -1,0 +1,226 @@
+# Note: the multiple call targets in the indirect_calls_in_loop functions are
+# not yet resolved, because a single instruction jumps to multiple addresses
+# there and we interpret only with single constant values or top. They may be
+# later discovered with different value domains.
+
+NAME=Indirect call x86_64
+FILE=bins/absint/x86_64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x0800006c    1 39           sym.indirect_call_single
+     reloc.target.indirect_call_single+9 0x8000075 ->      DATA -> 0x8000130 reloc..text.8000130
+                         reloc..rodata+4 0x800007c ->      CALL -> 0x8000056 sym.function_1
+                         reloc..rodata+8 0x8000080 ->      DATA -> 0x8000118 reloc..text.8000118
+                   reloc..data.8000083+4 0x8000087 ->      CALL -> 0x8000056 sym.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x800006c   39      0     14            0x0800006c  0x08000056 
+EOF
+RUN
+
+NAME=Indirect calls in loop x86_64
+FILE=bins/absint/x86_64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000093    4 75           sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+22 0x80000a9 ->      CODE -> 0x80000d3 reloc..rodata.80000c4+15
+                reloc..rodata.80000c4+19 0x80000d7 ->      CODE -> 0x80000ab reloc.target.indirect_calls_in_loop+24
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000093   24      0      6 0x080000d3             0x08000093       
+0x80000ab   40      0     11 0x080000d3             0x08000093        0x080000d7
+0x80000d3    6      0      2 0x080000ab 0x080000d9  0x08000093        0x080000a9
+0x80000d9    5      0      3                        0x08000093       
+EOF
+RUN
+
+NAME=Indirect call hexagon
+FILE=bins/absint/hexagon_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000040    1 64           sym.indirect_call_single
+            reloc..data.rel.ro.8000048+4 0x800004c ->      DATA -> 0x8000184 reloc..text.8000184
+            reloc..data.rel.ro.8000048+8 0x8000050 ->      CALL -> 0x8000160 sym.function_1
+                   reloc..data.8000060+4 0x8000064 ->      DATA -> 0x8000194 reloc..text.8000194
+                   reloc..data.8000060+8 0x8000068 ->      CALL -> 0x8000160 sym.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x8000040   64      0     16            0x08000040  0x08000160 
+EOF
+RUN
+
+NAME=Indirect calls in loop hexagon
+FILE=bins/absint/hexagon_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000080    4 140          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+32 0x80000a0 ->      CODE -> 0x8000104 reloc..data.rel.ro.80000d4+48
+           reloc..data.rel.ro.80000d4+44 0x8000100 ->      CODE -> 0x8000098 reloc.target.indirect_calls_in_loop+24
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000080   24      0      6 0x08000098             0x08000080       
+0x8000098   12      0      3 0x08000104 0x080000a4  0x08000080        0x08000100
+0x80000a4   96      0     24 0x08000098             0x08000080       
+0x8000104    8      0      2                        0x08000080        0x080000a0
+EOF
+RUN
+
+NAME=Indirect call sparc64
+FILE=bins/absint/sparc64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000ac    1 80           sym.indirect_call_single
+                 reloc..rodata.80000b4+4 0x80000b8 ->      DATA -> 0x8000210 reloc..text.8000210
+                reloc..rodata.80000b4+12 0x80000c0 ->      CALL -> 0x8000074 sym.function_1
+                   reloc..data.80000d0+4 0x80000d4 ->      DATA -> 0x80001f8 reloc..text.80001f8
+                  reloc..data.80000d0+12 0x80000dc ->      CALL -> 0x8000074 sym.function_1
+     addr size traced ninstr jump fail fcns        calls xrefs 
+---------------------------------------------------------------
+0x80000ac   80      0     20            0x080000ac       
+EOF
+RUN
+
+NAME=Indirect calls in loop sparc64
+FILE=bins/absint/sparc64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000fc    4 180          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+16 0x800010c ->      CODE -> 0x800018c reloc..rodata.800014c+64
+                reloc..rodata.800014c+76 0x8000198 ->      CODE -> 0x8000110 reloc..data.8000110
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80000fc   20      0      5 0x0800018c             0x080000fc       
+0x8000110  124      0     31 0x0800018c             0x080000fc        0x08000198
+0x800018c   16      0      4 0x08000110 0x0800019c  0x080000fc        0x0800010c
+0x800019c   20      0      5                        0x080000fc       
+EOF
+RUN
+
+NAME=Indirect call arm
+FILE=bins/absint/arm_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000b4    1 76           sym.indirect_call_single
+     reloc.target.indirect_call_single+8 0x80000bc ->      DATA -> 0x8000100 reloc..rodata
+    reloc.target.indirect_call_single+12 0x80000c0 ->      DATA -> 0x80001f4 reloc.function_1.80001f4
+    reloc.target.indirect_call_single+20 0x80000c8 ->      CALL -> 0x8000074 reloc.target.function_1
+    reloc.target.indirect_call_single+32 0x80000d4 ->      DATA -> 0x8000104 reloc..data.8000104
+    reloc.target.indirect_call_single+36 0x80000d8 ->      DATA -> 0x80001e4 reloc.function_0
+    reloc.target.indirect_call_single+44 0x80000e0 ->      CALL -> 0x8000054 reloc.target.function_0
+     addr size traced ninstr jump fail fcns        calls xrefs 
+---------------------------------------------------------------
+0x80000b4   76      0     19            0x080000b4       
+EOF
+RUN
+
+NAME=Indirect calls in loop arm
+FILE=bins/absint/arm_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000108    4 164          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+28 0x8000124 ->      CODE -> 0x800018c reloc.target.indirect_calls_in_loop+132
+  reloc.target.indirect_calls_in_loop+32 0x8000128 ->      DATA -> 0x80001ac reloc..data.80001ac
+  reloc.target.indirect_calls_in_loop+76 0x8000154 ->      DATA -> 0x80001b0 reloc..rodata.80001b0
+ reloc.target.indirect_calls_in_loop+140 0x8000194 ->      CODE -> 0x8000128 reloc.target.indirect_calls_in_loop+32
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000108   32      0      8 0x0800018c             0x08000108       
+0x8000128  100      0     25 0x0800018c             0x08000108        0x08000194
+0x800018c   12      0      3 0x08000128 0x08000198  0x08000108        0x08000124
+0x8000198   20      0      5                        0x08000108       
+EOF
+RUN
+
+# Not working properly yet, likely because of missing relocs
+#
+# NAME=Indirect calls in loop mips64
+# FILE=bins/absint/mips64_indirect_call.o
+# CMDS=<<EOF
+# s sym.indirect_call_single
+# aIf
+# afl
+# axl
+# ablt
+# EOF
+# EXPECT=<<EOF
+# 0x080001e4    4 220          sym.indirect_calls_in_loop
+#  reloc.indirect_calls_in_loop.8000200+12 0x800020c ->      CODE -> 0x8000290 reloc..data.rel.ro.local.8000258+56
+#      reloc..data.rel.ro.local.8000258+64 0x8000298 ->      CODE -> 0x8000214 reloc..data.rel.local.8000214
+#      addr size traced ninstr jump       fail       fcns        calls xrefs       
+# ---------------------------------------------------------------------------------
+# 0x80001e4   48      0     12 0x08000290             0x080001e4       
+# 0x8000214  124      0     31 0x08000290             0x080001e4        0x08000298
+# 0x8000290   16      0      4 0x08000214 0x080002a0  0x080001e4        0x0800020c
+# 0x80002a0   32      0      8                        0x080001e4       
+# EOF
+# RUN
+
+NAME=Indirect calls in loop mips64
+FILE=bins/absint/mips64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080001e4    4 220          sym.indirect_calls_in_loop
+ reloc.indirect_calls_in_loop.8000200+12 0x800020c ->      CODE -> 0x8000290 reloc..data.rel.ro.local.8000258+56
+     reloc..data.rel.ro.local.8000258+64 0x8000298 ->      CODE -> 0x8000214 reloc..data.rel.local.8000214
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80001e4   48      0     12 0x08000290             0x080001e4       
+0x8000214  124      0     31 0x08000290             0x080001e4        0x08000298
+0x8000290   16      0      4 0x08000214 0x080002a0  0x080001e4        0x0800020c
+0x80002a0   32      0      8                        0x080001e4       
+EOF
+RUN

@@ -2927,6 +2927,11 @@ static bool rzil_halt_on_exec(void *user, void *data) {
 	return true;
 }
 
+static bool var_validator_int_positive(void *user, const void *value) {
+	ut64 val = *(const ut64 *)value;
+	return (st64)val > 0;
+}
+
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3869,6 +3874,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETB("flirt.sigdb.load.system", true, "Load signatures from the system path");
 	SETB("flirt.sigdb.load.extra", true, "Load signatures from the extra path");
 	SETB("flirt.sigdb.load.home", true, "Load signatures from the home path");
+
+	/* Inquiry. All of these are experimental and not stored in projects. */
+	rz_config_add_bool(cfg, "inquiry.comment", "Experimental: Write comments at each address describing the state during abstract interpretation for debugging", false);
+	rz_config_add_set(cfg, "inquiry.trace", "Print information during analysis for debugging (options: ilblock, evalblock, bounds. Set log.level=2)", NULL);
+	rz_config_add_integer(cfg, "inquiry.threads", "Number of threads to use for abstract interpreter", 1);
+	rz_config_set_validator(cfg, "inquiry.threads", var_validator_int_positive, NULL);
 
 	return true;
 }
