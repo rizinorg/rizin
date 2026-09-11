@@ -119,6 +119,7 @@ RZ_IPI RZ_OWN char **rz_core_autocomplete_rotate_theme(RzCore *core) {
 	rz_pvector_foreach (themes, iter) {
 		theme_name[i++] = rz_str_dup(*iter);
 	}
+	rz_pvector_free(themes);
 	return theme_name;
 }
 

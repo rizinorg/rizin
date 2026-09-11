@@ -738,6 +738,48 @@ bool test_foreach_cmdname(void) {
 	mu_end;
 }
 
+typedef struct cmd_desc_visit_state_t {
+	const char *pre[5];
+	const char *post[5];
+	size_t n_pre;
+	size_t n_post;
+} CmdDescVisitState;
+
+static void foreach_tree_pre_cb(RZ_UNUSED RzCmd *cmd, const RzCmdDesc *desc, void *user) {
+	CmdDescVisitState *state = user;
+	state->pre[state->n_pre++] = desc->name;
+}
+
+static void foreach_tree_post_cb(RZ_UNUSED RzCmd *cmd, const RzCmdDesc *desc, void *user) {
+	CmdDescVisitState *state = user;
+	state->post[state->n_post++] = desc->name;
+}
+
+bool test_foreach_tree_pre_post(void) {
+	RzCmd *cmd = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
+	RzCmdDesc *ab_cd = rz_cmd_desc_group_new(cmd, a_cd, "ab", NULL, NULL, &fake_help);
+	rz_cmd_desc_argv_new(cmd, ab_cd, "abd", zd_handler, &fake_help);
+	RzCmdDesc *ac_cd = rz_cmd_desc_group_new(cmd, a_cd, "ac", NULL, NULL, &fake_help);
+	rz_cmd_desc_argv_new(cmd, ac_cd, "ace", zd_handler, &fake_help);
+
+	CmdDescVisitState state = { 0 };
+	rz_cmd_desc_foreach_tree_from(cmd, a_cd, foreach_tree_pre_cb, foreach_tree_post_cb, &state);
+
+	const char *exp_pre[] = { "a", "ab", "abd", "ac", "ace" };
+	const char *exp_post[] = { "abd", "ab", "ace", "ac", "a" };
+	mu_assert_eq(state.n_pre, RZ_ARRAY_SIZE(exp_pre), "pre callback count");
+	mu_assert_eq(state.n_post, RZ_ARRAY_SIZE(exp_post), "post callback count");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(exp_pre); i++) {
+		mu_assert_streq(state.pre[i], exp_pre[i], "pre callback order");
+		mu_assert_streq(state.post[i], exp_post[i], "post callback order");
+	}
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 bool test_foreach_cmdname_begin(void) {
 	RzCmd *cmd = rz_cmd_new(NULL, false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -1479,6 +1521,7 @@ int all_tests() {
 	mu_run_test(test_cmd_argv_state);
 	mu_run_test(test_cmd_group_argv_modes);
 	mu_run_test(test_foreach_cmdname);
+	mu_run_test(test_foreach_tree_pre_post);
 	mu_run_test(test_foreach_cmdname_begin);
 	mu_run_test(test_arg_escaping);
 	mu_run_test(test_double_quoted_arg_escaping);
