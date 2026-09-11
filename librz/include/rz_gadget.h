@@ -149,6 +149,7 @@ typedef struct rz_gadget_search_context_t {
 	bool subchains; ///< Display every length gadget from gadget.len=X to 2.
 	bool allow_conditional; ///< Include conditional jump, calls and returns in gadget search.
 	bool comments; ///< Display comments in gadget search output.
+	ut32 bytes_length; ///< Maximum length in bytes of the opcode bytes shown in table mode output (0: no limit).
 	char *greparg; ///< Grep argument string.
 	const char *arch; ///< Architecture of the binary.
 	bool regexp; ///< Regular expression argument flag.

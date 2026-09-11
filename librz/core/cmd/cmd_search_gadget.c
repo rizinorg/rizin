@@ -437,6 +437,7 @@ RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNUL
 	context->unique_hitlists = NULL;
 	context->allow_conditional = rz_config_get_b(core->config, "gadget.conditional");
 	context->comments = rz_config_get_b(core->config, "gadget.comments");
+	context->bytes_length = rz_config_get_i(core->config, "gadget.bytes.length");
 	context->subchains = rz_config_get_b(core->config, "gadget.subchains");
 	context->cache = rz_config_get_b(core->config, "gadget.cache");
 	context->ret_val = false;
