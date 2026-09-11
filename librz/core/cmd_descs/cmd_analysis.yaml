@@ -2305,12 +2305,17 @@ commands:
     summary: Analyze N instructions
     subcommands:
       - name: ao
-        summary: Analyze next N instructions
+        summary: Analyze next N instructions and print all details Rizin knows about them.
         cname: analyze_n_ins
         args:
           - name: n_instructions
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: ""
+            entries:
+              - text: "Details include information like: jump targets, operand details, conditions, size, disassembly, bytes, RzIL, address"
+                comment: ""
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD

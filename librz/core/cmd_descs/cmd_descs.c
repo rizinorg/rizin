@@ -65,6 +65,7 @@ static const RzCmdDescDetail analysis_hint_set_val_details[2];
 static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
+static const RzCmdDescDetail analyze_n_ins_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
@@ -7948,6 +7949,14 @@ static const RzCmdDescHelp analyze_n_bytes_size_help = {
 static const RzCmdDescHelp ao_help = {
 	.summary = "Analyze N instructions",
 };
+static const RzCmdDescDetailEntry analyze_n_ins_empty_detail_entries[] = {
+	{ .text = "Details include information like: jump targets, operand details, conditions, size, disassembly, bytes, RzIL, address", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail analyze_n_ins_details[] = {
+	{ .name = "", .entries = analyze_n_ins_empty_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg analyze_n_ins_args[] = {
 	{
 		.name = "n_instructions",
@@ -7958,7 +7967,8 @@ static const RzCmdDescArg analyze_n_ins_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_ins_help = {
-	.summary = "Analyze next N instructions",
+	.summary = "Analyze next N instructions and print all details Rizin knows about them.",
+	.details = analyze_n_ins_details,
 	.args = analyze_n_ins_args,
 };
 
