@@ -257,6 +257,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-find -Z wide string
+TOOL=rz-find
+ARGS=-Z -w PATH=C: bins/heap/multithreadheap.exe.bin
+EXPECT=<<EOF
+0x15d8 PATH=C:'Users'vboxuser'rizin'rizin-install'bin;C:'Windows'system32;C:'Windows;C:'...
+EOF
+RUN
+
 NAME=rz-find -S ascii
 TOOL=rz-find
 ARGS=-S QueryPerformanceCounter bins/pe/testapp-msvc64.exe
@@ -276,6 +284,14 @@ RUN
 NAME=rz-find -Z
 TOOL=rz-find
 ARGS=-Z -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f 250382
+EOF
+RUN
+
+NAME=rz-find -Z keyword across block boundary
+TOOL=rz-find
+ARGS=-Z -b 0x592 -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
 0x58f 250382
 EOF
