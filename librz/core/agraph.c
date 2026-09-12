@@ -2356,12 +2356,14 @@ static void fix_back_edge_dummy_nodes(RzAGraph *g, RzANode *from, RzANode *to) {
 
 	if (tmp) {
 		tmp = v;
+		agraph_del_graph_edge(g, to->gnode, tmp->gnode);
 		while (tmp->gnode->hash_id != from->gnode->hash_id) {
 			v = tmp;
 			tmp = get_anode(agraph_nth_neighbour(g, tmp->gnode, 0, true));
 			if (!tmp) {
 				break;
 			}
+			agraph_del_graph_edge(g, v->gnode, tmp->gnode);
 
 			i = 0;
 			while (i < g->layers[v->layer].n_nodes &&
@@ -2834,6 +2836,7 @@ static void set_layout(RzAGraph *g) {
 	free(g->layers);
 	rz_list_free(g->long_edges);
 	rz_list_free(g->back_edges);
+	// rz_list_free(g->dummy_nodes);
 	rz_cons_break_pop();
 }
 

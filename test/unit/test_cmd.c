@@ -216,7 +216,7 @@ bool test_cmd_get_desc(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
+	RzCmdDesc *ae_cd = rz_cmd_desc_group_new(cmd, a_cd, "ae", ae_handler, NULL, &fake_help);
 	RzCmdDesc *aeir_cd = rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
 	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
@@ -1292,7 +1292,7 @@ bool test_get_best_match(void) {
 	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
 	RzCmdDesc *ap_cd = rz_cmd_desc_group_new(cmd, a_cd, "ap", ap_handler, NULL, &fake_help);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new(cmd, ap_cd, "apd", ap_handler, &fake_help);
-	RzCmdDesc *ae_cd = rz_cmd_desc_argv_new(cmd, a_cd, "ae", ae_handler, &fake_help);
+	RzCmdDesc *ae_cd = rz_cmd_desc_group_new(cmd, a_cd, "ae", ae_handler, NULL, &fake_help);
 	rz_cmd_desc_argv_new(cmd, ae_cd, "aeir", aeir_handler, &fake_help);
 	rz_cmd_desc_argv_new(cmd, root, "w", w_handler, &fake_help);
 
@@ -1401,7 +1401,7 @@ bool test_call_macros(void) {
 }
 
 bool test_call_multiple_macros(void) {
-	RzCore *core = RZ_NEW0(RzCore);
+	RzCore *core = rz_core_new();
 	core->cons = rz_cons_singleton();
 	RzCmd *cmd = rz_core_cmd_new(core, false);
 	core->rcmd = cmd;
@@ -1426,7 +1426,8 @@ bool test_call_multiple_macros(void) {
 	mu_assert_eq(status, RZ_CMD_STATUS_OK, "macro2 has been called correctly");
 	status = rz_cmd_macro_call(cmd, "macro2", macro_args_val_wrong);
 	mu_assert_eq(status, RZ_CMD_STATUS_INVALID, "macro2 should be called with a multiple of arguments");
-	rz_cmd_free(cmd);
+	// rz_cmd_free(cmd);
+	rz_core_free(core);
 	mu_end;
 }
 
