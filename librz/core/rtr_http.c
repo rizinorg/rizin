@@ -489,6 +489,8 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 
 		if (!rs->auth) {
 			rz_socket_http_response(rs, 401, "", 0, NULL);
+			rz_socket_http_close(rs);
+			continue;
 		}
 
 		if (rz_config_get_i(core->config, "http.verbose")) {
