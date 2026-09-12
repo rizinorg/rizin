@@ -415,10 +415,13 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 			continue;
 		}
 
-		rz_vector_push(result, sym);
+		if (rz_vector_push(result, sym)) {
+			// the ownership has been moved to `result`,
+			// don't free the heap memory allocated for the name string of this element
+			sym->name = NULL;
+		}
 	}
-	// The ownership has been moved to `result`, no need to free the elements.
-	debug_symbols->len = 0;
+
 	res = true;
 
 	ht_sp_free(name_set);
