@@ -148,7 +148,7 @@ if get_option('enable_tests')
   ]
 
   if capstone_dep.type_name() == 'internal'
-    tests += 'analysis_op'
+    tests += ['analysis_op', 'analysis_m68k']
   endif
 
   unit_test_env = environment()

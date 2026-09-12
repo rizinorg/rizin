@@ -245,6 +245,26 @@ if has_capstone_m68k_coldfire
   add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
 endif
 
+has_capstone_m68k_fp_formats = cc.compiles('''
+#include <capstone/capstone.h>
+#include <capstone/m68k.h>
+int main(void) {
+	m68k_op_fp_extended extended = { 0 };
+	m68k_op_fp_packed packed = { 0 };
+	m68k_op_type extended_type = M68K_OP_FP_EXTENDED;
+	m68k_op_type packed_type = M68K_OP_FP_PACKED;
+	m68k_fpu_size packed_size = M68K_FPU_SIZE_PACKED;
+	return extended.sign_exp + packed.header + extended_type + packed_type + packed_size;
+}
+''',
+  dependencies: capstone_check_deps,
+  include_directories: capstone_check_includes,
+  name: 'Capstone has M68K extended and packed FP operand formats'
+)
+if has_capstone_m68k_fp_formats
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_FP_FORMATS'], language: 'c')
+endif
+
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
 pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']
