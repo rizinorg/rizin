@@ -1037,7 +1037,7 @@ EXPECT=<<EOF
 |                                                                      ; x9
 |           0x1000078e8      mov   x0, x8
 |           0x1000078ec      bl    fcn.100007bf8
-|           0x1000078f0      add   x8, var_48h
+|           0x1000078f0      add   x8, sp, 0x38
 |           0x1000078f4      str   x0, [var_48h]
 |           0x1000078f8      ldr   x9, [var_48h]                       ; x1
 |                                                                      ; [0x38:4]=-1
@@ -1207,7 +1207,7 @@ EXPECT=<<EOF
 |           0x100007934      add   x8, x8, 0x70                        ; 0x100008070 ; "X\x80\U00000001"
 |           0x100007938      mov   x0, x8                              ; void *instance
 |           0x10000793c      bl    sym.imp.objc_retain                 ; void objc_retain(void *instance)
-|           0x100007940      add   x8, var_48h
+|           0x100007940      add   x8, sp, 0x38
 |           0x100007944      str   x0, [var_48h]
 |           0x100007948      ldr   x9, [var_48h]                       ; [0x38:4]=-1 ; 56
 |           0x10000794c      adrp  x0, data.100007000                  ; 0x100007000

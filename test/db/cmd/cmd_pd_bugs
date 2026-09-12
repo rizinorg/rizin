@@ -58,6 +58,31 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=arm preserve stack address calculation and memory substitution (#4583)
+FILE=malloc://14
+ARGS=-a arm -b 16 -e asm.cpu=cortexA8
+CMDS=<<EOF
+e asm.bytes=false
+e asm.comments=false
+e asm.lines.bb=false
+e asm.lines.fcn=false
+e asm.offset=false
+wx b0b584b002ac0290029904b0b0bd
+af
+pd 3 @ 4
+e asm.pseudo=true
+pd 3 @ 4
+EOF
+EXPECT=<<EOF
+     add   r4, sp, 8
+     str   r0, [var_18h]
+     ldr   r1, [var_18h]
+     r4 = sp + 8
+     [var_18h] = r0
+     r1 = [var_18h]
+EOF
+RUN
+
 NAME=pd call sym bug
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
