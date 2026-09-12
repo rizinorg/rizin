@@ -1206,8 +1206,17 @@ RZ_API char *rz_file_tmpdir(void) {
 	return path;
 }
 
-RZ_API bool rz_file_copy(const char *src, const char *dst) {
-	/* TODO: implement in C */
+/**
+ * \brief      Copies a file from a source path to a destination.
+ *
+ * \param[in]  src   The source path
+ * \param[in]  dst   The destination ath
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_file_copy(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE
 	return copyfile(src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
@@ -1250,13 +1259,78 @@ RZ_API bool rz_file_copy(const char *src, const char *dst) {
 	free(d);
 	return ret;
 #else
-	char *src2 = rz_str_replace(rz_str_dup(src), "'", "\\'", 1);
-	char *dst2 = rz_str_replace(rz_str_dup(dst), "'", "\\'", 1);
-	int rc = rz_sys_cmdf("cp -f '%s' '%s'", src2, dst2);
-	free(src2);
-	free(dst2);
-	return rc == 0;
+	if (rz_file_exists(dst)) {
+		if (!rz_file_is_regular(dst)) {
+			RZ_LOG_ERROR("rz_file_copy: '%s' is not a file\n", dst);
+			return false;
+		} else if (!rz_file_rm(dst)) {
+			RZ_LOG_ERROR("rz_file_copy: cannot remove '%s' before copying\n", dst);
+			return false;
+		}
+	}
+
+	ut8 buffer[0x100000]; // 1mb
+	FILE *input = fopen(src, "rb");
+	if (!input) {
+		RZ_LOG_ERROR("rz_file_copy: Failed to open %s\n", src);
+		return false;
+	}
+
+	FILE *output = fopen(dst, "wb");
+	if (!output) {
+		RZ_LOG_ERROR("rz_file_copy: Failed to open %s\n", dst);
+		fclose(input);
+		return false;
+	}
+
+	do {
+		ssize_t n_bytes = fread(buffer, 1, sizeof(buffer), input);
+		if (n_bytes < 1) {
+			break;
+		}
+		fwrite(buffer, 1, n_bytes, output);
+	} while (n_bytes == sizeof(buffer));
+
+	fclose(input);
+	fclose(output);
+	return true;
 #endif
+}
+
+/**
+ * \brief      Moves a file from a source path to a destination by copying the contents and later removing the source.
+ *
+ * \param[in]  src   The source path
+ * \param[in]  dst   The destination ath
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_file_move(RZ_NONNULL const char *src, RZ_NONNULL const char *dst) {
+	rz_return_val_if_fail(src && dst, false);
+
+	if (!rz_file_is_regular(src)) {
+		RZ_LOG_ERROR("rz_file_move: '%s' is not a file\n", src);
+		return false;
+	}
+
+	if (rz_file_exists(dst)) {
+		if (!rz_file_is_regular(dst)) {
+			RZ_LOG_ERROR("rz_file_move: '%s' is not a file\n", dst);
+			return false;
+		} else if (!rz_file_rm(dst)) {
+			RZ_LOG_ERROR("rz_file_move: cannot remove '%s' before moving\n", dst);
+			return false;
+		}
+	}
+
+	if (!rz_file_copy(src, dst)) {
+		RZ_LOG_ERROR("rz_file_move: cannot copy '%s' to '%s'\n", src, dst);
+		return false;
+	} else if (!rz_file_rm(src)) {
+		RZ_LOG_WARN("rz_file_move: cannot remove '%s'\n", src);
+	}
+
+	return true;
 }
 
 static void recursive_search_glob(const char *path, const char *glob, RzList /*<char *>*/ *list, int depth) {
