@@ -676,33 +676,31 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg) {
  * \param b RzBuffer pointer
  * \param addr The address of the string
  * \param size The max length authorized
+ * \param must_find_null When true, it must find the `\0` terminator to consider the string as valid.
  * \return A string with a length <= size or NULL
  *
- * Return an heap-allocated string read from the RzBuffer b at address addr. The
- * length depends on the first '\0' found and the arguments size in the buffer.
- * If there is no '\0' in the buffer, there is no string, thus NULL is returned.
+ * Return an heap-allocated string read from the RzBuffer b at address addr.
  */
-RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size) {
+RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size, bool must_find_null) {
 	rz_return_val_if_fail(b, NULL);
 
+	bool found_null = false;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 
-	while (true) {
+	while (size > 0) {
 		char tmp[GET_STRING_BUFFER_SIZE + 1];
 		st64 r = rz_buf_read_at(b, addr, (ut8 *)tmp, sizeof(tmp) - 1);
 		if (r < 1) {
-			rz_strbuf_free(buf);
-			return NULL;
+			break;
 		}
 
 		size_t count = rz_str_nlen(tmp, r);
-		rz_strbuf_append_n(buf, tmp, count);
-
+		found_null = count != r;
 		if (count > size) {
-			rz_strbuf_free(buf);
-			return NULL;
+			count = size;
 		}
 
+		rz_strbuf_append_n(buf, tmp, count);
 		if (count != r) {
 			break;
 		}
@@ -711,24 +709,13 @@ RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t
 		size -= count;
 	}
 
+	if (must_find_null && !found_null) {
+		rz_strbuf_free(buf);
+		return NULL;
+	}
+
 	char *result = rz_strbuf_drain(buf);
 	return result;
-}
-
-/**
- * \brief Get a string from the buffer
- * \param b RzBuffer pointer
- * \param addr The address of the string
- * \return A string with a length <= size or NULL
- *
- * Return an heap-allocated string read from the RzBuffer b at address addr. The
- * length depends on the first '\0' found in the buffer. If there is no '\0' in
- * the buffer, there is no string, thus NULL is returned.
- */
-RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr) {
-	rz_return_val_if_fail(b, NULL);
-
-	return rz_buf_get_nstring(b, addr, rz_buf_size(b));
 }
 
 /**
