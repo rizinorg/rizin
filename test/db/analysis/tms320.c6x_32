@@ -2,6 +2,7 @@ NAME=c6x native decode, control-flow and compact-packet analysis (c674x)
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e asm.cpu=c674x
 e scr.color=0
 s 0
@@ -131,6 +132,7 @@ NAME=c6x c64x branch, stack-pointer and loop analysis
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e asm.cpu=c64x
 e scr.color=0
 s 0x1c
@@ -157,6 +159,7 @@ NAME=c6x mixed compact/32-bit packet: 32-bit p-bit and compact header decode
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e asm.cpu=c64xp
 e scr.color=0
 e asm.lines=false
@@ -184,6 +187,7 @@ NAME=c6x c66x SIMD/complex op decode and classification
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e asm.cpu=c66x
 e scr.color=0
 s 0
@@ -223,6 +227,7 @@ NAME=c6x floating-point opcodes gate on the selected cpu
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 wx 000e0401
 e asm.cpu=c674x
 pi 1
@@ -261,6 +266,7 @@ NAME=c6x opex operand detail: registers, pairs, quads, immediates, control and m
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e analysis.cpu=c674x
 e scr.color=0
 wx 78000401
@@ -356,6 +362,7 @@ NAME=c6x opex issue detail: functional unit, cross path and predicate
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e analysis.cpu=c674x
 e scr.color=0
 wx 78000401
@@ -430,6 +437,7 @@ NAME=c6x CALLP resolves its call target
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e analysis.cpu=c674x
 e scr.color=0
 wx 12080010
@@ -455,6 +463,7 @@ NAME=c6x compact fetch packets from real C674x firmware
 FILE=malloc://64
 CMDS=<<EOF
 e asm.arch=tms320
+e cfg.bigendian=false
 e asm.cpu=c674x
 e scr.color=0
 e asm.lines=false
