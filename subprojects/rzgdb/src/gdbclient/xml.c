@@ -391,6 +391,10 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		column += sizeof("<column name=\"pid\">") - 1;
 		column_data_len = column_end - column;
 
+		if (column_data_len > (sizeof(pidstr) - 1)) {
+			column_data_len = sizeof(pidstr) - 1;
+		}
+
 		memcpy(pidstr, column, column_data_len);
 		pidstr[column_data_len] = '\0';
 
