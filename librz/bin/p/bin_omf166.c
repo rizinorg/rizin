@@ -7,7 +7,8 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
-#include "omf/omf.h"
+#include "omf/omf166.h"
+#include <c166/c166_raw.h>
 
 // Modified from one in analysis_riscv
 // First arg is checked against all others
@@ -16,7 +17,7 @@ static bool _is_any_n(const char *str, size_t n, ...) {
 	va_list va;
 	va_start(va, n);
 	while (true) {
-		char *cur = va_arg(va, char *);
+		const char *cur = va_arg(va, char *);
 		if (!cur) {
 			break;
 		}
@@ -30,6 +31,8 @@ static bool _is_any_n(const char *str, size_t n, ...) {
 }
 
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) {
+	(void)bf;
+	(void)sdb;
 	ut64 size;
 	const ut8 *buf = rz_buf_data(b, &size);
 	if (!buf) {
@@ -57,6 +60,9 @@ static void destroy(RzBinFile *bf) {
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
 	if (!omf_obj) {
 		return;
+	}
+	if (omf_obj->interrupts) {
+		rz_vector_free(omf_obj->interrupts);
 	}
 	ht_up_free(omf_obj->ht_types);
 	rz_bin_format_omf166_fini(omf_obj);
@@ -98,14 +104,13 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzPVector *ret;
-	RzBinAddr *addr;
-	rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
-
-	if (!((ret = rz_pvector_new(free)))) {
+	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+	RzPVector *ret = rz_pvector_new(free);
+	if (!ret) {
 		return NULL;
 	}
-	if (!((addr = RZ_NEW0(RzBinAddr)))) {
+	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
+	if (!addr) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
@@ -130,17 +135,20 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	void **it;
 	rz_pvector_foreach (obj->pe_vec, it) {
 		const OMF_pes *pe = (OMF_pes *)*it;
-		if (!((map = RZ_NEW0(RzBinMap)))) {
+		map = RZ_NEW0(RzBinMap);
+		if (!map) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
 		map->paddr = pe->paddr;
 		map->vaddr = (pe->SegmentNumber8 << 16) + pe->offset;
-		map->psize = map->vsize = pe->size;
+		map->psize = pe->size;
+		map->vsize = pe->size;
 		map->perm = get_perm_by_type(pe->data_type);
 		map->name = rz_str_dup(get_data_type(pe->data_type));
 		rz_pvector_push(ret, map);
 	}
+
 	return ret;
 }
 
@@ -149,8 +157,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzPVector *ret;
-	if (!((ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free)))) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -159,19 +167,19 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	rz_pvector_foreach (obj->sections_vec, it) {
 		const OMF_sections *section = (OMF_sections *)*it;
 
-		RzBinSection *new = NULL;
-		if (!((new = RZ_NEW0(RzBinSection)))) {
+		RzBinSection *new = RZ_NEW0(RzBinSection);
+		if (!new) {
 			rz_pvector_free(ret);
 			return NULL;
 		}
 
-		OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
+		const OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->index);
 		if (!lname) {
 			rz_warn_if_reached();
 			RZ_FREE(new);
 			continue;
 		}
-		OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
+		const OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->class_index);
 		if (!c_lname) {
 			rz_warn_if_reached();
 			RZ_FREE(new);
@@ -180,7 +188,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
 		const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
 		new->name = rz_str_newf("%s_%s", name, class_name);
-		new->size = new->vsize = section->Seclen;
+		new->size = section->Seclen;
+		new->vsize = section->Seclen;
 		new->vaddr = (section->SegmentNumber8 << 16) + section->offset;
 		new->has_strings = section->Type != OMF_SEC_TYPE_CODE;
 		new->is_data = section->Type != OMF_SEC_TYPE_CODE;
@@ -192,6 +201,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 }
 
 static int offset_cmp(const void *a, const void *b, void *user) {
+	(void)user;
 	const OMF_symbol *sa = a;
 	const OMF_symbol *sb = b;
 	// first, sort by addr
@@ -270,27 +280,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		}
 		rz_pvector_push(ret, sym);
 	}
-	rz_pvector_foreach (obj->pe_vec, it) {
-		const OMF_pes *pe = (OMF_pes *)*it;
-		if (pe->isVector) {
-			const ut64 addr = (pe->SegmentNumber8 << 16) + pe->offset;
-			char *sym_name = pe->offset == 0x00 ? rz_str_newf("int.RESET") : rz_str_newf("isr_vec_0x%" PFMT64x, addr & 0xff);
-			RzBinSymbol *ptr = RZ_NEW0(RzBinSymbol);
-			if (!ptr) {
-				free(sym_name);
-				return ret;
-			}
-			ptr->name = sym_name;
-			ptr->paddr = addr;
-			ptr->vaddr = addr;
-			ptr->size = pe->size;
-			ptr->ordinal = 0;
-			ptr->bits = 16;
-			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
-			ptr->type = RZ_BIN_TYPE_FUNC_STR;
-			rz_pvector_push(ret, ptr);
-		}
-	}
+	populate_isr_table(obj->interrupts, ret, obj->base_addr);
 	return ret;
 }
 
@@ -308,7 +298,22 @@ static RzStructuredData *omf166_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzStructuredData *modinfo = rz_structured_data_map_add_map(info, "omf166-modinfo");
+	char *cpu = cpu_name(obj->cpu);
+	rz_structured_data_map_add_string(info, "cpu", cpu);
+	free(cpu);
+	rz_structured_data_map_add_unsigned(info, "bits", bf->o->info->bits, false);
+
+	rz_structured_data_map_add_unsigned(info, "isr_count",
+		rz_vector_len(obj->interrupts), false);
+
+	RzStructuredData *omf = rz_structured_data_map_add_map(info, "omf166");
+	if (!omf) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+	rz_structured_data_map_add_unsigned(omf, "base_addr", obj->base_addr, true);
+
+	RzStructuredData *modinfo = rz_structured_data_map_add_map(omf, "modinfo");
 	if (!modinfo) {
 		rz_structured_data_free(info);
 		return NULL;
@@ -350,9 +355,72 @@ static RzStructuredData *omf166_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_boolean(modinfo, "CaseSensitive", (obj->modinfo & 0x02) >> 1);
 	///< If bit is set, then the segmented cpu mode was choosen for the module.
 	rz_structured_data_map_add_boolean(modinfo, "Segmented", (obj->modinfo & 0x01));
-	const char *mm = get_memory_model(obj->modinfo);
+	char *mm = get_memory_model(obj->modinfo);
 	rz_structured_data_map_add_string(modinfo, "MemoryModel", mm);
-	free((char *)mm);
+	free(mm);
+
+	const size_t num_sections = rz_pvector_len(obj->sections_vec);
+	rz_structured_data_map_add_unsigned(omf, "num_sections", num_sections, false);
+
+	RzStructuredData *sections = rz_structured_data_map_add_array(omf, "sections");
+	if (!sections) {
+		return NULL;
+	}
+
+	void **it;
+	rz_pvector_foreach (obj->sections_vec, it) {
+		const OMF_sections *osection = (OMF_sections *)*it;
+
+		RzStructuredData *section = rz_structured_data_array_add_map(sections);
+		if (!section) {
+			return NULL;
+		}
+		const OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, osection->index);
+		if (!lname) {
+			rz_warn_if_reached();
+			continue;
+		}
+		const OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, osection->class_index);
+		if (!c_lname) {
+			rz_warn_if_reached();
+			continue;
+		}
+		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
+		const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
+		char *fname = rz_str_newf("%s_%s", name, class_name);
+
+		rz_structured_data_map_add_string(section, "name", rz_str_get(fname));
+		free(fname);
+		rz_structured_data_map_add_unsigned(section, "name_idx", osection->SegmentNumber8, true);
+		rz_structured_data_map_add_unsigned(section, "vaddr", (osection->SegmentNumber8 << 16) + osection->offset, true);
+		rz_structured_data_map_add_unsigned(section, "size", osection->Seclen, false);
+		if (osection->isXSec) {
+			rz_structured_data_map_add_boolean(section, "isXSec", osection->isXSec);
+		}
+		if (osection->H) {
+			rz_structured_data_map_add_boolean(section, "isHuge", osection->H);
+		}
+		if (osection->X) {
+			rz_structured_data_map_add_boolean(section, "isXhuge", osection->X);
+		}
+		switch (osection->Type) { // = SecTyp >> 6; ///< 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
+		case 0:
+			rz_structured_data_map_add_string(section, "type", "BIT");
+			break;
+		case 1:
+			rz_structured_data_map_add_string(section, "type", "DATA");
+			break;
+		case 2:
+			rz_structured_data_map_add_string(section, "type", "CODE");
+			break;
+		case 3:
+			rz_structured_data_map_add_string(section, "type", "CONST");
+			break;
+		default:
+			rz_structured_data_map_add_string(section, "type", "UNKNOWN");
+			break;
+		}
+	}
 	return info;
 }
 
@@ -365,8 +433,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	RzBinInfo *ret;
-	if (!((ret = RZ_NEW0(RzBinInfo)))) {
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -376,7 +444,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->rclass = rz_str_dup("OMF166");
 	ret->compiler = rz_str_dup("keil");
 	ret->os = rz_str_dup("c166");
-	ret->cpu = rz_str_dup("c166-generic");
+	ret->cpu = cpu_name(obj->cpu);
 	ret->machine = rz_str_dup("Siemens/Infineon C166 family microcontroller");
 	ret->arch = rz_str_dup("c166");
 	ret->big_endian = false;
@@ -388,6 +456,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 }
 
 static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	(void)bf;
+	(void)baddr;
+	(void)paddr;
 	return vaddr;
 }
 
@@ -401,12 +472,13 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 
 static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 	RzBinAddr *ptr = NULL;
-	rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
+	const rz_bin_omf166_obj *obj = (rz_bin_omf166_obj *)bf->o->bin_obj;
 
 	switch (type) {
 	case RZ_BIN_SPECIAL_SYMBOL_ENTRY:
 		// entrypoint is always RESET vector (0xC00000)
-		if (!((ptr = RZ_NEW0(RzBinAddr)))) {
+		ptr = RZ_NEW0(RzBinAddr);
+		if (!ptr) {
 			RZ_FREE(ptr);
 			return NULL;
 		}
@@ -414,7 +486,8 @@ static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
 		ptr->vaddr = obj->base_addr;
 		return ptr;
 	case RZ_BIN_SPECIAL_SYMBOL_MAIN:
-		if (!((ptr = RZ_NEW0(RzBinAddr)))) {
+		ptr = RZ_NEW0(RzBinAddr);
+		if (!ptr) {
 			return NULL;
 		}
 		if (!rz_bin_omf166_get_entry(bf->o->bin_obj, ptr)) {
