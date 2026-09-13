@@ -867,6 +867,8 @@ static const RzCmdDescArg print_equal_equal_m_args[4];
 static const RzCmdDescArg print_equal_equal_printable_args[4];
 static const RzCmdDescArg print_equal_equal_priv_args[4];
 static const RzCmdDescArg print_equal_equal_z_args[4];
+static const RzCmdDescArg write_to_file_args[4];
+static const RzCmdDescArg write_to_file_append_args[4];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
 static const RzCmdDescArg project_open_no_bin_io_args[2];
@@ -19210,6 +19212,54 @@ static const RzCmdDescHelp print_equal_equal_z_visual_help = {
 	.args = print_equal_equal_z_visual_args,
 };
 
+static const RzCmdDescArg write_to_file_args[] = {
+	{
+		.name = "start",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_to_file_help = {
+	.summary = "Print memory region to file (overwrite/create)",
+	.description = "Copy raw bytes from mapped memory range [<start>, <start> + <size>) into <file>. If the file exists, it is truncated first.",
+	.args = write_to_file_args,
+};
+
+static const RzCmdDescArg write_to_file_append_args[] = {
+	{
+		.name = "start",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "size",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+
+	},
+	{
+		.name = "file",
+		.type = RZ_CMD_ARG_TYPE_FILE,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp write_to_file_append_help = {
+	.summary = "Print memory region to file (append to end of file)",
+	.description = "Copy raw bytes from mapped memory range [<start>, <start> + <size>) into <file>. The file is appended to if it already exists.",
+	.args = write_to_file_append_args,
+};
+
 static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
@@ -26095,6 +26145,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(p_equal__equal_z_cd);
 	RzCmdDesc *print_equal_equal_z_visual_cd = rz_cmd_desc_argv_new(core->rcmd, p_equal__equal_z_cd, "p==zv", rz_print_equal_equal_z_visual_handler, &print_equal_equal_z_visual_help);
 	rz_warn_if_fail(print_equal_equal_z_visual_cd);
+
+	RzCmdDesc *write_to_file_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "ptf", rz_write_to_file_handler, &write_to_file_help);
+	rz_warn_if_fail(write_to_file_cd);
+
+	RzCmdDesc *write_to_file_append_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_print_cd, "ptfa", rz_write_to_file_append_handler, &write_to_file_append_help);
+	rz_warn_if_fail(write_to_file_append_cd);
 
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "P", NULL, NULL, &P_help);
 	rz_warn_if_fail(P_cd);
