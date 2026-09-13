@@ -85,7 +85,7 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 		opcode = rz_read_ble32(b, big_endian);
 		unsigned_imm = opcode & 0X00FFFFFF;
 		signed_imm = (st32)(unsigned_imm << 8) >> 8;
-		reloc->addend = signed_imm * 4; // << 2
+		reloc->addend = (st32)((ut32)signed_imm << 2);
 		break;
 
 	case R_ARM_MOVW_ABS_NC:
