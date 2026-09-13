@@ -58,7 +58,7 @@ static bool is_valid_omf51_type(const ut8 type) {
 	const ut8 types[] = {
 		OMF166_DEPLST, OMF_LINSYM,
 		OMF_THEADR, OMF51_ENTRYPOINT,
-		OMF_GRPDEF, OMF_COMENT, OMF_LINNUM, OMF_PUBDEF,
+		OMF_GRPDEF, OMF_COMMENT, OMF_LINNUM, OMF_PUBDEF,
 		OMF_EXTDEF, OMF_ALIAS,
 		OMF166_UNKNOWN0, OMF166_INCLUDES, OMF166_UNKNOWN2, OMF166_UNKNOWN3, OMF166_UNKNOWN4,
 		0x84, 0xc0, 0xd0, 0x8e, 0x92, 0x98, 0xc8,
@@ -289,7 +289,6 @@ static int load_d0_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_r
 			continue;
 		}
 		rz_mem_copy(reg->name, MAX_NAME_LEN, buf + ct, reg->n);
-		reg->name[reg->n] = '\0';
 #ifdef RZ_DEBUG
 		printf("\t\tunk1: 0x%04x, type: %5s (0x%02x), addr: 0x%04x, unk4: 0x%04x, unk5: 0x%04x, unk6: 0x%04x, n: %d, `%s`\n",
 			reg->unk1, reg_type_name(reg->type), reg->type, reg->addr, reg->unk4, reg->unk5, reg->unk6, reg->n, reg->name);
@@ -341,7 +340,6 @@ static int load_8e_data(const rz_bin_omf51_obj *obj, const ut8 *buf, const OMF_r
 			continue;
 		}
 		rz_mem_copy(sym->name2, MAX_NAME_LEN, buf + ct, sym->n);
-		sym->name2[sym->n] = '\0';
 #ifdef RZ_DEBUG
 #endif
 		printf("\t\tunk1: 0x%04x, type: %5s (0x%02x), unk2: 0x%04x, unk3: 0x%04x, addr: 0x%06x, n: %d, `%s`\n",
@@ -1256,9 +1254,26 @@ static void omf166_linnums_free(void *it) {
 // 	RZ_FREE(type);
 // }
 
-#define new_pv_and_check(vec, destructor) \
-	if (!((vec) = rz_pvector_new((RzPVectorFree)(destructor)))) \
-		return false;
+const char *get_data_type51(ut8 data_type) {
+	switch (data_type) {
+	case 0: {
+		return "BIT";
+	}
+	case 1: {
+		return "DATA";
+	}
+	case 2: {
+		return "CODE";
+	}
+	case 3: {
+		return "CONST";
+	}
+	default: {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	}
+}
 
 static int rz_bin_format_omf51_init_internal_storage(rz_bin_omf51_obj *obj) {
 	// obj->ht_types = ht_up_new(NULL, (HtUPFreeValue)typnew_free);
@@ -1308,18 +1323,18 @@ static int rz_bin_format_omf51_init_internal_storage(rz_bin_omf51_obj *obj) {
 	// 	}
 	// }
 
-	new_pv_and_check(obj->sections_vec, free);
-	new_pv_and_check(obj->symbols_vec, free);
-	new_pv_and_check(obj->blocks_vec, free);
-	new_pv_and_check(obj->pe_vec, free);
-	new_pv_and_check(obj->lnames_vec, free);
-	new_pv_and_check(obj->deplsts_vec, free);
-	new_pv_and_check(obj->linnums_vec, omf166_linnums_free);
-	new_pv_and_check(obj->coments_vec, free);
-	new_pv_and_check(obj->includes_vec, free);
-	new_pv_and_check(obj->group_vec, free);
-	new_pv_and_check(obj->regs_vec, free);
-	new_pv_and_check(obj->ledatas_vec, free);
+	new_pv_and_check(obj->sections_vec, free, false);
+	new_pv_and_check(obj->symbols_vec, free, false);
+	new_pv_and_check(obj->blocks_vec, free, false);
+	new_pv_and_check(obj->pe_vec, free, false);
+	new_pv_and_check(obj->lnames_vec, free, false);
+	new_pv_and_check(obj->deplsts_vec, free, false);
+	new_pv_and_check(obj->linnums_vec, omf166_linnums_free, false);
+	new_pv_and_check(obj->coments_vec, free, false);
+	new_pv_and_check(obj->includes_vec, free, false);
+	new_pv_and_check(obj->group_vec, free, false);
+	new_pv_and_check(obj->regs_vec, free, false);
+	new_pv_and_check(obj->ledatas_vec, free, false);
 	return true;
 }
 

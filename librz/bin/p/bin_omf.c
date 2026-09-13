@@ -325,6 +325,54 @@ static RzStructuredData *omf_structure(RzBinFile *bf) {
 	return info;
 }
 
+static RzPVector /*<RzBinReloc *>*/ *omf_relocs(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+
+	const rz_bin_omf_obj *obj = bf->o->bin_obj;
+	if (!obj->relocs_vec) {
+		return ret;
+	}
+#if 0
+	void **it;
+	rz_pvector_foreach (obj->relocs_vec, it) {
+		const OMF1_1_relocs *omf_reloc = (OMF1_1_relocs *)*it;
+		RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
+		if (!reloc) {
+			return ret;
+		}
+
+		const OMF_pes *pe = rz_pvector_at(obj->pe_vec, omf_reloc->ledata_index);
+		if (!pe) RZ_LOG_FATAL("No PE found in index: %u\n", omf_reloc->ledata_index);
+		reloc->type = fixup_location_bits(omf_reloc->location);
+		// reloc->print_name = rz_str_dup(get_data_type(pe->data_type));
+		// reloc->paddr = omf_reloc->data_record_offset;
+		// reloc->vaddr = (pe->SegmentNumber8 << 16) + pe->offset + omf_reloc->data_record_offset; // section_base_vaddr + offset
+		// reloc->addend = omf_reloc->targdisp;
+		rz_pvector_push(ret, reloc);
+		break;
+	}
+#endif
+	RzBinReloc *reloc = RZ_NEW0(RzBinReloc);
+	if (!reloc) {
+		return ret;
+	}
+	const OMF_pes *pe = rz_pvector_at(obj->pe_vec, 0);
+	if (!pe) RZ_LOG_FATAL("No PE found in index: %u\n", 0);
+	reloc->type = fixup_location_bits(0x05);
+	// reloc->print_name = rz_str_dup("SOME REL\n");
+	reloc->print_name = "SOME REL";
+	rz_pvector_push(ret, reloc);
+	printf("reloc->type: %u\n", reloc->type);
+	return ret;
+}
+
 RzBinPlugin rz_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "OMF (Object Module Format)",
@@ -341,6 +389,7 @@ RzBinPlugin rz_bin_plugin_omf = {
 	.info = &info,
 	.bin_structure = &omf_structure,
 	.get_vaddr = &get_vaddr,
+	.relocs = &omf_relocs
 };
 
 #ifndef RZ_PLUGIN_INCORE

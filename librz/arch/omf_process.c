@@ -425,5 +425,19 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		rz_core_bin_apply_omf_lines(binfile, ls);
 		return rz_c51_process(core->analysis, binfile);
 	}
+
+	if (RZ_STR_EQ(info->rclass, "omf")) {
+		// printf("omf\n");
+		const rz_bin_omf_obj *omf_obj = (rz_bin_omf_obj *)binfile->o->bin_obj;
+		printf("omf ret->bits: %d\n", omf_obj->bits);
+		// RzPVector *ls = omf_obj->linnums_vec;
+		// rz_core_bin_apply_omf_lines(binfile, ls);
+#if 1
+		bool autoseg = omf_obj->bits == 16 && RZ_STR_EQ(arch, "x86");
+		rz_config_set_b(core->config, "asm.segoff", autoseg);
+		rz_config_set_i(core->config, "asm.seggrn", 1);
+#endif
+		return rz_x86_process(core->analysis, binfile);
+	}
 	return true;
 }
