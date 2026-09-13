@@ -364,7 +364,7 @@ static void __update_menu(RzCore *core, const char *parent, RZ_NULLABLE RzPanelM
 static int __show_status(RzCore *core, const char *msg);
 static bool __show_status_yesno(RzCore *core, int def, const char *msg);
 static RZ_OWN char *__show_status_input(RzCore *core, const char *msg);
-static void __panel_prompt(const char *prompt, char *buf, int len);
+static void __panel_prompt(RzCore *core, const char *prompt, char *buf, int len);
 
 /* panel layout */
 static void __panels_layout_refresh(RzCore *core);
@@ -3628,7 +3628,7 @@ int __break_points_cb(void *user) {
 	rz_line_set_hist_callback(core->cons->line,
 		&rz_line_hist_offset_up,
 		&rz_line_hist_offset_down);
-	__panel_prompt(prompt, buf, sizeof(buf));
+	__panel_prompt(core, prompt, buf, sizeof(buf));
 	rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 
@@ -3641,8 +3641,8 @@ int __watch_points_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	char addrBuf[128], perm[128];
 	const char *addrPrompt = "addr: ", *rwPrompt = "<r/w/rw>: ";
-	__panel_prompt(addrPrompt, addrBuf, sizeof(addrBuf));
-	__panel_prompt(rwPrompt, perm, sizeof(perm));
+	__panel_prompt(core, addrPrompt, addrBuf, sizeof(addrBuf));
+	__panel_prompt(core, rwPrompt, perm, sizeof(perm));
 	ut64 addr = rz_num_math(core->num, addrBuf);
 	bool hwbp = rz_config_get_b(core->config, "dbg.hwbp");
 	rz_core_debug_bp_add(core, addr, perm, NULL, hwbp, true);
@@ -5332,7 +5332,7 @@ bool __handle_console(RzCore *core, RzPanel *panel, const int key) {
 	case 'i': {
 		char cmd[128] = { 0 };
 		char *prompt = rz_str_newf("[0x%08" PFMT64x "] ", core->offset);
-		__panel_prompt(prompt, cmd, sizeof(cmd));
+		__panel_prompt(core, prompt, cmd, sizeof(cmd));
 		if (*cmd) {
 			if (!strcmp(cmd, "clear")) {
 				rz_cons_clear00();
@@ -5677,17 +5677,17 @@ void __insert_value(RzCore *core) {
 	char buf[128];
 	if (__check_panel_type(cur, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
-		__panel_prompt(prompt, buf, sizeof(buf));
+		__panel_prompt(core, prompt, buf, sizeof(buf));
 		rz_core_write_hexpair(core, cur->model->addr, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_DISASSEMBLY)) {
 		const char *prompt = "insert hex: ";
-		__panel_prompt(prompt, buf, sizeof(buf));
+		__panel_prompt(core, prompt, buf, sizeof(buf));
 		rz_core_write_hexpair(core, core->offset + core->print->cur, buf);
 		cur->view->refresh = true;
 	} else if (__check_panel_type(cur, PANEL_CMD_HEXDUMP)) {
 		const char *prompt = "insert hex: ";
-		__panel_prompt(prompt, buf, sizeof(buf));
+		__panel_prompt(core, prompt, buf, sizeof(buf));
 		rz_core_write_hexpair(core, cur->model->addr + core->print->cur, buf);
 		cur->view->refresh = true;
 	}
@@ -6425,8 +6425,8 @@ void __handle_tab_new_with_cur_panel(RzCore *core) {
 	__set_root_state(core, ROTATE);
 }
 
-void __panel_prompt(const char *prompt, char *buf, int len) {
-	rz_line_set_prompt(rz_cons_singleton()->line, prompt);
+void __panel_prompt(RzCore *core, const char *prompt, char *buf, int len) {
+	rz_line_set_prompt(core->cons->line, prompt);
 	*buf = 0;
 	rz_cons_fgets(buf, len, 0, NULL);
 }
@@ -6852,7 +6852,7 @@ repeat:
 		__set_panel_addr(core, cur, core->offset);
 		break;
 	case 'G': {
-		const char *hl = rz_cons_singleton()->highlight;
+		const char *hl = core->cons->highlight;
 		if (hl) {
 			ut64 addr = rz_num_math(core->num, hl);
 			__set_panel_addr(core, cur, addr);
