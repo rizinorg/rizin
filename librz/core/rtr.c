@@ -41,7 +41,7 @@ typedef struct {
 } RapThread;
 
 RZ_API void rz_core_wait(RzCore *core) {
-	rz_cons_singleton()->context->breaked = true;
+	core->cons->context->breaked = true;
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {
