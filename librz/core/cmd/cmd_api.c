@@ -764,8 +764,10 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
 		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
-			bool res = rz_table_query(state.d.t, args->extra);
-			if (!res) {
+			if (!state.table_view) {
+				state.table_view = rz_table_view_new(state.d.t);
+			}
+			if (!state.table_view || !rz_table_view_query(state.table_view, args->extra)) {
 				rz_cmd_state_output_fini(&state);
 				return RZ_CMD_STATUS_INVALID;
 			}
@@ -2476,6 +2478,8 @@ RZ_API void rz_cmd_state_output_fini(RZ_NONNULL RzCmdStateOutput *state) {
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_free(state->d.t);
 		state->d.t = NULL;
+		rz_table_view_free(state->table_view);
+		state->table_view = NULL;
 		break;
 	case RZ_OUTPUT_MODE_STR_BUF:
 		rz_strbuf_free(state->d.sbuf);
@@ -2593,6 +2597,7 @@ RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutpu
 	rz_return_val_if_fail(state, false);
 
 	state->mode = mode;
+	state->table_view = NULL;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_TABLE:
 		state->d.t = rz_table_new();
@@ -2649,7 +2654,7 @@ RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state) {
 		rz_cons_println(pj_string(state->d.pj));
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
-		s = rz_table_tostring(state->d.t);
+		s = state->table_view ? rz_table_view_tostring(state->table_view) : rz_table_tostring(state->d.t);
 		rz_cons_printf("%s", s);
 		free(s);
 		break;
