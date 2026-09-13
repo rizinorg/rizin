@@ -2972,12 +2972,12 @@ static void ds_print_offset(RzDisasmState *ds) {
 			int of = core->print->flags;
 			core->print->flags = 0;
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label, core->cons);
 			core->print->flags = of;
 			rz_cons_strcat(Color_RESET);
 		} else {
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label, core->cons);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
@@ -6320,7 +6320,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 						const int show_offseg = (core->print->flags & RZ_PRINT_FLAGS_SEGOFF) != 0;
 						const int show_offdec = (core->print->flags & RZ_PRINT_FLAGS_ADDRDEC) != 0;
 						unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
-						rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
+						rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL, core->cons);
 					}
 					rz_cons_printf("  %s:\n", item->name);
 				}
@@ -6330,7 +6330,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 			const int show_offseg = (core->print->flags & RZ_PRINT_FLAGS_SEGOFF) != 0;
 			const int show_offdec = (core->print->flags & RZ_PRINT_FLAGS_ADDRDEC) != 0;
 			unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
-			rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
+			rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL, core->cons);
 		}
 		ut64 meta_start = at;
 		ut64 meta_size;
