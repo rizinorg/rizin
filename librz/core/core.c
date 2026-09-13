@@ -1674,7 +1674,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	/* initialize libraries */
 	core->cons = rz_cons_new();
 	if (core->cons->refcnt == 1) {
-		core->cons = rz_cons_singleton();
 		if (core->cons->line) {
 			core->cons->line->user = core;
 			core->cons->line->cb_editor =
@@ -1897,8 +1896,8 @@ RZ_API void rz_core_fini(RzCore *c) {
 	/* after rz_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a rz_config_free_payload callback */
+	c->cons->teefile = NULL; // HACK
 	rz_cons_free();
-	rz_cons_singleton()->teefile = NULL; // HACK
 	RZ_FREE_CUSTOM(c->search, rz_search_free);
 	RZ_FREE_CUSTOM(c->flags, rz_flag_free);
 	RZ_FREE_CUSTOM(c->egg, rz_egg_free);
