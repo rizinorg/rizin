@@ -1,4 +1,4 @@
-# DEVELOPERS
+#DEVELOPERS
 
 This file is aimed at developers who want to work on the Rizin code base.
 
@@ -119,15 +119,13 @@ int check(RzCore *c, int a, int b) {
 
 ```c
 switch(something) {
-	case EXPECTED_CASE1:
-		...
-		break;
-	case EXPECTED_CASE2:
-		...
-		break;
-	case UNEXPECTED_CASE:
-		rz_warn_if_reached();
-		break;
+case EXPECTED_CASE1:
+	... break;
+case EXPECTED_CASE2:
+	... break;
+case UNEXPECTED_CASE:
+	rz_warn_if_reached();
+	break;
 	...
 }
 ```
@@ -136,24 +134,25 @@ switch(something) {
 
 ```diff
 +static inline bool inRange(RzBreakpointItem *b, ut64 addr) {
-+       return (addr >= b->addr && addr < (b->addr + b->size));
-+}
+	+return (addr >= b->addr && addr < (b->addr + b->size));
+	+}
 +
 +static inline bool matchProt(RzBreakpointItem *b, int rwx) {
-+       return (!rwx || (rwx && b->rwx));
-+}
+	+return (!rwx || (rwx && b->rwx));
+	+}
 +
  RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int rwx) {
-        RzBreakpointItem *b;
-        RzListIter *iter;
-        rz_list_foreach (bp->bps, iter, b) {
--               if (addr >= b->addr && addr < (b->addr+b->size) && \
--                       (!rwx || rwx&b->rwx))
-+               if (inRange(b, addr) && matchProt(b, rwx)) {
-                        return b;
-+               }
-        }
-        return NULL;
+	RzBreakpointItem *b;
+	RzListIter *iter;
+	rz_list_foreach (bp->bps, iter, b) {
+		-if (addr >= b->addr && addr < (b->addr + b->size) &&
+			-(!rwx || rwx & b->rwx)) +
+			if (inRange(b, addr) && matchProt(b, rwx)) {
+			return b;
+			+
+		}
+	}
+	return NULL;
  }
 ```
 
@@ -220,40 +219,40 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
   Examples:
   ```c
-  // OK: If the member `ops` is very often accessed in the code,
-  // it is fine to simplify the syntax with a macro.
-  #define GET_OP_N(n) insn->details->ops[n]
+// OK: If the member `ops` is very often accessed in the code,
+// it is fine to simplify the syntax with a macro.
+#define GET_OP_N(n) insn->details->ops[n]
   ```
 
   ```c
-  // OK: Repetitive but **simple** initialization patterns.
-  #define TOKEN(_type, _pat) \
-  	do { \
-  		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
-  		pat->type = RZ_ASM_TOKEN_##_type; \
-  		pat->pattern = rz_str_dup(_pat); \
-  		rz_pvector_push(pvec, pat); \
-  	} while (0)
+// OK: Repetitive but **simple** initialization patterns.
+#define TOKEN(_type, _pat) \
+	do { \
+		RzAsmTokenPattern *pat = RZ_NEW0(RzAsmTokenPattern); \
+		pat->type = RZ_ASM_TOKEN_##_type; \
+		pat->pattern = rz_str_dup(_pat); \
+		rz_pvector_push(pvec, pat); \
+	} while (0)
 
   // [...]
   void set_tokens() {
-    RzVector *pvec = rz_pvector_new();
-  	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
-  	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
-  	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
+	RzVector *pvec = rz_pvector_new();
+	TOKEN(RZ_ASM_TOKEN_REGISTER, "(ptr)");
+	TOKEN(RZ_ASM_TOKEN_OPERATOR, "(\\[)|(\\])");
+	TOKEN(RZ_ASM_TOKEN_SEPARATOR, "(\\s+)");
   }
   ```
 
   ```c
-  // OK: Repetitive but **simple** function definitions implemented for each **type**.
-  // This case is rare!
-  //
-  // In C++ or other languages this would be done with templates or generics.
-  // C doesn't have this, so macros are fine in this case.
-  #define DEF_TEMPLATE_FCN(T) \
-  T template_like_function() { \
-    return (T) (sizeof(T) * sizeof(T)); \
-  }
+// OK: Repetitive but **simple** function definitions implemented for each **type**.
+// This case is rare!
+//
+// In C++ or other languages this would be done with templates or generics.
+// C doesn't have this, so macros are fine in this case.
+#define DEF_TEMPLATE_FCN(T) \
+	T template_like_function() { \
+		return (T)(sizeof(T) * sizeof(T)); \
+	}
   DEF_TEMPLATE_FCN(ut8);
   DEF_TEMPLATE_FCN(ut16);
   DEF_TEMPLATE_FCN(ut32);
@@ -261,23 +260,23 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
   ```
 
   ```c
-  // NOT OK: This hides semantics.
-  // Implement the case in a static function instead and call it.
-  #define REPETITIVE_CASE(n) \
-    int i = some_fcn(n); \
-    i <<= 8; \
-    i &= 0x80000; \
-    ret = i * other_fcn(n); \
-    break;
+// NOT OK: This hides semantics.
+// Implement the case in a static function instead and call it.
+#define REPETITIVE_CASE(n) \
+	int i = some_fcn(n); \
+	i <<= 8; \
+	i &= 0x80000; \
+	ret = i * other_fcn(n); \
+	break;
 
   // [...]
   switch(x) {
-  case 1:
-    REPETITIVE_CASE(1)
-  case 2:
-    REPETITIVE_CASE(2)
-  case 3:
-    REPETITIVE_CASE(3)
+case 1:
+	REPETITIVE_CASE(1)
+case 2:
+	REPETITIVE_CASE(2)
+case 3:
+	REPETITIVE_CASE(3)
   }
   ```
 
@@ -285,7 +284,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 int sum = 0; // set sum to 0
 ```
 
-* If you want to iterate over values of your struct, implement `RzIterator *mystruct_as_iter()` and `RzIterator *mystruct_as_iter_mut()` for them.
+* If you want to iterate over values of your struct, implement `RzIterator mystruct_as_iter()` and `RzIterator mystruct_as_iter_mut()` for them.
   See `rz_iterator.h` for details about the iterator.
 
 * If you need bitmaps, do not shift and OR the bits manually on `ut32`. Use bit vectors from `rz_bitvector.h` instead.
@@ -302,7 +301,7 @@ int sum = 0; // set sum to 0
 
 * Code must run under Python 3.6 (for [Debian "wheezy" compatibility](https://github.com/rizinorg/rizin/pull/2870#issuecomment-1205338140)).
 
-# Manage Endianness
+#Manage Endianness
 
 As hackers, we need to be aware of endianness.
 
@@ -451,7 +450,7 @@ In particular, the SPDX header may look like:
 You can use the [REUSE Software](https://reuse.software/) to check the
 compliance of the project and get the licenses/copyright of each file.
 
-# Custom Pointer Modifiers
+#Custom Pointer Modifiers
 
 In Rizin code, there are some conventions to help developers use pointers more safely, which are defined in `librz/include/rz_types.h`:
 
@@ -497,41 +496,41 @@ You can use the two modifiers in two places, and their explanations are as follo
 
 ```c
 RZ_OWN MyString *capitalize_str(RZ_BORROW char *s) {
-  MyString *m = RZ_NEWS(MyString);
-  m->s = strdup(s);
-  capitalize(m->s);
-  return m;
+	MyString *m = RZ_NEWS(MyString);
+	m->s = strdup(s);
+	capitalize(m->s);
+	return m;
 }
 
 int main() {
-  char *s = rz_str_dup("Hello World");
-  MyString *m = capitalize_str(s);
-  // s was RZ_BORROW, so main MUST free it
-  free(s);
-  // ... use m ....
-  // m was RZ_OWN, so main now has to free it
-  my_string_free(m);
+	char *s = rz_str_dup("Hello World");
+	MyString *m = capitalize_str(s);
+	// s was RZ_BORROW, so main MUST free it
+	free(s);
+	// ... use m ....
+	// m was RZ_OWN, so main now has to free it
+	my_string_free(m);
 }
 ```
 
 ```c
 RZ_BORROW MyString *capitalize_str(RZ_BORROW MyFile *f, RZ_OWN char *s) {
-  MyString *m = RZ_NEWS(MyString);
-  m->s = s;
-  capitalize(m->s);
-  f->m = m;
-  return m;
+	MyString *m = RZ_NEWS(MyString);
+	m->s = s;
+	capitalize(m->s);
+	f->m = m;
+	return m;
 }
 
 int main() {
-  char *s = strdup("Hello World");
-  MyFile *f = create_my_file();
-  MyString *m = capitalize_str(f, s);
-  // s was RZ_OWN, so main does not need to free it. s is now owned by `m`
-  // ... use m ....
-  // m was RZ_BORROW, so main is just borrowing it from `f`, and it does not have to free it.
-  my_file_free(f);
-  // f was created by main and never transferred to anything else, so main needs to free it.
+	char *s = strdup("Hello World");
+	MyFile *f = create_my_file();
+	MyString *m = capitalize_str(f, s);
+	// s was RZ_OWN, so main does not need to free it. s is now owned by `m`
+	// ... use m ....
+	// m was RZ_BORROW, so main is just borrowing it from `f`, and it does not have to free it.
+	my_file_free(f);
+	// f was created by main and never transferred to anything else, so main needs to free it.
 }
 ```
 

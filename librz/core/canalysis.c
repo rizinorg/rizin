@@ -3912,15 +3912,15 @@ static bool is_apple_target(RzCore *core) {
 }
 
 static void core_analysis_using_plugins(RzCore *core) {
-	RzIterator *it = ht_sp_as_iter(core->plugins);
+	RzIterator it = ht_sp_as_iter(core->plugins);
 	RzCorePlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzCorePlugin *plugin = *val;
 		if (plugin->analysis) {
 			plugin->analysis(core, rz_core_plugin_context_get(core, plugin));
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 }
 
 static void core_analysis_analyze_local_var_and_arg(RzCore *core) {
@@ -5489,14 +5489,14 @@ static RzAnalysisOp *analysis_op_context_iter_next(RzIterator *it) {
  * \param mask The which analysis details should be disassembled.
  * \return RzIterator of RzAnalysisOp
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_chunk_iter(
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_chunk_iter(
 	RZ_NONNULL RzCore *core, ut64 start_addr, ut64 n_bytes, ut64 max_ops, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core, NULL);
+	rz_return_val_if_fail(core, (RzIterator){ 0 });
 
 	AnalysisOpContext *ctx = RZ_NEW0(AnalysisOpContext);
 	if (!ctx || !analysis_op_context_init(ctx, core, start_addr, n_bytes, max_ops, mask)) {
 		free(ctx);
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 
 	return rz_iterator_new((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx);
@@ -5679,9 +5679,9 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  * \param max_ops  analysis n ops
  * \return RzIterator of RzCoreDecodedBytes
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
+RZ_API RZ_OWN RzIterator rz_core_analysis_bytes(
 	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops) {
-	rz_return_val_if_fail(core && buf, NULL);
+	rz_return_val_if_fail(core && buf, (RzIterator){ 0 });
 
 	// TODO: this should be removed once rz_config is refactored.
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
@@ -5690,7 +5690,7 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
 	CoreDecodedBytes *ctx = RZ_NEW0(CoreDecodedBytes);
 	if (!ctx || !core_decoded_bytes_init(ctx, core, start_addr, buf, n_bytes, max_ops)) {
 		free(ctx);
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 
 	return rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx);
@@ -5704,10 +5704,10 @@ RZ_API RZ_OWN RzIterator *rz_core_analysis_bytes(
  * \param mask The which analysis details should be disassembled.
  * \return RzIterator of RzAnalysisOp
  */
-RZ_API RZ_OWN RzIterator *rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core && fcn, NULL);
+RZ_API RZ_OWN RzIterator rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
+	rz_return_val_if_fail(core && fcn, (RzIterator){ 0 });
 
-	RzIterator *ops = NULL;
+	RzIterator ops = (RzIterator){ 0 };
 	ut64 start = fcn->addr;
 	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {

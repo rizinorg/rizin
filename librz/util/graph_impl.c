@@ -345,24 +345,25 @@ static void *pvecotr_iter_next(RzIterator *iter) {
  * \param vec the pvector to iterate over (borrowed)
  * \return A new RzIterator, or NULL on failure
  */
-static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
+static RZ_OWN RzIterator pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
 	if (!vec) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 
 	// free state only, dont broke pvector nodes of graph
 	RzGraphListIterState *state = RZ_NEW0(RzGraphListIterState);
 	if (!state) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	state->cur_id = 0;
 	state->vec = vec;
 
-	RzIterator *iter = rz_iterator_new(
-		(rz_iterator_next_cb)pvecotr_iter_next,
-		NULL,
-		free,
-		state);
+	RzIterator iter = (RzIterator){
+		.next = (rz_iterator_next_cb)pvecotr_iter_next,
+		.free = NULL,
+		.free_u = free,
+		.u = state
+	};
 	return iter;
 }
 
@@ -373,14 +374,14 @@ static RZ_OWN RzIterator *pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec) {
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no out-edges
  */
-static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
-	rz_return_val_if_fail(g, NULL);
+static RZ_OWN RzIterator rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 	RzPVector /*<RzGraphEdge *>*/ *out_vec = rz_pvector_at(impl->out_edges, node->_vec_id);
 	if (!out_vec || rz_pvector_empty(out_vec)) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
-	RzIterator *iter = pvector_as_iter(out_vec);
+	RzIterator iter = pvector_as_iter(out_vec);
 	return iter;
 }
 
@@ -391,14 +392,14 @@ static RZ_OWN RzIterator *rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator owned by caller, or NULL if no in-edges
  */
-static RZ_OWN RzIterator *rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
-	rz_return_val_if_fail(g, NULL);
+static RZ_OWN RzIterator rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphListImpl *impl = (RzGraphListImpl *)g->impl;
 	RzPVector /*<RzGraphEdge *>*/ *in_vec = rz_pvector_at(impl->in_edges, node->_vec_id);
 	if (!in_vec || rz_pvector_empty(in_vec)) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
-	RzIterator *iter = pvector_as_iter(in_vec);
+	RzIterator iter = pvector_as_iter(in_vec);
 	return iter;
 }
 
@@ -801,21 +802,22 @@ static void *matrix_edge_iter_next(RzIterator *it) {
  * \param scan_out true for outgoing edges, false for incoming edges
  * \return A new RzIterator, or NULL on failure
  */
-static RzIterator *matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 node_vid, bool scan_out) {
+static RzIterator matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 node_vid, bool scan_out) {
 	RzGraphMatrixIterState *state = RZ_NEW0(RzGraphMatrixIterState);
 	if (!state) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	state->g = g;
 	state->node_vid = node_vid;
 	state->cur = 0;
 	state->scan_out = scan_out;
 
-	RzIterator *iter = rz_iterator_new(
-		(rz_iterator_next_cb)matrix_edge_iter_next,
-		NULL,
-		free,
-		state);
+	RzIterator iter = (RzIterator){
+		.next = (rz_iterator_next_cb)matrix_edge_iter_next,
+		.free = NULL,
+		.free_u = free,
+		.u = state
+	};
 	return iter;
 }
 
@@ -826,9 +828,9 @@ static RzIterator *matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*
  * \param node the node whose in-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
-static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+static RzIterator rz_graph_matrix_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return matrix_edge_as_iter(g, node->_vec_id, false);
 }
@@ -840,9 +842,9 @@ static RzIterator *rz_graph_matrix_impl_get_in_edges(RzGraph /*<NodeType *, Edge
  * \param node the node whose out-edges to iterate
  * \return A new edge iterator, or NULL if node is NULL
  */
-static RzIterator *rz_graph_matrix_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+static RzIterator rz_graph_matrix_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return matrix_edge_as_iter(g, node->_vec_id, true);
 }
@@ -1186,18 +1188,18 @@ RZ_API void rz_graph_free(RZ_NULLABLE RZ_OWN RzGraph /*<NodeType *, EdgeType *>*
 			if (!node) {
 				continue;
 			}
-			RzIterator *edge_it = g->impl_ops->get_out_edges(g, node);
-			if (!edge_it) {
+			RzIterator edge_it = g->impl_ops->get_out_edges(g, node);
+			if (rz_iterator_is_uninit(&edge_it)) {
 				continue;
 			}
 			RzGraphEdge *e;
-			rz_iterator_foreach(edge_it, e) {
+			rz_iterator_foreach(&edge_it, e) {
 				if (e->data) {
 					g->edge_data_free(e->data);
 					e->data = NULL;
 				}
 			}
-			rz_iterator_free(edge_it);
+			rz_iterator_fini(&edge_it);
 		}
 	}
 
@@ -1259,18 +1261,18 @@ RZ_API void rz_graph_reset(RzGraph /*<NodeType *, EdgeType *>*/ *g) {
 			if (!node) {
 				continue;
 			}
-			RzIterator *edge_it = g->impl_ops->get_out_edges(g, node);
-			if (!edge_it) {
+			RzIterator edge_it = g->impl_ops->get_out_edges(g, node);
+			if (rz_iterator_is_uninit(&edge_it)) {
 				continue;
 			}
 			RzGraphEdge *e;
-			rz_iterator_foreach(edge_it, e) {
+			rz_iterator_foreach(&edge_it, e) {
 				if (e->data) {
 					g->edge_data_free(e->data);
 					e->data = NULL;
 				}
 			}
-			rz_iterator_free(edge_it);
+			rz_iterator_fini(&edge_it);
 		}
 	}
 
@@ -1626,9 +1628,9 @@ RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph /*<NodeType *, EdgeType
  * \param g The graph.
  * \return A new node iterator, or NULL on failure
  */
-RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
-	rz_return_val_if_fail(g, NULL);
-	RzIterator *iter = pvector_as_iter(g->node_vec);
+RZ_API RZ_OWN RzIterator rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
+	RzIterator iter = pvector_as_iter(g->node_vec);
 	return iter;
 }
 
@@ -1672,7 +1674,7 @@ RZ_API ut64 rz_graph_count_edges(const RzGraph /*<NodeType *, EdgeType *>*/ *g) 
 }
 
 typedef struct {
-	RzIterator *edge_iter;
+	RzIterator edge_iter;
 	bool use_from;
 } RzNeighbourIterState;
 
@@ -1687,7 +1689,7 @@ typedef struct {
  */
 static void *neighbour_iter_next(RzIterator *it) {
 	RzNeighbourIterState *state = (RzNeighbourIterState *)it->u;
-	RzGraphEdge *edge = rz_iterator_next(state->edge_iter);
+	RzGraphEdge *edge = rz_iterator_next(&state->edge_iter);
 	if (!edge) {
 		return NULL;
 	}
@@ -1711,8 +1713,8 @@ static void neighbour_iter_free(void *user_data) {
 	if (!state) {
 		return;
 	}
-	rz_iterator_free(state->edge_iter);
-	state->edge_iter = NULL;
+	rz_iterator_fini(&state->edge_iter);
+	state->edge_iter = (RzIterator){ 0 };
 	free(state);
 }
 
@@ -1726,20 +1728,21 @@ static void neighbour_iter_free(void *user_data) {
  * \param use_from if true, yield edge->from; otherwise yield edge->to
  * \return A new neighbour iterator, or NULL on failure
  */
-static RZ_OWN RzIterator *as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool use_from) {
-	rz_return_val_if_fail(edge_iter, NULL);
+static RZ_OWN RzIterator as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool use_from) {
+	rz_return_val_if_fail(edge_iter, (RzIterator){ 0 });
 	RzNeighbourIterState *state = RZ_NEW0(RzNeighbourIterState);
 	if (!state) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
-	state->edge_iter = edge_iter;
+	state->edge_iter = *edge_iter;
 	state->use_from = use_from;
 
-	RzIterator *iter = rz_iterator_new(
-		neighbour_iter_next,
-		NULL,
-		neighbour_iter_free,
-		state);
+	RzIterator iter = (RzIterator){
+		.next = neighbour_iter_next,
+		.free = NULL,
+		.free_u = neighbour_iter_free,
+		.u = state
+	};
 	return iter;
 }
 
@@ -1750,16 +1753,16 @@ static RZ_OWN RzIterator *as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool u
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
-	rz_return_val_if_fail(g && n, NULL);
-	RzIterator *edge_iter = g->impl_ops->get_out_edges(g, n);
-	if (!edge_iter) {
-		return NULL;
+RZ_API RZ_OWN RzIterator rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
+	rz_return_val_if_fail(g && n, (RzIterator){ 0 });
+	RzIterator edge_iter = g->impl_ops->get_out_edges(g, n);
+	if (rz_iterator_is_uninit(&edge_iter)) {
+		return (RzIterator){ 0 };
 	}
-	RzIterator *iter = as_neighbour_iter(edge_iter, false);
-	if (!iter) {
-		rz_iterator_free(edge_iter);
-		return NULL;
+	RzIterator iter = as_neighbour_iter(&edge_iter, false);
+	if (rz_iterator_is_uninit(&iter)) {
+		rz_iterator_fini(&edge_iter);
+		return (RzIterator){ 0 };
 	}
 	return iter;
 }
@@ -1771,16 +1774,16 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType
  * \param n the node
  * \return A new neighbour iterator owned by caller, or NULL
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
-	rz_return_val_if_fail(g && n, NULL);
-	RzIterator *edge_iter = g->impl_ops->get_in_edges(g, n);
-	if (!edge_iter) {
-		return NULL;
+RZ_API RZ_OWN RzIterator rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *n) {
+	rz_return_val_if_fail(g && n, (RzIterator){ 0 });
+	RzIterator edge_iter = g->impl_ops->get_in_edges(g, n);
+	if (rz_iterator_is_uninit(&edge_iter)) {
+		return (RzIterator){ 0 };
 	}
-	RzIterator *iter = as_neighbour_iter(edge_iter, true);
-	if (!iter) {
-		rz_iterator_free(edge_iter);
-		return NULL;
+	RzIterator iter = as_neighbour_iter(&edge_iter, true);
+	if (rz_iterator_is_uninit(&iter)) {
+		rz_iterator_fini(&edge_iter);
+		return (RzIterator){ 0 };
 	}
 	return iter;
 }
@@ -1799,21 +1802,21 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType 
  */
 RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *n, ut64 nth, bool out_neighbor) {
 	rz_return_val_if_fail(g && n, NULL);
-	RzIterator *edge_iter = out_neighbor ? g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n) : g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n);
-	if (!edge_iter) {
+	RzIterator edge_iter = out_neighbor ? g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n) : g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)n);
+	if (rz_iterator_is_uninit(&edge_iter)) {
 		return NULL;
 	}
 
 	RzGraphEdge *edge;
 	ut64 i = 0;
-	while ((edge = rz_iterator_next(edge_iter)) != NULL) {
+	while ((edge = rz_iterator_next(&edge_iter)) != NULL) {
 		if (i == nth) {
-			rz_iterator_free(edge_iter);
+			rz_iterator_fini(&edge_iter);
 			return out_neighbor ? edge->to : edge->from;
 		}
 		i += 1;
 	}
-	rz_iterator_free(edge_iter);
+	rz_iterator_fini(&edge_iter);
 	return NULL;
 }
 
@@ -1826,8 +1829,8 @@ RZ_API RzGraphNode *rz_graph_nth_neighbour(const RzGraph /*<NodeType *, EdgeType
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
-	rz_return_val_if_fail(g && node, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_out_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+	rz_return_val_if_fail(g && node, (RzIterator){ 0 });
 	return g->impl_ops->get_out_edges(g, node);
 }
 
@@ -1840,21 +1843,21 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph /*<NodeType *, EdgeType *>*
  * \param node node to get edges
  * \return A new edge iterator, caller should free after use, or NULL if no edge or error
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
-	rz_return_val_if_fail(g && node, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_in_edges(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node) {
+	rz_return_val_if_fail(g && node, (RzIterator){ 0 });
 	return g->impl_ops->get_in_edges(g, node);
 }
 
 RZ_API ut64 rz_graph_out_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, 0);
 	ut32 count = 0;
-	RzIterator *it = g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
-	if (it) {
+	RzIterator it = g->impl_ops->get_out_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
+	if (!rz_iterator_is_uninit(&it)) {
 		RzGraphEdge *e;
-		rz_iterator_foreach(it, e) {
+		rz_iterator_foreach(&it, e) {
 			count += 1;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 	return count;
 }
@@ -1862,13 +1865,13 @@ RZ_API ut64 rz_graph_out_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, c
 RZ_API ut64 rz_graph_in_degree(const RzGraph /*<NodeType *, EdgeType *>*/ *g, const RzGraphNode *node) {
 	rz_return_val_if_fail(g && node, 0);
 	ut32 count = 0;
-	RzIterator *it = g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
-	if (it) {
+	RzIterator it = g->impl_ops->get_in_edges((RzGraph /*<NodeType *, EdgeType *>*/ *)g, (RzGraphNode *)node);
+	if (!rz_iterator_is_uninit(&it)) {
 		RzGraphEdge *e;
-		rz_iterator_foreach(it, e) {
+		rz_iterator_foreach(&it, e) {
 			count += 1;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 	return count;
 }
@@ -2046,11 +2049,11 @@ RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph /*<No
  * \param hash_id The node identifier.
  * \return The iterator over <RZ_BORROW RzGraphEdge *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return rz_graph_out_edges(g, node);
 }
@@ -2062,11 +2065,11 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph /*<NodeType *, EdgeTy
  * \param hash_id The node identifier.
  * \return The iterator over <RZ_BORROW RzGraphEdge *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return rz_graph_in_edges(g, node);
 }
@@ -2078,11 +2081,11 @@ RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph /*<NodeType *, EdgeTyp
  * \param hash_id The node identifier.
  * \return The iterator over <RZ_BORROW RzGraphNode *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return rz_graph_out_neighbors(g, node);
 }
@@ -2094,11 +2097,11 @@ RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph /*<NodeType *, Ed
  * \param hash_id The node identifier.
  * \return The iterator over <RZ_BORROW RzGraphNode *> or NULL in case of failure.
  */
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
-	rz_return_val_if_fail(g, NULL);
+RZ_API RZ_OWN RzIterator rz_graph_in_neighbors_by_id(RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 hash_id) {
+	rz_return_val_if_fail(g, (RzIterator){ 0 });
 	RzGraphNode *node = rz_graph_find_node(g, hash_id);
 	if (!node) {
-		return NULL;
+		return (RzIterator){ 0 };
 	}
 	return rz_graph_in_neighbors(g, node);
 }
@@ -2160,9 +2163,9 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(
 
 #define INDENT "   "
 
-	RzIterator *nodes = rz_graph_get_nodes(g);
+	RzIterator nodes = rz_graph_get_nodes(g);
 	RzGraphNode *n;
-	rz_iterator_foreach(nodes, n) {
+	rz_iterator_foreach(&nodes, n) {
 		char node_name[64] = { 0 };
 		rz_strf(node_name, "%" PFMT64d, rz_graph_node_get_id(n));
 
@@ -2172,12 +2175,12 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(
 			free(node_format);
 		}
 
-		RzIterator *out_edges = rz_graph_out_edges((RzGraph *)g, n);
-		if (!out_edges) {
+		RzIterator out_edges = rz_graph_out_edges((RzGraph *)g, n);
+		if (rz_iterator_is_uninit(&out_edges)) {
 			continue;
 		}
 		RzGraphEdge *e;
-		rz_iterator_foreach(out_edges, e) {
+		rz_iterator_foreach(&out_edges, e) {
 			rz_strbuf_appendf(sb, INDENT "%s -> %" PFMT64d,
 				node_name,
 				rz_graph_node_get_id(rz_graph_edge_get_to(e)));
@@ -2190,9 +2193,9 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(
 				rz_strbuf_append(sb, "\n");
 			}
 		}
-		rz_iterator_free(out_edges);
+		rz_iterator_fini(&out_edges);
 	}
-	rz_iterator_free(nodes);
+	rz_iterator_fini(&nodes);
 	rz_strbuf_append(sb, "}\n");
 	return rz_strbuf_drain(sb);
 }

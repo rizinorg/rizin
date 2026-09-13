@@ -195,21 +195,21 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		return NULL;
 	}
 	ut64 seq = 0;
-	RzIterator *it = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it, node) {
+	RzIterator it = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(&it, node) {
 		ht_uu_insert(id_map, node->hash_id, seq++);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	// Pass 2: emit nodes and edges using sequential ids
-	RzIterator *it_nodes = rz_graph_get_nodes(graph);
-	if (!it_nodes) {
+	RzIterator it_nodes = rz_graph_get_nodes(graph);
+	if (rz_iterator_is_uninit(&it_nodes)) {
 		ht_uu_free(id_map);
 		rz_strbuf_fini(&buf);
 		return NULL;
 	}
 
-	rz_iterator_foreach(it_nodes, node) {
+	rz_iterator_foreach(&it_nodes, node) {
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
 		char *url;
 		RzStrBuf *label = rz_strbuf_new("");
@@ -218,7 +218,7 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		default:
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
 			rz_strbuf_free(label);
-			rz_iterator_free(it_nodes);
+			rz_iterator_fini(&it_nodes);
 			ht_uu_free(id_map);
 			rz_strbuf_fini(&buf);
 			return NULL;
@@ -268,19 +268,19 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_dot(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		url = NULL;
 
 		// get Iterator
-		RzIterator *it_out_nodes = rz_graph_out_neighbors(graph, node);
-		if (!it_out_nodes) {
+		RzIterator it_out_nodes = rz_graph_out_neighbors(graph, node);
+		if (rz_iterator_is_uninit(&it_out_nodes)) {
 			continue;
 		}
 
-		rz_iterator_foreach(it_out_nodes, target) {
+		rz_iterator_foreach(&it_out_nodes, target) {
 			bool found_t = false;
 			ut64 target_id = ht_uu_find(id_map, target->hash_id, &found_t);
 			rz_strbuf_appendf(&buf, "%" PFMT64d " -> %" PFMT64d "\n", node_id, target_id);
 		}
-		rz_iterator_free(it_out_nodes);
+		rz_iterator_fini(&it_out_nodes);
 	}
-	rz_iterator_free(it_nodes);
+	rz_iterator_fini(&it_nodes);
 	ht_uu_free(id_map);
 
 	rz_strbuf_append(&buf, "}\n");
@@ -304,11 +304,11 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, N
 		return;
 	}
 	ut64 seq = 0;
-	RzIterator *it = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it, node) {
+	RzIterator it = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(&it, node) {
 		ht_uu_insert(id_map, node->hash_id, seq++);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	// Pass 2: serialize using sequential ids
 	pj_o(pj);
@@ -316,7 +316,7 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, N
 	pj_a(pj);
 
 	it = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it, node) {
+	rz_iterator_foreach(&it, node) {
 		bool found;
 		RzGraphNodeInfo *print_node = (RzGraphNodeInfo *)node->data;
 		pj_o(pj);
@@ -347,17 +347,17 @@ RZ_API void rz_graph_drawable_to_json(RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, N
 		pj_k(pj, "out_nodes");
 		pj_a(pj);
 
-		RzIterator *it_neighbours = rz_graph_out_neighbors(graph, node);
-		if (it_neighbours) {
-			rz_iterator_foreach(it_neighbours, neighbour) {
+		RzIterator it_neighbours = rz_graph_out_neighbors(graph, node);
+		if (!rz_iterator_is_uninit(&it_neighbours)) {
+			rz_iterator_foreach(&it_neighbours, neighbour) {
 				pj_n(pj, ht_uu_find(id_map, neighbour->hash_id, &found));
 			}
-			rz_iterator_free(it_neighbours);
+			rz_iterator_fini(&it_neighbours);
 		}
 		pj_end(pj); // close out_nodes array
 		pj_end(pj); // close node object
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	pj_end(pj); // close nodes array
 	pj_end(pj); // close root object
 	ht_uu_free(id_map);
@@ -399,8 +399,8 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 
 	RzGraphNode *node, *target;
 
-	RzIterator *it_nodes = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it_nodes, node) {
+	RzIterator it_nodes = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(&it_nodes, node) {
 		RzGraphNodeInfo *print_node = node->data;
 		if (RZ_STR_ISNOTEMPTY(print_node->def.body)) {
 			ut32 len = strlen(print_node->def.body);
@@ -414,22 +414,22 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_cmd(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 			rz_strbuf_appendf(sb, "agn \"%s\"\n", print_node->def.title);
 		}
 	}
-	rz_iterator_free(it_nodes);
+	rz_iterator_fini(&it_nodes);
 
 	it_nodes = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it_nodes, node) {
+	rz_iterator_foreach(&it_nodes, node) {
 		RzGraphNodeInfo *print_node = node->data;
-		RzIterator *it_out_neighbours = rz_graph_out_neighbors(graph, node);
-		if (!it_out_neighbours) {
+		RzIterator it_out_neighbours = rz_graph_out_neighbors(graph, node);
+		if (rz_iterator_is_uninit(&it_out_neighbours)) {
 			continue;
 		}
-		rz_iterator_foreach(it_out_neighbours, target) {
+		rz_iterator_foreach(&it_out_neighbours, target) {
 			RzGraphNodeInfo *to = target->data;
 			rz_strbuf_appendf(sb, "age \"%s\" \"%s\"\n", print_node->def.title, to->def.title);
 		}
-		rz_iterator_free(it_out_neighbours);
+		rz_iterator_fini(&it_out_neighbours);
 	}
-	rz_iterator_free(it_nodes);
+	rz_iterator_fini(&it_nodes);
 	return rz_strbuf_drain(sb);
 }
 
@@ -458,27 +458,27 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 		return NULL;
 	}
 	ut64 seq = 0;
-	RzIterator *it = rz_graph_get_nodes(graph);
-	rz_iterator_foreach(it, graphNode) {
+	RzIterator it = rz_graph_get_nodes(graph);
+	rz_iterator_foreach(&it, graphNode) {
 		ht_uu_insert(id_map, graphNode->hash_id, seq++);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	// Pass 2: emit nodes using sequential ids
-	RzIterator *it_nodes = rz_graph_get_nodes(graph);
-	if (!it_nodes) {
+	RzIterator it_nodes = rz_graph_get_nodes(graph);
+	if (rz_iterator_is_uninit(&it_nodes)) {
 		ht_uu_free(id_map);
 		rz_strbuf_free(sb);
 		return NULL;
 	}
 
-	rz_iterator_foreach(it_nodes, graphNode) {
+	rz_iterator_foreach(&it_nodes, graphNode) {
 		RzGraphNodeInfo *print_node = graphNode->data;
 
 		switch (print_node->type) {
 		default:
 			RZ_LOG_ERROR("Unhandled node type. Graph node either doesn't support dot graph printing or it isn't implemented.\n");
-			rz_iterator_free(it_nodes);
+			rz_iterator_fini(&it_nodes);
 			ht_uu_free(id_map);
 			rz_strbuf_free(sb);
 			return NULL;
@@ -501,19 +501,19 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 				      "  ]\n",
 			node_id, label);
 	}
-	rz_iterator_free(it_nodes);
+	rz_iterator_fini(&it_nodes);
 
-	RzIterator *it_out_nodes = rz_graph_get_nodes(graph);
-	RzIterator *it_neighbours = NULL;
-	rz_iterator_foreach(it_out_nodes, graphNode) {
+	RzIterator it_out_nodes = rz_graph_get_nodes(graph);
+	RzIterator it_neighbours = { 0 };
+	rz_iterator_foreach(&it_out_nodes, graphNode) {
 		it_neighbours = rz_graph_out_neighbors(graph, graphNode);
-		if (!it_neighbours) {
+		if (rz_iterator_is_uninit(&it_neighbours)) {
 			continue;
 		}
 
 		bool found_s = false;
 		ut64 src_id = ht_uu_find(id_map, graphNode->hash_id, &found_s);
-		rz_iterator_foreach(it_neighbours, target) {
+		rz_iterator_foreach(&it_neighbours, target) {
 			bool found_t = false;
 			ut64 target_id = ht_uu_find(id_map, target->hash_id, &found_t);
 			rz_strbuf_appendf(sb, "  edge [\n"
@@ -522,9 +522,9 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 					      "  ]\n",
 				src_id, target_id);
 		}
-		rz_iterator_free(it_neighbours);
+		rz_iterator_fini(&it_neighbours);
 	}
-	rz_iterator_free(it_out_nodes);
+	rz_iterator_fini(&it_out_nodes);
 	ht_uu_free(id_map);
 
 	rz_strbuf_appendf(sb, "]\n");

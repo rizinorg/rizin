@@ -55,12 +55,12 @@ static bool isGdbPlugin(RzCore *core) {
 }
 
 static void print_node_options(RzConfigNode *node) {
-	RzIterator *iter = rz_set_s_as_iter(node->options);
+	RzIterator iter = rz_set_s_as_iter(node->options);
 	const char **option;
-	rz_iterator_foreach(iter, option) {
+	rz_iterator_foreach(&iter, option) {
 		rz_cons_printf("%s\n", *option);
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 }
 
 static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b, void *user) {
@@ -98,13 +98,13 @@ static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
 	}
 
 	RzAsmPlugin **val;
-	RzIterator *it = rz_asm_plugin_iterator(core->rasm);
+	RzIterator it = rz_asm_plugin_iterator(core->rasm);
 	rz_set_s_clear(node->options);
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzAsmPlugin *h = *val;
 		SETOPTIONS(node, h->name, NULL);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 }
 
 static void update_asmbits_options(RzCore *core, RzConfigNode *node) {
@@ -458,16 +458,16 @@ static bool cb_analysis_hpskip(void *user, void *data) {
 }
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator *it = rz_analysis_plugin_iterator(core->analysis);
+	RzIterator it = rz_analysis_plugin_iterator(core->analysis);
 	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
 		rz_set_s_clear(node->options);
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			RzAnalysisPlugin *h = *val;
 			SETOPTIONS(node, h->name, NULL);
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 }
 
 static bool cb_analysis_recont(void *user, void *data) {
@@ -949,19 +949,19 @@ static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 }
 
 static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
-	RzIterator *iter = rz_set_s_as_iter(node->options);
+	RzIterator iter = rz_set_s_as_iter(node->options);
 	const char **option;
-	rz_iterator_foreach(iter, option) {
+	rz_iterator_foreach(&iter, option) {
 		if (rz_str_casecmp(*option, node->value)) {
 			continue;
 		}
 		free(node->value);
 		node->value = rz_str_dup(*option);
 		*encoding = rz_str_enc_string_as_type(*option);
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
 		return true;
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	if (rz_set_s_size(node->options) == 0) {
 		// Edge case when the node was just initialized but the options
 		// were not added yet.
@@ -1602,12 +1602,12 @@ static bool cb_iopcachewrite(void *user, void *data) {
 static void config_print_options_as_json(PJ *pj, const RzSetS *options) {
 	pj_ka(pj, "options");
 	if (options) {
-		RzIterator *iter = rz_set_s_as_iter(options);
+		RzIterator iter = rz_set_s_as_iter(options);
 		const char **option;
-		rz_iterator_foreach(iter, option) {
+		rz_iterator_foreach(&iter, option) {
 			pj_s(pj, *option);
 		}
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
 	}
 	pj_end(pj);
 }
@@ -1667,10 +1667,10 @@ static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty)
 		return;
 	}
 	rz_cons_print("[");
-	RzIterator *iter = rz_set_s_as_iter(set);
+	RzIterator iter = rz_set_s_as_iter(set);
 	const char **entry;
 	bool first = true;
-	rz_iterator_foreach(iter, entry) {
+	rz_iterator_foreach(&iter, entry) {
 		if (!first) {
 			rz_cons_printf(", %s", *entry);
 		} else {
@@ -1678,7 +1678,7 @@ static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty)
 			first = false;
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	rz_cons_print("]");
 }
 

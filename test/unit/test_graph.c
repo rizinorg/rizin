@@ -34,16 +34,16 @@ static bool test_legacy_graph(void) {
 
 	// Check out-neighbors of gn: should contain gn2
 	{
-		RzIterator *it = rz_graph_out_neighbors(g, gn);
-		mu_assert_notnull(it, "get_neighbours.1.iter");
+		RzIterator it = rz_graph_out_neighbors(g, gn);
+		mu_assert_notnull(&it, "get_neighbours.1.iter");
 		int count = 0;
 		RzGraphNode *nb;
-		rz_iterator_foreach(it, nb) {
+		rz_iterator_foreach(&it, nb) {
 			mu_assert_ptreq(nb, gn2, "get_neighbours.1");
 			count++;
 		}
 		mu_assert_eq(count, 1, "get_neighbours.1.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 
 	RzGraphNode *gn3 = NULL;
@@ -52,16 +52,16 @@ static bool test_legacy_graph(void) {
 
 	// Check out-neighbors of gn: gn2 and gn3
 	{
-		RzIterator *it = rz_graph_out_neighbors(g, gn);
-		mu_assert_notnull(it, "get_neighbours.2.iter");
+		RzIterator it = rz_graph_out_neighbors(g, gn);
+		mu_assert_notnull(&it, "get_neighbours.2.iter");
 		int count = 0;
 		RzGraphNode *nb;
-		rz_iterator_foreach(it, nb) {
+		rz_iterator_foreach(&it, nb) {
 			mu_assert_true(nb == gn2 || nb == gn3, "get_neighbours.2");
 			count++;
 		}
 		mu_assert_eq(count, 2, "get_neighbours.2.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 
 	RzGraphNode *gn4 = NULL;
@@ -82,15 +82,15 @@ static bool test_legacy_graph(void) {
 
 	// Check all nodes are present
 	{
-		RzIterator *it = rz_graph_get_nodes(g);
-		mu_assert_notnull(it, "get_all_nodes.iter");
+		RzIterator it = rz_graph_get_nodes(g);
+		mu_assert_notnull(&it, "get_all_nodes.iter");
 		int count = 0;
 		RzGraphNode *nd;
-		rz_iterator_foreach(it, nd) {
+		rz_iterator_foreach(&it, nd) {
 			count++;
 		}
 		mu_assert_eq(count, 10, "get_all_nodes.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 
 	rz_graph_add_edge(g, gn2, gn3, NULL);
@@ -130,34 +130,34 @@ static bool test_legacy_graph(void) {
 
 	// Check in-neighbors of gn3: gn and gn2
 	{
-		RzIterator *it = rz_graph_in_neighbors(g, gn3);
-		mu_assert_notnull(it, "in_nodes.iter");
+		RzIterator it = rz_graph_in_neighbors(g, gn3);
+		mu_assert_notnull(&it, "in_nodes.iter");
 		int count = 0;
 		RzGraphNode *nb;
-		rz_iterator_foreach(it, nb) {
+		rz_iterator_foreach(&it, nb) {
 			mu_assert_true(nb == gn || nb == gn2, "in_nodes");
 			count++;
 		}
 		mu_assert_eq(count, 2, "in_nodes.count");
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 
 	// All neighbors of gn3: in={gn, gn2} + out={gn5}
 	{
 		int count = 0;
 		RzGraphNode *nb;
-		RzIterator *it = rz_graph_in_neighbors(g, gn3);
-		rz_iterator_foreach(it, nb) {
+		RzIterator it = rz_graph_in_neighbors(g, gn3);
+		rz_iterator_foreach(&it, nb) {
 			mu_assert_true(nb == gn || nb == gn2, "all_neighbours.in");
 			count++;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		it = rz_graph_out_neighbors(g, gn3);
-		rz_iterator_foreach(it, nb) {
+		rz_iterator_foreach(&it, nb) {
 			mu_assert_ptreq(nb, gn5, "all_neighbours.out");
 			count++;
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		mu_assert_eq(count, 3, "all_neighbours.count");
 	}
 

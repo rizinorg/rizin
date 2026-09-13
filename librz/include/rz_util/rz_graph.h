@@ -85,15 +85,15 @@ RZ_API RzGraphStatus rz_graph_del_edges(RZ_BORROW RzGraph *g, RZ_NULLABLE RzGrap
 RZ_API RzGraphStatus rz_graph_has_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph *g, RzGraphNode *from, RzGraphNode *to);
 
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges(RzGraph *g, RzGraphNode *node);
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges(RzGraph *g, RzGraphNode *node);
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors(RzGraph *g, RzGraphNode *n);
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n);
+RZ_API RZ_OWN RzIterator rz_graph_out_edges(RzGraph *g, RzGraphNode *node);
+RZ_API RZ_OWN RzIterator rz_graph_in_edges(RzGraph *g, RzGraphNode *node);
+RZ_API RZ_OWN RzIterator rz_graph_out_neighbors(RzGraph *g, RzGraphNode *n);
+RZ_API RZ_OWN RzIterator rz_graph_in_neighbors(RzGraph *g, RzGraphNode *n);
 
 // utils
 RZ_API ut64 rz_graph_count_nodes(const RzGraph *g);
 RZ_API ut64 rz_graph_count_edges(const RzGraph *g);
-RZ_API RZ_OWN RzIterator *rz_graph_get_nodes(const RzGraph *g);
+RZ_API RZ_OWN RzIterator rz_graph_get_nodes(const RzGraph *g);
 RZ_API ut64 rz_graph_mem_usage(const RzGraph *g);
 
 /**
@@ -163,10 +163,10 @@ RZ_API RzGraphStatus rz_graph_add_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_i
 RZ_API RzGraphStatus rz_graph_del_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
 RZ_API RzGraphStatus rz_graph_has_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphEdge *rz_graph_find_edge_by_id(RzGraph *g, ut64 from_id, ut64 to_id);
-RZ_API RZ_OWN RzIterator *rz_graph_out_edges_by_id(RzGraph *g, ut64 id);
-RZ_API RZ_OWN RzIterator *rz_graph_in_edges_by_id(RzGraph *g, ut64 id);
-RZ_API RZ_OWN RzIterator *rz_graph_out_neighbors_by_id(RzGraph *g, ut64 id);
-RZ_API RZ_OWN RzIterator *rz_graph_in_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator rz_graph_out_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator rz_graph_in_edges_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator rz_graph_out_neighbors_by_id(RzGraph *g, ut64 id);
+RZ_API RZ_OWN RzIterator rz_graph_in_neighbors_by_id(RzGraph *g, ut64 id);
 RZ_API ut64 rz_graph_out_degree_by_id(const RzGraph *g, ut64 id);
 RZ_API ut64 rz_graph_in_degree_by_id(const RzGraph *g, ut64 id);
 RZ_API RZ_NULLABLE RZ_BORROW RzGraphNode *rz_graph_nth_neighbour_by_id(const RzGraph *g, ut64 id, ut64 nth, bool out_neighbor);
