@@ -5309,7 +5309,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_OWN RZ_NONNULL RzHistogra
 			rz_cons_clear00();
 			RzStrBuf *help = rz_strbuf_new(NULL);
 			if (help) {
-				rz_core_visual_append_help(help, "Visual histogram keybindings", help_msg_visual_hist);
+				rz_core_visual_append_help(core, help, "Visual histogram keybindings", help_msg_visual_hist);
 				rz_cons_less_str(rz_strbuf_get(help), "?");
 				rz_strbuf_free(help);
 			}

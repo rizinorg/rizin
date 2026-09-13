@@ -3572,7 +3572,7 @@ void __update_help(RzCore *core, RzPanelsTab *tab) {
 			tmp = rz_str_dup(cmd);
 			free(p->model->cmd);
 			p->model->cmd = tmp;
-			rz_core_visual_append_help(rsb, title, msg);
+			rz_core_visual_append_help(core, rsb, title, msg);
 			if (!rsb) {
 				return;
 			}
@@ -5571,7 +5571,7 @@ RZ_IPI bool rz_load_panels_layout(RzCore *core, const char *_name) {
 			free(p->model->cmd);
 			p->model->cmd = tmp;
 			RzStrBuf *rsb = rz_strbuf_new(NULL);
-			rz_core_visual_append_help(rsb, "Visual Ascii Art Panels", help_msg_panels);
+			rz_core_visual_append_help(core, rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
 				rz_json_free(json);
 				free(panels_config);

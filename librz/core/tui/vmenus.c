@@ -727,8 +727,8 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			rz_cons_clear00();
 			RzStrBuf *buf = rz_strbuf_new("");
 			rz_cons_println("|Usage: vv");
-			rz_core_visual_append_help(buf, "Actions supported", help_vv_actions_visual);
-			rz_core_visual_append_help(buf, "Keys", help_vv_visual);
+			rz_core_visual_append_help(core, buf, "Actions supported", help_vv_actions_visual);
+			rz_core_visual_append_help(core, buf, "Keys", help_vv_visual);
 			rz_cons_printf("%s", rz_strbuf_drain(buf));
 			rz_cons_flush();
 			rz_cons_any_key(NULL);
