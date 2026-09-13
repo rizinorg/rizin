@@ -1328,7 +1328,7 @@ static int print_double_linked_list_bin_simple(RzCore *core, ut64 bin, MallocSta
 }
 
 static int print_double_linked_list_bin_graph(RzCore *core, ut64 bin, MallocState *main_arena, ut64 brk_start) {
-	RzAGraph *g = rz_agraph_new(rz_cons_canvas_new(1, 1));
+	RzAGraph *g = rz_agraph_new(rz_cons_canvas_new(1, 1), core->cons);
 	ut64 next = UT64_MAX;
 	char title[256], chunk[256];
 	RzANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;
@@ -2512,7 +2512,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzAGraph *g = rz_agraph_new(can);
+	RzAGraph *g = rz_agraph_new(can, core->cons);
 	if (!g) {
 		rz_cons_canvas_free(can);
 		rz_config_hold_restore(hc);

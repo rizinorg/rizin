@@ -1743,7 +1743,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->search = rz_search_new(RZ_SEARCH_KEYWORD);
 	core->flags = rz_flag_new();
 	core->marks = rz_mark_new();
-	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1));
+	core->graph = rz_agraph_new(rz_cons_canvas_new(1, 1), core->cons);
 	core->graph->need_reload_nodes = false;
 	core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
 	if (sizeof(ut64) * core->asmqjmps_size < core->asmqjmps_size) {
