@@ -326,7 +326,7 @@ static bool parse_note_file(ELFOBJ *bin, RzVector /*<RzBinElfNote>*/ *notes, Elf
 			return false;
 		}
 
-		char *name = rz_buf_get_nstring(bin->b, offset + strings_offset, note_segment_header->n_descsz);
+		char *name = rz_buf_get_nstring(bin->b, offset + strings_offset, note_segment_header->n_descsz, false);
 		if (!name) {
 			return false;
 		}
