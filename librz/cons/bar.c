@@ -3,6 +3,7 @@
 
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
+#include "i/private.h"
 
 // TODO: add support for colors
 /**
