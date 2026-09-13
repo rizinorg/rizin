@@ -71,9 +71,4 @@ RZ_API void rz_iterator_fini(RzIterator *it) {
 	if (it->free_u) {
 		it->free_u(it->u);
 	}
-	/**
-	 * NOTE: Removed free(it).
-	 * RzIterator is now stack-allocated as part of the stack-refactor.
-	 * Freeing the handle causes heap corruption (debug assertion).
-	 */
 }

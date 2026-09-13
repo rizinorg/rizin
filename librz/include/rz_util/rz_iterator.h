@@ -17,7 +17,7 @@ typedef void (*rz_iterator_free_cb)(void *);
 typedef struct rz_iterator_t {
 	void *cur;
 	void *u;
-	rz_iterator_next_cb next;
+	rz_iterator_next_cb next; // NULL means this iterator is uninitialized/invalid
 	rz_iterator_free_cb free;
 	rz_iterator_free_cb free_u;
 } RzIterator;
@@ -32,6 +32,9 @@ RZ_API RZ_OWN RzIterator rz_iterator_new(
 	RZ_NONNULL RZ_OWN void *u);
 RZ_API RZ_BORROW void *rz_iterator_next(RZ_NONNULL RZ_BORROW RzIterator *it);
 RZ_API void rz_iterator_fini(RzIterator *it);
+static inline bool rz_iterator_is_uninit(RZ_NONNULL const RzIterator *it) {
+	return !it || !it->next;
+}
 
 #ifdef __cplusplus
 }

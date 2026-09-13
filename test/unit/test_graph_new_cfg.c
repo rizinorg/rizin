@@ -295,34 +295,31 @@ static bool test_cfg_foo_function(void) {
 	mu_assert_eq(rz_graph_has_edge(cfg, n_check_sum, n_ret_sum), RZ_GRAPH_STATUS_OK, "edge: check_sum->ret_sum (break)");
 
 	// verify out-neighbors of bb_check_n (should have 2)
-	RzIterator *it = rz_graph_out_neighbors(cfg, n_check_n);
+	RzIterator it = rz_graph_out_neighbors(cfg, n_check_n);
 	int count = 0;
 	RzGraphNode *neighbor;
-	rz_iterator_foreach(it, neighbor) {
+	rz_iterator_foreach(&it, neighbor) {
 		count++;
 	}
-	rz_iterator_fini(it);
-	free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(count, 2, "bb_check_n out-neighbors");
 
 	// verify in-neighbors of bb_check_sum (should have 2: bb_even and bb_odd)
 	it = rz_graph_in_neighbors(cfg, n_check_sum);
 	count = 0;
-	rz_iterator_foreach(it, neighbor) {
+	rz_iterator_foreach(&it, neighbor) {
 		count++;
 	}
-	rz_iterator_fini(it);
-	free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(count, 2, "bb_check_sum in-neighbors");
 
 	// verify in-neighbors of bb_loop_cond (should have 2: bb_loop_init and bb_loop_inc)
 	it = rz_graph_in_neighbors(cfg, n_loop_cond);
 	count = 0;
-	rz_iterator_foreach(it, neighbor) {
+	rz_iterator_foreach(&it, neighbor) {
 		count++;
 	}
-	rz_iterator_fini(it);
-	free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(count, 2, "bb_loop_cond in-neighbors (includes back edge)");
 
 	rz_graph_free(cfg);

@@ -27,22 +27,22 @@ bool test_graph_to_agraph() {
 	mu_assert_notnull(agraph, "Couldn't create the agraph");
 	mu_assert_eq(rz_graph_count_nodes(agraph->graph), 4, "Wrong agraph node count");
 
-	RzIterator *iter = rz_graph_get_nodes(agraph->graph);
-	mu_assert_notnull(iter, "get_nodes iterator");
+	RzIterator iter = rz_graph_get_nodes(agraph->graph);
+	mu_assert_notnull(&iter, "get_nodes iterator");
 	RzGraphNode *node;
 	int i = 0;
-	rz_iterator_foreach(iter, node) {
+	rz_iterator_foreach(&iter, node) {
 		const RzANode *info = rz_graph_node_get_data(node);
 		switch (i++) {
 		case 0:
 			mu_assert_streq(info->title, "A", "Wrong node name");
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 2, "Wrong node out-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter A");
+				RzIterator out_iter = rz_graph_out_neighbors(agraph->graph, node);
+				mu_assert_notnull(&out_iter, "out_neighbors iter A");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -53,8 +53,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_fini(out_iter);
-				free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 1:
@@ -62,11 +61,11 @@ bool test_graph_to_agraph() {
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(agraph->graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter B");
+				RzIterator out_iter = rz_graph_out_neighbors(agraph->graph, node);
+				mu_assert_notnull(&out_iter, "out_neighbors iter B");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -74,8 +73,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_fini(out_iter);
-				free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 2:
@@ -83,11 +81,11 @@ bool test_graph_to_agraph() {
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(agraph->graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter C");
+				RzIterator out_iter = rz_graph_out_neighbors(agraph->graph, node);
+				mu_assert_notnull(&out_iter, "out_neighbors iter C");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -95,8 +93,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_fini(out_iter);
-				free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 3:
@@ -107,8 +104,7 @@ bool test_graph_to_agraph() {
 			break;
 		}
 	}
-	rz_iterator_fini(iter);
-	free(iter);
+	rz_iterator_fini(&iter);
 
 	rz_core_free(core);
 	rz_graph_free(graph);

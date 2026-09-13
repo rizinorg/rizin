@@ -147,8 +147,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 	rz_tree_bfs(t, &vis);
 
 	/* traverse the callgraph to print the dot file */
-	RzIterator *it_nodes = rz_graph_get_nodes(aux_data.graph);
-	if (!it_nodes) {
+	RzIterator it_nodes = rz_graph_get_nodes(aux_data.graph);
+	if (rz_iterator_is_uninit(&it_nodes)) {
 		RZ_LOG_ERROR("Failed to get graph nodes\n");
 		rz_graph_free(aux_data.graph);
 		sdb_free(aux_data.graphnodes);
@@ -162,7 +162,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 			       " shape=box fontname=\"%s\" fontsize=\"8\"];\n",
 			gfont);
 	}
-	rz_iterator_foreach(it_nodes, n) {
+	rz_iterator_foreach(&it_nodes, n) {
 		const struct trace_node *tn = rz_graph_node_get_data(n);
 		RzGraphNode *w;
 
@@ -173,12 +173,12 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				tn->addr, tn->addr, tn->addr, tn->refs);
 		}
 
-		RzIterator *it_neighbours = rz_graph_out_neighbors(aux_data.graph, n);
-		if (!it_neighbours) {
+		RzIterator it_neighbours = rz_graph_out_neighbors(aux_data.graph, n);
+		if (rz_iterator_is_uninit(&it_neighbours)) {
 			continue;
 		}
 
-		rz_iterator_foreach(it_neighbours, w) {
+		rz_iterator_foreach(&it_neighbours, w) {
 			const struct trace_node *tv = rz_graph_node_get_data(w);
 
 			if (tv && tn) {
@@ -194,11 +194,9 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				}
 			}
 		}
-		rz_iterator_fini(it_neighbours);
-		free(it_neighbours);
+		rz_iterator_fini(&it_neighbours);
 	}
-	rz_iterator_fini(it_nodes);
-	free(it_nodes);
+	rz_iterator_fini(&it_nodes);
 
 	if (!fmt) {
 		rz_cons_printf("}\n");

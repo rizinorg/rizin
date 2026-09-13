@@ -397,7 +397,7 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
 	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		return;
 	}
 	pj_a(pj);
@@ -507,7 +507,7 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
 	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		return;
 	}
 
@@ -5457,7 +5457,7 @@ RZ_IPI RzCmdStatus rz_analyze_n_ins_esil_handler(RzCore *core, int argc, const c
 RZ_API void rz_core_analysis_bytes_il(RZ_NONNULL RzCore *core, ut64 len, ut64 num_ops, bool pretty, bool unicode) {
 	rz_return_if_fail(core);
 	RzIterator iter = rz_core_analysis_op_chunk_iter(core, core->offset, len, num_ops, RZ_ANALYSIS_OP_MASK_IL);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		return;
 	}
 

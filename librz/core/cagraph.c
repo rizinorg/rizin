@@ -253,17 +253,16 @@ RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, 
 
 RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 	rz_return_val_if_fail(core && ag, false);
-	RzIterator *it = rz_graph_get_nodes(ag->graph);
-	if (!it) {
+	RzIterator it = rz_graph_get_nodes(ag->graph);
+	if (rz_iterator_is_uninit(&it)) {
 		return false;
 	}
 	RzGraphNode *gn;
-	rz_iterator_foreach(it, gn) {
+	rz_iterator_foreach(&it, gn) {
 		RzANode *an = rz_graph_node_get_data_mut(gn);
 		rz_core_agraph_add_shortcut(core, ag, an, an->offset, an->title);
 	}
-	rz_iterator_fini(it);
-	free(it);
+	rz_iterator_fini(&it);
 	return true;
 }
 

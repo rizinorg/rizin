@@ -1092,7 +1092,7 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter_mut)(RZ_NONNULL HtName_
 	}
 
 	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		Ht_(free_iter_mut_state)(state);
 	}
 	return iter;
@@ -1111,7 +1111,7 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter)(const RZ_NONNULL HtNam
 	rz_return_val_if_fail(state, (RzIterator){ 0 });
 
 	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		Ht_(free_iter_state)(state);
 	}
 	return iter;
@@ -1130,7 +1130,7 @@ RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ Ht_(as_iter_keys)(const RZ_NONNULL 
 	rz_return_val_if_fail(state, (RzIterator){ 0 });
 
 	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		Ht_(free_iter_state)(state);
 	}
 	return iter;
@@ -1149,7 +1149,7 @@ RZ_API RZ_OWN RzIterator /* <const HtName_(Ht)> */ Ht_(as_iter_kv)(const RZ_NONN
 	rz_return_val_if_fail(state, (RzIterator){ 0 });
 
 	RzIterator iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter.next) {
+	if (rz_iterator_is_uninit(&iter)) {
 		Ht_(free_iter_state)(state);
 	}
 	return iter;

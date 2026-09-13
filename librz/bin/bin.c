@@ -397,7 +397,7 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 		return NULL;
 	}
 	RzIterator it = ht_sp_as_iter_keys(bin->plugins);
-	if (!it.next) {
+	if (rz_iterator_is_uninit(&it)) {
 		rz_pvector_free(compatible_plugins);
 		return NULL;
 	}
