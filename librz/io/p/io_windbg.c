@@ -242,7 +242,7 @@ static bool init_callbacks(DbgEngContext *idbg) {
 	PDEBUG_INPUT_CALLBACKS input_callbacks = DEBUG_INPUT_CALLBACKS_impl_new(idbg);
 	PDEBUG_OUTPUT_CALLBACKS output_callbacks = DEBUG_OUTPUT_CALLBACKS_impl_new(idbg);
 
-	if (!event_callbacks || !output_callbacks || !event_callbacks) {
+	if (!event_callbacks || !input_callbacks || !output_callbacks) {
 		RELEASE(event_callbacks);
 		RELEASE(input_callbacks);
 		RELEASE(output_callbacks);
