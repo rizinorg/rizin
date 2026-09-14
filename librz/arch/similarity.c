@@ -501,7 +501,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 				max_similarity = calc_similarity;
 				match = fcn_b;
 				break;
-			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD && calc_similarity <= max_similarity) {
+			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD || calc_similarity <= max_similarity) {
 				continue;
 			}
 			max_similarity = calc_similarity;
