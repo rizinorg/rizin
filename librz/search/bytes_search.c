@@ -75,23 +75,23 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
 }
 
 /**
- * \brief Get the read-only pointer to bytes buffer of the pattern.
+ * \brief Get read-only pointers to the bytes and mask buffers of the search pattern.
  *
- * \return The bytes of the pattern or NULL in case of failure.
- */
-RZ_API const ut8 *rz_search_bytes_pattern_get_bytes(RZ_NONNULL const RzSearchBytesPattern *bp) {
-	rz_return_val_if_fail(bp, NULL);
-	return bp->bytes;
-}
-
-/**
- * \brief Get the read-only pointer to the mask buffer of the pattern.
+ * \warning The output pointers must NOT be freed or modified by the caller.
  *
- * \return The mask of the pattern or NULL in case of failure.
+ * \param [in]  bp	The bytes pattern structure.
+ * \param [out] bytes	Pointer to receive the address of the internal bytes buffer.
+ * \param [out] mask	Pointer to receive the address of the internal mask buffer.
+ *			Receives NULL if the pattern is an exact byte match without a mask.
  */
-RZ_API const ut8 *rz_search_bytes_pattern_get_mask(RZ_NONNULL const RzSearchBytesPattern *bp) {
-	rz_return_val_if_fail(bp, NULL);
-	return bp->mask;
+RZ_API void rz_search_bytes_pattern_get_bytes_and_mask(RZ_NONNULL const RzSearchBytesPattern *bp, RZ_NULLABLE const ut8 **bytes, RZ_NULLABLE const ut8 **mask) {
+	rz_return_if_fail(bp);
+	if (bytes) {
+		*bytes = bp->bytes;
+	}
+	if (mask) {
+		*mask = bp->mask;
+	}
 }
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {

@@ -6272,8 +6272,13 @@ RZ_IPI RzCmdStatus rz_analyze_all_preludes_keyword_handler(RzCore *core, int arg
 		return RZ_CMD_STATUS_ERROR;
 	}
 	const size_t len = rz_search_bytes_pattern_len(pattern);
-	const ut8 *bytes = rz_search_bytes_pattern_get_bytes(pattern);
-	const ut8 *mask = rz_search_bytes_pattern_get_mask(pattern);
+	const ut8 *bytes = NULL;
+	const ut8 *mask = NULL;
+	rz_search_bytes_pattern_get_bytes_and_mask(pattern, &bytes, &mask);
+	if (!bytes) {
+		rz_search_bytes_pattern_free(pattern);
+		return RZ_CMD_STATUS_ERROR;
+	}
 
 	RzList *prologue = rz_list_newf((RzListFree)rz_search_keyword_free);
 	if (!prologue) {
