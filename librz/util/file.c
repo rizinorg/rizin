@@ -1283,8 +1283,9 @@ RZ_API bool rz_file_copy(RZ_NONNULL const char *src, RZ_NONNULL const char *dst)
 		return false;
 	}
 
+	ssize_t n_bytes = 0;
 	do {
-		ssize_t n_bytes = fread(buffer, 1, sizeof(buffer), input);
+		n_bytes = fread(buffer, 1, sizeof(buffer), input);
 		if (n_bytes < 1) {
 			break;
 		}
