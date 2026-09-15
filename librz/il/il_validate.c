@@ -1043,6 +1043,7 @@ VALIDATOR_EFFECT(seq) {
 	// Code after a jmp/goto makes no sense because the jmp naturally jumps somewhere else already.
 	// Intuitively, this could be considered just dead code and valid, but because it is not practically useful,
 	// we reject such code completely. Do not weaken this restriction, as existing analysis depends on it.
+	// E.g. the abstract interpretation.
 	VALIDATOR_ASSERT(!(tx & RZ_IL_TYPE_EFFECT_CTRL) || !ty, "Encountered further effects after a ctrl effect in seq op.");
 	*type_out = tx | ty;
 	return true;

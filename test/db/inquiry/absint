@@ -2,6 +2,7 @@
 # not yet resolved, because a single instruction jumps to multiple addresses
 # there and we interpret only with single constant values or top. They may be
 # later discovered with different value domains.
+# https://github.com/rizinorg/rizin/issues/6748
 
 NAME=Indirect call x86_64
 FILE=bins/absint/x86_64_indirect_call.o
