@@ -178,7 +178,7 @@ typedef struct rz_absint_config_t {
 	RzAbsIntTraceOptions trace_opts;
 
 	void *cb_user;
-	RzAbsIntIOReadResult (*io_read)(RZ_NONNULL RZ_OWN RzAbsIntIOReadRequest *req, void *user);
+	RzAbsIntIOReadResult (*io_read)(RZ_NONNULL RZ_BORROW RzAbsIntIOReadRequest *req, void *user);
 	RzAbsIntLiftBlockResult (*lift_block)(ut64 addr, RZ_OUT const RzILCacheBlock **block_out, void *user);
 } RzAbsIntConfig;
 
