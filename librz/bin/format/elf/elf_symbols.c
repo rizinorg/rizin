@@ -415,11 +415,9 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 			continue;
 		}
 
-		if (rz_vector_push(result, sym)) {
-			// the ownership has been moved to `result`,
-			// don't free the heap memory allocated for the name string of this element
-			sym->name = NULL;
-		}
+		RzBinElfSymbol sym_cpy = *sym;
+		sym_cpy.name = rz_str_dup(sym->name);
+		rz_vector_push(result, &sym_cpy);
 	}
 
 	res = true;
