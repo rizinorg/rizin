@@ -562,7 +562,7 @@ static RzILOpEffect *c6x_mem_seq(RzILOpEffect *access, RzILOpEffect *wb, bool pr
 static RzILOpEffect *c6x_load(const C6xInsn *insn, ut8 bytes, bool sign) {
 	// single-register widths only; pairs go through c6x_load_pair
 	rz_return_val_if_fail(OP(1).kind == C6X_OP_REG && bytes <= 4, NULL);
-	RzILOpEffect *wb;
+	RzILOpEffect *wb = NULL;
 	bool pre;
 	RzILOpPure *ea = c6x_ea(&OP(0), bytes, &wb, &pre);
 	if (!ea) {
@@ -576,7 +576,7 @@ static RzILOpEffect *c6x_load(const C6xInsn *insn, ut8 bytes, bool sign) {
 // Store: mem[EA] = truncate(src). Pairs use c6x_store_pair.
 static RzILOpEffect *c6x_store(const C6xInsn *insn, ut8 bytes) {
 	rz_return_val_if_fail(OP(0).kind == C6X_OP_REG && bytes <= 4, NULL);
-	RzILOpEffect *wb;
+	RzILOpEffect *wb = NULL;
 	bool pre;
 	RzILOpPure *ea = c6x_ea(&OP(1), bytes, &wb, &pre);
 	if (!ea) {
@@ -593,7 +593,7 @@ static RzILOpEffect *c6x_store(const C6xInsn *insn, ut8 bytes) {
 // LDNDW behaves the same here; only its alignment requirement differs.
 static RzILOpEffect *c6x_load_pair(const C6xInsn *insn) {
 	rz_return_val_if_fail(OP(1).kind == C6X_OP_REGPAIR, NULL);
-	RzILOpEffect *wb;
+	RzILOpEffect *wb = NULL;
 	bool pre;
 	RzILOpPure *ea = c6x_ea(&OP(0), 8, &wb, &pre);
 	if (!ea) {
@@ -611,7 +611,7 @@ static RzILOpEffect *c6x_load_pair(const C6xInsn *insn) {
 // odd member. STDW and the non-aligned STNDW share this data path.
 static RzILOpEffect *c6x_store_pair(const C6xInsn *insn) {
 	rz_return_val_if_fail(OP(0).kind == C6X_OP_REGPAIR, NULL);
-	RzILOpEffect *wb;
+	RzILOpEffect *wb = NULL;
 	bool pre;
 	RzILOpPure *ea = c6x_ea(&OP(1), 8, &wb, &pre);
 	if (!ea) {
@@ -2278,7 +2278,9 @@ static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
  * \return The packet's effect, or NULL if a slot has a shape this cannot model.
  */
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
-	rz_return_val_if_fail(insns && n >= 1, NULL);
+	// n bounds the staging arrays below and the shift used for \p skip, so it
+	// is checked here rather than at each use
+	rz_return_val_if_fail(insns && n >= 1 && n <= C6X_FP_SLOTS, NULL);
 	const char *written[C6X_MAX_OPS * 8];
 	size_t nw = 0;
 	for (size_t i = 0; i < n; i++) {
@@ -2314,7 +2316,7 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 	for (size_t j = 0; j < nw; j++) {
 		snap[j] = j < C6X_PK_REGS ? c6x_snapshot_names[j] : NULL;
 		for (size_t i = 0; i < n; i++) {
-			cap[i][j] = (i < C6X_FP_SLOTS && j < C6X_PK_REGS) ? c6x_capture_names[i][j] : NULL;
+			cap[i][j] = j < C6X_PK_REGS ? c6x_capture_names[i][j] : NULL;
 		}
 		if (!snap[j] || !cap[n - 1][j]) {
 			rz_pvector_free(steps);
