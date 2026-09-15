@@ -77,7 +77,7 @@ static void val_set_const_bv(RZ_OUT RZ_NONNULL RzAbsIntVal *dst, RZ_IN RZ_NONNUL
 	rz_bv_copy(AD(dst)->bv, src);
 }
 
-void val_copy(RzAbsIntVal *dst_val, const RzAbsIntVal *src_val) {
+static void val_copy(RzAbsIntVal *dst_val, const RzAbsIntVal *src_val) {
 	ValueData *dst = AD(dst_val);
 	ValueData *src = AD(src_val);
 	rz_return_if_fail(dst && src && dst->bv && src->bv);
@@ -103,7 +103,7 @@ static bool join_val(RZ_BORROW RZ_INOUT RzAbsIntVal *a, RZ_BORROW RZ_IN const Rz
 	return changed;
 }
 
-bool val_as_str(RZ_NONNULL const RzAbsIntVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+static bool val_as_str(RZ_NONNULL const RzAbsIntVal *val, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
 	rz_return_val_if_fail(val && sb, false);
 	ValueData *av = AD(val);
 	if (av->is_const) {
