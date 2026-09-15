@@ -6273,11 +6273,13 @@ RZ_IPI RzCmdStatus rz_analysis_devirtualize_handler(RzCore *core, int argc, cons
 		rz_core_analysis_devirtualize_cxx_methods(core);
 		break;
 	case RZ_BIN_LANGUAGE_OBJC:
-	case RZ_BIN_LANGUAGE_SWIFT:
 		rz_core_analysis_devirtualize_objc_methods(core);
 		break;
+	case RZ_BIN_LANGUAGE_SWIFT:
+		rz_core_analysis_devirtualize_swift_methods(core);
+		break;
 	default:
-		RZ_LOG_ERROR("Devirtualization is only supported for C++ and Objective-C binaries.\n");
+		RZ_LOG_ERROR("Devirtualization is only supported for C++, Objective-C, and Swift binaries.\n");
 		break;
 	}
 	return RZ_CMD_STATUS_OK;
