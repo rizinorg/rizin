@@ -46,8 +46,8 @@ struct rz_graph_impl_ops_t {
 	ut64 (*mem_usage)(const RzGraph *g);
 
 	// Return neighbors as iterator
-	RZ_OWN RzIterator *(*get_out_edges)(RzGraph *graph, RzGraphNode *node);
-	RZ_OWN RzIterator *(*get_in_edges)(RzGraph *graph, RzGraphNode *node);
+	RZ_OWN RzIterator (*get_out_edges)(RzGraph *graph, RzGraphNode *node);
+	RZ_OWN RzIterator (*get_in_edges)(RzGraph *graph, RzGraphNode *node);
 
 	bool (*add_node)(RzGraph *graph, RzGraphNode *node);
 	bool (*del_node)(RzGraph *graph, RzGraphNode *node);

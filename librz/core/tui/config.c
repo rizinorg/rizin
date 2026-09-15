@@ -82,9 +82,9 @@ static void show_config_options(RzCore *core, const char *name) {
 
 	int w = rz_cons_get_size(NULL);
 	const char **item;
-	RzIterator *iter = rz_set_s_as_iter(options);
+	RzIterator iter = rz_set_s_as_iter(options);
 	RzStrBuf *sb = rz_strbuf_new(" Options: ");
-	rz_iterator_foreach(iter, item) {
+	rz_iterator_foreach(&iter, item) {
 		rz_strbuf_appendf(sb, "%s%s", *item ? ", " : "", *item);
 		if (rz_strbuf_length(sb) + 5 >= w) {
 			char *s = rz_strbuf_drain(sb);
@@ -93,7 +93,7 @@ static void show_config_options(RzCore *core, const char *name) {
 			sb = rz_strbuf_new("");
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	char *s = rz_strbuf_drain(sb);
 	rz_cons_println(s);
 	free(s);
