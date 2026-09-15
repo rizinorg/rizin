@@ -39,11 +39,13 @@ Sdb *types_ref_db() {
 }
 
 bool sdb_has_record(Sdb *db, const char *key, const char *value) {
-	const char *result = sdb_get(db, key);
+	char *result = sdb_get(db, key);
 	if (!result) {
 		return false;
 	}
-	return !strcmp(result, value);
+	bool ret = !strcmp(result, value);
+	rz_mem_free(result);
+	return ret;
 }
 
 bool test_types_save() {

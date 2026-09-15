@@ -374,6 +374,7 @@ static bool test_rz_tokenize_custom_hexagon_issues_tilde(void) {
 	mu_assert_eq(tok->val.number, 0, "Token value");
 
 	rz_asm_op_fini(op);
+	rz_asm_op_free(op);
 	rz_asm_free(a);
 	mu_end;
 }
@@ -399,6 +400,7 @@ static bool test_rz_tokenize_custom_hexagon_issues_long_reg(void) {
 	mu_assert_eq(tok->val.number, 0, "Token value");
 
 	rz_asm_op_fini(op);
+	rz_asm_op_free(op);
 	rz_asm_free(a);
 	mu_end;
 }
@@ -678,7 +680,6 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
-	RzAsmOp asmop = { 0 };
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
@@ -697,6 +698,7 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 	};
 
 	for (int i = 0; i < 0x14; i += 4) {
+		RzAsmOp asmop = { 0 };
 		rz_asm_set_pc(d, i);
 		rz_asm_disassemble(d, &asmop, buf + i, 4);
 		colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
@@ -705,9 +707,9 @@ static bool test_rz_colorize_custom_hexagon_2(void) {
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 		rz_strbuf_free(colored_asm);
 		rz_strbuf_free(expected);
+		rz_asm_op_fini(&asmop);
 	}
 
-	rz_asm_op_fini(&asmop);
 	rz_asm_free(d);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
@@ -719,7 +721,6 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	rz_asm_set_utf8(d, true);
 
 	RzPrint *p = setup_print();
-	RzAsmOp asmop = { 0 };
 	RzStrBuf *colored_asm;
 	RzStrBuf *expected;
 	char err_msg[2048];
@@ -741,6 +742,7 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 	};
 
 	for (int i = 0; i < 0x10; i += 4) {
+		RzAsmOp asmop = { 0 };
 		rz_asm_set_pc(d, i);
 		rz_asm_disassemble(d, &asmop, buf + i, 0x10 - i);
 
@@ -750,9 +752,9 @@ static bool test_rz_colorize_custom_hexagon_3(void) {
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 		rz_strbuf_free(colored_asm);
 		rz_strbuf_free(expected);
+		rz_asm_op_fini(&asmop);
 	}
 
-	rz_asm_op_fini(&asmop);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
 	rz_asm_free(d);
@@ -789,8 +791,8 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 
 	RzPrint *p = setup_print();
 	char err_msg[2048];
-	RzAsmOp asmop = { 0 };
 	for (int i = 0; i < sizeof(buf) - 1; i++) {
+		RzAsmOp asmop = { 0 };
 		rz_asm_disassemble(a, &asmop, buf + i, 1);
 		RzStrBuf *colored_asm = rz_print_colorize_asm_str(p, asmop.asm_toks);
 		RzStrBuf *expected = rz_strbuf_new(expected_str[i]);
@@ -798,9 +800,9 @@ static bool test_rz_tokenize_custom_bf_0(void) {
 		mu_assert_true(rz_strbuf_equals(colored_asm, expected), err_msg);
 		rz_strbuf_free(expected);
 		rz_strbuf_free(colored_asm);
+		rz_asm_op_fini(&asmop);
 	}
 
-	rz_asm_op_fini(&asmop);
 	rz_asm_free(a);
 	rz_cons_context_free(p->cons->context);
 	rz_print_free(p);
