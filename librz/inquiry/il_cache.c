@@ -113,6 +113,8 @@ RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 			// Not lifted. Map to NOP
 			lifted = false;
 			op.il_op = rz_il_op_new_nop();
+		} else if (!op.il_op) {
+			goto fail;
 		}
 		il_block->size += op.size;
 		if (lifted && il_op_is_not_only_fallthrough(op.il_op, addr + op.size)) {
