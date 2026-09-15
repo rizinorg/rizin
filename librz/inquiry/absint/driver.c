@@ -219,6 +219,7 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	}
 	if (rz_bv_len(io_req->addr) == 64 && rz_bv_msb(io_req->addr)) {
 		// TODO: remove this when not needed anymore
+		// https://github.com/rizinorg/rizin/issues/5806
 		RZ_LOG_ERROR("Due to the Unix seek() implementation, addresses with the "
 			     "63 bit set can't be addresses.\n");
 		return RZ_ABSINT_IO_READ_RESULT_TOP;
@@ -228,6 +229,7 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 		return RZ_ABSINT_IO_READ_RESULT_TOP;
 	}
 	// TODO: here only memory should be read that can be assumed to be constant!
+	// https://github.com/rizinorg/rizin/issues/6655
 	bool ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
 	RZ_LOG_DEBUG("inquiry: Sent IO read result. Success = %s.\n", rz_str_bool(ok));
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;

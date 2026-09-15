@@ -729,6 +729,7 @@ static void store_abstr_data(
 	const RzAbsIntVal *addr,
 	const RzAbsIntVal *src) {
 	// TODO: handle with memory abstractions
+	// See: https://github.com/rizinorg/rizin/issues/6749
 }
 
 static EvalResult load_abstr_data(
