@@ -222,7 +222,7 @@ static bool join_vars(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BOR
 	return changed;
 }
 
-bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState *a, RZ_BORROW RZ_IN const RzAbsIntState *b) {
+static bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState *a, RZ_BORROW RZ_IN const RzAbsIntState *b) {
 	bool global_change = join_vars(inst, a->globals, b->globals);
 	bool local_change = join_vars(inst, a->locals, b->locals);
 	// lets are not be relevant here since they are immutable within their scope
@@ -656,7 +656,7 @@ cleanup:
 	rz_bv_fini(&to_bv);
 }
 
-void write_var_to_state(RzAbsIntInstance *inst,
+static void write_var_to_state(RzAbsIntInstance *inst,
 	RzAbsIntState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
@@ -692,7 +692,7 @@ void write_var_to_state(RzAbsIntInstance *inst,
 	val_domain(inst)->copy(av, data);
 }
 
-bool read_var_from_state(RzAbsIntInstance *inst,
+static bool read_var_from_state(RzAbsIntInstance *inst,
 	RzAbsIntState *astate,
 	RzILVarKind kind,
 	ut64 var_id,
@@ -731,7 +731,7 @@ static void store_abstr_data(
 	// TODO: handle with memory abstractions
 }
 
-EvalResult load_abstr_data(
+static EvalResult load_abstr_data(
 	RzAbsIntInstance *inst,
 	RzILMemIndex mem_idx,
 	const RzBitVector *addr,
