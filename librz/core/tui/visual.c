@@ -458,9 +458,9 @@ RZ_IPI void rz_core_visual_jump(RzCore *core, ut8 ch) {
 	}
 }
 
-RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help) {
+RZ_IPI void rz_core_visual_append_help(RzCore *core, RzStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
-	RzConsContext *cons_ctx = rz_cons_singleton()->context;
+	RzConsContext *cons_ctx = core->cons->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
 		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
 		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
@@ -489,7 +489,7 @@ repeat:
 		return 0;
 	}
 	rz_cons_clear00();
-	rz_core_visual_append_help(q, "Visual Help", help_visual);
+	rz_core_visual_append_help(core, q, "Visual Help", help_visual);
 	rz_cons_printf("%s", rz_strbuf_get(q));
 	rz_cons_flush();
 	switch (rz_cons_readchar()) {
@@ -501,8 +501,8 @@ repeat:
 		rz_core_visual_panels_root(core, visual->panels_root);
 		break;
 	case '?':
-		rz_core_visual_append_help(p, "Visual mode help", help_msg_visual);
-		rz_core_visual_append_help(p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
+		rz_core_visual_append_help(core, p, "Visual mode help", help_msg_visual);
+		rz_core_visual_append_help(core, p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
 		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
 		break;
 	case 'v':
@@ -589,12 +589,12 @@ repeat:
 	goto repeat;
 }
 
-static void prompt_read(const char *p, char *buf, int buflen) {
+static void prompt_read(RzCons *cons, const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(rz_cons_singleton()->line, p);
+	rz_line_set_prompt(cons->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
@@ -606,7 +606,7 @@ static void reset_print_cur(RzPrint *p) {
 }
 
 static bool __holdMouseState(RzCore *core) {
-	bool m = rz_cons_singleton()->mouse;
+	bool m = core->cons->mouse;
 	rz_cons_enable_mouse(false);
 	return m;
 }
@@ -826,9 +826,9 @@ static int visual_nkey(RzCore *core, int ch) {
 
 static void setdiff(RzCore *core) {
 	char from[64], to[64];
-	prompt_read("diff from: ", from, sizeof(from));
+	prompt_read(core->cons, "diff from: ", from, sizeof(from));
 	rz_config_set(core->config, "diff.from", from);
-	prompt_read("diff to: ", to, sizeof(to));
+	prompt_read(core->cons, "diff to: ", to, sizeof(to));
 	rz_config_set(core->config, "diff.to", to);
 }
 
@@ -1319,7 +1319,7 @@ repeat:
 				rz_cons_newline();
 			}
 			/* prepare highlight */
-			char *cmd = rz_str_dup(rz_cons_singleton()->highlight);
+			char *cmd = rz_str_dup(core->cons->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
 			if (ats && RZ_STR_ISEMPTY(cmd)) {
 				rz_cons_highlight(ats);
@@ -2121,7 +2121,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			return 1;
 		}
 	}
-	if (rz_cons_singleton()->mouse_event) {
+	if (core->cons->mouse_event) {
 		wheelspeed = rz_config_get_i(core->config, "scr.wheel.speed");
 	} else {
 		wheelspeed = 1;
@@ -2337,7 +2337,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		case '@':
 			if (core->print->cur_enabled) {
 				char buf[128];
-				prompt_read("cursor at:", buf, sizeof(buf));
+				prompt_read(core->cons, "cursor at:", buf, sizeof(buf));
 				core->print->cur = (st64)rz_num_math(core->num, buf);
 			}
 			break;
@@ -2991,7 +2991,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				}
 				char buf[128];
 				// TODO autocomplete filenames
-				prompt_read("dump to file: ", buf, sizeof(buf));
+				prompt_read(core->cons, "dump to file: ", buf, sizeof(buf));
 				if (buf[0]) {
 					ut64 from = core->offset + core->print->ocur;
 					ut64 size = RZ_ABS(core->print->cur - core->print->ocur) + 1;
@@ -3005,7 +3005,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				char buf[128];
 				// TODO autocomplete filenames
-				prompt_read("load from file: ", buf, sizeof(buf));
+				prompt_read(core->cons, "load from file: ", buf, sizeof(buf));
 				if (buf[0]) {
 					size_t sz;
 					char *data = rz_file_slurp(buf, &sz);
@@ -3804,8 +3804,8 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	core->vmode = true;
 
 	// disable tee in cons
-	teefile = rz_cons_singleton()->teefile;
-	rz_cons_singleton()->teefile = "";
+	teefile = core->cons->teefile;
+	core->cons->teefile = "";
 
 	do {
 	dodo:
@@ -3920,7 +3920,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	if (visual->autoblocksize) {
 		rz_core_block_size(core, visual->obs);
 	}
-	rz_cons_singleton()->teefile = teefile;
+	core->cons->teefile = teefile;
 	rz_cons_set_cup(false);
 	rz_cons_clear00();
 	core->vmode = false;

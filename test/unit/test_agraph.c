@@ -23,7 +23,7 @@ bool test_graph_to_agraph() {
 	mu_assert_notnull(graph, "Couldn't create the graph");
 	mu_assert_eq(rz_graph_count_nodes(graph), 4, "Wrong node count");
 
-	RzAGraph *agraph = rz_core_create_agraph_from_graph(graph, false);
+	RzAGraph *agraph = rz_core_create_agraph_from_graph(core->cons, graph, false);
 	mu_assert_notnull(agraph, "Couldn't create the agraph");
 	mu_assert_eq(rz_graph_count_nodes(agraph->graph), 4, "Wrong agraph node count");
 
@@ -127,9 +127,8 @@ static RzANode *find_anode(RzAGraph *ag, const char *title) {
  * graph, because set_layout calls rz_cons_is_breaked() internally.
  * The caller is responsible for rz_agraph_free() and rz_cons_free().
  */
-static RzAGraph *build_agraph(const char **titles, int n_titles,
-	const char *edges[][2], int n_edges) {
-	RzAGraph *ag = rz_agraph_new(NULL);
+static RzAGraph *build_agraph(const char **titles, int n_titles, const char *edges[][2], int n_edges, RzCons *cons) {
+	RzAGraph *ag = rz_agraph_new(NULL, cons);
 	if (!ag) {
 		return NULL;
 	}
@@ -182,7 +181,7 @@ bool test_layout_back_edge_simple() {
 		{ "B", "C" },
 		{ "C", "A" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -262,7 +261,7 @@ bool test_layout_back_edge_complex() {
 		{ "C", "D" },
 		{ "D", "A" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 6);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 6, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -324,7 +323,7 @@ bool test_layout_topo_sort_diamond() {
 		{ "B", "D" },
 		{ "C", "D" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -376,7 +375,7 @@ bool test_layout_topo_sort_chain() {
 		{ "C", "D" },
 		{ "D", "E" },
 	};
-	RzAGraph *ag = build_agraph(titles, 5, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 5, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);

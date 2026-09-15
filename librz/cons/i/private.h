@@ -24,6 +24,8 @@ typedef struct {
 typedef RzVector /*<RzCodePoint>*/ RzCodePoints;
 typedef RzVector /*<RzUnicodeCaseMapping>*/ RzUnicodeCaseMappings;
 
+RZ_IPI RzCons *rz_cons_singleton(void);
+
 RZ_IPI void rz_emacs_mode_modify_opts_reset(RZ_NONNULL RzEmacsModeModifyOpts *opts);
 RZ_IPI bool rz_emacs_mode_modify(RZ_NONNULL RzEmacsModeModifyOpts *opts, RZ_NONNULL RzLine *line);
 

@@ -491,7 +491,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 				"the displayed value is reordered so the most significant byte sits\n"
 				"on the left. Cursor and byte-write keys honour the same mapping.\n"
 				"\n");
-			rz_core_visual_append_help(help, "Keys", help_msg);
+			rz_core_visual_append_help(core, help, "Keys", help_msg);
 			rz_strbuf_append(help,
 				"\n"
 				"Position legend (the line just below the bit grid):\n"

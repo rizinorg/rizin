@@ -134,6 +134,7 @@ typedef struct diff_hex_view_t {
 	DiffIO *io_b;
 	bool column_descr;
 	DiffColors colors;
+	RzCons *cons;
 	RzConsCanvas *canvas;
 	DiffScreen screen;
 } DiffHexView;
@@ -2541,7 +2542,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	const char *reset = hview->colors.reset;
 	const char *legenda = hview->colors.legenda;
 	const char *toolbar = NULL;
-	bool utf8 = rz_cons_singleton()->use_utf8;
+	bool utf8 = hview->cons->use_utf8;
 	const char *arrow_up = utf8 ? RUNE_ARROW_UP " " : "/\\";
 	const char *arrow_down = utf8 ? RUNE_ARROW_DOWN " " : "\\/";
 	const char *arrow_right = utf8 ? RUNE_ARROW_RIGHT " " : "> ";
@@ -2735,7 +2736,7 @@ static char *visual_prompt(DiffHexView *hview, const char *prompt) {
 	rz_cons_gotoxy(0, hview->screen.height);
 	rz_cons_clear_line(stdout);
 	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
-	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
+	rz_line_set_prompt(hview->cons->line, ":> ");
 	rz_cons_flush();
 	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
 	if (*buf) {
@@ -2966,7 +2967,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 
 	rz_core_parse_rizinrc(core);
 
-	console = rz_cons_singleton();
+	console = rz_cons_new();
 	if (!console) {
 		rz_diff_error("cannot get console.\n");
 		goto rz_diff_hex_visual_fail;
@@ -3032,6 +3033,7 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.address_a = 0;
 	hview.address_b = 0;
 	hview.column_descr = true;
+	hview.cons = console;
 	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
 	rz_cons_show_cursor(false);

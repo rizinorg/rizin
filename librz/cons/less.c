@@ -6,6 +6,7 @@
 #include <rz_util.h>
 #include <rz_vector.h>
 #include "pager_private.h"
+#include "i/private.h"
 
 #define I(x) rz_cons_singleton()->x
 

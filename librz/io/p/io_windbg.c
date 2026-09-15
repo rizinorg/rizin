@@ -30,6 +30,7 @@ typedef struct { // Keep in sync with debug_windbg.c
 	PDEBUG_SYSTEM_OBJECTS4 dbgSysObj;
 	PDEBUG_SYMBOLS3 dbgSymbols;
 	PDEBUG_ADVANCED3 dbgAdvanced;
+	RzCons *cons;
 } DbgEngContext;
 
 typedef struct {
@@ -156,9 +157,9 @@ static STDMETHODIMP __system_error_cb(PDEBUG_EVENT_CALLBACKS This, ULONG Error, 
 
 static STDMETHODIMP __input_cb(PDEBUG_INPUT_CALLBACKS This, ULONG BufferSize) {
 	char prompt[512];
-	RzLine *line = rz_cons_singleton()->line;
 	PDEBUG_INPUT_CALLBACKS_IMPL impl = (PDEBUG_INPUT_CALLBACKS_IMPL)This;
 	DbgEngContext *idbg = impl->m_idbg;
+	RzLine *line = idbg->cons->line;
 	ITHISCALL(dbgCtrl, GetPromptText, prompt, sizeof(prompt), NULL);
 	rz_line_set_prompt(line, prompt);
 	const char *str = rz_line_readline(line);
@@ -309,8 +310,8 @@ fail:
 	return NULL;
 }
 
-static DbgEngContext *create_context(RZ_NONNULL RzIOWindbg *io_windbg) {
-	rz_return_val_if_fail(io_windbg, NULL);
+static DbgEngContext *create_context(RZ_NONNULL RzIOWindbg *io_windbg, RzCons *cons) {
+	rz_return_val_if_fail(io_windbg && cons, NULL);
 
 	DbgEngContext *idbg = RZ_NEW0(DbgEngContext);
 
@@ -343,6 +344,7 @@ static DbgEngContext *create_context(RZ_NONNULL RzIOWindbg *io_windbg) {
 	if (!init_callbacks(idbg)) {
 		goto fail;
 	}
+	idbg->cons = cons;
 	idbg->initialized = true;
 	return idbg;
 fail:
@@ -431,7 +433,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 			goto remote_client;
 		}
 	} else {
-		idbg = create_context(io_windbg);
+		idbg = create_context(io_windbg, core->cons);
 		if (idbg && rz_str_startswith(args, "-premote")) {
 			args += strlen("-premote") + 1;
 			if (FAILED(ITHISCALL(dbgClient, ConnectProcessServer, args, &idbg->server))) {
