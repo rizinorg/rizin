@@ -165,13 +165,14 @@ RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzB
 	if (!data) {
 		return false;
 	}
-	// we ignore bad reads. RzBuffer fills up with its "overflow byte" on failure.
-	rz_buf_read_at(mem_buf, address, data, n_bytes);
-	if (big_endian) {
-		rz_bv_set_from_bytes_be(out_bv, data, 0, n_bits);
-	} else {
-		rz_bv_set_from_bytes_le(out_bv, data, 0, n_bits);
+	st64 cur_pos = rz_buf_tell(mem_buf);
+	if (rz_buf_seek(mem_buf, address, RZ_BUF_SET) != address) {
+		rz_buf_seek(mem_buf, cur_pos, RZ_BUF_SET);
+		RZ_LOG_INFO("rz_il_loadw_into: OOB read from invalid address: 0x%" PFMT64x "\n", address);
+		return false;
 	}
+	rz_bv_set_from_buffer_ble(out_bv, mem_buf, n_bits, big_endian);
+	rz_buf_seek(mem_buf, cur_pos, RZ_BUF_SET);
 	free(data);
 	return true;
 }
@@ -226,7 +227,7 @@ RZ_API bool rz_il_mem_loadw_into(RZ_NONNULL RzILMem *mem,
 	ut32 n_bits,
 	bool big_endian) {
 	rz_return_val_if_fail(mem && key && n_bits, false);
-	return_val_if_key_len_wrong(mem, key, NULL);
+	return_val_if_key_len_wrong(mem, key, false);
 	return rz_il_loadw_into(mem->buf, out_bv, key, n_bits, big_endian);
 }
 
