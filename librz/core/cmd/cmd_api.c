@@ -894,7 +894,7 @@ static bool show_children_shortcut(const RzCmdDesc *cd) {
 static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool use_color, const char *reset_color) {
 	const char *pal_args_color = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_args_color = cons->context->pal.args;
 	}
 
@@ -920,7 +920,7 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	bool is_interactive = false;
 	const char *help_color = "";
 	if (cmd->has_cons) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		cols = rz_cons_get_size(NULL);
 		is_interactive = rz_cons_is_interactive();
 		help_color = use_color ? cons->context->pal.help : "";
@@ -1014,7 +1014,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_label_color = cons->context->pal.label;
 		pal_args_color = cons->context->pal.args;
 		pal_input_color = cons->context->pal.input;
@@ -1102,7 +1102,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_args_color = cons->context->pal.args;
 		pal_opt_color = cons->context->pal.reset;
 		pal_help_color = cons->context->pal.help;
@@ -1178,7 +1178,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutte
 			   *pal_reset = "";
 
 		if (cmd->has_cons && use_color) {
-			RzCons *cons = rz_cons_singleton();
+			RzCons *cons = cmd->core->cons;
 			pal_args_color = cons->context->pal.args;
 			pal_input_color = cons->context->pal.input;
 			pal_reset = cons->context->pal.reset;
@@ -1250,7 +1250,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 		   *pal_args_color = "",
 		   *pal_reset = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_help_color = cons->context->pal.help;
 		pal_input_color = cons->context->pal.input;
 		pal_label_color = cons->context->pal.label;
@@ -1326,7 +1326,7 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	const char *pal_reset = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_reset = cons->context->pal.reset;
 	}
 

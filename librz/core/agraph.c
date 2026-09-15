@@ -776,8 +776,7 @@ static void mini_RzANode_print(const RzAGraph *g, const RzANode *n, const AGraph
 	return;
 }
 
-static inline char *get_node_color(int cur) {
-	RzCons *cons = rz_cons_singleton();
+static inline const char *get_node_color(int cur, const RzCons *cons) {
 	return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
 }
 
@@ -865,7 +864,7 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 
 	// TODO: check if node is traced or not and show proper color
 	// This info must be stored inside RzANode* from RzCore*
-	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(cur));
+	rz_cons_canvas_box(g->can, n->x, n->y, n->w, n->h, get_node_color(cur, g->cons));
 }
 
 /* =========================================================================
@@ -3022,7 +3021,6 @@ static void fold_asm_trace(RzCore *core, RzAGraph *g) {
 	}
 	rz_iterator_free(nodes);
 	g->need_update_dim = 1;
-	// agraph_refresh (rz_cons_singleton ()->event_data);
 }
 
 static void delete_dup_edges(RzAGraph *g) {
@@ -4034,7 +4032,7 @@ static void agraph_toggle_mini(RzAGraph *g) {
 		n->is_mini = !n->is_mini;
 	}
 	g->need_update_dim = 1;
-	agraph_refresh(rz_cons_singleton()->event_data);
+	agraph_refresh(g->cons->event_data);
 	agraph_set_layout((RzAGraph *)g);
 }
 
@@ -4308,9 +4306,9 @@ static int agraph_refresh(AGraphContext *grp_ctx) {
 		return 0;
 	}
 
-	rz_cons_singleton()->event_data = grp_ctx;
 	RzCore *core = grp_ctx->core;
 	RzAGraph *g = grp_ctx->g;
+	g->cons->event_data = grp_ctx;
 	RzAnalysisFunction *f = NULL;
 	RzAnalysisFunction **fcn = grp_ctx->fcn;
 
@@ -4442,7 +4440,7 @@ static void sdb_set_enc(Sdb *db, const char *key, const char *v) {
 
 static void agraph_sdb_init(const RzAGraph *g) {
 	sdb_bool_set(g->db, "agraph.is_callgraph", g->is_callgraph);
-	RzCons *cons = rz_cons_singleton();
+	const RzCons *cons = g->cons;
 	sdb_set_enc(g->db, "agraph.color_box", cons->context->pal.graph_box);
 	sdb_set_enc(g->db, "agraph.color_box2", cons->context->pal.graph_box2);
 	sdb_set_enc(g->db, "agraph.color_box3", cons->context->pal.graph_box3);
@@ -4890,11 +4888,12 @@ RZ_API void rz_agraph_free(RzAGraph *g) {
 	free(g);
 }
 
-RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can) {
+RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can, RzCons *cons) {
 	RzAGraph *g = RZ_NEW0(RzAGraph);
 	if (!g) {
 		return NULL;
 	}
+	g->cons = cons;
 	g->can = can;
 	g->dummy = true;
 	agraph_init(g);
@@ -5134,7 +5133,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			return false;
 		}
 		check_function_modified(core, fcn);
-		g = rz_agraph_new(can);
+		g = rz_agraph_new(can, core->cons);
 		if (!g) {
 			rz_cons_canvas_free(can);
 			rz_config_hold_restore(hc);
@@ -5263,7 +5262,7 @@ RZ_IPI int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			get_bbupdate(g, core, fcn);
 		} break;
 		case '\\':
-			nextword(core, g, rz_cons_singleton()->highlight);
+			nextword(core, g, g->cons->highlight);
 			break;
 		case 'b':
 			rz_core_visual_browse(core, "");
@@ -6001,10 +6000,10 @@ failure:
  *
  * \return RzAGraph* The agraph or NULL in case of failure
  */
-RZ_API RZ_OWN RzAGraph *rz_core_create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8) {
-	rz_return_val_if_fail(graph, NULL);
+RZ_API RZ_OWN RzAGraph *rz_core_create_agraph_from_graph(RZ_NONNULL RzCons *cons, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8) {
+	rz_return_val_if_fail(cons && graph, NULL);
 
-	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1));
+	RzAGraph *result_agraph = rz_agraph_new(rz_cons_canvas_new(1, 1), cons);
 	if (!result_agraph) {
 		return NULL;
 	}
