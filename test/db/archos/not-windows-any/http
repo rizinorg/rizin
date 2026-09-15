@@ -6,6 +6,7 @@ o http://127.0.0.1:9000/simple.html
 r
 b 256
 ps
+!python3 scripts/kill_http_server.py
 EOF
 EXPECT=<<EOF
 342
