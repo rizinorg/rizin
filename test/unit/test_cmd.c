@@ -1456,8 +1456,19 @@ bool test_cmd_descriptor_folder_arg(void) {
 	mu_end;
 }
 
+bool test_cmd_status_tostring(void) {
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_OK), "OK", "OK status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_WRONG_ARGS), "WRONG_ARGS", "WRONG_ARGS status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_ERROR), "ERROR", "ERROR status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_INVALID), "INVALID", "INVALID status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_NONEXISTINGCMD), "NONEXISTINGCMD", "NONEXISTINGCMD status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_EXIT), "EXIT", "EXIT status string");
+	mu_end;
+}
+
 int all_tests() {
 	rz_cons_new();
+	mu_run_test(test_cmd_status_tostring);
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
 	mu_run_test(test_parsed_args_args);

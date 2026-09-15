@@ -337,6 +337,7 @@ struct rz_core_t {
 	bool is_lastcmd;
 	bool is_pipe;
 	char *cmdlog;
+	RzCmdStatus last_cmd_status; ///< Status of the last command line executed via the rzshell, exposed to scripts/rzpipe
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks

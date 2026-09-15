@@ -557,6 +557,8 @@ static inline int rz_cmd_status2int(RzCmdStatus s) {
 	}
 }
 
+RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status);
+
 /* RzCmdDescriptor */
 RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help);
