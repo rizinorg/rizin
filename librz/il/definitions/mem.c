@@ -34,7 +34,6 @@ static RzILMem *mem_new(RZ_NONNULL RzBuffer *buf, ut32 key_len, bool take_buf_ow
  *
  * \param buf The buffer of the memory.
  * \param key_len The number of bits a memory key requires.
- * \param take_buf_ownerhip If set, RzILMem takes ownership of the buffer.
  *
  * \return The new RzILMem object, or NULL in case of failure.
  */
@@ -49,7 +48,6 @@ RZ_API RZ_OWN RzILMem *rz_il_mem_new_owned(RZ_NONNULL RZ_OWN RzBuffer *buf, ut32
  *
  * \param buf The buffer of the memory.
  * \param key_len The number of bits a memory key requires.
- * \param take_buf_ownerhip If set, RzILMem takes ownership of the buffer.
  *
  * \return The new RzILMem object, or NULL in case of failure.
  */
