@@ -789,6 +789,7 @@ static bool set_abstr_pc(RzAbsIntInstance *inst, RzAbsIntState *state, RzAbsIntV
  * The overall idea of this kind of call identification is from:
  * Rev.ng: a unified binary analysis framework to recover CFGs and function boundaries (CC 2017)
  * https://doi.org/10.1145/3033019.3033028
+ * https://web.archive.org/web/20250904202421/https://hexhive.epfl.ch/publications/files/17CC.pdf
  */
 static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal *val) {
 	RzBitVector bv;
