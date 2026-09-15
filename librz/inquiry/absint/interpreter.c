@@ -472,26 +472,28 @@ RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBloc
 	rz_vector_reserve(&interp_block->insn_offsets, insns_count);
 	for (size_t i = 0; i < rz_pvector_len(il_block->il_ops); i++) {
 		RzILCacheInsnPkt *insn = rz_pvector_at(il_block->il_ops, i);
-		if (i > 0) {
-			// Close block if hitting another block's start address
-			while (rz_rbtree_iter_has(&next_it)) {
-				RzIntervalNode *next_node = rz_interval_tree_iter_get(&next_it);
-				if (next_node->start > cur) {
-					break;
-				}
-				if (next_node->start == cur) {
-					// hit found, the block will not include this instruction anymore.
-					if (trace) {
-						RZ_LOG_INFO("  closing early because an op hit a following block @ 0x%" PFMT64x "\n\n", next_node->start);
-					}
-					goto close;
-				}
-				rz_rbtree_iter_next(&next_it);
-			}
-
-			ut16 off = cur - block_start;
-			rz_vector_push(&interp_block->insn_offsets, &off);
+		if (i == 0) {
+			cur += insn->insn_pkt_size;
+			continue;
 		}
+		// Close block if hitting another block's start address
+		while (rz_rbtree_iter_has(&next_it)) {
+			RzIntervalNode *next_node = rz_interval_tree_iter_get(&next_it);
+			if (next_node->start > cur) {
+				break;
+			}
+			if (next_node->start == cur) {
+				// hit found, the block will not include this instruction anymore.
+				if (trace) {
+					RZ_LOG_INFO("  closing early because an op hit a following block @ 0x%" PFMT64x "\n\n", next_node->start);
+				}
+				goto close;
+			}
+			rz_rbtree_iter_next(&next_it);
+		}
+
+		ut16 off = cur - block_start;
+		rz_vector_push(&interp_block->insn_offsets, &off);
 		if (trace) {
 			RZ_LOG_INFO("  insn packet @ 0x%" PFMT64x "\n", cur);
 		}
