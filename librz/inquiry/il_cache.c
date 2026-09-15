@@ -72,7 +72,7 @@ static bool il_op_is_not_only_fallthrough(RzILOpEffect *op, ut64 fallthrough_add
 	}
 }
 
-RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
+static RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
 	RzILCacheBlock *il_block = NULL;
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
