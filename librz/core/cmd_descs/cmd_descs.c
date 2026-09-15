@@ -23929,7 +23929,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
 
-	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, ae_cd, "aI", NULL, NULL, &aI_help);
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aI", NULL, NULL, &aI_help);
 	rz_warn_if_fail(aI_cd);
 	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
 	rz_warn_if_fail(inquiry_analyze_function_cd);
