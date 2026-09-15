@@ -4,6 +4,14 @@
 
 #include <rz_inquiry/rz_il_cache.h>
 
+/**
+ * \brief Builds a string describing the RzILCacheBlock.
+ * For logging and debugging.
+ *
+ * \param block The block to get the string representation for.
+ *
+ * \return The string describing the block or NULL in case of failure.
+ */
 RZ_API RZ_OWN char *rz_il_cache_block_str(RZ_NONNULL const RzILCacheBlock *block) {
 	rz_return_val_if_fail(block, NULL);
 	RzStrBuf sb;
@@ -176,8 +184,6 @@ RZ_API const RzILCacheBlock *rz_il_cache_lift_il_block(RzILCache *cache, ut64 ad
 	rz_return_val_if_fail(cache && rz_analysis_plugin_current(cache->analysis) && cache->io, NULL);
 	RzILCacheBlock *block = ht_up_find(cache->cache, addr, NULL);
 	if (block) {
-		char *bstr = rz_il_cache_block_str(block);
-		free(bstr);
 		return block;
 	}
 	block = lift_il_block(cache, addr);
