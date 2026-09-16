@@ -245,7 +245,7 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		}
 		dbg->forked_pid = data;
 		RzDebugProcess *forked_child = RZ_NEW0(RzDebugProcess);
-		forked_child->pid=data;
+		forked_child->pid = data;
 		rz_list_append(dbg->processes, (void *)data);
 		if (dowait) {
 			// The new child has a pending SIGSTOP. We can't affect it until it
@@ -408,7 +408,7 @@ static void linux_remove_thread(RzDebug *dbg, int tid) {
 }
 
 bool linux_select(RzDebug *dbg, int pid, int tid) {
-	if(rz_list_contains(dbg->processes, (void *)pid)){
+	if (rz_list_contains(dbg->processes, (void *)pid)) {
 		return true;
 	}
 	if (dbg->pid != -1 && dbg->pid != pid) {
@@ -743,8 +743,8 @@ RzDebugInfo *linux_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
-	RzDebugPid *pid_info = RZ_NEW0(RzDebugPid);
+RzDebugProcess *fill_pid_info(const char *info, const char *path, int tid) {
+	RzDebugProcess *pid_info = RZ_NEW0(RzDebugProcess);
 	if (!pid_info) {
 		return NULL;
 	}
@@ -752,23 +752,23 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (ptr) {
 		switch (*(ptr + 7)) {
 		case 'R':
-			pid_info->status = RZ_DBG_PROC_RUN;
+			pid_info->state = RZ_DBG_PROC_RUN;
 			break;
 		case 'S':
-			pid_info->status = RZ_DBG_PROC_SLEEP;
+			pid_info->state = RZ_DBG_PROC_SLEEP;
 			break;
 		case 'T':
 		case 't':
-			pid_info->status = RZ_DBG_PROC_STOP;
+			pid_info->state = RZ_DBG_PROC_STOP;
 			break;
 		case 'Z':
-			pid_info->status = RZ_DBG_PROC_ZOMBIE;
+			pid_info->state = RZ_DBG_PROC_ZOMBIE;
 			break;
 		case 'X':
-			pid_info->status = RZ_DBG_PROC_DEAD;
+			pid_info->state = RZ_DBG_PROC_DEAD;
 			break;
 		default:
-			pid_info->status = RZ_DBG_PROC_SLEEP;
+			pid_info->state = RZ_DBG_PROC_SLEEP;
 			break;
 		}
 	}
@@ -883,107 +883,146 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	return tls;
 }
 
-RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list) {
-	int i = 0, thid = 0;
-	char *ptr, buf[PATH_MAX];
-	RzDebugPid *pid_info = NULL;
-	ut64 pc = 0;
-	ut64 tls = 0;
+static ut64 linux_get_pc_for_tid(RzDebug *dbg, int tid) {
 	int prev_tid = dbg->tid;
+	if (prev_tid != tid) {
+		linux_attach_single_pid(dbg, tid);
+		dbg->tid = tid;
+	}
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
+	if (prev_tid != tid) {
+		linux_attach_single_pid(dbg, prev_tid);
+		dbg->tid = prev_tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+	return pc;
+}
+
+static RzDebugThreadState linux_parse_thread_state(const char *info) {
+	const char *ptr = strstr(info, "State:");
+	if (!ptr) {
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+	switch (*(ptr + 7)) {
+	case 'R':
+		return RZ_DBG_THREAD_RUN;
+	case 'S':
+		return RZ_DBG_THREAD_SLEEP;
+	case 'D':
+		return RZ_DBG_THREAD_WAIT;
+	case 'T':
+	case 't':
+		return RZ_DBG_THREAD_STOP;
+	case 'Z':
+		return RZ_DBG_THREAD_ZOMBIE;
+	case 'X':
+	case 'x':
+		return RZ_DBG_THREAD_DEAD;
+	default:
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+}
+
+static RzDebugThread *fill_thread_state_info(const char *info, int tid, int process_pid) {
+	RzDebugThread *thread_info = RZ_NEW0(RzDebugThread);
+	if (!thread_info) {
+		return NULL;
+	}
+	thread_info->tid = tid;
+	thread_info->process_pid = process_pid;
+	thread_info->state = linux_parse_thread_state(info);
+	return thread_info;
+}
+
+RzList /*<RzDebugThread *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugThread *>*/ *list) {
+	char *ptr, buf[PATH_MAX];
+	int prev_tid = dbg->tid;
+	int thid = 0;
 
 	if (!pid) {
 		rz_list_free(list);
 		return NULL;
 	}
 
-	list->free = (RzListFree)&rz_debug_pid_free;
-	/* if this process has a task directory, use that */
+	list->free = ;
+
 	snprintf(buf, sizeof(buf), "/proc/%d/task", pid);
 	if (rz_file_is_directory(buf)) {
 		struct dirent *de;
 		DIR *dh = opendir(buf);
-		// Update the process' memory maps to set correct paths
+		if (!dh) {
+			return list;
+		}
 		rz_debug_map_sync(dbg);
+
 		while ((de = readdir(dh))) {
 			if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) {
 				continue;
 			}
 			int tid = atoi(de->d_name);
 			char info[PATH_MAX];
-			int uid = 0;
-			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
-				ptr = strstr(info, "Uid:");
-				if (ptr) {
-					uid = atoi(ptr + 4);
-				}
-				ptr = strstr(info, "Tgid:");
-				if (ptr) {
-					int tgid = atoi(ptr + 5);
-					if (tgid != pid) {
-						/* Ignore threads that aren't in the pid's thread group */
-						continue;
-					}
-				}
-			}
 
-			// Switch to the currently inspected thread to get it's program counter
-			if (dbg->tid != tid) {
-				linux_attach_single_pid(dbg, tid);
-				dbg->tid = tid;
-			}
-
-			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(dbg, "PC");
-#if !__ANDROID__
-			tls = get_linux_tls_val(dbg, dbg->tid);
-#endif
-			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
-				// Get information about pid (status, pc, etc.)
-				pid_info = fill_pid_info(info, NULL, tid);
-				pid_info->pc = pc;
-			} else {
-				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
-			}
-			// Handle it in the caller if tls is not found. Setting it here anyways.
-			pid_info->tls = tls;
-			rz_list_append(list, pid_info);
-		}
-		dbg->n_threads = rz_list_length(list);
-		closedir(dh);
-		// Return to the original thread
-		linux_attach_single_pid(dbg, prev_tid);
-		dbg->tid = prev_tid;
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-	} else {
-		/* Some linux configurations might hide threads from /proc, use this workaround instead */
-#undef MAXPID
-#define MAXPID 99999
-		/* otherwise, brute force the pids */
-		for (i = pid; i < MAXPID; i++) { // XXX
-			if (procfs_pid_slurp(i, "status", buf, sizeof(buf)) == -1) {
+			if (procfs_pid_slurp(tid, "status", info, sizeof(info)) == -1) {
 				continue;
 			}
-			int uid = 0;
-			/* look for a thread group id */
-			ptr = strstr(buf, "Uid:");
-			if (ptr) {
-				uid = atoi(ptr + 4);
-			}
-			ptr = strstr(buf, "Tgid:");
+
+			ptr = strstr(info, "Tgid:");
 			if (ptr) {
 				int tgid = atoi(ptr + 5);
-
-				/* if it is not in our thread group, we don't want it */
 				if (tgid != pid) {
 					continue;
 				}
-
-				if (procfs_pid_slurp(i, "comm", buf, sizeof(buf)) == -1) {
-					/* fall back to auto-id */
-					snprintf(buf, sizeof(buf), "thread_%d", thid++);
-				}
-				rz_list_append(list, rz_debug_pid_new(buf, i, uid, 's', 0));
 			}
+
+			RzDebugThread *thread_info = fill_thread_state_info(info, tid, pid);
+			if (!thread_info) {
+				continue;
+			}
+
+			thread_info->pc = linux_get_pc_for_tid(dbg, tid);
+
+#if !__ANDROID__
+			thread_info->tls_base = get_linux_tls_val(dbg, tid);
+#else
+			thread_info->tls_base = 0;
+#endif
+			rz_list_append(list, thread_info);
+		}
+		dbg->n_threads = rz_list_length(list);
+		closedir(dh);
+
+		/* restore selection once, after the whole listing pass */
+		if (dbg->tid != prev_tid) {
+			linux_attach_single_pid(dbg, prev_tid);
+			dbg->tid = prev_tid;
+			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+		}
+	} else {
+		/* Some linux configurations hide threads from /proc; brute-force fallback.
+		 * No ptrace switching here - only cheap procfs data is available. */
+#undef MAXPID
+#define MAXPID 99999
+		for (int i = pid; i < MAXPID; i++) {
+			if (procfs_pid_slurp(i, "status", buf, sizeof(buf)) == -1) {
+				continue;
+			}
+			ptr = strstr(buf, "Tgid:");
+			if (!ptr) {
+				continue;
+			}
+			int tgid = atoi(ptr + 5);
+			if (tgid != pid) {
+				continue;
+			}
+
+			RzDebugThread *thread_info = fill_thread_state_info(buf, i, pid);
+			if (!thread_info) {
+				continue;
+			}
+			/* pc/tls unknown in this fallback path — leave zeroed rather than fabricate */
+			rz_list_append(list, thread_info);
+			thid++;
 		}
 	}
 	return list;
