@@ -60,10 +60,25 @@ typedef enum {
 	RZ_DBG_PROC_STOP = 's',
 	RZ_DBG_PROC_RUN = 'r',
 	RZ_DBG_PROC_SLEEP = 'S',
+	RZ_DBG_PROC_WAIT = 'D',
 	RZ_DBG_PROC_ZOMBIE = 'z',
 	RZ_DBG_PROC_DEAD = 'd',
-	RZ_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
-} RzDebugPidState;
+	RZ_DBG_PROC_RAISED = 'R', // has produced a signal, breakpoint, etc.
+	RZ_DBG_PROC_UNKNOWN = '?'
+} RzDebugProcessState;
+
+/*
+ * states a thread can be in
+ */
+typedef enum {
+	RZ_DBG_THREAD_RUN = 'r',
+	RZ_DBG_THREAD_SLEEP = 'S',
+	RZ_DBG_THREAD_WAIT = 'D',
+	RZ_DBG_THREAD_STOP = 's',
+	RZ_DBG_THREAD_ZOMBIE = 'z',
+	RZ_DBG_THREAD_DEAD = 'd',
+	RZ_DBG_THREAD_UNKNOWN = '?'
+} RzDebugThreadState;
 
 // signal handling must support application and debugger level options
 typedef enum {
@@ -235,13 +250,6 @@ typedef struct rz_debug_tracepoint_t {
 	ut64 stamp;
 } RzDebugTracepoint;
 
-typedef struct rz_debug_process_t{
-	int pid;
-	int n_threads;
-	RzList /*<void *>*/ *threads; /* NOTE: list contents are platform-specific */
-	RzReg reg;
-} RzDebugProcess;
-
 typedef struct rz_debug_t {
 	char *arch;
 	RZ_DEPRECATE int bits; ///< bad indicator for the bitness of the debuggee
@@ -252,6 +260,7 @@ typedef struct rz_debug_t {
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
+	RzList /*<RzDebugThread> */ *threads;
 	RzList /*<RzDebugProcess>*/ *processes;
 	RzDebugProcess *cur_proc;
 
@@ -406,19 +415,27 @@ typedef struct rz_debug_plugin_t {
 	// TODO: use RzList here
 } RzDebugPlugin;
 
+typedef struct rz_debug_thread_t {
+	int tid;
+	int process_pid;
+	ut64 pc;
+	ut64 tls_base;
+	RzDebugThreadState state;
+	void *native; // OS Specific structs
+} RzDebugThread;
+
 // TODO: rename to rz_debug_process_t ? maybe a thread too ?
-typedef struct rz_debug_pid_t {
+typedef struct rz_debug_process_t {
 	int pid;
 	int ppid;
-	char status; /* stopped, running, zombie, sleeping ,... */
+	RzDebugProcessState state; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	bool signalled;
 	char *path;
 	int uid;
 	int gid;
-	ut64 pc;
-	ut64 tls; ///< Thread local storage base (used for accessing thread specific variables)
-} RzDebugPid;
+	RzList /* <RzDebugThread*>*/ *threads;
+} RzDebugProcess;
 
 typedef struct rz_backtrace_t {
 	RzDebugFrame *frame;
