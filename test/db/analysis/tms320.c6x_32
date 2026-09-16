@@ -76,7 +76,7 @@ EXPECT=<<EOF
         |   0x00000018      nop
 jump: 0x00000054
 size: 4
-type: null
+type: ill
 jump: 0x0000001c
 type: ret
 type: cret
@@ -533,4 +533,64 @@ EXPECT=<<EOF
 0x0800004c      mvkh  .s1 0x800,a0
 0x08000050      nop
 EOF
+RUN
+
+NAME=c6x compact packets: header by position, cl6x 7.4.4 output, real C674x firmware
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=false
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx 4602baea2874ca01e805e001740280012ae05002ea05600276220002008020e0
+s 0x1c
+pd 1
+s 0
+pd 2
+wx 2712a60621a10c30a2039026660c3c0c6e4c6e0c675cd062ef81c682010420ef
+pd 13
+wx 58103d0232036e2c2fd64d1212fbde1f4602faa486423f025dbc6e6c2080c6ea @ 0
+s 0
+pd 6
+wx d31ae98620a1ca2e4dac6e6ce652be016e6cefa1f78c45dcb4823c020000a0e6 @ 0
+s 0
+pd 10
+EOF
+EXPECT=<<EOF
+0x0000001c      .fphead n, l, w, bu, br, nosat, 0000001b
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000000      cmplt .l2 0x0,b4,b0
+0x00000002      ||    mvk .l1 0x0,a5
+0x00000004      [!b0] bnop .s1 0x30,0x5
+0x00000008      ||    [b0] mvc .s2 b4,ilc
+0x0000000c      sploop 1
+0x0000000e      ldw   .d1 *a4++[0x1],a3
+0x00000010      nop   3
+0x00000012      nop   1
+0x00000014      spkernel 40
+0x00000016      ||    add .l1 a3,a5,a5
+0x00000018      bnop  .s2 b3,0x4
+0x0000001a      mv    .l1 a5,a4
+0x0000001c      .fphead n, l, w, bu, nobr, nosat, 1111001b
+0x00000000      add   .l1x 0x8,b15,a4
+0x00000004      mvk   .s1 0x20,a6
+0x00000006      nop   2
+0x00000008      addk  .s2 0x16,b4
+0x0000000a      ldnw  .d2 *b4,b4
+0x0000000c      ||    callp .s2 0xfffffffffffef7d8,b3
+0x00000000      mvk   .s2 0x58,b5                                      ; 'X'
+0x00000002      cmpeq .l2 b4,b5,b0
+0x00000004      [b0]  bnop .s1 0xfffffffffffffd94,0x5
+0x00000008      ldw   .d2 *+b15[0x1],a4
+0x0000000a      nop   4
+0x0000000c      ldw   .d2 *++b15[0x12],b3
+0x00000010      nop   4
+0x00000012      bnop  .s2 b3,0x5
+0x00000014      subaw .d2 b15,0x4,b15
+0x00000016      stw   .d2 b4,*+b15[0x2]
+EOF
+
 RUN
