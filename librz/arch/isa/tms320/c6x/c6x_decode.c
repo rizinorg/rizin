@@ -1212,7 +1212,12 @@ static void decode_branch_nop(C6xInsn *insn) {
 	insn->op_type = RZ_ANALYSIS_OP_TYPE_JMP;
 	insn->unit_side = BIT(w, 1);
 	OP(0).kind = C6X_OP_PCREL;
-	OP(0).v.imm.value = sext(BITS(w, 27, 16), 12) * 4;
+	// Half-word scaled inside a compact packet so that the branch can reach
+	// 16-bit code, word scaled elsewhere. This applies to BNOP's displacement
+	// and not to the plain B beside it, which stays word scaled in a compact
+	// packet -- dis6x disassembles both forms in one packet and scales only
+	// this one.
+	OP(0).v.imm.value = sext(BITS(w, 27, 16), 12) * (insn->compact_packet ? 2 : 4);
 	op_imm(&OP(1), n);
 	insn->nops = 2;
 }
@@ -2488,7 +2493,11 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 		if (fp_off < 0x1c && hdr_off + 4 <= len) {
 			ut32 hdr = big_endian ? rz_read_be32(buf + hdr_off) : rz_read_le32(buf + hdr_off);
 			ut8 slot = fp_off >> 2;
-			if ((hdr >> 28) == C6X_FP_HEADER_TAG && ((hdr >> (21 + slot)) & 1)) {
+			// A branch anywhere in a compact packet is half-word scaled, so
+			// the packet's nature matters even for a slot the header does not
+			// split into two 16-bit instructions.
+			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
+			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
 				ut16 w16 = big_endian ? rz_read_be16(buf) : rz_read_le16(buf);
 				ut8 half = (fp_off >> 1) & 1;
 				insn->word = w16;

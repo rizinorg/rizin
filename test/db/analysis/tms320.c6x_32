@@ -177,7 +177,7 @@ EXPECT=<<EOF
 0x0000000e      cmpeq .l1 a5,a3,a0
 0x00000010      [a0]  cmpltu .l1 a6,a8,a1
 0x00000014      [!a0] cmpltu .l1 a5,a3,a1
-0x00000018      [!a1] bnop .s1 0xd8,0x5
+0x00000018      [!a1] bnop .s1 0x6c,0x5
 0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0001001b
 EOF
 
@@ -484,7 +484,7 @@ EXPECT=<<EOF
 0x0000000c      ||    callp .s2 0xfffffffffffef7d8,b3
 0x00000000      mvk   .s2 0x58,b5                                      ; 'X'
 0x00000002      cmpeq .l2 b4,b5,b0
-0x00000004      [b0]  bnop .s1 0xfffffffffffffb28,0x5
+0x00000004      [b0]  bnop .s1 0xfffffffffffffd94,0x5
 0x00000008      ldw   .d2 *+b15[0x1],a4
 0x0000000a      nop   4
 0x0000000c      ldw   .d2 *++b15[0x12],b3
@@ -564,7 +564,7 @@ EXPECT=<<EOF
 0x00000002      [!a0] bnop .s1 0x154,0x5
 0x00000000      cmplt .l2 0x0,b4,b0
 0x00000002      ||    mvk .l1 0x0,a5
-0x00000004      [!b0] bnop .s1 0x30,0x5
+0x00000004      [!b0] bnop .s1 0x18,0x5
 0x00000008      ||    [b0] mvc .s2 b4,ilc
 0x0000000c      sploop 1
 0x0000000e      ldw   .d1 *a4++[0x1],a3
