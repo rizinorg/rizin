@@ -906,8 +906,34 @@ static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
 	return NULL;
 }
 
+/**
+ * \brief Sizes rizin uses when deciding how many bytes to read for one op.
+ *
+ * A slot cannot be decoded for the C6000 architecture series without its
+ * fetch-packet header, which sits at the end of the 32-byte packet, so a caller
+ * that sizes its buffer from the largest instruction reads four bytes and hands
+ * the decoder too little: a 16-bit compact slot then decodes as an unrelated
+ * 32-bit instruction. Reporting the packet size instead makes those callers read
+ * enough to see the header.
+ */
+static int tms320_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	// Only the C6000 is answered here
+	const C6xArchDesc *c6x = c6x_desc_from_cpu(analysis->cpu);
+	if (!c6x) {
+		return -1;
+	}
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return C6X_COMPACT_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return C6X_FETCH_PACKET_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN: return C6X_COMPACT_SIZE;
+	default: return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_tms320 = {
 	.name = "tms320",
+	.archinfo = tms320_archinfo,
 	.arch = "tms320",
 	.bits = 16 | 32,
 	.desc = "TMS320 DSP family code analysis plugin",
