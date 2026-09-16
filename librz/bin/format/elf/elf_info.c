@@ -100,7 +100,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_68HC12, "Motorola M68HC12" },
 	{ EM_MMA, "Fujitsu MMA Multimedia Accelerator" },
 	{ EM_PCP, "Siemens PCP" },
-	{ EM_NCPU, "Sony nCPU embeeded RISC" },
+	{ EM_NCPU, "Sony nCPU embedded RISC" },
 	{ EM_NDR1, "Denso NDR1 microprocessor" },
 	{ EM_STARCORE, "Motorola Start*Core processor" },
 	{ EM_ME16, "Toyota ME16 processor" },
@@ -781,7 +781,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 	// format byte
 	ut8 format = 0;
 	if (!sec || !rz_buf_read8_offset(sec, &curr, &format) || format != 'A') {
-		RZ_LOG_ERROR("Can't read the format byte of the RISCV attrbiute section or found a different format (expected 'A' at section start)\n");
+		RZ_LOG_ERROR("Can't read the format byte of the RISCV attribute section or found a different format (expected 'A' at section start)\n");
 		return RISCV_ATTR_NONE;
 	}
 
@@ -1539,7 +1539,9 @@ static char *get_cpu_h8xx(ELFOBJ *bin) {
 static char *get_cpu_riscv(ELFOBJ *bin) {
 	char bin_arch[256] = { 0 };
 	size_t len = 0;
-	riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	RzBuffer *sec = get_riscv_attributes_section(bin);
+	riscv_attr_type typ = get_riscv_attribute_from_section(sec, T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	rz_buf_free(sec);
 	len = RZ_MIN(len, sizeof(bin_arch));
 	if (typ == RISCV_ATTR_NT_STRING) {
 		return rz_str_ndup((const char *)bin_arch, len);
