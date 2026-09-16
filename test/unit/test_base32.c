@@ -50,6 +50,15 @@ bool test_rz_base32_encode_dyn_empty(void) {
 	mu_assert_notnull(encoded, "empty input must have an allocated encoding");
 	mu_assert_streq(encoded, "", "empty input must encode as an empty string");
 	free(encoded);
+	encoded = rz_base32_encode_dyn((const ut8 *)"ignored", 0);
+	mu_assert_notnull(encoded, "zero-length input must have an allocated encoding");
+	mu_assert_streq(encoded, "", "input length determines whether input is empty");
+	free(encoded);
+	const ut8 binary[] = { 0 };
+	encoded = rz_base32_encode_dyn(binary, sizeof(binary));
+	mu_assert_notnull(encoded, "a zero byte is not empty input");
+	mu_assert_streq(encoded, "AA======", "encode a binary zero byte");
+	free(encoded);
 	mu_end;
 }
 
