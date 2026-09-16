@@ -43,6 +43,7 @@ static bool verify_phdr_entry(ELFOBJ *bin, RzBinObjectLoadOptions *options, Elf_
 		ret = false;
 	}
 
+	entry->p_vaddr *= Elf_(rz_bin_elf_addr_scale)(bin);
 	if (!Elf_(rz_bin_elf_add_addr)(NULL, entry->p_vaddr, entry->p_memsz)) {
 		RZ_LOG_WARN("phdr entry: p_vaddr is invalid for p_memsz.\n");
 		ret = false;

@@ -136,6 +136,7 @@ if get_option('enable_tests')
     'table',
     'task',
     'threads',
+    'tms320_dwarf_regs',
     'tokens',
     'tree',
     'trie',
