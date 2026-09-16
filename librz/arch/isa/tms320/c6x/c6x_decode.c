@@ -2477,9 +2477,11 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// of the other seven words hold two 16-bit compact instructions. Look for
 	// that header ahead of the current word; if this slot is compact, decode a
 	// 16-bit instruction and take the parallel bit from the header p-bit field.
-	// Only families with the compact set are probed, so C62x/C67x are untouched;
-	// when the header is not reachable (an isolated single-word decode) the
-	// 32-bit path runs and still recognises a header word on its own.
+	// Only families with the compact set are probed, so C62x/C67x are untouched.
+	// When the header is not reachable the packet's layout is unknown, and a
+	// word that is really two compact instructions cannot be told from a 32-bit
+	// one; the caller is given the 32-bit reading, which is why the analysis
+	// path reconstructs the whole packet rather than relying on this.
 	if (desc->features & C6X_FEAT_SIMD) {
 		ut32 fp_off = (ut32)(pc & 0x1f);
 		int hdr_off = 0x1c - (int)fp_off; // header lives at packet offset 0x1c
@@ -2509,7 +2511,11 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// other slots as 16-bit compact instructions; decoding those is future
 	// work, but the header itself is recognised so it is not mis-read as a
 	// 32-bit opcode and to flag the packet as compact.
-	if ((w >> 28) == C6X_FP_HEADER_TAG) {
+	// A header is word 7 of a fetch packet, so its position decides this as
+	// much as its tag: an ordinary instruction whose top nibble happens to be
+	// the tag is not a header, and treating it as one puts packet metadata in
+	// the middle of real code.
+	if ((w >> 28) == C6X_FP_HEADER_TAG && (pc & 0x1f) == 0x1c) {
 		insn->is_header = true;
 		set_ins(insn, C6X_INS_FPHEAD);
 		insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;

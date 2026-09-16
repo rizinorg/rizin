@@ -251,3 +251,9 @@ d "addah .d1x b15,127,a4" dd7f0012 0x0
 # Unsigned subtract widening into a register pair: both sources stay single and
 # the cross path feeds src1. Found on real C674x firmware, matched to TI dis6x.
 d "subu .l2x a3,b6,b7:b6" fb771803 0x0
+
+# A word whose top nibble is the fetch-packet header tag is only a header when
+# it sits at packet offset 0x1c. rz-asm decodes at pc 0, so this one is an
+# ordinary instruction; emitting a .fphead here put packet metadata in the
+# middle of code (#6751).
+d "ldh .d1 *+a14[0x10],b21" 4602baea 0x0
