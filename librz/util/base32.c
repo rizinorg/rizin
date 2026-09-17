@@ -206,7 +206,7 @@ RZ_API size_t rz_base32_encode(RZ_OUT RZ_NONNULL char *dest, RZ_NONNULL const ut
  */
 RZ_API RZ_OWN char *rz_base32_encode_dyn(RZ_NONNULL const ut8 *src, size_t n) {
 	rz_return_val_if_fail(src, NULL);
-	if (!n) {
+	if (n < 1) {
 		return rz_str_dup("");
 	}
 	size_t buf_sz = calculate_dest_length(n) + 1;
