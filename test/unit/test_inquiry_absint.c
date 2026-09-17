@@ -849,7 +849,7 @@ bool test_absint_driver(size_t n_threads) {
 	RzAbsIntDriverConfig config = {
 		.analysis = analysis,
 		.io = io,
-		.entry_points = entry_points,
+		.fcn_entry_points = entry_points,
 		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS | RZ_ABSINT_RESULT_DIMEN_COMMENTS,
 		.trace_opts = RZ_ABSINT_TRACE_NONE,
 		.n_threads = n_threads
