@@ -11,16 +11,25 @@
 #include <windows.h>
 #endif
 
-RZ_API RZ_OWN char *sdb_lock_file(const char *f) {
-	char *buf = calloc(128, sizeof(char));
-	size_t len;
+#define BUF_SIZE 128
+
+/**
+ * \brief Creates the name of the lock file belonging to \p f.
+ *
+ * The returned string is \p f with the ".lock" suffix appended.
+ *
+ * \param f Path of the file to lock. If NULL or empty, NULL is returned.
+ * \return The newly allocated lock file name, or NULL on failure.
+ */
+RZ_API RZ_OWN char *sdb_lock_file(RZ_NULLABLE const char *f) {
 	if (!f || !*f) {
 		return NULL;
 	}
-	len = strlen(f);
-	if (len + 10 > sizeof buf) {
+	size_t len = strlen(f);
+	if (len + 10 > BUF_SIZE) {
 		return NULL;
 	}
+	char *buf = calloc(BUF_SIZE, sizeof(char));
 	memcpy(buf, f, len);
 	strcpy(buf + len, ".lock");
 	return buf;
