@@ -6515,15 +6515,15 @@ static char *choose_function_name_cb(ut64 addr, void *user) {
 	return cinquiry_choose_function_name(user, addr);
 }
 
-static bool cinquiry_absint_run(RzCore *core, RzSetU *entry_points) {
+static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	RzAbsIntDriverConfig config = {
 		.analysis = core->analysis,
 		.io = core->io,
-		.entry_points = entry_points,
+		.fcn_entry_points = fcn_entry_points,
 		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS,
 		.trace_opts = absint_trace_opts(core),
 		.n_threads = rz_config_get_integer(core->config, "inquiry.threads"),
-		.cb_user = core,
+		.choose_fcn_name_priv_data = core,
 		.choose_fcn_name = choose_function_name_cb
 	};
 	if (rz_config_get_bool(core->config, "inquiry.comment")) {

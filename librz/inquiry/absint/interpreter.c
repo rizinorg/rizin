@@ -30,8 +30,7 @@ static const RzAbsIntValueDomain *val_domain(const RzAbsIntInstance *inst) {
  */
 
 /**
- * \brief Initializes an abstract state for specified abstract kinds. Optionally with a list of registers.
- * The register name list should always be given if the architecture has some.
+ * \brief Initializes an abstract state.
  */
 RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 	RZ_NONNULL RzAbsIntInstance *inst) {
@@ -94,6 +93,12 @@ RZ_API void rz_absint_state_free(RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAb
 	free(state);
 }
 
+/**
+ * \brief Set the PC of the \p state to the given constant value.
+ *
+ * \param state The state to set the PC in.
+ * \param pc The constant value to set it to.
+ */
 RZ_API void rz_absint_state_set_pc_const(RzAbsIntState *state, ut64 pc) {
 	rz_return_if_fail(state);
 	state->pc = pc;
@@ -117,8 +122,17 @@ static bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, 
 	return true;
 }
 
+/**
+ * \brief Prints the state as string to \p sb.
+ *
+ * \param inst The abstract instance for accessing the value domain.
+ * \param state The abstract state to print.
+ * \param sb The string buffer to output the string into.
+ *
+ * \return True on success, false otherwise.
+ */
 RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
-	rz_return_val_if_fail(state && sb, false);
+	rz_return_val_if_fail(inst && state && sb, false);
 
 	rz_strbuf_append(sb, "Globals\n\n");
 	rz_strbuf_append(sb, "\tpc = ");
@@ -142,7 +156,19 @@ RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL
 	return true;
 }
 
-RZ_API void rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+/**
+ * \brief Prints the state as a _single line_ string to \p sb.
+ * Use rz_absint_state_as_str() to print more details.
+ *
+ * \param inst The abstract instance for accessing the value domain.
+ * \param state The abstract state to print.
+ * \param sb The string buffer to output the string into.
+ *
+ * \return True on success, false otherwise.
+ */
+RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+	rz_return_val_if_fail(inst && astate && sb, false);
+
 	bool first = true;
 	RzIterator *it = ht_up_as_iter_keys(astate->globals);
 	ut64 *k;
@@ -166,6 +192,7 @@ RZ_API void rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 	if (all_top) {
 		rz_strbuf_append(sb, RZ_ABSINT_STR_TOP);
 	}
+	return true;
 }
 
 static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
@@ -188,6 +215,8 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 }
 
 RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *iset, const RzAbsIntState *state) {
+	rz_return_val_if_fail(iset && state, NULL);
+
 	RzAbsIntState *r = RZ_NEW0(RzAbsIntState);
 	if (!state) {
 		return NULL;
@@ -273,6 +302,8 @@ static void interp_add_comment(RzAbsIntRunContext *ctx, ut64 addr, const char *c
  */
 
 static RzAbsIntBlock *interp_block_new(RzAbsIntInstance *inst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state) {
+	rz_return_val_if_fail(inst && entry_state, NULL);
+
 	RzAbsIntBlock *block = RZ_NEW0(RzAbsIntBlock);
 	if (!block) {
 		return NULL;
@@ -310,7 +341,16 @@ static void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks) {
 	rz_interval_tree_fini(blocks);
 }
 
-RZ_API RzAbsIntBlock *rz_absint_block_create(RzAbsIntInstance *inst, RzIntervalTree *dst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state) {
+/**
+ * \brief Creates a RzAbsIntBlock with the given state.
+ *
+ * \param inst The abstract instance to access the value domain.
+ * \param dst The interval tree to insert the block into.
+ * \param entry_state The abstract state at the entry point of the block.
+ *
+ * \return Pointer to the RzAbsIntBlock or NULL in case of failure.
+ */
+RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_create(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL RZ_OUT RzIntervalTree *dst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state) {
 	rz_return_val_if_fail(inst && dst && entry_state && entry_state->pc_state == RZ_ABSINT_PC_CONST, NULL);
 	RzAbsIntBlock *block = interp_block_new(inst, entry_state);
 	if (!block) {
@@ -333,7 +373,16 @@ static void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 t
 	rz_vector_push(&block->jump_targets, &target);
 }
 
-RZ_API RzAbsIntBlock *rz_absint_block_at(RzAbsIntRunContext *ctx, ut64 addr) {
+/**
+ * \brief Get the RzAbsIntBlock at \p addr.
+ *
+ * \param ctx The runtime context of the interpreter.
+ * \param addr The address of the block.
+ *
+ * \return Pointer to the block. NULL if there is no block at address or ctx was NULL.
+ */
+RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_at(RZ_NONNULL RzAbsIntRunContext *ctx, ut64 addr) {
+	rz_return_val_if_fail(ctx, NULL);
 	return rz_interval_tree_at(&ctx->blocks, addr);
 }
 
@@ -346,9 +395,12 @@ static void interp_block_mark_uninterpreted(RzAbsIntRunContext *ctx, RzAbsIntBlo
 	rz_list_push(ctx->queue, block);
 }
 
+/**
+ * \brief Helper struct used for searching over all blocks.
+ */
 typedef struct interp_block_with_op_at_ctx_t {
-	ut64 addr;
-	RzAbsIntBlock *found;
+	ut64 addr; ///< The address at which the found block should start.
+	RzAbsIntBlock *found; ///< The found block (NULL it not found).
 	size_t *hit_op_idx;
 } InterpBlockWithOpAtCtx;
 
@@ -372,7 +424,18 @@ static bool interp_block_with_op_at_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzAbsIntBlock *interp_block_with_op_at(RzAbsIntRunContext *ctx, ut64 addr, size_t *hit_op_idx) {
+/**
+ * \brief Finds RzAbsIntBlock which has an instruction packet at \p addr.
+ * It stops looking at the first match and returns the block.
+ *
+ * \param ctx The run context o the interpreter.
+ * \param addr The address of the instruction packet, for which we search a block which covers it.
+ * \param hit_op_idx The varaible to store the index of the instruction packet into.
+ *                   This is the index into all instruction packets of the returned block.
+ *
+ * \return The block covering the instruction at \p addr. Or NULL if there is no such block.
+ */
+static RzAbsIntBlock *interp_block_with_op_at(RzAbsIntRunContext *ctx, ut64 addr, RZ_OUT size_t *hit_op_idx) {
 	InterpBlockWithOpAtCtx lctx = {
 		.addr = addr,
 		.found = NULL,
@@ -405,7 +468,7 @@ static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, u
  * and fill instruction offsets.
  * It may also split another block if \p interp_block starts at one of its instruction addresses.
  */
-RZ_API void rz_absint_block_resolve_bounds(RzAbsIntRunContext *ctx, RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block) {
+RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block) {
 	if (interp_block->bounds_resolved) {
 		return;
 	}
@@ -511,6 +574,10 @@ close:
  *
  * This will join the state with the already known one at the same pc and add it to the
  * queue for further interpretation if there were changes.
+ *
+ * \param ctx The runtime context of the interpereter.
+ * \param as The abstract state to add. It will be joined with all other states at the same PC.
+ * \param is_fallthrough True if the PC of \p as is the starting address of the neighboring block (block didn't branch to some other location in the code).
  */
 RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as, bool is_fallthrough) {
 	rz_return_if_fail(interp_is_collecting_states(ctx));
@@ -1370,7 +1437,9 @@ static RzAbsIntLiftBlockResult interp_lift_block(RzAbsIntInstance *inst, ut64 ad
 }
 
 /**
- * \brief Run the interpreter from a single entrypoint until a fixpoint is reached
+ * \brief Run the interpreter from a single entrypoint until a fixpoint is reached.
+ * It does not follow calls!
+ * The CFG it discovers should be considered a function.
  */
 RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out) {
 	rz_return_val_if_fail(inst && res_out, RZ_ABSINT_RESULT_FAILED);
@@ -1532,6 +1601,18 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 	}
 }
 
+/**
+ * \brief Applies the results of the abstract interpreter to RzAnalysis.
+ *
+ * It converts the \p res->blocks to a function with name \p fcn_name (or a generated name if NULL).
+ * Directly applicable results like xrefs and comments are simply added to RzAnalysis.
+ *
+ * \param res The results.
+ * \param analysis The RzAnalysis instance to add the results to.
+ * \param fcn_name Optionally given function name for the function it creates for the \p res->blocks.
+ *
+ * \return True for success, false in case of failure.
+ */
 RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name) {
 	rz_return_val_if_fail(res && analysis, false);
 	char name_alt[128];
@@ -1539,7 +1620,7 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 	if (!func) {
 		// TODO: handle better than skipping everything
 		// rz_analysis_create_function() already prints the more detailed reason if there is any
-		RZ_LOG_ERROR("Could not apply analysis result as function @ 0x%" PFMT64x "\n", res->entry);
+		RZ_LOG_ERROR("Could not apply analysis result as function @ 0x%" PFMT64x ": func == NULL\n", res->entry);
 		return false;
 	}
 	RzIntervalTreeIter it;

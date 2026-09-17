@@ -251,8 +251,13 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
+/**
+ * \brief The main loop of multi-threaded abstract interpretation.
+ * It initialises: The IL cache, communication channels with the interpreter threads and collects the entry points to analyze.
+ * It then spawns n interpreter threads, serving them IO requests, IL block lifting requests, collecting their results.
+ */
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config) {
-	rz_return_val_if_fail(config && config->analysis && config->io && config->entry_points && config->n_threads > 0, false);
+	rz_return_val_if_fail(config && config->analysis && config->io && config->fcn_entry_points && config->n_threads > 0, false);
 	bool return_code = false;
 	bool breaked = false;
 
@@ -280,7 +285,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 
 	// Push all root entries
 	size_t entries_pushed = 0;
-	RzIterator *it = rz_set_u_as_iter(config->entry_points);
+	RzIterator *it = rz_set_u_as_iter(config->fcn_entry_points);
 	ut64 *entry;
 	rz_iterator_foreach(it, entry) {
 		ut64 *tmp = RZ_NEW(ut64);
@@ -358,7 +363,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
-				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->cb_user) : NULL;
+				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->choose_fcn_name_priv_data) : NULL;
 				if (!rz_absint_result_apply_to_analysis(res, config->analysis, name)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
 				}

@@ -66,7 +66,8 @@ typedef struct rz_absint_state_t {
 } RzAbsIntState;
 
 /**
- * \brief Basic Block as part of the abstract interpretation loop
+ * \brief Basic Block as part of the abstract interpretation loop.
+ *
  * Represents a block of instructions of which only the last may have a control effect.
  * Unlike IL blocks, the last instruction may also not have a control effect, which is
  * the case when the instruction directly following this block has an in-edge.
@@ -79,6 +80,9 @@ typedef struct rz_absint_block_t {
 	 * pc_state of this state must be RZ_ABSINT_PC_CONST and pc points to the first instruction of the block.
 	 */
 	RzAbsIntState *entry_state; // TODO: flatten to remove indirection
+	/**
+	 * \brief The offsets of the instructions (packets), from the block start address. 
+	 */
 	RzVector /*<ut16>*/ insn_offsets; ///< starting at the second instruction in the block (since first is always 0), offsets from the start of the block
 	bool bounds_resolved; ///< Set to true once insn_offsets and node->end are filled.
 	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzAbsIntFunctionState.queue
@@ -259,12 +263,12 @@ RZ_API RZ_NULLABLE const RzAbsIntValueDomain *rz_absint_builtin_value_domain(RzA
 typedef struct rz_absint_driver_config_t {
 	RZ_NONNULL RzAnalysis *analysis;
 	RZ_NONNULL RzIO *io;
-	RZ_NONNULL RzSetU *entry_points;
-	RzAbsIntResultDimen dimens;
-	RzAbsIntTraceOptions trace_opts;
-	size_t n_threads;
-	void *cb_user;
-	char *(*choose_fcn_name)(ut64 addr, void *user);
+	RZ_NONNULL RzSetU *fcn_entry_points; ///< Addresses considered function entry points.
+	RzAbsIntResultDimen dimens; ///< The results the interpreter can detect.
+	RzAbsIntTraceOptions trace_opts; ///< Trace options, to choose which logs to print.
+	size_t n_threads; ///< Number of interpreter threads spawned.
+	char *(*choose_fcn_name)(ut64 addr, void *priv_data); ///< Callback to generate a function name for the given address.
+	void *choose_fcn_name_priv_data; ///< Private data for the function name chooser.
 } RzAbsIntDriverConfig;
 
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config);
