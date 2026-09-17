@@ -328,6 +328,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 	int pid = dbg->tid;
 	switch (type) {
 	case RZ_REG_TYPE_DRX: {
+		bool ok = true;
 		int i;
 		long *val = (long *)buf;
 		for (i = 0; i < 8; i++) { // DR0-DR7
@@ -337,9 +338,10 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 			if (rz_debug_ptrace(dbg, PTRACE_POKEUSER, pid,
 				    (void *)rz_offsetof(struct user, u_debugreg[i]), (rz_ptrace_data_t)val[i])) {
 				rz_sys_perror("ptrace POKEUSER");
+				ok = false;
 			}
 		}
-		return sizeof(RZ_DEBUG_REG_T);
+		return ok ? sizeof(RZ_DEBUG_REG_T) : 0;
 	}
 	case RZ_REG_TYPE_GPR: {
 		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, 0, (void *)buf);

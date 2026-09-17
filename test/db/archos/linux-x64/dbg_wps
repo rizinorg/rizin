@@ -3,7 +3,38 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 ARGS=-d
 BROKEN=1
 CMDS=<<EOF
-dbw 0x80484b0 r
+s 0x80484b0
+dbw r
+dc
+dr rip
+EOF
+EXPECT=<<EOF
+0x08048409
+EOF
+RUN
+
+NAME=wwatchpoint test
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+s 0x80484b0
+dbw w
+dc
+dr rip
+EOF
+EXPECT=<<EOF
+0x08048409
+EOF
+RUN
+
+NAME=rwwatchpoint test
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+BROKEN=1
+CMDS=<<EOF
+s 0x80484b0
+dbw rw
 dc
 dr rip
 EOF

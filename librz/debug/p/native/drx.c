@@ -89,7 +89,10 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	switch (rwx) {
 	case 1: rwx = 0; break;
 	case 2: rwx = 1; break;
+	case 3: rwx = 3; break;
 	case 4: rwx = 3; break;
+	case 6: rwx = 3; break;
+	case 7: rwx = 3; break;
 	default:
 		rwx = 0;
 	}
@@ -210,7 +213,9 @@ bool drx_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (bp->nhwbps < 4) {
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_DRX, false);
 		rz_debug_drx_set(dbg, bp->nhwbps, b->addr, b->size, b->perm, 0);
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_DRX, true);
+		if (!rz_debug_reg_sync(dbg, RZ_REG_TYPE_DRX, true)) {
+			return false;
+		}
 		bp->nhwbps++;
 		return true;
 	}
