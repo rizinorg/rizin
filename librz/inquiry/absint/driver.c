@@ -29,13 +29,13 @@
 typedef struct interp_thread InterpThread;
 
 /**
- * \brief Message from an interpreter to the main loop
+ * \brief Request from an interpreter to the main loop
  */
 typedef struct interp_driver_message_t {
 	enum {
-		DRIVER_MESSAGE_IO_READ,
-		DRIVER_MESSAGE_LIFT_BLOCK,
-		DRIVER_MESSAGE_INTERP_RESULT
+		DRIVER_MESSAGE_IO_READ, ///< The interpreter requests an IO read.
+		DRIVER_MESSAGE_LIFT_BLOCK, ///< The interpreter requests lifting a block.
+		DRIVER_MESSAGE_INTERP_RESULT ///< The interpreter delivers its results.
 	} type;
 	InterpThread *sender;
 	union {
@@ -55,26 +55,42 @@ typedef struct interp_driver_message_t {
 #define DRIVER_MAIN_CH_SIZE 16 ///< TODO: optimize this to be small but blocking any interpreters under practical circumstances
 
 typedef struct interp_driver_t {
-	RzThreadQueue /* ut64 */ *entry_points_ch; ///< Main delivers entry points to multiple interpreters with this. TODO: linked list is not optimal, but rbuf may lead to starvation
-	RzThreadRingBuf *main_ch; ///< Channel to main. Multiple interpreters send info requests and analysis results with this.
+	/**
+	 * \brief Main -> Interpreters.
+	 * Main delivers entry points to multiple interpreters with this.
+	 * TODO: The queue is not the optimal data structure (needs heap data).
+	 * But rbuf may lead to starvation.
+	 */
+	RzThreadQueue /*<ut64*>*/ *entry_points_ch;
+	/**
+	 * \brief Interpreters -> Main.
+	 * Multiple interpreters send info requests and analysis results with this.
+	 */
+	RzThreadRingBuf /*<InterpDriverMessage>*/ *main_ch;
+	/**
+	 * \brief Flags of result types the interpreters collect.
+	 */
 	RzAbsIntResultDimen dimens;
+	/**
+	 * \brief Flags for what is logged.
+	 */
 	RzAbsIntTraceOptions trace_opts;
 } InterpDriver;
 
 /**
- * \brief Message from the main loop to an interpreter thread
- * Currently corresponds to exactly one request sent on InterpDriver.main_ch
+ * \brief Answer from the main loop to an interpreter thread
+ * Currently corresponds to exactly one request sent on InterpDriver.main_ch.
  */
 typedef struct interp_thread_message_t {
 	enum {
-		INTERP_MESSAGE_IO_READ_RESULT,
-		INTERP_MESSAGE_LIFT_BLOCK_RESULT
+		INTERP_ANSWER_IO_READ,
+		INTERP_ANSWER_LIFT_BLOCK
 	} type;
 	union {
-		RzAbsIntIOReadResult io_read_result;
-		const RzILCacheBlock *lift_block_result;
+		RzAbsIntIOReadResult io_read_result; ///< Flags of the IO read result (ok, top, error/stop).
+		const RzILCacheBlock *lift_block_result; ///< The requested IL block. NULL in case of failure.
 	} payload;
-} InterpThreadMessage;
+} InterpDriverAnswer;
 
 struct interp_thread {
 	InterpDriver *driver;
@@ -129,11 +145,11 @@ static RzAbsIntIOReadResult send_io_read(RZ_NONNULL RzAbsIntIOReadRequest *req, 
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_IO_READ_RESULT_BREAK;
 	}
-	InterpThreadMessage ret;
+	InterpDriverAnswer ret;
 	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_IO_READ_RESULT_BREAK;
 	}
-	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_IO_READ_RESULT, RZ_ABSINT_IO_READ_RESULT_BREAK);
+	rz_return_val_if_fail(ret.type == INTERP_ANSWER_IO_READ, RZ_ABSINT_IO_READ_RESULT_BREAK);
 	return ret.payload.io_read_result;
 }
 
@@ -149,11 +165,11 @@ static RzAbsIntLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBloc
 	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK;
 	}
-	InterpThreadMessage ret;
+	InterpDriverAnswer ret;
 	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
 		return RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK;
 	}
-	rz_return_val_if_fail(ret.type == INTERP_MESSAGE_LIFT_BLOCK_RESULT, RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK);
+	rz_return_val_if_fail(ret.type == INTERP_ANSWER_LIFT_BLOCK, RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK);
 	if (ret.payload.lift_block_result) {
 		*block_out = ret.payload.lift_block_result;
 		return RZ_ABSINT_LIFT_BLOCK_RESULT_OK;
@@ -167,7 +183,7 @@ static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *drive
 		return NULL;
 	}
 	ctx->driver = driver;
-	ctx->ch = rz_th_ring_buf_new(1, sizeof(InterpThreadMessage)); // At the moment, threads directly wait after a single request, so size 1 is enough
+	ctx->ch = rz_th_ring_buf_new(1, sizeof(InterpDriverAnswer)); // At the moment, threads directly wait after a single request, so size 1 is enough
 	if (!ctx->ch) {
 		goto err_ctx;
 	}
@@ -315,8 +331,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		switch (msg.type) {
 		case DRIVER_MESSAGE_IO_READ: {
 			RzAbsIntIOReadResult res = handle_io_request(msg.sender->inst->il_ctx, msg.payload.io_read.request);
-			InterpThreadMessage res_msg = {
-				.type = INTERP_MESSAGE_IO_READ_RESULT,
+			InterpDriverAnswer res_msg = {
+				.type = INTERP_ANSWER_IO_READ,
 				.payload = {
 					.io_read_result = res }
 			};
@@ -328,8 +344,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 		case DRIVER_MESSAGE_LIFT_BLOCK: {
 			const RzILCacheBlock *block = rz_il_cache_lift_il_block(il_cache, msg.payload.lift_block.addr);
-			InterpThreadMessage res_msg = {
-				.type = INTERP_MESSAGE_LIFT_BLOCK_RESULT,
+			InterpDriverAnswer res_msg = {
+				.type = INTERP_ANSWER_LIFT_BLOCK,
 				.payload = {
 					.lift_block_result = block }
 			};
