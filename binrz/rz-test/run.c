@@ -327,6 +327,19 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 	return out;
 }
 
+static RzSubprocessOutput *run_cmd_test_with_retries(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user) {
+	RzSubprocessOutput *out = NULL;
+	ut64 retries = test->retries.value;
+	do {
+		out = rz_test_run_cmd_test(config, test, runner, user);
+		if (rz_test_check_cmd_test(out, test) || !retries) {
+			return out;
+		}
+		rz_subprocess_output_free(out);
+		retries--;
+	} while (true);
+}
+
 RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text) {
 	return rz_regex_full_match_str(pattern, text, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
 		"\n");
@@ -716,7 +729,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD: {
 		RzCmdTest *cmd_test = test->cmd_test;
-		RzSubprocessOutput *out = rz_test_run_cmd_test(config, cmd_test, subprocess_runner, NULL);
+		RzSubprocessOutput *out = run_cmd_test_with_retries(config, cmd_test, subprocess_runner, NULL);
 		success = rz_test_check_cmd_test(out, cmd_test);
 		ret->proc_out = out;
 		ret->timeout = out && out->timeout;

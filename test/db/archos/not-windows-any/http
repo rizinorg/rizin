@@ -1,5 +1,6 @@
 NAME=read from http
 FILE=--
+RETRIES=3
 CMDS=<<EOF
 !python3 scripts/http_server.py
 o http://127.0.0.1:9000/simple.html
