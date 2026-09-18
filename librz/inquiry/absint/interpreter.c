@@ -926,20 +926,11 @@ RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point
 	res->entry = entry_point;
 
 	if (inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
-		RZ_LOG_INFO("============ final absint blocks ============\n\n");
-		RzIntervalTreeIter it;
-		RzAbsIntBlock *interp_block;
-		rz_interval_tree_foreach (&ctx.blocks, it, interp_block) {
-			RZ_LOG_INFO("0x%" PFMT64x "%s\n", interp_block->entry_state->pc, interp_block->non_fallthrough_in ? " <-" : "");
-			if (interp_block->is_fallthrough) {
-				RZ_LOG_INFO("  -> 0x%" PFMT64x " (fallthrough)\n", rz_absint_block_get_end(interp_block) + 1);
-			}
-			ut64 *it;
-			rz_vector_foreach (&interp_block->jump_targets, it) {
-				RZ_LOG_INFO("  -> 0x%" PFMT64x "\n", *it);
-			}
-			RZ_LOG_INFO("\n");
-		}
+		RzStrBuf sb = { 0 };
+		rz_strbuf_init(&sb);
+		interp_block_tree_as_str(&ctx.blocks, &sb);
+		RZ_LOG_INFO("%s", rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
 	}
 
 	if (dimen != RZ_ABSINT_RESULT_DIMEN_BASE) {

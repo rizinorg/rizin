@@ -312,11 +312,30 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 	}
 }
 
-RZ_IPI RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
+RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
 	RzAbsIntBlock *r = rz_list_pop(ctx->queue);
 	if (!r) {
 		return NULL;
 	}
 	r->uninterpreted = false;
 	return r;
+}
+
+RZ_IPI bool interp_block_tree_as_str(const RzIntervalTree /* RzAbsIntBlock */ *blocks, RZ_NONNULL RZ_OUT RzStrBuf *sb) {
+	rz_return_val_if_fail(blocks && sb, false);
+	rz_strbuf_append(sb, "============ final absint blocks ============\n\n");
+	RzIntervalTreeIter it;
+	RzAbsIntBlock *interp_block;
+	rz_interval_tree_foreach (blocks, it, interp_block) {
+		rz_strbuf_appendf(sb, "0x%" PFMT64x "%s\n", interp_block->entry_state->pc, interp_block->non_fallthrough_in ? " <-" : "");
+		if (interp_block->is_fallthrough) {
+			rz_strbuf_appendf(sb, "  -> 0x%" PFMT64x " (fallthrough)\n", rz_absint_block_get_end(interp_block) + 1);
+		}
+		ut64 *it;
+		rz_vector_foreach (&interp_block->jump_targets, it) {
+			rz_strbuf_appendf(sb, "  -> 0x%" PFMT64x "\n", *it);
+		}
+		rz_strbuf_append(sb, "\n");
+	}
+	return true;
 }
