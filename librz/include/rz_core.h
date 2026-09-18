@@ -1057,6 +1057,7 @@ RZ_API void rz_core_bin_print_source_line_sample(RzCore *core, const RzBinSource
 RZ_API void rz_core_bin_print_source_line_info(RzCore *core, const RzBinSourceLineInfo *li, RzCmdStateOutput *state);
 
 RZ_API bool rz_core_sym_is_export(RZ_NONNULL RzBinSymbol *s);
+RZ_API RzBinSymbol *rz_core_bin_get_symbol_by_name(RZ_NONNULL const RzCore *core, const char *name);
 
 RZ_API void rz_core_sysenv_begin(RzCore *core);
 RZ_API void rz_core_sysenv_end(RzCore *core);
