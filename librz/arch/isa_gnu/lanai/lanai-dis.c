@@ -118,7 +118,7 @@ static int is_delayed_branch(unsigned long insn, struct lanai_opcode *opcodes) {
 /* extern void qsort (); */
 static int compare_opcodes(char *a, char *b);
 
-void lanai_dis_context_init(LanaiContext *ctx) {
+RZ_IPI void lanai_dis_context_init(RZ_NONNULL LanaiContext *ctx) {
 	ctx->opcodes = malloc(NUMOPCODES * sizeof(struct lanai_opcode));
 	if (!ctx->opcodes) {
 		return;
@@ -128,7 +128,7 @@ void lanai_dis_context_init(LanaiContext *ctx) {
 		(int (*)(const void *, const void *))compare_opcodes);
 }
 
-void lanai_dis_context_fini(LanaiContext *ctx) {
+RZ_IPI void lanai_dis_context_fini(RZ_NONNULL LanaiContext *ctx) {
 	free(ctx->opcodes);
 	ctx->opcodes = NULL;
 }

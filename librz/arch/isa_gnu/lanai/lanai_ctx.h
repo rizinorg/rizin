@@ -14,7 +14,7 @@ typedef struct {
 	struct lanai_opcode *opcodes;
 } LanaiContext;
 
-void lanai_dis_context_init(LanaiContext *ctx);
-void lanai_dis_context_fini(LanaiContext *ctx);
+RZ_IPI void lanai_dis_context_init(RZ_NONNULL LanaiContext *ctx);
+RZ_IPI void lanai_dis_context_fini(RZ_NONNULL LanaiContext *ctx);
 
 #endif
