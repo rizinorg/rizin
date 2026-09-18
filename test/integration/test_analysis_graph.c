@@ -416,6 +416,285 @@ bool test_analysis_graph_serialize() {
 	mu_end;
 }
 
+/*
+ * Real-CFG render golden.
+ *
+ * The synthetic-graph goldens in test/unit/test_agraph.c pin coordinates for
+ * small graphs with fixed node dimensions. They do not cover the rendered
+ * output of a real binary's control-flow graph, where node bodies hold actual
+ * instruction text and node width/height come from rz_str_bounds() on that
+ * text. This test loads bins/elf/lab1B, computes the main function's CFG, and
+ * asserts that the full ASCII render is byte-for-byte identical to a known-good
+ * fixture (2791 bytes). Any change to layout, dummy-edge routing, node
+ * rendering, or text measurement that affects the visible output will fail this
+ * test with a diff that points at the exact change.
+ *
+ * The fixture was captured from the algorithm as it stands when this test was
+ * written; the md5 (671d659a9ec3725794c5fbcd1b74f0d3) has been stable across
+ * every layout refactor in this series (rizinorg/rizin#992).
+ */
+/*
+ * Helper: load \p binary, seek to \p seek_target, render the function CFG via
+ * the agf command, and assert it equals \p expected byte-for-byte. Used by the
+ * real-CFG render goldens below.
+ */
+static bool assert_agf_render(const char *binary, const char *seek_target,
+	const char *expected) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "new RzCore instance");
+	mu_assert_true(rz_core_file_open_load(core, binary, 0, RZ_PERM_R, false), "load file");
+
+	/* Pin the rendering knobs so the fixture is reproducible. */
+	rz_config_set(core->config, "scr.utf8", "false");
+	rz_config_set(core->config, "scr.color", "0");
+
+	rz_core_cmd0(core, "aa");
+	rz_core_cmd0(core, seek_target);
+	char *out = rz_core_cmd_str(core, "agf");
+	mu_assert_notnull(out, "agf produced output");
+	mu_assert_streq(out, expected, "agf render byte-identical to fixture");
+
+	free(out);
+	rz_core_free(core);
+	return true;
+}
+
+/*
+ * Real-CFG render golden #1: lab1B main (small, ~4 blocks).
+ *
+ * Loads bins/elf/lab1B, computes main's CFG, runs the full agf pipeline
+ * in-process via rz_core_cmd_str(), and asserts the 2791-byte ASCII render is
+ * byte-for-byte identical to a stored fixture. Catches anything the
+ * coordinate goldens in test_agraph.c miss: text measurement on real
+ * instruction bodies, dummy-edge routing, canvas drawing, spacing. Any
+ * visible change in the picture fails the test with a diff that points at
+ * the exact byte. The fixture's md5
+ * (671d659a9ec3725794c5fbcd1b74f0d3) has been stable across every layout
+ * refactor in this series (rizinorg/rizin#992).
+ */
+bool test_analysis_graph_render_real_cfg() {
+	const char *expected =
+		"  .----------------------------------------.\n"
+		"  |  0x8048be4                             |\n"
+		"  |   ; DATA XREF from entry0 @ 0x8048867  |\n"
+		"  | main();                                |\n"
+		"  | ; var unknown_t var_20h @ stack - 0x20 |\n"
+		"  | ; var unknown_t var_1ch @ stack - 0x1c |\n"
+		"  | ; var unknown_t var_8h @ stack - 0x8   |\n"
+		"  | ; var unknown_t var_4h @ stack - 0x4   |\n"
+		"  | push ebp                               |\n"
+		"  | mov ebp, esp                           |\n"
+		"  | and esp, 0xfffffff0                    |\n"
+		"  | sub esp, 0x20                          |\n"
+		"  | push eax                               |\n"
+		"  | xor eax, eax                           |\n"
+		"  | jz 0x8048bf5                           |\n"
+		"  `----------------------------------------'\n"
+		"          f t\n"
+		"          | |\n"
+		"          | '----------------.\n"
+		"          '--.               |\n"
+		"             |               |\n"
+		"         .---------------.   |\n"
+		"         |  0x8048bf2    |   |\n"
+		"         | add esp, 0x04 |   |\n"
+		"         `---------------'   |\n"
+		"             v               |\n"
+		"             |               |\n"
+		"      .------'               |\n"
+		"      | .--------------------'\n"
+		"      | |\n"
+		".--------------------------------------------.\n"
+		"|  0x8048bf5                                 |\n"
+		"| pop eax                                    |\n"
+		"| mov dword [esp], 0x00                      |\n"
+		"| call sym.imp.time                          |\n"
+		"| mov dword [esp], eax                       |\n"
+		"| call sym.imp.srand                         |\n"
+		"| ; [0x8048d88:4]=0x2d2d2d2e                 |\n"
+		"| mov dword [esp], 0x8048d88                 |\n"
+		"| call sym.imp.puts                          |\n"
+		"| ; [0x8048da6:4]=0x202d2d7c                 |\n"
+		"| ; \"|-- RPISEC - CrackMe v2.0 --|\"          |\n"
+		"| mov dword [esp], str.RPISEC___CrackMe_v2.0 |\n"
+		"| call sym.imp.puts                          |\n"
+		"| ; [0x8048dc4:4]=0x2d2d2d27                 |\n"
+		"| ; \"'---------------------------'\"          |\n"
+		"| mov dword [esp], str.                      |\n"
+		"| call sym.imp.puts                          |\n"
+		"| ; [0x8048de2:4]=0x7361500a                 |\n"
+		"| ; \"\\nPassword: \"                           |\n"
+		"| mov dword [esp], str.Password:             |\n"
+		"| call sym.imp.printf                        |\n"
+		"| lea eax, dword [var_8h]                    |\n"
+		"| mov dword [var_20h], eax                   |\n"
+		"| ; [0x8048dee:4]=0x6425                     |\n"
+		"| mov dword [esp], 0x8048dee                 |\n"
+		"| call sym.imp.__isoc99_scanf                |\n"
+		"| mov eax, dword [var_8h]                    |\n"
+		"| ; [0x1337d00d:4]=-1                        |\n"
+		"| mov dword [var_20h], 0x1337d00d            |\n"
+		"| mov dword [esp], eax                       |\n"
+		"| call sym.test                              |\n"
+		"| mov eax, 0x00                              |\n"
+		"| leave                                      |\n"
+		"| ret                                        |\n"
+		"`--------------------------------------------'\n";
+	if (!assert_agf_render("bins/elf/lab1B", "s main", expected)) {
+		return MU_ERR;
+	}
+	mu_end;
+}
+
+/*
+ * Real-CFG render golden #2: lab1B sym.decrypt (~11 blocks, multi-layer with
+ * long edges that exercise dummy-node insertion and crossing reduction on a
+ * real CFG). Materially broader coverage than the main fixture: deeper
+ * layering, more edge routing, wider mix of comment/data references in node
+ * bodies. Fixture md5: 3db46f6070ef4f0b16bd8013d2dec3c6.
+ */
+bool test_analysis_graph_render_real_cfg_decrypt() {
+	const char *expected =
+		"                  .-----------------------------------------.\n"
+		"                  |  0x80489b7                              |\n"
+		"                  |   ; CALL XREF from sym.test @ 0x8048bdd |\n"
+		"                  | sym.decrypt(unknown_t arg_4h);          |\n"
+		"                  | ; var unknown_t var_38h @ stack - 0x38  |\n"
+		"                  | ; var unknown_t var_2ch @ stack - 0x2c  |\n"
+		"                  | ; var unknown_t var_28h @ stack - 0x28  |\n"
+		"                  | ; var unknown_t var_21h @ stack - 0x21  |\n"
+		"                  | ; var unknown_t var_1dh @ stack - 0x1d  |\n"
+		"                  | ; var unknown_t var_19h @ stack - 0x19  |\n"
+		"                  | ; var unknown_t var_15h @ stack - 0x15  |\n"
+		"                  | ; var unknown_t var_11h @ stack - 0x11  |\n"
+		"                  | ; var unknown_t var_10h @ stack - 0x10  |\n"
+		"                  | ; arg unknown_t arg_4h @ stack + 0x4    |\n"
+		"                  | push ebp                                |\n"
+		"                  | mov ebp, esp                            |\n"
+		"                  | sub esp, 0x38                           |\n"
+		"                  | mov eax, dword gs:[0x14]                |\n"
+		"                  | mov dword [var_10h], eax                |\n"
+		"                  | xor eax, eax                            |\n"
+		"                  | ; 'Q}|u'                                |\n"
+		"                  | mov dword [var_21h], 0x757c7d51         |\n"
+		"                  | ; '`sfg'                                |\n"
+		"                  | mov dword [var_1dh], 0x67667360         |\n"
+		"                  | ; '~sf{'                                |\n"
+		"                  | mov dword [var_19h], 0x7b66737e         |\n"
+		"                  | ; '}|a3'                                |\n"
+		"                  | mov dword [var_15h], 0x33617c7d         |\n"
+		"                  | mov byte [var_11h], 0x00                |\n"
+		"                  | push eax                                |\n"
+		"                  | xor eax, eax                            |\n"
+		"                  | jz 0x80489f0                            |\n"
+		"                  `-----------------------------------------'\n"
+		"                          f t\n"
+		"                          | |\n"
+		"                          | '----------------.\n"
+		"                          '--.               |\n"
+		"                             |               |\n"
+		"                         .---------------.   |\n"
+		"                         |  0x80489ed    |   |\n"
+		"                         | add esp, 0x04 |   |\n"
+		"                         `---------------'   |\n"
+		"                             v               |\n"
+		"                             |               |\n"
+		"                           .-'               |\n"
+		"                           | .---------------'\n"
+		"                           | |\n"
+		"                     .---------------------------.\n"
+		"                     |  0x80489f0                |\n"
+		"                     | pop eax                   |\n"
+		"                     | lea eax, dword [var_21h]  |\n"
+		"                     | mov dword [esp], eax      |\n"
+		"                     | call sym.imp.strlen       |\n"
+		"                     | mov dword [var_28h], eax  |\n"
+		"                     | mov dword [var_2ch], 0x00 |\n"
+		"                     | jmp 0x8048a28             |\n"
+		"                     `---------------------------'\n"
+		"                         v\n"
+		"                         |\n"
+		"                   .-----'\n"
+		".--------------------.\n"
+		"|                  | |\n"
+		"|            .------------------------------------------.\n"
+		"|            |  0x8048a28                               |\n"
+		"|            | ; CODE XREF from sym.decrypt @ 0x8048a06 |\n"
+		"|            | mov eax, dword [var_2ch]                 |\n"
+		"|            | cmp eax, dword [var_28h]                 |\n"
+		"|            | jb 0x8048a08                             |\n"
+		"|            `------------------------------------------'\n"
+		"|                  t f\n"
+		"|                  | |\n"
+		"|    .-------------' |\n"
+		"|    |               '---------------.\n"
+		"|    |                               |\n"
+		"|.---------------------------.   .------------------------------------------.\n"
+		"||  0x8048a08                |   |  0x8048a30                               |\n"
+		"|| lea edx, dword [var_21h]  |   | ; [0x8048d03:4]=0x676e6f43               |\n"
+		"|| mov eax, dword [var_2ch]  |   | ; \"Congratulations!\"                     |\n"
+		"|| add eax, edx              |   | mov dword [var_38h], str.Congratulations |\n"
+		"|| movzx eax, byte [eax]     |   | lea eax, dword [var_21h]                 |\n"
+		"|| mov edx, eax              |   | mov dword [esp], eax                     |\n"
+		"|| mov eax, dword [arg_4h]   |   | call sym.imp.strcmp                      |\n"
+		"|| xor eax, edx              |   | test eax, eax                            |\n"
+		"|| lea ecx, dword [var_21h]  |   | jnz 0x8048a55                            |\n"
+		"|| mov edx, dword [var_2ch]  |   `------------------------------------------'\n"
+		"|| add edx, ecx              |         t f\n"
+		"|| mov byte [edx], al        |         | |\n"
+		"|| add dword [var_2ch], 0x01 |         | |\n"
+		"|`---------------------------'         | |\n"
+		"|    v                                 | |\n"
+		"|    |                                 | |\n"
+		"`----'                                 | |\n"
+		"    .----------------------------------' |\n"
+		"    |                                    '------.\n"
+		"    |                                           |\n"
+		".---------------------------------------.   .-----------------------------.\n"
+		"|  0x8048a55                            |   |  0x8048a47                  |\n"
+		"| ; [0x8048d1c:4]=0x766e490a            |   | ; [0x8048d14:4]=0x6e69622f  |\n"
+		"| ; \"\\nInvalid Password!\"               |   | ; \"/bin/sh\"                 |\n"
+		"| mov dword [esp], str.Invalid_Password |   | mov dword [esp], str.bin_sh |\n"
+		"| call sym.imp.puts                     |   | call sym.imp.system         |\n"
+		"`---------------------------------------'   | jmp 0x8048a61               |\n"
+		"    v                                       `-----------------------------'\n"
+		"    |                                           v\n"
+		"    |                                           |\n"
+		"    '------------------.                        |\n"
+		"                       | .----------------------'\n"
+		"                       | |\n"
+		"                 .------------------------------------------.\n"
+		"                 |  0x8048a61                               |\n"
+		"                 | ; CODE XREF from sym.decrypt @ 0x8048a53 |\n"
+		"                 | mov eax, dword [var_10h]                 |\n"
+		"                 | xor eax, dword gs:[0x14]                 |\n"
+		"                 | jz 0x8048a72                             |\n"
+		"                 `------------------------------------------'\n"
+		"                         f t\n"
+		"                         | |\n"
+		"                         | '---------------------.\n"
+		"                 .-------'                       |\n"
+		"                 |                               |\n"
+		"             .-------------------------------.   |\n"
+		"             |  0x8048a6d                    |   |\n"
+		"             | call sym.imp.__stack_chk_fail |   |\n"
+		"             `-------------------------------'   |\n"
+		"                 v                               |\n"
+		"                 |                               |\n"
+		"                 '--------------------.          |\n"
+		"                                      | .--------'\n"
+		"                                      | |\n"
+		"                                .-------------.\n"
+		"                                |  0x8048a72  |\n"
+		"                                | leave       |\n"
+		"                                | ret         |\n"
+		"                                `-------------'\n";
+	if (!assert_agf_render("bins/elf/lab1B", "s sym.decrypt", expected)) {
+		return MU_ERR;
+	}
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_graph);
 	mu_run_test(test_analysis_graph_more);
@@ -423,6 +702,8 @@ int all_tests() {
 	mu_run_test(test_analysis_graph_cfg);
 	mu_run_test(test_analysis_graph_entrypoints);
 	mu_run_test(test_analysis_graph_serialize);
+	mu_run_test(test_analysis_graph_render_real_cfg);
+	mu_run_test(test_analysis_graph_render_real_cfg_decrypt);
 	return tests_passed != tests_run;
 }
 
