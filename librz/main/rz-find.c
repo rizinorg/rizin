@@ -89,14 +89,20 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
-	char _str[128];
+	char _str[4096];
 	char *str = _str;
 	*_str = 0;
+	// Never read past the end of the block that was actually loaded into ro->buf.
+	size_t avail = (delta < ro->bsize) ? (size_t)(ro->bsize - delta) : 0;
+	size_t maxlen = sizeof(_str) - 1;
+	if (avail < maxlen) {
+		maxlen = avail;
+	}
 	if (ro->showstr) {
 		if (ro->widestr) {
 			str = _str;
 			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof(_str); i++) {
+			for (i = delta; ro->buf[i] && (size_t)(i - delta) < maxlen; i++) {
 				char ch = ro->buf[i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
@@ -106,11 +112,6 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				}
 				str[j++] = ch;
 				i++;
-				if (j > 80) {
-					strcpy(str + j, "...");
-					j += 3;
-					break;
-				}
 				if (ro->buf[i]) {
 					break;
 				}
@@ -118,7 +119,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			str[j] = 0;
 		} else {
 			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
+			for (i = 0; i < maxlen; i++) {
 				char ch = ro->buf[delta + i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
@@ -132,7 +133,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	} else {
 		size_t i;
-		for (i = 0; i < sizeof(_str) - 1; i++) {
+		for (i = 0; i < maxlen; i++) {
 			char ch = ro->buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
