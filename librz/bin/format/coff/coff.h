@@ -52,4 +52,7 @@ RZ_API RZ_BORROW RzBuffer *rz_coff_get_patched_buf(struct rz_bin_coff_obj *bin);
 
 #define RZ_COFF_RELOC_TARGET_SIZE 8
 
+/// on-disk size of a TI COFF2 relocation entry (r_vaddr, r_symndx, r_disp, r_type)
+#define RZ_COFF_TI_RELOC_SIZE 12
+
 #endif /* COFF_H */

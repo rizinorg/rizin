@@ -4,8 +4,9 @@ CMDS=<<EOF
 !python3 scripts/http_server.py
 o http://127.0.0.1:9000/simple.html
 r
-b 64
+b 256
 ps
+!python3 scripts/kill_http_server.py
 EOF
 EXPECT=<<EOF
 342
@@ -13,6 +14,20 @@ EXPECT=<<EOF
 <html>
 <head>
 <title>My Simple Web Page</title>
-
+<style>
+body {
+background-color: lightgrey;
+}
+h1 {
+color: blue;
+}
+p {
+font-family: Arial, sans-serif;
+}
+</style>
+</head>
+<body>
+<h1>Welcome to My Page!</h1>
+<p>This is a simple web page create
 EOF
 RUN

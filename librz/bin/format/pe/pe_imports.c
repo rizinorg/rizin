@@ -108,9 +108,6 @@ static int bin_pe_parse_imports(RZ_BORROW RZ_NONNULL RzPath *sys_path,
 
 				if (!sdb_module || strcmp(symdllname, sdb_module)) {
 					sdb_free(db);
-					if (db) {
-						sdb_free(db);
-					}
 					db = NULL;
 					free(sdb_module);
 					sdb_module = rz_str_dup(symdllname);

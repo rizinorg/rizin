@@ -171,6 +171,7 @@ void PE_(free_security_directory)(Pe_image_security_directory *security_director
 	}
 	size_t numCert = 0;
 	for (; numCert < security_directory->length; numCert++) {
+		free(security_directory->certificates[numCert]->bCertificate);
 		free(security_directory->certificates[numCert]);
 	}
 	free(security_directory->certificates);

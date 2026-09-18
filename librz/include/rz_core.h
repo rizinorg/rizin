@@ -1400,36 +1400,9 @@ RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* DECOMPILER PRINTING FUNCTIONS */
-/**
- * @brief Prints the data contained in the specified RzAnnotatedCode in JSON format.
- *
- * The function will print the output in console using the function rz_cons_printf();
- *
- * @param code Pointer to a RzAnnotatedCode.
- */
-RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code);
-/**
- * @brief Prints the decompiled code from the specified RzAnnotatedCode.
- *
- * This function is used for printing the output of commands pdg and pdgo.
- * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
- * the output will be printed without offsets (pdg), otherwise, the output will be
- * printed with offsets.
- * This function will print the output in console using the function rz_cons_printf();
- *
- * @param code Pointer to a RzAnnotatedCode.
- * @param line_offsets Pointer to a @ref RzVector that contains offsets for the decompiled code.
- */
-RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64>*/ *line_offsets);
-/**
- * @brief  Prints the decompiled code as comments
- *
- * This function is used for the output of command pdg*
- * Output will be printed in console using the function rz_cons_printf();
- *
- * @param code Pointer to a RzAnnotatedCode.
- */
-RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code);
 
 /* serialize */
 

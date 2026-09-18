@@ -245,21 +245,6 @@ if has_capstone_m68k_coldfire
   add_project_arguments(['-DRZ_CAPSTONE_HAS_M68K_COLDFIRE'], language: 'c')
 endif
 
-has_capstone_m680x_hcs12x = cc.compiles('''
-#include <capstone/capstone.h>
-int main(void) {
-        cs_mode mode = CS_MODE_M680X_HCS12X;
-        return mode == 0;
-}
-''',
-  dependencies: capstone_check_deps,
-  include_directories: capstone_check_includes,
-  name: 'Capstone has M680X HCS12X mode'
-)
-if has_capstone_m680x_hcs12x
-  add_project_arguments(['-DRZ_CAPSTONE_HAS_M680X_HCS12X'], language: 'c')
-endif
-
 # Handle PCRE2
 cpu_jit_supported = [ 'aarch64', 'arm', 'mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64', 's390x', 'x86', 'x86_64' ]
 pcre2_jit_supported = target_machine.cpu_family() in cpu_jit_supported and cc.get_id() != 'tcc' and target_machine.system() not in ['darwin', 'serenity']

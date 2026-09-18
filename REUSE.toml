@@ -344,3 +344,9 @@ path = "patches/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 RizinOrg <info@rizin.re>"
 SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
+path = "cross-compile/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"

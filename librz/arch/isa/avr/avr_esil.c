@@ -1592,6 +1592,7 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 	}
 	rz_analysis_esil_mem_read(esil, tmp_page, (ut8 *)t, 1 << page_size_bits);
 	rz_analysis_esil_mem_write(esil, addr, (ut8 *)t, 1 << page_size_bits);
+	free(t);
 
 	return true;
 }

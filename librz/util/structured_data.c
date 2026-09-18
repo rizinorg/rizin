@@ -134,9 +134,10 @@ static RzStructuredData *structured_data_new_bool(bool v_bool) {
 	return sd;
 }
 
-static RzStructuredData *structured_data_new_string(char *v_string) {
+static RzStructuredData *structured_data_new_string(RZ_OWN char *v_string) {
 	RzStructuredData *sd = RZ_NEW0(RzStructuredData);
 	if (!sd) {
+		free(v_string);
 		return NULL;
 	}
 	sd->type = STRUCTURED_DATA_TYPE_STRING;
