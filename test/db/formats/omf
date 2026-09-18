@@ -195,76 +195,166 @@ RUN
 NAME=omf166 modinfo check
 FILE=bins/omf/omf166/measure
 CMDS=<<EOF
-e bin.baddr
-echo
+e asm.arch=c166
 iH
 EOF
 EXPECT=<<EOF
-0x00c00000
+cpu: "c166-generic"
+bits: 16
+isr_count: 6
+omf166:
+  base_addr: 0xc00000
+  modinfo:
+    DoubleUsed: false
+    FloatUsed: true
+    MOD167: true
+    CaseSensitive: true
+    Segmented: true
+    MemoryModel: "HLarge: 'huge' data, 'far' funcs"
+  num_sections: 27
+  sections:
+    - name: "?PR?MCOMMAND_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc0168a
+      size: 592
+      type: "CODE"
+    - name: "?HC?MCOMMAND_HCONST"
+      name_idx: 0xc0
+      vaddr: 0xc01e4c
+      size: 111
+      isHuge: true
+      type: "DATA"
+    - name: "?PR?MEASURE_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc01230
+      size: 1114
+      type: "CODE"
+    - name: "?HC?MEASURE_HCONST"
+      name_idx: 0xc0
+      vaddr: 0xc01a26
+      size: 1062
+      isHuge: true
+      type: "DATA"
+    - name: "?ND0?MEASURE_NDATA0"
+      name_idx: 0x1
+      vaddr: 0x10240
+      size: 27
+      type: "DATA"
+    - name: "?HD0?MEASURE_HDATA0"
+      name_idx: 0x1
+      vaddr: 0x1025c
+      size: 8208
+      isHuge: true
+      type: "DATA"
+    - name: "?BI0?MEASURE_BIT0"
+      name_idx: 0x0
+      vaddr: 0xfd00
+      size: 3
+      type: "BIT"
+    - name: "?PR?GETLINE_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc018da
+      size: 146
+      type: "CODE"
+    - name: "?PR?PUTCHAR_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc0196c
+      size: 82
+      type: "CODE"
+    - name: "?PR?GETKEY_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc0001c
+      size: 12
+      type: "CODE"
+    - name: "?PR?TRAPS_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc00074
+      size: 8
+      type: "CODE"
+    - name: "?C_USERSTACK_NDATA"
+      name_idx: 0x1
+      vaddr: 0x10000
+      size: 512
+      type: "DATA"
+    - name: "?C_USERSTACK1_NDATA"
+      name_idx: 0x1
+      vaddr: 0x10200
+      size: 32
+      type: "DATA"
+    - name: "?C_USERSTACK2_NDATA"
+      name_idx: 0x1
+      vaddr: 0x10220
+      size: 32
+      type: "DATA"
+    - name: "?C_SYSSTACK_IDATA"
+      name_idx: 0x0
+      vaddr: 0xf600
+      size: 512
+      type: "DATA"
+    - name: "?C_STARTUP_CODE_ICODE"
+      name_idx: 0xc0
+      vaddr: 0xc00084
+      size: 350
+      type: "CODE"
+    - name: "?C_LIB_CODE_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc001e2
+      size: 2940
+      type: "CODE"
+    - name: "?PR?SCANF_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc00d5e
+      size: 1234
+      type: "CODE"
+    - name: "?HC??PRNFMT_HCONST"
+      name_idx: 0xc0
+      vaddr: 0xc01ebc
+      size: 90
+      isHuge: true
+      type: "DATA"
+    - name: "?C_LIB_NCONST_NCONST"
+      name_idx: 0xc0
+      vaddr: 0xc00044
+      size: 48
+      type: "DATA"
+    - name: "?PR?ISSPACE_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc019ec
+      size: 26
+      type: "CODE"
+    - name: "?PR?TOUPPER_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc01a06
+      size: 24
+      type: "CODE"
+    - name: "?PR?GETCHAR_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc019be
+      size: 46
+      type: "CODE"
+    - name: "?ND0?GETCHAR_NDATA0"
+      name_idx: 0x1
+      vaddr: 0x1025b
+      size: 1
+      type: "DATA"
+    - name: "?PR?UNGET_FCODE"
+      name_idx: 0xc0
+      vaddr: 0xc01a1e
+      size: 8
+      type: "CODE"
+    - name: "?C_INITSEC_UNKNOWN"
+      name_idx: 0xc0
+      vaddr: 0xc00004
+      size: 2
+      isXSec: true
+      isXhuge: true
+      type: "DATA"
+    - name: "?C_CLRMEMSEC_UNKNOWN"
+      name_idx: 0xc0
+      vaddr: 0xc0002c
+      size: 24
+      type: "CONST"
 
-omf166-modinfo:
-  DoubleUsed: false
-  FloatUsed: true
-  MOD167: true
-  CaseSensitive: true
-  Segmented: true
-  MemoryModel: "HLarge: 'huge' data, 'far' funcs"
-
-EOF
-RUN
-
-NAME=omf166 modinfo check
-FILE=bins/omf/omf166/emulateme
-CMDS=<<EOF
-e bin.baddr
-echo
-iH
-EOF
-EXPECT=<<EOF
-0
-
-omf166-modinfo:
-  DoubleUsed: false
-  FloatUsed: false
-  MOD167: true
-  CaseSensitive: true
-  Segmented: true
-  MemoryModel: "Large: 'far' functions and data"
-
-EOF
-RUN
-
-NAME=omf166 THEADR overflow check
-FILE=bins/omf/omf166/sym_overflow_theadr
-CMDS=<<EOF
-e bin.baddr
-EOF
-EXPECT=<<EOF
-0
-EOF
-REGEXP_FILTER_ERR=<<EOF
-WARNING:.+
-EOF
-EXPECT_ERR=<<EOF
-WARNING: File may be corrupted (Overflow detected).
-WARNING: The binary loader searches strings only in the read only sections, but the binary has no sections.
-EOF
-RUN
-
-NAME=omf166 sym overflow check
-FILE=bins/omf/omf166/sym_overflow
-CMDS=<<EOF
-e bin.baddr
-EOF
-EXPECT=<<EOF
-0
-EOF
-REGEXP_FILTER_ERR=<<EOF
-[WARNING,ERROR]:.+
-EOF
-EXPECT_ERR=<<EOF
-R: Invalid sym record (overflow)
-G: The binary loader searches strings only in the read only sections, but the binary has no sections.
 EOF
 RUN
 
@@ -275,13 +365,939 @@ e asm.arch=c166
 iH
 EOF
 EXPECT=<<EOF
-omf166-modinfo:
-  DoubleUsed: false
-  FloatUsed: false
-  MOD167: false
-  CaseSensitive: false
-  Segmented: false
-  MemoryModel: "XLarge: 'xhuge' data, 'far' funcs"
+cpu: "c166-generic"
+bits: 16
+isr_count: 0
+omf166:
+  base_addr: 0x0
+  modinfo:
+    DoubleUsed: false
+    FloatUsed: false
+    MOD167: false
+    CaseSensitive: false
+    Segmented: false
+    MemoryModel: "XLarge: 'xhuge' data, 'far' funcs"
+  num_sections: 0
+  sections: []
 
+EOF
+RUN
+
+NAME=omf51
+FILE=bins/omf/omf51/nxp_80c51mx_huge_loadapp
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+load_omf: 0xc4          [00008] (  762) [0x000002fa] 0xc4 (16274)		n: 6, `MAIN_B`
+load_omf: 0xc8          [00008] (  773) [0x00000305] 0xc8 (16263) 		unk1: 0x0004, unk2: 0x005c, unk3: 0x0300, unk4: 0x17
+load_omf: 0x98          [00027] (  814) [0x0000032e] 0x98 (16222)		unk1: 0x0024, unk2: 0x000b, [ 0x0000 0x0000 0x0000 0x0000 ] unk3: 0x0005, unk4: 0x000b
+load_omf: 0x98          [00027] (  844) [0x0000034c] 0x98 (16192)		unk1: 0x0024, unk2: 0x000b, [ 0x0000 0x0000 0x0000 0x0000 ] unk3: 0x0005, unk4: 0x0004
+load_omf: 0xc0          [00008] ( 1486) [0x000005ce] 0xc0 (15550)		n: 6, `MAIN_B`
+load_omf: OMF_GRPDEF    [00018] ( 1497) [0x000005d9] 0x9a (15539)		group_index: 0x01, unk2: 0x00, unk3: 0x00		ct: 15 (18), n: 8, `main_b.c`
+load_omf: OMF_GRPDEF    [00045] ( 1518) [0x000005ee] 0x9a (15518)		group_index: 0x02, unk2: 0x00, unk3: 0x00		ct: 43 (45), n: 35, `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: 0xd0          [02682] ( 1724) [0x000006bc] 0xd0 (15312)
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0080, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0090, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P3`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0584, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0686, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `AC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0585, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0480, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0547, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01ff, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `MXCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0546, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCTL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `FE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0483, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fa, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0484, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP0H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0485, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP1H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0486, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0487, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ea, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0646, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `EXF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0587, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00eb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00da, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ec, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00db, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0544, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `ES`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ed, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ee, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IP`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00de, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `FE_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0582, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1R`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0687, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CY`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `TI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0583, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0741, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES0T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0742, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0183, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADDR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0182, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADDR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `PS`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0081, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `SP`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0481, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `T2EX`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0682, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `OV`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ca, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS0T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0641, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `C_T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0586, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `WR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS1T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0645, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RCLK`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0644, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TCLK`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SBUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0087, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `PCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0743, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ESPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SCON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0089, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0088, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PSPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0185, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `BRGCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0441, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0443, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0STAT`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008e, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `AUXR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 1, `B`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0184, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1STAT`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0640, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 6, `CP_RL2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `ACC`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ES1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0541, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0543, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0445, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0545, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0447, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0647, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RB8`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0540, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0440, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008d, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TB8`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0542, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0442, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0680, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 1, `P`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008a, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0482, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ECI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008b, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0683, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0444, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0684, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0446, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0642, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0083, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPH`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c02, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `RB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0186, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c03, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `TB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0187, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0082, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM0_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPL`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0BUF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c06, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM1_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0181, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1BUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPM`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0643, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `EXEN2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c05, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM2_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PPC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0CON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `REN`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0180, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2MOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `SPE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `WDTRST`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0580, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RXD`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0581, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TXD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `AUXR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `PCONA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCFG`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0685, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `F0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c04, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `REN_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `PSW`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018f, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `WDCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPDAT`
+load_omf: OMF51_PEDATA  [00014] ( 4409) [0x00001139] 0x94 (12627)		Segment: 1, offset: 0x800003, size: 3, addr: 0x1146
+load_omf: OMF51_PEDATA  [00012] ( 4426) [0x0000114a] 0x94 (12610)		Segment: 1, offset: 0x800006, size: 1, addr: 0x1157
+load_omf: OMF51_PEDATA  [00014] ( 4441) [0x00001159] 0x94 (12595)		Segment: 1, offset: 0x800007, size: 3, addr: 0x1166
+load_omf: OMF51_PEDATA  [00012] ( 4458) [0x0000116a] 0x94 (12578)		Segment: 1, offset: 0x80000a, size: 1, addr: 0x1177
+load_omf: 0x8e          [00017] ( 4473) [0x00001179] 0x8e (12563)		unk1: 0x0001, type:  0x81 (0x81), unk2: 0x0000, unk3: 0x0000, addr: 0x800030, n: 4, `main`
+load_omf: OMF51_PEDATA  [00076] ( 4493) [0x0000118d] 0x94 (12543)		Segment: 1, offset: 0x800030, size: 65, addr: 0x119a
+load_omf: 0x90 (PUBDEF?)[00006] ( 4755) [0x00001293] 0x90 (12281)		0x90 0x06 0x00 0x00 0x41 0x00 0x00 0x00 0x29 
+load_omf: 0x8e          [00024] ( 4764) [0x0000129c] 0x8e (12272)		unk1: 0x0001, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x80000c, n: 11, `t2_ini_load`
+load_omf: OMF51_PEDATA  [00036] ( 4791) [0x000012b7] 0x94 (12245)		Segment: 1, offset: 0x80000c, size: 25, addr: 0x12c4
+load_omf: 0x90 (PUBDEF?)[00006] ( 4922) [0x0000133a] 0x90 (12114)		0x90 0x06 0x00 0x00 0x19 0x00 0x00 0x00 0x51 
+load_omf: 0x8e          [00024] ( 4931) [0x00001343] 0x8e (12105)		unk1: 0x0001, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x8000ae, n: 11, `t2_isr_load`
+load_omf: OMF51_PEDATA  [00024] ( 4958) [0x0000135e] 0x94 (12078)		Segment: 1, offset: 0x8000ae, size: 13, addr: 0x136b
+load_omf: 0x90 (PUBDEF?)[00006] ( 5028) [0x000013a4] 0x90 (12008)		0x90 0x06 0x00 0x00 0x0d 0x00 0x00 0x00 0x5d 
+load_omf: 0x8e          [00019] ( 5037) [0x000013ad] 0x8e (11999)		unk1: 0x0001, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x800025, n: 6, `int_on`
+load_omf: OMF51_PEDATA  [00015] ( 5059) [0x000013c3] 0x94 (11977)		Segment: 1, offset: 0x800025, size: 4, addr: 0x13d0
+load_omf: 0x90 (PUBDEF?)[00006] ( 5106) [0x000013f2] 0x90 (11930)		0x90 0x06 0x00 0x00 0x04 0x00 0x00 0x00 0x66 
+load_omf: 0x8e          [00020] ( 5115) [0x000013fb] 0x8e (11921)		unk1: 0x0001, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x800071, n: 7, `int_off`
+load_omf: OMF51_PEDATA  [00015] ( 5138) [0x00001412] 0x94 (11898)		Segment: 1, offset: 0x800071, size: 4, addr: 0x141f
+load_omf: 0x90 (PUBDEF?)[00006] ( 5185) [0x00001441] 0x90 (11851)		0x90 0x06 0x00 0x00 0x04 0x00 0x00 0x00 0x66 
+load_omf: INCLUDES 0x61 [00016] ( 5249) [0x00001481] 0x61 (11787)		[1] [ 2020-06-10 05:35:12 ] 1591767312 `main_b.c`
+load_omf: INCLUDES 0x61 [00043] ( 5268) [0x00001494] 0x61 (11768)		[2] [ 2020-06-10 05:34:30 ] 1591767270 `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: UNKNOWN2 0x62 [00010] ( 5314) [0x000014c2] 0x62 (11722)		index: 1 flags: 0x0000  `main`
+load_omf: UNKNOWN3 0x63 [00013] ( 5327) [0x000014cf] 0x63 (11709)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00085] ( 5343) [0x000014df] 0x64 (11693)		count:  5 [00 00]	02 00
+		02 00 01 00  [line:    16]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		03 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 01 00 00 00
+		03 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 0d 00 00 00
+		03 00 01 00  [line:    21]   00 00 definition (0x00) 00 00 00 14 00 00 00
+		03 00 01 00  [line:    28]   00 00 definition (0x00) 00 00 00 13 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00013] ( 5431) [0x00001537] 0x62 (11605)		index: 1 flags: 0x0000  `int_off`
+load_omf: UNKNOWN3 0x63 [00013] ( 5447) [0x00001547] 0x63 (11589)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] ( 5463) [0x00001557] 0x64 (11573)		count:  4 [00 00]	01 00
+		01 00 01 00  [line:    12]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		01 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		04 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		02 00 01 00  [line:    67]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: UNKNOWN2 0x62 [00018] ( 5535) [0x0000159f] 0x62 (11501)		index: 1 flags: 0x0000  `__REG51M_H__`
+load_omf: UNKNOWN3 0x63 [00013] ( 5556) [0x000015b4] 0x63 (11480)		63 	0d 00 	01 00 00 00 00 00 00 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] ( 5572) [0x000015c4] 0x64 (11464)		count:  1 [00 00]	02 00
+		02 00 02 00  [line:    10]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] ( 5596) [0x000015dc] 0x62 (11440)		index: 1 flags: 0x0000  `P1`
+load_omf: UNKNOWN3 0x63 [00013] ( 5607) [0x000015e7] 0x63 (11429)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 5623) [0x000015f7] 0x64 (11413)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    15]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    58]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    59]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] ( 5679) [0x0000162f] 0x62 (11357)		index: 1 flags: 0x0000  `P2`
+load_omf: UNKNOWN3 0x63 [00013] ( 5690) [0x0000163a] 0x63 (11346)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 5706) [0x0000164a] 0x64 (11330)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    16]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    22]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    25]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] ( 5762) [0x00001682] 0x62 (11274)		index: 1 flags: 0x0000  `P3`
+load_omf: UNKNOWN3 0x63 [00013] ( 5773) [0x0000168d] 0x63 (11263)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00117] ( 5789) [0x0000169d] 0x64 (11247)		count:  7 [00 00]	02 00
+		02 00 02 00  [line:    17]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    33]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    34]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    35]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    36]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    37]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    38]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] ( 5909) [0x00001715] 0x62 (11127)		index: 1 flags: 0x0000  `ET2`
+load_omf: UNKNOWN3 0x63 [00013] ( 5921) [0x00001721] 0x63 (11115)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 5937) [0x00001731] 0x64 (11099)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:   124]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    46]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    53]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] ( 5993) [0x00001769] 0x62 (11043)		index: 1 flags: 0x0000  `TR2`
+load_omf: UNKNOWN3 0x63 [00013] ( 6005) [0x00001775] 0x63 (11031)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6021) [0x00001785] 0x64 (11015)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:   207]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    54]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] ( 6061) [0x000017ad] 0x62 (10975)		index: 1 flags: 0x0000  `T2CON`
+load_omf: UNKNOWN3 0x63 [00013] ( 6075) [0x000017bb] 0x63 (10961)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6091) [0x000017cb] 0x64 (10945)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    47]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    48]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] ( 6131) [0x000017f3] 0x62 (10905)		index: 1 flags: 0x0000  `RCAP2H`
+load_omf: UNKNOWN3 0x63 [00013] ( 6146) [0x00001802] 0x63 (10890)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 6162) [0x00001812] 0x64 (10874)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    50]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    50]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    52]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] ( 6218) [0x0000184a] 0x62 (10818)		index: 1 flags: 0x0000  `RCAP2L`
+load_omf: UNKNOWN3 0x63 [00013] ( 6233) [0x00001859] 0x63 (10803)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 6249) [0x00001869] 0x64 (10787)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    49]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    49]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    51]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] ( 6305) [0x000018a1] 0x62 (10731)		index: 1 flags: 0x0000  `T2MOD`
+load_omf: UNKNOWN3 0x63 [00013] ( 6319) [0x000018af] 0x63 (10717)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6335) [0x000018bf] 0x64 (10701)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    48]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    47]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] ( 6375) [0x000018e7] 0x62 (10661)		index: 1 flags: 0x0000  `EA`
+load_omf: UNKNOWN3 0x63 [00013] ( 6386) [0x000018f2] 0x63 (10650)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 6402) [0x00001902] 0x64 (10634)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:   122]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    64]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    68]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00017] ( 6458) [0x0000193a] 0x62 (10578)		index: 1 flags: 0x0000  `t2_ini_load`
+load_omf: UNKNOWN3 0x63 [00013] ( 6478) [0x0000194e] 0x63 (10558)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] ( 6494) [0x0000195e] 0x64 (10542)		count:  4 [00 00]	01 00
+		01 00 01 00  [line:    13]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		01 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		04 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		02 00 01 00  [line:    44]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: UNKNOWN2 0x62 [00012] ( 6566) [0x000019a6] 0x62 (10470)		index: 1 flags: 0x0000  `t2_ind`
+load_omf: UNKNOWN3 0x63 [00013] ( 6581) [0x000019b5] 0x63 (10455)		63 	0d 00 	04 00 02 00 03 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00085] ( 6597) [0x000019c5] 0x64 (10439)		count:  5 [00 00]	02 00
+		02 00 01 00  [line:     8]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    20]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    30]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    32]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    60]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] ( 6685) [0x00001a1d] 0x62 (10351)		index: 1 flags: 0x0000  `TH2`
+load_omf: UNKNOWN3 0x63 [00013] ( 6697) [0x00001a29] 0x63 (10339)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6713) [0x00001a39] 0x64 (10323)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    52]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    52]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] ( 6753) [0x00001a61] 0x62 (10283)		index: 1 flags: 0x0000  `stsys`
+load_omf: UNKNOWN3 0x63 [00013] ( 6767) [0x00001a6f] 0x63 (10269)		63 	0d 00 	04 00 02 00 03 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6783) [0x00001a7f] 0x64 (10253)		count:  2 [00 00]	02 00
+		02 00 01 00  [line:     7]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    27]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00017] ( 6823) [0x00001aa7] 0x62 (10213)		index: 1 flags: 0x0000  `t2_isr_load`
+load_omf: UNKNOWN3 0x63 [00013] ( 6843) [0x00001abb] 0x63 (10193)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] ( 6859) [0x00001acb] 0x64 (10177)		count:  1 [00 00]	02 00
+		02 00 01 00  [line:    57]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: UNKNOWN2 0x62 [00009] ( 6883) [0x00001ae3] 0x62 (10153)		index: 1 flags: 0x0000  `TL2`
+load_omf: UNKNOWN3 0x63 [00013] ( 6895) [0x00001aef] 0x63 (10141)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] ( 6911) [0x00001aff] 0x64 (10125)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    51]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    51]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00014] ( 6951) [0x00001b27] 0x62 (10085)		index: 1 flags: 0x0000  `main_app`
+load_omf: UNKNOWN3 0x63 [00013] ( 6968) [0x00001b38] 0x63 (10068)		63 	0d 00 	08 00 05 00 11 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] ( 6984) [0x00001b48] 0x64 (10052)		count:  3 [00 00]	01 00
+		01 00 01 00  [line:    10]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		01 00 01 00  [line:    28]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		04 00 01 00  [line:    28]   00 00 definition (0x00) 00 00 00 00 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00012] ( 7040) [0x00001b80] 0x62 (9996)		index: 1 flags: 0x0000  `int_on`
+load_omf: UNKNOWN3 0x63 [00013] ( 7055) [0x00001b8f] 0x63 (9981)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] ( 7071) [0x00001b9f] 0x64 (9965)		count:  4 [00 00]	01 00
+		01 00 01 00  [line:    14]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		01 00 01 00  [line:    21]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		04 00 01 00  [line:    21]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		02 00 01 00  [line:    63]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: 0xc0          [00008] ( 7143) [0x00001be7] 0xc0 (9893)		n: 6, `MAIN_A`
+load_omf: OMF_GRPDEF    [00018] ( 7154) [0x00001bf2] 0x9a (9882)		group_index: 0x03, unk2: 0x00, unk3: 0x00		ct: 15 (18), n: 8, `main_a.c`
+load_omf: OMF_GRPDEF    [00045] ( 7175) [0x00001c07] 0x9a (9861)		group_index: 0x04, unk2: 0x00, unk3: 0x00		ct: 43 (45), n: 35, `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: 0xd0          [02682] ( 7311) [0x00001c8f] 0xd0 (9725)
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0080, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0090, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P3`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0584, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0686, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `AC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0585, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0480, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0547, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01ff, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `MXCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0546, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCTL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `FE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0483, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fa, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0484, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP0H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0485, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP1H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0486, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0487, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ea, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0646, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `EXF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0587, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00eb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00da, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ec, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00db, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0544, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `ES`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ed, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ee, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IP`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00de, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `FE_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0582, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1R`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0687, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CY`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `TI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0583, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0741, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES0T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0742, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0183, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADDR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0182, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADDR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `PS`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0081, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `SP`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0481, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `T2EX`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0682, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `OV`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ca, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS0T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0641, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `C_T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0586, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `WR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS1T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0645, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RCLK`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0644, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TCLK`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SBUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0087, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `PCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0743, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ESPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SCON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0089, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0088, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PSPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0185, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `BRGCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0441, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0443, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0STAT`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008e, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `AUXR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 1, `B`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0184, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1STAT`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0640, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 6, `CP_RL2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `ACC`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ES1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0541, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0543, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0445, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0545, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0447, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0647, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RB8`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0540, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0440, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008d, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TB8`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0542, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0442, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0680, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 1, `P`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008a, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0482, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ECI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008b, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0683, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0444, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0684, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0446, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0642, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0083, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPH`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c02, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `RB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0186, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c03, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `TB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0187, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0082, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM0_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPL`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0BUF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c06, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM1_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0181, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1BUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPM`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0643, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `EXEN2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c05, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM2_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PPC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0CON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `REN`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0180, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2MOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `SPE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `WDTRST`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0580, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RXD`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0581, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TXD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `AUXR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `PCONA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCFG`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0685, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `F0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c04, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `REN_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `PSW`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018f, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `WDCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPDAT`
+load_omf: 0x8e          [00021] ( 9996) [0x0000270c] 0x8e (7040)		unk1: 0x0003, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x870000, n: 8, `main_app`
+load_omf: OMF51_PEDATA  [00064] (10020) [0x00002724] 0x94 (7016)		Segment: 3, offset: 0x870000, size: 53, addr: 0x2731
+load_omf: 0x90 (PUBDEF?)[00006] (10256) [0x00002810] 0x90 (6780)		0x90 0x06 0x00 0x00 0x35 0x00 0x00 0x00 0x35 
+load_omf: 0x8e          [00023] (10265) [0x00002819] 0x8e (6771)		unk1: 0x0003, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x870035, n: 10, `t2_ini_app`
+load_omf: OMF51_PEDATA  [00036] (10291) [0x00002833] 0x94 (6745)		Segment: 3, offset: 0x870035, size: 25, addr: 0x2840
+load_omf: 0x90 (PUBDEF?)[00006] (10422) [0x000028b6] 0x90 (6614)		0x90 0x06 0x00 0x00 0x19 0x00 0x00 0x00 0x51 
+load_omf: 0x8e          [00023] (10431) [0x000028bf] 0x8e (6605)		unk1: 0x0003, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x87004e, n: 10, `t2_isr_app`
+load_omf: OMF51_PEDATA  [00024] (10457) [0x000028d9] 0x94 (6579)		Segment: 3, offset: 0x87004e, size: 13, addr: 0x28e6
+load_omf: 0x90 (PUBDEF?)[00006] (10534) [0x00002926] 0x90 (6502)		0x90 0x06 0x00 0x00 0x0d 0x00 0x00 0x00 0x5d 
+load_omf: INCLUDES 0x61 [00016] (10598) [0x00002966] 0x61 (6438)		[1] [ 2020-06-10 05:35:12 ] 1591767312 `main_a.c`
+load_omf: INCLUDES 0x61 [00043] (10617) [0x00002979] 0x61 (6419)		[2] [ 2020-06-10 05:34:30 ] 1591767270 `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: UNKNOWN2 0x62 [00016] (10663) [0x000029a7] 0x62 (6373)		index: 1 flags: 0x0000  `t2_isr_app`
+load_omf: UNKNOWN3 0x63 [00013] (10682) [0x000029ba] 0x63 (6354)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] (10698) [0x000029ca] 0x64 (6338)		count:  1 [00 00]	02 00
+		02 00 01 00  [line:    54]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: UNKNOWN2 0x62 [00016] (10722) [0x000029e2] 0x62 (6314)		index: 1 flags: 0x0000  `t2_ini_app`
+load_omf: UNKNOWN3 0x63 [00013] (10741) [0x000029f5] 0x63 (6295)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] (10757) [0x00002a05] 0x64 (6279)		count:  4 [00 00]	01 00
+		01 00 01 00  [line:    14]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		01 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		04 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 10 00 00 00
+		02 00 01 00  [line:    41]   00 00 definition (0x00) 00 00 00 82 36 50 00
+
+load_omf: UNKNOWN2 0x62 [00013] (10829) [0x00002a4d] 0x62 (6207)		index: 1 flags: 0x0000  `int_off`
+load_omf: UNKNOWN3 0x63 [00013] (10845) [0x00002a5d] 0x63 (6191)		63 	0d 00 	08 00 05 00 11 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (10861) [0x00002a6d] 0x64 (6175)		count:  3 [00 00]	01 00
+		01 00 01 00  [line:    12]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		01 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		04 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 10 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00018] (10917) [0x00002aa5] 0x62 (6119)		index: 1 flags: 0x0000  `__REG51M_H__`
+load_omf: UNKNOWN3 0x63 [00013] (10938) [0x00002aba] 0x63 (6098)		63 	0d 00 	01 00 00 00 00 00 00 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] (10954) [0x00002aca] 0x64 (6082)		count:  1 [00 00]	02 00
+		02 00 02 00  [line:    10]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] (10978) [0x00002ae2] 0x62 (6058)		index: 1 flags: 0x0000  `P1`
+load_omf: UNKNOWN3 0x63 [00013] (10989) [0x00002aed] 0x63 (6047)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (11005) [0x00002afd] 0x64 (6031)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    15]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    56]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    57]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00008] (11061) [0x00002b35] 0x62 (5975)		index: 1 flags: 0x0000  `P3`
+load_omf: UNKNOWN3 0x63 [00013] (11072) [0x00002b40] 0x63 (5964)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00181] (11088) [0x00002b50] 0x64 (5948)		count: 11 [00 00]	02 00
+		02 00 02 00  [line:    17]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    26]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    27]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    28]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    29]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    30]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    31]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    32]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    33]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    34]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    35]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] (11272) [0x00002c08] 0x62 (5764)		index: 1 flags: 0x0000  `ET2`
+load_omf: UNKNOWN3 0x63 [00013] (11284) [0x00002c14] 0x63 (5752)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (11300) [0x00002c24] 0x64 (5736)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:   124]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    43]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    50]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] (11356) [0x00002c5c] 0x62 (5680)		index: 1 flags: 0x0000  `TR2`
+load_omf: UNKNOWN3 0x63 [00013] (11368) [0x00002c68] 0x63 (5668)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (11384) [0x00002c78] 0x64 (5652)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:   207]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    51]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] (11424) [0x00002ca0] 0x62 (5612)		index: 1 flags: 0x0000  `T2CON`
+load_omf: UNKNOWN3 0x63 [00013] (11438) [0x00002cae] 0x63 (5598)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (11454) [0x00002cbe] 0x64 (5582)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    47]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    45]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] (11494) [0x00002ce6] 0x62 (5542)		index: 1 flags: 0x0000  `RCAP2H`
+load_omf: UNKNOWN3 0x63 [00013] (11509) [0x00002cf5] 0x63 (5527)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (11525) [0x00002d05] 0x64 (5511)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    50]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    47]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    49]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] (11581) [0x00002d3d] 0x62 (5455)		index: 1 flags: 0x0000  `RCAP2L`
+load_omf: UNKNOWN3 0x63 [00013] (11596) [0x00002d4c] 0x63 (5440)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (11612) [0x00002d5c] 0x64 (5424)		count:  3 [00 00]	02 00
+		02 00 02 00  [line:    49]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    46]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    48]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] (11668) [0x00002d94] 0x62 (5368)		index: 1 flags: 0x0000  `T2MOD`
+load_omf: UNKNOWN3 0x63 [00013] (11682) [0x00002da2] 0x63 (5354)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (11698) [0x00002db2] 0x64 (5338)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    48]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    44]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] (11738) [0x00002dda] 0x62 (5298)		index: 1 flags: 0x0000  `t2_ind`
+load_omf: UNKNOWN3 0x63 [00013] (11753) [0x00002de9] 0x63 (5283)		63 	0d 00 	04 00 02 00 03 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] (11769) [0x00002df9] 0x64 (5267)		count:  4 [00 00]	01 00
+		01 00 01 00  [line:     9]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    23]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    25]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    58]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] (11841) [0x00002e41] 0x62 (5195)		index: 1 flags: 0x0000  `TH2`
+load_omf: UNKNOWN3 0x63 [00013] (11853) [0x00002e4d] 0x63 (5183)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (11869) [0x00002e5d] 0x64 (5167)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    52]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    49]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] (11909) [0x00002e85] 0x62 (5127)		index: 1 flags: 0x0000  `stsys`
+load_omf: UNKNOWN3 0x63 [00013] (11923) [0x00002e93] 0x63 (5113)		63 	0d 00 	04 00 02 00 03 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] (11939) [0x00002ea3] 0x64 (5097)		count:  1 [00 00]	01 00
+		01 00 01 00  [line:     8]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00009] (11963) [0x00002ebb] 0x62 (5073)		index: 1 flags: 0x0000  `TL2`
+load_omf: UNKNOWN3 0x63 [00013] (11975) [0x00002ec7] 0x63 (5061)		63 	0d 00 	02 00 04 00 03 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (11991) [0x00002ed7] 0x64 (5045)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:    51]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    48]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00014] (12031) [0x00002eff] 0x62 (5005)		index: 1 flags: 0x0000  `main_app`
+load_omf: UNKNOWN3 0x63 [00013] (12048) [0x00002f10] 0x63 (4988)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00069] (12064) [0x00002f20] 0x64 (4972)		count:  4 [00 00]	02 00
+		02 00 01 00  [line:    16]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		03 00 01 00  [line:    18]   00 00 definition (0x00) 00 00 00 02 00 00 00
+		03 00 01 00  [line:    19]   00 00 definition (0x00) 00 00 00 01 00 00 00
+		03 00 01 00  [line:    20]   00 00 definition (0x00) 00 00 00 11 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00012] (12136) [0x00002f68] 0x62 (4900)		index: 1 flags: 0x0000  `int_on`
+load_omf: UNKNOWN3 0x63 [00013] (12151) [0x00002f77] 0x63 (4885)		63 	0d 00 	08 00 05 00 11 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (12167) [0x00002f87] 0x64 (4869)		count:  3 [00 00]	01 00
+		01 00 01 00  [line:    11]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		01 00 01 00  [line:    20]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		04 00 01 00  [line:    20]   00 00 definition (0x00) 00 00 00 10 00 00 00
+
+load_omf: 0xc0          [00005] (12223) [0x00002fbf] 0xc0 (4813)		n: 3, `INT`
+load_omf: OMF_GRPDEF    [00015] (12231) [0x00002fc7] 0x9a (4805)		group_index: 0x05, unk2: 0x00, unk3: 0x00		ct: 12 (15), n: 5, `int.c`
+load_omf: OMF_GRPDEF    [00045] (12249) [0x00002fd9] 0x9a (4787)		group_index: 0x06, unk2: 0x00, unk3: 0x00		ct: 43 (45), n: 35, `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: 0xd0          [02682] (12339) [0x00003033] 0xd0 (4697)
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0080, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0090, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P3`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0584, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0686, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `AC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `P4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0585, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0480, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0547, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01ff, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `MXCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0546, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `EC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCTL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `FE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IEN1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `CL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0483, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fa, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0484, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP0H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0485, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `IP1H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0486, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0487, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CEX4`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4H`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ea, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP0L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0646, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `EXF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0587, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00eb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP1L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00da, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ec, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP2L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00db, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0544, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `ES`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ed, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP3L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ee, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAP4L`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00dd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM3`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `IP`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00de, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `CCAPM4`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `RI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `FE_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0582, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1R`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0687, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `CY`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `TI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0583, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `INT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0741, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES0T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0742, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ES1T`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0183, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADEN`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0ADDR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0182, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1ADDR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0e01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TXD1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2H`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `PS`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0081, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `SP`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0481, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `T2EX`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `CCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0682, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `OV`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00ca, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `RCAP2L`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS0T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0641, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `C_T2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0586, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `WR`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PS1T`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c00, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0645, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `RCLK`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c01, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TI_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0644, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `TCLK`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SBUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0087, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `PCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0743, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `ESPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `SCON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0089, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TMOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0088, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `TCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `PSPI`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0185, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `BRGCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0441, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0443, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IE1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S0STAT`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008e, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `AUXR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 1, `B`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0184, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `S1STAT`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0640, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 6, `CP_RL2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `ACC`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0740, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ES1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0541, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0543, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0445, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00f8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IP1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0545, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ET2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0447, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0647, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TF2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RB8`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008c, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0540, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0440, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008d, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TB8`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0542, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `EX1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0442, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `IT1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TH2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0680, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 1, `P`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008a, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0482, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `ECI`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008b, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `SM2`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00cc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `TL2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x07c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0683, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PT2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0444, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0684, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RS1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0446, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0642, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TR2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PX1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0083, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPH`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c02, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `RB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fe, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0186, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c03, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `TB8_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0187, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `BRGR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0082, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `DPL`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c07, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM0_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fc, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPL`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b7, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `IPH`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0099, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0BUF`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c06, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM1_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0181, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1BUF`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fd, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `EPM`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0643, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `EXEN2`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c05, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `SM2_1`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x05c6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `PPC`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0098, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S0CON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x04c4, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `REN`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0180, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `S1CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c9, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2MOD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00c8, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `T2CON`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x01fb, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `SPE`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a6, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 6, `WDTRST`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0580, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `RXD`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0581, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 3, `TXD`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `AUXR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00b5, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `PCONA`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPCFG`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0685, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 2, `F0`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x0c04, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 5, `REN_1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00d0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 3, `PSW`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c0, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF0`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x018f, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `WDCON`
+		unk1: 0x0000, type:  sbit (0x01), addr: 0x06c1, unk4: 0x0000, unk5: 0x0002, unk6: 0x0001, n: 4, `CCF1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00e3, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `SPDAT`
+load_omf: OMF51_PEDATA  [00016] (15024) [0x00003ab0] 0x94 (2012)		Segment: 5, offset: 0x80002b, size: 5, addr: 0x3abd
+load_omf: 0x8e          [00019] (15043) [0x00003ac3] 0x8e (1993)		unk1: 0x0005, type:  0x80 (0x80), unk2: 0x0000, unk3: 0x0000, addr: 0x800082, n: 6, `timer2`
+load_omf: OMF51_PEDATA  [00055] (15065) [0x00003ad9] 0x94 (1971)		Segment: 5, offset: 0x800082, size: 44, addr: 0x3ae6
+load_omf: 0x90 (PUBDEF?)[00006] (15173) [0x00003b45] 0x90 (1863)		0x90 0x06 0x00 0x00 0x2c 0x00 0x00 0x00 0x3e 
+load_omf: INCLUDES 0x61 [00013] (15237) [0x00003b85] 0x61 (1799)		[1] [ 2020-06-10 05:35:16 ] 1591767316 `int.c`
+load_omf: INCLUDES 0x61 [00043] (15253) [0x00003b95] 0x61 (1783)		[2] [ 2020-06-10 05:34:30 ] 1591767270 `C:\Keil_v5\C51\Inc\Philips\reg51m.h`
+load_omf: UNKNOWN2 0x62 [00016] (15299) [0x00003bc3] 0x62 (1737)		index: 1 flags: 0x0000  `t2_isr_app`
+load_omf: UNKNOWN3 0x63 [00013] (15318) [0x00003bd6] 0x63 (1718)		63 	0d 00 	08 00 05 00 11 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (15334) [0x00003be6] 0x64 (1702)		count:  3 [00 00]	01 00
+		01 00 01 00  [line:     6]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		01 00 01 00  [line:    14]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		04 00 01 00  [line:    14]   00 00 definition (0x00) 00 00 00 02 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00018] (15390) [0x00003c1e] 0x62 (1646)		index: 1 flags: 0x0000  `__REG51M_H__`
+load_omf: UNKNOWN3 0x63 [00013] (15411) [0x00003c33] 0x63 (1625)		63 	0d 00 	01 00 00 00 00 00 00 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00021] (15427) [0x00003c43] 0x64 (1609)		count:  1 [00 00]	02 00
+		02 00 02 00  [line:    10]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00012] (15451) [0x00003c5b] 0x62 (1585)		index: 1 flags: 0x0000  `timer2`
+load_omf: UNKNOWN3 0x63 [00013] (15466) [0x00003c6a] 0x63 (1570)		63 	0d 00 	08 00 05 00 11 00 01 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (15482) [0x00003c7a] 0x64 (1554)		count:  3 [00 00]	02 00
+		02 00 01 00  [line:     8]   00 00 definition (0x00) 00 00 00 82 36 50 00
+		03 00 01 00  [line:    12]   00 00 definition (0x00) 00 00 00 05 00 00 00
+		03 00 01 00  [line:    14]   00 00 definition (0x00) 00 00 00 00 00 00 00
+
+load_omf: UNKNOWN2 0x62 [00009] (15538) [0x00003cb2] 0x62 (1498)		index: 1 flags: 0x0000  `TF2`
+load_omf: UNKNOWN3 0x63 [00013] (15550) [0x00003cbe] 0x63 (1486)		63 	0d 00 	02 00 04 00 01 00 03 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (15566) [0x00003cce] 0x64 (1470)		count:  2 [00 00]	02 00
+		02 00 02 00  [line:   202]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    10]   00 00 assignment (0x02) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00011] (15606) [0x00003cf6] 0x62 (1430)		index: 1 flags: 0x0000  `stsys`
+load_omf: UNKNOWN3 0x63 [00013] (15620) [0x00003d04] 0x63 (1416)		63 	0d 00 	04 00 02 00 03 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00037] (15636) [0x00003d14] 0x64 (1400)		count:  2 [00 00]	01 00
+		01 00 01 00  [line:     3]   00 00 definition (0x00) 00 00 00 ff ff ff ff
+		01 00 01 00  [line:    11]   00 00  condition (0x01) 00 00 00 ff ff ff ff
+
+load_omf: UNKNOWN2 0x62 [00017] (15676) [0x00003d3c] 0x62 (1360)		index: 1 flags: 0x0000  `t2_isr_load`
+load_omf: UNKNOWN3 0x63 [00013] (15696) [0x00003d50] 0x63 (1340)		63 	0d 00 	08 00 05 00 11 00 02 00 01 00 00 00
+load_omf: UNKNOWN4 0x64 [00053] (15712) [0x00003d60] 0x64 (1324)		count:  3 [00 00]	01 00
+		01 00 01 00  [line:     5]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		01 00 01 00  [line:    12]   00 00 definition (0x00) 00 00 00 00 00 00 00
+		04 00 01 00  [line:    12]   00 00 definition (0x00) 00 00 00 02 00 00 00
+
+load_omf: 0xc0          [00012] (15768) [0x00003d98] 0xc0 (1268)		n: 10, `?C_STARTUP`
+load_omf: OMF_GRPDEF    [00022] (15783) [0x00003da7] 0x9a (1253)		group_index: 0x07, unk2: 0x00, unk3: 0x00		ct: 19 (22), n: 12, `Start_mx.a51`
+load_omf: OMF_GRPDEF    [00022] (15808) [0x00003dc0] 0x9a (1228)		group_index: 0x08, unk2: 0x00, unk3: 0x01		ct: 19 (22), n: 12, `Start_mx.LST`
+load_omf: 0xd0          [00048] (15879) [0x00003e07] 0xd0 (1157)
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x008e, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 4, `AUXR`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x00a2, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 5, `AUXR1`
+		unk1: 0x0000, type:   sfr (0x00), addr: 0x0081, unk4: 0x0000, unk5: 0x0002, unk6: 0x0003, n: 2, `SP`
+load_omf: OMF_EXTDEF    [00539] (15930) [0x00003e3a] 0x8c (1106)
+load_omf: 0x8e          [00043] (16472) [0x00004058] 0x8e (564)		unk1: 0x0007, type:  0x0a (0x0a), unk2: 0x0000, unk3: 0x0000, addr: 0x800000, n: 30, `__?CO?START_MX?3_AP0004_000000`
+load_omf: OMF51_PEDATA  [00014] (16518) [0x00004086] 0x94 (518)		Segment: 7, offset: 0x800000, size: 3, addr: 0x4093
+load_omf: 0x90 (PUBDEF?)[00006] (16550) [0x000040a6] 0x90 (486)		0x90 0x06 0x00 0x00 0x03 0x00 0x00 0x00 0x67 
+load_omf: 0x8e          [00043] (16559) [0x000040af] 0x8e (477)		unk1: 0x0007, type:  0x0a (0x0a), unk2: 0x0000, unk3: 0x0000, addr: 0x80007b, n: 30, `__?CO?START_MX?4_AP0005_00007B`
+load_omf: OMF51_PEDATA  [00018] (16605) [0x000040dd] 0x94 (431)		Segment: 7, offset: 0x80007b, size: 7, addr: 0x40ea
+load_omf: 0x90 (PUBDEF?)[00006] (16648) [0x00004108] 0x90 (388)		0x90 0x06 0x00 0x00 0x07 0x00 0x00 0x00 0x63 
+load_omf: 0x8e          [00042] (16657) [0x00004111] 0x8e (379)		unk1: 0x0007, type:  0x0a (0x0a), unk2: 0x0000, unk3: 0x0000, addr: 0x800800, n: 29, `__?C_C51STARTUP_AP0002_000000`
+load_omf: OMF51_PEDATA  [00023] (16702) [0x0000413e] 0x94 (334)		Segment: 7, offset: 0x800800, size: 12, addr: 0x414b
+load_omf: 0x90 (PUBDEF?)[00006] (16778) [0x0000418a] 0x90 (258)		0x90 0x06 0x00 0x00 0x0c 0x00 0x00 0x00 0x5e 
+load_omf: 0xc0          [00009] (cpu: "c166-generic"
+bits: 8
+isr_count: 0
+omf166:
+  base_addr: 0x800000
+  modinfo:
+    DoubleUsed: false
+    FloatUsed: false
+    MOD167: false
+    CaseSensitive: false
+    Segmented: false
+    MemoryModel: "XLarge: 'xhuge' data, 'far' funcs"
+
+16787) [0x00004193] 0xc0 (249)		n: 7, `?C_INIT`
+load_omf: OMF51_PEDATA  [00174] (16839) [0x000041c7] 0x94 (197)		Segment: 0, offset: 0x80080c, size: 163, addr: 0x41d4
+load_omf: OMF51_PEDATA  [00012] (17016) [0x00004278] 0x94 (20)		Segment: 0, offset: 0x80000b, size: 1, addr: 0x4285
+load_omf: OMF_ALIAS    [00002] (17031) [0x00004287] 0xc6 (5)
 EOF
 RUN
