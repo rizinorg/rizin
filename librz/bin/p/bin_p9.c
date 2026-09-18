@@ -154,6 +154,48 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
+static RzStructuredData *bin_structure(RzBinFile *bf) {
+	if (rz_buf_size(bf->buf) < 28) {
+		return NULL;
+	}
+
+	// magic is read big-endian (see rz_bin_p9_get_arch); the rest of the
+	// header fields are read little-endian, matching sections()/size() above.
+	ut32 magic, text, data, bss, syms, entry, spsz, pcsz;
+	if (!rz_buf_read_be32_at(bf->buf, 0, &magic) ||
+		!rz_buf_read_le32_at(bf->buf, 4, &text) ||
+		!rz_buf_read_le32_at(bf->buf, 8, &data) ||
+		!rz_buf_read_le32_at(bf->buf, 12, &bss) ||
+		!rz_buf_read_le32_at(bf->buf, 16, &syms) ||
+		!rz_buf_read_le32_at(bf->buf, 20, &entry) ||
+		!rz_buf_read_le32_at(bf->buf, 24, &spsz) ||
+		!rz_buf_read_le32_at(bf->buf, 28, &pcsz)) {
+		return NULL;
+	}
+
+	RzStructuredData *sdata = rz_structured_data_new_map();
+	if (!sdata) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_map_add_map(sdata, "p9");
+	if (!root) {
+		rz_structured_data_free(sdata);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_unsigned(root, "magic", magic, true);
+	rz_structured_data_map_add_unsigned(root, "text", text, true);
+	rz_structured_data_map_add_unsigned(root, "data", data, true);
+	rz_structured_data_map_add_unsigned(root, "bss", bss, true);
+	rz_structured_data_map_add_unsigned(root, "syms", syms, true);
+	rz_structured_data_map_add_unsigned(root, "entry", entry, true);
+	rz_structured_data_map_add_unsigned(root, "spsz", spsz, true);
+	rz_structured_data_map_add_unsigned(root, "pcsz", pcsz, true);
+
+	return sdata;
+}
+
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	// TODO: parse symbol table
 	return NULL;
@@ -269,6 +311,7 @@ RzBinPlugin rz_bin_plugin_p9 = {
 	.info = &info,
 	.libs = &libs,
 	.create = &create,
+	.bin_structure = &bin_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

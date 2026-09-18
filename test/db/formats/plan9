@@ -21,3 +21,22 @@ EXPECT=<<EOF
 0x364a0721 0x408a0500 0x364a0721 0x408a0a00   0x0 -rw- data      
 EOF
 RUN
+
+NAME=Plan9: header structure (iH)
+FILE=bins/plan9/bin
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+p9:
+  magic: 0x1eb
+  text: 0x364a0701
+  data: 0x408a0500
+  bss: 0x609d0100
+  syms: 0x0
+  entry: 0x40ee0400
+  spsz: 0x0
+  pcsz: 0x0
+
+EOF
+RUN
