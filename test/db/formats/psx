@@ -17,3 +17,32 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000800 0x80010000 * 0x8018ffff r-x fmap.TEXT
 EOF
 RUN
+
+NAME=psx: header structure (iH)
+FILE=bins/psx/HITPSX.EXE
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+psxexe:
+  id: "PS-X EXE"
+  text: 0x0
+  data: 0x0
+  pc0: 0x8012f484
+  gp0: 0x0
+  t_addr: 0x80010000
+  t_size: 0x180000
+  d_addr: 0x0
+  d_size: 0x0
+  b_addr: 0x0
+  b_size: 0x0
+  S_addr: 0x801ffff0
+  S_size: 0x0
+  SavedSP: 0x0
+  SavedFP: 0x0
+  SavedGP: 0x0
+  SavedRA: 0x0
+  SavedS0: 0x0
+
+EOF
+RUN

@@ -109,6 +109,47 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
+static RzStructuredData *bin_structure(RzBinFile *bf) {
+	psxexe_header psxheader;
+
+	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
+		RZ_LOG_ERROR("Truncated Header\n");
+		return NULL;
+	}
+
+	RzStructuredData *sdata = rz_structured_data_new_map();
+	if (!sdata) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_map_add_map(sdata, "psxexe");
+	if (!root) {
+		rz_structured_data_free(sdata);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_string_n(root, "id", (const char *)psxheader.id, sizeof(psxheader.id));
+	rz_structured_data_map_add_unsigned(root, "text", psxheader.text, true);
+	rz_structured_data_map_add_unsigned(root, "data", psxheader.data, true);
+	rz_structured_data_map_add_unsigned(root, "pc0", psxheader.pc0, true);
+	rz_structured_data_map_add_unsigned(root, "gp0", psxheader.gp0, true);
+	rz_structured_data_map_add_unsigned(root, "t_addr", psxheader.t_addr, true);
+	rz_structured_data_map_add_unsigned(root, "t_size", psxheader.t_size, true);
+	rz_structured_data_map_add_unsigned(root, "d_addr", psxheader.d_addr, true);
+	rz_structured_data_map_add_unsigned(root, "d_size", psxheader.d_size, true);
+	rz_structured_data_map_add_unsigned(root, "b_addr", psxheader.b_addr, true);
+	rz_structured_data_map_add_unsigned(root, "b_size", psxheader.b_size, true);
+	rz_structured_data_map_add_unsigned(root, "S_addr", psxheader.S_addr, true);
+	rz_structured_data_map_add_unsigned(root, "S_size", psxheader.S_size, true);
+	rz_structured_data_map_add_unsigned(root, "SavedSP", psxheader.SavedSP, true);
+	rz_structured_data_map_add_unsigned(root, "SavedFP", psxheader.SavedFP, true);
+	rz_structured_data_map_add_unsigned(root, "SavedGP", psxheader.SavedGP, true);
+	rz_structured_data_map_add_unsigned(root, "SavedRA", psxheader.SavedRA, true);
+	rz_structured_data_map_add_unsigned(root, "SavedS0", psxheader.SavedS0, true);
+
+	return sdata;
+}
+
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinStringSearchOpt opt;
 	rz_bin_string_search_opt_init(&opt);
@@ -130,6 +171,7 @@ RzBinPlugin rz_bin_plugin_psxexe = {
 	.sections = &sections,
 	.entries = &entries,
 	.strings = &strings,
+	.bin_structure = &bin_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE
