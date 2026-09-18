@@ -167,9 +167,46 @@ static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, u
 }
 
 /**
- * Resize the block to cover the instructions, or until the following block
- * and fill instruction offsets.
+ * Resize \p interp_block to cover the instructions, or until the following block.
+ * It fills \p RzAbsIntBlock::insn_offsets.
  * It may also split another block if \p interp_block starts at one of its instruction addresses.
+ *
+ * There are two cases to handle:
+ *
+ * Case A:
+ *
+ * Existing Block I at 0x0
+ * 0x00 +- Block I
+ * 0x04 |
+ * 0x08 |        <--- interp_block starts at 0x08.
+ * 0x0c |
+ * 0x10 +-
+ *
+ * Becomes:
+ *
+ * 0x00 +- Block I
+ * 0x04 |
+ * 0x08 +- Block II
+ * 0x0c |
+ * 0x10 +-
+ *
+ *
+ * Case B:
+ *
+ * Existing Block I at 0x0
+ * 0x00         <--- interp_block starts here.
+ * 0x04
+ * 0x08 +- Block I
+ * 0x0c |
+ * 0x10 +-
+ *
+ * Becomes:
+ *
+ * 0x00 +- Block II
+ * 0x04 |
+ * 0x08 +- Block I
+ * 0x0c |
+ * 0x10 +-
  */
 RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block) {
 	if (interp_block->bounds_resolved) {
@@ -186,7 +223,7 @@ RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ
 	// Blocks may overlap, but one block must not start at an instruction start of another.
 	// We have to consider two cases here, depending on the order in which blocks have been discovered.
 
-	// Case A: Our block would start at an instruction start of another block that starts before us and falls through.
+	// Case A: interp_block would start at an instruction start of another block that starts before us and falls through.
 	// We can move the instruction information from the preceding block in that case. This way, case B is already handled as well.
 	size_t hit_op_idx = 0;
 	RzAbsIntBlock *preceding = interp_block_with_op_at(ctx, rz_absint_block_get_start(interp_block), &hit_op_idx);
