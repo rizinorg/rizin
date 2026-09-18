@@ -469,6 +469,20 @@ static const JavaAsm instructions[205] = {
 };
 #undef NS
 
+/**
+ * \brief Look up an exact Java mnemonic in the existing instruction table.
+ */
+RZ_API int rz_analysis_java_opcode_byname(RZ_NULLABLE const char *name) {
+	if (name) {
+		for (ut32 i = 0; i < RZ_ARRAY_SIZE(instructions); i++) {
+			if (!strcmp(name, instructions[i].opcode)) {
+				return instructions[i].bytecode;
+			}
+		}
+	}
+	return -1;
+}
+
 bool java_assembler(const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, st32 *written) {
 	rz_return_val_if_fail(input && output && input_size > 0 && output_size > 0, false);
 
