@@ -55,9 +55,10 @@ so its numbers differ from Rizin's by design. In C2000 ELF, `sh_addr`,
 
 Native engine under `c28x/`, decoding from a mask/match table generated against
 TI's `dis2000`: of the 62518 opcode words `dis2000` decodes as instructions, it
-agrees on 61641 (98.6%). 782 of the rest are the VCU co-processor set; most of
-the others are spellings `dis2000` prefers, such as `MOVL *SP++,ACC` where this
-engine writes `PUSH ACC`.
+agrees on 62405 (99.8%). Most of the rest are spellings `dis2000` prefers, such
+as `MOVL *SP++,ACC` where this engine writes `PUSH ACC`. The others are VCU
+parallel forms whose second half the comparison lacks, because the parser that
+made it dropped `dis2000`'s `||` lines.
 
 Most core instructions are lifted to RzIL. These are not, and leave
 `op->il_op` unset:
@@ -77,6 +78,16 @@ Encodings with a reserved field are not lifted either.
 Accumulator arithmetic follows SPRU430's *Flags and Modes*. `V` is sticky, and
 `OVC` counts overflows while `OVM` is clear; with `OVM` set the result
 saturates instead. `SXM` selects sign or zero extension of a 16-bit source.
+
+The VCU co-processor of the F2806x and F2837x parts -- Viterbi, complex
+arithmetic, FFT and CRC, documented in **SPRUHS1** -- decodes as well, parallel
+forms included. Its instructions work on `VR0`-`VR8`, `VT0`-`VT1`, the Viterbi
+state metrics and the CRC registers. The encodings were checked against
+`dis2000`, and the VCU-I core set also against TI's assembler. The status,
+clear, move, shift, increment, bit-reversal and CRC instructions are lifted to
+RzIL, except with a register operand such as `@AL` in place of memory. The
+other arithmetic, `VPACK4`, `VSHLMB`, and the complex, Viterbi, FFT and
+Galois-field instructions are not lifted.
 
 ## c55x
 
@@ -147,6 +158,8 @@ as `c28x`, from COFF and from ELF with `e_machine` set to `EM_TI_C2000`.
   Guide (calling convention)
 - TI [SPRAC71C][sprac71c] -- C28x Embedded Application Binary Interface (DWARF
   register numbers and ELF relocations)
+- TI [SPRUHS1C][spruhs1c] -- TMS320C28x Extended Instruction Sets Technical
+  Reference Manual (the VCU)
 - TI SWPU086 -- TMS320C55x 'C55x+' CPU Reference Guide, Preliminary,
   May 2005
 - TI SWPU104 -- TMS320C55x+ DSP Algebraic Instruction Set Reference
@@ -161,3 +174,4 @@ as `c28x`, from COFF and from ELF with `e_machine` set to `EM_TI_C2000`.
 [sprueo2b]: https://web.archive.org/web/20240513043003/https://www.ti.com/lit/ug/sprueo2b/sprueo2b.pdf
 [spru514aa]: https://web.archive.org/web/20261006050208/https://www.ti.com/lit/ug/spru514aa/spru514aa.pdf
 [sprac71c]: https://web.archive.org/web/20261006050055/https://www.ti.com/lit/an/sprac71c/sprac71c.pdf
+[spruhs1c]: https://web.archive.org/web/20250127171200/https://www.ti.com/lit/ug/spruhs1c/spruhs1c.pdf

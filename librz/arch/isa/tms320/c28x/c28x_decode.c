@@ -33,6 +33,10 @@ typedef enum {
 	C28X_OD_SHIFTFIX, ///< fixed shift amount held in param
 	C28X_OD_COND, ///< 4-bit condition code
 	C28X_OD_PCREL, ///< signed word displacement from the instruction address
+	C28X_OD_REGSEL, ///< register chosen by a field, added to a base register
+	C28X_OD_REGSEL_LOW, ///< as REGSEL, but naming the register's low half
+	C28X_OD_IMM_SPLIT, ///< 16-bit immediate split across the opcode and parameter words
+	C28X_OD_IMMV, ///< immediate the opcode fixes, carried in the row itself
 	C28X_OD_PMA, ///< absolute program-memory word address
 	C28X_OD_PMA_IND, ///< the same, read as data and wrapped
 	C28X_OD_PMA_DP, ///< the same, through the page pointer
@@ -43,6 +47,13 @@ typedef enum {
 	C28X_OD_BITNUM, ///< bit number for TBIT/TSET/TCLR
 	C28X_OD_INTR, ///< interrupt selector for INTR
 	C28X_OD_IND, ///< fixed indirect operand, mode in param and register in lo
+	C28X_OD_PAR, ///< parallel half begins; param is its C28xInsnId
+	C28X_OD_REGSEL_HIGH, ///< as REGSEL, but naming the register's high half
+	C28X_OD_REGSEL_SPLIT, ///< VR0-VR7, low bits at lo and the rest at param
+	C28X_OD_VSMPAIR, ///< VSM register pair from a field
+	C28X_OD_VSHIFT, ///< shift amount that is always written; param 1 shifts right
+	C28X_OD_IMMDEC, ///< immediate written in decimal
+	C28X_OD_IMMCOLON, ///< decimal immediate joined to the one before it by ":"
 } C28xOpndKind;
 
 typedef struct {
@@ -65,6 +76,7 @@ typedef struct {
 #include "c28x_rowdefs.h"
 static const C28xInsnDef c28x_table[] = {
 #include "c28x_rows.inc"
+#include "c28x_rows_vcu.inc"
 };
 #include "c28x_rowundefs.h"
 
@@ -186,6 +198,35 @@ static st64 c28x_sext(ut32 v, ut8 width) {
 	return (st64)(v ^ sign) - (st64)sign;
 }
 
+/**
+ * \brief Registers a register-select field can name, by the field's base
+ * register.
+ *
+ * Field values past these are reserved and leave the operand empty, as dis2000
+ * prints them.
+ */
+static const ut8 c28x_regsel_counts[] = {
+	[C28X_REG_VR0] = 9,
+	[C28X_REG_VT0] = 2,
+};
+
+/**
+ * \brief How many registers a register-select field based at \p base can name.
+ */
+static ut32 c28x_regsel_count(ut16 base) {
+	if (base >= RZ_ARRAY_SIZE(c28x_regsel_counts) || !c28x_regsel_counts[base]) {
+		rz_warn_if_reached();
+		return 0;
+	}
+	return c28x_regsel_counts[base];
+}
+
+static const C28xOpKind c28x_regsel_kinds[] = {
+	[C28X_OD_REGSEL] = C28X_OP_REG,
+	[C28X_OD_REGSEL_LOW] = C28X_OP_REG_LOW,
+	[C28X_OD_REGSEL_HIGH] = C28X_OP_REG_HIGH,
+};
+
 static void c28x_decode_operand(const C28xOpndDef *def, ut32 packed, ut64 pc,
 	RZ_OUT C28xOperand *out) {
 	const ut32 f = def->width ? BITS(packed, def->lo, def->width) : 0;
@@ -246,6 +287,36 @@ static void c28x_decode_operand(const C28xOpndDef *def, ut32 packed, ut64 pc,
 		out->kind = C28X_OP_PCREL;
 		out->imm = (st64)pc + c28x_sext(f, def->width) * C28X_WORD_BYTES;
 		break;
+	case C28X_OD_IMMV:
+		out->kind = C28X_OP_IMM;
+		out->imm = (st64)def->param;
+		break;
+	case C28X_OD_IMM_SPLIT: {
+		// the low part sits in the parameter word and the high part in the
+		// opcode word, so neither half is contiguous with the other
+		const ut32 lo = f;
+		const ut32 hi_w = 16 - def->width;
+		const ut32 hi = BITS(packed, def->param, hi_w);
+		out->kind = C28X_OP_IMM;
+		out->imm = (st64)((hi << def->width) | lo);
+		break;
+	}
+	case C28X_OD_REGSEL_LOW:
+	case C28X_OD_REGSEL_HIGH:
+	case C28X_OD_REGSEL: {
+		// the field selects one of a contiguous run of registers; values past
+		// the named ones are reserved and left unrendered, as dis2000 does
+		const ut32 n = f;
+		// a zero-width field names the register in param itself: a fixed VRnL or VRnH
+		const ut32 named = def->width ? c28x_regsel_count(def->param) : 1;
+		if (n >= named) {
+			out->kind = C28X_OP_NONE;
+			break;
+		}
+		out->kind = c28x_regsel_kinds[def->kind];
+		out->reg = (C28xReg)(def->param + n);
+		break;
+	}
 	case C28X_OD_PMA:
 		out->kind = C28X_OP_PMA;
 		// param is the 64K page a 16-bit C2xLP address lies in
@@ -282,6 +353,32 @@ static void c28x_decode_operand(const C28xOpndDef *def, ut32 packed, ut64 pc,
 		break;
 	case C28X_OD_INTR:
 		out->kind = C28X_OP_INTR;
+		out->imm = f;
+		break;
+	case C28X_OD_PAR:
+		out->kind = C28X_OP_PAR;
+		out->imm = def->param;
+		break;
+	case C28X_OD_REGSEL_SPLIT:
+		// VGFACC and friends keep the register's low bit in the opcode word
+		out->kind = C28X_OP_REG;
+		out->reg = (C28xReg)(C28X_REG_VR0 +
+			(f | BITS(packed, def->param, 3 - def->width) << def->width));
+		break;
+	case C28X_OD_VSMPAIR:
+		out->kind = C28X_OP_VSMPAIR;
+		out->imm = f;
+		break;
+	case C28X_OD_VSHIFT:
+		out->kind = def->param ? C28X_OP_VSHR : C28X_OP_VSHL;
+		out->imm = f;
+		break;
+	case C28X_OD_IMMDEC:
+		out->kind = C28X_OP_IMMDEC;
+		out->imm = f;
+		break;
+	case C28X_OD_IMMCOLON:
+		out->kind = C28X_OP_IMMCOLON;
 		out->imm = f;
 		break;
 	case C28X_OD_IND:
@@ -464,6 +561,14 @@ RZ_IPI bool c28x_decode(RZ_NONNULL const C28xIndex *idx, RZ_NONNULL const ut8 *b
 		insn->nops = i + 1;
 	}
 	return true;
+}
+
+/**
+ * \brief The mnemonic of an instruction id.
+ * \return the lower-case name, or "" for an id outside the list
+ */
+RZ_IPI RZ_BORROW const char *c28x_insn_name(C28xInsnId id) {
+	return id > C28X_INS_INVALID && id < C28X_INS_COUNT ? c28x_insn_names[id] : "";
 }
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c28x_mnemonics(void) {

@@ -566,6 +566,85 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr spa    .1 81.0 0\n" // Stack-pointer alignment record
 			"gpr pm     .3 82.0 0\n" // Product shift mode
 			"gpr ovc    .6 83.0 0\n" // Overflow counter
+			"gpr vr0    .32 88 0\n" // VCU result register 0
+			"gpr vr1    .32 92 0\n" // VCU result register 1
+			"gpr vr2    .32 96 0\n" // VCU result register 2
+			"gpr vr3    .32 100 0\n" // VCU result register 3
+			"gpr vr4    .32 104 0\n" // VCU result register 4
+			"gpr vr5    .32 108 0\n" // VCU result register 5
+			"gpr vr6    .32 112 0\n" // VCU result register 6
+			"gpr vr7    .32 116 0\n" // VCU result register 7
+			"gpr vr8    .32 120 0\n" // VCU result register 8
+			"gpr vt0    .32 124 0\n" // VCU shift/status
+			"gpr vt1    .32 128 0\n"
+			"gpr vstatus .32 280 0\n" // VCU status and configuration
+			"gpr vcrc   .32 284 0\n" // CRC result
+			"gpr vcrcpoly .32 288 0\n" // CRC polynomial (VCU-II)
+			"gpr vcrcsize .32 292 0\n" // CRC polynomial and data sizes (VCU-II)
+			"gpr vsm0   .16 296 0\n" // Viterbi state metric (VCU-II)
+			"gpr vsm1   .16 298 0\n"
+			"gpr vsm2   .16 300 0\n"
+			"gpr vsm3   .16 302 0\n"
+			"gpr vsm4   .16 304 0\n"
+			"gpr vsm5   .16 306 0\n"
+			"gpr vsm6   .16 308 0\n"
+			"gpr vsm7   .16 310 0\n"
+			"gpr vsm8   .16 312 0\n"
+			"gpr vsm9   .16 314 0\n"
+			"gpr vsm10  .16 316 0\n"
+			"gpr vsm11  .16 318 0\n"
+			"gpr vsm12  .16 320 0\n"
+			"gpr vsm13  .16 322 0\n"
+			"gpr vsm14  .16 324 0\n"
+			"gpr vsm15  .16 326 0\n"
+			"gpr vsm16  .16 328 0\n"
+			"gpr vsm17  .16 330 0\n"
+			"gpr vsm18  .16 332 0\n"
+			"gpr vsm19  .16 334 0\n"
+			"gpr vsm20  .16 336 0\n"
+			"gpr vsm21  .16 338 0\n"
+			"gpr vsm22  .16 340 0\n"
+			"gpr vsm23  .16 342 0\n"
+			"gpr vsm24  .16 344 0\n"
+			"gpr vsm25  .16 346 0\n"
+			"gpr vsm26  .16 348 0\n"
+			"gpr vsm27  .16 350 0\n"
+			"gpr vsm28  .16 352 0\n"
+			"gpr vsm29  .16 354 0\n"
+			"gpr vsm30  .16 356 0\n"
+			"gpr vsm31  .16 358 0\n"
+			"gpr vsm32  .16 360 0\n"
+			"gpr vsm33  .16 362 0\n"
+			"gpr vsm34  .16 364 0\n"
+			"gpr vsm35  .16 366 0\n"
+			"gpr vsm36  .16 368 0\n"
+			"gpr vsm37  .16 370 0\n"
+			"gpr vsm38  .16 372 0\n"
+			"gpr vsm39  .16 374 0\n"
+			"gpr vsm40  .16 376 0\n"
+			"gpr vsm41  .16 378 0\n"
+			"gpr vsm42  .16 380 0\n"
+			"gpr vsm43  .16 382 0\n"
+			"gpr vsm44  .16 384 0\n"
+			"gpr vsm45  .16 386 0\n"
+			"gpr vsm46  .16 388 0\n"
+			"gpr vsm47  .16 390 0\n"
+			"gpr vsm48  .16 392 0\n"
+			"gpr vsm49  .16 394 0\n"
+			"gpr vsm50  .16 396 0\n"
+			"gpr vsm51  .16 398 0\n"
+			"gpr vsm52  .16 400 0\n"
+			"gpr vsm53  .16 402 0\n"
+			"gpr vsm54  .16 404 0\n"
+			"gpr vsm55  .16 406 0\n"
+			"gpr vsm56  .16 408 0\n"
+			"gpr vsm57  .16 410 0\n"
+			"gpr vsm58  .16 412 0\n"
+			"gpr vsm59  .16 414 0\n"
+			"gpr vsm60  .16 416 0\n"
+			"gpr vsm61  .16 418 0\n"
+			"gpr vsm62  .16 420 0\n"
+			"gpr vsm63  .16 422 0\n"
 			"gpr arp    .3 84.0 0\n" // Auxiliary register pointer
 			"gpr rptc   .8 85.0 0\n" // Repeat counter
 			"gpr eallow .1 86.0 0\n" // Protected-register write enable

@@ -90,6 +90,7 @@ RZ_IPI void c28x_fill_analysis(RZ_NONNULL const C28xInsn *insn, ut64 addr,
 }
 
 static const char *const c28x_opkind_names[] = {
+	[C28X_OP_REG_LOW] = "reg_low",
 	[C28X_OP_REG] = "reg",
 	[C28X_OP_MEM] = "mem",
 	[C28X_OP_IMM] = "imm",
@@ -103,6 +104,13 @@ static const char *const c28x_opkind_names[] = {
 	[C28X_OP_PORT] = "port",
 	[C28X_OP_MODE] = "mode",
 	[C28X_OP_INTR] = "intr",
+	[C28X_OP_PAR] = "par",
+	[C28X_OP_REG_HIGH] = "reg_high",
+	[C28X_OP_VSMPAIR] = "vsm_pair",
+	[C28X_OP_VSHL] = "vshl",
+	[C28X_OP_VSHR] = "vshr",
+	[C28X_OP_IMMDEC] = "imm_dec",
+	[C28X_OP_IMMCOLON] = "imm_colon",
 };
 
 static const char *const c28x_addrmode_names[] = {
@@ -201,6 +209,16 @@ RZ_IPI RZ_OWN RzStructuredData *c28x_opex(RZ_NONNULL const C28xInsn *insn) {
 		case C28X_OP_COND:
 			rz_structured_data_map_add_string(ent, "value",
 				c28x_cond_name((ut8)o->imm));
+			break;
+		case C28X_OP_REG_LOW:
+		case C28X_OP_REG_HIGH:
+			rz_structured_data_map_add_string(ent, "value", c28x_reg_name(o->reg));
+			rz_structured_data_map_add_string(ent, "part",
+				o->kind == C28X_OP_REG_LOW ? "low" : "high");
+			break;
+		case C28X_OP_PAR:
+			rz_structured_data_map_add_string(ent, "value",
+				c28x_insn_name((C28xInsnId)o->imm));
 			break;
 		case C28X_OP_PCREL:
 		case C28X_OP_PMA:

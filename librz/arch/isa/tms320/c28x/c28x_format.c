@@ -41,6 +41,23 @@ static const char *const c28x_reg_names[] = {
 	[C28X_REG_IFR] = "ifr",
 	[C28X_REG_DBGIER] = "dbgier",
 	[C28X_REG_OVC] = "ovc",
+	[C28X_REG_VR0] = "vr0",
+	[C28X_REG_VR1] = "vr1",
+	[C28X_REG_VR2] = "vr2",
+	[C28X_REG_VR3] = "vr3",
+	[C28X_REG_VR4] = "vr4",
+	[C28X_REG_VR5] = "vr5",
+	[C28X_REG_VR6] = "vr6",
+	[C28X_REG_VR7] = "vr7",
+	[C28X_REG_VR8] = "vr8",
+	[C28X_REG_VT0] = "vt0",
+	[C28X_REG_VCRC] = "vcrc",
+	[C28X_REG_VSTATUS] = "vstatus",
+	[C28X_REG_VCRCPOLY] = "vcrcpoly",
+	[C28X_REG_VCRCDSIZE] = "vcrcdsize",
+	[C28X_REG_VCRCPSIZE] = "vcrcpsize",
+	[C28X_REG_VCRCSIZE] = "vcrcsize",
+	[C28X_REG_VT1] = "vt1",
 	[C28X_REG_PM] = "pm",
 	[C28X_REG_ARP] = "arp",
 	[C28X_REG_ACC_P] = "acc:p",
@@ -191,6 +208,18 @@ static void c28x_format_mode(RzStrBuf *sb, ut32 mask) {
 
 static void c28x_format_operand(RzStrBuf *sb, const C28xInsn *insn, const C28xOperand *op) {
 	switch (op->kind) {
+	case C28X_OP_REG_LOW:
+		rz_strbuf_appendf(sb, "%sl", c28x_reg_name(op->reg));
+		break;
+	case C28X_OP_REG_HIGH:
+		rz_strbuf_appendf(sb, "%sh", c28x_reg_name(op->reg));
+		break;
+	case C28X_OP_VSMPAIR:
+		rz_strbuf_appendf(sb, "vsm%u:vsm%u", (ut32)op->imm * 2 + 1, (ut32)op->imm * 2);
+		break;
+	case C28X_OP_IMMDEC:
+		rz_strbuf_appendf(sb, "#%u", (ut32)op->imm);
+		break;
 	case C28X_OP_REG:
 		if (op->reg == C28X_REG_ARP) {
 			rz_strbuf_appendf(sb, "arp%d", (int)op->imm);
@@ -292,8 +321,14 @@ RZ_IPI RZ_OWN char *c28x_format(RZ_NONNULL const C28xInsn *insn, ut64 pc) {
 		return rz_strbuf_drain_nofree(&sb);
 	}
 
+	bool par_start = false;
 	for (ut8 i = 0; i < insn->nops; i++) {
 		const C28xOperand *op = &insn->ops[i];
+		// a reserved register number leaves the slot empty rather than naming
+		// something that does not exist; dis2000 drops the operand the same way
+		if (op->kind == C28X_OP_NONE) {
+			continue;
+		}
 		const bool suffix_shift = i > 1;
 		if (op->kind == C28X_OP_SHIFT) {
 			if (!suffix_shift) {
@@ -310,8 +345,21 @@ RZ_IPI RZ_OWN char *c28x_format(RZ_NONNULL const C28xInsn *insn, ut64 pc) {
 			rz_strbuf_append(&sb, " << ");
 			rz_strbuf_append(&sb, c28x_reg_name(op->reg));
 			continue;
+		} else if (op->kind == C28X_OP_VSHL || op->kind == C28X_OP_VSHR) {
+			// the VCU shifts write their count after the register, zero included
+			rz_strbuf_appendf(&sb, " %s #%u", op->kind == C28X_OP_VSHR ? ">>" : "<<",
+				(ut32)op->imm);
+			continue;
+		} else if (op->kind == C28X_OP_IMMCOLON) {
+			rz_strbuf_appendf(&sb, ":#%u", (ut32)op->imm);
+			continue;
+		} else if (op->kind == C28X_OP_PAR) {
+			rz_strbuf_appendf(&sb, " || %s", c28x_insn_name((C28xInsnId)op->imm));
+			par_start = true;
+			continue;
 		} else {
-			rz_strbuf_append(&sb, i ? ", " : " ");
+			rz_strbuf_append(&sb, i && !par_start ? ", " : " ");
+			par_start = false;
 		}
 		c28x_format_operand(&sb, insn, op);
 	}

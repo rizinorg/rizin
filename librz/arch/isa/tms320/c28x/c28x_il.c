@@ -3239,10 +3239,12 @@ static const C28xLifter c28x_lifters[] = {
  */
 RZ_IPI RZ_OWN RzILOpEffect *c28x_lift(RZ_NONNULL const C28xInsn *insn, ut64 pc) {
 	rz_return_val_if_fail(insn, NULL);
-	if ((size_t)insn->id >= RZ_ARRAY_SIZE(c28x_lifters) || !c28x_lifters[insn->id]) {
-		return NULL;
+	RzILOpEffect *eff = NULL;
+	if ((size_t)insn->id < RZ_ARRAY_SIZE(c28x_lifters) && c28x_lifters[insn->id]) {
+		eff = c28x_lifters[insn->id](insn, pc);
 	}
-	return c28x_lifters[insn->id](insn, pc);
+	// the VCU lifts its own instructions
+	return eff ? eff : c28x_lift_vcu(insn, pc);
 }
 
 /**
