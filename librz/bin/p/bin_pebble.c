@@ -193,6 +193,51 @@ static RzPVector /*<RzBinAddr *>*/ *pebble_entries(RzBinFile *bf) {
 	return ret;
 }
 
+static void pebble_add_version(RzStructuredData *parent, const char *key, Version v) {
+	RzStructuredData *node = rz_structured_data_map_add_map(parent, key);
+	if (!node) {
+		return;
+	}
+	rz_structured_data_map_add_unsigned(node, "major", v.major, false);
+	rz_structured_data_map_add_unsigned(node, "minor", v.minor, false);
+}
+
+static RzStructuredData *pebble_structure(RzBinFile *bf) {
+	PebbleAppInfo *pai = pebble_get_pai(bf);
+	if (!pai) {
+		return NULL;
+	}
+
+	RzStructuredData *sdata = rz_structured_data_new_map();
+	if (!sdata) {
+		return NULL;
+	}
+
+	RzStructuredData *root = rz_structured_data_map_add_map(sdata, "pebble");
+	if (!root) {
+		rz_structured_data_free(sdata);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_string_n(root, "header", pai->header, sizeof(pai->header));
+	pebble_add_version(root, "struct_version", pai->struct_version);
+	pebble_add_version(root, "sdk_version", pai->sdk_version);
+	pebble_add_version(root, "app_version", pai->app_version);
+	rz_structured_data_map_add_unsigned(root, "size", pai->size, true);
+	rz_structured_data_map_add_unsigned(root, "offset", pai->offset, true);
+	rz_structured_data_map_add_unsigned(root, "crc", pai->crc, true);
+	rz_structured_data_map_add_string_n(root, "name", pai->name, sizeof(pai->name));
+	rz_structured_data_map_add_string_n(root, "company", pai->company, sizeof(pai->company));
+	rz_structured_data_map_add_unsigned(root, "icon_resource_id", pai->icon_resource_id, true);
+	rz_structured_data_map_add_unsigned(root, "sym_table_addr", pai->sym_table_addr, true);
+	rz_structured_data_map_add_unsigned(root, "flags", pai->flags, true);
+	rz_structured_data_map_add_unsigned(root, "reloc_list_start", pai->reloc_list_start, true);
+	rz_structured_data_map_add_unsigned(root, "num_reloc_entries", pai->num_reloc_entries, true);
+	rz_structured_data_map_add_bytes(root, "uuid", pai->uuid, sizeof(pai->uuid), RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
+
+	return sdata;
+}
+
 RzBinPlugin rz_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
@@ -205,6 +250,7 @@ RzBinPlugin rz_bin_plugin_pebble = {
 	.maps = &rz_bin_maps_of_file_sections,
 	.sections = pebble_sections,
 	.info = &pebble_info,
+	.bin_structure = &pebble_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE

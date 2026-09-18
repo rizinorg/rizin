@@ -5,3 +5,35 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=Peeble: header structure (iH)
+FILE=bins/pebble/pebble-app.bin
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+pebble:
+  header: "PBLAPP"
+  struct_version:
+    major: 16
+    minor: 0
+  sdk_version:
+    major: 5
+    minor: 0
+  app_version:
+    major: 1
+    minor: 5
+  size: 0x1bac
+  offset: 0x98
+  crc: 0x6a4aab95
+  name: "Pedometer"
+  company: "Jathusan Thiruchelvanathan"
+  icon_resource_id: 0x11
+  sym_table_addr: 0x94
+  flags: 0x0
+  reloc_list_start: 0x2e
+  num_reloc_entries: 0x1178d807
+  uuid: "51 0f 48 f2 b7 23 6b cf c4 db 9a 40 4f 47 bb 58 |Q.H..#k....@OG.X|"
+
+EOF
+RUN
