@@ -50,7 +50,12 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 			}
 		}
 	}
-	rz_core_seek_to_register(r, "PC", false);
+    rz_core_seek_to_register(r, "PC", false);
+
+	if (rz_config_get_b(r->config, "dbg.trace_persistent") && !r->dbg->session) {
+		r->dbg->session = rz_debug_session_new();
+		rz_debug_add_checkpoint(r->dbg);
+	}
 
 	return true;
 }
