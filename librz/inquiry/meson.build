@@ -3,9 +3,11 @@
 
 rz_inquiry_sources = [
   'il_cache.c',
+  'absint/block.c',
   'absint/interpreter.c',
   'absint/driver.c',
   'absint/val_domain_constant.c',
+  'absint/state.c',
 ]
 
 rz_inquiry_inc = [platform_inc]

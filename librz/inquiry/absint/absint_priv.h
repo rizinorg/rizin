@@ -33,4 +33,26 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
 RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb);
 RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb);
 
+RZ_IPI bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, ut64 entry_point);
+RZ_IPI bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState *a, RZ_BORROW RZ_IN const RzAbsIntState *b);
+
+RZ_IPI void interp_blocks_init(RzAbsIntRunContext *ctx);
+RZ_IPI void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks);
+RZ_IPI void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 target);
+RZ_IPI RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx);
+
+static inline const RzAbsIntValueDomain *val_domain(const RzAbsIntInstance *inst) {
+	return inst->config.val_domain;
+}
+
+/** Whether during evaluation, analysis results should be collected */
+static inline bool interp_is_analyzing(RzAbsIntRunContext *ctx) {
+	return ctx->res != NULL;
+}
+
+/** Whether during evaluation, new states may be discoveres */
+static inline bool interp_is_collecting_states(RzAbsIntRunContext *ctx) {
+	return ctx->res == NULL;
+}
+
 #endif
