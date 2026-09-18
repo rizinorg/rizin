@@ -32,14 +32,14 @@
 	{ OP(0xffff0000, 0x76170000), .mnem = "nasp", RZTYPE(SUB) },                                  // NASP
 	{ OP(0xffff0000, 0x76180000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(ST0) } },            // PUSH ST0
 	{ OP(0xffff0000, 0x76190000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(T_ST0) } },          // PUSH T:ST0
-	{ OP(0xffff0000, 0x761a0000), .mnem = "edis", RZTYPE(NULL) },                                 // EDIS
+	{ OP(0xffff0000, 0x761a0000), .mnem = "edis", RZTYPE(MOV) },                                 // EDIS
 	{ OP(0xffff0000, 0x761b0000), .mnem = "asp", RZTYPE(ADD) },                                   // ASP
 	{ OP(0xffff0000, 0x761c0000), .mnem = "intr", RZTYPE(SWI), .ops = { REG(EMUINT) } },          // INTR EMUINT
 	{ OP(0xffff0000, 0x761d0000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(P) } },              // PUSH P
 	{ OP(0xffff0000, 0x761f0000), .mnem = "movw", RZTYPE(MOV), .len = 4, .ops = { REG(DP), IMMU(0, 16) } }, // MOVW DP,#16bit
 	{ OP(0xffff0000, 0x76200000), .mnem = "lb", RZTYPE(RJMP), .ops = { INDR(XAR_NONE, 7) } },      // LB *XAR7
-	{ OP(0xffff0000, 0x76210000), .mnem = "idle", RZTYPE(NULL) },                                 // IDLE
-	{ OP(0xffff0000, 0x76220000), .mnem = "eallow", RZTYPE(NULL) },                               // EALLOW
+	{ OP(0xffff0000, 0x76210000), .mnem = "idle", RZTYPE(SYNC) },                                 // IDLE
+	{ OP(0xffff0000, 0x76220000), .mnem = "eallow", RZTYPE(MOV) },                               // EALLOW
 	{ OP(0xffff0000, 0x76230000), .mnem = "or", RZTYPE(OR), .len = 4, .ops = { REG(IER), IMMU(0, 16) } },   // OR IER,#16bit
 	{ OP(0xffff0000, 0x76240000), .mnem = "estop1", RZTYPE(TRAP) },                               // ESTOP1
 	{ OP(0xffff0000, 0x76250000), .mnem = "estop0", RZTYPE(TRAP) },                               // ESTOP0

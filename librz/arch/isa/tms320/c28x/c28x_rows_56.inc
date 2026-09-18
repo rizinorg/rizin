@@ -27,23 +27,23 @@
 	{ OP(0xffffff00, 0x56130000), .mnem = "zalr", RZTYPE(MOV), .len = 4, .ops = { REG(ACC), LOC16(0) }, RPTABLE },     // ZALR ACC,loc16
 	{ OP(0xffff0000, 0x56140000), .mnem = "xb", RZTYPE(RJMP), .ops = { REG(AL) } },                                    // XB *AL
 	{ OP(0xffffff00, 0x56150000), .mnem = "sqra", RZTYPE(MUL), .len = 4, .ops = { LOC16(0) }, RPTABLE },               // SQRA loc16
-	{ OP(0xffff0000, 0x56160000), .mnem = "clrc", RZTYPE(NULL), .ops = { REG(AMODE) } },                               // CLRC AMODE (= C28ADDR)
+	{ OP(0xffff0000, 0x56160000), .mnem = "clrc", RZTYPE(MOV), .ops = { REG(AMODE) } },                               // CLRC AMODE (= C28ADDR)
 	{ OP(0xffffff00, 0x56170000), .mnem = "subcul", RZTYPE(SUB), .len = 4, .ops = { REG(ACC), LOC32(0) }, RPTABLE },   // SUBCUL ACC,loc32
 	{ OP(0xffff0000, 0x56180000), .mnem = "cmpr", RZTYPE(CMP), .ops = { IMMC(2) } },                                   // CMPR 2
 	{ OP(0xffff0000, 0x56190000), .mnem = "cmpr", RZTYPE(CMP), .ops = { IMMC(1) } },                                   // CMPR 1
-	{ OP(0xffff0000, 0x561a0000), .mnem = "setc", RZTYPE(NULL), .ops = { REG(M0M1MAP) } },                             // SETC M0M1MAP (= C28MAP)
-	{ OP(0xffff0000, 0x561b0000), .mnem = "clrc", RZTYPE(NULL), .ops = { REG(XF) } },                                  // CLRC XF
+	{ OP(0xffff0000, 0x561a0000), .mnem = "setc", RZTYPE(MOV), .ops = { REG(M0M1MAP) } },                             // SETC M0M1MAP (= C28MAP)
+	{ OP(0xffff0000, 0x561b0000), .mnem = "clrc", RZTYPE(MOV), .ops = { REG(XF) } },                                  // CLRC XF
 	{ OP(0xffff0000, 0x561c0000), .mnem = "cmpr", RZTYPE(CMP), .ops = { IMMC(3) } },                                   // CMPR 3
 	{ OP(0xffff0000, 0x561d0000), .mnem = "cmpr", RZTYPE(CMP), .ops = { IMMC(0) } },                                   // CMPR 0
-	{ OP(0xffff0000, 0x561e0000), .mnem = "lpaddr", RZTYPE(NULL) },                                                    // LPADDR
-	{ OP(0xffff0000, 0x561f0000), .mnem = "setc", RZTYPE(NULL), .ops = { REG(OBJMODE) } },                             // SETC OBJMODE (= C28OBJ)
+	{ OP(0xffff0000, 0x561e0000), .mnem = "lpaddr", RZTYPE(MOV) },                                                    // LPADDR
+	{ OP(0xffff0000, 0x561f0000), .mnem = "setc", RZTYPE(MOV), .ops = { REG(OBJMODE) } },                             // SETC OBJMODE (= C28OBJ)
 	{ OP(0xffff0000, 0x56200000), .mnem = "norm", RZTYPE(MOV), .ops = { REG(ACC), IND(ARP_POSTDEC, 0) } },             // NORM ACC,*--
 	{ OP(0xffffff00, 0x56210000), .mnem = "movx", RZTYPE(MOV), .len = 4, .ops = { REG(TL), LOC16(0) } },               // MOVX TL,loc16
 	{ OP(0xffff0000, 0x56220000), .mnem = "lsrl", RZTYPE(SHR), .ops = { REG(ACC), REG(T) } },                          // LSRL ACC,T
 	{ OP(0xffffff00, 0x56230000), .mnem = "add", RZTYPE(ADD), .len = 4, .ops = { REG(ACC), LOC16(0), REG(T) } },       // ADD ACC,loc16 << T
 	{ OP(0xffff0000, 0x56240000), .mnem = "norm", RZTYPE(MOV), .ops = { REG(ACC), IND(ARP, 0) } },                     // NORM ACC,*
 	{ OP(0xffffff00, 0x56250000), .mnem = "tbit", RZTYPE(CMP), .len = 4, .ops = { LOC16(0), REG(T) } },                // TBIT loc16,T
-	{ OP(0xffff0000, 0x56260000), .mnem = "setc", RZTYPE(NULL), .ops = { REG(XF) } },                                  // SETC XF
+	{ OP(0xffff0000, 0x56260000), .mnem = "setc", RZTYPE(MOV), .ops = { REG(XF) } },                                  // SETC XF
 	{ OP(0xffffff00, 0x56270000), .mnem = "sub", RZTYPE(SUB), .len = 4, .ops = { REG(ACC), LOC16(0), REG(T) } },       // SUB ACC,loc16 << T
 	{ OP(0xffffff00, 0x56280000), .mnem = "movu", RZTYPE(MOV), .len = 4, .ops = { LOC16(0), REG(OVC) } },              // MOVU loc16,OVC
 	{ OP(0xffffff00, 0x56290000), .mnem = "mov", RZTYPE(MOV), .len = 4, .ops = { LOC16(0), REG(OVC) } },               // MOV loc16,OVC
@@ -56,13 +56,13 @@
 	{ OP(0xffff0000, 0x56330000), .mnem = "zapa", RZTYPE(MOV) },                                                       // ZAPA
 	{ OP(0xffff0000, 0x56340000), .mnem = "xcall", RZTYPE(RCALL), .ops = { REG(AL) } },                                // XCALL *AL
 	{ OP(0xffff0000, 0x56350000), .mnem = "csb", RZTYPE(MOV), .ops = { REG(ACC) } },                                   // CSB ACC
-	{ OP(0xffff0000, 0x56360000), .mnem = "clrc", RZTYPE(NULL), .ops = { REG(OBJMODE) } },                             // CLRC OBJMODE (= C27OBJ)
+	{ OP(0xffff0000, 0x56360000), .mnem = "clrc", RZTYPE(MOV), .ops = { REG(OBJMODE) } },                             // CLRC OBJMODE (= C27OBJ)
 	{ OP(0xfffe0000, 0x56380000), .mnem = "mov", RZTYPE(MOV), .ops = { REG(PM), AXAT(16) } },                             // MOV PM,AX
 	{ OP(0xffff0000, 0x563b0000), .mnem = "lsll", RZTYPE(SHL), .ops = { REG(ACC), REG(T) } },                          // LSLL ACC,T
 	{ OP(0xffffff00, 0x563c0000), .mnem = "xpread", RZTYPE(LOAD), .len = 4, .ops = { LOC16(0), REG(AL) } },            // XPREAD loc16,*AL
 	{ OP(0xffffff00, 0x563d0000), .mnem = "xpwrite", RZTYPE(STORE), .len = 4, .ops = { REG(AL), LOC16(0) } },          // XPWRITE *AL,loc16
 	{ OP(0xffff0000, 0x563e0000), .mnem = "sat64", RZTYPE(MOV), .ops = { REG(ACC_P) } },                               // SAT64 ACC:P
-	{ OP(0xffff0000, 0x563f0000), .mnem = "clrc", RZTYPE(NULL), .ops = { REG(M0M1MAP) } },                             // CLRC M0M1MAP (= C27MAP)
+	{ OP(0xffff0000, 0x563f0000), .mnem = "clrc", RZTYPE(MOV), .ops = { REG(M0M1MAP) } },                             // CLRC M0M1MAP (= C27MAP)
 	{ OP(0xffffff00, 0x56400000), .mnem = "addcl", RZTYPE(ADD), .len = 4, .ops = { REG(ACC), LOC32(0) } },             // ADDCL ACC,loc32
 	{ OP(0xffffff00, 0x56410000), .mnem = "subl", RZTYPE(SUB), .len = 4, .ops = { LOC32(0), REG(ACC) } },              // SUBL loc32,ACC
 	{ OP(0xffffff00, 0x56420000), .mnem = "qmpyxul", RZTYPE(MUL), .len = 4, .ops = { REG(P), REG(XT), LOC32(0) } },    // QMPYXUL P,XT,loc32

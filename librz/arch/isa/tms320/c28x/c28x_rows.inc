@@ -11,7 +11,7 @@
 
 // clang-format off
 	// --- 0x00: control transfer, stack and interrupt ---
-	{ OP(0xffff0000, 0x00010000), .mnem = "aborti", RZTYPE(NULL) },                                                    // ABORTI
+	{ OP(0xffff0000, 0x00010000), .mnem = "aborti", RZTYPE(MOV) },                                                    // ABORTI
 	{ OP(0xffff0000, 0x00020000), .mnem = "pop", RZTYPE(POP), .ops = { REG(IFR) } },                                   // POP IFR
 	{ OP(0xffff0000, 0x00030000), .mnem = "pop", RZTYPE(POP), .ops = { REG(AR1H_AR0H) } },                             // POP AR1H:AR0H
 	{ OP(0xffff0000, 0x00040000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(RPC) } },                                 // PUSH RPC
@@ -77,8 +77,8 @@
 	{ OP(0xff000000, 0x26000000), .mnem = "pwrite", RZTYPE(STORE), .ops = { INDR(XAR_NONE, 7), LOC16(16) }, RPTABLE },  // PWRITE *XAR7,loc16
 	{ OP(0xff000000, 0x27000000), .mnem = "mov", RZTYPE(MOV), .ops = { REG(PL), LOC16(16) } },                         // MOV PL,loc16
 	{ OP(0xff000000, 0x28000000), .mnem = "mov", RZTYPE(MOV), .len = 4, .ops = { LOC16(16), IMMU(0, 16) } },           // MOV loc16,#16bit
-	{ OP(0xffff0000, 0x29100000), .mnem = "eint", RZTYPE(NULL) },                                                      // EINT (= CLRC INTM)
-	{ OP(0xff000000, 0x29000000), .mnem = "clrc", RZTYPE(NULL), .ops = { MODE(16) } },                                 // CLRC mode
+	{ OP(0xffff0000, 0x29100000), .mnem = "eint", RZTYPE(MOV) },                                                      // EINT (= CLRC INTM)
+	{ OP(0xff000000, 0x29000000), .mnem = "clrc", RZTYPE(MOV), .ops = { MODE(16) } },                                 // CLRC mode
 	{ OP(0xff000000, 0x2a000000), .mnem = "pop", RZTYPE(POP), .ops = { LOC16(16) } },                                  // POP loc16
 	{ OP(0xff000000, 0x2b000000), .mnem = "mov", RZTYPE(MOV), .ops = { LOC16(16), IMMC(0) }, RPTABLE },                // MOV loc16,#0
 	{ OP(0xff000000, 0x2c000000), .mnem = "loopz", RZTYPE(CJMP), .len = 4, .ops = { LOC16(16), IMMU(0, 16) } },        // LOOPZ loc16,#16bit
@@ -100,8 +100,8 @@
 	{ OP(0xfe000000, 0x38000000), .mnem = "movb", RZTYPE(MOV), .ops = { AXMSB, LOC16(16) } },                          // MOVB AX.MSB,loc16
 	{ OP(0xffff0000, 0x3abd0000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(XAR0) } },                                // PUSH XAR0
 	{ OP(0xff000000, 0x3a000000), .mnem = "movl", RZTYPE(MOV), .ops = { LOC32(16), REG(XAR0) } },                      // MOVL loc32,XAR0
-	{ OP(0xffff0000, 0x3b100000), .mnem = "dint", RZTYPE(NULL) },                                                      // DINT (= SETC INTM)
-	{ OP(0xff000000, 0x3b000000), .mnem = "setc", RZTYPE(NULL), .ops = { MODE(16) } },                                 // SETC mode
+	{ OP(0xffff0000, 0x3b100000), .mnem = "dint", RZTYPE(MOV) },                                                      // DINT (= SETC INTM)
+	{ OP(0xff000000, 0x3b000000), .mnem = "setc", RZTYPE(MOV), .ops = { MODE(16) } },                                 // SETC mode
 	{ OP(0xfe000000, 0x3c000000), .mnem = "movb", RZTYPE(MOV), .ops = { LOC16(16), AXLSB } },                          // MOVB loc16,AX.LSB
 	{ OP(0xfff00000, 0x3e000000), .mnem = "and", RZTYPE(AND), .len = 4, .ops = { REG(ACC), IMMU(0, 16), SHIFT(16, 4) } }, // AND ACC,#16bit << #0..15
 	{ OP(0xfff00000, 0x3e100000), .mnem = "or", RZTYPE(OR), .len = 4, .ops = { REG(ACC), IMMU(0, 16), SHIFT(16, 4) } },   // OR ACC,#16bit << #0..15
@@ -208,8 +208,8 @@
 	{ OP(0xff000000, 0xb1000000), .mnem = "mov", RZTYPE(MOV), .ops = { LOC16(16), REG(ACC), SHIFTC(1) }, RPTABLE },    // MOV loc16,ACC << 1
 	{ OP(0xffff0000, 0xb2bd0000), .mnem = "push", RZTYPE(PUSH), .ops = { REG(XAR1) } },                                // PUSH XAR1
 	{ OP(0xff000000, 0xb2000000), .mnem = "movl", RZTYPE(MOV), .ops = { LOC32(16), REG(XAR1) } },                      // MOVL loc32,XAR1
-	{ OP(0xff800000, 0xb5000000), .mnem = "rptb", RZTYPE(NULL), .len = 4, .ops = { IMMU(16, 7), LOC16(0) } },      // RPTB label,loc16
-	{ OP(0xff800000, 0xb5800000), .mnem = "rptb", RZTYPE(NULL), .len = 4, .ops = { IMMU(16, 7), IMMU(0, 16) } },    // RPTB label,#16bit
+	{ OP(0xff800000, 0xb5000000), .mnem = "rptb", RZTYPE(REP), .len = 4, .ops = { IMMU(16, 7), LOC16(0) } },      // RPTB label,loc16
+	{ OP(0xff800000, 0xb5800000), .mnem = "rptb", RZTYPE(REP), .len = 4, .ops = { IMMU(16, 7), IMMU(0, 16) } },    // RPTB label,#16bit
 	{ OP(0xff000000, 0xb3000000), .mnem = "movh", RZTYPE(MOV), .ops = { LOC16(16), REG(ACC), SHIFTC(1) }, RPTABLE },   // MOVH loc16,ACC << 1
 	{ OP(0xff000000, 0xb4000000), .mnem = "in", RZTYPE(IO), .len = 4, .ops = { LOC16(16), PORT(0, 16) } },             // IN loc16,*(PA)
 	{ OP(0xff000000, 0xb6000000), .mnem = "movb", RZTYPE(MOV), .ops = { REG(XAR7), IMMU(16, 8) } },                    // MOVB XAR7,#8bit
@@ -284,7 +284,7 @@
 	{ OP(0xfffe0000, 0xff620000), .mnem = "lsr", RZTYPE(SHR), .ops = { AXAT(16), REG(T) } },                              // LSR AX,T
 	{ OP(0xfffe0000, 0xff640000), .mnem = "asr", RZTYPE(SAR), .ops = { AXAT(16), REG(T) } },                              // ASR AX,T
 	{ OP(0xfffe0000, 0xff660000), .mnem = "lsl", RZTYPE(SHL), .ops = { AXAT(16), REG(T) } },                              // LSL AX,T
-	{ OP(0xfff80000, 0xff680000), .mnem = "spm", RZTYPE(NULL), .ops = { PMSHIFT(16) } },                               // SPM shift
+	{ OP(0xfff80000, 0xff680000), .mnem = "spm", RZTYPE(MOV), .ops = { PMSHIFT(16) } },                               // SPM shift
 	{ OP(0xfff80000, 0xff700000), .mnem = "norm", RZTYPE(MOV), .ops = { REG(ACC), IND(XAR_MOD_DEC, 16) } },            // NORM ACC,XARn--
 	{ OP(0xfff80000, 0xff780000), .mnem = "norm", RZTYPE(MOV), .ops = { REG(ACC), IND(XAR_MOD_INC, 16) } },            // NORM ACC,XARn++
 	{ OP(0xffe00000, 0xff800000), .mnem = "lsl", RZTYPE(SHL), .ops = { AXAT(20), SHIFT1(16, 4) } },                       // LSL AX,#1..16
