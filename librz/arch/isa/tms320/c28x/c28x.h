@@ -66,6 +66,19 @@ typedef enum {
 	C28X_REG_IFR, ///< interrupt flag register
 	C28X_REG_DBGIER, ///< debug interrupt enable register
 	C28X_REG_OVC, ///< overflow counter (ST0 field)
+	// VCU (SPRUHS1): eight result registers and two status/shift registers,
+	// present on the F2806x and F2837x parts that carry the co-processor
+	C28X_REG_VR0,
+	C28X_REG_VR1,
+	C28X_REG_VR2,
+	C28X_REG_VR3,
+	C28X_REG_VR4,
+	C28X_REG_VR5,
+	C28X_REG_VR6,
+	C28X_REG_VR7,
+	C28X_REG_VR8,
+	C28X_REG_VT0,
+	C28X_REG_VT1,
 	C28X_REG_PM, ///< product shift mode (ST0 field)
 	C28X_REG_ARP, ///< auxiliary register pointer (ST1 field)
 	C28X_REG_P_PM, ///< P shifted by the product shift mode, written "P << PM"
@@ -85,6 +98,13 @@ typedef enum {
 	C28X_REG_XF,
 	C28X_REG_NMI,
 	C28X_REG_EMUINT,
+	// VCU registers that only moves and CRC set-up name
+	C28X_REG_VCRC,
+	C28X_REG_VSTATUS,
+	C28X_REG_VCRCPOLY,
+	C28X_REG_VCRCDSIZE,
+	C28X_REG_VCRCPSIZE,
+	C28X_REG_VCRCSIZE,
 } C28xReg;
 
 /** loc16/loc32 addressing modes, AMODE = 0 (SPRU430F Table 5-1). */
@@ -118,6 +138,7 @@ typedef enum {
 /** Operand kind within a decoded instruction. */
 typedef enum {
 	C28X_OP_NONE = 0,
+	C28X_OP_REG_LOW, ///< low half of a VCU register, spelled VRnL
 	C28X_OP_REG, ///< named register in \ref C28xOperand::reg
 	C28X_OP_MEM, ///< loc16/loc32 access (see \ref C28xAddrMode)
 	C28X_OP_IMM, ///< immediate constant in \ref C28xOperand::imm
@@ -131,6 +152,13 @@ typedef enum {
 	C28X_OP_PORT, ///< I/O space port address, rendered as "*(PA)"
 	C28X_OP_MODE, ///< ST0/ST1 mode bit mask for SETC/CLRC
 	C28X_OP_INTR, ///< interrupt selector for INTR, rendered by name
+	C28X_OP_PAR, ///< start of the parallel half; its \ref C28xInsnId in \ref C28xOperand::imm
+	C28X_OP_REG_HIGH, ///< high half of a VCU register, spelled VRnH
+	C28X_OP_VSMPAIR, ///< state-metric pair VSM(2n+1):VSM(2n), n in \ref C28xOperand::imm
+	C28X_OP_VSHL, ///< "<< #n" after the register it shifts, zero included
+	C28X_OP_VSHR, ///< ">> #n" after the register it shifts, zero included
+	C28X_OP_IMMDEC, ///< immediate written in decimal
+	C28X_OP_IMMCOLON, ///< decimal immediate joined to the one before it by ":"
 } C28xOpKind;
 
 /** One decoded operand. */
@@ -147,8 +175,8 @@ typedef struct {
 	bool wide; ///< loc32 (32-bit) rather than loc16 (16-bit) access
 } C28xOperand;
 
-// Enough for the widest rows: BAR, with its target, two registers and condition
-#define C28X_MAX_OPS 4
+// Enough for the widest rows: a VCU FFT butterfly with its parallel VMOV32
+#define C28X_MAX_OPS 10
 
 /**
  * \brief Every C28x mnemonic, in alphabetical order, as X(ID, "name").
@@ -157,6 +185,8 @@ typedef struct {
  * so the two cannot drift apart.
  */
 #define C28X_INSN_LIST(X) \
+	X(A_VCLROVFI, "a_vclrovfi") \
+	X(A_VCLROVFR, "a_vclrovfr") \
 	X(ABORTI, "aborti") \
 	X(ABS, "abs") \
 	X(ABSTC, "abstc") \
@@ -300,6 +330,101 @@ typedef struct {
 	X(TRAP, "trap") \
 	X(TSET, "tset") \
 	X(UOUT, "uout") \
+	X(VASHL32, "vashl32") \
+	X(VASHR32, "vashr32") \
+	X(VBITFLIP, "vbitflip") \
+	X(VCADD, "vcadd") \
+	X(VCCMAC, "vccmac") \
+	X(VCCMPY, "vccmpy") \
+	X(VCCON, "vccon") \
+	X(VCDADD16, "vcdadd16") \
+	X(VCDSUB16, "vcdsub16") \
+	X(VCFFT1, "vcfft1") \
+	X(VCFFT10, "vcfft10") \
+	X(VCFFT2, "vcfft2") \
+	X(VCFFT3, "vcfft3") \
+	X(VCFFT4, "vcfft4") \
+	X(VCFFT5, "vcfft5") \
+	X(VCFFT6, "vcfft6") \
+	X(VCFFT7, "vcfft7") \
+	X(VCFFT8, "vcfft8") \
+	X(VCFFT9, "vcfft9") \
+	X(VCFLIP, "vcflip") \
+	X(VCLEAR, "vclear") \
+	X(VCLEARALL, "vclearall") \
+	X(VCLRCPACK, "vclrcpack") \
+	X(VCLRCRCMSGFLIP, "vclrcrcmsgflip") \
+	X(VCLRDIVE, "vclrdive") \
+	X(VCLROPACK, "vclropack") \
+	X(VCMAC, "vcmac") \
+	X(VCMAG, "vcmag") \
+	X(VCMPY, "vcmpy") \
+	X(VCRC16P1H_1, "vcrc16p1h_1") \
+	X(VCRC16P1L_1, "vcrc16p1l_1") \
+	X(VCRC16P2H_1, "vcrc16p2h_1") \
+	X(VCRC16P2L_1, "vcrc16p2l_1") \
+	X(VCRC24H_1, "vcrc24h_1") \
+	X(VCRC24L_1, "vcrc24l_1") \
+	X(VCRC32H_1, "vcrc32h_1") \
+	X(VCRC32L_1, "vcrc32l_1") \
+	X(VCRC32P2H_1, "vcrc32p2h_1") \
+	X(VCRC32P2L_1, "vcrc32p2l_1") \
+	X(VCRC8H_1, "vcrc8h_1") \
+	X(VCRC8L_1, "vcrc8l_1") \
+	X(VCRCCLR, "vcrcclr") \
+	X(VCRCH, "vcrch") \
+	X(VCRCL, "vcrcl") \
+	X(VCSHL16, "vcshl16") \
+	X(VCSHR16, "vcshr16") \
+	X(VCSUB, "vcsub") \
+	X(VDEC, "vdec") \
+	X(VGFACC, "vgfacc") \
+	X(VGFADD4, "vgfadd4") \
+	X(VGFINIT, "vgfinit") \
+	X(VGFMAC4, "vgfmac4") \
+	X(VGFMPY4, "vgfmpy4") \
+	X(VINC, "vinc") \
+	X(VITBM2, "vitbm2") \
+	X(VITBM3, "vitbm3") \
+	X(VITDHADDSUB, "vitdhaddsub") \
+	X(VITDHSUBADD, "vitdhsubadd") \
+	X(VITDLADDSUB, "vitdladdsub") \
+	X(VITDLSUBADD, "vitdlsubadd") \
+	X(VITHSEL, "vithsel") \
+	X(VITLSEL, "vitlsel") \
+	X(VITSTAGE, "vitstage") \
+	X(VLSHL32, "vlshl32") \
+	X(VLSHR32, "vlshr32") \
+	X(VMOD32, "vmod32") \
+	X(VMOV16, "vmov16") \
+	X(VMOV32, "vmov32") \
+	X(VMOVD32, "vmovd32") \
+	X(VMOVIX, "vmovix") \
+	X(VMOVXI, "vmovxi") \
+	X(VMOVZI, "vmovzi") \
+	X(VMPYADD, "vmpyadd") \
+	X(VNEG, "vneg") \
+	X(VNOP, "vnop") \
+	X(VPACK4, "vpack4") \
+	X(VREVB, "vrevb") \
+	X(VRNDOFF, "vrndoff") \
+	X(VRNDON, "vrndon") \
+	X(VSATOFF, "vsatoff") \
+	X(VSATON, "vsaton") \
+	X(VSETCPACK, "vsetcpack") \
+	X(VSETCRCMSGFLIP, "vsetcrcmsgflip") \
+	X(VSETCRCSIZE, "vsetcrcsize") \
+	X(VSETK, "vsetk") \
+	X(VSETOPACK, "vsetopack") \
+	X(VSETSHL, "vsetshl") \
+	X(VSETSHR, "vsetshr") \
+	X(VSHLMB, "vshlmb") \
+	X(VSMINIT, "vsminit") \
+	X(VSWAP32, "vswap32") \
+	X(VSWAPCRC, "vswapcrc") \
+	X(VTCLEAR, "vtclear") \
+	X(VTRACE, "vtrace") \
+	X(VXORMOV32, "vxormov32") \
 	X(XB, "xb") \
 	X(XBANZ, "xbanz") \
 	X(XCALL, "xcall") \
@@ -392,6 +517,7 @@ RZ_IPI RZ_BORROW const char *c28x_reg_name(C28xReg reg);
 
 RZ_IPI RZ_BORROW const char *c28x_cond_name(ut8 cond);
 
+RZ_IPI RZ_BORROW const char *c28x_insn_name(C28xInsnId id);
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c28x_mnemonics(void);
 
 #ifdef __cplusplus

@@ -1555,3 +1555,718 @@ acc = 0x000033cd
 n = 0x0
 EOF
 RUN
+
+# VCU
+
+NAME=C28x RzIL VM: VCU status fields and clears
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 45e5 @ 0
+ara0
+ar vstatus=0x3000
+aezi
+aezs 1
+echo -- VSETSHR 5 keeps the other fields
+ar vstatus
+w0 8192 @ 0
+wx c3e5 @ 0
+ara0
+aezi
+aezs 1
+echo -- VSETSHL 3
+ar vstatus
+w0 8192 @ 0
+wx 06e5 @ 0
+ara0
+aezi
+aezs 1
+echo -- VSATON
+ar vstatus
+w0 8192 @ 0
+wx 07e5 @ 0
+ara0
+ar vstatus=0x400
+aezi
+aezs 1
+echo -- VSATOFF
+ar vstatus
+w0 8192 @ 0
+wx 08e5 @ 0
+ara0
+aezi
+aezs 1
+echo -- VRNDON
+ar vstatus
+w0 8192 @ 0
+wx 0be5 @ 0
+ara0
+ar vstatus=0x3000
+aezi
+aezs 1
+echo -- A_VCLROVFI clears the imaginary flag
+ar vstatus
+w0 8192 @ 0
+wx 0ae5 @ 0
+ara0
+ar vstatus=0x3000
+aezi
+aezs 1
+echo -- A_VCLROVFR clears the real flag
+ar vstatus
+w0 8192 @ 0
+wx 21e523e52ce520e5 @ 0
+ara0
+ar vstatus=0x40000000
+aezi
+aezs 4
+echo -- VSETCPACK, VSETOPACK, VSETCRCMSGFLIP, VCLRDIVE
+ar vstatus
+w0 8192 @ 0
+wx f2e60509 @ 0
+ara0
+ar vstatus=0x38000000
+aezi
+aezs 1
+echo -- VSETK 5
+ar vstatus
+w0 8192 @ 0
+wx f8e60300 @ 0
+ara0
+ar vr3=0x1234
+ar vr4=0x7
+aezi
+aezs 1
+echo -- VCLEAR VR3
+ar vr3
+ar vr4
+w0 8192 @ 0
+wx f9e60000 @ 0
+ara0
+ar vr0=0x1
+ar vr8=0x2
+ar vt1=0x3
+ar vcrc=0x4
+aezi
+aezs 1
+echo -- VCLEARALL
+ar vr0
+ar vr8
+ar vt1
+ar vcrc
+w0 8192 @ 0
+wx 29e524e5 @ 0
+ara0
+ar vt0=0x5
+ar vt1=0x6
+ar vcrc=0xdeadbeef
+aezi
+aezs 2
+echo -- VTCLEAR, VCRCCLR
+ar vt0
+ar vt1
+ar vcrc
+EOF
+EXPECT=<<EOF
+-- VSETSHR 5 keeps the other fields
+vstatus = 0x00003005
+-- VSETSHL 3
+vstatus = 0x00000060
+-- VSATON
+vstatus = 0x00000400
+-- VSATOFF
+vstatus = 0x00000000
+-- VRNDON
+vstatus = 0x00000800
+-- A_VCLROVFI clears the imaginary flag
+vstatus = 0x00001000
+-- A_VCLROVFR clears the real flag
+vstatus = 0x00002000
+-- VSETCPACK, VSETOPACK, VSETCRCMSGFLIP, VCLRDIVE
+vstatus = 0x8000c000
+-- VSETK 5
+vstatus = 0x28000000
+-- VCLEAR VR3
+vr3 = 0x00000000
+vr4 = 0x00000007
+-- VCLEARALL
+vr0 = 0x00000000
+vr8 = 0x00000000
+vt1 = 0x00000000
+vcrc = 0x00000004
+-- VTCLEAR, VCRCCLR
+vt0 = 0x00000000
+vt1 = 0x00000000
+vcrc = 0x00000000
+EOF
+RUN
+
+NAME=C28x RzIL VM: VCU moves
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx f0e38401 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 1
+echo -- VMOV32 VR1,XAR4++
+ar vr1
+ar xar4
+w0 8192 @ 0
+wx 04e28402f0e38c03 @ 0
+ara0
+ar xar4=0x40
+ar vr2=0xcafef00d
+aezi
+aezs 2
+echo -- VMOV32 XAR4++,VR2 read back
+ar vr3
+ar xar4
+w0 8192 @ 0
+wx c9e28401 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+ar vr1=0xaaaaaaaa
+aezi
+aezs 1
+echo -- VMOV16 VR1L,XAR4++ keeps VR1H
+ar vr1
+ar xar4
+w0 8192 @ 0
+wx c9e28411 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+ar vr1=0xaaaaaaaa
+aezi
+aezs 1
+echo -- VMOV16 VR1H,XAR4++ keeps VR1L
+ar vr1
+w0 8192 @ 0
+wx 18e28412c9e28c03 @ 0
+ara0
+ar xar4=0x40
+ar vr2=0xbeef0000
+aezi
+aezs 2
+echo -- VMOV16 XAR4++,VR2H read back
+ar vr3
+ar xar4
+w0 8192 @ 0
+wx f2e6080a @ 0
+ara0
+ar vr0=0x11112222
+ar vr1=0x33334444
+aezi
+aezs 1
+echo -- VMOV16 VR0L,VR1H
+ar vr0
+w0 8192 @ 0
+wx f2e64502 @ 0
+ara0
+ar vr5=0x12345678
+aezi
+aezs 1
+echo -- VMOV32 VR4,VR5
+ar vr4
+w0 8192 @ 0
+wx f2e61203 @ 0
+ara0
+ar vr1=0x1
+ar vr2=0x2
+aezi
+aezs 1
+echo -- VSWAP32 VR1,VR2
+ar vr1
+ar vr2
+w0 8192 @ 0
+wx f1e74123 @ 0
+ara0
+ar vr1=0xffffffff
+aezi
+aezs 1
+echo -- VMOVZI VR1,0x1234 clears the high half
+ar vr1
+w0 8192 @ 0
+wx 7be7f1ee @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VMOVXI VR1,0xbeef
+ar vr1
+w0 8192 @ 0
+wx ede7d1ea @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VMOVIX VR1,0xdead
+ar vr1
+w0 8192 @ 0
+wx 24e2c401f0e3d402 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 2
+echo -- VMOVD32 copies two words up
+ar vr1
+ar vr2
+w0 8192 @ 0
+wx f0e3c411 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+ar vr1=0xffff0000
+aezi
+aezs 1
+echo -- VXORMOV32 VR1,+XAR40
+ar vr1
+w0 8192 @ 0
+wx b0e2c400 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 1
+echo -- VMOV32 VSTATUS,mem32
+ar vstatus
+w0 8192 @ 0
+wx f1e3c401 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 1
+echo -- VMOV32 VT1,mem32
+ar vt1
+w0 8192 @ 0
+wx 80e2c421 @ 0
+wx 78563412 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 1
+echo -- VMOV32 VSM3:VSM2,mem32
+ar vsm3
+ar vsm2
+w0 8192 @ 0
+wx 0ee2c401f0e3c401 @ 0
+ara0
+ar xar4=0x40
+ar vsm3=0xaaaa
+ar vsm2=0xbbbb
+aezi
+aezs 2
+echo -- VMOV32 mem32,VSM3:VSM2 read back
+ar vr1
+w0 8192 @ 0
+wx 84bd4000f0e3c501 @ 0
+wx bebafeca @ 160
+ara0
+ar xar4=0x50
+ar xar5=0x40
+aezi
+aezs 2
+echo -- VMOV32 0:16bit,XAR4++ read back
+ar vr1
+ar xar4
+w0 8192 @ 0
+wx 56e70503 @ 0
+ara0
+aezi
+aezs 1
+echo -- VSETCRCSIZE 5:3
+ar vcrcsize
+w0 8192 @ 0
+wx cbe2c405 @ 0
+wx 0600 @ 128
+ara0
+ar xar4=0x40
+ar vcrcsize=0x1f0001
+aezi
+aezs 1
+echo -- VMOV16 VCRCDSIZE,mem16 sets DSIZE only
+ar vcrcsize
+EOF
+EXPECT=<<EOF
+-- VMOV32 VR1,XAR4++
+vr1 = 0x12345678
+xar4 = 0x00000042
+-- VMOV32 XAR4++,VR2 read back
+vr3 = 0xcafef00d
+xar4 = 0x00000040
+-- VMOV16 VR1L,XAR4++ keeps VR1H
+vr1 = 0xaaaa5678
+xar4 = 0x00000041
+-- VMOV16 VR1H,XAR4++ keeps VR1L
+vr1 = 0x5678aaaa
+-- VMOV16 XAR4++,VR2H read back
+vr3 = 0x0000beef
+xar4 = 0x00000040
+-- VMOV16 VR0L,VR1H
+vr0 = 0x11113333
+-- VMOV32 VR4,VR5
+vr4 = 0x12345678
+-- VSWAP32 VR1,VR2
+vr1 = 0x00000002
+vr2 = 0x00000001
+-- VMOVZI VR1,0x1234 clears the high half
+vr1 = 0x00001234
+-- VMOVXI VR1,0xbeef
+vr1 = 0x1234beef
+-- VMOVIX VR1,0xdead
+vr1 = 0xdead5678
+-- VMOVD32 copies two words up
+vr1 = 0x12345678
+vr2 = 0x12345678
+-- VXORMOV32 VR1,+XAR40
+vr1 = 0xedcb5678
+-- VMOV32 VSTATUS,mem32
+vstatus = 0x12345678
+-- VMOV32 VT1,mem32
+vt1 = 0x12345678
+-- VMOV32 VSM3:VSM2,mem32
+vsm3 = 0x1234
+vsm2 = 0x5678
+-- VMOV32 mem32,VSM3:VSM2 read back
+vr1 = 0xaaaabbbb
+-- VMOV32 0:16bit,XAR4++ read back
+vr1 = 0xcafebabe
+xar4 = 0x00000052
+-- VSETCRCSIZE 5:3
+vcrcsize = 0x00050003
+-- VMOV16 VCRCDSIZE,mem16 sets DSIZE only
+vcrcsize = 0x001f0006
+EOF
+RUN
+
+NAME=C28x RzIL VM: VCU CRC, against TI linker CRC tables
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 24e5cbe2c400cce28400cbe2c400cce28400cbe2c400cce28400cbe2c400cce28400 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC8 over 12345678: TI linker CRC8_PRIME
+ar vcrc
+w0 8192 @ 0
+wx 24e5cee2c400cfe28400cee2c400cfe28400cee2c400cfe28400cee2c400cfe28400 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC16P1: TI linker CRC16_ALT
+ar vcrc
+w0 8192 @ 0
+wx 24e5cee2c410cfe28410cee2c410cfe28410cee2c410cfe28410cee2c410cfe28410 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC16P2: TI linker CRC16_802_15_4
+ar vcrc
+w0 8192 @ 0
+wx 24e5cbe2c401cbe28402cbe2c401cbe28402cbe2c401cbe28402cbe2c401cbe28402 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC24: TI linker CRC24_FLEXRAY
+ar vcrc
+w0 8192 @ 0
+wx 24e5c1e2c400c2e28400c1e2c400c2e28400c1e2c400c2e28400c1e2c400c2e28400 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC32: TI linker CRC32_PRIME
+ar vcrc
+ar xar4
+w0 8192 @ 0
+wx 24e5cbe2c403cbe28404cbe2c403cbe28404cbe2c403cbe28404cbe2c403cbe28404 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 9
+echo -- VCRC32P2: TI linker CRC32_C
+ar vcrc
+w0 8192 @ 0
+wx 24e5cbe2c400cce28400cbe2c400cce28400cbe2c400cce28400cbe2c400cce28400 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+ar vstatus=0x80000000
+aezi
+aezs 9
+echo -- VCRC8 with CRCMSGFLIP
+ar vcrc
+w0 8192 @ 0
+wx cbe2c400 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+ar vcrc=0xabcd0000
+aezi
+aezs 1
+echo -- VCRC8 keeps VCRC31:8
+ar vcrc
+w0 8192 @ 0
+wx 54e7211056e70f0724e5cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 11
+echo -- VCRCL/VCRCH 16-bit poly 0x1021 CRC16_802_15_4
+ar vcrc
+w0 8192 @ 0
+wx 54e7070056e7070324e5cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+aezi
+aezs 11
+echo -- VCRCL/VCRCH 8-bit CRC of 4-bit data
+ar vcrc
+w0 8192 @ 0
+wx 54e7070056e7070324e5cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407cbe2c406cbe28407 @ 0
+wx 3132333435363738 @ 128
+ara0
+ar xar4=0x40
+ar vstatus=0x80000000
+aezi
+aezs 11
+echo -- VCRCL/VCRCH 4-bit data, flipped
+ar vcrc
+w0 8192 @ 0
+wx 2ee5 @ 0
+ara0
+ar vcrc=0x12345678
+aezi
+aezs 1
+echo -- VSWAPCRC
+ar vcrc
+EOF
+EXPECT=<<EOF
+-- VCRC8 over 12345678: TI linker CRC8_PRIME
+vcrc = 0x000000c7
+-- VCRC16P1: TI linker CRC16_ALT
+vcrc = 0x000095fd
+-- VCRC16P2: TI linker CRC16_802_15_4
+vcrc = 0x00009015
+-- VCRC24: TI linker CRC24_FLEXRAY
+vcrc = 0x00fe2631
+-- VCRC32: TI linker CRC32_PRIME
+vcrc = 0x20e779a2
+xar4 = 0x00000044
+-- VCRC32P2: TI linker CRC32_C
+vcrc = 0xf9ef9da2
+-- VCRC8 with CRCMSGFLIP
+vcrc = 0x000000f1
+-- VCRC8 keeps VCRC31:8
+vcrc = 0xabcd0097
+-- VCRCL/VCRCH 16-bit poly 0x1021 CRC16_802_15_4
+vcrc = 0x00009015
+-- VCRCL/VCRCH 8-bit CRC of 4-bit data
+vcrc = 0x0000001c
+-- VCRCL/VCRCH 4-bit data, flipped
+vcrc = 0x000000fd
+-- VSWAPCRC
+vcrc = 0x12347856
+EOF
+RUN
+
+NAME=C28x RzIL VM: VCU shifts, increments and reversals
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx f2e62105 @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VLSHL32 VR14
+ar vr1
+w0 8192 @ 0
+wx f2e62106 @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VLSHR32 VR14
+ar vr1
+w0 8192 @ 0
+wx f2e61908 @ 0
+ara0
+ar vr1=0xd
+aezi
+aezs 1
+echo -- VASHR32 133 truncates to 1
+ar vr1
+w0 8192 @ 0
+wx f2e61908 @ 0
+ara0
+ar vr1=0xd
+ar vstatus=0x800
+aezi
+aezs 1
+echo -- VASHR32 133 rounds to 2 SPRUHS1C 1.625
+ar vr1
+w0 8192 @ 0
+wx f2e61908 @ 0
+ara0
+ar vr1=0xfffffff3
+ar vstatus=0x800
+aezi
+aezs 1
+echo -- VASHR32 -133 rounds to -2
+ar vr1
+w0 8192 @ 0
+wx f2e62107 @ 0
+ara0
+ar vr1=0x8000000
+aezi
+aezs 1
+echo -- VASHL32 overflow wraps, OVFR
+ar vr1
+ar vstatus
+w0 8192 @ 0
+wx f2e62107 @ 0
+ara0
+ar vr1=0x8000000
+ar vstatus=0x400
+aezi
+aezs 1
+echo -- VASHL32 overflow saturates with SAT
+ar vr1
+ar vstatus
+w0 8192 @ 0
+wx f2e62107 @ 0
+ara0
+ar vr1=0xf0000000
+ar vstatus=0x400
+aezi
+aezs 1
+echo -- VASHL32 negative saturates
+ar vr1
+ar vstatus
+w0 8192 @ 0
+wx f2e62107 @ 0
+ara0
+ar vr1=0x100000
+aezi
+aezs 1
+echo -- VASHL32 no overflow
+ar vr1
+ar vstatus
+w0 8192 @ 0
+wx f2e6010b @ 0
+ara0
+ar vr1=0x1234ffff
+aezi
+aezs 1
+echo -- VINC VR1L wraps
+ar vr1
+w0 8192 @ 0
+wx f2e6090b @ 0
+ara0
+ar vr1=0x12340000
+aezi
+aezs 1
+echo -- VDEC VR1L wraps
+ar vr1
+w0 8192 @ 0
+wx 81e28411 @ 0
+wx 78563412 @ 128
+ara0
+ar vr1=0x5
+ar xar4=0x40
+aezi
+aezs 1
+echo -- VINC VR1L par VMOV32 VR2,XAR4++
+ar vr1
+ar vr2
+ar xar4
+w0 8192 @ 0
+wx 21a10000 @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VBITFLIP VR1
+ar vr1
+w0 8192 @ 0
+wx 80e60124 @ 0
+ara0
+ar vr1=0x12345678
+aezi
+aezs 1
+echo -- VREVB VR1
+ar vr1
+EOF
+EXPECT=<<EOF
+-- VLSHL32 VR14
+vr1 = 0x23456780
+-- VLSHR32 VR14
+vr1 = 0x01234567
+-- VASHR32 133 truncates to 1
+vr1 = 0x00000001
+-- VASHR32 133 rounds to 2 SPRUHS1C 1.625
+vr1 = 0x00000002
+-- VASHR32 -133 rounds to -2
+vr1 = 0xfffffffe
+-- VASHL32 overflow wraps, OVFR
+vr1 = 0x80000000
+vstatus = 0x00001000
+-- VASHL32 overflow saturates with SAT
+vr1 = 0x7fffffff
+vstatus = 0x00001400
+-- VASHL32 negative saturates
+vr1 = 0x80000000
+vstatus = 0x00001400
+-- VASHL32 no overflow
+vr1 = 0x01000000
+vstatus = 0x00000000
+-- VINC VR1L wraps
+vr1 = 0x12340000
+-- VDEC VR1L wraps
+vr1 = 0x1234ffff
+-- VINC VR1L par VMOV32 VR2,XAR4++
+vr1 = 0x00000006
+vr2 = 0x12345678
+xar4 = 0x00000042
+-- VBITFLIP VR1
+vr1 = 0x1e6a2c48
+-- VREVB VR1
+vr1 = 0x78563412
+EOF
+RUN

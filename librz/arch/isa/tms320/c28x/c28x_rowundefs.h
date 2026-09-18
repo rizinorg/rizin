@@ -5,6 +5,10 @@
 
 #undef OP
 #undef REG
+#undef VRREG
+#undef VRREG3
+#undef VRREGL
+#undef VTREG
 #undef AXREG
 #undef XARN
 #undef ARN
@@ -12,6 +16,8 @@
 #undef LOC16
 #undef LOC32
 #undef IMMU
+#undef IMMSPLIT
+#undef IMMV
 #undef IMMS
 #undef IMMC
 #undef SHIFT
@@ -31,3 +37,15 @@
 #undef AXAT
 #undef INTRN
 #undef RPTABLE
+#undef PAR
+#undef VRREGH
+#undef VRREGL4
+#undef VRSPLIT
+#undef VSMPAIR
+#undef VSHIFT
+#undef IMMDEC
+#undef IMMCOLON
+#undef VRREGH4
+#undef VTREG2
+#undef VRLFIX
+#undef VRHFIX
