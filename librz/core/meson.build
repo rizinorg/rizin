@@ -173,6 +173,7 @@ rz_core_deps = [
   rz_inquiry_dep,
   platform_deps,
   dependency('rzgdb'),
+  dependency('rzar'),
   rzheap_dep,
   shell_parser_dep,
   lrt,

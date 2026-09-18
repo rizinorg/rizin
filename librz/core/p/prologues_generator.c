@@ -13,6 +13,7 @@
 #include <rz_util.h>
 #include <rz_prologues.h>
 #include "prologues_generator.inc"
+#include "ar.h"
 
 #define rz_cmd_desc_argv_new_warn(rcmd, parent, cmd, cb, help) \
 	rz_warn_if_fail(rz_cmd_desc_argv_new(rcmd, parent, cmd, cb, help))
@@ -182,7 +183,7 @@ static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 p
 
 	RzBinObject *o = binfile->o;
 	if (!o) {
-		RZ_LOG_ERROR("Failed to get bin object for file: %s\n", binfile->file);
+		RZ_LOG_ERROR("Failed to get bin object for file: '%s'\n", binfile->file);
 		return false;
 	}
 
@@ -362,7 +363,7 @@ RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNUL
 	}
 
 	if (!build_prefix_tree_from_binfile(binfile, pg_trie, prologue_len)) {
-		RZ_LOG_WARN("Failed to build prefix tree for file: %s\n", binfile->file ? binfile->file : "unknown");
+		RZ_LOG_WARN("Failed to build prefix tree for file: '%s'\n", binfile->file ? binfile->file : "unknown");
 		return false;
 	}
 
@@ -397,6 +398,46 @@ static bool print_sd(RzStructuredData *sd, RzOutputMode mode) {
 	return true;
 }
 
+static bool process_archive(const char *ar_file, RzTrie *pg_trie, RzBin *bin, ut64 prologue_len,
+	RZ_NULLABLE RzProloguesArchInfo *arch_info, RzSetS *processed_files) {
+
+	const char *f_base = rz_file_basename(ar_file);
+	if (!rz_cons_yesno('y', "'%s' is an ar archive. Unpack and process individual object files? (Y/n) ", f_base)) {
+		return false;
+	}
+	RzList /*<RzArFp>*/ *ar_fp_list = ar_open_all(ar_file, O_RDONLY);
+	if (!ar_fp_list) {
+		RZ_LOG_WARN("ar: Failed to open all .o files in: '%s'\n", f_base);
+		rz_list_free(ar_fp_list);
+		return false;
+	}
+
+	RzListIter *it;
+	RzArFp *ar_fp;
+	rz_list_foreach (ar_fp_list, it, ar_fp) {
+		RzBinOptions opt;
+		rz_bin_options_init(&opt, -1, 0, 0, false);
+		opt.filename = ar_fp->name;
+		RzBuffer *buf_slice = rz_buf_new_slice(ar_fp->buf, ar_fp->start, ar_fp->end - ar_fp->start);
+		if (!buf_slice) {
+			RZ_LOG_ERROR("Failed to get buf slice from parent buf");
+			rz_list_free(ar_fp_list);
+			return false;
+		}
+		RzBinFile *bf = rz_bin_open_buf(bin, buf_slice, &opt);
+		if (!bf) {
+			RZ_LOG_WARN("Failed to parse bin object file: '%s'\n", ar_fp->name);
+			rz_list_free(ar_fp_list);
+			return false;
+		}
+		rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, arch_info, processed_files);
+		rz_buf_free(buf_slice);
+		rz_bin_file_delete(bin, bf);
+	}
+	rz_list_free(ar_fp_list);
+	return true;
+}
+
 RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	CorePGContext *ctx = rz_core_plugin_context_get(core, &rz_core_plugin_prologues_generator);
 	rz_return_val_if_fail(ctx, RZ_CMD_STATUS_ERROR);
@@ -422,7 +463,15 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	}
 
 	RzProloguesArchInfo arch_info = { 0 };
-	if (!rz_prologues_trie_feed_binfile(pg_trie, binfile, ctx->prologue_len, &arch_info, NULL)) {
+
+	const char *ext = rz_file_extension(binfile->file);
+	if (ext && !rz_str_cmp(ext, "a", -1)) {
+		if (!process_archive(binfile->file, pg_trie, bin, ctx->prologue_len, &arch_info, NULL)) {
+			rz_prologues_arch_info_fini(&arch_info);
+			rz_trie_free(pg_trie);
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else if (!rz_prologues_trie_feed_binfile(pg_trie, binfile, ctx->prologue_len, &arch_info, NULL)) {
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -478,6 +527,15 @@ RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_N
 			RZ_LOG_WARN("Skipping, null file found in list\n");
 			continue;
 		}
+
+		const char *ext = rz_file_extension(curr_file->file);
+		if (ext && !rz_str_cmp(ext, "a", -1)) {
+			if (process_archive(curr_file->file, pg_trie, bin, prologue_len, arch_info, processed_files)) {
+				fcnt++;
+			}
+			continue;
+		}
+
 		if (rz_prologues_trie_feed_binfile(pg_trie, curr_file, prologue_len, arch_info, processed_files)) {
 			fcnt++;
 		}
@@ -566,11 +624,19 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 			RZ_FREE(file_path);
 			continue;
 		}
+
+		const char *ext = rz_file_extension(file);
+		if (ext && !rz_str_cmp(ext, "a", -1)) {
+			process_archive(file, pg_trie, bin, prologue_len, arch_info, processed_files);
+			RZ_FREE(file_path);
+			continue;
+		}
+
 		// using rz_buf... + rz_bin_open_buf instead of rz_bin_open to avoid RzIO
 		// bcz for RzIO we need to close fd seperately after rz_bin_file_delete
 		RzBuffer *buf = rz_buf_new_file(file_path, O_RDONLY, 0);
 		if (!buf) {
-			RZ_LOG_WARN("Failed to open buffer for file: %s\n", file_path);
+			RZ_LOG_WARN("Failed to open buffer for file: '%s'\n", file);
 			RZ_FREE(file_path);
 			continue;
 		}
@@ -581,7 +647,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 		RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
 		rz_buf_free(buf);
 		if (!bf) {
-			RZ_LOG_WARN("Failed to parse binary for file: %s\n", file_path);
+			RZ_LOG_WARN("Failed to parse binary for file: '%s'\n", file);
 			RZ_FREE(file_path);
 			continue;
 		}
