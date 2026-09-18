@@ -19,7 +19,7 @@ struct buf_mmap_priv {
 	RzIO *io;
 };
 
-static inline struct buf_mmap_priv *get_priv_mmap(RzBuffer *b) {
+static inline struct buf_mmap_priv *get_priv_mmap(const RzBuffer *b) {
 	struct buf_mmap_priv *priv = (struct buf_mmap_priv *)b->priv;
 	rz_warn_if_fail(priv);
 	return priv;
@@ -64,7 +64,7 @@ static bool buf_mmap_resize(RzBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static ut8 *buf_mmap_get_whole_buf(RzBuffer *b, ut64 *size) {
+static ut8 *buf_mmap_get_whole_buf(const RzBuffer *b, ut64 *size) {
 	struct buf_mmap_priv *priv = get_priv_mmap(b);
 	if (size) {
 		*size = priv->mmap->len;

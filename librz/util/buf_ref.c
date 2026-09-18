@@ -16,7 +16,7 @@ struct buf_ref_priv {
 	ut64 size;
 };
 
-static inline struct buf_ref_priv *get_priv_ref(RzBuffer *b) {
+static inline struct buf_ref_priv *get_priv_ref(const RzBuffer *b) {
 	struct buf_ref_priv *priv = (struct buf_ref_priv *)b->priv;
 	rz_warn_if_fail(priv);
 	return priv;
@@ -69,7 +69,7 @@ static st64 buf_ref_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	return r;
 }
 
-static ut64 buf_ref_get_size(RzBuffer *b) {
+static ut64 buf_ref_get_size(const RzBuffer *b) {
 	struct buf_ref_priv *priv = get_priv_ref(b);
 	return priv->size;
 }

@@ -15,7 +15,7 @@ struct buf_file_priv {
 	ut8 tmp[8];
 };
 
-static inline struct buf_file_priv *get_priv_file(RzBuffer *b) {
+static inline struct buf_file_priv *get_priv_file(const RzBuffer *b) {
 	struct buf_file_priv *priv = (struct buf_file_priv *)b->priv;
 	rz_warn_if_fail(priv);
 	return priv;
@@ -45,7 +45,7 @@ static bool buf_file_fini(RzBuffer *b) {
 	return true;
 }
 
-static ut64 buf_file_get_size(RzBuffer *b) {
+static ut64 buf_file_get_size(const RzBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file(b);
 	int pos = lseek(priv->fd, 0, SEEK_CUR);
 	int res = lseek(priv->fd, 0, SEEK_END);

@@ -14,7 +14,7 @@ struct buf_io_fd_priv {
 	int fd;
 };
 
-static inline struct buf_io_fd_priv *get_priv_io(RzBuffer *b) {
+static inline struct buf_io_fd_priv *get_priv_io(const RzBuffer *b) {
 	struct buf_io_fd_priv *priv = (struct buf_io_fd_priv *)b->priv;
 	rz_warn_if_fail(priv);
 	return priv;
@@ -60,7 +60,7 @@ static st64 buf_io_fd_seek(RzBuffer *b, st64 addr, int whence) {
 	return priv->iob->fd_seek(priv->iob->io, priv->fd, addr, io_whence);
 }
 
-static ut64 buf_io_fd_get_size(RzBuffer *b) {
+static ut64 buf_io_fd_get_size(const RzBuffer *b) {
 	struct buf_io_fd_priv *priv = get_priv_io(b);
 	return priv->iob->fd_size(priv->iob->io, priv->fd);
 }
@@ -81,7 +81,7 @@ static st64 buf_io_fd_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	return priv->iob->fd_write(priv->iob->io, priv->fd, buf, len);
 }
 
-static ut8 *buf_io_fd_get_whole_buf(RzBuffer *b, ut64 *size) {
+static ut8 *buf_io_fd_get_whole_buf(const RzBuffer *b, ut64 *size) {
 	struct buf_io_fd_priv *priv = get_priv_io(b);
 	return priv->iob->fd_getbuf(priv->iob->io, priv->fd, size);
 }
