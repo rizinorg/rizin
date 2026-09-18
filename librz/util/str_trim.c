@@ -227,7 +227,7 @@ RZ_API int rz_str_ansi_trim(char *str, int str_len, int n) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (i + 2 + 5 + 4 <= str_len && !strncmp(str + 2 + 5, "rgb:", 4)) {
+				if (i + 2 + 5 + 4 <= str_len && !strncmp(str + i + 2 + 5, "rgb:", 4)) {
 					i += 18;
 				}
 			} else if (ch2 == '[') {
