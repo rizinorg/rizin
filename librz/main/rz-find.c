@@ -34,6 +34,7 @@ typedef struct {
 	bool json;
 	bool use_colors;
 	bool force_raw;
+	bool hud;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -43,6 +44,7 @@ typedef struct {
 	ut64 cur;
 	RzPrint *pr;
 	RzList /*<char *>*/ *keywords;
+	RzList /*<char *>*/ *hud_entries;
 	const char *mask;
 	const char *curfile;
 	const char *comma;
@@ -227,9 +229,26 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 	}
 }
 
+static bool collect_hud_string(RzfindOptions *ro, const RzBinString *string) {
+	RzStrEscOptions esc = { .esc_bslash = true, .keep_printable = true };
+	char *file = rz_str_escape_utf8(ro->curfile, &esc);
+	char *value = rz_str_escape_utf8(string->string, &esc);
+	char *entry = file && value
+		? rz_str_newf("%s  0x%08" PFMT64x "  %s", file, string->paddr, value)
+		: NULL;
+	free(file);
+	free(value);
+	if (!entry || !rz_list_append(ro->hud_entries, entry)) {
+		free(entry);
+		eprintf("Cannot allocate HUD entry\n");
+		return false;
+	}
+	return true;
+}
+
 static int show_help(const char *argv0, bool line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-find [-mXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
+	printf("rz-find [-HmXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
 	if (line) {
 		return 0;
 	}
@@ -245,6 +264,7 @@ static int show_help(const char *argv0, bool line) {
 		"-f",    "from",    "Start searching from address 'from'",
 		"-F",    "file",    "Read the contents of the file and use it as keyword",
 		"-h",    "",        "Show this help",
+		"-H",    "",        "Interactively browse strings across files and directories (HUD)",
 		"-i",    "",        "Identify filetype (magic signatures)",
 		"-j",    "",        "Output in JSON",
 		"-m",    "",        "Magic search, file-type carver",
@@ -481,11 +501,11 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 	}
 
 	RzIO *io = rz_io_new();
-	io->ff = true;
 	if (!io) {
 		free(efile);
 		return 1;
 	}
+	io->ff = true;
 
 	if (!rz_io_open_nomap(io, file, RZ_PERM_R, 0)) {
 		eprintf("Cannot open file '%s'\n", file);
@@ -495,6 +515,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (data) {
 		rz_io_write_at(io, 0, data, datalen);
+	}
+	if (ro->mode == RZ_SEARCH_STRING && !rz_io_size(io)) {
+		goto err;
 	}
 
 	rs = rz_search_new(ro->mode);
@@ -568,7 +591,14 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		RzBinString *string;
 		rz_pvector_foreach (vec, it) {
 			string = *it;
-			print_bin_string(bf, string, ro);
+			if (ro->hud) {
+				if (!collect_hud_string(ro, string)) {
+					result = 1;
+					break;
+				}
+			} else {
+				print_bin_string(bf, string, ro);
+			}
 		}
 		rz_pvector_free(vec);
 		goto done;
@@ -804,13 +834,20 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	const char *file = NULL;
 	RzGetopt opt = { 0 };
 	RzfindOptions ro = { 0 };
+	bool hud_incompatible = false;
 
 	rzfind_options_init(&ro);
 	find_set_log_level();
 
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVBZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChHvVBZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
+		if (!strchr("HhzvBCnqV", c)) {
+			hud_incompatible = true;
+		}
 		switch (c) {
+		case 'H':
+			ro.hud = true;
+			break;
 		case 'a':
 			ro.align = rz_num_math(NULL, opt.arg);
 			if (rz_bits_count_ones_ut64(ro.align) != 1) {
@@ -944,6 +981,25 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		rz_list_free(ro.keywords);
 		return show_help(argv[0], 1);
 	}
+	if (ro.hud) {
+		/* incompatible cmd arguments */
+		if (hud_incompatible) {
+			rz_list_free(ro.keywords);
+			return show_help(argv[0], 0);
+		}
+		/* hud mode supports files or directories */
+		for (int i = opt.ind; i < argc; i++) {
+			if (!strcmp(argv[i], "-")) {
+				rz_list_free(ro.keywords);
+				return show_help(argv[0], 0);
+			}
+		}
+		ro.hud_entries = rz_list_newf(free);
+		if (!ro.hud_entries) {
+			rz_list_free(ro.keywords);
+			return 1;
+		}
+	}
 	/* Enable quiet mode if searching just a single file */
 	if (opt.ind + 1 == argc && RZ_STR_ISNOTEMPTY(argv[opt.ind]) && !rz_file_is_directory(argv[opt.ind])) {
 		if (!ro.verbose) {
@@ -973,6 +1029,23 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			overall_result = 1;
 		}
 	}
+	if (ro.hud && !rz_list_empty(ro.hud_entries)) {
+		RzCons *cons = rz_cons_new();
+		if (cons) {
+			rz_cons_set_interactive(true);
+			cons->context->color_mode = ro.use_colors ? COLOR_MODE_16 : COLOR_MODE_DISABLED;
+			rz_cons_set_cup(true);
+			char *selected = rz_cons_hud(ro.hud_entries, "Interactive Strings Browser: ");
+			free(selected);
+			rz_cons_reset();
+			rz_cons_set_cup(false);
+			rz_cons_flush();
+			rz_cons_free();
+		} else {
+			overall_result = 1;
+		}
+	}
+	rz_list_free(ro.hud_entries);
 	rz_list_free(ro.keywords);
 	if (ro.json) {
 		printf("]\n");
