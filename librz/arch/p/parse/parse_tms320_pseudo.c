@@ -94,6 +94,57 @@ static const RzPseudoGrammar tms320_lexicon[] = {
 
 static const RzPseudoConfig tms320_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(tms320_lexicon, 5, tms320_tokenize);
 
+/**
+ * The C28x needs its own lexicon: it shares mnemonics with the C6000 above but
+ * not their shapes -- C6000 "add" is three-operand, C28x "add" is two-operand,
+ * so one grammar cannot serve both. Entries are the two-operand accumulator and
+ * memory forms the decoder actually emits (SPRU430F).
+ */
+static const RzPseudoGrammar c28x_lexicon[] = {
+	RZ_PSEUDO_DEFINE_GRAMMAR("add", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addb", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addl", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("addu", "1 += 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("and", "1 &= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("andb", "1 &= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("asr", "1 >>= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("b", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmp", "cmp(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpb", "cmp(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("cmpl", "cmp(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("dec", "1--"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("inc", "1++"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lb", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lc", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lcr", "1 ()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lretr", "return"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsl", "1 <<= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("lsr", "1 >>= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mov", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movb", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movl", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movw", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("movz", "1 = 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpy", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("mpyb", "1 = 2 * 3"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("neg", "1 = -1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("not", "1 = ~1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("or", "1 |= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("orb", "1 |= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("pop", "1 = pop()"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("push", "push(1)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sb", "goto 1"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("sub", "1 -= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subb", "1 -= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subl", "1 -= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("subu", "1 -= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("tbit", "test(1, 2)"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xor", "1 ^= 2"),
+	RZ_PSEUDO_DEFINE_GRAMMAR("xorb", "1 ^= 2"),
+};
+
+static const RzPseudoConfig c28x_config = RZ_PSEUDO_DEFINE_CONFIG_ONLY_LEXICON(c28x_lexicon, 4, tms320_tokenize);
+
 RzList /*<char *>*/ *tms320_tokenize(const char *assembly, size_t length) {
 	char *buf = NULL, *sp = NULL;
 	RzList *tokens = NULL;
@@ -114,6 +165,12 @@ RzList /*<char *>*/ *tms320_tokenize(const char *assembly, size_t length) {
 }
 
 static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
+	// the lexicons are per-core, so pick by cpu; analb.anal is the sanctioned
+	// way to reach it from here
+	const char *cpu = parse && parse->analb.analysis ? rz_analysis_get_cpu(parse->analb.analysis) : NULL;
+	if (cpu && !rz_str_casecmp(cpu, "c28x")) {
+		return rz_pseudo_convert(&c28x_config, assembly, sb);
+	}
 	return rz_pseudo_convert(&tms320_config, assembly, sb);
 }
 

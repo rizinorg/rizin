@@ -4608,6 +4608,30 @@ ARM32 relocations:
 #define R_AVR_PORT5          35
 #define R_AVR_32_PCREL       36
 
+/* TMS320C28x (C28x EABI) Relocations, SPRAC71C Table 11-5 */
+#define R_C28X_NONE       0
+#define R_C28X_ABS8       1
+#define R_C28X_ABS16      2
+#define R_C28X_ABS32      3
+#define R_C28X_ABSLO6     4 /* also R_C28X_ABSLO6_BLKD, blocked access */
+#define R_C28X_ABS22      5
+#define R_C28X_HI6        6
+#define R_C28X_DP_HI10    7
+#define R_C28X_DP_HI16    8
+#define R_C28X_PCREL16    9
+#define R_C28X_PCREL8     10
+#define R_C28X_HI16       11
+#define R_C28X_NEGWORD    12
+#define R_C28X_NEGBYTE    13
+#define R_C28X_ABS8_HI    14
+#define R_C28X_ABS13_SE16 15
+#define R_CLA_ABS16       16
+#define R_C28X_ABSLO7     17
+#define R_C28X_PREL31     18
+/* SPRAC71C Table 11-5 lists ABS22_BR as a duplicate of ABS22 at 5, but the
+   assembler emits 20; verified against ti-cgt-c2000 25.11.1.LTS output */
+#define R_C28X_ABS22_BR   20
+
 /* TMS320C6000 (C6000 EABI) Relocations */
 #define R_C6000_NONE          0
 #define R_C6000_ABS32         1
