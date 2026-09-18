@@ -147,7 +147,7 @@ hex immediates, `@` on register-direct operands, resolved branch targets, and
 the word-to-byte scaling of program and data addresses, which is the same x2 the
 loader applies to `sh_addr` and `st_value`.
 
-**98.6%** agree. Of the 877 that do not, 782 are the VCU co-processor set, which
+**99.6%** agree. Of the 877 that do not, 782 are the VCU co-processor set, which
 is a separate instruction set rather than a gap in this one; excluding it the
 figure is **99.9%**, leaving 95 words. Those are mostly spellings dis2000
 prefers -- it writes `MOVL *SP++,ACC` where this engine writes `PUSH ACC`, and
@@ -156,8 +156,8 @@ no 32-bit register meaning and which dis2000 also declines to name.
 
 ## Not covered
 
-- The VCU (SPRUE87) and FPU32 (SPRUEO2) co-processor sets decode in TI's tools
-  but are out of scope here; they belong behind their own cpu variants.
+- FPU32 (SPRUEO2) decodes in TI's tools but is out of scope here; it belongs
+  behind its own cpu variant.
 - Pseudo syntax covers the two-operand accumulator and memory forms; the
   multiply, repeat and co-processor groups still render as `asm("...")`.
 - IL for the memory-destination ALU forms; see above.
@@ -205,3 +205,64 @@ problem.
   single flat address space, so mapped disassembly reads zeros until the
   offending map is dropped (`om- <id>`). This is the Harvard-architecture
   problem and is not specific to C28x.
+
+### VCU verification
+
+The dis2000 sweep holds the parameter word at a constant, so any operand field
+living there is unexercised by it -- which is how several rows came to be fitted
+from too little data. The assembler closes that: `asm2000 -v28
+--vcu_support=vcu2` was given every `VMOVZI`/`VMOVXI`/`VMOVIX` over eight
+registers and six immediates including 0x0000, 0x8000 and 0xffff, and the
+encodings read back and compared. **168 of 168 agree.**
+
+That pins the split immediate with real values rather than the sweep's filler:
+`VMOVZI VR3, #0x1234` assembles to `e7f1 2343`, so the top nibble sits in the
+opcode word and the low twelve plus the register in the parameter word.
+
+Two limits the assembler shows and the sweep does not. `VCFLIP VR8`, `VCCON VR8`
+and `VBITFLIP VR8` are rejected -- the assembler accepts VR0-VR7 -- while
+dis2000 disassembles `a108` as `VCFLIP VR8`. Register 8 is therefore decodable
+but not assemblable, and this engine follows dis2000 because disassembly is what
+it does. `VITDLADDSUB` also rejects operands other than its fixed VR4, VR3, VR2
+triple.
+
+`VGFMAC4` was added the same way: the assembler puts its three registers in the
+parameter word at bits 6, 3 and 0, three bits each, with a fixed opcode word --
+fitted from the full 8x8 matrix and agreeing 64 of 64. The sweep contains a
+*different* one-word encoding of that mnemonic, which is still undecoded, so the
+two oracles are not interchangeable: the sweep covers opcode-word forms the
+assembler was not asked for, and the assembler reaches parameter-word fields the
+sweep holds constant. Both are worth running.
+
+The assembler caught one mistake the sweep could not. `VGFMAC4` and `VGFMPY4`
+share an opcode word and differ only in bit 9 of the *parameter* word, so a row
+masking the opcode word alone claims both, and `VGFMPY4` disassembled as
+`VGFMAC4`. The sweep holds that word constant and can never show it. The mask
+now reaches bits 9 to 15 of the parameter word and the two are separate rows.
+
+`VGFACC` came from the same probe and shows why the round-trip has to be run
+rather than trusted: its first two registers sit at bits 3 and 0 with the third
+fixed at VR7, and a first attempt placed them at 6, 3 and 0 by analogy with
+`VGFMAC4`. That agreed with nothing -- 0 of 64 -- and the correct placement
+agrees with all 64.
+
+`VDEC` names the low half of a register, spelled `VR7L`, which needed an operand
+kind of its own -- the assembler rejects the `H` spelling, so only the low half
+exists.
+
+`VCADD`, `VCMAC` and `VCCMAC` take no operand combination other than the one
+they are written with -- the assembler rejects every substitution -- so they are
+single encodings with fixed registers rather than rows with fields. Assembling
+them consecutively also fails with a pipeline write-read conflict, which is why
+the probe separates them with NOPs.
+
+`VITBM2` was the last row still reading a register as a field. The assembler
+rejects any first operand but VR0, so it is fixed; read as a field, its low
+nibble looked like a reserved register number and the operand vanished from the
+output. `VITBM3` is fixed the same way.
+
+Five round-trip scripts are kept beside this engine and all agree completely:
+168/168 (immediates), 64/64 (`VGFMAC4`), 72/72 (`VGFACC` and `VDEC`), 9/9 (the
+fixed-operand three) and 11/11 (canonical forms) -- 324 encodings in total. Any
+VCU row added later should extend one of them, because the sweep this table is
+generated from cannot see the parameter word.

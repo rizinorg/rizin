@@ -33,6 +33,10 @@ typedef enum {
 	C28X_OD_SHIFTFIX, ///< fixed shift amount held in param
 	C28X_OD_COND, ///< 4-bit condition code
 	C28X_OD_PCREL, ///< signed word displacement from the instruction address
+	C28X_OD_REGSEL, ///< register chosen by a field, added to a base register
+	C28X_OD_REGSEL_LOW, ///< as REGSEL, but naming the register's low half
+	C28X_OD_IMM_SPLIT, ///< 16-bit immediate split across the opcode and parameter words
+	C28X_OD_IMMV, ///< immediate the opcode fixes, carried in the row itself
 	C28X_OD_PMA, ///< absolute program-memory word address
 	C28X_OD_PMA_IND, ///< the same, read as data and wrapped
 	C28X_OD_PMA_DP, ///< the same, through the page pointer
@@ -66,6 +70,7 @@ typedef struct {
 #include "c28x_rowdefs.h"
 static const C28xInsnDef c28x_table[] = {
 #include "c28x_rows.inc"
+#include "c28x_rows_vcu.inc"
 };
 #include "c28x_rowundefs.h"
 
@@ -242,6 +247,34 @@ static void c28x_decode_operand(const C28xOpndDef *def, ut32 packed, ut64 pc, RZ
 		out->kind = C28X_OP_PCREL;
 		out->imm = (st64)pc + c28x_sext(f, def->width) * C28X_WORD_BYTES;
 		break;
+	case C28X_OD_IMMV:
+		out->kind = C28X_OP_IMM;
+		out->imm = (st64)def->param;
+		break;
+	case C28X_OD_IMM_SPLIT: {
+		// the low part sits in the parameter word and the high part in the
+		// opcode word, so neither half is contiguous with the other
+		const ut32 lo = f;
+		const ut32 hi_w = 16 - def->width;
+		const ut32 hi = BITS(packed, def->param, hi_w);
+		out->kind = C28X_OP_IMM;
+		out->imm = (st64)((hi << def->width) | lo);
+		break;
+	}
+	case C28X_OD_REGSEL_LOW:
+	case C28X_OD_REGSEL: {
+		// the field selects one of a contiguous run of registers; values past
+		// the named ones are reserved and left unrendered, as dis2000 does
+		const ut32 n = f;
+		const ut32 named = def->param == C28X_REG_VR0 ? 9 : 2;
+		if (n >= named) {
+			out->kind = C28X_OP_NONE;
+			break;
+		}
+		out->kind = def->kind == C28X_OD_REGSEL_LOW ? C28X_OP_REG_LOW : C28X_OP_REG;
+		out->reg = (C28xReg)(def->param + n);
+		break;
+	}
 	case C28X_OD_PMA:
 		out->kind = C28X_OP_PMA;
 		out->imm = (st64)f * C28X_WORD_BYTES;

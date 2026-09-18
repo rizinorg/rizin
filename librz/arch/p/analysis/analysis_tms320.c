@@ -563,6 +563,17 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr spa    .1 81.0 0\n" // Stack-pointer alignment record
 			"gpr pm     .3 82.0 0\n" // Product shift mode
 			"gpr ovc    .6 83.0 0\n" // Overflow counter
+			"gpr vr0    .32 88 0\n" // VCU result register 0
+			"gpr vr1    .32 92 0\n" // VCU result register 1
+			"gpr vr2    .32 96 0\n" // VCU result register 2
+			"gpr vr3    .32 100 0\n" // VCU result register 3
+			"gpr vr4    .32 104 0\n" // VCU result register 4
+			"gpr vr5    .32 108 0\n" // VCU result register 5
+			"gpr vr6    .32 112 0\n" // VCU result register 6
+			"gpr vr7    .32 116 0\n" // VCU result register 7
+			"gpr vr8    .32 120 0\n" // VCU result register 8
+			"gpr vt0    .32 124 0\n" // VCU shift/status
+			"gpr vt1    .32 128 0\n"
 			"gpr arp    .3 84.0 0\n" // Auxiliary register pointer
 			"gpr rptc   .8 85.0 0\n"); // Repeat counter
 	}

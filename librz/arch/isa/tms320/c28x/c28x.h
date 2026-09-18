@@ -76,6 +76,19 @@ typedef enum {
 	C28X_REG_IFR, ///< interrupt flag register
 	C28X_REG_DBGIER, ///< debug interrupt enable register
 	C28X_REG_OVC, ///< overflow counter (ST0 field)
+	// VCU (SPRUE87): eight result registers and two status/shift registers,
+	// present on the F2806x and F2837x parts that carry the co-processor
+	C28X_REG_VR0,
+	C28X_REG_VR1,
+	C28X_REG_VR2,
+	C28X_REG_VR3,
+	C28X_REG_VR4,
+	C28X_REG_VR5,
+	C28X_REG_VR6,
+	C28X_REG_VR7,
+	C28X_REG_VR8,
+	C28X_REG_VT0,
+	C28X_REG_VT1,
 	C28X_REG_PM, ///< product shift mode (ST0 field)
 	C28X_REG_ARP, ///< auxiliary register pointer (ST1 field)
 	C28X_REG_P_PM, ///< P shifted by the product shift mode, written "P << PM"
@@ -128,6 +141,7 @@ typedef enum {
 /** Operand kind within a decoded instruction. */
 typedef enum {
 	C28X_OP_NONE = 0,
+	C28X_OP_REG_LOW, ///< low half of a VCU register, spelled VRnL
 	C28X_OP_REG, ///< named register in \ref C28xOperand::reg
 	C28X_OP_MEM, ///< loc16/loc32 access (see \ref C28xAddrMode)
 	C28X_OP_IMM, ///< immediate constant in \ref C28xOperand::imm
@@ -157,7 +171,10 @@ typedef struct {
 	bool wide; ///< loc32 (32-bit) rather than loc16 (16-bit) access
 } C28xOperand;
 
-#define C28X_MAX_OPS 3
+// The VCU's FFT butterflies take six registers and a stage number; every other
+// instruction in the set uses three or fewer, so this costs table space to
+// describe one family
+#define C28X_MAX_OPS 7
 
 /** A fully decoded C28x instruction. */
 typedef struct {

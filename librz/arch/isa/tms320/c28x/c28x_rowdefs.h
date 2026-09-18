@@ -20,16 +20,29 @@
 
 // operand extractors; \p lo is the low bit inside the packed opcode
 #define REG(r_) { C28X_OD_REG, 0, 0, C28X_REG_##r_ }
-#define AXREG   { C28X_OD_AX, 24, 1, 0 }
+// VCU registers are picked by a field rather than fixed, so the base is stored
+// in the extra slot and the field index is added to it when decoding
+#define VRREG(lo_) { C28X_OD_REGSEL, (lo_), 4, C28X_REG_VR0 }
+// three-bit form: the VCU's multi-register instructions reach VR0-VR7 only
+#define VRREG3(lo_) { C28X_OD_REGSEL, (lo_), 3, C28X_REG_VR0 }
+// the low half of a VCU register, which VDEC names
+#define VRREGL(lo_) { C28X_OD_REGSEL_LOW, (lo_), 3, C28X_REG_VR0 }
+#define VTREG(lo_)  { C28X_OD_REGSEL, (lo_), 1, C28X_REG_VT0 }
+#define AXREG       { C28X_OD_AX, 24, 1, 0 }
 // AX addressed as its low or high byte ("AL.LSB", "AH.MSB")
-#define AXLSB          { C28X_OD_AX, 24, 1, 1 }
-#define AXMSB          { C28X_OD_AX, 24, 1, 2 }
-#define XARN(lo_)      { C28X_OD_XAR, (lo_), 3, 0 }
-#define ARN(lo_)       { C28X_OD_AR, (lo_), 3, 0 }
-#define ARPN(lo_)      { C28X_OD_ARP, (lo_), 3, 0 }
-#define LOC16(lo_)     { C28X_OD_LOC, (lo_), 8, 0 }
-#define LOC32(lo_)     { C28X_OD_LOC, (lo_), 8, 1 }
-#define IMMU(lo_, w_)  { C28X_OD_IMM, (lo_), (w_), 0 }
+#define AXLSB         { C28X_OD_AX, 24, 1, 1 }
+#define AXMSB         { C28X_OD_AX, 24, 1, 2 }
+#define XARN(lo_)     { C28X_OD_XAR, (lo_), 3, 0 }
+#define ARN(lo_)      { C28X_OD_AR, (lo_), 3, 0 }
+#define ARPN(lo_)     { C28X_OD_ARP, (lo_), 3, 0 }
+#define LOC16(lo_)    { C28X_OD_LOC, (lo_), 8, 0 }
+#define LOC32(lo_)    { C28X_OD_LOC, (lo_), 8, 1 }
+#define IMMU(lo_, w_) { C28X_OD_IMM, (lo_), (w_), 0 }
+// A 16-bit immediate split across both words: \p lo_ and \p w_ locate the low
+// part, \p hi_ the low bit of the remaining high bits (VMOVXI and friends)
+#define IMMSPLIT(lo_, w_, hi_) { C28X_OD_IMM_SPLIT, (lo_), (w_), (hi_) }
+// An immediate the opcode fixes rather than encodes (the VCFFT stage number)
+#define IMMV(v_)       { C28X_OD_IMMV, 0, 0, (v_) }
 #define IMMS(lo_, w_)  { C28X_OD_IMM, (lo_), (w_), 1 }
 #define IMMC(v_)       { C28X_OD_IMMFIX, 0, 0, (v_) }
 #define SHIFT(lo_, w_) { C28X_OD_SHIFT, (lo_), (w_), 0 }

@@ -98,3 +98,27 @@ d "or acc, #0x7700 << #15" 1f3e0077 0x0
 d "max al, @0x00" 72560077 0x0
 d "min al, @0x00" 74560077 0x0
 d "sxtb al" 60ff 0x0
+
+# VCU (SPRUE87), the co-processor on F2806x and F2837x parts. The result
+# register is selected by a field, and dis2000 leaves the operand off for the
+# reserved numbers above VR8, which these pin. VMOV32 reaches memory through the
+# ordinary loc16 byte rather than anything VCU-specific.
+d "vmov32 *(0:0xee00), @0x0d" 0dbd0077 0x0
+d "vmov32 @0x00, *(0:0xee00)" 00bf0077 0x0
+d "vcflip vr0" 00a1 0x0
+d "vcflip vr8" 08a1 0x0
+d "vcflip" 09a1 0x0
+d "vmovzi vr0, #0xc770" fce70077 0x0
+d "vmovxi vr0, #0x770" 70e70077 0x0
+d "vitdladdsub vr4, vr3, vr2, vr1" 31e5 0x0
+d "vitdladdsub vr4, vr3, vr2, vr8" 38e5 0x0
+d "vitdladdsub vr4, vr3, vr2" 3fe5 0x0
+d "vgfmac4 vr0, vr1, vr7" 80e60f22 0x0
+d "vgfmpy4 vr2, vr6, vr7" 80e6b720 0x0
+d "vgfacc vr0, vr1, vr7" 81e60104 0x0
+d "vdec vr3l" f2e60b0b 0x0
+d "vcadd vr5, vr4, vr3, vr2" 02e5 0x0
+d "vcmac vr5, vr4, vr3, vr2, vr1, vr0" 01e5 0x0
+d "vccmac vr5, vr4, vr3, vr2, vr1, vr0" 0fe5 0x0
+d "vitbm2 vr0" 0ce5 0x0
+d "vitbm3 vr0, vr1, vr2" 0de5 0x0
