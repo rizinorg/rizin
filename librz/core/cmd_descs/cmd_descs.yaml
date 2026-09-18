@@ -67,9 +67,19 @@ commands:
     summary: Run command via system(3)
     subcommands: cmd_system
   - name: _
-    cname: last_output
-    summary: Print last output
-    args: []
+    summary: Last command introspection
+    subcommands:
+      - name: _
+        cname: last_output
+        summary: Print last output
+        args: []
+      - name: _s
+        cname: last_cmd_status
+        summary: Print the status of the last executed command line
+        args: []
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
   - name: "#!"
     cname: hash_bang
     summary: Run interpreter
