@@ -27,8 +27,7 @@ rz_type_sources = [
   'pf/pf_render_sd.c'
 ]
 
-r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if do_subprojects_check and run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false).returncode() == 1
   error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
 endif
 
