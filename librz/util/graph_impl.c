@@ -1728,13 +1728,12 @@ static void neighbour_iter_free(void *user_data) {
  * \param use_from if true, yield edge->from; otherwise yield edge->to
  * \return A new neighbour iterator, or NULL on failure
  */
-static RZ_OWN RzIterator as_neighbour_iter(RZ_OWN RzIterator *edge_iter, bool use_from) {
-	rz_return_val_if_fail(edge_iter, (RzIterator){ 0 });
+static RZ_OWN RzIterator as_neighbour_iter(RZ_OWN RzIterator edge_iter, bool use_from) {
 	RzNeighbourIterState *state = RZ_NEW0(RzNeighbourIterState);
 	if (!state) {
 		return (RzIterator){ 0 };
 	}
-	state->edge_iter = *edge_iter;
+	state->edge_iter = edge_iter;
 	state->use_from = use_from;
 
 	RzIterator iter = (RzIterator){
@@ -1759,7 +1758,7 @@ RZ_API RZ_OWN RzIterator rz_graph_out_neighbors(RzGraph /*<NodeType *, EdgeType 
 	if (rz_iterator_is_uninit(&edge_iter)) {
 		return (RzIterator){ 0 };
 	}
-	RzIterator iter = as_neighbour_iter(&edge_iter, false);
+	RzIterator iter = as_neighbour_iter(edge_iter, false);
 	if (rz_iterator_is_uninit(&iter)) {
 		rz_iterator_fini(&edge_iter);
 		return (RzIterator){ 0 };
@@ -1780,7 +1779,7 @@ RZ_API RZ_OWN RzIterator rz_graph_in_neighbors(RzGraph /*<NodeType *, EdgeType *
 	if (rz_iterator_is_uninit(&edge_iter)) {
 		return (RzIterator){ 0 };
 	}
-	RzIterator iter = as_neighbour_iter(&edge_iter, true);
+	RzIterator iter = as_neighbour_iter(edge_iter, true);
 	if (rz_iterator_is_uninit(&iter)) {
 		rz_iterator_fini(&edge_iter);
 		return (RzIterator){ 0 };

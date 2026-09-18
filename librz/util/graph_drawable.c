@@ -504,9 +504,8 @@ RZ_API RZ_OWN char *rz_graph_drawable_to_gml(RZ_NONNULL RzGraph /*<RzGraphNodeIn
 	rz_iterator_fini(&it_nodes);
 
 	RzIterator it_out_nodes = rz_graph_get_nodes(graph);
-	RzIterator it_neighbours = { 0 };
 	rz_iterator_foreach(&it_out_nodes, graphNode) {
-		it_neighbours = rz_graph_out_neighbors(graph, graphNode);
+		RzIterator it_neighbours = rz_graph_out_neighbors(graph, graphNode);
 		if (rz_iterator_is_uninit(&it_neighbours)) {
 			continue;
 		}

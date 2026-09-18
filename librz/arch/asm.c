@@ -864,12 +864,12 @@ static bool assemblerMatches(const RzAsm *a, RzAsmPlugin *h) {
 }
 
 static Ase findAssembler(const RzAsm *a, const char *kw) {
-	Ase ase = NULL;
-	RzIterator iter = ht_sp_as_iter(a->plugins);
-	RzAsmPlugin **val;
 	if (a->acur && a->acur->assemble) {
 		return a->acur->assemble;
 	}
+	Ase ase = NULL;
+	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzAsmPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (assemblerMatches(a, h)) {
