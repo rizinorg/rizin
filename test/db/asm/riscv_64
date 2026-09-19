@@ -50,7 +50,7 @@ d "lw s9, 0x64(sp)" 965c 0x40 (set s9 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 
 d "lw s10, 0x60(sp)" 065d 0x40 (set s10 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x60)))) (loadw 0 32 (+ (var sp) (bv 64 0x60)))))
 d "lw s11, 0x5c(sp)" f64d 0x40 (set s11 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x5c)))) (loadw 0 32 (+ (var sp) (bv 64 0x5c)))))
 d "addi sp, sp, 0x90" 4961 0x40 (set sp (+ (var sp) (bv 64 0x90)))
-d "ret" 8280 0x40 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) nop (jmp (var jalr_target)))
+d "ret" 8280 0x40 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) empty (jmp (var jalr_target)))
 d "lw a5, 0x18(sp)" e247 0x40 (set a5 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x18)))) (loadw 0 32 (+ (var sp) (bv 64 0x18)))))
 d "beqz a5, 0x2d8" 63890726 0x66 (branch (== (var a5) (bv 64 0x0)) (jmp (bv 64 0x2d8)) (jmp (bv 64 0x6a)))
 d "lw s0, 0x1c(sp)" 7244 0x40 (set s0 (cast 64 (msb (loadw 0 32 (+ (var sp) (bv 64 0x1c)))) (loadw 0 32 (+ (var sp) (bv 64 0x1c)))))
@@ -132,7 +132,7 @@ d "li a3, 0" 8146 0x100 (set a3 (bv 64 0x0))
 d "li t1, 0" 0143 0x100 (set t1 (bv 64 0x0))
 d "li a2, 0" 0146 0x100 (set a2 (bv 64 0x0))
 d "li a0, 0" 0145 0x100 (set a0 (bv 64 0x0))
-d "j 0x176" 25a8 0x13e (seq nop (jmp (bv 64 0x176)))
+d "j 0x176" 25a8 0x13e (seq empty (jmp (bv 64 0x176)))
 d "mul a4, a0, a2" 3307c502 0x140 (set a4 (* (var a0) (var a2)))
 d "mulhu t1, a2, a2" 3333c602 0x140 (set t1 (cast 64 false (>> (* (cast 128 false (var a2)) (cast 128 false (var a2))) (bv 8 0x40) false)))
 d "slli a4, a4, 1" 0607 0x140 (set a4 (<< (var a4) (bv 64 0x1) false))
@@ -194,8 +194,8 @@ d "ori a5, a5, 0x89" 93e79708 0x0 (set a5 (| (var a5) (bv 64 0x89)))
 d "xori a5, a5, 0x431" 93c71743 0x0 (set a5 (^ (var a5) (bv 64 0x431)))
 d "jalr ra" e7800000 0x30 (seq (set jalr_target (& (+ (var ra) (bv 64 0x0)) (bv 64 0xfffffffffffffffe))) (set ra (bv 64 0x34)) (jmp (var jalr_target)))
 d "jalr a0, 4(a0)" 67054500 0x0 (seq (set jalr_target (& (+ (var a0) (bv 64 0x4)) (bv 64 0xfffffffffffffffe))) (set a0 (bv 64 0x4)) (jmp (var jalr_target)))
-d "slti zero, ra, 0xc" 13a0c000 0x0 nop
-d "sltiu zero, ra, 0xc" 13b0c000 0x0 nop
+d "slti zero, ra, 0xc" 13a0c000 0x0 empty
+d "sltiu zero, ra, 0xc" 13b0c000 0x0 empty
 d "slti t0, ra, 0xc" 93a2c000 0x0 (set t0 (ite (&& (sle (var ra) (bv 64 0xc)) (! (== (var ra) (bv 64 0xc)))) (bv 64 0x1) (bv 64 0x0)))
 d "sltiu t1, sp, 0x14" 13334101 0x0 (set t1 (ite (&& (ule (var sp) (bv 64 0x14)) (! (== (var sp) (bv 64 0x14)))) (bv 64 0x1) (bv 64 0x0)))
 d "jal t0, 0x14" ef024001 0x0 (seq (set t0 (bv 64 0x4)) (jmp (bv 64 0x14)))
