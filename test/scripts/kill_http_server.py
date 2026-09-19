@@ -15,7 +15,7 @@ for p in psutil.process_iter(["cmdline"]):
             p.kill()
             print("Killed http.server")
             sys.exit(0)
-    except psutil.AccessDenied:
+    except (psutil.AccessDenied, psutil.NoSuchProcess):
         pass
 
 print("ERROR: http.server process not found")
