@@ -5,12 +5,13 @@ This script kills the http.server launched by http_server.py.
 
 """
 
+import re
 import sys
 import psutil
 
 for p in psutil.process_iter(["cmdline"]):
     try:
-        if "python3 -m http.server" in " ".join(p.cmdline()):
+        if re.search(r"[Pp]ython3? -m http\.server", " ".join(p.cmdline())):
             p.kill()
             print("Killed http.server")
             sys.exit(0)
