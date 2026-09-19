@@ -81,7 +81,7 @@ typedef struct rz_absint_block_t {
 	 */
 	RzAbsIntState *entry_state; // TODO: flatten to remove indirection
 	/**
-	 * \brief The offsets of the instructions (packets), from the block start address. 
+	 * \brief The offsets of the instructions (packets), from the block start address.
 	 */
 	RzVector /*<ut16>*/ insn_offsets; ///< starting at the second instruction in the block (since first is always 0), offsets from the start of the block
 	bool bounds_resolved; ///< Set to true once insn_offsets and node->end are filled.
