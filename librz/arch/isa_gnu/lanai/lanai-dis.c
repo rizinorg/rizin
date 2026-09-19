@@ -61,6 +61,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <common_gnu/ansidecl.h>
 #include <common_gnu/opcode/lanai.h>
 #include <common_gnu/disas-asm.h>
+#include <lanai/lanai_ctx.h>
 
 static char *reg_names[] = {
 	"r0",
@@ -100,13 +101,13 @@ static char *reg_names[] = {
 static char *op_names[] = { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
 
 /* Nonzero if INSN is the opcode for a delayed branch.  */
-static int is_delayed_branch(unsigned long insn);
+static int is_delayed_branch(unsigned long insn, struct lanai_opcode *opcodes);
 
-static int is_delayed_branch(unsigned long insn) {
+static int is_delayed_branch(unsigned long insn, struct lanai_opcode *opcodes) {
 	int i;
 
 	for (i = 0; i < NUMOPCODES; i++) {
-		CONST struct lanai_opcode *opcode = &lanai_opcodes[i];
+		CONST struct lanai_opcode *opcode = &opcodes[i];
 		if ((opcode->match & insn) == opcode->match && (opcode->lose & insn) == 0) {
 			return (opcode->flags & F_BR);
 		}
@@ -114,9 +115,28 @@ static int is_delayed_branch(unsigned long insn) {
 	return 0;
 }
 
-static int opcodes_sorted = 0;
 /* extern void qsort (); */
 static int compare_opcodes(char *a, char *b);
+
+static int compare_opcodes_qsort(const void *a, const void *b) {
+	return compare_opcodes((char *)a, (char *)b);
+}
+
+RZ_IPI bool lanai_dis_context_init(RZ_NONNULL LanaiContext *ctx) {
+	ctx->opcodes = malloc(NUMOPCODES * sizeof(struct lanai_opcode));
+	if (!ctx->opcodes) {
+		return false;
+	}
+	memcpy(ctx->opcodes, lanai_opcodes, NUMOPCODES * sizeof(struct lanai_opcode));
+	qsort(ctx->opcodes, NUMOPCODES, sizeof(struct lanai_opcode),
+		compare_opcodes_qsort);
+	return true;
+}
+
+RZ_IPI void lanai_dis_context_fini(RZ_NONNULL LanaiContext *ctx) {
+	free(ctx->opcodes);
+	ctx->opcodes = NULL;
+}
 
 /* Print one instruction from MEMADDR on INFO->STREAM.
 
@@ -126,17 +146,11 @@ static int compare_opcodes(char *a, char *b);
    displacement to that register, or it is an `add' or `or' instruction
    on that register.  */
 extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info, void *data) {
+	LanaiContext *ctx = (LanaiContext *)data;
 	FILE *stream = info->stream;
 	bfd_byte buffer[4];
 	unsigned int insn;
 	register int i;
-
-	if (!opcodes_sorted) {
-		qsort((char *)lanai_opcodes, NUMOPCODES,
-			sizeof(lanai_opcodes[0]),
-			(int (*)(const void *, const void *))compare_opcodes);
-		opcodes_sorted = 1;
-	}
 
 	{
 		int status =
@@ -155,7 +169,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info, void *data)
 	info->target = 0; /* Assume no target known */
 
 	for (i = 0; i < NUMOPCODES; i++) {
-		CONST struct lanai_opcode *opcode = &lanai_opcodes[i];
+		CONST struct lanai_opcode *opcode = &ctx->opcodes[i];
 		if ((opcode->match & insn) == opcode->match && (opcode->lose & insn) == 0) {
 			/* Nonzero means that we have found an instruction which has
 			   the effect of adding or or'ing the imm13 field to rs1.  */
@@ -197,7 +211,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info, void *data)
 						(*info->fprintf_func)(stream, data, "%c", *s);
 						break;
 
-#define reg(n,data) (*info->fprintf_func)(stream, data, "%s", reg_names[n])
+#define reg(n, data) (*info->fprintf_func)(stream, data, "%s", reg_names[n])
 						// #define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
 					case '1':
 						reg(X_RS1(insn), data);
@@ -343,7 +357,7 @@ extern int print_insn_lanai(bfd_vma memaddr, disassemble_info *info, void *data)
 					   or %r4, %lo(_foo), %r4
 					   */
 
-					if (is_delayed_branch(prev_insn)) {
+					if (is_delayed_branch(prev_insn, ctx->opcodes)) {
 						errcode = (*info->read_memory_func)(memaddr - 8, buffer, sizeof(buffer), info, data);
 						prev_insn = bfd_getb32(buffer);
 					}
