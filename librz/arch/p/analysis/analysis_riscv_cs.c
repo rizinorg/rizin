@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <rz_analysis.h>
-#include "rz_reg.h"
-#include "rz_util/rz_log.h"
+#include <rz_reg.h>
+#include <rz_util/rz_log.h>
 #include <rz_asm.h>
 #include <rz_lib.h>
 
 #include <capstone/capstone.h>
 #include <capstone/riscv.h>
 
+#include "analysis_riscv_cs.h"
 #include "analysis_riscv_utils.h"
 #include <rz_util/rz_str.h>
 
@@ -28,42 +29,46 @@ static RzRegItem *riscv_reg_get(const RzReg *reg, const char *name, int type) {
 	return rz_reg_get(reg, name, type);
 }
 
-static cs_riscv_op *riscv_operand(cs_insn *insn, ut8 n) {
+ut8 riscv_operand_count(cs_insn *insn) {
+	return insn && insn->detail ? insn->detail->riscv.op_count : 0;
+}
+
+const cs_riscv_op *riscv_operand(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(insn && insn->detail && n < insn->detail->riscv.op_count, NULL);
 	return &insn->detail->riscv.operands[n];
 }
 
-static bool riscv_operand_is(cs_insn *insn, ut8 n, riscv_op_type type) {
+bool riscv_operand_is(cs_insn *insn, ut8 n, riscv_op_type type) {
 	return insn && insn->detail && n < insn->detail->riscv.op_count && insn->detail->riscv.operands[n].type == type;
 }
 
-static const char *riscv_reg_name(csh handle, cs_insn *insn, ut8 n) {
+const char *riscv_reg_name(csh handle, cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), NULL);
 	return cs_reg_name(handle, riscv_operand(insn, n)->reg);
 }
 
-static ut32 riscv_reg_id(cs_insn *insn, ut8 n) {
+ut32 riscv_reg_id(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), RISCV_REG_INVALID);
 	return riscv_operand(insn, n)->reg;
 }
 
-static st64 riscv_imm(cs_insn *insn, ut8 n) {
+st64 riscv_imm(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_IMM), INT64_MAX);
 	return riscv_operand(insn, n)->imm;
 }
 
-static cs_riscv_op *riscv_memory_operand(cs_insn *insn, ut8 n) {
+const cs_riscv_op *riscv_memory_operand(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_MEM), NULL);
 	return riscv_operand(insn, n);
 }
 
-static bool riscv_memory_operand_is_based_on(cs_insn *insn, ut8 n, ut32 reg) {
+bool riscv_memory_operand_is_based_on(cs_insn *insn, ut8 n, ut32 reg) {
 	return riscv_operand_is(insn, n, RISCV_OP_MEM) && riscv_memory_operand(insn, n)->mem.base == reg;
 }
 
-static cs_riscv_op *find_memory_reference(cs_insn *insn) {
-	for (int i = 0; i < insn->detail->riscv.op_count; i++) {
-		cs_riscv_op *op = riscv_operand(insn, i);
+static const cs_riscv_op *find_memory_reference(cs_insn *insn) {
+	for (ut8 i = 0; i < riscv_operand_count(insn); i++) {
+		const cs_riscv_op *op = riscv_operand(insn, i);
 		if (op && op->type == RISCV_OP_MEM) {
 			return op;
 		}
@@ -173,9 +178,8 @@ static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
 	}
 
 	RzStructuredData *operands = rz_structured_data_map_add_array(opex, "operands");
-	cs_riscv *x = &insn->detail->riscv;
-	for (st32 i = 0; i < x->op_count; i++) {
-		cs_riscv_op *op = x->operands + i;
+	for (ut8 i = 0; i < riscv_operand_count(insn); i++) {
+		const cs_riscv_op *op = riscv_operand(insn, i);
 		RzStructuredData *operand = rz_structured_data_array_add_map(operands);
 		switch (op->type) {
 		case RISCV_OP_REG:
@@ -202,27 +206,7 @@ static RzStructuredData *riscv_opex(csh handle, cs_insn *insn) {
 	return root;
 }
 
-static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
-	cs_riscv_op *op = riscv_operand(insn, reg_num);
-	switch (op->type) {
-	case RISCV_OP_REG:
-		reg->name = (char *)cs_reg_name(handle, op->reg);
-		break;
-	case RISCV_OP_MEM:
-		if (op->mem.base != RISCV_REG_INVALID) {
-			reg->name = (char *)cs_reg_name(handle, op->mem.base);
-		}
-	default:
-		break;
-	}
-	return 0;
-}
-
 typedef struct {
-	RzRegItem reg;
 	csh hndl;
 	int omode;
 	int obits;
@@ -239,31 +223,30 @@ static bool riscv_init(void **user) {
 }
 
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
-	RiscvContext *ctx = (RiscvContext *)analysis->plugin_data;
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		if (riscv_operand_is(insn, 1, RISCV_OP_MEM)) {
-			cs_riscv_op *mem = riscv_memory_operand(insn, 1);
-			ZERO_FILL(ctx->reg);
+			const cs_riscv_op *mem = riscv_memory_operand(insn, 1);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_REG;
 			op->dst->reg = riscv_reg_get(analysis->reg, riscv_reg_name(*handle, insn, 0), RZ_REG_TYPE_GPR);
 			op->src[0] = rz_analysis_value_new();
 			op->src[0]->type = RZ_ANALYSIS_VAL_MEM;
-			op->src[0]->reg = &ctx->reg;
-			parse_reg_name(op->src[0]->reg, *handle, insn, 1);
+			op->src[0]->reg = mem->mem.base == RISCV_REG_INVALID
+				? NULL
+				: riscv_reg_get(analysis->reg, cs_reg_name(*handle, mem->mem.base), RZ_REG_TYPE_GPR);
 			op->src[0]->delta = mem->mem.disp;
 			op->src[0]->memref = op->refptr;
 		}
 		break;
 	case RZ_ANALYSIS_OP_TYPE_STORE:
 		if (riscv_operand_is(insn, 1, RISCV_OP_MEM)) {
-			cs_riscv_op *mem = riscv_memory_operand(insn, 1);
-			ZERO_FILL(ctx->reg);
+			const cs_riscv_op *mem = riscv_memory_operand(insn, 1);
 			op->dst = rz_analysis_value_new();
 			op->dst->type = RZ_ANALYSIS_VAL_MEM;
-			op->dst->reg = &ctx->reg;
-			parse_reg_name(op->dst->reg, *handle, insn, 1);
+			op->dst->reg = mem->mem.base == RISCV_REG_INVALID
+				? NULL
+				: riscv_reg_get(analysis->reg, cs_reg_name(*handle, mem->mem.base), RZ_REG_TYPE_GPR);
 			op->dst->delta = mem->mem.disp;
 			op->dst->memref = op->refptr;
 			op->src[0] = rz_analysis_value_new();
@@ -837,7 +820,7 @@ static void set_op_extra_metadata(RzAnalysis *analysis, RzAnalysisOp *op, csh ha
 	}
 
 	// Set indirect register name (base for loads/stores)
-	cs_riscv_op *mem = find_memory_reference(insn);
+	const cs_riscv_op *mem = find_memory_reference(insn);
 	if (mem) {
 		op->ireg = cs_reg_name(handle, mem->mem.base);
 		op->disp = mem->mem.disp;
