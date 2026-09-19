@@ -8,7 +8,10 @@ This script kills the http.server launched by http_server.py.
 import psutil
 
 for p in psutil.process_iter(["cmdline"]):
-    if "python3 -m http.server" in " ".join(p.cmdline()):
-        p.kill()
-        print("Killed http.server")
-        break
+    try:
+        if "python3 -m http.server" in " ".join(p.cmdline()):
+            p.kill()
+            print("Killed http.server")
+            break
+    except psutil.AccessDenied:
+        pass
