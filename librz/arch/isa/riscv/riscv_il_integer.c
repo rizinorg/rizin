@@ -3,7 +3,7 @@
 
 #include "riscv_il_integer.h"
 
-#include "capstone.h"
+#include <capstone.h>
 
 #include "riscv_il_base.h"
 

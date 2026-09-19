@@ -6,13 +6,17 @@
 #include "riscv_il_integer.h"
 #include "riscv_il_m.h"
 #include "riscv_il_compressed.h"
+#include <rz_util/rz_assert.h>
+#include <rz_util/rz_log.h>
 
 static void label_ecall(RzILVM *vm, RzILOpEffect *op) {
-	// stub: ecall is handled at the analysis layer
+	RZ_LOG_WARN("RISC-V ecall syscall: ignored");
+	// stub: syscalls aren't modelled in RzIL
 }
 
 static void label_ebreak(RzILVM *vm, RzILOpEffect *op) {
-	// stub: ebreak is handled at the analysis layer
+	RZ_LOG_WARN("RISC-V ebreak syscall: ignored");
+	// stub: syscalls aren't modelled in RzIL
 }
 
 static const RiscvInstructionLifter riscv_lifters[] = {
@@ -133,17 +137,13 @@ static const RiscvInstructionLifter riscv_lifters[] = {
 RZ_OWN RZ_IPI RzILOpEffect *
 rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
 	rz_return_val_if_fail(analysis && op && insn, NULL);
-
-	if (insn->id == RISCV_INS_INVALID) {
-		return NULL;
-	}
+	rz_return_val_if_fail(insn->id != RISCV_INS_INVALID, NULL);
 	if (insn->id >= RISCV_INS_ENDING) {
 		RZ_LOG_ERROR("Invalid RISC-V instruction id %u (0x%08x)\n", insn->id, rz_read_le32(insn->bytes));
 		return NULL;
 	}
-	if (insn->id >= RZ_ARRAY_SIZE(riscv_lifters)) {
-		return NULL;
-	}
+	rz_return_val_if_fail(insn->id < RZ_ARRAY_SIZE(riscv_lifters), NULL);
+
 	RiscvInstructionLifter lifter = riscv_lifters[insn->id];
 	if (!lifter) {
 		return NULL;

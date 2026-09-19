@@ -5,24 +5,24 @@
 
 #include "riscv/riscv_il_base.h"
 #include "riscv_il_integer.h"
-#include "rz_util/rz_buf.h"
+#include <rz_util/rz_buf.h>
 
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 #define DECODE_C_MV(analysis, insn) \
 	REQUIRE_2OPS(RISCV_OP_REG, RISCV_OP_REG); \
-	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[1].reg);
+	uint32_t rd = riscv_reg_id(insn, 0); \
+	RzILOpBitVector *rs = riscv_il_get_reg(rz_analysis_get_bits(analysis), riscv_reg_id(insn, 1));
 
 #define DECODE_C_LI(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
-	uint32_t rd = insn->detail->riscv.operands[0].reg; \
-	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
+	uint32_t rd = riscv_reg_id(insn, 0); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), riscv_imm(insn, 2));
 
 #define DECODE_C_BRANCH_ZERO(analysis, insn) \
 	REQUIRE_3OPS(RISCV_OP_REG, RISCV_OP_REG, RISCV_OP_IMM); \
-	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[0].reg); \
-	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), insn->detail->riscv.operands[2].imm);
+	RzILOpBitVector *rs1 = riscv_il_get_reg(rz_analysis_get_bits(analysis), riscv_reg_id(insn, 0)); \
+	RzILOpBitVector *imm = SN(rz_analysis_get_bits(analysis), riscv_imm(insn, 2));
 
 DEFINE_LIFTER_WITH_EFFECT(c_nop, DECODE_NONE, NOP())
 DEFINE_ALIAS_LIFTER(c_addi, addi)
@@ -31,10 +31,10 @@ DEFINE_ALIAS_LIFTER(c_addi4spn, addi)
 DEFINE_ALIAS_LIFTER(c_add, add)
 
 RzILOpEffect *rz_riscv_lift_c_slli(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
-	if (insn->detail->riscv.op_count == 2 &&
-		insn->detail->riscv.operands[0].type == RISCV_OP_REG &&
-		insn->detail->riscv.operands[0].reg == RISCV_REG_X0 &&
-		insn->detail->riscv.operands[1].type == RISCV_OP_IMM) {
+	if (riscv_operand_count(insn) == 2 &&
+		riscv_operand_is(insn, 0, RISCV_OP_REG) &&
+		riscv_reg_id(insn, 0) == RISCV_REG_X0 &&
+		riscv_operand_is(insn, 1, RISCV_OP_IMM)) {
 		// Capstone exposes the c.slli hint form as the same public ID as c.slli.
 		// It should later fix this by having a different public ID for the hint form.
 		return NOP();
