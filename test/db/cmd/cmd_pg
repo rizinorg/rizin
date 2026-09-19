@@ -12,11 +12,15 @@ RUN
 NAME=configs
 FILE=
 CMDS=<<EOF
+el plugins.prologues_generator.entropy_threshold
 e plugins.prologues_generator.entropy_threshold
+el plugins.prologues_generator.prologue_len
 e plugins.prologues_generator.prologue_len
 EOF
 EXPECT=<<EOF
+plugins.prologues_generator.entropy_threshold: Shannon entropy threshold for node splitting: 0.0-1.0 (strictly > threshold; not inclusive).
 0.8
+plugins.prologues_generator.prologue_len: Number of bytes (>0) to extract from start of function for prologue generation
 16
 EOF
 RUN

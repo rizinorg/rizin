@@ -1060,7 +1060,7 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 		config_prologue_len_getter, config_prologue_len_setter, NULL, ctx);
 
 	rz_config_add_string_bind(cfg, "plugins.prologues_generator.entropy_threshold",
-		"Threshold for shanon entropy of node split to consider 0.0 to 1.0",
+		"Shannon entropy threshold for node splitting: 0.0-1.0 (strictly > threshold; not inclusive).",
 		config_entropy_threshold_getter, config_entropy_threshold_setter, NULL, ctx);
 
 	ht_sp_insert(core->plugin_configs, "prologues_generator", cfg);
