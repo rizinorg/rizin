@@ -1205,8 +1205,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			}
 			if (opt.ind < argc) {
-				RZ_FREE(pfile);
 				while (opt.ind < argc) {
+					RZ_FREE(pfile);
 					pfile = rz_str_dup(argv[opt.ind++]);
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
