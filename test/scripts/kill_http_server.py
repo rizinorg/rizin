@@ -10,4 +10,5 @@ import psutil
 for p in psutil.process_iter(["cmdline"]):
     if "python3 -m http.server" in " ".join(p.cmdline()):
         p.kill()
+        print("Killed http.server")
         break
