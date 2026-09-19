@@ -21,7 +21,7 @@ def main():
     )
     while True:
         try:
-            http.client.HTTPConnection("127.0.0.1", 9000, timeout=10).connect()
+            http.client.HTTPConnection("127.0.0.1", 9000, timeout=5).connect()
         except ConnectionRefusedError:
             continue
         break
