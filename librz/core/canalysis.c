@@ -2002,15 +2002,27 @@ RZ_API bool rz_core_analysis_refs(RZ_NONNULL RzCore *core, size_t nbytes) {
  * \return false xref is not valid.
  */
 static bool is_valid_xref(RzCore *core, ut64 xref_to, RzAnalysisXRefType type, int cfg_debug) {
-	if (type == RZ_ANALYSIS_XREF_TYPE_NULL) {
+	int min_perm = 0;
+	switch (type) {
+	case RZ_ANALYSIS_XREF_TYPE_NULL:
 		return false;
+	case RZ_ANALYSIS_XREF_TYPE_CODE:
+	case RZ_ANALYSIS_XREF_TYPE_CALL:
+		min_perm = RZ_PERM_X;
+		break;
+	case RZ_ANALYSIS_XREF_TYPE_DATA:
+	case RZ_ANALYSIS_XREF_TYPE_STRING:
+		min_perm = RZ_PERM_R;
+		break;
 	}
 	if (cfg_debug) {
-		if (!rz_debug_map_get(core->dbg, xref_to)) {
+		const RzDebugMap *map = rz_debug_map_get(core->dbg, xref_to);
+		if (!map) {
 			return false;
 		}
+		return map->perm & min_perm;
 	} else if (core->io->va) {
-		if (!rz_io_is_valid_offset(core->io, xref_to, 0)) {
+		if (!rz_io_is_valid_offset(core->io, xref_to, min_perm)) {
 			return false;
 		}
 	}
@@ -2150,7 +2162,10 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			for (ut8 i = 0; i < 6; ++i) {
 				st64 aval = op.analysis_vals[i].imm;
 				if (aval > asm_sub_varmin && aval != UT64_MAX && aval != UT32_MAX) {
-					if (is_valid_xref(core, aval, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
+					if (is_valid_xref(core, aval, RZ_ANALYSIS_XREF_TYPE_CODE, cfg_debug)) {
+						set_new_xref(core, op.addr, aval, rz_analysis_op_is_call(&op) ? RZ_ANALYSIS_XREF_TYPE_CALL : RZ_ANALYSIS_XREF_TYPE_CODE, can_search_string);
+						count++;
+					} else if (is_valid_xref(core, aval, RZ_ANALYSIS_XREF_TYPE_DATA, cfg_debug)) {
 						set_new_xref(core, op.addr, aval, RZ_ANALYSIS_XREF_TYPE_DATA, can_search_string);
 						count++;
 					}
