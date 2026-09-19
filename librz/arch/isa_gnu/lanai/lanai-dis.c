@@ -118,14 +118,19 @@ static int is_delayed_branch(unsigned long insn, struct lanai_opcode *opcodes) {
 /* extern void qsort (); */
 static int compare_opcodes(char *a, char *b);
 
-RZ_IPI void lanai_dis_context_init(RZ_NONNULL LanaiContext *ctx) {
+static int compare_opcodes_qsort(const void *a, const void *b) {
+	return compare_opcodes((char *)a, (char *)b);
+}
+
+RZ_IPI bool lanai_dis_context_init(RZ_NONNULL LanaiContext *ctx) {
 	ctx->opcodes = malloc(NUMOPCODES * sizeof(struct lanai_opcode));
 	if (!ctx->opcodes) {
-		return;
+		return false;
 	}
 	memcpy(ctx->opcodes, lanai_opcodes, NUMOPCODES * sizeof(struct lanai_opcode));
-	qsort((char *)ctx->opcodes, NUMOPCODES, sizeof(struct lanai_opcode),
-		(int (*)(const void *, const void *))compare_opcodes);
+	qsort(ctx->opcodes, NUMOPCODES, sizeof(struct lanai_opcode),
+		compare_opcodes_qsort);
+	return true;
 }
 
 RZ_IPI void lanai_dis_context_fini(RZ_NONNULL LanaiContext *ctx) {

@@ -85,7 +85,10 @@ static int lanai_gnu_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, in
 static bool lanai_gnu_init(void **user) {
 	LanaiContext *ctx = RZ_NEW0(LanaiContext);
 	rz_return_val_if_fail(ctx, false);
-	lanai_dis_context_init(ctx);
+	if (!lanai_dis_context_init(ctx)) {
+		RZ_FREE(ctx);
+		return false;
+	}
 	*user = ctx;
 	return true;
 }
