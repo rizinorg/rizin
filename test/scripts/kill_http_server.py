@@ -5,8 +5,8 @@ This script kills the http.server launched by http_server.py.
 
 """
 
-import psutil
 import sys
+import psutil
 
 for p in psutil.process_iter(["pid", "name", "exe", "cmdline"]):
     try:
