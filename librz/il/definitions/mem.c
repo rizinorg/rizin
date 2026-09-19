@@ -152,7 +152,34 @@ static RzBitVector *read_n_bits(RzBuffer *buf, ut32 n_bits, RzBitVector *key, bo
 	return value;
 }
 
-static bool write_n_bits(RzBuffer *buf, RzBitVector *key, RzBitVector *value, bool big_endian) {
+/**
+ * \brief Low-level reading function used in rz_il_mem_loadw_into
+ */
+RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzBitVector *out_bv, RZ_NONNULL const RzBitVector *key, ut32 n_bits, bool big_endian) {
+	rz_return_val_if_fail(mem_buf && out_bv && key, false);
+	ut64 address = rz_bv_to_ut64(key);
+	size_t n_bytes = rz_bv_len_bytes(out_bv);
+	ut8 *data = calloc(n_bytes, 1);
+	if (!data) {
+		return false;
+	}
+	st64 cur_pos = rz_buf_tell(mem_buf);
+	if (rz_buf_seek(mem_buf, address, RZ_BUF_SET) != address) {
+		rz_buf_seek(mem_buf, cur_pos, RZ_BUF_SET);
+		RZ_LOG_INFO("rz_il_loadw_into: OOB read from invalid address: 0x%" PFMT64x "\n", address);
+		return false;
+	}
+	rz_bv_set_from_buffer_ble(out_bv, mem_buf, n_bits, big_endian);
+	rz_buf_seek(mem_buf, cur_pos, RZ_BUF_SET);
+	free(data);
+	return true;
+}
+
+/**
+ * \brief Low-level writing function used in rz_il_mem_storew
+ */
+RZ_API bool rz_il_storew(RZ_NONNULL RzBuffer *buf, RZ_NONNULL const RzBitVector *key, RZ_NONNULL const RzBitVector *value, bool big_endian) {
+	rz_return_val_if_fail(buf && key && value, false);
 	ut64 address = rz_bv_to_ut64(key);
 	ut32 n_bytes = rz_bv_len_bytes(value);
 
@@ -185,13 +212,31 @@ RZ_API RzBitVector *rz_il_mem_loadw(RzILMem *mem, RzBitVector *key, ut32 n_bits,
 }
 
 /**
+ * Load data of the given size from the given address into the bitvector \p out_bv.
+ *
+ * \param out_bv The bitvector to write the loaded data into.
+ * \param key address (bitvector)
+ * \param n_bits How many bits to read. This also determines the size of the returned bitvector
+ * \return True on success, false on failure.
+ */
+RZ_API bool rz_il_mem_loadw_into(RZ_NONNULL RzILMem *mem,
+	RZ_OUT RZ_NONNULL RzBitVector *out_bv,
+	RZ_NONNULL const RzBitVector *key,
+	ut32 n_bits,
+	bool big_endian) {
+	rz_return_val_if_fail(mem && key && n_bits, false);
+	return_val_if_key_len_wrong(mem, key, false);
+	return rz_il_loadw_into(mem->buf, out_bv, key, n_bits, big_endian);
+}
+
+/**
  * Store an entire word or arbitrary size at an address
  * \param key address
  * \param value data
  * \return whether the store succeeded
  */
-RZ_API bool rz_il_mem_storew(RzILMem *mem, RzBitVector *key, RzBitVector *value, bool big_endian) {
+RZ_API bool rz_il_mem_storew(RzILMem *mem, const RzBitVector *key, const RzBitVector *value, bool big_endian) {
 	rz_return_val_if_fail(mem && key && value, false);
 	return_val_if_key_len_wrong(mem, key, false);
-	return write_n_bits(mem->buf, key, value, big_endian);
+	return rz_il_storew(mem->buf, key, value, big_endian);
 }
