@@ -148,17 +148,34 @@ bool test_prologues_generate() {
 	RZ_FREE(output);
 	rz_structured_data_free(sd);
 	rz_vector_free(prologues);
-
+	rz_set_s_free(processed_files);
 	rz_trie_free(pg_trie);
 	rz_bin_file_delete(bin, bf1);
 	rz_bin_file_delete(bin, bf2);
 	rz_bin_file_delete(bin, bf3);
+	rz_prologues_arch_info_fini(&arch_info);
+
+	// file path
+	pg_trie = rz_prologues_trie_new();
+	bool res = rz_prologues_trie_feed_file(pg_trie, bin, "bins/elf/core/crash-linux-arm64", 8, &arch_info, NULL);
+	mu_assert_true(res, "feeding through disk file api should succeed");
+	prologues = rz_prologues_generalize_and_extract(pg_trie, 8, 0.8);
+	mu_assert_notnull(prologues, "Failed to generalize prologues from trie");
+	mu_assert_eq(rz_vector_len(prologues), 6, "no. of prologues extracted differs");
+	sd = rz_prologues_to_structured_data(prologues, 8, &arch_info);
+	mu_assert_notnull(sd, "Failed to convert prologues to structured data");
+	output = rz_structured_data_to_yaml(sd);
+	mu_assert_notnull(output, "Failed to convert structured data to YAML");
+	mu_assert_streq(output, crash_linux_arm64_generalized, "YAML output mismatch");
+	RZ_FREE(output);
+	rz_structured_data_free(sd);
+	rz_vector_free(prologues);
+	rz_trie_free(pg_trie);
+	rz_prologues_arch_info_fini(&arch_info);
 
 	// dir
-	rz_prologues_arch_info_fini(&arch_info);
 	rz_prologues_arch_info_init(&arch_info, "mips", 32, false);
 
-	rz_set_s_free(processed_files);
 	processed_files = rz_set_s_new(HT_STR_DUP);
 	pg_trie = rz_prologues_trie_new();
 	// nonexistent

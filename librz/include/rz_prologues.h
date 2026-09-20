@@ -32,6 +32,8 @@ RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNUL
 	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files);
 RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, ut64 prologue_len,
 	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files);
+RZ_API bool rz_prologues_trie_feed_file(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *file_path,
+	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files);
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
 	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files);
 

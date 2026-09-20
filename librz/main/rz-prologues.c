@@ -133,31 +133,8 @@ static bool generate_prologues(const char *input_path, bool is_dir, const char *
 		}
 	} else {
 		// file
-		if (!rz_file_is_regular(input_path)) {
-			RZ_LOG_ERROR("File does not exist, invalid path: %s\n", input_path);
-			goto err;
-		}
-
-		RzBuffer *buf = rz_buf_new_file(input_path, O_RDONLY, 0);
-		if (!buf) {
-			RZ_LOG_WARN("Failed to open buffer for file: %s\n", input_path);
-			goto err;
-		}
-
-		RzBinOptions opt;
-		rz_bin_options_init(&opt, -1, 0, 0, false);
-		opt.filename = input_path;
-		RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
-		rz_buf_free(buf);
-		if (!bf) {
-			RZ_LOG_WARN("Failed to parse binary for file: %s\n", input_path);
-			goto err;
-		}
-
-		bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, &arch_info, files);
-		rz_bin_file_delete(bin, bf);
-		if (!res) {
-			RZ_LOG_ERROR("Failed to feed binfile '%s' into prologues trie\n", input_path);
+		if (!rz_prologues_trie_feed_file(pg_trie, bin, input_path, prologue_len, &arch_info, files)) {
+			RZ_LOG_ERROR("Failed to feed file '%s' into prologues trie\n", input_path);
 			goto err;
 		}
 	}

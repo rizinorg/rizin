@@ -402,13 +402,12 @@ static bool process_archive(const char *ar_file, RzTrie *pg_trie, RzBin *bin, ut
 	RZ_NULLABLE RzProloguesArchInfo *arch_info, RzSetS *processed_files) {
 
 	const char *f_base = rz_file_basename(ar_file);
-	if (!rz_cons_yesno('y', "'%s' is an ar archive. Unpack and process individual object files? (Y/n) ", f_base)) {
+	if (!rz_cons_yesno('y', "'%s' is an archive. Unpack and process individual object files? (Y/n) ", f_base)) {
 		return false;
 	}
 	RzList /*<RzArFp>*/ *ar_fp_list = ar_open_all(ar_file, O_RDONLY);
 	if (!ar_fp_list) {
 		RZ_LOG_WARN("ar: Failed to open all .o files in: '%s'\n", f_base);
-		rz_list_free(ar_fp_list);
 		return false;
 	}
 
@@ -428,6 +427,7 @@ static bool process_archive(const char *ar_file, RzTrie *pg_trie, RzBin *bin, ut
 		if (!bf) {
 			RZ_LOG_WARN("Failed to parse bin object file: '%s'\n", ar_fp->name);
 			rz_list_free(ar_fp_list);
+			rz_buf_free(buf_slice);
 			return false;
 		}
 		rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, arch_info, processed_files);
@@ -601,6 +601,65 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Feed function prologues from a binary file on disk into the trie.
+ *
+ * If the file is an archive (.a / .lib), unpacks all member object files and feeds them.
+ *
+ * \param pg_trie          prologues trie to feed into.
+ * \param bin              RzBin instance used to load binary files.
+ * \param file_path        path to regular file or archive on disk.
+ * \param prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param arch_info        optional target arch to check/adopt.
+ * \param processed_files  optional set of processed file paths to check and update.
+ *
+ * \return true on success, false on error or if skipped.
+ */
+RZ_API bool rz_prologues_trie_feed_file(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *file_path,
+	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
+	rz_return_val_if_fail(pg_trie && bin && file_path && prologue_len > 0, false);
+
+	if (!rz_file_is_regular(file_path)) {
+		return false;
+	}
+
+	if (processed_files && rz_set_s_contains(processed_files, file_path)) {
+		RZ_LOG_WARN("Skipping file '%s', already processed.\n", file_path);
+		return false;
+	}
+
+	const char *ext = rz_file_extension(file_path);
+	if (ext && (!rz_str_cmp(ext, "a", -1) || !rz_str_cmp(ext, "lib", -1))) {
+		bool res = process_archive(file_path, pg_trie, bin, prologue_len, arch_info, processed_files);
+		if (res && processed_files) {
+			rz_set_s_add(processed_files, file_path);
+		}
+		return res;
+	}
+
+	// using rz_buf... + rz_bin_open_buf instead of rz_bin_open to avoid RzIO
+	// bcz for RzIO we need to close fd seperately after rz_bin_file_delete
+	RzBuffer *buf = rz_buf_new_file(file_path, O_RDONLY, 0);
+	if (!buf) {
+		RZ_LOG_WARN("Failed to open buffer for file: '%s'\n", file_path);
+		return false;
+	}
+
+	RzBinOptions opt;
+	rz_bin_options_init(&opt, -1, 0, 0, false);
+	opt.filename = file_path;
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
+	rz_buf_free(buf);
+	if (!bf) {
+		RZ_LOG_WARN("Failed to parse binary for file: '%s'\n", file_path);
+		return false;
+	}
+
+	bool res = rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, arch_info, processed_files);
+	rz_bin_file_delete(bin, bf);
+	return res;
+}
+
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
 	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && dir_path && prologue_len > 0, -1);
@@ -620,42 +679,9 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONN
 	// nested dir not supported
 	rz_list_foreach (files, it, file) {
 		char *file_path = rz_file_path_join(dir_path, file);
-		if (!rz_file_is_regular(file_path)) {
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		const char *ext = rz_file_extension(file);
-		if (ext && !rz_str_cmp(ext, "a", -1)) {
-			process_archive(file, pg_trie, bin, prologue_len, arch_info, processed_files);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		// using rz_buf... + rz_bin_open_buf instead of rz_bin_open to avoid RzIO
-		// bcz for RzIO we need to close fd seperately after rz_bin_file_delete
-		RzBuffer *buf = rz_buf_new_file(file_path, O_RDONLY, 0);
-		if (!buf) {
-			RZ_LOG_WARN("Failed to open buffer for file: '%s'\n", file);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		RzBinOptions opt;
-		rz_bin_options_init(&opt, -1, 0, 0, false);
-		opt.filename = file_path;
-		RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
-		rz_buf_free(buf);
-		if (!bf) {
-			RZ_LOG_WARN("Failed to parse binary for file: '%s'\n", file);
-			RZ_FREE(file_path);
-			continue;
-		}
-
-		if (rz_prologues_trie_feed_binfile(pg_trie, bf, prologue_len, arch_info, processed_files)) {
+		if (rz_prologues_trie_feed_file(pg_trie, bin, file_path, prologue_len, arch_info, processed_files)) {
 			fcnt++;
 		}
-		rz_bin_file_delete(bin, bf);
 		RZ_FREE(file_path);
 	}
 

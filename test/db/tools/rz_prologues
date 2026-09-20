@@ -71,7 +71,7 @@ TOOL=rz-prologues
 ARGS=-f /nonexistent/file.bin
 EXIT_STATUS=1
 EXPECT_ERR=<<EOF
-ERROR: File does not exist, invalid path: /nonexistent/file.bin
+ERROR: Failed to feed file '/nonexistent/file.bin' into prologues trie
 ERROR: Failed to generate prologues from input '/nonexistent/file.bin'
 EOF
 RUN
@@ -114,7 +114,7 @@ EXPECT_ERR=<<EOF
 WARNING: Skipping file 'bins/elf/riscv_crypto_64': arch mismatch.
   Trie: (arm, 64-bit, LE)
   File: (riscv, 64-bit, LE)
-ERROR: Failed to feed binfile 'bins/elf/riscv_crypto_64' into prologues trie
+ERROR: Failed to feed file 'bins/elf/riscv_crypto_64' into prologues trie
 ERROR: Failed to generate prologues from input 'bins/elf/riscv_crypto_64'
 EOF
 RUN
