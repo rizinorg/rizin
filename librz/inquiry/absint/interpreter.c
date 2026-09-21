@@ -833,7 +833,8 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 	return EVAL_RESULT_OK;
 }
 
-RZ_API bool rz_absint_run_context_init(RzAbsIntRunContext *ctx, RzAbsIntInstance *inst) {
+RZ_API bool rz_absint_run_context_init(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst) {
+	rz_return_val_if_fail(ctx && inst, false);
 	ctx->inst = inst;
 	ctx->astate = NULL;
 	ctx->res = NULL;
@@ -845,7 +846,10 @@ RZ_API bool rz_absint_run_context_init(RzAbsIntRunContext *ctx, RzAbsIntInstance
 	return true;
 }
 
-RZ_API void rz_absint_run_context_fini(RzAbsIntRunContext *ctx) {
+RZ_API void rz_absint_run_context_fini(RZ_NULLABLE RzAbsIntRunContext *ctx) {
+	if (!ctx) {
+		return;
+	}
 	rz_list_free(ctx->queue);
 	interp_blocks_fini(ctx->inst, &ctx->blocks);
 }
@@ -863,7 +867,7 @@ static RzAbsIntLiftBlockResult interp_lift_block(RzAbsIntInstance *inst, ut64 ad
  * It does not follow calls!
  * The CFG it discovers should be considered a function.
  */
-RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out) {
+RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out) {
 	rz_return_val_if_fail(inst && res_out, RZ_ABSINT_RESULT_FAILED);
 
 	// Initialization
@@ -991,13 +995,15 @@ cleanup:
 	return ret;
 }
 
-RZ_API void rz_absint_result_free(RzAbsIntInstance *inst, RzAbsIntResult *res) {
+RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res) {
 	if (!res) {
 		return;
 	}
-	interp_blocks_fini(inst, &res->blocks);
 	rz_vector_fini(&res->xrefs);
 	ht_up_free(res->comments);
+	if (inst) {
+		interp_blocks_fini(inst, &res->blocks);
+	}
 	free(res);
 }
 

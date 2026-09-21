@@ -58,7 +58,7 @@ static void var_set_free(RzAbsIntInstance *inst, HtUP *vars) {
 	ht_up_free(vars);
 }
 
-RZ_API void rz_absint_state_free(RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntState *state) {
+RZ_API void rz_absint_state_free(RZ_BORROW RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntState *state) {
 	if (!state) {
 		return;
 	}

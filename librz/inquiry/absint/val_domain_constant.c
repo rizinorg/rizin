@@ -36,6 +36,9 @@ static RzAbsIntVal *pack(ValueData *val) {
 
 static RZ_OWN RzAbsIntVal *val_new_top() {
 	ValueData *ad = RZ_NEW0(ValueData);
+	if (!ad) {
+		return NULL;
+	}
 	ad->is_const = false;
 	ad->bv = rz_bv_new(64);
 	return pack(ad);

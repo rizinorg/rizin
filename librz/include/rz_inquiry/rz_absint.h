@@ -217,7 +217,7 @@ typedef enum rz_absint_result_dimen_t {
  * \brief Local data during an interpreter run
  */
 struct rz_absint_run_context_t {
-	RzAbsIntInstance *inst; //< parent interpreter thread
+	RZ_BORROW RzAbsIntInstance *inst; //< parent interpreter thread
 
 	RzList /*<RzAbsIntBlock *>*/ *queue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
 	/**
@@ -250,8 +250,8 @@ typedef enum rz_absint_result_code_t {
 	RZ_ABSINT_RESULT_BREAK
 } RzAbsIntResultCode;
 
-RZ_API RzAbsIntResultCode rz_absint_run(RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
-RZ_API void rz_absint_result_free(RzAbsIntInstance *inst, RzAbsIntResult *res);
+RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
+RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);
 RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name);
 
 typedef enum rz_absint_builtin_value_domain_t {
