@@ -66,6 +66,7 @@ static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail aI_details[2];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
@@ -8450,8 +8451,20 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.args = analyze_esil_insn_access_args,
 };
 
+static const RzCmdDescDetailEntry aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries[] = {
+	{ .text = "Analysis Results", .arg_str = NULL, .comment = "In the early stage the results will be less comprehensive than the old analysis. This won't be the case for long. You can track the progress here: https://github.com/orgs/rizinorg/projects/18" },
+	{ .text = "Design", .arg_str = NULL, .comment = "The algorithms are designed with performance, extensibility, formal correctness, and compatibility for VLIW architectures in mind." },
+	{ .text = "Future's Base", .arg_str = NULL, .comment = "The commands' module will be the foundation for future analysis development." },
+	{ .text = "RzIL", .arg_str = NULL, .comment = "The IL for the the analysis is exclusively RzIL with support for many more architectures than ESIL had." },
+	{ 0 },
+};
+static const RzCmdDescDetail aI_details[] = {
+	{ .name = "What is the difference to the old analysis?", .entries = aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp aI_help = {
-	.summary = "New experimental RzInquiry analysis",
+	.summary = "Experimental RzIL based analysis",
+	.details = aI_details,
 };
 static const RzCmdDescArg inquiry_analyze_function_args[] = {
 	{ 0 },

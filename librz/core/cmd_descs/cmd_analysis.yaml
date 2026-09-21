@@ -2620,7 +2620,20 @@ commands:
                   - text: "NOTE:"
                     comment: "mem{reads,writes} with PIC only fetch the offset"
   - name: aI
-    summary: New experimental RzInquiry analysis
+    summary: Experimental RzIL based analysis
+    details:
+      - name: "What is the difference to the old analysis?"
+        entries:
+          - text: "Analysis Results"
+            comment: "In the early stage the results will be less comprehensive than the old analysis. \
+              This won't be the case for long. You can track the progress here: https://github.com/orgs/rizinorg/projects/18"
+          - text: "Design"
+            comment: "The algorithms are designed with performance, extensibility, formal correctness, \
+              and compatibility for VLIW architectures in mind."
+          - text: "Future's Base"
+            comment: "The commands' module will be the foundation for future analysis development."
+          - text: "RzIL"
+            comment: "The IL for the the analysis is exclusively RzIL with support for many more architectures than ESIL had."
     subcommands:
       - name: aIf
         summary: analyze function at current seek
