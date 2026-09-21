@@ -61,7 +61,7 @@ typedef struct interp_driver_t {
 	 * TODO: The queue is not the optimal data structure (needs heap data).
 	 * But rbuf may lead to starvation.
 	 */
-	RzThreadQueue /*<ut64*>*/ *entry_points_ch;
+	RzThreadQueue /*<ut64 *>*/ *entry_points_ch;
 	/**
 	 * \brief Interpreters -> Main.
 	 * Multiple interpreters send info requests and analysis results with this.
@@ -101,7 +101,7 @@ struct interp_thread {
 	 * \brief Channel to this thread.
 	 * Main delivers responses to requests on InterpDriver.main_ch to this in the exact order they were requested.
 	 */
-	RzThreadRingBuf *ch;
+	RzThreadRingBuf /*<InterpDriverAnswer>*/ *ch;
 } /* InterpThread */;
 
 static void *interp_th(void *user) {
