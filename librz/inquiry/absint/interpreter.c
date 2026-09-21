@@ -1038,7 +1038,7 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
  */
 RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name) {
 	rz_return_val_if_fail(res && analysis, false);
-	char name_alt[128];
+	char name_alt[32] = { 0 };
 	RzAnalysisFunction *func = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
 	if (!func) {
 		// TODO: handle better than skipping everything
