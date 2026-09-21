@@ -166,6 +166,7 @@ RZ_API bool rz_il_loadw_into(RZ_NONNULL RzBuffer *mem_buf, RZ_NONNULL RZ_OUT RzB
 	st64 cur_pos = rz_buf_tell(mem_buf);
 	if (rz_buf_seek(mem_buf, address, RZ_BUF_SET) != address) {
 		rz_buf_seek(mem_buf, cur_pos, RZ_BUF_SET);
+		free(data);
 		RZ_LOG_INFO("rz_il_loadw_into: OOB read from invalid address: 0x%" PFMT64x "\n", address);
 		return false;
 	}
