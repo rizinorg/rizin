@@ -27,6 +27,10 @@ typedef enum {
 	EVAL_RESULT_BREAK
 } EvalResult;
 
+/**
+ * \brief Adds a comment to \p addr.
+ * If there is already a comment at this address \p cmt will be appended to it.
+ */
 static void interp_add_comment(RzAbsIntRunContext *ctx, ut64 addr, const char *cmt) {
 	// building the commment string passed to this function is expensive, so assert that it is only called
 	// when actually requested.
@@ -536,7 +540,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	case RZ_IL_OP_FPOWN:
 	case RZ_IL_OP_FCOMPOUND:
 	case RZ_IL_OP_FEXCEPT:
-		RZ_LOG_ERROR("Unhandled pure %" PFMT32d "\n", pure->code);
+		RZ_LOG_WARN("Unhandled pure %" PFMT32d "\n", pure->code);
 		// Not implemented.
 		goto map_to_top;
 	}
@@ -743,7 +747,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 	case RZ_IL_OP_GOTO:
 	case RZ_IL_OP_BLK:
 	case RZ_IL_OP_REPEAT:
-		RZ_LOG_ERROR("Unhandled effect %" PFMT32d "\n", effect->code);
+		RZ_LOG_WARN("Unhandled effect %" PFMT32d "\n", effect->code);
 		// Ignore for now.
 		break;
 	}

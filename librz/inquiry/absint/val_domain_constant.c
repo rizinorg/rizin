@@ -203,6 +203,7 @@ static void eval_binop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *x, 
 		rz_bv_div_inplace(xv, yv);
 		break;
 	default:
+		RZ_LOG_WARN("RzAbsInt: Constant - eval_binop: Pure %u is not implemented.\n", code);
 		// unimplemented
 		val_set_top(x);
 		break;
@@ -232,6 +233,7 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val)
 		rz_bv_neg_inplace(bv);
 		break;
 	default:
+		RZ_LOG_WARN("RzAbsInt: Constant - eval_unop: Pure %u is not implemented.\n", code);
 		// unimplemented
 		val_set_top(val);
 		break;
