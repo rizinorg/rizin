@@ -1,15 +1,24 @@
-NAME=ESIL ignores SP plus zero (Thumb)
+NAME=ESIL handles stack pointer offsets (Thumb)
 FILE==
 ARGS=-a arm -b 16
 CMDS=<<EOF
 e cfg.bigendian=false
-wx 84b000af04b07047
+wx 84b000af84b000200090009901a808b07047
 af
 afv- *
 aaef
 afvs
+afvR
+afvW
 EOF
-EXPECT=
+EXPECT=<<EOF
+var int32_t var_20h @ stack - 0x20
+var int32_t var_1ch @ stack - 0x1c
+   var_20h  0xa
+   var_1ch
+   var_20h  0x8
+   var_1ch
+EOF
 RUN
 
 NAME=ESIL ignores an SP register copy (x86-64)
@@ -24,41 +33,4 @@ aaef
 afvs
 EOF
 EXPECT=
-RUN
-
-NAME=ESIL preserves zero-offset stack reads and writes (Thumb)
-FILE==
-ARGS=-a arm -b 16
-CMDS=<<EOF
-e cfg.bigendian=false
-wx 84b000200090009904b07047
-af
-afv- *
-aaef
-afvs
-afvxv
-EOF
-EXPECT=<<EOF
-var int32_t var_10h @ stack - 0x10
-afvR
-   var_10h  0x6
-afvW
-   var_10h  0x4
-EOF
-RUN
-
-NAME=ESIL preserves nonzero stack pointer offsets (Thumb)
-FILE==
-ARGS=-a arm -b 16
-CMDS=<<EOF
-e cfg.bigendian=false
-wx 84b001a804b07047
-af
-afv- *
-aaef
-afvs
-EOF
-EXPECT=<<EOF
-var int32_t var_ch @ stack - 0xc
-EOF
 RUN
