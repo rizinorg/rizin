@@ -1,0 +1,64 @@
+NAME=ESIL ignores SP plus zero (Thumb)
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 84b000af04b07047
+af
+afv- *
+aaef
+afvs
+EOF
+EXPECT=
+RUN
+
+NAME=ESIL ignores an SP register copy (x86-64)
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e analysis.cc=amd64
+wx 4883ec104889e04883c410c3
+af
+afv- *
+aaef
+afvs
+EOF
+EXPECT=
+RUN
+
+NAME=ESIL preserves zero-offset stack reads and writes (Thumb)
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 84b000200090009904b07047
+af
+afv- *
+aaef
+afvs
+afvxv
+EOF
+EXPECT=<<EOF
+var int32_t var_10h @ stack - 0x10
+afvR
+   var_10h  0x6
+afvW
+   var_10h  0x4
+EOF
+RUN
+
+NAME=ESIL preserves nonzero stack pointer offsets (Thumb)
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 84b001a804b07047
+af
+afv- *
+aaef
+afvs
+EOF
+EXPECT=<<EOF
+var int32_t var_ch @ stack - 0xc
+EOF
+RUN
