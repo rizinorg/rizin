@@ -872,6 +872,67 @@ bool test_absint_driver(size_t n_threads) {
 	mu_end;
 }
 
+static bool test_absint_sdiv_smod_case(
+	const RzAbsIntValueDomain *domain,
+	st64 x,
+	st64 y,
+	st64 expected_div,
+	st64 expected_mod) {
+	RzBitVector *x_bv = rz_bv_new_from_st64(8, x);
+	RzBitVector *y_bv = rz_bv_new_from_st64(8, y);
+	RzBitVector *div_result = rz_bv_new(8);
+	RzBitVector *mod_result = rz_bv_new(8);
+	RzAbsIntVal *div = domain->val_new_top();
+	RzAbsIntVal *mod = domain->val_new_top();
+	RzAbsIntVal *divisor = domain->val_new_top();
+	bool ok = false;
+
+	if (!x_bv || !y_bv || !div_result || !mod_result || !div || !mod || !divisor) {
+		goto cleanup;
+	}
+
+	domain->set_const_bv(div, x_bv);
+	domain->set_const_bv(mod, x_bv);
+	domain->set_const_bv(divisor, y_bv);
+
+	domain->eval_binop(RZ_IL_OP_SDIV, div, divisor);
+	domain->eval_binop(RZ_IL_OP_SMOD, mod, divisor);
+
+	if (!domain->to_concrete_const(div, div_result) ||
+		!domain->to_concrete_const(mod, mod_result)) {
+		goto cleanup;
+	}
+
+	ok = rz_bv_to_ut64(div_result) == (ut8)expected_div &&
+		rz_bv_to_ut64(mod_result) == (ut8)expected_mod;
+
+cleanup:
+	domain->val_free(div);
+	domain->val_free(mod);
+	domain->val_free(divisor);
+	rz_bv_free(x_bv);
+	rz_bv_free(y_bv);
+	rz_bv_free(div_result);
+	rz_bv_free(mod_result);
+	return ok;
+}
+
+bool test_absint_sdiv_smod(void) {
+	const RzAbsIntValueDomain *domain =
+		rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST);
+
+	mu_assert_notnull(domain, "constant value domain");
+
+	mu_assert_true(test_absint_sdiv_smod_case(domain, 10, 3, 3, 1), "positive/positive");
+	mu_assert_true(test_absint_sdiv_smod_case(domain, -10, 3, -3, -1), "negative/positive");
+	mu_assert_true(test_absint_sdiv_smod_case(domain, 10, -3, -3, -1), "positive/negative");
+	mu_assert_true(test_absint_sdiv_smod_case(domain, -10, -3, 3, -1), "negative/negative");
+	mu_assert_true(test_absint_sdiv_smod_case(domain, 10, 0, -1, 10), "division by zero");
+	mu_assert_true(test_absint_sdiv_smod_case(domain, -10, 0, 1, -10), "negative dividend, zero divisor");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_absint_block_resolve_bounds_single);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, false);
@@ -899,6 +960,7 @@ bool all_tests() {
 	mu_run_test(test_absint_comments);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);
+	mu_run_test(test_absint_sdiv_smod);
 	return tests_passed != tests_run;
 }
 

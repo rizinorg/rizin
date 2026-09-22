@@ -897,7 +897,9 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	case RZ_IL_OP_EQ:
 	case RZ_IL_OP_MUL:
 	case RZ_IL_OP_MOD:
-	case RZ_IL_OP_DIV: {
+	case RZ_IL_OP_DIV:
+	case RZ_IL_OP_SDIV:
+	case RZ_IL_OP_SMOD: {
 		RzILOpPure *px;
 		RzILOpPure *py;
 		if (pure->code == RZ_IL_OP_APPEND) {
@@ -1000,8 +1002,6 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		}
 		break;
 	}
-	case RZ_IL_OP_SDIV:
-	case RZ_IL_OP_SMOD:
 	case RZ_IL_OP_FLOAT:
 	case RZ_IL_OP_FBITS:
 	case RZ_IL_OP_IS_FINITE:
