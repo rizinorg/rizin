@@ -931,7 +931,7 @@ static void handle_var_stack_access(RzAnalysisEsil *esil, ut64 addr, RzAnalysisV
 			free(varname);
 		}
 		if (var) {
-			rz_analysis_var_set_access(var, regname, ctx->op->addr, type, delta);
+			rz_analysis_var_set_access(var, regname, ctx->op->addr, type, delta_for_access(ctx->op, type));
 		}
 	}
 }
