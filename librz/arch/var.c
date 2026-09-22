@@ -1665,6 +1665,7 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	}
 	if (SP) {
 		extract_stack_var(analysis, fcn, op, SP, "+", true, sp, shadow_store);
+		extract_stack_var(analysis, fcn, op, SP, "-", true, sp, shadow_store);
 	}
 }
 
