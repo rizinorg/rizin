@@ -70,7 +70,10 @@ RZ_API RZ_BORROW const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 RZ_API RZ_BORROW const RzCryptoPlugin *rz_crypto_plugin_by_index(RZ_NONNULL RzCrypto *cry, size_t index) {
 	rz_return_val_if_fail(cry, NULL);
 
-	RzIterator it = ht_sp_as_iter(cry->plugins);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(cry->plugins, &it)) {
+		return NULL;
+	}
 	RzCryptoPlugin **val;
 	size_t i = 0;
 
@@ -169,7 +172,10 @@ RZ_API void rz_crypto_reset(RZ_NONNULL RzCrypto *cry) {
 
 RZ_API bool rz_crypto_use(RZ_NONNULL RzCrypto *cry, RZ_NONNULL const char *algo) {
 	rz_return_val_if_fail(cry && algo, false);
-	RzIterator it = ht_sp_as_iter(cry->plugins);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(cry->plugins, &it)) {
+		return false;
+	}
 	RzCryptoPlugin **val;
 	if (cry->h && cry->h->fini && !cry->h->fini(cry)) {
 		RZ_LOG_ERROR("[!] crypto: error terminating '%s' plugin\n", cry->h->name);

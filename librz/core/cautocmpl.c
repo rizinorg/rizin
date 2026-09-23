@@ -860,7 +860,10 @@ static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *r
 	rz_config_iterate_over(core->config, autocmplt_cmd_arg_eval_key_iterator, &ctx);
 
 	RzConfig **plugin_cfg;
-	RzIterator it = ht_sp_as_iter(core->plugin_configs);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(core->plugin_configs, &it)) {
+		return;
+	}
 	rz_iterator_foreach(&it, plugin_cfg) {
 		rz_config_iterate_over((*plugin_cfg), autocmplt_cmd_arg_eval_key_iterator, &ctx);
 	}

@@ -190,9 +190,11 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core,
 	rz_core_config_print_all(core->config, "", &state);
 
 	RzConfig **cfg;
-	RzIterator it = ht_sp_as_iter(core->plugin_configs);
-	rz_iterator_foreach(&it, cfg) {
-		rz_core_config_print_all(*cfg, "", &state);
+	RzIterator it = (RzIterator){ 0 };
+	if (ht_sp_as_iter(core->plugin_configs, &it)) {
+		rz_iterator_foreach(&it, cfg) {
+			rz_core_config_print_all(*cfg, "", &state);
+		}
 	}
 	rz_iterator_fini(&it);
 

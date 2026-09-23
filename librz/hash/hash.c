@@ -412,7 +412,10 @@ RZ_API bool rz_hash_cfg_configure(RZ_NONNULL RzHashCfg *md, RZ_NONNULL const cha
 	}
 
 	HashCfgConfig *mdc = NULL;
-	RzIterator it = ht_sp_as_iter(md->hash->plugins);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(md->hash->plugins, &it)) {
+		return false;
+	}
 	const RzHashPlugin **val;
 
 	rz_iterator_foreach(&it, val) {

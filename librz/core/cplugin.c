@@ -30,7 +30,10 @@ static bool core_plugin_fini(RzCore *core, RzCorePlugin *plugin) {
 RZ_API bool rz_core_plugin_fini(RzCore *core) {
 	rz_return_val_if_fail(core->plugins, false);
 
-	RzIterator iter = ht_sp_as_iter(core->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(core->plugins, &iter)) {
+		return false;
+	}
 	RzCorePlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzCorePlugin *plugin = *val;

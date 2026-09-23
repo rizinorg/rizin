@@ -3912,7 +3912,10 @@ static bool is_apple_target(RzCore *core) {
 }
 
 static void core_analysis_using_plugins(RzCore *core) {
-	RzIterator it = ht_sp_as_iter(core->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(core->plugins, &it)) {
+		return;
+	}
 	RzCorePlugin **val;
 	rz_iterator_foreach(&it, val) {
 		RzCorePlugin *plugin = *val;

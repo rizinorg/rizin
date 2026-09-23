@@ -387,7 +387,10 @@ RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL const RzAsm *a) {
 
 RZ_API RZ_OWN RzIterator rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a) {
 	rz_return_val_if_fail(a, (RzIterator){ 0 });
-	return ht_sp_as_iter(a->plugins);
+	RzIterator iterator = { 0 };
+	if (!ht_sp_as_iter(a->plugins, &iterator))
+		return (RzIterator){ 0 };
+	return iterator;
 }
 
 RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name) {
@@ -405,7 +408,10 @@ RZ_API bool rz_asm_is_valid(const RzAsm *a, const char *name) {
 		return false;
 	}
 
-	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = { 0 };
+	if (!ht_sp_as_iter(a->plugins, &iter)) {
+		return false;
+	}
 	RzAsmPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
@@ -425,7 +431,10 @@ RZ_API bool rz_asm_use_assembler(RzAsm *a, const char *name) {
 	if (RZ_STR_ISEMPTY(name)) {
 		a->acur = NULL;
 	}
-	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = { 0 };
+	if (!ht_sp_as_iter(a->plugins, &iter)) {
+		return false;
+	}
 	RzAsmPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
@@ -503,7 +512,10 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 	if (a->cur && !strcmp(a->cur->arch, name)) {
 		return true;
 	}
-	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = { 0 };
+	if (!ht_sp_as_iter(a->plugins, &iter)) {
+		return false;
+	}
 	RzAsmPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
@@ -868,7 +880,10 @@ static Ase findAssembler(const RzAsm *a, const char *kw) {
 		return a->acur->assemble;
 	}
 	Ase ase = NULL;
-	RzIterator iter = ht_sp_as_iter(a->plugins);
+	RzIterator iter = { 0 };
+	if (!ht_sp_as_iter(a->plugins, &iter)) {
+		return NULL;
+	}
 	RzAsmPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;

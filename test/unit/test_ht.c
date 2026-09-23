@@ -721,7 +721,8 @@ bool test_ht_uu_iter(void) {
 	ut32 icnt = 0;
 	const ut64 *im_elem;
 
-	RzIterator it = ht_uu_as_iter(ht);
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
@@ -733,7 +734,8 @@ bool test_ht_uu_iter(void) {
 	ht_uu_insert(ht, 0x4040404, 0x4040404);
 	ht_uu_insert(ht, 0x5050505, 0x5050505);
 	icnt = 0;
-	it = ht_uu_as_iter(ht);
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
@@ -749,7 +751,8 @@ bool test_ht_uu_iter(void) {
 	icnt = 0;
 	// Test write of value
 	ut64 *m_elem;
-	it = ht_uu_as_iter_mut(ht);
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_mut(ht, &it), "ht_uu_as_iter_mut failed");
 	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (*m_elem == 0x1010101) {
@@ -771,7 +774,8 @@ bool test_ht_uu_iter_kv(void) {
 	ut32 icnt = 0;
 	const HtUUKv *kv;
 
-	RzIterator it = ht_uu_as_iter_kv(ht);
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
 	rz_iterator_foreach(&it, kv) {
 		icnt++;
 	}
@@ -787,7 +791,8 @@ bool test_ht_uu_iter_kv(void) {
 	bool found_3 = false;
 
 	icnt = 0;
-	it = ht_uu_as_iter_kv(ht);
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
 	rz_iterator_foreach(&it, kv) {
 		icnt++;
 		if (kv->key == 0x11 && kv->value == 0x1111) {
@@ -816,7 +821,8 @@ bool test_ht_ss_iter(void) {
 	ut32 icnt = 0;
 	const char **im_elem;
 
-	RzIterator it = ht_ss_as_iter(ht);
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
@@ -829,7 +835,8 @@ bool test_ht_ss_iter(void) {
 	ht_ss_insert(ht, "0x4040404", "0x4040404");
 	ht_ss_insert(ht, "0x5050505", "0x5050505");
 	icnt = 0;
-	it = ht_ss_as_iter(ht);
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
@@ -845,7 +852,8 @@ bool test_ht_ss_iter(void) {
 	icnt = 0;
 	// Test write of value
 	char **m_elem;
-	it = ht_ss_as_iter_mut(ht);
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter_mut(ht, &it), "ht_ss_as_iter_mut failed");
 	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (RZ_STR_EQ(*m_elem, "0x1010101")) {

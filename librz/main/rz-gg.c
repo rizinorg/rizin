@@ -58,7 +58,10 @@ static int usage(int v) {
 
 static void list(RzEgg *egg) {
 	printf("shellcodes:\n");
-	RzIterator iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(egg->plugins, &iter)) {
+		return;
+	}
 	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
 		rz_iterator_fini(&iter);

@@ -206,7 +206,10 @@ RZ_IPI RzCmdStatus rz_egg_list_plugins_handler(RzCore *core, int argc, const cha
 	if (!egg) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RzIterator iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(egg->plugins, &iter)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzEggPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzEggPlugin *p = *val;

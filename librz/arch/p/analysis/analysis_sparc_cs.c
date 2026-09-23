@@ -767,7 +767,10 @@ static bool sparc_fini(void *user) {
 	if (!sparc) {
 		return true;
 	}
-	RzIterator iter = ht_up_as_iter(sparc->delayed_branch);
+	RzIterator iter = { 0 };
+	if (!ht_up_as_iter(sparc->delayed_branch, &iter)) {
+		return false;
+	}
 	RzSparcDelatedBranchOp **eff;
 	rz_iterator_foreach(&iter, eff) {
 		rz_il_op_effect_free((*eff)->perform_jmp);

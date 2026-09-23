@@ -60,7 +60,10 @@ RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool
 
 RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool many) {
 	rz_return_val_if_fail(io && filename, NULL);
-	RzIterator iter = ht_sp_as_iter(io->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(io->plugins, &iter)) {
+		return NULL;
+	}
 	RzIOPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzIOPlugin *ret = *val;
@@ -78,7 +81,10 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 
 RZ_API RzIOPlugin *rz_io_plugin_byname(RzIO *io, const char *name) {
 	rz_return_val_if_fail(io && name, NULL);
-	RzIterator iter = ht_sp_as_iter(io->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(io->plugins, &iter)) {
+		return NULL;
+	}
 	RzIOPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzIOPlugin *iop = *val;

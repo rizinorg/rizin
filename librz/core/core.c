@@ -2341,7 +2341,10 @@ static RzCmdStatus core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *st
 }
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
-	RzIterator iter = ht_sp_as_iter(core->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(core->plugins, &iter)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {

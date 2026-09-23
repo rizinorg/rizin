@@ -117,7 +117,10 @@ static void rz_hash_show_algorithms(RzHashContext *ctx) {
 
 	printf("flags  algorithm      license    author\n");
 
-	RzIterator iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(ctx->rh->plugins, &iter)) {
+		return;
+	}
 	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
 		rz_iterator_fini(&iter);
@@ -810,10 +813,15 @@ static RzList /*<char *>*/ *parse_hash_algorithms(RzHashContext *ctx) {
 	if (!list) {
 		return NULL;
 	}
-	RzIterator iter = ht_sp_as_iter(ctx->rh->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(ctx->rh->plugins, &iter)) {
+		rz_list_free(list);
+		return NULL;
+	}
 	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
 		rz_iterator_fini(&iter);
+		rz_list_free(list);
 		return NULL;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_hash_plugin_cmp, NULL);

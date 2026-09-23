@@ -551,7 +551,10 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 
 RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
-	RzIterator iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(egg->plugins, &iter)) {
+		return false;
+	}
 	RzEggPlugin **val;
 	RzBuffer *b;
 	rz_iterator_foreach(&iter, val) {
@@ -576,7 +579,10 @@ RZ_API int rz_egg_shellcode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 
 RZ_API int rz_egg_encode(RZ_NONNULL RZ_BORROW RzEgg *egg, const char *name) {
 	rz_return_val_if_fail(egg && name, false);
-	RzIterator iter = ht_sp_as_iter(egg->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(egg->plugins, &iter)) {
+		return false;
+	}
 	RzEggPlugin **val;
 	RzBuffer *b;
 	rz_iterator_foreach(&iter, val) {

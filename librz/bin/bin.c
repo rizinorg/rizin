@@ -259,7 +259,10 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && opt, NULL);
 
-	RzIterator it = ht_sp_as_iter(bin->binxtrs);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(bin->binxtrs, &it)) {
+		return NULL;
+	}
 	RzBinXtrPlugin **val;
 
 	bin->file = opt->filename;
@@ -396,8 +399,8 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	if (!compatible_plugins) {
 		return NULL;
 	}
-	RzIterator it = ht_sp_as_iter_keys(bin->plugins);
-	if (rz_iterator_is_uninit(&it)) {
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter_keys(bin->plugins, &it)) {
 		rz_pvector_free(compatible_plugins);
 		return NULL;
 	}
@@ -434,7 +437,10 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
-	RzIterator it = ht_sp_as_iter(bin->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(bin->plugins, &it)) {
+		return NULL;
+	}
 	RzBinPlugin **val;
 
 	rz_return_val_if_fail(bin, NULL);
@@ -531,13 +537,15 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
-	RzIterator it = ht_sp_as_iter(bin->binxtrs);
-	RzBinXtrPlugin **val;
-	rz_iterator_foreach(&it, val) {
-		RzBinXtrPlugin *p = *val;
-		plugin_fini(bin, p);
+	RzIterator it = { 0 };
+	if (ht_sp_as_iter(bin->binxtrs, &it)) {
+		RzBinXtrPlugin **val;
+		rz_iterator_foreach(&it, val) {
+			RzBinXtrPlugin *p = *val;
+			plugin_fini(bin, p);
+		}
+		rz_iterator_fini(&it);
 	}
-	rz_iterator_fini(&it);
 	ht_sp_free(bin->binxtrs);
 	ht_sp_free(bin->plugins);
 	rz_list_free(bin->default_hashes);

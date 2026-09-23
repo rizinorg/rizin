@@ -227,7 +227,8 @@ bool test_rz_list_from_iter(void) {
 	for (size_t i = 0; i < 26; i++) {
 		ht_up_insert(alpha_ht, i, (void *)unordered_alphabeth[i]);
 	}
-	RzIterator iter = ht_up_as_iter(alpha_ht);
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(ht_up_as_iter(alpha_ht, &iter), "ht_up_as_iter failed");
 	RzList *list = rz_list_new_from_iterator(&iter);
 	mu_assert_notnull(list, "List init failed.");
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);

@@ -42,24 +42,31 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "ssss", "algorithm", "license", "author", "description");
 
-	RzIterator iter = ht_sp_as_iter(cry->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(&iter);
-	if (!plugin_list) {
-		rz_iterator_fini(&iter);
-		return RZ_CMD_STATUS_ERROR;
-	}
-	rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
+	RzCmdStatus status;
 
-	RzCmdStatus status = RZ_CMD_STATUS_OK;
-	RzListIter *it;
-	RzCryptoPlugin *plugin;
-	rz_list_foreach (plugin_list, it, plugin) {
-		status = core_crypto_plugin_print(state, plugin);
-		if (status != RZ_CMD_STATUS_OK) {
-			break;
+	RzIterator iter = (RzIterator){ 0 };
+	if (ht_sp_as_iter(cry->plugins, &iter)) {
+		RzList *plugin_list = rz_list_new_from_iterator(&iter);
+		if (!plugin_list) {
+			rz_iterator_fini(&iter);
+			rz_cmd_state_output_array_end(state);
+			return RZ_CMD_STATUS_ERROR;
 		}
+		rz_list_sort(plugin_list, (RzListComparator)rz_crypto_plugin_cmp, NULL);
+
+		status = RZ_CMD_STATUS_OK;
+		RzListIter *it;
+		RzCryptoPlugin *plugin;
+		rz_list_foreach (plugin_list, it, plugin) {
+			status = core_crypto_plugin_print(state, plugin);
+			if (status != RZ_CMD_STATUS_OK) {
+				break;
+			}
+		}
+		rz_list_free(plugin_list);
+	} else {
+		status = RZ_CMD_STATUS_ERROR;
 	}
-	rz_list_free(plugin_list);
 	rz_iterator_fini(&iter);
 	rz_cmd_state_output_array_end(state);
 	return status;
