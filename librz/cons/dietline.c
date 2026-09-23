@@ -641,6 +641,7 @@ RZ_API void rz_line_hist_free(RZ_NULLABLE RzLine *line) {
 		}
 	}
 	RZ_FREE(line->history.data);
+	RZ_FREE(line->history.match);
 	RZ_FREE(line->sdbshell_hist);
 	line->history.index = 0;
 }

@@ -1231,9 +1231,11 @@ static Tpi_LF_MethodList *methodlist_parse(RzBuffer *b) {
 			rz_pvector_push(&mlist->members, member));
 	}
 	return mlist;
+
 err:
 	rz_warn_if_reached();
-	tpi_data_free_with_kind(member, TpiKind_METHODLIST);
+	free(member);
+	tpi_data_free_with_kind(mlist, TpiKind_METHODLIST);
 	return NULL;
 }
 
@@ -1571,33 +1573,27 @@ RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		RZ_LOG_ERROR("Corrupted TPI stream.\n");
 		return false;
 	}
-	RzPdbTpiType *type = NULL;
-	RzBuffer *b = NULL;
 	for (ut32 index = s->header.TypeIndexBegin; index < s->header.TypeIndexEnd; index++) {
 		ut16 length = 0;
 		if (!rz_buf_read_le16(steam_buffer, &length)) {
-			goto err;
-		}
-		b = NULL;
-		b = buf_take(steam_buffer, length);
-		if (!b) {
-			goto err;
+			return false;
 		}
 
-		type = NULL;
-		type = RzPdbTpiType_from_buf(b, index, length);
+		RzBuffer *b = buf_take(steam_buffer, length);
+		if (!b) {
+			rz_buf_free(b);
+			return false;
+		}
+
+		RzPdbTpiType *type = RzPdbTpiType_from_buf(b, index, length);
 		if (!type) {
-			goto err;
+			rz_warn_if_reached();
+			rz_buf_free(b);
+			tpi_type_free(type);
+			return false;
 		}
 		rz_buf_free(b);
-		b = NULL;
 		rz_rbtree_insert(&s->types, &type->index, &type->rb, tpi_type_node_cmp, NULL);
-		continue;
-	err:
-		rz_warn_if_reached();
-		rz_buf_free(b);
-		tpi_type_free(type);
-		return false;
 	}
 	return true;
 }

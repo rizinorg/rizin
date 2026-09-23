@@ -306,14 +306,14 @@ static bool is_localhost(const char *address) {
 		!strcmp(address, "local");
 }
 
-static int rtr_http_stop(RzCore *u) {
+static void rtr_http_stop(void *u) {
 	RzCore *core = (RzCore *)u;
 	const int timeout = 1; // 1 second
 	const char *port;
 	RzSocket *sock;
 
 #if __WINDOWS__
-	rz_socket_http_server_set_breaked(&rz_cons_singleton()->context->breaked);
+	rz_socket_http_server_set_breaked(&core->cons->context->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
 		port = rz_config_get(core->config, "http.port");
@@ -321,7 +321,6 @@ static int rtr_http_stop(RzCore *u) {
 		(void)rz_socket_connect(sock, "localhost", port, RZ_SOCKET_PROTO_TCP, timeout);
 		rz_socket_free(sock);
 	}
-	return 0;
 }
 
 // return 1 on error
@@ -417,7 +416,7 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 
 	core->block = newblk;
 	// TODO: handle mutex lock/unlock here
-	rz_cons_break_push((RzConsBreak)rtr_http_stop, core);
+	rz_cons_break_push(rtr_http_stop, core);
 	while (!rz_cons_is_breaked()) {
 
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
@@ -489,6 +488,8 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 
 		if (!rs->auth) {
 			rz_socket_http_response(rs, 401, "", 0, NULL);
+			rz_socket_http_close(rs);
+			continue;
 		}
 
 		if (rz_config_get_i(core->config, "http.verbose")) {

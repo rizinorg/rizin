@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <rz_cons.h>
+#include "i/private.h"
 
 /**
  * \brief Set the prompt and return the input contents

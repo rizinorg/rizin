@@ -420,7 +420,7 @@ static char *block_line(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 	}
 	char file[1024], *cmd_str = NULL, *file_str = NULL, *str = NULL;
 	int line = 0, oline = 0, idx = 0;
-	int is_html = rz_cons_singleton()->is_html;
+	int is_html = core->cons->is_html;
 	ut64 end = bb->addr + bb->size - 2;
 	RzBinObject *o = rz_bin_cur_object(core->bin);
 	RzBinSourceLineInfo *sl = o ? o->lines : NULL;

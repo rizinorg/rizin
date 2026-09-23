@@ -41,7 +41,7 @@ typedef struct {
 } RapThread;
 
 RZ_API void rz_core_wait(RzCore *core) {
-	rz_cons_singleton()->context->breaked = true;
+	core->cons->context->breaked = true;
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {
@@ -397,6 +397,11 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		break;
 	case 'm':
 		sscanf(cmd + 1, "%" PFMT64x ",%x", &m_off, &ret);
+		if (ret < 1) {
+			return -1;
+		} else if (ret > max_len) {
+			ret = max_len;
+		}
 		if (rz_io_read_at_mapped(core->io, m_off, (ut8 *)out_buf, ret)) {
 			return ret;
 		}

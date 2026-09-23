@@ -8,6 +8,7 @@
 #elif __WINDOWS__
 #include <rz_windows.h>
 #endif
+#include "i/private.h"
 
 #define I rz_cons_singleton()
 

@@ -200,7 +200,7 @@ RZ_API const char *sdb_itoca(ut64 n);
 
 /* locking */
 RZ_API bool sdb_lock(const char *s);
-RZ_API RZ_OWN char *sdb_lock_file(const char *f);
+RZ_API RZ_OWN char *sdb_lock_file(RZ_NULLABLE const char *f);
 RZ_API void sdb_unlock(const char *s);
 RZ_API bool sdb_unlink(Sdb *s);
 RZ_API int sdb_lock_wait(RZ_UNUSED const char *s);

@@ -142,7 +142,7 @@ int handle_vFile_open(libgdbr_t *g) {
 	return send_ack(g);
 }
 
-int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
+int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t buf_len) {
 	send_ack(g);
 	char *ptr;
 	int len;
@@ -163,6 +163,8 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 	// Again, this is probably the end of file
 	if (len == 0) {
 		return 0;
+	} else if (len > buf_len) {
+		len = buf_len;
 	}
 	if (!(ptr = strchr(g->data, ';')) || ptr >= g->data + g->data_len) {
 		return -1;

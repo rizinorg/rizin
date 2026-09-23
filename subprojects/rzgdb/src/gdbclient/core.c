@@ -1546,7 +1546,7 @@ int gdbr_pread_file(libgdbr_t *g, ut8 *buf, ut64 max_len, uint32_t start_offset)
 			ret = -1;
 			goto end;
 		}
-		if ((ret1 = handle_vFile_pread(g, buf + ret)) < 0) {
+		if ((ret1 = handle_vFile_pread(g, buf + ret, max_len - ret)) < 0) {
 			ret = ret1;
 			goto end;
 		}

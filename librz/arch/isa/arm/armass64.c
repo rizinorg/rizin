@@ -1036,6 +1036,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 		}
 		if (operand >= MAX_OPERANDS) {
 			RZ_LOG_ERROR("assembler: arm64: maximum number of operands reached.\n");
+			free(t);
 			return false;
 		}
 		op->operands[operand].type = ARM_NOTYPE;
@@ -1149,6 +1150,7 @@ static bool parseOperands(char *str, ArmOp *op) {
 			}
 			if (!*token || !isdigit(*token)) {
 				if (present) {
+					free(t);
 					return false;
 				}
 				op->operands[operand].shift_amount = 0;

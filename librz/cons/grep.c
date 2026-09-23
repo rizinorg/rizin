@@ -9,6 +9,7 @@
 #include <rz_util/rz_print.h>
 #include <sdb.h>
 #include <string.h>
+#include "i/private.h"
 
 #define I(x) rz_cons_singleton()->x
 

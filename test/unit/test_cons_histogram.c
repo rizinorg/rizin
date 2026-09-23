@@ -388,14 +388,14 @@ bool test_histogram_horizontal_thinline(void) {
 
 // Color mode wraps bars in ANSI escape sequences.
 bool test_histogram_horizontal_color(void) {
-	rz_cons_new();
-	rz_cons_singleton()->context->color_mode = COLOR_MODE_16M;
-	rz_cons_pal_init(rz_cons_singleton()->context);
+	RzCons *cons = rz_cons_new();
+	cons->context->color_mode = COLOR_MODE_16M;
+	rz_cons_pal_init(cons->context);
 	rz_cons_pal_update_event();
 	RzHistogramOptions opts = { 0 };
 	opts.color = true;
 	opts.ruler = true;
-	opts.pal = &rz_cons_singleton()->context->pal;
+	opts.pal = &cons->context->pal;
 	ut8 data[] = { 200, 100 };
 	RzStrBuf *buf = rz_histogram_horizontal(&opts, data, 2, 4);
 	char *res = rz_strbuf_drain(buf);
@@ -511,16 +511,16 @@ bool test_histogram_horizontal_data_f_precision(void) {
 // Combination test: every feature toggled on at once must still render
 // without crashing and must show evidence of each feature.
 bool test_histogram_horizontal_combined_features(void) {
-	rz_cons_new();
-	rz_cons_singleton()->context->color_mode = COLOR_MODE_16M;
-	rz_cons_pal_init(rz_cons_singleton()->context);
+	RzCons *cons = rz_cons_new();
+	cons->context->color_mode = COLOR_MODE_16M;
+	rz_cons_pal_init(cons->context);
 	rz_cons_pal_update_event();
 	RzHistogramOptions opts = { 0 };
 	opts.unicode = true;
 	opts.thinline = true;
 	opts.color = true;
 	opts.ruler = true;
-	opts.pal = &rz_cons_singleton()->context->pal;
+	opts.pal = &cons->context->pal;
 	opts.offpos = 0x401000;
 	opts.blocksize = 0x10;
 	opts.cols = 60;
@@ -1010,7 +1010,7 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 // of 2 bytes separated by single spaces), with px-style colour codes
 // applied per-byte when opts->color is set.
 bool test_histogram_interactive_horizontal_hex_preview(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 
 	// Case 1: wide terminal + cursor_bytes -> hex preview shown
 	{
@@ -1108,7 +1108,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		opts->unicode = true;
 		opts->minimap = true;
 		opts->color = true;
-		opts->pal = &rz_cons_singleton()->context->pal;
+		opts->pal = &cons->context->pal;
 		ut8 data[64];
 		for (int i = 0; i < 64; i++) {
 			data[i] = (ut8)i * 4;

@@ -548,7 +548,7 @@ typedef struct core_task_ctx_t {
 
 static bool core_task_ctx_init(CoreTaskCtx *ctx, RzCore *core) {
 	ctx->core = core;
-	ctx->cons_context = rz_cons_context_new(rz_cons_singleton()->context);
+	ctx->cons_context = rz_cons_context_new(core->cons->context);
 	if (!ctx->cons_context) {
 		return false;
 	}

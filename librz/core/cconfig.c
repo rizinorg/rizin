@@ -501,8 +501,9 @@ static bool cb_asmsubtail(void *user, void *data) {
 }
 
 static bool cb_scrlast(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->context->lastEnabled = node->i_value;
+	core->cons->context->lastEnabled = node->i_value;
 	return true;
 }
 
@@ -1377,20 +1378,23 @@ static bool cb_esilstackdepth(void *user, void *data) {
 }
 
 static bool cb_fixrows(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->fix_rows = (int)node->i_value;
+	core->cons->fix_rows = (int)node->i_value;
 	return true;
 }
 
 static bool cb_fixcolumns(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->fix_columns = atoi(node->value);
+	core->cons->fix_columns = atoi(node->value);
 	return true;
 }
 
 static bool cb_rows(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->force_rows = node->i_value;
+	core->cons->force_rows = node->i_value;
 	return true;
 }
 
@@ -2095,8 +2099,9 @@ static bool cb_pager(void *user, void *data) {
 }
 
 static bool cb_breaklines(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->break_lines = node->i_value;
+	core->cons->break_lines = node->i_value;
 	return true;
 }
 
@@ -2130,16 +2135,15 @@ static bool cb_scrcolumns(void *user, void *data) {
 static bool cb_scrfgets(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->cons->user_fgets = node->i_value
-		? NULL
-		: (void *)rz_core_fgets;
+	core->cons->user_fgets = node->i_value ? NULL : (void *)rz_core_fgets;
 	core->cons->user_fgets_user = core;
 	return true;
 }
 
 static bool cb_scrhtml(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->is_html = node->i_value;
+	core->cons->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
@@ -2152,12 +2156,13 @@ static bool cb_scrhighlight(void *user, void *data) {
 
 #if __WINDOWS__
 static bool scr_vtmode(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	if (rz_str_is_true(node->value)) {
 		node->i_value = RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
 	node->i_value = node->i_value > RZ_VIRT_TERM_MODE_COMPLETE ? RZ_VIRT_TERM_MODE_COMPLETE : node->i_value;
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	cons->line->vtmode = cons->vtmode = node->i_value;
 
 	DWORD mode;
@@ -2196,26 +2201,30 @@ static bool scr_vtmode(void *user, void *data) {
 #endif
 
 static bool cb_screcho(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->echo = node->i_value;
+	core->cons->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrlinesleep(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->linesleep = node->i_value;
+	core->cons->linesleep = node->i_value;
 	return true;
 }
 
 static bool cb_scrpagesize(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->pagesize = node->i_value;
+	core->cons->pagesize = node->i_value;
 	return true;
 }
 
 static bool cb_scrflush(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->flush = node->i_value;
+	core->cons->flush = node->i_value;
 	return true;
 }
 
@@ -2281,8 +2290,9 @@ static bool cb_scr_bgfill(void *user, void *data) {
 }
 
 static bool cb_scrint(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->context->is_interactive = node->i_value;
+	core->cons->context->is_interactive = node->i_value;
 	return true;
 }
 
@@ -2386,8 +2396,9 @@ static bool cb_consbreak(void *user, void *data) {
 }
 
 static bool cb_teefile(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	rz_cons_singleton()->teefile = node->value;
+	core->cons->teefile = node->value;
 	return true;
 }
 
@@ -3640,7 +3651,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("scr.slow", "true", "Do slow stuff on visual mode like RzFlag.get_at(true)");
 	SETCB("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
-	SETICB("scr.vtmode", rz_cons_singleton()->vtmode,
+	SETICB("scr.vtmode", core->cons->vtmode,
 		&scr_vtmode, "Use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
 #endif
 #if __ANDROID__

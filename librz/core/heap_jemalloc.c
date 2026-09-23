@@ -246,7 +246,7 @@ static inline bool read_ptr_at(RzIO *io, ut64 addr, ut64 *value, ut8 ptr_size) {
 
 static void jemalloc_get_chunks_450(RzCore *core, bool has_specified_addr, ut64 arena_addr, const RzJemallocConfig450 *config) {
 	ut64 cnksz;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!rz_resolve_jemalloc(core, "je_chunksize", &cnksz)) {
 		RZ_LOG_ERROR("Fail at reading symbol je_chunksize\n");
@@ -387,7 +387,7 @@ static void jemalloc_print_narenas_450(RzCore *core, bool has_specified_addr, ut
 	ut64 arena_addr = UT64_MAX;
 	int i = 0;
 	ut64 narenas = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!has_specified_addr) {
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {
@@ -499,7 +499,7 @@ static void jemalloc_get_bins_450(RzCore *core, bool has_specified_addr, ut64 ad
 	ut64 bin_info = 0;
 	ut64 arenas = 0;
 	ut64 arena_addr = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	int i = 0;
 
 	if (!has_specified_addr) {
@@ -546,7 +546,7 @@ static void jemalloc_get_bins_450(RzCore *core, bool has_specified_addr, ut64 ad
 // ============================================================================
 
 static void jemalloc_print_extent_info_530(RzCore *core, ut64 edata_addr, const RzJemallocConfig530 *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	edata_t_530 edata;
 	static const char *state_names[] = { "Active", "Dirty", "Muzzy", "Retained" };
 
@@ -611,7 +611,7 @@ static void jemalloc_process_leaf_elm_530(RzCore *core, ut64 leaf_addr, const Rz
 }
 
 static void jemalloc_enumerate_extents_530(RzCore *core, ut64 rtree_addr, const RzJemallocConfig530 *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	HtUU *seen_extents = ht_uu_new();
 	if (!seen_extents) {
 		RZ_LOG_ERROR("Failed to allocate hash table\n");
@@ -789,7 +789,7 @@ static ut64 jemalloc_rtree_lookup_530(RzCore *core, ut64 rtree_addr, ut64 addr, 
 
 static void jemalloc_find_extent_530(RzCore *core, bool has_specified_addr, ut64 addr, const RzJemallocConfig530 *config) {
 	ut64 je_arena_emap_global_addr;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!has_specified_addr) {
 		// No argument: enumerate all extents
@@ -825,7 +825,7 @@ static void jemalloc_extent_info_530(RzCore *core, bool has_specified_addr, ut64
 }
 
 static void jemalloc_print_arena_bins_530(RzCore *core, ut64 arena, ut64 bin_info_addr, const RzJemallocConfig530 *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	bin_info_t_530 bin_info;
 	bin_t_530 bin;
 
@@ -862,7 +862,7 @@ static void jemalloc_get_bins_530(RzCore *core, bool has_specified_addr, ut64 ad
 	ut64 bin_info = 0;
 	ut64 arenas_sym = 0;
 	ut64 arena_addr = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!has_specified_addr) {
 		// No argument - use symbol resolution (debug mode)
@@ -905,7 +905,7 @@ static void jemalloc_print_narenas_530(RzCore *core, bool has_specified_addr, ut
 	ut64 arena_addr = UT64_MAX;
 	int i = 0;
 	ut64 narenas = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!has_specified_addr) { // no args, list all arenas
 		if (rz_resolve_jemalloc(core, "narenas_total", &symaddr)) {

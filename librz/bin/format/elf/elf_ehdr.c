@@ -216,6 +216,7 @@ RzStructuredData *Elf_(rz_bin_elf_ehdr)(ELFOBJ *bin) {
 		    rz_structured_data_map_add_unsigned(e_ident, "ei_version", bin->ehdr.e_ident[EI_VERSION], false) &&
 		    rz_structured_data_map_add_unsigned(e_ident, "ei_osabi", bin->ehdr.e_ident[EI_OSABI], false) &&
 		    rz_structured_data_map_add_unsigned(e_ident, "ei_abiversion", bin->ehdr.e_ident[EI_ABIVERSION], false))) {
+		free(e_ident_bytes);
 		goto fail;
 	}
 	free(e_ident_bytes);

@@ -184,6 +184,39 @@
 #define COFF_REL_ARM64_ADDR32NB 2
 #define COFF_REL_ARM64_BRANCH26 3
 
+/* TI TMS320C6000 COFF relocations are RPN expressions evaluated by a small
+ * stack machine (TI "Common Object File Format Specification", SPRAAO8): the
+ * RE_PUSH* operators load operands, the arithmetic operators fold the two top
+ * stack entries, and the RE_*STFLD operators store the result into a field the
+ * reloc's symbol-index word describes as (container_bits << 16) |
+ * (field_bits << 8) | start_bit. Framing relocations (type < 0x4000, e.g. the
+ * no-compact marker) carry no operand and patch nothing. */
+#define COFF_REL_C6000_ADD    0x4000 /* pop b, a; push a + b */
+#define COFF_REL_C6000_SUB    0x4001 /* pop b, a; push a - b */
+#define COFF_REL_C6000_NEG    0x4002 /* pop a; push -a */
+#define COFF_REL_C6000_MPY    0x4003 /* pop b, a; push a * b */
+#define COFF_REL_C6000_DIV    0x4004 /* pop b, a; push a / b */
+#define COFF_REL_C6000_MOD    0x4005 /* pop b, a; push a % b */
+#define COFF_REL_C6000_SR     0x4006 /* pop b, a; push a >> b (unsigned) */
+#define COFF_REL_C6000_ASR    0x4007 /* pop b, a; push a >> b (arithmetic) */
+#define COFF_REL_C6000_SL     0x4008 /* pop b, a; push a << b */
+#define COFF_REL_C6000_AND    0x4009 /* pop b, a; push a & b */
+#define COFF_REL_C6000_OR     0x400a /* pop b, a; push a | b */
+#define COFF_REL_C6000_XOR    0x400b /* pop b, a; push a ^ b */
+#define COFF_REL_C6000_NOTB   0x400c /* pop a; push ~a */
+#define COFF_REL_C6000_USTFLD 0x400f /* pop v; store unsigned v into field */
+#define COFF_REL_C6000_SSTFLD 0x4010 /* pop v; store signed v into field */
+#define COFF_REL_C6000_PUSH   0x4011 /* push value of symbol symndx */
+#define COFF_REL_C6000_PUSHSK 0x4012 /* push signed constant symndx */
+#define COFF_REL_C6000_PUSHUK 0x4013 /* push unsigned constant symndx */
+#define COFF_REL_C6000_XSTFLD 0x4016 /* pop v; store v into a whole-word field */
+
+/* Classic COFF direct data relocations reused by TI (not stack-machine ops):
+ * the referenced symbol value is added to the in-place field. */
+#define COFF_REL_C6000_RELBYTE 0x000f /* symbol value added to an 8-bit field */
+#define COFF_REL_C6000_RELWORD 0x0010 /* symbol value added to a 16-bit field */
+#define COFF_REL_C6000_RELLONG 0x0011 /* symbol value added to a 32-bit field */
+
 typedef struct coff_hdr {
 	ut16 f_magic; /* Magic number */
 	ut16 f_nscns; /* Number of Sections */

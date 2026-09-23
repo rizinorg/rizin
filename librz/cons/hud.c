@@ -3,6 +3,7 @@
 
 #include <rz_cons.h>
 #include <ctype.h>
+#include "i/private.h"
 
 #define I(x) rz_cons_singleton()->x
 

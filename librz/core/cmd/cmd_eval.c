@@ -384,7 +384,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCor
 	}
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
 	const char *str = rz_meta_get_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
-	dup = rz_str_newf("%s \"%s\"", str ? str : "", color_code ? color_code : rz_cons_singleton()->context->pal.wordhl);
+	dup = rz_str_newf("%s \"%s\"", str ? str : "", color_code ? color_code : core->cons->context->pal.wordhl);
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
 	RZ_FREE(color_code);
 	RZ_FREE(dup);
@@ -404,7 +404,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *
 	}
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
 	const char *str = rz_meta_get_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
-	dup = rz_str_newf("%s \"%s%s\"", str, argv[1], color_code ? color_code : rz_cons_singleton()->context->pal.wordhl);
+	dup = rz_str_newf("%s \"%s%s\"", str, argv[1], color_code ? color_code : core->cons->context->pal.wordhl);
 	rz_meta_set_string(core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
 	RZ_FREE(dup);
 	RZ_FREE(color_code);

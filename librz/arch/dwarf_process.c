@@ -481,6 +481,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #include <alpha/alpha_dwarf_regnum_table.h>
 #include <h8300/h8300_dwarf_regnum_table.h>
 #include <tms320/tms320_dwarf_regnum_table.h>
+#include <tms320/c6x/c6x.h>
 
 /**
  * \brief Returns a function that maps a DWARF register number to a register name
@@ -488,7 +489,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
  * \param bits The architecture bitness
  * \return The function that maps a DWARF register number to a register name
  */
-static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char *arch, int bits) {
+static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char *arch, int bits, RZ_NULLABLE const char *cpu) {
 	if (RZ_STR_EQ(arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg;
@@ -563,6 +564,18 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char 
 	}
 
 	if (RZ_STR_EQ(arch, "tms320")) {
+		// The tms320 plugin covers several unrelated cores whose DWARF
+		// numberings have nothing in common, so the cpu decides. C2x, C5x and
+		// C54x keep the C55x table they have always used: TI publishes no
+		// DWARF numbering for them that could be transcribed instead.
+		if (!rz_str_casecmp(cpu, "c28x")) {
+			return tms320_c28x_register_name;
+		}
+		// the decoder already knows which cpu names are C6000 variants, including
+		// the c64x+ spellings, so ask it rather than keeping a second list
+		if (c6x_desc_from_cpu(cpu)) {
+			return tms320_c6000_register_name;
+		}
 		return tms320_c55x_register_name;
 	}
 
@@ -1781,7 +1794,7 @@ RZ_API void rz_analysis_dwarf_preprocess_info(
 	if (!dw->info || !analysis->cur) {
 		return;
 	}
-	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cur->name, analysis->bits);
+	analysis->debug_info->dwarf_register_mapping = dwarf_register_mapping_query(analysis->cur->name, analysis->bits, rz_analysis_get_cpu(analysis));
 	DwContext ctx = {
 		.analysis = analysis,
 		.dw = dw,

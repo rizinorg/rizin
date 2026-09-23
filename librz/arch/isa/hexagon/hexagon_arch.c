@@ -374,6 +374,7 @@ RZ_IPI RZ_OWN HexState *hexagon_state_new() {
 		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
 			hexagon_state_fini(state);
+			free(state);
 			RZ_LOG_FATAL("Could not initialize instruction list!");
 			return NULL;
 		}
@@ -1267,6 +1268,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
 	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_SET) != addr) {
 		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
+		rz_buf_free(buffer);
 		return;
 	}
 	ut64 initial_buffer_offset = rz_buf_tell(buffer);

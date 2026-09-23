@@ -643,13 +643,14 @@ static int findMinMax(RzList /*<RzDebugMap *>*/ *maps, ut64 *min, ut64 *max, int
 }
 
 static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *maps, ut64 addr, int colors) {
+	RzCore *core = (RzCore *)dbg->corebind.core;
 	ut64 mul; // The amount of address space a single console column will represent in bar graph
 	ut64 min = -1, max = 0;
 	int width = rz_cons_get_size(NULL) - 90;
 	RzListIter *iter;
 	RzDebugMap *map;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	bool use_utf8 = rz_cons_singleton()->use_utf8;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
+	bool use_utf8 = core->cons->use_utf8;
 	const char *block = use_utf8 ? UTF_BLOCK : "#";
 	const char *h_line = use_utf8 ? RUNE_LINE_HORIZ : "-";
 	if (width < 1) {
@@ -787,10 +788,11 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
  */
 RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_return_if_fail(dbg);
+	RzCore *core = (RzCore *)dbg->corebind.core;
 	RzList *info_list = rz_debug_traces_info(dbg, offset);
 	RzTable *table = rz_table_new();
 
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	if (cons) {
 		if (cons->use_utf8_curvy) {
 			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
