@@ -93,6 +93,10 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 
 	op->size = is_python36 ? 2 : ((op_code >= ctx->cache->have_argument) ? 3 : 1);
 
+	if (len < op->size) {
+		return -1;
+	}
+
 	if (op_code >= ctx->cache->have_argument) {
 		if (!is_python36) {
 			oparg = data[1] + data[2] * 256 + extended_arg;

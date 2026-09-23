@@ -69,3 +69,15 @@ const char *format_value_flags_36(ut32 oparg) {
 const char *format_extended_arg_36(ut32 oparg) {
 	return rz_str_newf("%u", oparg * (1 << 8));
 }
+
+const char *format_COMPARE_OP_313(ut32 oparg) {
+	const char *const compare_ops[] = { "<", "<=", "==", "!=", ">", ">=" };
+	ut32 index = oparg >> 5;
+	if (index < RZ_ARRAY_SIZE(compare_ops)) {
+		if (oparg & 16) {
+			return rz_str_newf("bool(%s)", compare_ops[index]);
+		}
+		return rz_str_dup(compare_ops[index]);
+	}
+	return NULL;
+}
