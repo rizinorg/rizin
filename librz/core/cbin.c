@@ -5373,53 +5373,57 @@ RZ_API RzCmdStatus rz_core_bin_plugins_print(RzBin *bin, RzCmdStateOutput *state
 	rz_cmd_state_output_array_start(state);
 
 	RzIterator iter = { 0 };
-	if (ht_sp_as_iter(bin->plugins, &iter)) {
-		RzList *plugin_list = rz_list_new_from_iterator(&iter);
-		if (!plugin_list) {
-			rz_iterator_fini(&iter);
-			rz_cmd_state_output_array_end(state);
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_list_sort(plugin_list, (RzListComparator)rz_bin_plugin_cmp, NULL);
-		RzListIter *it;
-		RzBinPlugin *bp;
-		RzBinXtrPlugin *bx;
-
-		rz_list_foreach (plugin_list, it, bp) {
-			status = rz_core_bin_plugin_print(bp, state);
-			if (status != RZ_CMD_STATUS_OK) {
-				rz_iterator_fini(&iter);
-				rz_list_free(plugin_list);
-				rz_cmd_state_output_array_end(state);
-				return status;
-			}
-		}
-		rz_list_free(plugin_list);
+	if (!ht_sp_as_iter(bin->plugins, &iter)) {
 		rz_iterator_fini(&iter);
-
-		iter = (RzIterator){ 0 };
-		if (ht_sp_as_iter(bin->binxtrs, &iter)) {
-			plugin_list = rz_list_new_from_iterator(&iter);
-			if (!plugin_list) {
-				rz_iterator_fini(&iter);
-				rz_cmd_state_output_array_end(state);
-				return RZ_CMD_STATUS_ERROR;
-			}
-			rz_list_sort(plugin_list, (RzListComparator)rz_bin_xtr_plugin_cmp, NULL);
-			rz_list_foreach (plugin_list, it, bx) {
-				status = rz_core_binxtr_plugin_print(bx, state);
-				if (status != RZ_CMD_STATUS_OK) {
-					rz_iterator_fini(&iter);
-					rz_list_free(plugin_list);
-					rz_cmd_state_output_array_end(state);
-					return status;
-				}
-			}
-			rz_list_free(plugin_list);
-		}
-	} else {
-		status = RZ_CMD_STATUS_ERROR;
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
 	}
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
+	if (!plugin_list) {
+		rz_iterator_fini(&iter);
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_bin_plugin_cmp, NULL);
+	RzListIter *it;
+	RzBinPlugin *bp;
+	RzBinXtrPlugin *bx;
+
+	rz_list_foreach (plugin_list, it, bp) {
+		status = rz_core_bin_plugin_print(bp, state);
+		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_fini(&iter);
+			rz_list_free(plugin_list);
+			rz_cmd_state_output_array_end(state);
+			return status;
+		}
+	}
+	rz_list_free(plugin_list);
+	rz_iterator_fini(&iter);
+
+	iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(bin->binxtrs, &iter)) {
+		rz_iterator_fini(&iter);
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	plugin_list = rz_list_new_from_iterator(&iter);
+	if (!plugin_list) {
+		rz_iterator_fini(&iter);
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_list_sort(plugin_list, (RzListComparator)rz_bin_xtr_plugin_cmp, NULL);
+	rz_list_foreach (plugin_list, it, bx) {
+		status = rz_core_binxtr_plugin_print(bx, state);
+		if (status != RZ_CMD_STATUS_OK) {
+			rz_iterator_fini(&iter);
+			rz_list_free(plugin_list);
+			rz_cmd_state_output_array_end(state);
+			return status;
+		}
+	}
+	rz_list_free(plugin_list);
 	rz_iterator_fini(&iter);
 	rz_cmd_state_output_array_end(state);
 	return status;
