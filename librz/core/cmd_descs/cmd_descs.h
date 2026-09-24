@@ -378,6 +378,10 @@ RZ_IPI RzCmdStatus rz_autoname_all_functions_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_autoname_all_functions_noreturn_handler(RzCore *core, int argc, const char **argv);
 // "aap"
 RZ_IPI RzCmdStatus rz_analyze_all_preludes_handler(RzCore *core, int argc, const char **argv);
+// "aapf"
+RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int argc, const char **argv);
+// "aapk"
+RZ_IPI RzCmdStatus rz_analyze_all_preludes_keyword_handler(RzCore *core, int argc, const char **argv);
 // "aar"
 RZ_IPI RzCmdStatus rz_analyze_xrefs_section_bytes_handler(RzCore *core, int argc, const char **argv);
 // "aas"
