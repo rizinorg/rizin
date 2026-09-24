@@ -15,11 +15,7 @@ RZ_OWN RzBinSymbol *Elf_(rz_bin_elf_convert_symbol)(RZ_NONNULL ELFOBJ *bin, RZ_N
 
 	result->paddr = elf_symbol->paddr;
 	result->vaddr = elf_symbol->vaddr;
-	if (RZ_STR_ISNOTEMPTY(elf_symbol->name)) {
-		result->name = rz_str_dup(elf_symbol->name);
-	} else {
-		result->name = rz_str_newf("unknown_%u", elf_symbol->ordinal);
-	}
+	result->name = rz_str_dup(elf_symbol->name);
 	result->forwarder = "NONE";
 	result->bind = elf_symbol->bind;
 	result->type = elf_symbol->type;

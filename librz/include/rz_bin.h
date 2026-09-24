@@ -346,6 +346,7 @@ typedef struct rz_bin_object_t {
 	 * This associates the name of every symbol where is_imported == true to the symbol itself.
 	 */
 	HtSP /*<const char *, RzBinSymbol>*/ *import_name_symbols; // currently only used for imports, but could be extended to all symbols if needed.
+	HtSP /*<const char *, RzBinSymbol *>*/ *name_to_symbol;
 	RzPVector /*<RzBinAddr *>*/ *entries;
 	RzPVector /*<RzBinField *>*/ *fields;
 	RzPVector /*<char *>*/ *libs;
@@ -728,6 +729,7 @@ typedef struct rz_bin_symbol_t {
 	/* see RZ_BIN_METH_* constants */
 	ut64 method_flags;
 	int dup_count;
+	bool is_auto_generated;
 } RzBinSymbol;
 
 typedef struct rz_bin_import_t {
