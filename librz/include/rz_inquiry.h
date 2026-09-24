@@ -92,7 +92,7 @@ RZ_API bool rz_inquiry_algo_revng_fcn_detection(
 	RZ_OUT RzPVector /*<RzInquiryFunction *>*/ *fcns,
 	RZ_NONNULL const RzVector /*<RzInterval>*/ *ignored_code);
 
-RZ_IPI bool rz_inquiry_convert_and_add_to_analysis(
+RZ_API bool rz_inquiry_convert_and_add_to_analysis(
 	RzAnalysis *analysis,
 	RzInquiry *inquiry,
 	const RzPVector /*<RzInquiryFunction *>*/ *fcns,
