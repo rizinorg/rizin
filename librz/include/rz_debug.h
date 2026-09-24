@@ -235,6 +235,13 @@ typedef struct rz_debug_tracepoint_t {
 	ut64 stamp;
 } RzDebugTracepoint;
 
+typedef struct rz_debug_process_t{
+	int pid;
+	int n_threads;
+	RzList /*<void *>*/ *threads; /* NOTE: list contents are platform-specific */
+	RzReg reg;
+} RzDebugProcess;
+
 typedef struct rz_debug_t {
 	char *arch;
 	RZ_DEPRECATE int bits; ///< bad indicator for the bitness of the debuggee
@@ -245,7 +252,8 @@ typedef struct rz_debug_t {
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
-	RzList /*<void *>*/ *threads; /* NOTE: list contents are platform-specific */
+	RzList /*<RzDebugProcess>*/ *processes;
+	RzDebugProcess *cur_proc;
 
 	char *malloc; /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
 
