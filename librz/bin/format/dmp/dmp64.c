@@ -75,11 +75,20 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 		return false;
 	};
 
+	ut64 dump_size = rz_buf_size(obj->b);
+	ut64 acc_pages_size = 0;
 	ut64 num_page = 0;
 	ut64 base = sizeof(dmp64_header);
 	for (i = 0; i < num_runs; i++) {
 		dmp_p_memory_run *run = &runs[i];
 		dmp64_memory_run_endian_to_host(run);
+		acc_pages_size += run->PageCount * DMP_PAGE_SIZE;
+		if (acc_pages_size > dump_size) {
+			RZ_LOG_ERROR("Invalid Page count.\n");
+			rz_list_purge(obj->pages);
+			free(runs);
+			return false;
+		}
 		for (j = 0; j < run->PageCount; j++) {
 			dmp_page_desc *page = RZ_NEW0(dmp_page_desc);
 			if (!page) {
@@ -339,6 +348,10 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 	obj->bmp_header->Pages = rz_read_le64((ut8 *)&obj->bmp_header->Pages);
 
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
+	if (bitmapsize > rz_buf_size(obj->b)) {
+		RZ_LOG_ERROR("Invalid bitmap\n");
+		return false;
+	}
 	obj->bitmap = calloc(1, bitmapsize);
 	if (!obj->bitmap) {
 		RZ_LOG_ERROR("Cannot allocate bitmap\n");
