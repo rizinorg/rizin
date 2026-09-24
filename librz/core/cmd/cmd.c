@@ -403,6 +403,36 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	// The status reported is the one of the command executed right before this
+	// one, so that a script or rzpipe consumer can read it back after running a
+	// command. Running this command updates the status in turn (to its own OK),
+	// exactly like reading `$?` in a shell.
+	RzCmdStatus last = core->last_cmd_status;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_o(pj);
+		pj_ks(pj, "status", rz_cmd_status_tostring(last));
+		pj_ki(pj, "code", rz_cmd_status2int(last));
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
+		break;
+	}
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_println(rz_cmd_status_tostring(last));
+		break;
+	default:
+		rz_warn_if_reached();
+		break;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
@@ -2834,6 +2864,10 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
+		// Track the status of each executed statement so that the `_s` command
+		// (and rzpipe consumers) can read back the status of the command that
+		// ran right before, even within a single multi-statement input.
+		core->last_cmd_status = cmd_res;
 		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string(command, state->input);
 			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
@@ -2954,6 +2988,9 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);
+	// Remember the status of the (outermost) command line so that scripts and
+	// rzpipe consumers can read it back after the command has been executed.
+	core->last_cmd_status = res;
 	return res;
 }
 
