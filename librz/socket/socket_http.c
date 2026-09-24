@@ -89,15 +89,17 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 		goto exit;
 	}
 
+	size_t len_after_header = olen - (dn - buf);
+
 	/* Parse Len */
 	p = rz_str_casestr(buf, "Content-Length: ");
 	if (p) {
 		len = atoi(p + 16);
 	} else {
-		len = olen - (dn - buf);
+		len = len_after_header;
 	}
 	if (len > 0) {
-		if (len > olen) {
+		if (len > len_after_header) {
 			res = malloc(len + 2);
 			if (!res) {
 				goto exit;
