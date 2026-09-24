@@ -36,9 +36,23 @@ static bool test_mutual_info_independent(void) {
     mu_end;
 }
 
+static bool test_mutual_info_zero_length(void) {
+    RzMutualInfo ctx;
+    rz_mutual_info_init(&ctx);
+
+    double result = rz_mutual_info_final(&ctx);
+
+    char val[16] = { 0 };
+    rz_strf(val, "%.6f", result);
+    mu_assert_streq(val, "0.000000", "mutual info with no data should be zero, not NaN");
+
+    mu_end;
+}
+
 static int all_tests(void) {
     mu_run_test(test_mutual_info_basic);
     mu_run_test(test_mutual_info_independent);
+    mu_run_test(test_mutual_info_zero_length);
     return tests_passed != tests_run;
 }
 

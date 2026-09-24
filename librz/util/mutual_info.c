@@ -18,8 +18,14 @@ RZ_API bool rz_mutual_info_update(RzMutualInfo *ctx, const ut8 *data_a, const ut
     return true;
 }
 
+
 RZ_API double rz_mutual_info_final(RzMutualInfo *ctx) {
     rz_return_val_if_fail(ctx, 0.0);
+
+    if (ctx->size == 0) {
+        return 0.0;
+    }
+
 
     double marginal_a[256] = { 0 };
     double marginal_b[256] = { 0 };
