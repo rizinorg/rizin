@@ -6,7 +6,9 @@
 #include <rz_type.h>
 #include <rz_util.h>
 #include <rz_arch.h>
+#include <rz_parse.h>
 #include "analysis_private.h"
+#include "rz_analysis.h"
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -209,6 +211,12 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
+	bool c16x = false;
+	if (p && p->analb.analysis) {
+		if (strstr(p->analb.analysis->cur->arch, "c166")) {
+			c16x = true;
+		}
+	}
 	if (p && p->cur && p->cur->name) {
 		if (strstr(p->cur->name, "x86")) {
 			x86 = true;
@@ -453,7 +461,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				}
 			}
 		}
-		if (hint) {
+		if (hint && !c16x) {
 			char *num_start = ptr;
 			char *num_end = ptr2;
 			const int nw = hint->nword;

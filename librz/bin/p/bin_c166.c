@@ -67,10 +67,11 @@ static RzBinInfo *info(RzBinFile *bf) {
 	}
 	ret->type = rz_str_dup("ROM");
 	ret->file = rz_str_dup(bf->file);
-	ret->bclass = rz_str_dup("Unknown");
-	ret->rclass = rz_str_dup("Unknown");
+	ret->bclass = rz_str_dup("C16x Raw Dump");
+	ret->rclass = rz_str_dup("C16x Raw");
 	ret->compiler = rz_str_dup("keil");
 	ret->os = rz_str_dup("c166");
+	ret->cpu = rz_str_dup("c166-generic");
 	ret->machine = rz_str_dup("Siemens/Infineon C166 family microcontroller");
 	ret->arch = rz_str_dup("c166");
 	ret->big_endian = false;
