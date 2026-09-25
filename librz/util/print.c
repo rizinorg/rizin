@@ -1428,7 +1428,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	void **it;
 	rz_pvector_foreach (toks->tokens, it) {
 		RzAsmToken *tok = *it;
-		const char *alternative_string = param ? ht_pp_find(param->repl_vals, tok, NULL) : NULL;
+		const char *alternative_string = param && param->repl_vals ? ht_pp_find(param->repl_vals, tok, NULL) : NULL;
 		switch (tok->type) {
 		default:
 			rz_strbuf_free(out);

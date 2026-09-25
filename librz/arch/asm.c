@@ -2170,6 +2170,10 @@ RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(
 	// No free or key comparison functions required.
 	HtPPOptions opt = { 0 };
 	param->repl_vals = ht_pp_new_opt(&opt);
+	if (param->repl_vals) {
+		rz_asm_parse_param_free(param);
+		return NULL;
+	}
 	bool sub_names = rz_config_get_b(core->config, "asm.sub.names");
 	// TODO Substitute more.
 	if (!sub_names) {
