@@ -554,7 +554,13 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	}
 
 	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+
 	RzProloguesArchInfo arch_info = { 0 };
+	const RzConfig *cfg = rz_core_get_config(core);
+	const char *arch = rz_config_get_string(cfg, "asm.arch");
+	arch_info.arch = rz_str_dup(arch);
+	arch_info.bits = rz_config_get_integer(cfg, "asm.bits");
+	arch_info.big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
 
 	st64 fcnt = rz_prologues_trie_feed_all_binfiles(pg_trie, bin, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
@@ -703,7 +709,13 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	}
 
 	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+
 	RzProloguesArchInfo arch_info = { 0 };
+	const RzConfig *cfg = rz_core_get_config(core);
+	const char *arch = rz_config_get_string(cfg, "asm.arch");
+	arch_info.arch = rz_str_dup(arch);
+	arch_info.bits = rz_config_get_integer(cfg, "asm.bits");
+	arch_info.big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
 
 	st64 fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, dir_path, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {

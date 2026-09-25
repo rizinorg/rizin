@@ -4,8 +4,8 @@ CMDS=pg?
 EXPECT=<<EOF
 Usage: pg[jad]   # Core plugin to generate prologues from given set of binaries having symbol info.
 | pg[j]        # Generate prologues only from current open file
-| pga[j]       # Generate prologues for all open files (arch will be adopted from first open binary)
-| pgd[j] <dir> # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
+| pga[j]       # Generate prologues for all open files (arch adopted from config: asm.arch/bits and cfg.bigendian)
+| pgd[j] <dir> # Generate prologues for all files in a directory (arch adopted from config: asm.arch/bits and cfg.bigendian)
 EOF
 RUN
 
@@ -62,7 +62,12 @@ FILE=<<EOF
 bins/elf/openbsd-arm64-nobtcfi
 bins/elf/r2pay-arm64.so
 EOF
-CMDS=pga
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
+pga
+EOF
 EXPECT=<<EOF
 arch: "arm"
 bits: 64
@@ -103,7 +108,12 @@ FILE=<<EOF
 bins/elf/openbsd-arm64-nobtcfi
 bins/elf/r2pay-arm64.so
 EOF
-CMDS=pgaj
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
+pgaj
+EOF
 EXPECT=<<EOF
 {"arch":"arm","bits":64,"endian":"little","prologue_length":16,"count":12,"prologues":[{"bytes":"5f2403d5ff4300d1fe0300f96dffff97","mask":"ffffffff8fbcffbeee09baff100000a0"},{"bytes":"080900b0087547f9e00308aac0035fd6","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6fd7bbfa9fd030091","mask":"fffffffffffffffffc034287e283fe87"},{"bytes":"c0035fd6c0035fd6c0035fd6c0035fd6","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6c0035fd6ff8302d1","mask":"fffffffffffffffffffffffffc034287"},{"bytes":"c0035fd6c0035fd6c0035fd6080100b0","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6c0035fd6080100b008413c91","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"c0035fd6fc4fbea9fd7b01a9fd430091","mask":"fffffffffdffffffffffffffffffffff"},{"bytes":"c0035fd6fd7bbfa9fd030091ff0303d1","mask":"fffffffffd074287e283ff97a09a7c14"},{"bytes":"c0035fd6080900b0087547f9e00308aa","mask":"fffffffff7f6ff4f280884825e19d3ca"},{"bytes":"fc6fbaa9fa6701a9f85f02a9f65703a9","mask":"fc934186e883e1640aa07d0402a9f886"},{"bytes":"880000f008c547f9e00308aac0035fd6","mask":"ffffffffffffffffffffffffffffffff"}]}
 EOF
@@ -116,9 +126,9 @@ CMDS=pgd
 EXPECT_ERR=<<EOF
 ERROR: Wrong number of arguments passed to `pgd`, see its help with `pgd?`
 
-ERROR: Usage: pgd[j] <dir>   # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
-| pgd <dir>     # Generate prologues for all files in a directory (arch will be adopted from first valid binary)
-| pgdj <dir>    # Generate prologues for all files in a directory (arch will be adopted from first valid binary) (JSON mode)
+ERROR: Usage: pgd[j] <dir>   # Generate prologues for all files in a directory (arch adopted from config: asm.arch/bits and cfg.bigendian)
+| pgd <dir>     # Generate prologues for all files in a directory (arch adopted from config: asm.arch/bits and cfg.bigendian)
+| pgdj <dir>    # Generate prologues for all files in a directory (arch adopted from config: asm.arch/bits and cfg.bigendian) (JSON mode)
 EOF
 RUN
 
@@ -132,7 +142,12 @@ RUN
 
 NAME=generate prologues from dir
 FILE=
-CMDS=pgd bins/elf/sparc
+CMDS=<<EOF
+e asm.arch=sparc
+e asm.bits=64
+e cfg.bigendian=true
+pgd bins/elf/sparc
+EOF
 EXPECT=<<EOF
 arch: "sparc"
 bits: 64
@@ -154,7 +169,12 @@ RUN
 
 NAME=generate prologues from dir (json)
 FILE=
-CMDS=pgdj bins/elf/sparc
+CMDS=<<EOF
+e asm.arch=sparc
+e asm.bits=64
+e cfg.bigendian=true
+pgdj bins/elf/sparc
+EOF
 EXPECT=<<EOF
 {"arch":"sparc","bits":64,"endian":"big","prologue_length":16,"count":4,"prologues":[{"bytes":"9de3bf40f077a87fc02fa7fec02fa7fd","mask":"ffffffef7077a800be30580100002002"},{"bytes":"9de3bf4082100018f277a887c227a87f","mask":"ffffffef7fffffffffffffffffffffff"},{"bytes":"a4042001a404a0032f000407ae15e390","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"2f000400ae15e230e005e000e205e010","mask":"ffffffffffffffffffffffffffffffff"}]}
 EOF
@@ -165,6 +185,9 @@ FILE=
 CMDS=<<EOF
 e plugins.prologues_generator.entropy_threshold=0.7
 e plugins.prologues_generator.prologue_len=4
+e asm.arch=arm
+e asm.bits=64
+e cfg.bigendian=false
 pgdj bins/arm/elf
 EOF
 EXPECT=<<EOF
