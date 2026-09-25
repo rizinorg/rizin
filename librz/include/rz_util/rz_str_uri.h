@@ -31,10 +31,6 @@ typedef struct rz_str_uri_param_spec_t {
 
 /**
  * \brief Opaque handle to a parsed, type-checked set of URI parameters.
- *
- * \note The \p grammar array passed to \p rz_str_uri_params_parse is borrowed, not
- * copied: it must stay valid for the lifetime of the returned RzStrUriParams. In
- * practice this means grammar tables should be declared `static const`.
  */
 typedef struct rz_str_uri_params_t RzStrUriParams;
 
