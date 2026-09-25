@@ -1343,14 +1343,14 @@ RZ_API bool rz_core_file_malloc_copy_chunk(RzCore *core, size_t len, ut64 offset
 		goto err;
 	}
 
+	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
+	rz_warn_if_fail(desc);
+	rz_io_desc_write_at(desc, 0, data, len);
+
 	if (!rz_core_bin_load(core, uri, 0)) {
 		RZ_LOG_ERROR("Cannot load binary info of '%s'.\n", uri);
 		goto err;
 	}
-
-	RzIODesc *desc = rz_io_desc_get(core->io, cfile->fd);
-	rz_warn_if_fail(desc);
-	rz_io_desc_write_at(desc, 0, data, len);
 	res = true;
 
 err:
