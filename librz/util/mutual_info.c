@@ -53,7 +53,7 @@ RZ_API double rz_mutual_info_final(RzMutualInfo *ctx) {
     for (int x = 0; x < 256; x++) {
         for (int y = 0; y < 256; y++) {
             double p_xy = (double)ctx->joint_count[x][y] / ctx->size;
-            if (p_xy > 0) {
+            if (p_xy > 0 && marginal_a[x] > 0 && marginal_b[y] > 0) {
                 mutual_info += p_xy * log2(p_xy / (marginal_a[x] * marginal_b[y]));
             }
         }
