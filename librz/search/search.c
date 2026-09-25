@@ -511,12 +511,12 @@ typedef struct search_ctx {
 	RzThreadLock *buffer_lock;
 	RzSearchCollection *col; ///< collection to use
 	RzSearchOpt *opt; ///< User options
-	RzThreadQueue /* RzSearchHits */ *hits; ///< Hits list
+	RzThreadQueue /*<RzSearchHits *>*/ *hits; ///< Hits list
 	RzAtomicBool *loop; ///< If set, the execution will continue until it terminates. If unset, the execution cancels.
-	RzThreadQueue /* RzSearchInterval */ *finished_intervals; ///< Interval queue
+	RzThreadQueue /*<RzSearchInterval *>*/ *finished_intervals; ///< Interval queue
 } search_ctx_t;
 
-static void print_intervals(RZ_NONNULL RzThreadQueue *intervals) {
+static void print_intervals(RZ_NONNULL RzThreadQueue /*<RzSearchInterval *>*/ *intervals) {
 	rz_return_if_fail(intervals);
 
 	void *data = NULL;
