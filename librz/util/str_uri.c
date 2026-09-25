@@ -20,7 +20,7 @@ struct rz_str_uri_params_t {
 
 static const RzStrUriParamSpec *find_spec(const RzStrUriParamSpec *grammar, size_t grammar_count, const char *name) {
 	for (size_t i = 0; i < grammar_count; i++) {
-		if (!strcmp(grammar[i].name, name)) {
+		if (RZ_STR_EQ(grammar[i].name, name)) {
 			return &grammar[i];
 		}
 	}
