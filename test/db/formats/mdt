@@ -23,7 +23,6 @@ echo ---
 # This should give the same (relative) result as the reloc tests in db/analysis/hexagon.
 # The load-bin.b04 is the same binary as used for the reloc tests there.
 
-e plugins.hexagon.imm.sign=false
 echo "==== Print instructions ===="
 s section.load_test.b04.text
 pi 30
@@ -44,7 +43,6 @@ echo ---
 # The binaries in the image are test/bins/analysis/hexagon-hello-loop
 # and test/bins/elf/hexagon/relocs.
 
-e plugins.hexagon.imm.sign=false
 echo "==== symbols vaddr correct hexagon-hello-loop ===="
 is~fputs
 is~.CONST_4197D78400000000
@@ -57,7 +55,6 @@ echo ---
 # and test/bins/elf/hexagon/relocs.
 # Note that hexagon-hello-loop doesn't have relocations.
 
-e plugins.hexagon.imm.sign=false
 echo "==== hexagon-hello-loop ===="
 # One for each executable section.
 echo "== .init"
@@ -321,9 +318,9 @@ offset - 0 1 2 3 4 5
 [   R28.h = #0x0
 [   R28.l = #0x5f80
 == .text
-/   R4 = add(R2,##0xffffffdb)
+/   R4 = add(R2,##-0x25)
 |   R16 = R0
-\   memd(R29+#0xfffffff0) = R17:16 ; allocframe(#0x18)
+\   memd(R29+#-0x10) = R17:16 ; allocframe(#0x18)
 [   P0 = cmp.gtu(R4,##0x53)
 /   if (P0) jump:nt 0x556638
 \   memd(SP+##0x8) = R19:18

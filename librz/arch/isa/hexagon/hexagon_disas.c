@@ -36564,7 +36564,6 @@ static int get_jmp_target_imm_op_index(const HexInsnTemplate *tpl) {
 static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *state, ut32 hi_u32, RZ_INOUT HexInsn *hi, HexInsnContainer *hic, ut64 addr, HexPkt *pkt) {
 	bool print_reg_alias = state->reg_alias;
 	bool show_hash = state->imm_hash;
-	bool sign_nums = state->imm_sign;
 	char signed_imm[HEX_MAX_OPERANDS][32];
 	// Find the right template
 	for (; tpl->id; tpl++) {
@@ -36628,7 +36627,8 @@ static void hex_disasm_with_templates(const HexInsnTemplate *tpl, HexState *stat
 			if (op->info & HEX_OP_TEMPLATE_FLAG_IMM_PC_RELATIVE) {
 				rz_strbuf_appendf(&sb, "0x%" PFMT32x, pkt->pkt_addr + (st32)hi->ops[i].op.imm);
 			} else if (op->info & HEX_OP_TEMPLATE_FLAG_IMM_SIGNED) {
-				if (sign_nums && ((st32)hi->ops[i].op.imm) < 0) {
+				if (state->imm_sign != HEX_PRINT_SIGN_NONE && ((st32)hi->ops[i].op.imm) < 0 &&
+					(state->imm_sign == HEX_PRINT_SIGN_ALL || ((st32)hi->ops[i].op.imm) >= -state->imm_sign)) {
 					char tmp[28] = { 0 };
 					rz_hex_ut2st_str(hi->ops[i].op.imm, tmp, 28);
 					snprintf(signed_imm[i], sizeof(signed_imm[i]), "%s%s", h, tmp);

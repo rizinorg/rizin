@@ -34,7 +34,7 @@ EXPECT=<<EOF
 /   immext(##0xd180)
 |   R2 = ##0xd1ac
 |   immext(##0xfe105000)
-\   R3 = ##-0x1efb000
+\   R3 = ##0xfe105000
 EOF
 RUN
 
@@ -257,24 +257,24 @@ EXPECT=<<EOF
 \   memw(R3+##0x0) = R2.new
 /   R3 = R0
 |   immext(##0xc2f34000)
-|   R0 = ##-0x3d0cc000
+|   R0 = ##0xc2f34000
 \   memw(SP+##0x0) = R3.new
 /   R3 = R0
 |   immext(##0xc2f34000)
-|   R0 = ##-0x3d0cc000
+|   R0 = ##0xc2f34000
 \   memw(SP+##0x0) = R0.new
 /   immext(##0xc2f345c0)
-|   R0 = ##-0x3d0cba20
+|   R0 = ##0xc2f345e0
 |   immext(##0x1c40)
 \   memw(SP+##0x1c40) = R0.new
 /   R3 = R0
 |   R0 = ##0x0
 |   immext(##0xc2f34000)
-\   memw(SP+##-0x3d0cc000) = R0.new
+\   memw(SP+##0xc2f34000) = R0.new
 /   R3 = R0
 |   R0 = ##0x0
 |   immext(##0xc2f34000)
-\   memw(SP+##-0x3d0cc000) = R3.new
+\   memw(SP+##0xc2f34000) = R3.new
 EOF
 RUN
 
@@ -309,11 +309,21 @@ FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF
 b 0x100000
 aar
-e plugins.hexagon.imm.sign=false
+e plugins.hexagon.imm.sign
+# Should print as unsigned.
+pi 1 @ 0x000053a8
+e plugins.hexagon.imm.sign=none
+e plugins.hexagon.imm.sign
 /ai -8
 /ai 0xffffff40 0xffffffff
+e plugins.hexagon.imm.sign=all
+e plugins.hexagon.imm.sign
+pi 1 @ 0x0000342c
 EOF
 EXPECT=<<EOF
+some
+\   R3 = ##0xfe105000
+none
 0x0000342c   # 4: |   if (!P3) memh(R23++#0xfffffff8) = R11.h
 0x0000511c   # 4: [   R2 = add(FP,##0xfffffff8)
 0x00005128   # 4: [   R2 = memw(FP+##0xfffffff8)
@@ -352,6 +362,11 @@ EXPECT=<<EOF
 0x00007144   # 4: |   R0 = add(##0xfffffffa,mpyi(R2,#0x6))
 0x00009684   # 4: |   immext(##0xffffff40)
 0x00009688   # 4: \   memh(R0+#0x0) = ##0xffffff7f
+all
+?   if (!P3) memh(R23++#-0x8) = R11.h
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot determine entrypoint, using 0x00005000.
 EOF
 RUN
 
@@ -557,7 +572,6 @@ CMDS=<<EOF
 e analysis.jmp.cref=true
 e analysis.trap.after=true
 e asm.pcalign=4
-e plugins.hexagon.imm.sign=false
 aaa
 s sym.sys_deinit_tls
 pd 11
