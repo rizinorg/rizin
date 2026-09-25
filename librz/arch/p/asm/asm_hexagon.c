@@ -127,7 +127,7 @@ static bool hexagon_init(void **plugin_data) {
 	rz_return_val_if_fail(state, false);
 
 	state->imm_hash = true;
-	state->imm_sign = true;
+	state->imm_sign = false;
 	state->sdk = false;
 	state->reg_alias = true;
 
