@@ -5,6 +5,7 @@
 #define RZ_STR_URI_H
 
 #include <rz_types.h>
+#include <rz_vector.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +17,7 @@ extern "C" {
 typedef enum {
 	RZ_STR_URI_PARAM_TYPE_STRING = 0, ///< Value is kept as-is (a copied string).
 	RZ_STR_URI_PARAM_TYPE_INT, ///< Value is parsed as a signed 64-bit integer.
-	RZ_STR_URI_PARAM_TYPE_BOOL, ///< Value is parsed with \p rz_str_is_true / \p rz_str_is_false rules.
+	RZ_STR_URI_PARAM_TYPE_BOOL, ///< Value is parsed with \\p rz_str_is_true / \\p rz_str_is_false rules.
 } RzStrUriParamType;
 
 /**
@@ -34,10 +35,18 @@ typedef struct rz_str_uri_param_spec_t {
  */
 typedef struct rz_str_uri_params_t RzStrUriParams;
 
+/**
+ * \brief Parse a "key=value,key=value" style URI parameter string against a caller-defined grammar.
+ *
+ * \param param_str Raw parameter string, e.g. "d=32,verbose=true".
+ * \param grammars RZ_NONNULL Vector of RZ_BORROW RzStrUriParamSpec entries describing the accepted keys.
+ *        The vector (and the specs it points to) must outlive the returned RzStrUriParams.
+ * \param error RZ_NULLABLE RZ_OUT On failure, set to a newly allocated, caller-owned error message.
+ * \return RZ_OWN A new RzStrUriParams handle on success, or NULL on failure.
+ */
 RZ_API RZ_OWN RzStrUriParams *rz_str_uri_params_parse(
 	RZ_NONNULL const char *param_str,
-	RZ_NONNULL const RzStrUriParamSpec *grammars,
-	size_t grammar_count,
+	RZ_NONNULL const RzPVector /*<RzStrUriParamSpec *>*/ *grammars,
 	RZ_NULLABLE RZ_OUT RZ_OWN char **error);
 RZ_API void rz_str_uri_params_free(RZ_NULLABLE RzStrUriParams *params);
 
