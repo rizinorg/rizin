@@ -639,3 +639,121 @@ attr.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 attrtypes.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline=vtable,method
 EOF
 RUN
+
+NAME=dlang class RTTI
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+acvl class_dlang_Polygon
+acbl class_dlang_Rectangle
+acvl class_dlang_Triangle
+acil class_dlang_Rectangle
+EOF
+EXPECT=<<EOF
+class_dlang_Polygon:
+     0 vtable 0xa40e0 @ +0x0 size:+0x40
+class_dlang_Rectangle:
+     0 class_dlang_Polygon @ +0x0
+class_dlang_Triangle:
+     0 vtable 0xa4300 @ +0x0 size:+0x40
+[class_dlang_Rectangle: class_dlang_Polygon]
+  (vtable at 0xa41f0)
+nth       addr  vt_offset type        name                                                   
+---------------------------------------------------------------------------------------------
+  1 0x0004e9e0 0x00000008 VIRTUAL     sym.immutable_char____object.Object.toString
+  2 0x0004e9f0 0x00000010 VIRTUAL     sym.nothrow__trusted_ulong_object.Object.toHash
+  3 0x0004e9fc 0x00000018 VIRTUAL     sym.int_object.Object.opCmp_Object
+  4 0x0004ea88 0x00000020 VIRTUAL     sym.bool_object.Object.opEquals_Object
+  5 0x0004d864 0x00000028 VIRTUAL     sym.void_class_dlang.Polygon.set_values_int__int
+  6 0x0004d890 0x00000030 VIRTUAL     sym.int_class_dlang.Rectangle.area
+  7 0x0004d898 0x00000038 VIRTUAL     sym.int_class_dlang.Rectangle.sides
+  8 0x0004d88c ---------- DESTRUCTOR  sym.void_class_dlang.Rectangle.__dtor
+  9 0x0004d874 ---------- CONSTRUCTOR sym.class_dlang.Rectangle_class_dlang.Rectangle.__ctor
+
+EOF
+RUN
+
+NAME=dlang interfaces and vtables
+BROKEN=1
+FILE=bins/elf/dlang_pet
+CMDS=<<EOF
+aaa
+acbl pets_Pet
+acbl pets_Petoverr
+acvl pets_Petoverr
+acil pets_LoudPet
+EOF
+EXPECT=<<EOF
+pets_Pet:
+     0 pets_Speaker @ +0x0
+     1 pets_Runner @ +0x8
+pets_Petoverr:
+     0 pets_BasePet @ +0x0
+     1 pets_Speaker @ +0x28
+     2 pets_Pet @ +0x10
+     3 pets_Runner @ +0x18
+pets_Petoverr:
+     0 vtable 0x485a50 @ +0x0 size:+0x48
+     1 vtable 0x485a08 @ +0x28 size:+0x10
+     2 vtable 0x485a18 @ +0x10 size:+0x20
+     3 vtable 0x485738 @ +0x18 size:+0x10
+[pets_LoudPet: pets_BasePet, pets_Pet, pets_Runner]
+  (vtable at 0x4858c0)
+  (vtable at 0x485888 in class at +0x10)
+  (vtable at 0x485738 in class at +0x18)
+nth       addr  vt_offset type    name                                            
+----------------------------------------------------------------------------------
+  1 0x00400fd0 0x00000008 VIRTUAL sym.immutable_char____object.Object.toString
+  2 0x00400fe0 0x00000010 VIRTUAL sym.nothrow__trusted_ulong_object.Object.toHash
+  3 0x00400fec 0x00000018 VIRTUAL sym.int_object.Object.opCmp_Object
+  4 0x00401060 0x00000020 VIRTUAL sym.bool_object.Object.opEquals_Object
+  5 0x00400bc0 0x00000028 VIRTUAL sym.ulong_pets.LoudPet.speak
+  6 0x00400b64 0x00000030 VIRTUAL sym.ulong_pets.BasePet.runSpeed
+  7 0x00400bd0 0x00000038 VIRTUAL sym.ulong_pets.LoudPet.petValue
+  8 0x00400be0 0x00000040 VIRTUAL sym.ulong_pets.LoudPet.classValue
+  9 0x00400ad8 0x00000008 VIRTUAL sym._THUNK4
+ 10 0x00400ae8 0x00000010 VIRTUAL sym._THUNK5
+ 11 0x00400af8 0x00000018 VIRTUAL sym._THUNK6
+ 12 0x00400ac8 0x00000008 VIRTUAL sym._THUNK3
+
+EOF
+RUN
+
+NAME=dlang class RTTI (MachO)
+FILE=bins/mach0/dlang-hello
+CMDS=<<EOF
+aaa
+acbl TypeInfo_Const
+acvl TypeInfo_Const
+acil TypeInfo_Const
+EOF
+EXPECT=<<EOF
+TypeInfo_Const:
+     0 object_TypeInfo @ +0x0
+TypeInfo_Const:
+     0 vtable 0x100075100 @ +0x0 size:+0x98
+[TypeInfo_Const: object_TypeInfo]
+  (vtable at 0x100075100)
+nth        addr  vt_offset type    name                                                                                 
+------------------------------------------------------------------------------------------------------------------------
+  1 0x100038d40 0x00000008 VIRTUAL sym.const_pure_nothrow__safe_immutable_char____object.TypeInfo_Const.toString
+  2 0x100036e00 0x00000010 VIRTUAL sym.const_nothrow__trusted_ulong_object.TypeInfo.toHash
+  3 0x100036e30 0x00000018 VIRTUAL sym.int_object.TypeInfo.opCmp_Object
+  4 0x100038da0 0x00000020 VIRTUAL sym.bool_object.TypeInfo_Const.opEquals_Object
+  5 0x100036d20 0x00000028 VIRTUAL sym.const_nothrow__safe_ulong_object.TypeInfo_Const.getHash_const_void
+  6 0x100038e60 0x00000030 VIRTUAL sym.const_bool_object.TypeInfo_Const.equals_const_void____const_void
+  7 0x100038e70 0x00000038 VIRTUAL sym.const_int_object.TypeInfo_Const.compare_const_void____const_void
+  8 0x100038e80 0x00000040 VIRTUAL sym.const_pure_nothrow__property__nogc__safe_ulong_object.TypeInfo_Const.tsize
+  9 0x100038e90 0x00000048 VIRTUAL sym.const_void_object.TypeInfo_Const.swap_void___void
+ 10 0x100038ea0 0x00000050 VIRTUAL sym.inout_pure_nothrow__property__nogc_inout_TypeInfo__object.TypeInfo_Const.next
+ 11 0x100038ec0 0x00000058 VIRTUAL sym.const_pure_nothrow__nogc__safe_const_void____object.TypeInfo_Const.initializer
+ 12 0x100038eb0 0x00000060 VIRTUAL sym.const_pure_nothrow__property__nogc__safe_uint_object.TypeInfo_Const.flags
+ 13 0x1000371b0 0x00000068 VIRTUAL sym.const_const_object.OffsetTypeInfo____object.TypeInfo.offTi
+ 14 0x1000371c0 0x00000070 VIRTUAL sym.const_void_object.TypeInfo.destroy_void
+ 15 0x1000371d0 0x00000078 VIRTUAL sym.const_void_object.TypeInfo.postblit_void
+ 16 0x100038ed0 0x00000080 VIRTUAL sym.const_pure_nothrow__property__nogc__safe_ulong_object.TypeInfo_Const.talign
+ 17 0x100038ee0 0x00000088 VIRTUAL sym.nothrow__safe_int_object.TypeInfo_Const.argTypes_out_TypeInfo__out_TypeInfo
+ 18 0x100037200 0x00000090 VIRTUAL sym.const_pure_nothrow__property__nogc__safe_immutable_void___object.TypeInfo.rtInfo
+
+EOF
+RUN
