@@ -71,6 +71,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rizin command catalog json forms
+FILE==
+CMDS=<<EOF
+echo --cmd-catalog
+!!rizin -Nq --cmd-catalog
+echo --cmd-catalog=json
+!!rizin -Nq --cmd-catalog=json
+echo --cmd-catalog json
+!!rizin -Nq --cmd-catalog json
+EOF
+REGEXP_FILTER_OUT=(--cmd-catalog=json|--cmd-catalog json|--cmd-catalog|"n_children":52)
+EXPECT=<<EOF
+--cmd-catalog
+"n_children":52
+--cmd-catalog=json
+--cmd-catalog json
+"n_children":52
+EOF
+REGEXP_FILTER_ERR=illegal option -- cmd-catalog=json
+EXPECT_ERR=<<EOF
+illegal option -- cmd-catalog=json
+EOF
+RUN
+
 NAME=no-nl-at-eof script
 FILE==
 CMDS=!rizin -i scripts/no-nl-at-eof.rz -Nq =
@@ -221,50 +245,51 @@ ARGS=-h
 EXPECT=<<EOF
 [36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
              [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
- [32m--[0m         [0mRun rizin without opening any file
- [32m=[0m          [0mSame as 'rizin malloc://512'
- [32m- [0m         [0mRead file from stdin
- [32m-=[0m         [0mPerform R=! command to run all commands remotely
- [32m-0[0m         [0mPrint \x00 after init and every command
- [32m-1[0m         [0mRedirect stderr to stdout
- [32m-2[0m         [0mClose stderr file descriptor (silent warning messages)
- [32m-a[0m[33m arch [0m   [0mSet asm.arch
- [32m-A[0m         [0mRun 'aaa' command to analyze all referenced code
- [32m-b[0m[33m bits [0m   [0mSet asm.bits
- [32m-B[0m[33m baddr [0m  [0mSet base address for PIE binaries
- [32m-c[0m[33m 'cmd..' [0m[0mExecute rizin command
- [32m-C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
- [32m-d[0m         [0mDebug the executable 'file' or running process 'pid'
- [32m-D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
- [32m-e[0m[33m k=v [0m    [0mEvaluate config var
- [32m-E[0m[33m endian [0m [0mEndianness -E big or -E little
- [32m-f[0m         [0mBlock size = file size
- [32m-F[0m[33m binplug [0m[0mForce to use that rbin plugin
- [32m-h, -hh[0m    [0mShow help message, -hh for long
- [32m-H[0m[33m [var] [0m  [0mDisplay variable
- [32m-i[0m[33m file [0m   [0mRun script file
- [32m-I[0m[33m file [0m   [0mRun script file before the file is opened
- [32m-k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
- [32m-l[0m[33m lib [0m    [0mLoad plugin file
- [32m-L[0m         [0mList supported IO plugins
- [32m-m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
- [32m-M[0m         [0mDo not demangle symbol names
- [32m-n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
- [32m-N[0m         [0mDo not load user settings and scripts
- [32m-NN[0m        [0mDo not load any script or plugin
- [32m-q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
- [32m-qq[0m        [0mQuiet mode (no prompt) and force quit
- [32m-p[0m[33m p.rzdb [0m [0mLoad project file
- [32m-r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
- [32m-R[0m[33m rule [0m   [0mSpecify custom rz-run directive
- [32m-s[0m[33m addr [0m   [0mInitial seek
- [32m-T[0m         [0mDo not compute file hashes
- [32m-u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
- [32m-v, -V[0m     [0mShow rizin version (-V show lib versions)
- [32m-w[0m         [0mOpen file in write mode
- [32m-x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
- [32m-X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
- [32m-z, -zz[0m    [0mDo not load strings or load them even in raw
+ [32m--[0m                   [0mRun rizin without opening any file
+ [32m=[0m                    [0mSame as 'rizin malloc://512'
+ [32m- [0m                   [0mRead file from stdin
+ [32m-=[0m                   [0mPerform R=! command to run all commands remotely
+ [32m-0[0m                   [0mPrint \x00 after init and every command
+ [32m-1[0m                   [0mRedirect stderr to stdout
+ [32m-2[0m                   [0mClose stderr file descriptor (silent warning messages)
+ [32m-a[0m[33m arch [0m             [0mSet asm.arch
+ [32m-A[0m                   [0mRun 'aaa' command to analyze all referenced code
+ [32m-b[0m[33m bits [0m             [0mSet asm.bits
+ [32m-B[0m[33m baddr [0m            [0mSet base address for PIE binaries
+ [32m-c[0m[33m 'cmd..' [0m          [0mExecute rizin command
+ [32m-C[0m                   [0mFile is host:port (alias for -cR+http://%%s/cmd/)
+ [32m--cmd-catalog[0m[33m [json] [0m[0mPrint command tree catalog and exit
+ [32m-d[0m                   [0mDebug the executable 'file' or running process 'pid'
+ [32m-D[0m[33m backend [0m          [0mEnable debug mode (e cfg.debug=true)
+ [32m-e[0m[33m k=v [0m              [0mEvaluate config var
+ [32m-E[0m[33m endian [0m           [0mEndianness -E big or -E little
+ [32m-f[0m                   [0mBlock size = file size
+ [32m-F[0m[33m binplug [0m          [0mForce to use that rbin plugin
+ [32m-h, -hh[0m              [0mShow help message, -hh for long
+ [32m-H[0m[33m [var] [0m            [0mDisplay variable
+ [32m-i[0m[33m file [0m             [0mRun script file
+ [32m-I[0m[33m file [0m             [0mRun script file before the file is opened
+ [32m-k[0m[33m OS/kern [0m          [0mSet asm.os (linux, macos, w32, netbsd, ...)
+ [32m-l[0m[33m lib [0m              [0mLoad plugin file
+ [32m-L[0m                   [0mList supported IO plugins
+ [32m-m[0m[33m addr [0m             [0mMap file at given address (loadaddr)
+ [32m-M[0m                   [0mDo not demangle symbol names
+ [32m-n, -nn[0m              [0mDo not load RzBin info (-nn only load bin structures)
+ [32m-N[0m                   [0mDo not load user settings and scripts
+ [32m-NN[0m                  [0mDo not load any script or plugin
+ [32m-q[0m                   [0mQuiet mode (no prompt) and quit after -i and -c
+ [32m-qq[0m                  [0mQuiet mode (no prompt) and force quit
+ [32m-p[0m[33m p.rzdb [0m           [0mLoad project file
+ [32m-r[0m[33m rz-run [0m           [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
+ [32m-R[0m[33m rule [0m             [0mSpecify custom rz-run directive
+ [32m-s[0m[33m addr [0m             [0mInitial seek
+ [32m-T[0m                   [0mDo not compute file hashes
+ [32m-u[0m                   [0mSet bin.filter=false to get raw sym/sec/cls names
+ [32m-v, -V[0m               [0mShow rizin version (-V show lib versions)
+ [32m-w[0m                   [0mOpen file in write mode
+ [32m-x[0m                   [0mOpen without exec-flag (asm.emu will not work), See io.exec
+ [32m-X[0m                   [0mSame as -e bin.usextr=false (useful for dyldcache)
+ [32m-z, -zz[0m              [0mDo not load strings or load them even in raw
 EOF
 RUN
 
