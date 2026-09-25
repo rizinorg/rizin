@@ -1077,11 +1077,12 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields mutable values.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding mutable values.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table values or NULL in case of failure.
+ * \return True on success, false on failure.
  */
 RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	rz_return_val_if_fail(ht, false);
@@ -1100,12 +1101,12 @@ RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIte
 }
 
 /**
- * \brief Returns a bool over the hash table \p ht. The iterator yields immutable values.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable values.
  *
  * \param ht The hash table to create the iterator for.
- * \param iterator The iterator to fill with the hash table values.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return True on success, false on failure. \p iterator is filled with the iterator over the hash table values.
+ * \return True on success, false on failure.
  */
 RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	rz_return_val_if_fail(ht, false);
@@ -1125,11 +1126,12 @@ RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzI
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable keys.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable keys.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table keys or NULL in case of failure.
+ * \return True on success, false on failure.
  */
 RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	rz_return_val_if_fail(ht, false);
@@ -1145,11 +1147,12 @@ RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNUL
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable key-value pairs.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable key-value pairs.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table key-value pairs or NULL in case of failure.
+ * \return True on success, false on failure.
  */
 RZ_API bool Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	rz_return_val_if_fail(ht, false);
