@@ -78,6 +78,7 @@ typedef struct {
 typedef struct {
 	const RzRegSet *reg_sets; ///< Array of reg sets used to lookup register names during parsing.
 	ut32 ana_op_type; ///< Analysis op type (see: _RzAnalysisOpType) of the token string to parse.
+	HtPP /*<const RzAsmToken *, const char *>*/ *repl_vals; ///< Holds alternative text for the token pointer.
 } RzAsmParseParam;
 
 /**
@@ -234,7 +235,7 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
 RZ_API RZ_OWN char *rz_print_json_indent(RZ_NULLABLE const char *s, bool color, const char *tab, RZ_NULLABLE const char **palette);
 RZ_API char *rz_print_json_human(const char *s);
 
-RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks);
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, const RzAsmParseParam *param);
 RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool have_examples);
 #endif
 

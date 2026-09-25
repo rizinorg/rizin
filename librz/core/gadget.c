@@ -188,7 +188,9 @@ static bool gadget_prepare_asm_op(const RzCore *core, const RzCoreAsmHit *hit, R
 static RzStrBuf *get_colored_asm_str(const RzCore *core, RzAsmOp *asmop, RzAnalysisOp *aop) {
 	RzStrBuf *bw_str = rz_strbuf_new(rz_asm_op_get_asm(asmop));
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop->type);
+	RzAsmParseParam *param = rz_asm_get_parse_param(asmop->asm_toks,
+		core, rreg,
+		aop->type);
 	RzStrBuf *colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop->asm_toks);
 	rz_asm_parse_param_free(param);
 	rz_strbuf_free(bw_str);

@@ -71,7 +71,10 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 		{
 			RzStrBuf *colored_asm;
 			RzReg *rreg = rz_analysis_get_reg(core->analysis);
-			RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
+			RzAsmParseParam *param = rz_asm_get_parse_param(asmop.asm_toks,
+				core,
+				rreg,
+				aop.type);
 			colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
 			rz_asm_parse_param_free(param);
 			rz_cons_printf(Color_RESET "asm: %s\n" Color_RESET, colored_asm ? rz_strbuf_get(colored_asm) : "");
