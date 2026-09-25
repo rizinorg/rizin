@@ -528,6 +528,9 @@ static bool TpiVariant_parse(RzBuffer *b, TpiVariant *x) {
  */
 RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, false); // return val stands for we do nothing for it
+	if (!t->data) {
+		return false;
+	}
 	switch (t->kind) {
 	case TpiKind_UNION: {
 		Tpi_LF_Union *lf = t->data;
@@ -558,6 +561,9 @@ RZ_API RZ_BORROW RzPVector /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(
 	RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, NULL);
 	const RzPdbTpiType *fieldlist = NULL;
+	if (!t->data) {
+		return NULL;
+	}
 	switch (t->kind) {
 	case TpiKind_FILEDLIST: {
 		fieldlist = t;
@@ -648,6 +654,9 @@ RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type) {
  */
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 	rz_return_val_if_fail(type, -1);
+	if (!type->data) {
+		return 0;
+	}
 	switch (type->kind) {
 	case TpiKind_ONEMETHOD: {
 		Tpi_LF_OneMethod *lf_onemethod = type->data;
@@ -1512,6 +1521,11 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 	if (!data && !length && !index) {
 		rz_warn_if_reached();
 		return NULL;
+	}
+	if (!data) {
+		// Keep the record so type indices stay contiguous, but never expose a
+		// known kind without its parsed data: consumers dereference data by kind.
+		k = TpiKind_INVALID;
 	}
 
 	RzPdbTpiType *type = RZ_NEW0(RzPdbTpiType);
