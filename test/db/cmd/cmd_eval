@@ -219,11 +219,11 @@ el plugins.hexagon
 EOF
 EXPECT=<<EOF
 plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
-plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
+plugins.hexagon.imm.sign: all: Print all immediates with sign. some: Print only some with sign (>=-256). none: Print none with sign.
 plugins.hexagon.reg.alias: Print the alias of registers (Alias from C0 = SA0).
  plugins.hexagon.sdk: Print packet syntax in objdump style.
 plugins.hexagon.imm.hash: Display ## before 32bit immediates and # before immidiates with other width.
-plugins.hexagon.imm.sign: True: Print them with sign. False: Print signed immediates in unsigned representation.
+plugins.hexagon.imm.sign: all: Print all immediates with sign. some: Print only some with sign (>=-256). none: Print none with sign.
 [   allocframe(SP,#0x8):raw
 [   allocframe(SP,0x8):raw
 EOF
