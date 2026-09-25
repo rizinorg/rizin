@@ -76,9 +76,13 @@ typedef struct {
 } RzAsmTokenString;
 
 typedef struct {
-	const RzRegSet *reg_sets; ///< Array of reg sets used to lookup register names during parsing.
+	/**
+	 * \brief Array of reg sets used to lookup register names during parsing.
+	 * Tokens won't be classified as registers if this is NULL.
+	 */
+	RZ_NULLABLE const RzRegSet *reg_sets;
 	ut32 ana_op_type; ///< Analysis op type (see: _RzAnalysisOpType) of the token string to parse.
-	HtPP /*<const RzAsmToken *, const char *>*/ *repl_vals; ///< Holds alternative text for the token pointer.
+	RZ_NULLABLE HtPP /*<const RzAsmToken *, const char *>*/ *repl_vals; ///< Holds alternative text for the token pointer.
 } RzAsmParseParam;
 
 /**

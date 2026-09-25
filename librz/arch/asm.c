@@ -2042,7 +2042,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
-				if (param && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
+				if (param && param->reg_sets && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else if (prefix_less_hex) {
 					// It wasn't a register but still could be a prefixless hex number.
@@ -2155,12 +2155,15 @@ RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(
 	RZ_NULLABLE const RzCore *core,
 	RZ_NULLABLE const RzReg *reg,
 	ut32 ana_op_type) {
-	if (!reg) {
+	RzAsmParseParam *param = RZ_NEW0(RzAsmParseParam);
+	if (!param) {
 		return NULL;
 	}
-	RzAsmParseParam *param = RZ_NEW0(RzAsmParseParam);
-	param->reg_sets = reg->regset;
 	param->ana_op_type = ana_op_type;
+	if (reg) {
+		param->reg_sets = reg->regset;
+	}
+
 	// Substiture strings.
 	if (!core || !asm_toks) {
 		return param;
@@ -2170,7 +2173,7 @@ RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(
 	// No free or key comparison functions required.
 	HtPPOptions opt = { 0 };
 	param->repl_vals = ht_pp_new_opt(&opt);
-	if (param->repl_vals) {
+	if (!param->repl_vals) {
 		rz_asm_parse_param_free(param);
 		return NULL;
 	}
