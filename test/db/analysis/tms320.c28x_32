@@ -1,0 +1,33 @@
+
+NAME=c28x VCU and control instructions carry meaningful analysis types
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c28x
+e scr.color=0
+wx 02e5f2e60b0b80e6b72280e6b72001e5f1e743231a76
+s 0
+ao~^type:
+s 2
+ao~^type:
+s 6
+ao~^type:
+s 0xa
+ao~^type:
+s 0xe
+ao~^type:
+s 0x10
+ao~^type:
+s 0x14
+ao~^type:
+EOF
+EXPECT=<<EOF
+type: add
+type: sub
+type: mul
+type: mul
+type: mul
+type: mov
+type: mov
+EOF
+RUN

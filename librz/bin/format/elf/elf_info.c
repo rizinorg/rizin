@@ -362,6 +362,7 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_VIDEOCORE4, "vc4" },
 	{ EM_MSP430, "msp430" },
 	{ EM_TI_C6000, "tms320" },
+	{ EM_TI_C2000, "tms320" },
 	{ EM_SH, "sh" },
 	{ EM_V810, "v810" },
 	{ EM_V800, "v850" },
@@ -929,6 +930,10 @@ static inline bool arch_is_parisc(ELFOBJ *bin) {
 
 static inline bool arch_is_c6x(ELFOBJ *bin) {
 	return arch_is(bin, EM_TI_C6000);
+}
+
+static inline bool arch_is_c2000(ELFOBJ *bin) {
+	return arch_is(bin, EM_TI_C2000);
 }
 
 static inline bool arch_is_riscv(ELFOBJ *bin) {
@@ -1511,6 +1516,27 @@ static char *get_cpu_hppa(ELFOBJ *bin) {
 // with -c on the shared tms320 c6x decoder.
 static RZ_OWN char *get_cpu_c6x(ELFOBJ *bin) {
 	return rz_str_dup("c674x");
+}
+
+// EM_TI_C2000 covers the whole C2000 line, but every part rizin can decode runs
+// the C28x core; the C27x object mode is only entered out of reset and is
+// selectable with -c on the shared tms320 decoder.
+/**
+ * \brief How many address units one value in this object's address fields covers.
+ *
+ * TI's C2000 objects mix units: sh_addr, p_vaddr, st_value and a relocation's
+ * r_offset all count 16-bit words, while sh_size and p_memsz count bytes of the
+ * image. Rizin addresses bytes throughout, so the word-counting fields are
+ * scaled on the way in and the byte-counting ones are left alone. The COFF path
+ * does the same through rz_coff_addr_scale().
+ */
+ut32 Elf_(rz_bin_elf_addr_scale)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 1);
+	return bin->ehdr.e_machine == EM_TI_C2000 ? 2 : 1;
+}
+
+static char *get_cpu_c2000(ELFOBJ *bin) {
+	return rz_str_dup("c28x");
 }
 
 static char *get_cpu_h8xx(ELFOBJ *bin) {
@@ -2142,6 +2168,8 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return get_cpu_hppa(bin);
 	} else if (arch_is_c6x(bin)) {
 		return get_cpu_c6x(bin);
+	} else if (arch_is_c2000(bin)) {
+		return get_cpu_c2000(bin);
 	} else if (arch_is_arm(bin)) {
 		return get_cpu_arm(bin);
 	} else if (arch_is_h8xx(bin)) {
