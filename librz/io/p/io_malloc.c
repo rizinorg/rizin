@@ -49,6 +49,13 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
+static ut8 *__get_buf(RzIODesc *desc, ut64 *size) {
+	rz_return_val_if_fail(desc && size, NULL);
+	const RzIOMalloc *mal = desc->data;
+	*size = mal->size;
+	return mal->buf;
+}
+
 RzIOPlugin rz_io_plugin_malloc = {
 	.name = "malloc",
 	.desc = "Memory allocation plugin",
@@ -61,6 +68,7 @@ RzIOPlugin rz_io_plugin_malloc = {
 	.lseek = io_memory_lseek,
 	.write = io_memory_write,
 	.resize = io_memory_resize,
+	.get_buf = __get_buf
 };
 
 #ifndef RZ_PLUGIN_INCORE
