@@ -903,8 +903,10 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, u
 		if ((oplen = rz_analysis_op(analysis, op, at, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
-			memset(ret + idx + op->nopcode, 0, oplen - op->nopcode);
+		ut32 avail = size - idx;
+		ut32 safe_oplen = (ut32)oplen > avail ? avail : (ut32)oplen;
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0 && op->nopcode <= safe_oplen) {
+			memset(ret + idx + op->nopcode, 0, safe_oplen - op->nopcode);
 		}
 		idx += oplen;
 		at += oplen;
