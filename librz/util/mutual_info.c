@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 vk3089790-arch <vk3089790@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+
 #include <rz_util/rz_mutual_info.h>
 #include <math.h>
 #include <rz_util/rz_assert.h>
