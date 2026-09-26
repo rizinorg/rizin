@@ -96,7 +96,8 @@ RZ_API void rz_search_bytes_pattern_get_bytes_and_mask(RZ_NONNULL const RzSearch
 
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
 	rz_return_val_if_fail(hp, NULL);
-	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc, hp->regex != NULL);
+	ut8 *mask = hp->mask ? rz_new_copy(hp->length, hp->mask) : NULL;
+	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), mask, hp->length, hp->pattern_desc, hp->regex != NULL);
 }
 
 static bool parse_custom_mask(const char *bytes_pattern, const RzRegexMatch *mask_match, const RzRegexMatch *bytes_match, ut8 *mask) {
