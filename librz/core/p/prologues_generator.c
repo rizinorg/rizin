@@ -3,9 +3,10 @@
 
 /**
  * \file prologues_generator.c
- * \brief Dynamic prologues generator plugin.
+ * \brief Function prologues generator plugin.
  *
- * TODO: short desc of algo, flow etc.
+ * A core plugin for generating generalized function prologues from binaries with symbol table.
+ * Provides a suite of commands for use from rizin and an API surface for external use.
  */
 
 #include <rz_core.h>
@@ -25,32 +26,38 @@ RzCorePlugin rz_core_plugin_prologues_generator;
 
 typedef struct core_prologues_generator_context_t {
 	RzCmdDesc *cmd_desc;
-	ut64 prologue_len; // cfg: prologue length used for generation
-	double entropy_threshold; // cfg: threshold for node split entropy used for generalization
-	char *entropy_threshold_str;
+	ut64 prologue_len; ///< cfg: prologue length used for generation
+	double entropy_threshold; ///< cfg: threshold for node split entropy used for generalization
+	char *entropy_threshold_str; ///< string corresponding to the `entropy_threshold` to store in config system
 } CorePGContext;
 
 /**
- * \brief
+ * \brief node data for prologues RzTrie
  */
 typedef struct {
 	ut64 hit_cnt; ///< number of hits of the bit in trie
 	bool bit_val; ///< value of bit 0/1
 } PGTrieNodeData;
 
+/**
+ * \brief dfs context for trie->rz_structured_data
+ */
 typedef struct {
-	RzStructuredData *arr;
-	HtPU *ids;
-	ut64 curr_id;
+	RzStructuredData *arr; ///< array holding the serialized nodes
+	HtPU *ids; ///< map of trie node address to integer node id
+	ut64 curr_id; ///< current integer node id (counter of no. of nodes inserted already in arr)
 } TrieDFSContext;
 
+/**
+ * \brief dfs context for extraction (+ generalization) of prologues from trie
+ */
 typedef struct {
-	RzVector /*<RzPrologue>*/ *prologues;
-	RzBuffer *byte_buf;
-	RzBuffer *mask_buf;
-	size_t depth;
-	double entropy_threshold;
-	bool generalize;
+	RzVector /*<RzPrologue>*/ *prologues; ///< vector to store extracted prologues
+	RzBuffer *byte_buf; ///< byte buffer for the current branch
+	RzBuffer *mask_buf; ///< mask buffer for the current branch
+	size_t depth; ///< current depth (root_depth = 0)
+	double entropy_threshold; ///< the entropy threshold to use while generalizing (entropy of split > threshold, strict comparison)
+	bool generalize; ///< whether to generalize while extracting or not
 } ProloguesDFSContext;
 
 static void pg_prologue_free(void *e, RZ_UNUSED void *user) {
@@ -151,6 +158,13 @@ static bool config_entropy_threshold_setter(void *user, const void *value) {
 	return true;
 }
 
+/**
+ * \brief Allocate a prologues trie.
+ *
+ * Initializes the trie callbacks and root node data used by the prologue generator.
+ *
+ * \return A new prologue trie, or NULL on failure.
+ */
 RZ_API RZ_OWN RzTrie *rz_prologues_trie_new(void) {
 	RzTrie *t = rz_trie_new(pg_match, pg_node_init, pg_node_free);
 	if (!t) {
@@ -246,6 +260,14 @@ static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 p
 	return true;
 }
 
+/**
+ * \brief Initialize RzProloguesArchInfo.
+ *
+ * \param [out] arch_info	The arch_info instance to initialize
+ * \param [in]	arch		The arch name (deep copied)
+ * \param [in]	bits		The bitness of arch
+ * \param [in]	big_endian	Is arch bigendian? (default: little)
+ */
 RZ_API void rz_prologues_arch_info_init(RZ_BORROW RZ_NONNULL RzProloguesArchInfo *arch_info,
 	RZ_NULLABLE const char *arch, int bits, bool big_endian) {
 	rz_return_if_fail(arch_info);
@@ -257,7 +279,7 @@ RZ_API void rz_prologues_arch_info_init(RZ_BORROW RZ_NONNULL RzProloguesArchInfo
 /**
  * \brief Free internal fields of an RzProloguesArchInfo struct and reset its values.
  *
- * \param arch_info Pointer to the RzProloguesArchInfo struct to finalize.
+ * \param [in] arch_info Pointer to the RzProloguesArchInfo struct to finalize.
  */
 RZ_API void rz_prologues_arch_info_fini(RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info) {
 	if (!arch_info) {
@@ -276,8 +298,8 @@ RZ_API void rz_prologues_arch_info_fini(RZ_BORROW RZ_NULLABLE RzProloguesArchInf
  * If \p target_arch->bits <= 0, it adopts and sets the bitness from \p info.
  * If \p target_arch fields are already set, it checks that \p info matches them.
  *
- * \param[in]		info                Binary info to check or adopt.
- * \param[in,out] 	target_arch         Arch container to match against or populate.
+ * \param [in]		info                Binary info to check or adopt.
+ * \param [in,out] 	target_arch         Arch container to match against or populate.
  *
  * \return true if the binary matches or was successfully adopted, false on arch/bitness/endianness mismatch.
  */
@@ -324,11 +346,11 @@ RZ_API bool rz_prologues_arch_check(RZ_BORROW RZ_NONNULL const RzBinInfo *info, 
  * and inserts them into \p pg_trie. Skips imported symbols and deduplicates
  * by address (handles ICF / weak symbol aliasing).
  *
- * \param pg_trie          prologues trie to feed into.
- * \param binfile          already open/loaded RzBinFile with symbols available.
- * \param prologue_len     number of bytes to read per function entry point (must be > 0).
- * \param arch_info        optional target arch to check/adopt.
- * \param processed_files  optional set of processed file paths to check and update.
+ * \param [in,out] pg_trie          prologues trie to feed into.
+ * \param [in]	   binfile          already open/loaded RzBinFile with symbols available.
+ * \param [in]	   prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param [in,out] arch_info        optional target arch to check/adopt.
+ * \param [in,out] processed_files  optional set of processed file paths to skip processed file or else update.
  *
  * \return true on success, false on error or if skipped.
  */
@@ -508,6 +530,24 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Feed all binary files in a bin session into the prologue trie.
+ *
+ * Reads \p prologue_len bytes from each FUNC/METH symbol's physical address
+ * and inserts them into \p pg_trie. Skips imported symbols and deduplicates
+ * by address (handles ICF / weak symbol aliasing).
+ *
+ * \note Archive files are unpacked (after approval) and each object file is processed seperately.
+ * Already processed paths are skipped when \p processed_files is provided.
+ *
+ * \param [in,out] 	pg_trie          trie to populate.
+ * \param [in] 		bin              bin session containing the files.
+ * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param [in,out] 	arch_info        optional target arch to check/adopt.
+ * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
+ *
+ * \return The number of files successfully processed, or -1 on error.
+ */
 RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, ut64 prologue_len,
 	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && prologue_len > 0, -1);
@@ -557,9 +597,9 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	RzProloguesArchInfo arch_info = { 0 };
 	const RzConfig *cfg = rz_core_get_config(core);
 	const char *arch = rz_config_get_string(cfg, "asm.arch");
-	arch_info.arch = rz_str_dup(arch);
-	arch_info.bits = rz_config_get_integer(cfg, "asm.bits");
-	arch_info.big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
+	int bits = rz_config_get_integer(cfg, "asm.bits");
+	bool big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
+	rz_prologues_arch_info_init(&arch_info, arch, bits, big_endian);
 
 	st64 fcnt = rz_prologues_trie_feed_all_binfiles(pg_trie, bin, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
@@ -609,14 +649,19 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 /**
  * \brief Feed function prologues from a binary file on disk into the trie.
  *
- * If the file is an archive (.a / .lib), unpacks all member object files and feeds them.
+ * Reads \p prologue_len bytes from each FUNC/METH symbol's physical address
+ * and inserts them into \p pg_trie. Skips imported symbols and deduplicates
+ * by address (handles ICF / weak symbol aliasing).
  *
- * \param pg_trie          prologues trie to feed into.
- * \param bin              RzBin instance used to load binary files.
- * \param file_path        path to regular file or archive on disk.
- * \param prologue_len     number of bytes to read per function entry point (must be > 0).
- * \param arch_info        optional target arch to check/adopt.
- * \param processed_files  optional set of processed file paths to check and update.
+ * \note Archive files are unpacked (after approval) and each object file is processed seperately.
+ * Already processed paths are skipped when \p processed_files is provided.
+ *
+ * \param [in,out] 	pg_trie          trie to populate.
+ * \param [in]		bin              RzBin instance used to load binary files.
+ * \param [in] 		file_path        path to regular file or archive on disk.
+ * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param [in,out] 	arch_info        optional target arch to check/adopt.
+ * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
  *
  * \return true on success, false on error or if skipped.
  */
@@ -665,6 +710,26 @@ RZ_API bool rz_prologues_trie_feed_file(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ
 	return res;
 }
 
+/**
+ * \brief Feed function prologues from every file in a directory.
+ *
+ * Only files directly contained in the directory are considered; nested directories are not traversed.
+ * Reads \p prologue_len bytes from each FUNC/METH symbol's physical address
+ * and inserts them into \p pg_trie. Skips imported symbols and deduplicates
+ * by address (handles ICF / weak symbol aliasing).
+ *
+ * \note Archive files are unpacked (after approval) and each object file is processed seperately.
+ * Already processed paths are skipped when \p processed_files is provided.
+ *
+ * \param [in,out] 	pg_trie          trie to populate.
+ * \param [in] 		bin              bin session used to load files.
+ * \param [in] 		dir_path         directory containing the input files.
+ * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
+ * \param [in,out] 	arch_info        optional target arch to check/adopt.
+ * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
+ *
+ * \return The number of files successfully processed, or -1 on error.
+ */
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
 	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && dir_path && prologue_len > 0, -1);
@@ -712,9 +777,9 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	RzProloguesArchInfo arch_info = { 0 };
 	const RzConfig *cfg = rz_core_get_config(core);
 	const char *arch = rz_config_get_string(cfg, "asm.arch");
-	arch_info.arch = rz_str_dup(arch);
-	arch_info.bits = rz_config_get_integer(cfg, "asm.bits");
-	arch_info.big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
+	int bits = rz_config_get_integer(cfg, "asm.bits");
+	bool big_endian = rz_config_get_integer(cfg, "cfg.bigendian");
+	rz_prologues_arch_info_init(&arch_info, arch, bits, big_endian);
 
 	st64 fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, dir_path, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
@@ -808,6 +873,7 @@ static void merge_subtrees(RzTrieNode *src, RzTrieNode *dst) {
 	RZ_FREE(src);
 }
 
+// create mask buffer initialized to all 1's
 static RzBuffer *pg_mask_buf_new(ut64 len) {
 	ut8 *mask_data = RZ_NEWS(ut8, len);
 	if (!mask_data) {
@@ -898,6 +964,18 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	pgctx->depth--;
 }
 
+/**
+ * \brief Generalize the trie and extract prologue patterns.
+ *
+ * Branches whose split entropy is strictly greater than \p entropy_threshold
+ * are merged and represented by wildcard (mask bits=0).
+ *
+ * \param [in,out] 	pg_trie             trie containing collected prologues.
+ * \param [in] 		prologue_len        length of each prologue in bytes.
+ * \param [in] 		entropy_threshold   split threshold in the range [0.0, 1.0].
+ *
+ * \return Vector of generalized prologues, or NULL on error.
+ */
 RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 	rz_return_val_if_fail(entropy_threshold >= 0.0 && entropy_threshold <= 1.0, NULL);
@@ -939,6 +1017,16 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RZ_
 	return prologues;
 }
 
+/**
+ * \brief Extract exact raw prologue patterns from the trie (No generalization).
+ *
+ * Preserves every branch and returns masks with all bits 1.
+ *
+ * \param [in] pg_trie       trie containing collected prologues.
+ * \param [in] prologue_len  length of each prologue in bytes.
+ *
+ * \return Vector of raw prologues, or NULL on error.
+ */
 RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 
@@ -1016,6 +1104,19 @@ static void add_session_metadata_to_sd(RzStructuredData *root, const RzPrologues
 	rz_structured_data_map_add_string(root, "endian", big_endian ? "big" : "little");
 }
 
+/**
+ * \brief Serialize the prologue trie to structured data.
+ *
+ * The result contains session metadata, the total number of analyzed
+ * prologues, optional input files, and the serialized prefix tree.
+ *
+ * \param [in] pg_trie       trie to serialize.
+ * \param [in] prologue_len  length of each prologue in bytes.
+ * \param [in] arch_info     optional architecture metadata.
+ * \param [in] files         optional set of input file paths.
+ *
+ * \return structured data, or NULL on error.
+ */
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW RZ_NONNULL const RzTrie *pg_trie,
 	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE const RzSetS *files) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
@@ -1068,6 +1169,18 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW R
 	return root;
 }
 
+/**
+ * \brief Serialize extracted prologue patterns to structured data.
+ *
+ * Contains architecture and prologues length, number of prologues and then patterns.
+ * Each pattern has bytes and mask.
+ *
+ * \param [in] prologues     vector of prologue patterns to serialize.
+ * \param [in] prologue_len  length of each prologue in bytes.
+ * \param [in] arch_info     optional architecture metadata.
+ *
+ * \return structured data, or NULL on error.
+ */
 RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_BORROW RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
 	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info) {
 	rz_return_val_if_fail(prologues && prologue_len > 0, NULL);
