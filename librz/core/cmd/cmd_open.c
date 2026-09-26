@@ -520,7 +520,7 @@ RZ_IPI RzCmdStatus rz_open_maps_map_handler(RzCore *core, int argc, const char *
 
 	ut64 vaddr = rz_num_math(core->num, argv[2]);
 	ut64 size = argc > 3 ? rz_num_math(core->num, argv[3]) : rz_io_fd_size(core->io, fd);
-	ut64 paddr = argc > 4 ? rz_num_math(core->num, argv[4]) : 0;
+	ut64 paddr = argc > 4 ? rz_num_math(core->num, argv[4]) : vaddr;
 	int rwx = argc > 5 ? rz_str_rwx(argv[5]) : 0;
 	const char *name = argc > 6 ? argv[6] : "";
 

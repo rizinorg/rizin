@@ -886,3 +886,21 @@ v7
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=om separate maps do not share buffer
+FILE==
+CMDS=<<EOF
+om- 1
+om 3 0x0 0xc
+om 3 0xc 0x50
+wx ffffffffffffffffffffffff @ 0x0
+s 0xc
+wx 99999999999999999999999999999999 @ 0xc
+px 0x1c @ 0x0
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  ffff ffff ffff ffff ffff ffff 0000 0000  ................
+0x00000010  9999 9999 9999 9999 9999 9999            ............
+EOF
+RUN
