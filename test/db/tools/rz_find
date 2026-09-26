@@ -514,3 +514,11 @@ ERROR.+
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rz-find -Z long string not truncated (issue #6289)
+TOOL=rz-find
+ARGS=-Z -f 0x3f951 -t 0x3fa00 -s Android16ANDROID_VERSIONS bins/elf/0pack
+EXPECT=<<EOF
+0x3f951 Android16ANDROID_VERSIONSEESt10_Select1stIS5_ESt4lessIjESaIS5_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS5_ERS1_
+EOF
+RUN
