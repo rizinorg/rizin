@@ -65,7 +65,9 @@ static const RzCmdDescDetail analysis_hint_set_val_details[2];
 static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
+static const RzCmdDescDetail analyze_n_ins_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail aI_details[2];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
@@ -7948,6 +7950,14 @@ static const RzCmdDescHelp analyze_n_bytes_size_help = {
 static const RzCmdDescHelp ao_help = {
 	.summary = "Analyze N instructions",
 };
+static const RzCmdDescDetailEntry analyze_n_ins_empty_detail_entries[] = {
+	{ .text = "Details include information like: jump targets, operand details, conditions, size, disassembly, bytes, RzIL, address", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail analyze_n_ins_details[] = {
+	{ .name = "", .entries = analyze_n_ins_empty_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg analyze_n_ins_args[] = {
 	{
 		.name = "n_instructions",
@@ -7958,7 +7968,8 @@ static const RzCmdDescArg analyze_n_ins_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_ins_help = {
-	.summary = "Analyze next N instructions",
+	.summary = "Analyze next N instructions and print all details Rizin knows about them.",
+	.details = analyze_n_ins_details,
 	.args = analyze_n_ins_args,
 };
 
@@ -8448,6 +8459,37 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.summary = "Show register and memory access of the next [len] instructions or bytes.",
 	.details = analyze_esil_insn_access_details,
 	.args = analyze_esil_insn_access_args,
+};
+
+static const RzCmdDescDetailEntry aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries[] = {
+	{ .text = "Analysis Results", .arg_str = NULL, .comment = "In the early stage the results will be less comprehensive than the old analysis. This won't be the case for long. You can track the progress here: https://github.com/orgs/rizinorg/projects/18" },
+	{ .text = "Design", .arg_str = NULL, .comment = "The algorithms are designed with performance, extensibility, formal correctness, and compatibility for VLIW architectures in mind." },
+	{ .text = "Future's Base", .arg_str = NULL, .comment = "The commands' module will be the foundation for future analysis development." },
+	{ .text = "RzIL", .arg_str = NULL, .comment = "The IL for the the analysis is exclusively RzIL with support for many more architectures than ESIL had." },
+	{ 0 },
+};
+static const RzCmdDescDetail aI_details[] = {
+	{ .name = "What is the difference to the old analysis?", .entries = aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp aI_help = {
+	.summary = "Experimental RzIL based analysis",
+	.details = aI_details,
+};
+static const RzCmdDescArg inquiry_analyze_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_function_help = {
+	.summary = "analyze function at current seek",
+	.args = inquiry_analyze_function_args,
+};
+
+static const RzCmdDescArg inquiry_analyze_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_all_help = {
+	.summary = "analyze all functions",
+	.args = inquiry_analyze_all_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -23909,6 +23951,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
+
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aI", NULL, NULL, &aI_help);
+	rz_warn_if_fail(aI_cd);
+	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
+	rz_warn_if_fail(inquiry_analyze_function_cd);
+
+	RzCmdDesc *inquiry_analyze_all_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIa", rz_inquiry_analyze_all_handler, &inquiry_analyze_all_help);
+	rz_warn_if_fail(inquiry_analyze_all_cd);
 
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
