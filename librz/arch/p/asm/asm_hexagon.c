@@ -118,16 +118,53 @@ static bool hexagon_fini(void *user) {
 	hexagon_getter_config(config_##variable##_get, variable)
 
 hexagon_config_callbacks(imm_hash);
-hexagon_config_callbacks(imm_sign);
 hexagon_config_callbacks(sdk);
 hexagon_config_callbacks(reg_alias);
+
+static bool hexagon_config_imm_sign_set(void *user, const void *data) {
+	const char *value = data;
+	HexState *state = user;
+	if (!state) {
+		return 0;
+	}
+	if (RZ_STR_EQ(value, "all")) {
+		state->imm_sign = HEX_PRINT_SIGN_ALL;
+	} else if (RZ_STR_EQ(value, "some")) {
+		state->imm_sign = HEX_PRINT_SIGN_SOME;
+	} else if (RZ_STR_EQ(value, "none")) {
+		state->imm_sign = HEX_PRINT_SIGN_NONE;
+	} else {
+		return false;
+	}
+	return true;
+}
+
+static bool hexagon_config_imm_sign_get(void *user, void *data) {
+	char **value = data;
+	HexState *state = user;
+	if (!state) {
+		return false;
+	}
+	switch (state->imm_sign) {
+	case HEX_PRINT_SIGN_NONE:
+		*value = "none";
+		return true;
+	case HEX_PRINT_SIGN_SOME:
+		*value = "some";
+		return true;
+	case HEX_PRINT_SIGN_ALL:
+		*value = "all";
+		return true;
+	}
+	return false;
+};
 
 static bool hexagon_init(void **plugin_data) {
 	HexState *state = hexagon_state_new();
 	rz_return_val_if_fail(state, false);
 
 	state->imm_hash = true;
-	state->imm_sign = true;
+	state->imm_sign = HEX_PRINT_SIGN_SOME;
 	state->sdk = false;
 	state->reg_alias = true;
 
@@ -155,8 +192,8 @@ RZ_API RZ_OWN RzConfig *hexagon_get_config(void *plugin_data) {
 		hexagon_config_imm_hash_get,
 		hexagon_config_imm_hash_set,
 		NULL, state);
-	rz_config_add_bool_bind(cfg, "plugins.hexagon.imm.sign",
-		"True: Print them with sign. False: Print signed immediates in unsigned representation.",
+	rz_config_add_string_bind(cfg, "plugins.hexagon.imm.sign",
+		"all: Print all immediates with sign. some: Print only some with sign (>=-256). none: Print none with sign.",
 		hexagon_config_imm_sign_get,
 		hexagon_config_imm_sign_set,
 		NULL, state);
