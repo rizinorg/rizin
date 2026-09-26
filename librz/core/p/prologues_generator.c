@@ -46,10 +46,9 @@ typedef struct {
 
 typedef struct {
 	RzVector /*<RzPrologue>*/ *prologues;
-	ut8 *byte_buf;
-	ut8 *mask_buf;
+	RzBuffer *byte_buf;
+	RzBuffer *mask_buf;
 	size_t depth;
-	ut64 prologue_len;
 	double entropy_threshold;
 	bool generalize;
 } ProloguesDFSContext;
@@ -809,6 +808,20 @@ static void merge_subtrees(RzTrieNode *src, RzTrieNode *dst) {
 	RZ_FREE(src);
 }
 
+static RzBuffer *pg_mask_buf_new(ut64 len) {
+	ut8 *mask_data = RZ_NEWS(ut8, len);
+	if (!mask_data) {
+		return NULL;
+	}
+	memset(mask_data, 0xFF, len);
+	RzBuffer *mask_buf = rz_buf_new_from_bytes(mask_data, len);
+	if (!mask_buf) {
+		RZ_FREE(mask_data);
+		return NULL;
+	}
+	return mask_buf;
+}
+
 static void pre_visit_prologues(RzTrieNode *n, void *user) {
 	rz_return_if_fail(n && n->data && user);
 
@@ -819,10 +832,14 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 		size_t bit_idx = pgctx->depth - 1;
 		size_t byte_idx = bit_idx / 8;
 		size_t bit_pos = 7 - (bit_idx % 8);
-		if (nd->bit_val) {
-			pgctx->byte_buf[byte_idx] |= (1u << bit_pos);
-		} else {
-			pgctx->byte_buf[byte_idx] &= ~(1u << bit_pos);
+		ut8 b = 0;
+		if (rz_buf_read8_at(pgctx->byte_buf, byte_idx, &b)) {
+			if (nd->bit_val) {
+				b |= (1u << bit_pos);
+			} else {
+				b &= ~(1u << bit_pos);
+			}
+			rz_buf_write8_at(pgctx->byte_buf, byte_idx, b);
 		}
 	}
 
@@ -833,18 +850,27 @@ static void pre_visit_prologues(RzTrieNode *n, void *user) {
 			// set next depth bit to 0 in mask
 			size_t child_byte_idx = pgctx->depth / 8;
 			size_t child_bit_pos = 7 - (pgctx->depth % 8);
-			// len(pvec)==2 check already prevents oob for leaf ndoe below
-			pgctx->mask_buf[child_byte_idx] &= ~(1u << child_bit_pos);
+			ut8 m = 0;
+			if (rz_buf_read8_at(pgctx->mask_buf, child_byte_idx, &m)) {
+				m &= ~(1u << child_bit_pos);
+				rz_buf_write8_at(pgctx->mask_buf, child_byte_idx, m);
+			}
 			merge_subtrees(rz_pvector_at(&n->children, 1), rz_pvector_at(&n->children, 0));
 			rz_pvector_pop(&n->children);
 		}
 	}
 
 	if (n->is_end) {
-		size_t byte_len = pgctx->depth / 8;
-		ut8 *byte_buf = rz_mem_dup(pgctx->byte_buf, byte_len);
-		ut8 *mask_buf = rz_mem_dup(pgctx->mask_buf, byte_len);
+		ut64 buf_len = rz_buf_size(pgctx->byte_buf);
+		ut8 *byte_buf = RZ_NEWS0(ut8, buf_len);
+		ut8 *mask_buf = RZ_NEWS0(ut8, buf_len);
 		if (!byte_buf || !mask_buf) {
+			RZ_FREE(byte_buf);
+			RZ_FREE(mask_buf);
+			return;
+		}
+		if (rz_buf_read_at(pgctx->byte_buf, 0, byte_buf, buf_len) != (st64)buf_len ||
+			rz_buf_read_at(pgctx->mask_buf, 0, mask_buf, buf_len) != (st64)buf_len) {
 			RZ_FREE(byte_buf);
 			RZ_FREE(mask_buf);
 			return;
@@ -860,10 +886,14 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	rz_return_if_fail(n && n->data && user);
 	ProloguesDFSContext *pgctx = user;
 	// reset child's mask bit to 1
-	size_t child_byte_idx = (pgctx->depth - 1) / 8;
-	size_t child_bit_pos = 7 - ((pgctx->depth - 1) % 8);
-	if (child_byte_idx < pgctx->prologue_len) { // bcz its oob for leaf node
-		pgctx->mask_buf[child_byte_idx] |= (1u << child_bit_pos);
+	if (pgctx->depth > 0) {
+		size_t child_byte_idx = (pgctx->depth - 1) / 8;
+		size_t child_bit_pos = 7 - ((pgctx->depth - 1) % 8);
+		ut8 m = 0;
+		if (rz_buf_read8_at(pgctx->mask_buf, child_byte_idx, &m)) {
+			m |= (1u << child_bit_pos);
+			rz_buf_write8_at(pgctx->mask_buf, child_byte_idx, m);
+		}
 	}
 	pgctx->depth--;
 }
@@ -878,22 +908,25 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzT
 		return NULL;
 	}
 
-	ut8 *byte_buf = RZ_NEWS0(ut8, prologue_len);
-	ut8 *mask_buf = RZ_NEWS0(ut8, prologue_len);
+	RzBuffer *byte_buf = rz_buf_new_empty(prologue_len);
+	RzBuffer *mask_buf = pg_mask_buf_new(prologue_len);
 	if (!byte_buf || !mask_buf) {
-		RZ_FREE(byte_buf);
-		RZ_FREE(mask_buf);
+		rz_buf_free(byte_buf);
+		rz_buf_free(mask_buf);
 		return NULL;
 	}
-	memset(mask_buf, 0xFF, prologue_len);
 
 	RzVector *prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
+	if (!prologues) {
+		rz_buf_free(byte_buf);
+		rz_buf_free(mask_buf);
+		return NULL;
+	}
 	ProloguesDFSContext pgctx = {
 		.prologues = prologues,
 		.byte_buf = byte_buf,
 		.mask_buf = mask_buf,
 		.depth = 0,
-		.prologue_len = prologue_len,
 		.entropy_threshold = entropy_threshold,
 		.generalize = true
 	};
@@ -901,8 +934,8 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzT
 	rz_trie_dfs(pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
 
 	RZ_LOG_INFO("Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(prologues));
-	RZ_FREE(byte_buf);
-	RZ_FREE(mask_buf);
+	rz_buf_free(byte_buf);
+	rz_buf_free(mask_buf);
 	return prologues;
 }
 
@@ -915,16 +948,20 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTr
 		return NULL;
 	}
 
-	ut8 *byte_buf = RZ_NEWS0(ut8, prologue_len);
-	ut8 *mask_buf = RZ_NEWS0(ut8, prologue_len);
+	RzBuffer *byte_buf = rz_buf_new_empty(prologue_len);
+	RzBuffer *mask_buf = pg_mask_buf_new(prologue_len);
 	if (!byte_buf || !mask_buf) {
-		RZ_FREE(byte_buf);
-		RZ_FREE(mask_buf);
+		rz_buf_free(byte_buf);
+		rz_buf_free(mask_buf);
 		return NULL;
 	}
-	memset(mask_buf, 0xFF, prologue_len);
 
 	RzVector *prologues = rz_vector_new(sizeof(RzPrologue), pg_prologue_free, NULL);
+	if (!prologues) {
+		rz_buf_free(byte_buf);
+		rz_buf_free(mask_buf);
+		return NULL;
+	}
 	ProloguesDFSContext pgctx = {
 		.prologues = prologues,
 		.byte_buf = byte_buf,
@@ -937,8 +974,8 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTr
 	rz_trie_dfs(pg_trie->root, pre_visit_prologues, NULL, post_visit_prologues, &pgctx);
 
 	RZ_LOG_INFO("Generated %" PFMTSZu " prologues from trie\n", rz_vector_len(prologues));
-	RZ_FREE(byte_buf);
-	RZ_FREE(mask_buf);
+	rz_buf_free(byte_buf);
+	rz_buf_free(mask_buf);
 	return prologues;
 }
 
