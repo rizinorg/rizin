@@ -80,6 +80,37 @@ Gadget size: 6
   0x000104ac           67000e00  jr t3
 Gadget size: 4
 
+  0x00010512               5da1  j 0x109b8
+  0x00010514           97310000  auipc gp, 3
+  0x00010518           9381c130  addi gp, gp, 0x30c
+  0x0001051c               8280  ret
+Gadget size: 12
+
+  0x00010514           97310000  auipc gp, 3
+  0x00010518           9381c130  addi gp, gp, 0x30c
+  0x0001051c               8280  ret
+Gadget size: 10
+
+  0x00010516               0000  unimp
+  0x00010518           9381c130  addi gp, gp, 0x30c
+  0x0001051c               8280  ret
+Gadget size: 8
+
+  0x00010518           9381c130  addi gp, gp, 0x30c
+  0x0001051c               8280  ret
+Gadget size: 6
+
+  0x0001051a               c130  addiw ra, ra, -0x10
+  0x0001051c               8280  ret
+Gadget size: 4
+
+  0x0001051c               8280  ret
+Gadget size: 2
+
+  0x0001051e               0100  nop
+  0x00010520               8280  ret
+Gadget size: 4
+
   0x0001052e           6386a700  beq a5, a0, 0x1053a
   0x00010532           93070000  li a5, 0
   0x00010536               91c3  beqz a5, 0x1053a
@@ -120,6 +151,123 @@ Gadget size: 12
   0x00010556           93070000  li a5, 0
   0x0001055a               91c3  beqz a5, 0x1055e
   0x0001055c               8287  jr a5
+Gadget size: 10
+
+  0x00010572               0547  li a4, 1
+  0x00010574               cd67  lui a5, 0x13
+  0x00010576           2384e702  sb a4, 0x28(a5)
+  0x0001057a               4101  addi sp, sp, 0x10
+  0x0001057c               8280  ret
+Gadget size: 12
+
+  0x00010574               cd67  lui a5, 0x13
+  0x00010576           2384e702  sb a4, 0x28(a5)
+  0x0001057a               4101  addi sp, sp, 0x10
+  0x0001057c               8280  ret
+Gadget size: 10
+
+  0x00010576           2384e702  sb a4, 0x28(a5)
+  0x0001057a               4101  addi sp, sp, 0x10
+  0x0001057c               8280  ret
+Gadget size: 8
+
+  0x00010578           e7024101  jalr t0, 0x14(sp)
+  0x0001057c               8280  ret
+Gadget size: 6
+
+  0x0001057a               4101  addi sp, sp, 0x10
+  0x0001057c               8280  ret
+Gadget size: 4
+
+  0x000105a6               3e85  mv a0, a5
+  0x000105a8               a270  ld ra, 0x28(sp)
+  0x000105aa               0274  ld s0, 0x20(sp)
+  0x000105ac               4561  addi sp, sp, 0x30
+  0x000105ae               8280  ret
+Gadget size: 10
+
+  0x000105a8               a270  ld ra, 0x28(sp)
+  0x000105aa               0274  ld s0, 0x20(sp)
+  0x000105ac               4561  addi sp, sp, 0x30
+  0x000105ae               8280  ret
+Gadget size: 8
+
+  0x000105aa               0274  ld s0, 0x20(sp)
+  0x000105ac               4561  addi sp, sp, 0x30
+  0x000105ae               8280  ret
+Gadget size: 6
+
+  0x000105ac               4561  addi sp, sp, 0x30
+  0x000105ae               8280  ret
+Gadget size: 4
+
+  0x000107d0               0100  nop
+  0x000107d2               a260  ld ra, 8(sp)
+  0x000107d4               0264  ld s0, 0(sp)
+  0x000107d6               4101  addi sp, sp, 0x10
+  0x000107d8               8280  ret
+Gadget size: 10
+
+  0x000107d2               a260  ld ra, 8(sp)
+  0x000107d4               0264  ld s0, 0(sp)
+  0x000107d6               4101  addi sp, sp, 0x10
+  0x000107d8               8280  ret
+Gadget size: 8
+
+  0x000107d4               0264  ld s0, 0(sp)
+  0x000107d6               4101  addi sp, sp, 0x10
+  0x000107d8               8280  ret
+Gadget size: 6
+
+  0x00010890               0100  nop
+  0x00010892               e270  ld ra, 0x38(sp)
+  0x00010894               4274  ld s0, 0x30(sp)
+  0x00010896               2161  addi sp, sp, 0x40
+  0x00010898               8280  ret
+Gadget size: 10
+
+  0x00010892               e270  ld ra, 0x38(sp)
+  0x00010894               4274  ld s0, 0x30(sp)
+  0x00010896               2161  addi sp, sp, 0x40
+  0x00010898               8280  ret
+Gadget size: 8
+
+  0x00010894               4274  ld s0, 0x30(sp)
+  0x00010896               2161  addi sp, sp, 0x40
+  0x00010898               8280  ret
+Gadget size: 6
+
+  0x00010896               2161  addi sp, sp, 0x40
+  0x00010898               8280  ret
+Gadget size: 4
+
+  0x00010920               0100  nop
+  0x00010922               e260  ld ra, 0x18(sp)
+  0x00010924               4264  ld s0, 0x10(sp)
+  0x00010926               0561  addi sp, sp, 0x20
+  0x00010928               8280  ret
+Gadget size: 10
+
+  0x00010922               e260  ld ra, 0x18(sp)
+  0x00010924               4264  ld s0, 0x10(sp)
+  0x00010926               0561  addi sp, sp, 0x20
+  0x00010928               8280  ret
+Gadget size: 8
+
+  0x00010924               4264  ld s0, 0x10(sp)
+  0x00010926               0561  addi sp, sp, 0x20
+  0x00010928               8280  ret
+Gadget size: 6
+
+  0x00010926               0561  addi sp, sp, 0x20
+  0x00010928               8280  ret
+Gadget size: 4
+
+  0x00010a12               3e85  mv a0, a5
+  0x00010a14               a260  ld ra, 8(sp)
+  0x00010a16               0264  ld s0, 0(sp)
+  0x00010a18               4101  addi sp, sp, 0x10
+  0x00010a1a               8280  ret
 Gadget size: 10
 
   0x00010d56               0000  unimp
@@ -233,6 +381,13 @@ EXPECT=<<EOF
 0x000104a8: ld t0, 8(t0); jr t3;
 0x000104aa: c.slli64 ra; jr t3;
 0x000104ac: jr t3;
+0x00010512: j 0x109b8; auipc gp, 3; addi gp, gp, 0x30c; ret;
+0x00010514: auipc gp, 3; addi gp, gp, 0x30c; ret;
+0x00010516: unimp; addi gp, gp, 0x30c; ret;
+0x00010518: addi gp, gp, 0x30c; ret;
+0x0001051a: addiw ra, ra, -0x10; ret;
+0x0001051c: ret;
+0x0001051e: nop; ret;
 0x0001052e: beq a5, a0, 0x1053a; li a5, 0; beqz a5, 0x1053a; jr a5;
 0x00010530: vsuxei8.v v1, (t1), v25; unimp; beqz a5, 0x1053a; jr a5;
 0x00010532: li a5, 0; beqz a5, 0x1053a; jr a5;
@@ -241,6 +396,27 @@ EXPECT=<<EOF
 0x00010538: jr a5;
 0x00010552: srai a1, a1, 1; beqz a1, 0x1055e; li a5, 0; beqz a5, 0x1055e; jr a5;
 0x00010554: beqz a1, 0x1055e; li a5, 0; beqz a5, 0x1055e; jr a5;
+0x00010572: li a4, 1; lui a5, 0x13; sb a4, 0x28(a5); addi sp, sp, 0x10; ret;
+0x00010574: lui a5, 0x13; sb a4, 0x28(a5); addi sp, sp, 0x10; ret;
+0x00010576: sb a4, 0x28(a5); addi sp, sp, 0x10; ret;
+0x00010578: jalr t0, 0x14(sp); ret;
+0x0001057a: addi sp, sp, 0x10; ret;
+0x000105a6: mv a0, a5; ld ra, 0x28(sp); ld s0, 0x20(sp); addi sp, sp, 0x30; ret;
+0x000105a8: ld ra, 0x28(sp); ld s0, 0x20(sp); addi sp, sp, 0x30; ret;
+0x000105aa: ld s0, 0x20(sp); addi sp, sp, 0x30; ret;
+0x000105ac: addi sp, sp, 0x30; ret;
+0x000107d0: nop; ld ra, 8(sp); ld s0, 0(sp); addi sp, sp, 0x10; ret;
+0x000107d2: ld ra, 8(sp); ld s0, 0(sp); addi sp, sp, 0x10; ret;
+0x000107d4: ld s0, 0(sp); addi sp, sp, 0x10; ret;
+0x00010890: nop; ld ra, 0x38(sp); ld s0, 0x30(sp); addi sp, sp, 0x40; ret;
+0x00010892: ld ra, 0x38(sp); ld s0, 0x30(sp); addi sp, sp, 0x40; ret;
+0x00010894: ld s0, 0x30(sp); addi sp, sp, 0x40; ret;
+0x00010896: addi sp, sp, 0x40; ret;
+0x00010920: nop; ld ra, 0x18(sp); ld s0, 0x10(sp); addi sp, sp, 0x20; ret;
+0x00010922: ld ra, 0x18(sp); ld s0, 0x10(sp); addi sp, sp, 0x20; ret;
+0x00010924: ld s0, 0x10(sp); addi sp, sp, 0x20; ret;
+0x00010926: addi sp, sp, 0x20; ret;
+0x00010a12: mv a0, a5; ld ra, 8(sp); ld s0, 0(sp); addi sp, sp, 0x10; ret;
 0x00010d56: unimp; lw s0, 0(a2); fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
 0x00010d58: lw s0, 0(a2); fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
 0x00010d5a: fld ft0, 0xe0(sp); lbu s1, 1(a0); jr a6;
