@@ -246,7 +246,7 @@ static bool build_prefix_tree_from_binfile(RzBinFile *binfile, RzTrie *t, ut64 p
 	return true;
 }
 
-RZ_API void rz_prologues_arch_info_init(RZ_NONNULL RzProloguesArchInfo *arch_info,
+RZ_API void rz_prologues_arch_info_init(RZ_BORROW RZ_NONNULL RzProloguesArchInfo *arch_info,
 	RZ_NULLABLE const char *arch, int bits, bool big_endian) {
 	rz_return_if_fail(arch_info);
 	arch_info->arch = arch ? rz_str_dup(arch) : NULL;
@@ -259,7 +259,7 @@ RZ_API void rz_prologues_arch_info_init(RZ_NONNULL RzProloguesArchInfo *arch_inf
  *
  * \param arch_info Pointer to the RzProloguesArchInfo struct to finalize.
  */
-RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_info) {
+RZ_API void rz_prologues_arch_info_fini(RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info) {
 	if (!arch_info) {
 		return;
 	}
@@ -281,7 +281,7 @@ RZ_API void rz_prologues_arch_info_fini(RZ_NULLABLE RzProloguesArchInfo *arch_in
  *
  * \return true if the binary matches or was successfully adopted, false on arch/bitness/endianness mismatch.
  */
-RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABLE RzProloguesArchInfo *target_arch) {
+RZ_API bool rz_prologues_arch_check(RZ_BORROW RZ_NONNULL const RzBinInfo *info, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *target_arch) {
 	rz_return_val_if_fail(info, false);
 
 	if (!target_arch) {
@@ -332,8 +332,8 @@ RZ_API bool rz_prologues_arch_check(RZ_NONNULL const RzBinInfo *info, RZ_NULLABL
  *
  * \return true on success, false on error or if skipped.
  */
-RZ_API bool rz_prologues_trie_feed_binfile(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBinFile *binfile, ut64 prologue_len,
-	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
+RZ_API bool rz_prologues_trie_feed_binfile(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBinFile *binfile, ut64 prologue_len,
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && binfile && prologue_len > 0, false);
 
 	if (processed_files && binfile->file && rz_set_s_contains(processed_files, binfile->file)) {
@@ -508,8 +508,8 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, ut64 prologue_len,
-	RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
+RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, ut64 prologue_len,
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && prologue_len > 0, -1);
 
 	RzList *binfiles = bin ? bin->binfiles : NULL;
@@ -620,8 +620,8 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
  *
  * \return true on success, false on error or if skipped.
  */
-RZ_API bool rz_prologues_trie_feed_file(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *file_path,
-	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
+RZ_API bool rz_prologues_trie_feed_file(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *file_path,
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && file_path && prologue_len > 0, false);
 
 	if (!rz_file_is_regular(file_path)) {
@@ -665,8 +665,8 @@ RZ_API bool rz_prologues_trie_feed_file(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL R
 	return res;
 }
 
-RZ_API st64 rz_prologues_trie_feed_directory(RZ_NONNULL RzTrie *pg_trie, RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
-	ut64 prologue_len, RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_NULLABLE RzSetS *processed_files) {
+RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && dir_path && prologue_len > 0, -1);
 
 	if (!rz_file_is_directory(dir_path)) {
@@ -898,7 +898,7 @@ static void post_visit_prologues(RzTrieNode *n, void *user) {
 	pgctx->depth--;
 }
 
-RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold) {
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 	rz_return_val_if_fail(entropy_threshold >= 0.0 && entropy_threshold <= 1.0, NULL);
 
@@ -939,7 +939,7 @@ RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RzT
 	return prologues;
 }
 
-RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RzTrie *pg_trie, ut64 prologue_len) {
+RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 
 	PGTrieNodeData *rd = pg_trie->root->data;
@@ -1016,8 +1016,8 @@ static void add_session_metadata_to_sd(RzStructuredData *root, const RzPrologues
 	rz_structured_data_map_add_string(root, "endian", big_endian ? "big" : "little");
 }
 
-RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL const RzTrie *pg_trie,
-	ut64 prologue_len, RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_NULLABLE const RzSetS *files) {
+RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW RZ_NONNULL const RzTrie *pg_trie,
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE const RzSetS *files) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 
 	HtPUOptions opt = { 0 };
@@ -1068,8 +1068,8 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_NONNULL 
 	return root;
 }
 
-RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
-	ut64 prologue_len, RZ_NULLABLE const RzProloguesArchInfo *arch_info) {
+RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_BORROW RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info) {
 	rz_return_val_if_fail(prologues && prologue_len > 0, NULL);
 
 	RzStructuredData *root = rz_structured_data_new_map();
