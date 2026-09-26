@@ -308,7 +308,9 @@ static void colordump(RzCore *core, const ut8 *block, int len) {
 			free(name);
 		}
 		if (show_offset) {
-			rz_print_addr(core->print, core->offset + i);
+			char *s = rz_print_addr(core->print, core->offset + i);
+			rz_cons_print(s);
+			free(s);
 		}
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
@@ -2377,7 +2379,9 @@ RZ_IPI RzCmdStatus rz_print_hexdump_emoji_handler(RzCore *core, int argc, const 
 		cols = 1;
 	}
 	for (int i = 0; i < len; i += cols) {
-		rz_print_addr(core->print, core->offset + i);
+		char *s = rz_print_addr(core->print, core->offset + i);
+		rz_cons_print(s);
+		free(s);
 		for (int j = i; j < i + cols; j += 1) {
 			ut8 *p = (ut8 *)core->block + j;
 			if (j < len) {
@@ -2389,7 +2393,9 @@ RZ_IPI RzCmdStatus rz_print_hexdump_emoji_handler(RzCore *core, int argc, const 
 		rz_cons_print(" ");
 		for (int j = i; j < len && j < i + cols; j += 1) {
 			ut8 *p = (ut8 *)core->block + j;
-			rz_print_byte(core->print, "%c", j, *p);
+			char *s = rz_print_byte(core->print, "%c", j, *p);
+			rz_cons_print(s);
+			free(s);
 		}
 		rz_cons_newline();
 	}
@@ -2429,8 +2435,10 @@ RZ_IPI RzCmdStatus rz_print_hexdump_function_handler(RzCore *core, int argc, con
 
 RZ_IPI RzCmdStatus rz_print_hexdump_hexii_handler(RzCore *core, int argc, const char **argv) {
 	core->print->show_offset = rz_config_get_i(core->config, "hex.offset");
-	rz_print_hexii(core->print, core->offset, core->block,
+	char *s = rz_print_hexii(core->print, core->offset, core->block,
 		(int)core->blocksize, rz_config_get_i(core->config, "hex.cols"));
+	rz_cons_print(s);
+	free(s);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -2533,7 +2541,15 @@ RZ_IPI RzCmdStatus rz_print_hexdump_hexpair_bytes_handler(RzCore *core, int argc
 	if (!len) {
 		return RZ_CMD_STATUS_OK;
 	}
-	rz_print_bytes(core->print, core->block, len, "%02x");
+	// rz_print_bytes(core->print, core->block, len, "%02x");
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	for (int i = 0; i < len; i++) {
+		rz_strbuf_appendf(&sb, "%02x", (core->block)[i]);
+	}
+	char *s = rz_strbuf_drain_nofree(&sb);
+	rz_cons_print(s);
+	free(s);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6770,7 +6786,16 @@ static RzCmdStatus print_8bit_hexpair(RzCore *core, ut64 addr, size_t len) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_io_read_at_mapped(core->io, addr, buf, len);
-	rz_print_bytes(core->print, buf, len, "%02x");
+	//	rz_print_bytes(core->print, buf, len, "%02x");
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	for (int i = 0; i < len; i++) {
+		rz_strbuf_appendf(&sb, "%02x", buf[i]);
+	}
+	rz_strbuf_append(&sb, "\n");
+	char *s = rz_strbuf_drain_nofree(&sb);
+	rz_cons_print(s);
+	free(s);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
