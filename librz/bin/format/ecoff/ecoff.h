@@ -329,7 +329,7 @@ typedef struct ecoff_32_t {
 	bool big_endian;
 	ECoff_Header_32 header;
 	union {
-		ECoff_AOutHdr_Mips mips;
+		ECoff_AOutHdr_Mips mips_hdr;
 	} aouthdr;
 	ECoff_SymHdr_32 symhdr;
 	RzVector /*<ECoff_Section_32>*/ *sections;

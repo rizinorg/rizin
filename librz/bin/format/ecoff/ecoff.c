@@ -159,22 +159,22 @@ static bool ecoff_init_aouthdr_alpha(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Al
 		rz_buf_read_ble64_offset(b, offset, &alpha->gp_value, big_endian);
 }
 
-static bool ecoff_init_aouthdr_mips(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Mips *mips, const bool big_endian) {
-	return rz_buf_read_ble16_offset(b, offset, &mips->magic, big_endian) &&
-		rz_buf_read_ble16_offset(b, offset, &mips->vstamp, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->tsize, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->dsize, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->bsize, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->entry, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->text_start, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->data_start, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->bss_start, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->gpr_mask, big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->cpr_mask[0], big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->cpr_mask[1], big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->cpr_mask[2], big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->cpr_mask[3], big_endian) &&
-		rz_buf_read_ble32_offset(b, offset, &mips->gp_value, big_endian);
+static bool ecoff_init_aouthdr_mips(RzBuffer *b, ut64 *offset, ECoff_AOutHdr_Mips *mips_hdr, const bool big_endian) {
+	return rz_buf_read_ble16_offset(b, offset, &mips_hdr->magic, big_endian) &&
+		rz_buf_read_ble16_offset(b, offset, &mips_hdr->vstamp, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->tsize, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->dsize, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->bsize, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->entry, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->text_start, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->data_start, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->bss_start, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->gpr_mask, big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->cpr_mask[0], big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->cpr_mask[1], big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->cpr_mask[2], big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->cpr_mask[3], big_endian) &&
+		rz_buf_read_ble32_offset(b, offset, &mips_hdr->gp_value, big_endian);
 }
 
 static bool ecoff_init_symbol_old(RzBuffer *b, ut64 *offset, ECoff_Symbol_Old *symbol, const bool big_endian) {
@@ -320,7 +320,7 @@ static bool ecoff_init_aouthdr_32(RzBuffer *buffer, ut64 *offset, ECoff_32 *ecof
 		RZ_LOG_ERROR("ecoff: f_opthdr in ecoff32 header is 0\n");
 		return false;
 	} else if (ecoff_is_mips_magic(ecoff->header.f_magic)) {
-		return ecoff_init_aouthdr_mips(buffer, offset, &ecoff->aouthdr.mips, ecoff->big_endian);
+		return ecoff_init_aouthdr_mips(buffer, offset, &ecoff->aouthdr.mips_hdr, ecoff->big_endian);
 	}
 	RZ_LOG_ERROR("ecoff: unsupported aouthdr for ecoff32\n");
 	return false;
@@ -556,7 +556,7 @@ static RzBinAddr *ecoff_get_entrypoint(const ECoff *ecoff) {
 	if (ecoff_is_alpha_magic(magic)) {
 		vaddr = ecoff->ecoff64.aouthdr.alpha.entry;
 	} else if (ecoff_is_mips_magic(magic)) {
-		vaddr = ecoff->ecoff32.aouthdr.mips.entry;
+		vaddr = ecoff->ecoff32.aouthdr.mips_hdr.entry;
 	}
 
 	if (!vaddr) {
@@ -789,7 +789,7 @@ static RzBinSymbol *ecoff_gp_to_bin_symbol(const ECoff *ecoff) {
 	if (ecoff_is_alpha_magic(magic)) {
 		vaddr = ecoff->ecoff64.aouthdr.alpha.gp_value;
 	} else if (ecoff_is_mips_magic(magic)) {
-		vaddr = ecoff->ecoff32.aouthdr.mips.gp_value;
+		vaddr = ecoff->ecoff32.aouthdr.mips_hdr.gp_value;
 	}
 
 	if (!vaddr) {
@@ -1511,20 +1511,20 @@ static bool ecoff_aouthdr_mips_to_structure(const ECoff_32 *ecoff, RzStructuredD
 	}
 
 	char vstamp[16] = { 0 };
-	const ECoff_AOutHdr_Mips *mips = &ecoff->aouthdr.mips;
-	const char *magic = ecoff_aouthdr_magic_to_string(mips->magic);
-	rz_strf(vstamp, "v%u.%u", mips->vstamp >> 8, mips->vstamp & 0xff);
+	const ECoff_AOutHdr_Mips *mips_hdr = &ecoff->aouthdr.mips_hdr;
+	const char *magic = ecoff_aouthdr_magic_to_string(mips_hdr->magic);
+	rz_strf(vstamp, "v%u.%u", mips_hdr->vstamp >> 8, mips_hdr->vstamp & 0xff);
 
 	bool res = rz_structured_data_map_add_string(parent, "magic", magic) &&
 		rz_structured_data_map_add_string(parent, "vstamp", vstamp) &&
-		rz_structured_data_map_add_unsigned(parent, "tsize", mips->tsize, true) &&
-		rz_structured_data_map_add_unsigned(parent, "dsize", mips->dsize, true) &&
-		rz_structured_data_map_add_unsigned(parent, "bsize", mips->bsize, true) &&
-		rz_structured_data_map_add_unsigned(parent, "entry", mips->entry, true) &&
-		rz_structured_data_map_add_unsigned(parent, "text_start", mips->text_start, true) &&
-		rz_structured_data_map_add_unsigned(parent, "data_start", mips->data_start, true) &&
-		rz_structured_data_map_add_unsigned(parent, "bss_start", mips->bss_start, true) &&
-		rz_structured_data_map_add_unsigned(parent, "gpr_mask", mips->gpr_mask, true);
+		rz_structured_data_map_add_unsigned(parent, "tsize", mips_hdr->tsize, true) &&
+		rz_structured_data_map_add_unsigned(parent, "dsize", mips_hdr->dsize, true) &&
+		rz_structured_data_map_add_unsigned(parent, "bsize", mips_hdr->bsize, true) &&
+		rz_structured_data_map_add_unsigned(parent, "entry", mips_hdr->entry, true) &&
+		rz_structured_data_map_add_unsigned(parent, "text_start", mips_hdr->text_start, true) &&
+		rz_structured_data_map_add_unsigned(parent, "data_start", mips_hdr->data_start, true) &&
+		rz_structured_data_map_add_unsigned(parent, "bss_start", mips_hdr->bss_start, true) &&
+		rz_structured_data_map_add_unsigned(parent, "gpr_mask", mips_hdr->gpr_mask, true);
 	if (!res) {
 		return false;
 	}
@@ -1534,11 +1534,11 @@ static bool ecoff_aouthdr_mips_to_structure(const ECoff_32 *ecoff, RzStructuredD
 		return false;
 	}
 
-	return rz_structured_data_array_add_unsigned(cpr_mask, mips->cpr_mask[0], true) &&
-		rz_structured_data_array_add_unsigned(cpr_mask, mips->cpr_mask[1], true) &&
-		rz_structured_data_array_add_unsigned(cpr_mask, mips->cpr_mask[2], true) &&
-		rz_structured_data_array_add_unsigned(cpr_mask, mips->cpr_mask[3], true) &&
-		rz_structured_data_map_add_unsigned(parent, "gp_value", mips->gp_value, true);
+	return rz_structured_data_array_add_unsigned(cpr_mask, mips_hdr->cpr_mask[0], true) &&
+		rz_structured_data_array_add_unsigned(cpr_mask, mips_hdr->cpr_mask[1], true) &&
+		rz_structured_data_array_add_unsigned(cpr_mask, mips_hdr->cpr_mask[2], true) &&
+		rz_structured_data_array_add_unsigned(cpr_mask, mips_hdr->cpr_mask[3], true) &&
+		rz_structured_data_map_add_unsigned(parent, "gp_value", mips_hdr->gp_value, true);
 }
 
 static bool ecoff_aouthdr_to_structure(const ECoff *ecoff, RzStructuredData *parent) {
