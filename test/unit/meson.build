@@ -97,6 +97,7 @@ if get_option('enable_tests')
     'log',
     'lzma',
     'math',
+    'mutual_info',
     'mem',
     'ovf',
     'parse',
