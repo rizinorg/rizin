@@ -958,7 +958,6 @@ RZ_API int rz_core_fgets(char *buf, int len, void *user) {
 		rzline->ns_completion.run_user = core;
 		rzline->completion.run = NULL;
 	} else {
-		rzline->history.data = NULL;
 		rz_line_completion_set(&rzline->completion, 0, NULL);
 		rzline->completion.run = NULL;
 		rzline->completion.run_user = NULL;
