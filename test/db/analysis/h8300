@@ -94,29 +94,30 @@ EXPECT=<<EOF
 offset: 0x00000478
 name: dbg.main
 size: 260
-is-pure: true
+is-pure: false
 realsz: 260
-stackframe: 8
+stackframe: 12
 cyclomatic-cost: 0
-cyclomatic-complexity: 5
+cyclomatic-complexity: 2
 loops: 3
 bits: 16
 type: fcn
 num-bbs: 8
-edges: 13
+edges: 10
 end-bbs: 0
-call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x0000064e C 0x00000604 C
-data-refs:
-code-xrefs: 0x0000008c J
+call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x00000558 J 0x0000064e C 0x00000546 J 0x00000604 C 0x000004f4 J
+data-refs: 0x00000986 0x00000986
+code-xrefs: 0x0000008c J 0x0000051e J 0x00000530 J 0x00000578 J
 noreturn: false
-in-degree: 1
+in-degree: 4
 out-degree: 26
 data-xrefs:
-locals: 3
+locals: 4
 args: 0
 var int a @ stack - 0x8
 var int j @ stack - 0x6
 var int i @ stack - 0x4
+var int16_t var_2h @ stack - 0x2
             ; CODE XREF from loc.start_bss_loop @ +0xa
             ;-- entry0:
             ;-- .LFB23:
@@ -124,6 +125,7 @@ var int i @ stack - 0x4
             ;-- _main:
             ;-- pc:
 / int main()
+|           ; var int16_t var_2h @ stack - 0x2
 |           ; var int i @ stack - 0x4
 |           ; var int j @ stack - 0x6
 |           ; var int a @ stack - 0x8
@@ -188,18 +190,19 @@ var int i @ stack - 0x4
 |           0x000004ec      jsr   @dbg.test_bss                        ; main.c:211 ;  test_bss(void)
 |           ;-- .LM150:
 |           0x000004f0      jsr   @dbg.st_init                         ; main.c:213 ;  st_init(void)
+|           ; CODE XREF from dbg.main @ 0x578
 |           ;-- .L59:
 |           ;-- .LBB2:
 |           ;-- .LM151:
 |       .-> 0x000004f4      mov.w @(-2,er6),r2                         ; main.c:217
 |       :   0x000004f8      exts.l er2
-|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l
+|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l              ; [0x986:1]=0
 |       :   ;-- .LM152:
 |       :   0x00000502      mov.b r2l,@(-4,er6)
 |       :   ;-- .LM153:
 |       :   0x00000506      mov.w @(-2,er6),r2
 |       :   0x0000050a      exts.l er2
-|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l
+|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l              ; [0x986:1]=0
 |       :   ;-- .LM154:
 |       :   0x00000514      mov.b r2l,@(-3,er6)
 |       :   ;-- .LM155:
@@ -229,6 +232,7 @@ var int i @ stack - 0x4
 |   :|:|:   0x00000540      mov.w @er6,r2                              ; main.c:222
 |   :|:|:   0x00000542      inc.w #0x1,r2
 |   :|:|:   0x00000544      mov.w r2,@er6
+|   :|:|:   ; CODE XREF from dbg.main @ 0x530
 |   :|:|:   ;-- .L56:
 |   :|:|:   ;-- .LM162:
 |   :`----> 0x00000546      mov.w @er6,r2
@@ -238,6 +242,7 @@ var int i @ stack - 0x4
 |     :|:   0x0000054e      mov.w @(+2,er6),r2                         ; main.c:219
 |     :|:   0x00000552      inc.w #0x1,r2
 |     :|:   0x00000554      mov.w r2,@(+2,er6)
+|     :|:   ; CODE XREF from dbg.main @ 0x51e
 |     :|:   ;-- .L55:
 |     :|:   ;-- .LM164:
 |     :`--> 0x00000558      mov.w @(+2,er6),r2
@@ -260,6 +265,7 @@ var int i @ stack - 0x4
 |   ;-- .LM25:                        |
 |   ;-- _test_branch:                 |
 | void test_branch()                  |
+| ; var int16_t var_6h @ stack - 0x6  |
 | ; var int a @ stack - 0x8           |
 | ; var int b @ stack - 0xa           |
 | push.l er6                          |
@@ -362,30 +368,36 @@ EXPECT=<<EOF
 offset: 0x00000478
 name: entry0
 size: 260
-is-pure: true
+is-pure: false
 realsz: 260
-stackframe: 8
+stackframe: 12
 cyclomatic-cost: 0
-cyclomatic-complexity: 5
+cyclomatic-complexity: 2
 loops: 3
 bits: 16
 type: fcn
 num-bbs: 8
-edges: 13
+edges: 10
 end-bbs: 0
-call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x0000064e C 0x00000604 C
-data-refs:
-code-xrefs: 0x0000008c J
+call-refs: 0x00000090 C 0x000000a8 C 0x000000c0 C 0x000000d8 C 0x000000f0 C 0x00000108 C 0x00000120 C 0x00000138 C 0x00000150 C 0x00000188 C 0x000001de C 0x00000212 C 0x00000246 C 0x0000025e C 0x00000276 C 0x0000028e C 0x000002b8 C 0x000002e2 C 0x0000030c C 0x00000340 C 0x00000374 C 0x000003a2 C 0x00000442 C 0x00000972 C 0x00000558 J 0x0000064e C 0x00000546 J 0x00000604 C 0x000004f4 J
+data-refs: 0x00000986 0x00000986
+code-xrefs: 0x0000008c J 0x0000051e J 0x00000530 J 0x00000578 J
 noreturn: false
-in-degree: 1
+in-degree: 4
 out-degree: 26
 data-xrefs:
-locals: 0
+locals: 3
 args: 0
+var int16_t var_6h @ stack - 0x6
+var int16_t var_4h @ stack - 0x4
+var int16_t var_2h @ stack - 0x2
             ; CODE XREF from loc.start_bss_loop @ +0xa
             ;-- _main:
             ;-- pc:
 / entry0();
+|           ; var int16_t var_6h @ stack - 0x6
+|           ; var int16_t var_4h @ stack - 0x4
+|           ; var int16_t var_2h @ stack - 0x2
 |           0x00000478      push.l er6
 |           0x0000047c      mov.l er7,er6
 |           0x0000047e      sub.l #0x8,er7
@@ -419,14 +431,15 @@ args: 0
 |           0x000004e8      jsr   @loc._test_data
 |           0x000004ec      jsr   @loc._test_bss
 |           0x000004f0      jsr   @loc._st_init
+|           ; CODE XREF from entry0 @ 0x578
 |           ;-- .L59:
 |       .-> 0x000004f4      mov.w @(-2,er6),r2
 |       :   0x000004f8      exts.l er2
-|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l
+|       :   0x000004fa      mov.b @(+obj._colors,er2),r2l              ; [0x986:1]=0
 |       :   0x00000502      mov.b r2l,@(-4,er6)
 |       :   0x00000506      mov.w @(-2,er6),r2
 |       :   0x0000050a      exts.l er2
-|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l
+|       :   0x0000050c      mov.b @(+obj._colors,er2),r2l              ; [0x986:1]=0
 |       :   0x00000514      mov.b r2l,@(-3,er6)
 |       :   0x00000518      sub.w r2,r2
 |       :   0x0000051a      mov.w r2,@(+2,er6)
@@ -448,6 +461,7 @@ args: 0
 |   :|:|:   0x00000540      mov.w @er6,r2
 |   :|:|:   0x00000542      inc.w #0x1,r2
 |   :|:|:   0x00000544      mov.w r2,@er6
+|   :|:|:   ; CODE XREF from entry0 @ 0x530
 |   :|:|:   ;-- .L56:
 |   :`----> 0x00000546      mov.w @er6,r2
 |   : :|:   0x00000548      cmp.w #0x7f,r2
@@ -455,6 +469,7 @@ args: 0
 |     :|:   0x0000054e      mov.w @(+2,er6),r2
 |     :|:   0x00000552      inc.w #0x1,r2
 |     :|:   0x00000554      mov.w r2,@(+2,er6)
+|     :|:   ; CODE XREF from entry0 @ 0x51e
 |     :|:   ;-- .L55:
 |     :`--> 0x00000558      mov.w @(+2,er6),r2
 |     : :   0x0000055c      cmp.w #0xf,r2
@@ -466,45 +481,118 @@ args: 0
 |       :   0x00000570      and.w #0x3,r2
 |       :   0x00000574      mov.w r2,@(-2,er6)
 \       `=< 0x00000578      bra   .-136
-.-----------------------------------.
-|  0x150                            |
-|   ; CALL XREF from entry0 @ 0x4b4 |
-| loc._test_branch();               |
-| push.l er6                        |
-| mov.l er7,er6                     |
-| subs #0x4,er7                     |
-| mov.w #0x5,r2                     |
-| mov.w r2,@(-2,er6)                |
-| mov.w #0x3,r2                     |
-| mov.w r2,@(-4,er6)                |
-| mov.w @(-2,er6),r3                |
-| mov.w @(-4,er6),r2                |
-| cmp.w r2,r3                       |
-| ble .+10                          |
-`-----------------------------------'
+.------------------------------------.
+|  0x150                             |
+|   ; CALL XREF from entry0 @ 0x4b4  |
+| loc._test_branch();                |
+| ; var int16_t var_8h @ stack - 0x8 |
+| ; var int16_t var_6h @ stack - 0x6 |
+| push.l er6                         |
+| mov.l er7,er6                      |
+| subs #0x4,er7                      |
+| mov.w #0x5,r2                      |
+| mov.w r2,@(-2,er6)                 |
+| mov.w #0x3,r2                      |
+| mov.w r2,@(-4,er6)                 |
+| mov.w @(-2,er6),r3                 |
+| mov.w @(-4,er6),r2                 |
+| cmp.w r2,r3                        |
+| ble .+10                           |
+`------------------------------------'
         f t
         | |
-        | '--------------.
-     .--'                |
-     |                   |
- .-------------------.   |
- |  0x174            |   |
- | mov.l #0xf7a9,er2 |   |
- | mov.b #0x9,r3l    |   |
- | mov.b r3l,@er2    |   |
- `-------------------'   |
-     v                   |
-     |                   |
-     '----------.        |
-                | .------'
-                | |
-          .---------------.
-          |  0x17e        |
-          | ;-- .L11:     |
-          | nop           |
-          | adds #0x4,er7 |
-          | pop.l er6     |
-          | rts           |
-          `---------------'
+        | '---------------.
+      .-'                 |
+      |                   |
+  .-------------------.   |
+  |  0x174            |   |
+  | mov.l #0xf7a9,er2 |   |
+  | mov.b #0x9,r3l    |   |
+  | mov.b r3l,@er2    |   |
+  `-------------------'   |
+      v                   |
+      |                   |
+      '----------.        |
+                 | .------'
+                 | |
+           .---------------.
+           |  0x17e        |
+           | ;-- .L11:     |
+           | nop           |
+           | adds #0x4,er7 |
+           | pop.l er6     |
+           | rts           |
+           `---------------'
+EOF
+RUN
+
+NAME=h8300h stack effects and balanced calls
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.cpu=h8300h
+wx 01006df60ff67a37000000085e0000305e0000307a170000000801006d765470
+wx 5470 @ 0x30
+ao~mnemonic,stackop,stackptr @ 0
+ao~mnemonic,stackop,stackptr @ 6
+ao~mnemonic,stackop,stackptr @ 12
+ao~mnemonic,stackop,stackptr @ 20
+ao~mnemonic,stackop,stackptr @ 26
+af @ 0
+afi @ 0~stackframe,size
+EOF
+EXPECT=<<EOF
+mnemonic: push.l
+stackop: inc
+stackptr: 4
+mnemonic: sub.l
+stackop: inc
+stackptr: 8
+mnemonic: jsr
+stackop: nop
+mnemonic: add.l
+stackop: inc
+stackptr: -8
+mnemonic: pop.l
+stackop: inc
+stackptr: -4
+size: 32
+stackframe: 12
+EOF
+RUN
+
+NAME=h8300 main analysis stops at unconditional branch
+FILE=bins/elf/h8300/main.elf
+CMDS=<<EOF
+af @ 0x478
+afi @ 0x478~stackframe,size,num-bbs
+EOF
+EXPECT=<<EOF
+size: 260
+stackframe: 12
+num-bbs: 8
+EOF
+RUN
+
+NAME=h8300h decoded memory operations and indirect targets
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.cpu=h8300h
+e asm.decode=true
+e asm.comments=false
+e asm.lines=false
+e asm.offset=false
+e asm.bytes=false
+wx 6912699230885d4059405f40
+pd 6
+EOF
+EXPECT=<<EOF
+     r2 = (short)[er1]
+     (short)[er1] = r2
+     (char)[0xffff88] = r0h
+     er4()
+     goto er4
+     (word)[0x40]()
 EOF
 RUN
