@@ -529,10 +529,13 @@ static void *parse_custom_name_entry(RzBuffer *b, ut64 max) {
 		ptr->func->names = rz_id_storage_new(0, UT32_MAX);
 
 		if (!ptr->func->names) {
+			free(ptr->func);
 			goto beach;
 		}
 
 		if (!parse_namemap(b, max, ptr->func->names, &ptr->func->count)) {
+			rz_id_storage_free(ptr->func->names);
+			free(ptr->func);
 			goto beach;
 		}
 		break;
@@ -552,6 +555,7 @@ static void *parse_custom_name_entry(RzBuffer *b, ut64 max) {
 		for (i = 0; i < ptr->local->count; i++) {
 			RzBinWasmCustomNameLocalName *local_name = RZ_NEW0(RzBinWasmCustomNameLocalName);
 			if (!local_name) {
+				rz_list_free(ptr->local->locals);
 				free(ptr->local);
 				free(ptr);
 				return NULL;
@@ -581,6 +585,7 @@ static void *parse_custom_name_entry(RzBuffer *b, ut64 max) {
 			}
 
 			if (!rz_list_append(ptr->local->locals, local_name)) {
+				rz_id_storage_free(local_name->names);
 				free(local_name);
 				goto beach;
 			};
