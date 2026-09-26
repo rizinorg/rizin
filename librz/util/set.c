@@ -75,9 +75,12 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str) {
  *
  * \return Iterator yielding immutable elements.
  */
-RZ_API RzIterator /* <RzSetS> */ *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
-	rz_return_val_if_fail(set, NULL);
-	return ht_sp_as_iter_keys((const HtSP *)set);
+RZ_API RzIterator /* <RzSetS> */ rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
+	rz_return_val_if_fail(set, (RzIterator){ 0 });
+	RzIterator iterator = (RzIterator){ 0 };
+	if (!ht_sp_as_iter_keys((const HtSP *)set, &iterator))
+		return (RzIterator){ 0 };
+	return iterator;
 }
 
 static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) {
@@ -206,7 +209,10 @@ RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
  *
  * \return Iterator yielding immutable elements.
  */
-RZ_API RzIterator /* <RzSetU> */ *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
-	rz_return_val_if_fail(set, NULL);
-	return ht_up_as_iter_keys((const HtUP *)set);
+RZ_API RzIterator /* <RzSetU> */ rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
+	rz_return_val_if_fail(set, (RzIterator){ 0 });
+	RzIterator iterator = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys((const HtUP *)set, &iterator))
+		return (RzIterator){ 0 };
+	return iterator;
 }

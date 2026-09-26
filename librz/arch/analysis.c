@@ -262,9 +262,12 @@ RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis) 
 	return analysis->cur;
 }
 
-RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	return ht_sp_as_iter(analysis->plugins);
+RZ_API RZ_OWN RzIterator rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, (RzIterator){ 0 });
+	RzIterator iterator = { 0 };
+	if (!ht_sp_as_iter(analysis->plugins, &iterator))
+		return (RzIterator){ 0 };
+	return iterator;
 }
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
@@ -295,9 +298,12 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		return true;
 	}
 
-	RzIterator *it = ht_sp_as_iter(analysis->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(analysis->plugins, &it)) {
+		return false;
+	}
 	RzAnalysisPlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h || !h->name || strcmp(h->name, name)) {
 			continue;
@@ -309,17 +315,17 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			return false;
 		}
 		rz_analysis_set_reg_profile(analysis);
 		if (analysis->il_vm) {
 			rz_analysis_il_vm_setup(analysis);
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		return true;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return false;
 }
 

@@ -2340,7 +2340,10 @@ static RzCmdStatus core_core_plugin_print(RzCorePlugin *cp, RzCmdStateOutput *st
 }
 
 RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *state) {
-	RzIterator *iter = ht_sp_as_iter(core->plugins);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(core->plugins, &iter)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzCorePlugin **val;
 	RzCmdStatus status;
 	if (!core) {
@@ -2348,14 +2351,14 @@ RZ_API RzCmdStatus rz_core_core_plugins_print(RzCore *core, RzCmdStateOutput *st
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sssss", "name", "license", "author", "version", "description");
-	rz_iterator_foreach(iter, val) {
+	rz_iterator_foreach(&iter, val) {
 		RzCorePlugin *cp = *val;
 		status = core_core_plugin_print(cp, state);
 		if (status != RZ_CMD_STATUS_OK) {
 			return status;
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }

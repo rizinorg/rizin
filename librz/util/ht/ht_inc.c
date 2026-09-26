@@ -1077,80 +1077,92 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state) {
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields mutable values.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding mutable values.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table values or NULL in case of failure.
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(ht, false);
 	HT_(IterMutState) *state = Ht_(new_iter_mut_state)(ht);
 	if (!state) {
 		RZ_LOG_ERROR("Could not allocate a new ht_iter state.\n");
-		return NULL;
+		return false;
 	}
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
-	if (!iter) {
+	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
+	if (rz_iterator_is_uninit(iterator)) {
 		Ht_(free_iter_mut_state)(state);
+		return false;
 	}
-	return iter;
+	return true;
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable values.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable values.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table values or NULL in case of failure.
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(ht, false);
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	rz_return_val_if_fail(state, false);
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter) {
+	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	/**
+	 * \note rz_iterator_is_uninit check here is currently unreachable given new_iter_state already guarantees state != NULL and iter_next is a fixed function pointer.
+	 * Left the guard in for robustness against future changes, happy to simplify to just return !rz_iterator_is_uninit(iter); if preferred.
+	 */
+	if (rz_iterator_is_uninit(iterator)) {
 		Ht_(free_iter_state)(state);
+		return false;
 	}
-	return iter;
+	return true;
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable keys.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable keys.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table keys or NULL in case of failure.
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(ht, false);
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	rz_return_val_if_fail(state, false);
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter) {
+	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (rz_iterator_is_uninit(iterator)) {
 		Ht_(free_iter_state)(state);
+		return false;
 	}
-	return iter;
+	return true;
 }
 
 /**
- * \brief Returns an iterator over the hash table \p ht. The iterator yields immutable key-value pairs.
+ * \brief Fills \p iterator with an iterator over the hash table \p ht, yielding immutable key-value pairs.
  *
  * \param ht The hash table to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return The iterator over the hash table key-value pairs or NULL in case of failure.
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator /* <const HtName_(Ht)> */ *Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht) {
-	rz_return_val_if_fail(ht, NULL);
+RZ_API bool Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(ht, false);
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
-	rz_return_val_if_fail(state, NULL);
+	rz_return_val_if_fail(state, false);
 
-	RzIterator *iter = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (!iter) {
+	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
+	if (rz_iterator_is_uninit(iterator)) {
 		Ht_(free_iter_state)(state);
+		return false;
 	}
-	return iter;
+	return true;
 }
