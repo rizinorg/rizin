@@ -410,6 +410,7 @@ static void *parse_export_entry(RzBuffer *b, ut64 max) {
 	}
 	return ptr;
 beach:
+	free(ptr->field_str);
 	free(ptr);
 	return NULL;
 }
