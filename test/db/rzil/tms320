@@ -945,3 +945,33 @@ a6 = 0x00000011
 a5 = 0xfeedface
 EOF
 RUN
+
+# A 16-bit multiply has one delay slot, so the next packet still reads the old
+# destination.
+NAME=c6x a multiply result is not visible to the next packet
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 802c880178609002000000000000000000000000
+s 0
+pd 2
+aezi
+ar a1=3
+ar a2=5
+ar a3=0x10
+ar a4=1
+aezs
+ar a5
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      mpy   .m1 a1,a2,a3
+            0x00000004      add   .l1 a3,a4,a5
+a5 = 0x00000011
+a3 = 0x0000000f
+EOF
+RUN

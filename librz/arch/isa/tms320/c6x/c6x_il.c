@@ -14,10 +14,11 @@
  * Two architectural notes bound what is modelled here. C6000 is a VLIW: every
  * instruction of an execute packet reads its sources at the packet start and
  * writes at its end, so within a packet an instruction never sees another's
- * result. The RzIL VM steps sequentially, so a "|| mv a,b || mv b,a" swap is
- * not modelled exactly; ordinary (non-swapping) parallel code lifts correctly.
- * Branches have five delay slots and are left unlifted for now, so IL covers
- * straight-line data flow.
+ * result. That is modelled by lifting the whole packet on its first
+ * instruction, as described at c6x_lift_packet(), so a "mv a,b || mv b,a" swap
+ * is exact. Branches have five delay slots and loads and multiplies deliver
+ * their results late: c6x_lift_il() in analysis_tms320.c lifts a branch
+ * together with its delay slots and holds back a late result read too soon.
  */
 
 #include <rz_util.h>
@@ -813,10 +814,10 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_BNOP:
 	case C6X_INS_CALLP: {
 		// Control transfer. The target is either a register or a PC-relative
-		// displacement off the fetch-packet-aligned address (PCE1). The five
-		// delay slots are not modelled -- the sequential VM takes the branch at
-		// once -- but the target is exact. Call forms (a link register in
-		// ops[1]) also record the return address, the word after the branch.
+		// displacement off the fetch-packet-aligned address (PCE1). This is the
+		// transfer alone: c6x_lift_il() in analysis_tms320.c places it after the
+		// delay slots. Call forms (a link register in ops[1]) also record the
+		// return address, the word after the branch.
 		const C6xOperand *t = &OP(0);
 		RzILOpBitVector *tgt;
 		if (t->kind == C6X_OP_PCREL) {
