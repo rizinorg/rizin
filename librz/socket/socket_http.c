@@ -113,7 +113,10 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 				// }
 				olen += ret;
 			} while (olen < len);
-			res[len] = 0;
+			res[olen] = 0;
+			if (olen < len) {
+				len = olen;
+			}
 		} else {
 			res = malloc(len + 1);
 			if (res) {
