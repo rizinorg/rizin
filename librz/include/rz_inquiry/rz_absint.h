@@ -219,7 +219,7 @@ typedef enum rz_absint_result_dimen_t {
 struct rz_absint_run_context_t {
 	RZ_BORROW RzAbsIntInstance *inst; //< parent interpreter thread
 
-	RzList /*<RzAbsIntBlock *>*/ *todo_interp; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
+	RzList /*<RzAbsIntBlock *>*/ *workqueue; ///< States that have to be interpreted still. If this is empty, a fixpoint has been reached.
 	/**
 	 * \brief All currently discovered blocks by address.
 	 * TODO: If the interval tree concept is kept, this should eventually be refactored to use RBTree directly and embed RBNode

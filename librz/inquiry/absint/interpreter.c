@@ -158,7 +158,7 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
  * \return The block to interpret or NULL if the work queue is empty (a fixed point was reached).
  */
 RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
-	RzAbsIntBlock *r = rz_list_pop(ctx->todo_interp);
+	RzAbsIntBlock *r = rz_list_pop(ctx->workqueue);
 	if (!r) {
 		return NULL;
 	}
@@ -900,8 +900,8 @@ RZ_API bool rz_absint_run_context_init(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *
 	ctx->inst = inst;
 	ctx->astate = NULL;
 	ctx->res = NULL;
-	ctx->todo_interp = rz_list_new();
-	if (!ctx->todo_interp) {
+	ctx->workqueue = rz_list_new();
+	if (!ctx->workqueue) {
 		return false;
 	}
 	interp_blocks_init(ctx);
@@ -912,7 +912,7 @@ RZ_API void rz_absint_run_context_fini(RZ_NULLABLE RzAbsIntRunContext *ctx) {
 	if (!ctx) {
 		return;
 	}
-	rz_list_free(ctx->todo_interp);
+	rz_list_free(ctx->workqueue);
 	interp_blocks_fini(ctx->inst, &ctx->blocks);
 }
 

@@ -157,7 +157,7 @@ RZ_IPI void interp_block_mark_uninterpreted(RZ_BORROW RzAbsIntRunContext *ctx, R
 		return;
 	}
 	block->uninterpreted = true;
-	rz_list_push(ctx->todo_interp, block);
+	rz_list_push(ctx->workqueue, block);
 }
 
 static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, ut64 new_end) {
