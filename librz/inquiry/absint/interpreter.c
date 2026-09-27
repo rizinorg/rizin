@@ -148,6 +148,15 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 	}
 }
 
+/**
+ * \brief Pops a an block from the work queue to interpret it.
+ * RzAbsIntBlock->uninterpret is set to false,
+ * implying that the block is from now on interpreted.
+ *
+ * \param ctx The current run context.
+ *
+ * \return The block to interpret or NULL if the work queue is empty (a fixed point was reached).
+ */
 RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
 	RzAbsIntBlock *r = rz_list_pop(ctx->todo_interp);
 	if (!r) {
