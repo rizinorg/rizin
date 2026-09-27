@@ -195,7 +195,10 @@ static void autocmplt_bits_plugin(const RzAsmPlugin *plugin, RzLineNSCompletionR
 static void autocmplt_arch(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	rz_return_if_fail(core->rasm);
 
-	RzIterator it = rz_asm_plugin_iterator(core->rasm);
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_asm_plugin_iterator(core->rasm, &it)) {
+		return;
+	}
 	RzAsmPlugin **val;
 
 	// @a: can either be used with @a:arch or @a:arch:bits
@@ -893,7 +896,10 @@ static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *
 	res->start += strlen(k) + 1;
 
 	if (rz_set_s_size(options) > 0) {
-		RzIterator iter = rz_set_s_as_iter(options);
+		RzIterator iter = (RzIterator){ 0 };
+		if (!rz_set_s_as_iter(options, &iter)) {
+			goto err;
+		}
 		const char **opt;
 		rz_iterator_foreach(&iter, opt) {
 			if (!strncmp(*opt, v, len)) {

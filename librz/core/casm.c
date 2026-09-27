@@ -66,7 +66,10 @@ RZ_API char *rz_core_asm_search(RzCore *core, const char *input) {
 
 static const char *has_esil(RzCore *core, const char *name) {
 	rz_return_val_if_fail(core && core->analysis && name, NULL);
-	RzIterator iter = rz_analysis_plugin_iterator(core->analysis);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_analysis_plugin_iterator(core->analysis, &iter)) {
+		return NULL;
+	}
 	RzAnalysisPlugin **val;
 	rz_iterator_foreach(&iter, val) {
 		RzAnalysisPlugin *h = *val;
@@ -244,7 +247,10 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 	rz_return_val_if_fail(core && state, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
 
-	RzIterator iter = rz_asm_plugin_iterator(a);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_asm_plugin_iterator(a, &iter)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
 		rz_iterator_fini(&iter);
@@ -275,7 +281,10 @@ RZ_API RzCmdStatus rz_core_asm_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core, 
 RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *plugin) {
 	rz_return_val_if_fail(core && plugin && core->rasm, RZ_CMD_STATUS_ERROR);
 	RzAsm *a = core->rasm;
-	RzIterator iter = rz_asm_plugin_iterator(a);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_asm_plugin_iterator(a, &iter)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
 		rz_iterator_fini(&iter);

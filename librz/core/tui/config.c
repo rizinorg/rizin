@@ -82,7 +82,10 @@ static void show_config_options(RzCore *core, const char *name) {
 
 	int w = rz_cons_get_size(NULL);
 	const char **item;
-	RzIterator iter = rz_set_s_as_iter(options);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_set_s_as_iter(options, &iter)) {
+		return;
+	}
 	RzStrBuf *sb = rz_strbuf_new(" Options: ");
 	rz_iterator_foreach(&iter, item) {
 		rz_strbuf_appendf(sb, "%s%s", *item ? ", " : "", *item);

@@ -262,12 +262,9 @@ RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis) 
 	return analysis->cur;
 }
 
-RZ_API RZ_OWN RzIterator rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, (RzIterator){ 0 });
-	RzIterator iterator = { 0 };
-	if (!ht_sp_as_iter(analysis->plugins, &iterator))
-		return (RzIterator){ 0 };
-	return iterator;
+RZ_API bool rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RZ_OWN RzIterator *iter) {
+	rz_return_val_if_fail(analysis, false);
+	return ht_sp_as_iter(analysis->plugins, iter);
 }
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {

@@ -111,8 +111,8 @@ bool test_rz_core_analysis_bytes() {
 
 	ut8 buf[128];
 	int len = rz_hex_str2bin("554889e5897dfc", buf);
-	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, 0);
-	mu_assert_notnull(&iter, "rz_core_analysis_bytes");
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(rz_core_analysis_bytes(core, core->offset, buf, len, 0, &iter), "rz_core_analysis_bytes");
 
 	RzCoreDecodedBytes *ab = rz_iterator_next(&iter);
 	mu_assert_streq(ab->opcode, "push rbp", "rz_core_analysis_bytes opcode");

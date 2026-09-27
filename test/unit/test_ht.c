@@ -984,7 +984,8 @@ bool test_set_s(void) {
 	size_t x = 0;
 	const char **im_elem;
 
-	RzIterator it = rz_set_s_as_iter(set_s);
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = RZ_STR_EQ(*im_elem, "0x5050505") || RZ_STR_EQ(*im_elem, "0x6060606");
@@ -998,7 +999,7 @@ bool test_set_s(void) {
 	rz_set_s_delete(set_s, "0x5050505");
 	mu_assert_eq(rz_set_s_size(set_s), 0, "Length wrong.");
 
-	it = rz_set_s_as_iter(set_s);
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
@@ -1006,7 +1007,7 @@ bool test_set_s(void) {
 	rz_set_s_add(set_s, "0x53e0");
 	rz_set_s_add(set_s, "0x53bc");
 	x = 0;
-	it = rz_set_s_as_iter(set_s);
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}

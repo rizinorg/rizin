@@ -71,16 +71,16 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str) {
 }
 
 /**
- * \brief Returns an iterator over the \p set with immutable elements.
+ * \brief Fills \p iter with an iterator over \p set, yielding immutable elements.
  *
- * \return Iterator yielding immutable elements.
+ * \param set The set to create the iterator for.
+ * \param iter Output parameter, filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RzIterator /* <RzSetS> */ rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
-	rz_return_val_if_fail(set, (RzIterator){ 0 });
-	RzIterator iterator = (RzIterator){ 0 };
-	if (!ht_sp_as_iter_keys((const HtSP *)set, &iterator))
-		return (RzIterator){ 0 };
-	return iterator;
+RZ_API bool rz_set_s_as_iter(const RZ_NONNULL RzSetS *set, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(set, false);
+	return ht_sp_as_iter_keys((const HtSP *)set, iter);
 }
 
 static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) {

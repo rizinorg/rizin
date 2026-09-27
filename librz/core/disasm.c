@@ -6054,8 +6054,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	bool res = true;
 	RzIterator iter = (RzIterator){ 0 };
 	ut64 offset = rz_core_backward_offset(core, addr, &nb_opcodes, &nb_bytes);
-	iter = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
-	if (rz_iterator_is_uninit(&iter)) {
+	if (!rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes, &iter)) {
 		res = false;
 		goto clean_return;
 	}

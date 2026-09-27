@@ -55,7 +55,10 @@ static bool isGdbPlugin(RzCore *core) {
 }
 
 static void print_node_options(RzConfigNode *node) {
-	RzIterator iter = rz_set_s_as_iter(node->options);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_set_s_as_iter(node->options, &iter)) {
+		return;
+	}
 	const char **option;
 	rz_iterator_foreach(&iter, option) {
 		rz_cons_printf("%s\n", *option);
@@ -98,7 +101,10 @@ static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
 	}
 
 	RzAsmPlugin **val;
-	RzIterator it = rz_asm_plugin_iterator(core->rasm);
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_asm_plugin_iterator(core->rasm, &it)) {
+		return;
+	}
 	rz_set_s_clear(node->options);
 	rz_iterator_foreach(&it, val) {
 		RzAsmPlugin *h = *val;
@@ -458,7 +464,10 @@ static bool cb_analysis_hpskip(void *user, void *data) {
 }
 
 static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
-	RzIterator it = rz_analysis_plugin_iterator(core->analysis);
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_analysis_plugin_iterator(core->analysis, &it)) {
+		return;
+	}
 	RzAnalysisPlugin **val;
 	if (core && core->analysis && node) {
 		rz_set_s_clear(node->options);
@@ -950,7 +959,10 @@ static bool cb_search_str_check_ascii_freq(void *user, void *data) {
 }
 
 static bool find_encoding(RzConfigNode *node, RzStrEnc *encoding) {
-	RzIterator iter = rz_set_s_as_iter(node->options);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_set_s_as_iter(node->options, &iter)) {
+		return false;
+	}
 	const char **option;
 	rz_iterator_foreach(&iter, option) {
 		if (rz_str_casecmp(*option, node->value)) {
@@ -1606,7 +1618,10 @@ static bool cb_iopcachewrite(void *user, void *data) {
 static void config_print_options_as_json(PJ *pj, const RzSetS *options) {
 	pj_ka(pj, "options");
 	if (options) {
-		RzIterator iter = rz_set_s_as_iter(options);
+		RzIterator iter = (RzIterator){ 0 };
+		if (!rz_set_s_as_iter(options, &iter)) {
+			return;
+		}
 		const char **option;
 		rz_iterator_foreach(&iter, option) {
 			pj_s(pj, *option);
@@ -1671,7 +1686,10 @@ static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty)
 		return;
 	}
 	rz_cons_print("[");
-	RzIterator iter = rz_set_s_as_iter(set);
+	RzIterator iter = (RzIterator){ 0 };
+	if (rz_set_s_as_iter(set, &iter)) {
+		return;
+	}
 	const char **entry;
 	bool first = true;
 	rz_iterator_foreach(&iter, entry) {

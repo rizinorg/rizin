@@ -396,8 +396,8 @@ static void core_analysis_bytes_esil(RzCore *core, const ut8 *buf, int len, int 
 }
 
 static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int nops, PJ *pj) {
-	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (rz_iterator_is_uninit(&iter)) {
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_core_analysis_bytes(core, core->offset, buf, len, nops, &iter)) {
 		return;
 	}
 	pj_a(pj);
@@ -506,8 +506,8 @@ static void core_analysis_bytes_json(RzCore *core, const ut8 *buf, int len, int 
 	}
 
 static void core_analysis_bytes_standard(RzCore *core, const ut8 *buf, int len, int nops) {
-	RzIterator iter = rz_core_analysis_bytes(core, core->offset, buf, len, nops);
-	if (rz_iterator_is_uninit(&iter)) {
+	RzIterator iter = (RzIterator){ 0 };
+	if (!rz_core_analysis_bytes(core, core->offset, buf, len, nops, &iter)) {
 		return;
 	}
 

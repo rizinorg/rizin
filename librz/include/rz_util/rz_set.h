@@ -24,7 +24,7 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str);
 RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set);
 RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set);
 RZ_API RZ_OWN RzPVector /*<char *>*/ *rz_set_s_to_vector(RZ_NONNULL RzSetS *set);
-RZ_API RzIterator /* <RzSetS> */ rz_set_s_as_iter(const RZ_NONNULL RzSetS *set);
+RZ_API bool rz_set_s_as_iter(const RZ_NONNULL RzSetS *set, RZ_OUT RZ_NONNULL RzIterator *iter);
 
 typedef HtUP RzSetU;
 

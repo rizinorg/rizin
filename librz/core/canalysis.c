@@ -5677,14 +5677,17 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  * Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
  *
  * \param core     The RzCore instance
+ * \param start_addr Address to start analysis from
  * \param buf      data to analysis
  * \param n_bytes  analysis len bytes
  * \param max_ops  analysis n ops
- * \return RzIterator of RzCoreDecodedBytes
+ * \param iterator Output parameter, filled with an iterator of RzCoreDecodedBytes on success
+ * 
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator rz_core_analysis_bytes(
-	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops) {
-	rz_return_val_if_fail(core && buf, (RzIterator){ 0 });
+RZ_API bool rz_core_analysis_bytes(
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(core && buf && iterator, false);
 
 	// TODO: this should be removed once rz_config is refactored.
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
@@ -5693,10 +5696,12 @@ RZ_API RZ_OWN RzIterator rz_core_analysis_bytes(
 	CoreDecodedBytes *ctx = RZ_NEW0(CoreDecodedBytes);
 	if (!ctx || !core_decoded_bytes_init(ctx, core, start_addr, buf, n_bytes, max_ops)) {
 		free(ctx);
-		return (RzIterator){ 0 };
+		*iterator = (RzIterator){ 0 };
+		return false;
 	}
 
-	return rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx);
+	*iterator = rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx);
+	return true;
 }
 
 /**
