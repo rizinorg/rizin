@@ -7,6 +7,7 @@
 #include <rz_bin.h>
 #include <rz_diff.h>
 #include <rz_util.h>
+#include <rz_util/rz_mutual_info.h>
 #include <rz_main.h>
 
 #define RZ_DIFF_DISTANCE_MAX_SIZE (1024 * 1024) // 1 miB
@@ -51,6 +52,7 @@ typedef enum {
 	DIFF_TYPE_STRINGS,
 	DIFF_TYPE_SYMBOLS,
 	DIFF_TYPE_PLOTDIFF,
+	DIFF_TYPE_MUTUALINFO,
 } DiffType;
 
 typedef enum {
@@ -358,6 +360,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 		if (!strcmp(type, "bytes")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_BYTES);
+		} else if (!strcmp(type, "mutualinfo")) {
+			rz_diff_ctx_set_type(ctx, DIFF_TYPE_MUTUALINFO);
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
@@ -1422,7 +1426,8 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	bool result = false;
 
 	if (ctx->type == DIFF_TYPE_BYTES ||
-		ctx->type == DIFF_TYPE_LINES) {
+		ctx->type == DIFF_TYPE_LINES ||
+		ctx->type == DIFF_TYPE_MUTUALINFO) {
 		if (!(a_buffer = rz_diff_slurp_file(ctx->file_a, &a_size))) {
 			goto rz_diff_unified_files_bad;
 		}
@@ -1437,6 +1442,17 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		if (!rz_diff_file_open(&dfile_b, ctx->file_b)) {
 			goto rz_diff_unified_files_bad;
 		}
+	}
+
+	if (ctx->type == DIFF_TYPE_MUTUALINFO) {
+		RzMutualInfo mi_ctx;
+		rz_mutual_info_init(&mi_ctx);
+		size_t len = RZ_MIN(a_size, b_size);
+		rz_mutual_info_update(&mi_ctx, a_buffer, b_buffer, len);
+		double mi = rz_mutual_info_final(&mi_ctx);
+		printf("Mutual information: %.6f bits\n", mi);
+		result = true;
+		goto rz_diff_unified_files_bad;
 	}
 
 	switch (ctx->type) {
