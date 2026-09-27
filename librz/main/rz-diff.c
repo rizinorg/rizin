@@ -35,6 +35,7 @@ typedef enum {
 	DIFF_DISTANCE_LEVENSHTEIN,
 	DIFF_DISTANCE_LCS_ROLLING,
 	DIFF_DISTANCE_SSDEEP,
+	DIFF_DISTANCE_MUTUALINFO,
 } DiffDistance;
 
 typedef enum {
@@ -52,7 +53,6 @@ typedef enum {
 	DIFF_TYPE_STRINGS,
 	DIFF_TYPE_SYMBOLS,
 	DIFF_TYPE_PLOTDIFF,
-	DIFF_TYPE_MUTUALINFO,
 } DiffType;
 
 typedef enum {
@@ -348,6 +348,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LCS_ROLLING);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
+		} else if (!strcmp(algorithm, "mutualinfo")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MUTUALINFO);
 		} else {
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -d argument '%s' is not a recognized algorithm.\n", algorithm);
 		}
@@ -360,8 +362,6 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 
 		if (!strcmp(type, "bytes")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_BYTES);
-		} else if (!strcmp(type, "mutualinfo")) {
-			rz_diff_ctx_set_type(ctx, DIFF_TYPE_MUTUALINFO);
 		} else if (!strcmp(type, "lines")) {
 			rz_diff_ctx_set_type(ctx, DIFF_TYPE_LINES);
 		} else if (!strcmp(type, "functions")) {
@@ -583,6 +583,14 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
+	case DIFF_DISTANCE_MUTUALINFO: {
+		RzMutualInfo mi_ctx;
+		rz_mutual_info_init(&mi_ctx);
+		size_t len = RZ_MIN(a_size, b_size);
+		rz_mutual_info_update(&mi_ctx, a_buffer, b_buffer, len);
+		similarity = rz_mutual_info_final(&mi_ctx);
+		break;
+	}
 	default:
 		rz_diff_error("unknown distance algorithm\n");
 		goto rz_diff_calculate_distance_bad;
@@ -595,8 +603,12 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		pj_o(pj);
-		pj_kd(pj, "similarity", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			pj_kd(pj, "bits", similarity);
+		} else {
+			pj_kd(pj, "similarity", similarity);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			pj_kn(pj, "distance", distance);
 		}
 		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
@@ -606,14 +618,22 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
 	} else if (ctx->mode == DIFF_MODE_QUIET) {
-		printf("%.3f\n", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			printf("%.6f\n", similarity);
+		} else {
+			printf("%.3f\n", similarity);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("%d\n", distance);
 		}
 	} else {
 		// DIFF_MODE_STANDARD
-		printf("similarity: %.3f\n", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			printf("mutual information: %.6f bits\n", similarity);
+		} else {
+			printf("similarity: %.3f\n", similarity);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("distance: %u\n", distance);
 		}
 		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
@@ -1426,8 +1446,7 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 	bool result = false;
 
 	if (ctx->type == DIFF_TYPE_BYTES ||
-		ctx->type == DIFF_TYPE_LINES ||
-		ctx->type == DIFF_TYPE_MUTUALINFO) {
+		ctx->type == DIFF_TYPE_LINES) {
 		if (!(a_buffer = rz_diff_slurp_file(ctx->file_a, &a_size))) {
 			goto rz_diff_unified_files_bad;
 		}
@@ -1442,17 +1461,6 @@ static bool rz_diff_unified_files(DiffContext *ctx) {
 		if (!rz_diff_file_open(&dfile_b, ctx->file_b)) {
 			goto rz_diff_unified_files_bad;
 		}
-	}
-
-	if (ctx->type == DIFF_TYPE_MUTUALINFO) {
-		RzMutualInfo mi_ctx;
-		rz_mutual_info_init(&mi_ctx);
-		size_t len = RZ_MIN(a_size, b_size);
-		rz_mutual_info_update(&mi_ctx, a_buffer, b_buffer, len);
-		double mi = rz_mutual_info_final(&mi_ctx);
-		printf("Mutual information: %.6f bits\n", mi);
-		result = true;
-		goto rz_diff_unified_files_bad;
 	}
 
 	switch (ctx->type) {
