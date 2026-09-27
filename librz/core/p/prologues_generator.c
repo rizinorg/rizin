@@ -608,7 +608,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	RZ_LOG_INFO("Processed %" PFMTSZu " files out of %" PFMT32u "\n", fcnt, rz_list_length(bin->binfiles));
+	RZ_LOG_INFO("Processed %" PFMT64d " files out of %" PFMT32u "\n", fcnt, rz_list_length(bin->binfiles));
 
 	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
@@ -755,7 +755,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_tri
 		RZ_FREE(file_path);
 	}
 
-	RZ_LOG_INFO("Processed %" PFMTSZu " files out of %" PFMT32u "\n", fcnt, rz_list_length(files));
+	RZ_LOG_INFO("Processed %" PFMT64d " files out of %" PFMT32u "\n", fcnt, rz_list_length(files));
 	rz_list_free(files);
 	return fcnt;
 }
