@@ -698,7 +698,6 @@ beach:
 
 static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
-	char str[512];
 	RzAnalysisFunction *fcn;
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
@@ -711,11 +710,6 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 			RzAsmOp asmop = { 0 };
 			rz_asm_disassemble(core->rasm, &asmop, buf, size);
 			fcn = rz_analysis_get_fcn_in(core->analysis, xref->from, 0);
-			RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->from);
-			rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_strbuf_get(&asmop.buf_asm),
-				str, sizeof(str), core->print->big_endian);
-			rz_asm_op_fini(&asmop);
-			rz_analysis_hint_free(hint);
 			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xref->from);
 			char *print_comment = NULL;
 			const char *nl = comment ? strchr(comment, '\n') : NULL;
@@ -728,7 +722,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 			free(print_comment);
 			if (from <= xref->from && to >= xref->from) {
 				rz_cons_printf("%s 0x%" PFMT64x " [%s] %s\n",
-					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
+					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), rz_strbuf_get(&asmop.buf_asm));
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					rz_core_seek(core, xref->from, true);
@@ -736,6 +730,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 					rz_core_seek(core, here, true);
 				}
 			}
+			rz_asm_op_fini(&asmop);
 			free(buf_fcn);
 		}
 	}
@@ -998,10 +993,6 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 						char tmp[128] = {
 							0
 						};
-						RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, hit->addr);
-						rz_parse_filter(core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof(tmp),
-							core->print->big_endian);
-						rz_analysis_hint_free(hint);
 						rz_cons_printf("0x%08" PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
 					} else {
