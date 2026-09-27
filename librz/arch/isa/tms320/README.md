@@ -3,17 +3,31 @@
 Rizin's `tms320` arch plugin covers three Texas Instruments DSP
 families, selected by `analysis.cpu` / `asm.cpu`:
 
-| cpu     | family             | word | endian | typical parts                                 |
-|---------|--------------------|------|--------|-----------------------------------------------|
-| `c55x`  | TMS320C55x         |  16  | LE     | C5501, C5502, C5503, C5507, C5509, C5510       |
-| `c55x+` | TMS320C55x+        |  16  | LE     | C5504, C5505, C5514, C5515, C5517, C5535, C5545|
-| `c64x`  | TMS320C6000 / C64x |  32  | LE     | C6201..C6748, C6655, KeyStone-II               |
+| cpu                                     | family      | word | endian | typical parts                                   |
+|-----------------------------------------|-------------|------|--------|-------------------------------------------------|
+| `c55x`                                  | TMS320C55x  | 16   | LE     | C5501, C5502, C5503, C5507, C5509, C5510        |
+| `c55x+`                                 | TMS320C55x+ | 16   | LE     | C5504, C5505, C5514, C5515, C5517, C5535, C5545 |
+| `c62x`, `c64x`, `c67x`, `c674x`, `c66x` | TMS320C6000 | 32   | LE/BE  | C6201..C6748, C6655, KeyStone-II                |
 
-## c64x
+## c6x
 
-VLIW 32-bit DSP. Independent disassembler under `c64x/` based on the
-Capstone backend. Fixed 32-bit instruction width packed into execute
-packets.
+VLIW, with a fixed 32-bit instruction word. Instructions issue in execute
+packets: bit 0 of each word, the p-bit, chains it to the next instruction in the
+same cycle, and eight words form a fetch packet. From C64x+ on, a fetch packet
+may also hold compact 16-bit instructions. Its eighth word is then a header,
+whose layout field says which words hold two of them. Documented per generation
+in TI **SPRU733** (C67x/C67x+), **SPRU732** (C64x/C64x+), **SPRUFE8** (C674x,
+the superset of C64x+ and C67x+) and **SPRUGH7** (C66x), all public.
+
+Native engine under `c6x/`. One decoder serves every cpu, driven by a single
+instruction table and a per-generation feature gate, as the C55 engine serves
+C54x, C55x and C55x+. Analysis reconstructs execute packets, and the scalar
+move, ALU, shift, multiply, load and store core is lifted to RzIL.
+
+A whole execute packet is lifted on its first instruction. Every slot reads the
+register file as it stood when the packet issued, through snapshot variables,
+and all the writes land together. A parallel swap such as `mv a0,a1 || mv a1,a0`
+is therefore exact.
 
 ## c55x
 
@@ -56,7 +70,7 @@ silicon. SWPU086/104 are not redistributed in this tree.
 ```
 rizin -a tms320 -e analysis.cpu=c55x   FILE.coff   # baseline C55x
 rizin -a tms320 -e analysis.cpu=c55x+  FILE.coff   # c55x+ (Ryujin / SWPU104)
-rizin -a tms320 -e analysis.cpu=c64x   FILE.elf    # VLIW C64x
+rizin -a tms320 -e analysis.cpu=c64x   FILE.elf    # C6000; cpus in the table
 ```
 
 The COFF loader autodetects `c55x` (TI COFF v2 target_id 0x009c)
@@ -66,8 +80,14 @@ and `c55x+` (target_id 0x00a1) from the file header.
 
 - TI SPRU374 -- TMS320C55x DSP Mnemonic Instruction Set Reference
   Guide (public)
-- TI SPRU430 -- TMS320C6000 CPU and Instruction Set Reference Guide
-  (public; covers c64x)
+- TI SPRU732 -- TMS320C64x/C64x+ DSP CPU and Instruction Set Reference
+  Guide (public)
+- TI SPRU733 -- TMS320C67x/C67x+ DSP CPU and Instruction Set Reference
+  Guide (public)
+- TI SPRUFE8 -- TMS320C674x DSP CPU and Instruction Set Reference Guide
+  (public)
+- TI SPRUGH7 -- TMS320C66x DSP CPU and Instruction Set Reference Guide
+  (public)
 - TI SWPU086 -- TMS320C55x 'C55x+' CPU Reference Guide, Preliminary,
   May 2005
 - TI SWPU104 -- TMS320C55x+ DSP Algebraic Instruction Set Reference
