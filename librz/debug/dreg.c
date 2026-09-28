@@ -133,7 +133,7 @@ RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num)
 	return true;
 }
 
-RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num){
+RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num) {
 	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
 	if (!ri) {
 		if (role == RZ_REG_NAME_PC) {
