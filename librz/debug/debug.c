@@ -1342,6 +1342,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 
 				if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
 					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
+					dbg->reason.signum = -1;
 					continue;
 				}
 
