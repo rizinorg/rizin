@@ -1383,7 +1383,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 				continue;
 			} else if (what & RZ_DBG_SIGNAL_SKIP) {
 				const char *signame = rz_signal_to_string(dbg->reason.signum);
-				/* 
+				/*
 				If signal is marked to be skipped but sent via external syscalls, we do not skip the instruction
 				*since it would lead to incorrect execution of further instructions, if sent due to the faulty instruction
 				* we just hit the instruciton so we skip it and move the PC so that we are not stuck hitting the same instruction
