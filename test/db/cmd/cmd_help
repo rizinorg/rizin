@@ -68,6 +68,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=command catalog root child count
+FILE==
+CMDS=?+j~{.root.n_children}
+EXPECT=<<EOF
+52
+EOF
+RUN
+
 NAME=recursive help (old style)
 FILE==
 CMDS=<<EOF
