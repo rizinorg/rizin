@@ -5606,11 +5606,6 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 		memcpy(disasm, opcode, RZ_MIN(opcode_len, sizeof(disasm)));
 	}
 
-	// input and output must be different for rz_parse_filter.
-	char *tmp = rz_str_dup(disasm);
-	rz_parse_filter(core->parser, ctx->current, core->flags, cdb->hint, tmp, disasm, sizeof(disasm), ctx->big_endian);
-	free(tmp);
-
 	ut8 *amask = rz_analysis_mask(core->analysis, left, ptr, ctx->current);
 	cdb->mask = rz_hex_bin2strdup(amask, cdb->oplen);
 	free(amask);

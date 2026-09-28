@@ -1406,11 +1406,11 @@ RZ_API RZ_OWN char *rz_print_jsondump_str(RZ_NONNULL RzPrint *p, RZ_NONNULL cons
  *
  * \param p The RzPrint struct. Used to retrieve the color palette.
  * \param toks The tokenized asm string.
- * \param opt Options for colorizing. E.g. reset background color, an address to highlight etc.
+ * \param param Parameters to build the string. E.g. reset background color, an address to highlight etc.
  *
  * \return The colorized asm string.
  */
-RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks) {
+RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const RzAsmTokenString *toks, RZ_NULLABLE const RzAsmParseParam *param) {
 	rz_return_val_if_fail(p && toks, NULL);
 	// Color palette.
 	RzConsPrintablePalette palette = p->cons->context->pal;
@@ -1428,6 +1428,7 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 	void **it;
 	rz_pvector_foreach (toks->tokens, it) {
 		RzAsmToken *tok = *it;
+		const char *alternative_string = param && param->repl_vals ? ht_pp_find(param->repl_vals, tok, NULL) : NULL;
 		switch (tok->type) {
 		default:
 			rz_strbuf_free(out);
@@ -1459,7 +1460,11 @@ RZ_API RZ_OWN RzStrBuf *rz_print_colorize_asm_str(RZ_BORROW RzPrint *p, const Rz
 		}
 
 		rz_strbuf_append(out, color);
-		rz_strbuf_append_n(out, bw_str + tok->start, tok->len);
+		if (alternative_string) {
+			rz_strbuf_append(out, alternative_string);
+		} else {
+			rz_strbuf_append_n(out, bw_str + tok->start, tok->len);
+		}
 		rz_strbuf_append(out, reset);
 	}
 	return out;

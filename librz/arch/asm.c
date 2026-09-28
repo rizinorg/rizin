@@ -2042,7 +2042,7 @@ static RZ_OWN RzAsmTokenString *tokenize_asm_generic(RZ_BORROW RzStrBuf *asm_str
 			} else if (mnemonic_parsed) {
 				l = seek_to_end_of_token(str, i, RZ_ASM_TOKEN_REGISTER);
 				char *op_name = rz_str_ndup(str + i, l);
-				if (param && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
+				if (param && param->reg_sets && is_register(op_name, param->reg_sets) && is_not_unknown(str, i, i + l)) {
 					add_token(toks, i, l, RZ_ASM_TOKEN_REGISTER, 0);
 				} else if (prefix_less_hex) {
 					// It wasn't a register but still could be a prefixless hex number.
@@ -2114,14 +2114,14 @@ RZ_DEPRECATE RZ_API RZ_OWN RzStrBuf *
 rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NULLABLE const RzAsmParseParam *param, RZ_NULLABLE const RzAsmTokenString *toks) {
 	RzStrBuf *colored_asm;
 	if (toks) {
-		colored_asm = rz_print_colorize_asm_str(p, toks);
+		colored_asm = rz_print_colorize_asm_str(p, toks, param);
 	} else {
 		RzAsmTokenString *ts = rz_asm_tokenize_asm_string(asm_str, param);
 		if (!ts) {
 			return NULL;
 		}
 		ts->op_type = param ? param->ana_op_type : 0;
-		colored_asm = rz_print_colorize_asm_str(p, ts);
+		colored_asm = rz_print_colorize_asm_str(p, ts, param);
 		rz_asm_token_string_free(ts);
 	}
 	return colored_asm;
@@ -2133,21 +2133,70 @@ rz_asm_colorize_asm_str(RZ_BORROW RzStrBuf *asm_str, RZ_BORROW RzPrint *p, RZ_NU
  * \param p The parameter struct.
  */
 RZ_API void rz_asm_parse_param_free(RZ_OWN RZ_NULLABLE RzAsmParseParam *p) {
+	if (p) {
+		ht_pp_free(p->repl_vals);
+	}
 	free(p);
 }
 
 /**
  * \brief Does all kinds of NULL checks on the parameters and returns an initialized RzAsmParseParam or NULL on failure.
+ * If anything in the token string should be substituted, all parameters have to be non-NULL.
  *
+ * \param asm_toks The asm tokens these parameters are for.
  * \param reg The RzReg which holds the reg_set.
+ * \param core Optionally the core the asm.sub. settings should be applied to it.
+ * \param ana_op_type The RzAnalysisOpType of the instruction.
+ *
  * \return RzAsmParseParam* Pointer to the RzAsmParseParam struct or NULL.
  */
-RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(RZ_NULLABLE const RzReg *reg, ut32 ana_op_type) {
-	if (!reg) {
+RZ_API RZ_OWN RzAsmParseParam *rz_asm_get_parse_param(
+	RZ_NULLABLE const RzAsmTokenString *asm_toks,
+	RZ_NULLABLE const RzCore *core,
+	RZ_NULLABLE const RzReg *reg,
+	ut32 ana_op_type) {
+	RzAsmParseParam *param = RZ_NEW0(RzAsmParseParam);
+	if (!param) {
 		return NULL;
 	}
-	RzAsmParseParam *param = RZ_NEW(RzAsmParseParam);
-	param->reg_sets = reg->regset;
 	param->ana_op_type = ana_op_type;
+	if (reg) {
+		param->reg_sets = reg->regset;
+	}
+
+	// Substiture strings.
+	if (!core || !asm_toks) {
+		return param;
+	}
+	// Search the tokens to substitute.
+
+	// No free or key comparison functions required.
+	HtPPOptions opt = { 0 };
+	param->repl_vals = ht_pp_new_opt(&opt);
+	if (!param->repl_vals) {
+		rz_asm_parse_param_free(param);
+		return NULL;
+	}
+	bool sub_names = rz_config_get_b(core->config, "asm.sub.names");
+	// TODO Substitute more.
+	if (!sub_names) {
+		return param;
+	}
+
+	ut64 min_val = rz_config_get_i(core->config, "asm.sub.varmin");
+	void **it;
+	rz_pvector_foreach (asm_toks->tokens, it) {
+		RzAsmToken *tok = *it;
+		if (tok->type != RZ_ASM_TOKEN_NUMBER) {
+			continue;
+		}
+		if (tok->val.number < min_val) {
+			continue;
+		}
+		RzFlagItem *flag = rz_flag_get_at(core->flags, tok->val.number, false);
+		if (flag) {
+			ht_pp_insert(param->repl_vals, tok, flag->name);
+		}
+	}
 	return param;
 }

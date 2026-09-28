@@ -275,6 +275,12 @@ typedef enum {
 	HEX_BUF_NEW = 2, ///< Instruction is written to a new packet (overwrites old one).
 } HexBufferAction;
 
+typedef enum {
+	HEX_PRINT_SIGN_NONE = 0,
+	HEX_PRINT_SIGN_ALL = 1,
+	HEX_PRINT_SIGN_SOME = 256,
+} HexPrintSign;
+
 /**
  * \brief Buffer packets for reversed instructions.
  */
@@ -287,7 +293,7 @@ typedef struct {
 	bool might_have_jumped; ///< Is set if a previous IL packet was a branch. Indicates the next decoded packet is valid.
 
 	bool imm_hash; ///< Display ## before 32bit immediates and # before immidiates with other width.
-	bool imm_sign; ///< True: Print them with sign. False: Print signed immediates in unsigned representation.
+	HexPrintSign imm_sign; ///< Print all, none, or only some signed values as signed.
 	bool sdk; ///< Print packet syntax in objdump style.
 	bool reg_alias; ///< Print the alias of registers (Alias from C0 = SA0).
 } HexState;

@@ -3151,31 +3151,25 @@ RZ_IPI RzCmdStatus rz_analysis_xrefs_to_list_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analysis_xrefs_from_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisXRef *xref;
 	RzListIter *iter;
-	char str[512];
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
 	RzList *list = rz_analysis_xrefs_get_from(core->analysis, core->offset);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (list, iter, xref) {
 			ut8 buf[16];
-			char *desc;
 			RzFlagItem *flag = rz_flag_get_at(core->flags, xref->to, false);
 			if (flag) {
-				desc = flag->name;
+				rz_cons_printf("%c 0x%" PFMT64x " %s",
+					xref->type ? xref->type : ' ', xref->to, flag->name);
 			} else {
 				rz_io_read_at_mapped(core->io, xref->to, buf, sizeof(buf));
 				rz_asm_set_pc(core->rasm, xref->to);
 				RzAsmOp asmop = { 0 };
 				rz_asm_disassemble(core->rasm, &asmop, buf, sizeof(buf));
-				RzAnalysisHint *hint = rz_analysis_hint_get(core->analysis, xref->to);
-				rz_parse_filter(core->parser, xref->from, core->flags, hint, rz_asm_op_get_asm(&asmop),
-					str, sizeof(str), core->print->big_endian);
+				rz_cons_printf("%c 0x%" PFMT64x " %s",
+					xref->type ? xref->type : ' ', xref->to, rz_asm_op_get_asm(&asmop));
 				rz_asm_op_fini(&asmop);
-				rz_analysis_hint_free(hint);
-				desc = str;
 			}
-			rz_cons_printf("%c 0x%" PFMT64x " %s",
-				xref->type ? xref->type : ' ', xref->to, desc);
 
 			if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL) {
 				RzAnalysisOp aop = { 0 };
