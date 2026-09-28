@@ -123,6 +123,13 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	return true;
 }
 
+/**
+ * \brief Set value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Name or role of the register whose value needs to be set, eg: "PC" or "RZ_REG_NAME_PC"
+ * \param num The value to be set to the register
+ * \return true if correctly set otherwise false
+ */
 RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num) {
 	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
 	if (!ri) {
@@ -133,6 +140,13 @@ RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num)
 	return true;
 }
 
+/**
+ * \brief Set value to a register of the debuggee by role
+ * \param dbg The debugger struct
+ * \param role Role of the register whose value needs to be set, eg: "RZ_REG_NAME_PC"
+ * \param num The value to be set to the register
+ * \return true if correctly set otherwise false
+ */
 RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num) {
 	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
 	if (!ri) {
@@ -148,13 +162,22 @@ RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, 
 	return true;
 }
 
+/**
+ * \brief Get value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Name or role whose value needs to be retrieved, eg: "PC" or "RZ_REG_NAME_PC"
+ * \return The value of the register retrieved
+ */
 RZ_API ut64 rz_debug_reg_get(RZ_NONNULL RzDebug *dbg, const char *name) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	return rz_reg_getv_by_role_or_name(dbg->reg, name);
 }
 
 /**
- * Get the value of the register with the given role, including syncing first.
+ * \brief Get value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Role of the register whose value needs to be retrieved, eg: "RZ_REG_NAME_PC"
+ * \return The value of the register retrieved
  */
 RZ_API ut64 rz_debug_reg_get_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
