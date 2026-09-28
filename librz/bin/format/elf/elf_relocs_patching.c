@@ -1041,13 +1041,13 @@ static void patch_reloc_c6000(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
 	ut32 mask = f->size >= 32 ? UT32_MAX : (((ut32)1 << f->size) - 1);
 	ut32 field = ((ut32)val & mask) << f->offset;
 	if (nbytes == 4) {
-		ut32 word = big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+		ut32 word = rz_read_ble32(buf, big_endian);
 		word = (word & ~(mask << f->offset)) | field;
-		big_endian ? rz_write_be32(buf, word) : rz_write_le32(buf, word);
+		rz_write_ble32(buf, word, big_endian);
 	} else if (nbytes == 2) {
-		ut16 word = big_endian ? rz_read_be16(buf) : rz_read_le16(buf);
+		ut16 word = rz_read_ble16(buf, big_endian);
 		word = (word & ~(mask << f->offset)) | field;
-		big_endian ? rz_write_be16(buf, word) : rz_write_le16(buf, word);
+		rz_write_ble16(buf, word, big_endian);
 	} else {
 		buf[0] = (buf[0] & ~(mask << f->offset)) | field;
 	}
