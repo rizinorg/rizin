@@ -5692,6 +5692,7 @@ static RZ_OWN RzVector /*<ut64>*/ *get_calls(RzCore *core, RzAnalysisBlock *bloc
 	}
 	RzVector *set = rz_vector_new(sizeof(ut64), NULL, NULL);
 	if (!set) {
+		free(data);
 		return NULL;
 	}
 	RzAnalysisOp op = { 0 };
