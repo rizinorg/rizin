@@ -123,7 +123,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	return true;
 }
 
-RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) {
+RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num) {
 	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
 	if (!ri) {
 		return false;
@@ -133,7 +133,22 @@ RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) 
 	return true;
 }
 
-RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
+RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num){
+	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
+	if (!ri) {
+		if (role == RZ_REG_NAME_PC) {
+			// Debug generally requires the existence of a PC register,
+			// other registers may be optional.
+			RZ_LOG_ERROR("debug: no PC register known");
+		}
+		return false;
+	}
+	rz_reg_set_value(dbg->reg, ri, num);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
+	return true;
+}
+
+RZ_API ut64 rz_debug_reg_get(RZ_NONNULL RzDebug *dbg, const char *name) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	return rz_reg_getv_by_role_or_name(dbg->reg, name);
 }
