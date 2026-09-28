@@ -266,6 +266,7 @@ static LuaJITBinInfo *luajit_build_info_new() {
 		rz_pvector_free(ret->sections);
 		rz_list_free(ret->strings);
 		rz_list_free(ret->symbol_list);
+		free(ret);
 		return NULL;
 	}
 	return ret;
