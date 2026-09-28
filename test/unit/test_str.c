@@ -1034,8 +1034,21 @@ bool test_rz_str_utf32_to_utf8(void) {
 	mu_end;
 }
 
+bool test_rz_str_casecmp_null(void) {
+	// NULL is a defined input: two NULLs are equal and a NULL sorts before any
+	// non-NULL pointer, which is what lets callers pass an optional string
+	// without guarding it
+	mu_assert_eq(rz_str_casecmp(NULL, NULL), 0, "NULL equals NULL");
+	mu_assert_true(rz_str_casecmp(NULL, "x") < 0, "NULL sorts before a string");
+	mu_assert_true(rz_str_casecmp("x", NULL) > 0, "a string sorts after NULL");
+	mu_assert_eq(rz_str_casecmp("AbC", "aBc"), 0, "case is ignored");
+	mu_assert_true(rz_str_casecmp("a", "b") < 0, "ordering is preserved");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
+	mu_run_test(test_rz_str_casecmp_null);
 	mu_run_test(test_rz_str_replace_char_once);
 	mu_run_test(test_rz_str_ncpy);
 	mu_run_test(test_rz_str_ncat);

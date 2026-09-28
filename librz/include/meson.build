@@ -144,6 +144,12 @@ rz_util_files = [
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
+rz_inquiry_files = [
+  'rz_inquiry/rz_absint.h',
+  'rz_inquiry/rz_il_cache.h'
+]
+install_headers(rz_inquiry_files, install_dir: join_paths(rizin_incdir, 'rz_inquiry'))
+
 rz_il_definitions_files = [
   'rz_il/definitions/bool.h',
   'rz_il/definitions/definitions.h',

@@ -1212,7 +1212,12 @@ static void decode_branch_nop(C6xInsn *insn) {
 	insn->op_type = RZ_ANALYSIS_OP_TYPE_JMP;
 	insn->unit_side = BIT(w, 1);
 	OP(0).kind = C6X_OP_PCREL;
-	OP(0).v.imm.value = sext(BITS(w, 27, 16), 12) * 4;
+	// Half-word scaled inside a compact packet so that the branch can reach
+	// 16-bit code, word scaled elsewhere. This applies to BNOP's displacement
+	// and not to the plain B beside it, which stays word scaled in a compact
+	// packet -- dis6x disassembles both forms in one packet and scales only
+	// this one.
+	OP(0).v.imm.value = sext(BITS(w, 27, 16), 12) * (insn->compact_packet ? 2 : 4);
 	op_imm(&OP(1), n);
 	insn->nops = 2;
 }
@@ -2477,16 +2482,22 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// of the other seven words hold two 16-bit compact instructions. Look for
 	// that header ahead of the current word; if this slot is compact, decode a
 	// 16-bit instruction and take the parallel bit from the header p-bit field.
-	// Only families with the compact set are probed, so C62x/C67x are untouched;
-	// when the header is not reachable (an isolated single-word decode) the
-	// 32-bit path runs and still recognises a header word on its own.
+	// Only families with the compact set are probed, so C62x/C67x are untouched.
+	// When the header is not reachable the packet's layout is unknown, and a
+	// word that is really two compact instructions cannot be told from a 32-bit
+	// one; the caller is given the 32-bit reading, which is why the analysis
+	// path reconstructs the whole packet rather than relying on this.
 	if (desc->features & C6X_FEAT_SIMD) {
 		ut32 fp_off = (ut32)(pc & 0x1f);
 		int hdr_off = 0x1c - (int)fp_off; // header lives at packet offset 0x1c
 		if (fp_off < 0x1c && hdr_off + 4 <= len) {
 			ut32 hdr = big_endian ? rz_read_be32(buf + hdr_off) : rz_read_le32(buf + hdr_off);
 			ut8 slot = fp_off >> 2;
-			if ((hdr >> 28) == C6X_FP_HEADER_TAG && ((hdr >> (21 + slot)) & 1)) {
+			// A branch anywhere in a compact packet is half-word scaled, so
+			// the packet's nature matters even for a slot the header does not
+			// split into two 16-bit instructions.
+			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
+			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
 				ut16 w16 = big_endian ? rz_read_be16(buf) : rz_read_le16(buf);
 				ut8 half = (fp_off >> 1) & 1;
 				insn->word = w16;
@@ -2509,7 +2520,11 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// other slots as 16-bit compact instructions; decoding those is future
 	// work, but the header itself is recognised so it is not mis-read as a
 	// 32-bit opcode and to flag the packet as compact.
-	if ((w >> 28) == C6X_FP_HEADER_TAG) {
+	// A header is word 7 of a fetch packet, so its position decides this as
+	// much as its tag: an ordinary instruction whose top nibble happens to be
+	// the tag is not a header, and treating it as one puts packet metadata in
+	// the middle of real code.
+	if ((w >> 28) == C6X_FP_HEADER_TAG && (pc & 0x1f) == 0x1c) {
 		insn->is_header = true;
 		set_ins(insn, C6X_INS_FPHEAD);
 		insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;

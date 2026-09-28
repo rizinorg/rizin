@@ -10,7 +10,7 @@ static void rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws)
 	bool useColor = rz_config_get_i(core->config, "scr.color") != 0;
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut64 v[2];
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	for (i = 0; i < len; i += ws) {
 		for (size_t j = 0; j < 2; j++) {
 			ut8 tmp[8] = { 0 };
@@ -74,7 +74,7 @@ static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
 static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	const char *color = scr_color ? pal->offset : "";
 	const char *color_end = scr_color ? Color_RESET : "";
 	if (rz_config_get_i(core->config, "hex.header")) {

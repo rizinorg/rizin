@@ -181,7 +181,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 						fcn->addr, rz_analysis_function_realsize(fcn), fcn->name);
 				}
 				if (var_functions) {
-					if (!rz_cons_singleton()->show_vals) {
+					if (!core->cons->show_vals) {
 						int fun_len = rz_str_ansi_len(var_functions);
 						int columns = fun_len > cols ? cols - 2 : cols;
 						tmp = rz_str_ansi_crop(var_functions, 0, 0, columns, window);
@@ -350,9 +350,9 @@ static const char *help_vv_actions_visual[] = {
 	NULL
 };
 
-static void rz_core_vmenu_append_help(RzStrBuf *p, const char **help) {
+static void core_vmenu_append_help(RzCore *core, RzStrBuf *p, const char **help) {
 	int i;
-	RzConsContext *cons_ctx = rz_cons_singleton()->context;
+	RzConsContext *cons_ctx = core->cons->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
 		   *pal_help_color = cons_ctx->color_mode ? cons_ctx->pal.help : "",
 		   *pal_reset = cons_ctx->color_mode ? cons_ctx->pal.reset : "";
@@ -403,7 +403,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			rz_cons_strcat("\n");
 		}
 		if (!visual->view->hide_legend) {
-			rz_core_vmenu_append_help(buf, help_fun_visual);
+			core_vmenu_append_help(core, buf, help_fun_visual);
 		}
 		char *drained = rz_strbuf_drain(buf);
 		rz_cons_printf("%s", drained);
@@ -428,7 +428,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		if (color) {
 			rz_cons_strcat("\n" Color_RESET);
 		}
-		rz_core_vmenu_append_help(buf, help_var_visual);
+		core_vmenu_append_help(core, buf, help_var_visual);
 		char *drained = rz_strbuf_drain(buf);
 		rz_cons_printf("%s", drained);
 		addr = var_variables_show(core, view->option, &(view->variable_option), 1, cols);
@@ -450,7 +450,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		char *output = rz_core_cmd_str(core, old);
 		if (output) {
 			// 'h - 2' because we have two new lines in rz_cons_printf
-			if (!rz_cons_singleton()->show_vals) {
+			if (!core->cons->show_vals) {
 				char *out = rz_str_ansi_crop(output, 0, 0, cols, h - 2);
 				rz_cons_printf("\n%s\n", out);
 				free(out);
@@ -579,11 +579,11 @@ RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 beach:;
 }
 
-static char *__prompt(const char *msg, void *p) {
+static char *prompt_user(RzCore *core, const char *msg, void *p) {
 	char res[128];
 	rz_cons_show_cursor(true);
 	rz_cons_set_raw(false);
-	rz_line_set_prompt(rz_cons_singleton()->line, msg);
+	rz_line_set_prompt(core->cons->line, msg);
 	res[0] = 0;
 	if (!rz_cons_fgets(res, sizeof(res), 0, NULL)) {
 		res[0] = 0;
@@ -592,9 +592,9 @@ static char *__prompt(const char *msg, void *p) {
 }
 
 static void addVar(RzCore *core, int ch, const char *msg) {
-	char *src = __prompt(msg, NULL);
-	char *name = __prompt("Variable Name: ", NULL);
-	char *type = __prompt("Type of Variable (int32_t): ", NULL);
+	char *src = prompt_user(core, msg, NULL);
+	char *name = prompt_user(core, "Variable Name: ", NULL);
+	char *type = prompt_user(core, "Type of Variable (int32_t): ", NULL);
 	char *cmd = rz_str_newf("afv%c %s %s %s", ch, src, name, type);
 	rz_str_trim(cmd);
 	rz_core_cmd0(core, cmd);
@@ -718,17 +718,17 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			}
 			break;
 		case '[':
-			rz_cons_singleton()->show_vals = true;
+			core->cons->show_vals = true;
 			break;
 		case ']':
-			rz_cons_singleton()->show_vals = false;
+			core->cons->show_vals = false;
 			break;
 		case '?':
 			rz_cons_clear00();
 			RzStrBuf *buf = rz_strbuf_new("");
 			rz_cons_println("|Usage: vv");
-			rz_core_visual_append_help(buf, "Actions supported", help_vv_actions_visual);
-			rz_core_visual_append_help(buf, "Keys", help_vv_visual);
+			rz_core_visual_append_help(core, buf, "Actions supported", help_vv_actions_visual);
+			rz_core_visual_append_help(core, buf, "Keys", help_vv_visual);
 			rz_cons_printf("%s", rz_strbuf_drain(buf));
 			rz_cons_flush();
 			rz_cons_any_key(NULL);
@@ -967,10 +967,10 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			goto beach;
 			break;
 		case 'l':
-			rz_cons_singleton()->show_vals = true;
+			core->cons->show_vals = true;
 			break;
 		case 'h':
-			rz_cons_singleton()->show_vals = false;
+			core->cons->show_vals = false;
 			break;
 		case 'b': // back
 			view->level = 0;

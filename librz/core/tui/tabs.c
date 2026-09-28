@@ -7,12 +7,12 @@
 #include "../core_private.h"
 #include "modes.h"
 
-static void prompt_read(const char *p, char *buf, int buflen) {
+static void prompt_read(RzCons *cons, const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
 		return;
 	}
 	*buf = 0;
-	rz_line_set_prompt(rz_cons_singleton()->line, p);
+	rz_line_set_prompt(cons->line, p);
 	rz_core_visual_showcursor(NULL, true);
 	rz_cons_fgets(buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
@@ -191,7 +191,7 @@ RZ_IPI void rz_core_visual_tabname_prompt(RzCore *core) {
 		return;
 	}
 	char name[32] = { 0 };
-	prompt_read("tab name: ", name, sizeof(name));
+	prompt_read(core->cons, "tab name: ", name, sizeof(name));
 	RzCoreVisualTab *tab = rz_list_get_n(visual->tabs, visual->tab);
 	if (tab) {
 		strcpy(tab->name, name);

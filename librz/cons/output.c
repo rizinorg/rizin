@@ -3,6 +3,8 @@
 
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
+#include "i/private.h"
+
 #define I rz_cons_singleton()
 
 #if __WINDOWS__

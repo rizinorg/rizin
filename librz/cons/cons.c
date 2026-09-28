@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "i/private.h"
+
 #define COUNT_LINES 1
 #define CTX(x)      I.context->x
 
@@ -321,7 +323,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 	free(str);
 }
 
-RZ_API RzCons *rz_cons_singleton(void) {
+RZ_IPI RzCons *rz_cons_singleton(void) {
 	return &I;
 }
 

@@ -152,7 +152,6 @@ bool test_cons_at(void) {
 
 bool test_cons_misc(void) {
 	rz_cons_new();
-	mu_assert_notnull(rz_cons_singleton(), "Singleton check");
 
 	rz_cons_break_push(NULL, NULL);
 	mu_assert_false(rz_cons_is_breaked(), "Not breaked initially");

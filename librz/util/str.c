@@ -121,7 +121,22 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 	return RZ_STRING_ENC_GUESS;
 }
 
-RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
+/**
+ * \brief Case-insensitive string comparison, accepting NULL.
+ *
+ * NULL is a defined input: two NULLs compare equal, and a NULL sorts before any
+ * non-NULL pointer. Only the underlying strcasecmp is undefined on NULL, which
+ * is why a caller holding an optional string would otherwise have to guard it
+ * itself.
+ *
+ * \param s1 first string, may be NULL
+ * \param s2 second string, may be NULL
+ * \return <0, 0 or >0 as \p s1 sorts before, with or after \p s2
+ */
+RZ_API int rz_str_casecmp(RZ_NULLABLE const char *s1, RZ_NULLABLE const char *s2) {
+	if (!s1 || !s2) {
+		return s1 == s2 ? 0 : (s1 ? 1 : -1);
+	}
 #ifdef _MSC_VER
 	return stricmp(s1, s2);
 #else

@@ -2305,12 +2305,18 @@ commands:
     summary: Analyze N instructions
     subcommands:
       - name: ao
-        summary: Analyze next N instructions
+        summary: Analyze next N instructions and print all details Rizin knows about them.
         cname: analyze_n_ins
         args:
           - name: n_instructions
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: ""
+            entries:
+              - text: "Details include information like: jump targets, operand details,
+                  conditions, size, disassembly, bytes, RzIL, address"
+                comment: ""
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -2619,3 +2625,29 @@ commands:
                     comment: "memwrites"
                   - text: "NOTE:"
                     comment: "mem{reads,writes} with PIC only fetch the offset"
+  - name: aI
+    summary: Experimental RzIL based analysis
+    details:
+      - name: "What is the difference to the old analysis?"
+        entries:
+          - text: "Analysis Results"
+            comment: "In the early stage the results will be less comprehensive than the old analysis.
+              This won't be the case for long. You can track the progress here:
+              https://github.com/orgs/rizinorg/projects/18"
+          - text: "Design"
+            comment: "The algorithms are designed with performance, extensibility, formal correctness,
+              and compatibility for VLIW architectures in mind."
+          - text: "Future's Base"
+            comment: "The commands' module will be the foundation for future analysis development."
+          - text: "RzIL"
+            comment: "The IL for the the analysis is exclusively RzIL with support for
+              many more architectures than ESIL had."
+    subcommands:
+      - name: aIf
+        summary: analyze function at current seek
+        cname: inquiry_analyze_function
+        args: []
+      - name: aIa
+        summary: analyze all functions
+        cname: inquiry_analyze_all
+        args: []

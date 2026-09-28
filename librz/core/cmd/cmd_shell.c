@@ -352,11 +352,48 @@ RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char 
 
 // cp
 RZ_IPI RzCmdStatus rz_cmd_shell_cp_handler(RzCore *core, int argc, const char **argv) {
-	bool rc = rz_file_copy(argv[1], argv[2]);
-	if (!rc) {
+	const char *src = argv[1];
+	const char *dst = argv[2];
+	char *tmp = NULL;
+
+	if (rz_file_is_directory(dst)) {
+		const char *basename = rz_file_basename(src);
+		dst = tmp = rz_str_newf(RZ_JOIN_2_PATHS("%s", "%s"), dst, basename);
+		if (!tmp) {
+			RZ_LOG_ERROR("Failed allocate memory for new destination path\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+
+	bool ok = rz_file_copy(src, dst);
+	if (!ok) {
 		RZ_LOG_ERROR("Failed to copy %s to %s\n", argv[1], argv[2]);
 	}
-	return rc ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	free(tmp);
+
+	return ok ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+}
+
+// mv
+RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv) {
+	const char *src = argv[1];
+	const char *dst = argv[2];
+	char *tmp = NULL;
+
+	if (rz_file_is_directory(dst)) {
+		const char *basename = rz_file_basename(src);
+		dst = tmp = rz_str_newf(RZ_JOIN_2_PATHS("%s", "%s"), dst, basename);
+		if (!tmp) {
+			RZ_LOG_ERROR("Failed allocate memory for new destination path\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	}
+
+	// TODO: if we want to support directories we need to iterate over subdir and copy+delete the files they cointains.
+	bool ok = rz_file_move(src, dst);
+	free(tmp);
+
+	return ok ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // cd
@@ -414,14 +451,6 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 		free(res);
 	}
 	return RZ_CMD_STATUS_OK;
-}
-
-// mv
-RZ_IPI RzCmdStatus rz_cmd_shell_mv_handler(RzCore *core, int argc, const char **argv) {
-	char *input = rz_str_newf("mv %s %s", argv[1], argv[2]);
-	int ec = rz_sys_system(input);
-	free(input);
-	return ec == 0 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 // mkdir

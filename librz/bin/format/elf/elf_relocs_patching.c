@@ -852,7 +852,7 @@ static ut32 convert_alu_group_mask(ut32 X, int n) {
 			encoded_g_n = 0;
 		} else {
 			int msb = 31;
-			while (msb > 0 && !(residual & (1 << msb))) {
+			while (msb > 0 && !(residual & (1U << msb))) {
 				msb--;
 			}
 
@@ -889,7 +889,7 @@ static ut32 convert_ldr_group_mask(ut32 X, int n) {
 		}
 
 		int msb = 31;
-		while (msb > 0 && !(residual & (1 << msb))) {
+		while (msb > 0 && !(residual & (1U << msb))) {
 			msb--;
 		}
 

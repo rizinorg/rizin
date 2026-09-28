@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+#include "i/private.h"
 
 #define RZCOLOR_AT(i) (RzColor *)(((ut8 *)&(rz_cons_singleton()->context->cpal)) + keys[i].coff)
 #define COLOR_AT(i)   (char **)(((ut8 *)&(rz_cons_singleton()->context->pal)) + keys[i].off)

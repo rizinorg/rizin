@@ -558,13 +558,19 @@ static bool node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_n
 	return ret;
 }
 
+/**
+ * \brief      Parses a module tail bytes of the signature
+ *
+ * \param      module  The module to fill
+ * \param      b       The parsing status
+ *
+ * \return     On success returns true, otherwise false
+ */
 static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
-	/* parses a module tail bytes */
-	/* returns false on parsing error */
-	int i;
-	ut32 number_of_tail_bytes;
 	RzFlirtTailByte *tail_byte = NULL;
-	if (!(module->tail_bytes = rz_list_newf((RzListFree)free))) {
+	size_t number_of_tail_bytes = 0;
+	RzList *tail_bytes = rz_list_newf((RzListFree)free);
+	if (!tail_bytes) {
 		RZ_LOG_ERROR("FLIRT: failed to allocate tail bytes list.\n");
 		goto err_exit;
 	}
@@ -583,14 +589,16 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
 			RZ_LOG_ERROR("FLIRT: failed to read referenced function count because EOF (version > 9).\n");
 			goto err_exit;
 		}
-	} else { // suppose there's only one
+	} else {
+		// there is only one tail byte pre v8
 		number_of_tail_bytes = 1;
 	}
 
-	for (i = 0; i < number_of_tail_bytes; i++) {
+	for (size_t i = 0; i < number_of_tail_bytes; i++) {
 		tail_byte = RZ_NEW0(RzFlirtTailByte);
 		if (!tail_byte) {
-			return false;
+			RZ_LOG_ERROR("FLIRT: failed to allocate memory for tail byte.\n");
+			goto err_exit;
 		}
 		if (b->version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
@@ -611,15 +619,16 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, ParseStatus *b) {
 			RZ_LOG_ERROR("FLIRT: failed to read tail byte value because EOF.\n");
 			goto err_exit;
 		}
-		rz_list_append(module->tail_bytes, tail_byte);
+		rz_list_append(tail_bytes, tail_byte);
 		sig_dbg("dbg: read tail byte: %04X: %02X\n", tail_byte->offset, tail_byte->value);
 	}
 
+	module->tail_bytes = tail_bytes;
 	return true;
 
 err_exit:
 	free(tail_byte);
-	rz_list_free(module->tail_bytes);
+	rz_list_free(tail_bytes);
 	return false;
 }
 

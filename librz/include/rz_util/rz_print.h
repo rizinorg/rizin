@@ -221,8 +221,8 @@ RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor)
 #define RZ_PRINT_QUIET     (1 << 8)
 #define RZ_PRINT_STRUCT    (1 << 9)
 
-RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
-RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
+RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label, RzCons *cons);
+RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label, RzCons *cons);
 RZ_API const char *rz_print_color_op_type(RZ_NONNULL RzPrint *p, ut32 /* RzAnalaysisOpType */ analysis_type);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);

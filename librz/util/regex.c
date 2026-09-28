@@ -289,7 +289,7 @@ RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, R
 	}
 	}
 	if (!re->re8 && !re->re16 && !re->re32) {
-		free(re);
+		rz_regex_free_multi(re);
 		return NULL;
 	}
 #ifdef SUPPORTS_PCRE2_JIT

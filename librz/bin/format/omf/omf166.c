@@ -1055,7 +1055,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		*/
 		size_t left = 14;
 		while (record->size - 1 > left) {
-			char name[MAX_NAME_LEN] = RZ_EMPTY;
+			char name[MAX_NAME_LEN + 1] = RZ_EMPTY;
 			const ut8 n = rz_read_le8_offset(buf, &left);
 			if (n + 1 + left > buf_size) {
 				RZ_LOG_WARN("File may be corrupted (Overflow detected).\n");

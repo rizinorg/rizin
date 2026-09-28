@@ -247,7 +247,7 @@ RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData
 	char colpad[80];
 	int hascolor = rz_config_get_i(core->config, "scr.color");
 	int cols = rz_config_get_i(core->config, "hex.cols") * 2;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzListIter *it;
 	RzCompareData *cmp;
 

@@ -5,6 +5,7 @@
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
 #include <rz_cons.h>
+#include "i/private.h"
 
 int color_table[256] = { 0 };
 int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff };

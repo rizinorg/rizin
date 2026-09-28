@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include <rz_cons.h>
+#include "i/private.h"
 
 static void rz_line_nscompletion_init(RzLineNSCompletion *c) {
 	c->run = NULL;

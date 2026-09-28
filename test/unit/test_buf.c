@@ -1185,22 +1185,26 @@ bool test_rz_buf_get_nstring(void) {
 
 	RzBuffer *b = rz_buf_new_with_bytes(ch, 128);
 
-	char *s = rz_buf_get_nstring(b, 100, 10);
-	mu_assert_null(s, "there is no string with size < 10 (no null terminator)");
+	char *s = rz_buf_get_nstring(b, 0, 10, true);
+	mu_assert_null(s, "there is no string with size < 10 (require null terminator)");
 
-	s = rz_buf_get_nstring(b, 117, 11);
+	s = rz_buf_get_nstring(b, 0, 10, false);
+	mu_assert_notnull(s, "there is no string with size < 10 (ignore null terminator)");
+	mu_assert_streq_free(s, (char *)ch + 117, "the string is the same");
+
+	s = rz_buf_get_nstring(b, 117, 11, true);
 	mu_assert_true(strlen(s) < 11, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 117, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 0, 128);
+	s = rz_buf_get_nstring(b, 0, 128, true);
 	mu_assert_true(strlen(s) < 128, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 96, 50);
+	s = rz_buf_get_nstring(b, 96, 50, true);
 	mu_assert_true(strlen(s) < 50, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 96, 32);
+	s = rz_buf_get_nstring(b, 96, 32, true);
 	mu_assert_true(strlen(s) < 32, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
 

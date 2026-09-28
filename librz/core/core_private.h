@@ -432,7 +432,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
 RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
-RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
+RZ_IPI void rz_core_visual_append_help(RzCore *core, RzStrBuf *p, const char *title, const char **help);
 
 /* tui/biteditor.c */
 RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);

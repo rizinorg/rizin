@@ -27,7 +27,7 @@ typedef struct shared_data_t {
 } SharedData;
 
 typedef struct search_thread_data_t {
-	RzThreadQueue *intervals;
+	RzThreadQueue /*<SearchInterval *>*/ *intervals;
 	RzPVector /*<RzBinString *>*/ *results;
 	SharedData *shared;
 	RzAtomicBool *loop;
@@ -331,7 +331,7 @@ static void interrupt_pool(RzThreadPool *pool) {
 	}
 }
 
-static bool create_string_search_thread(RzThreadPool *pool, RzThreadQueue *intervals, SharedData *shared) {
+static bool create_string_search_thread(RzThreadPool *pool, RzThreadQueue /*<SearchInterval *>*/ *intervals, SharedData *shared) {
 	SearchThreadData *std = RZ_NEW0(SearchThreadData);
 	if (!std) {
 		RZ_LOG_ERROR("bin_file_strings: cannot allocate SearchThreadData.\n");

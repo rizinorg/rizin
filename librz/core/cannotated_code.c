@@ -7,7 +7,16 @@
 #include <rz_types.h>
 #include <rz_vector.h>
 
-RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
+/**
+ * \brief Prints the data contained in the specified RzAnnotatedCode in JSON format.
+ *
+ * The function will print the output in console using the function rz_cons_printf();
+ *
+ * \param code Pointer to a RzAnnotatedCode.
+ */
+RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code) {
+	rz_return_if_fail(code);
+
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
@@ -105,7 +114,7 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 /**
  * \param width maximum nibbles per address
  */
-static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, size_t width) {
+static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, size_t width, RzCons *cons) {
 	static const char *fmt[9] = {
 		"0x%08" PFMT64x,
 		"0x%09" PFMT64x,
@@ -125,7 +134,6 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 	}
 	width -= 8;
 
-	RzCons *cons = rz_cons_singleton();
 	rz_cons_printf("    ");
 	if (offset == UT64_MAX) {
 		rz_cons_print("          ");
@@ -141,7 +149,21 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 	rz_cons_printf("    |");
 }
 
-RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64>*/ *line_offsets) {
+/**
+ * \brief Prints the decompiled code from the specified RzAnnotatedCode.
+ *
+ * This function is used for printing the output of commands pdg and pdgo.
+ * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
+ * the output will be printed without offsets (pdg), otherwise, the output will be
+ * printed with offsets.
+ * This function will print the output in console using the function rz_cons_printf();
+ *
+ * \param code Pointer to a RzAnnotatedCode.
+ * \param line_offsets Pointer to a \ref RzVector that contains offsets for the decompiled code.
+ */
+RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets) {
+	rz_return_if_fail(cons && code);
+
 	if (code->annotations.len == 0) {
 		rz_cons_printf("%s\n", code->code);
 		return;
@@ -169,7 +191,6 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 		}
 	}
 
-	RzCons *cons = rz_cons_singleton();
 	RzCodeAnnotation *annotation;
 	rz_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
@@ -214,7 +235,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 				if (line_idx < line_offsets->len) {
 					offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 				}
-				print_offset_in_binary_line_bar(code, offset, offset_width);
+				print_offset_in_binary_line_bar(code, offset, offset_width, cons);
 				line_idx++;
 			}
 			rz_cons_printf("%c", code->code[cur]);
@@ -232,7 +253,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 					offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 				}
 				PRINT_COLOR(Color_RESET);
-				print_offset_in_binary_line_bar(code, offset, offset_width);
+				print_offset_in_binary_line_bar(code, offset, offset_width, cons);
 				PRINT_COLOR(color);
 				line_idx++;
 			}
@@ -250,7 +271,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector /*<ut64
 			if (line_idx < line_offsets->len) {
 				offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 			}
-			print_offset_in_binary_line_bar(code, offset, offset_width);
+			print_offset_in_binary_line_bar(code, offset, offset_width, cons);
 			line_idx++;
 		}
 		rz_cons_printf("%c", code->code[cur]);
@@ -267,7 +288,17 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 	return true;
 }
 
-RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
+/**
+ * \brief  Prints the decompiled code as comments
+ *
+ * This function is used for the output of command pdg*
+ * Output will be printed in console using the function rz_cons_printf();
+ *
+ * \param code Pointer to a RzAnnotatedCode.
+ */
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code) {
+	rz_return_if_fail(code);
+
 	RzCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new(NULL, NULL);
 	rz_vector_foreach (&code->annotations, annotation) {

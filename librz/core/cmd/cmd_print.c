@@ -1372,7 +1372,7 @@ static void handle_default_disasm_print_mode(const RzCore *core, const ut64 addr
 	const bool show_color = rz_config_get_i(core->config, "scr.color");
 
 	if (show_color) {
-		const char *offsetColor = rz_cons_singleton()->context->pal.offset;
+		const char *offsetColor = core->cons->context->pal.offset;
 		if (!ret_val) {
 			rz_cons_printf("%s0x%08" PFMT64x Color_RESET "  %10s %s\n",
 				offsetColor, addr, "", m_intr);
@@ -1848,7 +1848,7 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 	rz_list_foreach (found, it, detected) {
 		ut64 address = core->offset + detected->addr;
 		if (mode != RZ_OUTPUT_MODE_QUIET) {
-			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
+			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL, core->cons);
 		}
 		RzStrEscOptions eopts = { 0 };
 		eopts.keep_printable = true;
@@ -2092,14 +2092,14 @@ static int lenof(ut64 off, int two) {
 	return strlen(buf);
 }
 
-RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label) {
+RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label, RzCons *cons) {
 	char space[32] = {
 		0
 	};
 	const char *reset = p->resetbg ? Color_RESET : Color_RESET_NOBG;
 	bool show_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (show_color) {
-		const char *k = rz_cons_singleton()->context->pal.offset; // TODO etooslow. must cache
+		const char *k = cons->context->pal.offset; // TODO etooslow. must cache
 		const char *inv = invert ? RZ_CONS_INVERT(true, true) : "";
 		if (offseg) {
 			ut32 s, a;
@@ -2189,8 +2189,8 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 
 // TODO : move to rz_util? .. depends on rz_cons...
 // XXX: dupe of rz_print_addr
-RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
-	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
+RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label, RzCons *cons) {
+	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label, cons);
 }
 
 RZ_IPI RzCmdStatus rz_print_utf8_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -2252,7 +2252,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const c
 			char *string = rz_print_section_str(core->print, ea);
 			rz_cons_print(string);
 			free(string);
-			rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL);
+			rz_print_offset(core->print, ea, 0, 0, 0, 0, NULL, core->cons);
 		}
 		rz_str_bits(buf, core->block + i, 8, NULL);
 
@@ -3106,9 +3106,9 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 
 	state->mode = RZ_OUTPUT_MODE_JSON;
 
-	if (rz_cons_singleton()->is_html) {
-		rz_cons_singleton()->is_html = false;
-		rz_cons_singleton()->was_html = true;
+	if (core->cons->is_html) {
+		core->cons->is_html = false;
+		core->cons->was_html = true;
 	}
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 1,
@@ -3208,8 +3208,8 @@ RZ_IPI RzCmdStatus rz_cmd_sizes_of_n_instructions_handler(RzCore *core, int argc
 
 static void disassemble_till_return_is_found(RzCore *core, ut64 offset, ut64 limit, RzCmdStateOutput *state) {
 	bool src_color = rz_config_get_i(core->config, "scr.color") > 0;
-	const char *off_color = src_color ? rz_cons_singleton()->context->pal.b0x00 : "";
-	const char *ret_color = src_color ? rz_cons_singleton()->context->pal.jmp : "";
+	const char *off_color = src_color ? core->cons->context->pal.b0x00 : "";
+	const char *ret_color = src_color ? core->cons->context->pal.jmp : "";
 	const char *end_color = src_color ? Color_RESET : "";
 
 	for (ut64 i = 0; i < limit; i++) {
@@ -3261,8 +3261,8 @@ RZ_IPI RzCmdStatus rz_cmd_disassemble_ropchain_handler(RzCore *core, int argc, c
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	bool src_color = rz_config_get_i(core->config, "scr.color") > 0;
 
-	const char *off_color = src_color ? rz_cons_singleton()->context->pal.offset : "";
-	const char *num_color = src_color ? rz_cons_singleton()->context->pal.num : "";
+	const char *off_color = src_color ? core->cons->context->pal.offset : "";
+	const char *num_color = src_color ? core->cons->context->pal.num : "";
 	const char *end_color = src_color ? Color_RESET : "";
 
 	if (asm_bits < 64) {
@@ -4455,12 +4455,12 @@ static void analysis_stats_standard_info(RzCore *core, RzCoreAnalysisStatsRange 
 		if (use_color) {
 			if (s) {
 				if (s->perm & RZ_PERM_X) {
-					rz_cons_print(rz_cons_singleton()->context->pal.graph_ujump);
+					rz_cons_print(core->cons->context->pal.graph_ujump);
 				} else {
-					rz_cons_print(rz_cons_singleton()->context->pal.graph_true);
+					rz_cons_print(core->cons->context->pal.graph_true);
 				}
 			} else {
-				rz_cons_print(rz_cons_singleton()->context->pal.graph_false);
+				rz_cons_print(core->cons->context->pal.graph_false);
 			}
 		}
 		if (sitem->strings > 0) {
@@ -5309,7 +5309,7 @@ static RzCmdStatus print_visual_bytes(RzCore *core, RZ_OWN RZ_NONNULL RzHistogra
 			rz_cons_clear00();
 			RzStrBuf *help = rz_strbuf_new(NULL);
 			if (help) {
-				rz_core_visual_append_help(help, "Visual histogram keybindings", help_msg_visual_hist);
+				rz_core_visual_append_help(core, help, "Visual histogram keybindings", help_msg_visual_hist);
 				rz_cons_less_str(rz_strbuf_get(help), "?");
 				rz_strbuf_free(help);
 			}

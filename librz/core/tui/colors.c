@@ -15,7 +15,7 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 	char *color = calloc(1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	bool truecolor = cons->context->color_mode == COLOR_MODE_16M;
 	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x " : "rgb:%x%x%x ";
 	const char *k;

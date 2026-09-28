@@ -25,4 +25,4 @@ d "b .s1 0x40;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,
 d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0001000b" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
 
 # a full 32-byte fetch packet, compact header and mixed widths
-d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x130,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1

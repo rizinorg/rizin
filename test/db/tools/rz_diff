@@ -1023,3 +1023,19 @@ EXPECT=<<EOF
 `------------------------------------------------------------------------------------------------'
 EOF
 RUN
+
+NAME=rz-diff function comparison against two candidates
+TOOL=rz-diff
+ARGS=-e scr.utf8=false -e scr.utf8.curvy=false -B -t functions bins/other/rz-diff/fcn_match_base bins/other/rz-diff/fcn_match_candidates
+EXPECT=<<EOF
+.----------------------------------------------------------------------------------------------------------------------------.
+| name0                    | size0 |      addr0 | type     | similarity |      addr1 | size1 | name1                         |
+)----------------------------------------------------------------------------------------------------------------------------(
+| sym.imp.printf           |     6 | 0x00001030 | COMPLETE | 1.000000   | 0x00001030 |     6 | sym.imp.printf                |
+| sym.imp.__cxa_finalize   |     6 | 0x00001040 | COMPLETE | 1.000000   | 0x00001040 |     6 | sym.imp.__cxa_finalize        |
+| sym.deregister_tm_clones |    34 | 0x00001080 | COMPLETE | 1.000000   | 0x00001080 |    34 | sym.deregister_tm_clones      |
+| sym.process_data         |    84 | 0x00001139 | PARTIAL  | 0.965517   | 0x00001139 |    87 | sym.candidate_high_similarity |
+|                          |     0 | ---------- | UNLIKE   | 0.000000   | 0x00001190 |    50 | sym.candidate_low_similarity  |
+`----------------------------------------------------------------------------------------------------------------------------'
+EOF
+RUN

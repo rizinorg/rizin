@@ -355,7 +355,7 @@ cleanup:
 }
 
 static void print_tcache(RzCore *core, RzList /*<RzList *>*/ *bins, PJ *pj, const ut64 tid, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	RzHeapBin *bin;
 	RzListIter *iter;
@@ -604,7 +604,7 @@ static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_aren
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
 	ut64 align = 12 * ptr_size + sizeof(int) * 2;
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (tcache) {
 		align = 16;
@@ -1078,7 +1078,7 @@ RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base,
 #endif
 
 void print_heap_chunk(RzCore *core, ut64 chunk, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!config) {
 		return;
 	}
@@ -1188,7 +1188,7 @@ void print_heap_chunk_simple(RzCore *core, ut64 chunk, const char *status, PJ *p
 	if (!cnk) {
 		return;
 	}
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	ut64 size = rz_glibc_chunk_size(cnk, config);
 	if (pj == NULL) {
 		PRINT_GA("Chunk");
@@ -1277,7 +1277,7 @@ static int print_double_linked_list_bin_simple(RzCore *core, ut64 bin, MallocSta
 		return -1;
 	}
 	RzHeapChunk cnk;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!rz_glibc_read_chunk(core->io, bin, &cnk, &config)) {
 		return -1;
@@ -1328,7 +1328,7 @@ static int print_double_linked_list_bin_simple(RzCore *core, ut64 bin, MallocSta
 }
 
 static int print_double_linked_list_bin_graph(RzCore *core, ut64 bin, MallocState *main_arena, ut64 brk_start) {
-	RzAGraph *g = rz_agraph_new(rz_cons_canvas_new(1, 1));
+	RzAGraph *g = rz_agraph_new(rz_cons_canvas_new(1, 1), core->cons);
 	ut64 next = UT64_MAX;
 	char title[256], chunk[256];
 	RzANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;
@@ -1338,7 +1338,7 @@ static int print_double_linked_list_bin_graph(RzCore *core, ut64 bin, MallocStat
 		return -1;
 	}
 	RzHeapChunk cnk;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (!g) {
 		rz_agraph_free(g);
@@ -1392,7 +1392,7 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 	int ret = 0;
 	ut64 brk_start = UT64_MAX, brk_end = UT64_MAX, initial_brk = UT64_MAX;
 	const ut8 ptr_size = rz_heap_ptr_size(core);
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (num_bin > 126) {
 		return -1;
@@ -1438,7 +1438,7 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 static void print_heap_bin(RzCore *core, ut64 m_arena, MallocState *main_arena, const char *input, bool print_graph, const RzHeapConfig *config) {
 	ut64 num_bin = UT64_MAX;
 	ut64 offset;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
@@ -1563,7 +1563,7 @@ RzHeapBin *rz_heap_fastbin_content_internal(RzCore *core, MallocState *arena, in
 }
 
 void print_heap_fastbin(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, const char *input, bool main_arena_only, PJ *pj, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
 	int fastbins_max = rz_config_get_i(core->config, "dbg.glibc.fastbinmax") - 1;
 	int global_max_fast_idx = rz_heap_fastbin_index(global_max_fast, ptr_size);
@@ -1755,7 +1755,7 @@ RZ_API RzList /*<RzHeapBin *>*/ *rz_heap_tcache_content(RzCore *core, ut64 arena
 }
 
 static void print_tcache_content(RzCore *core, ut64 arena_base, ut64 main_arena_base, PJ *pj, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	RzList *bins = rz_heap_tcache_content_internal(core, arena_base, config);
 	if (!bins) {
@@ -1773,7 +1773,7 @@ static void print_tcache_content(RzCore *core, ut64 arena_base, ut64 main_arena_
 }
 
 void print_inst_minfo(RzCore *core, const RzHeapHeapInfo *heap_info, ut64 hinfo) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	PRINT_YA("malloc_info @ ");
 	PRINTF_BA("0x%" PFMT64x, (ut64)hinfo);
@@ -1790,7 +1790,7 @@ void print_inst_minfo(RzCore *core, const RzHeapHeapInfo *heap_info, ut64 hinfo)
 
 void print_malloc_info(RzCore *core, ut64 m_state, ut64 malloc_state, const RzHeapConfig *config) {
 	ut64 h_info;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (malloc_state == m_state) {
 		PRINT_RA("main_arena does not have an instance of malloc_info\n");
 	} else if (rz_heap_is_arena(core, malloc_state, m_state, config)) {
@@ -1945,7 +1945,7 @@ static int print_bin_content(RzCore *core, MallocState *main_arena, int bin_num,
 		return 0;
 	}
 	int chunks_cnt = 0;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!pj) {
 		rz_cons_printf("%s", bin->type);
 		rz_cons_printf("_bin[");
@@ -1994,7 +1994,7 @@ static int print_bin_content(RzCore *core, MallocState *main_arena, int bin_num,
  * \param main_arena MallocState struct for the arena in which bin are
  */
 static void print_unsortedbin_description(RzCore *core, ut64 m_arena, MallocState *main_arena, PJ *pj, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!pj) {
 		rz_cons_printf("Unsorted bin in Arena @ ");
 		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
@@ -2019,7 +2019,7 @@ static void print_unsortedbin_description(RzCore *core, ut64 m_arena, MallocStat
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
  */
 static void print_smallbin_description(RzCore *core, ut64 m_arena, MallocState *main_arena, PJ *pj, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!pj) {
 		rz_cons_printf("Small bins in Arena @ ");
 		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
@@ -2053,7 +2053,7 @@ static void print_smallbin_description(RzCore *core, ut64 m_arena, MallocState *
  * \param main_arena Pointer to MallocState struct for the arena in which bins are
  */
 static void print_largebin_description(RzCore *core, ut64 m_arena, MallocState *main_arena, PJ *pj, const RzHeapConfig *config) {
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!pj) {
 		rz_cons_printf("Large bins in Arena @ ");
 		PRINTF_YA("0x%" PFMT64x "\n", (ut64)m_arena);
@@ -2215,7 +2215,7 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 
 	const int tcache = rz_config_get_i(core->config, "dbg.glibc.tcache");
 	const int offset = rz_config_get_i(core->config, "dbg.glibc.fc_offset");
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
 	if (m_arena == m_state) {
 		if (!rz_heap_get_brks(core, &brk_start, &brk_end)) {
@@ -2420,7 +2420,7 @@ RzList /*<RzHeapChunkListItem *>*/ *rz_heap_chunks_list_internal(RzCore *core, M
 
 RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char **argv) {
 	ut64 m_arena = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2464,7 +2464,7 @@ RZ_IPI RzCmdStatus rz_cmd_arena_print_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	MallocState main_arena_storage = { 0 };
 	MallocState *main_arena = &main_arena_storage;
 	RzOutputMode mode = state->mode;
@@ -2512,7 +2512,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunks_print_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzAGraph *g = rz_agraph_new(can);
+	RzAGraph *g = rz_agraph_new(can, core->cons);
 	if (!g) {
 		rz_cons_canvas_free(can);
 		rz_config_hold_restore(hc);
@@ -2619,7 +2619,7 @@ end:
 
 RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2663,7 +2663,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_chunk_print_handler(RzCore *core, int argc, const
 
 RZ_IPI RzCmdStatus rz_cmd_heap_info_print_handler(RzCore *core, int argc, const char **argv) {
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2718,7 +2718,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	const char *input = (argc == 1) ? "" : argv[1];
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2761,7 +2761,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, c
 RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler(RzCore *core, int argc, const char **argv) {
 	const char *input = (argc == 1) ? "" : argv[1];
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2806,7 +2806,7 @@ RZ_IPI RzCmdStatus rz_cmd_heap_fastbins_print_handler(RzCore *core, int argc, co
 
 RZ_IPI RzCmdStatus rz_cmd_heap_arena_bins_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;

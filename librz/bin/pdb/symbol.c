@@ -107,7 +107,9 @@ RZ_IPI bool PDBSymbol_parse(RzBuffer *b, PDBSymbol *symbol) {
 	}
 
 	return true;
+
 err:
+	RZ_FREE(symbol->data);
 	return false;
 }
 

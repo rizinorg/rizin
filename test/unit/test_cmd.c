@@ -1365,7 +1365,7 @@ static RzCmdStatus b_handler(RzCore *core, int argc, const char **argv) {
 
 bool test_call_macros(void) {
 	RzCore *core = RZ_NEW0(RzCore);
-	core->cons = rz_cons_singleton();
+	core->cons = rz_cons_new();
 	RzCmd *cmd = rz_core_cmd_new(core, false);
 	core->rcmd = cmd;
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -1402,7 +1402,7 @@ bool test_call_macros(void) {
 
 bool test_call_multiple_macros(void) {
 	RzCore *core = RZ_NEW0(RzCore);
-	core->cons = rz_cons_singleton();
+	core->cons = rz_cons_new();
 	RzCmd *cmd = rz_core_cmd_new(core, false);
 	core->rcmd = cmd;
 	RzCmdDesc *root = rz_cmd_get_root(cmd);

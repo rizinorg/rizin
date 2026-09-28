@@ -20,7 +20,7 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 	char *homehud = rz_path_home_prefix(RZ_HUD);
 	char *res = NULL;
 	char *p = 0;
-	rz_cons_singleton()->context->color_mode = use_color;
+	core->cons->context->color_mode = use_color;
 
 	rz_core_visual_showcursor(core, true);
 	if (c && *c && rz_file_exists(c)) {

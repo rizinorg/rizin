@@ -370,6 +370,7 @@ typedef struct {
 	C6xOperand ops[C6X_MAX_OPS];
 	ut8 nops; ///< number of valid operands
 	bool is_header; ///< compact fetch-packet header word (renders as .fphead)
+	bool compact_packet; ///< this slot sits in a packet that has a compact header
 } C6xInsn;
 
 /** Per-variant feature gate and register-set descriptor. */

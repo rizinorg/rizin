@@ -801,6 +801,17 @@ RZ_API bool rz_project_migrate_v24_v25(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 25 -> 26
+//
+// Changes from <commit not yet known>:
+//      Added 'w' xref type.
+
+RZ_API bool rz_project_migrate_v25_v26(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the change was only additive
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -826,6 +837,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v22_v23,
 	rz_project_migrate_v23_v24,
 	rz_project_migrate_v24_v25,
+	rz_project_migrate_v25_v26,
 };
 
 /// Migrate the given project to the current version in-place

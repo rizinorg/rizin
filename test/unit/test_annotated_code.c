@@ -338,9 +338,9 @@ static bool test_rz_core_annotated_code_print(void) {
 			       "    sym.imp.puts(\"Hello, World!\");\n"
 			       "    return;\n"
 			       "}\n";
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	rz_cons_push();
-	rz_core_annotated_code_print(code, NULL);
+	rz_core_annotated_code_print(cons, code, NULL);
 	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();
 	mu_assert_streq(actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
@@ -354,7 +354,7 @@ static bool test_rz_core_annotated_code_print(void) {
 				"    0x00001158    |    sym.imp.puts(\"Hello, World!\");\n"
 				"    0x0000115f    |    return;\n"
 				"                  |}\n";
-	rz_core_annotated_code_print(code, offsets);
+	rz_core_annotated_code_print(cons, code, offsets);
 	free(actual);
 	actual = rz_cons_get_buffer_dup();
 	rz_cons_pop();

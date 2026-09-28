@@ -24,9 +24,9 @@ typedef ut8 *(*AllocateBuffer)(RzAnalysis *analysis, void *data, ut8 **buffer, u
 
 typedef struct shared_context_t {
 	const RzList /*<void *>*/ *list_b;
-	RzThreadQueue *queue;
-	RzThreadQueue *matches;
-	RzThreadQueue *unmatch;
+	RzThreadQueue /*<void *>*/ *queue;
+	RzThreadQueue /*<RzAnalysisMatchPair *>*/ *matches;
+	RzThreadQueue /*<RzAnalysisBlock *>*/ *unmatch;
 	AllocateBuffer alloc;
 	RzThreadLock *lock_a;
 	RzThreadLock *lock_b;
@@ -501,7 +501,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 				max_similarity = calc_similarity;
 				match = fcn_b;
 				break;
-			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD && calc_similarity <= max_similarity) {
+			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD || calc_similarity <= max_similarity) {
 				continue;
 			}
 			max_similarity = calc_similarity;

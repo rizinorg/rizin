@@ -27,7 +27,7 @@ typedef struct string_search {
 	 * above.
 	 * On return it must push its ID into the queue again to release it.
 	 */
-	RzThreadQueue *thread_ids;
+	RzThreadQueue /*<size_t *>*/ *thread_ids;
 } StringSearch;
 
 /**
@@ -78,7 +78,7 @@ static void align_offsets(RzUtilStrScanOptions options, RzStrEnc encoding, RzDet
 }
 
 static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut64 offset, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 
 	ut64 size;
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
@@ -139,7 +139,7 @@ static inline int next_i(int i, RzStrEnc enc, size_t alignment) {
 }
 
 static bool adjusted_buffer_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut64 offset, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 	if (fopt->alignment < 4 && !RZ_BETWEEN(1, fopt->alignment, 2)) {
 		rz_warn_if_reached();
 		return false;
@@ -217,7 +217,7 @@ static inline bool do_search_with_adjusted_buffer(RzStrEnc encoding, size_t alig
 }
 
 static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 	rz_return_val_if_fail(fopt, false);
 
 	void *data = NULL;

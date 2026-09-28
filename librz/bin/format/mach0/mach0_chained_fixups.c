@@ -169,7 +169,7 @@ RZ_API RZ_OWN char *MACH0_(read_chained_symbol)(struct MACH0_(obj_t) * obj, ut32
 		return NULL;
 	}
 	paddr += name_offset;
-	return rz_buf_get_nstring(obj->b, paddr, RZ_BIN_MACH0_STRING_LENGTH);
+	return rz_buf_get_nstring(obj->b, paddr, RZ_BIN_MACH0_STRING_LENGTH, false);
 }
 
 RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {

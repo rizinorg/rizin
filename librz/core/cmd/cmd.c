@@ -3215,9 +3215,9 @@ RZ_IPI RzCmdStatus rz_basefind_compute_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
 	bool use_color = rz_config_get_i(core->config, "scr.color") != 0;
-	const char *cmd_color = use_color ? rz_cons_singleton()->context->pal.help : "";
-	const char *cmd_bold = use_color ? rz_cons_singleton()->context->pal.btext : "";
-	const char *reset = use_color ? rz_cons_singleton()->context->pal.reset : "";
+	const char *cmd_color = use_color ? core->cons->context->pal.help : "";
+	const char *cmd_bold = use_color ? core->cons->context->pal.btext : "";
+	const char *reset = use_color ? core->cons->context->pal.reset : "";
 	rz_cons_printf("Welcome to Rizin!\n\n");
 	rz_cons_printf("%sFastest way to help yourself%s\n", cmd_bold, reset);
 	rz_cons_printf("Type %s?**%s to search all commands' short descriptions.\n", cmd_color, reset);

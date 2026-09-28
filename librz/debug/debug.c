@@ -1551,10 +1551,12 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 		eprintf("Cannot find 'sn' register for current arch-os.\n");
 		return -1;
 	}
-	for (;;) {
+
+	RzCons *cons = ((RzCore *)dbg->corebind.core)->cons;
+	while (true) {
 		RzDebugReasonType reason;
 
-		if (rz_cons_singleton()->context->breaked) {
+		if (cons->context->breaked) {
 			break;
 		}
 #if __linux__
