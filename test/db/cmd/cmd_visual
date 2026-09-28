@@ -240,3 +240,39 @@ EXPECT=<<EOF
 0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J[0;0H
 EOF
 RUN
+NAME=depth indicator simple chain
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=200
+e scr.rows=20
+aaa
+e graph.depth.enabled=true
+e graph.depth.ref=main
+s main
+< q; Vp
+echo
+EOF
+EXPECT=<<EOF
+[?25l[0;0H[0m[0x00010450 [xAdvc]0 0% 100 bins/elf/analysis/armcall]> pd $r @ main depth from main: 0                                                                                                                 
+            ; UNKNOWN XREFS from entry0 @ 0x10318, 0x1032c                                                                                                                                              
+/ main();                                                                                                                                                                                               
+|           ; var unknown_t var_10h @ stack - 0x10                                                                                                                                                      
+|           ; var unknown_t var_ch @ stack - 0xc                                                                                                                                                        
+|           0x00010450      push  {fp, lr}                                                                                                                                                              
+|           0x00010454      add   fp, sp, 4                                                                                                                                                             
+|           0x00010458      sub   sp, sp, 8                                                                                                                                                             
+|           0x0001045c      str   r0, [var_ch]                         ; 0x8 ; 8                                                                                                                        
+|           0x00010460      str   r1, [var_10h]                        ; 0xc ; 12                                                                                                                       
+|           0x00010464      ldr   r0, [var_ch]                         ; 0x8 ; 8                                                                                                                        
+|           0x00010468      bl    sym.call                             ;[1]                                                                                                                             
+|           0x0001046c      mov   r3, r0                                                                                                                                                                
+|           0x00010470      mov   r0, r3                                                                                                                                                                
+|           0x00010474      sub   sp, fp, 4                                                                                                                                                             
+\           0x00010478      pop   {fp, pc}                                                                                                                                                              
+            ; UNKNOWN XREFS from entry0 @ 0x1031c, 0x10330                                                                                                                                              
+/ sym.__libc_csu_init();                                                                                                                                                                                
+|           0x0001047c      push  {r3, r4, r5, r6, r7, r8, sb, lr}                                                                                                                                      
+|           0x00010480      mov   r7, r0                                                                                                                                                                [20;194H79.7%[?25h[0m[2J[0;0H
+EOF
+RUN
