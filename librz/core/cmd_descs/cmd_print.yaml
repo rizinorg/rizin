@@ -2573,3 +2573,29 @@ commands:
                 summary: Show a interactive horizontal histogram of number of chars in strings per each block
                 cname: print_equal_equal_z_visual
                 args: []
+  - name: ptf
+    cname: write_to_file
+    summary: Print memory region to file (overwrite/create)
+    description: >
+      Copy raw bytes from mapped memory range [<start>, <start> + <size>) into
+      <file>. If the file exists, it is truncated first.
+    args:
+      - name: start
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
+  - name: ptfa
+    cname: write_to_file_append
+    summary: Print memory region to file (append to end of file)
+    description: >
+      Copy raw bytes from mapped memory range [<start>, <start> + <size>) into
+      <file>. The file is appended to if it already exists.
+    args:
+      - name: start
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: size
+        type: RZ_CMD_ARG_TYPE_RZNUM
+      - name: file
+        type: RZ_CMD_ARG_TYPE_FILE
