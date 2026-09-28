@@ -1153,7 +1153,7 @@ RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps) {
 static bool skip_current_instruction(RzDebug *dbg) {
 	ut8 buf[64];
 	RzAnalysisOp op = { 0 };
-	ut64 pc = rz_debug_reg_get(dbg, "PC");
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 
 	dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
 
@@ -1166,7 +1166,7 @@ static bool skip_current_instruction(RzDebug *dbg) {
 		return false;
 	}
 
-	rz_debug_reg_set(dbg, "PC", pc + op.size);
+	rz_debug_reg_set_by_role(dbg, RZ_REG_NAME_PC, pc + op.size);
 	rz_analysis_op_fini(&op);
 	return true;
 }
@@ -1195,6 +1195,52 @@ static int session_forward_to_breakpoint(RzDebug *dbg) {
 	return dbg->tid;
 }
 
+/**
+ * \brief Resume the debuggee and run until a user-visible stop event occurs.
+ *
+ * Core execution loop of the debugger. It resumes the target process, handles
+ * internal background events silently (looping back to continue execution),
+ * and only returns control to the caller when a legitimate stop occurs, such
+ * as a user breakpoint or an unexpected crash.
+ *
+ * The function works in three phases:
+ *
+ * 1. Resumption and recoil
+ *    - If a reverse-debugging (time-travel) session is being inspected in the
+ *      past, live execution is skipped and the session is advanced through the
+ *      recorded snapshots instead.
+ *    - If the program counter sits on a breakpoint, the breakpoint is
+ *      temporarily lifted, the target single-steps one instruction, the
+ *      breakpoint is restored, and execution resumes. This prevents the
+ *      debugger from getting stuck on the same instruction.
+ *
+ * 2. Silent event filtering
+ *    After each stop (\ref rz_debug_wait), internal events are handled without
+ *    returning to the caller:
+ *    - Conditional breakpoints: the condition is evaluated and execution
+ *      resumes if it is false.
+ *    - Disabled breakpoints: skipped over.
+ *    - OS events (Linux/Windows): forks, new threads (NEW_TID), thread exits
+ *      and library loads are processed automatically.
+ *    - Tracepoints: the trace data is logged, the tracepoint is stepped over,
+ *      and execution continues.
+ *    - Signals: either passed to the target's own signal handler, or the
+ *      faulting instruction is stepped over to bypass the handler entirely.
+ *
+ * 3. Cleanup and halt
+ *    When a real stop condition is reached, the loop exits and:
+ *    - the debugger's current thread is synchronized to the thread that
+ *      caused the stop,
+ *    - software breakpoints are restored into target memory,
+ *    - if recording is active, a time-travel checkpoint is saved so the user
+ *      can later rewind to this exact stop.
+ *
+ * \param dbg The debugger instance.
+ * \param sig Signal to deliver to the target when resuming (0 for none).
+ *
+ * \return The thread ID (TID) on which the debugger halted, or 0 if the
+ *         process died.
+ */
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	if (!dbg) {
 		return 0;
@@ -1337,7 +1383,11 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 				continue;
 			} else if (what & RZ_DBG_SIGNAL_SKIP) {
 				const char *signame = rz_signal_to_string(dbg->reason.signum);
-
+				/* 
+				If signal is marked to be skipped but sent via external syscalls, we do not skip the instruction
+				*since it would lead to incorrect execution of further instructions, if sent due to the faulty instruction
+				* we just hit the instruciton so we skip it and move the PC so that we are not stuck hitting the same instruction
+				*/
 				if (dbg->reason.sig_source == RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL) {
 					eprintf("Skipped signal handler for %d (%s)\n", dbg->reason.signum, signame);
 					continue;
