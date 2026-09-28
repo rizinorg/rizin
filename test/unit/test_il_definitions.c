@@ -196,6 +196,13 @@ static bool test_il_mem_loadw() {
 	mu_assert_eq(rz_bv_to_ut64(val), 0xaaaa, "load val");
 	rz_bv_free(val);
 
+	// Load into existing bitvector.
+	val = rz_bv_new_from_ut64(16, 0);
+	mu_assert_true(rz_il_mem_loadw_into(mem, val, addr, 16, false), "Load success");
+	mu_assert_eq(rz_bv_len(val), 16, "load size");
+	mu_assert_eq(rz_bv_to_ut64(val), 0xaaaa, "load val");
+	rz_bv_free(val);
+
 	rz_bv_free(addr);
 	rz_il_mem_free(mem);
 	mu_end;
