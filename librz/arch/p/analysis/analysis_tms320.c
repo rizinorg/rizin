@@ -650,7 +650,51 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr eallow .1 86.0 0\n" // Protected-register write enable
 			"gpr loop   .1 87.0 0\n" // LOOPZ/LOOPNZ in progress
 			"ctr dbgstat .16 132 0\n" // Debug status, saved with IER on interrupts
-			"gpr idlestat .1 134.0 0\n"); // IDLE in progress
+			"gpr idlestat .1 134.0 0\n" // IDLE in progress
+			"fpu r0  .64 136 0\n" // FPU register; RnH and RnL are its halves
+			"fpu r0h .32 140 0\n"
+			"fpu r0l .32 136 0\n"
+			"fpu r1  .64 144 0\n"
+			"fpu r1h .32 148 0\n"
+			"fpu r1l .32 144 0\n"
+			"fpu r2  .64 152 0\n"
+			"fpu r2h .32 156 0\n"
+			"fpu r2l .32 152 0\n"
+			"fpu r3  .64 160 0\n"
+			"fpu r3h .32 164 0\n"
+			"fpu r3l .32 160 0\n"
+			"fpu r4  .64 168 0\n"
+			"fpu r4h .32 172 0\n"
+			"fpu r4l .32 168 0\n"
+			"fpu r5  .64 176 0\n"
+			"fpu r5h .32 180 0\n"
+			"fpu r5l .32 176 0\n"
+			"fpu r6  .64 184 0\n"
+			"fpu r6h .32 188 0\n"
+			"fpu r6l .32 184 0\n"
+			"fpu r7  .64 192 0\n"
+			"fpu r7h .32 196 0\n"
+			"fpu r7l .32 192 0\n"
+			"gpr lvf   .1 200.0 0\n" // Latched overflow
+			"gpr luf   .1 200.1 0\n" // Latched underflow
+			"gpr nf    .1 200.2 0\n" // Negative float
+			"gpr zf    .1 200.3 0\n" // Zero float
+			"gpr ni    .1 200.4 0\n" // Negative integer
+			"gpr zi    .1 200.5 0\n" // Zero integer
+			"gpr tf    .1 200.6 0\n" // Test flag
+			"gpr rnd32 .1 201.0 0\n" // Round to nearest (else to zero), 32-bit
+			"gpr rnd64 .1 201.1 0\n" // The same for 64-bit
+			"gpr shdws .1 201.2 0\n" // Shadow registers hold SAVE state
+			"gpr rb    .32 204 0\n" // Repeat block
+			"fpu r0s  .64 208 0\n" // SAVE/RESTORE shadow of Rn
+			"fpu r1s  .64 216 0\n"
+			"fpu r2s  .64 224 0\n"
+			"fpu r3s  .64 232 0\n"
+			"fpu r4s  .64 240 0\n"
+			"fpu r5s  .64 248 0\n"
+			"fpu r6s  .64 256 0\n"
+			"fpu r7s  .64 264 0\n"
+			"ctr stfs  .32 272 0\n"); // SAVE/RESTORE shadow of STF
 	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c5x") == 0) {
 		// TMS320C5x: the C2x register file plus the C5x additions — the 32-bit

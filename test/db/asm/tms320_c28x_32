@@ -137,6 +137,173 @@ d "vcmac vr5, vr4, vr3, vr2, vr1, vr0" 01e5 0x0
 d "vccmac vr5, vr4, vr3, vr2, vr1, vr0" 0fe5 0x0
 d "vitbm2 vr0" 0ce5 0x0
 d "vitbm3 vr0, vr1, vr2" 0de5 0x0
+# FPU32, FPU64, TMU and fast integer division; texts agree with TI dis2000 20.2.6.LTS
+d "mov32 r0h, @acc" a9bd120f 0x0
+d "mov32 r0l, @acc" a9bd100f 0x0
+d "mov32 r0h, @acc" a9bd110f 0x0
+d "mov32 r7h, @xt" acbd2e0f 0x0
+d "mov32 r4l, @p" abbd200f 0x0
+d "mov32 r0h, *xar4++" 84bd120f 0x0
+d "mov32 @acc, r0h" a9bf120f 0x0
+d "mov32 @xar5, r7h" a5bf2e0f 0x0
+d "movst0 lvf,ni,zi,ci" 69ad 0x0
+d "mpyf32 r3h, r7h, r2h || mov32 *-sp[30], r7h" 05e05edf 0x0
+d "addf32 r3h, r7h, r1h || mov32 @0x1f, r2h" 13e01fda 0x0
+d "subf32 r5h, r7h, r4h || mov32 *-sp[38], r2h" 29e066ea 0x0
+d "mpyf64 r6, r3, r5 || mov32 @0x14, r6h" 4ae014f6 0x0
+d "addf64 r5, r1, r2 || mov32 *-sp[5], r3h" 54e0456b 0x0
+d "subf64 r7, r6, r2 || mov32 *-sp[48], r0h" 65e070b8 0x0
+d "mpyf64 r6, r7, r4 || mov32 *-sp[2], r5l" 89e042f5 0x0
+d "addf64 r5, r7, r1 || mov32 *+xar1[2], r6l" 93e0d1ee 0x0
+d "subf64 r6, r6, r3 || mov32 *sp++, r5l" a7e0bdb5 0x0
+d "mov32 *+xar1[3], stf" 00e2d9dd 0x0
+d "mov32 *+xar4[2], r3l" 02e2d4eb 0x0
+d "mov32 *+xar2[ar0], r5h" 03e29295 0x0
+d "mov16 *-sp[28], r5h" 13e25c05 0x0
+d "f32dtof64 r1, *+xar6[0]" 21e2c601 0x0
+d "movd32 r7h, *+xar5[5]" 23e2ed2f 0x0
+d "movdd32 r0l, @0x36" 42e23618 0x0
+d "movdd32 r6h, @0x28" 43e22866 0x0
+d "macf32 r0h, r2h, *+xar1[1], *xar7++" 50e2c990 0x0
+d "mpy2pif32 r2h, r4h" 70e22200 0x0
+d "div2pif32 r0h, r4h" 71e22000 0x0
+d "log2f32 r7h, r4h" 72e22700 0x0
+d "iexp2f32 r0h, r1h" 73e20800 0x0
+d "divf32 r0h, r6h, r0h" 74e23000 0x0
+d "sqrtf32 r3h, r2h" 77e21300 0x0
+d "sinpuf32 r2h, r1h" 78e20a00 0x0
+d "cospuf32 r3h, r7h" 79e23b00 0x0
+d "atanpuf32 r5h, r1h" 7ae20d00 0x0
+d "quadf32 r5h, r7h, r3h, r4h" 7ce2fd08 0x0
+d "mov32 stf, *-sp[53]" 80e27500 0x0
+d "ui32tof32 r5h, *-sp[31]" 84e25f05 0x0
+d "ui32tof64 r1, *-sp[1]" 85e24101 0x0
+d "i32tof32 r7h, *-sp[3]" 88e24307 0x0
+d "i32tof64 r3, *arp0" 89e2b003 0x0
+d "f32tof64 r3, @0x12" 8ce21203 0x0
+d "mov32 r2l, *+xar7[1]" 98e2cfc2 0x0
+d "mov32 r6h, *-sp[38], unc" aee2660e 0x0
+d "ui16tof32 r7h, *arp7" c4e2b707 0x0
+d "i16tof32 r2h, *-sp[49]" c8e27102 0x0
+d "mpyf32 r1h, r7h, r1h || mov32 r1h, *+xar7[7]" 03e3ffc9 0x0
+d "addf32 r7h, r2h, r2h || mov32 r3h, *--xar4" 14e38cbb 0x0
+d "subf32 r4h, r4h, r3h || mov32 r7h, *-sp[22]" 27e35627 0x0
+d "macf32 r3h, r2h, r0h, r5h, r0h || mov32 r2h, *-sp[40]" 31e36842 0x0
+d "mpyf64 r0, r3, r2 || mov32 r1h, *-sp[28]" 44e35cc1 0x0
+d "addf64 r7, r5, r6 || mov32 r4h, @0x35" 5de3357c 0x0
+d "subf64 r4, r4, r2 || mov32 r0h, *+xar7[2]" 65e3d720 0x0
+d "macf64 r3, r2, r0, r7, r6 || mov32 r1h, @0x0e" 7de30ec1 0x0
+d "mpyf64 r0, r6, r4 || mov32 r2l, @0x3c" 89e33c82 0x0
+d "addf64 r3, r4, r2 || mov32 r6l, *-sp[38]" 95e3661e 0x0
+d "subf64 r1, r0, r2 || mov32 r2l, @0x33" a4e3330a 0x0
+d "macf64 r3, r2, r0, r6, r4 || mov32 r5l, @0x20" b9e32085 0x0
+d "macf32 r7h, r6h, r4h, r1h, r2h || mov32 r2h, @0x1b" c4e31b62 0x0
+d "macf64 r7, r6, r1, r6, r1 || mov32 r6h, @0x22" d3e3228e 0x0
+d "macf64 r7, r6, r5, r2, r5 || mov32 r5l, *-sp[11]" eae34bad 0x0
+d "restore" 62e5 0x0
+d "zeroa" 63e5 0x0
+d "subc4ui32 r2h, r1h, r3h" 64e5 0x0
+d "subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h" 65e5 0x0
+d "subc3f64 r2, r1, r3" 66e5 0x0
+d "absi32div32 r2h, r1h, r3h" 68e5 0x0
+d "absi32div32u r2h, r1h" 69e5 0x0
+d "negi32div32 r1h, r2h" 6ae5 0x0
+d "enegi32div32 r1h, r2h, r3h" 6be5 0x0
+d "mnegi32div32 r1h, r2h, r3h" 6ce5 0x0
+d "testtf tf" 8ae5 0x0
+d "zero r5" 95e5 0x0
+d "cmpf32 r1h, #0.0" a1e5 0x0
+d "absi64div32 r2h, r1h:r0h, r3h" a8e5 0x0
+d "absi64div32u r2h, r1h:r0h" a9e5 0x0
+d "negi64div32 r1h:r0h, r2h" aae5 0x0
+d "enegi64div32 r1h:r0h, r2h, r3h" abe5 0x0
+d "mnegi64div32 r1h:r0h, r2h, r3h" ace5 0x0
+d "cmpf64 r2, #0.0" b2e5 0x0
+d "absi64div64 r2h:r4h, r1h:r0h, r3h:r5h" b8e5 0x0
+d "absi64div64u r2h:r4h, r1h:r0h" b9e5 0x0
+d "negi64div64 r1h:r0h, r2h:r4h" bae5 0x0
+d "enegi64div64 r1h:r0h, r2h:r4h, r3h:r5h" bbe5 0x0
+d "mnegi64div64 r1h:r0h, r2h:r4h, r3h:r5h" bce5 0x0
+d "predivf64 r0h, r2, r1, r3" bee5 0x0
+d "postdivf64 r1, r0h" bfe5 0x0
+d "setflg luf=0,zf=0,ni=1,zi=0,rndq32=1,rndf32=1" 19e695d7 0x0
+d "save nf=0,zf=1,ni=1,zi=0,tf=1,rndq16=1" 47e6dae1 0x0
+d "f64toi32 r0h, r1" 84e60800 0x0
+d "f64toi64 r3, r5" 84e62b80 0x0
+d "i32tof64 r2, r5h" 85e62a00 0x0
+d "i64tof64 r6, r7" 85e63e80 0x0
+d "f64toui32 r5h, r3" 86e61d00 0x0
+d "f64toui64 r1, r4" 86e62180 0x0
+d "ui32tof64 r0, r1h" 87e60800 0x0
+d "ui64tof64 r0, r4" 87e62080 0x0
+d "f32toi32 r1h, r6h" 88e63100 0x0
+d "i32tof32 r1h, r6h" 89e63100 0x0
+d "f32toui32 r1h, r4h" 8ae62100 0x0
+d "ui32tof32 r4h, r2h" 8be61400 0x0
+d "f32toi16 r6h, r0h" 8ce60600 0x0
+d "f32toi16r r2h, r7h" 8ce63a80 0x0
+d "i16tof32 r0h, r5h" 8de62800 0x0
+d "f32toui16 r7h, r7h" 8ee63f00 0x0
+d "f32toui16r r2h, r5h" 8ee62a80 0x0
+d "ui16tof32 r2h, r1h" 8fe60a00 0x0
+d "f64tof32 r1h, r4" 90e62100 0x0
+d "f32tof64 r4, r4h" 91e62400 0x0
+d "eisqrtf32 r0h, r5h" 92e62800 0x0
+d "eisqrtf64 r6, r4" 92e62680 0x0
+d "einvf32 r4h, r0h" 93e60400 0x0
+d "einvf64 r4, r6" 93e63480 0x0
+d "cmpf32 r3h, r2h" 94e61300 0x0
+d "absf32 r1h, r0h" 95e60100 0x0
+d "maxf32 r3h, r7h" 96e63b00 0x0
+d "minf32 r3h, r3h" 97e61b00 0x0
+d "cmpf64 r0, r7" 98e63800 0x0
+d "absf64 r6, r5" 99e62e00 0x0
+d "maxf64 r1, r0" 9ae60100 0x0
+d "minf64 r5, r2" 9be61500 0x0
+d "maxf32 r4h, r5h || mov32 r0h, r7h" 9ce62cae 0x0
+d "minf32 r3h, r1h || mov32 r5h, r2h" 9de64bb5 0x0
+d "maxf64 r1, r1 || mov64 r3, r2" 9ee6c9c4 0x0
+d "minf64 r5, r7 || mov64 r3, r5" 9fe6fd9a 0x0
+d "negf32 r0h, r1h, geq" a3e68817 0x0
+d "negf64 r5, r5" b7e6adb9 0x0
+d "mov32 r6h, r4h, lu" cce666ec 0x0
+d "mov64 r4, r0" d6e6c471 0x0
+d "swapf r3, r1, unc" eee68be1 0x0
+d "fracf32 r0h, r4h" f1e62000 0x0
+d "fracf64 r6, r5" f1e62e80 0x0
+d "mov32 r0h, r5l" f4e62800 0x0
+d "mov32 r7l, r3h" f5e61f00 0x0
+d "mpyf32 r0h, r6h, r0h" 00e730a8 0x0
+d "addf32 r3h, r3h, r3h" 10e7dbde 0x0
+d "subf32 r6h, r4h, r5h" 20e766b3 0x0
+d "mpyf32 r7h, r7h, r5h || addf32 r7h, r7h, r6h" 43e77f7f 0x0
+d "mpyf32 r2h, r3h, r1h || subf32 r5h, r6h, r4h" 52e75a6a 0x0
+d "mpyf64 r2, r7, r1" 80e77afa 0x0
+d "addf64 r6, r0, r1" 90e746ac 0x0
+d "subf64 r3, r6, r3" a0e7f374 0x0
+d "mpyf64 r0, r7, r7 || addf64 r6, r6, r0" cce7f86d 0x0
+d "mpyf64 r0, r0, r0 || subf64 r5, r6, r4" dee7006a 0x0
+d "moviz r0, #0x67c5" 03e8283e 0x0
+d "movxi r3h, #0x2c77" 09e8bb63 0x0
+d "cmpf32 r0h, #0x34dc" 11e8e0a6 0x0
+d "maxf32 r0h, #0x7914" 23e8a0c8 0x0
+d "minf32 r3h, #0x63ce" 33e8731e 0x0
+d "mpyf32 r7h, #0x4b81, r7h" 52e87fe0 0x0
+d "addf32 r0h, #0x6187, r0h" 98e8c061 0x0
+d "subf32 r2h, #0xc674, r0h" f1e8029d 0x0
+d "movix r7l, #0x22cb" 01e95f16 0x0
+d "movxi r4l, #0xcc36" 0ee9b461 0x0
+d "cmpf64 r7, #0xa9e4" 15e9274f 0x0
+d "maxf64 r7, #0x9d41" 24e90fea 0x0
+d "minf64 r5, #0x884f" 34e97d42 0x0
+d "mpyf64 r6, #0x8675, r0" 61e9469d 0x0
+d "addf64 r1, #0x8516, r1" a1e98945 0x0
+d "subf64 r5, #0x55a9, r7" d5e97d6a 0x0
+d "push rb" f0ff 0x0
+d "pop rb" f1ff 0x0
+d "mov32 r2h, @0x34" a6e23412 0x0
+d "setflg" 00e60000 0x0
+d "movst0 #0" 00ad 0x0
 # VCU parallel forms, second-word operands, FFT and CRC; texts agree with TI dis2000 20.2.6.LTS
 d "vcfft2 vr7, vr6, vr4, vr2, vr1, vr0, #0x1" 31a1 0x0
 d "vcfft3 vr5, vr4, vr3, vr2, vr0, #0x1" 33a1 0x0

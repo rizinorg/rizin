@@ -71,6 +71,14 @@ state metrics and the CRC registers. The encodings were checked against
 `dis2000`, and the VCU-I core set also against TI's assembler. They are not
 lifted to RzIL.
 
+The FPU32 and FPU64 instructions of the floating-point parts decode too, with
+the TMU's trigonometric and math instructions and the fast integer division;
+FPU32 is documented in **SPRUEO2**. They work on `R0H`-`R7H`, their low halves
+`R0L`-`R7L` and the 64-bit `R0`-`R7`, `STF` and `RB`, and include the parallel
+forms written with `||`, such as `MPYF32 ... || MOV32 ...`. The rows were
+derived from `dis2000` and checked against it on random encodings of every row.
+None of these instructions are lifted to RzIL.
+
 ## c55x
 
 Variable-length (1-7 byte) instructions, little-endian, 16-bit word.
