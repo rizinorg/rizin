@@ -610,7 +610,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		break;
 	}
 	case RZ_IL_OP_SET: {
-		ut64 vhash = effect->op.set.hash;
+		ut64 vhash = effect->op.set.idx;
 		EVAL_PURE_OR_RETURN(effect->op.set.x);
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);

@@ -5,6 +5,7 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 #include "analysis_private.h"
 #include "pic_midrange.h"
+#include "pic_midrange_global_idx_map.inc"
 #include "pic_il.inc"
 
 enum {

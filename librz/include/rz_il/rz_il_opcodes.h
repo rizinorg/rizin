@@ -156,7 +156,7 @@ typedef RzILOpArgsShift RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
-	ut64 hash; ///< DJB2 hash of variable name
+	ut64 idx; ///< The index for this variable (unique within the category of GLOBAL, LOCAL, LET).
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -942,7 +942,7 @@ RZ_API void rz_il_op_effect_free(RZ_NULLABLE RzILOpEffect *op);
 
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_empty();
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop();
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x);
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, size_t idx, bool is_local, RZ_NONNULL RzILOpPure *x);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_jmp(RZ_NONNULL RzILOpBitVector *dst);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_goto(RZ_NONNULL const char *label);
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONNULL RzILOpEffect *y);

@@ -23,6 +23,8 @@
 #include <rz_util.h>
 #include "c6x.h"
 
+#include "c6x_global_idx_map.inc"
+
 /* RzIL VM */
 
 // IL-VM register bindings: the 32+32 general-purpose registers (a0-a31,

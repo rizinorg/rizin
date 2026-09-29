@@ -16,6 +16,8 @@
 #include <hexagon/hexagon_arch.h>
 #include <rz_il/rz_il_opcodes.h>
 
+#include "hexagon_global_idx_map.inc"
+
 #define WRITE_REG(pkt, op, val)                    hex_write_reg(pkt, op, val)
 #define READ_REG(pkt, op, tmp_reg)                 hex_read_reg(pkt, op, tmp_reg)
 #define ISA2REG(hi, var, tmp_reg)                  hex_isa_to_reg(hi, var, tmp_reg)

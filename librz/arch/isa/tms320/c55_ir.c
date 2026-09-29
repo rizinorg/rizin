@@ -19,6 +19,8 @@
 #include <string.h>
 #include "c55_ir.h"
 
+#include "c55x_plus/c55plus_global_idx_map.inc"
+
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 // ---------------------------------------------------------------------------

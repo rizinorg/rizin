@@ -630,11 +630,15 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop() {
  *
  *  set v x changes the value stored in v to the value of x.
  */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x) {
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, size_t idx, bool is_local, RZ_NONNULL RzILOpPure *x) {
 	rz_return_val_if_fail(v && x, NULL);
+	if (!is_local && idx == -1) {
+		rz_warn_if_reached();
+		return NULL;
+	}
 	RzILOpEffect *ret;
 	rz_il_op_new_3(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, is_local, x);
-	ret->op.set.hash = rz_str_djb2_hash(v);
+	ret->op.set.idx = idx;
 	return ret;
 }
 

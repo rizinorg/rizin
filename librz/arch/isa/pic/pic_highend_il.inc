@@ -3,6 +3,7 @@
 
 #include <rz_il.h>
 #include <rz_il/rz_il_opbuilder_begin.h>
+#include "pic_highend_global_idx_map.inc"
 #include "pic_il.inc"
 
 #define U24(x) UN(24, x)
