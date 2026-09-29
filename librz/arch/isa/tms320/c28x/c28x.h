@@ -97,6 +97,39 @@ typedef enum {
 	C28X_REG_XF,
 	C28X_REG_NMI,
 	C28X_REG_EMUINT,
+	// FPU32: result registers R0H-R7H, the status register and the repeat-block
+	// register. R0H-R7H stay consecutive for a 3-bit field.
+	C28X_REG_R0H,
+	C28X_REG_R1H,
+	C28X_REG_R2H,
+	C28X_REG_R3H,
+	C28X_REG_R4H,
+	C28X_REG_R5H,
+	C28X_REG_R6H,
+	C28X_REG_R7H,
+	C28X_REG_STF,
+	C28X_REG_RB,
+	// FPU64 splits each result register into RaH:RaL and names the 64-bit whole
+	// Ra. The fast integer division works on fixed pairs of result registers.
+	C28X_REG_R0L,
+	C28X_REG_R1L,
+	C28X_REG_R2L,
+	C28X_REG_R3L,
+	C28X_REG_R4L,
+	C28X_REG_R5L,
+	C28X_REG_R6L,
+	C28X_REG_R7L,
+	C28X_REG_R0,
+	C28X_REG_R1,
+	C28X_REG_R2,
+	C28X_REG_R3,
+	C28X_REG_R4,
+	C28X_REG_R5,
+	C28X_REG_R6,
+	C28X_REG_R7,
+	C28X_REG_R1H_R0H,
+	C28X_REG_R2H_R4H,
+	C28X_REG_R3H_R5H,
 	// VCU registers that only moves and CRC set-up name
 	C28X_REG_VCRC,
 	C28X_REG_VSTATUS,
@@ -151,6 +184,10 @@ typedef enum {
 	C28X_OP_PORT, ///< I/O space port address, rendered as "*(PA)"
 	C28X_OP_MODE, ///< ST0/ST1 mode bit mask for SETC/CLRC
 	C28X_OP_INTR, ///< interrupt selector for INTR, rendered by name
+	C28X_OP_FCOND, ///< FPU condition code in \ref C28xOperand::imm
+	C28X_OP_FFLAGS, ///< MOVST0 flag mask in \ref C28xOperand::imm
+	C28X_OP_FSETFLG, ///< SETFLG/SAVE flag values, for the flags in \ref C28xOperand::mask
+	C28X_OP_FZERO, ///< the constant #0.0
 	C28X_OP_PAR, ///< start of the parallel half; its \ref C28xInsnId in \ref C28xOperand::imm
 	C28X_OP_REG_HIGH, ///< high half of a VCU register, spelled VRnH
 	C28X_OP_VSMPAIR, ///< state-metric pair VSM(2n+1):VSM(2n), n in \ref C28xOperand::imm
@@ -172,6 +209,7 @@ typedef struct {
 	ut8 arn; ///< XARn / ARPn selected by the mode
 	ut8 off; ///< 6-bit DP or SP offset, or the 3-bit XARn index
 	bool wide; ///< loc32 (32-bit) rather than loc16 (16-bit) access
+	ut16 mask; ///< SETFLG/SAVE: the flags whose values \ref imm holds
 } C28xOperand;
 
 /**
@@ -191,11 +229,21 @@ typedef struct {
 	X(A_VCLROVFR, "a_vclrovfr") \
 	X(ABORTI, "aborti") \
 	X(ABS, "abs") \
+	X(ABSF32, "absf32") \
+	X(ABSF64, "absf64") \
+	X(ABSI32DIV32, "absi32div32") \
+	X(ABSI32DIV32U, "absi32div32u") \
+	X(ABSI64DIV32, "absi64div32") \
+	X(ABSI64DIV32U, "absi64div32u") \
+	X(ABSI64DIV64, "absi64div64") \
+	X(ABSI64DIV64U, "absi64div64u") \
 	X(ABSTC, "abstc") \
 	X(ADD, "add") \
 	X(ADDB, "addb") \
 	X(ADDCL, "addcl") \
 	X(ADDCU, "addcu") \
+	X(ADDF32, "addf32") \
+	X(ADDF64, "addf64") \
 	X(ADDL, "addl") \
 	X(ADDU, "addu") \
 	X(ADDUL, "addul") \
@@ -206,6 +254,7 @@ typedef struct {
 	X(ASR, "asr") \
 	X(ASR64, "asr64") \
 	X(ASRL, "asrl") \
+	X(ATANPUF32, "atanpuf32") \
 	X(B, "b") \
 	X(BANZ, "banz") \
 	X(BAR, "bar") \
@@ -214,22 +263,54 @@ typedef struct {
 	X(CMP, "cmp") \
 	X(CMP64, "cmp64") \
 	X(CMPB, "cmpb") \
+	X(CMPF32, "cmpf32") \
+	X(CMPF64, "cmpf64") \
 	X(CMPL, "cmpl") \
 	X(CMPR, "cmpr") \
+	X(COSPUF32, "cospuf32") \
 	X(CSB, "csb") \
 	X(DEC, "dec") \
 	X(DINT, "dint") \
+	X(DIV2PIF32, "div2pif32") \
+	X(DIVF32, "divf32") \
 	X(DMAC, "dmac") \
 	X(DMOV, "dmov") \
 	X(EALLOW, "eallow") \
 	X(EDIS, "edis") \
 	X(EINT, "eint") \
+	X(EINVF32, "einvf32") \
+	X(EINVF64, "einvf64") \
+	X(EISQRTF32, "eisqrtf32") \
+	X(EISQRTF64, "eisqrtf64") \
+	X(ENEGI32DIV32, "enegi32div32") \
+	X(ENEGI64DIV32, "enegi64div32") \
+	X(ENEGI64DIV64, "enegi64div64") \
 	X(ESTOP0, "estop0") \
 	X(ESTOP1, "estop1") \
+	X(F32DTOF64, "f32dtof64") \
+	X(F32TOF64, "f32tof64") \
+	X(F32TOI16, "f32toi16") \
+	X(F32TOI16R, "f32toi16r") \
+	X(F32TOI32, "f32toi32") \
+	X(F32TOUI16, "f32toui16") \
+	X(F32TOUI16R, "f32toui16r") \
+	X(F32TOUI32, "f32toui32") \
+	X(F64TOF32, "f64tof32") \
+	X(F64TOI32, "f64toi32") \
+	X(F64TOI64, "f64toi64") \
+	X(F64TOUI32, "f64toui32") \
+	X(F64TOUI64, "f64toui64") \
 	X(FFC, "ffc") \
 	X(FLIP, "flip") \
+	X(FRACF32, "fracf32") \
+	X(FRACF64, "fracf64") \
+	X(I16TOF32, "i16tof32") \
+	X(I32TOF32, "i32tof32") \
+	X(I32TOF64, "i32tof64") \
+	X(I64TOF64, "i64tof64") \
 	X(IACK, "iack") \
 	X(IDLE, "idle") \
+	X(IEXP2F32, "iexp2f32") \
 	X(IMACL, "imacl") \
 	X(IMPYAL, "impyal") \
 	X(IMPYL, "impyl") \
@@ -242,6 +323,7 @@ typedef struct {
 	X(LB, "lb") \
 	X(LC, "lc") \
 	X(LCR, "lcr") \
+	X(LOG2F32, "log2f32") \
 	X(LOOPNZ, "loopnz") \
 	X(LOOPZ, "loopz") \
 	X(LPADDR, "lpaddr") \
@@ -255,34 +337,60 @@ typedef struct {
 	X(LSR64, "lsr64") \
 	X(LSRL, "lsrl") \
 	X(MAC, "mac") \
+	X(MACF32, "macf32") \
+	X(MACF64, "macf64") \
 	X(MAX, "max") \
 	X(MAXCUL, "maxcul") \
+	X(MAXF32, "maxf32") \
+	X(MAXF64, "maxf64") \
 	X(MAXL, "maxl") \
 	X(MIN, "min") \
 	X(MINCUL, "mincul") \
+	X(MINF32, "minf32") \
+	X(MINF64, "minf64") \
 	X(MINL, "minl") \
+	X(MNEGI32DIV32, "mnegi32div32") \
+	X(MNEGI64DIV32, "mnegi64div32") \
+	X(MNEGI64DIV64, "mnegi64div64") \
 	X(MOV, "mov") \
+	X(MOV16, "mov16") \
+	X(MOV32, "mov32") \
+	X(MOV64, "mov64") \
 	X(MOVA, "mova") \
 	X(MOVAD, "movad") \
 	X(MOVB, "movb") \
+	X(MOVD32, "movd32") \
+	X(MOVDD32, "movdd32") \
 	X(MOVDL, "movdl") \
 	X(MOVH, "movh") \
+	X(MOVIX, "movix") \
+	X(MOVIZ, "moviz") \
 	X(MOVL, "movl") \
 	X(MOVP, "movp") \
 	X(MOVS, "movs") \
+	X(MOVST0, "movst0") \
 	X(MOVU, "movu") \
 	X(MOVW, "movw") \
 	X(MOVX, "movx") \
+	X(MOVXI, "movxi") \
 	X(MOVZ, "movz") \
 	X(MPY, "mpy") \
+	X(MPY2PIF32, "mpy2pif32") \
 	X(MPYA, "mpya") \
 	X(MPYB, "mpyb") \
+	X(MPYF32, "mpyf32") \
+	X(MPYF64, "mpyf64") \
 	X(MPYS, "mpys") \
 	X(MPYU, "mpyu") \
 	X(MPYXU, "mpyxu") \
 	X(NASP, "nasp") \
 	X(NEG, "neg") \
 	X(NEG64, "neg64") \
+	X(NEGF32, "negf32") \
+	X(NEGF64, "negf64") \
+	X(NEGI32DIV32, "negi32div32") \
+	X(NEGI64DIV32, "negi64div32") \
+	X(NEGI64DIV64, "negi64div64") \
 	X(NEGTC, "negtc") \
 	X(NOP, "nop") \
 	X(NORM, "norm") \
@@ -291,7 +399,9 @@ typedef struct {
 	X(ORB, "orb") \
 	X(OUT, "out") \
 	X(POP, "pop") \
+	X(POSTDIVF64, "postdivf64") \
 	X(PREAD, "pread") \
+	X(PREDIVF64, "predivf64") \
 	X(PUSH, "push") \
 	X(PWRITE, "pwrite") \
 	X(QMACL, "qmacl") \
@@ -300,37 +410,54 @@ typedef struct {
 	X(QMPYSL, "qmpysl") \
 	X(QMPYUL, "qmpyul") \
 	X(QMPYXUL, "qmpyxul") \
+	X(QUADF32, "quadf32") \
+	X(RESTORE, "restore") \
 	X(ROL, "rol") \
 	X(ROR, "ror") \
 	X(RPT, "rpt") \
 	X(RPTB, "rptb") \
 	X(SAT, "sat") \
 	X(SAT64, "sat64") \
+	X(SAVE, "save") \
 	X(SB, "sb") \
 	X(SBBU, "sbbu") \
 	X(SBF, "sbf") \
 	X(SBRK, "sbrk") \
 	X(SETC, "setc") \
+	X(SETFLG, "setflg") \
 	X(SFR, "sfr") \
+	X(SINPUF32, "sinpuf32") \
 	X(SPM, "spm") \
 	X(SQRA, "sqra") \
 	X(SQRS, "sqrs") \
+	X(SQRTF32, "sqrtf32") \
 	X(SUB, "sub") \
 	X(SUBB, "subb") \
 	X(SUBBL, "subbl") \
+	X(SUBC2UI64, "subc2ui64") \
+	X(SUBC3F64, "subc3f64") \
+	X(SUBC4UI32, "subc4ui32") \
 	X(SUBCU, "subcu") \
 	X(SUBCUL, "subcul") \
+	X(SUBF32, "subf32") \
+	X(SUBF64, "subf64") \
 	X(SUBL, "subl") \
 	X(SUBR, "subr") \
 	X(SUBRL, "subrl") \
 	X(SUBU, "subu") \
 	X(SUBUL, "subul") \
+	X(SWAPF, "swapf") \
 	X(SXTB, "sxtb") \
 	X(TBIT, "tbit") \
 	X(TCLR, "tclr") \
 	X(TEST, "test") \
+	X(TESTTF, "testtf") \
 	X(TRAP, "trap") \
 	X(TSET, "tset") \
+	X(UI16TOF32, "ui16tof32") \
+	X(UI32TOF32, "ui32tof32") \
+	X(UI32TOF64, "ui32tof64") \
+	X(UI64TOF64, "ui64tof64") \
 	X(UOUT, "uout") \
 	X(VASHL32, "vashl32") \
 	X(VASHR32, "vashr32") \
@@ -440,7 +567,9 @@ typedef struct {
 	X(XRETC, "xretc") \
 	X(ZALR, "zalr") \
 	X(ZAP, "zap") \
-	X(ZAPA, "zapa")
+	X(ZAPA, "zapa") \
+	X(ZERO, "zero") \
+	X(ZEROA, "zeroa")
 
 /**
  * \brief Instruction identifier, one per mnemonic.
@@ -518,6 +647,7 @@ RZ_IPI RZ_OWN RzStructuredData *c28x_opex(RZ_NONNULL const C28xInsn *insn);
 RZ_IPI RZ_BORROW const char *c28x_reg_name(C28xReg reg);
 
 RZ_IPI RZ_BORROW const char *c28x_cond_name(ut8 cond);
+RZ_IPI RZ_BORROW const char *c28x_fcond_name(ut8 cond);
 
 RZ_IPI RZ_BORROW const char *c28x_insn_name(C28xInsnId id);
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c28x_mnemonics(void);

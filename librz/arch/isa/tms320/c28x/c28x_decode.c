@@ -47,6 +47,10 @@ typedef enum {
 	C28X_OD_BITNUM, ///< bit number for TBIT/TSET/TCLR
 	C28X_OD_INTR, ///< interrupt selector for INTR
 	C28X_OD_IND, ///< fixed indirect operand, mode in param and register in lo
+	C28X_OD_FCOND, ///< 4-bit FPU condition code; the reserved ones name nothing
+	C28X_OD_FFLAGS, ///< MOVST0 flag mask
+	C28X_OD_FSETFLG, ///< SETFLG/SAVE: values at lo, the mask at param, width bits each
+	C28X_OD_FZERO, ///< the constant #0.0
 	C28X_OD_PAR, ///< parallel half begins; param is its C28xInsnId
 	C28X_OD_REGSEL_HIGH, ///< as REGSEL, but naming the register's high half
 	C28X_OD_REGSEL_SPLIT, ///< VR0-VR7, low bits at lo and the rest at param
@@ -60,7 +64,7 @@ typedef struct {
 	ut8 kind; ///< C28xOpndKind
 	ut8 lo; ///< low bit of the field inside the packed opcode
 	ut8 width; ///< field width in bits
-	ut8 param; ///< kind-specific selector (see \ref C28xOpndKind)
+	ut16 param; ///< kind-specific selector, wide enough for a C28xInsnId (\ref C28xOpndKind)
 } C28xOpndDef;
 
 typedef struct {
@@ -77,6 +81,7 @@ typedef struct {
 static const C28xInsnDef c28x_table[] = {
 #include "c28x_rows.inc"
 #include "c28x_rows_vcu.inc"
+#include "c28x_rows_fpu.inc"
 };
 #include "c28x_rowundefs.h"
 
@@ -207,6 +212,11 @@ static st64 c28x_sext(ut32 v, ut8 width) {
  */
 static const ut8 c28x_regsel_counts[] = {
 	[C28X_REG_VR0] = 9,
+	[C28X_REG_R0H] = 8,
+	[C28X_REG_R4H] = 4,
+	[C28X_REG_R0L] = 8,
+	[C28X_REG_R4L] = 4,
+	[C28X_REG_R0] = 8,
 	[C28X_REG_VT0] = 2,
 };
 
@@ -354,6 +364,23 @@ static void c28x_decode_operand(const C28xOpndDef *def, ut32 packed, ut64 pc,
 	case C28X_OD_INTR:
 		out->kind = C28X_OP_INTR;
 		out->imm = f;
+		break;
+	case C28X_OD_FCOND:
+		// codes 6-9 are reserved; dis2000 prints nothing for them
+		out->kind = f >= 6 && f <= 9 ? C28X_OP_NONE : C28X_OP_FCOND;
+		out->imm = f;
+		break;
+	case C28X_OD_FFLAGS:
+		out->kind = C28X_OP_FFLAGS;
+		out->imm = f;
+		break;
+	case C28X_OD_FSETFLG:
+		out->kind = C28X_OP_FSETFLG;
+		out->imm = f;
+		out->mask = BITS(packed, def->param, def->width);
+		break;
+	case C28X_OD_FZERO:
+		out->kind = C28X_OP_FZERO;
 		break;
 	case C28X_OD_PAR:
 		out->kind = C28X_OP_PAR;

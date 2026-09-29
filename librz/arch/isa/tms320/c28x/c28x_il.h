@@ -37,5 +37,6 @@ static inline RzILOpEffect *c28x_with_mem(const C28xOperand *m, bool wide, RzILO
 }
 
 RZ_IPI RzILOpEffect *c28x_lift_vcu(const C28xInsn *insn, ut64 pc);
+RZ_IPI RzILOpEffect *c28x_lift_fpu(const C28xInsn *insn, ut64 pc);
 
 #endif // C28X_IL_H

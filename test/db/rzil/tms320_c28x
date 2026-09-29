@@ -3038,3 +3038,2408 @@ vrevb vr1
 vr1 = 0x78563412
 EOF
 RUN
+
+# FPU32, FPU64 and TMU
+
+NAME=C28x RzIL VM: FPU arithmetic, compare and 32-bit conversions
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 10e78800 @ 0
+ara0
+ar r1=0x3fc0000000000000
+ar r2=0x4010000000000000
+aezi
+pi 1
+aezs 1
+echo -- ADDF32 1.5 + 2.25
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 00e78800 @ 0
+ara0
+ar r1=0x7f00000000000000
+ar r2=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 overflow, truncating: max, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 00e78800 @ 0
+ara0
+ar r1=0x7f00000000000000
+ar r2=0x4000000000000000
+ar rnd32=0x1
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 overflow, to nearest: +inf, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 00e78800 @ 0
+ara0
+ar r1=0x7f7fffff00000000
+ar r2=0x3f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 max1: exact, no LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 00e78800 @ 0
+ara0
+ar r1=0x80000000000000
+ar r2=0x3f00000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 tiny product: +0, LUF
+ar r0
+ar luf
+w0 8192 @ 0
+wx 10e78800 @ 0
+ara0
+ar r1=0x100000000
+ar r2=0x4010000000000000
+aezi
+pi 1
+aezs 1
+echo -- ADDF32 denormal operand counts as 0
+ar r0
+ar luf
+w0 8192 @ 0
+wx 94e61100 @ 0
+ara0
+ar r1=0x3fc0000000000000
+ar r2=0x4010000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- CMPF32 1.5 2.25
+ar nf
+ar zf
+w0 8192 @ 0
+wx 89e60800 @ 0
+ara0
+ar r1=0xfffffffd00000000
+aezi
+pi 1
+aezs 1
+echo -- I32TOF32 -3
+ar r0
+w0 8192 @ 0
+wx 88e60800 @ 0
+ara0
+ar r1=0xc060000000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOI32 -3.5 truncates
+ar r0
+EOF
+EXPECT=<<EOF
+addf32 r0h, r1h, r2h
+-- ADDF32 1.5 + 2.25
+r0 = 0x4070000000000000
+lvf = 0x0
+luf = 0x0
+mpyf32 r0h, r1h, r2h
+-- MPYF32 overflow, truncating: max, LVF
+r0 = 0x7f7fffff00000000
+lvf = 0x1
+mpyf32 r0h, r1h, r2h
+-- MPYF32 overflow, to nearest: +inf, LVF
+r0 = 0x7f80000000000000
+lvf = 0x1
+mpyf32 r0h, r1h, r2h
+-- MPYF32 max1: exact, no LVF
+r0 = 0x7f7fffff00000000
+lvf = 0x0
+mpyf32 r0h, r1h, r2h
+-- MPYF32 tiny product: +0, LUF
+r0 = 0x0000000000000000
+luf = 0x1
+addf32 r0h, r1h, r2h
+-- ADDF32 denormal operand counts as 0
+r0 = 0x4010000000000000
+luf = 0x0
+cmpf32 r1h, r2h
+-- CMPF32 1.5 2.25
+nf = 0x1
+zf = 0x0
+i32tof32 r0h, r1h
+-- I32TOF32 -3
+r0 = 0xc040000000000000
+f32toi32 r0h, r1h
+-- F32TOI32 -3.5 truncates
+r0 = 0xfffffffd00000000
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU moves between CPU and FPU registers
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx a9bd120f @ 0
+wx 00000040 @ 128
+ara0
+ar acc=0x12345678
+ar r0=0xaaaaaaaa
+aezi
+pi 1
+aezs 1
+echo -- MOV32 R0H,ACC keeps R0L
+ar r0
+w0 8192 @ 0
+wx a9bd100f @ 0
+wx 00000040 @ 128
+ara0
+ar acc=0x12345678
+ar r0=0xbbbbbbbb00000000
+aezi
+pi 1
+aezs 1
+echo -- MOV32 R0L,ACC keeps R0H
+ar r0
+w0 8192 @ 0
+wx a9bf2e0f @ 0
+wx 00000040 @ 128
+ara0
+ar r7=0x8000000100000000
+ar z=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV32 ACC,R7H sets N/Z
+ar acc
+ar n
+ar z
+w0 8192 @ 0
+wx a5bf2e0f @ 0
+wx 00000040 @ 128
+ara0
+ar r7=0x123400000000
+ar z=0x1
+ar n=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV32 XAR5,R7H no flags
+ar xar5
+ar z
+ar n
+w0 8192 @ 0
+wx 84bd120f @ 0
+wx 00000040 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MOV32 R0H,XAR4++ steps 2
+ar r0
+ar xar4
+w0 8192 @ 0
+wx afe28401 @ 0
+wx 00000040 @ 128
+ara0
+ar xar4=0x40
+ar zf=0x1
+ar zi=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV32 R1H,XAR4++,UNCF steps 2, flags
+ar r1
+ar xar4
+ar zf
+ar nf
+ar zi
+ar ni
+EOF
+EXPECT=<<EOF
+mov32 r0h, @acc
+-- MOV32 R0H,ACC keeps R0L
+r0 = 0x12345678aaaaaaaa
+mov32 r0l, @acc
+-- MOV32 R0L,ACC keeps R0H
+r0 = 0xbbbbbbbb12345678
+mov32 @acc, r7h
+-- MOV32 ACC,R7H sets N/Z
+acc = 0x80000001
+n = 0x1
+z = 0x0
+mov32 @xar5, r7h
+-- MOV32 XAR5,R7H no flags
+xar5 = 0x00001234
+z = 0x1
+n = 0x1
+mov32 r0h, *xar4++
+-- MOV32 R0H,XAR4++ steps 2
+r0 = 0x4000000000000000
+xar4 = 0x00000042
+mov32 r1h, *xar4++, uncf
+-- MOV32 R1H,XAR4++,UNCF steps 2, flags
+r1 = 0x4000000000000000
+xar4 = 0x00000042
+zf = 0x0
+nf = 0x0
+zi = 0x0
+ni = 0x0
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU immediates, sign operations, max/min and conversions
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 01e888ff0ce8c8cc04e9c8cc0ce9d0cc @ 0
+wx feff @ 128
+ara0
+ar r0=0x123456789abcdef0
+aezi
+pi 4
+aezs 4
+echo -- MOVIZ/MOVXI/MOVIX/MOVXI: TI-compiled double 1.1
+ar r0
+w0 8192 @ 0
+wx 02e82000 @ 0
+wx feff @ 128
+ara0
+ar r0=0xffffffffffffffff
+aezi
+pi 1
+aezs 1
+echo -- MOVIZ R0,0x4004 alone is double 2.5
+ar r0
+w0 8192 @ 0
+wx 90e5 @ 0
+wx feff @ 128
+ara0
+ar r0=0xffffffffffffffff
+aezi
+pi 1
+aezs 1
+echo -- ZERO R0 clears all 64 bits
+ar r0
+w0 8192 @ 0
+wx 63e5 @ 0
+wx feff @ 128
+ara0
+ar r0=0x1111111111111111
+ar r7=0x7777777777777777
+aezi
+pi 1
+aezs 1
+echo -- ZEROA clears R0-R7
+ar r0
+ar r7
+w0 8192 @ 0
+wx aee60800 @ 0
+wx feff @ 128
+ara0
+ar r0=0x12345678
+ar r1=0x4020000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEGF32 UNC flips the sign, keeps flags
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx afe60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4020000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEGF32 UNCF sets NF/ZF
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx a1e60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4020000000000000
+ar zf=0x0
+ar nf=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEGF32 EQ false copies, keeps flags
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 95e60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0xc040000000000000
+ar nf=0x1
+aezi
+pi 1
+aezs 1
+echo -- ABSF32 -3.0
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 95e60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x8000000000000000
+aezi
+pi 1
+aezs 1
+echo -- ABSF32 -0.0: ZF
+ar r0
+ar zf
+ar nf
+w0 8192 @ 0
+wx 96e60800 @ 0
+wx feff @ 128
+ara0
+ar r0=0x3f80000000000000
+ar r1=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF32 1 2
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 97e60800 @ 0
+wx feff @ 128
+ara0
+ar r0=0x3f80000000000000
+ar r1=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- MINF32 1 2 keeps
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 9ce68806 @ 0
+wx feff @ 128
+ara0
+ar r0=0x3f80000000000000
+ar r1=0x4000000000000000
+ar r2=0x0
+ar r3=0x700000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF32 par MOV32 moves when replaced
+ar r0
+ar r2
+w0 8192 @ 0
+wx 9ce68806 @ 0
+wx feff @ 128
+ara0
+ar r0=0x4040000000000000
+ar r1=0x4000000000000000
+ar r2=0x500000000
+ar r3=0x700000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF32 par MOV32 holds when kept
+ar r0
+ar r2
+ar nf
+ar zf
+w0 8192 @ 0
+wx 22e80000 @ 0
+wx feff @ 128
+ara0
+ar r0=0x3f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF32 R0H,2.0
+ar r0
+w0 8192 @ 0
+wx 8be60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0xffffffff00000000
+aezi
+pi 1
+aezs 1
+echo -- UI32TOF32 0xffffffff
+ar r0
+w0 8192 @ 0
+wx 8de60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x1234ffff00000000
+aezi
+pi 1
+aezs 1
+echo -- I16TOF32 low half -1
+ar r0
+w0 8192 @ 0
+wx 8fe60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x1ffff00000000
+aezi
+pi 1
+aezs 1
+echo -- UI16TOF32 low half 65535
+ar r0
+w0 8192 @ 0
+wx 8ce60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0xc02ccccd00000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOI16 -2.7 truncates, sign-extends
+ar r0
+w0 8192 @ 0
+wx 8ce60880 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4020000000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOI16R 2.5 to even
+ar r0
+w0 8192 @ 0
+wx 8ce60880 @ 0
+wx feff @ 128
+ara0
+ar r1=0xc71c400000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOI16R -40000 saturates
+ar r0
+w0 8192 @ 0
+wx 8ee60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x48927c0000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOUI16 300000 saturates SPRUHS1C
+ar r0
+w0 8192 @ 0
+wx 8ee60880 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4060000000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOUI16R 3.5 to even
+ar r0
+w0 8192 @ 0
+wx 8ae60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0xc0a0000000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOUI32 -5 saturates to 0
+ar r0
+w0 8192 @ 0
+wx 8ae60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4f32d05e00000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOUI32 3e9
+ar r0
+w0 8192 @ 0
+wx 88e60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0x4f00000000000000
+aezi
+pi 1
+aezs 1
+echo -- F32TOI32 231 saturates
+ar r0
+w0 8192 @ 0
+wx f1e60800 @ 0
+wx feff @ 128
+ara0
+ar r1=0xc030000000000000
+aezi
+pi 1
+aezs 1
+echo -- FRACF32 -2.75
+ar r0
+w0 8192 @ 0
+wx c8e28400 @ 0
+wx feff @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- I16TOF32 R0H,XAR4++: mem16 steps 1
+ar r0
+ar xar4
+EOF
+EXPECT=<<EOF
+moviz r0, #0x3ff1
+movxi r0h, #0x9999
+movix r0l, #0x9999
+movxi r0l, #0x999a
+-- MOVIZ/MOVXI/MOVIX/MOVXI: TI-compiled double 1.1
+r0 = 0x3ff199999999999a
+moviz r0, #0x4004
+-- MOVIZ R0,0x4004 alone is double 2.5
+r0 = 0x4004000000000000
+zero r0
+-- ZERO R0 clears all 64 bits
+r0 = 0x0000000000000000
+zeroa
+-- ZEROA clears R0-R7
+r0 = 0x0000000000000000
+r7 = 0x0000000000000000
+negf32 r0h, r1h, unc
+-- NEGF32 UNC flips the sign, keeps flags
+r0 = 0xc020000012345678
+nf = 0x0
+zf = 0x1
+negf32 r0h, r1h, uncf
+-- NEGF32 UNCF sets NF/ZF
+r0 = 0xc020000000000000
+nf = 0x1
+zf = 0x0
+negf32 r0h, r1h, eq
+-- NEGF32 EQ false copies, keeps flags
+r0 = 0x4020000000000000
+nf = 0x1
+zf = 0x0
+absf32 r0h, r1h
+-- ABSF32 -3.0
+r0 = 0x4040000000000000
+nf = 0x0
+zf = 0x0
+absf32 r0h, r1h
+-- ABSF32 -0.0: ZF
+r0 = 0x0000000000000000
+zf = 0x1
+nf = 0x0
+maxf32 r0h, r1h
+-- MAXF32 1 2
+r0 = 0x4000000000000000
+nf = 0x1
+zf = 0x0
+minf32 r0h, r1h
+-- MINF32 1 2 keeps
+r0 = 0x3f80000000000000
+nf = 0x1
+zf = 0x0
+maxf32 r0h, r1h || mov32 r2h, r3h
+-- MAXF32 par MOV32 moves when replaced
+r0 = 0x4000000000000000
+r2 = 0x0000000700000000
+maxf32 r0h, r1h || mov32 r2h, r3h
+-- MAXF32 par MOV32 holds when kept
+r0 = 0x4040000000000000
+r2 = 0x0000000500000000
+nf = 0x0
+zf = 0x0
+maxf32 r0h, #0x4000
+-- MAXF32 R0H,2.0
+r0 = 0x4000000000000000
+ui32tof32 r0h, r1h
+-- UI32TOF32 0xffffffff
+r0 = 0x4f80000000000000
+i16tof32 r0h, r1h
+-- I16TOF32 low half -1
+r0 = 0xbf80000000000000
+ui16tof32 r0h, r1h
+-- UI16TOF32 low half 65535
+r0 = 0x477fff0000000000
+f32toi16 r0h, r1h
+-- F32TOI16 -2.7 truncates, sign-extends
+r0 = 0xfffffffe00000000
+f32toi16r r0h, r1h
+-- F32TOI16R 2.5 to even
+r0 = 0x0000000200000000
+f32toi16r r0h, r1h
+-- F32TOI16R -40000 saturates
+r0 = 0xffff800000000000
+f32toui16 r0h, r1h
+-- F32TOUI16 300000 saturates SPRUHS1C
+r0 = 0x0000ffff00000000
+f32toui16r r0h, r1h
+-- F32TOUI16R 3.5 to even
+r0 = 0x0000000400000000
+f32toui32 r0h, r1h
+-- F32TOUI32 -5 saturates to 0
+r0 = 0x0000000000000000
+f32toui32 r0h, r1h
+-- F32TOUI32 3e9
+r0 = 0xb2d05e0000000000
+f32toi32 r0h, r1h
+-- F32TOI32 231 saturates
+r0 = 0x7fffffff00000000
+fracf32 r0h, r1h
+-- FRACF32 -2.75
+r0 = 0xbf40000000000000
+i16tof32 r0h, *xar4++
+-- I16TOF32 R0H,XAR4++: mem16 steps 1
+r0 = 0xc000000000000000
+xar4 = 0x00000041
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU status flags, SAVE/RESTORE, swaps, delay-line moves and RB
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 12e64002 @ 0
+ara0
+ar lvf=0x1
+aezi
+pi 1
+aezs 1
+echo -- SETFLG RNDF321,TF1
+ar rnd32
+ar tf
+ar lvf
+w0 8192 @ 0
+wx 00e60008 @ 0
+ara0
+ar lvf=0x1
+aezi
+pi 1
+aezs 1
+echo -- SETFLG LVF0
+ar lvf
+w0 8192 @ 0
+wx 91ad @ 0
+ara0
+ar lvf=0x1
+ar luf=0x1
+ar zf=0x1
+ar tf=0x1
+ar n=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVST0 LVF,ZF,TF: copies, clears LVF
+ar v
+ar z
+ar c
+ar tc
+ar lvf
+ar luf
+ar n
+w0 8192 @ 0
+wx 0cad @ 0
+ara0
+ar ni=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVST0 NF,NI: N from NI
+ar n
+w0 8192 @ 0
+wx 0cad @ 0
+ara0
+ar n=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOVST0 NF,NI: N cleared
+ar n
+w0 8192 @ 0
+wx 80e28400 @ 0
+wx 45020080 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MOV32 STF,XAR4++: SHDWS kept
+ar lvf
+ar luf
+ar nf
+ar zf
+ar tf
+ar rnd32
+ar shdws
+ar xar4
+w0 8192 @ 0
+wx 00e28400afe28c00 @ 0
+ara0
+ar xar4=0x40
+ar lvf=0x1
+ar nf=0x1
+ar tf=0x1
+ar rnd32=0x1
+aezi
+pi 2
+aezs 2
+echo -- MOV32 XAR4++,STF read back
+ar r0
+ar xar4
+w0 8192 @ 0
+wx 50e60002 @ 0
+ara0
+ar r1=0xaabbccddeeff0011
+ar tf=0x1
+aezi
+pi 1
+aezs 1
+echo -- SAVE RNDF321 shadows, sets SHDWS
+ar r1s
+ar stfs
+ar rnd32
+ar shdws
+w0 8192 @ 0
+wx 50e6000290e562e5 @ 0
+ara0
+ar r0=0x1122334455667788
+ar tf=0x1
+aezi
+pi 3
+aezs 3
+echo -- SAVE, ZERO R0, RESTORE
+ar r0
+ar rnd32
+ar tf
+ar shdws
+w0 8192 @ 0
+wx 81e5 @ 0
+ara0
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- TESTTF EQ true
+ar tf
+w0 8192 @ 0
+wx 81e5 @ 0
+ara0
+ar tf=0x1
+aezi
+pi 1
+aezs 1
+echo -- TESTTF EQ false
+ar tf
+w0 8192 @ 0
+wx eee60800 @ 0
+ara0
+ar r0=0x1111111122222222
+ar r1=0x3333333344444444
+aezi
+pi 1
+aezs 1
+echo -- SWAPF R0,R1,UNC swaps whole registers
+ar r0
+ar r1
+w0 8192 @ 0
+wx 13e284008c92 @ 0
+ara0
+ar r0=0x1234567800000000
+ar xar4=0x40
+aezi
+pi 2
+aezs 2
+echo -- MOV16 XAR4++,R0H stores 16 bits
+ar acc
+ar xar4
+w0 8192 @ 0
+wx 23e2c400afe2d401 @ 0
+wx db0f4940 @ 128
+ara0
+ar xar4=0x40
+ar zf=0x1
+ar zi=0x1
+aezi
+pi 2
+aezs 2
+echo -- MOVD32 copies two words up
+ar r0
+ar r1
+w0 8192 @ 0
+wx 43e2c400afe2e401 @ 0
+wx db0f4940 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 2
+aezs 2
+echo -- MOVDD32 copies four words up
+ar r0
+ar r1
+w0 8192 @ 0
+wx f0ffbe06 @ 0
+ara0
+ar rb=0xdeadbeef
+ar sp=0x100
+aezi
+pi 2
+aezs 2
+echo -- PUSH RB, POP ACC
+ar acc
+ar sp
+w0 8192 @ 0
+wx f1ff @ 0
+wx 0df0feca @ 512
+ara0
+ar sp=0x102
+aezi
+pi 1
+aezs 1
+echo -- POP RB
+ar rb
+ar sp
+EOF
+EXPECT=<<EOF
+setflg tf=1,rndf32=1
+-- SETFLG RNDF321,TF1
+rnd32 = 0x1
+tf = 0x1
+lvf = 0x1
+setflg lvf=0
+-- SETFLG LVF0
+lvf = 0x0
+movst0 lvf,zf,tf
+-- MOVST0 LVF,ZF,TF: copies, clears LVF
+v = 0x1
+z = 0x1
+c = 0x1
+tc = 0x1
+lvf = 0x0
+luf = 0x1
+n = 0x1
+movst0 nf,ni
+-- MOVST0 NF,NI: N from NI
+n = 0x1
+movst0 nf,ni
+-- MOVST0 NF,NI: N cleared
+n = 0x0
+mov32 stf, *xar4++
+-- MOV32 STF,XAR4++: SHDWS kept
+lvf = 0x1
+luf = 0x0
+nf = 0x1
+zf = 0x0
+tf = 0x1
+rnd32 = 0x1
+shdws = 0x0
+xar4 = 0x00000042
+mov32 *xar4++, stf
+mov32 r0h, *--xar4, uncf
+-- MOV32 XAR4++,STF read back
+r0 = 0x0000024500000000
+xar4 = 0x00000040
+save rndf32=1
+-- SAVE RNDF321 shadows, sets SHDWS
+r1s = 0xaabbccddeeff0011
+stfs = 0x00000040
+rnd32 = 0x1
+shdws = 0x1
+save rndf32=1
+zero r0
+restore
+-- SAVE, ZERO R0, RESTORE
+r0 = 0x1122334455667788
+rnd32 = 0x0
+tf = 0x1
+shdws = 0x0
+testtf eq
+-- TESTTF EQ true
+tf = 0x1
+testtf eq
+-- TESTTF EQ false
+tf = 0x0
+swapf r0, r1, unc
+-- SWAPF R0,R1,UNC swaps whole registers
+r0 = 0x3333333344444444
+r1 = 0x1111111122222222
+mov16 *xar4++, r0h
+mov al, *--xar4
+-- MOV16 XAR4++,R0H stores 16 bits
+acc = 0x00005678
+xar4 = 0x00000040
+movd32 r0h, *+xar4[0]
+mov32 r1h, *+xar4[2], uncf
+-- MOVD32 copies two words up
+r0 = 0x40490fdb00000000
+r1 = 0x40490fdb00000000
+movdd32 r0h, *+xar4[0]
+mov32 r1h, *+xar4[4], uncf
+-- MOVDD32 copies four words up
+r0 = 0x40490fdb00000000
+r1 = 0x40490fdb00000000
+push rb
+pop acc
+-- PUSH RB, POP ACC
+acc = 0xdeadbeef
+sp = 0x0100
+pop rb
+-- POP RB
+rb = 0xcafef00d
+sp = 0x0100
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU parallel forms and MACF32
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 14e38443 @ 0
+wx 0000e040 @ 128
+ara0
+ar r1=0x3fc0000000000000
+ar r2=0x4010000000000000
+ar xar4=0x40
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADDF32 par MOV32 RaH,mem32
+ar r0
+ar r3
+ar xar4
+ar nf
+ar zf
+w0 8192 @ 0
+wx 14e384c3 @ 0
+wx 0000e040 @ 128
+ara0
+ar r3=0x3f80000000000000
+ar r2=0x4000000000000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- ADDF32 reads RaH before the load
+ar r0
+ar r3
+w0 8192 @ 0
+wx 04e08440afe28c05 @ 0
+ara0
+ar r0=0x40a0000000000000
+ar r1=0x4000000000000000
+ar r2=0x4040000000000000
+ar xar4=0x40
+aezi
+pi 2
+aezs 2
+echo -- MPYF32 par MOV32 mem32,RaH stores the old RaH
+ar r0
+ar r5
+ar xar4
+w0 8192 @ 0
+wx 42e788c6 @ 0
+ara0
+ar r1=0x4000000000000000
+ar r2=0x4040000000000000
+ar r4=0x3f80000000000000
+ar r5=0x3f00000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 par ADDF32
+ar r0
+ar r3
+w0 8192 @ 0
+wx 51e78802 @ 0
+ara0
+ar r0=0x4120000000000000
+ar r1=0x4000000000000000
+ar r2=0x4040000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 par SUBF32 reads R0H before the product
+ar r0
+ar r1
+w0 8192 @ 0
+wx 42e788c6 @ 0
+ara0
+ar r1=0x7f00000000000000
+ar r2=0x4000000000000000
+ar r4=0x3f80000000000000
+ar r5=0x3f00000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF32 par ADDF32: the product overflows
+ar r0
+ar r3
+ar lvf
+w0 8192 @ 0
+wx 38e38445 @ 0
+wx 0000e040 @ 128
+ara0
+ar r3=0x4120000000000000
+ar r2=0x4000000000000000
+ar r1=0x4040000000000000
+ar r4=0x4080000000000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MACF32 R3H,R2H,R0H,R1H,R4H par MOV32
+ar r3
+ar r0
+ar r5
+w0 8192 @ 0
+wx 38e38455 @ 0
+wx 0000e040 @ 128
+ara0
+ar r3=0x4120000000000000
+ar r2=0x4000000000000000
+ar r1=0x4040000000000000
+ar r4=0x4080000000000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MACF32 accumulates the previous product
+ar r3
+ar r2
+ar r5
+w0 8192 @ 0
+wx 50e2841f @ 0
+wx 00004040 @ 128
+wx 00008040 @ 160
+ara0
+ar r3=0x4120000000000000
+ar r2=0x4000000000000000
+ar xar4=0x40
+ar xar7=0x50
+aezi
+pi 1
+aezs 1
+echo -- MACF32 R7H,R3H,XAR4++,XAR7++
+ar r3
+ar r2
+ar xar4
+ar xar7
+EOF
+EXPECT=<<EOF
+addf32 r0h, r1h, r2h || mov32 r3h, *xar4++
+-- ADDF32 par MOV32 RaH,mem32
+r0 = 0x4070000000000000
+r3 = 0x40e0000000000000
+xar4 = 0x00000042
+nf = 0x0
+zf = 0x0
+addf32 r0h, r3h, r2h || mov32 r3h, *xar4++
+-- ADDF32 reads RaH before the load
+r0 = 0x4040000000000000
+r3 = 0x40e0000000000000
+mpyf32 r0h, r1h, r2h || mov32 *xar4++, r0h
+mov32 r5h, *--xar4, uncf
+-- MPYF32 par MOV32 mem32,RaH stores the old RaH
+r0 = 0x40c0000000000000
+r5 = 0x40a0000000000000
+xar4 = 0x00000040
+mpyf32 r0h, r1h, r2h || addf32 r3h, r4h, r5h
+-- MPYF32 par ADDF32
+r0 = 0x40c0000000000000
+r3 = 0x3fc0000000000000
+mpyf32 r0h, r1h, r2h || subf32 r1h, r0h, r2h
+-- MPYF32 par SUBF32 reads R0H before the product
+r0 = 0x40c0000000000000
+r1 = 0x40e0000000000000
+mpyf32 r0h, r1h, r2h || addf32 r3h, r4h, r5h
+-- MPYF32 par ADDF32: the product overflows
+r0 = 0x7f7fffff00000000
+r3 = 0x3fc0000000000000
+lvf = 0x1
+macf32 r3h, r2h, r0h, r1h, r4h || mov32 r5h, *xar4++
+-- MACF32 R3H,R2H,R0H,R1H,R4H par MOV32
+r3 = 0x4140000000000000
+r0 = 0x4140000000000000
+r5 = 0x40e0000000000000
+macf32 r3h, r2h, r2h, r1h, r4h || mov32 r5h, *xar4++
+-- MACF32 accumulates the previous product
+r3 = 0x4140000000000000
+r2 = 0x4140000000000000
+r5 = 0x40e0000000000000
+macf32 r7h, r3h, *xar4++, *xar7++
+-- MACF32 R7H,R3H,XAR4++,XAR7++
+r3 = 0x4140000000000000
+r2 = 0x4140000000000000
+xar4 = 0x00000042
+xar7 = 0x00000052
+EOF
+RUN
+
+NAME=C28x RzIL VM: TMU division, square root and 2pi multiplies
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x40f0000000000000
+ar r2=0x4020000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 7.5/2.5
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x3f80000000000000
+ar r2=0x4040000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 1/3 rounds to nearest
+ar r0
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x3f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 Normal/0: Inf, LVF
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0xbf80000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 -1/0: -Inf, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 0/0: 0, LVF
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x7f80000000000000
+ar r2=0x7f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 Inf/Inf: Inf, LUF
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x7f80000000000000
+ar r2=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 Inf/Normal: Inf, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0xc0c0000000000000
+ar r2=0x7f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 -6/Inf: +0, LUF
+ar r0
+ar luf
+ar lvf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x7f7fffff00000000
+ar r2=0x3f00000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 max/0.5 overflows
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x80000000000000
+ar r2=0x4080000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 min normal/4 underflows
+ar r0
+ar luf
+w0 8192 @ 0
+wx 74e28800 @ 0
+ara0
+ar r1=0x100000000
+ar r2=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIVF32 denormal dividend counts as 0
+ar r0
+ar luf
+ar lvf
+w0 8192 @ 0
+wx 77e20800 @ 0
+ara0
+ar r1=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- SQRTF32 2
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 77e20800 @ 0
+ara0
+ar r1=0xc080000000000000
+aezi
+pi 1
+aezs 1
+echo -- SQRTF32 -4: +0, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 77e20800 @ 0
+ara0
+ar r1=0x7f80000000000000
+aezi
+pi 1
+aezs 1
+echo -- SQRTF32 +Inf: +Inf, LVF
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 77e20800 @ 0
+ara0
+ar r1=0x8000000000000000
+aezi
+pi 1
+aezs 1
+echo -- SQRTF32 -0: +0
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 70e20800 @ 0
+ara0
+ar r1=0x3e80000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPY2PIF32 0.25 is pi/2
+ar r0
+w0 8192 @ 0
+wx 70e20800 @ 0
+ara0
+ar r1=0x7f7fffff00000000
+aezi
+pi 1
+aezs 1
+echo -- MPY2PIF32 max overflows
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 71e20800 @ 0
+ara0
+ar r1=0x40c90fdb00000000
+aezi
+pi 1
+aezs 1
+echo -- DIV2PIF32 2pi is 1
+ar r0
+w0 8192 @ 0
+wx 71e20800 @ 0
+ara0
+ar r1=0x80000000000000
+aezi
+pi 1
+aezs 1
+echo -- DIV2PIF32 min normal underflows
+ar r0
+ar luf
+EOF
+EXPECT=<<EOF
+divf32 r0h, r1h, r2h
+-- DIVF32 7.5/2.5
+r0 = 0x4040000000000000
+lvf = 0x0
+luf = 0x0
+divf32 r0h, r1h, r2h
+-- DIVF32 1/3 rounds to nearest
+r0 = 0x3eaaaaab00000000
+divf32 r0h, r1h, r2h
+-- DIVF32 Normal/0: Inf, LVF
+r0 = 0x7f80000000000000
+lvf = 0x1
+luf = 0x0
+divf32 r0h, r1h, r2h
+-- DIVF32 -1/0: -Inf, LVF
+r0 = 0xff80000000000000
+lvf = 0x1
+divf32 r0h, r1h, r2h
+-- DIVF32 0/0: 0, LVF
+r0 = 0x0000000000000000
+lvf = 0x1
+luf = 0x0
+divf32 r0h, r1h, r2h
+-- DIVF32 Inf/Inf: Inf, LUF
+r0 = 0x7f80000000000000
+lvf = 0x0
+luf = 0x1
+divf32 r0h, r1h, r2h
+-- DIVF32 Inf/Normal: Inf, LVF
+r0 = 0x7f80000000000000
+lvf = 0x1
+divf32 r0h, r1h, r2h
+-- DIVF32 -6/Inf: +0, LUF
+r0 = 0x0000000000000000
+luf = 0x1
+lvf = 0x0
+divf32 r0h, r1h, r2h
+-- DIVF32 max/0.5 overflows
+r0 = 0x7f80000000000000
+lvf = 0x1
+divf32 r0h, r1h, r2h
+-- DIVF32 min normal/4 underflows
+r0 = 0x0000000000000000
+luf = 0x1
+divf32 r0h, r1h, r2h
+-- DIVF32 denormal dividend counts as 0
+r0 = 0x0000000000000000
+luf = 0x0
+lvf = 0x0
+sqrtf32 r0h, r1h
+-- SQRTF32 2
+r0 = 0x3fb504f300000000
+lvf = 0x0
+sqrtf32 r0h, r1h
+-- SQRTF32 -4: +0, LVF
+r0 = 0x0000000000000000
+lvf = 0x1
+sqrtf32 r0h, r1h
+-- SQRTF32 +Inf: +Inf, LVF
+r0 = 0x7f80000000000000
+lvf = 0x1
+sqrtf32 r0h, r1h
+-- SQRTF32 -0: +0
+r0 = 0x0000000000000000
+lvf = 0x0
+mpy2pif32 r0h, r1h
+-- MPY2PIF32 0.25 is pi/2
+r0 = 0x3fc90fdb00000000
+mpy2pif32 r0h, r1h
+-- MPY2PIF32 max overflows
+r0 = 0x7f80000000000000
+lvf = 0x1
+div2pif32 r0h, r1h
+-- DIV2PIF32 2pi is 1
+r0 = 0x3f80000000000000
+div2pif32 r0h, r1h
+-- DIV2PIF32 min normal underflows
+r0 = 0x0000000000000000
+luf = 0x1
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU64 arithmetic, compares, moves and MACF64
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 90e78800 @ 0
+ara0
+ar r1=0x3ff8000000000000
+ar r2=0x4002000000000000
+aezi
+pi 1
+aezs 1
+echo -- ADDF64 1.5 + 2.25
+ar r0
+ar lvf
+ar luf
+w0 8192 @ 0
+wx 90e78800 @ 0
+ara0
+ar r1=0x3ff0000000000000
+ar r2=0x3ca8000000000000
+aezi
+pi 1
+aezs 1
+echo -- ADDF64 1 + 1.5 ulp truncates RND64 0
+ar r0
+w0 8192 @ 0
+wx 90e78800 @ 0
+ara0
+ar r1=0x3ff0000000000000
+ar r2=0x3ca8000000000000
+ar rnd64=0x1
+aezi
+pi 1
+aezs 1
+echo -- ADDF64 1 + 1.5 ulp rounds up RND64 1
+ar r0
+w0 8192 @ 0
+wx 80e78800 @ 0
+ara0
+ar r1=0x3ff8000000000000
+ar r2=0x4008000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF64 1.5 3
+ar r0
+w0 8192 @ 0
+wx a0e78800 @ 0
+ara0
+ar r1=0x4024000000000000
+ar r2=0x3fd0000000000000
+aezi
+pi 1
+aezs 1
+echo -- SUBF64 10 - 0.25
+ar r0
+w0 8192 @ 0
+wx 8fe908fe @ 0
+ara0
+ar r1=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- ADDF64 R0,1.5,R1
+ar r0
+w0 8192 @ 0
+wx 80e78800 @ 0
+ara0
+ar r1=0x7fefffffffffffff
+ar r2=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF64 max 2 overflows, truncating
+ar r0
+ar lvf
+w0 8192 @ 0
+wx 80e78800 @ 0
+ara0
+ar r1=0x10000000000000
+ar r2=0x3fe0000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF64 min normal / 2 flushes
+ar r0
+ar luf
+w0 8192 @ 0
+wx 98e61100 @ 0
+ara0
+ar r1=0x3ff8000000000000
+ar r2=0x4000000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- CMPF64 1.5 2
+ar nf
+ar zf
+w0 8192 @ 0
+wx 9ae60800 @ 0
+ara0
+ar r0=0x3ff0000000000000
+ar r1=0x4000000000000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF64 1 2
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 9ee68806 @ 0
+ara0
+ar r0=0x3ff0000000000000
+ar r1=0x4000000000000000
+ar r3=0x401c000000000000
+aezi
+pi 1
+aezs 1
+echo -- MAXF64 par MOV64 moves when replaced
+ar r0
+ar r2
+w0 8192 @ 0
+wx dfe60800 @ 0
+ara0
+ar r1=0xc004000000000000
+ar zf=0x1
+ar zi=0x1
+aezi
+pi 1
+aezs 1
+echo -- MOV64 UNCF: NF/ZF of the double, NI/ZI of 64 bits
+ar r0
+ar nf
+ar zf
+ar ni
+ar zi
+w0 8192 @ 0
+wx bfe60800 @ 0
+ara0
+ar r1=0x4004000000000000
+aezi
+pi 1
+aezs 1
+echo -- NEGF64 UNCF sets NF
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx bee60800 @ 0
+ara0
+ar r1=0x4004000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEGF64 UNC keeps flags
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 99e60800 @ 0
+ara0
+ar r1=0xc008000000000000
+ar nf=0x1
+aezi
+pi 1
+aezs 1
+echo -- ABSF64 -3
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx f1e60880 @ 0
+ara0
+ar r1=0xc006000000000000
+aezi
+pi 1
+aezs 1
+echo -- FRACF64 -2.75
+ar r0
+w0 8192 @ 0
+wx c2e788c6 @ 0
+ara0
+ar r1=0x4000000000000000
+ar r2=0x4008000000000000
+ar r4=0x3ff0000000000000
+ar r5=0x3fe0000000000000
+aezi
+pi 1
+aezs 1
+echo -- MPYF64 par ADDF64
+ar r0
+ar r3
+w0 8192 @ 0
+wx 54e38446 @ 0
+wx 0000e040 @ 128
+ara0
+ar r1=0x3ff8000000000000
+ar r2=0x4002000000000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- ADDF64 par MOV32 R6H,XAR4++
+ar r0
+ar r6
+ar xar4
+w0 8192 @ 0
+wx 78e38445 @ 0
+wx 0000e040 @ 128
+ara0
+ar r3=0x4024000000000000
+ar r2=0x4000000000000000
+ar r1=0x4008000000000000
+ar r4=0x4010000000000000
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- MACF64 R3,R2,R0,R1,R4 par MOV32 R5H
+ar r3
+ar r0
+ar r5
+EOF
+EXPECT=<<EOF
+addf64 r0, r1, r2
+-- ADDF64 1.5 + 2.25
+r0 = 0x400e000000000000
+lvf = 0x0
+luf = 0x0
+addf64 r0, r1, r2
+-- ADDF64 1 + 1.5 ulp truncates RND64 0
+r0 = 0x3ff0000000000000
+addf64 r0, r1, r2
+-- ADDF64 1 + 1.5 ulp rounds up RND64 1
+r0 = 0x3ff0000000000001
+mpyf64 r0, r1, r2
+-- MPYF64 1.5 3
+r0 = 0x4012000000000000
+subf64 r0, r1, r2
+-- SUBF64 10 - 0.25
+r0 = 0x4023800000000000
+addf64 r0, #0x3ff8, r1
+-- ADDF64 R0,1.5,R1
+r0 = 0x400c000000000000
+mpyf64 r0, r1, r2
+-- MPYF64 max 2 overflows, truncating
+r0 = 0x7fefffffffffffff
+lvf = 0x1
+mpyf64 r0, r1, r2
+-- MPYF64 min normal / 2 flushes
+r0 = 0x0000000000000000
+luf = 0x1
+cmpf64 r1, r2
+-- CMPF64 1.5 2
+nf = 0x1
+zf = 0x0
+maxf64 r0, r1
+-- MAXF64 1 2
+r0 = 0x4000000000000000
+nf = 0x1
+zf = 0x0
+maxf64 r0, r1 || mov64 r2, r3
+-- MAXF64 par MOV64 moves when replaced
+r0 = 0x4000000000000000
+r2 = 0x401c000000000000
+mov64 r0, r1, uncf
+-- MOV64 UNCF: NF/ZF of the double, NI/ZI of 64 bits
+r0 = 0xc004000000000000
+nf = 0x1
+zf = 0x0
+ni = 0x1
+zi = 0x0
+negf64 r0, r1, uncf
+-- NEGF64 UNCF sets NF
+r0 = 0xc004000000000000
+nf = 0x1
+zf = 0x0
+negf64 r0, r1, unc
+-- NEGF64 UNC keeps flags
+r0 = 0xc004000000000000
+nf = 0x0
+zf = 0x1
+absf64 r0, r1
+-- ABSF64 -3
+r0 = 0x4008000000000000
+nf = 0x0
+zf = 0x0
+fracf64 r0, r1
+-- FRACF64 -2.75
+r0 = 0xbfe8000000000000
+mpyf64 r0, r1, r2 || addf64 r3, r4, r5
+-- MPYF64 par ADDF64
+r0 = 0x4018000000000000
+r3 = 0x3ff8000000000000
+addf64 r0, r1, r2 || mov32 r6h, *xar4++
+-- ADDF64 par MOV32 R6H,XAR4++
+r0 = 0x400e000000000000
+r6 = 0x40e0000000000000
+xar4 = 0x00000042
+macf64 r3, r2, r0, r1, r4 || mov32 r5h, *xar4++
+-- MACF64 R3,R2,R0,R1,R4 par MOV32 R5H
+r3 = 0x4028000000000000
+r0 = 0x4028000000000000
+r5 = 0x40e0000000000000
+EOF
+RUN
+
+NAME=C28x RzIL VM: FPU64 conversions
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 91e60800 @ 0
+ara0
+ar r1=0xbfc0000000000000
+ar zf=0x1
+aezi
+pi 1
+aezs 1
+echo -- F32TOF64 R0,R1H
+ar r0
+ar nf
+ar zf
+w0 8192 @ 0
+wx 8ce28400 @ 0
+wx 0000e040 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- F32TOF64 R0,XAR4++
+ar r0
+ar xar4
+w0 8192 @ 0
+wx 21e2c400afe2d401 @ 0
+wx 0000e040 @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 2
+aezs 2
+echo -- F32DTOF64 copies two words up
+ar r0
+ar r1
+w0 8192 @ 0
+wx 90e60800 @ 0
+ara0
+ar r1=0x3fd5555555555555
+aezi
+pi 1
+aezs 1
+echo -- F64TOF32 1/3 truncates RND32 0
+ar r0
+w0 8192 @ 0
+wx 90e60800 @ 0
+ara0
+ar r1=0x3fd5555555555555
+ar rnd32=0x1
+aezi
+pi 1
+aezs 1
+echo -- F64TOF32 1/3 rounds RND32 1
+ar r0
+w0 8192 @ 0
+wx 90e60800 @ 0
+ara0
+ar r1=0x48078287f49c4a1d
+aezi
+pi 1
+aezs 1
+echo -- F64TOF32 1e39 truncates to max
+ar r0
+w0 8192 @ 0
+wx 90e60800 @ 0
+ara0
+ar r1=0x48078287f49c4a1d
+ar rnd32=0x1
+aezi
+pi 1
+aezs 1
+echo -- F64TOF32 1e39 rounds to Inf
+ar r0
+w0 8192 @ 0
+wx 90e60800 @ 0
+ara0
+ar r1=0x37a16c262777579c
+aezi
+pi 1
+aezs 1
+echo -- F64TOF32 1e-40 flushes
+ar r0
+ar luf
+w0 8192 @ 0
+wx 84e60800 @ 0
+ara0
+ar r1=0xc00599999999999a
+aezi
+pi 1
+aezs 1
+echo -- F64TOI32 -2.7 truncates
+ar r0
+w0 8192 @ 0
+wx 84e60800 @ 0
+ara0
+ar r1=0x41e65a0bc0000000
+aezi
+pi 1
+aezs 1
+echo -- F64TOI32 3e9 saturates
+ar r0
+w0 8192 @ 0
+wx 86e60800 @ 0
+ara0
+ar r1=0x41e65a0bc0000000
+aezi
+pi 1
+aezs 1
+echo -- F64TOUI32 3e9
+ar r0
+w0 8192 @ 0
+wx 86e60800 @ 0
+ara0
+ar r1=0xbff0000000000000
+aezi
+pi 1
+aezs 1
+echo -- F64TOUI32 -1 saturates to 0
+ar r0
+w0 8192 @ 0
+wx 84e60880 @ 0
+ara0
+ar r1=0xc270000000000800
+aezi
+pi 1
+aezs 1
+echo -- F64TOI64 -240 + 0.5 truncates
+ar r0
+w0 8192 @ 0
+wx 84e60880 @ 0
+ara0
+ar r1=0x43e0000000000000
+aezi
+pi 1
+aezs 1
+echo -- F64TOI64 263 saturates
+ar r0
+w0 8192 @ 0
+wx 86e60880 @ 0
+ara0
+ar r1=0x43e158e460913d00
+aezi
+pi 1
+aezs 1
+echo -- F64TOUI64 1e19
+ar r0
+w0 8192 @ 0
+wx 86e60880 @ 0
+ara0
+ar r1=0x43f0000000000000
+aezi
+pi 1
+aezs 1
+echo -- F64TOUI64 264 saturates
+ar r0
+w0 8192 @ 0
+wx 85e60800 @ 0
+ara0
+ar r1=0x8000000000000000
+aezi
+pi 1
+aezs 1
+echo -- I32TOF64 -231
+ar r0
+w0 8192 @ 0
+wx 87e60800 @ 0
+ara0
+ar r1=0xffffffff00000000
+aezi
+pi 1
+aezs 1
+echo -- UI32TOF64 232 - 1
+ar r0
+w0 8192 @ 0
+wx 89e28400 @ 0
+wx fbffffff @ 128
+ara0
+ar xar4=0x40
+aezi
+pi 1
+aezs 1
+echo -- I32TOF64 R0,XAR4++
+ar r0
+ar xar4
+w0 8192 @ 0
+wx 85e60880 @ 0
+ara0
+ar r1=0x7fffffffffffffff
+aezi
+pi 1
+aezs 1
+echo -- I64TOF64 263 - 1 rounds to 263
+ar r0
+w0 8192 @ 0
+wx 87e60880 @ 0
+ara0
+ar r1=0xffffffffffffffff
+aezi
+pi 1
+aezs 1
+echo -- UI64TOF64 264 - 1 rounds to 264
+ar r0
+w0 8192 @ 0
+wx 87e60880 @ 0
+ara0
+ar r1=0x3039
+aezi
+pi 1
+aezs 1
+echo -- UI64TOF64 12345
+ar r0
+EOF
+EXPECT=<<EOF
+f32tof64 r0, r1h
+-- F32TOF64 R0,R1H
+r0 = 0xbff8000000000000
+nf = 0x1
+zf = 0x0
+f32tof64 r0, *xar4++
+-- F32TOF64 R0,XAR4++
+r0 = 0x401c000000000000
+xar4 = 0x00000042
+f32dtof64 r0, *+xar4[0]
+mov32 r1h, *+xar4[2], uncf
+-- F32DTOF64 copies two words up
+r0 = 0x401c000000000000
+r1 = 0x40e0000000000000
+f64tof32 r0h, r1
+-- F64TOF32 1/3 truncates RND32 0
+r0 = 0x3eaaaaaa00000000
+f64tof32 r0h, r1
+-- F64TOF32 1/3 rounds RND32 1
+r0 = 0x3eaaaaab00000000
+f64tof32 r0h, r1
+-- F64TOF32 1e39 truncates to max
+r0 = 0x7f7fffff00000000
+f64tof32 r0h, r1
+-- F64TOF32 1e39 rounds to Inf
+r0 = 0x7f80000000000000
+f64tof32 r0h, r1
+-- F64TOF32 1e-40 flushes
+r0 = 0x0000000000000000
+luf = 0x0
+f64toi32 r0h, r1
+-- F64TOI32 -2.7 truncates
+r0 = 0xfffffffe00000000
+f64toi32 r0h, r1
+-- F64TOI32 3e9 saturates
+r0 = 0x7fffffff00000000
+f64toui32 r0h, r1
+-- F64TOUI32 3e9
+r0 = 0xb2d05e0000000000
+f64toui32 r0h, r1
+-- F64TOUI32 -1 saturates to 0
+r0 = 0x0000000000000000
+f64toi64 r0, r1
+-- F64TOI64 -240 + 0.5 truncates
+r0 = 0xffffff0000000000
+f64toi64 r0, r1
+-- F64TOI64 263 saturates
+r0 = 0x7fffffffffffffff
+f64toui64 r0, r1
+-- F64TOUI64 1e19
+r0 = 0x8ac7230489e80000
+f64toui64 r0, r1
+-- F64TOUI64 264 saturates
+r0 = 0xffffffffffffffff
+i32tof64 r0, r1h
+-- I32TOF64 -231
+r0 = 0xc1e0000000000000
+ui32tof64 r0, r1h
+-- UI32TOF64 232 - 1
+r0 = 0x41efffffffe00000
+i32tof64 r0, *xar4++
+-- I32TOF64 R0,XAR4++
+r0 = 0xc014000000000000
+xar4 = 0x00000042
+i64tof64 r0, r1
+-- I64TOF64 263 - 1 rounds to 263
+r0 = 0x43e0000000000000
+ui64tof64 r0, r1
+-- UI64TOF64 264 - 1 rounds to 264
+r0 = 0x43f0000000000000
+ui64tof64 r0, r1
+-- UI64TOF64 12345
+r0 = 0x40c81c8000000000
+EOF
+RUN
+
+NAME=C28x RzIL VM: fast integer division, whole divisions
+FILE=malloc://8192
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=32
+e asm.cpu=c28x
+e analysis.cpu=c28x
+w0 8192 @ 0
+wx 68e564e564e564e564e564e564e564e564e56ae5 @ 0
+ara0
+ar r1=0xfffffff900000000
+ar r3=0x200000000
+aezi
+pi 10
+aezs 10
+echo -- -7/2 truncated: -3 r -1
+ar r1
+ar r2
+ar r3
+w0 8192 @ 0
+wx 68e564e564e564e564e564e564e564e564e56be5 @ 0
+ara0
+ar r1=0xfffffff900000000
+ar r3=0x200000000
+aezi
+pi 10
+aezs 10
+echo -- -7/2 euclidean: -4 r 1
+ar r1
+ar r2
+w0 8192 @ 0
+wx 68e564e564e564e564e564e564e564e564e56ce5 @ 0
+ara0
+ar r1=0xfffffff900000000
+ar r3=0x200000000
+aezi
+pi 10
+aezs 10
+echo -- -7/2 floored: -4 r 1
+ar r1
+ar r2
+w0 8192 @ 0
+wx 68e564e564e564e564e564e564e564e564e56ce5 @ 0
+ara0
+ar r1=0x700000000
+ar r3=0xfffffffe00000000
+aezi
+pi 10
+aezs 10
+echo -- 7/-2 floored: -4 r -1
+ar r1
+ar r2
+w0 8192 @ 0
+wx 64e564e564e564e564e564e564e564e5 @ 0
+ara0
+ar r1=0x6400000000
+ar r3=0x700000000
+ar zi=0x1
+aezi
+pi 8
+aezs 8
+echo -- SUBC4UI32 x8: 100/7 unsigned
+ar r1
+ar r2
+ar zi
+w0 8192 @ 0
+wx 64e564e564e564e564e564e564e564e5 @ 0
+ara0
+ar r1=0x6400000000
+ar r3=0x500000000
+aezi
+pi 8
+aezs 8
+echo -- SUBC4UI32 x8: 100/5 sets ZI
+ar r1
+ar r2
+ar zi
+w0 8192 @ 0
+wx 64e5 @ 0
+ara0
+ar r1=0x6400000000
+aezi
+pi 1
+aezs 1
+echo -- SUBC4UI32 by zero latches LVF
+ar lvf
+w0 8192 @ 0
+wx 68e5 @ 0
+ara0
+ar r1=0x8000000000000000
+ar r3=0x300000000
+aezi
+pi 1
+aezs 1
+echo -- ABSI32DIV32 0x80000000: LVF, NI, TF
+ar lvf
+ar ni
+ar tf
+ar r2
+w0 8192 @ 0
+wx 69e5 @ 0
+ara0
+ar r1=0xfffffff600000000
+ar r3=0xfffffff000000000
+aezi
+pi 1
+aezs 1
+echo -- ABSI32DIV32U: TF from the numerator only
+ar ni
+ar tf
+ar r1
+ar r3
+w0 8192 @ 0
+wx b8e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e565e5bae5 @ 0
+ara0
+ar r1=0xffffff1700000000
+ar r0=0x2b5af00000000000
+ar r3=0x0
+ar r5=0x700000000
+aezi
+pi 34
+aezs 34
+echo -- -1012/7 over 64 bits: truncated
+ar r1
+ar r0
+ar r2
+ar r4
+w0 8192 @ 0
+wx a8e5 @ 0
+ara0
+ar r1=0xffffffff00000000
+ar r0=0xfffffffb00000000
+ar r3=0xfffffffd00000000
+aezi
+pi 1
+aezs 1
+echo -- ABSI64DIV32: TF from both signs
+ar r1
+ar r0
+ar r3
+ar ni
+ar tf
+ar r2
+w0 8192 @ 0
+wx aae5 @ 0
+ara0
+ar r1=0x0
+ar r0=0x500000000
+ar r2=0x200000000
+ar tf=0x1
+ar ni=0x1
+aezi
+pi 1
+aezs 1
+echo -- NEGI64DIV32 signs both
+ar r1
+ar r0
+ar r2
+w0 8192 @ 0
+wx bbe5 @ 0
+ara0
+ar r1=0x0
+ar r0=0x300000000
+ar r2=0x0
+ar r4=0x100000000
+ar r3=0x0
+ar r5=0x200000000
+ar ni=0x1
+ar tf=0x1
+aezi
+pi 1
+aezs 1
+echo -- ENEGI64DIV64 adjusts
+ar r1
+ar r0
+ar r2
+ar r4
+EOF
+EXPECT=<<EOF
+absi32div32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+negi32div32 r1h, r2h
+-- -7/2 truncated: -3 r -1
+r1 = 0xfffffffd00000000
+r2 = 0xffffffff00000000
+r3 = 0x0000000200000000
+absi32div32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+enegi32div32 r1h, r2h, r3h
+-- -7/2 euclidean: -4 r 1
+r1 = 0xfffffffc00000000
+r2 = 0x0000000100000000
+absi32div32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+mnegi32div32 r1h, r2h, r3h
+-- -7/2 floored: -4 r 1
+r1 = 0xfffffffc00000000
+r2 = 0x0000000100000000
+absi32div32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+mnegi32div32 r1h, r2h, r3h
+-- 7/-2 floored: -4 r -1
+r1 = 0xfffffffc00000000
+r2 = 0xffffffff00000000
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+-- SUBC4UI32 x8: 100/7 unsigned
+r1 = 0x0000000e00000000
+r2 = 0x0000000200000000
+zi = 0x0
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+subc4ui32 r2h, r1h, r3h
+-- SUBC4UI32 x8: 100/5 sets ZI
+r1 = 0x0000001400000000
+r2 = 0x0000000000000000
+zi = 0x1
+subc4ui32 r2h, r1h, r3h
+-- SUBC4UI32 by zero latches LVF
+lvf = 0x1
+absi32div32 r2h, r1h, r3h
+-- ABSI32DIV32 0x80000000: LVF, NI, TF
+lvf = 0x1
+ni = 0x1
+tf = 0x1
+r2 = 0x0000000000000000
+absi32div32u r2h, r1h
+-- ABSI32DIV32U: TF from the numerator only
+ni = 0x1
+tf = 0x1
+r1 = 0x0000000a00000000
+r3 = 0xfffffff000000000
+absi64div64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+subc2ui64 r2h:r4h, r1h:r0h, r3h:r5h
+negi64div64 r1h:r0h, r2h:r4h
+-- -1012/7 over 64 bits: truncated
+r1 = 0xffffffde00000000
+r0 = 0xbd0cfdb700000000
+r2 = 0xffffffff00000000
+r4 = 0xffffffff00000000
+absi64div32 r2h, r1h:r0h, r3h
+-- ABSI64DIV32: TF from both signs
+r1 = 0x0000000000000000
+r0 = 0x0000000500000000
+r3 = 0x0000000300000000
+ni = 0x1
+tf = 0x0
+r2 = 0x0000000000000000
+negi64div32 r1h:r0h, r2h
+-- NEGI64DIV32 signs both
+r1 = 0xffffffff00000000
+r0 = 0xfffffffb00000000
+r2 = 0xfffffffe00000000
+enegi64div64 r1h:r0h, r2h:r4h, r3h:r5h
+-- ENEGI64DIV64 adjusts
+r1 = 0xffffffff00000000
+r0 = 0xfffffffc00000000
+r2 = 0x0000000000000000
+r4 = 0x0000000100000000
+EOF
+RUN

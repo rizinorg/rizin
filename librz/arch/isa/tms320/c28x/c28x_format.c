@@ -51,6 +51,35 @@ static const char *const c28x_reg_names[] = {
 	[C28X_REG_VR7] = "vr7",
 	[C28X_REG_VR8] = "vr8",
 	[C28X_REG_VT0] = "vt0",
+	[C28X_REG_R0H] = "r0h",
+	[C28X_REG_R1H] = "r1h",
+	[C28X_REG_R2H] = "r2h",
+	[C28X_REG_R3H] = "r3h",
+	[C28X_REG_R4H] = "r4h",
+	[C28X_REG_R5H] = "r5h",
+	[C28X_REG_R6H] = "r6h",
+	[C28X_REG_R7H] = "r7h",
+	[C28X_REG_STF] = "stf",
+	[C28X_REG_RB] = "rb",
+	[C28X_REG_R0L] = "r0l",
+	[C28X_REG_R1L] = "r1l",
+	[C28X_REG_R2L] = "r2l",
+	[C28X_REG_R3L] = "r3l",
+	[C28X_REG_R4L] = "r4l",
+	[C28X_REG_R5L] = "r5l",
+	[C28X_REG_R6L] = "r6l",
+	[C28X_REG_R7L] = "r7l",
+	[C28X_REG_R0] = "r0",
+	[C28X_REG_R1] = "r1",
+	[C28X_REG_R2] = "r2",
+	[C28X_REG_R3] = "r3",
+	[C28X_REG_R4] = "r4",
+	[C28X_REG_R5] = "r5",
+	[C28X_REG_R6] = "r6",
+	[C28X_REG_R7] = "r7",
+	[C28X_REG_R1H_R0H] = "r1h:r0h",
+	[C28X_REG_R2H_R4H] = "r2h:r4h",
+	[C28X_REG_R3H_R5H] = "r3h:r5h",
 	[C28X_REG_VCRC] = "vcrc",
 	[C28X_REG_VSTATUS] = "vstatus",
 	[C28X_REG_VCRCPOLY] = "vcrcpoly",
@@ -104,6 +133,37 @@ RZ_IPI RZ_BORROW const char *c28x_reg_name(C28xReg reg) {
 		return "?";
 	}
 	return c28x_reg_names[reg];
+}
+
+/**
+ * \brief FPU condition names by code.
+ *
+ * The FPU tests STF rather than ST0, so its conditions differ from the core's
+ * from code 6 on. The reserved codes 6-9 print as nothing.
+ */
+static const char *const c28x_fcond_names[16] = {
+	"neq", "eq", "gt", "geq", "lt", "leq", "", "",
+	"", "", "tf", "ntf", "lu", "lv", "unc", "uncf"
+};
+
+/**
+ * \brief STF flag names in MOVST0 order.
+ *
+ * MOVST0 and SETFLG/SAVE number the same STF flags in different orders.
+ */
+static const char *const c28x_movst0_names[8] = {
+	"lvf", "luf", "nf", "ni", "zf", "zi", "ci", "tf"
+};
+
+static const char *const c28x_setflg_names[11] = {
+	"lvf", "luf", "nf", "zf", "ni", "zi", "tf", "rndq16", "rndq32", "rndf32", "rndf64"
+};
+
+/**
+ * \brief Printable name of FPU condition code \p cond.
+ */
+RZ_IPI RZ_BORROW const char *c28x_fcond_name(ut8 cond) {
+	return c28x_fcond_names[cond & 0xf];
 }
 
 /**
@@ -250,6 +310,37 @@ static void c28x_format_operand(RzStrBuf *sb, const C28xInsn *insn, const C28xOp
 		break;
 	case C28X_OP_COND:
 		rz_strbuf_append(sb, c28x_cond_name((ut8)op->imm));
+		break;
+	case C28X_OP_FCOND:
+		rz_strbuf_append(sb, c28x_fcond_name((ut8)op->imm));
+		break;
+	case C28X_OP_FFLAGS: {
+		bool any = false;
+		for (ut32 b = 0; b < RZ_ARRAY_SIZE(c28x_movst0_names); b++) {
+			if (op->imm & (1u << b)) {
+				rz_strbuf_appendf(sb, "%s%s", any ? "," : "", c28x_movst0_names[b]);
+				any = true;
+			}
+		}
+		if (!any) {
+			rz_strbuf_append(sb, "#0");
+		}
+		break;
+	}
+	case C28X_OP_FSETFLG: {
+		const ut32 mask = op->mask;
+		bool any = false;
+		for (ut32 b = 0; b < RZ_ARRAY_SIZE(c28x_setflg_names); b++) {
+			if (mask & (1u << b)) {
+				rz_strbuf_appendf(sb, "%s%s=%u", any ? "," : "",
+					c28x_setflg_names[b], (ut32)(op->imm >> b) & 1);
+				any = true;
+			}
+		}
+		break;
+	}
+	case C28X_OP_FZERO:
+		rz_strbuf_append(sb, "#0.0");
 		break;
 	case C28X_OP_PCREL:
 	case C28X_OP_PMA:

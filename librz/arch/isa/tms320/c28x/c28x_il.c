@@ -3243,8 +3243,11 @@ RZ_IPI RZ_OWN RzILOpEffect *c28x_lift(RZ_NONNULL const C28xInsn *insn, ut64 pc) 
 	if ((size_t)insn->id < RZ_ARRAY_SIZE(c28x_lifters) && c28x_lifters[insn->id]) {
 		eff = c28x_lifters[insn->id](insn, pc);
 	}
-	// the VCU lifts its own instructions
-	return eff ? eff : c28x_lift_vcu(insn, pc);
+	// the extensions lift their own instructions and their forms of core ones, such as PUSH RB
+	if (!eff) {
+		eff = c28x_lift_vcu(insn, pc);
+	}
+	return eff ? eff : c28x_lift_fpu(insn, pc);
 }
 
 /**

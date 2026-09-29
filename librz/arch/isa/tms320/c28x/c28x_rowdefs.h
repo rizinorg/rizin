@@ -77,7 +77,18 @@
 	{ C28X_OD_INTR, (lo_), 4, 0 }
 
 // A row is repeatable under RPT, which the analysis layer reports as a hint.
-#define RPTABLE                 .repeatable = true
+#define RPTABLE     .repeatable = true
+#define FREG(lo_)   { C28X_OD_REGSEL, (lo_), 3, C28X_REG_R0H }
+#define FREGFIX(n_) { C28X_OD_REG, 0, 0, C28X_REG_R##n_##H }
+#define FREGL(lo_)  { C28X_OD_REGSEL, (lo_), 3, C28X_REG_R0L }
+#define FREG64(lo_) { C28X_OD_REGSEL, (lo_), 3, C28X_REG_R0 }
+// FPU register n of a group of four from base_: MOV32 between CPU and FPU
+// registers addresses RnL at data address 0x0f10 + 4n
+#define FREGM(base_)            { C28X_OD_REGSEL, 2, 2, (base_) }
+#define FCOND(lo_)              { C28X_OD_FCOND, (lo_), 4, 0 }
+#define FFLAGS(lo_)             { C28X_OD_FFLAGS, (lo_), 8, 0 }
+#define FSETFLG                 { C28X_OD_FSETFLG, 0, 11, 11 }
+#define FZERO                   { C28X_OD_FZERO, 0, 0, 0 }
 #define PAR(id_)                { C28X_OD_PAR, 0, 0, C28X_INS_##id_ }
 #define VRREGH(lo_)             { C28X_OD_REGSEL_HIGH, (lo_), 3, C28X_REG_VR0 }
 #define VRREGL4(lo_)            { C28X_OD_REGSEL_LOW, (lo_), 4, C28X_REG_VR0 }

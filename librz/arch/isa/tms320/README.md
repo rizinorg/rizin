@@ -89,6 +89,24 @@ RzIL, except with a register operand such as `@AL` in place of memory. The
 other arithmetic, `VPACK4`, `VSHLMB`, and the complex, Viterbi, FFT and
 Galois-field instructions are not lifted.
 
+The FPU32 and FPU64 instructions of the floating-point parts decode too, with
+the TMU's trigonometric and math instructions and the fast integer division.
+All are documented in **SPRUHS1**, and FPU32 also in **SPRUEO2**. They work on
+`R0H`-`R7H`, their low halves `R0L`-`R7L` and the 64-bit `R0`-`R7`, `STF` and
+`RB`. They include the parallel forms written with `||`, such as
+`MPYF32 ... || MOV32 ...`. The rows were derived from `dis2000` and checked
+against it on random encodings of every row. Most are lifted to RzIL. These are
+not:
+
+- the TMU's transcendental functions and the reciprocal estimates, whose exact
+  results TI does not define
+- `PREDIVF64`, `SUBC3F64` and `POSTDIVF64`, and `MOV32` between the halves of
+  two registers, which SPRUHS1C does not document
+- `MOVDD32 RaL,mem32`, whose description contradicts itself
+- `MACF32 RaH,RbH,mem32,*XAR7++` with registers other than `R7H,R3H`
+- a register operand such as `@ACC` in place of `mem32`, except in an
+  unconditional `MOV32` to or from `RaH` or `RaL`
+
 ## c55x
 
 Variable-length (1-7 byte) instructions, little-endian, 16-bit word.
@@ -159,7 +177,7 @@ as `c28x`, from COFF and from ELF with `e_machine` set to `EM_TI_C2000`.
 - TI [SPRAC71C][sprac71c] -- C28x Embedded Application Binary Interface (DWARF
   register numbers and ELF relocations)
 - TI [SPRUHS1C][spruhs1c] -- TMS320C28x Extended Instruction Sets Technical
-  Reference Manual (the VCU)
+  Reference Manual (the VCU, FPU, TMU and FINTDIV)
 - TI SWPU086 -- TMS320C55x 'C55x+' CPU Reference Guide, Preliminary,
   May 2005
 - TI SWPU104 -- TMS320C55x+ DSP Algebraic Instruction Set Reference

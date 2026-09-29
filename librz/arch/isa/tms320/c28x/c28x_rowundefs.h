@@ -37,6 +37,15 @@
 #undef AXAT
 #undef INTRN
 #undef RPTABLE
+#undef FREG
+#undef FREGFIX
+#undef FREGL
+#undef FREG64
+#undef FREGM
+#undef FCOND
+#undef FFLAGS
+#undef FSETFLG
+#undef FZERO
 #undef PAR
 #undef VRREGH
 #undef VRREGL4
