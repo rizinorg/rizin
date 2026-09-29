@@ -60,30 +60,6 @@ RZ_API void rz_big_from_int(RzNumBig *b, st64 n) {
 #endif
 }
 
-static void rz_big_from_unsigned(RzNumBig *b, ut64 v) {
-	rz_return_if_fail(b);
-
-	_r_big_zero_out(b);
-
-	/* Endianness issue if machine is not little-endian? */
-#ifdef RZ_BIG_WORD_SIZE
-#if (RZ_BIG_WORD_SIZE == 1)
-	b->array[0] = (v & 0x000000ff);
-	b->array[1] = (v & 0x0000ff00) >> 8;
-	b->array[2] = (v & 0x00ff0000) >> 16;
-	b->array[3] = (v & 0xff000000) >> 24;
-#elif (RZ_BIG_WORD_SIZE == 2)
-	b->array[0] = (v & 0x0000ffff);
-	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (RZ_BIG_WORD_SIZE == 4)
-	b->array[0] = v;
-	RZ_BIG_DTYPE_TMP num_32 = 32;
-	RZ_BIG_DTYPE_TMP tmp = v >> num_32;
-	b->array[1] = tmp;
-#endif
-#endif
-}
-
 RZ_API st64 rz_big_to_int(RzNumBig *b) {
 	rz_return_val_if_fail(b, 0);
 
@@ -360,40 +336,58 @@ RZ_API void rz_big_sub(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	}
 }
 
-RZ_API void rz_big_mul(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
+/**
+ * \brief Count the words up to the most significant non-zero one.
+ */
+static size_t big_significant_words(const RzNumBig *a) {
+	size_t n = RZ_BIG_ARRAY_SIZE;
+	while (n && !a->array[n - 1]) {
+		n--;
+	}
+	return n;
+}
+
+/**
+ * \brief Multiply two big numbers.
+ *
+ * \param c Receives a * b, wrapped to the fixed width like the other
+ *          operations; may alias \p a or \p b
+ * \param a Multiplicand
+ * \param b Multiplier
+ */
+RZ_API void rz_big_mul(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
 	rz_return_if_fail(a);
 	rz_return_if_fail(b);
 	rz_return_if_fail(c);
 
-	RzNumBig *row = rz_big_new();
-	RzNumBig *tmp = rz_big_new();
-	RzNumBig *res = rz_big_new();
-	int i, j;
-
-	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
-		_r_big_zero_out(row);
-
-		for (j = 0; j < RZ_BIG_ARRAY_SIZE; j++) {
-			if (i + j < RZ_BIG_ARRAY_SIZE) {
-				_r_big_zero_out(tmp);
-				RZ_BIG_DTYPE_TMP intermediate = ((RZ_BIG_DTYPE_TMP)a->array[i] * (RZ_BIG_DTYPE_TMP)b->array[j]);
-				rz_big_from_unsigned(tmp, intermediate);
-				_lshift_word(tmp, i + j);
-				rz_big_add(row, row, tmp);
-			}
+	// Accumulate over the significant words only, so the cost follows the
+	// operand sizes rather than the fixed width, and into a local so that
+	// c may alias an operand.
+	RZ_BIG_DTYPE res[RZ_BIG_ARRAY_SIZE] = { 0 };
+	size_t na = big_significant_words(a);
+	size_t nb = big_significant_words(b);
+	for (size_t i = 0; i < na; i++) {
+		if (!a->array[i]) {
+			continue;
 		}
-		rz_big_add(res, row, res);
+		RZ_BIG_DTYPE_TMP carry = 0;
+		size_t j;
+		for (j = 0; j < nb && i + j < RZ_BIG_ARRAY_SIZE; j++) {
+			// Cannot overflow: (B - 1)^2 + 2 * (B - 1) == B^2 - 1 for word base B.
+			RZ_BIG_DTYPE_TMP t = (RZ_BIG_DTYPE_TMP)a->array[i] * b->array[j];
+			t += res[i + j] + carry;
+			res[i + j] = (RZ_BIG_DTYPE)t;
+			carry = t >> (8 * RZ_BIG_WORD_SIZE);
+		}
+		// Earlier rows end below i + nb, so this word is still zero.
+		if (i + j < RZ_BIG_ARRAY_SIZE) {
+			res[i + j] = (RZ_BIG_DTYPE)carry;
+		}
 	}
 
-	res->sign = a->sign * b->sign;
-	if (rz_big_is_zero(res)) {
-		res->sign = 1; // For -1 * 0 case
-	}
-	rz_big_assign(c, res);
-
-	rz_big_free(row);
-	rz_big_free(tmp);
-	rz_big_free(res);
+	int sign = a->sign * b->sign;
+	memcpy(c->array, res, sizeof(res));
+	c->sign = rz_big_is_zero(c) ? 1 : sign; // no negative zero
 }
 
 RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {

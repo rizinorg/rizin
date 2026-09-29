@@ -47,7 +47,7 @@ RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src);
 /* Basic arithmetic operations */
 RZ_API void rz_big_add(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a + b */
 RZ_API void rz_big_sub(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a - b */
-RZ_API void rz_big_mul(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a * b */
+RZ_API void rz_big_mul(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b); /* c = a * b */
 RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a / b */
 RZ_API void rz_big_mod(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a % b */
 RZ_API void rz_big_divmod(RzNumBig *c, RzNumBig *d, RzNumBig *a, RzNumBig *b); /* c = a/b, d = a%b */
