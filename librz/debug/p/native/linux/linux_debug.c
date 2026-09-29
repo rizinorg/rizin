@@ -246,6 +246,9 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 			return RZ_DEBUG_REASON_ERROR;
 		}
 		dbg->forked_pid = data;
+		RzDebugProcess *forked_child = RZ_NEW0(RzDebugProcess);
+		forked_child->pid=data;
+		rz_list_append(dbg->processes, (void *)data);
 		if (dowait) {
 			// The new child has a pending SIGSTOP. We can't affect it until it
 			// hits the SIGSTOP, but we're already attached.  */
@@ -254,13 +257,13 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 			}
 		}
 		RZ_LOG_WARN("(%d) Created process %d\n", ptid, (int)data);
-		if (!dbg->trace_forks) {
+		if (!dbg->trace_forks && !dbg->follow_child) {
 			// We need to do this even if the new process will be detached since the
 			// breakpoints are inherited from the parent
 			linux_remove_fork_bps(dbg);
-			if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
-				perror("PTRACE_DETACH");
-			}
+			// if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
+			// 	perror("PTRACE_DETACH");
+			// }
 		}
 		return RZ_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
@@ -407,6 +410,9 @@ static void linux_remove_thread(RzDebug *dbg, int tid) {
 }
 
 bool linux_select(RzDebug *dbg, int pid, int tid) {
+	if(rz_list_contains(dbg->processes, (void *)pid)){
+		return true;
+	}
 	if (dbg->pid != -1 && dbg->pid != pid) {
 		return linux_attach_new_process(dbg, pid);
 	}
