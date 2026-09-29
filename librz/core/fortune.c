@@ -23,10 +23,10 @@ static char *rizin_fortune_file(RZ_BORROW RZ_NONNULL RzPath *sys_path, const cha
 	return RZ_STR_DUP(type);
 }
 
-RZ_API void rz_core_fortune_list_types(void) {
+RZ_API void rz_core_fortune_list_types(RZ_NONNULL RzCons *cons) {
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE(fortunes); i++) {
-		rz_cons_printf("%s\n", fortunes[i]);
+		rz_cons_printf(cons, "%s\n", fortunes[i]);
 	}
 }
 
@@ -43,7 +43,7 @@ RZ_API void rz_core_fortune_list(RzCore *core) {
 	for (j = 0, beg = 0; str[j]; j++) {
 		if (str[j] == '\n') {
 			str[j] = '\0';
-			rz_cons_printf("%s\n", str + beg);
+			rz_cons_printf(core->cons, "%s\n", str + beg);
 			beg = j + 1;
 		}
 	}
@@ -71,7 +71,7 @@ RZ_API void rz_core_fortune_print_random(RzCore *core) {
 		if (rz_config_get_i(core->config, "cfg.fortunes.clippy")) {
 			rz_core_clippy_print(core, line);
 		} else {
-			rz_cons_printf(" -- %s\n", line);
+			rz_cons_printf(core->cons, " -- %s\n", line);
 		}
 		free(line);
 	}

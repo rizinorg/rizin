@@ -1243,7 +1243,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	}
 	r->io->bits = rz_asm_get_bits(r->rasm); // TODO: we need an api for this
 	RzIODesc *fd = rz_io_open_nomap(r->io, file, flags, 0644);
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(r->intr)) {
 		goto beach;
 	}
 	if (!fd && openmany) {
@@ -1449,7 +1449,7 @@ RZ_API bool rz_core_raw_file_print(RzCore *core) {
 			char *absfile = rz_file_abspath(desc->uri);
 			rz_list_foreach (maps, it3, current_map) {
 				if (current_map) {
-					rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
+					rz_cons_printf(core->cons, "on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
 				}
 			}
 			rz_list_free(maps);
@@ -1500,7 +1500,7 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 			} else {
 				fmt = "%c %d %d %s @ 0x%" PFMT64x " ; %s size=%" PFMT64u "\n";
 			}
-			rz_cons_printf(fmt,
+			rz_cons_printf(core->cons, fmt,
 				core->io->desc->fd == f->fd ? '*' : '-',
 				count,
 				(int)f->fd, desc->uri, (ut64)from,
@@ -1512,7 +1512,7 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 	return true;
@@ -1551,7 +1551,7 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 		cf = rz_core_file_get_by_fd(core, fd);
 		desc = rz_io_desc_get(core->io, fd);
 		if (cf) {
-			rz_cons_printf("%c %d %s ; %s\n",
+			rz_cons_printf(core->cons, "%c %d %s ; %s\n",
 				core->io->desc == desc ? '*' : '-',
 				fd, desc->uri, desc->perm & RZ_PERM_W ? "rw" : "r");
 		}

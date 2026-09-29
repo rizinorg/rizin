@@ -3,14 +3,14 @@
 
 #include <rz_core.h>
 
-RZ_API RzCmdStatus rz_core_parser_plugin_print(RzParsePlugin *plugin, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_core_parser_plugin_print(RzParsePlugin *plugin, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons) {
 	const char *name = rz_str_get(plugin->name);
 	const char *desc = rz_str_get(plugin->desc);
 
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(name);
+		rz_cons_println(cons, name);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -19,7 +19,7 @@ RZ_API RzCmdStatus rz_core_parser_plugin_print(RzParsePlugin *plugin, RzCmdState
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-15s %s\n", name, desc);
+		rz_cons_printf(cons, "%-15s %s\n", name, desc);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "ss", name, desc);
@@ -31,7 +31,7 @@ RZ_API RzCmdStatus rz_core_parser_plugin_print(RzParsePlugin *plugin, RzCmdState
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons) {
 	RzListIter *iter;
 	RzParsePlugin *plugin;
 	if (!parser) {
@@ -40,7 +40,7 @@ RZ_API RzCmdStatus rz_core_parser_plugins_print(RzParse *parser, RzCmdStateOutpu
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "ss", "name", "description");
 	rz_list_foreach (parser->parsers, iter, plugin) {
-		rz_core_parser_plugin_print(plugin, state);
+		rz_core_parser_plugin_print(plugin, state, cons);
 	}
 
 	rz_cmd_state_output_array_end(state);

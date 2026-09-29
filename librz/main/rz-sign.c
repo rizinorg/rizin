@@ -153,8 +153,8 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	}
 	rz_config_set_b(core->config, "scr.interactive", false);
 	rz_config_set_b(core->config, "analysis.apply.signature", false);
-	rz_cons_reset();
-	rz_cons_set_interactive(false);
+	rz_cons_reset(core->cons);
+	rz_cons_set_interactive(core->cons, false);
 
 	rz_core_loadlibs(core, RZ_CORE_LOADLIBS_ALL);
 
@@ -188,7 +188,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		if (!rz_core_flirt_convert_file(core, input_file, output_file)) {
 			ret = -1;
 		} else if (!quiet) {
-			rz_cons_printf("rz-sign: %s was converted to %s.\n", input_file, output_file);
+			rz_cons_printf(core->cons, "rz-sign: %s was converted to %s.\n", input_file, output_file);
 		}
 		break;
 	case RZ_SIGN_OPT_CREATE_FLIRT:
@@ -198,11 +198,11 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		if (!rz_core_flirt_create_file(core, output_file, &n_nodes)) {
 			ret = -1;
 		} else if (!quiet) {
-			rz_cons_printf("rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
+			rz_cons_printf(core->cons, "rz-sign: written %u signatures to %s.\n", n_nodes, output_file);
 		}
 		break;
 	case RZ_SIGN_OPT_DUMP_FLIRT:
-		if (!rz_core_flirt_dump_file(input_file)) {
+		if (!rz_core_flirt_dump_file(core, input_file)) {
 			ret = -1;
 		}
 		break;
@@ -211,7 +211,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 		ret = -1;
 		break;
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 
 rz_sign_end:
 	rz_list_free(evars);

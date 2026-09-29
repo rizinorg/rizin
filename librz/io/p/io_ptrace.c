@@ -324,7 +324,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 					iop->pid = iop->tid = pid;
 				}
 			} else {
-				io->cb_printf("%d\n", iop->pid);
+				io->cb_printf(io->cb_printf_user, "%d\n", iop->pid);
 			}
 			return rz_str_newf("%d", iop->pid);
 		}

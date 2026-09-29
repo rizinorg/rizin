@@ -586,7 +586,9 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 		const char *ji = rz_cmd_alias_get(cmd, input, 1);
 		if (ji) {
 			if (*ji == '$') {
-				rz_cons_strcat(ji + 1);
+				if (cmd->has_cons) {
+					rz_cons_strcat(cmd->core->cons, ji + 1);
+				}
 				return true;
 			} else {
 				nstr = rz_str_newf("R! %s", input);
@@ -770,8 +772,8 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 				return RZ_CMD_STATUS_INVALID;
 			}
 		}
-		if (res == RZ_CMD_STATUS_OK) {
-			rz_cmd_state_output_print(&state);
+		if (res == RZ_CMD_STATUS_OK && cmd->has_cons) {
+			rz_cmd_state_output_print(&state, cmd->core->cons);
 		}
 		rz_cmd_state_output_fini(&state);
 		return res;
@@ -921,8 +923,8 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	const char *help_color = "";
 	if (cmd->has_cons) {
 		RzCons *cons = cmd->core->cons;
-		cols = rz_cons_get_size(NULL);
-		is_interactive = rz_cons_is_interactive();
+		cols = rz_cons_get_size(cons, NULL);
+		is_interactive = rz_cons_is_interactive(cons);
 		help_color = use_color ? cons->context->pal.help : "";
 	}
 	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
@@ -1766,7 +1768,9 @@ static RzCmdStatus macro_call(RzCmd *cmd, const RzCmdMacro *macro, const char **
 		code = rz_str_replace(code, rz_strf(key, "${%s}", macro->args[i]), argv[i], true);
 	}
 	RzCmdStatus res = rz_core_cmd_lines_rzshell(cmd->core, code);
-	rz_cons_flush();
+	if (cmd->has_cons) {
+		rz_cons_flush(cmd->core->cons);
+	}
 	free(code);
 	return res;
 }
@@ -2639,18 +2643,18 @@ RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutpu
  * output was already printed to console for those types that output as they go
  * (e.g. STANDARD, QUIET).
  */
-RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state) {
+RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state, RZ_NONNULL RzCons *cons) {
 	rz_return_if_fail(state);
 
 	char *s;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 	case RZ_OUTPUT_MODE_LONG_JSON:
-		rz_cons_println(pj_string(state->d.pj));
+		rz_cons_println(cons, pj_string(state->d.pj));
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		s = rz_table_tostring(state->d.t);
-		rz_cons_printf("%s", s);
+		rz_cons_printf(cons, "%s", s);
 		free(s);
 		break;
 	default:

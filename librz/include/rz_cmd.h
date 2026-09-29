@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_bind.h>
+#include <rz_cons.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -601,7 +602,7 @@ RZ_API void rz_cmd_state_output_set_color_selector(RzCmdStateOutput *state, RzTa
 RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutputMode mode, RZ_NULLABLE const RzCore *core);
 RZ_API void rz_cmd_state_output_fini(RZ_NONNULL RzCmdStateOutput *state);
 RZ_API void rz_cmd_state_output_free(RZ_NONNULL RzCmdStateOutput *state);
-RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state);
+RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state, RZ_NONNULL RzCons *cons);
 
 #define rz_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 

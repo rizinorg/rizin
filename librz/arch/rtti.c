@@ -14,35 +14,35 @@ RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const ch
 	return rz_analysis_rtti_itanium_demangle_class_name(&context, name);
 }
 
-RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode) {
+RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode, RZ_NONNULL RzCons *cons) {
 	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	if (use_json) {
-		rz_cons_print("[");
+		rz_cons_print(cons, "[");
 	}
 
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 	if (context.abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
-		rz_analysis_rtti_msvc_print_at_vtable(&context, addr, mode, false);
+		rz_analysis_rtti_msvc_print_at_vtable(&context, addr, mode, false, cons);
 	} else {
-		rz_analysis_rtti_itanium_print_at_vtable(&context, addr, mode);
+		rz_analysis_rtti_itanium_print_at_vtable(&context, addr, mode, cons);
 	}
 
 	if (use_json) {
-		rz_cons_print("]\n");
+		rz_cons_print(cons, "]\n");
 	}
 }
 
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode) {
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RzCons *cons) {
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 
 	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	if (use_json) {
-		rz_cons_print("[");
+		rz_cons_print(cons, "[");
 	}
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(analysis->intr, NULL, NULL);
 	RzList *vtables = rz_analysis_vtable_search(&context);
 	RzListIter *vtableIter;
 	RVTableInfo *table;
@@ -51,37 +51,37 @@ RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode) 
 		bool comma = false;
 		bool success = false;
 		rz_list_foreach (vtables, vtableIter, table) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(analysis->intr)) {
 				break;
 			}
 			if (use_json && success) {
-				rz_cons_print(",");
+				rz_cons_print(cons, ",");
 				comma = true;
 			}
 			if (context.abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
-				success = rz_analysis_rtti_msvc_print_at_vtable(&context, table->saddr, mode, true);
+				success = rz_analysis_rtti_msvc_print_at_vtable(&context, table->saddr, mode, true, cons);
 			} else {
-				success = rz_analysis_rtti_itanium_print_at_vtable(&context, table->saddr, mode);
+				success = rz_analysis_rtti_itanium_print_at_vtable(&context, table->saddr, mode, cons);
 			}
 			if (success) {
 				comma = false;
 				if (!use_json) {
-					rz_cons_print("\n");
+					rz_cons_print(cons, "\n");
 				}
 			}
 		}
 		if (use_json && !success && comma) {
 			// drop last comma if necessary
-			rz_cons_drop(1);
+			rz_cons_drop(cons, 1);
 		}
 	}
 	rz_list_free(vtables);
 
 	if (use_json) {
-		rz_cons_print("]\n");
+		rz_cons_print(cons, "]\n");
 	}
 
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(analysis->intr);
 }
 
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
@@ -100,7 +100,7 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
 		RVTableContext context;
 		rz_analysis_vtable_begin(analysis, &context);
 
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(analysis->intr, NULL, NULL);
 		RzList *vtables = rz_analysis_vtable_search(&context);
 		if (vtables) {
 			if (context.abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
@@ -111,7 +111,7 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
 			rz_analysis_no_rtti_analysis(&context, vtables);
 		}
 		rz_list_free(vtables);
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(analysis->intr);
 	}
 	}
 }

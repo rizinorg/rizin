@@ -43,7 +43,7 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
-RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt);
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt, RZ_NONNULL RzCons *cons);
 
 RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
 RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
@@ -54,7 +54,7 @@ RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const ch
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, const char *id);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
-RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name);
+RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name, RZ_NONNULL RzCons *cons);
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core);
 RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig);
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr);
@@ -104,7 +104,7 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb);
 RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *type, bool multiline);
 
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_function_print(RZ_NONNULL RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
@@ -139,12 +139,12 @@ RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NUL
 RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
 RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
-RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* creg.c */
 RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items);
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* cdebug.c */
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
@@ -165,13 +165,13 @@ RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
 RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
 
 /* cmark.c */
-RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state);
-RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
+RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons);
+RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to, RZ_NONNULL RzCons *cons);
 
 /* cflag.c */
-RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
-RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
-RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
+RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons);
+RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons);
+RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to, RZ_NONNULL RzCons *cons);
 
 /* cdisasm.c */
 RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, st64 i_bytes);

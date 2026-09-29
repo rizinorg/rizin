@@ -51,10 +51,10 @@ static const char *attr_type_id(RzAnalysisClassAttrType attr_type) {
 }
 
 RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(analysis->intr, NULL, NULL);
 	RzBinObject *bin_obj = rz_bin_cur_object(analysis->binb.bin);
 	if (!bin_obj) {
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(analysis->intr);
 		return;
 	}
 	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
@@ -63,7 +63,7 @@ RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
 		RzBinClass *class;
 		rz_pvector_foreach (classes, iter_class) {
 			class = *iter_class;
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(analysis->intr)) {
 				break;
 			}
 			if (!rz_analysis_class_exists(analysis, class->name)) {
@@ -75,7 +75,7 @@ RZ_API void rz_analysis_class_recover_from_rzbin(RzAnalysis *analysis) {
 			}
 		}
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(analysis->intr);
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_create(RzAnalysis *analysis, const char *name) {

@@ -15,13 +15,10 @@
 #include "i/private.h"
 
 #define COUNT_LINES 1
-#define CTX(x)      I.context->x
 
 RZ_LIB_VERSION(rz_cons);
 
 static RzConsContext rz_cons_context_default = { { { { 0 } } } };
-static RzCons rz_cons_instance = { 0 };
-#define I rz_cons_instance
 
 #if __WINDOWS__
 // restore only the console flags rizin owns instead of replaying the whole host mode word
@@ -31,6 +28,7 @@ static RzCons rz_cons_instance = { 0 };
 
 // this structure goes into cons_stack when rz_cons_push/pop
 typedef struct {
+	RzCons *cons;
 	char *buf;
 	int buf_len;
 	int buf_size;
@@ -38,35 +36,25 @@ typedef struct {
 	bool noflush;
 } RzConsStack;
 
-typedef struct {
-	bool breaked;
-	RzConsEvent event_interrupt;
-	void *event_interrupt_data;
-} RzConsBreakStack;
-
 static void cons_grep_reset(RzConsGrep *grep);
 
-static void ctx_rowcol_calc_reset(void) {
-	CTX(row) = 0;
-	CTX(col) = 0;
-	CTX(rowcol_calc_start) = 0;
-}
-
-static void break_stack_free(void *ptr) {
-	RzConsBreakStack *b = (RzConsBreakStack *)ptr;
-	free(b);
+static void ctx_rowcol_calc_reset(RzCons *cons) {
+	cons->context->row = 0;
+	cons->context->col = 0;
+	cons->context->rowcol_calc_start = 0;
 }
 
 static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
+	RzCons *cons = s->cons;
 	free(s->buf);
 	if (s->grep) {
-		if (CTX(grep.str) == s->grep->str) {
-			CTX(grep.str) = NULL;
+		if (cons->context->grep.str == s->grep->str) {
+			cons->context->grep.str = NULL;
 		}
 		RZ_FREE(s->grep->str);
-		if (CTX(grep.json_path) == s->grep->json_path) {
-			CTX(grep.json_path) = NULL;
+		if (cons->context->grep.json_path == s->grep->json_path) {
+			cons->context->grep.json_path = NULL;
 		}
 		RZ_FREE(s->grep->json_path);
 	}
@@ -74,60 +62,60 @@ static void cons_stack_free(void *ptr) {
 	free(s);
 }
 
-static RzConsStack *cons_stack_dump(bool recreate) {
+static RzConsStack *cons_stack_dump(RzCons *cons, bool recreate) {
 	RzConsStack *data = RZ_NEW0(RzConsStack);
 	if (data) {
-		if (CTX(buffer)) {
-			data->buf = CTX(buffer);
-			data->buf_len = CTX(buffer_len);
-			data->buf_size = CTX(buffer_sz);
+		if (cons->context->buffer) {
+			data->buf = cons->context->buffer;
+			data->buf_len = cons->context->buffer_len;
+			data->buf_size = cons->context->buffer_sz;
 		}
-		data->noflush = CTX(noflush);
+		data->noflush = cons->context->noflush;
 		data->grep = RZ_NEW0(RzConsGrep);
 		if (data->grep) {
-			memcpy(data->grep, &CTX(grep), sizeof(RzConsGrep));
-			if (CTX(grep).str) {
-				data->grep->str = rz_str_dup(CTX(grep).str);
+			memcpy(data->grep, &cons->context->grep, sizeof(RzConsGrep));
+			if (cons->context->grep.str) {
+				data->grep->str = rz_str_dup(cons->context->grep.str);
 			}
-			if (CTX(grep).json_path) {
-				data->grep->json_path = rz_str_dup(CTX(grep).json_path);
+			if (cons->context->grep.json_path) {
+				data->grep->json_path = rz_str_dup(cons->context->grep.json_path);
 			}
 		}
-		if (recreate && CTX(buffer_sz) > 0) {
-			CTX(buffer) = malloc(CTX(buffer_sz));
-			ctx_rowcol_calc_reset();
-			if (!CTX(buffer)) {
-				CTX(buffer) = data->buf;
+		if (recreate && cons->context->buffer_sz > 0) {
+			cons->context->buffer = malloc(cons->context->buffer_sz);
+			ctx_rowcol_calc_reset(cons);
+			if (!cons->context->buffer) {
+				cons->context->buffer = data->buf;
 				free(data);
 				return NULL;
 			}
 		} else {
-			CTX(buffer) = NULL;
+			cons->context->buffer = NULL;
 		}
 	}
 	return data;
 }
 
 static void cons_stack_load(RzConsStack *data, bool free_current) {
-	rz_return_if_fail(data);
+	rz_return_if_fail(data && data->cons);
+	RzCons *cons = data->cons;
 	if (free_current) {
-		free(CTX(buffer));
+		free(cons->context->buffer);
 	}
-	CTX(buffer) = data->buf;
+	cons->context->buffer = data->buf;
 	data->buf = NULL;
-	CTX(buffer_len) = data->buf_len;
-	CTX(buffer_sz) = data->buf_size;
+	cons->context->buffer_len = data->buf_len;
+	cons->context->buffer_sz = data->buf_size;
 	if (data->grep) {
-		free(CTX(grep).str);
-		free(CTX(grep).json_path);
-		memcpy(&CTX(grep), data->grep, sizeof(RzConsGrep));
+		free(cons->context->grep.str);
+		free(cons->context->grep.json_path);
+		memcpy(&cons->context->grep, data->grep, sizeof(RzConsGrep));
 	}
-	CTX(noflush) = data->noflush;
-	ctx_rowcol_calc_reset();
+	cons->context->noflush = data->noflush;
+	ctx_rowcol_calc_reset(cons);
 }
 
 static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
-	context->breaked = false;
 	context->cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
@@ -135,9 +123,6 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 	context->buffer_len = 0;
 	context->is_interactive = false;
 	context->cons_stack = rz_stack_newf(6, cons_stack_free);
-	context->break_stack = rz_stack_newf(6, break_stack_free);
-	context->event_interrupt = NULL;
-	context->event_interrupt_data = NULL;
 	context->pageable = true;
 	context->log_callback = NULL;
 	context->noflush = false;
@@ -156,8 +141,6 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 static void cons_context_deinit(RzConsContext *context) {
 	rz_stack_free(context->cons_stack);
 	context->cons_stack = NULL;
-	rz_stack_free(context->break_stack);
-	context->break_stack = NULL;
 	rz_cons_pal_free(context);
 	cons_grep_reset(&context->grep);
 	free(context->buffer);
@@ -169,46 +152,42 @@ static void cons_context_deinit(RzConsContext *context) {
 	context->lastLength = 0;
 }
 
-static void __break_signal(int sig) {
-	rz_cons_context_break(&rz_cons_context_default);
-}
-
-static inline void __cons_write_ll(const char *buf, int len) {
+static inline void __cons_write_ll(RzCons *cons, const char *buf, int len) {
 #if __WINDOWS__
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		rz_xwrite(I.fdout, buf, len);
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		rz_xwrite(cons->fdout, buf, len);
 	} else {
-		if (I.fdout == 1) {
-			rz_cons_w32_print(buf, len, false);
+		if (cons->fdout == 1) {
+			rz_cons_w32_print(cons, buf, len, false);
 		} else {
-			rz_xwrite(I.fdout, buf, len);
+			rz_xwrite(cons->fdout, buf, len);
 		}
 	}
 #else
-	if (I.fdout < 1) {
-		I.fdout = 1;
+	if (cons->fdout < 1) {
+		cons->fdout = 1;
 	}
-	rz_xwrite(I.fdout, buf, len);
+	rz_xwrite(cons->fdout, buf, len);
 #endif
 }
 
-static inline void __cons_write(const char *obuf, int olen) {
+static inline void __cons_write(RzCons *cons, const char *obuf, int olen) {
 	const size_t bucket = 64 * 1024;
 	size_t i;
 	if (olen < 0) {
 		olen = strlen(obuf);
 	}
 	for (i = 0; (i + bucket) < olen; i += bucket) {
-		__cons_write_ll(obuf + i, bucket);
+		__cons_write_ll(cons, obuf + i, bucket);
 	}
 	if (i < olen) {
-		__cons_write_ll(obuf + i, olen - i);
+		__cons_write_ll(cons, obuf + i, olen - i);
 	}
 }
 
-RZ_API RzColor rz_cons_color_random(ut8 alpha) {
+RZ_API RzColor rz_cons_color_random(RzCons *cons, ut8 alpha) {
 	RzColor rcolor = { 0 };
-	if (CTX(color_mode) > COLOR_MODE_16) {
+	if (cons->context->color_mode > COLOR_MODE_16) {
 		rcolor.r = rz_num_rand32(0xff);
 		rcolor.g = rz_num_rand32(0xff);
 		rcolor.b = rz_num_rand32(0xff);
@@ -240,7 +219,7 @@ RZ_API RzColor rz_cons_color_random(ut8 alpha) {
 	return rcolor;
 }
 
-RZ_API void rz_cons_color(int fg, int r, int g, int b) {
+RZ_API void rz_cons_color(RzCons *cons, int fg, int r, int g, int b) {
 	int k;
 	r = RZ_DIM(r, 0, 255);
 	g = RZ_DIM(g, 0, 255);
@@ -253,42 +232,42 @@ RZ_API void rz_cons_color(int fg, int r, int g, int b) {
 		b = (int)(b / 42.6);
 		k = 16 + (r * 36) + (g * 6) + b;
 	}
-	rz_cons_printf("\x1b[%d;5;%dm", fg ? 48 : 38, k);
+	rz_cons_printf(cons, "\x1b[%d;5;%dm", fg ? 48 : 38, k);
 }
 
-RZ_API void rz_cons_println(const char *str) {
-	rz_cons_print(str);
-	rz_cons_newline();
+RZ_API void rz_cons_println(RzCons *cons, const char *str) {
+	rz_cons_print(cons, str);
+	rz_cons_newline(cons);
 }
 
-RZ_API void rz_cons_strcat_justify(const char *str, int j, char c) {
+RZ_API void rz_cons_strcat_justify(RzCons *cons, const char *str, int j, char c) {
 	int i, o, len;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
-			rz_cons_memset(' ', j);
+			rz_cons_memset(cons, ' ', j);
 			if (c) {
-				rz_cons_memset(c, 1);
-				rz_cons_memset(' ', 1);
+				rz_cons_memset(cons, c, 1);
+				rz_cons_memset(cons, ' ', 1);
 			}
-			rz_cons_memcat(str + o, len);
+			rz_cons_memcat(cons, str + o, len);
 			if (str[o + len] == '\n') {
-				rz_cons_newline();
+				rz_cons_newline(cons);
 			}
 			o = i + 1;
 			len = 0;
 		}
 	}
 	if (len > 0) {
-		rz_cons_memcat(str + o, len);
+		rz_cons_memcat(cons, str + o, len);
 	}
 }
 
-RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
+RZ_API void rz_cons_strcat_at(RzCons *cons, const char *_str, int x, char y, int w, int h) {
 	int i, o, len;
 	int cols = 0;
 	int rows = 0;
 	if (x < 0 || y < 0) {
-		int H, W = rz_cons_get_size(&H);
+		int H, W = rz_cons_get_size(cons, &H);
 		if (x < 0) {
 			x += W;
 		}
@@ -297,120 +276,55 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	char *str = rz_str_ansi_crop(_str, 0, 0, w + 1, h);
-	rz_cons_strcat(RZ_CONS_CURSOR_SAVE);
+	rz_cons_strcat(cons, RZ_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (w < 0 || rows > w) {
 			break;
 		}
 		if (str[i] == '\n') {
-			rz_cons_gotoxy(x, y + rows);
+			rz_cons_gotoxy(cons, x, y + rows);
 			int ansilen = rz_str_ansi_len(str + o);
 			cols = RZ_MIN(w, ansilen);
 			const char *end = rz_str_ansi_chrn(str + o, cols);
 			cols = end - str + o;
-			rz_cons_memcat(str + o, RZ_MIN(len, cols));
+			rz_cons_memcat(cons, str + o, RZ_MIN(len, cols));
 			o = i + 1;
 			len = 0;
 			rows++;
 		}
 	}
 	if (len > 0) {
-		rz_cons_gotoxy(x, y + rows);
-		rz_cons_memcat(str + o, len);
+		rz_cons_gotoxy(cons, x, y + rows);
+		rz_cons_memcat(cons, str + o, len);
 	}
-	rz_cons_strcat(Color_RESET);
-	rz_cons_strcat(RZ_CONS_CURSOR_RESTORE);
+	rz_cons_strcat(cons, Color_RESET);
+	rz_cons_strcat(cons, RZ_CONS_CURSOR_RESTORE);
 	free(str);
 }
 
-RZ_IPI RzCons *rz_cons_singleton(void) {
-	return &I;
-}
-
-RZ_API void rz_cons_break_clear(void) {
-	CTX(breaked) = false;
-}
-
-RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, void *user, bool sig) {
-	if (!context->break_stack) {
+RZ_API void rz_cons_context_break_push(RzConsContext *context, RzInterruptEvent cb, void *user) {
+	if (!context || !context->intr) {
 		return;
 	}
+	rz_interrupt_break_push(context->intr, cb, user);
+}
 
-	// if we don't have any element in the stack start the signal
-	RzConsBreakStack *b = RZ_NEW0(RzConsBreakStack);
-	if (!b) {
+RZ_API void rz_cons_context_break_pop(RzConsContext *context) {
+	if (!context || !context->intr) {
 		return;
 	}
-	if (rz_stack_is_empty(context->break_stack)) {
-#if __UNIX__
-		if (sig && rz_cons_context_is_main()) {
-			rz_sys_signal(SIGINT, __break_signal);
-		}
-#endif
-		context->breaked = false;
-	}
-	// save the actual state
-	b->event_interrupt = context->event_interrupt;
-	b->event_interrupt_data = context->event_interrupt_data;
-	rz_stack_push(context->break_stack, b);
-	// configure break
-	context->event_interrupt = cb;
-	context->event_interrupt_data = user;
+	rz_interrupt_break_pop(context->intr);
 }
 
-RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig) {
-	if (!context->break_stack) {
-		return;
-	}
-	// restore old state
-	RzConsBreakStack *b = NULL;
-	b = rz_stack_pop(context->break_stack);
-	if (b) {
-		context->event_interrupt = b->event_interrupt;
-		context->event_interrupt_data = b->event_interrupt_data;
-		break_stack_free(b);
-	} else {
-		// there is not more elements in the stack
-#if __UNIX__
-		if (sig && rz_cons_context_is_main()) {
-			rz_sys_signal(SIGINT, SIG_IGN);
-		}
-#endif
-		context->breaked = false;
-	}
+RZ_API bool rz_cons_is_interactive(RzCons *cons) {
+	return cons->context->is_interactive;
 }
 
-RZ_API void rz_cons_break_push(RzConsBreak cb, void *user) {
-	rz_cons_context_break_push(I.context, cb, user, true);
-}
-
-RZ_API void rz_cons_break_pop(void) {
-	rz_cons_context_break_pop(I.context, true);
-}
-
-RZ_API bool rz_cons_is_interactive(void) {
-	return CTX(is_interactive);
-}
-
-RZ_API bool rz_cons_default_context_is_interactive(void) {
+RZ_API bool rz_cons_default_context_is_interactive() {
 	return rz_cons_context_default.is_interactive;
 }
 
-RZ_API bool rz_cons_is_breaked(void) {
-	if (I.cb_break) {
-		I.cb_break(I.user);
-	}
-	if (I.timeout) {
-		if (rz_time_now_mono() > I.timeout) {
-			CTX(breaked) = true;
-			eprintf("\nTimeout!\n");
-			I.timeout = 0;
-		}
-	}
-	return CTX(breaked);
-}
-
-RZ_API int rz_cons_get_cur_line(void) {
+RZ_API int rz_cons_get_cur_line() {
 	int curline = 0;
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO info;
@@ -444,41 +358,6 @@ RZ_API int rz_cons_get_cur_line(void) {
 	return curline;
 }
 
-RZ_API void rz_cons_break_timeout(int timeout) {
-	I.timeout = (timeout && !I.timeout)
-		? rz_time_now_mono() + ((ut64)timeout << 20)
-		: 0;
-}
-
-RZ_API void rz_cons_break_end(void) {
-	CTX(breaked) = false;
-	I.timeout = 0;
-#if __UNIX__
-	rz_sys_signal(SIGINT, SIG_IGN);
-#endif
-	if (!rz_stack_is_empty(CTX(break_stack))) {
-		// free all the stack
-		rz_stack_free(CTX(break_stack));
-		// create another one
-		CTX(break_stack) = rz_stack_newf(6, break_stack_free);
-		CTX(event_interrupt_data) = NULL;
-		CTX(event_interrupt) = NULL;
-	}
-}
-
-RZ_API void *rz_cons_sleep_begin(void) {
-	if (!I.cb_sleep_begin) {
-		return NULL;
-	}
-	return I.cb_sleep_begin(I.user);
-}
-
-RZ_API void rz_cons_sleep_end(void *user) {
-	if (I.cb_sleep_end) {
-		I.cb_sleep_end(I.user, user);
-	}
-}
-
 #if __WINDOWS__
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
@@ -494,64 +373,65 @@ static void resize(int sig) {
 	sigwinchFlag = 1;
 }
 #endif
-void resizeWin(void) {
-	if (I.event_resize) {
-		I.event_resize(I.event_data);
+void resizeWin(RzCons *cons) {
+	if (cons->event_resize) {
+		cons->event_resize(cons->event_data);
 	}
 }
 
 /**
  * \brief Set the property of the click event
+ * \param cons The cons reference
  * \param x The x coordinate of the position
  * \param y The y coordinate of the position
  * \param event The type of the click
  */
-RZ_API void rz_cons_set_click(int x, int y, MouseEvent event) {
-	I.click_x = x;
-	I.click_y = y;
-	I.click_set = true;
-	I.mouse_event = event;
+RZ_API void rz_cons_set_click(RzCons *cons, int x, int y, MouseEvent event) {
+	cons->click_x = x;
+	cons->click_y = y;
+	cons->click_set = true;
+	cons->mouse_event = event;
 }
 
-RZ_API bool rz_cons_get_click(int *x, int *y) {
+RZ_API bool rz_cons_get_click(RzCons *cons, int *x, int *y) {
 	if (x) {
-		*x = I.click_x;
+		*x = cons->click_x;
 	}
 	if (y) {
-		*y = I.click_y;
+		*y = cons->click_y;
 	}
-	bool set = I.click_set;
-	I.click_set = false;
+	bool set = cons->click_set;
+	cons->click_set = false;
 	return set;
 }
 
-RZ_API void rz_cons_enable_highlight(const bool enable) {
-	I.enable_highlight = enable;
+RZ_API void rz_cons_enable_highlight(RzCons *cons, const bool enable) {
+	cons->enable_highlight = enable;
 }
 
-RZ_API bool rz_cons_enable_mouse(const bool enable) {
-	if ((I.mouse && enable) || (!I.mouse && !enable)) {
-		return I.mouse;
+RZ_API bool rz_cons_enable_mouse(RzCons *cons, const bool enable) {
+	if ((cons->mouse && enable) || (!cons->mouse && !enable)) {
+		return cons->mouse;
 	}
 #if __WINDOWS__
-	if (I.vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
+	if (cons->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 #endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
 		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
-		bool enabled = I.mouse;
+		bool enabled = cons->mouse;
 		const size_t click_len = strlen(click);
 		if (write(2, click, click_len) != click_len) {
 			return false;
 		}
-		I.mouse = enable;
+		cons->mouse = enable;
 		return enabled;
 #if __WINDOWS__
 	}
 	DWORD mode;
 	HANDLE h;
-	bool enabled = I.mouse;
+	bool enabled = cons->mouse;
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	if (!GetConsoleMode(h, &mode)) {
 		return enabled;
@@ -561,7 +441,7 @@ RZ_API bool rz_cons_enable_mouse(const bool enable) {
 		? (mode | ENABLE_MOUSE_INPUT) & ~ENABLE_QUICK_EDIT_MODE
 		: (mode & ~ENABLE_MOUSE_INPUT) | ENABLE_QUICK_EDIT_MODE;
 	if (SetConsoleMode(h, mode)) {
-		I.mouse = enable;
+		cons->mouse = enable;
 	}
 	return enabled;
 #else
@@ -583,19 +463,19 @@ static void set_console_codepage_to_utf8(void) {
 	}
 }
 
-static void save_console_state(void) {
+static void save_console_state(RzCons *cons) {
 	// Snapshot the exact std handles and their current console modes before any probing mutates them.
-	I.saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
-	I.saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	I.saved_input_console = GetConsoleMode((HANDLE)I.saved_input_handle, &I.old_input_mode);
-	I.saved_output_console = GetConsoleMode((HANDLE)I.saved_output_handle, &I.old_output_mode);
-	if (I.saved_output_console) {
-		if (!(I.old_ocp = GetConsoleOutputCP())) {
+	cons->saved_input_handle = GetStdHandle(STD_INPUT_HANDLE);
+	cons->saved_output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	cons->saved_input_console = GetConsoleMode((HANDLE)cons->saved_input_handle, &cons->old_input_mode);
+	cons->saved_output_console = GetConsoleMode((HANDLE)cons->saved_output_handle, &cons->old_output_mode);
+	if (cons->saved_output_console) {
+		if (!(cons->old_ocp = GetConsoleOutputCP())) {
 			rz_sys_perror("GetConsoleOutputCP");
 		}
 	}
-	if (I.saved_input_console) {
-		if (!(I.old_cp = GetConsoleCP())) {
+	if (cons->saved_input_console) {
+		if (!(cons->old_cp = GetConsoleCP())) {
 			rz_sys_perror("GetConsoleCP");
 		}
 	}
@@ -605,25 +485,25 @@ static inline DWORD restore_console_mode_bits(DWORD mode, DWORD saved_mode, DWOR
 	return (mode & ~mask) | (saved_mode & mask);
 }
 
-static void restore_console_state(void) {
+static void restore_console_state(RzCons *cons) {
 	DWORD mode;
-	if (I.saved_output_console && GetConsoleMode((HANDLE)I.saved_output_handle, &mode)) {
-		if (!SetConsoleOutputCP(I.old_ocp)) {
+	if (cons->saved_output_console && GetConsoleMode((HANDLE)cons->saved_output_handle, &mode)) {
+		if (!SetConsoleOutputCP(cons->old_ocp)) {
 			rz_sys_perror("SetConsoleOutputCP");
 		}
 		// Keep unrelated host-owned bits intact and restore only the output flags we changed.
-		mode = restore_console_mode_bits(mode, I.old_output_mode, RZ_CONS_OUTPUT_MODE_MASK);
-		if (!SetConsoleMode((HANDLE)I.saved_output_handle, mode)) {
+		mode = restore_console_mode_bits(mode, cons->old_output_mode, RZ_CONS_OUTPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)cons->saved_output_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
-	if (I.saved_input_console && GetConsoleMode((HANDLE)I.saved_input_handle, &mode)) {
-		if (!SetConsoleCP(I.old_cp)) {
+	if (cons->saved_input_console && GetConsoleMode((HANDLE)cons->saved_input_handle, &mode)) {
+		if (!SetConsoleCP(cons->old_cp)) {
 			rz_sys_perror("SetConsoleCP");
 		}
 		// Input teardown mirrors output teardown for the subset of flags Rizin manages.
-		mode = restore_console_mode_bits(mode, I.old_input_mode, RZ_CONS_INPUT_MODE_MASK);
-		if (!SetConsoleMode((HANDLE)I.saved_input_handle, mode)) {
+		mode = restore_console_mode_bits(mode, cons->old_input_mode, RZ_CONS_INPUT_MODE_MASK);
+		if (!SetConsoleMode((HANDLE)cons->saved_input_handle, mode)) {
 			rz_sys_perror("SetConsoleMode");
 		}
 	}
@@ -632,117 +512,111 @@ static void restore_console_state(void) {
 
 // Stub function that cb_main_output gets pointed to in util/log.c by rz_cons_new
 // This allows Cutter to set per-task logging redirection
-RZ_API RzCons *rz_cons_new(void) {
-	I.refcnt++;
-	if (I.refcnt != 1) {
-		return &I;
-	}
+RZ_API RzCons *rz_cons_new() {
+	RzCons *cons = RZ_NEW0(RzCons);
 #if __WINDOWS__
 	// Save the console state before rz_line_new() runs VT detection on Windows.
-	save_console_state();
+	save_console_state(cons);
 #endif
-	I.rgbstr = rz_cons_rgb_str_off;
-	I.line = rz_line_new();
-	I.enable_highlight = true;
-	I.highlight = NULL;
-	I.is_wine = -1;
-	I.blankline = true;
-	I.teefile = NULL;
-	I.fix_columns = 0;
-	I.fix_rows = 0;
-	I.mouse_event = MOUSE_NONE;
-	I.force_rows = 0;
-	I.force_columns = 0;
-	I.event_resize = NULL;
-	I.event_data = NULL;
-	I.linesleep = 0;
-	I.fdin = stdin;
-	I.fdout = 1;
-	I.break_lines = false;
-	I.lines = 0;
-	I.oldraw = -1;
+	cons->rgbstr = rz_cons_rgb_str_off;
+	cons->line = rz_line_new();
+	cons->enable_highlight = true;
+	cons->highlight = NULL;
+	cons->is_wine = -1;
+	cons->blankline = true;
+	cons->teefile = NULL;
+	cons->fix_columns = 0;
+	cons->fix_rows = 0;
+	cons->mouse_event = MOUSE_NONE;
+	cons->force_rows = 0;
+	cons->force_columns = 0;
+	cons->event_resize = NULL;
+	cons->event_data = NULL;
+	cons->linesleep = 0;
+	cons->fdin = stdin;
+	cons->fdout = 1;
+	cons->break_lines = false;
+	cons->lines = 0;
+	cons->oldraw = -1;
 
-	I.input = RZ_NEW0(RzConsInputContext);
-	I.input->bufactive = true;
-	I.context = &rz_cons_context_default;
-	cons_context_init(I.context, NULL);
+	cons->input = RZ_NEW0(RzConsInputContext);
+	cons->input->bufactive = true;
+	cons->context = &rz_cons_context_default;
+	cons_context_init(cons->context, NULL);
 
-	rz_cons_get_size(&I.pagesize);
-	I.num = NULL;
-	I.null = 0;
+	rz_cons_get_size(cons, &cons->pagesize);
+	cons->num = NULL;
+	cons->null = 0;
 #if __WINDOWS__
-	I.vtmode = rz_cons_detect_vt_mode();
+	cons->vtmode = rz_cons_detect_vt_mode(cons);
 	// Keep line editing on the same VT mode that the main console instance selected.
-	I.line->vtmode = I.vtmode;
+	cons->line->vtmode = cons->vtmode;
 	set_console_codepage_to_utf8();
 #else
-	I.vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
+	cons->vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
 #elif __UNIX__
-	tcgetattr(0, &I.term_buf);
-	memcpy(&I.term_raw, &I.term_buf, sizeof(I.term_raw));
-	I.term_raw.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-	I.term_raw.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-	I.term_raw.c_cflag &= ~(CSIZE | PARENB);
-	I.term_raw.c_cflag |= CS8;
-	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
+	tcgetattr(0, &cons->term_buf);
+	memcpy(&cons->term_raw, &cons->term_buf, sizeof(cons->term_raw));
+	cons->term_raw.c_iflag &= ~(BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+	cons->term_raw.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+	cons->term_raw.c_cflag &= ~(CSIZE | PARENB);
+	cons->term_raw.c_cflag |= CS8;
+	cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	rz_sys_signal(SIGWINCH, resize);
 #elif __WINDOWS__
-	if (I.saved_input_console) {
+	if (cons->saved_input_console) {
 		// Raw/buffered mode masks must be derived from the saved console input mode.
-		I.term_buf = I.old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
-		I.term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+		cons->term_buf = cons->old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
+		cons->term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	}
 	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
 		eprintf("rz_cons: Cannot set control console handler\n");
 	}
 #endif
-	I.pager = NULL; /* no pager by default */
-	I.mouse = 0;
-	I.show_vals = false;
-	rz_cons_reset();
+	cons->pager = NULL; /* no pager by default */
+	cons->mouse = 0;
+	cons->show_vals = false;
+	rz_cons_reset(cons);
 	rz_cons_rgb_init();
 
-	rz_print_set_is_interrupted_cb(rz_cons_is_breaked);
+	rz_print_set_is_interrupted_cb(rz_interrupt_is_breaked);
 
-	return &I;
+	return cons;
 }
 
-RZ_API RzCons *rz_cons_free(void) {
-	if (I.refcnt <= 0) {
+RZ_API RzCons *rz_cons_free(RzCons *cons) {
+	if (!cons) {
 		return NULL;
 	}
-	I.refcnt--;
-	if (I.refcnt != 0) {
-		return &I;
-	}
 #if __WINDOWS__
-	restore_console_state();
+	restore_console_state(cons);
 #endif
-	if (I.line) {
-		rz_line_free(I.line);
-		I.line = NULL;
+	if (cons->line) {
+		rz_line_free(cons->line);
+		cons->line = NULL;
 	}
-	RZ_FREE(I.input->readbuffer);
-	RZ_FREE(I.input);
-	RZ_FREE(I.break_word);
-	cons_context_deinit(I.context);
-	I.context = NULL;
-	rz_strbuf_free(I.echobuf);
-	I.echobuf = NULL;
-	RZ_FREE(I.pager);
+	RZ_FREE(cons->input->readbuffer);
+	RZ_FREE(cons->input);
+	RZ_FREE(cons->break_word);
+	cons_context_deinit(cons->context);
+	cons->context = NULL;
+	rz_strbuf_free(cons->echobuf);
+	cons->echobuf = NULL;
+	RZ_FREE(cons->pager);
+	RZ_FREE(cons);
 	return NULL;
 }
 
 #define MOAR (4096 * 8)
-static bool palloc(int moar) {
+static bool palloc(RzCons *cons, int moar) {
 	void *temp;
 	if (moar <= 0) {
 		return false;
 	}
-	if (!CTX(buffer)) {
+	if (!cons->context->buffer) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return false;
@@ -750,48 +624,48 @@ static bool palloc(int moar) {
 		new_sz = moar + MOAR;
 		temp = calloc(1, new_sz);
 		if (temp) {
-			CTX(buffer_sz) = new_sz;
-			CTX(buffer) = temp;
-			(CTX(buffer))[0] = '\0';
+			cons->context->buffer_sz = new_sz;
+			cons->context->buffer = temp;
+			(cons->context->buffer)[0] = '\0';
 		}
-	} else if (moar + CTX(buffer_len) > CTX(buffer_sz)) {
+	} else if (moar + cons->context->buffer_len > cons->context->buffer_sz) {
 		char *new_buffer;
-		int old_buffer_sz = CTX(buffer_sz);
-		if ((INT_MAX - MOAR - moar) < CTX(buffer_sz)) {
+		int old_buffer_sz = cons->context->buffer_sz;
+		if ((INT_MAX - MOAR - moar) < cons->context->buffer_sz) {
 			return false;
 		}
-		CTX(buffer_sz) += moar + MOAR;
-		new_buffer = realloc(CTX(buffer), CTX(buffer_sz));
+		cons->context->buffer_sz += moar + MOAR;
+		new_buffer = realloc(cons->context->buffer, cons->context->buffer_sz);
 		if (new_buffer) {
-			CTX(buffer) = new_buffer;
+			cons->context->buffer = new_buffer;
 		} else {
-			CTX(buffer_sz) = old_buffer_sz;
+			cons->context->buffer_sz = old_buffer_sz;
 			return false;
 		}
 	}
 	return true;
 }
 
-RZ_API int rz_cons_eof(void) {
-	return feof(I.fdin);
+RZ_API int rz_cons_eof(RzCons *cons) {
+	return feof(cons->fdin);
 }
 
-RZ_API void rz_cons_gotoxy(int x, int y) {
+RZ_API void rz_cons_gotoxy(RzCons *cons, int x, int y) {
 #if __WINDOWS__
-	rz_cons_w32_gotoxy(1, x, y);
+	rz_cons_w32_gotoxy(cons, 1, x, y);
 #else
-	rz_cons_printf("\x1b[%d;%dH", y, x);
+	rz_cons_printf(cons, "\x1b[%d;%dH", y, x);
 #endif
 }
 
-RZ_API void rz_cons_goto_origin_reset(void) {
-	rz_cons_gotoxy(0, 0);
-	rz_cons_strcat(Color_RESET);
+RZ_API void rz_cons_goto_origin_reset(RzCons *cons) {
+	rz_cons_gotoxy(cons, 0, 0);
+	rz_cons_strcat(cons, Color_RESET);
 }
 
-RZ_API void rz_cons_fill_line(void) {
+RZ_API void rz_cons_fill_line(RzCons *cons) {
 	char *p, white[1024];
-	int cols = I.columns - 1;
+	int cols = cons->columns - 1;
 	if (cols < 1) {
 		return;
 	}
@@ -801,7 +675,7 @@ RZ_API void rz_cons_fill_line(void) {
 	if (p) {
 		memset(p, ' ', cols);
 		p[cols] = 0;
-		rz_cons_strcat(p);
+		rz_cons_strcat(cons, p);
 		if (white != p) {
 			free(p);
 		}
@@ -812,17 +686,17 @@ RZ_API void rz_cons_fill_line(void) {
  * \brief Print on `stream` the ANSI escape sequence to clear the current line.
  * \param stream Either stdout or stderr. Only 2 possible stream values are accepted.
  */
-RZ_API void rz_cons_clear_line(FILE *stream) {
+RZ_API void rz_cons_clear_line(RzCons *cons, FILE *stream) {
 	rz_return_if_fail(stream == stdout || stream == stderr);
 #if __WINDOWS__
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset(&white, ' ', sizeof(white));
-		if (I.columns > 0 && I.columns < sizeof(white)) {
-			white[I.columns - 1] = 0;
-		} else if (I.columns == 0) {
+		if (cons->columns > 0 && cons->columns < sizeof(white)) {
+			white[cons->columns - 1] = 0;
+		} else if (cons->columns == 0) {
 			white[0] = 0;
 		} else {
 			white[sizeof(white) - 1] = 0; // HACK
@@ -835,21 +709,21 @@ RZ_API void rz_cons_clear_line(FILE *stream) {
 	fflush(stream);
 }
 
-RZ_API void rz_cons_clear00(void) {
-	rz_cons_clear();
-	rz_cons_gotoxy(0, 0);
+RZ_API void rz_cons_clear00(RzCons *cons) {
+	rz_cons_clear(cons);
+	rz_cons_gotoxy(cons, 0, 0);
 }
 
-RZ_API void rz_cons_reset_colors(void) {
-	rz_cons_strcat(Color_RESET_BG Color_RESET);
+RZ_API void rz_cons_reset_colors(RzCons *cons) {
+	rz_cons_strcat(cons, Color_RESET_BG Color_RESET);
 }
 
-RZ_API void rz_cons_clear(void) {
-	I.lines = 0;
+RZ_API void rz_cons_clear(RzCons *cons) {
+	cons->lines = 0;
 #if __WINDOWS__
-	rz_cons_w32_clear();
+	rz_cons_w32_clear(cons);
 #else
-	rz_cons_strcat(Color_RESET RZ_CONS_CLEAR_SCREEN);
+	rz_cons_strcat(cons, Color_RESET RZ_CONS_CLEAR_SCREEN);
 #endif
 }
 
@@ -865,82 +739,83 @@ static void cons_grep_reset(RzConsGrep *grep) {
 	grep->sort_invert = false;
 }
 
-RZ_API void rz_cons_reset(void) {
-	if (CTX(buffer)) {
-		(CTX(buffer))[0] = '\0';
+RZ_API void rz_cons_reset(RzCons *cons) {
+	if (cons->context->buffer) {
+		(cons->context->buffer)[0] = '\0';
 	}
-	CTX(buffer_len) = 0;
-	I.lines = 0;
-	cons_grep_reset(&CTX(grep));
-	CTX(pageable) = true;
-	ctx_rowcol_calc_reset();
+	cons->context->buffer_len = 0;
+	cons->lines = 0;
+	cons_grep_reset(&cons->context->grep);
+	cons->context->pageable = true;
+	ctx_rowcol_calc_reset(cons);
 }
 
 /**
  * \brief Return the current RzCons buffer
  */
-RZ_API const char *rz_cons_get_buffer(void) {
+RZ_API const char *rz_cons_get_buffer(RzCons *cons) {
 	// check len otherwise it will return trash
-	return CTX(buffer_len) ? CTX(buffer) : NULL;
+	return cons->context->buffer_len ? cons->context->buffer : NULL;
 }
 
 /**
  * \brief Return a newly allocated buffer containing what's currently in RzCons buffer
  */
-RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void) {
-	const char *s = rz_cons_get_buffer();
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(RzCons *cons) {
+	const char *s = rz_cons_get_buffer(cons);
 	return rz_str_dup(s);
 }
 
-RZ_API int rz_cons_get_buffer_len(void) {
-	return CTX(buffer_len);
+RZ_API int rz_cons_get_buffer_len(RzCons *cons) {
+	return cons->context->buffer_len;
 }
 
-RZ_API void rz_cons_filter(void) {
+RZ_API void rz_cons_filter(RzCons *cons) {
 	/* grep */
-	if (I.filter || CTX(grep).nstrings > 0 || CTX(grep).tokens_used || CTX(grep).less || CTX(grep).json) {
-		(void)rz_cons_grepbuf();
-		I.filter = false;
+	if (cons->filter || cons->context->grep.nstrings > 0 || cons->context->grep.tokens_used || cons->context->grep.less || cons->context->grep.json) {
+		(void)rz_cons_grepbuf(cons);
+		cons->filter = false;
 	}
 	/* html */
-	if (I.is_html) {
+	if (cons->is_html) {
 		int newlen = 0;
-		char *input = rz_str_ndup(CTX(buffer), CTX(buffer_len));
-		char *res = rz_cons_html_filter(input, &newlen);
-		free(CTX(buffer));
-		CTX(buffer) = res;
-		CTX(buffer_len) = newlen;
-		CTX(buffer_sz) = newlen;
-		ctx_rowcol_calc_reset();
+		char *input = rz_str_ndup(cons->context->buffer, cons->context->buffer_len);
+		char *res = rz_cons_html_filter(cons, input, &newlen);
+		free(cons->context->buffer);
+		cons->context->buffer = res;
+		cons->context->buffer_len = newlen;
+		cons->context->buffer_sz = newlen;
+		ctx_rowcol_calc_reset(cons);
 		free(input);
 	}
-	if (I.was_html) {
-		I.is_html = true;
-		I.was_html = false;
+	if (cons->was_html) {
+		cons->is_html = true;
+		cons->was_html = false;
 	}
 }
 
-RZ_API void rz_cons_push(void) {
-	if (!CTX(cons_stack)) {
+RZ_API void rz_cons_push(RzCons *cons) {
+	if (!cons->context->cons_stack) {
 		return;
 	}
-	RzConsStack *data = cons_stack_dump(true);
+	RzConsStack *data = cons_stack_dump(cons, true);
 	if (!data) {
 		return;
 	}
-	rz_stack_push(CTX(cons_stack), data);
-	CTX(buffer_len) = 0;
-	if (CTX(buffer)) {
-		memset(CTX(buffer), 0, CTX(buffer_sz));
+	rz_stack_push(cons->context->cons_stack, data);
+	cons->context->buffer_len = 0;
+	if (cons->context->buffer) {
+		memset(cons->context->buffer, 0, cons->context->buffer_sz);
 	}
-	CTX(noflush) = true;
+	cons->context->noflush = true;
 }
 
-RZ_API void rz_cons_pop(void) {
-	if (!CTX(cons_stack)) {
+RZ_API void rz_cons_pop(RzCons *cons) {
+	if (!cons->context->cons_stack) {
 		return;
 	}
-	RzConsStack *data = (RzConsStack *)rz_stack_pop(CTX(cons_stack));
+	RzConsStack *data = (RzConsStack *)rz_stack_pop(cons->context->cons_stack);
+	data->cons = cons;
 	if (!data) {
 		return;
 	}
@@ -965,43 +840,38 @@ RZ_API void rz_cons_context_free(RzConsContext *context) {
 	free(context);
 }
 
-RZ_API void rz_cons_context_load(RzConsContext *context) {
-	I.context = context;
+RZ_API void rz_cons_context_load(RzCons *cons, RzConsContext *context) {
+	cons->context = context;
 }
 
-RZ_API void rz_cons_context_reset(void) {
-	I.context = &rz_cons_context_default;
+RZ_API void rz_cons_context_reset(RzCons *cons) {
+	cons->context = &rz_cons_context_default;
 }
 
-RZ_API bool rz_cons_context_is_main(void) {
-	return I.context == &rz_cons_context_default;
+RZ_API bool rz_cons_context_is_main(RzCons *cons) {
+	return cons->context == &rz_cons_context_default;
 }
 
 RZ_API void rz_cons_context_break(RzConsContext *context) {
-	if (!context) {
-		context = &rz_cons_context_default;
-	}
-	context->breaked = true;
-	if (context->event_interrupt) {
-		context->event_interrupt(context->event_interrupt_data);
-	}
-}
-
-RZ_API void rz_cons_last(void) {
-	if (!CTX(lastEnabled)) {
+	if (!context || !context->intr) {
 		return;
 	}
-	CTX(lastMode) = true;
-	rz_cons_memcat(CTX(lastOutput), CTX(lastLength));
+	rz_interrupt_raise(context->intr);
 }
 
-static bool lastMatters(void) {
-	return (CTX(buffer_len) > 0) && (CTX(lastEnabled) && !I.filter && CTX(grep).nstrings < 1 && !CTX(grep).tokens_used && !CTX(grep).less && !CTX(grep).json && !I.is_html);
+RZ_API void rz_cons_last(RzCons *cons) {
+	if (!cons->context->lastEnabled) {
+		return;
+	}
+	cons->context->lastMode = true;
+	rz_cons_memcat(cons, cons->context->lastOutput, cons->context->lastLength);
 }
 
-RZ_API void rz_cons_echo(const char *msg) {
-	RzCons *cons = rz_cons_singleton();
+static bool lastMatters(RzCons *cons) {
+	return (cons->context->buffer_len > 0) && (cons->context->lastEnabled && !cons->filter && cons->context->grep.nstrings < 1 && !cons->context->grep.tokens_used && !cons->context->grep.less && !cons->context->grep.json && !cons->is_html);
+}
 
+RZ_API void rz_cons_echo(RzCons *cons, const char *msg) {
 	if (msg) {
 		if (cons->echobuf) {
 			rz_strbuf_append(cons->echobuf, msg);
@@ -1012,78 +882,78 @@ RZ_API void rz_cons_echo(const char *msg) {
 	} else {
 		if (cons->echobuf) {
 			char *data = rz_strbuf_drain(cons->echobuf);
-			rz_cons_strcat(data);
-			rz_cons_newline();
+			rz_cons_strcat(cons, data);
+			rz_cons_newline(cons);
 			cons->echobuf = NULL;
 			free(data);
 		}
 	}
 }
 
-RZ_API void rz_cons_flush(void) {
-	const char *tee = I.teefile;
-	if (CTX(noflush)) {
+RZ_API void rz_cons_flush(RzCons *cons) {
+	const char *tee = cons->teefile;
+	if (cons->context->noflush) {
 		return;
 	}
-	if (I.null) {
-		rz_cons_reset();
+	if (cons->null) {
+		rz_cons_reset(cons);
 		return;
 	}
-	if (lastMatters() && !CTX(lastMode)) {
+	if (lastMatters(cons) && !cons->context->lastMode) {
 		// snapshot of the output
-		if (CTX(buffer_len) > CTX(lastLength)) {
-			free(CTX(lastOutput));
-			CTX(lastOutput) = malloc(CTX(buffer_len) + 1);
+		if (cons->context->buffer_len > cons->context->lastLength) {
+			free(cons->context->lastOutput);
+			cons->context->lastOutput = malloc(cons->context->buffer_len + 1);
 		}
-		CTX(lastLength) = CTX(buffer_len);
-		memcpy(CTX(lastOutput), CTX(buffer), CTX(buffer_len));
+		cons->context->lastLength = cons->context->buffer_len;
+		memcpy(cons->context->lastOutput, cons->context->buffer, cons->context->buffer_len);
 	} else {
-		CTX(lastMode) = false;
+		cons->context->lastMode = false;
 	}
-	rz_cons_filter();
-	if (rz_cons_is_interactive() && I.fdout == 1) {
+	rz_cons_filter(cons);
+	if (rz_cons_is_interactive(cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (CTX(pageable) && CTX(buffer) && I.pager && *I.pager && CTX(buffer_len) > 0 && rz_str_char_count(CTX(buffer), '\n') >= I.rows) {
-			(CTX(buffer))[CTX(buffer_len) - 1] = 0;
-			if (!strcmp(I.pager, "..")) {
-				char *str = rz_str_ndup(CTX(buffer), CTX(buffer_len));
-				CTX(pageable) = false;
-				rz_cons_less_str(str, NULL);
-				rz_cons_reset();
+		if (cons->context->pageable && cons->context->buffer && cons->pager && *cons->pager && cons->context->buffer_len > 0 && rz_str_char_count(cons->context->buffer, '\n') >= cons->rows) {
+			(cons->context->buffer)[cons->context->buffer_len - 1] = 0;
+			if (!strcmp(cons->pager, "..")) {
+				char *str = rz_str_ndup(cons->context->buffer, cons->context->buffer_len);
+				cons->context->pageable = false;
+				rz_cons_less_str(cons, str, NULL);
+				rz_cons_reset(cons);
 				free(str);
 				return;
 			} else {
-				rz_sys_cmd_str_full(I.pager, CTX(buffer), NULL, NULL, NULL);
-				rz_cons_reset();
+				rz_sys_cmd_str_full(cons->pager, cons->context->buffer, NULL, NULL, NULL);
+				rz_cons_reset(cons);
 			}
-		} else if (CTX(buffer_len) > CONS_MAX_USER) {
+		} else if (cons->context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
-			for (i = 0; CTX(buffer)[i]; i++) {
-				if (CTX(buffer)[i] == '\n') {
+			for (i = 0; cons->context->buffer[i]; i++) {
+				if (cons->context->buffer[i] == '\n') {
 					lines++;
 				}
 			}
-			if (lines > 0 && !rz_cons_yesno('n', "Do you want to print %d lines? (y/N)", lines)) {
-				rz_cons_reset();
+			if (lines > 0 && !rz_cons_yesno(cons, 'n', "Do you want to print %d lines? (y/N)", lines)) {
+				rz_cons_reset(cons);
 				return;
 			}
 #else
 			char buf[8];
-			rz_num_units(buf, sizeof(buf), CTX(buffer_len));
-			if (!rz_cons_yesno('n', "Do you want to print %s chars? (y/N)", buf)) {
-				rz_cons_reset();
+			rz_num_units(buf, sizeof(buf), cons->context->buffer_len);
+			if (!rz_cons_yesno(cons, 'n', "Do you want to print %s chars? (y/N)", buf)) {
+				rz_cons_reset(cons);
 				return;
 			}
 #endif
 			// fix | more | less problem
-			rz_cons_set_raw(true);
+			rz_cons_set_raw(cons, true);
 		}
 	}
 	if (tee && *tee) {
 		FILE *d = rz_sys_fopen(tee, "a+");
 		if (d) {
-			if (CTX(buffer_len) != fwrite(CTX(buffer), 1, CTX(buffer_len), d)) {
+			if (cons->context->buffer_len != fwrite(cons->context->buffer, 1, cons->context->buffer_len, d)) {
 				eprintf("rz_cons_flush: fwrite: error (%s)\n", tee);
 			}
 			fclose(d);
@@ -1091,61 +961,61 @@ RZ_API void rz_cons_flush(void) {
 			eprintf("Cannot write on '%s'\n", tee);
 		}
 	}
-	rz_cons_highlight(I.highlight);
+	rz_cons_highlight(cons, cons->highlight);
 
 	// is_html must be a filter, not a write endpoint
-	if (rz_cons_is_interactive()) {
-		if (I.linesleep > 0 && I.linesleep < 1000) {
+	if (rz_cons_is_interactive(cons)) {
+		if (cons->linesleep > 0 && cons->linesleep < 1000) {
 			int i = 0;
-			int pagesize = RZ_MAX(1, I.pagesize);
-			char *ptr = CTX(buffer);
+			int pagesize = RZ_MAX(1, cons->pagesize);
+			char *ptr = cons->context->buffer;
 			char *nl = strchr(ptr, '\n');
-			int len = CTX(buffer_len);
-			(CTX(buffer))[CTX(buffer_len)] = 0;
-			rz_cons_break_push(NULL, NULL);
-			while (nl && !rz_cons_is_breaked()) {
-				__cons_write(ptr, nl - ptr + 1);
-				if (I.linesleep && !(i % pagesize)) {
-					rz_sys_usleep(I.linesleep * 1000);
+			int len = cons->context->buffer_len;
+			(cons->context->buffer)[cons->context->buffer_len] = 0;
+			rz_interrupt_break_push(cons->intr, NULL, NULL);
+			while (nl && !rz_interrupt_is_breaked(cons->intr)) {
+				__cons_write(cons, ptr, nl - ptr + 1);
+				if (cons->linesleep && !(i % pagesize)) {
+					rz_sys_usleep(cons->linesleep * 1000);
 				}
 				ptr = nl + 1;
 				nl = strchr(ptr, '\n');
 				i++;
 			}
-			__cons_write(ptr, CTX(buffer) + len - ptr);
-			rz_cons_break_pop();
+			__cons_write(cons, ptr, cons->context->buffer + len - ptr);
+			rz_interrupt_break_pop(cons->intr);
 		} else {
-			__cons_write(CTX(buffer), CTX(buffer_len));
+			__cons_write(cons, cons->context->buffer, cons->context->buffer_len);
 		}
 	} else {
-		__cons_write(CTX(buffer), CTX(buffer_len));
+		__cons_write(cons, cons->context->buffer, cons->context->buffer_len);
 	}
 
-	rz_cons_reset();
-	if (I.newline) {
+	rz_cons_reset(cons);
+	if (cons->newline) {
 		eprintf("\n");
-		I.newline = false;
+		cons->newline = false;
 	}
 }
 
-RZ_API void rz_cons_visual_flush(void) {
-	if (CTX(noflush)) {
+RZ_API void rz_cons_visual_flush(RzCons *cons) {
+	if (cons->context->noflush) {
 		return;
 	}
-	rz_cons_highlight(I.highlight);
-	if (!I.null) {
+	rz_cons_highlight(cons, cons->highlight);
+	if (!cons->null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-		if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-			rz_cons_visual_write(CTX(buffer));
+		if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+			rz_cons_visual_write(cons, cons->context->buffer);
 		} else {
-			rz_cons_w32_print(CTX(buffer), CTX(buffer_len), true);
+			rz_cons_w32_print(cons, cons->context->buffer, cons->context->buffer_len, true);
 		}
 #else
-		rz_cons_visual_write(CTX(buffer));
+		rz_cons_visual_write(cons, cons->context->buffer);
 #endif
 	}
-	rz_cons_reset();
+	rz_cons_reset(cons);
 }
 
 static int real_strlen(const char *ptr, int len) {
@@ -1158,18 +1028,18 @@ static int real_strlen(const char *ptr, int len) {
 	return ansilen - diff;
 }
 
-RZ_API void rz_cons_visual_write(char *buffer) {
+RZ_API void rz_cons_visual_write(RzCons *cons, char *buffer) {
 	char white[1024];
-	int alen, plen, lines = I.rows;
-	bool break_lines = I.break_lines;
+	int alen, plen, lines = cons->rows;
+	bool break_lines = cons->break_lines;
 	const char *endptr;
 	char *nl, *ptr = buffer, *pptr;
 
-	if (I.null) {
+	if (cons->null) {
 		return;
 	}
-	rz_return_if_fail(I.columns > 0); // modulo by 0 is UB
-	unsigned int cols = I.columns;
+	rz_return_if_fail(cons->columns > 0); // modulo by 0 is UB
+	unsigned int cols = cons->columns;
 
 	memset(&white, ' ', sizeof(white));
 	while ((nl = strchr(ptr, '\n'))) {
@@ -1192,27 +1062,27 @@ RZ_API void rz_cons_visual_write(char *buffer) {
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;
 			if (lines > 0) {
-				__cons_write(pptr, plen);
+				__cons_write(cons, pptr, plen);
 				if (len != olen) {
-					__cons_write(RZ_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
-					__cons_write(Color_RESET, strlen(Color_RESET));
+					__cons_write(cons, RZ_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
+					__cons_write(cons, Color_RESET, strlen(Color_RESET));
 				}
 			}
 		} else {
 			if (lines > 0) {
 				unsigned int w = cols - (alen % cols == 0 ? cols : alen % cols);
-				__cons_write(pptr, plen);
-				if (I.blankline && w > 0) {
+				__cons_write(cons, pptr, plen);
+				if (cons->blankline && w > 0) {
 					if (w > sizeof(white) - 1) {
 						w = sizeof(white) - 1;
 					}
-					__cons_write(white, w);
+					__cons_write(cons, white, w);
 				}
 			}
 			// TRICK to empty columns.. maybe buggy in w32
 			if (rz_mem_mem((const ut8 *)ptr, len, (const ut8 *)"\x1b[0;0H", 6)) {
-				lines = I.rows;
-				__cons_write(pptr, plen);
+				lines = cons->rows;
+				__cons_write(cons, pptr, plen);
 			}
 		}
 		if (break_lines) {
@@ -1228,118 +1098,118 @@ RZ_API void rz_cons_visual_write(char *buffer) {
 			cols = sizeof(white);
 		}
 		while (--lines >= 0) {
-			__cons_write(white, cols);
+			__cons_write(cons, white, cols);
 		}
 	}
 }
 
-RZ_API void rz_cons_printf_list(const char *format, va_list ap) {
+RZ_API void rz_cons_printf_list(RzCons *cons, const char *format, va_list ap) {
 	size_t size, written;
 	va_list ap2, ap3;
 
 	va_copy(ap2, ap);
 	va_copy(ap3, ap);
-	if (I.null || !format) {
+	if (cons->null || !format) {
 		va_end(ap2);
 		va_end(ap3);
 		return;
 	}
 	if (strchr(format, '%')) {
-		if (palloc(MOAR + strlen(format) * 20)) {
+		if (palloc(cons, MOAR + strlen(format) * 20)) {
 		club:
-			size = CTX(buffer_sz) - CTX(buffer_len); /* remaining space in CTX(buffer) */
-			written = vsnprintf(CTX(buffer) + CTX(buffer_len), size, format, ap3);
+			size = cons->context->buffer_sz - cons->context->buffer_len; /* remaining space in cons->context->buffer */
+			written = vsnprintf(cons->context->buffer + cons->context->buffer_len, size, format, ap3);
 			if (written >= size) { /* not all bytes were written */
-				if (palloc(written + 1)) { /* + 1 byte for \0 termination */
+				if (palloc(cons, written + 1)) { /* + 1 byte for \0 termination */
 					va_end(ap3);
 					va_copy(ap3, ap2);
 					goto club;
 				}
 			}
-			CTX(buffer_len) += written;
+			cons->context->buffer_len += written;
 		}
 	} else {
-		rz_cons_strcat(format);
+		rz_cons_strcat(cons, format);
 	}
 	va_end(ap2);
 	va_end(ap3);
 }
 
-RZ_API int rz_cons_printf(const char *format, ...) {
+RZ_API int rz_cons_printf(RzCons *cons, const char *format, ...) {
 	va_list ap;
 	if (!format || !*format) {
 		return -1;
 	}
 	va_start(ap, format);
-	rz_cons_printf_list(format, ap);
+	rz_cons_printf_list(cons, format, ap);
 	va_end(ap);
 
 	return 0;
 }
 
-RZ_API int rz_cons_get_column(void) {
-	char *line = strrchr(CTX(buffer), '\n');
+RZ_API int rz_cons_get_column(RzCons *cons) {
+	char *line = strrchr(cons->context->buffer, '\n');
 	if (!line) {
-		line = CTX(buffer);
+		line = cons->context->buffer;
 	}
-	(CTX(buffer))[CTX(buffer_len)] = 0;
+	(cons->context->buffer)[cons->context->buffer_len] = 0;
 	return rz_str_ansi_len(line);
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
-RZ_API int rz_cons_memcat(const char *str, int len) {
+RZ_API int rz_cons_memcat(RzCons *cons, const char *str, int len) {
 	if (len < 0) {
 		return -1;
 	}
-	if (I.echo) {
+	if (cons->echo) {
 		// Here to silent pedantic meson flags ...
 		int rlen;
 		if ((rlen = write(2, str, len)) != len) {
 			return rlen;
 		}
 	}
-	if (str && len > 0 && !I.null) {
-		if (palloc(len + 1)) {
-			memcpy(CTX(buffer) + CTX(buffer_len), str, len);
-			CTX(buffer_len) += len;
-			(CTX(buffer))[CTX(buffer_len)] = 0;
+	if (str && len > 0 && !cons->null) {
+		if (palloc(cons, len + 1)) {
+			memcpy(cons->context->buffer + cons->context->buffer_len, str, len);
+			cons->context->buffer_len += len;
+			(cons->context->buffer)[cons->context->buffer_len] = 0;
 		}
 	}
-	if (I.flush) {
-		rz_cons_flush();
+	if (cons->flush) {
+		rz_cons_flush(cons);
 	}
-	if (I.break_word && str && len > 0) {
-		if (rz_mem_mem((const ut8 *)str, len, (const ut8 *)I.break_word, I.break_word_len)) {
-			CTX(breaked) = true;
+	if (cons->break_word && str && len > 0) {
+		if (rz_mem_mem((const ut8 *)str, len, (const ut8 *)cons->break_word, cons->break_word_len)) {
+			rz_interrupt_set_breaked(cons->intr, true);
 		}
 	}
 	return len;
 }
 
-RZ_API void rz_cons_memset(char ch, int len) {
-	if (!I.null && len > 0) {
-		if (palloc(len + 1)) {
-			memset(CTX(buffer) + CTX(buffer_len), ch, len);
-			CTX(buffer_len) += len;
-			(CTX(buffer))[CTX(buffer_len)] = 0;
+RZ_API void rz_cons_memset(RzCons *cons, char ch, int len) {
+	if (!cons->null && len > 0) {
+		if (palloc(cons, len + 1)) {
+			memset(cons->context->buffer + cons->context->buffer_len, ch, len);
+			cons->context->buffer_len += len;
+			(cons->context->buffer)[cons->context->buffer_len] = 0;
 		}
 	}
 }
 
-RZ_API void rz_cons_strcat(const char *str) {
+RZ_API void rz_cons_strcat(RzCons *cons, const char *str) {
 	int len;
-	if (!str || I.null) {
+	if (!str || cons->null) {
 		return;
 	}
 	len = strlen(str);
 	if (len > 0) {
-		rz_cons_memcat(str, len);
+		rz_cons_memcat(cons, str, len);
 	}
 }
 
-RZ_API void rz_cons_newline(void) {
-	if (!I.null) {
-		rz_cons_strcat("\n");
+RZ_API void rz_cons_newline(RzCons *cons) {
+	if (!cons->null) {
+		rz_cons_strcat(cons, "\n");
 	}
 #if 0
 	// This place is wrong to manage the color reset, can interfire with rzpipe output sending resetchars
@@ -1348,11 +1218,11 @@ RZ_API void rz_cons_newline(void) {
 	// now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
 
 #if __WINDOWS__
-	rz_cons_reset_colors();
+	rz_cons_reset_colors(cons);
 #else
-	rz_cons_strcat (Color_RESET_ALL"\n");
+	rz_cons_strcat (cons, Color_RESET_ALL"\n");
 #endif
-	if (I.is_html) rz_cons_strcat ("<br />\n");
+	if (cons->is_html) rz_cons_strcat (cons, "<br />\n");
 #endif
 }
 
@@ -1361,19 +1231,19 @@ RZ_API void rz_cons_newline(void) {
  * \param[out] rows Row number of the cursor
  * \return Column number of the cursor
  */
-RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows) {
+RZ_API int rz_cons_get_cursor(RzCons *cons, RZ_NONNULL int *rows) {
 	rz_return_val_if_fail(rows, 0);
-	int col = CTX(col);
-	int row = CTX(row);
-	if (CTX(rowcol_calc_start) > CTX(buffer_len)) {
+	int col = cons->context->col;
+	int row = cons->context->row;
+	if (cons->context->rowcol_calc_start > cons->context->buffer_len) {
 		rz_warn_if_reached();
-		CTX(rowcol_calc_start) = 0;
+		cons->context->rowcol_calc_start = 0;
 	}
-	if (!CTX(buffer)) {
+	if (!cons->context->buffer) {
 		*rows = 0;
 		return 0;
 	}
-	const char *last_line = CTX(buffer) + CTX(rowcol_calc_start);
+	const char *last_line = cons->context->buffer + cons->context->rowcol_calc_start;
 	const char *ptr;
 	while ((ptr = strchr(last_line, '\n'))) {
 		last_line = ++ptr;
@@ -1398,13 +1268,13 @@ RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows) {
 		last_escape = ptr;
 	}
 	*rows = row;
-	CTX(row) = row;
-	CTX(col) = col;
-	CTX(rowcol_calc_start) = CTX(buffer_len);
+	cons->context->row = row;
+	cons->context->col = col;
+	cons->context->rowcol_calc_start = cons->context->buffer_len;
 	return col;
 }
 
-RZ_API bool rz_cons_isatty(void) {
+RZ_API bool rz_cons_isatty() {
 #if __UNIX__
 	struct winsize win = { 0 };
 	const char *tty;
@@ -1442,7 +1312,7 @@ RZ_API bool rz_cons_isatty(void) {
 static int __pty_get_cur_pos(int *xpos) {
 	int ypos = 0;
 	const char *get_pos = RZ_CONS_GET_CURSOR_POSITION;
-	if (write(I.fdout, get_pos, sizeof(get_pos)) < 1) {
+	if (write(cons->fdout, get_pos, sizeof(get_pos)) < 1) {
 		return 0;
 	}
 	int ch;
@@ -1451,9 +1321,9 @@ static int __pty_get_cur_pos(int *xpos) {
 	bool is_reply;
 	do {
 		is_reply = true;
-		ch = rz_cons_readchar();
+		ch = rz_cons_readchar(cons);
 		if (ch != 0x1b) {
-			while ((ch = rz_cons_readchar_timeout(25))) {
+			while ((ch = rz_cons_readchar_timeout(cons, 25))) {
 				if (ch < 1) {
 					return 0;
 				}
@@ -1462,9 +1332,9 @@ static int __pty_get_cur_pos(int *xpos) {
 				}
 			}
 		}
-		(void)rz_cons_readchar();
+		(void)rz_cons_readchar(cons);
 		for (i = 0; i < RZ_ARRAY_SIZE(pos) - 1; i++) {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 			if ((!i && !IS_DIGIT(ch)) || // dumps arrow keys etc.
 				(i == 1 && ch == '~')) { // dumps PgUp, PgDn etc.
 				is_reply = false;
@@ -1480,7 +1350,7 @@ static int __pty_get_cur_pos(int *xpos) {
 	pos[RZ_ARRAY_SIZE(pos) - 1] = 0;
 	ypos = atoi(pos);
 	for (i = 0; i < RZ_ARRAY_SIZE(pos) - 1; i++) {
-		if ((ch = rz_cons_readchar()) == 'R') {
+		if ((ch = rz_cons_readchar(cons)) == 'R') {
 			pos[i] = 0;
 			break;
 		}
@@ -1493,43 +1363,43 @@ static int __pty_get_cur_pos(int *xpos) {
 }
 
 static bool __pty_get_size(void) {
-	if (write(I.fdout, RZ_CONS_CURSOR_SAVE, sizeof(RZ_CONS_CURSOR_SAVE)) < 1) {
+	if (write(cons->fdout, RZ_CONS_CURSOR_SAVE, sizeof(RZ_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
-	rz_xwrite(I.fdout, "\x1b[999;999H", sizeof("\x1b[999;999H"));
+	rz_xwrite(cons->fdout, "\x1b[999;999H", sizeof("\x1b[999;999H"));
 	rows = __pty_get_cur_pos(&columns);
 	if (rows) {
-		I.rows = rows;
-		I.columns = columns;
+		cons->rows = rows;
+		cons->columns = columns;
 	} // otherwise reuse previous values
-	rz_xwrite(I.fdout, RZ_CONS_CURSOR_RESTORE, sizeof(RZ_CONS_CURSOR_RESTORE));
+	rz_xwrite(cons->fdout, RZ_CONS_CURSOR_RESTORE, sizeof(RZ_CONS_CURSOR_RESTORE));
 	return true;
 }
 
 #endif
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
-RZ_API int rz_cons_get_size(int *rows) {
+RZ_API int rz_cons_get_size(RzCons *cons, int *rows) {
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 	if (ret) {
-		I.columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-		I.rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+		cons->columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+		cons->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
-		if (I.term_pty) {
+		if (cons->term_pty) {
 			ret = __pty_get_size();
 		}
-		if (!ret || (I.columns == -1 && I.rows == 0)) {
+		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
 			// Stdout is probably redirected so we set default values
-			I.columns = 80;
-			I.rows = 23;
+			cons->columns = 80;
+			cons->rows = 23;
 		}
 	}
 #elif EMSCRIPTEN
-	I.columns = 80;
-	I.rows = 23;
+	cons->columns = 80;
+	cons->rows = 23;
 #elif __UNIX__
 	struct winsize win = { 0 };
 	if (isatty(0) && !ioctl(0, TIOCGWINSZ, &win)) {
@@ -1545,55 +1415,55 @@ RZ_API int rz_cons_get_size(int *rows) {
 				close(fd);
 			}
 		}
-		I.columns = win.ws_col;
-		I.rows = win.ws_row;
+		cons->columns = win.ws_col;
+		cons->rows = win.ws_row;
 	} else {
-		I.columns = 80;
-		I.rows = 23;
+		cons->columns = 80;
+		cons->rows = 23;
 	}
 #else
 	char *str = rz_sys_getenv("COLUMNS");
 	if (str) {
-		I.columns = atoi(str);
-		I.rows = 23; // XXX. windows must get console size
+		cons->columns = atoi(str);
+		cons->rows = 23; // XXX. windows must get console size
 		free(str);
 	} else {
-		I.columns = 80;
-		I.rows = 23;
+		cons->columns = 80;
+		cons->rows = 23;
 	}
 #endif
 #if SIMULATE_ADB_SHELL
-	I.rows = 0;
-	I.columns = 0;
+	cons->rows = 0;
+	cons->columns = 0;
 #endif
 #if SIMULATE_MAYHEM
 	// expect tons of crashes
-	I.rows = -1;
-	I.columns = -1;
+	cons->rows = -1;
+	cons->columns = -1;
 #endif
-	if (I.rows < 0) {
-		I.rows = 0;
+	if (cons->rows < 0) {
+		cons->rows = 0;
 	}
-	if (I.columns < 0) {
-		I.columns = 0;
+	if (cons->columns < 0) {
+		cons->columns = 0;
 	}
-	if (I.force_columns) {
-		I.columns = I.force_columns;
+	if (cons->force_columns) {
+		cons->columns = cons->force_columns;
 	}
-	if (I.force_rows) {
-		I.rows = I.force_rows;
+	if (cons->force_rows) {
+		cons->rows = cons->force_rows;
 	}
-	if (I.fix_columns) {
-		I.columns += I.fix_columns;
+	if (cons->fix_columns) {
+		cons->columns += cons->fix_columns;
 	}
-	if (I.fix_rows) {
-		I.rows += I.fix_rows;
+	if (cons->fix_rows) {
+		cons->rows += cons->fix_rows;
 	}
 	if (rows) {
-		*rows = I.rows;
+		*rows = cons->rows;
 	}
-	I.rows = RZ_MAX(0, I.rows);
-	return RZ_MAX(0, I.columns);
+	cons->rows = RZ_MAX(0, cons->rows);
+	return RZ_MAX(0, cons->columns);
 }
 
 #if __WINDOWS__
@@ -1610,7 +1480,7 @@ static inline bool is_win_10_creators_or_above(DWORD major, DWORD minor, DWORD r
 	return major > 10 || (major == 10 && minor > 0) || (major == 10 && minor == 0 && release >= 1703);
 }
 
-RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(RzCons *cons) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
@@ -1624,7 +1494,7 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 		free(alacritty);
 		return RZ_VIRT_TERM_MODE_OUTPUT_ONLY;
 	}
-	const bool is_console = rz_cons_isatty();
+	const bool is_console = rz_cons_isatty(cons);
 	HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
 	if (!is_console) {
 #if NTDDI_VERSION >= NTDDI_VISTA
@@ -1643,7 +1513,7 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 				buf.fi.FileName[buf.fi.FileNameLength / sizeof(WCHAR)] = 0;
 				if ((wcsstr(buf.fi.FileName, L"msys-") || wcsstr(buf.fi.FileName, L"cygwin-")) &&
 					wcsstr(buf.fi.FileName, L"-pty")) {
-					I.term_pty = 1;
+					cons->term_pty = 1;
 				}
 			}
 		}
@@ -1684,9 +1554,9 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 }
 #endif
 
-RZ_API void rz_cons_show_cursor(int cursor) {
+RZ_API void rz_cons_show_cursor(RzCons *cons, int cursor) {
 #if __WINDOWS__
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 #endif
 		rz_xwrite(1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
@@ -1709,20 +1579,20 @@ RZ_API void rz_cons_show_cursor(int cursor) {
 }
 
 /**
- * void rz_cons_set_raw( [0,1] )
+ * void rz_cons_set_raw(cons,  [0,1] )
  *
  *   Change canonicality of the terminal
  *
  * For optimization reasons, there's no initialization flag, so you need to
- * ensure that the make the first call to rz_cons_set_raw() with '1' and
+ * ensure that the make the first call to rz_cons_set_raw(cons) with '1' and
  * the next calls ^=1, so: 1, 0, 1, 0, 1, ...
  *
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
-RZ_API void rz_cons_set_raw(bool is_raw) {
-	if (I.oldraw != -1) {
-		if (is_raw == I.oldraw) {
+RZ_API void rz_cons_set_raw(RzCons *cons, bool is_raw) {
+	if (cons->oldraw != -1) {
+		if (is_raw == cons->oldraw) {
 			return;
 		}
 	}
@@ -1731,10 +1601,10 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #elif __UNIX__
 	// enforce echo off
 	if (is_raw) {
-		I.term_raw.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-		tcsetattr(0, TCSANOW, &I.term_raw);
+		cons->term_raw.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+		tcsetattr(0, TCSANOW, &cons->term_raw);
 	} else {
-		tcsetattr(0, TCSANOW, &I.term_buf);
+		tcsetattr(0, TCSANOW, &cons->term_buf);
 	}
 #elif __WINDOWS__
 	DWORD mode;
@@ -1742,35 +1612,35 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 	if (!GetConsoleMode(h, &mode)) {
 		// non console stdin is valid in batch mode.. just track state and leave the handle untouched
 		fflush(stdout);
-		I.oldraw = is_raw;
+		cons->oldraw = is_raw;
 		return;
 	}
 	if (is_raw) {
-		if (I.term_pty) {
+		if (cons->term_pty) {
 			rz_sys_xsystem("stty raw -echo");
 		} else {
-			SetConsoleMode(h, mode & I.term_raw);
+			SetConsoleMode(h, mode & cons->term_raw);
 		}
 	} else {
-		if (I.term_pty) {
+		if (cons->term_pty) {
 			rz_sys_xsystem("stty -raw echo");
 		} else {
-			SetConsoleMode(h, mode | I.term_buf);
+			SetConsoleMode(h, mode | cons->term_buf);
 		}
 	}
 #else
 #warning No raw console supported for this platform
 #endif
 	fflush(stdout);
-	I.oldraw = is_raw;
+	cons->oldraw = is_raw;
 }
 
-RZ_API void rz_cons_set_utf8(bool b) {
-	I.use_utf8 = b;
+RZ_API void rz_cons_set_utf8(RzCons *cons, bool b) {
+	cons->use_utf8 = b;
 }
 
-RZ_API void rz_cons_invert(int set, int color) {
-	rz_cons_strcat(RZ_CONS_INVERT(set, color));
+RZ_API void rz_cons_invert(RzCons *cons, int set, int color) {
+	rz_cons_strcat(cons, RZ_CONS_INVERT(set, color));
 }
 
 /*
@@ -1779,7 +1649,7 @@ RZ_API void rz_cons_invert(int set, int color) {
   smcup: disable terminal scrolling (fullscreen mode)
   rmcup: enable terminal scrolling (normal mode)
 */
-RZ_API bool rz_cons_set_cup(bool enable) {
+RZ_API bool rz_cons_set_cup(RzCons *cons, bool enable) {
 #if __UNIX__
 	const char *code = enable
 		? "\x1b[?1049h"
@@ -1795,7 +1665,7 @@ RZ_API bool rz_cons_set_cup(bool enable) {
 	}
 	fflush(stdout);
 #elif __WINDOWS__
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
 				? "\x1b[?1049h\x1b"
@@ -1814,30 +1684,30 @@ RZ_API bool rz_cons_set_cup(bool enable) {
 	return true;
 }
 
-RZ_API void rz_cons_column(int c) {
-	char *b = malloc(CTX(buffer_len) + 1);
+RZ_API void rz_cons_column(RzCons *cons, int c) {
+	char *b = malloc(cons->context->buffer_len + 1);
 	if (!b) {
 		return;
 	}
-	memcpy(b, CTX(buffer), CTX(buffer_len));
-	b[CTX(buffer_len)] = 0;
-	rz_cons_reset();
+	memcpy(b, cons->context->buffer, cons->context->buffer_len);
+	b[cons->context->buffer_len] = 0;
+	rz_cons_reset(cons);
 	// align current buffer N chars right
-	rz_cons_strcat_justify(b, c, 0);
-	rz_cons_gotoxy(0, 0);
+	rz_cons_strcat_justify(cons, b, c, 0);
+	rz_cons_gotoxy(cons, 0, 0);
 	free(b);
 }
 
-RZ_API void rz_cons_set_interactive(bool x) {
-	rz_cons_singleton()->context->last_interactive_option = rz_cons_singleton()->context->is_interactive;
-	rz_cons_singleton()->context->is_interactive = x;
+RZ_API void rz_cons_set_interactive(RzCons *cons, bool x) {
+	cons->context->last_interactive_option = cons->context->is_interactive;
+	cons->context->is_interactive = x;
 }
 
-RZ_API void rz_cons_set_last_interactive(void) {
-	rz_cons_singleton()->context->is_interactive = rz_cons_singleton()->context->last_interactive_option;
+RZ_API void rz_cons_set_last_interactive(RzCons *cons) {
+	cons->context->is_interactive = cons->context->last_interactive_option;
 }
 
-RZ_API void rz_cons_set_title(const char *str) {
+RZ_API void rz_cons_set_title(RzCons *cons, const char *str) {
 #if __WINDOWS__
 #if defined(_UNICODE)
 	wchar_t *wstr = rz_utf8_to_utf16_l(str, strlen(str));
@@ -1849,18 +1719,18 @@ RZ_API void rz_cons_set_title(const char *str) {
 	SetConsoleTitle(str);
 #endif // defined(_UNICODE)
 #else
-	rz_cons_printf("\x1b]0;%s\007", str);
+	rz_cons_printf(cons, "\x1b]0;%s\007", str);
 #endif
 }
 
-RZ_API void rz_cons_zero(void) {
-	if (I.line) {
-		I.line->zerosep = true;
+RZ_API void rz_cons_zero(RzCons *cons) {
+	if (cons->line) {
+		cons->line->zerosep = true;
 	}
 	rz_xwrite(1, "", 1);
 }
 
-RZ_API void rz_cons_highlight(const char *word) {
+RZ_API void rz_cons_highlight(RzCons *cons, const char *word) {
 	int l, *cpos = NULL;
 	char *rword = NULL, *res, *clean = NULL;
 	char *inv[2] = {
@@ -1872,24 +1742,24 @@ RZ_API void rz_cons_highlight(const char *word) {
 		strlen(inv[1])
 	};
 
-	if (!I.enable_highlight) {
-		rz_cons_enable_highlight(true);
+	if (!cons->enable_highlight) {
+		rz_cons_enable_highlight(cons, true);
 		return;
 	}
-	if (word && *word && CTX(buffer)) {
+	if (word && *word && cons->context->buffer) {
 		int word_len = strlen(word);
 		char *orig;
-		clean = rz_str_ndup(CTX(buffer), CTX(buffer_len));
+		clean = rz_str_ndup(cons->context->buffer, cons->context->buffer_len);
 		l = rz_str_ansi_filter(clean, &orig, &cpos, -1);
-		free(CTX(buffer));
-		CTX(buffer) = orig;
-		if (I.highlight) {
-			if (strcmp(word, I.highlight)) {
-				free(I.highlight);
-				I.highlight = rz_str_dup(word);
+		free(cons->context->buffer);
+		cons->context->buffer = orig;
+		if (cons->highlight) {
+			if (strcmp(word, cons->highlight)) {
+				free(cons->highlight);
+				cons->highlight = rz_str_dup(word);
 			}
 		} else {
-			I.highlight = rz_str_dup(word);
+			cons->highlight = rz_str_dup(word);
 		}
 		rword = malloc(word_len + linv[0] + linv[1] + 1);
 		if (!rword) {
@@ -1900,26 +1770,26 @@ RZ_API void rz_cons_highlight(const char *word) {
 		strcpy(rword, inv[0]);
 		strcpy(rword + linv[0], word);
 		strcpy(rword + linv[0] + word_len, inv[1]);
-		res = rz_str_replace_thunked(CTX(buffer), clean, cpos,
+		res = rz_str_replace_thunked(cons->context->buffer, clean, cpos,
 			l, word, rword, 1);
 		if (res) {
-			CTX(buffer) = res;
-			CTX(buffer_len) = CTX(buffer_sz) = strlen(res);
+			cons->context->buffer = res;
+			cons->context->buffer_len = cons->context->buffer_sz = strlen(res);
 		}
 		free(rword);
 		free(clean);
 		free(cpos);
-		ctx_rowcol_calc_reset();
+		ctx_rowcol_calc_reset(cons);
 		/* don't free orig - it's assigned
-		 * to CTX(buffer) and possibly realloc'd */
+		 * to cons->context->buffer and possibly realloc'd */
 	} else {
-		RZ_FREE(I.highlight);
+		RZ_FREE(cons->highlight);
 	}
 }
 
-RZ_API char *rz_cons_lastline(int *len) {
-	char *b = CTX(buffer) + CTX(buffer_len);
-	while (b > CTX(buffer)) {
+RZ_API char *rz_cons_lastline(RzCons *cons, int *len) {
+	char *b = cons->context->buffer + cons->context->buffer_len;
+	while (b > cons->context->buffer) {
 		if (*b == '\n') {
 			b++;
 			break;
@@ -1927,25 +1797,25 @@ RZ_API char *rz_cons_lastline(int *len) {
 		b--;
 	}
 	if (len) {
-		int delta = b - CTX(buffer);
-		*len = CTX(buffer_len) - delta;
+		int delta = b - cons->context->buffer;
+		*len = cons->context->buffer_len - delta;
 	}
 	return b;
 }
 
-// same as rz_cons_lastline(), but len will be the number of
+// same as rz_cons_lastline(RzCons *cons), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
-RZ_API char *rz_cons_lastline_utf8_ansi_len(int *len) {
+RZ_API char *rz_cons_lastline_utf8_ansi_len(RzCons *cons, int *len) {
 	if (!len) {
-		return rz_cons_lastline(0);
+		return rz_cons_lastline(cons, 0);
 	}
 
-	char *b = CTX(buffer) + CTX(buffer_len);
+	char *b = cons->context->buffer + cons->context->buffer_len;
 	int l = 0;
 	int last_possible_ansi_end = 0;
 	char ch = '\0';
 	char ch2;
-	while (b > CTX(buffer)) {
+	while (b > cons->context->buffer) {
 		ch2 = ch;
 		ch = *b;
 
@@ -1995,22 +1865,22 @@ RZ_API char *rz_cons_swap_ground(const char *col) {
 	return rz_str_dup(col);
 }
 
-RZ_API bool rz_cons_drop(int n) {
-	if (n > CTX(buffer_len)) {
-		CTX(buffer_len) = 0;
+RZ_API bool rz_cons_drop(RzCons *cons, int n) {
+	if (n > cons->context->buffer_len) {
+		cons->context->buffer_len = 0;
 		return false;
 	}
-	CTX(buffer_len) -= n;
+	cons->context->buffer_len -= n;
 	return true;
 }
 
-RZ_API void rz_cons_chop(void) {
-	while (CTX(buffer_len) > 0) {
-		char ch = CTX(buffer)[CTX(buffer_len) - 1];
+RZ_API void rz_cons_chop(RzCons *cons) {
+	while (cons->context->buffer_len > 0) {
+		char ch = cons->context->buffer[cons->context->buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE(ch)) {
 			break;
 		}
-		(CTX(buffer_len))--;
+		(cons->context->buffer_len)--;
 	}
 }
 
@@ -2018,12 +1888,12 @@ RZ_API void rz_cons_bind(RzConsBind *bind) {
 	if (!bind) {
 		return;
 	}
-	bind->get_size = rz_cons_get_size;
-	bind->get_cursor = rz_cons_get_cursor;
-	bind->cb_printf = rz_cons_printf;
-	bind->cb_flush = rz_cons_flush;
-	bind->cb_grep = rz_cons_grep;
-	bind->is_breaked = rz_cons_is_breaked;
+	bind->get_size = (RzConsGetSize)rz_cons_get_size;
+	bind->get_cursor = (RzConsGetCursor)rz_cons_get_cursor;
+	bind->cb_printf = (PrintfCallback)rz_cons_printf;
+	bind->cb_flush = (RzConsFlush)rz_cons_flush;
+	bind->cb_grep = (RzConsGrepCallback)rz_cons_grep;
+	bind->is_breaked = (RzConsIsBreaked)rz_interrupt_is_breaked;
 }
 
 RZ_API const char *rz_cons_get_rune(const ut8 ch) {
@@ -2043,14 +1913,14 @@ RZ_API const char *rz_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
-RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
-	free(I.break_word);
+RZ_API void rz_cons_breakword(RzCons *cons, RZ_NULLABLE const char *s) {
+	free(cons->break_word);
 	if (s) {
-		I.break_word = rz_str_dup(s);
-		I.break_word_len = strlen(s);
+		cons->break_word = rz_str_dup(s);
+		cons->break_word_len = strlen(s);
 	} else {
-		I.break_word = NULL;
-		I.break_word_len = 0;
+		cons->break_word = NULL;
+		cons->break_word_len = 0;
 	}
 }
 
@@ -2058,8 +1928,7 @@ RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
  * help should be an array of the following form:
  * {"command", "args", "description",
  * "command2", "args2", "description"}; */
-RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
-	RzCons *cons = rz_cons_singleton();
+RZ_API void rz_cons_cmd_help(RzCons *cons, const char *help[], bool use_color) {
 	const char *pal_args_color = use_color ? cons->context->pal.args : "",
 		   *pal_help_color = use_color ? cons->context->pal.help : "",
 		   *pal_input_color = use_color ? cons->context->pal.input : "",
@@ -2078,26 +1947,26 @@ RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
 	for (i = 0; help[i]; i += 3) {
 		if (!strncmp(help[i], usage_str, strlen(usage_str))) {
 			// Lines matching Usage: should always be the first in inline doc
-			rz_cons_printf("%s%s %s  %s%s\n", pal_args_color,
+			rz_cons_printf(cons, "%s%s %s  %s%s\n", pal_args_color,
 				help[i], help[i + 1], help[i + 2], pal_reset);
 			continue;
 		}
 		if (!help[i + 1][0] && !help[i + 2][0]) {
 			// no need to indent the sections lines
-			rz_cons_printf("%s%s%s\n", pal_help_color, help[i], pal_reset);
+			rz_cons_printf(cons, "%s%s%s\n", pal_help_color, help[i], pal_reset);
 		} else {
 			// these are the normal lines
 			int str_length = strlen(help[i]) + strlen(help[i + 1]);
 			int padding = (str_length < max_length) ? (max_length - str_length) : 0;
-			rz_cons_printf("| %s%s%s%s%*s  %s%s%s\n",
+			rz_cons_printf(cons, "| %s%s%s%s%*s  %s%s%s\n",
 				pal_input_color, help[i], pal_args_color, help[i + 1],
 				padding, "", pal_help_color, help[i + 2], pal_reset);
 		}
 	}
 }
 
-RZ_API void rz_cons_clear_buffer(void) {
-	if (I.vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+RZ_API void rz_cons_clear_buffer(RzCons *cons) {
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(1, "\x1b"
 			     "c\x1b[3J",
 			6);
@@ -2110,6 +1979,6 @@ RZ_API void rz_cons_clear_buffer(void) {
  * \param flush If true, calls to \p rz_cons_flush and \p rz_cons_visual_flush
  *              would flush cons content to the screen, otherwise they will not.
  */
-RZ_API void rz_cons_set_flush(bool flush) {
-	CTX(noflush) = !flush;
+RZ_API void rz_cons_set_flush(RzCons *cons, bool flush) {
+	cons->context->noflush = !flush;
 }

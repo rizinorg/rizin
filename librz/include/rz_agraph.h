@@ -91,6 +91,7 @@ typedef struct rz_ascii_graph_t {
 	RzList /*<AEdge *>*/ *edges;
 	ut64 next_edge_creation_order;
 	RzAGraphHits ghits;
+	RzInterrupt *intr;
 } RzAGraph;
 
 #ifdef RZ_API
@@ -113,7 +114,7 @@ RZ_API void rz_agraph_foreach(RzAGraph *g, RzANodeCallback cb, void *user);
 RZ_API void rz_agraph_foreach_edge(RzAGraph *g, RAEdgeCallback cb, void *user);
 RZ_API void rz_agraph_set_curnode(RzAGraph *g, RzANode *node);
 RZ_API bool rz_core_create_agraph_from_graph_at(RZ_NONNULL RzAGraph *ag, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *g, bool free_on_fail, bool utf8);
-RZ_API RZ_OWN RzAGraph *rz_core_create_agraph_from_graph(RZ_NONNULL RzCons *cons, RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8);
+RZ_API RZ_OWN RzAGraph *rz_core_create_agraph_from_graph(RZ_NONNULL const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, bool utf8, RZ_NONNULL RzCons *cons);
 RZ_API void rz_agraph_compute_layout(RZ_NONNULL RzAGraph *g);
 #endif
 

@@ -119,9 +119,9 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_N
 	if (!sten) {
 		goto list_err;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(analysis->intr, NULL, NULL);
 	/* analyze code block */
-	while (ptr < end && !rz_cons_is_breaked()) {
+	while (ptr < end && !rz_interrupt_is_breaked(analysis->intr)) {
 		if (nlines != -1) {
 			if (!nlines) {
 				break;
@@ -226,7 +226,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_N
 		ptr += sz;
 	}
 	rz_analysis_op_fini(&op);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(analysis->intr);
 
 	free_levels = RZ_NEWS0(ut8, rz_pvector_len(result) + 1);
 	if (!free_levels) {
@@ -268,7 +268,7 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_N
 
 sten_err:
 list_err:
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(analysis->intr);
 	rz_list_free(sten);
 	rz_pvector_free(result);
 	return NULL;
@@ -388,7 +388,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	}
 	rz_pvector_foreach (analysis->reflines, refline_iter) {
 		ref = *refline_iter;
-		if (core->cons && core->cons->context->breaked) {
+		if (core->cons && rz_interrupt_is_breaked(core->cons->intr)) {
 			rz_list_free(lvls);
 			return NULL;
 		}
@@ -401,7 +401,7 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	rz_buf_append_string(c, " ");
 	rz_buf_append_string(b, " ");
 	rz_list_foreach (lvls, iter, ref) {
-		if (core->cons && core->cons->context->breaked) {
+		if (core->cons && rz_interrupt_is_breaked(core->cons->intr)) {
 			rz_list_free(lvls);
 			rz_buf_free(b);
 			rz_buf_free(c);

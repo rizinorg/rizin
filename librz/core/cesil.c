@@ -97,10 +97,10 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	if (esiltimeout > 0) {
 		startTime = rz_time_now_mono();
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 repeat:
 	rz_analysis_op_fini(&op);
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(core->intr)) {
 		RZ_LOG_WARN("core: esil: emulation interrupted at 0x%08" PFMT64x "\n", addr);
 		return_tail(0);
 	}
@@ -250,7 +250,7 @@ repeat:
 	}
 	// check breakpoints
 	if (rz_bp_get_at(core->dbg->bp, pc)) {
-		rz_cons_printf("[ESIL] hit breakpoint at 0x%" PFMT64x "\n", pc);
+		rz_cons_printf(core->cons, "[ESIL] hit breakpoint at 0x%" PFMT64x "\n", pc);
 		return_tail(0);
 	}
 	// check addr
@@ -278,7 +278,7 @@ repeat:
 	}
 tail_return:
 	rz_analysis_op_fini(&op);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	return tail_return_value;
 }
 
@@ -337,11 +337,11 @@ RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	return true;
 }
 
-RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
+RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil, RZ_NONNULL RzCons *cons) {
 	rz_return_val_if_fail(esil, false);
 	int i;
 	if (esil->trap) {
-		rz_cons_printf("ESIL TRAP type %d code 0x%08x %s\n",
+		rz_cons_printf(cons, "ESIL TRAP type %d code 0x%08x %s\n",
 			esil->trap, esil->trap_code,
 			rz_analysis_esil_trapstr(esil->trap));
 	}
@@ -349,7 +349,7 @@ RZ_API bool rz_core_esil_dumpstack(RzAnalysisEsil *esil) {
 		return false;
 	}
 	for (i = esil->stackptr - 1; i >= 0; i--) {
-		rz_cons_printf("%s\n", esil->stack[i]);
+		rz_cons_printf(cons, "%s\n", esil->stack[i]);
 	}
 	return true;
 }
@@ -375,7 +375,7 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 				ew->expr);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("%s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
+			rz_cons_printf(dbg->cons, "%s %c %s\n", rz_str_rwx_i(ew->rwx), ew->dev, ew->expr);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -712,7 +712,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	ut64 oldoff = core->offset;
 	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;
 	for (i = 0, j = 0; j < off; i++, j++) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (i >= (bsize - 32)) {
@@ -1310,7 +1310,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		goto out_pop_regs;
 	}
 	estate->analysis_stop = false;
-	rz_cons_break_push(cccb, core);
+	rz_interrupt_break_push(core->intr, cccb, core);
 
 	int arch = -1;
 	if (rz_asm_is_arch(core->rasm, "arm")) {
@@ -1334,7 +1334,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	IterCtx ictx = { core, start, end, fcn, NULL };
 	size_t i = 0;
 	do {
-		if (estate->analysis_stop || rz_cons_is_breaked()) {
+		if (estate->analysis_stop || rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		size_t i_old = i;
@@ -1603,7 +1603,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 	esil->cb.hook_reg_write = NULL;
 	esil->user = NULL;
 	rz_analysis_op_fini(&op);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 out_pop_regs:
 	// restore register
 	rz_reg_arena_pop(rreg);

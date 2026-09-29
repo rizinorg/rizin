@@ -309,38 +309,32 @@ static void add_window_to_table(RzTable *tbl, window *win) {
 	free(pid);
 }
 
-RZ_API void rz_w32_identify_window(void) {
-	while (!rz_cons_yesno('y', "Move cursor to the window to be identified. Ready? (Y/n)"))
-		;
-	POINT p;
-	if (!GetCursorPos(&p)) {
-		rz_sys_perror("GetCursorPos");
-	}
+RZ_API RzTable *rz_w32_identify_window(int x, int y, bool fetch_child) {
+	POINT p = { (LONG)x, (LONG)y };
 	HWND hwnd = WindowFromPoint(p);
-	window *win = NULL;
-	if (hwnd) {
-		if (rz_cons_yesno('y', "Try to get the child? (Y/n)")) {
-			HWND child = ChildWindowFromPoint(hwnd, p);
-			hwnd = child ? child : hwnd;
-		}
-		win = window_from_handle(hwnd);
-	} else {
-		eprintf("No window found\n");
-		return;
+	if (!hwnd) {
+		RZ_LOG_ERROR("No window found at cursor position\n");
+		return NULL;
 	}
+
+	if (fetch_child) {
+		HWND child = ChildWindowFromPoint(hwnd, p);
+		hwnd = child ? child : hwnd;
+	}
+
+	window *win = window_from_handle(hwnd);
 	if (!win) {
-		eprintf("Error trying to get information from 0x%08" PFMT64x "\n", (ut64)hwnd);
-		return;
+		RZ_LOG_ERROR("Error getting window information for handle 0x%08" PFMT64x "\n", (ut64)hwnd);
+		return NULL;
 	}
+
 	RzTable *tbl = create_window_table();
 	if (!tbl) {
-		return;
+		return NULL;
 	}
+
 	add_window_to_table(tbl, win);
-	char *tbl_str = rz_table_tofancystring(tbl);
-	rz_cons_print(tbl_str);
-	free(tbl_str);
-	rz_table_free(tbl);
+	return tbl;
 }
 
 static BOOL CALLBACK enum_childs(
@@ -441,7 +435,7 @@ static void print_windows(RzDebug *dbg, RzList *windows) {
 		add_window_to_table(tbl, win);
 	}
 	char *t = rz_table_tostring(tbl);
-	dbg->cb_printf(t);
+	dbg->cb_printf(dbg->cons, t);
 	free(t);
 	rz_table_free(tbl);
 }
@@ -450,7 +444,7 @@ RZ_API void rz_w32_print_windows(RzDebug *dbg) {
 	RzList *windows = get_windows(dbg);
 	if (windows) {
 		if (!windows->length) {
-			dbg->cb_printf("No windows for this process.\n");
+			dbg->cb_printf(dbg->cons, "No windows for this process.\n");
 			return;
 		}
 		print_windows(dbg, windows);

@@ -54,7 +54,7 @@ static int rz_debug_native_continue_syscall(RzDebug *dbg, int pid, int num) {
 
 static void interrupt_process(RzDebug *dbg) {
 	rz_debug_kill(dbg, dbg->pid, dbg->tid, SIGINT);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 }
 
 static int rz_debug_native_stop(RzDebug *dbg) {
@@ -69,8 +69,8 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		contsig = sig;
 	}
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
-	if (dbg->consbreak) {
-		rz_cons_break_push((RzConsBreak)interrupt_process, dbg);
+	if (dbg->intrbreak) {
+		rz_interrupt_break_push(dbg->intr, (RzInterruptBreakCallback)interrupt_process, dbg);
 	}
 
 	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
@@ -133,56 +133,56 @@ RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
 	return get_linux_tls_val(dbg, tid);
 }
 
-#define PRINT_FPU(fpregs) \
-	rz_cons_printf("cwd = 0x%04x  ; control   ", (fpregs).cwd); \
-	rz_cons_printf("swd = 0x%04x  ; status\n", (fpregs).swd); \
-	rz_cons_printf("ftw = 0x%04x              ", (fpregs).ftw); \
-	rz_cons_printf("fop = 0x%04x\n", (fpregs).fop); \
-	rz_cons_printf("rip = 0x%016" PFMT64x "  ", (ut64)(fpregs).rip); \
-	rz_cons_printf("rdp = 0x%016" PFMT64x "\n", (ut64)(fpregs).rdp); \
-	rz_cons_printf("mxcsr = 0x%08x        ", (fpregs).mxcsr); \
-	rz_cons_printf("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)
+#define PRINT_FPU(fpregs, cb, user) \
+	cb(user, "cwd = 0x%04x  ; control   ", (fpregs).cwd); \
+	cb(user, "swd = 0x%04x  ; status\n", (fpregs).swd); \
+	cb(user, "ftw = 0x%04x              ", (fpregs).ftw); \
+	cb(user, "fop = 0x%04x\n", (fpregs).fop); \
+	cb(user, "rip = 0x%016" PFMT64x "  ", (ut64)(fpregs).rip); \
+	cb(user, "rdp = 0x%016" PFMT64x "\n", (ut64)(fpregs).rdp); \
+	cb(user, "mxcsr = 0x%08x        ", (fpregs).mxcsr); \
+	cb(user, "mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)
 
-#define PRINT_FPU_NOXMM(fpregs) \
-	rz_cons_printf("cwd = 0x%04lx  ; control   ", (fpregs).cwd); \
-	rz_cons_printf("swd = 0x%04lx  ; status\n", (fpregs).swd); \
-	rz_cons_printf("twd = 0x%04lx              ", (fpregs).twd); \
-	rz_cons_printf("fip = 0x%04lx          \n", (fpregs).fip); \
-	rz_cons_printf("fcs = 0x%04lx              ", (fpregs).fcs); \
-	rz_cons_printf("foo = 0x%04lx          \n", (fpregs).foo); \
-	rz_cons_printf("fos = 0x%04lx              ", (fpregs).fos)
+#define PRINT_FPU_NOXMM(fpregs, cb, user) \
+	cb(user, "cwd = 0x%04lx  ; control   ", (fpregs).cwd); \
+	cb(user, "swd = 0x%04lx  ; status\n", (fpregs).swd); \
+	cb(user, "twd = 0x%04lx              ", (fpregs).twd); \
+	cb(user, "fip = 0x%04lx          \n", (fpregs).fip); \
+	cb(user, "fcs = 0x%04lx              ", (fpregs).fcs); \
+	cb(user, "foo = 0x%04lx          \n", (fpregs).foo); \
+	cb(user, "fos = 0x%04lx              ", (fpregs).fos)
 
-static void print_fpu(void *f) {
+static void print_fpu(PrintfCallback cb, void *f, void *user) {
 #if __x86_64__
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
-	rz_cons_printf("---- x86-64 ----\n");
-	PRINT_FPU(fpregs);
-	rz_cons_printf("size = 0x%08x\n", (ut32)sizeof(fpregs));
+	cb(user, "---- x86-64 ----\n");
+	PRINT_FPU(fpregs, cb, user);
+	cb(user, "size = 0x%08x\n", (ut32)sizeof(fpregs));
 	for (int i = 0; i < 16; i++) {
 		ut32 *a = (ut32 *)&fpregs.xmm_space;
 		a = a + (i * 4);
-		rz_cons_printf("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
+		cb(user, "xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
 			(int)a[2], (int)a[3]);
 		if (i < 8) {
 			ut64 *st_u64 = (ut64 *)&fpregs.st_space[i * 4];
 			ut8 *st_u8 = (ut8 *)&fpregs.st_space[i * 4];
 			long double *st_ld = (long double *)&fpregs.st_space[i * 4];
-			rz_cons_printf("mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
+			cb(user, "mm%d = 0x%016" PFMT64x " | st%d = ", i, *st_u64, i);
 			// print as hex TBYTE - always little endian
 			for (int j = 9; j >= 0; j--) {
-				rz_cons_printf("%02x", st_u8[j]);
+				cb(user, "%02x", st_u8[j]);
 			}
 			// Using %Lf and %Le even though we do not show the extra precision to avoid another cast
 			// %f with (double)*st_ld would also work
-			rz_cons_printf(" %Le %Lf\n", *st_ld, *st_ld);
+			cb(user, " %Le %Lf\n", *st_ld, *st_ld);
 		} else {
-			rz_cons_printf("\n");
+			cb(user, "\n");
 		}
 	}
 #elif __i386__
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
-	rz_cons_printf("---- x86-32-noxmm ----\n");
-	PRINT_FPU_NOXMM(fpregs);
+	cb(user, "---- x86-32-noxmm ----\n");
+	PRINT_FPU_NOXMM(fpregs, cb, user);
 	for (int i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i * 4]);
 		double *d = (double *)b;
@@ -190,8 +190,8 @@ static void print_fpu(void *f) {
 		float *f = (float *)&fpregs.st_space;
 		c = c + (i * 4);
 		f = f + (i * 4);
-		rz_cons_printf("st%d = %0.3lg (0x%016" PFMT64x ") | %0.3f (0x%08x) | "
-			       "%0.3f (0x%08x)\n",
+		cb(user, "st%d = %0.3lg (0x%016" PFMT64x ") | %0.3f (0x%08x) | "
+			 "%0.3f (0x%08x)\n",
 			i, d[0], b[0], f[0], c[0], f[1], c[1]);
 	}
 #endif
@@ -240,7 +240,7 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 				return false;
 			}
 			if (showfpu) {
-				print_fpu((void *)&fpregs);
+				print_fpu(dbg->cb_printf, (void *)&fpregs, dbg->cb_printf_user);
 			}
 			size = RZ_MIN(sizeof(fpregs), size);
 			memcpy(buf, &fpregs, size);

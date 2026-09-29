@@ -69,10 +69,10 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 	}
 	for (;;) {
 		bool hasColor = rz_config_get_i(core->config, "scr.color");
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 
 		if (menu) {
-			rz_cons_printf("Flags in flagspace '%s'. Press '?' for help.\n\n",
+			rz_cons_printf(core->cons, "Flags in flagspace '%s'. Press '?' for help.\n\n",
 				rz_flag_space_cur_name(core->flags));
 			hit = 0;
 			i = j = 0;
@@ -88,12 +88,12 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				if ((i >= option - delta) && ((i < option + delta) || ((option < delta) && (i < (delta << 1))))) {
 					bool cur = option == i;
 					if (cur && hasColor) {
-						rz_cons_printf(Color_INVERT);
+						rz_cons_printf(core->cons, Color_INVERT);
 					}
-					rz_cons_printf(" %c  %03d 0x%08" PFMT64x " %4" PFMT64d " %s\n",
+					rz_cons_printf(core->cons, " %c  %03d 0x%08" PFMT64x " %4" PFMT64d " %s\n",
 						cur ? '>' : ' ', i, fi->offset, fi->size, fi->name);
 					if (cur && hasColor) {
-						rz_cons_printf(Color_RESET);
+						rz_cons_printf(core->cons, Color_RESET);
 					}
 					j++;
 				}
@@ -106,10 +106,10 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				continue;
 			}
 			if (fs2) {
-				int cols, rows = rz_cons_get_size(&cols);
+				int cols, rows = rz_cons_get_size(core->cons, &cols);
 				// int rows = 20;
 				rows -= 12;
-				rz_cons_printf("\n Selected: %s\n\n", fs2);
+				rz_cons_printf(core->cons, "\n Selected: %s\n\n", fs2);
 				// Honor MAX_FORMATS here
 				switch (format) {
 				case 0:
@@ -131,10 +131,10 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 					rz_core_cmd(core, cmd, 0);
 				}
 			} else {
-				rz_cons_printf("(no flags)\n");
+				rz_cons_printf(core->cons, "(no flags)\n");
 			}
 		} else {
-			rz_cons_printf("Flag spaces:\n\n");
+			rz_cons_printf(core->cons, "Flag spaces:\n\n");
 			hit = 0;
 			RzSpaceIter it;
 			const RzSpace *s, *cur = rz_flag_space_cur(core->flags);
@@ -145,7 +145,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 					hit = 1;
 				}
 				if ((i >= option - delta) && ((i < option + delta) || ((option < delta) && (i < (delta << 1))))) {
-					rz_cons_printf(" %c %c %s\n",
+					rz_cons_printf(core->cons, " %c %c %s\n",
 						(option == i) ? '>' : ' ',
 						(s == cur) ? '*' : ' ',
 						s->name);
@@ -156,7 +156,7 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				fs = "*";
 				hit = 1;
 			}
-			rz_cons_printf(" %c %c %s\n", (option == i) ? '>' : ' ',
+			rz_cons_printf(core->cons, " %c %c %s\n", (option == i) ? '>' : ' ',
 				!cur ? '*' : ' ', "*");
 			i++;
 			if (!hit && i > 0) {
@@ -164,12 +164,12 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				continue;
 			}
 		}
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
+		rz_cons_visual_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
 		if (ch == -1 || ch == 4) {
 			return false;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			rz_config_toggle(core->config, "scr.color");
@@ -214,22 +214,22 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 		case 'a':
 			switch (menu) {
 			case 0: // new flag space
-				rz_cons_show_cursor(true);
+				rz_cons_show_cursor(core->cons, true);
 				rz_line_set_prompt(rzline, "add flagspace: ");
-				if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
+				if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) > 0) {
 					rz_flag_space_set(core->flags, cmd);
-					rz_cons_set_raw(1);
-					rz_cons_show_cursor(false);
+					rz_cons_set_raw(core->cons, 1);
+					rz_cons_show_cursor(core->cons, false);
 				}
 				break;
 			case 1: // new flag
-				rz_cons_show_cursor(true);
+				rz_cons_show_cursor(core->cons, true);
 				rz_line_set_prompt(rzline, "add flag: ");
 				strcpy(cmd, "f ");
-				if (rz_cons_fgets(cmd + 2, sizeof(cmd) - 2, 0, NULL) > 0) {
+				if (rz_cons_fgets(core->cons, cmd + 2, sizeof(cmd) - 2, 0, NULL) > 0) {
 					rz_core_cmd(core, cmd, 0);
-					rz_cons_set_raw(1);
-					rz_cons_show_cursor(false);
+					rz_cons_set_raw(core->cons, 1);
+					rz_cons_show_cursor(core->cons, false);
 				}
 				break;
 			}
@@ -265,35 +265,35 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 		case 'r': // "Vtr"
 			if (menu == 1) {
 				int len;
-				rz_cons_show_cursor(true);
-				rz_cons_set_raw(0);
+				rz_cons_show_cursor(core->cons, true);
+				rz_cons_set_raw(core->cons, 0);
 				// TODO: use rz_flag_rename or fail?..`fr` doesn't uses this..
 				snprintf(cmd, sizeof(cmd), "fr %s ", fs2);
 				len = strlen(cmd);
 				eprintf("Rename flag '%s' as:\n", fs2);
 				rz_line_set_prompt(rzline, ":> ");
-				if (rz_cons_fgets(cmd + len, sizeof(cmd) - len, 0, NULL) < 0) {
+				if (rz_cons_fgets(core->cons, cmd + len, sizeof(cmd) - len, 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				rz_core_cmd(core, cmd, 0);
-				rz_cons_set_raw(1);
-				rz_cons_show_cursor(false);
+				rz_cons_set_raw(core->cons, 1);
+				rz_cons_show_cursor(core->cons, false);
 			}
 			break;
 		case 'R':
 			if (menu == 1) {
 				char line[1024];
-				rz_cons_show_cursor(true);
-				rz_cons_set_raw(0);
+				rz_cons_show_cursor(core->cons, true);
+				rz_cons_set_raw(core->cons, 0);
 				eprintf("Rename function '%s' as:\n", fs2);
 				rz_line_set_prompt(rzline, ":> ");
-				if (rz_cons_fgets(line, sizeof(line), 0, NULL) < 0) {
+				if (rz_cons_fgets(core->cons, line, sizeof(line), 0, NULL) < 0) {
 					cmd[0] = '\0';
 				}
 				ut64 addr = rz_num_math(core->num, line);
 				rz_core_analysis_function_add(core, fs2, addr, true);
-				rz_cons_set_raw(1);
-				rz_cons_show_cursor(false);
+				rz_cons_set_raw(core->cons, 1);
+				rz_cons_show_cursor(core->cons, false);
 			}
 			break;
 		case 'P':
@@ -318,8 +318,8 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 			option = 0;
 			break;
 		case '?':
-			rz_cons_clear00();
-			rz_cons_printf(
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons,
 				"\nVF: Visual Flags help:\n\n"
 				" q     - quit menu\n"
 				" j/k   - line down/up keys\n"
@@ -335,26 +335,26 @@ RZ_IPI int rz_core_visual_trackflags(RzCore *core) {
 				" p/P   - rotate print format\n"
 				" _     - hud for flags and comments\n"
 				" :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case ':':
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			*cmd = 0;
 			rz_line_set_prompt(rzline, ":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 				*cmd = 0;
 			}
 			cmd[sizeof(cmd) - 1] = 0;
 			rz_core_cmd0(core, cmd);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 			if (*cmd) {
-				rz_cons_any_key(NULL);
+				rz_cons_any_key(core->cons, NULL);
 			}
 			// cons_gotoxy(0,0);
-			rz_cons_clear();
+			rz_cons_clear(core->cons);
 			continue;
 		}
 	}

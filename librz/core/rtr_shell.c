@@ -5,20 +5,20 @@ static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 	RzLine *line = core->cons->line;
 	bool autorefresh = false;
 	if (cmd) {
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 		for (;;) {
 			char *ret;
-			rz_cons_clear00();
+			rz_cons_clear00(core->cons);
 			ret = rtrcmd(T, cmd);
-			rz_cons_println(ret);
+			rz_cons_println(core->cons, ret);
 			free(ret);
-			rz_cons_flush();
-			if (rz_cons_is_breaked()) {
+			rz_cons_flush(core->cons);
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			rz_sys_sleep(1);
 		}
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 	} else {
 		const char *cmds[] = { "px", "pd", "pxa", "dr", "sr SP;pxa", NULL };
 		int cmdidx = 0;
@@ -26,48 +26,48 @@ static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 		free(rtrcmd(T, "e scr.color=true"));
 		free(rtrcmd(T, "e scr.html=false"));
 		for (;;) {
-			rz_cons_clear00();
+			rz_cons_clear00(core->cons);
 			ret = rtrcmd(T, cmds[cmdidx]);
 			if (ret) {
-				rz_cons_println(ret);
+				rz_cons_println(core->cons, ret);
 				free(ret);
 			}
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			if (autorefresh) {
-				rz_cons_printf("(auto-refresh)\n");
-				rz_cons_flush();
-				rz_cons_break_push(NULL, NULL);
+				rz_cons_printf(core->cons, "(auto-refresh)\n");
+				rz_cons_flush(core->cons);
+				rz_interrupt_break_push(core->intr, NULL, NULL);
 				rz_sys_sleep(1);
-				if (rz_cons_is_breaked()) {
+				if (rz_interrupt_is_breaked(core->intr)) {
 					autorefresh = false;
-					ch = rz_cons_readchar();
+					ch = rz_cons_readchar(core->cons);
 				} else {
-					rz_cons_break_pop();
+					rz_interrupt_break_pop(core->intr);
 					continue;
 				}
-				rz_cons_break_pop();
+				rz_interrupt_break_pop(core->intr);
 			} else {
-				ch = rz_cons_readchar();
+				ch = rz_cons_readchar(core->cons);
 			}
 			// TODO:
 			//  i   insert hex/string/asm
 			//  0-9 follow jumps
 			switch (ch) {
 			case '?':
-				rz_cons_clear00();
-				rz_cons_printf("Remote Visual keys:\n"
-					       " hjkl : move\n"
-					       " HJKL : move faster\n"
-					       " +-*/ : change block size\n"
-					       " pP   : rotate print modes\n"
-					       " T    : enter TextLog chat console\n"
-					       " @    : enter auto-refresh mode\n"
-					       " i    : insert hexpair\n"
-					       " q    : quit this mode and go back to the shell\n"
-					       " sS   : step / step over\n"
-					       " .    : seek entry or pc\n");
-				rz_cons_flush();
-				rz_cons_any_key(NULL);
+				rz_cons_clear00(core->cons);
+				rz_cons_printf(core->cons, "Remote Visual keys:\n"
+							   " hjkl : move\n"
+							   " HJKL : move faster\n"
+							   " +-*/ : change block size\n"
+							   " pP   : rotate print modes\n"
+							   " T    : enter TextLog chat console\n"
+							   " @    : enter auto-refresh mode\n"
+							   " i    : insert hexpair\n"
+							   " q    : quit this mode and go back to the shell\n"
+							   " sS   : step / step over\n"
+							   " .    : seek entry or pc\n");
+				rz_cons_flush(core->cons);
+				rz_cons_any_key(core->cons, NULL);
 				break;
 			case 'i': {
 #if __UNIX__
@@ -82,15 +82,15 @@ static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 					rz_line_set_prompt(line, ":> ");
 				}
 				showcursor(core, true);
-				rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL);
+				rz_cons_fgets(core->cons, buf + 3, sizeof(buf) - 3, 0, NULL);
 				memcpy(buf, "wx ", 3);
 				if (buf[3]) {
 					char *res = rtrcmd(T, buf);
 					if (res) {
-						rz_cons_println(res);
+						rz_cons_println(core->cons, res);
 						free(res);
 					}
-					rz_cons_flush();
+					rz_cons_flush(core->cons);
 				}
 			} break;
 			case 's':
@@ -113,20 +113,20 @@ static bool rtr_visual(RzCore *core, TextLog T, const char *cmd) {
 					rz_line_set_prompt(line, ":> ");
 #endif
 					showcursor(core, true);
-					rz_cons_fgets(buf, sizeof(buf), 0, NULL);
+					rz_cons_fgets(core->cons, buf, sizeof(buf), 0, NULL);
 					if (*buf) {
 						rz_line_hist_add(line, buf);
 						char *res = rtrcmd(T, buf);
 						if (res) {
-							rz_cons_println(res);
+							rz_cons_println(core->cons, res);
 							free(res);
 						}
-						rz_cons_flush();
+						rz_cons_flush(core->cons);
 						ret = true;
 					} else {
 						ret = false;
 						// rz_cons_any_key ();
-						rz_cons_clear00();
+						rz_cons_clear00(core->cons);
 						showcursor(core, false);
 					}
 				} while (ret);
@@ -236,7 +236,7 @@ static void __rtr_shell(RzCore *core, int nth) {
 		} else {
 			char *cmdline = rz_str_newf("%d %s", nth, res);
 			rz_core_rtr_cmd(core, cmdline);
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			rz_line_hist_add(line, res);
 		}
 	}

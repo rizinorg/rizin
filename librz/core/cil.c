@@ -22,7 +22,7 @@ typedef struct il_print_t {
 #define p_tbl(x) ((RzTable *)x)
 #define p_pj(x)  ((PJ *)x)
 
-static void rzil_print_register_bool(bool value, ILPrint *p) {
+static void rzil_print_register_bool(RzCons *cons, bool value, ILPrint *p) {
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_strbuf_appendf(p_sb(p->ptr), " %s: %s", p->name, rz_str_bool(value));
@@ -34,12 +34,12 @@ static void rzil_print_register_bool(bool value, ILPrint *p) {
 		pj_kb(p_pj(p->ptr), p->name, value);
 		break;
 	default:
-		rz_cons_printf("%s\n", rz_str_bool(value));
+		rz_cons_printf(cons, "%s\n", rz_str_bool(value));
 		break;
 	}
 }
 
-static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
+static void rzil_print_register_bitv(RzCons *cons, RzBitVector *number, ILPrint *p) {
 	char *hex = rz_bv_as_hex_string(number, true);
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -52,13 +52,13 @@ static void rzil_print_register_bitv(RzBitVector *number, ILPrint *p) {
 		pj_ks(p_pj(p->ptr), p->name, hex);
 		break;
 	default:
-		rz_cons_printf("%s\n", hex);
+		rz_cons_printf(cons, "%s\n", hex);
 		break;
 	}
 	free(hex);
 }
 
-static void rzil_print_register_float(RzFloat *number, ILPrint *p) {
+static void rzil_print_register_float(RzCons *cons, RzFloat *number, ILPrint *p) {
 	char *hex = rz_float_as_hex_string(number, true);
 	switch (p->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -71,7 +71,7 @@ static void rzil_print_register_float(RzFloat *number, ILPrint *p) {
 		pj_ks(p_pj(p->ptr), p->name, hex);
 		break;
 	default:
-		rz_cons_printf("%s\n", hex);
+		rz_cons_printf(cons, "%s\n", hex);
 		break;
 	}
 	free(hex);
@@ -109,7 +109,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 
 	if (!var_name || !strcmp(var_name, "PC")) {
 		p.name = "PC";
-		rzil_print_register_bitv(vm->vm->pc, &p);
+		rzil_print_register_bitv(core->cons, vm->vm->pc, &p);
 	}
 
 	RzPVector *global_vars = rz_il_vm_get_all_vars(vm->vm, RZ_IL_VAR_KIND_GLOBAL);
@@ -128,13 +128,13 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 			}
 			switch (val->type) {
 			case RZ_IL_TYPE_PURE_BITVECTOR:
-				rzil_print_register_bitv(val->data.bv, &p);
+				rzil_print_register_bitv(core->cons, val->data.bv, &p);
 				break;
 			case RZ_IL_TYPE_PURE_BOOL:
-				rzil_print_register_bool(val->data.b->b, &p);
+				rzil_print_register_bool(core->cons, val->data.b->b, &p);
 				break;
 			case RZ_IL_TYPE_PURE_FLOAT:
-				rzil_print_register_float(val->data.f, &p);
+				rzil_print_register_float(core->cons, val->data.f, &p);
 				break;
 			default:
 				rz_warn_if_reached();
@@ -144,7 +144,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 				break;
 			}
 			if (rz_strbuf_length(p_sb(p.ptr)) > 95) {
-				rz_cons_printf("%s\n", rz_strbuf_get(p_sb(p.ptr)));
+				rz_cons_printf(core->cons, "%s\n", rz_strbuf_get(p_sb(p.ptr)));
 				rz_strbuf_fini(p_sb(p.ptr));
 			}
 		}
@@ -173,7 +173,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 		return;
 	}
 
-	rz_cons_printf("%s\n", out);
+	rz_cons_printf(core->cons, "%s\n", out);
 	free(out);
 }
 #undef p_sb
@@ -212,16 +212,21 @@ static bool step_handle_result(RzCore *core, RzAnalysisILStepResult r) {
 	return false;
 }
 
+typedef struct step_cond_ctx_t {
+	RzCore *core;
+	ut64 val;
+} StepCondCtx;
+
 static bool step_cond_n(RzAnalysisILVM *vm, void *user) {
-	if (rz_cons_is_breaked()) {
-		rz_cons_printf("Stepping was interrupted.\n");
+	StepCondCtx *ctx = (StepCondCtx *)user;
+	if (rz_interrupt_is_breaked(ctx->core->intr)) {
+		rz_cons_printf(ctx->core->cons, "Stepping was interrupted.\n");
 		return false;
 	}
-	ut64 *n = user;
-	if (!*n) {
+	if (!ctx->val) {
 		return false;
 	}
-	(*n)--;
+	ctx->val--;
 	return true;
 }
 
@@ -236,19 +241,24 @@ RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n) {
 	}
 	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg,
-		step_cond_n, &n);
+	StepCondCtx ctx = {
+		.core = core,
+		.val = n
+	};
+	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg, core->cons,
+		step_cond_n, &ctx);
 	return step_handle_result(core, r);
 }
 
 static bool step_cond_until(RzAnalysisILVM *vm, void *user) {
-	if (rz_cons_is_breaked()) {
-		rz_cons_printf("Stepping was interrupted.\n");
+	StepCondCtx *ctx = (StepCondCtx *)user;
+	ut64 until = ctx->val;
+	if (rz_interrupt_is_breaked(ctx->core->intr)) {
+		rz_cons_printf(ctx->core->cons, "Stepping was interrupted.\n");
 		return false;
 	}
-	ut64 *until = user;
 	ut64 pc = rz_bv_to_ut64(vm->vm->pc);
-	return pc != *until;
+	return pc != until;
 }
 
 /**
@@ -264,8 +274,12 @@ RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until) {
 	}
 	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg,
-		step_cond_until, &until);
+	StepCondCtx ctx = {
+		.core = core,
+		.val = until
+	};
+	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg, core->cons,
+		step_cond_until, &ctx);
 	return step_handle_result(core, r);
 }
 
@@ -282,9 +296,13 @@ RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 unti
 	}
 	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	StepCondCtx ctx = {
+		.core = core,
+		.val = until
+	};
 	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while_with_events(
-		core->analysis, il_vm, rreg,
-		step_cond_until, &until);
+		core->analysis, il_vm, rreg, core->cons,
+		step_cond_until, &ctx);
 	return step_handle_result(core, r);
 }
 
@@ -335,20 +353,20 @@ RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
 		}
 	}
 	if (!pj) {
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 	return true;
 }
 
-static inline void emit_span(const char *s, size_t n, const char *color) {
+static inline void emit_span(RzCons *cons, const char *s, size_t n, const char *color) {
 	if (n < 1) {
 		return;
 	}
 	if (color) {
-		rz_cons_printf("%s%.*s" Color_RESET, color, (int)n, s);
+		rz_cons_printf(cons, "%s%.*s" Color_RESET, color, (int)n, s);
 	} else {
-		rz_cons_printf("%.*s", (int)n, s);
+		rz_cons_printf(cons, "%.*s", (int)n, s);
 	}
 }
 
@@ -369,7 +387,7 @@ static inline void emit_span_to_strbuf(const char *s, size_t n, const char *colo
  * Emits only the body (no address prefix, no newline) with the same palette
  * as \c plf. A NULL or empty \p il_stmt emits nothing.
  */
-RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt) {
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt, RZ_NONNULL RzCons *cons) {
 	rz_return_if_fail(ctx);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
 		return;
@@ -382,13 +400,13 @@ RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE 
 		const char ch = il_stmt[i];
 
 		if (ch == '(' || ch == ')') {
-			emit_span(il_stmt + prev, i - prev, color);
-			rz_cons_printf("%s%c" Color_RESET, ctx->pal.meta, ch);
+			emit_span(cons, il_stmt + prev, i - prev, color);
+			rz_cons_printf(cons, "%s%c" Color_RESET, ctx->pal.meta, ch);
 			prev = i + 1;
 			color = (ch == '(') ? ctx->pal.flow : NULL;
 		} else if (ch == ' ') {
-			emit_span(il_stmt + prev, i - prev, color);
-			rz_cons_printf(" ");
+			emit_span(cons, il_stmt + prev, i - prev, color);
+			rz_cons_printf(cons, " ");
 			prev = i + 1;
 			color = NULL;
 		} else if (i == prev && prev > 0 && il_stmt[prev - 1] == ' ') {
@@ -396,13 +414,13 @@ RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE 
 		}
 	}
 
-	emit_span(il_stmt + prev, len - prev, color);
+	emit_span(cons, il_stmt + prev, len - prev, color);
 }
 
-static void core_colorify_il_statement(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
-	rz_core_il_colorize_body(ctx, il_stmt);
-	rz_cons_newline();
+static void core_colorify_il_statement(RzCons *cons, RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf(cons, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+	rz_core_il_colorize_body(ctx, il_stmt, cons);
+	rz_cons_newline(cons);
 }
 
 static void core_colorify_il_statement_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
@@ -498,10 +516,10 @@ static const char *core_il_get_token_color(RzILUnicodeColorifyState state, const
 	return color;
 }
 
-static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
-	rz_cons_printf("%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
+static void core_colorify_il_statement_unicode(RzCons *cons, RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr) {
+	rz_cons_printf(cons, "%s0x%" PFMT64x Color_RESET "%c", ctx->pal.label, addr, delim);
 	if (RZ_STR_ISEMPTY(il_stmt)) {
-		rz_cons_newline();
+		rz_cons_newline(cons);
 		return;
 	}
 
@@ -516,9 +534,9 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 		if (state != prev_state) {
 			const int plen = i - prev_i;
 			if (color) {
-				rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+				rz_cons_printf(cons, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
 			} else {
-				rz_cons_printf("%.*s", plen, il_stmt + prev_i);
+				rz_cons_printf(cons, "%.*s", plen, il_stmt + prev_i);
 			}
 
 			color = core_il_get_token_color(state, color, ctx);
@@ -531,12 +549,12 @@ static void core_colorify_il_statement_unicode(RzConsContext *ctx, const char *i
 	if (prev_i < len) {
 		const int plen = len - prev_i;
 		if (color) {
-			rz_cons_printf("%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
+			rz_cons_printf(cons, "%s%.*s" Color_RESET, color, plen, il_stmt + prev_i);
 		} else {
-			rz_cons_printf("%.*s", plen, il_stmt + prev_i);
+			rz_cons_printf(cons, "%.*s", plen, il_stmt + prev_i);
 		}
 	}
-	rz_cons_newline();
+	rz_cons_newline(cons);
 }
 
 static void core_colorify_il_statement_unicode_to_strbuf(RzConsContext *ctx, const char *il_stmt, const char delim, ut64 addr, RzStrBuf *sb) {
@@ -841,12 +859,12 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 		il_stmt = rz_strbuf_get(&sb);
 		if (colorize) {
 			if (unicode) {
-				core_colorify_il_statement_unicode(core->cons->context, il_stmt, delim, op->addr);
+				core_colorify_il_statement_unicode(core->cons, core->cons->context, il_stmt, delim, op->addr);
 			} else {
-				core_colorify_il_statement(core->cons->context, il_stmt, delim, op->addr);
+				core_colorify_il_statement(core->cons, core->cons->context, il_stmt, delim, op->addr);
 			}
 		} else {
-			rz_cons_printf("0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
+			rz_cons_printf(core->cons, "0x%" PFMT64x "%c%s\n", op->addr, delim, il_stmt);
 		}
 
 		if (ctx) {
@@ -854,7 +872,7 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 			char *report;
 			rz_il_validate_effect(op->il_op, ctx, NULL, &t, &report);
 			if (report) {
-				rz_cons_println(report);
+				rz_cons_println(core->cons, report);
 				free(report);
 			}
 		}

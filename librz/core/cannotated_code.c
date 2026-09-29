@@ -13,8 +13,9 @@
  * The function will print the output in console using the function rz_cons_printf();
  *
  * \param code Pointer to a RzAnnotatedCode.
+ * \param cons Poitner to RzCons.
  */
-RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code) {
+RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RzCons *cons) {
 	rz_return_if_fail(code);
 
 	PJ *pj = pj_new();
@@ -99,7 +100,7 @@ RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code) 
 	pj_end(pj);
 
 	pj_end(pj);
-	rz_cons_printf("%s\n", pj_string(pj));
+	rz_cons_printf(cons, "%s\n", pj_string(pj));
 	pj_free(pj);
 }
 
@@ -107,7 +108,7 @@ RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code) 
 #define PRINT_COLOR(x) \
 	do { \
 		if (cons->context->color_mode) { \
-			rz_cons_printf("%s", (x)); \
+			rz_cons_printf(cons, "%s", (x)); \
 		} \
 	} while (0)
 
@@ -134,19 +135,19 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 	}
 	width -= 8;
 
-	rz_cons_printf("    ");
+	rz_cons_printf(cons, "    ");
 	if (offset == UT64_MAX) {
-		rz_cons_print("          ");
+		rz_cons_print(cons, "          ");
 		while (width > 0) {
-			rz_cons_print(" ");
+			rz_cons_print(cons, " ");
 			width--;
 		}
 	} else {
 		PRINT_COLOR(PALETTE(offset) : Color_GREEN);
-		rz_cons_printf(fmt[width], offset);
+		rz_cons_printf(cons, fmt[width], offset);
 		PRINT_COLOR(Color_RESET);
 	}
-	rz_cons_printf("    |");
+	rz_cons_printf(cons, "    |");
 }
 
 /**
@@ -165,7 +166,7 @@ RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzA
 	rz_return_if_fail(cons && code);
 
 	if (code->annotations.len == 0) {
-		rz_cons_printf("%s\n", code->code);
+		rz_cons_printf(cons, "%s\n", code->code);
 		return;
 	}
 
@@ -238,7 +239,7 @@ RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzA
 				print_offset_in_binary_line_bar(code, offset, offset_width, cons);
 				line_idx++;
 			}
-			rz_cons_printf("%c", code->code[cur]);
+			rz_cons_printf(cons, "%c", code->code[cur]);
 		}
 
 		// (3/3)
@@ -257,7 +258,7 @@ RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzA
 				PRINT_COLOR(color);
 				line_idx++;
 			}
-			rz_cons_printf("%c", code->code[cur]);
+			rz_cons_printf(cons, "%c", code->code[cur]);
 		}
 		PRINT_COLOR(Color_RESET);
 	}
@@ -274,16 +275,22 @@ RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzA
 			print_offset_in_binary_line_bar(code, offset, offset_width, cons);
 			line_idx++;
 		}
-		rz_cons_printf("%c", code->code[cur]);
+		rz_cons_printf(cons, "%c", code->code[cur]);
 	}
 }
 
+typedef struct {
+	RzCons *cons;
+	RzAnnotatedCode *code;
+} AnnotatedCodePrintCtx;
+
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
-	RzAnnotatedCode *code = user;
+	AnnotatedCodePrintCtx *ctx = user;
+	RzAnnotatedCode *code = ctx->code;
 	const RzCodeAnnotation *annotation = val;
 	char *b64statement = rz_base64_encode_dyn((const ut8 *)(code->code + annotation->start),
 		annotation->end - annotation->start);
-	rz_cons_printf("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
+	rz_cons_printf(ctx->cons, "CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free(b64statement);
 	return true;
 }
@@ -296,8 +303,8 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
  *
  * \param code Pointer to a RzAnnotatedCode.
  */
-RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code) {
-	rz_return_if_fail(code);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code) {
+	rz_return_if_fail(cons && code);
 
 	RzCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new(NULL, NULL);
@@ -314,6 +321,10 @@ RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode
 		}
 		ht_up_update(ht, annotation->offset.offset, annotation);
 	}
-	ht_up_foreach(ht, foreach_offset_annotation, code);
+	AnnotatedCodePrintCtx ctx = {
+		.cons = cons,
+		.code = code,
+	};
+	ht_up_foreach(ht, foreach_offset_annotation, &ctx);
 	ht_up_free(ht);
 }

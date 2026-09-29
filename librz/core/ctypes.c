@@ -23,7 +23,7 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_list_foreach (list, iter, cc) {
-			rz_cons_println(cc);
+			rz_cons_println(core->cons, cc);
 		}
 	} break;
 	case RZ_OUTPUT_MODE_JSON: {
@@ -33,13 +33,13 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 			rz_core_analysis_cc_print(core, cc, pj);
 		}
 		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
+		rz_cons_printf(core->cons, "%s\n", pj_string(pj));
 		pj_free(pj);
 	} break;
 	case RZ_OUTPUT_MODE_LONG: {
 		rz_list_foreach (list, iter, cc) {
 			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			rz_cons_printf("%s\n", ccexpr);
+			rz_cons_printf(core->cons, "%s\n", ccexpr);
 			free(ccexpr);
 		}
 	} break;
@@ -80,13 +80,13 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
 			rz_vector_foreach (&btype->enum_data.cases, cas) {
-				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
+				rz_cons_printf(core->cons, "%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -109,7 +109,7 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(enumlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -168,13 +168,13 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 		break;
 	}
 	case RZ_OUTPUT_MODE_LONG: {
-		rz_cons_printf("union %s:\n", btype->name);
+		rz_cons_printf(core->cons, "union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
 			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
-				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
+				rz_cons_printf(core->cons, "\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
 				free(mtype);
 			}
 		}
@@ -182,7 +182,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -205,7 +205,7 @@ RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(unionlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -262,14 +262,14 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		break;
 	}
 	case RZ_OUTPUT_MODE_LONG: {
-		rz_cons_printf("struct %s:\n", btype->name);
+		rz_cons_printf(core->cons, "struct %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			ut64 offset = 0;
 			rz_vector_foreach (&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
-				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
+				rz_cons_printf(core->cons, "\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
 					memb->name, mtype, size, offset);
 				offset += size;
 				free(mtype);
@@ -279,7 +279,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -302,7 +302,7 @@ RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(structlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -349,11 +349,11 @@ RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, R
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf("%s = %s\n", btype->name, typestr);
+		rz_cons_printf(core->cons, "%s = %s\n", btype->name, typestr);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -377,7 +377,7 @@ RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(typedeflist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -472,7 +472,7 @@ RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multili
 
 // Function types
 
-RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
+RZ_IPI void rz_core_types_function_print(RZ_NONNULL RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(function);
 	RzCallable *callable = rz_type_func_get(typedb, function);
 	if (!callable) {
@@ -502,7 +502,7 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 	} break;
 	default: {
 		char *str = rz_type_callable_as_string(typedb, callable);
-		rz_cons_printf("%s;\n", str);
+		rz_cons_printf(cons, "%s;\n", str);
 		free(str);
 	} break;
 	}
@@ -524,12 +524,12 @@ RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (l, iter, name) {
-		rz_core_types_function_print(typedb, name, mode, pj);
+		rz_core_types_function_print(core->cons, typedb, name, mode, pj);
 	}
 	rz_list_free(l);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -540,7 +540,7 @@ static bool nonreturn_print(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (noretl, it, s) {
-		rz_cons_println(s);
+		rz_cons_println(core->cons, s);
 	}
 	return true;
 }
@@ -554,7 +554,7 @@ static bool nonreturn_print_json(RzCore *core, RzList /*<char *>*/ *noretl) {
 		pj_s(pj, s);
 	}
 	pj_end(pj);
-	rz_cons_println(pj_string(pj));
+	rz_cons_println(core->cons, pj_string(pj));
 	pj_free(pj);
 	return true;
 }
@@ -609,16 +609,16 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		pj_ks(pj, "format", fmt);
 		pj_ki(pj, "size", type_size);
 		pj_end(pj);
-		rz_cons_printf("%s", pj_string(pj));
+		rz_cons_printf(core->cons, "%s", pj_string(pj));
 		pj_free(pj);
 	} break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
+		rz_cons_printf(core->cons, "%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		// FIXME: Not really a standard format
 		// We should think about better representation by default here
-		rz_cons_printf("pf \"%s\"\n", fmt);
+		rz_cons_printf(core->cons, "pf \"%s\"\n", fmt);
 		break;
 	default:
 		break;
@@ -794,7 +794,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	rz_config_set_i(core->config, "io.cache", 1);
 	rz_config_set_i(core->config, "dbg.follow", 0);
 	ut64 oldoff = core->offset;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 
 	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
@@ -804,7 +804,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 		ut64 to = bb->addr + bb->size;
 		rz_reg_set_value(rreg, pc, at);
 		for (i = 0; at < to; i++) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				goto beach;
 			}
 			if (at < bb->addr) {
@@ -904,7 +904,7 @@ beach:
 	rz_analysis_esil_free(esil);
 	rz_reg_arena_pop(rreg);
 	rz_core_reg_update_flags(core);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	free(buf);
 }
 
@@ -939,20 +939,20 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
-			rz_cons_println(btype->name);
+			rz_cons_println(core->cons, btype->name);
 		}
 		break;
 	case RZ_OUTPUT_MODE_LONG:
 		rz_list_foreach (types, it, btype) {
 			ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
 			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
-			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
+			rz_cons_printf(core->cons, "%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
 		}
 		break;
 	default:
@@ -1094,17 +1094,17 @@ RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode) {
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
-			rz_cons_println(rz_type_typeclass_as_string(tc));
+			rz_cons_println(core->cons, rz_type_typeclass_as_string(tc));
 		}
 		break;
 	case RZ_OUTPUT_MODE_LONG:
 		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
-			rz_cons_printf("%s:\n", rz_type_typeclass_as_string(tc));
+			rz_cons_printf(core->cons, "%s:\n", rz_type_typeclass_as_string(tc));
 			RzList *types = rz_type_typeclass_get_all(typedb, tc);
 			RzListIter *it;
 			RzBaseType *btype;
 			rz_list_foreach (types, it, btype) {
-				rz_cons_printf("  %s\n", btype->name);
+				rz_cons_printf(core->cons, "  %s\n", btype->name);
 			}
 			rz_list_free(types);
 		}
@@ -1123,7 +1123,7 @@ RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode) {
 			rz_list_free(types);
 		}
 		char *s = rz_table_tostring(table);
-		rz_cons_print(s);
+		rz_cons_print(core->cons, s);
 		free(s);
 		rz_table_free(table);
 		break;
@@ -1143,7 +1143,7 @@ RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode) {
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 		break;
 	}

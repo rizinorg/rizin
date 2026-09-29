@@ -9,6 +9,7 @@
 #include <rz_cons.h>
 
 struct print_mark_t {
+	RzCons *cons;
 	RzMark *b;
 	PJ *pj;
 	RzTable *tbl;
@@ -24,7 +25,7 @@ static bool print_mark_name(RzMarkItem *bm, void *user) {
 			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
-	rz_cons_printf("%s\n", bm->name);
+	rz_cons_printf(u->cons, "%s\n", bm->name);
 	return true;
 }
 
@@ -56,7 +57,7 @@ static bool print_mark_range_name(RzMarkItem *bm, void *user) {
 			RZ_BETWEEN(bm->from, u->range_from, bm->to) || RZ_BETWEEN(bm->from, u->range_to, bm->to))) {
 		return true;
 	}
-	rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s\n",
+	rz_cons_printf(u->cons, "[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s\n",
 		bm->from, bm->to, bm->name);
 	return true;
 }
@@ -76,13 +77,14 @@ static bool print_mark_table(RzMarkItem *bm, void *user) {
 }
 
 static void mark_print(RzMark *b, RzCmdStateOutput *state,
-	ut64 range_from, ut64 range_to, bool in_range) {
+	ut64 range_from, ut64 range_to, bool in_range, RzCons *cons) {
 	rz_return_if_fail(b);
 	struct print_mark_t u = {
 		.b = b,
 		.in_range = in_range,
 		.range_from = range_from,
-		.range_to = range_to
+		.range_to = range_to,
+		.cons = cons
 	};
 
 	switch (state->mode) {
@@ -109,11 +111,11 @@ static void mark_print(RzMark *b, RzCmdStateOutput *state,
 	}
 }
 
-RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state) {
-	mark_print(b, state, UT64_MAX, UT64_MAX, false);
+RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons) {
+	mark_print(b, state, UT64_MAX, UT64_MAX, false, cons);
 }
 
 RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state,
-	ut64 range_from, ut64 range_to) {
-	mark_print(b, state, range_from, range_to, true);
+	ut64 range_from, ut64 range_to, RZ_NONNULL RzCons *cons) {
+	mark_print(b, state, range_from, range_to, true, cons);
 }

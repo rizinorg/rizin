@@ -45,7 +45,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	RzCore *core = u->core;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size(desc);
-	rz_cons_printf("%2d %c %s 0x%08" PFMT64x " ", desc->fd,
+	rz_cons_printf(core->cons, "%2d %c %s 0x%08" PFMT64x " ", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i(desc->perm), sz);
 	RzBarOptions opts = {
 		.unicode = rz_config_get_b(core->config, "scr.utf8"),
@@ -59,29 +59,29 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	};
 	// avoid divide-by-zero error when the total file size is zero.
 	int percent = u->fdsz == 0 ? 0 : sz * 100 / u->fdsz;
-	RzStrBuf *strbuf = rz_progressbar(&opts, percent, rz_cons_get_size(NULL) - 40);
+	RzStrBuf *strbuf = rz_progressbar(&opts, percent, rz_cons_get_size(core->cons, NULL) - 40);
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate progressbar\n");
 	} else {
 		char *bar = rz_strbuf_drain(strbuf);
-		rz_cons_print(bar);
+		rz_cons_print(core->cons, bar);
 		free(bar);
 	}
-	rz_cons_printf(" %s\n", desc->uri);
+	rz_cons_printf(core->cons, " %s\n", desc->uri);
 	return true;
 }
 
 static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
-	p->cb_printf("%d\n", desc->fd);
+	p->cb_printf(p->cons, "%d\n", desc->fd);
 	return true;
 }
 
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
-	p->cb_printf("%2d %c %s 0x%08" PFMT64x " %s\n", desc->fd,
+	p->cb_printf(p->cons, "%2d %c %s 0x%08" PFMT64x " %s\n", desc->fd,
 		(desc->io && (desc->io->desc == desc)) ? '*' : '-',
 		rz_str_rwx_i(desc->perm), rz_io_desc_size(desc), desc->uri);
 	return true;
@@ -262,9 +262,9 @@ RZ_IPI RzCmdStatus rz_open_maps_list_ascii_handler(RzCore *core, int argc, const
 	}
 	RzTable *table = rz_core_table(core);
 	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
-		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+		rz_cons_get_size(core->cons, NULL), rz_config_get_i(core->config, "scr.color"));
 	char *tablestr = rz_table_tostring(table);
-	rz_cons_printf("%s", tablestr);
+	rz_cons_printf(core->cons, "%s", tablestr);
 	rz_table_free(table);
 	rz_list_free(list);
 	free(tablestr);
@@ -545,10 +545,10 @@ RZ_IPI RzCmdStatus rz_open_maps_map_handler(RzCore *core, int argc, const char *
 static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map, bool seek_inside) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%d %d\n", map->fd, map->id);
+		rz_cons_printf(core->cons, "%d %d\n", map->fd, map->id);
 		break;
 	case RZ_OUTPUT_MODE_QUIETEST:
-		rz_cons_printf("0x%08" PFMT64x "\n", rz_io_map_get_from(map));
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", rz_io_map_get_from(map));
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -567,7 +567,7 @@ static void open_maps_show(RzCore *core, RzCmdStateOutput *state, RzIOMap *map, 
 			rz_io_map_get_from(map), rz_itv_end(map->itv), rz_str_rwx_i(map->perm), rz_str_get(map->name));
 		break;
 	default:
-		rz_cons_printf("%2d fd: %i +0x%08" PFMT64x " 0x%08" PFMT64x " %c 0x%08" PFMT64x " %s %s\n",
+		rz_cons_printf(core->cons, "%2d fd: %i +0x%08" PFMT64x " 0x%08" PFMT64x " %c 0x%08" PFMT64x " %s %s\n",
 			map->id, map->fd,
 			map->delta, rz_io_map_get_from(map), seek_inside ? '*' : '-', rz_io_map_get_to(map),
 			rz_str_rwx_i(map->perm), rz_str_get(map->name));
@@ -668,7 +668,7 @@ RZ_IPI RzCmdStatus rz_open_binary_list_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_open_binary_show_handler(RzCore *core, int argc, const char **argv) {
 	RzBinFile *bf = rz_bin_file_at(core->bin, core->offset);
 	if (bf) {
-		rz_cons_printf("%d\n", bf->id);
+		rz_cons_printf(core->cons, "%d\n", bf->id);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -695,9 +695,9 @@ RZ_IPI RzCmdStatus rz_open_binary_list_ascii_handler(RzCore *core, int argc, con
 	}
 	RzTable *table = rz_core_table(core);
 	rz_core_debug_listinfo_to_table(table, list, core->offset, core->blocksize,
-		rz_cons_get_size(NULL), rz_config_get_i(core->config, "scr.color"));
+		rz_cons_get_size(core->cons, NULL), rz_config_get_i(core->config, "scr.color"));
 	char *table_text = rz_table_tostring(table);
-	rz_cons_printf("\n%s\n", table_text);
+	rz_cons_printf(core->cons, "\n%s\n", table_text);
 	free(table_text);
 	rz_table_free(table);
 	rz_list_free(list);
@@ -782,7 +782,7 @@ RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const c
 		}
 		rz_list_foreach (binfile->xtr_data, iter_xtr, xtr_data) {
 			if (list_existing) {
-				rz_cons_printf("%s_%i_%s\n", xtr_data->metadata->arch, xtr_data->metadata->bits, xtr_data->metadata->machine);
+				rz_cons_printf(core->cons, "%s_%i_%s\n", xtr_data->metadata->arch, xtr_data->metadata->bits, xtr_data->metadata->machine);
 				continue;
 			}
 			RzList *selection = rz_str_split_duplist(argv[1], "_", 0);
@@ -798,7 +798,7 @@ RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const c
 					RZ_LOG_ERROR("Failed to backup and reset flag spaces. Refusing to switch object.\n");
 					return RZ_CMD_STATUS_ERROR;
 				}
-				rz_cons_printf("Backed up flag space into '%s'. You can restore the flags with the 'ko' command.\n", bak_file);
+				rz_cons_printf(core->cons, "Backed up flag space into '%s'. You can restore the flags with the 'ko' command.\n", bak_file);
 
 				bits = xtr_data->metadata->bits;
 				const char *mach = rz_list_length(selection) > 2 ? rz_list_get_n(selection, 2) : NULL;

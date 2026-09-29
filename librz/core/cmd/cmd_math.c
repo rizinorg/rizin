@@ -97,9 +97,9 @@ RZ_IPI RzCmdStatus rz_list_rizin_vars_handler(RzCore *core, int argc, const char
 		}
 		char *pad = rz_str_pad(' ', 6 - strlen(var->name));
 		if (wideOffsets) {
-			rz_cons_printf("%s %s 0x%016" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
+			rz_cons_printf(core->cons, "%s %s 0x%016" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		} else {
-			rz_cons_printf("%s %s 0x%08" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
+			rz_cons_printf(core->cons, "%s %s 0x%08" PFMT64x "\n", var->name, pad, rz_num_math(core->num, var->name));
 		}
 		free(pad);
 	}
@@ -134,7 +134,7 @@ static void calc_expr_print_typed(RzCore *core, RZ_BORROW const RzNumValue *v, R
 	rz_num_value_print_ex(v, &opts, sb);
 	char *block = rz_strbuf_drain(sb);
 	if (block) {
-		rz_cons_print(block);
+		rz_cons_print(core->cons, block);
 		free(block);
 	}
 }
@@ -185,27 +185,27 @@ static void calc_expr_print_ut64(RzCore *core, ut64 n, RZ_BORROW PJ *pj) {
 		pj_end(pj);
 	} else {
 		if (n >> 32) {
-			rz_cons_printf("int64   %" PFMT64d "\n", (st64)n);
-			rz_cons_printf("uint64  %" PFMT64u "\n", (ut64)n);
+			rz_cons_printf(core->cons, "int64   %" PFMT64d "\n", (st64)n);
+			rz_cons_printf(core->cons, "uint64  %" PFMT64u "\n", (ut64)n);
 		} else {
-			rz_cons_printf("int32   %d\n", (st32)n);
-			rz_cons_printf("uint32  %u\n", (ut32)n);
+			rz_cons_printf(core->cons, "int32   %d\n", (st32)n);
+			rz_cons_printf(core->cons, "uint32  %u\n", (ut32)n);
 		}
-		rz_cons_printf("hex     0x%" PFMT64x "\n", n);
-		rz_cons_printf("octal   0%" PFMT64o "\n", n);
-		rz_cons_printf("unit    %s\n", unit);
-		rz_cons_printf("segment %04x:%04x\n", s, a);
+		rz_cons_printf(core->cons, "hex     0x%" PFMT64x "\n", n);
+		rz_cons_printf(core->cons, "octal   0%" PFMT64o "\n", n);
+		rz_cons_printf(core->cons, "unit    %s\n", unit);
+		rz_cons_printf(core->cons, "segment %04x:%04x\n", s, a);
 		char *asnum = rz_num_as_string(NULL, n, false);
 		if (asnum) {
-			rz_cons_printf("string  \"%s\"\n", asnum);
+			rz_cons_printf(core->cons, "string  \"%s\"\n", asnum);
 			free(asnum);
 		}
-		rz_cons_printf("fvalue  %.1lf\n", core->num->fvalue);
-		rz_cons_printf("float   %ff\n", f);
-		rz_cons_printf("double  %lf\n", d);
-		rz_cons_printf("binary  0b%s\n", out);
+		rz_cons_printf(core->cons, "fvalue  %.1lf\n", core->num->fvalue);
+		rz_cons_printf(core->cons, "float   %ff\n", f);
+		rz_cons_printf(core->cons, "double  %lf\n", d);
+		rz_cons_printf(core->cons, "binary  0b%s\n", out);
 		rz_num_to_trits(out, n);
-		rz_cons_printf("trits   0t%s\n", out);
+		rz_cons_printf(core->cons, "trits   0t%s\n", out);
 	}
 }
 
@@ -299,7 +299,7 @@ RZ_IPI RzCmdStatus rz_generate_random_number_handler(RzCore *core, int argc, con
 	}
 
 	core->num->value = (ut64)(low + rz_num_rand64(high - low));
-	rz_cons_printf("0x%" PFMT64x "\n", core->num->value);
+	rz_cons_printf(core->cons, "0x%" PFMT64x "\n", core->num->value);
 
 	return RZ_CMD_STATUS_OK;
 }
@@ -308,7 +308,7 @@ RZ_IPI RzCmdStatus rz_print_binary_handler(RzCore *core, int argc, const char **
 	char out[128] = RZ_EMPTY;
 	ut64 n = rz_num_math(core->num, argv[1]);
 	rz_num_to_bits(out, n);
-	rz_cons_printf("%sb\n", out);
+	rz_cons_printf(core->cons, "%sb\n", out);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -318,7 +318,7 @@ RZ_IPI RzCmdStatus rz_base64_encode_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("Out of memory!\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(buf);
+	rz_cons_println(core->cons, buf);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
@@ -329,7 +329,7 @@ RZ_IPI RzCmdStatus rz_base64_decode_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("Base64 string is invalid\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println((char *)buf);
+	rz_cons_println(core->cons, (char *)buf);
 	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
@@ -361,7 +361,7 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 		const char *perm = rz_str_rwx_i(map->perm);
 		switch (state->mode) {
 		default:
-			rz_cons_printf("0x%" PFMT64x " 0x%" PFMT64x "\n", from, to);
+			rz_cons_printf(core->cons, "0x%" PFMT64x " 0x%" PFMT64x "\n", from, to);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -384,7 +384,7 @@ RZ_IPI RzCmdStatus rz_print_boundaries_prot_handler(RzCore *core, int argc, cons
 
 RZ_IPI RzCmdStatus rz_print_djb2_hash_handler(RzCore *core, int argc, const char **argv) {
 	ut32 hash = (ut32)rz_str_djb2_hash(argv[1]);
-	rz_cons_printf("0x%08x\n", hash);
+	rz_cons_printf(core->cons, "0x%08x\n", hash);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -392,14 +392,14 @@ RZ_IPI RzCmdStatus rz_print_bitstring_handler(RzCore *core, int argc, const char
 	ut64 n = rz_num_get(core->num, argv[1]);
 	char out[128] = RZ_EMPTY;
 	rz_str_bits(out, (const ut8 *)&n, sizeof(n) * 8, argv[2]);
-	rz_cons_println(out);
+	rz_cons_println(core->cons, out);
 
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_eval_expr_print_octal_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n = rz_num_math(core->num, argv[1]);
-	rz_cons_printf("0%" PFMT64o "\n", n);
+	rz_cons_printf(core->cons, "0%" PFMT64o "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -407,7 +407,7 @@ RZ_IPI RzCmdStatus rz_num_to_units_handler(RzCore *core, int argc, const char **
 	char unit[8];
 	ut64 n = rz_num_math(core->num, argv[1]);
 	rz_num_units(unit, sizeof(unit), n);
-	rz_cons_println(unit);
+	rz_cons_println(core->cons, unit);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -422,7 +422,7 @@ RZ_IPI RzCmdStatus rz_show_value_handler(RzCore *core, int argc, const char **ar
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%" PFMT64x "\n", n);
+	rz_cons_printf(core->cons, "0x%" PFMT64x "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -432,7 +432,7 @@ RZ_IPI RzCmdStatus rz_show_value_hex_handler(RzCore *core, int argc, const char 
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%08" PFMT64x "\n", n); // differs from %v here 0x%08
+	rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", n); // differs from %v here 0x%08
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -442,7 +442,7 @@ RZ_IPI RzCmdStatus rz_show_value_i1_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%d\n", (st8)(n & UT8_MAX));
+	rz_cons_printf(core->cons, "%d\n", (st8)(n & UT8_MAX));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -452,7 +452,7 @@ RZ_IPI RzCmdStatus rz_show_value_i2_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%d\n", (st16)(n & UT16_MAX));
+	rz_cons_printf(core->cons, "%d\n", (st16)(n & UT16_MAX));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -462,7 +462,7 @@ RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%d\n", (st32)(n & UT32_MAX));
+	rz_cons_printf(core->cons, "%d\n", (st32)(n & UT32_MAX));
 	return RZ_CMD_STATUS_OK;
 }
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv) {
@@ -471,7 +471,7 @@ RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char *
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%" PFMT64d "\n", (st64)(n & UT64_MAX));
+	rz_cons_printf(core->cons, "%" PFMT64d "\n", (st64)(n & UT64_MAX));
 	return RZ_CMD_STATUS_OK;
 }
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv) {
@@ -480,7 +480,7 @@ RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char 
 		RZ_LOG_ERROR("core: RzNum ERROR: Division by Zero\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%" PFMT64d "\n", n);
+	rz_cons_printf(core->cons, "%" PFMT64d "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -562,14 +562,14 @@ err:
 RZ_IPI RzCmdStatus rz_calculate_string_length_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	core->num->value = strlen(argv[1]);
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		rz_cons_printf("%" PFMT64d "\n", core->num->value);
+		rz_cons_printf(core->cons, "%" PFMT64d "\n", core->num->value);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_calc_expr_show_hex_handler(RzCore *core, int argc, const char **argv) {
 	ut64 n = rz_num_math(core->num, argv[1]);
-	rz_cons_printf("%" PFMT64x "\n", n);
+	rz_cons_printf(core->cons, "%" PFMT64x "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -577,9 +577,9 @@ RZ_IPI RzCmdStatus rz_ascii_to_hex_handler(RzCore *core, int argc, const char **
 	const char *str = argv[1];
 	int n = strlen(str);
 	for (int i = 0; i < n; i++) {
-		rz_cons_printf("%02x", str[i]);
+		rz_cons_printf(core->cons, "%02x", str[i]);
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -587,9 +587,9 @@ RZ_IPI RzCmdStatus rz_numeric_expr_to_hex_handler(RzCore *core, int argc, const 
 	ut64 n = rz_num_math(core->num, argv[1]);
 	int bits = rz_num_to_bits(NULL, n) / 8;
 	for (int i = 0; i < bits; i++) {
-		rz_cons_printf("%02x", (ut8)((n >> (i * 8)) & 0xff));
+		rz_cons_printf(core->cons, "%02x", (ut8)((n >> (i * 8)) & 0xff));
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -599,7 +599,7 @@ RZ_IPI RzCmdStatus rz_hex_to_ascii_handler(RzCore *core, int argc, const char **
 		int len = rz_hex_str2bin(argv[1], out);
 		if (len >= 0) {
 			out[len] = 0;
-			rz_cons_println((const char *)out);
+			rz_cons_println(core->cons, (const char *)out);
 		} else {
 			RZ_LOG_ERROR("core: Error parsing the hexpair string\n");
 		}
@@ -622,8 +622,8 @@ RZ_IPI RzCmdStatus rz_generate_sequence_handler(RzCore *core, int argc, const ch
 	}
 
 	for (; from <= to; from += step)
-		rz_cons_printf("%" PFMT64d " ", from);
-	rz_cons_newline();
+		rz_cons_printf(core->cons, "%" PFMT64d " ", from);
+	rz_cons_newline(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -631,9 +631,9 @@ RZ_IPI RzCmdStatus rz_phys2virt_handler(RzCore *core, int argc, const char **arg
 	ut64 n = argc == 2 ? rz_num_math(core->num, argv[1]) : core->offset;
 	ut64 vaddr = rz_io_p2v(core->io, n);
 	if (vaddr == UT64_MAX) {
-		rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
+		rz_cons_printf(core->cons, "no map at 0x%08" PFMT64x "\n", n);
 	} else {
-		rz_cons_printf("0x%08" PFMT64x "\n", vaddr);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", vaddr);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -642,9 +642,9 @@ RZ_IPI RzCmdStatus rz_virt2phys_handler(RzCore *core, int argc, const char **arg
 	ut64 n = argc == 2 ? rz_num_math(core->num, argv[1]) : core->offset;
 	ut64 paddr = rz_io_v2p(core->io, n);
 	if (paddr == UT64_MAX) {
-		rz_cons_printf("no map at 0x%08" PFMT64x "\n", n);
+		rz_cons_printf(core->cons, "no map at 0x%08" PFMT64x "\n", n);
 	} else {
-		rz_cons_printf("0x%08" PFMT64x "\n", paddr);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", paddr);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -655,13 +655,13 @@ RZ_IPI RzCmdStatus rz_yank_hud_file_handler(RzCore *core, int argc, const char *
 }
 
 static bool get_prompt(RzCore *core, char *prompt, char *output, size_t output_sz) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return false;
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	rz_line_set_prompt(core->cons->line, prompt);
-	rz_cons_fgets(output, output_sz, 0, NULL);
+	rz_cons_fgets(core->cons, output, output_sz, 0, NULL);
 	output[output_sz - 1] = 0;
 	return true;
 }
@@ -678,7 +678,7 @@ RZ_IPI void rz_core_prompt_highlight(RzCore *core) {
 		return;
 	}
 
-	rz_cons_highlight(highlight_str);
+	rz_cons_highlight(core->cons, highlight_str);
 }
 
 static RzCmdStatus prompt_handler(RzCore *core, int argc, const char **argv, bool echo) {
@@ -691,9 +691,9 @@ static RzCmdStatus prompt_handler(RzCore *core, int argc, const char **argv, boo
 
 	rz_core_yank_set_str(core, RZ_CORE_FOREIGN_ADDR, foo);
 	core->num->value = rz_num_math(core->num, foo);
-	rz_cons_set_raw(0);
+	rz_cons_set_raw(core->cons, 0);
 	if (echo) {
-		rz_cons_printf("%s\n", foo);
+		rz_cons_printf(core->cons, "%s\n", foo);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -707,12 +707,12 @@ RZ_IPI RzCmdStatus rz_input_prompt_echo_handler(RzCore *core, int argc, const ch
 }
 
 static RzCmdStatus yesno_handler(RzCore *core, int argc, const char **argv, const char *yn) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	core->num->value = rz_cons_yesno(0, "%s? (%s) ", argv[1], yn);
-	rz_cons_set_raw(0);
+	core->num->value = rz_cons_yesno(core->cons, 0, "%s? (%s) ", argv[1], yn);
+	rz_cons_set_raw(core->cons, 0);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -725,43 +725,43 @@ RZ_IPI RzCmdStatus rz_input_yesno_yes_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_input_any_key_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	rz_cons_any_key(NULL);
-	rz_cons_set_raw(0);
+	rz_cons_any_key(core->cons, NULL);
+	rz_cons_set_raw(core->cons, 0);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_input_yank_hud_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	core->num->value = rz_core_yank_hud_path(core, argv[1], 0) == true;
-	rz_cons_set_raw(0);
+	rz_cons_set_raw(core->cons, 0);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_input_msg_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	rz_cons_message(argv[1]);
-	rz_cons_set_raw(0);
+	rz_cons_message(core->cons, argv[1]);
+	rz_cons_set_raw(core->cons, 0);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_input_conditional_handler(RzCore *core, int argc, const char **argv) {
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("core: Not running in interactive mode\n");
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	core->num->value = !rz_num_conditional(core->num, argv[1]);
-	rz_cons_printf("%s\n", rz_str_bool(!core->num->value));
-	rz_cons_set_raw(0);
+	rz_cons_printf(core->cons, "%s\n", rz_str_bool(!core->num->value));
+	rz_cons_set_raw(core->cons, 0);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -772,7 +772,7 @@ RZ_IPI RzCmdStatus rz_get_addr_references_handler(RzCore *core, int argc, const 
 		RZ_LOG_ERROR("core: Cannot get refs\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(rstr);
+	rz_cons_println(core->cons, rstr);
 	free(rstr);
 	return RZ_CMD_STATUS_OK;
 }

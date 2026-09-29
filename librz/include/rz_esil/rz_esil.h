@@ -266,12 +266,13 @@ RZ_API void rz_analysis_esil_mem_ro(RzAnalysisEsil *esil, int mem_readonly);
 RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 
 /* ESIL trace */
+struct rz_cons_t; // forward declaration
 RZ_API RZ_BORROW void /*RzILTraceInstruction*/ *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE const char *esil_expr);
-RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil);
-RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx);
+RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil, RZ_NONNULL struct rz_cons_t *cons);
+RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx, RZ_NONNULL struct rz_cons_t *cons);
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx);
 
 #ifdef __cplusplus

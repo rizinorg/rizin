@@ -531,7 +531,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		if (files) {
 			ut32 i = 0;
 			rz_list_foreach (files, iter, name) {
-				io->cb_printf("%d %s\n", i, name);
+				io->cb_printf(io->cb_printf_user, "%d %s\n", i, name);
 				i++;
 			}
 			rz_list_free(files);

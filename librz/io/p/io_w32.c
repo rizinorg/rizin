@@ -73,7 +73,7 @@ static RzIODesc *w32__open(RzIO *io, const char *pathname, int rw, int mode) {
 static char *w32__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (io && fd && fd->data && cmd && !strcmp(cmd, "winbase")) {
 		RzIOW32 *w32 = (RzIOW32 *)fd->data;
-		io->cb_printf("%" PFMT64u, w32->winbase);
+		io->cb_printf(io->cb_printf_user, "%" PFMT64u, w32->winbase);
 	}
 	return NULL;
 }

@@ -4,7 +4,7 @@
 #include <rz_core.h>
 #include <rz_util/rz_iterator.h>
 
-static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCryptoPlugin *plugin) {
+static RzCmdStatus core_crypto_plugin_print(RzCons *cons, RzCmdStateOutput *state, const RzCryptoPlugin *plugin) {
 	const char *name = rz_str_get(plugin->name);
 	const char *license = rz_str_get(plugin->license);
 	const char *author = rz_str_get(plugin->author);
@@ -13,7 +13,7 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(name);
+		rz_cons_println(cons, name);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -24,7 +24,7 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-14s %-10s %-24s %s\n", name, license, author, description);
+		rz_cons_printf(cons, "%-14s %-10s %-24s %s\n", name, license, author, description);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "ssss", name, license, author, description);
@@ -36,7 +36,7 @@ static RzCmdStatus core_crypto_plugin_print(RzCmdStateOutput *state, const RzCry
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput *state, RZ_NONNULL RzCons *cons) {
 	rz_return_val_if_fail(cry, RZ_CMD_STATUS_ERROR);
 
 	rz_cmd_state_output_array_start(state);
@@ -54,7 +54,7 @@ RZ_API RzCmdStatus rz_core_crypto_plugins_print(RzCrypto *cry, RzCmdStateOutput 
 	RzListIter *it;
 	RzCryptoPlugin *plugin;
 	rz_list_foreach (plugin_list, it, plugin) {
-		status = core_crypto_plugin_print(state, plugin);
+		status = core_crypto_plugin_print(cons, state, plugin);
 		if (status != RZ_CMD_STATUS_OK) {
 			break;
 		}

@@ -343,7 +343,7 @@ static void il_events(RzILVM *vm, RzStrBuf *sb) {
 
 static RzAnalysisILStepResult analysis_il_vm_step_while(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	bool with_events, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
+	bool with_events, RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
 
 	rz_return_val_if_fail(analysis && vm, false);
 	RzAnalysisPlugin *cur = analysis->cur;
@@ -385,12 +385,12 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
 		rz_strbuf_append(&sb, "\n");
 		il_events(vm->vm, &sb);
 
-		rz_cons_printf("0x%08" PFMT64x " [", addr);
+		rz_cons_printf(cons, "0x%08" PFMT64x " [", addr);
 		for (int i = 0; i < op.size; ++i) {
-			rz_cons_printf("%02x", code[i]);
+			rz_cons_printf(cons, "%02x", code[i]);
 		}
-		rz_cons_printf("] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
-		rz_cons_flush();
+		rz_cons_printf(cons, "] %s\n%s\n", op.mnemonic, rz_strbuf_get(&sb));
+		rz_cons_flush(cons);
 		rz_strbuf_fini(&sb);
 		rz_analysis_op_fini(&op);
 	}
@@ -419,9 +419,9 @@ static RzAnalysisILStepResult analysis_il_vm_step_while(
  *             - RZ_ANALYSIS_IL_STEP_INVALID: Invalid arguments or state resulted in undefined behavior.
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RzCons *cons,
 	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
-	return analysis_il_vm_step_while(analysis, vm, reg, false, cond, user);
+	return analysis_il_vm_step_while(analysis, vm, reg, false, cons, cond, user);
 }
 
 /**
@@ -443,9 +443,9 @@ RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
  *             - RZ_ANALYSIS_IL_STEP_INVALID: Invalid arguments or state resulted in undefined behavior.
  */
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RzCons *cons,
 	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user) {
-	return analysis_il_vm_step_while(analysis, vm, reg, true, cond, user);
+	return analysis_il_vm_step_while(analysis, vm, reg, true, cons, cond, user);
 }
 
 static bool step_cond_once(RzAnalysisILVM *vm, void *user) {
@@ -466,9 +466,9 @@ static bool step_cond_once(RzAnalysisILVM *vm, void *user) {
  *
  * \return and indicator for which error occured, if any
  */
-RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg) {
+RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RzCons *cons) {
 	bool stepped = false;
-	return rz_analysis_il_vm_step_while(analysis, vm, reg, step_cond_once, &stepped);
+	return rz_analysis_il_vm_step_while(analysis, vm, reg, cons, step_cond_once, &stepped);
 }
 
 /// @}

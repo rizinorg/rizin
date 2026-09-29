@@ -4,7 +4,7 @@
 
 #include <rz_cons.h>
 
-static bool gethtmlrgb(const char *str, char *buf) {
+static bool gethtmlrgb(RzCons *cons, const char *str, char *buf) {
 	ut8 r = 0, g = 0, b = 0;
 	if (rz_cons_rgb_parse(str, &r, &g, &b, 0)) {
 		sprintf(buf, "#%02x%02x%02x", r, g, b);
@@ -45,7 +45,7 @@ static const char *gethtmlbrightcolor(const char ptrch) {
 }
 
 // TODO: move into rz_util/str
-RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
+RZ_API char *rz_cons_html_filter(RZ_NONNULL RzCons *cons, const char *ptr, int *newlen) {
 	const char *str = ptr;
 	int esc = 0;
 	bool inv = false;
@@ -155,20 +155,20 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				continue;
 			} else if (!strncmp(ptr, "48;5;", 5) || !strncmp(ptr, "48;2;", 5)) {
 				const char *end = strchr(ptr, 'm');
-				gethtmlrgb(ptr, background_color);
+				gethtmlrgb(cons, ptr, background_color);
 				need_to_set = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (!strncmp(ptr, "38;5;", 5) || !strncmp(ptr, "38;2;", 5)) {
 				const char *end = strchr(ptr, 'm');
-				gethtmlrgb(ptr, text_color);
+				gethtmlrgb(cons, ptr, text_color);
 				need_to_set = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
 			} else if (ptr[0] == '0' && ptr[1] == ';' && ptr[2] == '0') {
-				rz_cons_gotoxy(0, 0);
+				rz_cons_gotoxy(cons, 0, 0);
 				ptr += 4;
 				esc = 0;
 				str = ptr;
