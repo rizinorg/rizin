@@ -11,25 +11,24 @@
  */
 RZ_API size_t rz_il_global_idx_lookup(const RzILGlobalIdxMapEntry *table, size_t tbl_entries, const char *global) {
 	rz_return_val_if_fail(table && tbl_entries && global, SIZE_MAX);
+	if (tbl_entries == 1) {
+		return RZ_STR_EQ(global, table[0].global_name) ? table[0].idx : SIZE_MAX;
+	}
 
 	size_t low = 0;
-	size_t hi = tbl_entries - 1;
+	size_t hi = tbl_entries;
 
-	do {
-		size_t mid = (low + hi) >> 1;
-		if (strcmp(table[mid].global_name, global) == 0) {
+	while (low < hi) {
+		size_t mid = low + ((hi - low) >> 1);
+		int d = strcmp(global, table[mid].global_name);
+		if (d == 0) {
 			return table[mid].idx;
-		}
-		if (low == hi) {
-			break;
-		}
-		if (mid < tbl_entries && strcmp(table[mid].global_name, global) > 0) {
+		} else if (d > 0) {
 			low = mid + 1;
+		} else {
+			hi = mid;
 		}
-		if (mid < tbl_entries && strcmp(table[mid].global_name, global) < 0) {
-			hi = mid - 1;
-		}
-	} while (low <= hi);
+	}
 
 	RZ_LOG_ERROR("Could not find unique index for '%s'. The implementation is broken.\n", global);
 	return SIZE_MAX;
