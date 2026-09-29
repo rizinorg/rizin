@@ -313,6 +313,100 @@ static bool test_rz_big_mul(void) {
 	mu_end;
 }
 
+static bool test_rz_big_mul_multiword(void) {
+	RzNumBig *a = rz_big_new();
+	RzNumBig *b = rz_big_new();
+	RzNumBig *c = rz_big_new();
+	RzNumBig *d = rz_big_new();
+	RzNumBig *zero = rz_big_new();
+	// 2^4096 - 1, the widest value the fixed-size representation holds.
+	char ones[2 + 2 * RZ_BIG_WORD_SIZE * RZ_BIG_ARRAY_SIZE + 1];
+	ones[0] = '0';
+	ones[1] = 'x';
+	memset(ones + 2, 'f', sizeof(ones) - 3);
+	ones[sizeof(ones) - 1] = '\0';
+	char *str;
+
+	// Every partial product carries into the next word.
+	rz_big_from_hexstr(a, "0xffffffffffffffffffffffffffffffff");
+	rz_big_mul(c, a, a);
+	str = rz_big_to_hexstr(c);
+	mu_assert_streq_free(str,
+		"0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001",
+		"(2^128 - 1)^2");
+
+	// Zero words inside the operands. The two operands take different paths,
+	// so the product must not depend on their order.
+	rz_big_from_hexstr(a, "0x1000000000000000000000001");
+	rz_big_from_hexstr(b, "0x10000000000000003");
+	rz_big_mul(c, a, b);
+	str = rz_big_to_hexstr(c);
+	mu_assert_streq_free(str, "0x10000000000000003000000010000000000000003",
+		"(2^96 + 1) * (2^64 + 3)");
+	rz_big_mul(d, b, a);
+	mu_assert_eq(rz_big_cmp(d, c), 0, "(2^64 + 3) * (2^96 + 1)");
+
+	// Words of a previous, wider value must not survive in the destination.
+	rz_big_from_hexstr(c, ones);
+	rz_big_from_int(a, 3);
+	rz_big_from_int(b, 5);
+	rz_big_mul(c, a, b);
+	str = rz_big_to_hexstr(c);
+	mu_assert_streq_free(str, "0xf", "destination is overwritten");
+
+	// Multiplication by zero is zero, and zero is never negative.
+	rz_big_from_int(a, -5);
+	rz_big_from_int(b, 0);
+	rz_big_mul(c, a, b);
+	mu_assert_eq(rz_big_cmp(c, zero), 0, "-5 * 0");
+
+	// The product wraps at the fixed width.
+	rz_big_from_hexstr(a, ones);
+	rz_big_mul(c, a, a);
+	str = rz_big_to_hexstr(c);
+	mu_assert_streq_free(str, "0x1", "(2^4096 - 1)^2 wraps to 1");
+	rz_big_from_int(b, 2);
+	rz_big_mul(c, a, b);
+	str = rz_big_to_hexstr(c);
+	ones[sizeof(ones) - 2] = 'e';
+	mu_assert_streq_free(str, ones, "(2^4096 - 1) * 2 wraps to 2^4096 - 2");
+	rz_big_mul(d, b, a);
+	mu_assert_eq(rz_big_cmp(d, c), 0, "2 * (2^4096 - 1) wraps to 2^4096 - 2");
+	rz_big_from_int(a, 2);
+	rz_big_from_int(b, 4095);
+	rz_big_pow(c, a, b);
+	rz_big_from_int(b, -2);
+	rz_big_mul(d, b, c);
+	mu_assert_eq(rz_big_cmp(d, zero), 0, "-2 * 2^4095 wraps to 0");
+	rz_big_mul(c, c, b);
+	mu_assert_eq(rz_big_cmp(c, zero), 0, "2^4095 * -2 wraps to 0");
+
+	// The destination may alias either operand, as rz_big_pow() relies on.
+	rz_big_from_hexstr(a, "0xffffffffffffffffffffffffffffffff");
+	rz_big_from_int(b, -3);
+	rz_big_mul(a, a, b);
+	str = rz_big_to_hexstr(a);
+	mu_assert_streq_free(str, "-0x2fffffffffffffffffffffffffffffffd", "c aliases a");
+	rz_big_from_int(a, -3);
+	rz_big_from_hexstr(b, "0xffffffffffffffffffffffffffffffff");
+	rz_big_mul(b, a, b);
+	str = rz_big_to_hexstr(b);
+	mu_assert_streq_free(str, "-0x2fffffffffffffffffffffffffffffffd", "c aliases b");
+	rz_big_from_hexstr(a, "0xffffffffffffffffffffffffffffffff");
+	rz_big_mul(a, a, a);
+	str = rz_big_to_hexstr(a);
+	mu_assert_streq_free(str,
+		"0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001",
+		"c aliases a and b");
+
+	rz_big_free(a);
+	rz_big_free(b);
+	rz_big_free(c);
+	rz_big_free(d);
+	rz_big_free(zero);
+	mu_end;
+}
+
 static bool test_rz_big_div(void) {
 	RzNumBig *a = rz_big_new();
 	RzNumBig *b = rz_big_new();
@@ -752,6 +846,7 @@ static int all_tests(void) {
 	mu_run_test(test_rz_big_add);
 	mu_run_test(test_rz_big_sub);
 	mu_run_test(test_rz_big_mul);
+	mu_run_test(test_rz_big_mul_multiword);
 	mu_run_test(test_rz_big_div);
 	mu_run_test(test_rz_big_divmod);
 	mu_run_test(test_rz_big_mod);
