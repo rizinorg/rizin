@@ -35,6 +35,11 @@ static bool test_rz_big_from_to_hexstr(void) {
 	str = rz_big_to_hexstr(a);
 	mu_assert_streq_free(str, "-0x7fff", "Failed rz_big_to_hexstr");
 
+	// Zero is owned by the caller like any other result.
+	rz_big_from_int(a, 0);
+	str = rz_big_to_hexstr(a);
+	mu_assert_streq_free(str, "0x0", "rz_big_to_hexstr zero");
+
 	rz_big_free(a);
 	mu_end;
 }

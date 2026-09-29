@@ -40,7 +40,7 @@ RZ_API void rz_big_fini(RzNumBig *b);
 RZ_API void rz_big_from_int(RzNumBig *b, st64 v);
 RZ_API st64 rz_big_to_int(RzNumBig *b);
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str);
-RZ_API char *rz_big_to_hexstr(RzNumBig *b);
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b);
 RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b);
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src);
 

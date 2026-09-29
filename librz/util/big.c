@@ -130,7 +130,14 @@ RZ_API void rz_big_from_hexstr(RzNumBig *n, const char *str) {
 	}
 }
 
-RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
+/**
+ * \brief Format a big number as a hexadecimal string.
+ *
+ * \param b Value to render
+ * \return Owned "0x"-prefixed string (leading '-' for negatives, "0x0" for
+ *         zero), or NULL on allocation failure
+ */
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b) {
 	rz_return_val_if_fail(b, NULL);
 
 	int j = RZ_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
@@ -138,10 +145,11 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	size_t k = 0; /* Leading zero's amount */
 	size_t z, last_z = 2 * RZ_BIG_WORD_SIZE;
 
-	for (; b->array[j] == 0 && j >= 0; j--) {
+	for (; j >= 0 && b->array[j] == 0; j--) {
 	}
 	if (j == -1) {
-		return "0x0";
+		// Callers free the result, so zero cannot be a string literal.
+		return rz_str_dup("0x0");
 	}
 
 	size_t size = 3 + 2 * RZ_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0) ? 0 : 1);
