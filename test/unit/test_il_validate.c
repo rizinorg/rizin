@@ -112,7 +112,7 @@ static bool test_il_validate_pure_let() {
 	// bound
 	op = rz_il_op_new_let(
 		"x", rz_il_op_new_b0(),
-		rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE));
+		rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bool()), "sort");
@@ -126,7 +126,7 @@ static bool test_il_validate_pure_let() {
 			"y", rz_il_op_new_bitv_from_ut64(32, 123),
 			rz_il_op_new_let(
 				"x", rz_il_op_new_bitv_from_ut64(42, 321),
-				rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE))));
+				rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE))));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(42)), "sort");
@@ -140,7 +140,7 @@ static bool test_il_validate_pure_let() {
 			"y", rz_il_op_new_bitv_from_ut64(32, 123),
 			rz_il_op_new_let(
 				"x", rz_il_op_new_bitv_from_ut64(42, 321),
-				rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE))));
+				rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL_PURE))));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_bv(32)), "sort");
@@ -151,7 +151,7 @@ static bool test_il_validate_pure_let() {
 	// invalid cases
 	op = rz_il_op_new_let(
 		"x", rz_il_op_new_b0(),
-		rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL));
+		rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "valid");
 	free(report);
@@ -159,7 +159,7 @@ static bool test_il_validate_pure_let() {
 
 	op = rz_il_op_new_let(
 		"x", rz_il_op_new_b0(),
-		rz_il_op_new_var("x", RZ_IL_VAR_KIND_GLOBAL));
+		rz_il_op_new_var("x", 0, RZ_IL_VAR_KIND_GLOBAL));
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "valid");
 	free(report);
@@ -173,7 +173,7 @@ static bool test_il_validate_pure_var() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 	rz_il_validate_global_context_add_var(ctx, "y", rz_il_sort_pure_bv(42));
 
-	RzILOpPure *op = rz_il_op_new_var("y", RZ_IL_VAR_KIND_GLOBAL);
+	RzILOpPure *op = rz_il_op_new_var("y", 0, RZ_IL_VAR_KIND_GLOBAL);
 	RzILSortPure sort;
 	RzILValidateReport report;
 	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
@@ -184,8 +184,8 @@ static bool test_il_validate_pure_var() {
 	rz_il_op_pure_free(op);
 
 	RzILOpEffect *eop = rz_il_op_new_seq(
-		rz_il_op_new_set("y", true, rz_il_op_new_bitv_from_ut64(24, 0x1234)),
-		rz_il_op_new_jmp(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL)));
+		rz_il_op_new_set("y", 0, true, rz_il_op_new_bitv_from_ut64(24, 0x1234)),
+		rz_il_op_new_jmp(rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL)));
 	RzILTypeEffect t;
 	val = rz_il_validate_effect(eop, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
@@ -193,22 +193,22 @@ static bool test_il_validate_pure_var() {
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(eop);
 
-	op = rz_il_op_new_var("x", RZ_IL_VAR_KIND_GLOBAL);
+	op = rz_il_op_new_var("x", 1, RZ_IL_VAR_KIND_GLOBAL);
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"x\" referenced by var op does not exist.", "report");
 	mu_assert_eq(op->op.var.idx, rz_str_djb2_hash("x"), "Hash mismatch");
 	rz_il_op_pure_free(op);
 
-	op = rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL);
+	op = rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL);
 	val = rz_il_validate_pure(op, ctx, &sort, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
 	rz_il_op_pure_free(op);
 
 	eop = rz_il_op_new_seq(
-		rz_il_op_new_set("y", true, rz_il_op_new_bitv_from_ut64(23, 0x1234)),
-		rz_il_op_new_jmp(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_bitv_from_ut64(23, 0x1234)),
+		rz_il_op_new_jmp(rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(eop, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Length of dst operand (23) of jmp op is not equal to pc length 24.", "report");
@@ -741,7 +741,7 @@ static bool test_il_validate_effect_set() {
 	rz_il_validate_global_context_add_var(ctx, "x", rz_il_sort_pure_bv(42));
 
 	// global
-	RzILOpEffect *op = rz_il_op_new_set("x", false, rz_il_op_new_bitv_from_ut64(42, 0));
+	RzILOpEffect *op = rz_il_op_new_set("x", 0, false, rz_il_op_new_bitv_from_ut64(42, 0));
 	RzILValidateReport report;
 	RzILTypeEffect t;
 	bool val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
@@ -750,36 +750,36 @@ static bool test_il_validate_effect_set() {
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_set("y", false, rz_il_op_new_bitv_from_ut64(42, 0));
+	op = rz_il_op_new_set("y", 1, false, rz_il_op_new_bitv_from_ut64(42, 0));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"y\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_set("x", false, rz_il_op_new_bitv_from_ut64(41, 0));
+	op = rz_il_op_new_set("x", 0, false, rz_il_op_new_bitv_from_ut64(41, 0));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of global variable \"x\" and set op do not agree: bitvector:42 vs. bitvector:41.", "report");
 	rz_il_op_effect_free(op);
 
 	// local
-	op = rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(20, 0));
+	op = rz_il_op_new_set("x", 0, true, rz_il_op_new_bitv_from_ut64(20, 0));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seq(
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 0)),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 42)));
+		rz_il_op_new_set("x", 0, true, rz_il_op_new_bitv_from_ut64(22, 0)),
+		rz_il_op_new_set("x", 0, true, rz_il_op_new_bitv_from_ut64(22, 42)));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seq(
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(22, 0)),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(21, 42)));
+		rz_il_op_new_set("x", 0, true, rz_il_op_new_bitv_from_ut64(22, 0)),
+		rz_il_op_new_set("x", 0, true, rz_il_op_new_bitv_from_ut64(21, 42)));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:22 vs. bitvector:21.", "report");
@@ -845,34 +845,34 @@ static bool test_il_validate_effect_seq() {
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_set("nexist", false, rz_il_op_new_b0()), rz_il_op_new_nop());
+	op = rz_il_op_new_seq(rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()), rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
+	op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
 	// effect type handling
-	op = rz_il_op_new_seq(rz_il_op_new_set("x", true, rz_il_op_new_b0()), rz_il_op_new_nop());
+	op = rz_il_op_new_seq(rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()), rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_set("x", true, rz_il_op_new_b0()), rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)));
+	op = rz_il_op_new_seq(rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()), rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA | RZ_IL_TYPE_EFFECT_CTRL, "effect type");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)), rz_il_op_new_set("x", true, rz_il_op_new_b0()));
+	op = rz_il_op_new_seq(rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)), rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Encountered further effects after a ctrl effect in seq op.", "report");
@@ -892,7 +892,7 @@ static bool test_il_validate_effect_seq() {
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_b0()));
+	op = rz_il_op_new_seq(rz_il_op_new_nop(), rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
@@ -916,7 +916,7 @@ static bool test_il_validate_effect_blk() {
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_blk(NULL,
-		rz_il_op_new_set("nexist", false, rz_il_op_new_b0()),
+		rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()),
 		rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x1000)));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
@@ -933,7 +933,7 @@ static bool test_il_validate_effect_blk() {
 
 	// effect type handling
 	op = rz_il_op_new_blk(NULL,
-		rz_il_op_new_set("x", true, rz_il_op_new_b0()),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()),
 		rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x1000)));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
@@ -942,7 +942,7 @@ static bool test_il_validate_effect_blk() {
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_blk(NULL,
-		rz_il_op_new_set("x", true, rz_il_op_new_b0()),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()),
 		rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
@@ -952,7 +952,7 @@ static bool test_il_validate_effect_blk() {
 
 	op = rz_il_op_new_blk(NULL,
 		rz_il_op_new_nop(),
-		rz_il_op_new_set("x", true, rz_il_op_new_b0()));
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Control effect operand of blk op does not only perform control effects.", "report");
@@ -988,7 +988,7 @@ static bool test_il_validate_effect_repeat() {
 	mu_assert_streq_free(report, "Condition of repeat op is not boolean.", "report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
+	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
@@ -998,7 +998,7 @@ static bool test_il_validate_effect_repeat() {
 	// local context handling
 
 	// types remembered from the loop
-	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)));
+	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)));
 	HtSP *local_var_sorts;
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_true(val, "valid");
@@ -1015,9 +1015,9 @@ static bool test_il_validate_effect_repeat() {
 
 	// vars available before are still available after
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("y", true, rz_il_op_new_ite(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_ite(rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
@@ -1035,9 +1035,9 @@ static bool test_il_validate_effect_repeat() {
 
 	// vars available only inside the loop can be made available again if they have the same type
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
@@ -1055,9 +1055,9 @@ static bool test_il_validate_effect_repeat() {
 
 	// vars defined inside the loop already can not be used again with another type
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(13, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
@@ -1065,9 +1065,9 @@ static bool test_il_validate_effect_repeat() {
 
 	// vars available only inside the loop are not available after it anymore
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
@@ -1076,7 +1076,7 @@ static bool test_il_validate_effect_repeat() {
 	//////////////////////////
 	// effect type handling
 
-	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)));
+	op = rz_il_op_new_repeat(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
@@ -1093,9 +1093,9 @@ static bool test_il_validate_effect_repeat() {
 	// malformed effect handling
 
 	op = rz_il_op_new_seqn(2,
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(32, 1)),
-		rz_il_op_new_repeat(rz_il_op_new_non_zero(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)),
-			rz_il_op_new_set("x", true, rz_il_op_new_sub(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b1()))));
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(32, 1)),
+		rz_il_op_new_repeat(rz_il_op_new_non_zero(rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)),
+			rz_il_op_new_set("x", -1, true, rz_il_op_new_sub(rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b1()))));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Right operand of sub op is not a bitvector.", "report");
@@ -1123,13 +1123,13 @@ static bool test_il_validate_effect_branch() {
 	mu_assert_streq_free(report, "Condition of branch op is not boolean.", "report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()), rz_il_op_new_nop());
+	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()), rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("nexist", false, rz_il_op_new_b0()));
+	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("nexist", 0, false, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Global variable \"nexist\" referenced by set op does not exist.", "report");
@@ -1140,8 +1140,8 @@ static bool test_il_validate_effect_branch() {
 
 	// types remembered from the branches
 	op = rz_il_op_new_branch(rz_il_op_new_b0(),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)),
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()));
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)),
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()));
 	HtSP *local_var_sorts;
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_true(val, "valid");
@@ -1160,9 +1160,9 @@ static bool test_il_validate_effect_branch() {
 
 	// vars available before are still available after
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_nop()),
-		rz_il_op_new_set("y", true, rz_il_op_new_ite(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_ite(rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL), rz_il_op_new_b0(), rz_il_op_new_b1())));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
@@ -1178,9 +1178,9 @@ static bool test_il_validate_effect_branch() {
 
 	// vars available only inside a branch can be made available again if they have the same type
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
@@ -1197,9 +1197,9 @@ static bool test_il_validate_effect_branch() {
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
@@ -1217,11 +1217,11 @@ static bool test_il_validate_effect_branch() {
 
 	// vars defined in both branches are still available after it
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(),
-			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)),
-			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 42))),
-		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
+			rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)),
+			rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 42))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_null(report, "no report");
@@ -1239,18 +1239,18 @@ static bool test_il_validate_effect_branch() {
 
 	// vars defined already inside the branch can not be used again with another type
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(13, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
-		rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 32)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(13, 32)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Types of local variable \"x\" and set op do not agree: bitvector:14 vs. bitvector:13.", "report");
@@ -1258,18 +1258,18 @@ static bool test_il_validate_effect_branch() {
 
 	// vars defined only inside one branch are not available after it anymore
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0))),
-		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
 	rz_il_op_effect_free(op);
 
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
-		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
-		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
+		rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 0)), rz_il_op_new_nop()),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report, "Local variable \"x\" is not available at var op.", "report");
@@ -1277,11 +1277,11 @@ static bool test_il_validate_effect_branch() {
 
 	// vars defined in both branches must agree in their types
 	op = rz_il_op_new_seqn(3,
-		rz_il_op_new_set("y", true, rz_il_op_new_b0()),
+		rz_il_op_new_set("y", -1, true, rz_il_op_new_b0()),
 		rz_il_op_new_branch(rz_il_op_new_b0(),
-			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(13, 0)),
-			rz_il_op_new_set("x", true, rz_il_op_new_bitv_from_ut64(14, 42))),
-		rz_il_op_new_set("x", true, rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL)));
+			rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(13, 0)),
+			rz_il_op_new_set("x", -1, true, rz_il_op_new_bitv_from_ut64(14, 42))),
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL)));
 	val = rz_il_validate_effect(op, ctx, &local_var_sorts, NULL, &report);
 	mu_assert_false(val, "invalid");
 	mu_assert_streq_free(report,
@@ -1291,14 +1291,14 @@ static bool test_il_validate_effect_branch() {
 	//////////////////////////
 	// effect type handling
 
-	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", true, rz_il_op_new_b0()), rz_il_op_new_nop());
+	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()), rz_il_op_new_nop());
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
 	mu_assert_null(report, "no report");
 	rz_il_op_effect_free(op);
 
-	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", true, rz_il_op_new_b0()));
+	op = rz_il_op_new_branch(rz_il_op_new_b0(), rz_il_op_new_nop(), rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA, "effect type");
@@ -1321,7 +1321,7 @@ static bool test_il_validate_effect_branch() {
 
 	op = rz_il_op_new_branch(rz_il_op_new_b0(),
 		rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(24, 0x100)),
-		rz_il_op_new_set("x", true, rz_il_op_new_b0()));
+		rz_il_op_new_set("x", -1, true, rz_il_op_new_b0()));
 	val = rz_il_validate_effect(op, ctx, NULL, &t, &report);
 	mu_assert_true(val, "valid");
 	mu_assert_eq(t, RZ_IL_TYPE_EFFECT_DATA | RZ_IL_TYPE_EFFECT_CTRL, "effect type");

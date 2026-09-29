@@ -141,7 +141,7 @@ static bool test_rzil_vm_step() {
 	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
 
 	// fallthrough
-	RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
+	RzILOpEffect *op = rz_il_op_new_set("r1", 1, false, rz_il_op_new_bitv_from_ut64(32, 42));
 	bool succ = rz_il_vm_step(vm, op, 0x321);
 	rz_il_op_effect_free(op);
 	mu_assert_true(succ, "success");
@@ -176,22 +176,22 @@ static bool test_rzil_vm_halt_on_exc() {
 		RzILVar *var_r1 = rz_il_vm_create_global_var(vm, "r1", rz_il_sort_pure_bv(32));
 		RzILVar *var_r2 = rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
 
-		RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
+		RzILOpEffect *op = rz_il_op_new_set("r1", 1, false, rz_il_op_new_bitv_from_ut64(32, 42));
 		bool succ = rz_il_vm_step(vm, op, 0x331);
 		rz_il_op_effect_free(op);
 		mu_assert_true(succ, "success set r1");
 
-		op = rz_il_op_new_set("r2", false, rz_il_op_new_bitv_from_ut64(32, 0));
+		op = rz_il_op_new_set("r2", 2, false, rz_il_op_new_bitv_from_ut64(32, 0));
 		succ = rz_il_vm_step(vm, op, 0x332);
 		rz_il_op_effect_free(op);
 		mu_assert_true(succ, "success set r2");
 
-		RzILOpPure *r1 = rz_il_op_new_var(var_r1->name, RZ_IL_VAR_KIND_GLOBAL);
+		RzILOpPure *r1 = rz_il_op_new_var(var_r1->name, 1, RZ_IL_VAR_KIND_GLOBAL);
 		mu_assert_notnull(r1, "get val");
-		RzILOpPure *r2 = rz_il_op_new_var(var_r2->name, RZ_IL_VAR_KIND_GLOBAL);
+		RzILOpPure *r2 = rz_il_op_new_var(var_r2->name, 2, RZ_IL_VAR_KIND_GLOBAL);
 		mu_assert_notnull(r2, "get val");
 
-		op = rz_il_op_new_set("r2", false, rz_il_op_new_div(r1, r2));
+		op = rz_il_op_new_set("r2", 2, false, rz_il_op_new_div(r1, r2));
 		succ = rz_il_vm_step(vm, op, 0x333);
 		rz_il_op_effect_free(op);
 
@@ -223,7 +223,7 @@ static bool test_rzil_vm_op_let() {
 	//   let preanswer = 41 in preanswer + 1
 	RzILOpBitVector *op = rz_il_op_new_let("preanswer",
 		rz_il_op_new_bitv_from_ut64(16, 41),
-		rz_il_op_new_add(rz_il_op_new_var("preanswer", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 1)));
+		rz_il_op_new_add(rz_il_op_new_var("preanswer", -1, RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 1)));
 	RzBitVector *r = rz_il_evaluate_bitv(vm, op);
 	rz_il_op_pure_free(op);
 	mu_assert_notnull(r, "eval");
@@ -242,11 +242,11 @@ static bool test_rzil_vm_op_let() {
 	op = rz_il_op_new_let("y", rz_il_op_new_bitv_from_ut64(8, 0x23),
 		rz_il_op_new_let("x", rz_il_op_new_bitv_from_ut64(16, 0xaaaa),
 			rz_il_op_new_add(
-				rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE),
+				rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL_PURE),
 				rz_il_op_new_cast(8, rz_il_op_new_b0(),
 					rz_il_op_new_let("y",
-						rz_il_op_new_add(rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 0x2212)),
-						rz_il_op_new_sub(rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE)))))));
+						rz_il_op_new_add(rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_bitv_from_ut64(16, 0x2212)),
+						rz_il_op_new_sub(rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL_PURE), rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE)))))));
 	r = rz_il_evaluate_bitv(vm, op);
 	rz_il_op_pure_free(op);
 	mu_assert_notnull(r, "eval");
@@ -371,7 +371,7 @@ static bool test_rzil_vm_op_set() {
 	rz_il_vm_create_global_var(vm, "r2", rz_il_sort_pure_bv(32));
 
 	// set global
-	RzILOpEffect *op = rz_il_op_new_set("r1", false, rz_il_op_new_bitv_from_ut64(32, 42));
+	RzILOpEffect *op = rz_il_op_new_set("r1", 1, false, rz_il_op_new_bitv_from_ut64(32, 42));
 	bool succ = rz_il_evaluate_effect(vm, op);
 	rz_il_op_effect_free(op);
 	RzILVal *val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
@@ -401,9 +401,9 @@ static bool test_rzil_vm_op_set() {
 
 	// set local temporarily
 	op = rz_il_op_new_seq(
-		rz_il_op_new_set("r1", true, rz_il_op_new_bitv_from_ut64(32, 2)),
-		rz_il_op_new_set("r1", false,
-			rz_il_op_new_div(rz_il_op_new_var("r1", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("r1", RZ_IL_VAR_KIND_LOCAL))));
+		rz_il_op_new_set("r1", 1, true, rz_il_op_new_bitv_from_ut64(32, 2)),
+		rz_il_op_new_set("r1", 1, false,
+			rz_il_op_new_div(rz_il_op_new_var("r1", 1, RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_var("r1", -1, RZ_IL_VAR_KIND_LOCAL))));
 	succ = rz_il_vm_step(vm, op, 1); // use step here because it also clears the local vars
 	rz_il_op_effect_free(op);
 	val = rz_il_vm_get_var_value(vm, RZ_IL_VAR_KIND_GLOBAL, var_r1->name);
@@ -487,7 +487,7 @@ static bool test_rzil_vm_op_blk() {
 
 	RzILVar *var = rz_il_vm_create_global_var(vm, "leetbap", rz_il_sort_pure_bv(8));
 	rz_il_vm_set_global_var(vm, var->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 0x42)));
-	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", false, rz_il_op_new_bitv_from_ut64(8, 0x13));
+	RzILOpEffect *data_eff = rz_il_op_new_set("leetbap", 0, false, rz_il_op_new_bitv_from_ut64(8, 0x13));
 
 	RzBitVector *dst = rz_bv_new_from_ut64(8, 0x07);
 	rz_il_vm_create_label(vm, "beach", dst);
@@ -534,11 +534,11 @@ static bool test_rzil_vm_op_repeat() {
 	RzILVar *count = rz_il_vm_create_global_var(vm, "i", rz_il_sort_pure_bv(8));
 	rz_il_vm_set_global_var(vm, count->name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, 7)));
 
-	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("i", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(8, 1));
-	RzILOpBitVector *mul = rz_il_op_new_mul(rz_il_op_new_var("leetbap", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(16, 3));
+	RzILOpBitVector *sub = rz_il_op_new_sub(rz_il_op_new_var("i", 0, RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(8, 1));
+	RzILOpBitVector *mul = rz_il_op_new_mul(rz_il_op_new_var("leetbap", 1, RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(16, 3));
 
-	RzILOpEffect *mul_eff = rz_il_op_new_set("leetbap", false, mul);
-	RzILOpEffect *sub_eff = rz_il_op_new_set("i", false, rz_il_op_pure_dup(sub));
+	RzILOpEffect *mul_eff = rz_il_op_new_set("leetbap", 1, false, mul);
+	RzILOpEffect *sub_eff = rz_il_op_new_set("i", 0, false, rz_il_op_pure_dup(sub));
 	RzILOpEffect *data_seq = rz_il_op_new_seq(mul_eff, sub_eff);
 	RzILOpBool *c = rz_il_op_new_non_zero(sub);
 
@@ -925,11 +925,11 @@ static bool test_rzil_vm_op_float() {
 	op = rz_il_op_new_let("f",
 		rz_il_op_new_float_from_f64(2.14),
 		rz_il_op_new_ite(
-			rz_il_op_new_is_fneg(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE)),
+			rz_il_op_new_is_fneg(rz_il_op_new_var("f", -1, RZ_IL_VAR_KIND_LOCAL_PURE)),
 			rz_il_op_new_neg(
-				rz_il_op_new_fbits(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE))),
+				rz_il_op_new_fbits(rz_il_op_new_var("f", -1, RZ_IL_VAR_KIND_LOCAL_PURE))),
 			rz_il_op_new_fbits(
-				rz_il_op_new_fsucc(rz_il_op_new_var("f", RZ_IL_VAR_KIND_LOCAL_PURE)))));
+				rz_il_op_new_fsucc(rz_il_op_new_var("f", -1, RZ_IL_VAR_KIND_LOCAL_PURE)))));
 
 	RzBitVector *bv = rz_il_evaluate_bitv(vm, op);
 	rz_il_op_pure_free(op);
@@ -949,9 +949,9 @@ static bool test_rzil_vm_op_float() {
 			rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
 				rz_il_op_new_fabs(
 					(rz_il_op_new_fsub(RZ_FLOAT_RMODE_RNE,
-						rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE),
-						rz_il_op_new_var("y", RZ_IL_VAR_KIND_LOCAL_PURE)))),
-				rz_il_op_new_var("x", RZ_IL_VAR_KIND_LOCAL_PURE))));
+						rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE),
+						rz_il_op_new_var("y", -1, RZ_IL_VAR_KIND_LOCAL_PURE)))),
+				rz_il_op_new_var("x", -1, RZ_IL_VAR_KIND_LOCAL_PURE))));
 
 	RzFloat *expect_f = rz_float_new_from_f64((15.02 - 11.25) * 11.25);
 	RzFloat *act_f = rz_il_evaluate_float(vm, fop);
@@ -977,9 +977,9 @@ static bool test_rzil_vm_op_float() {
 	// is true (and (and is_inf is_nan) is_zero)
 	RzILOpBool *bop = rz_il_op_new_bool_and(
 		rz_il_op_new_bool_and(
-			rz_il_op_new_is_inf(rz_il_op_new_var("inf", RZ_IL_VAR_KIND_GLOBAL)),
-			rz_il_op_new_is_nan(rz_il_op_new_var("nan", RZ_IL_VAR_KIND_GLOBAL))),
-		rz_il_op_new_is_fzero(rz_il_op_new_var("zero", RZ_IL_VAR_KIND_GLOBAL)));
+			rz_il_op_new_is_inf(rz_il_op_new_var("inf", 0, RZ_IL_VAR_KIND_GLOBAL)),
+			rz_il_op_new_is_nan(rz_il_op_new_var("nan", 1, RZ_IL_VAR_KIND_GLOBAL))),
+		rz_il_op_new_is_fzero(rz_il_op_new_var("zero", 2, RZ_IL_VAR_KIND_GLOBAL)));
 
 	RzILBool *bool_ = rz_il_evaluate_bool(vm, bop);
 	rz_il_op_pure_free(bop);
@@ -1561,7 +1561,7 @@ static bool test_rzil_vm_runtime_rmode_avoids_let_capture() {
 			rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RTZ),
 			rz_il_op_new_float(
 				RZ_FLOAT_IEEE754_BIN_32,
-				rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL_PURE)),
+				rz_il_op_new_var(name, -1, RZ_IL_VAR_KIND_LOCAL_PURE)),
 			rz_il_op_new_float_from_f32(0.0f)));
 
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(32);
