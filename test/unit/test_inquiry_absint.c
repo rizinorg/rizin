@@ -26,7 +26,7 @@ static RzAbsIntLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **bloc
 	return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
 }
 
-static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+static TestInterp *interp_new_domain(const char *arch, int bits, ut64 baddr, const char *url, RZ_NULLABLE const RzAbsIntValueDomain *val_domain) {
 	// for debugging, uncomment:
 	// eprintf("rz -a %s -b %d -m 0x%" PFMT64x " %s\n", arch, bits, baddr, url);
 	TestInterp *interp = RZ_NEW(TestInterp);
@@ -37,7 +37,7 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	interp->io->va = 1;
 	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	RzAbsIntConfig config = {
-		.val_domain = rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST),
+		.val_domain = val_domain ? val_domain : rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST),
 		.cb_user = interp,
 		.io_read = io_read,
 		.lift_block = lift_block
@@ -49,6 +49,10 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 		return NULL;
 	}
 	return interp;
+}
+
+static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+	return interp_new_domain(arch, bits, baddr, url, NULL);
 }
 
 static void interp_free(TestInterp *interp) {
@@ -872,6 +876,192 @@ bool test_absint_driver(size_t n_threads) {
 	mu_end;
 }
 
+// ---- Helpers to test the may_skip_rhs_eval (short-circuit) hook ----
+// The value domain interface has no user pointer, so the counters are global.
+// The unit tests are single-threaded, so this is fine.
+
+static size_t g_skip_asked; ///< number of may_skip_rhs_eval calls
+static size_t g_skip_taken; ///< number of taken short-circuits
+static size_t g_top_binop_evals; ///< eval_binop calls where the first operand is top
+static size_t g_add_evals; ///< eval_binop calls for RZ_IL_OP_ADD
+static size_t g_const_add_evals; ///< eval_binop calls for RZ_IL_OP_ADD where the first operand is const
+static bool g_force_skip; ///< if true, may_skip_rhs_eval returns true unconditionally
+static bool g_transform_result; ///< if true, a forced short-circuit sets the result to x + x
+
+static RzAbsIntValueDomain g_const_domain_copy; ///< pristine copy of the builtin constant domain
+static RzAbsIntValueDomain g_count_domain; ///< constant domain with counting overrides and enabled hook
+static RzAbsIntValueDomain g_count_domain_nohook; ///< same, but without the may_skip_rhs_eval hook
+
+static void counting_eval_binop(RzILOpPureCode code, RZ_INOUT RzAbsIntVal *x, RZ_NONNULL const RzAbsIntVal *y) {
+	if (code == RZ_IL_OP_ADD) {
+		g_add_evals++;
+		if (!g_const_domain_copy.is_top(x)) {
+			g_const_add_evals++;
+		}
+	}
+	if (g_const_domain_copy.is_top(x)) {
+		g_top_binop_evals++;
+	}
+	g_const_domain_copy.eval_binop(code, x, y);
+}
+
+static bool counting_may_skip_rhs_eval(RzILOpPureCode code, RZ_INOUT RzAbsIntVal *x) {
+	g_skip_asked++;
+	if (g_force_skip) {
+		g_skip_taken++;
+		if (g_transform_result) {
+			// pretend that the result of the operation is x + x,
+			// to test that a skipped evaluation may adjust x in place.
+			g_const_domain_copy.eval_binop(RZ_IL_OP_ADD, x, x);
+		}
+		return true;
+	}
+	bool skip = g_const_domain_copy.may_skip_rhs_eval(code, x);
+	if (skip) {
+		g_skip_taken++;
+	}
+	return skip;
+}
+
+static const RzAbsIntValueDomain *counting_domain(void) {
+	if (!g_count_domain.name) {
+		g_const_domain_copy = *rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST);
+		g_count_domain = g_const_domain_copy;
+		g_count_domain.eval_binop = counting_eval_binop;
+		g_count_domain.may_skip_rhs_eval = counting_may_skip_rhs_eval;
+
+		g_count_domain_nohook = g_count_domain;
+		g_count_domain_nohook.may_skip_rhs_eval = NULL;
+	}
+	return &g_count_domain;
+}
+
+static const RzAbsIntValueDomain *counting_domain_nohook(void) {
+	counting_domain();
+	return &g_count_domain_nohook;
+}
+
+static void counting_reset(void) {
+	g_skip_asked = 0;
+	g_skip_taken = 0;
+	g_top_binop_evals = 0;
+	g_add_evals = 0;
+	g_const_add_evals = 0;
+	g_force_skip = false;
+	g_transform_result = false;
+}
+
+static bool test_absint_short_circuit_top_skips_rhs(void) {
+	// the rhs of the add must not be evaluated when the first operand is top,
+	// since the constant domain maps (binop top x) to top for every op.
+	counting_reset();
+	TestInterp *interp = interp_new_domain("x86", 64, 0x10000, "hex://" // clang-format off
+		"81c15a5a0000"  // 0x00  add   ecx, 0x5a5a
+		"c3"            // 0x06  ret
+		// clang-format on
+		,
+		counting_domain());
+	mu_assert_notnull(interp, "init");
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_COMMENTS, &res);
+	EXTRACT_RESULT(code, res, 1);
+
+	// ecx is still top, with and without the short-circuit
+	mu_assert_streq(ht_up_find(res->comments, 0x10000, NULL), "⊤; <-", "comment entry");
+	mu_assert_streq(ht_up_find(res->comments, 0x10006, NULL), "⊤; ->", "comment ret");
+	rz_absint_result_free(interp->inst, res);
+
+	mu_assert_neq(g_skip_asked, (size_t)0, "may_skip_rhs_eval called");
+	mu_assert_eq(g_skip_taken, g_skip_asked, "all asked short-circuits taken");
+	mu_assert_eq(g_add_evals, (size_t)0, "no add must be evaluated");
+	mu_assert_eq(g_top_binop_evals, (size_t)0, "no binop with top first operand must be evaluated");
+
+	interp_free(interp);
+
+	// same code, but without the may_skip_rhs_eval hook: the binops have to be evaluated
+	{
+		counting_reset();
+		TestInterp *interp = interp_new_domain("x86", 64, 0x10000, "hex://" // clang-format off
+			"81c15a5a0000"  // 0x00  add   ecx, 0x5a5a
+			"c3"            // 0x06  ret
+			// clang-format on
+			,
+			counting_domain_nohook());
+		mu_assert_notnull(interp, "init");
+		RzAbsIntResult *res;
+		RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_COMMENTS, &res);
+		EXTRACT_RESULT(code, res, 1);
+		mu_assert_streq(ht_up_find(res->comments, 0x10006, NULL), "⊤; ->", "comment ret");
+		rz_absint_result_free(interp->inst, res);
+
+		mu_assert_eq(g_skip_asked, (size_t)0, "may_skip_rhs_eval not called");
+		mu_assert_neq(g_add_evals, (size_t)0, "adds must be evaluated");
+		mu_assert_neq(g_top_binop_evals, (size_t)0, "binops with top first operand are evaluated");
+
+		interp_free(interp);
+	}
+	mu_end;
+}
+
+static bool test_absint_short_circuit_const_no_skip(void) {
+	// if the first operand is a constant, the short-circuit must not be taken
+	// and the result must be unchanged
+	counting_reset();
+	TestInterp *interp = interp_new_domain("x86", 64, 0x10000, "hex://" // clang-format off
+		"b907000000"    // 0x00  mov   ecx, 7
+		"81c15a5a0000"  // 0x05  add   ecx, 0x5a5a
+		"c3"            // 0x0b  ret
+		// clang-format on
+		,
+		counting_domain());
+	mu_assert_notnull(interp, "init");
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_COMMENTS, &res);
+	EXTRACT_RESULT(code, res, 1);
+
+	// 7 + 0x5a5a = 0x5a61
+	mu_assert_strcontains(ht_up_find(res->comments, 0x10005, NULL), "rcx = 0x7", "comment add");
+	mu_assert_strcontains(ht_up_find(res->comments, 0x1000b, NULL), "rcx = 0x5a61", "comment ret");
+	rz_absint_result_free(interp->inst, res);
+
+	mu_assert_neq(g_skip_asked, (size_t)0, "may_skip_rhs_eval called");
+	mu_assert_eq(g_top_binop_evals, (size_t)0, "no binop with top first operand must be evaluated");
+	mu_assert_neq(g_const_add_evals, (size_t)0, "the add with constant operand must be evaluated");
+
+	interp_free(interp);
+	mu_end;
+}
+
+static bool test_absint_short_circuit_result_inplace(void) {
+	// a forced short-circuit may adjust the first operand in place to become the result.
+	// here the plugin (wrongly) claims that the result of any op is x + x.
+	counting_reset();
+	g_force_skip = true;
+	g_transform_result = true;
+	TestInterp *interp = interp_new_domain("x86", 64, 0x10000, "hex://" // clang-format off
+		"b907000000"    // 0x00  mov   ecx, 7
+		"81c15a5a0000"  // 0x05  add   ecx, 0x5a5a
+		"c3"            // 0x0b  ret
+		// clang-format on
+		,
+		counting_domain());
+	mu_assert_notnull(interp, "init");
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_COMMENTS, &res);
+	EXTRACT_RESULT(code, res, 1);
+
+	// the rhs was not evaluated, instead the plugin turned ecx into 7 + 7
+	mu_assert_strcontains(ht_up_find(res->comments, 0x1000b, NULL), "rcx = 0xe", "comment ret");
+	rz_absint_result_free(interp->inst, res);
+
+	mu_assert_neq(g_skip_asked, (size_t)0, "may_skip_rhs_eval called");
+	mu_assert_eq(g_skip_taken, g_skip_asked, "all asked short-circuits taken");
+	mu_assert_eq(g_add_evals, (size_t)0, "no add must be evaluated");
+
+	interp_free(interp);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_absint_block_resolve_bounds_single);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, false);
@@ -897,6 +1087,9 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_merge_multiple_consecutive);
 	mu_run_test(test_absint_xrefs);
 	mu_run_test(test_absint_comments);
+	mu_run_test(test_absint_short_circuit_top_skips_rhs);
+	mu_run_test(test_absint_short_circuit_const_no_skip);
+	mu_run_test(test_absint_short_circuit_result_inplace);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);
 	return tests_passed != tests_run;

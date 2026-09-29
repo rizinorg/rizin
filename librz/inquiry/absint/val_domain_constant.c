@@ -240,7 +240,15 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val)
 	}
 }
 
+static bool may_skip_rhs_eval(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *x) {
+	// For any binary operation or shift, the result is top if the first operand is top.
+	// Since the result (top) is already stored in x, the evaluation of the remaining
+	// operands can be skipped without losing precision.
+	return val_is_top(x);
+}
+
 RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const = {
+	.may_skip_rhs_eval = may_skip_rhs_eval,
 	.name = "constant",
 	.val_new_top = val_new_top,
 	.val_free = val_free,

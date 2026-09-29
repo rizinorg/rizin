@@ -311,6 +311,11 @@ static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal 
 	return ret;
 }
 
+static bool may_skip_rhs_eval(RzAbsIntInstance *inst, RzILOpPureCode code, RZ_INOUT RzAbsIntVal *x) {
+	const RzAbsIntValueDomain *dom = val_domain(inst);
+	return dom->may_skip_rhs_eval && dom->may_skip_rhs_eval(code, x);
+}
+
 static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_OUT RzAbsIntVal *out) {
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, out, cleanup) \
 	do { \
@@ -415,8 +420,12 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 			py = pure->op.binop.y;
 		}
 		EVAL_SUB_OR_RETURN(px, out);
-		// Hint: As an optimization, we could short-circuit if out is top here.
-		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
+		// The plugin may guarantee that the result of this operation does not depend on the
+		// remaining operands anymore. In that case out already holds the result and we can
+		// skip their evaluation entirely. See RzAbsIntValueDomain.may_skip_rhs_eval
+		if (may_skip_rhs_eval(ctx->inst, pure->code, out)) {
+			break;
+		}
 		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
 			return EVAL_RESULT_ERROR;
@@ -444,8 +453,10 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		RzILOpPure *py = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.y : pure->op.shiftl.y;
 		RzILOpPure *pfill_bit = pure->code == RZ_IL_OP_SHIFTR ? pure->op.shiftr.fill_bit : pure->op.shiftl.fill_bit;
 		EVAL_SUB_OR_RETURN(px, out);
-		// Hint: As an optimization, we could short-circuit if out is top here.
-		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
+		// See the binop case above for why the evaluation of y and fill_bit may be skippable.
+		if (may_skip_rhs_eval(ctx->inst, pure->code, out)) {
+			break;
+		}
 		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
 		if (!y) {
 			return EVAL_RESULT_ERROR;

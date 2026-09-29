@@ -155,6 +155,25 @@ typedef struct rz_absint_value_domain_t {
 	 * \param val Output, as well as operand
 	 */
 	void (*eval_unop)(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val);
+
+	/**
+	 * \brief Ask the plugin whether the evaluation of the remaining operands of a binary operation or shift can be skipped
+	 *
+	 * The interpreter calls this after the first operand \p x of the binary operation or shift \p code
+	 * has been evaluated, but before the second operand (and, for shifts, the fill bit) is evaluated.
+	 * If the plugin returns true, it guarantees that the result of the operation does not depend on
+	 * the remaining operands and \p x already holds this result (it may be adjusted in place, if needed).
+	 * The interpreter then skips the evaluation of the remaining operands entirely.
+	 *
+	 * This enables short-circuit evaluation, typically when \p x is top and the operation is
+	 * top-absorbing. Since this is not the case for every operation (e.g. for (logand x y), a
+	 * \p y evaluating to 0 may turn the result into a constant again), the decision is up to the plugin.
+	 *
+	 * May be NULL, in which case the interpreter always evaluates all operands.
+	 *
+	 * \return true if the evaluation of the remaining operands can be skipped
+	 */
+	bool (*may_skip_rhs_eval)(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *x);
 } RzAbsIntValueDomain;
 
 typedef struct rz_absint_io_read_request_t {
