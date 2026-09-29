@@ -327,7 +327,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
-		if (!read_var_from_state(ctx->inst, ctx->astate, pure->op.var.kind, pure->op.var.hash, out)) {
+		if (!read_var_from_state(ctx->inst, ctx->astate, pure->op.var.kind, pure->op.var.idx, out)) {
 			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
 				rz_il_var_kind_name(pure->op.var.kind),
 				pure->op.var.v);

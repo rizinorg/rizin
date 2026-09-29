@@ -171,9 +171,9 @@
 #define STOREW(addr, val)     rz_il_op_new_storew(0, addr, val)
 #define STOREWI(i, addr, val) rz_il_op_new_storew(i, addr, val)
 
-#define VARG(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_GLOBAL)
-#define VARL(name)         rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL)
-#define VARLP(name)        rz_il_op_new_var(name, RZ_IL_VAR_KIND_LOCAL_PURE)
+#define VARG(name)         rz_il_op_new_var(name, rz_il_global_idx_lookup(global_idx, RZ_ARRAY_SIZE(global_idx), name), RZ_IL_VAR_KIND_GLOBAL)
+#define VARL(name)         rz_il_op_new_var(name, -1, RZ_IL_VAR_KIND_LOCAL)
+#define VARLP(name)        rz_il_op_new_var(name, -1, RZ_IL_VAR_KIND_LOCAL_PURE)
 #define SETG(name, v)      rz_il_op_new_set(name, false, v)
 #define SETL(name, v)      rz_il_op_new_set(name, true, v)
 #define LET(name, v, body) rz_il_op_new_let(name, v, body)

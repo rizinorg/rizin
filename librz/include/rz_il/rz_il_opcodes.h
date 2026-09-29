@@ -251,7 +251,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
-	ut64 hash; ///< The DJB2 hash of the name.
+	ut64 idx; ///< The index for this variable (unique within the category of GLOBAL, LOCAL, LET).
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
@@ -749,6 +749,25 @@ struct rz_il_op_pure_t {
 	} op;
 };
 
+/**
+ * \brief This is an entry in a global name -> unique index map.
+ * Every RzIL supporting architecture must have such a table.
+ * The indices are used during interpretation to lookup the global variable value in an array,
+ * instead of having to do slow string comparisons or hash map lookup.
+ *
+ * The table must follow these rules:
+ * - The table must contain every global variable name.
+ * - The table must be ascending by global name.
+ * - The indices must be unique for every name and must go from [0..n).
+ *   Where n is the number of global variables of this architecture.
+ */
+typedef struct {
+	const char *global_name;
+	size_t idx;
+} RzILGlobalIdxMapEntry;
+
+RZ_API size_t rz_il_global_idx_lookup(const RzILGlobalIdxMapEntry *table, size_t tbl_entries, const char *global);
+
 typedef RzILOpBool *(rz_il_bool_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
 typedef RzILOpBitVector *(rz_il_pure_2args_op)(RzILOpBitVector *, RzILOpBitVector *);
 typedef RzILOpBitVector *(rz_il_pure_3args_op)(RzILOpBitVector *, RzILOpBitVector *, RzILOpBitVector *);
@@ -757,7 +776,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, RzILVarKind kind);
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, size_t var_idx, RzILVarKind kind);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNULL RzILOpPure *exp, RZ_NONNULL RzILOpPure *body);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b0();
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b1();
