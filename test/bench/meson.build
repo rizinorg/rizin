@@ -26,7 +26,8 @@ if get_option('enable_benchmarks')
     'ht',
     'util',
     'vector',
-    'list'
+    'list',
+    'core_analysis'
   ]
 
   # Create benchmark executables
@@ -39,6 +40,7 @@ if get_option('enable_benchmarks')
         rz_util_dep,
         rz_diff_dep,
         rz_core_dep,
+        rz_config_dep,
       ],
       install: false,
       implicit_include_directories: false,

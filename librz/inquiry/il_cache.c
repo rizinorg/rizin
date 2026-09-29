@@ -73,6 +73,11 @@ static bool il_op_is_not_only_fallthrough(RzILOpEffect *op, ut64 fallthrough_add
 }
 
 static RZ_OWN RzILCacheBlock *lift_il_block(const RzILCache *cache, ut64 addr) {
+	RzIOMap *map = rz_io_map_get(cache->io, addr);
+	if (!map || !(map->perm & RZ_PERM_X)) {
+		RZ_LOG_DEBUG("Tried to get effect from non exectuable region.'n'");
+		return NULL;
+	}
 	RzILCacheBlock *il_block = NULL;
 	RzAnalysisOp op = { 0 };
 	rz_analysis_op_init(&op);
