@@ -61,7 +61,7 @@ static RzSearchHit *calculate_entropy_and_compare(RzHashCfg *cfg, const SearchEn
 }
 
 static bool entropy_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 	SearchEntropy *ctx = (SearchEntropy *)user;
 
 	RzHashCfg *entropy_norm = rz_hash_cfg_new_with_algo2(ctx->rz_hash, "entropy");

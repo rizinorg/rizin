@@ -29,7 +29,7 @@ static bool magic_is_empty(void *user) {
 }
 
 static bool magic_find(RzSearchFindOpt *fopt, void *user, ut64 address, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 	const char *magic_dir = user;
 	RzMagic *magic = setup_magic_instance(magic_dir);
 	if (!magic) {

@@ -2657,9 +2657,10 @@ static ut8 *analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut64 
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
-			if ((oplen * 8) > size - idx) {
+			if (oplen > size - idx) {
 				break;
 			}
+			// the width is in bits, so this reads the oplen bytes checked above
 			ut32 opcode = rz_read_ble(data + idx, analysis->big_endian, oplen * 8);
 			switch (oplen) {
 			case 2:

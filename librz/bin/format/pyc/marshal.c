@@ -69,6 +69,8 @@ static double get_float64(RzBuffer *buffer, bool *error) {
 }
 
 static ut8 *get_bytes(RzBuffer *buffer, ut32 size) {
+	rz_return_val_if_fail(size < ST32_MAX && buffer, NULL);
+
 	ut8 *ret = RZ_NEWS0(ut8, size + 1);
 	if (!ret) {
 		return NULL;
@@ -208,14 +210,14 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 			tmp |= n << left;
 			left += 15;
 
-			while (left >= 4) {
+			while (left >= 4 && j > 0) {
 				hexstr[--j] = digist2hex[tmp & 0xf];
 				tmp >>= 4;
 				left -= 4;
 			}
 		}
 
-		if (tmp) {
+		if (tmp && j > 0) {
 			hexstr[--j] = digist2hex[tmp & 0xf];
 		}
 
