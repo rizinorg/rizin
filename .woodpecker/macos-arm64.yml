@@ -30,3 +30,5 @@ steps:
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
       - rz-test -V -L
+      - ls -la
+      - ls -la www
