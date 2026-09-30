@@ -240,7 +240,7 @@ static bool collect_hud_string(RzfindOptions *ro, const RzBinString *string) {
 	free(value);
 	if (!entry || !rz_list_append(ro->hud_entries, entry)) {
 		free(entry);
-		eprintf("Cannot allocate HUD entry\n");
+		RZ_LOG_ERROR("Cannot allocate HUD entry\n");
 		return false;
 	}
 	return true;
@@ -841,6 +841,10 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 
 	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChHvVBZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
+		/* HUD mode only browses the strings of the default string search, so
+		 * remember whether an option that selects another search mode or
+		 * produces non-browsable output was given and reject it below. Only
+		 * -H, -h, -z, -v, -B, -C, -n, -q and -V can be combined with -H. */
 		if (!strchr("HhzvBCnqV", c)) {
 			hud_incompatible = true;
 		}
@@ -989,7 +993,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		}
 		/* hud mode supports files or directories */
 		for (int i = opt.ind; i < argc; i++) {
-			if (!strcmp(argv[i], "-")) {
+			if (RZ_STR_EQ(argv[i], "-")) {
 				rz_list_free(ro.keywords);
 				return show_help(argv[0], 0);
 			}
