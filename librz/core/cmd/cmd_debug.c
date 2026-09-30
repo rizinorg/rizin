@@ -3387,7 +3387,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_window_identify_handler(RzCore *core, int argc, 
 	}
 
 	bool fetch_child = rz_cons_yesno(core->cons, 'y', "Try to get the child? (Y/n)");
-	RzTable *tbl = rz_w32_identify_window_at(p, fetch_child);
+	RzTable *tbl = rz_w32_identify_window(p.x, p.y, fetch_child);
 	if (!tbl) {
 		return RZ_CMD_STATUS_ERROR;
 	}
