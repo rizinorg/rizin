@@ -34,8 +34,8 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 		return riscv_il_set_reg(rd, result); \
 	}
 
-// by default, a RISC-V jump both sets a destination and sets the PC (i.e., jumps)
-#define DEFINE_LIFTER_FOR_JUMP(name, decoder, result, jmp_effect) \
+// linking jumps set a destination register and then set the PC
+#define DEFINE_LIFTER_FOR_LINKING_JUMP(name, decoder, result, jmp_effect) \
 	RzILOpEffect *rz_riscv_lift_##name(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
 		decoder(analysis, insn); \
@@ -51,8 +51,8 @@ static inline RzILOpEffect *riscv_il_set_reg(uint32_t reg, RZ_OWN RZ_NONNULL RzI
 		return effect; \
 	}
 
-// oneway jumps are those that don't have a destination register
-#define DEFINE_LIFTER_FOR_ONEWAY_JUMP DEFINE_LIFTER_WITH_EFFECT
+// jumps do not have a destination register
+#define DEFINE_LIFTER_FOR_JUMP DEFINE_LIFTER_WITH_EFFECT
 
 #define DEFINE_ALIAS_LIFTER(alias, name) \
 	RzILOpEffect *rz_riscv_lift_##alias(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \

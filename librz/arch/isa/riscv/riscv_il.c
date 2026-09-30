@@ -155,6 +155,7 @@ RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *conf = rz_analysis_il_config_new(rz_analysis_get_bits(analysis), rz_analysis_is_big_endian_set(analysis), rz_analysis_get_bits(analysis));
+	conf->reg_bindings = &riscv_integer_reg_names[1];
 
 	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
 	ecall_label->hook = label_ecall;
