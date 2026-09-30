@@ -14,9 +14,13 @@ typedef struct rz_interrupt_frame_t {
 	void *user;
 } RzInterruptFrame;
 
-#if __UNIX__
+#if __WINDOWS__
+#include <windows.h>
+#elif __UNIX__
 #include <signal.h>
+#endif
 
+#if __UNIX__ || __WINDOWS__
 // <stdatomic.h> is only supported in GCC >= 4.9
 // https://gcc.gnu.org/gcc-4.9/changes.html#c
 #if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 9)) && !defined(__clang__)
@@ -27,22 +31,43 @@ typedef volatile int atomic_int;
 #include <stdatomic.h>
 #endif
 
-static volatile sig_atomic_t g_sigint_flag = 0; ///< Process-wide SIGINT arrival flag
+static volatile sig_atomic_t g_sigint_flag = 0; ///< Process-wide SIGINT / Ctrl+C arrival flag
 static atomic_int g_hook_count = 0; ///< Active reference counter for hooked signal handlers
 
+#if __WINDOWS__
 /**
- * \brief      Signal handler for SIGINT
- *
- * \param[in]  sig  Signal identifier received from OS
+ * \brief Windows Console Ctrl handler callback
+ */
+static BOOL WINAPI rz_interrupt_w32_control(DWORD dwCtrlType) {
+	if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
+		g_sigint_flag = 1;
+		return TRUE; // Prevents default process termination
+	}
+	return FALSE;
+}
+
+static void rz_interrupt_hook(void) {
+	if (atomic_fetch_add(&g_hook_count, 1) == 0) {
+		g_sigint_flag = 0;
+		SetConsoleCtrlHandler((PHANDLER_ROUTINE)rz_interrupt_w32_control, TRUE);
+	}
+}
+
+static void rz_interrupt_unhook(void) {
+	if (atomic_fetch_sub(&g_hook_count, 1) == 1) {
+		SetConsoleCtrlHandler((PHANDLER_ROUTINE)rz_interrupt_w32_control, FALSE);
+		g_sigint_flag = 0;
+	}
+}
+#elif __UNIX__
+/**
+ * \brief Signal handler for SIGINT
  */
 static void interrupt_signal_handler(int sig) {
 	(void)sig;
 	g_sigint_flag = 1;
 }
 
-/**
- * \brief      Hooks process-wide OS SIGINT signal when transition 0 -> 1 occurs
- */
 static void rz_interrupt_hook(void) {
 	if (atomic_fetch_add(&g_hook_count, 1) == 0) {
 		g_sigint_flag = 0;
@@ -50,9 +75,6 @@ static void rz_interrupt_hook(void) {
 	}
 }
 
-/**
- * \brief      Unhooks process-wide OS SIGINT signal when transition 1 -> 0 occurs
- */
 static void rz_interrupt_unhook(void) {
 	if (atomic_fetch_sub(&g_hook_count, 1) == 1) {
 		rz_sys_signal(SIGINT, SIG_IGN);
@@ -60,22 +82,13 @@ static void rz_interrupt_unhook(void) {
 	}
 }
 #endif
+#endif
 
-/**
- * \brief      Frees an RzInterruptFrame item stored in the break stack
- *
- * \param      ptr  Pointer to the RzInterruptFrame structure to free
- */
 static void break_stack_free(void *ptr) {
 	RzInterruptFrame *frame = (RzInterruptFrame *)ptr;
 	free(frame);
 }
 
-/**
- * \brief      Initialize a new interrupt context structure
- *
- * \return     On success returns a valid pointer, otherwise NULL
- */
 RZ_API RZ_OWN RzInterrupt *rz_interrupt_new(void) {
 	RzInterrupt *intr = RZ_NEW0(RzInterrupt);
 	if (!intr) {
@@ -89,16 +102,11 @@ RZ_API RZ_OWN RzInterrupt *rz_interrupt_new(void) {
 	return intr;
 }
 
-/**
- * \brief      Frees an RzInterrupt structure and unhooks signal if active
- *
- * \param      intr  The RzInterrupt structure to free
- */
 RZ_API void rz_interrupt_free(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
 	}
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 	if (intr->hook_signals && !rz_stack_is_empty(intr->break_stack)) {
 		rz_interrupt_unhook();
 	}
@@ -107,11 +115,6 @@ RZ_API void rz_interrupt_free(RZ_NULLABLE RzInterrupt *intr) {
 	free(intr);
 }
 
-/**
- * \brief      Triggers an interrupt state on the given context
- *
- * \param[in]  intr  The RzInterrupt structure to raise
- */
 RZ_API void rz_interrupt_raise(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
@@ -122,13 +125,6 @@ RZ_API void rz_interrupt_raise(RZ_NULLABLE RzInterrupt *intr) {
 	}
 }
 
-/**
- * \brief      Pushes a new interrupt frame and hooks signals on first frame
- *
- * \param[in]  intr  The RzInterrupt context structure
- * \param[in]  cb    Callback function to execute on interrupt
- * \param[in]  user  User context data passed to callback
- */
 RZ_API void rz_interrupt_break_push(RZ_NULLABLE RzInterrupt *intr, RZ_NULLABLE RzInterruptEvent cb, RZ_NULLABLE void *user) {
 	if (!intr || !intr->break_stack) {
 		return;
@@ -140,7 +136,7 @@ RZ_API void rz_interrupt_break_push(RZ_NULLABLE RzInterrupt *intr, RZ_NULLABLE R
 	}
 
 	if (rz_stack_is_empty(intr->break_stack)) {
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 		if (intr->hook_signals) {
 			rz_interrupt_hook();
 		}
@@ -156,11 +152,6 @@ RZ_API void rz_interrupt_break_push(RZ_NULLABLE RzInterrupt *intr, RZ_NULLABLE R
 	intr->current_user = user;
 }
 
-/**
- * \brief      Pops the active interrupt frame and unhooks signals on empty stack
- *
- * \param[in]  intr  The RzInterrupt context structure
- */
 RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr || !intr->break_stack || rz_stack_is_empty(intr->break_stack)) {
 		return;
@@ -174,7 +165,7 @@ RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
 	}
 
 	if (rz_stack_is_empty(intr->break_stack)) {
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 		if (intr->hook_signals) {
 			rz_interrupt_unhook();
 		}
@@ -183,12 +174,6 @@ RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
 	}
 }
 
-/**
- * \brief      Sets a monotonic timeout value for the interrupt
- *
- * \param[in]  intr     The RzInterrupt structure to modify
- * \param[in]  timeout  Relative timeout value in milliseconds
- */
 RZ_API void rz_interrupt_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	if (!intr) {
 		return;
@@ -196,21 +181,11 @@ RZ_API void rz_interrupt_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	intr->timeout = (timeout && !intr->timeout) ? rz_time_now_mono() + ((ut64)timeout << 20) : 0;
 }
 
-/**
- * \brief      Clears the break flag for the specified interrupt structure
- *
- * \param[in]  intr  The RzInterrupt structure to clear
- */
 RZ_API void rz_interrupt_break_clear(RZ_NONNULL RzInterrupt *intr) {
 	rz_return_if_fail(intr);
 	intr->is_breaked = false;
 }
 
-/**
- * \brief      Resets break state and unwinds the entire interrupt stack
- *
- * \param[in]  intr  The RzInterrupt structure to end
- */
 RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
@@ -218,7 +193,7 @@ RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr) {
 	intr->is_breaked = false;
 	intr->timeout = 0;
 
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 	if (intr->hook_signals && !rz_stack_is_empty(intr->break_stack)) {
 		rz_interrupt_unhook();
 	}
@@ -232,19 +207,12 @@ RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr) {
 	intr->current_user = NULL;
 }
 
-/**
- * \brief      Checks if the interrupt structure has received a break or timeout
- *
- * \param[in]  intr  The RzInterrupt structure to query
- *
- * \return     Returns true if breaked or timed out, false otherwise
- */
 RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return false;
 	}
 
-#if __UNIX__
+#if __UNIX__ || __WINDOWS__
 	if (intr->hook_signals && g_sigint_flag) {
 		intr->is_breaked = true;
 	}
@@ -260,12 +228,6 @@ RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr) {
 	return intr->is_breaked;
 }
 
-/**
- * \brief      Configures break timeout relative to current monotonic time
- *
- * \param[in]  intr     The RzInterrupt structure to modify
- * \param[in]  timeout  Relative timeout duration
- */
 RZ_API void rz_interrupt_break_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	if (!intr) {
 		return;
