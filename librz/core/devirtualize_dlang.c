@@ -5,6 +5,21 @@
 #include <rz_core.h>
 #include "core_private.h"
 
+/**
+ * \file devirtualize_dlang.c
+ * Resolves D class and interface virtual calls in the function at the current address.
+ *
+ * rtti_dlang.c recovers classes, interface receiver offsets, vtables, and methods.
+ * Callers are replayed up to each call site to recover object vtables
+ * passed in argument registers. Calls to _d_newclass are emulated by copying
+ * the ClassInfo initializer and setting the return register. The target
+ * function is replayed both without seeds and with each distinct set
+ * of caller derived receiver types.
+ *
+ * When indirect calls to known vtable slots or method addresses are seen
+ * virtual xrefs and comments are added.
+ */
+
 #define DLANG_MAX_CALL_ARGS  8
 #define DLANG_TRACK_MEM_ADDR 0x10000000
 #define DLANG_TRACK_MEM_SIZE 0x50000
