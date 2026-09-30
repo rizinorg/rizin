@@ -16,14 +16,19 @@ typedef struct rz_interrupt_frame_t {
 
 #if __WINDOWS__
 #include <windows.h>
+#include <signal.h>
 #elif __UNIX__
 #include <signal.h>
 #endif
 
-#if __UNIX__ || __WINDOWS__
 // <stdatomic.h> is only supported in GCC >= 4.9
 // https://gcc.gnu.org/gcc-4.9/changes.html#c
-#if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 9)) && !defined(__clang__)
+#if __UNIX__ || __WINDOWS__
+#if defined(_MSC_VER)
+typedef volatile LONG atomic_int;
+#define atomic_fetch_add(p, v) InterlockedExchangeAdd((volatile LONG *)(p), (LONG)(v))
+#define atomic_fetch_sub(p, v) InterlockedExchangeAdd((volatile LONG *)(p), -(LONG)(v))
+#elif defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 9)) && !defined(__clang__)
 typedef volatile int atomic_int;
 #define atomic_fetch_add(p, v) __sync_fetch_and_add(p, v)
 #define atomic_fetch_sub(p, v) __sync_fetch_and_sub(p, v)
