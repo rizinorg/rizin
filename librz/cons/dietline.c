@@ -10,7 +10,7 @@
 
 #if __WINDOWS__
 #include <windows.h>
-#define printf(...) rz_cons_win_printf(false, __VA_ARGS__)
+#define printf(...) rz_cons_win_printf(cons, false, __VA_ARGS__)
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
