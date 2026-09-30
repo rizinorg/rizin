@@ -1314,7 +1314,7 @@ RZ_API bool rz_cons_isatty() {
 }
 
 #if __WINDOWS__
-static int __pty_get_cur_pos(int *xpos) {
+static int __pty_get_cur_pos(RzCons *cons, int *xpos) {
 	int ypos = 0;
 	const char *get_pos = RZ_CONS_GET_CURSOR_POSITION;
 	if (write(cons->fdout, get_pos, sizeof(get_pos)) < 1) {
@@ -1367,13 +1367,13 @@ static int __pty_get_cur_pos(int *xpos) {
 	return ypos;
 }
 
-static bool __pty_get_size(void) {
+static bool __pty_get_size(RzCons *cons) {
 	if (write(cons->fdout, RZ_CONS_CURSOR_SAVE, sizeof(RZ_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
 	rz_xwrite(cons->fdout, "\x1b[999;999H", sizeof("\x1b[999;999H"));
-	rows = __pty_get_cur_pos(&columns);
+	rows = __pty_get_cur_pos(cons, &columns);
 	if (rows) {
 		cons->rows = rows;
 		cons->columns = columns;
