@@ -563,7 +563,7 @@ RZ_API void rz_cons_canvas_fill(RzConsCanvas *c, int x, int y, int w, int h, cha
 }
 
 RZ_API void rz_cons_canvas_line(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style) {
-	rz_return_if_fail(cons && c);	
+	rz_return_if_fail(cons && c);
 	if (c->linemode) {
 		rz_cons_canvas_line_square(cons, c, x, y, x2, y2, style);
 	} else {
