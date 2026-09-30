@@ -519,7 +519,7 @@ RZ_NONNULL RZ_BORROW RZ_API RzCons *rz_cons_new() {
 	save_console_state(cons);
 #endif
 	cons->rgbstr = rz_cons_rgb_str_off;
-	cons->line = rz_line_new();
+	cons->line = rz_line_new(cons);
 	cons->enable_highlight = true;
 	cons->highlight = NULL;
 	cons->is_wine = -1;
@@ -1394,7 +1394,7 @@ RZ_API int rz_cons_get_size(RZ_NONNULL RZ_BORROW RzCons *cons, int *rows) {
 		cons->rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	} else {
 		if (cons->term_pty) {
-			ret = __pty_get_size();
+			ret = __pty_get_size(cons);
 		}
 		if (!ret || (cons->columns == -1 && cons->rows == 0)) {
 			// Stdout is probably redirected so we set default values
