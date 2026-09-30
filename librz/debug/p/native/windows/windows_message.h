@@ -4,5 +4,5 @@
 #include <rz_debug.h>
 
 RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *msg_name, const char *window_id);
-RZ_API void rz_w32_identify_window(int x, int y, bool fetch_child);
+RZ_API RzTable *rz_w32_identify_window(int x, int y, bool fetch_child);
 RZ_API void rz_w32_print_windows(RzDebug *dbg);
