@@ -170,7 +170,7 @@ static bool is_valid_guid(const char *guid) {
  * \param cons RzCons instance
  */
 RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options, RZ_NULLABLE RzCons *cons) {
-	rz_return_val_if_fail(bin && options && cons, 1);
+	rz_return_val_if_fail(bin && options, 1);
 	SPDBDownloaderOpt opt;
 	RzBinObject *obj = rz_bin_cur_object(bin);
 	RzBinInfo *info = obj ? (RzBinInfo *)rz_bin_object_get_info(obj) : NULL;
