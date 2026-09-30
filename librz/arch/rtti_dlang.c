@@ -12,6 +12,29 @@
 #define DLANG_MODULE_FLAG_IMPORTED_MODULES 0x400
 #define DLANG_MODULE_FLAG_LOCAL_CLASSES    0x800
 
+// https://github.com/dlang/dmd/blob/master/compiler/src/dmd/glue/toobj.d
+typedef enum {
+	DLANG_CLASS_INIT_SIZE,
+	DLANG_CLASS_INIT_ADDR,
+	DLANG_CLASS_NAME_LENGTH,
+	DLANG_CLASS_NAME_ADDR,
+	DLANG_CLASS_VTABLE_COUNT,
+	DLANG_CLASS_VTABLE_ADDR,
+	DLANG_CLASS_INTERFACES_COUNT,
+	DLANG_CLASS_INTERFACES_ADDR,
+	DLANG_CLASS_BASE,
+	DLANG_CLASS_DESTRUCTOR,
+	DLANG_CLASS_INVARIANT,
+	DLANG_CLASS_FLAGS,
+	DLANG_CLASS_DEALLOCATOR,
+	DLANG_CLASS_OFFTI_COUNT,
+	DLANG_CLASS_OFFTI_ADDR,
+	DLANG_CLASS_CONSTRUCTOR,
+} DlangClassInfoField;
+
+/**
+ * \brief TypeInfo_Class (ClassInfo) metadata used to recover classes and interfaces.
+ */
 typedef struct dlang_class_info_t {
 	ut64 addr;
 	ut64 init_size;
@@ -28,6 +51,9 @@ typedef struct dlang_class_info_t {
 	bool is_interface;
 } DlangClassInfo;
 
+/**
+ * \brief Interface metadata used to recover interface vtables and object offsets.
+ */
 typedef struct dlang_interface_t {
 	ut64 class_info_addr;
 	ut64 vtable_count;
@@ -36,6 +62,10 @@ typedef struct dlang_interface_t {
 } DlangInterface;
 
 static void class_info_free(void *ptr) {
+	if (!ptr) {
+		return;
+	}
+
 	DlangClassInfo *info = ptr;
 	RZ_FREE(info->name);
 	RZ_FREE(info);
@@ -163,18 +193,18 @@ static DlangClassInfo *class_info_parse_layout(RVTableContext *context, ut64 add
 		return NULL;
 	}
 	info->addr = addr;
-	bool ok = read_word(context, addr, field, &info->init_size) &&
-		read_word(context, addr, field + 1, &info->init_addr) &&
-		read_word(context, addr, field + 2, &name_length) &&
-		read_word(context, addr, field + 3, &name_addr) &&
-		read_word(context, addr, field + 4, &info->vtable_count) &&
-		read_word(context, addr, field + 5, &info->vtable_addr) &&
-		read_word(context, addr, field + 6, &info->interfaces_count) &&
-		read_word(context, addr, field + 7, &info->interfaces_addr) &&
-		read_word(context, addr, field + 8, &info->base_addr) &&
-		read_word(context, addr, field + 9, &info->destructor) &&
-		read_word(context, addr, field + 11, &info->flags) &&
-		read_word(context, addr, field + 15, &info->constructor);
+	bool ok = read_word(context, addr, field + DLANG_CLASS_INIT_SIZE, &info->init_size) &&
+		read_word(context, addr, field + DLANG_CLASS_INIT_ADDR, &info->init_addr) &&
+		read_word(context, addr, field + DLANG_CLASS_NAME_LENGTH, &name_length) &&
+		read_word(context, addr, field + DLANG_CLASS_NAME_ADDR, &name_addr) &&
+		read_word(context, addr, field + DLANG_CLASS_VTABLE_COUNT, &info->vtable_count) &&
+		read_word(context, addr, field + DLANG_CLASS_VTABLE_ADDR, &info->vtable_addr) &&
+		read_word(context, addr, field + DLANG_CLASS_INTERFACES_COUNT, &info->interfaces_count) &&
+		read_word(context, addr, field + DLANG_CLASS_INTERFACES_ADDR, &info->interfaces_addr) &&
+		read_word(context, addr, field + DLANG_CLASS_BASE, &info->base_addr) &&
+		read_word(context, addr, field + DLANG_CLASS_DESTRUCTOR, &info->destructor) &&
+		read_word(context, addr, field + DLANG_CLASS_FLAGS, &info->flags) &&
+		read_word(context, addr, field + DLANG_CLASS_CONSTRUCTOR, &info->constructor);
 	if (!ok) {
 		class_info_free(info);
 		return NULL;
@@ -188,7 +218,8 @@ static DlangClassInfo *class_info_parse_layout(RVTableContext *context, ut64 add
 
 	info->is_interface = !info->init_size && !info->vtable_count && !info->base_addr;
 	if (!info->is_interface) {
-		if (info->init_size < 2 * context->word_size || !info->init_addr ||
+		// header contains the vtable pointer and monitor pointer.
+		if (info->init_size < (2 * context->word_size) || !info->init_addr ||
 			!vtable_is_valid(context, addr, info->vtable_addr, info->vtable_count)) {
 			class_info_free(info);
 			return NULL;
@@ -273,6 +304,8 @@ static void discover_module(RVTableContext *context, RzList /*<DlangClassInfo *>
 	if (!read_u32(context->analysis, addr, &flags) || !(flags & DLANG_MODULE_FLAG_LOCAL_CLASSES)) {
 		return;
 	}
+	// +8 skips the two 32-bit ModuleInfo header fields, _flags and _index,
+	// placing the read position at the start of the optional fields.
 	ut64 cursor = addr + 8;
 	for (ut32 bit = DLANG_MODULE_FLAG_TLS_CTOR; bit <= DLANG_MODULE_FLAG_UNITTEST; bit <<= 1) {
 		if (flags & bit) {
@@ -307,15 +340,19 @@ static void discover_module(RVTableContext *context, RzList /*<DlangClassInfo *>
 	}
 }
 
+static bool section_module_info(RzBinSection *section) {
+	return section && !section->is_segment && RZ_STR_ISNOTEMPTY(section->name) &&
+		(!strcmp(section->name, "minfo") || // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/elfobj.d#L3420-L3431
+			!strcmp(section->name, ".minfo") || // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/mscoffobj.d#L2400-L2415
+			!strcmp(section->name, "__minfodata")); // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/machobj.d#L3381-L3390
+}
+
 static void discover_modules(RVTableContext *context, RzBinObject *obj, RzList /*<DlangClassInfo *>*/ *infos, HtUP *by_addr) {
 	const RzPVector *sections = context->analysis->binb.get_sections(obj);
 	void **iter;
 	rz_pvector_foreach (sections, iter) {
 		RzBinSection *section = *iter;
-		if (!section || section->is_segment || RZ_STR_ISEMPTY(section->name) ||
-			(strcmp(section->name, "minfo") && // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/elfobj.d#L3420-L3431
-				strcmp(section->name, ".minfo") && // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/mscoffobj.d#L2400-L2415
-				strcmp(section->name, "__minfodata"))) { // https://github.com/dlang/dmd/blob/master/compiler/src/dmd/backend/machobj.d#L3381-L3390
+		if (!section_module_info(section)) {
 			continue;
 		}
 		if (section->vsize < context->word_size) {
@@ -367,6 +404,7 @@ static void add_method(RVTableContext *context, DlangClassInfo *info, ut64 addr,
 		RZ_FREE(real_name);
 		return;
 	}
+	// add(int, int) -> add(int#_# int)
 	real_name = rz_str_replace(real_name, ",", "#_#", 1);
 	if (!real_name) {
 		free(name);
