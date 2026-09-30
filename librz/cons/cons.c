@@ -512,7 +512,7 @@ static void restore_console_state(RzCons *cons) {
 
 // Stub function that cb_main_output gets pointed to in util/log.c by rz_cons_new
 // This allows Cutter to set per-task logging redirection
-RZ_NONNULL RZ_OWN RZ_API RzCons *rz_cons_new() {
+RZ_API RZ_OWN RzCons *rz_cons_new() {
 	RzCons *cons = RZ_NEW0(RzCons);
 #if __WINDOWS__
 	// Save the console state before rz_line_new() runs VT detection on Windows.
