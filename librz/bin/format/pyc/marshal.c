@@ -334,12 +334,13 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ut8 *s1 = malloc(n1 + 1);
 	if (!s1) {
+		free(ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
 	if (rz_buf_read(buffer, s1, n1) != n1) {
-		RZ_FREE(s1);
-		RZ_FREE(ret);
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	s1[n1] = '\0';
@@ -350,27 +351,31 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		n2 = get_st32(buffer, &error);
 	}
 	if (error || UT32_ADD_OVFCHK(n2, 1)) {
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	ut8 *s2 = malloc(n2 + 1);
 	if (!s2) {
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
 	if (rz_buf_read(buffer, s2, n2) != n2) {
-		RZ_FREE(s1);
-		RZ_FREE(s2);
-		RZ_FREE(ret);
+		free(s1);
+		free(s2);
+		free(ret);
 		return NULL;
 	}
 	s2[n2] = '\0';
 
 	ret->type = TYPE_COMPLEX;
 	ret->data = rz_str_newf("%s+%sj", s1, s2);
-	RZ_FREE(s1);
-	RZ_FREE(s2);
+	free(s1);
+	free(s2);
 	if (!ret->data) {
-		RZ_FREE(ret);
+		free(ret);
 		return NULL;
 	}
 	return ret;
