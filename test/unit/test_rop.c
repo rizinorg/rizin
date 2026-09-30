@@ -6,7 +6,6 @@
 #include <rz_core.h>
 #include <rz_gadget.h>
 
-#include <unistd.h>
 #include <fcntl.h>
 
 static void suppress_stderr(int *saved_stderr) {
