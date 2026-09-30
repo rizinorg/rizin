@@ -1249,7 +1249,7 @@ struct rz_line_t {
 
 #ifdef RZ_API
 
-RZ_API RZ_OWN RzLine *rz_line_new(void);
+RZ_API RZ_OWN RzLine *rz_line_new(RzCons *cons);
 RZ_API void rz_line_free(RZ_NULLABLE RzLine *line);
 RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line);
 RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt);

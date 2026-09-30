@@ -12,7 +12,8 @@ static RzLineNSCompletionResult *nocompletion_run(RzLineBuffer *buf, RzLinePromp
 }
 
 bool test_line_nocompletion(void) {
-	RzLine *line = rz_line_new();
+	RzCons *cons = rz_cons_new();
+	RzLine *line = rz_line_new(cons);
 	line->ns_completion.run = nocompletion_run;
 	strcpy(line->buffer.data, "pd");
 	line->buffer.length = strlen("pd");
@@ -23,6 +24,7 @@ bool test_line_nocompletion(void) {
 	mu_assert_eq(line->buffer.length, 2, "length is still 2");
 	mu_assert_eq(line->buffer.index, 2, "the user position is still the same");
 
+	rz_cons_free(cons);
 	rz_line_free(line);
 	mu_end;
 }
@@ -37,7 +39,8 @@ static RzLineNSCompletionResult *onecompletion_run(RzLineBuffer *buf, RzLineProm
 }
 
 bool test_line_onecompletion(void) {
-	RzLine *line = rz_line_new();
+	RzCons *cons = rz_cons_new();
+	RzLine *line = rz_line_new(cons);
 	line->ns_completion.run = onecompletion_run;
 
 	strcpy(line->buffer.data, "pd");
@@ -58,6 +61,7 @@ bool test_line_onecompletion(void) {
 	mu_assert_eq(line->buffer.length, 7, "length is updated");
 	mu_assert_streq(line->buffer.data, "pdf fcn", "pdf has been autocompleted and fcn kept intact");
 
+	rz_cons_free(cons);
 	rz_line_free(line);
 	mu_end;
 }
@@ -193,8 +197,8 @@ bool test_line_undo(void) {
 }
 
 bool test_line_misc(void) {
-	RzLine *line = rz_line_new();
-	line->cons = rz_cons_new();
+	RzCons *cons = rz_cons_new();
+	RzLine *line = rz_line_new(cons);
 	mu_assert_notnull(line, "Line object should be created");
 	rz_line_set_prompt(line, "test> ");
 	char *prompt = rz_line_get_prompt(line);
@@ -204,7 +208,7 @@ bool test_line_misc(void) {
 	rz_line_clipboard_push(line, "item1");
 	mu_assert_eq(rz_list_length(line->kill_ring), 1, "Kill ring size");
 
-	rz_cons_free(line->cons);
+	rz_cons_free(cons);
 	rz_line_free(line);
 	mu_end;
 }
