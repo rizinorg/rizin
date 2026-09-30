@@ -40,11 +40,12 @@ static const char *riscv_integer_reg_names[] = {
 	/* x29 */ "t4",
 	/* x30 */ "t5",
 	/* x31 */ "t6",
+	NULL,
 };
 
 static inline const char *riscv_integer_reg_name(uint32_t reg) {
 	int idx = (int)reg - RISCV_REG_X0;
-	if (idx < 0 || idx >= RZ_ARRAY_SIZE(riscv_integer_reg_names)) {
+	if (idx < 0 || idx >= RZ_ARRAY_SIZE(riscv_integer_reg_names) - 1) {
 		RZ_LOG_ERROR("Invalid RISC-V integer register index %d, returning empty str\n", idx);
 		return "";
 	}

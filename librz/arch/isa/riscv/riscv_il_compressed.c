@@ -79,7 +79,7 @@ DEFINE_ALIAS_LIFTER(c_lw, lw)
 DEFINE_ALIAS_LIFTER(c_ld, ld)
 DEFINE_ALIAS_LIFTER(c_ldsp, ld)
 
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_beqz, DECODE_C_BRANCH_ZERO, BRANCH(EQ(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
-DEFINE_LIFTER_FOR_ONEWAY_JUMP(c_bnez, DECODE_C_BRANCH_ZERO, BRANCH(NE(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
+DEFINE_LIFTER_FOR_JUMP(c_beqz, DECODE_C_BRANCH_ZERO, BRANCH(EQ(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
+DEFINE_LIFTER_FOR_JUMP(c_bnez, DECODE_C_BRANCH_ZERO, BRANCH(NE(rs1, UN(rz_analysis_get_bits(analysis), 0)), JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
 
 #include <rz_il/rz_il_opbuilder_end.h>

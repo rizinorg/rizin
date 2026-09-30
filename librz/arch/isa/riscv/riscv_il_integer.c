@@ -31,7 +31,7 @@ DEFINE_LIFTER(srl, DECODE_RD_RS_RS, SHIFTR0(rs1, LOGAND(rs2, UN(rz_analysis_get_
 DEFINE_LIFTER(sra, DECODE_RD_RS_RS, SHIFTRA(rs1, LOGAND(rs2, UN(rz_analysis_get_bits(analysis), rz_analysis_get_bits(analysis) - 1))))
 
 #define DEFINE_LIFTER_FOR_BRANCH(name, decoder, condition) \
-	DEFINE_LIFTER_FOR_ONEWAY_JUMP(name, decoder, BRANCH(condition, JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
+	DEFINE_LIFTER_FOR_JUMP(name, decoder, BRANCH(condition, JMP(imm), JMP(UN(rz_analysis_get_bits(analysis), current_addr + size))))
 
 DEFINE_LIFTER_FOR_BRANCH(beq, DECODE_RS_RS_IMM, EQ(rs1, rs2))
 DEFINE_LIFTER_FOR_BRANCH(bne, DECODE_RS_RS_IMM, NE(rs1, rs2))
@@ -40,7 +40,7 @@ DEFINE_LIFTER_FOR_BRANCH(bge, DECODE_RS_RS_IMM, SGE(rs1, rs2))
 DEFINE_LIFTER_FOR_BRANCH(bltu, DECODE_RS_RS_IMM, ULT(rs1, rs2))
 DEFINE_LIFTER_FOR_BRANCH(bgeu, DECODE_RS_RS_IMM, UGE(rs1, rs2))
 
-DEFINE_LIFTER_FOR_JUMP(jal, DECODE_RD_IMM,
+DEFINE_LIFTER_FOR_LINKING_JUMP(jal, DECODE_RD_IMM,
 	/*RETURN ADDR*/ UN(rz_analysis_get_bits(analysis), current_addr + size),
 	/*GOTO ADDR*/ JMP(imm))
 

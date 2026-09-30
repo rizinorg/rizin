@@ -29,40 +29,40 @@ static RzRegItem *riscv_reg_get(const RzReg *reg, const char *name, int type) {
 	return rz_reg_get(reg, name, type);
 }
 
-ut8 riscv_operand_count(cs_insn *insn) {
+RZ_IPI ut8 riscv_operand_count(cs_insn *insn) {
 	return insn && insn->detail ? insn->detail->riscv.op_count : 0;
 }
 
-const cs_riscv_op *riscv_operand(cs_insn *insn, ut8 n) {
+RZ_IPI const cs_riscv_op *riscv_operand(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(insn && insn->detail && n < insn->detail->riscv.op_count, NULL);
 	return &insn->detail->riscv.operands[n];
 }
 
-bool riscv_operand_is(cs_insn *insn, ut8 n, riscv_op_type type) {
+RZ_IPI bool riscv_operand_is(cs_insn *insn, ut8 n, riscv_op_type type) {
 	return insn && insn->detail && n < insn->detail->riscv.op_count && insn->detail->riscv.operands[n].type == type;
 }
 
-const char *riscv_reg_name(csh handle, cs_insn *insn, ut8 n) {
+RZ_IPI const char *riscv_reg_name(csh handle, cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), NULL);
 	return cs_reg_name(handle, riscv_operand(insn, n)->reg);
 }
 
-ut32 riscv_reg_id(cs_insn *insn, ut8 n) {
+RZ_IPI ut32 riscv_reg_id(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_REG), RISCV_REG_INVALID);
 	return riscv_operand(insn, n)->reg;
 }
 
-st64 riscv_imm(cs_insn *insn, ut8 n) {
+RZ_IPI st64 riscv_imm(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_IMM), INT64_MAX);
 	return riscv_operand(insn, n)->imm;
 }
 
-const cs_riscv_op *riscv_memory_operand(cs_insn *insn, ut8 n) {
+RZ_IPI const cs_riscv_op *riscv_memory_operand(cs_insn *insn, ut8 n) {
 	rz_return_val_if_fail(riscv_operand_is(insn, n, RISCV_OP_MEM), NULL);
 	return riscv_operand(insn, n);
 }
 
-bool riscv_memory_operand_is_based_on(cs_insn *insn, ut8 n, ut32 reg) {
+RZ_IPI bool riscv_memory_operand_is_based_on(cs_insn *insn, ut8 n, ut32 reg) {
 	return riscv_operand_is(insn, n, RISCV_OP_MEM) && riscv_memory_operand(insn, n)->mem.base == reg;
 }
 
@@ -2220,7 +2220,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft9	.64	488	0\n" // =f29
 			"gpr	ft10	.64	496	0\n" // =f30
 			"gpr	ft11	.64	504	0\n" // =f31
-			"gpr	fcsr	.64	512	0\n"
+			"gpr	fcsr	.32	512	0\n"
 			// vector registers
 			// assume each register is 512 bits (64 bytes) for maximum compatibility
 			// TODO: make the width accurately reflect the exact width defined in the binary
