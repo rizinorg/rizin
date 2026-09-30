@@ -735,6 +735,7 @@ static const char *conds_names[] = {
 static const char *conds(ut8 cc) {
 	return conds_names[cc << 1];
 }
+
 static const char *conds_extended(ut8 cc) {
 	return conds_names[cc];
 }
@@ -757,6 +758,7 @@ typedef struct {
 	ut32 last_addr; 	///< State of last addr dissassembled
 	C166ExtState ext;
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
+	bool inited;
 } C166State;
 // clang-format on
 
@@ -788,4 +790,5 @@ static inline ut16 get_operand(const C166_Inst *i, const ut8 index) {
 
 RZ_IPI st32 c166_decode_command(RZ_NONNULL C166State *state, RZ_NONNULL C166_Inst *instr, RZ_NONNULL const ut8 *bytes, st32 len);
 static bool check_unused_opcode(ut8 opcode);
+static ut16 CoREG(ut8 bits);
 #endif /* C166_DISAS_H */
