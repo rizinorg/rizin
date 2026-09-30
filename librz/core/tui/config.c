@@ -62,14 +62,14 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 		return;
 	}
 
-	rz_cons_printf("New value (old=%s): \n", value);
-	rz_cons_show_cursor(true);
-	rz_cons_flush();
-	rz_cons_set_raw(0);
+	rz_cons_printf(core->cons, "New value (old=%s): \n", value);
+	rz_cons_show_cursor(core->cons, true);
+	rz_cons_flush(core->cons);
+	rz_cons_set_raw(core->cons, 0);
 	rz_line_set_prompt(line, ":> ");
-	rz_cons_fgets(buf, sizeof(buf), 0, 0);
-	rz_cons_set_raw(1);
-	rz_cons_show_cursor(false);
+	rz_cons_fgets(core->cons, buf, sizeof(buf), 0, 0);
+	rz_cons_set_raw(core->cons, 1);
+	rz_cons_show_cursor(core->cons, false);
 	rz_config_set_any(core->config, name, buf);
 	free(value);
 }
@@ -80,7 +80,7 @@ static void show_config_options(RzCore *core, const char *name) {
 		return;
 	}
 
-	int w = rz_cons_get_size(NULL);
+	int w = rz_cons_get_size(core->cons, NULL);
 	const char **item;
 	RzIterator *iter = rz_set_s_as_iter(options);
 	RzStrBuf *sb = rz_strbuf_new(" Options: ");
@@ -88,14 +88,14 @@ static void show_config_options(RzCore *core, const char *name) {
 		rz_strbuf_appendf(sb, "%s%s", *item ? ", " : "", *item);
 		if (rz_strbuf_length(sb) + 5 >= w) {
 			char *s = rz_strbuf_drain(sb);
-			rz_cons_println(s);
+			rz_cons_println(core->cons, s);
 			free(s);
 			sb = rz_strbuf_new("");
 		}
 	}
 	rz_iterator_free(iter);
 	char *s = rz_strbuf_drain(sb);
-	rz_cons_println(s);
+	rz_cons_println(core->cons, s);
 	free(s);
 }
 
@@ -121,7 +121,7 @@ static bool core_visual_config_flag_space(const RzConfigEntry *entry, void *user
 		}
 		if ((ctx->i >= ctx->option - ctx->delta) &&
 			((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
-			rz_cons_printf(" %c  %s\n", (ctx->option == ctx->i) ? '>' : ' ', ctx->old);
+			rz_cons_printf(ctx->core->cons, " %c  %s\n", (ctx->option == ctx->i) ? '>' : ' ', ctx->old);
 			ctx->j++;
 		}
 		ctx->i++;
@@ -144,7 +144,7 @@ static bool core_visual_config_flag_selection(const RzConfigEntry *entry, void *
 			((ctx->i < ctx->option + ctx->delta) || ((ctx->option < ctx->delta) && (ctx->i < (ctx->delta << 1))))) {
 			// TODO: Better align
 			char *value = rz_config_get_as_string(ctx->core->config, name);
-			rz_cons_printf(" %c  %s = %s\n", (ctx->option == ctx->i) ? '>' : ' ', name, value);
+			rz_cons_printf(ctx->core->cons, " %c  %s = %s\n", (ctx->option == ctx->i) ? '>' : ' ', name, value);
 			free(value);
 			ctx->j++;
 		}
@@ -162,23 +162,23 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 	ctx.core = core;
 
 	for (;;) {
-		rz_cons_clear00();
-		rz_cons_get_size(&ctx.delta);
+		rz_cons_clear00(core->cons);
+		rz_cons_get_size(core->cons, &ctx.delta);
 		ctx.delta /= 4;
 
 		switch (ctx.menu) {
 		case 0: // flag space
-			rz_cons_printf("[EvalSpace]\n\n");
+			rz_cons_printf(core->cons, "[EvalSpace]\n\n");
 			ctx.hit = ctx.j = ctx.i = 0;
 			rz_config_iterate_over(core->config, core_visual_config_flag_space, &ctx);
 			if (!ctx.hit && ctx.j > 0) {
 				ctx.option--;
 				continue;
 			}
-			rz_cons_printf("\n Sel: %s \n\n", ctx.fs);
+			rz_cons_printf(core->cons, "\n Sel: %s \n\n", ctx.fs);
 			break;
 		case 1: // flag selection
-			rz_cons_printf("[EvalSpace < Variables: %s]\n\n", ctx.fs);
+			rz_cons_printf(core->cons, "[EvalSpace < Variables: %s]\n\n", ctx.fs);
 			ctx.hit = 0;
 			ctx.j = ctx.i = 0;
 			rz_config_iterate_over(core->config, core_visual_config_flag_selection, &ctx);
@@ -189,21 +189,21 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 			}
 			if (ctx.fs2) {
 				// TODO: Break long lines.
-				rz_cons_printf("\n Selected: %s (%s)\n", ctx.fs2, ctx.desc);
+				rz_cons_printf(core->cons, "\n Selected: %s (%s)\n", ctx.fs2, ctx.desc);
 				show_config_options(core, ctx.fs2);
-				rz_cons_newline();
+				rz_cons_newline(core->cons);
 			}
 		}
 
 		if (ctx.fs && !strncmp(ctx.fs, "asm.", 4)) {
 			rz_core_cmd(core, "pd $r", 0);
 		}
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
+		rz_cons_visual_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
 		if (ch == 4 || ch == -1) {
 			return;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
 		case 'j': ctx.option++; break;
@@ -228,7 +228,7 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 			break;
 		case '$':
 			rz_list_rizin_vars_handler(core, 0, NULL);
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case '*':
 		case '+':
@@ -253,31 +253,31 @@ RZ_IPI void rz_core_visual_config(RzCore *core) {
 			}
 			break;
 		case '?':
-			rz_cons_clear00();
-			rz_cons_printf("\nVe: Visual Eval help:\n\n"
-				       " q     - quit menu\n"
-				       " j/k   - down/up keys\n"
-				       " h/b   - go back\n"
-				       " $     - same as %%$ - show values of vars\n"
-				       " e/' ' - edit/toggle current variable\n"
-				       " E     - edit variable with 'cfg.editor' (vi?)\n"
-				       " +/-   - increase/decrease numeric value (* and /, too)\n"
-				       " :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons, "\nVe: Visual Eval help:\n\n"
+						   " q     - quit menu\n"
+						   " j/k   - down/up keys\n"
+						   " h/b   - go back\n"
+						   " $     - same as %%$ - show values of vars\n"
+						   " e/' ' - edit/toggle current variable\n"
+						   " E     - edit variable with 'cfg.editor' (vi?)\n"
+						   " +/-   - increase/decrease numeric value (* and /, too)\n"
+						   " :     - enter command\n");
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case ':':
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			{
-				char *cmd = rz_cons_prompt(":> ", NULL);
+				char *cmd = rz_cons_prompt(core->cons, ":> ", NULL);
 				rz_core_cmd(core, cmd, 1);
 				free(cmd);
 			}
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
-			rz_cons_any_key(NULL);
-			rz_cons_clear00();
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
+			rz_cons_any_key(core->cons, NULL);
+			rz_cons_clear00(core->cons);
 			continue;
 		}
 	}

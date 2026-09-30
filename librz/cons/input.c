@@ -10,13 +10,11 @@
 #endif
 #include "i/private.h"
 
-#define I rz_cons_singleton()
-
-RZ_API int rz_cons_controlz(int ch) {
+RZ_API int rz_cons_controlz(RZ_NONNULL RZ_BORROW RzCons *cons, int ch) {
 #if __UNIX__
 	if (ch == 0x1a) {
-		rz_cons_show_cursor(true);
-		rz_cons_enable_mouse(false);
+		rz_cons_show_cursor(cons, true);
+		rz_cons_enable_mouse(cons, false);
 		rz_sys_stop();
 		return 0;
 	}
@@ -28,11 +26,11 @@ RZ_API int rz_cons_controlz(int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int __parseMouseEvent(void) {
+static int __parseMouseEvent(RzCons *cons) {
 	char xpos[32];
 	char ypos[32];
-	(void)rz_cons_readchar(); // skip first char
-	int ch2 = rz_cons_readchar();
+	(void)rz_cons_readchar(cons); // skip first char
+	int ch2 = rz_cons_readchar(cons);
 
 	// [32M - mousedown
 	// [35M - mouseup
@@ -40,7 +38,7 @@ static int __parseMouseEvent(void) {
 		int i;
 		// read until next ;
 		for (i = 0; i < sizeof(xpos) - 1; i++) {
-			char ch = rz_cons_readchar();
+			char ch = rz_cons_readchar(cons);
 			if (ch == ';' || ch == 'M') {
 				break;
 			}
@@ -48,35 +46,35 @@ static int __parseMouseEvent(void) {
 		}
 		xpos[i] = 0;
 		for (i = 0; i < sizeof(ypos) - 1; i++) {
-			char ch = rz_cons_readchar();
+			char ch = rz_cons_readchar(cons);
 			if (ch == ';' || ch == 'M') {
 				break;
 			}
 			ypos[i] = ch;
 		}
 		ypos[i] = 0;
-		rz_cons_set_click(atoi(xpos), atoi(ypos), MOUSE_DEFAULT);
-		(void)rz_cons_readchar();
+		rz_cons_set_click(cons, atoi(xpos), atoi(ypos), MOUSE_DEFAULT);
+		(void)rz_cons_readchar(cons);
 		// ignored
-		int ch = rz_cons_readchar();
+		int ch = rz_cons_readchar(cons);
 		if (ch == 27) {
-			ch = rz_cons_readchar(); // '['
+			ch = rz_cons_readchar(cons); // '['
 		}
 		if (ch == '[') {
 			do {
-				ch = rz_cons_readchar(); // '3'
+				ch = rz_cons_readchar(cons); // '3'
 			} while (ch != 'M');
 		}
 	}
 	return 0;
 }
 
-RZ_API int rz_cons_arrow_to_hjkl(int ch) {
-	I->mouse_event = MOUSE_NONE;
+RZ_API int rz_cons_arrow_to_hjkl(RZ_NONNULL RZ_BORROW RzCons *cons, int ch) {
+	cons->mouse_event = MOUSE_NONE;
 	/* emacs */
 	switch ((ut8)ch) {
 	case 0xc3:
-		rz_cons_readchar();
+		rz_cons_readchar(cons);
 		ch = 'K';
 		break; // emacs repag (alt + v)
 	case 0x16: ch = 'J'; break; // emacs avpag (ctrl + v)
@@ -88,7 +86,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 	if (ch != 0x1b) {
 		return ch;
 	}
-	ch = rz_cons_readchar();
+	ch = rz_cons_readchar(cons);
 	if (!ch) {
 		return 0;
 	}
@@ -97,7 +95,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		ch = 'q'; // XXX: must be 0x1b (RZ_CONS_KEY_ESC)
 		break;
 	case 0x4f: // function keys from f1 to f4
-		ch = rz_cons_readchar();
+		ch = rz_cons_readchar(cons);
 #if defined(__HAIKU__)
 		/* Haiku't don use the '[' char for function keys */
 		if (ch > 'O') { /* only in f1..f12 function keys */
@@ -108,7 +106,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 	case '[': // 0x5b function keys (2)
 		/* Haiku need ESC + [ for PageUp and PageDown  */
 		if (ch < 'A' || ch == '[') {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 		}
 #else
 		switch (ch) { // Arrow keys
@@ -120,7 +118,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		}
 		break;
 	case '[': // function keys (2)
-		ch = rz_cons_readchar();
+		ch = rz_cons_readchar(cons);
 #endif
 		switch (ch) {
 		case '<': {
@@ -134,7 +132,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			char vel[8] = { 0 };
 			int vn = 0;
 			do {
-				ch = rz_cons_readchar();
+				ch = rz_cons_readchar(cons);
 				if (sc > 0) {
 					if (ch >= '0' && ch <= '9') {
 						pos[p++] = ch;
@@ -171,11 +169,11 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			// setup click
 			pos[p++] = 0;
 			y = atoi(pos);
-			rz_cons_set_click(x, y, event);
+			rz_cons_set_click(cons, x, y, event);
 		}
 			return 0;
 		case '[':
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 			switch (ch) {
 			case '2': ch = RZ_CONS_KEY_F11; break;
 			case 'A': ch = RZ_CONS_KEY_F1; break;
@@ -187,10 +185,10 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		case '9':
 			// handle mouse wheel
 			//		__parseWheelEvent();
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 			// 6 is up
 			// 7 is down
-			I->mouse_event = MOUSE_DEFAULT;
+			cons->mouse_event = MOUSE_DEFAULT;
 			if (ch == '6') {
 				ch = 'k';
 			} else if (ch == '7') {
@@ -201,22 +199,22 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			}
 			int ch2;
 			do {
-				ch2 = rz_cons_readchar();
+				ch2 = rz_cons_readchar(cons);
 			} while (ch2 != 'M');
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			__parseMouseEvent();
+			__parseMouseEvent(cons);
 			return 0;
 			break;
 		case '2':
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 			switch (ch) {
 			case 0x7e:
 				ch = RZ_CONS_KEY_F12;
 				break;
 			default:
-				rz_cons_readchar();
+				rz_cons_readchar(cons);
 				switch (ch) {
 				case '0': ch = RZ_CONS_KEY_F9; break;
 				case '1': ch = RZ_CONS_KEY_F10; break;
@@ -226,7 +224,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			}
 			break;
 		case '1':
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(cons);
 			switch (ch) {
 			case '1': ch = RZ_CONS_KEY_F1; break;
 			case '2': ch = RZ_CONS_KEY_F2; break;
@@ -262,10 +260,10 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			// Support st/st-256color term and others
 			// for shift+arrows
 			case ';': // arrow+mod
-				ch = rz_cons_readchar();
+				ch = rz_cons_readchar(cons);
 				switch (ch) {
 				case '2': // arrow+shift
-					ch = rz_cons_readchar();
+					ch = rz_cons_readchar(cons);
 					switch (ch) {
 					case 'A': ch = 'K'; break;
 					case 'B': ch = 'J'; break;
@@ -277,8 +275,8 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 				}
 				break;
 			case ':': // arrow+shift
-				rz_cons_readchar();
-				ch = rz_cons_readchar();
+				rz_cons_readchar(cons);
+				ch = rz_cons_readchar(cons);
 				switch (ch) {
 				case 'A': ch = 'K'; break;
 				case 'B': ch = 'J'; break;
@@ -290,11 +288,11 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			break;
 		case '5':
 			ch = 'K';
-			rz_cons_readchar();
+			rz_cons_readchar(cons);
 			break; // repag
 		case '6':
 			ch = 'J';
-			rz_cons_readchar();
+			rz_cons_readchar(cons);
 			break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
@@ -308,7 +306,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		case 'M': ch = __parseMouseEvent(); break;
+		case 'M': ch = __parseMouseEvent(cons); break;
 		}
 		break;
 	}
@@ -316,17 +314,16 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 }
 
 // XXX no control for max length here?!?!
-RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
+RZ_API int rz_cons_fgets(RZ_NONNULL RZ_BORROW RzCons *cons, char *buf, int len, int argc, const char **argv) {
 #define RETURN(x) \
 	{ \
 		ret = x; \
 		goto beach; \
 	}
-	RzCons *cons = rz_cons_singleton();
 	int ret = 0, color = cons->context->pal.input && *cons->context->pal.input;
 	if (cons->echo) {
-		rz_cons_set_raw(false);
-		rz_cons_show_cursor(true);
+		rz_cons_set_raw(cons, false);
+		rz_cons_show_cursor(cons, true);
 	}
 
 	errno = 0;
@@ -366,14 +363,14 @@ beach:
 	return ret;
 }
 
-RZ_API int rz_cons_any_key(const char *msg) {
+RZ_API int rz_cons_any_key(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
 	if (msg && *msg) {
-		rz_cons_printf("\n-- %s --\n", msg);
+		rz_cons_printf(cons, "\n-- %s --\n", msg);
 	} else {
-		rz_cons_print("\n--press any key--\n");
+		rz_cons_print(cons, "\n--press any key--\n");
 	}
-	rz_cons_flush();
-	return rz_cons_readchar();
+	rz_cons_flush(cons);
+	return rz_cons_readchar(cons);
 	// rz_cons_strcat ("\x1b[2J\x1b[0;0H");
 }
 
@@ -388,7 +385,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	INPUT_RECORD irInBuf = { 0 };
 	CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
 	wchar_t surrogate[3] = { 0 };
-	const bool mouse_enabled = I->mouse;
+	const bool mouse_enabled = cons->mouse;
 	bool click_n_drag = false;
 	bool shift = false;
 	bool alt = false;
@@ -396,11 +393,11 @@ static int __cons_readchar_w32(ut32 usec) {
 	bool do_break = false;
 	const bool is_console = rz_cons_isatty();
 	void *bed;
-	I->mouse_event = MOUSE_NONE;
+	cons->mouse_event = MOUSE_NONE;
 	h = GetStdHandle(STD_INPUT_HANDLE);
 	const bool has_input_console = GetConsoleMode(h, &mode);
 	DWORD newmode = ENABLE_WINDOW_INPUT;
-	if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
+	if (cons->vtmode == RZ_VIRT_TERM_MODE_COMPLETE) {
 		newmode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 	}
 	if (has_input_console) {
@@ -408,22 +405,22 @@ static int __cons_readchar_w32(ut32 usec) {
 		SetConsoleMode(h, newmode | mode);
 	}
 	do {
-		bed = rz_cons_sleep_begin();
+		bed = rz_interrupt_sleep_begin(cons->intr);
 		if (usec) {
 			if (WaitForSingleObject(h, usec) == WAIT_TIMEOUT) {
-				rz_cons_sleep_end(bed);
+				rz_interrupt_sleep_end(cons->intr, bed);
 				return -1;
 			}
 		}
-		if (I->term_pty || !is_console) {
-			if (I->term_pty) {
-				rz_cons_enable_mouse(I->mouse);
+		if (cons->term_pty || !is_console) {
+			if (cons->term_pty) {
+				rz_cons_enable_mouse(cons->mouse);
 			}
 			ret = ReadFile(h, &ch, 1, &out, NULL);
 		} else {
 			ret = ReadConsoleInputW(h, &irInBuf, 1, &out);
 		}
-		rz_cons_sleep_end(bed);
+		rz_interrupt_sleep_end(cons->intr, bed);
 		if (!ret) {
 			ch = -1;
 			break;
@@ -434,7 +431,7 @@ static int __cons_readchar_w32(ut32 usec) {
 		if (mouse_enabled) {
 			rz_cons_enable_mouse(true);
 		}
-		if (irInBuf.EventType == MOUSE_EVENT && I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
+		if (irInBuf.EventType == MOUSE_EVENT && cons->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 			if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
 				if (irInBuf.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
 					click_n_drag = true;
@@ -447,7 +444,7 @@ static int __cons_readchar_w32(ut32 usec) {
 				} else {
 					ch = ctrl ? 'K' : 'k';
 				}
-				I->mouse_event = MOUSE_DEFAULT;
+				cons->mouse_event = MOUSE_DEFAULT;
 			}
 			switch (irInBuf.Event.MouseEvent.dwButtonState) {
 			case FROM_LEFT_1ST_BUTTON_PRESSED:
@@ -496,7 +493,7 @@ static int __cons_readchar_w32(ut32 usec) {
 						}
 						free(tmp);
 					}
-				} else if (I->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
+				} else if (cons->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 					char *c;
 					char mod[2];
 					sprintf(mod, "%d", state);
@@ -556,9 +553,9 @@ static int __cons_readchar_w32(ut32 usec) {
 }
 #endif
 
-RZ_API int rz_cons_readchar_timeout(ut32 usec) {
+RZ_API int rz_cons_readchar_timeout(RZ_NONNULL RZ_BORROW RzCons *cons, ut32 usec) {
 	char ch;
-	if (rz_cons_readbuffer_readchar(&ch)) {
+	if (rz_cons_readbuffer_readchar(cons, &ch)) {
 		return ch;
 	}
 #if __UNIX__
@@ -569,11 +566,11 @@ RZ_API int rz_cons_readchar_timeout(ut32 usec) {
 	FD_SET(0, &fdset);
 	tv.tv_sec = 0; // usec / 1000;
 	tv.tv_usec = 1000 * usec;
-	rz_cons_set_raw(1);
+	rz_cons_set_raw(cons, 1);
 	if (select(1, &fdset, NULL, &errset, &tv) == 1) {
-		return rz_cons_readchar();
+		return rz_cons_readchar(cons);
 	}
-	rz_cons_set_raw(0);
+	rz_cons_set_raw(cons, 0);
 	// timeout
 	return -1;
 #else
@@ -581,51 +578,51 @@ RZ_API int rz_cons_readchar_timeout(ut32 usec) {
 #endif
 }
 
-RZ_API bool rz_cons_readpush(const char *str, int len) {
-	char *res = (len + I->input->readbuffer_length > 0) ? realloc(I->input->readbuffer, len + I->input->readbuffer_length) : NULL;
+RZ_API bool rz_cons_readpush(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, int len) {
+	char *res = (len + cons->input->readbuffer_length > 0) ? realloc(cons->input->readbuffer, len + cons->input->readbuffer_length) : NULL;
 	if (res) {
-		I->input->readbuffer = res;
-		memmove(I->input->readbuffer + I->input->readbuffer_length, str, len);
-		I->input->readbuffer_length += len;
+		cons->input->readbuffer = res;
+		memmove(cons->input->readbuffer + cons->input->readbuffer_length, str, len);
+		cons->input->readbuffer_length += len;
 		return true;
 	}
 	return false;
 }
 
-RZ_API void rz_cons_readflush(void) {
-	RZ_FREE(I->input->readbuffer);
-	I->input->readbuffer_length = 0;
+RZ_API void rz_cons_readflush(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	RZ_FREE(cons->input->readbuffer);
+	cons->input->readbuffer_length = 0;
 }
 
-RZ_API void rz_cons_switchbuf(bool active) {
-	I->input->bufactive = active;
+RZ_API void rz_cons_switchbuf(RZ_NONNULL RZ_BORROW RzCons *cons, bool active) {
+	cons->input->bufactive = active;
 }
 
 #if !__WINDOWS__
 extern volatile sig_atomic_t sigwinchFlag;
 #endif
 
-RZ_API bool rz_cons_readbuffer_readchar(char *ch) {
-	if (I->input->readbuffer_length <= 0) {
+RZ_API bool rz_cons_readbuffer_readchar(RZ_NONNULL RZ_BORROW RzCons *cons, char *ch) {
+	if (cons->input->readbuffer_length <= 0) {
 		return false;
 	}
-	*ch = *I->input->readbuffer;
-	I->input->readbuffer_length--;
-	memmove(I->input->readbuffer, I->input->readbuffer + 1, I->input->readbuffer_length);
+	*ch = *cons->input->readbuffer;
+	cons->input->readbuffer_length--;
+	memmove(cons->input->readbuffer, cons->input->readbuffer + 1, cons->input->readbuffer_length);
 	return true;
 }
 
-RZ_API int rz_cons_readchar(void) {
+RZ_API int rz_cons_readchar(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	char buf[2], ch;
 	buf[0] = -1;
-	if (rz_cons_readbuffer_readchar(&ch)) {
+	if (rz_cons_readbuffer_readchar(cons, &ch)) {
 		return ch;
 	}
-	rz_cons_set_raw(1);
+	rz_cons_set_raw(cons, 1);
 #if __WINDOWS__
-	return __cons_readchar_w32(0);
+	return __cons_readchar_w32(cons, 0);
 #else
-	void *bed = rz_cons_sleep_begin();
+	void *bed = rz_interrupt_sleep_begin(cons->intr);
 
 	// Blocks until either stdin has something to read or a signal happens.
 	// This serves to check if the terminal window was resized. It avoids the race
@@ -651,30 +648,30 @@ RZ_API int rz_cons_readchar(void) {
 	}
 
 	ssize_t ret = read(STDIN_FILENO, buf, 1);
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(cons->intr, bed);
 	if (ret != 1) {
 		return -1;
 	}
-	if (I->input->bufactive) {
-		rz_cons_set_raw(0);
+	if (cons->input->bufactive) {
+		rz_cons_set_raw(cons, 0);
 	}
-	return rz_cons_controlz(buf[0]);
+	return rz_cons_controlz(cons, buf[0]);
 #endif
 }
 
-RZ_API bool rz_cons_yesno(int def, const char *fmt, ...) {
+RZ_API bool rz_cons_yesno(RZ_NONNULL RZ_BORROW RzCons *cons, int def, const char *fmt, ...) {
 	va_list ap;
 	ut8 key = (ut8)def;
 	va_start(ap, fmt);
 
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(cons)) {
 		va_end(ap);
 		return def == 'y';
 	}
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fflush(stderr);
-	rz_cons_set_raw(true);
+	rz_cons_set_raw(cons, true);
 	char buf[] = " ?\n";
 	if (read(0, buf + 1, 1) == 1) {
 		key = (ut8)buf[1];
@@ -682,7 +679,7 @@ RZ_API bool rz_cons_yesno(int def, const char *fmt, ...) {
 			if (key == 'Y') {
 				key = 'y';
 			}
-			rz_cons_set_raw(false);
+			rz_cons_set_raw(cons, false);
 			if (key == '\n' || key == '\r') {
 				key = def;
 			}
@@ -692,20 +689,20 @@ RZ_API bool rz_cons_yesno(int def, const char *fmt, ...) {
 	return false;
 }
 
-RZ_API char *rz_cons_input(const char *msg) {
-	char *oprompt = rz_line_get_prompt(I->line);
+RZ_API char *rz_cons_input(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
+	char *oprompt = rz_line_get_prompt(cons->line);
 	if (!oprompt) {
 		return NULL;
 	}
 	char buf[1024];
 	if (msg) {
-		rz_line_set_prompt(I->line, msg);
+		rz_line_set_prompt(cons->line, msg);
 	} else {
-		rz_line_set_prompt(I->line, "");
+		rz_line_set_prompt(cons->line, "");
 	}
 	buf[0] = 0;
-	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
-	rz_line_set_prompt(I->line, oprompt);
+	rz_cons_fgets(cons, buf, sizeof(buf), 0, NULL);
+	rz_line_set_prompt(cons->line, oprompt);
 	free(oprompt);
 	return rz_str_dup(buf);
 }

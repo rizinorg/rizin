@@ -27,6 +27,14 @@ typedef ut64 (*RzCoreNumGet)(void *core, const char *str);
 typedef const RzList *(*RzCoreFlagsGet)(void *core, ut64 offset);
 typedef bool (*RzCoreBinApplyInfo)(void *core, void *binfile, ut32 mask);
 
+// TODO: Not really confident in these and binds in general
+// These two are only used in:
+// 1 - librz/arch/p/analysis/analysis_wasm.c
+// 2 - librz/arch/p/parse/parse_wasm_pseudo.c
+// (PremadeS)
+typedef void (*RzCoreConsPush)(void *core);
+typedef void (*RzCoreConsPop)(void *core);
+
 typedef struct rz_core_bind_t {
 	void *core;
 	RzCoreCmd cmd;
@@ -47,6 +55,8 @@ typedef struct rz_core_bind_t {
 	RzCoreNumGet numGet;
 	RzCoreFlagsGet flagsGet;
 	RzCoreBinApplyInfo applyBinInfo;
+	RzCoreConsPush consPush;
+	RzCoreConsPop consPop;
 } RzCoreBind;
 
 #endif

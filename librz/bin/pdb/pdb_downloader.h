@@ -31,7 +31,7 @@ typedef struct SPDBDownloader {
 	char *(*download)(struct SPDBDownloader *pdb_downloader);
 } SPDBDownloader;
 
-RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options);
+RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options, RZ_NULLABLE RzCons *cons);
 RZ_API RZ_OWN char *rz_bin_symserver_download(RZ_NONNULL const SPDBDownloaderOpt *options);
 
 #ifdef __cplusplus

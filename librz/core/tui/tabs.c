@@ -14,7 +14,7 @@ static void prompt_read(RzCons *cons, const char *p, char *buf, int buflen) {
 	*buf = 0;
 	rz_line_set_prompt(cons->line, p);
 	rz_core_visual_showcursor(NULL, true);
-	rz_cons_fgets(buf, buflen, 0, NULL);
+	rz_cons_fgets(cons, buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
 }
 

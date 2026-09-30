@@ -254,17 +254,17 @@ static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 		RZ_LOG_ERROR("Cannot allocate buffer\n");
 		return NULL;
 	}
-	rz_cons_push();
+	rz_cons_push(core->cons);
 	rz_io_read_at_mapped(core->io, b->addr, block, b->size);
 	RzCoreDisasmOptions disasm_options = {
 		.cbytes = 2,
 	};
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
-	rz_cons_filter();
-	const char *retstr = rz_str_get(rz_cons_get_buffer());
+	rz_cons_filter(core->cons);
+	const char *retstr = rz_str_get(rz_cons_get_buffer(core->cons));
 	char *opcodes = rz_str_dup(retstr);
-	rz_cons_pop();
-	rz_cons_echo(NULL);
+	rz_cons_pop(core->cons);
+	rz_cons_echo(core->cons, NULL);
 	free(block);
 	return opcodes;
 }
@@ -613,7 +613,7 @@ RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGrap
 	if (!string) {
 		return false;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 	return true;
 }
@@ -712,8 +712,8 @@ end:
 
 static bool convert_dot_str_to_image(RzCore *core, char *str, const char *save_path) {
 	if (save_path && *save_path) {
-		rz_cons_printf("Saving to file '%s'...\n", save_path);
-		rz_cons_flush();
+		rz_cons_printf(core->cons, "Saving to file '%s'...\n", save_path);
+		rz_cons_flush(core->cons);
 	}
 	if (!rz_file_dump("a.dot", (const unsigned char *)str, -1, false)) {
 		return false;

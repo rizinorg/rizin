@@ -552,7 +552,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 
 static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int json) {
 	if (json == 'q') {
-		bin->cb_printf("%s\n", bp->name);
+		bin->cb_printf(bin->cb_printf_user, "%s\n", bp->name);
 	} else if (json) {
 		pj_o(pj);
 		pj_ks(pj, "name", bp->name);
@@ -560,16 +560,16 @@ static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int
 		pj_ks(pj, "license", bp->license ? bp->license : "???");
 		pj_end(pj);
 	} else {
-		bin->cb_printf("Name: %s\n", bp->name);
-		bin->cb_printf("Description: %s\n", bp->desc);
+		bin->cb_printf(bin->cb_printf_user, "Name: %s\n", bp->name);
+		bin->cb_printf(bin->cb_printf_user, "Description: %s\n", bp->desc);
 		if (bp->license) {
-			bin->cb_printf("License: %s\n", bp->license);
+			bin->cb_printf(bin->cb_printf_user, "License: %s\n", bp->license);
 		}
 		if (bp->version) {
-			bin->cb_printf("Version: %s\n", bp->version);
+			bin->cb_printf(bin->cb_printf_user, "Version: %s\n", bp->version);
 		}
 		if (bp->author) {
-			bin->cb_printf("Author: %s\n", bp->author);
+			bin->cb_printf(bin->cb_printf_user, "Author: %s\n", bp->author);
 		}
 	}
 	return true;
@@ -577,7 +577,7 @@ static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int
 
 static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 	if (json == 'q') {
-		bin->cb_printf("%s\n", bx->name);
+		bin->cb_printf(bin->cb_printf_user, "%s\n", bx->name);
 	} else if (json) {
 		PJ *pj = pj_new();
 		if (!pj) {
@@ -588,13 +588,13 @@ static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 		pj_ks(pj, "description", bx->desc);
 		pj_ks(pj, "license", bx->license ? bx->license : "???");
 		pj_end(pj);
-		bin->cb_printf("%s\n", pj_string(pj));
+		bin->cb_printf(bin->cb_printf_user, "%s\n", pj_string(pj));
 		pj_free(pj);
 	} else {
-		bin->cb_printf("Name: %s\n", bx->name);
-		bin->cb_printf("Description: %s\n", bx->desc);
+		bin->cb_printf(bin->cb_printf_user, "Name: %s\n", bx->name);
+		bin->cb_printf(bin->cb_printf_user, "Description: %s\n", bx->desc);
 		if (bx->license) {
-			bin->cb_printf("License: %s\n", bx->license);
+			bin->cb_printf(bin->cb_printf_user, "License: %s\n", bx->license);
 		}
 	}
 }
@@ -831,7 +831,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
-	bin->cb_printf = (PrintfCallback)printf;
+	bin->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	bin->strpurge = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;

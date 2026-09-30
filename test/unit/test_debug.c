@@ -748,14 +748,14 @@ static bool test_debug_hw_watch(void) {
 }
 
 int all_tests() {
-	rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
+	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
 	mu_run_test(test_rz_debug_reg_offset);
 	mu_run_test(test_debug_sw_bp);
 	mu_run_test(test_debug_sw_bp_multibits);
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
-	rz_cons_free();
+	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }
 

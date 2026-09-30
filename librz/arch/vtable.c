@@ -234,13 +234,13 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 		return NULL;
 	}
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(analysis->intr, NULL, NULL);
 
 	void **iter;
 	RzBinSection *section;
 	rz_pvector_foreach (sections, iter) {
 		section = *iter;
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(analysis->intr)) {
 			break;
 		}
 
@@ -255,7 +255,7 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 			break;
 		}
 		while (startAddress <= endAddress) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(analysis->intr)) {
 				break;
 			}
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, startAddress, 0)) {
@@ -277,7 +277,7 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 		}
 	}
 
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(analysis->intr);
 
 	if (rz_list_empty(vtables)) {
 		// stripped binary?
@@ -287,7 +287,7 @@ RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *con
 	return vtables;
 }
 
-RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	RVTableContext context;
 	rz_analysis_vtable_begin(analysis, &context);
 
@@ -321,19 +321,20 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode) {
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_print(cons, pj_string(pj));
+		rz_cons_print(cons, "\n");
 		pj_free(pj);
 	} else {
 		rz_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
-			rz_cons_printf("\nVtable Found at 0x%08" PFMT64x "\n", vtableStartAddress);
+			rz_cons_printf(cons, "\nVtable Found at 0x%08" PFMT64x "\n", vtableStartAddress);
 			rz_vector_foreach (&table->methods, curMethod) {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
-				rz_cons_printf("0x%08" PFMT64x " : %s\n", vtableStartAddress, name ? name : noMethodName);
+				rz_cons_printf(cons, "0x%08" PFMT64x " : %s\n", vtableStartAddress, name ? name : noMethodName);
 				vtableStartAddress += context.word_size;
 			}
-			rz_cons_newline();
+			rz_cons_printf(cons, "\n");
 		}
 	}
 	rz_list_free(vtables);

@@ -10,6 +10,7 @@
 #include "linux/linux_debug.h"
 #include "procfs.h"
 #include "bt.c"
+#include "rz_util/rz_interrupt.h"
 
 #define WAIT_ANY -1
 #ifndef WIFCONTINUED
@@ -49,7 +50,7 @@ static int rz_debug_native_continue_syscall(RzDebug *dbg, int pid, int num) {
 
 static void interrupt_process(RzDebug *dbg) {
 	rz_debug_kill(dbg, dbg->pid, dbg->tid, SIGINT);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 }
 
 static int rz_debug_native_stop(RzDebug *dbg) {
@@ -65,7 +66,7 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
 	if (dbg->consbreak) {
-		rz_cons_break_push((RzConsBreak)interrupt_process, dbg);
+		rz_interrupt_break_push(dbg->intr, (RzInterruptBreakCallback)interrupt_process, dbg);
 	}
 
 	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {

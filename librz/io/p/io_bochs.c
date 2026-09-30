@@ -261,7 +261,7 @@ static char *io_bochs_command(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	io->cb_printf("%s\n", output);
+	io->cb_printf(io->cb_printf_user, "%s\n", output);
 	free(output);
 	return NULL;
 }

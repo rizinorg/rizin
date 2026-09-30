@@ -932,7 +932,7 @@ RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core) 
 }
 
 static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
-	rz_cons_printf("C 0x%08" PFMT64x " ", key);
+	rz_cons_printf(core->cons, "C 0x%08" PFMT64x " ", key);
 	rz_core_seek(core, key, true);
 	int nb_opcodes = 1;
 	int nb_bytes = 0;
@@ -954,7 +954,7 @@ RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NON
 		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s\n", vfunc);
 		return;
 	}
-	rz_cons_printf("Virtual xrefs to %s\n", vfunc);
+	rz_cons_printf(core->cons, "Virtual xrefs to %s\n", vfunc);
 	ht_up_foreach(set, (HtUPForeachCallback)print_virtual_xrefs, core);
 }
 

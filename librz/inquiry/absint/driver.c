@@ -315,12 +315,12 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 	}
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(config->intr, NULL, NULL);
 
 	// Serve the interpreters
 	size_t entries_finished = 0;
 	while (entries_finished < entries_pushed) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(config->intr)) {
 			breaked = true;
 			break;
 		}
@@ -329,7 +329,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			// closed
 			break;
 		}
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(config->intr)) {
 			breaked = true;
 			break;
 		}
@@ -383,7 +383,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 
 	return_code = true;
 
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(config->intr);
 
 err_threads:
 	// Close channels to make interp threads stop.

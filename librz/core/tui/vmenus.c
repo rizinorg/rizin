@@ -132,7 +132,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 	RzCoreVisual *visual = core->visual;
 
 	// Adjust the windows size automaticaly
-	(void)rz_cons_get_size(&window);
+	(void)rz_cons_get_size(core->cons, &window);
 	window -= 2; // size of command line in the bottom
 	if (visual->view->inputing) {
 		window -= 2; // filter size
@@ -160,7 +160,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 		print_full_func = true;
 		if (i >= wdelta) {
 			if (i > window + wdelta - 1) {
-				rz_cons_printf("...\n");
+				rz_cons_printf(core->cons, "...\n");
 				break;
 			}
 			if (idx == i) {
@@ -186,13 +186,13 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 						int columns = fun_len > cols ? cols - 2 : cols;
 						tmp = rz_str_ansi_crop(var_functions, 0, 0, columns, window);
 						if (rz_str_ansi_len(tmp) < fun_len) {
-							rz_cons_printf("%s..%s\n", tmp, Color_RESET);
+							rz_cons_printf(core->cons, "%s..%s\n", tmp, Color_RESET);
 							print_full_func = false;
 						}
 						free(tmp);
 					}
 					if (print_full_func) {
-						rz_cons_println(var_functions);
+						rz_cons_println(core->cons, var_functions);
 					}
 					free(var_functions);
 				}
@@ -218,11 +218,11 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	// Adjust the window size automatically.
-	(void)rz_cons_get_size(&window);
+	(void)rz_cons_get_size(core->cons, &window);
 	window -= 8; // Size of printed things.
 
 	// A new line so this looks reasonable.
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 
 	int llen = rz_pvector_len(&fcn->vars);
 	if (*vindex >= llen) {
@@ -234,16 +234,16 @@ static ut64 var_variables_show(RzCore *core, int idx, int *vindex, int show, int
 		RzAnalysisVar *var = *it;
 		if (i >= wdelta) {
 			if (i > window + wdelta) {
-				rz_cons_printf("...\n");
+				rz_cons_printf(core->cons, "...\n");
 				break;
 			}
 			if (show) {
 				char *vartype = rz_type_as_string(typedb, var->type);
-				rz_cons_printf("%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
+				rz_cons_printf(core->cons, "%s%s %s %s @ ", i == *vindex ? "* " : "  ", rz_analysis_var_is_arg(var) ? "arg" : "var", vartype, var->name);
 				free(vartype);
 
 				char *storage_str = rz_analysis_var_storage_to_string(core->analysis, var, &var->storage);
-				rz_cons_strcat(storage_str);
+				rz_cons_strcat(core->cons, storage_str);
 				free(storage_str);
 			}
 		}
@@ -257,7 +257,7 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 	ut64 addr = (view->level != 0 && view->level != 1)
 		? core->offset
 		: var_functions_show(core, view->option, 0, colpos);
-	int h, w = rz_cons_get_size(&h);
+	int h, w = rz_cons_get_size(core->cons, &h);
 
 	if (view->printMode == 1) { // px $r
 		addr += view->delta * 16;
@@ -306,7 +306,7 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		} else {
 			out = rz_str_ansi_crop(view->output, 0, view->delta, w - colpos, h - 2 + view->delta);
 		}
-		rz_cons_printf("\n%s\n", out);
+		rz_cons_printf(core->cons, "\n%s\n", out);
 		free(out);
 	}
 }
@@ -372,7 +372,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	RzStrBuf *buf;
 	char old[1024];
 	bool color = rz_config_get_i(core->config, "scr.color");
-	int h, cols = rz_cons_get_size(&h);
+	int h, cols = rz_cons_get_size(core->cons, &h);
 	old[0] = '\0';
 	addr = core->offset;
 	cols -= 50;
@@ -380,40 +380,40 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 		cols = 60;
 	}
 
-	rz_cons_clear00();
+	rz_cons_clear00(core->cons);
 	rz_core_visual_analysis_refresh_column(core, cols);
 	if (cols > 30) {
-		rz_cons_column(cols);
+		rz_cons_column(core->cons, cols);
 	}
 	switch (view->level) {
 	// Show functions list help in visual mode
 	case 0: {
 		buf = rz_strbuf_new("");
 		if (color) {
-			rz_cons_strcat(core->cons->context->pal.prompt);
+			rz_cons_strcat(core->cons, core->cons->context->pal.prompt);
 		}
 		if (view->selectPanel) {
-			rz_cons_printf("-- functions -----------------[ %s ]-->>", printCmds[view->printMode]);
+			rz_cons_printf(core->cons, "-- functions -----------------[ %s ]-->>", printCmds[view->printMode]);
 		} else {
-			rz_cons_printf("-[ functions ]----------------- %s ---", printCmds[view->printMode]);
+			rz_cons_printf(core->cons, "-[ functions ]----------------- %s ---", printCmds[view->printMode]);
 		}
 		if (color) {
-			rz_cons_strcat("\n" Color_RESET);
+			rz_cons_strcat(core->cons, "\n" Color_RESET);
 		} else {
-			rz_cons_strcat("\n");
+			rz_cons_strcat(core->cons, "\n");
 		}
 		if (!visual->view->hide_legend) {
 			core_vmenu_append_help(core, buf, help_fun_visual);
 		}
 		char *drained = rz_strbuf_drain(buf);
-		rz_cons_printf("%s", drained);
+		rz_cons_printf(core->cons, "%s", drained);
 		free(drained);
 		// hints for filtered keywords
 		if (visual->view->inputing) {
 			if (visual->view->is_inputing) {
-				rz_cons_printf("input keywords: %s\n\n", visual->view->inputing);
+				rz_cons_printf(core->cons, "input keywords: %s\n\n", visual->view->inputing);
 			} else {
-				rz_cons_printf("keywords: %s\n\n", visual->view->inputing);
+				rz_cons_printf(core->cons, "keywords: %s\n\n", visual->view->inputing);
 			}
 		}
 		addr = var_functions_show(core, view->option, 1, cols);
@@ -422,28 +422,28 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	case 1: {
 		buf = rz_strbuf_new("");
 		if (color) {
-			rz_cons_strcat(core->cons->context->pal.prompt);
+			rz_cons_strcat(core->cons, core->cons->context->pal.prompt);
 		}
-		rz_cons_printf("-[ variables ]----- 0x%08" PFMT64x, addr);
+		rz_cons_printf(core->cons, "-[ variables ]----- 0x%08" PFMT64x, addr);
 		if (color) {
-			rz_cons_strcat("\n" Color_RESET);
+			rz_cons_strcat(core->cons, "\n" Color_RESET);
 		}
 		core_vmenu_append_help(core, buf, help_var_visual);
 		char *drained = rz_strbuf_drain(buf);
-		rz_cons_printf("%s", drained);
+		rz_cons_printf(core->cons, "%s", drained);
 		addr = var_variables_show(core, view->option, &(view->variable_option), 1, cols);
 		free(drained);
 		// var_index_show (core->analysis, fcn, addr, option);
 		break;
 	}
 	case 2: {
-		rz_cons_printf("Press 'q' to quit call refs\n");
+		rz_cons_printf(core->cons, "Press 'q' to quit call refs\n");
 		if (color) {
-			rz_cons_strcat(core->cons->context->pal.prompt);
+			rz_cons_strcat(core->cons, core->cons->context->pal.prompt);
 		}
-		rz_cons_printf("-[ calls ]----------------------- 0x%08" PFMT64x " (TODO)\n", addr);
+		rz_cons_printf(core->cons, "-[ calls ]----------------------- 0x%08" PFMT64x " (TODO)\n", addr);
 		if (color) {
-			rz_cons_strcat("\n" Color_RESET);
+			rz_cons_strcat(core->cons, "\n" Color_RESET);
 		}
 		// TODO: filter only the callrefs. but we cant grep here
 		sprintf(old, "afi @ 0x%08" PFMT64x, addr);
@@ -452,11 +452,11 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 			// 'h - 2' because we have two new lines in rz_cons_printf
 			if (!core->cons->show_vals) {
 				char *out = rz_str_ansi_crop(output, 0, 0, cols, h - 2);
-				rz_cons_printf("\n%s\n", out);
+				rz_cons_printf(core->cons, "\n%s\n", out);
 				free(out);
 				RZ_FREE(output);
 			} else {
-				rz_cons_printf("\n%s\n", output);
+				rz_cons_printf(core->cons, "\n%s\n", output);
 				RZ_FREE(output);
 			}
 		}
@@ -468,18 +468,18 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	}
 
 	// print percentage at right corner
-	cols = rz_cons_get_size(&h);
+	cols = rz_cons_get_size(core->cons, &h);
 	float p = (float)(view->delta + h - 2) / (float)(view->column_nlines);
 	if (p > 1) {
 		p = 1;
 	}
 	char *percentage = rz_str_newf("%.1f%%", p * 100);
 	// move to the right corner
-	rz_cons_gotoxy(cols - strlen(percentage) - 1, h);
-	rz_cons_printf("%s", percentage);
+	rz_cons_gotoxy(core->cons, cols - strlen(percentage) - 1, h);
+	rz_cons_printf(core->cons, "%s", percentage);
 	free(percentage);
-	rz_cons_show_cursor(false);
-	rz_cons_flush();
+	rz_cons_show_cursor(core->cons, false);
+	rz_cons_flush(core->cons);
 	return addr;
 }
 
@@ -488,15 +488,15 @@ static void rz_core_visual_analysis_refresh_oneshot(RzCore *core) {
 }
 
 static void rz_core_visual_debugtraces_help(RzCore *core) {
-	rz_cons_clear00();
-	rz_cons_printf(
+	rz_cons_clear00(core->cons);
+	rz_cons_printf(core->cons,
 		"vbd: Visual Browse Debugtraces:\n\n"
 		" q     - quit the bit editor\n"
 		" Q     - Quit (jump into the disasm view)\n"
 		" j/k   - Select next/previous trace\n"
 		" :     - enter command\n");
-	rz_cons_flush();
-	rz_cons_any_key(NULL);
+	rz_cons_flush(core->cons);
+	rz_cons_any_key(core->cons, NULL);
 }
 
 RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
@@ -506,22 +506,22 @@ RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 		char *trace_addr_str = rz_core_cmd_strf(core, "dtdq %d", delta);
 		ut64 trace_addr = rz_num_get(NULL, trace_addr_str);
 		free(trace_addr_str);
-		rz_cons_printf("[0x%08" PFMT64x "]> %d dbg.trace\n", trace_addr, delta);
+		rz_cons_printf(core->cons, "[0x%08" PFMT64x "]> %d dbg.trace\n", trace_addr, delta);
 		for (i = 0; i < delta; i++) {
 			rz_core_cmdf(core, ".dte %d", i);
 		}
 		rz_core_cmd0(core, "x 64@r:SP");
 		rz_core_debug_ri(core);
 		// limit by rows here
-		// int rows = rz_cons_get_size (NULL);
+		// int rows = rz_cons_get_size core->cons, (NULL);
 		rz_core_cmdf(core, "dtd %d", delta);
-		rz_cons_visual_flush();
+		rz_cons_visual_flush(core->cons);
 		char ch;
 		if (input && *input) {
 			ch = *input;
 			input++;
 		} else {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(core->cons);
 		}
 		if (ch == 4 || ch == -1) {
 			if (view->level == 0) {
@@ -530,7 +530,7 @@ RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			view->level--;
 			continue;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'Q': // tab
 		{
@@ -569,7 +569,7 @@ RZ_IPI void rz_core_visual_debugtraces(RzCore *core, const char *input) {
 			break;
 		case ':':
 			rz_core_visual_prompt(core);
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case '?':
 			rz_core_visual_debugtraces_help(core);
@@ -581,11 +581,11 @@ beach:;
 
 static char *prompt_user(RzCore *core, const char *msg, void *p) {
 	char res[128];
-	rz_cons_show_cursor(true);
-	rz_cons_set_raw(false);
+	rz_cons_show_cursor(core->cons, true);
+	rz_cons_set_raw(core->cons, false);
 	rz_line_set_prompt(core->cons->line, msg);
 	res[0] = 0;
-	if (!rz_cons_fgets(res, sizeof(res), 0, NULL)) {
+	if (!rz_cons_fgets(core->cons, res, sizeof(res), 0, NULL)) {
 		res[0] = 0;
 	}
 	return rz_str_dup(res);
@@ -655,7 +655,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 
 		// for filter on the go
 		if (view->level == 0 && visual->view->is_inputing) {
-			int ch = rz_cons_readchar();
+			int ch = rz_cons_readchar(core->cons);
 			switch (ch) {
 			case 13: // CR
 				visual->view->is_inputing = false;
@@ -684,7 +684,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			ch = *input;
 			input++;
 		} else {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(core->cons);
 		}
 		if (ch == 4 || ch == -1) {
 			if (view->level == 0) {
@@ -693,7 +693,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			view->level--;
 			continue;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
 		case '=':
@@ -724,14 +724,14 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			core->cons->show_vals = false;
 			break;
 		case '?':
-			rz_cons_clear00();
+			rz_cons_clear00(core->cons);
 			RzStrBuf *buf = rz_strbuf_new("");
-			rz_cons_println("|Usage: vv");
+			rz_cons_println(core->cons, "|Usage: vv");
 			rz_core_visual_append_help(core, buf, "Actions supported", help_vv_actions_visual);
 			rz_core_visual_append_help(core, buf, "Keys", help_vv_visual);
-			rz_cons_printf("%s", rz_strbuf_drain(buf));
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_printf(core->cons, "%s", rz_strbuf_drain(buf));
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case 9:
 			view->selectPanel = !view->selectPanel;
@@ -740,13 +740,13 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			}
 			break;
 		case ':': {
-			rz_cons_show_cursor(true);
+			rz_cons_show_cursor(core->cons, true);
 			ut64 orig = core->offset;
 			rz_core_seek(core, addr, false);
 			while (rz_core_visual_prompt(core))
 				;
 			rz_core_seek(core, orig, false);
-			rz_cons_show_cursor(false);
+			rz_cons_show_cursor(core->cons, false);
 		}
 			continue;
 		case '/':
@@ -764,7 +764,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				break;
 			case 1: {
 				eprintf("Select variable source ('r'egister or 's'tack): ");
-				int type = rz_cons_readchar();
+				int type = rz_cons_readchar(core->cons);
 				switch (type) {
 				case 'r':
 					addVar(core, type, "Source Register Name: ");
@@ -779,10 +779,10 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 		case 'r': {
 			switch (view->level) {
 			case 1:
-				rz_cons_show_cursor(true);
-				rz_cons_set_raw(false);
+				rz_cons_show_cursor(core->cons, true);
+				rz_cons_set_raw(core->cons, false);
 				rz_line_set_prompt(line, "New name: ");
-				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
+				if (rz_cons_fgets(core->cons, old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
 						variable_rename(core, addr, view->variable_option, old);
@@ -791,7 +791,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				break;
 			default:
 				rz_line_set_prompt(line, "New name: ");
-				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
+				if (rz_cons_fgets(core->cons, old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
 						function_rename(core, addr, old);
@@ -799,22 +799,22 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				}
 				break;
 			}
-			rz_cons_set_raw(true);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, true);
+			rz_cons_show_cursor(core->cons, false);
 		} break;
 		case 't':
 			if (view->level == 1) {
-				rz_cons_show_cursor(true);
-				rz_cons_set_raw(false);
+				rz_cons_show_cursor(core->cons, true);
+				rz_cons_set_raw(core->cons, false);
 				rz_line_set_prompt(line, "New type: ");
-				if (rz_cons_fgets(old, sizeof(old), 0, NULL)) {
+				if (rz_cons_fgets(core->cons, old, sizeof(old), 0, NULL)) {
 					if (*old) {
 						// old[strlen (old)-1] = 0;
 						variable_set_type(core, addr, view->variable_option, old);
 					}
 				}
-				rz_cons_set_raw(true);
-				rz_cons_show_cursor(false);
+				rz_cons_set_raw(core->cons, true);
+				rz_cons_show_cursor(core->cons, false);
 			}
 			break;
 		case '.':
@@ -927,7 +927,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				view->delta += 40;
 			} else {
 				int rows = 0;
-				rz_cons_get_size(&rows);
+				rz_cons_get_size(core->cons, &rows);
 				view->option += (rows - 5);
 				if (view->option >= nfcns) {
 					view->option = nfcns - 1;
@@ -943,7 +943,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 				}
 			} else {
 				int rows = 0;
-				rz_cons_get_size(&rows);
+				rz_cons_get_size(core->cons, &rows);
 				view->option -= (rows - 5);
 				if (view->option < 0) {
 					view->option = 0;

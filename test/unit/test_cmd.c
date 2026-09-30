@@ -1042,11 +1042,11 @@ bool test_sort_subcommands(void) {
 	mu_end;
 }
 
-static void func1_output(RzCmdStateOutput *state) {
+static void func1_output(RzCmdStateOutput *state, RzCons *cons) {
 	rz_cmd_state_output_set_columnsf(state, "d", "val");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("val=33\n");
+		rz_cons_printf(cons, "val=33\n");
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -1057,18 +1057,18 @@ static void func1_output(RzCmdStateOutput *state) {
 		rz_table_add_rowf(state->d.t, "d", 33);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("33\n");
+		rz_cons_printf(cons, "33\n");
 		break;
 	default:
 		break;
 	}
 }
 
-static void func2_output(RzCmdStateOutput *state) {
+static void func2_output(RzCmdStateOutput *state, RzCons *cons) {
 	rz_cmd_state_output_set_columnsf(state, "sd", "name", "val");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("name=second,val=55\n");
+		rz_cons_printf(cons, "name=second,val=55\n");
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -1080,7 +1080,7 @@ static void func2_output(RzCmdStateOutput *state) {
 		rz_table_add_rowf(state->d.t, "sd", "second", 55);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("second=55\n");
+		rz_cons_printf(cons, "second=55\n");
 		break;
 	default:
 		break;
@@ -1091,42 +1091,44 @@ bool test_state_output_concat_standard(void) {
 	RzCmdStateOutput state;
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, NULL), "state is initialized correctly");
 
-	rz_cons_flush();
-	rz_cons_push();
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
-	const char *s = rz_cons_get_buffer();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
+	const char *s = rz_cons_get_buffer(cons);
 	mu_assert_streq(s, "val=33\n", "standard output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
-
-	rz_cons_flush();
-	rz_cons_push();
-	func1_output(&state);
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
-	s = rz_cons_get_buffer();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
+	func1_output(&state, cons);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
+	s = rz_cons_get_buffer(cons);
 	mu_assert_streq(s, "val=33\nname=second,val=55\n", "standard output was printed concatenated");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
 
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_state_output_concat_table(void) {
 	RzCmdStateOutput state;
 
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp = "val \n"
 			  "----\n"
 			  " 33\n"
@@ -1134,71 +1136,73 @@ bool test_state_output_concat_table(void) {
 			  "-----------\n"
 			  "second  55\n";
 	mu_assert_streq(s, exp, "tables output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
 
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_state_output_concat_mix(void) {
 	RzCmdStateOutput state;
-
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp = "val \n"
 			  "----\n"
 			  " 33\n"
 			  "second=55\n";
 	mu_assert_streq(s, exp, "table+quiet output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
+	rz_cons_free(cons);
 
 	mu_end;
 }
 
 bool test_state_output_concat_json(void) {
 	RzCmdStateOutput state;
-
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp_union = "{\"val\":33}\n"
 				"{\"name\":\"second\",\"val\":55}\n";
 	mu_assert_streq(s, exp_union, "json+json output was printed");
-	rz_cons_pop();
-
-	rz_cons_flush();
-	rz_cons_push();
+	rz_cons_pop(cons);
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	pj_o(state.d.pj);
 	pj_k(state.d.pj, "first");
-	func1_output(&state);
+	func1_output(&state, cons);
 	pj_k(state.d.pj, "second");
-	func2_output(&state);
+	func2_output(&state, cons);
 	pj_end(state.d.pj);
-	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	s = rz_cons_get_buffer();
+	s = rz_cons_get_buffer(cons);
 	const char *exp_comp = "{\"first\":{\"val\":33},\"second\":{\"name\":\"second\",\"val\":55}}\n";
 	mu_assert_streq(s, exp_comp, "json composition output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
+	rz_cons_free(cons);
 
 	mu_end;
 }
@@ -1397,6 +1401,7 @@ bool test_call_macros(void) {
 	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "c command should not exist");
 
 	rz_cmd_free(cmd);
+	rz_cons_free(core->cons);
 	mu_end;
 }
 
@@ -1427,6 +1432,7 @@ bool test_call_multiple_macros(void) {
 	status = rz_cmd_macro_call(cmd, "macro2", macro_args_val_wrong);
 	mu_assert_eq(status, RZ_CMD_STATUS_INVALID, "macro2 should be called with a multiple of arguments");
 	rz_cmd_free(cmd);
+	rz_cons_free(core->cons);
 	mu_end;
 }
 
@@ -1457,7 +1463,6 @@ bool test_cmd_descriptor_folder_arg(void) {
 }
 
 int all_tests() {
-	rz_cons_new();
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
 	mu_run_test(test_parsed_args_args);

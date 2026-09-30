@@ -6,6 +6,25 @@
 #include <rz_core.h>
 #include <rz_gadget.h>
 
+#include <unistd.h>
+#include <fcntl.h>
+
+static void suppress_stderr(int *saved_stderr) {
+	*saved_stderr = dup(STDERR_FILENO);
+	int null_fd = open("/dev/null", O_WRONLY);
+	if (null_fd >= 0) {
+		dup2(null_fd, STDERR_FILENO);
+		close(null_fd);
+	}
+}
+
+static void restore_stderr(int saved_stderr) {
+	if (saved_stderr >= 0) {
+		dup2(saved_stderr, STDERR_FILENO);
+		close(saved_stderr);
+	}
+}
+
 // Only one gadget is added once for each test case.
 #define ROP_GADGET_MAX_SIZE 16
 
@@ -248,9 +267,12 @@ bool test_rz_gadget_cache_mips() {
 }
 
 bool all_tests() {
+	int saved_stderr = -1;
+	suppress_stderr(&saved_stderr);
 	mu_run_test(test_rz_direct_solver);
 	mu_run_test(test_rz_gadget_cache_x86_64);
 	mu_run_test(test_rz_gadget_cache_mips);
+	restore_stderr(saved_stderr);
 	return tests_passed != tests_run;
 }
 
