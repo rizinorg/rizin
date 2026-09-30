@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-static const RzILGlobalIdxMapEntry global_idx[] = {
+// Generated with sys/gen_il_reg_idx_mapping_from_reg_binding.py
+static const RzILGlobalIdxMapEntry c54x_global_idx[] = {
 	{ "a", 0 },
 	{ "ar0", 1 },
 	{ "ar1", 2 },

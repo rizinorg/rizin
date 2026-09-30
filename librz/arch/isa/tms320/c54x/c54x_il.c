@@ -13,7 +13,7 @@
 
 #include "c54x.h"
 
-#include "c54x_global_idx_map.inc"
+#include  "../c54_c55x_lookup_tbls.h"
 
 // Mirrors the decoder's keyword table (c54x.c): maps the TS/ASM/DP/ARP operand
 // keyword (carried as the rendered string) back to its field value so the
