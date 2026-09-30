@@ -377,7 +377,7 @@ RZ_API int rz_cons_any_key(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
 extern void resizeWin(void);
 
 #if __WINDOWS__
-static int __cons_readchar_w32(ut32 usec) {
+static int __cons_readchar_w32(RzCons *cons, ut32 usec) {
 	int ch = 0;
 	BOOL ret;
 	DWORD mode, out;
@@ -391,7 +391,7 @@ static int __cons_readchar_w32(ut32 usec) {
 	bool alt = false;
 	bool ctrl = false;
 	bool do_break = false;
-	const bool is_console = rz_cons_isatty();
+	const bool is_console = rz_cons_isatty(cons);
 	void *bed;
 	cons->mouse_event = MOUSE_NONE;
 	h = GetStdHandle(STD_INPUT_HANDLE);
@@ -414,7 +414,7 @@ static int __cons_readchar_w32(ut32 usec) {
 		}
 		if (cons->term_pty || !is_console) {
 			if (cons->term_pty) {
-				rz_cons_enable_mouse(cons->mouse);
+				rz_cons_enable_mouse(cons, true);
 			}
 			ret = ReadFile(h, &ch, 1, &out, NULL);
 		} else {
@@ -429,7 +429,7 @@ static int __cons_readchar_w32(ut32 usec) {
 			continue;
 		}
 		if (mouse_enabled) {
-			rz_cons_enable_mouse(true);
+			rz_cons_enable_mouse(cons, true);
 		}
 		if (irInBuf.EventType == MOUSE_EVENT && cons->vtmode != RZ_VIRT_TERM_MODE_COMPLETE) {
 			if (irInBuf.Event.MouseEvent.dwEventFlags == MOUSE_MOVED) {
@@ -450,14 +450,14 @@ static int __cons_readchar_w32(ut32 usec) {
 			case FROM_LEFT_1ST_BUTTON_PRESSED:
 				GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 				int rel_y = irInBuf.Event.MouseEvent.dwMousePosition.Y - info.srWindow.Top;
-				rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
+				rz_cons_set_click(cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, rel_y + 1, LEFT_PRESS);
 				do_break = true;
 				break;
 			} // TODO: Handle more buttons?
 		}
 
 		if (click_n_drag) {
-			rz_cons_set_click(irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1, MOUSE_DEFAULT);
+			rz_cons_set_click(cons, irInBuf.Event.MouseEvent.dwMousePosition.X + 1, irInBuf.Event.MouseEvent.dwMousePosition.Y + 1, MOUSE_DEFAULT);
 			do_break = true;
 		}
 
@@ -484,11 +484,11 @@ static int __cons_readchar_w32(ut32 usec) {
 					if (tmp) {
 						if (alt) {
 							ch = '\x1b';
-							rz_cons_readpush(tmp, strlen(tmp));
+							rz_cons_readpush(cons, tmp, strlen(tmp));
 						} else {
 							ch = *tmp;
 							if (tmp[1]) {
-								rz_cons_readpush(&tmp[1], strlen(&tmp[1]));
+								rz_cons_readpush(cons, &tmp[1], strlen(&tmp[1]));
 							}
 						}
 						free(tmp);
@@ -524,25 +524,25 @@ static int __cons_readchar_w32(ut32 usec) {
 					}
 					if (c) {
 						ch = '\x1b';
-						rz_cons_readpush("[[", 1);
+						rz_cons_readpush(cons, "[[", 1);
 						if (state != 1 && isalpha((int)*c)) {
-							rz_cons_readpush("1;", 2);
-							rz_cons_readpush(mod, 1);
+							rz_cons_readpush(cons, "1;", 2);
+							rz_cons_readpush(cons, mod, 1);
 						}
-						rz_cons_readpush(c, strlen(c));
+						rz_cons_readpush(cons, c, strlen(c));
 						if (!isalpha((int)*c)) {
 							if (state != 1) {
-								rz_cons_readpush(";", 1);
-								rz_cons_readpush(mod, 1);
+								rz_cons_readpush(cons, ";", 1);
+								rz_cons_readpush(cons, mod, 1);
 							}
-							rz_cons_readpush("~", 1);
+							rz_cons_readpush(cons, "~", 1);
 						}
 					}
 				}
 			}
 		}
 		if (irInBuf.EventType == WINDOW_BUFFER_SIZE_EVENT) {
-			resizeWin();
+			resizeWin(cons);
 		}
 	} while (ch == 0 && !do_break);
 	if (has_input_console) {
@@ -574,7 +574,7 @@ RZ_API int rz_cons_readchar_timeout(RZ_NONNULL RZ_BORROW RzCons *cons, ut32 usec
 	// timeout
 	return -1;
 #else
-	return __cons_readchar_w32(usec);
+	return __cons_readchar_w32(cons, usec);
 #endif
 }
 
