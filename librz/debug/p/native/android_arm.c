@@ -64,8 +64,8 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	if (sig != -1) {
 		contsig = sig;
 	}
-	/* SIGINT handler for attached processes: dbg.consbreak (disabled by default) */
-	if (dbg->consbreak) {
+	/* SIGINT handler for attached processes: dbg.intrbreak (disabled by default) */
+	if (dbg->intrbreak) {
 		rz_interrupt_break_push(dbg->intr, (RzInterruptBreakCallback)interrupt_process, dbg);
 	}
 
