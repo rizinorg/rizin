@@ -391,7 +391,7 @@ Literals:([])*+- ,
 #define X_C21(i) (((i)&0xffff) | (((i)&0x7c0000) >> 2))
 #define X_C25(i) ((i)&0x1fffffc)
 
-extern struct lanai_opcode lanai_opcodes[];
+extern const struct lanai_opcode lanai_opcodes[];
 extern const int bfd_lanai_num_opcodes;
 
 #define NUMOPCODES bfd_lanai_num_opcodes
