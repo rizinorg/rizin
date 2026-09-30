@@ -5775,7 +5775,7 @@ static void print_arch(RzCons *cons, RzBin *bin, RzCmdStateOutput *state, struct
 }
 
 RZ_API bool rz_core_bin_archs_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBin *bin, RZ_NONNULL RzCmdStateOutput *state) {
-	rz_return_val_if_fail(bin && state && cons, false);
+	rz_return_val_if_fail(core && bin && state, false);
 
 	RzBinFile *binfile = rz_bin_cur(bin);
 	if (!binfile) {
