@@ -374,7 +374,7 @@ RZ_API int rz_cons_any_key(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
 	// rz_cons_strcat ("\x1b[2J\x1b[0;0H");
 }
 
-extern void resizeWin(void);
+extern void resizeWin(RzCons *cons);
 
 #if __WINDOWS__
 static int __cons_readchar_w32(RzCons *cons, ut32 usec) {
@@ -643,7 +643,7 @@ RZ_API int rz_cons_readchar(RZ_NONNULL RZ_BORROW RzCons *cons) {
 		}
 		if (sigwinchFlag) {
 			sigwinchFlag = 0;
-			resizeWin();
+			resizeWin(cons);
 		}
 	}
 
