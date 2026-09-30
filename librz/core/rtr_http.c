@@ -312,9 +312,6 @@ static void rtr_http_stop(void *u) {
 	const char *port;
 	RzSocket *sock;
 
-#if __WINDOWS__
-	rz_socket_http_server_set_breaked(&core->cons->context->breaked);
-#endif
 	if (((size_t)u) > 0xff) {
 		port = rz_config_get(core->config, "http.port");
 		sock = rz_socket_new(0);
@@ -434,6 +431,9 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 		/* this is blocking */
 		activateDieTime(core);
 
+#if __WINDOWS__
+		so.breaked = rz_interrupt_is_breaked(core->intr);
+#endif
 		void *bed = rz_interrupt_sleep_begin(core->intr);
 		rs = rz_socket_http_accept(s, &so);
 		rz_interrupt_sleep_end(core->intr, bed);
