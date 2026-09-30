@@ -71,14 +71,6 @@ const char *x86_bound_regs_16[] = {
  */
 const char *x86_bound_regs_32[] = {
 	COMMON_REGS,
-	"ax", /* X86_REG_AX */
-	"bx", /* X86_REG_BX */
-	"cx", /* X86_REG_CX */
-	"dx", /* X86_REG_DX */
-	"sp", /* X86_REG_SP */
-	"bp", /* X86_REG_BP */
-	"si", /* X86_REG_SI */
-	"di", /* X86_REG_DI */
 	"eax", /* X86_REG_EAX */
 	"ebx", /* X86_REG_EBX */
 	"ecx", /* X86_REG_ECX */
@@ -102,30 +94,7 @@ const char *x86_bound_regs_32[] = {
  * \brief All registers bound to IL variables for x86 64-bit
  */
 const char *x86_bound_regs_64[] = {
-	"cs", "ss", "ds", "es", "cf", "pf", "af", "zf", "sf", "tf", "if", "df", "of", "nt",
-	"ax", /* X86_REG_AX */
-	"bx", /* X86_REG_BX */
-	"cx", /* X86_REG_CX */
-	"dx", /* X86_REG_DX */
-	"sp", /* X86_REG_SP */
-	"bp", /* X86_REG_BP */
-	"si", /* X86_REG_SI */
-	"di", /* X86_REG_DI */
-	"eax", /* X86_REG_EAX */
-	"ebx", /* X86_REG_EBX */
-	"ecx", /* X86_REG_ECX */
-	"edx", /* X86_REG_EDX */
-	"esp", /* X86_REG_ESP */
-	"ebp", /* X86_REG_EBP */
-	"esi", /* X86_REG_ESI */
-	"edi", /* X86_REG_EDI */
-	"rf", /* X86_EFLAGS_RF */
-	"vm", /* X86_EFLAGS_VM */
-	"ac", /* X86_EFLAGS_AC */
-	"fs", /* X86_REG_FS */
-	"gs", /* X86_REG_GS */
-	"cr0", /* X86_REG_CR0 */
-	"dr0", /* X86_REG_DR0 */
+	COMMON_REGS,
 	"rax", /* X86_REG_RAX */
 	"rbx", /* X86_REG_RBX */
 	"rcx", /* X86_REG_RCX */
@@ -149,8 +118,8 @@ const char *x86_bound_regs_64[] = {
 	"gs", /* X86_REG_GS */
 	"cr0", /* X86_REG_CR0 */
 	"dr0", /* X86_REG_DR0 */
-	"cwd", "swd", "ftw", "fop", "frip", "frdp", "st0", "st1", "st2", "st3", "st4", "st5", "st6", "st7",
-	"xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
+	FPU_REGS,
+	XMM_REGS,
 	NULL
 };
 
