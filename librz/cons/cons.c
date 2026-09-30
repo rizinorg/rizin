@@ -572,9 +572,6 @@ RZ_NONNULL RZ_BORROW RZ_API RzCons *rz_cons_new() {
 		cons->term_buf = cons->old_input_mode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT;
 		cons->term_raw = ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
 	}
-	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		eprintf("rz_cons: Cannot set control console handler\n");
-	}
 #endif
 	cons->pager = NULL; /* no pager by default */
 	cons->mouse = 0;
