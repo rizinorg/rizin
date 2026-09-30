@@ -274,9 +274,9 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 	count++;
 	has_match = 0;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(dbg->intr, NULL, NULL);
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(dbg->intr)) {
 			break;
 		}
 		if (has_match) {
@@ -291,7 +291,7 @@ RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 			}
 		}
 	} while (rz_debug_esil_stepi(dbg));
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	return opc;
 }
 

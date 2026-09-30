@@ -219,11 +219,11 @@ static void __sync_status_with_cursor(RzCoreVisualViewGraph *status) {
 }
 
 RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *status) {
-	int h, w = rz_cons_get_size(&h);
+	int h, w = rz_cons_get_size(core->cons, &h);
 	const int colw = w / 4;
 	const int colh = h / 2;
 	const int colx = w / 3;
-	rz_cons_clear00();
+	rz_cons_clear00(core->cons);
 
 	char *xrefsColstr = rz_str_widget_list(core, status->xrefsCol, colh, 0, print_item);
 	char *mainColstr = rz_str_widget_list(core, status->mainCol, colh, status->cur, print_item);
@@ -237,12 +237,12 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 
 	char *title = rz_str_newf("[rz-visual-browser] addr=0x%08" PFMT64x " faddr=0x%08" PFMT64x, status->addr, status->fcn ? status->fcn->addr : 0);
 	if (title) {
-		rz_cons_strcat_at(title, 0, 0, w - 1, 2);
+		rz_cons_strcat_at(core->cons, title, 0, 0, w - 1, 2);
 		free(title);
 	}
-	rz_cons_strcat_at(xrefsColstr, 0, 2, colw, colh);
-	rz_cons_strcat_at(mainColstr, colx, 2, colw * 2, colh);
-	rz_cons_strcat_at(refsColstr, colx * 2, 2, colw, colh);
+	rz_cons_strcat_at(core->cons, xrefsColstr, 0, 2, colw, colh);
+	rz_cons_strcat_at(core->cons, mainColstr, colx, 2, colw * 2, colh);
+	rz_cons_strcat_at(core->cons, refsColstr, colx * 2, 2, colw, colh);
 
 	RzConfigHold *hc = rz_config_hold_new(core->config);
 	if (!hc) {
@@ -261,10 +261,10 @@ RZ_IPI int __core_visual_view_graph_update(RzCore *core, RzCoreVisualViewGraph *
 
 	output1 = rz_str_append(output1, output2);
 	int disy = colh + 2;
-	rz_cons_strcat_at(output1, 10, disy, w, h - disy);
+	rz_cons_strcat_at(core->cons, output1, 10, disy, w, h - disy);
 	free(output1);
 	free(output2);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 
 	free(xrefsColstr);
 	free(mainColstr);
@@ -286,11 +286,11 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 	}
 	while (true) {
 		__core_visual_view_graph_update(core, &status);
-		int ch = rz_cons_readchar();
+		int ch = rz_cons_readchar(core->cons);
 		if (ch == -1 || ch == 4) {
 			return true;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'h':
 			if (!rz_list_empty(status.xrefsCol)) {
@@ -382,8 +382,8 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 			__sync_status_with_cursor(&status);
 			break;
 		case '?':
-			rz_cons_clear00();
-			rz_cons_printf(
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons,
 				"vbg: Visual Browser (Code) Graph:\n\n"
 				" jkJK  - scroll up/down\n"
 				" hl    - move to the left/right panel\n"
@@ -391,42 +391,42 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 				" _     - enter the hud\n"
 				" .     - go back to the initial function list view\n"
 				" :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case '/': {
 			char cmd[1024];
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			cmd[0] = '\0';
 			rz_line_set_prompt(line, ":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			rz_cons_highlight(cmd);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
-			rz_cons_clear();
+			rz_cons_highlight(core->cons, cmd);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
+			rz_cons_clear(core->cons);
 		} break;
 		case 'q':
 			return false;
 		case ':': // TODO: move this into a separate helper function
 		{
 			char cmd[1024];
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			cmd[0] = '\0';
 			rz_line_set_prompt(line, ":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			rz_core_cmd0(core, cmd);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 			if (cmd[0]) {
-				rz_cons_any_key(NULL);
+				rz_cons_any_key(core->cons, NULL);
 			}
-			rz_cons_clear();
+			rz_cons_clear(core->cons);
 		} break;
 		case '!': {
 			__toggleSort(&status);

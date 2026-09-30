@@ -14,7 +14,7 @@ RZ_IPI RzCmdStatus rz_interactive_visual_handler(RzCore *core, int argc, const c
 		RZ_LOG_ERROR("core->http_up=false.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("Visual mode requires scr.interactive=true.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -50,7 +50,7 @@ RZ_IPI RzCmdStatus rz_interactive_visual_help_handler(RzCore *core, int argc, co
 
 RZ_IPI RzCmdStatus rz_interactive_visual_help_detail_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_cmd_help(core, rz_core_visual_get_long_help());
-	rz_cons_printf("%s\n", "Function Keys: (See 'e key.'), defaults to");
+	rz_cons_printf(core->cons, "%s\n", "Function Keys: (See 'e key.'), defaults to");
 	rz_core_cmd_help(core, rz_core_visual_get_fcn_help());
 	return RZ_CMD_STATUS_OK;
 }

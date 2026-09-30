@@ -46,10 +46,10 @@ RZ_IPI void pager_color_line(const char *line, RzStrpool *p, RzPVector /*<RzRege
 	rz_strpool_append(p, line + offset);
 }
 
-RZ_IPI void pager_printpage(const char *line, int *index, RzPVector /*<RzRegexMatch *>*/ **mla, int from, int to, int w) {
+RZ_IPI void pager_printpage(RzCons *cons, const char *line, int *index, RzPVector /*<RzRegexMatch *>*/ **mla, int from, int to, int w) {
 	int i;
 
-	rz_cons_clear00();
+	rz_cons_clear00(cons);
 	if (from < 0 || to < 0) {
 		return;
 	}
@@ -61,15 +61,15 @@ RZ_IPI void pager_printpage(const char *line, int *index, RzPVector /*<RzRegexMa
 	for (i = from; i < to; i++) {
 		pager_color_line(line + index[i], p, mla[i]);
 		rz_strpool_ansi_chop(p, w);
-		rz_cons_reset_colors();
+		rz_cons_reset_colors(cons);
 		if (i + 1 == to) {
-			rz_cons_print(p->str);
+			rz_cons_print(cons, p->str);
 		} else {
-			rz_cons_println(p->str);
+			rz_cons_println(cons, p->str);
 		}
 	}
 	rz_strpool_free(p);
-	rz_cons_flush();
+	rz_cons_flush(cons);
 }
 
 RZ_IPI int pager_next_match(int from, RzPVector /*<RzRegexMatch *>*/ **mla, int lcount) {

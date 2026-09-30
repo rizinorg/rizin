@@ -69,7 +69,7 @@ static void lang_prompt(RzLang *lang, RzCons *cons) {
 
 	/* foo */
 	for (;;) {
-		rz_cons_flush();
+		rz_cons_flush(cons);
 		snprintf(buf, sizeof(buf) - 1, "%s> ", lang->cur->name);
 		rz_line_set_prompt(line, buf);
 		p = rz_line_readline(line);
@@ -142,7 +142,7 @@ RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **arg
 			free(run_str);
 		}
 	} else {
-		if (rz_cons_is_interactive()) {
+		if (rz_cons_is_interactive(core->cons)) {
 			lang_prompt(core->lang, core->cons);
 		} else {
 			RZ_LOG_ERROR("scr.interactive required to run the rlang prompt\n");

@@ -151,7 +151,7 @@ static RzCmdStatus core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, RzCmdSta
 	const char *version = rz_str_get(ap->version);
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET: {
-		rz_cons_println(name);
+		rz_cons_println(core->cons, name);
 		break;
 	}
 	case RZ_OUTPUT_MODE_TABLE: {
@@ -174,15 +174,15 @@ static RzCmdStatus core_asm_plugin_print(RzCore *core, RzAsmPlugin *ap, RzCmdSta
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf("%s %-10s %-11s %-7s %s",
+		rz_cons_printf(core->cons, "%s %-10s %-11s %-7s %s",
 			features, bits, name, license, description);
 		if (ap->author) {
-			rz_cons_printf(" (by %s)", author);
+			rz_cons_printf(core->cons, " (by %s)", author);
 		}
 		if (ap->version) {
-			rz_cons_printf(" v%s", version);
+			rz_cons_printf(core->cons, " v%s", version);
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 		break;
 	}
 	default: {
@@ -224,7 +224,7 @@ RZ_API RzCmdStatus rz_core_asm_cpu_plugin_print(RZ_NONNULL RZ_BORROW RzCore *cor
 	rz_list_foreach (list, it, name) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_println(name);
+			rz_cons_println(core->cons, name);
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_s(pj, name);
@@ -298,8 +298,8 @@ RZ_API RzCmdStatus rz_core_cpu_descs_print(RZ_NONNULL RzCore *core, RZ_NONNULL c
 				return RZ_CMD_STATUS_ERROR;
 			}
 			for (size_t i = 0; desc[i] != NULL; i += 2) {
-				rz_cons_printf("%-15s %s", desc[i], desc[i + 1]);
-				rz_cons_newline();
+				rz_cons_printf(core->cons, "%-15s %s", desc[i], desc[i + 1]);
+				rz_cons_newline(core->cons);
 			}
 		}
 		break;
@@ -373,10 +373,10 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 		tokens[tokcount] = tok;
 	}
 	tokens[tokcount] = NULL;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	char *opst = NULL;
 	for (at = from; at < to; at += core->blocksize) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (!rz_io_is_valid_offset(core->io, at, 0)) {
@@ -540,7 +540,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_strsearch(RzCore *core, const ch
 			RZ_FREE(opst);
 		}
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	rz_asm_set_pc(core->rasm, toff);
 beach:
 	free(inp);
@@ -548,7 +548,7 @@ beach:
 	free(ptr);
 	free(code);
 	RZ_FREE(opst);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	return hits;
 }
 
@@ -772,7 +772,7 @@ RZ_API RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_bwdisassemble(RzCore *core, ut64
 	}
 
 	for (idx = 1; idx < len; idx++) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		c = rz_asm_mdisassemble(core->rasm, buf + len - idx, idx);
@@ -839,7 +839,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble_all(RzCore *cor
 	}
 
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		// reset assembler
@@ -920,7 +920,7 @@ static RzList /*<RzCoreAsmHit *>*/ *rz_core_asm_back_disassemble(RzCore *core, u
 	next_buf_pos = len + extra_padding - 1;
 	current_instr_addr = addr - 1;
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		// reset assembler

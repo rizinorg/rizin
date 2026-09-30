@@ -251,7 +251,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			if (!p->consbind.get_size) {
 				break;
 			}
-			(void)p->consbind.get_size(&scr_rows);
+			(void)p->consbind.get_size(core->cons, &scr_rows);
 			ut64 scols = rz_config_get_i(core->config, "hex.cols");
 			rz_core_seek_and_save(core, rz_itv_end(map->itv) - (scr_rows - 2) * scols, true);
 		}
@@ -390,12 +390,12 @@ static const char *rotateAsmemu(RzCore *core) {
 
 RZ_IPI void rz_core_visual_showcursor(RzCore *core, int x) {
 	if (core && core->vmode) {
-		rz_cons_show_cursor(x);
-		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
+		rz_cons_show_cursor(core->cons, x);
+		rz_cons_enable_mouse(core->cons, rz_config_get_b(core->config, "scr.wheel"));
 	} else {
-		rz_cons_enable_mouse(false);
+		rz_cons_enable_mouse(core->cons, false);
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 }
 
 static void printFormat(RzCore *core, const int next) {
@@ -488,11 +488,11 @@ repeat:
 	if (!p) {
 		return 0;
 	}
-	rz_cons_clear00();
+	rz_cons_clear00(core->cons);
 	rz_core_visual_append_help(core, q, "Visual Help", help_visual);
-	rz_cons_printf("%s", rz_strbuf_get(q));
-	rz_cons_flush();
-	switch (rz_cons_readchar()) {
+	rz_cons_printf(core->cons, "%s", rz_strbuf_get(q));
+	rz_cons_flush(core->cons);
+	switch (rz_cons_readchar(core->cons)) {
 	case 'q':
 		rz_strbuf_free(p);
 		rz_strbuf_free(q);
@@ -503,7 +503,7 @@ repeat:
 	case '?':
 		rz_core_visual_append_help(core, p, "Visual mode help", help_msg_visual);
 		rz_core_visual_append_help(core, p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'v':
 		rz_strbuf_appendf(p, "Visual Views:\n\n");
@@ -517,21 +517,21 @@ repeat:
 			" t[1-9] select nth tab\n"
 			" C   -> rotate scr.color=0,1,2,3\n"
 			" R   -> rotate color theme with ecr command which honors scr.randpal\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'p':
 		rz_strbuf_appendf(p, "Visual Print Modes:\n\n");
 		rz_strbuf_appendf(p,
 			" pP  -> change to the next/previous print mode (hex, dis, ..)\n"
 			" TAB -> rotate between all the configurations for the current print mode\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'e':
 		rz_strbuf_appendf(p, "Visual Evals:\n\n");
 		rz_strbuf_appendf(p,
 			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'c':
 		setcursor(core, !core->print->cur_enabled);
@@ -546,7 +546,7 @@ repeat:
 			" A   -> visual assembler\n"
 			" +   -> increment value of byte\n"
 			" -   -> decrement value of byte\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'd':
 		rz_strbuf_appendf(p, "Visual Debugger Help:\n\n");
@@ -556,7 +556,7 @@ repeat:
 			" S   -> step over\n"
 			" B   -> toggle breakpoint\n"
 			" :dc -> continue\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'm':
 		rz_strbuf_appendf(p, "Visual Moving Around:\n\n");
@@ -569,7 +569,7 @@ repeat:
 			" $        seek to the end of the current map\n"
 			" c        toggle cursor mode (use hjkl to move and HJKL to select a range)\n"
 			" mK/'K    mark/go to Key (any key)\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	case 'a':
 		rz_strbuf_appendf(p, "Visual Analysis:\n\n");
@@ -581,7 +581,7 @@ repeat:
 			" dw -> define as qword (64bit)\n"
 			" dd -> define current block or selected bytes as data\n"
 			" V  -> view graph (same as press the 'space' key)\n");
-		ret = rz_cons_less_str(rz_strbuf_get(p), "?");
+		ret = rz_cons_less_str(core->cons, rz_strbuf_get(p), "?");
 		break;
 	}
 	rz_strbuf_free(p);
@@ -596,7 +596,7 @@ static void prompt_read(RzCons *cons, const char *p, char *buf, int buflen) {
 	*buf = 0;
 	rz_line_set_prompt(cons->line, p);
 	rz_core_visual_showcursor(NULL, true);
-	rz_cons_fgets(buf, buflen, 0, NULL);
+	rz_cons_fgets(cons, buf, buflen, 0, NULL);
 	rz_core_visual_showcursor(NULL, false);
 }
 
@@ -607,7 +607,7 @@ static void reset_print_cur(RzPrint *p) {
 
 static bool __holdMouseState(RzCore *core) {
 	bool m = core->cons->mouse;
-	rz_cons_enable_mouse(false);
+	rz_cons_enable_mouse(core->cons, false);
 	return m;
 }
 
@@ -663,12 +663,12 @@ static void restore_current_addr(RzCore *core, ut64 addr, ut64 bsze, ut64 newadd
 RZ_IPI void rz_core_visual_prompt_input(RzCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h, cur;
-	(void)rz_cons_get_size(&h);
+	(void)rz_cons_get_size(core->cons, &h);
 	bool mouse_state = __holdMouseState(core);
-	rz_cons_gotoxy(0, h);
-	rz_cons_reset_colors();
+	rz_cons_gotoxy(core->cons, 0, h);
+	rz_cons_reset_colors(core->cons);
 	// rz_cons_printf ("\nPress <enter> to return to Visual mode.\n");
-	rz_cons_show_cursor(true);
+	rz_cons_show_cursor(core->cons, true);
 	core->vmode = false;
 
 	backup_current_addr(core, &addr, &bsze, &newaddr, &cur);
@@ -677,10 +677,10 @@ RZ_IPI void rz_core_visual_prompt_input(RzCore *core) {
 	} while (ret);
 	restore_current_addr(core, addr, bsze, newaddr, cur);
 
-	rz_cons_show_cursor(false);
+	rz_cons_show_cursor(core->cons, false);
 	core->vmode = true;
-	rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
-	rz_cons_show_cursor(true);
+	rz_cons_enable_mouse(core->cons, mouse_state && rz_config_get_b(core->config, "scr.wheel"));
+	rz_cons_show_cursor(core->cons, true);
 }
 
 RZ_IPI int rz_core_visual_prompt(RzCore *core) {
@@ -696,14 +696,14 @@ RZ_IPI int rz_core_visual_prompt(RzCore *core) {
 	rz_line_set_prompt(line, ":> ");
 #endif
 	rz_core_visual_showcursor(core, true);
-	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
+	rz_cons_fgets(core->cons, buf, sizeof(buf), 0, NULL);
 	if (!strcmp(buf, "q")) {
 		ret = false;
 	} else if (*buf) {
 		rz_line_hist_add(line, buf);
 		rz_core_cmd(core, buf, 0);
-		rz_cons_echo(NULL);
-		rz_cons_flush();
+		rz_cons_echo(core->cons, NULL);
+		rz_cons_flush(core->cons);
 		ret = true;
 		if (rz_config_get_b(core->config, "cfg.debug")) {
 			rz_core_reg_update_flags(core);
@@ -711,7 +711,7 @@ RZ_IPI int rz_core_visual_prompt(RzCore *core) {
 	} else {
 		ret = false;
 		// rz_cons_any_key (NULL);
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 		rz_core_visual_showcursor(core, false);
 	}
 	return ret;
@@ -936,7 +936,7 @@ static void visual_search(RzCore *core) {
 	char str[128], buf[sizeof(str) * 2 + 1];
 
 	rz_line_set_prompt(core->cons->line, "search byte/string in block: ");
-	rz_cons_fgets(str, sizeof(str), 0, NULL);
+	rz_cons_fgets(core->cons, str, sizeof(str), 0, NULL);
 	len = rz_hex_str2bin(str, (ut8 *)buf);
 	if (*str == '"') {
 		rz_str_ncpy(buf, str + 1, sizeof(buf));
@@ -960,12 +960,12 @@ static void visual_search(RzCore *core) {
 			core->print->ocur = -1;
 		}
 		rz_core_visual_showcursor(core, true);
-		rz_cons_printf("Found in offset 0x%08" PFMT64x " + %d\n", core->offset, core->print->cur);
-		rz_cons_any_key(NULL);
+		rz_cons_printf(core->cons, "Found in offset 0x%08" PFMT64x " + %d\n", core->offset, core->print->cur);
+		rz_cons_any_key(core->cons, NULL);
 	} else {
 		RZ_LOG_ERROR("core: Cannot find bytes.\n");
-		rz_cons_any_key(NULL);
-		rz_cons_clear00();
+		rz_cons_any_key(core->cons, NULL);
+		rz_cons_clear00(core->cons);
 	}
 }
 
@@ -976,11 +976,11 @@ RZ_IPI void rz_core_visual_show_char(RzCore *core, char ch) {
 	if (!IS_PRINTABLE(ch)) {
 		return;
 	}
-	rz_cons_gotoxy(1, 2);
-	rz_cons_printf(".---.\n");
-	rz_cons_printf("| %c |\n", ch);
-	rz_cons_printf("'---'\n");
-	rz_cons_flush();
+	rz_cons_gotoxy(core->cons, 1, 2);
+	rz_cons_printf(core->cons, ".---.\n");
+	rz_cons_printf(core->cons, "| %c |\n", ch);
+	rz_cons_printf(core->cons, "'---'\n");
+	rz_cons_flush(core->cons);
 	rz_sys_sleep(1);
 }
 
@@ -991,17 +991,17 @@ static void visual_seek_animation(RzCore *core, ut64 addr) {
 	if (core->offset == addr) {
 		return;
 	}
-	rz_cons_gotoxy(1, 2);
+	rz_cons_gotoxy(core->cons, 1, 2);
 	if (addr > core->offset) {
-		rz_cons_printf(".----.\n");
-		rz_cons_printf("| \\/ |\n");
-		rz_cons_printf("'----'\n");
+		rz_cons_printf(core->cons, ".----.\n");
+		rz_cons_printf(core->cons, "| \\/ |\n");
+		rz_cons_printf(core->cons, "'----'\n");
 	} else {
-		rz_cons_printf(".----.\n");
-		rz_cons_printf("| /\\ |\n");
-		rz_cons_printf("'----'\n");
+		rz_cons_printf(core->cons, ".----.\n");
+		rz_cons_printf(core->cons, "| /\\ |\n");
+		rz_cons_printf(core->cons, "'----'\n");
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	rz_sys_usleep(90000);
 }
 
@@ -1089,7 +1089,7 @@ RZ_IPI void rz_core_visual_offset(RzCore *core) {
 		&rz_line_hist_offset_up,
 		&rz_line_hist_offset_down);
 	rz_line_set_prompt(line, "[offset]> ");
-	if (rz_cons_fgets(buf, sizeof(buf) - 1, 0, NULL) > 0) {
+	if (rz_cons_fgets(core->cons, buf, sizeof(buf) - 1, 0, NULL) > 0) {
 		if (!strcmp(buf, "g") || !strcmp(buf, "G")) {
 			__core_visual_gogo(core, buf[0]);
 		} else {
@@ -1113,13 +1113,13 @@ RZ_IPI int rz_core_visual_prevopsz(RzCore *core, ut64 addr) {
 
 static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 	char buf[1024];
-	rz_cons_print(prompt);
+	rz_cons_print(core->cons, prompt);
 	rz_core_visual_showcursor(core, true);
-	rz_cons_flush();
-	rz_cons_set_raw(false);
+	rz_cons_flush(core->cons);
+	rz_cons_set_raw(core->cons, false);
 	rz_line_set_prompt(core->cons->line, ":> ");
-	rz_cons_enable_mouse(false);
-	if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 0) {
+	rz_cons_enable_mouse(core->cons, false);
+	if (rz_cons_fgets(core->cons, buf, sizeof(buf), 0, NULL) < 0) {
 		buf[0] = '\0';
 	}
 	if (!strcmp(buf, "-")) {
@@ -1130,7 +1130,7 @@ static void add_comment(RzCore *core, ut64 addr, const char *prompt) {
 		rz_core_meta_append(core, buf, RZ_META_TYPE_COMMENT, addr);
 	}
 	rz_core_visual_showcursor(core, false);
-	rz_cons_set_raw(true);
+	rz_cons_set_raw(core->cons, true);
 }
 
 static int follow_ref(RzCore *core, RzList /*<RzAnalysisXRef *>*/ *xrefs, int choice, bool xref_to) {
@@ -1186,22 +1186,22 @@ repeat:
 		}
 	}
 
-	rz_cons_clear00();
-	rz_cons_gotoxy(1, 1);
+	rz_cons_clear00(core->cons);
+	rz_cons_gotoxy(core->cons, 1, 1);
 	{
 		char *address = (core->dbg->bits & RZ_SYS_BITS_64)
 			? rz_str_newf("0x%016" PFMT64x, addr)
 			: rz_str_newf("0x%08" PFMT64x, addr);
-		rz_cons_printf("[%s%srefs]> %s # (TAB/jk/q/?) ",
+		rz_cons_printf(core->cons, "[%s%srefs]> %s # (TAB/jk/q/?) ",
 			xrefsMode ? "fcn." : "addr.", xref_to ? "x" : "", address);
 		free(address);
 	}
 	if (!xrefs || rz_list_empty(xrefs)) {
 		rz_list_free(xrefs);
 		xrefs = NULL;
-		rz_cons_printf("\n\n(no %srefs)\n", xref_to ? "x" : "");
+		rz_cons_printf(core->cons, "\n\n(no %srefs)\n", xref_to ? "x" : "");
 	} else {
-		int h, w = rz_cons_get_size(&h);
+		int h, w = rz_cons_get_size(core->cons, &h);
 		bool asm_bytes = rz_config_get_b(core->config, "asm.bytes");
 		rz_config_set_b(core->config, "asm.bytes", false);
 		RzCmdStateOutput state;
@@ -1211,7 +1211,7 @@ repeat:
 		rz_core_flag_describe(core, core->offset, false, &state);
 		rz_cmd_state_output_fini(&state);
 		int maxcount = 9;
-		int rows, cols = rz_cons_get_size(&rows);
+		int rows, cols = rz_cons_get_size(core->cons, &rows);
 		count = 0;
 		char *dis = NULL;
 		rows -= 4;
@@ -1221,7 +1221,7 @@ repeat:
 			ut64 xaddr1 = xref_to ? xrefi->from : xrefi->to;
 			ut64 xaddr2 = xref_to ? xrefi->to : xrefi->from;
 			if (idx - skip > maxcount) {
-				rz_cons_printf("...");
+				rz_cons_printf(core->cons, "...");
 				break;
 			}
 			if (!rz_list_has_next(iter) && idx < skip) {
@@ -1251,7 +1251,7 @@ repeat:
 				const char *cmt = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, xaddr1);
 				if (cmt) {
 					cmt = rz_str_trim_head_ro(cmt);
-					rz_cons_printf(" %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
+					rz_cons_printf(core->cons, " %d [%s] 0x%08" PFMT64x " 0x%08" PFMT64x " %s %sref (%s) ; %s\n",
 						idx, cstr, xaddr2, xaddr1,
 						rz_analysis_xrefs_type_tostring(xrefi->type),
 						xref_to ? "x" : "", name, cmt);
@@ -1304,7 +1304,7 @@ repeat:
 					dis = res;
 				}
 				if (++count >= rows) {
-					rz_cons_printf("...");
+					rz_cons_printf(core->cons, "...");
 					break;
 				}
 			}
@@ -1312,27 +1312,27 @@ repeat:
 		}
 		if (dis) {
 			if (count < rows) {
-				rz_cons_newline();
+				rz_cons_newline(core->cons);
 			}
 			int i = count;
 			for (; i < 9; i++) {
-				rz_cons_newline();
+				rz_cons_newline(core->cons);
 			}
 			/* prepare highlight */
 			char *cmd = rz_str_dup(core->cons->highlight);
 			char *ats = rz_str_newf("%" PFMT64x, curat);
 			if (ats && RZ_STR_ISEMPTY(cmd)) {
-				rz_cons_highlight(ats);
+				rz_cons_highlight(core->cons, ats);
 			}
 			/* print disasm */
 			char *d = rz_str_ansi_crop(dis, 0, 0, cols, rows - 9);
 			if (d) {
-				rz_cons_printf("%s", d);
+				rz_cons_printf(core->cons, "%s", d);
 				free(d);
 			}
 			/* flush and restore highlight */
-			rz_cons_flush();
-			rz_cons_highlight(cmd);
+			rz_cons_flush(core->cons);
+			rz_cons_highlight(core->cons, cmd);
 			free(ats);
 			free(cmd);
 			free(dis);
@@ -1340,29 +1340,29 @@ repeat:
 		}
 		rz_config_set_b(core->config, "asm.bytes", asm_bytes);
 	}
-	rz_cons_flush();
-	rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
-	ch = rz_cons_readchar();
-	ch = rz_cons_arrow_to_hjkl(ch);
+	rz_cons_flush(core->cons);
+	rz_cons_enable_mouse(core->cons, rz_config_get_b(core->config, "scr.wheel"));
+	ch = rz_cons_readchar(core->cons);
+	ch = rz_cons_arrow_to_hjkl(core->cons, ch);
 	if (ch == ':') {
 		rz_core_visual_prompt_input(core);
 		goto repeat;
 	} else if (ch == '?') {
-		rz_cons_clear00();
-		rz_cons_printf("Usage: Visual Xrefs\n"
-			       " jk  - select next or previous item (use arrows)\n"
-			       " JK  - step 10 rows\n"
-			       " pP  - rotate between various print modes\n"
-			       " :   - run rizin command\n"
-			       " /   - highlight given word\n"
-			       " ?   - show this help message\n"
-			       " <>  - '<' for xrefs and '>' for refs\n"
-			       " TAB - toggle between address and function references\n"
-			       " xX  - switch to refs or xrefs\n"
-			       " q   - quit this view\n"
-			       " \\n  - seek to this xref");
-		rz_cons_flush();
-		rz_cons_any_key(NULL);
+		rz_cons_clear00(core->cons);
+		rz_cons_printf(core->cons, "Usage: Visual Xrefs\n"
+					   " jk  - select next or previous item (use arrows)\n"
+					   " JK  - step 10 rows\n"
+					   " pP  - rotate between various print modes\n"
+					   " :   - run rizin command\n"
+					   " /   - highlight given word\n"
+					   " ?   - show this help message\n"
+					   " <>  - '<' for xrefs and '>' for refs\n"
+					   " TAB - toggle between address and function references\n"
+					   " xX  - switch to refs or xrefs\n"
+					   " q   - quit this view\n"
+					   " \\n  - seek to this xref");
+		rz_cons_flush(core->cons);
+		rz_cons_any_key(core->cons, NULL);
 		goto repeat;
 	} else if (ch == 9) { // TAB
 		xrefsMode = !xrefsMode;
@@ -1476,7 +1476,7 @@ static void visual_comma(RzCore *core) {
 	cmtfile = rz_str_between(comment, ",(", ")");
 	if (!cmtfile) {
 		char *fn;
-		fn = rz_cons_input("<comment-file> ");
+		fn = rz_cons_input(core->cons, "<comment-file> ");
 		if (fn && *fn) {
 			cmtfile = rz_str_dup(fn);
 			if (!comment || !*comment) {
@@ -1513,7 +1513,7 @@ static void visual_comma(RzCore *core) {
 beach:
 	free(cmtfile);
 	free(comment);
-	rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
+	rz_cons_enable_mouse(core->cons, mouse_state && rz_config_get_b(core->config, "scr.wheel"));
 }
 
 static bool isDisasmPrint(int mode) {
@@ -1812,13 +1812,13 @@ static bool insert_mode_enabled(RzCore *core) {
 	if (!visual->insertMode) {
 		return false;
 	}
-	char ch = (ut8)rz_cons_readchar();
+	char ch = (ut8)rz_cons_readchar(core->cons);
 	if ((ut8)ch == KEY_ALTQ) {
-		(void)rz_cons_readchar();
+		(void)rz_cons_readchar(core->cons);
 		visual->insertMode = false;
 		return true;
 	}
-	char arrows = rz_cons_arrow_to_hjkl(ch);
+	char arrows = rz_cons_arrow_to_hjkl(core->cons, ch);
 	switch (ch) {
 	case 127:
 		core->print->cur = RZ_MAX(0, core->print->cur - 1);
@@ -1905,17 +1905,17 @@ static bool insert_mode_enabled(RzCore *core) {
 		visual->insertMode = false;
 		break;
 	case '?':
-		rz_cons_less_str("\nVisual Insert Mode:\n\n"
-				 " tab          - toggle between ascii and hex columns\n"
-				 " q (or alt-q) - quit insert mode\n"
-				 "\nHex column:\n"
-				 " r            - remove byte in cursor\n"
-				 " R            - insert byte in cursor\n"
-				 " [0-9a-f]     - insert hexpairs in hex column\n"
-				 " hjkl         - move around\n"
-				 "\nAscii column:\n"
-				 " arrows       - move around\n"
-				 " alt-q        - quit insert mode\n",
+		rz_cons_less_str(core->cons, "\nVisual Insert Mode:\n\n"
+					     " tab          - toggle between ascii and hex columns\n"
+					     " q (or alt-q) - quit insert mode\n"
+					     "\nHex column:\n"
+					     " r            - remove byte in cursor\n"
+					     " R            - insert byte in cursor\n"
+					     " [0-9a-f]     - insert hexpairs in hex column\n"
+					     " hjkl         - move around\n"
+					     "\nAscii column:\n"
+					     " arrows       - move around\n"
+					     " alt-q        - quit insert mode\n",
 			"?");
 		break;
 	}
@@ -1950,17 +1950,17 @@ RZ_IPI void rz_core_visual_browse(RzCore *core, const char *input) {
 		" X  refs\n"
 		" :  run command\n";
 	for (;;) {
-		rz_cons_clear00();
-		rz_cons_printf("%s\n", browsemsg);
-		rz_cons_flush();
+		rz_cons_clear00(core->cons);
+		rz_cons_printf(core->cons, "%s\n", browsemsg);
+		rz_cons_flush(core->cons);
 		char ch = 0;
 		if (input && *input) {
 			ch = *input;
 			input++;
 		} else {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(core->cons);
 		}
-		ch = rz_cons_arrow_to_hjkl(ch);
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch);
 		switch (ch) {
 		case '1':
 			rz_core_visual_bit_editor(core);
@@ -2089,14 +2089,14 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	int ch = och;
 	int *numbuf_i = &visual->util.numbuf_i;
 	if ((ut8)ch == KEY_ALTQ) {
-		rz_cons_readchar();
+		rz_cons_readchar(core->cons);
 		ch = 'q';
 	}
-	ch = rz_cons_arrow_to_hjkl(ch);
+	ch = rz_cons_arrow_to_hjkl(core->cons, ch);
 	ch = visual_nkey(core, ch);
 	if (ch < 2) {
 		int x, y;
-		if (rz_cons_get_click(&x, &y)) {
+		if (rz_cons_get_click(core->cons, &x, &y)) {
 			if (y == 1) {
 				if (x < 15) {
 					ch = '_';
@@ -2154,7 +2154,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			RzAnalysisOp *op;
 			bool wheel = rz_config_get_b(core->config, "scr.wheel");
 			if (wheel) {
-				rz_cons_enable_mouse(true);
+				rz_cons_enable_mouse(core->cons, true);
 			}
 			do {
 				op = rz_core_analysis_op(core, core->offset + core->print->cur, RZ_ANALYSIS_OP_MASK_BASIC);
@@ -2227,24 +2227,24 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 				}
 				if (!canWrite(core, addr)) {
-					rz_cons_printf("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-					rz_cons_any_key(NULL);
+					rz_cons_printf(core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+					rz_cons_any_key(core->cons, NULL);
 					return true;
 				}
 			}
-			rz_cons_printf("Enter assembler opcodes separated with ';':\n");
+			rz_cons_printf(core->cons, "Enter assembler opcodes separated with ';':\n");
 			rz_core_visual_showcursor(core, true);
-			rz_cons_flush();
-			rz_cons_set_raw(false);
+			rz_cons_flush(core->cons);
+			rz_cons_set_raw(core->cons, false);
 			strcpy(buf, "wa ");
 			rz_line_set_prompt(line, ":> ");
-			rz_cons_enable_mouse(false);
-			if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
+			rz_cons_enable_mouse(core->cons, false);
+			if (rz_cons_fgets(core->cons, buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 				buf[0] = '\0';
 			}
 			bool wheel = rz_config_get_b(core->config, "scr.wheel");
 			if (wheel) {
-				rz_cons_enable_mouse(true);
+				rz_cons_enable_mouse(core->cons, true);
 			}
 			if (*buf) {
 				if (core->print->cur_enabled) {
@@ -2258,7 +2258,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				}
 			}
 			rz_core_visual_showcursor(core, false);
-			rz_cons_set_raw(true);
+			rz_cons_set_raw(core->cons, true);
 		} break;
 		case '=': { // TODO: edit
 			rz_core_visual_showcursor(core, true);
@@ -2308,13 +2308,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			const int occ = core->print->cur;
 			ut64 off = oce ? core->offset + core->print->cur : core->offset;
 			core->print->cur_enabled = 0;
-			rz_cons_enable_mouse(false);
+			rz_cons_enable_mouse(core->cons, false);
 			rz_core_visual_asm(core, off);
 			core->print->cur_enabled = oce;
 			core->print->cur = occ;
 			core->print->ocur = oco;
 			if (rz_config_get_b(core->config, "scr.wheel")) {
-				rz_cons_enable_mouse(true);
+				rz_cons_enable_mouse(core->cons, true);
 			}
 		} break;
 		case '\\':
@@ -2353,7 +2353,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			int distance = numbuf_pull(&visual->util);
 			rz_core_visual_define(core, arg + 1, distance - 1);
 			rz_core_visual_showcursor(core, false);
-			rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
+			rz_cons_enable_mouse(core->cons, mouse_state && rz_config_get_b(core->config, "scr.wheel"));
 		} break;
 		case 'D':
 			setdiff(core);
@@ -2364,7 +2364,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			char name[256], *n;
 			rz_line_set_prompt(line, "flag name: ");
 			rz_core_visual_showcursor(core, true);
-			if (rz_cons_fgets(name, sizeof(name), 0, NULL) >= 0 && *name) {
+			if (rz_cons_fgets(core->cons, name, sizeof(name), 0, NULL) >= 0 && *name) {
 				n = name;
 				rz_str_trim(n);
 				if (core->print->ocur != -1) {
@@ -2401,21 +2401,21 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 				}
 			}
-			rz_cons_enable_mouse(mouse_state && rz_config_get_b(core->config, "scr.wheel"));
+			rz_cons_enable_mouse(core->cons, mouse_state && rz_config_get_b(core->config, "scr.wheel"));
 			rz_core_visual_showcursor(core, false);
 		} break;
 		case ',':
 			visual_comma(core);
 			break;
 		case 't': {
-			rz_cons_gotoxy(0, 0);
+			rz_cons_gotoxy(core->cons, 0, 0);
 			if (visual->tabs) {
-				rz_cons_printf("[tnp:=+-] ");
+				rz_cons_printf(core->cons, "[tnp:=+-] ");
 			} else {
-				rz_cons_printf("[t] ");
+				rz_cons_printf(core->cons, "[t] ");
 			}
-			rz_cons_flush();
-			int ch = rz_cons_readchar();
+			rz_cons_flush(core->cons);
+			int ch = rz_cons_readchar(core->cons);
 			if (isdigit(ch)) {
 				rz_core_visual_nthtab(core, ch - '0' - 1);
 			}
@@ -2441,7 +2441,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				RzCoreVisualTab *tab = rz_core_visual_newtab(core);
 				if (tab) {
 					tab->name[0] = ':';
-					rz_cons_fgets(tab->name + 1, sizeof(tab->name) - 1, 0, NULL);
+					rz_cons_fgets(core->cons, tab->name + 1, sizeof(tab->name) - 1, 0, NULL);
 				}
 			} break;
 			case '+':
@@ -2484,17 +2484,17 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				}
 			}
 			if (!canWrite(core, addr)) {
-				rz_cons_printf("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-				rz_cons_any_key(NULL);
+				rz_cons_printf(core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+				rz_cons_any_key(core->cons, NULL);
 				return true;
 			}
 			rz_core_visual_showcursor(core, true);
-			rz_cons_flush();
-			rz_cons_set_raw(0);
+			rz_cons_flush(core->cons);
+			rz_cons_set_raw(core->cons, 0);
 			if (ch == 'I') {
 				strcpy(buf, "wb ");
 				rz_line_set_prompt(line, "insert hexpair block: ");
-				if (rz_cons_fgets(buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
+				if (rz_cons_fgets(core->cons, buf + 4, sizeof(buf) - 4, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				char *p = rz_str_dup(buf);
@@ -2511,7 +2511,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (core->print->col == 2) {
 				strcpy(buf, "w \"");
 				rz_line_set_prompt(line, "insert string: ");
-				if (rz_cons_fgets(buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
+				if (rz_cons_fgets(core->cons, buf + 3, sizeof(buf) - 3, 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 				strcat(buf, "\"");
@@ -2524,7 +2524,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				} else {
 					strcpy(buf, "wx ");
 				}
-				if (rz_cons_fgets(buf + strlen(buf), sizeof(buf) - strlen(buf), 0, NULL) < 0) {
+				if (rz_cons_fgets(core->cons, buf + strlen(buf), sizeof(buf) - strlen(buf), 0, NULL) < 0) {
 					buf[0] = '\0';
 				}
 			}
@@ -2535,13 +2535,13 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				rz_core_seek(core, addr, true);
 			}
-			rz_cons_set_raw(1);
+			rz_cons_set_raw(core->cons, 1);
 			rz_core_visual_showcursor(core, false);
 			rz_core_seek(core, oaddr, true);
 		} break;
 		case 'R':
 			if (rz_config_get_b(core->config, "scr.randpal")) {
-				rz_cons_pal_random();
+				rz_cons_pal_random(core->cons);
 			} else {
 				rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			}
@@ -2576,10 +2576,10 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			RzAnalysisFunction *fun = rz_analysis_get_fcn_in(core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 			int ocolor = rz_config_get_i(core->config, "scr.color");
 			if (!fun) {
-				rz_cons_message("Not in a function. Type 'df' to define it here");
+				rz_cons_message(core->cons, "Not in a function. Type 'df' to define it here");
 				break;
 			} else if (rz_pvector_len(fun->bbs) < 1) {
-				rz_cons_message("No basic blocks in this function. You may want to use 'afb+'.");
+				rz_cons_message(core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 				break;
 			}
 			reset_print_cur(core->print);
@@ -2700,7 +2700,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						if (hexCols < 1) {
 							hexCols = 16;
 						}
-						(void)rz_cons_get_size(&h);
+						(void)rz_cons_get_size(core->cons, &h);
 						int delta = hexCols * (h / 4);
 						addr = core->offset + delta;
 					}
@@ -2848,7 +2848,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				} else {
 					rz_core_block_size(core, visual->obs);
 				}
-				rz_cons_clear();
+				rz_cons_clear(core->cons);
 			}
 			break;
 		case 'w':
@@ -2858,26 +2858,26 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			findPrevWord(core);
 			break;
 		case 'm': {
-			rz_cons_gotoxy(0, 0);
-			rz_cons_printf(RZ_CONS_CLEAR_LINE "Set shortcut key for 0x%" PFMT64x "\n", core->offset);
-			rz_cons_flush();
-			int ch = rz_cons_readchar();
+			rz_cons_gotoxy(core->cons, 0, 0);
+			rz_cons_printf(core->cons, RZ_CONS_CLEAR_LINE "Set shortcut key for 0x%" PFMT64x "\n", core->offset);
+			rz_cons_flush(core->cons);
+			int ch = rz_cons_readchar(core->cons);
 			rz_core_visual_mark(core, ch);
 		} break;
 		case 'M': {
-			rz_cons_gotoxy(0, 0);
+			rz_cons_gotoxy(core->cons, 0, 0);
 			if (rz_core_visual_mark_dump(core)) {
-				rz_cons_printf(RZ_CONS_CLEAR_LINE "Remove a shortcut key from the list\n");
-				rz_cons_flush();
-				int ch = rz_cons_readchar();
+				rz_cons_printf(core->cons, RZ_CONS_CLEAR_LINE "Remove a shortcut key from the list\n");
+				rz_cons_flush(core->cons);
+				int ch = rz_cons_readchar(core->cons);
 				rz_core_visual_mark_del(core, ch);
 			}
 		} break;
 		case '\'': {
-			rz_cons_gotoxy(0, 0);
+			rz_cons_gotoxy(core->cons, 0, 0);
 			if (rz_core_visual_mark_dump(core)) {
-				rz_cons_flush();
-				int ch = rz_cons_readchar();
+				rz_cons_flush(core->cons);
+				int ch = rz_cons_readchar(core->cons);
 				rz_core_visual_mark_seek(core, ch);
 			}
 		} break;
@@ -2890,10 +2890,10 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case 'Y':
 			if (!core->yank_buf) {
-				rz_cons_strcat("Cannot paste, clipboard is empty.\n");
-				rz_cons_flush();
-				rz_cons_any_key(NULL);
-				rz_cons_clear00();
+				rz_cons_strcat(core->cons, "Cannot paste, clipboard is empty.\n");
+				rz_cons_flush(core->cons);
+				rz_cons_any_key(core->cons, NULL);
+				rz_cons_clear00(core->cons);
 			} else {
 				rz_core_yank_paste(core, core->offset + core->print->cur, 0);
 			}
@@ -2963,7 +2963,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					rz_core_block_size(core, core->blocksize - cols);
 				}
 			}
-			rz_cons_enable_mouse(mouse_state && rz_config_get_i(core->config, "scr.wheel"));
+			rz_cons_enable_mouse(core->cons, mouse_state && rz_config_get_i(core->config, "scr.wheel"));
 		} break;
 		case ')':
 			rotateAsmemu(core);
@@ -2986,7 +2986,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (core->print->cur_enabled) {
 				if (core->print->ocur == -1) {
 					RZ_LOG_ERROR("core: No range selected. Use HJKL.\n");
-					rz_cons_any_key(NULL);
+					rz_cons_any_key(core->cons, NULL);
 					break;
 				}
 				char buf[128];
@@ -3067,7 +3067,7 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			rz_core_visual_hudstuff(core);
 			break;
 		case ';':
-			rz_cons_gotoxy(0, 0);
+			rz_cons_gotoxy(core->cons, 0, 0);
 			ut64 addr = core->print->cur_enabled ? core->offset + core->print->cur : core->offset;
 			add_comment(core, addr, "Enter a comment: ('-' to remove, '!' to use cfg.editor)\n");
 			break;
@@ -3104,10 +3104,10 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 static void visual_flagzone(RzCore *core) {
 	const char *a, *b;
 	int a_len = 0;
-	int w = rz_cons_get_size(NULL);
+	int w = rz_cons_get_size(core->cons, NULL);
 	rz_flag_zone_around(core->flags, core->offset, &a, &b);
 	if (a) {
-		rz_cons_printf("[<< %s]", a);
+		rz_cons_printf(core->cons, "[<< %s]", a);
 		a_len = strlen(a) + 4;
 	}
 	int padsize = (w / 2) - a_len;
@@ -3117,18 +3117,18 @@ static void visual_flagzone(RzCore *core) {
 		title_size = strlen(title);
 		padsize -= strlen(title) / 2;
 		char *halfpad = rz_str_pad(' ', padsize);
-		rz_cons_printf("%s%s", halfpad, title);
+		rz_cons_printf(core->cons, "%s%s", halfpad, title);
 		free(title);
 		free(halfpad);
 	}
 	if (b) {
 		padsize = (w / 2) - title_size - strlen(b) - 4;
 		char *halfpad = rz_str_pad(' ', padsize);
-		rz_cons_printf("%s[%s >>]", halfpad, b);
+		rz_cons_printf(core->cons, "%s[%s >>]", halfpad, b);
 		free(halfpad);
 	}
 	if (a || b) {
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 	}
 }
 
@@ -3218,7 +3218,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 	}
 
 	if (color) {
-		rz_cons_strcat(BEGIN);
+		rz_cons_strcat(core->cons, BEGIN);
 	}
 	const char *cmd_visual = rz_config_get(core->config, "cmd.visual");
 	if (cmd_visual && *cmd_visual) {
@@ -3300,17 +3300,17 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 				free(tabstring);
 			}
 		}
-		rz_cons_print(title);
+		rz_cons_print(core->cons, title);
 		free(title);
 		free(address);
 	}
 	if (color) {
-		rz_cons_strcat(Color_RESET);
+		rz_cons_strcat(core->cons, Color_RESET);
 	}
 }
 
 static int visual_responsive(RzCore *core) {
-	int h, w = rz_cons_get_size(&h);
+	int h, w = rz_cons_get_size(core->cons, &h);
 	if (rz_config_get_b(core->config, "scr.responsive")) {
 		if (w < 110) {
 			rz_config_set_b(core->config, "asm.cmt.right", false);
@@ -3346,7 +3346,7 @@ static int visual_responsive(RzCore *core) {
 
 // TODO: use colors
 RZ_IPI void rz_core_visual_scrollbar(RzCore *core) {
-	int i, h, w = rz_cons_get_size(&h);
+	int i, h, w = rz_cons_get_size(core->cons, &h);
 
 	int scrollbar = rz_config_get_i(core->config, "scr.scrollbar");
 	if (scrollbar == 2) {
@@ -3373,8 +3373,8 @@ RZ_IPI void rz_core_visual_scrollbar(RzCore *core) {
 		to = rz_num_math(core->num, "$s");
 	}
 	char *s = rz_str_newf("[0x%08" PFMT64x "]", from);
-	rz_cons_gotoxy(w - strlen(s) + 1, 2);
-	rz_cons_strcat(s);
+	rz_cons_gotoxy(core->cons, w - strlen(s) + 1, 2);
+	rz_cons_strcat(core->cons, s);
 	free(s);
 
 	ut64 block = (to - from) / h;
@@ -3385,35 +3385,35 @@ RZ_IPI void rz_core_visual_scrollbar(RzCore *core) {
 	for (i = 0; i < h; i++) {
 		const char *word = rz_list_pop_head(words);
 		if (word && *word) {
-			rz_cons_gotoxy(w - strlen(word) - 1, i + 3);
-			rz_cons_printf("%s>", word);
+			rz_cons_gotoxy(core->cons, w - strlen(word) - 1, i + 3);
+			rz_cons_printf(core->cons, "%s>", word);
 		}
-		rz_cons_gotoxy(w, i + 3);
+		rz_cons_gotoxy(core->cons, w, i + 3);
 		if (hadMatch) {
-			rz_cons_printf("|");
+			rz_cons_printf(core->cons, "|");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 1));
 			if (RZ_BETWEEN(cur, core->offset, nex)) {
-				rz_cons_printf(Color_INVERT "|" Color_RESET);
+				rz_cons_printf(core->cons, Color_INVERT "|" Color_RESET);
 				hadMatch = true;
 			} else {
-				rz_cons_printf("|");
+				rz_cons_printf(core->cons, "|");
 			}
 		}
 	}
 	s = rz_str_newf("[0x%08" PFMT64x "]", to);
 	if (s) {
-		rz_cons_gotoxy(w - strlen(s) + 1, h + 1);
-		rz_cons_strcat(s);
+		rz_cons_gotoxy(core->cons, w - strlen(s) + 1, h + 1);
+		rz_cons_strcat(core->cons, s);
 		free(s);
 	}
 	rz_list_free(words);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 }
 
 RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
-	int i, h, w = rz_cons_get_size(&h);
+	int i, h, w = rz_cons_get_size(core->cons, &h);
 
 	if (w < 10 || h < 4) {
 		return;
@@ -3431,8 +3431,8 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
 	}
 	char *s = rz_str_newf("[0x%08" PFMT64x "]", from);
 	int slen = strlen(s) + 1;
-	rz_cons_gotoxy(0, h + 1);
-	rz_cons_strcat(s);
+	rz_cons_gotoxy(core->cons, 0, h + 1);
+	rz_cons_strcat(core->cons, s);
 	free(s);
 
 	int linew = (w - (slen * 2)) + 1;
@@ -3442,17 +3442,17 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
 
 	bool hadMatch = false;
 	for (i = 0; i < linew + 1; i++) {
-		rz_cons_gotoxy(i + slen, h + 1);
+		rz_cons_gotoxy(core->cons, i + slen, h + 1);
 		if (hadMatch) {
-			rz_cons_strcat("-");
+			rz_cons_strcat(core->cons, "-");
 		} else {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + 2));
 			if (RZ_BETWEEN(cur, core->offset, nex)) {
-				rz_cons_strcat(Color_INVERT "-" Color_RESET);
+				rz_cons_strcat(core->cons, Color_INVERT "-" Color_RESET);
 				hadMatch = true;
 			} else {
-				rz_cons_strcat("-");
+				rz_cons_strcat(core->cons, "-");
 			}
 		}
 	}
@@ -3461,22 +3461,22 @@ RZ_IPI void rz_core_visual_scrollbar_bottom(RzCore *core) {
 		if (word && *word) {
 			ut64 cur = from + (block * i);
 			ut64 nex = from + (block * (i + strlen(word) + 1));
-			rz_cons_gotoxy(i + slen - 1, h);
+			rz_cons_gotoxy(core->cons, i + slen - 1, h);
 			if (RZ_BETWEEN(cur, core->offset, nex)) {
-				rz_cons_printf(Color_INVERT "{%s}" Color_RESET, word);
+				rz_cons_printf(core->cons, Color_INVERT "{%s}" Color_RESET, word);
 			} else {
-				rz_cons_printf("{%s}", word);
+				rz_cons_printf(core->cons, "{%s}", word);
 			}
 		}
 	}
 	s = rz_str_newf("[0x%08" PFMT64x "]", to);
 	if (s) {
-		rz_cons_gotoxy(linew + slen + 1, h + 1);
-		rz_cons_strcat(s);
+		rz_cons_gotoxy(core->cons, linew + slen + 1, h + 1);
+		rz_cons_strcat(core->cons, s);
 		free(s);
 	}
 	rz_list_free(words);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 }
 
 static bool is_in_symbol_range(ut64 sym_addr, ut64 sym_size, ut64 addr) {
@@ -3539,7 +3539,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	char *output = rz_str_dup(core->cons->context->buffer);
 	size_t line_count = 0, *line_index = rz_str_split_lines(output, &line_count);
 	int rows;
-	rz_cons_get_size(&rows);
+	rz_cons_get_size(core->cons, &rows);
 	if (!line_index || rows > line_count) {
 		goto exit1;
 	}
@@ -3601,10 +3601,10 @@ static void visual_refresh(RzCore *core) {
 	int w = visual_responsive(core);
 
 	if (!visual->autoblocksize) {
-		rz_cons_clear();
+		rz_cons_clear(core->cons);
 	}
-	rz_cons_goto_origin_reset();
-	rz_cons_flush();
+	rz_cons_goto_origin_reset(core->cons);
+	rz_cons_flush(core->cons);
 
 	int hex_cols = rz_config_get_i(core->config, "hex.cols");
 	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
@@ -3619,13 +3619,13 @@ static void visual_refresh(RzCore *core) {
 		if (split_w > w) {
 			// do not show column contents
 		} else {
-			rz_cons_clear();
-			rz_cons_printf("[cmd.cprompt=%s]\n", vi);
+			rz_cons_clear(core->cons);
+			rz_cons_printf(core->cons, "[cmd.cprompt=%s]\n", vi);
 			if (*oseek != UT64_MAX) {
 				rz_core_seek(core, *oseek, true);
 			}
 			rz_core_cmd0(core, vi);
-			rz_cons_column(split_w + 1);
+			rz_cons_column(core->cons, split_w + 1);
 			if (!strncmp(vi, "p=", 2) && core->print->cur_enabled) {
 				*oseek = core->offset;
 				core->print->cur_enabled = false;
@@ -3634,7 +3634,7 @@ static void visual_refresh(RzCore *core) {
 				*oseek = UT64_MAX;
 			}
 		}
-		rz_cons_gotoxy(0, 0);
+		rz_cons_gotoxy(core->cons, 0, 0);
 	}
 	vi = rz_config_get(core->config, "cmd.vprompt");
 	if (vi && *vi) {
@@ -3677,7 +3677,7 @@ static void visual_refresh(RzCore *core) {
 		if (vsplit) {
 			char *cmd_result = rz_core_cmd_str(core, cmd_str);
 			cmd_result = rz_str_ansi_crop(cmd_result, 0, 0, split_w, -1);
-			rz_cons_strcat(cmd_result);
+			rz_cons_strcat(core->cons, cmd_result);
 		} else {
 			rz_core_cmd0(core, cmd_str);
 		}
@@ -3694,9 +3694,9 @@ static void visual_refresh(RzCore *core) {
 
 	/* this is why there's flickering */
 	if (core->print->vflush) {
-		rz_cons_visual_flush();
+		rz_cons_visual_flush(core->cons);
 	} else {
-		rz_cons_reset();
+		rz_cons_reset(core->cons);
 	}
 	core->cons->blankline = false;
 	core->cons->blankline = true;
@@ -3707,12 +3707,12 @@ static void visual_refresh(RzCore *core) {
 		rz_core_visual_scrollbar(core);
 	}
 
-	int h, cols = rz_cons_get_size(&h);
+	int h, cols = rz_cons_get_size(core->cons, &h);
 	if (visual->percentage >= 0) {
 		char *percentage_str = rz_str_newf("%.1f%%", visual->percentage * 100);
-		rz_cons_gotoxy(cols - strlen(percentage_str) - 1, h);
-		rz_cons_printf("%s", percentage_str);
-		rz_cons_flush();
+		rz_cons_gotoxy(core->cons, cols - strlen(percentage_str) - 1, h);
+		rz_cons_printf(core->cons, "%s", percentage_str);
+		rz_cons_flush(core->cons);
 		free(percentage_str);
 	}
 }
@@ -3787,7 +3787,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 	RzCoreVisual *visual = core->visual;
 	visual->splitPtr = UT64_MAX;
 
-	if (rz_cons_get_size(&ch) < 1 || ch < 1) {
+	if (rz_cons_get_size(core->cons, &ch) < 1 || ch < 1) {
 		RZ_LOG_ERROR("core: Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}
@@ -3812,8 +3812,8 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		rz_core_visual_tab_update(core);
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor(core);
-		rz_cons_show_cursor(false);
-		rz_cons_set_raw(1);
+		rz_cons_show_cursor(core->cons, false);
+		rz_cons_set_raw(core->cons, 1);
 		const int ref = rz_config_get_b(core->config, "dbg.slow");
 #if 1
 		// This is why multiple debug views dont work
@@ -3845,7 +3845,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 			printfmtSingle[2] = visual->util.debugstr_core;
 		}
 #endif
-		rz_cons_enable_mouse(rz_config_get_b(core->config, "scr.wheel"));
+		rz_cons_enable_mouse(core->cons, rz_config_get_b(core->config, "scr.wheel"));
 		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
 		core->cons->event_resize = (RzConsEvent)visual_refresh_oneshot;
@@ -3871,7 +3871,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 			goto dodo;
 		}
 		if (!skip) {
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(core->cons);
 
 			if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE && !is_mintty(core->cons)) {
 				// Prevent runaway scrolling
@@ -3880,9 +3880,9 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 				} else if (ch == 0x1b) {
 					char chrs[2];
 					int chrs_read = 1;
-					chrs[0] = rz_cons_readchar();
+					chrs[0] = rz_cons_readchar(core->cons);
 					if (chrs[0] == '[') {
-						chrs[1] = rz_cons_readchar();
+						chrs[1] = rz_cons_readchar(core->cons);
 						chrs_read++;
 						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
 							flush_stdin();
@@ -3890,15 +3890,15 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 							// Following seems to fix an issue where scrolling slows
 							// down to a crawl for some terminals after some time
 							// mashing the up and down arrow keys
-							rz_cons_set_raw(false);
-							rz_cons_set_raw(true);
+							rz_cons_set_raw(core->cons, false);
+							rz_cons_set_raw(core->cons, true);
 #endif
 						}
 					}
-					(void)rz_cons_readpush(chrs, chrs_read);
+					(void)rz_cons_readpush(core->cons, chrs, chrs_read);
 				}
 			}
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			rz_core_visual_show_char(core, ch);
@@ -3910,10 +3910,10 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		}
 	} while (skip || (*arg && rz_core_visual_cmd(core, arg)));
 
-	rz_cons_enable_mouse(false);
+	rz_cons_enable_mouse(core->cons, false);
 	if (visual->color) {
 
-		rz_cons_strcat(Color_RESET);
+		rz_cons_strcat(core->cons, Color_RESET);
 	}
 	rz_config_set_i(core->config, "scr.color", visual->color);
 	core->print->cur_enabled = false;
@@ -3921,11 +3921,11 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 		rz_core_block_size(core, visual->obs);
 	}
 	core->cons->teefile = teefile;
-	rz_cons_set_cup(false);
-	rz_cons_clear00();
+	rz_cons_set_cup(core->cons, false);
+	rz_cons_clear00(core->cons);
 	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
-	rz_cons_show_cursor(true);
+	rz_cons_show_cursor(core->cons, true);
 	return 0;
 }

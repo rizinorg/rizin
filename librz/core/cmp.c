@@ -116,11 +116,11 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
 		}
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%08" PFMT64x, cmp->addr1 + i);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x, cmp->addr1 + i);
 			if (!data_str) {
-				rz_cons_printf("  ->  0x%08" PFMT64x, cmp->addr2 + i);
+				rz_cons_printf(core->cons, "  ->  0x%08" PFMT64x, cmp->addr2 + i);
 			}
-			rz_cons_printf(" (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n", i + 1,
+			rz_cons_printf(core->cons, " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n", i + 1,
 				cmp->data1[i], (IS_PRINTABLE(cmp->data1[i])) ? cmp->data1[i] : ' ',
 				cmp->data2[i], (IS_PRINTABLE(cmp->data2[i])) ? cmp->data2[i] : ' ');
 			break;
@@ -138,7 +138,7 @@ RZ_API int rz_core_cmp_print(RzCore *core, RZ_NONNULL const RzCompareData *cmp, 
 		}
 	}
 	if (mode == RZ_OUTPUT_MODE_STANDARD) {
-		rz_cons_printf("Compare %d/%d equal bytes (%d%%)\n", eq, cmp->len, (int)(100.0 * eq / cmp->len));
+		rz_cons_printf(core->cons, "Compare %d/%d equal bytes (%d%%)\n", eq, cmp->len, (int)(100.0 * eq / cmp->len));
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
 		pj_ki(pj, "equal_bytes", eq);
@@ -254,21 +254,21 @@ RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData
 	if (unified) {
 		rz_list_foreach (compare, it, cmp) {
 			if (cmp->same) {
-				rz_cons_printf(" 0x%08" PFMT64x "  %s\n",
+				rz_cons_printf(core->cons, " 0x%08" PFMT64x "  %s\n",
 					cmp->addr1, cmp->data1);
 			} else {
 				if (hascolor) {
-					rz_cons_print(pal->graph_false);
+					rz_cons_print(core->cons, pal->graph_false);
 				}
-				rz_cons_printf("-0x%08" PFMT64x "  %s\n",
+				rz_cons_printf(core->cons, "-0x%08" PFMT64x "  %s\n",
 					cmp->addr1, cmp->data1);
 				if (hascolor) {
-					rz_cons_print(pal->graph_true);
+					rz_cons_print(core->cons, pal->graph_true);
 				}
-				rz_cons_printf("+0x%08" PFMT64x "  %s\n",
+				rz_cons_printf(core->cons, "+0x%08" PFMT64x "  %s\n",
 					cmp->addr2, cmp->data2);
 				if (hascolor) {
-					rz_cons_print(Color_RESET);
+					rz_cons_print(core->cons, Color_RESET);
 				}
 			}
 		}
@@ -279,14 +279,14 @@ RZ_API bool rz_core_cmp_disasm_print(RzCore *core, const RzList /*<RzCompareData
 			pos = (pos > cols) ? 0 : cols - pos;
 			colpad[pos] = 0;
 			if (hascolor) {
-				rz_cons_print(cmp->same ? pal->graph_true : pal->graph_false);
+				rz_cons_print(core->cons, cmp->same ? pal->graph_true : pal->graph_false);
 			}
-			rz_cons_printf(" 0x%08" PFMT64x "  %s %s",
+			rz_cons_printf(core->cons, " 0x%08" PFMT64x "  %s %s",
 				cmp->addr1, cmp->data1, colpad);
-			rz_cons_printf("%c 0x%08" PFMT64x "  %s\n",
+			rz_cons_printf(core->cons, "%c 0x%08" PFMT64x "  %s\n",
 				cmp->same ? '=' : '!', cmp->addr2, cmp->data2);
 			if (hascolor) {
-				rz_cons_print(Color_RESET);
+				rz_cons_print(core->cons, Color_RESET);
 			}
 		}
 	}
@@ -409,7 +409,7 @@ RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 		int is_diff = w->odata ? memcmp(w->odata, w->ndata, w->size) : 0;
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
+			rz_cons_printf(core->cons, "0x%08" PFMT64x "%s\n", w->addr, is_diff ? " modified" : "");
 			snprintf(cmd, sizeof(cmd), "%s @ %" PFMT64d " @!%d", w->cmd, w->addr, w->size);
 			rz_core_cmd0(core, cmd);
 			break;

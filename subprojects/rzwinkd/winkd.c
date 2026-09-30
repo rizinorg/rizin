@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <rz_util.h>
-#include <rz_cons.h>
 #include <rz_list.h>
 #include <rz_debug.h>
 #include "transport.h"
@@ -21,10 +20,10 @@
 #define KOBJECT_THREAD  6
 
 bool winkd_lock_enter(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
-	rz_cons_break_push(winkd_break, ctx);
+	rz_interrupt_break_push(ctx->intr, winkd_break, ctx);
 	while (!rz_th_lock_tryenter(ctx->dontmix)) {
-		if (rz_cons_is_breaked()) {
-			rz_cons_break_pop();
+		if (rz_interrupt_is_breaked(ctx->intr)) {
+			rz_interrupt_break_pop(ctx->intr);
 			return false;
 		}
 	}
@@ -32,7 +31,7 @@ bool winkd_lock_enter(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
 }
 
 bool winkd_lock_leave(RZ_BORROW RZ_NONNULL KdCtx *ctx) {
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(ctx->intr);
 	rz_th_lock_leave(ctx->dontmix);
 	return true;
 }
@@ -987,7 +986,7 @@ static bool winkd_send_state_manipulate_req(RZ_BORROW RZ_NONNULL KdCtx *ctx, kd_
 				}
 			}
 		}
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(ctx->intr)) {
 			break;
 		}
 	} while (ret == KD_E_MALFORMED);
@@ -1465,4 +1464,9 @@ void winkd_break(void *arg) {
 	KdCtx *ctx = (KdCtx *)arg;
 	ctx->breaked = true;
 	(void)iob_write(ctx->desc, (const ut8 *)"b", 1);
+}
+
+void winkd_set_interrupt(RZ_NONNULL RZ_BORROW KdCtx *ctx, RZ_NONNULL RzInterrupt *intr) {
+	rz_return_if_fail(ctx && intr);
+	ctx->intr = intr;
 }

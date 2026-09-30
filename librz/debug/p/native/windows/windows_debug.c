@@ -932,13 +932,13 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
-	rz_cons_break_push(w32_break_process, dbg);
+	rz_interrupt_break_push(dbg->intr, w32_break_process, dbg);
 
 	/* handle debug events */
 	do {
 		/* do not continue when already exited but still open for examination */
 		if (exited_already == pid) {
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(dbg->intr);
 			return RZ_DEBUG_REASON_DEAD;
 		}
 		memset(&de, 0, sizeof(DEBUG_EVENT));
@@ -946,9 +946,9 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			wrap->params.type = W32_WAIT;
 			wrap->params.wait.de = &de;
 			wrap->params.wait.wait_time = wait_time;
-			void *bed = rz_cons_sleep_begin();
+			void *bed = rz_interrupt_sleep_begin(dbg->intr);
 			w32dbg_wrap_wait_ret(wrap);
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(dbg->intr, bed);
 			if (!w32dbgw_ret(wrap)) {
 				if (w32dbgw_err(wrap) != ERROR_SEM_TIMEOUT) {
 					rz_sys_perror("WaitForDebugEvent");
@@ -1138,7 +1138,7 @@ end:
 		rz_list_purge(dbg->threads);
 		rz_list_purge(lib_list);
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	return ret;
 }
 

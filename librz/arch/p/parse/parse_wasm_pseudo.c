@@ -11,9 +11,9 @@
 #include <rz_parse.h>
 
 static char *get_fcn_name(RzAnalysis *analysis, ut32 fcn_id) {
-	rz_cons_push();
+	analysis->coreb.consPush(analysis->coreb.core);
 	char *s = analysis->coreb.cmdstrf(analysis->coreb.core, "is~FUNC[6:%u]", fcn_id);
-	rz_cons_pop();
+	analysis->coreb.consPop(analysis->coreb.core);
 	if (s) {
 		size_t namelen = strlen(s);
 		s[namelen - 1] = 0;

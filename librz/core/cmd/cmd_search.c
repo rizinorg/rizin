@@ -226,15 +226,15 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	int fd = core->file->fd;
 	RzIOBind *iob = rz_analysis_get_io_bind(core->analysis);
 	RzBuffer *b = rz_buf_new_with_io_fd(iob, fd);
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	while (from < to) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		RzBuffer *ref = rz_buf_new_slice(b, from, to);
 		RzBinPlugin *plug = rz_bin_get_binplugin_by_buffer(core->bin, ref);
 		if (plug) {
-			rz_cons_printf("0x%08" PFMT64x "  %s\n", from, plug->name);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
 				RzBinOptions opt = {
 					.pluginname = plug->name,
@@ -246,7 +246,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 				rz_bin_open_io(core->bin, &opt);
 				size = plug->size(core->bin->cur);
 				if (size > 0) {
-					rz_cons_printf("size %d\n", size);
+					rz_cons_printf(core->cons, "size %d\n", size);
 				}
 			}
 		}
@@ -254,7 +254,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 		from++;
 	}
 	rz_buf_free(b);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 }
 
 static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
@@ -285,7 +285,7 @@ RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *b
 	rz_search_set_callback(core->search, &__prelude_cb_hit, core);
 	core->search->preludecnt = 0;
 	for (at = from; at < to; at += core->blocksize) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (!rz_io_is_valid_offset(core->io, at, 0)) {
@@ -507,7 +507,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			pj_ks(param->pj, "data", s);
 			pj_end(param->pj);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x " %s%d_%d %s\n",
+			rz_cons_printf(core->cons, "0x%08" PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, param->hit_prefix, kw->kwidx, kw->count, s);
 		}
 		free(s);
@@ -521,9 +521,9 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			pj_end(param->pj);
 		} else {
 			if (param->searchflags) {
-				rz_cons_printf("%s%d_%d\n", param->hit_prefix, kw->kwidx, kw->count);
+				rz_cons_printf(core->cons, "%s%d_%d\n", param->hit_prefix, kw->kwidx, kw->count);
 			} else {
-				rz_cons_printf("f %s%d_%d %d @ 0x%08" PFMT64x "\n", param->hit_prefix,
+				rz_cons_printf(core->cons, "f %s%d_%d %d @ 0x%08" PFMT64x "\n", param->hit_prefix,
 					kw->kwidx, kw->count, keyword_len, base_addr + addr);
 			}
 		}
@@ -598,7 +598,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	}
 	ut64 oldoff = core->offset;
 	int syscallNumber = 0;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 	char *esp = rz_str_newf("%s,=", a0);
 	char *esp32 = NULL;
@@ -620,7 +620,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			if (i >= (bsize - 32)) {
@@ -655,7 +655,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 				scVector = (aop.val > 0) ? aop.val : -1; // int 0x80 (aop.val = 0x80)
 				RzSyscallItem *item = rz_syscall_get(sysc, scNumber, scVector);
 				if (item) {
-					rz_cons_printf("0x%08" PFMT64x " %s\n", at, item->name);
+					rz_cons_printf(core->cons, "0x%08" PFMT64x " %s\n", at, item->name);
 				}
 				memset(previnstr, 0, (MAXINSTR + 1) * sizeof(*previnstr)); // clearing the buffer
 				if (param->searchflags) {
@@ -689,7 +689,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 beach:
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	free(buf);
 	free(esp32);
 	free(esp);
@@ -727,7 +727,7 @@ static void do_ref_search(RzCore *core, ut64 addr, ut64 from, ut64 to, struct se
 				: rz_str_newf("%s", fcn ? fcn->name : "(nofunc)");
 			free(print_comment);
 			if (from <= xref->from && to >= xref->from) {
-				rz_cons_printf("%s 0x%" PFMT64x " [%s] %s\n",
+				rz_cons_printf(core->cons, "%s 0x%" PFMT64x " [%s] %s\n",
 					buf_fcn, xref->from, rz_analysis_xrefs_type_tostring(xref->type), str);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
@@ -771,7 +771,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					if (!strcmp(str, "undefined")) {
 						continue;
 					}
-					rz_cons_println(str);
+					rz_cons_println(core->cons, str);
 				}
 				break;
 			case 's': { // "/als"
@@ -781,9 +781,9 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 				RzList *list = rz_syscall_list(sysc);
 				rz_list_foreach (list, iter, si) {
 					if (si->num > SYSCALL_HEX_LIMIT) {
-						rz_cons_printf("%s = 0x%02x.%x\n", si->name, si->swi, si->num);
+						rz_cons_printf(core->cons, "%s = 0x%02x.%x\n", si->name, si->swi, si->num);
 					} else {
-						rz_cons_printf("%s = 0x%02x.%d\n", si->name, si->swi, si->num);
+						rz_cons_printf(core->cons, "%s = 0x%02x.%d\n", si->name, si->swi, si->num);
 					}
 				}
 				rz_list_free(list);
@@ -818,14 +818,14 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 		pj_a(param->pj);
 	}
 	input = rz_str_trim_head_ro(input);
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	RzIOMap *map;
 	RzListIter *iter;
 	rz_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = rz_itv_end(map->itv);
 		for (i = 0, at = from; at < to; i++, at++) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			at = from + i;
@@ -883,14 +883,14 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 						pj_end(param->pj);
 						break;
 					case 'q':
-						rz_cons_printf("0x%08" PFMT64x "\n", at);
+						rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", at);
 						break;
 					default:
 						if (type == 'f') {
 							const char *fam = rz_analysis_op_family_to_string(aop.family);
-							rz_cons_printf("0x%08" PFMT64x " %d %s %s\n", at, ret, fam, opstr);
+							rz_cons_printf(core->cons, "0x%08" PFMT64x " %d %s %s\n", at, ret, fam, opstr);
 						} else {
-							rz_cons_printf("0x%08" PFMT64x " %d %s\n", at, ret, opstr);
+							rz_cons_printf(core->cons, "0x%08" PFMT64x " %d %s\n", at, ret, opstr);
 						}
 						break;
 					}
@@ -926,7 +926,7 @@ done:
 	if (mode == 'j') {
 		pj_end(param->pj);
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	return false;
 }
 
@@ -957,7 +957,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(param->pj);
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	if (everyByte) {
 		input++;
 	}
@@ -967,7 +967,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 		}
 		ut64 from = map->itv.addr;
 		ut64 to = rz_itv_end(map->itv);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (maxhits && count >= maxhits) {
@@ -978,7 +978,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 		if (hits) {
 			const char *cmdhit = rz_config_get(core->config, "cmd.hit");
 			rz_list_foreach (hits, iter, hit) {
-				if (rz_cons_is_breaked()) {
+				if (rz_interrupt_is_breaked(core->intr)) {
 					rz_list_free(hits);
 					break;
 				}
@@ -1002,10 +1002,10 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 						rz_parse_filter(core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof(tmp),
 							core->print->big_endian);
 						rz_analysis_hint_free(hint);
-						rz_cons_printf("0x%08" PFMT64x "   # %i: %s\n",
+						rz_cons_printf(core->cons, "0x%08" PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
 					} else {
-						rz_cons_printf("0x%08" PFMT64x "   # %i: %s\n",
+						rz_cons_printf(core->cons, "0x%08" PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, hit->code);
 					}
 					break;
@@ -1025,7 +1025,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	if (param->outmode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(param->pj);
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 }
 
 static void do_string_search(RzCore *core, RzInterval search_itv, struct search_parameters *param) {
@@ -1039,7 +1039,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	RzListIter *iter;
 	RzIOMap *map;
 	if (!param->searchflags && param->outmode != RZ_OUTPUT_MODE_JSON) {
-		rz_cons_printf("fs hits\n");
+		rz_cons_printf(core->cons, "fs hits\n");
 	}
 	core->search->inverse = param->inverse;
 	// TODO Bad but is to be compatible with the legacy behavior
@@ -1056,7 +1056,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 		if (!param->regex_search && !(buf = malloc(core->blocksize))) {
 			return;
 		}
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 		// TODO search cross boundary
 		rz_list_foreach (param->boundaries, iter, map) {
 			if (!rz_itv_overlap(search_itv, map->itv)) {
@@ -1064,7 +1064,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			}
 			const ut64 saved_nhits = search->nhits;
 			RzInterval itv = rz_itv_intersect(search_itv, map->itv);
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			if (param->outmode != RZ_OUTPUT_MODE_JSON) {
@@ -1090,7 +1090,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 			size_t c = 0;
 			for (at = from1; at != to1; at = at + len) {
 				print_search_progress(core->cons, at, to1, search->nhits, param, c);
-				if (rz_cons_is_breaked()) {
+				if (rz_interrupt_is_breaked(core->intr)) {
 					eprintf("\n\n");
 					break;
 				}
@@ -1130,14 +1130,14 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				}
 			}
 			print_search_progress(core->cons, at, to1, search->nhits, param, c);
-			rz_cons_clear_line(stderr);
+			rz_cons_clear_line(core->cons, stderr);
 			core->num->value = search->nhits;
 			if (param->outmode != RZ_OUTPUT_MODE_JSON) {
 				eprintf("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
 		}
 	done:
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 		free(buf);
 	} else {
 		RZ_LOG_ERROR("core: No keywords defined\n");
@@ -1168,14 +1168,14 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 	}
 	while (addr < to) {
 		(void)rz_io_read_at_mapped(core->io, addr, block, core->blocksize);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		int diff = memcmpdiff(core->block, block, core->blocksize);
 		int equal = core->blocksize - diff;
 		if (equal >= count) {
 			int pc = (equal * 100) / core->blocksize;
-			rz_cons_printf("0x%08" PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
@@ -1194,7 +1194,7 @@ static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 t
 			if (!strbuf) {
 				RZ_LOG_ERROR("Cannot generate vertical histogram\n");
 			} else {
-				rz_cons_print(rz_strbuf_drain(strbuf));
+				rz_cons_print(core->cons, rz_strbuf_drain(strbuf));
 			}
 		}
 		addr += core->blocksize;
@@ -1206,11 +1206,11 @@ static void search_similar_pattern(RzCore *core, int count, struct search_parame
 	RzIOMap *p;
 	RzListIter *iter;
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	rz_list_foreach (param->boundaries, iter, p) {
 		search_similar_pattern_in(core, count, p->itv.addr, rz_itv_end(p->itv));
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 }
 
 static bool isArm(RzCore *core) {
@@ -1234,7 +1234,7 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) 
 		}
 	}
 	if (param->outmode != RZ_OUTPUT_MODE_JSON) {
-		rz_cons_printf("0x%" PFMT64x ": 0x%" PFMT64x "\n", from, to);
+		rz_cons_printf(core->cons, "0x%" PFMT64x ": 0x%" PFMT64x "\n", from, to);
 	} else {
 		pj_o(param->pj);
 		pj_kn(param->pj, "offset", from);
@@ -1301,7 +1301,7 @@ static void __core_cmd_search_asm_infinite(RzCore *core, const char *arg) {
 			rz_analysis_op_init(&aop);
 			rz_analysis_op(core->analysis, &aop, at, buf + (at - map_begin), 24, RZ_ANALYSIS_OP_MASK_HINT);
 			if (at == aop.jump) {
-				rz_cons_printf("0x%08" PFMT64x "\n", at);
+				rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", at);
 			}
 			at += aop.size;
 			rz_analysis_op_fini(&aop);
@@ -1325,7 +1325,7 @@ static void __core_cmd_search_asm_byteswap(RzCore *core, int nth) {
 			const char *asmstr = rz_strbuf_get(&asmop.buf_asm);
 			rz_asm_op_fini(&asmop);
 			if (!strstr(asmstr, "invalid") && !strstr(asmstr, "unaligned")) {
-				rz_cons_printf("%02x  %s\n", i, asmstr);
+				rz_cons_printf(core->cons, "%02x  %s\n", i, asmstr);
 			}
 		} else {
 			rz_asm_op_fini(&asmop);
@@ -1479,7 +1479,7 @@ reread:
 					rz_core_analysis_search(core, from, to, core->offset, 0);
 					do_ref_search(core, core->offset, from, to, &param);
 				}
-				if (rz_cons_is_breaked()) {
+				if (rz_interrupt_is_breaked(core->intr)) {
 					break;
 				}
 			}
@@ -1528,10 +1528,10 @@ reread:
 				RzIOMap *map;
 				rz_list_foreach (param.boundaries, iter, map) {
 					eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-					rz_cons_break_push(NULL, NULL);
+					rz_interrupt_break_push(core->intr, NULL, NULL);
 					rz_search_pattern_size(core->search, ps);
 					rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv));
-					rz_cons_break_pop();
+					rz_interrupt_break_pop(core->intr);
 				}
 				break;
 			}
@@ -1600,7 +1600,7 @@ beach:
 	core->in_search = false;
 	rz_flag_space_pop(core->flags);
 	if (param.outmode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_println(pj_string(param.pj));
+		rz_cons_println(core->cons, pj_string(param.pj));
 	}
 	pj_free(param.pj);
 	rz_list_free(param.boundaries);
@@ -1633,34 +1633,35 @@ static int pass_to_legacy_api(RzCore *core, int argc, const char **argv, RzOutpu
 		RZ_LOG_ERROR("core: recursive search is forbidden.\n"); \
 		return RZ_CMD_STATUS_ERROR; \
 	} \
-	rz_cons_break_push(NULL, NULL); \
+	rz_interrupt_break_push(core->intr, NULL, NULL); \
 	core->in_search = true;
 
 #define CMD_SEARCH_END() \
 	do { \
-		rz_cons_break_pop(); \
+		rz_interrupt_break_pop(core->intr); \
 		core->in_search = false; \
 	} while (0)
 
 static bool cmd_search_progress_cancel(void *user, size_t n_hits, RzSearchCancelReason invoke_reason) {
-	if (user) {
+	RzCmdStateOutput *state = (RzCmdStateOutput *)user;
+	if (state) {
 		// we have RzCmdStateOutput state
 		eprintf("Searching... hits: %" PFMTSZu "\r", n_hits);
 	}
-	return rz_cons_is_breaked();
+	return rz_interrupt_is_breaked(user);
 }
 
-static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name, const char *detail) {
+static void cmd_search_output_to_state(RzCmdStateOutput *state, RzSearchHit *hit, const char *flag_name, const char *detail, RzCons *cons) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("0x%08" PFMT64x "\n", hit->address);
+		rz_cons_printf(cons, "0x%08" PFMT64x "\n", hit->address);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
+		rz_cons_printf(cons, "0x%08" PFMT64x " %" PFMTSZu " %s", hit->address, hit->size, flag_name);
 		if (detail) {
-			rz_cons_printf(" %s", detail);
+			rz_cons_printf(cons, " %s", detail);
 		}
-		rz_cons_newline();
+		rz_cons_newline(cons);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -1694,7 +1695,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 
 	if (!rz_str_is_false(rz_config_get(core->config, "search.show_progress"))) {
 		// clear last progress notification, if any
-		rz_cons_clear_line(stderr);
+		rz_cons_clear_line(core->cons, stderr);
 	}
 
 	RzListIter *it = NULL;
@@ -1729,7 +1730,7 @@ static RzCmdStatus cmd_core_handle_search_hits(RzCore *core, RzCmdStateOutput *s
 		if (detail) {
 			rz_flag_item_set_comment(fitem, detail);
 		}
-		cmd_search_output_to_state(state, hit, flag, detail);
+		cmd_search_output_to_state(state, hit, flag, detail, core->cons);
 		free(detail);
 		free(flag);
 	}
@@ -1796,7 +1797,7 @@ static RzCmdStatus byte_pattern_search(RzCore *core, RZ_OWN RzSearchBytesPattern
 	CMD_SEARCH_BEGIN();
 
 	bool progress = rz_search_opt_get_show_progress(search_opts) != RZ_SEARCH_PROGRESS_DISABLED;
-	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? state : NULL)) {
+	if (!rz_search_opt_set_cancel_cb(search_opts, cmd_search_progress_cancel, progress ? (void *)state : (void *)core->intr)) {
 		RZ_LOG_ERROR("code: Failed to setup default search options.\n");
 		rz_search_bytes_pattern_free(pattern);
 		goto error;
@@ -2204,9 +2205,9 @@ RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int
 		(void)rz_core_asm_bwdis_len(core, NULL, &addr, n);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_printf("[%" PFMT64u "]", addr);
+		rz_cons_printf(core->cons, "[%" PFMT64u "]", addr);
 	} else {
-		rz_cons_printf("0x%08" PFMT64x "\n", addr);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", addr);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2219,9 +2220,9 @@ RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_fallback_handler(RzCore *
 	}
 	addr = rz_core_prevop_addr_force(core, core->offset, n);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_printf("[%" PFMT64u "]", addr);
+		rz_cons_printf(core->cons, "[%" PFMT64u "]", addr);
 	} else {
-		rz_cons_printf("0x%08" PFMT64x "\n", addr);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", addr);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -2240,15 +2241,15 @@ RZ_IPI RzCmdStatus rz_cmd_search_pattern_handler(RzCore *core, int argc, const c
 	RzIOMap *map;
 	rz_list_foreach (param.boundaries, iter, map) {
 		eprintf("-- %" PFMT64x " %" PFMT64x "\n", map->itv.addr, rz_itv_end(map->itv));
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 		rz_search_pattern_size(core->search, ps);
 		if (!rz_search_pattern(core->search, map->itv.addr, rz_itv_end(map->itv))) {
 			RZ_LOG_ERROR("Pattern search failed.\n");
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(core->intr);
 			CMD_SEARCH_END();
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 	}
 	CMD_SEARCH_END();
 	return RZ_CMD_STATUS_OK;
