@@ -116,7 +116,7 @@ static void lang_pipe_run_win(RzLang *lang) {
 			}
 		}
 	} while (true);
-	rz_interrupt_break_pop(dbg->intr);
+	rz_interrupt_break_pop(lang->intr);
 	CloseHandle(hWritten);
 	CloseHandle(hRead);
 }
