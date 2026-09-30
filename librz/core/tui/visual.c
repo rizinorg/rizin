@@ -3764,8 +3764,8 @@ static bool is_mintty(RzCons *cons) {
 	return cons->term_pty;
 }
 
-static void flush_stdin(void) {
-	while (rz_cons_readchar_timeout(1) != -1)
+static void flush_stdin(RzCons *cons) {
+	while (rz_cons_readchar_timeout(cons, 1) != -1)
 		;
 }
 
@@ -3775,7 +3775,8 @@ static bool is_mintty(RzCons *cons) {
 	return false;
 }
 
-static void flush_stdin(void) {
+static void flush_stdin(void *cons) {
+	(void)cons; // unused
 	tcflush(STDIN_FILENO, TCIFLUSH);
 }
 
@@ -3882,7 +3883,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 			if (I->vtmode == RZ_VIRT_TERM_MODE_COMPLETE && !is_mintty(core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE(ch) || ch == '\t' || ch == '\n') {
-					flush_stdin();
+					flush_stdin(core->cons);
 				} else if (ch == 0x1b) {
 					char chrs[2];
 					int chrs_read = 1;
@@ -3891,7 +3892,7 @@ RZ_IPI int rz_core_visual(RzCore *core, const char *input) {
 						chrs[1] = rz_cons_readchar(core->cons);
 						chrs_read++;
 						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
-							flush_stdin();
+							flush_stdin(core->cons);
 #ifndef __WINDOWS__
 							// Following seems to fix an issue where scrolling slows
 							// down to a crawl for some terminals after some time
