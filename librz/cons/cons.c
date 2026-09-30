@@ -587,7 +587,7 @@ RZ_NONNULL RZ_BORROW RZ_API RzCons *rz_cons_new() {
 	return cons;
 }
 
-RZ_NONNULL RZ_BORROW RZ_API RzCons *rz_cons_free(RZ_NONNULL RZ_BORROW RzCons *cons) {
+RZ_API RzCons *rz_cons_free(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	if (!cons) {
 		return NULL;
 	}
@@ -602,6 +602,9 @@ RZ_NONNULL RZ_BORROW RZ_API RzCons *rz_cons_free(RZ_NONNULL RZ_BORROW RzCons *co
 	RZ_FREE(cons->input);
 	RZ_FREE(cons->break_word);
 	cons_context_deinit(cons->context);
+	if (cons->context != &rz_cons_context_default) {
+		RZ_FREE(cons->context);
+	}
 	cons->context = NULL;
 	rz_strbuf_free(cons->echobuf);
 	cons->echobuf = NULL;
