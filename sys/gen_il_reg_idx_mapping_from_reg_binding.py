@@ -281,7 +281,7 @@ def build_global_idx(entries, out_path):
         "// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>",
         "// SPDX-License-Identifier: LGPL-3.0-only",
         "",
-        "// Generated with sys/gen_il_reg_idx_mapping_from_reg_binding.py"
+        "// Generated with sys/gen_il_reg_idx_mapping_from_reg_binding.py",
         "static const RzILGlobalIdxMapEntry global_idx[] = {",
     ]
     for idx, name in enumerate(entries):
