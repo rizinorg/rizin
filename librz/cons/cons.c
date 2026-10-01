@@ -1768,6 +1768,9 @@ RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *wor
 		if (res) {
 			cons->context->buffer = res;
 			cons->context->buffer_len = cons->context->buffer_sz = strlen(res);
+		} else {
+			cons->context->buffer = NULL;
+			cons->context->buffer_len = cons->context->buffer_sz = 0;
 		}
 		free(rword);
 		free(clean);
