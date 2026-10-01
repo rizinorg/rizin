@@ -358,16 +358,7 @@ RZ_API int rz_cons_get_cur_line() {
 	return curline;
 }
 
-#if __WINDOWS__
-static BOOL __w32_control(DWORD type) {
-	if (type == CTRL_C_EVENT) {
-		__break_signal(2); // SIGINT
-		eprintf("{ctrl+c} pressed.\n");
-		return true;
-	}
-	return false;
-}
-#elif __UNIX__
+#if __UNIX__
 volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
