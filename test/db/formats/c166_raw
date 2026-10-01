@@ -8,5 +8,10 @@ EOF
 EXPECT=<<EOF
 0x00c00000
 
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 4
+  base_addr: 0xc00000
+
 EOF
 RUN
