@@ -26,6 +26,8 @@
 #include <rz_inquiry/rz_absint.h>
 #include <rz_core.h>
 
+#include "io.h"
+
 typedef struct interp_thread InterpThread;
 
 /**
@@ -224,33 +226,6 @@ static void interp_thread_free(InterpThread *th) {
 	free(th);
 }
 
-static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx, RzAbsIntIOReadRequest *io_req) {
-	RZ_LOG_DEBUG("inquiry: Received IO read request: mem:%" PFMTSZd " 0x%" PFMT64x "\n",
-		io_req->mem_idx,
-		rz_bv_to_ut64(io_req->addr));
-	RzILMemIndex mem_idx = io_req->mem_idx;
-	if (mem_idx >= rz_vector_len(&il_ctx->memory)) {
-		rz_warn_if_reached();
-		return RZ_ABSINT_IO_READ_RESULT_TOP;
-	}
-	if (rz_bv_len(io_req->addr) == 64 && rz_bv_msb(io_req->addr)) {
-		// TODO: remove this when not needed anymore
-		// https://github.com/rizinorg/rizin/issues/5806
-		RZ_LOG_ERROR("Due to the Unix seek() implementation, addresses with the "
-			     "63 bit set can't be addresses.\n");
-		return RZ_ABSINT_IO_READ_RESULT_TOP;
-	}
-	RzAnalysisILMem *mem = rz_vector_index_ptr(&il_ctx->memory, mem_idx);
-	if (!mem->base_buf) {
-		return RZ_ABSINT_IO_READ_RESULT_TOP;
-	}
-	// TODO: here only memory should be read that can be assumed to be constant!
-	// https://github.com/rizinorg/rizin/issues/6655
-	bool ok = rz_il_loadw_into(mem->base_buf, io_req->ld_data, io_req->addr, io_req->n_bits, io_req->big_endian);
-	RZ_LOG_DEBUG("inquiry: Sent IO read result. Success = %s.\n", rz_str_bool(ok));
-	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
-}
-
 /**
  * \brief The main loop of multi-threaded abstract interpretation.
  * It initialises: The IL cache, communication channels with the interpreter threads and collects the entry points to analyze.
@@ -335,7 +310,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 		switch (msg.type) {
 		case DRIVER_MESSAGE_IO_READ: {
-			RzAbsIntIOReadResult res = handle_io_request(msg.sender->inst->il_ctx, msg.payload.io_read.request);
+			RzAbsIntIOReadResult res = rz_absint_io_read(msg.sender->inst->il_ctx, msg.payload.io_read.request);
 			InterpDriverAnswer res_msg = {
 				.type = INTERP_ANSWER_IO_READ,
 				.payload = {

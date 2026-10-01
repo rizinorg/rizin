@@ -201,6 +201,28 @@ RZ_API RZ_OWN RzAbsIntInstance *rz_absint_instance_new(RzAnalysis *analysis, RZ_
 RZ_API void rz_absint_instance_free(RZ_OWN RZ_NULLABLE RzAbsIntInstance *iset);
 
 /**
+ * \brief Initialize and finalize the state used by a single interpreter run.
+ *
+ * These helpers are exposed for clients that need to inspect or build
+ * interpreter results incrementally. The driver uses rz_absint_run() for the
+ * usual complete analysis.
+ */
+RZ_API bool rz_absint_run_context_init(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst);
+RZ_API void rz_absint_run_context_fini(RZ_NULLABLE RzAbsIntRunContext *ctx);
+
+RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_create(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL RZ_OUT RzIntervalTree *dst, RZ_BORROW RZ_NONNULL RzAbsIntState *entry_state);
+RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_at(RZ_NONNULL RzAbsIntRunContext *ctx, ut64 addr);
+RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block);
+RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as, bool is_fallthrough);
+
+RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(RZ_NONNULL RzAbsIntInstance *inst);
+RZ_API void rz_absint_state_free(RZ_BORROW RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntState *state);
+RZ_API void rz_absint_state_set_pc_const(RzAbsIntState *state, ut64 pc);
+RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *iset, const RzAbsIntState *state);
+RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *state, RZ_NONNULL RZ_OUT RzStrBuf *sb);
+RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL const RzAbsIntState *astate, RZ_NONNULL RZ_OUT RzStrBuf *sb);
+
+/**
  * \brief Dimensions describing what kind of information should be retrieved from the interpreter run
  */
 typedef enum rz_absint_result_dimen_t {

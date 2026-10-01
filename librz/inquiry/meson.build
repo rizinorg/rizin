@@ -6,6 +6,7 @@ rz_inquiry_sources = [
   'absint/block.c',
   'absint/interpreter.c',
   'absint/driver.c',
+  'absint/io.c',
   'absint/val_domain_constant.c',
   'absint/state.c',
 ]
