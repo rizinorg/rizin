@@ -925,7 +925,7 @@ RZ_API void rz_cons_canvas_fill(RzConsCanvas *c, int x, int y, int w, int h, cha
 RZ_API void rz_cons_canvas_line_square_defined(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int bendpoint, int isvert);
 RZ_API void rz_cons_canvas_line_back_edge(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 RZ_API RZ_OWN RzCons *rz_cons_new();
-RZ_API RzCons *rz_cons_free(RZ_NONNULL RZ_OWN RzCons *cons);
+RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons);
 RZ_API char *rz_cons_lastline(RZ_NONNULL RZ_BORROW RzCons *cons, int *size);
 RZ_API char *rz_cons_lastline_utf8_ansi_len(RZ_NONNULL RZ_BORROW RzCons *cons, int *len);
 RZ_API void rz_cons_set_click(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y, MouseEvent event);
