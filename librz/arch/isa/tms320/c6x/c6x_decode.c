@@ -2491,14 +2491,14 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 		ut32 fp_off = (ut32)(pc & 0x1f);
 		int hdr_off = 0x1c - (int)fp_off; // header lives at packet offset 0x1c
 		if (fp_off < 0x1c && hdr_off + 4 <= len) {
-			ut32 hdr = big_endian ? rz_read_be32(buf + hdr_off) : rz_read_le32(buf + hdr_off);
+			ut32 hdr = rz_read_ble32(buf + hdr_off, big_endian);
 			ut8 slot = fp_off >> 2;
 			// A branch anywhere in a compact packet is half-word scaled, so
 			// the packet's nature matters even for a slot the header does not
 			// split into two 16-bit instructions.
 			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
 			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
-				ut16 w16 = big_endian ? rz_read_be16(buf) : rz_read_le16(buf);
+				ut16 w16 = rz_read_ble16(buf, big_endian);
 				ut8 half = (fp_off >> 1) & 1;
 				insn->word = w16;
 				insn->parallel = (hdr >> (slot * 2 + half)) & 1;
@@ -2511,7 +2511,7 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	if (len < 4) {
 		return false;
 	}
-	insn->word = big_endian ? rz_read_be32(buf) : rz_read_le32(buf);
+	insn->word = rz_read_ble32(buf, big_endian);
 	insn->size = C6X_WORD_SIZE;
 	ut32 w = insn->word;
 	// A C64x+ compact fetch packet replaces its eighth word with a header

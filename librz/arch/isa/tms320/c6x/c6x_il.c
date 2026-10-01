@@ -14,10 +14,10 @@
  * Two architectural notes bound what is modelled here. C6000 is a VLIW: every
  * instruction of an execute packet reads its sources at the packet start and
  * writes at its end, so within a packet an instruction never sees another's
- * result. The RzIL VM steps sequentially, so a "|| mv a,b || mv b,a" swap is
- * not modelled exactly; ordinary (non-swapping) parallel code lifts correctly.
- * Branches have five delay slots and are left unlifted for now, so IL covers
- * straight-line data flow.
+ * result. That is modelled by lifting the whole packet on its first
+ * instruction, as described at c6x_reg_read(), so a "mv a,b || mv b,a" swap is
+ * exact. Branches have five delay slots and are left unlifted for now, so IL
+ * covers straight-line data flow.
  */
 
 #include <rz_util.h>
