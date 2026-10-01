@@ -1258,7 +1258,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			goto err;
 		}
 	}
-	rz_cons_new()->context->is_interactive = false;
+
+	if (core.cons && core.cons->context) {
+		core.cons->context->is_interactive = false;
+	}
 
 	RzCmdStateOutput state;
 	if (!rz_cmd_state_output_init(&state, out_mode, &core)) {
