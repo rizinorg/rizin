@@ -122,6 +122,7 @@ static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext 
 	context->lastEnabled = true;
 	context->buffer_len = 0;
 	context->is_interactive = false;
+	rz_stack_free(context->cons_stack);
 	context->cons_stack = rz_stack_newf(6, cons_stack_free);
 	context->pageable = true;
 	context->log_callback = NULL;
@@ -575,7 +576,7 @@ RZ_API RZ_OWN RzCons *rz_cons_new() {
 	return cons;
 }
 
-RZ_API RzCons *rz_cons_free(RZ_NONNULL RZ_BORROW RzCons *cons) {
+RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons) {
 	if (!cons) {
 		return NULL;
 	}
@@ -1741,11 +1742,16 @@ RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *wor
 	}
 	if (word && *word && cons->context->buffer) {
 		int word_len = strlen(word);
-		char *orig;
 		clean = rz_str_ndup(cons->context->buffer, cons->context->buffer_len);
-		l = rz_str_ansi_filter(clean, &orig, &cpos, -1);
-		free(cons->context->buffer);
-		cons->context->buffer = orig;
+
+		/* Pass NULL for out - cons->context->buffer already holds the original string */
+		l = rz_str_ansi_filter(clean, NULL, &cpos, -1);
+		if (l <= 0 || !cpos) {
+			free(clean);
+			free(cpos);
+			return;
+		}
+
 		if (cons->highlight) {
 			if (strcmp(word, cons->highlight)) {
 				free(cons->highlight);
@@ -1763,6 +1769,7 @@ RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *wor
 		strcpy(rword, inv[0]);
 		strcpy(rword + linv[0], word);
 		strcpy(rword + linv[0] + word_len, inv[1]);
+
 		res = rz_str_replace_thunked(cons->context->buffer, clean, cpos,
 			l, word, rword, 1);
 		if (res) {
@@ -1776,8 +1783,6 @@ RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *wor
 		free(clean);
 		free(cpos);
 		ctx_rowcol_calc_reset(cons);
-		/* don't free orig - it's assigned
-		 * to cons->context->buffer and possibly realloc'd */
 	} else {
 		RZ_FREE(cons->highlight);
 	}

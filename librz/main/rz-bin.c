@@ -624,6 +624,7 @@ static void __listPlugins(RzBin *bin, const char *plugin_name, PJ *pj, RzOutputM
 		rz_cmd_state_output_fini(&state);
 		rz_cons_flush(cons);
 	}
+	rz_cmd_state_output_fini(&state);
 }
 
 static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, void *user) {
