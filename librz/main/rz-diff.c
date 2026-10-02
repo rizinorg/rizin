@@ -525,8 +525,10 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	ut8 *a_buffer = NULL;
 	ut8 *b_buffer = NULL;
 	ut32 distance = 0;
+	ut32 overlap = 0;
 	st32 chunk_size = 0;
 	double similarity = 0.0;
+	double coverage = 0.0;
 
 	if (ctx->command_line) {
 		if (!(a_buffer = (ut8 *)rz_str_dup(ctx->file_a))) {
@@ -589,6 +591,10 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		size_t len = RZ_MIN(a_size, b_size);
 		rz_mutual_info_update(&mi_ctx, a_buffer, b_buffer, len);
 		similarity = rz_mutual_info_final(&mi_ctx);
+		overlap = (ut32)len;
+		if (RZ_MAX(a_size, b_size) > 0) {
+			coverage = 100.0 * (double)RZ_MIN(a_size, b_size) / (double)RZ_MAX(a_size, b_size);
+		}
 		break;
 	}
 	default:
@@ -605,6 +611,8 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		pj_o(pj);
 		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
 			pj_kd(pj, "bits", similarity);
+			pj_kd(pj, "coverage", coverage);
+			pj_kn(pj, "overlap", overlap);
 		} else {
 			pj_kd(pj, "similarity", similarity);
 		}
@@ -619,13 +627,19 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		pj_free(pj);
 	} else if (ctx->mode == DIFF_MODE_QUIET) {
 		printf("%.3f\n", similarity);
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			printf("%.3f\n", coverage);
+			printf("%u\n", overlap);
+		}
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("%d\n", distance);
 		}
 	} else {
 		// DIFF_MODE_STANDARD
 		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
-			printf("mutual information: %.6f bits\n", similarity);
+			printf("mutual information: %.3f bits\n", similarity);
+			printf("coverage: %.3f%%\n", coverage);
+			printf("overlap: %u\n", overlap);
 		} else {
 			printf("similarity: %.3f\n", similarity);
 		}

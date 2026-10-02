@@ -28,7 +28,9 @@ NAME=rz-diff distance comparison (mutualinfo)
 TOOL=rz-diff
 ARGS=-d mutualinfo bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-mutual information: 2.422252 bits
+mutual information: 2.422 bits
+coverage: 78.984%
+overlap: 1150
 EOF
 RUN
 
@@ -36,7 +38,7 @@ NAME=rz-diff distance comparison (mutualinfo) JSON
 TOOL=rz-diff
 ARGS=-jd mutualinfo bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-{"bits":2.422252}
+{"bits":2.422252,"coverage":78.983516,"overlap":1150}
 EOF
 RUN
 
@@ -44,7 +46,9 @@ NAME=rz-diff distance comparison (mutualinfo) QUIET
 TOOL=rz-diff
 ARGS=-qd mutualinfo bins/java/Main.java.1.7.class bins/java/Main.java.15.class
 EXPECT=<<EOF
-2.422252
+2.422
+78.984
+1150
 EOF
 RUN
 
