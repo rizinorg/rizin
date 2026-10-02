@@ -26,6 +26,7 @@ static bool core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	if (!nbf) {
 		return false;
 	}
+	rz_pvector_push(&cf->binfiles, nbf);
 	rz_core_bin_apply_all_info(r, nbf);
 	return true;
 }

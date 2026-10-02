@@ -1018,6 +1018,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				rz_io_fd_size(r->io, fh->fd));
 			rz_io_write_at(r->io, mapaddr, (const ut8 *)buf, sz);
 			rz_core_block_read(r);
+			if (load_bin == LOAD_BIN_ALL) {
+				(void)rz_core_bin_load(r, path, baddr);
+			} else if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
+				rz_core_bin_load_structs(r, path);
+			}
 			free(buf);
 			free(path);
 			if (asmarch) {
@@ -1032,7 +1037,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (endianness != RZ_SYS_ENDIAN_NONE) {
 				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
 			}
-			// TODO: load rbin thing
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
