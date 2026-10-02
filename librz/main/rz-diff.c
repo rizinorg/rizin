@@ -618,11 +618,7 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		printf("%s\n", pj_string(pj));
 		pj_free(pj);
 	} else if (ctx->mode == DIFF_MODE_QUIET) {
-		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
-			printf("%.6f\n", similarity);
-		} else {
-			printf("%.3f\n", similarity);
-		}
+		printf("%.3f\n", similarity);
 		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("%d\n", distance);
 		}
