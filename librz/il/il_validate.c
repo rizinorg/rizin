@@ -100,6 +100,11 @@ RZ_API void rz_il_validate_global_context_free(RzILValidateGlobalContext *ctx) {
 
 typedef struct {
 	const RzILValidateGlobalContext *global_ctx;
+	/**
+	 * \brief Indicies of all variables.
+	 * It's used to validate that no two variables share the same index.
+	 */
+	HtSU *global_variable_indices;
 
 	/**
 	 * all vars' types that were encountered somewhere before, for enforcing vars always have the
@@ -114,12 +119,18 @@ typedef struct {
 
 static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContext *global_ctx) {
 	ctx->global_ctx = global_ctx;
+	ctx->global_variable_indices = ht_su_new(HT_STR_CONST);
+	if (!ctx->global_variable_indices) {
+		return false;
+	}
 	ctx->local_vars_known = ht_sp_new(HT_STR_DUP, NULL, free);
 	if (!ctx->local_vars_known) {
+		ht_su_free(ctx->global_variable_indices);
 		return false;
 	}
 	ctx->local_vars_available = ht_sp_new(HT_STR_DUP, NULL, NULL);
 	if (!ctx->local_vars_available) {
+		ht_su_free(ctx->global_variable_indices);
 		ht_sp_free(ctx->local_vars_known);
 		ctx->local_vars_known = NULL;
 		return false;
@@ -128,10 +139,15 @@ static bool local_context_init(LocalContext *ctx, const RzILValidateGlobalContex
 }
 
 static void local_context_fini(LocalContext *ctx) {
+	if (!ctx) {
+		return;
+	}
 	ht_sp_free(ctx->local_vars_known);
 	ht_sp_free(ctx->local_vars_available);
+	ht_su_free(ctx->global_variable_indices);
 	ctx->local_vars_known = NULL;
 	ctx->local_vars_available = NULL;
+	ctx->global_variable_indices = NULL;
 }
 
 static bool local_var_copy_known_cb(RZ_NONNULL void *user, const char *k, const void *v) {
@@ -289,6 +305,12 @@ VALIDATOR_PURE(var) {
 	VALIDATOR_ASSERT(args->v, "Var name of var op is NULL.\n");
 	switch (args->kind) {
 	case RZ_IL_VAR_KIND_GLOBAL: {
+		bool found = false;
+		size_t idx = ht_su_find(ctx->global_variable_indices, args->v, &found);
+		if (found) {
+			VALIDATOR_ASSERT(idx == args->idx, "Global variable \"%s\" has more than one index assigned: %" PFMTSZu " and %" PFMTSZu ".\n", args->v, args->idx, idx);
+		}
+		ht_su_insert(ctx->global_variable_indices, args->v, args->idx);
 		RzILSortPure *sort = ht_sp_find(ctx->global_ctx->global_vars, args->v, NULL);
 		VALIDATOR_ASSERT(sort, "Global variable \"%s\" referenced by var op does not exist.\n", args->v);
 		*sort_out = *sort;

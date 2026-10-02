@@ -19,6 +19,8 @@
 #include <string.h>
 #include "c55_ir.h"
 
+#include  "c54_c55x_lookup_tbls.h"
+
 #include <rz_il/rz_il_opbuilder_begin.h>
 
 // ---------------------------------------------------------------------------

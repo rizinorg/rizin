@@ -25,6 +25,8 @@
 #include "c2x.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#include "c2x_global_idx_map.inc"
+
 static const char *const c2x_ar[8] = {
 	"ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7"
 };

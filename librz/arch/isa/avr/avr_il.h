@@ -8,6 +8,8 @@
 #include "analysis_private.h"
 #include "disassembler.h"
 
+#include "avr_global_idx_map.inc"
+
 RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AVROp *aop, AVROp *next_op);
 RZ_IPI RzAnalysisILConfig *rz_avr_il_config(RZ_NONNULL RzAnalysis *analysis);
 

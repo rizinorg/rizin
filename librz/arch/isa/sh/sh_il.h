@@ -7,6 +7,8 @@
 #include "analysis_private.h"
 #include "disassembler.h"
 
+#include "sh_global_idx_map.inc"
+
 /**
  * \brief To store the context of the IL lifter ; Used to pass around information outside effects
  * Other context variables *may* be added in the future when the rest of the instructions are lifted

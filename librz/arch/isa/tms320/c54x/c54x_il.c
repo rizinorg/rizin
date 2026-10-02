@@ -13,6 +13,8 @@
 
 #include "c54x.h"
 
+#include  "../c54_c55x_lookup_tbls.h"
+
 // Mirrors the decoder's keyword table (c54x.c): maps the TS/ASM/DP/ARP operand
 // keyword (carried as the rendered string) back to its field value so the
 // lifter can act on it. Small and self-contained, kept local to avoid a

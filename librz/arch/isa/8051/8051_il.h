@@ -7,6 +7,8 @@
 #include "analysis_private.h"
 #include <rz_il.h>
 
+#include "8051_global_idx_map.inc"
+
 typedef enum {
 	I_UNDEFINED = 0,
 	I_ACALL, /// Absolute Call
