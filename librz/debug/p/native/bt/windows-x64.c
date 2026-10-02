@@ -309,7 +309,7 @@ static ut64 get_frame_base(const Win64UnwindInfo *info, const struct context_typ
 
 	// There is a register being used as a frame base, unknown if we set it yet
 	int i;
-	Win64UnwindCode *code = NULL;
+	Win64UnwindCode *code = info->code;
 	// Find unwind of where frame register is being set
 	for (i = 0; i < info->CountOfCodes; i++) {
 		if (code[i].UnwindOp == UWOP_SET_FPREG) {
