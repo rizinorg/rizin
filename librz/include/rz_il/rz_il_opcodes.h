@@ -157,6 +157,7 @@ typedef RzILOpArgsShift RzILOpArgsShiftRight;
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
 	ut64 idx; ///< The index for this variable (unique within the category of GLOBAL, LOCAL, LET).
+	ut64 djb2_hash; ///< djb2 hash of the variable names.
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -252,6 +253,7 @@ typedef struct rz_il_op_args_ite_t {
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
 	ut64 idx; ///< The index for this variable (unique within the category of GLOBAL, LOCAL, LET).
+	ut64 djb2_hash; ///< djb2 hash of the variable names.
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
