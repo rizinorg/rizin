@@ -490,6 +490,115 @@ RZ_API ut32 rz_bin_java_class_access_flags(RZ_NONNULL RzBinJavaClass *bin) {
 	return bin->access_flags;
 }
 
+RZ_API ut32 rz_bin_java_class_interface_count(RZ_NONNULL RzBinJavaClass *bin) {
+	rz_return_val_if_fail(bin, 0);
+	return bin->interfaces_count;
+}
+
+RZ_API RZ_OWN char *rz_bin_java_class_interface_name(RZ_NONNULL RzBinJavaClass *bin, ut32 index) {
+	rz_return_val_if_fail(bin && index < bin->interfaces_count, NULL);
+	Interface *interface = bin->interfaces[index];
+	if (!interface) {
+		return NULL;
+	}
+	return rz_bin_java_class_const_pool_resolve_index(bin, interface->index);
+}
+
+RZ_API ut32 rz_bin_java_class_method_count(RZ_NONNULL RzBinJavaClass *bin) {
+	rz_return_val_if_fail(bin, 0);
+	return bin->methods_count;
+}
+
+RZ_API void rz_bin_java_method_info_fini(RZ_NULLABLE RzBinJavaMethodInfo *info) {
+	if (!info) {
+		return;
+	}
+	RZ_FREE(info->name);
+	RZ_FREE(info->descriptor);
+}
+
+RZ_API bool rz_bin_java_class_method(RZ_NONNULL RzBinJavaClass *bin, ut32 index, RZ_OUT RzBinJavaMethodInfo *info) {
+	rz_return_val_if_fail(bin && info && index < bin->methods_count, false);
+	memset(info, 0, sizeof(*info));
+	info->code_addr = UT64_MAX;
+	Method *method = bin->methods[index];
+	if (!method) {
+		return false;
+	}
+	info->name = java_class_constant_pool_stringify_at(bin, method->name_index);
+	info->descriptor = java_class_constant_pool_stringify_at(bin, method->descriptor_index);
+	info->access_flags = method->access_flags;
+	if (!info->name || !info->descriptor) {
+		rz_bin_java_method_info_fini(info);
+		return false;
+	}
+	for (ut32 i = 0; i < method->attributes_count; i++) {
+		Attribute *attribute = method->attributes[i];
+		if (!attribute || attribute->type != ATTRIBUTE_TYPE_CODE || !attribute->info) {
+			continue;
+		}
+		AttributeCode *code = attribute->info;
+		info->code_addr = code->code_offset;
+		info->code_size = code->code_length;
+		info->max_stack = code->max_stack;
+		info->max_locals = code->max_locals;
+		break;
+	}
+	return true;
+}
+
+RZ_API void rz_bin_java_member_info_fini(RZ_NULLABLE RzBinJavaMemberInfo *info) {
+	if (!info) {
+		return;
+	}
+	RZ_FREE(info->owner);
+	RZ_FREE(info->name);
+	RZ_FREE(info->descriptor);
+}
+
+RZ_API bool rz_bin_java_class_member(RZ_NONNULL RzBinJavaClass *bin, ut32 index, RZ_OUT RzBinJavaMemberInfo *info) {
+	rz_return_val_if_fail(bin && info, false);
+	memset(info, 0, sizeof(*info));
+	const ConstPool *member = java_class_constant_pool_at(bin, index);
+	if (!member) {
+		return false;
+	}
+	switch (member->tag) {
+	case CONSTANT_POOL_FIELDREF:
+		info->kind = RZ_BIN_JAVA_MEMBER_FIELD;
+		break;
+	case CONSTANT_POOL_METHODREF:
+		info->kind = RZ_BIN_JAVA_MEMBER_METHOD;
+		break;
+	case CONSTANT_POOL_INTERFACEMETHODREF:
+		info->kind = RZ_BIN_JAVA_MEMBER_INTERFACE_METHOD;
+		break;
+	default:
+		return false;
+	}
+
+	ut16 owner_index = 0;
+	ut16 name_and_type_index = 0;
+	if (java_constant_pool_resolve(member, &owner_index, &name_and_type_index) != 2) {
+		return false;
+	}
+	const ConstPool *name_and_type = java_class_constant_pool_at(bin, name_and_type_index);
+	ut16 name_index = 0;
+	ut16 descriptor_index = 0;
+	if (!name_and_type || name_and_type->tag != CONSTANT_POOL_NAMEANDTYPE ||
+		java_constant_pool_resolve(name_and_type, &name_index, &descriptor_index) != 2) {
+		return false;
+	}
+	info->owner = rz_bin_java_class_const_pool_resolve_index(bin, owner_index);
+	info->name = java_class_constant_pool_stringify_at(bin, name_index);
+	info->descriptor = java_class_constant_pool_stringify_at(bin, descriptor_index);
+	if (!info->owner || !info->name || !info->descriptor) {
+		rz_bin_java_member_info_fini(info);
+		return false;
+	}
+	return true;
+}
+
 /**
  * \brief Returns the readable class access flags
  */

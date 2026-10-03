@@ -1259,3 +1259,105 @@ EXPECT=<<EOF
 \           0x100003e94      ret
 EOF
 RUN
+
+NAME=Java devirtualization
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- entry1:
+            ;-- section.class.methods.main.attr.0.code:
+            ;-- sym.Hello.void_main_String:
+            ;-- method.Hello.java_6d61696e285b4c6a6176612f6c616e672f537472696e673b2956:
+/ method.public.static.Hello.void_main_String();
+|           0x000002aa      new   LHello;                              ; [09] -r-x section size 41 named class.methods.main.attr.0.code
+|           0x000002ad      dup
+|           0x000002ae      ldc   "World"
+|           0x000002b0      invokespecial LHello;.<init>(Ljava/lang/String;)V
+|           0x000002b3      invokevirtual LHello;.say()V               ; Java Virtual Call: Hello.say()V
+\           0x000002b6      return
+EOF
+RUN
+
+NAME=Java devirtualization (MainAnimals)
+FILE=bins/java/MainAnimals.class
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- entry1:
+            ;-- section.class.methods.main.attr.0.code:
+            ;-- sym.rizinjava.MainAnimals.void_main_String:
+            ;-- method.rizinjava.MainAnimals.java_6d61696e285b4c6a6176612f6c616e672f537472696e673b2956:
+/ method.public.static.rizinjava.MainAnimals.void_main_String();
+|           0x00000138      new   Lrizinjava/Pig;                      ; [05] -r-x section size 53 named class.methods.main.attr.0.code
+|           0x0000013b      dup
+|           0x0000013c      invokespecial Lrizinjava/Pig;.<init>()V
+|           0x0000013f      astore_1
+|           0x00000140      aload_1
+|           0x00000141      invokevirtual Lrizinjava/Pig;.animalSound()V
+|           0x00000144      aload_1
+|           0x00000145      invokevirtual Lrizinjava/Pig;.sleep()V
+\           0x00000148      return
+EOF
+RUN
+
+NAME=Java devirtualization (Main)
+FILE=bins/java/Main.class
+CMDS=<<EOF
+aaaa
+avD @ main
+pdf @ main
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- entry1:
+            ;-- section.class.methods.main.attr.0.code:
+            ;-- sym.Main.void_main_String:
+            ;-- method.Main.java_6d61696e285b4c6a6176612f6c616e672f537472696e673b2956:
+/ method.public.static.Main.void_main_String();
+|           0x000003b4      getstatic Ljava/lang/System;.out.Ljava/io/PrintStream; ; [05] -r-x section size 206 named class.methods.main.attr.0.code
+|           0x000003b7      ldc   "Hello World"
+|           0x000003b9      invokevirtual Ljava/io/PrintStream;.println(Ljava/lang/String;)V
+|           0x000003bc      ldc   "/etc/services"
+|           0x000003be      astore_1
+|           0x000003bf      new   Ljava/io/BufferedReader;
+|           0x000003c2      dup
+|           0x000003c3      new   Ljava/io/FileReader;
+|           0x000003c6      dup
+|           0x000003c7      aload_1
+|           0x000003c8      invokespecial Ljava/io/FileReader;.<init>(Ljava/lang/String;)V
+|           0x000003cb      invokespecial Ljava/io/BufferedReader;.<init>(Ljava/io/Reader;)V
+|           0x000003ce      astore_2
+|           ; CODE XREF from method.public.static.Main.void_main_String @ 0x3f1
+|       .-> 0x000003cf      aload_2
+|       :   0x000003d0      invokevirtual Ljava/io/BufferedReader;.readLine()Ljava/lang/String;
+|       :   0x000003d3      dup
+|       :   0x000003d4      astore_3
+|      ,==< 0x000003d5      ifnull 0x3f4
+|      |:   0x000003d8      getstatic Ljava/lang/System;.out.Ljava/io/PrintStream;
+|      |:   0x000003db      new   Ljava/lang/StringBuilder;
+|      |:   0x000003de      dup
+|      |:   0x000003df      invokespecial Ljava/lang/StringBuilder;.<init>()V
+|      |:   0x000003e2      ldc   "Line: "
+|      |:   0x000003e4      invokevirtual Ljava/lang/StringBuilder;.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+|      |:   0x000003e7      aload_3
+|      |:   0x000003e8      invokevirtual Ljava/lang/StringBuilder;.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+|      |:   0x000003eb      invokevirtual Ljava/lang/StringBuilder;.toString()Ljava/lang/String;
+|      |:   0x000003ee      invokevirtual Ljava/io/PrintStream;.println(Ljava/lang/String;)V
+|      |`=< 0x000003f1      goto  0x3cf
+|      `--> 0x000003f4      aload_2
+|           0x000003f5      invokevirtual Ljava/io/BufferedReader;.close()V
+|       ,=< 0x000003f8      goto  0x411
+..
+|       |   ; CODE XREF from method.public.static.Main.void_main_String @ 0x3f8
+\       `-> 0x00000411      return
+EOF
+RUN

@@ -493,6 +493,7 @@ arch_common_sources = [
   'reflines.c',
   'rtti.c',
   'rtti_itanium.c',
+  'rtti_java.c',
   'rtti_msvc.c',
   'serialize_analysis.c',
   'similarity.c',
