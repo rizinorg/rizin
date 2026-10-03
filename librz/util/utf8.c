@@ -14,7 +14,7 @@
  *
  * Copied from: UCD/Blocks.txt
  *
- * Unicode version: 17.0.0.
+ * Unicode version: 18.0.0.
  */
 const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x0000, 0x007F, "Basic Latin" },
@@ -271,6 +271,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x11D00, 0x11D5F, "Masaram Gondi" },
 	{ 0x11D60, 0x11DAF, "Gunjala Gondi" },
 	{ 0x11DB0, 0x11DEF, "Tolong Siki" },
+	{ 0x11DF0, 0x11DFF, "Bengali Supplement" },
 	{ 0x11EE0, 0x11EFF, "Makasar" },
 	{ 0x11F00, 0x11F5F, "Kawi" },
 	{ 0x11FB0, 0x11FBF, "Lisu Supplement" },
@@ -278,6 +279,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x12000, 0x123FF, "Cuneiform" },
 	{ 0x12400, 0x1247F, "Cuneiform Numbers and Punctuation" },
 	{ 0x12480, 0x1254F, "Early Dynastic Cuneiform" },
+	{ 0x12550, 0x1268F, "Archaic Cuneiform Numerals" },
 	{ 0x12F90, 0x12FFF, "Cypro-Minoan" },
 	{ 0x13000, 0x1342F, "Egyptian Hieroglyphs" },
 	{ 0x13430, 0x1345F, "Egyptian Hieroglyph Format Controls" },
@@ -299,6 +301,8 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x18B00, 0x18CFF, "Khitan Small Script" },
 	{ 0x18D00, 0x18D7F, "Tangut Supplement" },
 	{ 0x18D80, 0x18DFF, "Tangut Components Supplement" },
+	{ 0x18E00, 0x1919F, "Jurchen" },
+	{ 0x191A0, 0x191DF, "Jurchen Radicals" },
 	{ 0x1AFF0, 0x1AFFF, "Kana Extended-B" },
 	{ 0x1B000, 0x1B0FF, "Kana Supplement" },
 	{ 0x1B100, 0x1B12F, "Kana Extended-A" },
@@ -312,12 +316,14 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x1D000, 0x1D0FF, "Byzantine Musical Symbols" },
 	{ 0x1D100, 0x1D1FF, "Musical Symbols" },
 	{ 0x1D200, 0x1D24F, "Ancient Greek Musical Notation" },
+	{ 0x1D250, 0x1D28F, "Musical Symbols Supplement" },
 	{ 0x1D2C0, 0x1D2DF, "Kaktovik Numerals" },
 	{ 0x1D2E0, 0x1D2FF, "Mayan Numerals" },
 	{ 0x1D300, 0x1D35F, "Tai Xuan Jing Symbols" },
 	{ 0x1D360, 0x1D37F, "Counting Rod Numerals" },
 	{ 0x1D400, 0x1D7FF, "Mathematical Alphanumeric Symbols" },
 	{ 0x1D800, 0x1DAAF, "Sutton SignWriting" },
+	{ 0x1DB00, 0x1DBFF, "Miscellaneous Symbols and Arrows Extended" },
 	{ 0x1DF00, 0x1DFFF, "Latin Extended-G" },
 	{ 0x1E000, 0x1E02F, "Glagolitic Supplement" },
 	{ 0x1E030, 0x1E08F, "Cyrillic Extended-D" },
@@ -359,6 +365,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x30000, 0x3134F, "CJK Unified Ideographs Extension G" },
 	{ 0x31350, 0x323AF, "CJK Unified Ideographs Extension H" },
 	{ 0x323B0, 0x3347F, "CJK Unified Ideographs Extension J" },
+	{ 0x3D000, 0x3FC3F, "Seal" },
 	{ 0xE0000, 0xE007F, "Tags" },
 	{ 0xE0100, 0xE01EF, "Variation Selectors Supplement" },
 	{ 0xF0000, 0xFFFFF, "Supplementary Private Use Area-A" },

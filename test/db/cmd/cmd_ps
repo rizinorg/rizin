@@ -219,3 +219,47 @@ EXPECT=<<EOF
 𞛀
 EOF
 RUN
+
+NAME=Unicode 18.0.0 Jurchen script
+FILE==
+CMDS=<<EOF
+wx f098b880
+ps
+EOF
+EXPECT=<<EOF
+𘸀
+EOF
+RUN
+
+NAME=Unicode 18.0.0 Seal script
+FILE==
+CMDS=<<EOF
+wx f0bd8080
+ps
+EOF
+EXPECT=<<EOF
+𽀀
+EOF
+RUN
+
+NAME=Unicode 18.0.0 Archaic Cuneiform Numerals
+FILE==
+CMDS=<<EOF
+wx f0929590
+ps
+EOF
+EXPECT=<<EOF
+𒕐
+EOF
+RUN
+
+NAME=Unicode 18.0.0 Bengali Supplement
+FILE==
+CMDS=<<EOF
+wx f091b7b1
+ps
+EOF
+EXPECT=<<EOF
+𑷱
+EOF
+RUN

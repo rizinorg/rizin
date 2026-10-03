@@ -536,6 +536,28 @@ bool test_rz_utf16_valid(void) {
 	mu_end;
 }
 
+bool test_rz_unicode_18_new_code_points(void) {
+	// Currency Symbols: U+20C4 OMANI RIAL SIGN is new, U+20C5 is still unassigned.
+	mu_assert_true(rz_unicode_code_point_is_defined(0x20C1), "Defined before 18.0.0.");
+	mu_assert_true(rz_unicode_code_point_is_defined(0x20C4), "Defined since 18.0.0.");
+	mu_assert_true(rz_unicode_code_point_is_printable(0x20C4), "Printable since 18.0.0.");
+	mu_assert_false(rz_unicode_code_point_is_defined(0x20C5), "Not defined.");
+
+	// Seal block: U+3D000..U+3FC3F is assigned since 18.0.0.
+	mu_assert_false(rz_unicode_code_point_is_defined(0x3CFFF), "Not defined.");
+	mu_assert_true(rz_unicode_code_point_is_defined(0x3D000), "Defined since 18.0.0.");
+	mu_assert_true(rz_unicode_code_point_is_defined(0x3FC3F), "Defined since 18.0.0.");
+	mu_assert_false(rz_unicode_code_point_is_defined(0x3FC40), "Not defined.");
+
+	// Jurchen: U+18E00..U+19191 and the radicals U+191A0..U+191D2.
+	mu_assert_false(rz_unicode_code_point_is_defined(0x18DFF), "Not defined.");
+	mu_assert_true(rz_unicode_code_point_is_defined(0x18E00), "Defined since 18.0.0.");
+	mu_assert_true(rz_unicode_code_point_is_defined(0x191D2), "Defined since 18.0.0.");
+	mu_assert_false(rz_unicode_code_point_is_defined(0x191D3), "Not defined.");
+
+	mu_end;
+}
+
 bool test_rz_unicode_lowercase_mapping(void) {
 	// first element
 	RzUnicodeCaseMapping f = rz_unicode_code_point_find_lower(65);
@@ -555,6 +577,15 @@ bool test_rz_unicode_lowercase_mapping(void) {
 	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
 	mu_assert_eq(l.key, 125217, "Mismatched key");
 	mu_assert_eq(l.val[0], 125251, "Incorrect lowercase value");
+
+	// added in Unicode 18.0.0
+	RzUnicodeCaseMapping n = rz_unicode_code_point_find_lower(0xA7DD);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&n), "Should not be empty");
+	mu_assert_eq(n.key, 0xA7DD, "Mismatched key");
+	mu_assert_eq(n.val[0], 0x277, "Incorrect lowercase value");
+	n = rz_unicode_code_point_find_lower(0xA7E2);
+	mu_assert_eq(n.key, 0xA7E2, "Mismatched key");
+	mu_assert_eq(n.val[0], 0x27C, "Incorrect lowercase value");
 
 	// not found
 	RzUnicodeCaseMapping nf = rz_unicode_code_point_find_lower(0xFFFFFFu);
@@ -584,6 +615,15 @@ bool test_rz_unicode_uppercase_mapping(void) {
 	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
 	mu_assert_eq(l.key, 125248, "Mismatched key");
 	mu_assert_eq(l.val[0], 125214, "Incorrect uppercase value");
+
+	// added in Unicode 18.0.0
+	RzUnicodeCaseMapping n = rz_unicode_code_point_find_upper(0x277);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&n), "Should not be empty");
+	mu_assert_eq(n.key, 0x277, "Mismatched key");
+	mu_assert_eq(n.val[0], 0xA7DD, "Incorrect uppercase value");
+	n = rz_unicode_code_point_find_upper(0x27C);
+	mu_assert_eq(n.key, 0x27C, "Mismatched key");
+	mu_assert_eq(n.val[0], 0xA7E2, "Incorrect uppercase value");
 
 	// not found
 	RzUnicodeCaseMapping nf = rz_unicode_code_point_find_upper(-1);
@@ -627,6 +667,7 @@ bool all_tests() {
 	mu_run_test(test_rz_unicode_surrogate);
 	mu_run_test(test_rz_unicode_private);
 	mu_run_test(test_rz_unicode_control);
+	mu_run_test(test_rz_unicode_18_new_code_points);
 	mu_run_test(test_rz_unicode_lowercase_mapping);
 	mu_run_test(test_rz_unicode_uppercase_mapping);
 	mu_run_test(test_utf8_strlen);
