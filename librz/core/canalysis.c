@@ -5617,7 +5617,9 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	rz_parse_filter(core->parser, ctx->current, core->flags, cdb->hint, tmp, disasm, sizeof(disasm), ctx->big_endian);
 	free(tmp);
 
-	ut8 *amask = rz_analysis_mask(core->analysis, left, ptr, ctx->current);
+	// only this instruction's mask is kept, so only its bytes are masked: masking
+	// the rest of the range made every op cost that much, and a run of n ops O(n^2)
+	ut8 *amask = rz_analysis_mask(core->analysis, RZ_MIN(left, (size_t)cdb->oplen), ptr, ctx->current);
 	cdb->mask = rz_hex_bin2strdup(amask, cdb->oplen);
 	free(amask);
 	cdb->bytes = rz_hex_bin2strdup(ptr, cdb->oplen);
