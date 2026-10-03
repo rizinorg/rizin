@@ -23,6 +23,23 @@
 #include <rz_util/rz_log.h>
 #include <sys/proc.h>
 
+/**
+ * \brief Determine whether a signal was externally sent or internally generated.
+ *
+ * \param si_code Signal code from siginfo_t::si_code.
+ * \return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL if the signal was sent via
+ *         kill(), sigqueue(), tkill()/tgkill(), otherwise
+ *         RZ_DEBUG_SIGNAL_SOURCE_INTERNAL.
+ */
+static RzDebugSignalSource find_signal_source(int signal_code) {
+	if (signal_code == SI_USER ||
+		signal_code == SI_QUEUE ||
+		signal_code == SI_LWP) {
+		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
+	}
+	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
+}
+
 int bsd_handle_signals(RzDebug *dbg) {
 	siginfo_t siginfo;
 	struct ptrace_siginfo sinfo = { 0 };
@@ -38,6 +55,7 @@ int bsd_handle_signals(RzDebug *dbg) {
 	siginfo = sinfo.psi_siginfo;
 	dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 	dbg->reason.signum = siginfo.si_signo;
+	dbg->reason.sig_source = find_signal_source(siginfo.si_code);
 
 	switch (dbg->reason.signum) {
 	case SIGABRT:
