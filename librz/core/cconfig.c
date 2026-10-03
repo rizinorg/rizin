@@ -3705,6 +3705,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF("scr.seek", "", "Seek to the specified address on startup");
+	SETPREF("graph.depth.ref", "", "Reference function for the call depth indicator in visual mode");
+	SETI("graph.depth.max", 20, "Maximum call depth to search when calculating the depth indictor");
+	SETB("graph.depth.enabled", "false", "Enable the call depth indicator in visual disassembly mode");
 
 	rz_config_add_integer_bind(cfg, "scr.color", "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)", core_scr_color_get, core_scr_color_set, NULL, core);
 	rz_config_set_i(cfg, "scr.color", (core->print->flags & RZ_PRINT_FLAGS_COLOR) ? COLOR_MODE_16 : COLOR_MODE_DISABLED);

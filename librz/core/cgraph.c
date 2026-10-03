@@ -1144,3 +1144,87 @@ error:
 	graph = NULL;
 	goto fini;
 }
+
+typedef struct {
+	ut64 addr;
+	int depth;
+} BfsNode;
+
+static void bfs_node_free(void *data) {
+	free(data);
+}
+
+/**
+ * \brief Finds the shortest call depth from a reference function to a target function.
+ *
+ * \param core RzCore instance
+ * \param ref_addr Address of the reference function (e.g., main)
+ * \param target_addr Address of the target function (where the cursor is)
+ * \param max_depth Maximum depth to search
+ *
+ * \return The depth (number of calls) on success, -1 if no path is found or max_depth is exceeded.
+ */
+RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 target_addr, int max_depth) {
+	if (ref_addr == target_addr) {
+		return 0; // We are already at the reference
+	}
+
+	RzList *queue = rz_list_newf(bfs_node_free);
+	HtUP *visited = ht_up_new(NULL, NULL);
+
+	BfsNode *start_node = RZ_NEW0(BfsNode);
+	start_node->addr = ref_addr;
+	start_node->depth = 0;
+	rz_list_append(queue, start_node);
+	ht_up_insert(visited, ref_addr, (void *)1);
+
+	int found_depth = -1;
+
+	while (!rz_list_empty(queue)) {
+		BfsNode *curr = rz_list_pop_head(queue);
+
+		if (curr->addr == target_addr) {
+			found_depth = curr->depth;
+			free(curr);
+			break;
+		}
+
+		if (curr->depth >= max_depth) {
+			free(curr);
+			continue;
+		}
+
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, curr->addr);
+		if (!fcn) {
+			free(curr);
+			continue;
+		}
+
+		RzList *calls = rz_core_analysis_fcn_get_calls(core, fcn);
+		if (calls) {
+			RzListIter *it;
+			RzAnalysisXRef *xref;
+			rz_list_foreach (calls, it, xref) {
+				if (xref->to == 0 || xref->to == UT64_MAX) {
+					continue;
+				}
+				if (!ht_up_find(visited, xref->to, NULL)) {
+					ht_up_insert(visited, xref->to, (void *)1);
+
+					BfsNode *next_node = RZ_NEW0(BfsNode);
+					next_node->addr = xref->to;
+					next_node->depth = curr->depth + 1;
+					rz_list_append(queue, next_node);
+				}
+			}
+			rz_list_free(calls);
+		}
+
+		free(curr);
+	}
+
+	rz_list_free(queue);
+	ht_up_free(visited);
+
+	return found_depth;
+}

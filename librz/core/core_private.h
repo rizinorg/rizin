@@ -532,4 +532,6 @@ RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_c(RzCore *core, bool has_specified_addr,
 RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_e(RzCore *core, bool has_specified_addr, ut64 addr);
 RZ_IPI RzCmdStatus rz_heap_jemalloc_cmd_ei(RzCore *core, bool has_specified_addr, ut64 addr);
 
+RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 target_addr, int max_depth);
+
 #endif
