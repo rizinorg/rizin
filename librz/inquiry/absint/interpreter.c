@@ -557,12 +557,15 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	// For calls, assume control flow will continue like fallthrough.
 	// But any data that may be modified by the callee must be set to top.
 	// TODO: this should depend on the ABI, some data may be preserved.
-	RzIterator *it = ht_up_as_iter(ctx->astate->globals);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter(ctx->astate->globals, &it)) {
+		return;
+	}
 	RzAbsIntVal **av;
-	rz_iterator_foreach(it, av) {
+	rz_iterator_foreach(&it, av) {
 		val_domain(ctx->inst)->set_top(*av);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 }
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
@@ -1121,15 +1124,18 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 	}
 
 	if (res->comments) {
-		RzIterator *it = ht_up_as_iter_keys(res->comments);
+		RzIterator it = (RzIterator){ 0 };
+		if (!ht_up_as_iter_keys(res->comments, &it)) {
+			return false;
+		}
 		ut64 *k;
-		rz_iterator_foreach(it, k) {
+		rz_iterator_foreach(&it, k) {
 			const char *cmt = ht_up_find(res->comments, *k, NULL);
 			if (cmt) {
 				rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, *k, cmt);
 			}
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 	}
 
 	return true;

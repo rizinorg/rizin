@@ -253,8 +253,8 @@ RZ_IPI bool rz_core_agraph_add_shortcut(RzCore *core, RzAGraph *g, RzANode *an, 
 
 RZ_IPI bool rz_core_add_shortcuts(RzCore *core, RzAGraph *ag) {
 	rz_return_val_if_fail(core && ag, false);
-	RzIterator it = rz_graph_get_nodes(ag->graph);
-	if (rz_iterator_is_uninit(&it)) {
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_graph_get_nodes(ag->graph, &it)) {
 		return false;
 	}
 	RzGraphNode *gn;

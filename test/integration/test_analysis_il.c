@@ -107,8 +107,8 @@ static bool test_analysis_il() {
 	rz_io_read_at_mapped(core->io, obj_seckrit, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
 	mu_assert_streq(buf, "Hello from RzIL!", "eval rzil in function");
 
-	RzIterator iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	mu_assert_notnull(&iter, "function rzil");
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL, &iter), "function rzil");
 	ut64 count = 0;
 	RzAnalysisOp *pop = NULL;
 	rz_iterator_foreach(&iter, pop) {
@@ -130,8 +130,8 @@ static bool test_analysis_il() {
 
 	// extract and evaluate a chunk of instructions
 	count = 0;
-	iter = rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL);
-	mu_assert_notnull(&iter, "chunk rzil");
+	iter = (RzIterator){ 0 };
+	mu_assert_true(rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL, &iter), "chunk rzil");
 	rz_iterator_foreach(&iter, pop) {
 		if (op.addr == 0x918) {
 			rz_strbuf_fini(&sb);

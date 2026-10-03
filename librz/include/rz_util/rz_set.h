@@ -36,7 +36,7 @@ RZ_API bool rz_set_u_contains(const RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_delete(RZ_NONNULL RzSetU *set, ut64 u);
 RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set);
 RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set);
-RZ_API RzIterator /* <RzSetU> */ rz_set_u_as_iter(const RZ_NONNULL RzSetU *set);
+RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzIterator *iterator);
 
 #ifdef __cplusplus
 }

@@ -1092,8 +1092,7 @@ RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIte
 		return false;
 	}
 
-	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state);
-	if (rz_iterator_is_uninit(iterator)) {
+	if (!rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_mut), NULL, (rz_iterator_free_cb)Ht_(free_iter_mut_state), state, iterator)) {
 		Ht_(free_iter_mut_state)(state);
 		return false;
 	}
@@ -1113,12 +1112,11 @@ RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzI
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, false);
 
-	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
 	/**
 	 * \note rz_iterator_is_uninit check here is currently unreachable given new_iter_state already guarantees state != NULL and iter_next is a fixed function pointer.
 	 * Left the guard in for robustness against future changes, happy to simplify to just return !rz_iterator_is_uninit(iter); if preferred.
 	 */
-	if (rz_iterator_is_uninit(iterator)) {
+	if (!rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}
@@ -1138,8 +1136,7 @@ RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNUL
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, false);
 
-	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (rz_iterator_is_uninit(iterator)) {
+	if (!rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_key), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}
@@ -1159,8 +1156,7 @@ RZ_API bool Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL 
 	HT_(IterState) *state = Ht_(new_iter_state)(ht);
 	rz_return_val_if_fail(state, false);
 
-	*iterator = rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state);
-	if (rz_iterator_is_uninit(iterator)) {
+	if (!rz_iterator_new((rz_iterator_next_cb)Ht_(iter_next_kv), NULL, (rz_iterator_free_cb)Ht_(free_iter_state), state, iterator)) {
 		Ht_(free_iter_state)(state);
 		return false;
 	}

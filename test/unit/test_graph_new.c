@@ -274,8 +274,8 @@ static bool test_graph_in_out_edges(void) {
 	rz_graph_add_edge(g, n1, n4, NULL);
 
 	// out edges
-	RzIterator it = rz_graph_out_edges(g, n1);
-	mu_assert_notnull(&it, "out_edges_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_edges(g, n1, &it), "out_edges_iterator");
 
 	int count = 0;
 	RzGraphEdge *edge;
@@ -290,8 +290,9 @@ static bool test_graph_in_out_edges(void) {
 	// in edges
 	rz_graph_add_edge(g, n2, n4, NULL);
 	rz_graph_add_edge(g, n3, n4, NULL);
-	it = rz_graph_in_edges(g, n4);
-	mu_assert_notnull(&it, "in_edges_iterator");
+	it = (RzIterator){ 0 };
+	;
+	mu_assert_true(rz_graph_in_edges(g, n4, &it), "in_edges_iterator");
 
 	count = 0;
 	rz_iterator_foreach(&it, edge) {
@@ -322,8 +323,8 @@ static bool test_graph_in_out_neighbors(void) {
 	rz_graph_add_edge(g, n1, n3, NULL);
 
 	// n1 out neighbours
-	RzIterator it = rz_graph_out_neighbors(g, n1);
-	mu_assert_notnull(&it, "out_neighbors_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_neighbors(g, n1, &it), "out_neighbors_iterator");
 
 	int count = 0;
 	RzGraphNode *neighbor;
@@ -338,8 +339,8 @@ static bool test_graph_in_out_neighbors(void) {
 	// Get in neighbours
 	rz_graph_add_edge(g, n2, n3, NULL);
 
-	it = rz_graph_in_neighbors(g, n3);
-	mu_assert_notnull(&it, "in_neighbors_iterator");
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_in_neighbors(g, n3, &it), "in_neighbors_iterator");
 
 	count = 0;
 	rz_iterator_foreach(&it, neighbor) {
@@ -499,8 +500,8 @@ static bool test_graph_get_nodes(void) {
 	RzGraphNode *n3 = NULL;
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
-	RzIterator it = rz_graph_get_nodes(g);
-	mu_assert_notnull(&it, "get_nodes_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_get_nodes(g, &it), "get_nodes_iterator");
 
 	int count = 0;
 	RzGraphNode *node;
@@ -828,8 +829,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 	rz_graph_add_edge(g, n1, n4, NULL);
 
 	// out edges
-	RzIterator it = rz_graph_out_edges(g, n1);
-	mu_assert_notnull(&it, "out_edges_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_edges(g, n1, &it), "out_edges_iterator");
 
 	int count = 0;
 	RzGraphEdge *edge;
@@ -844,8 +845,8 @@ static bool test_graph_in_out_edges_matrix(void) {
 	// in edges
 	rz_graph_add_edge(g, n2, n4, NULL);
 	rz_graph_add_edge(g, n3, n4, NULL);
-	it = rz_graph_in_edges(g, n4);
-	mu_assert_notnull(&it, "in_edges_iterator");
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_in_edges(g, n4, &it), "in_edges_iterator");
 
 	count = 0;
 	rz_iterator_foreach(&it, edge) {
@@ -876,8 +877,8 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 	rz_graph_add_edge(g, n1, n3, NULL);
 
 	// n1 out neighbours
-	RzIterator it = rz_graph_out_neighbors(g, n1);
-	mu_assert_notnull(&it, "out_neighbors_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_neighbors(g, n1, &it), "out_neighbors_iterator");
 
 	int count = 0;
 	RzGraphNode *neighbor;
@@ -891,8 +892,8 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 
 	// Get in neighbours
 	rz_graph_add_edge(g, n2, n3, NULL);
-	it = rz_graph_in_neighbors(g, n3);
-	mu_assert_notnull(&it, "in_neighbors_iterator");
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_in_neighbors(g, n3, &it), "in_neighbors_iterator");
 
 	count = 0;
 	rz_iterator_foreach(&it, neighbor) {
@@ -1044,8 +1045,9 @@ static bool test_graph_get_nodes_matrix(void) {
 	RzGraphNode *n3 = NULL;
 	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
 
-	RzIterator it = rz_graph_get_nodes(g);
-	mu_assert_notnull(&it, "get_nodes_iterator");
+	RzIterator it = (RzIterator){ 0 };
+	;
+	mu_assert_true(rz_graph_get_nodes(g, &it), "get_nodes_iterator");
 
 	int count = 0;
 	RzGraphNode *node;
@@ -1302,8 +1304,10 @@ static bool test_graph_impl_equivalence(void) {
 		"same has_edge result for 1->0 (false)");
 
 	// Test out-neighbor count is same
-	RzIterator l_it = rz_graph_out_neighbors(g_list, l_nodes[0]);
-	RzIterator m_it = rz_graph_out_neighbors(g_matrix, m_nodes[0]);
+	RzIterator l_it = (RzIterator){ 0 };
+	RzIterator m_it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_neighbors(g_list, l_nodes[0], &l_it), "out_neighbors list");
+	mu_assert_true(rz_graph_out_neighbors(g_matrix, m_nodes[0], &m_it), "out_neighbors matrix");
 
 	int l_count = 0, m_count = 0;
 	RzGraphNode *node;

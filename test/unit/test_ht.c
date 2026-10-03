@@ -892,7 +892,8 @@ bool test_set_u(void) {
 
 	size_t x = 0;
 	const ut64 *im_elem;
-	RzIterator it = rz_set_u_as_iter(set_u);
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = *im_elem == 0x5050505 || *im_elem == 0x6060606;
@@ -906,7 +907,8 @@ bool test_set_u(void) {
 	rz_set_u_delete(set_u, 0x5050505);
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Length wrong.");
 
-	it = rz_set_u_as_iter(set_u);
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
@@ -922,7 +924,8 @@ bool test_set_u(void) {
 	rz_set_u_add(set_u, 0x53bc);
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
@@ -943,7 +946,8 @@ bool test_set_u(void) {
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}

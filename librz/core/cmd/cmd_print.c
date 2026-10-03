@@ -3024,8 +3024,8 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_handler(RzCore *core, int argc, const 
 		goto exit;
 	}
 
-	RzIterator ops = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	if (rz_iterator_is_uninit(&ops)) {
+	RzIterator ops = (RzIterator){ 0 };
+	if (!rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL, &ops)) {
 		goto exit;
 	}
 
@@ -3046,8 +3046,8 @@ RZ_IPI RzCmdStatus rz_print_function_rzil_enriched_handler(RzCore *core, int arg
 		goto exit;
 	}
 
-	RzIterator ops = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	if (rz_iterator_is_uninit(&ops)) {
+	RzIterator ops = (RzIterator){ 0 };
+	if (!rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL, &ops)) {
 		goto exit;
 	}
 

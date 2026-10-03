@@ -21,8 +21,8 @@ bool test_inherit_graph_creation() {
 	mu_assert_notnull(graph, "Couldn't create the graph");
 	mu_assert_eq(rz_graph_count_nodes(graph), 4, "Wrong node count");
 
-	RzIterator iter = rz_graph_get_nodes(graph);
-	mu_assert_notnull(&iter, "get_nodes iterator");
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_get_nodes(graph, &iter), "get_nodes iterator");
 	RzGraphNode *node;
 	int i = 0;
 	rz_iterator_foreach(&iter, node) {
@@ -32,8 +32,8 @@ bool test_inherit_graph_creation() {
 			mu_assert_streq(info->def.title, "A", "Wrong node name");
 			mu_assert_eq(rz_graph_out_degree(graph, node), 2, "Wrong node out-nodes");
 			{
-				RzIterator out_iter = rz_graph_out_neighbors(graph, node);
-				mu_assert_notnull(&out_iter, "out_neighbors iter A");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(graph, node, &out_iter), "out_neighbors iter A");
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(&out_iter, out_node) {
@@ -55,8 +55,8 @@ bool test_inherit_graph_creation() {
 			mu_assert_eq(rz_graph_out_degree(graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator out_iter = rz_graph_out_neighbors(graph, node);
-				mu_assert_notnull(&out_iter, "out_neighbors iter B");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(graph, node, &out_iter), "out_neighbors iter B");
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(&out_iter, out_node) {
@@ -75,8 +75,8 @@ bool test_inherit_graph_creation() {
 			mu_assert_eq(rz_graph_out_degree(graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator out_iter = rz_graph_out_neighbors(graph, node);
-				mu_assert_notnull(&out_iter, "out_neighbors iter C");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(graph, node, &out_iter), "out_neighbors iter C");
 				RzGraphNode *out_node;
 				int j = 0;
 				rz_iterator_foreach(&out_iter, out_node) {

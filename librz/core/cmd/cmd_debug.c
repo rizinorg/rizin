@@ -147,8 +147,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 	rz_tree_bfs(t, &vis);
 
 	/* traverse the callgraph to print the dot file */
-	RzIterator it_nodes = rz_graph_get_nodes(aux_data.graph);
-	if (rz_iterator_is_uninit(&it_nodes)) {
+	RzIterator it_nodes = (RzIterator){ 0 };
+	if (!rz_graph_get_nodes(aux_data.graph, &it_nodes)) {
 		RZ_LOG_ERROR("Failed to get graph nodes\n");
 		rz_graph_free(aux_data.graph);
 		sdb_free(aux_data.graphnodes);
@@ -173,8 +173,8 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 				tn->addr, tn->addr, tn->addr, tn->refs);
 		}
 
-		RzIterator it_neighbours = rz_graph_out_neighbors(aux_data.graph, n);
-		if (rz_iterator_is_uninit(&it_neighbours)) {
+		RzIterator it_neighbours = (RzIterator){ 0 };
+		if (!rz_graph_out_neighbors(aux_data.graph, n, &it_neighbours)) {
 			continue;
 		}
 

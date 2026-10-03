@@ -89,9 +89,15 @@ static void dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode
  */
 static void dfs_push_neighbours(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node, RzStack *stack, bool forward, RzGraphVisitor *visitor) {
 	// assert g, node, stack, visitor NON NULL
-	RzIterator edge_iter = forward ? g->impl_ops->get_out_edges(g, node) : g->impl_ops->get_in_edges(g, node);
-	if (rz_iterator_is_uninit(&edge_iter)) {
-		return;
+	RzIterator edge_iter = (RzIterator){ 0 };
+	if (forward) {
+		if (!g->impl_ops->get_out_edges(g, node, &edge_iter)) {
+			return;
+		}
+	} else {
+		if (!g->impl_ops->get_in_edges(g, node, &edge_iter)) {
+			return;
+		}
 	}
 
 	RzGraphEdge *edge;
@@ -295,8 +301,8 @@ RZ_API void rz_graph_dfs_reverse_from_node(RzGraph /*<NodeType *, EdgeType *>*/ 
  * the LIFO stack, matching the traversal order used for layout.
  */
 static void find_back_edges_push(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *node, RzStack *stack, RzGraphEdgeCmp cmp, void *user) {
-	RzIterator edge_iter = g->impl_ops->get_out_edges(g, node);
-	if (rz_iterator_is_uninit(&edge_iter)) {
+	RzIterator edge_iter = (RzIterator){ 0 };
+	if (!g->impl_ops->get_out_edges(g, node, &edge_iter)) {
 		return;
 	}
 
@@ -512,8 +518,8 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 		if (!root_nb) {
 			break;
 		}
-		RzIterator it = g->impl_ops->get_out_edges(g, root);
-		if (!rz_iterator_is_uninit(&it)) {
+		RzIterator it = (RzIterator){ 0 };
+		if (g->impl_ops->get_out_edges(g, root, &it)) {
 			RzGraphEdge *e;
 			rz_iterator_foreach(&it, e) {
 				rz_pvector_push(root_nb, e->to);
@@ -544,8 +550,8 @@ RZ_API RZ_OWN RzPVector /*<RzPVector<RzGraphNode *> *>*/ *rz_graph_find_sccs(RzG
 					if (!v_nb) {
 						break;
 					}
-					RzIterator vit = g->impl_ops->get_out_edges(g, v);
-					if (!rz_iterator_is_uninit(&vit)) {
+					RzIterator vit = (RzIterator){ 0 };
+					if (g->impl_ops->get_out_edges(g, v, &vit)) {
 						RzGraphEdge *e;
 						rz_iterator_foreach(&vit, e) {
 							rz_pvector_push(v_nb, e->to);

@@ -5486,22 +5486,25 @@ static RzAnalysisOp *analysis_op_context_iter_next(RzIterator *it) {
  *        restricted by \p len and \p nops at the same time
  *
  * \param core RzCore
- * \param len Maximum length read from \p buf in bytes. set to 0 to disable it (only use \p nops).
- * \param nops Maximum number of instruction, set to 0 to disable it (only use \p len).
- * \param mask The which analysis details should be disassembled.
- * \return RzIterator of RzAnalysisOp
+ * \param start_addr Address to start parsing from.
+ * \param n_bytes Maximum length read from buf in bytes, set to 0 to disable it (only use max_ops).
+ * \param max_ops Maximum number of instructions, set to 0 to disable it (only use n_bytes).
+ * \param mask Which analysis details should be disassembled.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator rz_core_analysis_op_chunk_iter(
-	RZ_NONNULL RzCore *core, ut64 start_addr, ut64 n_bytes, ut64 max_ops, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core, (RzIterator){ 0 });
+RZ_API bool rz_core_analysis_op_chunk_iter(
+	RZ_NONNULL RzCore *core, ut64 start_addr, ut64 n_bytes, ut64 max_ops, RzAnalysisOpMask mask, RZ_NONNULL RZ_OUT RzIterator *iterator) {
+	rz_return_val_if_fail(core, false);
 
 	AnalysisOpContext *ctx = RZ_NEW0(AnalysisOpContext);
 	if (!ctx || !analysis_op_context_init(ctx, core, start_addr, n_bytes, max_ops, mask)) {
 		free(ctx);
-		return (RzIterator){ 0 };
+		return false;
 	}
 
-	return rz_iterator_new((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx);
+	return rz_iterator_new((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
 }
 
 typedef struct core_decoded_bytes_s {
@@ -5685,7 +5688,7 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  * \return True on success, false on failure.
  */
 RZ_API bool rz_core_analysis_bytes(
-	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_NONNULL RZ_OUT RzIterator *iterator) {
 	rz_return_val_if_fail(core && buf && iterator, false);
 
 	// TODO: this should be removed once rz_config is refactored.
@@ -5699,8 +5702,7 @@ RZ_API bool rz_core_analysis_bytes(
 		return false;
 	}
 
-	*iterator = rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx);
-	return true;
+	return rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx, iterator);
 }
 
 /**
@@ -5709,12 +5711,14 @@ RZ_API bool rz_core_analysis_bytes(
  * \param core RzCore
  * \param fcn Pointer to `RzAnalysisFunction` used to analysis.
  * \param mask The which analysis details should be disassembled.
- * \return RzIterator of RzAnalysisOp
+ * \param iterator Output parameter, filled with an iterator of RzAnalysisOp on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask) {
-	rz_return_val_if_fail(core && fcn, (RzIterator){ 0 });
+RZ_API bool rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(core && fcn, false);
 
-	RzIterator ops = (RzIterator){ 0 };
+	bool flag = false;
 	ut64 start = fcn->addr;
 	ut64 end = rz_analysis_function_max_addr(fcn);
 	if (end <= start) {
@@ -5722,9 +5726,9 @@ RZ_API RZ_OWN RzIterator rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *co
 		goto exit;
 	}
 	ut64 size = end - start;
-	ops = rz_core_analysis_op_chunk_iter(core, start, size, 0, mask);
+	flag = rz_core_analysis_op_chunk_iter(core, start, size, 0, mask, iterator);
 exit:
-	return ops;
+	return flag;
 }
 
 /**

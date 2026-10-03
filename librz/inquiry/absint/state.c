@@ -33,11 +33,15 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 	state->locals = ht_up_new(NULL, NULL);
 	state->lets = ht_up_new(NULL, NULL);
 	return state;
-	RzIterator *it;
+	RzIterator it = (RzIterator){ 0 };
 	RzAbsIntVal **v;
 err_globals:
-	it = ht_up_as_iter(state->globals);
-	rz_iterator_foreach(it, v) {
+	if (!ht_up_as_iter(state->globals, &it)) {
+		ht_up_free(state->globals);
+		free(state);
+		return NULL;
+	}
+	rz_iterator_foreach(&it, v) {
 		val_domain(inst)->val_free(*v);
 	}
 	ht_up_free(state->globals);
@@ -49,12 +53,15 @@ static void var_set_free(RzAbsIntInstance *inst, HtUP *vars) {
 	if (!vars) {
 		return;
 	}
-	RzIterator *it = ht_up_as_iter(vars);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter(vars, &it)) {
+		return;
+	}
 	RzAbsIntVal **v;
-	rz_iterator_foreach(it, v) {
+	rz_iterator_foreach(&it, v) {
 		val_domain(inst)->val_free(*v);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	ht_up_free(vars);
 }
 
@@ -84,16 +91,19 @@ RZ_IPI bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, 
 	state->pc_state = RZ_ABSINT_PC_CONST;
 	state->pc = entry_point;
 
-	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys(state->globals, &it)) {
+		return false;
+	}
 	ut64 *k;
-	rz_iterator_foreach(it, k) {
+	rz_iterator_foreach(&it, k) {
 		ut64 djb2_reg_name = *k;
 		RzAbsIntVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
 		if (av) {
 			val_domain(inst)->set_top(av);
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return true;
 }
 
@@ -118,16 +128,19 @@ RZ_API bool rz_absint_state_as_str(RZ_NONNULL RzAbsIntInstance *inst, RZ_NONNULL
 	}
 	rz_strbuf_append(sb, "\n\n");
 
-	RzIterator *it = ht_up_as_iter_keys(state->globals);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys(state->globals, &it)) {
+		return false;
+	}
 	ut64 *k;
-	rz_iterator_foreach(it, k) {
+	rz_iterator_foreach(&it, k) {
 		const char *gname = ht_up_find(inst->var_name_hashes, *k, NULL);
 		rz_strbuf_appendf(sb, "\t%s = ", gname);
 		RzAbsIntVal *av = ht_up_find(state->globals, *k, NULL);
 		val_domain(inst)->val_as_str(av, sb);
 		rz_strbuf_append(sb, "\n");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return true;
 }
 
@@ -145,10 +158,13 @@ RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 	rz_return_val_if_fail(inst && astate && sb, false);
 
 	bool first = true;
-	RzIterator *it = ht_up_as_iter_keys(astate->globals);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys(astate->globals, &it)) {
+		return false;
+	}
 	ut64 *k;
 	bool all_top = true;
-	rz_iterator_foreach(it, k) {
+	rz_iterator_foreach(&it, k) {
 		ut64 djb2_reg_name = *k;
 		RzAbsIntVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
 		if (!av || val_domain(inst)->is_top(av)) {
@@ -163,7 +179,7 @@ RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 		rz_strbuf_appendf(sb, "%s = ", varname);
 		val_domain(inst)->val_as_str(av, sb);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	if (all_top) {
 		rz_strbuf_append(sb, RZ_ABSINT_STR_TOP);
 	}
@@ -175,9 +191,12 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 	if (!r) {
 		return NULL;
 	}
-	RzIterator *it = ht_up_as_iter_keys(vars);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys(vars, &it)) {
+		return NULL;
+	}
 	ut64 *key;
-	rz_iterator_foreach(it, key) {
+	rz_iterator_foreach(&it, key) {
 		RzAbsIntVal *val = val_domain(inst)->val_new_top();
 		if (!val) {
 			break;
@@ -185,7 +204,7 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 		val_domain(inst)->copy(val, ht_up_find(vars, *key, NULL));
 		ht_up_insert(r, *key, val);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return r;
 }
 
@@ -209,10 +228,13 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
  * \return True if a was changed
  */
 static bool join_vars(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BORROW RZ_IN HtUP *b) {
-	RzIterator *it = ht_up_as_iter_keys(a);
+	RzIterator it = (RzIterator){ 0 };
+	if (!ht_up_as_iter_keys(a, &it)) {
+		return false;
+	}
 	ut64 *k;
 	bool changed = false;
-	rz_iterator_foreach(it, k) {
+	rz_iterator_foreach(&it, k) {
 		RzAbsIntVal *av = ht_up_find(a, *k, NULL);
 		RzAbsIntVal *bv = ht_up_find(b, *k, NULL);
 		if (!av || !bv) {
@@ -222,7 +244,7 @@ static bool join_vars(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, RZ_BOR
 			changed = true;
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return changed;
 }
 

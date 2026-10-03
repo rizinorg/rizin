@@ -285,22 +285,25 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 
 	// Push all root entries
 	size_t entries_pushed = 0;
-	RzIterator *it = rz_set_u_as_iter(config->fcn_entry_points);
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_set_u_as_iter(config->fcn_entry_points, &it)) {
+		return;
+	}
 	ut64 *entry;
-	rz_iterator_foreach(it, entry) {
+	rz_iterator_foreach(&it, entry) {
 		ut64 *tmp = RZ_NEW(ut64);
 		if (!tmp) {
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			goto err_main_ch;
 		}
 		*tmp = *entry;
 		if (!rz_th_queue_push(driver.entry_points_ch, tmp, true)) {
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			goto err_main_ch;
 		}
 		entries_pushed++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	InterpThread **threads = RZ_NEWS0(InterpThread *, config->n_threads);
 	if (!threads) {

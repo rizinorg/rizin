@@ -34,8 +34,8 @@ static bool test_legacy_graph(void) {
 
 	// Check out-neighbors of gn: should contain gn2
 	{
-		RzIterator it = rz_graph_out_neighbors(g, gn);
-		mu_assert_notnull(&it, "get_neighbours.1.iter");
+		RzIterator it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_out_neighbors(g, gn, &it), "get_neighbours.1.iter");
 		int count = 0;
 		RzGraphNode *nb;
 		rz_iterator_foreach(&it, nb) {
@@ -52,8 +52,8 @@ static bool test_legacy_graph(void) {
 
 	// Check out-neighbors of gn: gn2 and gn3
 	{
-		RzIterator it = rz_graph_out_neighbors(g, gn);
-		mu_assert_notnull(&it, "get_neighbours.2.iter");
+		RzIterator it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_out_neighbors(g, gn, &it), "get_neighbours.2.iter");
 		int count = 0;
 		RzGraphNode *nb;
 		rz_iterator_foreach(&it, nb) {
@@ -82,8 +82,8 @@ static bool test_legacy_graph(void) {
 
 	// Check all nodes are present
 	{
-		RzIterator it = rz_graph_get_nodes(g);
-		mu_assert_notnull(&it, "get_all_nodes.iter");
+		RzIterator it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_get_nodes(g, &it), "get_all_nodes.iter");
 		int count = 0;
 		RzGraphNode *nd;
 		rz_iterator_foreach(&it, nd) {
@@ -130,8 +130,8 @@ static bool test_legacy_graph(void) {
 
 	// Check in-neighbors of gn3: gn and gn2
 	{
-		RzIterator it = rz_graph_in_neighbors(g, gn3);
-		mu_assert_notnull(&it, "in_nodes.iter");
+		RzIterator it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_in_neighbors(g, gn3, &it), "in_nodes.iter");
 		int count = 0;
 		RzGraphNode *nb;
 		rz_iterator_foreach(&it, nb) {
@@ -146,13 +146,15 @@ static bool test_legacy_graph(void) {
 	{
 		int count = 0;
 		RzGraphNode *nb;
-		RzIterator it = rz_graph_in_neighbors(g, gn3);
+		RzIterator it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_in_neighbors(g, gn3, &it), "all_neighbours.in");
 		rz_iterator_foreach(&it, nb) {
 			mu_assert_true(nb == gn || nb == gn2, "all_neighbours.in");
 			count++;
 		}
 		rz_iterator_fini(&it);
-		it = rz_graph_out_neighbors(g, gn3);
+		it = (RzIterator){ 0 };
+		mu_assert_true(rz_graph_out_neighbors(g, gn3, &it), "all_neighbours.out");
 		rz_iterator_foreach(&it, nb) {
 			mu_assert_ptreq(nb, gn5, "all_neighbours.out");
 			count++;

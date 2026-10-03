@@ -205,14 +205,14 @@ RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
 }
 
 /**
- * \brief Returns an iterator over the \p set with immutable elements.
+ * \brief Fills \p iterator with an iterator over the \p set, yielding immutable elements.
  *
- * \return Iterator yielding immutable elements.
+ * \param set The set to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RzIterator /* <RzSetU> */ rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
-	rz_return_val_if_fail(set, (RzIterator){ 0 });
-	RzIterator iterator = (RzIterator){ 0 };
-	if (!ht_up_as_iter_keys((const HtUP *)set, &iterator))
-		return (RzIterator){ 0 };
-	return iterator;
+RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(set, false);
+	return ht_up_as_iter_keys((const HtUP *)set, iterator);
 }
