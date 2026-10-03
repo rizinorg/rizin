@@ -206,7 +206,7 @@ RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
 				rz_debug_snap_free(snap);
 				return;
 			}
-			dbg->cb_printf("%s: %s\n", snap->name, hexstr);
+			dbg->cb_printf(dbg->cb_printf_user, "%s: %s\n", snap->name, hexstr);
 
 			free(hexstr);
 			free(hash);

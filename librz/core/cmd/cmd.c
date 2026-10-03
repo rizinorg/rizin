@@ -36,7 +36,7 @@ TSLanguage *tree_sitter_rzcmd();
 #include "cmd_math.c"
 
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]) {
-	rz_cons_cmd_help(help, core->print->flags & RZ_PRINT_FLAGS_COLOR);
+	rz_cons_cmd_help(core->cons, help, core->print->flags & RZ_PRINT_FLAGS_COLOR);
 }
 
 struct duplicate_flag_t {
@@ -108,8 +108,8 @@ RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next) {
 
 static int rz_core_cmd_nullcallback(void *data) {
 	RzCore *core = (RzCore *)data;
-	if (core->cons->context->breaked) {
-		core->cons->context->breaked = false;
+	if (rz_interrupt_is_breaked(core->intr)) {
+		rz_interrupt_set_breaked(core->intr, false);
 		return 0;
 	}
 	if (!core->cmdrepeat) {
@@ -334,7 +334,7 @@ RZ_IPI int rz_line_hist_sdb_down(RzLine *line) {
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
 	char *out = sdb_querys(core->sdb, NULL, 0, k);
 	if (out) {
-		rz_cons_print(out);
+		rz_cons_print(core->cons, out);
 	}
 	free(out);
 }
@@ -342,7 +342,7 @@ RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k) {
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv) {
 	char *input = rz_str_array_join(argv + 1, argc - 1, " ");
 	int len = rz_str_unescape(input);
-	RzCmdStatus res = bool2status(rz_cons_readpush(input, len));
+	RzCmdStatus res = bool2status(rz_cons_readpush(core->cons, input, len));
 	free(input);
 	return res;
 }
@@ -358,7 +358,7 @@ static RzCmdStatus pointer_read(RzCore *core, const char *expr) {
 	if (!rz_io_read_i(core->io, n, &n, arch_bits / 8, big_endian)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%" PFMT64x "\n", n);
+	rz_cons_printf(core->cons, "0x%" PFMT64x "\n", n);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -399,7 +399,7 @@ RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv)
 }
 
 RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_last();
+	rz_cons_last(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -695,20 +695,20 @@ static char *system_exec_stdin(bool is_pipe, int argc, char **argv, const ut8 *i
 static ut8 *core_cmd_raw_node(RzCore *core, struct tsr2cmd_state *state, TSNode rizin_cmd, int *length) {
 	const char *static_str;
 	ut8 *retstr = NULL;
-	rz_cons_push();
+	rz_cons_push(core->cons);
 	if (handle_ts_stmt(state, rizin_cmd) != RZ_CMD_STATUS_OK) {
-		rz_cons_pop();
+		rz_cons_pop(core->cons);
 		return NULL;
 	}
-	rz_cons_filter();
+	rz_cons_filter(core->cons);
 
-	static_str = rz_cons_get_buffer();
-	int len = rz_cons_get_buffer_len();
+	static_str = rz_cons_get_buffer(core->cons);
+	int len = rz_cons_get_buffer_len(core->cons);
 	retstr = (ut8 *)rz_str_newlen(static_str, len);
 	*length = len;
 
-	rz_cons_pop();
-	rz_cons_echo(NULL);
+	rz_cons_pop(core->cons);
+	rz_cons_echo(core->cons, NULL);
 	return retstr;
 }
 
@@ -732,7 +732,7 @@ static RzCmdStatus core_cmd_pipe(RzCore *core, struct tsr2cmd_state *state, TSNo
 
 	char *out = system_exec_stdin(core->is_pipe, argc, argv, bytes, length, &length);
 	if (out) {
-		rz_cons_memcat(out, length);
+		rz_cons_memcat(core->cons, out, length);
 	}
 
 	free(bytes);
@@ -1331,8 +1331,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_stmt) {
 	free(number_str);
 
 	TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
-	if (rep > INTERACTIVE_MAX_REP && rz_cons_is_interactive()) {
-		if (!rz_cons_yesno('n', "Are you sure to repeat this %d times? (y/N)", rep)) {
+	if (rep > INTERACTIVE_MAX_REP && rz_cons_is_interactive(state->core->cons)) {
+		if (!rz_cons_yesno(state->core->cons, 'n', "Are you sure to repeat this %d times? (y/N)", rep)) {
 			return RZ_CMD_STATUS_INVALID;
 		}
 	}
@@ -1353,6 +1353,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 	int scr_html = -1;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
 	int fdn = 1;
+	RzCore *core = state->core;
 
 	TSNode redirect_op = ts_node_child_by_field_name(node, "redirect_operator", strlen("redirect_operator"));
 	if (is_ts_fdn_redirect_operator(redirect_op)) {
@@ -1382,7 +1383,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		}
 	}
 
-	rz_cons_set_interactive(false);
+	rz_cons_set_interactive(core->cons, false);
 	// TODO: allow to use editor as the old behaviour
 
 	// extract the string of the filename we need to write to
@@ -1415,10 +1416,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 		free(command_str);
 		res = RZ_CMD_STATUS_OK;
 	} else {
-		rz_cons_flush();
+		rz_cons_flush(core->cons);
 		RZ_LOG_DEBUG("redirect_stmt: fdn = %d, is_append = %d\n", fdn, is_append);
-		rz_cons_push();
-		rz_cons_set_flush(true);
+		rz_cons_push(core->cons);
+		rz_cons_set_flush(core->cons, true);
 		RzConsPipe *cpipe = rz_cons_pipe_open(arg_str, fdn, is_append);
 		if (cpipe) {
 			if (!pipecolor) {
@@ -1426,16 +1427,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_stmt) {
 			}
 			TSNode command = ts_node_child_by_field_name(node, "command", strlen("command"));
 			res = handle_ts_stmt(state, command);
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			rz_cons_pipe_close(cpipe);
 		} else {
 			RZ_LOG_WARN("Could not open pipe to %d\n", fdn);
 		}
-		rz_cons_pop();
+		rz_cons_pop(core->cons);
 	}
 	free(arg_str);
 fail:
-	rz_cons_set_last_interactive();
+	rz_cons_set_last_interactive(core->cons);
 	if (!pipecolor) {
 		rz_config_set_i(state->core->config, "scr.color", ocolor);
 	}
@@ -1498,7 +1499,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_stmt) {
 	bool use_color = state->core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	char *help_msg = rz_cmd_get_help(state->core->rcmd, pr_args, use_color, 0);
 	if (help_msg) {
-		rz_cons_printf("%s", help_msg);
+		rz_cons_printf(state->core->cons, "%s", help_msg);
 		free(help_msg);
 		res = RZ_CMD_STATUS_OK;
 	}
@@ -1986,7 +1987,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_stmt) {
 
 	/* for all flags that match */
 	rz_list_foreach (match_flag_items, iter, flag) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 
@@ -2035,7 +2036,7 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 	}
 err:
@@ -2110,7 +2111,7 @@ static RzCmdStatus do_iter_offsets(RzCore *core, struct tsr2cmd_state *state, TS
 			rz_core_block_size(core, blk_sz);
 		}
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, *command);
-		rz_cons_flush();
+		rz_cons_flush(core->cons);
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 	}
 
@@ -2175,7 +2176,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_stmt) {
 		rz_core_seek(core, i_addr, true);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 	}
@@ -2214,7 +2215,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_stmt) {
 		rz_core_block_size(core, step);
 		RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 	}
@@ -2438,7 +2439,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_stmt) {
 		rz_list_foreach (list, iter, item_name) {
 			value = rz_reg_getv(reg, item_name);
 			rz_core_seek(core, value, true);
-			rz_cons_printf("%s: ", item_name);
+			rz_cons_printf(core->cons, "%s: ", item_name);
 			RzCmdStatus cmd_res = handle_ts_stmt_tmpseek(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}
@@ -2459,7 +2460,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 	RzPVector *symbols = o ? (RzPVector *)rz_bin_object_get_symbols(o) : NULL;
 	RzListIter *iter;
 	void **it;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	RzList *lost = rz_list_newf(free);
 	rz_pvector_foreach (symbols, it) {
 		sym = *it;
@@ -2468,7 +2469,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 	}
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, sym) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		rz_core_block_size(core, sym->size);
@@ -2477,7 +2478,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_symbol_stmt) {
 		UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 	}
 err:
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	rz_list_free(lost);
 	rz_core_block_size(core, obs);
 	rz_core_seek(core, offorig, true);
@@ -2624,9 +2625,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 	RzList *list = rz_analysis_function_list(core->analysis);
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	rz_list_foreach (list, iter, fcn) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (!filter || rz_str_glob(fcn->name, filter)) {
@@ -2637,7 +2638,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_stmt) {
 		}
 	}
 err:
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	rz_core_block_size(core, obs);
 	rz_core_seek(core, offorig, true);
 	free(filter);
@@ -2659,7 +2660,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_threads_stmt) {
 		RzListIter *iter;
 		rz_list_foreach (list, iter, p) {
 			rz_debug_select(dbg, dbg->pid, p->pid);
-			rz_cons_printf("PID %d\n", p->pid);
+			rz_cons_printf(core->cons, "PID %d\n", p->pid);
 			RzCmdStatus cmd_res = handle_ts_stmt(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}
@@ -2688,7 +2689,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_stmt) {
 	rz_strbuf_free(sb);
 	char *specifier_str = rz_cmd_unescape_arg(specifier_str_es, true);
 	RZ_LOG_DEBUG("grep_stmt processed specifier: '%s'\n", specifier_str);
-	rz_cons_grep_process(specifier_str);
+	rz_cons_grep_process(state->core->cons, specifier_str);
 	free(specifier_str_es);
 	free(arg_str);
 	return res;
@@ -2702,7 +2703,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_disable_stmt) {
 	rz_config_set_i(state->core->config, "scr.color", COLOR_MODE_DISABLED);
 	RzCmdStatus res = handle_ts_stmt(state, command);
 	if (scr_html != -1) {
-		rz_cons_flush();
+		rz_cons_flush(state->core->cons);
 		rz_config_set_i(state->core->config, "scr.html", scr_html);
 	}
 	if (scr_color != -1) {
@@ -2717,7 +2718,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(html_enable_stmt) {
 	rz_config_set_i(state->core->config, "scr.html", true);
 	RzCmdStatus res = handle_ts_stmt(state, command);
 	if (scr_html != -1) {
-		rz_cons_flush();
+		rz_cons_flush(state->core->cons);
 		rz_config_set_i(state->core->config, "scr.html", scr_html);
 	}
 	return res;
@@ -2756,7 +2757,7 @@ static RzCmdStatus handle_ts_stmt(struct tsr2cmd_state *state, TSNode node) {
 			} else {
 				char *res = rz_io_system(core->io, state->input);
 				if (res) {
-					rz_cons_printf("%s\n", res);
+					rz_cons_printf(core->cons, "%s\n", res);
 					free(res);
 				}
 			}
@@ -2800,8 +2801,8 @@ DEFINE_HANDLE_TS_FCN(statements) {
 
 	RZ_LOG_DEBUG("commands with %d childs\n", child_count);
 	if (child_count == 0 && !*state->input) {
-		if (core->cons->context->breaked) {
-			core->cons->context->breaked = false;
+		if (rz_interrupt_is_breaked(core->intr)) {
+			rz_interrupt_set_breaked(core->intr, false);
 			return RZ_CMD_STATUS_INVALID;
 		}
 		if (!core->cmdrepeat) {
@@ -2810,7 +2811,7 @@ DEFINE_HANDLE_TS_FCN(statements) {
 		return rz_core_cmd_lastcmd_repeat(core, true) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_INVALID;
 	}
 	if (state->split_lines) {
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 	}
 	for (i = 0; i < child_count; i++) {
 		if (core->cons->context->cmd_depth < 1) {
@@ -2822,14 +2823,14 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			core->prompt_offset = core->offset;
 		}
 
-		if (state->split_lines && rz_cons_is_breaked()) {
-			rz_cons_break_pop();
+		if (state->split_lines && rz_interrupt_is_breaked(core->intr)) {
+			rz_interrupt_break_pop(core->intr);
 			return res;
 		}
 		TSNode command = ts_node_named_child(node, i);
 		RzCmdStatus cmd_res = handle_ts_stmt(state, command);
 		if (state->split_lines) {
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			rz_core_print_warnings_after(core);
 			rz_core_task_yield(&core->tasks);
 		}
@@ -2851,7 +2852,7 @@ DEFINE_HANDLE_TS_FCN(statements) {
 	}
 err:
 	if (state->split_lines) {
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 	}
 	return res;
 }
@@ -3067,7 +3068,7 @@ RZ_API int rz_core_cmd0(RzCore *core, const char *cmd) {
 
 RZ_API int rz_core_flush(RzCore *core, const char *cmd) {
 	int ret = rz_core_cmd(core, cmd, 0);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	return ret;
 }
 
@@ -3077,7 +3078,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 	if (!p && *cmd != '!' && *cmd != '.') {
 		return rz_core_cmd_str(core, cmd);
 	}
-	rz_cons_reset();
+	rz_cons_reset(core->cons);
 	if (rz_file_mkstemp("cmd", &tmp) != -1) {
 		RzConsPipe *cpipe = rz_cons_pipe_open(tmp, 1, 0);
 		if (!cpipe) {
@@ -3087,7 +3088,7 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		}
 		char *_cmd = rz_str_dup(cmd);
 		rz_core_cmd(core, _cmd, 0);
-		rz_cons_flush();
+		rz_cons_flush(core->cons);
 		rz_cons_pipe_close(cpipe);
 		if (rz_file_exists(tmp)) {
 			char *s = rz_file_slurp(tmp, NULL);
@@ -3119,27 +3120,27 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) {
 static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	const char *static_str;
 	ut8 *retstr = NULL;
-	rz_cons_push();
+	rz_cons_push(core->cons);
 	bool is_pipe = core->is_pipe;
 	core->is_pipe = true;
 	if (rz_core_cmd(core, cmd, 0) == -1) {
 		core->is_pipe = is_pipe;
-		rz_cons_pop();
+		rz_cons_pop(core->cons);
 		return NULL;
 	}
 	core->is_pipe = is_pipe;
-	rz_cons_filter();
-	static_str = rz_cons_get_buffer();
+	rz_cons_filter(core->cons);
+	static_str = rz_cons_get_buffer(core->cons);
 	if (length) {
-		int len = rz_cons_get_buffer_len();
+		int len = rz_cons_get_buffer_len(core->cons);
 		retstr = (ut8 *)rz_str_newlen(static_str, len);
 		*length = len;
 	} else {
 		retstr = (ut8 *)rz_str_dup(rz_str_get(static_str));
 	}
 
-	rz_cons_pop();
-	rz_cons_echo(NULL);
+	rz_cons_pop(core->cons);
+	rz_cons_echo(core->cons, NULL);
 	return retstr;
 }
 
@@ -3218,27 +3219,27 @@ RZ_IPI RzCmdStatus rz_help_handler(RzCore *core, int argc, const char **argv) {
 	const char *cmd_color = use_color ? core->cons->context->pal.help : "";
 	const char *cmd_bold = use_color ? core->cons->context->pal.btext : "";
 	const char *reset = use_color ? core->cons->context->pal.reset : "";
-	rz_cons_printf("Welcome to Rizin!\n\n");
-	rz_cons_printf("%sFastest way to help yourself%s\n", cmd_bold, reset);
-	rz_cons_printf("Type %s?**%s to search all commands' short descriptions.\n", cmd_color, reset);
-	rz_cons_printf("Type %s?***%s to search all commands' long descriptions.\n", cmd_color, reset);
-	rz_cons_printf("Type %s?**e%s to search all settings' descriptions.\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("Type %s?%s for a list of commands available.\n", cmd_color, reset);
-	rz_cons_printf("Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
-	rz_cons_printf("Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("Commands output can be redirected as in a regular shell, see %s>?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("You can grep commands output with the 'internal grep', see %s~?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("You can pipe an internal Rizin command to a system program, see %s|?%s for more info.\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("Chain multiple commands with %s;%s.\n", cmd_color, reset);
-	rz_cons_printf("Temporary modifiers are your friends, see %s@?%s for more info, but here some useful ones:\n", cmd_color, reset);
-	rz_cons_printf(" - %s@ %s temporarily switch to a different address\n", cmd_color, reset);
-	rz_cons_printf(" - %s@a:<arch>%s temporarily switch to a different architecture\n", cmd_color, reset);
-	rz_cons_printf(" - %s@e:<varname>=<varvalue>%s temporarily change an eval variable\n", cmd_color, reset);
-	rz_cons_printf("\n");
-	rz_cons_printf("There are a lot of settings that customize Rizin's behaviour, see them with %sel%s. Have a look at %se?%s to know how to interact with them.\n", cmd_color, reset, cmd_color, reset);
-	rz_cons_printf("You can save your preferred settings in %s~/.rizinrc%s.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Welcome to Rizin!\n\n");
+	rz_cons_printf(core->cons, "%sFastest way to help yourself%s\n", cmd_bold, reset);
+	rz_cons_printf(core->cons, "Type %s?**%s to search all commands' short descriptions.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Type %s?***%s to search all commands' long descriptions.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Type %s?**e%s to search all settings' descriptions.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "\n");
+	rz_cons_printf(core->cons, "Type %s?%s for a list of commands available.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Append %s?%s to any command to get the list of sub-commands or more details about a specific command.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Append %s??%s to any command to get the full description of a command, e.g. with examples.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "\n");
+	rz_cons_printf(core->cons, "Commands output can be redirected as in a regular shell, see %s>?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "You can grep commands output with the 'internal grep', see %s~?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "You can pipe an internal Rizin command to a system program, see %s|?%s for more info.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "\n");
+	rz_cons_printf(core->cons, "Chain multiple commands with %s;%s.\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "Temporary modifiers are your friends, see %s@?%s for more info, but here some useful ones:\n", cmd_color, reset);
+	rz_cons_printf(core->cons, " - %s@ %s temporarily switch to a different address\n", cmd_color, reset);
+	rz_cons_printf(core->cons, " - %s@a:<arch>%s temporarily switch to a different architecture\n", cmd_color, reset);
+	rz_cons_printf(core->cons, " - %s@e:<varname>=<varvalue>%s temporarily change an eval variable\n", cmd_color, reset);
+	rz_cons_printf(core->cons, "\n");
+	rz_cons_printf(core->cons, "There are a lot of settings that customize Rizin's behaviour, see them with %sel%s. Have a look at %se?%s to know how to interact with them.\n", cmd_color, reset, cmd_color, reset);
+	rz_cons_printf(core->cons, "You can save your preferred settings in %s~/.rizinrc%s.\n", cmd_color, reset);
 	return RZ_CMD_STATUS_OK;
 }

@@ -345,7 +345,7 @@ static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>
 			RZ_LOG_ERROR("[c] Cannot open '%s'\n", file);
 		}
 		if (ret < 0 || (ret == 0 && quiet)) {
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 			return false;
 		}
 	}
@@ -353,7 +353,7 @@ static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>
 	rz_list_foreach (cmds, iter, cmdn) {
 		// rz_core_cmd0 (r, cmdn);
 		rz_core_cmd_lines(r, cmdn);
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 	}
 beach:
 	if (quiet) {
@@ -370,11 +370,12 @@ beach:
 	return false;
 }
 
-static bool mustSaveHistory(RzConfig *c) {
+static bool mustSaveHistory(RzCore *r) {
+	RzConfig *c = r->config;
 	if (!rz_config_get_i(c, "scr.histsave")) {
 		return false;
 	}
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(r->cons)) {
 		return false;
 	}
 	return true;
@@ -601,9 +602,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, r);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
-				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_print(&state, r->cons);
 				rz_cmd_state_output_fini(&state);
-				rz_cons_flush();
+				rz_cons_flush(r->cons);
 				ret = 0;
 				goto beach;
 			}
@@ -847,10 +848,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		run_commands(r, NULL, prefiles, false, do_analysis);
 		run_commands(r, cmds, files, quiet, do_analysis);
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
-		rz_core_io_plugins_print(r->io, &state);
-		rz_cmd_state_output_print(&state);
+		rz_core_io_plugins_print(r->io, &state, r->cons);
+		rz_cmd_state_output_print(&state, r->cons);
 		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 		LISTS_FREE();
 		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
@@ -996,17 +997,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #endif
 		ut64 scr_color = rz_config_get_i(r->config, "scr.color");
 		const char *scr_interactive = rz_config_get(r->config, "scr.interactive");
-		while (rz_cons_free())
-			;
+		rz_cons_free(r->cons);
 		rz_xfreopen(con_dev, "r", stdin);
-		rz_cons_new();
+		r->cons = rz_cons_new();
 		rz_config_set_i(r->config, "scr.color", scr_color);
 		rz_config_set(r->config, "scr.interactive", scr_interactive);
 		if (buf && sz > 0) {
 			char *path = rz_str_newf("malloc://%d", sz);
 			fh = rz_core_file_open(r, path, perms, mapaddr);
 			if (!fh) {
-				rz_cons_flush();
+				rz_cons_flush(r->cons);
 				free(buf);
 				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
@@ -1101,7 +1101,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 								if (addr == UINT64_MAX) {
 									addr = rz_debug_get_baddr(r->dbg, filepath);
 								}
-								if (rz_cons_yesno('n', "Download remote executable '%s' to a temporary file? (y/N) ", filepath)) {
+								if (rz_cons_yesno(r->cons, 'n', "Download remote executable '%s' to a temporary file? (y/N) ", filepath)) {
 									downloaded = download_gdb_remote_file(iod, filepath);
 									if (!downloaded) {
 										RZ_LOG_ERROR("Failed to download remote executable '%s'.\n", filepath);
@@ -1315,14 +1315,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {
 				rz_config_set_i(r->config, "asm.bits", 16);
 			}
-			rz_cons_reset();
+			rz_cons_reset(r->cons);
 		}
 		if (!pfile) {
 			pfile = file;
 		}
 		if (!fh && !prj) {
 			if (pfile && *pfile) {
-				rz_cons_flush();
+				rz_cons_flush(r->cons);
 				if (perms & RZ_PERM_W) {
 					RZ_LOG_ERROR("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
@@ -1341,7 +1341,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		// initalize io subsystem
 		char *res = rz_io_system(r->io, NULL);
 		if (res) {
-			rz_cons_println(res);
+			rz_cons_println(r->cons, res);
 			free(res);
 		}
 
@@ -1363,7 +1363,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
@@ -1416,7 +1416,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 
 		// no flagspace selected by default the beginning
@@ -1429,8 +1429,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			(void)rz_str_path_unescape(path);
 			if (rz_file_exists(path)) {
 				// TODO: should 'q' unset the interactive bit?
-				bool isInteractive = rz_cons_is_interactive();
-				if (isInteractive && rz_cons_yesno('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+				bool isInteractive = rz_cons_is_interactive(r->cons);
+				if (isInteractive && rz_cons_yesno(r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					rz_core_cmd_file(r, path);
 				}
 			}
@@ -1453,7 +1453,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 	}
 	{
@@ -1471,7 +1471,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
 		default: break;
 		}
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 	}
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
@@ -1491,6 +1491,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			map->perm |= RZ_PERM_W;
 		}
 	}
+	r->print->cons = r->cons; // TODO: why is this not set?
 	ret = run_commands(r, cmds, files, quiet, do_analysis);
 	rz_list_free(cmds);
 	rz_list_free(evals);
@@ -1506,7 +1507,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (rz_config_get_i(r->config, "scr.prompt")) {
 		if (run_rc && rz_config_get_i(r->config, "cfg.fortunes")) {
 			rz_core_fortune_print_random(r);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 	}
 	if (quiet) {
@@ -1516,7 +1517,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 	r->num->value = 0;
 	if (zerosep) {
-		rz_cons_zero();
+		rz_cons_zero(r->cons);
 	}
 	if (seek != UT64_MAX) {
 		rz_core_seek(r, seek, true);
@@ -1528,7 +1529,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_prompt_loop(r);
 		ret = r->num->value;
 		debug = rz_config_get_i(r->config, "cfg.debug");
-		if (ret != -1 && rz_cons_is_interactive()) {
+		if (ret != -1 && rz_cons_is_interactive(r->cons)) {
 			char *question;
 			bool no_question_debug = ret & 1;
 			bool no_question_save = (ret & 2) >> 1;
@@ -1536,7 +1537,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			bool y_save_project = (ret & 8) >> 3;
 
 			if (rz_core_task_running_tasks_count(&r->tasks) > 0) {
-				if (rz_cons_yesno('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+				if (rz_cons_yesno(r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
 					rz_core_task_break_all(&r->tasks);
 					rz_core_task_join(&r->tasks, r->tasks.main_task, -1);
 				} else {
@@ -1553,7 +1554,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				question = rz_str_newf("Do you want to save the '%s' project? (Y/n)", prj);
-				if (prj && *prj && rz_cons_yesno('y', "%s", question)) {
+				if (prj && *prj && rz_cons_yesno(r->cons, 'y', "%s", question)) {
 					prj_err = rz_project_save_file(r, prj, compress);
 				}
 				free(question);
@@ -1564,7 +1565,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 
 			if (rz_config_get_i(r->config, "scr.confirmquit")) {
-				if (!rz_cons_yesno('n', "Do you want to quit? (Y/n)")) {
+				if (!rz_cons_yesno(r->cons, 'n', "Do you want to quit? (Y/n)")) {
 					continue;
 				}
 			}
@@ -1576,7 +1577,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				} else if (rz_config_get_i(r->config, "dbg.exitkills") &&
 					rz_debug_can_kill(r->dbg) &&
-					rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
+					rz_cons_yesno(r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
 					rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 				}
 			}
@@ -1589,7 +1590,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		break;
 	}
 
-	if (mustSaveHistory(r->config)) {
+	if (mustSaveHistory(r)) {
 		char *history = rz_path_home_history();
 		rz_line_hist_save(r->cons->line, history);
 		free(history);
@@ -1599,7 +1600,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ret = r->num->value;
 beach:
 	if (!rz_debug_is_dead(r->dbg)) {
-		if (!rz_cons_is_interactive() && rz_config_get_i(r->config, "dbg.exitkills") &&
+		if (!rz_cons_is_interactive(r->cons) && rz_config_get_i(r->config, "dbg.exitkills") &&
 			rz_debug_can_kill(r->dbg)) {
 			rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 		}
@@ -1614,13 +1615,12 @@ beach:
 	// and this fh may be come stale during the command
 	// execution.
 	// rz_core_file_close (r, fh);
-	rz_core_free(r);
 	if (gdb_downloaded_exe) {
 		rz_file_rm(gdb_downloaded_exe);
 		free(gdb_downloaded_exe);
 	}
-	rz_cons_set_raw(0);
-	rz_cons_free();
+	rz_cons_set_raw(r->cons, 0);
+	rz_core_free(r);
 	LISTS_FREE();
 	free(debugbackend);
 	RZ_FREE(pfile);

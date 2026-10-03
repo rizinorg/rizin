@@ -392,15 +392,15 @@ static int fork_and_ptraceme_for_unix(RzIO *io, int bits, const char *cmd) {
 				perror("waitpid");
 				return -1;
 			}
-			bed = rz_cons_sleep_begin();
+			bed = rz_interrupt_sleep_begin(io->intr);
 			usleep(100000);
-			rz_cons_sleep_end(bed);
-		} while (ret != child_pid && !rz_cons_is_breaked());
+			rz_interrupt_sleep_end(io->intr, bed);
+		} while (ret != child_pid && !rz_interrupt_is_breaked(io->intr));
 		if (WIFSTOPPED(status)) {
 			eprintf("Process with PID %d started...\n", (int)child_pid);
 		} else if (WEXITSTATUS(status) == MAGIC_EXIT) {
 			child_pid = -1;
-		} else if (rz_cons_is_breaked()) {
+		} else if (rz_interrupt_is_breaked(io->intr)) {
 			kill(child_pid, SIGSTOP);
 		} else {
 			eprintf("Killing child process %d due to an error\n", (int)child_pid);

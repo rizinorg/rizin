@@ -37,7 +37,7 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 
 	switch (mode) {
 	case TUI_CLASS_MODE_CLASSES:
-		rz_cons_printf("[hjkl_/Cfm]> classes:\n\n");
+		rz_cons_printf(core->cons, "[hjkl_/Cfm]> classes:\n\n");
 		void **vec_it;
 		rz_pvector_foreach (vec, vec_it) {
 			c = *vec_it;
@@ -58,14 +58,14 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 			if (show_color) {
 				if (i == *idx) {
 					const char *clr = Color_BLUE;
-					rz_cons_printf(Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW "  %s\n" Color_RESET,
+					rz_cons_printf(core->cons, Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW "  %s\n" Color_RESET,
 						i, clr, c->addr, c->name);
 				} else {
-					rz_cons_printf("-  %02d %s0x%08" PFMT64x Color_RESET "  %s\n",
+					rz_cons_printf(core->cons, "-  %02d %s0x%08" PFMT64x Color_RESET "  %s\n",
 						i, core->cons->context->pal.offset, c->addr, c->name);
 				}
 			} else {
-				rz_cons_printf("%s %02d 0x%08" PFMT64x "  %s\n",
+				rz_cons_printf(core->cons, "%s %02d 0x%08" PFMT64x "  %s\n",
 					(i == *idx) ? ">>" : "- ", i, c->addr, c->name);
 			}
 			if (i++ == *idx) {
@@ -84,7 +84,7 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 		return cur;
 	case TUI_CLASS_MODE_FIELDS:
 		// show fields
-		rz_cons_printf("[hjkl_/cFm]> fields of %s:\n\n", _c->name);
+		rz_cons_printf(core->cons, "[hjkl_/cFm]> fields of %s:\n\n", _c->name);
 		rz_list_foreach (_c->fields, iter, f) {
 			const char *name = f->name;
 			if (grep) {
@@ -110,14 +110,14 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 			if (show_color) {
 				if (i == *idx) {
 					const char *clr = Color_BLUE;
-					rz_cons_printf(Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
+					rz_cons_printf(core->cons, Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
 						i, clr, f->vaddr, mflags, name);
 				} else {
-					rz_cons_printf("-  %02d %s0x%08" PFMT64x Color_RESET " %s %s\n",
+					rz_cons_printf(core->cons, "-  %02d %s0x%08" PFMT64x Color_RESET " %s %s\n",
 						i, core->cons->context->pal.offset, f->vaddr, mflags, name);
 				}
 			} else {
-				rz_cons_printf("%s %02d 0x%08" PFMT64x " %s %s\n",
+				rz_cons_printf(core->cons, "%s %02d 0x%08" PFMT64x " %s %s\n",
 					(i == *idx) ? ">>" : "- ", i, f->vaddr, mflags, name);
 			}
 
@@ -143,7 +143,7 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 			eprintf("No class selected.\n");
 			return mur;
 		}
-		rz_cons_printf("[hjkl_/cfM]> methods of %s\n\n", _c->name);
+		rz_cons_printf(core->cons, "[hjkl_/cfM]> methods of %s\n\n", _c->name);
 		rz_list_foreach (_c->methods, iter, m) {
 			const char *name = m->dname ? m->dname : m->name;
 			char *mflags;
@@ -170,14 +170,14 @@ static void *show_class(RzCore *core, TuiClassMode mode, int *idx, RzBinClass *_
 				}
 				if (i == *idx) {
 					const char *clr = Color_BLUE;
-					rz_cons_printf(Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
+					rz_cons_printf(core->cons, Color_GREEN ">>" Color_RESET " %02d %s0x%08" PFMT64x Color_YELLOW " %s %s\n" Color_RESET,
 						i, clr, m->vaddr, mflags, name);
 				} else {
-					rz_cons_printf("-  %02d %s0x%08" PFMT64x Color_RESET " %s %s\n",
+					rz_cons_printf(core->cons, "-  %02d %s0x%08" PFMT64x Color_RESET " %s %s\n",
 						i, core->cons->context->pal.offset, m->vaddr, mflags, name);
 				}
 			} else {
-				rz_cons_printf("%s %02d 0x%08" PFMT64x " %s %s\n",
+				rz_cons_printf(core->cons, "%s %02d 0x%08" PFMT64x " %s %s\n",
 					(i == *idx) ? ">>" : "- ", i, m->vaddr, mflags, name);
 			}
 
@@ -219,14 +219,14 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
 	const RzPVector *vec = rz_bin_object_get_classes(bin_obj);
 	if (!vec || rz_pvector_empty(vec)) {
-		rz_cons_message("No Classes");
+		rz_cons_message(core->cons, "No Classes");
 		return false;
 	}
 	for (;;) {
 		int cols;
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 		if (grepmode) {
-			rz_cons_printf("Grep: %s\n", grep ? grep : "");
+			rz_cons_printf(core->cons, "Grep: %s\n", grep ? grep : "");
 		}
 		ptr = show_class(core, mode, &index, cur, grep, vec);
 		switch (mode) {
@@ -244,9 +244,9 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 		}
 
 		/* update terminal size */
-		(void)rz_cons_get_size(&cols);
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
+		(void)rz_cons_get_size(core->cons, &cols);
+		rz_cons_visual_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
 		if (ch == -1 || ch == 4) {
 			RZ_FREE(grep);
 			return false;
@@ -279,7 +279,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			continue;
 		}
 
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			rz_config_toggle(core->config, "scr.color");
@@ -309,7 +309,7 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			index = rz_pvector_len(vec) - 1;
 			break;
 		case 'i': {
-			char *num = rz_cons_prompt("Index:", NULL);
+			char *num = rz_cons_prompt(core->cons, "Index:", NULL);
 			if (num) {
 				index = atoi(num);
 				free(num);
@@ -362,8 +362,8 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 			}
 			break;
 		case '?':
-			rz_cons_clear00();
-			rz_cons_printf(
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons,
 				"\nVF: Visual Classes help:\n\n"
 				" q     - quit menu\n"
 				" j/k   - down/up keys\n"
@@ -377,73 +377,73 @@ RZ_IPI int rz_core_visual_classes(RzCore *core) {
 				" l/' ' - accept current selection\n"
 				" p     - preview method disasm with less\n"
 				" :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case ':':
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			cmd[0] = '\0';
 			rz_line_set_prompt(line, ":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			// line[strlen(line)-1]='\0';
 			rz_core_cmd(core, cmd, 1);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 			if (cmd[0]) {
-				rz_cons_any_key(NULL);
+				rz_cons_any_key(core->cons, NULL);
 			}
 			// cons_gotoxy(0,0);
-			rz_cons_clear();
+			rz_cons_clear(core->cons);
 			break;
 		}
 	}
 	return true;
 }
 
-static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
+static void analysis_class_print(RzCons *cons, RzAnalysis *analysis, const char *class_name) {
 	RzVector *bases = rz_analysis_class_base_get_all(analysis, class_name);
 	RzVector *vtables = rz_analysis_class_vtable_get_all(analysis, class_name);
 	RzVector *methods = rz_analysis_class_method_get_all(analysis, class_name);
 
-	rz_cons_print(class_name);
+	rz_cons_print(cons, class_name);
 	if (bases) {
 		RzAnalysisBaseClass *base;
 		bool first = true;
 		rz_vector_foreach (bases, base) {
 			if (first) {
-				rz_cons_print(": ");
+				rz_cons_print(cons, ": ");
 				first = false;
 			} else {
-				rz_cons_print(", ");
+				rz_cons_print(cons, ", ");
 			}
-			rz_cons_print(base->class_name);
+			rz_cons_print(cons, base->class_name);
 		}
 		rz_vector_free(bases);
 	}
 
-	rz_cons_print("\n");
+	rz_cons_print(cons, "\n");
 
 	if (vtables) {
 		RzAnalysisVTable *vtable;
 		rz_vector_foreach (vtables, vtable) {
-			rz_cons_printf("  %2s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
+			rz_cons_printf(cons, "  %2s vtable 0x%" PFMT64x " @ +0x%" PFMT64x " size:+0x%" PFMT64x "\n", vtable->id, vtable->addr, vtable->offset, vtable->size);
 		}
 		rz_vector_free(vtables);
 	}
 
-	rz_cons_print("\n");
+	rz_cons_print(cons, "\n");
 
 	if (methods) {
 		RzAnalysisMethod *meth;
 		rz_vector_foreach (methods, meth) {
-			rz_cons_printf("  %s @ 0x%" PFMT64x, meth->name, meth->addr);
+			rz_cons_printf(cons, "  %s @ 0x%" PFMT64x, meth->name, meth->addr);
 			if (meth->vtable_offset >= 0) {
-				rz_cons_printf(" (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);
+				rz_cons_printf(cons, " (vtable + 0x%" PFMT64x ")\n", (ut64)meth->vtable_offset);
 			} else {
-				rz_cons_print("\n");
+				rz_cons_print(cons, "\n");
 			}
 		}
 		rz_vector_free(methods);
@@ -454,10 +454,10 @@ static const char *show_analysis_classes(RzCore *core, TuiClassMode mode, int *i
 	bool show_color = rz_config_get_i(core->config, "scr.color");
 	int skip = *idx - 10;
 	const char *cur_class = NULL;
-	rz_cons_printf("[hjkl_/Cfm]> analysis classes:\n\n");
+	rz_cons_printf(core->cons, "[hjkl_/Cfm]> analysis classes:\n\n");
 
 	if (mode == TUI_CLASS_MODE_DETAILS && class_name) {
-		analysis_class_print(core->analysis, class_name);
+		analysis_class_print(core->cons, core->analysis, class_name);
 		return class_name;
 	}
 
@@ -482,11 +482,11 @@ static const char *show_analysis_classes(RzCore *core, TuiClassMode mode, int *i
 				txt_clr = Color_YELLOW;
 				cur_class = class_name;
 			}
-			rz_cons_printf("%s" Color_RESET " %02d"
-				       " %s%s\n" Color_RESET,
+			rz_cons_printf(core->cons, "%s" Color_RESET " %02d"
+						   " %s%s\n" Color_RESET,
 				pointer, i, txt_clr, class_name);
 		} else {
-			rz_cons_printf("%s %02d %s\n", (i == *idx) ? ">>" : "- ", i, class_name);
+			rz_cons_printf(core->cons, "%s %02d %s\n", (i == *idx) ? ">>" : "- ", i, class_name);
 		}
 	}
 
@@ -506,24 +506,24 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 	RzLine *line = core->cons->line;
 
 	if (rz_pvector_empty(classes)) {
-		rz_cons_message("No Classes");
+		rz_cons_message(core->cons, "No Classes");
 		goto cleanup;
 	}
 	for (;;) {
 		int cols;
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 
 		class_name = show_analysis_classes(core, mode, &index, classes, class_name);
 
 		/* update terminal size */
-		(void)rz_cons_get_size(&cols);
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
+		(void)rz_cons_get_size(core->cons, &cols);
+		rz_cons_visual_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
 		if (ch == -1 || ch == 4) {
 			goto cleanup;
 		}
 
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'C':
 			rz_config_toggle(core->config, "scr.color");
@@ -575,8 +575,8 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 			mode = TUI_CLASS_MODE_DETAILS;
 			break;
 		case '?':
-			rz_cons_clear00();
-			rz_cons_printf(
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons,
 				"\nVF: Visual Classes help:\n\n"
 				" q     - quit menu\n"
 				" j/k   - down/up keys\n"
@@ -584,26 +584,26 @@ RZ_IPI int rz_core_visual_analysis_classes(RzCore *core) {
 				" g/G   - go first/last item\n"
 				" l/' ' - accept current selection\n"
 				" :     - enter command\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		case ':':
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			command[0] = '\0';
 			rz_line_set_prompt(line, ":> ");
-			if (rz_cons_fgets(command, sizeof(command), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, command, sizeof(command), 0, NULL) < 0) {
 				command[0] = '\0';
 			}
 			// line[strlen(line)-1]='\0';
 			rz_core_cmd(core, command, 1);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 			if (command[0]) {
-				rz_cons_any_key(NULL);
+				rz_cons_any_key(core->cons, NULL);
 			}
 			// cons_gotoxy(0,0);
-			rz_cons_clear();
+			rz_cons_clear(core->cons);
 			break;
 		}
 	}

@@ -686,7 +686,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	}
 	bool has_variadic_reg = !!variadic_reg;
 
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(analysis->intr)) {
 		rz_analysis_task_item_new(analysis, tasks, fcn, bb, addr, sp);
 		return RZ_ANALYSIS_RET_END;
 	}
@@ -792,7 +792,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	repeat:
 		at_delta = idx;
 		at = addr + at_delta;
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(analysis->intr)) {
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
 			break;
 		}
@@ -1138,7 +1138,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					gotoBeach(RZ_ANALYSIS_RET_END);
 				}
 			}
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(analysis->intr)) {
 				gotoBeach(RZ_ANALYSIS_RET_END);
 			}
 			if (analysis->opt.jmpref) {
@@ -1631,6 +1631,7 @@ RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *t
 	while (!rz_vector_empty(tasks)) {
 		RzAnalysisTaskItem item;
 		rz_vector_pop(tasks, &item);
+		RzAnalysis *analysis = item.fcn->analysis;
 		int r = run_basic_block_analysis(&item, tasks);
 		switch (r) {
 		case RZ_ANALYSIS_RET_BRANCH:
@@ -1647,7 +1648,7 @@ RZ_API int rz_analysis_run_tasks(RZ_NONNULL RzVector /*<RzAnalysisTaskItem>*/ *t
 			ret = r;
 			break;
 		}
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(analysis->intr)) {
 			break;
 		}
 	}
@@ -2436,7 +2437,7 @@ static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block
 	RzAnalysisOp op = { 0 };
 	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {
 		rz_analysis_op_init(&op);
-		int ret = rz_analysis_op(analysis->coreb.core, &op, cur_addr, buf, len, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL);
+		int ret = rz_analysis_op(analysis, &op, cur_addr, buf, len, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL);
 		if (ret < 1 || op.size < 1) {
 			rz_analysis_op_fini(&op);
 			break;

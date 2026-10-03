@@ -6,9 +6,6 @@
 #include <rz_util/rz_assert.h>
 #include "i/private.h"
 
-#define USE_UTF8       (rz_cons_singleton()->use_utf8)
-#define USE_UTF8_CURVY (rz_cons_singleton()->use_utf8_curvy)
-
 #define W(y)    rz_cons_canvas_write(c, y)
 #define G(x, y) rz_cons_canvas_gotoxy(c, x, y)
 
@@ -215,7 +212,7 @@ RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y) {
 	return ret;
 }
 
-RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
+RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
@@ -223,6 +220,7 @@ RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
 	if (!c) {
 		return NULL;
 	}
+	c->cons = cons;
 	c->bsize = NULL;
 	c->blen = NULL;
 	int i = 0;
@@ -288,7 +286,7 @@ RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	** using the ANSI chars to set the attr of the canvas */
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(c->cons->intr, NULL, NULL);
 	do {
 		const char *s_part = set_attr(c, s);
 		ch = 0;
@@ -338,8 +336,8 @@ RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
 			attr_x += utf8_len;
 		}
 		s += piece_len;
-	} while (*s && !rz_cons_is_breaked());
-	rz_cons_break_pop();
+	} while (*s && !rz_interrupt_is_breaked(c->cons->intr));
+	rz_interrupt_break_pop(c->cons->intr);
 	c->x = orig_x;
 }
 
@@ -402,7 +400,8 @@ RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c) {
 	return o;
 }
 
-RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c) {
+RZ_API void rz_cons_canvas_print_region(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c) {
+	rz_return_if_fail(cons && c);
 	char *o = rz_cons_canvas_to_string(c);
 	if (RZ_STR_ISEMPTY(o)) {
 		free(o);
@@ -410,17 +409,18 @@ RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c) {
 	}
 	rz_str_trim_tail(o);
 	if (RZ_STR_ISNOTEMPTY(o)) {
-		rz_cons_strcat(o);
+		rz_cons_strcat(cons, o);
 	}
 	free(o);
 }
 
-RZ_API void rz_cons_canvas_print(RzConsCanvas *c) {
+RZ_API void rz_cons_canvas_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c) {
+	rz_return_if_fail(cons && c);
 	char *o = rz_cons_canvas_to_string(c);
 	if (!o) {
 		return;
 	}
-	rz_cons_strcat(o);
+	rz_cons_strcat(cons, o);
 	free(o);
 }
 
@@ -490,12 +490,14 @@ RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, cons
 		return;
 	}
 
-	const char *hline = USE_UTF8 ? RUNECODESTR_LINE_HORIZ : "-";
-	const char *vtmp = USE_UTF8 ? RUNECODESTR_LINE_VERT : "|";
-	const char *tl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
-	const char *tr_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
-	const char *bl_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
-	const char *br_corner = USE_UTF8 ? (USE_UTF8_CURVY ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
+	bool use_utf8 = c->cons->use_utf8;
+	bool use_utf8_curvy = c->cons->use_utf8_curvy;
+	const char *hline = use_utf8 ? RUNECODESTR_LINE_HORIZ : "-";
+	const char *vtmp = use_utf8 ? RUNECODESTR_LINE_VERT : "|";
+	const char *tl_corner = use_utf8 ? (use_utf8_curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
+	const char *tr_corner = use_utf8 ? (use_utf8_curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";
+	const char *bl_corner = use_utf8 ? (use_utf8_curvy ? RUNECODESTR_CURVE_CORNER_BL : RUNECODESTR_CORNER_BL) : "`";
+	const char *br_corner = use_utf8 ? (use_utf8_curvy ? RUNECODESTR_CURVE_CORNER_BR : RUNECODESTR_CORNER_BR) : "'";
 	int i, x_mod;
 	int roundcorners = 0;
 	char *row_ptr;
@@ -560,10 +562,11 @@ RZ_API void rz_cons_canvas_fill(RzConsCanvas *c, int x, int y, int w, int h, cha
 	free(row);
 }
 
-RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style) {
+RZ_API void rz_cons_canvas_line(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style) {
+	rz_return_if_fail(cons && c);
 	if (c->linemode) {
-		rz_cons_canvas_line_square(c, x, y, x2, y2, style);
+		rz_cons_canvas_line_square(cons, c, x, y, x2, y2, style);
 	} else {
-		rz_cons_canvas_line_diagonal(c, x, y, x2, y2, style);
+		rz_cons_canvas_line_diagonal(cons, c, x, y, x2, y2, style);
 	}
 }

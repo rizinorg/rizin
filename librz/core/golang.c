@@ -1933,7 +1933,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	}
 
 	rz_list_foreach (fcns, lit, func) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		rz_pvector_foreach (func->bbs, vit) {

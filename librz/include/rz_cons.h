@@ -19,6 +19,7 @@ extern "C" {
 #include <rz_util/rz_sys.h>
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_file.h>
+#include <rz_util/rz_interrupt.h>
 #include <rz_vector.h>
 #include <sdb.h>
 #include <rz_util/ht_up.h>
@@ -55,11 +56,11 @@ RZ_LIB_VERSION_HEADER(rz_cons);
 
 #define RZ_CONS_CMD_DEPTH 100
 
-typedef int (*RzConsGetSize)(int *rows);
-typedef int (*RzConsGetCursor)(RZ_NONNULL int *rows);
-typedef bool (*RzConsIsBreaked)(void);
-typedef void (*RzConsFlush)(void);
-typedef void (*RzConsGrepCallback)(const char *grep);
+typedef int (*RzConsGetSize)(void *cons, int *rows);
+typedef int (*RzConsGetCursor)(void *cons, RZ_NONNULL int *rows);
+typedef bool (*RzConsIsBreaked)(void *cons);
+typedef void (*RzConsFlush)(void *cons);
+typedef void (*RzConsGrepCallback)(void *cons, const char *grep);
 
 typedef struct rz_cons_bind_t {
 	RzConsGetSize get_size;
@@ -361,6 +362,8 @@ typedef void (*RzConsEvent)(void *);
 
 #define CONS_MAX_ATTR_SZ 16
 
+struct rz_cons_t;
+
 typedef struct rz_cons_canvas_t {
 	int w;
 	int h;
@@ -376,6 +379,7 @@ typedef struct rz_cons_canvas_t {
 	int sy; // scrolly
 	int color;
 	int linemode; // 0 = diagonal , 1 = square
+	struct rz_cons_t *cons;
 } RzConsCanvas;
 
 #define RUNECODE_MIN             0xc8 // 200
@@ -463,7 +467,6 @@ typedef struct rz_cons_canvas_t {
 
 typedef char *(*RzConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RzConsClickCallback)(void *core, int x, int y);
-typedef void (*RzConsBreakCallback)(void *core);
 typedef void *(*RzConsSleepBeginCallback)(void *core);
 typedef void (*RzConsSleepEndCallback)(void *core, void *user);
 typedef void (*RzConsQueueTaskOneshot)(void *core, void *task, void *user);
@@ -500,10 +503,7 @@ typedef struct rz_cons_context_t {
 	size_t buffer_len;
 	size_t buffer_sz;
 
-	bool breaked;
-	RzStack *break_stack;
-	RzConsEvent event_interrupt;
-	void *event_interrupt_data;
+	RzInterrupt *intr;
 	int cmd_depth;
 
 	// Used for per-task logging redirection
@@ -568,9 +568,6 @@ typedef struct rz_cons_t {
 	MouseEvent mouse_event;
 
 	RzConsEditorCallback cb_editor;
-	RzConsBreakCallback cb_break;
-	RzConsSleepBeginCallback cb_sleep_begin;
-	RzConsSleepEndCallback cb_sleep_end;
 	RzConsClickCallback cb_click;
 	RzConsQueueTaskOneshot cb_task_oneshot;
 	RzConsFunctionKey cb_fkey;
@@ -601,7 +598,6 @@ typedef struct rz_cons_t {
 	int is_wine;
 	struct rz_line_t *line;
 	const char **vline;
-	int refcnt;
 	RZ_DEPRECATE bool newline;
 	RzVirtTermMode vtmode;
 	bool flush;
@@ -612,18 +608,17 @@ typedef struct rz_cons_t {
 	int pagesize;
 	char *break_word;
 	int break_word_len;
-	ut64 timeout; // must come from rz_time_now_mono()
 	bool grep_color;
 	bool grep_highlight;
 	int grep_icase;
 	bool filter;
-	char *(*rgbstr)(char *str, size_t sz, ut64 addr);
+	char *(*rgbstr)(struct rz_cons_t *cons, char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;
 	int click_y;
 	bool show_vals; // show which section in Vv
 	RzStrBuf *echobuf;
-	// TODO: move into instance? + avoid unnecessary copies
+	RzInterrupt *intr;
 } RzCons;
 
 #define RZ_CONS_SEARCH_CASE_SENSITIVE   0
@@ -912,43 +907,38 @@ typedef struct rz_histogram_interactive_t {
 } RzHistogramInteractive;
 
 #ifdef RZ_API
-RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
+
+RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
-RZ_API void rz_cons_canvas_print(RzConsCanvas *c);
-RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c);
+RZ_API void rz_cons_canvas_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c);
+RZ_API void rz_cons_canvas_print_region(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c);
 RZ_API RZ_OWN char *rz_cons_canvas_to_string(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *_s);
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y);
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
-RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
-RZ_API void rz_cons_canvas_line_diagonal(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
-RZ_API void rz_cons_canvas_line_square(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
+RZ_API void rz_cons_canvas_line(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
+RZ_API void rz_cons_canvas_line_diagonal(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
+RZ_API void rz_cons_canvas_line_square(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h);
 RZ_API void rz_cons_canvas_fill(RzConsCanvas *c, int x, int y, int w, int h, char ch);
-RZ_API void rz_cons_canvas_line_square_defined(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int bendpoint, int isvert);
-RZ_API void rz_cons_canvas_line_back_edge(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
-RZ_API RzCons *rz_cons_new(void);
-RZ_API RzCons *rz_cons_free(void);
-RZ_API char *rz_cons_lastline(int *size);
-RZ_API char *rz_cons_lastline_utf8_ansi_len(int *len);
-RZ_API void rz_cons_set_click(int x, int y, MouseEvent event);
-RZ_API bool rz_cons_get_click(int *x, int *y);
+RZ_API void rz_cons_canvas_line_square_defined(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int bendpoint, int isvert);
+RZ_API void rz_cons_canvas_line_back_edge(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
+RZ_API RZ_OWN RzCons *rz_cons_new();
+RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons);
+RZ_API char *rz_cons_lastline(RZ_NONNULL RZ_BORROW RzCons *cons, int *size);
+RZ_API char *rz_cons_lastline_utf8_ansi_len(RZ_NONNULL RZ_BORROW RzCons *cons, int *len);
+RZ_API void rz_cons_set_click(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y, MouseEvent event);
+RZ_API bool rz_cons_get_click(RZ_NONNULL RZ_BORROW RzCons *cons, int *x, int *y);
 
-typedef void (*RzConsBreak)(void *);
-RZ_API bool rz_cons_is_breaked(void);
-RZ_API bool rz_cons_is_interactive(void);
-RZ_API bool rz_cons_default_context_is_interactive(void);
-RZ_API void *rz_cons_sleep_begin(void);
-RZ_API void rz_cons_sleep_end(void *user);
+RZ_API bool rz_cons_is_interactive(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API bool rz_cons_default_context_is_interactive();
+
+RZ_API void rz_cons_push(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_pop(RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* ^C */
-RZ_API void rz_cons_break_push(RzConsBreak cb, void *user);
-RZ_API void rz_cons_break_pop(void);
-RZ_API void rz_cons_break_clear(void);
-RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s);
-RZ_API void rz_cons_break_end(void);
-RZ_API void rz_cons_break_timeout(int timeout);
+RZ_API void rz_cons_breakword(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NULLABLE const char *s);
 
 /* pipe */
 typedef struct rz_cons_pipe_t RzConsPipe;
@@ -956,143 +946,142 @@ RZ_API RZ_OWN RzConsPipe *rz_cons_pipe_open(RZ_NONNULL const char *file, int old
 RZ_API void rz_cons_pipe_close(RZ_NULLABLE RzConsPipe *cpipe);
 
 #if __WINDOWS__
-RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void);
-RZ_API void rz_cons_w32_clear(void);
-RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
-RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
-RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API int rz_cons_win_vhprintf(unsigned long hdl, bool vmode, const char *fmt, va_list ap);
+RZ_API RzVirtTermMode rz_cons_detect_vt_mode(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_w32_clear(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_w32_gotoxy(RZ_NONNULL RZ_BORROW RzCons *cons, int fd, int x, int y);
+RZ_API int rz_cons_w32_print(RZ_NONNULL RZ_BORROW RzCons *cons, const char *ptr, int len, bool vmode);
+RZ_API int rz_cons_win_printf(RZ_NONNULL RZ_BORROW RzCons *cons, bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API int rz_cons_win_eprintf(RZ_NONNULL RZ_BORROW RzCons *cons, bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API int rz_cons_win_vhprintf(RZ_NONNULL RZ_BORROW RzCons *cons, unsigned long hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
-RZ_API void rz_cons_push(void);
-RZ_API void rz_cons_pop(void);
 RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent);
 RZ_API void rz_cons_context_free(RzConsContext *context);
-RZ_API void rz_cons_context_load(RzConsContext *context);
-RZ_API void rz_cons_context_reset(void);
-RZ_API bool rz_cons_context_is_main(void);
+RZ_API void rz_cons_context_load(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsContext *context);
+RZ_API void rz_cons_context_reset(RZ_NONNULL RZ_BORROW RzCons *cons);
+
+RZ_API bool rz_cons_context_is_main(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_context_break_push(RzConsContext *context, RzInterruptEvent cb, void *user);
+RZ_API void rz_cons_context_break_pop(RzConsContext *context);
 RZ_API void rz_cons_context_break(RzConsContext *context);
-RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, void *user, bool sig);
-RZ_API void rz_cons_context_break_pop(RzConsContext *context, bool sig);
 
 /* control */
-RZ_API void rz_cons_reset(void);
-RZ_API void rz_cons_reset_colors(void);
-RZ_API void rz_cons_goto_origin_reset(void);
-RZ_API void rz_cons_echo(const char *msg);
-RZ_API void rz_cons_zero(void);
-RZ_API void rz_cons_highlight(const char *word);
-RZ_API void rz_cons_clear(void);
-RZ_API void rz_cons_clear_buffer(void);
-RZ_API void rz_cons_clear00(void);
-RZ_API void rz_cons_clear_line(FILE *stream);
-RZ_API void rz_cons_fill_line(void);
-RZ_API void rz_cons_gotoxy(int x, int y);
-RZ_API int rz_cons_get_cur_line(void);
-RZ_API void rz_cons_show_cursor(int cursor);
+RZ_API void rz_cons_reset(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_reset_colors(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_goto_origin_reset(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_echo(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg);
+RZ_API void rz_cons_zero(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *word);
+RZ_API void rz_cons_clear(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_clear_buffer(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_clear00(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_clear_line(RZ_NONNULL RZ_BORROW RzCons *cons, FILE *stream);
+RZ_API void rz_cons_fill_line(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_gotoxy(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y);
+RZ_API int rz_cons_get_cur_line();
+RZ_API void rz_cons_show_cursor(RZ_NONNULL RZ_BORROW RzCons *cons, int cursor);
 RZ_API char *rz_cons_swap_ground(const char *col);
-RZ_API bool rz_cons_drop(int n);
-RZ_API void rz_cons_chop(void);
-RZ_API void rz_cons_set_raw(bool b);
-RZ_API void rz_cons_set_interactive(bool b);
-RZ_API void rz_cons_set_last_interactive(void);
-RZ_API void rz_cons_set_utf8(bool b);
-RZ_API void rz_cons_grep(const char *grep);
+RZ_API bool rz_cons_drop(RZ_NONNULL RZ_BORROW RzCons *cons, int n);
+RZ_API void rz_cons_chop(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_set_raw(RZ_NONNULL RZ_BORROW RzCons *cons, bool b);
+RZ_API void rz_cons_set_interactive(RZ_NONNULL RZ_BORROW RzCons *cons, bool b);
+RZ_API void rz_cons_set_last_interactive(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_set_utf8(RZ_NONNULL RZ_BORROW RzCons *cons, bool b);
+RZ_API void rz_cons_grep(RZ_NONNULL RZ_BORROW RzCons *cons, const char *grep);
 
 /* output */
-RZ_API int rz_cons_printf(const char *format, ...) RZ_PRINTF_CHECK(1, 2);
-RZ_API void rz_cons_printf_list(const char *format, va_list ap);
-RZ_API void rz_cons_strcat(const char *str);
-RZ_API void rz_cons_strcat_at(const char *str, int x, char y, int w, int h);
-#define rz_cons_print(x) rz_cons_strcat(x)
-RZ_API void rz_cons_println(const char *str);
+RZ_API int rz_cons_printf(RZ_NONNULL RZ_BORROW RzCons *cons, const char *format, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API void rz_cons_printf_list(RZ_NONNULL RZ_BORROW RzCons *cons, const char *format, va_list ap);
+RZ_API void rz_cons_strcat(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str);
+RZ_API void rz_cons_strcat_at(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, int x, char y, int w, int h);
+#define rz_cons_print(cons, x) rz_cons_strcat(cons, x)
+RZ_API void rz_cons_println(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str);
 
-RZ_API void rz_cons_strcat_justify(const char *str, int j, char c);
-RZ_API int rz_cons_memcat(const char *str, int len);
-RZ_API void rz_cons_newline(void);
-RZ_API void rz_cons_filter(void);
-RZ_API void rz_cons_flush(void);
-RZ_API void rz_cons_set_flush(bool flush);
-RZ_API void rz_cons_last(void);
-RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);
-RZ_API void rz_cons_less(void);
-RZ_API void rz_cons_memset(char ch, int len);
-RZ_API void rz_cons_visual_flush(void);
-RZ_API void rz_cons_visual_write(char *buffer);
+RZ_API void rz_cons_strcat_justify(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, int j, char c);
+RZ_API int rz_cons_memcat(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, int len);
+RZ_API void rz_cons_newline(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_filter(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_flush(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_set_flush(RZ_NONNULL RZ_BORROW RzCons *cons, bool flush);
+RZ_API void rz_cons_last(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API int rz_cons_less_str(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, const char *exitkeys);
+RZ_API void rz_cons_less(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_memset(RZ_NONNULL RZ_BORROW RzCons *cons, char ch, int len);
+RZ_API void rz_cons_visual_flush(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_visual_write(RZ_NONNULL RZ_BORROW RzCons *cons, char *buffer);
 RZ_API bool rz_cons_is_utf8(void);
-RZ_API void rz_cons_cmd_help(const char *help[], bool use_color);
+RZ_API void rz_cons_cmd_help(RZ_NONNULL RZ_BORROW RzCons *cons, const char *help[], bool use_color);
 
 /* input */
-RZ_API int rz_cons_controlz(int ch);
-RZ_API int rz_cons_readchar(void);
-RZ_API bool rz_cons_readbuffer_readchar(char *ch);
-RZ_API bool rz_cons_readpush(const char *str, int len);
-RZ_API void rz_cons_readflush(void);
-RZ_API void rz_cons_switchbuf(bool active);
-RZ_API int rz_cons_readchar_timeout(ut32 usec);
-RZ_API int rz_cons_any_key(const char *msg);
-RZ_API int rz_cons_eof(void);
+RZ_API int rz_cons_controlz(RZ_NONNULL RZ_BORROW RzCons *cons, int ch);
+RZ_API int rz_cons_readchar(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API bool rz_cons_readbuffer_readchar(RZ_NONNULL RZ_BORROW RzCons *cons, char *ch);
+RZ_API bool rz_cons_readpush(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, int len);
+RZ_API void rz_cons_readflush(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_switchbuf(RZ_NONNULL RZ_BORROW RzCons *cons, bool active);
+RZ_API int rz_cons_readchar_timeout(RZ_NONNULL RZ_BORROW RzCons *cons, ut32 usec);
+RZ_API int rz_cons_any_key(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg);
+RZ_API int rz_cons_eof(RZ_NONNULL RZ_BORROW RzCons *cons);
 
-RZ_API int rz_cons_pal_set(const char *key, const char *val);
-RZ_API void rz_cons_pal_update_event(void);
+RZ_API int rz_cons_pal_set(RZ_NONNULL RZ_BORROW RzCons *cons, const char *key, const char *val);
+RZ_API void rz_cons_pal_update_event(RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_cons_pal_free(RzConsContext *ctx);
 RZ_API void rz_cons_pal_init(RzConsContext *ctx);
 RZ_API void rz_cons_pal_copy(RzConsContext *dst, RzConsContext *src);
-RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol);
-RZ_API void rz_cons_pal_random(void);
-RZ_API RzColor rz_cons_pal_get(const char *key);
-RZ_API RzColor rz_cons_pal_get_i(int index);
-RZ_API const char *rz_cons_pal_get_name(int index);
+RZ_API char *rz_cons_pal_parse(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, RzColor *outcol);
+RZ_API void rz_cons_pal_random(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API RzColor rz_cons_pal_get(RZ_NONNULL RZ_BORROW RzCons *cons, const char *key);
+RZ_API RzColor rz_cons_pal_get_i(RZ_NONNULL RZ_BORROW RzCons *cons, int index);
+RZ_API const char *rz_cons_pal_get_name(RZ_NONNULL RZ_BORROW RzCons *cons, int index);
 RZ_API int rz_cons_pal_len(void);
 RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
-RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj);
-RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix);
-RZ_API void rz_cons_pal_list_visual(void);
-RZ_API void rz_cons_pal_show(void);
-RZ_API int rz_cons_get_size(int *rows);
-RZ_API bool rz_cons_isatty(void);
-RZ_API int rz_cons_get_cursor(RZ_NONNULL int *rows);
-RZ_API int rz_cons_arrow_to_hjkl(int ch);
-RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen);
-RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg);
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL PJ *pj);
+RZ_API void rz_cons_pal_list_as_css(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NULLABLE const char *name_prefix);
+RZ_API void rz_cons_pal_list_visual(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_pal_show(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API int rz_cons_get_size(RZ_NONNULL RZ_BORROW RzCons *cons, int *rows);
+RZ_API bool rz_cons_isatty();
+RZ_API int rz_cons_get_cursor(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL int *rows);
+RZ_API int rz_cons_arrow_to_hjkl(RZ_NONNULL RZ_BORROW RzCons *cons, int ch);
+RZ_API char *rz_cons_html_filter(RZ_NONNULL RZ_BORROW RzCons *cons, const char *ptr, int *newlen);
+RZ_API char *rz_cons_rainbow_get(RZ_NONNULL RZ_BORROW RzCons *cons, int idx, int last, bool bg);
 RZ_API void rz_cons_rainbow_free(RzConsContext *ctx);
 RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz);
 
-RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv);
-RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt);
-RZ_API char *rz_cons_hud_path(const char *path, int dir);
-RZ_API char *rz_cons_hud_string(const char *s);
-RZ_API char *rz_cons_hud_file(const char *f);
+RZ_API int rz_cons_fgets(RZ_NONNULL RZ_BORROW RzCons *cons, char *buf, int len, int argc, const char **argv);
+RZ_API char *rz_cons_hud(RZ_NONNULL RZ_BORROW RzCons *cons, RzList /*<char *>*/ *list, const char *prompt);
+RZ_API char *rz_cons_hud_path(RZ_NONNULL RZ_BORROW RzCons *cons, const char *path, int dir);
+RZ_API char *rz_cons_hud_string(RZ_NONNULL RZ_BORROW RzCons *cons, const char *s);
+RZ_API char *rz_cons_hud_file(RZ_NONNULL RZ_BORROW RzCons *cons, const char *f);
 
-RZ_API const char *rz_cons_get_buffer(void);
-RZ_API RZ_OWN char *rz_cons_get_buffer_dup(void);
-RZ_API int rz_cons_get_buffer_len(void);
-RZ_API void rz_cons_grep_help(void);
-RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
+RZ_API const char *rz_cons_get_buffer(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API RZ_OWN char *rz_cons_get_buffer_dup(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API int rz_cons_get_buffer_len(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_grep_help(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_grep_parsecmd(RZ_NONNULL RZ_BORROW RzCons *cons, char *cmd, const char *quotestr);
 RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(RZ_OWN char *grep);
-RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
-RZ_API void rz_cons_grepbuf(void);
+RZ_API void rz_cons_grep_process(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_OWN char *grep);
+RZ_API int rz_cons_grep_line(RZ_NONNULL RZ_BORROW RzCons *cons, char *buf, int len);
+RZ_API void rz_cons_grepbuf(RZ_NONNULL RZ_BORROW RzCons *cons);
 
 RZ_API void rz_cons_rgb_init(void);
 RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, const RzColor *rcolor);
-RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, const RzColor *rcolor);
-RZ_API char *rz_cons_rgb_str_off(char *outstr, size_t sz, ut64 off);
-RZ_API void rz_cons_color(int fg, int r, int g, int b);
+RZ_API char *rz_cons_rgb_str(RZ_NONNULL RZ_BORROW RzCons *cons, char *outstr, size_t sz, const RzColor *rcolor);
+RZ_API char *rz_cons_rgb_str_off(RZ_NONNULL RZ_BORROW RzCons *cons, char *outstr, size_t sz, ut64 off);
+RZ_API void rz_cons_color(RZ_NONNULL RZ_BORROW RzCons *cons, int fg, int r, int g, int b);
 
-RZ_API RzColor rz_cons_color_random(ut8 alpha);
-RZ_API void rz_cons_invert(int set, int color);
-RZ_API bool rz_cons_yesno(int def, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
-RZ_API char *rz_cons_input(const char *msg);
-RZ_API bool rz_cons_set_cup(bool enable);
-RZ_API void rz_cons_column(int c);
-RZ_API int rz_cons_get_column(void);
-RZ_API void rz_cons_message(RZ_NONNULL const char *msg);
-RZ_API void rz_cons_set_title(const char *str);
-RZ_API bool rz_cons_enable_mouse(const bool enable);
-RZ_API void rz_cons_enable_highlight(const bool enable);
+RZ_API RzColor rz_cons_color_random(RZ_NONNULL RZ_BORROW RzCons *cons, ut8 alpha);
+RZ_API void rz_cons_invert(RZ_NONNULL RZ_BORROW RzCons *cons, int set, int color);
+RZ_API bool rz_cons_yesno(RZ_NONNULL RZ_BORROW RzCons *cons, int def, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API char *rz_cons_input(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg);
+RZ_API bool rz_cons_set_cup(RZ_NONNULL RZ_BORROW RzCons *cons, bool enable);
+RZ_API void rz_cons_column(RZ_NONNULL RZ_BORROW RzCons *cons, int c);
+RZ_API int rz_cons_get_column(RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_cons_message(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL const char *msg);
+RZ_API void rz_cons_set_title(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str);
+RZ_API bool rz_cons_enable_mouse(RZ_NONNULL RZ_BORROW RzCons *cons, const bool enable);
+RZ_API void rz_cons_enable_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const bool enable);
 RZ_API void rz_cons_bind(RzConsBind *bind);
 RZ_API const char *rz_cons_get_rune(const ut8 ch);
 
@@ -1215,6 +1204,7 @@ typedef int (*RzLineHistoryDownCb)(RzLine *line);
 typedef struct rz_line_undo_entry_t RzLineUndoEntry;
 
 struct rz_line_t {
+	RzCons *cons;
 	RzLineCompletion completion;
 	RzLineNSCompletion ns_completion;
 	RzLineBuffer buffer;
@@ -1259,7 +1249,7 @@ struct rz_line_t {
 
 #ifdef RZ_API
 
-RZ_API RZ_OWN RzLine *rz_line_new(void);
+RZ_API RZ_OWN RzLine *rz_line_new(RzCons *cons);
 RZ_API void rz_line_free(RZ_NULLABLE RzLine *line);
 RZ_API RZ_OWN char *rz_line_get_prompt(RZ_NONNULL RzLine *line);
 RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *prompt);
@@ -1293,7 +1283,7 @@ RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
 RZ_API void rz_line_ns_completion_result_propose(RzLineNSCompletionResult *res, const char *option, const char *cur, size_t cur_len);
 
-RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL const char *str, RZ_NULLABLE const char *txt);
+RZ_API RZ_OWN char *rz_cons_prompt(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL const char *str, RZ_NULLABLE const char *txt);
 
 #define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 

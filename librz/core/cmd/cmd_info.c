@@ -73,12 +73,12 @@ static int compare_string(const char *s1, const char *s2, void *user) {
 static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdStateOutput *state) {
 	RzBinFile *binfile = core->bin->cur;
 	if (!binfile || !binfile->o) {
-		rz_cons_printf("No file loaded.\n");
+		rz_cons_printf(core->cons, "No file loaded.\n");
 		return false;
 	}
 	RzBinSourceLineInfo *li = binfile->o->lines;
 	if (!li) {
-		rz_cons_printf("No source info available.\n");
+		rz_cons_printf(core->cons, "No source info available.\n");
 		return true;
 	}
 	switch (type) {
@@ -110,11 +110,11 @@ static bool print_source_info(RzCore *core, PrintSourceInfoType type, RzCmdState
 			}
 			pj_end(state->d.pj);
 		} else {
-			rz_cons_printf("[Source file]\n");
+			rz_cons_printf(core->cons, "[Source file]\n");
 			void **it;
 			rz_pvector_foreach (&sorter, it) {
 				const char *file = *it;
-				rz_cons_printf("%s\n", file);
+				rz_cons_printf(core->cons, "%s\n", file);
 			}
 		}
 		rz_pvector_fini(&sorter);
@@ -142,7 +142,7 @@ static bool core_bin_structured_data_print(RZ_NONNULL RzCore *core, RzOutputMode
 	const RzStructuredData *sf = obj ? rz_bin_object_get_structured_data(obj) : NULL;
 	if (!sf) {
 		if (mode == RZ_OUTPUT_MODE_JSON) {
-			rz_cons_print("{}\n");
+			rz_cons_print(core->cons, "{}\n");
 		}
 		return true;
 	}
@@ -161,7 +161,7 @@ static bool core_bin_structured_data_print(RZ_NONNULL RzCore *core, RzOutputMode
 	}
 
 	rz_return_val_if_fail(output, false);
-	rz_cons_printf("%s\n", output);
+	rz_cons_printf(core->cons, "%s\n", output);
 	free(output);
 
 	return true;
@@ -174,7 +174,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_ERROR;
 	}
 	char *query_result = sdb_querys(obj->kv, NULL, 0, argc > 1 ? argv[1] : "*");
-	rz_cons_print(query_result);
+	rz_cons_print(core->cons, query_result);
 	free(query_result);
 	return RZ_CMD_STATUS_OK;
 }
@@ -187,7 +187,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_query_handler(RzCore *core, int argc, const char 
 	}
 
 RZ_IPI RzCmdStatus rz_cmd_info_archs_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return bool2status(rz_core_bin_archs_print(core->bin, state));
+	return bool2status(rz_core_bin_archs_print(core, core->bin, state));
 }
 
 RZ_IPI RzCmdStatus rz_cmd_info_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -297,7 +297,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	int cols = rz_cons_get_size(NULL);
+	int cols = rz_cons_get_size(core->cons, NULL);
 	RzList *list = rz_list_newf((RzListFree)rz_debug_listinfo_free);
 	if (!list) {
 		goto sections_err;
@@ -331,7 +331,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_section_bars_handler(RzCore *core, int argc, cons
 		RZ_LOG_ERROR("Cannot print section bars\n");
 		goto table_err;
 	}
-	rz_cons_printf("%s\n", s);
+	rz_cons_printf(core->cons, "%s\n", s);
 	free(s);
 	res = RZ_CMD_STATUS_OK;
 
@@ -460,20 +460,20 @@ RZ_IPI RzCmdStatus rz_cmd_info_binary_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_cmd_info_plugins_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc < 2) {
-		rz_core_bin_plugins_print(core->bin, state);
+		rz_core_bin_plugins_print(core->bin, state, core->cons);
 		return RZ_CMD_STATUS_OK;
 	}
 
 	const char *plugin_name = argv[1];
 	const RzBinPlugin *bp = rz_bin_plugin_get(core->bin, plugin_name);
 	if (bp) {
-		rz_core_bin_plugin_print(bp, state);
+		rz_core_bin_plugin_print(bp, state, core->cons);
 		return RZ_CMD_STATUS_OK;
 	}
 
 	const RzBinXtrPlugin *xbp = rz_bin_xtrplugin_get(core->bin, plugin_name);
 	if (xbp) {
-		rz_core_binxtr_plugin_print(xbp, state);
+		rz_core_binxtr_plugin_print(xbp, state, core->cons);
 		return RZ_CMD_STATUS_OK;
 	}
 
@@ -533,7 +533,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, cons
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}
-	int r = rz_bin_pdb_download(core->bin, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts);
+	int r = rz_bin_pdb_download(core->bin, state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL, state->mode == RZ_OUTPUT_MODE_JSON, &pdbopts, core->cons);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(state->d.pj);
 	}
@@ -553,15 +553,25 @@ RZ_IPI RzCmdStatus rz_cmd_pdb_extract_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
+typedef struct {
+	RzCmdStateOutput *state;
+	RzCons *cons;
+} DemanglerPrintCtx;
+
 static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFlag flags, void *user) {
 	if (!user) {
-		rz_cons_printf("%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
 		return true;
 	}
-	RzCmdStateOutput *state = (RzCmdStateOutput *)user;
+	DemanglerPrintCtx *ctx = (DemanglerPrintCtx *)user;
+	RzCmdStateOutput *state = ctx->state;
+	RzCons *cons = ctx->cons;
+	if (!state) {
+		rz_cons_printf(cons, "%-6s %-8s %s\n", plugin->language, plugin->license, plugin->author);
+		return true;
+	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(plugin->language);
+		rz_cons_println(cons, plugin->language);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -571,7 +581,7 @@ static bool print_demangler_info(const RzDemanglerPlugin *plugin, RzDemanglerFla
 		pj_end(state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%-8s %-12s %s\n", plugin->language, plugin->license, plugin->author);
+		rz_cons_printf(cons, "%-8s %-12s %s\n", plugin->language, plugin->license, plugin->author);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		rz_table_add_rowf(state->d.t, "sss", plugin->language, plugin->license, plugin->author);
@@ -600,11 +610,15 @@ RZ_IPI char **rz_cmd_info_demangle_lang_choices(RzCore *core) {
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const char **argv) {
 	char *output = NULL;
 	if (!rz_demangler_resolve(core->bin->demangler, argv[2], argv[1], &output)) {
-		rz_cons_printf("Language '%s' is unsupported\nList of supported languages:\n", argv[1]);
-		rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, NULL);
+		rz_cons_printf(core->cons, "Language '%s' is unsupported\nList of supported languages:\n", argv[1]);
+		DemanglerPrintCtx ctx = {
+			.cons = core->cons,
+			.state = NULL
+		};
+		rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, &ctx);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(output ? output : argv[2]);
+	rz_cons_println(core->cons, output ? output : argv[2]);
 	free(output);
 	return RZ_CMD_STATUS_OK;
 }
@@ -612,7 +626,11 @@ RZ_IPI RzCmdStatus rz_cmd_info_demangle_handler(RzCore *core, int argc, const ch
 RZ_IPI RzCmdStatus rz_cmd_info_demangle_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sss", "language", "license", "author");
-	rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, state);
+	DemanglerPrintCtx ctx = {
+		.cons = core->cons,
+		.state = state
+	};
+	rz_demangler_plugin_iterate(core->bin->demangler, (RzDemanglerIter)print_demangler_info, &ctx);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -702,7 +720,7 @@ RZ_IPI RzCmdStatus rz_cmd_info_hashes_handler(RzCore *core, int argc, const char
 		} else { // hashes are equal
 			rz_pvector_foreach (new_hashes, hiter_new) {
 				fh_new = *hiter_new;
-				rz_cons_printf("%s %s\n", fh_new->type, fh_new->hex);
+				rz_cons_printf(core->cons, "%s %s\n", fh_new->type, fh_new->hex);
 			}
 		}
 		break;

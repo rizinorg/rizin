@@ -25,11 +25,11 @@ static int rotate_nibble(const ut8 b, int dir) {
 static void print_half_separator(RzCore *core, bool use_utf8, bool use_color) {
 	const char *sep = use_utf8 ? RUNE_LINE_VERT : "|";
 	if (use_color) {
-		rz_cons_printf(" %s%s%s",
+		rz_cons_printf(core->cons, " %s%s%s",
 			core->cons->context->pal.comment, sep,
 			core->cons->context->pal.reset);
 	} else {
-		rz_cons_printf(" %s", sep);
+		rz_cons_printf(core->cons, " %s", sep);
 	}
 }
 
@@ -39,14 +39,14 @@ static void print_byte_cell(RzCore *core, bool use_color, const char *fmt, ut8 b
 	if (use_color) {
 		const char *bc = rz_print_byte_color(core->print, byte);
 		if (bc) {
-			rz_cons_print(bc);
+			rz_cons_print(core->cons, bc);
 		}
-		rz_cons_printf(fmt, byte);
+		rz_cons_printf(core->cons, fmt, byte);
 		if (bc) {
-			rz_cons_print(Color_RESET);
+			rz_cons_print(core->cons, Color_RESET);
 		}
 	} else {
-		rz_cons_printf(fmt, byte);
+		rz_cons_printf(core->cons, fmt, byte);
 	}
 }
 
@@ -56,20 +56,20 @@ static void print_byte_cell(RzCore *core, bool use_color, const char *fmt, ut8 b
 #define RZIL_LABEL     "rzil: "
 #define RZIL_LABEL_LEN 6
 static void print_rzil_wrapped(RzCore *core, bool use_color, const char *il) {
-	const int cols = rz_cons_get_size(NULL);
+	const int cols = rz_cons_get_size(core->cons, NULL);
 	const int width = (cols > RZIL_LABEL_LEN + 20) ? cols - 2 : 0;
 	const size_t avail_first = width > 0 ? (size_t)(width - RZIL_LABEL_LEN) : (size_t)-1;
 	const size_t avail_cont = width > 0 ? (size_t)(width - RZIL_LABEL_LEN) : (size_t)-1;
 	const size_t len = strlen(il);
 
-	rz_cons_print(RZIL_LABEL);
+	rz_cons_print(core->cons, RZIL_LABEL);
 	if (width <= 0 || len <= avail_first) {
 		if (use_color) {
-			rz_core_il_colorize_body(core->cons->context, il);
+			rz_core_il_colorize_body(core->cons->context, il, core->cons);
 		} else {
-			rz_cons_print(il);
+			rz_cons_print(core->cons, il);
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 		return;
 	}
 
@@ -108,20 +108,20 @@ static void print_rzil_wrapped(RzCore *core, bool use_color, const char *il) {
 		}
 		if (!first_line) {
 			for (int k = 0; k < RZIL_LABEL_LEN; k++) {
-				rz_cons_print(" ");
+				rz_cons_print(core->cons, " ");
 			}
 		}
 		size_t slice_len = end - start;
 		char *slice = rz_str_ndup(il + start, slice_len);
 		if (slice) {
 			if (use_color) {
-				rz_core_il_colorize_body(core->cons->context, slice);
+				rz_core_il_colorize_body(core->cons->context, slice, core->cons);
 			} else {
-				rz_cons_print(slice);
+				rz_cons_print(core->cons, slice);
 			}
 			free(slice);
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 		for (size_t i = start; i < end; i++) {
 			if (il[i] == '(') {
 				depth++;
@@ -154,7 +154,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 	}
 	memcpy(buf, core->block + cur, sizeof(ut64));
 	for (;;) {
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 		const bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		const bool use_utf8 = rz_config_get_b(core->config, "scr.utf8");
 		const bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
@@ -175,21 +175,21 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_IL);
 
 		// chr: printable char per byte, px-style colored.
-		rz_cons_print("chr:");
+		rz_cons_print(core->cons, "chr:");
 		for (i = 0; i < 8; i++) {
 			const ut8 byte = buf[MEM_BYTE(i)];
 			char ch = IS_PRINTABLE(byte) ? byte : '?';
 			if (i == 4) {
 				print_half_separator(core, use_utf8, use_color);
 			}
-			rz_cons_print("      '");
+			rz_cons_print(core->cons, "      '");
 			print_byte_cell(core, use_color, "%c", (ut8)ch);
-			rz_cons_print("'");
+			rz_cons_print(core->cons, "'");
 		}
 
 		// dec: decimal value per byte.
-		rz_cons_newline();
-		rz_cons_print("dec:");
+		rz_cons_newline(core->cons);
+		rz_cons_print(core->cons, "dec:");
 		for (i = 0; i < 8; i++) {
 			if (i == 4) {
 				print_half_separator(core, use_utf8, use_color);
@@ -198,15 +198,15 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		}
 
 		// hex: hex value per byte.
-		rz_cons_newline();
-		rz_cons_print("hex:");
+		rz_cons_newline(core->cons);
+		rz_cons_print(core->cons, "hex:");
 		for (i = 0; i < 8; i++) {
 			if (i == 4) {
 				print_half_separator(core, use_utf8, use_color);
 			}
 			print_byte_cell(core, use_color, "     0x%02x", buf[MEM_BYTE(i)]);
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 
 		// bit: rows. Padding glyph for the opposite value is `·` when
 		// colour or Unicode is on, else `.`. The cursor bit is reverse-
@@ -223,34 +223,34 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		const bool _is_active = ((COMBINED) || (SHOW_VALUE) == _bit); \
 		const bool _is_cursor = (((BYTE_DISPLAY_IDX) * 8 + (BIT_IDX)) == x); \
 		if (_is_cursor) { \
-			rz_cons_print(Color_INVERT); \
+			rz_cons_print(core->cons, Color_INVERT); \
 		} else if (use_color && !_is_active) { \
-			rz_cons_print(col_comment); \
+			rz_cons_print(core->cons, col_comment); \
 		} \
-		rz_cons_print(_is_active ? (_bit ? "1" : "0") : ws); \
+		rz_cons_print(core->cons, _is_active ? (_bit ? "1" : "0") : ws); \
 		if (_is_cursor || (use_color && !_is_active)) { \
-			rz_cons_print(Color_RESET); \
+			rz_cons_print(core->cons, Color_RESET); \
 		} \
 	} while (0)
 
 #define EMIT_BIT_ROW(SET_PASS, COMBINED) \
 	do { \
-		rz_cons_print("bit: "); \
+		rz_cons_print(core->cons, "bit: "); \
 		for (i = 0; i < 8; i++) { \
 			ut8 *byte = buf + MEM_BYTE(i); \
 			if (i == 4) { \
 				if (use_color) { \
-					rz_cons_printf("%s%s%s ", col_comment, bit_sep_glyph, col_reset); \
+					rz_cons_printf(core->cons, "%s%s%s ", col_comment, bit_sep_glyph, col_reset); \
 				} else { \
-					rz_cons_printf("%s ", bit_sep_glyph); \
+					rz_cons_printf(core->cons, "%s ", bit_sep_glyph); \
 				} \
 			} \
 			for (j = 0; j < 8; j++) { \
 				EMIT_BIT(byte, i, j, (COMBINED), (bool)(SET_PASS)); \
 			} \
-			rz_cons_print(" "); \
+			rz_cons_print(core->cons, " "); \
 		} \
-		rz_cons_newline(); \
+		rz_cons_newline(core->cons); \
 	} while (0)
 
 		// Body column of the cursor: 8 bits + 1 space per byte, plus 2 for
@@ -273,12 +273,12 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			EMIT_BIT_ROW(/*set*/ 1, /*combined*/ false);
 		}
 
-		rz_cons_print("     ");
+		rz_cons_print(core->cons, "     ");
 		for (int k = 0; k < cursor_col; k++) {
-			rz_cons_print(" ");
+			rz_cons_print(core->cons, " ");
 		}
-		rz_cons_print(caret);
-		rz_cons_newline();
+		rz_cons_print(core->cons, caret);
+		rz_cons_newline(core->cons);
 
 		if (!bitsInLine) {
 			EMIT_BIT_ROW(/*set*/ 0, /*combined*/ false);
@@ -287,7 +287,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 #undef EMIT_BIT_ROW
 #undef EMIT_BIT
 
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 
 		// Cursor info, right-aligned: byte N · nibble H|L · bit B [P] · LE|BE
 		// N=display byte 0..7, H/L=nibble half, B=bit in byte 0..7,
@@ -310,9 +310,9 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 				padding = 0;
 			}
 			for (int k = 0; k < padding; k++) {
-				rz_cons_print(" ");
+				rz_cons_print(core->cons, " ");
 			}
-			rz_cons_printf("byte %d%snibble %c%sbit %d [%d]%s%s\n",
+			rz_cons_printf(core->cons, "byte %d%snibble %c%sbit %d [%d]%s%s\n",
 				byte_idx, sep_display,
 				nibble_letter, sep_display,
 				bit_in_byte, x, sep_display,
@@ -321,28 +321,28 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 
 		// Two blank lines between the cursor info and the byte information
 		// block (per user request).
-		rz_cons_newline();
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
+		rz_cons_newline(core->cons);
 
 		// offset:
-		rz_cons_printf("offset: 0x%08" PFMT64x "\n", core->offset + cur);
+		rz_cons_printf(core->cons, "offset: 0x%08" PFMT64x "\n", core->offset + cur);
 
 		// hex: (rz_print_hexpair applies px-style coloring)
 		{
 			char *op_hex = rz_asm_op_get_hex(&asmop);
 			char *res = rz_print_hexpair(core->print, op_hex, -1);
-			rz_cons_printf("hex: %s%s\n", res ? res : "", col_reset);
+			rz_cons_printf(core->cons, "hex: %s%s\n", res ? res : "", col_reset);
 			free(res);
 			free(op_hex);
 		}
 
 		// len:
-		rz_cons_printf("len: %d\n", asmop.size);
+		rz_cons_printf(core->cons, "len: %d\n", asmop.size);
 
 		// shift:
 		{
 			ut32 word = (x % 32);
-			rz_cons_printf("shift: >> %u << %d\n", word, (asmop.size * 8) - (int)word - 1);
+			rz_cons_printf(core->cons, "shift: >> %u << %d\n", word, (asmop.size * 8) - (int)word - 1);
 		}
 
 		// asm: (colored via rz_asm_colorize_asm_str, same as pd)
@@ -351,7 +351,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 			RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 			RzStrBuf *colored_asm = rz_asm_colorize_asm_str(&asmop.buf_asm, core->print, param, asmop.asm_toks);
 			rz_asm_parse_param_free(param);
-			rz_cons_printf("asm: %s%s\n", colored_asm ? rz_strbuf_get(colored_asm) : "", col_reset);
+			rz_cons_printf(core->cons, "asm: %s%s\n", colored_asm ? rz_strbuf_get(colored_asm) : "", col_reset);
 			rz_strbuf_free(colored_asm);
 		}
 
@@ -368,20 +368,20 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 				}
 				rz_strbuf_free(sbil);
 			} else if (RZ_STR_ISNOTEMPTY(esilstr)) {
-				rz_cons_printf("esil: %s\n", esilstr);
+				rz_cons_printf(core->cons, "esil: %s\n", esilstr);
 			}
 		}
 		rz_analysis_op_fini(&aop);
 
-		rz_cons_newline();
-		rz_cons_visual_flush();
+		rz_cons_newline(core->cons);
+		rz_cons_visual_flush(core->cons);
 
-		int ch = rz_cons_readchar();
+		int ch = rz_cons_readchar(core->cons);
 		if (ch == -1 || ch == 4) {
 			break;
 		}
 		if (ch != 10) {
-			ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+			ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		}
 		switch (ch) {
 		case 'Q':
@@ -436,7 +436,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 		} break;
 		case 'R':
 			if (rz_config_get_b(core->config, "scr.randpal")) {
-				rz_cons_pal_random();
+				rz_cons_pal_random(core->cons);
 			} else {
 				rz_core_theme_nextpal(core, RZ_CONS_PAL_SEEK_NEXT);
 			}
@@ -472,7 +472,7 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 				NULL
 			};
 			RzStrBuf *help = rz_strbuf_new(NULL);
-			rz_cons_clear00();
+			rz_cons_clear00(core->cons);
 			rz_strbuf_append(help,
 				"Visual bit editor: edit individual bits of the 64 bits at the\n"
 				"current offset. The screen layout is, top to bottom:\n"
@@ -501,28 +501,28 @@ RZ_IPI bool rz_core_visual_bit_editor(RzCore *core) {
 				"  bit B       bit index inside the byte, 0..7, MSB-first\n"
 				"  [P]         global bit position across the 64-bit window, 0..63\n"
 				"  LE / BE     little-endian / big-endian, from cfg.bigendian\n");
-			rz_cons_print(rz_strbuf_get(help));
+			rz_cons_print(core->cons, rz_strbuf_get(help));
 			rz_strbuf_free(help);
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 		} break;
 		case ':': // TODO: move this into a separate helper function
 		{
 			char cmd[1024];
-			rz_cons_show_cursor(true);
-			rz_cons_set_raw(0);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_set_raw(core->cons, 0);
 			cmd[0] = '\0';
 			rz_line_set_prompt(rzline, ":> ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
 			rz_core_cmd(core, cmd, 1);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 			if (cmd[0]) {
-				rz_cons_any_key(NULL);
+				rz_cons_any_key(core->cons, NULL);
 			}
-			rz_cons_clear();
+			rz_cons_clear(core->cons);
 		} break;
 		}
 		rz_asm_op_fini(&asmop);

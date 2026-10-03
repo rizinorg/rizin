@@ -233,18 +233,18 @@ static RzCmdStatus show_regs_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync
 			format_reg_value(reg, item, buf, sizeof(buf));
 			const char *color = get_reg_color(core, reg, item);
 			if (color) {
-				rz_cons_print(color);
+				rz_cons_print(core->cons, color);
 			}
-			rz_cons_printf("%s = %s", item->name, buf);
+			rz_cons_printf(core->cons, "%s = %s", item->name, buf);
 			if (color) {
-				rz_cons_print(Color_RESET);
+				rz_cons_print(core->cons, Color_RESET);
 			}
-			rz_cons_print("\n");
+			rz_cons_print(core->cons, "\n");
 			break;
 		}
 		case RZ_OUTPUT_MODE_QUIET:
 			format_reg_value(reg, item, buf, sizeof(buf));
-			rz_cons_printf("%s\n", buf);
+			rz_cons_printf(core->cons, "%s\n", buf);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
 			rz_table_add_rowf(state->d.t, "ssXxs",
@@ -323,31 +323,31 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 	rz_list_foreach (ritems, iter, item) {
 		const char *color = get_reg_color(core, reg, item);
 		if (color) {
-			rz_cons_print(color);
+			rz_cons_print(core->cons, color);
 		}
 		format_reg_value(reg, item, strvalue, sizeof(strvalue));
 		int len = snprintf(content, sizeof(content), "%7s %s", item->name, strvalue);
 		if (len < 0) {
 			break;
 		}
-		rz_cons_print(content);
+		rz_cons_print(core->cons, content);
 		if (color) {
-			rz_cons_print(Color_RESET);
+			rz_cons_print(core->cons, Color_RESET);
 		}
 		if ((idx + 1) % cols) {
 			int rem = colwidth - strlen(content);
 			rem = RZ_MIN(sizeof(whites) - 1, RZ_MAX(0, rem));
 			memset(whites, ' ', rem);
 			whites[rem] = 0;
-			rz_cons_print(whites);
+			rz_cons_print(core->cons, whites);
 		} else {
-			rz_cons_print("\n");
+			rz_cons_print(core->cons, "\n");
 		}
 		idx++;
 	}
 	if (idx % cols) {
 		// only print newline if not already done in the loop above
-		rz_cons_print("\n");
+		rz_cons_print(core->cons, "\n");
 	}
 	rz_list_free(ritems);
 	return RZ_CMD_STATUS_OK;
@@ -390,9 +390,9 @@ static RzCmdStatus references_handler(RzCore *core, RzReg *reg, RzCmdRegSync syn
 	}
 
 	char *s = (mode == RZ_OUTPUT_MODE_JSON) ? rz_table_tojson(t) : rz_table_tostring(t);
-	rz_cons_print(s);
+	rz_cons_print(core->cons, s);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		rz_cons_print("\n");
+		rz_cons_print(core->cons, "\n");
 	}
 	free(s);
 	rz_table_free(t);
@@ -453,25 +453,25 @@ RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb
 	ht_up_foreach(db, valgroup_regcb, sorted);
 	ut64 *addr;
 	rz_list_foreach (sorted, iter, addr) {
-		rz_cons_printf("0x%08" PFMT64x " ", *addr);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x " ", *addr);
 		RzList *list = ht_up_find(db, *addr, NULL);
 		if (list) {
 			RzListIter *iter;
 			const char *r;
 			if (use_colors) {
-				rz_cons_strcat(Color_YELLOW);
+				rz_cons_strcat(core->cons, Color_YELLOW);
 			}
 			rz_list_foreach (list, iter, r) {
-				rz_cons_printf(" %s", r);
+				rz_cons_printf(core->cons, " %s", r);
 			}
 			if (use_colors) {
-				rz_cons_strcat(Color_RESET);
+				rz_cons_strcat(core->cons, Color_RESET);
 			}
 			char *rrstr = rz_core_analysis_hasrefs(core, *addr, RZ_OUTPUT_MODE_STANDARD);
 			if (rrstr && *rrstr && strchr(rrstr, 'R')) {
-				rz_cons_printf("    ;%s%s", rrstr, use_colors ? Color_RESET : "");
+				rz_cons_printf(core->cons, "    ;%s%s", rrstr, use_colors ? Color_RESET : "");
 			}
-			rz_cons_newline();
+			rz_cons_newline(core->cons);
 		}
 	}
 	rz_list_free(sorted);
@@ -498,7 +498,7 @@ RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, con
 		RzRegSet *rs = &reg->regset[i];
 		j = 0;
 		rz_list_foreach (rs->pool, iter, a) {
-			rz_cons_printf("%s %p %d %d %s %d\n",
+			rz_cons_printf(core->cons, "%s %p %d %d %s %d\n",
 				(a == rs->arena) ? "*" : ".", a,
 				i, j, rz_reg_get_type(i), a->size);
 			j++;
@@ -575,7 +575,7 @@ RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmd
 }
 
 RZ_IPI RzCmdStatus rz_reg_arenas_stack_size_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
-	rz_cons_printf("%d\n", (int)rz_list_length(reg->regset[0].pool));
+	rz_cons_printf(core->cons, "%d\n", (int)rz_list_length(reg->regset[0].pool));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -645,19 +645,19 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 
 RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
 	for (int i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		rz_cons_println(rz_reg_get_type(i));
+		rz_cons_println(core->cons, rz_reg_get_type(i));
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
 	for (int i = 0; i < RZ_REG_NAME_LAST; i++) {
-		rz_cons_print(rz_reg_get_role(i));
+		rz_cons_print(core->cons, rz_reg_get_role(i));
 		RzRegItem *ri = rz_reg_get_by_role(reg, i);
 		if (ri && ri->name) {
-			rz_cons_printf(" -> %s", ri->name);
+			rz_cons_printf(core->cons, " -> %s", ri->name);
 		}
-		rz_cons_print("\n");
+		rz_cons_print(core->cons, "\n");
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -678,7 +678,7 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 		}
 	}
 	if (!unset) {
-		rz_cons_print("fss+ " RZ_FLAGS_FS_REGISTERS "\n");
+		rz_cons_print(core->cons, "fss+ " RZ_FLAGS_FS_REGISTERS "\n");
 		bool failed;
 		SYNC_READ_LIST(ritems, failed);
 		if (failed) {
@@ -691,13 +691,13 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	rz_list_foreach (ritems, iter, item) {
 		if (!unset) {
 			ut64 v = rz_reg_get_value(reg, item);
-			rz_cons_printf("f+ %s @ 0x%" PFMT64x "\n", item->name, v);
+			rz_cons_printf(core->cons, "f+ %s @ 0x%" PFMT64x "\n", item->name, v);
 		} else {
-			rz_cons_printf("f- %s\n", item->name);
+			rz_cons_printf(core->cons, "f- %s\n", item->name);
 		}
 	}
 	if (!unset) {
-		rz_cons_print("fss-\n");
+		rz_cons_print(core->cons, "fss-\n");
 	}
 	rz_list_free(ritems);
 	return RZ_CMD_STATUS_OK;
@@ -707,7 +707,7 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (reg->reg_profile_str) {
-			rz_cons_println(reg->reg_profile_str);
+			rz_cons_println(core->cons, reg->reg_profile_str);
 		} else {
 			RZ_LOG_ERROR("core: No register profile defined.\n");
 		}
@@ -756,7 +756,7 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 
 RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
 	if (reg->reg_profile_cmt) {
-		rz_cons_println(reg->reg_profile_cmt);
+		rz_cons_println(core->cons, reg->reg_profile_cmt);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -775,7 +775,7 @@ RZ_IPI RzCmdStatus rz_reg_profile_gdb_handler(RzCore *core, RzReg *reg, int argc
 		core->num->value = 1;
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(rz_profile);
+	rz_cons_println(core->cons, rz_profile);
 	core->num->value = 0;
 	free(rz_profile);
 	return RZ_CMD_STATUS_OK;
@@ -791,10 +791,10 @@ RZ_IPI RzCmdStatus rz_reg_cond_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 	if (!rf) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("| s:%d z:%d c:%d o:%d p:%d\n",
+	rz_cons_printf(core->cons, "| s:%d z:%d c:%d o:%d p:%d\n",
 		rf->s, rf->z, rf->c, rf->o, rf->p);
 	for (int i = 0; i < RZ_REG_COND_LAST; i++) {
-		rz_cons_printf("%d %s\n",
+		rz_cons_printf(core->cons, "%d %s\n",
 			rz_reg_cond_bits(reg, i, rf),
 			rz_reg_cond_to_string(i));
 	}
@@ -805,7 +805,7 @@ RZ_IPI RzCmdStatus rz_reg_cond_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 RZ_IPI RzCmdStatus rz_reg_cc_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
 	char *s = rz_reg_profile_to_cc(reg);
 	if (s) {
-		rz_cons_printf("%s\n", s);
+		rz_cons_printf(core->cons, "%s\n", s);
 		free(s);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -817,7 +817,7 @@ RZ_IPI RzCmdStatus rz_regs_diff_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	if (failed) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_reg_print_diff(reg, reg->allregs);
+	rz_core_reg_print_diff(reg, reg->allregs, core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -919,7 +919,7 @@ RZ_IPI RzCmdStatus rz_regs_fpu_handler(RzCore *core, RzReg *reg, RzCmdRegSync sy
 				goto error;
 			}
 			char *numeric = rz_float_as_dec_string(fnum);
-			rz_cons_printf("%s\n", numeric);
+			rz_cons_printf(core->cons, "%s\n", numeric);
 			free(numeric);
 			rz_float_free(fnum);
 		}

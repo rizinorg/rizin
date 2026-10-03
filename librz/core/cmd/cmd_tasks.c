@@ -25,7 +25,7 @@ static int task_output(RzCore *core, int tid) {
 	if (task) {
 		const char *res = rz_core_cmd_task_get_result(task);
 		if (res) {
-			rz_cons_println(res);
+			rz_cons_println(core->cons, res);
 		}
 		rz_core_task_decref(task);
 	} else {

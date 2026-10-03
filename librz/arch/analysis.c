@@ -1412,3 +1412,8 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, R
 	rz_return_if_fail(analysis);
 	analysis->esil = esil;
 }
+
+RZ_API void rz_analysis_set_interrupt(RZ_NONNULL RzAnalysis *analysis, RzInterrupt *intr) {
+	rz_return_if_fail(analysis);
+	analysis->intr = intr;
+}

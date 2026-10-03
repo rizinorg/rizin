@@ -544,7 +544,7 @@ static linux_map_entry_t *linux_get_mapped_files(RzDebug *dbg, ut8 filter_flags)
 			pmentry->file_backed = true;
 		}
 		pmentry->dumpeable = dump_this_map(buff_smaps, pmentry, filter_flags);
-		rz_cons_printf(fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
+		rz_cons_printf(dbg->cons, fmt_addr " - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
 			pmentry->start_addr, pmentry->end_addr,
 			pmentry->anonymous, pmentry->kernel_mapping,
 			pmentry->file_backed, pmentry->dumpeable);
@@ -772,7 +772,7 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 	size_t size;
 	bool ret;
 
-	rz_cons_printf("dump_elf_map_content starting\n\n");
+	rz_cons_printf(dbg->cons, "dump_elf_map_content starting\n\n");
 
 	for (p = head; p; p = p->n) {
 		if (!p->dumpeable) {
@@ -794,7 +794,7 @@ static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t
 		}
 		free(map_content);
 	}
-	rz_cons_printf("dump_elf_map_content - done\n");
+	rz_cons_printf(dbg->cons, "dump_elf_map_content - done\n");
 	return true;
 }
 

@@ -53,6 +53,7 @@ static int debug_gdb_write_at(RzIODesc *fd, const ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
+#include <rz_core.h>
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	RzIODesc *riogdb = NULL;
 	libgdbr_t *desc = NULL;
@@ -104,6 +105,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 	desc = RZ_NEW(libgdbr_t);
 	gdbr_init(desc, false);
+	gdbr_set_interrupt(desc, io->intr);
 
 	if (gdbr_connect(desc, host, i_port) == 0) {
 		__close(NULL);
@@ -300,7 +302,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (rz_str_startswith(cmd, "pktsz")) {
 		const char *ptr = rz_str_trim_head_ro(cmd + 5);
 		if (!isdigit((ut8)*ptr)) {
-			io->cb_printf("packet size: %u bytes\n",
+			io->cb_printf(io->cb_printf_user, "packet size: %u bytes\n",
 				desc->stub_features.pkt_sz);
 			return NULL;
 		}
@@ -335,7 +337,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (send_msg(desc, cmd + 4) >= 0) {
 			(void)read_packet(desc, false);
 			desc->data[desc->data_len] = '\0';
-			io->cb_printf("reply:\n%s\n", desc->data);
+			io->cb_printf(io->cb_printf_user, "reply:\n%s\n", desc->data);
 			if (!desc->no_ack) {
 				eprintf("[waiting for ack]\n");
 			}
@@ -348,7 +350,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		pj_kb(pj, "reverse-continue", desc->stub_features.ReverseStep);
 		pj_kb(pj, "reverse-step", desc->stub_features.ReverseContinue);
 		pj_end(pj);
-		io->cb_printf("%s\n", pj_string(pj));
+		io->cb_printf(io->cb_printf_user, "%s\n", pj_string(pj));
 		pj_free(pj);
 		return NULL;
 	}
@@ -403,7 +405,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (rz_str_startswith(cmd, "pid")) {
 		int pid = desc ? desc->pid : -1;
 		if (!cmd[3]) {
-			io->cb_printf("%d\n", pid);
+			io->cb_printf(io->cb_printf_user, "%d\n", pid);
 		}
 		return rz_str_newf("%d", pid);
 	}
@@ -412,7 +414,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (!isspace((ut8)cmd[7])) {
 			qrcmd = "help";
 		}
-		if (gdbr_send_qRcmd(desc, qrcmd, io->cb_printf) < 0) {
+		if (gdbr_send_qRcmd(desc, qrcmd, io->cb_printf, io->cb_printf_user) < 0) {
 			eprintf("remote error\n");
 			return NULL;
 		}
@@ -441,7 +443,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (!file) {
 			return NULL;
 		}
-		io->cb_printf("%s\n", file);
+		io->cb_printf(io->cb_printf_user, "%s\n", file);
 		return file;
 	}
 	// These are internal, not available to user directly
@@ -453,7 +455,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf("num_retries: %d byte(s)\n", desc->page_size);
+		io->cb_printf(io->cb_printf_user, "num_retries: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	if (rz_str_startswith(cmd, "page_size")) {
@@ -464,7 +466,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf("page size: %d byte(s)\n", desc->page_size);
+		io->cb_printf(io->cb_printf_user, "page size: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	// Sets a flag that next call to get memmap will be for getting baddr
