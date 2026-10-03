@@ -26,6 +26,9 @@ static const char *get_mangled_name(const char *mangled) {
 	}
 
 	skip_prefix_n(mangled, "__OBJC_", 1);
+	if (!strncmp(mangled, "__D", 3) && IS_DIGIT(mangled[3])) {
+		mangled++;
+	}
 
 	return RZ_STR_ISEMPTY(mangled) ? NULL : mangled;
 }

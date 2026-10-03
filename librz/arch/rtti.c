@@ -90,6 +90,9 @@ RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis) {
 		return;
 	}
 	switch (bin_obj->lang) {
+	case RZ_BIN_LANGUAGE_DLANG:
+		rz_analysis_rtti_dlang(analysis);
+		break;
 	case RZ_BIN_LANGUAGE_SWIFT:
 		rz_analysis_rtti_swift(analysis);
 		break;
