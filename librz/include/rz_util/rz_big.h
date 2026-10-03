@@ -40,14 +40,14 @@ RZ_API void rz_big_fini(RzNumBig *b);
 RZ_API void rz_big_from_int(RzNumBig *b, st64 v);
 RZ_API st64 rz_big_to_int(RzNumBig *b);
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str);
-RZ_API char *rz_big_to_hexstr(RzNumBig *b);
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b);
 RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b);
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src);
 
 /* Basic arithmetic operations */
 RZ_API void rz_big_add(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a + b */
 RZ_API void rz_big_sub(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a - b */
-RZ_API void rz_big_mul(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a * b */
+RZ_API void rz_big_mul(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b); /* c = a * b */
 RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a / b */
 RZ_API void rz_big_mod(RzNumBig *c, RzNumBig *a, RzNumBig *b); /* c = a % b */
 RZ_API void rz_big_divmod(RzNumBig *c, RzNumBig *d, RzNumBig *a, RzNumBig *b); /* c = a/b, d = a%b */
