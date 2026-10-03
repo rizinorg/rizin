@@ -29,6 +29,8 @@ sdb_types_files = [
   'types-arm-ios-64',
   'types-android',
   'types-atomic',
+  'types-golang-32',
+  'types-golang-64',
   'types-libc',
   'types-linux',
   'types-macos',
