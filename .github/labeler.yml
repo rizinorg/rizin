@@ -717,3 +717,13 @@ MacOS:
     - librz/debug/p/native/maps/darwin.c
     - librz/debug/p/native/darwin.c
     - librz/syscall/d/darwin*
+
+RzInquiry:
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/inquiry/**/*
+
+"RzAbstInt: Constant":
+- changed-files:
+  - any-glob-to-any-file:
+    - librz/inquiry/absint/val_domain_constant.c

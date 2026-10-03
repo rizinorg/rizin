@@ -108,6 +108,64 @@ RZ_API void rz_absint_instance_free(RZ_OWN RZ_NULLABLE RzAbsIntInstance *inst) {
 	free(inst);
 }
 
+/*
+ * \brief Register a newly discovered state
+ *
+ * This will join the state with the already known one at the same pc and add it to the
+ * queue for further interpretation if there were changes.
+ *
+ * \param ctx The runtime context of the interpereter.
+ * \param as The abstract state to add. It will be joined with all other states at the same PC.
+ * \param is_fallthrough True if the PC of \p as is the starting address of the neighboring block (block didn't branch to some other location in the code).
+ */
+RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as, bool is_fallthrough) {
+	rz_return_if_fail(interp_is_collecting_states(ctx));
+	if (as->pc_state == RZ_ABSINT_PC_ANY) {
+		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
+		return;
+	}
+	if (as->pc_state != RZ_ABSINT_PC_CONST) {
+		rz_warn_if_reached();
+		return;
+	}
+	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
+		RZ_LOG_INFO("  push successor state @ 0x%" PFMT64x "\n", as->pc);
+	}
+	RzAbsIntBlock *block = rz_absint_block_at(ctx, as->pc);
+	if (block) {
+		if (join_state(ctx->inst, block->entry_state, as)) {
+			interp_block_mark_uninterpreted(ctx, block);
+		}
+	} else {
+		block = rz_absint_block_create(ctx->inst, &ctx->blocks, as);
+		if (!block) {
+			return;
+		}
+		interp_block_mark_uninterpreted(ctx, block);
+	}
+	if (!is_fallthrough) {
+		block->non_fallthrough_in = true;
+	}
+}
+
+/**
+ * \brief Pops a an block from the work queue to interpret it.
+ * RzAbsIntBlock->uninterpret is set to false,
+ * implying that the block is from now on interpreted.
+ *
+ * \param ctx The current run context.
+ *
+ * \return The block to interpret or NULL if the work queue is empty (a fixed point was reached).
+ */
+RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
+	RzAbsIntBlock *r = rz_list_pop(ctx->workqueue);
+	if (!r) {
+		return NULL;
+	}
+	r->uninterpreted = false;
+	return r;
+}
+
 static void report_yield_xref(
 	RzAbsIntRunContext *ctx,
 	size_t insn_pkt_size,
@@ -842,8 +900,8 @@ RZ_API bool rz_absint_run_context_init(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *
 	ctx->inst = inst;
 	ctx->astate = NULL;
 	ctx->res = NULL;
-	ctx->queue = rz_list_new();
-	if (!ctx->queue) {
+	ctx->workqueue = rz_list_new();
+	if (!ctx->workqueue) {
 		return false;
 	}
 	interp_blocks_init(ctx);
@@ -854,7 +912,7 @@ RZ_API void rz_absint_run_context_fini(RZ_NULLABLE RzAbsIntRunContext *ctx) {
 	if (!ctx) {
 		return;
 	}
-	rz_list_free(ctx->queue);
+	rz_list_free(ctx->workqueue);
 	interp_blocks_fini(ctx->inst, &ctx->blocks);
 }
 
@@ -971,7 +1029,7 @@ RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *i
 			if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
 				ret = RZ_ABSINT_RESULT_BREAK;
 				rz_absint_state_free(inst, ctx.astate);
-				goto cleanup;
+				goto cleanup_res;
 			}
 			if (lift_res != RZ_ABSINT_LIFT_BLOCK_RESULT_OK) {
 				rz_absint_state_free(inst, ctx.astate);
