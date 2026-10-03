@@ -337,6 +337,7 @@ static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int
 			if (rz_debug_ptrace(dbg, PTRACE_POKEUSER, pid,
 				    (void *)rz_offsetof(struct user, u_debugreg[i]), (rz_ptrace_data_t)val[i])) {
 				rz_sys_perror("ptrace POKEUSER");
+				return false;
 			}
 		}
 		return sizeof(RZ_DEBUG_REG_T);
