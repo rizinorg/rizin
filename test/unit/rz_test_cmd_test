@@ -1,5 +1,6 @@
 NAME=multiline0
 FILE==
+RETRIES=3
 CMDS=<<EOF
 rm -rf /
 EOF

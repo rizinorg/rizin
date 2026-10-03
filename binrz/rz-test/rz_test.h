@@ -73,6 +73,7 @@ typedef struct rz_test_cmd_test_t {
 	RzCmdTestBoolRecord broken;
 	RzCmdTestBoolRecord color;
 	RzCmdTestBoolRecord utf8;
+	RzCmdTestNumRecord retries;
 	RzCmdTestNumRecord timeout;
 	RzCmdTestNumRecord exit_status;
 	ut64 run_line;
@@ -90,6 +91,7 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("ARGS", args) \
 	macro_str ("TOOL", tool) \
 	macro_str ("ENVS", envs) \
+	macro_int ("RETRIES", retries) \
 	macro_int ("TIMEOUT", timeout) \
 	macro_int ("EXIT_STATUS", exit_status) \
 	macro_str ("SOURCE", source) \
