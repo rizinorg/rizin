@@ -92,7 +92,9 @@ RZ_API bool rz_bv_div_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNU
 RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
 RZ_API bool rz_bv_mod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_sdiv_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y);
 RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);
+RZ_API bool rz_bv_smod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y);
 
 RZ_API bool rz_bv_msb(RZ_NONNULL const RzBitVector *bv);
 RZ_API bool rz_bv_lsb(RZ_NONNULL const RzBitVector *bv);
