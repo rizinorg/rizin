@@ -74,6 +74,54 @@ typedef struct {
 	RzCore *core;
 } RzfindContext;
 
+static size_t extract_string_unified(char *dst, size_t max_dst, const ut8 *src, size_t max_src, bool is_wide, size_t cap) {
+	size_t i = 0;
+	size_t j = 0;
+
+	if (max_dst == 0) {
+		return 0;
+	}
+
+	while (i < max_src && j < (max_dst - 1)) {
+		ut8 c = src[i];
+
+		if (c == '\0') {
+			break;
+		}
+
+		/* Guardamos el carácter (o lo escapamos) ANTES de mirar el byte alto */
+		if (c == '"' || c == '\\') {
+			dst[j++] = '\'';
+		} else if (IS_PRINTABLE(c)) {
+			dst[j++] = c;
+		} else {
+			break;
+		}
+
+		/* Límite visual (display cap) de 80 chars y "..." (ANTES del byte alto) */
+		if (cap > 0 && j > cap) {
+			if (j + 3 < max_dst) {
+				strcpy(dst + j, "...");
+				j += 3;
+			}
+			break;
+		}
+
+		/* Lógica exclusiva de modo wide: chequeo del byte alto */
+		if (is_wide) {
+			i++; /* Avanzamos al byte alto */
+			if (i >= max_src || src[i] != '\0') {
+				break; /* Si no es 0, o nos pasamos del buffer, cortamos */
+			}
+		}
+
+		i++; /* Avanzamos al siguiente byte bajo (o al siguiente char ascii) */
+	}
+
+	dst[j] = '\0';
+	return j;
+}
+
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindContext *ctx = (RzfindContext *)user;
 	RzfindOptions *ro = ctx->opt;
@@ -82,68 +130,39 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
 	}
-	if (delta < 0 || delta >= ro->bsize) {
+	if (delta < 0 || (ut64)delta >= ro->bsize) {
 		eprintf("Invalid delta\n");
 		return 0;
 	}
+
+	size_t max_avail = ro->bsize - (ut64)delta;
+	if (max_avail == 0) {
+		return 0;
+	}
+
+	/* Buffer dinámico en lugar de _str[128] */
+	char *str = malloc(max_avail + 1);
+	if (!str) {
+		return 0;
+	}
+
+	int ret_val = 1;
+
 	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
-	char _str[128];
-	char *str = _str;
-	*_str = 0;
+
+	/* Reemplazo de los tres bucles duplicados */
 	if (ro->showstr) {
 		if (ro->widestr) {
-			str = _str;
-			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof(_str); i++) {
-				char ch = ro->buf[i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[j++] = ch;
-				i++;
-				if (j > 80) {
-					strcpy(str + j, "...");
-					j += 3;
-					break;
-				}
-				if (ro->buf[i]) {
-					break;
-				}
-			}
-			str[j] = 0;
+			extract_string_unified(str, max_avail + 1, ro->buf + delta, max_avail, true, 80);
 		} else {
-			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!ch || !IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[i] = ch;
-			}
-			str[i] = 0;
+			extract_string_unified(str, max_avail + 1, ro->buf + delta, max_avail, false, 0);
 		}
 	} else {
-		size_t i;
-		for (i = 0; i < sizeof(_str) - 1; i++) {
-			char ch = ro->buf[delta + i];
-			if (ch == '"' || ch == '\\') {
-				ch = '\'';
-			}
-			if (!ch || !IS_PRINTABLE(ch)) {
-				break;
-			}
-			str[i] = ch;
-		}
-		str[i] = 0;
+		extract_string_unified(str, max_avail + 1, ro->buf + delta, max_avail, false, 0);
 	}
+
 	if (ro->json) {
 		const char *type = "string";
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
@@ -172,7 +191,8 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
-		return 1;
+		ret_val = 1;
+		goto cleanup;
 	}
 	if (ro->rizin_command && ctx->core) {
 		rz_core_seek(ctx->core, addr, true);
@@ -181,9 +201,13 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("%s", output);
 			free(output);
 		}
-		return 1;
+		ret_val = 1;
+		goto cleanup;
 	}
-	return 1;
+
+cleanup:
+	free(str);
+	return ret_val;
 }
 
 /**
