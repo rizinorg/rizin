@@ -508,3 +508,13 @@ args: 0
           `---------------'
 EOF
 RUN
+
+NAME=h8300: rz_analysis_mask does not overflow when jsr straddles mask window (#6795)
+FILE=bins/elf/h8300/main.elf
+CMDS=<<EOF
+ao @ 0x534~mask
+EOF
+EXPECT=<<EOF
+mask: ffff
+EOF
+RUN
