@@ -385,9 +385,9 @@ RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL const RzAsm *a) {
 	return a->cur;
 }
 
-RZ_API bool rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a, RZ_NONNULL RZ_OWN RzIterator *iter) {
+RZ_API bool rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a, RZ_OUT RZ_NONNULL RzIterator *iter) {
 	rz_return_val_if_fail(a, false);
-	return ht_sp_as_iter(a->plugins, &iter);
+	return ht_sp_as_iter(a->plugins, iter);
 }
 
 RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name) {
