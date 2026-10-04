@@ -599,16 +599,7 @@ static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-/**
- * \brief Analyse Golang symbols matching "sym.go.*"
- * \param core RzCore Pointer
- */
-static void analyse_golang_symbols(RzCore *core) {
-	const RzSpace *symbols = rz_flag_space_get(core->flags, RZ_FLAGS_FS_SYMBOLS);
-	if (!symbols) {
-		return;
-	}
-
+static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
 
@@ -640,10 +631,22 @@ static void analyse_golang_symbols(RzCore *core) {
 	} else if (!strcmp(asm_arch, "arm") && asm_bits == 64) {
 		detected_cc = "golang";
 	}
+	return detected_cc;
+}
+
+/**
+ * \brief Analyse Golang symbols matching "sym.go.*"
+ * \param core RzCore Pointer
+ */
+static void analyse_golang_symbols(RzCore *core) {
+	const RzSpace *symbols = rz_flag_space_get(core->flags, RZ_FLAGS_FS_SYMBOLS);
+	if (!symbols) {
+		return;
+	}
 
 	RzGolangAnalyseCtx actx = {
 		.core = core,
-		.cc = detected_cc
+		.cc = golang_detect_cc(core, symbols)
 	};
 
 	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, &actx);
