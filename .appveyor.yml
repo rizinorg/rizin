@@ -35,7 +35,7 @@ environment:
       TEST_INCLUDE_HEADERS_CPP: false
     # Clang-cl 64 (Dynamic linking)
     - builder: clang_cl_64_dyn
-      PYTHON: 'C:\\Python314'
+      PYTHON: 'C:\\Python314-x64'
       INNO_SETUP: 'C:\\Program Files (x86)\\Inno Setup 6'
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2026
       RUN_TESTS: true
