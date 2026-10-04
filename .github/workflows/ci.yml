@@ -376,7 +376,7 @@ jobs:
         run: yum install -y patch unzip git gcc make python3-pip
         # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
-        run: pip3 install meson==0.61.5 ninja PyYAML requests
+        run: pip3 install meson==0.61.5 ninja PyYAML psutil requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -481,7 +481,7 @@ jobs:
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       - name: Install test dependencies
-        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
+        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' psutil requests
       - name: Run tests
         # Debug tests fail on old Debian because of the runtime differences, ignore them
         run: |
