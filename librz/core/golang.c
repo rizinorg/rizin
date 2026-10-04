@@ -584,7 +584,6 @@ static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
 	GolangAnalyseCtx *ctx = (GolangAnalyseCtx *)user;
 	RzCore *core = ctx->core;
 
-	// Skip compiler-generated thunk wrappers and runtime metadata
 	if (rz_golang_is_compiler_wrapper_symbol(fi->name)) {
 		return true;
 	}
