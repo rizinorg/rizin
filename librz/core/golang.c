@@ -603,35 +603,31 @@ static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
 
-	const char *detected_cc = "golang";
-	if (asm_bits == 32) {
-		detected_cc = "golang";
-	} else if (!strcmp(asm_arch, "x86") && asm_bits == 64) {
-		// Run statistical prologue vote across sampled functions to determine active ABI
-		RzGolangVoteCtx vote_ctx = {
-			.core = core,
-			.samples_count = 0,
-			.reg_votes = 0,
-			.stack_votes = 0
-		};
-		rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, rz_golang_sample_flag_for_abi, &vote_ctx);
-
-		ut32 total_votes = vote_ctx.reg_votes + vote_ctx.stack_votes;
-		if (total_votes >= 8 && vote_ctx.reg_votes * 10 >= total_votes * 9) {
-			detected_cc = "golang";
-			RZ_LOG_INFO("Golang ABI prologue vote: Register ABI (votes: %u reg, %u stack)\n",
-				vote_ctx.reg_votes, vote_ctx.stack_votes);
-		} else if (total_votes >= 8 && vote_ctx.stack_votes * 10 >= total_votes * 9) {
-			detected_cc = "golang_abi0";
-			RZ_LOG_INFO("Golang ABI prologue vote: Stack ABI (votes: %u reg, %u stack)\n",
-				vote_ctx.reg_votes, vote_ctx.stack_votes);
-		} else {
-			detected_cc = "golang";
-		}
-	} else if (!strcmp(asm_arch, "arm") && asm_bits == 64) {
-		detected_cc = "golang";
+	if (asm_bits == 32 || strcmp(asm_arch, "x86") != 0) {
+		return "golang";
 	}
-	return detected_cc;
+
+	// Run statistical prologue vote across sampled functions to determine active ABI
+	RzGolangVoteCtx vote_ctx = {
+		.core = core,
+		.samples_count = 0,
+		.reg_votes = 0,
+		.stack_votes = 0
+	};
+	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, rz_golang_sample_flag_for_abi, &vote_ctx);
+
+	ut32 total_votes = vote_ctx.reg_votes + vote_ctx.stack_votes;
+	if (total_votes >= 8 && vote_ctx.stack_votes * 10 >= total_votes * 9) {
+		RZ_LOG_INFO("Golang ABI prologue vote: Stack ABI (votes: %u reg, %u stack)\n",
+			vote_ctx.reg_votes, vote_ctx.stack_votes);
+		return "golang_abi0";
+	}
+
+	if (total_votes >= 8 && vote_ctx.reg_votes * 10 >= total_votes * 9) {
+		RZ_LOG_INFO("Golang ABI prologue vote: Register ABI (votes: %u reg, %u stack)\n",
+			vote_ctx.reg_votes, vote_ctx.stack_votes);
+	}
+	return "golang";
 }
 
 /**
