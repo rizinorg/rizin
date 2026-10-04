@@ -3573,7 +3573,7 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	if (rtn && !rz_str_startswith_icase(rtn, "0x")) {
 		ut32 addr_len = strlen(rtn), prefix_len = strlen("0x");
 		char *tmp = realloc(rtn, prefix_len + addr_len + 1);
-		if (!tmp){
+		if (!tmp) {
 			free(rtn);
 			rtn = NULL;
 			goto exit;
