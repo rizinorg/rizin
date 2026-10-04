@@ -428,6 +428,7 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 
 	if (kinfo_proc_error) {
 		eprintf("Error while querying the process info to sysctl\n");
+		free(rdi);
 		return NULL;
 	}
 	rdi->status = RZ_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?
