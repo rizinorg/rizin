@@ -376,7 +376,7 @@ jobs:
         run: yum install -y patch unzip git gcc make python3-pip
         # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
-        run: pip3 install meson==0.61.5 ninja PyYAML psutil requests
+        run: pip3 install meson==0.61.5 ninja PyYAML psutil==6.1.1 requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
