@@ -593,7 +593,7 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		similarity = rz_mutual_info_final(&mi_ctx);
 		overlap = (ut32)len;
 		if (RZ_MAX(a_size, b_size) > 0) {
-			coverage = 100.0 * (double)RZ_MIN(a_size, b_size) / (double)RZ_MAX(a_size, b_size);
+			coverage = 100.0 * (double)len / (double)RZ_MAX(a_size, b_size);
 		}
 		break;
 	}
