@@ -547,10 +547,8 @@ static void rz_golang_load_types(RzCore *core) {
 	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
 	if (types_dir) {
 		char *dbpath = rz_file_path_join(types_dir, filename);
-		if (rz_file_exists(dbpath)) {
-			if (rz_type_db_load_sdb(typedb, dbpath)) {
-				RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
-			}
+		if (rz_file_exists(dbpath) && rz_type_db_load_sdb(typedb, dbpath)) {
+			RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
 			free(dbpath);
 			free(types_dir);
 			return;
@@ -562,10 +560,8 @@ static void rz_golang_load_types(RzCore *core) {
 	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
 	if (home_types_dir) {
 		char *dbpath = rz_file_path_join(home_types_dir, filename);
-		if (rz_file_exists(dbpath)) {
-			if (rz_type_db_load_sdb(typedb, dbpath)) {
-				RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
-			}
+		if (rz_file_exists(dbpath) && rz_type_db_load_sdb(typedb, dbpath)) {
+			RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
 		}
 		free(dbpath);
 		free(home_types_dir);
