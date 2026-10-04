@@ -5504,7 +5504,7 @@ RZ_API bool rz_core_analysis_op_chunk_iter(
 		return false;
 	}
 
-	return rz_iterator_new((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
+	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
 }
 
 typedef struct core_decoded_bytes_s {
@@ -5704,7 +5704,7 @@ RZ_API bool rz_core_analysis_bytes(
 		return false;
 	}
 
-	return rz_iterator_new((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx, iterator);
+	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx, iterator);
 }
 
 /**

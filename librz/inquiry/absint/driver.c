@@ -287,7 +287,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	size_t entries_pushed = 0;
 	RzIterator it = (RzIterator){ 0 };
 	if (!rz_set_u_as_iter(config->fcn_entry_points, &it)) {
-		return;
+		goto err_main_ch;
 	}
 	ut64 *entry;
 	rz_iterator_foreach(&it, entry) {

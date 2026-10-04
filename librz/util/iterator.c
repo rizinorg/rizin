@@ -19,7 +19,7 @@
  *
  * \return True on success, false on failure.
  */
-RZ_API bool rz_iterator_new(
+RZ_API bool rz_iterator_init(
 	RZ_NONNULL rz_iterator_next_cb next,
 	RZ_NULLABLE rz_iterator_free_cb free,
 	RZ_NULLABLE rz_iterator_free_cb free_u,
@@ -27,7 +27,10 @@ RZ_API bool rz_iterator_new(
 	RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	if (!(next && u)) {
 		rz_warn_if_reached();
-		goto cleanup;
+		if (free_u) {
+			free_u(u);
+		}
+		return false;
 	}
 
 	iterator->next = next;
@@ -35,11 +38,6 @@ RZ_API bool rz_iterator_new(
 	iterator->free = free;
 	iterator->free_u = free_u;
 	return true;
-cleanup:
-	if (free_u) {
-		free_u(u);
-	}
-	return false;
 }
 
 /**
