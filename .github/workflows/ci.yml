@@ -373,7 +373,7 @@ jobs:
           sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
           sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
       - name: Install tools
-        run: yum install -y patch unzip git gcc make python3-pip
+        run: yum install -y patch unzip git gcc make python3-pip python3-devel
         # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
         run: pip3 install meson==0.61.5 ninja PyYAML psutil==6.1.1 requests
