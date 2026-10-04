@@ -1242,7 +1242,7 @@ NAME=Detect Golang ABI calling convention
 FILE=bins/golang/go-re-sample-linux-amd64-go121
 CMDS=<<EOF
 aalg
-afcc @ sym.go.main.main
+afc @ sym.main.main
 EOF
 EXPECT=<<EOF
 golang
