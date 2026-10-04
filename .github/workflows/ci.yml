@@ -499,7 +499,7 @@ jobs:
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz py3-requests
+        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz py3-psutil py3-requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
