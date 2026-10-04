@@ -98,13 +98,14 @@ for:
       # Windows Python ships no python3.exe, so `python3` spawned by the tests would
       # resolve to another interpreter on PATH that has no rzpipe installed
       - copy /y "%PYTHON%\python.exe" "%PYTHON%\python3.exe"
+      - copy /y "%PYTHON%\pythonw.exe" "%PYTHON%\pythonw3.exe"
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;%PYTHON%;C:\msys64\mingw64\bin;%PATH%
       - echo %PATH%
       - where rizin
       - where python3
       - rizin -v
       - '%PYTHON%\\python -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"'
-      - "%PYTHON%\\python -m pip install requests"
+      - "%PYTHON%\\python -m pip install psutil requests"
       - cd test
       - git clone -q --depth 1 -c core.symlinks=true https://github.com/rizinorg/rizin-testbins bins
       - cd ..
