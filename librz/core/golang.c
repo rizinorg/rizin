@@ -519,7 +519,7 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
  * \brief Checks if a Go symbol is compiler boilerplate (ABI wrappers, closures, inittasks).
  */
 static bool rz_golang_is_compiler_wrapper_symbol(const char *name) {
-	if (!name || !*name) {
+	if (RZ_STR_ISEMPTY(name)) {
 		return true;
 	}
 	if (strstr(name, ".abi0") ||
@@ -563,10 +563,10 @@ typedef struct {
 	ut32 samples_count;
 	ut32 reg_votes;
 	ut32 stack_votes;
-} RzGolangVoteCtx;
+} GolangVoteCtx;
 
 static bool rz_golang_sample_flag_for_abi(RzFlagItem *fi, void *user) {
-	RzGolangVoteCtx *ctx = (RzGolangVoteCtx *)user;
+	GolangVoteCtx *ctx = (GolangVoteCtx *)user;
 	if (ctx->samples_count >= GO_ABI_MAX_SAMPLES) {
 		return false;
 	}
@@ -578,10 +578,10 @@ static bool rz_golang_sample_flag_for_abi(RzFlagItem *fi, void *user) {
 typedef struct {
 	RzCore *core;
 	const char *cc;
-} RzGolangAnalyseCtx;
+} GolangAnalyseCtx;
 
 static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
-	RzGolangAnalyseCtx *ctx = (RzGolangAnalyseCtx *)user;
+	GolangAnalyseCtx *ctx = (GolangAnalyseCtx *)user;
 	RzCore *core = ctx->core;
 
 	// Skip compiler-generated thunk wrappers and runtime metadata
@@ -608,7 +608,7 @@ static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
 	}
 
 	// Run statistical prologue vote across sampled functions to determine active ABI
-	RzGolangVoteCtx vote_ctx = {
+	GolangVoteCtx vote_ctx = {
 		.core = core,
 		.samples_count = 0,
 		.reg_votes = 0,
@@ -640,7 +640,7 @@ static void analyse_golang_symbols(RzCore *core) {
 		return;
 	}
 
-	RzGolangAnalyseCtx actx = {
+	GolangAnalyseCtx actx = {
 		.core = core,
 		.cc = golang_detect_cc(core, symbols)
 	};
