@@ -1237,3 +1237,17 @@ TAIL
 3249
 EOF
 RUN
+
+NAME=Load Golang runtime types
+FILE=bins/golang/go-re-sample-linux-amd64-go121
+CMDS=<<EOF
+aalg
+tc stringStruct
+EOF
+EXPECT=<<EOF
+struct stringStruct {
+	char *str;
+	size_t len;
+};
+EOF
+RUN
