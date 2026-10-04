@@ -880,7 +880,7 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 
 	segment_count = xnu_get_vmmap_entries_for_pid(ctx, dbg->pid);
 
-	memcpy(thread_flavor_array, &flavors, sizeof(thread_flavor_array));
+	memcpy(flavors, thread_flavor_array, sizeof(thread_flavor_array));
 	tstate_size = 0;
 
 	for (size_t i = 0; i < COREDUMP_FLAVORS_ARRAY_SIZE; i++) {
