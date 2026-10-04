@@ -151,12 +151,15 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 		bt->name = rz_str_dup("some");
 		RzType *newtype = RZ_NEW0(RzType);
 		if (!newtype) {
+			rz_type_base_type_free(bt);
 			return NULL;
 		}
 		newtype->kind = RZ_TYPE_KIND_CALLABLE;
 
 		RzCallable *cal = RZ_NEW0(RzCallable);
 		if (!cal) {
+			rz_type_base_type_free(bt);
+			free(newtype);
 			return NULL;
 		}
 
@@ -165,6 +168,9 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 		cal->ret = TYPE_TI(omf_obj, type->descriptor.function.rtype_ti);
 		cal->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 		if (!cal->args) {
+			rz_type_base_type_free(bt);
+			free(newtype);
+			free(cal);
 			return false;
 		}
 
@@ -174,6 +180,10 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 				const OMF_component *component = (OMF_component *)components->comp + i;
 				RzCallableArg *cargs = RZ_NEW0(RzCallableArg);
 				if (!cargs) {
+					rz_type_base_type_free(bt);
+					free(newtype);
+					free(cal->args);
+					free(cal);
 					return NULL;
 				}
 
