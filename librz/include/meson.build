@@ -40,6 +40,7 @@ include_files = [
   'rz_pdb.h',
   'rz_platform.h',
   'rz_project.h',
+  'rz_prologues.h',
   'rz_reg.h',
   'rz_gadget.h',
   'rz_search.h',
