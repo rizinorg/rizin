@@ -21,13 +21,19 @@ static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_query_cop_gadget_details[5];
 static const RzCmdDescDetail cmd_cop_search_stack_details[2];
 static const RzCmdDescDetail cmd_cop_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_cop_gadget_search_written_details[2];
+static const RzCmdDescDetail cmd_cop_gadget_search_read_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
 static const RzCmdDescDetail cmd_query_jop_gadget_details[5];
 static const RzCmdDescDetail cmd_jop_search_stack_details[2];
 static const RzCmdDescDetail cmd_jop_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_jop_gadget_search_written_details[2];
+static const RzCmdDescDetail cmd_jop_gadget_search_read_details[2];
 static const RzCmdDescDetail cmd_query_rop_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_rop_gadget_search_size_details[2];
+static const RzCmdDescDetail cmd_rop_gadget_search_written_details[2];
+static const RzCmdDescDetail cmd_rop_gadget_search_read_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -165,6 +171,8 @@ static const RzCmdDescArg cmd_query_cop_gadget_args[2];
 static const RzCmdDescArg cmd_detail_cop_gadget_args[2];
 static const RzCmdDescArg cmd_cop_search_stack_args[2];
 static const RzCmdDescArg cmd_cop_gadget_search_size_args[2];
+static const RzCmdDescArg cmd_cop_gadget_search_written_args[2];
+static const RzCmdDescArg cmd_cop_gadget_search_read_args[2];
 static const RzCmdDescArg cmd_search_deltified_args[2];
 static const RzCmdDescArg cmd_search_file_args[4];
 static const RzCmdDescArg cmd_info_jop_gadget_args[2];
@@ -173,6 +181,8 @@ static const RzCmdDescArg cmd_query_jop_gadget_args[2];
 static const RzCmdDescArg cmd_detail_jop_gadget_args[2];
 static const RzCmdDescArg cmd_jop_search_stack_args[2];
 static const RzCmdDescArg cmd_jop_gadget_search_size_args[2];
+static const RzCmdDescArg cmd_jop_gadget_search_written_args[2];
+static const RzCmdDescArg cmd_jop_gadget_search_read_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[2];
 static const RzCmdDescArg cmd_search_insn_offset_backwards_fallback_args[2];
 static const RzCmdDescArg cmd_search_pattern_args[2];
@@ -187,6 +197,8 @@ static const RzCmdDescArg cmd_query_rop_gadget_args[2];
 static const RzCmdDescArg cmd_detail_rop_gadget_args[2];
 static const RzCmdDescArg cmd_rop_search_stack_args[2];
 static const RzCmdDescArg cmd_rop_gadget_search_size_args[2];
+static const RzCmdDescArg cmd_rop_gadget_search_written_args[2];
+static const RzCmdDescArg cmd_rop_gadget_search_read_args[2];
 static const RzCmdDescArg cmd_search_value_args[3];
 static const RzCmdDescArg cmd_search_value_alias_v1_args[2];
 static const RzCmdDescArg cmd_search_value_alias_v2_args[2];
@@ -2101,6 +2113,56 @@ static const RzCmdDescHelp cmd_cop_gadget_search_size_help = {
 	.args = cmd_cop_gadget_search_size_args,
 };
 
+static const RzCmdDescDetailEntry cmd_cop_gadget_search_written_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets which write rax", .arg_str = NULL, .comment = "/Cw rax" },
+	{ .text = "Search COP gadgets which write rax, but do not write rbx", .arg_str = NULL, .comment = "/Cw rax,!rbx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_gadget_search_written_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_gadget_search_written_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_gadget_search_written_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_gadget_search_written_help = {
+	.summary = "Search cop gadgets given written registers",
+	.details = cmd_cop_gadget_search_written_details,
+	.args = cmd_cop_gadget_search_written_args,
+};
+
+static const RzCmdDescDetailEntry cmd_cop_gadget_search_read_Usage_space_example_detail_entries[] = {
+	{ .text = "Search COP gadgets which read rdi", .arg_str = NULL, .comment = "/Cr rdi" },
+	{ .text = "Search COP gadgets which do not read rbp", .arg_str = NULL, .comment = "/Cr !rbp" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_cop_gadget_search_read_details[] = {
+	{ .name = "Usage example", .entries = cmd_cop_gadget_search_read_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_cop_gadget_search_read_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_cop_gadget_search_read_help = {
+	.summary = "Search cop gadgets given read registers",
+	.details = cmd_cop_gadget_search_read_details,
+	.args = cmd_cop_gadget_search_read_args,
+};
+
 static const RzCmdDescArg cmd_search_deltified_args[] = {
 	{
 		.name = "101112",
@@ -2308,6 +2370,56 @@ static const RzCmdDescHelp cmd_jop_gadget_search_size_help = {
 	.summary = "Search JOP gadgets given gadget size",
 	.details = cmd_jop_gadget_search_size_details,
 	.args = cmd_jop_gadget_search_size_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_gadget_search_written_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets which write rax", .arg_str = NULL, .comment = "/Jw rax" },
+	{ .text = "Search JOP gadgets which write rax, but do not write rbx", .arg_str = NULL, .comment = "/Jw rax,!rbx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_gadget_search_written_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_gadget_search_written_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_gadget_search_written_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_gadget_search_written_help = {
+	.summary = "Search JOP gadgets given written registers",
+	.details = cmd_jop_gadget_search_written_details,
+	.args = cmd_jop_gadget_search_written_args,
+};
+
+static const RzCmdDescDetailEntry cmd_jop_gadget_search_read_Usage_space_example_detail_entries[] = {
+	{ .text = "Search JOP gadgets which read rdi", .arg_str = NULL, .comment = "/Jr rdi" },
+	{ .text = "Search JOP gadgets which do not read rbp", .arg_str = NULL, .comment = "/Jr !rbp" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_jop_gadget_search_read_details[] = {
+	{ .name = "Usage example", .entries = cmd_jop_gadget_search_read_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_jop_gadget_search_read_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_jop_gadget_search_read_help = {
+	.summary = "Search JOP gadgets given read registers",
+	.details = cmd_jop_gadget_search_read_details,
+	.args = cmd_jop_gadget_search_read_args,
 };
 
 static const RzCmdDescArg cmd_search_insn_offset_backwards_args[] = {
@@ -2647,6 +2759,56 @@ static const RzCmdDescHelp cmd_rop_gadget_search_size_help = {
 	.summary = "Search rop gadgets given gadget size",
 	.details = cmd_rop_gadget_search_size_details,
 	.args = cmd_rop_gadget_search_size_args,
+};
+
+static const RzCmdDescDetailEntry cmd_rop_gadget_search_written_Usage_space_example_detail_entries[] = {
+	{ .text = "Search ROP gadgets which write rax", .arg_str = NULL, .comment = "/Rw rax" },
+	{ .text = "Search ROP gadgets which write rax, but do not write rbx", .arg_str = NULL, .comment = "/Rw rax,!rbx" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_rop_gadget_search_written_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_gadget_search_written_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_rop_gadget_search_written_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_rop_gadget_search_written_help = {
+	.summary = "Search rop gadgets given written registers",
+	.details = cmd_rop_gadget_search_written_details,
+	.args = cmd_rop_gadget_search_written_args,
+};
+
+static const RzCmdDescDetailEntry cmd_rop_gadget_search_read_Usage_space_example_detail_entries[] = {
+	{ .text = "Search ROP gadgets which read rdi", .arg_str = NULL, .comment = "/Rr rdi" },
+	{ .text = "Search ROP gadgets which do not read rbp", .arg_str = NULL, .comment = "/Rr !rbp" },
+	{ 0 },
+};
+static const RzCmdDescDetail cmd_rop_gadget_search_read_details[] = {
+	{ .name = "Usage example", .entries = cmd_rop_gadget_search_read_Usage_space_example_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg cmd_rop_gadget_search_read_args[] = {
+	{
+		.name = "Registers",
+		.type = RZ_CMD_ARG_TYPE_STRING,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = false,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_rop_gadget_search_read_help = {
+	.summary = "Search rop gadgets given read registers",
+	.details = cmd_rop_gadget_search_read_details,
+	.args = cmd_rop_gadget_search_read_args,
 };
 
 static const RzCmdDescHelp slash_v_help = {
@@ -22731,6 +22893,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_cop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_gadget_search_size_handler, &cmd_cop_gadget_search_size_help);
 	rz_warn_if_fail(cmd_cop_gadget_search_size_cd);
 
+	RzCmdDesc *cmd_cop_gadget_search_written_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_gadget_search_written_handler, &cmd_cop_gadget_search_written_help);
+	rz_warn_if_fail(cmd_cop_gadget_search_written_cd);
+
+	RzCmdDesc *cmd_cop_gadget_search_read_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_C_cd, "/Cr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cop_gadget_search_read_handler, &cmd_cop_gadget_search_read_help);
+	rz_warn_if_fail(cmd_cop_gadget_search_read_cd);
+
 	RzCmdDesc *cmd_search_deltified_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/d", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_deltified_handler, &cmd_search_deltified_help);
 	rz_warn_if_fail(cmd_search_deltified_cd);
 
@@ -22756,6 +22924,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_jop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_gadget_search_size_handler, &cmd_jop_gadget_search_size_help);
 	rz_warn_if_fail(cmd_jop_gadget_search_size_cd);
+
+	RzCmdDesc *cmd_jop_gadget_search_written_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_gadget_search_written_handler, &cmd_jop_gadget_search_written_help);
+	rz_warn_if_fail(cmd_jop_gadget_search_written_cd);
+
+	RzCmdDesc *cmd_jop_gadget_search_read_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_J_cd, "/Jr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_jop_gadget_search_read_handler, &cmd_jop_gadget_search_read_help);
+	rz_warn_if_fail(cmd_jop_gadget_search_read_cd);
 
 	RzCmdDesc *cmd_search_insn_offset_backwards_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash__cd, "/o", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_insn_offset_backwards_handler, &cmd_search_insn_offset_backwards_help);
 	rz_warn_if_fail(cmd_search_insn_offset_backwards_cd);
@@ -22815,6 +22989,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_rop_gadget_search_size_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_gadget_search_size_handler, &cmd_rop_gadget_search_size_help);
 	rz_warn_if_fail(cmd_rop_gadget_search_size_cd);
+
+	RzCmdDesc *cmd_rop_gadget_search_written_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rw", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_gadget_search_written_handler, &cmd_rop_gadget_search_written_help);
+	rz_warn_if_fail(cmd_rop_gadget_search_written_cd);
+
+	RzCmdDesc *cmd_rop_gadget_search_read_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_R_cd, "/Rr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_rop_gadget_search_read_handler, &cmd_rop_gadget_search_read_help);
+	rz_warn_if_fail(cmd_rop_gadget_search_read_cd);
 
 	RzCmdDesc *slash_v_cd = rz_cmd_desc_group_state_new(core->rcmd, slash__cd, "/v", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_cmd_search_value_handler, &cmd_search_value_help, &slash_v_help);
 	rz_warn_if_fail(slash_v_cd);

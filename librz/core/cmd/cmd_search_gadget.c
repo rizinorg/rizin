@@ -399,6 +399,121 @@ compound:
 	return parse_compound_op(core, str, gadget_constraint);
 }
 
+static void gadget_reg_filter_free(RzGadgetRegFilter *filter) {
+	if (!filter) {
+		return;
+	}
+	free(filter->name);
+	free(filter);
+}
+
+/**
+ * \brief Find the widest GPR sharing the offset of \p item.
+ *
+ * The gadget analysis records register events with the widest name of the register
+ * profile, for example \c rax and \c rsp instead of \c eax and \c sp. Sub-registers
+ * are normalized to that name, so conditions like \c /Rw eax match what the user
+ * expects. If there is no wider register, \p item is returned unchanged.
+ *
+ * Only candidates whose type is \c RZ_REG_TYPE_GPR are considered. The GPR regset
+ * also holds flag registers, because flags share the GPR arena, and widening a GPR
+ * to one of them would produce a name the gadget analysis never records.
+ *
+ * \param reg RZ_NONNULL Pointer to the RzReg object.
+ * \param item RZ_NONNULL Register to normalize.
+ * \return The widest GPR with the same offset, or \p item itself.
+ */
+static const RzRegItem *gadget_reg_filter_canonical(RZ_NONNULL RzReg *reg, RZ_NONNULL const RzRegItem *item) {
+	const RzList /*<RzRegItem *>*/ *gprs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	if (!gprs) {
+		return item;
+	}
+
+	const RzRegItem *widest = item;
+	RzListIter *iter;
+	RzRegItem *candidate;
+	rz_list_foreach (gprs, iter, candidate) {
+		if (candidate->type == RZ_REG_TYPE_GPR &&
+			candidate->offset == item->offset && candidate->size > widest->size) {
+			widest = candidate;
+		}
+	}
+	return widest;
+}
+
+/**
+ * \brief Parse a comma separated list of register conditions.
+ *
+ * Every condition is a register name, optionally prefixed with '!' to negate it,
+ * for example \c "rax,!rbx,!rcx". Register roles such as \c SP or \c PC are
+ * resolved to the name used by the current register profile, and sub-registers
+ * are normalized to the widest register sharing their offset, so that \c eax
+ * refers to \c rax. Only general purpose registers are accepted, because gadgets
+ * are analyzed for those only.
+ *
+ * \param core RZ_NONNULL Pointer to the RzCore structure.
+ * \param str RZ_NONNULL Comma separated list of register conditions.
+ * \return RZ_OUT A newly allocated vector of RzGadgetRegFilter, or NULL on error.
+ */
+static RZ_OWN RzPVector /*<RzGadgetRegFilter *>*/ *gadget_reg_filter_parse(RZ_NONNULL const RzCore *core, RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	if (!reg || RZ_STR_ISEMPTY(str)) {
+		RZ_LOG_ERROR("No register given to filter gadgets by\n");
+		return NULL;
+	}
+
+	RzPVector *filters = rz_pvector_new((RzPVectorFree)gadget_reg_filter_free);
+	if (!filters) {
+		return NULL;
+	}
+
+	RzList *tokens = rz_str_split_duplist(str, ",", true);
+	RzListIter *it;
+	char *token;
+	rz_list_foreach (tokens, it, token) {
+		if (RZ_STR_ISEMPTY(token)) {
+			RZ_LOG_ERROR("Empty register condition in \"%s\"\n", str);
+			goto fail;
+		}
+
+		bool negate = false;
+		const char *name = token;
+		if (name[0] == '!') {
+			negate = true;
+			name = rz_str_trim_head_ro(name + 1);
+		}
+		if (RZ_STR_ISEMPTY(name)) {
+			RZ_LOG_ERROR("Missing register name after '!' in \"%s\"\n", str);
+			goto fail;
+		}
+
+		RzRegItem *item = rz_reg_get(reg, name, RZ_REG_TYPE_ANY);
+		if (!item || item->type != RZ_REG_TYPE_GPR) {
+			RZ_LOG_ERROR("Unknown general purpose register \"%s\"\n", name);
+			goto fail;
+		}
+		const char *canonical = gadget_reg_filter_canonical(reg, item)->name;
+
+		RzGadgetRegFilter *filter = RZ_NEW0(RzGadgetRegFilter);
+		if (!filter) {
+			goto fail;
+		}
+		filter->name = rz_str_dup(canonical);
+		filter->negate = negate;
+		rz_pvector_push(filters, filter);
+	}
+
+	rz_list_free(tokens);
+	return filters;
+
+fail:
+	rz_list_free(tokens);
+	rz_pvector_free(filters);
+	return NULL;
+}
+
 /**
  * \brief Create a new RzGadgetSearchContext object.
  * \param core RZ_NONNULL Pointer to the RzCore structure containing configuration settings.
@@ -441,6 +556,13 @@ RZ_API RZ_OWN RzGadgetSearchContext *rz_core_gadget_search_context_new(RZ_NONNUL
 	context->cache = rz_config_get_b(core->config, "gadget.cache");
 	context->ret_val = false;
 	context->buf = NULL;
+	if (detail_mask & (RZ_GADGET_DETAIL_SEARCH_WRITE | RZ_GADGET_DETAIL_SEARCH_READ)) {
+		context->reg_filters = gadget_reg_filter_parse(core, greparg);
+		if (!context->reg_filters) {
+			rz_core_gadget_search_context_free(context);
+			return NULL;
+		}
+	}
 	return context;
 }
 
@@ -459,6 +581,7 @@ RZ_API void rz_core_gadget_search_context_free(RZ_NULLABLE RzGadgetSearchContext
 	free(context->greparg);
 	rz_strbuf_free(context->buf);
 	rz_pvector_free(context->constraints);
+	rz_pvector_free(context->reg_filters);
 	free(context);
 }
 
