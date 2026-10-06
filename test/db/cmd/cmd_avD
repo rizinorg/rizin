@@ -1259,3 +1259,270 @@ EXPECT=<<EOF
 \           0x100003e94      ret
 EOF
 RUN
+
+NAME=dlang class devirtualization
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+avD @ 0x4d900
+pdf @ 0x4d900
+avD @ 0x4d8d8
+pdf @ 0x4d8d8
+avD @ 0x4d8f0
+pdf @ 0x4d8f0
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from main @ 0x4d9bc
+            ;-- rip:
+/ sym._Dmain(int64_t arg2);
+|           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           0x0004d900      push  rbp
+|           0x0004d901      mov   rbp, rsp
+|           0x0004d904      sub   rsp, 0x20
+|           0x0004d908      lea   rdi, qword obj.class_dlang.Polygon.__Class ; D11class_dlang7Polygon7__ClassZ
+|                                                                      ; 0xa4030 ; "pF\n" ; int64_t arg1
+|           0x0004d90f      call  sym._d_newclass
+|           0x0004d914      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d917      call  sym.class_dlang.Polygon_class_dlang.Polygon.__ctor
+|           0x0004d91c      mov   qword [var_20h], rax
+|           0x0004d920      lea   rdi, qword obj.class_dlang.Rectangle.__Class ; D11class_dlang9Rectangle7__ClassZ
+|                                                                      ; 0xa4140 ; "pF\n" ; int64_t arg1
+|           0x0004d927      call  sym._d_newclass
+|           0x0004d92c      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d92f      call  sym.class_dlang.Rectangle_class_dlang.Rectangle.__ctor
+|           0x0004d934      mov   qword [var_18h], rax
+|           0x0004d938      lea   rdi, qword obj.class_dlang.Triangle.__Class ; D11class_dlang8Triangle7__ClassZ
+|                                                                      ; 0xa4250 ; "pF\n" ; int64_t arg1
+|           0x0004d93f      call  sym._d_newclass
+|           0x0004d944      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d947      call  sym.class_dlang.Triangle_class_dlang.Triangle.__ctor
+|           0x0004d94c      mov   qword [var_10h], rax
+|           0x0004d950      mov   edx, 0x04
+|           0x0004d955      mov   esi, 0x05
+|           0x0004d95a      mov   rdi, qword [var_20h]
+|           0x0004d95e      mov   rcx, qword [rdi]
+|           0x0004d961      call  qword [rcx+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d965      mov   edx, 0x04
+|           0x0004d96a      mov   esi, 0x05
+|           0x0004d96f      mov   rdi, qword [var_18h]
+|           0x0004d973      mov   rax, qword [rdi]
+|           0x0004d976      call  qword [rax+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d97a      mov   edx, 0x04
+|           0x0004d97f      mov   esi, 0x05
+|           0x0004d984      mov   rdi, qword [var_10h]
+|           0x0004d988      mov   rcx, qword [rdi]
+|           0x0004d98b      call  qword [rcx+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d98f      mov   rdi, qword [var_20h]                 ; int64_t arg1
+|           0x0004d993      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d998      mov   rdi, qword [var_20h]                 ; int64_t arg1
+|           0x0004d99c      call  sym.void_class_dlang.printSides_class_dlang.Polygon
+|           0x0004d9a1      mov   rdi, qword [var_18h]                 ; int64_t arg1
+|           0x0004d9a5      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d9aa      mov   rdi, qword [var_10h]                 ; int64_t arg1
+|           0x0004d9ae      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d9b3      xor   eax, eax
+|           0x0004d9b5      leave
+\           0x0004d9b6      ret
+            ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
+            ;-- rip:
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
+|           0x0004d8d9      mov   rbp, rsp
+|           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8df      call  qword [rax+0x30]                     ; Virtual call: sym.int_class_dlang.Polygon.area / sym.int_class_dlang.Rectangle.area / sym.int_class_dlang.Triangle.area
+|           0x0004d8e3      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8e5      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8ea      pop   rbp
+\           0x0004d8eb      ret
+            ; CALL XREF from sym._Dmain @ 0x4d99c
+/ sym.void_class_dlang.printSides_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8ec      push  rbp                                  ; void class_dlang.printSides(class_dlang.Polygon)
+|           0x0004d8ed      mov   rbp, rsp
+|           ;-- rip:
+|           0x0004d8f0      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8f3      call  qword [rax+0x38]                     ; Virtual call: sym.int_class_dlang.Polygon.sides
+|           0x0004d8f7      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8f9      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8fe      pop   rbp
+\           0x0004d8ff      ret
+EOF
+RUN
+
+NAME=dlang devirtualization elf (dlang_pet)
+BROKEN=1
+FILE=bins/elf/dlang_pet
+CMDS=<<EOF
+aaa
+avD @ 0x400c2c
+pdf @ 0x400c2c
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from dbg._Dmain @ 0x400d1b, 0x400d58, 0x400d93
+            ;-- ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet):
+            ;-- dbg.ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet:
+            ;-- rip:
+/ ulong ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)(struct pets.BasePet *base, struct pets.Pet *pet, struct pets.Runner *runner, struct pets.Speaker *speaker)
+|           ; var int64_t arg1 @ rdi
+|           ; var int64_t arg2 @ rsi
+|           ; var int64_t arg3 @ rdx
+|           ; var int64_t arg4 @ rcx
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_28h @ stack - 0x28
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; arg struct pets.BasePet *base @ stack + 0x344
+|           ; arg struct pets.Pet *pet @ stack + 0x344
+|           ; arg struct pets.Runner *runner @ stack + 0x344
+|           ; arg struct pets.Speaker *speaker @ stack + 0x344
+|           ; var ulong result @ rbx
+|           0x00400c2c      push  rbp                                  ; pets.d:67  ; ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)
+|           0x00400c2d      mov   rbp, rsp
+|           0x00400c30      sub   rsp, 0x30
+|           0x00400c34      mov   qword [var_30h], rbx
+|           0x00400c38      mov   qword [var_28h], rdi                 ; arg1
+|           0x00400c3c      mov   qword [var_20h], rsi                 ; arg2
+|           0x00400c40      mov   qword [var_18h], rdx                 ; arg3
+|           0x00400c44      mov   qword [var_10h], rcx                 ; arg4
+|           0x00400c48      mov   rdi, qword [var_10h]                 ; pets.d:68 export extern(D) size_t dispatch(Speaker speaker, Runner runner, Pet pet, BasePet base) {
+|           0x00400c4c      mov   rax, qword [rdi]
+|           0x00400c4f      call  qword [rax+0x08]                     ; 8 ; Virtual call: sym._THUNK4 / loc.unknown_12 / sym._THUNK7
+|           0x00400c53      mov   rbx, rax
+|           0x00400c56      mov   rdi, qword [var_18h]                 ; pets.d:69 size_t result = speaker.speak();
+|           0x00400c5a      mov   rcx, qword [rdi]
+|           0x00400c5d      call  qword [rcx+0x08]                     ; 8 ; Virtual call: sym._THUNK3
+|           0x00400c61      add   rbx, rax
+|           0x00400c64      mov   rdi, qword [var_20h]                 ; pets.d:70 result += runner.runSpeed();
+|           0x00400c68      mov   rdx, qword [rdi]
+|           0x00400c6b      call  qword [rdx+0x18]                     ; 24 ; Virtual call: sym._THUNK2 / sym._THUNK10 / sym._THUNK6
+|           0x00400c6f      add   rbx, rax
+|           0x00400c72      mov   rdi, qword [var_28h]                 ; pets.d:71 result += pet.petValue();
+|           0x00400c76      mov   rax, qword [rdi]
+|           0x00400c79      call  qword [rax+0x40]                     ; 64 ; Virtual call: sym.ulong_pets.LoudPet.classValue / sym.ulong_pets.BasePet.classValue
+|           0x00400c7d      add   rbx, rax
+|           0x00400c80      mov   rax, rbx
+|           0x00400c83      mov   rbx, qword [var_30h]                 ; pets.d:73 return result;
+|           0x00400c87      mov   rsp, rbp
+|           0x00400c8a      pop   rbp
+\           0x00400c8b      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (PE)
+BROKEN=1
+FILE=bins/pe/dlang_pet/dlang_pet.exe
+CMDS=<<EOF
+idp bins/pe/dlang_pet/dlang_pet.pdb
+aaa
+avD @ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm
+pdf @ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm
+EOF
+EXPECT=<<EOF
+            ; CODE XREF from sym.dlang_pet_Og.exe_ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet @ 0x1400056f5
+            ;-- rip:
+/ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           ; arg int64_t arg4 @ r9
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack + 0x8
+|           ; var int64_t var_20h @ stack + 0x20
+|           0x14000cb50      push  rbp
+|           0x14000cb51      mov   rbp, rsp
+|           0x14000cb54      sub   rsp, 0x30
+|           0x14000cb58      mov   qword [var_18h], rbx
+|           0x14000cb5c      mov   qword [var_10h], rsi
+|           0x14000cb60      mov   qword [var_8h], rcx                 ; arg1
+|           0x14000cb64      mov   qword [var_8h + 0x8], rdx           ; arg2
+|           0x14000cb68      mov   qword [var_8h + 0x10], r8           ; arg3
+|           0x14000cb6c      mov   qword [var_20h], r9                 ; arg4
+|           0x14000cb70      mov   rcx, qword [var_20h]
+|           0x14000cb74      mov   rax, qword [rcx]
+|           0x14000cb77      call  qword [rax+0x08]                    ; 8 ; Virtual call: interface_0x10_0x8 / interface_0x28_0x8
+|           0x14000cb7b      mov   rsi, rax
+|           0x14000cb7e      mov   rcx, qword [var_8h + 0x10]
+|           0x14000cb82      mov   rdx, qword [rcx]
+|           0x14000cb85      call  qword [rdx+0x08]                    ; 8 ; Virtual call: interface_0x18_0x8
+|           0x14000cb89      add   rsi, rax
+|           0x14000cb8c      mov   rcx, qword [var_8h + 0x8]
+|           0x14000cb90      mov   rbx, qword [rcx]
+|           0x14000cb93      call  qword [rbx+0x18]                    ; 24 ; Virtual call: interface_0x10_0x18
+|           0x14000cb97      add   rsi, rax
+|           0x14000cb9a      mov   rcx, qword [var_8h]
+|           0x14000cb9e      mov   rax, qword [rcx]
+|           0x14000cba1      call  qword [rax+0x40]                    ; 64 ; Virtual call: virtual_0x40
+|           0x14000cba5      add   rsi, rax
+|           0x14000cba8      mov   rax, rsi
+|           0x14000cbab      mov   rbx, qword [var_18h]
+|           0x14000cbaf      mov   rsi, qword [var_10h]
+|           0x14000cbb3      mov   rsp, rbp
+|           0x14000cbb6      pop   rbp
+\           0x14000cbb7      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (MachO)
+FILE=bins/mach0/dlang-hello
+CMDS=<<EOF
+aaa
+avD @ 0x100001eb0
+pdf @ 0x100001eb0
+EOF
+EXPECT=<<EOF
+            ;-- func.100001eb0:
+            ;-- rip:
+/ sym.nothrow__trusted_ulong_std.bitmanip.FloatRep.__xtoHash_ref_const_std.bitmanip.FloatRep(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x100001eb0      push  r14                                 ; nothrow @trusted ulong std.bitmanip.FloatRep.__xtoHash(ref const(std.bitmanip.FloatRep))
+|           0x100001eb2      push  rbx
+|           0x100001eb3      push  rax
+|           0x100001eb4      mov   rbx, rdi                            ; arg1
+|           0x100001eb7      mov   rdi, qword [reloc.TypeInfo_xf.__init] ; [0x100072030:8]=0x100079f80 sym.TypeInfo_xf.__init
+|           0x100001ebe      mov   rax, qword [rdi]
+|           0x100001ec1      mov   rsi, rbx
+|           0x100001ec4      call  qword [rax+0x28]                    ; 40 ; Virtual call: sym.const_nothrow__safe_ulong_object.TypeInfo_Const.getHash_const_void
+|           0x100001ec7      mov   r14, rax
+|           0x100001eca      mov   rdi, qword [reloc.TypeInfo_xk.__init] ; [0x100072048:8]=0x1000779d0 rdi
+|           0x100001ed1      mov   rax, qword [rdi]
+|           0x100001ed4      mov   rsi, rbx
+|           0x100001ed7      call  qword [rax+0x28]                    ; 40 ; Virtual call: sym.const_nothrow__safe_ulong_object.TypeInfo_Const.getHash_const_void
+|           0x100001eda      add   rax, r14
+|           0x100001edd      add   rsp, 0x08
+|           0x100001ee1      pop   rbx
+|           0x100001ee2      pop   r14
+\           0x100001ee4      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (elf)
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+acvl class_dlang_Polygon
+avD @ 0x4d8d8
+pdf @ 0x4d8d8
+EOF
+EXPECT=<<EOF
+class_dlang_Polygon:
+     0 vtable 0xa40e0 @ +0x0 size:+0x40
+            ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
+            ;-- rip:
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
+|           0x0004d8d9      mov   rbp, rsp
+|           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8df      call  qword [rax+0x30]                     ; Virtual call: sym.int_class_dlang.Polygon.area / sym.int_class_dlang.Rectangle.area / sym.int_class_dlang.Triangle.area
+|           0x0004d8e3      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8e5      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8ea      pop   rbp
+\           0x0004d8eb      ret
+EOF
+RUN

@@ -19,7 +19,7 @@ static inline bool check_objc(RzBinSymbol *sym) {
 }
 
 static inline bool check_dlang(RzBinSymbol *sym) {
-	return !strncmp(sym->name, "_D", 2) && IS_DIGIT(sym->name[2]);
+	return (!strncmp(sym->name, "_D", 2) && IS_DIGIT(sym->name[2])) || (!strncmp(sym->name, "__D", 3) && IS_DIGIT(sym->name[3]));
 }
 
 static inline bool check_swift(RzBinSymbol *sym) {
