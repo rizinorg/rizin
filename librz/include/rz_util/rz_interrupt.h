@@ -56,4 +56,10 @@ static inline void rz_interrupt_set_breaked(RzInterrupt *intr, bool breaked) {
 	}
 }
 
+static inline void rz_interrupt_set_hook_signals(RzInterrupt *intr, bool hook) {
+	if (intr) {
+		intr->hook_signals = hook;
+	}
+}
+
 #endif

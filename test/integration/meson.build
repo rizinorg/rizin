@@ -23,6 +23,7 @@ if get_option('enable_tests') and cli_enabled
     'dwarf_info',
     'dwarf_integration',
     'glibc_version',
+    'interrupt_signal',
     'open_analyse_save_load_project',
     'pdb',
     'project_migrate',

@@ -82,6 +82,7 @@ if get_option('enable_tests')
     'idpool',
     'idstorage',
     'inflate_deflate',
+    'interrupt',
     'il_definitions',
     'il_reg',
     'il_validate',
