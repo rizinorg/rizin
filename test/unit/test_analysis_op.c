@@ -278,12 +278,47 @@ bool test_rz_core_il_print_rzil() {
 	mu_end;
 }
 
+bool test_rz_analysis_op_h8300() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	RzAnalysisOp op;
+	SWITCH_TO_ARCH_BITS("h8300", 16);
+
+	rz_analysis_op_init(&op);
+	int len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x5e\x00", 2, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_true(len < 0, "truncated jsr");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x5e\x00\x12\x34", 4, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_eq(len, 4, "jsr @0x1234");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x5a\x00", 2, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_true(len < 0, "truncated jmp");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x6e\x36", 2, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_true(len < 0, "truncated mov.b");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x5d\x40", 2, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_eq(len, 2, "jsr @r4");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_op_val);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_analysis_op_h8300);
 	return tests_passed != tests_run;
 }
 
