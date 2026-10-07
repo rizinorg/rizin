@@ -14,7 +14,12 @@ typedef struct rz_interrupt_frame_t {
 	void *user;
 } RzInterruptFrame;
 
+#if __WINDOWS__
+#include <windows.h>
 #include <signal.h>
+#elif __UNIX__
+#include <signal.h>
+#endif
 
 // <stdatomic.h> is only supported in GCC >= 4.9
 // https://gcc.gnu.org/gcc-4.9/changes.html#c
@@ -38,7 +43,7 @@ static atomic_int g_hook_count = 0; ///< Active reference counter for hooked sig
 /**
  * \brief Windows Console Ctrl handler callback
  */
-RZ_API BOOL WINAPI rz_interrupt_w32_control(DWORD dwCtrlType) {
+static BOOL WINAPI rz_interrupt_w32_control(DWORD dwCtrlType) {
 	if (dwCtrlType == CTRL_C_EVENT || dwCtrlType == CTRL_BREAK_EVENT) {
 		g_sigint_flag = 1;
 		return TRUE; // Prevents default process termination
@@ -83,6 +88,17 @@ static void rz_interrupt_unhook(void) {
 }
 #endif
 #endif
+
+/**
+ * \brief Programmatically trigger/simulate a process-wide SIGINT or Ctrl+C signal.
+ */
+RZ_API void rz_interrupt_raise_sigint(void) {
+#if __WINDOWS__
+	rz_interrupt_w32_control(CTRL_C_EVENT);
+#elif __UNIX__
+	raise(SIGINT);
+#endif
+}
 
 static void break_stack_free(void *ptr) {
 	RzInterruptFrame *frame = (RzInterruptFrame *)ptr;

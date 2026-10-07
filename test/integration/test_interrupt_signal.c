@@ -23,11 +23,7 @@ static bool test_rz_interrupt_sigint_handling(void) {
 
 	mu_assert_false(rz_interrupt_is_breaked(intr), "should not be breaked initially");
 
-#if __UNIX__
-	raise(SIGINT);
-#elif __WINDOWS__
-	rz_interrupt_w32_control(CTRL_C_EVENT);
-#endif
+	rz_interrupt_raise_sigint();
 
 	mu_assert_true(rz_interrupt_is_breaked(intr), "should be breaked after signal");
 
