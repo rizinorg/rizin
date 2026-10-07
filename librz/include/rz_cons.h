@@ -545,6 +545,7 @@ typedef enum {
 
 typedef struct rz_cons_t {
 	RzConsContext *context;
+	RzConsContext default_context;
 	RzConsInputContext *input;
 	bool is_html;
 	bool was_html;
@@ -932,7 +933,6 @@ RZ_API void rz_cons_set_click(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y, M
 RZ_API bool rz_cons_get_click(RZ_NONNULL RZ_BORROW RzCons *cons, int *x, int *y);
 
 RZ_API bool rz_cons_is_interactive(RZ_NONNULL RZ_BORROW RzCons *cons);
-RZ_API bool rz_cons_default_context_is_interactive();
 
 RZ_API void rz_cons_push(RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_cons_pop(RZ_NONNULL RZ_BORROW RzCons *cons);

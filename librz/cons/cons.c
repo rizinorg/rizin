@@ -18,8 +18,6 @@
 
 RZ_LIB_VERSION(rz_cons);
 
-static RzConsContext rz_cons_context_default = { { { { 0 } } } };
-
 #if __WINDOWS__
 // restore only the console flags rizin owns instead of replaying the whole host mode word
 #define RZ_CONS_OUTPUT_MODE_MASK (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
@@ -333,10 +331,6 @@ RZ_API bool rz_cons_is_interactive(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	return cons->context->is_interactive;
 }
 
-RZ_API bool rz_cons_default_context_is_interactive() {
-	return rz_cons_context_default.is_interactive;
-}
-
 RZ_API int rz_cons_get_cur_line() {
 	int curline = 0;
 #if __WINDOWS__
@@ -545,7 +539,7 @@ RZ_API RZ_OWN RzCons *rz_cons_new() {
 
 	cons->input = RZ_NEW0(RzConsInputContext);
 	cons->input->bufactive = true;
-	cons->context = &rz_cons_context_default;
+	cons->context = &cons->default_context;
 	cons_context_init(cons->context, NULL);
 
 	rz_cons_get_size(cons, &cons->pagesize);
@@ -603,7 +597,7 @@ RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons) {
 	RZ_FREE(cons->input);
 	RZ_FREE(cons->break_word);
 	cons_context_deinit(cons->context);
-	if (cons->context != &rz_cons_context_default) {
+	if (cons->context != &cons->default_context) {
 		RZ_FREE(cons->context);
 	}
 	cons->context = NULL;
@@ -849,11 +843,11 @@ RZ_API void rz_cons_context_load(RZ_NONNULL RZ_BORROW RzCons *cons, RzConsContex
 }
 
 RZ_API void rz_cons_context_reset(RZ_NONNULL RZ_BORROW RzCons *cons) {
-	cons->context = &rz_cons_context_default;
+	cons->context = &cons->default_context;
 }
 
 RZ_API bool rz_cons_context_is_main(RZ_NONNULL RZ_BORROW RzCons *cons) {
-	return cons->context == &rz_cons_context_default;
+	return cons->context == &cons->default_context;
 }
 
 RZ_API void rz_cons_context_break(RzConsContext *context) {
