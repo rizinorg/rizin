@@ -42,6 +42,24 @@ bool test_rz_interrupt_raise_and_callbacks(void) {
 	mu_end;
 }
 
+bool test_rz_interrupt_raise_sigint(void) {
+	RzInterrupt *intr = rz_interrupt_new();
+	mu_assert_notnull(intr, "rz_interrupt_new failed");
+
+	intr->hook_signals = true;
+	rz_interrupt_break_push(intr, NULL, NULL);
+
+	mu_assert_false(rz_interrupt_is_breaked(intr), "should not be breaked initially");
+
+	rz_interrupt_raise_sigint();
+
+	mu_assert_true(rz_interrupt_is_breaked(intr), "should be breaked after raise_sigint");
+
+	rz_interrupt_break_pop(intr);
+	rz_interrupt_free(intr);
+	mu_end;
+}
+
 bool test_rz_interrupt_push_pop(void) {
 	RzInterrupt *intr = rz_interrupt_new();
 	mu_assert_notnull(intr, "rz_interrupt_new failed");
@@ -106,6 +124,7 @@ bool test_rz_interrupt_timeout(void) {
 bool test_rz_interrupt_null_inputs(void) {
 	rz_interrupt_free(NULL);
 	rz_interrupt_raise(NULL);
+	rz_interrupt_raise_sigint();
 	rz_interrupt_break_push(NULL, NULL, NULL);
 	rz_interrupt_break_pop(NULL);
 	rz_interrupt_timeout(NULL, 10);
@@ -118,6 +137,7 @@ bool test_rz_interrupt_null_inputs(void) {
 bool all_tests(void) {
 	mu_run_test(test_rz_interrupt_new_free);
 	mu_run_test(test_rz_interrupt_raise_and_callbacks);
+	mu_run_test(test_rz_interrupt_raise_sigint);
 	mu_run_test(test_rz_interrupt_push_pop);
 	mu_run_test(test_rz_interrupt_break_clear_and_end);
 	mu_run_test(test_rz_interrupt_timeout);
