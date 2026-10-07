@@ -97,7 +97,7 @@ struct rz_analysis_t {
 	ut64 lea_jmptbl_ip; ///< jump table x86 lea ip
 	ut64 gnu_thumb1_case_uqi_addr; ///< address of a `__gnu_thumb1_case_uqi_addr` function (specific to ARM / Thumb-1)
 	HtSP /*<const char *, RzSetU *>*/ *ht_virtual_xrefs; ///< addresses of virtual function calls
-	RzInterrupt *intr;
+	RzInterrupt *intr; ///< Interrupt handler for cancellation and timeouts
 };
 
 #endif // RZ_ANALYSIS_PRIVATE_H

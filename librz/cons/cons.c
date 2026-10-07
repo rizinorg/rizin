@@ -303,6 +303,13 @@ RZ_API void rz_cons_strcat_at(RZ_NONNULL RZ_BORROW RzCons *cons, const char *_st
 	free(str);
 }
 
+/**
+ * \brief Push a break callback onto the console context interrupt stack.
+ *
+ * \param context Console context.
+ * \param cb Callback to run on interrupt.
+ * \param user User pointer passed to callback.
+ */
 RZ_API void rz_cons_context_break_push(RzConsContext *context, RzInterruptEvent cb, void *user) {
 	if (!context || !context->intr) {
 		return;
@@ -310,6 +317,11 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzInterruptEvent 
 	rz_interrupt_break_push(context->intr, cb, user);
 }
 
+/**
+ * \brief Pop the top break callback from the console context interrupt stack.
+ *
+ * \param context Console context.
+ */
 RZ_API void rz_cons_context_break_pop(RzConsContext *context) {
 	if (!context || !context->intr) {
 		return;
