@@ -175,9 +175,10 @@ static bool test_h8300_control_flow(void) {
 		RzAnalysisOp op;
 		mu_assert_eq(rz_analysis_op(analysis, &op, 0x100, bytes, sizeof(bytes), RZ_ANALYSIS_OP_MASK_VAL), 2, "branch size");
 		mu_assert_eq(op.cond, conditions[i], "branch condition");
-		mu_assert_eq(op.type, i == 0 ? RZ_ANALYSIS_OP_TYPE_JMP : i == 1 ? RZ_ANALYSIS_OP_TYPE_NOP
-										: RZ_ANALYSIS_OP_TYPE_CJMP,
-			"branch type");
+		/* Normalize enum signedness before mu_assert_eq widens both operands. */
+		const ut32 expected_type = i == 0 ? RZ_ANALYSIS_OP_TYPE_JMP : i == 1 ? RZ_ANALYSIS_OP_TYPE_NOP
+										     : RZ_ANALYSIS_OP_TYPE_CJMP;
+		mu_assert_eq(op.type, expected_type, "branch type");
 		mu_assert_eq(op.jump, i == 1 ? UT64_MAX : 0xfe, "branch target");
 		mu_assert_eq(op.fail, i < 2 ? UT64_MAX : 0x102, "conditional fallthrough only");
 		mu_assert_eq(op.eob, i != 1, "BRN does not end block");
