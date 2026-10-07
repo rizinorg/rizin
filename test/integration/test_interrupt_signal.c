@@ -18,7 +18,7 @@ static bool test_rz_interrupt_sigint_handling(void) {
 	RzInterrupt *intr = rz_interrupt_new();
 	mu_assert_notnull(intr, "rz_interrupt_new failed");
 
-	rz_interrupt_set_hook_signals(intr, true);
+	intr->hook_signals = true;
 	rz_interrupt_break_push(intr, NULL, NULL);
 
 	mu_assert_false(rz_interrupt_is_breaked(intr), "should not be breaked initially");
@@ -26,8 +26,7 @@ static bool test_rz_interrupt_sigint_handling(void) {
 #if __UNIX__
 	raise(SIGINT);
 #elif __WINDOWS__
-	GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
-	rz_sys_usleep(50000);
+	rz_interrupt_w32_control(CTRL_C_EVENT);
 #endif
 
 	mu_assert_true(rz_interrupt_is_breaked(intr), "should be breaked after signal");
@@ -44,7 +43,7 @@ static bool test_rz_interrupt_process_signal(void) {
 		if (!intr) {
 			ExitProcess(1);
 		}
-		rz_interrupt_set_hook_signals(intr, true);
+		intr->hook_signals = true;
 		rz_interrupt_break_push(intr, NULL, NULL);
 
 		for (int i = 0; i < 50; i++) {
@@ -93,7 +92,7 @@ static bool test_rz_interrupt_process_signal(void) {
 		if (!intr) {
 			exit(1);
 		}
-		rz_interrupt_set_hook_signals(intr, true);
+		intr->hook_signals = true;
 		rz_interrupt_break_push(intr, NULL, NULL);
 
 		for (int i = 0; i < 50; i++) {

@@ -37,6 +37,11 @@ RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr);
 RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr);
 RZ_API void rz_interrupt_break_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout);
 
+#if __WINDOWS__
+#include <windows.h>
+RZ_API BOOL WINAPI rz_interrupt_w32_control(DWORD dwCtrlType);
+#endif
+
 static inline void *rz_interrupt_sleep_begin(RzInterrupt *intr) {
 	if (intr && intr->sleep_begin) {
 		return intr->sleep_begin(intr->user);
