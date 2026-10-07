@@ -613,7 +613,7 @@ static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 		ctx->finished_cb(res_str, ctx->finished_cb_user);
 	}
 
-	if (task != sched->main_task && rz_cons_default_context_is_interactive()) {
+	if (task != sched->main_task && rz_cons_is_interactive(core->cons)) {
 		eprintf("\nTask %d finished\n", task->id);
 	}
 }
