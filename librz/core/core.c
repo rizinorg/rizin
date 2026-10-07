@@ -1717,6 +1717,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->intr->sleep_begin = (RzInterruptSleepBegin)rz_core_sleep_begin;
 		core->intr->sleep_end = (RzInterruptSleepEnd)rz_core_sleep_end;
 		core->intr->cb_break = (RzInterruptBreakCallback)rz_core_break;
+		rz_interrupt_set_hook_signals(core->intr, true);
 	}
 	core->cons->intr = core->intr;
 
