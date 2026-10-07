@@ -94,6 +94,11 @@ static void break_stack_free(void *ptr) {
 	free(frame);
 }
 
+/**
+ * \brief Allocate and initialize a new interrupt handler.
+ *
+ * \return Pointer to new RzInterrupt instance, or NULL on error.
+ */
 RZ_API RZ_OWN RzInterrupt *rz_interrupt_new(void) {
 	RzInterrupt *intr = RZ_NEW0(RzInterrupt);
 	if (!intr) {
@@ -107,6 +112,11 @@ RZ_API RZ_OWN RzInterrupt *rz_interrupt_new(void) {
 	return intr;
 }
 
+/**
+ * \brief Free an interrupt handler instance and unhook signals if active.
+ *
+ * \param intr Interrupt instance.
+ */
 RZ_API void rz_interrupt_free(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
@@ -120,6 +130,11 @@ RZ_API void rz_interrupt_free(RZ_NULLABLE RzInterrupt *intr) {
 	free(intr);
 }
 
+/**
+ * \brief Raise an interrupt flag and invoke current callback.
+ *
+ * \param intr Interrupt instance.
+ */
 RZ_API void rz_interrupt_raise(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
@@ -130,6 +145,13 @@ RZ_API void rz_interrupt_raise(RZ_NULLABLE RzInterrupt *intr) {
 	}
 }
 
+/**
+ * \brief Push a break callback to the stack and hook signals if empty.
+ *
+ * \param intr Interrupt instance.
+ * \param cb Callback function.
+ * \param user User data pointer passed to callback.
+ */
 RZ_API void rz_interrupt_break_push(RZ_NULLABLE RzInterrupt *intr, RZ_NULLABLE RzInterruptEvent cb, RZ_NULLABLE void *user) {
 	if (!intr || !intr->break_stack) {
 		return;
@@ -157,6 +179,11 @@ RZ_API void rz_interrupt_break_push(RZ_NULLABLE RzInterrupt *intr, RZ_NULLABLE R
 	intr->current_user = user;
 }
 
+/**
+ * \brief Pop top break callback from the stack and unhook signals when empty.
+ *
+ * \param intr Interrupt instance.
+ */
 RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr || !intr->break_stack || rz_stack_is_empty(intr->break_stack)) {
 		return;
@@ -179,6 +206,12 @@ RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
 	}
 }
 
+/**
+ * \brief Set interrupt timeout in milliseconds.
+ *
+ * \param intr Interrupt instance.
+ * \param timeout Timeout in ms, or 0 to disable.
+ */
 RZ_API void rz_interrupt_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	if (!intr) {
 		return;
@@ -186,11 +219,21 @@ RZ_API void rz_interrupt_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	intr->timeout = (timeout && !intr->timeout) ? rz_time_now_mono() + ((ut64)timeout << 20) : 0;
 }
 
+/**
+ * \brief Clear the interrupted state flag.
+ *
+ * \param intr Interrupt instance.
+ */
 RZ_API void rz_interrupt_break_clear(RZ_NONNULL RzInterrupt *intr) {
 	rz_return_if_fail(intr);
 	intr->is_breaked = false;
 }
 
+/**
+ * \brief Reset break state, unhook signals, and clear break stack.
+ *
+ * \param intr Interrupt instance.
+ */
 RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return;
@@ -212,6 +255,12 @@ RZ_API void rz_interrupt_break_end(RZ_NULLABLE RzInterrupt *intr) {
 	intr->current_user = NULL;
 }
 
+/**
+ * \brief Check if interrupt signal or timeout has occurred.
+ *
+ * \param intr Interrupt instance.
+ * \return True if interrupted, false otherwise.
+ */
 RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr) {
 	if (!intr) {
 		return false;
@@ -233,6 +282,12 @@ RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr) {
 	return intr->is_breaked;
 }
 
+/**
+ * \brief Set break timeout in milliseconds.
+ *
+ * \param intr Interrupt instance.
+ * \param timeout Timeout in ms, or 0 to disable.
+ */
 RZ_API void rz_interrupt_break_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
 	if (!intr) {
 		return;
