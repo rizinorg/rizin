@@ -373,10 +373,10 @@ jobs:
           sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
           sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
       - name: Install tools
-        run: yum install -y patch unzip git gcc make python3-pip
+        run: yum install -y patch unzip git gcc make python3-pip python3-devel
         # Pin Meson to the last version stil supporting Python 3.6
       - name: Install meson and ninja
-        run: pip3 install meson==0.61.5 ninja PyYAML requests
+        run: pip3 install meson==0.61.5 ninja PyYAML psutil==6.1.1 requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}
@@ -481,7 +481,7 @@ jobs:
         env:
           PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       - name: Install test dependencies
-        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
+        run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' psutil requests
       - name: Run tests
         # Debug tests fail on old Debian because of the runtime differences, ignore them
         run: |
@@ -499,7 +499,7 @@ jobs:
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz py3-requests
+        run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz py3-psutil py3-requests
       - name: Checkout rizin
         run: |
           git clone https://github.com/${{ github.repository }}

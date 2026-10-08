@@ -68,7 +68,7 @@ jobs:
           path: test/rz-pipe
 
       - name: Install test dependencies
-        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" requests
+        run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python" psutil requests
         env:
           PIP_BREAK_SYSTEM_PACKAGES: 1
 
