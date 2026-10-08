@@ -1,0 +1,72 @@
+name: Cross Build Tests
+on:
+  push:
+  pull_request:
+
+# Stop previous runs on the same branch on new push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
+  ASAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
+  LSAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
+
+jobs:
+  Linux:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              name: 'QEMU Linux Mips64',
+              os: ubuntu-24.04,
+              build_type: 'Debug',
+              musl_toolchain: 'mips64-linux-musl',
+              packages: 'qemu-user-static',
+              cross_file: 'doc/examples/cross_builds/meson-linux-mips64.ini',
+            }
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ matrix.config.python-version }}
+
+    - name: Install meson and ninja
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: pip3 install --user meson ninja PyYAML
+
+    - name: Install cross build dependencies
+      if: ${{ matrix.config.packages != '' }}
+      env:
+        packages: ${{ matrix.config.packages }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${packages}
+
+    - name: Install toolchain
+      env:
+        musl_toolchain: ${{ matrix.config.musl_toolchain }}
+        cross_file: ${{ matrix.config.cross_file }}
+      run: |
+        curl -s "https://musl.cc/${musl_toolchain}-cross.tgz"
+        tar xvf "${musl_toolchain}-cross.tgz"
+        sed -i "<<path-to-toolchain>>|$(pwd)/${musl_toolchain}-cross/|g" ${cross_file}
+
+    - name: meson (cross config)
+      env:
+        build_type: ${{ matrix.config.build_type }}
+        cross_file: ${{ matrix.config.cross_file }}
+      run: |
+        meson --cross-file=${cross_file} --buildtype=${build_type} build
+
+    - name: meson (cross build)
+      run: |
+        ninja -C build
