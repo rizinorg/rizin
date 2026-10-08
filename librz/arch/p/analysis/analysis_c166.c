@@ -91,7 +91,8 @@ bool set_reg_val(RzAnalysis *analysis, const char *name, const ut64 value) {
 
 static void c166_set_mimo_addr_from_reg(RzAnalysisOp *op, ut8 reg) {
 	if (reg < 0xF0) {
-		op->mmio_address = BASE_SFR_ADDR + (2 * reg);
+		op->mmios[op->mmios_count] = BASE_SFR_ADDR + (2 * reg);
+		op->mmios_count++;
 	}
 }
 
@@ -780,21 +781,16 @@ static void c166_op_mov_reg_data(RzAnalysis *analysis, RzAnalysisOp *op, const u
 	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	op->dst = c166_new_reg_value(analysis, reg, false);
 	op->src[0] = c166_new_imm_value(data, true);
-	if (op->dst != NULL) {
-		op->mmio_address = op->dst->base;
-	}
+	op->mmios[op->mmios_count] = op->dst->base;
+	op->mmios_count++;
 }
 
 static void c166_op_mov_reg_mem(const RzAnalysis *analysis, RzAnalysisOp *op, const C166_Inst *instr, const ut8 *buf) {
 	op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	const bool byte = buf[0] != C166_MOV_reg_mem;
-	const ut16 mask = byte ? 0xFF : 0xFFFF;
-	const ut32 addr = rz_read_at_le16(buf, 2) & mask;
 	op->dst = c166_new_reg_value(analysis, buf[1], byte);
-	op->src[0] = c166_new_mem_value(analysis, instr, addr);
-	if (op->dst != NULL) {
-		op->mmio_address = op->dst->base;
-	}
+	op->mmios[op->mmios_count] = op->dst->base;
+	op->mmios_count++;
 }
 
 static void c166_op_mov_mem_reg(const RzAnalysis *analysis, RzAnalysisOp *op, const C166_Inst *instr, const ut8 *buf) {
@@ -802,15 +798,18 @@ static void c166_op_mov_mem_reg(const RzAnalysis *analysis, RzAnalysisOp *op, co
 	const bool byte = buf[0] != C166_MOV_mem_reg;
 	op->src[0] = c166_new_reg_value(analysis, buf[1], byte);
 	op->dst = c166_new_mem_value(analysis, instr, rz_read_at_le16(buf, 2));
-	if (op->src[0])
-		op->mmio_address = op->src[0]->base;
+	if (op->src[0]) {
+		op->mmios[op->mmios_count] = op->src[0]->base;
+		op->mmios_count++;
+	}
 }
 
 static void c166_op_bfld(const RzAnalysis *analysis, RzAnalysisOp *op, const C166_Inst *instr, const ut8 *buf) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 	op->dst = c166_new_bitaddr_value(analysis, instr, buf[1]);
 	if (op->dst != NULL) {
-		op->mmio_address = op->dst->base;
+		op->mmios[op->mmios_count] = op->dst->base;
+		op->mmios_count++;
 	}
 }
 
@@ -822,7 +821,8 @@ static void c166_op_jmp_bitoff(const RzAnalysis *analysis, RzAnalysisOp *op, con
 	op->fail = op->addr + op->size;
 	op->src[0] = c166_new_bitaddr_value(analysis, instr, buf[1]);
 	if (op->src[0]) {
-		op->mmio_address = op->src[0]->base;
+		op->mmios[op->mmios_count] = op->src[0]->base;
+		op->mmios_count++;
 	}
 }
 
@@ -1016,8 +1016,10 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 	case C166_BSET_bitoff15:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->dst = c166_new_bitaddr_value(analysis, instr, operand1);
-		if (op->dst)
-			op->mmio_address = op->dst->base;
+		if (op->dst) {
+			op->mmios[op->mmios_count] = op->dst->base;
+			op->mmios_count++;
+		}
 		break;
 	case C166_BFLDH_bitoff_x:
 	case C166_BFLDL_bitoff_x:
@@ -1028,8 +1030,14 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = c166_new_bitaddr_value(analysis, instr, operand1);
 		op->src[0] = c166_new_bitaddr_value(analysis, instr, get_operand(instr, 2));
-		if (op->dst)
-			op->mmio_address = op->dst->base;
+		if (op->src[0]) {
+			op->mmios[op->mmios_count] = op->src[0]->base;
+			op->mmios_count++;
+		}
+		if (op->dst) {
+			op->mmios[op->mmios_count] = op->dst->base;
+			op->mmios_count++;
+		}
 		break;
 	case C166_BCMP_bitaddr_bitaddr:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
@@ -1129,15 +1137,18 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->dst = c166_new_mem_value(analysis, instr, rz_read_at_le16(buf, 2));
 		if (op->dst) {
-			op->mmio_address = op->dst->base;
+			op->mmios[op->mmios_count] = op->dst->base;
+			op->mmios_count++;
 		}
 		break;
 	case C166_MOV_oRwn_mem:
 	case C166_MOVB_oRwn_mem: {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->src[0] = c166_new_mem_value(analysis, instr, rz_read_at_le16(buf, 2));
-		if (op->src[0])
-			op->mmio_address = op->src[0]->base;
+		if (op->src[0]) {
+			op->mmios[op->mmios_count] = op->src[0]->base;
+			op->mmios_count++;
+		}
 		break;
 	}
 	case C166_NEG_Rwn:
@@ -1180,7 +1191,8 @@ static void c166_op_set_type(RZ_NONNULL C166_Inst *instr, RzAnalysis *analysis, 
 	case C166_CMPI2_Rwn_mem:
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		op->reg = c166_rw[operand1 & 0xF];
-		op->mmio_address = rz_read_at_le16(buf, 2);
+		op->mmios[op->mmios_count] = rz_read_at_le16(buf, 2);
+		op->mmios_count++;
 		break;
 	case C166_CMP_reg_data16:
 	case C166_CMP_reg_mem:
