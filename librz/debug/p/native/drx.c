@@ -88,12 +88,12 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	}
 	switch (rwx) {
 	case 1: rwx = DR_RW_EXECUTE; break;
-	case 2:
-	case 3: rwx = DR_RW_WRITE; break;
-	case 4:
-	case 5:
-	case 6:
-	case 7: rwx = DR_RW_READ; break;
+	case 2: // fallthrough
+	case 3: rwx = DR_RW_WRITE; break; // x86 can't combine write with execute
+	case 4: // fallthrough
+	case 5: // fallthrough
+	case 6: // fallthrough
+	case 7: rwx = DR_RW_READ; break; // x86 has no read-only mode: this traps on read or write
 	default:
 		rwx = DR_RW_EXECUTE;
 	}
