@@ -227,15 +227,18 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 
 	RzPdbMsfStreamDirectory *msd = RZ_NEW0(RzPdbMsfStreamDirectory);
 	if (!msd) {
+		rz_buf_free(sd);
 		goto error_memory;
 	}
 	if (!rz_buf_read_le32(sd, &msd->NumStreams)) {
+		rz_buf_free(sd);
 		RZ_FREE(msd);
 		goto error;
 	}
 	msd->StreamSizes = (ut32 *)malloc(msd->NumStreams * sizeof(ut32));
 	msd->sd = sd;
 	if (!msd->StreamSizes) {
+		rz_buf_free(msd->sd);
 		RZ_FREE(msd);
 		goto error_memory;
 	}
@@ -243,6 +246,8 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	for (size_t i = 0; i < msd->NumStreams; i++) {
 		ut32 stream_size;
 		if (!rz_buf_read_le32(sd, &stream_size)) {
+			rz_buf_free(msd->sd);
+			RZ_FREE(msd->StreamSizes);
 			RZ_FREE(msd);
 			goto error;
 		}
@@ -258,6 +263,8 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) + total_blocks * sizeof(ut32);
 	if (msd_size != pdb->super_block->num_directory_bytes) {
 		RZ_LOG_ERROR("Error stream directory size.\n");
+		rz_buf_free(msd->sd);
+		RZ_FREE(msd->StreamSizes);
 		RZ_FREE(msd);
 		goto error;
 	}
