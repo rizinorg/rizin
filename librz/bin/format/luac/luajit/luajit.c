@@ -54,6 +54,13 @@ RZ_IPI RzBinInfo *luajit_header_parser(RzBinFile *bf, LuaJITBinInfo *bin_info, i
 		int end_len;
 		end_len = rz_buf_uleb128_at(r_buffer, LUAJIT_FILE_LEN_START, &name_len);
 		if (check_malformed_ULEB128(end_len)) {
+			free(info->file);
+			free(info->type);
+			free(info->bclass);
+			free(info->rclass);
+			free(info->arch);
+			free(info->cpu);
+			free(info->compiler);
 			RZ_FREE(info);
 			return NULL;
 		}
