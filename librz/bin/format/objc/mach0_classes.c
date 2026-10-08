@@ -618,7 +618,6 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				}
 			}
 			copy_sym_name_with_namespace(class_name, name, method);
-			RZ_FREE(name);
 		}
 
 		r = va2pa(m.types, NULL, &left, bf);
@@ -640,17 +639,20 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 					goto error;
 				}
 				if (rz_buf_read_at(buf, r, (ut8 *)rtype, left) != left) {
-					free(rtype);
 					goto error;
 				}
 				rtype[left] = 0;
 			}
 			method->rtype = rz_str_dup(rtype);
-			RZ_FREE(rtype);
 		}
 
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
+			RZ_FREE(name);
+			RZ_FREE(rtype);
+			RZ_FREE(method->classname);
+			RZ_FREE(method->name);
+			RZ_FREE(method->rtype);
 			RZ_FREE(method);
 			goto next;
 		}
@@ -671,8 +673,12 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 	}
 	return;
 error:
-	RZ_FREE(method);
 	RZ_FREE(name);
+	RZ_FREE(rtype);
+	RZ_FREE(method->classname);
+	RZ_FREE(method->name);
+	RZ_FREE(method->rtype);
+	RZ_FREE(method);
 	return;
 }
 
