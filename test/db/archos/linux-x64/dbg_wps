@@ -12,28 +12,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=write watchpoint stops after the store
-FILE=bins/elf/analysis/x86-helloworld-gcc
+NAME=write watchpoint traps after the store
+FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
-dbw obj.completed.5979 w
+s obj.completed.6661
+dbw w 1
 dc
-?v rip - sym.__do_global_dtors_aux
+s rip
+fs symbols
+fd
 EOF
 EXPECT=<<EOF
-0x1b
+entry.fini0 + 26
 EOF
 RUN
 
-NAME=rw watchpoint stops at the first access (the read)
-FILE=bins/elf/analysis/x86-helloworld-gcc
+NAME=rw watchpoint traps at the first access (the read)
+FILE=bins/elf/analysis/calls_x64
 ARGS=-d
 CMDS=<<EOF
-dbw obj.completed.5979 rw
+s obj.completed.6661
+dbw rw 1
 dc
-?v rip - sym.__do_global_dtors_aux
+s rip
+fs symbols
+fd
 EOF
 EXPECT=<<EOF
-0x7
+entry.fini0 + 7
 EOF
 RUN
