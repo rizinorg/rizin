@@ -42,5 +42,5 @@ bool rz_bin_omf166_get_entry(const rz_bin_omf166_obj *obj, RzBinAddr *addr);
 ut64 rz_bin_omf166_get_paddr_sym(rz_bin_omf166_obj *obj, OMF_symbol *sym);
 ut64 rz_bin_omf166_get_vaddr_sym(rz_bin_omf166_obj *obj, OMF_symbol *sym);
 const char *rz_bin_omf166_get_module_information(rz_bin_omf166_obj *obj);
-
+const char *get_data_type166(ut8 data_type);
 #endif // OMF166_H

@@ -347,6 +347,7 @@ typedef struct {
 	 *             Automatics are relative to R0 with an offset given by Offset16 [R0+Offset16]).
 	 */
 	ut8 bpos;
+	ut8 type51;
 } OMF_symbol;
 
 /**
@@ -410,7 +411,7 @@ typedef struct {
  */
 typedef struct {
 	ut16 index;
-	ut16 class_index;
+	ut8 class_index;
 	ut8 Type; ///< The ’Type’ field is two bits and specifies the type of the section as follows: 0:=BIT, 1:=DATA, 2:=CODE, 3:=CONST
 	bool X; ///< The ’X’ bit is set if the section is of type ’xhuge’ (length 0 ... 16M).
 	bool H; ///< The ’H’ bit is set if the section is of type ’huge’ (length 0 ... 64K).
@@ -420,7 +421,41 @@ typedef struct {
 	ut32 offset;
 	ut32 Seclen;
 	bool isXSec; ///< XSECDEF and SECDEF is same records
+	ut8 n51; ///< name length, n max 255, so name array len is 255
+	char name51[MAX_NAME_LEN];
 } OMF_sections;
+
+
+typedef struct {
+	ut8 seg_attr;
+	ut8 seg_alignment;
+	ut8 seg_combination;
+	bool seg_b;
+	bool seg_p;
+	ut32 seg_length;
+	ut16 seg_name_idx;
+	ut16 class_name_idx;
+	ut16 overlay_name_idx;
+	ut32 offset;
+	ut32 paddr;
+} OMF1_1_sections;
+
+typedef struct {
+	ut16 locat;
+	bool mode;
+	ut8 location;
+	ut32 data_record_offset;
+	ut8 fix_data;
+	bool F;
+	ut8 Frame;
+	bool T;
+	bool P;
+	ut8 Targt;
+	ut32 targdisp;
+	ut8 ledata_index;
+	ut8 Frame_Datum;
+	ut8 Target_Datum;
+} OMF1_1_relocs;
 
 /**
  * PEDATA and VECTAB records provides contiguous data, from which a portion of a memory image is
@@ -570,6 +605,7 @@ typedef struct {
 typedef struct {
 	ut16 index;
 	bool nopurge; ///< NOPURGE bit; 1 = comment may not be purged from the file
+	bool nolist; ///< no list bit; 1 = comment may not be purged from the file
 	bool is_filename;
 	ut8 n;
 	char text[MAX_NAME_LEN]; ///< this field provides the commentary text.
@@ -577,20 +613,29 @@ typedef struct {
 
 typedef struct {
 	ut8 bits;
+	ut64 base_addr;
 	ut8 modinfo;
 	char **names;
 	ut32 nb_name;
 	OMF_segment **sections;
+	int SEC_INDEX;
 	ut32 nb_section;
 	OMF_symbol **symbols;
 	ut32 nb_symbol;
 	OMF_record_handler *records;
+	RzPVector /*<OMF_lnames *>*/ *lnames_vec;
+	RzPVector /*<OMF_sections *>*/ *sections_vec;
+	RzPVector /*<OMF_pes *>*/ *pe_vec;
+	RzPVector /*<OMF1_1_relocs *>*/ *relocs_vec;
+	RzPVector /*<OMF_coments *>*/ *coments_vec;
+	RzPVector /*<OMF_linnums *>*/ *linnums_vec;
 } rz_bin_omf_obj;
 
 typedef struct {
-	ut16 index;
+	ut16 index; // 51
 	ut8 n; ///< n max 255, so name array len is 255
 	char name[MAX_NAME_LEN];
+	ut32 timestamp;
 } OMF_debug_includes;
 
 typedef struct {
@@ -739,12 +784,23 @@ typedef struct {
 #define SP_RESET_VALUE      0xFC00
 #define CPUCON1_RESET_VALUE 0x0000
 
+#define new_pv_and_check2(vec, destructor) \
+	if (!((vec) = rz_pvector_new((RzPVectorFree)(destructor)))) \
+		return false;
+
+
+#define new_pv_and_check(vec, destructor, ret) \
+	vec = rz_pvector_new((RzPVectorFree)(destructor)); \
+	if (!vec) { \
+		return ret; \
+	}
+
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
-rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size);
+rz_bin_omf_obj *rz_bin_format_omf_load(const ut8 *buf, ut64 size);
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj);
 bool rz_bin_omf_get_entry(const rz_bin_omf_obj *obj, RzBinAddr *addr);
-int rz_bin_omf_get_bits(const rz_bin_omf_obj *obj);
-int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, const OMF_segment *section, const rz_bin_omf_obj *obj);
+ut8 rz_bin_omf_get_bits(const rz_bin_omf_obj *obj);
+// int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, const OMF_segment *section, const rz_bin_omf_obj *obj);
 ut64 rz_bin_omf_get_paddr_sym(const rz_bin_omf_obj *obj, const OMF_symbol *sym);
 ut64 rz_bin_omf_get_vaddr_sym(const rz_bin_omf_obj *obj, const OMF_symbol *sym);
 
@@ -753,4 +809,8 @@ RZ_API char *get_memory_model(ut8 modinfo);
 ut32 get_perm_by_type(ut8 data_type);
 ut32 c166_get_perms_from_class(const ut8 class_id);
 const char *get_data_type(ut8 data_type);
+ut8 fixup_location_bits(const ut8 type);
+ut16 omf_get_idx(const ut8 *buf, const size_t buf_size);
+void omf_linnums_free(void *it);
+
 #endif

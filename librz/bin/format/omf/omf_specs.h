@@ -8,10 +8,11 @@
 
 // additional information : http://pierrelib.pagesperso-orange.fr/exec_formats/OMF_v1.1.pdf
 
+#define RECORD_MAX_SIZE 1 << 10 // max size 1Kb
 // record type
 #define OMF_THEADR    0x80 // Translator Header Record
 #define OMF_LHEADR    0x82 // Library Module Header Record
-#define OMF_COMENT    0x88 // Comment Record (Including all comment class extensions)
+#define OMF_COMMENT   0x88 // Comment Record (Including all comment class extensions)
 #define OMF_MODEND    0x8A // Module End Record 16 bits
 #define OMF_MODEND32  0x8B // Module End Record 32 bits
 #define OMF_EXTDEF    0x8C // External Names Definition Record
@@ -117,6 +118,9 @@
 #define OMF166_UNKNOWN3 0x63
 #define OMF166_UNKNOWN4 0x64
 #define OMF166_UNKNOWN5 0x65
+
+#define OMF51_PEDATA     0x94
+#define OMF51_ENTRYPOINT 0xCA // Base address (entry point)
 
 typedef struct {
 	ut8 type;
