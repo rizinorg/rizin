@@ -786,6 +786,7 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 	ut32 nlen = 0;
 	memset(info, 0, sizeof(GoStrInfo));
 
+	// First verify all pattern masks match before executing any expensive decode callbacks
 	for (size_t i = 0; i < n_sigs; ++i) {
 		if (nlen >= ctx->size) {
 			return false;
@@ -810,6 +811,16 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 		if (memcmp(copy, sig->pasm->pattern, sig->pasm->size)) {
 			return false;
 		}
+
+		nlen += sig->pasm->size;
+	}
+
+	// Now decode info once pattern match is confirmed across the whole signature
+	nlen = 0;
+	for (size_t i = 0; i < n_sigs; ++i) {
+		GoSignature *sig = &sigs[i];
+		ut8 *bytes = ctx->bytes + nlen;
+		ut32 size = ctx->size - nlen;
 
 		// decode info
 		if (sig->decode && !sig->decode(ctx->core, info, ctx->pc + nlen, bytes, size)) {
@@ -1882,7 +1893,8 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	RzAnalysisFunction *func;
 	RzAnalysisBlock *block;
 	GoStrRecoverCb recover_cb = NULL;
-	ut8 *bytes = NULL;
+	ut8 *bb_buf = NULL;
+	ut32 bb_buf_cap = 0;
 	ut32 min_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	GoStrRecover ctx = { 0 };
 	ctx.core = core;
@@ -1963,27 +1975,35 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 		}
 		rz_pvector_foreach (func->bbs, vit) {
 			block = (RzAnalysisBlock *)*vit;
-			bytes = malloc(block->size);
-			if (!bytes) {
-				RZ_LOG_ERROR("Failed allocate basic block bytes buffer\n");
-				return;
-			} else if (0 > rz_io_nread_at(core->io, block->addr, bytes, block->size)) {
-				free(bytes);
+			if (block->size == 0) {
+				continue;
+			}
+			if (block->size > bb_buf_cap) {
+				ut8 *new_buf = realloc(bb_buf, block->size);
+				if (!new_buf) {
+					free(bb_buf);
+					RZ_LOG_ERROR("Failed to allocate basic block bytes buffer\n");
+					return;
+				}
+				bb_buf = new_buf;
+				bb_buf_cap = block->size;
+			}
+			if (0 > rz_io_nread_at(core->io, block->addr, bb_buf, block->size)) {
 				RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
-				return;
+				continue;
 			}
 
 			for (ut32 i = 0; i < block->size;) {
 				ctx.pc = block->addr + i;
-				ctx.bytes = bytes + i;
+				ctx.bytes = bb_buf + i;
 				ctx.size = block->size - i;
 
 				ut32 nlen = recover_cb(&ctx);
 				i += RZ_MAX(nlen, min_op_size);
 			}
-			free(bytes);
 		}
 	}
+	free(bb_buf);
 
 	rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
 	rz_core_notify_done(core, "Recovered %d strings from the sym.go.* functions.", ctx.n_recovered);
