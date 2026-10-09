@@ -1356,7 +1356,12 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	free(prefix);
 	return true;
 fail:
-
+	if (section) {
+		free(section->name);
+	}
+	if (symbol) {
+		free(symbol->name);
+	}
 	free(section);
 	free(prefix);
 	free(symbol);
