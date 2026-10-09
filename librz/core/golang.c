@@ -522,17 +522,15 @@ static bool rz_golang_is_compiler_wrapper_symbol(const char *name) {
 	if (RZ_STR_ISEMPTY(name)) {
 		return true;
 	}
-	if (strstr(name, ".abi0") ||
+	if (!strncmp(name, "sym.go.", 7)) {
+		name += 7;
+	}
+	return strstr(name, ".abi0") ||
 		strstr(name, ".abiinternal") ||
 		strstr(name, ".deferwrap") ||
 		strstr(name, "..inittask") ||
-		!strncmp(name, "sym.go.type:", 12) ||
 		!strncmp(name, "type:", 5) ||
-		!strncmp(name, "sym.go.go:", 10) ||
-		!strncmp(name, "go:", 3)) {
-		return true;
-	}
-	return false;
+		!strncmp(name, "go:", 3);
 }
 
 /**
@@ -549,8 +547,8 @@ static void rz_golang_vote_abi_prologue(RzIO *io, ut64 func_addr, ut32 *reg_vote
 			(*reg_votes)++;
 			return;
 		}
-		// 65 48|4C 8B /r with SIB 0x25 (MOVQ GS:[disp32], reg) -> Stack ABI (g loaded from TLS)
-		if (code[k] == 0x65 && (code[k + 1] == 0x48 || code[k + 1] == 0x4c) && code[k + 2] == 0x8b &&
+		// 64|65 48|4C 8B /r with SIB 0x25 (MOVQ FS|GS:[disp32], reg) -> Stack ABI (g loaded from TLS)
+		if ((code[k] == 0x64 || code[k] == 0x65) && (code[k + 1] == 0x48 || code[k + 1] == 0x4c) && code[k + 2] == 0x8b &&
 			(code[k + 3] & 0xc7) == 0x04 && code[k + 4] == 0x25) {
 			(*stack_votes)++;
 			return;
@@ -590,10 +588,11 @@ static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
 
 	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 
-	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fi->offset);
-	if (fcn && ctx->cc) {
-		RzStrConstPool *cpool = rz_analysis_get_const_pool(core->analysis);
-		fcn->cc = rz_str_constpool_get(cpool, ctx->cc);
+	if (ctx->cc) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fi->offset);
+		if (fcn) {
+			fcn->cc = ctx->cc;
+		}
 	}
 	return true;
 }
@@ -639,9 +638,11 @@ static void analyse_golang_symbols(RzCore *core) {
 		return;
 	}
 
+	const char *detected_cc = golang_detect_cc(core, symbols);
+	RzStrConstPool *cpool = rz_analysis_get_const_pool(core->analysis);
 	GolangAnalyseCtx actx = {
 		.core = core,
-		.cc = golang_detect_cc(core, symbols)
+		.cc = (detected_cc && cpool) ? rz_str_constpool_get(cpool, detected_cc) : NULL
 	};
 
 	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, &actx);
