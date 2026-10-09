@@ -71,7 +71,7 @@ typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
-	RzAbsIntScratchPad *scratch;
+	RzAbsIntScratchPad scratch;
 	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
 	HtUP /*<RzAbsIntVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
@@ -264,7 +264,7 @@ typedef enum rz_absint_result_code_t {
 } RzAbsIntResultCode;
 
 RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIntState *state);
-RZ_IPI void rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state);
+RZ_IPI bool rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state);
 
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);

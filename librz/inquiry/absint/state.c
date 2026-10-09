@@ -53,23 +53,40 @@ static bool join_var_arrs(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzVector *a
  */
 RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIntState *state) {
 	rz_return_val_if_fail(state, NULL);
-	if (rz_vector_len(state->scratch->pad) < state->scratch->i) {
-		return rz_vector_index_ptr(state->scratch->pad, state->scratch->i++);
+	if (rz_vector_len(state->scratch.pad) < state->scratch.i) {
+		return rz_vector_index_ptr(state->scratch.pad, state->scratch.i++);
 	}
-	size_t new_cap = rz_vector_len(state->scratch->pad) * 1.2;
-	rz_vector_reserve(state->globals, new_cap);
-	return rz_vector_index_ptr(state->scratch->pad, state->scratch->i++);
+	size_t new_cap = rz_vector_len(state->scratch.pad) * 1.2;
+	rz_vector_reserve(state->scratch.pad, new_cap);
+	return rz_vector_index_ptr(state->scratch.pad, state->scratch.i++);
+}
+
+static bool init_scratch(RzAbsIntInstance *inst, RzAbsIntScratchPad *scratch) {
+	scratch->i = 0;
+	scratch->pad = rz_vector_new(val_domain(inst)->val_size(), NULL, NULL);
+	if (!scratch->pad) {
+		rz_warn_if_reached();
+		return false;
+	}
+	rz_vector_reserve(scratch->pad, RZ_ABS_INT_INIT_SCRATCH_PAD_SIZE);
+	return true;
 }
 
 /**
- * \brief Resets the scratch values.
+ * \brief Resets the scratch values. If state->scractch is uninitizlized, it will init it.
  * So new values will be taken from the head of the array again.
  */
-RZ_IPI void rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state) {
-	rz_return_if_fail(state);
-	var_arr_fini(inst, state->scratch->pad);
-	rz_vector_purge(state->scratch->pad);
-	state->scratch->i = 0;
+RZ_IPI bool rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state) {
+	rz_return_val_if_fail(inst && state, false);
+	if (state->scratch.pad) {
+		var_arr_fini(inst, state->scratch.pad);
+		rz_vector_purge(state->scratch.pad);
+		state->scratch.i = 0;
+	} else if (!init_scratch(inst, &state->scratch)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	return true;
 }
 
 /**
@@ -83,9 +100,7 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		return NULL;
 	}
 	state->pc_state = RZ_ABSINT_PC_UNREACHABLE;
-	state->scratch->pad = rz_vector_new(val_domain(inst)->val_size(), NULL, NULL);
-	rz_vector_reserve(state->globals, RZ_ABS_INT_INIT_SCRATCH_PAD_SIZE);
-	if (!state->scratch->pad) {
+	if (!init_scratch(inst, &state->scratch)) {
 		rz_warn_if_reached();
 		free(state);
 		return NULL;
@@ -131,7 +146,7 @@ RZ_API void rz_absint_state_free(RZ_BORROW RzAbsIntInstance *inst, RZ_OWN RZ_NUL
 	if (!state) {
 		return;
 	}
-	var_arr_free(inst, state->scratch->pad);
+	var_arr_free(inst, state->scratch.pad);
 	var_arr_free(inst, state->globals);
 	var_set_free(inst, state->locals);
 	var_set_free(inst, state->lets);
@@ -262,6 +277,10 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
 
 	RzAbsIntState *r = RZ_NEW0(RzAbsIntState);
 	if (!state) {
+		return NULL;
+	}
+	if (!init_scratch(iset, &r->scratch)) {
+		free(r);
 		return NULL;
 	}
 	r->pc = state->pc;

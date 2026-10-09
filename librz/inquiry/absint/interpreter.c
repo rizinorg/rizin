@@ -789,7 +789,9 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 			if (res != EVAL_RESULT_BREAK) {
 				RZ_LOG_ERROR("Failed to evaluate op at 0x%" PFMT64x "\n", ctx->insn_addr);
 			}
-			rz_absint_scratch_reset(ctx->inst, astate);
+			if (!rz_absint_scratch_reset(ctx->inst, astate)) {
+				return EVAL_RESULT_ERROR;
+			}
 			return res;
 		}
 		if (astate->pc_state != RZ_ABSINT_PC_CONST) {
@@ -816,7 +818,9 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 		RZ_LOG_INFO("Finished evaluating absint block @ 0x%" PFMT64x "\n\n", interp_block->entry_state->pc);
 	}
 
-	rz_absint_scratch_reset(ctx->inst, astate);
+	if (!rz_absint_scratch_reset(ctx->inst, astate)) {
+		return EVAL_RESULT_ERROR;
+	}
 	return EVAL_RESULT_OK;
 }
 
