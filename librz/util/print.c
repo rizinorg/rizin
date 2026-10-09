@@ -293,8 +293,9 @@ static bool isAllZeros(const ut8 *buf, int len) {
 }
 
 #define Pal(x, y) (x->cons && x->cons->context->pal.y) ? x->cons->context->pal.y
-RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
-	PrintfCallback p = (PrintfCallback)rp->cb_printf;
+RZ_API RZ_OWN char *rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
 	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_0xff = c ? (Pal(rp, b0xff) : Color_RED)
 				   : "";
@@ -307,11 +308,11 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 	bool show_offset = rp->show_offset;
 
 	if (rp->flags & RZ_PRINT_FLAGS_HEADER) {
-		p("         ");
+		rz_strbuf_append(&sb, "         ");
 		for (i = 0; i < step; i++) {
-			p("%3X", i);
+			rz_strbuf_appendf(&sb, "%3X", i);
 		}
-		p("\n");
+		rz_strbuf_append(&sb, "\n");
 	}
 
 	for (i = 0; i < len; i += step) {
@@ -320,25 +321,26 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 			continue;
 		}
 		if (show_offset) {
-			p("%8" PFMT64x ":", addr + i);
+			rz_strbuf_appendf(&sb, "%8" PFMT64x ":", addr + i);
 		}
 		for (j = 0; j < inc; j++) {
 			ut8 ch = buf[i + j];
 			if (ch == 0x00) {
-				p("   ");
+				rz_strbuf_append(&sb, "   ");
 			} else if (ch == 0xff) {
-				p("%s ##%s", color_0xff, color_reset);
+				rz_strbuf_appendf(&sb, "%s ##%s", color_0xff, color_reset);
 			} else if (IS_PRINTABLE(ch) && !(rp->flags & RZ_PRINT_FLAGS_NODOT)) {
-				p("%s .%c%s", color_text, ch, color_reset);
+				rz_strbuf_appendf(&sb, "%s .%c%s", color_text, ch, color_reset);
 			} else if (IS_PRINTABLE(ch) && (rp->flags & RZ_PRINT_FLAGS_NODOT)) {
-				p("%s  %c%s", color_text, ch, color_reset);
+				rz_strbuf_appendf(&sb, "%s  %c%s", color_text, ch, color_reset);
 			} else {
-				p("%s %02x%s", color_other, ch, color_reset);
+				rz_strbuf_appendf(&sb, "%s %02x%s", color_other, ch, color_reset);
 			}
 		}
-		p("\n");
+		rz_strbuf_append(&sb, "\n");
 	}
-	p("%8" PFMT64x ": ]\n", addr + i);
+	rz_strbuf_appendf(&sb, "%8" PFMT64x ": ]\n", addr + i);
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 /**
@@ -457,14 +459,12 @@ static inline void print_addr(RzStrBuf *sb, RzPrint *p, ut64 addr) {
 	free(allocated);
 }
 
-RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
-	rz_return_if_fail(p);
+RZ_API RZ_OWN char *rz_print_addr(RzPrint *p, ut64 addr) {
+	rz_return_val_if_fail(p, NULL);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 	print_addr(&sb, p, addr);
-	char *s = rz_strbuf_drain_nofree(&sb);
-	p->cb_printf("%s", s);
-	free(s);
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 static inline void print_section(RzStrBuf *sb, RzPrint *p, ut64 at) {
@@ -479,7 +479,7 @@ static inline void print_section(RzStrBuf *sb, RzPrint *p, ut64 at) {
 	rz_strbuf_appendf(sb, "%20s ", s);
 }
 
-RZ_API char *rz_print_section_str(RzPrint *p, ut64 at) {
+RZ_API RZ_OWN char *rz_print_section_str(RzPrint *p, ut64 at) {
 	rz_return_val_if_fail(p, NULL);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
@@ -520,14 +520,12 @@ static inline void print_byte(RzStrBuf *sb, RzPrint *p, const char *fmt, int idx
 	print_cursor_r(sb, p, idx, 1);
 }
 
-RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
-	rz_return_if_fail(p && fmt);
+RZ_API RZ_OWN char *rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
+	rz_return_val_if_fail(p && fmt, NULL);
 	RzStrBuf sb;
 	rz_strbuf_init(&sb);
 	print_byte(&sb, p, fmt, idx, ch);
-	char *s = rz_strbuf_drain_nofree(&sb);
-	p->cb_printf("%s", s);
-	free(s);
+	return rz_strbuf_drain_nofree(&sb);
 }
 
 /**
@@ -1197,22 +1195,6 @@ RZ_API RZ_OWN char *rz_print_hexdiff_str(RZ_NONNULL RzPrint *p, ut64 aa, RZ_NONN
 	free(a);
 	free(b);
 	return rz_strbuf_drain(sb);
-}
-
-RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt) {
-	rz_return_if_fail(fmt);
-	int i;
-	if (p) {
-		for (i = 0; i < len; i++) {
-			p->cb_printf(fmt, buf[i]);
-		}
-		p->cb_printf("\n");
-	} else {
-		for (i = 0; i < len; i++) {
-			printf(fmt, buf[i]);
-		}
-		printf("\n");
-	}
 }
 
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
