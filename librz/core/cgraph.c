@@ -432,7 +432,13 @@ static char *block_line(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 			file_str = rz_file_slurp_line(file, line, 0);
 			if (file_str) {
 				ut32 len = strlen(file_str);
-				cmd_str = realloc(cmd_str, idx + len + 8);
+				char *tmp = realloc(cmd_str, idx + len + 8);
+				if (!tmp){
+					free(file_str);
+					free(cmd_str);
+					return NULL;
+				}
+				cmd_str = tmp;
 				memcpy(cmd_str + idx, file_str, len);
 				idx += len;
 				if (is_html) {
