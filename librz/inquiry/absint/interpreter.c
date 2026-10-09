@@ -171,16 +171,22 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		break;
 	}
 	RzAbsIntVal *av = ht_up_find(ht_vals, var_id, NULL);
+	if (av) {
+		val_domain(inst)->copy(av, data);
+		return;
+	}
+	av = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(inst)->val_size());
 	if (!av) {
-		av = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(inst)->val_size());
-		if (!av) {
-			rz_warn_if_reached();
-			return;
-		}
-		val_domain(inst)->val_new_top(av);
-		ht_up_insert(ht_vals, var_id, av);
+		rz_warn_if_reached();
+		return;
+	}
+	if (!val_domain(inst)->val_new_top(av)) {
+		rz_warn_if_reached();
+		free(av);
+		return;
 	}
 	val_domain(inst)->copy(av, data);
+	ht_up_insert(ht_vals, var_id, av);
 }
 
 static bool read_var_from_state(RzAbsIntInstance *inst,
@@ -666,6 +672,10 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		ut64 fallthrough_pc = ctx->astate->pc;
 		if (may_be_true && may_be_false) {
 			RzAbsIntState *true_state = rz_absint_state_clone(ctx->inst, ctx->astate);
+			if (!true_state) {
+				rz_warn_if_reached();
+				break;
+			}
 			RzAbsIntState *false_state = ctx->astate;
 			ctx->astate = true_state;
 			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
@@ -707,6 +717,8 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 				rz_bv_init(&mask, 64);
 				rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
 				rz_bv_and_inplace(&st_addr_bv, &mask);
+			} else {
+				rz_warn_if_reached();
 			}
 			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		}
@@ -887,6 +899,10 @@ RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *i
 			break;
 		}
 		ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
+		if (!ctx.astate) {
+			ret = RZ_ABSINT_RESULT_FAILED;
+			goto cleanup;
+		}
 
 		const RzILCacheBlock *il_block;
 		RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
@@ -953,6 +969,10 @@ RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *i
 			// Note: depending on what info is requested, i.e. whether the entry states are read again later,
 			// this might not have to be cloned but could just be interpreted further.
 			ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
+			if (!ctx.astate) {
+				ret = RZ_ABSINT_RESULT_FAILED;
+				goto cleanup;
+			}
 			const RzILCacheBlock *il_block;
 			RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
 			if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {
