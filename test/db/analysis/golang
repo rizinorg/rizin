@@ -1185,6 +1185,7 @@ NAME=Resolve all symbols on a stripped linux go1.21 binary
 FILE=bins/golang/go-re-sample-linux-amd64-go121
 CMDS=<<EOF
 aalg
+tc stringStruct
 fl~sym.go.~?
 pdfs @ main ~str.
 # Attempt to get some reference strings when the count changes with izq.
@@ -1195,6 +1196,10 @@ izq~:-10..
 izq~?
 EOF
 EXPECT=<<EOF
+struct stringStruct {
+	char *str;
+	size_t len;
+};
 1587
 0x004875b7 str.foo
 0x00487612 str.enable

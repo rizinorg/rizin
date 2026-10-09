@@ -531,6 +531,30 @@ static void analyse_golang_symbols(RzCore *core) {
 }
 
 /**
+ * \brief Loads Golang base runtime types (string, slice, eface, iface, hmap) into type database.
+ *
+ * \param core RzCore Pointer
+ */
+static void rz_golang_load_types(RzCore *core) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	if (!typedb) {
+		return;
+	}
+	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
+	if (!types_dir) {
+		return;
+	}
+	int bits = rz_analysis_get_bits(core->analysis);
+	char tmp[64];
+	char *dbpath = rz_file_path_join(types_dir, rz_strf(tmp, "types-golang-%d.sdb", bits));
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
+	}
+	free(dbpath);
+	free(types_dir);
+}
+
+/**
  * \brief Sorts the recovered libraries.
  *
  * \param core RzCore Pointer
@@ -632,6 +656,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
+		rz_golang_load_types(core);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
