@@ -540,32 +540,18 @@ static void rz_golang_load_types(RzCore *core) {
 	if (!typedb) {
 		return;
 	}
+	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
+	if (!types_dir) {
+		return;
+	}
 	int bits = rz_analysis_get_bits(core->analysis);
 	char tmp[64];
-	const char *filename = rz_strf(tmp, "types-golang-%d.sdb", bits);
-
-	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
-	if (types_dir) {
-		char *dbpath = rz_file_path_join(types_dir, filename);
-		if (rz_file_exists(dbpath) && rz_type_db_load_sdb(typedb, dbpath)) {
-			RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
-			free(dbpath);
-			free(types_dir);
-			return;
-		}
-		free(dbpath);
-		free(types_dir);
+	char *dbpath = rz_file_path_join(types_dir, rz_strf(tmp, "types-golang-%d.sdb", bits));
+	if (rz_type_db_load_sdb(typedb, dbpath)) {
+		RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
 	}
-
-	char *home_types_dir = rz_path_home_prefix(RZ_SDB_TYPES);
-	if (home_types_dir) {
-		char *dbpath = rz_file_path_join(home_types_dir, filename);
-		if (rz_file_exists(dbpath) && rz_type_db_load_sdb(typedb, dbpath)) {
-			RZ_LOG_DEBUG("golang: loaded type database \"%s\"\n", dbpath);
-		}
-		free(dbpath);
-		free(home_types_dir);
-	}
+	free(dbpath);
+	free(types_dir);
 }
 
 /**
