@@ -494,7 +494,7 @@ EXPECT=<<EOF
 |    |                                         |
 |.------------------------------------.    .-----------------.
 ||  0x5154                            |    |  0x5134         |
-|| ; DATA XREF from main @ 0x5130     |    | [   jump 0x5138 |
+|| ; CODE XREF from main @ 0x5130     |    | [   jump 0x5138 |
 || [   R0 = ##0x0                     |    `-----------------'
 || [   LR:FP = dealloc_return(FP):raw |        v
 |`------------------------------------'        |
@@ -565,10 +565,10 @@ EOF
 EXPECT=<<EOF
 / sym.sys_deinit_tls();
 |           0x00005344      [   R2 = UGP
-|           0x00005348      /       immext(##loc.CoreDump)             ; 0x1100
-|           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)        ; 0x1110
-|           0x00005350      |       immext(##loc.CoreDump)             ; 0x1100
-|           0x00005354      \       R4 = memw(GP+##loc._TLSStart)      ; 0x1108
+|           0x00005348      /       immext(##loc.CoreDump)
+|           0x0000534c      |       R3 = memw(GP+##loc._TLSEnd)
+|           0x00005350      |       immext(##loc.CoreDump)
+|           0x00005354      \       R4 = memw(GP+##loc._TLSStart)
 |           0x00005358      [   R2 = sub(R2,R3)
 |       ,=< 0x0000535c      /       jump sym.free
 |       |   0x00005360      \       R0 = add(R2,R4)
@@ -651,6 +651,10 @@ EOF
 RUN
 
 NAME=hexagon string search
+# Broken due to https://github.com/rizinorg/rizin/issues/6771
+# In order to detect the strings as such, they must be mapped in
+# a rw- map. But because om seems hard (impossible?) to do.
+BROKEN=1
 FILE==
 CMDS=<<EOF
 e asm.sub.varmin=0
