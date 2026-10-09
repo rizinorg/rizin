@@ -31,6 +31,7 @@
 #
 
 FROM debian:12
+ARG TARGETPLATFORM
 
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
@@ -84,7 +85,10 @@ RUN pip3 install --root=/tmp/rizin-install ./rz-pipe/python
 WORKDIR /tmp
 RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/rizinorg/rz-ghidra
 WORKDIR /tmp/rz-ghidra
-RUN cmake -DRizin_DIR=/tmp/rizin-install/usr/lib/cmake/Rizin -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
+RUN case "$TARGETPLATFORM" in linux/amd64) __LIBDIR=lib64 ;; *) __LIBDIR=lib ;; esac; \
+        cmake -DRizin_DIR=/tmp/rizin-install/usr/${__LIBDIR}/cmake/Rizin -DCMAKE_INSTALL_PREFIX=/usr -B build && \
+        cmake --build build && \
+        DESTDIR=/tmp/rizin-install cmake --build build --target install
 
 FROM debian:12
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
