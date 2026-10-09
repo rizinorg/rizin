@@ -241,12 +241,13 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 	if (!r) {
 		return NULL;
 	}
-	RzAbsIntVal *val = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(inst)->val_size());
 	RzIterator *it = ht_up_as_iter_keys(vars);
 	ut64 *key;
 	rz_iterator_foreach(it, key) {
-		if (!val_domain(inst)->val_new_top(val)) {
+		RzAbsIntVal *val = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(inst)->val_size());
+		if (!val || !val_domain(inst)->val_new_top(val)) {
 			rz_warn_if_reached();
+			free(val);
 			break;
 		}
 		val_domain(inst)->copy(val, ht_up_find(vars, *key, NULL));
