@@ -30,6 +30,7 @@ const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"pxr",
 	"prx",
 	"pxb",
+	"pxB",
 	"pxh",
 	"pxw",
 	"pxq",

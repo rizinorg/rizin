@@ -1,0 +1,198 @@
+NAME=pxB zero shift
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 4 0
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+EOF
+RUN
+
+NAME=pxB shifts 1, 3, 7 cross-byte extraction
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 4 1 ; pxB 4 3 ; pxB 4 7
+EXPECT=<<EOF
+0x00000000+1 1001.0101 1110.0000 1010.1011 0101.0100  95 e0 ab 54  ...T
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+EOF
+RUN
+
+NAME=pxB scroll across byte boundaries
+FILE=malloc://16
+CMDS=wx caf055aa11223344 ; e hex.cols=4 ; pxB 4 8 ; pxB 4 9 ; pxB 4 15 ; pxB 4 16
+EXPECT=<<EOF
+0x00000001   1111.0000 0101.0101 1010.1010 0001.0001  f0 55 aa 11  .U..
+0x00000001+1 1110.0000 1010.1011 0101.0100 0010.0010  e0 ab 54 22  ..T"
+0x00000001+7 0010.1010 1101.0101 0000.1000 1001.0001  2a d5 08 91  *...
+0x00000002   0101.0101 1010.1010 0001.0001 0010.0010  55 aa 11 22  U.."
+EOF
+RUN
+
+NAME=pxB beginning and end of buffer behavior
+FILE=malloc://16
+CMDS=wx caf055 ; e hex.cols=4 ; pxB 3 0 ; pxB 3 3 ; pxB 3 -1
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+0x00000000+3 0101.0111 1000.0010 1010.1000            57 82 a8     W..
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+EOF
+RUN
+
+NAME=pxB output at different column counts (4, 8, 16)
+FILE=malloc://32
+CMDS=wx caf055aa11223344caf055aa11223344 ; e hex.cols=4 ; pxB 4 ; e hex.cols=8 ; pxB 8 ; e hex.cols=16 ; pxB 16
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44  ..U.."3D
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100 1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44 ca f0 55 aa 11 22 33 44  ..U.."3D..U.."3D
+EOF
+RUN
+
+NAME=pxB config hex.bitshift
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; e hex.bitshift=3 ; pxB 4
+EXPECT=<<EOF
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+EOF
+RUN
+
+NAME=pxB metadata display
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; f entry0 @ 0 ; pxB 4
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.  ; entry0
+EOF
+RUN
+
+NAME=pxb regression test
+FILE=malloc://16
+CMDS=wx caf055aa ; pxb 4
+EXPECT=<<EOF
+0x00000000 1100.1010  1111.0000  0101.0101  1010.1010  0xcaf055aa  ..U.
+EOF
+RUN
+
+NAME=visual bitstream 1-bit shift right }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+1
+EOF
+RUN
+
+NAME=visual bitstream cross byte boundary forward }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}}}}}}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x1
+0
+EOF
+RUN
+
+NAME=visual bitstream cross byte boundary backward {
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+s 1
+V ooooo{q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+7
+EOF
+RUN
+
+NAME=visual bitstream clamp at start of buffer {
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo{{{{{{{{q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+0
+EOF
+RUN
+
+NAME=visual bitstream preserve shift vertical down j
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}jq
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x4
+3
+EOF
+RUN
+
+NAME=visual bitstream preserve shift vertical up and down j k
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}jkq
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+3
+EOF
+RUN
+
+NAME=visual non-bitstream mode ignores { }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V }}}}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+0
+EOF
+RUN
+
+NAME=pxB short read and final byte zero-padding at buffer boundary
+FILE=malloc://3
+CMDS=wx caf055 ; e hex.cols=4 ; pxB 3 0 ; pxB 3 1 ; pxB 3 3 ; pxB 3 7
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+0x00000000+1 1001.0101 1110.0000 1010.1010            95 e0 aa     ...
+0x00000000+3 0101.0111 1000.0010 1010.1000            57 82 a8     W..
+0x00000000+7 0111.1000 0010.1010 1000.0000            78 2a 80     x*.
+EOF
+RUN
+
+NAME=pxB requests more bytes than malloc allocation contains
+FILE=malloc://4
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 16 ; pxB 16 3
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+EOF
+RUN

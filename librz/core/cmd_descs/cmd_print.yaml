@@ -1651,6 +1651,16 @@ commands:
           - name: len
             type: RZ_CMD_ARG_TYPE_RZNUM
             optional: true
+      - name: pxB
+        summary: dump bitstream in hexdump form with optional bit shift
+        cname: print_hexdump_bitstream
+        args:
+          - name: len
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
+          - name: shift
+            type: RZ_CMD_ARG_TYPE_RZNUM
+            optional: true
       - name: pxc
         summary: show hexdump with comments
         cname: print_hexdump_comments

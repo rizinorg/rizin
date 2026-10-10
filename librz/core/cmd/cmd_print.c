@@ -2277,6 +2277,232 @@ RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const c
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_print_hexdump_bitstream_handler(RzCore *core, int argc, const char **argv) {
+	if (argc < 1 || !core) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	ut64 raw_len = argc > 1 ? rz_num_math(core->num, argv[1]) : (ut64)core->blocksize;
+	if (raw_len == 0) {
+		return RZ_CMD_STATUS_OK;
+	}
+	if (raw_len > 0x10000000) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t len = (size_t)raw_len;
+
+	st64 shift = argc > 2 ? (st64)rz_num_math(core->num, argv[2]) : (st64)rz_config_get_i(core->config, "hex.bitshift");
+
+	// Normalize shift and adjust start address
+	st64 byte_delta = 0;
+	if (shift < 0) {
+		if (shift == ST64_MIN) {
+			shift = -7;
+		}
+		st64 rem = (-shift) % 8;
+		byte_delta = -((-shift) / 8);
+		if (rem > 0) {
+			byte_delta -= 1;
+			shift = 8 - rem;
+		} else {
+			shift = 0;
+		}
+	} else {
+		byte_delta = shift / 8;
+		shift = shift % 8;
+	}
+	ut64 addr = core->offset;
+	if (byte_delta < 0) {
+		if ((ut64)(-byte_delta) > addr) {
+			addr = 0;
+			shift = 0;
+		} else {
+			addr += byte_delta;
+		}
+	} else if (byte_delta > 0) {
+		if (UT64_MAX - addr < (ut64)byte_delta) {
+			addr = UT64_MAX;
+		} else {
+			addr += byte_delta;
+		}
+	}
+	int bitshift = (int)shift;
+
+	// Number of columns
+	int cols = rz_config_get_i(core->config, "hex.cols");
+	if (cols <= 0) {
+		cols = 16;
+	} else if (cols > 256) {
+		cols = 256;
+	}
+
+	// Responsive terminal width adjustments
+	int term_h, term_w = rz_cons_get_size(&term_h);
+	if (term_w <= 0 && core->cons) {
+		term_w = core->cons->columns;
+	}
+	bool responsive = rz_config_get_b(core->config, "scr.responsive");
+	bool show_bytes = rz_config_get_b(core->config, "hex.bytes");
+	bool show_ascii = rz_config_get_b(core->config, "hex.ascii");
+
+	if (responsive && term_w > 0) {
+		int needed = 13 + cols * 10 + (show_bytes ? (cols * 3 + 1) : 0) + (show_ascii ? (cols + 1) : 0);
+		if (term_w < needed) {
+			if (cols > 8 && term_w >= (13 + 8 * 14 + 4)) {
+				cols = 8;
+			} else if (cols > 4 && term_w >= (13 + 4 * 14 + 4)) {
+				cols = 4;
+			} else if (cols > 4 && term_w < (13 + 4 * 14 + 4)) {
+				cols = 4;
+				if (term_w < 69) {
+					show_ascii = false;
+					if (term_w < 55) {
+						show_bytes = false;
+					}
+				}
+			} else if (cols <= 4 && term_w < 69) {
+				show_ascii = false;
+				if (term_w < 55) {
+					show_bytes = false;
+				}
+			}
+		}
+	}
+
+	// Read buffer: len + 1 bytes needed if bitshift > 0
+	size_t read_sz = len + (bitshift > 0 ? 1 : 0);
+	ut8 *buf = calloc(read_sz + 1, 1);
+	if (!buf) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	size_t valid_len = 0;
+	int nread = rz_io_nread_at(core->io, addr, buf, read_sz);
+	if (nread > 0) {
+		valid_len = (size_t)nread;
+	} else if (rz_io_read_at_mapped(core->io, addr, buf, read_sz)) {
+		valid_len = read_sz;
+	} else if (read_sz > len && rz_io_read_at_mapped(core->io, addr, buf, len)) {
+		valid_len = len;
+	} else if (addr == core->offset && core->block && core->blocksize > 0) {
+		size_t copy_sz = RZ_MIN(read_sz, (size_t)core->blocksize);
+		memcpy(buf, core->block, copy_sz);
+		valid_len = copy_sz;
+	}
+	if (valid_len == 0) {
+		free(buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	bool use_color = rz_config_get_i(core->config, "scr.color") > 0;
+	const char *color_offset = (use_color && core->cons && core->cons->context->pal.offset) ? core->cons->context->pal.offset : "";
+	const char *color_reset = (use_color && core->cons && core->cons->context->pal.offset) ? Color_RESET : "";
+	bool show_section = rz_config_get_b(core->config, "hex.section");
+
+	size_t max_extractable = (bitshift > 0 && valid_len > len) ? len : valid_len;
+	size_t out_len = RZ_MIN(len, max_extractable);
+	if (out_len == 0) {
+		free(buf);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	size_t rows = (out_len + (size_t)cols - 1) / (size_t)cols;
+	char bit_buf[16];
+	ut8 *extracted = calloc((size_t)cols, 1);
+	if (!extracted) {
+		free(buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	for (size_t r = 0; r < rows; r++) {
+		ut64 row_delta = (ut64)r * (ut64)cols;
+		if (UT64_MAX - addr < row_delta) {
+			break;
+		}
+		ut64 row_addr = addr + row_delta;
+		ut64 ea = row_addr;
+		if (core->print->pava) {
+			ut64 va = rz_io_p2v(core->io, row_addr);
+			if (va != UT64_MAX) {
+				ea = va;
+			}
+		}
+
+		if (show_section) {
+			char *sec_str = rz_print_section_str(core->print, ea);
+			if (sec_str) {
+				rz_cons_print(sec_str);
+				free(sec_str);
+			}
+		}
+
+		// Offset column (13 characters)
+		rz_cons_printf("%s0x%08" PFMT64x "%s", color_offset, ea, color_reset);
+		if (bitshift > 0) {
+			rz_cons_printf("+%d ", bitshift);
+		} else {
+			rz_cons_printf("   ");
+		}
+
+		// Bit columns
+		int row_bytes = (int)RZ_MIN((size_t)cols, out_len - r * (size_t)cols);
+		for (int c = 0; c < cols; c++) {
+			if (c < row_bytes) {
+				size_t byte_pos = r * (size_t)cols + (size_t)c;
+				ut8 b = rz_bits_extract_stream_byte(buf, valid_len, byte_pos, (ut8)bitshift);
+				extracted[c] = b;
+				rz_str_bits(bit_buf, &b, 8, NULL);
+				// Split bits into 4.4
+				memmove(bit_buf + 5, bit_buf + 4, 5);
+				bit_buf[4] = '.';
+
+				print_cursor(core->print, (int)byte_pos, 1, 1);
+				rz_cons_printf("%s", bit_buf);
+				print_cursor(core->print, (int)byte_pos, 1, 0);
+				rz_cons_printf(" ");
+			} else {
+				rz_cons_printf("          ");
+			}
+		}
+
+		// Hex bytes column
+		if (show_bytes) {
+			rz_cons_printf(" ");
+			for (int c = 0; c < cols; c++) {
+				if (c < row_bytes) {
+					print_cursor(core->print, (int)(r * (size_t)cols + (size_t)c), 1, 1);
+					rz_cons_printf("%02x ", extracted[c]);
+					print_cursor(core->print, (int)(r * (size_t)cols + (size_t)c), 1, 0);
+				} else {
+					rz_cons_printf("   ");
+				}
+			}
+		}
+
+		// ASCII column
+		if (show_ascii) {
+			rz_cons_printf(" ");
+			for (int c = 0; c < row_bytes; c++) {
+				char ch = (char)extracted[c];
+				rz_cons_printf("%c", IS_PRINTABLE(ch) ? ch : '.');
+			}
+		}
+
+		// Metadata (comments/flags on the right like pxa)
+		RzFlagItem *flag = rz_flag_get_at(core->flags, ea, true);
+		const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, ea);
+		if (flag) {
+			rz_cons_printf("  ; %s", flag->name);
+		} else if (comment) {
+			rz_cons_printf("  ; %s", comment);
+		}
+
+		rz_cons_newline();
+	}
+
+	free(extracted);
+	free(buf);
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI RzCmdStatus rz_print_hexdump_comments_handler(RzCore *core, int argc, const char **argv) {
 	int len = argc > 1 ? (int)rz_num_math(core->num, argv[1]) : (int)core->blocksize;
 	return bool2status(rz_core_print_hexdump_or_hexdiff(core, RZ_OUTPUT_MODE_STANDARD, core->offset, len, true));
