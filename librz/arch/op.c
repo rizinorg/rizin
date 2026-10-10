@@ -364,9 +364,13 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	if (!a1) {
 		a1 = rz_str_dup("?");
 	}
+	/* Older plugins use dst for indirect targets; read-only targets use src[0]. */
+	const char *target = op->dst ? r0 : a0;
 
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
 		snprintf(ret, sizeof(ret), "%s = %s", r0, a0);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
@@ -385,7 +389,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	case RZ_ANALYSIS_OP_TYPE_RJMP:
 	case RZ_ANALYSIS_OP_TYPE_IJMP:
 	case RZ_ANALYSIS_OP_TYPE_IRJMP:
-		snprintf(ret, sizeof(ret), "goto %s", r0);
+		snprintf(ret, sizeof(ret), "goto %s", target);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_PUSH:
 	case RZ_ANALYSIS_OP_TYPE_UPUSH:
@@ -399,7 +403,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	case RZ_ANALYSIS_OP_TYPE_RCALL:
 	case RZ_ANALYSIS_OP_TYPE_ICALL:
 	case RZ_ANALYSIS_OP_TYPE_IRCALL:
-		snprintf(ret, sizeof(ret), "%s()", r0);
+		snprintf(ret, sizeof(ret), "%s()", target);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CALL:
 		f = rz_analysis_get_fcn_in(analysis, op->jump, RZ_ANALYSIS_FCN_TYPE_NULL);

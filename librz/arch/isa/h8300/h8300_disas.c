@@ -261,7 +261,7 @@ static ut8 r32_high(ut8 x) {
 			OPS_ADD(T, F, r32_low(reg)); \
 		} else { \
 			INS_OP(cmd->ops_count).width = H8300Operand_16; \
-			OPS_ADD(T, F, r16_low(reg)); \
+			OPS_ADD(T, F, r16_low(reg & 0x7)); \
 		} \
 	}
 
@@ -275,7 +275,7 @@ static void append_rd(H8300Instruction *cmd, ut8 reg, st32 disp) {
 		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r32_low(reg), disp);
 	} else {
 		INS_OP(cmd->ops_count).width = H8300Operand_16;
-		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r16_low(reg), disp);
+		OPS_ADD_EXT2(H8300_OP_RD, rd, reg, disp, r16_low(reg & 0x7), disp);
 	}
 }
 
@@ -590,7 +590,6 @@ static int decode_mi8(const ut8 *bytes, H8300Instruction *cmd) {
 		return ret; \
 	}
 
-ABS_IMPL(4, 16);
 ABS_IMPL(6, 16);
 ABS_IMPL(8, 24);
 
@@ -949,7 +948,19 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 	ut32 x2 = rz_read_be16(instr);
 	ut32 x4 = rz_read_be32(instr);
 
+	if (instr[0] == 0x5a || instr[0] == 0x5e) {
+		/* Absolute branch targets are unsigned, unlike absolute data addresses. */
+		cmd->id = instr[0] == 0x5a ? H8300_INSN_JMP : H8300_INSN_JSR;
+		cmd->fmt = H8300_INSN_FORMAT_ABS;
+		OPS_ADD(H8300_OP_ABS, imm, x4 & (cmd->cpu_type == CPU_H8300H ? 0xffffff : 0xffff));
+		return 4;
+	}
+
 	if (cmd->cpu_type == CPU_H8300H) {
+		if (x2 == 0x5c00) {
+			cmd->id = H8300_INSN_BSR;
+			return decode_pc_rel16(instr, cmd);
+		}
 		switch (x4 & 0xfffffff8) {
 			CASE_F_F(decode_r32_4l, 0x01006d70, POP_L);
 			CASE_F_F(decode_r32_4l, 0x01006df0, PUSH_L);
@@ -1215,9 +1226,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 		CASE_F_F(decode_r16_2, 0x6d70, POP_W);
 		CASE_F_F(decode_r16_2, 0x6df0, PUSH_W);
 
-		CASE_F_F(decode_i16r16_4, 0x7900, MOV_W);
-		CASE_F_F(decode_abs16r8_4, 0x6b00, MOV_W);
-
 	case 0x0b00:
 	case 0x0b80:
 	case 0x0b90:
@@ -1329,10 +1337,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 		cmd->id = H8300_INSN_JMP;
 		ret = decode_ri_2(instr, cmd);
 		break;
-	case 0x5a:
-		cmd->id = H8300_INSN_JMP;
-		ret = decode_abs16_4(instr, cmd);
-		break;
 	case 0x5b:
 		cmd->id = H8300_INSN_JMP;
 		ret = decode_mi8(instr, cmd);
@@ -1340,10 +1344,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	case 0x5d:
 		cmd->id = H8300_INSN_JSR;
 		ret = decode_ri_2(instr, cmd);
-		break;
-	case 0x5e:
-		cmd->id = H8300_INSN_JSR;
-		ret = decode_abs16_4(instr, cmd);
 		break;
 	case 0x5f:
 		cmd->id = H8300_INSN_JSR;
