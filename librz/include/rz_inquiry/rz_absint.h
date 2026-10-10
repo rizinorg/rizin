@@ -113,6 +113,7 @@ typedef struct rz_absint_value_domain_t {
 
 	size_t (*val_size)(void); ///< Return the RzAbsIntVal in bytes.
 	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval); ///< Initialize the new abstract value \p aval as top.
+	void (*val_fini)(RzAbsIntVal *val);
 	void (*val_free)(RzAbsIntVal *val);
 	bool (*is_top)(RZ_NONNULL const RzAbsIntVal *val); ///< return whether the given value is top
 	bool (*may_be_bool)(RZ_NONNULL const RzAbsIntVal *val, bool value); ///< return whether the given value's concrete set contains \p value
@@ -128,6 +129,10 @@ typedef struct rz_absint_value_domain_t {
 	 */
 	bool (*to_concrete_const)(RZ_NONNULL const RzAbsIntVal *val, RZ_NULLABLE RZ_OUT RzBitVector *out);
 
+	/**
+	 * \brief Copies the abstract value from \p src to \p dst.
+	 * \p dst and \p src must be previously initialized abstract values (e.g. with val_new_top()).
+	 */
 	RZ_OWN void (*copy)(RzAbsIntVal *dst, const RzAbsIntVal *src);
 
 	/**

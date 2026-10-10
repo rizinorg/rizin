@@ -14,7 +14,7 @@ static void var_arr_fini(RZ_NONNULL RzAbsIntInstance *inst, RZ_OWN RzVector *arr
 	rz_return_if_fail(inst);
 	void *it;
 	rz_vector_foreach (array, it) {
-		val_domain(inst)->val_free(it);
+		val_domain(inst)->val_fini(it);
 	}
 }
 
@@ -28,6 +28,7 @@ static RzVector *var_arr_clone(const RzAbsIntInstance *inst, const RzVector *arr
 	RzVector *clone = rz_vector_clone(array);
 	for (size_t i = 0; i < rz_vector_len(array); i++) {
 		RzAbsIntVal *clone_aval = rz_vector_index_ptr(clone, i);
+		val_domain(inst)->val_new_top(clone_aval);
 		val_domain(inst)->copy(clone_aval, rz_vector_index_ptr(array, i));
 	}
 	return clone;

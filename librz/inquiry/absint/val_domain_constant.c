@@ -46,13 +46,17 @@ static bool val_new_top(RZ_BORROW RzAbsIntVal *av) {
 	return pack(ad);
 }
 
-static void val_free(RzAbsIntVal *val) {
+static void val_fini(RzAbsIntVal *val) {
 	if (!val) {
 		return;
 	}
 	ValueData *adata = AD(val);
 	rz_bv_free(adata->bv);
-	free(adata);
+}
+
+static void val_free(RzAbsIntVal *val) {
+	val_fini(val);
+	free(val);
 }
 
 static bool val_is_top(RZ_NONNULL const RzAbsIntVal *val) {
@@ -246,6 +250,7 @@ RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const = {
 	.name = "constant",
 	.val_new_top = val_new_top,
 	.val_size = sizeof_abs_int_val,
+	.val_fini = val_fini,
 	.val_free = val_free,
 	.set_top = val_set_top,
 	.set_const_bool = val_set_const_bool,
