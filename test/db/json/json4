@@ -33,3 +33,5 @@ tuj
 wcj
 yj
 zj
+?+j | jq -c '[path(.. | objects | select(has("cmd") and .executable))] as $paths | if ($paths | length) == 1661 then $paths[], {"count": ($paths | length)} else error("unexpected executable command count") end'
+?+j | jq -c '[path(.. | objects | select(has("cmd") and ((.children // []) | length == 0)))] as $paths | if ($paths | length) == 1445 then $paths[], {"count": ($paths | length)} else error("unexpected leaf command count") end'
