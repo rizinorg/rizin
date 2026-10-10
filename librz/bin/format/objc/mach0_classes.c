@@ -1339,16 +1339,21 @@ static RzPVector /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzB
 			goto error;
 		}
 		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
+			rz_list_free(klass->methods);
 			RZ_FREE(klass);
 			goto error;
 		}
 		if (!read_ptr_pa(bf, buf, paddr + i, &p)) {
+			rz_list_free(klass->methods);
+			rz_list_free(klass->fields);
 			RZ_FREE(klass);
 			goto error;
 		}
 		MACH0_(get_category_t)
 		(p, bf, buf, klass, relocs, oi);
 		if (!klass->name) {
+			rz_list_free(klass->methods);
+			rz_list_free(klass->fields);
 			RZ_FREE(klass);
 			continue;
 		}
