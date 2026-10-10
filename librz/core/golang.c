@@ -48,7 +48,10 @@ typedef struct go_string_recover_t {
 	ut64 pc;
 	ut8 *bytes;
 	ut32 size;
+	ut32 op_size;
 	ut32 n_recovered;
+	char raw_buf[GO_MAX_STRING_SIZE + 1];
+	char flag_buf[GO_MAX_STRING_SIZE + 8];
 } GoStrRecover;
 
 typedef struct go_string_info_t {
@@ -667,19 +670,23 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 	return false;
 }
 
-static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size) {
+static bool add_new_bin_string(RzCore *core, const char *string, ut64 vaddr, ut32 size) {
 	RzBinString *bstr;
 	RzBin *bin = core->bin;
 	RzBinFile *bf = rz_bin_cur(bin);
 	if (!bf || !bf->o || !bf->o->strings) {
-		free(string);
 		return false;
 	}
 
 	bstr = rz_bin_object_get_string_at(bf->o, vaddr, true);
 	if (bstr && bstr->vaddr == vaddr && bstr->size == size) {
-		free(string);
 		return true;
+	}
+
+	char *dup_str = rz_str_ndup(string, size);
+	if (!dup_str) {
+		RZ_LOG_ERROR("Failed allocate new go string buffer\n");
+		return false;
 	}
 
 	ut64 paddr = rz_io_v2p(core->io, vaddr);
@@ -687,13 +694,13 @@ static bool add_new_bin_string(RzCore *core, char *string, ut64 vaddr, ut32 size
 	bstr = RZ_NEW0(RzBinString);
 	if (!bstr) {
 		RZ_LOG_ERROR("Failed allocate new go string\n");
-		free(string);
+		free(dup_str);
 		return false;
 	}
 	bstr->paddr = paddr;
 	bstr->vaddr = vaddr;
 	bstr->length = bstr->size = size;
-	bstr->string = string;
+	bstr->string = dup_str;
 	bstr->type = RZ_STRING_ENC_UTF8;
 	if (!rz_bin_string_database_add(bf->o->strings, bstr)) {
 		RZ_LOG_ERROR("Failed append new go string to strings database\n");
@@ -709,62 +716,44 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		return false;
 	}
 
-	// skip possible pointers that matches to symbols flags, because these are already handled.
-	RzFlagItem *fi = rz_flag_get_by_spaces(ctx->core->flags, str_addr, RZ_FLAGS_FS_SYMBOLS, NULL);
-	if (fi && !strncmp(fi->name, "sym.", 4)) {
-		return false;
-	}
-
 	RzBinObject *obj = rz_bin_cur_object(ctx->core->bin);
 	if (!obj || !rz_bin_get_section_at(obj, str_addr, true)) {
 		// skip any possible string from invalid sections.
 		return false;
 	}
 
-	const size_t n_prefix = strlen("str.");
-	// string size + strlen('str.') + \0
-	char *flag = malloc(str_size + n_prefix + 1);
-	char *raw = malloc(str_size + 1);
-	if (!flag || !raw) {
-		RZ_LOG_ERROR("Cannot allocate buffer to read string.\n");
-		free(flag);
-		free(raw);
+	// skip possible pointers that matches to symbols flags, because these are already handled.
+	RzFlagItem *fi = rz_flag_get_by_spaces(ctx->core->flags, str_addr, RZ_FLAGS_FS_SYMBOLS, NULL);
+	if (fi && !strncmp(fi->name, "sym.", 4)) {
 		return false;
 	}
 
-	// set prefix and zero-terminator
-	flag[0] = 's';
-	flag[1] = 't';
-	flag[2] = 'r';
-	flag[3] = '.';
-	flag[str_size + 4] = 0;
-	raw[str_size] = 0;
-
+	char *raw = ctx->raw_buf;
 	if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)raw, str_size)) {
 		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
-		free(flag);
-		free(raw);
-		return false;
-	} else if (rz_str_utf8_ansi_cols(raw) != str_size) {
-		free(flag);
-		free(raw);
 		return false;
 	}
+	raw[str_size] = 0;
+	if (rz_str_utf8_ansi_cols(raw) != str_size) {
+		return false;
+	}
+
+	const size_t n_prefix = strlen("str.");
+	char *flag = ctx->flag_buf;
+	memcpy(flag, "str.", n_prefix);
 	memcpy(flag + n_prefix, raw, str_size);
+	flag[str_size + n_prefix] = 0;
 
 	// apply any filter to the new flag name
 	rz_name_filter(flag + n_prefix, str_size, true);
 
 	// verify is a valid flag.
 	if (rz_str_utf8_ansi_cols(flag) < 5) {
-		free(flag);
-		free(raw);
 		return false;
 	}
 
-	// add new string to string list (raw is freed/owned by add_new_bin_string)
+	// add new string to string list
 	if (!add_new_bin_string(ctx->core, raw, str_addr, str_size)) {
-		free(flag);
 		return false;
 	}
 
@@ -775,16 +764,13 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	rz_flag_space_push(ctx->core->flags, RZ_FLAGS_FS_STRINGS);
 	rz_flag_set(ctx->core->flags, flag, str_addr, str_size);
 	rz_flag_space_pop(ctx->core->flags);
-	free(flag);
 	ctx->n_recovered++;
 
 	return true;
 }
 
 static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *sigs, const size_t n_sigs) {
-	ut8 copy[32]; // big enough to handle any pattern.
 	ut32 nlen = 0;
-	memset(info, 0, sizeof(GoStrInfo));
 
 	// First verify all pattern masks match before executing any expensive decode callbacks
 	for (size_t i = 0; i < n_sigs; ++i) {
@@ -799,23 +785,19 @@ static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *si
 			return false;
 		}
 
-		// copy opcodes
-		memcpy(copy, bytes, sig->pasm->size);
-
-		// apply mask
-		for (ut32 j = 0; j < sig->pasm->size; ++j) {
-			copy[j] = copy[j] & sig->pasm->mask[j];
-		}
-
-		// verify the masked input matches the pattern
-		if (memcmp(copy, sig->pasm->pattern, sig->pasm->size)) {
-			return false;
+		const ut8 *pat = sig->pasm->pattern;
+		const ut8 *msk = sig->pasm->mask;
+		for (ut32 j = 0, psize = sig->pasm->size; j < psize; ++j) {
+			if ((bytes[j] & msk[j]) != pat[j]) {
+				return false;
+			}
 		}
 
 		nlen += sig->pasm->size;
 	}
 
 	// Now decode info once pattern match is confirmed across the whole signature
+	memset(info, 0, sizeof(GoStrInfo));
 	nlen = 0;
 	for (size_t i = 0; i < n_sigs; ++i) {
 		GoSignature *sig = &sigs[i];
@@ -1027,22 +1009,36 @@ static GoSignature go_x64_table1_signature[] = {
 };
 
 static ut32 golang_recover_string_x64(GoStrRecover *ctx) {
-	RzAnalysis *analysis = ctx->core->analysis;
-	ut32 oplen = decode_one_opcode_size(ctx);
-	GoStrInfo info = { 0 };
+	ut32 oplen = ctx->op_size ? ctx->op_size : decode_one_opcode_size(ctx);
+	if (ctx->size < 11) {
+		return oplen;
+	}
+	ut8 b0 = ctx->bytes[0];
+	if (b0 != 0x48 && b0 != 0xb9 && b0 != 0x41 && b0 != 0xbb && b0 != 0xbf) {
+		return oplen;
+	}
 
-	if (!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov2_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov3_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_mov0_lea_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_mov1_lea_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_mov2_lea_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_mov3_lea_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_table0_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x64_table1_signature)) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	GoStrInfo info = { 0 };
+	bool matched = false;
+
+	if (b0 == 0x48) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov2_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov3_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_mov1_lea_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_table0_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_table1_signature);
+	} else {
+		matched = go_is_sign_match_autosize(ctx, &info, go_x64_mov0_lea_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_mov2_lea_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x64_mov3_lea_signature);
+	}
+
+	if (!matched) {
 		return oplen;
 	}
 
@@ -1108,16 +1104,30 @@ static GoSignature go_x86_table_signature[] = {
 };
 
 static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
-	RzAnalysis *analysis = ctx->core->analysis;
-	ut32 oplen = decode_one_opcode_size(ctx);
-	GoStrInfo info = { 0 };
+	ut32 oplen = ctx->op_size ? ctx->op_size : decode_one_opcode_size(ctx);
+	if (ctx->size < 9) {
+		return oplen;
+	}
+	ut8 b0 = ctx->bytes[0];
+	if (b0 != 0x8d && b0 != 0xc7) {
+		return oplen;
+	}
 
-	if (!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x86_mov_lea_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_x86_table_signature)) {
+	RzAnalysis *analysis = ctx->core->analysis;
+	GoStrInfo info = { 0 };
+	bool matched = false;
+
+	if (b0 == 0x8d) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_x86_table_signature);
+	} else {
+		matched = go_is_sign_match_autosize(ctx, &info, go_x86_mov_lea_signature);
+	}
+
+	if (!matched) {
 		return oplen;
 	}
 
@@ -1208,16 +1218,32 @@ static GoSignature go_arm64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
+	if (ctx->size < 12) {
+		return 4;
+	}
+	ut8 b3 = ctx->bytes[3];
 	RzAnalysis *analysis = ctx->core->analysis;
 	GoStrInfo info = { 0 };
+	bool matched = false;
 
-	if (!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_orr_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_movz_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_orr_str_adrp_add_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_movz_str_adrp_add_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_orr_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_movz_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm64_table_signature)) {
+	if ((b3 & 0x8f) == 0x80) {
+		if ((ctx->bytes[7] & 0x6f) != 0x01) {
+			return 4;
+		}
+		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_orr_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_movz_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_orr_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_movz_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm64_table_signature);
+	} else if ((b3 & 0x6f) == 0x22) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_orr_str_adrp_add_signature);
+	} else if ((b3 & 0x6f) == 0x42) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_movz_str_adrp_add_signature);
+	} else {
+		return 4;
+	}
+
+	if (!matched) {
 		return 4;
 	}
 
@@ -1288,13 +1314,26 @@ static GoSignature go_arm32_table_signature[] = {
 };
 
 static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
+	if (ctx->size < 8) {
+		return 4;
+	}
+	ut8 b2 = ctx->bytes[2];
+	ut8 b3 = ctx->bytes[3];
 	RzAnalysis *analysis = ctx->core->analysis;
 	GoStrInfo info = { 0 };
+	bool matched = false;
 
-	if (!go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_str_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm32_mov_str_ldr_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_mov_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_arm32_table_signature)) {
+	if (b3 == 0xe5 && b2 == 0x9f) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_str_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_mov_signature) ||
+			go_is_sign_match_autosize(ctx, &info, go_arm32_table_signature);
+	} else if (b3 == 0xe3 && b2 == 0xa0) {
+		matched = go_is_sign_match_autosize(ctx, &info, go_arm32_mov_str_ldr_signature);
+	} else {
+		return 4;
+	}
+
+	if (!matched) {
 		return 4;
 	}
 
@@ -1409,7 +1448,14 @@ static GoSignature go_mipsbe32_table_signature[] = {
 };
 
 static ut32 golang_recover_string_mips32(GoStrRecover *ctx) {
+	if (ctx->size < 12) {
+		return 4;
+	}
 	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
+	ut8 op = big_endian ? ctx->bytes[0] : ctx->bytes[3];
+	if (op != 0x3c && op != 0x24) {
+		return 4;
+	}
 	GoStrInfo info = { 0 };
 
 	if (big_endian &&
@@ -1544,7 +1590,14 @@ static GoSignature go_mipsbe64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
+	if (ctx->size < 16) {
+		return 4;
+	}
 	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
+	ut8 op = big_endian ? ctx->bytes[0] : ctx->bytes[3];
+	if (op != 0x3c && op != 0x64) {
+		return 4;
+	}
 	GoStrInfo info = { 0 };
 
 	if (big_endian &&
@@ -1661,7 +1714,14 @@ static GoSignature go_ppcbe64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
+	if (ctx->size < 12) {
+		return 4;
+	}
 	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
+	ut8 op = (big_endian ? ctx->bytes[0] : ctx->bytes[3]) & 0xfc;
+	if (op != 0x3c && op != 0x38) {
+		return 4;
+	}
 	GoStrInfo info = { 0 };
 
 	if (big_endian &&
@@ -1781,6 +1841,13 @@ static GoSignature go_riscv64_table_signature[] = {
 };
 
 static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
+	if (ctx->size < 12) {
+		return 4;
+	}
+	ut8 op = ctx->bytes[0] & 0x7f;
+	if (op != 0x17 && op != 0x13 && op != 0x1b) {
+		return 4;
+	}
 	RzAnalysis *analysis = ctx->core->analysis;
 	GoStrInfo info = { 0 };
 
@@ -1993,13 +2060,28 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 				continue;
 			}
 
-			for (ut32 i = 0; i < block->size;) {
-				ctx.pc = block->addr + i;
-				ctx.bytes = bb_buf + i;
-				ctx.size = block->size - i;
+			if (block->ninstr > 0) {
+				for (int idx = 0; idx < block->ninstr; idx++) {
+					ut16 i = rz_analysis_block_get_op_offset(block, idx);
+					if (i >= block->size) {
+						break;
+					}
+					ctx.pc = block->addr + i;
+					ctx.bytes = bb_buf + i;
+					ctx.size = block->size - i;
+					ctx.op_size = (ut32)rz_analysis_block_get_op_size(block, idx);
+					recover_cb(&ctx);
+				}
+			} else {
+				ctx.op_size = 0;
+				for (ut32 i = 0; i < block->size;) {
+					ctx.pc = block->addr + i;
+					ctx.bytes = bb_buf + i;
+					ctx.size = block->size - i;
 
-				ut32 nlen = recover_cb(&ctx);
-				i += RZ_MAX(nlen, min_op_size);
+					ut32 nlen = recover_cb(&ctx);
+					i += RZ_MAX(nlen, min_op_size);
+				}
 			}
 		}
 	}
