@@ -185,6 +185,17 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 
 static bool log_mode = false;
 
+static int test_timeout_cmp(const void *a, const void *b, void *user) {
+	const RzTest *ta = (const RzTest *)a;
+	const RzTest *tb = (const RzTest *)b;
+	ut64 t_a = (ta->type == RZ_TEST_TYPE_CMD && ta->cmd_test->timeout.set) ? ta->cmd_test->timeout.value : 0;
+	ut64 t_b = (tb->type == RZ_TEST_TYPE_CMD && tb->cmd_test->timeout.set) ? tb->cmd_test->timeout.value : 0;
+	if (t_a != t_b) {
+		return (t_a > t_b) - (t_a < t_b);
+	}
+	return (ta > tb) - (ta < tb);
+}
+
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
@@ -505,7 +516,22 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	if (rz_pvector_len(&state.db->tests) != 0) {
-		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+		RzPVector long_tests;
+		rz_pvector_init(&long_tests, NULL);
+		void **it;
+		rz_pvector_foreach (&state.db->tests, it) {
+			RzTest *test = *it;
+			if (test->type == RZ_TEST_TYPE_CMD && test->cmd_test->timeout.set && test->cmd_test->timeout.value > timeout_sec) {
+				rz_pvector_push(&long_tests, test);
+			} else {
+				rz_pvector_push(&state.queue, test);
+			}
+		}
+		if (!rz_pvector_empty(&long_tests)) {
+			rz_pvector_sort(&long_tests, test_timeout_cmp, NULL);
+			rz_pvector_insert_range(&state.queue, rz_pvector_len(&state.queue), long_tests.v.a, rz_pvector_len(&long_tests));
+		}
+		rz_pvector_clear(&long_tests);
 	} else {
 		eprintf("No tests discovered\n");
 	}
