@@ -55,7 +55,9 @@ static bool join_var_arrs(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzVector *a
 RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIntState *state) {
 	rz_return_val_if_fail(state, NULL);
 	if (rz_vector_len(state->scratch.pad) < state->scratch.i) {
-		return rz_vector_index_ptr(state->scratch.pad, state->scratch.i++);
+		RzAbsIntVal *s = rz_vector_index_ptr(state->scratch.pad, state->scratch.i);
+		state->scratch.i++;
+		return s;
 	}
 	size_t new_cap = rz_vector_len(state->scratch.pad) * 1.2;
 	rz_vector_reserve(state->scratch.pad, new_cap);
