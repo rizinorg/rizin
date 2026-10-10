@@ -1952,6 +1952,18 @@ static bool cb_hexstride(void *user, void *data) {
 	return true;
 }
 
+static bool cb_hexbitshift(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	int shift = node->i_value;
+	if (shift < 0) {
+		shift = (shift % 8 + 8) % 8;
+	} else if (shift >= 8) {
+		shift %= 8;
+	}
+	node->i_value = shift;
+	return true;
+}
+
 static bool cb_search_kwidx(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3542,6 +3554,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI("hex.depth", 5, "Maximal level of recurrence while telescoping memory");
 	SETBPREF("hex.onechar", "false", "Number of columns in hexdump");
 	SETICB("hex.stride", 0, &cb_hexstride, "Line stride in hexdump (default is 0)");
+	SETICB("hex.bitshift", 0, &cb_hexbitshift, "Number of bits to shift in bitstream hexdump (0-7)");
 	SETCB("hex.comments", "true", &cb_hexcomments, "Show comments in 'px' hexdump");
 
 	/* http */

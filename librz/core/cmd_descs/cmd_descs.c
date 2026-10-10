@@ -803,6 +803,7 @@ static const RzCmdDescArg print_hexdump_format_args[4];
 static const RzCmdDescArg print_hexdump_annotated_args[2];
 static const RzCmdDescArg print_op_analysis_color_map_args[2];
 static const RzCmdDescArg print_hexdump_bits_args[2];
+static const RzCmdDescArg print_hexdump_bitstream_args[3];
 static const RzCmdDescArg print_hexdump_comments_args[2];
 static const RzCmdDescArg print_hexdump_signed_integer_args[2];
 static const RzCmdDescArg print_hexdump_signed_integer2_args[2];
@@ -17606,6 +17607,27 @@ static const RzCmdDescHelp print_hexdump_bits_help = {
 	.args = print_hexdump_bits_args,
 };
 
+static const RzCmdDescArg print_hexdump_bitstream_args[] = {
+	{
+		.name = "len",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.optional = true,
+
+	},
+	{
+		.name = "shift",
+		.type = RZ_CMD_ARG_TYPE_RZNUM,
+		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
+
+	},
+	{ 0 },
+};
+static const RzCmdDescHelp print_hexdump_bitstream_help = {
+	.summary = "dump bitstream in hexdump form with optional bit shift",
+	.args = print_hexdump_bitstream_args,
+};
+
 static const RzCmdDescArg print_hexdump_comments_args[] = {
 	{
 		.name = "len",
@@ -25900,6 +25922,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *print_hexdump_bits_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxb", rz_print_hexdump_bits_handler, &print_hexdump_bits_help);
 	rz_warn_if_fail(print_hexdump_bits_cd);
+
+	RzCmdDesc *print_hexdump_bitstream_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxB", rz_print_hexdump_bitstream_handler, &print_hexdump_bitstream_help);
+	rz_warn_if_fail(print_hexdump_bitstream_cd);
 
 	RzCmdDesc *print_hexdump_comments_cd = rz_cmd_desc_argv_new(core->rcmd, px_cd, "pxc", rz_print_hexdump_comments_handler, &print_hexdump_comments_help);
 	rz_warn_if_fail(print_hexdump_comments_cd);

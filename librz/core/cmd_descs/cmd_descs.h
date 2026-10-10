@@ -2287,6 +2287,8 @@ RZ_IPI RzCmdStatus rz_print_hexdump_annotated_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_print_op_analysis_color_map_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pxb"
 RZ_IPI RzCmdStatus rz_print_hexdump_bits_handler(RzCore *core, int argc, const char **argv);
+// "pxB"
+RZ_IPI RzCmdStatus rz_print_hexdump_bitstream_handler(RzCore *core, int argc, const char **argv);
 // "pxc"
 RZ_IPI RzCmdStatus rz_print_hexdump_comments_handler(RzCore *core, int argc, const char **argv);
 // "pxd"
