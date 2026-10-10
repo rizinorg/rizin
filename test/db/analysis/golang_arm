@@ -1,6 +1,6 @@
 NAME=Resolve all symbols on a linux go1.16 binary (arm32)
 FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
-TIMEOUT=1800
+TIMEOUT=900
 CMDS=<<EOF
 aalg
 fl~sym.go.~?
@@ -198,6 +198,7 @@ RUN
 
 NAME=Resolve all symbols on a linux go1.16 binary (arm64)
 FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
+TIMEOUT=900
 CMDS=<<EOF
 aalg
 fl~sym.go.~?

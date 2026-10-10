@@ -45,7 +45,7 @@ struct.runtime.iface.data=void*,8,0
 
 hmap=struct
 struct.hmap=count,flags,B,noverflow,hash0,buckets,oldbuckets,nevacuate,extra
-struct.hmap.count=int,0,0
+struct.hmap.count=int64_t,0,0
 struct.hmap.flags=uint8_t,8,0
 struct.hmap.B=uint8_t,9,0
 struct.hmap.noverflow=uint16_t,10,0
@@ -57,7 +57,7 @@ struct.hmap.extra=void*,40,0
 
 runtime.hmap=struct
 struct.runtime.hmap=count,flags,B,noverflow,hash0,buckets,oldbuckets,nevacuate,extra
-struct.runtime.hmap.count=int,0,0
+struct.runtime.hmap.count=int64_t,0,0
 struct.runtime.hmap.flags=uint8_t,8,0
 struct.runtime.hmap.B=uint8_t,9,0
 struct.runtime.hmap.noverflow=uint16_t,10,0

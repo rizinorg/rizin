@@ -565,6 +565,9 @@ typedef struct {
 
 static bool rz_golang_sample_flag_for_abi(RzFlagItem *fi, void *user) {
 	GolangVoteCtx *ctx = (GolangVoteCtx *)user;
+	if (rz_golang_is_compiler_wrapper_symbol(fi->name)) {
+		return true;
+	}
 	if (ctx->samples_count >= GO_ABI_MAX_SAMPLES) {
 		return false;
 	}
@@ -601,7 +604,7 @@ static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
 
-	if (asm_bits == 32 || strcmp(asm_arch, "x86") != 0) {
+	if (RZ_STR_ISEMPTY(asm_arch) || asm_bits == 32 || strcmp(asm_arch, "x86") != 0) {
 		return "golang";
 	}
 
@@ -774,10 +777,10 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
-		rz_golang_load_types(core);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+		rz_golang_load_types(core);
 		return true;
 	}
 
