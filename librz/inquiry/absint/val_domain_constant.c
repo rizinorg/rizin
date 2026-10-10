@@ -25,6 +25,10 @@ typedef struct {
 	RzBitVector *bv;
 } ValueData;
 
+static size_t sizeof_abs_int_val() {
+	return sizeof(ValueData);
+}
+
 /**
  * \brief Abstract data getter from the RzAbsIntVal
  */
@@ -34,11 +38,9 @@ static RzAbsIntVal *pack(ValueData *val) {
 	return rz_absint_val_pack(val);
 }
 
-static RZ_OWN RzAbsIntVal *val_new_top() {
-	ValueData *ad = RZ_NEW0(ValueData);
-	if (!ad) {
-		return NULL;
-	}
+static bool val_new_top(RZ_BORROW RzAbsIntVal *av) {
+	rz_return_val_if_fail(av, NULL);
+	ValueData *ad = AD(av);
 	ad->is_const = false;
 	ad->bv = rz_bv_new(64);
 	return pack(ad);
@@ -243,6 +245,7 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val)
 RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const = {
 	.name = "constant",
 	.val_new_top = val_new_top,
+	.val_size = sizeof_abs_int_val,
 	.val_free = val_free,
 	.set_top = val_set_top,
 	.set_const_bool = val_set_const_bool,

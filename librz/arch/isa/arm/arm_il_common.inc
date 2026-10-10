@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2022 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "arm_global_idx_map.inc"
+
 /**
  * Carry resulting from a + b (+ cf)
  */

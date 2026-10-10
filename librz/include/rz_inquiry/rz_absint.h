@@ -10,12 +10,22 @@
 #ifndef RZ_ABSINT
 #define RZ_ABSINT
 
+#include "rz_vector.h"
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
 
 #define RZ_ABSINT_STR_TOP    "⊤"
 #define RZ_ABSINT_STR_BOTTOM "⊥"
+
+/**
+ * \brief An abstract value representing a set of RzILVal
+ *
+ * The actual abstraction and structure of this is defined by the plugin in use.
+ * `struct rz_absint_val_opaque` is defined nowhere. It is used to ensure
+ * type-checking of passing this opaque pointer.
+ */
+typedef struct rz_absint_val_opaque RzAbsIntVal;
 
 typedef enum rz_absint_trace_options_t {
 	RZ_ABSINT_TRACE_NONE = 0,
@@ -26,15 +36,6 @@ typedef enum rz_absint_trace_options_t {
 
 typedef struct rz_absint_run_context_t RzAbsIntRunContext;
 typedef struct rz_absint_result_t RzAbsIntResult;
-
-/**
- * \brief An abstract value representing a set of RzILVal
- *
- * The actual abstraction and structure of this is defined by the plugin in use.
- * `struct rz_absint_val_opaque` is defined nowhere. Is is used to ensure
- * type-checking of passing this opaque pointer.
- */
-typedef struct rz_absint_val_opaque RzAbsIntVal;
 
 /**
  * \brief Helper to explicitly cast a plugin-defined abstract value to an opaque RzAbsIntAbstrVal
@@ -56,13 +57,24 @@ typedef enum rz_absint_pc_state_t {
 	RZ_ABSINT_PC_ANY ///< Top state, if this is set, pc field is unused and undefined
 } RzAbsIntPCState;
 
+/**
+ * \brief Number of initially allocated scratch values.
+ */
+#define RZ_ABS_INT_INIT_SCRATCH_PAD_SIZE 128
+
+typedef struct rz_absint_scratch_pad {
+	RzVector /*<RzAbsIntVal>*/ *pad; ///< An array of scratch abstract variables.
+	size_t i; ///< Currently free scratch value. If >|scratch| new values must be pushed to the vector.
+} RzAbsIntScratchPad;
+
 typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
-	HtUP /*<RzAbsIntAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
-	HtUP /*<RzAbsIntAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
-	HtUP /*<RzAbsIntAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
+	RzAbsIntScratchPad *scratch;
+	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
+	HtUP /*<RzAbsIntVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
+	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 } RzAbsIntState;
 
 /**
@@ -99,7 +111,8 @@ typedef struct rz_absint_instance_t RzAbsIntInstance;
 typedef struct rz_absint_value_domain_t {
 	const char *name;
 
-	RZ_OWN RzAbsIntVal *(*val_new_top)(void); ///< allocate a new abstract value and initialize it as top
+	size_t (*val_size)(void); ///< Return the RzAbsIntVal in bytes.
+	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval); ///< Initialize the new abstract value \p aval as top.
 	void (*val_free)(RzAbsIntVal *val);
 	bool (*is_top)(RZ_NONNULL const RzAbsIntVal *val); ///< return whether the given value is top
 	bool (*may_be_bool)(RZ_NONNULL const RzAbsIntVal *val, bool value); ///< return whether the given value's concrete set contains \p value
@@ -249,6 +262,9 @@ typedef enum rz_absint_result_code_t {
 	RZ_ABSINT_RESULT_FAILED,
 	RZ_ABSINT_RESULT_BREAK
 } RzAbsIntResultCode;
+
+RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIntState *state);
+RZ_IPI void rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state);
 
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);

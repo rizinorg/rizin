@@ -4,6 +4,8 @@
 #include "h8300_disas.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#include "h8300_global_idx_map.inc"
+
 #define INS_OPS(I)  (cmd->ops[(I)])
 #define PC_VAL      UADDR(cmd->pc)
 #define PC_NEXT_VAL UADDR(cmd->pc + cmd->size)

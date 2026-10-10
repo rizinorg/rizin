@@ -7,6 +7,8 @@
 #include <rz_analysis.h>
 #include <msp430/msp430_disas.h>
 
+#include "msp430_global_idx_map.inc"
+
 typedef Msp430Cmd Msp430Instruction;
 
 typedef RzILOpEffect *(*MSP430InstructionLifter)(RzAnalysis *analysis, const Msp430Instruction *op, ut64 curr_addr, int instr_size);
