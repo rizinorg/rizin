@@ -1,0 +1,307 @@
+NAME=Resolve all symbols on a linux go1.16 binary (arm32)
+FILE=bins/golang/btcctl-linux-armv7-v0.22.0-beta
+TIMEOUT=1800
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+# Attempt to get some reference strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
+izq~?
+ilq
+EOF
+EXPECT=<<EOF
+5124
+0x00270aac str.Failed_to_read_data_from_stdin:__v
+0x00270d70 str.s_command:__v
+0x00270db8 str.1.0
+0x002710ec str.Failed_to_unmarshal_result:__v
+0x0027124c str.Failed_to_format_result:__v
+0x0027140c str.s_command:__v__code:__s
+0x002714b0 str.The___s__command_can_only_be_used_via_websockets
+0x00271580 str.Unrecognized_command___s
+0x00271608 str.No_command_specified
+0x0027186c str.Chain_Server_Commands:DEBUG_HTTP2
+0x0027187c str.Wallet_Server_Commands____wallet_:
+0x00271bbc str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x00271e10 str.localhost
+0x00272018 str.Use__s__h_to_show_options
+0x002720ec str.btcwallet.conf
+0x00272188 str.Error_creating_a_default_config_file:__v
+0x00272618 str.s:_Multiple_network_params_can_t_be_used_together____choose_one
+0x0027271c str.Error_parsing_config_file:__v
+0x002727f8 str.btcd.conf
+0x00272c0c str.m___s_rpcuser_____s
+0x00272c60 str.m___s_rpcpass_____s
+0x00272cb4 str.m___s_notls__0_1___:_s
+0x00272e4c str.rpcuser__s_rpcpass__s
+0x00272edc str.notls__s
+0x00273460 str.http
+0x0027347c str.:
+0x00273514 str.POST
+0x00273574 str.Content_Type
+0x002735b4 str.application_json
+0x0027373c str.error_reading_json_reply:__v
+0x00273834 str.d__s
+0x002738bc str.s
+0x00273a58 str.https
+0x00273b18 str.d._d._d
+0x00273b50 str.beta
+0x00273c20 str.s__s
+0x00273d74 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+0x00273efc str.linux
+0x00273f0c str.btcd
+0x00273f50 str.linux
+0x00273f60 str.btcctl
+0x00273fa4 str.linux
+0x00273fb4 str.btcwallet
+0x0027401c str.btcctl.conf
+0x00274090 str.rpc.cert
+0x00274104 str.rpc.cert
+HEAD
+0x280a6f 4 4 main
+0x280a77 4 4 sort
+0x280a7f 4 4 sync
+0x280a87 4 4 time
+0x280a8e 4 4 *int
+0x280a95 4 4 AAAA
+0x280a9c 4 4 Add2
+0x280aa3 4 4 Addr
+0x280aaa 4 4 Args
+0x280ab1 4 4 Atim
+TAIL
+0x2e9fd2 5 5 %s+%s
+0x2fe095 63 63 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-
+0x2e9e6b 5 5 btcdc
+0x2e9e6b 4 4 btcd
+0x2ea4ca 5 5 btcct
+0x2ea4ca 6 6 btcctl
+0x2eb50f 5 5 btcwa
+0x2eb50f 9 9 btcwallet
+0x2ec40d 11 11 btcctl.conf
+0x2eb053 8 8 rpc.cert
+14315
+bufio
+bytes
+compress/flate
+compress/gzip
+compress/zlib
+container/list
+context
+crypto
+crypto/aes
+crypto/cipher
+crypto/des
+crypto/dsa
+crypto/ecdsa
+crypto/ed25519
+crypto/ed25519/internal/edwards25519
+crypto/elliptic
+crypto/hmac
+crypto/internal/randutil
+crypto/md5
+crypto/rand
+crypto/rc4
+crypto/rsa
+crypto/sha1
+crypto/sha256
+crypto/sha512
+crypto/tls
+crypto/x509
+crypto/x509/pkix
+encoding/asn1
+encoding/base64
+encoding/binary
+encoding/hex
+encoding/json
+encoding/pem
+errors
+fmt
+github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcd/btcjson
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcd/chaincfg/chainhash
+github.com/btcsuite/btcd/txscript
+github.com/btcsuite/btcd/wire
+github.com/btcsuite/btclog
+github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/base58
+github.com/btcsuite/go-socks/socks
+github.com/jessevdk/go-flags
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/chacha20poly1305
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/ripemd160
+golang.org/x/net/dns/dnsmessage
+golang.org/x/net/http/httpguts
+golang.org/x/net/http/httpproxy
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+hash/adler32
+hash/crc32
+internal/bytealg
+internal/cpu
+internal/fmtsort
+internal/oserror
+internal/poll
+internal/reflectlite
+internal/singleflight
+internal/syscall/unix
+internal/testlog
+io
+io/fs
+io/ioutil
+log
+math
+math/big
+math/bits
+math/rand
+mime
+mime/multipart
+net
+net/http
+net/http/internal
+net/textproto
+net/url
+os
+os/user
+path
+path/filepath
+reflect
+regexp
+regexp/syntax
+runtime
+runtime/debug
+runtime/internal/atomic
+sort
+strconv
+strings
+sync
+sync/atomic
+syscall
+time
+unicode
+unicode/utf16
+unicode/utf8
+EOF
+RUN
+
+NAME=Resolve all symbols on a linux go1.16 binary (arm64)
+FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
+CMDS=<<EOF
+aalg
+fl~sym.go.~?
+pdfs @ main ~str.
+# Attempt to get some reference strings when the count changes with izq.
+echo HEAD
+izq~:..10
+echo TAIL
+izq~:-10..
+izq~?
+EOF
+EXPECT=<<EOF
+5070
+0x0026b000 str.s_command:__v
+0x0026b04c str.1.0
+0x0026b310 str.tls:_invalid_server_key_share
+0x0026b314 str.Failed_to_unmarshal_result:__v
+0x0026b444 str.Failed_to_format_result:__v
+0x0026b5dc str.s_command:__v__code:__s
+0x0026b730 str.Failed_to_read_data_from_stdin:__v
+0x0026b884 str.Not_enough_lines_provided_on_stdin
+0x0026b998 str.The___s__command_can_only_be_used_via_websockets
+0x0026b9d0 str.Specify__l_to_list_available_commands
+0x0026ba70 str.Unrecognized_command___s
+0x0026baa8 str.Specify__l_to_list_available_commands
+0x0026bb00 str.No_command_specified
+0x0026bc28 str.Chain_Server_Commands:DEBUG_HTTP2
+0x0026bc3c str.Wallet_Server_Commands____wallet_:
+0x0026bf1c str.testnet3
+0x0026bf40 str.18334
+0x0026c030 str.simnet
+0x0026c054 str.18556
+0x0026c064 str.regtest
+0x0026c084 str.18334
+0x0026c090 str.cannot_use__wallet_with__regtest__btcwallet_not_yet_compatible_with_regtest
+0x0026c100 str.8334
+0x0026c2c8 str.localhost
+0x0026c2d0 str.localhost
+0x0026c520 str.Use__s__h_to_show_options
+0x0026c5f4 str.btcwallet.conf
+0x0026c688 str.Error_creating_a_default_config_file:__v
+0x0026c8ac str.testnet3
+0x0026c8b4 str.mainnet
+0x0026c8c4 str.simnet
+0x0026c8d4 str.regtest
+0x0026cad4 str.loadConfig
+0x0026cae0 str.profilealloc_called_without_a_P_or_outside_bootstrapping
+0x0026cae4 str.s:_Multiple_network_params_can_t_be_used_together____choose_one
+0x0026cbd0 str.tls:_invalid_server_key_share
+0x0026cbd4 str.Error_parsing_config_file:__v
+0x0026ccb8 str.btcd.conf
+0x0026cd6c str.version
+0x0026cec4 str.The_special_parameter_____indicates_that_a_parameter_should_be_read_from_the_next_unread_line_from_standard_input.
+0x0026d0a8 str.m___s_rpcuser_____s
+0x0026d0fc str.m___s_rpcpass_____s
+0x0026d150 str.m___s_notls__0_1___:_s
+0x0026d2e0 str.rpcuser__s_rpcpass__s
+0x0026d368 str.notls__s
+0x0026d900 str.http
+0x0026d908 str.https
+0x0026d90c str.http
+0x0026d928 str.:
+0x0026d9c4 str.POST
+0x0026da28 str.Content_Type
+0x0026da70 str.application_json
+0x0026dbe8 str.error_reading_json_reply:__v
+0x0026dcec str.d__s
+0x0026dd70 str.s
+0x0026df84 str.d._d._d
+0x0026dfc0 str.beta
+0x0026e0a0 str.s__s
+0x0026e1dc str.profilealloc_called_without_a_P_or_outside_bootstrapping
+0x0026e1e0 str.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+0x0026e370 str.linux
+0x0026e384 str.btcd
+0x0026e3d0 str.linux
+0x0026e3e4 str.btcctl
+0x0026e430 str.linux
+0x0026e444 str.btcwallet
+0x0026e4b8 str.btcctl.conf
+0x0026e53c str.rpc.cert
+0x0026e5c0 str.rpc.cert
+HEAD
+0x270767 4 4 main
+0x27076f 4 4 sort
+0x270777 4 4 sync
+0x27077f 4 4 time
+0x270786 4 4 *int
+0x27078d 4 4 AAAA
+0x270794 4 4 Add2
+0x27079b 4 4 Addr
+0x2707a2 4 4 Args
+0x2707a9 4 4 Atim
+TAIL
+0x306b9a 5 5 %s+%s
+0x31abbf 63 63 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-
+0x306a26 5 5 btcdc
+0x306a26 4 4 btcd
+0x30708d 5 5 btcct
+0x30708d 6 6 btcctl
+0x308060 5 5 btcwa
+0x308060 9 9 btcwallet
+0x308f22 11 11 btcctl.conf
+0x307bd6 8 8 rpc.cert
+14368
+EOF
+RUN
