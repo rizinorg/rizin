@@ -123,6 +123,10 @@ RZ_IPI RzCmdStatus rz_cmd_detail_cop_gadget_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_cop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Cl"
 RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cw"
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_written_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Cr"
+RZ_IPI RzCmdStatus rz_cmd_cop_gadget_search_read_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/d"
 RZ_IPI RzCmdStatus rz_cmd_search_deltified_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/F"
@@ -141,6 +145,10 @@ RZ_IPI RzCmdStatus rz_cmd_detail_jop_gadget_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_jop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Jl"
 RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jw"
+RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_written_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Jr"
+RZ_IPI RzCmdStatus rz_cmd_jop_gadget_search_read_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/o"
 RZ_IPI RzCmdStatus rz_cmd_search_insn_offset_backwards_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/O"
@@ -183,6 +191,10 @@ RZ_IPI RzCmdStatus rz_cmd_detail_rop_gadget_handler(RzCore *core, int argc, cons
 RZ_IPI RzCmdStatus rz_cmd_rop_search_stack_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/Rl"
 RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_size_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Rw"
+RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_written_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
+// "/Rr"
+RZ_IPI RzCmdStatus rz_cmd_rop_gadget_search_read_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v"
 RZ_IPI RzCmdStatus rz_cmd_search_value_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/v1"

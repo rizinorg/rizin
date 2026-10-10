@@ -4217,7 +4217,7 @@ pi 3
 echo "================================================"
 /R
 echo "================================================"
-/Rg 
+/Rg
 EOF
 EXPECT=<<EOF
 addiu sp, sp, 0x20
@@ -4256,5 +4256,184 @@ EOF
 EXPECT=<<EOF
 1951
 1951
+EOF
+RUN
+
+NAME=search rop gadgets which write a register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Rw rax
+EOF
+EXPECT=<<EOF
+Gadget 0x400398
+Stack change: 0x10
+Changed registers: rax rsp 
+Register dependencies:
+Var Read: rax
+Memory Read: rax Value: 0xffffffffffffffa5
+Memory Read: rax Value: 0x1f
+Memory Read: rdx Value: 0x1f
+Memory Write: rax Initial Value: 0xff New Value: 0x0
+Memory Write: rdx Initial Value: 0xff New Value: 0x0
+
+EOF
+RUN
+
+NAME=search rop gadgets which write a register, but not another one
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Rw rax,!rbx
+EOF
+EXPECT=<<EOF
+Gadget 0x400398
+Stack change: 0x10
+Changed registers: rax rsp 
+Register dependencies:
+Var Read: rax
+Memory Read: rax Value: 0xffffffffffffffa5
+Memory Read: rax Value: 0x1f
+Memory Read: rdx Value: 0x1f
+Memory Write: rax Initial Value: 0xff New Value: 0x0
+Memory Write: rdx Initial Value: 0xff New Value: 0x0
+
+EOF
+RUN
+
+NAME=search rop gadgets which read a register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Rr rax
+EOF
+EXPECT=<<EOF
+Gadget 0x400398
+Stack change: 0x10
+Changed registers: rax rsp 
+Register dependencies:
+Var Read: rax
+Memory Read: rax Value: 0xffffffffffffffa5
+Memory Read: rax Value: 0x1f
+Memory Read: rdx Value: 0x1f
+Memory Write: rax Initial Value: 0xff New Value: 0x0
+Memory Write: rdx Initial Value: 0xff New Value: 0x0
+
+EOF
+RUN
+
+NAME=search rop gadgets which do not read a register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Rr !rax
+EOF
+EXPECT=<<EOF
+Gadget 0x400295
+Stack change: 0x0
+Changed registers: 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets given a sub-register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Rw eax
+EOF
+EXPECT=<<EOF
+Gadget 0x400398
+Stack change: 0x10
+Changed registers: rax rsp 
+Register dependencies:
+Var Read: rax
+Memory Read: rax Value: 0xffffffffffffffa5
+Memory Read: rax Value: 0x1f
+Memory Read: rdx Value: 0x1f
+Memory Write: rax Initial Value: 0xff New Value: 0x0
+Memory Write: rdx Initial Value: 0xff New Value: 0x0
+
+EOF
+RUN
+
+NAME=search rop gadgets which write a register, output JSON
+FILE=bins/elf/analysis/x86-helloworld-phdr
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+/Rwj eax
+EOF
+EXPECT=<<EOF
+[{"address":180,"stack_change":4,"modified_registers":[{"name":"eax","type":"var_write"},{"name":"ecx","type":"var_write"},{"name":"esp","type":"var_write"}],"dependencies":[]},{"address":182,"stack_change":4,"modified_registers":[{"name":"eax","type":"var_write"},{"name":"ecx","type":"var_write"},{"name":"esp","type":"var_write"}],"dependencies":[]}]
+EOF
+RUN
+
+NAME=search cop gadgets which write a register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Cw rax
+EOF
+EXPECT=<<EOF
+Gadget 0x400390
+Stack change: 0xfffffffffffffff0
+Changed registers: rsp rax 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search jop gadgets which read a register
+FILE=bins/elf/varsub
+CMDS=<<EOF
+e search.maxhits=1
+/Jr rsp
+EOF
+EXPECT=<<EOF
+Gadget 0x4003fa
+Stack change: 0x8
+Changed registers: rbp rsp rdi 
+Register dependencies:
+
+EOF
+RUN
+
+NAME=search rop gadgets which write a register on arm
+FILE=bins/arm/crackme.arm32.bin
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+e search.maxhits=1
+/Rw r0
+EOF
+EXPECT=<<EOF
+Gadget 0x900
+Stack change: 0x0
+Changed registers: r0 r1 r3 r6 r8 r9 r11 r12 sp 
+Register dependencies:
+Memory Read: r1 Value: 0x4
+
+EOF
+RUN
+
+NAME=search rop gadgets given a non general purpose register
+FILE=
+CMDS=/Rw xmm0
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Unknown general purpose register "xmm0"
+EOF
+RUN
+
+NAME=search rop gadgets given an empty register condition
+FILE=
+CMDS=/Rw ","
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Empty register condition in ","
 EOF
 RUN

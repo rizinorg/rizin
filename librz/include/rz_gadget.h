@@ -109,8 +109,8 @@ typedef enum {
 	RZ_GADGET_DETAIL_SEARCH_NON = 0,
 	RZ_GADGET_DETAIL_SEARCH_STACK = 1 << 0, ///< Search gadgets by stack changes.
 	RZ_GADGET_DETAIL_SEARCH_SIZE = 1 << 1, ///< Search gadgets by gadget sizes.
-	// RZ_GADGET_DETAIL_SEARCH_WRITE = 1 << 2, ///< Search gadgets by written registers.
-	// RZ_GADGET_DETAIL_SEARCH_READ = 1 << 3, ///< Search gadgets by read registers.
+	RZ_GADGET_DETAIL_SEARCH_WRITE = 1 << 2, ///< Search gadgets by written registers.
+	RZ_GADGET_DETAIL_SEARCH_READ = 1 << 3, ///< Search gadgets by read registers.
 } RzGadgetDetailSearchMask;
 
 /**
@@ -141,6 +141,19 @@ typedef struct rz_gadget_constraint_t {
 } RzGadgetConstraint;
 
 /**
+ * \brief Condition on the usage of a single register, used to filter gadgets.
+ *
+ * A list of these conditions is matched against a gadget with AND semantics.
+ * For example { "rax", false } together with { "rbx", true } selects gadgets
+ * which write \p rax, but do not write \p rbx (when the search mask is
+ * RZ_GADGET_DETAIL_SEARCH_WRITE).
+ */
+typedef struct rz_gadget_reg_filter_t {
+	char *name; ///< Canonical register name in the current register profile.
+	bool negate; ///< If true, the gadget must not use the register in the requested way.
+} RzGadgetRegFilter;
+
+/**
  * \brief Structure representing a Gadget search context.
  */
 typedef struct rz_gadget_search_context_t {
@@ -165,6 +178,7 @@ typedef struct rz_gadget_search_context_t {
 	bool ret_val; ///< Flag to indicate return the search results.
 	RzStrBuf *buf; ///< String buffer for storing search results.
 	RzPVector /*<RzGadgetConstraint *>*/ *constraints; ///< User constraints for filtering.
+	RzPVector /*<RzGadgetRegFilter *>*/ *reg_filters; ///< Register conditions for RZ_GADGET_DETAIL_SEARCH_WRITE/READ.
 } RzGadgetSearchContext;
 
 /**
