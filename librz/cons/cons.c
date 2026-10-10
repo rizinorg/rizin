@@ -98,6 +98,11 @@ static RzConsStack *cons_stack_dump(bool recreate) {
 			ctx_rowcol_calc_reset();
 			if (!CTX(buffer)) {
 				CTX(buffer) = data->buf;
+				if (data->grep) {
+					free(data->grep->str);
+					free(data->grep->json_path);
+					free(data->grep);
+				}
 				free(data);
 				return NULL;
 			}
