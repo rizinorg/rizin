@@ -80,9 +80,9 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 		fclose(fd);
 		return false;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	for (i = 0; i < size; i += bs) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if ((i + bs) > size) {
@@ -94,7 +94,7 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 			break;
 		}
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	fclose(fd);
 	free(buf);
 	return true;
@@ -412,8 +412,9 @@ err:
  *
  * \param plugin Reference to RzIOPlugin
  * \param state Specify how the plugin shall be printed
+ * \param cons Reference to RzCons
  */
-RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput *state) {
+RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	char str[4];
 	PJ *pj = state->d.pj;
 	str[0] = 'r';
@@ -455,22 +456,22 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
 		rz_table_add_rowf(state->d.t, "sssss", str, plugin->license, plugin->name, plugin->uris, plugin->desc);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s\n", plugin->name);
+		rz_cons_printf(cons, "%s\n", plugin->name);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%s  %-8s %s (%s)",
+		rz_cons_printf(cons, "%s  %-8s %s (%s)",
 			str, plugin->name,
 			plugin->desc, plugin->license);
 		if (plugin->uris) {
-			rz_cons_printf(" %s", plugin->uris);
+			rz_cons_printf(cons, " %s", plugin->uris);
 		}
 		if (plugin->version) {
-			rz_cons_printf(" v%s", plugin->version);
+			rz_cons_printf(cons, " v%s", plugin->version);
 		}
 		if (plugin->author) {
-			rz_cons_printf(" %s", plugin->author);
+			rz_cons_printf(cons, " %s", plugin->author);
 		}
-		rz_cons_printf("\n");
+		rz_cons_printf(cons, "\n");
 		break;
 	default: {
 		rz_warn_if_reached();
@@ -485,9 +486,10 @@ RZ_API RzCmdStatus rz_core_io_plugin_print(RzIOPlugin *plugin, RzCmdStateOutput 
  *
  * \param io Reference to RzIO instance
  * \param state Specify how plugins shall be printed
+ * \param cons Reference to RzCons instance
  */
-RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmdStateOutput *state) {
-	rz_return_val_if_fail(io && state, RZ_CMD_STATUS_ERROR);
+RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_return_val_if_fail(io && state && cons, RZ_CMD_STATUS_ERROR);
 
 	if (!io) {
 		return RZ_CMD_STATUS_ERROR;
@@ -505,7 +507,7 @@ RZ_API RzCmdStatus rz_core_io_plugins_print(RZ_NONNULL RZ_BORROW RzIO *io, RzCmd
 	RzListIter *it;
 	RzIOPlugin *plugin;
 	rz_list_foreach (plugin_list, it, plugin) {
-		rz_core_io_plugin_print(plugin, state);
+		rz_core_io_plugin_print(plugin, state, cons);
 	}
 	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
@@ -828,15 +830,15 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 		const ut64 dataSize = rz_itv_size(c->itv);
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
+			rz_cons_printf(core->cons, "idx=%" PFMTSZu " addr=0x%08" PFMT64x " size=%" PFMT64u " ", j, rz_itv_begin(c->itv), dataSize);
 			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", c->odata[i]);
+				rz_cons_printf(core->cons, "%02x", c->odata[i]);
 			}
-			rz_cons_printf(" -> ");
+			rz_cons_printf(core->cons, " -> ");
 			for (i = 0; i < dataSize; i++) {
-				rz_cons_printf("%02x", c->data[i]);
+				rz_cons_printf(core->cons, "%02x", c->data[i]);
 			}
-			rz_cons_printf(" %s\n", c->written ? "(written)" : "(not written)");
+			rz_cons_printf(core->cons, " %s\n", c->written ? "(written)" : "(not written)");
 			break;
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -875,16 +877,16 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%08" PFMT64x ": %02x",
+			rz_cons_printf(core->cons, "0x%08" PFMT64x ": %02x",
 				rz_itv_begin(c->itv), c->odata[0]);
 			for (i = 1; i < cacheSize; i++) {
-				rz_cons_printf("%02x", c->odata[i]);
+				rz_cons_printf(core->cons, "%02x", c->odata[i]);
 			}
-			rz_cons_printf(" -> %02x", c->data[0]);
+			rz_cons_printf(core->cons, " -> %02x", c->data[0]);
 			for (i = 1; i < cacheSize; i++) {
-				rz_cons_printf("%02x", c->data[i]);
+				rz_cons_printf(core->cons, "%02x", c->data[i]);
 			}
-			rz_cons_printf("\n");
+			rz_cons_printf(core->cons, "\n");
 			break;
 		default:
 			rz_warn_if_reached();

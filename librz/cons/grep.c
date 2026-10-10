@@ -194,13 +194,13 @@ static const char *help_detail_tilde[] = {
 	NULL
 };
 
-RZ_API void rz_cons_grep_help(void) {
-	rz_cons_cmd_help(help_detail_tilde, true);
+RZ_API void rz_cons_grep_help(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_cons_cmd_help(cons, help_detail_tilde, true);
 }
 
 #define RZ_CONS_GREP_BUFSIZE 4096
 
-static void parse_grep_expression(const char *str) {
+static void parse_grep_expression(RzCons *cons, const char *str) {
 	static char buf[RZ_CONS_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
@@ -209,7 +209,6 @@ static void parse_grep_expression(const char *str) {
 	if (!str || !*str) {
 		return;
 	}
-	RzCons *cons = rz_cons_singleton();
 	RzConsGrep *grep = &cons->context->grep;
 	grep->sorted_column = 0;
 	bool first = true;
@@ -325,7 +324,7 @@ static void parse_grep_expression(const char *str) {
 				str++;
 			} else if (*str == '?') {
 				cons->filter = true;
-				rz_cons_grep_help();
+				rz_cons_grep_help(cons);
 				return;
 			}
 			break;
@@ -543,12 +542,12 @@ static char *preprocess_filter_expr(char *cmd, const char *quotes) {
 	return ns;
 }
 
-RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr) {
-	rz_return_if_fail(cmd && quotestr);
+RZ_API void rz_cons_grep_parsecmd(RZ_NONNULL RZ_BORROW RzCons *cons, char *cmd, const char *quotestr) {
+	rz_return_if_fail(cons && cmd && quotestr);
 	char *ptr = preprocess_filter_expr(cmd, quotestr);
 	if (ptr) {
 		rz_str_trim(cmd);
-		parse_grep_expression(ptr);
+		parse_grep_expression(cons, ptr);
 		free(ptr);
 	}
 }
@@ -563,12 +562,12 @@ RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr) {
 	return ptr;
 }
 
-RZ_API void rz_cons_grep_process(RZ_OWN char *grep) {
+RZ_API void rz_cons_grep_process(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_OWN char *grep) {
 	if (!grep) {
 		return;
 	}
 	rz_str_trim_tail(grep);
-	parse_grep_expression(grep);
+	parse_grep_expression(cons, grep);
 	free(grep);
 }
 
@@ -608,8 +607,7 @@ static int cmp(const void *a, const void *b, void *user) {
 	return strcmp(a, b);
 }
 
-RZ_API void rz_cons_grepbuf(void) {
-	RzCons *cons = rz_cons_singleton();
+RZ_API void rz_cons_grepbuf(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	cons->context->row = 0;
 	cons->context->col = 0;
 	cons->context->rowcol_calc_start = 0;
@@ -656,7 +654,7 @@ RZ_API void rz_cons_grepbuf(void) {
 				cons->context->buffer_len = strlen(out);
 				cons->context->buffer_sz = cons->context->buffer_len + 1;
 				grep->json = 0;
-				rz_cons_newline();
+				rz_cons_newline(cons);
 			}
 			RZ_FREE(grep->json_path);
 		} else {
@@ -672,7 +670,7 @@ RZ_API void rz_cons_grepbuf(void) {
 			rz_str_ansi_filter(bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
 				? rz_print_json_human(bb)
-				: rz_print_json_indent(bb, I(context->color_mode), "  ", palette);
+				: rz_print_json_indent(bb, cons->context->color_mode, "  ", palette);
 			free(bb);
 			if (!out) {
 				return;
@@ -684,10 +682,10 @@ RZ_API void rz_cons_grepbuf(void) {
 			grep->json = 0;
 			if (grep->hud) {
 				grep->hud = false;
-				rz_cons_hud_string(cons->context->buffer);
+				rz_cons_hud_string(cons, cons->context->buffer);
 			} else if (grep->less) {
 				grep->less = 0;
-				rz_cons_less_str(cons->context->buffer, NULL);
+				rz_cons_less_str(cons, cons->context->buffer, NULL);
 			}
 		}
 		return;
@@ -697,13 +695,13 @@ RZ_API void rz_cons_grepbuf(void) {
 		int less = grep->less;
 		grep->less = 0;
 		if (less == 2) {
-			char *res = rz_cons_hud_string(buf);
+			char *res = rz_cons_hud_string(cons, buf);
 			if (res) {
-				rz_cons_println(res);
+				rz_cons_println(cons, res);
 				free(res);
 			}
 		} else {
-			rz_cons_less_str(buf, NULL);
+			rz_cons_less_str(cons, buf, NULL);
 			cons->context->buffer_len = 0;
 			if (cons->context->buffer) {
 				cons->context->buffer[0] = 0;
@@ -763,7 +761,7 @@ RZ_API void rz_cons_grepbuf(void) {
 			if (tl < 0) {
 				ret = -1;
 			} else {
-				ret = rz_cons_grep_line(tline, tl);
+				ret = rz_cons_grep_line(cons, tline, tl);
 				if (!grep->range_line) {
 					if (grep->line == cons->lines) {
 						show = true;
@@ -880,8 +878,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	}
 }
 
-RZ_API int rz_cons_grep_line(char *buf, int len) {
-	RzCons *cons = rz_cons_singleton();
+RZ_API int rz_cons_grep_line(RZ_NONNULL RZ_BORROW RzCons *cons, char *buf, int len) {
 	RzConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
@@ -1004,7 +1001,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 	return len;
 }
 
-RZ_API void rz_cons_grep(const char *grep) {
-	parse_grep_expression(grep);
-	rz_cons_grepbuf();
+RZ_API void rz_cons_grep(RZ_NONNULL RZ_BORROW RzCons *cons, const char *grep) {
+	parse_grep_expression(cons, grep);
+	rz_cons_grepbuf(cons);
 }

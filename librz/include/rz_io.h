@@ -11,6 +11,7 @@
 #include <rz_bind.h>
 #include "rz_vector.h"
 #include "rz_skyline.h"
+#include "rz_cons.h"
 
 #define RZ_IO_SEEK_SET 0
 #define RZ_IO_SEEK_CUR 1
@@ -87,8 +88,10 @@ typedef struct rz_io_t {
 #endif
 	char *args;
 	RzEvent *event;
+	void *cb_printf_user;
 	PrintfCallback cb_printf;
 	RzCoreBind corebind;
+	RzInterrupt *intr;
 } RzIO;
 
 typedef struct rz_io_desc_t {

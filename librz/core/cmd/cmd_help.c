@@ -157,11 +157,11 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char
 
 	if (mode & RZ_OUTPUT_MODE_JSON) {
 		pj_end(hs.pj);
-		rz_cons_printf("%s\n", pj_string(hs.pj));
+		rz_cons_printf(core->cons, "%s\n", pj_string(hs.pj));
 		pj_free(hs.pj);
 	} else {
 		char *help = rz_strbuf_drain(hs.sb);
-		rz_cons_printf("%s", help);
+		rz_cons_printf(core->cons, "%s", help);
 		free(help);
 	}
 exit_status:
@@ -177,7 +177,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 	// Get all summary descriptions of commands.
 	rz_cmd_foreach_cmdname(core->rcmd, NULL, help_search_interactive_cmd_desc_summary, brief_lines);
 	// Run it in the hub.
-	free(rz_cons_hud(brief_lines, NULL));
+	free(rz_cons_hud(core->cons, brief_lines, NULL));
 
 	rz_list_free(brief_lines);
 	return RZ_CMD_STATUS_OK;
@@ -187,17 +187,17 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core, int argc, const char **argv) {
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STR_BUF, core);
-	rz_core_config_print_all(core->config, "", &state);
+	rz_core_config_print_all(core->config, "", &state, core->cons);
 
 	RzConfig **cfg;
 	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
 	rz_iterator_foreach(it, cfg) {
-		rz_core_config_print_all(*cfg, "", &state);
+		rz_core_config_print_all(*cfg, "", &state, core->cons);
 	}
 	rz_iterator_free(it);
 
 	// Run it in the hub.
-	free(rz_cons_hud_string(rz_strbuf_get(state.d.sbuf)));
+	free(rz_cons_hud_string(core->cons, rz_strbuf_get(state.d.sbuf)));
 	rz_strbuf_free(state.d.sbuf);
 	return RZ_CMD_STATUS_OK;
 }
@@ -220,7 +220,7 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_everything_handler(RzCore *cor
 		return RZ_CMD_STATUS_ERROR;
 	}
 	// Run it in the hub.
-	free(rz_cons_hud(hs.detail_lines, NULL));
+	free(rz_cons_hud(core->cons, hs.detail_lines, NULL));
 
 	rz_list_free(hs.detail_lines);
 	return RZ_CMD_STATUS_OK;

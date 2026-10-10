@@ -21,15 +21,15 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 	const char *k;
 	RzColor rcolor;
 
-	rz_cons_show_cursor(false);
-	rcolor = rz_cons_pal_get_i(opt);
+	rz_cons_show_cursor(core->cons, false);
+	rcolor = rz_cons_pal_get_i(core->cons, opt);
 	for (;;) {
-		rz_cons_clear();
-		rz_cons_gotoxy(0, 0);
-		k = rz_cons_pal_get_name(opt);
+		rz_cons_clear(core->cons);
+		rz_cons_gotoxy(core->cons, 0, 0);
+		k = rz_cons_pal_get_name(core->cons, opt);
 		if (!k) {
 			opt = 0;
-			k = rz_cons_pal_get_name(opt);
+			k = rz_cons_pal_get_name(core->cons, opt);
 		}
 		if (!truecolor) {
 			rcolor.r &= 0xf;
@@ -53,35 +53,33 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 		} else {
 			rcolor.a = ALPHA_FG;
 		}
-		rz_cons_rgb_str(cstr, sizeof(cstr), &rcolor);
+		rz_cons_rgb_str(core->cons, cstr, sizeof(cstr), &rcolor);
 		char *esc = strchr(cstr + 1, '\x1b');
 		char *curtheme = rz_core_theme_get(core);
 
-		rz_cons_printf("# Use '.' to randomize current color and ':' to randomize palette\n");
-		rz_cons_printf("# Press '" Color_RED "rR" Color_GREEN "gG" Color_BLUE "bB" Color_RESET
-			       "' or '" Color_BGRED "eE" Color_BGGREEN "fF" Color_BGBLUE "vV" Color_RESET
-			       "' to change foreground/background color\n");
-		rz_cons_printf("# Export colorscheme with command 'ec* > filename'\n");
-		rz_cons_printf("# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
-		rz_cons_printf("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", curtheme ? curtheme : "default");
-		rz_cons_printf("# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
-		rz_cons_printf("# ec %s %s # %d (\\x1b%.*s)",
+		rz_cons_printf(core->cons, "# Use '.' to randomize current color and ':' to randomize palette\n");
+		rz_cons_printf(core->cons, "# Press '" Color_RED "rR" Color_GREEN "gG" Color_BLUE "bB" Color_RESET "' or '" Color_BGRED "eE" Color_BGGREEN "fF" Color_BGBLUE "vV" Color_RESET "' to change foreground/background color\n");
+		rz_cons_printf(core->cons, "# Export colorscheme with command 'ec* > filename'\n");
+		rz_cons_printf(core->cons, "# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
+		rz_cons_printf(core->cons, "# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", curtheme ? curtheme : "default");
+		rz_cons_printf(core->cons, "# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
+		rz_cons_printf(core->cons, "# ec %s %s # %d (\\x1b%.*s)",
 			k, color, atoi(cstr + 7), esc ? (int)(esc - cstr - 1) : (int)strlen(cstr + 1), cstr + 1);
 		if (esc) {
-			rz_cons_printf(" (\\x1b%s)", esc + 1);
+			rz_cons_printf(core->cons, " (\\x1b%s)", esc + 1);
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 
 		rz_core_cmdf(core, "ec %s %s", k, color);
 		char *res = rz_core_cmd_str(core, preview_cmd);
-		int h, w = rz_cons_get_size(&h);
+		int h, w = rz_cons_get_size(core->cons, &h);
 		char *body = rz_str_ansi_crop(res, 0, 0, w, h - 8);
 		if (body) {
-			rz_cons_printf("\n%s", body);
+			rz_cons_printf(core->cons, "\n%s", body);
 		}
-		rz_cons_flush();
-		ch = rz_cons_readchar();
-		ch = rz_cons_arrow_to_hjkl(ch);
+		rz_cons_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch);
 		switch (ch) {
 #define CASE_RGB(x, X, y) \
 	case x: \
@@ -126,7 +124,7 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 			opt = rz_cons_pal_len() - 1;
 			break;
 		case ':':
-			rz_cons_pal_random();
+			rz_cons_pal_random(core->cons);
 			break;
 		case '.':
 			rcolor.r = rz_num_rand32(0xff);
@@ -135,12 +133,12 @@ RZ_IPI void rz_core_visual_colors(RzCore *core) {
 			break;
 		case 'c':
 			rz_line_set_prompt(cons->line, "Preview command> ");
-			rz_cons_show_cursor(true);
-			rz_cons_fgets(preview_cmd, sizeof(preview_cmd), 0, NULL);
-			rz_cons_show_cursor(false);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_fgets(core->cons, preview_cmd, sizeof(preview_cmd), 0, NULL);
+			rz_cons_show_cursor(core->cons, false);
 		}
 		if (opt != oopt) {
-			rcolor = rz_cons_pal_get_i(opt);
+			rcolor = rz_cons_pal_get_i(core->cons, opt);
 			oopt = opt;
 		}
 		free(body);

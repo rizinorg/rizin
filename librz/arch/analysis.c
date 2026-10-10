@@ -1412,3 +1412,14 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, R
 	rz_return_if_fail(analysis);
 	analysis->esil = esil;
 }
+
+/**
+ * \brief Set interrupt instance for analysis operations.
+ *
+ * \param analysis Pointer to the RzAnalysis context.
+ * \param intr Pointer to the RzInterrupt instance, or NULL to detach.
+ */
+RZ_API void rz_analysis_set_interrupt(RZ_NONNULL RzAnalysis *analysis, RzInterrupt *intr) {
+	rz_return_if_fail(analysis);
+	analysis->intr = intr;
+}

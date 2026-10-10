@@ -18,7 +18,7 @@ RZ_IPI RzCmdStatus rz_block_handler(RzCore *core, int argc, const char **argv, R
 			break;
 		}
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x%x\n", core->blocksize);
+			rz_cons_printf(core->cons, "0x%x\n", core->blocksize);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -55,7 +55,7 @@ RZ_IPI RzCmdStatus rz_block_max_handler(RzCore *core, int argc, const char **arg
 		ut64 n = rz_num_math(core->num, argv[1]);
 		core->blocksize_max = n;
 	} else {
-		rz_cons_printf("0x%x\n", core->blocksize_max);
+		rz_cons_printf(core->cons, "0x%x\n", core->blocksize_max);
 	}
 	return RZ_CMD_STATUS_OK;
 }

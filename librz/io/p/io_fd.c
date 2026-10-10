@@ -39,9 +39,9 @@ static bool __resize(RzIO *io, RzIODesc *desc, ut64 count) {
 static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, size_t count) {
 	RzIOFdata *fdd = (RzIOFdata *)desc->data;
 	if (fdd) {
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(io->intr, NULL, NULL);
 		int res = read(fdd->fd, buf, count);
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(io->intr);
 		return res;
 	}
 	return -1;

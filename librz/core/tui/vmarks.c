@@ -20,9 +20,9 @@ RZ_IPI bool rz_core_visual_mark_dump(RzCore *core) {
 	for (i = 0; i < UT8_MAX; i++) {
 		if (core->vmarks[i] != UT64_MAX) {
 			if (i > ASCII_MAX) {
-				rz_cons_printf("fV %zu 0x%" PFMT64x "\n", i - ASCII_MAX - 1, core->vmarks[i]);
+				rz_cons_printf(core->cons, "fV %zu 0x%" PFMT64x "\n", i - ASCII_MAX - 1, core->vmarks[i]);
 			} else {
-				rz_cons_printf("fV %c 0x%" PFMT64x "\n", (char)i, core->vmarks[i]);
+				rz_cons_printf(core->cons, "fV %c 0x%" PFMT64x "\n", (char)i, core->vmarks[i]);
 			}
 			res = true;
 		}

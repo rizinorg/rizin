@@ -327,14 +327,14 @@ static bool line_highlighted(RzDisasmState *ds);
 static int ds_print_shortcut(RzDisasmState *ds, ut64 addr, int pos);
 static void ds_asmop_fixup(RzDisasmState *ds);
 
-#define theme_printf(kwd, fmt, ...) rz_cons_printf("%s" fmt "%s", COLOR(ds, kwd), __VA_ARGS__, COLOR_RESET(ds))
-#define theme_print(kwd, x) \
+#define theme_printf(cons, kwd, fmt, ...) rz_cons_printf(cons, "%s" fmt "%s", COLOR(ds, kwd), __VA_ARGS__, COLOR_RESET(ds))
+#define theme_print(cons, kwd, x) \
 	do { \
-		rz_cons_print(COLOR(ds, kwd)); \
-		rz_cons_print(x); \
-		rz_cons_print(COLOR_RESET(ds)); \
+		rz_cons_print(cons, COLOR(ds, kwd)); \
+		rz_cons_print(cons, x); \
+		rz_cons_print(cons, COLOR_RESET(ds)); \
 	} while (false)
-#define theme_print_color(kwd) rz_cons_print(COLOR(ds, kwd))
+#define theme_print_color(cons, kwd) rz_cons_print(cons, COLOR(ds, kwd))
 
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr) {
 	if (core->print->pava) {
@@ -369,7 +369,7 @@ static const char *get_utf8_char(const char line, RzDisasmState *ds) {
 	}
 }
 
-static void ds_print_ref_lines(char *line, char *line_col, RzDisasmState *ds) {
+static void ds_print_ref_lines(RzCons *cons, char *line, char *line_col, RzDisasmState *ds) {
 	if (ds->suppress_ref_lines) {
 		return;
 	}
@@ -379,36 +379,36 @@ static void ds_print_ref_lines(char *line, char *line_col, RzDisasmState *ds) {
 		if (ds->show_color) {
 			for (i = 0; i < len; i++) {
 				if (line[i] == ' ') {
-					rz_cons_printf(" ");
+					rz_cons_printf(cons, " ");
 					continue;
 				}
 				if (line_col[i] == 'd') {
-					theme_printf(flow, "%s", get_utf8_char(line[i], ds));
+					theme_printf(cons, flow, "%s", get_utf8_char(line[i], ds));
 				} else {
-					theme_printf(flow2, "%s", get_utf8_char(line[i], ds));
+					theme_printf(cons, flow2, "%s", get_utf8_char(line[i], ds));
 				}
 			}
 		} else {
 			len = strlen(line);
 			for (i = 0; i < len; i++) {
-				rz_cons_printf("%s", get_utf8_char(line[i], ds));
+				rz_cons_printf(cons, "%s", get_utf8_char(line[i], ds));
 			}
 		}
 	} else {
 		if (ds->show_color) {
 			for (i = 0; i < len; i++) {
 				if (line[i] == ' ') {
-					rz_cons_printf(" ");
+					rz_cons_printf(cons, " ");
 					continue;
 				}
 				if (line_col[i] == 'd') {
-					theme_printf(flow, "%c", line[i]);
+					theme_printf(cons, flow, "%c", line[i]);
 				} else {
-					theme_printf(flow2, "%c", line[i]);
+					theme_printf(cons, flow2, "%c", line[i]);
 				}
 			}
 		} else {
-			rz_cons_printf("%s", line);
+			rz_cons_printf(cons, "%s", line);
 		}
 	}
 }
@@ -456,17 +456,17 @@ RZ_API RZ_OWN char *rz_core_get_section_name(RzCore *core, ut64 addr) {
 // nl if we have to insert new line, it controls whether to insert \n
 static void _ds_comment_align_(RzDisasmState *ds, bool up, bool nl) {
 	if (ds->show_comment_right) {
-		theme_print_color(comment);
+		theme_print_color(ds->core->cons, comment);
 		return;
 	}
 	char *sn = ds->show_section ? rz_core_get_section_name(ds->core, ds->at) : NULL;
 	ds_align_comment(ds);
 	ds_align_comment(ds);
-	rz_cons_print(COLOR_RESET(ds));
+	rz_cons_print(ds->core->cons, COLOR_RESET(ds));
 	ds_print_pre(ds, true);
-	rz_cons_printf("%s%s", nl ? "\n" : "", rz_str_get(sn));
-	ds_print_ref_lines(ds->refline, ds->line_col, ds);
-	rz_cons_printf("  %s %s", up ? "" : ".-", COLOR(ds, comment));
+	rz_cons_printf(ds->core->cons, "%s%s", nl ? "\n" : "", rz_str_get(sn));
+	ds_print_ref_lines(ds->core->cons, ds->refline, ds->line_col, ds);
+	rz_cons_printf(ds->core->cons, "  %s %s", up ? "" : ".-", COLOR(ds, comment));
 	free(sn);
 }
 #define CMT_ALIGN _ds_comment_align_(ds, true, false)
@@ -480,11 +480,11 @@ static void ds_comment_(RzDisasmState *ds, bool align, bool nl, const char *form
 		if (ds->show_comment_right && align) {
 			ds_align_comment(ds);
 		} else {
-			theme_print_color(comment);
+			theme_print_color(ds->core->cons, comment);
 		}
 	}
 
-	rz_cons_printf_list(format, ap);
+	rz_cons_printf_list(ds->core->cons, format, ap);
 	if (!ds->show_comment_right && nl) {
 		ds_newline(ds);
 	}
@@ -517,7 +517,7 @@ static void ds_comment_esil(RzDisasmState *ds, bool up, bool end, const char *fo
 	if (ds->show_comments && up) {
 		ds->show_comment_right ? ds_align_comment(ds) : ds_comment_lineup(ds);
 	}
-	rz_cons_printf_list(format, ap);
+	rz_cons_printf_list(ds->core->cons, format, ap);
 	va_end(ap);
 
 	if (ds->show_comments && !ds->show_comment_right) {
@@ -602,7 +602,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 		ds->atabs = 0;
 	}
 	ds->subnames = rz_config_get_b(core->config, "asm.sub.names");
-	ds->interactive = rz_cons_is_interactive();
+	ds->interactive = rz_cons_is_interactive(core->cons);
 	ds->subjmp = rz_config_get_b(core->config, "asm.sub.jmp");
 	ds->subvar = rz_config_get_b(core->config, "asm.sub.var");
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
@@ -1242,10 +1242,10 @@ static void ds_begin_line(RzDisasmState *ds) {
 		}
 		pj_k(ds->pj, "text");
 	}
-	ds->buf_line_begin = rz_cons_get_buffer_len();
+	ds->buf_line_begin = rz_cons_get_buffer_len(ds->core->cons);
 	if (!ds->pj && ds->asm_hint_pos == -1) {
 		if (!ds_print_core_vmode(ds, ds->asm_hint_pos)) {
-			rz_cons_printf("    ");
+			rz_cons_printf(ds->core->cons, "    ");
 		}
 	}
 }
@@ -1256,8 +1256,8 @@ static void ds_newline(RzDisasmState *ds) {
 		if (!t) {
 			return;
 		}
-		ds_disasm_text(ds, t, rz_cons_get_buffer_dup());
-		rz_cons_reset();
+		ds_disasm_text(ds, t, rz_cons_get_buffer_dup(ds->core->cons));
+		rz_cons_reset(ds->core->cons);
 		rz_pvector_push(ds->vec, t);
 		return;
 	}
@@ -1265,16 +1265,16 @@ static void ds_newline(RzDisasmState *ds) {
 	if (ds->pj) {
 		const bool is_html = rz_config_get_b(ds->core->config, "scr.html");
 		if (is_html) {
-			char *s = rz_cons_html_filter(rz_cons_get_buffer(), NULL);
+			char *s = rz_cons_html_filter(ds->core->cons, rz_cons_get_buffer(ds->core->cons), NULL);
 			pj_s(ds->pj, s);
 			free(s);
 		} else {
-			pj_s(ds->pj, rz_cons_get_buffer());
+			pj_s(ds->pj, rz_cons_get_buffer(ds->core->cons));
 		}
-		rz_cons_reset();
+		rz_cons_reset(ds->core->cons);
 		pj_end(ds->pj);
 	} else {
-		rz_cons_newline();
+		rz_cons_newline(ds->core->cons);
 	}
 }
 
@@ -1284,7 +1284,7 @@ static void ds_begin_cont(RzDisasmState *ds) {
 	if (!ds->linesright && ds->show_lines_bb && ds->line) {
 		RzAnalysisRefStr *refstr = rz_analysis_reflines_str(ds->core, ds->at,
 			ds->linesopts | RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_AFTER);
-		ds_print_ref_lines(refstr->str, refstr->cols, ds);
+		ds_print_ref_lines(ds->core->cons, refstr->str, refstr->cols, ds);
 		rz_analysis_reflines_str_free(refstr);
 	}
 }
@@ -1318,7 +1318,7 @@ static void ds_show_refs(RzDisasmState *ds) {
 		}
 
 		// ds_align_comment (ds);
-		theme_print_color(comment);
+		theme_print_color(ds->core->cons, comment);
 		if (cmt) {
 			ds_begin_comment(ds);
 			ds_comment(ds, true, "; (%s)", cmt);
@@ -1436,7 +1436,7 @@ RZ_API RZ_OWN char *rz_core_get_xref_comment(RZ_NONNULL RzCore *core, ut64 addr)
 
 	if (xref_count > foldxrefs) {
 		int count = 0;
-		int cols = rz_cons_get_size(NULL);
+		int cols = rz_cons_get_size(core->cons, NULL);
 		cols = (cols - 15);
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
@@ -1751,7 +1751,7 @@ static void ds_print_show_cursor(RzDisasmState *ds) {
 			res[i] = '0' + (diff % 10);
 		}
 	}
-	rz_cons_strcat(res);
+	rz_cons_strcat(core->cons, res);
 }
 
 static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
@@ -1775,7 +1775,7 @@ static void ds_pre_xrefs(RzDisasmState *ds, bool no_fcnlines) {
 static void ds_show_function_var(RzDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var) {
 	char *s = rz_core_analysis_var_to_string(ds->core, var);
 	if (s) {
-		rz_cons_print(s);
+		rz_cons_print(ds->core->cons, s);
 		free(s);
 	}
 
@@ -1787,7 +1787,7 @@ static void ds_show_function_var(RzDisasmState *ds, RzAnalysisFunction *fcn, RzA
 		return;
 	}
 	rz_str_replace_char(val, '\n', '\0');
-	rz_cons_printf(" = %s", val);
+	rz_cons_printf(ds->core->cons, " = %s", val);
 	free(val);
 }
 
@@ -1843,13 +1843,13 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 	if (ds->show_varsum == 2) {
 		ds_begin_line(ds);
 		ds_print_pre(ds, true);
-		rz_cons_printf("vars: %s%d%s %s%d%s",
+		rz_cons_printf(ds->core->cons, "vars: %s%d%s %s%d%s",
 			stack_vars_color, stack_vars, COLOR_RESET(ds),
 			reg_vars_color, reg_vars, COLOR_RESET(ds));
 		ds_newline(ds);
 		ds_begin_line(ds);
 		ds_print_pre(ds, true);
-		rz_cons_printf("args: %s%d%s %s%d%s",
+		rz_cons_printf(ds->core->cons, "args: %s%d%s %s%d%s",
 			stack_args_color, stack_args, COLOR_RESET(ds),
 			reg_args_color, reg_args, COLOR_RESET(ds));
 		ds_newline(ds);
@@ -1857,14 +1857,14 @@ static void printVarSummary(RzDisasmState *ds, RzList /*<RzAnalysisVar *>*/ *lis
 	}
 	ds_begin_line(ds);
 	ds_print_pre(ds, true);
-	rz_cons_printf("stack: %s%d%s (vars %s%d%s, args %s%d%s)",
+	rz_cons_printf(ds->core->cons, "stack: %s%d%s (vars %s%d%s, args %s%d%s)",
 		stack_args || stack_vars ? numColor : COLOR_RESET(ds), stack_args + stack_vars, COLOR_RESET(ds),
 		stack_vars_color, stack_vars, COLOR_RESET(ds),
 		stack_args_color, stack_args, COLOR_RESET(ds));
 	ds_newline(ds);
 	ds_begin_line(ds);
 	ds_print_pre(ds, true);
-	rz_cons_printf("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
+	rz_cons_printf(ds->core->cons, "rg: %s%d%s (vars %s%d%s, args %s%d%s)",
 		reg_args || reg_vars ? numColor : COLOR_RESET(ds), reg_args + reg_vars, COLOR_RESET(ds),
 		reg_vars_color, reg_vars, COLOR_RESET(ds),
 		reg_args_color, reg_args, COLOR_RESET(ds));
@@ -1937,10 +1937,10 @@ static ut32 fold_variables(RzCore *core, RzDisasmState *ds, RzListIter /*<RzAnal
 
 	ds_begin_line(ds);
 	ds_pre_xrefs(ds, false);
-	rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
+	rz_cons_printf(ds->core->cons, "%s; ", COLOR_ARG(ds, func_var));
 	char *line = rz_strbuf_drain(sb);
-	rz_cons_print(line);
-	rz_cons_print(COLOR_RESET(ds));
+	rz_cons_print(ds->core->cons, line);
+	rz_cons_print(ds->core->cons, COLOR_RESET(ds));
 	ds_newline(ds);
 	free(line);
 	free(vartype);
@@ -1954,12 +1954,12 @@ static void ds_show_fn_var_line(
 	if (ds->show_flgoff) {
 		ds_print_offset(ds);
 	}
-	rz_cons_printf("%s; ", COLOR_ARG(ds, func_var));
+	rz_cons_printf(ds->core->cons, "%s; ", COLOR_ARG(ds, func_var));
 	ds_show_function_var(ds, f, var);
 	if (var->comment) {
-		rz_cons_printf("    %s; %s", COLOR(ds, comment), var->comment);
+		rz_cons_printf(ds->core->cons, "    %s; %s", COLOR(ds, comment), var->comment);
 	}
-	rz_cons_print(COLOR_RESET(ds));
+	rz_cons_print(ds->core->cons, COLOR_RESET(ds));
 	ds_newline(ds);
 }
 
@@ -2021,7 +2021,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 	}
 
 	if (f->type == RZ_ANALYSIS_FCN_TYPE_LOC) {
-		rz_cons_printf("%s%s ", COLOR(ds, fline),
+		rz_cons_printf(ds->core->cons, "%s%s ", COLOR(ds, fline),
 			core->cons->vline[LINE_CROSS]); // |-
 		fcntype = "loc";
 	} else {
@@ -2051,13 +2051,13 @@ static void ds_show_functions(RzDisasmState *ds) {
 		}
 	}
 	if (!strcmp(fcntype, "fcn")) {
-		rz_cons_printf("%s", COLOR(ds, fname));
+		rz_cons_printf(ds->core->cons, "%s", COLOR(ds, fname));
 	} else {
-		rz_cons_printf("%s(%s) ", COLOR(ds, fname), fcntype);
+		rz_cons_printf(ds->core->cons, "%s(%s) ", COLOR(ds, fname), fcntype);
 	}
 
 	if (ds->show_fcnsize) {
-		rz_cons_printf("%" PFMT64d ": ", rz_analysis_function_realsize(f));
+		rz_cons_printf(ds->core->cons, "%" PFMT64d ": ", rz_analysis_function_realsize(f));
 	}
 	// show function's realname in the signature if realnames are enabled
 	if (core->flags->realnames) {
@@ -2069,10 +2069,10 @@ static void ds_show_functions(RzDisasmState *ds) {
 
 	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, fname), COLOR_RESET(ds));
 	if (sig && fcnsig) {
-		rz_cons_print(sig);
+		rz_cons_print(ds->core->cons, sig);
 		RZ_FREE(sig);
 	} else {
-		rz_cons_printf("%s", fcn_name);
+		rz_cons_printf(ds->core->cons, "%s", fcn_name);
 	}
 	ds_newline(ds);
 
@@ -2099,7 +2099,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 		rz_list_foreach (ds->fcn->imports, iter, imp) {
 			ds_print_pre(ds, true);
 			ds_print_lines_left(ds);
-			rz_cons_printf(".import %s", imp);
+			rz_cons_printf(ds->core->cons, ".import %s", imp);
 			ds_newline(ds);
 		}
 	}
@@ -2107,7 +2107,7 @@ static void ds_show_functions(RzDisasmState *ds) {
 	rz_list_foreach (aimports, iter, imp) {
 		ds_print_pre(ds, true);
 		ds_print_lines_left(ds);
-		rz_cons_printf(".globalimport %s", imp);
+		rz_cons_printf(ds->core->cons, ".globalimport %s", imp);
 		ds_newline(ds);
 	}
 }
@@ -2166,15 +2166,15 @@ static void ds_print_pre(RzDisasmState *ds, bool fcnline) {
 		c = core->cons->vline[CORNER_BL];
 		break;
 	case DS_PRE_EMPTY:
-		rz_cons_print("  ");
+		rz_cons_print(ds->core->cons, "  ");
 		return;
 	case DS_PRE_NONE:
 	default:
 		return;
 	}
 
-	theme_print(fline, c);
-	rz_cons_print(" ");
+	theme_print(ds->core->cons, fline, c);
+	rz_cons_print(ds->core->cons, " ");
 }
 
 static void ds_show_comments_describe(RzDisasmState *ds) {
@@ -2196,7 +2196,7 @@ static void ds_show_comments_describe(RzDisasmState *ds) {
 	if (RZ_STR_ISNOTEMPTY(desc)) {
 		ds_begin_comment(ds);
 		ds_align_comment(ds);
-		theme_printf(comment, "; %s", desc);
+		theme_printf(ds->core->cons, comment, "; %s", desc);
 		ds_newline(ds);
 		free(desc);
 	}
@@ -2244,10 +2244,10 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 			mycols = 0;
 		}
 		mycols /= 2;
-		theme_print_color(comment);
+		theme_print_color(core->cons, comment);
 		ds_pre_xrefs(ds, false);
 
-		theme_print_color(usercomment);
+		theme_print_color(core->cons, usercomment);
 		ds_comment(ds, false, "%s", ds->comment);
 		ds_print_color_reset(ds);
 
@@ -2256,11 +2256,11 @@ static void ds_show_comments_right(RzDisasmState *ds) {
 		/* flag one */
 		if (item && item->comment && ds->ocomment != item->comment) {
 			ds_begin_line(ds);
-			theme_print_color(comment);
+			theme_print_color(core->cons, comment);
 			ds_newline(ds);
 			ds_begin_line(ds);
-			rz_cons_strcat("  ;  ");
-			rz_cons_strcat_justify(item->comment, mycols, ';');
+			rz_cons_strcat(core->cons, "  ;  ");
+			rz_cons_strcat_justify(core->cons, item->comment, mycols, ';');
 			ds_newline(ds);
 			ds_print_color_reset(ds);
 		}
@@ -2284,20 +2284,20 @@ static void __preline_flag(RzDisasmState *ds, RzFlagItem *flag) {
 	if (ds->show_color) {
 		bool hasColor = false;
 		if (flag->color) {
-			char *color = rz_cons_pal_parse(flag->color, NULL);
+			char *color = rz_cons_pal_parse(ds->core->cons, flag->color, NULL);
 			if (color) {
-				rz_cons_strcat(color);
+				rz_cons_strcat(ds->core->cons, color);
 				free(color);
 				ds->lastflag = flag;
 				hasColor = true;
 			}
 		}
 		if (!hasColor) {
-			rz_cons_strcat(COLOR(ds, flag));
+			rz_cons_strcat(ds->core->cons, COLOR(ds, flag));
 		}
 	}
 	if (!ds->show_offset) {
-		rz_cons_printf("     ");
+		rz_cons_printf(ds->core->cons, "     ");
 	}
 }
 
@@ -2353,7 +2353,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 			if (printPre) {
 				ds_pre_xrefs(ds, no_fcn_lines);
 			}
-			rz_cons_printf("...");
+			rz_cons_printf(core->cons, "...");
 			break;
 		}
 		count++;
@@ -2396,7 +2396,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				ds_pre_line(ds);
 				ds_print_offset(ds);
 				if (!fake_flag_marks) {
-					rz_cons_printf(" ");
+					rz_cons_printf(core->cons, " ");
 				}
 			} else {
 				ds_pre_xrefs(ds, no_fcn_lines);
@@ -2407,21 +2407,21 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 		char *color = NULL;
 		if (ds->show_color) {
 			if (flag->color) {
-				color = rz_cons_pal_parse(flag->color, NULL);
+				color = rz_cons_pal_parse(core->cons, flag->color, NULL);
 				if (color) {
-					rz_cons_strcat(color);
+					rz_cons_strcat(core->cons, color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
 			}
 			if (!hasColor) {
-				rz_cons_strcat(COLOR(ds, flag));
+				rz_cons_strcat(core->cons, COLOR(ds, flag));
 			}
 		}
 
 		if (flag->realname) {
 			if (!strncmp(flag->name, "switch.", 7)) {
-				rz_cons_printf(FLAG_PREFIX "switch");
+				rz_cons_printf(core->cons, FLAG_PREFIX "switch");
 			} else if (!strncmp(flag->name, "case.", 5)) {
 				if (nth > 0) {
 					__preline_flag(ds, flag);
@@ -2444,7 +2444,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					rz_list_free(blocks);
 				}
 				if (!strncmp(flag->name + 5, "default", 7)) {
-					rz_cons_printf(FLAG_PREFIX "default:"); // %s:", flag->name);
+					rz_cons_printf(core->cons, FLAG_PREFIX "default:"); // %s:", flag->name);
 					rz_str_ncpy(addr, flag->name + 5 + strlen("default."), sizeof(addr));
 					nth = 0;
 				} else {
@@ -2452,21 +2452,21 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 					if (switch_enum_name) {
 						case_prev_name = rz_type_db_enum_member_by_val(typedb, switch_enum_name, case_prev);
 					}
-					rz_cons_printf(FLAG_PREFIX "case ");
+					rz_cons_printf(core->cons, FLAG_PREFIX "case ");
 					if (case_prev != case_start) {
 						const char *case_start_name = NULL;
 						if (switch_enum_name) {
 							case_start_name = rz_type_db_enum_member_by_val(typedb, switch_enum_name, case_start);
 						}
 						if (case_start_name) {
-							rz_cons_printf("%s...", case_start_name);
+							rz_cons_printf(core->cons, "%s...", case_start_name);
 						} else {
-							rz_cons_printf("%d...", case_start);
+							rz_cons_printf(core->cons, "%d...", case_start);
 						}
 						if (case_prev_name) {
-							rz_cons_printf("%s:", case_prev_name);
+							rz_cons_printf(core->cons, "%s:", case_prev_name);
 						} else {
-							rz_cons_printf("%d:", case_prev);
+							rz_cons_printf(core->cons, "%d:", case_prev);
 						}
 						if (iter != uniqlist->head && iter != uniqlist->tail && case_current != case_prev) {
 							iter = rz_list_prev(iter);
@@ -2474,16 +2474,16 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 						case_start = case_current;
 					} else {
 						if (!case_prev_name) {
-							rz_cons_printf("%d:", case_prev);
+							rz_cons_printf(core->cons, "%d:", case_prev);
 						} else {
-							rz_cons_printf("%s:", case_prev_name);
+							rz_cons_printf(core->cons, "%s:", case_prev_name);
 						}
 						case_start = case_current;
 					}
 				}
 				case_prev = case_current;
 				ds_align_comment(ds);
-				rz_cons_printf("%s; from %s", COLOR(ds, comment), addr);
+				rz_cons_printf(core->cons, "%s; from %s", COLOR(ds, comment), addr);
 				outline = false;
 				docolon = false;
 			} else {
@@ -2491,25 +2491,25 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 				if (name) {
 					rz_str_ansi_filter(name, NULL, NULL, -1);
 					if (!ds->flags_inline || nth == 0) {
-						rz_cons_printf(FLAG_PREFIX);
+						rz_cons_printf(core->cons, FLAG_PREFIX);
 						if (overlapped) {
-							rz_cons_printf("%s(0x%08" PFMT64x ")%s ", COLOR(ds, offset), ds->at,
+							rz_cons_printf(core->cons, "%s(0x%08" PFMT64x ")%s ", COLOR(ds, offset), ds->at,
 								ds->show_color ? (hasColor ? color : COLOR(ds, flag)) : "");
 						}
 					}
 					if (outline) {
-						rz_cons_printf("%s:", name);
+						rz_cons_printf(core->cons, "%s:", name);
 					} else {
-						rz_cons_printf("%s%s", comma, flag->name);
+						rz_cons_printf(core->cons, "%s%s", comma, flag->name);
 					}
 					RZ_FREE(name);
 				}
 			}
 		} else {
 			if (outline) {
-				rz_cons_printf(FLAG_PREFIX "%s", flag->name);
+				rz_cons_printf(core->cons, FLAG_PREFIX "%s", flag->name);
 			} else {
-				rz_cons_printf("%s%s", comma, flag->name);
+				rz_cons_printf(core->cons, "%s%s", comma, flag->name);
 			}
 		}
 		ds_print_color_reset(ds);
@@ -2523,7 +2523,7 @@ static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	}
 	if (!outline && *comma) {
 		if (nth > 0 && docolon) {
-			rz_cons_printf(":");
+			rz_cons_printf(core->cons, ":");
 		}
 		ds_newline(ds);
 	}
@@ -2627,7 +2627,7 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 			switch (meta->type) {
 			case RZ_META_TYPE_DATA:
 				if (meta->str) {
-					rz_cons_printf(".data: %s\n", meta->str);
+					rz_cons_printf(ds->core->cons, ".data: %s\n", meta->str);
 				}
 				i += meta_size;
 				break;
@@ -2635,11 +2635,11 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 				i += meta_size;
 				break;
 			case RZ_META_TYPE_FORMAT:
-				rz_cons_printf(".format : %s\n", meta->str);
+				rz_cons_printf(ds->core->cons, ".format : %s\n", meta->str);
 				i += meta_size;
 				break;
 			case RZ_META_TYPE_MAGIC:
-				rz_cons_printf(".magic : %s\n", meta->str);
+				rz_cons_printf(ds->core->cons, ".magic : %s\n", meta->str);
 				i += meta_size;
 				break;
 			default:
@@ -2670,13 +2670,13 @@ static int ds_disassemble(RzDisasmState *ds, ut8 *buf, int len) {
 		if (ds->prev_ins && !strcmp(ds->prev_ins, opname)) {
 			if (!ds->prev_ins_eq) {
 				ds->prev_ins_eq = true;
-				rz_cons_printf("...");
+				rz_cons_printf(ds->core->cons, "...");
 			}
 			ds->prev_ins_count++;
 			return -31337;
 		}
 		if (ds->prev_ins_eq) {
-			rz_cons_printf("dup (%d)\n", ds->prev_ins_count);
+			rz_cons_printf(ds->core->cons, "dup (%d)\n", ds->prev_ins_count);
 		}
 		ds->prev_ins_count = 0;
 		ds->prev_ins_eq = false;
@@ -2746,9 +2746,9 @@ static void ds_control_flow_comments(RzDisasmState *ds) {
 		case RZ_ANALYSIS_OP_TYPE_CALL:
 			item = rz_flag_get_i(ds->core->flags, ds->analysis_op.jump);
 			if (item && item->comment) {
-				theme_print_color(comment);
+				theme_print_color(ds->core->cons, comment);
 				ds_align_comment(ds);
-				rz_cons_printf("  ; ref to %s: %s\n", item->name, item->comment);
+				rz_cons_printf(ds->core->cons, "  ; ref to %s: %s\n", item->name, item->comment);
 				ds_print_color_reset(ds);
 			}
 			break;
@@ -2758,7 +2758,7 @@ static void ds_control_flow_comments(RzDisasmState *ds) {
 
 static void ds_print_lines_right(RzDisasmState *ds) {
 	if (ds->linesright && ds->show_lines_bb && ds->line) {
-		ds_print_ref_lines(ds->line, ds->line_col, ds);
+		ds_print_ref_lines(ds->core->cons, ds->line, ds->line_col, ds);
 	}
 }
 
@@ -2792,7 +2792,7 @@ static void printCol(RzDisasmState *ds, char *sect, int cols, const char *color)
 	} else {
 		snprintf(out, (size_t)outsz + 1, " %s ", sect);
 	}
-	rz_cons_strcat(out);
+	rz_cons_strcat(ds->core->cons, out);
 	free(out);
 }
 
@@ -2840,23 +2840,23 @@ static void ds_print_lines_left(RzDisasmState *ds) {
 		}
 	}
 	if (ds->line) {
-		ds_print_ref_lines(ds->line, ds->line_col, ds);
+		ds_print_ref_lines(ds->core->cons, ds->line, ds->line_col, ds);
 	}
 }
 
 static void ds_print_family(RzDisasmState *ds) {
 	if (ds->show_family) {
 		const char *familystr = rz_analysis_op_family_to_string(ds->analysis_op.family);
-		rz_cons_printf("%5s ", familystr ? familystr : "");
+		rz_cons_printf(ds->core->cons, "%5s ", familystr ? familystr : "");
 	}
 }
 
 static void ds_print_cycles(RzDisasmState *ds) {
 	if (ds->show_cycles) {
 		if (!ds->analysis_op.failcycles) {
-			rz_cons_printf("%3d     ", ds->analysis_op.cycles);
+			rz_cons_printf(ds->core->cons, "%3d     ", ds->analysis_op.cycles);
 		} else {
-			rz_cons_printf("%3d %3d ", ds->analysis_op.cycles, ds->analysis_op.failcycles);
+			rz_cons_printf(ds->core->cons, "%3d %3d ", ds->analysis_op.cycles, ds->analysis_op.failcycles);
 		}
 	}
 	if (ds->cyclespace) {
@@ -2864,7 +2864,7 @@ static void ds_print_cycles(RzDisasmState *ds) {
 		int times = RZ_MIN(ds->analysis_op.cycles / 4, 30); // limit to 30
 		memset(spaces, ' ', sizeof(spaces));
 		spaces[times] = 0;
-		rz_cons_strcat(spaces);
+		rz_cons_strcat(ds->core->cons, spaces);
 	}
 }
 
@@ -2889,19 +2889,19 @@ static void ds_print_stackptr(RzDisasmState *ds) {
 	}
 	RzStackAddr sp = ds_stackptr_at(ds, ds->at);
 	if (sp == RZ_STACK_ADDR_INVALID) {
-		rz_cons_print("    ? ");
+		rz_cons_print(ds->core->cons, "    ? ");
 	} else {
-		rz_cons_printf("%5" PFMT64d " ", sp);
+		rz_cons_printf(ds->core->cons, "%5" PFMT64d " ", sp);
 	}
 	char *eff = rz_analysis_op_describe_sp_effect(&ds->analysis_op);
 	if (eff) {
-		rz_cons_print(eff);
+		rz_cons_print(ds->core->cons, eff);
 		int len = strlen(eff);
 		for (; len < 6; len++) {
-			rz_cons_print(" ");
+			rz_cons_print(ds->core->cons, " ");
 		}
 	} else {
-		rz_cons_print("      ");
+		rz_cons_print(ds->core->cons, "      ");
 	}
 }
 
@@ -2917,9 +2917,9 @@ static void ds_print_offset(RzDisasmState *ds) {
 		if (ds->at >= f->offset && ds->at < f->offset + f->size) {
 			//	if (rz_itv_inrange (f->itv, ds->at))
 			if (color && *color) {
-				char *k = rz_cons_pal_parse(f->color, NULL);
+				char *k = rz_cons_pal_parse(core->cons, f->color, NULL);
 				if (k) {
-					rz_cons_printf("%s", k);
+					rz_cons_printf(ds->core->cons, "%s", k);
 					hasCustomColor = true;
 					free(k);
 				}
@@ -2973,12 +2973,12 @@ static void ds_print_offset(RzDisasmState *ds) {
 			int of = core->print->flags;
 			core->print->flags = 0;
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label, core->cons);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
 			core->print->flags = of;
-			rz_cons_strcat(Color_RESET);
+			rz_cons_strcat(core->cons, Color_RESET);
 		} else {
 			rz_print_offset_sg(core->print, at, (at == ds->dest) || show_trace,
-				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label, core->cons);
+				rz_config_get_b(core->config, "asm.segoff"), seggrn, ds->show_offdec, delta, label);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
@@ -2993,7 +2993,7 @@ static void ds_print_offset(RzDisasmState *ds) {
 				ds->_tabsoff = ds->atabsoff;
 			}
 		}
-		rz_cons_strcat(ds->_tabsbuf);
+		rz_cons_strcat(core->cons, ds->_tabsbuf);
 	}
 }
 
@@ -3028,7 +3028,7 @@ static bool requires_op_size(RzDisasmState *ds) {
 static void ds_print_op_size(RzDisasmState *ds) {
 	if (ds->show_size && requires_op_size(ds)) {
 		int size = ds->oplen;
-		rz_cons_printf("%d ", size); // ds->analysis_op.size);
+		rz_cons_printf(ds->core->cons, "%d ", size); // ds->analysis_op.size);
 	}
 }
 
@@ -3036,7 +3036,7 @@ static void ds_print_trace(RzDisasmState *ds) {
 	RzDebugTracepoint *tp = NULL;
 	if (ds->show_trace) {
 		tp = rz_debug_trace_get(ds->core->dbg, ds->at);
-		rz_cons_printf("%02x:%04x ", tp ? tp->times : 0, tp ? tp->count : 0);
+		rz_cons_printf(ds->core->cons, "%02x:%04x ", tp ? tp->times : 0, tp ? tp->count : 0);
 	}
 	if (ds->tracespace) {
 		char spaces[32];
@@ -3048,7 +3048,7 @@ static void ds_print_trace(RzDisasmState *ds) {
 			times = RZ_MIN(tp->times, 30); // limit to 30
 			memset(spaces, ' ', sizeof(spaces));
 			spaces[times] = 0;
-			rz_cons_strcat(spaces);
+			rz_cons_strcat(ds->core->cons, spaces);
 		}
 	}
 }
@@ -3079,52 +3079,52 @@ static bool ds_print_data_type(RzDisasmState *ds, const ut8 *buf, int ib, int si
 	// adjust alignment
 	ut64 n = rz_read_ble(buf, core->print->big_endian, size * 8);
 	if (rz_config_get_b(core->config, "asm.marks")) {
-		rz_cons_printf("  ");
+		rz_cons_printf(core->cons, "  ");
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
 			ds->cursor < (ds->index + size);
 		if (q) {
 			if (ds->cursor > ds->index) {
 				int diff = ds->cursor - ds->index;
-				rz_cons_printf("%d  ", diff);
+				rz_cons_printf(core->cons, "%d  ", diff);
 			} else if (ds->cursor == ds->index) {
-				rz_cons_printf("*  ");
+				rz_cons_printf(core->cons, "*  ");
 			} else {
-				rz_cons_printf("   ");
+				rz_cons_printf(core->cons, "   ");
 			}
 		} else {
-			rz_cons_printf("   ");
+			rz_cons_printf(core->cons, "   ");
 		}
 	}
 
-	rz_cons_strcat(COLOR(ds, mov));
+	rz_cons_strcat(core->cons, COLOR(ds, mov));
 	switch (ib) {
 	case 1:
 		rz_str_bits(msg, buf, size * 8, NULL);
-		rz_cons_printf("%s %sb", type, msg);
+		rz_cons_printf(core->cons, "%s %sb", type, msg);
 		break;
 	case 3:
-		rz_cons_printf("%s %d", type, ntohs(n & 0xFFFF));
+		rz_cons_printf(core->cons, "%s %d", type, ntohs(n & 0xFFFF));
 		break;
 	case 8:
-		rz_cons_printf("%s %" PFMT64o "o", type, n);
+		rz_cons_printf(core->cons, "%s %" PFMT64o "o", type, n);
 		break;
 	case 10:
-		rz_cons_printf("%s %" PFMT64d, type, n);
+		rz_cons_printf(core->cons, "%s %" PFMT64d, type, n);
 		break;
 	default:
 		switch (size) {
 		case 1:
-			rz_cons_printf("%s 0x%02" PFMT64x, type, n);
+			rz_cons_printf(core->cons, "%s 0x%02" PFMT64x, type, n);
 			break;
 		case 2:
-			rz_cons_printf("%s 0x%04" PFMT64x, type, n);
+			rz_cons_printf(core->cons, "%s 0x%04" PFMT64x, type, n);
 			break;
 		case 4:
-			rz_cons_printf("%s 0x%08" PFMT64x, type, n);
+			rz_cons_printf(core->cons, "%s 0x%08" PFMT64x, type, n);
 			break;
 		case 8:
-			rz_cons_printf("%s 0x%016" PFMT64x, type, n);
+			rz_cons_printf(core->cons, "%s 0x%016" PFMT64x, type, n);
 			break;
 		default:
 			return false;
@@ -3146,7 +3146,7 @@ static bool ds_print_data_type(RzDisasmState *ds, const ut8 *buf, int ib, int si
 			RzListIter *iter;
 			RzFlagItem *fi;
 			rz_list_foreach (flags, iter, fi) {
-				rz_cons_printf(" ; %s", fi->name);
+				rz_cons_printf(core->cons, " ; %s", fi->name);
 			}
 		}
 	}
@@ -3176,7 +3176,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 					if (ds->asm_hint_lea) {
 						ds_print_shortcut(ds, node->start, 0);
 					} else {
-						rz_cons_strcat("   ");
+						rz_cons_strcat(core->cons, "   ");
 					}
 				}
 				once = false;
@@ -3228,7 +3228,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 				if (!out) {
 					break;
 				}
-				rz_cons_printf("    .string %s\"%s\"%s ; len=%" PFMT64d,
+				rz_cons_printf(ds->core->cons, "    .string %s\"%s\"%s ; len=%" PFMT64d,
 					COLOR(ds, btext), out, COLOR_RESET(ds),
 					mi_size);
 				free(out);
@@ -3245,7 +3245,7 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 			}
 			break;
 		case RZ_META_TYPE_HIDE:
-			rz_cons_printf("(%" PFMT64d " bytes hidden)", mi_size);
+			rz_cons_printf(ds->core->cons, "(%" PFMT64d " bytes hidden)", mi_size);
 			ds->asmop.size = mi_size;
 			ds->oplen = mi_size;
 			ret = true;
@@ -3261,10 +3261,10 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 			int size = RZ_MIN(mi_size, len - idx);
 			if (!ds_print_data_type(ds, buf + idx, ds->hint ? ds->hint->immbase : 0, size)) {
 				if (size > delta && hexlen > delta) {
-					rz_cons_printf("hex length=%d delta=%d\n", size, delta);
+					rz_cons_printf(core->cons, "hex length=%d delta=%d\n", size, delta);
 					rz_core_print_hexdump(core, ds->at, buf + idx, hexlen - delta, 16, 1, 1);
 				} else {
-					rz_cons_printf("hex size=%d hexlen=%d delta=%d", size, hexlen, delta);
+					rz_cons_printf(core->cons, "hex size=%d hexlen=%d delta=%d", size, hexlen, delta);
 				}
 			}
 			core->print->flags |= RZ_PRINT_FLAGS_HEADER;
@@ -3277,8 +3277,8 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 			ret = true;
 			break;
 		case RZ_META_TYPE_FORMAT: {
-			rz_cons_printf("pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
-			int len_before = rz_cons_get_buffer_len();
+			rz_cons_printf(core->cons, "pf %s # size=%" PFMT64d "\n", mi->str, mi_size);
+			int len_before = rz_cons_get_buffer_len(core->cons);
 			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 			const char *raw = rz_pf_resolve_name(typedb, mi->str);
 			if (!raw) {
@@ -3333,13 +3333,13 @@ static bool ds_print_meta_infos(RzDisasmState *ds, ut8 *buf, int len, int idx, i
 				len - idx, ds->at, &ctx,
 				RZ_PF_MODE_TEXT, &opts);
 			if (format) {
-				rz_cons_print(format);
+				rz_cons_print(ds->core->cons, format);
 				free(format);
 			}
-			int len_after = rz_cons_get_buffer_len();
-			const char *cons_buf = rz_cons_get_buffer();
+			int len_after = rz_cons_get_buffer_len(core->cons);
+			const char *cons_buf = rz_cons_get_buffer(core->cons);
 			if (len_after > len_before && buf && cons_buf[len_after - 1] == '\n') {
-				rz_cons_drop(1);
+				rz_cons_drop(core->cons, 1);
 			}
 			ds->oplen = ds->asmop.size = (int)mi_size;
 			RZ_FREE(ds->line);
@@ -3401,7 +3401,7 @@ static void ds_cdiv_optimization(RzDisasmState *ds) {
 			if (comma && comma == end) {
 				divisor = revert_cdiv_magic(imm);
 				if (divisor) {
-					rz_cons_printf(" ; CDIV: %" PFMT64d " * 2^n", divisor);
+					rz_cons_printf(ds->core->cons, " ; CDIV: %" PFMT64d " * 2^n", divisor);
 					break;
 				}
 			}
@@ -3495,7 +3495,7 @@ static void ds_print_show_bytes(RzDisasmState *ds) {
 			str = nstr;
 		}
 	}
-	rz_cons_printf("%s%s %s", pad, str, extra);
+	rz_cons_printf(ds->core->cons, "%s%s %s", pad, str, extra);
 	free(str);
 	core->print->flags = oldFlags;
 }
@@ -3512,7 +3512,7 @@ static void ds_print_indent(RzDisasmState *ds) {
 		}
 		memset(indent, ' ', num);
 		indent[num] = 0;
-		rz_cons_strcat(indent);
+		rz_cons_strcat(ds->core->cons, indent);
 	}
 }
 
@@ -3521,7 +3521,7 @@ static void ds_print_optype(RzDisasmState *ds) {
 		const char *optype = rz_analysis_optype_to_string(ds->analysis_op.type);
 		ds_print_color_reset(ds);
 		char *pad = rz_str_pad(' ', 8 - strlen(optype));
-		rz_cons_printf("[%s]%s", optype, pad);
+		rz_cons_printf(ds->core->cons, "[%s]%s", optype, pad);
 		free(pad);
 	}
 }
@@ -3529,14 +3529,14 @@ static void ds_print_optype(RzDisasmState *ds) {
 static void ds_print_opstr(RzDisasmState *ds) {
 	ds_print_indent(ds);
 	if (ds->asm_instr) {
-		rz_cons_strcat(ds->opstr);
+		rz_cons_strcat(ds->core->cons, ds->opstr);
 		ds_print_color_reset(ds);
 	}
 }
 
 static void ds_print_color_reset(RzDisasmState *ds) {
 	if (ds->show_color) {
-		rz_cons_strcat(Color_RESET);
+		rz_cons_strcat(ds->core->cons, Color_RESET);
 	}
 }
 
@@ -3544,7 +3544,7 @@ static int ds_print_middle(RzDisasmState *ds, int ret) {
 	if (ds->middle != 0) {
 		ret -= ds->middle;
 		ds_align_comment(ds);
-		theme_printf(comment, " ; *middle* %d", ret);
+		theme_printf(ds->core->cons, comment, " ; *middle* %d", ret);
 	}
 	return ret;
 }
@@ -3563,7 +3563,7 @@ static bool ds_print_labels(RzDisasmState *ds, RzAnalysisFunction *f) {
 		return false;
 	}
 	ds_pre_line(ds);
-	theme_printf(label, " .%s:\n", label);
+	theme_printf(ds->core->cons, label, " .%s:\n", label);
 	return true;
 }
 
@@ -3675,26 +3675,26 @@ static int ds_print_shortcut(RzDisasmState *ds, ut64 addr, int pos) {
 	if (ds->asm_hint_pos == -1) {
 		ch = " ";
 	}
-	theme_print_color(comment);
+	theme_print_color(ds->core->cons, comment);
 	if (*ch) {
 		slen++;
 	}
 	if (shortcut) {
 		if (ds->core->is_asmqjmps_letter) {
-			rz_cons_printf("%s[o%s]", ch, shortcut);
+			rz_cons_printf(ds->core->cons, "%s[o%s]", ch, shortcut);
 			slen++;
 		} else {
-			rz_cons_printf("%s[%s]", ch, shortcut);
+			rz_cons_printf(ds->core->cons, "%s[%s]", ch, shortcut);
 		}
 		free(shortcut);
 	} else {
-		rz_cons_printf("%s[?]", ch);
+		rz_cons_printf(ds->core->cons, "%s[?]", ch);
 	}
 	if (ds->show_color) {
 		if (ds->core->print->resetbg) {
-			rz_cons_strcat(Color_RESET);
+			rz_cons_strcat(ds->core->cons, Color_RESET);
 		} else {
-			rz_cons_strcat(Color_RESET_NOBG);
+			rz_cons_strcat(ds->core->cons, Color_RESET_NOBG);
 		}
 	}
 	slen++;
@@ -3847,10 +3847,10 @@ beach:
 	if (ds->asm_hint_pos > 0) {
 		const int begin = gotShortcut ? 2 : 3;
 		for (i = begin - slen; i > 0; i--) {
-			rz_cons_strcat(" ");
+			rz_cons_strcat(core->cons, " ");
 		}
 	} else if (ds->asm_hint_pos == 0 && !gotShortcut) {
-		rz_cons_strcat("   ");
+		rz_cons_strcat(core->cons, "   ");
 	}
 	ds->hinted_line = gotShortcut;
 	return gotShortcut;
@@ -3865,7 +3865,7 @@ static void ds_begin_nl_comment(RzDisasmState *ds) {
 		ds_pre_xrefs(ds, false);
 	}
 	if (ds->show_color && (ds->cmtcount > 0 || ds->show_comment_right)) {
-		theme_print_color(comment);
+		theme_print_color(ds->core->cons, comment);
 	}
 }
 
@@ -3875,7 +3875,7 @@ static void ds_align_comment(RzDisasmState *ds) {
 		return;
 	}
 	const int cmtcol = ds->cmtcol - 1;
-	const char *ll = rz_cons_get_buffer();
+	const char *ll = rz_cons_get_buffer(ds->core->cons);
 	if (!ll) {
 		return;
 	}
@@ -3885,10 +3885,10 @@ static void ds_align_comment(RzDisasmState *ds) {
 	if (cells < cmtcol) {
 		int len = cmtcol - cells;
 		if (len < cols && len > 0) {
-			rz_cons_memset(' ', len);
+			rz_cons_memset(ds->core->cons, ' ', len);
 		}
 	}
-	rz_cons_print(" ");
+	rz_cons_print(ds->core->cons, " ");
 }
 
 static void ds_print_debuginfo(RzDisasmState *ds) {
@@ -3905,7 +3905,7 @@ static void ds_print_debuginfo(RzDisasmState *ds) {
 		if (ds->osl && !(ds->osl && strcmp(ds->sl, ds->osl)))
 			return;
 		ds_align_comment(ds);
-		theme_printf(comment, "; %s", ds->sl);
+		theme_printf(ds->core->cons, comment, "; %s", ds->sl);
 		free(ds->osl);
 		ds->osl = ds->sl;
 		ds->sl = NULL;
@@ -3920,16 +3920,16 @@ static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf) {
 		switch (ds->analysis_op.stackop) {
 		case RZ_ANALYSIS_STACK_GET:
 			if (v < 0) {
-				rz_cons_printf(" ; local.get %d", -v);
+				rz_cons_printf(ds->core->cons, " ; local.get %d", -v);
 			} else {
-				rz_cons_printf(" ; arg.get %d", v);
+				rz_cons_printf(ds->core->cons, " ; arg.get %d", v);
 			}
 			break;
 		case RZ_ANALYSIS_STACK_SET:
 			if (v < 0) {
-				rz_cons_printf(" ; local.set %d", -v);
+				rz_cons_printf(ds->core->cons, " ; local.set %d", -v);
 			} else {
-				rz_cons_printf(" ; arg.set %d", v);
+				rz_cons_printf(ds->core->cons, " ; arg.set %d", v);
 			}
 			break;
 		default:
@@ -3937,16 +3937,16 @@ static void ds_print_asmop_payload(RzDisasmState *ds, const ut8 *buf) {
 		}
 	}
 	if (ds->asmop.payload != 0) {
-		rz_cons_printf("\n; .. payload of %d byte(s)", ds->asmop.payload);
+		rz_cons_printf(ds->core->cons, "\n; .. payload of %d byte(s)", ds->asmop.payload);
 		if (ds->showpayloads) {
 			int dataalign = rz_analysis_archinfo(ds->core->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
 			int mod = ds->asmop.payload % dataalign;
 			int x;
 			for (x = 0; x < ds->asmop.payload; x++) {
-				rz_cons_printf("\n        0x%02x", buf[ds->oplen + x]);
+				rz_cons_printf(ds->core->cons, "\n        0x%02x", buf[ds->oplen + x]);
 			}
 			for (x = 0; x < mod; x++) {
-				rz_cons_printf("\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
+				rz_cons_printf(ds->core->cons, "\n        0x%02x ; alignment", buf[ds->oplen + ds->asmop.payload + x]);
 			}
 		}
 	}
@@ -4333,7 +4333,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 		ds_print_as_string(ds);
 	}
 	if (!ds->show_comment_right && ds->cmtcount > 0) {
-		const char *p = rz_cons_get_buffer();
+		const char *p = rz_cons_get_buffer(core->cons);
 		if (p) {
 			int l = strlen(p);
 			if (p[l - 1] != '\n') {
@@ -4382,7 +4382,7 @@ static void ds_print_relocs(RzDisasmState *ds) {
 	}
 	if (rel) {
 		int cstrlen = 0;
-		char *ll = rz_cons_lastline(&cstrlen);
+		char *ll = rz_cons_lastline(core->cons, &cstrlen);
 		if (!ll) {
 			return;
 		}
@@ -4390,25 +4390,25 @@ static void ds_print_relocs(RzDisasmState *ds) {
 		int utf8len = rz_utf8_strlen((const ut8 *)ll);
 		int cells = utf8len - (cstrlen - ansilen);
 		int len = ds->cmtcol - cells;
-		rz_cons_memset(' ', len);
+		rz_cons_memset(core->cons, ' ', len);
 		if (rel->import) {
 			RzBinImport *imp = rel->import;
-			rz_cons_printf("; %s %d %s", rel_label, rel->type, imp->dname ? imp->dname : imp->name);
+			rz_cons_printf(ds->core->cons, "; %s %d %s", rel_label, rel->type, imp->dname ? imp->dname : imp->name);
 		} else if (rel->symbol) {
 			RzBinSymbol *sym = rel->symbol;
-			rz_cons_printf("; %s %d %s @ 0x%08" PFMT64x,
+			rz_cons_printf(ds->core->cons, "; %s %d %s @ 0x%08" PFMT64x,
 				rel_label,
 				rel->type, sym->dname ? sym->dname : sym->name,
 				rel->symbol->vaddr);
 			if (rel->addend) {
 				if (rel->addend > 0) {
-					rz_cons_printf(" + 0x%" PFMT64x, rel->addend);
+					rz_cons_printf(ds->core->cons, " + 0x%" PFMT64x, rel->addend);
 				} else {
-					rz_cons_printf(" - 0x%" PFMT64x, -rel->addend);
+					rz_cons_printf(ds->core->cons, " - 0x%" PFMT64x, -rel->addend);
 				}
 			}
 		} else {
-			rz_cons_printf("; %s %d ", rel_label, rel->type);
+			rz_cons_printf(ds->core->cons, "; %s %d ", rel_label, rel->type);
 		}
 	}
 }
@@ -4712,9 +4712,9 @@ static void ds_print_bbline(RzDisasmState *ds) {
 				ds_update_ref_lines(ds);
 				refline = ds->refline2;
 				reflinecol = ds->prev_line_col;
-				ds_print_ref_lines(refline, reflinecol, ds);
+				ds_print_ref_lines(ds->core->cons, refline, reflinecol, ds);
 			}
-			rz_cons_printf("|");
+			rz_cons_printf(ds->core->cons, "|");
 			ds_newline(ds);
 		}
 	}
@@ -4726,7 +4726,7 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 	if (on_stack == 1 && asm_types > 1) {
 		RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 		char *typestr = rz_type_as_string(typedb, type);
-		rz_cons_printf("%s", typestr);
+		rz_cons_printf(core->cons, "%s", typestr);
 		free(typestr);
 	}
 	if (addr != UT32_MAX && addr != UT64_MAX && addr != 0) {
@@ -4739,20 +4739,20 @@ static void print_fcn_arg(RzCore *core, RzType *type, const char *name,
 		int mode = (asm_types == 2) ? RZ_PRINT_MUSTSEE : RZ_PRINT_QUIET | RZ_PRINT_MUSTSEE;
 		char *format = rz_core_print_format(core, realfmt, mode, addr);
 		rz_str_trim(format);
-		rz_cons_print(format);
+		rz_cons_print(core->cons, format);
 		free(realfmt);
 		free(format);
 	} else {
-		rz_cons_printf("-1");
+		rz_cons_printf(core->cons, "-1");
 	}
-	rz_cons_chop();
+	rz_cons_chop(core->cons);
 }
 
 static void delete_last_comment(RzDisasmState *ds) {
 	if (!ds->show_comment_right_default) {
 		return;
 	}
-	const char *ll = rz_cons_get_buffer();
+	const char *ll = rz_cons_get_buffer(ds->core->cons);
 	if (!ll) {
 		return;
 	}
@@ -4820,7 +4820,7 @@ static void ds_print_esil_analysis(RzDisasmState *ds) {
 	if (!can_emulate_metadata(core, at)) {
 		goto beach;
 	}
-	theme_print_color(comment);
+	theme_print_color(core->cons, comment);
 
 	pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
 	if (pc) {
@@ -5094,7 +5094,7 @@ static void ds_print_comments_right(RzDisasmState *ds) {
 	if (ds->show_usercomments || ds->show_comments) {
 		if (RZ_STR_ISNOTEMPTY(desc)) {
 			ds_align_comment(ds);
-			theme_printf(comment, "; %s", desc);
+			theme_printf(core->cons, comment, "; %s", desc);
 		}
 		if (ds->show_comment_right && ds->comment) {
 			char *comment = ds->comment;
@@ -5115,8 +5115,8 @@ static void ds_print_comments_right(RzDisasmState *ds) {
 							for (i = 0; i < lines_count; i++) {
 								char *c = comment + line_indexes[i];
 								ds_print_pre(ds, true);
-								theme_print_color(usercomment);
-								rz_cons_printf(i == 0 ? "%s" : "; %s", c);
+								theme_print_color(core->cons, usercomment);
+								rz_cons_printf(core->cons, i == 0 ? "%s" : "; %s", c);
 								if (i < lines_count - 1) {
 									ds_newline(ds);
 									ds_begin_line(ds);
@@ -5128,7 +5128,7 @@ static void ds_print_comments_right(RzDisasmState *ds) {
 					free(comment);
 				} else {
 					if (comment) {
-						rz_cons_strcat(comment);
+						rz_cons_strcat(core->cons, comment);
 					}
 				}
 			}
@@ -5305,13 +5305,13 @@ static bool line_highlighted(RzDisasmState *ds) {
 
 static void ds_start_line_highlight(RzDisasmState *ds) {
 	if (ds->show_color && line_highlighted(ds)) {
-		rz_cons_strcat(COLOR(ds, linehl));
+		rz_cons_strcat(ds->core->cons, COLOR(ds, linehl));
 	}
 }
 
 static void ds_end_line_highlight(RzDisasmState *ds) {
 	if (ds->show_color && line_highlighted(ds)) {
-		rz_cons_strcat(Color_RESET);
+		rz_cons_strcat(ds->core->cons, Color_RESET);
 	}
 }
 
@@ -5381,7 +5381,7 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 			rz_config_hold_free(rch);
 			return 0;
 		}
-		rz_cons_push();
+		rz_cons_push(core->cons);
 	}
 
 	// disable row_offsets to prevent other commands to overwrite computed info
@@ -5444,16 +5444,16 @@ toro:
 	if (!ds->nlines) {
 		ds->nlines = core->blocksize;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	for (idx = ret = 0; idx < len && ds->lines < ds->nlines; idx += inc, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = rz_core_pava(core, ds->at);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			RZ_FREE(nbuf);
 			if (!ds->vec && ds->pj) {
-				rz_cons_pop();
+				rz_cons_pop(core->cons);
 			}
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(core->intr);
 			rz_config_hold_restore(rch);
 			rz_config_hold_free(rch);
 			ds_free(ds);
@@ -5468,7 +5468,7 @@ toro:
 				core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 				ds_start_line_highlight(ds);
 				ds_print_offset(ds);
-				rz_cons_printf("  unmapped\n");
+				rz_cons_printf(core->cons, "  unmapped\n");
 				inc = 1;
 				continue;
 			}
@@ -5499,9 +5499,9 @@ toro:
 			char *fmt = rz_type_as_format_pair(typedb, gv->type);
 			const char *typename = rz_type_identifier(gv->type);
 			if (fmt && typename) {
-				rz_cons_printf("(%s %s)\n", typename, gv->name);
+				rz_cons_printf(core->cons, "(%s %s)\n", typename, gv->name);
 				char *r = rz_core_print_format(core, fmt, RZ_PRINT_MUSTSEE, ds->addr + idx);
-				rz_cons_print(r);
+				rz_cons_print(core->cons, r);
 				free(r);
 				const ut32 type_bitsize = rz_type_db_get_bitsize(typedb, gv->type);
 				// always round up when calculating byte_size from bit_size of types
@@ -5523,7 +5523,7 @@ toro:
 		}
 		if (ds->retry) {
 			ds->retry = false;
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(core->intr);
 			rz_analysis_op_fini(&ds->analysis_op);
 			goto retry;
 		}
@@ -5575,7 +5575,7 @@ toro:
 				rz_analysis_op_fini(&ds->analysis_op);
 				RZ_FREE(ds->opstr);
 				if (!ds->sparse) {
-					rz_cons_printf("..\n");
+					rz_cons_printf(core->cons, "..\n");
 					ds->sparse = true;
 				}
 				continue;
@@ -5629,7 +5629,7 @@ toro:
 		bool mi_found = ds_print_meta_infos(ds, buf, len, idx, &mi_type);
 		if (ds->asm_hint_pos == 0) {
 			if (mi_found) {
-				rz_cons_printf("      ");
+				rz_cons_printf(core->cons, "      ");
 			} else {
 				ds_print_core_vmode(ds, ds->asm_hint_pos);
 			}
@@ -5724,8 +5724,8 @@ toro:
 				}
 				ds_begin_line(ds);
 				ds_print_pre(ds, true);
-				ds_print_ref_lines(ds->line, ds->line_col, ds);
-				rz_cons_printf("; --------------------------------------");
+				ds_print_ref_lines(core->cons, ds->line, ds->line_col, ds);
+				rz_cons_printf(core->cons, "; --------------------------------------");
 				ds_newline(ds);
 			}
 			RZ_FREE(ds->line);
@@ -5752,7 +5752,7 @@ toro:
 	rz_analysis_op_fini(&ds->analysis_op);
 
 	RZ_FREE(nbuf);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 
 	if (!ds->cbytes && ds->lines < ds->nlines) {
 		ds->addr = ds->at + inc;
@@ -5780,10 +5780,10 @@ toro:
 		RZ_FREE(nbuf);
 	}
 	if (!ds->vec && ds->pj) {
-		rz_cons_pop();
+		rz_cons_pop(core->cons);
 		if (!pj) {
 			pj_end(ds->pj);
-			rz_cons_printf("%s", pj_string(ds->pj));
+			rz_cons_printf(core->cons, "%s", pj_string(ds->pj));
 			pj_free(ds->pj);
 		}
 	}
@@ -5871,7 +5871,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		}
 	}
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	// build ranges to map addr with bits
 	j = 0;
 	for (i = 0; rz_disasm_check_end(nb_opcodes, j, nb_bytes, i); i += ret, j++) {
@@ -5880,7 +5880,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		int len = nb_bytes - i;
 		hasanalysis = false;
 		rz_core_seek_arch_bits(core, ds->at);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		ds->hint = rz_core_hint_begin(core, ds->hint, ds->at);
@@ -5986,9 +5986,9 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 		}
 		if (ds->asm_instr) {
 			if (ds->show_color) {
-				rz_cons_printf("%s\n", ds->opstr);
+				rz_cons_printf(ds->core->cons, "%s\n", ds->opstr);
 			} else {
-				rz_cons_println(ds->opstr);
+				rz_cons_println(ds->core->cons, ds->opstr);
 			}
 			RZ_FREE(ds->opstr);
 		}
@@ -5997,7 +5997,7 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 			ds->hint = NULL;
 		}
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	ds_free(ds);
 	rz_reg_arena_pop(rreg);
 	if (alloc_buf) {
@@ -6211,12 +6211,12 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 		buf = malloc(l + 1);
 		rz_io_read_at_mapped(core->io, addr, buf, l);
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
 		ds->vat = rz_core_pava(core, ds->at);
 		rz_asm_set_pc(core->rasm, ds->vat);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		RzAsmOp asmop = { 0 };
@@ -6237,16 +6237,16 @@ RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {
 				rz_analysis_op_fini(&aop);
 				rz_asm_parse_param_free(param);
 				if (colored_asm) {
-					rz_cons_printf("%s\n", rz_strbuf_get(colored_asm));
+					rz_cons_printf(ds->core->cons, "%s\n", rz_strbuf_get(colored_asm));
 					rz_strbuf_free(colored_asm);
 				}
 			} else {
-				rz_cons_println(rz_asm_op_get_asm(&asmop));
+				rz_cons_println(core->cons, rz_asm_op_get_asm(&asmop));
 			}
 		}
 		rz_asm_op_fini(&asmop);
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	if (buf != core->block) {
 		free(buf);
 	}
@@ -6299,7 +6299,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 		}
 	}
 
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	int midflags = rz_config_get_i(core->config, "asm.flags.middle");
 	bool midbb = rz_config_get_b(core->config, "asm.bb.middle");
 	bool asmmarks = rz_config_get_b(core->config, "asm.marks");
@@ -6308,7 +6308,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 	j = 0;
 	RzAnalysisMetaItem *meta = NULL;
 	for (; rz_disasm_check_end(nb_opcodes, j, nb_bytes, i); j++) {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			err = 1;
 			break;
 		}
@@ -6321,9 +6321,9 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 						const int show_offseg = (core->print->flags & RZ_PRINT_FLAGS_SEGOFF) != 0;
 						const int show_offdec = (core->print->flags & RZ_PRINT_FLAGS_ADDRDEC) != 0;
 						unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
-						rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL, core->cons);
+						rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 					}
-					rz_cons_printf("  %s:\n", item->name);
+					rz_cons_printf(core->cons, "  %s:\n", item->name);
 				}
 			} // do not show flags in pie
 		}
@@ -6331,7 +6331,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 			const int show_offseg = (core->print->flags & RZ_PRINT_FLAGS_SEGOFF) != 0;
 			const int show_offdec = (core->print->flags & RZ_PRINT_FLAGS_ADDRDEC) != 0;
 			unsigned int seggrn = rz_config_get_i(core->config, "asm.seggrn");
-			rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL, core->cons);
+			rz_print_offset_sg(core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
 		ut64 meta_start = at;
 		ut64 meta_size;
@@ -6357,10 +6357,10 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					RzDisasmState ds = { 0 };
 					ds.core = core;
 					if (!ds_print_data_type(&ds, buf + i, 0, size)) {
-						rz_cons_printf("hex length=%d delta=%d\n", size, delta);
+						rz_cons_printf(core->cons, "hex length=%d delta=%d\n", size, delta);
 						rz_core_print_hexdump(core, at, buf + idx, hexlen - delta, 16, 1, 1);
 					} else {
-						rz_cons_newline();
+						rz_cons_newline(core->cons);
 					}
 				}
 				continue;
@@ -6403,7 +6403,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 		if (fmt == 'C') {
 			const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, core->offset + i);
 			if (comment) {
-				rz_cons_printf("0x%08" PFMT64x " %s\n", core->offset + i, comment);
+				rz_cons_printf(core->cons, "0x%08" PFMT64x " %s\n", core->offset + i, comment);
 			}
 			i += ret;
 			continue;
@@ -6416,18 +6416,18 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 				ret = 1;
 			}
 			if (show_bytes) {
-				rz_cons_printf("%18s%02x  ", "", buf[i]);
+				rz_cons_printf(core->cons, "%18s%02x  ", "", buf[i]);
 			}
-			rz_cons_println("invalid"); // ???");
+			rz_cons_println(core->cons, "invalid"); // ???");
 		} else {
 			if (show_bytes) {
 				char *op_hex = rz_asm_op_get_hex(&asmop);
-				rz_cons_printf("%20s  ", op_hex);
+				rz_cons_printf(core->cons, "%20s  ", op_hex);
 				free(op_hex);
 			}
 			ret = asmop.size;
 			if (!asm_instr) {
-				rz_cons_newline();
+				rz_cons_newline(core->cons);
 			} else if (!asm_immtrim && (decode || esil)) {
 				RzAnalysisOp analysis_op;
 				char *tmpopstr, *opstr = NULL;
@@ -6437,7 +6437,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 				tmpopstr = rz_analysis_op_to_string(core->analysis, &analysis_op);
 				if (fmt == 'e') { // pie
 					char *esil = (RZ_STRBUF_SAFEGET(&analysis_op.esil));
-					rz_cons_println(esil);
+					rz_cons_println(core->cons, esil);
 				} else {
 					if (decode) {
 						opstr = tmpopstr ? tmpopstr : rz_asm_op_get_asm(&(asmop));
@@ -6447,7 +6447,7 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					if (asm_immtrim) {
 						rz_parse_immtrim(opstr);
 					}
-					rz_cons_println(opstr);
+					rz_cons_println(core->cons, opstr);
 				}
 				rz_analysis_op_fini(&analysis_op);
 				rz_asm_op_fini(&asmop);
@@ -6479,19 +6479,19 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 					RzAsmParseParam *param = rz_asm_get_parse_param(rreg, aop.type);
 					colored_asm = rz_asm_colorize_asm_str(bw_str, core->print, param, asmop.asm_toks);
 					rz_asm_parse_param_free(param);
-					rz_cons_printf("%s" Color_RESET "\n", colored_asm ? rz_strbuf_get(colored_asm) : "");
+					rz_cons_printf(core->cons, "%s" Color_RESET "\n", colored_asm ? rz_strbuf_get(colored_asm) : "");
 					rz_strbuf_free(colored_asm);
 					rz_analysis_op_fini(&aop);
 					rz_asm_op_fini(&asmop);
 				} else {
-					rz_cons_println(asm_str);
+					rz_cons_println(core->cons, asm_str);
 				}
 			}
 		}
 		i += ret;
 	}
 	rz_config_set_i(core->config, "asm.marks", asmmarks);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	if (alloc_buf) {
 		free(buf);
 	}
@@ -6777,7 +6777,7 @@ RZ_API RZ_OWN RzPVector /*<RzCoreDisasmOp *>*/ *rz_core_disasm_all_possible_opco
 	}
 	rz_pvector_reserve(vec, n_bytes);
 
-	for (ut64 position = 0; position < n_bytes && !rz_cons_is_breaked(); position++) {
+	for (ut64 position = 0; position < n_bytes && !rz_interrupt_is_breaked(core->intr); position++) {
 		ut64 offset = addr + position;
 		ut8 *ptr = buffer + position;
 		int length = (int)(n_bytes - position);

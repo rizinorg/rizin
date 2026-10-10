@@ -47,6 +47,7 @@ bool test_rz_mark_get_all_off() {
 	mu_assert_eq(found, 2, "both overlapping items found");
 
 	rz_mark_free(mark);
+	rz_list_free(list);
 	mu_end;
 }
 
@@ -60,6 +61,7 @@ bool test_rz_mark_all_list() {
 	RzList *all = rz_mark_all_list(mark);
 	mu_assert_eq(rz_list_length(all), 3, "all marks listed");
 
+	rz_list_free(all);
 	rz_mark_free(mark);
 	mu_end;
 }

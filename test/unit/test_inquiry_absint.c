@@ -824,7 +824,7 @@ bool test_absint_comments(void) {
 }
 
 bool test_absint_driver(size_t n_threads) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new(); // TODOe: we need this?
 	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "arm");
 	rz_analysis_set_bits(analysis, 64);
@@ -847,6 +847,7 @@ bool test_absint_driver(size_t n_threads) {
 	RzSetU *entry_points = rz_set_u_new();
 	rz_set_u_add(entry_points, 0x10000);
 	RzAbsIntDriverConfig config = {
+		.intr = cons->intr, // TODOe: maybe change the intr and use analysis->intr?? and set intr for others aswell??
 		.analysis = analysis,
 		.io = io,
 		.fcn_entry_points = entry_points,
@@ -868,7 +869,7 @@ bool test_absint_driver(size_t n_threads) {
 
 	rz_analysis_free(analysis);
 	rz_io_free(io);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 

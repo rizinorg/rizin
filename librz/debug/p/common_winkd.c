@@ -64,7 +64,7 @@ static char *download_pdb(const char *path, const char *symserver, const char *s
 	}
 	pj_o(pj);
 	SPDBOptions opts = { .extract = 1, .symbol_server = symserver, .symbol_store_path = symstore };
-	rz_bin_pdb_download(bin, pj, true, &opts);
+	rz_bin_pdb_download(bin, pj, true, &opts, NULL);
 	pj_end(pj);
 end:
 	rz_bin_free(bin);

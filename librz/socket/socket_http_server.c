@@ -4,12 +4,6 @@
 #include <rz_socket.h>
 #include <rz_util.h>
 
-static bool *breaked = NULL;
-
-RZ_API void rz_socket_http_server_set_breaked(bool *b) {
-	breaked = b;
-}
-
 RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptions *so) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
@@ -33,7 +27,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptio
 	hr->auth = !so->httpauth;
 	for (;;) {
 #if __WINDOWS__
-		if (breaked && *breaked) {
+		if (so->breaked) {
 			rz_socket_http_close(hr);
 			return NULL;
 		}
@@ -41,7 +35,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept(RzSocket *s, RzSocketHTTPOptio
 		memset(buf, 0, sizeof(buf));
 		xx = rz_socket_gets(hr->s, buf, sizeof(buf));
 		yy = rz_socket_ready(hr->s, 0, 20 * 1000); // this function uses usecs as argument
-		//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
+		// 	eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx)) {
 			break;
 		}

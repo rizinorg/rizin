@@ -139,7 +139,7 @@ RZ_IPI RzCmdStatus rz_mark_remove_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_mark_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_mark_print(core->marks, state);
+	rz_core_mark_print(core->marks, state, core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -166,19 +166,19 @@ RZ_IPI RzCmdStatus rz_mark_color_handler(RzCore *core, int argc, const char **ar
 	}
 	if (argc < 3) {
 		if (bi->color) {
-			rz_cons_println(bi->color);
+			rz_cons_println(core->cons, bi->color);
 		}
 		return RZ_CMD_STATUS_OK;
 	}
 	const char *ret = rz_mark_item_set_color(bi, argv[2]);
 	if (ret) {
-		rz_cons_println(ret);
+		rz_cons_println(core->cons, ret);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_mark_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_mark_range_print(core->marks, state, core->offset, core->offset + 1);
+	rz_core_mark_range_print(core->marks, state, core->offset, core->offset + 1, core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -197,7 +197,7 @@ RZ_IPI RzCmdStatus rz_mark_comment_handler(RzCore *core, int argc, const char **
 			RZ_LOG_ERROR("Cannot find mark\n");
 			return RZ_CMD_STATUS_ERROR;
 		} else if (item->comment) {
-			rz_cons_println(item->comment);
+			rz_cons_println(core->cons, item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;
@@ -225,7 +225,7 @@ RZ_IPI RzCmdStatus rz_mark_realname_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 3) {
-		rz_cons_printf("%s\n", item->realname);
+		rz_cons_printf(core->cons, "%s\n", item->realname);
 	} else {
 		rz_mark_item_set_realname(item, argv[2]);
 		RzFlagItem *fi = rz_flag_get(core->flags, item->name);
@@ -253,7 +253,7 @@ RZ_IPI RzCmdStatus rz_mark_move_handler(RzCore *core, int argc, const char **arg
 }
 
 RZ_IPI RzCmdStatus rz_mark_distance_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", mark_to_mark(core, argv[1]));
+	rz_cons_printf(core->cons, "%d\n", mark_to_mark(core, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -295,11 +295,11 @@ RZ_IPI RzCmdStatus rz_core_mark_describe(RzCore *core, ut64 addr, RzMarkItem *b,
 	case RZ_OUTPUT_MODE_STANDARD: {
 		const char *name = b->realname ? b->realname : b->name;
 		if (addr >= b->from && addr <= b->to) {
-			rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s\n", b->from, b->to, name);
+			rz_cons_printf(core->cons, "[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s\n", b->from, b->to, name);
 		} else if (addr < b->from) {
-			rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s - %d\n", b->from, b->to, name, (int)(b->from - addr));
+			rz_cons_printf(core->cons, "[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s - %d\n", b->from, b->to, name, (int)(b->from - addr));
 		} else {
-			rz_cons_printf("[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s + %d\n", b->from, b->to, name, (int)(addr - b->to));
+			rz_cons_printf(core->cons, "[0x%08" PFMT64x " - 0x%08" PFMT64x "] %s + %d\n", b->from, b->to, name, (int)(addr - b->to));
 		}
 		break;
 	}
@@ -328,9 +328,9 @@ RZ_IPI RzCmdStatus rz_mark_describe_handler(RzCore *core, int argc, const char *
 RZ_IPI RzCmdStatus rz_mark_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
 		ut64 size = rz_num_math(core->num, argv[1]);
-		rz_core_mark_range_print(core->marks, state, core->offset, core->offset + size);
+		rz_core_mark_range_print(core->marks, state, core->offset, core->offset + size, core->cons);
 	} else {
-		rz_core_mark_range_print(core->marks, state, core->offset, core->offset + core->blocksize);
+		rz_core_mark_range_print(core->marks, state, core->offset, core->offset + core->blocksize, core->cons);
 	}
 	return RZ_CMD_STATUS_OK;
 }

@@ -84,6 +84,7 @@ typedef struct rz_socket_http_options {
 	bool accept_timeout;
 	int timeout;
 	bool httpauth;
+	bool breaked;
 } RzSocketHTTPOptions;
 
 #define RZ_SOCKET_PROTO_TCP     IPPROTO_TCP

@@ -131,7 +131,7 @@ static bool test_hist_push(void) {
 
 	rz_line_hist_add(line, cmd);
 	int history_top = line->history.top;
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 
 	free(core->cmdqueue);
 	core->cmdqueue = rz_str_newf("< \\x12%s\\n", mark);
@@ -145,7 +145,7 @@ static bool test_hist_push(void) {
 	mu_assert_notnull(res, "reverse-search result should not be null");
 	mu_assert_streq(res, cmd, "reverse-search should resolve to prior history, not the injector command");
 
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 	rz_core_free(core);
 	mu_end;
 }
@@ -158,7 +158,7 @@ static bool test_hist_push_seq(void) {
 
 	rz_line_hist_add(line, cmd);
 	int history_top = line->history.top;
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 
 	free(core->cmdqueue);
 	core->cmdqueue = rz_str_newf("echo %s; < \\x12%s\\n", mark, mark);
@@ -172,7 +172,7 @@ static bool test_hist_push_seq(void) {
 	mu_assert_notnull(res, "reverse-search result should not be null");
 	mu_assert_streq(res, cmd, "reverse-search should resolve to prior history, not the injector command");
 
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 	rz_core_free(core);
 	mu_end;
 }

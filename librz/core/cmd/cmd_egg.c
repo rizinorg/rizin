@@ -16,14 +16,14 @@ static const char *RzEggConfigOptions[] = {
 	NULL
 };
 
-static void egg_option(RzEgg *egg, const char *key, const char *input) {
+static void egg_option(RzCons *cons, RzEgg *egg, const char *key, const char *input) {
 	if (!*input) {
 		return;
 	}
 	if (input[1] != ' ') {
 		char *a = rz_egg_option_get(egg, key);
 		if (a) {
-			rz_cons_println(a);
+			rz_cons_println(cons, a);
 			free(a);
 		}
 	} else {
@@ -31,7 +31,7 @@ static void egg_option(RzEgg *egg, const char *key, const char *input) {
 	}
 }
 
-static void showBuffer(RzBuffer *b) {
+static void showBuffer(RzCons *cons, RzBuffer *b) {
 	int i;
 	if (b && rz_buf_size(b) > 0) {
 		rz_buf_seek(b, 0, RZ_BUF_SET);
@@ -40,13 +40,13 @@ static void showBuffer(RzBuffer *b) {
 			if (!rz_buf_read8(b, &tmp)) {
 				return;
 			}
-			rz_cons_printf("%02x", tmp);
+			rz_cons_printf(cons, "%02x", tmp);
 		}
-		rz_cons_newline();
+		rz_cons_newline(cons);
 	}
 }
 
-static bool egg_compile(RzEgg *egg) {
+static bool egg_compile(RzCons *cons, RzEgg *egg) {
 	rz_egg_compile(egg);
 	if (!rz_egg_assemble(egg)) {
 		RZ_LOG_ERROR("core: rz_egg_assemble: invalid assembly\n");
@@ -64,13 +64,13 @@ static bool egg_compile(RzEgg *egg) {
 	}
 	RzBuffer *b;
 	if ((b = rz_egg_get_bin(egg))) {
-		showBuffer(b);
+		showBuffer(cons, b);
 		return true;
 	}
 	return false;
 }
 
-static bool rz_core_egg_compile(RzEgg *egg) {
+static bool rz_core_egg_compile(RzCons *cons, RzEgg *egg) {
 	int ret = false;
 	char *p = rz_egg_option_get(egg, "egg.shellcode");
 	if (p && *p) {
@@ -85,7 +85,7 @@ static bool rz_core_egg_compile(RzEgg *egg) {
 		free(p);
 		return false;
 	}
-	ret = egg_compile(egg);
+	ret = egg_compile(cons, egg);
 	rz_egg_option_set(egg, "egg.shellcode", "");
 	rz_egg_option_set(egg, "egg.padding", "");
 	rz_egg_option_set(egg, "egg.encoder", "");
@@ -118,7 +118,7 @@ static RzCmdStatus rz_core_egg_compile_file(RzCore *core, const char *file) {
 		RZ_LOG_ERROR("Cannot load file \"%s\"\n", file);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!egg_compile(egg)) {
+	if (!egg_compile(core->cons, egg)) {
 		RZ_LOG_ERROR("Cannot compile file \"%s\"\n", file);
 		return RZ_CMD_STATUS_ERROR;
 	}
@@ -133,7 +133,7 @@ RZ_IPI RzCmdStatus rz_egg_compile_handler(RzCore *core, int argc, const char **a
 		if (!egg) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		if (!rz_core_egg_compile(egg)) {
+		if (!rz_core_egg_compile(core->cons, egg)) {
 			RZ_LOG_ERROR("Cannot compile the shellcode\n");
 			return RZ_CMD_STATUS_ERROR;
 		}
@@ -152,9 +152,9 @@ RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **ar
 		for (i = 0; RzEggConfigOptions[i]; i++) {
 			const char *p = RzEggConfigOptions[i];
 			if (rz_egg_option_get(egg, p)) {
-				rz_cons_printf("%s : %s\n", p, rz_egg_option_get(egg, p));
+				rz_cons_printf(core->cons, "%s : %s\n", p, rz_egg_option_get(egg, p));
 			} else {
-				rz_cons_printf("%s : %s\n", p, "");
+				rz_cons_printf(core->cons, "%s : %s\n", p, "");
 			}
 		}
 		return RZ_CMD_STATUS_OK;
@@ -185,7 +185,7 @@ RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **ar
 				rz_list_free(l);
 				return RZ_CMD_STATUS_ERROR;
 			}
-			rz_cons_print(o);
+			rz_cons_print(core->cons, o);
 			free(o);
 		} else if (llen == 2) {
 			char *value = rz_list_get_n(l, 1);
@@ -210,7 +210,7 @@ RZ_IPI RzCmdStatus rz_egg_list_plugins_handler(RzCore *core, int argc, const cha
 	RzEggPlugin **val;
 	rz_iterator_foreach(iter, val) {
 		RzEggPlugin *p = *val;
-		rz_cons_printf("%s  %6s : %s\n",
+		rz_cons_printf(core->cons, "%s  %6s : %s\n",
 			(p->type == RZ_EGG_PLUGIN_SHELLCODE) ? "shc" : "enc", p->name, p->desc);
 	}
 	rz_iterator_free(iter);
@@ -231,7 +231,7 @@ RZ_IPI RzCmdStatus rz_egg_syscall_handler(RzCore *core, int argc, const char **a
 		buf = rz_core_syscall(core, argv[1], "");
 	}
 	if (buf) {
-		showBuffer(buf);
+		showBuffer(core->cons, buf);
 	}
 	egg->lang.nsyscalls = 0;
 	return RZ_CMD_STATUS_OK;
@@ -270,9 +270,9 @@ RZ_IPI RzCmdStatus rz_egg_reset_handler(RzCore *core, int argc, const char **arg
 	if (!egg) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	egg_option(egg, "egg.padding", "");
-	egg_option(egg, "egg.shellcode", "");
-	egg_option(egg, "egg.encoder", "");
+	egg_option(core->cons, egg, "egg.padding", "");
+	egg_option(core->cons, egg, "egg.shellcode", "");
+	egg_option(core->cons, egg, "egg.encoder", "");
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -281,19 +281,19 @@ RZ_IPI RzCmdStatus rz_egg_show_config_handler(RzCore *core, int argc, const char
 	if (!egg) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("Configuration options\n");
+	rz_cons_printf(core->cons, "Configuration options\n");
 	int i;
 	for (i = 0; RzEggConfigOptions[i]; i++) {
 		const char *p = RzEggConfigOptions[i];
 		if (rz_egg_option_get(egg, p)) {
-			rz_cons_printf("%s : %s\n", p, rz_egg_option_get(egg, p));
+			rz_cons_printf(core->cons, "%s : %s\n", p, rz_egg_option_get(egg, p));
 		} else {
-			rz_cons_printf("%s : %s\n", p, "");
+			rz_cons_printf(core->cons, "%s : %s\n", p, "");
 		}
 	}
-	rz_cons_printf("\nTarget options\n");
-	rz_cons_printf("arch : %s\n", rz_core_get_cpu(core));
-	rz_cons_printf("os   : %s\n", rz_core_get_os(core));
-	rz_cons_printf("bits : %u\n", rz_core_get_bits(core));
+	rz_cons_printf(core->cons, "\nTarget options\n");
+	rz_cons_printf(core->cons, "arch : %s\n", rz_core_get_cpu(core));
+	rz_cons_printf(core->cons, "os   : %s\n", rz_core_get_os(core));
+	rz_cons_printf(core->cons, "bits : %u\n", rz_core_get_bits(core));
 	return RZ_CMD_STATUS_OK;
 }

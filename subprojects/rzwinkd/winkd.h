@@ -108,6 +108,7 @@ typedef struct _KdCtx {
 	int context_cache_size;
 	bool context_cache_valid;
 	bool breaked;
+	RzInterrupt *intr;
 } KdCtx;
 
 #define TARGET_BACKEND  0
@@ -182,4 +183,5 @@ int winkd_write_at_phys(RZ_BORROW RZ_NONNULL KdCtx *ctx, const ut64 offset, RZ_B
 void winkd_break(void *ctx);
 bool winkd_lock_enter(RZ_BORROW RZ_NONNULL KdCtx *ctx);
 bool winkd_lock_leave(RZ_BORROW RZ_NONNULL KdCtx *ctx);
+void winkd_set_interrupt(RZ_BORROW RZ_NONNULL KdCtx *ctx, RZ_NONNULL RzInterrupt *intr);
 #endif
