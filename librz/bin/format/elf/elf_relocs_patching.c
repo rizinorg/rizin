@@ -2709,7 +2709,7 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_386_PC8:
 		val = fs->S + fs->A;
 		rz_buf_read_at(buf_patched, patch_addr, buf, 1);
-		if (rel_type == R_386_PC16) {
+		if (rel_type == R_386_PC8) {
 			val -= fs->P;
 		}
 		rz_write_le8(buf, val);
