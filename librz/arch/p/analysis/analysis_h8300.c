@@ -101,8 +101,8 @@ static int h8300_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
 	op->addr = addr;
 	ret = op->size = h8300_decode_command(buf, len, &cmd, addr, rz_analysis_get_cpu(analysis));
 
-	if (ret < 0) {
-		return ret;
+	if (ret <= 0) {
+		return -1;
 	}
 
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
