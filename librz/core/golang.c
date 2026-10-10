@@ -1988,7 +1988,7 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 				bb_buf = new_buf;
 				bb_buf_cap = block->size;
 			}
-			if (rz_io_nread_at(core->io, block->addr, bb_buf, block->size) > 0) {
+			if (rz_io_nread_at(core->io, block->addr, bb_buf, block->size) < 0) {
 				RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
 				continue;
 			}
