@@ -1687,7 +1687,8 @@ static void core_config_print_set_as_string(const RzSetS *set, bool allow_empty)
 	}
 	rz_cons_print("[");
 	RzIterator iter = (RzIterator){ 0 };
-	if (rz_set_s_as_iter(set, &iter)) {
+	if (!rz_set_s_as_iter(set, &iter)) {
+		rz_cons_print("]");
 		return;
 	}
 	const char **entry;

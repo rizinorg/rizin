@@ -5691,7 +5691,7 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  */
 RZ_API bool rz_core_analysis_bytes(
 	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_NONNULL RZ_OUT RzIterator *iterator) {
-	rz_return_val_if_fail(core && buf && iterator, false);
+	rz_return_val_if_fail(core && buf, false);
 
 	// TODO: this should be removed once rz_config is refactored.
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
