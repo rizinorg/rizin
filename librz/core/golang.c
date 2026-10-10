@@ -512,10 +512,123 @@ static ut32 core_recover_golang_functions_go_1_2(RzCore *core, GoPcLnTab *pclnta
 	return num_syms;
 }
 
-static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
-	RzCore *core = (RzCore *)user;
-	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+#define GO_ABI_PROLOGUE_WINDOW 24
+#define GO_ABI_MAX_SAMPLES     512
+
+/**
+ * \brief Checks if a Go symbol is compiler boilerplate (ABI wrappers, closures, inittasks).
+ */
+static bool rz_golang_is_compiler_wrapper_symbol(const char *name) {
+	if (RZ_STR_ISEMPTY(name)) {
+		return true;
+	}
+	if (!strncmp(name, "sym.go.", 7)) {
+		name += 7;
+	}
+	return strstr(name, ".abi0") ||
+		strstr(name, ".abiinternal") ||
+		strstr(name, ".deferwrap") ||
+		strstr(name, "..inittask") ||
+		!strncmp(name, "type:", 5) ||
+		!strncmp(name, "go:", 3);
+}
+
+/**
+ * \brief Sample a function's prologue to vote on register ABI (R14 holds g) vs stack ABI (g from TLS).
+ */
+static void rz_golang_vote_abi_prologue(RzIO *io, ut64 func_addr, ut32 *reg_votes, ut32 *stack_votes) {
+	ut8 code[GO_ABI_PROLOGUE_WINDOW + 8] = { 0 };
+	if (0 > rz_io_nread_at(io, func_addr, code, sizeof(code))) {
+		return;
+	}
+	for (ut32 k = 0; k <= GO_ABI_PROLOGUE_WINDOW; k++) {
+		// 49 3B 66 10 / 4D 3B 66 10 (CMPQ SP|R12, 16(R14)) -> Register ABI (R14 holds g)
+		if ((code[k] == 0x49 || code[k] == 0x4d) && code[k + 1] == 0x3b && code[k + 2] == 0x66 && code[k + 3] == 0x10) {
+			(*reg_votes)++;
+			return;
+		}
+		// 64|65 48|4C 8B /r with SIB 0x25 (MOVQ FS|GS:[disp32], reg) -> Stack ABI (g loaded from TLS)
+		if ((code[k] == 0x64 || code[k] == 0x65) && (code[k + 1] == 0x48 || code[k + 1] == 0x4c) && code[k + 2] == 0x8b &&
+			(code[k + 3] & 0xc7) == 0x04 && code[k + 4] == 0x25) {
+			(*stack_votes)++;
+			return;
+		}
+	}
+}
+
+typedef struct {
+	RzCore *core;
+	ut32 samples_count;
+	ut32 reg_votes;
+	ut32 stack_votes;
+} GolangVoteCtx;
+
+static bool rz_golang_sample_flag_for_abi(RzFlagItem *fi, void *user) {
+	GolangVoteCtx *ctx = (GolangVoteCtx *)user;
+	if (rz_golang_is_compiler_wrapper_symbol(fi->name)) {
+		return true;
+	}
+	if (ctx->samples_count >= GO_ABI_MAX_SAMPLES) {
+		return false;
+	}
+	ctx->samples_count++;
+	rz_golang_vote_abi_prologue(ctx->core->io, fi->offset, &ctx->reg_votes, &ctx->stack_votes);
 	return true;
+}
+
+typedef struct {
+	RzCore *core;
+	const char *cc;
+} GolangAnalyseCtx;
+
+static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
+	GolangAnalyseCtx *ctx = (GolangAnalyseCtx *)user;
+	RzCore *core = ctx->core;
+
+	if (rz_golang_is_compiler_wrapper_symbol(fi->name)) {
+		return true;
+	}
+
+	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+
+	if (ctx->cc) {
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fi->offset);
+		if (fcn) {
+			fcn->cc = ctx->cc;
+		}
+	}
+	return true;
+}
+
+static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
+	const char *asm_arch = rz_config_get(core->config, "asm.arch");
+	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
+
+	if (RZ_STR_ISEMPTY(asm_arch) || asm_bits == 32 || strcmp(asm_arch, "x86") != 0) {
+		return "golang";
+	}
+
+	// Run statistical prologue vote across sampled functions to determine active ABI
+	GolangVoteCtx vote_ctx = {
+		.core = core,
+		.samples_count = 0,
+		.reg_votes = 0,
+		.stack_votes = 0
+	};
+	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, rz_golang_sample_flag_for_abi, &vote_ctx);
+
+	ut32 total_votes = vote_ctx.reg_votes + vote_ctx.stack_votes;
+	if (total_votes >= 8 && vote_ctx.stack_votes * 10 >= total_votes * 9) {
+		RZ_LOG_INFO("Golang ABI prologue vote: Stack ABI (votes: %u reg, %u stack)\n",
+			vote_ctx.reg_votes, vote_ctx.stack_votes);
+		return "golang_abi0";
+	}
+
+	if (total_votes >= 8 && vote_ctx.reg_votes * 10 >= total_votes * 9) {
+		RZ_LOG_INFO("Golang ABI prologue vote: Register ABI (votes: %u reg, %u stack)\n",
+			vote_ctx.reg_votes, vote_ctx.stack_votes);
+	}
+	return "golang";
 }
 
 /**
@@ -527,7 +640,15 @@ static void analyse_golang_symbols(RzCore *core) {
 	if (!symbols) {
 		return;
 	}
-	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, core);
+
+	const char *detected_cc = golang_detect_cc(core, symbols);
+	RzStrConstPool *cpool = rz_analysis_get_const_pool(core->analysis);
+	GolangAnalyseCtx actx = {
+		.core = core,
+		.cc = (detected_cc && cpool) ? rz_str_constpool_get(cpool, detected_cc) : NULL
+	};
+
+	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, &actx);
 }
 
 /**
@@ -656,10 +777,10 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
-		rz_golang_load_types(core);
 		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
 		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+		rz_golang_load_types(core);
 		return true;
 	}
 
