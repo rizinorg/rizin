@@ -64,6 +64,7 @@ EXEMPT = {
     "psc": "generates code",
     "pss": "wraps `ps` to the screen, `psj` is the JSON",
     "pxA": "draws a color map",
+    "pxB": "bit-level hexdump for visual inspection, has no JSON form",
     "p-h": "prints a table, `p-j` is the JSON",
     "p6d": "decodes its argument",
     "p6e": "encodes its argument",
