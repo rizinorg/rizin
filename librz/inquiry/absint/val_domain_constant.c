@@ -23,6 +23,7 @@ typedef struct {
 	 * If is_const is unset this might hold garbage.
 	 */
 	RzBitVector *bv;
+	bool bv_owned;
 } ValueData;
 
 static size_t sizeof_abs_int_val() {
@@ -38,11 +39,17 @@ static RzAbsIntVal *pack(ValueData *val) {
 	return rz_absint_val_pack(val);
 }
 
-static bool val_new_top(RZ_BORROW RzAbsIntVal *av) {
+static bool val_new_top(RZ_BORROW RzAbsIntVal *av, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv) {
 	rz_return_val_if_fail(av, NULL);
 	ValueData *ad = AD(av);
 	ad->is_const = false;
-	ad->bv = rz_bv_new(64);
+	if (aval_bv) {
+		ad->bv = aval_bv;
+		ad->bv_owned = false;
+	} else {
+		ad->bv = rz_bv_new(64);
+		ad->bv_owned = true;
+	}
 	return pack(ad);
 }
 
@@ -51,7 +58,9 @@ static void val_fini(RzAbsIntVal *val) {
 		return;
 	}
 	ValueData *adata = AD(val);
-	rz_bv_free(adata->bv);
+	if (adata->bv_owned) {
+		rz_bv_free(adata->bv);
+	}
 }
 
 static void val_free(RzAbsIntVal *val) {
@@ -90,9 +99,14 @@ static void val_copy(RzAbsIntVal *dst_val, const RzAbsIntVal *src_val) {
 	ValueData *dst = AD(dst_val);
 	ValueData *src = AD(src_val);
 	rz_return_if_fail(dst && src && dst->bv && src->bv);
+	dst->is_const = src->is_const;
+	if (dst->is_const && rz_bv_len(src->bv) > 64) {
+		// TODO: Not supported in the test.
+		rz_warn_if_reached();
+		return;
+	}
 	rz_bv_cast_inplace(dst->bv, rz_bv_len(src->bv), false);
 	rz_bv_copy(dst->bv, src->bv);
-	dst->is_const = src->is_const;
 }
 
 /**

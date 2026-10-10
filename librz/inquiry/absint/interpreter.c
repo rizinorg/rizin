@@ -180,7 +180,7 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		rz_warn_if_reached();
 		return;
 	}
-	if (!val_domain(inst)->val_new_top(av)) {
+	if (!val_domain(inst)->val_new_top(av, NULL)) {
 		rz_warn_if_reached();
 		free(av);
 		return;
@@ -380,7 +380,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	case RZ_IL_OP_CAST: {
 		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
 		RzAbsIntVal *fill_bit = rz_absint_scratch_get(ctx->astate);
-		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit)) {
+		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(pure->op.cast.fill, fill_bit, {});
@@ -421,7 +421,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
 		RzAbsIntVal *y = rz_absint_scratch_get(ctx->astate);
-		if (!y || !val_domain(ctx->inst)->val_new_top(y)) {
+		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {});
@@ -447,12 +447,12 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
 		RzAbsIntVal *y = rz_absint_scratch_get(ctx->astate);
-		if (!y || !val_domain(ctx->inst)->val_new_top(y)) {
+		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {});
 		RzAbsIntVal *fill_bit = rz_absint_scratch_get(ctx->astate);
-		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit)) {
+		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(pfill_bit, fill_bit, {});
@@ -572,7 +572,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 #define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) \
 	do { \
 		dst = rz_absint_scratch_get(ctx->astate); \
-		if (RZ_UNLIKELY(!dst || !val_domain(ctx->inst)->val_new_top(dst))) { \
+		if (RZ_UNLIKELY(!dst || !val_domain(ctx->inst)->val_new_top(dst, NULL))) { \
 			res = EVAL_RESULT_ERROR; \
 			cleanup_local goto cleanup; \
 		} \

@@ -72,6 +72,14 @@ typedef struct rz_absint_state_t {
 	RzAbsIntPCState pc_state;
 
 	RzAbsIntScratchPad scratch;
+	/**
+	 * \brief A flat array of bit vectors. One for each global.
+	 * These bit vectors are not allowed to be used outside of the value domain!
+	 * Order is the same as in globals.
+	 *
+	 * TODO: Supports only 64 bit wide bit vectors as test.
+	 */
+	RzVector /*<RzBitVector>*/ *global_bvs;
 	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
 	HtUP /*<RzAbsIntVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
 	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
@@ -112,7 +120,11 @@ typedef struct rz_absint_value_domain_t {
 	const char *name;
 
 	size_t (*val_size)(void); ///< Return the RzAbsIntVal in bytes.
-	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval); ///< Initialize the new abstract value \p aval as top.
+	/**
+	 * \brief Initialize the new abstract value \p aval as top.
+	 * If \p aval_bv is given and the value domain uses bit vectors, it should assign it to the abstract value.
+	 */
+	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv);
 	void (*val_fini)(RzAbsIntVal *val);
 	void (*val_free)(RzAbsIntVal *val);
 	bool (*is_top)(RZ_NONNULL const RzAbsIntVal *val); ///< return whether the given value is top
