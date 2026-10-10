@@ -133,6 +133,7 @@ pyc_opcodes *opcode_313(void) {
 	ret->jump_use_instruction_offset = true;
 
 	rz_list_purge(ret->opcode_arg_fmt);
+	add_arg_fmt(ret, "COMPARE_OP", format_COMPARE_OP_313);
 	add_arg_fmt(ret, "CALL_FUNCTION_EX", format_CALL_FUNCTION_EX_36);
 	add_arg_fmt(ret, "MAKE_FUNCTION", format_MAKE_FUNCTION_arg_36);
 	add_arg_fmt(ret, "EXTENDED_ARG", format_extended_arg_36);
