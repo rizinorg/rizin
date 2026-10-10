@@ -379,12 +379,15 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		break;
 	case RZ_IL_OP_CAST: {
 		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
-		RzAbsIntVal *fill_bit = rz_absint_scratch_get(ctx->astate);
+		RzAbsIntVal *fill_bit = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
 		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
-		EVAL_SUB_OR_RETURN_CLEANUP(pure->op.cast.fill, fill_bit, {});
+		EVAL_SUB_OR_RETURN_CLEANUP(pure->op.cast.fill, fill_bit, {
+			val_domain(ctx->inst)->val_free(fill_bit);
+		});
 		val_domain(ctx->inst)->eval_cast(pure->op.cast.length, fill_bit, out);
+		val_domain(ctx->inst)->val_free(fill_bit);
 		break;
 	}
 	case RZ_IL_OP_BITV:
@@ -420,12 +423,15 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzAbsIntVal *y = rz_absint_scratch_get(ctx->astate);
+		RzAbsIntVal *y = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
 		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
-		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {});
+		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
+			val_domain(ctx->inst)->val_free(y);
+		});
 		val_domain(ctx->inst)->eval_binop(pure->code, out, y);
+		val_domain(ctx->inst)->val_free(y);
 		break;
 	}
 	case RZ_IL_OP_LOGNOT:
@@ -446,17 +452,24 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzAbsIntVal *y = rz_absint_scratch_get(ctx->astate);
+		RzAbsIntVal *y = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
 		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
-		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {});
-		RzAbsIntVal *fill_bit = rz_absint_scratch_get(ctx->astate);
+		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
+			val_domain(ctx->inst)->val_free(y);
+		});
+		RzAbsIntVal *fill_bit = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
 		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
-		EVAL_SUB_OR_RETURN_CLEANUP(pfill_bit, fill_bit, {});
+		EVAL_SUB_OR_RETURN_CLEANUP(pfill_bit, fill_bit, {
+			val_domain(ctx->inst)->val_free(y);
+			val_domain(ctx->inst)->val_free(fill_bit);
+		});
 		val_domain(ctx->inst)->eval_shift(pure->code == RZ_IL_OP_SHIFTR, out, y, fill_bit);
+		val_domain(ctx->inst)->val_free(y);
+		val_domain(ctx->inst)->val_free(fill_bit);
 		break;
 	}
 	case RZ_IL_OP_LOADW:
@@ -571,7 +584,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 #define EVAL_SUB_OR_RETURN(op) EVAL_SUB_OR_RETURN_CLEANUP(op, )
 #define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) \
 	do { \
-		dst = rz_absint_scratch_get(ctx->astate); \
+		dst = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size()); \
 		if (RZ_UNLIKELY(!dst || !val_domain(ctx->inst)->val_new_top(dst, NULL))) { \
 			res = EVAL_RESULT_ERROR; \
 			cleanup_local goto cleanup; \
@@ -704,7 +717,9 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 	case RZ_IL_OP_STOREW: {
 		RzILOpPure *key = effect->code == RZ_IL_OP_STORE ? effect->op.store.key : effect->op.storew.key;
 		RzAbsIntVal *st_addr;
-		EVAL_PURE_OR_RETURN_CLEANUP(key, st_addr, {});
+		EVAL_PURE_OR_RETURN_CLEANUP(key, st_addr, {
+			val_domain(ctx->inst)->val_free(st_addr);
+		});
 		RzILMemIndex mem_idx = effect->code == RZ_IL_OP_STORE ? 0 : effect->op.storew.mem;
 		RzBitVector st_addr_bv;
 		rz_bv_init(&st_addr_bv, 64);
@@ -735,6 +750,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			}
 		}
 		store_abstr_data(ctx->inst, mem_idx, st_addr, eval_out);
+		val_domain(ctx->inst)->val_free(st_addr);
 		rz_bv_fini(&st_addr_bv);
 		break;
 	}
@@ -803,9 +819,6 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 			}
 			return res;
 		}
-		if (!rz_absint_scratch_reset(ctx->inst, astate)) {
-			return EVAL_RESULT_ERROR;
-		}
 		if (astate->pc_state != RZ_ABSINT_PC_CONST) {
 			// unreachable or unknown jump
 			break;
@@ -830,9 +843,6 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 		RZ_LOG_INFO("Finished evaluating absint block @ 0x%" PFMT64x "\n\n", interp_block->entry_state->pc);
 	}
 
-	if (!rz_absint_scratch_reset(ctx->inst, astate)) {
-		return EVAL_RESULT_ERROR;
-	}
 	return EVAL_RESULT_OK;
 }
 

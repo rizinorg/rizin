@@ -57,21 +57,10 @@ typedef enum rz_absint_pc_state_t {
 	RZ_ABSINT_PC_ANY ///< Top state, if this is set, pc field is unused and undefined
 } RzAbsIntPCState;
 
-/**
- * \brief Number of initially allocated scratch values.
- */
-#define RZ_ABS_INT_INIT_SCRATCH_PAD_SIZE 128
-
-typedef struct rz_absint_scratch_pad {
-	RzVector /*<RzAbsIntVal>*/ *pad; ///< An array of scratch abstract variables.
-	size_t i; ///< Currently free scratch value. If >|scratch| new values must be pushed to the vector.
-} RzAbsIntScratchPad;
-
 typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
-	RzAbsIntScratchPad scratch;
 	/**
 	 * \brief A flat array of bit vectors. One for each global.
 	 * These bit vectors are not allowed to be used outside of the value domain!
@@ -279,9 +268,6 @@ typedef enum rz_absint_result_code_t {
 	RZ_ABSINT_RESULT_FAILED,
 	RZ_ABSINT_RESULT_BREAK
 } RzAbsIntResultCode;
-
-RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIntState *state);
-RZ_IPI bool rz_absint_scratch_reset(RZ_NONNULL RZ_BORROW RzAbsIntInstance *inst, RZ_NONNULL RZ_BORROW RzAbsIntState *state);
 
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);
