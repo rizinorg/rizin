@@ -35,6 +35,7 @@ rz_util_common_sources = [
   'log.c',
   'luhn.c',
   'math.c',
+  'mutual_info.c',
   'mem.c',
   'name.c',
   'path.c',
