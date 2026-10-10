@@ -1190,7 +1190,8 @@ static void __print_prompt(RzLine *line) {
 	RzCons *cons = rz_cons_singleton();
 	int columns = rz_cons_get_size(NULL) - 2;
 	int chars = strlen(line->buffer.data);
-	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(line->prompt) - 2);
+	int len, i, ansi = (int)rz_str_ansi_len(line->prompt);
+	int cols = RZ_MAX(1, columns - ansi - 2);
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		rz_cons_gotoxy(0, cons->rows);
 		rz_cons_flush();
