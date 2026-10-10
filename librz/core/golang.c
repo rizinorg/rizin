@@ -50,8 +50,9 @@ typedef struct go_string_recover_t {
 	ut32 size;
 	ut32 op_size;
 	ut32 n_recovered;
-	char raw_buf[GO_MAX_STRING_SIZE + 1];
-	char flag_buf[GO_MAX_STRING_SIZE + 8];
+	char *raw_buf;
+	char *flag_buf;
+	size_t buf_cap;
 } GoStrRecover;
 
 typedef struct go_string_info_t {
@@ -70,9 +71,16 @@ typedef struct go_asm_pattern_t {
 typedef bool (*GoDecodeCb)(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size);
 
 typedef struct go_signature_t {
-	GoAsmPattern *pasm;
+	const GoAsmPattern *pasm;
 	GoDecodeCb decode;
 } GoSignature;
+
+typedef struct go_signature_table_t {
+	const GoSignature *sigs;
+	size_t n_sigs;
+} GoSignatureTable;
+
+#define GO_SIG_TABLE_ENTRY(s) { (s), RZ_ARRAY_SIZE(s) }
 
 typedef ut32 (*GoStrRecoverCb)(GoStrRecover *ctx);
 
@@ -728,9 +736,30 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		return false;
 	}
 
+	const size_t n_prefix = strlen("str.");
+	size_t req_cap = (size_t)str_size + n_prefix + 1;
+	if (req_cap > ctx->buf_cap) {
+		size_t new_cap = RZ_MAX(req_cap, 256);
+		char *new_raw = realloc(ctx->raw_buf, new_cap);
+		if (!new_raw) {
+			return false;
+		}
+		ctx->raw_buf = new_raw;
+		char *new_flag = realloc(ctx->flag_buf, new_cap);
+		if (!new_flag) {
+			return false;
+		}
+		ctx->flag_buf = new_flag;
+		ctx->buf_cap = new_cap;
+	}
+
 	char *raw = ctx->raw_buf;
-	if (0 > rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)raw, str_size)) {
+	int nread = rz_io_nread_at(ctx->core->io, str_addr, (ut8 *)raw, str_size);
+	if (nread < 0) {
 		RZ_LOG_ERROR("Failed to read string value at address %" PFMT64x "\n", str_addr);
+		return false;
+	}
+	if (!ctx->core->io->ff && (ut64)nread != str_size) {
 		return false;
 	}
 	raw[str_size] = 0;
@@ -738,7 +767,6 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 		return false;
 	}
 
-	const size_t n_prefix = strlen("str.");
 	char *flag = ctx->flag_buf;
 	memcpy(flag, "str.", n_prefix);
 	memcpy(flag + n_prefix, raw, str_size);
@@ -769,39 +797,59 @@ static bool recover_string_at(GoStrRecover *ctx, ut64 str_addr, ut64 str_size) {
 	return true;
 }
 
-static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, GoSignature *sigs, const size_t n_sigs) {
-	ut32 nlen = 0;
-
-	// First verify all pattern masks match before executing any expensive decode callbacks
-	for (size_t i = 0; i < n_sigs; ++i) {
-		if (nlen >= ctx->size) {
-			return false;
-		}
-
-		GoSignature *sig = &sigs[i];
-		ut8 *bytes = ctx->bytes + nlen;
-		ut32 size = ctx->size - nlen;
-		if (sig->pasm->size > size) {
-			return false;
-		}
-
-		const ut8 *pat = sig->pasm->pattern;
-		const ut8 *msk = sig->pasm->mask;
-		for (ut32 j = 0, psize = sig->pasm->size; j < psize; ++j) {
+static inline bool go_asm_pattern_match(const GoAsmPattern *pasm, const ut8 *bytes) {
+	const ut8 *pat = pasm->pattern;
+	const ut8 *msk = pasm->mask;
+	switch (pasm->size) {
+	case 3:
+		return ((rz_read_le16(bytes) & rz_read_le16(msk)) == rz_read_le16(pat)) &&
+			((bytes[2] & msk[2]) == pat[2]);
+	case 4:
+		return (rz_read_le32(bytes) & rz_read_le32(msk)) == rz_read_le32(pat);
+	case 5:
+		return ((rz_read_le32(bytes) & rz_read_le32(msk)) == rz_read_le32(pat)) &&
+			((bytes[4] & msk[4]) == pat[4]);
+	case 6:
+		return ((rz_read_le32(bytes) & rz_read_le32(msk)) == rz_read_le32(pat)) &&
+			((rz_read_le16(bytes + 4) & rz_read_le16(msk + 4)) == rz_read_le16(pat + 4));
+	case 7:
+		return ((rz_read_le32(bytes) & rz_read_le32(msk)) == rz_read_le32(pat)) &&
+			((rz_read_le16(bytes + 4) & rz_read_le16(msk + 4)) == rz_read_le16(pat + 4)) &&
+			((bytes[6] & msk[6]) == pat[6]);
+	case 8:
+		return (rz_read_le64(bytes) & rz_read_le64(msk)) == rz_read_le64(pat);
+	default:
+		for (ut32 j = 0; j < pasm->size; ++j) {
 			if ((bytes[j] & msk[j]) != pat[j]) {
 				return false;
 			}
 		}
+		return true;
+	}
+}
 
-		nlen += sig->pasm->size;
+static bool go_is_sign_match(GoStrRecover *ctx, GoStrInfo *info, const GoSignature *sigs, const size_t n_sigs) {
+	ut32 nlen = 0;
+
+	// First verify all pattern masks match before executing any expensive decode callbacks
+	for (size_t i = 0; i < n_sigs; ++i) {
+		const GoSignature *sig = &sigs[i];
+		const ut32 psize = sig->pasm->size;
+		if (nlen >= ctx->size || psize > ctx->size - nlen) {
+			return false;
+		}
+		if (!go_asm_pattern_match(sig->pasm, ctx->bytes + nlen)) {
+			return false;
+		}
+		nlen += psize;
 	}
 
 	// Now decode info once pattern match is confirmed across the whole signature
 	memset(info, 0, sizeof(GoStrInfo));
 	nlen = 0;
 	for (size_t i = 0; i < n_sigs; ++i) {
-		GoSignature *sig = &sigs[i];
-		ut8 *bytes = ctx->bytes + nlen;
+		const GoSignature *sig = &sigs[i];
+		const ut8 *bytes = ctx->bytes + nlen;
 		ut32 size = ctx->size - nlen;
 
 		// decode info
@@ -832,14 +880,31 @@ static ut32 decode_one_opcode_size(GoStrRecover *ctx) {
 	return size > 0 ? size : 0;
 }
 
-#define go_is_sign_match_autosize(ctx, info, sigs) go_is_sign_match(ctx, info, sigs, RZ_ARRAY_SIZE(sigs))
-#define go_asm_pattern_name(arch, bits, mnemonic)  go_##arch##_##bits##_##mnemonic
+static ut32 golang_recover_string_with_table(GoStrRecover *ctx, const GoSignatureTable *table, size_t n_table, ut32 fixed_op_size) {
+	ut32 oplen = fixed_op_size ? fixed_op_size : (ctx->op_size ? ctx->op_size : decode_one_opcode_size(ctx));
+	GoStrInfo info = { 0 };
+	for (size_t i = 0; i < n_table; ++i) {
+		if (go_is_sign_match(ctx, &info, table[i].sigs, table[i].n_sigs)) {
+			if (recover_string_at(ctx, info.addr, info.size)) {
+				rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
+			}
+			break;
+		}
+	}
+	return oplen;
+}
+
+#define go_asm_pattern_name(arch, bits, mnemonic) go_##arch##_##bits##_##mnemonic
 #define go_asm_pattern_define(arch, bits, mnemonic, pattern, mask, set_xref) \
-	static GoAsmPattern go_asm_pattern_name(arch, bits, mnemonic) = { (const ut8 *)pattern, (const ut8 *)mask, (sizeof(pattern) - 1), set_xref }
+	static const GoAsmPattern go_asm_pattern_name(arch, bits, mnemonic) = { (const ut8 *)pattern, (const ut8 *)mask, (sizeof(pattern) - 1), set_xref }
 
 static bool decode_from_table(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
+	if (!info->addr || info->addr == UT64_MAX) {
+		return false;
+	}
 	ut8 tmp[16];
-	if (0 > rz_io_nread_at(core->io, info->addr, tmp, sizeof(tmp))) {
+	int nread = rz_io_nread_at(core->io, info->addr, tmp, sizeof(tmp));
+	if (nread < 0 || (!core->io->ff && (size_t)nread != sizeof(tmp))) {
 		return false;
 	}
 	ut32 bits = rz_asm_get_bits(core->rasm);
@@ -893,8 +958,12 @@ static bool decode_ptr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
-	info->addr = aop.ptr;
+	ut64 ptr = aop.ptr;
 	rz_analysis_op_fini(&aop);
+	if (!ptr || ptr == UT64_MAX) {
+		return false;
+	}
+	info->addr = ptr;
 	return true;
 }
 
@@ -905,8 +974,12 @@ static bool decode_disp_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const u
 		rz_analysis_op_fini(&aop);
 		return false;
 	}
-	info->addr = aop.disp;
+	ut64 disp = aop.disp;
 	rz_analysis_op_fini(&aop);
+	if (!disp || disp == UT64_MAX) {
+		return false;
+	}
+	info->addr = disp;
 	return true;
 }
 // 0x004881da      48c7401003000000       mov   qword [rax + 0x10], 3
@@ -920,7 +993,7 @@ go_asm_pattern_define(x86, 64, mov_imm4, "\xbf\x00\x00\x00\x00", "\xff\x00\x00\x
 go_asm_pattern_define(x86, 64, mov_reg0, "\x48\x00\x00\x00", "\xff\x00\x00\x00", false);
 go_asm_pattern_define(x86, 64, mov_reg1, "\x48\x00\x00\x00\x00", "\xff\x00\x00\x00\x00", false);
 
-static GoSignature go_x64_lea_mov0_mov_signature[] = {
+static const GoSignature go_x64_lea_mov0_mov_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   [esp/rsp + 0x..], reg
@@ -929,7 +1002,7 @@ static GoSignature go_x64_lea_mov0_mov_signature[] = {
 	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
 };
 
-static GoSignature go_x64_lea_mov1_mov_signature[] = {
+static const GoSignature go_x64_lea_mov1_mov_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   [esp/rsp + 0x..], reg
@@ -938,117 +1011,93 @@ static GoSignature go_x64_lea_mov1_mov_signature[] = {
 	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
 };
 
-static GoSignature go_x64_lea_mov0_signature[] = {
+static const GoSignature go_x64_lea_mov0_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm0), &decode_val_set_size },
 };
 
-static GoSignature go_x64_lea_mov1_signature[] = {
+static const GoSignature go_x64_lea_mov1_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm2), &decode_val_set_size },
 };
 
-static GoSignature go_x64_lea_mov2_signature[] = {
+static const GoSignature go_x64_lea_mov2_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm3), &decode_val_set_size },
 };
 
-static GoSignature go_x64_lea_mov3_signature[] = {
+static const GoSignature go_x64_lea_mov3_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm4), &decode_val_set_size },
 };
 
-static GoSignature go_x64_mov0_lea_signature[] = {
+static const GoSignature go_x64_mov0_lea_signature[] = {
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm0), &decode_val_set_size },
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 };
 
-static GoSignature go_x64_mov1_lea_signature[] = {
+static const GoSignature go_x64_mov1_lea_signature[] = {
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm1), &decode_val_set_size },
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 };
 
-static GoSignature go_x64_mov2_lea_signature[] = {
+static const GoSignature go_x64_mov2_lea_signature[] = {
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm3), &decode_val_set_size },
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 };
 
-static GoSignature go_x64_mov3_lea_signature[] = {
+static const GoSignature go_x64_mov3_lea_signature[] = {
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 64, mov_imm4), &decode_val_set_size },
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 };
 
-static GoSignature go_x64_table0_signature[] = {
+static const GoSignature go_x64_table0_signature[] = {
 	// lea   reg, [table_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, reg
 	{ &go_asm_pattern_name(x86, 64, mov_reg0), &decode_from_table },
 };
 
-static GoSignature go_x64_table1_signature[] = {
+static const GoSignature go_x64_table1_signature[] = {
 	// lea   reg, [table_offset]
 	{ &go_asm_pattern_name(x86, 64, lea), &decode_ptr_set_addr },
 	// mov   reg, reg
 	{ &go_asm_pattern_name(x86, 64, mov_reg1), &decode_from_table },
 };
 
+static const GoSignatureTable go_x64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov0_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov1_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov0_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov1_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov2_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_lea_mov3_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_mov0_lea_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_mov1_lea_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_mov2_lea_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_mov3_lea_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_table0_signature),
+	GO_SIG_TABLE_ENTRY(go_x64_table1_signature),
+};
+
 static ut32 golang_recover_string_x64(GoStrRecover *ctx) {
-	ut32 oplen = ctx->op_size ? ctx->op_size : decode_one_opcode_size(ctx);
-	if (ctx->size < 11) {
-		return oplen;
-	}
-	ut8 b0 = ctx->bytes[0];
-	if (b0 != 0x48 && b0 != 0xb9 && b0 != 0x41 && b0 != 0xbb && b0 != 0xbf) {
-		return oplen;
-	}
-
-	RzAnalysis *analysis = ctx->core->analysis;
-	GoStrInfo info = { 0 };
-	bool matched = false;
-
-	if (b0 == 0x48) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov0_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov1_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov2_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_lea_mov3_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_mov1_lea_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_table0_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_table1_signature);
-	} else {
-		matched = go_is_sign_match_autosize(ctx, &info, go_x64_mov0_lea_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_mov2_lea_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x64_mov3_lea_signature);
-	}
-
-	if (!matched) {
-		return oplen;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return oplen;
-	}
-
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return oplen;
+	return golang_recover_string_with_table(ctx, go_x64_signatures, RZ_ARRAY_SIZE(go_x64_signatures), 0);
 }
 
 go_asm_pattern_define(x86, 32, lea, "\x8d\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00", true);
@@ -1057,7 +1106,7 @@ go_asm_pattern_define(x86, 32, mov_imm1, "\xc7\x00\x00\x00\x00\x00\x00\x00", "\x
 go_asm_pattern_define(x86, 32, mov_reg0, "\x89\x00\x00", "\xff\x00\x00", false);
 go_asm_pattern_define(x86, 32, mov_reg1, "\x89\x00\x00\x00", "\xff\x00\x00\x00", false);
 
-static GoSignature go_x86_lea_mov0_mov_signature[] = {
+static const GoSignature go_x86_lea_mov0_mov_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 	// mov   [esp/rsp + 0x..], reg
@@ -1066,7 +1115,7 @@ static GoSignature go_x86_lea_mov0_mov_signature[] = {
 	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
 };
 
-static GoSignature go_x86_lea_mov1_mov_signature[] = {
+static const GoSignature go_x86_lea_mov1_mov_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 	// mov   [esp/rsp + 0x..], reg
@@ -1075,69 +1124,45 @@ static GoSignature go_x86_lea_mov1_mov_signature[] = {
 	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
 };
 
-static GoSignature go_x86_lea_mov0_signature[] = {
+static const GoSignature go_x86_lea_mov0_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 32, mov_imm0), &decode_val_set_size },
 };
 
-static GoSignature go_x86_lea_mov1_signature[] = {
+static const GoSignature go_x86_lea_mov1_signature[] = {
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 32, mov_imm1), &decode_val_set_size },
 };
 
-static GoSignature go_x86_mov_lea_signature[] = {
+static const GoSignature go_x86_mov_lea_signature[] = {
 	// mov   reg, string_size
 	{ &go_asm_pattern_name(x86, 32, mov_imm0), &decode_val_set_size },
 	// lea   reg, [string_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 };
 
-static GoSignature go_x86_table_signature[] = {
+static const GoSignature go_x86_table_signature[] = {
 	// lea   reg, [table_offset]
 	{ &go_asm_pattern_name(x86, 32, lea), &decode_disp_set_addr },
 	// mov   reg, reg
 	{ &go_asm_pattern_name(x86, 32, mov_reg0), &decode_from_table },
 };
 
+static const GoSignatureTable go_x86_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_x86_lea_mov0_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_x86_lea_mov1_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_x86_lea_mov0_signature),
+	GO_SIG_TABLE_ENTRY(go_x86_lea_mov1_signature),
+	GO_SIG_TABLE_ENTRY(go_x86_mov_lea_signature),
+	GO_SIG_TABLE_ENTRY(go_x86_table_signature),
+};
+
 static ut32 golang_recover_string_x86(GoStrRecover *ctx) {
-	ut32 oplen = ctx->op_size ? ctx->op_size : decode_one_opcode_size(ctx);
-	if (ctx->size < 9) {
-		return oplen;
-	}
-	ut8 b0 = ctx->bytes[0];
-	if (b0 != 0x8d && b0 != 0xc7) {
-		return oplen;
-	}
-
-	RzAnalysis *analysis = ctx->core->analysis;
-	GoStrInfo info = { 0 };
-	bool matched = false;
-
-	if (b0 == 0x8d) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov0_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x86_lea_mov1_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_x86_table_signature);
-	} else {
-		matched = go_is_sign_match_autosize(ctx, &info, go_x86_mov_lea_signature);
-	}
-
-	if (!matched) {
-		return oplen;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return oplen;
-	}
-
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return oplen;
+	return golang_recover_string_with_table(ctx, go_x86_signatures, RZ_ARRAY_SIZE(go_x86_signatures), 0);
 }
 
 go_asm_pattern_define(arm, 64, adrp, "\x00\x00\x00\x80", "\x00\x00\x00\x8f", true);
@@ -1146,7 +1171,7 @@ go_asm_pattern_define(arm, 64, orr, "\x00\x00\x00\x22", "\x00\x00\x80\x6f", fals
 go_asm_pattern_define(arm, 64, movz, "\x00\x00\x80\x42", "\x00\x00\x80\x6f", false);
 go_asm_pattern_define(arm, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
 
-static GoSignature go_arm64_adrp_add_str_orr_signature[] = {
+static const GoSignature go_arm64_adrp_add_str_orr_signature[] = {
 	// adrp   reg0, base_str
 	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
 	// add    reg0, reg0, offset_str
@@ -1157,7 +1182,7 @@ static GoSignature go_arm64_adrp_add_str_orr_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
 };
 
-static GoSignature go_arm64_adrp_add_str_movz_signature[] = {
+static const GoSignature go_arm64_adrp_add_str_movz_signature[] = {
 	// adrp   reg0, base_str
 	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
 	// add    reg0, reg0, offset_str
@@ -1168,7 +1193,7 @@ static GoSignature go_arm64_adrp_add_str_movz_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
 };
 
-static GoSignature go_arm64_orr_str_adrp_add_signature[] = {
+static const GoSignature go_arm64_orr_str_adrp_add_signature[] = {
 	// orr    reg1, 0, string_size
 	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
 	// str    reg, [sp, ..]
@@ -1179,7 +1204,7 @@ static GoSignature go_arm64_orr_str_adrp_add_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
 };
 
-static GoSignature go_arm64_movz_str_adrp_add_signature[] = {
+static const GoSignature go_arm64_movz_str_adrp_add_signature[] = {
 	// movz   reg1, string_size
 	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
 	// str    reg, [sp, ..]
@@ -1190,7 +1215,7 @@ static GoSignature go_arm64_movz_str_adrp_add_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, add), &decode_val_add_addr },
 };
 
-static GoSignature go_arm64_adrp_add_orr_signature[] = {
+static const GoSignature go_arm64_adrp_add_orr_signature[] = {
 	// adrp   reg0, base_str
 	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
 	// add    reg0, reg0, offset_str
@@ -1199,7 +1224,7 @@ static GoSignature go_arm64_adrp_add_orr_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, orr), &decode_val_set_size },
 };
 
-static GoSignature go_arm64_adrp_add_movz_signature[] = {
+static const GoSignature go_arm64_adrp_add_movz_signature[] = {
 	// adrp   reg0, base_str
 	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
 	// add    reg0, reg0, offset_str
@@ -1208,7 +1233,7 @@ static GoSignature go_arm64_adrp_add_movz_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, movz), &decode_val_set_size },
 };
 
-static GoSignature go_arm64_table_signature[] = {
+static const GoSignature go_arm64_table_signature[] = {
 	// adrp   reg0, base_str
 	{ &go_asm_pattern_name(arm, 64, adrp), &decode_ptr_set_addr },
 	// add    reg0, reg0, offset_str
@@ -1217,43 +1242,18 @@ static GoSignature go_arm64_table_signature[] = {
 	{ &go_asm_pattern_name(arm, 64, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_arm64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_arm64_adrp_add_str_orr_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_adrp_add_str_movz_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_orr_str_adrp_add_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_movz_str_adrp_add_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_adrp_add_orr_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_adrp_add_movz_signature),
+	GO_SIG_TABLE_ENTRY(go_arm64_table_signature),
+};
+
 static ut32 golang_recover_string_arm64(GoStrRecover *ctx) {
-	if (ctx->size < 12) {
-		return 4;
-	}
-	ut8 b3 = ctx->bytes[3];
-	RzAnalysis *analysis = ctx->core->analysis;
-	GoStrInfo info = { 0 };
-	bool matched = false;
-
-	if ((b3 & 0x8f) == 0x80) {
-		if ((ctx->bytes[7] & 0x6f) != 0x01) {
-			return 4;
-		}
-		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_orr_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_str_movz_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_orr_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm64_adrp_add_movz_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm64_table_signature);
-	} else if ((b3 & 0x6f) == 0x22) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_orr_str_adrp_add_signature);
-	} else if ((b3 & 0x6f) == 0x42) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_arm64_movz_str_adrp_add_signature);
-	} else {
-		return 4;
-	}
-
-	if (!matched) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return 4;
-	}
-
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_arm64_signatures, RZ_ARRAY_SIZE(go_arm64_signatures), 4);
 }
 
 static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
@@ -1269,8 +1269,12 @@ static bool decode_ldr_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut
 	}
 	addr = aop.ptr;
 	rz_analysis_op_fini(&aop);
+	if (!addr || addr == UT64_MAX) {
+		return false;
+	}
 
-	if (0 > rz_io_nread_at(core->io, addr, tmp, sizeof(tmp))) {
+	int nread = rz_io_nread_at(core->io, addr, tmp, sizeof(tmp));
+	if (nread < 0 || (!core->io->ff && (size_t)nread != sizeof(tmp))) {
 		return false;
 	}
 	info->addr = rz_read_ble32(tmp, big_endian);
@@ -1281,7 +1285,7 @@ go_asm_pattern_define(arm, 32, ldr, "\x00\x00\x9f\xe5", "\x00\x00\x9f\xe5", true
 go_asm_pattern_define(arm, 32, mov, "\x00\x00\xa0\xe3", "\x00\x00\xa0\xe3", false);
 go_asm_pattern_define(arm, 32, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
 
-static GoSignature go_arm32_ldr_str_mov_signature[] = {
+static const GoSignature go_arm32_ldr_str_mov_signature[] = {
 	// ldr    reg0, string_offset
 	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
 	// str    reg, [sp, ..]
@@ -1290,7 +1294,7 @@ static GoSignature go_arm32_ldr_str_mov_signature[] = {
 	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
 };
 
-static GoSignature go_arm32_mov_str_ldr_signature[] = {
+static const GoSignature go_arm32_mov_str_ldr_signature[] = {
 	// mov    reg1, string_size
 	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
 	// str    reg, [sp, ..]
@@ -1299,51 +1303,29 @@ static GoSignature go_arm32_mov_str_ldr_signature[] = {
 	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
 };
 
-static GoSignature go_arm32_ldr_mov_signature[] = {
+static const GoSignature go_arm32_ldr_mov_signature[] = {
 	// ldr    reg0, string_offset
 	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
 	// mov    reg1, string_size
 	{ &go_asm_pattern_name(arm, 32, mov), &decode_val_set_size },
 };
 
-static GoSignature go_arm32_table_signature[] = {
+static const GoSignature go_arm32_table_signature[] = {
 	// ldr    reg0, string_offset
 	{ &go_asm_pattern_name(arm, 32, ldr), &decode_ldr_set_addr },
 	// str    reg, [sp, ..]
 	{ &go_asm_pattern_name(arm, 32, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_arm32_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_arm32_ldr_str_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_arm32_mov_str_ldr_signature),
+	GO_SIG_TABLE_ENTRY(go_arm32_ldr_mov_signature),
+	GO_SIG_TABLE_ENTRY(go_arm32_table_signature),
+};
+
 static ut32 golang_recover_string_arm32(GoStrRecover *ctx) {
-	if (ctx->size < 8) {
-		return 4;
-	}
-	ut8 b2 = ctx->bytes[2];
-	ut8 b3 = ctx->bytes[3];
-	RzAnalysis *analysis = ctx->core->analysis;
-	GoStrInfo info = { 0 };
-	bool matched = false;
-
-	if (b3 == 0xe5 && b2 == 0x9f) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_str_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm32_ldr_mov_signature) ||
-			go_is_sign_match_autosize(ctx, &info, go_arm32_table_signature);
-	} else if (b3 == 0xe3 && b2 == 0xa0) {
-		matched = go_is_sign_match_autosize(ctx, &info, go_arm32_mov_str_ldr_signature);
-	} else {
-		return 4;
-	}
-
-	if (!matched) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return 4;
-	}
-
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_arm32_signatures, RZ_ARRAY_SIZE(go_arm32_signatures), 4);
 }
 
 static bool decode_lui_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
@@ -1366,7 +1348,7 @@ go_asm_pattern_define(mipsbe, 32, lui, "\x3c\x00\x00\x00", "\xff\x00\x00\x00", t
 go_asm_pattern_define(mipsle, 32, lui, "\x00\x00\x00\x3c", "\x00\x00\x00\xff", true);
 
 // ---- LE ----
-static GoSignature go_mipsle32_lui_addiu_sw_addiu_signature[] = {
+static const GoSignature go_mipsle32_lui_addiu_sw_addiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
@@ -1377,7 +1359,7 @@ static GoSignature go_mipsle32_lui_addiu_sw_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 32, addiu), &decode_val_set_size },
 };
 
-static GoSignature go_mipsle32_addiu_sw_lui_addiu_signature[] = {
+static const GoSignature go_mipsle32_addiu_sw_lui_addiu_signature[] = {
 	// addiu v0, zero, string_size
 	{ &go_asm_pattern_name(mipsle, 32, addiu), &decode_val_set_size },
 	// sw    v0, 0x08(at)
@@ -1388,7 +1370,7 @@ static GoSignature go_mipsle32_addiu_sw_lui_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 32, addiu), &decode_val_add_addr },
 };
 
-static GoSignature go_mipsle32_lui_addiu_addiu_signature[] = {
+static const GoSignature go_mipsle32_lui_addiu_addiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
@@ -1397,17 +1379,24 @@ static GoSignature go_mipsle32_lui_addiu_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 32, addiu), &decode_val_set_size },
 };
 
-static GoSignature go_mipsle32_table_signature[] = {
+static const GoSignature go_mipsle32_table_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
 	{ &go_asm_pattern_name(mipsle, 32, addiu), &decode_val_add_addr },
 	// sw    v0, 0x08(at)
 	{ &go_asm_pattern_name(mips, 32, any), &decode_from_table },
+};
+
+static const GoSignatureTable go_mipsle32_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_mipsle32_lui_addiu_sw_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle32_addiu_sw_lui_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle32_lui_addiu_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle32_table_signature),
 };
 
 // ---- BE ----
-static GoSignature go_mipsbe32_lui_addiu_sw_addiu_signature[] = {
+static const GoSignature go_mipsbe32_lui_addiu_sw_addiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
@@ -1418,7 +1407,7 @@ static GoSignature go_mipsbe32_lui_addiu_sw_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 32, addiu), &decode_val_set_size },
 };
 
-static GoSignature go_mipsbe32_addiu_sw_lui_addiu_signature[] = {
+static const GoSignature go_mipsbe32_addiu_sw_lui_addiu_signature[] = {
 	// addiu v0, zero, string_size
 	{ &go_asm_pattern_name(mipsbe, 32, addiu), &decode_val_set_size },
 	// sw    v0, 0x08(at)
@@ -1429,7 +1418,7 @@ static GoSignature go_mipsbe32_addiu_sw_lui_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 32, addiu), &decode_val_add_addr },
 };
 
-static GoSignature go_mipsbe32_lui_addiu_addiu_signature[] = {
+static const GoSignature go_mipsbe32_lui_addiu_addiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
@@ -1438,7 +1427,7 @@ static GoSignature go_mipsbe32_lui_addiu_addiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 32, addiu), &decode_val_set_size },
 };
 
-static GoSignature go_mipsbe32_table_signature[] = {
+static const GoSignature go_mipsbe32_table_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 32, lui), &decode_lui_set_addr },
 	// addiu v0, v0, low_string_offset
@@ -1447,38 +1436,18 @@ static GoSignature go_mipsbe32_table_signature[] = {
 	{ &go_asm_pattern_name(mips, 32, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_mipsbe32_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_mipsbe32_lui_addiu_sw_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe32_addiu_sw_lui_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe32_lui_addiu_addiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe32_table_signature),
+};
+
 static ut32 golang_recover_string_mips32(GoStrRecover *ctx) {
-	if (ctx->size < 12) {
-		return 4;
+	if (rz_asm_is_big_endian_set(ctx->core->rasm)) {
+		return golang_recover_string_with_table(ctx, go_mipsbe32_signatures, RZ_ARRAY_SIZE(go_mipsbe32_signatures), 4);
 	}
-	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
-	ut8 op = big_endian ? ctx->bytes[0] : ctx->bytes[3];
-	if (op != 0x3c && op != 0x24) {
-		return 4;
-	}
-	GoStrInfo info = { 0 };
-
-	if (big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_lui_addiu_sw_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_addiu_sw_lui_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_lui_addiu_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe32_table_signature)) {
-		return 4;
-	} else if (!big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_lui_addiu_sw_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_addiu_sw_lui_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_lui_addiu_addiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle32_table_signature)) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return 4;
-	}
-
-	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_mipsle32_signatures, RZ_ARRAY_SIZE(go_mipsle32_signatures), 4);
 }
 
 go_asm_pattern_define(mips, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
@@ -1492,7 +1461,7 @@ go_asm_pattern_define(mipsbe, 64, lui, "\x3c\x00\x00\x00", "\xff\x00\x00\x00", t
 go_asm_pattern_define(mipsle, 64, lui, "\x00\x00\x00\x3c", "\x00\x00\x00\xff", true);
 
 // ---- LE ----
-static GoSignature go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature[] = {
+static const GoSignature go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1505,7 +1474,7 @@ static GoSignature go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 64, move), &decode_val_set_size },
 };
 
-static GoSignature go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature[] = {
+static const GoSignature go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature[] = {
 	// daddiu v0, zero, string_size
 	{ &go_asm_pattern_name(mipsle, 64, move), &decode_val_set_size },
 	// sd    v0, 8(at)
@@ -1518,7 +1487,7 @@ static GoSignature go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 64, daddiu), &decode_val_add_addr },
 };
 
-static GoSignature go_mipsle64_lui_daddu_daddiu_daddiu_signature[] = {
+static const GoSignature go_mipsle64_lui_daddu_daddiu_daddiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1529,7 +1498,7 @@ static GoSignature go_mipsle64_lui_daddu_daddiu_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 64, move), &decode_val_set_size },
 };
 
-static GoSignature go_mipsle64_table_signature[] = {
+static const GoSignature go_mipsle64_table_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsle, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1538,10 +1507,17 @@ static GoSignature go_mipsle64_table_signature[] = {
 	{ &go_asm_pattern_name(mipsle, 64, daddiu), &decode_val_add_addr },
 	// sd    v0, 8(at)
 	{ &go_asm_pattern_name(mips, 64, any), &decode_from_table },
+};
+
+static const GoSignatureTable go_mipsle64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle64_lui_daddu_daddiu_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsle64_table_signature),
 };
 
 // ---- BE ----
-static GoSignature go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature[] = {
+static const GoSignature go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1554,7 +1530,7 @@ static GoSignature go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 64, move), &decode_val_set_size },
 };
 
-static GoSignature go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature[] = {
+static const GoSignature go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature[] = {
 	// daddiu v0, zero, string_size
 	{ &go_asm_pattern_name(mipsbe, 64, move), &decode_val_set_size },
 	// sd    v0, 8(at)
@@ -1567,7 +1543,7 @@ static GoSignature go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 64, daddiu), &decode_val_add_addr },
 };
 
-static GoSignature go_mipsbe64_lui_daddu_daddiu_daddiu_signature[] = {
+static const GoSignature go_mipsbe64_lui_daddu_daddiu_daddiu_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1578,7 +1554,7 @@ static GoSignature go_mipsbe64_lui_daddu_daddiu_daddiu_signature[] = {
 	{ &go_asm_pattern_name(mipsbe, 64, move), &decode_val_set_size },
 };
 
-static GoSignature go_mipsbe64_table_signature[] = {
+static const GoSignature go_mipsbe64_table_signature[] = {
 	// lui   v0, high_string_offset
 	{ &go_asm_pattern_name(mipsbe, 64, lui), &decode_lui_set_addr },
 	// daddu v0, v0, gp
@@ -1589,38 +1565,18 @@ static GoSignature go_mipsbe64_table_signature[] = {
 	{ &go_asm_pattern_name(mips, 64, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_mipsbe64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe64_lui_daddu_daddiu_daddiu_signature),
+	GO_SIG_TABLE_ENTRY(go_mipsbe64_table_signature),
+};
+
 static ut32 golang_recover_string_mips64(GoStrRecover *ctx) {
-	if (ctx->size < 16) {
-		return 4;
+	if (rz_asm_is_big_endian_set(ctx->core->rasm)) {
+		return golang_recover_string_with_table(ctx, go_mipsbe64_signatures, RZ_ARRAY_SIZE(go_mipsbe64_signatures), 4);
 	}
-	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
-	ut8 op = big_endian ? ctx->bytes[0] : ctx->bytes[3];
-	if (op != 0x3c && op != 0x64) {
-		return 4;
-	}
-	GoStrInfo info = { 0 };
-
-	if (big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_lui_daddu_daddiu_sd_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_daddiu_sd_lui_daddu_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_lui_daddu_daddiu_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsbe64_table_signature)) {
-		return 4;
-	} else if (!big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_lui_daddu_daddiu_sd_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_daddiu_sd_lui_daddu_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_lui_daddu_daddiu_daddiu_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_mipsle64_table_signature)) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return 4;
-	}
-
-	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_mipsle64_signatures, RZ_ARRAY_SIZE(go_mipsle64_signatures), 4);
 }
 
 go_asm_pattern_define(ppc, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
@@ -1632,7 +1588,7 @@ go_asm_pattern_define(ppcle, 64, li, "\x00\x00\x00\x38", "\x00\x00\x1f\xfc", fal
 go_asm_pattern_define(ppcbe, 64, li, "\x38\x00\x00\x00", "\xfc\x1f\x00\x00", false);
 
 // ---- LE ----
-static GoSignature go_ppcle64_lis_addi_std_li_signature[] = {
+static const GoSignature go_ppcle64_lis_addi_std_li_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
@@ -1643,7 +1599,7 @@ static GoSignature go_ppcle64_lis_addi_std_li_signature[] = {
 	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_ppcle64_li_std_lis_addi_signature[] = {
+static const GoSignature go_ppcle64_li_std_lis_addi_signature[] = {
 	// li    r3, string_size
 	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
 	// std   r3, 0x20(r1)
@@ -1654,7 +1610,7 @@ static GoSignature go_ppcle64_li_std_lis_addi_signature[] = {
 	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
 };
 
-static GoSignature go_ppcle64_lis_addi_li_signature[] = {
+static const GoSignature go_ppcle64_lis_addi_li_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
@@ -1663,17 +1619,24 @@ static GoSignature go_ppcle64_lis_addi_li_signature[] = {
 	{ &go_asm_pattern_name(ppcle, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_ppcle64_table_signature[] = {
+static const GoSignature go_ppcle64_table_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcle, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
 	{ &go_asm_pattern_name(ppcle, 64, addi), &decode_val_add_addr },
 	// std   r3, 0x20(r1)
 	{ &go_asm_pattern_name(ppc, 64, any), &decode_from_table },
+};
+
+static const GoSignatureTable go_ppcle64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_ppcle64_lis_addi_li_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcle64_lis_addi_std_li_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcle64_li_std_lis_addi_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcle64_table_signature),
 };
 
 // ---- BE ----
-static GoSignature go_ppcbe64_lis_addi_std_li_signature[] = {
+static const GoSignature go_ppcbe64_lis_addi_std_li_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
@@ -1684,7 +1647,7 @@ static GoSignature go_ppcbe64_lis_addi_std_li_signature[] = {
 	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_ppcbe64_li_std_lis_addi_signature[] = {
+static const GoSignature go_ppcbe64_li_std_lis_addi_signature[] = {
 	// li    r3, string_size
 	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
 	// std   r3, 0x20(r1)
@@ -1695,7 +1658,7 @@ static GoSignature go_ppcbe64_li_std_lis_addi_signature[] = {
 	{ &go_asm_pattern_name(ppcbe, 64, addi), &decode_val_add_addr },
 };
 
-static GoSignature go_ppcbe64_lis_addi_li_signature[] = {
+static const GoSignature go_ppcbe64_lis_addi_li_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
@@ -1704,7 +1667,7 @@ static GoSignature go_ppcbe64_lis_addi_li_signature[] = {
 	{ &go_asm_pattern_name(ppcbe, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_ppcbe64_table_signature[] = {
+static const GoSignature go_ppcbe64_table_signature[] = {
 	// lis   r3, high_string_offset
 	{ &go_asm_pattern_name(ppcbe, 64, lis), &decode_val_set_addr },
 	// addi  r3, r3, low_string_offset
@@ -1713,42 +1676,18 @@ static GoSignature go_ppcbe64_table_signature[] = {
 	{ &go_asm_pattern_name(ppc, 64, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_ppcbe64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_ppcbe64_lis_addi_li_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcbe64_lis_addi_std_li_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcbe64_li_std_lis_addi_signature),
+	GO_SIG_TABLE_ENTRY(go_ppcbe64_table_signature),
+};
+
 static ut32 golang_recover_string_ppc64(GoStrRecover *ctx) {
-	if (ctx->size < 12) {
-		return 4;
+	if (rz_asm_is_big_endian_set(ctx->core->rasm)) {
+		return golang_recover_string_with_table(ctx, go_ppcbe64_signatures, RZ_ARRAY_SIZE(go_ppcbe64_signatures), 4);
 	}
-	bool big_endian = rz_asm_is_big_endian_set(ctx->core->rasm);
-	ut8 op = (big_endian ? ctx->bytes[0] : ctx->bytes[3]) & 0xfc;
-	if (op != 0x3c && op != 0x38) {
-		return 4;
-	}
-	GoStrInfo info = { 0 };
-
-	if (big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_std_li_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_li_std_lis_addi_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcbe64_table_signature)) {
-		return 4;
-	} else if (!big_endian &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_std_li_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_li_std_lis_addi_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_ppcle64_table_signature)) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		if (big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcbe64_lis_addi_li_signature)) {
-			return 4;
-		} else if (!big_endian && !go_is_sign_match_autosize(ctx, &info, go_ppcle64_lis_addi_li_signature)) {
-			return 4;
-		} else if (!recover_string_at(ctx, info.addr, info.size)) {
-			return 4;
-		}
-	}
-
-	rz_analysis_xrefs_set(ctx->core->analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_ppcle64_signatures, RZ_ARRAY_SIZE(go_ppcle64_signatures), 4);
 }
 
 static bool decode_auipc_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const ut8 *buffer, const ut32 size) {
@@ -1769,7 +1708,7 @@ go_asm_pattern_define(riscv, 64, addiw, "\x1b\x00\x00\x00", "\x7f\x70\x00\x00", 
 go_asm_pattern_define(riscv, 64, li, "\x13\x00\x00\x00", "\x7f\x80\x0F\x00", false);
 go_asm_pattern_define(riscv, 64, any, "\x00\x00\x00\x00", "\x00\x00\x00\x00", false);
 
-static GoSignature go_riscv64_auipc_add_sd_addiw_signature[] = {
+static const GoSignature go_riscv64_auipc_add_sd_addiw_signature[] = {
 	// auipc gp, high_string_offset
 	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
 	// addi  gp, gp, low_string_offset
@@ -1780,7 +1719,7 @@ static GoSignature go_riscv64_auipc_add_sd_addiw_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
 };
 
-static GoSignature go_riscv64_auipc_add_sd_li_signature[] = {
+static const GoSignature go_riscv64_auipc_add_sd_li_signature[] = {
 	// auipc gp, high_string_offset
 	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
 	// addi  gp, gp, low_string_offset
@@ -1791,7 +1730,7 @@ static GoSignature go_riscv64_auipc_add_sd_li_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_riscv64_li_sd_auipc_add_signature[] = {
+static const GoSignature go_riscv64_li_sd_auipc_add_signature[] = {
 	// li    gp, zero, string_size
 	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
 	// sd    gp, 8(sp)
@@ -1802,7 +1741,7 @@ static GoSignature go_riscv64_li_sd_auipc_add_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
 };
 
-static GoSignature go_riscv64_addiw_sd_auipc_add_signature[] = {
+static const GoSignature go_riscv64_addiw_sd_auipc_add_signature[] = {
 	// addiw gp, zero, string_size
 	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
 	// sd    gp, 8(sp)
@@ -1813,7 +1752,7 @@ static GoSignature go_riscv64_addiw_sd_auipc_add_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, addi), &decode_val_add_addr },
 };
 
-static GoSignature go_riscv64_auipc_add_addiw_signature[] = {
+static const GoSignature go_riscv64_auipc_add_addiw_signature[] = {
 	// auipc gp, high_string_offset
 	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
 	// addi  gp, gp, low_string_offset
@@ -1822,7 +1761,7 @@ static GoSignature go_riscv64_auipc_add_addiw_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, addiw), &decode_val_set_size },
 };
 
-static GoSignature go_riscv64_auipc_add_li_signature[] = {
+static const GoSignature go_riscv64_auipc_add_li_signature[] = {
 	// auipc gp, high_string_offset
 	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
 	// addi  gp, gp, low_string_offset
@@ -1831,7 +1770,7 @@ static GoSignature go_riscv64_auipc_add_li_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, li), &decode_val_set_size },
 };
 
-static GoSignature go_riscv64_table_signature[] = {
+static const GoSignature go_riscv64_table_signature[] = {
 	// auipc gp, high_string_offset
 	{ &go_asm_pattern_name(riscv, 64, auipc), &decode_auipc_set_addr },
 	// addi  gp, gp, low_string_offset
@@ -1840,34 +1779,18 @@ static GoSignature go_riscv64_table_signature[] = {
 	{ &go_asm_pattern_name(riscv, 64, any), &decode_from_table },
 };
 
+static const GoSignatureTable go_riscv64_signatures[] = {
+	GO_SIG_TABLE_ENTRY(go_riscv64_auipc_add_sd_addiw_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_auipc_add_sd_li_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_li_sd_auipc_add_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_addiw_sd_auipc_add_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_auipc_add_addiw_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_auipc_add_li_signature),
+	GO_SIG_TABLE_ENTRY(go_riscv64_table_signature),
+};
+
 static ut32 golang_recover_string_riscv64(GoStrRecover *ctx) {
-	if (ctx->size < 12) {
-		return 4;
-	}
-	ut8 op = ctx->bytes[0] & 0x7f;
-	if (op != 0x17 && op != 0x13 && op != 0x1b) {
-		return 4;
-	}
-	RzAnalysis *analysis = ctx->core->analysis;
-	GoStrInfo info = { 0 };
-
-	if (!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_sd_addiw_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_sd_li_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_li_sd_auipc_add_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_addiw_sd_auipc_add_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_addiw_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_auipc_add_li_signature) &&
-		!go_is_sign_match_autosize(ctx, &info, go_riscv64_table_signature)) {
-		return 4;
-	}
-
-	// try to recover the string.
-	if (!recover_string_at(ctx, info.addr, info.size)) {
-		return 4;
-	}
-
-	rz_analysis_xrefs_set(analysis, info.xref, info.addr, RZ_ANALYSIS_XREF_TYPE_STRING);
-	return 4;
+	return golang_recover_string_with_table(ctx, go_riscv64_signatures, RZ_ARRAY_SIZE(go_riscv64_signatures), 4);
 }
 
 // Sometimes the data-structures has strings, but these are stored in tables where
@@ -2028,12 +1951,12 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 		// also they are already handled by rizin.
 		// example: 'larl  %r0, str.XXXX' with the correct length.
 		rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
-		return;
+		goto end;
 	}
 
 	if (!recover_cb) {
 		rz_core_notify_error(core, "Cannot resolve go strings because arch '%s:%u' is not supported.", asm_arch, asm_bits);
-		return;
+		goto end;
 	}
 
 	rz_list_foreach (fcns, lit, func) {
@@ -2048,19 +1971,23 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			if (block->size > bb_buf_cap) {
 				ut8 *new_buf = realloc(bb_buf, block->size);
 				if (!new_buf) {
-					free(bb_buf);
 					RZ_LOG_ERROR("Failed to allocate basic block bytes buffer\n");
-					return;
+					goto end;
 				}
 				bb_buf = new_buf;
 				bb_buf_cap = block->size;
 			}
-			if (rz_io_nread_at(core->io, block->addr, bb_buf, block->size) < 0) {
+			int nread = rz_io_nread_at(core->io, block->addr, bb_buf, block->size);
+			if (nread < 0) {
 				RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
+				continue;
+			}
+			if (!core->io->ff && (ut64)nread != block->size) {
 				continue;
 			}
 
 			if (block->ninstr > 0) {
+				ctx.op_size = 1;
 				for (int idx = 0; idx < block->ninstr; idx++) {
 					ut16 i = rz_analysis_block_get_op_offset(block, idx);
 					if (i >= block->size) {
@@ -2069,7 +1996,6 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 					ctx.pc = block->addr + i;
 					ctx.bytes = bb_buf + i;
 					ctx.size = block->size - i;
-					ctx.op_size = (ut32)rz_analysis_block_get_op_size(block, idx);
 					recover_cb(&ctx);
 				}
 			} else {
@@ -2085,8 +2011,12 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 			}
 		}
 	}
-	free(bb_buf);
 
 	rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
 	rz_core_notify_done(core, "Recovered %d strings from the sym.go.* functions.", ctx.n_recovered);
+
+end:
+	free(bb_buf);
+	free(ctx.raw_buf);
+	free(ctx.flag_buf);
 }
