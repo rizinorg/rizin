@@ -61,7 +61,10 @@ RZ_IPI RZ_BORROW RzAbsIntVal *rz_absint_scratch_get(RZ_NONNULL RZ_BORROW RzAbsIn
 	}
 	size_t new_cap = rz_vector_len(state->scratch.pad) * 1.2;
 	rz_vector_reserve(state->scratch.pad, new_cap);
-	return rz_vector_index_ptr(state->scratch.pad, state->scratch.i++);
+	rz_vector_set_len(state->scratch.pad, new_cap);
+	RzAbsIntVal *v = rz_vector_index_ptr(state->scratch.pad, state->scratch.i);
+	state->scratch.i++;
+	return v;
 }
 
 static bool init_scratch(RzAbsIntInstance *inst, RzAbsIntScratchPad *scratch) {
