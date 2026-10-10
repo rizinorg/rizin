@@ -78,6 +78,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 		return NULL;
 	}
 	const C6xArchDesc *desc = c6x_desc_from_cpu(rz_analysis_get_cpu(analysis));
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = (const char **)((desc && desc->num_regs <= 16) ? c6x_il_regs16 : c6x_il_regs);
 	return cfg;
 }

@@ -115,6 +115,7 @@ RzAnalysisILConfig *v810_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(RZ_STR_EQ(SR[0], "EIPC"), NULL);
 
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 32);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = registers;
 	return cfg;
 }

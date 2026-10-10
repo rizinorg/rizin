@@ -100,6 +100,7 @@ static void sparc_il_init_32_cb(RzAnalysisILVM *vm, RzReg *reg) {
 
 RZ_IPI RzAnalysisILConfig *rz_sparc_cs_64_il_config(bool big_endian) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(64, big_endian, 64);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = il_regs64;
 	RzILEffectLabel *trap_label = rz_il_effect_label_new("trap", EFFECT_LABEL_SYSCALL);
 	trap_label->hook = label_trap;
@@ -127,6 +128,7 @@ RZ_IPI RzAnalysisILConfig *rz_sparc_cs_64_il_config(bool big_endian) {
 
 RZ_IPI RzAnalysisILConfig *rz_sparc_cs_32_il_config(bool big_endian) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, big_endian, 32);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = il_regs32;
 	RzILEffectLabel *trap_label = rz_il_effect_label_new("trap", EFFECT_LABEL_SYSCALL);
 	trap_label->hook = label_trap;

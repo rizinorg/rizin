@@ -1061,6 +1061,7 @@ typedef struct rz_analysis_il_config_t {
 	 * If not specified, rz_il_reg_binding_derive will be used.
 	 */
 	RZ_NULLABLE const char **reg_bindings;
+	size_t global_idx_tbl_len; ///< Length of the global index table. This must be set if reg_bindings are given.
 	ut32 mem_key_size; ///< address size for memory 0, bound against IO
 	RzPVector /*<RzILEffectLabel *>*/ labels; ///< global labels, primarily for syscall/hook callbacks
 	RZ_NULLABLE RzAnalysisILInitState *init_state; ///< optional, initial contents for variables/registers, etc.

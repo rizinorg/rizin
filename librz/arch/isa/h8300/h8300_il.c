@@ -1538,6 +1538,7 @@ RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = h8300_cpu_type(rz_analysis_get_cpu(a)) == CPU_H8300H ? h8300h_reg_bindings : reg_bindings;
 	cfg->init_state = rz_analysis_il_init_state_new();
 	if (!cfg->init_state) {

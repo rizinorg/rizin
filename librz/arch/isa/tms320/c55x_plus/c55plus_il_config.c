@@ -5,6 +5,8 @@
 
 #include "c55plus_analysis.h"
 
+#include "../c54_c55x_lookup_tbls.h"
+
 // IL-VM register bindings for the TMS320C55x and C55x+ cores. The lifter emits
 // SET/VAR ops that name these registers; the binding list tells the RzIL VM
 // which variables to materialise. C55x+ extends the C55x file with the high
@@ -49,6 +51,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c55x_plus_il_config(RZ_NONNULL RzAnalysis *ana
 	}
 	const char *cpu = rz_analysis_get_cpu(analysis);
 	bool plus = cpu && rz_str_casecmp(cpu, "c55x+") == 0;
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = plus ? c55x_plus_il_regs : c55x_il_regs;
 	return cfg;
 }

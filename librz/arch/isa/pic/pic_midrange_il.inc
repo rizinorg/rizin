@@ -571,6 +571,7 @@ const char *pic_midrange_reg_bindings[] = {
 RzAnalysisILConfig *pic_midrange_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(16, false, 16);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = pic_midrange_reg_bindings;
 	return cfg;
 }

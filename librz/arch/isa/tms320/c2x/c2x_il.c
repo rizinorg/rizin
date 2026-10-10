@@ -727,6 +727,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c2x_il_config(RZ_NONNULL RzAnalysis *analysis)
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = c2x_il_regs;
 	return cfg;
 }

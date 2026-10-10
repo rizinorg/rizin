@@ -112,10 +112,10 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		rz_warn_if_reached();
 		goto err_globals;
 	}
-	rz_vector_reserve(state->globals, inst->il_ctx->reg_binding->regs_count);
-	void *it;
-	rz_vector_foreach (state->globals, it) {
-		if (!val_domain(inst)->val_new_top(it)) {
+	rz_vector_reserve(state->globals, inst->il_ctx->config->global_idx_tbl_len);
+	rz_vector_set_len(state->globals, rz_vector_capacity(state->globals));
+	for (size_t i = 0; i < rz_vector_len(state->globals); ++i) {
+		if (!val_domain(inst)->val_new_top(rz_vector_index_ptr(state->globals, i))) {
 			rz_warn_if_reached();
 			goto err_globals;
 		}

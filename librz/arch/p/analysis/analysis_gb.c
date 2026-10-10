@@ -2043,6 +2043,7 @@ static const char *gb_regs_bound[] = {
 
 static RzAnalysisILConfig *gb_il_config(RzAnalysis *analysis) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, false, 16);
+	r->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	r->reg_bindings = gb_regs_bound;
 	return r;
 }

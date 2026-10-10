@@ -3157,6 +3157,7 @@ RZ_IPI RzAnalysisILConfig *rz_avr_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(AVR_ADDR_SIZE, analysis->big_endian, AVR_ADDR_SIZE);
+	r->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	r->reg_bindings = avr_global_registers;
 	return r;
 }
