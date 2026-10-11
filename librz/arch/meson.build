@@ -485,6 +485,7 @@ arch_common_sources = [
   'luac_process.c',
   'fcn.c',
   'fcn_hpskip.c',
+  'fcn_purity.c',
   'filter.c',
   'function.c',
   'hint.c',
