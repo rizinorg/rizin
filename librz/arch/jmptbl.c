@@ -7,6 +7,29 @@
 #include <rz_parse.h>
 #include <rz_types_overflow.h>
 
+RZ_IPI ut64 rz_analysis_try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg) {
+	rz_return_val_if_fail(fcn && fcn->bbs && cmp_reg, UT64_MAX);
+
+	RzAnalysisBlock *tmp_bb;
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		tmp_bb = (RzAnalysisBlock *)*it;
+		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
+			continue;
+		}
+		if (tmp_bb->cmpreg != cmp_reg) {
+			continue;
+		}
+		if (tmp_bb->cond &&
+			(tmp_bb->cond->type == RZ_TYPE_COND_HI ||
+				tmp_bb->cond->type == RZ_TYPE_COND_GT)) {
+			return tmp_bb->cmpval + 1;
+		}
+		return tmp_bb->cmpval;
+	}
+	return UT64_MAX;
+}
+
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	RZ_LOG_DEBUG("jump table: apply_case: 0x%" PFMT64x " from 0x%" PFMT64x "\n", case_addr, case_addr_loc);
 

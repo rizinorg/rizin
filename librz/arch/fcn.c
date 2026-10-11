@@ -117,29 +117,6 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
 }
 
-static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg) {
-	rz_return_val_if_fail(fcn && fcn->bbs && cmp_reg, UT64_MAX);
-
-	RzAnalysisBlock *tmp_bb;
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		tmp_bb = (RzAnalysisBlock *)*it;
-		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
-			continue;
-		}
-		if (tmp_bb->cmpreg != cmp_reg) {
-			continue;
-		}
-		if (tmp_bb->cond &&
-			(tmp_bb->cond->type == RZ_TYPE_COND_HI ||
-				tmp_bb->cond->type == RZ_TYPE_COND_GT)) {
-			return tmp_bb->cmpval + 1;
-		}
-		return tmp_bb->cmpval;
-	}
-	return UT64_MAX;
-}
-
 static bool regs_exist(RzAnalysisValue *src, RzAnalysisValue *dst) {
 	rz_return_val_if_fail(src && dst, false);
 	return src->reg && dst->reg && src->reg->name && dst->reg->name;
@@ -1338,7 +1315,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					params.jmptbl_off = op.addr + 4;
 					params.default_case = UT64_MAX;
 					if (op.ptrsize == 1) { // TBB
-						ut64 pred_cmpval = try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
+						ut64 pred_cmpval = rz_analysis_try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
 						params.table_count = 0;
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
@@ -1350,7 +1327,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						// skip inlined jumptable
 						idx += params.table_count;
 					} else if (op.ptrsize == 2) { // LDRH on thumb/arm
-						ut64 pred_cmpval = try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
+						ut64 pred_cmpval = rz_analysis_try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
 						params.table_count = 1;
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;

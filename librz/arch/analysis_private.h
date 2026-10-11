@@ -21,6 +21,7 @@ typedef struct {
 
 RZ_IPI int rz_analysis_read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, ssize_t len);
 RZ_IPI bool rz_analysis_is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop);
+RZ_IPI ut64 rz_analysis_try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg);
 
 /**
  * TODO: rename & document AnalysisLeAddrPair
