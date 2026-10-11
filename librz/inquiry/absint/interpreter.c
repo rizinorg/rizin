@@ -158,6 +158,7 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
  * \return The block to interpret or NULL if the work queue is empty (a fixed point was reached).
  */
 RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
+	rz_return_val_if_fail(ctx, NULL);
 	RzAbsIntBlock *r = rz_list_pop(ctx->workqueue);
 	if (!r) {
 		return NULL;
