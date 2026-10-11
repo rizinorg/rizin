@@ -9,8 +9,8 @@
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
-#define BB_ALIGN             0x10
-#define MAX_SCAN_SIZE        0x7ffffff
+#define BB_ALIGN      0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 // 16 KB is the maximum size for a basic block
 

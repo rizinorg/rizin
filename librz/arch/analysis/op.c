@@ -261,8 +261,7 @@ RZ_API bool rz_analysis_op_get_jump_target(RZ_NULLABLE const RzAnalysisOp *op, R
 	if (!op || !out) {
 		return false;
 	}
-	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG |
-		RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
 	if (t != RZ_ANALYSIS_OP_TYPE_JMP && t != RZ_ANALYSIS_OP_TYPE_CJMP) {
 		return false;
 	}
@@ -280,8 +279,7 @@ RZ_API bool rz_analysis_op_get_call_target(RZ_NULLABLE const RzAnalysisOp *op, R
 	if (!op || !out) {
 		return false;
 	}
-	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG |
-		RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
 	if (t != RZ_ANALYSIS_OP_TYPE_CALL && t != RZ_ANALYSIS_OP_TYPE_CCALL) {
 		return false;
 	}
@@ -299,8 +297,7 @@ RZ_API bool rz_analysis_op_get_indirect_ref(RZ_NULLABLE const RzAnalysisOp *op, 
 	if (!op || !out) {
 		return false;
 	}
-	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG |
-		RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
 	if (t != RZ_ANALYSIS_OP_TYPE_UJMP && t != RZ_ANALYSIS_OP_TYPE_RJMP && t != RZ_ANALYSIS_OP_TYPE_IJMP &&
 		t != RZ_ANALYSIS_OP_TYPE_IRJMP && t != RZ_ANALYSIS_OP_TYPE_MJMP && t != RZ_ANALYSIS_OP_TYPE_UCJMP &&
 		t != RZ_ANALYSIS_OP_TYPE_UCALL && t != RZ_ANALYSIS_OP_TYPE_RCALL && t != RZ_ANALYSIS_OP_TYPE_ICALL &&
@@ -325,8 +322,7 @@ RZ_API bool rz_analysis_op_is_unknown_jump(RZ_NULLABLE const RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
-	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG |
-		RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
 	if (t == RZ_ANALYSIS_OP_TYPE_UJMP || t == RZ_ANALYSIS_OP_TYPE_RJMP || t == RZ_ANALYSIS_OP_TYPE_IJMP ||
 		t == RZ_ANALYSIS_OP_TYPE_IRJMP || t == RZ_ANALYSIS_OP_TYPE_UCJMP) {
 		return true;
@@ -341,8 +337,7 @@ RZ_API bool rz_analysis_op_is_unknown_call(RZ_NULLABLE const RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
-	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG |
-		RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
 	if (t == RZ_ANALYSIS_OP_TYPE_UCALL || t == RZ_ANALYSIS_OP_TYPE_RCALL || t == RZ_ANALYSIS_OP_TYPE_ICALL ||
 		t == RZ_ANALYSIS_OP_TYPE_IRCALL || t == RZ_ANALYSIS_OP_TYPE_UCCALL) {
 		return true;
