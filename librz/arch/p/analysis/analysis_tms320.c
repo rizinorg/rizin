@@ -59,24 +59,58 @@ static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 	return pkt->n;
 }
 
-// The branch in a packet, if it opens delay slots.
+// The branch in a packet, even when it has no visible delay slots because a
+// BNOP/CALLP fills them internally.
 static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx, RZ_OUT ut8 *slots) {
 	for (size_t i = 0; i < n; i++) {
-		ut8 s = c6x_branch_slots(&insns[i]);
-		if (s) {
+		switch (insns[i].id) {
+		case C6X_INS_B:
+		case C6X_INS_BNOP:
+		case C6X_INS_BPOS:
+		case C6X_INS_BDEC:
+		case C6X_INS_CALLP:
 			*idx = i;
-			*slots = s;
+			*slots = c6x_branch_slots(&insns[i]);
+			return true;
+		default:
+			break;
+		}
+	}
+	return false;
+}
+
+static bool c6x_operand_reads_reg(const C6xOperand *operand, const C6xOperand *reg) {
+	if (operand->kind == C6X_OP_REG) {
+		return c6x_same_reg(operand, reg);
+	}
+	if (operand->kind == C6X_OP_REGPAIR || operand->kind == C6X_OP_REGQUAD) {
+		ut8 members = operand->kind == C6X_OP_REGPAIR ? 2 : 4;
+		for (ut8 i = 0; i < members; i++) {
+			if (operand->v.reg.side == reg->v.reg.side && operand->v.reg.num + i == reg->v.reg.num) {
+				return true;
+			}
+		}
+	} else if (operand->kind == C6X_OP_MEM) {
+		if (operand->v.mem.base_side == reg->v.reg.side && operand->v.mem.base == reg->v.reg.num) {
+			return true;
+		}
+		if ((operand->v.mem.mode == C6X_AM_NEG_REG || operand->v.mem.mode == C6X_AM_POS_REG ||
+			operand->v.mem.mode == C6X_AM_PREDEC_REG || operand->v.mem.mode == C6X_AM_PREINC_REG ||
+			operand->v.mem.mode == C6X_AM_POSTDEC_REG || operand->v.mem.mode == C6X_AM_POSTINC_REG) &&
+			operand->v.mem.base_side == reg->v.reg.side && operand->v.mem.off_reg == reg->v.reg.num) {
 			return true;
 		}
 	}
 	return false;
 }
 
-// Does any packet up to \p depth ahead read \p reg?
+// Does a too-early consumer occur within the next \p depth issue cycles?
+// Multi-cycle NOP packets consume the same number of cycles they encode.
 static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 from,
 	ut8 depth, const C6xOperand *reg, RZ_OUT ut64 *end) {
 	ut64 at = from;
-	for (ut8 k = 0; k < depth; k++) {
+	ut32 elapsed = 0;
+	while (elapsed < depth) {
 		C6xPacketRef p;
 		C6xInsn ins[C6X_FP_SLOTS];
 		size_t n = c6x_decode_packet(analysis, c6x, at, ins, &p);
@@ -90,16 +124,39 @@ static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 		}
 		for (size_t i = 0; i < n; i++) {
 			for (ut8 o = 0; o + 1 < ins[i].nops; o++) {
-				const C6xOperand *s = &ins[i].ops[o];
-				if (c6x_same_reg(s, reg)) {
+				if (c6x_operand_reads_reg(&ins[i].ops[o], reg)) {
 					*end = C6X_PACKET_END(p);
 					return true;
 				}
 			}
 		}
+		elapsed += c6x_packet_cycles(ins, n);
 		at = C6X_PACKET_END(p);
 	}
 	return false;
+}
+
+// Expand a scalar or long destination into the architectural registers it
+// writes. C6xOperand's num is the low/even register of a pair.
+static size_t c6x_result_registers(const C6xInsn *insn, C6xOperand *out) {
+	if (!insn->nops) {
+		return 0;
+	}
+	const C6xOperand *dst = &insn->ops[insn->nops - 1];
+	if (dst->kind == C6X_OP_REG) {
+		out[0] = *dst;
+		return 1;
+	}
+	if (dst->kind == C6X_OP_REGPAIR || dst->kind == C6X_OP_REGQUAD) {
+		ut8 members = dst->kind == C6X_OP_REGPAIR ? 2 : 4;
+		for (ut8 i = 0; i < members; i++) {
+			out[i] = *dst;
+			out[i].kind = C6X_OP_REG;
+			out[i].v.reg.num += i;
+		}
+		return members;
+	}
+	return 0;
 }
 
 /**
@@ -118,26 +175,28 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
 	ut64 window_end = 0;
 	ut64 after = C6X_PACKET_END(*pkt);
 	for (size_t i = 0; i < n; i++) {
-		ut8 lat = c6x_result_latency(&slots[i]);
+		ut8 lat = c6x_result_latency(c6x, &slots[i]);
 		if (!lat || !slots[i].nops) {
 			continue;
 		}
-		const C6xOperand *d = &slots[i].ops[slots[i].nops - 1];
-		if (d->kind != C6X_OP_REG) {
-			continue; // pairs and stores are left to the plain path
-		}
-		ut64 end = 0;
-		if (c6x_reads_reg_ahead(analysis, c6x, after, lat, d, &end)) {
-			hold |= 1u << i;
-			window_end = end > window_end ? end : window_end;
+		C6xOperand dests[4];
+		size_t ndests = c6x_result_registers(&slots[i], dests);
+		for (size_t d = 0; d < ndests; d++) {
+			ut64 end = 0;
+			if (c6x_reads_reg_ahead(analysis, c6x, after, lat, &dests[d], &end)) {
+				hold |= 1u << i;
+				window_end = end > window_end ? end : window_end;
+				break;
+			}
 		}
 	}
 	if (!hold) {
 		return NULL;
 	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, pkt->addr, hold);
+	RzILOpEffect *writeback = NULL;
+	RzILOpEffect *eff = c6x_lift_packet_deferred(slots, n, pkt->addr, 0, hold, 0, &writeback);
 	ut64 at = after;
-	while (at < window_end) {
+	while (eff && at < window_end) {
 		C6xPacketRef p;
 		C6xInsn ins[C6X_FP_SLOTS];
 		size_t pn = c6x_decode_packet(analysis, c6x, at, ins, &p);
@@ -146,21 +205,113 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
 		}
 		RzILOpEffect *pe = c6x_lift_packet(ins, pn, p.addr, 0);
 		if (pe) {
-			eff = eff ? rz_il_op_new_seq(eff, pe) : pe;
+			eff = rz_il_op_new_seq(eff, pe);
 		}
 		at = C6X_PACKET_END(p);
 	}
+	if (eff && writeback) {
+		eff = rz_il_op_new_seq(eff, writeback);
+	}
+	// The window has already issued every intervening packet. Leave the PC at
+	// the first packet after that cycle window.
+	return eff ? rz_il_op_new_seq(eff, c6x_jump_to(at)) : NULL;
+}
+
+/**
+ * Lift a static SPLOOP..SPKERNEL region. The C6000 loop buffer replays the
+ * software-pipelined body while ILC counts down; representing the body as one
+ * RzIL REPEAT keeps the loop count in VM state, so it works across ordinary
+ * `aezs` stepping without inventing a branch instruction in the image.
+ *
+ * The model executes the captured kernel packets in order for each ILC tick.
+ * It preserves packet semantics and loop termination, but not the overlapping
+ * prolog/epilog stages or unit-specific SPMASK scheduling.
+ */
+static RzILOpEffect *c6x_lift_sploop_window(RzAnalysis *analysis, const C6xArchDesc *c6x,
+	const C6xInsn *slots, size_t n, const C6xPacketRef *first) {
+	size_t start_idx = n;
 	for (size_t i = 0; i < n; i++) {
-		if (!(hold & (1u << i))) {
-			continue;
-		}
-		RzILOpEffect *held = c6x_lift(&slots[i], pkt->slots[i].addr);
-		if (held) {
-			eff = eff ? rz_il_op_new_seq(eff, held) : held;
+		if (slots[i].id == C6X_INS_SPLOOP || slots[i].id == C6X_INS_SPLOOPD || slots[i].id == C6X_INS_SPLOOPW) {
+			start_idx = i;
+			break;
 		}
 	}
-	// the window ran the packets in between, so leave the pc past them
-	return eff ? rz_il_op_new_seq(eff, c6x_jump_to(at)) : NULL;
+	if (start_idx == n) {
+		return NULL;
+	}
+	RzILOpEffect *kernel = NULL;
+	ut64 at = C6X_PACKET_END(*first);
+	ut64 loop_end = at;
+	bool found_kernel = false;
+	for (size_t packet_count = 0; packet_count < 256; packet_count++) {
+		C6xPacketRef p;
+		C6xInsn body[C6X_FP_SLOTS];
+		size_t pn = c6x_decode_packet(analysis, c6x, at, body, &p);
+		if (!pn) {
+			break;
+		}
+		bool marker = false;
+		for (size_t i = 0; i < pn; i++) {
+			if (body[i].id == C6X_INS_SPKERNEL || body[i].id == C6X_INS_SPKERNELR) {
+				marker = true;
+				break;
+			}
+		}
+		size_t branch_idx = 0;
+		ut8 branch_slots = 0;
+		if (c6x_packet_branch(body, pn, &branch_idx, &branch_slots)) {
+			break; // control effects are not allowed inside an RzIL REPEAT body
+		}
+		RzILOpEffect *packet = c6x_lift_packet_data(body, pn, p.addr, 0);
+		if (!packet) {
+			break;
+		}
+		kernel = kernel ? rz_il_op_new_seq(kernel, packet) : packet;
+		loop_end = C6X_PACKET_END(p);
+		if (marker) {
+			found_kernel = true;
+			break;
+		}
+		at = loop_end;
+	}
+	if (!found_kernel || !kernel) {
+		return NULL;
+	}
+	RzILOpEffect *entry = c6x_lift_packet(slots, n, first->addr, 0);
+	if (!entry) {
+		return NULL;
+	}
+	RzILOpEffect *iteration = kernel;
+	RzILOpBool *condition = NULL;
+	const char *loop_pred = c6x_pred_name(slots[start_idx].creg);
+	if (slots[start_idx].id == C6X_INS_SPLOOPW) {
+		// SPLOOPW terminates on its encoded predicate (including its z sense),
+		// not on B0 specifically and not on ILC.
+		if (!loop_pred) {
+			return NULL; // do not turn an unbounded loop into a hung RzIL step
+		}
+		RzILOpPure *pred = rz_il_op_new_var(loop_pred, RZ_IL_VAR_KIND_GLOBAL);
+		condition = slots[start_idx].z ? rz_il_op_new_is_zero(pred) : rz_il_op_new_non_zero(pred);
+	} else {
+		condition = rz_il_op_new_non_zero(rz_il_op_new_var("ilc", RZ_IL_VAR_KIND_GLOBAL));
+		if (loop_pred) {
+			// The start predicate is sampled when SPLOOP issues; parallel slots
+			// in the start packet must not retroactively enable or cancel it.
+			RzILOpPure *pred = rz_il_op_new_var(loop_pred, RZ_IL_VAR_KIND_GLOBAL);
+			RzILOpBool *enabled = slots[start_idx].z ? rz_il_op_new_is_zero(pred) : rz_il_op_new_non_zero(pred);
+			RzILOpEffect *sample = rz_il_op_new_set("_c6x_loop_enabled", true,
+				rz_il_op_new_ite(enabled, rz_il_op_new_bitv_from_ut64(32, 1), rz_il_op_new_bitv_from_ut64(32, 0)));
+			entry = rz_il_op_new_seq(sample, entry);
+			condition = rz_il_op_new_bool_and(condition,
+				rz_il_op_new_non_zero(rz_il_op_new_var("_c6x_loop_enabled", RZ_IL_VAR_KIND_LOCAL)));
+		}
+		iteration = rz_il_op_new_seq(iteration,
+			rz_il_op_new_set("ilc", false, rz_il_op_new_sub(
+				rz_il_op_new_var("ilc", RZ_IL_VAR_KIND_GLOBAL), rz_il_op_new_bitv_from_ut64(32, 1))));
+	}
+	RzILOpEffect *repeat = rz_il_op_new_repeat(condition, iteration);
+	RzILOpEffect *leave = c6x_jump_to(loop_end);
+	return rz_il_op_new_seq(entry, rz_il_op_new_seq(repeat, leave));
 }
 
 /**
@@ -205,83 +356,110 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 		}
 		probe = prev.addr;
 	}
+	RzILOpEffect *loop = c6x_lift_sploop_window(analysis, c6x, slots, n, &pkt);
+	if (loop) {
+		return loop;
+	}
 	size_t bidx;
 	ut8 bslots;
 	if (!c6x_packet_branch(slots, n, &bidx, &bslots)) {
 		RzILOpEffect *lat = c6x_lift_latency_window(analysis, c6x, slots, n, &pkt);
 		if (lat) {
-			return lat;
+			return c6x_apply_pending_branch(lat, c6x_packet_cycles(slots, n));
 		}
 		if (n > 1) {
 			RzILOpEffect *pe = c6x_lift_packet(slots, n, addr, 0);
 			if (pe) {
-				return pe;
+				return c6x_apply_pending_branch(pe, c6x_packet_cycles(slots, n));
 			}
-			// a slot the packet pass cannot stage, e.g. a destination shape it
-			// does not model; per-instruction IL is better than none
+			// If no destination could be staged, keep the first instruction's
+			// behavior and still let a previously queued branch make progress.
 		}
-		return c6x_lift(insn, addr);
+		RzILOpEffect *plain = c6x_lift(insn, addr);
+		return plain ? c6x_apply_pending_branch(plain, c6x_packet_cycles(slots, n)) : NULL;
 	}
-	// The branch's own packet, with the transfer held back. Slots whose result
-	// lands beyond the last delay-slot packet are held back too and emitted
-	// after the transfer: a load issued in slot k writes four packets later, so
-	// with k + 4 > bslots the write happens once control has already moved. jmp
-	// only sets the program counter, so an effect sequenced after it still runs.
-	// The transfer happens after instructions that may overwrite the register
-	// the branch tests, so sample the predicate now and carry the answer.
-	RzILOpEffect *sample = c6x_sample_predicate(&slots[bidx]);
-	// Hold back the branch itself, and any slot of its own packet whose result
-	// lands after the transfer: a load beside the branch writes four packets on,
-	// so with fewer delay slots than that the write belongs after the jump. Real
-	// code relies on it -- "[!a0] ldw *b5,b4 || bnop" beside "[!a0] b .s2 b4"
-	// wants the branch to read the b4 the load is replacing.
-	ut32 hold = 1u << bidx;
+	// Sample the branch predicate at issue; the transfer is emitted only after
+	// its visible delay-slot cycles have run.
+	RzILOpEffect *sample = c6x_sample_branch(&slots[bidx], pkt.slots[bidx].addr);
+	ut32 hold = 1u << bidx; // the branch slot itself is skipped below
 	for (size_t i = 0; i < n; i++) {
-		if (i != bidx && c6x_result_latency(&slots[i]) > bslots) {
+		if (i != bidx && c6x_result_latency(c6x, &slots[i]) > 5) {
 			hold |= 1u << i;
 		}
 	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, addr, hold);
+	RzILOpEffect *late = NULL;
+	RzILOpEffect *main_writeback = NULL;
+	RzILOpEffect *eff = c6x_lift_packet_deferred(slots, n, addr, 1u << bidx, hold, 0, &main_writeback);
 	if (sample) {
 		eff = eff ? rz_il_op_new_seq(sample, eff) : sample;
 	}
-	RzILOpEffect *late = NULL;
+	if (main_writeback) {
+		late = main_writeback;
+	}
+	RzILOpEffect *branch_commit = c6x_commit_branch(&slots[bidx]);
+	if (branch_commit) {
+		eff = eff ? rz_il_op_new_seq(eff, branch_commit) : branch_commit;
+	}
 	ut64 next = C6X_PACKET_END(pkt);
-	for (ut8 k = 1; k <= bslots; k++) {
+	ut32 elapsed = 0;
+	ut8 frame = 1;
+	while (elapsed < bslots && frame < C6X_LIFT_FRAMES) {
 		C6xPacketRef dp;
 		C6xInsn dins[C6X_FP_SLOTS];
 		size_t dn = c6x_decode_packet(analysis, c6x, next, dins, &dp);
 		if (!dn) {
 			break;
 		}
-		// does anything in this packet write after the branch resolves?
-		bool crosses = false;
+		ut32 defer = 0;
 		for (size_t i = 0; i < dn; i++) {
-			crosses |= k + c6x_result_latency(&dins[i]) > bslots;
-		}
-		RzILOpEffect *de = c6x_lift_packet(dins, dn, dp.addr, 0);
-		if (de) {
-			if (crosses) {
-				late = late ? rz_il_op_new_seq(late, de) : de;
-			} else {
-				eff = eff ? rz_il_op_new_seq(eff, de) : de;
+			// `elapsed` counts delay cycles completed before this packet; the
+			// instruction issues in the next cycle, so include that cycle when
+			// comparing its result time with the branch transfer.
+			if (elapsed + 1 + c6x_result_latency(c6x, &dins[i]) > bslots) {
+				defer |= 1u << i;
 			}
 		}
+		size_t nested_idx = 0;
+		ut8 nested_slots = 0;
+		bool nested = c6x_packet_branch(dins, dn, &nested_idx, &nested_slots);
+		ut32 skip = nested ? (1u << nested_idx) : 0;
+		// Sample a nested branch before any other slot in this packet executes.
+		// Its architectural counter/link writes are committed just after the
+		// packet, preserving packet-start reads for the remaining slots.
+		RzILOpEffect *queued = nested
+			? c6x_queue_branch(&dins[nested_idx], dp.slots[nested_idx].addr, 5)
+			: NULL;
+		if (queued) {
+			eff = eff ? rz_il_op_new_seq(eff, queued) : queued;
+		}
+		RzILOpEffect *writeback = NULL;
+		RzILOpEffect *de = c6x_lift_packet_deferred(dins, dn, dp.addr, skip, defer, frame++, &writeback);
+		if (de) {
+			eff = eff ? rz_il_op_new_seq(eff, de) : de;
+		}
+		if (nested) {
+			RzILOpEffect *commit = c6x_commit_queued_branch(&dins[nested_idx], dp.slots[nested_idx].addr);
+			if (commit) {
+				eff = eff ? rz_il_op_new_seq(eff, commit) : commit;
+			}
+		} else {
+			RzILOpEffect *aged = c6x_apply_pending_branch(NULL, c6x_packet_cycles(dins, dn));
+			if (aged) {
+				eff = eff ? rz_il_op_new_seq(eff, aged) : aged;
+			}
+		}
+		if (writeback) {
+			late = late ? rz_il_op_new_seq(late, writeback) : writeback;
+		}
+		elapsed += c6x_packet_cycles(dins, dn);
 		next = C6X_PACKET_END(dp);
 	}
-	// "next" now sits just past the last delay-slot packet
+	// `next` is just past all visible delay-slot cycles. The branches' own
+	// result writes become visible after the transfer, not by re-running the
+	// instructions with their now-stale operands.
 	RzILOpEffect *xfer = c6x_deferred_transfer(&slots[bidx], pkt.slots[bidx].addr, sample != NULL, next);
 	if (xfer) {
 		eff = eff ? rz_il_op_new_seq(eff, xfer) : xfer;
-	}
-	for (size_t i = 0; i < n; i++) {
-		if (i == bidx || !(hold & (1u << i))) {
-			continue;
-		}
-		RzILOpEffect *held = c6x_lift(&slots[i], pkt.slots[i].addr);
-		if (held) {
-			late = late ? rz_il_op_new_seq(late, held) : held;
-		}
 	}
 	if (late) {
 		eff = eff ? rz_il_op_new_seq(eff, late) : late;

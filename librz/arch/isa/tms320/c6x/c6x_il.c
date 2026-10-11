@@ -16,22 +16,23 @@
  * writes at its end, so within a packet an instruction never sees another's
  * result. The RzIL VM steps sequentially, so a "|| mv a,b || mv b,a" swap is
  * not modelled exactly; ordinary (non-swapping) parallel code lifts correctly.
- * Branches have five delay slots and are left unlifted for now, so IL covers
- * straight-line data flow.
+ * Branch and result-delay behavior is assembled into windows by the analysis
+ * plugin, which defers transfers and write-back while those packets issue.
  */
 
 #include <rz_util.h>
+#include <rz_il/rz_il_vm.h>
 #include "c6x.h"
 
 /* RzIL VM */
 
 // IL-VM register bindings: the 32+32 general-purpose registers (a0-a31,
-// b0-b31), pce1 (the program counter, named as the register profile does), then
-// the control registers MVC reaches -- the set common to every C6000, followed
-// by the C64x+ extension. A single flat table doubles as the name lookup for a
-// general-register operand: side A occupies indices 0-31 and side B 32-63, so
-// c6x_reg_name(side, num) indexes it directly and never reaches pce1 or the
-// control registers past it.
+// b0-b31), then the control registers MVC reaches -- the set common to every
+// C6000, followed by the C64x+ extension. The PC alias pce1 is deliberately not
+// bound as an ordinary variable: RzIL owns it and synchronizes it through =PC.
+// A single flat table doubles as the name lookup for a general-register
+// operand: side A occupies indices 0-31 and side B 32-63, so c6x_reg_name()
+// never reaches the control registers past it.
 // Predicate registers by creg code; 0 and 7 are reserved.
 static const char *const c6x_pred_regs[8] = { NULL, "b0", "b1", "b2", "a1", "a2", "a0", NULL };
 
@@ -44,7 +45,6 @@ static const char *const c6x_il_regs[] = {
 	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
 	"b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23",
 	"b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31",
-	"pce1",
 	// control registers common to all C6000 variants
 	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
 	// C64x+ control-register extension
@@ -62,10 +62,28 @@ static const char *const c6x_il_regs16[] = {
 	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15",
 	"b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7",
 	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
-	"pce1",
 	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
 	NULL
 };
+
+// The target and countdown of a branch issued in another branch's delay
+// slots have to survive the end of one VM step. They are IL-only state, not
+// architectural registers, so create them with the VM rather than extending the
+// user-visible C6000 register profile.
+#define C6X_PENDING_BRANCH_VALID "_c6x_br_valid"
+#define C6X_PENDING_BRANCH_TARGET "_c6x_br_target"
+#define C6X_PENDING_BRANCH_TAKEN "_c6x_br_taken"
+#define C6X_PENDING_BRANCH_CYCLES "_c6x_br_cycles"
+#define C6X_PENDING_BRANCH_COUNTER "_c6x_br_counter"
+
+static void c6x_il_vm_init(RzAnalysisILVM *vm, RzReg *reg) {
+	(void)reg;
+	rz_il_vm_create_global_var(vm->vm, C6X_PENDING_BRANCH_VALID, rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm->vm, C6X_PENDING_BRANCH_TARGET, rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm->vm, C6X_PENDING_BRANCH_TAKEN, rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm->vm, C6X_PENDING_BRANCH_CYCLES, rz_il_sort_pure_bv(32));
+	rz_il_vm_create_global_var(vm->vm, C6X_PENDING_BRANCH_COUNTER, rz_il_sort_pure_bv(32));
+}
 
 /** RzIL configuration (register bindings, PC/memory widths) for the C6000 VM. */
 RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis) {
@@ -77,6 +95,12 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 	}
 	const C6xArchDesc *desc = c6x_desc_from_cpu(rz_analysis_get_cpu(analysis));
 	cfg->reg_bindings = (const char **)((desc && desc->num_regs <= 16) ? c6x_il_regs16 : c6x_il_regs);
+	cfg->init_state = rz_analysis_il_init_state_new();
+	if (!cfg->init_state) {
+		rz_analysis_il_config_free(cfg);
+		return NULL;
+	}
+	cfg->init_state->cb = c6x_il_vm_init;
 	return cfg;
 }
 
@@ -89,7 +113,7 @@ static const char *c6x_reg_name(ut8 side, ut8 num) {
 
 // Predicate register named by the creg field (SPRU733 Table 3-9), or NULL when
 // unconditional. Mirrors the disassembler's pred_reg().
-static const char *c6x_pred_name(ut8 creg) {
+RZ_IPI const char *c6x_pred_name(ut8 creg) {
 	return c6x_pred_regs[creg & 7];
 }
 
@@ -112,7 +136,8 @@ static RzILOpEffect *c6x_reg_write(const char *name, RzILOpPure *v) {
 }
 
 // 32-bit value of a register or immediate source operand, or NULL for kinds
-// this core does not model as a scalar (pairs, quads, control regs, memory).
+// that need an explicit pair/long path. Pair operands are valid C6000 forms, so
+// this is an ordinary unsupported shape rather than an unreachable condition.
 static RzILOpPure *c6x_src(const C6xOperand *o) {
 	switch (o->kind) {
 	case C6X_OP_REG:
@@ -120,17 +145,16 @@ static RzILOpPure *c6x_src(const C6xOperand *o) {
 	case C6X_OP_IMM:
 		return S32(o->v.imm.value);
 	default:
-		rz_warn_if_reached();
 		return NULL;
 	}
 }
 
-// Write `v` to a register destination, or free it and fail for other kinds.
+// Write `v` to a scalar register destination, or free it and fail for other
+// destination kinds; pair writes use c6x_wr_pair64().
 static RzILOpEffect *c6x_wr(const C6xOperand *o, RzILOpPure *v) {
 	if (o->kind == C6X_OP_REG) {
 		return c6x_reg_write(c6x_reg_name(o->v.reg.side, o->v.reg.num), v);
 	}
-	rz_warn_if_reached();
 	rz_il_op_pure_free(v);
 	return NULL;
 }
@@ -141,7 +165,6 @@ static RzILOpEffect *c6x_alu3(const C6xInsn *insn, rz_il_pure_2args_op *mk) {
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
@@ -154,7 +177,6 @@ static RzILOpEffect *c6x_cmp(const C6xInsn *insn, rz_il_bool_2args_op *mk) {
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
@@ -806,17 +828,26 @@ static RzILOpEffect *c6x_addr(const C6xInsn *insn, bool sub, ut8 scale) {
 static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_NOP:
-	case C6X_INS_IDLE: {
+	case C6X_INS_IDLE:
+	case C6X_INS_SPLOOP:
+	case C6X_INS_SPLOOPD:
+	case C6X_INS_SPLOOPW:
+	case C6X_INS_SPKERNEL:
+	case C6X_INS_SPKERNELR:
+	case C6X_INS_SPMASK:
+	case C6X_INS_SPMASKR: {
+		// Loop-buffer controls are consumed by c6x_lift_il() when a complete
+		// SPLOOP..SPKERNEL region is available. As standalone instructions they
+		// have no ordinary register or memory effect.
 		return NOP();
 	}
 	case C6X_INS_B:
 	case C6X_INS_BNOP:
 	case C6X_INS_CALLP: {
-		// Control transfer. The target is either a register or a PC-relative
-		// displacement off the fetch-packet-aligned address (PCE1). The five
-		// delay slots are not modelled -- the sequential VM takes the branch at
-		// once -- but the target is exact. Call forms (a link register in
-		// ops[1]) also record the return address, the word after the branch.
+		// Bare control transfer for callers that do not build a branch window.
+		// The analysis lifter normally handles the delay window and emits a
+		// sampled transfer; this path remains useful as a conservative fallback.
+		// Call forms (a link register in ops[1]) also record the return address.
 		const C6xOperand *t = &OP(0);
 		RzILOpBitVector *tgt;
 		if (t->kind == C6X_OP_PCREL) {
@@ -899,10 +930,57 @@ static RzILOpEffect *c6x_lift_move(const C6xInsn *insn, ut64 pc) {
 	return NULL;
 }
 
+// Long .L ADD: src1 is sign-extended to 40 bits, src2 and dst are the
+// 40-bit values carried in register pairs. The odd register contributes only
+// its low eight bits; the result's high register is zero-filled above bit 39.
+static RzILOpEffect *c6x_add_long(const C6xInsn *insn) {
+	RzILOpPure *s1 = c6x_src(&OP(0));
+	RzILOpBitVector *s2 = c6x_long40(&OP(1));
+	if (!s1 || !s2) {
+		rz_il_op_pure_free(s1);
+		rz_il_op_pure_free(s2);
+		return NULL;
+	}
+	return c6x_wr_pair64(&OP(2), LOGAND(ADD(SIGNED(64, s1), s2), SN(64, 0xffffffffffLL)));
+}
+
+// Compare a 32-bit scalar against a 40-bit long operand. Signed comparisons
+// sign-extend both values, while unsigned compares zero-extend the scalar and
+// mask the long to the 40 bits that are architecturally read.
+static RzILOpEffect *c6x_cmp_long40(const C6xInsn *insn) {
+	RzILOpPure *s1 = c6x_src(&OP(0));
+	bool uns = insn->id == C6X_INS_CMPGTU || insn->id == C6X_INS_CMPLTU;
+	RzILOpBitVector *pair = uns ? c6x_pair64(&OP(1)) : NULL;
+	if (!s1 || (uns && !pair)) {
+		rz_il_op_pure_free(s1);
+		rz_il_op_pure_free(pair);
+		return NULL;
+	}
+	RzILOpPure *lhs = uns ? UNSIGNED(64, s1) : SIGNED(64, s1);
+	RzILOpPure *rhs = uns ? LOGAND(pair, SN(64, 0xffffffffffLL)) : c6x_long40(&OP(1));
+	RzILOpBool *cmp;
+	switch (insn->id) {
+	case C6X_INS_CMPEQ: cmp = EQ(lhs, rhs); break;
+	case C6X_INS_CMPGT: cmp = SGT(lhs, rhs); break;
+	case C6X_INS_CMPGTU: cmp = UGT(lhs, rhs); break;
+	case C6X_INS_CMPLT: cmp = SLT(lhs, rhs); break;
+	case C6X_INS_CMPLTU: cmp = ULT(lhs, rhs); break;
+	default:
+		rz_il_op_pure_free(lhs);
+		rz_il_op_pure_free(rhs);
+		return NULL;
+	}
+	return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
+}
+
 // Integer add/subtract, bitwise and compare.
 static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_ADD:
+		if (OP(1).kind == C6X_OP_REGPAIR && OP(2).kind == C6X_OP_REGPAIR) {
+			return c6x_add_long(insn);
+		}
+		return c6x_alu3(insn, rz_il_op_new_add);
 	case C6X_INS_ADDU: {
 		return c6x_alu3(insn, rz_il_op_new_add);
 	}
@@ -931,31 +1009,20 @@ static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_XOR: {
 		return c6x_alu3(insn, rz_il_op_new_log_xor);
 	}
-	case C6X_INS_CMPEQ: {
-		return c6x_cmp(insn, rz_il_op_new_eq);
-	}
+	case C6X_INS_CMPEQ:
+		return OP(1).kind == C6X_OP_REGPAIR ? c6x_cmp_long40(insn) : c6x_cmp(insn, rz_il_op_new_eq);
 	case C6X_INS_CMPGT:
-	case C6X_INS_CMPGTU: {
-		bool uns = insn->id == C6X_INS_CMPGTU;
+	case C6X_INS_CMPGTU:
 		if (OP(1).kind == C6X_OP_REGPAIR) {
-			// long form: a 32-bit src1 compared against a 40-bit long src2
-			RzILOpPure *s1 = c6x_src(&OP(0));
-			if (!s1) {
-				return NULL;
-			}
-			RzILOpBool *cmp = uns
-				? UGT(UNSIGNED(64, s1), LOGAND(c6x_pair64(&OP(1)), SN(64, 0xffffffffffLL)))
-				: SGT(SIGNED(64, s1), c6x_long40(&OP(1)));
-			return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
+			return c6x_cmp_long40(insn);
 		}
-		return c6x_cmp(insn, uns ? rz_il_op_new_ugt : rz_il_op_new_sgt);
-	}
-	case C6X_INS_CMPLT: {
-		return c6x_cmp(insn, rz_il_op_new_slt);
-	}
-	case C6X_INS_CMPLTU: {
-		return c6x_cmp(insn, rz_il_op_new_ult);
-	}
+		return c6x_cmp(insn, insn->id == C6X_INS_CMPGTU ? rz_il_op_new_ugt : rz_il_op_new_sgt);
+	case C6X_INS_CMPLT:
+	case C6X_INS_CMPLTU:
+		if (OP(1).kind == C6X_OP_REGPAIR) {
+			return c6x_cmp_long40(insn);
+		}
+		return c6x_cmp(insn, insn->id == C6X_INS_CMPLTU ? rz_il_op_new_ult : rz_il_op_new_slt);
 	case C6X_INS_CMPEQ2: {
 		return c6x_cmp_packed(insn, 2, rz_il_op_new_eq);
 	}
@@ -2199,6 +2266,94 @@ static const char *const c6x_capture_names[C6X_FP_SLOTS][C6X_PK_REGS] = {
 };
 // clang-format on
 
+
+// Names for held results must be unique across every packet in one composed
+// delay window. Ordinary packet captures can reuse their shorter _cN_M names,
+// but a write-back effect may outlive the packet that produced it.
+#define C6X_HOLD_ROW(f, s) { \
+	"_h" #f "_" #s "_0", "_h" #f "_" #s "_1", "_h" #f "_" #s "_2", "_h" #f "_" #s "_3", \
+	"_h" #f "_" #s "_4", "_h" #f "_" #s "_5", "_h" #f "_" #s "_6", "_h" #f "_" #s "_7", \
+	"_h" #f "_" #s "_8", "_h" #f "_" #s "_9", "_h" #f "_" #s "_10", "_h" #f "_" #s "_11", \
+	"_h" #f "_" #s "_12", "_h" #f "_" #s "_13", "_h" #f "_" #s "_14", "_h" #f "_" #s "_15" }
+#define C6X_HOLD_FRAME(f) { \
+	C6X_HOLD_ROW(f, 0), C6X_HOLD_ROW(f, 1), C6X_HOLD_ROW(f, 2), C6X_HOLD_ROW(f, 3), C6X_HOLD_ROW(f, 4), \
+	C6X_HOLD_ROW(f, 5), C6X_HOLD_ROW(f, 6), C6X_HOLD_ROW(f, 7), C6X_HOLD_ROW(f, 8), C6X_HOLD_ROW(f, 9), \
+	C6X_HOLD_ROW(f, 10), C6X_HOLD_ROW(f, 11), C6X_HOLD_ROW(f, 12), C6X_HOLD_ROW(f, 13), C6X_HOLD_ROW(f, 14) }
+static const char *const c6x_hold_names[C6X_LIFT_FRAMES][C6X_FP_SLOTS][C6X_PK_REGS] = {
+	C6X_HOLD_FRAME(0),
+	C6X_HOLD_FRAME(1),
+	C6X_HOLD_FRAME(2),
+	C6X_HOLD_FRAME(3),
+	C6X_HOLD_FRAME(4),
+	C6X_HOLD_FRAME(5),
+	C6X_HOLD_FRAME(6),
+	C6X_HOLD_FRAME(7),
+	C6X_HOLD_FRAME(8),
+	C6X_HOLD_FRAME(9),
+	C6X_HOLD_FRAME(10),
+	C6X_HOLD_FRAME(11),
+	C6X_HOLD_FRAME(12),
+	C6X_HOLD_FRAME(13),
+	C6X_HOLD_FRAME(14),
+	C6X_HOLD_FRAME(15)
+};
+
+#define C6X_HOLD_OLD_ROW(f, s) { \
+	"_ho" #f "_" #s "_0", "_ho" #f "_" #s "_1", "_ho" #f "_" #s "_2", "_ho" #f "_" #s "_3", \
+	"_ho" #f "_" #s "_4", "_ho" #f "_" #s "_5", "_ho" #f "_" #s "_6", "_ho" #f "_" #s "_7", \
+	"_ho" #f "_" #s "_8", "_ho" #f "_" #s "_9", "_ho" #f "_" #s "_10", "_ho" #f "_" #s "_11", \
+	"_ho" #f "_" #s "_12", "_ho" #f "_" #s "_13", "_ho" #f "_" #s "_14", "_ho" #f "_" #s "_15" }
+#define C6X_HOLD_OLD_FRAME(f) { \
+	C6X_HOLD_OLD_ROW(f, 0), C6X_HOLD_OLD_ROW(f, 1), C6X_HOLD_OLD_ROW(f, 2), C6X_HOLD_OLD_ROW(f, 3), C6X_HOLD_OLD_ROW(f, 4), \
+	C6X_HOLD_OLD_ROW(f, 5), C6X_HOLD_OLD_ROW(f, 6), C6X_HOLD_OLD_ROW(f, 7), C6X_HOLD_OLD_ROW(f, 8), C6X_HOLD_OLD_ROW(f, 9), \
+	C6X_HOLD_OLD_ROW(f, 10), C6X_HOLD_OLD_ROW(f, 11), C6X_HOLD_OLD_ROW(f, 12), C6X_HOLD_OLD_ROW(f, 13), C6X_HOLD_OLD_ROW(f, 14) }
+static const char *const c6x_hold_old_names[C6X_LIFT_FRAMES][C6X_FP_SLOTS][C6X_PK_REGS] = {
+	C6X_HOLD_OLD_FRAME(0),
+	C6X_HOLD_OLD_FRAME(1),
+	C6X_HOLD_OLD_FRAME(2),
+	C6X_HOLD_OLD_FRAME(3),
+	C6X_HOLD_OLD_FRAME(4),
+	C6X_HOLD_OLD_FRAME(5),
+	C6X_HOLD_OLD_FRAME(6),
+	C6X_HOLD_OLD_FRAME(7),
+	C6X_HOLD_OLD_FRAME(8),
+	C6X_HOLD_OLD_FRAME(9),
+	C6X_HOLD_OLD_FRAME(10),
+	C6X_HOLD_OLD_FRAME(11),
+	C6X_HOLD_OLD_FRAME(12),
+	C6X_HOLD_OLD_FRAME(13),
+	C6X_HOLD_OLD_FRAME(14),
+	C6X_HOLD_OLD_FRAME(15)
+};
+#undef C6X_HOLD_OLD_FRAME
+#undef C6X_HOLD_OLD_ROW
+
+#define C6X_HOLD_PRED_FRAME(f) { \
+	"_hp" #f "_0", "_hp" #f "_1", "_hp" #f "_2", "_hp" #f "_3", "_hp" #f "_4", \
+	"_hp" #f "_5", "_hp" #f "_6", "_hp" #f "_7", "_hp" #f "_8", "_hp" #f "_9", \
+	"_hp" #f "_10", "_hp" #f "_11", "_hp" #f "_12", "_hp" #f "_13", "_hp" #f "_14" }
+static const char *const c6x_hold_pred_names[C6X_LIFT_FRAMES][C6X_FP_SLOTS] = {
+	C6X_HOLD_PRED_FRAME(0),
+	C6X_HOLD_PRED_FRAME(1),
+	C6X_HOLD_PRED_FRAME(2),
+	C6X_HOLD_PRED_FRAME(3),
+	C6X_HOLD_PRED_FRAME(4),
+	C6X_HOLD_PRED_FRAME(5),
+	C6X_HOLD_PRED_FRAME(6),
+	C6X_HOLD_PRED_FRAME(7),
+	C6X_HOLD_PRED_FRAME(8),
+	C6X_HOLD_PRED_FRAME(9),
+	C6X_HOLD_PRED_FRAME(10),
+	C6X_HOLD_PRED_FRAME(11),
+	C6X_HOLD_PRED_FRAME(12),
+	C6X_HOLD_PRED_FRAME(13),
+	C6X_HOLD_PRED_FRAME(14),
+	C6X_HOLD_PRED_FRAME(15)
+};
+#undef C6X_HOLD_PRED_FRAME
+#undef C6X_HOLD_FRAME
+#undef C6X_HOLD_ROW
+
 // Whether a slot writes memory, i.e. is a store.
 static bool c6x_writes_memory(const C6xInsn *insn) {
 	return insn->nops && OP(insn->nops - 1).kind == C6X_OP_MEM;
@@ -2208,10 +2363,9 @@ static bool c6x_writes_memory(const C6xInsn *insn) {
 //
 // The ISA does not promise that the last operand is the destination -- a branch
 // ends in its target, BNOP in its NOP count, MVC in a control register -- so
-// this is a recogniser rather than a rule: it reports only the shapes it is sure
-// of and returns false for everything else, leaving the caller to lift the
-// packet the plain way. Being wrong here would stage the wrong register, so the
-// bar for adding a shape is knowing which operand it writes.
+// this is a recogniser rather than a rule. It reports only shapes it can stage;
+// an unrecognised destination is still offered to the instruction lifter, while
+// other packet slots retain their known destinations and packet-start reads.
 static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
 	*n = 0;
 	if (!insn->nops) {
@@ -2227,15 +2381,26 @@ static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
 		out[(*n)++] = r;
 		return true;
 	}
-	case C6X_OP_REGPAIR: {
-		const char *lo = c6x_reg_name(dst->v.reg.side, dst->v.reg.num);
-		const char *hi = c6x_reg_name(dst->v.reg.side, dst->v.reg.num + 1);
-		if (!lo || !hi) {
-			return false;
+	case C6X_OP_REGPAIR:
+	case C6X_OP_REGQUAD: {
+		ut8 members = dst->kind == C6X_OP_REGPAIR ? 2 : 4;
+		for (ut8 i = 0; i < members; i++) {
+			const char *r = c6x_reg_name(dst->v.reg.side, dst->v.reg.num + i);
+			if (!r) {
+				return false;
+			}
+			out[(*n)++] = r;
 		}
-		out[(*n)++] = lo;
-		out[(*n)++] = hi;
 		return true;
+	}
+	case C6X_OP_CTRLREG: {
+		for (size_t i = 0; c6x_il_regs[i]; i++) {
+			if (RZ_STR_EQ(c6x_il_regs[i], dst->v.ctrl)) {
+				out[(*n)++] = dst->v.ctrl;
+				return true;
+			}
+		}
+		return false; // this control register is not in the active IL profile
 	}
 	case C6X_OP_MEM:
 		// a store writes memory, and the base too when it writes back
@@ -2252,6 +2417,8 @@ static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
 		return false;
 	}
 }
+
+static RzILOpEffect *c6x_fold_effects(RzPVector *steps);
 
 /**
  * \brief Lift a whole execute packet.
@@ -2271,13 +2438,13 @@ static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
  * lifters themselves are untouched.
  *
  * \param insns The decoded slots, in address order.
- * \param n How many, at least two.
+ * \param n Number of packet slots, from one through C6X_FP_SLOTS.
  * \param pc Address of the packet.
  * \param skip Slots to hold back, by bit index, for the caller to emit later.
  *
- * \return The packet's effect, or NULL if a slot has a shape this cannot model.
+ * \return The packet's effect, or NULL if packet staging cannot be constructed.
  */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
+static RzILOpEffect *c6x_lift_packet_internal(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip, bool advance_pc) {
 	// n bounds the staging arrays below and the shift used for \p skip, so it
 	// is checked here rather than at each use
 	rz_return_val_if_fail(insns && n >= 1 && n <= C6X_FP_SLOTS, NULL);
@@ -2290,7 +2457,7 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 		const char *w[C6X_MAX_OPS];
 		size_t k = 0;
 		if (!c6x_writes(&insns[i], w, &k)) {
-			return NULL;
+			continue; // this slot still runs, but its destination cannot be staged
 		}
 		for (size_t j = 0; j < k && nw < RZ_ARRAY_SIZE(written); j++) {
 			bool seen = false;
@@ -2303,7 +2470,31 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 		}
 	}
 	if (!nw) {
-		return NULL; // nothing to stage; sequential lifting is already correct
+		// There is no known architectural destination to stage (for example, a
+		// packet containing only MVC to a control register). Keep every liftable
+		// slot rather than making the caller silently drop the rest of the packet.
+		RzPVector *plain = rz_pvector_new(NULL);
+		if (!plain) {
+			return NULL;
+		}
+		ut64 slot_pc = pc;
+		for (size_t i = 0; i < n; i++) {
+			if (!(skip & (1u << i))) {
+				RzILOpEffect *body = c6x_lift(&insns[i], slot_pc);
+				if (body) {
+					rz_pvector_push(plain, body);
+				}
+			}
+			slot_pc += insns[i].size;
+		}
+		if (advance_pc) {
+			ut64 end = pc;
+			for (size_t i = 0; i < n; i++) {
+				end += insns[i].size;
+			}
+			rz_pvector_push(plain, JMP(U32((ut32)end)));
+		}
+		return c6x_fold_effects(plain);
 	}
 	// the folded chain takes ownership of the steps, so the vector frees nothing
 	RzPVector *steps = rz_pvector_new(NULL);
@@ -2343,6 +2534,7 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 			order[nord++] = i;
 		}
 	}
+	bool lifted[C6X_FP_SLOTS] = { false };
 	for (size_t o = 0; o < nord; o++) {
 		size_t i = order[o];
 		if (skip & (1u << i)) {
@@ -2354,13 +2546,9 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 		}
 		RzILOpEffect *body = c6x_lift(&insns[i], pc);
 		if (!body) {
-			void **it;
-			rz_pvector_foreach (steps, it) {
-				rz_il_op_effect_free(*it);
-			}
-			rz_pvector_free(steps);
-			return NULL;
+			continue; // keep the other packet slots even if this form is unlifted
 		}
+		lifted[i] = true;
 		rz_pvector_push(steps, body);
 		// capture what this slot produced before the next restore wipes it
 		for (size_t j = 0; j < nw; j++) {
@@ -2370,17 +2558,36 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 	// apply the last slot that actually wrote each register
 	for (size_t j = 0; j < nw; j++) {
 		size_t last = 0;
+		bool has_last = false;
 		for (size_t i = 0; i < n; i++) {
+			if (!lifted[i] || (skip & (1u << i))) {
+				continue;
+			}
 			const char *w[C6X_MAX_OPS];
 			size_t k = 0;
-			c6x_writes(&insns[i], w, &k);
+			if (!c6x_writes(&insns[i], w, &k)) {
+				continue;
+			}
 			for (size_t m = 0; m < k; m++) {
 				if (RZ_STR_EQ(w[m], written[j])) {
 					last = i;
+					has_last = true;
 				}
 			}
 		}
-		rz_pvector_push(steps, SETG(written[j], VARL(cap[last][j])));
+		if (has_last) {
+			rz_pvector_push(steps, SETG(written[j], VARL(cap[last][j])));
+		}
+	}
+	// One aezs step issues an entire execute packet. Explicitly advance past
+	// every full or compact slot so another command cannot start at a later slot
+	// of the packet that has already been evaluated.
+	if (advance_pc) {
+		ut64 packet_end = pc;
+		for (size_t i = 0; i < n; i++) {
+			packet_end += insns[i].size;
+		}
+		rz_pvector_push(steps, JMP(U32((ut32)packet_end)));
 	}
 	// there is no vector form of SEQN, so fold the steps into a chain
 	RzILOpEffect *seq = NULL;
@@ -2391,6 +2598,146 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64
 	}
 	rz_pvector_free(steps);
 	return seq;
+}
+
+/** Lift a packet as data effects only, for use inside an RzIL REPEAT body. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet_data(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
+	return c6x_lift_packet_internal(insns, n, pc, skip, false);
+}
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
+	return c6x_lift_packet_internal(insns, n, pc, skip, true);
+}
+
+// Fold an owned vector of effects into a single sequence.
+static RzILOpEffect *c6x_fold_effects(RzPVector *steps) {
+	if (!steps) {
+		return NULL;
+	}
+	RzILOpEffect *seq = NULL;
+	void **it;
+	rz_pvector_foreach (steps, it) {
+		RzILOpEffect *step = *it;
+		seq = seq ? SEQ2(seq, step) : step;
+	}
+	rz_pvector_free(steps);
+	return seq;
+}
+
+/**
+ * Lift a packet and remove selected instruction results from the architectural
+ * register file until the caller runs the returned writeback effect. The slot's
+ * operands, predicate, effective address and loaded data are all evaluated by
+ * c6x_lift_packet() at issue time; only the captured destination values are
+ * delayed. This is the important distinction from replaying the instruction at
+ * the end of a branch/latency window.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet_deferred(const C6xInsn *insns, size_t n, ut64 pc,
+	ut32 skip, ut32 defer, ut8 frame, RZ_OUT RzILOpEffect **writeback) {
+	if (writeback) {
+		*writeback = NULL;
+	}
+	rz_return_val_if_fail(insns && n >= 1 && n <= C6X_FP_SLOTS && frame < C6X_LIFT_FRAMES, NULL);
+	if (!writeback) {
+		return c6x_lift_packet(insns, n, pc, skip);
+	}
+	defer &= ~skip;
+	if (!defer) {
+		return c6x_lift_packet(insns, n, pc, skip);
+	}
+	const char *regs[C6X_FP_SLOTS][C6X_MAX_OPS] = { { NULL } };
+	size_t reg_counts[C6X_FP_SLOTS] = { 0 };
+	RzPVector *before = rz_pvector_new(NULL);
+	RzPVector *after = rz_pvector_new(NULL);
+	RzPVector *wb = rz_pvector_new(NULL);
+	if (!before || !after || !wb) {
+		rz_pvector_free(before);
+		rz_pvector_free(after);
+		rz_pvector_free(wb);
+		return NULL;
+	}
+	for (size_t i = 0; i < n; i++) {
+		if (!(defer & (1u << i))) {
+			continue;
+		}
+		size_t nr = 0;
+		if (!c6x_writes(&insns[i], regs[i], &nr) || !nr || nr > C6X_PK_REGS) {
+			continue; // e.g. an unsupported control-register destination
+		}
+		reg_counts[i] = nr;
+		const char *pred = c6x_pred_name(insns[i].creg);
+		if (pred) {
+			RzILOpBool *cond = insns[i].z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred));
+			if (!c6x_hold_pred_names[frame][i] || !rz_pvector_push(before, SETL(c6x_hold_pred_names[frame][i], cond))) {
+				goto fail;
+			}
+		}
+		for (size_t j = 0; j < nr; j++) {
+			if (!c6x_hold_names[frame][i][j] || !c6x_hold_old_names[frame][i][j] || !regs[i][j]) {
+				goto fail;
+			}
+			if (!rz_pvector_push(before, SETL(c6x_hold_old_names[frame][i][j], VARG(regs[i][j])))) {
+				goto fail;
+			}
+		}
+	}
+	RzILOpEffect *packet = c6x_lift_packet(insns, n, pc, skip);
+	if (!packet) {
+		goto fail;
+	}
+	for (size_t i = 0; i < n; i++) {
+		RzILOpEffect *slot_wb = NULL;
+		for (size_t j = 0; j < reg_counts[i]; j++) {
+			if (!rz_pvector_push(after, SETL(c6x_hold_names[frame][i][j], VARG(regs[i][j]))) ||
+				!rz_pvector_push(after, SETG(regs[i][j], VARL(c6x_hold_old_names[frame][i][j])))) {
+				rz_il_op_effect_free(slot_wb);
+				rz_il_op_effect_free(packet);
+				goto fail;
+			}
+			RzILOpEffect *set = SETG(regs[i][j], VARL(c6x_hold_names[frame][i][j]));
+			slot_wb = slot_wb ? SEQ2(slot_wb, set) : set;
+		}
+		if (!slot_wb) {
+			continue;
+		}
+		if (c6x_pred_name(insns[i].creg)) {
+			slot_wb = BRANCH(VARL(c6x_hold_pred_names[frame][i]), slot_wb, NOP());
+		}
+		if (!rz_pvector_push(wb, slot_wb)) {
+			rz_il_op_effect_free(slot_wb);
+			rz_il_op_effect_free(packet);
+			goto fail;
+		}
+	}
+	*writeback = c6x_fold_effects(wb);
+	RzILOpEffect *pre = c6x_fold_effects(before);
+	RzILOpEffect *post = c6x_fold_effects(after);
+	RzILOpEffect *seq = pre ? SEQ2(pre, packet) : packet;
+	return post ? SEQ2(seq, post) : seq;
+
+fail:
+	if (before) {
+		void **it;
+		rz_pvector_foreach (before, it) {
+			rz_il_op_effect_free(*it);
+		}
+		rz_pvector_free(before);
+	}
+	if (after) {
+		void **it;
+		rz_pvector_foreach (after, it) {
+			rz_il_op_effect_free(*it);
+		}
+		rz_pvector_free(after);
+	}
+	if (wb) {
+		void **it;
+		rz_pvector_foreach (wb, it) {
+			rz_il_op_effect_free(*it);
+		}
+		rz_pvector_free(wb);
+	}
+	return NULL;
 }
 
 /** Lift a decoded instruction to RzIL, or NULL when the form is not yet lifted.
@@ -2412,40 +2759,195 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc) {
 }
 
 /**
- * \brief Sample a branch's predicate into a local, for a transfer emitted later.
- *
- * A branch deferred past its delay slots is emitted after instructions that may
- * have overwritten the register it tests, so the test has to be taken when the
- * branch issues and the result carried to the transfer. Unconditional branches
- * need nothing.
- *
- * \return NULL when \p insn is unconditional.
+ * Sample the target, predicate, and conditional counter of a branch at issue.
+ * A delay-window transfer must not reread a target or condition after its slots
+ * have had a chance to overwrite the corresponding architectural register.
  */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn) {
-	const char *pred = c6x_pred_name(insn->creg);
-	if (!pred) {
+RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_branch(const C6xInsn *insn, ut64 pc) {
+	rz_return_val_if_fail(insn && insn->nops, NULL);
+	const C6xOperand *target = &insn->ops[0];
+	RzILOpPure *target_value = NULL;
+	if (target->kind == C6X_OP_PCREL) {
+		target_value = U32((ut32)(c6x_packet_base(pc) + target->v.imm.value));
+	} else if (target->kind == C6X_OP_REG) {
+		target_value = c6x_reg_read(c6x_reg_name(target->v.reg.side, target->v.reg.num));
+	} else if (target->kind == C6X_OP_CTRLREG) {
+		target_value = c6x_reg_read(target->v.ctrl);
+	} else {
 		return NULL;
 	}
-	return SETL(C6X_PRED_TAKEN, insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred)));
+	RzILOpBool *condition = NULL;
+	RzILOpEffect *sample = NULL;
+	if (insn->id == C6X_INS_BPOS || insn->id == C6X_INS_BDEC) {
+		if (insn->nops < 2 || insn->ops[1].kind != C6X_OP_REG) {
+			rz_il_op_pure_free(target_value);
+			rz_il_op_pure_free(condition);
+			return NULL;
+		}
+		const char *counter = c6x_reg_name(insn->ops[1].v.reg.side, insn->ops[1].v.reg.num);
+		if (!counter) {
+			rz_il_op_pure_free(target_value);
+			rz_il_op_pure_free(condition);
+			return NULL;
+		}
+		if (insn->id == C6X_INS_BDEC) {
+			sample = SETL(C6X_BRANCH_COUNT, VARG(counter));
+			condition = SGE(VARL(C6X_BRANCH_COUNT), S32(0));
+		} else {
+			condition = SGE(VARG(counter), S32(0));
+		}
+	} else {
+		condition = NON_ZERO(U32(1));
+	}
+	const char *pred = c6x_pred_name(insn->creg);
+	if (pred) {
+		RzILOpBool *pred_cond = insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred));
+		condition = AND(pred_cond, condition);
+	}
+	RzILOpEffect *save_target = SETL(C6X_BRANCH_TARGET, target_value);
+	RzILOpEffect *save_taken = SETL(C6X_PRED_TAKEN, condition);
+	if (sample) {
+		sample = SEQ3(sample, save_target, save_taken);
+	} else {
+		sample = SEQ2(save_target, save_taken);
+	}
+	return sample;
+}
+
+/** Commit issue-time side effects of the main (non-queued) branch. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_commit_branch(const C6xInsn *insn) {
+	if (insn->id == C6X_INS_BDEC) {
+		const C6xOperand *counter = &insn->ops[1];
+		const char *name = c6x_reg_name(counter->v.reg.side, counter->v.reg.num);
+		return BRANCH(VARL(C6X_PRED_TAKEN),
+			c6x_reg_write(name, SUB(VARL(C6X_BRANCH_COUNT), U32(1))), NOP());
+	}
+	return NULL;
+}
+
+/** Save a branch encountered inside an older branch's delay window. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_queue_branch(const C6xInsn *insn, ut64 pc, ut32 cycles) {
+	rz_return_val_if_fail(insn && cycles && insn->nops, NULL);
+	const C6xOperand *target = &insn->ops[0];
+	RzILOpBitVector *target_value = NULL;
+	if (target->kind == C6X_OP_PCREL) {
+		target_value = U32((ut32)(c6x_packet_base(pc) + target->v.imm.value));
+	} else if (target->kind == C6X_OP_REG) {
+		target_value = c6x_reg_read(c6x_reg_name(target->v.reg.side, target->v.reg.num));
+	} else if (target->kind == C6X_OP_CTRLREG) {
+		target_value = c6x_reg_read(target->v.ctrl);
+	} else {
+		return NULL;
+	}
+	RzILOpBool *condition = NULL;
+	RzILOpEffect *save_counter = NULL;
+	const char *counter = NULL;
+	if (insn->id == C6X_INS_BPOS || insn->id == C6X_INS_BDEC) {
+		if (insn->nops < 2 || insn->ops[1].kind != C6X_OP_REG) {
+			rz_il_op_pure_free(target_value);
+			rz_il_op_pure_free(condition);
+			return NULL;
+		}
+		counter = c6x_reg_name(insn->ops[1].v.reg.side, insn->ops[1].v.reg.num);
+		if (!counter) {
+			rz_il_op_pure_free(target_value);
+			rz_il_op_pure_free(condition);
+			return NULL;
+		}
+		if (insn->id == C6X_INS_BDEC) {
+			save_counter = SETG(C6X_PENDING_BRANCH_COUNTER, VARG(counter));
+			condition = SGE(VARG(C6X_PENDING_BRANCH_COUNTER), S32(0));
+		} else {
+			condition = SGE(VARG(counter), S32(0));
+		}
+	} else {
+		condition = NON_ZERO(U32(1));
+	}
+	const char *pred = c6x_pred_name(insn->creg);
+	if (pred) {
+		condition = AND(insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred)), condition);
+	}
+	RzILOpEffect *save = SEQ4(
+		SETG(C6X_PENDING_BRANCH_TARGET, target_value),
+		SETG(C6X_PENDING_BRANCH_TAKEN, ITE(DUP(condition), U32(1), U32(0))),
+		SETG(C6X_PENDING_BRANCH_CYCLES, U32(cycles)),
+		SETG(C6X_PENDING_BRANCH_VALID, U32(1)));
+	return save_counter ? SEQ2(save_counter, save) : save;
+}
+
+/** Commit counter/link writes for a branch previously queued in a delay packet. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_commit_queued_branch(const C6xInsn *insn, ut64 pc) {
+	RzILOpEffect *commit = NULL;
+	if (insn->id == C6X_INS_BDEC) {
+		const C6xOperand *counter = &insn->ops[1];
+		const char *name = c6x_reg_name(counter->v.reg.side, counter->v.reg.num);
+		commit = BRANCH(NON_ZERO(VARG(C6X_PENDING_BRANCH_TAKEN)),
+			c6x_reg_write(name, SUB(VARG(C6X_PENDING_BRANCH_COUNTER), U32(1))), NOP());
+	}
+	if ((insn->id == C6X_INS_B || insn->id == C6X_INS_CALLP) && insn->nops > 1 &&
+		insn->ops[1].kind == C6X_OP_REG) {
+		const C6xOperand *link = &insn->ops[1];
+		RzILOpEffect *link_write = BRANCH(NON_ZERO(VARG(C6X_PENDING_BRANCH_TAKEN)),
+			c6x_reg_write(c6x_reg_name(link->v.reg.side, link->v.reg.num), U32((ut32)(pc + insn->size))), NOP());
+		commit = commit ? SEQ2(commit, link_write) : link_write;
+	}
+	return commit;
+}
+
+/** Execute one issued packet and age any branch saved from its delay slots. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_apply_pending_branch(RZ_OWN RzILOpEffect *effect, ut32 cycles) {
+	rz_return_val_if_fail(cycles, effect);
+	RzILOpEffect *age = BRANCH(
+		NON_ZERO(VARG(C6X_PENDING_BRANCH_VALID)),
+		BRANCH(
+			ULE(VARG(C6X_PENDING_BRANCH_CYCLES), U32(cycles)),
+			SEQ2(SETG(C6X_PENDING_BRANCH_VALID, U32(0)),
+				BRANCH(NON_ZERO(VARG(C6X_PENDING_BRANCH_TAKEN)), JMP(VARG(C6X_PENDING_BRANCH_TARGET)), NOP())),
+			SETG(C6X_PENDING_BRANCH_CYCLES, SUB(VARG(C6X_PENDING_BRANCH_CYCLES), U32(cycles)))),
+		NOP());
+	return effect ? SEQ2(effect, age) : age;
 }
 
 /**
- * \brief The transfer of a branch whose predicate was sampled earlier.
+ * \brief Transfer a branch after its visible delay window has issued.
  *
- * \param insn The branch.
- * \param pc Address the branch issued from.
- * \param sampled Whether c6x_sample_predicate() ran for it.
- * \param fallthrough Where to leave the pc when the branch is not taken.
+ * When \p sampled is true, both the target and the taken condition are locals
+ * produced by c6x_sample_branch() at issue; branch delay slots cannot alter
+ * either one before this effect runs.
  */
 RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled,
 	ut64 fallthrough) {
-	// lift the branch unconditionally, then re-apply the sampled predicate
-	C6xInsn bare = *insn;
-	bare.creg = 0;
-	bare.z = 0;
-	RzILOpEffect *xfer = c6x_lift(&bare, pc);
-	if (!xfer || !sampled) {
-		return xfer;
+	if (!sampled) {
+		C6xInsn bare = *insn;
+		bare.creg = 0;
+		bare.z = 0;
+		return c6x_lift(&bare, pc);
+	}
+	RzILOpEffect *xfer = NULL;
+	switch (insn->id) {
+	case C6X_INS_B:
+	case C6X_INS_BNOP:
+	case C6X_INS_BPOS:
+	case C6X_INS_BDEC:
+	case C6X_INS_CALLP:
+		xfer = JMP(VARL(C6X_BRANCH_TARGET));
+		if ((insn->id == C6X_INS_B || insn->id == C6X_INS_CALLP) && insn->nops > 1 &&
+			insn->ops[1].kind == C6X_OP_REG) {
+			const C6xOperand *link = &insn->ops[1];
+			xfer = SEQ2(c6x_reg_write(c6x_reg_name(link->v.reg.side, link->v.reg.num),
+				U32((ut32)(pc + insn->size))), xfer);
+		}
+		break;
+	default: {
+		C6xInsn bare = *insn;
+		bare.creg = 0;
+		bare.z = 0;
+		xfer = c6x_lift(&bare, pc);
+		break;
+	}
+	}
+	if (!xfer) {
+		return NULL;
 	}
 	// The window already ran the delay slots, so a branch that is not taken has
 	// to leave the program counter past them; otherwise the VM steps back into

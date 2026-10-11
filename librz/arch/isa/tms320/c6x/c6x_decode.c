@@ -2593,43 +2593,130 @@ RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn) {
 }
 
 /**
- * \brief Execute packets between \p insn issuing and its result being readable.
- *
- * A load's destination is written four packets on, an extended multiply's three
- * and an ordinary multiply's one; most instructions land in the same cycle. An
- * instruction issued in a branch's delay slots can therefore write after the
- * branch has transferred, which is why the value matters here rather than only
- * inside a packet.
+ * Number of issue cycles occupied by a decoded execute packet. A multi-cycle
+ * NOP is one instruction in one packet, but it occupies all of the cycles
+ * named by its operand. Other currently modelled instructions issue once per
+ * cycle.
  */
-RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn) {
-	switch (insn->id) {
-	case C6X_INS_LDW:
-	case C6X_INS_LDB:
-	case C6X_INS_LDBU:
-	case C6X_INS_LDH:
-	case C6X_INS_LDHU:
-	case C6X_INS_LDDW:
-	case C6X_INS_LDNW:
-	case C6X_INS_LDNDW:
-		return 4;
-	case C6X_INS_MPY32:
-	case C6X_INS_MPY32U:
-	case C6X_INS_MPY32SU:
-	case C6X_INS_MPY32US:
-		return 3;
-	case C6X_INS_MPY:
-	case C6X_INS_MPYH:
-	case C6X_INS_MPYLH:
-	case C6X_INS_MPYHL:
-	case C6X_INS_MPYU:
-	case C6X_INS_MPYSU:
-	case C6X_INS_MPYUS:
-	case C6X_INS_SMPY:
-	case C6X_INS_SMPYH:
-	case C6X_INS_SMPYHL:
-	case C6X_INS_SMPYLH:
+RZ_IPI ut8 c6x_packet_cycles(const C6xInsn *insns, size_t n) {
+	if (!insns || !n) {
 		return 1;
-	default:
+	}
+	ut8 cycles = 1;
+	for (size_t i = 0; i < n; i++) {
+		if (insns[i].id == C6X_INS_NOP && insns[i].nops &&
+			insns[i].ops[insns[i].nops - 1].kind == C6X_OP_IMM) {
+			cycles = RZ_MAX(cycles, (ut8)insns[i].ops[insns[i].nops - 1].v.imm.value);
+		}
+	}
+	return cycles;
+}
+
+// Architectural result-delay slots by opcode. The common entries are shared
+// by the C6000 integer cores; C67x/C674x adds the floating-point timings, and
+// C66x overrides the scalar floating-point timings where its pipeline is
+// shorter. A missing entry means a same-cycle/next-cycle result (zero delay
+// slots), not an unknown instruction.
+static const ut8 c6x_result_latencies[C6X_INS_LAST] = {
+	[C6X_INS_LDW] = 4,
+	[C6X_INS_LDB] = 4,
+	[C6X_INS_LDBU] = 4,
+	[C6X_INS_LDH] = 4,
+	[C6X_INS_LDHU] = 4,
+	[C6X_INS_LDDW] = 4,
+	[C6X_INS_LDNW] = 4,
+	[C6X_INS_LDNDW] = 4,
+	[C6X_INS_MPY32] = 3,
+	[C6X_INS_MPY32U] = 3,
+	[C6X_INS_MPY32SU] = 3,
+	[C6X_INS_MPY32US] = 3,
+	[C6X_INS_MPYI] = 8,
+	[C6X_INS_MPYID] = 9,
+	[C6X_INS_ADDSP] = 3,
+	[C6X_INS_SUBSP] = 3,
+	[C6X_INS_MPYSP] = 3,
+	[C6X_INS_INTSP] = 3,
+	[C6X_INS_INTSPU] = 3,
+	[C6X_INS_SPINT] = 3,
+	[C6X_INS_SPTRUNC] = 3,
+	[C6X_INS_INTDP] = 4,
+	[C6X_INS_INTDPU] = 4,
+	[C6X_INS_DPINT] = 4,
+	[C6X_INS_DPTRUNC] = 3,
+	[C6X_INS_DPSP] = 3,
+	[C6X_INS_SPDP] = 1,
+	[C6X_INS_ADDDP] = 6,
+	[C6X_INS_SUBDP] = 6,
+	[C6X_INS_MPYDP] = 9,
+	[C6X_INS_MPYSPDP] = 6,
+	[C6X_INS_MPYSP2DP] = 4,
+	[C6X_INS_CMPEQDP] = 1,
+	[C6X_INS_CMPGTDP] = 1,
+	[C6X_INS_CMPLTDP] = 1,
+	// C64x+ multiply/dot-product results have one delay slot.
+	[C6X_INS_MPY] = 1,
+	[C6X_INS_MPYH] = 1,
+	[C6X_INS_MPYHL] = 1,
+	[C6X_INS_MPYHLU] = 1,
+	[C6X_INS_MPYHSLU] = 1,
+	[C6X_INS_MPYHSU] = 1,
+	[C6X_INS_MPYHU] = 1,
+	[C6X_INS_MPYHULS] = 1,
+	[C6X_INS_MPYHUS] = 1,
+	[C6X_INS_MPYLH] = 1,
+	[C6X_INS_MPYLHU] = 1,
+	[C6X_INS_MPYLSHU] = 1,
+	[C6X_INS_MPYLUHS] = 1,
+	[C6X_INS_MPYSU] = 1,
+	[C6X_INS_MPYU] = 1,
+	[C6X_INS_MPYUS] = 1,
+	[C6X_INS_SMPY] = 1,
+	[C6X_INS_SMPYH] = 1,
+	[C6X_INS_SMPYHL] = 1,
+	[C6X_INS_SMPYLH] = 1,
+	[C6X_INS_MPY2] = 1,
+	[C6X_INS_SMPY2] = 1,
+	[C6X_INS_DOTP2] = 1,
+	[C6X_INS_DOTPN2] = 1,
+	[C6X_INS_DOTPNRSU2] = 1,
+	[C6X_INS_DOTPRSU2] = 1,
+	[C6X_INS_DOTPSU4] = 1,
+	[C6X_INS_DOTPU4] = 1,
+	[C6X_INS_DOTPSU4H] = 1,
+	[C6X_INS_DOTP4H] = 1,
+	[C6X_INS_DDOTPL2] = 1,
+	[C6X_INS_DDOTPH2] = 1,
+	[C6X_INS_MPYSU4] = 1,
+	[C6X_INS_MPYU4] = 1,
+	[C6X_INS_MPYHI] = 1,
+	[C6X_INS_MPYHIR] = 1,
+	[C6X_INS_MPYLI] = 1,
+	[C6X_INS_MPYLIR] = 1,
+};
+
+// Pipeline comparison in the TI KeyStone C66x CorePac ISA presentation:
+// ADDSP/SUBSP 3 -> 2, ADDDP/SUBDP 6 -> 2, and MPYDP 9 -> 3 delay slots.
+static const ut8 c6x_result_latencies_c66x[C6X_INS_LAST] = {
+	[C6X_INS_ADDSP] = 2,
+	[C6X_INS_SUBSP] = 2,
+	[C6X_INS_ADDDP] = 2,
+	[C6X_INS_SUBDP] = 2,
+	[C6X_INS_MPYDP] = 3,
+};
+
+/**
+ * rief Result delay, in issue cycles, for an instruction on this core.
+ *
+ * The base table follows SPRUFE8B / SPRUGH7; the C66x overrides are from TI's
+ * KeyStone C66x CorePac ISA latency comparison. Unsupported generations and
+ * malformed ids conservatively have no special result delay.
+ */
+RZ_IPI ut8 c6x_result_latency(const C6xArchDesc *desc, const C6xInsn *insn) {
+	if (!desc || !insn || insn->id <= C6X_INS_INVALID || insn->id >= C6X_INS_LAST) {
 		return 0;
 	}
+	if (desc->gen == C6X_GEN_C66X && c6x_result_latencies_c66x[insn->id]) {
+		return c6x_result_latencies_c66x[insn->id];
+	}
+	return c6x_result_latencies[insn->id];
 }

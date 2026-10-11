@@ -411,10 +411,13 @@ RZ_IPI const char *c6x_pred_reg_name(ut8 creg);
 /** Most slots a fetch packet can hold: seven words of two compact opcodes, plus the header. */
 #define C6X_FP_SLOTS 15
 
+/** Unique local-name frames in one composed packet/branch latency window. */
+#define C6X_LIFT_FRAMES 16
+
 /** First address after execute packet \p p, i.e. where the next one starts. */
 #define C6X_PACKET_END(p) ((p).slots[(p).n - 1].addr + (p).slots[(p).n - 1].size)
 
-/** Registers one execute packet can stage; every slot writes at most a pair. */
+/** Maximum distinct destination registers staged by one execute packet. */
 #define C6X_PK_REGS 16
 
 /** One instruction slot of a fetch packet, before decoding. */
@@ -455,22 +458,55 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
+/** Predicate register selected by an instruction's creg field, or NULL. */
+RZ_IPI const char *c6x_pred_name(ut8 creg);
+
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
 
-/** Local carrying a deferred branch's predicate from issue to transfer. */
+/** Lift only data effects from a packet, for a control-free REPEAT body. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet_data(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+
+/**
+ * Lift a packet while deferring only the result destinations of selected slots.
+ * The other effects of those slots (for example a load's address write-back)
+ * still happen at issue. `frame` gives delayed results unique IL-local names
+ * when several packets are combined into one branch/latency window.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet_deferred(const C6xInsn *insns, size_t n, ut64 pc,
+	ut32 skip, ut32 defer, ut8 frame, RZ_OUT RzILOpEffect **writeback);
+
+/** Locals carrying a deferred branch's issue-time state to its transfer. */
 #define C6X_PRED_TAKEN "_br_taken"
+#define C6X_BRANCH_TARGET "_br_target"
+#define C6X_BRANCH_COUNT "_br_count"
+
+/** Sample a branch target, predicate, and conditional counter at issue time. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_branch(const C6xInsn *insn, ut64 pc);
+
+/** Apply issue-time counter/link writes after the branch's packet has issued. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_commit_branch(const C6xInsn *insn);
+
+/** Save a branch found in another branch's delay window for the next issue cycle. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_queue_branch(const C6xInsn *insn, ut64 pc, ut32 cycles);
+
+/** Commit counter/link writes for a branch queued in another delay window. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_commit_queued_branch(const C6xInsn *insn, ut64 pc);
+
+/** Apply a queued branch after the next packet has issued. */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_apply_pending_branch(RZ_OWN RzILOpEffect *effect, ut32 cycles);
 
 RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other);
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn);
-
 RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled, ut64 fallthrough);
 
-RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn);
+RZ_IPI ut8 c6x_result_latency(const C6xArchDesc *desc, const C6xInsn *insn);
 
 RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn);
+
+/** Number of issue cycles occupied by an execute packet. */
+RZ_IPI ut8 c6x_packet_cycles(const C6xInsn *insns, size_t n);
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 
