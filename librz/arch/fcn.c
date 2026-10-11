@@ -8,7 +8,6 @@
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
-#define JMPTBL_LEA_SEARCH_SZ 64
 #define BB_ALIGN             0x10
 #define MAX_SCAN_SIZE        0x7ffffff
 
@@ -36,40 +35,6 @@ RZ_API const char *rz_analysis_fcntype_tostring(int type) {
 	case RZ_ANALYSIS_FCN_TYPE_ROOT: return "root";
 	}
 	return "unk";
-}
-
-typedef struct {
-	ut8 cache[1024];
-	ut64 cache_addr;
-} ReadAhead;
-
-// TODO: move into io :?
-static int read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, ssize_t len) {
-	bool is_cached = false;
-	if (len < 1) {
-		return -1;
-	}
-
-	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof(ra->cache)) {
-		ut64 addr_end = UT64_ADD_OVFCHK(addr, len) ? UT64_MAX : addr + len;
-		ut64 cache_addr_end = UT64_ADD_OVFCHK(ra->cache_addr, sizeof(ra->cache)) ? UT64_MAX : ra->cache_addr + sizeof(ra->cache);
-		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
-	}
-
-	if (!is_cached) {
-		if (len > sizeof(ra->cache)) {
-			len = sizeof(ra->cache);
-		}
-		analysis->iob.read_at(analysis->iob.io, addr, ra->cache, sizeof(ra->cache));
-		ra->cache_addr = addr;
-	}
-	ssize_t delta = addr - ra->cache_addr;
-	if (delta >= 0) {
-		size_t length = sizeof(ra->cache) - delta;
-		memcpy(buf, ra->cache + delta, RZ_MIN(len, length));
-		return len;
-	}
-	return -1;
 }
 
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
@@ -150,97 +115,6 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 
 	RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
-}
-
-static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
-	int i;
-	ut64 dst;
-	st32 jmptbl[64] = { 0 };
-	/* check if current instruction is followed by an ujmp */
-	ut8 buf[JMPTBL_LEA_SEARCH_SZ];
-	RzAnalysisOp *aop = jmp_aop;
-	RzAnalysisOp omov_aop = { 0 };
-	RzAnalysisOp mov_aop = { 0 };
-	RzAnalysisOp add_aop = { 0 };
-	RzRegItem *reg_src = NULL, *o_reg_dst = NULL;
-	RzAnalysisValue cur_scr, cur_dst = { 0 };
-	read_ahead(ra, analysis, addr, buf, sizeof(buf));
-	bool isValid = false;
-	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
-		ut64 at = addr + i;
-		int left = JMPTBL_LEA_SEARCH_SZ - i;
-		rz_analysis_op_init(aop);
-		int len = rz_analysis_op(analysis, aop, at, buf + i, left, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_VAL);
-		if (len < 1) {
-			len = 1;
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_UJMP || aop->type == RZ_ANALYSIS_OP_TYPE_RJMP) {
-			isValid = true;
-			break;
-		} else if (aop->type == RZ_ANALYSIS_OP_TYPE_JMP || aop->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-			break;
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_MOV) {
-			omov_aop = mov_aop;
-			mov_aop = *aop;
-			o_reg_dst = cur_dst.reg;
-			if (mov_aop.dst) {
-				cur_dst = *mov_aop.dst;
-			}
-			if (mov_aop.src[0]) {
-				cur_scr = *mov_aop.src[0];
-				reg_src = cur_scr.regdelta;
-			}
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-			add_aop = *aop;
-		}
-		rz_analysis_op_fini(aop);
-		i += len - 1;
-	}
-	if (!isValid) {
-		return false;
-	}
-
-	// check if we have a msvc 19xx style jump table using rva table entries
-	// lea reg1, [base_addr]
-	// mov reg2, dword [reg1 + tbl_off*4 + tbl_loc_off]
-	// add reg2, reg1
-	// jmp reg2
-	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr && mov_aop.disp && mov_aop.disp != UT64_MAX) {
-		// disp in this case should be tbl_loc_off
-		*jmptbl_addr += mov_aop.disp;
-		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
-			// Special case for indirection
-			// lea reg1, [base_addr]
-			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
-			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
-			// add reg3, reg1
-			// jmp reg3
-			*casetbl_addr += omov_aop.disp;
-		}
-	}
-
-	/* check if jump table contains valid deltas */
-	read_ahead(ra, analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
-	for (i = 0; i < 3; i++) {
-		dst = lea_ptr + (st32)rz_read_le32(jmptbl);
-		if (!analysis->iob.is_valid_offset(analysis->iob.io, dst, 0)) {
-			RZ_LOG_VERBOSE("Jump table target is not valid: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-		if (!UT64_ADD_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
-			dst > jmp_aop->addr + analysis->opt.jmptbl_maxoffset) {
-			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-		if (analysis->opt.jmpabove && !UT64_SUB_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
-			dst < jmp_aop->addr - analysis->opt.jmptbl_maxoffset) {
-			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-	}
-	return true;
 }
 
 static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg) {
@@ -797,7 +671,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 		}
 		ut64 bytes_read = sizeof(buf);
-		ret = read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
+		ret = rz_analysis_read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
 
 		if (ret < 0) {
 			RZ_LOG_ERROR("Failed to read ahead\n");
@@ -1066,7 +940,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RzAnalysisOp jmp_aop = { 0 };
 				ut64 jmptbl_addr = op.ptr;
 				ut64 casetbl_addr = op.ptr;
-				if (is_delta_pointer_table(&read_ahead_cache, analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+				if (rz_analysis_is_delta_pointer_table(&read_ahead_cache, analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					// we require both checks here since rz_analysis_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead

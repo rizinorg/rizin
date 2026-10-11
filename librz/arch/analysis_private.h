@@ -12,6 +12,16 @@
 #include <rz_list.h>
 #include <rz_vector.h>
 
+#define JMPTBL_LEA_SEARCH_SZ 64
+
+typedef struct {
+	ut8 cache[1024];
+	ut64 cache_addr;
+} ReadAhead;
+
+RZ_IPI int rz_analysis_read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, ssize_t len);
+RZ_IPI bool rz_analysis_is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop);
+
 /**
  * TODO: rename & document AnalysisLeAddrPair
  * This structure is used for something
