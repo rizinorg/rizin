@@ -278,7 +278,163 @@ bool test_rz_core_il_print_rzil() {
 	mu_end;
 }
 
+bool test_rz_analysis_op_jump_call_helpers(void) {
+	typedef struct {
+		ut32 type;
+		ut64 jump;
+		ut64 fail;
+		st64 ptr;
+		ut64 val;
+		bool exp_jump_ok;
+		ut64 exp_jump_out;
+		bool exp_call_ok;
+		ut64 exp_call_out;
+		bool exp_ind_ok;
+		ut64 exp_ind_out;
+		bool exp_ujump;
+		bool exp_ucall;
+		bool exp_fail_ok;
+		ut64 exp_fail_out;
+	} OpHelperCase;
+	static const OpHelperCase cases[] = {
+		{ RZ_ANALYSIS_OP_TYPE_JMP, 0x1000, UT64_MAX, (st64)UT64_MAX, UT64_MAX, true, 0x1000, false, 0, false, 0, false, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_CJMP, 0x2000, 0x2008, (st64)UT64_MAX, UT64_MAX, true, 0x2000, false, 0, false, 0, false, false, true, 0x2008 },
+		{ RZ_ANALYSIS_OP_TYPE_CALL, 0x3000, UT64_MAX, (st64)UT64_MAX, UT64_MAX, false, 0, true, 0x3000, false, 0, false, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_CCALL, 0x4000, 0x4008, (st64)UT64_MAX, UT64_MAX, false, 0, true, 0x4000, false, 0, false, false, true, 0x4008 },
+		{ RZ_ANALYSIS_OP_TYPE_UJMP, UT64_MAX, UT64_MAX, (st64)0x5000, UT64_MAX, false, 0, false, 0, true, 0x5000, true, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_RJMP, UT64_MAX, UT64_MAX, (st64)UT64_MAX, 0x6000, false, 0, false, 0, true, 0x6000, true, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_IJMP, UT64_MAX, UT64_MAX, (st64)0x7000, 0x7008, false, 0, false, 0, true, 0x7000, true, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_IRJMP, UT64_MAX, UT64_MAX, (st64)UT64_MAX, UT64_MAX, false, 0, false, 0, false, 0, true, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_MJMP, UT64_MAX, UT64_MAX, (st64)0x8000, UT64_MAX, false, 0, false, 0, true, 0x8000, false, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_UCJMP, UT64_MAX, UT64_MAX, (st64)0x9000, UT64_MAX, false, 0, false, 0, true, 0x9000, true, false, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_ICALL, UT64_MAX, UT64_MAX, (st64)0xa000, UT64_MAX, false, 0, false, 0, true, 0xa000, false, true, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_UCCALL, UT64_MAX, UT64_MAX, (st64)UT64_MAX, 0xb000, false, 0, false, 0, true, 0xb000, false, true, false, 0 },
+		{ RZ_ANALYSIS_OP_TYPE_RCJMP, 0xc000, 0xc008, (st64)0xc000, 0xc000, false, 0, false, 0, false, 0, false, false, true, 0xc008 },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		const OpHelperCase *c = &cases[i];
+		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
+		op.type = c->type;
+		op.jump = c->jump;
+		op.fail = c->fail;
+		op.ptr = c->ptr;
+		op.val = c->val;
+		ut64 out = 0xdeadbeef;
+		bool ok = rz_analysis_op_get_jump_target(&op, &out);
+		mu_assert_eq(ok, c->exp_jump_ok, "get_jump_target ok");
+		mu_assert_eq(ok ? out : 0xdeadbeef, c->exp_jump_ok ? c->exp_jump_out : 0xdeadbeef, "get_jump_target out");
+		out = 0xdeadbeef;
+		ok = rz_analysis_op_get_call_target(&op, &out);
+		mu_assert_eq(ok, c->exp_call_ok, "get_call_target ok");
+		mu_assert_eq(ok ? out : 0xdeadbeef, c->exp_call_ok ? c->exp_call_out : 0xdeadbeef, "get_call_target out");
+		out = 0xdeadbeef;
+		ok = rz_analysis_op_get_indirect_ref(&op, &out);
+		mu_assert_eq(ok, c->exp_ind_ok, "get_indirect_ref ok");
+		mu_assert_eq(ok ? out : 0xdeadbeef, c->exp_ind_ok ? c->exp_ind_out : 0xdeadbeef, "get_indirect_ref out");
+		mu_assert_eq(rz_analysis_op_is_unknown_jump(&op), c->exp_ujump, "is_unknown_jump");
+		mu_assert_eq(rz_analysis_op_is_unknown_call(&op), c->exp_ucall, "is_unknown_call");
+		out = 0xdeadbeef;
+		ok = rz_analysis_op_has_fail_target(&op, &out);
+		mu_assert_eq(ok, c->exp_fail_ok, "has_fail_target ok");
+		mu_assert_eq(ok ? out : 0xdeadbeef, c->exp_fail_ok ? c->exp_fail_out : 0xdeadbeef, "has_fail_target out");
+		rz_analysis_op_fini(&op);
+	}
+
+	RzAnalysisOp op;
+	rz_analysis_op_init(&op);
+	ut64 out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_jump_target(NULL, &out), "jump NULL op");
+	mu_assert_eq(out, 0xdeadbeef, "jump NULL op leaves out untouched");
+	mu_assert_false(rz_analysis_op_get_jump_target(&op, NULL), "jump NULL out");
+	mu_assert_false(rz_analysis_op_get_call_target(NULL, &out), "call NULL op");
+	mu_assert_false(rz_analysis_op_get_indirect_ref(NULL, &out), "indirect NULL op");
+	mu_assert_false(rz_analysis_op_has_fail_target(NULL, &out), "fail NULL op");
+	mu_assert_false(rz_analysis_op_is_unknown_jump(NULL), "ujump NULL op");
+	mu_assert_false(rz_analysis_op_is_unknown_call(NULL), "ucall NULL op");
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_UCALL;
+	op.ptr = (st64)0xd000;
+	mu_assert_true(rz_analysis_op_get_indirect_ref(&op, &out), "ucall indirect");
+	mu_assert_eq(out, 0xd000, "ucall indirect out");
+	mu_assert_true(rz_analysis_op_is_unknown_call(&op), "ucall is unknown call");
+	mu_assert_false(rz_analysis_op_is_unknown_jump(&op), "ucall is not unknown jump");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_RCALL;
+	op.ptr = (st64)0xd008;
+	mu_assert_true(rz_analysis_op_get_indirect_ref(&op, &out), "rcall indirect");
+	mu_assert_eq(out, 0xd008, "rcall indirect out");
+	mu_assert_true(rz_analysis_op_is_unknown_call(&op), "rcall is unknown call");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_IRCALL;
+	op.val = 0xd010;
+	mu_assert_true(rz_analysis_op_get_indirect_ref(&op, &out), "ircall indirect val fallback");
+	mu_assert_eq(out, 0xd010, "ircall indirect out");
+	mu_assert_true(rz_analysis_op_is_unknown_call(&op), "ircall is unknown call");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_MCJMP;
+	op.jump = 0xe000;
+	op.ptr = (st64)0xe000;
+	op.fail = 0xe008;
+	out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_jump_target(&op, &out), "mcjmp matches no jump");
+	mu_assert_eq(out, 0xdeadbeef, "mcjmp leaves out untouched");
+	mu_assert_false(rz_analysis_op_get_indirect_ref(&op, &out), "mcjmp matches no indirect");
+	mu_assert_false(rz_analysis_op_is_unknown_jump(&op), "mcjmp is not unknown jump");
+	mu_assert_false(rz_analysis_op_is_unknown_call(&op), "mcjmp is not unknown call");
+	mu_assert_true(rz_analysis_op_has_fail_target(&op, &out), "mcjmp fail is type-agnostic");
+	mu_assert_eq(out, 0xe008, "mcjmp fail out");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+	op.jump = UT64_MAX;
+	out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_jump_target(&op, &out), "jmp sentinel has no target");
+	mu_assert_eq(out, 0xdeadbeef, "jmp sentinel leaves out untouched");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_CALL;
+	op.jump = UT64_MAX;
+	out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_call_target(&op, &out), "call sentinel has no target");
+	mu_assert_eq(out, 0xdeadbeef, "call sentinel leaves out untouched");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_UJMP;
+	op.jump = 0xf000;
+	op.ptr = (st64)UT64_MAX;
+	op.val = UT64_MAX;
+	out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_jump_target(&op, &out), "ujmp has no jump target (no jump-to-ptr fallback)");
+	mu_assert_eq(out, 0xdeadbeef, "ujmp leaves out untouched");
+	mu_assert_false(rz_analysis_op_get_indirect_ref(&op, &out), "ujmp without ptr/val has no indirect ref");
+	mu_assert_true(rz_analysis_op_is_unknown_jump(&op), "ujmp is unknown jump without target");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+	op.jump = 0xf008;
+	op.ptr = (st64)0xf008;
+	out = 0xdeadbeef;
+	mu_assert_false(rz_analysis_op_get_indirect_ref(&op, &out), "jmp has no indirect ref");
+	mu_assert_eq(out, 0xdeadbeef, "jmp indirect leaves out untouched");
+	rz_analysis_op_fini(&op);
+
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_rz_analysis_op_jump_call_helpers);
 	mu_run_test(test_rz_analysis_op_val);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_print_disasm);
