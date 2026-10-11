@@ -486,6 +486,7 @@ arch_common_sources = [
   'fcn.c',
   'fcn_hpskip.c',
   'fcn_purity.c',
+  'fcn_metrics.c',
   'filter.c',
   'function.c',
   'hint.c',
