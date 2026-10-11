@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023 Florian Märkl <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "gb_global_idx_map.inc"
+
 /**
  * \file
  * GameBoy lifting to be included from analysis_gb.c and plugged directly into the decoding logic.

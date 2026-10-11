@@ -97,6 +97,20 @@ static inline size_t rz_vector_len(RZ_NULLABLE const RzVector *vec) {
 	return vec ? vec->len : 0;
 }
 
+/**
+ * \brief Sets the length of the vector to \p len.
+ * It will fail if \p len is larger than the vector's capacity.
+ * The elements' content located after the old tail are undefined.
+ */
+static inline bool rz_vector_set_len(RZ_NONNULL RzVector *vec, size_t len) {
+	rz_return_val_if_fail(vec, false);
+	if (vec->capacity >= len) {
+		vec->len = len;
+		return true;
+	}
+	return false;
+}
+
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *rz_vector_index_ptr(const RzVector *vec, size_t index) {
 	rz_return_val_if_fail(vec && index < vec->capacity, NULL);

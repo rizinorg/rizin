@@ -10,6 +10,8 @@
 #define VARG_REG(idx)     VARG(REG(idx))
 #define VARG_MEMBASE(idx) VARG(MEMBASE(idx))
 
+#include "mips_global_idx_map.inc"
+
 #include "il/hw.c"
 #include "il/common.c"
 #include "il/fp.c"

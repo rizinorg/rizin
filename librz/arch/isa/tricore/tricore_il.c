@@ -4666,6 +4666,7 @@ static void trap_hook(RzILVM *vm, RzILOpEffect *op) {}
 RZ_IPI RzAnalysisILConfig *tricore_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(32, false, 32);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = TriCoreREGs;
 
 	RzILEffectLabel *int_label = rz_il_effect_label_new("trap", EFFECT_LABEL_SYSCALL);

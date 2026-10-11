@@ -4544,6 +4544,7 @@ RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
 RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, big_endian, 32);
 	r->reg_bindings = regs_bound_32;
+	r->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	RzILEffectLabel *svc_label = rz_il_effect_label_new("svc", EFFECT_LABEL_SYSCALL);
 	svc_label->hook = label_svc;
 	rz_analysis_il_config_add_label(r, svc_label);

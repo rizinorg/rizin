@@ -15,6 +15,8 @@
 #include "c5x.h"
 #include "../c2x/c2x.h"
 
+#include "../c54_c55x_lookup_tbls.h"
+
 /**
  * \brief Map an instruction id to its C5x mnemonic.
  * \param id C5X_INS_* id, or a shared C2X_INS_* id
@@ -287,6 +289,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c5x_il_config(RZ_NONNULL RzAnalysis *analysis)
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = c5x_il_regs;
 	return cfg;
 }

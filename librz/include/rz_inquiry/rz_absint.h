@@ -10,12 +10,22 @@
 #ifndef RZ_ABSINT
 #define RZ_ABSINT
 
+#include "rz_vector.h"
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
 
 #define RZ_ABSINT_STR_TOP    "⊤"
 #define RZ_ABSINT_STR_BOTTOM "⊥"
+
+/**
+ * \brief An abstract value representing a set of RzILVal
+ *
+ * The actual abstraction and structure of this is defined by the plugin in use.
+ * `struct rz_absint_val_opaque` is defined nowhere. It is used to ensure
+ * type-checking of passing this opaque pointer.
+ */
+typedef struct rz_absint_val_opaque RzAbsIntVal;
 
 typedef enum rz_absint_trace_options_t {
 	RZ_ABSINT_TRACE_NONE = 0,
@@ -26,15 +36,6 @@ typedef enum rz_absint_trace_options_t {
 
 typedef struct rz_absint_run_context_t RzAbsIntRunContext;
 typedef struct rz_absint_result_t RzAbsIntResult;
-
-/**
- * \brief An abstract value representing a set of RzILVal
- *
- * The actual abstraction and structure of this is defined by the plugin in use.
- * `struct rz_absint_val_opaque` is defined nowhere. Is is used to ensure
- * type-checking of passing this opaque pointer.
- */
-typedef struct rz_absint_val_opaque RzAbsIntVal;
 
 /**
  * \brief Helper to explicitly cast a plugin-defined abstract value to an opaque RzAbsIntAbstrVal
@@ -60,9 +61,17 @@ typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
-	HtUP /*<RzAbsIntAbstrVal *>*/ *globals; ///< Global variables (mostly registers). Indexed by DJB2 hash of global name.
-	HtUP /*<RzAbsIntAbstrVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
-	HtUP /*<RzAbsIntAbstrVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
+	/**
+	 * \brief A flat array of bit vectors. One for each global.
+	 * These bit vectors are not allowed to be used outside of the value domain!
+	 * Order is the same as in globals.
+	 *
+	 * TODO: Supports only 64 bit wide bit vectors as test.
+	 */
+	RzVector /*<RzBitVector>*/ *global_bvs;
+	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
+	HtUP /*<RzAbsIntVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
+	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 } RzAbsIntState;
 
 /**
@@ -99,7 +108,13 @@ typedef struct rz_absint_instance_t RzAbsIntInstance;
 typedef struct rz_absint_value_domain_t {
 	const char *name;
 
-	RZ_OWN RzAbsIntVal *(*val_new_top)(void); ///< allocate a new abstract value and initialize it as top
+	size_t (*val_size)(void); ///< Return the RzAbsIntVal in bytes.
+	/**
+	 * \brief Initialize the new abstract value \p aval as top.
+	 * If \p aval_bv is given and the value domain uses bit vectors, it should assign it to the abstract value.
+	 */
+	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv);
+	void (*val_fini)(RzAbsIntVal *val);
 	void (*val_free)(RzAbsIntVal *val);
 	bool (*is_top)(RZ_NONNULL const RzAbsIntVal *val); ///< return whether the given value is top
 	bool (*may_be_bool)(RZ_NONNULL const RzAbsIntVal *val, bool value); ///< return whether the given value's concrete set contains \p value
@@ -115,6 +130,10 @@ typedef struct rz_absint_value_domain_t {
 	 */
 	bool (*to_concrete_const)(RZ_NONNULL const RzAbsIntVal *val, RZ_NULLABLE RZ_OUT RzBitVector *out);
 
+	/**
+	 * \brief Copies the abstract value from \p src to \p dst.
+	 * \p dst and \p src must be previously initialized abstract values (e.g. with val_new_top()).
+	 */
 	RZ_OWN void (*copy)(RzAbsIntVal *dst, const RzAbsIntVal *src);
 
 	/**

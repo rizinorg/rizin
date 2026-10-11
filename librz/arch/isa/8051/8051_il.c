@@ -586,5 +586,6 @@ RZ_IPI RzAnalysisILConfig *rz_8051_il_config(RZ_NONNULL RzAnalysis *analysis) {
 		NULL
 	};
 	r->reg_bindings = regs_bound;
+	r->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	return r;
 }

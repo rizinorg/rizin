@@ -1,0 +1,30 @@
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+static const RzILGlobalIdxMapEntry global_idx[] = {
+	{ "acc", 0 },
+	{ "ar0", 1 },
+	{ "ar1", 2 },
+	{ "ar2", 3 },
+	{ "ar3", 4 },
+	{ "ar4", 5 },
+	{ "ar5", 6 },
+	{ "ar6", 7 },
+	{ "ar7", 8 },
+	{ "arb", 9 },
+	{ "arp", 10 },
+	{ "c", 11 },
+	{ "dp", 12 },
+	{ "ov", 13 },
+	{ "ovm", 14 },
+	{ "p", 15 },
+	{ "pc", 16 },
+	{ "pm", 17 },
+	{ "rptc", 18 },
+	{ "sp", 19 },
+	{ "st0", 20 },
+	{ "st1", 21 },
+	{ "sxm", 22 },
+	{ "t", 23 },
+	{ "tc", 24 },
+};

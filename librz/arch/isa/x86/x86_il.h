@@ -14,6 +14,8 @@
 #include <Zydis.h>
 #endif
 
+#include "x86_global_idx_map.inc"
+
 #define BITS_PER_BYTE    8
 #define GPR_FAMILY_COUNT 10
 

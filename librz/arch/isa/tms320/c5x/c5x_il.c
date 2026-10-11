@@ -21,6 +21,8 @@
 #include "c5x.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#include "c5x_global_idx_map.inc"
+
 // A single 0/1 flag write helper for SETC/CLRC.
 static RzILOpEffect *c5x_set_flag(const char *name, bool set) {
 	return SETG(name, set ? IL_TRUE : IL_FALSE);

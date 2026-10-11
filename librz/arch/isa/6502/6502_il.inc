@@ -8,6 +8,8 @@
 
 #include <rz_il.h>
 
+#include "6502_global_idx_map.inc"
+
 typedef enum {
 	_6502_ADDR_KIND_ADDR,
 	_6502_ADDR_KIND_IMMEDIATE,

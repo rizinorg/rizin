@@ -7,6 +7,8 @@
 #include <rz_analysis.h>
 #include "v850_disas.h"
 
+#include "v850_plus_global_idx_map.inc"
+
 enum {
 	C_BGT = 0b1111,
 	C_BGE = 0b1110,

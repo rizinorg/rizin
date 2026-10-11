@@ -4,6 +4,8 @@
 #include "h8300_disas.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#include "h8300_global_idx_map.inc"
+
 #define INS_OPS(I)  (cmd->ops[(I)])
 #define PC_VAL      UADDR(cmd->pc)
 #define PC_NEXT_VAL UADDR(cmd->pc + cmd->size)
@@ -1536,6 +1538,7 @@ RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = h8300_cpu_type(rz_analysis_get_cpu(a)) == CPU_H8300H ? h8300h_reg_bindings : reg_bindings;
 	cfg->init_state = rz_analysis_il_init_state_new();
 	if (!cfg->init_state) {

@@ -11,6 +11,8 @@
 #include <rz_types.h>
 #include <capstone/capstone.h>
 
+#include "ppc_global_idx_map.inc"
+
 #define PPC_BYTE  8
 #define PPC_HWORD 16
 #define PPC_WORD  32

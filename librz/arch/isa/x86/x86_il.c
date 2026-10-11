@@ -392,6 +392,7 @@ RZ_IPI RzAnalysisILConfig *rz_x86_il_config(RZ_NONNULL RzAnalysis *analysis) {
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(analysis->bits, analysis->big_endian, analysis->bits);
 
+	r->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	switch (analysis->bits) {
 	case 16:
 		r->reg_bindings = x86_bound_regs_16;

@@ -20,6 +20,7 @@
 // do what in these functions:
 
 #include "absint_priv.h"
+#include "rz_inquiry/rz_absint.h"
 
 typedef enum {
 	EVAL_RESULT_OK,
@@ -219,8 +220,8 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		rz_warn_if_reached();
 		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = astate->globals;
-		break;
+		val_domain(inst)->copy(rz_vector_index_ptr(astate->globals, var_id), data);
+		return;
 	case RZ_IL_VAR_KIND_LOCAL:
 		ht_vals = astate->locals;
 		break;
@@ -229,19 +230,22 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		break;
 	}
 	RzAbsIntVal *av = ht_up_find(ht_vals, var_id, NULL);
+	if (av) {
+		val_domain(inst)->copy(av, data);
+		return;
+	}
+	av = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(inst)->val_size());
 	if (!av) {
-		if (kind == RZ_IL_VAR_KIND_GLOBAL) {
-			RZ_LOG_WARN("New global variable created: 0x%" PFMT64x "\n", var_id)
-			return;
-		}
-		av = val_domain(inst)->val_new_top();
-		if (!av) {
-			rz_warn_if_reached();
-			return;
-		}
-		ht_up_insert(ht_vals, var_id, av);
+		rz_warn_if_reached();
+		return;
+	}
+	if (!val_domain(inst)->val_new_top(av, NULL)) {
+		rz_warn_if_reached();
+		free(av);
+		return;
 	}
 	val_domain(inst)->copy(av, data);
+	ht_up_insert(ht_vals, var_id, av);
 }
 
 static bool read_var_from_state(RzAbsIntInstance *inst,
@@ -255,8 +259,8 @@ static bool read_var_from_state(RzAbsIntInstance *inst,
 		rz_warn_if_reached();
 		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		ht_vals = astate->globals;
-		break;
+		val_domain(inst)->copy(data, rz_vector_index_ptr(astate->globals, var_id));
+		return true;
 	case RZ_IL_VAR_KIND_LOCAL:
 		ht_vals = astate->locals;
 		break;
@@ -386,7 +390,9 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	switch (pure->code) {
 	default:
 	case RZ_IL_OP_VAR: {
-		if (!read_var_from_state(ctx->inst, ctx->astate, pure->op.var.kind, pure->op.var.hash, out)) {
+		RzILVarKind kind = pure->op.var.kind;
+		ut64 vhash = kind == RZ_IL_VAR_KIND_GLOBAL ? pure->op.var.idx : pure->op.var.djb2_hash;
+		if (!read_var_from_state(ctx->inst, ctx->astate, kind, vhash, out)) {
 			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
 				rz_il_var_kind_name(pure->op.var.kind),
 				pure->op.var.v);
@@ -432,8 +438,8 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		break;
 	case RZ_IL_OP_CAST: {
 		EVAL_SUB_OR_RETURN(pure->op.cast.val, out);
-		RzAbsIntVal *fill_bit = val_domain(ctx->inst)->val_new_top();
-		if (!fill_bit) {
+		RzAbsIntVal *fill_bit = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
+		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(pure->op.cast.fill, fill_bit, {
@@ -476,8 +482,8 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
-		if (!y) {
+		RzAbsIntVal *y = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
+		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
@@ -505,16 +511,15 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		EVAL_SUB_OR_RETURN(px, out);
 		// Hint: As an optimization, we could short-circuit if out is top here.
 		// However it entirely depends on the plugin whether this is possible, or we lose a lot of precision by doing so.
-		RzAbsIntVal *y = val_domain(ctx->inst)->val_new_top();
-		if (!y) {
+		RzAbsIntVal *y = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
+		if (!y || !val_domain(ctx->inst)->val_new_top(y, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(py, y, {
 			val_domain(ctx->inst)->val_free(y);
 		});
-		RzAbsIntVal *fill_bit = val_domain(ctx->inst)->val_new_top();
-		if (!fill_bit) {
-			val_domain(ctx->inst)->val_free(y);
+		RzAbsIntVal *fill_bit = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size());
+		if (!fill_bit || !val_domain(ctx->inst)->val_new_top(fill_bit, NULL)) {
 			return EVAL_RESULT_ERROR;
 		}
 		EVAL_SUB_OR_RETURN_CLEANUP(pfill_bit, fill_bit, {
@@ -616,12 +621,11 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	// For calls, assume control flow will continue like fallthrough.
 	// But any data that may be modified by the callee must be set to top.
 	// TODO: this should depend on the ABI, some data may be preserved.
-	RzIterator *it = ht_up_as_iter(ctx->astate->globals);
-	RzAbsIntVal **av;
-	rz_iterator_foreach(it, av) {
-		val_domain(ctx->inst)->set_top(*av);
+	// https://github.com/rizinorg/rizin/issues/6676
+	void *it;
+	rz_vector_foreach (ctx->astate->globals, it) {
+		val_domain(ctx->inst)->set_top(it);
 	}
-	rz_iterator_free(it);
 }
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
@@ -639,8 +643,8 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 #define EVAL_SUB_OR_RETURN(op) EVAL_SUB_OR_RETURN_CLEANUP(op, )
 #define EVAL_PURE_OR_RETURN_CLEANUP(op, dst, cleanup_local) \
 	do { \
-		dst = val_domain(ctx->inst)->val_new_top(); \
-		if (RZ_UNLIKELY(!(dst))) { \
+		dst = (RzAbsIntVal *)RZ_NEWS0(ut8, val_domain(ctx->inst)->val_size()); \
+		if (RZ_UNLIKELY(!dst || !val_domain(ctx->inst)->val_new_top(dst, NULL))) { \
 			res = EVAL_RESULT_ERROR; \
 			cleanup_local goto cleanup; \
 		} \
@@ -669,9 +673,9 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		break;
 	}
 	case RZ_IL_OP_SET: {
-		ut64 vhash = effect->op.set.hash;
 		EVAL_PURE_OR_RETURN(effect->op.set.x);
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
+		ut64 vhash = kind == RZ_IL_VAR_KIND_GLOBAL ? effect->op.set.idx : effect->op.set.djb2_hash;
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
 		if (value_indicates_ret_addr_write(ctx, eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
@@ -740,6 +744,10 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		ut64 fallthrough_pc = ctx->astate->pc;
 		if (may_be_true && may_be_false) {
 			RzAbsIntState *true_state = rz_absint_state_clone(ctx->inst, ctx->astate);
+			if (!true_state) {
+				rz_warn_if_reached();
+				break;
+			}
 			RzAbsIntState *false_state = ctx->astate;
 			ctx->astate = true_state;
 			EVAL_SUB_OR_RETURN(effect->op.branch.true_eff);
@@ -783,6 +791,8 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 				rz_bv_init(&mask, 64);
 				rz_bv_set_from_ut64(&mask, 0x7fffffffffffffff);
 				rz_bv_and_inplace(&st_addr_bv, &mask);
+			} else {
+				rz_warn_if_reached();
 			}
 			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, st_addr, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 		}
@@ -811,7 +821,6 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		break;
 	}
 cleanup:
-	val_domain(ctx->inst)->val_free(eval_out);
 	return res;
 #undef EVAL_SUB_OR_RETURN_CLEANUP
 #undef EVAL_SUB_OR_RETURN
@@ -959,6 +968,10 @@ RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *i
 			break;
 		}
 		ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
+		if (!ctx.astate) {
+			ret = RZ_ABSINT_RESULT_FAILED;
+			goto cleanup;
+		}
 
 		const RzILCacheBlock *il_block;
 		RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
@@ -1025,6 +1038,10 @@ RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *i
 			// Note: depending on what info is requested, i.e. whether the entry states are read again later,
 			// this might not have to be cloned but could just be interpreted further.
 			ctx.astate = rz_absint_state_clone(inst, interp_block->entry_state);
+			if (!ctx.astate) {
+				ret = RZ_ABSINT_RESULT_FAILED;
+				goto cleanup;
+			}
 			const RzILCacheBlock *il_block;
 			RzAbsIntLiftBlockResult lift_res = interp_lift_block(inst, ctx.astate->pc, &il_block);
 			if (lift_res == RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK) {

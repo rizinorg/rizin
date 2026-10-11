@@ -25,6 +25,8 @@
 #include "c2x.h"
 #include <rz_il/rz_il_opbuilder_begin.h>
 
+#include "c2x_global_idx_map.inc"
+
 static const char *const c2x_ar[8] = {
 	"ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7"
 };
@@ -725,6 +727,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c2x_il_config(RZ_NONNULL RzAnalysis *analysis)
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = c2x_il_regs;
 	return cfg;
 }

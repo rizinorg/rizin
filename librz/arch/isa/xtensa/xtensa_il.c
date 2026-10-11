@@ -3,6 +3,8 @@
 
 #include "xtensa.h"
 
+#include "xtensa_global_idx_map.inc"
+
 static const char *epc_tbl[] = {
 	NULL, "epc1", "epc2", "epc3", "epc4", "epc5", "epc6", "epc7"
 };

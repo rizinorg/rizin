@@ -5,6 +5,7 @@
 #include <rz_il/rz_il_opbuilder_begin.h>
 #include "analysis_private.h"
 #include "pic_midrange.h"
+#include "pic_midrange_global_idx_map.inc"
 #include "pic_il.inc"
 
 enum {
@@ -570,6 +571,7 @@ const char *pic_midrange_reg_bindings[] = {
 RzAnalysisILConfig *pic_midrange_il_config(
 	RZ_NONNULL RzAnalysis *analysis) {
 	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(16, false, 16);
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = pic_midrange_reg_bindings;
 	return cfg;
 }

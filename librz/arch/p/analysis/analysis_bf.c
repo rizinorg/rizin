@@ -8,6 +8,12 @@
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
+// Generated with sys/gen_il_reg_idx_mapping_from_reg_profile.py
+static const RzILGlobalIdxMapEntry global_idx[] = {
+	{ "pc", 0 },
+	{ "ptr", 1 },
+};
+
 static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr(keys, ch);
@@ -20,8 +26,8 @@ static int getid(char ch) {
 #define BF_BYTE_SIZE 8
 #define BF_ID_STACK  32
 
-#define bf_il_ptr()      rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL)
-#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", false, x)
+#define bf_il_ptr()      rz_il_op_new_var("ptr", rz_il_global_idx_lookup(global_idx, RZ_ARRAY_SIZE(global_idx), "ptr"), RZ_IL_VAR_KIND_GLOBAL)
+#define bf_il_set_ptr(x) rz_il_op_new_set("ptr", rz_il_global_idx_lookup(global_idx, RZ_ARRAY_SIZE(global_idx), "ptr"), false, x)
 #define bf_il_one(l)     rz_il_op_new_bitv_from_ut64(l, 1)
 
 static void bf_syscall_read(RzILVM *vm, RzILOpEffect *op) {
@@ -54,7 +60,7 @@ static void bf_syscall_write(RzILVM *vm, RzILOpEffect *op) {
 RzILOpEffect *bf_right_arrow() {
 	// (set ptr (+ (val ptr) (int 1)))
 	RzILOpBitVector *add = rz_il_op_new_add(bf_il_ptr(), bf_il_one(BF_ADDR_SIZE));
-	return bf_il_set_ptr(add);
+	return rz_il_op_new_set("ptr", rz_il_global_idx_lookup(global_idx, (sizeof(global_idx) / sizeof((global_idx)[0])), "ptr"), 0, add);
 }
 
 RzILOpEffect *bf_left_arrow() {
@@ -132,7 +138,7 @@ RzILOpEffect *bf_llimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
 	// (perform (branch (load mem (var ptr))
 	//                  (do nothing)
 	//                  (goto ]))
-	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
+	RzILOpBitVector *var = bf_il_ptr();
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 	// goto ]
 	RzILOpEffect *jmp = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(64, target));
@@ -144,7 +150,7 @@ RzILOpEffect *bf_rlimit(RzAnalysis *analysis, ut64 addr, ut64 target) {
 	// (perform (branch (load mem (var ptr))
 	//                  (goto [)
 	//                  (do nothing))
-	RzILOpBitVector *var = rz_il_op_new_var("ptr", RZ_IL_VAR_KIND_GLOBAL);
+	RzILOpBitVector *var = bf_il_ptr();
 	RzILOpBool *cond = rz_il_op_new_non_zero(rz_il_op_new_load(0, var));
 	// goto [
 	RzILOpEffect *jmp = rz_il_op_new_jmp(rz_il_op_new_bitv_from_ut64(64, target));

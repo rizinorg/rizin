@@ -13,6 +13,8 @@
 
 #include "c54x.h"
 
+#include  "../c54_c55x_lookup_tbls.h"
+
 // Mirrors the decoder's keyword table (c54x.c): maps the TS/ASM/DP/ARP operand
 // keyword (carried as the rendered string) back to its field value so the
 // lifter can act on it. Small and self-contained, kept local to avoid a
@@ -43,6 +45,7 @@ RZ_IPI RzAnalysisILConfig *tms320_c54x_il_config(RZ_NONNULL RzAnalysis *analysis
 	if (!cfg) {
 		return NULL;
 	}
+	cfg->global_idx_tbl_len = RZ_ARRAY_SIZE(global_idx);
 	cfg->reg_bindings = c54x_il_regs;
 	return cfg;
 }

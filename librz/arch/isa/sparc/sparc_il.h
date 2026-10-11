@@ -8,6 +8,8 @@
 #include <rz_analysis.h>
 #include <capstone/capstone.h>
 
+#include "sparc_global_idx_map.inc"
+
 #define INSDETAIL() insn->detail->sparc
 #define INSOP(n)    insn->detail->sparc.operands[n]
 #if CS_API_MAJOR >= 6

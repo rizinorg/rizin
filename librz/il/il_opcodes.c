@@ -1,7 +1,38 @@
 // SPDX-FileCopyrightText: 2021 heersin <teablearcher@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_il/definitions/variable.h"
+#include "rz_util/rz_assert.h"
 #include <rz_il/rz_il_opcodes.h>
+#include <stdint.h>
+
+/**
+ * \brief Binary search lookup to get the index for the global variable name.
+ */
+RZ_API size_t rz_il_global_idx_lookup(const RzILGlobalIdxMapEntry *table, size_t tbl_entries, const char *global) {
+	rz_return_val_if_fail(table && tbl_entries && global, SIZE_MAX);
+	if (tbl_entries == 1) {
+		return RZ_STR_EQ(global, table[0].global_name) ? table[0].idx : SIZE_MAX;
+	}
+
+	size_t low = 0;
+	size_t hi = tbl_entries;
+
+	while (low < hi) {
+		size_t mid = low + ((hi - low) >> 1);
+		int d = strcmp(global, table[mid].global_name);
+		if (d == 0) {
+			return table[mid].idx;
+		} else if (d > 0) {
+			low = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+
+	RZ_LOG_ERROR("Could not find unique index for '%s'. The implementation is broken.\n", global);
+	return SIZE_MAX;
+}
 
 #define rz_il_op_new_0(sort, id) \
 	do { \
@@ -74,13 +105,22 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_
 /**
  *  \brief op structure for `var` ('a var -> 'a pure)
  *
- *  var v is the value of the variable v.
+ * \param var v is the value of the variable v.
+ * \param idx The index of the variable, unique for \p kind.
+ * \param kind The variable kind.
+ *
+ * \return The Pure or NULL in case of failure.
  */
-RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v, RzILVarKind kind) {
+RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v, size_t idx, RzILVarKind kind) {
 	rz_return_val_if_fail(v, NULL);
+	if (kind == RZ_IL_VAR_KIND_GLOBAL && idx == -1) {
+		rz_warn_if_reached();
+		return NULL;
+	}
 	RzILOpPure *ret;
 	rz_il_op_new_2(Pure, RZ_IL_OP_VAR, RzILOpArgsVar, var, v, kind);
-	ret->op.var.hash = rz_str_djb2_hash(v);
+	ret->op.var.idx = idx;
+	ret->op.var.djb2_hash = rz_str_djb2_hash(v);
 	return ret;
 }
 
@@ -590,11 +630,16 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_nop() {
  *
  *  set v x changes the value stored in v to the value of x.
  */
-RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_local, RZ_NONNULL RzILOpPure *x) {
+RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, size_t idx, bool is_local, RZ_NONNULL RzILOpPure *x) {
 	rz_return_val_if_fail(v && x, NULL);
+	if (!is_local && idx == -1) {
+		rz_warn_if_reached();
+		return NULL;
+	}
 	RzILOpEffect *ret;
 	rz_il_op_new_3(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, is_local, x);
-	ret->op.set.hash = rz_str_djb2_hash(v);
+	ret->op.set.idx = idx;
+	ret->op.set.djb2_hash = rz_str_djb2_hash(v);
 	return ret;
 }
 
@@ -1313,7 +1358,8 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	switch (op->code) {
 	case RZ_IL_OP_VAR:
 		r->op.var.v = op->op.var.v;
-		r->op.var.hash = op->op.var.hash;
+		r->op.var.idx = op->op.var.idx;
+		r->op.var.djb2_hash = op->op.var.djb2_hash;
 		r->op.var.kind = op->op.var.kind;
 		break;
 	case RZ_IL_OP_ITE:
