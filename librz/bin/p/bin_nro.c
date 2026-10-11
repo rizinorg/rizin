@@ -204,6 +204,7 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	return ret;
 
 maps_err:
+	free(map->name);
 	free(map);
 	return ret;
 }

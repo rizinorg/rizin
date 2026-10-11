@@ -8,6 +8,8 @@ EOF
 EXPECT=<<EOF
 amd64
 amd64syscall
+golang
+golang_abi0
 ms
 reg
 swift
@@ -20,6 +22,8 @@ CMDS=tcc
 EXPECT=<<EOF
 amd64
 amd64syscall
+golang
+golang_abi0
 ms
 reg
 swift
@@ -33,9 +37,11 @@ tccj
 tccl
 EOF
 EXPECT=<<EOF
-[{"name":"amd64","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"]},{"name":"amd64syscall","ret":"rax","args":["rdi","rsi","rdx","r10","r8","r9"]},{"name":"ms","ret":"rax","args":["rcx","rdx","r8","r9"]},{"name":"reg","ret":"rdi","args":["rdi","rsi","rdx","rcx","r8","r9","r10","r11"]},{"name":"swift","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}]
+[{"name":"amd64","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"]},{"name":"amd64syscall","ret":"rax","args":["rdi","rsi","rdx","r10","r8","r9"]},{"name":"golang","ret":"rax","args":["rax","rbx","rcx","rdi","rsi","r8","r9","r10","r11"],"self":"r14"},{"name":"golang_abi0","ret":"rax","args":[]},{"name":"ms","ret":"rax","args":["rcx","rdx","r8","r9"]},{"name":"reg","ret":"rdi","args":["rdi","rsi","rdx","rcx","r8","r9","r10","r11"]},{"name":"swift","ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}]
 rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
 rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
+rax r14.golang (rax, rbx, rcx, rdi, rsi, r8, r9, r10, r11, stack);
+rax golang_abi0 (stack);
 rax ms (rcx, rdx, r8, r9, stack);
 rdi reg (rdi, rsi, rdx, rcx, r8, r9, r10, r11);
 rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;
