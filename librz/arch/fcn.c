@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
+#include "fcn_hpskip_private.h"
 #include <rz_parse.h>
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
@@ -12,7 +13,6 @@
 #define MAX_SCAN_SIZE        0x7ffffff
 
 // 16 KB is the maximum size for a basic block
-#define MAX_FLG_NAME_SIZE 64
 
 #define DB             a->sdb_fcns
 #define EXISTS(x, ...) snprintf(key, sizeof(key) - 1, x, ##__VA_ARGS__), sdb_exists(DB, key)
@@ -115,30 +115,6 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 
 	RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
-}
-
-static bool regs_exist(RzAnalysisValue *src, RzAnalysisValue *dst) {
-	rz_return_val_if_fail(src && dst, false);
-	return src->reg && dst->reg && src->reg->name && dst->reg->name;
-}
-
-// 0 if not skipped; 1 if skipped; 2 if skipped before
-static int skip_hp(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, RzAnalysisBlock *bb, ut64 addr,
-	char *tmp_buf, int oplen, int un_idx, int *idx) {
-	// this step is required in order to prevent infinite recursion in some cases
-	if ((addr + un_idx - oplen) == fcn->addr) {
-		// use addr instead of op->addr to mark repeat
-		if (!analysis->flb.exist_at(analysis->flb.f, "skip", 4, addr)) {
-			snprintf(tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%" PFMT64u, addr);
-			analysis->flb.set(analysis->flb.f, tmp_buf, addr, oplen);
-			fcn->addr += oplen;
-			rz_analysis_block_relocate(bb, bb->addr + oplen, bb->size - oplen);
-			*idx = un_idx;
-			return 1;
-		}
-		return 2;
-	}
-	return 0;
 }
 
 static bool purity_checked(HtUP *ht, RzAnalysisFunction *fcn) {
@@ -864,8 +840,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					RZ_FREE(movbasereg);
 				}
 			}
-			if (analysis->opt.hpskip && regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
-				skip_ret = skip_hp(analysis, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+			if (analysis->opt.hpskip && rz_analysis_regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = rz_analysis_skip_hp(analysis, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
 				}
@@ -904,8 +880,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 			// skip lea reg,[reg]
-			if (analysis->opt.hpskip && regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
-				skip_ret = skip_hp(analysis, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
+			if (analysis->opt.hpskip && rz_analysis_regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = rz_analysis_skip_hp(analysis, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
 				}
