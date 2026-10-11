@@ -295,7 +295,10 @@ static bool test_h8300_values(void) {
 	rz_analysis_op_fini(&op);
 	mu_assert_true(decode(analysis, &op, "6acb3322", 0x100, RZ_ANALYSIS_OP_MASK_VAL), "movtpe r3l,@0x3322");
 	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_STORE, "peripheral write");
-	mu_assert_eq(op.mmio_address, 0x3322, "peripheral address");
+	mu_assert_eq(op.mmios_count, 1, "peripheral address count");
+	mu_assert_eq(op.mmios[0], 0x3322, "peripheral MMIO address");
+	mu_assert_eq(op.ptr, 0x3322, "peripheral address");
+	mu_assert_eq(op.dst->base, 0x3322, "peripheral destination address");
 	rz_analysis_op_fini(&op);
 	rz_analysis_set_cpu(analysis, "h8300");
 	mu_assert_true(decode(analysis, &op, "2588", 0x100, RZ_ANALYSIS_OP_MASK_VAL), "base CPU short absolute address");
@@ -321,6 +324,15 @@ static bool test_h8300_opex_and_implicit(void) {
 	free(json);
 	mu_assert_true(reg_is(find_access(&op, RZ_ANALYSIS_VAL_REG, "er1"), "er1", RZ_ANALYSIS_ACC_R | RZ_ANALYSIS_ACC_W), "predecrement updates base register");
 	mu_assert_eq(op.dst->delta, -4, "predecrement access uses updated base");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(decode(analysis, &op, "7140", 0x100, RZ_ANALYSIS_OP_MASK_OPEX), "bnot #4,r0h");
+	json = rz_structured_data_to_json(op.opex);
+	mu_assert_notnull(json, "read-write OPEX JSON");
+	mu_assert_true(rz_json_string_eq(json,
+			       "{\"opex\":{\"operands\":[{\"access\":\"r\",\"type\":\"imm\",\"value\":4},"
+			       "{\"access\":\"rw\",\"type\":\"reg\",\"value\":\"r0h\"}]}}"),
+		"OPEX keeps compact read and read-write access strings");
+	free(json);
 	rz_analysis_op_fini(&op);
 	mu_assert_true(decode(analysis, &op, "01006d12", 0x100, RZ_ANALYSIS_OP_MASK_VAL), "mov.l @er1+,er2");
 	mu_assert_eq(op.src[0]->delta, 0, "postincrement accesses old base");

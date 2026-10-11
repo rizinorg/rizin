@@ -364,7 +364,8 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	if (!a1) {
 		a1 = rz_str_dup("?");
 	}
-	/* Older plugins use dst for indirect targets; read-only targets use src[0]. */
+	/* Older plugins use dst for indirect targets; read-only targets use src[0].
+	 * Track consistent target semantics at https://github.com/rizinorg/rizin/issues/6845. */
 	const char *target = op->dst ? r0 : a0;
 
 	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {

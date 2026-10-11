@@ -516,7 +516,8 @@ static void h8300_metadata(RzAnalysisOp *op, const H8300Instruction *cmd) {
 		op->refptr = op->ptrsize = h8300_data_size(cmd->id);
 	}
 	if (cmd->id == H8300_INSN_MOVFPE || cmd->id == H8300_INSN_MOVTPE) {
-		op->mmio_address = op->ptr;
+		op->mmios[0] = op->ptr;
+		op->mmios_count = 1;
 	}
 	if (cmd->id == H8300_INSN_EEPMOV_B || cmd->id == H8300_INSN_EEPMOV_W) {
 		op->direction = RZ_ANALYSIS_OP_DIR_READ | RZ_ANALYSIS_OP_DIR_WRITE;
@@ -580,8 +581,11 @@ static RzStructuredData *h8300_opex(RzAnalysis *analysis, const H8300Instruction
 		if (!operand) {
 			goto fail;
 		}
-		const char *access = value.access == RZ_ANALYSIS_ACC_R ? "r" : value.access == RZ_ANALYSIS_ACC_W ? "w"
-														 : "rw";
+		int perm = (value.access & RZ_ANALYSIS_ACC_R ? RZ_PERM_R : 0) |
+			(value.access & RZ_ANALYSIS_ACC_W ? RZ_PERM_W : 0);
+		char access[4];
+		rz_str_ncpy(access, rz_str_rwx_i(perm), sizeof(access));
+		rz_str_remove_char(access, '-');
 		if (!rz_structured_data_map_add_string(operand, "access", access)) {
 			goto fail;
 		}
