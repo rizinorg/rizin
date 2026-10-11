@@ -103,6 +103,12 @@ static void loadGP(RzCore *core) {
 	}
 }
 
+static void sync_m68k_core_usp(RzCore *core, RzReg *reg) {
+	if (rz_asm_is_arch(core->rasm, "m68k")) {
+		rz_reg_setv(reg, "usp", rz_reg_getv(reg, "a7"));
+	}
+}
+
 static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) {
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
@@ -1161,12 +1167,15 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			if (rz_reg_arena_set_bytes(rreg, binfile->o->regstate)) {
 				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
 			} else {
+				sync_m68k_core_usp(r, rreg);
 				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");
 			}
 			if (!RZ_STR_ISEMPTY(rreg->reg_profile_str)) {
 				rz_reg_set_profile_string(r->dbg->reg, rreg->reg_profile_str);
 				if (binfile->o->regstate && rz_reg_arena_set_bytes(r->dbg->reg, binfile->o->regstate)) {
 					RZ_LOG_WARN("Setting up coredump: Problem while setting debug registers\n");
+				} else {
+					sync_m68k_core_usp(r, r->dbg->reg);
 				}
 			}
 		}

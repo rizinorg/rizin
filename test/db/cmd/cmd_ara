@@ -92,6 +92,8 @@ EOF
 EXPECT=<<EOF
 amd64
 amd64syscall
+golang
+golang_abi0
 ms
 reg
 swift
@@ -99,6 +101,8 @@ r0 reg(r0, r1, r2, r3)
 rdi reg(rdi, rsi, rdx, rcx, r8, r9, r10, r11)
 amd64
 amd64syscall
+golang
+golang_abi0
 ms
 reg
 swift

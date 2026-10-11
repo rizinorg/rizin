@@ -49,3 +49,8 @@ cc.watcom.maxargs=4
 pascal=cc
 cc.pascal.argn=stack_rev
 cc.pascal.maxargs=0
+
+golang=cc
+cc.golang.argn=stack
+cc.golang.maxargs=0
+cc.golang.ret=eax
