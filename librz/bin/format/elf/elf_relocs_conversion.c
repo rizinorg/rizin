@@ -1531,6 +1531,50 @@ static RzBinReloc *reloc_convert_avr(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) 
 	}
 }
 
+/**
+ * \brief Convert a TMS320C28x EABI relocation.
+ *
+ * Types and values come from SPRAC71C Table 11-5 and field layouts from Table
+ * 11-6; elf_relocs_patching.c applies them. The spec disagrees with the tools
+ * in two places, both checked against ti-cgt-c2000 25.11.1.LTS output: it lists
+ * ABS22_BR as 5, a duplicate of ABS22, where the assembler emits 20, and it
+ * spells a few types differently in its two tables (PCREL16/PCR16,
+ * HI16/ABS_HI16), where Table 11-5's names are used.
+ */
+static RzBinReloc *reloc_convert_c28x(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
+	ut64 P = rel->vaddr;
+
+	switch (rel->type) {
+	case R_C28X_NONE:
+		return reloc_convert_set(bin, rel, 0, "R_C28X_NONE");
+	case R_C28X_ABS32: ADD(32, 0, "R_C28X_ABS32", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_ABS16: ADD(16, 0, "R_C28X_ABS16", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_ABS8: ADD(8, 0, "R_C28X_ABS8", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_PCREL16: ADD(16, -P, "R_C28X_PCREL16", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_PCREL8: ADD(8, -P, "R_C28X_PCREL8", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_PREL31: ADD(32, -P, "R_C28X_PREL31", RZ_RELOC_BASE_SYMBOL);
+	case R_C28X_DP_HI10: ADD(16, -P, "R_C28X_DP_HI10", RZ_RELOC_BASE_SYMBOL);
+	// instruction-field forms: the value lands in a bit field inside the
+	// opcode, so it is named and sized but not resolved to an address
+	case R_C28X_ABSLO6: SET(16, "R_C28X_ABSLO6");
+	case R_C28X_ABSLO7: SET(16, "R_C28X_ABSLO7");
+	case R_C28X_ABS22: SET(32, "R_C28X_ABS22");
+	case R_C28X_ABS22_BR: SET(32, "R_C28X_ABS22_BR");
+	case R_C28X_HI6: SET(16, "R_C28X_HI6");
+	case R_C28X_DP_HI16: SET(16, "R_C28X_DP_HI16");
+	case R_C28X_HI16: SET(16, "R_C28X_HI16");
+	case R_C28X_ABS8_HI: SET(8, "R_C28X_ABS8_HI");
+	case R_C28X_ABS13_SE16: SET(16, "R_C28X_ABS13_SE16");
+	case R_CLA_ABS16: SET(16, "R_CLA_ABS16");
+	// the negated forms subtract the symbol rather than add it, which the
+	// generic add/set conversion cannot express
+	case R_C28X_NEGWORD: SET(16, "R_C28X_NEGWORD");
+	case R_C28X_NEGBYTE: SET(8, "R_C28X_NEGBYTE");
+	default:
+		UNHANDL("R_C28X_UNKNOWN");
+	}
+}
+
 // TMS320C6000 EABI. The relocation types and the value each computes are
 // SPRAB89 Table 13-5, and the field each writes is Table 13-6:
 // "C6000 Embedded Application Binary Interface", SPRAB89B, revised August 2025.
@@ -1740,7 +1784,7 @@ RZ_OWN RzBinReloc *Elf_(rz_bin_elf_convert_relocation)(RZ_NONNULL ELFOBJ *bin, R
 	case EM_LATTICEMICO32: ARCH_MISSING("EM_LATTICEMICO32");
 	case EM_SE_C17: ARCH_MISSING("EM_SE_C17");
 	case EM_TI_C6000: return reloc_convert_c6000(bin, rel, GOT);
-	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
+	case EM_TI_C2000: return reloc_convert_c28x(bin, rel, GOT);
 	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
 	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
 	case EM_TI_PRU: ARCH_MISSING("EM_TI_PRU");

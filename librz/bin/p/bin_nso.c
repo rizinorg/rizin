@@ -324,12 +324,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_pvector_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->size = tmp;
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_pvector_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->vsize = tmp;

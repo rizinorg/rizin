@@ -1,0 +1,60 @@
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// Undoes c28x_rowdefs.h; included right after the decode-table body.
+
+#undef OP
+#undef REG
+#undef VRREG
+#undef VRREG3
+#undef VRREGL
+#undef VTREG
+#undef AXREG
+#undef XARN
+#undef ARN
+#undef ARPN
+#undef LOC16
+#undef LOC32
+#undef IMMU
+#undef IMMSPLIT
+#undef IMMV
+#undef IMMS
+#undef IMMC
+#undef SHIFT
+#undef SHIFT1
+#undef SHIFTC
+#undef COND
+#undef REL
+#undef PMA
+#undef PMA_IND
+#undef PMA_DP
+#undef DMA
+#undef PORT
+#undef MODE
+#undef BITN
+#undef IND
+#undef INDR
+#undef AXAT
+#undef INTRN
+#undef RPTABLE
+#undef FREG
+#undef FREGFIX
+#undef FREGL
+#undef FREG64
+#undef FREGM
+#undef FCOND
+#undef FFLAGS
+#undef FSETFLG
+#undef FZERO
+#undef PAR
+#undef VRREGH
+#undef VRREGL4
+#undef VRSPLIT
+#undef VSMPAIR
+#undef VSHIFT
+#undef IMMDEC
+#undef IMMCOLON
+#undef VRREGH4
+#undef VTREG2
+#undef VRLFIX
+#undef VRHFIX

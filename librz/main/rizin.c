@@ -10,6 +10,10 @@
 #include <rz_socket.h>
 #include <locale.h>
 
+enum {
+	RZ_MAIN_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
+};
+
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
 	return d && strncmp(d->name, "gdb://", 6);
@@ -126,6 +130,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-B",          "baddr",     "Set base address for PIE binaries",
 			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
+			"--cmd-catalog", "[json]",  "Print command tree catalog and exit",
 			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
 			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
 			"-e",          "k=v",       "Evaluate config var",
@@ -444,6 +449,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
+	bool do_print_cmd_tree_json = false;
 	char *file = NULL;
 	char *pfile = NULL;
 	char *gdb_downloaded_exe = NULL;
@@ -531,14 +537,34 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool load_l = true;
 	char *debugbackend = rz_str_dup("native");
 
+	RzPVector cmd_catalog_values;
+	rz_pvector_init(&cmd_catalog_values, NULL);
+	rz_pvector_push(&cmd_catalog_values, "json");
+	RzGetoptLong cmd_catalog = {
+		"cmd-catalog", RZ_MAIN_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
+	};
+	RzVector rizin_longopts;
+	rz_vector_init(&rizin_longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&rizin_longopts, &cmd_catalog);
+
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init_long(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt", &rizin_longopts);
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
 			RZ_LOG_ERROR("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
 			ret = 1;
 			goto beach;
+			break;
+		case RZ_MAIN_LONG_CMD_CATALOG:
+			do_print_cmd_tree_json = true;
+			break;
+		case '?':
+			if (opt.opt == '-') {
+				ret = 1;
+				goto beach;
+			}
+			help++;
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
@@ -957,6 +983,27 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_parse_rizinrc(r);
 	} else {
 		rz_config_set(r->config, "scr.utf8", "false");
+	}
+
+	if (do_print_cmd_tree_json) {
+		PJ *pj = pj_new();
+		if (!pj || !rz_cmd_get_tree_json(r->rcmd, pj)) {
+			pj_free(pj);
+			RZ_LOG_ERROR("Cannot build command tree JSON\n");
+			LISTS_FREE();
+			RZ_FREE(pfile);
+			RZ_FREE(debugbackend);
+			ret = 1;
+			goto beach;
+		}
+		rz_cons_printf("%s\n", pj_string(pj));
+		pj_free(pj);
+		rz_cons_flush();
+		LISTS_FREE();
+		RZ_FREE(pfile);
+		RZ_FREE(debugbackend);
+		ret = 0;
+		goto beach;
 	}
 
 	if (pfile && rz_file_is_directory(pfile)) {
@@ -1623,6 +1670,8 @@ beach:
 	rz_cons_free();
 	LISTS_FREE();
 	free(debugbackend);
+	rz_vector_fini(&rizin_longopts);
+	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
 	return ret;
 }

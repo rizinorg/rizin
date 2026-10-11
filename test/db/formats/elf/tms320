@@ -41,3 +41,43 @@ EXPECT=<<EOF
 28b8020068000400
 EOF
 RUN
+
+# Relocation patching for the C28x EABI. The field layouts are not fully given
+# in SPRAC71C Table 11-6, so they were measured: assemble a reference to an
+# external symbol, link it at a known address with lnk2000, and diff the
+# section against the relocatable object. far_target resolves to 0x080001e0.
+#
+#   R_C28X_DP_HI16  whole word    = (S >> 6) & 0xffff = 0x0007
+#   R_C28X_ABSLO6   word bits 5:0 = S & 0x3f          = 0x20
+#   R_C28X_ABS8     word bits 7:0 = S & 0xff          = 0xe0
+#   R_C28X_ABS16    whole word    = S & 0xffff        = 0x01e0
+#   R_C28X_ABS22_BR w0 bits 5:0   = S >> 16           = 0x00
+#                   w1            = S & 0xffff        = 0x01e0
+#   R_C28X_PCREL16  w1            = S + A - P         = 0x0197
+#   R_C28X_PCREL8   word bits 7:0 = S + A - P         = 0x94
+NAME=TMS320C28x EABI relocation patching
+FILE=bins/tms320/elf/c28x_reloc.eabi.elf
+CMDS=<<EOF
+e bin.relocs.apply=true
+e scr.color=0
+ir
+s 0x08000036
+p8 10
+s 0x08000040
+p8 14
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type            name                    
+-------------------------------------------------------------------------
+0x08000036 0x00000036 0x080001e0 R_C28X_DP_HI16  far_target
+0x08000038 0x00000038 0x080001e0 R_C28X_ABSLO6   far_target
+0x0800003a 0x0000003a 0x080001e0 R_C28X_ABS8     far_target
+0x0800003e 0x0000003e 0x080001e0 R_C28X_ABS16    far_target
+0x08000040 0x00000040 0x080001e0 R_C28X_ABS22_BR far_target
+0x08000044 0x00000044 0x080001e0 R_C28X_ABS22_BR far_target
+0x0800004a 0x0000004a 0x080001e0 R_C28X_PCREL16  far_target - 0x08000049
+0x0800004c 0x0000004c 0x080001e0 R_C28X_PCREL8   far_target - 0x0800004c
+07002092e09aa928e001
+008fe0014076e001e0ff97019460
+EOF
+RUN

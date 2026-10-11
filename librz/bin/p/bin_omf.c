@@ -22,7 +22,6 @@ static void destroy(RzBinFile *bf) {
 }
 
 static bool check_buffer(RzBuffer *b) {
-	int i;
 	ut8 ch;
 	if (rz_buf_read_at(b, 0, &ch, 1) != 1) {
 		return false;
@@ -43,7 +42,7 @@ static bool check_buffer(RzBuffer *b) {
 		return false;
 	}
 	// check that the string is ASCII
-	for (i = 4; i < str_size + 4; i++) {
+	for (ut16 i = 4; i < str_size + 4; i++) {
 		if (rz_buf_read_at(b, i, &ch, 1) != 1) {
 			break;
 		}
@@ -55,9 +54,9 @@ static bool check_buffer(RzBuffer *b) {
 	const ut8 *buf = rz_buf_data(b, &size);
 	if (buf == NULL) {
 		// hackaround until we make this plugin not use RBuf.data
-		ut8 buf[1024] = { 0 };
-		rz_buf_read_at(b, 0, buf, sizeof(buf));
-		return rz_bin_checksum_omf_ok(buf, sizeof(buf));
+		ut8 tmp_buf[1024] = { 0 };
+		rz_buf_read_at(b, 0, tmp_buf, sizeof(tmp_buf));
+		return rz_bin_checksum_omf_ok(tmp_buf, sizeof(tmp_buf));
 	}
 	rz_return_val_if_fail(buf, false);
 	return rz_bin_checksum_omf_ok(buf, length);
@@ -68,13 +67,12 @@ static ut64 baddr(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
-	RzPVector *ret;
-	RzBinAddr *addr;
-
-	if (!(ret = rz_pvector_new(free))) {
+	RzPVector *ret = rz_pvector_new(free);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(addr = RZ_NEW0(RzBinAddr))) {
+	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
+	if (!addr) {
 		rz_pvector_free(ret);
 		return NULL;
 	}
@@ -87,15 +85,14 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
-	RzPVector *ret;
 	ut32 ct_omf_sect = 0;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	rz_bin_omf_obj *obj = bf->o->bin_obj;
-
-	if (!(ret = rz_pvector_new(NULL))) {
+	const rz_bin_omf_obj *obj = bf->o->bin_obj;
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	if (!ret) {
 		return NULL;
 	}
 
@@ -109,22 +106,21 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 }
 
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
-	RzPVector *ret;
-	RzBinSymbol *sym;
-	OMF_symbol *sym_omf;
 	int ct_sym = 0;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free))) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+	if (!ret) {
 		return NULL;
 	}
 
 	while (ct_sym < ((rz_bin_omf_obj *)bf->o->bin_obj)->nb_symbol) {
-		if (!(sym = RZ_NEW0(RzBinSymbol))) {
+		RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
+		if (!sym) {
 			return ret;
 		}
-		sym_omf = ((rz_bin_omf_obj *)bf->o->bin_obj)->symbols[ct_sym++];
+		const OMF_symbol *sym_omf = ((rz_bin_omf_obj *)bf->o->bin_obj)->symbols[ct_sym++];
 		sym->name = rz_str_dup(sym_omf->name);
 		sym->forwarder = "NONE";
 		sym->paddr = rz_bin_omf_get_paddr_sym(bf->o->bin_obj, sym_omf);
@@ -137,9 +133,9 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret;
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 
-	if (!(ret = RZ_NEW0(RzBinInfo))) {
+	if (!ret) {
 		return NULL;
 	}
 	ret->file = rz_str_dup(bf->file);
@@ -197,7 +193,7 @@ static void omf_structure_add_data_blocks(RzStructuredData *section, OMF_segment
 		return;
 	}
 
-	OMF_data *data = seg->data;
+	const OMF_data *data = seg->data;
 	ut32 block_count = 0;
 	while (data && block_count < OMF_MAX_DATA_BLOCKS) {
 		RzStructuredData *block = rz_structured_data_array_add_map(data_blocks);

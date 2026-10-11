@@ -14,10 +14,10 @@
  * Two architectural notes bound what is modelled here. C6000 is a VLIW: every
  * instruction of an execute packet reads its sources at the packet start and
  * writes at its end, so within a packet an instruction never sees another's
- * result. The RzIL VM steps sequentially, so a "|| mv a,b || mv b,a" swap is
- * not modelled exactly; ordinary (non-swapping) parallel code lifts correctly.
- * Branch and result-delay behavior is assembled into windows by the analysis
- * plugin, which defers transfers and write-back while those packets issue.
+ * result. The packet lifter stages supported register writes, so a
+ * "|| mv a,b || mv b,a" swap reads both packet-start values. Branch and
+ * result-delay behavior is assembled into windows by the analysis plugin,
+ * which defers transfers and write-back while those packets issue.
  */
 
 #include <rz_util.h>
@@ -844,10 +844,10 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_B:
 	case C6X_INS_BNOP:
 	case C6X_INS_CALLP: {
-		// Bare control transfer for callers that do not build a branch window.
-		// The analysis lifter normally handles the delay window and emits a
-		// sampled transfer; this path remains useful as a conservative fallback.
-		// Call forms (a link register in ops[1]) also record the return address.
+		// Bare control transfer used by callers that do not assemble a delay
+		// window. A PC-relative target is based on fetch-packet-aligned PCE1;
+		// the analysis lifter normally samples and defers it until after the
+		// delay slots. Call forms also record the word after the branch.
 		const C6xOperand *t = &OP(0);
 		RzILOpBitVector *tgt;
 		if (t->kind == C6X_OP_PCREL) {

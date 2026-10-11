@@ -665,6 +665,7 @@ EXPECT=<<EOF
 c54x            Texas Instruments TMS320C54x DSP family
 c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
 c5x             Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)
+c28x            Texas Instruments TMS320C28x fixed-point DSP family (C2000)
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
 c62x            Texas Instruments TMS320C62x fixed-point VLIW DSP family
