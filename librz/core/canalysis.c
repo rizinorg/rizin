@@ -5686,7 +5686,7 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  * \param n_bytes  analysis len bytes
  * \param max_ops  analysis n ops
  * \param iterator Output parameter, filled with an iterator of RzCoreDecodedBytes on success
- * 
+ *
  * \return True on success, false on failure.
  */
 RZ_API bool rz_core_analysis_bytes(
