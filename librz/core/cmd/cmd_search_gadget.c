@@ -424,6 +424,8 @@ static void gadget_reg_filter_free(RzGadgetRegFilter *filter) {
  * \return The widest GPR with the same offset, or \p item itself.
  */
 static const RzRegItem *gadget_reg_filter_canonical(RZ_NONNULL RzReg *reg, RZ_NONNULL const RzRegItem *item) {
+	rz_return_val_if_fail(reg && item, NULL);
+
 	const RzList /*<RzRegItem *>*/ *gprs = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
 	if (!gprs) {
 		return item;
@@ -456,7 +458,7 @@ static const RzRegItem *gadget_reg_filter_canonical(RZ_NONNULL RzReg *reg, RZ_NO
  * \return RZ_OUT A newly allocated vector of RzGadgetRegFilter, or NULL on error.
  */
 static RZ_OWN RzPVector /*<RzGadgetRegFilter *>*/ *gadget_reg_filter_parse(RZ_NONNULL const RzCore *core, RZ_NONNULL const char *str) {
-	rz_return_val_if_fail(core && core->analysis, NULL);
+	rz_return_val_if_fail(core && core->analysis && str, NULL);
 
 	RzReg *reg = rz_analysis_get_reg(core->analysis);
 	if (!reg || RZ_STR_ISEMPTY(str)) {
