@@ -586,6 +586,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
+e cfg.bigendian=false
 wx 000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb1eff2fe1
 af
 afsb
