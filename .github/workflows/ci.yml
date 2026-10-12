@@ -315,7 +315,7 @@ jobs:
           if [ "$RUNNER_OS" == "macOS" ]; then
             rz-test -j `sysctl -n hw.activecpu` -L -o results.json
           else
-            rz-test -L -o results.json
+            rz-test -j `nproc` -L -o results.json
           fi
         env:
           ASAN: ${{ matrix.asan }}
