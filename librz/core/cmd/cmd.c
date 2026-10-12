@@ -3149,18 +3149,20 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
+static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length, RZ_NULLABLE RzCmdStatus *status) {
 	const char *static_str;
 	ut8 *retstr = NULL;
 	rz_cons_push();
 	bool is_pipe = core->is_pipe;
 	core->is_pipe = true;
-	if (rz_core_cmd(core, cmd, 0) == -1) {
-		core->is_pipe = is_pipe;
+	RzCmdStatus res = rz_core_cmd_rzshell(core, cmd, 0);
+	core->is_pipe = is_pipe;
+	if (status) {
+		*status = res;
+	} else if (rz_cmd_status2int(res) == -1) {
 		rz_cons_pop();
 		return NULL;
 	}
-	core->is_pipe = is_pipe;
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
 	if (length) {
@@ -3181,7 +3183,24 @@ static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
  */
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	rz_return_val_if_fail(core && cmd, NULL);
-	return (char *)core_cmd_raw(core, cmd, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL, NULL);
+}
+
+/**
+ * \brief Executes a rizin command and returns its output, along with its status
+ *
+ * The output is what \p cmd printed, also when it failed: `echo a; zzz` gives
+ * `"a\n"`, while rz_core_cmd_str() gives NULL. Error messages go to stderr and
+ * are not part of it.
+ *
+ * \param core RzCore instance
+ * \param cmd Command line to execute
+ * \param status Set to the status of \p cmd, in any case
+ * \return The output of \p cmd, possibly empty, or NULL if it cannot be allocated
+ */
+RZ_API RZ_OWN char *rz_core_cmd_str_status(RZ_NONNULL RzCore *core, RZ_NONNULL const char *cmd, RZ_NONNULL RZ_OUT RzCmdStatus *status) {
+	rz_return_val_if_fail(core && cmd && status, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL, status);
 }
 
 /**
@@ -3189,7 +3208,7 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
  */
 RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	rz_return_val_if_fail(core && cmd && length, NULL);
-	return core_cmd_raw(core, cmd, length);
+	return core_cmd_raw(core, cmd, length, NULL);
 }
 
 static int compare_cmd_descriptor_name(const void *a, const void *b, void *user) {
