@@ -262,9 +262,9 @@ RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis) 
 	return analysis->cur;
 }
 
-RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	return ht_sp_as_iter(analysis->plugins);
+RZ_API bool rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RZ_OWN RzIterator *iter) {
+	rz_return_val_if_fail(analysis, false);
+	return ht_sp_as_iter(analysis->plugins, iter);
 }
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
@@ -295,9 +295,12 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		return true;
 	}
 
-	RzIterator *it = ht_sp_as_iter(analysis->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(analysis->plugins, &it)) {
+		return false;
+	}
 	RzAnalysisPlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h || !h->name || strcmp(h->name, name)) {
 			continue;
@@ -309,17 +312,17 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			return false;
 		}
 		rz_analysis_set_reg_profile(analysis);
 		if (analysis->il_vm) {
 			rz_analysis_il_vm_setup(analysis);
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		return true;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return false;
 }
 
@@ -903,8 +906,10 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, u
 		if ((oplen = rz_analysis_op(analysis, op, at, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
-			memset(ret + idx + op->nopcode, 0, oplen - op->nopcode);
+		ut32 avail = size - idx;
+		ut32 safe_oplen = (ut32)oplen > avail ? avail : (ut32)oplen;
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0 && op->nopcode <= safe_oplen) {
+			memset(ret + idx + op->nopcode, 0, safe_oplen - op->nopcode);
 		}
 		idx += oplen;
 		at += oplen;

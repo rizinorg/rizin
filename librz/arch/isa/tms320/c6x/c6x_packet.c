@@ -54,7 +54,7 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 	RZ_OUT C6xSlotRef *out) {
 	ut32 w[8];
 	for (size_t i = 0; i < 8; i++) {
-		w[i] = big_endian ? rz_read_be32(fp + i * 4) : rz_read_le32(fp + i * 4);
+		w[i] = rz_read_ble32(fp + i * 4, big_endian);
 	}
 	size_t n = 0;
 	if (!is_compact_header(w[7])) {

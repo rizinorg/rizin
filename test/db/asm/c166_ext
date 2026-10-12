@@ -1,0 +1,159 @@
+
+d "extr #1;mov 0xf1d0, #0x7889;mov 0xffaa, #0x0000;mov 0xfe16, #0xf800;mov 0xfe14, #0xf60c;bfldh 0xff10, #0x03, #0x02" d180e6e88978e6d50000e60b00f8e60a0cf61a880203
+d "extr #4;mov 0xf1d0, #0x7889;mov 0xf1aa, #0x0000;mov 0xf016, #0xf800;mov 0xf014, #0xf60c;bfldh 0xff10, #0x03, #0x02" d1B0e6e88978e6d50000e60b00f8e60a0cf61a880203
+d "mov 0xfe06, #0x0003" e6030300
+d "mov 0xfe06, #0x0003" e6030300
+
+d "sub 0xfe0a, 0xfe00:0x0404" 22050404 # as sub 0x05,DPP0:0x0404
+d "sub 0xfe00, 0xfe00:0x0404" 22000404
+d "sub 0xfe5a, 0xfe00:0x0404" 222D0404 # as sub 0x2d,DPP0:0x0404
+
+d "sub r5, 0xfe00:0x0404" 22F50404 # as sub R5, DPP0:0x0404
+
+d "exts #0x008d, #1;cmp 0xfe10, 0xfe00:0x08f6" d7038d074208f608
+d "exts #0x008d, #1" d7038d07
+d "cmp 0xfe10, 0xfe00:0x08f6" 4208f608 # right (Keil) as  CMP CP,DPP0:0x08F6
+
+d "exts #0x008d, #1" d7008d00 # right (Keil)
+d "exts #0x008d, #2" d7108d00 # right (Keil)
+d "exts #0x008d, #3" d7208d00 # right (Keil)
+d "exts #0x008d, #4" d7308d00 # right (Keil)
+
+dB "" 9AEF0260 # warning A111: ACCESS TO EXTENDED SFR OUTSIDE AN 'EXT' SEQUENCE
+d "extr #1;jnb 0xf1de.6, 0x00000a" d1809AEF0260 # as 9AEF0260 JNB 0xEF.6,0x000222
+d "jnb 0xfd02.3, 0x00000c" 9A010430
+
+d "jnb 0xff12.10, 0x00000a" 9A8903A0 # as jnb ROMEN,0x00000a
+
+d "add r12, 0xfe00:0x1ffc" 02FCFC1F # as ADD R12,DPP0:0x1FFC
+d "add r13, 0xfe00:0x1ffc" 02FDFC1F # as ADD R13,DPP0:0x1FFC
+
+d "extp #0x0000, #1;cmp r12, 0xfe00:0x1ffe" D740000042FCFE1F # as EXTP #0x0000,#1; CMP R12,DPP0:0x1FFE
+d "cmp r12, 0xfe00:0x1ffe" 42FCFE1F # as CMP R12,DPP0:0x1FFE
+
+d "add r4, r10" 004a
+
+d "movb rl4, [r10+#0x2200]" f48a0022
+d "jb r4.14, 0x000010" 8af406e0
+d "sub r2, #1" 2821
+d "cmpb rl7, #0x0010" 47fe1000
+d "addb rl7, #0x0001" 09e1
+d "movb [r3], rl5" b9a3
+d "mov r2, [r8+]" 9828
+d "extsr r0, #1;mov r2, [r8+]" dc809828
+d "bfldl 0xff0c, #0x3f, #0x2e" 0a863f2e
+d "mov r9, #0x0001" e6f90100
+d "mov r4, r2" f042
+d "jbc r2.14, 0x00003a" aaf21be0
+d "add r10, #0x000e" 06fa0e00
+d "exts r9, #1;mov r2, [r8+]" dc099828
+d "mov 0xfe06:0x3e06, r3" f6f306fe
+d "bfldh 0xff0c, #0xd2, #0x00" 1a8600d2
+d "movb rl1, #0x0000" e102
+d "jnb r8.0, 0xffffffa4" 9af8d000
+d "xor 0xff46, #0x0200" 56a30002
+
+d "extp #0x0003, #1;movb rl4, [r10+#0x2200]" d7400300f48a0022
+d "extp r4, #1;movb [r3], rl5" dc44b9a3
+
+d "jmpr cc_N, 0x000034" 6d19
+d "jmpr cc_NC/UGE, 0x000032" 9d18
+
+d "jmpr cc_NET, 0x000030" 1d17
+d "jmpr cc_V, 0x00002e" 4d16
+d "jmpr cc_NV, 0x00002c" 5d15
+d "jmpr cc_SGT, 0x00002a" ad14
+d "jmpr cc_SLE, 0x000028" bd13
+d "jmpr cc_SLT, 0x000026" cd12
+d "jmpr cc_SGE, 0x000024" dd11
+d "jmpr cc_UGT, 0x000022" ed10
+d "jmpr cc_ULE, 0x000020" fd0f
+
+d "bclr r1.0" 0ef1
+d "bclr r2.1" 1ef2
+d "bclr r3.2" 2ef3
+d "bclr r4.3" 3ef4
+d "bclr r5.4" 4ef5
+d "bclr r6.5" 5ef6
+d "bclr r7.6" 6ef7
+d "bclr r8.7" 7ef8
+d "bclr r9.0" 0ef9
+d "bclr r10.1" 1efa
+d "bclr r11.2" 2efb
+d "bclr r12.3" 3efc
+d "bclr r13.4" 4efd
+d "bclr r14.5" 5efe
+d "bclr r15.6" 6eff
+d "bclr r15.7" 7eff
+d "bclr r15.8" 8eff
+d "bclr r15.9" 9eff
+d "bclr r15.10" aeff
+d "bclr r15.11" beff
+d "bclr r15.12" ceff
+d "bclr r15.13" deff
+d "bclr r15.14" eeff
+d "bclr r15.15" feff
+
+d "bclr 0xfd00.0" 0e00
+
+# 00C0069A 7E80      BCLR     P0L.7
+d "bclr 0xff00.7" 7e80
+
+d "bset r1.0" 0ff1
+d "bset r2.1" 1ff2
+d "bset r3.2" 2ff3
+d "bset r4.3" 3ff4
+d "bset r5.4" 4ff5
+d "bset r6.5" 5ff6
+d "bset r7.6" 6ff7
+d "bset r8.7" 7ff8
+d "bset r9.0" 0ff9
+d "bset r10.1" 1ffa
+d "bset r11.2" 2ffb
+d "bset r12.3" 3ffc
+d "bset r13.4" 4ffd
+d "bset r14.5" 5ffe
+d "bset r15.6" 6fff
+d "bset r15.7" 7fff
+d "bset r15.8" 8fff
+d "bset r15.9" 9fff
+d "bset r15.10" afff
+d "bset r15.11" bfff
+d "bset r15.12" cfff
+d "bset r15.13" dfff
+d "bset r15.14" efff
+d "bset r15.15" ffff
+
+d "bclr 0xff10.2" 2e88
+d "bset 0xff10.3" 3f88
+
+d "bset r14.5;bclr r14.5;bclr r14.5;bclr 0xff7c.5" 5ffe5efe5efe5ebe
+
+# XOR PSW,DPP0:0x0200
+d "xor 0xff10, 0xfe00:0x0200" 52880002
+
+d "cmpb rl4, #0x0000" 4980
+d "cmpb rl4, rh7" 418f
+d "cmpb rl4, [r0+]" 498c
+d "cmpb rl4, [r1+]" 498d
+d "cmpb rl4, [r2+]" 498e
+d "cmpb rl4, [r3+]" 498f
+d "cmpb rl4, [r1]" 4989
+
+d "sub r3, [r1+]" 283d
+d "sub r4, [r2]" 284a
+
+d "jmpa- cc_NUSR0, 0x000500" EA0B0005
+d "jmpa+ cc_NUSR0, 0x000500" EA0A0005
+
+d "calla- cc_NUSR0, 0x000500" ca0b0005
+d "calla+ cc_NUSR0, 0x000500" ca0a0005
+
+d "calla- cc_NUSR0, 0x000614" ca091406
+d "calla- cc_NUSR1, 0x000614" ca191406
+d "calla- cc_USR0, 0x000614" ca291406
+d "calla- cc_USR1, 0x000614" ca391406
+d "calla+ cc_NUSR0, 0x000614" ca081406
+d "calla+ cc_NUSR1, 0x000614" ca181406
+d "calla+ cc_USR0, 0x000614" ca281406
+d "calla+ cc_USR1, 0x000614" ca381406

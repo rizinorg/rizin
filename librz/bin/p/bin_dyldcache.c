@@ -453,6 +453,10 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 				if (!(klass = RZ_NEW0(RzBinClass)) ||
 					!(klass->methods = rz_list_newf((RzListFree)rz_bin_symbol_free)) ||
 					!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
+					if (klass) {
+						rz_list_free(klass->methods);
+						rz_list_free(klass->fields);
+					}
 					RZ_FREE(klass);
 					RZ_FREE(pointers);
 					RZ_FREE(sections);
@@ -475,6 +479,8 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 					RZ_LOG_ERROR("CLASS ERROR AT 0x%" PFMT64x ", is_classlist %d\n", pointer_to_class, is_classlist);
 					klass->name = rz_str_newf("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
+						rz_list_free(klass->methods);
+						rz_list_free(klass->fields);
 						RZ_FREE(klass);
 						RZ_FREE(pointers);
 						RZ_FREE(sections);

@@ -25,3 +25,12 @@ cc.c6x.arg9=b12
 cc.c6x.argn=stack
 cc.c6x.maxargs=10
 cc.c6x.ret=a4
+
+c28x=cc
+cc.c28x.arg0=al
+cc.c28x.arg1=ah
+cc.c28x.arg2=xar4
+cc.c28x.arg3=xar5
+cc.c28x.argn=stack
+cc.c28x.maxargs=4
+cc.c28x.ret=acc

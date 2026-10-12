@@ -2430,6 +2430,7 @@ static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block
 		return;
 	}
 	if (analysis->iob.read_at(analysis->iob.io, from, buf, len) < len) {
+		free(buf);
 		return;
 	}
 	RzAnalysisOp op = { 0 };

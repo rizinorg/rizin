@@ -176,6 +176,7 @@ rz_bin_sources = [
 
 
   'format/bflt/bflt.c',
+  'format/c166/c166_raw.c',
   'format/coff/coff.c',
   'format/coff/coff_reloc.c',
   'format/dex/dex.c',

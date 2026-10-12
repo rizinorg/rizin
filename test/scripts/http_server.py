@@ -8,11 +8,17 @@ a new connection.
 
 import http.client
 import subprocess
+import sys
 
 
 def main():
+    args = "-m http.server 9000 --bind 127.0.0.1"
+    if sys.platform == "win32":
+        cmd = "start /B pythonw3 " + args
+    else:
+        cmd = "python3 " + args + " &"
     subprocess.run(
-        "python3 -m http.server 9000 --bind 127.0.0.1 &",
+        cmd,
         shell=True,
         check=True,
         cwd="www",

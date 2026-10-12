@@ -117,6 +117,22 @@ error:
 	goto beach;
 }
 
+// "?+"
+RZ_IPI RzCmdStatus rz_cmd_catalog_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	if (mode != RZ_OUTPUT_MODE_JSON) {
+		RZ_LOG_ERROR("Command ?+ does not support output mode %d. Only json is supported.\n", mode);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	PJ *pj = pj_new();
+	if (!pj || !rz_cmd_get_tree_json(core->rcmd, pj)) {
+		pj_free(pj);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(pj_string(pj));
+	pj_free(pj);
+	return RZ_CMD_STATUS_OK;
+}
+
 // "?*"
 RZ_IPI RzCmdStatus rz_cmd_help_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	RzCmdStatus status = RZ_CMD_STATUS_OK;
@@ -190,11 +206,13 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core,
 	rz_core_config_print_all(core->config, "", &state);
 
 	RzConfig **cfg;
-	RzIterator *it = ht_sp_as_iter(core->plugin_configs);
-	rz_iterator_foreach(it, cfg) {
-		rz_core_config_print_all(*cfg, "", &state);
+	RzIterator it = (RzIterator){ 0 };
+	if (ht_sp_as_iter(core->plugin_configs, &it)) {
+		rz_iterator_foreach(&it, cfg) {
+			rz_core_config_print_all(*cfg, "", &state);
+		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	// Run it in the hub.
 	free(rz_cons_hud_string(rz_strbuf_get(state.d.sbuf)));

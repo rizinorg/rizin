@@ -1020,17 +1020,6 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		}
 	}
 
-	if (ds->analysis_op.mmio_address != UT64_MAX) {
-		char number[32];
-		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmio_address);
-
-		RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
-		const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmio_address);
-		if (resolved) {
-			ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
-		}
-	}
-
 	if (ds->analysis_op.ptr != UT64_MAX) {
 		char number[32];
 		rz_strf(number, "0x%" PFMT64x, ds->analysis_op.ptr);
@@ -1145,6 +1134,18 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 		}
 	} else {
 		ds_opstr_try_colorize(ds, print_color);
+	}
+	for (int i = 0; i < RZ_ARRAY_SIZE(ds->analysis_op.mmios); i++) {
+		if (ds->analysis_op.mmios[i] != UT64_MAX) {
+			char number[32];
+			rz_strf(number, "0x%" PFMT64x, ds->analysis_op.mmios[i]);
+
+			RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
+			const char *resolved = rz_platform_profile_resolve_mmio(arch_target->profile, ds->analysis_op.mmios[i]);
+			if (resolved) {
+				ds->opstr = rz_str_replace(ds->opstr, number, resolved, 0);
+			}
+		}
 	}
 	rz_str_trim_char(ds->opstr, '\n');
 	// updates ds->opstr
@@ -6052,10 +6053,9 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
-	RzIterator *iter = NULL;
+	RzIterator iter = (RzIterator){ 0 };
 	ut64 offset = rz_core_backward_offset(core, addr, &nb_opcodes, &nb_bytes);
-	iter = rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes);
-	if (!iter) {
+	if (!rz_core_analysis_bytes(core, offset, buf, nb_bytes, nb_opcodes, &iter)) {
 		res = false;
 		goto clean_return;
 	}
@@ -6063,7 +6063,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	bool asm_pseudo = rz_config_get_i(core->config, "asm.pseudo");
 
 	RzCoreDecodedBytes *cdb;
-	rz_iterator_foreach(iter, cdb) {
+	rz_iterator_foreach(&iter, cdb) {
 		RzAnalysisOp *op = &cdb->an_op;
 		pj_o(pj);
 		pj_kn(pj, "offset", op->addr);
@@ -6193,7 +6193,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_end(pj);
 	}
 clean_return:
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	return res;
 }
 

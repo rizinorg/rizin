@@ -43,6 +43,17 @@ static bool verify_phdr_entry(ELFOBJ *bin, RzBinObjectLoadOptions *options, Elf_
 		ret = false;
 	}
 
+	// p_vaddr is the width of the file's address type, so unlike the other
+	// scaled fields there is nowhere wider to put the product: a p_vaddr past
+	// half the address space would wrap silently. Refuse the entry instead.
+	const ut32 scale = Elf_(rz_bin_elf_addr_scale)(bin);
+	if (scale > 1 && entry->p_vaddr > (Elf_(Addr)) - 1 / scale) {
+		RZ_LOG_WARN("phdr entry: p_vaddr (0x%" PFMTnx ") does not fit once scaled.\n",
+			entry->p_vaddr);
+		ret = false;
+	} else {
+		entry->p_vaddr *= scale;
+	}
 	if (!Elf_(rz_bin_elf_add_addr)(NULL, entry->p_vaddr, entry->p_memsz)) {
 		RZ_LOG_WARN("phdr entry: p_vaddr is invalid for p_memsz.\n");
 		ret = false;

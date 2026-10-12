@@ -577,3 +577,22 @@ F30F1EFA4881ECD80000004989FA4889742428488954243048894C24384C8944 0A CA1D 00D0 :0
 ---
 EOF
 RUN
+
+# Every bl carries a jump, so all 16 are masked. The ARM mask used to compare
+# the instruction length in bits with the bytes left, and so left the last seven
+# instructions of any function unmasked.
+NAME=afsb: arm masks every call up to the end of the function
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb1eff2fe1
+af
+afsb
+EOF
+EXPECT=<<EOF
+pattern 000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb000000eb1eff2fe1
+mask 0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ff0000f0ffffffffff
+search ......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb......eb1eff2fe1
+EOF
+RUN
