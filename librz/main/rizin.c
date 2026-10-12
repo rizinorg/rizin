@@ -351,7 +351,8 @@ static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>
 		}
 		if (ret < 0 || (ret == 0 && quiet)) {
 			rz_cons_flush();
-			return false;
+			// -q quits after the scripts, a failed one must not make it read stdin
+			return true;
 		}
 	}
 	/* -c */
