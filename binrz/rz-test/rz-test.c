@@ -173,7 +173,7 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 			free(exec);
 			return false;
 		} else if (!rz_test_check_tool_available(exec)) {
-			eprintf("%s is not a valid executable\n", exec);
+			eprintf("On trying to run '%s -v' a non zero code was returned. rz-test assumes it is broken.\n", exec);
 			free(exec);
 			return false;
 		}
