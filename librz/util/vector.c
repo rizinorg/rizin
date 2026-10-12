@@ -130,7 +130,8 @@ static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {
  * \brief Clone the contents of \p src into \p dst.
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
- * \param item_cpy The function to copy every element of \p src into \p dst
+ * \param item_cpy The function to copy every element of \p src into \p dst.
+ *                 If NULL, the buffer is copied with memcpy.
  * \return true on success, false on failure.
  */
 RZ_API bool rz_vector_clone_intof(
@@ -190,13 +191,17 @@ RZ_API RZ_OWN RzVector *rz_vector_clonef(
 
 /**
  * \brief Clone the contents of \p src into \p dst.
+ * The vectors buffer is copied with memcpy.
+ *
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
+ *
  * \return true on success, false on failure.
  */
 RZ_API bool rz_vector_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src) {
+	rz_return_val_if_fail(dst && src, false);
 	const bool ret = rz_vector_clone_intof(dst, src, NULL);
 	dst->free = NULL;
 	dst->free_user = NULL;
@@ -214,6 +219,7 @@ RZ_API bool rz_vector_clone_into(
  */
 RZ_API RZ_OWN RzVector *rz_vector_clone(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
+	rz_return_val_if_fail(vec, false);
 	RzVector *dst = rz_vector_clonef(vec, NULL);
 	if (!dst) {
 		return NULL;
