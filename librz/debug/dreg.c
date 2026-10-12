@@ -23,7 +23,7 @@ static bool rz_debug_reg_sync_from_regstate(RzDebug *dbg) {
 	return rz_reg_arena_set_bytes(dbg->reg, bf->o->regstate) == 0;
 }
 
-RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
+RZ_API bool rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	int i, n, size;
 	if (!dbg || !dbg->reg) {
 		return false;
@@ -130,7 +130,8 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
  * \param num The value to be set to the register
  * \return true if correctly set otherwise false
  */
-RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num) {
+RZ_API bool rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num) {
+	rz_return_val_if_fail(dbg, false);
 	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
 	if (!ri) {
 		return false;
@@ -147,7 +148,8 @@ RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num)
  * \param num The value to be set to the register
  * \return true if correctly set otherwise false
  */
-RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num) {
+RZ_API bool rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num) {
+	rz_return_val_if_fail(dbg, false);
 	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
 	if (!ri) {
 		if (role == RZ_REG_NAME_PC) {
