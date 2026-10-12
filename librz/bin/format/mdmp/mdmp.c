@@ -81,7 +81,6 @@ static void rz_bin_mdmp_free_pe32_bin(struct Pe32_rz_bin_mdmp_pe_bin *pe_bin) {
 		return;
 	}
 	if (pe_bin->bin) {
-		sdb_free(pe_bin->bin->kv);
 		Pe32_rz_bin_pe_free(pe_bin->bin);
 	}
 	free(pe_bin);
@@ -92,7 +91,6 @@ static void rz_bin_mdmp_free_pe64_bin(struct Pe64_rz_bin_mdmp_pe_bin *pe_bin) {
 		return;
 	}
 	if (pe_bin->bin) {
-		sdb_free(pe_bin->bin->kv);
 		Pe64_rz_bin_pe_free(pe_bin->bin);
 	}
 	free(pe_bin);
