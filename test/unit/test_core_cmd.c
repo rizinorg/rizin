@@ -179,6 +179,23 @@ static bool test_last_cmd_status(void) {
 	mu_end;
 }
 
+static bool test_cmd_str_status(void) {
+	RzCore *core = rz_core_new();
+	RzCmdStatus status = RZ_CMD_STATUS_INVALID;
+	char *out = rz_core_cmd_str_status(core, "echo hello", &status);
+	mu_assert_streq_free(out, "hello\n", "output of a successful command");
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "status of a successful command");
+	out = rz_core_cmd_str_status(core, "zzz", &status);
+	mu_assert_streq_free(out, "", "a missing command prints nothing");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a missing command");
+	out = rz_core_cmd_str_status(core, "echo partial; zzz", &status);
+	mu_assert_streq_free(out, "partial\n", "the output should be kept on failure");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a failed command line");
+	mu_assert_null(rz_core_cmd_str(core, "echo partial; zzz"), "rz_core_cmd_str() should still discard a failed output");
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_hist_push(void) {
 	RzCore *core = rz_core_new();
 	RzLine *line = core->cons->line;
@@ -305,6 +322,7 @@ int all_tests() {
 	mu_run_test(test_arg_cmd_last_with_at);
 	mu_run_test(test_arg_cmd_last_opt);
 	mu_run_test(test_last_cmd_status);
+	mu_run_test(test_cmd_str_status);
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
