@@ -56,7 +56,7 @@ jobs:
         musl_toolchain: ${{ matrix.config.musl_toolchain }}
         cross_file: ${{ matrix.config.cross_file }}
       run: |
-        curl -vs "https://musl.cc/${musl_toolchain}-cross.tgz"
+        curl -vs "https://github.com/rizinorg/cross-toolchains/releases/download/musl-git-b76f37f/${musl_toolchain}-cross.tgz"
         tar xvf "${musl_toolchain}-cross.tgz"
         sed -i "<<path-to-toolchain>>|$(pwd)/${musl_toolchain}-cross/|g" ${cross_file}
 
