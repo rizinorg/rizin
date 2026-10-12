@@ -1376,7 +1376,12 @@ static bool process_instruction(const RzGadgetType type, const RzCore *core, RzA
 }
 
 static bool is_invalid_instruction(const char *opst, const int end_gadget_cnt) {
-	rz_return_val_if_fail(opst, false);
+	// The analysis layer does not always provide a mnemonic for a decoded
+	// instruction (for example for some PowerPC instructions), so only treat
+	// the instruction as invalid when a mnemonic is actually available.
+	if (!opst) {
+		return false;
+	}
 	return !rz_str_ncasecmp(opst, "invalid", strlen("invalid")) ||
 		!rz_str_ncasecmp(opst, ".byte", strlen(".byte")) ||
 		end_gadget_cnt > 1;
