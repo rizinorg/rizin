@@ -262,7 +262,7 @@ typedef struct rz_debug_t {
 	int n_threads;
 	RzList /*<RzDebugThread> */ *threads;
 	RzList /*<RzDebugProcess>*/ *processes;
-	RzDebugProcess *cur_proc;
+	// RzDebugProcess *cur_proc;
 
 	char *malloc; /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
 
@@ -384,8 +384,8 @@ typedef struct rz_debug_plugin_t {
 	int (*attach)(RzDebug *dbg, int pid);
 	int (*detach)(RzDebug *dbg, int pid);
 	int (*select)(RzDebug *dbg, int pid, int tid);
-	RzList /*<RzDebugPid *>*/ *(*threads)(RzDebug *dbg, int pid);
-	RzList /*<RzDebugPid *>*/ *(*pids)(RzDebug *dbg, int pid);
+	RzList /*<RzDebugThread *>*/ *(*threads)(RzDebug *dbg, int pid);
+	RzList /*<RzDebugProcess *>*/ *(*pids)(RzDebug *dbg, int pid);
 	/* flow */
 	int (*stop)(RzDebug *dbg);
 	bool (*step)(RzDebug *dbg);
@@ -503,13 +503,16 @@ RZ_API int rz_debug_continue(RzDebug *dbg);
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int signal);
 RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
-/* process/thread handling */
+/* process handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
-RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
-RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
+RZ_API RzDebugProcess *rz_debug_pid_free(RzDebugProcess *pid);
+RZ_API RzList /*<RzDebugProcess *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
+
+/*thread handling */
+RZ_API RzDebugThread *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
+RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API RzDebugThread *rz_debug_thread_free(RzDebug *dbg, int tid);
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
