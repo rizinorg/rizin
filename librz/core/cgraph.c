@@ -15,6 +15,8 @@
 #include <rz_util/ht_up.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_th_ht.h>
+#include <rz_util/rz_set.h>
+#include <rz_vector.h>
 
 static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
@@ -1150,10 +1152,6 @@ typedef struct {
 	int depth;
 } BfsNode;
 
-static void bfs_node_free(void *data) {
-	free(data);
-}
-
 /**
  * \brief Finds the shortest call depth from a reference function to a target function.
  *
@@ -1166,37 +1164,33 @@ static void bfs_node_free(void *data) {
  */
 RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 target_addr, int max_depth) {
 	if (ref_addr == target_addr) {
-		return 0; // We are already at the reference
+		return 0;
 	}
 
-	RzList *queue = rz_list_newf(bfs_node_free);
-	HtUP *visited = ht_up_new(NULL, NULL);
+	RzVector *queue = rz_vector_new(sizeof(BfsNode), NULL, NULL);
+	RzSetU *visited = rz_set_u_new();
 
-	BfsNode *start_node = RZ_NEW0(BfsNode);
-	start_node->addr = ref_addr;
-	start_node->depth = 0;
-	rz_list_append(queue, start_node);
-	ht_up_insert(visited, ref_addr, (void *)1);
+	BfsNode start_node = { .addr = ref_addr, .depth = 0 };
+	rz_vector_push(queue, &start_node);
+	rz_set_u_add(visited, ref_addr);
 
 	int found_depth = -1;
+	size_t head = 0;
 
-	while (!rz_list_empty(queue)) {
-		BfsNode *curr = rz_list_pop_head(queue);
+	while (head < rz_vector_len(queue)) {
+		BfsNode *curr = rz_vector_index_ptr(queue, head++);
 
 		if (curr->addr == target_addr) {
 			found_depth = curr->depth;
-			free(curr);
 			break;
 		}
 
 		if (curr->depth >= max_depth) {
-			free(curr);
 			continue;
 		}
 
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, curr->addr);
+		RzAnalysisFunction *fcn = rz_analysis_first_function_in(core->analysis, curr->addr);
 		if (!fcn) {
-			free(curr);
 			continue;
 		}
 
@@ -1208,23 +1202,20 @@ RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 targ
 				if (xref->to == 0 || xref->to == UT64_MAX) {
 					continue;
 				}
-				if (!ht_up_find(visited, xref->to, NULL)) {
-					ht_up_insert(visited, xref->to, (void *)1);
-
-					BfsNode *next_node = RZ_NEW0(BfsNode);
-					next_node->addr = xref->to;
-					next_node->depth = curr->depth + 1;
-					rz_list_append(queue, next_node);
+				if (!rz_set_u_contains(visited, xref->to)) {
+					rz_set_u_add(visited, xref->to);
+					BfsNode next_node = {
+						.addr = xref->to,
+						.depth = curr->depth + 1,
+					};
+					rz_vector_push(queue, &next_node);
 				}
 			}
 			rz_list_free(calls);
 		}
-
-		free(curr);
 	}
 
-	rz_list_free(queue);
-	ht_up_free(visited);
-
+	rz_vector_free(queue);
+	rz_set_u_free(visited);
 	return found_depth;
 }
