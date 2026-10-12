@@ -149,7 +149,7 @@ RZ_API bool rz_vector_clone_intof(
 		dst->free = NULL;
 		dst->free_user = NULL;
 	}
-	if (!dst->len) {
+	if (!dst->capacity) {
 		dst->a = NULL;
 	} else {
 		dst->a = malloc(src->elem_size * src->capacity);
