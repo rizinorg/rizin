@@ -198,7 +198,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 			RZ_LOG_ERROR("core: %s\n", error_msg);
 			free(error_msg);
 		}
-		ret = result != 0;
+		// 0 means success
+		ret = !result;
 	} else {
 		p = rz_lang_get_by_extension(core->lang, file);
 		if (p) {
@@ -3011,7 +3012,12 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 	if (!odata) {
 		return false;
 	}
-	if (!rz_core_cmd_lines(core, odata)) {
+	RzCmdStatus status = rz_core_cmd_lines_rzshell(core, odata);
+	if (status == RZ_CMD_STATUS_EXIT) {
+		// `q` ends a script, it fails only if a command failed before it
+		status = core->last_cmd_status;
+	}
+	if (status != RZ_CMD_STATUS_OK && status != RZ_CMD_STATUS_EXIT) {
 		RZ_LOG_ERROR("core: Failed to run script '%s'\n", file);
 		free(odata);
 		return false;

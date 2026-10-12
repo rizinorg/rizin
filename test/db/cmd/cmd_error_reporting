@@ -31,6 +31,10 @@ _sj~{.error}
 _s~?
 echo $(_s)
 _s @@= 1 2
+. scripts/cmd-error.rz
+_s
+. scripts/echo-quit.rz
+_s
 EOF
 EXPECT=<<EOF
 OK
@@ -47,6 +51,10 @@ null
 1
 OK
 OK
+OK
+before
+ERROR
+script
 OK
 EOF
 RUN
@@ -74,5 +82,32 @@ EXPECT=<<EOF
 []
 []
 {"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"aflj","args":["a","b","c"]}}
+EOF
+RUN
+
+NAME=scripts ending with q and C headers succeed
+FILE==
+ARGS=-i scripts/echo-quit.rz
+CMDS=<<EOF
+. scripts/echo-quit.rz
+%vi $?
+. bins/headers/s1.h
+%vi $?
+EOF
+EXPECT=<<EOF
+script
+script
+0
+0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=failed -i script
+FILE==
+ARGS=-i scripts/cmd-error.rz
+CMDS=echo cmds
+EXPECT=<<EOF
+before
 EOF
 RUN
