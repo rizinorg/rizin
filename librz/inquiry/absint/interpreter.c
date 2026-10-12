@@ -21,6 +21,9 @@
 
 #include "absint_priv.h"
 #include "rz_inquiry/rz_absint.h"
+#include "rz_types.h"
+#include "rz_util/rz_assert.h"
+#include "rz_vector.h"
 
 typedef enum {
 	EVAL_RESULT_OK,
@@ -164,8 +167,8 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		val_domain(inst)->copy(rz_vector_index_ptr(astate->globals, var_id), data);
 		return;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = astate->locals;
-		break;
+		val_domain(inst)->copy(rz_vector_index_ptr(astate->locals, var_id), data);
+		return;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
 		ht_vals = astate->lets;
 		break;
@@ -203,8 +206,8 @@ static bool read_var_from_state(RzAbsIntInstance *inst,
 		val_domain(inst)->copy(data, rz_vector_index_ptr(astate->globals, var_id));
 		return true;
 	case RZ_IL_VAR_KIND_LOCAL:
-		ht_vals = astate->locals;
-		break;
+		val_domain(inst)->copy(data, rz_vector_index_ptr(astate->locals, var_id));
+		return true;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
 		ht_vals = astate->lets;
 		break;
@@ -332,7 +335,23 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	default:
 	case RZ_IL_OP_VAR: {
 		RzILVarKind kind = pure->op.var.kind;
-		ut64 vhash = kind == RZ_IL_VAR_KIND_GLOBAL ? pure->op.var.idx : pure->op.var.djb2_hash;
+		ut64 vhash;
+		switch(kind) {
+		case RZ_IL_VAR_KIND_GLOBAL:
+			vhash = pure->op.var.idx;
+			break;
+		case RZ_IL_VAR_KIND_LOCAL:
+			vhash = rz_absint_djb2_idx_lookup(ctx->astate->locals_idx, pure->op.var.djb2_hash);
+			if (vhash == SIZE_MAX) {
+				rz_warn_if_reached();
+				// Invalid IL op. Locals must be written before read.
+				return EVAL_RESULT_ERROR;
+			}
+			break;
+		case RZ_IL_VAR_KIND_LOCAL_PURE:
+			vhash = pure->op.var.djb2_hash;
+			break;
+		}
 		if (!read_var_from_state(ctx->inst, ctx->astate, kind, vhash, out)) {
 			RZ_LOG_ERROR("prototype: VAR failed to evaluate. The %s '%s' doesn't exist.\n",
 				rz_il_var_kind_name(pure->op.var.kind),
@@ -616,7 +635,29 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 	case RZ_IL_OP_SET: {
 		EVAL_PURE_OR_RETURN(effect->op.set.x);
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
-		ut64 vhash = kind == RZ_IL_VAR_KIND_GLOBAL ? effect->op.set.idx : effect->op.set.djb2_hash;
+		ut64 vhash;
+		switch (kind) {
+		case RZ_IL_VAR_KIND_GLOBAL:
+			vhash = effect->op.set.idx;
+			break;
+		case RZ_IL_VAR_KIND_LOCAL:
+			vhash = rz_absint_djb2_idx_lookup(ctx->astate->locals_idx, effect->op.set.djb2_hash);
+			if (vhash != SIZE_MAX) {
+				break;
+			}
+			size_t idx = vhash = rz_vector_len(ctx->astate->locals);
+			rz_absint_djb2_idx_add(ctx->astate->locals_idx, effect->op.set.djb2_hash, idx);
+			if (idx >= rz_vector_capacity(ctx->astate->locals)) {
+				// TODO: More than LOCAL_ARR_LEN are not supported in the test.
+				rz_warn_if_reached();
+				return EVAL_RESULT_ERROR;
+			}
+			rz_vector_set_len(ctx->astate->locals, idx + 1);
+			rz_vector_set_len(ctx->astate->local_bvs, idx + 1);
+			break;
+		case RZ_IL_VAR_KIND_LOCAL_PURE:
+			return EVAL_RESULT_ERROR;
+		}
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
 		if (value_indicates_ret_addr_write(ctx, eval_out) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {

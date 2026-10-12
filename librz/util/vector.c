@@ -138,6 +138,7 @@ RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
 	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
 	rz_return_val_if_fail(dst && src, false);
+	dst->reverse_sorted = src->reverse_sorted;
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
@@ -148,11 +149,12 @@ RZ_API bool rz_vector_clone_intof(
 		dst->free = NULL;
 		dst->free_user = NULL;
 	}
-	if (!dst->len) {
+	if (!dst->capacity) {
 		dst->a = NULL;
 	} else {
 		dst->a = malloc(src->elem_size * src->capacity);
 		if (!dst->a) {
+			rz_warn_if_reached();
 			return false;
 		}
 		const ut64 len = rz_vector_len(src);
@@ -162,7 +164,7 @@ RZ_API bool rz_vector_clone_intof(
 					(ut8 *)(src->a) + i * src->elem_size);
 			}
 		} else {
-			memcpy(dst->a, src->a, src->elem_size * len);
+			memcpy(dst->a, src->a, src->elem_size * dst->capacity);
 		}
 	}
 	return true;
@@ -176,7 +178,12 @@ RZ_API bool rz_vector_clone_intof(
 RZ_API RZ_OWN RzVector *rz_vector_clonef(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec,
 	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
-	rz_return_val_if_fail(vec, NULL);
+	do {
+		if (__builtin_expect(!(vec), 0)) {
+			rz_assert_log(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); returning %s\n", ((const char *)(__func__)), "vec", 179, "NULL");
+			return (((void *)0));
+		}
+	} while (0);
 	RzVector *dst = RZ_NEW(RzVector);
 	if (!dst) {
 		return NULL;
@@ -190,6 +197,8 @@ RZ_API RZ_OWN RzVector *rz_vector_clonef(
 
 /**
  * \brief Clone the contents of \p src into \p dst.
+ * The vectors buffer is copied with memcpy.
+ *
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
  * \return true on success, false on failure.
@@ -197,6 +206,7 @@ RZ_API RZ_OWN RzVector *rz_vector_clonef(
 RZ_API bool rz_vector_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src) {
+	rz_return_val_if_fail(dst && src, false);
 	const bool ret = rz_vector_clone_intof(dst, src, NULL);
 	dst->free = NULL;
 	dst->free_user = NULL;

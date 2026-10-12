@@ -873,6 +873,7 @@ bool test_absint_driver(size_t n_threads) {
 }
 
 bool all_tests() {
+	mu_run_test(test_absint_cfg_branch_join);
 	mu_run_test(test_absint_block_resolve_bounds_single);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, false);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, true);
@@ -885,7 +886,6 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_single_block);
 	mu_run_test(test_absint_cfg_direct_jmp);
 	mu_run_test(test_absint_cfg_branch);
-	mu_run_test(test_absint_cfg_branch_join);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp, false);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp, true);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp_before);

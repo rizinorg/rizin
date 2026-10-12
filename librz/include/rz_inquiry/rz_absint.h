@@ -57,6 +57,11 @@ typedef enum rz_absint_pc_state_t {
 	RZ_ABSINT_PC_ANY ///< Top state, if this is set, pc field is unused and undefined
 } RzAbsIntPCState;
 
+typedef struct {
+	ut64 djb2;
+	size_t idx;
+} RzAbsIntDJB2Idx;
+
 typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
@@ -70,7 +75,16 @@ typedef struct rz_absint_state_t {
 	 */
 	RzVector /*<RzBitVector>*/ *global_bvs;
 	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
-	HtUP /*<RzAbsIntVal *>*/ *locals; ///< Local variables. Indexed by DJB2 hash of the local name.
+
+	RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx; ///< Sorted vector of DJB2 hashes to indices into locals and local_bvs below.
+	/**
+	 * \brief A flat array of bit vectors. One for each local.
+	 * These bit vectors are not allowed to be used outside of the value domain!
+	 *
+	 * TODO: Supports only 64 bit wide bit vectors as test.
+	 */
+	RzVector /*<RzBitVector>*/ *local_bvs;
+	RzVector /*<RzAbsIntVal>*/ *locals; ///< local variables. Indexed by the locals unique index.
 	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 } RzAbsIntState;
 

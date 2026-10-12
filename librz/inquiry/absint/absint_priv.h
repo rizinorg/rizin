@@ -7,6 +7,14 @@
 
 #include <rz_inquiry/rz_absint.h>
 
+RZ_IPI size_t rz_absint_djb2_idx_lookup(const RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx, ut64 djb2);
+RZ_IPI void rz_absint_djb2_idx_add(RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx, ut64 djb2, size_t idx);
+RZ_IPI bool rz_absint_init_var_array(RzAbsIntInstance *inst,
+	RZ_OUT RzVector /*<RzAbsIntVal>*/ **arr,
+	RZ_OUT RzVector /*<RzBitVector>*/ **bvs,
+	size_t len,
+	bool set_len_to_cap);
+
 // These functions are actually internal, but need RZ_API to be called from unit tests
 RZ_API bool rz_absint_run_context_init(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst);
 RZ_API void rz_absint_run_context_fini(RZ_NULLABLE RzAbsIntRunContext *ctx);
