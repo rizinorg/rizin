@@ -1,6 +1,13 @@
 ---
 name: rizin-analysis
-description: Analyze binaries using Rizin (rizin CLI, rzpipe Python API, rz-ghidra decompiler, and rz-bin/rz-find/rz-diff/rz-sign/rz-ax/rz-hash/rz-asm tools) in headless mode with persistent .rzdb project caching. Use when disassembling, decompiling with rz-ghidra (pdg/pdgj), mapping cross-references, recovering C structs/types/vtables/Go symbols, running RzIL micro-emulation (aez*), or writing automated binary analysis and configuration extraction scripts with Rizin.
+description: >-
+  Analyzes binaries statically using Rizin, rzpipe, and the rz-ghidra decompiler
+  in headless mode with persistent .rzdb project caching. Use when disassembling
+  or decompiling binaries with Rizin, mapping cross-references, recovering C
+  structs, types, C++ vtables, or Golang symbols, running static RzIL
+  micro-emulation, diffing binary variants, or writing automated binary analysis
+  and configuration extraction scripts in the Rizin ecosystem. Don't use for
+  live dynamic malware execution or non-Rizin disassemblers.
 license: LGPL-3.0-only
 ---
 
@@ -11,8 +18,8 @@ Use this skill to perform static binary analysis, reverse engineering, decompila
 ## 1. Core Principles & Performance Rules
 
 1. **Preserve `stderr` for Errors and Command Help (Do Not Blindly Pass `-2`):**
-   Rizin prints command syntax errors (`ERROR: Command '...' does not exist`) and automatic command help fallbacks (`<cmd>?`) to `stderr`. Suppressing `stderr` with `-2` blinds agents to failed commands and help output.
-   - **In `rzpipe` (`rz-pipe` >= 0.5 / PR #61):** Open without `-2` (`rz = rzpipe.open(path)`). `rzpipe` pipes `stdout` and `stderr` separately: `rz.cmdj("<cmd>")` reads `stdout` cleanly without `stderr` interference, while `rz.cmd("<cmd>", ret_stderr=True)` returns both `stdout` and `stderr` so you can inspect errors, warnings, and help messages (`<cmd>?`, `?* <query>`).
+   Rizin prints command syntax errors (`ERROR: Command '...' does not exist`) and automatic command help fallbacks to `stderr`. Suppressing `stderr` with `-2` blinds agents to failed commands and fallback help output.
+   - **In `rzpipe` (`rz-pipe` >= 0.5 / PR #61):** Open without `-2` (`rz = rzpipe.open(path)`). `rzpipe` pipes `stdout` and `stderr` separately: `rz.cmdj("<cmd>")` reads `stdout` cleanly without `stderr` interference, while `rz.cmd("<cmd>", ret_stderr=True)` captures `stderr` diagnostics and automatic fallback help when a command fails or produces no `stdout` (explicit `<cmd>?` and `?* <prefix>` help commands print to `stdout`).
    - **In `subprocess.run`:** Capture `stdout` and `stderr` separately (`capture_output=True`) without `-2`. Parse `res.stdout` for JSON commands and inspect `res.stderr` whenever `res.returncode != 0` or `res.stdout` is empty. Only use `-2` when piping raw CLI `stdout` directly into an external shell filter (e.g., `rizin -2 -qc "aflj" sample.bin | jq`).
 2. **Use `aa` or `aaa` and Persist Analysis in `<sha256>.rzdb` Projects:**
    Standard analysis is `aa` (fast: symbols and entrypoints) or `aaa` (full standard analysis: calls, references, strings/Go recovery, signatures). **Never recommend `aaaa`** (`aaaa` is experimental analysis and slow/noisy). Never re-run `aa` / `aaa` on every query:
@@ -23,34 +30,36 @@ Use this skill to perform static binary analysis, reverse engineering, decompila
 4. **Filter `codexrefs` by `"type": "CALL"` Using `x["from"]`:**
    In `aflj` and `axtj`, cross-reference objects have keys `{"from": <int>, "to": <int>, "type": "CALL" | "CODE" | "DATA" | "STRING"}`. When counting callers of a utility function (string decryptors, API resolvers, config accessors), filter for `xref.get("type") == "CALL"` and read `xref["from"]`.
 
-## 2. Critical `radare2` vs. `rizin` Syntax Differences
+## 2. Core Rizin Command & Syntax Reference
 
-Rizin replaced many legacy `radare2` commands with structured, consistent command trees (`librz/core/cmd_descs/*.yaml`). Do **not** emit legacy `radare2` syntax:
+Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`). Always use native Rizin syntax and argument order:
 
-| Operation | Legacy `radare2` (BROKEN / DEPRECATED in Rizin) | `rizin` Syntax (USE THIS) |
+| Operation | Rizin Syntax | Notes & Argument Order |
 | :--- | :--- | :--- |
-| **Auto-Analysis Level** | `aaaa` | `aa` (symbols + entry) or `aaa` (full standard analysis) |
-| **Analysis Config Variables** | `e anal.in=...`, `e anal.strings=true`, `e anal.hasnext=true` | `e analysis.in=...`, `e analysis.strings=true`, `e analysis.hasnext=true` |
-| **List Config Vars & Help** | `e??` | `el [key]` / `elj [key]` (list config vars with descriptions); `es` (list spaces) |
-| **Command Catalog / Search Help** | `?~...` | `?* <query>` / `?*j <query>` (search help); `?+` (export full command catalog as JSON) |
-| **Math & Address Evaluation** | `? <expr>`, `?v <expr>`, `?p <vaddr>`, `?P <paddr>`, `?$` | `% <expr>`, `%j <expr>`, `%v <expr>`, `%p <vaddr>` (VA->PA), `%P <paddr>` (PA->VA), `%$` |
-| **Table Query Filtering** | `afl,size/gt/500,size/sort/dec,size/head/20:json` | `aflt:size/gt/500:size/sort/rev:*/head/20:json` (`:` separator, `t` suffix, `sort/rev`, `*/head/N`) |
-| **String & Regex Search** | `/ foo`, `/i foo`, `/w foo`, `/e /regex/`, `/z min max` | `/z[jqt] <pattern> [<flags>=l] [<enc>]` (e.g. `/zj "http" li utf8`, `/zj "https?://" r utf8`, `/zj "cmd" l utf16le`) |
-| **String Search Config Vars** | `e bin.minstr=8`, `e bin.maxstr=256`, `e bin.str.enc=utf8` | `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8`, `e str.search.mode=auto` |
-| **Micro-Emulation VM** | `aei`, `aeim`, `aepc`, `aes`, `aecu` (ESIL) | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `aoi`, `aoip`, `plf`, `plF` (**RzIL**) |
-| **Rename Local Variable / Arg** | `afvn old_name new_name` | `afvn <new_name> <old_name>` (`new_name` comes **first**) |
-| **List Function Variables** | `afvj` | `afvlj` (`afvl` lists all register + stack variables; `afvlj` for JSON, `afvlt` for table) |
-| **List Flags / Xrefs / Hints / Maps** | `f` / `fj`, `ax`, `ah`, `om`, `o` | `fl` / `flj` / `flt`, `axl` / `axlj`, `ahl` / `ahlj`, `oml` / `omlj` / `omlt`, `ol` / `olj` |
-| **Comments** | `CCa <addr> <text>`, `CCj` | `CC <text> @ <addr>` or `CCu <text> @ <addr>`; `CClj` (all JSON) or `CCfj @ <addr>` (func JSON) |
-| **Formatted Print (`pf` / `pfj`)** | Bare letters `b, w, i, q, x, d, Z` (deprecated warnings) | Sized specifiers: `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f4/f8`, `p4/p8`, `z`, `z(utf16le)`, `t(unix32)`, `G(le)` |
-| **Seek History Undo / Redo** | `s-` / `s+` | `shu` (undo) / `shr` (redo) |
-| **Project Save / Open** | `Ps <name>` / `Po <name>` (stored in `~/.local/...`) | `Ps <path>.rzdb` / `Po <path>.rzdb` / CLI `-p <path>.rzdb` (standalone file) |
-| **Define Structure Offset in Asm** | `aho` | `aht <struct.member>` (or `ahts <offset>` to list matching struct members) |
-| **Link Global Typed Variable** | `afv` global | `avga <name> <type> @ <addr>` + `aat` (propagates struct offsets in functions) |
-| **FLIRT Signatures** | `z` (`z*`, `zf`, `zs`) | `F` (`Fs <file>` apply sig, `Fa` apply from sigdb, `Fc <file>` create, `Fl` list) |
-| **Binary Diffing CLI (`rz-diff`)** | `radiff2 -s a b`, `radiff2 -g main a b` | `rz-diff -d myers\|leven\|ssdeep [-j] a b`, `rz-diff -t functions a b`, `rz-diff -t graphs -0 main a b` |
-| **Companion CLI Binaries** | `rabin2`, `rafind2`, `radiff2`, `rahash2`, `rasm2`, `rax2`, `rasign2` | `rz-bin`, `rz-find`, `rz-diff`, `rz-hash`, `rz-asm`, `rz-ax`, `rz-sign`, `rz-gg`, `rz-run` |
-| **Python Bindings** | `import r2pipe` | `import rzpipe` (`rz.cmd(cmd, ret_stderr=True)`, `rz.cmdj(cmd)`, `rz.cmdJ(cmd)`) |
+| **Auto-Analysis Level** | `aa` or `aaa` | `aa` (symbols + entry) or `aaa` (full standard analysis). Never use `aaaa`. |
+| **Analysis Config Variables** | `e analysis.in=...`, `e analysis.strings=true`, `e analysis.hasnext=true` | Config namespace is `analysis.*` (inspect all with `el analysis.`). |
+| **List Config Vars & Spaces** | `el [key]` / `elj [key]`; `es` | `el` lists config variables with descriptions (`elj` as JSON); `es` lists config spaces. |
+| **Command Catalog / Search Help** | `?* [<cmd_prefix>]` / `?*j [<cmd_prefix>]`, `?*~<keyword>` | `?*j` (no args) exports the full command catalog as JSON; `?*~<kw>` greps summaries. |
+| **Math & Address Evaluation** | `% <expr>`, `%j <expr>`, `%v <expr>`, `%p <vaddr>`, `%P <paddr>`, `%$` | `%v` prints hex value; `%p` converts VA->PA; `%P` converts PA->VA; `%$` lists `$` vars. |
+| **Table Query Filtering** | `aflt:size/gt/500:size/sort/rev:*/head/20:json` | Colon-separated `:col/op/val`, `t` suffix (`aflt`), descending is `sort/rev`, slice is `*/head/N`. |
+| **String & Regex Search** | `/z[jqt] <pattern> [<flags>=l] [<enc>]` | E.g., `/zj "http" li utf8`, `/zj "https?://" r utf8`, `/zj "cmd" l utf16le`. |
+| **String Search Config Vars** | `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8` | Also `e str.search.mode=auto` (`auto`, `rosections`, `raw`). |
+| **Micro-Emulation VM (RzIL)** | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `aoi`, `aoip`, `plf`, `plF` | Always use **RzIL** (`aez*`, `aoi`, `plf`) for static micro-emulation and lifting. |
+| **Rename Local Variable / Arg** | `afvn <new_name> <old_name> @ <addr>` | `<new_name>` comes **first**, `<old_name>` comes **second**. |
+| **List Function Variables** | `afvl` / `afvlj` / `afvlt` | Lists all register (`reg`) and stack (`stack`) variables and arguments. |
+| **List Flags / Xrefs / Hints / Maps** | `fl` / `flj` / `flt`, `axl` / `axlj`, `ahl` / `ahlj`, `oml` / `omlj` / `omlt`, `ol` / `olj` | Explicit `l` subcommand lists all items (`j` for JSON, `t` for table). |
+| **Comments** | `CC <text> @ <addr>` or `CCu <text> @ <addr>`; `CClj` / `CCfj @ <addr>` | `CCu` sets unique comment; `CClj` lists all comments as JSON; `CCfj` lists function comments. |
+| **Formatted Print (`pf` / `pfj`)** | `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f4/f8`, `p4/p8`, `z`, `z(utf16le)`, `t(unix32)`, `G(le)` | Always use explicit sized/parenthesized specifiers (lowercase = LE, uppercase = BE). |
+| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '? (<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '? (<type>) <name>'` returns structured JSON; `tsj <type>` dumps struct schema. |
+| **Seek History Undo / Redo** | `shu` (undo) / `shr` (redo) | `shj` lists seek history as JSON. |
+| **Project Save / Open** | `Ps <path>.rzdb` / `Po <path>.rzdb` / CLI `-p <path>.rzdb` | Projects are standalone `.rzdb` files. |
+| **Define Structure Offset in Asm** | `aht <struct.member> @ <insn_addr>` | Use `ahts <offset>` to list matching struct members for a numeric displacement. |
+| **Link Global Typed Variable** | `avga <name> <type> @ <addr>`; `aat` | `avgp <name>` prints global value; `avglj` lists globals as JSON; `aat` propagates struct offsets. |
+| **C++ Vtables, RTTI & Devirt** | `avj`, `avra`, `avrr`, `aclj`, `avD @ <func_addr>` | `avD` (uppercase `D`) devirtualizes virtual calls in the current function. |
+| **FLIRT Signatures** | `Fs <file>`, `Fa [<filter>]`, `Fc <file>`, `Fd <file>`, `Fl[t]` | All FLIRT signature commands live under `F`. |
+| **Binary Diffing CLI (`rz-diff`)** | `rz-diff -d myers\|leven\|ssdeep [-j] a b`, `rz-diff -t functions [-j] a b` | `rz-diff -t graphs -0 <fcn> a b` outputs CFG Graphviz DOT diff. |
+| **Companion CLI Binaries** | `rz-bin`, `rz-find`, `rz-diff`, `rz-hash`, `rz-asm`, `rz-ax`, `rz-sign`, `rz-gg`, `rz-run` | Standalone headless CLI utilities (`-j` for JSON output). |
+| **Python Bindings** | `import rzpipe` | `rz.cmd(cmd, ret_stderr=True)`, `rz.cmdj(cmd)`, `rz.cmdJ(cmd)`. |
 
 ## 3. Opening a Binary with Persistent `.rzdb` Caching & Stderr Visibility
 
@@ -115,10 +124,11 @@ else:
     rz.cmd("aaa")
     rz.cmd(f"Ps {project_file}")
 
-info = rz.cmdj("iIj")                           # JSON commands read stdout cleanly
+info = rz.cmdj("iIj")                                    # JSON commands read stdout cleanly
 funcs = rz.cmdj("aflj")
-help_out = rz.cmd("aez?", ret_stderr=True)      # ret_stderr=True includes stderr diagnostics/help
-rz.cmd(f"Ps {project_file}")                    # Persist renames/comments/types before closing
+help_out = rz.cmd("aez?")                                # Explicit '<cmd>?' help writes to stdout
+diag = rz.cmd("af @ 0x401000", ret_stderr=True)          # ret_stderr=True captures stderr errors/fallback help
+rz.cmd(f"Ps {project_file}")                             # Persist renames/comments/types before closing
 rz.quit()
 ```
 
@@ -126,7 +136,7 @@ rz.quit()
 
 | Analysis Task | Rizin Command (`cmd` / `cmdj`) | Key JSON Fields |
 | :--- | :--- | :--- |
-| **Binary Metadata** | `iIj` | `arch`, `bits`, `os`, `bintype`, `baddr`, `canary`, `nx`, `pic` |
+| **Binary Metadata** | `iIj` | `arch`, `bits`, `os`, `bintype`, `baddr`, `canary`, `nx`, `pie`, `stripped`, `static`, `compiler`, `lang` |
 | **Segments / Sections** | `iSSj` (segments) / `iSj` (sections) | `name`, `vaddr`, `vsize`, `paddr`, `size`, `perm`, `type` |
 | **Entry Points** | `iej` | `vaddr`, `paddr`, `baddr`, `laddr`, `hvaddr`, `haddr`, `type` |
 | **Imports / Exports** | `iij` / `iEj` | `iij`: `ordinal`, `bind`, `type`, `name`, `plt`; `iEj`: `name`, `flagname`, `vaddr`, `size`, `type` |
@@ -134,9 +144,9 @@ rz.quit()
 | **String Search (`RzSearch`)** | `/zj <pattern> <flags> <enc>` | `address`, `size`, `flag` (`hit.string.<enc>.<N>`), `detail` (does **not** populate `izz`) |
 | **Byte / Hex Search** | `/xj <hex_pattern>` | `address`, `size`, `flag` (`hit.bytes.<N>`); supports `.` nibble wildcards (e.g. `/xj 8b0485........5dc3`) |
 | **List Functions** | `aflj` | `offset`, `name`, `size`, `realsz`, `nbbs`, `cc`, `calltype`, `signature`, `codexrefs`, `callrefs`, `datarefs`, `indegree` |
-| **Function Details & Vars** | `afij @ <addr>` / `afvlj @ <addr>` | `afvlj` dict: `{"stack": [...], "reg": [...]}` with `name`, `arg`, `type`, `storage` |
-| **Disassemble Function** | `pdfj @ <addr>` or `pdrj @ <addr>` | `ops[]`: `offset`, `opcode`, `disasm`, `bytes`, `type`, `ptr`, `val`, `jump`, `fail` |
-| **Disassemble N Instrs** | `pdj <N> @ <addr>` | Array of instruction dicts (`offset`, `bytes`, `opcode`, `disasm`, `ptr`, `val`, `jump`, `fcn_addr`) |
+| **Function Details & Vars** | `afij @ <addr>` / `afvlj @ <addr>` | `afvlj` dict: `{"stack": [...], "reg": [...], "eval_pending": [...]}` with `name`, `arg`, `type`, `storage` |
+| **Disassemble Function** | `pdfj @ <addr>` or `pdrj @ <addr>` | `pdfj` returns `{"name", "size", "addr", "ops": [...]}`; `pdrj` returns `[...]` (list of op dicts directly) |
+| **Disassemble N Instrs** | `pdj <N> @ <addr>` | Array of instruction dicts (`offset`, `bytes`, `opcode`, `disasm`, `ptr`, `val`, `jump`, `fail`, `fcn_addr`) |
 | **Instruction Analysis & RzIL** | `aoj <N> @ <addr>` | `addr`, `opcode`, `disasm`, `mnemonic`, `bytes`, `size`, `type`, `rzil` (lifted RzIL tree) |
 | **Decompile (`rz-ghidra`)** | `pdg @ <addr>` / `pdgj @ <addr>` | `code` (C string) and `annotations[]` (`start`, `end`, `type`, `offset`, `name`) |
 | **Xrefs TO / FROM Address** | `axtj @ <addr>` / `axfj @ <addr>` | Array of `{"from": <int>, "to": <int>, "type": "CALL" \| "CODE" \| "DATA" \| "STRING"}` |
@@ -186,7 +196,7 @@ for ann in dec.get("annotations", []):
 
 ```bash
 afn mw_rc4_crypt @ 0x140001200                                                # 1. Rename function
-afc ms @ 0x140001200                                                          # 2. Set calling convention
+afc ms @ 0x140001200                                                          # 2. Set calling convention (see `afcl` for arch list)
 afs "void mw_rc4_crypt(uint8_t *state, uint8_t *buf, size_t len)" @ 0x140001200 # 3. Set C prototype
 td "struct c2_config { uint32_t magic; uint16_t port; char host[64]; };"      # 4. Define C struct (RizinTypeFactory)
 afvn cfg_ptr var_18h @ 0x140001500                                            # 5. Rename var (new_name FIRST!)
@@ -211,8 +221,10 @@ Instead of tracking raw `[rcx + 0x208]` displacements manually, define C types o
 
 ```bash
 td "struct bot_ctx { uint8_t pad[520]; char sid[4]; uint32_t xor_key; };"  # Define struct inline (or `to structs.h`)
-tpj bot_ctx @ 0x140008000                                                  # Cast and dump bytes at <addr> as JSON
-avga g_ctx bot_ctx @ 0x140008000; aat                                      # Link global struct & propagate offsets
+tsj bot_ctx                                                                # Dump struct member schema as JSON
+tp bot_ctx @ 0x140008000                                                   # Cast and print formatted struct at <addr>
+pfj '? (bot_ctx) ctx' @ 0x140008000                                        # Cast and dump struct at <addr> as JSON
+avga g_ctx bot_ctx @ 0x140008000; avgp g_ctx; aat                          # Link global struct, print it, & propagate offsets
 ahts 0x208                                                                 # List struct members at offset 0x208
 aht bot_ctx.sid @ 0x140002b3e                                              # Apply struct member offset hint to insn
 
@@ -228,16 +240,16 @@ tdf pkt_hdr "x4u2u2z magic cmd_id payload_len tag"                         # Sav
 ```bash
 afvlj @ 0x401000                        # List all register & stack variables/args as JSON (`afvlt` for table)
 afvn decrypt_key var_18h @ 0x401000     # Rename `var_18h` -> `decrypt_key` (NOTE: new_name is first!)
-afvt decrypt_key uint32_t @ 0x401000    # Set variable type
-aft @ 0x401000                          # Run function type propagation
+afvt decrypt_key uint32_t @ 0x401000    # Set variable type (immediately visible to `pdg` / `afvlj`)
+aat @ 0x401000                          # Convert immediate operands in function to linked struct offsets
 afvR decrypt_key @ 0x401000             # List instructions reading variable (`afvW` for writes, `afvxj` for JSON)
 ```
 
 ### C++ Virtual Tables / RTTI (`av`, `acl`) & FLIRT Signatures (`F`)
 ```bash
 avj                                     # List all discovered C++ virtual tables as JSON
-avra; aclj                              # Parse RTTI, recover C++ classes, and list classes/vtables/methods as JSON
-avd                                     # Devirtualize C++ / ObjC / Swift virtual method calls using vtables
+avra; avrr; aclj                        # Parse RTTI, recover C++ classes, and list classes/vtables/methods as JSON
+avD @ 0x401000                          # Devirtualize C++ virtual method calls in function at current offset
 Fs /path/to/library.sig; Fa             # Apply FLIRT signature file (.sig/.pat) or scan built-in sigdb
 ```
 
@@ -245,7 +257,7 @@ Fs /path/to/library.sig; Fa             # Apply FLIRT signature file (.sig/.pat)
 
 On large (20MB+) Go, Rust, or statically linked C++ binaries, running `aflj` or `izzj` dumps megabytes of JSON. Use Rizin's **colon-separated table query syntax** (`<cmd>[:<col>/<op>/<val>...][:<output_mode>]`) to filter, sort, and slice inside Rizin before serializing to JSON:
 
-- **Table-mode commands:** Append `t` to commands whose default mode is not already a table (`aflt`, `afvlt`, `ablt`, `avglt`, `flt`, `omlt`, `/zt`, `/xt`). For `i*` commands (`iz`, `izz`, `izx`, `ii`, `iE`, `is`, `iS`, `iSS`, `il`, `ir`, `ic`), table mode is already the default (`iz:...` and `izt:...` both work). Run `<cmd>t:?` (e.g. `aflt:?` or `iz:?`) to see the exact column names and operators.
+- **Table-mode commands:** Append `t` to commands whose default mode is not already a table (`aflt`, `afvlt`, `ablt`, `avglt`, `flt`, `omlt`, `/zt`, `/xt`). For `i*` commands (`iz`, `izz`, `izx`, `ii`, `iE`, `is`, `iS`, `iSS`, `il`, `ir`, `ic`), table mode is already the default (`iz:...` and `izt:...` both work). When a command takes arguments (such as `/zt` or `/xt`), attach the `:query:json` suffix directly to the command token before the arguments (e.g. `/zt:*/head/10:json "http" li utf8`). Run `<cmd>t:?` (e.g. `aflt:?` or `iz:?`) to see the exact column names and operators.
 - **Operators:**
   - Numeric comparisons: `eq`, `ne`, `gt`, `ge`, `lt`, `le` (e.g. `size/gt/500`).
   - String matching: `str` (contains substring), `nostr` (excludes substring), `eq`, `ne` (e.g. `name/str/decrypt`).
@@ -256,9 +268,10 @@ On large (20MB+) Go, Rust, or statically linked C++ binaries, running `aflj` or 
 ```bash
 aflt:size/gt/500:size/sort/rev:*/head/20:json  # Top 20 largest functions > 500 bytes as JSON
 aflt:name/str/main:json                        # Functions whose name contains "main" as JSON
-izz:length/ge/8:string/str/http:json           # Whole-binary strings >= 8 chars containing "http" as JSON
+izz:len/ge/8:string/str/http:json              # Whole-binary strings >= 8 chars containing "http" as JSON
 izx:string/str/http:json                       # Strings with cross-references containing "http" as JSON
 ii:name/str/Virtual:json                       # Imports containing "Virtual" as JSON
+/zt:*/head/20:json "http" li utf8              # First 20 UTF-8 search hits as JSON
 ```
 
 ### Batch Iterators (`@@`)
@@ -266,7 +279,7 @@ Chain operations inside a single Rizin invocation without Python round-trips (`@
 - `@@F` — iterate over every function (`afva @@F`).
 - `@@f:<glob>` — iterate over matching flags (`pdj 6 @@f:sym.go.main.*`).
 - `@@c:<cmd>` — iterate over addresses output by `<cmd>` (`axtj @@c:ii:name/str/Virtual:vaddr/cols:quiet`).
-- `@@b` / `@@i` — iterate over basic blocks or instructions of the current function.
+- `@@b` / `@@i` — iterate over basic blocks of the current function (`@@b`) or instructions of the current basic block (`@@i`; chain `@@i @@b` for all instructions in a function).
 
 ## 8. String Discovery (`iz` / `izz` / `izx`) vs. String Searching (`/z`)
 
@@ -275,13 +288,13 @@ Rizin has two separate string subsystems. Mixing them up causes missed indicator
 1. **`RzBin` String Tables (`iz`, `izz`, `izx`)**:
    - Populated when the binary loads (`iz` = data sections, `izz` = whole file, `izx` = strings with cross-references).
    - Controlled by `e str.encoding` (`ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `guess`), `e search.str.min_length`, `e search.str.max_length`, and `e str.search.mode` (`auto`, `rosections`, `raw`).
-   - To rescan `iz`/`izz` with new settings in an open session, enable `e str.search.reload=true` and update `e search.str.min_length=...` or `e str.encoding=...`.
+   - With `e str.search.reload=true` (enabled by default), updating `e search.str.min_length=...` or `e str.encoding=...` automatically rescans `iz`/`izz` on the next query.
 2. **`RzSearch` Pattern & Regex String Search (`/z` / `/zj` / `/zt`)**:
    - Syntax: `/z[jqt] <pattern> [<regex_flags>=l] [<encoding>=settings]`
      - `<regex_flags>`: `l` (literal default), `r` (PCRE2 regex), `e` (extended regex), `i` (case-insensitive), `m` (multiline), `d` (dotall).
      - `<encoding>`: `ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `utf32be`, `mutf8`, `ibm037`, etc.
    - **Critical Gotcha 1 (`/z` does NOT update `izz`)**: Strings matched by `/z` are recorded as `hit.string.<encoding>.<N>` flags and returned directly by `/zj` (`[{"address": ..., "size": ..., "flag": "hit.string.utf8.0", "detail": ...}]`). They **never** appear in `iz` or `izz` output.
-   - **Critical Gotcha 2 (Specify `<encoding>` explicitly)**: By default `str.encoding` is `"guess"`, which is slow and emits a warning during `/z`. Always pass the encoding argument (or set `e str.encoding=utf8` first):
+   - **Critical Gotcha 2 (Specify `<encoding>` explicitly and check `search.str.min_length`)**: By default `str.encoding` is `"guess"`, which is slow and emits a warning during `/z`. Also `/z` skips matches shorter than `e search.str.min_length` (default `4`). Always pass the encoding argument (or set `e str.encoding=utf8` first):
      ```bash
      /zj "http" li utf8                         # Case-insensitive literal search in UTF-8
      /zj "http" li utf16le                      # Case-insensitive literal search in UTF-16LE
@@ -294,7 +307,7 @@ Rizin uses **RzIL** (BAP Core Theory / SMT bitvector intermediate language) for 
 
 ### 1. RzIL Inspection & Emulation Commands
 - `aoi [<N>]` / `aoip [<N>]` — Print single-line (`aoi`) or pretty-printed (`aoip`) RzIL s-expressions for the next `N` instructions (`aoj <N>` includes `"rzil"` in JSON).
-- `plf @ <addr>` / `plF @ <addr>` — Print ASCII (`plf`) or Unicode (`plF`) RzIL statements for an entire function (`agI` for the RzIL graph; `e asm.cmt.il=true` to show RzIL inline in `pd`/`pdf`).
+- `plf @ <addr>` / `plF @ <addr>` — Print ASCII (`plf`) or Unicode (`plF`) RzIL statements for an entire function (`agI` prints the RzIL graph of the current instruction; `e asm.cmt.il=true` shows RzIL inline in `pd`/`pdf`).
 - `aezi` — Initialize the RzIL Virtual Machine at the current seek offset (`s <start_va>; aezi`).
 - `aezs [<N>]` — Step `N` instructions in the RzIL VM.
 - `aezse [<N>]` / `aezsej [<N>]` — Step `N` instructions and emit all VM register/memory events (`pc_write`, `var_write`, `mem_write`, `var_read`, `mem_read`). Controlled by `e rzil.step.events.write=true` (default) and `e rzil.step.events.read=true`.
@@ -318,7 +331,7 @@ decrypted = bytes.fromhex(rz.cmd(f"p8 64 @ 0x{rbp - 0x40:x}").strip())
 rz.quit()
 ```
 
-- **Inline disassembly emulation preview:** Enable `e asm.emu=true` (and `e emu.str=true`) before running `pdf @ <addr>` to make Rizin display resolved register values, stack strings, and string pointers inline as comments on each instruction.
+- **Inspecting RzIL write events directly (`aezsej`):** You can also capture every register and memory write event emitted during RzIL execution as JSON via `events = rz.cmdj("aezsej 32")`, where memory writes have `{"type": "mem_write", "address": "0x...", "old": "0x...", "new": "0x..."}`.
 
 ## 10. Companion CLI Tools (`rz-bin`, `rz-find`, `rz-diff`, `rz-ax`, `rz-hash`, `rz-asm`, `rz-sign`)
 
@@ -382,7 +395,8 @@ Use `izxj` (or table query `izx:string/str/http:json`) to get strings paired wit
 # Option A: Directly query strings with xrefs via `izx` table query
 for h in rz.cmdj("izx:string/str/http:json") or []:
     xref_addr = h["xref-from"]
-    print(f"String 0x{h['vaddr']:x} ({h['string']!r}) <- {xref_addr} ({rz.cmd(f'afd @ {xref_addr}').strip()})")
+    vaddr_str = f"0x{h['vaddr']:x}" if isinstance(h.get("vaddr"), int) else str(h.get("vaddr"))
+    print(f"String {vaddr_str} ({h['string']!r}) <- {xref_addr} ({rz.cmd(f'afd @ {xref_addr}').strip()})")
 
 # Option B: Trace all xrefs to an import or global address via `axtj`
 for x in rz.cmdj(f"axtj @ 0x{target_vaddr:x}") or []:
@@ -400,7 +414,7 @@ When carving encrypted blobs or patching a raw binary buffer in Python while usi
 
 ### Recipe 5: Handling Obfuscated / Non-Contiguous Functions
 
-- **`pdfj` fails with `"Linear size differs too much from the bbsum"` or misses chunked blocks**: Use `pdrj @ <addr>` (recursive disassembly across basic blocks) or `pdj <N> @ <addr>` (linear instruction count, independent of function boundaries).
+- **`pdfj` fails with `"Linear size differs too much from the bbsum"` or misses chunked blocks**: Use `pdrj @ <addr>` (recursive disassembly across basic blocks; returns a flat list `[...]` of instruction dicts) or `pdj <N> @ <addr>` (linear instruction count, independent of function boundaries).
 - **Self-modifying / encrypted function bodies**: If a stub decrypts a function body in-place (e.g., per-function XOR stubs), decrypt the bytes in Python (or via RzIL with `e io.cache=true` or `wx <hex> @ <addr>`) and re-run `af @ <func_va>` so Rizin builds the CFG over the decrypted instructions.
 - **Forcing code definition at undefined bytes**: Run `Cd- @ <addr>; af @ <addr>` to clear data metadata and analyze the function.
 
@@ -428,7 +442,7 @@ aflt:name/str/sym.go.main.:json  # List only application functions in `main.*` (
 - Check or override a function's calling convention with `afc @ sym.go.main.main` or `afc golang @ sym.go.main.main` (`afc golang_abi0` for stack ABI0).
 
 ### 3. Preloaded Go Runtime Types (`types-golang-32.sdb` / `types-golang-64.sdb`)
-`aalg` automatically loads Go's core runtime data structures into `RzTypeDB`. Use `tpj` or `afvt` to inspect Go values instead of manual pointer arithmetic:
+`aalg` automatically loads Go's core runtime data structures into `RzTypeDB`. Use `tp`, `pfj '? (<type>) <name>'`, or `afvt` to inspect Go values instead of manual pointer arithmetic:
 - **`string` / `stringStruct` / `runtime.stringStruct`**: `{ char *str; size_t len; }`
 - **`slice` / `runtime.slice`**: `{ void *array; size_t len; size_t cap; }`
 - **`eface` / `runtime.eface`** (empty `interface{}` / `any`): `{ void *_type; void *data; }`
@@ -436,7 +450,8 @@ aflt:name/str/sym.go.main.:json  # List only application functions in `main.*` (
 - **`hmap` / `runtime.hmap`** (Go `map` header): `{ int64_t count; uint8_t flags; uint8_t B; uint16_t noverflow; uint32_t hash0; void *buckets; void *oldbuckets; uintptr_t nevacuate; void *extra; }`
 
 ```bash
-tpj stringStruct @ 0x560000; tpj slice @ 0x560010; tpj hmap @ 0x560030  # Format address as Go struct in JSON
+tp slice @ 0x560010; tp hmap @ 0x560030                                  # Print Go runtime structs at <addr>
+pfj '? (slice) s' @ 0x560010; pfj '? (hmap) m' @ 0x560030                # Dump Go runtime structs as JSON
 afvt s_arg stringStruct @ sym.go.main.decrypt                            # Type a Go function variable
 ```
 
@@ -449,7 +464,7 @@ Go concatenates string literals into a single read-only blob without null termin
 
 - **Command fails or returns empty output**:
   1. Read `stderr` (`rz.cmd(cmd, ret_stderr=True)` in `rzpipe` or `res.stderr` in `subprocess.run`) — Rizin automatically prints `ERROR:` diagnostics and the parent command's help table to `stderr`.
-  2. Query built-in help directly: `<cmd>?` (e.g. `afv?`, `/z?`, `aflt:?`), search all commands with `?* <keyword>` / `?*j <keyword>`, list config variables with `el <keyword>`, or dump the entire command catalog as JSON with `?+`.
+  2. Query built-in help directly: `<cmd>?` (e.g. `afv?`, `/z?`, `aflt:?`), search command trees by prefix with `?* <cmd_prefix>` / `?*j <cmd_prefix>`, grep all command summaries with `?*~<keyword>`, list config variables with `el <keyword>`, or dump the entire command catalog as JSON with `?*j`.
   3. Ensure `aa` / `aaa` (or `-p <hash>.rzdb`) has run; `pdfj` and `pdgj` require a function to be defined at `<addr>` (run `af @ <addr>` first, or use `pdj <N> @ <addr>` for raw instruction disassembly).
 - **Decompiler (`pdg` / `pdgj`) unavailable**:
-  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lc` or `pdg?`. If unavailable, fall back to `pdc` (built-in pseudo-C), `pdf` with `e asm.emu=true`, or `pdfj` / `pdj`.
+  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lc` or `pdg?`. If unavailable, fall back to `pdc` (built-in pseudo-C), `pdfj` / `pdj`, or `aoj` / `plf` (RzIL).
