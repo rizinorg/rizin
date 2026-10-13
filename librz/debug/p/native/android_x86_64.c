@@ -6,8 +6,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <rz_drx.h>
 #include "linux/linux_debug.h"
+#include "linux/linux_ptrace.h"
 #include "procfs.h"
 #include "drx.c" // x86 specific
 #include "bt.c"
@@ -137,21 +139,189 @@ RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
 	return get_linux_tls_val(dbg, tid);
 }
 
+#ifdef __GLIBC__
+#define HAVE_YMM 1
+#else
+#define HAVE_YMM 0
+#endif
+
+#define PRINT_FPU(fpregs) \
+	rz_cons_printf(dbg->cons, "cwd = 0x%04x  ; control   ", (fpregs).cwd); \
+	rz_cons_printf(dbg->cons, "swd = 0x%04x  ; status\n", (fpregs).swd); \
+	rz_cons_printf(dbg->cons, "ftw = 0x%04x              ", (fpregs).ftw); \
+	rz_cons_printf(dbg->cons, "fop = 0x%04x\n", (fpregs).fop); \
+	rz_cons_printf(dbg->cons, "rip = 0x%016" PFMT64x "  ", (ut64)(fpregs).rip); \
+	rz_cons_printf(dbg->cons, "rdp = 0x%016" PFMT64x "\n", (ut64)(fpregs).rdp); \
+	rz_cons_printf(dbg->cons, "mxcsr = 0x%08x        ", (fpregs).mxcsr); \
+	rz_cons_printf(dbg->cons, "mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)
+
+static void print_fpu(RzDebug *dbg, void *f) {
+#if __x86_64__
+	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
+	PRINT_FPU(fpregs);
+	for (int i = 0; i < 8; i++) {
+		ut64 *b = (ut64 *)&fpregs.st_space[i * 4];
+		ut32 *c = (ut32 *)&fpregs.st_space;
+		float *f = (float *)&fpregs.st_space;
+		c = c + (i * 4);
+		f = f + (i * 4);
+		rz_cons_printf(dbg->cons, "st%d =%0.3lg (0x%016" PFMT64x ") | %0.3f (%08x) | "
+					  "%0.3f (%08x) \n",
+			i,
+			(double)*((double *)&fpregs.st_space[i * 4]), *b, (float)f[0],
+			c[0], (float)f[1], c[1]);
+	}
+#elif __i386__
+	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct *)f;
+	rz_cons_printf(dbg->cons, "---- x86-32 ----\n");
+	rz_cons_printf(dbg->cons, "cwd = 0x%04x  ; control   ", fpxregs.cwd);
+	rz_cons_printf(dbg->cons, "swd = 0x%04x  ; status\n", fpxregs.swd);
+	rz_cons_printf(dbg->cons, "twd = 0x%04x ", fpxregs.twd);
+	rz_cons_printf(dbg->cons, "fop = 0x%04x\n", fpxregs.fop);
+	rz_cons_printf(dbg->cons, "fip = 0x%08x\n", (ut32)fpxregs.fip);
+	rz_cons_printf(dbg->cons, "fcs = 0x%08x\n", (ut32)fpxregs.fcs);
+	rz_cons_printf(dbg->cons, "foo = 0x%08x\n", (ut32)fpxregs.foo);
+	rz_cons_printf(dbg->cons, "fos = 0x%08x\n", (ut32)fpxregs.fos);
+	rz_cons_printf(dbg->cons, "mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
+	for (int i = 0; i < 8; i++) {
+		ut32 *a = (ut32 *)(&fpxregs.xmm_space);
+		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
+		ut32 *c = (ut32 *)&fpxregs.st_space;
+		float *f = (float *)&fpxregs.st_space;
+		a = a + (i * 4);
+		c = c + (i * 4);
+		f = f + (i * 4);
+		rz_cons_printf(dbg->cons, "xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+			(int)a[1], (int)a[2], (int)a[3]);
+		rz_cons_printf(dbg->cons, "st%d = %0.3lg (0x%016" PFMT64x ") | %0.3f (0x%08x) | "
+					  "%0.3f (0x%08x)\n",
+			i,
+			(double)*((double *)(&fpxregs.st_space[i * 4])), b[0],
+			f[0], c[0], f[1], c[1]);
+	}
+#else
+#warning print_fpu not implemented for this platform
+#endif
+}
+
 static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
-	return linux_reg_read(dbg, type, buf, size);
+	bool showfpu = false;
+	int pid = dbg->tid;
+	int ret = 0;
+	if (type < -1) {
+		showfpu = true;
+		type = -type;
+	}
+	switch (type) {
+	case RZ_REG_TYPE_DRX:
+		// Android x86 does not support DRX
+		return true;
+	case RZ_REG_TYPE_FPU:
+	case RZ_REG_TYPE_MMX:
+	case RZ_REG_TYPE_XMM: {
+		struct user_fpregs_struct fpregs;
+		if (type == RZ_REG_TYPE_FPU) {
+#if __x86_64__
+			ret = rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			if (ret != 0) {
+				rz_sys_perror("PTRACE_GETFPREGS");
+				return false;
+			}
+			if (showfpu) {
+				print_fpu(dbg, (void *)&fpregs);
+			}
+			size = RZ_MIN(sizeof(fpregs), size);
+			memcpy(buf, &fpregs, size);
+			return size;
+#elif __i386__
+			ret = rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
+			if (showfpu) {
+				print_fpu(dbg, (void *)&fpregs);
+			}
+			if (ret != 0) {
+				rz_sys_perror("PTRACE_GETFPREGS");
+				return false;
+			}
+			size = RZ_MIN(sizeof(fpregs), size);
+			memcpy(buf, &fpregs, size);
+			return size;
+#endif
+		}
+	} break;
+	case RZ_REG_TYPE_SEG:
+	case RZ_REG_TYPE_FLG:
+	case RZ_REG_TYPE_GPR: {
+		RZ_DEBUG_REG_T regs;
+		memset(&regs, 0, sizeof(regs));
+		memset(buf, 0, size);
+		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, NULL, &regs);
+		/*
+		 * if perror here says 'no such process' and the
+		 * process exists still.. is because there's a missing call
+		 * to 'wait'. and the process is not yet available to accept
+		 * more ptrace queries.
+		 */
+		if (ret != 0) {
+			rz_sys_perror("PTRACE_GETREGS");
+			return false;
+		}
+		size = RZ_MIN(sizeof(regs), size);
+		memcpy(buf, &regs, size);
+		return size;
+	}
+	case RZ_REG_TYPE_YMM: {
+#if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
+		ut32 ymm_space[128]; // full ymm registers
+		struct _xstate xstate;
+		struct iovec iov;
+		iov.iov_base = &xstate;
+		iov.iov_len = sizeof(struct _xstate);
+		ret = rz_debug_ptrace_get_x86_xstate(dbg, pid, &iov);
+		if (ret == -1) {
+			return false;
+		}
+		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
+		int ri, rj;
+		for (ri = 0; ri < 16; ri++) {
+			for (rj = 0; rj < 4; rj++) {
+#ifdef __ANDROID__
+				ymm_space[ri * 8 + rj] = ((struct _libc_fpstate *)&xstate.fpstate)->_xmm[ri].element[rj];
+#else
+				ymm_space[ri * 8 + rj] = xstate.fpstate._xmm[ri].element[rj];
+#endif
+			}
+			for (rj = 0; rj < 4; rj++) {
+				ymm_space[ri * 8 + (rj + 4)] = xstate.ymmh.ymmh_space[ri * 4 + rj];
+			}
+		}
+		size = RZ_MIN(sizeof(ymm_space), size);
+		memcpy(buf, &ymm_space, size);
+		return size;
+#endif
+		return false;
+	}
+	}
+	return false;
 }
 
 static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	int pid = dbg->tid;
 	// XXX use switch or so
 	if (type == RZ_REG_TYPE_DRX) {
-		return linux_reg_write(dbg, type, buf, size);
+		return false;
 	} else if (type == RZ_REG_TYPE_GPR) {
-		return linux_reg_write(dbg, type, buf, size);
+		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, 0, (void *)buf);
+		if (ret == -1) {
+			rz_sys_perror("reg_write");
+			return false;
+		}
+		return true;
 	} else if (type == RZ_REG_TYPE_FPU) {
-		return linux_reg_write(dbg, type, buf, size);
+		int ret = rz_debug_ptrace(dbg, PTRACE_SETFPREGS, pid, 0, (void *)buf);
+		return (ret != 0) ? false : true;
 	} else {
 		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
 	}

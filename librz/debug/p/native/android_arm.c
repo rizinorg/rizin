@@ -133,17 +133,59 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 	if (size < 1) {
 		return false;
 	}
-	return linux_reg_read(dbg, type, buf, size);
+	int pid = dbg->tid;
+	int ret = 0;
+	if (type < -1) {
+		type = -type;
+	}
+	switch (type) {
+	case RZ_REG_TYPE_DRX:
+		return true;
+	case RZ_REG_TYPE_FPU:
+	case RZ_REG_TYPE_MMX:
+	case RZ_REG_TYPE_XMM:
+		break;
+	case RZ_REG_TYPE_SEG:
+	case RZ_REG_TYPE_FLG:
+	case RZ_REG_TYPE_GPR: {
+		RZ_DEBUG_REG_T regs;
+		memset(&regs, 0, sizeof(regs));
+		memset(buf, 0, size);
+		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, NULL, &regs);
+		/*
+		 * if perror here says 'no such process' and the
+		 * process exists still.. is because there's a missing call
+		 * to 'wait'. and the process is not yet available to accept
+		 * more ptrace queries.
+		 */
+		if (ret != 0) {
+			rz_sys_perror("PTRACE_GETREGS");
+			return false;
+		}
+		size = RZ_MIN(sizeof(regs), size);
+		memcpy(buf, &regs, size);
+		return size;
+	}
+	case RZ_REG_TYPE_YMM:
+		return false;
+	}
+	return false;
 }
 
 static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	int pid = dbg->tid;
 	// XXX use switch or so
 	if (type == RZ_REG_TYPE_DRX) {
 		return false;
 	} else if (type == RZ_REG_TYPE_GPR) {
-		return linux_reg_write(dbg, type, buf, size);
+		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, 0, (void *)buf);
+		if (ret == -1) {
+			rz_sys_perror("reg_write");
+			return false;
+		}
+		return true;
 	} else if (type == RZ_REG_TYPE_FPU) {
-		return linux_reg_write(dbg, type, buf, size);
+		return false;
 	} else {
 		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
 	}
