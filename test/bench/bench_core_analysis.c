@@ -57,11 +57,14 @@ static void bench_analysis_bytes(RzTable *t_out, const BenchTarget *target, ut64
 	rz_strf(title, "rz_core_analysis_bytes: %s%s%s, %" PFMT64u " ops", target->arch,
 		target->cpu ? "/" : "", target->cpu ? target->cpu : "", n_ops);
 	RZ_BENCH_RUN(title, t_out, iterations, {
-		RzIterator *it = rz_core_analysis_bytes(core, 0, buf, len, n_ops);
-		RzCoreDecodedBytes *db;
-		rz_iterator_foreach(it, db) {
+		RzIterator it = (RzIterator){ 0 };
+		if (!rz_core_analysis_bytes(core, 0, buf, len, n_ops, &it)) {
+			continue;
 		}
-		rz_iterator_free(it);
+		RzCoreDecodedBytes *db;
+		rz_iterator_foreach(&it, db) {
+		}
+		rz_iterator_fini(&it);
 	});
 
 	free(buf);

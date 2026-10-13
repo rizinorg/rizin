@@ -12,10 +12,12 @@
 #include <tms320/c2x/c2x.h>
 #include <tms320/c5x/c5x.h>
 #include <tms320/c6x/c6x.h>
+#include <tms320/c28x/c28x.h>
 
 typedef struct tms320_ctx_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } Tms320Context;
 
 // Read image bytes for packet reconstruction; the buffer the analysis op is
@@ -319,6 +321,27 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 		}
 		return op->size;
 	}
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		if (!context->c28x_index) {
+			context->c28x_index = c28x_index_new();
+		}
+		C28xInsn insn;
+		if (!context->c28x_index ||
+			!c28x_decode(context->c28x_index, buf, len, addr, &insn)) {
+			return -1;
+		}
+		c28x_fill_analysis(&insn, addr, op);
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c28x_opex(&insn);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = c28x_lift(&insn, addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c28x_format(&insn, addr);
+		}
+		return op->size;
+	}
 	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
 		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
 	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
@@ -345,6 +368,7 @@ static bool tms320_analysis_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	Tms320Context *context = (Tms320Context *)user;
 
+	c28x_index_free(context->c28x_index);
 	free(context);
 	return true;
 }
@@ -365,7 +389,13 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	// runs on every cpu change, so switching back to a C5000 cpu restores c55x.
 	// The 16-bit file carries its own default for c2x/c5x and is left alone.
 	if (a->bits == 32) {
-		rz_analysis_set_cc_default(a, c6x_desc_from_cpu(cpu0) ? "c6x" : "c55x");
+		const char *cc = "c55x";
+		if (c6x_desc_from_cpu(cpu0)) {
+			cc = "c6x";
+		} else if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+			cc = "c28x";
+		}
+		rz_analysis_set_cc_default(a, cc);
 	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
 		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
@@ -466,6 +496,205 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr pm   .2 43.0 0\n" // Product shift mode
 			"gpr arb  .16 44 0\n" // Auxiliary register pointer backup
 			"gpr rptc .16 46 0\n"); // Repeat counter
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+		// TMS320C28x: ACC (AH:AL), P (PH:PL), XT (T:TL), XAR0-XAR7 (low halves
+		// AR0-AR7), SP, DP, ST0/ST1, IER/IFR/DBGIER, RPC and a 22-bit PC. Data
+		// addresses are 32-bit, program addresses 22-bit.
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			// SPRU514AA Table 7-2 and section 7.3.1: remaining 16-bit arguments
+			// go in AL, AH, XAR4, XAR5, and pointer arguments in XAR4 and XAR5
+			"=A0\tal\n"
+			"=A1\tah\n"
+			"=A2\txar4\n"
+			"=A3\txar5\n"
+			"=R0\tacc\n"
+			"ctr acc    .32 0  0\n" // Accumulator
+			"gpr al     .16 0  0\n" // Accumulator low half
+			"gpr ah     .16 2  0\n" // Accumulator high half
+			"ctr p      .32 4  0\n" // Product register
+			"gpr pl     .16 4  0\n" // Product low half
+			"gpr ph     .16 6  0\n" // Product high half
+			"ctr xt     .32 8  0\n" // Multiplicand register
+			"gpr tl     .16 8  0\n" // XT low half
+			"gpr t      .16 10 0\n" // XT high half (shift count)
+			"gpr xar0   .32 12 0\n" // Auxiliary register 0
+			"gpr ar0    .16 12 0\n"
+			"gpr xar1   .32 16 0\n" // Auxiliary register 1
+			"gpr ar1    .16 16 0\n"
+			"gpr xar2   .32 20 0\n" // Auxiliary register 2
+			"gpr ar2    .16 20 0\n"
+			"gpr xar3   .32 24 0\n" // Auxiliary register 3
+			"gpr ar3    .16 24 0\n"
+			"gpr xar4   .32 28 0\n" // Auxiliary register 4
+			"gpr ar4    .16 28 0\n"
+			"gpr xar5   .32 32 0\n" // Auxiliary register 5
+			"gpr ar5    .16 32 0\n"
+			"gpr xar6   .32 36 0\n" // Auxiliary register 6
+			"gpr ar6    .16 36 0\n"
+			"gpr xar7   .32 40 0\n" // Auxiliary register 7
+			"gpr ar7    .16 40 0\n"
+			"ctr sp     .16 44 0\n" // Stack pointer
+			"ctr dp     .16 46 0\n" // Data page pointer
+			"ctr st0    .16 48 0\n" // Status register 0
+			"ctr st1    .16 50 0\n" // Status register 1
+			"ctr ier    .16 52 0\n" // Interrupt enable register
+			"ctr ifr    .16 54 0\n" // Interrupt flag register
+			"ctr dbgier .16 56 0\n" // Debug interrupt enable register
+			"ctr rpc    .32 58 0\n" // Return program counter
+			"ctr pc     .32 62 0\n" // Program counter (22-bit on silicon)
+			// ST0/ST1 bits modelled individually so the analysis layer and a
+			// future lifter can address them by name
+			"flg n      .1 66.0 0\n" // Negative
+			"flg z      .1 67.0 0\n" // Zero
+			"flg c      .1 68.0 0\n" // Carry
+			"flg v      .1 69.0 0\n" // Overflow
+			"flg tc     .1 70.0 0\n" // Test/control
+			"gpr ovm    .1 71.0 0\n" // Overflow mode
+			"gpr sxm    .1 72.0 0\n" // Sign-extension mode
+			"gpr intm   .1 73.0 0\n" // Interrupt mask
+			"gpr dbgm   .1 74.0 0\n" // Debug mask
+			"gpr page0  .1 75.0 0\n" // Direct/stack addressing select
+			"gpr vmap   .1 76.0 0\n" // Vector map
+			"gpr amode  .1 77.0 0\n" // Addressing mode select
+			"gpr objmode .1 78.0 0\n" // Object compatibility mode
+			"gpr m0m1map .1 79.0 0\n" // M0/M1 map
+			"gpr xf     .1 80.0 0\n" // XF external flag
+			"gpr spa    .1 81.0 0\n" // Stack-pointer alignment record
+			"gpr pm     .3 82.0 0\n" // Product shift mode
+			"gpr ovc    .6 83.0 0\n" // Overflow counter
+			"gpr vr0    .32 88 0\n" // VCU result register 0
+			"gpr vr1    .32 92 0\n" // VCU result register 1
+			"gpr vr2    .32 96 0\n" // VCU result register 2
+			"gpr vr3    .32 100 0\n" // VCU result register 3
+			"gpr vr4    .32 104 0\n" // VCU result register 4
+			"gpr vr5    .32 108 0\n" // VCU result register 5
+			"gpr vr6    .32 112 0\n" // VCU result register 6
+			"gpr vr7    .32 116 0\n" // VCU result register 7
+			"gpr vr8    .32 120 0\n" // VCU result register 8
+			"gpr vt0    .32 124 0\n" // VCU shift/status
+			"gpr vt1    .32 128 0\n"
+			"gpr vstatus .32 280 0\n" // VCU status and configuration
+			"gpr vcrc   .32 284 0\n" // CRC result
+			"gpr vcrcpoly .32 288 0\n" // CRC polynomial (VCU-II)
+			"gpr vcrcsize .32 292 0\n" // CRC polynomial and data sizes (VCU-II)
+			"gpr vsm0   .16 296 0\n" // Viterbi state metric (VCU-II)
+			"gpr vsm1   .16 298 0\n"
+			"gpr vsm2   .16 300 0\n"
+			"gpr vsm3   .16 302 0\n"
+			"gpr vsm4   .16 304 0\n"
+			"gpr vsm5   .16 306 0\n"
+			"gpr vsm6   .16 308 0\n"
+			"gpr vsm7   .16 310 0\n"
+			"gpr vsm8   .16 312 0\n"
+			"gpr vsm9   .16 314 0\n"
+			"gpr vsm10  .16 316 0\n"
+			"gpr vsm11  .16 318 0\n"
+			"gpr vsm12  .16 320 0\n"
+			"gpr vsm13  .16 322 0\n"
+			"gpr vsm14  .16 324 0\n"
+			"gpr vsm15  .16 326 0\n"
+			"gpr vsm16  .16 328 0\n"
+			"gpr vsm17  .16 330 0\n"
+			"gpr vsm18  .16 332 0\n"
+			"gpr vsm19  .16 334 0\n"
+			"gpr vsm20  .16 336 0\n"
+			"gpr vsm21  .16 338 0\n"
+			"gpr vsm22  .16 340 0\n"
+			"gpr vsm23  .16 342 0\n"
+			"gpr vsm24  .16 344 0\n"
+			"gpr vsm25  .16 346 0\n"
+			"gpr vsm26  .16 348 0\n"
+			"gpr vsm27  .16 350 0\n"
+			"gpr vsm28  .16 352 0\n"
+			"gpr vsm29  .16 354 0\n"
+			"gpr vsm30  .16 356 0\n"
+			"gpr vsm31  .16 358 0\n"
+			"gpr vsm32  .16 360 0\n"
+			"gpr vsm33  .16 362 0\n"
+			"gpr vsm34  .16 364 0\n"
+			"gpr vsm35  .16 366 0\n"
+			"gpr vsm36  .16 368 0\n"
+			"gpr vsm37  .16 370 0\n"
+			"gpr vsm38  .16 372 0\n"
+			"gpr vsm39  .16 374 0\n"
+			"gpr vsm40  .16 376 0\n"
+			"gpr vsm41  .16 378 0\n"
+			"gpr vsm42  .16 380 0\n"
+			"gpr vsm43  .16 382 0\n"
+			"gpr vsm44  .16 384 0\n"
+			"gpr vsm45  .16 386 0\n"
+			"gpr vsm46  .16 388 0\n"
+			"gpr vsm47  .16 390 0\n"
+			"gpr vsm48  .16 392 0\n"
+			"gpr vsm49  .16 394 0\n"
+			"gpr vsm50  .16 396 0\n"
+			"gpr vsm51  .16 398 0\n"
+			"gpr vsm52  .16 400 0\n"
+			"gpr vsm53  .16 402 0\n"
+			"gpr vsm54  .16 404 0\n"
+			"gpr vsm55  .16 406 0\n"
+			"gpr vsm56  .16 408 0\n"
+			"gpr vsm57  .16 410 0\n"
+			"gpr vsm58  .16 412 0\n"
+			"gpr vsm59  .16 414 0\n"
+			"gpr vsm60  .16 416 0\n"
+			"gpr vsm61  .16 418 0\n"
+			"gpr vsm62  .16 420 0\n"
+			"gpr vsm63  .16 422 0\n"
+			"gpr arp    .3 84.0 0\n" // Auxiliary register pointer
+			"gpr rptc   .8 85.0 0\n" // Repeat counter
+			"gpr eallow .1 86.0 0\n" // Protected-register write enable
+			"gpr loop   .1 87.0 0\n" // LOOPZ/LOOPNZ in progress
+			"ctr dbgstat .16 132 0\n" // Debug status, saved with IER on interrupts
+			"gpr idlestat .1 134.0 0\n" // IDLE in progress
+			"fpu r0  .64 136 0\n" // FPU register; RnH and RnL are its halves
+			"fpu r0h .32 140 0\n"
+			"fpu r0l .32 136 0\n"
+			"fpu r1  .64 144 0\n"
+			"fpu r1h .32 148 0\n"
+			"fpu r1l .32 144 0\n"
+			"fpu r2  .64 152 0\n"
+			"fpu r2h .32 156 0\n"
+			"fpu r2l .32 152 0\n"
+			"fpu r3  .64 160 0\n"
+			"fpu r3h .32 164 0\n"
+			"fpu r3l .32 160 0\n"
+			"fpu r4  .64 168 0\n"
+			"fpu r4h .32 172 0\n"
+			"fpu r4l .32 168 0\n"
+			"fpu r5  .64 176 0\n"
+			"fpu r5h .32 180 0\n"
+			"fpu r5l .32 176 0\n"
+			"fpu r6  .64 184 0\n"
+			"fpu r6h .32 188 0\n"
+			"fpu r6l .32 184 0\n"
+			"fpu r7  .64 192 0\n"
+			"fpu r7h .32 196 0\n"
+			"fpu r7l .32 192 0\n"
+			"gpr lvf   .1 200.0 0\n" // Latched overflow
+			"gpr luf   .1 200.1 0\n" // Latched underflow
+			"gpr nf    .1 200.2 0\n" // Negative float
+			"gpr zf    .1 200.3 0\n" // Zero float
+			"gpr ni    .1 200.4 0\n" // Negative integer
+			"gpr zi    .1 200.5 0\n" // Zero integer
+			"gpr tf    .1 200.6 0\n" // Test flag
+			"gpr rnd32 .1 201.0 0\n" // Round to nearest (else to zero), 32-bit
+			"gpr rnd64 .1 201.1 0\n" // The same for 64-bit
+			"gpr shdws .1 201.2 0\n" // Shadow registers hold SAVE state
+			"gpr rb    .32 204 0\n" // Repeat block
+			"fpu r0s  .64 208 0\n" // SAVE/RESTORE shadow of Rn
+			"fpu r1s  .64 216 0\n"
+			"fpu r2s  .64 224 0\n"
+			"fpu r3s  .64 232 0\n"
+			"fpu r4s  .64 240 0\n"
+			"fpu r5s  .64 248 0\n"
+			"fpu r6s  .64 256 0\n"
+			"fpu r7s  .64 264 0\n"
+			"ctr stfs  .32 272 0\n"); // SAVE/RESTORE shadow of STF
 	}
 	if (cpu0 && rz_str_casecmp(cpu0, "c5x") == 0) {
 		// TMS320C5x: the C2x register file plus the C5x additions — the 32-bit
@@ -875,6 +1104,13 @@ static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *anal
 		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
 	} else if (c6x_desc_from_cpu(cpu)) {
 		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
+	} else if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		/* ADDB SP,#7bit -- 1111 1110 0CCC CCCC -- is the C28x frame setup and
+		 * the only instruction in 0xfe00..0xfe7f. In a 128K PIP inverter image
+		 * it occurs 933 times, 871 of them directly after the previous
+		 * function's LRETR. A minority of functions push a register first, so
+		 * those start one instruction earlier than this matches. */
+		KW("\x00\xfe", 2, "\x80\xff", 2);
 	} else {
 		/* plain C55x: two consecutive single pushes (0x38 0x38) */
 		KW("\x38\x38", 2, "\xff\xff", 2);
@@ -902,6 +1138,9 @@ static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
 	}
 	if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
 		return tms320_c5x_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		return c28x_il_config();
 	}
 	return NULL;
 }

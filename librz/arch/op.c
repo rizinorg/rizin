@@ -30,7 +30,9 @@ RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
 	op->refptr = 0;
 	op->val = UT64_MAX;
 	op->disp = UT64_MAX;
-	op->mmio_address = UT64_MAX;
+	for (int i = 0; i < RZ_ARRAY_SIZE(op->mmios); i++) {
+		op->mmios[i] = UT64_MAX;
+	}
 	op->stackptr = RZ_ANALYSIS_OP_INVALID_STACKPTR;
 }
 

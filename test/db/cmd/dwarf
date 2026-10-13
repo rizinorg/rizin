@@ -907,11 +907,11 @@ global error internal/poll.ErrTimeout @ 0x55e820
 global error internal/poll.errEAGAIN @ 0x55e830
 global error internal/poll.errEINVAL @ 0x55e840
 global error internal/poll.errENOENT @ 0x55e850
-global struct string runtime.badginsignalMsg @ 0x55e8b0
-global struct string runtime.badmorestackg0Msg @ 0x55e8c0
-global struct string runtime.badmorestackgsignalMsg @ 0x55e8d0
-global struct string runtime.badsystemstackMsg @ 0x55e8e0
-global struct string runtime.buildVersion @ 0x55e8f0
+global string runtime.badginsignalMsg @ 0x55e8b0
+global string runtime.badmorestackg0Msg @ 0x55e8c0
+global string runtime.badmorestackgsignalMsg @ 0x55e8d0
+global string runtime.badsystemstackMsg @ 0x55e8e0
+global string runtime.buildVersion @ 0x55e8f0
 global error runtime.divideError @ 0x55e900
 global error runtime.floatError @ 0x55e910
 global error runtime.memoryError @ 0x55e920
@@ -922,7 +922,7 @@ global interface {} runtime.stringEface @ 0x55e960
 global interface {} runtime.uint16Eface @ 0x55e970
 global interface {} runtime.uint32Eface @ 0x55e980
 global interface {} runtime.uint64Eface @ 0x55e990
-global struct string runtime/internal/sys.DefaultGoroot @ 0x55e9a0
+global string runtime/internal/sys.DefaultGoroot @ 0x55e9a0
 global error syscall.errEAGAIN @ 0x55e9b0
 global error syscall.errEINVAL @ 0x55e9c0
 global error syscall.errENOENT @ 0x55e9d0
@@ -942,12 +942,12 @@ global struct []uint16 strconv.isPrint16 @ 0x55eb60
 global struct []uint32 strconv.isPrint32 @ 0x55eb80
 global struct []strconv.leftCheat strconv.leftcheats @ 0x55eba0
 global sync.Pool fmt.ppFree @ 0x55ebe0
-global struct string [9] runtime.boundsErrorFmts @ 0x5626a0
-global struct string [9] runtime.boundsNegErrorFmts @ 0x562720
-global struct string [11] runtime.gStatusStrings @ 0x5627a0
-global struct string [27] runtime.waitReasonStrings @ 0x562840
+global string [9] runtime.boundsErrorFmts @ 0x5626a0
+global string [9] runtime.boundsNegErrorFmts @ 0x562720
+global string [11] runtime.gStatusStrings @ 0x5627a0
+global string [27] runtime.waitReasonStrings @ 0x562840
 global runtime.sigTabT [66] runtime.sigtable @ 0x563320
-global struct string [134] syscall.errors @ 0x563940
+global string [134] syscall.errors @ 0x563940
 global runtime.itabTableType runtime.itabTableInit @ 0x5641a0
 global void * _cgo_callers @ 0x5651c0
 global void * _cgo_init @ 0x5651c8
@@ -1024,9 +1024,9 @@ global error os.ErrNotExist @ 0x5654c0
 global error os.ErrPermission @ 0x5654d0
 global error os.errFinished @ 0x5654e0
 global error os.errWriteAtInAppendMode @ 0x5654f0
-global struct string os.executablePath @ 0x565500
+global string os.executablePath @ 0x565500
 global error os.executablePathErr @ 0x565510
-global struct string runtime.modinfo @ 0x565530
+global string runtime.modinfo @ 0x565530
 global runtime.pollCache runtime.pollcache @ 0x565540
 global error strconv.ErrRange @ 0x565550
 global error strconv.ErrSyntax @ 0x565560

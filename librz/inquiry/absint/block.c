@@ -89,15 +89,6 @@ RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_at(RZ_NONNULL RzAbsIntRunContext
 	return rz_interval_tree_at(&ctx->blocks, addr);
 }
 
-/** Mark a block that its current entry_state has not been explored fully yet */
-static void interp_block_mark_uninterpreted(RzAbsIntRunContext *ctx, RzAbsIntBlock *block) {
-	if (block->uninterpreted) {
-		return;
-	}
-	block->uninterpreted = true;
-	rz_list_push(ctx->queue, block);
-}
-
 /**
  * \brief Helper struct used for searching over all blocks.
  */
@@ -158,6 +149,15 @@ static int interp_block_addr_cmp(const void *incoming, const RBNode *in_tree, vo
 		return 1;
 	}
 	return 0;
+}
+
+/** Mark a block that its current entry_state has not been explored fully yet */
+RZ_IPI void interp_block_mark_uninterpreted(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *block) {
+	if (block->uninterpreted) {
+		return;
+	}
+	block->uninterpreted = true;
+	rz_list_push(ctx->workqueue, block);
 }
 
 static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, ut64 new_end) {
@@ -307,55 +307,6 @@ RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ
 	}
 close:
 	interp_block_resize(ctx, interp_block, cur - 1);
-}
-
-/*
- * \brief Register a newly discovered state
- *
- * This will join the state with the already known one at the same pc and add it to the
- * queue for further interpretation if there were changes.
- *
- * \param ctx The runtime context of the interpereter.
- * \param as The abstract state to add. It will be joined with all other states at the same PC.
- * \param is_fallthrough True if the PC of \p as is the starting address of the neighboring block (block didn't branch to some other location in the code).
- */
-RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_BORROW RZ_NONNULL RzAbsIntState *as, bool is_fallthrough) {
-	rz_return_if_fail(interp_is_collecting_states(ctx));
-	if (as->pc_state == RZ_ABSINT_PC_ANY) {
-		RZ_LOG_DEBUG("Encountered state with unknown/top pc\n");
-		return;
-	}
-	if (as->pc_state != RZ_ABSINT_PC_CONST) {
-		rz_warn_if_reached();
-		return;
-	}
-	if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
-		RZ_LOG_INFO("  push successor state @ 0x%" PFMT64x "\n", as->pc);
-	}
-	RzAbsIntBlock *block = rz_absint_block_at(ctx, as->pc);
-	if (block) {
-		if (join_state(ctx->inst, block->entry_state, as)) {
-			interp_block_mark_uninterpreted(ctx, block);
-		}
-	} else {
-		block = rz_absint_block_create(ctx->inst, &ctx->blocks, as);
-		if (!block) {
-			return;
-		}
-		interp_block_mark_uninterpreted(ctx, block);
-	}
-	if (!is_fallthrough) {
-		block->non_fallthrough_in = true;
-	}
-}
-
-RZ_IPI RZ_OWN RzAbsIntBlock *rz_absint_run_pop(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx) {
-	RzAbsIntBlock *r = rz_list_pop(ctx->queue);
-	if (!r) {
-		return NULL;
-	}
-	r->uninterpreted = false;
-	return r;
 }
 
 RZ_IPI bool interp_block_tree_as_str(const RzIntervalTree /* RzAbsIntBlock */ *blocks, RZ_NONNULL RZ_OUT RzStrBuf *sb) {

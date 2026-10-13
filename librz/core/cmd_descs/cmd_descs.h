@@ -243,6 +243,8 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core, int argc, const char **argv);
 // "?***"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_everything_handler(RzCore *core, int argc, const char **argv);
+// "?+"
+RZ_IPI RzCmdStatus rz_cmd_catalog_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "%"
 RZ_IPI RzCmdStatus rz_calculate_expr_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "%$"

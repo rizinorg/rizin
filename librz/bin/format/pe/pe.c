@@ -98,6 +98,7 @@ void *PE_(rz_bin_pe_free)(RzBinPEObj *bin) {
 	rz_pkcs7_spcinfo_free(bin->spcinfo);
 	rz_hash_free(bin->hash);
 	rz_buf_free(bin->b);
+	sdb_free(bin->kv);
 	bin->b = NULL;
 	free(bin);
 	return NULL;

@@ -10,14 +10,7 @@
 #include <rz_asm.h>
 #include <common_gnu/disas-asm.h>
 #include <common_gnu/mybfd.h>
-
-typedef struct {
-	struct disassemble_info disasm_obj;
-	ut32 Offset;
-	RzStrBuf *buf_global;
-	int buf_len;
-	ut8 bytes[32];
-} ArcContext;
+#include <arc/arc_ctx.h>
 
 /* extern */
 int decodeInstr(bfd_vma address, disassemble_info *info);

@@ -875,7 +875,8 @@ typedef struct rz_analysis_op_t {
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	ut64 mmio_address; // mmio address
+	ut8 mmios_count; ///< used MMIO count
+	ut64 mmios[4]; ///< MMIO addresses
 	RzAnalysisValue *src[8];
 	RzAnalysisValue *dst;
 	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
@@ -1407,7 +1408,7 @@ RZ_DEPRECATE RZ_API bool rz_analysis_plugin_is_arch(RZ_NONNULL RzAnalysis *analy
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
 RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
 RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis);
-RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis);
+RZ_API bool rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RZ_OWN RzIterator *iter);
 RZ_API RZ_BORROW HtSP /*<RzAnalysisPlugin *>*/ *rz_analysis_get_plugins(RZ_NONNULL RzAnalysis *analysis);
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);

@@ -184,6 +184,8 @@ static bool load_elf_obj_data(RZ_OUT RzBinMdtPart *part, RZ_OWN RzBinElfSegment 
 		rz_buf_free(vfile->buf);
 		rz_bin_map_free(map);
 		free(vfile);
+		part->vfile = NULL;
+		part->map = NULL;
 		return false;
 	}
 

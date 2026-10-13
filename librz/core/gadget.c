@@ -402,7 +402,7 @@ RZ_API void rz_core_gadget_info_free(RZ_NULLABLE RzGadgetInfo *gadget_info) {
 	}
 	rz_pvector_free(gadget_info->modified_registers);
 	rz_list_free(gadget_info->dependencies);
-	rz_iterator_free(gadget_info->analysis_cache);
+	rz_iterator_fini(gadget_info->analysis_cache);
 	free(gadget_info);
 }
 
