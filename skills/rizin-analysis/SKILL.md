@@ -2,14 +2,14 @@
 name: rizin-analysis
 description: >-
   Analyzes binaries statically using Rizin (rizin CLI, rzpipe Python API,
-  rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign, rz-ax, rz-hash,
-  rz-asm companion tools) in headless mode with persistent .rzdb project
-  caching. Use when disassembling or decompiling binaries with Rizin (pdg/pdgj),
-  mapping cross-references, recovering C structs, types, C++ vtables, or Golang
-  symbols, running static RzIL micro-emulation (aez*), diffing binary variants,
-  or writing automated binary analysis and configuration extraction scripts in
-  the Rizin ecosystem. Don't use for live dynamic malware execution or
-  non-Rizin disassemblers.
+  rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign, rz-ar, rz-ax,
+  rz-hash, rz-asm companion tools) in headless mode with persistent .rzdb
+  project caching. Use when disassembling or decompiling binaries with Rizin
+  (pdg/pdgj), mapping cross-references, recovering C structs, types, C++
+  vtables, or Golang symbols, running static RzIL micro-emulation (aez*),
+  diffing binary variants, or writing automated binary analysis and
+  configuration extraction scripts in the Rizin ecosystem. Don't use for live
+  dynamic malware execution or non-Rizin disassemblers.
 license: LGPL-3.0-only
 ---
 
@@ -60,7 +60,7 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **C++ Vtables, RTTI & Devirt** | `avj`, `avra`, `avrr`, `aclj`, `avD @ <func_addr>` | `avD` (uppercase `D`) devirtualizes virtual calls in the current function. |
 | **FLIRT Signatures** | `Fs <file>`, `Fa [<filter>]`, `Fc <file>`, `Fd <file>`, `Fl[t]` | All FLIRT signature commands live under `F`. |
 | **Binary Diffing CLI (`rz-diff`)** | `rz-diff -d myers\|leven\|ssdeep [-j] a b`, `rz-diff -t functions [-j] a b` | `rz-diff -t graphs -0 <fcn> a b` outputs CFG Graphviz DOT diff. |
-| **Companion CLI Binaries** | `rz-bin`, `rz-find`, `rz-diff`, `rz-hash`, `rz-asm`, `rz-ax`, `rz-sign`, `rz-gg`, `rz-run` | Standalone headless CLI utilities (`-j` for JSON output). |
+| **Companion CLI Binaries** | `rz-bin`, `rz-find`, `rz-diff`, `rz-hash`, `rz-asm`, `rz-ax`, `rz-sign`, `rz-ar`, `rz-gg`, `rz-run` | Standalone headless CLI utilities (`-j` for JSON output). |
 | **Python Bindings** | `import rzpipe` | `rz.cmd(cmd, ret_stderr=True)`, `rz.cmdj(cmd)`, `rz.cmdJ(cmd)`. |
 
 ## 3. Opening a Binary with Persistent `.rzdb` Caching & Stderr Visibility
@@ -335,33 +335,45 @@ rz.quit()
 
 - **Inspecting RzIL write events directly (`aezsej`):** You can also capture every register and memory write event emitted during RzIL execution as JSON via `events = rz.cmdj("aezsej 32")`, where memory writes have `{"type": "mem_write", "address": "0x...", "old": "0x...", "new": "0x..."}`.
 
-## 10. Companion CLI Tools (`rz-bin`, `rz-find`, `rz-diff`, `rz-ax`, `rz-hash`, `rz-asm`, `rz-sign`)
+## 10. Companion CLI Tools (`rz-bin`, `rz-find`, `rz-diff`, `rz-ax`, `rz-hash`, `rz-asm`, `rz-sign`, `rz-ar`)
 
 For fast pre-triage without opening a full Rizin session:
 
 ```bash
-# 1. Fast JSON triage of headers, sections, imports, exports, and strings
+# 1. Fast JSON triage of headers, sections, segments, imports, exports, symbols, libraries & strings (rz-bin)
 rz-bin -Ij sample.bin    # Binary info (arch, bits, baddr, compiler, security flags)
 rz-bin -Sj sample.bin    # Sections (-SSj for segments)
-rz-bin -ij sample.bin    # Imports (-Ej for exports)
-rz-bin -zj sample.bin    # Strings in data sections (-zzj for whole binary)
+rz-bin -ij sample.bin    # Imports (-Ej for exports, -sj for symbols, -lj for linked libraries)
+rz-bin -zj sample.bin    # Strings in data sections (-zzj for raw strings across whole binary)
 
-# 2. Byte-pattern, string, wide-string & regex hunting across files (-j for JSON)
+# 2. Byte-pattern, string, wide-string & regex hunting across files (rz-find, -j for JSON)
 rz-find -j -x "8b0485" sample.bin
 rz-find -j -s "VirtualAlloc" -w "VirtualAlloc" sample.bin
 rz-find -j -e "https?://[a-zA-Z0-9./_-]+" sample.bin
 
-# 3. Binary & function diffing between two binary variants or unpacked stages
-rz-diff -j -d myers sample_v1.bin sample_v2.bin          # Similarity score (myers, leven, lcs-roll, ssdeep)
-rz-diff -j -t functions sample_v1.bin sample_v2.bin      # Function-by-function similarity table as JSON
-rz-diff -t graphs -0 sym.main sample_v1.bin sample_v2.bin # CFG Graphviz DOT diff of a function
+# 3. Binary & function diffing between two binary variants or unpacked stages (rz-diff)
+rz-diff -j -d myers sample_v1.bin sample_v2.bin          # Edit-distance similarity (myers, leven, lcs-roll, ssdeep)
+rz-diff -j -t functions sample_v1.bin sample_v2.bin      # Diff by type (-t functions|imports|strings|sections|symbols|classes; -B runs 'aaa')
+rz-diff -t graphs -0 sym.main sample_v1.bin sample_v2.bin # CFG Graphviz DOT diff of a function (-1 <other_fcn> optional)
 
-# 4. Base conversion, timestamps, hashing, assemble/disassemble/RzIL, and FLIRT signatures
-rz-ax -s "48656c6c6f"                                    # Hex to raw ASCII
-rz-ax "0x401263 + 0xf8"                                  # Hex arithmetic (-t <ts> for Unix time, -W for FILETIME)
-rz-hash -j -a sha256,md5,entropy sample.bin              # Hashes & entropy as JSON
-rz-asm -a x86 -b 64 -d "488d0d00100000"                  # Disassemble hex (-I "4831c0" to lift bytes to RzIL)
-rz-sign -o library.sig library.a                         # Generate FLIRT .sig (-d library.sig to dump)
+# 4. Base conversion, timestamps & encodings (rz-ax)
+rz-ax -s "48656c6c6f"                                    # Hex string to raw ASCII (-S for raw stdin to hex)
+rz-ax "0x401263 + 0xf8"                                  # Hex arithmetic (-d for base 10, -t <ts> Unix time, -W Win32 FILETIME, -I IPv4)
+rz-ax -D "cml6aW4="                                      # Base64 decode (-E to base64 encode)
+
+# 5. Hashing, entropy & block/buffer crypto/encoding (rz-hash)
+rz-hash -j -a sha256,md5,entropy sample.bin              # Multiple hashes & entropy as JSON (-qq -a sha256 for bare hex digest, -L to list all)
+rz-hash -D rc4 -K "s:secretkey" -x "deadbeef"            # Decrypt/encode hex (-x) or string (-s) with -D/-E <algo> and -K <key> (-I <iv>)
+
+# 6. Disassemble, assemble & lift instructions to RzIL (rz-asm)
+rz-asm -a x86 -b 64 -d "488d0d00100000"                  # Disassemble hexpairs (-D to include offset + hexpairs)
+rz-asm -a x86 -b 64 -I "4831c0"                          # Lift hexpairs to validated RzIL expressions
+rz-asm -a x86 -b 64 "xor rax, rax"                       # Assemble instruction to hexpairs
+
+# 7. FLIRT signature generation/conversion & static archive extraction (rz-sign, rz-ar)
+rz-sign -o libc.sig libc.so.6                            # Analyze binary/object (-a for 'aaa') and generate FLIRT .sig (takes ELF/PE/Mach-O/.o, NOT .a)
+rz-sign -d libc.sig                                      # Dump FLIRT .sig contents (-c output.pat input.sig to convert between .sig and .pat)
+rz-ar -l library.a                                       # List object members inside a static .a/.lib archive (-o outdir library.a to extract .o files)
 ```
 
 ## 11. Common Reverse Engineering Recipes
