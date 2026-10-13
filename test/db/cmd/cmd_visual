@@ -193,8 +193,7 @@ EXPECT=<<EOF
 0x00005b40  488d 3d21 c701 0048 8d35 1ac7 0100 4829  H.=!...H.5....H)           
 0x00005b50  fe48 c1fe 0348 89f0 48c1 e83f 4801 c648  .H...H..H..?H..H           
 0x00005b60  d1fe 7414 488b 053d c401 0048 85c0 7408  ..t.H..=...H..t.           
-0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [12;75H9.2%[?25h[0m[2J
-[0;0H
+0x00005b70  ffe0 660f 1f44 0000 c30f 1f80 0000 0000  ..f..D..........           [12;75H9.2%[?25h[0m[2J[0;0H
 EOF
 RUN
 
@@ -211,9 +210,7 @@ aF
 echo
 EOF
 EXPECT=<<EOF
-[0m[2J
-[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J
-[0;0H[0x00000000]> 0x0 # fcn.00000000();
+[0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
                                                                                
                                                                                
                                                                                
@@ -221,9 +218,7 @@ EXPECT=<<EOF
                           | [0x0]                     |                         
                           | fcn.00000000();           |                         
                           | add byte [rax], al        |                         
-                          `---------------------------'                                                                                                                                                                                                                                                                         [0m[2J
-[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J
-[0;0H[0x00000000]> 0x0 # fcn.00000000();
+                          `---------------------------'                                                                                                                                                                                                                                                                         [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();                                            [0m[2J[0;0H[0x00000000]> 0x0 # fcn.00000000();
                                                                                
                                                                                
                                                                                
@@ -233,8 +228,7 @@ EXPECT=<<EOF
                           | add byte [rax], al        |                         
                           `---------------------------'                                                                                                                                                                                                                                                                         [?25l[?25l[0;0H[0m[0x00000000 [Xadvc]0 0% 192 malloc://2]> xc @ fcn.00000000                      
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF  comment  
-0x00000000  0000 ffff ffff ffff ffff ffff ffff ffff  ................  ; fcn.000[0J
-[0m
+0x00000000  0000 ffff ffff ffff ffff ffff ffff ffff  ................  ; fcn.000[0J[0m
 0x00000010  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
 0x00000020  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
 0x00000030  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
@@ -243,8 +237,7 @@ EXPECT=<<EOF
 0x00000060  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
 0x00000070  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
 0x00000080  ffff ffff ffff ffff ffff ffff ffff ffff  ................           
-0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J
-[0;0H
+0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J[0;0H
 EOF
 RUN
 
