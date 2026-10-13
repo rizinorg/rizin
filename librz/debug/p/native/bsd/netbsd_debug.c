@@ -128,7 +128,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
+RzList /*<RzDebugProcess *>*/ *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 #define KVM_OPEN_FLAG KVM_NO_FILES
 #define KVM_GETPROCS(kd, opt, arg, cntptr) \
 	kvm_getproc2(kd, opt, arg, sizeof(struct kinfo_proc2), cntptr)
@@ -136,6 +136,7 @@ RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 #define KP_PPID(x) (x)->p_ppid
 #define KP_PID(x)  (x)->p_pid
 #define KP_UID(x)  (x)->p_uid
+#define KP_GID(x)  (x)->p_gid
 #define KINFO_PROC kinfo_proc2
 
 	char errbuf[_POSIX2_LINE_MAX];
@@ -150,13 +151,20 @@ RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	}
 
 	kp = KVM_GETPROCS(kd, KERN_PROC_ALL, 0, &cnt);
+	if (!kp) {
+		kvm_close(kd);
+		return NULL;
+	}
+
+	list->free = (RzListFree)&rz_debug_pid_free;
 	for (i = 0; i < cnt; i++) {
 		entry = kp + i;
-		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		// Unless pid 0 is requested, only add the requested pid and its child processes
 		if (0 == pid || KP_PID(entry) == pid || KP_PPID(entry) == pid) {
-			RzDebugPid *p = rz_debug_pid_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), 's', 0);
+			RzDebugProcess *p = rz_debug_pid_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), RZ_DBG_PROC_STOP);
 			if (p) {
 				p->ppid = KP_PPID(entry);
+				p->gid = KP_GID(entry);
 				rz_list_append(list, p);
 			}
 		}
@@ -165,6 +173,7 @@ RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	kvm_close(kd);
 	return list;
 }
+
 
 RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 	return NULL;
@@ -238,70 +247,46 @@ fail:
 	return NULL;
 }
 
-static int get_rz_status(int stat) {
-	switch (stat) {
-	case LSRUN:
-	case LSONPROC:
-	case LSIDL:
-		return RZ_DBG_PROC_RUN;
-	case LSSTOP:
-		return RZ_DBG_PROC_STOP;
-	case LSZOMB:
-		return RZ_DBG_PROC_ZOMBIE;
-	case LSSLEEP:
-		return RZ_DBG_PROC_SLEEP;
-	case LSSUSPENDED:
-		return RZ_DBG_PROC_STOP;
-	default:
-		return RZ_DBG_PROC_DEAD;
-	}
-}
-
-static RzList *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
-	int mib[6] = { CTL_KERN, KERN_PROC2, KERN_PROC_PID, pid, sizeof(struct kinfo_proc2), 0 };
-	struct kinfo_proc2 *kp;
+static RzList /*<RzDebugThread *>*/ *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
+	int mib[5] = { CTL_KERN, KERN_LWP, pid, sizeof(struct kinfo_lwp), 0 };
+	struct kinfo_lwp *kl;
 	size_t len = 0;
-	size_t max;
-	int i = 0;
+	size_t max, i;
 
-	if (sysctl(mib, 6, NULL, &len, NULL, 0) == -1) {
+	if (sysctl(mib, 5, NULL, &len, NULL, 0) == -1) {
 		rz_list_free(list);
 		return NULL;
 	}
 
-	len += sizeof(*kp) + len / 10;
-	kp = malloc(len);
-	if (!kp) {
+	len += sizeof(*kl) + len / 10;
+	kl = malloc(len);
+	if (!kl) {
 		rz_list_free(list);
 		return NULL;
 	}
 
-	mib[5] = len / sizeof(struct kinfo_proc2);
+	mib[4] = len / sizeof(struct kinfo_lwp);
 
-	if (sysctl(mib, 6, kp, &len, NULL, 0) == -1) {
-		free(kp);
+	if (sysctl(mib, 5, kl, &len, NULL, 0) == -1) {
+		free(kl);
 		rz_list_free(list);
 		return NULL;
 	}
 
-	max = len / sizeof(*kp);
-
+	list->free = (RzListFree)&rz_debug_thread_free;
+	max = len / sizeof(*kl);
 	for (i = 0; i < max; i++) {
-		int pid_stat = get_rz_status(kp[i].p_stat);
-
-		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
-			kp[i].p_uid, pid_stat, (ut64)kp[i].p_wchan);
-
-		if (pid_info) {
-			rz_list_append(list, pid_info);
+		RzDebugThread *th = rz_debug_thread_new(kl[i].l_lid, pid,
+			get_rz_thread_state(kl[i].l_stat), 0);
+		if (th) {
+			rz_list_append(list, th);
 		}
 	}
 
-	free(kp);
+	free(kl);
 	return list;
 }
 
-RzList *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
-	RzList *thread_list = netbsd_thread_list(dbg, pid, list);
-	return thread_list;
+RzList /*<RzDebugThread *>*/ *bsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
+	return netbsd_thread_list(dbg, pid, list);
 }
