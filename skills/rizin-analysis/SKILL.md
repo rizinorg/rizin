@@ -1,13 +1,15 @@
 ---
 name: rizin-analysis
 description: >-
-  Analyzes binaries statically using Rizin, rzpipe, and the rz-ghidra decompiler
-  in headless mode with persistent .rzdb project caching. Use when disassembling
-  or decompiling binaries with Rizin, mapping cross-references, recovering C
-  structs, types, C++ vtables, or Golang symbols, running static RzIL
-  micro-emulation, diffing binary variants, or writing automated binary analysis
-  and configuration extraction scripts in the Rizin ecosystem. Don't use for
-  live dynamic malware execution or non-Rizin disassemblers.
+  Analyzes binaries statically using Rizin (rizin CLI, rzpipe Python API,
+  rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign, rz-ax, rz-hash,
+  rz-asm companion tools) in headless mode with persistent .rzdb project
+  caching. Use when disassembling or decompiling binaries with Rizin (pdg/pdgj),
+  mapping cross-references, recovering C structs, types, C++ vtables, or Golang
+  symbols, running static RzIL micro-emulation (aez*), diffing binary variants,
+  or writing automated binary analysis and configuration extraction scripts in
+  the Rizin ecosystem. Don't use for live dynamic malware execution or
+  non-Rizin disassemblers.
 license: LGPL-3.0-only
 ---
 
