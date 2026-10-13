@@ -606,3 +606,309 @@ EXPECT=<<EOF
 mask: ffff
 EOF
 RUN
+
+NAME=h8300 instruction sizes and types
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300
+s 0
+a8 5e009999~^opcode,size,type,jump
+a8 5a001488~^opcode,size,type,jump
+a8 6e369494~^opcode,size,type,jump
+a8 79035555~^opcode,size,type,jump
+a8 6b011234~^opcode,size,type,jump
+a8 5d40~^opcode,size,type,jump
+a8 5940~^opcode,size,type,jump
+a8 0c89~^opcode,size,type,jump
+a8 5d40ffff~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: jsr @0xff9999
+size: 4
+type: call
+jump: 0x00ff9999
+opcode: jmp @0x1488
+size: 4
+type: jmp
+jump: 0x00001488
+opcode: mov.b @(-27500,r3),r6h
+size: 4
+type: mov
+opcode: mov.w #0x5555,r3
+size: 4
+type: mov
+opcode: mov.w @0x1234,r1
+size: 4
+type: mov
+opcode: jsr @r4
+size: 2
+type: ircall
+opcode: jmp @r4
+size: 2
+type: irjmp
+opcode: mov.b r0l,r1l
+size: 2
+type: mov
+opcode: jsr @r4
+size: 2
+type: ircall
+EOF
+RUN
+
+NAME=h8300 truncated four-byte instructions
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300
+s 0
+a8 5e00~^opcode,size,type:0..3
+a8 5e0099~^opcode,size,type:0..3
+a8 5a00~^opcode,size,type:0..3
+a8 5a0014~^opcode,size,type:0..3
+a8 6e36~^opcode,size,type:0..3
+a8 6e3694~^opcode,size,type:0..3
+a8 7903~^opcode,size,type:0..3
+a8 790355~^opcode,size,type:0..3
+a8 6b01~^opcode,size,type:0..3
+a8 6b0112~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+EOF
+RUN
+
+NAME=h8300h instruction sizes and types
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300h
+s 0
+a8 5e009999~^opcode,size,type,jump
+a8 5a001488~^opcode,size,type,jump
+a8 6e369494~^opcode,size,type,jump
+a8 79035555~^opcode,size,type,jump
+a8 6b011234~^opcode,size,type,jump
+a8 5d40~^opcode,size,type,jump
+a8 5940~^opcode,size,type,jump
+a8 0c89~^opcode,size,type,jump
+a8 5d40ffff~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: jsr @0xff9999
+size: 4
+type: call
+jump: 0x00ff9999
+opcode: jmp @0x1488
+size: 4
+type: jmp
+jump: 0x00001488
+opcode: mov.b @(-27500,er3),r6h
+size: 4
+type: mov
+opcode: mov.w #0x5555,r3
+size: 4
+type: mov
+opcode: mov.w @0x1234,r1
+size: 4
+type: mov
+opcode: jsr @er4
+size: 2
+type: ircall
+opcode: jmp @er4
+size: 2
+type: irjmp
+opcode: mov.b r0l,r1l
+size: 2
+type: mov
+opcode: jsr @er4
+size: 2
+type: ircall
+EOF
+RUN
+
+NAME=h8300h truncated four-byte instructions
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300h
+s 0
+a8 5e00~^opcode,size,type:0..3
+a8 5e0099~^opcode,size,type:0..3
+a8 5a00~^opcode,size,type:0..3
+a8 5a0014~^opcode,size,type:0..3
+a8 6e36~^opcode,size,type:0..3
+a8 6e3694~^opcode,size,type:0..3
+a8 7903~^opcode,size,type:0..3
+a8 790355~^opcode,size,type:0..3
+a8 6b01~^opcode,size,type:0..3
+a8 6b0112~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+EOF
+RUN
+
+NAME=h8300l instruction sizes and types
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300l
+s 0
+a8 5e009999~^opcode,size,type,jump
+a8 5a001488~^opcode,size,type,jump
+a8 6e369494~^opcode,size,type,jump
+a8 79035555~^opcode,size,type,jump
+a8 6b011234~^opcode,size,type,jump
+a8 5d40~^opcode,size,type,jump
+a8 5940~^opcode,size,type,jump
+a8 0c89~^opcode,size,type,jump
+a8 5d40ffff~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: jsr @0xff9999
+size: 4
+type: call
+jump: 0x00ff9999
+opcode: jmp @0x1488
+size: 4
+type: jmp
+jump: 0x00001488
+opcode: mov.b @(-27500,r3),r6h
+size: 4
+type: mov
+opcode: mov.w #0x5555,r3
+size: 4
+type: mov
+opcode: mov.w @0x1234,r1
+size: 4
+type: mov
+opcode: jsr @r4
+size: 2
+type: ircall
+opcode: jmp @r4
+size: 2
+type: irjmp
+opcode: mov.b r0l,r1l
+size: 2
+type: mov
+opcode: jsr @r4
+size: 2
+type: ircall
+EOF
+RUN
+
+NAME=h8300l truncated four-byte instructions
+FILE==
+CMDS=<<EOF
+e asm.arch=h8300
+e asm.bits=16
+e asm.cpu=h8300l
+s 0
+a8 5e00~^opcode,size,type:0..3
+a8 5e0099~^opcode,size,type:0..3
+a8 5a00~^opcode,size,type:0..3
+a8 5a0014~^opcode,size,type:0..3
+a8 6e36~^opcode,size,type:0..3
+a8 6e3694~^opcode,size,type:0..3
+a8 7903~^opcode,size,type:0..3
+a8 790355~^opcode,size,type:0..3
+a8 6b01~^opcode,size,type:0..3
+a8 6b0112~^opcode,size,type:0..3
+EOF
+EXPECT=<<EOF
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+opcode: invalid
+size: 0
+type: ill
+EOF
+RUN
