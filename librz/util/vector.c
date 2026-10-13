@@ -163,7 +163,7 @@ RZ_API bool rz_vector_clone_intof(
 					(ut8 *)(src->a) + i * src->elem_size);
 			}
 		} else {
-			memcpy(dst->a, src->a, src->elem_size * len);
+			memcpy(dst->a, src->a, src->elem_size * dst->capacity);
 		}
 	}
 	return true;
