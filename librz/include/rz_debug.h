@@ -260,7 +260,7 @@ typedef struct rz_debug_t {
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
-	RzList /*<RzDebugThread> */ *threads;
+	HT_UP_H /*<RzDebugThread> */ *threads; /*Non owning hash table*/
 	RzList /*<RzDebugProcess>*/ *processes;
 	// RzDebugProcess *cur_proc;
 
@@ -508,14 +508,14 @@ RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
 /* process handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
+RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char status);
 RZ_API RzDebugProcess *rz_debug_pid_free(RzDebugProcess *pid);
 RZ_API RzList /*<RzDebugProcess *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
 
 /*thread handling */
 RZ_API RzDebugThread *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
 RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
-RZ_API RzDebugThread *rz_debug_thread_free(RzDebug *dbg, int tid);
+RZ_API RzDebugThread *rz_debug_thread_free(RzDebugThread *th);
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);

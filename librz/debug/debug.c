@@ -398,7 +398,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = ht_up_new(NULL, free);
+	dbg->tracenodes = ht_up_new(NULL, NULL);
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -407,10 +407,9 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
 	dbg->plugin_data = NULL;
-	// dbg->threads = NULL;
+	dbg->threads = ht_up_new();
 	dbg->hitinfo = 1;
 	dbg->processes = rz_list_new();
-	dbg->cur_proc = NULL;
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
 	dbg->maps_user = rz_debug_map_list_new();
@@ -442,7 +441,7 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	free(dbg->snap_path);
 	rz_list_free(dbg->maps);
 	rz_list_free(dbg->maps_user);
-	rz_list_free(dbg->threads);
+	ht_up_free(dbg->threads);
 	rz_num_free(dbg->num);
 	sdb_free(dbg->sgnls);
 	rz_tree_free(dbg->tree);

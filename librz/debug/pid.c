@@ -3,7 +3,7 @@
 
 #include <rz_debug.h>
 
-RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc) {
+RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, RzDebugProcessState state) {
 	RzDebugProcess *p = RZ_NEW0(RzDebugProcess);
 	if (!p) {
 		return NULL;
@@ -11,9 +11,8 @@ RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char
 	p->path = rz_str_dup(path);
 	p->pid = pid;
 	p->uid = uid;
-	p->status = status;
+	p->state = state;
 	p->runnable = true;
-	p->pc = pc;
 	return p;
 }
 
