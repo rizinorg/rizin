@@ -1178,22 +1178,19 @@ RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 targ
 	size_t head = 0;
 
 	while (head < rz_vector_len(queue)) {
-		BfsNode *curr = rz_vector_index_ptr(queue, head++);
+		BfsNode curr = *(BfsNode *)rz_vector_index_ptr(queue, head++);
 
-		if (curr->addr == target_addr) {
-			found_depth = curr->depth;
+		if (curr.addr == target_addr) {
+			found_depth = curr.depth;
 			break;
 		}
-
-		if (curr->depth >= max_depth) {
+		if (curr.depth >= max_depth) {
 			continue;
 		}
-
-		RzAnalysisFunction *fcn = rz_analysis_first_function_in(core->analysis, curr->addr);
+		RzAnalysisFunction *fcn = rz_analysis_first_function_in(core->analysis, curr.addr);
 		if (!fcn) {
 			continue;
 		}
-
 		RzList *calls = rz_core_analysis_fcn_get_calls(core, fcn);
 		if (calls) {
 			RzListIter *it;
@@ -1206,7 +1203,7 @@ RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 targ
 					rz_set_u_add(visited, xref->to);
 					BfsNode next_node = {
 						.addr = xref->to,
-						.depth = curr->depth + 1,
+						.depth = curr.depth + 1,
 					};
 					rz_vector_push(queue, &next_node);
 				}
