@@ -180,7 +180,7 @@ RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, 
 /**
  * \brief Return the capacity of the vector.
  */
-static inline size_t rz_vector_capacity(RzVector *vec) {
+static inline size_t rz_vector_capacity(const RzVector *vec) {
 	rz_return_val_if_fail(vec, 0);
 	return vec->capacity;
 }
