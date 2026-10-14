@@ -566,3 +566,25 @@ fcn.00000000 0x00000000   2   1    1   1   0
 fcn.00000010 0x00000010   0   0    0   1   1
 EOF
 RUN
+
+NAME=afis and afisa in JSON
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 554889e5b8000000005dc3
+wx 31c0c3 @ 0x10
+af
+af @ 0x10
+afisj
+afisj family
+afisaj
+afisaj type
+EOF
+EXPECT=<<EOF
+{"name":"fcn.00000000","addr":0,"stats":{"mov":2,"pop":1,"push":1,"ret":1}}
+{"name":"fcn.00000000","addr":0,"stats":{"cpu":5}}
+[{"name":"fcn.00000000","addr":0,"stats":{"mov":2,"pop":1,"push":1,"ret":1}},{"name":"fcn.00000010","addr":16,"stats":{"ret":1,"xor":1}}]
+[{"name":"fcn.00000000","addr":0,"stats":{"mov":2,"pop":1,"ret":1,"rpush":1}},{"name":"fcn.00000010","addr":16,"stats":{"ret":1,"xor":1}}]
+EOF
+RUN

@@ -23334,9 +23334,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
 	rz_warn_if_fail(analysis_function_import_list_del_cd);
 
-	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
+	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
 	rz_warn_if_fail(afis_cd);
-	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
+	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
 	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
 	rz_cmd_desc_set_default_mode(analysis_function_all_opcode_stat_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -23607,7 +23607,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
 	rz_warn_if_fail(ai_cd);
-	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD, rz_global_imports_handler, &global_imports_help, &aii_help);
+	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_global_imports_handler, &global_imports_help, &aii_help);
 	rz_warn_if_fail(aii_cd);
 	RzCmdDesc *delete_global_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, aii_cd, "aii-", RZ_OUTPUT_MODE_STANDARD, rz_delete_global_imports_handler, &delete_global_imports_help);
 	rz_warn_if_fail(delete_global_imports_cd);
@@ -23663,7 +23663,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
 	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
 
-	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
+	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
 	rz_warn_if_fail(analysis_virtual_xrefs_cd);
 
 	RzCmdDesc *ax_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ax", rz_analysis_xrefs_set_0_handler, &analysis_xrefs_set_0_help, &ax_help);
@@ -25047,7 +25047,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *apply_signatures_from_sigdb_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Fa", rz_apply_signatures_from_sigdb_handler, &apply_signatures_from_sigdb_help);
 	rz_warn_if_fail(apply_signatures_from_sigdb_cd);
 
-	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
+	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
 	rz_warn_if_fail(list_signatures_in_sigdb_cd);
 	rz_cmd_desc_set_default_mode(list_signatures_in_sigdb_cd, RZ_OUTPUT_MODE_TABLE);
 
