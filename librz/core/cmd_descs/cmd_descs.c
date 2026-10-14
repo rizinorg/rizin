@@ -25867,13 +25867,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_string_as_libcpp_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "ps+", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_as_libcpp_string_handler, &print_string_as_libcpp_string_help);
 	rz_warn_if_fail(print_string_as_libcpp_string_cd);
 
-	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_strings_current_block_handler, &print_strings_current_block_help);
+	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_print_strings_current_block_handler, &print_strings_current_block_help);
 	rz_warn_if_fail(print_strings_current_block_cd);
 
 	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
 	rz_warn_if_fail(print_string_c_cpp_cd);
 
-	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
+	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
 	rz_warn_if_fail(print_first_string_current_block_cd);
 
 	RzCmdDesc *print_pascal_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_pascal_string_handler, &print_pascal_string_help);

@@ -2250,11 +2250,11 @@ RZ_IPI RzCmdStatus rz_print_string_handler(RzCore *core, int argc, const char **
 // "ps+"
 RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psb"
-RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "psc"
 RZ_IPI RzCmdStatus rz_print_string_c_cpp_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "psi"
-RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "psp"
 RZ_IPI RzCmdStatus rz_print_pascal_string_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "pss"

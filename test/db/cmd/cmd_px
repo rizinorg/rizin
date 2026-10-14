@@ -497,12 +497,14 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 pxF 50 s w
 pxF 50 s d
+pxFj 50 s d
 EOF
 EXPECT=<<EOF
 0x00005b8b u3UH
 0x00005b8b u3UH
 0x00005c02 F\bH9G\b
 0x00005c5a AUATA
+[{"addr":23435,"size":4,"length":4,"type":"ascii","string":"u3UH"},{"addr":23554,"size":6,"length":6,"type":"ascii","string":"F\bH9G\b"},{"addr":23642,"size":5,"length":5,"type":"ascii","string":"AUATA"}]
 EOF
 EXPECT_ERR=
 RUN
