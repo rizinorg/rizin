@@ -93,7 +93,7 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **In-CLI Comparison (`c*`)** | `c <str>`, `cx <hex>`, `cX <addr>`, `cc <addr>`, `ccd <addr>`, `cf <file>`, `cu[1248d] <addr>` | In-session counterpart to `rz-diff` for comparing bytes, hexpairs, hexdumps, disassembly, and files. |
 | **Micro-Emulation VM (RzIL)** | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `aoi`, `aoip`, `plf`, `plF` | Always use **RzIL** (`aez*`, `aoi`, `plf`) for static micro-emulation and lifting. |
 | **Type Management (`t*`)** | `t[j]`, `td "<C>"`, `tdf`, `to <h>`, `tr <old> <new>`, `tc`, `ts[j]`, `tu[j]`, `te[j]`, `tt[j]`, `tf[j]` | `tx`/`txf`/`txl`/`txg` for type xrefs; `tn`/`tn-` for `noreturn` functions; `tp`/`tpv`/`tpx` to cast data. |
-| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '? (<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '? (<type>) <name>'` returns structured JSON; `tsj <type>` dumps struct schema. |
+| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '?(<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '?(<type>) <name>'` returns structured JSON; `tsj <type>` dumps struct schema. |
 | **Formatted Print (`pf` / `pfj` / `pfn`)** | `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f2/f4/f8`, `p4/p8`, `z(utf16le)`, `t(unix32)`, `G(le)` | Explicit sized/parameterised specifiers (lowercase = LE, uppercase = BE); `pfn <name> "<fmt>"` defines named formats, `pf.[j] <name>` prints them. |
 | **Rename Local Variable / Arg** | `afvn <new_name> <old_name> @ <addr>` | `<new_name>` comes **first**, `<old_name>` comes **second**. |
 | **List Function Variables** | `afvl` / `afvlj` / `afvlt` | Lists all register (`reg`) and stack (`stack`) variables and arguments. |
@@ -160,11 +160,11 @@ All math, base conversion, address translation, and expression evaluation comman
 | **Integers (LE / BE)** | `{u,d,x,o,b}{1,2,4,8}` (LE) / `{U,D,X,O,B}{1,2,4,8}` (BE) | Unsigned (`u`), signed (`d`), hex (`x`), octal (`o`), binary (`b`) of `1, 2, 4, 8` bytes. |
 | **Context-Endian Ints** | `n1`, `n2`, `n4`, `n8` | Unsigned integers whose endianness comes from `pf -e le\|be` or enclosing `V(...)`. |
 | **Floats (LE / BE)** | `f2`, `f4`, `f8` (LE) / `F2`, `F4`, `F8` (BE) | IEEE-754 half (`f2`), single (`f4`), and double (`f8`) precision floats. |
-| **Strings & Encodings** | `z`, `z(<enc>)`, `z[N]`, `z(<enc>)[<W>b]`, `s`, `c` | `z` = NUL-terminated string; `<enc>` = `ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `ibm037`, etc.; `z[32]` = fixed 32 chars; `z(utf16le)[2b]` = 2-byte length-prefixed UTF-16LE (BSTR); `s` = `char*` pointer; `c` = single ASCII char. |
+| **Strings & Encodings** | `z`, `z(<enc>)`, `[N]z`, `z[W]`, `z(<enc>)[<W>b]`, `s`, `c` | `z` = NUL-terminated string; `<enc>` = `ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `ibm037`, etc.; `[32]z` = fixed 32-byte string; `z[2]` / `z(utf16le)[2b]` = length-prefixed string (`W` in `1,2,4,8`; `b` = prefix in bytes, e.g. BSTR); `s` = `char*` pointer; `c` = single ASCII char. |
 | **Timestamps & GUIDs** | `t(<kind>)` (LE) / `T(<kind>)` (BE); `G` / `G(ms\|le\|be)` | `<kind>` = `unix32`, `unix64`, `unixms`, `unixus`, `unixns`, `filetime`, `dos`, `hfs`, `oletime`, `webkit`, `cocoa`. |
 | **Pointers & Deref** | `p`, `p2`, `p4`, `p8`; `*<spec>` | `p` uses `asm.bits`; `*<spec>` dereferences a pointer (`*u4`, `*z(utf8)`, `*?(my_struct)`). |
-| **Bitfields & Packed Bits** | `B{1,2,4,8}(K=V,...)`, `B4 (enum_t) name`, `:N`, `:N<`, `:N>` | Inline bitmask flags (`B4(R=1,W=2,X=4) perms`) or packed C bitfields (`:4:4 nibble_lo nibble_hi`). |
-| **Enums & Structs** | `E{1,2,4,8} (enum_t)f`, `?(struct_t) f` | Resolve enum member names (`E4 (cmd_id) op`) or nest registered `pfn` / `td` structs (`?(hdr_t) hdr`). |
+| **Bitfields & Packed Bits** | `B{1,2,4,8}(K=V,...)`, `B4 (enum_t)name`, `:N`, `:N<`, `:N>` | Inline bitmask flags (`B4(R=1,W=2,X=4) perms`), typed bitfield (`B4 (perm)flags`), or packed C bitfields (`:4:4 nibble_lo nibble_hi`). |
+| **Enums & Structs** | `E (enum_t)f`, `[1\|2\|4\|8]E (enum_t)f`, `?(struct_t) f` | Resolve enum member names (`E (cmd_id)op` or `[2]E (cmd_id)op`) or nest registered `pfn` / `td` structs (`?(hdr_t) hdr`). |
 | **TLV & Bitvectors** | `V(t=u1,l=u2,e=le,h=v,d=tbl)`, `v(N[,lsb\|msb])` | Parse Type-Length-Value streams (`h=v` value-len or `h=l` total-len) or arbitrary `N`-bit bitvectors. |
 | **Arrays, Skip & Align** | `[N]<T>`, `[@<len_field>]<T>`, `.` / `[N].`, `@N`, `0...` | Fixed array `[16]u1`, dynamic array sized by an earlier field `[@count]u4`, skip `.`, align `@4`, union `0`. |
 
@@ -364,7 +364,7 @@ td "enum pkt_cmd { CMD_PING = 1, CMD_EXEC = 2, CMD_UPLOAD = 4 };"
 td "struct bot_ctx { uint8_t pad[520]; char sid[4]; uint32_t xor_key; };"
 tsj bot_ctx                                               # Dump struct member schema (names, types, offsets, sizes) as JSON
 tp bot_ctx @ 0x140008000                                  # Cast and print formatted struct at <addr>
-pfj '? (bot_ctx) ctx' @ 0x140008000                       # Cast and dump struct at <addr> as JSON
+pfj '?(bot_ctx) ctx' @ 0x140008000                        # Cast and dump struct at <addr> as JSON (no space after `?`)
 avga g_ctx bot_ctx @ 0x140008000; avgp g_ctx; aat         # Bind global struct, print it, and propagate field offsets
 ahts 0x208                                                # List all struct members across RzTypeDB matching displacement 0x208
 aht bot_ctx.sid @ 0x140002b3e                             # Apply struct member offset hint to instruction operand
@@ -713,7 +713,7 @@ aflt:name/str/sym.go.main.:json  # List only application functions in `main.*` (
 - Check or override a function's calling convention with `afc @ sym.go.main.main` or `afc golang @ sym.go.main.main` (`afc golang_abi0` for stack ABI0).
 
 ### 3. Preloaded Go Runtime Types (`types-golang-32.sdb` / `types-golang-64.sdb`)
-`aalg` automatically loads Go's core runtime data structures into `RzTypeDB`. Use `tp`, `pfj '? (<type>) <name>'`, or `afvt` to inspect Go values instead of manual pointer arithmetic:
+`aalg` automatically loads Go's core runtime data structures into `RzTypeDB`. Use `tp`, `pfj '?(<type>) <name>'`, or `afvt` to inspect Go values instead of manual pointer arithmetic:
 - **`string` / `stringStruct` / `runtime.stringStruct`**: `{ char *str; size_t len; }`
 - **`slice` / `runtime.slice`**: `{ void *array; size_t len; size_t cap; }`
 - **`eface` / `runtime.eface`** (empty `interface{}` / `any`): `{ void *_type; void *data; }`
@@ -722,7 +722,7 @@ aflt:name/str/sym.go.main.:json  # List only application functions in `main.*` (
 
 ```bash
 tp slice @ 0x560010; tp hmap @ 0x560030                                  # Print Go runtime structs at <addr>
-pfj '? (slice) s' @ 0x560010; pfj '? (hmap) m' @ 0x560030                # Dump Go runtime structs as JSON
+pfj '?(slice) s' @ 0x560010; pfj '?(hmap) m' @ 0x560030                  # Dump Go runtime structs as JSON
 afvt s_arg stringStruct @ sym.go.main.decrypt                            # Type a Go function variable
 ```
 
