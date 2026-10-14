@@ -1885,8 +1885,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 
 	detected = rz_list_first_val(found);
 	if (detected) {
-		rz_cons_memcat(detected->string, detected->size);
-		rz_cons_newline();
+		rz_cons_println(detected->string);
 	}
 
 	rz_list_free(found);

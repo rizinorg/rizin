@@ -102,7 +102,9 @@ ar rsp=0x41000
 aezsu 0x001007ba
 psi @ obj.seckrit
 EOF
-EXPECT=Hello from RzIL!
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
 EXPECT_ERR=
 RUN
 
