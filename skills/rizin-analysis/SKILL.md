@@ -32,7 +32,7 @@ Every Rizin command can be suffixed with `@` (temporary seek/state override), `~
    - `@! <blocksize>` — Temporarily override the command block size `$b` without changing global `b` (e.g., `ph entropy @! 0x1000 @ 0x401000`, `p8 @! $FS @ sym.main`).
    - `@(<from> <to>)` — Temporarily set `analysis.from`/`search.from` and `*.to` address range bounds for the command.
    - `@a:<arch>[:<bits>]` and `@b:<bits>` — Temporarily switch architecture and/or bitness (e.g., `pd 4 @a:arm:16 @ 0x401000`).
-   - `@e:<k>=<v>[,<k2>=<v2>]` — Temporarily override `e` configuration variables for a single command (e.g., `pd 8 @e:asm.bytes=false,asm.cmt.il=true @ sym.main`).
+   - `@e:<k>=<v>[,<k2>=<v2>]` — Temporarily override `e` configuration variables for a single command without mutating session state or `.rzdb` projects (e.g., `/zj "http" li utf8 @e:search.prefix=str_search,search.str.min_length=4`, `pd 8 @e:asm.bytes=false,asm.cmt.il=true @ sym.main`).
    - `@f:<file>`, `@s:<string>`, `@v:<value>`, `@x:<hexpairs>` — Temporarily map the command buffer to file contents, an ASCII string, an integer value (sized by `asm.bits` and ordered by `cfg.bigendian`), or raw hexpairs (e.g., `ph sha256 @s:hello`, `pd 2 @x:4831c0c3`).
    - `@r:<reg>` — Temporarily seek to the current value of register `<reg>` (e.g., `px 64 @r:rsp`).
    - `@i:<nth_op>` / `@B:<nth>` — Temporarily seek to the `<nth_op>` instruction relative to the current offset (`@i:`) or the `<nth>` instruction in the current basic block (`@B:`).
@@ -70,6 +70,8 @@ Every Rizin command can be suffixed with `@` (temporary seek/state override), `~
    Append `j` to Rizin commands (`iIj`, `iSj`, `iij`, `izj`, `izxj`, `aflj`, `pdfj`, `pdj`, `pdgj`, `axtj`, `axfj`, `pxj`, `afvlj`, `avj`, `flj`) or use Rizin's colon-separated table query syntax (`aflt:size/gt/500:size/sort/rev:*/head/20:json`) and parse with `json.loads()` or `rz.cmdj()`.
 4. **Filter `codexrefs` by `"type": "CALL"` Using `x["from"]`:**
    In `aflj` and `axtj`, cross-reference objects have keys `{"from": <int>, "to": <int>, "type": "CALL" | "CODE" | "DATA" | "STRING"}`. When counting callers of a utility function (string decryptors, API resolvers, config accessors), filter for `xref.get("type") == "CALL"` and read `xref["from"]`.
+5. **Prefer `rz-ghidra` (`pdg` / `pdgj`) for Decompilation When Present:**
+   Before falling back to raw disassembly (`pdfj` / `pdrj` / `pdj`) or RzIL (`plf` / `aoj`), check whether the `rz-ghidra` core plugin (`ghidra`) is loaded (`Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, or `Lcj`) and use `pdg @ <addr>` / `pdgj @ <addr>` for function-level recovery.
 
 ## 2. Core Rizin Command & Syntax Reference
 
@@ -81,12 +83,12 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **Internal Grep & Pipes** | `<cmd>~<pat>`, `~+<pat>`, `~!<pat>`, `~[col]`, `~:line`, `~{}`, `<cmd> \| <prog>`, `<cmd> \|` | `~` filters/slices/formats internally; trailing `\|` strips ANSI color/HTML. |
 | **Auto-Analysis Level** | `aa` or `aaa` | `aa` (symbols + entry) or `aaa` (full standard analysis). Never use `aaaa`. |
 | **Analysis Config Variables** | `e analysis.in=...`, `e analysis.strings=true`, `e analysis.hasnext=true` | Config namespace is `analysis.*` (inspect all with `el analysis.`). |
-| **List Config Vars & Spaces** | `el [key]` / `elj [key]`; `es` | `el` lists config variables with descriptions (`elj` as JSON); `es` lists config spaces. |
-| **Command Catalog / Search Help** | `?* [<search_cmd>]` / `?*j [<search_cmd>]`, `?+`, `?*~<keyword>` | `?*j` searches command help as JSON; `?+` exports the full hierarchical command catalog tree as JSON; `?*~<kw>` greps summaries. |
+| **List Config Vars & Spaces** | `el [key]` / `elj [key]`, `el~+<kw>`; `es` | `el` lists config variables with descriptions (`elj` as JSON, `el~+<kw>` searches settings); `es` lists config spaces. |
+| **Command Help & Full Catalog** | `<cmd>?`, `<cmd>??`, `?* [<cmd>]` / `?*j [<cmd>]`, `?*~+<kw>`, `?+` | `<cmd>?` short summary; `<cmd>??` extended help (`details`/`Examples`); `?*~+<kw>` greps summaries; `?+` dumps full command tree JSON (never run interactive `?**` / `?***` / `?**e` in headless mode). |
 | **Math & Expression Engine (`%`)** | `% <expr>`, `%j <expr>`, `%v <expr>`, `%p <vaddr>`, `%P <paddr>`, `%$`, `%b64[-]` | Replaced legacy `?` math commands; supports `u8..u128` bitvectors, `addr:le32` deref, and `entropy(addr,n)`. |
 | **Table Query Filtering** | `aflt:size/gt/500:size/sort/rev:*/head/20:json` | Colon-separated `:col/op/val`, `t` suffix (`aflt`), descending is `sort/rev`, slice is `*/head/N`. |
-| **String & Regex Search** | `/z[jqt] <pattern> [<flags>=l] [<enc>]` | E.g., `/zj "http" li utf8`, `/zj "https?://" r utf8`, `/zj "cmd" l utf16le`. |
-| **String Search Config Vars** | `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8` | Also `e str.search.mode=auto` (`auto`, `rosections`, `raw`). |
+| **String & Regex Search** | `/z[jqt] <pattern> [<flags>=l] [<enc>] [@e:search.prefix=<pfx>]` | E.g., `/zj "http" li utf8 @e:search.prefix=str_search`, `/zj "https?://" r utf8`, `/zj "cmd" l utf16le`. |
+| **String Search Config Vars** | `e search.prefix=hit`, `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8` | Also `e str.search.mode=auto` (`auto`, `rosections`, `raw`); override per-command via `@e:search.prefix=...`. |
 | **ROP / COP / JOP Gadget Search** | `/R[jqt]`, `/R/[jqt]`, `/Rk[jqt]`, `/Rg[j]`, `/Rs[j]`, `/Rl[j]` (and `/C*`, `/J*`); `pdp` | `/R` = ROP, `/C` = call-oriented (COP), `/J` = jump-oriented (JOP); `/Rk` queries RzIL register constraints. |
 | **Pattern & Block Similarity Search** | `/p <patternsize>`, `/P <patternsize>` | `/p` finds repeating byte patterns of `<patternsize>`; `/P` finds blocks similar to current block. |
 | **Statistical & Hash Analysis** | `phl`, `ph[j] <algo> @! <sz> @ <addr>`, `/ce[j]`, `/cef[j]` | `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr` (discover via `phl~entro`, `phl~chi`, `phl~seri`). |
@@ -108,6 +110,26 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **Binary Diffing CLI (`rz-diff`)** | `rz-diff -d myers\|leven\|ssdeep [-j] a b`, `rz-diff -t functions [-j] a b` | `rz-diff -t graphs -0 <fcn> a b` outputs CFG Graphviz DOT diff. |
 | **Companion CLI Binaries** | `rz-bin`, `rz-find`, `rz-diff`, `rz-hash`, `rz-asm`, `rz-ax`, `rz-sign`, `rz-ar`, `rz-gg`, `rz-run` | Standalone headless CLI utilities (`-j` for JSON output). |
 | **Python Bindings** | `import rzpipe` | `rz.cmd(cmd, ret_stderr=True)`, `rz.cmdj(cmd)`, `rz.cmdJ(cmd)`. |
+
+### Searching Rizin Help Reliably (Headless-Safe)
+
+1. **Short Help (`<cmd>?`) vs. Extended Help (`<cmd>??`):**
+   - `<cmd>?` prints the command summary or subcommand table (e.g., `/z?`, `afv?`, `La?`).
+   - `<cmd>??` prints the **full extended help**, including `description`, `details`, argument `choices`, `Encodings`, `Regex Flags`, and `Examples` (e.g., `/z??`, `w??`, `La??`, `e??`).
+2. **Searching Command Summaries (`?*`) and Settings (`el`):**
+   - `?*~+<keyword>` — Case-insensitively search all command names, argument signatures, and 1-line summaries across the entire command tree (e.g., `?*~+noreturn`, `?*~+entropy`).
+   - `?* <prefix>~+<keyword>` (or `<prefix>?*~+<keyword>`) — Restrict summary search to a command subtree (e.g., `?* a~+xref`, `?* /~+regex`).
+   - `el~+<keyword>` (or `elj`) — Case-insensitively search all `e` configuration variable names and descriptions (e.g., `el~+prefix`, `el~+ghidra`).
+3. **Searching the Entire Help Catalog (`?+` Including Descriptions, Examples & Group Nodes):**
+   - `?*` only prints 1-line summaries, and `?*j` only visits executable leaf commands (skipping `details`/`Examples` attached to group descriptors like `/z`).
+   - `?+` exports the **entire** `RzCmd` descriptor tree (`summary`, `description`, `args`, `choices`, and `details`/`Examples` across all leaf, group, and `@`/`~`/`|` modifier nodes) as a single minified JSON line.
+   - **Gotcha:** Because `?+` is a single ~1 MB JSON line, `?+~<keyword>` matches the entire line. Pipe `?+` to `jq` (or traverse `rz.cmdj("?+")` in Python) to search the whole help:
+     ```bash
+     # Search all command summaries, descriptions, details, and examples case-insensitively:
+     rizin -2 -qc '?+ | jq -r ".. | objects | select(.cmd?) | select((.summary + \" \" + .description + \" \" + (.details | tostring)) | test(\"search.prefix\"; \"i\")) | \"\(.cmd)\(.args_str) # \(.summary)\""' -
+     ```
+4. **Never Run Interactive HUD Help (`?**`, `?***`, `?**e`) in Headless Mode:**
+   - `?**` and `?***` launch `rz_cons_hud()` and **hang waiting for TTY input** in headless/agent mode; `?**e` fails with `Hud mode requires scr.interactive=true.` Always use `?*~+<kw>`, `<cmd>??`, `el~+<kw>`, or `?+` instead.
 
 ## 3. Expression Engine (`%` / `RzNum`) & Structured Binary Formatting (`pf` / `RzFormat`)
 
@@ -261,8 +283,8 @@ rz.quit()
 | **Entry Points** | `iej` | `vaddr`, `paddr`, `baddr`, `laddr`, `hvaddr`, `haddr`, `type` |
 | **Imports / Exports** | `iij` / `iEj` | `iij`: `ordinal`, `bind`, `type`, `name`, `plt`; `iEj`: `name`, `flagname`, `vaddr`, `size`, `type` |
 | **Strings (`RzBin`)** | `izj` (data) / `izzj` (whole bin) / `izxj` (with xrefs) | `vaddr`, `paddr`, `string`, `length`, `size`, `section`, `type` (`izxj` adds `flag`, `xref-from`) |
-| **String Search (`RzSearch`)** | `/zj <pattern> <flags> <enc>` | `address`, `size`, `flag` (`hit.string.<enc>.<N>`), `detail` (does **not** populate `izz`) |
-| **Byte / Hex Search** | `/xj <hex_pattern>` | `address`, `size`, `flag` (`hit.bytes.<N>`); supports `.` nibble wildcards (e.g. `/xj 8b0485........5dc3`) |
+| **String Search (`RzSearch`)** | `/zj <pattern> <flags> <enc> [@e:search.prefix=<pfx>]` | `address`, `size`, `flag` (`<search.prefix>.string.<enc>.<N>`, default `hit`), `detail` (does **not** populate `izz`) |
+| **Byte / Hex Search** | `/xj <hex_pattern> [@e:search.prefix=<pfx>]` | `address`, `size`, `flag` (`<search.prefix>.bytes.<N>`); supports `.` nibble wildcards (e.g. `/xj 8b0485........5dc3`) |
 | **ROP / COP / JOP Search** | `/Rj [str]`, `/Rkj <constraints>`, `/Cj`, `/Jj` | Array of gadget dicts (`ret_addr`, `size`, `stack_change`, `instructions`, `modified_registers`) |
 | **Statistical / Hash Digest** | `phj <algo> @! <len> @ <addr>` | `name`, `value`, `from`, `to` (`algo`: `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr`, `sha256`, ...) |
 | **List Functions** | `aflj` | `offset`, `name`, `size`, `realsz`, `nbbs`, `cc`, `calltype`, `signature`, `codexrefs`, `callrefs`, `datarefs`, `indegree` |
@@ -281,7 +303,12 @@ rz.quit()
 
 ## 6. `rz-ghidra` Decompiler & SLEIGH Integration (`pdg*`)
 
-The `rz-ghidra` core plugin (`libcore_ghidra.so`) embeds the native **Ghidra C++ decompiler** and **SLEIGH disassembler/P-code lifter** directly into Rizin (`pdg?`).
+The `rz-ghidra` core plugin (`libcore_ghidra.so`) embeds the native **Ghidra C++ decompiler** and **SLEIGH disassembler/P-code lifter** directly into Rizin (`pdg?`). Prefer `pdg` / `pdgj` for function decompilation whenever `rz-ghidra` is present:
+
+```bash
+Lcq~^ghidra$                   # Check if rz-ghidra is loaded (prints "ghidra" if present, empty if absent)
+Lct:name/eq/ghidra:json        # Structured JSON check (`[{"name":"ghidra",...}]` or `[]`)
+```
 
 ### 1. `pdg*` Command Reference
 | Command | Purpose |
@@ -468,12 +495,14 @@ Rizin has two separate string subsystems. Mixing them up causes missed indicator
    - Syntax: `/z[jqt] <pattern> [<regex_flags>=l] [<encoding>=settings]`
      - `<regex_flags>`: `l` (literal default), `r` (PCRE2 regex), `e` (extended regex), `i` (case-insensitive), `m` (multiline), `d` (dotall).
      - `<encoding>`: `ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `utf32be`, `mutf8`, `ibm037`, etc.
-   - **Critical Gotcha 1 (`/z` does NOT update `izz`)**: Strings matched by `/z` are recorded as `hit.string.<encoding>.<N>` flags and returned directly by `/zj` (`[{"address": ..., "size": ..., "flag": "hit.string.utf8.0", "detail": ...}]`). They **never** appear in `iz` or `izz` output.
-   - **Critical Gotcha 2 (Specify `<encoding>` explicitly and check `search.str.min_length`)**: By default `str.encoding` is `"guess"`, which is slow and emits a warning during `/z`. Also `/z` skips matches shorter than `e search.str.min_length` (default `4`). Always pass the encoding argument (or set `e str.encoding=utf8` first):
+   - **Critical Gotcha 1 (`/z` does NOT update `izz`, and uses `search.prefix` for flags)**: Strings matched by `/z` are recorded in the `search` flagspace as `<search.prefix>.string.<encoding>.<N>` (default `hit.string.<encoding>.<N>`) and returned directly by `/zj` (`[{"address": ..., "size": ..., "flag": "hit.string.utf8.0", "detail": ...}]`). They **never** appear in `iz` or `izz` output.
+   - **Critical Gotcha 2 (Specify `<encoding>` explicitly and scope multi-pass searches with `@e:search.prefix=...`)**: By default `str.encoding` is `"guess"`, which is slow and emits a warning during `/z`. Also `/z` skips matches shorter than `e search.str.min_length` (default `4`), and consecutive searches overwrite `hit.*` flags unless scoped with `@e:search.prefix=<name>`:
      ```bash
-     /zj "http" li utf8                         # Case-insensitive literal search in UTF-8
-     /zj "http" li utf16le                      # Case-insensitive literal search in UTF-16LE
-     /zj "https?://[a-zA-Z0-9./_:-]+" ri utf8   # Case-insensitive PCRE2 regex search in UTF-8
+     /zj "http" li utf8 @e:search.prefix=str_search                        # Flags named str_search.string.utf8.<N>; search.prefix stays "hit"
+     /zj "http" li utf16le @e:search.prefix=wstr_search                    # Separate flag prefix for UTF-16LE hits
+     /zj "https?://[a-zA-Z0-9./_:-]+" ri utf8 @e:search.prefix=url_search  # Case-insensitive PCRE2 regex search in UTF-8
+     /zj "ELF" l utf8 @e:search.prefix=hdr_search,search.str.min_length=3  # Temporarily lower min_length to 3 for a single search
+     fl @F:search~str_search.                                              # List only flags from the `str_search` pass
      ```
 
 ### 2. Repeating Pattern Search (`/p`), Block Similarity (`/P`), Bytes (`/x`) & Assembly (`/a`, `/c`)
@@ -735,7 +764,11 @@ Go concatenates string literals into a single read-only blob without null termin
 
 - **Command fails or returns empty output**:
   1. Read `stderr` (`rz.cmd(cmd, ret_stderr=True)` in `rzpipe` or `res.stderr` in `subprocess.run`) — Rizin automatically prints `ERROR:` diagnostics and the parent command's help table to `stderr`.
-  2. Query built-in help directly: `<cmd>?` (e.g. `afv?`, `/z?`, `aflt:?`), search command trees by prefix with `?* [<search_cmd>]` / `?*j [<search_cmd>]`, grep all command summaries with `?*~<keyword>`, list config variables with `el <keyword>`, or dump the entire hierarchical command catalog tree as JSON with `?+`.
+  2. Query built-in help directly (never run interactive `?**` / `?***` / `?**e` in headless mode):
+     - `<cmd>?` for short summary/subcommands (e.g., `afv?`, `/z?`, `aflt:?`) and **`<cmd>??`** for full extended help (`description`, `details`, `Encodings`, `Regex Flags`, `Examples`, e.g., `/z??`, `La??`).
+     - `?*~+<keyword>` or `?* <prefix>~+<keyword>` to search command names, args, and 1-line summaries case-insensitively.
+     - `el~+<keyword>` (or `elj`) to search configuration variables and their descriptions.
+     - `?+ | jq ...` (or `rz.cmdj("?+")` in Python) to search the **entire** command catalog tree (`summary`, `description`, `args`, `choices`, and `details`/`Examples` across all group and leaf nodes).
   3. Ensure `aa` / `aaa` (or `-p <hash>.rzdb`) has run; `pdfj` and `pdgj` require a function to be defined at `<addr>` (run `af @ <addr>` first, or use `pdj <N> @ <addr>` for raw instruction disassembly).
 - **Decompiler (`pdg` / `pdgj`) unavailable**:
-  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lc` or `pdg?`. If unavailable, fall back to `pdfj` / `pdrj` / `pdj` or `aoj` / `plf` (RzIL).
+  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, `Lcj`, or `pdg?`. When `rz-ghidra` is present, always prefer `pdg` / `pdgj` for decompilation; if unavailable, fall back to `pdfj` / `pdrj` / `pdj` or `aoj` / `plf` (RzIL).
