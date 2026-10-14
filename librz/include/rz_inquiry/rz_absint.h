@@ -73,18 +73,18 @@ typedef struct rz_absint_state_t {
 	 *
 	 * TODO: Supports only 64 bit wide bit vectors as test.
 	 */
-	RzVector /*<RzBitVector>*/ *global_bvs;
-	RzVector /*<RzAbsIntVal>*/ *globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
+	RzVector /*<RzBitVector>*/ global_bvs;
+	RzVector /*<RzAbsIntVal>*/ globals; ///< Global variables (mostly registers). Indexed by the globals unique index.
 
-	RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx; ///< Sorted vector of DJB2 hashes to indices into locals and local_bvs below.
+	RzVector /*<RzAbsIntDJB2Idx>*/ locals_idx; ///< Sorted vector of DJB2 hashes to indices into locals and local_bvs below.
 	/**
 	 * \brief A flat array of bit vectors. One for each local.
 	 * These bit vectors are not allowed to be used outside of the value domain!
 	 *
 	 * TODO: Supports only 64 bit wide bit vectors as test.
 	 */
-	RzVector /*<RzBitVector>*/ *local_bvs;
-	RzVector /*<RzAbsIntVal>*/ *locals; ///< local variables. Indexed by the locals unique index.
+	RzVector /*<RzBitVector>*/ local_bvs;
+	RzVector /*<RzAbsIntVal>*/ locals; ///< local variables. Indexed by the locals unique index.
 	HtUP /*<RzAbsIntVal *>*/ *lets; ///< Let variables. Indexed by DJB2 hash of the let name.
 } RzAbsIntState;
 
@@ -102,7 +102,7 @@ typedef struct rz_absint_block_t {
 	 * Least upper bound of all states discovered at the entry of the block.
 	 * pc_state of this state must be RZ_ABSINT_PC_CONST and pc points to the first instruction of the block.
 	 */
-	RzAbsIntState *entry_state; // TODO: flatten to remove indirection
+	RZ_BORROW RzAbsIntState *entry_state; // TODO: flatten to remove indirection
 	/**
 	 * \brief The offsets of the instructions (packets), from the block start address.
 	 */

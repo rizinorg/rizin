@@ -64,20 +64,14 @@ static void var_arr_fini(RZ_NONNULL RzAbsIntInstance *inst, RZ_OWN RzVector *arr
 	}
 }
 
-static void var_arr_free(RZ_NONNULL RzAbsIntInstance *inst, RZ_OWN RzVector *array) {
-	var_arr_fini(inst, array);
-	rz_vector_free(array);
-}
-
-static RzVector *var_vec_clone(const RzAbsIntInstance *inst, const RzVector *vec, const RzVector *bv_array_clone) {
-	rz_return_val_if_fail(inst && vec, NULL);
-	RzVector *clone = rz_vector_clone(vec);
+static void var_vec_clone(const RzAbsIntInstance *inst, RzVector *dst_vec, const RzVector *vec, const RzVector *bv_array_clone) {
+	rz_return_if_fail(inst && vec);
+	rz_vector_clone_into(dst_vec, vec);
 	for (size_t i = 0; i < rz_vector_capacity(vec); i++) {
-		RzAbsIntVal *clone_aval = rz_vector_index_ptr(clone, i);
+		RzAbsIntVal *clone_aval = rz_vector_index_ptr(dst_vec, i);
 		val_domain(inst)->val_new_top(clone_aval, rz_vector_index_ptr(bv_array_clone, i));
 		val_domain(inst)->copy(clone_aval, rz_vector_index_ptr(vec, i));
 	}
-	return clone;
 }
 
 static bool join_var_arrs(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzVector *a, const RZ_IN RzVector *b) {
@@ -97,40 +91,28 @@ static bool join_var_arrs(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzVector *a
  * write it to the given pointers.
  */
 RZ_IPI bool rz_absint_init_var_array(RzAbsIntInstance *inst,
-	RZ_OUT RzVector /*<RzAbsIntVal>*/ **arr,
-	RZ_OUT RzVector /*<RzBitVector>*/ **bvs,
+	RZ_OUT RzVector /*<RzAbsIntVal>*/ *arr,
+	RZ_OUT RzVector /*<RzBitVector>*/ *bvs,
 	size_t cap,
 	bool set_len_to_cap) {
-	*arr = rz_vector_new(val_domain(inst)->val_size(), NULL, NULL);
-	if (!*arr) {
-		rz_warn_if_reached();
-		return false;
-	}
-	*bvs = rz_vector_new(sizeof(RzBitVector), NULL, NULL);
-	if (!*bvs) {
-		rz_vector_free(*arr);
-		rz_warn_if_reached();
-		return false;
-	}
-	rz_vector_reserve(*arr, cap);
+	rz_vector_init(arr, val_domain(inst)->val_size(), NULL, NULL);
+	rz_vector_init(bvs, sizeof(RzBitVector), NULL, NULL);
+	rz_vector_reserve(arr, cap);
+	rz_vector_reserve(bvs, cap);
 	if (set_len_to_cap) {
-		rz_vector_set_len(*arr, rz_vector_capacity(*arr));
-	}
-
-	rz_vector_reserve(*bvs, cap);
-	if (set_len_to_cap) {
-		rz_vector_set_len(*bvs, rz_vector_capacity(*bvs));
+		rz_vector_set_len(arr, rz_vector_capacity(arr));
+		rz_vector_set_len(bvs, rz_vector_capacity(bvs));
 	}
 
 	for (size_t i = 0; i < cap; ++i) {
-		RzBitVector *bv = rz_vector_index_ptr(*bvs, i);
+		RzBitVector *bv = rz_vector_index_ptr(bvs, i);
 		rz_bv_init(bv, 64);
 		if (!val_domain(inst)->val_new_top(
-			    rz_vector_index_ptr(*arr, i),
+			    rz_vector_index_ptr(arr, i),
 			    bv)) {
 			rz_warn_if_reached();
-			var_arr_free(inst, *arr);
-			rz_vector_free(*bvs);
+			var_arr_fini(inst, arr);
+			rz_vector_free(bvs);
 			return false;
 		}
 	}
@@ -153,8 +135,8 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		rz_warn_if_reached();
 		goto err;
 	}
-	state->locals_idx = rz_vector_new(sizeof(RzAbsIntDJB2Idx), NULL, NULL);
-	rz_vector_reserve(state->locals_idx, LOCAL_ARR_LEN);
+	rz_vector_init(&state->locals_idx, sizeof(RzAbsIntDJB2Idx), NULL, NULL);
+	rz_vector_reserve(&state->locals_idx, LOCAL_ARR_LEN);
 	if (!rz_absint_init_var_array(inst, &state->locals, &state->local_bvs, LOCAL_ARR_LEN, false)) {
 		rz_warn_if_reached();
 		goto err;
@@ -166,11 +148,11 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 	}
 	return state;
 err:
-	rz_vector_free(state->global_bvs);
-	var_arr_free(inst, state->globals);
-	rz_vector_free(state->locals_idx);
-	rz_vector_free(state->local_bvs);
-	var_arr_free(inst, state->locals);
+	rz_vector_fini(&state->global_bvs);
+	var_arr_fini(inst, &state->globals);
+	rz_vector_fini(&state->locals_idx);
+	rz_vector_fini(&state->local_bvs);
+	var_arr_fini(inst, &state->locals);
 	free(state);
 	return NULL;
 }
@@ -194,11 +176,11 @@ RZ_API void rz_absint_state_free(RZ_BORROW RzAbsIntInstance *inst, RZ_OWN RZ_NUL
 	if (!state) {
 		return;
 	}
-	rz_vector_free(state->global_bvs);
-	var_arr_free(inst, state->globals);
-	rz_vector_free(state->locals_idx);
-	rz_vector_free(state->local_bvs);
-	var_arr_free(inst, state->locals);
+	rz_vector_fini(&state->global_bvs);
+	var_arr_fini(inst, &state->globals);
+	rz_vector_fini(&state->locals_idx);
+	rz_vector_fini(&state->local_bvs);
+	var_arr_fini(inst, &state->locals);
 	var_set_free(inst, state->lets);
 	free(state);
 }
@@ -217,9 +199,9 @@ RZ_API void rz_absint_state_set_pc_const(RzAbsIntState *state, ut64 pc) {
 
 RZ_API void rz_absint_state_reset_locals(RzAbsIntState *state) {
 	rz_return_if_fail(state);
-	rz_vector_set_len(state->locals, 0);
-	rz_vector_set_len(state->local_bvs, 0);
-	rz_vector_set_len(state->locals_idx, 0);
+	rz_vector_set_len(&state->locals, 0);
+	rz_vector_set_len(&state->local_bvs, 0);
+	rz_vector_set_len(&state->locals_idx, 0);
 }
 
 RZ_IPI bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, ut64 entry_point) {
@@ -228,8 +210,8 @@ RZ_IPI bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, 
 
 	rz_absint_state_reset_locals(state);
 
-	for (size_t i = 0; i < rz_vector_len(state->globals); ++i) {
-		if (!val_domain(inst)->val_new_top(rz_vector_index_ptr(state->globals, i), rz_vector_index_ptr(state->global_bvs, i))) {
+	for (size_t i = 0; i < rz_vector_len(&state->globals); ++i) {
+		if (!val_domain(inst)->val_new_top(rz_vector_index_ptr(&state->globals, i), rz_vector_index_ptr(&state->global_bvs, i))) {
 			rz_warn_if_reached();
 		}
 	}
@@ -339,12 +321,12 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
 	}
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
-	r->global_bvs = rz_vector_clone(state->global_bvs);
-	r->globals = var_vec_clone(iset, state->globals, r->global_bvs);
+	rz_vector_clone_into(&r->global_bvs, &state->global_bvs);
+	var_vec_clone(iset, &r->globals, &state->globals, &r->global_bvs);
 
-	r->locals_idx = rz_vector_clone(state->locals_idx);
-	r->local_bvs = rz_vector_clone(state->local_bvs);
-	r->locals = var_vec_clone(iset, state->locals, r->local_bvs);
+	rz_vector_clone_into(&r->locals_idx, &state->locals_idx);
+	rz_vector_clone_into(&r->local_bvs, &state->local_bvs);
+	var_vec_clone(iset, &r->locals, &state->locals, &r->local_bvs);
 
 	r->lets = var_set_clone(iset, state->lets);
 	return r;
@@ -373,8 +355,8 @@ static bool join_vars_sets(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT HtUP *a, R
 }
 
 RZ_IPI bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState *a, RZ_BORROW RZ_IN const RzAbsIntState *b) {
-	bool global_change = join_var_arrs(inst, a->globals, b->globals);
-	bool local_change = join_var_arrs(inst, a->locals, b->locals);
+	bool global_change = join_var_arrs(inst, &a->globals, &b->globals);
+	bool local_change = join_var_arrs(inst, &a->locals, &b->locals);
 	// lets are not be relevant here since they are immutable within their scope
 	return global_change || local_change;
 }

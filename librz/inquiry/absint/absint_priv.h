@@ -10,8 +10,8 @@
 RZ_IPI size_t rz_absint_djb2_idx_lookup(const RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx, ut64 djb2);
 RZ_IPI void rz_absint_djb2_idx_add(RzVector /*<RzAbsIntDJB2Idx>*/ *locals_idx, ut64 djb2, size_t idx);
 RZ_IPI bool rz_absint_init_var_array(RzAbsIntInstance *inst,
-	RZ_OUT RzVector /*<RzAbsIntVal>*/ **arr,
-	RZ_OUT RzVector /*<RzBitVector>*/ **bvs,
+	RZ_OUT RzVector /*<RzAbsIntVal>*/ *arr,
+	RZ_OUT RzVector /*<RzBitVector>*/ *bvs,
 	size_t len,
 	bool set_len_to_cap);
 

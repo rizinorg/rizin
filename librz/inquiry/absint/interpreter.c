@@ -164,10 +164,10 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 		rz_warn_if_reached();
 		return;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		val_domain(inst)->copy(rz_vector_index_ptr(astate->globals, var_id), data);
+		val_domain(inst)->copy(rz_vector_index_ptr(&astate->globals, var_id), data);
 		return;
 	case RZ_IL_VAR_KIND_LOCAL:
-		val_domain(inst)->copy(rz_vector_index_ptr(astate->locals, var_id), data);
+		val_domain(inst)->copy(rz_vector_index_ptr(&astate->locals, var_id), data);
 		return;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
 		ht_vals = astate->lets;
@@ -203,10 +203,10 @@ static bool read_var_from_state(RzAbsIntInstance *inst,
 		rz_warn_if_reached();
 		return false;
 	case RZ_IL_VAR_KIND_GLOBAL:
-		val_domain(inst)->copy(data, rz_vector_index_ptr(astate->globals, var_id));
+		val_domain(inst)->copy(data, rz_vector_index_ptr(&astate->globals, var_id));
 		return true;
 	case RZ_IL_VAR_KIND_LOCAL:
-		val_domain(inst)->copy(data, rz_vector_index_ptr(astate->locals, var_id));
+		val_domain(inst)->copy(data, rz_vector_index_ptr(&astate->locals, var_id));
 		return true;
 	case RZ_IL_VAR_KIND_LOCAL_PURE:
 		ht_vals = astate->lets;
@@ -341,7 +341,7 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 			vhash = pure->op.var.idx;
 			break;
 		case RZ_IL_VAR_KIND_LOCAL:
-			vhash = rz_absint_djb2_idx_lookup(ctx->astate->locals_idx, pure->op.var.djb2_hash);
+			vhash = rz_absint_djb2_idx_lookup(&ctx->astate->locals_idx, pure->op.var.djb2_hash);
 			if (vhash == SIZE_MAX) {
 				rz_warn_if_reached();
 				// Invalid IL op. Locals must be written before read.
@@ -583,7 +583,7 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	// TODO: this should depend on the ABI, some data may be preserved.
 	// https://github.com/rizinorg/rizin/issues/6676
 	void *it;
-	rz_vector_foreach (ctx->astate->globals, it) {
+	rz_vector_foreach (&ctx->astate->globals, it) {
 		val_domain(ctx->inst)->set_top(it);
 	}
 }
@@ -641,19 +641,19 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			vhash = effect->op.set.idx;
 			break;
 		case RZ_IL_VAR_KIND_LOCAL:
-			vhash = rz_absint_djb2_idx_lookup(ctx->astate->locals_idx, effect->op.set.djb2_hash);
+			vhash = rz_absint_djb2_idx_lookup(&ctx->astate->locals_idx, effect->op.set.djb2_hash);
 			if (vhash != SIZE_MAX) {
 				break;
 			}
-			size_t idx = vhash = rz_vector_len(ctx->astate->locals);
-			rz_absint_djb2_idx_add(ctx->astate->locals_idx, effect->op.set.djb2_hash, idx);
-			if (idx >= rz_vector_capacity(ctx->astate->locals)) {
+			size_t idx = vhash = rz_vector_len(&ctx->astate->locals);
+			rz_absint_djb2_idx_add(&ctx->astate->locals_idx, effect->op.set.djb2_hash, idx);
+			if (idx >= rz_vector_capacity(&ctx->astate->locals)) {
 				// TODO: More than LOCAL_ARR_LEN are not supported in the test.
 				rz_warn_if_reached();
 				return EVAL_RESULT_ERROR;
 			}
-			rz_vector_set_len(ctx->astate->locals, idx + 1);
-			rz_vector_set_len(ctx->astate->local_bvs, idx + 1);
+			rz_vector_set_len(&ctx->astate->locals, idx + 1);
+			rz_vector_set_len(&ctx->astate->local_bvs, idx + 1);
 			break;
 		case RZ_IL_VAR_KIND_LOCAL_PURE:
 			return EVAL_RESULT_ERROR;
