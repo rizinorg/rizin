@@ -340,6 +340,7 @@ arch_isa_sources = [
   'isa/tms320/c6x/c6x_analysis.c',
   'isa/tms320/c6x/c6x_il.c',
   'isa/tms320/c6x/c6x_packet.c',
+  'isa/tms320/c6x/c6x_sim.c',
   'isa/tms320/c28x/c28x_decode.c',
   'isa/tms320/c28x/c28x_format.c',
   'isa/tms320/c28x/c28x_analysis.c',

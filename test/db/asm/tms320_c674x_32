@@ -32,8 +32,8 @@ d "bdec .s1 0x4,a5" 20308002 0x0 (branch (|| (! (sle (var a5) (bv 32 0x0))) (== 
 d ".fphead n, l, w, bu, nobr, nosat, 0001000b" 000000e1 0x1c
 d ".fphead n, l, w, b, nobr, nosat, 1111010b" 082841ef 0x5c
 d "[b0] bnop .s1 0x40,0x4" 21810820 0x38 (branch (! (is_zero (var b0))) (jmp (bv 32 0x40)) nop)
-d "dint" 00400010 0x0
-d "rint" 00600010 0x0
+d "dint" 00400010 0x0 (seq (set tsr (| (& (var tsr) (bv 32 0xfffffffc)) (<< (& (var tsr) (bv 32 0x1)) (bv 32 0x1) false))) (set csr (& (var csr) (bv 32 0xfffffffe))))
+d "rint" 00600010 0x0 (seq (set csr (| (& (var csr) (bv 32 0xfffffffe)) (& (>> (var tsr) (bv 32 0x1) false) (bv 32 0x1)))) (set tsr (| (& (var tsr) (bv 32 0xfffffffc)) (& (>> (var tsr) (bv 32 0x1) false) (bv 32 0x1)))))
 d "shru .s1 a3,0x14,a6" a1890e03 0x0 (set a6 (>> (var a3) (bv 32 0x14) false))
 d "shr .s1 a6,0x2,a6" a04d1803 0x0 (set a6 (>> (var a6) (bv 32 0x2) (msb (var a6))))
 d "cmpgtsp .s1 a10,a3,a1" 614e8d00 0x0 (set a1 (ite (<. (float 0 (var a3) ) (float 0 (var a10) )) (bv 32 0x1) (bv 32 0x0)))

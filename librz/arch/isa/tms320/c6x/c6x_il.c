@@ -11,14 +11,13 @@
  * independent. The scalar move / ALU / shift / multiply / load / store core is
  * lifted; forms not yet handled return NULL and simply leave op->il_op unset.
  *
- * Two architectural notes bound what is modelled here. C6000 is a VLIW: every
- * instruction of an execute packet reads its sources at the packet start and
- * writes at its end, so within a packet an instruction never sees another's
- * result. That is modelled by lifting the whole packet on its first
- * instruction, as described at c6x_lift_packet(), so a "mv a,b || mv b,a" swap
- * is exact. Branches have five delay slots and loads and multiplies deliver
- * their results late: c6x_lift_il() in analysis_tms320.c lifts a branch
- * together with its delay slots and holds back a late result read too soon.
+ * This file lifts one instruction on its own, as if it ran alone. What the
+ * C6000 pipeline adds on top -- every instruction of an execute packet reading
+ * the register file as the packet found it, results landing a per-instruction
+ * number of cycles later, branches taking effect after five delay slots, and
+ * the SPLOOP buffer replaying a loop body -- is modelled by the cycle
+ * simulator in c6x_sim.c, which calls in here for the data flow of each
+ * instruction.
  */
 
 #include <rz_util.h>
@@ -27,15 +26,18 @@
 /* RzIL VM */
 
 // IL-VM register bindings: the 32+32 general-purpose registers (a0-a31,
-// b0-b31), pce1 (the program counter, named as the register profile does), then
-// the control registers MVC reaches -- the set common to every C6000, followed
-// by the C64x+ extension. A single flat table doubles as the name lookup for a
-// general-register operand: side A occupies indices 0-31 and side B 32-63, so
-// c6x_reg_name(side, num) indexes it directly and never reaches pce1 or the
-// control registers past it.
-// Predicate registers by creg code; 0 and 7 are reserved.
-static const char *const c6x_pred_regs[8] = { NULL, "b0", "b1", "b2", "a1", "a2", "a0", NULL };
-
+// b0-b31), then the control registers MVC reaches -- the set common to every
+// C6000, followed by the C64x+ extension. A single flat table doubles as the
+// name lookup for a general-register operand: side A occupies indices 0-31 and
+// side B 32-63, so c6x_reg_name(side, num) indexes it directly and never
+// reaches the control registers past it.
+//
+// pce1 is deliberately not bound. It is the register profile's program
+// counter, which the VM keeps itself and writes back to the profile; binding
+// it as well made the VM write its stale copy of the variable over the program
+// counter on every sync, so the pc never moved between steps. Reading PCE1
+// gives the address of the fetch packet being executed, which is a constant
+// at lift time.
 static const char *const c6x_il_regs[] = {
 	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
 	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15",
@@ -45,7 +47,6 @@ static const char *const c6x_il_regs[] = {
 	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
 	"b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23",
 	"b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31",
-	"pce1",
 	// control registers common to all C6000 variants
 	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
 	// C64x+ control-register extension
@@ -63,10 +64,12 @@ static const char *const c6x_il_regs16[] = {
 	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15",
 	"b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7",
 	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
-	"pce1",
 	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
 	NULL
 };
+
+// Predicate registers by creg code; 0 and 7 are reserved.
+static const char *const c6x_pred_regs[8] = { NULL, "b0", "b1", "b2", "a1", "a2", "a0", NULL };
 
 /** RzIL configuration (register bindings, PC/memory widths) for the C6000 VM. */
 RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis) {
@@ -94,6 +97,25 @@ static const char *c6x_pred_name(ut8 creg) {
 	return c6x_pred_regs[creg & 7];
 }
 
+/** IL global of general register \p num on side \p side (0 = A, 1 = B). */
+RZ_IPI const char *c6x_il_reg_name(ut8 side, ut8 num) {
+	return c6x_reg_name(side, num);
+}
+
+/**
+ * \brief The condition under which \p insn executes, read from the current
+ * register state.
+ *
+ * \return NULL when the instruction is unconditional.
+ */
+RZ_IPI RZ_OWN RzILOpBool *c6x_il_pred_cond(const C6xInsn *insn) {
+	const char *pred = c6x_pred_name(insn->creg);
+	if (!pred) {
+		return NULL;
+	}
+	return insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred));
+}
+
 /**
  * Every architectural register read and write goes through one of these, so
  * that the register traffic of a lifted instruction is in one place rather than
@@ -104,12 +126,35 @@ static const char *c6x_pred_name(ut8 creg) {
  * -- are reached instead by running each slot against restored state and
  * applying the captured results together, which leaves these untouched.
  */
+/**
+ * \brief Whether \p name is a register the VM binds.
+ *
+ * MVC names control registers the register profile does not declare: PCE1,
+ * which is the program counter, and FADCR/FAUCR/FMCR on C67x.
+ */
+RZ_IPI bool c6x_il_reg_bound(const char *name) {
+	for (size_t i = 0; name && c6x_il_regs[i]; i++) {
+		if (!strcmp(c6x_il_regs[i], name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static RzILOpPure *c6x_reg_read(const char *name) {
 	return VARG(name);
 }
 
 static RzILOpEffect *c6x_reg_write(const char *name, RzILOpPure *v) {
 	return SETG(name, v);
+}
+
+// A register pair or quad where a scalar is expected is a 40-bit long or a
+// 128-bit operand the caller has to handle itself, not a decoding error, so it
+// fails quietly. Anything else -- memory or a control register in an ALU slot
+// -- would be a decoder bug and is flagged.
+static bool c6x_is_wide(const C6xOperand *o) {
+	return o->kind == C6X_OP_REGPAIR || o->kind == C6X_OP_REGQUAD;
 }
 
 // 32-bit value of a register or immediate source operand, or NULL for kinds
@@ -121,7 +166,9 @@ static RzILOpPure *c6x_src(const C6xOperand *o) {
 	case C6X_OP_IMM:
 		return S32(o->v.imm.value);
 	default:
-		rz_warn_if_reached();
+		if (!c6x_is_wide(o)) {
+			rz_warn_if_reached();
+		}
 		return NULL;
 	}
 }
@@ -131,9 +178,67 @@ static RzILOpEffect *c6x_wr(const C6xOperand *o, RzILOpPure *v) {
 	if (o->kind == C6X_OP_REG) {
 		return c6x_reg_write(c6x_reg_name(o->v.reg.side, o->v.reg.num), v);
 	}
-	rz_warn_if_reached();
+	if (!c6x_is_wide(o)) {
+		rz_warn_if_reached();
+	}
 	rz_il_op_pure_free(v);
 	return NULL;
+}
+
+static RzILOpBitVector *c6x_pair64(const C6xOperand *o);
+static RzILOpEffect *c6x_wr_pair64(const C6xOperand *o, RzILOpBitVector *v);
+static RzILOpBitVector *c6x_long40(const C6xOperand *o);
+
+// Whether any operand of \p insn is a 40-bit long, i.e. a register pair.
+static bool c6x_has_long(const C6xInsn *insn) {
+	for (ut8 i = 0; i < insn->nops; i++) {
+		if (OP(i).kind == C6X_OP_REGPAIR) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// A source of one of the 40-bit long forms, widened to 64 bits: a pair is the
+// long it holds, taken from bit 39, and a register or constant is taken from
+// bit 31. \p sgn picks sign- over zero-extension, following the signedness the
+// instruction gives its operands (slong/ulong, sint/uint).
+static RzILOpBitVector *c6x_src_long(const C6xOperand *o, bool sgn) {
+	if (o->kind == C6X_OP_REGPAIR) {
+		return sgn ? c6x_long40(o) : LOGAND(c6x_pair64(o), SN(64, 0xffffffffffLL));
+	}
+	RzILOpPure *v = c6x_src(o);
+	if (!v) {
+		return NULL;
+	}
+	return sgn ? SIGNED(64, v) : UNSIGNED(64, v);
+}
+
+// Write the low 40 bits of \p v as a long: bits 31:0 to the even register of
+// the pair and bits 39:32 to the odd one, whose upper 24 bits are cleared.
+static RzILOpEffect *c6x_wr_long40(const C6xOperand *o, RzILOpBitVector *v) {
+	return c6x_wr_pair64(o, LOGAND(v, SN(64, 0xffffffffffLL)));
+}
+
+// dst = src1 OP src2 over 40-bit longs: ADD/SUB and ADDU/SUBU with a long
+// source or destination. The sum or difference is formed in 64 bits from the
+// widened sources and written back as a long, or truncated to 32 bits for a
+// single destination.
+static RzILOpEffect *c6x_alu3_long(const C6xInsn *insn, rz_il_pure_2args_op *mk, bool sgn) {
+	if (insn->nops != 3) {
+		return NULL;
+	}
+	RzILOpBitVector *s1 = c6x_src_long(&OP(0), sgn);
+	RzILOpBitVector *s2 = c6x_src_long(&OP(1), sgn);
+	if (!s1 || !s2) {
+		rz_il_op_pure_free(s1);
+		rz_il_op_pure_free(s2);
+		return NULL;
+	}
+	if (OP(2).kind == C6X_OP_REGPAIR) {
+		return c6x_wr_long40(&OP(2), mk(s1, s2));
+	}
+	return c6x_wr(&OP(2), UNSIGNED(32, mk(s1, s2)));
 }
 
 // dst = src1 OP src2, the shared shape of the register/immediate ALU ops. `mk`
@@ -142,7 +247,9 @@ static RzILOpEffect *c6x_alu3(const C6xInsn *insn, rz_il_pure_2args_op *mk) {
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
+		if (!c6x_is_wide(&OP(0)) && !c6x_is_wide(&OP(1))) {
+			rz_warn_if_reached();
+		}
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
@@ -150,8 +257,20 @@ static RzILOpEffect *c6x_alu3(const C6xInsn *insn, rz_il_pure_2args_op *mk) {
 	return c6x_wr(&OP(2), mk(s1, s2));
 }
 
-// dst = (src1 CMP src2) ? 1 : 0, the shared shape of the compare ops.
-static RzILOpEffect *c6x_cmp(const C6xInsn *insn, rz_il_bool_2args_op *mk) {
+// dst = (src1 CMP src2) ? 1 : 0, the shared shape of the compare ops. The long
+// forms compare a 32-bit src1 against a 40-bit src2, both widened to 64 bits
+// with the signedness \p sgn of the comparison.
+static RzILOpEffect *c6x_cmp(const C6xInsn *insn, rz_il_bool_2args_op *mk, bool sgn) {
+	if (c6x_has_long(insn)) {
+		RzILOpBitVector *l1 = c6x_src_long(&OP(0), sgn);
+		RzILOpBitVector *l2 = c6x_src_long(&OP(1), sgn);
+		if (!l1 || !l2) {
+			rz_il_op_pure_free(l1);
+			rz_il_op_pure_free(l2);
+			return NULL;
+		}
+		return c6x_wr(&OP(2), ITE(mk(l1, l2), U32(1), U32(0)));
+	}
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
 	if (!s1 || !s2) {
@@ -161,6 +280,77 @@ static RzILOpEffect *c6x_cmp(const C6xInsn *insn, rz_il_bool_2args_op *mk) {
 		return NULL;
 	}
 	return c6x_wr(&OP(2), ITE(mk(s1, s2), U32(1), U32(0)));
+}
+
+// dst = src1 OP src2 for the bitwise ops, with src2 inverted first for ANDN.
+// The C66x forms on register pairs work on all 64 bits at once, and a constant
+// src1 is applied to both words.
+static RzILOpEffect *c6x_logic(const C6xInsn *insn, rz_il_pure_2args_op *mk, bool invert2) {
+	if (insn->nops != 3) {
+		return NULL;
+	}
+	if (OP(2).kind == C6X_OP_REGPAIR) {
+		RzILOpBitVector *s1 = NULL;
+		if (OP(0).kind == C6X_OP_REGPAIR) {
+			s1 = c6x_pair64(&OP(0));
+		} else if (OP(0).kind == C6X_OP_IMM) {
+			ut64 k = (ut32)OP(0).v.imm.value;
+			s1 = UN(64, (k << 32) | k);
+		}
+		RzILOpBitVector *s2 = OP(1).kind == C6X_OP_REGPAIR ? c6x_pair64(&OP(1)) : NULL;
+		if (!s1 || !s2) {
+			rz_il_op_pure_free(s1);
+			rz_il_op_pure_free(s2);
+			return NULL;
+		}
+		return c6x_wr_pair64(&OP(2), mk(s1, invert2 ? LOGNOT(s2) : s2));
+	}
+	RzILOpPure *s1 = c6x_src(&OP(0));
+	RzILOpPure *s2 = c6x_src(&OP(1));
+	if (!s1 || !s2) {
+		rz_il_op_pure_free(s1);
+		rz_il_op_pure_free(s2);
+		return NULL;
+	}
+	return c6x_wr(&OP(2), mk(s1, invert2 ? LOGNOT(s2) : s2));
+}
+
+// SHL, SHR and SHRU: src2 shifted by src1. A register count uses its six low
+// bits only, so up to 63, and every shift happens in a 40-bit shifter: a long
+// form shifts the long a register pair holds, or the 32-bit source widened to
+// one, and writes 40 bits back to a pair; the other forms keep the low 32 bits.
+// SHR fills from the sign, SHRU and SHL with zeros.
+static RzILOpEffect *c6x_shift(const C6xInsn *insn) {
+	if (insn->nops != 3) {
+		return NULL;
+	}
+	bool sgn = insn->id == C6X_INS_SHR;
+	RzILOpPure *n = c6x_src(&OP(1));
+	if (!n) {
+		return NULL;
+	}
+	if (OP(1).kind == C6X_OP_REG) {
+		n = LOGAND(n, U32(0x3f));
+	}
+	if (OP(0).kind == C6X_OP_REGPAIR || OP(2).kind == C6X_OP_REGPAIR) {
+		// SHL widens a single source as an unsigned int, and as its bits above
+		// 39 are shifted out, takes a long source sign-extended like SHR
+		RzILOpBitVector *v = c6x_src_long(&OP(0), sgn || (insn->id == C6X_INS_SHL && OP(0).kind == C6X_OP_REGPAIR));
+		if (!v || OP(2).kind != C6X_OP_REGPAIR) {
+			rz_il_op_pure_free(v);
+			rz_il_op_pure_free(n);
+			return NULL;
+		}
+		RzILOpBitVector *r = insn->id == C6X_INS_SHL ? SHIFTL0(v, n) : (sgn ? SHIFTRA(v, n) : SHIFTR0(v, n));
+		return c6x_wr_long40(&OP(2), r);
+	}
+	RzILOpPure *v = c6x_src(&OP(0));
+	if (!v) {
+		rz_il_op_pure_free(n);
+		return NULL;
+	}
+	RzILOpPure *r = insn->id == C6X_INS_SHL ? SHIFTL0(v, n) : (sgn ? SHIFTRA(v, n) : SHIFTR0(v, n));
+	return c6x_wr(&OP(2), r);
 }
 
 // Low 16 bits of `v`, sign-extended back to 32 -- the operand form shared by
@@ -807,17 +997,28 @@ static RzILOpEffect *c6x_addr(const C6xInsn *insn, bool sub, ut8 scale) {
 static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_NOP:
-	case C6X_INS_IDLE: {
+	case C6X_INS_IDLE:
+	case C6X_INS_FPHEAD: {
+		// a compact fetch-packet header is not an instruction at all
 		return NOP();
 	}
+	case C6X_INS_DINT:
+		// TSR.SGIE (bit 1) takes TSR.GIE (bit 0), and GIE is cleared both in
+		// TSR and in CSR, which mirrors it (SPRAA84A D.16)
+		return SEQ2(SETG("tsr", LOGOR(LOGAND(VARG("tsr"), U32(~3u)), SHIFTL0(LOGAND(VARG("tsr"), U32(1)), U32(1)))),
+			SETG("csr", LOGAND(VARG("csr"), U32(~1u))));
+	case C6X_INS_RINT:
+		// GIE in TSR and CSR takes TSR.SGIE back, and SGIE is cleared (D.28)
+		return SEQ2(SETG("csr", LOGOR(LOGAND(VARG("csr"), U32(~1u)), LOGAND(SHIFTR0(VARG("tsr"), U32(1)), U32(1)))),
+			SETG("tsr", LOGOR(LOGAND(VARG("tsr"), U32(~3u)), LOGAND(SHIFTR0(VARG("tsr"), U32(1)), U32(1)))));
 	case C6X_INS_B:
 	case C6X_INS_BNOP:
 	case C6X_INS_CALLP: {
 		// Control transfer. The target is either a register or a PC-relative
 		// displacement off the fetch-packet-aligned address (PCE1). This is the
-		// transfer alone: c6x_lift_il() in analysis_tms320.c places it after the
-		// delay slots. Call forms (a link register in ops[1]) also record the
-		// return address, the word after the branch.
+		// transfer alone: the simulator in c6x_sim.c places it after the delay
+		// slots. Call forms (a link register in ops[1]) also record the return
+		// address, the word after the branch.
 		const C6xOperand *t = &OP(0);
 		RzILOpBitVector *tgt;
 		if (t->kind == C6X_OP_PCREL) {
@@ -825,7 +1026,12 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 		} else if (t->kind == C6X_OP_REG) {
 			tgt = c6x_reg_read(c6x_reg_name(t->v.reg.side, t->v.reg.num));
 		} else if (t->kind == C6X_OP_CTRLREG) {
-			tgt = c6x_reg_read(t->v.ctrl); // e.g. b irp / b nrp (return from interrupt)
+			// b irp / b nrp return from an interrupt; the other control
+			// registers are no branch target
+			if (!c6x_il_reg_bound(t->v.ctrl)) {
+				return NULL;
+			}
+			tgt = c6x_reg_read(t->v.ctrl);
 		} else {
 			return NULL;
 		}
@@ -866,6 +1072,10 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 static RzILOpEffect *c6x_lift_move(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_MV: {
+		if (OP(0).kind == C6X_OP_REGPAIR && OP(1).kind == C6X_OP_REGPAIR) {
+			// ADD 0 over a 40-bit long
+			return c6x_wr_long40(&OP(1), c6x_pair64(&OP(0)));
+		}
 		RzILOpPure *s = c6x_src(&OP(0));
 		return s ? c6x_wr(&OP(1), s) : NULL;
 	}
@@ -892,7 +1102,22 @@ static RzILOpEffect *c6x_lift_move(const C6xInsn *insn, ut64 pc) {
 		const C6xOperand *d = &OP(1);
 		const char *sn = s->kind == C6X_OP_CTRLREG ? s->v.ctrl : (s->kind == C6X_OP_REG ? c6x_reg_name(s->v.reg.side, s->v.reg.num) : NULL);
 		const char *dn = d->kind == C6X_OP_CTRLREG ? d->v.ctrl : (d->kind == C6X_OP_REG ? c6x_reg_name(d->v.reg.side, d->v.reg.num) : NULL);
-		return sn && dn ? c6x_reg_write(dn, c6x_reg_read(sn)) : NULL;
+		if (!sn || !dn || !strcmp(dn, "pce1")) {
+			return NULL; // PCE1 cannot be written
+		}
+		if (!strcmp(sn, "pce1")) {
+			// the address of the fetch packet holding this MVC
+			return c6x_reg_write(dn, U32(c6x_packet_base(pc)));
+		}
+		if (!c6x_il_reg_bound(sn)) {
+			return NULL; // a C67x floating-point configuration register
+		}
+		if (!c6x_il_reg_bound(dn)) {
+			// Writing the C67x floating-point configuration only changes
+			// rounding and exception reporting, neither of which is modelled.
+			return NOP();
+		}
+		return c6x_reg_write(dn, c6x_reg_read(sn));
 	}
 	default:
 		break;
@@ -905,57 +1130,46 @@ static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_ADD:
 	case C6X_INS_ADDU: {
+		if (c6x_has_long(insn)) {
+			return c6x_alu3_long(insn, rz_il_op_new_add, insn->id == C6X_INS_ADD);
+		}
 		return c6x_alu3(insn, rz_il_op_new_add);
 	}
 	case C6X_INS_SUB:
 	case C6X_INS_SUBU: {
+		if (c6x_has_long(insn)) {
+			return c6x_alu3_long(insn, rz_il_op_new_sub, insn->id == C6X_INS_SUB);
+		}
 		return c6x_alu3(insn, rz_il_op_new_sub);
 	}
 	case C6X_INS_AND: {
-		return c6x_alu3(insn, rz_il_op_new_log_and);
+		return c6x_logic(insn, rz_il_op_new_log_and, false);
 	}
 	case C6X_INS_ANDN: {
-		// dst = src2 & ~src1 (src1 is the complemented operand)
-		RzILOpPure *s1 = c6x_src(&OP(0));
-		RzILOpPure *s2 = c6x_src(&OP(1));
-		if (!s1 || !s2) {
-			rz_warn_if_reached();
-			rz_il_op_pure_free(s1);
-			rz_il_op_pure_free(s2);
-			return NULL;
-		}
-		return c6x_wr(&OP(2), LOGAND(s2, LOGNOT(s1)));
+		// dst = src1 & ~src2: src2 is the operand inverted (SPRU732)
+		return c6x_logic(insn, rz_il_op_new_log_and, true);
 	}
 	case C6X_INS_OR: {
-		return c6x_alu3(insn, rz_il_op_new_log_or);
+		return c6x_logic(insn, rz_il_op_new_log_or, false);
 	}
 	case C6X_INS_XOR: {
-		return c6x_alu3(insn, rz_il_op_new_log_xor);
+		return c6x_logic(insn, rz_il_op_new_log_xor, false);
 	}
 	case C6X_INS_CMPEQ: {
-		return c6x_cmp(insn, rz_il_op_new_eq);
+		// the long form sign-extends a sint/scst5 src1 to 40 bits
+		return c6x_cmp(insn, rz_il_op_new_eq, true);
 	}
-	case C6X_INS_CMPGT:
+	case C6X_INS_CMPGT: {
+		return c6x_cmp(insn, rz_il_op_new_sgt, true);
+	}
 	case C6X_INS_CMPGTU: {
-		bool uns = insn->id == C6X_INS_CMPGTU;
-		if (OP(1).kind == C6X_OP_REGPAIR) {
-			// long form: a 32-bit src1 compared against a 40-bit long src2
-			RzILOpPure *s1 = c6x_src(&OP(0));
-			if (!s1) {
-				return NULL;
-			}
-			RzILOpBool *cmp = uns
-				? UGT(UNSIGNED(64, s1), LOGAND(c6x_pair64(&OP(1)), SN(64, 0xffffffffffLL)))
-				: SGT(SIGNED(64, s1), c6x_long40(&OP(1)));
-			return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
-		}
-		return c6x_cmp(insn, uns ? rz_il_op_new_ugt : rz_il_op_new_sgt);
+		return c6x_cmp(insn, rz_il_op_new_ugt, false);
 	}
 	case C6X_INS_CMPLT: {
-		return c6x_cmp(insn, rz_il_op_new_slt);
+		return c6x_cmp(insn, rz_il_op_new_slt, true);
 	}
 	case C6X_INS_CMPLTU: {
-		return c6x_cmp(insn, rz_il_op_new_ult);
+		return c6x_cmp(insn, rz_il_op_new_ult, false);
 	}
 	case C6X_INS_CMPEQ2: {
 		return c6x_cmp_packed(insn, 2, rz_il_op_new_eq);
@@ -991,6 +1205,10 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		return NULL;
 	}
 	case C6X_INS_NEG: {
+		if (OP(0).kind == C6X_OP_REGPAIR && OP(1).kind == C6X_OP_REGPAIR) {
+			// SUB 0 over a 40-bit long
+			return c6x_wr_long40(&OP(1), NEG(c6x_long40(&OP(0))));
+		}
 		RzILOpPure *s = c6x_src(&OP(0));
 		return s ? c6x_wr(&OP(1), NEG(s)) : NULL;
 	}
@@ -1332,38 +1550,10 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		const C6xOperand *d = &OP(1);
 		return c6x_wr(d, ADD(c6x_reg_read(c6x_reg_name(d->v.reg.side, d->v.reg.num)), S32(OP(0).v.imm.value)));
 	}
-	case C6X_INS_SHL: {
-		if (OP(0).kind == C6X_OP_REGPAIR) {
-			// 40-bit long shifted left by src1, truncated back to 40 bits
-			RzILOpBitVector *v = c6x_long40(&OP(0));
-			RzILOpPure *n = c6x_src(&OP(1));
-			if (!v || !n) {
-				rz_il_op_pure_free(v);
-				rz_il_op_pure_free(n);
-				return NULL;
-			}
-			return c6x_wr_pair64(&OP(2), LOGAND(SHIFTL0(v, n), SN(64, 0xffffffffffLL)));
-		}
-		RzILOpPure *v = c6x_src(&OP(0));
-		RzILOpPure *n = c6x_src(&OP(1));
-		if (!v || !n) {
-			rz_il_op_pure_free(v);
-			rz_il_op_pure_free(n);
-			return NULL;
-		}
-		return c6x_wr(&OP(2), SHIFTL0(v, n));
-	}
+	case C6X_INS_SHL:
 	case C6X_INS_SHR:
 	case C6X_INS_SHRU: {
-		RzILOpPure *v = c6x_src(&OP(0));
-		RzILOpPure *n = c6x_src(&OP(1));
-		if (!v || !n) {
-			rz_il_op_pure_free(v);
-			rz_il_op_pure_free(n);
-			return NULL;
-		}
-		// shr is arithmetic (sign-propagating); shru is logical
-		return c6x_wr(&OP(2), insn->id == C6X_INS_SHRU ? SHIFTR0(v, n) : SHIFTRA(v, n));
+		return c6x_shift(insn);
 	}
 	case C6X_INS_ADDAB: {
 		return c6x_addr(insn, false, 0);
@@ -1388,6 +1578,21 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 	}
 	case C6X_INS_SADD:
 	case C6X_INS_SSUB: {
+		if (c6x_has_long(insn)) {
+			// the 40-bit forms saturate to the range of a signed long
+			RzILOpBitVector *l1 = c6x_src_long(&OP(0), true);
+			RzILOpBitVector *l2 = c6x_src_long(&OP(1), true);
+			if (!l1 || !l2 || OP(2).kind != C6X_OP_REGPAIR) {
+				rz_il_op_pure_free(l1);
+				rz_il_op_pure_free(l2);
+				return NULL;
+			}
+			RzILOpBitVector *r = insn->id == C6X_INS_SSUB ? SUB(l1, l2) : ADD(l1, l2);
+			return c6x_wr_long40(&OP(2),
+				LET("_s", r,
+					ITE(SGT(VARLP("_s"), SN(64, 0x7fffffffffLL)), SN(64, 0x7fffffffffLL),
+						ITE(SLT(VARLP("_s"), SN(64, -0x8000000000LL)), SN(64, -0x8000000000LL), VARLP("_s")))));
+		}
 		// signed add/subtract saturating to the 32-bit range (src1 - src2 for
 		// ssub, matching the SUB operand order)
 		RzILOpPure *s1 = c6x_src(&OP(0));
@@ -1984,8 +2189,11 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_BNOP:
 	case C6X_INS_BPOS:
 	case C6X_INS_CALLP:
+	case C6X_INS_DINT:
+	case C6X_INS_FPHEAD:
 	case C6X_INS_IDLE:
 	case C6X_INS_NOP:
+	case C6X_INS_RINT:
 		return c6x_lift_control(insn, pc);
 	case C6X_INS_MV:
 	case C6X_INS_MVC:
@@ -2168,230 +2376,11 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_STW:
 		return c6x_lift_ldst(insn, pc);
 	default:
-		// Reached by design: the fetch-packet header is not an instruction, and
-		// the SPLOOP buffer controls are deliberately not modelled. Returning
+		// Reached by design: the SPLOOP buffer controls only make sense to the
+		// cycle simulator in c6x_sim.c, which handles them itself. Returning
 		// nothing leaves the caller to fall back, which is not a bug to warn on.
 		return NULL;
 	}
-}
-
-// RzIL keeps a variable name as a const char * and never copies it, so every
-// name a lifted packet mentions has to outlive the effect. They are drawn from a
-// bounded set -- one snapshot per staged register, one capture per register per
-// slot -- so the whole set is a table of string literals rather than anything
-// built at run time.
-// clang-format off
-static const char *const c6x_snapshot_names[C6X_PK_REGS] = {
-	"_pk0", "_pk1", "_pk2", "_pk3", "_pk4", "_pk5", "_pk6", "_pk7",
-	"_pk8", "_pk9", "_pk10", "_pk11", "_pk12", "_pk13", "_pk14", "_pk15"
-};
-
-static const char *const c6x_capture_names[C6X_FP_SLOTS][C6X_PK_REGS] = {
-#define C6X_CAP_ROW(s) \
-	{ "_c" #s "_0", "_c" #s "_1", "_c" #s "_2", "_c" #s "_3", \
-		"_c" #s "_4", "_c" #s "_5", "_c" #s "_6", "_c" #s "_7", \
-		"_c" #s "_8", "_c" #s "_9", "_c" #s "_10", "_c" #s "_11", \
-		"_c" #s "_12", "_c" #s "_13", "_c" #s "_14", "_c" #s "_15" }
-	C6X_CAP_ROW(0), C6X_CAP_ROW(1), C6X_CAP_ROW(2), C6X_CAP_ROW(3),
-	C6X_CAP_ROW(4), C6X_CAP_ROW(5), C6X_CAP_ROW(6), C6X_CAP_ROW(7),
-	C6X_CAP_ROW(8), C6X_CAP_ROW(9), C6X_CAP_ROW(10), C6X_CAP_ROW(11),
-	C6X_CAP_ROW(12), C6X_CAP_ROW(13), C6X_CAP_ROW(14)
-#undef C6X_CAP_ROW
-};
-// clang-format on
-
-// Whether a slot writes memory, i.e. is a store.
-static bool c6x_writes_memory(const C6xInsn *insn) {
-	return insn->nops && OP(insn->nops - 1).kind == C6X_OP_MEM;
-}
-
-// Registers an instruction writes.
-//
-// The ISA does not promise that the last operand is the destination -- a branch
-// ends in its target, BNOP in its NOP count, MVC in a control register -- so
-// this is a recogniser rather than a rule: it reports only the shapes it is sure
-// of and returns false for everything else, leaving the caller to lift the
-// packet the plain way. Being wrong here would stage the wrong register, so the
-// bar for adding a shape is knowing which operand it writes.
-static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
-	*n = 0;
-	if (!insn->nops) {
-		return true; // nothing written, e.g. nop
-	}
-	const C6xOperand *dst = &OP(insn->nops - 1);
-	switch (dst->kind) {
-	case C6X_OP_REG: {
-		const char *r = c6x_reg_name(dst->v.reg.side, dst->v.reg.num);
-		if (!r) {
-			return false;
-		}
-		out[(*n)++] = r;
-		return true;
-	}
-	case C6X_OP_REGPAIR: {
-		const char *lo = c6x_reg_name(dst->v.reg.side, dst->v.reg.num);
-		const char *hi = c6x_reg_name(dst->v.reg.side, dst->v.reg.num + 1);
-		if (!lo || !hi) {
-			return false;
-		}
-		out[(*n)++] = lo;
-		out[(*n)++] = hi;
-		return true;
-	}
-	case C6X_OP_MEM:
-		// a store writes memory, and the base too when it writes back
-		if (dst->v.mem.mode != C6X_AM_POS_CST && dst->v.mem.mode != C6X_AM_NEG_CST &&
-			dst->v.mem.mode != C6X_AM_POS_REG && dst->v.mem.mode != C6X_AM_NEG_REG) {
-			const char *base = c6x_reg_name(dst->v.mem.base_side, dst->v.mem.base);
-			if (!base) {
-				return false;
-			}
-			out[(*n)++] = base;
-		}
-		return true;
-	default:
-		return false;
-	}
-}
-
-/**
- * \brief Lift a whole execute packet.
- *
- * Every instruction in a C6000 execute packet reads the register file as it
- * stood when the packet issued, so a packet may swap two registers without a
- * temporary and no ordering of the writes reproduces that. Rather than redirect
- * every read inside the lifters, each slot is run against the packet's starting
- * state and its result captured, and the captured results are applied together
- * at the end:
- *
- *     save the packet-start value of every register the packet writes
- *     for each slot: restore those registers, run the slot, capture its writes
- *     apply the captured writes
- *
- * Restoring before each slot is what makes the reads see packet-start state; the
- * lifters themselves are untouched.
- *
- * \param insns The decoded slots, in address order.
- * \param n How many, at least two.
- * \param pc Address of the packet.
- * \param skip Slots to hold back, by bit index, for the caller to emit later.
- *
- * \return The packet's effect, or NULL if a slot has a shape this cannot model.
- */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
-	// n bounds the staging arrays below and the shift used for \p skip, so it
-	// is checked here rather than at each use
-	rz_return_val_if_fail(insns && n >= 1 && n <= C6X_FP_SLOTS, NULL);
-	const char *written[C6X_MAX_OPS * 8];
-	size_t nw = 0;
-	for (size_t i = 0; i < n; i++) {
-		if (skip & (1u << i)) {
-			continue;
-		}
-		const char *w[C6X_MAX_OPS];
-		size_t k = 0;
-		if (!c6x_writes(&insns[i], w, &k)) {
-			return NULL;
-		}
-		for (size_t j = 0; j < k && nw < RZ_ARRAY_SIZE(written); j++) {
-			bool seen = false;
-			for (size_t m = 0; m < nw; m++) {
-				seen |= RZ_STR_EQ(written[m], w[j]);
-			}
-			if (!seen) {
-				written[nw++] = w[j];
-			}
-		}
-	}
-	if (!nw) {
-		return NULL; // nothing to stage; sequential lifting is already correct
-	}
-	// the folded chain takes ownership of the steps, so the vector frees nothing
-	RzPVector *steps = rz_pvector_new(NULL);
-	if (!steps) {
-		return NULL;
-	}
-	// names for the staging locals, taken from the tables above
-	const char *snap[RZ_ARRAY_SIZE(written)];
-	const char *cap[C6X_FP_SLOTS][RZ_ARRAY_SIZE(written)];
-	for (size_t j = 0; j < nw; j++) {
-		snap[j] = j < C6X_PK_REGS ? c6x_snapshot_names[j] : NULL;
-		for (size_t i = 0; i < n; i++) {
-			cap[i][j] = j < C6X_PK_REGS ? c6x_capture_names[i][j] : NULL;
-		}
-		if (!snap[j] || !cap[n - 1][j]) {
-			rz_pvector_free(steps);
-			return NULL;
-		}
-	}
-	for (size_t j = 0; j < nw; j++) {
-		rz_pvector_push(steps, SETL(snap[j], VARG(written[j])));
-	}
-	// A load and a store to the same location in one packet load the old value
-	// and then store the new one (SPRUFE8B 4.2), so every slot that reads memory
-	// has to run before any slot that writes it. Registers are unaffected by the
-	// order, since each slot is restored to the packet's starting state and the
-	// result applied by original slot index.
-	size_t order[C6X_FP_SLOTS];
-	size_t nord = 0;
-	for (size_t i = 0; i < n; i++) {
-		if (!c6x_writes_memory(&insns[i])) {
-			order[nord++] = i;
-		}
-	}
-	for (size_t i = 0; i < n; i++) {
-		if (c6x_writes_memory(&insns[i])) {
-			order[nord++] = i;
-		}
-	}
-	for (size_t o = 0; o < nord; o++) {
-		size_t i = order[o];
-		if (skip & (1u << i)) {
-			continue; // emitted by the caller, later in the window
-		}
-		// restore packet-start state so this slot reads what the hardware would
-		for (size_t j = 0; j < nw; j++) {
-			rz_pvector_push(steps, SETG(written[j], VARL(snap[j])));
-		}
-		RzILOpEffect *body = c6x_lift(&insns[i], pc);
-		if (!body) {
-			void **it;
-			rz_pvector_foreach (steps, it) {
-				rz_il_op_effect_free(*it);
-			}
-			rz_pvector_free(steps);
-			return NULL;
-		}
-		rz_pvector_push(steps, body);
-		// capture what this slot produced before the next restore wipes it
-		for (size_t j = 0; j < nw; j++) {
-			rz_pvector_push(steps, SETL(cap[i][j], VARG(written[j])));
-		}
-	}
-	// apply the last slot that actually wrote each register
-	for (size_t j = 0; j < nw; j++) {
-		size_t last = 0;
-		for (size_t i = 0; i < n; i++) {
-			const char *w[C6X_MAX_OPS];
-			size_t k = 0;
-			c6x_writes(&insns[i], w, &k);
-			for (size_t m = 0; m < k; m++) {
-				if (RZ_STR_EQ(w[m], written[j])) {
-					last = i;
-				}
-			}
-		}
-		rz_pvector_push(steps, SETG(written[j], VARL(cap[last][j])));
-	}
-	// there is no vector form of SEQN, so fold the steps into a chain
-	RzILOpEffect *seq = NULL;
-	void **it;
-	rz_pvector_foreach (steps, it) {
-		RzILOpEffect *step = *it;
-		seq = seq ? SEQ2(seq, step) : step;
-	}
-	rz_pvector_free(steps);
-	return seq;
 }
 
 /** Lift a decoded instruction to RzIL, or NULL when the form is not yet lifted.
@@ -2410,61 +2399,6 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc) {
 	// z sense (z = 1 tests == 0, z = 0 tests != 0).
 	RzILOpBool *cond = insn->z ? IS_ZERO(c6x_reg_read(pred)) : NON_ZERO(c6x_reg_read(pred));
 	return BRANCH(cond, eff, NOP());
-}
-
-/**
- * \brief Sample a branch's predicate into a local, for a transfer emitted later.
- *
- * A branch deferred past its delay slots is emitted after instructions that may
- * have overwritten the register it tests, so the test has to be taken when the
- * branch issues and the result carried to the transfer. Unconditional branches
- * need nothing.
- *
- * \return NULL when \p insn is unconditional.
- */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn) {
-	const char *pred = c6x_pred_name(insn->creg);
-	if (!pred) {
-		return NULL;
-	}
-	return SETL(C6X_PRED_TAKEN, insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred)));
-}
-
-/**
- * \brief The transfer of a branch whose predicate was sampled earlier.
- *
- * \param insn The branch.
- * \param pc Address the branch issued from.
- * \param sampled Whether c6x_sample_predicate() ran for it.
- * \param fallthrough Where to leave the pc when the branch is not taken.
- */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled,
-	ut64 fallthrough) {
-	// lift the branch unconditionally, then re-apply the sampled predicate
-	C6xInsn bare = *insn;
-	bare.creg = 0;
-	bare.z = 0;
-	RzILOpEffect *xfer = c6x_lift(&bare, pc);
-	if (!xfer || !sampled) {
-		return xfer;
-	}
-	// The window already ran the delay slots, so a branch that is not taken has
-	// to leave the program counter past them; otherwise the VM steps back into
-	// the window and walks it again.
-	return BRANCH(VARL(C6X_PRED_TAKEN), xfer, JMP(U32(fallthrough)));
-}
-
-/** Whether \p o names the same architectural register as \p other. */
-RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other) {
-	if (o->kind != C6X_OP_REG || other->kind != C6X_OP_REG) {
-		return false;
-	}
-	return o->v.reg.side == other->v.reg.side && o->v.reg.num == other->v.reg.num;
-}
-
-/** A bare jump to \p addr, for leaving the pc past a window. */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr) {
-	return JMP(U32(addr));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

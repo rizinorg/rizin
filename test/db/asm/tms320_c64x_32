@@ -14,7 +14,7 @@ d "mv .d1 a0,a2" f1080001 0x0 (set a2 (var a0))
 # .D-unit extended logical/arith (C64x+): src2, src1, dst order.
 d "and .d2 -0x8,b15,b15" f209bf07 0x0 (set b15 (& (bv 32 0xfffffff8) (var b15)))
 d "or .d1x a3,b4,a4" b0781002 0x0 (set a4 (| (var a3) (var b4)))
-d "andn .d2 b7,b5,b6" 33e81403 0x0 (set b6 (& (var b5) (~ (var b7))))
+d "andn .d2 b7,b5,b6" 33e81403 0x0 (set b6 (& (var b7) (~ (var b5))))
 d "xor .d2 0x1,b0,b13" f22b8006 0x0 (set b13 (^ (bv 32 0x1) (var b0)))
 # .D address arithmetic: ADDAD scales src1 by 8; ADDAW by 4. src2, src1, dst.
 d "addad .d2 b15,0x4,b4" c29e3c02 0x0 (set b4 (+ (var b15) (<< (bv 32 0x4) (bv 32 0x3) false)))
@@ -25,7 +25,7 @@ d "sub .d2 b15,0x10,b15" c209be07 0x0 (set b15 (- (var b15) (bv 32 0x10)))
 d "mvk .d2 0,b4" 43000002 0x0 (set b4 (bv 32 0x0))
 d "[b0] mvk .d1 0,a12" 40000026 0x0 (branch (! (is_zero (var b0))) (set a12 (bv 32 0x0)) nop)
 # ANDN on .L (cross-path form).
-d "andn .l1x a4,b4,a0" 989f1000 0x0 (set a0 (& (var b4) (~ (var a4))))
+d "andn .l1x a4,b4,a0" 989f1000 0x0 (set a0 (& (var a4) (~ (var b4))))
 # ADDKPC (.S2, C64x+): dst = PCE1 + scst7*4; target shown as an address.
 d "addkpc .s2 0x54,b3,0" 62018501 0x4c (set b3 (bv 32 0x54))
 d "addkpc .s2 0x40,b3,2" 62418801 0x34 (set b3 (bv 32 0x40))
@@ -44,7 +44,7 @@ d "cmpgt .l1 0x0,a5:a4,a0" 98081000 0x0 (set a0 (ite (! (sle (cast 64 (msb (bv 3
 # B IRP (.S2): return from a maskable interrupt (branch to the IRP register).
 d "b .s2 irp" e2001800 0x0 (jmp (var irp))
 # ANDN on .S in the extended (bits[5:2]==1100) format.
-d "andn .s1 a5,a4,a5" b0ad9002 0x0 (set a5 (& (var a4) (~ (var a5))))
+d "andn .s1 a5,a4,a5" b0ad9002 0x0 (set a5 (& (var a5) (~ (var a4))))
 # MPYLI (.M, C64x+): 16x32 -> 64 multiply, writing a register pair.
 d "mpyli .m2 b6,b5,b7:b6" 73c51403 0x0 (seq (set _d (* (cast 64 (msb (cast 32 (msb (cast 16 false (var b6))) (cast 16 false (var b6)))) (cast 32 (msb (cast 16 false (var b6))) (cast 16 false (var b6)))) (cast 64 (msb (var b5)) (var b5)))) (set b6 (cast 32 false (var _d))) (set b7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 d "mpy32 .m1 a0,a1,a2" 00080401 0x0 (set a2 (* (var a0) (var a1)))

@@ -20,3 +20,11 @@ d "rsqrdp .s1 a1:a0,a3:a2" a00b0401 0x0
 d "dcmpyr1 .m1 a1:a0,a3:a2,a5:a4" 70030812 0x0
 d "dccmpyr1 .m1 a1:a0,a3:a2,a5:a4" b0030812 0x0
 d "qsmpy32r1 .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" b0061014 0x0
+
+# C66x bitwise ops on register pairs, under the creg = 0, z = 1 signature; a
+# constant applies to both words
+d "xor .l1x a7:a6,b5:b4,a7:a6" f8dd1013 0x0 (seq (set _d (^ (append (var a7) (var a6)) (append (var b5) (var b4)))) (set a6 (cast 32 false (var _d))) (set a7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "and .s2 b1:b0,b3:b2,b5:b4" e2070812 0x0 (seq (set _d (& (append (var b1) (var b0)) (append (var b3) (var b2)))) (set b4 (cast 32 false (var _d))) (set b5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "xor .l1 -0x1,a3:a2,a5:a4" d8ed0b12 0x0 (seq (set _d (^ (bv 64 0xffffffffffffffff) (append (var a3) (var a2)))) (set a4 (cast 32 false (var _d))) (set a5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "or .l1 a1:a0,a3:a2,a5:a4" f80f0812 0x0 (seq (set _d (| (append (var a1) (var a0)) (append (var a3) (var a2)))) (set a4 (cast 32 false (var _d))) (set a5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "andn .l1 a1:a0,a3:a2,a5:a4" 980f0812 0x0 (seq (set _d (& (append (var a1) (var a0)) (~ (append (var a3) (var a2))))) (set a4 (cast 32 false (var _d))) (set a5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))

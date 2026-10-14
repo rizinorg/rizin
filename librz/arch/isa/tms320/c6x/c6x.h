@@ -414,9 +414,6 @@ RZ_IPI const char *c6x_pred_reg_name(ut8 creg);
 /** First address after execute packet \p p, i.e. where the next one starts. */
 #define C6X_PACKET_END(p) ((p).slots[(p).n - 1].addr + (p).slots[(p).n - 1].size)
 
-/** Registers one execute packet can stage; every slot writes at most a pair. */
-#define C6X_PK_REGS 16
-
 /** One instruction slot of a fetch packet, before decoding. */
 typedef struct {
 	ut64 addr; ///< where the slot starts
@@ -424,6 +421,7 @@ typedef struct {
 	ut32 opcode; ///< the raw opcode, 16 or 32 bits wide
 	bool parallel; ///< runs in the same cycle as the following slot
 	bool header; ///< the compact fetch-packet header, not an instruction
+	bool prot; ///< its fetch packet has a compact header with the PROT bit set
 } C6xSlotRef;
 
 /** One execute packet: the instructions that issue in the same cycle. */
@@ -431,6 +429,7 @@ typedef struct {
 	ut64 addr; ///< address of the first slot
 	C6xSlotRef slots[C6X_FP_SLOTS];
 	size_t n;
+	ut64 next; ///< where the following execute packet starts, past any header
 } C6xPacketRef;
 
 /**
@@ -455,22 +454,38 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+RZ_IPI const char *c6x_il_reg_name(ut8 side, ut8 num);
 
-/** Local carrying a deferred branch's predicate from issue to transfer. */
-#define C6X_PRED_TAKEN "_br_taken"
+RZ_IPI bool c6x_il_reg_bound(const char *name);
 
-RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other);
+RZ_IPI RZ_OWN RzILOpBool *c6x_il_pred_cond(const C6xInsn *insn);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr);
+/** One register an instruction writes, and when the write lands. */
+typedef struct {
+	const char *reg; ///< IL global the write goes to
+	ut8 delay; ///< delay slots before the new value is readable
+} C6xWrite;
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn);
+/** Most registers one instruction can write: a pair and a base write-back. */
+#define C6X_MAX_WRITES 4
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled, ut64 fallthrough);
+RZ_IPI bool c6x_insn_writes(const C6xInsn *insn, RZ_OUT C6xWrite *out, RZ_OUT size_t *n);
+
+RZ_IPI bool c6x_insn_mentions(const C6xInsn *insn, const char *reg);
+
+RZ_IPI ut8 c6x_write_delay(const C6xInsn *insn, bool high);
 
 RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn);
 
-RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn);
+/** What the cycle simulator needs to read and decode the image. */
+typedef struct {
+	const C6xArchDesc *desc; ///< the cpu being lifted
+	C6xReadFn read; ///< reader for image bytes
+	void *user; ///< passed through to \c read
+	bool big_endian; ///< byte order of the image
+} C6xImage;
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_at(const C6xImage *img, ut64 addr, RZ_NULLABLE bool *handled);
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 
