@@ -125,6 +125,7 @@ void rz_bin_mdmp_free(MiniDmpObj *obj) {
 	rz_buf_free(obj->b);
 	free(obj->hdr);
 	obj->b = NULL;
+	sdb_free(obj->kv);
 	free(obj);
 
 	return;
