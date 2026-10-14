@@ -723,7 +723,10 @@ static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
 	}
 	for (; i < varFileInfo->numOfChildren; i++) {
 		snprintf(key, 20, "var%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
@@ -777,7 +780,6 @@ static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
 	free(encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf(key, 20, "string%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
 		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]))) {
 			sdb_free(sdb);
 			return NULL;
