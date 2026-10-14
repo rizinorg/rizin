@@ -62,6 +62,7 @@ NAME=arm preserve stack address calculation and memory substitution (#4583)
 FILE=malloc://14
 ARGS=-a arm -b 16 -e asm.cpu=cortexA8
 CMDS=<<EOF
+e cfg.bigendian=false
 e asm.bytes=false
 e asm.comments=false
 e asm.lines.bb=false

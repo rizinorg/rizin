@@ -334,7 +334,23 @@ static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_nam
 	return 0;
 }
 
-static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis) {
+// `q` returns RZ_CMD_STATUS_EXIT, which is not a failure
+static inline bool cmd_status_is_error(RzCmdStatus status) {
+	return status != RZ_CMD_STATUS_OK && status != RZ_CMD_STATUS_EXIT;
+}
+
+/**
+ * \brief Run the scripts and then the commands given on the command line.
+ *
+ * \param core RzCore instance
+ * \param cmds Commands given with -c, can be NULL
+ * \param files Scripts given with -i or -I, can be NULL
+ * \param quiet Whether the batch mode (-q) is enabled
+ * \param do_analysis Whether an analysis was requested with -A
+ * \param had_error Set to true when a script or a command fails
+ * \return true if Rizin should quit right after running the commands, false otherwise.
+ */
+static bool run_commands(RzCore *core, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis, RZ_NONNULL RZ_OUT bool *had_error) {
 	RzListIter *iter;
 	const char *cmdn;
 	const char *file;
@@ -343,21 +359,29 @@ static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>
 	rz_list_foreach (files, iter, file) {
 		if (!rz_file_exists(file)) {
 			RZ_LOG_ERROR("Script '%s' not found.\n", file);
+			*had_error = true;
 			goto beach;
 		}
-		ret = rz_core_run_script(r, file);
+		ret = rz_core_run_script(core, file);
 		if (ret == -2) {
 			RZ_LOG_ERROR("[c] Cannot open '%s'\n", file);
 		}
+		if (ret <= 0) {
+			*had_error = true;
+		}
 		if (ret < 0 || (ret == 0 && quiet)) {
 			rz_cons_flush();
-			return false;
+			// -q quits after the scripts, a failed one must not make it read stdin
+			return true;
 		}
 	}
 	/* -c */
 	rz_list_foreach (cmds, iter, cmdn) {
-		// rz_core_cmd0 (r, cmdn);
-		rz_core_cmd_lines(r, cmdn);
+		RzCmdStatus status = rz_core_cmd_lines_rzshell(core, cmdn);
+		// A line ending with `q` returns RZ_CMD_STATUS_EXIT even if a command failed before
+		if (cmd_status_is_error(status == RZ_CMD_STATUS_EXIT ? core->last_cmd_status : status)) {
+			*had_error = true;
+		}
 		rz_cons_flush();
 	}
 beach:
@@ -428,6 +452,7 @@ static bool has_file_arg(int argc, const char **argv, RzGetopt *opt) {
 RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzCore *r;
 	bool forcequit = false;
+	bool cmd_had_error = false;
 	bool haveRarunProfile = false;
 	RzListIter *iter;
 	int do_analysis = 0;
@@ -870,8 +895,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (rz_config_get_i(r->config, "cfg.plugins")) {
 			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 		}
-		run_commands(r, NULL, prefiles, false, do_analysis);
-		run_commands(r, cmds, files, quiet, do_analysis);
+		run_commands(r, NULL, prefiles, false, do_analysis, &cmd_had_error);
+		run_commands(r, cmds, files, quiet, do_analysis, &cmd_had_error);
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
 		rz_core_io_plugins_print(r->io, &state);
 		rz_cmd_state_output_print(&state);
@@ -938,7 +963,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
 		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 	}
-	run_commands(r, NULL, prefiles, false, do_analysis);
+	run_commands(r, NULL, prefiles, false, do_analysis, &cmd_had_error);
 	rz_list_free(prefiles);
 	prefiles = NULL;
 
@@ -1538,7 +1563,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			map->perm |= RZ_PERM_W;
 		}
 	}
-	ret = run_commands(r, cmds, files, quiet, do_analysis);
+	ret = run_commands(r, cmds, files, quiet, do_analysis, &cmd_had_error);
 	rz_list_free(cmds);
 	rz_list_free(evals);
 	rz_list_free(files);
@@ -1547,7 +1572,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		ret = 1;
 	}
 	if (ret) {
-		ret = 0;
+		// Opt-in, since batch mode always exited with 0
+		ret = cmd_had_error && rz_config_get_b(r->config, "cfg.exit.errorcode") ? 1 : 0;
 		goto beach;
 	}
 	if (rz_config_get_i(r->config, "scr.prompt")) {

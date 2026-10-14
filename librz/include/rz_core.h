@@ -337,6 +337,7 @@ struct rz_core_t {
 	bool is_lastcmd;
 	bool is_pipe;
 	char *cmdlog;
+	RzCmdStatus last_cmd_status; ///< Status of the last executed statement or command line, RZ_CMD_STATUS_INVALID before the first one. A line ending with `q` stores its last failure, if any, instead of RZ_CMD_STATUS_EXIT.
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
@@ -509,6 +510,7 @@ RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off);
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
+RZ_API RZ_OWN char *rz_core_cmd_str_status(RZ_NONNULL RzCore *core, RZ_NONNULL const char *cmd, RZ_NONNULL RZ_OUT RzCmdStatus *status);
 RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length);
 RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);
