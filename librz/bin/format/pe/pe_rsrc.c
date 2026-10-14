@@ -778,6 +778,10 @@ static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf(key, 20, "string%d", i);
 		sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
