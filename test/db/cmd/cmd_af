@@ -528,3 +528,22 @@ EOF
 REGEXP_FILTER_ERR=Doesn'tMatterJustShouldCatchSegfaults
 EXPECT_ERR=
 RUN
+
+NAME=afis counts each instruction once
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 554889e5b8000000005dc3
+af
+afis
+afis family
+EOF
+EXPECT=<<EOF
+   2 mov
+   1 pop
+   1 push
+   1 ret
+   5 cpu
+EOF
+RUN
