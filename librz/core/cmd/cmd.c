@@ -198,7 +198,8 @@ RZ_API bool rz_core_run_script(RzCore *core, RZ_NONNULL const char *file) {
 			RZ_LOG_ERROR("core: %s\n", error_msg);
 			free(error_msg);
 		}
-		ret = result != 0;
+		// 0 means success
+		ret = !result;
 	} else {
 		p = rz_lang_get_by_extension(core->lang, file);
 		if (p) {
@@ -403,6 +404,21 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_JSON:
+		rz_cmd_status_json(state->d.pj, core->last_cmd_status, NULL);
+		break;
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_cons_println(rz_cmd_status_tostring(core->last_cmd_status));
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
@@ -567,6 +583,7 @@ struct tsr2cmd_state {
 	bool log;
 	bool split_lines;
 	TSNode substitute_cmd;
+	RzCmdStatus failed; ///< Last failure of the line, which a later `q` must not hide
 };
 
 struct tsr2cmd_edit {
@@ -2837,6 +2854,11 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
+		// Per statement, so that the next statement of the same line can read it
+		core->last_cmd_status = cmd_res;
+		if (cmd_res != RZ_CMD_STATUS_OK && cmd_res != RZ_CMD_STATUS_EXIT) {
+			state->failed = cmd_res;
+		}
 		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string(command, state->input);
 			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
@@ -2933,6 +2955,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	state.tree = tree;
 	state.log = log;
 	state.split_lines = split_lines;
+	state.failed = RZ_CMD_STATUS_OK;
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
 
@@ -2957,6 +2980,8 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);
+	// Also covers the paths that run no statement, e.g. parse errors
+	core->last_cmd_status = res == RZ_CMD_STATUS_EXIT && state.failed != RZ_CMD_STATUS_OK ? state.failed : res;
 	return res;
 }
 
@@ -2987,7 +3012,12 @@ RZ_API int rz_core_cmd_file(RzCore *core, const char *file) {
 	if (!odata) {
 		return false;
 	}
-	if (!rz_core_cmd_lines(core, odata)) {
+	RzCmdStatus status = rz_core_cmd_lines_rzshell(core, odata);
+	if (status == RZ_CMD_STATUS_EXIT) {
+		// `q` ends a script, it fails only if a command failed before it
+		status = core->last_cmd_status;
+	}
+	if (status != RZ_CMD_STATUS_OK && status != RZ_CMD_STATUS_EXIT) {
 		RZ_LOG_ERROR("core: Failed to run script '%s'\n", file);
 		free(odata);
 		return false;
@@ -3119,18 +3149,20 @@ RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
+static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length, RZ_NULLABLE RzCmdStatus *status) {
 	const char *static_str;
 	ut8 *retstr = NULL;
 	rz_cons_push();
 	bool is_pipe = core->is_pipe;
 	core->is_pipe = true;
-	if (rz_core_cmd(core, cmd, 0) == -1) {
-		core->is_pipe = is_pipe;
+	RzCmdStatus res = rz_core_cmd_rzshell(core, cmd, 0);
+	core->is_pipe = is_pipe;
+	if (status) {
+		*status = res;
+	} else if (rz_cmd_status2int(res) == -1) {
 		rz_cons_pop();
 		return NULL;
 	}
-	core->is_pipe = is_pipe;
 	rz_cons_filter();
 	static_str = rz_cons_get_buffer();
 	if (length) {
@@ -3151,7 +3183,24 @@ static ut8 *core_cmd_raw(RzCore *core, const char *cmd, int *length) {
  */
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	rz_return_val_if_fail(core && cmd, NULL);
-	return (char *)core_cmd_raw(core, cmd, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL, NULL);
+}
+
+/**
+ * \brief Executes a rizin command and returns its output, along with its status
+ *
+ * The output is what \p cmd printed, also when it failed: `echo a; zzz` gives
+ * `"a\n"`, while rz_core_cmd_str() gives NULL. Error messages go to stderr and
+ * are not part of it.
+ *
+ * \param core RzCore instance
+ * \param cmd Command line to execute
+ * \param status Set to the status of \p cmd, in any case
+ * \return The output of \p cmd, possibly empty, or NULL if it cannot be allocated
+ */
+RZ_API RZ_OWN char *rz_core_cmd_str_status(RZ_NONNULL RzCore *core, RZ_NONNULL const char *cmd, RZ_NONNULL RZ_OUT RzCmdStatus *status) {
+	rz_return_val_if_fail(core && cmd && status, NULL);
+	return (char *)core_cmd_raw(core, cmd, NULL, status);
 }
 
 /**
@@ -3159,7 +3208,7 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
  */
 RZ_API ut8 *rz_core_cmd_raw(RzCore *core, const char *cmd, int *length) {
 	rz_return_val_if_fail(core && cmd && length, NULL);
-	return core_cmd_raw(core, cmd, length);
+	return core_cmd_raw(core, cmd, length, NULL);
 }
 
 static int compare_cmd_descriptor_name(const void *a, const void *b, void *user) {

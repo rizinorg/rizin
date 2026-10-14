@@ -1,0 +1,144 @@
+NAME=_s: status of the last command
+FILE==
+ARGS=-c _s -c zzz -c _s -c wx -c _sj
+CMDS=<<EOF
+s 0
+_s
+_sj
+s foo; _s
+EOF
+EXPECT=<<EOF
+INVALID
+NONEXISTINGCMD
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments"}}
+OK
+{"error":null}
+ERROR
+EOF
+RUN
+
+NAME=_s mixed with _ and failures
+FILE==
+ARGS=-c _ -c _s -c sasdasdasd -c _s -c _ -c _s -c _ -c _s
+CMDS=<<EOF
+s 0
+_
+_s
+s foo
+_s
+_s
+_sj~{.error}
+_s~?
+echo $(_s)
+_s @@= 1 2
+. scripts/cmd-error.rz
+_s
+. scripts/echo-quit.rz
+_s
+EOF
+EXPECT=<<EOF
+OK
+NONEXISTINGCMD
+NONEXISTINGCMD
+OK
+OK
+OK
+OK
+OK
+ERROR
+OK
+null
+1
+OK
+OK
+OK
+before
+ERROR
+script
+OK
+EOF
+RUN
+
+NAME=cfg.json.status: status line after JSON commands
+FILE==
+ARGS=-e cfg.json.status=true -c pdgj -c /xj -c wx -c flj
+CMDS=<<EOF
+tj int
+flj~?
+echo $(flj)
+e cfg.json.status=false
+flj
+e cfg.json.status=true
+aflj a b c
+EOF
+EXPECT=<<EOF
+{"error":{"code":"NONEXISTINGCMD","message":"Command does not exist","command":"pdgj","args":[]}}
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"/xj","args":[]}}
+[]
+{"error":null}
+{"name":"int","kind":"atomic","format":"d4 int","size":32}
+{"error":null}
+1
+[]
+[]
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"aflj","args":["a","b","c"]}}
+EOF
+RUN
+
+NAME=scripts ending with q and C headers succeed
+FILE==
+ARGS=-e cfg.exit.errorcode=true -i scripts/echo-quit.rz
+CMDS=<<EOF
+. scripts/echo-quit.rz
+%vi $?
+. bins/headers/s1.h
+%vi $?
+EOF
+EXIT_STATUS=0
+EXPECT=<<EOF
+script
+script
+0
+0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=failed -i script
+FILE==
+ARGS=-e cfg.exit.errorcode=true -i scripts/cmd-error.rz
+CMDS=echo cmds
+EXIT_STATUS=1
+EXPECT=<<EOF
+before
+EOF
+RUN
+
+NAME=cfg.exit.errorcode: missing -i script
+FILE==
+ARGS=-e cfg.exit.errorcode=true -i scripts/missing.rz
+CMDS=echo cmds
+EXIT_STATUS=1
+EXPECT=
+RUN
+
+NAME=cfg.exit.errorcode: failed -c commands
+FILE==
+ARGS=-e cfg.exit.errorcode=true -c sn;q -c _s
+CMDS=<<EOF
+s 0
+q
+EOF
+EXIT_STATUS=1
+EXPECT=<<EOF
+ERROR
+EOF
+RUN
+
+NAME=cfg.exit.errorcode: disabled by default
+FILE==
+ARGS=-c zzz
+CMDS=s 0
+EXIT_STATUS=0
+EXPECT=
+RUN

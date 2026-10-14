@@ -38,6 +38,24 @@ static const RzCmdDescHelp cmd_last_opt_help = {
 	.args = cmd_last_opt_args,
 };
 
+static const RzCmdDescArg no_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp fail_help = {
+	.summary = "fail help",
+	.args = no_args,
+};
+static const RzCmdDescHelp peek_help = {
+	.summary = "peek help",
+	.args = no_args,
+};
+static const RzCmdDescHelp quit_help = {
+	.summary = "quit help",
+	.args = no_args,
+};
+
+static RzCmdStatus peeked_status;
+
 static RzCmdStatus string_handler(RzCore *core, int argc, const char **argv) {
 	return argc == 2 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
@@ -68,6 +86,19 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmdStatus fail_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus peek_handler(RzCore *core, int argc, const char **argv) {
+	peeked_status = core->last_cmd_status;
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus quit_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_EXIT;
+}
+
 static RzCmd *old_rcmd = NULL;
 
 static RzCore *fake_core_new(void) {
@@ -80,6 +111,9 @@ static RzCore *fake_core_new(void) {
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last", cmd_last_handler, &cmd_last_help);
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last_with_at", cmd_last_with_at_handler, &cmd_last_help);
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last_opt", cmd_last_opt_handler, &cmd_last_opt_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "fail", fail_handler, &fail_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "peek", peek_handler, &peek_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "quit", quit_handler, &quit_help);
 	return core;
 }
 
@@ -120,6 +154,45 @@ static bool test_arg_cmd_last_opt(void) {
 	s = rz_core_cmd0_rzshell(core, "cmd_last_opt \"string 'hello everybody'\"");
 	mu_assert_eq(s, RZ_CMD_STATUS_OK, "argument cmd is passed as a single arg");
 	fake_core_free(core);
+	mu_end;
+}
+
+static bool test_last_cmd_status(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_INVALID, "no command ran yet");
+	rz_core_cmd0_rzshell(core, "string hello");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_OK, "success should be tracked");
+	rz_core_cmd0_rzshell(core, "zzz");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_NONEXISTINGCMD, "unknown command should be tracked");
+	rz_core_cmd0_rzshell(core, "string");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_WRONG_ARGS, "wrong arguments should be tracked");
+	rz_core_cmd0_rzshell(core, "fail; peek");
+	mu_assert_eq(peeked_status, RZ_CMD_STATUS_ERROR, "a statement should see the status of the previous one");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR, "the line should keep the status of its failing statement");
+	rz_core_cmd0_rzshell(core, "quit");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_EXIT, "quitting should be tracked");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "fail; quit"), RZ_CMD_STATUS_EXIT, "the line should still quit");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR, "quitting should not hide an earlier failure");
+	rz_core_cmd0_rzshell(core, "string \"hello");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_INVALID, "parse errors should be tracked");
+	fake_core_free(core);
+	mu_end;
+}
+
+static bool test_cmd_str_status(void) {
+	RzCore *core = rz_core_new();
+	RzCmdStatus status = RZ_CMD_STATUS_INVALID;
+	char *out = rz_core_cmd_str_status(core, "echo hello", &status);
+	mu_assert_streq_free(out, "hello\n", "output of a successful command");
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "status of a successful command");
+	out = rz_core_cmd_str_status(core, "zzz", &status);
+	mu_assert_streq_free(out, "", "a missing command prints nothing");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a missing command");
+	out = rz_core_cmd_str_status(core, "echo partial; zzz", &status);
+	mu_assert_streq_free(out, "partial\n", "the output should be kept on failure");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a failed command line");
+	mu_assert_null(rz_core_cmd_str(core, "echo partial; zzz"), "rz_core_cmd_str() should still discard a failed output");
+	rz_core_free(core);
 	mu_end;
 }
 
@@ -248,6 +321,8 @@ int all_tests() {
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
 	mu_run_test(test_arg_cmd_last_opt);
+	mu_run_test(test_last_cmd_status);
+	mu_run_test(test_cmd_str_status);
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
