@@ -219,3 +219,17 @@ EXPECT=<<EOF
 𞛀
 EOF
 RUN
+
+NAME=psi prints the string only
+FILE==
+CMDS=<<EOF
+wx 610062006300640065006600670068000000
+psi
+wz hello @ 0x40
+psi @ 0x40
+EOF
+EXPECT=<<EOF
+abcdefgh
+hello
+EOF
+RUN
