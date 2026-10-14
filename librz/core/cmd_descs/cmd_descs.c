@@ -23338,6 +23338,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail(afis_cd);
 	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
 	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
+	rz_cmd_desc_set_default_mode(analysis_function_all_opcode_stat_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *afn_cd = rz_cmd_desc_group_new(core->rcmd, af_cd, "afn", rz_analysis_function_rename_handler, &analysis_function_rename_help, &afn_help);
 	rz_warn_if_fail(afn_cd);
