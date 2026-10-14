@@ -716,6 +716,7 @@ commands:
                 summary: Enumerate unique opcodes/opcode families/opcode types in all functions
                 cname: analysis_function_all_opcode_stat
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                default_mode: RZ_OUTPUT_MODE_TABLE
                 modes:
                   - RZ_OUTPUT_MODE_TABLE
                 args:
