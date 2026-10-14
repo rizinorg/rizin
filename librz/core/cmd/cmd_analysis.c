@@ -4028,10 +4028,8 @@ static void gather_opcode_stat_for_fcn(RzCore *core, HtSU *ht, RzAnalysisFunctio
 	RzAnalysisBlock *bb;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		update_stat_for_op(core, ht, bb->addr, mode);
-		for (int i = 0; i < bb->op_pos_size; i++) {
-			ut16 op_pos = bb->op_pos[i];
-			update_stat_for_op(core, ht, bb->addr + op_pos, mode);
+		for (int i = 0; i < bb->ninstr; i++) {
+			update_stat_for_op(core, ht, rz_analysis_block_get_op_addr(bb, i), mode);
 		}
 	}
 }
