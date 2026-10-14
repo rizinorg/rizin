@@ -359,6 +359,22 @@ MZ
 EOF
 RUN
 
+NAME=wcp
+FILE=malloc://512
+CMDS=<<EOF
+e io.pcache=true
+wcp
+wx 9090
+wx 01 @ 0x10
+wcp
+EOF
+EXPECT=<<EOF
+0x00000000: 0000 -> 9090
+0x00000010: 00 -> 01
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=w octal esc
 FILE=malloc://16
 CMDS=<<EOF
