@@ -799,7 +799,10 @@ static Sdb *Pe_r_bin_store_string_file_info(StringFileInfo *stringFileInfo) {
 	}
 	for (; i < stringFileInfo->numOfChildren; i++) {
 		snprintf(key, 30, "stringtable%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
