@@ -829,6 +829,7 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 	void **iter;
 	RzIOCache *c;
 
+	rz_cmd_state_output_array_start(state);
 	rz_pvector_foreach (&core->io->cache, iter) {
 		c = *iter;
 		const ut64 dataSize = rz_itv_size(c->itv);
@@ -864,6 +865,7 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 		}
 		j++;
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
