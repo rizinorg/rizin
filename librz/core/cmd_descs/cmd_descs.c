@@ -24047,7 +24047,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cw_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cw", rz_cmd_cmp_add_memory_watcher_handler, &cmd_cmp_add_memory_watcher_help, &cw_help);
 	rz_warn_if_fail(cw_cd);
-	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
+	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
 	rz_warn_if_fail(cmd_cmp_list_compare_watchers_cd);
 
 	RzCmdDesc *cmd_cmp_reset_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwr", rz_cmd_cmp_reset_watcher_handler, &cmd_cmp_reset_watcher_help);
@@ -24470,7 +24470,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
 	rz_warn_if_fail(dt_cd);
-	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
+	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
 	rz_warn_if_fail(cmd_debug_traces_cd);
 
 	RzCmdDesc *cmd_debug_traces_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtl=", rz_cmd_debug_traces_ascii_handler, &cmd_debug_traces_ascii_help);
@@ -26528,7 +26528,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_cache_commit_all_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wci", rz_write_cache_commit_all_handler, &write_cache_commit_all_help);
 	rz_warn_if_fail(write_cache_commit_all_cd);
 
-	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD, rz_write_pcache_list_handler, &write_pcache_list_help);
+	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_write_pcache_list_handler, &write_pcache_list_help);
 	rz_warn_if_fail(write_pcache_list_cd);
 
 	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);
