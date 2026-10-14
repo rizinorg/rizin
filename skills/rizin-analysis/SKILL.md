@@ -86,12 +86,14 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **Math & Expression Engine (`%`)** | `% <expr>`, `%j <expr>`, `%v <expr>`, `%p <vaddr>`, `%P <paddr>`, `%$`, `%b64[-]` | Replaced legacy `?` math commands; supports `u8..u128` bitvectors, `addr:le32` deref, and `entropy(addr,n)`. |
 | **Table Query Filtering** | `aflt:size/gt/500:size/sort/rev:*/head/20:json` | Colon-separated `:col/op/val`, `t` suffix (`aflt`), descending is `sort/rev`, slice is `*/head/N`. |
 | **String & Regex Search** | `/z[jqt] <pattern> [<flags>=l] [<enc>]` | E.g., `/zj "http" li utf8`, `/zj "https?://" r utf8`, `/zj "cmd" l utf16le`. |
+| **String Search Config Vars** | `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8` | Also `e str.search.mode=auto` (`auto`, `rosections`, `raw`). |
 | **ROP / COP / JOP Gadget Search** | `/R[jqt]`, `/R/[jqt]`, `/Rk[jqt]`, `/Rg[j]`, `/Rs[j]`, `/Rl[j]` (and `/C*`, `/J*`); `pdp` | `/R` = ROP, `/C` = call-oriented (COP), `/J` = jump-oriented (JOP); `/Rk` queries RzIL register constraints. |
 | **Pattern & Block Similarity Search** | `/p <patternsize>`, `/P <patternsize>` | `/p` finds repeating byte patterns of `<patternsize>`; `/P` finds blocks similar to current block. |
 | **Statistical & Hash Analysis** | `phl`, `ph[j] <algo> @! <sz> @ <addr>`, `/ce[j]`, `/cef[j]` | `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr` (discover via `phl~entro`, `phl~chi`, `phl~seri`). |
 | **In-CLI Comparison (`c*`)** | `c <str>`, `cx <hex>`, `cX <addr>`, `cc <addr>`, `ccd <addr>`, `cf <file>`, `cu[1248d] <addr>` | In-session counterpart to `rz-diff` for comparing bytes, hexpairs, hexdumps, disassembly, and files. |
 | **Micro-Emulation VM (RzIL)** | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `aoi`, `aoip`, `plf`, `plF` | Always use **RzIL** (`aez*`, `aoi`, `plf`) for static micro-emulation and lifting. |
 | **Type Management (`t*`)** | `t[j]`, `td "<C>"`, `tdf`, `to <h>`, `tr <old> <new>`, `tc`, `ts[j]`, `tu[j]`, `te[j]`, `tt[j]`, `tf[j]` | `tx`/`txf`/`txl`/`txg` for type xrefs; `tn`/`tn-` for `noreturn` functions; `tp`/`tpv`/`tpx` to cast data. |
+| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '? (<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '? (<type>) <name>'` returns structured JSON; `tsj <type>` dumps struct schema. |
 | **Formatted Print (`pf` / `pfj` / `pfn`)** | `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f2/f4/f8`, `p4/p8`, `z(utf16le)`, `t(unix32)`, `G(le)` | Explicit sized/parameterised specifiers (lowercase = LE, uppercase = BE); `pfn <name> "<fmt>"` defines named formats, `pf.[j] <name>` prints them. |
 | **Rename Local Variable / Arg** | `afvn <new_name> <old_name> @ <addr>` | `<new_name>` comes **first**, `<old_name>` comes **second**. |
 | **List Function Variables** | `afvl` / `afvlj` / `afvlt` | Lists all register (`reg`) and stack (`stack`) variables and arguments. |
@@ -169,11 +171,13 @@ All math, base conversion, address translation, and expression evaluation comman
 ```bash
 # Parse a config header with magic, UTF-16LE BSTR, Win32 FILETIME, inline bitflags, and dynamic array:
 pfj x4z(utf16le)[2b]t(filetime)B4(SSL=1,PROXY=2,PERSIST=4)u2[@count]u4 magic mutex compiled_at flags count ports @ 0x403000
+pfj x4x4d4z(utf8)*z magic key1 sid title c2_url_ptr @ 0x403000  # Includes *z pointer-to-string dereference
 
 # Define a named format (`pfn`), print it (`pf.` / `pf.j`), promote it to `RzTypeDB` (`tdf`), or write to a field (`pfw`):
 pfn c2_pkt "x4u2u2[@len]u1 magic cmd len body"
 pf.j c2_pkt @ 0x403000                       # Print memory at 0x403000 using registered named format `c2_pkt` as JSON
-tdf c2_pkt c2_pkt                            # Promote saved `pfn` format (or inline format) into `RzTypeDB`
+tdf c2_pkt c2_pkt                            # Promote saved `pfn` format into `RzTypeDB`
+tdf pkt_hdr "x4u2u2z magic cmd_id payload_len tag"  # Or promote an inline `pf` format string directly into `RzTypeDB`
 pfw c2_pkt.cmd 0x05 @ 0x403000               # Write 0x05 to field `cmd` (requires `-w` or `e io.cache=true`)
 ```
 
@@ -359,7 +363,8 @@ Rizin maintains a full C type database (`RzTypeDB`, queried and modified via `t?
 td "enum pkt_cmd { CMD_PING = 1, CMD_EXEC = 2, CMD_UPLOAD = 4 };"
 td "struct bot_ctx { uint8_t pad[520]; char sid[4]; uint32_t xor_key; };"
 tsj bot_ctx                                               # Dump struct member schema (names, types, offsets, sizes) as JSON
-tp bot_ctx @ 0x140008000                                  # Cast and print formatted struct at <addr> (or `pfj '? (bot_ctx) ctx' @ <addr>`)
+tp bot_ctx @ 0x140008000                                  # Cast and print formatted struct at <addr>
+pfj '? (bot_ctx) ctx' @ 0x140008000                       # Cast and dump struct at <addr> as JSON
 avga g_ctx bot_ctx @ 0x140008000; avgp g_ctx; aat         # Bind global struct, print it, and propagate field offsets
 ahts 0x208                                                # List all struct members across RzTypeDB matching displacement 0x208
 aht bot_ctx.sid @ 0x140002b3e                             # Apply struct member offset hint to instruction operand
@@ -537,7 +542,7 @@ On large (20MB+) Go, Rust, or statically linked C++ binaries, running `aflj` or 
   - String matching & length: `str` (contains substring), `strlen`, `minlen`, `maxlen`, `eq`, `ne` (e.g. `name/str/decrypt`, `string/minlen/8`).
   - Sorting & deduplication: `<col>/sort` (ascending) or `<col>/sort/rev` (descending — **not** `dec`), `<col>/sortlen` or `<col>/sortlen/rev`, `<col>/uniq`.
   - Slicing & columns: `*/head/<N>`, `*/tail/<N>`, `*/page/<P>/<N>`, `<col1>/cols/<col2>/<col3>`.
-  - Output format: `:json`, `:csv`, `:fancy`, `:simple`, `:quiet` (no headers).
+  - Output format: `:json`, `:csv`, `:fancy`, `:simple`, `:quiet` (no headers; combine with `<col>/cols:quiet` for bare column values).
 
 ```bash
 aflt:size/gt/500:size/sort/rev:*/head/20:json  # Top 20 largest functions > 500 bytes as JSON
@@ -614,7 +619,7 @@ rz-ax "0x401263 + 0xf8"                                  # Hex arithmetic (-d fo
 rz-ax -D "cml6aW4="                                      # Base64 decode (-E to base64 encode)
 
 # 5. Hashing, statistical metrics & block/buffer crypto/encoding (rz-hash)
-rz-hash -j -a sha256,md5,entropy,minentropy,chisquare,serialcorr sample.bin # Hashes & statistical analysis as JSON (-L to list all)
+rz-hash -j -a sha256,md5,entropy,minentropy,chisquare,serialcorr sample.bin # Hashes & stats as JSON (-qq -a sha256 for bare hex digest, -L to list all)
 rz-hash -D rc4 -K "s:secretkey" -x "deadbeef"            # Decrypt/encode hex (-x) or string (-s) with -D/-E <algo> and -K <key> (-I <iv>)
 
 # 6. Disassemble, assemble & lift instructions to RzIL (rz-asm)
