@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "absint_priv.h"
+#include "rz_cons.h"
 #include "rz_il/definitions/variable.h"
 #include "rz_util/rz_assert.h"
 #include "rz_vector.h"
@@ -64,13 +65,11 @@ static void var_arr_fini(RZ_NONNULL RzAbsIntInstance *inst, RZ_OWN RzVector *arr
 	}
 }
 
-static void var_vec_clone(const RzAbsIntInstance *inst, RzVector *dst_vec, const RzVector *vec, const RzVector *bv_array_clone) {
-	rz_return_if_fail(inst && vec);
-	rz_vector_clone_into(dst_vec, vec);
-	for (size_t i = 0; i < rz_vector_capacity(vec); i++) {
+static void var_vec_update_ptr(const RzAbsIntInstance *inst, RzVector *dst_vec, const RzVector *bv_array_clone) {
+	rz_return_if_fail(inst && dst_vec);
+	for (size_t i = 0; i < rz_vector_capacity(dst_vec); i++) {
 		RzAbsIntVal *clone_aval = rz_vector_index_ptr(dst_vec, i);
-		val_domain(inst)->val_new_top(clone_aval, rz_vector_index_ptr(bv_array_clone, i));
-		val_domain(inst)->copy(clone_aval, rz_vector_index_ptr(vec, i));
+		val_domain(inst)->val_update_bv(clone_aval, rz_vector_index_ptr(bv_array_clone, i));
 	}
 }
 
@@ -86,25 +85,11 @@ static bool join_var_arrs(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzVector *a
 	return changed;
 }
 
-/**
- * \brief If init_offset == 0, it will allocate a new array of the given size and
- * write it to the given pointers.
- */
-RZ_IPI bool rz_absint_init_var_array(RzAbsIntInstance *inst,
-	RZ_OUT RzVector /*<RzAbsIntVal>*/ *arr,
-	RZ_OUT RzVector /*<RzBitVector>*/ *bvs,
-	size_t cap,
-	bool set_len_to_cap) {
-	rz_vector_init(arr, val_domain(inst)->val_size(), NULL, NULL);
-	rz_vector_init(bvs, sizeof(RzBitVector), NULL, NULL);
-	rz_vector_reserve(arr, cap);
-	rz_vector_reserve(bvs, cap);
-	if (set_len_to_cap) {
-		rz_vector_set_len(arr, rz_vector_capacity(arr));
-		rz_vector_set_len(bvs, rz_vector_capacity(bvs));
-	}
-
-	for (size_t i = 0; i < cap; ++i) {
+static bool rz_absint_vec_fill_top(
+	RzAbsIntInstance *inst,
+	RZ_OUT RZ_BORROW RzVector /*<RzAbsIntVal>*/ *arr,
+	RZ_OUT RZ_BORROW RzVector /*<RzBitVector>*/ *bvs) {
+	for (size_t i = 0; i < rz_vector_capacity(arr); ++i) {
 		RzBitVector *bv = rz_vector_index_ptr(bvs, i);
 		rz_bv_init(bv, 64);
 		if (!val_domain(inst)->val_new_top(
@@ -112,11 +97,70 @@ RZ_IPI bool rz_absint_init_var_array(RzAbsIntInstance *inst,
 			    bv)) {
 			rz_warn_if_reached();
 			var_arr_fini(inst, arr);
-			rz_vector_free(bvs);
+			rz_vector_fini(bvs);
 			return false;
 		}
 	}
 	return true;
+}
+
+/**
+ * \brief If init_offset == 0, it will allocate a new array of the given size and
+ * write it to the given pointers.
+ */
+static bool rz_absint_init_var_array(RzAbsIntInstance *inst,
+	RZ_OUT RZ_BORROW RzVector /*<RzAbsIntVal>*/ *arr,
+	RZ_BORROW ut8 *arr_mem,
+	RZ_OUT RZ_BORROW RzVector /*<RzBitVector>*/ *bvs,
+	RZ_BORROW ut8 *bv_mem,
+	size_t cap,
+	bool set_len_to_cap) {
+	rz_vector_init_bmem(arr, val_domain(inst)->val_size(), NULL, NULL, arr_mem);
+	rz_vector_init_bmem(bvs, sizeof(RzBitVector), NULL, NULL, bv_mem);
+	if (!rz_vector_set_capacity(arr, cap) || !rz_vector_set_capacity(bvs, cap)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	if (set_len_to_cap) {
+		rz_vector_set_len(arr, rz_vector_capacity(arr));
+		rz_vector_set_len(bvs, rz_vector_capacity(bvs));
+	}
+	return true;
+}
+
+static size_t state_vec_globals_len(RzAbsIntInstance *inst) {
+	return (inst->il_ctx->config->global_idx_tbl_len * val_domain(inst)->val_size());
+}
+
+static size_t state_vec_global_bvs_len(RzAbsIntInstance *inst) {
+	return (inst->il_ctx->config->global_idx_tbl_len * sizeof(RzBitVector));
+}
+
+static size_t state_vec_locals_len(RzAbsIntInstance *inst) {
+	return (LOCAL_ARR_LEN * val_domain(inst)->val_size());
+}
+
+static size_t state_vec_local_bvs_len(RzAbsIntInstance *inst) {
+	return (LOCAL_ARR_LEN * sizeof(RzBitVector));
+}
+
+static size_t state_vec_locals_idx_len(RzAbsIntInstance *inst) {
+	return (LOCAL_ARR_LEN * sizeof(RzAbsIntDJB2Idx));
+}
+
+static size_t total_state_vec_len(RzAbsIntInstance *inst) {
+	size_t total =
+		// globals
+		state_vec_globals_len(inst) +
+		// global_bvs
+		state_vec_global_bvs_len(inst) +
+		// locals
+		state_vec_locals_len(inst) +
+		// local_bvs
+		state_vec_local_bvs_len(inst) +
+		// local_idx
+		state_vec_locals_idx_len(inst);
+	return total;
 }
 
 /**
@@ -130,17 +174,34 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		return NULL;
 	}
 	state->pc_state = RZ_ABSINT_PC_UNREACHABLE;
+	state->vec_mem = RZ_NEWS0(ut8, total_state_vec_len(inst));
+	if (!state->vec_mem) {
+		goto err;
+	}
+	ut8 *mem_globals = state->vec_mem;
+	ut8 *mem_global_bvs = mem_globals + state_vec_globals_len(inst);
+	ut8 *mem_locals = mem_global_bvs + state_vec_global_bvs_len(inst);
+	ut8 *mem_local_bvs = mem_locals + state_vec_locals_len(inst);
+	ut8 *mem_locals_idx = mem_local_bvs + state_vec_local_bvs_len(inst);
 
-	if (!rz_absint_init_var_array(inst, &state->globals, &state->global_bvs, inst->il_ctx->config->global_idx_tbl_len, true)) {
+	if (!rz_absint_init_var_array(inst, &state->globals, mem_globals, &state->global_bvs, mem_global_bvs, inst->il_ctx->config->global_idx_tbl_len, true)) {
 		rz_warn_if_reached();
 		goto err;
 	}
-	rz_vector_init(&state->locals_idx, sizeof(RzAbsIntDJB2Idx), NULL, NULL);
-	rz_vector_reserve(&state->locals_idx, LOCAL_ARR_LEN);
-	if (!rz_absint_init_var_array(inst, &state->locals, &state->local_bvs, LOCAL_ARR_LEN, false)) {
+	if (!rz_absint_vec_fill_top(inst, &state->globals, &state->global_bvs)) {
+		return false;
+	}
+
+	if (!rz_absint_init_var_array(inst, &state->locals, mem_locals, &state->local_bvs, mem_local_bvs, LOCAL_ARR_LEN, false)) {
 		rz_warn_if_reached();
 		goto err;
 	}
+	if (!rz_absint_vec_fill_top(inst, &state->locals, &state->local_bvs)) {
+		return false;
+	}
+	rz_vector_init_bmem(&state->locals_idx, sizeof(RzAbsIntDJB2Idx), NULL, NULL, mem_locals_idx);
+	rz_vector_set_capacity(&state->locals_idx, LOCAL_ARR_LEN);
+
 	state->lets = ht_up_new(NULL, NULL);
 	if (!state->lets) {
 		rz_warn_if_reached();
@@ -153,6 +214,7 @@ err:
 	rz_vector_fini(&state->locals_idx);
 	rz_vector_fini(&state->local_bvs);
 	var_arr_fini(inst, &state->locals);
+	free(state->vec_mem);
 	free(state);
 	return NULL;
 }
@@ -182,6 +244,7 @@ RZ_API void rz_absint_state_free(RZ_BORROW RzAbsIntInstance *inst, RZ_OWN RZ_NUL
 	rz_vector_fini(&state->local_bvs);
 	var_arr_fini(inst, &state->locals);
 	var_set_free(inst, state->lets);
+	free(state->vec_mem);
 	free(state);
 }
 
@@ -312,8 +375,8 @@ static HtUP *var_set_clone(const RzAbsIntInstance *inst, HtUP *vars) {
 	return r;
 }
 
-RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *iset, const RzAbsIntState *state) {
-	rz_return_val_if_fail(iset && state, NULL);
+RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *inst, const RzAbsIntState *state) {
+	rz_return_val_if_fail(inst && state, NULL);
 
 	RzAbsIntState *r = RZ_NEW0(RzAbsIntState);
 	if (!state) {
@@ -321,14 +384,37 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
 	}
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
-	rz_vector_clone_into(&r->global_bvs, &state->global_bvs);
-	var_vec_clone(iset, &r->globals, &state->globals, &r->global_bvs);
+	r->vec_mem = RZ_NEWS0(ut8, total_state_vec_len(inst));
+	if (!r->vec_mem) {
+		free(r);
+		return NULL;
+	}
+	memcpy(r->vec_mem, state->vec_mem, total_state_vec_len(inst));
+	ut8 *mem_globals = r->vec_mem;
+	ut8 *mem_global_bvs = mem_globals + state_vec_globals_len(inst);
+	ut8 *mem_locals = mem_global_bvs + state_vec_global_bvs_len(inst);
+	ut8 *mem_local_bvs = mem_locals + state_vec_locals_len(inst);
+	ut8 *mem_locals_idx = mem_local_bvs + state_vec_local_bvs_len(inst);
 
-	rz_vector_clone_into(&r->locals_idx, &state->locals_idx);
-	rz_vector_clone_into(&r->local_bvs, &state->local_bvs);
-	var_vec_clone(iset, &r->locals, &state->locals, &r->local_bvs);
+	if (!rz_absint_init_var_array(inst, &r->globals, mem_globals, &r->global_bvs, mem_global_bvs, rz_vector_capacity(&state->globals), true)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	if (!rz_absint_init_var_array(inst, &r->locals, mem_locals, &r->local_bvs, mem_local_bvs, rz_vector_capacity(&state->locals), false)) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	rz_vector_set_len(&r->locals, rz_vector_len(&state->locals));
+	rz_vector_set_len(&r->local_bvs, rz_vector_len(&state->local_bvs));
 
-	r->lets = var_set_clone(iset, state->lets);
+	rz_vector_init_bmem(&r->locals_idx, sizeof(RzAbsIntDJB2Idx), NULL, NULL, mem_locals_idx);
+	rz_vector_set_len(&r->locals_idx, rz_vector_len(&state->locals_idx));
+	rz_vector_set_capacity(&r->locals_idx, rz_vector_capacity(&state->locals_idx));
+
+	var_vec_update_ptr(inst, &r->globals, &r->global_bvs);
+	var_vec_update_ptr(inst, &r->locals, &r->local_bvs);
+
+	r->lets = var_set_clone(inst, state->lets);
 	return r;
 }
 

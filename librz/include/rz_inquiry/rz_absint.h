@@ -66,6 +66,8 @@ typedef struct rz_absint_state_t {
 	ut64 pc; ///< Interpreter location in the code. This is not necessarily identical to the ISA's program counter register, but simply points to the instruction to execute next.
 	RzAbsIntPCState pc_state;
 
+	ut8 *vec_mem;
+
 	/**
 	 * \brief A flat array of bit vectors. One for each global.
 	 * These bit vectors are not allowed to be used outside of the value domain!
@@ -128,6 +130,7 @@ typedef struct rz_absint_value_domain_t {
 	 * If \p aval_bv is given and the value domain uses bit vectors, it should assign it to the abstract value.
 	 */
 	bool (*val_new_top)(RZ_BORROW RzAbsIntVal *aval, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv);
+	bool (*val_update_bv)(RZ_BORROW RzAbsIntVal *aval, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv);
 	void (*val_fini)(RzAbsIntVal *val);
 	void (*val_free)(RzAbsIntVal *val);
 	bool (*is_top)(RZ_NONNULL const RzAbsIntVal *val); ///< return whether the given value is top

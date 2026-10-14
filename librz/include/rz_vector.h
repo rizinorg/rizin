@@ -45,6 +45,7 @@ typedef void (*RzPVectorFree)(void *e);
 
 typedef struct rz_vector_t {
 	void *a;
+	bool a_borrowed;
 	size_t len;
 	size_t capacity;
 	size_t elem_size;
@@ -59,6 +60,8 @@ typedef struct rz_pvector_t {
 } RzPVector;
 
 // RzVector
+
+RZ_API void rz_vector_init_bmem(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user, RZ_BORROW ut8 *mem);
 
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user);
 
@@ -113,7 +116,12 @@ static inline bool rz_vector_set_len(RZ_NONNULL RzVector *vec, size_t len) {
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *rz_vector_index_ptr(const RzVector *vec, size_t index) {
-	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
+	do {
+		if (__builtin_expect(!(vec && index < vec->capacity), 0)) {
+			rz_assert_log(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d); returning %s\n", ((const char *)(__func__)), "vec && index < vec->capacity", 119, "NULL");
+			return (((void *)0));
+		}
+	} while (0);
 	return (char *)vec->a + vec->elem_size * index;
 }
 
@@ -179,6 +187,8 @@ RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL 
  * \return true if the swap succeeded
  **/
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b);
+
+RZ_API bool rz_vector_set_capacity(RZ_NONNULL RzVector *vec, size_t capacity);
 
 // make sure the capacity is at least capacity.
 RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity);

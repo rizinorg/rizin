@@ -41,9 +41,21 @@
 
 #define RZ_VECTOR_SWAP_TMP_SIZE 256
 
+RZ_API void rz_vector_init_bmem(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user, RZ_BORROW ut8 *mem) {
+	rz_return_if_fail(vec);
+	vec->a = mem;
+	vec->a_borrowed = true;
+	vec->reverse_sorted = false;
+	vec->capacity = vec->len = 0;
+	vec->elem_size = elem_size;
+	vec->free = free;
+	vec->free_user = free_user;
+}
+
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
 	vec->a = NULL;
+	vec->a_borrowed = false;
 	vec->reverse_sorted = false;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
@@ -86,7 +98,9 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec) {
 	rz_return_if_fail(vec);
 	vector_free_elems(vec);
-	RZ_FREE(vec->a);
+	if (!vec->a_borrowed) {
+		RZ_FREE(vec->a);
+	}
 	vec->capacity = 0;
 }
 
@@ -543,8 +557,23 @@ RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	return true;
 }
 
+RZ_API bool rz_vector_set_capacity(RZ_NONNULL RzVector *vec, size_t capacity) {
+	rz_return_val_if_fail(vec, false);
+	if (!vec->a_borrowed) {
+		RZ_LOG_ERROR("Vector's memory is owned. Use rz_vector_reserve() to change the capacity.\n");
+		return false;
+	}
+	vec->capacity = capacity;
+	return true;
+}
+
 RZ_API void *rz_vector_reserve(RzVector *vec, size_t capacity) {
 	rz_return_val_if_fail(vec, NULL);
+	if (vec->a_borrowed) {
+		RZ_LOG_ERROR("Cannot reserve memory for vector with borrowed memory. Use rz_vector_set_cap()\n");
+		return NULL;
+	}
+
 	if (vec->capacity < capacity) {
 		RESIZE_OR_RETURN_NULL(capacity);
 	}

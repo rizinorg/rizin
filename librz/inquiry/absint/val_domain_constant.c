@@ -39,6 +39,15 @@ static RzAbsIntVal *pack(ValueData *val) {
 	return rz_absint_val_pack(val);
 }
 
+static bool val_update_bv(RZ_BORROW RzAbsIntVal *av, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv) {
+	rz_return_val_if_fail(av, NULL);
+	ValueData *ad = AD(av);
+	if (!ad->bv_owned) {
+		ad->bv = aval_bv;
+	}
+	return true;
+}
+
 static bool val_new_top(RZ_BORROW RzAbsIntVal *av, RZ_NULLABLE RZ_BORROW RzBitVector *aval_bv) {
 	rz_return_val_if_fail(av, NULL);
 	ValueData *ad = AD(av);
@@ -263,6 +272,7 @@ static void eval_unop(RzILOpPureCode code, RZ_NONNULL RZ_INOUT RzAbsIntVal *val)
 RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const = {
 	.name = "constant",
 	.val_new_top = val_new_top,
+	.val_update_bv = val_update_bv,
 	.val_size = sizeof_abs_int_val,
 	.val_fini = val_fini,
 	.val_free = val_free,
