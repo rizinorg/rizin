@@ -33,3 +33,17 @@ sheep
 -
 EOF
 RUN
+
+NAME=aiij
+FILE==
+CMDS=<<EOF
+aiij
+aii pigs
+aii dogs
+aiij
+EOF
+EXPECT=<<EOF
+[]
+["pigs","dogs"]
+EOF
+RUN
