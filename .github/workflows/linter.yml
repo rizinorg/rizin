@@ -33,6 +33,7 @@ jobs:
             - '**.yml'
             - '**.yaml'
             - '.github/workflows/linter.yml'
+            - 'sys/check_cmd_json_modes.py'
           bindgen-linter:
             - '**.c'
             - '**.h'
@@ -60,6 +61,9 @@ jobs:
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # HEAD is the merge of the PR into its base, which is HEAD^1
+          fetch-depth: 2
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
@@ -69,6 +73,9 @@ jobs:
         run: |
           ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
+      - name: Check JSON output modes of new commands
+        if: github.event_name == 'pull_request'
+        run: ./sys/check_cmd_json_modes.py --base HEAD^1
 
   bindgen-linter:
     needs: changes
