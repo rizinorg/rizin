@@ -3,11 +3,17 @@ FILE=bins/mach0/hello-osx-x86_64
 ARGS=-d
 CMDS=<<EOF
 dcu main
+di~type
+di~type
+echo --
 di~baddr
 ds
 di~baddr
 EOF
 EXPECT=<<EOF
+type=breakpoint
+type=breakpoint
+--
 baddr=0x100000000
 baddr=0x100000000
 EOF
