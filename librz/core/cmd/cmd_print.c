@@ -1870,9 +1870,9 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 			continue;
 		}
 		ut64 address = core->offset + detected->addr;
-        if (state->mode != RZ_OUTPUT_MODE_QUIET) {
-            rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
-        }
+		if (state->mode != RZ_OUTPUT_MODE_QUIET) {
+			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL);
+		}
 		RzStrEscOptions eopts = { 0 };
 		eopts.keep_printable = true;
 		char *escaped = rz_str_escape_utf8(detected->string, &eopts);
@@ -1902,7 +1902,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 			pj_end(state->d.pj);
 		}
 	} else if (detected) {
-        rz_cons_println(core->cons, detected->string);
+		rz_cons_println(core->cons, detected->string);
 	}
 
 	rz_list_free(found);
