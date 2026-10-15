@@ -446,6 +446,8 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->type = type;
 	string->string = rz_str_dup(data);
 	if (!rz_pvector_push(pyc->strings_cache, string)) {
+		free(string->string);
+		free(string);
 		return false;
 	}
 	return true;
