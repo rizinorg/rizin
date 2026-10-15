@@ -100,6 +100,7 @@ if get_option('enable_tests')
     'mem',
     'ovf',
     'parse',
+    'pdb',
     'pf',
     'pj',
     'rbtree',
