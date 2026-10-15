@@ -25,3 +25,4 @@ ForEachMacros: ['rz_list_foreach', 'rz_list_foreach_enum', 'rz_list_foreach_safe
 SortIncludes: false
 RequiresClausePosition: SingleLine
 TypenameMacros: ['HT_', 'Ht_', 'HtName_']
+SeparateDefinitionBlocks: Always
