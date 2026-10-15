@@ -1463,6 +1463,75 @@ RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
 	return r;
 }
 
+static st64 bv_to_st64(const RZ_NONNULL RzBitVector *bv) {
+	ut64 value = rz_bv_to_ut64(bv);
+	if (bv->len < 64 && rz_bv_msb(bv)) {
+		value |= UT64_MAX << bv->len;
+	}
+	return (st64)value;
+}
+
+static ut64 bv_abs_st64(st64 value) {
+	return value < 0 ? 0 - (ut64)value : (ut64)value;
+}
+
+/**
+ * Result of (x / y) mod 2^length (signed algorithm)
+ *                               /
+ *                            | div x y : if not mx /\ not my
+ *                            | neg (div (neg x) y) if mx /\ not my
+ *                x sdiv y = <
+ *                            | neg (div x (neg y)) if not mx /\ my
+ *                            | div (neg x) (neg y) if mx /\ my
+ *                            \
+ *
+ *             where mx = msb x, and my = msb y.
+ * \param x RzBitVector, Operand
+ * \param y RzBitVector, Operand
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_bv_sdiv_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y && x->len == y->len, false);
+
+	bool mx = rz_bv_msb(x);
+	bool my = rz_bv_msb(y);
+
+	if (rz_bv_is_zero_vector(y)) {
+		rz_bv_set_all(x, true);
+		if (mx) {
+			return rz_bv_neg_inplace(x);
+		}
+		return true;
+	}
+
+	if (x->len <= 64) {
+		st64 sx = bv_to_st64(x);
+		st64 sy = bv_to_st64(y);
+		st64 quotient = sx == ST64_MIN && sy == -1 ? ST64_MIN : sx / sy;
+		return rz_bv_set_from_st64(x, quotient);
+	}
+
+	RzBitVector *abs_y = NULL;
+	if (my) {
+		abs_y = rz_bv_dup(y);
+		if (!abs_y || !rz_bv_neg_inplace(abs_y)) {
+			rz_bv_free(abs_y);
+			return false;
+		}
+	}
+	if (mx && !rz_bv_neg_inplace(x)) {
+		rz_bv_free(abs_y);
+		return false;
+	}
+
+	bool ok = rz_bv_div_inplace(x, abs_y ? abs_y : y);
+	if (ok && mx != my) {
+		ok = rz_bv_neg_inplace(x);
+	}
+	rz_bv_free(abs_y);
+	return ok;
+}
+
 /**
  * Result of (x / y) mod 2^length (signed algorithm)
  *                               /
@@ -1479,45 +1548,68 @@ RZ_API RZ_OWN RzBitVector *rz_bv_mod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBit
  * \return ret RzBitVector, point to the new bitvector
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
+	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
+	RzBitVector *ret = rz_bv_dup(x);
+	if (!ret || !rz_bv_sdiv_inplace(ret, y)) {
+		rz_bv_free(ret);
+		return NULL;
+	}
+	return ret;
+}
+
+/**
+ * Result of (x mod y) mod 2^length (signed algorithm)
+ *                            /
+ *                          | x % y : if not mx /\ not my
+ *                         | neg (neg x % y) if mx /\ not my
+ *           x smodulo y = <
+ *                          | neg (x % (neg y)) if not mx /\ my
+ *                          | neg (neg x % neg y) mod m if mx /\ my
+ *                          \
+ *
+ *           where mx = msb x  and my = msb y.
+ * \param x RzBitVector, Operand
+ * \param y RzBitVector, Operand
+ * \return True in case of success, false otherwise.
+ */
+RZ_API bool rz_bv_smod_inplace(RZ_NONNULL RZ_INOUT RzBitVector *x, const RZ_NONNULL RzBitVector *y) {
+	rz_return_val_if_fail(x && y && x->len == y->len, false);
+
+	if (rz_bv_is_zero_vector(y)) {
+		return true;
+	}
+
 	bool mx = rz_bv_msb(x);
 	bool my = rz_bv_msb(y);
-
-	RzBitVector *neg_x, *neg_y, *tmp, *ret;
-
-	if ((!mx) && (!my)) {
-		return rz_bv_div(x, y);
+	if (x->len <= 64) {
+		st64 sx = bv_to_st64(x);
+		st64 sy = bv_to_st64(y);
+		ut64 rem = bv_abs_st64(sx) % bv_abs_st64(sy);
+		if (mx || my) {
+			rem = 0 - rem;
+		}
+		return rz_bv_set_from_ut64(x, rem);
 	}
 
-	if ((mx) && (!my)) {
-		neg_x = rz_bv_neg(x);
-		tmp = rz_bv_div(neg_x, y);
-		ret = rz_bv_neg(tmp);
-
-		rz_bv_free(tmp);
-		rz_bv_free(neg_x);
-		return ret;
+	RzBitVector *abs_y = NULL;
+	if (my) {
+		abs_y = rz_bv_dup(y);
+		if (!abs_y || !rz_bv_neg_inplace(abs_y)) {
+			rz_bv_free(abs_y);
+			return false;
+		}
+	}
+	if (mx && !rz_bv_neg_inplace(x)) {
+		rz_bv_free(abs_y);
+		return false;
 	}
 
-	if ((!mx) && (my)) {
-		neg_y = rz_bv_neg(y);
-		tmp = rz_bv_div(x, neg_y);
-		ret = rz_bv_neg(tmp);
-
-		rz_bv_free(tmp);
-		rz_bv_free(neg_y);
-		return ret;
+	bool ok = rz_bv_mod_inplace(x, abs_y ? abs_y : y);
+	if (ok && (mx || my)) {
+		ok = rz_bv_neg_inplace(x);
 	}
-
-	// mx && my
-	neg_x = rz_bv_neg(x);
-	neg_y = rz_bv_neg(y);
-
-	ret = rz_bv_div(neg_x, neg_y);
-	rz_bv_free(neg_x);
-	rz_bv_free(neg_y);
-
-	return ret;
+	rz_bv_free(abs_y);
+	return ok;
 }
 
 /**
@@ -1536,45 +1628,12 @@ RZ_API RZ_OWN RzBitVector *rz_bv_sdiv(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBi
  * \return ret RzBitVector, point to the new bitvector
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_smod(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y) {
-	rz_return_val_if_fail(x && y, NULL);
-	bool mx = rz_bv_msb(x);
-	bool my = rz_bv_msb(y);
-
-	RzBitVector *neg_x, *neg_y, *tmp, *ret;
-
-	if ((!mx) && (!my)) {
-		return rz_bv_mod(x, y);
+	rz_return_val_if_fail(x && y && x->len == y->len, NULL);
+	RzBitVector *ret = rz_bv_dup(x);
+	if (!ret || !rz_bv_smod_inplace(ret, y)) {
+		rz_bv_free(ret);
+		return NULL;
 	}
-
-	if ((mx) && (!my)) {
-		neg_x = rz_bv_neg(x);
-		tmp = rz_bv_mod(neg_x, y);
-		ret = rz_bv_neg(tmp);
-
-		rz_bv_free(tmp);
-		rz_bv_free(neg_x);
-		return ret;
-	}
-
-	if ((!mx) && (my)) {
-		neg_y = rz_bv_neg(y);
-		tmp = rz_bv_mod(x, neg_y);
-		ret = rz_bv_neg(tmp);
-
-		rz_bv_free(tmp);
-		rz_bv_free(neg_y);
-		return ret;
-	}
-
-	// mx && my
-	neg_x = rz_bv_neg(x);
-	neg_y = rz_bv_neg(y);
-
-	tmp = rz_bv_mod(neg_x, neg_y);
-	ret = rz_bv_neg(tmp);
-	rz_bv_free(neg_x);
-	rz_bv_free(neg_y);
-	rz_bv_free(tmp);
 	return ret;
 }
 
