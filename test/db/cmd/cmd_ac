@@ -639,3 +639,20 @@ attr.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 attrtypes.Flaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatline=vtable,method
 EOF
 RUN
+
+NAME=Java class RTTI (Pig)
+FILE=bins/java/Pig.class
+CMDS=<<EOF
+aaa
+acbl rizinjava_Pig
+acil rizinjava_Pig~rizinjava.Pig
+EOF
+EXPECT=<<EOF
+rizinjava_Pig:
+     0 java_lang_Object @ +0x0
+     1 rizinjava_Animal @ +0x0
+  1 0x00000178 ---------- CONSTRUCTOR rizinjava.Pig.<init>()V
+  2 0x000001a3 ---------- VIRTUAL     rizinjava.Pig.animalSound()V
+  3 0x000001d6 ---------- VIRTUAL     rizinjava.Pig.sleep()V
+EOF
+RUN
