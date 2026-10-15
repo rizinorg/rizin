@@ -909,6 +909,13 @@ static void handle_var_stack_access(RzAnalysisEsil *esil, ut64 addr, RzAnalysisV
 	if (!ctx->fcn || !regname) {
 		return;
 	}
+	ut64 delta = delta_for_access(ctx->op, type);
+	if (type == RZ_ANALYSIS_VAR_ACCESS_TYPE_PTR && !delta &&
+		ctx->op->direction != RZ_ANALYSIS_OP_DIR_READ &&
+		ctx->op->direction != RZ_ANALYSIS_OP_DIR_WRITE) {
+		// Zero-offset register copies are not stack variable accesses.
+		return;
+	}
 
 	RzReg *rreg = rz_analysis_get_reg((RzAnalysis *)esil->panalysis);
 	ut64 spaddr = rz_reg_getv(rreg, ctx->spname);
