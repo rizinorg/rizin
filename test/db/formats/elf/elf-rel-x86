@@ -45,3 +45,23 @@ EXPECT=<<EOF
 EOF
 # loc.internal_word not used for R_386_16 and R_386_8 because the value was truncated during assembling to generate these relocations.
 RUN
+NAME=ELF: x86-32 R_386_PC8 reloc patching
+FILE=bins/elf/x86_relocs_pc8.o
+CMDS=<<EOF
+ir
+echo ---
+px 1 @ 0x08000035
+px 1 @ 0x08000036
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type      name                
+---------------------------------------------------------------
+0x08000035 0x00000035 0x08000037 R_386_PC8 target - 0x08000035
+0x08000036 0x00000036 0x08000037 R_386_8   target
+---
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000035  02                                       .
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x08000036  37                                       7
+EOF
+RUN
