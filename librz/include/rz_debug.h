@@ -123,6 +123,12 @@ typedef struct rz_debug_frame_t {
 	ut64 bp;
 } RzDebugFrame;
 
+typedef enum {
+	RZ_DEBUG_SIGNAL_SOURCE_UNKNOWN,
+	RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL,
+	RZ_DEBUG_SIGNAL_SOURCE_INTERNAL,
+} RzDebugSignalSource;
+
 typedef struct rz_debug_reason_t {
 	int /*RzDebugReasonType*/ type;
 	int tid;
@@ -131,6 +137,7 @@ typedef struct rz_debug_reason_t {
 	ut64 timestamp;
 	ut64 addr;
 	ut64 ptr;
+	RzDebugSignalSource sig_source;
 } RzDebugReason;
 
 typedef struct rz_debug_map_t {
@@ -538,8 +545,9 @@ RZ_API int rz_debug_desc_write(RzDebug *dbg, int fd, ut64 addr, int len);
 /* registers */
 RZ_API bool rz_debug_reg_profile_sync(RzDebug *dbg);
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
-RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
-RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
+RZ_API int rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num);
+RZ_API int rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num);
+RZ_API ut64 rz_debug_reg_get(RZ_NONNULL RzDebug *dbg, const char *name);
 RZ_API ut64 rz_debug_reg_get_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role);
 
 RZ_API ut64 rz_debug_execute(RzDebug *dbg, const ut8 *buf, int len, int restore);
