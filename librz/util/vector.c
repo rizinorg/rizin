@@ -139,6 +139,7 @@ RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
 	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
 	rz_return_val_if_fail(dst && src, false);
+	dst->reverse_sorted = src->reverse_sorted;
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
@@ -163,7 +164,7 @@ RZ_API bool rz_vector_clone_intof(
 					(ut8 *)(src->a) + i * src->elem_size);
 			}
 		} else {
-			memcpy(dst->a, src->a, src->elem_size * len);
+			memcpy(dst->a, src->a, src->elem_size * dst->capacity);
 		}
 	}
 	return true;
