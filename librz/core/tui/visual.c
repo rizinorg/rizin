@@ -3572,7 +3572,13 @@ static RZ_OWN char *screen_bottom_address(RzCore *core) {
 	// in case the address doesn't have 0x prefix (RZ_CORE_VISUAL_MODE_CD)
 	if (rtn && !rz_str_startswith_icase(rtn, "0x")) {
 		ut32 addr_len = strlen(rtn), prefix_len = strlen("0x");
-		rtn = realloc(rtn, prefix_len + addr_len + 1);
+		char *tmp = realloc(rtn, prefix_len + addr_len + 1);
+		if (!tmp) {
+			free(rtn);
+			rtn = NULL;
+			goto exit;
+		}
+		rtn = tmp;
 		memmove(rtn + 2, rtn, addr_len);
 		rtn[0] = '0';
 		rtn[1] = 'x';
