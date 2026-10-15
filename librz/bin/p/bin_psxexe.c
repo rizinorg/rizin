@@ -8,6 +8,8 @@
 #include <rz_bin.h>
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
+#include "rz_util/rz_assert.h"
+#include "rz_util/rz_structured_data.h"
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 magic[PSXEXE_ID_LEN];
@@ -118,6 +120,48 @@ static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	return rz_bin_file_strings(bf, &opt);
 }
 
+static RzStructuredData *psxexe_structure(RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->buf, NULL);
+
+	psxexe_header psxheader;
+	if (rz_buf_fread_at(bf->buf, 0, (ut8 *)&psxheader, "8c17i", 1) < sizeof(psxexe_header)) {
+		RZ_LOG_ERROR("Truncated Header\n");
+		return NULL;
+	}
+
+	RzStructuredData *info = rz_structured_data_new_map();
+	if (!info) {
+		return NULL;
+	}
+
+	RzStructuredData *psx = rz_structured_data_map_add_map(info, "psxexe");
+	if (!psx) {
+		rz_structured_data_free(info);
+		return NULL;
+	}
+
+	rz_structured_data_map_add_string_n(psx, "id", (const char *)psxheader.id, sizeof(psxheader.id));
+	rz_structured_data_map_add_unsigned(psx, "text", psxheader.text, true);
+	rz_structured_data_map_add_unsigned(psx, "data", psxheader.data, true);
+	rz_structured_data_map_add_unsigned(psx, "pc0", psxheader.pc0, true);
+	rz_structured_data_map_add_unsigned(psx, "gp0", psxheader.gp0, true);
+	rz_structured_data_map_add_unsigned(psx, "t_addr", psxheader.t_addr, true);
+	rz_structured_data_map_add_unsigned(psx, "t_size", psxheader.t_size, true);
+	rz_structured_data_map_add_unsigned(psx, "d_addr", psxheader.d_addr, true);
+	rz_structured_data_map_add_unsigned(psx, "d_size", psxheader.d_size, true);
+	rz_structured_data_map_add_unsigned(psx, "b_addr", psxheader.b_addr, true);
+	rz_structured_data_map_add_unsigned(psx, "b_size", psxheader.b_size, true);
+	rz_structured_data_map_add_unsigned(psx, "s_addr", psxheader.S_addr, true);
+	rz_structured_data_map_add_unsigned(psx, "s_size", psxheader.S_size, true);
+	rz_structured_data_map_add_unsigned(psx, "saved_sp", psxheader.SavedSP, true);
+	rz_structured_data_map_add_unsigned(psx, "saved_fp", psxheader.SavedFP, true);
+	rz_structured_data_map_add_unsigned(psx, "saved_gp", psxheader.SavedGP, true);
+	rz_structured_data_map_add_unsigned(psx, "saved_ra", psxheader.SavedRA, true);
+	rz_structured_data_map_add_unsigned(psx, "saved_s0", psxheader.SavedS0, true);
+
+	return info;
+}
+
 RzBinPlugin rz_bin_plugin_psxexe = {
 	.name = "psxexe",
 	.desc = "Sony PlayStation 1 executable",
@@ -130,6 +174,7 @@ RzBinPlugin rz_bin_plugin_psxexe = {
 	.sections = &sections,
 	.entries = &entries,
 	.strings = &strings,
+	.bin_structure = &psxexe_structure,
 };
 
 #ifndef RZ_PLUGIN_INCORE
