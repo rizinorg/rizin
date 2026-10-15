@@ -17,6 +17,7 @@ if get_option('enable_tests')
     'analysis_class_graph',
     'analysis_coverage',
     'analysis_function',
+    'analysis_h8300',
     'analysis_hints',
     'analysis_meta',
     'analysis_var',

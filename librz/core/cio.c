@@ -829,6 +829,7 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 	void **iter;
 	RzIOCache *c;
 
+	rz_cmd_state_output_array_start(state);
 	rz_pvector_foreach (&core->io->cache, iter) {
 		c = *iter;
 		const ut64 dataSize = rz_itv_size(c->itv);
@@ -864,6 +865,7 @@ RZ_API RzCmdStatus rz_core_io_cache_print(RzCore *core, RzCmdStateOutput *state)
 		}
 		j++;
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -875,6 +877,7 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 	RzListIter *iter;
 	RzIOCache *c;
 
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (caches, iter, c) {
 		const int cacheSize = rz_itv_size(c->itv);
 		int i;
@@ -892,11 +895,26 @@ RZ_API RzCmdStatus rz_core_io_pcache_print(RzCore *core, RzIODesc *desc, RzCmdSt
 			}
 			rz_cons_printf("\n");
 			break;
+		case RZ_OUTPUT_MODE_JSON: {
+			// Same keys as the entries of `wcj`
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "addr", rz_itv_begin(c->itv));
+			pj_kn(state->d.pj, "size", cacheSize);
+			char *hex = rz_hex_bin2strdup(c->odata, cacheSize);
+			pj_ks(state->d.pj, "before", rz_str_get(hex));
+			free(hex);
+			hex = rz_hex_bin2strdup(c->data, cacheSize);
+			pj_ks(state->d.pj, "after", rz_str_get(hex));
+			free(hex);
+			pj_end(state->d.pj);
+			break;
+		}
 		default:
 			rz_warn_if_reached();
 			break;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(caches);
 	return RZ_CMD_STATUS_OK;
 }

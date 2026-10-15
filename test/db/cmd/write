@@ -359,6 +359,26 @@ MZ
 EOF
 RUN
 
+NAME=wcp
+FILE=malloc://512
+CMDS=<<EOF
+e io.pcache=true
+wcp
+wcpj
+wx 9090
+wx 01 @ 0x10
+wcp
+wcpj
+EOF
+EXPECT=<<EOF
+[]
+0x00000000: 0000 -> 9090
+0x00000010: 00 -> 01
+[{"addr":0,"size":2,"before":"0000","after":"9090"},{"addr":16,"size":1,"before":"00","after":"01"}]
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=w octal esc
 FILE=malloc://16
 CMDS=<<EOF

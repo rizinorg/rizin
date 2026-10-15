@@ -219,3 +219,39 @@ EXPECT=<<EOF
 𞛀
 EOF
 RUN
+
+NAME=psi prints the string only
+FILE==
+CMDS=<<EOF
+wx 610062006300640065006600670068000000
+psi
+wz hello @ 0x40
+psi @ 0x40
+EOF
+EXPECT=<<EOF
+abcdefgh
+hello
+EOF
+RUN
+
+NAME=psb and psi in JSON
+FILE==
+CMDS=<<EOF
+wx 610062006300640065006600670068000000
+wz hello @ 0x40
+psb
+psbq
+psbj
+psij @ 0x30
+psij @ 0x100
+EOF
+EXPECT=<<EOF
+0x00000000 abcdefgh
+0x00000040 hello
+abcdefgh
+hello
+[{"addr":0,"size":18,"length":8,"type":"utf16le","string":"abcdefgh"},{"addr":64,"size":6,"length":5,"type":"ascii","string":"hello"}]
+{"addr":64,"size":6,"length":5,"type":"ascii","string":"hello"}
+{}
+EOF
+RUN

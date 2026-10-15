@@ -95,6 +95,14 @@ RZ_IPI RzCmdStatus rz_sky_handler(RzCore *core, int argc, const char **argv) {
 }
 ```
 
+If the command prints data, like a list, a record or a table, it should also
+offer JSON output, so that scripts and tools can use it. List the output modes
+of the command in `modes`, including `RZ_OUTPUT_MODE_JSON`, and use the type
+`RZ_CMD_DESC_TYPE_ARGV_STATE`: the handler then gets a `RzCmdStateOutput`,
+with a `PJ` to fill in JSON mode. The CI runs `sys/check_cmd_json_modes.py`,
+which fails when a new command seems to print data but offers no JSON. If the
+command prints no data, add it to `EXEMPT` in that script, with the reason.
+
 The YAML file is used at built-time (by meson only) to autogenerate two
 files: `cmd_descs.c` and `cmd_descs.h`.
 

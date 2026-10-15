@@ -524,6 +524,17 @@ elf x86    64 not-match.pat       1
 EOF
 RUN
 
+NAME=Print SigDB contents in JSON
+FILE==
+CMDS=<<EOF
+e flirt.sigdb.path=bins/sigdb/fake-db
+Flj
+EOF
+EXPECT=<<EOF
+[{"bin":"elf","arch":"x86","bits":64,"name":"match.sig","modules":1,"details":"Built with rizin 0.5.0"},{"bin":"elf","arch":"x86","bits":64,"name":"not-match.pat","modules":1,"details":""}]
+EOF
+RUN
+
 NAME=Do analysis and apply SigDB automatically
 FILE=bins/sigdb/elf-x86-64-static-libc
 CMDS=<<EOF

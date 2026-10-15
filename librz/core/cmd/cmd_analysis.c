@@ -1648,17 +1648,15 @@ RZ_IPI RzCmdStatus rz_analysis_virtual_xrefs_handler(RzCore *core, int argc, con
 	const char *vfunc_name = argv[1];
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_core_analysis_virtual_xrefs_print(core, vfunc_name);
-		break;
-	case RZ_OUTPUT_MODE_TABLE: {
+		return bool2status(rz_core_analysis_virtual_xrefs_print(core, vfunc_name));
+	case RZ_OUTPUT_MODE_TABLE:
 		rz_cmd_state_output_set_columnsf(state, "X", "from");
-		rz_core_analysis_virtual_xrefs_print_table(core, vfunc_name, state->d.t);
-		break;
-	}
+		return bool2status(rz_core_analysis_virtual_xrefs_print_table(core, vfunc_name, state->d.t));
+	case RZ_OUTPUT_MODE_JSON:
+		return bool2status(rz_core_analysis_virtual_xrefs_print_json(core, vfunc_name, state->d.pj));
 	default:
 		return RZ_CMD_STATUS_ERROR;
 	}
-	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_analysis_rtti_demangle_class_name_handler(RzCore *core, int argc, const char **argv) {
@@ -4028,10 +4026,8 @@ static void gather_opcode_stat_for_fcn(RzCore *core, HtSU *ht, RzAnalysisFunctio
 	RzAnalysisBlock *bb;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		update_stat_for_op(core, ht, bb->addr, mode);
-		for (int i = 0; i < bb->op_pos_size; i++) {
-			ut16 op_pos = bb->op_pos[i];
-			update_stat_for_op(core, ht, bb->addr + op_pos, mode);
+		for (int i = 0; i < bb->ninstr; i++) {
+			update_stat_for_op(core, ht, rz_analysis_block_get_op_addr(bb, i), mode);
 		}
 	}
 }
@@ -4065,6 +4061,17 @@ static void print_stats(RzCore *core, HtSU *ht, RzAnalysisFunction *fcn, RzCmdSt
 			rz_pvector_push(items, rz_str_newf("%d", nv));
 		}
 		rz_table_add_row_vec(t, items);
+	} else if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = state->d.pj;
+		pj_o(pj);
+		pj_ks(pj, "name", fcn->name);
+		pj_kn(pj, "addr", fcn->addr);
+		pj_ko(pj, "stats");
+		rz_list_foreach (list, iter, name) {
+			pj_kn(pj, name, ht_su_find(ht, name, NULL));
+		}
+		pj_end(pj);
+		pj_end(pj);
 	} else {
 		rz_list_foreach (list, iter, name) {
 			ut32 nv = (ut32)ht_su_find(ht, name, NULL);
@@ -4101,7 +4108,7 @@ static bool add_keys_to_set_cb(HtSU *ht, const char *k, RZ_UNUSED const ut64 v) 
 }
 
 RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	if (state->mode != RZ_OUTPUT_MODE_TABLE) {
+	if (state->mode != RZ_OUTPUT_MODE_TABLE && state->mode != RZ_OUTPUT_MODE_JSON) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzCmdStatus res = RZ_CMD_STATUS_ERROR;
@@ -4137,11 +4144,38 @@ RZ_IPI RzCmdStatus rz_analysis_function_all_opcode_stat_handler(RzCore *core, in
 	ht_su_foreach(keys_set, (HtSUForeachCallback)list_keys_cb, keys);
 	rz_list_sort(keys, (RzListComparator)strcmp, NULL);
 
+	char *key;
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = state->d.pj;
+		pj_a(pj);
+		rz_list_foreach (dbs, iter, db) {
+			ut64 fcn_addr = ht_su_find(db, ".addr", NULL);
+			RzAnalysisFunction *f = rz_analysis_get_function_at(core->analysis, fcn_addr);
+			pj_o(pj);
+			pj_ks(pj, "name", f ? f->name : "");
+			pj_kn(pj, "addr", fcn_addr);
+			pj_ko(pj, "stats");
+			// Unlike the table, list only what occurs in the function
+			RzListIter *kiter;
+			rz_list_foreach (keys, kiter, key) {
+				bool found = false;
+				ut64 n = ht_su_find(db, key, &found);
+				if (found) {
+					pj_kn(pj, key, n);
+				}
+			}
+			pj_end(pj);
+			pj_end(pj);
+		}
+		pj_end(pj);
+		res = RZ_CMD_STATUS_OK;
+		goto exit;
+	}
+
 	RzTable *t = state->d.t;
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name");
 	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "addr");
 
-	char *key;
 	rz_list_foreach (keys, iter, key) {
 		rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, key);
 	}
@@ -5976,8 +6010,38 @@ RZ_IPI RzCmdStatus rz_apply_signatures_from_sigdb_handler(RzCore *core, int argc
 	return bool2status(rz_core_analysis_sigdb_apply(core, NULL, filter));
 }
 
+static void sigdb_print_json(RzCore *core, PJ *pj) {
+	RzList *sigdb = rz_core_analysis_sigdb_list(core, true);
+	RzSigDBEntry *sig;
+	RzListIter *iter;
+	// Same keys as the columns of `Fl`
+	pj_a(pj);
+	rz_list_foreach (sigdb, iter, sig) {
+		pj_o(pj);
+		pj_ks(pj, "bin", rz_str_get(sig->bin_name));
+		pj_ks(pj, "arch", rz_str_get(sig->arch_name));
+		pj_kn(pj, "bits", sig->arch_bits);
+		pj_ks(pj, "name", rz_str_get(sig->base_name));
+		pj_kn(pj, "modules", sig->n_modules);
+		pj_ks(pj, "details", rz_str_get(sig->details));
+		pj_end(pj);
+	}
+	pj_end(pj);
+	rz_list_free(sigdb);
+}
+
 RZ_IPI RzCmdStatus rz_list_signatures_in_sigdb_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_analysis_sigdb_print(core, state->d.t);
+	switch (state->mode) {
+	case RZ_OUTPUT_MODE_TABLE:
+		rz_core_analysis_sigdb_print(core, state->d.t);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		sigdb_print_json(core, state->d.pj);
+		break;
+	default:
+		rz_warn_if_reached();
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -6245,16 +6309,21 @@ RZ_IPI RzCmdStatus rz_global_imports_handler(RzCore *core, int argc, const char 
 		return RZ_CMD_STATUS_OK;
 	}
 	RzList *imports = rz_analysis_get_imports(core->analysis);
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (imports, iter, imp) {
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf("%s\n", imp);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_s(state->d.pj, imp);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 
 	return RZ_CMD_STATUS_OK;
 }

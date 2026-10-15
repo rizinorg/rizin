@@ -11,6 +11,8 @@ pdj
 pifj
 pifcj
 Pj
+psbj
+psij
 psj
 pxhj
 pxj
@@ -31,6 +33,7 @@ tsj
 ttj
 tuj
 wcj
+wcpj
 yj
 zj
 ?+j | jq -c '[path(.. | objects | select(has("cmd") and .executable))] as $paths | if ($paths | length) == 1661 then $paths[], {"count": ($paths | length)} else error("unexpected executable command count") end'

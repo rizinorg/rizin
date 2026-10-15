@@ -1822,10 +1822,7 @@ RZ_IPI RzCmdStatus rz_print_string_as_libcpp_string_handler(RzCore *core, int ar
 	return status;
 }
 
-// "psb"
-RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzListIter *it = NULL;
-	RzDetectedString *detected = NULL;
+static RzList /*<RzDetectedString *>*/ *scan_block_strings(RzCore *core) {
 	RzBin *bin = core->bin;
 	RzUtilStrScanOptions scan_opt = {
 		.max_str_length = core->blocksize,
@@ -1837,17 +1834,43 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
 	if (!found) {
 		RZ_LOG_ERROR("core: failed to allocate RzList\n");
-		return RZ_CMD_STATUS_ERROR;
+		return NULL;
 	}
 
 	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
 		rz_list_free(found);
+		return NULL;
+	}
+	return found;
+}
+
+static void block_string_json(RzCore *core, const RzDetectedString *detected, PJ *pj) {
+	pj_o(pj);
+	pj_kn(pj, "addr", core->offset + detected->addr);
+	pj_kn(pj, "size", detected->size);
+	pj_kn(pj, "length", detected->length);
+	pj_ks(pj, "type", rz_str_enc_as_string(detected->encoding));
+	pj_ks(pj, "string", detected->string);
+	pj_end(pj);
+}
+
+// "psb"
+RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzListIter *it = NULL;
+	RzDetectedString *detected = NULL;
+	RzList *found = scan_block_strings(core);
+	if (!found) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (found, it, detected) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			block_string_json(core, detected, state->d.pj);
+			continue;
+		}
 		ut64 address = core->offset + detected->addr;
-		if (mode != RZ_OUTPUT_MODE_QUIET) {
+		if (state->mode != RZ_OUTPUT_MODE_QUIET) {
 			rz_print_offset(core->print, address, 0, 0, 0, 0, NULL, core->cons);
 		}
 		RzStrEscOptions eopts = { 0 };
@@ -1857,36 +1880,29 @@ RZ_IPI RzCmdStatus rz_print_strings_current_block_handler(RzCore *core, int argc
 		free(escaped);
 		rz_cons_newline();
 	}
+	rz_cmd_state_output_array_end(state);
 
 	rz_list_free(found);
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
-	RzDetectedString *detected = NULL;
-	RzBin *bin = core->bin;
-	RzUtilStrScanOptions scan_opt = {
-		.max_str_length = core->blocksize,
-		.min_str_length = bin->str_search_cfg.min_length,
-		.prefer_big_endian = false,
-		.check_ascii_freq = bin->str_search_cfg.check_ascii_freq,
-	};
-
-	RzList *found = rz_list_newf((RzListFree)rz_detected_string_free);
+// "psi"
+RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	RzList *found = scan_block_strings(core);
 	if (!found) {
-		RZ_LOG_ERROR("core: failed to allocate RzList\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
-		rz_list_free(found);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	detected = rz_list_first_val(found);
-	if (detected) {
-		rz_cons_memcat(detected->string, detected->size);
-		rz_cons_newline();
+	RzDetectedString *detected = rz_list_first_val(found);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		if (detected) {
+			block_string_json(core, detected, state->d.pj);
+		} else {
+			pj_o(state->d.pj);
+			pj_end(state->d.pj);
+		}
+	} else if (detected) {
+		rz_cons_println(detected->string);
 	}
 
 	rz_list_free(found);
@@ -6869,7 +6885,7 @@ RZ_IPI RzCmdStatus rz_print_hexdump_format_handler(RzCore *core, int argc, const
 			return RZ_CMD_STATUS_ERROR;
 		}
 		const char *psb = "psb";
-		RzCmdStatus status = rz_print_strings_current_block_handler(core, 1, &psb, state->mode);
+		RzCmdStatus status = rz_print_strings_current_block_handler(core, 1, &psb, state);
 		if (!rz_core_block_size(core, block_size_bak)) {
 			RZ_LOG_ERROR("Failed to reset block size to %" PFMTSZu " bytes.\n", block_size_bak);
 			return RZ_CMD_STATUS_ERROR;

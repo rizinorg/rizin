@@ -707,6 +707,7 @@ commands:
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
                   - RZ_OUTPUT_MODE_TABLE
+                  - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: mode
                     type: RZ_CMD_ARG_TYPE_CHOICES
@@ -716,8 +717,10 @@ commands:
                 summary: Enumerate unique opcodes/opcode families/opcode types in all functions
                 cname: analysis_function_all_opcode_stat
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                default_mode: RZ_OUTPUT_MODE_TABLE
                 modes:
                   - RZ_OUTPUT_MODE_TABLE
+                  - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: mode
                     type: RZ_CMD_ARG_TYPE_CHOICES
@@ -1536,6 +1539,7 @@ commands:
             cname: global_imports
             modes:
               - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args:
               - name: namespace
                 type: RZ_CMD_ARG_TYPE_STRING
@@ -1701,6 +1705,7 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: virtual function name
             type: RZ_CMD_ARG_TYPE_STRING

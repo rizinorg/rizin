@@ -393,15 +393,23 @@ RZ_API bool rz_core_cmpwatch_del(RzCore *core, ut64 addr) {
  *
  * \param core Current RzCore instance
  * \param addr Address of the memory watcher to be printed (if UT64_MAX, then all memory watchers will be printed)
- * \param mode Output mode
+ * \param mode Output mode: RZ_OUTPUT_MODE_STANDARD or RZ_OUTPUT_MODE_JSON
  *
- * Prints nothing if no memory watcher is found at \p addr.
+ * Prints nothing, or an empty JSON array, if no memory watcher is found at \p addr.
  */
 RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 	rz_return_if_fail(core);
 	char cmd[128];
 	RzListIter *iter;
 	RzCoreCmpWatcher *w;
+	PJ *pj = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			return;
+		}
+		pj_a(pj);
+	}
 	rz_list_foreach (core->watchers, iter, w) {
 		if (addr != UT64_MAX && w->addr != addr) {
 			continue;
@@ -413,9 +421,22 @@ RZ_API void rz_core_cmpwatch_show(RzCore *core, ut64 addr, RzOutputMode mode) {
 			snprintf(cmd, sizeof(cmd), "%s @ %" PFMT64d " @!%d", w->cmd, w->addr, w->size);
 			rz_core_cmd0(core, cmd);
 			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(pj);
+			pj_kn(pj, "addr", w->addr);
+			pj_ki(pj, "size", w->size);
+			pj_ks(pj, "cmd", w->cmd);
+			pj_kb(pj, "modified", is_diff);
+			pj_end(pj);
+			break;
 		default:
 			rz_warn_if_reached();
 		}
+	}
+	if (pj) {
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 	}
 }
 

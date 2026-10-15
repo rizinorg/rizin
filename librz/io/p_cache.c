@@ -203,7 +203,7 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 	const RzIODescCache *dcache = v;
 	blockaddr = k * RZ_IO_DESC_CACHE_SIZE;
 	for (i = byteaddr = 0; byteaddr < RZ_IO_DESC_CACHE_SIZE; byteaddr++) {
-		if (dcache->cached & (0x1LL << byteaddr)) {
+		if (dcache->cached & (0x1ULL << byteaddr)) {
 			if (!cache) {
 				cache = RZ_NEW0(RzIOCache);
 				if (!cache) {
@@ -281,7 +281,7 @@ static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 	const RzIODescCache *dcache = v;
 	ut64 blockaddr = RZ_IO_DESC_CACHE_SIZE * k;
 	for (i = byteaddr = 0; byteaddr < RZ_IO_DESC_CACHE_SIZE; byteaddr++) {
-		if (dcache->cached & (0x1LL << byteaddr)) {
+		if (dcache->cached & (0x1ULL << byteaddr)) {
 			buf[i] = dcache->cdata[byteaddr];
 			i++;
 		} else if (i > 0) {

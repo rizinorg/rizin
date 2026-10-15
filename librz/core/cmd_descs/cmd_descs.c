@@ -23334,10 +23334,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
 	rz_warn_if_fail(analysis_function_import_list_del_cd);
 
-	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
+	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
 	rz_warn_if_fail(afis_cd);
-	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
+	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
 	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
+	rz_cmd_desc_set_default_mode(analysis_function_all_opcode_stat_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *afn_cd = rz_cmd_desc_group_new(core->rcmd, af_cd, "afn", rz_analysis_function_rename_handler, &analysis_function_rename_help, &afn_help);
 	rz_warn_if_fail(afn_cd);
@@ -23606,7 +23607,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
 	rz_warn_if_fail(ai_cd);
-	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD, rz_global_imports_handler, &global_imports_help, &aii_help);
+	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_global_imports_handler, &global_imports_help, &aii_help);
 	rz_warn_if_fail(aii_cd);
 	RzCmdDesc *delete_global_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, aii_cd, "aii-", RZ_OUTPUT_MODE_STANDARD, rz_delete_global_imports_handler, &delete_global_imports_help);
 	rz_warn_if_fail(delete_global_imports_cd);
@@ -23662,7 +23663,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
 	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
 
-	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
+	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
 	rz_warn_if_fail(analysis_virtual_xrefs_cd);
 
 	RzCmdDesc *ax_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ax", rz_analysis_xrefs_set_0_handler, &analysis_xrefs_set_0_help, &ax_help);
@@ -24046,7 +24047,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cw_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cw", rz_cmd_cmp_add_memory_watcher_handler, &cmd_cmp_add_memory_watcher_help, &cw_help);
 	rz_warn_if_fail(cw_cd);
-	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
+	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
 	rz_warn_if_fail(cmd_cmp_list_compare_watchers_cd);
 
 	RzCmdDesc *cmd_cmp_reset_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwr", rz_cmd_cmp_reset_watcher_handler, &cmd_cmp_reset_watcher_help);
@@ -24469,7 +24470,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
 	rz_warn_if_fail(dt_cd);
-	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
+	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
 	rz_warn_if_fail(cmd_debug_traces_cd);
 
 	RzCmdDesc *cmd_debug_traces_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtl=", rz_cmd_debug_traces_ascii_handler, &cmd_debug_traces_ascii_help);
@@ -25046,7 +25047,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *apply_signatures_from_sigdb_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Fa", rz_apply_signatures_from_sigdb_handler, &apply_signatures_from_sigdb_help);
 	rz_warn_if_fail(apply_signatures_from_sigdb_cd);
 
-	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
+	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
 	rz_warn_if_fail(list_signatures_in_sigdb_cd);
 	rz_cmd_desc_set_default_mode(list_signatures_in_sigdb_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -25866,13 +25867,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_string_as_libcpp_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "ps+", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_as_libcpp_string_handler, &print_string_as_libcpp_string_help);
 	rz_warn_if_fail(print_string_as_libcpp_string_cd);
 
-	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_strings_current_block_handler, &print_strings_current_block_help);
+	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_print_strings_current_block_handler, &print_strings_current_block_help);
 	rz_warn_if_fail(print_strings_current_block_cd);
 
 	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
 	rz_warn_if_fail(print_string_c_cpp_cd);
 
-	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
+	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
 	rz_warn_if_fail(print_first_string_current_block_cd);
 
 	RzCmdDesc *print_pascal_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_pascal_string_handler, &print_pascal_string_help);
@@ -26527,7 +26528,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_cache_commit_all_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wci", rz_write_cache_commit_all_handler, &write_cache_commit_all_help);
 	rz_warn_if_fail(write_cache_commit_all_cd);
 
-	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD, rz_write_pcache_list_handler, &write_pcache_list_help);
+	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_write_pcache_list_handler, &write_pcache_list_help);
 	rz_warn_if_fail(write_pcache_list_cd);
 
 	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);

@@ -759,7 +759,7 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 /**
  * Print all traces
  * \param dbg core->dbg
- * \param mode output mode, default RZ_OUTPUT_MODE_STANDARD
+ * \param state output state: RZ_OUTPUT_MODE_QUIET, RZ_OUTPUT_MODE_JSON or RZ_OUTPUT_MODE_STANDARD
  * \param offset offset of address
  */
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset) {
@@ -767,6 +767,7 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	RzDebugTracepoint *trace;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
 		if (trace->tag && !(tag & trace->tag)) {
 			continue;
@@ -775,6 +776,15 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 		case RZ_OUTPUT_MODE_QUIET:
 			rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
 			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "addr", trace->addr);
+			pj_ki(state->d.pj, "size", trace->size);
+			pj_ki(state->d.pj, "count", trace->count);
+			pj_ki(state->d.pj, "times", trace->times);
+			pj_ki(state->d.pj, "tag", trace->tag);
+			pj_end(state->d.pj);
+			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 		default:
 			rz_cons_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
@@ -782,6 +792,7 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 			break;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 }
 
 /**
