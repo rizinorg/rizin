@@ -479,8 +479,19 @@ err:
 
 // disassemble an instruction from the given buffer.
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
-	op->failed = false;
 	RzStrBuf *sb = rz_strbuf_new("");
+	if (!sb) {
+		if (op) {
+			op->failed = true;
+			op->len = 1;
+			op->txt = NULL;
+		}
+		return 1;
+	}
+	if (!buf || buf_len < 1) {
+		goto err;
+	}
+	op->failed = false;
 	int id = buf[0];
 	if (id < 0xc0) {
 		op->type = WASM_TYPE_OP_CORE;
@@ -1170,6 +1181,8 @@ RZ_IPI void wasm_context_clear_cache(WasmContext *ctx) {
 	ctx->bin_id = UT32_MAX;
 	ctx->bin_size = 0;
 	ctx->nsyms = 0;
+	ctx->scope_hint = UT64_MAX;
+	ctx->addr_old = UT64_MAX;
 }
 
 // Offsets are relative to the function body. That body starts after the locals.
@@ -1262,9 +1275,11 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 			}
 			top = *(ut32 *)rz_vector_tail(&stack);
 			sc = scope_at(idx, top);
-			if (sc->is_if && sc->else_at == UT32_MAX) {
-				sc->else_at = off;
+			if (!sc->is_if || sc->else_at != UT32_MAX) {
+				failed = true;
+				break;
 			}
+			sc->else_at = off;
 		} else if (control && core == WASM_OP_END) {
 			ut32 top;
 			if (rz_vector_empty(&stack)) {
@@ -1354,6 +1369,14 @@ RZ_IPI bool wasm_scope_index_query(const WasmScopeIndex *idx, ut32 from, ut32 de
 		*jump_off = s->end;
 	}
 	return true;
+}
+
+/** \brief Body end offset, UT32_MAX if none. */
+RZ_IPI ut32 wasm_scope_index_root_end(const WasmScopeIndex *idx) {
+	if (!idx || !rz_vector_len(&idx->scopes)) {
+		return UT32_MAX;
+	}
+	return scope_at(idx, 0)->end;
 }
 
 RZ_IPI bool wasm_init(void **user) {
