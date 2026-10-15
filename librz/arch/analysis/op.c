@@ -18,6 +18,20 @@ RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void) {
 	return list;
 }
 
+/**
+ * \brief Initialize \p op with sentinel "unknown" values.
+ *
+ * Sentinel table (field -> unset value):
+ * addr, jump, fail, val, disp, mmios[] -> UT64_MAX;
+ * ptr -> (st64)UT64_MAX; refptr -> 0;
+ * stackptr -> RZ_ANALYSIS_OP_INVALID_STACKPTR;
+ * reg, ireg, mnemonic and other pointers -> NULL (via memset).
+ *
+ * Helpers interpret the sentinels: rz_analysis_op_get_jump_target() and
+ * rz_analysis_op_get_call_target() require jump != UT64_MAX,
+ * rz_analysis_op_get_indirect_ref() prefers ptr over val, and
+ * rz_analysis_op_has_fail_target() requires fail != UT64_MAX.
+ */
 RZ_API void rz_analysis_op_init(RzAnalysisOp *op) {
 	if (!op) {
 		return;
@@ -215,6 +229,7 @@ RZ_API bool rz_analysis_op_nonlinear(int t) {
 	case RZ_ANALYSIS_OP_TYPE_RET:
 		return true;
 	default:
+		rz_warn_if_reached();
 		return false;
 	}
 }
@@ -231,8 +246,117 @@ RZ_API bool rz_analysis_op_ismemref(int t) {
 	case RZ_ANALYSIS_OP_TYPE_PUSH:
 		return true;
 	default:
+		rz_warn_if_reached();
 		return false;
 	}
+}
+
+/**
+ * \brief Read the known direct jump destination (\p op->jump) for {JMP, CJMP}.
+ *
+ * No jump-to-ptr fallback: indirect targets are only visible via
+ * rz_analysis_op_get_indirect_ref().
+ */
+RZ_API bool rz_analysis_op_get_jump_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out) {
+	if (!op || !out) {
+		return false;
+	}
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	if (t != RZ_ANALYSIS_OP_TYPE_JMP && t != RZ_ANALYSIS_OP_TYPE_CJMP) {
+		return false;
+	}
+	if (op->jump == UT64_MAX) {
+		return false;
+	}
+	*out = op->jump;
+	return true;
+}
+
+/**
+ * \brief Read the known direct call destination (\p op->jump) for {CALL, CCALL}.
+ */
+RZ_API bool rz_analysis_op_get_call_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out) {
+	if (!op || !out) {
+		return false;
+	}
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	if (t != RZ_ANALYSIS_OP_TYPE_CALL && t != RZ_ANALYSIS_OP_TYPE_CCALL) {
+		return false;
+	}
+	if (op->jump == UT64_MAX) {
+		return false;
+	}
+	*out = op->jump;
+	return true;
+}
+
+/**
+ * \brief Read the indirect control-flow reference, preferring \p ptr over \p val.
+ */
+RZ_API bool rz_analysis_op_get_indirect_ref(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out) {
+	if (!op || !out) {
+		return false;
+	}
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	if (t != RZ_ANALYSIS_OP_TYPE_UJMP && t != RZ_ANALYSIS_OP_TYPE_RJMP && t != RZ_ANALYSIS_OP_TYPE_IJMP &&
+		t != RZ_ANALYSIS_OP_TYPE_IRJMP && t != RZ_ANALYSIS_OP_TYPE_MJMP && t != RZ_ANALYSIS_OP_TYPE_UCJMP &&
+		t != RZ_ANALYSIS_OP_TYPE_UCALL && t != RZ_ANALYSIS_OP_TYPE_RCALL && t != RZ_ANALYSIS_OP_TYPE_ICALL &&
+		t != RZ_ANALYSIS_OP_TYPE_IRCALL && t != RZ_ANALYSIS_OP_TYPE_UCCALL) {
+		return false;
+	}
+	if (op->ptr != (st64)UT64_MAX) {
+		*out = (ut64)op->ptr;
+		return true;
+	}
+	if (op->val == UT64_MAX) {
+		return false;
+	}
+	*out = op->val;
+	return true;
+}
+
+/**
+ * \brief True iff the op is an unknown jump (MJMP excluded, RCJMP/MCJMP match none).
+ */
+RZ_API bool rz_analysis_op_is_unknown_jump(RZ_NULLABLE const RzAnalysisOp *op) {
+	if (!op) {
+		return false;
+	}
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	if (t == RZ_ANALYSIS_OP_TYPE_UJMP || t == RZ_ANALYSIS_OP_TYPE_RJMP || t == RZ_ANALYSIS_OP_TYPE_IJMP ||
+		t == RZ_ANALYSIS_OP_TYPE_IRJMP || t == RZ_ANALYSIS_OP_TYPE_UCJMP) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * \brief True iff the op is an unknown call.
+ */
+RZ_API bool rz_analysis_op_is_unknown_call(RZ_NULLABLE const RzAnalysisOp *op) {
+	if (!op) {
+		return false;
+	}
+	ut32 t = op->type & (RZ_ANALYSIS_OP_TYPE_MASK | RZ_ANALYSIS_OP_TYPE_REG | RZ_ANALYSIS_OP_TYPE_IND | RZ_ANALYSIS_OP_TYPE_MEM);
+	if (t == RZ_ANALYSIS_OP_TYPE_UCALL || t == RZ_ANALYSIS_OP_TYPE_RCALL || t == RZ_ANALYSIS_OP_TYPE_ICALL ||
+		t == RZ_ANALYSIS_OP_TYPE_IRCALL || t == RZ_ANALYSIS_OP_TYPE_UCCALL) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * \brief Read the fail/alt-branch target (\p op->fail), type-agnostic.
+ */
+RZ_API bool rz_analysis_op_has_fail_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out) {
+	if (!op || !out) {
+		return false;
+	}
+	if (op->fail == UT64_MAX) {
+		return false;
+	}
+	*out = op->fail;
+	return true;
 }
 
 static struct optype {
@@ -340,6 +464,7 @@ RZ_API const char *rz_analysis_optype_to_string(int type) {
 			return optypes[i].name;
 		}
 	}
+	rz_warn_if_reached();
 	return "undefined";
 }
 
@@ -516,6 +641,11 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		break;
 	case RZ_ANALYSIS_OP_TYPE_ROL:
 	case RZ_ANALYSIS_OP_TYPE_ROR:
+		RZ_LOG_DEBUG("Command not implemented.\n");
+		free(r0);
+		free(a0);
+		free(a1);
+		return NULL;
 	case RZ_ANALYSIS_OP_TYPE_SWITCH:
 	case RZ_ANALYSIS_OP_TYPE_CASE:
 		RZ_LOG_DEBUG("Command not implemented.\n");
@@ -524,6 +654,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		free(a1);
 		return NULL;
 	default:
+		rz_warn_if_reached();
 		free(r0);
 		free(a0);
 		free(a1);
@@ -550,6 +681,7 @@ RZ_API const char *rz_analysis_stackop_tostring(int s) {
 	case RZ_ANALYSIS_STACK_RESET:
 		return "reset";
 	}
+	rz_warn_if_reached();
 	return "unk";
 }
 
@@ -566,6 +698,7 @@ RZ_API RzStackAddr rz_analysis_op_apply_sp_effect(RzAnalysisOp *op, RzStackAddr 
 	case RZ_ANALYSIS_STACK_RESET:
 		return 0;
 	default:
+		rz_warn_if_reached();
 		return sp;
 	}
 }
@@ -583,6 +716,7 @@ RZ_API RZ_NULLABLE RZ_OWN char *rz_analysis_op_describe_sp_effect(RzAnalysisOp *
 	case RZ_ANALYSIS_STACK_RESET:
 		return rz_str_dup(":= 0");
 	default:
+		rz_warn_if_reached();
 		return NULL;
 	}
 }

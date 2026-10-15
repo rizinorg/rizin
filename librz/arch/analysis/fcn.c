@@ -4,16 +4,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "analysis_private.h"
+#include "fcn_hpskip_private.h"
 #include <rz_parse.h>
 
 #define SDB_KEY_BB "bb.0x%" PFMT64x ".0x%" PFMT64x
 // XXX must be configurable by the user
-#define JMPTBL_LEA_SEARCH_SZ 64
-#define BB_ALIGN             0x10
-#define MAX_SCAN_SIZE        0x7ffffff
+#define BB_ALIGN      0x10
+#define MAX_SCAN_SIZE 0x7ffffff
 
 // 16 KB is the maximum size for a basic block
-#define MAX_FLG_NAME_SIZE 64
 
 #define DB             a->sdb_fcns
 #define EXISTS(x, ...) snprintf(key, sizeof(key) - 1, x, ##__VA_ARGS__), sdb_exists(DB, key)
@@ -36,40 +35,6 @@ RZ_API const char *rz_analysis_fcntype_tostring(int type) {
 	case RZ_ANALYSIS_FCN_TYPE_ROOT: return "root";
 	}
 	return "unk";
-}
-
-typedef struct {
-	ut8 cache[1024];
-	ut64 cache_addr;
-} ReadAhead;
-
-// TODO: move into io :?
-static int read_ahead(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut8 *buf, ssize_t len) {
-	bool is_cached = false;
-	if (len < 1) {
-		return -1;
-	}
-
-	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof(ra->cache)) {
-		ut64 addr_end = UT64_ADD_OVFCHK(addr, len) ? UT64_MAX : addr + len;
-		ut64 cache_addr_end = UT64_ADD_OVFCHK(ra->cache_addr, sizeof(ra->cache)) ? UT64_MAX : ra->cache_addr + sizeof(ra->cache);
-		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
-	}
-
-	if (!is_cached) {
-		if (len > sizeof(ra->cache)) {
-			len = sizeof(ra->cache);
-		}
-		analysis->iob.read_at(analysis->iob.io, addr, ra->cache, sizeof(ra->cache));
-		ra->cache_addr = addr;
-	}
-	ssize_t delta = addr - ra->cache_addr;
-	if (delta >= 0) {
-		size_t length = sizeof(ra->cache) - delta;
-		memcpy(buf, ra->cache + delta, RZ_MIN(len, length));
-		return len;
-	}
-	return -1;
 }
 
 RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
@@ -150,185 +115,6 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 
 	RzFlagItem *fi = analysis->flb.get_at(analysis->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
-}
-
-static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
-	int i;
-	ut64 dst;
-	st32 jmptbl[64] = { 0 };
-	/* check if current instruction is followed by an ujmp */
-	ut8 buf[JMPTBL_LEA_SEARCH_SZ];
-	RzAnalysisOp *aop = jmp_aop;
-	RzAnalysisOp omov_aop = { 0 };
-	RzAnalysisOp mov_aop = { 0 };
-	RzAnalysisOp add_aop = { 0 };
-	RzRegItem *reg_src = NULL, *o_reg_dst = NULL;
-	RzAnalysisValue cur_scr, cur_dst = { 0 };
-	read_ahead(ra, analysis, addr, buf, sizeof(buf));
-	bool isValid = false;
-	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
-		ut64 at = addr + i;
-		int left = JMPTBL_LEA_SEARCH_SZ - i;
-		rz_analysis_op_init(aop);
-		int len = rz_analysis_op(analysis, aop, at, buf + i, left, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_VAL);
-		if (len < 1) {
-			len = 1;
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_UJMP || aop->type == RZ_ANALYSIS_OP_TYPE_RJMP) {
-			isValid = true;
-			break;
-		} else if (aop->type == RZ_ANALYSIS_OP_TYPE_JMP || aop->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
-			break;
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_MOV) {
-			omov_aop = mov_aop;
-			mov_aop = *aop;
-			o_reg_dst = cur_dst.reg;
-			if (mov_aop.dst) {
-				cur_dst = *mov_aop.dst;
-			}
-			if (mov_aop.src[0]) {
-				cur_scr = *mov_aop.src[0];
-				reg_src = cur_scr.regdelta;
-			}
-		}
-		if (aop->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-			add_aop = *aop;
-		}
-		rz_analysis_op_fini(aop);
-		i += len - 1;
-	}
-	if (!isValid) {
-		return false;
-	}
-
-	// check if we have a msvc 19xx style jump table using rva table entries
-	// lea reg1, [base_addr]
-	// mov reg2, dword [reg1 + tbl_off*4 + tbl_loc_off]
-	// add reg2, reg1
-	// jmp reg2
-	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr && mov_aop.disp && mov_aop.disp != UT64_MAX) {
-		// disp in this case should be tbl_loc_off
-		*jmptbl_addr += mov_aop.disp;
-		if (o_reg_dst && reg_src && o_reg_dst->offset == reg_src->offset && omov_aop.disp != UT64_MAX) {
-			// Special case for indirection
-			// lea reg1, [base_addr]
-			// movzx reg2, byte [reg1 + tbl_off + casetbl_loc_off]
-			// mov reg3, dword [reg1 + reg2*4 + tbl_loc_off]
-			// add reg3, reg1
-			// jmp reg3
-			*casetbl_addr += omov_aop.disp;
-		}
-	}
-
-	/* check if jump table contains valid deltas */
-	read_ahead(ra, analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
-	for (i = 0; i < 3; i++) {
-		dst = lea_ptr + (st32)rz_read_le32(jmptbl);
-		if (!analysis->iob.is_valid_offset(analysis->iob.io, dst, 0)) {
-			RZ_LOG_VERBOSE("Jump table target is not valid: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-		if (!UT64_ADD_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
-			dst > jmp_aop->addr + analysis->opt.jmptbl_maxoffset) {
-			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-		if (analysis->opt.jmpabove && !UT64_SUB_OVFCHK(jmp_aop->addr, analysis->opt.jmptbl_maxoffset) &&
-			dst < jmp_aop->addr - analysis->opt.jmptbl_maxoffset) {
-			RZ_LOG_VERBOSE("Jump table target is too far away: 0x%" PFMT64x "\n", dst);
-			return false;
-		}
-	}
-	return true;
-}
-
-static ut64 try_get_cmpval_from_parents(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisBlock *my_bb, const char *cmp_reg) {
-	rz_return_val_if_fail(fcn && fcn->bbs && cmp_reg, UT64_MAX);
-
-	RzAnalysisBlock *tmp_bb;
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		tmp_bb = (RzAnalysisBlock *)*it;
-		if (tmp_bb->jump != my_bb->addr && tmp_bb->fail != my_bb->addr) {
-			continue;
-		}
-		if (tmp_bb->cmpreg != cmp_reg) {
-			continue;
-		}
-		if (tmp_bb->cond &&
-			(tmp_bb->cond->type == RZ_TYPE_COND_HI ||
-				tmp_bb->cond->type == RZ_TYPE_COND_GT)) {
-			return tmp_bb->cmpval + 1;
-		}
-		return tmp_bb->cmpval;
-	}
-	return UT64_MAX;
-}
-
-static bool regs_exist(RzAnalysisValue *src, RzAnalysisValue *dst) {
-	rz_return_val_if_fail(src && dst, false);
-	return src->reg && dst->reg && src->reg->name && dst->reg->name;
-}
-
-// 0 if not skipped; 1 if skipped; 2 if skipped before
-static int skip_hp(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, RzAnalysisBlock *bb, ut64 addr,
-	char *tmp_buf, int oplen, int un_idx, int *idx) {
-	// this step is required in order to prevent infinite recursion in some cases
-	if ((addr + un_idx - oplen) == fcn->addr) {
-		// use addr instead of op->addr to mark repeat
-		if (!analysis->flb.exist_at(analysis->flb.f, "skip", 4, addr)) {
-			snprintf(tmp_buf + 5, MAX_FLG_NAME_SIZE - 6, "%" PFMT64u, addr);
-			analysis->flb.set(analysis->flb.f, tmp_buf, addr, oplen);
-			fcn->addr += oplen;
-			rz_analysis_block_relocate(bb, bb->addr + oplen, bb->size - oplen);
-			*idx = un_idx;
-			return 1;
-		}
-		return 2;
-	}
-	return 0;
-}
-
-static bool purity_checked(HtUP *ht, RzAnalysisFunction *fcn) {
-	bool checked;
-	ht_up_find(ht, fcn->addr, &checked);
-	return checked;
-}
-
-/*
- * Checks whether a given function is pure and sets its 'is_pure' field.
- * This function marks fcn 'not pure' if fcn, or any function called by fcn, accesses data
- * from outside, even if it only READS it.
- * Probably worth changing it in the future, so that it marks fcn 'impure' only when it
- * (or any function called by fcn) MODIFIES external data.
- */
-static void check_purity(HtUP *ht, RzAnalysisFunction *fcn) {
-	RzListIter *iter;
-	RzList *xrefs = rz_analysis_function_get_xrefs_from(fcn);
-	RzAnalysisXRef *xref;
-	ht_up_insert(ht, fcn->addr, NULL);
-	fcn->is_pure = true;
-	rz_list_foreach (xrefs, iter, xref) {
-		if (xref->type == RZ_ANALYSIS_XREF_TYPE_CALL || xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
-			RzAnalysisFunction *called_fcn = rz_analysis_get_fcn_in(fcn->analysis, xref->to, 0);
-			if (!called_fcn) {
-				continue;
-			}
-			if (!purity_checked(ht, called_fcn)) {
-				check_purity(ht, called_fcn);
-			}
-			if (!called_fcn->is_pure) {
-				fcn->is_pure = false;
-				break;
-			}
-		}
-		if (xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
-			fcn->is_pure = false;
-			break;
-		}
-	}
-	rz_list_free(xrefs);
 }
 
 static void analysis_le_addr_pair_free(RZ_NULLABLE AnalysisLeAddrPair *pair) {
@@ -529,19 +315,6 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 	return rz_str_startswith(arch, "arm") ||
 		rz_str_startswith(arch, "riscv") ||
 		rz_str_startswith(arch, "ppc");
-}
-
-static int analyze_function_locally(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 address) {
-	rz_return_val_if_fail(analysis && fcn, RZ_ANALYSIS_RET_ERROR);
-	RzVector tasks;
-	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
-	RzAnalysisTaskItem item = { fcn, NULL, fcn->stack, address };
-	rz_vector_push(&tasks, &item);
-	int saved_stack = fcn->stack; // TODO: DO NOT use fcn->stack to keep track of stack during analysis
-	int ret = rz_analysis_run_tasks(&tasks);
-	rz_vector_fini(&tasks);
-	fcn->stack = saved_stack;
-	return ret;
 }
 
 static inline void set_bb_branches(RZ_OUT RzAnalysisBlock *bb, const ut64 jump, const ut64 fail) {
@@ -797,7 +570,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			break;
 		}
 		ut64 bytes_read = sizeof(buf);
-		ret = read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
+		ret = rz_analysis_read_ahead(&read_ahead_cache, analysis, at, buf, bytes_read);
 
 		if (ret < 0) {
 			RZ_LOG_ERROR("Failed to read ahead\n");
@@ -1013,8 +786,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					RZ_FREE(movbasereg);
 				}
 			}
-			if (analysis->opt.hpskip && regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
-				skip_ret = skip_hp(analysis, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
+			if (analysis->opt.hpskip && rz_analysis_regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = rz_analysis_skip_hp(analysis, fcn, &op, bb, addr, tmp_buf, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
 				}
@@ -1053,8 +826,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 			// skip lea reg,[reg]
-			if (analysis->opt.hpskip && regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
-				skip_ret = skip_hp(analysis, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
+			if (analysis->opt.hpskip && rz_analysis_regs_exist(op.src[0], op.dst) && !strcmp(op.src[0]->reg->name, op.dst->reg->name)) {
+				skip_ret = rz_analysis_skip_hp(analysis, fcn, &op, bb, at, tmp_buf, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
 				}
@@ -1066,7 +839,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				RzAnalysisOp jmp_aop = { 0 };
 				ut64 jmptbl_addr = op.ptr;
 				ut64 casetbl_addr = op.ptr;
-				if (is_delta_pointer_table(&read_ahead_cache, analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+				if (rz_analysis_is_delta_pointer_table(&read_ahead_cache, analysis, op.addr, op.ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					// we require both checks here since rz_analysis_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead
@@ -1464,7 +1237,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 					params.jmptbl_off = op.addr + 4;
 					params.default_case = UT64_MAX;
 					if (op.ptrsize == 1) { // TBB
-						ut64 pred_cmpval = try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
+						ut64 pred_cmpval = rz_analysis_try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
 						params.table_count = 0;
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
@@ -1476,7 +1249,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 						// skip inlined jumptable
 						idx += params.table_count;
 					} else if (op.ptrsize == 2) { // LDRH on thumb/arm
-						ut64 pred_cmpval = try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
+						ut64 pred_cmpval = rz_analysis_try_get_cmpval_from_parents(analysis, fcn, bb, op.ireg);
 						params.table_count = 1;
 						if (pred_cmpval != UT64_MAX) {
 							params.table_count += pred_cmpval;
@@ -1888,66 +1661,6 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 }
 
 /**
- * \brief Returns the amount of loops located in the \p fcn function
- */
-RZ_API ut32 rz_analysis_function_loops(RzAnalysisFunction *fcn) {
-	RzAnalysisBlock *bb;
-	ut32 loops = 0;
-
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = (RzAnalysisBlock *)*it;
-		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
-			loops++;
-		}
-		if (bb->fail != UT64_MAX && bb->fail < bb->addr) {
-			loops++;
-		}
-	}
-	return loops;
-}
-
-/**
- * \brief Returns cyclomatic complexity of the function
- *
- * It calculated using this formula:
- *
- * CC = E - N + 2P
- * where
- * E is the number of edges of the graph.
- * N is the number of nodes of the graph.
- * P is the number of connected components (exit nodes).
- *
- */
-RZ_API ut32 rz_analysis_function_complexity(RzAnalysisFunction *fcn) {
-	RzAnalysis *analysis = fcn->analysis;
-	ut32 E = 0, N = 0, P = 0;
-	RzAnalysisBlock *bb;
-
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = (RzAnalysisBlock *)*it;
-		N++; // nodes
-		if (!analysis && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
-			RZ_LOG_DEBUG("invalid bb jump/fail pair at 0x%08" PFMT64x " (fcn 0x%08" PFMT64x "\n", bb->addr, fcn->addr);
-		}
-		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
-			P++; // exit nodes
-		} else {
-			E++; // edges
-			if (bb->fail != UT64_MAX) {
-				E++;
-			}
-		}
-		if (bb->switch_op && bb->switch_op->cases) {
-			E += rz_list_length(bb->switch_op->cases);
-		}
-	}
-
-	return E - N + (2 * P);
-}
-
-/**
  * \brief Gets the RzCallable's arg count for the given function
  *
  * Derives the RzCallable type for the given function,
@@ -2217,392 +1930,6 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysi
 	return NULL;
 }
 
-// compute the cyclomatic cost
-RZ_API ut32 rz_analysis_function_cost(RzAnalysisFunction *fcn) {
-	RzAnalysisBlock *bb;
-	RzAnalysisOp op = { 0 };
-	ut32 totalCycles = 0;
-	if (!fcn) {
-		return 0;
-	}
-	RzAnalysis *analysis = fcn->analysis;
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = (RzAnalysisBlock *)*it;
-		ut64 at, end = bb->addr + bb->size;
-		ut8 *buf = malloc(bb->size);
-		if (!buf) {
-			continue;
-		}
-		(void)analysis->iob.read_at(analysis->iob.io, bb->addr, (ut8 *)buf, bb->size);
-		int idx = 0;
-		for (at = bb->addr; at < end;) {
-			rz_analysis_op_init(&op);
-			(void)rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_BASIC);
-			if (op.size < 1) {
-				op.size = 1;
-			}
-			idx += op.size;
-			at += op.size;
-			totalCycles += op.cycles;
-			rz_analysis_op_fini(&op);
-		}
-		free(buf);
-	}
-	return totalCycles;
-}
-
-RZ_API ut32 rz_analysis_function_count_edges(const RzAnalysisFunction *fcn, RZ_NULLABLE int *ebbs) {
-	rz_return_val_if_fail(fcn, 0);
-	RzAnalysisBlock *bb;
-	ut32 edges = 0;
-	if (ebbs) {
-		*ebbs = 0;
-	}
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = (RzAnalysisBlock *)*it;
-		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
-			*ebbs = *ebbs + 1;
-		} else {
-			if (bb->jump != UT64_MAX) {
-				edges++;
-			}
-			if (bb->fail != UT64_MAX) {
-				edges++;
-			}
-		}
-	}
-	return edges;
-}
-
-/**
- * \brief Returns if the function pure - accesses any external resources or not
- */
-RZ_API bool rz_analysis_function_purity(RzAnalysisFunction *fcn) {
-	if (fcn->has_changed) {
-		HtUP *ht = ht_up_new(NULL, NULL);
-		if (ht) {
-			check_purity(ht, fcn);
-			ht_up_free(ht);
-		}
-	}
-	return fcn->is_pure;
-}
-
-static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
-	RzAnalysisValue *dst = op->dst;
-	RzAnalysisValue *src = op->src[0];
-	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
-	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
-	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
-	bool is_bp_dst = opdreg && !dst->memref && !strcmp(opdreg, bp_name);
-	bool is_bp_src = opsreg && !src->memref && !strcmp(opsreg, bp_name);
-	if (op->type == RZ_ANALYSIS_OP_TYPE_XCHG) {
-		return is_bp_src || is_bp_dst;
-	}
-	return is_bp_dst;
-}
-
-/*
- * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
- * and "pop bp" at the end).
- */
-static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	if (!fcn) {
-		return;
-	}
-	RzAnalysisOp op = { 0 };
-	RzAnalysisBlock *bb;
-	void **it;
-	rz_pvector_foreach (fcn->bbs, it) {
-		bb = (RzAnalysisBlock *)*it;
-		ut64 at, end = bb->addr + bb->size;
-		ut8 *buf = malloc(bb->size);
-		if (!buf) {
-			continue;
-		}
-		(void)analysis->iob.read_at(analysis->iob.io, bb->addr, (ut8 *)buf, bb->size);
-		int idx = 0;
-		for (at = bb->addr; at < end;) {
-			rz_analysis_op_init(&op);
-			rz_analysis_op(analysis, &op, at, buf + idx, bb->size - idx, RZ_ANALYSIS_OP_MASK_VAL);
-			if (op.size < 1) {
-				op.size = 1;
-			}
-			switch (op.type) {
-			case RZ_ANALYSIS_OP_TYPE_MOV:
-			case RZ_ANALYSIS_OP_TYPE_LEA: {
-				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
-				const char *srcreg = op.src[0] && op.src[0]->reg ? op.src[0]->reg->name : NULL;
-				if (can_affect_bp(analysis, &op) && srcreg && sp && strcmp(srcreg, sp)) {
-					fcn->bp_frame = false;
-					rz_analysis_op_fini(&op);
-					free(buf);
-					return;
-				}
-				break;
-			}
-			case RZ_ANALYSIS_OP_TYPE_ADD:
-			case RZ_ANALYSIS_OP_TYPE_AND:
-			case RZ_ANALYSIS_OP_TYPE_CMOV:
-			case RZ_ANALYSIS_OP_TYPE_NOT:
-			case RZ_ANALYSIS_OP_TYPE_OR:
-			case RZ_ANALYSIS_OP_TYPE_ROL:
-			case RZ_ANALYSIS_OP_TYPE_ROR:
-			case RZ_ANALYSIS_OP_TYPE_SAL:
-			case RZ_ANALYSIS_OP_TYPE_SAR:
-			case RZ_ANALYSIS_OP_TYPE_SHR:
-			case RZ_ANALYSIS_OP_TYPE_SUB:
-			case RZ_ANALYSIS_OP_TYPE_XOR:
-			case RZ_ANALYSIS_OP_TYPE_SHL:
-			case RZ_ANALYSIS_OP_TYPE_XCHG:
-				if (can_affect_bp(analysis, &op)) {
-					fcn->bp_frame = false;
-					rz_analysis_op_fini(&op);
-					free(buf);
-					return;
-				}
-				break;
-			default:
-				break;
-			}
-			idx += op.size;
-			at += op.size;
-			rz_analysis_op_fini(&op);
-		}
-		free(buf);
-	}
-}
-
-/**
- *  \brief This function checks whether any operation in a given function may change BP
- *
- *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
- */
-RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
-	rz_return_if_fail(fcn);
-	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
-}
-
-typedef struct {
-	RzAnalysisFunction *fcn;
-	HtUP *visited;
-} BlockRecurseCtx;
-
-static bool mark_as_visited(RzAnalysisBlock *bb, void *user) {
-	BlockRecurseCtx *ctx = user;
-	ht_up_insert(ctx->visited, bb->addr, NULL);
-	return true;
-}
-
-static bool analize_addr_cb(ut64 addr, void *user) {
-	BlockRecurseCtx *ctx = user;
-	RzAnalysis *analysis = ctx->fcn->analysis;
-	RzAnalysisBlock *existing_bb = rz_analysis_get_block_at(analysis, addr);
-	if (!existing_bb || !rz_pvector_contains(ctx->fcn->bbs, existing_bb)) {
-		size_t old_len = rz_pvector_len(ctx->fcn->bbs);
-		analyze_function_locally(ctx->fcn->analysis, ctx->fcn, addr);
-		if (old_len != rz_pvector_len(ctx->fcn->bbs)) {
-			rz_analysis_block_recurse(rz_analysis_get_block_at(analysis, addr), mark_as_visited, user);
-		}
-	}
-	ht_up_insert(ctx->visited, addr, NULL);
-	return true;
-}
-
-static bool analize_descendents(RzAnalysisBlock *bb, void *user) {
-	return rz_analysis_block_successor_addrs_foreach(bb, analize_addr_cb, user);
-}
-
-static void update_vars_analysis(RzAnalysisFunction *fcn, RzAnalysisBlock *block, int align, ut64 from, ut64 to) {
-	RzAnalysis *analysis = fcn->analysis;
-	ut64 cur_addr;
-	int opsz;
-	from = align ? from - (from % align) : from;
-	to = align ? RZ_ROUND(to, align) : to;
-	if (UT64_SUB_OVFCHK(to, from)) {
-		return;
-	}
-	ut64 len = to - from;
-	ut8 *buf = malloc(len);
-	if (!buf) {
-		return;
-	}
-	if (analysis->iob.read_at(analysis->iob.io, from, buf, len) < len) {
-		free(buf);
-		return;
-	}
-	RzAnalysisOp op = { 0 };
-	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {
-		rz_analysis_op_init(&op);
-		int ret = rz_analysis_op(analysis->coreb.core, &op, cur_addr, buf, len, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL);
-		if (ret < 1 || op.size < 1) {
-			rz_analysis_op_fini(&op);
-			break;
-		}
-		opsz = op.size;
-		rz_analysis_extract_vars(analysis, fcn, &op, rz_analysis_block_get_sp_at(block, cur_addr));
-		rz_analysis_op_fini(&op);
-	}
-	free(buf);
-}
-
-// Clear function variable acesses inside in a block
-static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 from, ut64 to) {
-	int i;
-	if (rz_pvector_empty(&fcn->vars)) {
-		return;
-	}
-	for (i = 0; i < bb->ninstr; i++) {
-		const ut64 addr = rz_analysis_block_get_op_addr(bb, i);
-		if (addr < from) {
-			continue;
-		}
-		if (addr >= to || addr == UT64_MAX) {
-			break;
-		}
-		RzPVector *vars = rz_analysis_function_get_vars_used_at(fcn, addr);
-		if (vars) {
-			RzPVector *vars_clone = rz_pvector_clone(vars);
-			void **v;
-			rz_pvector_foreach (vars_clone, v) {
-				rz_analysis_var_remove_access_at((RzAnalysisVar *)*v, addr);
-			}
-			rz_pvector_clear(vars_clone);
-		}
-	}
-}
-
-static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *>*/ *fcns, HtUP *reachable) {
-	RzListIter *it;
-	RzAnalysisFunction *fcn;
-	bool old_jmpmid = analysis->opt.jmpmid;
-	analysis->opt.jmpmid = true;
-	rz_list_foreach (fcns, it, fcn) {
-		// Recurse through blocks of function, mark reachable,
-		// analyze edges that don't have a block
-		RzAnalysisBlock *bb = rz_analysis_get_block_at(analysis, fcn->addr);
-		if (!bb) {
-			analyze_function_locally(analysis, fcn, fcn->addr);
-			bb = rz_analysis_get_block_at(analysis, fcn->addr);
-			if (!bb) {
-				continue;
-			}
-		}
-		HtUP *ht = ht_up_new(NULL, NULL);
-		ht_up_insert(ht, bb->addr, NULL);
-		BlockRecurseCtx ctx = { fcn, ht };
-		rz_analysis_block_recurse(bb, analize_descendents, &ctx);
-
-		// in this loop we remove non-reachable basic blocks and since
-		// we modify the pvector size we cannot loop normally.
-		size_t count = rz_pvector_len(fcn->bbs);
-		for (size_t i = 0; i < count;) {
-			bb = (RzAnalysisBlock *)rz_pvector_at(fcn->bbs, i);
-			if (ht_up_find_kv(ht, bb->addr, NULL)) {
-				i++;
-				continue;
-			}
-			HtUP *o_visited = ht_up_find(reachable, fcn->addr, NULL);
-			if (!ht_up_find_kv(o_visited, bb->addr, NULL)) {
-				// Avoid removing blocks that were already not reachable
-				i++;
-				continue;
-			}
-			fcn->ninstr -= bb->ninstr;
-			rz_analysis_function_remove_block(fcn, bb);
-			count = rz_pvector_len(fcn->bbs);
-		}
-
-		RzPVector *dup_bbs = rz_pvector_clone(fcn->bbs);
-		rz_analysis_block_automerge(dup_bbs);
-		rz_analysis_function_delete_unused_vars(fcn);
-		rz_pvector_free(dup_bbs);
-	}
-	analysis->opt.jmpmid = old_jmpmid;
-}
-
-static void calc_reachable_and_remove_block(RzList /*<RzAnalysisFunction *>*/ *fcns, RzAnalysisFunction *fcn, RzAnalysisBlock *bb, HtUP *reachable) {
-	clear_bb_vars(fcn, bb, bb->addr, bb->addr + bb->size);
-	if (!rz_list_contains(fcns, fcn)) {
-		rz_list_append(fcns, fcn);
-
-		// Calculate reachable blocks from the start of function
-		HtUP *ht = ht_up_new(NULL, NULL);
-		BlockRecurseCtx ctx = { fcn, ht };
-		rz_analysis_block_recurse(rz_analysis_get_block_at(fcn->analysis, fcn->addr), mark_as_visited, &ctx);
-		ht_up_insert(reachable, fcn->addr, ht);
-	}
-	fcn->ninstr -= bb->ninstr;
-	rz_analysis_function_remove_block(fcn, bb);
-}
-
-RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, int size) {
-	rz_return_if_fail(analysis);
-	RzListIter *it, *it2, *tmp;
-	RzAnalysisBlock *bb;
-	RzAnalysisFunction *fcn;
-	RzList *blocks = rz_analysis_get_blocks_intersect(analysis, addr, size);
-	if (rz_list_empty(blocks)) {
-		rz_list_free(blocks);
-		return;
-	}
-	RzList *fcns = rz_list_new();
-	HtUP *reachable = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
-	const int align = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN);
-	const ut64 end_write = addr + size;
-
-	rz_list_foreach (blocks, it, bb) {
-		if (!rz_analysis_block_was_modified(bb)) {
-			continue;
-		}
-		rz_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
-			if (align > 1) {
-				if ((end_write < rz_analysis_block_get_op_addr(bb, bb->ninstr - 1)) && (!bb->switch_op || end_write < bb->switch_op->addr)) {
-					// Special case when instructions are aligned and we don't
-					// need to worry about a write messing with the jump instructions
-					clear_bb_vars(fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
-					update_vars_analysis(fcn, bb, align, addr > bb->addr ? addr : bb->addr, end_write);
-					rz_analysis_function_delete_unused_vars(fcn);
-					continue;
-				}
-			}
-			calc_reachable_and_remove_block(fcns, fcn, bb, reachable);
-		}
-	}
-	rz_list_free(blocks); // This will call rz_analysis_block_unref to actually remove blocks from RzAnalysis
-	update_analysis(analysis, fcns, reachable);
-	ht_up_free(reachable);
-	rz_list_free(fcns);
-}
-
-RZ_API void rz_analysis_function_update_analysis(RzAnalysisFunction *fcn) {
-	rz_return_if_fail(fcn);
-	RzListIter *it, *tmp;
-	RzAnalysisBlock *bb;
-	RzAnalysisFunction *f;
-	RzList *fcns = rz_list_new();
-	HtUP *reachable = ht_up_new(NULL, (HtUPFreeValue)ht_up_free);
-
-	// in this loop we modify the pvector size we cannot loop normally.
-	size_t count = rz_pvector_len(fcn->bbs);
-	for (size_t i = 0; i < count;) {
-		bb = (RzAnalysisBlock *)rz_pvector_at(fcn->bbs, i);
-		if (!rz_analysis_block_was_modified(bb)) {
-			i++;
-			continue;
-		}
-		rz_list_foreach_safe (bb->fcns, it, tmp, f) {
-			calc_reachable_and_remove_block(fcns, f, bb, reachable);
-		}
-		count = rz_pvector_len(fcn->bbs);
-	}
-	update_analysis(fcn->analysis, fcns, reachable);
-	ht_up_free(reachable);
-	rz_list_free(fcns);
-}
-
 /**
  * \brief Returns vector of all function arguments
  *
@@ -2717,163 +2044,6 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAn
 		return NULL;
 	}
 	return rz_pvector_at(args, index);
-}
-
-static int typecmp(const void *a, const void *b, void *user) {
-	const RzType *t1 = a;
-	const RzType *t2 = b;
-	return !rz_types_equal(t1, t2);
-}
-
-/**
- * \brief Returns vector of all unique types used in a function
- *
- * Accounts for all types used in both arguments and variables, excluding return value type
- */
-RZ_API RZ_OWN RzList /*<RzType *>*/ *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
-	RzList *type_used = rz_list_new();
-	void **it;
-	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalysisVar *var = *it;
-		rz_list_append(type_used, var->type);
-	}
-	RzList *uniq = rz_list_uniq(type_used, typecmp, NULL);
-	rz_list_free(type_used);
-	return uniq;
-}
-
-/**
- * \brief Clones the RzCallable type for the given function
- *
- * Searches the types database for the given function and
- * returns a clone of the RzCallable type.
- *
- * \param analysis RzAnalysis instance
- * \param f Function to update
- */
-RZ_API RZ_OWN RzCallable *rz_analysis_function_clone_type(RzAnalysis *analysis, const RzAnalysisFunction *f) {
-	rz_return_val_if_fail(analysis && f, NULL);
-	// Check first if there is a match with some pre-existing RzCallable type in the database
-	char *shortname = rz_analysis_function_name_guess(analysis->typedb, f->name);
-	if (!shortname) {
-		shortname = rz_str_dup(f->name);
-	}
-	// At this point the `callable` pointer is *borrowed*
-	RzCallable *callable = rz_type_func_get(analysis->typedb, shortname);
-	free(shortname);
-	if (callable) {
-		// TODO: Decide what to do if there is a mismatch between type
-		// stored in the RzTypeDB database and the actual type of the
-		// RzAnalysisFunction
-		return rz_type_callable_clone(callable);
-	}
-	return NULL;
-}
-
-/**
- * \brief Creates the RzCallable type for the given function
- *
- * Creates the RzCallable type for the given function
- * by searching in the types database and returning it.
- *
- * \param analysis RzAnalysis instance
- * \param f Function to update
- */
-RZ_API RZ_OWN RzCallable *rz_analysis_function_create_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
-	// TODO: Figure out if we should use shortname or a fullname here
-	RzCallable *callable = rz_type_func_new(analysis->typedb, f->name, NULL);
-	if (!callable) {
-		return NULL;
-	}
-	return callable;
-}
-
-/**
- * \brief Sets the RzCallable return type for the given function
- *
- * Checks if the given function's return type exists
- * and adds it to RzCallable by cloning it.
- *
- * \param analysis RzAnalysis instance
- * \param f Function to update
- * \param callable A function type
- */
-RZ_API void rz_analysis_function_derive_return_type(RzAnalysisFunction *f, RzCallable **callable) {
-	if (f->ret_type) {
-		(*callable)->ret = rz_type_clone(f->ret_type);
-	}
-}
-
-/**
- * \brief Sets the RzCallable args for the given function
- *
- * Gets the given function's arguments (names and types)
- * and if it has none it simply returns. Otherwise, it
- * creates RzCallableArgs and adds them to RzCallable.
- *
- * \param analysis RzAnalysis instance
- * \param f Function to update
- * \param callable A function type
- */
-RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFunction *f, RzCallable **callable) {
-	RzPVector *args = rz_analysis_function_args(analysis, f);
-	if (!args || rz_pvector_empty(args)) {
-		rz_pvector_free(args);
-		return true;
-	}
-	void **it;
-	rz_pvector_foreach (args, it) {
-		RzAnalysisVar *var = *it;
-		if (!var) {
-			// TODO: maybe create a stub void arg here?
-			continue;
-		}
-		RzType *cloned_type = rz_type_clone(var->type);
-		if (!cloned_type) {
-			rz_pvector_free(args);
-			rz_type_callable_free(*callable);
-			RZ_LOG_ERROR("Cannot parse function's argument type\n");
-			return false;
-		}
-		RzCallableArg *arg = rz_type_callable_arg_new(analysis->typedb, var->name, cloned_type);
-		if (!arg) {
-			rz_pvector_free(args);
-			rz_type_callable_free(*callable);
-			RZ_LOG_ERROR("Cannot create callable argument\n");
-			return false;
-		}
-		rz_type_callable_arg_add(*callable, arg);
-	}
-	rz_pvector_free(args);
-	return true;
-}
-
-/**
- * \brief Derives the RzCallable type for the given function
- *
- * Checks if the type is defined already for this function, if yes -
- * it returns pointer to the one stored in the types database.
- * If not - it creates a new RzCallable instance based on the function name,
- * its arguments' names and types.
- *
- * \param analysis RzAnalysis instance
- * \param f Function to update
- */
-RZ_API RZ_OWN RzCallable *rz_analysis_function_derive_type(RzAnalysis *analysis, RzAnalysisFunction *f) {
-	RzCallable *callable = rz_analysis_function_clone_type(analysis, f);
-	if (!callable) {
-		// If there is no match - create a new one.
-		callable = rz_analysis_function_create_type(analysis, f);
-		if (!callable) {
-			return NULL;
-		}
-		// Derive retvar and args from that function
-		rz_analysis_function_derive_return_type(f, &callable);
-		if (!rz_analysis_function_derive_args(analysis, f, &callable)) {
-			return NULL;
-		}
-	}
-	return callable;
 }
 
 /**

@@ -866,10 +866,40 @@ typedef struct rz_analysis_op_t {
 	bool sign; /* operates on signed values, false by default */
 	/* Run N instructions before executing the current one */
 	int delay; /* delay N slots (mips, ..)*/
+	/**
+	 * \brief Known direct jump/call destination address.
+	 *
+	 * Valid only when set by the analysis plugin for direct control flow.
+	 * Use rz_analysis_op_get_jump_target() for {JMP, CJMP} and
+	 * rz_analysis_op_get_call_target() for {CALL, CCALL}.
+	 * \invariant UT64_MAX means "no known target". There is no jump-to-ptr
+	 * fallback: indirect targets live in \p ptr / \p val, never here.
+	 */
 	ut64 jump; /* true jmp */
+	/**
+	 * \brief Address of the false/alt branch (e.g. CJMP fallthrough override).
+	 *
+	 * Type-agnostic: any op type may carry it. Use
+	 * rz_analysis_op_has_fail_target() to read it.
+	 * \invariant UT64_MAX means "no fail target".
+	 */
 	ut64 fail; /* false jmp */
 	RzAnalysisOpDirection direction;
+	/**
+	 * \brief Indirect control-flow reference (memory address or register-derived value).
+	 *
+	 * Read via rz_analysis_op_get_indirect_ref(), which accepts only
+	 * {UJMP, RJMP, IJMP, IRJMP, MJMP, UCJMP, UCALL, RCALL, ICALL, IRCALL, UCCALL}.
+	 * \invariant (st64)UT64_MAX means "no indirect reference".
+	 * Takes priority over \p val when both are set.
+	 */
 	st64 ptr; /* reference to memory */ /* XXX signed? */
+	/**
+	 * \brief Immediate/value fallback for indirect control flow.
+	 *
+	 * Read via rz_analysis_op_get_indirect_ref() only when \p ptr is unset.
+	 * \invariant UT64_MAX means "no value".
+	 */
 	ut64 val; /* reference to value */ /* XXX signed? */
 	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
@@ -883,9 +913,25 @@ typedef struct rz_analysis_op_t {
 	RzStrBuf esil;
 	RzStructuredData *opex;
 	RzAnalysisLiftedILOp il_op;
+	/**
+	 * \brief Destination register name, if the op writes a register.
+	 * \invariant NULL means "no destination register".
+	 */
 	const char *reg; /* destination register */
+	/**
+	 * \brief Register used for indirect memory computation, if any.
+	 * \invariant NULL means "no indirect register".
+	 */
 	const char *ireg; /* register used for indirect memory computation*/
+	/**
+	 * \brief Scale multiplier applied to the indirect register.
+	 * \invariant 0 means "no scaling".
+	 */
 	ut64 scale;
+	/**
+	 * \brief Displacement added to the indirect memory computation.
+	 * \invariant UT64_MAX means "no displacement".
+	 */
 	ut64 disp;
 	RzAnalysisSwitchOp *switch_op;
 	RzAnalysisHint hint;
@@ -1510,6 +1556,54 @@ RZ_API bool rz_analysis_op_fini(RzAnalysisOp *op);
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name);
 RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op);
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op);
+/**
+ * \brief Read the known direct jump destination (\p op->jump) for {JMP, CJMP}.
+ *
+ * \param op The op to inspect. NULL is accepted and yields false.
+ * \param out Receives the target on success. Untouched on failure.
+ * \return true and writes \p *out iff type is {JMP, CJMP} and jump != UT64_MAX.
+ */
+RZ_API bool rz_analysis_op_get_jump_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out);
+/**
+ * \brief Read the known direct call destination (\p op->jump) for {CALL, CCALL}.
+ *
+ * \param op The op to inspect. NULL is accepted and yields false.
+ * \param out Receives the target on success. Untouched on failure.
+ * \return true and writes \p *out iff type is {CALL, CCALL} and jump != UT64_MAX.
+ */
+RZ_API bool rz_analysis_op_get_call_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out);
+/**
+ * \brief Read the indirect control-flow reference for indirect jump/call types.
+ *
+ * Accepts {UJMP, RJMP, IJMP, IRJMP, MJMP, UCJMP, UCALL, RCALL, ICALL, IRCALL, UCCALL}.
+ * Prefers \p op->ptr unless it equals (st64)UT64_MAX, then falls back to
+ * \p op->val unless it equals UT64_MAX.
+ *
+ * \param op The op to inspect. NULL is accepted and yields false.
+ * \param out Receives the reference on success. Untouched on failure.
+ */
+RZ_API bool rz_analysis_op_get_indirect_ref(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out);
+/**
+ * \brief True iff the op is an unknown jump: {UJMP, RJMP, IJMP, IRJMP, UCJMP}.
+ *
+ * MJMP is a memory-known jump and is excluded; RCJMP/MCJMP match none.
+ * NULL yields false.
+ */
+RZ_API bool rz_analysis_op_is_unknown_jump(RZ_NULLABLE const RzAnalysisOp *op);
+/**
+ * \brief True iff the op is an unknown call: {UCALL, RCALL, ICALL, IRCALL, UCCALL}.
+ *
+ * NULL yields false.
+ */
+RZ_API bool rz_analysis_op_is_unknown_call(RZ_NULLABLE const RzAnalysisOp *op);
+/**
+ * \brief Read the fail/alt-branch target (\p op->fail), type-agnostic.
+ *
+ * \param op The op to inspect. NULL is accepted and yields false.
+ * \param out Receives the target on success. Untouched on failure.
+ * \return true and writes \p *out iff fail != UT64_MAX.
+ */
+RZ_API bool rz_analysis_op_has_fail_target(RZ_NULLABLE const RzAnalysisOp *op, RZ_OUT ut64 *out);
 RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
