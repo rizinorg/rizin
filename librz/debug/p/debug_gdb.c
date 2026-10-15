@@ -48,6 +48,7 @@ static void rz_debug_gdb_fini(RzDebug *dbg, void *user) {
 }
 
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid);
+
 static void check_connection(RzDebug *dbg) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	if (!ctx->desc) {

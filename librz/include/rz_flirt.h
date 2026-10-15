@@ -208,6 +208,7 @@ typedef struct rz_flirt_pat_info_t {
 
 typedef struct rz_flirt_info_t {
 	RzFlirtFileType type; ///< Flirt file type
+
 	union {
 		RzFlirtSigInfo sig; ///< Sig info
 		RzFlirtPatInfo pat; ///< Pat info

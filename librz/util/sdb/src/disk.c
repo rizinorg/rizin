@@ -76,6 +76,7 @@ RZ_API bool sdb_disk_insert(Sdb *s, const char *key, const char *val) {
 #define IFRET(x) \
 	if (x) \
 	ret = 0
+
 RZ_API bool sdb_disk_finish(Sdb *s) {
 	bool reopen = false, ret = true;
 	IFRET(!cdb_make_finish(&s->m));

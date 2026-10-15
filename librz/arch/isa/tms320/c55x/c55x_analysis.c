@@ -148,6 +148,7 @@ static const C55RegInfo c55x_tc_ri[2] = {
 	{ "TC1", NULL, 1 },
 	{ "TC2", NULL, 1 }
 };
+
 // Named status flags and special registers used as explicit operands. CARRY /
 // BORROW are the 0xdf carry/borrow flags; the rest are the destinations of the
 // 0xdc mov Smem, <special-reg> forms. These are the 16-bit views the legacy
@@ -185,6 +186,7 @@ enum {
 	C55X_SPR_XCDP,
 	C55X_SPR_COUNT
 };
+
 static const C55RegInfo c55x_special_ri[C55X_SPR_COUNT] = {
 	{ "CARRY", NULL, 1 }, { "BORROW", NULL, 1 },
 	{ "dp", "dp", 16 }, { "cdp", "cdp", 16 }, { "bsa01", "bsa01", 16 },
@@ -344,6 +346,7 @@ static void c55x_x_44src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C5
 	const C55RegInfo *ri = a->reg_info ? a->reg_info(out->reg.cls, out->reg.num, C55_SUB_NONE) : NULL;
 	out->width = ri ? ri->width : 0;
 }
+
 // Special-register destination of "mov #k16, <reg>" (opcode 0x78): byte3 bit 0
 // is don't-care; byte3 bits 1-4 select the register -- 0 dp, 1 ssp, 2 cdp,
 // 3 bsa01, 4 bsa23, 5 bsa45, 6 bsa67, 7 bsac, 8 sp. Selectors 9-15 are
@@ -388,6 +391,7 @@ static int c55x_16dst_spr(ut8 sel) {
 	default: return -1;
 	}
 }
+
 static void c55x_x_16dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	int spr = c55x_16dst_spr((ut8)((bits >> d->lo) & 0x0f));
 	if (spr < 0) {
@@ -478,6 +482,7 @@ static void c55x_x_swap(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55
 		[14] = { C55_RC_AR, 6, C55_RC_T, 2, true },
 		[15] = { C55_RC_AR, 7, C55_RC_T, 3, true },
 	};
+
 	ut8 sel = (ut8)((bits >> d->lo) & 0x0f);
 	bool swapp = ((bits >> 4) & 1) != 0;
 	bool swap4 = ((bits >> 5) & 1) != 0;
@@ -519,6 +524,7 @@ static void c55x_x_swap(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55
 	const C55RegInfo *ri = a->reg_info ? a->reg_info(out->reg.cls, out->reg.num, C55_SUB_NONE) : NULL;
 	out->width = ri ? ri->width : 0;
 }
+
 // 0x50, sub-opcodes 0/1). Sub-opcode bit 0 selects the direction: 0 -> +1,
 // 1 -> -1. Rendered as a signed decimal with a '#' prefix; lifted by the shared
 // SFTL shift handler (a positive count shifts left, a negative one right).
@@ -746,6 +752,7 @@ static void c55x_x_tc1(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55O
 	out->reg.sub = C55_SUB_NONE;
 	out->width = 1;
 }
+
 static void c55x_x_tc2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)bits;
@@ -1167,6 +1174,7 @@ static void c55x_x_shiftk_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	const C55RegInfo *ri = a->reg_info ? a->reg_info(out->reg.cls, out->reg.num, C55_SUB_NONE) : NULL;
 	out->width = ri ? ri->width : 0;
 }
+
 // (uns(Cmem) -> zero-extended).
 static void c55x_x_cmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	out->kind = C55_OP_MEM;
@@ -1239,6 +1247,7 @@ static void c55x_x_smem_u(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C
 		out->uns = true;
 	}
 }
+
 static void c55x_x_tcoef_u(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	c55x_x_mac_tcoef(a, bits, d, out);
 	out->uns = true;
@@ -1530,6 +1539,7 @@ static void c55x_x_dual_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	const ut8 b1 = (ut8)((bits >> 16) & 0xff);
 	c55x_dual_mem(out, (ut8)((b1 >> 5) & 7), (ut8)((b1 >> 2) & 7), false);
 }
+
 static void c55x_x_dual_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1537,6 +1547,7 @@ static void c55x_x_dual_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	const ut8 b2 = (ut8)((bits >> 8) & 0xff);
 	c55x_dual_mem(out, (ut8)(((b1 & 3) << 1) | ((b2 >> 7) & 1)), (ut8)((b2 >> 4) & 7), false);
 }
+
 static void c55x_x_dual_cmem3(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1555,6 +1566,7 @@ static void c55x_x_dual_xmem3(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	const ut8 b1 = (ut8)((bits >> 8) & 0xff);
 	c55x_dual_mem(out, (ut8)((b1 >> 5) & 7), (ut8)((b1 >> 2) & 7), false);
 }
+
 static void c55x_x_dual_ymem3(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1562,6 +1574,7 @@ static void c55x_x_dual_ymem3(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	const ut8 b2 = (ut8)(bits & 0xff);
 	c55x_dual_mem(out, (ut8)(((b1 & 3) << 1) | ((b2 >> 7) & 1)), (ut8)((b2 >> 4) & 7), false);
 }
+
 // dbl() variants: the "mov dbl(Xmem), dbl(Ymem)" form moves a 32-bit long word.
 static void c55x_x_dual_xmem3_dbl(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	c55x_x_dual_xmem3(a, bits, d, out);
@@ -1570,6 +1583,7 @@ static void c55x_x_dual_xmem3_dbl(const C55ArchDesc *a, ut64 bits, const C55OpDe
 		out->access = 32;
 	}
 }
+
 static void c55x_x_dual_ymem3_dbl(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	c55x_x_dual_ymem3(a, bits, d, out);
 	if (out->kind == C55_OP_MEM) {
@@ -1588,6 +1602,7 @@ static void c55x_x_xymac_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	const ut8 b1 = (ut8)((bits >> 16) & 0xff);
 	c55x_dual_mem(out, (ut8)((b1 >> 5) & 7), (ut8)((b1 >> 2) & 7), (bool)((bits >> 3) & 1));
 }
+
 static void c55x_x_xymac_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1595,6 +1610,7 @@ static void c55x_x_xymac_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	const ut8 b2 = (ut8)((bits >> 8) & 0xff);
 	c55x_dual_mem(out, (ut8)(((b1 & 3) << 1) | ((b2 >> 7) & 1)), (ut8)((b2 >> 4) & 7), (bool)((bits >> 2) & 1));
 }
+
 // Source accumulator of the dual-multiply MACs (macm / masm Xmem, Ymem, ACx, ACy):
 // SS is byte2 bits 2-3, DD byte2 bits 0-1. When the two coincide the instruction
 // is the two-operand form (ACy += Xmem*Ymem) and the explicit source slot is

@@ -936,6 +936,7 @@ static RzAnalysisLiftedILOp ld_base_short_offset(RzAsmTriCoreContext *ctx, ut8 B
 	return SEQ2(SETL("EA", ADD(VARG(m.reg), sign_ext32_bv(m.disp, 10))),
 		SETG_EA(R(0), B, f));
 }
+
 static RzAnalysisLiftedILOp st_base_short_offset(RzAsmTriCoreContext *ctx, ut8 L, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
@@ -949,6 +950,7 @@ static RzAnalysisLiftedILOp ld_base_long_offset(RzAsmTriCoreContext *ctx, ut8 B,
 	return SEQ2(SETL("EA", ADD(VARG(m.reg), sign_ext32_bv(m.disp, 16))),
 		SETG_EA(R(0), B, f));
 }
+
 static RzAnalysisLiftedILOp st_base_long_offset(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
@@ -964,6 +966,7 @@ static RzAnalysisLiftedILOp ld_post_increment(RzAsmTriCoreContext *ctx, ut8 B, R
 		SETG_EA(R(0), B, f),
 		SETG(m.reg, ADD(VARL("EA"), sign_ext32_bv(m.disp, 10))));
 }
+
 static RzAnalysisLiftedILOp st_post_increment(RzAsmTriCoreContext *ctx, ut8 L, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
@@ -982,6 +985,7 @@ static RzAnalysisLiftedILOp ld_pre_increment(RzAsmTriCoreContext *ctx, ut8 B, Rz
 		SETG_EA(R(0), B, f),
 		SETG(m.reg, VARL("EA")));
 }
+
 static RzAnalysisLiftedILOp st_pre_increment(RzAsmTriCoreContext *ctx, ut8 L, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
@@ -1002,9 +1006,11 @@ static RzAnalysisLiftedILOp addr_bit_reverse(RzAsmTriCoreContext *ctx, const cha
 		SETL("new_index", reverse16(ADD(reverse16(VARL("index")), reverse16(VARL("incr"))))),
 		SETG(REG_SUB(reg, false), LOGOR(SHL0(VARL("incr"), 16), VARL("new_index"))));
 }
+
 static RzAnalysisLiftedILOp ld_bit_reverse(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(*f)(RzILOpPure *, ut32)) {
 	return addr_bit_reverse(ctx, R(1), SETG_EA(R(0), B, f));
 }
+
 static RzAnalysisLiftedILOp st_bit_reverse(RzAsmTriCoreContext *ctx, ut8 L, ut8 B) {
 	const char *b1 = REG_SUB(R(0), 1);
 	const char *b = REG_SUB(R(0), 0);
@@ -1028,6 +1034,7 @@ static RzAnalysisLiftedILOp addr_circular(RzAsmTriCoreContext *ctx, TriCoreMem m
 		SETL("new_index", ITE(SLE(VARL("new_index"), U32(0)), ADD(VARL("new_index"), VARL("length")), MOD(VARL("new_index"), VARL("length")))),
 		SETG(b1, APPEND(UNSIGNED(16, VARL("length")), UNSIGNED(16, VARL("new_index")))));
 }
+
 static RzAnalysisLiftedILOp ld_circular(RzAsmTriCoreContext *ctx, ut8 B,
 	RzILOpPure *(*g)(RzILOpPure *, ut32),
 	RzAnalysisLiftedILOp (*f)(ut8, RzILOpPure *(*)(RzILOpPure *, ut32), const char *, const char *)) {
@@ -1045,6 +1052,7 @@ typedef enum {
 	ST_32x2,
 	ST_64,
 } ST_MODE;
+
 static RzAnalysisLiftedILOp st_circular(RzAsmTriCoreContext *ctx, ST_MODE mode) {
 	TriCoreMem m = M(0);
 	const char *b1 = REG_SUB(m.reg, 1);
@@ -1102,6 +1110,7 @@ static RzAnalysisLiftedILOp addr_circular_single(ut8 B, RzILOpPure *(*f)(RzILOpP
 		SETL("EA", ADD(VARG(b), VARL("index"))),
 		SETG_EA(a, B, f));
 }
+
 static RzAnalysisLiftedILOp addr_circular_4(ut8 B, RzILOpPure *(*g)(RzILOpPure *, ut32), const char *b, const char *a) {
 	return SEQ5(
 		SETL("EA", ADD(VARG(b), VARL("index"))),
@@ -1110,6 +1119,7 @@ static RzAnalysisLiftedILOp addr_circular_4(ut8 B, RzILOpPure *(*g)(RzILOpPure *
 		SETL("EA6", ADD(VARG(b), MOD(ADD(VARL("index"), U32(6)), VARL("length")))),
 		SETG(a, APPEND(APPEND(LOADW(HalfWord_b, VARL("EA6")), LOADW(HalfWord_b, VARL("EA4"))), APPEND(LOADW(HalfWord_b, VARL("EA2")), LOADW(HalfWord_b, VARL("EA"))))));
 }
+
 static RzAnalysisLiftedILOp addr_circular_2(ut8 B, RzILOpPure *(*g)(RzILOpPure *, ut32), const char *b, const char *a) {
 	return SEQ3(
 		SETL("EA", ADD(VARG(b), VARL("index"))),
@@ -1123,6 +1133,7 @@ static RzAnalysisLiftedILOp ld_sc(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *(
 		SETL("EA", ADD(VARG(m.reg), U32(m.disp * 4))),
 		SETG_EA(R(0), B, f));
 }
+
 static RzAnalysisLiftedILOp st_sc(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
 	return STOREW(ADD(VARG(m.reg), U32((ut64)B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
@@ -1154,6 +1165,7 @@ static RzAnalysisLiftedILOp ld_sro(RzAsmTriCoreContext *ctx, ut8 B, RzILOpPure *
 		SETL("EA", ADD(VARG(m.reg), U32(4 * m.disp))),
 		SETG_EA(R(0), B, f));
 }
+
 static RzAnalysisLiftedILOp st_sro(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
 	const char *b = m.reg;
@@ -1166,6 +1178,7 @@ static RzAnalysisLiftedILOp st_ssr(RzAsmTriCoreContext *ctx, ut8 B) {
 	const char *b = R(0);
 	return STOREW(VARG(b), UNSIGNED(B, VARG(a)));
 }
+
 static RzAnalysisLiftedILOp st_ssr_post_incr(RzAsmTriCoreContext *ctx, ut8 B) {
 	const char *a = R(1);
 	const char *b = R(0);
@@ -1173,6 +1186,7 @@ static RzAnalysisLiftedILOp st_ssr_post_incr(RzAsmTriCoreContext *ctx, ut8 B) {
 		STOREW(VARG(b), UNSIGNED(B, VARG(a))),
 		SETG(b, ADD(VARG(b), U32(B / 8))));
 }
+
 static RzAnalysisLiftedILOp st_ssro(RzAsmTriCoreContext *ctx, ut8 B) {
 	TriCoreMem m = M(0);
 	return STOREW(ADD(VARG(m.reg), U32((ut64)B / 8 * m.disp)), UNSIGNED(B, VARG(R(1))));
@@ -1201,6 +1215,7 @@ static RzAnalysisLiftedILOp st_lower_context(RzILOpPure *ea) {
 		ST_MB(ADD(VARL("EA"), U32(Word_b / 8 * 12)), 2, VARG("a10"), VARG("a11")),
 		ST_MB(ADD(VARL("EA"), U32(Word_b / 8 * 14)), 2, VARG("PSW"), VARG("PCXI")));
 }
+
 static RzAnalysisLiftedILOp st_upper_context(RzILOpPure *ea) {
 	return SEQ6(
 		SETL("EA", ea),
@@ -1542,6 +1557,7 @@ static RzAnalysisLiftedILOp e_SWAP_W_ea(RzILOpPure *ea, const char *reg, RzILOpE
 	}
 	return e;
 }
+
 static RzAnalysisLiftedILOp e_SWAP_W(const char *reg) {
 	return SEQ3(
 		SETL("tmp", LOADW(Word_b, VARL("EA"))),
@@ -1554,6 +1570,7 @@ static RzILOpPure *f_SWAPMSK_W(const char *reg) {
 	const char *a1 = REG_SUB(reg, 1);
 	return LOGOR(LOGAND(VARL("tmp"), LOGNOT(VARG(a1))), LOGAND(VARG(a0), VARG(a1)));
 }
+
 static RzAnalysisLiftedILOp e_SWAPMSK_W(const char *reg) {
 	const char *a0 = REG_SUB(reg, 0);
 	return SEQ3(
@@ -1561,6 +1578,7 @@ static RzAnalysisLiftedILOp e_SWAPMSK_W(const char *reg) {
 		STOREW(VARL("EA"), f_SWAPMSK_W(reg)),
 		SETG(a0, VARL("tmp")));
 }
+
 static RzAnalysisLiftedILOp e_SWAPMSK_W_ea(RzILOpPure *ea, const char *reg, RzILOpEffect *delay) {
 	if (delay) {
 		return SEQ2(
@@ -1589,6 +1607,7 @@ static RzILOpPure *f_ABS(RzILOpPure *a, unsigned n, unsigned l, RzILOpPure *(*f)
 	val = f ? f(val, UN(l, l)) : val;
 	return val;
 }
+
 static RzILOpPure *f_ABSDIF(RzILOpPure *a, RzILOpPure *b, unsigned n, unsigned l, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)) {
 	RzILOpPure *val = NULL;
 	if (n || l) {
@@ -1606,13 +1625,16 @@ static RzILOpPure *f_ABSDIF(RzILOpPure *a, RzILOpPure *b, unsigned n, unsigned l
 static RzILOpPure *packed_4byte(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, RzILOpPure *d) {
 	return LOGOR(UNSIGNED(32, SHL0(a, 8 * 3)), LOGOR(UNSIGNED(32, SHL0(b, 8 * 2)), LOGOR(UNSIGNED(32, SHL0(c, 8 * 1)), UNSIGNED(32, d))));
 }
+
 static RzILOpPure *packed_2halfword(RzILOpPure *a, RzILOpPure *b) {
 	return LOGOR(UNSIGNED(32, SHL0(a, 16 * 1)), UNSIGNED(32, b));
 }
+
 static RzILOpPure *packed_2word(
 	RzILOpPure *a, RzILOpPure *b) {
 	return LOGOR(UNSIGNED(64, SHL0(a, 32)), b ? UNSIGNED(64, b) : U64(0));
 }
+
 static RzILOpPure *ssov(RzILOpPure *x, RzILOpPure *y) {
 	return LET(
 		"x", x,
@@ -1622,6 +1644,7 @@ static RzILOpPure *ssov(RzILOpPure *x, RzILOpPure *y) {
 					ITE(SGT(VARLP("x"), VARLP("max_pos")), VARLP("max_pos"),
 						ITE(SLT(VARLP("x"), VARLP("max_neg")), VARLP("max_neg"), VARLP("x")))))));
 }
+
 static RzILOpPure *ssov_n(RzILOpPure *x, unsigned n) {
 	return ssov(x, UN(n, n));
 }
@@ -1632,12 +1655,14 @@ static RzILOpPure *append_h16_32(
 	RzILOpPure *a, RzILOpPure *b) {
 	return APPEND(H16_32(a), b ? H16_32(b) : U16(0));
 }
+
 static RzILOpPure *append_h16_32_ssov(
 	RzILOpPure *a, RzILOpPure *b) {
 	return LET("_a", H16_32(ssov(a, U32(32))),
 		LET("_b", H16_32(b ? ssov(b, U32(32)) : U32(0)),
 			APPEND(VARLP("_a"), VARLP("_b"))));
 }
+
 static RzILOpPure *append_ssov(
 	RzILOpPure *a, RzILOpPure *b) {
 	return LET("_a", ssov(a, U32(32)),
@@ -1662,6 +1687,7 @@ static RzILOpEffect *e_ABS(const char *r, RzILOpPure *a, unsigned n, RzILOpPure 
 	}
 	return SETG(r, val);
 }
+
 static RzILOpEffect *e_ABSDIF(const char *r, RzILOpPure *a, RzILOpPure *b, unsigned n, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)) {
 	RzILOpPure *val = NULL;
 	if (n == Word_b) {
@@ -1691,6 +1717,7 @@ static RzILOpPure *f_ADDU(RzILOpPure *a, RzILOpPure *b, unsigned n, unsigned l, 
 	val = f ? f(val, UN(l, l)) : val;
 	return val;
 }
+
 static RzILOpPure *f_ADDC(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n, unsigned l, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)) {
 	RzILOpPure *val = NULL;
 	if (n || l) {
@@ -1702,6 +1729,7 @@ static RzILOpPure *f_ADDC(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned 
 	val = f ? f(val, UN(l, l)) : val;
 	return val;
 }
+
 static RzILOpPure *carry(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c) {
 	RzILOpPure *val = ADD(ADD(a, b), c);
 	return BITS32(val, 0, 1);
@@ -1717,11 +1745,13 @@ static RzAnalysisLiftedILOp f_overflow32(
 	f_cons(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 	return e;
 }
+
 static RzAnalysisLiftedILOp f_overflow32_carry(
 	RzAnalysisLiftedILOp e) {
 	f_cons(e, set_PSW_C(BOOL_TO_BV32(VARL("carry_out"))));
 	return f_overflow32(e);
 }
+
 static RzAnalysisLiftedILOp f_overflow64(
 	RzAnalysisLiftedILOp e) {
 	f_cons(e, SETL("overflow", OR(UGT(VARL("result"), U64(0x7fffffffffffffff)), SLT(VARL("result"), S64(-0x8000000000000000)))));
@@ -1731,6 +1761,7 @@ static RzAnalysisLiftedILOp f_overflow64(
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
 	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
+
 static RzAnalysisLiftedILOp f_overflow32x2(
 	RzAnalysisLiftedILOp e, const char *n1, const char *n0) {
 	f_cons(e, SETL("ov1", OR(UGT(VARL(n1), U32(0x7FFFFFFF)), SLT(VARL(n1), S32(-0x80000000)))));
@@ -1744,6 +1775,7 @@ static RzAnalysisLiftedILOp f_overflow32x2(
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
 	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
+
 static RzAnalysisLiftedILOp f_overflow16x2(
 	RzAnalysisLiftedILOp e, const char *n1, const char *n0) {
 	f_cons(e, SETL("ov1", OR(UGT(VARL(n1), S16(0x7FFF)), SLT(VARL(n1), S16(-0x8000)))));
@@ -1757,6 +1789,7 @@ static RzAnalysisLiftedILOp f_overflow16x2(
 	f_cons(e, BRANCH(VARL("overflow"), set_PSW_SV(U32(1)), NOP()));
 	return f_cons_(e, BRANCH(VARL("advanced_overflow"), set_PSW_SAV(U32(1)), NOP()));
 }
+
 static RzAnalysisLiftedILOp f_overflow8x4(
 	RzAnalysisLiftedILOp e, const char *n3, const char *n2, const char *n1, const char *n0) {
 	f_cons(e, SETL("ov3", OR(UGT(VARL(n3), U8(0x7F)), SLT(VARL(n3), S8(-0x80)))));
@@ -1816,6 +1849,7 @@ static RzILOpEffect *packed_op2(
 	RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)) {
 	return packed_op2_(r, a, b, n, op, f, false);
 }
+
 static RzILOpEffect *packed_op2_ov(
 	const char *r, RzILOpPure *a, RzILOpPure *b, unsigned n,
 	RzILOpPure *(*op)(RzILOpPure *a, RzILOpPure *b, unsigned n, unsigned l, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)),
@@ -1827,6 +1861,7 @@ typedef RzILOpPure *(*FUNC_OP2)(RzILOpPure *x, RzILOpPure *y);
 typedef RzILOpPure *(*FUNC_OP3)(RzILOpPure *x, RzILOpPure *y, RzILOpPure *z);
 #define ONES32(l) U32((1ULL << l) - 1ULL)
 #define ONES64(l) U64((1ULL << l) - 1ULL)
+
 static RzILOpPure *f_op2_raw(
 	RzILOpPure *a, RzILOpPure *b, unsigned i, unsigned l,
 	FUNC_OP2 op) {
@@ -1836,11 +1871,13 @@ static RzILOpPure *f_op2_raw(
 	}
 	return op(a, b);
 }
+
 static RzILOpPure *f_op2_cmp(
 	RzILOpPure *a, RzILOpPure *b, unsigned i, unsigned l,
 	FUNC_OP2 op) {
 	return ITE(f_op2_raw(a, b, i, l, op), ONES32(l), U32(0));
 }
+
 static RzILOpEffect *packed_op2_cmp(
 	const char *r, RzILOpPure *a, RzILOpPure *b, unsigned n,
 	FUNC_OP2 op) {
@@ -1856,6 +1893,7 @@ static RzILOpPure *f_op2_minmax(
 	}
 	return LET("a", a, LET("b", b, ITE(op(VARLP("a"), VARLP("b")), VARLP("a"), VARLP("b"))));
 }
+
 static RzILOpEffect *packed_op2_minmax(
 	const char *r, RzILOpPure *a, RzILOpPure *b, unsigned n,
 	FUNC_OP2 op) {
@@ -1958,12 +1996,14 @@ static RzILOpEffect *packed_op3_(
 	}
 	return e;
 }
+
 static RzILOpEffect *packed_op3(
 	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n,
 	RzILOpPure *(*op)(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n, unsigned l, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)),
 	RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)) {
 	return packed_op3_(r, a, b, c, n, op, f, false);
 }
+
 static RzILOpEffect *packed_op3_ov(
 	const char *r, RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n,
 	RzILOpPure *(*op)(RzILOpPure *a, RzILOpPure *b, RzILOpPure *c, unsigned n, unsigned l, RzILOpPure *(*f)(RzILOpPure *x, RzILOpPure *y)),
@@ -1979,6 +2019,7 @@ static RzILOpPure *suov(RzILOpPure *x, RzILOpPure *y) {
 				ITE(SGT(VARLP("x"), VARLP("max_pos")), VARLP("max_pos"),
 					ITE(SLT(VARLP("x"), LIKE(y, 0)), LIKE(y, 0), VARLP("x"))))));
 }
+
 static RzILOpPure *suov_n(RzILOpPure *x, unsigned n) {
 	return suov(x, UN(n, n));
 }
@@ -2193,6 +2234,7 @@ static RzILOpEffect *lift_pack(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_6 = SETG(R(0), LOGOR(SHL0(BITS32(VARG(R(2)), 31, 1), 31), LOGOR(SHL0(VARL("fp_exp"), 23), VARL("fp_frac"))));
 	return SEQ6(_1, _2, _3, _4, _5, _6);
 }
+
 static RzILOpEffect *lift_unpack(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_1 = SETL("fp_exp", BITS32(VARG(R(1)), 23, 8));
 	RzILOpEffect *_2 = SETL("fp_frac", BITS32(VARG(R(1)), 0, 23));
@@ -2221,6 +2263,7 @@ static RzILOpEffect *e_op_op(
 	const char *r, RzILOpPure *a, RzILOpPure *b, FUNC_OP2 op1, FUNC_OP2 op2) {
 	return SETG(r, BITS32_U(VARG(r), 0, 1, BOOL_TO_BV32(op1(NON_ZERO(BITS32(VARG(r), 0, 1)), op2(a, b)))));
 }
+
 static RzILOpEffect *e_sh_op(
 	const char *r, RzILOpPure *a, RzILOpPure *b, FUNC_OP2 op1) {
 	return SETG(r, LOGOR(SHL0(BITS32(VARG(r), 0, 30), 1), BOOL_TO_BV32(op1(a, b))));
@@ -2230,14 +2273,17 @@ static RzILOpEffect *e_op_bit(
 	RzAsmTriCoreContext *ctx, FUNC_OP2 op) {
 	return SETG(R(0), BOOL_TO_BV32(op(NON_ZERO(BITS32(VARG(R(1)), I(2), 1)), NON_ZERO(BITS32(VARG(R(3)), I(4), 1)))));
 }
+
 static RzILOpEffect *e_op_op_bit(
 	RzAsmTriCoreContext *ctx, FUNC_OP2 op1, FUNC_OP2 op2) {
 	return e_op_op(R(0), NON_ZERO(BITS32(VARG(R(1)), I(2), 1)), NON_ZERO(BITS32(VARG(R(3)), I(4), 1)), op1, op2);
 }
+
 static RzILOpEffect *e_sh_op_bit(
 	RzAsmTriCoreContext *ctx, FUNC_OP2 op1) {
 	return SETG(R(0), LOGOR(SHL0(BITS32(VARG(R(0)), 0, 30), 1), BOOL_TO_BV32(op1(NON_ZERO(BITS32(VARG(R(1)), I(2), 1)), NON_ZERO(BITS32(VARG(R(3)), I(4), 1))))));
 }
+
 static RzILOpEffect *e_ins_bit(
 	RzAsmTriCoreContext *ctx, bool inv) {
 	unsigned pos1 = I(2);
@@ -2258,18 +2304,22 @@ static RzILOpPure *f_andn(
 	RzILOpPure *a, RzILOpPure *b) {
 	return AND(a, INV(b));
 }
+
 static RzILOpPure *f_nor(
 	RzILOpPure *a, RzILOpPure *b) {
 	return INV(OR(a, b));
 }
+
 static RzILOpPure *f_nand(
 	RzILOpPure *a, RzILOpPure *b) {
 	return INV(AND(a, b));
 }
+
 static RzILOpPure *f_orn(
 	RzILOpPure *a, RzILOpPure *b) {
 	return OR(a, INV(b));
 }
+
 static RzILOpPure *f_xnor(
 	RzILOpPure *a, RzILOpPure *b) {
 	return INV(XOR(a, b));
@@ -2375,6 +2425,7 @@ static RzILOpEffect *lift_div(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_5 = SETG(R(0), APPEND(VARL("remainder"), VARL("quotient")));
 	return SEQ5(_1, _2, _3, _4, _5);
 }
+
 static RzILOpEffect *lift_div_u(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_1 = SETL("dividend", VARG(R(1)));
 	RzILOpEffect *_2 = SETL("divisor", VARG(R(2)));
@@ -2484,6 +2535,7 @@ static RzILOpPure *f_beq(RzILOpPure *x, RzILOpPure *y) {
 			OR(AND(VARLP("x"), VARLP("y")),
 				AND(INV(VARLP("x")), INV(VARLP("y"))))));
 }
+
 static RzILOpPure *f_bne(RzILOpPure *x, RzILOpPure *y) {
 	return INV(f_beq(x, y));
 }
@@ -2505,6 +2557,7 @@ static RzILOpEffect *lift_dvstep(RzAsmTriCoreContext *ctx) {
 	}
 	return f_cons_(e, SETG(R(0), APPEND(VARL("remainder"), VARL("dividend_quotient"))));
 }
+
 static RzILOpEffect *lift_dvstep_u(RzAsmTriCoreContext *ctx) {
 	RzILOpEffect *_1 = SETL("divisor", VARG(R(2)));
 	RzILOpEffect *_2 = SETL("dividend_quotient", VARG_SUB(R(1), 0));
@@ -2548,6 +2601,7 @@ static RzILOpEffect *leading_ones(RzAnalysisLiftedILOp xs, const char *name, RzI
 		REPEAT(AND(AND(ULT(VARL(name), U32(N)), UGE(VARL(name), U32(0))), NON_ZERO(EXTRACT32(x, VARL(name), U32(1)))), SETL(name, ADD(VARL(name), U32(1))));
 	return xs ? f_cons_(f_cons_(xs, SETL(name, U32(N - 1))), y) : SEQ2(SETL(name, U32(N - 1)), y);
 }
+
 // n start with 30
 static RzILOpEffect *leading_signs(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N) {
 	RzILOpEffect *y =
@@ -2557,6 +2611,7 @@ static RzILOpEffect *leading_signs(RzAnalysisLiftedILOp xs, const char *name, Rz
 			SETL(name, ADD(VARL(name), U32(1))));
 	return xs ? f_cons_(f_cons_(xs, SETL(name, U32(N - 2))), y) : SEQ2(SETL(name, U32(N - 2)), y);
 }
+
 // n start with 31
 static RzILOpEffect *leading_zeros(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N) {
 	RzILOpEffect *y = REPEAT(AND(AND(ULT(VARL(name), U32(N)), UGE(VARL(name), U32(0))), IS_ZERO(EXTRACT32(x, VARL(name), U32(1)))), SETL(name, ADD(VARL(name), U32(1))));
@@ -2564,6 +2619,7 @@ static RzILOpEffect *leading_zeros(RzAnalysisLiftedILOp xs, const char *name, Rz
 }
 
 typedef RzILOpEffect *(*FUNC_BS)(RzAnalysisLiftedILOp xs, const char *name, RzILOpPure *x, const unsigned N);
+
 static RzILOpEffect *e_BS(RzAsmTriCoreContext *ctx, unsigned b, FUNC_BS f) {
 	switch (b) {
 	case Word_b: {
@@ -2590,6 +2646,7 @@ static RzILOpEffect *e_BS(RzAsmTriCoreContext *ctx, unsigned b, FUNC_BS f) {
 
 #define IL_MIN(x, y)     ITE(UGT(x, y), DUP(x), DUP(y))
 #define CRC_32_GENERATOR 0xEDB88320
+
 static RzILOpPure *crc_div(RzILOpPure *c, RzILOpPure *g, RzILOpPure *crc_width, RzILOpPure *data_width) {
 	return LET("shift", IL_MIN(crc_width, data_width),
 		MOD(SHIFTL0(c, VARLP("shift")), LOGOR(g, SHIFTL0(U32(1), DUP(crc_width)))));
@@ -2631,6 +2688,7 @@ static RzAnalysisLiftedILOp f_madd(
 					EQ(U32(arg_n), U32(1))))));
 	return f_cons_(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("madd_a"), VARL("madd_b")), arg_n))));
 }
+
 static RzAnalysisLiftedILOp e_madd(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4, unsigned n,
 	FUNC_OP2 finish) {
@@ -2658,6 +2716,7 @@ static RzAnalysisLiftedILOp f_mul(
 					EQ(U32(arg_n), U32(1))))));
 	return f_cons_(xs, SETL(name2, ITE(VARL(name1), U32(0x7fffffff), SHL0(MUL(VARL("mul_a"), VARL("mul_b")), arg_n))));
 }
+
 static RzAnalysisLiftedILOp f_mulr(
 	RzAnalysisLiftedILOp xs,
 	const char *name1, const char *name2,
@@ -2695,6 +2754,7 @@ static RzAnalysisLiftedILOp e_maddr(
 
 	return f_overflow32x2(e, "result_halfword1", "result_halfword0");
 }
+
 static RzAnalysisLiftedILOp e_maddr_q(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2,
 	FUNC_OP2 pack) {
@@ -2763,6 +2823,7 @@ static RzAnalysisLiftedILOp e_msubh(
 
 	return f_overflow32x2(e, "result_word1", "result_word0");
 }
+
 static RzAnalysisLiftedILOp e_msubadmh(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4,
 	FUNC_OP2 pack) {
@@ -2778,6 +2839,7 @@ static RzAnalysisLiftedILOp e_msubadmh(
 
 	return f_overflow64(e);
 }
+
 static RzAnalysisLiftedILOp e_msubadrh(
 	RzAsmTriCoreContext *ctx, unsigned i1, unsigned i2, unsigned i3, unsigned i4,
 	FUNC_OP2 pack) {
@@ -2838,11 +2900,13 @@ static RzILOpPure *f_op2_chain4(FUNC_OP2 f,
 	RzILOpPure *x0, RzILOpPure *x1, RzILOpPure *x2, RzILOpPure *x3) {
 	return f(x0, f(x1, f(x2, x3)));
 }
+
 static RzILOpPure *f_op2_chain6(FUNC_OP2 f,
 	RzILOpPure *x0, RzILOpPure *x1, RzILOpPure *x2, RzILOpPure *x3,
 	RzILOpPure *x4, RzILOpPure *x5) {
 	return f(x0, f(x1, f_op2_chain4(f, x2, x3, x4, x5)));
 }
+
 static RzILOpPure *f_op2_chain8(FUNC_OP2 f,
 	RzILOpPure *x0, RzILOpPure *x1, RzILOpPure *x2, RzILOpPure *x3,
 	RzILOpPure *x4, RzILOpPure *x5, RzILOpPure *x6, RzILOpPure *x7) {

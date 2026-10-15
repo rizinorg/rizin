@@ -1345,6 +1345,7 @@ static int mips_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 #define NANOMIPS_LE_SAVE_IMM_RA_GP  "\xe2\x83\x04\x30"
 
 #define KW(d, m, s) rz_list_append(l, rz_search_keyword_new((const ut8 *)d, s, (const ut8 *)m, s, NULL))
+
 static inline void mips32_preludes(RzList /*<RzSearchKeyword *>*/ *l, bool big_endian) {
 	if (big_endian) {
 		KW(MIPS_BE_MOVE_ZERO_RA_BAL, "\xff\xff\xff\xff\xff\xff\x00\x00", 8);
@@ -1437,6 +1438,7 @@ static RzList /*<RzSearchKeyword *>*/ *mips_analysis_preludes(RzAnalysis *analys
 	}
 	return l;
 }
+
 #undef KW
 
 static bool mips_fini(void *user) {

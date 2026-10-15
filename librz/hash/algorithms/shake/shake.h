@@ -12,10 +12,12 @@
 typedef struct shake_context_ {
 	uint64_t saved; /* the portion of the input message that we
 			 * didn't consume yet */
+
 	union { /* Keccak's state */
 		uint64_t s[SHAKE_KECCAK_SPONGE_WORDS];
 		uint8_t sb[SHAKE_KECCAK_SPONGE_WORDS * 8];
 	} u;
+
 	unsigned byteIndex; /* 0..7--the next byte after the set one
 			     * (starts from 0; 0--none are buffered) */
 	unsigned wordIndex; /* 0..24--the next word to integrate input

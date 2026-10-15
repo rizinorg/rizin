@@ -216,6 +216,7 @@ static bool test_rzil_vm_halt_on_exc() {
 
 	mu_end;
 }
+
 static bool test_rzil_vm_op_let() {
 	RzILVM *vm = rz_il_vm_new(0, 8, false, RZ_IL_EVENT_EXC_NONE);
 
@@ -1198,6 +1199,7 @@ static bool test_rzil_vm_binary80_full_precision() {
 		{ RZ_FLOAT_RPREC_32, 1.0L + 0x1.8p-23L },
 		{ RZ_FLOAT_RPREC_64, 1.0L + 0x1.8p-52L },
 	};
+
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(mul_cases); i++) {
 		mu_assert_true(rz_float_ext80_set_rounding_precision(mul_cases[i].ambient_precision), "set reduced ambient precision");
 		RzILOpFloat *op = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE,
@@ -1392,6 +1394,7 @@ static bool test_rzil_vm_all_float_rmode_payloads() {
 
 static bool test_rzil_vm_runtime_rmode_helpers() {
 	RzILVM *vm = rz_il_vm_new(0, 32, false, RZ_IL_EVENT_EXC_NONE);
+
 	const struct {
 		ut32 mode;
 		const char *expected;
@@ -1402,6 +1405,7 @@ static bool test_rzil_vm_runtime_rmode_helpers() {
 		{ RZ_FLOAT_RMODE_RTN, "0x3f800000" },
 		{ RZ_FLOAT_RMODE_RTZ, "0x3f800000" },
 	};
+
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(add_cases); i++) {
 		RzILOpFloat *op = rz_il_op_new_fadd_dyn_rmode(
 			rz_il_op_new_bitv_from_ut64(32, add_cases[i].mode),

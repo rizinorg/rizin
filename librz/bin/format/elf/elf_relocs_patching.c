@@ -3316,6 +3316,7 @@ static void patch_reloc_avr(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 	}
 }
+
 // U-Type: 32-bit instructions that store a 20-bit immediate in their upper 20 bit
 static const ut32 RISCV_U_TYPE_IMM_MASK = ((1ULL << 20) - 1) << 12;
 // I-Type: 32-bit instructions that store a 12-bit immediate in their upper 12 bit
@@ -4015,4 +4016,5 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		return;
 	}
 }
+
 #undef ARCH_MISSING

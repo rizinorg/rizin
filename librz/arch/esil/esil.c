@@ -1949,15 +1949,19 @@ static bool esil_mem_oreq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_oreq1(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, 8);
 }
+
 static bool esil_mem_oreq2(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, 16);
 }
+
 static bool esil_mem_oreq4(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, 32);
 }
+
 static bool esil_mem_oreq8(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, 64);
 }
+
 static bool esil_mem_oreq(RzAnalysisEsil *esil) {
 	return esil_mem_oreq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -1995,15 +1999,19 @@ static bool esil_mem_xoreq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_xoreq1(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, 8);
 }
+
 static bool esil_mem_xoreq2(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, 16);
 }
+
 static bool esil_mem_xoreq4(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, 32);
 }
+
 static bool esil_mem_xoreq8(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, 64);
 }
+
 static bool esil_mem_xoreq(RzAnalysisEsil *esil) {
 	return esil_mem_xoreq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2041,15 +2049,19 @@ static bool esil_mem_andeq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_andeq1(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, 8);
 }
+
 static bool esil_mem_andeq2(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, 16);
 }
+
 static bool esil_mem_andeq4(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, 32);
 }
+
 static bool esil_mem_andeq8(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, 64);
 }
+
 static bool esil_mem_andeq(RzAnalysisEsil *esil) {
 	return esil_mem_andeq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2087,15 +2099,19 @@ static bool esil_mem_addeq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_addeq1(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, 8);
 }
+
 static bool esil_mem_addeq2(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, 16);
 }
+
 static bool esil_mem_addeq4(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, 32);
 }
+
 static bool esil_mem_addeq8(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, 64);
 }
+
 static bool esil_mem_addeq(RzAnalysisEsil *esil) {
 	return esil_mem_addeq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2133,15 +2149,19 @@ static bool esil_mem_subeq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_subeq1(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, 8);
 }
+
 static bool esil_mem_subeq2(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, 16);
 }
+
 static bool esil_mem_subeq4(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, 32);
 }
+
 static bool esil_mem_subeq8(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, 64);
 }
+
 static bool esil_mem_subeq(RzAnalysisEsil *esil) {
 	return esil_mem_subeq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2186,15 +2206,19 @@ static bool esil_mem_modeq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_modeq1(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, 8);
 }
+
 static bool esil_mem_modeq2(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, 16);
 }
+
 static bool esil_mem_modeq4(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, 32);
 }
+
 static bool esil_mem_modeq8(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, 64);
 }
+
 static bool esil_mem_modeq(RzAnalysisEsil *esil) {
 	return esil_mem_modeq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2238,15 +2262,19 @@ static bool esil_mem_diveq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_diveq1(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, 8);
 }
+
 static bool esil_mem_diveq2(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, 16);
 }
+
 static bool esil_mem_diveq4(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, 32);
 }
+
 static bool esil_mem_diveq8(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, 64);
 }
+
 static bool esil_mem_diveq(RzAnalysisEsil *esil) {
 	return esil_mem_diveq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2284,12 +2312,15 @@ static bool esil_mem_muleq_n(RzAnalysisEsil *esil, int bits, ut64 bitmask) {
 static bool esil_mem_muleq1(RzAnalysisEsil *esil) {
 	return esil_mem_muleq_n(esil, 8, UT8_MAX);
 }
+
 static bool esil_mem_muleq2(RzAnalysisEsil *esil) {
 	return esil_mem_muleq_n(esil, 16, UT16_MAX);
 }
+
 static bool esil_mem_muleq4(RzAnalysisEsil *esil) {
 	return esil_mem_muleq_n(esil, 32, UT32_MAX);
 }
+
 static bool esil_mem_muleq8(RzAnalysisEsil *esil) {
 	return esil_mem_muleq_n(esil, 64, UT64_MAX);
 }
@@ -2338,15 +2369,19 @@ static bool esil_mem_inceq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_inceq1(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, 8);
 }
+
 static bool esil_mem_inceq2(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, 16);
 }
+
 static bool esil_mem_inceq4(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, 32);
 }
+
 static bool esil_mem_inceq8(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, 64);
 }
+
 static bool esil_mem_inceq(RzAnalysisEsil *esil) {
 	return esil_mem_inceq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2382,15 +2417,19 @@ static bool esil_mem_deceq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_deceq1(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, 8);
 }
+
 static bool esil_mem_deceq2(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, 16);
 }
+
 static bool esil_mem_deceq4(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, 32);
 }
+
 static bool esil_mem_deceq8(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, 64);
 }
+
 static bool esil_mem_deceq(RzAnalysisEsil *esil) {
 	return esil_mem_deceq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2436,15 +2475,19 @@ static bool esil_mem_lsleq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_lsleq1(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, 8);
 }
+
 static bool esil_mem_lsleq2(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, 16);
 }
+
 static bool esil_mem_lsleq4(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, 32);
 }
+
 static bool esil_mem_lsleq8(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, 64);
 }
+
 static bool esil_mem_lsleq(RzAnalysisEsil *esil) {
 	return esil_mem_lsleq_n(esil, EANALYSIS(esil)->bits);
 }
@@ -2482,15 +2525,19 @@ static bool esil_mem_lsreq_n(RzAnalysisEsil *esil, int bits) {
 static bool esil_mem_lsreq1(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, 8);
 }
+
 static bool esil_mem_lsreq2(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, 16);
 }
+
 static bool esil_mem_lsreq4(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, 32);
 }
+
 static bool esil_mem_lsreq8(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, 64);
 }
+
 static bool esil_mem_lsreq(RzAnalysisEsil *esil) {
 	return esil_mem_lsreq_n(esil, EANALYSIS(esil)->bits);
 }

@@ -116,6 +116,7 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
 
 // DFS and visitor mode
 typedef struct rz_graph_visitor_t_new RzGraphVisitor;
+
 struct rz_graph_visitor_t_new {
 	void (*discover_node)(RzGraphNode *n, RzGraphVisitor *vis);
 	void (*finish_node)(RzGraphNode *n, RzGraphVisitor *vis);

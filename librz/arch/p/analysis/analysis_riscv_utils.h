@@ -116,6 +116,7 @@ static inline bool is_any_reg_accessed_as(cs_riscv_op *operands, uint8_t op_coun
 static inline bool is_reg_written(cs_riscv_op *operands, uint8_t op_count, ut32 reg) {
 	return is_any_reg_accessed_as(operands, op_count, reg, CS_AC_WRITE);
 }
+
 static inline bool is_reg_read(cs_riscv_op *operands, uint8_t op_count, ut32 reg) {
 	return is_any_reg_accessed_as(operands, op_count, reg, CS_AC_READ);
 }

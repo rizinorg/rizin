@@ -10,6 +10,7 @@ static RzNum *num;
 
 bool test_rz_num_units() {
 	char humansz[8];
+
 	const struct {
 		const char *expected_res;
 		const char *message;
@@ -40,6 +41,7 @@ bool test_rz_num_units() {
 		{ "82P", "P", 82 * (1ULL << 50) },
 		{ "16E", "E", UT64_MAX }
 	};
+
 	size_t nitems = sizeof(test_cases) / sizeof(test_cases[0]);
 	size_t i;
 	for (i = 0; i < nitems; i++) {
@@ -2074,6 +2076,7 @@ bool test_rz_num_math_value_torture() {
 	ASSERT_U64("1 + 2 * 3 - 4 << 1 | 5 & 6 ^ 7 + 8 >> 2", 0x7);
 	mu_end;
 }
+
 // both variable names and function names. The grammar's identifier
 // rule admits any run of non-operator, non-control UTF-8, so these
 // work without special-casing; this test pins that behaviour down.

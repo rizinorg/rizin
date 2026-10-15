@@ -224,6 +224,7 @@ RZ_OWN RzILOpEffect *set_sub_flags(const char *source_name, const char *neginc_s
 RzILOpEffect *set_setc_flags() {
 	return MSP430_SETR(MSP430_SR, LOGOR(MSP430_GETR(MSP430_SR), U16(1)));
 }
+
 RzILOpEffect *set_setn_flags() {
 	return MSP430_SETR(MSP430_SR, LOGOR(MSP430_GETR(MSP430_SR), U16(1 << 2)));
 }

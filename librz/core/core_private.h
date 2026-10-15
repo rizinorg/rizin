@@ -289,6 +289,7 @@ typedef struct rz_core_visual_tab_t {
 } RzCoreVisualTab;
 
 typedef int (*RzPanelsMenuCallback)(void *user);
+
 typedef struct rz_panels_menu_item {
 	int selectedIndex;
 	char *name;

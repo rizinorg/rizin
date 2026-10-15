@@ -241,6 +241,7 @@ static prstatus_t *linux_get_prstatus(RzDebug *dbg, int pid, int tid, proc_conte
 		free(p);
 		return NULL;
 	}
+
 	memcpy(p->pr_reg, &regs, sizeof(regs));
 	RZ_FREE(proc_data->per_thread);
 	return p;
@@ -261,6 +262,7 @@ static elf_fpregset_t *linux_get_fp_regset(RzDebug *dbg, int pid) {
 		free(p);
 		return NULL;
 	}
+
 	return p;
 }
 

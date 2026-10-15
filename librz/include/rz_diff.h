@@ -38,6 +38,7 @@ typedef ut32 (*RzDiffMethodElemHash)(RZ_BORROW const void *elem);
 typedef int (*RzDiffMethodCompare)(RZ_BORROW const void *a_elem, RZ_BORROW const void *b_elem);
 typedef bool (*RzDiffMethodIgnore)(RZ_BORROW const void *elem);
 typedef void (*RzDiffMethodStringify)(RZ_BORROW const void *elem, RZ_BORROW RzStrBuf *sb);
+
 typedef struct rz_diff_methods_t {
 	RzDiffMethodElemAt elem_at; ///< can be either be an element of A or B
 	RzDiffMethodElemHash elem_hash; ///< can be either be an element of A or B

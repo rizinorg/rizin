@@ -1033,10 +1033,12 @@ static void c55plus_x_imm6_40(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	c55plus_x_imm6(a, bits, d, out);
 	out->imm |= 0x40;
 }
+
 static void c55plus_x_imm6_80(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	c55plus_x_imm6(a, bits, d, out);
 	out->imm |= 0x80;
 }
+
 static void c55plus_x_imm6_c0(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	c55plus_x_imm6(a, bits, d, out);
 	out->imm |= 0xc0;
@@ -1202,6 +1204,7 @@ static void c55plus_x_b1_local(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 		out->kind = C55_OP_NONE;
 	}
 }
+
 // The optional "|| far()" parallel qualifier (opcode 0x02, byte1[5]).
 static void c55plus_x_b1_far(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
@@ -1274,12 +1277,14 @@ static void c55plus_x_mpyk6_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)((bits >> 16) & 0x7f), &out->reg); // byte3[6:0]: ac / ac.h / ac.l / Tx / special
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_mpyk6_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 32) & 0x1f), &out->reg); // byte1[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_mpyk6_acc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1325,18 +1330,21 @@ static void c55plus_x_mac_mem(const C55ArchDesc *a, ut8 ab, bool uns, C55Operand
 		break; // t1
 	}
 }
+
 // Xmem of the 0xc8 multiply family: byte1[6:4] mode, byte1[3:0] ARn; byte2[5]
 // is the Xmem uns() bit.
 static void c55plus_x_mac_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 24) & 0x7f), ((bits >> 21) & 1) != 0, out);
 }
+
 // Ymem of the 0xc8 multiply family: byte3[6:4] mode, byte3[3:0] ARn; byte4[5]
 // is the Ymem uns() bit.
 static void c55plus_x_mac_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 8) & 0x7f), ((bits >> 5) & 1) != 0, out);
 }
+
 // ACy destination of the 0xc8 multiply family: byte2[4:0].
 static void c55plus_x_mac_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
@@ -1344,6 +1352,7 @@ static void c55plus_x_mac_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 // ACx accumulator source of the accumulating 0xc8 forms (macm / masm): byte4[4:0].
 static void c55plus_x_mac_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
@@ -1365,6 +1374,7 @@ static void c55plus_x_macr_src1(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)((bits >> 8) & 0x7f), &out->reg); // byte2[6:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_macr_src2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1372,6 +1382,7 @@ static void c55plus_x_macr_src2(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	out->width = c55plus_reg_width(a, &out->reg);
 	out->uns = (bits & 0x80) != 0; // byte3[7]
 }
+
 static void c55plus_x_macr_acdst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1426,6 +1437,7 @@ static void c55plus_x_btx_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 		out->dbl = true; // byte2[2]: dbl() 32-bit access
 	}
 }
+
 static void c55plus_x_btx_bit(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1443,6 +1455,7 @@ static void c55plus_x_btx_bit(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	out->imm = bits & mask;
 	out->width = 16;
 }
+
 static void c55plus_x_btx_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1467,6 +1480,7 @@ static void c55plus_x_btm_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 		return;
 	}
 }
+
 static void c55plus_x_btm_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1474,6 +1488,7 @@ static void c55plus_x_btm_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	c55plus_gr1(idx, &out->reg);
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_btm_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1488,6 +1503,7 @@ static void c55plus_x_subadd_tx(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)(48 + (bits & 0x3)), &out->reg); // byte3[1:0] -> t0-3
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_subadd_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 b_ar = (ut8)((bits >> 16) & 0xff); // byte1
@@ -1498,6 +1514,7 @@ static void c55plus_x_subadd_mem(const C55ArchDesc *a, ut64 bits, const C55OpDes
 	}
 	out->dual_wrap = ((bits >> 5) & 1) != 0; // byte3[5]
 }
+
 static void c55plus_x_subadd_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1518,10 +1535,12 @@ static void c55plus_x_bfxtr_half(C55Operand *out, const C55ArchDesc *a, ut8 idx5
 	out->reg.sub = half ? C55_SUB_LO : C55_SUB_HI; // bit5: 1 -> .l, 0 -> .h
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_bcx_acc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_bfxtr_half(out, a, (ut8)((bits >> 8) & 0x1f), (ut8)((bits >> 13) & 1)); // byte3[4:0], byte3[5]
 }
+
 static void c55plus_x_bcx_acb(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	if (((bits >> 6) & 3) != 0) {
@@ -1532,6 +1551,7 @@ static void c55plus_x_bcx_acb(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	}
 	c55plus_x_bfxtr_half(out, a, (ut8)(bits & 0x1f), (ut8)((bits >> 5) & 1)); // byte4[4:0], byte4[5]
 }
+
 static void c55plus_x_bcx_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 b_ar = (ut8)((bits >> 24) & 0xff); // byte1
@@ -1541,6 +1561,7 @@ static void c55plus_x_bcx_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 		return;
 	}
 }
+
 static void c55plus_x_bcx_aca(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_bfxtr_half(out, a, (ut8)((bits >> 16) & 0x1f), (ut8)((bits >> 21) & 1)); // byte2[4:0], byte2[5]
@@ -1563,18 +1584,21 @@ static void c55plus_x_bb_smem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 		return;
 	}
 }
+
 static void c55plus_x_bb_acz(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_bb_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)(bits & 0x7f), &out->reg); // byte4[6:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_bb_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1601,10 +1625,12 @@ static void c55plus_x_e0_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	}
 	out->uns = ((bits >> 21) & 1) != 0; // byte3[5]
 }
+
 static void c55plus_x_e0_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)(bits & 0x7f), ((bits >> 13) & 1) != 0, out); // byte5[6:0], byte4[5] uns
 }
+
 static void c55plus_x_e0_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1624,20 +1650,24 @@ static void c55plus_x_fir_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 32) & 0x7f), false, out); // byte1[6:0]
 }
+
 static void c55plus_x_fir_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 16) & 0x7f), false, out); // byte3[6:0]
 }
+
 static void c55plus_x_fir_cmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)(bits & 0x7f), false, out); // byte5[6:0]
 }
+
 static void c55plus_x_fir_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 24) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_fir_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1649,16 +1679,19 @@ static void c55plus_x_dst_xmem(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 24) & 0x7f), false, out); // byte1[6:0]
 }
+
 static void c55plus_x_dst_ymem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 8) & 0x7f), false, out); // byte3[6:0]
 }
+
 static void c55plus_x_dst_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_dst_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1672,24 +1705,28 @@ static void c55plus_x_diff_acc(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // byte3[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_diff_acd(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // byte4[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_diff_aca(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 24) & 0x1f), &out->reg); // byte1[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_diff_acb(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_diff_trn(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1716,12 +1753,14 @@ static void c55plus_x_sq_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		return;
 	}
 }
+
 static void c55plus_x_sq_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_sq_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1744,6 +1783,7 @@ static void c55plus_x_mpymk_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 		return;
 	}
 }
+
 static void c55plus_x_mpymk_k8(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1751,12 +1791,14 @@ static void c55plus_x_mpymk_k8(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	out->imm = bits & 0xff; // byte4
 	out->width = 8;
 }
+
 static void c55plus_x_mpymk_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_mpymk_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1770,12 +1812,14 @@ static void c55plus_x_mant_aca(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // byte3[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_mant_acb(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_mant_acc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1798,18 +1842,21 @@ static void c55plus_x_b3_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		return;
 	}
 }
+
 static void c55plus_x_b3_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // byte3[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_b3_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 // TCx of the addsubcc 1-TC form: byte2[5] selects tc1 (0) or tc2 (1).
 static void c55plus_x_b3_tcx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
@@ -1818,6 +1865,7 @@ static void c55plus_x_b3_tcx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->cond_is_flag = true;
 	out->cond_flag = (ut8)(((bits >> 21) & 1) ? 5 : 4); // byte2[5]: tc2 / tc1
 }
+
 // The fixed tc1 / tc2 operands of the addsubcc 2-TC and addsub2cc forms.
 static void c55plus_x_b3_tc1(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
@@ -1827,6 +1875,7 @@ static void c55plus_x_b3_tc1(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->cond_is_flag = true;
 	out->cond_flag = 4; // tc1
 }
+
 static void c55plus_x_b3_tc2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)bits;
@@ -1835,6 +1884,7 @@ static void c55plus_x_b3_tc2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->cond_is_flag = true;
 	out->cond_flag = 5; // tc2
 }
+
 // The ACz operand of addsub2cc: gr1(byte4[6:0]).
 static void c55plus_x_b3_acz(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
@@ -1858,6 +1908,7 @@ static void c55plus_x_b4_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->sh_mem_reg_set = true;
 	c55plus_gr1((ut8)(b4 & 0x7f), &out->sh_mem_reg); // byte4[6:0]
 }
+
 static void c55plus_x_b4_acdst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -1882,6 +1933,7 @@ static void c55plus_x_b6_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->sh_mem_reg_set = true;
 	c55plus_gr1((ut8)(b4 & 0x7f), &out->sh_mem_reg); // byte4[6:0]
 }
+
 // Source accumulator ACx of the 0xb6 form: byte3[4:0].
 static void c55plus_x_b6_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
@@ -1911,6 +1963,7 @@ static void c55plus_x_b4st_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 		out->wrap_half = (b3 & 2) ? 2 : 1; // byte3[1]: 0 -> hi, 1 -> lo
 	}
 }
+
 // Destination memory of the 0xb4 store form: Smem (byte1 mode+ARn / byte2[7:6]
 // offset-mode); byte3[0] selects the 32-bit dbl() store.
 static void c55plus_x_b4st_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
@@ -1946,12 +1999,14 @@ static void c55plus_x_bfxtr_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	}
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_bfxtr_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0] -> ACx
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_bfxtr_imm(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -1974,6 +2029,7 @@ static void c55plus_x_bit_num(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	out->width = 16;
 	out->is_bit = true;
 }
+
 static void c55plus_x_bit_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 num = (ut8)((bits >> 8) & 0x1f); // byte2[4:0]
@@ -1987,6 +2043,7 @@ static void c55plus_x_bit_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	}
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 // The TC flag of btst is byte2[5] (0 -> TC1, 1 -> TC2), rendered/lifted via the
 // shared cond-flag ids (tc1 = 4, tc2 = 5).
 static void c55plus_x_bit_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
@@ -2015,6 +2072,7 @@ static void c55plus_x_b1_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		out->access = 32; // dbl()
 	}
 }
+
 static void c55plus_x_b1_imm(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2234,14 +2292,17 @@ static void c55plus_gr1_sub7(const C55ArchDesc *a, ut8 v, C55Operand *out) {
 	out->kind = C55_OP_REG;
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_sft_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 16) & 0x7f), out); // byte1[6:0]
 }
+
 static void c55plus_x_sft_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 8) & 0x7f), out); // byte2[6:0]
 }
+
 static void c55plus_x_sft_shift(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)(bits & 0x7f), out); // byte3[6:0]
@@ -2256,6 +2317,7 @@ static void c55plus_x_sft7b_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 8) & 0x7f), out); // byte1[6:0]
 }
+
 static void c55plus_x_sft7b_one(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2280,12 +2342,14 @@ static void c55plus_x_8c_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	}
 	out->uns = true;
 }
+
 static void c55plus_x_8c_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // byte3[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_8c_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -2337,6 +2401,7 @@ static void c55plus_x_24_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	}
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_24_mmr(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_MEM;
@@ -2357,6 +2422,7 @@ static void c55plus_x_a9_sftcc_ac(const C55ArchDesc *a, ut64 bits, const C55OpDe
 		out->kind = C55_OP_INVALID;
 	}
 }
+
 static void c55plus_x_a9_sftcc_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2389,12 +2455,14 @@ static void c55plus_x_a9_bcnt_a(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // ac(byte2[4:0])
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_a9_bcnt_b(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // ac(byte3[4:0])
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_a9_bcnt_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2402,6 +2470,7 @@ static void c55plus_x_a9_bcnt_tc(const C55ArchDesc *a, ut64 bits, const C55OpDes
 	out->cond_is_flag = true;
 	out->cond_flag = ((bits >> 14) & 1) ? 5 : 4; // byte2[6]: 1 -> tc2, 0 -> tc1
 }
+
 static void c55plus_x_a9_bcnt_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1((ut8)((bits >> 16) & 0x7f), &out->reg); // gr1(byte1[6:0])
@@ -2420,6 +2489,7 @@ static void c55plus_x_a9_exp_src(const C55ArchDesc *a, ut64 bits, const C55OpDes
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // ac(byte3[4:0])
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_a9_exp_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 16) & 0x7f), out); // byte1[6:0]
@@ -2439,6 +2509,7 @@ static void c55plus_x_01_csr(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->reg.sub = C55_SUB_NONE;
 	out->width = 16;
 }
+
 static void c55plus_x_01_k4(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2446,6 +2517,7 @@ static void c55plus_x_01_k4(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d,
 	out->imm = bits & 0xf; // byte1[3:0]
 	out->width = 4;
 }
+
 static void c55plus_x_01_reg(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1((ut8)(32 + (bits & 0x1f)), &out->reg); // byte1[4:0] -> ar0-15/t0-3/special
@@ -2465,6 +2537,7 @@ static void c55plus_x_a8_flag(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 	out->cond_is_flag = true;
 	out->cond_flag = b ? 5 : 6; // 0 -> carry, 1 -> tc2
 }
+
 static void c55plus_x_a8_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	if (((bits >> 13) & 0x3) != 0) { // byte2[6:5] != 0: a half-register source, leave to legacy
@@ -2478,6 +2551,7 @@ static void c55plus_x_a8_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		out->kind = C55_OP_INVALID;
 	}
 }
+
 static void c55plus_x_a8_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	if (((bits >> 21) & 0x3) != 0) { // byte1[6:5] != 0: a half-register dest, leave to legacy
@@ -2505,6 +2579,7 @@ static void c55plus_x_0a_bit(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->reg.sub = C55_SUB_NONE;
 	out->width = 16;
 }
+
 static void c55plus_x_0a_st0(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)bits;
@@ -2543,6 +2618,7 @@ static void c55plus_x_pair_reg1(const C55ArchDesc *a, ut64 bits, const C55OpDesc
 	c55plus_gr1((ut8)((bits >> 8) & 0xff), &out->reg); // byte1
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_pair_reg2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -2563,10 +2639,12 @@ static void c55plus_x_amar3_p1(const C55ArchDesc *a, ut64 bits, const C55OpDesc 
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 32) & 0x7f), false, out); // byte1[6:0]
 }
+
 static void c55plus_x_amar3_p2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)((bits >> 16) & 0x7f), false, out); // byte3[6:0]
 }
+
 static void c55plus_x_amar3_p3(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_x_mac_mem(a, (ut8)(bits & 0x7f), false, out); // byte5[6:0]
@@ -2643,6 +2721,7 @@ static bool c55plus_swap_pair(ut8 sel, ut8 *rx, ut8 *ry) {
 	default: return false;
 	}
 }
+
 static void c55plus_x_swap_x(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 rx, ry;
@@ -2654,6 +2733,7 @@ static void c55plus_x_swap_x(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	c55plus_gr1(rx, &out->reg);
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_swap_y(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 rx, ry;
@@ -2686,6 +2766,7 @@ static void c55plus_x_79_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	c55plus_gr1((ut8)(bits & 0x1f), &out->reg); // ac(byte2[4:0])
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_79_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -2702,6 +2783,7 @@ static void c55plus_x_76_src(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)(bits & 0x7f), out); // byte2[6:0]
 }
+
 static void c55plus_x_76_dst(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)((bits >> 8) & 0x7f), out); // byte1[6:0]
@@ -2725,12 +2807,14 @@ static void c55plus_x_c2_imm(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->shamt = (int8_t)((((b1 >> 5) & 3) << 2) | ((b2 >> 5) & 3)); // byte1[6:5]*4 + byte2[6:5]
 	out->shamt_hex = true;
 }
+
 static void c55plus_x_c2_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_c2_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -2753,12 +2837,14 @@ static void c55plus_x_c0_imm(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->sh_left = true;
 	out->shamt = 16; // << #16
 }
+
 static void c55plus_x_c0_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 16) & 0x1f), &out->reg); // byte2[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_c0_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
@@ -2795,6 +2881,7 @@ static void c55plus_x_b2_cmp(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->imm = bits & 0xffff; // byte3:byte4
 	out->width = 16;
 }
+
 static void c55plus_x_b2_tc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2822,6 +2909,7 @@ static void c55plus_x_b2_band_mem(const C55ArchDesc *a, ut64 bits, const C55OpDe
 		out->dbl = true;
 	}
 }
+
 static void c55plus_x_b2_band_k16(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)d;
@@ -2872,6 +2960,7 @@ static void c55plus_x_97_memA(const C55ArchDesc *a, ut64 bits, const C55OpDesc *
 		out->byte_sel = 3; // byte()
 	}
 }
+
 static void c55plus_x_97_memB(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 b3 = (ut8)(bits & 0xff); // byte3
@@ -2922,10 +3011,12 @@ static void c55plus_x_82_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		out->kind = C55_OP_INVALID;
 	}
 }
+
 static void c55plus_x_82_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)(bits & 0x7f), out); // byte3[6:0]
 }
+
 static void c55plus_x_82_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 num = (ut8)((bits >> 8) & 0x1f); // byte2[4:0]
@@ -2950,10 +3041,12 @@ static void c55plus_x_85_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 		out->kind = C55_OP_INVALID;
 	}
 }
+
 static void c55plus_x_85_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	c55plus_gr1_sub7(a, (ut8)(bits & 0x7f), out); // byte3[6:0]
 }
+
 static void c55plus_x_85_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	ut8 num = (ut8)((bits >> 8) & 0x1f); // byte2[4:0]
@@ -3006,12 +3099,14 @@ static void c55plus_x_b7_mem(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d
 	out->shamt = (int8_t)(b4 & 0x3f); // shift count
 	out->shamt_hex = true;
 }
+
 static void c55plus_x_b7_acx(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;
 	c55plus_gr1((ut8)((bits >> 8) & 0x1f), &out->reg); // byte3[4:0]
 	out->width = c55plus_reg_width(a, &out->reg);
 }
+
 static void c55plus_x_b7_acy(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)d;
 	out->kind = C55_OP_REG;

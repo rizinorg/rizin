@@ -1402,6 +1402,7 @@ int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp)
 int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp(g, address, BREAKPOINT, sizebp);
 }
+
 int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp(g, address, HARDWARE_BREAKPOINT, sizebp);
 }

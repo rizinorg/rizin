@@ -45,18 +45,22 @@ typedef struct _ut80 {
 	ut64 Low;
 	ut16 High;
 } ut80;
+
 typedef struct _ut96 {
 	ut64 Low;
 	ut32 High;
 } ut96;
+
 typedef struct _ut128 {
 	ut64 Low;
 	ut64 High;
 } ut128;
+
 typedef struct _ut256 {
 	ut128 Low;
 	ut128 High;
 } ut256;
+
 typedef struct _utX {
 	ut80 v80;
 	ut96 v96;

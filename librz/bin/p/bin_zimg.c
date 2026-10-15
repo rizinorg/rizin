@@ -37,6 +37,7 @@ typedef enum zimage_arch {
 typedef struct zimage_s {
 	zimage_arch_t arch;
 	const char *kernel;
+
 	union {
 		zimage_arm32_t arm32;
 		zimage_riscv_t riscv;

@@ -24,6 +24,7 @@ enum {
 	RZ_ARCH_ARM64,
 	RZ_ARCH_MIPS
 };
+
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
 
@@ -1051,11 +1052,13 @@ err_op:
 typedef struct {
 	RBNode rb;
 	ut64 addr;
+
 	enum {
 		HINT_NODE_ADDR,
 		HINT_NODE_ARCH,
 		HINT_NODE_BITS
 	} type;
+
 	union {
 		const RzVector /*<const RzAnalysisAddrHintRecord>*/ *addr_hints;
 		const char *arch;
@@ -1782,6 +1785,7 @@ static bool opiscall(RzCore *core, RzAnalysisOp *aop, ut64 addr, const ut8 *buf,
 }
 
 #define OPSZ 8
+
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
 	ut8 *buf = (ut8 *)malloc(core->blocksize);
 	if (!buf) {
@@ -3084,6 +3088,7 @@ static bool printAnalPaths(RzCoreAnalPaths *p, PJ *pj) {
 	}
 	return (p->count < 1 || --p->count > 0);
 }
+
 static void analPaths(RzCoreAnalPaths *p, PJ *pj);
 
 static void analPathFollow(RzCoreAnalPaths *p, ut64 addr, PJ *pj) {

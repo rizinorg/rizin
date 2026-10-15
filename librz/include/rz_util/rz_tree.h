@@ -24,6 +24,7 @@ typedef struct rz_tree_visitor_t {
 	void (*discover_child)(RTreeNode *, struct rz_tree_visitor_t *);
 	void *data;
 } RTreeVisitor;
+
 typedef void (*RTreeNodeVisitCb)(RTreeNode *n, RTreeVisitor *vis);
 
 RZ_API RTree *rz_tree_new(void);

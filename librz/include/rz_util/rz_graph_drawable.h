@@ -71,6 +71,7 @@ typedef struct rz_analysis_graph_node_info_t {
 	 */
 	RzGraphNodeType type;
 	RzGraphNodeSubType subtype;
+
 	union {
 		RzGraphNodeInfoDataDefault def;
 		RzGraphNodeInfoDataCFG cfg;

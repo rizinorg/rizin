@@ -639,6 +639,7 @@ static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorCom
 		free(pivot);
 	}
 }
+
 #undef VEC_INDEX
 
 /**

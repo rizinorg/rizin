@@ -150,6 +150,7 @@ typedef struct SDebugInfo {
 #endif
 
 #define RzBinPEObj struct PE_(rz_bin_pe_obj_t)
+
 struct PE_(rz_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header) * dos_header;

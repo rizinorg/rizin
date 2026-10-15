@@ -144,6 +144,7 @@ typedef enum rz_test_test_type_t {
 typedef struct rz_test_test_t {
 	const char *path;
 	RzTestType type;
+
 	union {
 		RzCmdTest *cmd_test;
 		RzAsmTest *asm_test;
@@ -193,6 +194,7 @@ typedef struct rz_test_test_result_info_t {
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. rizin not found)
 	ut64 time_elapsed;
+
 	union {
 		RzSubprocessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
 		RzAsmTestOutput *asm_out; // for test->type == RZ_TEST_TYPE_ASM

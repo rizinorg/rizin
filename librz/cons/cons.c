@@ -495,6 +495,7 @@ static BOOL __w32_control(DWORD type) {
 }
 #elif __UNIX__
 volatile sig_atomic_t sigwinchFlag;
+
 static void resize(int sig) {
 	sigwinchFlag = 1;
 }
@@ -742,6 +743,7 @@ RZ_API RzCons *rz_cons_free(void) {
 }
 
 #define MOAR (4096 * 8)
+
 static bool palloc(int moar) {
 	void *temp;
 	if (moar <= 0) {
@@ -1644,6 +1646,7 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(void) {
 				FILE_NAME_INFO fi;
 				wchar_t buf[MAX_PATH];
 			} buf;
+
 			if (w32_GetFileInformationByHandleEx(in, FileNameInfo, &buf, sizeof(buf))) {
 				buf.fi.FileName[buf.fi.FileNameLength / sizeof(WCHAR)] = 0;
 				if ((wcsstr(buf.fi.FileName, L"msys-") || wcsstr(buf.fi.FileName, L"cygwin-")) &&

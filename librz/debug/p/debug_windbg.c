@@ -318,6 +318,7 @@ static int windbg_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	return 0;
 }
+
 static int windbg_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);

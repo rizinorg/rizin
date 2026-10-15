@@ -70,6 +70,7 @@ typedef enum {
 typedef struct rz_num_value_t {
 	RzNumKind kind;
 	RzNumError err;
+
 	union {
 		ut64 n; ///< valid when kind == RZ_NUM_KIND_UT64
 		double d; ///< valid when kind == RZ_NUM_KIND_FLOAT
@@ -289,6 +290,7 @@ RZ_DEPRECATE static inline ut64 rz_num_math(RzNum *num, const char *str) {
 typedef struct rz_num_callback_result_t {
 	bool ok; ///< false => evaluation error
 	RzNumKind kind; ///< kind of the value on success
+
 	union {
 		ut64 n;
 		double d;

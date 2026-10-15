@@ -71,6 +71,7 @@ static RzILOpPure *varg_hl(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	rz_strf(l, "%sl", v);
 	return APPEND(varg_mm(ctx, h, bank), varg_mm(ctx, l, bank));
 }
+
 static RzILOpEffect *setg_hl(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	char h[8];
 	char l[8];
@@ -81,11 +82,13 @@ static RzILOpEffect *setg_hl(PicHighendILContext *ctx, const char *v, RzILOpPure
 		setg_mm(ctx, h, UNSIGNED(8, SHIFTR0(VARL("__x"), U8(8))), bank),
 		setg_mm(ctx, l, UNSIGNED(8, VARL("__x")), bank));
 }
+
 static RzILOpPure *varg_uhl(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	char u[8];
 	rz_strf(u, "%su", v);
 	return APPEND(varg_mm(ctx, u, bank), varg_hl(ctx, v, bank));
 }
+
 static RzILOpEffect *setg_uhl(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	char u[8];
 	rz_strf(u, "%su", v);
@@ -126,6 +129,7 @@ static RzILOpEffect *setg_uhl(PicHighendILContext *ctx, const char *v, RzILOpPur
  */
 
 #define IS_FSR(x) (RZ_STR_EQ(x, "fsr0") || RZ_STR_EQ(x, "fsr1") || RZ_STR_EQ(x, "fsr2"))
+
 static RzILOpPure *varg_mm(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		rz_warn_if_reached();
@@ -148,6 +152,7 @@ static RzILOpPure *varg_mm(PicHighendILContext *ctx, const char *v, ut8 bank) {
 	}
 	return VARG(v);
 }
+
 static RzILOpEffect *setg_mm(PicHighendILContext *ctx, const char *v, RzILOpPure *x, ut8 bank) {
 	if (RZ_STR_ISEMPTY(v)) {
 		rz_warn_if_reached();

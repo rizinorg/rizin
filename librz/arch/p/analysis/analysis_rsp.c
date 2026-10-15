@@ -13,6 +13,7 @@
 
 static int rsp_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
 	int i;
+
 	typedef struct {
 		RzAnalysisValue *value;
 	} ParsedOperands;

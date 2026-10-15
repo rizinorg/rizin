@@ -81,9 +81,11 @@ bool test_getopt_long_option(void) {
 	RzPVector cmd_catalog_values;
 	rz_pvector_init(&cmd_catalog_values, NULL);
 	rz_pvector_push(&cmd_catalog_values, "json");
+
 	enum {
 		TEST_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
 	};
+
 	RzGetoptLong cmd_catalog = {
 		"cmd-catalog", TEST_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
 	};

@@ -201,6 +201,7 @@ typedef struct parse_status_t {
 // This is from flair tools flair/crc16.cpp
 // CRC-HDLC & CRC-16/X-25 produces the same but in LE format.
 #define POLY 0x8408
+
 ut16 flirt_crc16(const ut8 *data_p, size_t length) {
 	rz_return_val_if_fail(data_p, 0);
 

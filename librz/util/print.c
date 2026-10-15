@@ -250,6 +250,7 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 }
 
 #define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
+
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
 	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (!use_color) {
@@ -293,6 +294,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 }
 
 #define Pal(x, y) (x->cons && x->cons->context->pal.y) ? x->cons->context->pal.y
+
 RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback)rp->cb_printf;
 	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;

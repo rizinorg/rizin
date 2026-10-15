@@ -1193,6 +1193,7 @@ static RzBinReloc *reloc_convert_parisc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GO
 	default: UNSUPP("PARISC");
 	}
 }
+
 static RzBinReloc *reloc_convert_hexagon(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
 	ut64 P = rel->vaddr;
 

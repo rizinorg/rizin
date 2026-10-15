@@ -191,6 +191,7 @@ typedef struct rz_bin_elf_note_prstatus_t {
 /// A single PT_NOTE entry, parsed from an ElfW(Nhdr) and associated data.
 typedef struct Elf_(rz_bin_elf_note_t) {
 	Elf_(Word) type;
+
 	union {
 		RzBinElfNoteFile file; //< for type == NT_FILE
 		RzBinElfNotePrStatus prstatus; //< for type = NT_PRSTATUS

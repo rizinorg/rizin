@@ -1657,6 +1657,7 @@ static bool get_vernaux_entry(ELFOBJ *bin, ut64 offset, Elf_(Vernaux) * entry) {
 
 	return true;
 }
+
 static bool get_verneed_entry_aux(ELFOBJ *bin, ut64 offset, Elf_(Verneed) * entry) {
 	return Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vn_version) &&
 		Elf_(rz_bin_elf_read_half)(bin, &offset, &entry->vn_cnt) &&

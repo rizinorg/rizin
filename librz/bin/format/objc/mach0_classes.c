@@ -124,6 +124,7 @@ static bool read_ptr_pa(RzBinFile *bf, RzBuffer *buf, ut64 paddr, mach0_ut *out)
 static bool read_ptr_va(RzBinFile *bf, RzBuffer *buf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RzBinFile *bf, RzBuffer *buf, mach0_ut p, ut32 *offset, ut32 *left);
 static char *get_class_name(mach0_ut p, RzBinFile *bf, RzBuffer *buf);
+
 static bool is_thumb(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 	if (bin->hdr.cputype == 12) {

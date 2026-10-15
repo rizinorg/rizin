@@ -8,6 +8,7 @@
 
 #define RZ_HASH_SHA1_DIGEST_SIZE  0x14
 #define RZ_HASH_SHA1_BLOCK_LENGTH 0x40
+
 typedef struct sha1_context_t {
 	ut32 digest[5];
 	ut8 block[RZ_HASH_SHA1_BLOCK_LENGTH];

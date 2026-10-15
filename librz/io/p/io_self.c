@@ -543,6 +543,7 @@ kern_return_t mach_vm_region_recurse(
 	natural_t *depth,
 	vm_region_recurse_info_t info,
 	mach_msg_type_number_t *infoCnt);
+
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions(RzIO *io, RzIOSelf *io_self, task_t task, mach_vm_address_t address, int max) {
 	kern_return_t kret;

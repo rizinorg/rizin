@@ -465,6 +465,7 @@ typedef struct {
 	RzPVector /*<RzAsmTokenPattern *>*/ *token_patterns;
 	bool inited;
 } C166State;
+
 // clang-format on
 
 extern const char *const c166_rw[];

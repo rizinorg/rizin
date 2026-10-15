@@ -3234,6 +3234,7 @@ RZ_API char *rz_str_prefix_all(const char *s, const char *pfx) {
 
 #define HASCH(x) strchr(input_value, x)
 #define CAST     (void *)(size_t)
+
 RZ_API ut8 rz_str_contains_macro(const char *input_value) {
 	const char *has_tilde = input_value ? HASCH('~') : NULL,
 		   *has_bang = input_value ? HASCH('!') : NULL,

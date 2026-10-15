@@ -132,6 +132,7 @@ static void write_value(int fd, const char *v) {
 		ESCAPE('\n', "n", 1);
 		ESCAPE('\r', "r", 1););
 }
+
 #undef FLUSH
 #undef ESCAPE_LOOP
 #undef ESCAPE
@@ -184,6 +185,7 @@ static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
 
 	return true;
 }
+
 #undef write_
 
 RZ_API bool sdb_text_save_fd(Sdb *s, int fd, bool sort) {

@@ -181,6 +181,7 @@ struct MACH0_(obj_t) {
 	int nmodtab;
 	struct thread_command thread;
 	ut8 *signature;
+
 	union {
 		struct x86_thread_state32 x86_32;
 		struct x86_thread_state64 x86_64;
@@ -191,6 +192,7 @@ struct MACH0_(obj_t) {
 		struct sparc_thread_state64 sparc_64;
 		struct mc680x0_thread_state mc680x0;
 	} thread_state;
+
 	char (*libs)[RZ_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
 	int size;

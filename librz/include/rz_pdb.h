@@ -322,6 +322,7 @@ typedef struct {
 	PDBSymbolIndex index;
 	PDBSymbolKind raw_kind;
 	ut16 length;
+
 	enum {
 		PDB_ScopeEnd, /// End of a scope, such as a procedure.
 		PDB_ObjName, /// Name of the object file of this module.
@@ -361,6 +362,7 @@ typedef struct {
 		PDB_FrameProcedure, /// Extra frame and proc information.
 		PDB_CallSiteInfo, /// Indirect call site information.
 	} kind;
+
 	void *data;
 } PDBSymbol;
 

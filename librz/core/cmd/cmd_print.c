@@ -2307,12 +2307,15 @@ RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer_common_handler(RzCore *core, 
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 1);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 2);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 4);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_signed_integer8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_signed_integer_common_handler(core, argc, argv, state, 8);
 }
@@ -2571,9 +2574,11 @@ RZ_IPI RzCmdStatus rz_print_hexdump_hex_common_handler(RzCore *core, int argc, c
 RZ_IPI RzCmdStatus rz_print_hexdump_hex2_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hex_common_handler(core, argc, argv, state, 2);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_hex4_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hex_common_handler(core, argc, argv, state, 4);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_hex8_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hex_common_handler(core, argc, argv, state, 8);
 }
@@ -2588,9 +2593,11 @@ RZ_IPI RzCmdStatus rz_print_hexdump_hexl_common_handler(RzCore *core, int argc, 
 RZ_IPI RzCmdStatus rz_print_hexdump_hex2l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hexl_common_handler(core, argc, argv, state, 2);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_hex4l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hexl_common_handler(core, argc, argv, state, 4);
 }
+
 RZ_IPI RzCmdStatus rz_print_hexdump_hex8l_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	return rz_print_hexdump_hexl_common_handler(core, argc, argv, state, 8);
 }

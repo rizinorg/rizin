@@ -451,6 +451,7 @@ typedef struct rz_bin_xtr_metadata_t {
 } RzBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
+
 typedef struct rz_bin_xtr_extract_t {
 	char *file;
 	RzBuffer *buf;
@@ -947,9 +948,11 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb);
 RZ_API void rz_bin_import_free(RZ_NULLABLE RzBinImport *imp);
 RZ_API void rz_bin_resource_free(RZ_NULLABLE RzBinResource *res);
 RZ_API void rz_bin_symbol_free(RZ_NULLABLE RzBinSymbol *sym);
+
 static inline bool rz_bin_reloc_has_target(RzBinReloc *reloc) {
 	return reloc->target_vaddr && reloc->target_vaddr != UT64_MAX;
 }
+
 RZ_API void rz_bin_reloc_free(RZ_NULLABLE RzBinReloc *reloc);
 RZ_API RzBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 RZ_API void rz_bin_string_free(RZ_NULLABLE void *_str);

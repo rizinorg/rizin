@@ -385,6 +385,7 @@ typedef enum rz_il_op_arg_float_rmode_kind_t {
  */
 typedef struct rz_il_op_arg_float_rmode_t {
 	RzILOpArgFloatRModeKind kind;
+
 	union {
 		RzFloatRMode static_mode;
 		RzILOpBitVector *dynamic_mode;
@@ -509,6 +510,7 @@ typedef struct rz_il_op_args_float_alg_terop_t {
 	RzILOpFloat *y;
 	RzILOpFloat *z;
 } RzILOpArgsFloatAlgTernop;
+
 typedef RzILOpArgsFloatAlgTernop RzILOpArgsFmad;
 
 /**
@@ -622,6 +624,7 @@ typedef enum {
  */
 struct rz_il_op_pure_t {
 	RzILOpPureCode code;
+
 	union {
 		//////////
 		// Init //
@@ -633,6 +636,7 @@ struct rz_il_op_pure_t {
 			RzILOpPure *x;
 			RzILOpPure *y;
 		} binop; ///< any op that uses binop_bool or binop_bv
+
 		struct {
 			RzILOpPure *x;
 		} unop; ///< RZ_IL_OP_INV or any other op that uses unop_bv
@@ -905,6 +909,7 @@ typedef enum {
 
 struct rz_il_op_effect_t {
 	RzILOpEffectCode code;
+
 	union {
 		RzILOpArgsSet set;
 		RzILOpArgsJmp jmp;

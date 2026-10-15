@@ -171,9 +171,11 @@ struct rz_magic {
 	ut32 in_offset; /* offset from indirection */
 	/* Word 6 */
 	ut32 lineno; /* line number in magic file */
+
 	/* Word 7,8 */
 	union {
 		ut64 _mask; /* for use with numeric and date types */
+
 		struct {
 			ut32 _count; /* repeat/line count */
 			ut32 _flags; /* modifier flags */

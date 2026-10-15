@@ -1221,6 +1221,7 @@ static void decode_branch_nop(C6xInsn *insn) {
 	op_imm(&OP(1), n);
 	insn->nops = 2;
 }
+
 static void decode_mvk(C6xInsn *insn) {
 	ut32 w = insn->word;
 	ut8 s = BIT(w, 1);

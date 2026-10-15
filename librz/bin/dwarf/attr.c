@@ -3,6 +3,7 @@
 
 #include <rz_bin_dwarf.h>
 #include "dwarf_private.h"
+
 /**
  * \brief Parses attribute value based on its definition
  *        and stores it into `value`

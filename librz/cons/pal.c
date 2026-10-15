@@ -93,6 +93,7 @@ static struct {
 
 	{ NULL, 0, 0 }
 };
+
 static const int keys_len = sizeof(keys) / sizeof(keys[0]) - 1;
 
 struct {

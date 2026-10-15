@@ -266,10 +266,12 @@ typedef enum {
 typedef struct {
 	ut64 d;
 	ut32 imm;
+
 	union {
 		ut32 disp;
 		st32 sdisp;
 	};
+
 	c166_opcodes id;
 	ut32 addr;
 	ut8 byte_size : 4;

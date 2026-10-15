@@ -33,6 +33,7 @@ typedef struct class_type_info_t {
 typedef struct base_class_type_info_t {
 	ut64 base_class_addr;
 	ut64 flags;
+
 	enum flags_masks_e {
 		base_is_virtual = 0x1,
 		base_is_public = 0x2
@@ -61,6 +62,7 @@ typedef struct vmi_class_type_info_t {
 	int vmi_flags;
 	int vmi_base_count;
 	base_class_type_info *vmi_bases;
+
 	enum vmi_flags_masks_e {
 		non_diamond_repeat_mask = 0x1,
 		diamond_shaped_mask = 0x2,
@@ -303,6 +305,7 @@ static const char *type_to_string(RTypeInfoType type) {
 		rz_return_val_if_reached(CLASS_TYPE_INFO_NAME);
 	}
 }
+
 static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix) {
 	rz_cons_printf("%sType Info at 0x%08" PFMT64x ":\n"
 		       "%s  Type Info type: %s\n"

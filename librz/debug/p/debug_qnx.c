@@ -19,11 +19,13 @@ RZ_API RzDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut6
 	p->pc = pc;
 	return p;
 }
+
 RZ_API void *__r_debug_pid_free(RzDebugPid *pid) {
 	free(pid->path);
 	free(pid);
 	return NULL;
 }
+
 /* ------------------- */
 
 typedef struct {

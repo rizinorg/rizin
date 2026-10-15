@@ -86,6 +86,7 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+
 	// lldb-specific features
 	struct {
 		bool g;
@@ -93,12 +94,15 @@ typedef struct libgdbr_stub_features_t {
 		bool QListThreadsInStopReply;
 		bool qEcho;
 	} lldb;
+
 	// Cannot be determined with qSupported, found out on query
 	bool qC;
 	int extended_mode;
+
 	struct {
 		bool c, C, s, S, t, r;
 	} vcont;
+
 	bool P;
 } libgdbr_stub_features_t;
 
@@ -137,14 +141,17 @@ typedef struct libgdbr_stop_reason {
 	bool create;
 	bool vforkdone;
 	bool is_valid;
+
 	struct {
 		bool present;
 		ut64 addr;
 	} watchpoint;
+
 	struct {
 		bool present;
 		char *path;
 	} exec;
+
 	struct {
 		bool present;
 		int pid;

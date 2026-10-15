@@ -805,6 +805,7 @@ static int load_omf_modinf(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_rec
 	obj->modinfo = rz_read_le8(buf + ct);
 	return true;
 }
+
 /**
  * \brief Each compound type will force creation of a type record, which describes
  * the type of a variable or function.

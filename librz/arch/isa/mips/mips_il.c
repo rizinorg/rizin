@@ -2752,6 +2752,7 @@ RZ_IPI RzAnalysisILConfig *mips_il_config(RzAnalysis *analysis) {
 	}
 	return r;
 }
+
 #include <rz_il/rz_il_opbuilder_end.h>
 
 #else // CS_NEXT_VERSION < 6

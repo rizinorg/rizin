@@ -54,6 +54,7 @@ static int rz_main_version_verify(int show) {
 	int i, ret;
 	typedef const char *(*vc)();
 	const char *base = RZ_VERSION;
+
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -279,6 +280,7 @@ static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_nam
 	char *extraplugins = rz_path_extra(RZ_PLUGINS);
 	char *magicpath = rz_path_system(core->sys_path, RZ_SDB_MAGIC);
 	const char *is_portable = RZ_IS_PORTABLE ? "1" : "0";
+
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
@@ -301,6 +303,7 @@ static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_nam
 		{ "RZ_IS_PORTABLE", is_portable },
 		{ NULL, NULL }
 	};
+
 	int delta = 0;
 	if (var_name && strncmp(var_name, "RZ_", 3)) {
 		delta = 3;
@@ -466,9 +469,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool fullfile = false;
 	bool zerosep = false;
 	int help = 0;
+
 	enum { LOAD_BIN_ALL,
 		LOAD_BIN_NOTHING,
 		LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
+
 	bool run_rc = true;
 	int ret, c, perms = RZ_PERM_RX;
 	ut64 baddr = UT64_MAX;

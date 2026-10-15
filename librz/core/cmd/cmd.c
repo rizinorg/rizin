@@ -540,6 +540,7 @@ err_r_w32_cmd_pipe:
 	free(_shell_cmd_);
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode);
 }
+
 #undef __CLOSE_DUPPED_PIPES
 #endif
 

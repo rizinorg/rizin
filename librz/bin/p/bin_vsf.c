@@ -23,6 +23,7 @@ static const struct {
 	{ "C64", "Commodore 64", rz_offsetof(struct vsf_c64mem, ram), 64 * 1024 },
 	{ "C128", "Commodore 128", rz_offsetof(struct vsf_c128mem, ram), 128 * 1024 },
 };
+
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
 static Sdb *get_sdb(RzBinFile *bf) {
@@ -462,6 +463,7 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 		{ 0xDD0E, "CIA2_CRA" },
 		{ 0xDD0F, "CIA2_CRB" },
 	};
+
 	static const int SYMBOLS_MAX = sizeof(_symbols) / sizeof(_symbols[0]);
 	struct rz_bin_vsf_obj *vsf_obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	if (!vsf_obj) {

@@ -121,6 +121,7 @@ typedef struct rz_base_type_t {
 	ut64 size; // size of the whole type in bits
 	RzBaseTypeKind kind;
 	RzTypeAttribute attrs;
+
 	union {
 		RzBaseTypeStruct struct_data;
 		RzBaseTypeEnum enum_data;
@@ -161,20 +162,24 @@ typedef struct rz_callable_at {
 
 struct rz_type_t {
 	RzTypeKind kind;
+
 	union {
 		struct {
 			RzTypeIdentifierKind kind;
 			char *name;
 			bool is_const; // const char *
 		} identifier;
+
 		struct {
 			RzType *type;
 			bool is_const; // char * const
 		} pointer;
+
 		struct {
 			RzType *type;
 			ut64 count;
 		} array;
+
 		RzCallable *callable;
 	};
 };

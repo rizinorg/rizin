@@ -391,6 +391,7 @@ static void il_op_graph_frequal(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NU
 static void il_op_graph_fsucc(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fsucc", op->op.fsucc, f);
 }
+
 static void il_op_graph_fpred(RzILOpPure *op, RzGraph /*<RzGraphNodeInfo *, NULL *>*/ *g, RzGraphNode *from) {
 	il_op_param_1("fpred", op->op.fpred, f);
 }

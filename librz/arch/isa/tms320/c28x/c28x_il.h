@@ -25,6 +25,7 @@ RZ_IPI const char *c28x_reg32(const C28xOperand *o);
 RZ_IPI RzILOpPure *c28x_ea_load(ut32 bits);
 RZ_IPI RzILOpEffect *c28x_ea_store(RzILOpPure *val);
 RZ_IPI RzILOpEffect *c28x_with_ea(const C28xOperand *m, RzILOpEffect *body);
+
 /**
  * \brief Run \p body with the latched address of memory operand \p m, as a
  * 32-bit access when \p wide: rows render mem16 and mem32 as dis2000 does,

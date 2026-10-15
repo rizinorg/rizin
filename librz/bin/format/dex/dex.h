@@ -65,6 +65,7 @@ typedef struct dex_map_item_t {
 	ut32 map_offset;
 	ut64 offset;
 } DexMapItem;
+
 #define DEX_MAP_ITEM_SIZE (12)
 
 typedef struct dex_string_t {
@@ -72,6 +73,7 @@ typedef struct dex_string_t {
 	ut64 offset;
 	char *data;
 } DexString;
+
 // DexString structure size is variable.
 
 typedef ut32 DexTypeId;
@@ -84,6 +86,7 @@ typedef struct dex_proto_id_t {
 	ut16 *type_list;
 	ut64 offset;
 } DexProtoId;
+
 #define DEX_PROTO_ID_SIZE (0xC)
 
 typedef struct dex_field_id_t {
@@ -92,6 +95,7 @@ typedef struct dex_field_id_t {
 	ut32 name_idx;
 	ut64 offset;
 } DexFieldId;
+
 #define DEX_FIELD_ID_SIZE (8)
 
 typedef struct dex_method_id_t {
@@ -103,6 +107,7 @@ typedef struct dex_method_id_t {
 	ut64 code_offset;
 	ut64 code_size;
 } DexMethodId;
+
 #define DEX_METHOD_ID_SIZE (8)
 
 typedef struct dex_encoded_field_t {
@@ -155,6 +160,7 @@ typedef struct dex_class_def_t {
 	RzList /*<DexEncodedMethod *>*/ *direct_methods;
 	RzList /*<DexEncodedMethod *>*/ *virtual_methods;
 } DexClassDef;
+
 #define DEX_CLASS_DEF_SIZE (0x20)
 
 typedef struct dex_t {

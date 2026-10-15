@@ -802,6 +802,7 @@ void c55_fill_analysis(const C55ArchDesc *a, const C55Insn *insn, RzAnalysisOp *
 // imm|0). Status-flag and register-to-register compares return NULL so the
 // per-arch lifter handles them. The compare constant takes the subject's width.
 static RzILOpPure *c55_cmp_pred(const C55ArchDesc *a, const C55Operand *c, bool uns); // reg-reg compare predicate (defined below)
+
 static RzILOpPure *c55_cond_pred(const C55ArchDesc *a, const C55Operand *c, bool uns) {
 	if (c->cond_is_flag) {
 		// The single-bit st0_55 status flags (tc1, tc2, carry and their

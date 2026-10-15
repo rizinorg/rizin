@@ -58,10 +58,12 @@ typedef struct {
 	RzBinMdtSegBinFormat format; ///< The segment type.
 	RzBinMdtPFlags pflags; ///< The segment p_flags.
 	RzBinVirtualFile *vfile; ///< The virtual file for the `.bNN` file.
+
 	union {
 		ELFOBJ *elf; ///< Set if this part is an ELF.
 		SblHeader *mbn; ///< Set if this part is an MBN auth segment.
 	} obj;
+
 	RzBinAddr *entry; ///< The entry point, if any.
 	RzBinMap *map; ///< The mapping of the part in memory.
 	/**

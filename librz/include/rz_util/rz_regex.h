@@ -74,11 +74,13 @@ typedef enum {
 typedef struct {
 	RzRegexType re_type;
 	RzRegexFlags compile_flags_jit;
+
 	union {
 		RzRegex *re8;
 		RzRegex16 *re16;
 		RzRegex32 *re32;
 	};
+
 	void *jit_stack; ///< The JIT stack for this pattern. Must be used only by one thread at a time.
 	RzRegexCompContext *ccontext;
 } RzRegexMulti;

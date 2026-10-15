@@ -90,6 +90,7 @@ static void set_property(TpiCVProperty *p, ut32 const value) {
 }
 
 GEN_PARSER(TpiCVProperty, set_property, ut16, rz_buf_read_le16);
+
 static bool TpiCVProperty_parse_opt(RzBuffer *b, TpiCVProperty *p, const bool is32) {
 	if (is32) {
 		ut32 value;
@@ -112,6 +113,7 @@ static void set_fldattr(TpiCVFldattr *f, ut16 value) {
 	f->compgenx = GET_BF(value, 8, 1);
 	f->sealed = GET_BF(value, 9, 1);
 }
+
 GEN_PARSER(TpiCVFldattr, set_fldattr, ut16, rz_buf_read_le16);
 
 RZ_IPI bool TpiCVFldattr_is_intro_virtual(TpiCVFldattr *x) {
@@ -124,6 +126,7 @@ static void set_func_attribute(TpiCVFuncattr *f, ut16 value) {
 	f->ctor = GET_BF(value, 1, 1);
 	f->ctorvbase = GET_BF(value, 2, 1);
 }
+
 GEN_PARSER(TpiCVFuncattr, set_func_attribute, ut16, rz_buf_read_le16);
 
 static void set_pointer_attribute(TpiCVPointerAttr *p, ut32 value) {
@@ -140,6 +143,7 @@ static void set_pointer_attribute(TpiCVPointerAttr *p, ut32 value) {
 	p->rref = GET_BF(value, 21, 1);
 	p->unused = GET_BF(value, 22, 10);
 }
+
 GEN_PARSER(TpiCVPointerAttr, set_pointer_attribute, ut32, rz_buf_read_le32);
 
 RZ_IPI bool TpiCVPointerAttr_pointer_to_member(TpiCVPointerAttr *x) {
@@ -151,6 +155,7 @@ static void set_modifier(TpiCVModifier *m, ut16 value) {
 	m->volatile_ = GET_BF(value, 1, 1);
 	m->unaligned = GET_BF(value, 2, 1);
 }
+
 GEN_PARSER(TpiCVModifier, set_modifier, ut16, rz_buf_read_le16);
 
 static bool simple_type_check(RzPdbTpiStream *stream, ut32 idx) {

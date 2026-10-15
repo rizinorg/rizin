@@ -179,6 +179,7 @@ static inline st64 rz_buf_uleb128_at(RzBuffer *b, ut64 addr, ut64 *v) {
 	rz_buf_seek(b, addr, RZ_BUF_SET);
 	return rz_buf_uleb128(b, v);
 }
+
 static inline st64 rz_buf_sleb128_at(RzBuffer *b, ut64 addr, st64 *v) {
 	rz_buf_seek(b, addr, RZ_BUF_SET);
 	return rz_buf_sleb128(b, v);

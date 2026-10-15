@@ -169,9 +169,11 @@ RZ_API char *rz_str_ansi_crop(const char *str, unsigned int x, unsigned int y, u
 RZ_API int rz_str_word_count(const char *string);
 RZ_API int rz_str_char_count(const char *string, char ch);
 RZ_API int rz_str_word_set0(char *str);
+
 static inline const char *rz_str_word_get_next0(const char *str) {
 	return str + strlen(str) + 1;
 }
+
 RZ_API const char *rz_str_word_get0(const char *str, int idx);
 RZ_API RZ_OWN char *rz_str_skip_separator_chars(RZ_NONNULL const char *string);
 RZ_API void rz_str_trim(RZ_NONNULL RZ_INOUT char *str);
@@ -204,12 +206,15 @@ RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig,
 RZ_API int rz_str_casecmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
+
 static inline const char *rz_str_get(const char *str) {
 	return str ? str : "";
 }
+
 static inline const char *rz_str_get_null(const char *str) {
 	return str ? str : "(null)";
 }
+
 RZ_API char *rz_str_ndup(RZ_NULLABLE const char *ptr, int len);
 RZ_API RZ_OWN char *rz_str_dup(RZ_NULLABLE const char *str);
 RZ_API int rz_str_delta(char *p, char a, char b);

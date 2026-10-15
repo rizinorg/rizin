@@ -469,6 +469,7 @@ static void _ds_comment_align_(RzDisasmState *ds, bool up, bool nl) {
 	rz_cons_printf("  %s %s", up ? "" : ".-", COLOR(ds, comment));
 	free(sn);
 }
+
 #define CMT_ALIGN _ds_comment_align_(ds, true, false)
 
 static void ds_comment_lineup(RzDisasmState *ds) {
@@ -2320,6 +2321,7 @@ static inline bool is_flag_overlapped(RzFlagItem *flag, RzAnalysisFunction *f) {
 }
 
 #define printPre (outline || !*comma)
+
 static void ds_show_flags(RzDisasmState *ds, bool overlapped) {
 	// const char *beginch;
 	RzFlagItem *flag;
@@ -4444,6 +4446,7 @@ static void ssa_set(RzAnalysisEsil *esil, const char *reg) {
 }
 
 #define RZ_DISASM_MAX_STR 512
+
 static int myregread(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	RzDisasmState *ds = esil->user;
 	if (ds && ds->show_emu_ssa) {

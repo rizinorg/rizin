@@ -159,10 +159,12 @@ typedef enum register_t {
 typedef struct operand_t {
 	ut32 type;
 	st8 sign;
+
 	struct {
 		Register reg;
 		bool extended;
 	};
+
 	union {
 		struct {
 			ut64 offset;
@@ -170,14 +172,17 @@ typedef struct operand_t {
 			Register regs[2];
 			int scale[2];
 		};
+
 		struct {
 			ut64 immediate;
 			bool is_good_flag;
 		};
+
 		struct {
 			char rep_op[MAX_REPOP_LENGTH];
 		};
 	};
+
 	bool explicit_size;
 	ut32 dest_size;
 	ut32 reg_size;
@@ -4883,6 +4888,7 @@ static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 		op->offset = op->scale[reg_index];
 	}
 }
+
 // Parse operand
 static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrepop) {
 	size_t pos, nextpos = 0;

@@ -74,6 +74,7 @@ typedef struct {
 
 typedef struct rx_operand_t {
 	RxOperandKind kind;
+
 	union {
 		RxOperandReg reg;
 		RxOperandImm imm;

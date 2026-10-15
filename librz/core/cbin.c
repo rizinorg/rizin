@@ -4016,6 +4016,7 @@ static inline bool is_known_namespace(const char *string) {
 }
 
 #define CXX_BIN_VISIBILITY_FLAGS (RZ_BIN_METH_PUBLIC | RZ_BIN_METH_PRIVATE | RZ_BIN_METH_PROTECTED)
+
 static void classdump_cpp(RzBinClass *c) {
 	RzListIter *iter;
 	RzBinClassField *f;
@@ -4113,6 +4114,7 @@ static void classdump_cpp(RzBinClass *c) {
 	}
 	rz_cons_printf("}\n");
 }
+
 #undef CXX_BIN_VISIBILITY_FLAGS
 
 static inline char *demangle_type(const char *any) {

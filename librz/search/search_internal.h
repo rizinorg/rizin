@@ -138,6 +138,7 @@ struct rz_search_interval_t {
 
 struct rz_search_hit_detail_t {
 	RzSearchHitDetailType type;
+
 	union {
 		char *string;
 		ut64 u64;
@@ -145,6 +146,7 @@ struct rz_search_hit_detail_t {
 		double f64;
 		ut8 *bytes;
 	};
+
 	size_t length;
 };
 
@@ -178,9 +180,11 @@ RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_bytes_space(RZ_NONNUL
 RZ_IPI RZ_OWN RzSearchCollection *rz_search_collection_new_graph_space(RZ_NONNULL RzSearchFindGraphCallback find, RZ_NONNULL RzSearchIsEmptyCallback is_empty, RZ_NULLABLE RzSearchFreeCallback free_user, RZ_OWN RZ_NULLABLE void *user);
 RZ_IPI bool rz_search_collection_has_find_callback(RZ_NONNULL RzSearchCollection *col, RZ_NONNULL void *expected);
 RZ_IPI bool rz_search_collection_is_empty(RZ_NONNULL RzSearchCollection *col);
+
 RZ_IPI static inline bool rz_search_collection_on_bytes_space(RZ_NONNULL RzSearchCollection *col) {
 	return col->space == RZ_SEARCH_SPACE_BYTES;
 };
+
 RZ_IPI static inline bool rz_search_collection_on_graph_space(RZ_NONNULL RzSearchCollection *col) {
 	return col->space == RZ_SEARCH_SPACE_GRAPH;
 };

@@ -14,6 +14,7 @@ typedef struct {
 	HANDLE hnd;
 	ut64 winbase;
 } RzIOW32;
+
 #define RzIOW32_HANDLE(x) (((RzIOW32 *)x)->hnd)
 
 static int w32__write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {

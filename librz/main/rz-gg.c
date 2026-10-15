@@ -135,6 +135,7 @@ static int openfile(const char *f, int x) {
 	dup2(fd, 1);
 	return fd;
 }
+
 #define ISEXEC (fmt != 'r')
 
 RZ_API int rz_main_rz_gg(int argc, const char **argv) {

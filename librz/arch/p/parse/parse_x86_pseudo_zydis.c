@@ -10,6 +10,7 @@
 #include <rz_util.h>
 #include <rz_analysis.h>
 #include <rz_parse.h>
+
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
@@ -18,6 +19,7 @@ static int replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
+
 	struct {
 		char *op;
 		char *str;

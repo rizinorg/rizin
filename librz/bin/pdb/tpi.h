@@ -475,6 +475,7 @@ typedef struct {
 		TpiVariant_I16,
 		TpiVariant_I8,
 	} tag;
+
 	union {
 		ut64 u64v;
 		ut32 u32v;

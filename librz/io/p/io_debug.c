@@ -437,6 +437,7 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 }
 
 #include <rz_core.h>
+
 static int get_pid_of(RzIO *io, const char *procname) {
 	RzCore *c = io->corebind.core;
 	if (c && c->dbg && c->dbg->cur) {

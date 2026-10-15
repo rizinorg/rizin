@@ -23,6 +23,7 @@ typedef struct {
 	int fd;
 	int opid;
 } RzIOPtrace;
+
 #define RzIOPTRACE_OPID(x) (((RzIOPtrace *)(x)->data)->opid)
 #define RzIOPTRACE_PID(x)  (((RzIOPtrace *)(x)->data)->pid)
 #define RzIOPTRACE_FD(x)   (((RzIOPtrace *)(x)->data)->fd)

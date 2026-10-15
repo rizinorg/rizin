@@ -41,15 +41,18 @@ typedef struct rz_space_event_t {
 		struct {
 			const RzSpace *space;
 		} count;
+
 		struct {
 			const RzSpace *space;
 		} unset;
+
 		struct {
 			const RzSpace *space;
 			const char *oldname;
 			const char *newname;
 		} rename;
 	} data;
+
 	int res;
 } RzSpaceEvent;
 

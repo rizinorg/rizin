@@ -590,6 +590,7 @@ typedef enum {
 } Mcs96Instructions;
 
 static const char *mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };
+
 // in theory these invalids can never happen
 
 typedef enum {

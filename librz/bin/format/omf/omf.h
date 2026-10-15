@@ -627,9 +627,11 @@ typedef struct {
 	ut8 index;
 	ut8 descr_type;
 	bool is_data; ///< used to build functions
+
 	union {
 		OMF_types final_types;
 		OMF_components components;
+
 		struct {
 			ut8 size; ///< the size of the pointer (either 16 or 32 bits)
 			ut8 attrib;
@@ -653,6 +655,7 @@ typedef struct {
 
 			 */
 		} pointer;
+
 		struct {
 			ut8 attrib; ///< 1 = Near-Function 2 = Far-Function
 			ut16 rtype_ti; ///< TypeIndex of the function return type
@@ -669,6 +672,7 @@ typedef struct {
 			 * int test (void) { ... } // no params
 			 */
 		} function;
+
 		struct {
 			ut8 dims; ///< number of array dimensions
 			ut8 attrib; ///< 1 = Huge-Array (0 ... 64K) 2 = Xhuge-Array (0 ... 16MByte)
@@ -688,6 +692,7 @@ typedef struct {
 			 * creates the type descriptor 0x22,1,0,0x42,-1L
 			 */
 		} array;
+
 		struct {
 			bool is_struct; ///< 1 = struct, 2 = union
 			ut8 n; ///< struct/union-tag name length
@@ -695,6 +700,7 @@ typedef struct {
 			ut32 size; ///< sizeof struct or union
 			ut16 member_ti; ///< reference to component list or `<void>`
 		} struct_union;
+
 		struct {
 			ut16 ti; ///< base scalar type of the field [uchar, uint, long ]
 			ut8 offset; ///< field offset in base scalar in bits
@@ -702,6 +708,7 @@ typedef struct {
 		} bitfield;
 
 	} descriptor;
+
 	char *label;
 	void *rz_type;
 } OMF_type;

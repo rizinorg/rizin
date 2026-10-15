@@ -159,6 +159,7 @@ static st64 failing_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
 	(void)len;
 	return -1;
 }
+
 static const RzBufferMethods failing_src_methods = {
 	.read = failing_read,
 };
@@ -172,6 +173,7 @@ static st64 failing_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	(void)len;
 	return -1;
 }
+
 static const RzBufferMethods failing_dst_methods = {
 	.write = failing_write,
 };

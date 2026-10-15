@@ -690,6 +690,7 @@ str_err:
 	free(str);
 	return res;
 }
+
 /**
  * \brief Write at the specified \p addr the length of the string in one byte,
  * followed by the given string \p s

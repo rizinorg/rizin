@@ -112,6 +112,7 @@ static int can_replace(const char *str, int idx, int max_operands) {
 #define SPR_CONST(o, x) \
 	strcpy((o), (x)); \
 	return (strlen((x)) - 1)
+
 static int getspr_pseudo(const char *reg, char *output) {
 	char cspr[32];
 	ut32 spr = 0;
@@ -287,6 +288,7 @@ static int getspr_pseudo(const char *reg, char *output) {
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i, j, k;
+
 	struct {
 		char *op;
 		char *str;
@@ -1606,6 +1608,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 #define WSZ 128
+
 static bool parse(RzParse *p, const char *data, RzStrBuf *sb) {
 	int i, len = strlen(data);
 	char w0[WSZ];

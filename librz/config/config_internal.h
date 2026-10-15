@@ -11,6 +11,7 @@
 typedef struct config_value_t {
 	const char *name; ///< Variable name
 	ut32 flags; ///< Copy of the variable flags (see RzConfigVarFlags)
+
 	union {
 		char *string;
 		ut64 integer;

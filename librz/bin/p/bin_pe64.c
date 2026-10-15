@@ -444,6 +444,7 @@ static RzStructuredData *pe64_structure(RzBinFile *bf) {
 }
 
 #define RzBinPEObj struct PE_(rz_bin_pe_obj_t)
+
 static inline int find_section(RzBinPEObj *bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;

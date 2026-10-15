@@ -81,6 +81,7 @@ define_types_gen_nan(f128, long double);
 define_types_gen_inf(f32, float);
 define_types_gen_inf(f64, double);
 define_types_gen_inf(f128, long double);
+
 /** \} */ // end rz_float_special_group
 
 /**
@@ -263,6 +264,7 @@ static inline bool f128_is_zero(float128_t value) {
 static inline bool ext_f80_is_special(extFloat80_t value) {
 	return (value.signExp & 0x7fff) == 0x7fff;
 }
+
 /** \} */ // end rz_float_softfloat_group
 
 /**

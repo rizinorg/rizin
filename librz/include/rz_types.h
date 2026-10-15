@@ -426,6 +426,7 @@ static inline void *rz_new_copy(int size, const void *data) {
 	}
 	return a;
 }
+
 // TODO: Make RZ_NEW_COPY be 1 arg, not two
 #define RZ_NEW_COPY(x, y) \
 	x = (void *)malloc(sizeof(y)); \

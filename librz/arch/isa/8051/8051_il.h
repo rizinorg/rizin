@@ -176,6 +176,7 @@ typedef struct i8051_op_addressing_t {
 	struct i8051_op_t *op;
 	I8051AddressingMode mode;
 	i8051_plugin_context *ctx;
+
 	union {
 		I8051Register reg;
 		ut8 addr;

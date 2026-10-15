@@ -48,6 +48,7 @@ typedef struct {
 	int old_pid;
 	vm_size_t pagesize;
 } RzIOMach;
+
 /*
 #define RzIOMACH_PID(x) (x ? ((RzIOMach*)(x))->pid : -1)
 #define RzIOMACH_TASK(x) (x ? ((RzIOMach*)(x))->task : -1)

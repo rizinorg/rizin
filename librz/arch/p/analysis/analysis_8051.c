@@ -912,6 +912,7 @@ static void analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	}
 }
+
 static bool esil_i8051_init(void *pesil) {
 	RzAnalysisEsil *esil = pesil;
 	RzAnalysis *analysis = esil->panalysis;
@@ -1186,6 +1187,7 @@ static const i8051_map_entry init_mem_map[3] = {
 	{ NULL, UT32_MAX, "sfr" },
 	{ NULL, UT32_MAX, "xdata" }
 };
+
 static bool i8051_init(void **user) {
 	i8051_plugin_context *ctx = RZ_NEW0(i8051_plugin_context);
 	if (!ctx) {

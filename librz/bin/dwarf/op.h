@@ -70,6 +70,7 @@ typedef enum {
 typedef struct {
 	DW_OP opcode;
 	OperationKind kind;
+
 	/// Dereference the topmost value of the stack.
 	union {
 		struct {
@@ -77,6 +78,7 @@ typedef struct {
 			ut8 size; /// The size of the data to dereference.
 			bool space; /// True if the dereference operation takes an address space argument from the stack; false otherwise.
 		} deref; /// DW_OP_deref DW_OP_xderef
+
 		/// Pick an item from the stack and push it on top of the stack.
 		/// This operation handles `DW_OP_pick`, `DW_OP_dup`, and
 		/// `DW_OP_over`.
@@ -84,32 +86,38 @@ typedef struct {
 			/// The index, from the top of the stack, of the item to copy.
 			ut8 index;
 		} pick;
+
 		struct {
 			/// The value to add.
 			ut64 value;
 		} plus_constant;
+
 		/// Branch to the target location if the top of stack is nonzero.
 		struct {
 			/// The relative offset to the target bytecode.
 			st16 target;
 		} bra;
+
 		/// Unconditional branch to the target location.
 		struct {
 			/// The relative offset to the target bytecode.
 			st16 target;
 		} skip;
+
 		/// Push an unsigned constant value on the stack.  This handles multiple
 		/// DWARF opcodes.
 		struct {
 			/// The value to push.
 			ut64 value;
 		} unsigned_constant;
+
 		/// Push a signed constant value on the stack.  This handles multiple
 		/// DWARF opcodes.
 		struct {
 			/// The value to push.
 			st64 value;
 		} signed_constant;
+
 		/// Indicate that this piece's location is in the given register.
 		///
 		/// Completes the piece or expression.
@@ -117,6 +125,7 @@ typedef struct {
 			/// The register number.
 			ut16 register_number;
 		} reg;
+
 		/// Find the value of the given register, add the offset, and then
 		/// push the resulting sum on the stack.
 		struct {
@@ -127,12 +136,14 @@ typedef struct {
 			/// The DIE of the base type or 0 to indicate the generic type
 			UnitOffset base_type;
 		} register_offset;
+
 		/// Compute the frame base (using `DW_AT_frame_base`), add the
 		/// given offset, and then push the resulting sum on the stack.
 		struct {
 			/// The offset to add.
 			st64 offset;
 		} frame_offset;
+
 		/// Evaluate a DWARF expression as a subroutine.  The expression
 		/// comes from the `DW_AT_location` attribute of the indicated
 		/// DIE.
@@ -140,6 +151,7 @@ typedef struct {
 			/// The DIE to use.
 			ut64 offset;
 		} call;
+
 		/// Terminate a piece.
 		struct {
 			/// The size of this piece in bits.
@@ -150,6 +162,7 @@ typedef struct {
 			bool has_bit_offset;
 			ut64 bit_offset;
 		} piece;
+
 		/// For IMPLICIT_VALUE
 		RzBinDwarfBlock implicit_value;
 
@@ -222,6 +235,7 @@ typedef struct operation_evaluation_result_t {
 
 	union {
 		RzBinDwarfLocation complete;
+
 		struct {
 			RzBinDwarfEvaluationStateWaiting _1;
 			RzBinDwarfEvaluationResult _2;

@@ -25,6 +25,7 @@ typedef union rz_xnu_arm_reg_state_t {
 	arm_thread_state32_t arm32;
 	arm_thread_state64_t arm64;
 } RzXnuArmRegState;
+
 #define RZ_REG_T        RzXnuArmRegState
 #define RZ_REG_STATE_T  MACHINE_THREAD_STATE
 #define RZ_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
@@ -101,9 +102,11 @@ RZ_IPI bool rz_xnu_thread_get_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
 RZ_IPI bool rz_xnu_thread_set_drx(RzXnuDebug *ctx, xnu_thread_t *thread);
 
 RZ_IPI bool xnu_modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable);
+
 static inline bool xnu_set_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
 	return xnu_modify_trace_bit(dbg, th, 1);
 }
+
 static inline bool xnu_clear_trace_bit(RzDebug *dbg, xnu_thread_t *th) {
 	return xnu_modify_trace_bit(dbg, th, 0);
 }

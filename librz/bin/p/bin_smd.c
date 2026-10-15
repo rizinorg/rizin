@@ -378,6 +378,7 @@ static RzStructuredData *smd_structure(RzBinFile *bf) {
 
 	return info;
 }
+
 RzBinPlugin rz_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis / MegaDrive ROM",

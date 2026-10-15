@@ -61,6 +61,7 @@ static inline ut8 apply_sbox(int si, ut8 x) {
 	x = S[si][x & 0xf];
 	return x;
 }
+
 /* Apply SBox to the four least significant bits */
 static inline ut8 apply_sbox_inv(int si, ut8 x) {
 	x = Sinv[si][x & 0xf];

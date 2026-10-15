@@ -8,6 +8,7 @@
 
 #define R(a, b, c, d) \
 	{ (const ut8 *)a, (const ut8 *)b, c, d }
+
 static struct {
 	const ut8 *a;
 	const ut8 *b;

@@ -378,10 +378,12 @@ static int cmp_u32(const void *a, const void *b, void *user) {
 	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
 	return (x > y) - (x < y);
 }
+
 static int qsort_u32_asc(const void *a, const void *b) {
 	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
 	return (x > y) - (x < y);
 }
+
 static int qsort_u32_desc(const void *a, const void *b) {
 	ut32 x = *(const ut32 *)a, y = *(const ut32 *)b;
 	return (y > x) - (y < x);
@@ -1513,6 +1515,7 @@ static bool test_pvector_pop_front(void) {
 
 	mu_end;
 }
+
 // clang-format on
 
 static bool test_pvector_push(void) {

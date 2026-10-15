@@ -1204,6 +1204,7 @@ typedef enum {
 	RZ_CORE_DISASM_STRINGS_MODE_BLOCK,
 	RZ_CORE_DISASM_STRINGS_MODE_FUNCTION,
 } RzCorePrintDisasmStringsMode;
+
 RZ_API RZ_OWN char *rz_core_print_disasm_strings(RZ_NONNULL RzCore *core, RzCorePrintDisasmStringsMode mode, ut64 n_bytes, RZ_NULLABLE RzAnalysisFunction *fcn);
 
 /* rtr */

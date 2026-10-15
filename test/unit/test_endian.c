@@ -86,6 +86,7 @@ static const struct {
 	size_t offset; ///< offset parameter of read functions
 	int endianness; ///< 1 = be, 2 = le, 3 = me
 	int size; ///< 32 for ut32, st32, or float, etc
+
 	union {
 		ut8 u8;
 		ut16 u16;
@@ -535,6 +536,7 @@ bool test_rz_read_offset_be() {
 	check_offset128(be, offset, prev_offset, u128);
 	mu_end;
 }
+
 int all_tests() {
 	/* big-endian read tests */
 	mu_run_test(test_rz_read_be128);

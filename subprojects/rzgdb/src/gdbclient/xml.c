@@ -151,11 +151,13 @@ exit_err:
 
 typedef struct {
 	char type[32];
+
 	struct {
 		char name[32];
 		ut32 bit_num;
 		ut32 sz; // size in bits
 	} fields[64];
+
 	ut32 num_bits;
 	ut32 num_fields;
 } gdbr_xml_flags_t;

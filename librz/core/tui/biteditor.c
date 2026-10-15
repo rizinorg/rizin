@@ -55,6 +55,7 @@ static void print_byte_cell(RzCore *core, bool use_color, const char *fmt, ut8 b
 /// Coloring matches `plf` (skipped when \p use_color is false).
 #define RZIL_LABEL     "rzil: "
 #define RZIL_LABEL_LEN 6
+
 static void print_rzil_wrapped(RzCore *core, bool use_color, const char *il) {
 	const int cols = rz_cons_get_size(NULL);
 	const int width = (cols > RZIL_LABEL_LEN + 20) ? cols - 2 : 0;

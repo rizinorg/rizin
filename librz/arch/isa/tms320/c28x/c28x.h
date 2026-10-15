@@ -576,6 +576,7 @@ typedef struct {
  */
 typedef enum {
 	C28X_INS_INVALID = 0,
+
 #define C28X_INS_ENUM(id, name) C28X_INS_##id,
 	C28X_INSN_LIST(C28X_INS_ENUM)
 #undef C28X_INS_ENUM

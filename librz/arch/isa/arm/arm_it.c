@@ -15,6 +15,7 @@ typedef union arm_cs_itcond_t {
 		ut8 off; ///< offset of this instruction from the it, for back-referencing to the ArmCSITBlock
 		ut8 vpt; ///< >0 if it is a VCC condition. 0 otherwise.
 	};
+
 	ut64 packed; ///< for putting into HtUU
 } ArmCSITCond;
 

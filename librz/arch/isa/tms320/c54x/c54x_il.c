@@ -373,6 +373,7 @@ static bool c54x_status_lookup(const char *name, const char **reg, ut8 *bit) {
 		{ "ovm", "st1", 9 }, { "intm", "st1", 11 }, { "hm", "st1", 12 }, { "xf", "st1", 13 },
 		{ "cpl", "st1", 14 }, { "braf", "st1", 15 }
 	};
+
 	if (!name) {
 		return false;
 	}

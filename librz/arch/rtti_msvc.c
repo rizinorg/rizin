@@ -28,11 +28,13 @@ typedef struct rtti_class_hierarchy_descriptor_t {
 typedef struct rtti_base_class_descriptor_t {
 	ut32 type_descriptor_addr; // only a relative offset for 64bit
 	ut32 num_contained_bases;
+
 	struct {
 		st32 mdisp; // member displacement
 		st32 pdisp; // vbtable displacement
 		st32 vdisp; // displacement inside vbtable
 	} where;
+
 	ut32 attributes;
 } rtti_base_class_descriptor;
 

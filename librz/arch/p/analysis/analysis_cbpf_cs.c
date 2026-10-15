@@ -104,6 +104,7 @@ static RzStructuredData *cbpf_opex(csh handle, cs_insn *insn) {
 
 	return root;
 }
+
 static bool cbpf_anal_init(void **user) {
 	BPFContext *ctx = RZ_NEW0(BPFContext);
 	rz_return_val_if_fail(ctx, false);
@@ -140,6 +141,7 @@ static int cbpf_arch_info(RzAnalysis *a, RzAnalysisInfoType query) {
 		return -1;
 	}
 }
+
 static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	BPFContext *ctx = (BPFContext *)a->plugin_data;
 	cs_insn *insn;
@@ -263,6 +265,7 @@ static int cbpf_analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 	cs_free(insn, n);
 	return op->size;
 }
+
 RzAnalysisPlugin rz_analysis_plugin_cbpf_cs = {
 	.name = "cbpf",
 	.desc = "Classic BPF analysis plugin",

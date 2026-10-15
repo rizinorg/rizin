@@ -15,7 +15,9 @@
 #define OPCODE_SINGLE(name, str, param, byte, control) name = byte,
 #define OPCODE_DOUBLE(name, str, param, byte, control) name = byte,
 #define OPCODE_PREFIX(name, str, param, byte, control) name = byte,
+
 enum {
+
 #include "opcodes_single.def"
 #include "opcodes_double.def"
 #include "opcodes_prefix.def"
@@ -29,6 +31,7 @@ typedef struct {
 	int size;
 	ut8 byte1;
 	ut8 byte2;
+
 	union {
 		ut32 tok;
 		st32 target;

@@ -13,6 +13,7 @@
 // Modified from one in analysis_riscv
 // First arg is checked against all others
 #define is_any_n(...) _is_any_n(__VA_ARGS__, NULL)
+
 static bool _is_any_n(const char *str, size_t n, ...) {
 	va_list va;
 	va_start(va, n);

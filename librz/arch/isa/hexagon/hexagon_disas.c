@@ -66,6 +66,7 @@ typedef struct {
 	ut8 syntax; // offset into HexInsnTemplate.syntax where to insert this op
 	char isa_id;
 	HexOpMask masks[HEX_OP_MASKS_MAX];
+
 	union {
 		ut8 imm_scale;
 		ut8 reg_cls; // HexRegClass
@@ -86,6 +87,7 @@ typedef struct {
 		ut32 mask;
 		ut32 op;
 	} encoding;
+
 	HexInsnID id;
 	HexOpTemplate ops[HEX_MAX_OPERANDS];
 	ut8 pred; // HexPred

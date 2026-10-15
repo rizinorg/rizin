@@ -50,6 +50,7 @@ RZ_IPI bool pe_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 	}
 	return true;
 }
+
 RZ_IPI void pe_stream_free(RzPdbPeStream *stream) {
 	if (!stream) {
 		return;

@@ -130,6 +130,7 @@ typedef struct boot_image_obj_s {
 	Sdb *kv;
 	ut32 version;
 	ut32 header_size;
+
 	union {
 		BootImage0 v0;
 		BootImage1 v1;

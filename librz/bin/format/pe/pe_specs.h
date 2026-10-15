@@ -361,10 +361,12 @@ typedef struct {
 
 typedef struct {
 	ut8 Name[PE_IMAGE_SIZEOF_SHORT_NAME];
+
 	union {
 		ut32 PhysicalAddress;
 		ut32 VirtualSize;
 	} Misc;
+
 	ut32 VirtualAddress;
 	ut32 SizeOfRawData;
 	ut32 PointerToRawData;
@@ -587,6 +589,7 @@ typedef struct {
 		// ut16 Id;
 		ut32 Name;
 	} u1;
+
 	union {
 		// struct {
 		// 	ut32 OffsetToDirectory: 31;
@@ -830,6 +833,7 @@ typedef enum {
 typedef struct {
 	ut32 BeginAddress; // Function start address
 	ut32 EndAddress; // Function end address
+
 	union {
 		ut32 UnwindInfoAddress;
 		ut32 UnwindData;
@@ -842,6 +846,7 @@ typedef union {
 		ut8 UnwindOp : 4;
 		ut8 OpInfo : 4;
 	};
+
 	ut16 FrameOffset;
 } PE64_UNWIND_CODE;
 

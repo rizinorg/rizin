@@ -135,11 +135,13 @@ static void print_float(const RzNumValue *v, RzStrBuf *sb) {
 	}
 	rz_strbuf_appendf(sb, "float   %g\n", d);
 	rz_strbuf_appendf(sb, "scifmt  %.17g\n", d);
+
 	// IEEE-754 binary64 bit pattern (handy for back-conversion).
 	union {
 		double d;
 		ut64 u;
 	} u = { .d = d };
+
 	rz_strbuf_appendf(sb, "hex     0x%016" PFMT64x "\n", u.u);
 }
 

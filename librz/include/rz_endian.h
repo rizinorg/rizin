@@ -399,6 +399,7 @@ static inline float rz_read_be_float(const void *src) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.bits = rz_read_be32(src);
 	return p.flt;
 }
@@ -430,6 +431,7 @@ static inline void rz_write_be_float(void *dest, float val) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.flt = val;
 	rz_write_be32(dest, p.bits);
 }
@@ -458,6 +460,7 @@ static inline double rz_read_be_double(const void *src) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.bits = rz_read_be64(src);
 	return p.dbl;
 }
@@ -489,6 +492,7 @@ static inline void rz_write_be_double(void *dest, double val) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.dbl = val;
 	rz_write_be64(dest, p.bits);
 }
@@ -851,6 +855,7 @@ static inline float rz_read_le_float(const void *src) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.bits = rz_read_le32(src);
 	return p.flt;
 }
@@ -882,6 +887,7 @@ static inline void rz_write_le_float(void *dest, float val) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.flt = val;
 	rz_write_le32(dest, p.bits);
 }
@@ -910,6 +916,7 @@ static inline double rz_read_le_double(const void *src) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.bits = rz_read_le64(src);
 	return p.dbl;
 }
@@ -941,6 +948,7 @@ static inline void rz_write_le_double(void *dest, double val) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.dbl = val;
 	rz_write_le64(dest, p.bits);
 }
@@ -1163,6 +1171,7 @@ static inline float rz_read_me_float(const void *src) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.bits = rz_read_me32(src);
 	return p.flt;
 }
@@ -1194,6 +1203,7 @@ static inline void rz_write_me_float(void *dest, float val) {
 		ut32 bits;
 		float flt;
 	} p;
+
 	p.flt = val;
 	rz_write_me32(dest, p.bits);
 }
@@ -1222,6 +1232,7 @@ static inline double rz_read_me_double(const void *src) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.bits = rz_read_me64(src);
 	return p.dbl;
 }
@@ -1253,6 +1264,7 @@ static inline void rz_write_me_double(void *dest, double val) {
 		ut64 bits;
 		double dbl;
 	} p;
+
 	p.dbl = val;
 	rz_write_me64(dest, p.bits);
 }

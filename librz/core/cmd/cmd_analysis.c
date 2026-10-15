@@ -1247,6 +1247,7 @@ RZ_IPI RzCmdStatus rz_il_trace_stop_handler(RzCore *core, int argc, const char *
 }
 
 static const char _handler_no_name[] = "<no name>";
+
 static bool _aeli_iter(void *user, const ut64 key, const void *value) {
 	const RzAnalysisEsilInterrupt *interrupt = value;
 	rz_cons_printf("%3" PFMT64x ": %s\n", key, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);

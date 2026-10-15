@@ -334,6 +334,7 @@ static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, i
 RZ_IPI RzCmdStatus rz_write_1_inc_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 1);
 }
+
 RZ_IPI RzCmdStatus rz_write_1_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 1);
 }
@@ -341,6 +342,7 @@ RZ_IPI RzCmdStatus rz_write_1_dec_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_2_inc_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 2);
 }
+
 RZ_IPI RzCmdStatus rz_write_2_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 2);
 }
@@ -348,6 +350,7 @@ RZ_IPI RzCmdStatus rz_write_2_dec_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_4_inc_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 4);
 }
+
 RZ_IPI RzCmdStatus rz_write_4_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 4);
 }
@@ -355,6 +358,7 @@ RZ_IPI RzCmdStatus rz_write_4_dec_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_write_8_inc_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 8);
 }
+
 RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler(core, argc, argv, 8);
 }

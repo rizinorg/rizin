@@ -131,6 +131,7 @@ static const char *pclntab_version_str(GoPcLnTab *pclntab) {
 }
 
 #define is_addr_outside(x) ((x) <= begin || (x) >= end)
+
 static bool is_pclntab_valid(GoPcLnTab *pclntab) {
 	ut64 begin = pclntab->vaddr + 8;
 	ut64 end = pclntab->vaddr + pclntab->size;
@@ -161,6 +162,7 @@ static bool is_pclntab_valid(GoPcLnTab *pclntab) {
 
 	return true;
 }
+
 #undef is_addr_outside
 
 static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
@@ -1106,6 +1108,7 @@ static bool decode_disp_set_addr(RzCore *core, GoStrInfo *info, ut64 pc, const u
 	info->addr = disp;
 	return true;
 }
+
 // 0x004881da      48c7401003000000       mov   qword [rax + 0x10], 3
 // 0x004881e2      488d0d8d8c0100         lea   rcx, [0x004a0e76]
 go_asm_pattern_define(x86, 64, lea, "\x48\x00\x00\x00\x00\x00\x00", "\xff\x00\x00\x00\x00\x00\x00", true);

@@ -2026,6 +2026,7 @@ static bool test_pf_timestamp_all_formats_size(void) {
 		{ RZ_PF_TIMEFMT_WEBKIT, 8, "webkit" },
 		{ RZ_PF_TIMEFMT_COCOA, 8, "cocoa" },
 	};
+
 	for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
 		int sz = rz_pf_timefmt_size(cases[i].fmt);
 		mu_assert_eq(sz, cases[i].expected_sz, cases[i].name);

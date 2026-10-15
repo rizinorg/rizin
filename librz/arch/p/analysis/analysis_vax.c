@@ -125,6 +125,7 @@ static void vax_classify_data(RzAnalysisOp *op, const VaxInst *inst) {
 		{ "insv", RZ_ANALYSIS_OP_TYPE_MOV },
 		{ NULL, 0 },
 	};
+
 	const char *n = inst->name;
 	if (!n) {
 		return;

@@ -29,6 +29,7 @@ static const char *get_mangled_name(const char *mangled) {
 
 	return RZ_STR_ISEMPTY(mangled) ? NULL : mangled;
 }
+
 #undef skip_prefix_s
 #undef skip_prefix_n
 

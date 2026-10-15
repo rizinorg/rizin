@@ -503,6 +503,7 @@
 #define RISCV_FeatureStdExtZvl32768b 106
 
 #define RISCV_FeatureStdExtZvl65536b 107
+
 /* Parse result enum - indicates why parsing stopped */
 typedef enum {
 	RISCV_EXT_PARSE_END_OF_STRING, /* Stopped at '\0' - valid extension found */

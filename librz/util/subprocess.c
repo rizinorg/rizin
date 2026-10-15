@@ -138,6 +138,7 @@ leave:
 	rz_th_lock_leave(lock);
 	return true;
 }
+
 RZ_API void rz_subprocess_fini(void) {
 	RzThreadLock *lock = NULL;
 	do {

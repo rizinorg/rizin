@@ -1148,6 +1148,7 @@ static RzILOpEffect *writeback(cs_insn *insn, size_t addr_op, RZ_BORROW RzILOpBi
 #endif
 		return NULL;
 	}
+
 	RzILOpBitVector *wbaddr = DUP(addr);
 	if (ISPOSTINDEX64()) {
 		// post-index
@@ -1427,6 +1428,7 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 	}
 	arm64_reg addend_reg = REGID(0);
 	ut64 loadsz;
+
 	enum {
 		OP_ADD,
 		OP_CLR,
@@ -1437,6 +1439,7 @@ static RzILOpEffect *ldadd(cs_insn *insn) {
 		OP_UMAX,
 		OP_UMIN
 	} op = OP_ADD;
+
 	switch (insn->id) {
 	case ARM64_INS_LDCLRB:
 	case ARM64_INS_LDCLRAB:

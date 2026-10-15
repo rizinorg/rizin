@@ -68,20 +68,25 @@ typedef struct rz_egg_lang_t {
 	int oc;
 	int mode;
 	int inlinectr;
+
 	struct {
 		char *name;
 		char *body;
 		// int fastcall; /* TODO: NOT YET USED */
 	} inlines[256];
+
 	int ninlines;
+
 	struct {
 		char *name;
 		char *arg;
 	} syscalls[256];
+
 	struct {
 		char *name;
 		char *content;
 	} aliases[256];
+
 	char *nested[32];
 	char *nested_callname[32];
 	// char *nestede[32] = {0};
@@ -137,6 +142,7 @@ typedef struct rz_egg_t {
 #endif
 
 typedef struct rz_egg_emit_t RzEggEmit;
+
 struct rz_egg_emit_t {
 	const char *arch;
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */

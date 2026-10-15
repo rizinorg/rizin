@@ -23,69 +23,91 @@ RZ_LIB_VERSION(rz_socket);
 RZ_API RzSocket *rz_socket_new(bool is_ssl) {
 	return NULL;
 }
+
 RZ_API bool rz_socket_is_connected(RzSocket *s) {
 	return false;
 }
+
 RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	return false;
 }
+
 RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) {
 	return -1;
 }
+
 RZ_API int rz_socket_close_fd(RzSocket *s) {
 	return -1;
 }
+
 RZ_API int rz_socket_close(RzSocket *s) {
 	return -1;
 }
+
 RZ_API int rz_socket_free(RzSocket *s) {
 	return -1;
 }
+
 RZ_API int rz_socket_port_by_name(const char *name) {
 	return -1;
 }
+
 RZ_API bool rz_socket_listen(RzSocket *s, const char *port, const char *certfile) {
 	return false;
 }
+
 RZ_API RzSocket *rz_socket_accept(RzSocket *s) {
 	return NULL;
 }
+
 RZ_API RzSocket *rz_socket_accept_timeout(RzSocket *s, unsigned int timeout) {
 	return NULL;
 }
+
 RZ_API bool rz_socket_block_time(RzSocket *s, bool block, int sec, int usec) {
 	return false;
 }
+
 RZ_API int rz_socket_flush(RzSocket *s) {
 	return -1;
 }
+
 RZ_API int rz_socket_ready(RzSocket *s, int secs, int usecs) {
 	return -1;
 }
+
 RZ_API char *rz_socket_to_string(RzSocket *s) {
 	return NULL;
 }
+
 RZ_API int rz_socket_write(RzSocket *s, void *buf, int len) {
 	return -1;
 }
+
 RZ_API int rz_socket_puts(RzSocket *s, char *buf) {
 	return -1;
 }
+
 RZ_API void rz_socket_printf(RzSocket *s, const char *fmt, ...) {
 	/* nothing here */
 }
+
 RZ_API int rz_socket_read(RzSocket *s, unsigned char *buf, int len) {
 	return -1;
 }
+
 RZ_API int rz_socket_read_block(RzSocket *s, unsigned char *buf, int len) {
 	return -1;
 }
+
 RZ_API int rz_socket_gets(RzSocket *s, char *buf, int size) {
 	return -1;
 }
+
 RZ_API RzSocket *rz_socket_new_from_fd(int fd) {
 	return NULL;
 }
+
 RZ_API ut8 *rz_socket_slurp(RzSocket *s, int *len) {
 	return NULL;
 }

@@ -1680,6 +1680,7 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 #define PAL_JUMP "#0037da"
 #define PAL_FAIL "#c50f1f"
 #define PAL_TRUE "#13a10e"
+
 static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bbi;
 	void **iter;
@@ -1714,6 +1715,7 @@ static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 		}
 	}
 }
+
 #undef PAL_JUMP
 #undef PAL_FAIL
 #undef PAL_TRUE

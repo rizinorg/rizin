@@ -99,6 +99,7 @@ typedef enum {
 } RzOutputMode;
 
 RZ_OWN RZ_OUT typedef char *(*pipe_fn)(const char *, int *);
+
 /**
  * \brief List of fallback pipe handlers for specific commands.
  *
@@ -120,6 +121,7 @@ typedef struct rz_cmd_state_output_t {
 	 * Output mode expected from the command handler
 	 */
 	RzOutputMode mode;
+
 	/**
 	 * mode-specific data. Handlers are called with these data already
 	 * initialized as necessary, based on the requested mode, and they do not
@@ -268,6 +270,7 @@ typedef struct rz_cmd_desc_arg_t {
 	 * shall be used only when \p optional is true.
 	 */
 	const char *default_value;
+
 	/**
 	 * Additional data which is type specific.
 	 */
@@ -460,9 +463,11 @@ typedef struct rz_cmd_desc_t {
 			int min_argc;
 			int max_argc;
 		} argv_data;
+
 		struct {
 			struct rz_cmd_desc_t *exec_cd;
 		} group_data;
+
 		struct {
 			RzCmdArgvModesCb cb;
 			int modes; ///< A combination of RzOutputMode values
@@ -470,6 +475,7 @@ typedef struct rz_cmd_desc_t {
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;
+
 		struct {
 			RzCmdArgvStateCb cb;
 			int modes; ///< A combination of RzOutputMode values

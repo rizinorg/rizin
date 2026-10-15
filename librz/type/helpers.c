@@ -778,6 +778,7 @@ RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond) {
 	}
 	return 0;
 }
+
 /**
  * \brief evaluate the type condition on the arguments and return a bool accordingly.
  *

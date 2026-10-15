@@ -239,6 +239,7 @@ success:
 #endif /* CS_NEXT_VERSION */
 	return true;
 }
+
 #undef return_on_cpu
 
 #include "analysis/analysis_mips_cs.c"

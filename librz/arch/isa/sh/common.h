@@ -18,6 +18,7 @@ typedef struct sh_param_builder_t {
 		struct sh_param_builder_addr_t addr;
 		SHParam param;
 	};
+
 	bool is_param; ///< whether a param was directly passed
 } SHParamBuilder;
 

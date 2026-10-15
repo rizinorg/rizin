@@ -874,6 +874,7 @@ static int h8300_decode_10(const ut8 *instr, H8300Instruction *cmd) {
 
 	return -1;
 }
+
 static int h8300_decode_8(const ut8 *instr, H8300Instruction *cmd) {
 	ut64 x5 = rz_read_be64(instr) >> 24;
 	if (cmd->cpu_type == CPU_H8300H) {

@@ -29,16 +29,19 @@ typedef struct rz_dyld_cache_header_t {
 	ut64 cacheType;
 	ut32 branchPoolsOffset;
 	ut32 branchPoolsCount;
+
 	union {
 		struct {
 			ut64 accelerateInfoAddr;
 			ut64 accelerateInfoSize;
 		}; ///< used if rz_dyldcache_header_may_have_accel() == true
+
 		struct {
 			ut64 dyldInCacheMH;
 			ut64 dyldInCacheEntry;
 		}; ///< used if rz_dyldcache_header_may_have_accel() == false
 	};
+
 	ut64 imagesTextOffset;
 	ut64 imagesTextCount;
 	ut64 patchInfoAddr;

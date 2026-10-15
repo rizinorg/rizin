@@ -201,6 +201,7 @@ size_t calcSizePerson(void *c) {
 	Person *p = c;
 	return sizeof(*p);
 }
+
 bool test_ht_general(void) {
 	int retval = MU_PASSED;
 	bool found = false;
@@ -410,6 +411,7 @@ bool test_clear(void) {
 }
 
 static bool grow_1_found[3];
+
 static bool grow_1_foreach(void *user, const char *k, int v) {
 	grow_1_found[v] = true;
 	return true;

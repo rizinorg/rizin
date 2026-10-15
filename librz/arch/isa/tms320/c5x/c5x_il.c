@@ -31,6 +31,7 @@ static RzILOpEffect *c5x_set_flag(const char *name, bool set) {
 static const char *const c5x_ar[8] = {
 	"ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7"
 };
+
 static RzILOpPure *c5x_ind_addr(void) {
 	RzILOpPure *v = VARG("ar7");
 	for (int k = 6; k >= 0; k--) {
@@ -38,6 +39,7 @@ static RzILOpPure *c5x_ind_addr(void) {
 	}
 	return v;
 }
+
 static RzILOpPure *c5x_addr(const C55Operand *m) {
 	if (m->amode == C55_AM_DIRECT) {
 		RzILOpPure *page = SHIFTL0(LOGAND(VARG("dp"), UN(16, 0x1ff)), UN(16, 7));
@@ -45,17 +47,20 @@ static RzILOpPure *c5x_addr(const C55Operand *m) {
 	}
 	return c5x_ind_addr();
 }
+
 // Scale a word address to the byte-addressed IL VM space (see the C2x notes on
 // C2X_WORD_BYTES / C2X_MEM_ADDR_BITS; the C5x shares that memory model).
 static RzILOpPure *c5x_byte(RzILOpPure *word_addr) {
 	return MUL(UNSIGNED(C2X_MEM_ADDR_BITS, word_addr), UN(C2X_MEM_ADDR_BITS, C2X_WORD_BYTES));
 }
+
 // Callers must restrict these to direct operands: the indirect forms also
 // post-modify the auxiliary register and can reload ARP, which is not modelled
 // here, so lifting them would leave the AR file wrong.
 static RzILOpPure *c5x_mem_read(const C55Operand *m) {
 	return LOADW(16, c5x_byte(c5x_addr(m)));
 }
+
 static RzILOpEffect *c5x_mem_write(const C55Operand *m, RzILOpPure *val) {
 	return STOREW(c5x_byte(c5x_addr(m)), val);
 }

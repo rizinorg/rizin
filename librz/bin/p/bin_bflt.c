@@ -284,6 +284,7 @@ static RzStructuredData *bflt_structure(RzBinFile *bf) {
 
 	return info;
 }
+
 RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT uClinux binary",

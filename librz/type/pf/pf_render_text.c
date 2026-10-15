@@ -66,6 +66,7 @@ static void emit_colored(RzStrBuf *sb, const char *color,
 
 /* Like emit_colored() but accepts a printf-formatted body. */
 RZ_PRINTF_CHECK(4, 5)
+
 static void emit_coloredf(RzStrBuf *sb, const char *color,
 	const char *reset, const char *fmt, ...) {
 	va_list ap;

@@ -918,6 +918,7 @@ typedef struct
 typedef struct
 {
 	Elf32_Sword d_tag; /* Dynamic entry type */
+
 	union {
 		Elf32_Word d_val; /* Integer value */
 		Elf32_Addr d_ptr; /* Address value */
@@ -927,6 +928,7 @@ typedef struct
 typedef struct
 {
 	Elf64_Sxword d_tag; /* Dynamic entry type */
+
 	union {
 		Elf64_Xword d_val; /* Integer value */
 		Elf64_Addr d_ptr; /* Address value */
@@ -1212,6 +1214,7 @@ typedef struct
 typedef struct
 {
 	uint32_t a_type; /* Entry type */
+
 	union {
 		uint32_t a_val; /* Integer value */
 		/* We use to have pointer elements added here.  We cannot do that,
@@ -1223,6 +1226,7 @@ typedef struct
 typedef struct
 {
 	uint64_t a_type; /* Entry type */
+
 	union {
 		uint64_t a_val; /* Integer value */
 		/* We use to have pointer elements added here.  We cannot do that,
@@ -1887,6 +1891,7 @@ typedef union {
 		Elf32_Word gt_current_g_value; /* -G value used for compilation.  */
 		Elf32_Word gt_unused; /* Not used.  */
 	} gt_header; /* First entry in section.  */
+
 	struct
 	{
 		Elf32_Word gt_g_value; /* If this value were used for -G.  */

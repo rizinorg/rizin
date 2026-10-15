@@ -43,6 +43,7 @@ gdb_reg_t *parse_def(char **tok) {
 }
 
 #define PARSER_MAX_TOKENS 8
+
 gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];

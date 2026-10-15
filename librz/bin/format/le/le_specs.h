@@ -137,10 +137,12 @@ typedef struct LE_header_s { /* New 32-bit .EXE header */
 	ut32 stackobj; /* Object # for stack pointer */
 	ut32 esp; /* Extended stack pointer */
 	ut32 pagesize; /* .EXE page size */
+
 	union {
 		ut32 pageshift; /* Page alignment shift unless LE */
 		ut32 le_last_page_size;
 	};
+
 	ut32 fixupsize; /* Fixup section size */
 	ut32 fixupsum; /* Fixup section checksum */
 	ut32 ldrsize; /* Loader section size */

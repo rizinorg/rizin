@@ -3234,6 +3234,7 @@ RZ_API bool rz_num_math_value_ex(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *
 	rz_num_parse_result_free(pr);
 	return ok;
 }
+
 // Persistent variable store
 
 /**

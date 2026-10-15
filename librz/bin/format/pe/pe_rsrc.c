@@ -553,6 +553,7 @@ static StringFileInfo *Pe_r_bin_pe_parse_string_file_info(RzBinPEObj *bin, PE_DW
 	if (curAddr > bin->size || curAddr + (S) > bin->size) { \
 		goto out_error; \
 	}
+
 static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(RzBinPEObj *bin, PE_DWord version_info_paddr) {
 	ut32 sz;
 	PE_VS_VERSIONINFO *vs_VersionInfo = RZ_NEW0(PE_VS_VERSIONINFO);

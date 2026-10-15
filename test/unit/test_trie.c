@@ -179,6 +179,7 @@ static bool bit_match(const RzTrieNode *n, const void *key, size_t idx) {
 	bool *d = n->data;
 	return !(val ^ (*d));
 }
+
 static void bit_init(RzTrieNode *n, const void *key, size_t idx) {
 	rz_return_if_fail(n && key);
 	const RzBitVector *bv = key;

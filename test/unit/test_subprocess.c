@@ -380,9 +380,11 @@ bool test_interactive_not_raw_pty(void) {
 bool test_interactive_pty(void) {
 	mu_end;
 }
+
 bool test_interactive_custom_pty(void) {
 	mu_end;
 }
+
 bool test_interactive_not_raw_pty(void) {
 	mu_end;
 }

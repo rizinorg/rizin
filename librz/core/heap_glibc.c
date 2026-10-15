@@ -1175,6 +1175,7 @@ RZ_API RzHeapChunk *rz_heap_get_chunk_at_addr(RzCore *core, ut64 chunk) {
 	}
 	return rz_heap_get_chunk_at_addr_internal(core, chunk, &config);
 }
+
 /**
  * \brief Prints compact representation of a heap chunk. Format: Chunk(addr=, size=, flags=)
  * \param core RzCore pointer
@@ -1841,6 +1842,7 @@ RZ_API void rz_heap_bin_free(RzHeapBin *bin) {
 	rz_list_free(bin->chunks);
 	free(bin);
 }
+
 /**
  * \brief Get information about <bin_num> bin from NBINS array of an arena.
  * \param core RzCore pointer
@@ -2135,6 +2137,7 @@ void rz_arena_list_free(RzArenaListItem *item) {
 	free(item->type);
 	free(item);
 }
+
 /**
  * \brief Get a list of RzArenaListItem structs for all the arenas
  * \param core RzCore pointer

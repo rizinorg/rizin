@@ -993,6 +993,7 @@ RZ_API const char *rz_sys_arch_str(int arch) {
 }
 
 #define USE_FORK 0
+
 RZ_API int rz_sys_run(const ut8 *buf, int len) {
 	const int sz = 4096;
 	int pdelta, ret, (*cb)();
@@ -1464,6 +1465,7 @@ static bool is_child = false;
 #pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
 #endif
 RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+
 static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(true);
 }
@@ -1472,6 +1474,7 @@ static void sys_pipe_constructor(void) {
 #pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
 #endif
 RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+
 static void sys_pipe_destructor(void) {
 	rz_th_lock_free(sys_pipe_mutex);
 }
@@ -1541,6 +1544,7 @@ static bool is_child = false;
 #pragma RZ_DEFINE_CONSTRUCTOR_PRAGMA_ARGS(sys_pipe_constructor)
 #endif
 RZ_DEFINE_CONSTRUCTOR(sys_pipe_constructor)
+
 static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new(false);
 	fd2close = ht_uu_new();
@@ -1550,6 +1554,7 @@ static void sys_pipe_constructor(void) {
 #pragma RZ_DEFINE_DESTRUCTOR_PRAGMA_ARGS(sys_pipe_destructor)
 #endif
 RZ_DEFINE_DESTRUCTOR(sys_pipe_destructor)
+
 static void sys_pipe_destructor(void) {
 	ht_uu_free(fd2close);
 	rz_th_lock_free(sys_pipe_mutex);
@@ -1832,6 +1837,7 @@ RZ_API int rz_sys_system(const char *command) {
 }
 #elif !HAVE_SYSTEM && APPLE_SDK_IPHONEOS
 #include <spawn.h>
+
 RZ_API int rz_sys_system(const char *command) {
 	int argc;
 	char *cmd = rz_str_dup(command);
@@ -1847,6 +1853,7 @@ RZ_API int rz_sys_system(const char *command) {
 }
 #elif !HAVE_SYSTEM && HAVE_FORK
 #include <spawn.h>
+
 RZ_API int rz_sys_system(const char *command) {
 	if (!strchr(command, '|')) {
 		char **argv, *cmd = rz_str_dup(command);

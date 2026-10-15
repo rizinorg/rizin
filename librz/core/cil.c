@@ -176,6 +176,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 	rz_cons_printf("%s\n", out);
 	free(out);
 }
+
 #undef p_sb
 #undef p_tbl
 #undef p_pj

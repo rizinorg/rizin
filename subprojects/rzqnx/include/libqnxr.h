@@ -47,10 +47,12 @@ typedef struct libqnxr_t {
 	int port;
 	int connected;
 	ut8 mid;
+
 	union {
 		ut8 data[DS_DATA_MAX_SIZE];
 		DSMsg_union_t pkt;
 	} tran, recv;
+
 	ssize_t data_len;
 	ut8 architecture;
 	registers_t *registers;

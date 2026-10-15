@@ -452,6 +452,7 @@ typedef struct minidump_system_info_t {
 
 	union {
 		ut16 reserved_0;
+
 		struct {
 			ut8 number_of_processors;
 			ut8 product_type;
@@ -466,6 +467,7 @@ typedef struct minidump_system_info_t {
 
 	union {
 		ut32 reserved_1;
+
 		struct {
 			ut16 suite_mask;
 			ut16 reserved_2;
@@ -479,6 +481,7 @@ typedef struct minidump_system_info_t {
 			ut32 feature_information;
 			ut32 amd_extended_cpu_features;
 		} x86_cpu_info;
+
 		struct {
 			ut64 processor_features[2];
 		} other_cpu_info;
@@ -640,14 +643,17 @@ typedef struct minidump_callback_output_t {
 		ut32 module_write_flags;
 		ut32 thread_write_flags;
 		ut32 secondary_flags;
+
 		struct {
 			ut64 memory_base;
 			ut32 memory_size;
 		};
+
 		struct {
 			ut8 /*bool*/ check_cancel;
 			ut8 /*bool*/ cancel;
 		};
+
 		void /*handle*/ *handle;
 	};
 

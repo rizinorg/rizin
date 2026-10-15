@@ -629,6 +629,7 @@ static bool test_debug_sw_bp_multibits(void) {
 	rz_io_free(io);
 	mu_end;
 }
+
 /// @}
 
 /**

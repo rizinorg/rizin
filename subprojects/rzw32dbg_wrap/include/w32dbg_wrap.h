@@ -16,17 +16,21 @@ typedef enum {
 
 typedef struct {
 	w32dbg_wrap_req type;
+
 	union {
 		DWORD continue_status;
+
 		struct {
 			DEBUG_EVENT *de;
 			DWORD wait_time;
 		} wait;
+
 		struct {
 			int (*func)(void *);
 			void *user;
 		} func;
 	};
+
 	int ret;
 	DWORD err;
 } W32DbgWParams;

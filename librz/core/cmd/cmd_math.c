@@ -465,6 +465,7 @@ RZ_IPI RzCmdStatus rz_show_value_i4_handler(RzCore *core, int argc, const char *
 	rz_cons_printf("%d\n", (st32)(n & UT32_MAX));
 	return RZ_CMD_STATUS_OK;
 }
+
 RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char **argv) {
 	st64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {
@@ -474,6 +475,7 @@ RZ_IPI RzCmdStatus rz_show_value_i8_handler(RzCore *core, int argc, const char *
 	rz_cons_printf("%" PFMT64d "\n", (st64)(n & UT64_MAX));
 	return RZ_CMD_STATUS_OK;
 }
+
 RZ_IPI RzCmdStatus rz_show_value_int_handler(RzCore *core, int argc, const char **argv) {
 	st64 n = argc < 2 ? core->num->value : rz_num_math(core->num, argv[1]);
 	if (core->num->dbz) {

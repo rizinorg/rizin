@@ -492,4 +492,5 @@ RZ_API bool rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
 	}
 	return ret;
 }
+
 /** \} */

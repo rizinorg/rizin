@@ -77,6 +77,7 @@ typedef struct rz_config_owned_t {
 		RzSetS *set; ///< Owned set of zero-terminated string (can be NULL)
 		RzInterval interval; ///< Owned interval
 	};
+
 	RzConfigBindSet validator; ///< Validator callback
 	void *validator_user; ///< Validator callback user pointer
 } RzConfigOwned;
@@ -93,6 +94,7 @@ typedef struct rz_config_var_t {
 	char *desc; ///< Description of the variable
 	RzSetS *options; ///< Variable possible values
 	ut32 flags; ///< Define the type of the data via RzConfigVar (see RzConfigVarFlags)
+
 	union {
 		RzConfigOwned value; ///< owned value
 		RzConfigBind bind; ///< bind value
@@ -101,6 +103,7 @@ typedef struct rz_config_var_t {
 
 typedef struct rz_config_entry_t {
 	bool is_variable;
+
 	union {
 		RzConfigVar var;
 		RzConfigNode node;

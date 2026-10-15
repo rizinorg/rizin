@@ -211,6 +211,7 @@ static RzILOpEffect *SETGbs(const char *p, unsigned n, ...) {
 	}
 	return SETG(p, expr);
 }
+
 #define SETGb(p, ...) SETGbs(p, 1, __VA_ARGS__)
 
 static RzILOpEffect *SETGp(const char *p, unsigned l, unsigned r, RzILOpPure *x) {
@@ -223,6 +224,7 @@ static RzILOpEffect *SETGp(const char *p, unsigned l, unsigned r, RzILOpPure *x)
 static RzILOpPure *inth(unsigned b, RzILOpPure *x, RzILOpPure *n) {
 	return NON_ZERO(LOGAND(SHIFTR0(x, n), UN(b, 1)));
 }
+
 static RzILOpPure *nth(unsigned b, RzILOpPure *x, unsigned n) {
 	return inth(b, x, UN(b, n));
 }
@@ -233,6 +235,7 @@ static RzILOpPure *iset_nth(unsigned b, RzILOpPure *x, RzILOpPure *n, bool v) {
 	}
 	return LOGAND(x, LOGNOT(SHIFTL0(UN(b, v), n)));
 }
+
 static RzILOpPure *set_nth(unsigned b, RzILOpPure *x, unsigned n, bool v) {
 	if (v) {
 		return LOGOR(x, UN(b, (ut32)(v) << n));
@@ -520,6 +523,7 @@ static RzAnalysisLiftedILOp lift_satop2_(const V850AnalysisContext *ctx, const c
 		flags_update(ctx, x0, x1),
 		SETG(dst, VARL("result")));
 }
+
 static RzAnalysisLiftedILOp lift_satop2(const V850AnalysisContext *ctx, RzILOpPure *x0, RzILOpPure *x1, F_OP2 f) {
 	return lift_satop2_(ctx, R2, x0, x1, f);
 }
@@ -839,6 +843,7 @@ static RzAnalysisLiftedILOp lift_bins(const V850AnalysisContext *ctx) {
 static RzILOpPure *slice32(RzILOpPure *x, unsigned l, unsigned r) {
 	return EXTRACT32(x, U32(l), U32(r + 1 - l));
 }
+
 static RzILOpPure *slice32x(RzILOpPure *x, unsigned l, unsigned r) {
 	return UNSIGNED(r + 1 - l, EXTRACT32(x, U32(l), U32(r + 1 - l)));
 }

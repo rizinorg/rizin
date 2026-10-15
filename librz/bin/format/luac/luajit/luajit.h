@@ -202,6 +202,7 @@ typedef struct luajit_constant_entry {
 	ut64 offset; ///< offset of the constant
 	int type; ///< type of constant (e.g: LUAJIT_DOUBLE, LUAJIT_INT)
 	int size; ///< Size of the constant section.
+
 	union {
 		st32 int_val; ///< LUAJIT_TINT
 		double flt_val; ///< LUAJIT_TFLT

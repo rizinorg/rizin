@@ -129,6 +129,7 @@ typedef struct {
 	char operands[32];
 	ut8 size;
 	PicHighendArgsKind args_kind;
+
 	struct {
 		ut32 k : 20;
 		ut16 n : 11;

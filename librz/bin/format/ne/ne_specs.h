@@ -60,20 +60,24 @@ typedef struct ne_seg_relocation_entry_s {
 	ut8 source;
 	ut8 flags_and_target;
 	ut16 source_chain_offset;
+
 	union {
 		struct {
 			ut8 segment_number; // 0xFF == movable segment, other value == fixed segment
 			ut8 zero; // always 0
 			ut16 segment_index; // if fixed segment: offset into segment; if movable segment: ordinal number index into Entry Table
 		} internal_ref;
+
 		struct {
 			ut16 mod_ref_table_index; // index into module reference table
 			ut16 proc_name_offset; // offset from start of imported-names table to procedure name string
 		} import_name;
+
 		struct {
 			ut16 mod_ref_table_index; // index into module reference table
 			ut16 ordinal_number; // ordinal number of the procedure (index of sdb entry)
 		} import_ordinal;
+
 		struct {
 			ut16 os_fixup_type; // see OS_FIXUP_TYPE_*
 			ut16 zero; // always 0
@@ -110,6 +114,7 @@ typedef struct {
 
 typedef struct ne_segment_entry_s {
 	ut8 segment_indicator; ///< ENTRY_SEGMENT_INDICATOR_*
+
 	union {
 		NE_fixed_segment_entry fixed;
 		NE_movable_segment_entry movable;

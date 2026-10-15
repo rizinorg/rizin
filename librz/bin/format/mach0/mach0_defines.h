@@ -1133,15 +1133,19 @@ enum CPUSubTypeX86 {
 	CPU_SUBTYPE_X86_ARCH1 = 4,
 	CPU_SUBTYPE_X86_64_H = 8
 };
+
 static inline int CPU_SUBTYPE_INTEL(int Family, int Model) {
 	return Family | (Model << 4);
 }
+
 static inline int CPU_SUBTYPE_INTEL_FAMILY(enum CPUSubTypeX86 ST) {
 	return ((int)ST) & 0x0f;
 }
+
 static inline int CPU_SUBTYPE_INTEL_MODEL(enum CPUSubTypeX86 ST) {
 	return ((int)ST) >> 4;
 }
+
 enum {
 	CPU_SUBTYPE_INTEL_FAMILY_MAX = 15,
 	CPU_SUBTYPE_INTEL_MODEL_ALL = 0
@@ -1376,6 +1380,7 @@ struct x86_state_hdr_t {
 
 struct x86_thread_state_t {
 	struct x86_state_hdr_t tsh;
+
 	union {
 		struct x86_thread_state64_t ts64;
 	} uts;
@@ -1383,6 +1388,7 @@ struct x86_thread_state_t {
 
 struct x86_float_state_t {
 	struct x86_state_hdr_t fsh;
+
 	union {
 		struct x86_float_state64_t fs64;
 	} ufs;
@@ -1390,6 +1396,7 @@ struct x86_float_state_t {
 
 struct x86_exception_state_t {
 	struct x86_state_hdr_t esh;
+
 	union {
 		struct x86_exception_state64_t es64;
 	} ues;

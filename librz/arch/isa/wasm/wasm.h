@@ -490,6 +490,7 @@ typedef struct {
 		WasmOpAtomicCodes atomic;
 		WasmOpSimdCodes simd;
 	} op;
+
 	WasmTypeOp type;
 	int len;
 	char *txt;

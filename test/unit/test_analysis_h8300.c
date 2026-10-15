@@ -85,6 +85,7 @@ static bool test_h8300_stack(void) {
 		{ "h8300h", "5470", -4 },
 		{ "h8300h", "5670", -4 },
 	};
+
 	const RzAnalysisOpMask masks[] = {
 		RZ_ANALYSIS_OP_MASK_BASIC,
 		RZ_ANALYSIS_OP_MASK_VAL,
@@ -414,6 +415,7 @@ static bool test_h8300_decoded_rendering(void) {
 		{ "5940", "goto er4" },
 		{ "5f40", "(word)[0x40]()" },
 	};
+
 	RzAnalysis *analysis = h8300_analysis("h8300h");
 	mu_assert_notnull(analysis, "analysis");
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
@@ -442,6 +444,7 @@ static bool test_h8300_trace_memory_writes(void) {
 		{ "6ee20010", "er6", 0xffff80 }, /* mov.b r2h,@(16,er6) */
 		{ "6ce2", "er6", 0xffff6f }, /* mov.b r2h,@-er6 */
 	};
+
 	RzAnalysis *analysis = h8300_analysis("h8300h");
 	mu_assert_notnull(analysis, "analysis");
 	RzIO *io = rz_io_new();

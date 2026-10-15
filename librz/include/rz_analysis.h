@@ -265,6 +265,7 @@ typedef enum {
 // XXX: this definition is plain wrong. use enum or empower bits
 #define RZ_ANALYSIS_OP_TYPE_MASK 0x8000ffff
 #define RZ_ANALYSIS_OP_HINT_MASK 0xff000000
+
 typedef enum {
 	RZ_ANALYSIS_OP_TYPE_COND = 0x80000000, // TODO must be moved to prefix?
 	// TODO: MOVE TO PREFIX .. it is used by analysis_java.. must be updated
@@ -342,6 +343,7 @@ typedef enum {
 	RZ_ANALYSIS_OP_TYPE_BCNT = 48, /* bit-counting operations like pop count */
 	RZ_ANALYSIS_OP_TYPE_REV = 49, /* byte-reversal and bit-reversal operations  */
 	RZ_ANALYSIS_OP_TYPE_REDUCE = 50, /* instructions that reduce a sequence, like string operations or vector sum */
+
 // RZ_ANALYSIS_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
 	RZ_ANALYSIS_OP_TYPE_PRIV = 40, /* privileged instruction */
@@ -509,6 +511,7 @@ typedef enum rz_analysis_addr_hint_type_t {
 
 typedef struct rz_analysis_addr_hint_record_t {
 	RzAnalysisAddrHintType type;
+
 	union {
 		char *type_offset;
 		int nword;
@@ -636,6 +639,7 @@ typedef struct {
  */
 typedef struct rz_analysis_var_storage_t {
 	RzAnalysisVarStorageType type;
+
 	union {
 		/**
 		 * Used iff type == RZ_ANALYSIS_VAR_STORAGE_STACK.
@@ -747,6 +751,7 @@ typedef struct rz_analysis_var_t {
 
 	struct {
 		RzAnalysisVarOriginKind kind; ///< Kind of origin
+
 		union {
 			RzAnalysisDwarfVariable *dw_var; ///< Variable description from DWARF
 		};
@@ -976,6 +981,7 @@ typedef struct rz_analysis_ref_t {
 	ut64 to;
 	RzAnalysisXRefType type;
 } RzAnalysisXRef;
+
 RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
@@ -1709,6 +1715,7 @@ typedef struct rz_analysis_fcn_vars_cache {
 	RzList /*<RzAnalysisVar *>*/ *sorted_vars;
 	RzList /*<RzAnalysisVar *>*/ *arg_vars;
 } RzAnalysisFcnVarsCache;
+
 RZ_API void rz_analysis_fcn_vars_cache_init(
 	RZ_NONNULL RZ_BORROW RzAnalysis *analysis,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzAnalysisFcnVarsCache *cache,
@@ -2225,6 +2232,7 @@ RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo);
 
 typedef void *RzSerializeAnalysisVarParser;
 typedef void *RzSerializeAnalysisGlobalVarParser;
+
 typedef struct {
 	RzAnalysis *analysis;
 	RzKeyParser *parser;

@@ -25,6 +25,7 @@ typedef void *(*ptrace_wrap_func_func)(void *);
 
 typedef struct ptrace_wrap_request_t {
 	ptrace_wrap_request_type type;
+
 	union {
 		struct {
 			ptrace_wrap_ptrace_request request;
@@ -33,11 +34,13 @@ typedef struct ptrace_wrap_request_t {
 			void *data;
 			int *_errno;
 		} ptrace;
+
 		struct {
 			void (*child_callback)(void *);
 			void *child_callback_user;
 			int *_errno;
 		} fork;
+
 		struct {
 			ptrace_wrap_func_func func;
 			void *user;
@@ -50,6 +53,7 @@ typedef struct ptrace_wrap_instance_t {
 	sem_t request_sem;
 	ptrace_wrap_request request;
 	sem_t result_sem;
+
 	union {
 		long ptrace_result;
 		pid_t fork_result;

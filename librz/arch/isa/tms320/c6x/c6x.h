@@ -324,6 +324,7 @@ typedef struct {
 /** One decoded operand; the kind selects which union member is valid. */
 typedef struct {
 	C6xOpKind kind;
+
 	union {
 		C6xRegOperand reg; ///< C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGQUAD
 		C6xImmOperand imm; ///< C6X_OP_IMM, C6X_OP_PCREL

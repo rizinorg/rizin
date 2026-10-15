@@ -37,14 +37,18 @@ typedef struct interp_driver_message_t {
 		DRIVER_MESSAGE_LIFT_BLOCK, ///< The interpreter requests lifting a block.
 		DRIVER_MESSAGE_INTERP_RESULT ///< The interpreter delivers its results.
 	} type;
+
 	InterpThread *sender;
+
 	union {
 		struct {
 			RzAbsIntIOReadRequest *request;
 		} io_read;
+
 		struct {
 			ut64 addr;
 		} lift_block;
+
 		struct {
 			ut64 entry;
 			RzAbsIntResult *res;
@@ -86,6 +90,7 @@ typedef struct interp_thread_message_t {
 		INTERP_ANSWER_IO_READ,
 		INTERP_ANSWER_LIFT_BLOCK
 	} type;
+
 	union {
 		RzAbsIntIOReadResult io_read_result; ///< Flags of the IO read result (ok, top, error/stop).
 		const RzILCacheBlock *lift_block_result; ///< The requested IL block. NULL in case of failure.

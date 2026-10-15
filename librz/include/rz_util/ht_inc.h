@@ -167,6 +167,7 @@ static inline ut32 ht_default_hash_string(const char *key, ut32 len) {
 
 #ifndef HT_ENUM_DEFINED
 #define HT_ENUM_DEFINED
+
 /**
  * Return codes for insert/update methods
  * code < 0 <--> code == HT_RC_ERROR

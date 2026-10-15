@@ -166,6 +166,7 @@ typedef struct rz_io_cache_t {
 } RzIOCache;
 
 #define RZ_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+
 typedef struct rz_io_desc_cache_t {
 	ut64 cached;
 	ut8 cdata[RZ_IO_DESC_CACHE_SIZE];

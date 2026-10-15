@@ -45,6 +45,7 @@ typedef struct rz_rb_iter_t {
 
 typedef int (*RContRBCmp)(void *incoming, void *in, void *user);
 typedef void (*RContRBFree)(void *);
+
 typedef struct rz_containing_rb_node_t {
 	RBNode node;
 	void *data;

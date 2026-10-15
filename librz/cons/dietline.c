@@ -165,6 +165,7 @@ static bool undo_add_entry(RzLine *line, int offset, RZ_OWN char *deleted_text, 
 static void undo_continuous_entries_begin(RzLine *line) {
 	line->undo_continue = true;
 }
+
 static void undo_continuous_entries_end(RzLine *line) {
 	line->undo_continue = false;
 	if (!line->undo_vec->len) {

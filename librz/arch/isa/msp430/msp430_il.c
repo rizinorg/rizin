@@ -89,6 +89,7 @@ RZ_OWN RzILOpEffect *rz_msp430_lift_pop_instr(RZ_BORROW RZ_NONNULL RzAnalysis *a
 		(op->is_byte) ? set_destination(op, LOAD(MSP430_GETR(MSP430_SP)), current_addr) : set_destination(op, LOADW(16, MSP430_GETR(MSP430_SP)), current_addr),
 		MSP430_SETR(MSP430_SP, ADD(MSP430_GETR(MSP430_SP), U16(2))));
 }
+
 /** @} */
 
 // ************************************* Two-Operand Lifters ********************************  //
@@ -187,6 +188,7 @@ RZ_OWN RzILOpEffect *rz_msp430_lift_bic_instr(RZ_BORROW RZ_NONNULL RzAnalysis *a
 	RzILOpBitVector *result = LOGAND(LOGNOT(get_source(op, current_addr)), get_destination(op, current_addr));
 	return set_destination(op, result, current_addr);
 }
+
 /* @} */
 
 // ************************************* Emulated Instruction Lifters ******************************** //
@@ -251,6 +253,7 @@ RzILOpEffect *rz_msp430_lift_tst_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis
 RzILOpEffect *rz_msp430_lift_setc_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, const Msp430Instruction *op, ut64 current_addr, int instr_size) {
 	return set_setc_flags();
 }
+
 RzILOpEffect *rz_msp430_lift_setn_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, const Msp430Instruction *op, ut64 current_addr, int instr_size) {
 	return set_setn_flags();
 }
@@ -366,6 +369,7 @@ RzILOpBitVector *increment_digit_clear_lesser_digits(const char *operand_name, D
 	RzILOpBitVector *result = ADD(VARL(operand_name), (is_byte) ? U8(increment_by) : U16(increment_by));
 	return (dp == DIGIT_0) ? result : LOGAND(result, (is_byte) ? U8(clear_mask) : U16(clear_mask));
 }
+
 /* @} */
 
 // ************************************* Jump Instructions Lifter ******************************** //
@@ -390,6 +394,7 @@ RZ_OWN RzILOpEffect *rz_msp430_lift_jump_instr(RZ_BORROW RZ_NONNULL RzAnalysis *
 		return BRANCH(jmp_cond, NOP(), jmp);
 	}
 }
+
 /* @} */
 
 // ************************************* End of Lifters ******************************** //

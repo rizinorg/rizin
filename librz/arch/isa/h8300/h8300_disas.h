@@ -348,6 +348,7 @@ typedef enum h8300_registers_t {
 	H8300_R5L,
 	H8300_R6L,
 	H8300_R7L,
+
 #define H8300_REG8_BEGIN H8300_R0H
 #define H8300_REG8_END   H8300_E7L
 	H8300_R0,
@@ -385,16 +386,19 @@ typedef enum h8300_registers_t {
 
 typedef struct {
 	H8300OperandType typ;
+
 	enum {
 		H8300Operand_UNK,
 		H8300Operand_8,
 		H8300Operand_16,
 		H8300Operand_32,
 	} width;
+
 	union {
 		ut8 reg;
 		ut32 imm;
 		st32 disp;
+
 		struct {
 			ut8 reg;
 			st32 disp;

@@ -71,6 +71,7 @@ static RzILOpPure *val_fsrn(ut8 n) {
 	rz_return_val_if_fail(n <= 1, NULL);
 	return APPEND(register_i(2 * n + FSR0L + 1), register_i(2 * n + FSR0L));
 }
+
 static RzILOpEffect *set_fsrn(ut8 n, RzILOpPure *x) {
 	rz_return_val_if_fail(n <= 1, NULL);
 	return SEQ3(
@@ -82,6 +83,7 @@ static RzILOpEffect *set_fsrn(ut8 n, RzILOpPure *x) {
 static RzILOpPure *val_bank() {
 	return VARG("_bank");
 }
+
 static RzILOpEffect *set_bank() {
 	return SETG("_bank", LOGAND(register_i(BSR), U8(0x1f)));
 }
@@ -94,6 +96,7 @@ static RzILOpPure *register_i(ut16 i) {
 
 	return LOAD(ADD(U16(i), UNSIGNED(16, MUL(val_bank(), U8(0x80)))));
 }
+
 static RzILOpEffect *set_register_i(ut16 i, RzILOpPure *x) {
 	rz_warn_if_fail(i < 0x80);
 	if (i == INDF0 || i == INDF1) {
@@ -106,6 +109,7 @@ static RzILOpEffect *set_register_i(ut16 i, RzILOpPure *x) {
 	}
 	return eff;
 }
+
 #define VARGi(i)       register_i(i)
 #define SETGi(i, x)    set_register_i(i, x)
 #define VARGb(i, b)    bit_get(register_i(i), b)
@@ -125,10 +129,12 @@ static RzILOpPure *register_WF(PicMidrangeILContext *ctx) {
 	rz_warn_if_fail(F < 0x80);
 	return D ? VRW : VRF;
 }
+
 static RzILOpEffect *set_register_WF(PicMidrangeILContext *ctx, RzILOpPure *x) {
 	rz_warn_if_fail(F < 0x80);
 	return D ? SET_F(x) : SET_W(x);
 }
+
 #define VRWF      register_WF(ctx)
 #define SET_WF(x) (set_register_WF(ctx, x))
 
@@ -449,14 +455,17 @@ IL_LIFTER_IMPL(RESET) {
 		reset(),
 		JMP(U16(0)));
 }
+
 IL_LIFTER_IMPL(CALLW) {
 	return SEQ2(
 		SET_TOS(U16(PC + INS_LEN)),
 		JMP(LOGOR(U16(K), UNSIGNED(16, VRW))));
 }
+
 IL_LIFTER_IMPL(BRW) {
 	return JMP(ADD(UNSIGNED(16, VRW), SHIFTR0(U16(PC + INS_LEN), U16(1))));
 }
+
 IL_LIFTER_IMPL(MOVIW_1) {
 	switch (ctx->x->instr & 0b11) {
 	case 0x0: return SEQ3(
@@ -479,6 +488,7 @@ IL_LIFTER_IMPL(MOVIW_1) {
 	}
 	return NULL;
 }
+
 IL_LIFTER_IMPL(MOVIW_2) {
 	return SEQ2(
 		SET_W(LOAD(ADD(val_fsrn(N), S16(K)))),
@@ -488,6 +498,7 @@ IL_LIFTER_IMPL(MOVIW_2) {
 IL_LIFTER_IMPL(MOVWI_1) {
 	return STORE(val_fsrn(N), VRW);
 }
+
 IL_LIFTER_IMPL(MOVWI_2) {
 	return STORE(ADD(val_fsrn(N), S16(K)), VRW);
 }
@@ -496,6 +507,7 @@ IL_LIFTER_IMPL(MOVLB) {
 	// imm5?
 	return SETGi(BSR, U8(K));
 }
+
 IL_LIFTER_IMPL(MOVLP) {
 	// imm7?
 	return SETGi(PCLATH, U8(K));
@@ -507,33 +519,39 @@ IL_LIFTER_IMPL(LSLF) {
 		SET_WF(SHIFTL0(VRF, U8(1))),
 		SETZ(VRWF));
 }
+
 IL_LIFTER_IMPL(LSRF) {
 	return SEQ3(
 		SETGb(STATUS, C, LSB(VRF)),
 		SET_WF(SHIFTR0(VRF, U8(1))),
 		SETZ(VRWF));
 }
+
 IL_LIFTER_IMPL(ASRF) {
 	return SEQ3(
 		SETGb(STATUS, C, LSB(VRF)),
 		SET_WF(SHIFTRA(VRF, U8(1))),
 		SETZ(VRWF));
 }
+
 IL_LIFTER_IMPL(SUBWFB) {
 	return SEQ3(
 		SETL("_res", ADD(SUB(VRF, VRW), BOOL_TO_BV(VARGb(STATUS, C), 8))),
 		SET_STATUS_SUB(ctx, VRF, VRW, VARL("_res")),
 		SET_WF(VARL("_res")));
 }
+
 IL_LIFTER_IMPL(ADDWFC) {
 	return SEQ3(
 		SETL("_res", ADD(ADD(VRF, VRW), BOOL_TO_BV(VARGb(STATUS, C), 8))),
 		SET_STATUS_ADD(ctx, VRF, VRW, VARL("_res")),
 		SET_WF(VARL("_res")));
 }
+
 IL_LIFTER_IMPL(ADDFSR) {
 	return set_fsrn(N, ADD(val_fsrn(N), S16(K)));
 }
+
 IL_LIFTER_IMPL(BRA) {
 	return JMP(U16(PC + K));
 }

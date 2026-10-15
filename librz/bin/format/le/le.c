@@ -1467,6 +1467,7 @@ static bool le_load_fixup_record(rz_bin_le_obj_t *bin, RzList /*<LE_reloc *>*/ *
 					ut32 fixupinfo;
 					ut8 buf[4];
 				} u = { .fixupinfo = 0 };
+
 				CHECK(page_read(bin, cur_page, cur_page->vaddr + src_off, u.buf, 4));
 				rel.target_vaddr = target_base_vaddr + (u.fixupinfo & 0xFFFFF);
 				rel.src_off = src_off;

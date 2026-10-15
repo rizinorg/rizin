@@ -136,6 +136,7 @@ RZ_IPI RzCmdStatus rz_open_close_all_handler(RzCore *core, int argc, const char 
 	RZ_LOG_INFO("Close all files\n");
 	return RZ_CMD_STATUS_OK;
 }
+
 RZ_IPI RzCmdStatus rz_open_list_ascii_handler(RzCore *core, int argc, const char **argv) {
 	struct open_list_ascii_data_t data = { 0 };
 	data.core = core;
@@ -479,11 +480,13 @@ RZ_IPI RzCmdStatus rz_open_maps_flags_handler(RzCore *core, int argc, const char
 
 RZ_IPI RzCmdStatus rz_open_maps_flags_global_handler(RzCore *core, int argc, const char **argv) {
 	const char *arg = argv[1];
+
 	enum mode {
 		ADD,
 		DEL,
 		SET,
 	} mode = SET;
+
 	if (arg[0] == '+') {
 		mode = ADD;
 		arg++;

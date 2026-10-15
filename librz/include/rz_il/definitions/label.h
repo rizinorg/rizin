@@ -23,10 +23,12 @@ typedef enum {
 
 typedef struct rz_il_effect_label_t {
 	char *label_id; ///< Label name
+
 	union {
 		RzBitVector *addr; ///< RzBitVector address if EFFECT_LABEL_ADDR
 		void *hook; ///< Function pointer if EFFECT_LABEL_SYSCALL / EFFECT_LABEL_HOOK
 	};
+
 	RzILEffectLabelType type; ///< type of label
 } RzILEffectLabel;
 

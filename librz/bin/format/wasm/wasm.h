@@ -110,6 +110,7 @@ typedef struct rz_bin_wasm_import_t {
 	ut32 field_len;
 	char *field_str;
 	ut8 kind;
+
 	union {
 		ut32 type_f;
 		RzBinWasmGlobalType type_g;
@@ -202,6 +203,7 @@ typedef struct rz_bin_wasm_custom_name_entry_t {
 	ut32 size;
 
 	ut8 payload_data;
+
 	union {
 		RzBinWasmName *mod_name;
 		RzBinWasmCustomNameFunctionNames *func;

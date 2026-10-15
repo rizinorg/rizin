@@ -840,6 +840,7 @@ enum {
 	RZ_ARCH_ARM64,
 	RZ_ARCH_MIPS
 };
+
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
 

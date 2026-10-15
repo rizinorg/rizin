@@ -51,22 +51,26 @@ typedef enum logicalop_t {
 
 typedef struct operand_t {
 	OpType type;
+
 	union {
 		struct {
 			int reg;
 			RegType reg_type;
 			ut16 sp_val;
 		};
+
 		struct {
 			ut64 immediate;
 			bool sign;
 			bool preindex;
 		};
+
 		struct {
 			ut64 shift_amount;
 			ShiftType shift;
 			bool amount_present;
 		};
+
 		struct {
 			ut32 mem_option;
 		};

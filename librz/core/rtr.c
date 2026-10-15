@@ -575,6 +575,7 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 			{ "unix", RTR_PROTOCOL_UNIX },
 			{ NULL, 0 }
 		};
+
 		char *s = rz_str_ndup(input, pikaboo - input);
 		// int nlen = pikaboo - input;
 		for (i = 0; uris[i].name; i++) {

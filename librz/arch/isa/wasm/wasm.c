@@ -799,6 +799,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					ut32 v;
 					float f;
 				} u;
+
 				u.v = rz_read_at_le32(buf, 1);
 				rz_strbuf_setf(sb, "%s %f", opdef->txt, u.f);
 				op->len += 4;
@@ -812,6 +813,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					ut64 v;
 					double f;
 				} u;
+
 				u.v = rz_read_at_le64(buf, 1);
 				rz_strbuf_setf(sb, "%s %f", opdef->txt, u.f);
 				op->len += 8;

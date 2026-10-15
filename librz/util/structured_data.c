@@ -28,6 +28,7 @@ typedef enum {
 
 struct rz_structured_data_t {
 	StructuredDataType type;
+
 	union {
 		ut64 v_unsigned;
 		st64 v_signed;
@@ -36,6 +37,7 @@ struct rz_structured_data_t {
 		char *v_string;
 		HtSP /*<RzStructuredData *>*/ *v_map;
 	};
+
 	RzPVector /*<void *>*/ *v_array; // used also to keep the map keys in order
 };
 

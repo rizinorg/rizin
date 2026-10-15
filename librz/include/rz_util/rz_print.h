@@ -61,6 +61,7 @@ typedef struct {
 	size_t start; ///< byte-offset into `str` where this token starts. Must be exactly at a utf-8 codepoint boundary.
 	size_t len; ///< `str` length of token in bytes.
 	RzAsmTokenType type;
+
 	union {
 		ut64 number; ///< Number of RZ_ASM_TOKEN_NUMBER
 	} val;

@@ -40,6 +40,7 @@ typedef struct rz_code_annotation_t {
 	size_t start; /**< Start of the range in the annotation(inclusive). */
 	size_t end; /**< End of the range in the annotation(exclusive). */
 	RzCodeAnnotationType type;
+
 	union {
 		/** If the annotation is of type RZ_CODE_ANNOTATION_TYPE_OFFSET,
 		 * offset should be stored in the struct named offset in this union.
@@ -47,6 +48,7 @@ typedef struct rz_code_annotation_t {
 		struct {
 			ut64 offset;
 		} offset;
+
 		/** If the annotation is of type RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
 		 * type of the syntax highlight will be stored in the struct named syntax_highlight
 		 * in this union.
@@ -73,6 +75,7 @@ typedef struct rz_code_annotation_t {
 		} variable;
 	};
 } RzCodeAnnotation;
+
 /**
  * \brief This structure contains the decompiled code and all the annotations for the decompiled code.
  */

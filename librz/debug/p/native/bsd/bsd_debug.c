@@ -146,6 +146,7 @@ bool bsd_generate_corefile(RzDebug *dbg, char *path, RzBuffer *dest) {
 	return false;
 #endif
 }
+
 RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;

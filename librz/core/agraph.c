@@ -3636,6 +3636,7 @@ struct tmplayer {
 	int minx;
 	int maxx;
 };
+
 struct tmpbackedgeinfo {
 	int ax;
 	int ay;
@@ -5043,6 +5044,7 @@ static void graph_breakpoint(RzCore *core) {
 static void graph_continue(RzCore *core) {
 	rz_core_debug_continue(core);
 }
+
 static void applyDisMode(RzCore *core, const AGraphContext *grp_ctx) {
 	switch (grp_ctx->display_mode) {
 	case 0:

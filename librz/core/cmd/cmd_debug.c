@@ -529,6 +529,7 @@ static void cmd_debug_backtrace(RzCore *core, ut64 len) {
 }
 
 #define MAX_MAP_SIZE (1024 * 1024 * 512)
+
 static int dump_maps(RzCore *core, int perm, const char *filename) {
 	RzDebugMap *map;
 	RzListIter *iter;
@@ -576,6 +577,7 @@ static int dump_maps(RzCore *core, int perm, const char *filename) {
 }
 
 #define MAX_MAP_SIZE (1024 * 1024 * 512)
+
 static int dump_io_maps(RzCore *core, int perm, const char *filename) {
 	RzPVector *maps = rz_io_maps(core->io);
 	ut64 addr = core->offset;
@@ -2958,9 +2960,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_step_skip_handler(RzCore *core, int argc, const 
 
 #define CMD_REGS_PREFIX   debug
 #define CMD_REGS_REG_PATH core->dbg->reg
+
 static bool cmd_regs_sync(RzCore *core, RzRegisterType type, bool write) {
 	return rz_debug_reg_sync(core->dbg, type, write);
 }
+
 #define CMD_REGS_SYNC cmd_regs_sync
 #include "cmd_regs_meta.inc"
 #undef CMD_REGS_PREFIX

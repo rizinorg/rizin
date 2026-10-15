@@ -129,6 +129,7 @@ struct powerpc_regs_t {
 	unsigned long dsisr; /* on 4xx/Book-E used for ESR */
 	unsigned long result; /* Result of a system call */
 };
+
 #define RZ_DEBUG_REG_T struct powerpc_regs_t
 #elif __riscv || __riscv__ || __riscv64__
 

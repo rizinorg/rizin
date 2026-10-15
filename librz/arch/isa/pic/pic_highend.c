@@ -428,6 +428,7 @@ static const char *intcon_bits[] = {
 
 STATUS_BIT_IMPL(status_bits, status);
 STATUS_BIT_IMPL(rcon_bits, rcon);
+
 ut8 pic_highend_intcon(const char *name) {
 	for (int i = 0; i < RZ_ARRAY_SIZE(intcon_bits); ++i) {
 		if (RZ_STR_EQ(name, intcon_bits[i])) {

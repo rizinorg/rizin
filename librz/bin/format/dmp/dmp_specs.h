@@ -67,10 +67,12 @@ typedef struct {
 	ut8 KdSecondaryVersion;
 	ut8 VersionUser2[2];
 	ut32 KdDebuggerDataBlock;
+
 	union {
 		dmp32_p_memory_desc PhysicalMemoryBlock;
 		ut8 PhysicalMemoryBlockBuffer[DMP_PHYSICAL_MEMORY_BLOCK_SIZE];
 	};
+
 	ut8 ContextRecord[DMP_CONTEXT_RECORD_SIZE_32]; // 0x320 0x2cc bytes
 	struct windows_exception_record32 Exception; // 0x7d0
 	ut8 Comment[128];
@@ -105,10 +107,12 @@ typedef struct {
 	ut64 BugCheckParameter4;
 	char VersionUser[32];
 	ut64 KdDebuggerDataBlock; // 0x80
+
 	union {
 		dmp64_p_memory_desc PhysicalMemoryBlock; // 0x88 0x20 bytes
 		ut8 PhysicalMemoryBlockBuffer[DMP_PHYSICAL_MEMORY_BLOCK_SIZE];
 	};
+
 	ut8 ContextRecord[DMP_CONTEXT_RECORD_SIZE_64]; // 0x348 0x4d0 bytes
 	struct windows_exception_record64 Exception; // 0xf00 0x98 bytes
 	ut32 DumpType; // 0xf98 0x4 bytes
@@ -187,6 +191,7 @@ typedef struct {
 	ut32 BrokenDriverOffset;
 	ut32 TriageOptions;
 	ut64 TopOfStack;
+
 	union {
 		struct {
 			ut32 BStoreOffset;
@@ -194,6 +199,7 @@ typedef struct {
 			ut64 LimitOfBStore;
 		} Ia64;
 	} ArchitectureSpecific;
+
 	ut64 DataPageAddress;
 	ut32 DataPageOffset;
 	ut32 DataPageSize;

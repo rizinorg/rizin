@@ -94,6 +94,7 @@ extern "C" {
  */
 
 #define SHA256_BLOCK_LENGTH 64
+
 typedef struct _SHA256_CTX {
 	ut32 state[8];
 	ut64 bitcount;
@@ -102,11 +103,13 @@ typedef struct _SHA256_CTX {
 
 #define SHA384_BLOCK_LENGTH 128
 #define SHA512_BLOCK_LENGTH 128
+
 typedef struct _SHA512_CTX {
 	ut64 state[8];
 	ut64 bitcount[2];
 	ut8 buffer[SHA512_BLOCK_LENGTH];
 } RZ_SHA512_CTX;
+
 typedef RZ_SHA512_CTX RZ_SHA384_CTX;
 
 /*** SHA-256/384/512 Function Prototypes ******************************/

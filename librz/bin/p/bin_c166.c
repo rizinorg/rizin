@@ -27,6 +27,7 @@ static bool check_vector(const ut8 *buf, ut64 size) {
 }
 
 bool gb_check_buffer(RzBuffer *b);
+
 static bool check_buffer(RzBuffer *buf) {
 	if (is_c166_buffer(buf)) {
 		return !gb_check_buffer(buf);

@@ -496,6 +496,7 @@ static bool il_opdmp_fsucc(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf
 	return_false_if_fail(il_op_pure_string_resolve(ctx, op->op.fsucc.f, sb));
 	return rz_strbuf_append(sb, ")");
 }
+
 static bool il_opdmp_fpred(RzILStringifyCtx *ctx, const RzILOpPure *op, RzStrBuf *sb) {
 	return_false_if_fail(rz_strbuf_append(sb, UCD_FPRED "("));
 	return_false_if_fail(il_op_pure_string_resolve(ctx, op->op.fpred.f, sb));

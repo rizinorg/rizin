@@ -29,10 +29,12 @@ typedef enum {
 
 typedef struct rz_il_sort_pure_t {
 	RzILTypePure type;
+
 	union {
 		struct {
 			ut32 length;
 		} bv;
+
 		struct {
 			RzFloatFormat format;
 		} f;

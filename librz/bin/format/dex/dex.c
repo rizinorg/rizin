@@ -151,6 +151,7 @@ dex_proto_id_new_fail:
 }
 
 #define dex_field_id_free free
+
 static DexFieldId *dex_field_id_new(RzBuffer *buf, ut64 offset) {
 	DexFieldId *field_id = RZ_NEW0(DexFieldId);
 	if (!field_id) {
@@ -169,6 +170,7 @@ dex_field_id_new_fail:
 }
 
 #define dex_method_id_free free
+
 static DexMethodId *dex_method_id_new(RzBuffer *buf, ut64 offset) {
 	DexMethodId *method_id = RZ_NEW0(DexMethodId);
 	if (!method_id) {

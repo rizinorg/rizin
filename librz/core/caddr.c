@@ -562,6 +562,7 @@ RZ_API void rz_core_addr_describe_pj(RZ_NONNULL RzCore *core, RZ_NONNULL PJ *pj,
 	rz_core_addr_to_pj(pj, desc, opts);
 	rz_core_addr_free(desc);
 }
+
 /**
  * \brief Get relative offset info for an address (for asm.reloff functionality)
  *

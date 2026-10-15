@@ -492,6 +492,7 @@ static const char *show_analysis_classes(RzCore *core, TuiClassMode mode, int *i
 
 	return cur_class;
 }
+
 // TODO add other commands that Vbc has
 // Should the classes be refreshed after command execution with :
 // in case new class information would be added?

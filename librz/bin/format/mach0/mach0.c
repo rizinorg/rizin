@@ -419,6 +419,7 @@ static bool parse_segments(struct MACH0_(obj_t) * bin, ut64 off) {
 #define Error(x) \
 	error_message = x; \
 	goto error;
+
 static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
@@ -678,6 +679,7 @@ static void parseCodeDirectory(struct MACH0_(obj_t) * mo, RzBuffer *b, int offse
 		ut64 execSegLimit;
 		ut64 execSegFlags;
 	} CS_CodeDirectory;
+
 	ut64 off = offset;
 	int psize = datasize;
 	ut8 *p = calloc(1, psize);
@@ -1628,6 +1630,7 @@ static int init_items(struct MACH0_(obj_t) * bin) {
 				ut64 eo;
 				ut64 ss;
 			} ep = { 0 };
+
 			ut8 sep[2 * sizeof(ut64)] = { 0 };
 			sdb_set(bin->kv, rz_strf(tmpbuf, "mach0_cmd_%" PFMT64u ".cmd", i), "main");
 

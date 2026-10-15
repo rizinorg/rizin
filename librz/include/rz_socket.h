@@ -182,6 +182,7 @@ RZ_API ut8 *rz_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 
 /* run.c */
 #define RZ_RUN_PROFILE_NARGS 512
+
 typedef struct rz_run_profile_t {
 	char *_args[RZ_RUN_PROFILE_NARGS];
 	int _argc;

@@ -999,6 +999,7 @@ static void c54x_x_bitc(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55
 // Fixed shift-mode / register keywords selected by the operand's param index:
 // 0 = ts (shift by TREG), 1 = asm (shift by ASM field), 2 = dp, 3 = arp.
 static const char *const c54x_kw_tab[] = { "ts", "asm", "dp", "arp" };
+
 static void c54x_x_kw(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	(void)bits;
@@ -1010,6 +1011,7 @@ static void c54x_x_kw(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Op
 // the verbatim "|| <mnemonic>" via qual_join. param indexes the base mnemonic;
 // when width==1 the round bit at lo selects the "..r" variant in the next slot.
 static const char *const c54x_par2_tab[] = { "add", "sub", "mpy", "ld", "mac", "macr", "mas", "masr" };
+
 static void c54x_x_par2(const C55ArchDesc *a, ut64 bits, const C55OpDesc *d, C55Operand *out) {
 	(void)a;
 	ut8 idx = d->param;

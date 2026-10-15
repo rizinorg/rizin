@@ -446,6 +446,7 @@ struct context_type_amd64 {
 
 	union {
 		struct windows_xsave_format32 flt_save;
+
 		struct {
 			struct windows_m128a header[2];
 			struct windows_m128a legacy[8];
@@ -551,6 +552,7 @@ struct context_type_arm64 {
 			/* +0x0f0 */ ut64 Fp;
 			/* +0x0f8 */ ut64 Lr;
 		};
+
 		ut64 X[31];
 	};
 	/* +0x100 */ ut64 Sp;

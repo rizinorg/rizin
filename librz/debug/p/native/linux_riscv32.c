@@ -13,6 +13,7 @@
 
 #include "linux_riscv_common.c"
 #include "bt.c"
+
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #include "reg/linux-riscv32.h"
 }

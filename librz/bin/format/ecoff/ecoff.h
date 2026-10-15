@@ -328,9 +328,11 @@ typedef struct ecoff_reloc_mips_t {
 typedef struct ecoff_32_t {
 	bool big_endian;
 	ECoff_Header_32 header;
+
 	union {
 		ECoff_AOutHdr_Mips mips;
 	} aouthdr;
+
 	ECoff_SymHdr_32 symhdr;
 	RzVector /*<ECoff_Section_32>*/ *sections;
 	RzVector /*<ECoff_FileDescEntry_32>*/ *file_descs;
@@ -343,9 +345,11 @@ typedef struct ecoff_32_t {
 typedef struct ecoff_64_t {
 	bool big_endian;
 	ECoff_Header_64 header;
+
 	union {
 		ECoff_AOutHdr_Alpha alpha;
 	} aouthdr;
+
 	ECoff_SymHdr_64 symhdr;
 	RzVector /*<ECoff_Section_64>*/ *sections;
 	RzVector /*<ECoff_FileDescEntry_64>*/ *file_descs;
@@ -361,6 +365,7 @@ typedef enum {
 
 typedef struct ecoff_t {
 	ECoff_Type type;
+
 	union {
 		ECoff_64 ecoff64;
 		ECoff_32 ecoff32;

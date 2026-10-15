@@ -584,6 +584,7 @@ static void il_opdmp_frequal(RzILOpPure *op, RzStrBuf *sb, int pad) {
 static void il_opdmp_fsucc(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_1("fsucc", op->op.fsucc, f);
 }
+
 static void il_opdmp_fpred(RzILOpPure *op, RzStrBuf *sb, int pad) {
 	il_op_param_1("fpred", op->op.fpred, f);
 }

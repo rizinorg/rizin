@@ -91,8 +91,10 @@ typedef struct ebc_index {
 	enum { EBC_INDEX16,
 		EBC_INDEX32,
 		EBC_INDEX64 } type;
+
 	enum { EBC_INDEX_PLUS = 0,
 		EBC_INDEX_MINUS } sign;
+
 	ut8 a_width;
 	ut32 c;
 	ut32 n;

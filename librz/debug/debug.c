@@ -793,10 +793,12 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut64 next[2];
 	RzAnalysisOp op = { 0 };
 	int br, i, ret;
+
 	union {
 		ut64 r64;
 		ut32 r32[2];
 	} sp_top;
+
 	union {
 		ut64 r64;
 		ut32 r32[2];

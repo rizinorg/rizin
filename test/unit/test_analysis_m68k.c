@@ -384,6 +384,7 @@ static bool test_m68k_integer_results_and_flags(void) {
 		{ "divu.w d1,d0", "80c1", 7, 2, 0x201f, 0x00010003, 0x2010, 0 },
 		{ "divu.w quotient overflow", "80c1", 0x10000, 1, 0x2010, 0x10000, 0x2012, 0xfff3 },
 	};
+
 	RzCore *core = m68k_core_new("68020");
 	mu_assert_notnull(core, "M68K core");
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {

@@ -111,6 +111,7 @@
 /* Common message header. It must be 32 or 64 bit aligned.
    The top bit of cmd is 1 for BIG endian data format.  */
 #define DSHDR_MSG_BIG_ENDIAN 0x80
+
 struct DShdr {
 	ut8 cmd;
 	ut8 subcmd;
@@ -350,6 +351,7 @@ typedef struct {
 /* Run.  */
 typedef struct {
 	struct DShdr hdr;
+
 	union {
 		ut32 count;
 		ut32 addr[2];
@@ -449,6 +451,7 @@ typedef struct {
 	struct DShdr hdr;
 	st32 pid;
 	st32 tid;
+
 	union {
 		struct {
 			ut32 codeoff;
@@ -458,23 +461,28 @@ typedef struct {
 			ut32 cpuid; /* CPU dependant value.  */
 			char name[DS_DATA_MAX_SIZE];
 		} pidload;
+
 		struct {
 			st32 status;
 		} pidunload;
+
 		struct {
 			st32 status;
 			ut8 faulted;
 			ut8 reserved[3];
 		} pidunload_v3;
+
 		struct {
 			ut32 ip;
 			ut32 dp;
 			ut32 flags; /* Defined in <sys/debug.h>. */
 		} brk;
+
 		struct {
 			ut32 ip;
 			ut32 lastip;
 		} step;
+
 		struct {
 			st32 signo;
 			st32 code;
@@ -530,11 +538,13 @@ struct dspidlist {
 	st32 pid;
 	st32 num_tids; /* Num of threads this pid has.  */
 	st32 spare[6];
+
 	struct tidinfo {
 		st16 tid;
 		ut8 state;
 		ut8 flags;
 	} tids[1]; /* Variable length terminated by tid==0.  */
+
 	char name[1]; /* Variable length terminated by \0.  */
 };
 

@@ -160,6 +160,7 @@ typedef enum {
 	H8500_R5,
 	H8500_R6,
 	H8500_R7,
+
 #define H8500_FP H8500_R6
 #define H8500_SP H8500_R7
 } H8500Register;
@@ -180,11 +181,13 @@ typedef struct {
 
 typedef struct {
 	ut64 flags;
+
 	union {
 		ut32 aa;
 		ut32 imm;
 		st32 disp;
 		ut8 rn;
+
 		struct {
 			ut8 rn;
 			st32 disp;

@@ -8,6 +8,7 @@
 
 #define RZ_HASH_MD4_DIGEST_SIZE  0x10
 #define RZ_HASH_MD4_BLOCK_LENGTH 0x40
+
 typedef struct {
 	ut32 digest[4];
 	ut8 block[RZ_HASH_MD4_BLOCK_LENGTH];

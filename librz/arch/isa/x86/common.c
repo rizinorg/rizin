@@ -368,6 +368,7 @@ ut8 x86_il_get_reg_size(X86Reg reg) {
 RzILOpPure *x86_il_get_gprh(X86Reg reg, int bits) {
 	return UNSIGNED(8, SHIFTR0(VARG(x86_registers[reg]), U8(8)));
 }
+
 /**
  * \brief Get the lower 8 bits (0-8) of register \p reg
  *
@@ -377,6 +378,7 @@ RzILOpPure *x86_il_get_gprh(X86Reg reg, int bits) {
 RzILOpPure *x86_il_get_gprl(X86Reg reg, int bits) {
 	return UNSIGNED(8, VARG(x86_registers[reg]));
 }
+
 /**
  * \brief Get the lower 16 bits (0-16) of register \p reg
  *
@@ -390,6 +392,7 @@ RzILOpPure *x86_il_get_gpr16(X86Reg reg, int bits) {
 	}
 	return UNSIGNED(16, VARG(x86_registers[reg]));
 }
+
 /**
  * \brief Get the lower 32 bits (0-32) of register \p reg
  *
@@ -402,6 +405,7 @@ RzILOpPure *x86_il_get_gpr32(X86Reg reg, int bits) {
 	}
 	return UNSIGNED(32, VARG(x86_registers[reg]));
 }
+
 /**
  * \brief Get 64 bits (0-64) of register \p reg
  *
@@ -425,6 +429,7 @@ RzILOpEffect *x86_il_set_gprh(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *final_reg = LOGOR(masked_reg, SHIFTL0(UNSIGNED(bits, val), U8(8)));
 	return SETG(x86_registers[reg], final_reg);
 }
+
 /**
  * \brief  Set the lower 8 bits (0-8) of register \p reg to \p val
  *
@@ -438,6 +443,7 @@ RzILOpEffect *x86_il_set_gprl(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
+
 /**
  * \brief  Set the lower 16 bits (0-16) of register \p reg to \p val
  *
@@ -455,6 +461,7 @@ RzILOpEffect *x86_il_set_gpr16(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 	RzILOpPure *final_reg = LOGOR(masked_reg, UNSIGNED(bits, val));
 	return SETG(x86_registers[reg], final_reg);
 }
+
 /**
  * \brief  Set the lower 32 bits (0-32) of register \p reg to \p val, and zero out the rest
  * This is a very specific behavior of x86-64, see https://stackoverflow.com/questions/11177137/why-do-x86-64-instructions-on-32-bit-registers-zero-the-upper-part-of-the-full-6 for details
@@ -470,6 +477,7 @@ RzILOpEffect *x86_il_set_gpr32(X86Reg reg, RZ_OWN RzILOpPure *val, int bits) {
 
 	return SETG(x86_registers[reg], UNSIGNED(64, val));
 }
+
 /**
  * \brief  Set 64 bits (0-64) of register \p reg to \p val
  *

@@ -42,6 +42,7 @@ typedef struct minidump_object_t {
 		RzList *threads;
 		RzList *token_infos;
 		RzList *unloaded_modules;
+
 		struct {
 			rva64_t base_rva;
 			RzList *memories;

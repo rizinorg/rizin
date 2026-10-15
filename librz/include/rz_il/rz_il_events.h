@@ -68,6 +68,7 @@ typedef struct rz_il_vm_event_var_write_t {
 
 typedef struct rz_il_vm_event_t {
 	RzILEventId type;
+
 	union {
 		RzILEventException exception;
 		RzILEventPCWrite pc_write;

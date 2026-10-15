@@ -18,16 +18,19 @@ RZ_IPI RzCmdStatus rz_quit_kill_save_handler(RzCore *core, int argc, const char 
 	core->num->value += RZ_QUIT_VALUE_SAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
+
 RZ_IPI RzCmdStatus rz_quit_kill_nosave_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = RZ_QUIT_VALUE_KILL;
 	core->num->value += RZ_QUIT_VALUE_NOSAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
+
 RZ_IPI RzCmdStatus rz_quit_nokill_nosave_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = RZ_QUIT_VALUE_NOKILL;
 	core->num->value += RZ_QUIT_VALUE_NOSAVE;
 	return RZ_CMD_STATUS_EXIT;
 }
+
 RZ_IPI RzCmdStatus rz_quit_nokill_save_handler(RzCore *core, int argc, const char **argv) {
 	core->num->value = RZ_QUIT_VALUE_NOKILL;
 	core->num->value += RZ_QUIT_VALUE_SAVE;

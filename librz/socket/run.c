@@ -61,6 +61,7 @@
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
 static int (*dyn_login_tty)(int fd) = NULL;
 static id_t (*dyn_forkpty)(int *amaster, char *name, struct termios *termp, struct winsize *winp) = NULL;
+
 static void dyn_init(void) {
 	if (!dyn_openpty) {
 		dyn_openpty = rz_sys_dlsym(NULL, "openpty");

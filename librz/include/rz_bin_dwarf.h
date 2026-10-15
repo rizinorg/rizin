@@ -1022,6 +1022,7 @@ typedef enum {
 
 typedef struct {
 	RzBinDwarfAttrClass kind;
+
 	union {
 		RzBinDwarfBlock block;
 		ut64 u64;
@@ -1051,13 +1052,16 @@ typedef struct {
 	// A 4-byte unsigned offset into the .debug_abbrev section.
 	ut64 abbrev_offset;
 	DW_UT ut; // DWARF 5 addition
+
 	union {
 		ut64 dwo_id; // DWARF 5 addition
+
 		struct {
 			ut64 type_sig; // DWARF 5 addition
 			ut64 type_offset; // DWARF 5 addition
 		};
 	};
+
 	ut64 header_size; // excluding length field
 	RzBinDwarfEncoding encoding;
 } RzBinDwarfCompUnitHdr;
@@ -1178,10 +1182,12 @@ typedef enum {
 typedef struct {
 	ut64 offset;
 	RzBinDwarfLineOpType type;
+
 	union {
 		DW_LNS opcode;
 		DW_LNE ext_opcode;
 	};
+
 	struct {
 		union {
 			ut64 advance_pc; //< DW_LNS_advance_pc
@@ -1284,40 +1290,48 @@ typedef enum {
 typedef struct {
 	DW_RLE encoding;
 	bool is_address_or_offset_pair;
+
 	union {
 		/// A range from DWARF version <= 4.
 		struct {
 			ut64 begin; /// Start of range. May be an address or an offset.
 			ut64 end; /// End of range. May be an address or an offset.
 		} address_or_offset_pair;
+
 		/// DW_RLE_base_address
 		struct {
 			ut64 addr; /// base address
 		} base_address;
+
 		/// DW_RLE_base_addressx
 		struct {
 			ut64 addr; /// base address
 		} base_addressx;
+
 		/// DW_RLE_startx_endx
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 		} startx_endx;
+
 		/// DW_RLE_startx_length
 		struct {
 			ut64 begin; /// start of range
 			ut64 length; /// length of range
 		} startx_length;
+
 		/// DW_RLE_offset_pair
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 		} offset_pair;
+
 		/// DW_RLE_start_end
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 		} start_end;
+
 		/// DW_RLE_start_length
 		struct {
 			ut64 begin; /// Start of range.
@@ -1351,6 +1365,7 @@ typedef enum {
 typedef struct {
 	enum DW_LLE encoding;
 	bool is_address_or_offset_pair;
+
 	union {
 		/// A location from DWARF version <= 4.
 		struct {
@@ -1358,42 +1373,50 @@ typedef struct {
 			ut64 end; /// End of range. May be an address or an offset.
 			RzBinDwarfBlock data; /// expression
 		} address_or_offset_pair;
+
 		/// DW_LLE_base_address
 		struct {
 			ut64 addr; /// base address
 		} base_address;
+
 		/// DW_LLE_base_addressx
 		struct {
 			ut64 addr; /// base address
 		} base_addressx;
+
 		/// DW_LLE_startx_endx
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} startx_endx;
+
 		/// DW_LLE_startx_length
 		struct {
 			ut64 begin; /// start of range
 			ut64 length; /// length of range
 			RzBinDwarfBlock data; /// expression
 		} startx_length;
+
 		/// DW_LLE_offset_pair
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} offset_pair;
+
 		/// DW_LLE_default_location
 		struct {
 			RzBinDwarfBlock data; /// expression
 		} default_location;
+
 		/// DW_LLE_start_end
 		struct {
 			ut64 begin; /// Start of range.
 			ut64 end; /// End of range.
 			RzBinDwarfBlock data; /// expression
 		} start_end;
+
 		/// DW_LLE_start_length
 		struct {
 			ut64 begin; /// Start of range.
@@ -1581,6 +1604,7 @@ struct rz_bin_dwarf_location_t;
 
 typedef struct {
 	RzBinDwarfValueType type;
+
 	union {
 		ut64 generic;
 		ut8 u8;
@@ -1676,6 +1700,7 @@ typedef struct {
 		EvaluationResult_REQUIRES_ENTRY_VALUE,
 		EvaluationResult_REQUIRES_RESOLVE,
 	} kind;
+
 	union {
 		struct {
 			ut64 address;
@@ -1684,17 +1709,22 @@ typedef struct {
 			ut64 space : 63;
 			UnitOffset base_type;
 		} requires_memory;
+
 		struct {
 			RzBinDwarfBlock expression;
 		} requires_entry_value;
+
 		ut64 requires_relocated_address;
+
 		struct {
 			ut64 index;
 			bool relocate;
 		} requires_indexed_address;
+
 		struct {
 			ut64 offset;
 		} requires_at_location;
+
 		struct {
 			ut64 offset;
 		} requires_parameter_ref;
@@ -1721,16 +1751,19 @@ typedef struct rz_bin_dwarf_location_t {
 	RzBinDwarfLocationKind kind;
 	st64 offset;
 	RzBinDwarfEncoding encoding;
+
 	union {
 		ut64 register_number;
 		ut64 address;
 		RzBinDwarfValue value;
 		RzBinDwarfBlock bytes;
 		DebugInfoOffset implicit_pointer;
+
 		struct {
 			RzBinDwarfEvaluation *eval;
 			RzBinDwarfEvaluationResult *result;
 		} eval_waiting;
+
 		RzVector /*<RzBinDwarfPiece>*/ *composite;
 		const RzBinDwarfLocList *loclist;
 	};

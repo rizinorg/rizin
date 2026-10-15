@@ -471,6 +471,7 @@ void pf_emit_error(RzPfFormat *fmt, RzPfErrSeverity sev,
 RzPfFormat *pf_current_fmt(void) {
 	return g_current_fmt;
 }
+
 const char *pf_current_src(void) {
 	return g_current_src;
 }
@@ -1048,6 +1049,7 @@ static int parse_brace_repeat(const char *p, int *out) {
 	*out = n;
 	return (int)(close - p) + 1;
 }
+
 /* Locate the boundary between the specifier region and the names
  * list. The specifier region runs from `start` to the first
  * top-level (paren-depth 0, bracket-depth 0) space; the names list
@@ -1748,6 +1750,7 @@ int pf_read_field(const RzPfField *fld, const ut8 *buf, int off,
 				 * keeps the recursion bounded even when the
 				 * struct nominal size is unknown. */
 				enum { DEREF_BUF = 4096 };
+
 				ut8 *tbuf = RZ_NEWS0(ut8, DEREF_BUF);
 				if (tbuf) {
 					int got = ctx->read_at(ctx->read_at_user,

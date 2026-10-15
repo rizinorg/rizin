@@ -47,9 +47,11 @@ RZ_IPI bool Value_ne(RzBinDwarfValue *self, RzBinDwarfValue *rhs, ut64 addr_mask
 RZ_IPI void Value_fini(RzBinDwarfValue *self);
 RZ_IPI void Value_free(RzBinDwarfValue *self);
 RZ_IPI bool Value_clone_into(RzBinDwarfValue *self, RzBinDwarfValue *val);
+
 static inline void Value_cpy(RzBinDwarfValue *dst, RzBinDwarfValue *src) {
 	Value_clone_into(src, dst);
 }
+
 RZ_IPI void Value_dump(
 	const RzBinDwarfValue *self,
 	RzStrBuf *sb,

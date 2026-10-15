@@ -99,10 +99,12 @@ typedef struct {
 	ut8 /* HexOpType */ type; ///< Operand type: Immediate or register
 	ut8 class; ///< Equivalent to: HexRegClass (for registers) OR HexOpTemplateFlag (for immediate values).
 	char isa_id; ///< The identifier character in the ISA of this instruction: 'd' for Rdd, I for Ii etc. 0x0 if not known.
+
 	union {
 		ut8 reg; ///< Register number. E.g. 3 for R3 etc.
 		st64 imm; ///< Immediate value.
 	} op; ///< Actual value of the operand.
+
 	HexOpAttr attr; ///< Attributes of the operand.
 	ut8 shift; ///< Number of bits to shift the bits in the opcode to retrieve the operand value.
 } HexOp;
@@ -167,10 +169,12 @@ typedef struct {
 	ut8 parse_bits; ///< Parse bits of instruction.
 	bool is_duplex; ///< Does this container hold two sub-instructions?
 	ut32 identifier; ///< Equals instruction ID if is_duplex = false. Otherwise: (high.id << 16) | (low.id & 0xffff)
+
 	union {
 		HexInsn *sub[2]; ///< Pointer to sub-instructions if is_duplex = true. sub[0] = high, sub[1] = low
 		HexInsn *insn; ///< Pointer to instruction if is_duplex = false.
 	} bin;
+
 	ut32 addr; ///< Address of container. Equals address of instruction or of the high sub-instruction if this is a duplex.
 	ut32 bytes; ///< The instruction bytes.
 	HexPktInfo pkt_info; ///< Packet related information. First/last instr., prefix and postfix for text etc.

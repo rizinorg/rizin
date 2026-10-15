@@ -13,6 +13,7 @@ typedef struct {
 		ILOpEff_PostInc,
 		ILOpEff_PreInc,
 	} tag;
+
 	char fsr[8];
 } ILOpEff;
 

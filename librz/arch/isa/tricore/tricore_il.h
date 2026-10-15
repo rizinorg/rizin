@@ -40,24 +40,31 @@ static inline RzILOpPure *sign_ext64_bv(uint32_t X, unsigned B) {
 static inline RzILOpPure *BITS8(RzILOpBitVector *bv, ut32 i, ut32 n) {
 	return LOGAND(SHIFTR0(bv, U8(i)), U8((1U << n) - 1));
 }
+
 static inline RzILOpPure *BITS16(RzILOpBitVector *bv, ut32 i, ut32 n) {
 	return LOGAND(SHIFTR0(bv, U16(i)), U16((1U << n) - 1));
 }
+
 static inline RzILOpPure *BITS32(RzILOpBitVector *bv, ut32 i, ut32 n) {
 	return LOGAND(SHIFTR0(bv, U32(i)), U32((1U << n) - 1));
 }
+
 static inline RzILOpPure *BITS64(RzILOpBitVector *bv, ut32 i, ut32 n) {
 	return LOGAND(SHIFTR0(bv, U64(i)), U64((1ULL << n) - 1));
 }
+
 static inline RzILOpPure *BIT8(RzILOpBitVector *bv, ut32 i) {
 	return NON_ZERO(BITS8(bv, i, 1));
 }
+
 static inline RzILOpPure *BIT16(RzILOpBitVector *bv, ut32 i) {
 	return NON_ZERO(BITS16(bv, i, 1));
 }
+
 static inline RzILOpPure *BIT32(RzILOpBitVector *bv, ut32 i) {
 	return NON_ZERO(BITS32(bv, i, 1));
 }
+
 static inline RzILOpPure *BIT64(RzILOpBitVector *bv, ut32 i) {
 	return NON_ZERO(BITS64(bv, i, 1));
 }
@@ -75,15 +82,19 @@ static inline ut32 extract32(ut32 x, ut32 start, ut32 len) {
 static inline RzILOpPure *SEXT32(RzILOpPure *value, ut32 length) {
 	return LET("_sext_val", SIGNED(32, value), rz_il_sextract32(VARLP("_sext_val"), U32(0), U32(length)));
 }
+
 static inline RzILOpPure *SEXT64(RzILOpPure *value, ut32 length) {
 	return LET("_sext_val", SIGNED(32, value), rz_il_sextract64(VARLP("_sext_val"), U32(0), U32(length)));
 }
+
 static inline RzILOpPure *ZEXT32(RzILOpPure *value, ut32 length) {
 	return value;
 }
+
 static inline RzILOpPure *SHL0(RzILOpPure *value, ut32 length) {
 	return SHIFTL0(value, U32(length));
 }
+
 static inline RzILOpPure *SHR0(RzILOpPure *value, ut32 length) {
 	return SHIFTR0(value, U32(length));
 }

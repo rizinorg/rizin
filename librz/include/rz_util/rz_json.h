@@ -38,15 +38,19 @@ typedef enum rz_json_type_t {
 typedef struct rz_json_t {
 	RzJsonType type; // type of json node, see above
 	const char *key; // key of the property; for object's children only
+
 	union {
 		const char *str_value; // text value of STRING node
+
 		struct {
 			union {
 				ut64 u_value; // the value of INTEGER or BOOLEAN node
 				st64 s_value;
 			};
+
 			double dbl_value; // the value of DOUBLE node
 		} num;
+
 		struct { // children of OBJECT or ARRAY
 			size_t count;
 			struct rz_json_t *first;

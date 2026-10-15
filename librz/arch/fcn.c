@@ -656,6 +656,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	RzAnalysisOp op = { 0 };
 	int oplen, idx = 0;
 	bool varset = false;
+
 	struct {
 		int cnt;
 		int idx;

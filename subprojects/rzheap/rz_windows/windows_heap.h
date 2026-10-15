@@ -41,14 +41,17 @@ typedef struct _LFH_HEAP *PLFH_HEAP;
 typedef struct _HEAP *PHEAP;
 
 typedef struct _RTL_BALANCED_NODE *PRTL_BALANCED_NODE;
+
 typedef struct _RTL_BALANCED_NODE {
 	union {
 		PRTL_BALANCED_NODE Children[2];
+
 		struct {
 			PRTL_BALANCED_NODE Left;
 			PRTL_BALANCED_NODE Right;
 		};
 	};
+
 	union {
 		BYTE Red : 1;
 		BYTE Balance : 2;
@@ -58,6 +61,7 @@ typedef struct _RTL_BALANCED_NODE {
 
 typedef struct _RTL_RB_TREE {
 	PRTL_BALANCED_NODE Root;
+
 	union {
 		BOOL Encoded : 1;
 		PRTL_BALANCED_NODE Min;
@@ -96,20 +100,25 @@ typedef struct _HEAP_BUCKET_COUNTERS {
 			ULONG TotalBlocks;
 			ULONG SubSegmentCounts;
 		};
+
 		UINT64 Aggregate64;
 	};
 } HEAP_BUCKET_COUNTERS, *PHEAP_BUCKET_COUNTERS;
 
 typedef struct _INTERLOCK_SEQ { // Is this right? NO!
+
 	union {
 		WORD Depth;
+
 		union {
 			union {
 				WORD Hint : 15;
 				WORD Lock : 1;
 			};
+
 			WORD Hint16;
 		};
+
 		INT32 Exchg;
 	};
 } INTERLOCK_SEQ, *PINTERLOCK_SEQ;
@@ -128,12 +137,15 @@ typedef struct _HEAP_UNPACKED_ENTRY {
 		struct {
 			ULONG32 SubSegmentCode;
 			UINT16 PreviousSize;
+
 			union {
 				UINT8 SegmentOffset;
 				UINT8 LFHFlags;
 			};
+
 			UINT8 UnusedBytes;
 		};
+
 		UINT64 CompactHeader;
 #else
 		ULONG32 SubSegmentCode;
@@ -141,10 +153,12 @@ typedef struct _HEAP_UNPACKED_ENTRY {
 	};
 #if !defined(_M_X64)
 	UINT16 PreviousSize;
+
 	union {
 		UINT8 SegmentOffset;
 		UINT8 LFHFlags;
 	};
+
 	UINT8 UnusedBytes;
 #endif
 } HEAP_UNPACKED_ENTRY, *PHEAP_UNPACKED_ENTRY;
@@ -158,8 +172,10 @@ typedef struct _HEAP_EXTENDED_ENTRY {
 			UINT16 FunctionIndex;
 			UINT16 ContextValue;
 		};
+
 		ULONG32 InterceptorValue;
 	};
+
 	UINT16 UnusedBytesLength;
 	UINT8 EntryOffset;
 	UINT8 ExtendedBlockSignature;
@@ -168,24 +184,30 @@ typedef struct _HEAP_EXTENDED_ENTRY {
 typedef struct _HEAP_ENTRY {
 	union {
 		HEAP_UNPACKED_ENTRY UnpackedEntry;
+
 		struct {
 #if defined(_M_X64)
 			PVOID PreviousBlockPrivateData;
+
 			union {
 				struct {
 					UINT16 Size;
 					UINT8 Flags;
 					UINT8 SmallTagIndex;
 				};
+
 				struct {
 					ULONG32 SubSegmentCode;
 					UINT16 PreviousSize;
+
 					union {
 						UINT8 SegmentOffset;
 						UINT8 LFHFlags;
 					};
+
 					UINT8 UnusedBytes;
 				};
+
 				UINT64 CompactHeader;
 			};
 #else
@@ -198,24 +220,30 @@ typedef struct _HEAP_ENTRY {
 		struct {
 			ULONG32 SubSegmentCode;
 			UINT16 PreviousSize;
+
 			union {
 				UINT8 SegmentOffset;
 				UINT8 LFHFlags;
 			};
+
 			UINT8 UnusedBytes;
 		};
 #endif
 		HEAP_EXTENDED_ENTRY ExtendedEntry;
+
 		struct {
 #if defined(_M_X64)
 			PVOID Reserved;
+
 			union {
 				struct {
 					UINT16 FunctionIndex;
 					UINT16 ContextValue;
 				};
+
 				ULONG32 InterceptorValue;
 			};
+
 			UINT16 UnusedBytesLength;
 			UINT8 EntryOffset;
 			UINT8 ExtendedBlockSignature;
@@ -224,21 +252,26 @@ typedef struct _HEAP_ENTRY {
 			UINT16 ContextValue;
 #endif
 		};
+
 		struct {
 #if defined(_M_X64)
 			PVOID ReservedForAlignment;
+
 			union {
 				struct {
 					ULONG32 Code1;
+
 					union {
 						struct {
 							UINT16 Code2;
 							UINT8 Code3;
 							UINT8 Code4;
 						};
+
 						ULONG32 Code234;
 					};
 				};
+
 				UINT64 AgregateCode;
 			};
 #else
@@ -251,15 +284,18 @@ typedef struct _HEAP_ENTRY {
 #if !defined(_M_X64)
 		struct {
 			ULONG32 Code1;
+
 			union {
 				struct {
 					UINT16 Code2;
 					UINT8 Code3;
 					UINT8 Code4;
 				};
+
 				ULONG32 Code234;
 			};
 		};
+
 		UINT64 AgregateCode;
 #endif
 	};
@@ -366,6 +402,7 @@ typedef struct _HEAP_VS_CHUNK_HEADER_SIZE {
 		WPARAM HeaderBits;
 		USHORT KeyUShort;
 		ULONG KeyULong;
+
 		struct {
 			USHORT MemoryCost;
 			USHORT UnsafeSize;
@@ -377,6 +414,7 @@ typedef struct _HEAP_VS_CHUNK_HEADER_SIZE {
 
 typedef struct _HEAP_VS_CHUNK_HEADER {
 	HEAP_VS_CHUNK_HEADER_SIZE Sizes;
+
 	union {
 		ULONG EncodedSegmentPageOffset : 8;
 		ULONG UnusedBytes : 1;
@@ -397,22 +435,27 @@ enum {
 typedef struct _HEAP_PAGE_RANGE_DESCRIPTOR {
 	union {
 		RTL_BALANCED_NODE TreeNode;
+
 		struct {
 			ULONG TreeSignature;
 			ULONG UnusedBytes;
 		};
+
 		union {
 			bool ExtraPresent;
 			UINT16 Spare0 : 15;
 		};
 	};
+
 	UCHAR RangeFlags;
 	UCHAR CommittedPageCount;
 	USHORT Spare;
+
 	union {
 		//_HEAP_DESCRIPTOR_KEY Key;
 		UCHAR Align[3];
 	};
+
 	union {
 		UCHAR UnitOffset;
 		UCHAR UnitSize;
@@ -427,6 +470,7 @@ typedef struct _HEAP_PAGE_SEGMENT {
 			PVOID SegmentCommitState;
 			UCHAR UnusedWatermark;
 		};
+
 		HEAP_PAGE_RANGE_DESCRIPTOR DescArray[256];
 	};
 } HEAP_PAGE_SEGMENT, *PHEAP_PAGE_SEGMENT;
@@ -453,11 +497,14 @@ typedef struct _HEAP_LFH_SUBSEGMENT_OWNER {
 		BYTE IsBucket : 1;
 		BYTE Spare0 : 7;
 	};
+
 	BYTE BucketIndex;
+
 	union {
 		BYTE SlotCount;
 		BYTE SlotIndex;
 	};
+
 	BYTE Spare1;
 	WPARAM AvailableSubsegmentCount;
 	RTL_SRWLOCK Lock;
@@ -507,6 +554,7 @@ typedef struct _HEAP_LFH_CONTEXT {
 typedef struct _HEAP_LFH_SUBSEGMENT_ENCODED_OFFSETS {
 	union {
 		UINT32 EncodedData;
+
 		struct {
 			UINT16 BlockSize;
 			UINT16 FirstBlockOffset;
@@ -516,21 +564,26 @@ typedef struct _HEAP_LFH_SUBSEGMENT_ENCODED_OFFSETS {
 
 typedef struct _HEAP_LFH_SUBSEGMENT {
 	LIST_ENTRY ListEntry;
+
 	union {
 		PHEAP_LFH_SUBSEGMENT_OWNER Owner;
 		WPARAM /*HEAP_LFH_SUBSEGMENT_DELAY_FREE*/ DelayFree;
 	};
+
 	WPARAM CommitLock;
+
 	union {
 		struct {
 			UINT16 FreeCount;
 			UINT16 BlockCount;
 		};
+
 		union {
 			SHORT InterlockedShort;
 			LONG InterlockedLong;
 		};
 	};
+
 	UINT16 FreeHint;
 	BYTE Location;
 	BYTE WitheldBlockCount;
@@ -543,12 +596,15 @@ typedef struct _HEAP_LFH_SUBSEGMENT {
 
 typedef struct _HEAP_LARGE_ALLOC_DATA {
 	RTL_BALANCED_NODE TreeNode;
+
 	union {
 		WPARAM VirtualAddess;
 		UINT16 UnusedBytes;
 	};
+
 	union {
 		UINT64 BitMask;
+
 		union {
 			bool ExtraPresent : 1;
 			bool GuardPageCount : 1;
@@ -604,8 +660,10 @@ typedef struct _SEGMENT_HEAP {
 	ULONG Interceptor;
 	USHORT ProcessHeapListIndex;
 	USHORT AllocatedFromMetadata : 1;
+
 	union {
 		RTL_HEAP_MEMORY_LIMIT_DATA CommitLimitData;
+
 		struct {
 			UINT64 ReservedMustBeZero1;
 			PVOID UserContext;
@@ -613,6 +671,7 @@ typedef struct _SEGMENT_HEAP {
 			PVOID Spare;
 		};
 	};
+
 	RTL_SRWLOCK LargeMetadataLock;
 	RTL_RB_TREE LargeAllocMetadata; // Tree of HEAP_LARGE_ALLOC_DATA
 	WPARAM LargeReservedPages;
@@ -657,6 +716,7 @@ typedef struct _HEAP_SEGMENT {
 typedef struct _HEAP {
 	union {
 		HEAP_SEGMENT Segment;
+
 		struct {
 			HEAP_ENTRY Entry;
 			ULONG32 SegmentSignature;
@@ -674,6 +734,7 @@ typedef struct _HEAP {
 			LIST_ENTRY UCRSegmentList;
 		};
 	};
+
 	ULONG32 Flags;
 	ULONG32 ForceFlags;
 	ULONG32 CompatibilityFlags;
@@ -783,6 +844,7 @@ typedef struct _LFH_BLOCK_ZONE {
 typedef struct _HEAP_USERDATA_OFFSETS {
 	union {
 		UINT32 StrideAndOffset;
+
 		struct {
 			UINT16 FirstAllocationOffset;
 			UINT16 BlockStride;
@@ -800,15 +862,19 @@ typedef struct _HEAP_USERDATA_HEADER {
 		SINGLE_LIST_ENTRY SFreeListEntry;
 		PHEAP_SUBSEGMENT SubSegment;
 	};
+
 	PVOID Reserved;
+
 	union {
 		UINT32 SizeIndexAndPadding;
+
 		struct {
 			UCHAR SizeIndex;
 			UCHAR GuardPagePresent;
 			UINT16 PaddingBytes;
 		};
 	};
+
 	ULONG Signature;
 	HEAP_USERDATA_OFFSETS EncodedOffsets;
 	RTL_BITMAP_EX BusyBitmap;
@@ -816,6 +882,7 @@ typedef struct _HEAP_USERDATA_HEADER {
 } HEAP_USERDATA_HEADER, *PHEAP_USERDATA_HEADER;
 
 typedef struct _HEAP_SUBSEGMENT *PHEAP_SUBSEGMENT;
+
 typedef struct _HEAP_LOCAL_SEGMENT_INFO {
 	PHEAP_LOCAL_DATA LocalData;
 	PHEAP_SUBSEGMENT ActiveSubsegment;
@@ -833,6 +900,7 @@ typedef struct _HEAP_SUBSEGMENT {
 	PHEAP_USERDATA_HEADER UserBlocks;
 	SLIST_HEADER DelayFreeList;
 	INTERLOCK_SEQ AggregateExchg;
+
 	union {
 		struct {
 			WORD BlockSize;
@@ -841,8 +909,10 @@ typedef struct _HEAP_SUBSEGMENT {
 			UINT8 SizeIndex;
 			UINT8 AffinityIndex;
 		};
+
 		ULONG Alignment[2];
 	};
+
 	ULONG Lock;
 	SINGLE_LIST_ENTRY SFreeListEntry;
 } HEAP_SUBSEGMENT, *PHEAP_SUBSEGMENT;
@@ -850,6 +920,7 @@ typedef struct _HEAP_SUBSEGMENT {
 typedef struct _HEAP_LFH_MEM_POLICIES {
 	union {
 		ULONG AllPolicies;
+
 		union {
 			UINT8 DisableAffinity : 1;
 			UINT8 SlowSubsegmentGrowth : 1;
@@ -869,8 +940,10 @@ typedef struct _HEAP_LOCAL_DATA {
 typedef struct _HEAP_BUCKET {
 	WORD BlockUnits;
 	UINT8 SizeIndex;
+
 	union {
 		BYTE Flags;
+
 		union {
 			BYTE UseAffinity : 1;
 			BYTE DebugFlags : 2;
@@ -884,6 +957,7 @@ typedef struct _HEAP_BUCKET_RUN_INFO {
 			ULONG Bucket;
 			ULONG RunLength;
 		};
+
 		UINT64 Aggregate64;
 	};
 } HEAP_BUCKET_RUN_INFO, *PHEAP_BUCKET_RUN_INFO;

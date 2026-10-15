@@ -493,6 +493,7 @@ bool test_cmd_group_exec_help(void) {
 	rz_cmd_free(cmd);
 	mu_end;
 }
+
 bool test_remove_cmd(void) {
 	RzCmd *cmd = rz_cmd_new(NULL, false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);

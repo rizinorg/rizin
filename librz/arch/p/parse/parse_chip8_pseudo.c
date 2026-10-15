@@ -27,6 +27,7 @@ static void concat(char *buf, size_t len, char **args) {
 
 static int replace(int argc, char *argv[], char *newstr, size_t len) {
 	int i;
+
 	struct {
 		char *op;
 		char **res;

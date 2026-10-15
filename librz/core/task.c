@@ -33,6 +33,7 @@ RZ_API void rz_core_task_scheduler_fini(RzCoreTaskScheduler *tasks) {
 
 #if HAVE_PTHREAD
 #define TASK_SIGSET_T sigset_t
+
 static void tasks_lock_block_signals(sigset_t *old_sigset) {
 	sigset_t block_sigset;
 	sigemptyset(&block_sigset);
@@ -45,9 +46,11 @@ static void tasks_lock_block_signals_reset(sigset_t *old_sigset) {
 }
 #else
 #define TASK_SIGSET_T void *
+
 static void tasks_lock_block_signals(TASK_SIGSET_T *old_sigset) {
 	(void)old_sigset;
 }
+
 static void tasks_lock_block_signals_reset(TASK_SIGSET_T *old_sigset) {
 	(void)old_sigset;
 }
