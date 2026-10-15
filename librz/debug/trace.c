@@ -93,8 +93,7 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 
 			if (val->access & RZ_ANALYSIS_ACC_W) {
 				// resolve memory address
-				ut64 addr = 0;
-				addr += val->delta;
+				ut64 addr = val->base + val->delta;
 				if (val->seg) {
 					addr += rz_reg_get_value(dbg->reg, val->seg);
 				}
