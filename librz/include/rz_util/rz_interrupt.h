@@ -38,26 +38,26 @@ RZ_API bool rz_interrupt_is_breaked(RZ_NULLABLE RzInterrupt *intr);
 RZ_API void rz_interrupt_break_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout);
 RZ_API void rz_interrupt_raise_sigint(void);
 
-static inline void *rz_interrupt_sleep_begin(RzInterrupt *intr) {
+static inline void *rz_interrupt_sleep_begin(RZ_NULLABLE RzInterrupt *intr) {
 	if (intr && intr->sleep_begin) {
 		return intr->sleep_begin(intr->user);
 	}
 	return NULL;
 }
 
-static inline void rz_interrupt_sleep_end(RzInterrupt *intr, void *bed) {
+static inline void rz_interrupt_sleep_end(RZ_NULLABLE RzInterrupt *intr, void *bed) {
 	if (intr && intr->sleep_end) {
 		intr->sleep_end(intr->user, bed);
 	}
 }
 
-static inline void rz_interrupt_set_breaked(RzInterrupt *intr, bool breaked) {
+static inline void rz_interrupt_set_breaked(RZ_NULLABLE RzInterrupt *intr, bool breaked) {
 	if (intr) {
 		intr->is_breaked = breaked;
 	}
 }
 
-static inline void rz_interrupt_set_hook_signals(RzInterrupt *intr, bool hook) {
+static inline void rz_interrupt_set_hook_signals(RZ_NULLABLE RzInterrupt *intr, bool hook) {
 	if (intr) {
 		intr->hook_signals = hook;
 	}
