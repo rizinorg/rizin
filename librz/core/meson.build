@@ -53,6 +53,7 @@ rz_core_sources = [
   'ctypes.c',
   'cvfile.c',
   'devirtualize_cxx.c',
+  'devirtualize_dlang.c',
   'devirtualize_objc.c',
   'disasm.c',
   'fortune.c',
