@@ -342,6 +342,9 @@ RZ_IPI int rz_core_visual_view_graph(RzCore *core) {
 		case '\r':
 		case '\n': {
 			RzCoreVisualViewGraphItem *item = rz_list_get_n(status.mainCol, status.cur);
+			if (!item) {
+				break;
+			}
 			rz_core_seek(core, item->addr, true);
 		}
 			return true;
