@@ -137,7 +137,7 @@ if has_debugger
 
   # NetBSD OS
   elif host_machine.system() == 'netbsd'
-    if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64'
+    if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64' or host_machine.cpu_family() == 'vax'
       rz_debug_sources += ['p/native/netbsd.c']
     else
       rz_debug_sources += ['p/native/unsupported.c']
