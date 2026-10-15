@@ -3132,6 +3132,37 @@ static void visual_flagzone(RzCore *core) {
 	}
 }
 
+static void visual_title_append_depth(RzCore *core, char **title) {
+	const char *ref = rz_config_get(core->config, "graph.depth.ref");
+	if (!ref || !*ref) {
+		return;
+	}
+
+	char *depth_str = NULL;
+	ut64 ref_addr = rz_num_math(core->num, ref);
+	RzAnalysisFunction *cur_fcn = (ref_addr && ref_addr != UT64_MAX)
+		? rz_analysis_first_function_in(core->analysis, core->offset)
+		: NULL;
+
+	if (ref_addr && ref_addr != UT64_MAX && cur_fcn) {
+		int max_depth = rz_config_get_i(core->config, "graph.depth.max");
+		int depth = rz_core_analysis_depth_between(core, ref_addr, cur_fcn->addr, max_depth);
+		if (depth >= 0) {
+			depth_str = rz_str_newf(" depth from %s: %d", ref, depth);
+		}
+	}
+	if (!depth_str) {
+		depth_str = rz_str_newf(" depth from %s: ???", ref);
+	}
+
+	if (*title && (*title)[strlen(*title) - 1] == '\n') {
+		(*title)[strlen(*title) - 1] = 0;
+	}
+	*title = rz_str_append(*title, depth_str);
+	*title = rz_str_append(*title, "\n");
+	free(depth_str);
+}
+
 RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 	const char *BEGIN = core->cons->context->pal.prompt;
 	const char *filename;
@@ -3300,6 +3331,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 				free(tabstring);
 			}
 		}
+		visual_title_append_depth(core, &title);
 		rz_cons_print(title);
 		free(title);
 		free(address);

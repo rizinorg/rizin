@@ -15,6 +15,8 @@
 #include <rz_util/ht_up.h>
 #include <rz_util/rz_graph.h>
 #include <rz_util/rz_th_ht.h>
+#include <rz_util/rz_set.h>
+#include <rz_vector.h>
 
 static inline bool is_between(ut64 a, ut64 x, ut64 b) {
 	return (a == UT64_MAX && b == UT64_MAX) || RZ_BETWEEN(a, x, b);
@@ -1143,4 +1145,74 @@ error:
 	rz_graph_free(graph);
 	graph = NULL;
 	goto fini;
+}
+
+typedef struct {
+	ut64 addr;
+	int depth;
+} BfsNode;
+
+/**
+ * \brief Finds the shortest call depth from a reference function to a target function.
+ *
+ * \param core RzCore instance
+ * \param ref_addr Address of the reference function (e.g., main)
+ * \param target_addr Address of the target function (where the cursor is)
+ * \param max_depth Maximum depth to search
+ *
+ * \return The depth (number of calls) on success, -1 if no path is found or max_depth is exceeded.
+ */
+RZ_IPI int rz_core_analysis_depth_between(RzCore *core, ut64 ref_addr, ut64 target_addr, int max_depth) {
+	if (ref_addr == target_addr) {
+		return 0;
+	}
+
+	RzVector *queue = rz_vector_new(sizeof(BfsNode), NULL, NULL);
+	RzSetU *visited = rz_set_u_new();
+
+	BfsNode start_node = { .addr = ref_addr, .depth = 0 };
+	rz_vector_push(queue, &start_node);
+	rz_set_u_add(visited, ref_addr);
+
+	int found_depth = -1;
+	size_t head = 0;
+
+	while (head < rz_vector_len(queue)) {
+		BfsNode curr = *(BfsNode *)rz_vector_index_ptr(queue, head++);
+
+		if (curr.addr == target_addr) {
+			found_depth = curr.depth;
+			break;
+		}
+		if (curr.depth >= max_depth) {
+			continue;
+		}
+		RzAnalysisFunction *fcn = rz_analysis_first_function_in(core->analysis, curr.addr);
+		if (!fcn) {
+			continue;
+		}
+		RzList *calls = rz_core_analysis_fcn_get_calls(core, fcn);
+		if (calls) {
+			RzListIter *it;
+			RzAnalysisXRef *xref;
+			rz_list_foreach (calls, it, xref) {
+				if (xref->to == 0 || xref->to == UT64_MAX) {
+					continue;
+				}
+				if (!rz_set_u_contains(visited, xref->to)) {
+					rz_set_u_add(visited, xref->to);
+					BfsNode next_node = {
+						.addr = xref->to,
+						.depth = curr.depth + 1,
+					};
+					rz_vector_push(queue, &next_node);
+				}
+			}
+			rz_list_free(calls);
+		}
+	}
+
+	rz_vector_free(queue);
+	rz_set_u_free(visited);
+	return found_depth;
 }

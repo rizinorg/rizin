@@ -240,3 +240,75 @@ EXPECT=<<EOF
 0x00000090  ffff ffff ffff ffff ffff ffff ffff ffff  ................           [?25h[0m[2J[0;0H
 EOF
 RUN
+
+NAME=depth indicator simple chain
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=200
+e scr.rows=20
+aaa
+e asm.comments=false
+e asm.xrefs=false
+e asm.types=false
+e asm.bytes=false
+e asm.flags=false
+e asm.functions=false
+e graph.depth.ref=main
+s main
+< q; Vp
+echo
+EOF
+REGEXP_FILTER_OUT=depth from main: [0-9?]+
+EXPECT=<<EOF
+depth from main: 0
+EOF
+RUN
+
+NAME=depth indicator from callee
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=200
+e scr.rows=20
+aaa
+e asm.comments=false
+e asm.xrefs=false
+e asm.types=false
+e asm.bytes=false
+e asm.flags=false
+e asm.functions=false
+e graph.depth.ref=main
+s sym.call
+< q; Vp
+echo
+EOF
+REGEXP_FILTER_OUT=depth from main: [0-9?]+
+EXPECT=<<EOF
+depth from main: 1
+EOF
+RUN
+
+NAME=depth indicator unknown
+FILE=bins/elf/analysis/armcall
+CMDS=<<EOF
+e scr.interactive=true
+e scr.columns=200
+e scr.rows=20
+aaa
+e asm.comments=false
+e asm.xrefs=false
+e asm.types=false
+e asm.bytes=false
+e asm.flags=false
+e asm.functions=false
+e graph.depth.ref=main
+s 0x0
+< q; Vp
+echo
+EOF
+REGEXP_FILTER_OUT=depth from main: [0-9?]+
+EXPECT=<<EOF
+depth from main: ???
+EOF
+RUN
