@@ -86,6 +86,21 @@ static void process_handle_symbol(RzBinSymbol *symbol, RzBinObject *o, const RzD
 	language_cb(o, symbol);
 }
 
+RZ_IPI void rz_bin_normalize_symbol(RzBinSymbol *symbol) {
+	rz_return_if_fail(symbol);
+	if (RZ_STR_ISEMPTY(symbol->name)) {
+		if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
+			symbol->name = rz_str_newf("unknown_0x%" PFMT64x, symbol->vaddr);
+		} else {
+			symbol->name = rz_str_newf("unknown_%d", symbol->ordinal);
+		}
+		symbol->is_auto_generated = true;
+	} else {
+		symbol->is_auto_generated = false;
+	}
+	return;
+}
+
 RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {
 	if (rz_pvector_len(o->symbols) < 1) {
 		return;
@@ -94,12 +109,19 @@ RZ_IPI void rz_bin_process_symbols(RzBinFile *bf, RzBinObject *o, const RzDemang
 	ht_sp_free(o->import_name_symbols);
 	o->import_name_symbols = ht_sp_new(HT_STR_DUP, NULL, NULL);
 
+	ht_sp_free(o->name_to_symbol);
+	o->name_to_symbol = ht_sp_new(HT_STR_DUP, NULL, NULL);
+
 	RzBinProcessLanguage language_cb = rz_bin_process_language_symbol(o);
 
 	void **it;
 	RzBinSymbol *element;
 	rz_pvector_foreach (o->symbols, it) {
 		element = *it;
+		rz_bin_normalize_symbol(element);
+		if (RZ_STR_ISNOTEMPTY(element->name) && !ht_sp_find(o->name_to_symbol, element->name, NULL)) {
+			ht_sp_insert(o->name_to_symbol, element->name, element);
+		}
 		process_handle_symbol(element, o, demangler, flags, language_cb);
 	}
 }
