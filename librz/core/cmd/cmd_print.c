@@ -1893,7 +1893,6 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-<<<<<<< HEAD
 	RzDetectedString *detected = rz_list_first_val(found);
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		if (detected) {
@@ -1903,18 +1902,7 @@ RZ_IPI RzCmdStatus rz_print_first_string_current_block_handler(RzCore *core, int
 			pj_end(state->d.pj);
 		}
 	} else if (detected) {
-		rz_cons_println(detected->string);
-=======
-	if (rz_scan_strings_raw(core->block, found, &scan_opt, 0, core->blocksize, RZ_STRING_ENC_GUESS) < 0) {
-		rz_list_free(found);
-		return RZ_CMD_STATUS_ERROR;
-	}
-
-	detected = rz_list_first_val(found);
-	if (detected) {
-		rz_cons_memcat(core->cons, detected->string, detected->size);
-		rz_cons_newline(core->cons);
->>>>>>> f3b85d2fec (remove global RzCons instance)
+        rz_cons_println(core->cons, detected->string);
 	}
 
 	rz_list_free(found);

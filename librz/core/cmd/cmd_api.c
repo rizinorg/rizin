@@ -915,18 +915,19 @@ static bool cmd_has_json_status(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid) {
 		cmd_runs_in_json_mode(cd, cmdid);
 }
 
-static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status) {
+static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status, RzCons *cons) {
+	rz_return_if_fail(cons);
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
 	rz_cmd_status_json(pj, status, args);
 	// Consumers read the status from the last line, but e.g. `tj int` ends without a newline
-	int len = rz_cons_get_buffer_len();
-	if (len > 0 && rz_cons_get_buffer()[len - 1] != '\n') {
-		rz_cons_newline();
+	int len = rz_cons_get_buffer_len(cons);
+	if (len > 0 && rz_cons_get_buffer(cons)[len - 1] != '\n') {
+		rz_cons_newline(cons);
 	}
-	rz_cons_println(pj_string(pj));
+	rz_cons_println(cons, pj_string(pj));
 	pj_free(pj);
 }
 
@@ -950,7 +951,7 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 		: NULL;
 	RzCmdStatus res = cd ? call_cd(cmd, cd, args) : RZ_CMD_STATUS_NONEXISTINGCMD;
 	if (typed) {
-		cmd_print_json_status(typed, res);
+		cmd_print_json_status(typed, res, cmd->has_cons ? cmd->core->cons : NULL);
 		rz_cmd_parsed_args_free(typed);
 	}
 	return res;

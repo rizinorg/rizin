@@ -1022,9 +1022,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		rz_cons_printf("%s\n", pj_string(pj));
+		rz_cons_printf(r->cons, "%s\n", pj_string(pj));
 		pj_free(pj);
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 		LISTS_FREE();
 		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
