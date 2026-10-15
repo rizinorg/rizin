@@ -120,6 +120,7 @@ e asm.bytes=true
 af
 afb
 echo
+e asm.bytes=true
 pdf
 EOF
 EXPECT=<<EOF
