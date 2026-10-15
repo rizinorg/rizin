@@ -90,7 +90,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinSection *ptr = NULL;
 	RzBinWasmSection *sec;
 
-	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
 		return NULL;
 	}
 	if (!(secs = rz_bin_wasm_get_sections(bin))) {

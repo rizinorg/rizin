@@ -506,9 +506,8 @@ typedef struct wasm_scope_index_t WasmScopeIndex;
 typedef struct wasm_func_scope_t {
 	ut64 addr;
 	ut32 len;
-	ut32 body_hash;
 	WasmScopeIndex *idx;
-	bool hashed;
+	bool unindexable;
 } WasmFuncScope;
 
 typedef struct wasm_context_t {
