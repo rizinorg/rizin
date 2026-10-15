@@ -174,7 +174,7 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 		return NULL;
 	}
 	state->pc_state = RZ_ABSINT_PC_UNREACHABLE;
-	state->vec_mem = RZ_NEWS0(ut8, total_state_vec_len(inst));
+	state->vec_mem = RZ_NEWS(ut8, total_state_vec_len(inst));
 	if (!state->vec_mem) {
 		goto err;
 	}
@@ -384,7 +384,7 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_clone(RZ_NONNULL RzAbsIntInstance *
 	}
 	r->pc = state->pc;
 	r->pc_state = state->pc_state;
-	r->vec_mem = RZ_NEWS0(ut8, total_state_vec_len(inst));
+	r->vec_mem = RZ_NEWS(ut8, total_state_vec_len(inst));
 	if (!r->vec_mem) {
 		free(r);
 		return NULL;
