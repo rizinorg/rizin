@@ -310,6 +310,8 @@ commands:
       - name: om
         cname: open_maps_map
         summary: Create a new map
+        description: >-
+          When omitted, paddr defaults to 0. Specify it explicitly when maps of the same fd must use different physical ranges.
         args:
           - name: fd
             type: RZ_CMD_ARG_TYPE_NUM
