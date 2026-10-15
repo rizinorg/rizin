@@ -1072,6 +1072,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_cons_free(r->cons);
 		rz_xfreopen(con_dev, "r", stdin);
 		r->cons = rz_cons_new();
+
+		/* TODO:
+		 * There should be a more streamlined way of doing this
+		 * (PremadeS)
+		 */
+		if (r->print) {
+			r->print->cons = r->cons;
+		}
+
 		rz_config_set_i(r->config, "scr.color", scr_color);
 		rz_config_set(r->config, "scr.interactive", scr_interactive);
 		if (buf && sz > 0) {

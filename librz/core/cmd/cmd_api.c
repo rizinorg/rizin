@@ -916,7 +916,6 @@ static bool cmd_has_json_status(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid) {
 }
 
 static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status, RzCons *cons) {
-	rz_return_if_fail(cons);
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
@@ -951,7 +950,7 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 		: NULL;
 	RzCmdStatus res = cd ? call_cd(cmd, cd, args) : RZ_CMD_STATUS_NONEXISTINGCMD;
 	if (typed) {
-		cmd_print_json_status(typed, res, cmd->has_cons ? cmd->core->cons : NULL);
+		cmd_print_json_status(typed, res, cmd->core->cons);
 		rz_cmd_parsed_args_free(typed);
 	}
 	return res;
