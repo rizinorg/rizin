@@ -140,30 +140,41 @@ bool test_wasm_calls_three_functions(void) {
 	mu_end;
 }
 
-bool test_wasm_patched_body(void) {
-	// br_if at 0x22. Leave the jump hint from the first pass in place.
-	const char *uri = "hex://0061736d010000000104016000000302010007060102676f00000a0a0108000240010d000b0b";
+bool test_wasm_calls_and_aav(void) {
+	// import func, import memory, import func, defined body: call 0; call 1; call 2.
+	// Function index 2 is the defined body. Imports have no code address.
+	// export "go" of function 2. An export must not insert another call slot.
+	const char *uri = "hex://0061736d01000000010401600000021c0303656e760161000003656e76036d656d02000103656e76016200000302010007060102676f00020a0a0108001000100110020b";
 	RzCore *core = rz_core_new();
 	RzCoreFile *cf;
 	RzAnalysisOp *op;
+	char *flags;
+	int pointers;
 	mu_assert_notnull(core, "core");
 	cf = rz_core_file_open(core, uri, RZ_PERM_R, 0);
 	mu_assert_notnull(cf, "open");
 	mu_assert_true(rz_core_bin_load(core, NULL, 0), "bin");
-	op = rz_core_analysis_op(core, 0x22, RZ_ANALYSIS_OP_MASK_BASIC);
-	mu_assert_notnull(op, "br_if");
-	mu_assert_eq(op->jump, 0x24, "br_if 0 ends the block");
+	pointers = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS);
+	mu_assert_eq(pointers, 0, "wasm does not use code pointers");
+	flags = rz_core_cmd_str(core, "fl");
+	rz_core_cmd0(core, "aav");
+	{
+		char *after = rz_core_cmd_str(core, "fl");
+		mu_assert_streq(flags ? flags : "", after ? after : "", "aav adds no flags");
+		free(after);
+	}
+	free(flags);
+	op = rz_core_analysis_op(core, 61, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "call 0");
+	mu_assert_eq(op->jump, UT64_MAX, "import 0 is not a code address");
 	rz_analysis_op_free(op);
-
-	rz_core_cmd0(core, "s 0x1f; wx 03"); // block -> loop
-	// wasm_op skips the address it just resolved.
-	op = rz_core_analysis_op(core, 0x21, RZ_ANALYSIS_OP_MASK_BASIC);
-	mu_assert_notnull(op, "nop");
+	op = rz_core_analysis_op(core, 63, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "call 1");
+	mu_assert_eq(op->jump, UT64_MAX, "import 1 is not a code address");
 	rz_analysis_op_free(op);
-
-	op = rz_core_analysis_op(core, 0x22, RZ_ANALYSIS_OP_MASK_BASIC);
-	mu_assert_notnull(op, "br_if after patch");
-	mu_assert_eq(op->jump, 0x1f, "br_if 0 targets the loop start of the new bytes");
+	op = rz_core_analysis_op(core, 65, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "call 2");
+	mu_assert_eq(op->jump, 61, "defined function follows the two imports");
 	rz_analysis_op_free(op);
 	rz_core_free(core);
 	mu_end;
@@ -206,7 +217,7 @@ bool all_tests(void) {
 	mu_run_test(test_wasm_scope_reject);
 	mu_run_test(test_wasm_calls_with_imports);
 	mu_run_test(test_wasm_calls_three_functions);
-	mu_run_test(test_wasm_patched_body);
+	mu_run_test(test_wasm_calls_and_aav);
 	return tests_passed != tests_run;
 }
 

@@ -5063,6 +5063,8 @@ static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *u
 }
 
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
+	// cbpf, dalvik, java, luac, pyc, and wasm report 0. Missing archinfo stays enabled.
+	// Return before any config write or progress line.
 	if (!rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS)) {
 		return;
 	}
