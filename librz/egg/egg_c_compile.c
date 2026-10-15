@@ -175,14 +175,22 @@ static char *egg_find_sflib(RzPath *sys_path, const char *triplet) {
 
 static char *egg_get_cflags(const egg_c_config_t *config, RzPath *sys_path, const char *triplet) {
 	char *sflib_path = egg_find_sflib(sys_path, triplet);
+	char *sflib_include = NULL;
+	if (rz_file_exists(sflib_path)) {
+		sflib_include = rz_str_newf(" -include '%s'", sflib_path);
+	} else {
+		// Not every target has a sflib.h: code without syscalls still compiles.
+		RZ_LOG_WARN("egg: sflib.h is not available for '%s', compiling without it\n", triplet);
+	}
 	char *env_cflags = rz_sys_getenv("CFLAGS");
 	char *cflags = rz_str_newf("%s %s"
 				   " -fno-stack-protector"
 				   " -nostdinc"
 				   " -fPIC"
 				   " -fPIE"
-				   " -include '%s'",
-		rz_str_get(env_cflags), rz_str_get(config->add_cflags), rz_str_get(sflib_path));
+				   "%s",
+		rz_str_get(env_cflags), rz_str_get(config->add_cflags), rz_str_get(sflib_include));
+	free(sflib_include);
 	free(sflib_path);
 	free(env_cflags);
 	return cflags;
