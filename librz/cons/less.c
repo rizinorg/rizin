@@ -10,9 +10,9 @@
 
 #define I(x) rz_cons_singleton()->x
 
-RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
-	rz_return_val_if_fail(str && *str, 0);
-	if (!rz_cons_is_interactive()) {
+RZ_API int rz_cons_less_str(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, const char *exitkeys) {
+	rz_return_val_if_fail(cons && str && *str, 0);
+	if (!rz_cons_is_interactive(cons)) {
 		eprintf("Internal less requires scr.interactive=true.\n");
 		return 0;
 	}
@@ -56,12 +56,12 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 			return 0;
 		}
 	}
-	rz_cons_set_raw(true);
-	rz_cons_show_cursor(false);
-	rz_cons_reset();
+	rz_cons_set_raw(cons, true);
+	rz_cons_show_cursor(cons, false);
+	rz_cons_reset(cons);
 	h = 0;
 	while (ui) {
-		w = rz_cons_get_size(&h);
+		w = rz_cons_get_size(cons, &h);
 		to = RZ_MIN(lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
@@ -69,8 +69,8 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 		if (from < 0) {
 			from = 0;
 		}
-		pager_printpage(p, lines, mla, from, to, w);
-		ch = rz_cons_readchar();
+		pager_printpage(cons, p, lines, mla, from, to, w);
+		ch = rz_cons_readchar(cons);
 		if (exitkeys && strchr(exitkeys, ch)) {
 			for (i = 0; i < lines_count; i++) {
 				rz_pvector_free(mla[i]);
@@ -81,15 +81,15 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 			free(lines);
 			return ch;
 		}
-		ch = rz_cons_arrow_to_hjkl(ch);
+		ch = rz_cons_arrow_to_hjkl(cons, ch);
 		switch (ch) {
 		case '_':
-			rz_cons_hud_string(ostr);
+			rz_cons_hud_string(cons, ostr);
 			break;
 		case '?':
 			if (!in_help) {
 				in_help = true;
-				(void)rz_cons_less_str(rz_cons_less_help, NULL);
+				(void)rz_cons_less_str(cons, rz_cons_less_help, NULL);
 				in_help = false;
 			}
 			break;
@@ -118,9 +118,9 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 			from = (from >= h) ? from - h : 0;
 			break;
 		case '/': /* search */
-			rz_cons_reset_colors();
-			rz_line_set_prompt(I(line), "/");
-			sreg = rz_line_readline(I(line));
+			rz_cons_reset_colors(cons);
+			rz_line_set_prompt(cons->line, "/");
+			sreg = rz_line_readline(cons->line);
 			from = RZ_MIN(lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */
@@ -164,13 +164,13 @@ RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	rz_regex_free(rx);
 	free(lines);
 	free(p);
-	rz_cons_reset_colors();
-	rz_cons_set_raw(false);
-	rz_cons_show_cursor(true);
+	rz_cons_reset_colors(cons);
+	rz_cons_set_raw(cons, false);
+	rz_cons_show_cursor(cons, true);
 	free(ostr);
 	return 0;
 }
 
-RZ_API void rz_cons_less(void) {
-	(void)rz_cons_less_str(rz_cons_singleton()->context->buffer, NULL);
+RZ_API void rz_cons_less(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	(void)rz_cons_less_str(cons, cons->context->buffer, NULL);
 }

@@ -161,7 +161,7 @@ static STDMETHODIMP __input_cb(PDEBUG_INPUT_CALLBACKS This, ULONG BufferSize) {
 	DbgEngContext *idbg = impl->m_idbg;
 	RzLine *line = idbg->cons->line;
 	ITHISCALL(dbgCtrl, GetPromptText, prompt, sizeof(prompt), NULL);
-	rz_line_set_prompt(line, prompt);
+	rz_line_set_prompt(line, prompt, core->cons);
 	const char *str = rz_line_readline(line);
 	char *ret = rz_str_ndup(str, RZ_MIN(strlen(str), BufferSize));
 	ITHISCALL(dbgCtrl, ReturnInput, ret);

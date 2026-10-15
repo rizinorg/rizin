@@ -24,6 +24,7 @@ rz_util_common_sources = [
   'graph_algorithm.c',
   'hex.c',
   'idpool.c',
+  'interrupt.c',
   'intervaltree.c',
   'iterator.c',
   'itv.c',

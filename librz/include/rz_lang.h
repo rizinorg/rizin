@@ -23,6 +23,7 @@ typedef struct rz_lang_t {
 	RzCoreCmdStrCallback cmd_str;
 	RzCoreCmdfCallback cmdf;
 	RzPath *sys_path; ///< pointer to RzPath, contains path prefix of the system
+	RzInterrupt *intr;
 	int argc;
 	const char **argv;
 } RzLang;

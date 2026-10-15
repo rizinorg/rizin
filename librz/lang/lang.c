@@ -40,7 +40,7 @@ RZ_API RzLang *rz_lang_new(void) {
 		return NULL;
 	}
 	lang->defs->free = (RzListFree)rz_lang_def_free;
-	lang->cb_printf = (PrintfCallback)printf;
+	lang->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	for (int i = 0; i < RZ_ARRAY_SIZE(lang_static_plugins); i++) {
 		rz_lang_plugin_add(lang, lang_static_plugins[i]);
 	}

@@ -56,23 +56,23 @@
 #define PDI_HEAP_BLOCKS     0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
-#define CHECK_INFO(heapInfo) \
+#define CHECK_INFO(heapInfo, cons) \
 	if (!heapInfo) { \
 		RZ_LOG_ERROR("core: It wasn't possible to get the heap information\n"); \
 		return; \
 	} \
 	if (!heapInfo->count) { \
-		rz_cons_print("No heaps for this process\n"); \
+		rz_cons_print(cons, "No heaps for this process\n"); \
 		return; \
 	}
 
-#define CHECK_INFO_RETURN_NULL(heapInfo) \
+#define CHECK_INFO_RETURN_NULL(heapInfo, cons) \
 	if (!heapInfo) { \
 		RZ_LOG_ERROR("core: It wasn't possible to get the heap information\n"); \
 		return NULL; \
 	} \
 	if (!heapInfo->count) { \
-		rz_cons_print("No heaps for this process\n"); \
+		rz_cons_print(cons, "No heaps for this process\n"); \
 		return NULL; \
 	}
 
@@ -1258,7 +1258,7 @@ RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 		}
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO(heapInfo);
+	CHECK_INFO(heapInfo, core->cons);
 	int i;
 	RzTable *tbl = rz_table_new();
 	rz_table_add_column(tbl, RZ_TABLE_COLUMN_TYPE_NUMBER, "Address");
@@ -1286,9 +1286,9 @@ RZ_IPI void rz_heap_list_w32(RzCore *core, RzOutputMode mode) {
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 	} else {
-		rz_cons_println(rz_table_tostring(tbl));
+		rz_cons_println(core->cons, rz_table_tostring(tbl));
 	}
 	rz_table_free(tbl);
 	pj_free(pj);
@@ -1308,7 +1308,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO(heapInfo);
+	CHECK_INFO(heapInfo, core->cons);
 	HeapBlock *block = malloc(sizeof(HeapBlock));
 	int i;
 	RzTable *tbl = __new_heapblock_tbl();
@@ -1318,7 +1318,7 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 		bool go = true;
 		if (flag) {
 			if (heapInfo->heaps[i].BlockCount > 50000) {
-				go = rz_cons_yesno('n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
+				go = rz_cons_yesno(core->cons, 'n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
 		} else if (mode == RZ_OUTPUT_MODE_JSON) {
 			pj_o(pj);
@@ -1368,9 +1368,9 @@ static void w32_list_heaps_blocks(RzCore *core, RzOutputMode mode, bool flag) {
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 	} else if (!flag) {
-		rz_cons_println(rz_table_tostring(tbl));
+		rz_cons_println(core->cons, rz_table_tostring(tbl));
 	}
 	rz_table_free(tbl);
 	pj_free(pj);
@@ -1400,7 +1400,7 @@ RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode
 	ut64 headerAddr = off - granularity;
 	if (mode == RZ_OUTPUT_MODE_STANDARD) {
 		rz_table_add_rowf(tbl, "xxnnns", headerAddr, off, (ut64)hb->dwSize, granularity, (ut64)hb->extraInfo->unusedBytes, type);
-		rz_cons_println(rz_table_tostring(tbl));
+		rz_cons_println(core->cons, rz_table_tostring(tbl));
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(pj);
 		pj_kN(pj, "header_address", headerAddr);
@@ -1411,7 +1411,7 @@ RZ_IPI void rz_heap_debug_block_win(RzCore *core, const char *addr, RzOutputMode
 			pj_kN(pj, "unused", hb->extraInfo->unusedBytes);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 	}
 	free(hb->extraInfo);
 	free(hb);
@@ -1435,7 +1435,7 @@ RZ_IPI RzList *rz_heap_blocks_list(RzCore *core) {
 	}
 
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO_RETURN_NULL(heapInfo);
+	CHECK_INFO_RETURN_NULL(heapInfo, core->cons);
 	HeapBlock *block = malloc(sizeof(HeapBlock));
 	for (int i = 0; i < heapInfo->count; i++) {
 		bool go = true;
@@ -1493,7 +1493,7 @@ RZ_IPI RzList *rz_heap_list(RzCore *core) {
 
 	RzList *heaps_list = rz_list_newf(free);
 	PHeapInformation heapInfo = db->HeapInformation;
-	CHECK_INFO_RETURN_NULL(heapInfo);
+	CHECK_INFO_RETURN_NULL(heapInfo, core->cons);
 	for (int i = 0; i < heapInfo->count; i++) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
 		// add heaps to list

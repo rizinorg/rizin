@@ -49,9 +49,9 @@ static void lang_pipe_run_win(RzLang *lang) {
 		CloseHandle(hRead);
 		return;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(lang->intr, NULL, NULL);
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(lang->intr)) {
 			TerminateProcess(hproc, 0);
 			break;
 		}
@@ -116,7 +116,7 @@ static void lang_pipe_run_win(RzLang *lang) {
 			}
 		}
 	} while (true);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	CloseHandle(hWritten);
 	CloseHandle(hRead);
 }
@@ -176,15 +176,15 @@ RZ_IPI int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		/* Close pipe ends not required in the parent */
 		rz_sys_pipe_close(output[1]);
 		rz_sys_pipe_close(input[0]);
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(lang->intr, NULL, NULL);
 		for (;;) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(lang->intr)) {
 				break;
 			}
 			memset(buf, 0, sizeof(buf));
-			void *bed = rz_cons_sleep_begin();
+			void *bed = rz_interrupt_sleep_begin(lang->intr);
 			ret = read(output[0], buf, sizeof(buf) - 1);
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(lang->intr, bed);
 			if (ret < 1) {
 				break;
 			}
@@ -202,7 +202,7 @@ RZ_IPI int lang_pipe_run(RzLang *lang, const char *code, int len) {
 				rz_xwrite(input[1], "", 1); // NULL byte
 			}
 		}
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(lang->intr);
 		/* workaround to avoid stdin closed */
 		if (safe_in != -1) {
 			close(safe_in);

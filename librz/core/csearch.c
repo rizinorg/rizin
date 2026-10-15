@@ -94,7 +94,8 @@ fail:
 }
 
 static bool default_search_no_cancel(void *user, size_t n_hits, RzSearchCancelReason invoke_reason) {
-	return rz_cons_is_breaked();
+	RzCore *core = (RzCore *)user;
+	return rz_interrupt_is_breaked(core->intr);
 }
 
 static RzList /*<RzSearchHit *>*/ *perform_search_on_core_io(RzCore *core, RZ_BORROW RzSearchOpt *search_opts, RZ_BORROW RzList /*<RzIOMap *>*/ *boundaries, RZ_BORROW RzSearchCollection *collection) {
@@ -109,12 +110,12 @@ static RzList /*<RzSearchHit *>*/ *perform_search_on_core_io(RzCore *core, RZ_BO
 	return hits;
 }
 
-static RzSearchOpt *default_search_options() {
+static RzSearchOpt *default_search_options(RzCore *core) {
 	RzSearchOpt *def_options = rz_search_opt_new();
 	if (!def_options) {
 		RZ_LOG_ERROR("search: Failed to allocate search options.\n");
 		return NULL;
-	} else if (!rz_search_opt_set_cancel_cb(def_options, default_search_no_cancel, NULL)) {
+	} else if (!rz_search_opt_set_cancel_cb(def_options, default_search_no_cancel, core)) {
 		RZ_LOG_ERROR("search: Failed to setup callback for search options.\n");
 		rz_search_opt_free(def_options);
 		return NULL;
@@ -154,7 +155,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_bytes(RZ_NONNULL RzCore
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -210,7 +211,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_values(RZ_NONNULL RzCor
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -278,7 +279,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_string(RZ_NONNULL RzCor
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -346,7 +347,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_cryptographic_material(
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -405,7 +406,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_hash(
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -464,7 +465,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_entropy(
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}
@@ -515,7 +516,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_core_search_magic(RZ_NONNULL RzCore
 
 	if (!user_opts) {
 		// override user_opts with default one
-		user_opts = search_opts = default_search_options();
+		user_opts = search_opts = default_search_options(core);
 		if (!search_opts) {
 			goto quit;
 		}

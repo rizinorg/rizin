@@ -29,7 +29,7 @@ static bool test_analysis_il_vm_step() {
 
 	// a9 75    lda #0x75
 	RzReg *analysis_reg = rz_analysis_get_reg(core->analysis);
-	RzAnalysisILStepResult sr = rz_analysis_il_vm_step(core->analysis, vm, reg);
+	RzAnalysisILStepResult sr = rz_analysis_il_vm_step(core->analysis, vm, reg, core->cons);
 	mu_assert_eq(sr, RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS, "il step");
 	mu_assert_eq(rz_reg_getv(reg, "a"), 0x75, "result in local reg");
 	mu_assert_eq(rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), 2, "pc in local reg");
@@ -38,7 +38,7 @@ static bool test_analysis_il_vm_step() {
 
 	// 49 37    eor #0x37
 	//     ==> 0x75 ^ 0x37 = 0x42
-	sr = rz_analysis_il_vm_step(core->analysis, vm, reg);
+	sr = rz_analysis_il_vm_step(core->analysis, vm, reg, core->cons);
 	mu_assert_eq(sr, RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS, "il step");
 	mu_assert_eq(rz_reg_getv(reg, "a"), 0x42, "result in local reg");
 	mu_assert_eq(rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), 4, "pc in local reg");

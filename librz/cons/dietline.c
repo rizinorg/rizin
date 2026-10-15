@@ -424,17 +424,17 @@ RZ_API bool rz_line_dietline_init(RZ_NONNULL RzLine *line) {
 /* \brief Reads UTF-8 char into \p s with maximum expected bytelength \p maxlen
  * \return The length in bytes
  */
-static int rz_line_readchar_utf8(ut8 *s, int maxlen) {
+static int rz_line_readchar_utf8(RzLine *line, ut8 *s, int maxlen) {
 	ssize_t len, i;
 	if (maxlen < 1) {
 		return 0;
 	}
-	int ch = rz_cons_readchar();
+	int ch = rz_cons_readchar(line->cons);
 	if (ch == -1) {
 		return -1;
 	}
 	*s = ch;
-	*s = rz_cons_controlz(*s);
+	*s = rz_cons_controlz(line->cons, *s);
 	if (*s < 0x80) {
 		len = 1;
 	} else if ((s[0] & 0xe0) == 0xc0) {
@@ -450,7 +450,7 @@ static int rz_line_readchar_utf8(ut8 *s, int maxlen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
-		int ch = rz_cons_readchar();
+		int ch = rz_cons_readchar(line->cons);
 		if (ch != -1) {
 			s[i] = ch;
 		}
@@ -624,7 +624,7 @@ RZ_API int rz_line_hist_list(RZ_NONNULL RzLine *line) {
 		for (i = 0; i < line->history.size && line->history.data[i]; i++) {
 			// when you execute a command, you always move the history
 			// by 1 before actually printing it.
-			rz_cons_printf("%5d  %s\n", i + 1, line->history.data[i]);
+			rz_cons_printf(line->cons, "%5d  %s\n", i + 1, line->history.data[i]);
 		}
 	}
 	return i;
@@ -715,7 +715,7 @@ RZ_API int rz_line_hist_chop(RZ_NONNULL RzLine *line, const char *file, int limi
 }
 
 static void selection_widget_draw(RzLine *line) {
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = line->cons;
 	RzSelWidget *sel_widget = line->sel_widget;
 	int y, pos_y, pos_x = rz_str_ansi_len(line->prompt);
 	sel_widget->h = RZ_MIN(sel_widget->h, RZ_SELWIDGET_MAXH);
@@ -746,24 +746,24 @@ static void selection_widget_draw(RzLine *line) {
 
 	for (y = 0; y < sel_widget->h; y++) {
 		if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
-			rz_cons_gotoxy(pos_x + 1, pos_y - y - 1);
+			rz_cons_gotoxy(line->cons, pos_x + 1, pos_y - y - 1);
 		} else {
-			rz_cons_gotoxy(pos_x + 1, pos_y + y + 1);
+			rz_cons_gotoxy(line->cons, pos_x + 1, pos_y + y + 1);
 		}
 		int scroll = RZ_MAX(0, sel_widget->selection - sel_widget->scroll);
 		const char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
-		rz_cons_printf("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
-		rz_cons_printf("%-*.*s", sel_widget->w, sel_widget->w, option);
+		rz_cons_printf(line->cons, "%s", sel_widget->selection == y + scroll ? selected_color : background_color);
+		rz_cons_printf(line->cons, "%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && RZ_BETWEEN(scrollbar_y, y, scrollbar_y + scrollbar_l)) {
-			rz_cons_memcat(Color_INVERT " " Color_INVERT_RESET, 10);
+			rz_cons_memcat(line->cons, Color_INVERT " " Color_INVERT_RESET, 10);
 		} else {
-			rz_cons_memcat(" ", 1);
+			rz_cons_memcat(line->cons, " ", 1);
 		}
 	}
 
-	rz_cons_gotoxy(pos_x + line->buffer.length, pos_y);
-	rz_cons_memcat(Color_RESET_BG, 5);
-	rz_cons_flush();
+	rz_cons_gotoxy(line->cons, pos_x + line->buffer.length, pos_y);
+	rz_cons_memcat(line->cons, Color_RESET_BG, 5);
+	rz_cons_flush(line->cons);
 }
 
 static void selection_widget_up(RzLine *line, int steps) {
@@ -821,7 +821,7 @@ static void selection_widget_erase(RzLine *line) {
 	sel_widget->selection = -1;
 	selection_widget_draw(line);
 	RZ_FREE(line->sel_widget);
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = line->cons;
 	if (cons->event_resize && cons->event_data) {
 		cons->event_resize(cons->event_data);
 		RzCore *core = (RzCore *)(cons->user);
@@ -876,7 +876,7 @@ static void selection_widget_update(RzLine *line) {
 		line->sel_widget->direction = RZ_SELWIDGET_DIR_UP;
 	}
 	selection_widget_draw(line);
-	rz_cons_flush();
+	rz_cons_flush(line->cons);
 }
 
 static bool is_valid_buffer_limits(RzLineBuffer *buf, size_t start, size_t end, size_t s_len) {
@@ -938,8 +938,8 @@ static char *get_max_common_pfx(RzPVector /*<char *>*/ *options) {
 	return rz_str_ndup(ref, min_common_len);
 }
 
-static void print_options(int argc, const char **argv) {
-	int cols = (int)(rz_cons_get_size(NULL) * 0.82);
+static void print_options(RzLine *line, int argc, const char **argv) {
+	int cols = (int)(rz_cons_get_size(line->cons, NULL) * 0.82);
 	size_t i, len;
 	const int sep = 3;
 	int slen, col = 10;
@@ -956,14 +956,14 @@ static void print_options(int argc, const char **argv) {
 	}
 	for (len = i = 0; i < argc && argv[i]; i++) {
 		if (len + col > cols) {
-			rz_cons_printf("\n");
+			rz_cons_printf(line->cons, "\n");
 			len = 0;
 		}
-		rz_cons_printf("%-*s   ", col - sep, argv[i]);
+		rz_cons_printf(line->cons, "%-*s   ", col - sep, argv[i]);
 		slen = strlen(argv[i]);
 		len += (slen > col) ? (slen + sep) : (col + sep);
 	}
-	rz_cons_printf("\n");
+	rz_cons_printf(line->cons, "\n");
 }
 
 RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line) {
@@ -973,7 +973,7 @@ RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line) {
 	const char **argv = NULL;
 	int argc = 0, i, j, plen;
 	bool opt = false;
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = line->cons;
 
 	if (line->ns_completion.run) {
 		RzLineNSCompletionResult *res = line->ns_completion.run(&line->buffer, line->prompt_type, line->ns_completion.run_user);
@@ -994,8 +994,8 @@ RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line) {
 			replace_buffer_text(line, &line->buffer, res->start, res->end, max_common_pfx);
 			free(max_common_pfx);
 
-			rz_cons_printf("%s%s\n", line->prompt, line->buffer.data);
-			print_options(rz_pvector_len(&res->options), (const char **)rz_pvector_data(&res->options));
+			rz_cons_printf(line->cons, "%s%s\n", line->prompt, line->buffer.data);
+			print_options(line, rz_pvector_len(&res->options), (const char **)rz_pvector_data(&res->options));
 		}
 		undo_continuous_entries_end(line);
 		rz_line_ns_completion_result_free(res);
@@ -1112,8 +1112,8 @@ RZ_API void rz_line_autocomplete(RZ_NONNULL RzLine *line) {
 
 	/* show options */
 	if (argc > 1 && line->echo) {
-		rz_cons_printf("%s%s\n", line->prompt, line->buffer.data);
-		print_options(argc, argv);
+		rz_cons_printf(line->cons, "%s%s\n", line->prompt, line->buffer.data);
+		print_options(line, argc, argv);
 	}
 }
 
@@ -1187,15 +1187,15 @@ static inline void delete_till_end(RzLine *line) {
 }
 
 static void __print_prompt(RzLine *line) {
-	RzCons *cons = rz_cons_singleton();
-	int columns = rz_cons_get_size(NULL) - 2;
+	RzCons *cons = line->cons;
+	int columns = rz_cons_get_size(line->cons, NULL) - 2;
 	int chars = strlen(line->buffer.data);
 	int len, i, cols = RZ_MAX(1, columns - rz_str_ansi_len(line->prompt) - 2);
 	if (cons->line->prompt_type == RZ_LINE_PROMPT_OFFSET) {
-		rz_cons_gotoxy(0, cons->rows);
-		rz_cons_flush();
+		rz_cons_gotoxy(line->cons, 0, cons->rows);
+		rz_cons_flush(line->cons);
 	}
-	rz_cons_clear_line(stdout);
+	rz_cons_clear_line(line->cons, stdout);
 	if (cons->context->color_mode > 0) {
 		printf("\r%s%s", Color_RESET, line->prompt);
 	} else {
@@ -1310,7 +1310,7 @@ static inline void vi_cmd_e(RzLine *line) {
 }
 
 static void __update_prompt_color(RzLine *line) {
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = line->cons;
 	const char *BEGIN = "", *END = "";
 	if (cons->context->color_mode) {
 		if (line->prompt_mode) {
@@ -1350,14 +1350,14 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 		}
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
-		ch = rz_cons_readchar();
+		ch = rz_cons_readchar(line->cons);
 		while (IS_DIGIT(ch)) { // handle commands like 3b
 			if (ch == '0' && rep == 0) { // to handle the command 0
 				break;
 			}
 			int tmp = ch - '0';
 			rep = (rep * 10) + tmp;
-			ch = rz_cons_readchar();
+			ch = rz_cons_readchar(line->cons);
 		}
 		rep = rep > 0 ? rep : 1;
 
@@ -1378,7 +1378,7 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			delete_till_end(line);
 			break;
 		case 'r': {
-			char c = rz_cons_readchar();
+			char c = rz_cons_readchar(line->cons);
 			line->buffer.data[line->buffer.index] = c;
 		} break;
 		case 'x':
@@ -1390,11 +1390,11 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			line->vi_mode = INSERT_MODE; // goto insert mode
 			/* fall through */
 		case 'd': {
-			char c = rz_cons_readchar();
+			char c = rz_cons_readchar(line->cons);
 			while (rep--) {
 				switch (c) {
 				case 'i': {
-					char t = rz_cons_readchar();
+					char t = rz_cons_readchar(line->cons);
 					if (t == 'w') { // diw
 						kill_word(line, MINOR_BREAK);
 						backward_kill_word(line, MINOR_BREAK);
@@ -1521,7 +1521,7 @@ static void __vi_mode(RzLine *line, bool *enable_yank_pop) {
 			}
 			break;
 		default: // escape key
-			ch = tolower(rz_cons_arrow_to_hjkl(ch));
+			ch = tolower(rz_cons_arrow_to_hjkl(line->cons, ch));
 			switch (ch) {
 			case 'k': // up
 				line->history.do_setup_match = o_do_setup_match;
@@ -1560,7 +1560,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	RzEmacsModeModifyOpts em_opts;
 	rz_emacs_mode_modify_opts_reset(&em_opts);
 
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = line->cons;
 
 	if (!line->hud || (line->hud && !line->hud->activate)) {
 		line->buffer.index = line->buffer.length = 0;
@@ -1570,6 +1570,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 		}
 	}
 	int mouse_status = cons->mouse;
+	RzInterrupt *intr = cons->intr;
 	if (line->hud && line->hud->vi) {
 		__vi_mode(NULL, &enable_yank_pop);
 		goto _end;
@@ -1588,15 +1589,15 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	}
 
 	memset(&buf, 0, sizeof buf);
-	rz_cons_set_raw(1);
+	rz_cons_set_raw(cons, 1);
 
 	if (line->echo) {
 		__print_prompt(line);
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(intr, NULL, NULL);
 	for (;;) {
 		line->yank_flag = false;
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(intr)) {
 			break;
 		}
 		line->buffer.data[line->buffer.length] = '\0';
@@ -1607,16 +1608,16 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				line->buffer.length = 0;
 			}
 		}
-		utflen = rz_line_readchar_utf8((ut8 *)buf, sizeof(buf));
+		utflen = rz_line_readchar_utf8(line, (ut8 *)buf, sizeof(buf));
 		if (utflen < 1) {
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(intr);
 			return NULL;
 		}
 		buf[utflen] = 0;
 		bool o_do_setup_match = line->history.do_setup_match;
 		line->history.do_setup_match = true;
 		if (line->echo) {
-			rz_cons_clear_line(stdout);
+			rz_cons_clear_line(line->cons, stdout);
 		}
 		switch (*buf) {
 
@@ -1679,8 +1680,8 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 					__print_prompt(line);
 					printf("\n");
 				}
-				rz_cons_set_raw(false);
-				rz_cons_break_pop();
+				rz_cons_set_raw(line->cons, false);
+				rz_interrupt_break_pop(intr);
 				return NULL;
 			}
 			if (line->buffer.index < line->buffer.length) {
@@ -1835,7 +1836,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			}
 			break;
 		case 27: // esc-5b-41-00-00 alt/meta key
-			buf[0] = rz_cons_readchar_timeout(50);
+			buf[0] = rz_cons_readchar_timeout(line->cons, 50);
 			switch ((signed char)buf[0]) {
 			case 127: // alt+bkspace
 				backward_kill_word(line, MINOR_BREAK);
@@ -1937,9 +1938,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				}
 				break;
 			default:
-				buf[1] = rz_cons_readchar_timeout(50);
+				buf[1] = rz_cons_readchar_timeout(line->cons, 50);
 				if (buf[1] == -1) { // alt+e
-					rz_cons_break_pop();
+					rz_interrupt_break_pop(intr);
 					__print_prompt(line);
 					continue;
 				}
@@ -1950,16 +1951,16 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 					switch (buf[1]) {
 					case '3': // supr
 						__delete_next_char(line);
-						buf[1] = rz_cons_readchar();
+						buf[1] = rz_cons_readchar(line->cons);
 						if (buf[1] == -1) {
-							rz_cons_break_pop();
+							rz_interrupt_break_pop(intr);
 							return NULL;
 						}
 						break;
 					case '5': // pag up
-						buf[1] = rz_cons_readchar();
+						buf[1] = rz_cons_readchar(line->cons);
 						if (line->hud) {
-							rz_cons_get_size(&rows);
+							rz_cons_get_size(line->cons, &rows);
 							line->hud->top_entry_n -= (rows - 1);
 							if (line->hud->top_entry_n < 0) {
 								line->hud->top_entry_n = 0;
@@ -1971,9 +1972,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						}
 						break;
 					case '6': // pag down
-						buf[1] = rz_cons_readchar();
+						buf[1] = rz_cons_readchar(line->cons);
 						if (line->hud) {
-							rz_cons_get_size(&rows);
+							rz_cons_get_size(line->cons, &rows);
 							line->hud->top_entry_n += (rows - 1);
 							if (line->hud->top_entry_n >= line->hud->current_entry_n) {
 								line->hud->top_entry_n = line->hud->current_entry_n - 1;
@@ -1985,7 +1986,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						}
 						break;
 					case '9': // handle mouse wheel
-						key = rz_cons_readchar();
+						key = rz_cons_readchar(line->cons);
 						cons->mouse_event = MOUSE_DEFAULT;
 						if (key == '6') { // up
 							if (line->hud && line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
@@ -1996,7 +1997,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 								line->hud->top_entry_n++;
 							}
 						}
-						while (rz_cons_readchar() != 'M') {
+						while (rz_cons_readchar(line->cons) != 'M') {
 						}
 						break;
 					/* arrows */
@@ -2014,7 +2015,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 							undo_reset(line);
 							line->history.do_setup_match = o_do_setup_match;
 							if (rz_line_hist_up(line) == -1) {
-								rz_cons_break_pop();
+								rz_interrupt_break_pop(intr);
 								return NULL;
 							}
 						}
@@ -2035,7 +2036,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 							undo_reset(line);
 							line->history.do_setup_match = o_do_setup_match;
 							if (rz_line_hist_down(line) == -1) {
-								rz_cons_break_pop();
+								rz_interrupt_break_pop(intr);
 								return NULL;
 							}
 						}
@@ -2047,14 +2048,14 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						__move_cursor_left(line);
 						break;
 					case 0x31: // control + arrow
-						ch = rz_cons_readchar();
+						ch = rz_cons_readchar(line->cons);
 						if (ch == 0x7e) { // HOME in screen/tmux
 							// corresponding END is 0x34 below (the 0x7e is ignored there)
 							line->buffer.index = 0;
 							break;
 						}
-						rz_cons_readchar();
-						ch = rz_cons_readchar();
+						rz_cons_readchar(line->cons);
+						ch = rz_cons_readchar(line->cons);
 						int fkey = ch - '0';
 						switch (ch) {
 						case 0x41:
@@ -2095,10 +2096,10 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 							}
 							break;
 						}
-						rz_cons_set_raw(1);
+						rz_cons_set_raw(line->cons, 1);
 						break;
 					case 0x37: // HOME xrvt-unicode
-						rz_cons_readchar();
+						rz_cons_readchar(line->cons);
 						/* fall through */
 					case 0x48: // HOME
 						if (line->sel_widget) {
@@ -2110,7 +2111,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 						break;
 					case 0x34: // END
 					case 0x38: // END xrvt-unicode
-						rz_cons_readchar();
+						rz_cons_readchar(line->cons);
 						/* fall through */
 					case 0x46: // END
 						if (line->sel_widget) {
@@ -2146,7 +2147,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 				}
 			} else {
 				rz_line_autocomplete(line);
-				rz_cons_flush();
+				rz_cons_flush(line->cons);
 			}
 			break;
 		case 10: // ^J -- ignore
@@ -2204,7 +2205,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 		if (line->sel_widget && line->buffer.length != prev_buflen) {
 			prev_buflen = line->buffer.length;
 			rz_line_autocomplete(line);
-			rz_cons_flush();
+			rz_cons_flush(line->cons);
 		}
 		prev = buf[0];
 		if (line->echo) {
@@ -2243,9 +2244,9 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 	}
 _end:
 	undo_reset(line);
-	rz_cons_break_pop();
-	rz_cons_set_raw(0);
-	rz_cons_enable_mouse(mouse_status);
+	rz_interrupt_break_pop(intr);
+	rz_cons_set_raw(line->cons, 0);
+	rz_cons_enable_mouse(line->cons, mouse_status);
 	if (line->echo) {
 		printf("\r%s%s\n", line->prompt, line->buffer.data);
 		fflush(stdout);

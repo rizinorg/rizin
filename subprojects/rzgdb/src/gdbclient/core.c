@@ -10,7 +10,6 @@
 #include "gdbr_common.h"
 #include "packet.h"
 #include "rz_util/rz_strbuf.h"
-#include "rz_cons.h"
 #include "rz_debug.h"
 
 #if __UNIX__
@@ -98,16 +97,16 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 		return false;
 	}
 	g->gdbr_lock_depth++;
-	rz_cons_break_push(gdbr_break_process, g);
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
 	return true;
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
-	rz_cons_break_push(gdbr_break_process, g);
-	void *bed = rz_cons_sleep_begin();
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
+	void *bed = rz_interrupt_sleep_begin(g->intr);
 	rz_th_lock_enter(g->gdbr_lock);
 	g->gdbr_lock_depth++;
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	if (g->isbreaked) {
 		return false;
 	}
@@ -115,7 +114,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(g->intr);
 	assert(g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
 	g->gdbr_lock_depth--;
@@ -196,15 +195,15 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 	}
 	// Use the default break handler for rz_socket_connect to send a signal
-	rz_cons_break_pop();
-	bed = rz_cons_sleep_begin();
+	rz_interrupt_break_pop(g->intr);
+	bed = rz_interrupt_sleep_begin(g->intr);
 	if (*host == '/') {
 		ret = rz_socket_connect_serial(g->sock, host, port, 1);
 	} else {
 		ret = rz_socket_connect_tcp(g->sock, host, rz_strf(tmpbuf, "%d", port), 1);
 	}
-	rz_cons_sleep_end(bed);
-	rz_cons_break_push(gdbr_break_process, g);
+	rz_interrupt_sleep_end(g->intr, bed);
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
 	if (!ret) {
 		ret = -1;
 		goto end;
@@ -214,7 +213,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet(g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
-	bed = rz_cons_sleep_begin();
+	bed = rz_interrupt_sleep_begin(g->intr);
 	// TODO add config possibility here
 	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !g->isbreaked; i++) {
 		ret = send_msg(g, message);
@@ -231,7 +230,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 		break;
 	}
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		ret = -1;
@@ -1303,7 +1302,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		goto end;
 	}
 
-	bed = rz_cons_sleep_begin();
+	bed = rz_interrupt_sleep_begin(g->intr);
 	while (read_packet(g, true) < 0 && !g->isbreaked && rz_socket_is_connected(g->sock))
 		;
 	if (g->isbreaked) {
@@ -1319,7 +1318,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 
 	ret = handle_cont(g);
 end:
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	gdbr_lock_leave(g);
 	return ret;
 }
@@ -1600,7 +1599,7 @@ void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf, void *cb_printf_user) {
 	int ret = -1;
 	char *buf;
 	size_t len;
@@ -1645,7 +1644,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 			// Console output from gdbserver
 			unpack_hex(g->data + 1, g->data_len - 1, g->data + 1);
 			g->data[g->data_len - 1] = '\0';
-			cb_printf("%s", g->data + 1);
+			cb_printf(cb_printf_user, "%s", g->data + 1);
 		}
 		if ((ret = read_packet(g, false)) < 0) {
 			goto end;

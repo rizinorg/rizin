@@ -5,13 +5,11 @@
 #include <ctype.h>
 #include "i/private.h"
 
-#define I(x) rz_cons_singleton()->x
-
 // Display the content of a file in the hud
-RZ_API char *rz_cons_hud_file(const char *f) {
+RZ_API char *rz_cons_hud_file(RZ_NONNULL RZ_BORROW RzCons *cons, const char *f) {
 	char *s = rz_file_slurp(f, NULL);
 	if (s) {
-		char *ret = rz_cons_hud_string(s);
+		char *ret = rz_cons_hud_string(cons, s);
 		free(s);
 		return ret;
 	}
@@ -20,8 +18,8 @@ RZ_API char *rz_cons_hud_file(const char *f) {
 
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
-RZ_API char *rz_cons_hud_string(const char *s) {
-	if (!rz_cons_is_interactive()) {
+RZ_API char *rz_cons_hud_string(RZ_NONNULL RZ_BORROW RzCons *cons, const char *s) {
+	if (!rz_cons_is_interactive(cons)) {
 		eprintf("Hud mode requires scr.interactive=true.\n");
 		return NULL;
 	}
@@ -51,7 +49,7 @@ RZ_API char *rz_cons_hud_string(const char *s) {
 			os = o + i + 1;
 		}
 	}
-	ret = rz_cons_hud(fl, NULL);
+	ret = rz_cons_hud(cons, fl, NULL);
 	free(o);
 	rz_list_free(fl);
 	return ret;
@@ -110,13 +108,13 @@ static bool __matchString(char *entry, char *filter, char *mask, const int mask_
 	return true;
 }
 
-static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
+static RzList /*<char *>*/ *hud_filter(RzCons *cons, RzList /*<char *>*/ *list, char *user_input, int top_entry_n, int *current_entry_n, char **selected_entry) {
 	RzListIter *iter;
 	char *current_entry;
 	char mask[HUD_BUF_SIZE];
 	char *p, *x;
 	int j, rows;
-	(void)rz_cons_get_size(&rows);
+	(void)rz_cons_get_size(cons, &rows);
 	int counter = 0;
 	bool first_line = true;
 	RzList *res = rz_list_newf(free);
@@ -141,7 +139,7 @@ static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_inp
 				rz_list_append(res, rz_str_newf(" %c %s", first_line ? '-' : ' ', p));
 			} else {
 				// otherwise we need to emphasize the matching part
-				if (I(context->color_mode)) {
+				if (cons->context->color_mode) {
 					int last_color_change = 0;
 					int last_mask = 0;
 					char *str = rz_str_newf(" %c ", first_line ? '-' : ' ');
@@ -195,7 +193,7 @@ static RzList /*<char *>*/ *hud_filter(RzList /*<char *>*/ *list, char *user_inp
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
 
 #define HUD_CACHE 0
-RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
+RZ_API char *rz_cons_hud(RZ_NONNULL RZ_BORROW RzCons *cons, RzList /*<char *>*/ *list, const char *prompt) {
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RzListIter *iter;
@@ -204,18 +202,18 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 	RzLineHud *hud = (RzLineHud *)RZ_NEW(RzLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
-	I(line)->echo = false;
-	I(line)->hud = hud;
+	cons->line->echo = false;
+	cons->line->hud = hud;
 	user_input[0] = 0;
 	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
-	rz_cons_show_cursor(false);
-	rz_cons_enable_mouse(false);
-	rz_cons_clear();
+	rz_cons_show_cursor(cons, false);
+	rz_cons_enable_mouse(cons, false);
+	rz_cons_clear(cons);
 
 	// Repeat until the user exits the hud
 	for (;;) {
-		rz_cons_gotoxy(0, 0);
+		rz_cons_gotoxy(cons, 0, 0);
 		hud->current_entry_n = 0;
 
 		if (hud->top_entry_n < 0) {
@@ -223,23 +221,23 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 		}
 		selected_entry = NULL;
 		if (prompt && *prompt) {
-			rz_cons_printf(">> %s\n", prompt);
+			rz_cons_printf(cons, ">> %s\n", prompt);
 		}
-		rz_cons_printf("%d> %s|\n", hud->top_entry_n, user_input);
+		rz_cons_printf(cons, "%d> %s|\n", hud->top_entry_n, user_input);
 		char *row;
 		RzList *filtered_list = NULL;
 
 		bool found = false;
 		filtered_list = ht_sp_find(ht, user_input, &found);
 		if (!found) {
-			filtered_list = hud_filter(list, user_input,
+			filtered_list = hud_filter(cons, list, user_input,
 				hud->top_entry_n, &(hud->current_entry_n), &selected_entry);
 #if HUD_CACHE
 			ht_sp_insert(ht, user_input, filtered_list);
 #endif
 		}
 		rz_list_foreach (filtered_list, iter, row) {
-			rz_cons_printf("%s\n", row);
+			rz_cons_printf(cons, "%s\n", row);
 		}
 		if (!filtered_list->length) { // hack to remove garbage value when list is empty
 			printf("%s", RZ_CONS_CLEAR_LINE);
@@ -247,19 +245,19 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 #if !HUD_CACHE
 		rz_list_free(filtered_list);
 #endif
-		rz_cons_visual_flush();
-		(void)rz_line_readline(I(line));
-		rz_str_ncpy(user_input, I(line)->buffer.data, HUD_BUF_SIZE); // to search
+		rz_cons_visual_flush(cons);
+		(void)rz_line_readline(cons->line);
+		rz_str_ncpy(user_input, cons->line->buffer.data, HUD_BUF_SIZE); // to search
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1) {
 				if (selected_entry) {
-					RZ_FREE(I(line)->hud);
-					I(line)->echo = true;
-					rz_cons_enable_mouse(false);
-					rz_cons_show_cursor(true);
-					rz_cons_set_raw(false);
+					RZ_FREE(cons->line->hud);
+					cons->line->echo = true;
+					rz_cons_enable_mouse(cons, false);
+					rz_cons_show_cursor(cons, true);
+					rz_cons_set_raw(cons, false);
 					ht_sp_free(ht);
 					return rz_str_dup(selected_entry);
 				}
@@ -269,17 +267,17 @@ RZ_API char *rz_cons_hud(RzList /*<char *>*/ *list, const char *prompt) {
 		}
 	}
 _beach:
-	RZ_FREE(I(line)->hud);
-	I(line)->echo = true;
-	rz_cons_show_cursor(true);
-	rz_cons_enable_mouse(false);
-	rz_cons_set_raw(false);
+	RZ_FREE(cons->line->hud);
+	cons->line->echo = true;
+	rz_cons_show_cursor(cons, true);
+	rz_cons_enable_mouse(cons, false);
+	rz_cons_set_raw(cons, false);
 	ht_sp_free(ht);
 	return NULL;
 }
 
 // Display the list of files in a directory
-RZ_API char *rz_cons_hud_path(const char *path, int dir) {
+RZ_API char *rz_cons_hud_path(RZ_NONNULL RZ_BORROW RzCons *cons, const char *path, int dir) {
 	char *tmp, *ret = NULL;
 	RzList *files;
 	if (path) {
@@ -290,7 +288,7 @@ RZ_API char *rz_cons_hud_path(const char *path, int dir) {
 	}
 	files = rz_sys_dir(tmp);
 	if (files) {
-		ret = rz_cons_hud(files, tmp);
+		ret = rz_cons_hud(cons, files, tmp);
 		if (ret) {
 			tmp = rz_str_append(tmp, "/");
 			tmp = rz_str_append(tmp, ret);
@@ -299,7 +297,7 @@ RZ_API char *rz_cons_hud_path(const char *path, int dir) {
 			free(tmp);
 			tmp = ret;
 			if (rz_file_is_directory(tmp)) {
-				ret = rz_cons_hud_path(tmp, dir);
+				ret = rz_cons_hud_path(cons, tmp, dir);
 				free(tmp);
 				tmp = ret;
 			}
@@ -315,14 +313,14 @@ RZ_API char *rz_cons_hud_path(const char *path, int dir) {
 	return tmp;
 }
 
-RZ_API void rz_cons_message(RZ_NONNULL const char *msg) {
-	rz_return_if_fail(msg);
+RZ_API void rz_cons_message(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL const char *msg) {
+	rz_return_if_fail(cons && msg);
 	int len = strlen(msg);
-	int rows, cols = rz_cons_get_size(&rows);
-	rz_cons_clear();
-	rz_cons_gotoxy((cols - len) / 2, rows / 2);
-	rz_cons_println(msg);
-	rz_cons_flush();
-	rz_cons_gotoxy(0, rows - 2);
-	rz_cons_any_key(NULL);
+	int rows, cols = rz_cons_get_size(cons, &rows);
+	rz_cons_clear(cons);
+	rz_cons_gotoxy(cons, (cols - len) / 2, rows / 2);
+	rz_cons_println(cons, msg);
+	rz_cons_flush(cons);
+	rz_cons_gotoxy(cons, 0, rows - 2);
+	rz_cons_any_key(cons, NULL);
 }

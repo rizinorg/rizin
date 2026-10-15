@@ -416,6 +416,7 @@ struct rz_bin_t {
 	HtSP /*<RzBinPlugin *>*/ *plugins;
 	HtSP /*<RzBinXtrPlugin *>*/ *binxtrs;
 	RzList /*<RzBinFile *>*/ *binfiles;
+	void *cb_printf_user;
 	PrintfCallback cb_printf;
 	int loadany;
 	RzIOBind iob;

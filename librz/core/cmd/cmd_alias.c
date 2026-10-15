@@ -84,9 +84,9 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 		char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
 		if (v) {
 			if (nonl == desc + 1) {
-				rz_cons_print(v);
+				rz_cons_print(core->cons, v);
 			} else {
-				rz_cons_println(v);
+				rz_cons_println(core->cons, v);
 			}
 		} else {
 			RZ_LOG_ERROR("core: unknown key '%s'\n", buf);
@@ -97,7 +97,7 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 		int i, count = 0;
 		char **keys = rz_cmd_alias_keys(core->rcmd, &count);
 		for (i = 0; i < count; i++) {
-			rz_cons_println(keys[i]);
+			rz_cons_println(core->cons, keys[i]);
 		}
 	} else {
 		/* Execute alias */
@@ -107,8 +107,8 @@ RZ_IPI RzCmdStatus rz_alias_handler(RzCore *core, int argc, const char **argv) {
 		char *v = rz_cmd_alias_get(core->rcmd, buf, 0);
 		if (v) {
 			if (*v == '$') {
-				rz_cons_strcat(v + 1);
-				rz_cons_newline();
+				rz_cons_strcat(core->cons, v + 1);
+				rz_cons_newline(core->cons);
 			} else if (q) {
 				char *out = rz_str_newf("%s %s", v, q + 1);
 				rz_core_cmd0(core, out);
@@ -138,10 +138,10 @@ static void list_aliases(RzCore *core, bool base64) {
 		char *v = rz_cmd_alias_get(core->rcmd, keys[i], 0);
 		if (base64) {
 			char *q = rz_base64_encode_dyn((const ut8 *)v, strlen(v));
-			rz_cons_printf("%s=base64:%s\n", keys[i], q);
+			rz_cons_printf(core->cons, "%s=base64:%s\n", keys[i], q);
 			free(q);
 		} else {
-			rz_cons_printf("%s=%s\n", keys[i], v);
+			rz_cons_printf(core->cons, "%s=%s\n", keys[i], v);
 		}
 	}
 }

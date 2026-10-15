@@ -375,3 +375,9 @@ RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
 		sb->buf[0] = '\0';
 	}
 }
+
+RZ_API void rz_strbuf_set_progress_cb(RzStrBuf *sb, RzProgressCallback cb, void *user) {
+	rz_return_if_fail(sb);
+	sb->progress_cb = cb;
+	sb->progress_user = user;
+}

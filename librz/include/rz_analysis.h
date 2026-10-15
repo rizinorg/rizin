@@ -1543,13 +1543,13 @@ RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm);
 RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
 RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RZ_BORROW RzCons *cons,
 	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
+	RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
 RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
 RZ_API bool rz_analysis_il_vm_set_unsigned(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, ut64 value);
@@ -2091,27 +2091,27 @@ RZ_API ut64 rz_analysis_vtable_info_get_size(RVTableContext *context, RVTableInf
 RZ_API bool rz_analysis_vtable_begin(RzAnalysis *analysis, RVTableContext *context);
 RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 addr);
 RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *context);
-RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode);
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* rtti */
 RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);
-RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict);
+RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
 RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
-RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
 RZ_API void rz_analysis_no_rtti_analysis(RZ_NONNULL RVTableContext *context, RZ_NONNULL RzList /*<RVTableInfo *>*/ *vtables);
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name);
-RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode);
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
@@ -2220,6 +2220,9 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 RZ_API void rz_analysis_omf166_integrate_functions(RzAnalysis *analysis);
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new();
 RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo);
+
+/* interrupt */
+RZ_API void rz_analysis_set_interrupt(RZ_NONNULL RzAnalysis *analysis, RzInterrupt *intr);
 
 /* serialize */
 

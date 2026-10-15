@@ -366,7 +366,7 @@ extern "C" {
 #define __packed __attribute__((__packed__))
 #endif
 
-typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
+typedef int (*PrintfCallback)(void *user, const char *str, ...) RZ_PRINTF_CHECK(2, 3);
 
 /* compile-time introspection helpers */
 #define CTO(y, z)    ((size_t)&((y *)0)->z)

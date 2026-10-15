@@ -115,7 +115,7 @@ RZ_API void rz_core_reg_update_flags(RzCore *core) {
 /**
  * \brief Print registers that have changed since the last step (drd/ard)
  */
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items) {
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	RzListIter *iter;
 	RzRegItem *item;
 	rz_list_foreach (items, iter, item) {
@@ -125,7 +125,7 @@ RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items) 
 		rz_reg_arena_swap(reg, false);
 		ut64 delta = newval - oldval;
 		if (delta) {
-			rz_cons_printf(
+			rz_cons_printf(cons,
 				"%s = 0x%" PFMT64x " was 0x%" PFMT64x " delta 0x%" PFMT64x "\n",
 				item->name, newval, oldval, delta);
 		}

@@ -303,14 +303,14 @@ static const char *type_to_string(RTypeInfoType type) {
 		rz_return_val_if_reached(CLASS_TYPE_INFO_NAME);
 	}
 }
-static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix) {
-	rz_cons_printf("%sType Info at 0x%08" PFMT64x ":\n"
-		       "%s  Type Info type: %s\n"
-		       "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
-		       "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
-		       "%s  Reference to type's name: 0x%08" PFMT64x "\n"
-		       "%s  Type Name: %s\n"
-		       "%s  Name unique: %s\n",
+static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix, RzCons *cons) {
+	rz_cons_printf(cons, "%sType Info at 0x%08" PFMT64x ":\n"
+			     "%s  Type Info type: %s\n"
+			     "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			     "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			     "%s  Reference to type's name: 0x%08" PFMT64x "\n"
+			     "%s  Type Name: %s\n"
+			     "%s  Name unique: %s\n",
 		prefix, cti->typeinfo_addr,
 		prefix, type_to_string(cti->type),
 		prefix, cti->class_vtable_addr,
@@ -320,7 +320,7 @@ static void rtti_itanium_print_class_type_info(class_type_info *cti, const char 
 		prefix, cti->name_unique ? "true" : "false");
 }
 
-static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
+static void rtti_itanium_print_class_type_info_json(class_type_info *cti, RzCons *cons) {
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
@@ -336,21 +336,21 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	pj_kb(pj, "name_unique", cti->name_unique);
 	pj_end(pj);
 
-	rz_cons_print(pj_string(pj));
+	rz_cons_print(cons, pj_string(pj));
 	pj_free(pj);
 }
 
-static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix) {
-	rz_cons_printf("%sType Info at 0x%08" PFMT64x ":\n"
-		       "%s  Type Info type: %s\n"
-		       "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
-		       "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
-		       "%s  Reference to type's name: 0x%08" PFMT64x "\n"
-		       "%s  Type Name: %s\n"
-		       "%s  Name unique: %s\n"
-		       "%s  Flags: 0x%x\n"
-		       "%s  Count of base classes: 0x%x"
-		       "\n",
+static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti, const char *prefix, RzCons *cons) {
+	rz_cons_printf(cons, "%sType Info at 0x%08" PFMT64x ":\n"
+			     "%s  Type Info type: %s\n"
+			     "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			     "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			     "%s  Reference to type's name: 0x%08" PFMT64x "\n"
+			     "%s  Type Name: %s\n"
+			     "%s  Name unique: %s\n"
+			     "%s  Flags: 0x%x\n"
+			     "%s  Count of base classes: 0x%x"
+			     "\n",
 		prefix, vmi_cti->typeinfo_addr,
 		prefix, type_to_string(vmi_cti->type),
 		prefix, vmi_cti->class_vtable_addr,
@@ -363,15 +363,14 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
-		rz_cons_printf("%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
-			       "%s    Base class flags: 0x%" PFMT64x
-			       "\n",
+		rz_cons_printf(cons, "%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
+				     "%s    Base class flags: 0x%" PFMT64x "\n",
 			prefix, vmi_cti->vmi_bases[i].base_class_addr,
 			prefix, vmi_cti->vmi_bases[i].flags);
 	}
 }
 
-static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi_cti) {
+static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi_cti, RzCons *cons) {
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
@@ -398,19 +397,19 @@ static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi
 	pj_end(pj);
 	pj_end(pj);
 
-	rz_cons_print(pj_string(pj));
+	rz_cons_print(cons, pj_string(pj));
 	pj_free(pj);
 }
 
-static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, const char *prefix) {
-	rz_cons_printf("%sType Info at 0x%08" PFMT64x ":\n"
-		       "%s  Type Info type: %s\n"
-		       "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
-		       "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
-		       "%s  Reference to type's name: 0x%08" PFMT64x "\n"
-		       "%s  Type Name: %s\n"
-		       "%s  Name unique: %s\n"
-		       "%s  Reference to parent's type info: 0x%08" PFMT64x "\n",
+static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, const char *prefix, RzCons *cons) {
+	rz_cons_printf(cons, "%sType Info at 0x%08" PFMT64x ":\n"
+			     "%s  Type Info type: %s\n"
+			     "%s  Belongs to class vtable: 0x%08" PFMT64x "\n"
+			     "%s  Reference to RTTI's type class: 0x%08" PFMT64x "\n"
+			     "%s  Reference to type's name: 0x%08" PFMT64x "\n"
+			     "%s  Type Name: %s\n"
+			     "%s  Name unique: %s\n"
+			     "%s  Reference to parent's type info: 0x%08" PFMT64x "\n",
 		prefix, si_cti->typeinfo_addr,
 		prefix, type_to_string(si_cti->type),
 		prefix, si_cti->class_vtable_addr,
@@ -421,7 +420,7 @@ static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, co
 		prefix, si_cti->base_class_addr);
 }
 
-static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_cti) {
+static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_cti, RzCons *cons) {
 	PJ *pj = pj_new();
 	if (!pj) {
 		return;
@@ -438,7 +437,7 @@ static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_ct
 	pj_kn(pj, "ref_to_parent_type", si_cti->base_class_addr);
 	pj_end(pj);
 
-	rz_cons_print(pj_string(pj));
+	rz_cons_print(cons, pj_string(pj));
 	pj_free(pj);
 }
 
@@ -690,7 +689,7 @@ static void rtti_itanium_type_info_free(void *info) {
 	}
 }
 
-RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode) {
+RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	bool use_json = mode == RZ_OUTPUT_MODE_JSON;
 	class_type_info *cti = rtti_itanium_type_info_new(context, addr);
 	if (!cti) {
@@ -701,9 +700,9 @@ RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut
 	case RZ_TYPEINFO_TYPE_VMI_CLASS: {
 		vmi_class_type_info *vmi_cti = (vmi_class_type_info *)cti;
 		if (use_json) {
-			rtti_itanium_print_vmi_class_type_info_json(vmi_cti);
+			rtti_itanium_print_vmi_class_type_info_json(vmi_cti, cons);
 		} else {
-			rtti_itanium_print_vmi_class_type_info(vmi_cti, "");
+			rtti_itanium_print_vmi_class_type_info(vmi_cti, "", cons);
 		}
 		rtti_itanium_vmi_class_type_info_free(vmi_cti);
 	}
@@ -711,18 +710,18 @@ RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut
 	case RZ_TYPEINFO_TYPE_SI_CLASS: {
 		si_class_type_info *si_cti = (si_class_type_info *)cti;
 		if (use_json) {
-			rtti_itanium_print_si_class_type_info_json(si_cti);
+			rtti_itanium_print_si_class_type_info_json(si_cti, cons);
 		} else {
-			rtti_itanium_print_si_class_type_info(si_cti, "");
+			rtti_itanium_print_si_class_type_info(si_cti, "", cons);
 		}
 		rtti_itanium_si_class_type_info_free(si_cti);
 	}
 		return true;
 	case RZ_TYPEINFO_TYPE_CLASS: {
 		if (use_json) {
-			rtti_itanium_print_class_type_info_json(cti);
+			rtti_itanium_print_class_type_info_json(cti, cons);
 		} else {
-			rtti_itanium_print_class_type_info(cti, "");
+			rtti_itanium_print_class_type_info(cti, "", cons);
 		}
 		rtti_itanium_class_type_info_free(cti);
 	}

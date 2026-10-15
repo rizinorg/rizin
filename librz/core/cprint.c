@@ -168,7 +168,7 @@ RZ_IPI void rz_core_print_hexdump(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL
 		RZ_LOG_ERROR("fail to print hexdump at 0x%" PFMT64x "\n", addr);
 		return;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 }
 
@@ -178,7 +178,7 @@ RZ_IPI void rz_core_print_jsondump(RZ_NONNULL RzCore *core, RZ_NONNULL const ut8
 		RZ_LOG_ERROR("fail to print json hexdump\n");
 		return;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 }
 
@@ -188,7 +188,7 @@ RZ_IPI void rz_core_print_hexdiff(RZ_NONNULL RzCore *core, ut64 aa, RZ_NONNULL c
 		RZ_LOG_ERROR("fail to print hexdiff between 0x%" PFMT64x " and 0x%" PFMT64x "\n", aa, ba);
 		return;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 }
 
@@ -225,7 +225,7 @@ RZ_IPI bool rz_core_print_hexdump_diff(RZ_NONNULL RzCore *core, ut64 aa, ut64 ba
 		RZ_LOG_ERROR("fail to print hexdump diff between 0x%" PFMT64x " and 0x%" PFMT64x "\n", aa, ba);
 		return false;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 	return true;
 }
@@ -329,7 +329,7 @@ RZ_IPI bool rz_core_print_dump(RZ_NONNULL RzCore *core, RzOutputMode mode,
 		RZ_LOG_ERROR("fail to print dump at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 	return true;
 }
@@ -393,7 +393,7 @@ RZ_IPI bool rz_core_print_hexdump_or_hexdiff(RZ_NONNULL RzCore *core, RZ_NULLABL
 		RZ_LOG_ERROR("fail to print hexdump at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 	return true;
 }
@@ -473,7 +473,7 @@ RZ_IPI bool rz_core_print_hexdump_byline(RZ_NONNULL RzCore *core, bool hexoffset
 		RZ_LOG_ERROR("fail to print hexdump by line at 0x%" PFMT64x "\n", addr);
 		return false;
 	}
-	rz_cons_print(string);
+	rz_cons_print(core->cons, string);
 	free(string);
 	return true;
 }
@@ -599,13 +599,13 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 		.cbytes = cbytes,
 	};
 
-	rz_cons_push();
+	rz_cons_push(core->cons);
 	rz_core_print_disasm(core, addr, block, byte_len, inst_len, NULL, &disasm_options);
-	rz_cons_filter();
-	const char *cons_str = rz_str_get(rz_cons_get_buffer());
+	rz_cons_filter(core->cons);
+	const char *cons_str = rz_str_get(rz_cons_get_buffer(core->cons));
 	char *ret = rz_str_dup(cons_str);
-	rz_cons_pop();
-	rz_cons_echo(NULL);
+	rz_cons_pop(core->cons);
+	rz_cons_echo(core->cons, NULL);
 	free(block);
 	return ret;
 }

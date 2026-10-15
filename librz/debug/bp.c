@@ -30,7 +30,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->bps_idx = RZ_NEWS0(RzBreakpointItem *, bp->bps_idx_count);
 	bp->stepcont = RZ_BP_CONT_NORMAL;
 	bp->traces = rz_bp_traptrace_new();
-	bp->cb_printf = (PrintfCallback)printf;
+	bp->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	bp->opcode = NULL;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
 	bp->nhwbps = 0;

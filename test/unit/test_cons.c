@@ -123,39 +123,39 @@ bool test_rz_cons() {
 }
 
 bool test_cons_justify(void) {
-	rz_cons_new();
-	rz_cons_reset();
-	rz_cons_strcat_justify("Line1\nLine2", 2, '|');
-	const char *buf = rz_cons_get_buffer();
+	RzCons *cons = rz_cons_new();
+	rz_cons_reset(cons);
+	rz_cons_strcat_justify(cons, "Line1\nLine2", 2, '|');
+	const char *buf = rz_cons_get_buffer(cons);
 	const char *expected = "  | Line1\nLine2";
 
 	mu_assert_streq(buf, expected, "Justify multiple lines");
 
-	rz_cons_reset();
-	rz_cons_strcat_justify("A", 2, '|');
-	buf = rz_cons_get_buffer();
+	rz_cons_reset(cons);
+	rz_cons_strcat_justify(cons, "A", 2, '|');
+	buf = rz_cons_get_buffer(cons);
 	mu_assert_streq(buf, "A", "Justify single char");
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_cons_at(void) {
-	rz_cons_new();
-	rz_cons_reset();
-	rz_cons_strcat_at("Hello", 2, 0, 10, 1);
-	const char *buf = rz_cons_get_buffer();
+	RzCons *cons = rz_cons_new();
+	rz_cons_reset(cons);
+	rz_cons_strcat_at(cons, "Hello", 2, 0, 10, 1);
+	const char *buf = rz_cons_get_buffer(cons);
 	mu_assert_true(strstr(buf, "Hello") != NULL, "Buffer contains Hello");
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_cons_misc(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 
-	rz_cons_break_push(NULL, NULL);
-	mu_assert_false(rz_cons_is_breaked(), "Not breaked initially");
-	rz_cons_break_pop();
+	rz_interrupt_break_push(cons->intr, NULL, NULL);
+	mu_assert_false(rz_interrupt_is_breaked(cons->intr), "Not breaked initially");
+	rz_interrupt_break_pop(cons->intr);
 
 #if __UNIX__
 	// Test UTF-8 detection via environment
@@ -179,13 +179,13 @@ bool test_cons_misc(void) {
 #endif
 
 	// Interactive check
-	mu_assert_false(rz_cons_is_interactive(), "Unit tests should not be interactive by default");
-	rz_cons_set_interactive(true);
-	mu_assert_true(rz_cons_is_interactive(), "Manually set interactive to true");
-	rz_cons_set_interactive(false);
-	mu_assert_false(rz_cons_is_interactive(), "Manually set interactive to false");
+	mu_assert_false(rz_cons_is_interactive(cons), "Unit tests should not be interactive by default");
+	rz_cons_set_interactive(cons, true);
+	mu_assert_true(rz_cons_is_interactive(cons), "Manually set interactive to true");
+	rz_cons_set_interactive(cons, false);
+	mu_assert_false(rz_cons_is_interactive(cons), "Manually set interactive to false");
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
