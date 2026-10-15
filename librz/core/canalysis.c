@@ -5065,6 +5065,9 @@ static void cb_in_range_aav(RzCore *core, ut64 from, ut64 to, int vsize, void *u
 }
 
 RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode) {
+	if (!rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_CAN_USE_POINTERS)) {
+		return;
+	}
 	ut64 o_align = rz_config_get_i(core->config, "search.align");
 	const char *analysisin = rz_config_get(core->config, "analysis.in");
 	char *tmp = rz_str_dup(analysisin);
