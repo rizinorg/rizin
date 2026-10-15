@@ -142,7 +142,8 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "minentropy", .expected = "2.00000000" },
 	{ INDATA("admin"), .algo = "minentropy", .expected = "2.32192809" },
 	{ INDATA("password"), .algo = "serialcorr", .expected = "-0.16463233" },
-	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" }
+	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" },
+	{ INDATA("password"), .algo = "djb2", .expected = "17f6dc38" }
 #undef INDATA
 };
 

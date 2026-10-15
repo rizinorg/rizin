@@ -197,6 +197,7 @@ extern RzHashPlugin rz_hash_plugin_chisquare;
 extern RzHashPlugin rz_hash_plugin_ioc;
 extern RzHashPlugin rz_hash_plugin_minentropy;
 extern RzHashPlugin rz_hash_plugin_serialcorr;
+extern RzHashPlugin rz_hash_plugin_djb2;
 
 #ifdef __cplusplus
 }
