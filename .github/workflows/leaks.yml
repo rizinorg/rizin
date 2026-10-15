@@ -42,7 +42,7 @@ jobs:
       LSAN_LOGS_DIR: /tmp/lsan_logs/
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -62,7 +62,7 @@ jobs:
           PIP_BREAK_SYSTEM_PACKAGES: 1
 
       - name: Checkout rzpipe
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: rizinorg/rz-pipe
           path: test/rz-pipe
@@ -94,7 +94,7 @@ jobs:
           ninja -C build install
 
       - name: Checkout our Testsuite Binaries
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: rizinorg/rizin-testbins
           path: test/bins
