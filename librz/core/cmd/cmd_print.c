@@ -1638,7 +1638,12 @@ static bool cmd_pxr(RzCore *core, ut64 at, int len, RzCmdStateOutput *state, int
 			rz_table_add_rowf(t, "xxs", addr, val, refs);
 			RZ_FREE(refs);
 		}
-		rz_table_query(t, query);
+		if (query) {
+			state->table_view = rz_table_view_new(t);
+			if (state->table_view) {
+				rz_table_view_query(state->table_view, query);
+			}
+		}
 	} else if (mode == RZ_OUTPUT_MODE_JSON) {
 		PJ *pj = state->d.pj;
 		const int hex_depth = (int)rz_config_get_i(core->config, "hex.depth");
