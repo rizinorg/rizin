@@ -24598,7 +24598,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
 	rz_warn_if_fail(cmd_heap_info_print_cd);
 
-	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
 	rz_warn_if_fail(cmd_main_arena_print_cd);
 
 	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgt", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
