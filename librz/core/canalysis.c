@@ -1435,11 +1435,9 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 	// last value set and blow everything up
 	rz_core_seek_arch_bits(core, at);
 
-	if (core->io->va) {
-		if (!rz_io_is_valid_offset(core->io, at, !aopt->noncode)) {
-			RZ_LOG_VERBOSE("Address not mapped or not executable at 0x%" PFMT64x ".\n", at);
-			return false;
-		}
+	if (core->io->va && !rz_io_is_valid_offset(core->io, at, !aopt->noncode)) {
+		RZ_LOG_VERBOSE("Address not mapped or not executable at 0x%" PFMT64x ".\n", at);
+		return false;
 	}
 	if (use_esil) {
 		return rz_core_analysis_esil_fcn(core, at, from, reftype, depth);
@@ -2287,8 +2285,12 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	/* Entries */
 	item = rz_flag_get(core->flags, "entry0");
 	if (item) {
-		rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth - 1);
-		rz_core_analysis_function_rename(core, item->offset, "entry0");
+		if (core->io->va && !rz_io_is_valid_offset(core->io, item->offset, !aopt->noncode)) {
+			RZ_LOG_WARN("entry0 (0x%08" PFMT64x ") is not mapped or not executable.\n", item->offset);
+		} else {
+			rz_core_analysis_fcn(core, item->offset, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth - 1);
+			rz_core_analysis_function_rename(core, item->offset, "entry0");
+		}
 	} else {
 		rz_core_analysis_function_add(core, NULL, core->offset, false);
 	}
