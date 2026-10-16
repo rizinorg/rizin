@@ -1424,15 +1424,14 @@ static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const 
 RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
 	const RzOutputMode mode, const bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf) {
 	rz_return_val_if_fail(core, false);
-	if (!buf && ret_val) {
+	if (limit < 0 || (!buf && ret_val)) {
 		return false;
 	}
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 		if (!op) {
 			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr);
-			rz_analysis_op_free(op);
-			break;
+			return false;
 		}
 		const char *mnem = op->mnemonic;
 		disasm_print_ret(core, mode, mnem, addr, ret_val, buf);
@@ -4395,7 +4394,11 @@ RZ_IPI RzCmdStatus rz_print_instr_recursive_at_handler(RzCore *core, int argc, c
 
 RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const ut64 limit = argc > 1 ? rz_num_math(core->num, argv[1]) : 1024;
-	if (!rz_core_disasm_until_ret(core, core->offset, limit, state->mode, false, NULL)) {
+	if (limit > INT_MAX) {
+		RZ_LOG_ERROR("core: Instruction limit must be between 0 and %d\n", INT_MAX);
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	if (!rz_core_disasm_until_ret(core, core->offset, (int)limit, state->mode, false, NULL)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
