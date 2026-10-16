@@ -913,8 +913,12 @@ dotherax:
 		char *modified_str;
 
 		// To distinguish octal values.
-		if (*str != '0') {
-			modified_str = rz_str_newf("0%s", str);
+		if (strncmp(str, "0o", 2) && strncmp(str, "0O", 2)) {
+			if (*str == '0') {
+				modified_str = rz_str_newf("0o%s", str + 1);
+			} else {
+				modified_str = rz_str_newf("0o%s", str);
+			}
 		} else {
 			modified_str = rz_str_dup(str);
 		}
