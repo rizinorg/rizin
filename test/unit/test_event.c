@@ -115,10 +115,84 @@ bool test_rz_event_self_unhook(int hook_type, int send_type) {
 	mu_end;
 }
 
+bool test_rz_event_unhook_by_callback(void) {
+	int shared = 0;
+	int other = 0;
+	RzEvent *ev = rz_event_new(NULL);
+	mu_assert_notnull(ev, "rz_event_new ()");
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &other);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(shared, 3, "three firings");
+	mu_assert_eq(other, 1, "other fires");
+
+	// Drops every matching subscription at once, keeps the rest.
+	rz_event_unhook_by_callback(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(shared, 3, "all matching drained");
+	mu_assert_eq(other, 2, "other kept");
+
+	// Draining an empty set is a no-op.
+	rz_event_unhook_by_callback(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(other, 3, "other still kept");
+
+	// Hooks registered for all events drain through the ALL type as well.
+	rz_event_hook(ev, RZ_EVENT_ALL, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_ALL, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(shared, 5, "all-hooks fire");
+	mu_assert_eq(other, 4, "other fires");
+	rz_event_unhook_by_callback(ev, RZ_EVENT_ALL, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(shared, 5, "all-hooks drained");
+	mu_assert_eq(other, 5, "other still kept");
+
+	rz_event_free(ev);
+	mu_end;
+}
+
+typedef struct {
+	int type;
+	int counter;
+} SelfDrainCtx;
+
+static void callback_self_drain(RzEvent *ev, int type, void *user, void *data) {
+	SelfDrainCtx *ctx = user;
+	(void)type;
+	(void)data;
+	ctx->counter++;
+	rz_event_unhook_by_callback(ev, ctx->type, callback_self_drain, ctx);
+}
+
+bool test_rz_event_unhook_by_callback_dispatch(void) {
+	// Draining from inside a dispatch must terminate: removals defer to
+	// after the send instead of looping on re-collected handles.
+	SelfDrainCtx ctx = { 0 };
+	int other = 0;
+	RzEvent *ev = rz_event_new(NULL);
+	mu_assert_notnull(ev, "rz_event_new ()");
+	ctx.type = RZ_EVENT_META_SET;
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_self_drain, &ctx);
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &other);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(ctx.counter, 1, "self-drain fired once");
+	mu_assert_eq(other, 1, "other fired once");
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(ctx.counter, 1, "self-drain stayed drained");
+	mu_assert_eq(other, 2, "other kept");
+	rz_event_free(ev);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_event);
 	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_ALL, RZ_EVENT_META_SET);
 	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_META_SET, RZ_EVENT_META_SET);
+	mu_run_test(test_rz_event_unhook_by_callback);
+	mu_run_test(test_rz_event_unhook_by_callback_dispatch);
 	return tests_passed != tests_run;
 }
 

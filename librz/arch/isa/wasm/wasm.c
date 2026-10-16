@@ -480,6 +480,10 @@ err:
 // disassemble an instruction from the given buffer.
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	RzStrBuf *sb = rz_strbuf_new("");
+	if (!op) {
+		rz_strbuf_free(sb);
+		return -1;
+	}
 	if (!sb) {
 		if (op) {
 			op->failed = true;
@@ -922,7 +926,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		ut32 simdop;
 		op->type = WASM_TYPE_OP_SIMD;
 		size_t simdop_size = read_u32_leb128(buf + 1, buf + buf_len, &simdop);
-		if (simdop_size > buf_len) {
+		if (simdop_size < 1 || simdop > 0xff) {
 			goto err;
 		}
 		op->len = 1 + simdop_size;
@@ -1108,7 +1112,8 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		} break;
 		case WASM_OP_V128CONST:
 		case WASM_OP_V8X16SHUFFLE: {
-			if (buf_len < 18) {
+			// The simd opcode itself may be multi-byte encoded.
+			if (op->len + 16 > buf_len) {
 				goto err;
 			}
 			op->len += 16;
@@ -1138,10 +1143,10 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_F32X4REPLACELANE:
 		case WASM_OP_F64X2EXTRACTLANE:
 		case WASM_OP_F64X2REPLACELANE: {
-			if (buf_len < 3) {
+			if (op->len + 1 > buf_len) {
 				goto err;
 			}
-			unsigned char lane = buf[1 + simdop_size];
+			unsigned char lane = buf[op->len];
 			++op->len;
 			rz_strbuf_setf(sb, "%s %d", opdef->txt, lane);
 		} break;
@@ -1207,14 +1212,18 @@ static bool scope_contains(const WasmScope *s, ut32 from) {
 	return s->end != UT32_MAX && s->start < from && from <= s->end;
 }
 
-/** \brief Index one function body. NULL if a byte fails to decode or a scope is left open. */
+/** \brief Index one function body, tolerating trailing malformation.
+ *
+ * \p buf is one exact body (first opcode through the final end). Stops at the
+ * first undecodable byte or a closed root, stray else bytes are skipped.
+ * Only fully closed scopes answer queries, so partial results stay correct.
+ * NULL means nothing was learned (empty input) or allocation failure. */
 RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 	WasmScopeIndex *idx;
 	RzVector stack;
 	WasmScope root = { 0 };
 	ut32 root_id = 0;
 	ut32 off = 0;
-	bool failed = false;
 	if (!buf || len < 1) {
 		return NULL;
 	}
@@ -1228,8 +1237,10 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 	root.else_at = UT32_MAX;
 	root.parent = -1;
 	if (!rz_vector_push(&idx->scopes, &root) || !rz_vector_push(&stack, &root_id)) {
-		failed = true;
-		goto done;
+		rz_vector_fini(&idx->scopes);
+		rz_vector_fini(&stack);
+		free(idx);
+		return NULL;
 	}
 	// A byte after the function end must not read an empty scope stack.
 	while (off < (ut32)len && !rz_vector_empty(&stack)) {
@@ -1239,7 +1250,6 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 		bool control = false;
 		if (n < 1 || wop.failed) {
 			free(wop.txt);
-			failed = true;
 			break;
 		}
 		if (wop.type == WASM_TYPE_OP_CORE) {
@@ -1258,32 +1268,27 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 			sc.is_if = core == WASM_OP_IF;
 			sc.is_loop = core == WASM_OP_LOOP;
 			if (!rz_vector_push(&idx->scopes, &sc)) {
-				failed = true;
 				break;
 			}
 			id = (ut32)rz_vector_len(&idx->scopes) - 1;
 			if (!rz_vector_push(&stack, &id)) {
-				failed = true;
 				break;
 			}
 		} else if (control && core == WASM_OP_ELSE) {
 			ut32 top;
 			WasmScope *sc;
 			if (rz_vector_empty(&stack)) {
-				failed = true;
 				break;
 			}
 			top = *(ut32 *)rz_vector_tail(&stack);
 			sc = scope_at(idx, top);
-			if (!sc->is_if || sc->else_at != UT32_MAX) {
-				failed = true;
-				break;
+			// Skip recording a stray else; consuming it keeps earlier scopes valid.
+			if (sc->is_if && sc->else_at == UT32_MAX) {
+				sc->else_at = off;
 			}
-			sc->else_at = off;
 		} else if (control && core == WASM_OP_END) {
 			ut32 top;
 			if (rz_vector_empty(&stack)) {
-				failed = true;
 				break;
 			}
 			rz_vector_pop(&stack, &top);
@@ -1291,21 +1296,8 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 		}
 		off += (ut32)n;
 	}
-	if (!failed) {
-		ut32 i;
-		for (i = 1; i < rz_vector_len(&idx->scopes); i++) {
-			if (scope_at(idx, i)->end == UT32_MAX) {
-				failed = true;
-				break;
-			}
-		}
-		if (rz_vector_len(&stack) > 1) {
-			failed = true;
-		}
-	}
-done:
 	rz_vector_fini(&stack);
-	if (failed) {
+	if (rz_vector_len(&idx->scopes) < 2 && scope_at(idx, 0)->end == UT32_MAX) {
 		wasm_scope_index_free(idx);
 		return NULL;
 	}
