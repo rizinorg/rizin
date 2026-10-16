@@ -135,6 +135,31 @@ static void bench_rz_pvector_sort(RzTable *t_out) {
 	rz_pvector_free(v);
 }
 
+/**
+ * \brief Measure push and purge throughput while retaining vector capacity.
+ */
+static void bench_rz_pvector_push(RzTable *t_out) {
+	RzPVector *v = rz_pvector_new(NULL);
+	RZ_BENCH_RUN("[RzPVector] push+purge 100k", t_out, 50, {
+		for (size_t j = 0; j < 100000; ++j) {
+			rz_pvector_push(v, (void *)(j + 1));
+		}
+		rz_pvector_purge(v);
+	});
+	rz_pvector_free(v);
+}
+
+static void bench_rz_vector_push(RzTable *t_out) {
+	RzVector *v = rz_vector_new(sizeof(ut64), NULL, NULL);
+	RZ_BENCH_RUN("[RzVector] push+purge 100k", t_out, 50, {
+		for (ut64 j = 0; j < 100000; ++j) {
+			rz_vector_push(v, &j);
+		}
+		rz_vector_purge(v);
+	});
+	rz_vector_free(v);
+}
+
 int main() {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
@@ -144,6 +169,8 @@ int main() {
 	bench_rz_vector_swap(t);
 	bench_rz_vector_sort(t);
 	bench_rz_pvector_sort(t);
+	bench_rz_pvector_push(t);
+	bench_rz_vector_push(t);
 
 	// Print results
 	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
