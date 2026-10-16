@@ -522,7 +522,6 @@ typedef struct wasm_context_t {
 	ut32 bin_id;
 	ut64 bin_size;
 	ut32 nsyms;
-	RzEvent *hook_bus; ///< IO event bus watched for writes, NULL until hooked
 } WasmContext;
 
 RZ_IPI bool wasm_init(void **user); ///< initialize a context of type WasmContext

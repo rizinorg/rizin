@@ -55,7 +55,8 @@ static WasmFuncScope *wasm_find_func(WasmContext *ctx, ut64 addr) {
 		return NULL;
 	}
 	WasmFuncScope *fn = rz_pvector_at(ctx->funcs, best);
-	if (addr >= fn->addr + fn->len) {
+	// subtract just to prevent underflow
+	if (addr - fn->addr >= fn->len) {
 		return NULL;
 	}
 	return fn;
@@ -189,6 +190,8 @@ static bool wasm_fn_patched(WasmContext *ctx, ut64 addr) {
 }
 
 // Drop the scope index of every cached function overlapped by [addr, addr + len).
+// Overlap always marks patched, even with no index yet: pre-write hints are stale.
+// The subtraction form avoids fn->addr + fn->len overflow (funcs is sorted).
 static void wasm_invalidate_range(WasmContext *ctx, ut64 addr, ut64 len) {
 	ut64 end;
 	void **it;
@@ -202,9 +205,11 @@ static void wasm_invalidate_range(WasmContext *ctx, ut64 addr, ut64 len) {
 		if (fn->addr >= end) {
 			break;
 		}
-		if (addr < fn->addr + fn->len && (fn->idx || fn->unindexable)) {
-			wasm_scope_index_free(fn->idx);
-			fn->idx = NULL;
+		if (fn->addr > addr || addr - fn->addr < fn->len) {
+			if (fn->idx) {
+				wasm_scope_index_free(fn->idx);
+				fn->idx = NULL;
+			}
 			fn->unindexable = false;
 			fn->patched = true;
 			dropped = true;
@@ -217,8 +222,9 @@ static void wasm_invalidate_range(WasmContext *ctx, ut64 addr, ut64 len) {
 }
 
 // Invalidate cached scope indexes whose bytes were overwritten.
-// Never unhooked: the IO bus dies before the analysis.
-// Switches only replace plugin_data, rejected by the guard.
+// Never unhooked in wasm_fini: the IO bus dies before the analysis there.
+// Instead drop any orphaned subscription before hooking, keeping at most one
+// per analysis, stale callbacks bail via the plugin check below.
 static void wasm_on_io_write(RzEvent *ev, int type, void *user, void *data) {
 	RzAnalysis *analysis = user;
 	RzEventIOWrite *iow = data;
@@ -240,14 +246,14 @@ static void wasm_on_io_write(RzEvent *ev, int type, void *user, void *data) {
 
 static void wasm_hook_writes(RzAnalysis *analysis, WasmContext *ctx) {
 	RzIO *io;
-	if (!analysis || !ctx || ctx->hook_bus) {
+	if (!analysis || !ctx) {
 		return;
 	}
 	io = analysis->iob.io;
 	if (!io || !io->event) {
 		return;
 	}
-	ctx->hook_bus = io->event;
+	rz_event_unhook_by_callback(io->event, RZ_EVENT_IO_WRITE, wasm_on_io_write, analysis);
 	rz_event_hook(io->event, RZ_EVENT_IO_WRITE, wasm_on_io_write, analysis);
 }
 
@@ -263,9 +269,11 @@ static WasmScopeIndex *wasm_index_body(RzAnalysis *analysis, WasmFuncScope *fn) 
 	// Indexed once per function. The caller caches the result, so later
 	// branches in the same body do no IO.
 	buf = RZ_NEWS(ut8, fn->len);
-	if (!buf || !analysis->iob.read_at(analysis->iob.io, fn->addr, buf, fn->len)) {
+	if (!buf) {
+		return NULL;
+	}
+	if (!analysis->iob.read_at(analysis->iob.io, fn->addr, buf, fn->len)) {
 		free(buf);
-		fn->unindexable = true;
 		return NULL;
 	}
 	idx = wasm_scope_index_new(buf, (int)fn->len);
@@ -400,21 +408,29 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		/* Calls here are using index instead of address */
 		case WASM_OP_LOOP:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			if (!(hint = rz_analysis_hint_get(analysis, addr)) &&
+			hint = rz_analysis_hint_get(analysis, addr);
+			// Post-patch hints go dormant. user hints are kept, not trusted.
+			if ((!hint || wasm_fn_patched(ctx, addr)) &&
 				!wasm_scope_top_is(analysis, ctx, addr, "loop")) {
 				ctx->scope_hint--;
 				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "loop");
 				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 			}
+			rz_analysis_hint_free(hint);
+			hint = NULL;
 			break;
 		case WASM_OP_BLOCK:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-			if (!(hint = rz_analysis_hint_get(analysis, addr)) &&
+			hint = rz_analysis_hint_get(analysis, addr);
+			// Post-patch hints go dormant. user hints are kept, not trusted.
+			if ((!hint || wasm_fn_patched(ctx, addr)) &&
 				!wasm_scope_top_is(analysis, ctx, addr, "block")) {
 				ctx->scope_hint--;
 				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "block");
 				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 			}
+			rz_analysis_hint_free(hint);
+			hint = NULL;
 			break;
 		case WASM_OP_IF:
 			if ((hint = rz_analysis_hint_get(analysis, addr)) && !wasm_fn_patched(ctx, addr)) {
@@ -434,18 +450,20 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case WASM_OP_ELSE:
 			// get if and set hint.
-			if (!(hint = rz_analysis_hint_get(analysis, addr))) {
-				advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, 0, true);
-			} else {
+			hint = rz_analysis_hint_get(analysis, addr);
+			if (hint && !wasm_fn_patched(ctx, addr)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint->jump;
+			} else {
+				advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, 0, true);
 			}
 			break;
 		case WASM_OP_BR: {
 			RzAnalysisHint *hint2 = NULL;
 			ut32 val;
 			read_u32_leb128(data + 1, data + len, &val);
-			if ((hint2 = rz_analysis_hint_get(analysis, addr)) && hint2->jump != UT64_MAX) {
+			hint2 = rz_analysis_hint_get(analysis, addr);
+			if (hint2 && hint2->jump != UT64_MAX && !wasm_fn_patched(ctx, addr)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint2->jump;
 			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
@@ -468,7 +486,8 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			RzAnalysisHint *hint2 = NULL;
 			ut32 val;
 			read_u32_leb128(data + 1, data + len, &val);
-			if ((hint2 = rz_analysis_hint_get(analysis, addr)) && hint2->jump != UT64_MAX) {
+			hint2 = rz_analysis_hint_get(analysis, addr);
+			if (hint2 && hint2->jump != UT64_MAX && !wasm_fn_patched(ctx, addr)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = hint2->jump;
 				op->fail = addr + op->size;
@@ -617,6 +636,8 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:
+			// call_indirect encodes type/table immediates, not a fcn
+			// index, resolving it is legacy best-effort, not a table lookup.
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			op->jump = get_cf_offset(analysis, data, len);
 			op->fail = addr + op->size;
