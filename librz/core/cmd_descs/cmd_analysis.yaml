@@ -1446,8 +1446,15 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
           - name: arpc
-            summary: Show register profile comments
+            summary: Show the full-line comments of the register profile
+            description: >
+              A comment after a register definition describes that register, and `arpj` shows it
+              as the `comment` of the register.
             cname: analysis_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: arpo
             summary: Load a new register profile from file

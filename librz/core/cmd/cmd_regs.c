@@ -758,6 +758,12 @@ RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	return RZ_CMD_STATUS_OK;
 }
 
+/**
+ * \brief Show the register profile: its text, or its roles and registers as JSON.
+ *
+ * The comment after a register definition describes that register and is not
+ * one of the full-line comments of `arpc`/`drpc`, so JSON gives it with the register.
+ */
 RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -796,6 +802,9 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 				pj_ks(pj, "name", r->name);
 				pj_kn(pj, "size", r->size);
 				pj_kn(pj, "offset", r->offset);
+				if (r->comment) {
+					pj_ks(pj, "comment", r->comment);
+				}
 				pj_end(pj);
 			}
 		}
@@ -809,8 +818,18 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
-	if (reg->reg_profile_cmt) {
+/**
+ * \brief Show the full-line comments from the loaded register profile.
+ *
+ * Use an empty comments string in JSON so consumers do not need a separate
+ * case for profiles without notes.
+ */
+RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "comments", rz_str_get(reg->reg_profile_cmt));
+		pj_end(state->d.pj);
+	} else if (reg->reg_profile_cmt) {
 		rz_cons_println(core->cons, reg->reg_profile_cmt);
 	}
 	return RZ_CMD_STATUS_OK;

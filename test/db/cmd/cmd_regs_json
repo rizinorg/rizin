@@ -47,6 +47,25 @@ araj~{[1]}
 ara-
 ara-
 araj~{[0]}
+# Escape quotes, backslashes, and newlines in profile comments.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-comments
+arpcj
+drpcj
+# Comments stay with their register bank; absent comments yield an empty string.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-profile
+arpcj
+drpcj
+arpo scripts/reg-json-profile
+drpo scripts/reg-json-comments
+arpcj
+drpcj
+# A comment after a register definition describes that register.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-debug-profile
+arpj~{.reg_info}
+drpj~{.reg_info}
 EOF
 EXPECT=<<EOF
 ["gpr","drx","fpu","mmx","xmm","ymm","flg","seg","sys","sec","vc","vcc","ctr"]
@@ -117,5 +136,13 @@ SN
 {"type":0,"type_str":"gpr","index":0,"size":24,"current":false}
 {"type":0,"type_str":"gpr","index":1,"size":24,"current":true}
 {"type":0,"type_str":"gpr","index":0,"size":24,"current":true}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":""}
+{"comments":""}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+[{"type":0,"type_str":"gpr","name":"pc","size":32,"offset":0,"comment":"inline comment"}]
+[{"type":0,"type_str":"gpr","name":"ip","size":32,"offset":0}]
 EOF
 RUN
