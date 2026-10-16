@@ -1,0 +1,96 @@
+NAME=dmhgb 32-bit bin heads use the glibc layout
+FILE=malloc://0x8000
+ARGS=-a x86 -b 32 -e dbg.glibc.version=2.31 -e log.level=4
+CMDS=<<EOF
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+e dbg.glibc.fc_offset=0
+wx 00500000 @ 0x1034
+wx 00100000 @ 0x1444
+wx 00200000 @ 0x1450
+wx 00400000 @ 0x103c
+wx 40400000 @ 0x1040
+wx 40400000 @ 0x4008
+wx 34100000 @ 0x400c
+wx 34100000 @ 0x4048
+wx 00400000 @ 0x404c
+wx 24140000 @ 0x142c
+wx 24140000 @ 0x1430
+dmhgb 0
+dmhgb 126
+EOF
+EXPECT=<<EOF
+  Bin 000:
+  double linked list unsorted bin {
+    0x1034->fd = 0x4000->fd = 0x4040->fd = 0x1034
+    0x1034->bk = 0x4040->bk = 0x4000->bk = 0x1034
+  }
+  Bin 126:
+  double linked list large bin {
+    0x1424->fd = 0x1424
+    0x1424->bk = 0x1424
+  }
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dmhgb 64-bit bin heads and corrupt cycle
+FILE=malloc://0x8000
+ARGS=-a x86 -b 64 -e dbg.glibc.version=2.31 -e log.level=4 -e cfg.exit.errorcode=true
+EXIT_STATUS=1
+TIMEOUT=5
+CMDS=<<EOF
+# dmhgb 64-bit bin heads use the glibc layout
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+dmhgb 0
+dmhgb 126
+# dmhgb stops at a cycle which does not include the bin head
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wx 0040000000000000 @ 0x4010
+dmhgb 0
+EOF
+EXPECT=<<EOF
+  Bin 000:
+  double linked list unsorted bin {
+    0x1060->fd = 0x4000->fd = 0x4040->fd = 0x1060
+    0x1060->bk = 0x4040->bk = 0x4000->bk = 0x1060
+  }
+  Bin 126:
+  double linked list large bin {
+    0x1840->fd = 0x1840
+    0x1840->bk = 0x1840
+  }
+  Bin 000:
+  double linked list unsorted bin {
+    0x1060->fd = 0x4000->fd = 0x4000
+  }
+EOF
+EXPECT_ERR=<<EOF
+ERROR: core: Corrupted double linked list at 0x4000
+EOF
+RUN
