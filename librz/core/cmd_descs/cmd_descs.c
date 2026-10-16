@@ -23565,7 +23565,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, arf_cd, "arf-", rz_analysis_reg_flags_unset_handler, &analysis_reg_flags_unset_help);
 	rz_warn_if_fail(analysis_reg_flags_unset_cd);
 
-	RzCmdDesc *ara_cd = rz_cmd_desc_group_new(core->rcmd, ar_cd, "ara", rz_analysis_reg_arenas_handler, &analysis_reg_arenas_help, &ara_help);
+	RzCmdDesc *ara_cd = rz_cmd_desc_group_state_new(core->rcmd, ar_cd, "ara", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_arenas_handler, &analysis_reg_arenas_help, &ara_help);
 	rz_warn_if_fail(ara_cd);
 	RzCmdDesc *analysis_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "ara+", rz_analysis_reg_arenas_push_handler, &analysis_reg_arenas_push_help);
 	rz_warn_if_fail(analysis_reg_arenas_push_cd);
@@ -24720,7 +24720,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drf_cd, "drf-", rz_debug_reg_flags_unset_handler, &debug_reg_flags_unset_help);
 	rz_warn_if_fail(debug_reg_flags_unset_cd);
 
-	RzCmdDesc *dra_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "dra", rz_debug_reg_arenas_handler, &debug_reg_arenas_help, &dra_help);
+	RzCmdDesc *dra_cd = rz_cmd_desc_group_state_new(core->rcmd, dr_cd, "dra", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_arenas_handler, &debug_reg_arenas_help, &dra_help);
 	rz_warn_if_fail(dra_cd);
 	RzCmdDesc *debug_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dra+", rz_debug_reg_arenas_push_handler, &debug_reg_arenas_push_help);
 	rz_warn_if_fail(debug_reg_arenas_push_cd);
