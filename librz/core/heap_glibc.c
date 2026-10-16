@@ -1315,7 +1315,7 @@ static bool rz_heap_is_arena(RzCore *core, ut64 m_arena, ut64 m_state, const RzH
  * link. Checking it bounds corrupt walks without a growing visited set.
  */
 static bool print_bin_chain(RzCore *core, ut64 bin, const MallocState *arena, ut64 brk_start,
-	bool forward, const RzHeapConfig *config) {
+	bool forward, PJ *pj, const RzHeapConfig *config) {
 	RzHeapChunk cnk;
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	if (!rz_glibc_read_chunk(core->io, bin, &cnk, config)) {
@@ -1325,9 +1325,17 @@ static bool print_bin_chain(RzCore *core, ut64 bin, const MallocState *arena, ut
 	ut64 last = forward ? cnk.bk : cnk.fd;
 	ut64 previous = bin;
 	const char *link = forward ? "fd" : "bk";
-	PRINTF_GA("    0x%" PFMT64x, bin);
+	if (pj) {
+		pj_a(pj);
+	} else {
+		PRINTF_GA("    0x%" PFMT64x, bin);
+	}
 	while (next != bin) {
-		PRINTF_BA("->%s = 0x%" PFMT64x, link, next);
+		if (pj) {
+			pj_n(pj, next);
+		} else {
+			PRINTF_BA("->%s = 0x%" PFMT64x, link, next);
+		}
 		if (next < brk_start || next > arena->top ||
 			!rz_glibc_read_chunk(core->io, next, &cnk, config) ||
 			(forward ? cnk.bk : cnk.fd) != previous) {
@@ -1341,17 +1349,21 @@ static bool print_bin_chain(RzCore *core, ut64 bin, const MallocState *arena, ut
 		RZ_LOG_ERROR("core: Corrupted double linked list at 0x%" PFMT64x "\n", bin);
 		return false;
 	}
-	PRINTF_GA("->%s = 0x%" PFMT64x, link, bin);
+	if (pj) {
+		pj_end(pj);
+	} else {
+		PRINTF_GA("->%s = 0x%" PFMT64x, link, bin);
+	}
 	return true;
 }
 
 static int print_double_linked_list_bin_simple(RzCore *core, ut64 bin, MallocState *main_arena,
 	ut64 brk_start, const RzHeapConfig *config) {
-	if (!print_bin_chain(core, bin, main_arena, brk_start, true, config)) {
+	if (!print_bin_chain(core, bin, main_arena, brk_start, true, NULL, config)) {
 		return -1;
 	}
 	rz_cons_newline(core->cons);
-	return print_bin_chain(core, bin, main_arena, brk_start, false, config) ? 0 : -1;
+	return print_bin_chain(core, bin, main_arena, brk_start, false, NULL, config) ? 0 : -1;
 }
 
 static int print_double_linked_list_bin_graph(RzCore *core, ut64 bin, MallocState *main_arena, ut64 brk_start) {
@@ -1412,7 +1424,7 @@ static int print_double_linked_list_bin_graph(RzCore *core, ut64 bin, MallocStat
 	return 0;
 }
 
-static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 num_bin, int graph, const RzHeapConfig *config) {
+static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, ut64 m_arena, ut64 num_bin, int graph, PJ *pj, const RzHeapConfig *config) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return -1;
 	}
@@ -1445,6 +1457,23 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 
 	bin = m_arena + config->malloc_state.bins + ptr_size * num_bin * 2 - config->chunk.fd;
 
+	if (pj) {
+		pj_o(pj);
+		pj_kn(pj, "bin_num", num_bin);
+		pj_ks(pj, "bin_type", num_bin == 0 ? "unsorted" : (num_bin < RZ_GLIBC_NSMALLBINS ? "small" : "large"));
+		pj_kn(pj, "addr", bin);
+		pj_k(pj, "forward");
+		if (!print_bin_chain(core, bin, main_arena, initial_brk, true, pj, config)) {
+			return -1;
+		}
+		pj_k(pj, "backward");
+		if (!print_bin_chain(core, bin, main_arena, initial_brk, false, pj, config)) {
+			return -1;
+		}
+		pj_end(pj);
+		return 0;
+	}
+
 	if (num_bin == 0) {
 		PRINT_GA("  double linked list unsorted bin {\n");
 	} else if (num_bin >= 1 && num_bin <= RZ_GLIBC_NSMALLBINS - 1) {
@@ -1462,29 +1491,43 @@ static int print_double_linked_list_bin(RzCore *core, MallocState *main_arena, u
 	return ret;
 }
 
-static bool print_heap_bin(RzCore *core, ut64 m_arena, MallocState *main_arena, const char *input, bool print_graph, const RzHeapConfig *config) {
+static bool print_heap_bin(RzCore *core, ut64 m_arena, MallocState *main_arena, const char *input, bool print_graph, PJ *pj, const RzHeapConfig *config) {
 	ut64 num_bin = UT64_MAX;
 	RzConsPrintablePalette *pal = &core->cons->context->pal;
 
+	if (pj) {
+		pj_a(pj);
+	}
 	if (!input[0]) {
-		PRINT_YA("Bins {\n");
+		if (!pj) {
+			PRINT_YA("Bins {\n");
+		}
 		for (size_t i = 0; i < RZ_GLIBC_NBINS - 1; i++) {
-			PRINTF_YA(" Bin %03" PFMTSZu ":\n", i);
-			if (print_double_linked_list_bin(core, main_arena, m_arena, i, print_graph, config) < 0) {
+			if (!pj) {
+				PRINTF_YA(" Bin %03" PFMTSZu ":\n", i);
+			}
+			if (print_double_linked_list_bin(core, main_arena, m_arena, i, print_graph, pj, config) < 0) {
 				return false;
 			}
 		}
-		PRINT_YA("\n}\n");
+		if (!pj) {
+			PRINT_YA("\n}\n");
+		}
 	} else {
 		num_bin = rz_num_get(NULL, input);
 		if (num_bin > RZ_GLIBC_NBINS - 2) {
 			RZ_LOG_ERROR("The number of bins is greater than %d\n", RZ_GLIBC_NBINS - 2);
 			return false;
 		}
-		PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
-		if (print_double_linked_list_bin(core, main_arena, m_arena, num_bin, print_graph, config) < 0) {
+		if (!pj) {
+			PRINTF_YA("  Bin %03" PFMT64u ":\n", (ut64)num_bin);
+		}
+		if (print_double_linked_list_bin(core, main_arena, m_arena, num_bin, print_graph, pj, config) < 0) {
 			return false;
 		}
+	}
+	if (pj) {
+		pj_end(pj);
 	}
 	return true;
 }
@@ -2740,10 +2783,10 @@ RZ_IPI RzCmdStatus rz_cmd_heap_tcache_print_handler(RzCore *core, int argc, cons
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *input = (argc == 1) ? "" : argv[1];
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &core->cons->context->pal;
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2776,12 +2819,12 @@ RZ_IPI RzCmdStatus rz_cmd_heap_bins_list_print_handler(RzCore *core, int argc, c
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		if (!print_heap_bin(core, m_state, main_arena, dup, mode == RZ_OUTPUT_MODE_GRAPH, &config)) {
+		if (!print_heap_bin(core, m_state, main_arena, dup, state->mode == RZ_OUTPUT_MODE_GRAPH, pj, &config)) {
 			free(dup);
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		PRINT_RA("This address is not part of the arenas\n");
+		RZ_LOG_ERROR("core: This address is not part of the arenas\n");
 		free(dup);
 		return RZ_CMD_STATUS_ERROR;
 	}
