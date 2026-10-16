@@ -77,11 +77,13 @@ static void free_item_name(RzFlagItem *item) {
 	}
 }
 
-/* return the list of flag at the nearest position.
-   dir == -1 -> result <= off
-   dir == 0 ->  result == off
-   dir == 1 ->  result >= off*/
-static RzFlagsAtOffset *rz_flag_get_nearest_list(RzFlag *f, ut64 off, int dir) {
+/**
+ * \brief Find an offset entry in the manager's skiplist.
+ * \param dir -1 for an offset <= off, 0 for an exact match, 1 for an offset >= off.
+ * \return An entry owned by \p f, or NULL if none matches.
+ */
+static RZ_BORROW RzFlagsAtOffset *rz_flag_get_nearest_list(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off, int dir) {
+	rz_return_val_if_fail(f, NULL);
 	RzFlagsAtOffset key = { .off = off };
 	RzFlagsAtOffset *flags = (dir >= 0)
 		? rz_skiplist_get_geq(f->by_off, &key)
@@ -100,7 +102,12 @@ static void remove_offsetmap(RzFlag *f, RzFlagItem *item) {
 	}
 }
 
-static RzFlagsAtOffset *flags_at_offset(RzFlag *f, ut64 off) {
+/**
+ * \brief Get or create an offset entry owned by the manager's skiplist.
+ * \return An entry borrowed from \p f, or NULL on allocation failure.
+ */
+static RZ_BORROW RzFlagsAtOffset *flags_at_offset(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off) {
+	rz_return_val_if_fail(f, NULL);
 	RzFlagsAtOffset *res = rz_flag_get_nearest_list(f, off, 0);
 	if (res) {
 		return res;
@@ -123,7 +130,12 @@ static RzFlagsAtOffset *flags_at_offset(RzFlag *f, ut64 off) {
 	return res;
 }
 
-static char *filter_item_name(const char *name) {
+/**
+ * \brief Make a filtered copy without modifying the caller's flag name.
+ * \return A string to free with free(), or NULL on allocation failure.
+ */
+static RZ_OWN char *filter_item_name(RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, NULL);
 	char *res = rz_str_dup(name);
 	if (!res) {
 		return NULL;
@@ -213,7 +225,11 @@ static void new_spaces(RzFlag *f) {
 	rz_event_hook(f->spaces.event, RZ_SPACE_EVENT_UNSET, unset_flagspace, NULL);
 }
 
-RZ_API RzFlag *rz_flag_new(void) {
+/**
+ * \brief Create a flag manager.
+ * \return A manager to free with rz_flag_free(), or NULL on failure.
+ */
+RZ_API RZ_OWN RzFlag *rz_flag_new(void) {
 	RzFlag *f = RZ_NEW0(RzFlag);
 	if (!f) {
 		return NULL;
@@ -232,7 +248,13 @@ RZ_API RzFlag *rz_flag_new(void) {
 	return f;
 }
 
-RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
+/**
+ * \brief Create a separately owned copy of a flag item.
+ * \return A new item to release with rz_flag_item_free(), or NULL on allocation failure.
+ * The strings are copied, but the flag space is borrowed from the original manager.
+ * The space must remain alive while the clone's space pointer is used.
+ */
+RZ_API RZ_OWN RzFlagItem *rz_flag_item_clone(RZ_BORROW RZ_NONNULL RzFlagItem *item) {
 	rz_return_val_if_fail(item, NULL);
 
 	RzFlagItem *n = RZ_NEW0(RzFlagItem);
@@ -253,8 +275,11 @@ RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 
 /**
  * \brief Add a reference to the given flag item.
+ * \return The same item with an additional reference owned by the caller, or NULL on failure.
+ * Release the additional reference with rz_flag_item_free(). Existing references are unchanged.
+ * This does not retain the item's flag space.
  */
-RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item) {
+RZ_API RZ_OWN RzFlagItem *rz_flag_item_add_ref(RZ_BORROW RZ_NONNULL RzFlagItem *item) {
 	rz_return_val_if_fail(item && item->refcount < UT8_MAX, NULL);
 	item->refcount++;
 	return item;
@@ -278,8 +303,13 @@ RZ_API void rz_flag_item_free(RzFlagItem *item) {
 	free(item);
 }
 
-RZ_API RzFlag *rz_flag_free(RzFlag *f) {
-	rz_return_val_if_fail(f, NULL);
+/**
+ * \brief Destroy the manager and release its references to flag items.
+ */
+RZ_API void rz_flag_free(RZ_OWN RZ_NULLABLE RzFlag *f) {
+	if (!f) {
+		return;
+	}
 	rz_skiplist_free(f->by_off);
 	ht_sp_free(f->ht_name);
 	sdb_free(f->tags);
@@ -287,10 +317,13 @@ RZ_API RzFlag *rz_flag_free(RzFlag *f) {
 	rz_num_free(f->num);
 	rz_list_free(f->zones);
 	free(f);
-	return NULL;
 }
 
-static RzFlagItem *evalFlag(RzFlag *f, RzFlagItem *item) {
+/**
+ * \brief Evaluate a flag alias without taking or adding an item reference.
+ * \return The borrowed input item, or NULL if a precondition fails.
+ */
+static RZ_BORROW RzFlagItem *evalFlag(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_BORROW RZ_NONNULL RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, NULL);
 	if (item->alias) {
 		item->offset = rz_num_math(f->num, item->alias);
@@ -315,9 +348,12 @@ RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, u
 	return false;
 }
 
-/* return the flag item with name "name" in the RzFlag "f", if it exists.
- * Otherwise, NULL is returned. */
-RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name) {
+/**
+ * \brief Find a flag by name.
+ * \return An item borrowed from \p f, or NULL if no flag matches.
+ * No reference is added; use rz_flag_item_add_ref() if the item must be retained.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(f, NULL);
 	RzFlagItem *r = ht_sp_find(f->ht_name, name, NULL);
 	return r ? evalFlag(f, r) : NULL;
@@ -370,17 +406,24 @@ RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLA
 	return true;
 }
 
-/* return the first flag item that can be found at offset "off", or NULL otherwise */
-RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off) {
+/**
+ * \brief Find a flag at the given offset.
+ * \return An item borrowed from \p f, or NULL if no flag matches.
+ * No reference is added; use rz_flag_item_add_ref() if the item must be retained.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_i(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, NULL);
 	const RzList *list = rz_flag_get_list(f, off);
 	return list ? evalFlag(f, rz_list_last_val(list)) : NULL;
 }
 
-/* return the first flag that matches an offset ordered by the order of
- * operands to the function.
- * Pass in the name of each space, in order, followed by a NULL */
-RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
+/**
+ * \brief Find a flag at an offset using the given space priority.
+ * Pass each space name in order, followed by NULL.
+ * \return An item borrowed from \p f, or NULL if no flag matches.
+ * No reference is added; use rz_flag_item_add_ref() if the item must be retained.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_by_spaces(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off, ...) {
 	rz_return_val_if_fail(f, NULL);
 
 	const RzList *list = rz_flag_get_list(f, off);
@@ -497,9 +540,12 @@ static bool isFunctionFlag(const char *n) {
 	return (!strncmp(n, "sym.func.", 9) || !strncmp(n, "method.", 7) || !strncmp(n, "sym.", 4) || !strncmp(n, "func.", 5) || !strncmp(n, "fcn.0", 5));
 }
 
-/* returns the last flag item defined before or at the given offset.
- * NULL is returned if such a item is not found. */
-RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest) {
+/**
+ * \brief Find a flag at the given offset, optionally considering preceding offsets.
+ * \return An item borrowed from \p f, or NULL if no flag matches.
+ * No reference is added; use rz_flag_item_add_ref() if the item must be retained.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off, bool closest) {
 	rz_return_val_if_fail(f, NULL);
 
 	RzFlagItem *nice = NULL;
@@ -574,6 +620,7 @@ static bool flag_space_is_in_list(RzList /*<RzSpace *>*/ *spaces, RzFlagItem *it
  * \return     On success returns the flag item close or at the specified offset, otherwise NULL.
  */
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...) {
+	rz_return_val_if_fail(f, NULL);
 	va_list ap;
 	RzList *spaces = rz_list_new();
 	if (!spaces) {
@@ -648,7 +695,14 @@ static bool append_to_list(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space) {
+/**
+ * \brief Collect flags, optionally restricted to the current space.
+ * \return A list to free with rz_list_free(), or NULL on allocation failure.
+ * The list borrows its items from \p f without adding references. Freeing the list
+ * does not release the items; removing flags can invalidate its entries.
+ */
+RZ_API RZ_OWN RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RZ_BORROW RZ_NONNULL RzFlag *f, bool by_space) {
+	rz_return_val_if_fail(f, NULL);
 	RzList *ret = rz_list_new();
 	if (!ret) {
 		return NULL;
@@ -665,7 +719,12 @@ RZ_API const RzList /*<RzFlagItem *>*/ *rz_flag_get_list(RzFlag *f, ut64 off) {
 	return item ? item->flags : NULL;
 }
 
-RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off) {
+/**
+ * \brief Format the real names of flags at an offset as a comma-separated string.
+ * \return A string to free with free(), or NULL if no string is produced.
+ */
+RZ_API RZ_OWN char *rz_flag_get_liststr(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off) {
+	rz_return_val_if_fail(f, NULL);
 	RzFlagItem *fi;
 	RzListIter *iter;
 	const RzList *list = rz_flag_get_list(f, off);
@@ -701,8 +760,10 @@ bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem *
  * the same name, slightly change the name by appending the address or ".%d" as suffix.
  * If there is a flag at \p off of size \p size and a matching name, that flag is returned
  * instead of creating a new one.
+ * \return An item borrowed from \p f, or NULL on failure.
+ * No reference is added for the caller; use rz_flag_item_add_ref() to retain the item.
  */
-RZ_API RzFlagItem *rz_flag_set_next(RzFlag *f, const char *name, ut64 off, ut32 size) {
+RZ_API RZ_BORROW RzFlagItem *rz_flag_set_next(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name, ut64 off, ut32 size) {
 	rz_return_val_if_fail(f && name, NULL);
 	RzFlagItem *r = NULL;
 	if (try_set_flag(f, name, off, size, &r)) {
@@ -728,10 +789,12 @@ RZ_API RzFlagItem *rz_flag_set_next(RzFlag *f, const char *name, ut64 off, ut32 
 	return r;
 }
 
-/* create or modify an existing flag item with the given name and parameters.
- * The realname of the item will be the same as the name.
- * NULL is returned in case of any errors during the process. */
-RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size) {
+/**
+ * \brief Create or modify a flag with the given name and parameters.
+ * \return An item borrowed from \p f, or NULL on failure.
+ * No reference is added for the caller; use rz_flag_item_add_ref() to retain the item.
+ */
+RZ_API RZ_BORROW RzFlagItem *rz_flag_set(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name, ut64 off, ut32 size) {
 	rz_return_val_if_fail(f && name && *name, NULL);
 
 	bool is_new = false;
