@@ -265,6 +265,10 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	if (config->trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
 		il_cache_config |= RZ_IL_CACHE_CONFIG_TRACE;
 	}
+	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	if (!conflicts) {
+		goto err_conflicts;
+	}
 	RzILCache *il_cache = rz_il_cache_new(config->analysis, config->io, il_cache_config);
 	if (!il_cache) {
 		goto err_none;
@@ -367,7 +371,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
 				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->choose_fcn_name_priv_data) : NULL;
-				if (!rz_absint_result_apply_to_analysis(res, config->analysis, name)) {
+				if (!rz_absint_result_apply_to_analysis(res, config->analysis, conflicts, name)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
 				}
 				free(name);
@@ -383,6 +387,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			break;
 		}
 	}
+
+	rz_abs_int_cfg_conflict_resolve(config->analysis, conflicts);
 
 	return_code = true;
 
@@ -402,6 +408,8 @@ err_entry_points_ch:
 	rz_th_queue_free(driver.entry_points_ch);
 err_il_cache:
 	rz_il_cache_free(il_cache);
+err_conflicts:
+	rz_abs_int_cfg_conflict_free(conflicts);
 err_none:
 	return return_code && !breaked;
 }
