@@ -631,7 +631,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const v
 	return NULL;
 }
 
-static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user) {
+static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user, RZ_NULLABLE RZ_OUT RzListIter **tail) {
 	RzListIter *next = NULL, *result = NULL, *head = NULL;
 	while (first || second) {
 		if (!second) {
@@ -659,6 +659,12 @@ static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparato
 	}
 	head->prev = NULL;
 	next->next = NULL;
+	// \p next is the last element which was placed. So it is the new tail of
+	// the merged list. Passing it to the caller avoids walking the whole list
+	// for updating RzList.tail afterwards.
+	if (tail) {
+		*tail = next;
+	}
 	return head;
 }
 
@@ -680,15 +686,18 @@ static RzListIter *_r_list_half_split(RzListIter *head) {
 	return tmp;
 }
 
-static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp, void *user) {
+static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp, void *user, RZ_NULLABLE RZ_OUT RzListIter **tail) {
 	RzListIter *second;
 	if (!head || !head->next) {
+		if (tail) {
+			*tail = head;
+		}
 		return head;
 	}
 	second = _r_list_half_split(head);
-	head = _merge_sort(head, cmp, user);
-	second = _merge_sort(second, cmp, user);
-	return _merge(head, second, cmp, user);
+	head = _merge_sort(head, cmp, user, tail);
+	second = _merge_sort(second, cmp, user, NULL);
+	return _merge(head, second, cmp, user, tail);
 }
 
 /**
@@ -699,14 +708,8 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
 	rz_return_if_fail(list && cmp);
 
 	if (!list->sorted && list->head && cmp) {
-		RzListIter *iter;
-		list->head = _merge_sort(list->head, cmp, user);
-		// update tail reference
-		iter = list->head;
-		while (iter && iter->next) {
-			iter = iter->next;
-		}
-		list->tail = iter;
+		// The new tail of the list is passed by _merge_sort().
+		list->head = _merge_sort(list->head, cmp, user, &list->tail);
 	}
 	list->sorted = true;
 }
@@ -714,6 +717,8 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
 /**
  * \brief Insertion sorts the list via the RzListComparator
  *
+ * Nodes are relinked instead of swapping their values.
+ * Already sorted lists are processed in O(n) time.
  **/
 RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_if_fail(list && cmp);
@@ -721,16 +726,35 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 	if (list->sorted) {
 		return;
 	}
-	RzListIter *it;
-	RzListIter *it2;
-	for (it = list->head; it && it->val; it = it->next) {
-		for (it2 = it->next; it2 && it2->val; it2 = it2->next) {
-			if (cmp(it->val, it2->val, user) > 0) {
-				void *t = it->val;
-				it->val = it2->val;
-				it2->val = t;
-			}
+	RzListIter *sorted_tail = list->head;
+	while (sorted_tail && sorted_tail->next) {
+		RzListIter *node = sorted_tail->next;
+		if (cmp(sorted_tail->val, node->val, user) <= 0) {
+			// The node is already at the right position.
+			sorted_tail = node;
+			continue;
 		}
+		// Unlink the node from its current position.
+		sorted_tail->next = node->next;
+		if (node->next) {
+			node->next->prev = sorted_tail;
+		} else {
+			list->tail = sorted_tail;
+		}
+		// Find the first node which should come after the unlinked node.
+		RzListIter *pos = list->head;
+		while (cmp(pos->val, node->val, user) <= 0) {
+			pos = pos->next;
+		}
+		// Insert the node before \p pos.
+		node->next = pos;
+		node->prev = pos->prev;
+		if (pos->prev) {
+			pos->prev->next = node;
+		} else {
+			list->head = node;
+		}
+		pos->prev = node;
 	}
 	list->sorted = true;
 }
