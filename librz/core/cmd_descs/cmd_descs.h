@@ -710,9 +710,9 @@ RZ_IPI RzCmdStatus rz_analysis_reg_profile_gdb_handler(RzCore *core, int argc, c
 // "arc"
 RZ_IPI RzCmdStatus rz_analysis_reg_cond_handler(RzCore *core, int argc, const char **argv);
 // "arT"
-RZ_IPI RzCmdStatus rz_analysis_reg_types_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_reg_types_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "arR"
-RZ_IPI RzCmdStatus rz_analysis_reg_roles_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_reg_roles_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ai"
 RZ_IPI RzCmdStatus rz_analysis_info_show_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "aii"
@@ -1502,9 +1502,9 @@ RZ_IPI RzCmdStatus rz_debug_reg_profile_gdb_handler(RzCore *core, int argc, cons
 // "drc"
 RZ_IPI RzCmdStatus rz_debug_reg_cond_handler(RzCore *core, int argc, const char **argv);
 // "drT"
-RZ_IPI RzCmdStatus rz_debug_reg_types_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_debug_reg_types_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "drR"
-RZ_IPI RzCmdStatus rz_debug_reg_roles_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_debug_reg_roles_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "drx"
 RZ_IPI RzCmdStatus rz_debug_drx_handler(RzCore *core, int argc, const char **argv);
 // "drx-"
