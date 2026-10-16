@@ -6,32 +6,6 @@
 #include <rz_util.h>
 
 /**
- * \brief returns the value stored in the prev RzList iterator
- *
- **/
-RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	RzListIter *p = iter->prev;
-	if (!p) {
-		return NULL;
-	}
-	return p->val;
-}
-
-/**
- * \brief returns the value stored in the next RzList iterator
- *
- **/
-RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	RzListIter *n = iter->next;
-	if (!n) {
-		return NULL;
-	}
-	return n->val;
-}
-
-/**
  * \brief swaps the data held by two iterators and returns true if succeeds
  *
  **/
@@ -44,38 +18,11 @@ RZ_API bool rz_list_iter_swap_data(RZ_NONNULL RzListIter *iter0, RZ_NONNULL RzLi
 }
 
 /**
- * \brief returns the first RzList iterator int the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->head;
-}
-
-/**
  * \brief Alias for rz_list_append
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
 	return rz_list_append(list, item);
-}
-
-/**
- * \brief Returns the value stored in the first node of the list.
- *
- **/
-RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->head ? list->head->val : NULL;
-}
-
-/**
- * \brief Returns the value stored in the last node of the list.
- *
- **/
-RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->tail ? list->tail->val : NULL;
 }
 
 /**
@@ -90,17 +37,6 @@ RZ_API void rz_list_init(RZ_NONNULL RzList *list) {
 	list->free = NULL;
 	list->length = 0;
 	list->sorted = false;
-}
-
-/**
- * \brief Returns the length of the list
- *
- **/
-RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
-	if (!list) {
-		return 0;
-	}
-	return list->length;
 }
 
 static void _list_purge_with_free(RzList *list) {
