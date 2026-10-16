@@ -1,17 +1,37 @@
-NAME=arpg
+NAME=register profile conversion and comments
 FILE==
 CMDS=<<EOF
+# Convert valid and invalid GDB profiles.
 arpg scripts/gdb-reg-profile.txt > $a
 %v $?
 $a~?
 arpg scripts/gdb-reg-profile-invalid.txt > $b
 %v $?
 $b~?
+# Show full-line comments from both register banks.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-comments
+arpc
+drpc
+# Loading a profile without comments clears the old notes.
+arpo scripts/reg-json-comments
+arpo scripts/reg-json-profile
+arpc
+echo done
 EOF
 EXPECT=<<EOF
 0x0
 98
 0x1
 0
+# profile "quoted" C:\regs
+# indented # comment
+# final comment
+
+# profile "quoted" C:\regs
+# indented # comment
+# final comment
+
+done
 EOF
 RUN
