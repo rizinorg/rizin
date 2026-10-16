@@ -1,0 +1,31 @@
+NAME=piu rejects negative limits
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e cfg.exit.errorcode=true
+CMDS=<<EOF
+piu -1
+EOF
+EXPECT=
+EXIT_STATUS=1
+RUN
+
+NAME=piu rejects limits which do not fit in an int
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e cfg.exit.errorcode=true
+CMDS=<<EOF
+piu 0x100000001
+EOF
+EXPECT=
+EXIT_STATUS=1
+RUN
+
+NAME=piu reports a failed decode
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+piu 1 @ 0x80
+_s
+EOF
+EXPECT=<<EOF
+ERROR
+EOF
+RUN
