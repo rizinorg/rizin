@@ -490,20 +490,39 @@ RZ_IPI RzCmdStatus rz_regs_valgroup_handler(RzCore *core, RzReg *reg, RzCmdRegSy
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List the saved arenas for each register type.
+ *
+ * Identify JSON entries by type and stack index; allocation addresses in the
+ * text output are not useful identifiers for consumers.
+ */
+RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
 	int i, j;
 	RzRegArena *a;
 	RzListIter *iter;
+	rz_cmd_state_output_array_start(state);
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegSet *rs = &reg->regset[i];
 		j = 0;
 		rz_list_foreach (rs->pool, iter, a) {
-			rz_cons_printf(core->cons, "%s %p %d %d %s %d\n",
-				(a == rs->arena) ? "*" : ".", a,
-				i, j, rz_reg_get_type(i), a->size);
+			if (state->mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = state->d.pj;
+				pj_o(pj);
+				pj_kn(pj, "type", i);
+				pj_ks(pj, "type_str", rz_reg_get_type(i));
+				pj_kn(pj, "index", j);
+				pj_kn(pj, "size", a->size);
+				pj_kb(pj, "current", a == rs->arena);
+				pj_end(pj);
+			} else {
+				rz_cons_printf(core->cons, "%s %p %d %d %s %d\n",
+					(a == rs->arena) ? "*" : ".", a,
+					i, j, rz_reg_get_type(i), a->size);
+			}
 			j++;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
