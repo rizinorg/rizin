@@ -240,6 +240,8 @@ bool test_wasm_scope_query_bounds(void) {
 	ut32 jump = UT32_MAX;
 	mu_assert_notnull(idx, "index");
 	mu_assert_false(wasm_scope_index_query(idx, 0, 0, false, &jump), "at scope start");
+	mu_assert_true(wasm_scope_index_query(idx, 1, 0, false, &jump), "just inside");
+	mu_assert_eq(jump, 7, "just inside still ends the block");
 	mu_assert_true(wasm_scope_index_query(idx, 6, 0, false, &jump), "loop query");
 	mu_assert_eq(jump, 2, "br 0 targets the loop start");
 	mu_assert_true(wasm_scope_index_query(idx, 6, 1, false, &jump), "outer query");
@@ -312,6 +314,9 @@ bool test_wasm_patch_no_index(void) {
 	mu_assert_null(fn->idx, "fn0 never indexed");
 	mu_assert_false(fn->unindexable, "fn0 not failing");
 	mu_assert_false(fn->patched, "fn0 not patched yet");
+	rz_core_cmd0(core, "s 0x05; wx 00"); // outside every body
+	mu_assert_false(fn->patched, "outside write touches nothing");
+	mu_assert_false(fn1->patched, "outside write touches nothing either");
 	rz_analysis_hint_set_jump(core->analysis, 0x23, 0x55);
 	rz_core_cmd0(core, "s 0x20; wx 03"); // block -> loop
 	mu_assert_true(fn->patched, "overlapped write marks fn0 patched");
@@ -336,7 +341,7 @@ bool test_wasm_patch_no_index(void) {
 	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "function end stays RET after patch");
 	mu_assert_true(op->eob, "function end eob");
 	rz_analysis_op_free(op);
-	rz_core_cmd0(core, "s 0x1f; wx 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"); // span fn0+fn1
+	rz_core_cmd0(core, "s 0x21; wx 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"); // span fn0+fn1 from inside fn0
 	mu_assert_true(fn->patched, "span keeps fn0 patched");
 	mu_assert_true(fn1->patched, "span marks fn1 patched");
 	rz_core_file_close(cf);
@@ -513,6 +518,114 @@ bool test_wasm_scope_outer_loop(void) {
 	mu_end;
 }
 
+bool test_wasm_fallback_no_index(void) {
+	// No binary, no cache: traversal state plus forward scan.
+	// br 0 restarts loop. br 1 scans past unreachable to block end.
+	const char *uri = "hex://02400340000d000c000c01000b0b00000000000000000000000000";
+	RzCore *core = rz_core_new();
+	RzCoreFile *cf;
+	RzAnalysisOp op;
+	ut8 buf[2];
+	WasmContext *ctx;
+	mu_assert_notnull(core, "core");
+	cf = rz_core_file_open(core, uri, RZ_PERM_R, 0);
+	mu_assert_notnull(cf, "open");
+	mu_assert_true(rz_analysis_use(core->analysis, "wasm"), "use wasm");
+	rz_core_cmd0(core, "e io.va=false"); // no maps w/o a binary: raw access
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0, buf, 2), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "block");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_NOP, "block opener");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 2, buf, 2), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 2, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "loop");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_NOP, "loop opener");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 4, buf, 1), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 4, buf, 1, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "unreachable");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_TRAP, "unreachable is trap");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 5, buf, 2), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 5, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_CJMP, "conditional branch");
+	mu_assert_eq(op.jump, 2, "br_if 0 restarts the loop");
+	mu_assert_eq(op.fail, 7, "br_if falls through");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 7, buf, 2), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 7, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_JMP, "branch");
+	mu_assert_eq(op.jump, 2, "br 0 restarts the loop");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 9, buf, 2), "read");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 9, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br1");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_JMP, "outer branch");
+	mu_assert_eq(op.jump, 13, "br 1 skips the loop past unreachable to the block end");
+	rz_analysis_op_fini(&op);
+	ctx = core->analysis->plugin_data;
+	mu_assert_notnull(ctx, "ctx");
+	mu_assert_false(ctx->indexed, "no cache without symbols");
+	rz_core_file_close(cf);
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_wasm_oversized_tracked(void) {
+	// Huge body: tracked, never indexed. Header plus final end only.
+	// Writes mark patched, end stays RET.
+	static const ut8 hdr[29] = {
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x03, 0x02,
+		0x01, 0x00, 0x0a, 0x86, 0x80, 0x80, 0x10, 0x01,
+		0x81, 0x80, 0x80, 0x10, 0x00
+	};
+	const ut8 end = 0x0b;
+	RzCore *core = rz_core_new();
+	RzCoreFile *cf;
+	RzAnalysisOp *op;
+	WasmContext *ctx;
+	WasmFuncScope *fn = NULL;
+	void **it;
+	mu_assert_notnull(core, "core");
+	cf = rz_core_file_open(core, "malloc://33554461", RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open");
+	rz_core_cmd0(core, "e io.va=false"); // no maps before bin load: raw access
+	mu_assert_true(rz_io_write_at(core->io, 0, hdr, sizeof(hdr)), "header");
+	mu_assert_true(rz_io_write_at(core->io, 33554460, &end, 1), "final end");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "bin");
+	op = rz_core_analysis_op(core, 33554460, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "end");
+	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "huge body end is RET");
+	mu_assert_true(op->eob, "huge body end eob");
+	rz_analysis_op_free(op);
+	ctx = core->analysis->plugin_data;
+	mu_assert_notnull(ctx, "ctx");
+	rz_pvector_foreach (ctx->funcs, it) {
+		WasmFuncScope *cand = *it;
+		if (cand->addr == 29) {
+			fn = cand;
+		}
+	}
+	mu_assert_notnull(fn, "huge body tracked");
+	mu_assert_eq(fn->len, 33554432, "full size kept, not truncated");
+	mu_assert_null(fn->idx, "huge body never indexed");
+	mu_assert_false(fn->unindexable, "no poison");
+	mu_assert_false(fn->patched, "not patched yet");
+	rz_core_cmd0(core, "s 29; wx 01");
+	mu_assert_true(fn->patched, "write marks huge body patched");
+	op = rz_core_analysis_op(core, 33554460, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "end again");
+	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "still RET after patch");
+	rz_analysis_op_free(op);
+	rz_core_file_close(cf);
+	rz_core_free(core);
+	mu_end;
+}
+
 bool test_wasm_index_fallback_agree(void) {
 	// block { loop { br 0 } end } end, with and without trailing garbage.
 	// Queries in the valid prefix must agree, the garbage part must fail.
@@ -676,6 +789,8 @@ bool all_tests(void) {
 	mu_run_test(test_wasm_dis_empty);
 	mu_run_test(test_wasm_patch_invalidates);
 	mu_run_test(test_wasm_patch_no_index);
+	mu_run_test(test_wasm_oversized_tracked);
+	mu_run_test(test_wasm_fallback_no_index);
 	mu_run_test(test_wasm_hook_single);
 	mu_run_test(test_wasm_index_fallback_agree);
 	mu_run_test(test_wasm_dis_bounds);

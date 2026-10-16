@@ -160,10 +160,14 @@ aaa
 aaa
 afl
 aoj 1 @ 0x21
+s 0x1f
+wx 02
+aoj 1 @ 0x21
 EOF
 EXPECT=<<EOF
 0x0000001f    1 2            entry0
 0x00000021    1 4            fcn.00000021
 [{"opcode":"br_if 0","disasm":"br_if 0","mnemonic":"br_if","mask":"ffff","jump":31,"fail":35,"sign":true,"prefix":0,"id":13,"addr":33,"bytes":"0d00","size":2,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
+[{"opcode":"br_if 0","disasm":"br_if 0","mnemonic":"br_if","mask":"ffff","jump":36,"fail":35,"sign":true,"prefix":0,"id":13,"addr":33,"bytes":"0d00","size":2,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
 EOF
 RUN

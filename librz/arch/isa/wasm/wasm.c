@@ -905,7 +905,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I64ATOMICRMW32UXCHG: {
 			ut32 flag = 0, offset = 0;
 			size_t n = read_u32_leb128(buf + 2, buf + buf_len, &flag);
-			if (!(n > 0 && n < buf_len)) {
+			if (!(n > 0 && op->len + n <= (size_t)buf_len)) {
 				goto err;
 			}
 			op->len += n;
@@ -1186,6 +1186,7 @@ RZ_IPI void wasm_context_clear_cache(WasmContext *ctx) {
 	ctx->bin_id = UT32_MAX;
 	ctx->bin_size = 0;
 	ctx->nsyms = 0;
+	ctx->iob_io = NULL;
 	ctx->scope_hint = UT64_MAX;
 	ctx->addr_old = UT64_MAX;
 }
@@ -1215,7 +1216,8 @@ static bool scope_contains(const WasmScope *s, ut32 from) {
 /** \brief Index one function body, tolerating trailing malformation.
  *
  * \p buf is one exact body (first opcode through the final end). Stops at the
- * first undecodable byte or a closed root, stray else bytes are skipped.
+ * first undecodable byte or a closed root, ignoring later bytes. stray else
+ * bytes are skipped.
  * Only fully closed scopes answer queries, so partial results stay correct.
  * NULL means nothing was learned (empty input) or allocation failure. */
 RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {

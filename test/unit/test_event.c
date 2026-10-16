@@ -154,6 +154,28 @@ bool test_rz_event_unhook_by_callback(void) {
 	mu_end;
 }
 
+bool test_rz_event_unhook_by_callback_many(void) {
+	// More matches than any fixed batch: all drain, others stay.
+	int victim = 0;
+	int other = 0;
+	int i;
+	RzEvent *ev = rz_event_new(NULL);
+	mu_assert_notnull(ev, "rz_event_new ()");
+	for (i = 0; i < 20; i++) {
+		rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &victim);
+	}
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &other);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(victim, 20, "twenty firings");
+	mu_assert_eq(other, 1, "other fires");
+	rz_event_unhook_by_callback(ev, RZ_EVENT_META_SET, callback_inc, &victim);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(victim, 20, "all twenty drained");
+	mu_assert_eq(other, 2, "other kept");
+	rz_event_free(ev);
+	mu_end;
+}
+
 typedef struct {
 	int type;
 	int counter;
@@ -187,12 +209,51 @@ bool test_rz_event_unhook_by_callback_dispatch(void) {
 	mu_end;
 }
 
+typedef struct {
+	int type;
+	int counter;
+} SelfDrainManyCtx;
+
+static void callback_self_drain_many(RzEvent *ev, int type, void *user, void *data) {
+	SelfDrainManyCtx *ctx = user;
+	(void)type;
+	(void)data;
+	ctx->counter++;
+	rz_event_unhook_by_callback(ev, ctx->type, callback_self_drain_many, ctx);
+}
+
+bool test_rz_event_unhook_by_callback_dispatch_many(void) {
+	// Drain 20 from dispatch. Queued fire once, second send clean.
+	SelfDrainManyCtx ctx = { 0 };
+	int other = 0;
+	RzEvent *ev = rz_event_new(NULL);
+	int i;
+	mu_assert_notnull(ev, "rz_event_new ()");
+	ctx.type = RZ_EVENT_META_SET;
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &other);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(other, 1, "other fires");
+	for (i = 0; i < 20; i++) {
+		rz_event_hook(ev, RZ_EVENT_META_SET, callback_self_drain_many, &ctx);
+	}
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(ctx.counter, 20, "queued callbacks fire once each");
+	mu_assert_eq(other, 2, "other fires");
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	mu_assert_eq(ctx.counter, 20, "all twenty drained");
+	mu_assert_eq(other, 3, "other kept");
+	rz_event_free(ev);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_event);
 	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_ALL, RZ_EVENT_META_SET);
 	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_META_SET, RZ_EVENT_META_SET);
 	mu_run_test(test_rz_event_unhook_by_callback);
+	mu_run_test(test_rz_event_unhook_by_callback_many);
 	mu_run_test(test_rz_event_unhook_by_callback_dispatch);
+	mu_run_test(test_rz_event_unhook_by_callback_dispatch_many);
 	return tests_passed != tests_run;
 }
 

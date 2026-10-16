@@ -111,30 +111,47 @@ RZ_API void rz_event_unhook(RzEvent *ev, RzEventCallbackHandle handle) {
 typedef struct rz_event_unhook_by_cb_ctx_t {
 	RzEventCallback cb;
 	void *user;
-	int handles[16];
+	int *handles;
 	size_t n_handles;
+	size_t cap_handles;
 } RzEventUnhookByCbCtx;
 
 static bool collect_hook(void *user, const ut64 k, const void *v) {
 	RzEventUnhookByCbCtx *ctx = user;
 	RzVector *cbs = (RzVector *)v;
 	RzEventCallbackHook *hook;
+	(void)k;
 	rz_return_val_if_fail(cbs, false);
 	rz_vector_foreach (cbs, hook) {
-		if (ctx->n_handles < RZ_ARRAY_SIZE(ctx->handles) &&
-			hook->cb == ctx->cb && hook->user == ctx->user) {
-			ctx->handles[ctx->n_handles++] = hook->handle;
+		int *grown;
+		if (hook->cb != ctx->cb || hook->user != ctx->user) {
+			continue;
 		}
+		if (ctx->n_handles == ctx->cap_handles) {
+			grown = realloc(ctx->handles, 2 * ctx->cap_handles * sizeof(int));
+			if (!grown) {
+				return false;
+			}
+			ctx->handles = grown;
+			ctx->cap_handles *= 2;
+		}
+		ctx->handles[ctx->n_handles++] = hook->handle;
 	}
 	return true;
 }
 
-static size_t collect_hooks(RzEvent *ev, int type, RzEventCallback cb, void *user, int *handles, size_t n_handles) {
+RZ_API void rz_event_unhook_by_callback(RzEvent *ev, int type, RzEventCallback cb, void *user) {
 	RzEventUnhookByCbCtx ctx = { 0 };
 	RzVector *cbs;
 	size_t i;
+	rz_return_if_fail(ev && cb);
 	ctx.cb = cb;
 	ctx.user = user;
+	ctx.handles = malloc(16 * sizeof(int));
+	if (!ctx.handles) {
+		return;
+	}
+	ctx.cap_handles = 16;
 	if (type == RZ_EVENT_ALL) {
 		ht_up_foreach(ev->callbacks, collect_hook, &ctx);
 		collect_hook(&ctx, (ut64)type, &ev->all_callbacks);
@@ -144,26 +161,12 @@ static size_t collect_hooks(RzEvent *ev, int type, RzEventCallback cb, void *use
 			collect_hook(&ctx, (ut64)type, cbs);
 		}
 	}
-	for (i = 0; i < ctx.n_handles && i < n_handles; i++) {
-		handles[i] = ctx.handles[i];
+	// Route through rz_event_unhook() to reuse its dispatch deferral.
+	for (i = 0; i < ctx.n_handles; i++) {
+		RzEventCallbackHandle handle = { ctx.handles[i], type };
+		rz_event_unhook(ev, handle);
 	}
-	return ctx.n_handles;
-}
-
-RZ_API void rz_event_unhook_by_callback(RzEvent *ev, int type, RzEventCallback cb, void *user) {
-	int handles[16];
-	size_t n;
-	rz_return_if_fail(ev && cb);
-	// Route through rz_event_unhook() to reuse its dispatch deferral. a single
-	// pass suffices during dispatch since deferred removals land after the send.
-	do {
-		size_t i;
-		n = collect_hooks(ev, type, cb, user, handles, RZ_ARRAY_SIZE(handles));
-		for (i = 0; i < n && i < RZ_ARRAY_SIZE(handles); i++) {
-			RzEventCallbackHandle handle = { handles[i], type };
-			rz_event_unhook(ev, handle);
-		}
-	} while (n > 0 && !ev->incall);
+	free(ctx.handles);
 }
 
 RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
