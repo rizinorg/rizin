@@ -5,7 +5,7 @@
 #include "minunit.h"
 
 bool test_histogram_horizontal(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -21,12 +21,12 @@ bool test_histogram_horizontal(void) {
 	mu_assert_true(strstr(res, "0|") != NULL, "Bottom ruler label = vmin");
 	mu_assert_true(strstr(res, "_") != NULL, "Baseline marker present in bottom row");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_histogram_vertical(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -39,14 +39,14 @@ bool test_histogram_vertical(void) {
 	mu_assert_notnull(res, "Histogram buffer should not be null");
 	mu_assert_true(strstr(res, "#") != NULL, "Blocks present for data 255");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // When value_max is set, the ruler labels must show that range (and unit)
 // rather than the legacy 0..255 byte scale (issue #5290).
 bool test_histogram_horizontal_ruler_percent(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -64,14 +64,14 @@ bool test_histogram_horizontal_ruler_percent(void) {
 	// Legacy 0..255 labels must not leak in when value_max is set.
 	mu_assert_true(strstr(res, " 255|") == NULL, "Legacy 255 label absent");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // When value_max is left at 0, the ruler must fall back to the historical
 // 0..255 scale (backwards compatibility for callers that did not opt in).
 bool test_histogram_horizontal_ruler_default(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -84,7 +84,7 @@ bool test_histogram_horizontal_ruler_default(void) {
 	mu_assert_notnull(res, "Histogram buffer should not be null");
 	mu_assert_true(strstr(res, "255|") != NULL, "Default 0..255 ruler still shows 255 at top");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -92,7 +92,7 @@ bool test_histogram_horizontal_ruler_default(void) {
 // must reach the very top of the chart. This guards the "blank top rows"
 // behaviour cer-0 raised in #5290 against regressing.
 bool test_histogram_horizontal_top_row_filled(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -119,14 +119,14 @@ bool test_histogram_horizontal_top_row_filled(void) {
 	}
 	mu_assert_true(top_row_has_block, "Top row reached for storage peak with value_max=100");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // scr.hist.width opt-in: when opts->cols is set, the rendered width follows it
 // instead of the legacy 78 column default.
 bool test_histogram_horizontal_cols_override(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -143,7 +143,7 @@ bool test_histogram_horizontal_cols_override(void) {
 	mu_assert_notnull(nl, "Output must have at least one row");
 	mu_assert_eq((int)(nl - res), 20, "Custom cols=20 honoured");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -151,7 +151,7 @@ bool test_histogram_horizontal_cols_override(void) {
 // (the old behaviour). At most a small number of labels should appear, with
 // the top and bottom values always included.
 bool test_histogram_horizontal_sparse_labels(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -188,14 +188,14 @@ bool test_histogram_horizontal_sparse_labels(void) {
 	mu_assert_true(label_count >= 2, "At least two label rows (top + bottom)");
 	mu_assert_true(label_count <= 6, "Far fewer label rows than body rows (sparse)");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Floating-point ruler labels: with value_scale=0.01 and value_precision=2,
 // an integer value range 0..100 must render as decimal labels 0.00..1.00.
 bool test_histogram_horizontal_float_labels(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -213,14 +213,14 @@ bool test_histogram_horizontal_float_labels(void) {
 	mu_assert_true(strstr(res, "1.00|") != NULL, "Top label uses 2 decimal digits");
 	mu_assert_true(strstr(res, "0.00|") != NULL, "Bottom label uses 2 decimal digits");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // X-axis offset ruler: when blocksize is set, the output must include
 // "^" tick markers and absolute byte offset labels at the bottom.
 bool test_histogram_horizontal_xaxis_offsets(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -238,7 +238,7 @@ bool test_histogram_horizontal_xaxis_offsets(void) {
 	mu_assert_true(strstr(res, "0x1030") != NULL, "End offset label present");
 	mu_assert_true(strstr(res, "^") != NULL, "Tick characters present");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -247,7 +247,7 @@ bool test_histogram_horizontal_xaxis_offsets(void) {
 // uses the fp values directly. Two entropies that would round to the same
 // ut8 should still be distinguishable.
 bool test_histogram_horizontal_data_f(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.color = false;
 	opts.unicode = false;
@@ -272,14 +272,14 @@ bool test_histogram_horizontal_data_f(void) {
 	// must instead produce filled cells. Look for any block character.
 	mu_assert_true(strstr(res, "#") != NULL, "fp data renders bars (ut8 was ignored)");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Multi-character value_unit suffix (e.g. "MB", "ms") must fit in the gutter
 // alongside the numeric label.
 bool test_histogram_horizontal_multi_char_unit(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -293,14 +293,14 @@ bool test_histogram_horizontal_multi_char_unit(void) {
 	mu_assert_true(strstr(res, "100MB|") != NULL, "Top label uses multi-char unit");
 	mu_assert_true(strstr(res, "0MB|") != NULL, "Bottom label uses multi-char unit");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // value_precision=1 (one decimal) and value_precision=3 (three decimals)
 // both format correctly.
 bool test_histogram_horizontal_precision_variants(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -321,13 +321,13 @@ bool test_histogram_horizontal_precision_variants(void) {
 	mu_assert_true(strstr(res, "1.000|") != NULL, "Precision=3 top label");
 	mu_assert_true(strstr(res, "0.000|") != NULL, "Precision=3 bottom label");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // value_scale rescales the integer label value (e.g. milliseconds → seconds).
 bool test_histogram_horizontal_value_scale(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -342,13 +342,13 @@ bool test_histogram_horizontal_value_scale(void) {
 	mu_assert_true(strstr(res, "1.00s|") != NULL, "Scaled top label (1000 * 0.001 = 1.00)");
 	mu_assert_true(strstr(res, "0.00s|") != NULL, "Scaled bottom label");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Unicode mode produces UTF-8 block (█) and box-drawing vline (│).
 bool test_histogram_horizontal_unicode(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.unicode = true;
 	opts.ruler = true;
@@ -363,13 +363,13 @@ bool test_histogram_horizontal_unicode(void) {
 	mu_assert_true(strstr(res, "|") == NULL, "ASCII '|' absent in unicode mode");
 	mu_assert_true(strstr(res, "#") == NULL, "ASCII '#' absent in unicode mode");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Thinline mode draws bars as vertical pipes instead of block characters.
 bool test_histogram_horizontal_thinline(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.thinline = true;
 	opts.ruler = true;
@@ -382,7 +382,7 @@ bool test_histogram_horizontal_thinline(void) {
 	mu_assert_true(strstr(res, "#") == NULL, "Block '#' absent in thinline mode");
 	mu_assert_true(strstr(res, "|") != NULL, "Vline '|' present");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -391,7 +391,7 @@ bool test_histogram_horizontal_color(void) {
 	RzCons *cons = rz_cons_new();
 	cons->context->color_mode = COLOR_MODE_16M;
 	rz_cons_pal_init(cons->context);
-	rz_cons_pal_update_event();
+	rz_cons_pal_update_event(cons);
 	RzHistogramOptions opts = { 0 };
 	opts.color = true;
 	opts.ruler = true;
@@ -403,14 +403,14 @@ bool test_histogram_horizontal_color(void) {
 	mu_assert_true(strstr(res, "\x1b[") != NULL, "ANSI escape sequence present");
 	mu_assert_true(strstr(res, "\x1b[0m") != NULL, "Reset escape present");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // No X-axis ruler when opts->blocksize is 0 (preserves legacy output for
 // callers that don't supply a blocksize).
 bool test_histogram_horizontal_no_blocksize_no_xaxis(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.offpos = 0x1000;
@@ -422,14 +422,14 @@ bool test_histogram_horizontal_no_blocksize_no_xaxis(void) {
 	mu_assert_true(strstr(res, "0x1000") == NULL, "No X-axis offset labels when blocksize is 0");
 	mu_assert_true(strstr(res, "^") == NULL, "No '^' tick markers when blocksize is 0");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Baseline '_' marker appears at the bottom row even when there are zero-data
 // columns (preserves legacy behaviour for low-magnitude charts).
 bool test_histogram_horizontal_baseline_marker(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	// Data with strict zeros — these must render '_' on the bottom row
@@ -440,14 +440,14 @@ bool test_histogram_horizontal_baseline_marker(void) {
 	mu_assert_notnull(res, "Render should produce output");
 	mu_assert_true(strstr(res, "_") != NULL, "Baseline '_' present for zero data columns");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Narrow charts (opts->cols < 4) suppress the X-axis ruler since there's
 // no room for offset labels.
 bool test_histogram_horizontal_narrow_chart(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.offpos = 0x1000;
@@ -459,14 +459,14 @@ bool test_histogram_horizontal_narrow_chart(void) {
 	mu_assert_notnull(res, "Narrow chart must still render");
 	mu_assert_true(strstr(res, "0x1000") == NULL, "No X-axis offsets when cols < 4");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // data_f bypasses ut8 quantisation: two doubles that round to the same ut8
 // must render distinctly on a chart tall enough to separate them.
 bool test_histogram_horizontal_data_f_precision(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -504,7 +504,7 @@ bool test_histogram_horizontal_data_f_precision(void) {
 	// fdata[1] > fdata[0], so column 2 must reach at least as high.
 	mu_assert_true(col2_fills >= col1_fills, "fp data preserves ordering");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -514,7 +514,7 @@ bool test_histogram_horizontal_combined_features(void) {
 	RzCons *cons = rz_cons_new();
 	cons->context->color_mode = COLOR_MODE_16M;
 	rz_cons_pal_init(cons->context);
-	rz_cons_pal_update_event();
+	rz_cons_pal_update_event(cons);
 	RzHistogramOptions opts = { 0 };
 	opts.unicode = true;
 	opts.thinline = true;
@@ -544,7 +544,7 @@ bool test_histogram_horizontal_combined_features(void) {
 	mu_assert_true(strstr(res, "\x1b[") != NULL, "ANSI escape present");
 	mu_assert_true(strstr(res, "^") != NULL, "X-axis tick present");
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -552,7 +552,7 @@ bool test_histogram_horizontal_combined_features(void) {
 // printable characters wide. Callers that clamp `cols` to fit the terminal
 // must subtract the gutter themselves.
 bool test_histogram_horizontal_row_width_contract(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -581,7 +581,7 @@ bool test_histogram_horizontal_row_width_contract(void) {
 		row_idx++;
 	}
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -591,7 +591,7 @@ bool test_histogram_horizontal_row_width_contract(void) {
 // The fp interpolation should now produce distinct labels like
 // 1.00, 0.75, 0.50, 0.25, 0.00.
 bool test_histogram_horizontal_no_duplicate_labels(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions opts = { 0 };
 	opts.ruler = true;
 	opts.value_min = 0;
@@ -619,15 +619,15 @@ bool test_histogram_horizontal_no_duplicate_labels(void) {
 	mu_assert_eq(count, 1, "Top label 1.00 appears exactly once (no duplicates)");
 
 	free(res);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // ----- Visual / interactive horizontal histogram tests ----------------------
 
 // Build a fresh interactive harness with sensible defaults for the tests.
-static RzHistogramInteractive *make_visual_hist(int size, int w, int h, RzHistogramOptions *opts) {
-	RzConsCanvas *can = rz_cons_canvas_new(w, h);
+static RzHistogramInteractive *make_visual_hist(int size, int w, int h, RzHistogramOptions *opts, RzCons *cons) {
+	RzConsCanvas *can = rz_cons_canvas_new(w, h, cons);
 	if (!can) {
 		return NULL;
 	}
@@ -654,7 +654,7 @@ static void free_visual_hist(RzHistogramInteractive *hist) {
 // Smoke test: the renderer produces output, the status line is present, and
 // the cursor at index 0 doesn't trigger the #4431 segfault (negative adder).
 bool test_histogram_interactive_horizontal_basic(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	opts->ruler = false; // simplest path
@@ -662,7 +662,7 @@ bool test_histogram_interactive_horizontal_basic(void) {
 	for (int i = 0; i < 16; i++) {
 		data[i] = i * 16;
 	}
-	RzHistogramInteractive *hist = make_visual_hist(16, 40, 10, opts);
+	RzHistogramInteractive *hist = make_visual_hist(16, 40, 10, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
 	char *res = rz_strbuf_drain(buf);
@@ -670,14 +670,14 @@ bool test_histogram_interactive_horizontal_basic(void) {
 	mu_assert_true(strstr(res, "Index 0 data 0") != NULL, "Status line present");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Y-axis ruler with percent unit + value_max=100 + value_scale=0.01 +
 // precision=2 should render labels like 1.00%, 0.50%, 0.00% across 5 anchors.
 bool test_histogram_interactive_horizontal_ruler_percent(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	opts->ruler = true;
@@ -689,7 +689,7 @@ bool test_histogram_interactive_horizontal_ruler_percent(void) {
 	for (int i = 0; i < 32; i++) {
 		data[i] = i * 8;
 	}
-	RzHistogramInteractive *hist = make_visual_hist(32, 60, 14, opts);
+	RzHistogramInteractive *hist = make_visual_hist(32, 60, 14, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
 	char *res = rz_strbuf_drain(buf);
@@ -698,13 +698,13 @@ bool test_histogram_interactive_horizontal_ruler_percent(void) {
 	mu_assert_true(strstr(res, "0.00%") != NULL, "Bottom fractional label present");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Default 0..255 byte ruler should produce labels 255 (top) and 0 (bottom).
 bool test_histogram_interactive_horizontal_ruler_default(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	opts->ruler = true;
@@ -712,7 +712,7 @@ bool test_histogram_interactive_horizontal_ruler_default(void) {
 	for (int i = 0; i < 16; i++) {
 		data[i] = 255;
 	}
-	RzHistogramInteractive *hist = make_visual_hist(16, 50, 14, opts);
+	RzHistogramInteractive *hist = make_visual_hist(16, 50, 14, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
 	char *res = rz_strbuf_drain(buf);
@@ -721,7 +721,7 @@ bool test_histogram_interactive_horizontal_ruler_default(void) {
 	mu_assert_true(strstr(res, "0|") != NULL, "Bottom byte label present");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -729,11 +729,11 @@ bool test_histogram_interactive_horizontal_ruler_default(void) {
 // that span > histogramwidth, the adder must clamp to 0 (not go negative).
 // The renderer should produce output without crashing.
 bool test_histogram_interactive_horizontal_no_negative_adder(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	ut8 data[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-	RzHistogramInteractive *hist = make_visual_hist(8, 80, 10, opts);
+	RzHistogramInteractive *hist = make_visual_hist(8, 80, 10, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	hist->barnumber = 0;
 	hist->zoom = 1;
@@ -743,20 +743,20 @@ bool test_histogram_interactive_horizontal_no_negative_adder(void) {
 	mu_assert_true(strstr(res, "Index 0") != NULL, "Cursor index 0 reported");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
 // Percent indicator on the status line should appear when chart % is meaningful.
 bool test_histogram_interactive_horizontal_percent(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	ut8 data[20];
 	for (int i = 0; i < 20; i++) {
 		data[i] = i * 12;
 	}
-	RzHistogramInteractive *hist = make_visual_hist(20, 60, 12, opts);
+	RzHistogramInteractive *hist = make_visual_hist(20, 60, 12, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	hist->barnumber = 10; // ~50% through 20 bars
 	RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
@@ -765,7 +765,7 @@ bool test_histogram_interactive_horizontal_percent(void) {
 	mu_assert_true(strstr(res, "%") != NULL, "Percent indicator on status line");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -775,7 +775,7 @@ bool test_histogram_interactive_horizontal_percent(void) {
 // highlighting lives on the cursor bar between them, drawn as a continuous
 // vertical line regardless of whether the data threshold reaches that row.
 bool test_histogram_interactive_horizontal_cursor_markers(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	{
 		RzHistogramOptions *opts = rz_histogram_options_new();
 		mu_assert_notnull(opts, "opts new");
@@ -784,7 +784,7 @@ bool test_histogram_interactive_horizontal_cursor_markers(void) {
 		for (int i = 0; i < 16; i++) {
 			data[i] = i * 16;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(16, 50, 12, opts);
+		RzHistogramInteractive *hist = make_visual_hist(16, 50, 12, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 8;
 		RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
@@ -803,7 +803,7 @@ bool test_histogram_interactive_horizontal_cursor_markers(void) {
 		for (int i = 0; i < 16; i++) {
 			data[i] = i * 16;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(16, 50, 12, opts);
+		RzHistogramInteractive *hist = make_visual_hist(16, 50, 12, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 8;
 		RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
@@ -816,7 +816,7 @@ bool test_histogram_interactive_horizontal_cursor_markers(void) {
 		free(res);
 		free_visual_hist(hist);
 	}
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -826,13 +826,13 @@ bool test_histogram_interactive_horizontal_cursor_markers(void) {
 // only reach the lower rows, but the cursor line should still extend up to
 // the top marker.
 bool test_histogram_interactive_horizontal_cursor_full_line(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	RzHistogramOptions *opts = rz_histogram_options_new();
 	mu_assert_notnull(opts, "opts new");
 	opts->unicode = false; // ASCII so we can count `|` chars in the cursor column
 	opts->thinline = true; // force `|` glyph (else `#`)
 	ut8 data[8] = { 8, 16, 32, 4 /* cursor at this very small value */, 64, 128, 200, 255 };
-	RzHistogramInteractive *hist = make_visual_hist(8, 50, 12, opts);
+	RzHistogramInteractive *hist = make_visual_hist(8, 50, 12, opts, cons);
 	mu_assert_notnull(hist, "hist new");
 	hist->barnumber = 3;
 	RzStrBuf *buf = rz_histogram_interactive_horizontal(hist, data);
@@ -851,7 +851,7 @@ bool test_histogram_interactive_horizontal_cursor_full_line(void) {
 	mu_assert_true(pipe_count >= 6, "Cursor column extends as a continuous vertical line");
 	free(res);
 	free_visual_hist(hist);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -859,7 +859,7 @@ bool test_histogram_interactive_horizontal_cursor_full_line(void) {
 // of whether the data is zoomed in or shown in full. The user setting wins:
 // `e scr.hist.minimap=true` always shows the minimap, `false` always hides it.
 bool test_histogram_interactive_horizontal_minimap_toggle(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 	ut8 data[256];
 	for (int i = 0; i < 256; i++) {
 		data[i] = i;
@@ -870,7 +870,7 @@ bool test_histogram_interactive_horizontal_minimap_toggle(void) {
 		mu_assert_notnull(opts, "opts new");
 		opts->unicode = true;
 		opts->minimap = false;
-		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts);
+		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 128;
 		hist->zoom = 4; // forces a subset view
@@ -887,7 +887,7 @@ bool test_histogram_interactive_horizontal_minimap_toggle(void) {
 		mu_assert_notnull(opts, "opts new");
 		opts->unicode = true;
 		opts->minimap = true;
-		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts);
+		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 128;
 		hist->zoom = 4;
@@ -904,7 +904,7 @@ bool test_histogram_interactive_horizontal_minimap_toggle(void) {
 		mu_assert_notnull(opts, "opts new");
 		opts->unicode = true;
 		opts->minimap = true;
-		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts);
+		RzHistogramInteractive *hist = make_visual_hist(256, 80, 15, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 128;
 		hist->zoom = 1; // not zoomed - whole data visible
@@ -915,7 +915,7 @@ bool test_histogram_interactive_horizontal_minimap_toggle(void) {
 		free(res);
 		free_visual_hist(hist);
 	}
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -953,7 +953,7 @@ static int max_v_chars_per_line(const char *res) {
 //      screen columns map to the same data index via integer truncation;
 //      only the pre-computed j_cursor column may carry the cursor.
 bool test_histogram_interactive_horizontal_cursor_width(void) {
-	rz_cons_new();
+	RzCons *cons = rz_cons_new();
 
 	// Case 1: high zoom forces sizeofonebar > 1.
 	{
@@ -963,7 +963,7 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 		opts->thinline = true;
 		opts->color = false;
 		ut8 data[4] = { 64, 128, 192, 255 };
-		RzHistogramInteractive *hist = make_visual_hist(4, 80, 12, opts);
+		RzHistogramInteractive *hist = make_visual_hist(4, 80, 12, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 1;
 		hist->zoom = 20; // -> sizeofonebar > 1
@@ -985,7 +985,7 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 		opts->thinline = true;
 		opts->color = false;
 		ut8 data[4] = { 64, 128, 192, 255 };
-		RzHistogramInteractive *hist = make_visual_hist(4, 80, 12, opts);
+		RzHistogramInteractive *hist = make_visual_hist(4, 80, 12, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 1;
 		hist->zoom = 1; // -> sizeofonebar == 1, but width >> histogramwidth
@@ -997,7 +997,7 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 		free_visual_hist(hist);
 	}
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -1022,7 +1022,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		for (int i = 0; i < 64; i++) {
 			data[i] = (ut8)i * 4;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts);
+		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 32;
 		ut8 cursor_bytes[32];
@@ -1058,7 +1058,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		for (int i = 0; i < 64; i++) {
 			data[i] = (ut8)i * 4;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(64, 100, 18, opts);
+		RzHistogramInteractive *hist = make_visual_hist(64, 100, 18, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 32;
 		ut8 cursor_bytes[32];
@@ -1083,7 +1083,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		for (int i = 0; i < 64; i++) {
 			data[i] = (ut8)i * 4;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts);
+		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 32;
 		// cursor_bytes stays NULL by default.
@@ -1113,7 +1113,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		for (int i = 0; i < 64; i++) {
 			data[i] = (ut8)i * 4;
 		}
-		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts);
+		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts, cons);
 		mu_assert_notnull(hist, "hist new");
 		hist->barnumber = 32;
 		ut8 cursor_bytes[32];
@@ -1141,7 +1141,7 @@ bool test_histogram_interactive_horizontal_hex_preview(void) {
 		free_visual_hist(hist);
 	}
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 

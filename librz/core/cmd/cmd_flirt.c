@@ -13,12 +13,12 @@ RZ_IPI RzCmdStatus rz_flirt_create_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("core: failed to create FLIRT file '%s'\n", filename);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%u FLIRT signatures were written in '%s'\n", written_nodes, filename);
+	rz_cons_printf(core->cons, "%u FLIRT signatures were written in '%s'\n", written_nodes, filename);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_flirt_dump_handler(RzCore *core, int argc, const char **argv) {
-	rz_core_flirt_dump_file(argv[1]);
+	rz_core_flirt_dump_file(core, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -38,7 +38,7 @@ RZ_IPI RzCmdStatus rz_flirt_scan_handler(RzCore *core, int argc, const char **ar
 	rz_list_free(files);
 	new = rz_flag_count(core->flags, "flirt");
 
-	rz_cons_printf("Found %d FLIRT signatures via %s\n", new - old, argv[1]);
+	rz_cons_printf(core->cons, "Found %d FLIRT signatures via %s\n", new - old, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -72,8 +72,8 @@ RZ_IPI RzCmdStatus rz_flirt_function_handler(RzCore *core, int argc, const char 
 	rz_buf_free(buffer);
 
 	if (pat) {
-		rz_cons_print(pat);
-		rz_cons_flush();
+		rz_cons_print(core->cons, pat);
+		rz_cons_flush(core->cons);
 	}
 
 	rz_sign_flirt_node_free(node);

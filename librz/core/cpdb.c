@@ -5,7 +5,7 @@
 #include <rz_pdb.h>
 #include "../bin/pdb/pdb.h"
 
-static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types) {
+static void pdb_types_print_standard(RzCons *cons, const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types) {
 	rz_return_if_fail(pdb && db && types);
 	if (!types) {
 		RZ_LOG_ERROR("core: there is nothing to print!\n");
@@ -18,7 +18,7 @@ static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const
 		rz_strbuf_append(buf, pretty);
 		free(pretty);
 	}
-	rz_cons_print(rz_strbuf_get(buf));
+	rz_cons_print(cons, rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
 }
 
@@ -97,7 +97,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 	pj_end(pj);
 }
 
-static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, const RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_types_print(RzCons *cons, const RzTypeDB *db, const RzPdb *pdb, const RzCmdStateOutput *state) {
 	rz_return_if_fail(db && pdb && state);
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	if (!stream) {
@@ -106,7 +106,7 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		pdb_types_print_standard(db, pdb, stream->print_type);
+		pdb_types_print_standard(cons, db, pdb, stream->print_type);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pdb_types_print_json(db, pdb, stream->print_type, state->d.pj);
@@ -203,12 +203,12 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(
 	return rz_strbuf_drain(buf);
 }
 
-static void rz_core_bin_pdb_gvars_print(RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_gvars_print(RzCons *cons, RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_if_fail(pdb && state);
 	char *str = rz_core_bin_pdb_gvars_as_string(pdb, baddr, state);
 	// We don't need to print the output of JSON because the RzCmdStateOutput will handle it.
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		rz_cons_print(str);
+		rz_cons_print(cons, str);
 	}
 	free(str);
 }
@@ -387,7 +387,7 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	return pdb;
 }
 
-static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
+static void pdb_modules_print(RzCons *cons, RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
 	if (!(pdb->s_dbi && pdb->s_dbi->modules)) {
 		return;
 	}
@@ -398,7 +398,7 @@ static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput
 		pj_ka(j, "modules");
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_println("modules:");
+		rz_cons_println(cons, "modules:");
 		break;
 	}
 	default: rz_warn_if_reached();
@@ -415,7 +415,7 @@ static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput
 			break;
 		}
 		case RZ_OUTPUT_MODE_STANDARD: {
-			rz_cons_println(module->module_name);
+			rz_cons_println(cons, module->module_name);
 			break;
 		}
 		default: rz_warn_if_reached();
@@ -446,9 +446,9 @@ RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB 
 	}
 
 	rz_cmd_state_output_array_start(state);
-	pdb_modules_print(pdb, state);
+	pdb_modules_print(core->cons, pdb, state);
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
-	rz_core_bin_pdb_types_print(typedb, pdb, state);
-	rz_core_bin_pdb_gvars_print(pdb, baddr, state);
+	rz_core_bin_pdb_types_print(core->cons, typedb, pdb, state);
+	rz_core_bin_pdb_gvars_print(core->cons, pdb, baddr, state);
 	rz_cmd_state_output_array_end(state);
 }

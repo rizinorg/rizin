@@ -298,14 +298,14 @@ static bool test_rz_core_annotated_code_print_json(void) {
 	RzAnnotatedCode *code = get_hello_world();
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
-	rz_cons_new();
-	rz_cons_push();
-	rz_core_annotated_code_print_json(code);
-	actual = rz_cons_get_buffer_dup();
-	rz_cons_pop();
+	RzCons *cons = rz_cons_new();
+	rz_cons_push(cons);
+	rz_core_annotated_code_print_json(code, cons);
+	actual = rz_cons_get_buffer_dup(cons);
+	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected, "pdgj OUTPUT DOES NOT MATCH");
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	free(actual);
 	rz_annotated_code_free(code);
 	mu_end;
@@ -317,14 +317,15 @@ static bool test_rz_core_annotated_code_print_json(void) {
 static bool test_rz_core_annotated_code_print_json_context_annotations(void) {
 	RzAnnotatedCode *code = get_all_context_annotated_code();
 	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
-	rz_cons_new();
-	rz_cons_push();
-	rz_core_annotated_code_print_json(code);
-	char *actual = rz_cons_get_buffer_dup();
-	rz_cons_pop();
+	RzCons *cons = rz_cons_new();
+	rz_cons_push(cons);
+	rz_core_annotated_code_print_json(code, cons);
+	char *actual = rz_cons_get_buffer_dup(cons);
+	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected, "rz_core_annotated_code_print_json() output doesn't match with the expected output");
 	free(actual);
 	rz_annotated_code_free(code);
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -339,12 +340,12 @@ static bool test_rz_core_annotated_code_print(void) {
 			       "    return;\n"
 			       "}\n";
 	RzCons *cons = rz_cons_new();
-	rz_cons_push();
+	rz_cons_push(cons);
 	rz_core_annotated_code_print(cons, code, NULL);
-	actual = rz_cons_get_buffer_dup();
-	rz_cons_pop();
+	actual = rz_cons_get_buffer_dup(cons);
+	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
-	rz_cons_pop();
+	// rz_cons_pop(cons); // TODOe: check
 
 	// Checking with offset - pdgo
 	RzVector *offsets = rz_annotated_code_line_offsets(code);
@@ -354,14 +355,15 @@ static bool test_rz_core_annotated_code_print(void) {
 				"    0x00001158    |    sym.imp.puts(\"Hello, World!\");\n"
 				"    0x0000115f    |    return;\n"
 				"                  |}\n";
+	rz_cons_push(cons);
 	rz_core_annotated_code_print(cons, code, offsets);
 	free(actual);
-	actual = rz_cons_get_buffer_dup();
-	rz_cons_pop();
+	actual = rz_cons_get_buffer_dup(cons);
+	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected_second, "pdgo OUTPUT DOES NOT MATCH");
-	rz_cons_pop();
+	// rz_cons_pop(cons); // TODOe: same as above
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	free(actual);
 	rz_vector_free(offsets);
 	rz_annotated_code_free(code);
@@ -373,14 +375,14 @@ static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	char *actual;
 	char *expected = "CCu base64:cmV0dXJu @ 0x115f\n"
 			 "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n";
-	rz_cons_new();
-	rz_cons_push();
-	rz_core_annotated_code_print_comment_cmds(code);
-	actual = rz_cons_get_buffer_dup();
-	rz_cons_pop();
+	RzCons *cons = rz_cons_new();
+	rz_cons_push(cons);
+	rz_core_annotated_code_print_comment_cmds(cons, code);
+	actual = rz_cons_get_buffer_dup(cons);
+	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected, "pdg* OUTPUT DOES NOT MATCH");
 
-	rz_cons_free();
+	rz_cons_free(cons);
 	free(actual);
 	rz_annotated_code_free(code);
 	mu_end;

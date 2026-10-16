@@ -82,12 +82,12 @@ static RzDebugReasonType rz_debug_winkd_wait(RZ_BORROW RZ_NONNULL RzDebug *dbg, 
 		return RZ_DEBUG_REASON_UNKNOWN;
 	}
 	for (;;) {
-		void *bed = rz_cons_sleep_begin();
+		void *bed = rz_interrupt_sleep_begin(dbg->intr);
 		int ret;
 		do {
 			ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		} while (ret == KD_E_BREAK || ret == KD_E_MALFORMED);
-		rz_cons_sleep_end(bed);
+		rz_interrupt_sleep_end(dbg->intr, bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = RZ_DEBUG_REASON_ERROR;
 			break;

@@ -196,11 +196,11 @@ alloc_err:
 static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int argc, const char **argv) {
 	char *out = NULL;
 	int length = 0;
-	void *bed = rz_cons_sleep_begin();
+	void *bed = rz_interrupt_sleep_begin(core->intr);
 	bool need_rzcons = force_rzcons || core->is_pipe;
 	int ret = -1;
 	bool succ = system_exec(core, argc - 1, &argv[1], need_rzcons ? &out : NULL, &length, &ret);
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(core->intr, bed);
 	if (need_rzcons) {
 #if __WINDOWS__
 		char *src = out;
@@ -217,7 +217,7 @@ static RzCmdStatus system_common_handler(RzCore *core, bool force_rzcons, int ar
 			src++;
 		}
 #endif
-		rz_cons_memcat(out, length);
+		rz_cons_memcat(core->cons, out, length);
 	}
 	free(out);
 	core->num->value = (ut64)ret;

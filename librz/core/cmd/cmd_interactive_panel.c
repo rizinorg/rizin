@@ -17,7 +17,7 @@ RZ_IPI RzCmdStatus rz_interactive_panel_handler(RzCore *core, int argc, const ch
 		RZ_LOG_ERROR("core->vmode == false.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		RZ_LOG_ERROR("Panel mode requires scr.interactive=true.\n");
 		return RZ_CMD_STATUS_ERROR;
 	}

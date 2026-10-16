@@ -197,7 +197,7 @@ static bool m68k_step(RzCore *core, const char *hex) {
 	if (!vm) {
 		return false;
 	}
-	RzAnalysisILStepResult result = rz_analysis_il_vm_step(core->analysis, vm, rz_analysis_get_reg(core->analysis));
+	RzAnalysisILStepResult result = rz_analysis_il_vm_step(core->analysis, vm, rz_analysis_get_reg(core->analysis), core->cons);
 	rz_analysis_il_vm_free(vm);
 	if (result != RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
 		fprintf(stderr, "M68K step %s at 0x%" PFMT64x ": result %d\n", hex, pc, result);

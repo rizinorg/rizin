@@ -190,7 +190,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 
 static void printcmd(RzIO *io, const char *cmd) {
 	char *res = runcmd(cmd);
-	io->cb_printf("%s\n", res);
+	io->cb_printf(io->cb_printf_user, "%s\n", res);
 	free(res);
 }
 
@@ -300,22 +300,22 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return rz_str_dup(msg);
 	} else if (!strncmp(cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState();
-		io->cb_printf("f eip @ 0x%08x\n", r.eip);
-		io->cb_printf("f esp @ 0x%08x\n", r.esp);
-		io->cb_printf("f ebp @ 0x%08x\n", r.ebp);
-		io->cb_printf("f eax @ 0x%08x\n", r.eax);
-		io->cb_printf("f ebx @ 0x%08x\n", r.ebx);
-		io->cb_printf("f ecx @ 0x%08x\n", r.ecx);
-		io->cb_printf("f edx @ 0x%08x\n", r.edx);
-		io->cb_printf("f esi @ 0x%08x\n", r.esi);
-		io->cb_printf("f edi @ 0x%08x\n", r.edi);
-		io->cb_printf("f eflags @ 0x%08x\n", r.eflags);
-		io->cb_printf("f cs @ 0x%08x\n", r.cs);
-		io->cb_printf("f ss @ 0x%08x\n", r.ss);
-		io->cb_printf("f ds @ 0x%08x\n", r.ds);
-		io->cb_printf("f es @ 0x%08x\n", r.es);
-		io->cb_printf("f fs @ 0x%08x\n", r.fs);
-		io->cb_printf("f gs @ 0x%08x\n", r.gs);
+		io->cb_printf(io->cb_printf_user, "f eip @ 0x%08x\n", r.eip);
+		io->cb_printf(io->cb_printf_user, "f esp @ 0x%08x\n", r.esp);
+		io->cb_printf(io->cb_printf_user, "f ebp @ 0x%08x\n", r.ebp);
+		io->cb_printf(io->cb_printf_user, "f eax @ 0x%08x\n", r.eax);
+		io->cb_printf(io->cb_printf_user, "f ebx @ 0x%08x\n", r.ebx);
+		io->cb_printf(io->cb_printf_user, "f ecx @ 0x%08x\n", r.ecx);
+		io->cb_printf(io->cb_printf_user, "f edx @ 0x%08x\n", r.edx);
+		io->cb_printf(io->cb_printf_user, "f esi @ 0x%08x\n", r.esi);
+		io->cb_printf(io->cb_printf_user, "f edi @ 0x%08x\n", r.edi);
+		io->cb_printf(io->cb_printf_user, "f eflags @ 0x%08x\n", r.eflags);
+		io->cb_printf(io->cb_printf_user, "f cs @ 0x%08x\n", r.cs);
+		io->cb_printf(io->cb_printf_user, "f ss @ 0x%08x\n", r.ss);
+		io->cb_printf(io->cb_printf_user, "f ds @ 0x%08x\n", r.ds);
+		io->cb_printf(io->cb_printf_user, "f es @ 0x%08x\n", r.es);
+		io->cb_printf(io->cb_printf_user, "f fs @ 0x%08x\n", r.fs);
+		io->cb_printf(io->cb_printf_user, "f gs @ 0x%08x\n", r.gs);
 	} else if (!strncmp(cmd, "dr", 2)) {
 		printcmd(io, "info reg");
 	} else if (!strncmp(cmd, "db ", 3)) {

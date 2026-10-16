@@ -15,7 +15,7 @@ static bool load_theme(RzCore *core, const char *path) {
 	core->cmdfilter = "ec ";
 	bool res = rz_core_cmd_file(core, path);
 	if (res) {
-		rz_cons_pal_update_event();
+		rz_cons_pal_update_event(core->cons);
 	}
 	core->cmdfilter = NULL;
 	return res;
@@ -222,7 +222,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 
 	int pal_len = rz_cons_pal_len();
 	for (int i = 0; i < pal_len; i++) {
-		const char *color_name = rz_cons_pal_get_name(i);
+		const char *color_name = rz_cons_pal_get_name(core->cons, i);
 		if (!color_name) {
 			continue;
 		}
@@ -241,14 +241,14 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 			continue;
 		}
 
-		RzColor rcolor = rz_cons_pal_get_i(i);
+		RzColor rcolor = rz_cons_pal_get_i(core->cons, i);
 
 		char color_str[128];
 		rz_cons_rgb_str_mode(core->cons->context->color_mode, color_str, sizeof(color_str), &rcolor);
 
 		char *pad = rz_str_pad(' ', max_len + 2 - strlen(color_name));
 
-		rz_cons_printf(" %s##" Color_RESET " %s%s%s\n",
+		rz_cons_printf(core->cons, " %s##" Color_RESET " %s%s%s\n",
 			color_str,
 			color_name,
 			pad,
@@ -262,25 +262,25 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc == 3) {
-		if (!rz_cons_pal_set(argv[1], argv[2])) {
+		if (!rz_cons_pal_set(core->cons, argv[1], argv[2])) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_pal_update_event();
+		rz_cons_pal_update_event(core->cons);
 		return RZ_CMD_STATUS_OK;
 	} else if (argc == 2) {
 		char color[32];
-		RzColor rcolor = rz_cons_pal_get(argv[1]);
-		rz_cons_rgb_str(color, sizeof(color), &rcolor);
+		RzColor rcolor = rz_cons_pal_get(core->cons, argv[1]);
+		rz_cons_rgb_str(core->cons, color, sizeof(color), &rcolor);
 		eprintf("(%s)(%sCOLOR" Color_RESET ")\n", argv[1], color);
 		return RZ_CMD_STATUS_OK;
 	}
 
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_cons_pal_list_as_json(state->d.pj);
+		rz_cons_pal_list_as_json(core->cons, state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_pal_list_visual();
+		rz_cons_pal_list_visual(core->cons);
 		break;
 	default:
 		return RZ_CMD_STATUS_ERROR;
@@ -289,7 +289,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_display_palette_css_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_pal_list_as_css(argv[1]);
+	rz_cons_pal_list_as_css(core->cons, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -299,12 +299,12 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_set_default_palette_handler(RzCore *core, i
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_set_random_palette_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_pal_random();
+	rz_cons_pal_random(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_set_colorful_palette_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_pal_show();
+	rz_cons_pal_show(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -322,7 +322,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_handler(RzCore *core, int ar
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, mode, core);
 	rz_core_meta_print_list_all(core, RZ_META_TYPE_HIGHLIGHT, &state);
-	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_print(&state, core->cons);
 	rz_cmd_state_output_fini(&state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -348,13 +348,13 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 			break;
 		}
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("%s\n", th);
+			rz_cons_printf(core->cons, "%s\n", th);
 			break;
 		default:
 			if (core->curtheme && !strcmp(core->curtheme, th)) {
-				rz_cons_printf("> %s\n", th);
+				rz_cons_printf(core->cons, "> %s\n", th);
 			} else {
-				rz_cons_printf("  %s\n", th);
+				rz_cons_printf(core->cons, "  %s\n", th);
 			}
 		}
 	}
@@ -366,7 +366,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_load_theme_handler(RzCore *core, int argc, 
 }
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_current_theme_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_println(rz_core_theme_get(core));
+	rz_cons_println(core->cons, rz_core_theme_get(core));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -377,7 +377,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_reload_current_handler(RzCore *core, i
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_current_instruction_handler(RzCore *core, int argc, const char **argv) {
 	char *dup = rz_str_newf("bgonly %s", argv[1]);
-	char *color_code = rz_cons_pal_parse(dup, NULL);
+	char *color_code = rz_cons_pal_parse(core->cons, dup, NULL);
 	RZ_FREE(dup);
 	if (!color_code) {
 		RZ_LOG_ERROR("core: Unknown color %s\n", argv[1]);
@@ -396,7 +396,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_instruction_word_handler(RzCore *
 	char *color_code = NULL, *dup = NULL;
 	if (argc == 3) {
 		dup = rz_str_newf("bgonly %s", argv[2]);
-		color_code = rz_cons_pal_parse(dup, NULL);
+		color_code = rz_cons_pal_parse(core->cons, dup, NULL);
 		RZ_FREE(dup);
 		if (!color_code) {
 			RZ_LOG_ERROR("core: Unknown color %s\n", argv[2]);
@@ -416,7 +416,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_list_current_handler(RzCore *core
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, core);
 	rz_core_meta_print_list_in_function(core, RZ_META_TYPE_COMMENT, core->offset, &state);
-	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_print(&state, core->cons);
 	rz_cmd_state_output_fini(&state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -431,7 +431,7 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_highlight_remove_current_handler(RzCore *co
 	return RZ_CMD_STATUS_OK;
 }
 
-static void print_all_plugin_configs(const RzCore *core) {
+static void print_all_plugin_configs(RzCore *core) {
 	// Incomplete plugin config key.
 	RzConfig **cfg;
 	RzCmdStateOutput state = { 0 };
@@ -439,11 +439,11 @@ static void print_all_plugin_configs(const RzCore *core) {
 	RzIterator it = (RzIterator){ 0 };
 	if (ht_sp_as_iter(core->plugin_configs, &it)) {
 		rz_iterator_foreach(&it, cfg) {
-			rz_core_config_print_all(*cfg, "", &state);
+			rz_core_config_print_all(*cfg, "", &state, core->cons);
 		}
 	}
 	rz_iterator_fini(&it);
-	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_print(&state, core->cons);
 	rz_cmd_state_output_fini(&state);
 }
 
@@ -527,8 +527,8 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 			// no value was set, only key with ".". List possible sub-keys.
 			RzCmdStateOutput state = { 0 };
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, core);
-			rz_core_config_print_all(cfg, key, &state);
-			rz_cmd_state_output_print(&state);
+			rz_core_config_print_all(cfg, key, &state, core->cons);
+			rz_cmd_state_output_print(&state, core->cons);
 			rz_cmd_state_output_fini(&state);
 		} else if (llen == 1) {
 			// no value was set, show the value of the key
@@ -538,7 +538,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 				rz_list_free(l);
 				return RZ_CMD_STATUS_ERROR;
 			}
-			rz_cons_printf("%s\n", v);
+			rz_cons_printf(core->cons, "%s\n", v);
 			free(v);
 		} else if (llen == 2) {
 			char *value = rz_list_get_n(l, 1);
@@ -556,7 +556,7 @@ RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **arg
 	if (!cfg) {
 		return status;
 	}
-	rz_core_config_print_all(cfg, arg, state);
+	rz_core_config_print_all(cfg, arg, state, core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -622,7 +622,7 @@ RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **a
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (list, iter, name) {
-		rz_cons_println(name);
+		rz_cons_println(core->cons, name);
 	}
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
@@ -645,6 +645,6 @@ RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **arg
 		RZ_LOG_ERROR("core: Cannot find type of eval '%s'.\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(type);
+	rz_cons_println(core->cons, type);
 	return RZ_CMD_STATUS_OK;
 }

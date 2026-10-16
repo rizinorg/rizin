@@ -63,7 +63,7 @@ static RzList /*<RzDebugMap *>*/ *__io_maps(RzDebug *dbg) {
 		}
 	}
 	free(ostr);
-	rz_cons_reset();
+	rz_cons_reset(dbg->cons);
 	return list;
 }
 
@@ -78,18 +78,18 @@ static int __io_attach(RzDebug *dbg, int pid) {
 
 // "drp" register profile
 static char *__io_reg_profile(RzDebug *dbg) {
-	rz_cons_push();
+	rz_cons_push(dbg->cons);
 	char *drp = dbg->iob.system(dbg->iob.io, "drp");
 	if (drp) {
 		return drp;
 	}
-	char *buf = rz_cons_get_buffer_dup();
+	char *buf = rz_cons_get_buffer_dup(dbg->cons);
 	if (RZ_STR_ISNOTEMPTY(buf)) {
-		rz_cons_pop();
+		rz_cons_pop(dbg->cons);
 		return buf;
 	}
 	free(buf);
-	rz_cons_pop();
+	rz_cons_pop(dbg->cons);
 	return rz_analysis_get_reg_profile(dbg->analysis);
 }
 
@@ -97,14 +97,14 @@ static char *__io_reg_profile(RzDebug *dbg) {
 static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	char *dr8 = dbg->iob.system(dbg->iob.io, "dr8");
 	if (!dr8) {
-		char *fb = rz_cons_get_buffer_dup();
+		char *fb = rz_cons_get_buffer_dup(dbg->cons);
 		if (RZ_STR_ISEMPTY(fb)) {
 			free(fb);
 			eprintf("debug.io: Failed to get dr8 from io\n");
 			return -1;
 		}
 		dr8 = fb;
-		rz_cons_reset();
+		rz_cons_reset(dbg->cons);
 	}
 	ut8 *bregs = calloc(1, strlen(dr8));
 	if (!bregs) {
@@ -129,7 +129,7 @@ static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 // "dc" continue execution
 static int __io_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	dbg->iob.system(dbg->iob.io, "dc");
-	rz_cons_flush();
+	rz_cons_flush(dbg->cons);
 	return true;
 }
 
@@ -138,7 +138,7 @@ static bool __io_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	char tmpbuf[32];
 	const char *cmd = rz_strf(tmpbuf, "dk %d", sig);
 	dbg->iob.system(dbg->iob.io, cmd);
-	rz_cons_flush();
+	rz_cons_flush(dbg->cons);
 	return true;
 }
 

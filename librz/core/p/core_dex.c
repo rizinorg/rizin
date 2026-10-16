@@ -53,112 +53,112 @@ static char *decode_access_flags(ut32 access_flags) {
 	return str;
 }
 
-static void dex_print_encoded_field(RzBinDex *dex, ut32 index, DexEncodedField *encoded_field) {
+static void dex_print_encoded_field(RzCons *cons, RzBinDex *dex, ut32 index, DexEncodedField *encoded_field) {
 	if (dex->field_ids_size < encoded_field->field_idx) {
-		rz_cons_printf("    #%-14u: unknown id %" PFMT64u "\n", index, encoded_field->field_idx);
+		rz_cons_printf(cons, "    #%-14u: unknown id %" PFMT64u "\n", index, encoded_field->field_idx);
 		return;
 	}
 	DexFieldId *field_id = (DexFieldId *)rz_pvector_at(dex->field_ids, encoded_field->field_idx);
 
 	char *tmp = rz_bin_dex_resolve_type_id_by_idx(dex, field_id->class_idx);
-	rz_cons_printf("    #%-14u: (in %s)\n", index, tmp);
+	rz_cons_printf(cons, "    #%-14u: (in %s)\n", index, tmp);
 	free(tmp);
 	tmp = rz_bin_dex_resolve_string_by_idx(dex, field_id->name_idx);
-	rz_cons_printf("      name          : '%s'\n", tmp);
+	rz_cons_printf(cons, "      name          : '%s'\n", tmp);
 	free(tmp);
 	tmp = rz_bin_dex_resolve_type_id_by_idx(dex, field_id->type_idx);
-	rz_cons_printf("      type          : '%s'\n", tmp);
+	rz_cons_printf(cons, "      type          : '%s'\n", tmp);
 	free(tmp);
 	tmp = decode_access_flags(encoded_field->access_flags);
-	rz_cons_printf("      access        : 0x%04" PFMT64x " (%s)\n", encoded_field->access_flags, tmp ? tmp : "");
+	rz_cons_printf(cons, "      access        : 0x%04" PFMT64x " (%s)\n", encoded_field->access_flags, tmp ? tmp : "");
 	free(tmp);
 }
 
-static void dex_print_encoded_method(RzBinDex *dex, ut32 index, DexEncodedMethod *encoded_method) {
+static void dex_print_encoded_method(RzCons *cons, RzBinDex *dex, ut32 index, DexEncodedMethod *encoded_method) {
 	if (dex->method_ids_size < encoded_method->method_idx) {
-		rz_cons_printf("    #%-14u: unknown id %" PFMT64u "\n", index, encoded_method->method_idx);
+		rz_cons_printf(cons, "    #%-14u: unknown id %" PFMT64u "\n", index, encoded_method->method_idx);
 		return;
 	}
 	DexMethodId *method_id = (DexMethodId *)rz_pvector_at(dex->method_ids, encoded_method->method_idx);
 
 	char *tmp = rz_bin_dex_resolve_type_id_by_idx(dex, method_id->class_idx);
-	rz_cons_printf("    #%-14u: (in %s)\n", index, tmp);
+	rz_cons_printf(cons, "    #%-14u: (in %s)\n", index, tmp);
 	free(tmp);
 	tmp = rz_bin_dex_resolve_string_by_idx(dex, method_id->name_idx);
-	rz_cons_printf("      name          : '%s'\n", tmp);
+	rz_cons_printf(cons, "      name          : '%s'\n", tmp);
 	free(tmp);
 	tmp = rz_bin_dex_resolve_proto_by_idx(dex, method_id->proto_idx);
-	rz_cons_printf("      type          : '%s'\n", tmp);
+	rz_cons_printf(cons, "      type          : '%s'\n", tmp);
 	free(tmp);
 	tmp = decode_access_flags(encoded_method->access_flags);
-	rz_cons_printf("      access        : 0x%04" PFMT64x " (%s)\n", encoded_method->access_flags, tmp ? tmp : "");
+	rz_cons_printf(cons, "      access        : 0x%04" PFMT64x " (%s)\n", encoded_method->access_flags, tmp ? tmp : "");
 	free(tmp);
-	rz_cons_printf("      method_idx    : %" PFMT64u "\n", encoded_method->method_idx);
-	rz_cons_printf("      code          : (%s)\n", encoded_method->code_offset >= RZ_DEX_RELOC_ADDRESS ? "none" : "available");
+	rz_cons_printf(cons, "      method_idx    : %" PFMT64u "\n", encoded_method->method_idx);
+	rz_cons_printf(cons, "      code          : (%s)\n", encoded_method->code_offset >= RZ_DEX_RELOC_ADDRESS ? "none" : "available");
 }
 
-static void dex_print_class_def(RzBinDex *dex, ut32 index, DexClassDef *class_def) {
+static void dex_print_class_def(RzCons *cons, RzBinDex *dex, ut32 index, DexClassDef *class_def) {
 	ut32 j;
 	RzListIter *it;
 	DexEncodedField *encoded_field;
 	DexEncodedMethod *encoded_method;
-	rz_cons_printf("Class #%u header:\n", index);
-	rz_cons_printf("offset              : 0x%" PFMT64x "\n", class_def->offset);
-	rz_cons_printf("class_idx           : %u\n", class_def->class_idx);
-	rz_cons_printf("access_flags        : %u (0x%04x)\n", class_def->access_flags, class_def->access_flags);
-	rz_cons_printf("superclass_idx      : %u\n", class_def->superclass_idx);
-	rz_cons_printf("interfaces_off      : %u (0x%06x)\n", class_def->interfaces_offset, class_def->interfaces_offset);
-	rz_cons_printf("source_file_idx     : %u\n", class_def->source_file_idx);
-	rz_cons_printf("annotations_off     : %u (0x%06x)\n", class_def->annotations_offset, class_def->annotations_offset);
-	rz_cons_printf("class_data_off      : %u (0x%06x)\n", class_def->class_data_offset, class_def->class_data_offset);
-	rz_cons_printf("static_values_offset: %u (0x%06x)\n", class_def->static_values_offset, class_def->static_values_offset);
+	rz_cons_printf(cons, "Class #%u header:\n", index);
+	rz_cons_printf(cons, "offset              : 0x%" PFMT64x "\n", class_def->offset);
+	rz_cons_printf(cons, "class_idx           : %u\n", class_def->class_idx);
+	rz_cons_printf(cons, "access_flags        : %u (0x%04x)\n", class_def->access_flags, class_def->access_flags);
+	rz_cons_printf(cons, "superclass_idx      : %u\n", class_def->superclass_idx);
+	rz_cons_printf(cons, "interfaces_off      : %u (0x%06x)\n", class_def->interfaces_offset, class_def->interfaces_offset);
+	rz_cons_printf(cons, "source_file_idx     : %u\n", class_def->source_file_idx);
+	rz_cons_printf(cons, "annotations_off     : %u (0x%06x)\n", class_def->annotations_offset, class_def->annotations_offset);
+	rz_cons_printf(cons, "class_data_off      : %u (0x%06x)\n", class_def->class_data_offset, class_def->class_data_offset);
+	rz_cons_printf(cons, "static_values_offset: %u (0x%06x)\n", class_def->static_values_offset, class_def->static_values_offset);
 	j = rz_list_length(class_def->static_fields);
-	rz_cons_printf("static_fields_size  : %u\n", j);
+	rz_cons_printf(cons, "static_fields_size  : %u\n", j);
 	j = rz_list_length(class_def->instance_fields);
-	rz_cons_printf("instance_fields_size: %u\n", j);
+	rz_cons_printf(cons, "instance_fields_size: %u\n", j);
 	j = rz_list_length(class_def->direct_methods);
-	rz_cons_printf("direct_methods_size : %u\n", j);
+	rz_cons_printf(cons, "direct_methods_size : %u\n", j);
 	j = rz_list_length(class_def->virtual_methods);
-	rz_cons_printf("virtual_methods_size: %u\n\n", j);
+	rz_cons_printf(cons, "virtual_methods_size: %u\n\n", j);
 
-	rz_cons_printf("Class #%-13u-\n", index);
+	rz_cons_printf(cons, "Class #%-13u-\n", index);
 	char *tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->class_idx);
-	rz_cons_printf("  Class descriptor  : '%s'\n", tmp);
+	rz_cons_printf(cons, "  Class descriptor  : '%s'\n", tmp);
 	free(tmp);
 	tmp = decode_access_flags(class_def->access_flags);
-	rz_cons_printf("  Access flags      : 0x%04x (%s)\n", class_def->access_flags, tmp ? tmp : "");
+	rz_cons_printf(cons, "  Access flags      : 0x%04x (%s)\n", class_def->access_flags, tmp ? tmp : "");
 	free(tmp);
 	tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->superclass_idx);
-	rz_cons_printf("  Superclass        : '%s'\n", tmp);
+	rz_cons_printf(cons, "  Superclass        : '%s'\n", tmp);
 	free(tmp);
-	rz_cons_printf("  Interfaces        -\n");
+	rz_cons_printf(cons, "  Interfaces        -\n");
 	for (j = 0; j < class_def->n_interfaces; ++j) {
 		tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->interfaces[j]);
-		rz_cons_printf("    #%-15u: '%s'\n", j, tmp);
+		rz_cons_printf(cons, "    #%-15u: '%s'\n", j, tmp);
 		free(tmp);
 	}
-	rz_cons_printf("  Static fields     -\n");
+	rz_cons_printf(cons, "  Static fields     -\n");
 	j = 0;
 	rz_list_foreach (class_def->static_fields, it, encoded_field) {
-		dex_print_encoded_field(dex, j, encoded_field);
+		dex_print_encoded_field(cons, dex, j, encoded_field);
 		j++;
 	}
-	rz_cons_printf("  Instance fields   -\n");
+	rz_cons_printf(cons, "  Instance fields   -\n");
 	j = 0;
 	rz_list_foreach (class_def->instance_fields, it, encoded_field) {
-		dex_print_encoded_field(dex, j, encoded_field);
+		dex_print_encoded_field(cons, dex, j, encoded_field);
 		j++;
 	}
-	rz_cons_printf("  Direct methods    -\n");
+	rz_cons_printf(cons, "  Direct methods    -\n");
 	j = 0;
 	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
-		dex_print_encoded_method(dex, j, encoded_method);
+		dex_print_encoded_method(cons, dex, j, encoded_method);
 		j++;
 	}
-	rz_cons_printf("  Virtual methods   -\n");
+	rz_cons_printf(cons, "  Virtual methods   -\n");
 	j = 0;
 	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
-		dex_print_encoded_method(dex, j, encoded_method);
+		dex_print_encoded_method(cons, dex, j, encoded_method);
 		j++;
 	}
 }
@@ -175,89 +175,89 @@ RZ_IPI RzCmdStatus rz_cmd_dexs_handler(RzCore *core, int argc, const char **argv
 
 	// mimic dexdump output
 	char *tmp = NULL;
-	rz_cons_printf("DEX file header:\n");
+	rz_cons_printf(core->cons, "DEX file header:\n");
 	tmp = rz_bin_dex_version(dex);
-	rz_cons_printf("version             : %s\n", tmp);
+	rz_cons_printf(core->cons, "version             : %s\n", tmp);
 	free(tmp);
-	rz_cons_printf("checksum            : %08x\n", dex->checksum);
-	rz_cons_printf("signature           : %02x%02x...%02x%02x\n", dex->signature[0], dex->signature[1], dex->signature[18], dex->signature[19]);
-	rz_cons_printf("file_size           : %u\n", dex->file_size);
-	rz_cons_printf("header_size         : %u\n", dex->header_size);
-	rz_cons_printf("link_size           : %u\n", dex->link_size);
-	rz_cons_printf("link_off            : %u (0x%06x)\n", dex->link_offset, dex->link_offset);
-	rz_cons_printf("string_ids_size     : %u\n", dex->string_ids_size);
-	rz_cons_printf("string_ids_off      : %u (0x%06x)\n", dex->string_ids_offset, dex->string_ids_offset);
-	rz_cons_printf("type_ids_size       : %u\n", dex->type_ids_size);
-	rz_cons_printf("type_ids_off        : %u (0x%06x)\n", dex->type_ids_offset, dex->type_ids_offset);
-	rz_cons_printf("proto_ids_size      : %u\n", dex->proto_ids_size);
-	rz_cons_printf("proto_ids_off       : %u (0x%06x)\n", dex->proto_ids_offset, dex->proto_ids_offset);
-	rz_cons_printf("field_ids_size      : %u\n", dex->field_ids_size);
-	rz_cons_printf("field_ids_off       : %u (0x%06x)\n", dex->field_ids_offset, dex->field_ids_offset);
-	rz_cons_printf("method_ids_size     : %u\n", dex->method_ids_size);
-	rz_cons_printf("method_ids_off      : %u (0x%06x)\n", dex->method_ids_offset, dex->method_ids_offset);
-	rz_cons_printf("class_defs_size     : %u\n", dex->class_defs_size);
-	rz_cons_printf("class_defs_off      : %u (0x%06x)\n", dex->class_defs_offset, dex->class_defs_offset);
-	rz_cons_printf("data_size           : %u\n", dex->data_size);
-	rz_cons_printf("data_off            : %u (0x%06x)\n\n", dex->data_offset, dex->data_offset);
+	rz_cons_printf(core->cons, "checksum            : %08x\n", dex->checksum);
+	rz_cons_printf(core->cons, "signature           : %02x%02x...%02x%02x\n", dex->signature[0], dex->signature[1], dex->signature[18], dex->signature[19]);
+	rz_cons_printf(core->cons, "file_size           : %u\n", dex->file_size);
+	rz_cons_printf(core->cons, "header_size         : %u\n", dex->header_size);
+	rz_cons_printf(core->cons, "link_size           : %u\n", dex->link_size);
+	rz_cons_printf(core->cons, "link_off            : %u (0x%06x)\n", dex->link_offset, dex->link_offset);
+	rz_cons_printf(core->cons, "string_ids_size     : %u\n", dex->string_ids_size);
+	rz_cons_printf(core->cons, "string_ids_off      : %u (0x%06x)\n", dex->string_ids_offset, dex->string_ids_offset);
+	rz_cons_printf(core->cons, "type_ids_size       : %u\n", dex->type_ids_size);
+	rz_cons_printf(core->cons, "type_ids_off        : %u (0x%06x)\n", dex->type_ids_offset, dex->type_ids_offset);
+	rz_cons_printf(core->cons, "proto_ids_size      : %u\n", dex->proto_ids_size);
+	rz_cons_printf(core->cons, "proto_ids_off       : %u (0x%06x)\n", dex->proto_ids_offset, dex->proto_ids_offset);
+	rz_cons_printf(core->cons, "field_ids_size      : %u\n", dex->field_ids_size);
+	rz_cons_printf(core->cons, "field_ids_off       : %u (0x%06x)\n", dex->field_ids_offset, dex->field_ids_offset);
+	rz_cons_printf(core->cons, "method_ids_size     : %u\n", dex->method_ids_size);
+	rz_cons_printf(core->cons, "method_ids_off      : %u (0x%06x)\n", dex->method_ids_offset, dex->method_ids_offset);
+	rz_cons_printf(core->cons, "class_defs_size     : %u\n", dex->class_defs_size);
+	rz_cons_printf(core->cons, "class_defs_off      : %u (0x%06x)\n", dex->class_defs_offset, dex->class_defs_offset);
+	rz_cons_printf(core->cons, "data_size           : %u\n", dex->data_size);
+	rz_cons_printf(core->cons, "data_off            : %u (0x%06x)\n\n", dex->data_offset, dex->data_offset);
 
 	for (ut32 i = 0; i < rz_pvector_len(dex->class_defs); ++i) {
 		DexClassDef *class_def = rz_pvector_at(dex->class_defs, i);
-		dex_print_class_def(dex, i, class_def);
+		dex_print_class_def(core->cons, dex, i, class_def);
 	}
 
 	return RZ_CMD_STATUS_OK;
 }
 
-static void dex_print_class_def_exports(RzBinDex *dex, ut32 index, DexClassDef *class_def) {
+static void dex_print_class_def_exports(RzCons *cons, RzBinDex *dex, ut32 index, DexClassDef *class_def) {
 	ut32 j;
 	RzListIter *it;
 	DexEncodedField *encoded_field;
 	DexEncodedMethod *encoded_method;
-	rz_cons_printf("Class #%-13u-\n", index);
+	rz_cons_printf(cons, "Class #%-13u-\n", index);
 	char *tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->class_idx);
-	rz_cons_printf("  Class descriptor  : '%s'\n", tmp);
+	rz_cons_printf(cons, "  Class descriptor  : '%s'\n", tmp);
 	free(tmp);
 	tmp = decode_access_flags(class_def->access_flags);
-	rz_cons_printf("  Access flags      : 0x%04x (%s)\n", class_def->access_flags, tmp ? tmp : "");
+	rz_cons_printf(cons, "  Access flags      : 0x%04x (%s)\n", class_def->access_flags, tmp ? tmp : "");
 	free(tmp);
 	tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->superclass_idx);
-	rz_cons_printf("  Superclass        : '%s'\n", tmp);
+	rz_cons_printf(cons, "  Superclass        : '%s'\n", tmp);
 	free(tmp);
-	rz_cons_printf("  Interfaces        -\n");
+	rz_cons_printf(cons, "  Interfaces        -\n");
 	for (j = 0; j < class_def->n_interfaces; ++j) {
 		tmp = rz_bin_dex_resolve_type_id_by_idx(dex, class_def->interfaces[j]);
-		rz_cons_printf("    #%-15u: '%s'\n", j, tmp);
+		rz_cons_printf(cons, "    #%-15u: '%s'\n", j, tmp);
 		free(tmp);
 	}
-	rz_cons_printf("  Static fields     -\n");
+	rz_cons_printf(cons, "  Static fields     -\n");
 	j = 0;
 	rz_list_foreach (class_def->static_fields, it, encoded_field) {
 		if ((encoded_field->access_flags & (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PROTECTED)) != 0) {
-			dex_print_encoded_field(dex, j, encoded_field);
+			dex_print_encoded_field(cons, dex, j, encoded_field);
 		}
 		j++;
 	}
-	rz_cons_printf("  Instance fields   -\n");
+	rz_cons_printf(cons, "  Instance fields   -\n");
 	j = 0;
 	rz_list_foreach (class_def->instance_fields, it, encoded_field) {
 		if ((encoded_field->access_flags & (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PROTECTED)) != 0) {
-			dex_print_encoded_field(dex, j, encoded_field);
+			dex_print_encoded_field(cons, dex, j, encoded_field);
 		}
 		j++;
 	}
-	rz_cons_printf("  Direct methods    -\n");
+	rz_cons_printf(cons, "  Direct methods    -\n");
 	j = 0;
 	rz_list_foreach (class_def->direct_methods, it, encoded_method) {
 		if ((encoded_method->access_flags & (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PROTECTED)) != 0) {
-			dex_print_encoded_method(dex, j, encoded_method);
+			dex_print_encoded_method(cons, dex, j, encoded_method);
 		}
 		j++;
 	}
-	rz_cons_printf("  Virtual methods   -\n");
+	rz_cons_printf(cons, "  Virtual methods   -\n");
 	j = 0;
 	rz_list_foreach (class_def->virtual_methods, it, encoded_method) {
 		if ((encoded_method->access_flags & (ACCESS_FLAG_PUBLIC | ACCESS_FLAG_PROTECTED)) != 0) {
-			dex_print_encoded_method(dex, j, encoded_method);
+			dex_print_encoded_method(cons, dex, j, encoded_method);
 		}
 		j++;
 	}
@@ -276,7 +276,7 @@ RZ_IPI RzCmdStatus rz_cmd_dexe_handler(RzCore *core, int argc, const char **argv
 	for (ut32 i = 0; i < rz_pvector_len(dex->class_defs); ++i) {
 		DexClassDef *class_def = rz_pvector_at(dex->class_defs, i);
 		if ((class_def->access_flags & ACCESS_FLAG_PUBLIC) != 0) {
-			dex_print_class_def_exports(dex, i, class_def);
+			dex_print_class_def_exports(core->cons, dex, i, class_def);
 		}
 	}
 

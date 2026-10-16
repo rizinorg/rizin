@@ -10,11 +10,11 @@
 #define PRINTF_A(color, fmt, ...) \
 	do { \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
-			rz_cons_print(color); \
+			rz_cons_print(core->cons, color); \
 		} \
-		rz_cons_printf(fmt, __VA_ARGS__); \
+		rz_cons_printf(core->cons, fmt, __VA_ARGS__); \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
-			rz_cons_print(Color_RESET); \
+			rz_cons_print(core->cons, Color_RESET); \
 		} \
 	} while (0)
 #define PRINTF_YA(fmt, ...) PRINTF_A(pal->offset, fmt, __VA_ARGS__)
@@ -25,11 +25,11 @@
 #define PRINT_A(color, msg) \
 	do { \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
-			rz_cons_print(color); \
+			rz_cons_print(core->cons, color); \
 		} \
-		rz_cons_print(msg); \
+		rz_cons_print(core->cons, msg); \
 		if ((color) && rz_config_get_i(core->config, "scr.color") > 0) { \
-			rz_cons_print(Color_RESET); \
+			rz_cons_print(core->cons, Color_RESET); \
 		} \
 	} while (0)
 #define PRINT_YA(msg) PRINT_A(pal->offset, msg)
@@ -606,7 +606,7 @@ static void jemalloc_process_leaf_elm_530(RzCore *core, ut64 leaf_addr, const Rz
 	ht_uu_insert(seen_extents, edata_addr, 1);
 
 	jemalloc_print_extent_info_530(core, edata_addr, config);
-	rz_cons_printf("\n");
+	rz_cons_printf(core->cons, "\n");
 	(*extent_count)++;
 }
 

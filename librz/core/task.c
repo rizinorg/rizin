@@ -553,13 +553,13 @@ static bool core_task_ctx_init(CoreTaskCtx *ctx, RzCore *core) {
 		return false;
 	}
 	ctx->cons_context->cmd_depth = core->max_cmd_depth;
-	rz_cons_context_break_push(ctx->cons_context, NULL, NULL, false);
+	rz_cons_context_break_push(ctx->cons_context, NULL, NULL);
 	return true;
 }
 
 static void core_task_ctx_fini(CoreTaskCtx *ctx) {
-	if (ctx->cons_context && ctx->cons_context->break_stack) {
-		rz_cons_context_break_pop(ctx->cons_context, false);
+	if (ctx->cons_context && ctx->cons_context->intr) {
+		rz_cons_context_break_pop(ctx->cons_context);
 	}
 	rz_cons_context_free(ctx->cons_context);
 }
@@ -599,11 +599,13 @@ static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 	RzCore *core = ctx->core_ctx.core;
 	RzCoreTask *task = rz_core_task_self(sched);
 	char *res_str;
+
 	if (task == sched->main_task) {
 		rz_core_cmd(core, ctx->cmd, ctx->cmd_log);
 		res_str = NULL;
 	} else {
 		res_str = rz_core_cmd_str(core, ctx->cmd);
+		rz_cons_context_reset(core->cons);
 	}
 	ctx->res = res_str;
 
@@ -611,7 +613,7 @@ static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 		ctx->finished_cb(res_str, ctx->finished_cb_user);
 	}
 
-	if (task != sched->main_task && rz_cons_default_context_is_interactive()) {
+	if (task != sched->main_task && rz_cons_is_interactive(core->cons)) {
 		eprintf("\nTask %d finished\n", task->id);
 	}
 }
@@ -684,9 +686,16 @@ static FunctionTaskCtx *function_task_ctx_new(RzCore *core, RzCoreTaskFunction f
 static void function_task_runner(RzCoreTaskScheduler *sched, void *user) {
 	FunctionTaskCtx *ctx = user;
 	RzCore *core = ctx->core_ctx.core;
-	rz_cons_push();
-	ctx->res = ctx->fcn(core, ctx->fcn_user);
-	rz_cons_pop();
+	RzCoreTask *task = rz_core_task_self(sched);
+
+	if (task == sched->main_task) {
+		rz_cons_push(core->cons);
+		ctx->res = ctx->fcn(core, ctx->fcn_user);
+		rz_cons_pop(core->cons);
+	} else {
+		ctx->res = ctx->fcn(core, ctx->fcn_user);
+		rz_cons_context_reset(core->cons);
+	}
 }
 
 static void function_task_free(FunctionTaskCtx *ctx) {
@@ -729,14 +738,19 @@ RZ_API void *rz_core_function_task_get_result(RzCoreTask *task) {
 }
 
 RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user) {
-	if (next->runner_user) {
-		CoreTaskCtx *ctx = next->runner_user;
-		if (ctx->cons_context) {
-			rz_cons_context_load(ctx->cons_context);
-			return;
-		}
+	CoreTaskCtx *ctx = (next && next->runner_user) ? (CoreTaskCtx *)next->runner_user : NULL;
+	RzCore *core = ctx && ctx->core ? ctx->core : (RzCore *)user;
+
+	if (!core || !core->cons) {
+		return;
 	}
-	rz_cons_context_reset();
+
+	if (ctx && ctx->cons_context) {
+		rz_cons_context_load(core->cons, ctx->cons_context);
+		return;
+	}
+
+	rz_cons_context_reset(core->cons);
 }
 
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user) {
@@ -803,7 +817,7 @@ RZ_IPI void rz_core_task_print(RzCore *core, RzCoreTask *task, RzOutputMode mode
 		pj_end(j);
 		break;
 	default: {
-		rz_cons_printf("%3d %3s %12s  %s\n",
+		rz_cons_printf(core->cons, "%3d %3s %12s  %s\n",
 			task->id,
 			task->transient ? "(t)" : "",
 			rz_core_task_status(task),
@@ -828,10 +842,10 @@ RZ_IPI void rz_core_tasks_print(RzCore *core, RzOutputMode mode) {
 	}
 	if (j) {
 		pj_end(j);
-		rz_cons_println(pj_string(j));
+		rz_cons_println(core->cons, pj_string(j));
 		pj_free(j);
 	} else {
-		rz_cons_printf("--\ntotal running: %d\n", core->tasks.tasks_running);
+		rz_cons_printf(core->cons, "--\ntotal running: %d\n", core->tasks.tasks_running);
 	}
 	tasks_lock_leave(&core->tasks, &old_sigset);
 }

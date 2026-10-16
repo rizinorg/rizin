@@ -149,18 +149,18 @@ static RzDebugReasonType windbg_wait(RzDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->plugin_data;
 	rz_return_val_if_fail(idbg && idbg->initialized, 0);
 	ULONG Type, ProcessId, ThreadId;
-	rz_cons_break_push(break_debugger, dbg);
+	rz_interrupt_break_push(dbg->intr, break_debugger, dbg);
 	const ULONG timeout = is_target_kernel(idbg) ? INFINITE : TIMEOUT;
 	HRESULT hr;
 	while ((hr = ITHISCALL(dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, timeout)) == S_FALSE) {
 		if (do_break) {
 			do_break = false;
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(dbg->intr);
 			windbg_select(dbg, dbg->pid, dbg->tid);
 			return RZ_DEBUG_REASON_USERSUSP;
 		}
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	if (FAILED(hr)) {
 		return RZ_DEBUG_REASON_DEAD;
 	}

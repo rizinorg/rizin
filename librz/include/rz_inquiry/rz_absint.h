@@ -261,6 +261,7 @@ typedef enum rz_absint_builtin_value_domain_t {
 RZ_API RZ_NULLABLE const RzAbsIntValueDomain *rz_absint_builtin_value_domain(RzAbsIntBuiltinValueDomain dom);
 
 typedef struct rz_absint_driver_config_t {
+	RZ_NONNULL RzInterrupt *intr;
 	RZ_NONNULL RzAnalysis *analysis;
 	RZ_NONNULL RzIO *io;
 	RZ_NONNULL RzSetU *fcn_entry_points; ///< Addresses considered function entry points.

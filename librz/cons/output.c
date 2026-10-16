@@ -5,8 +5,6 @@
 #include <rz_util/rz_assert.h>
 #include "i/private.h"
 
-#define I rz_cons_singleton()
-
 #if __WINDOWS__
 #include <rz_windows.h>
 static void __fill_tail(int cols, int lines) {
@@ -23,16 +21,16 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-RZ_API void rz_cons_w32_clear(void) {
+RZ_API void rz_cons_w32_clear(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	static HANDLE hStdout = NULL;
 	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	COORD startCoords;
 	DWORD dummy;
-	if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		rz_cons_strcat(Color_RESET RZ_CONS_CLEAR_SCREEN);
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		rz_cons_strcat(cons, Color_RESET RZ_CONS_CLEAR_SCREEN);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		rz_xwrite(1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!hStdout) {
@@ -51,18 +49,18 @@ RZ_API void rz_cons_w32_clear(void) {
 		nLength, startCoords, &dummy);
 }
 
-RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y) {
+RZ_API void rz_cons_w32_gotoxy(RZ_NONNULL RZ_BORROW RzCons *cons, int fd, int x, int y) {
 	static HANDLE hStdout = NULL;
 	static HANDLE hStderr = NULL;
 	HANDLE *hConsole = fd == 1 ? &hStdout : &hStderr;
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
-	if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
-		rz_cons_printf("\x1b[%d;%dH", y, x);
+	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		rz_cons_printf(cons, "\x1b[%d;%dH", y, x);
 		return;
 	}
-	if (I->is_wine == 1) {
+	if (cons->is_wine == 1) {
 		rz_xwrite(fd, "\x1b[0;0H", 6);
 	}
 	if (!*hConsole) {
@@ -111,7 +109,7 @@ static int bytes_utf8len(const char *s, int n) {
 	return ret;
 }
 
-static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
+static int rz_cons_w32_hprint(RZ_NONNULL RZ_BORROW RzCons *cons, DWORD hdl, const char *ptr, int len, bool vmode) {
 	HANDLE hConsole = GetStdHandle(hdl);
 	int fd = hdl == STD_OUTPUT_HANDLE ? 1 : 2;
 	int esc = 0;
@@ -122,9 +120,9 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	int linelen = 0;
 	int ll = 0;
 	int raw_ll = 0;
-	int lines, cols = rz_cons_get_size(&lines);
-	if (I->is_wine == -1) {
-		I->is_wine = rz_file_is_directory("/proc") ? 1 : 0;
+	int lines, cols = rz_cons_get_size(cons, &lines);
+	if (cons->is_wine == -1) {
+		cons->is_wine = rz_file_is_directory("/proc") ? 1 : 0;
 	}
 	if (len < 0) {
 		len = strlen((const char *)ptr);
@@ -251,7 +249,7 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 					}
 				}
 				if (state == -2) {
-					rz_cons_w32_gotoxy(fd, x, y);
+					rz_cons_w32_gotoxy(cons, fd, x, y);
 					ptr += i;
 					str = ptr; // + i-2;
 					continue;
@@ -264,14 +262,14 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 						// fill row here
 						__fill_tail(cols, lines);
 					}
-					rz_cons_w32_gotoxy(fd, 0, 0);
+					rz_cons_w32_gotoxy(cons, fd, 0, 0);
 					lines = 0;
 					esc = 0;
 					ptr += 3;
 					str = ptr + 1;
 					continue;
 				} else if (ptr[0] == '2' && ptr[1] == 'J') {
-					rz_cons_w32_clear();
+					rz_cons_w32_clear(cons);
 					esc = 0;
 					ptr = ptr + 1;
 					str = ptr + 1;
@@ -404,20 +402,20 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 	return ret;
 }
 
-RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode) {
-	return rz_cons_w32_hprint(STD_OUTPUT_HANDLE, ptr, len, vmode);
+RZ_API int rz_cons_w32_print(RZ_NONNULL RZ_BORROW RzCons *cons, const char *ptr, int len, bool vmode) {
+	return rz_cons_w32_hprint(cons, STD_OUTPUT_HANDLE, ptr, len, vmode);
 }
 
-RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap) {
+RZ_API int rz_cons_win_vhprintf(RZ_NONNULL RZ_BORROW RzCons *cons, DWORD hdl, bool vmode, const char *fmt, va_list ap) {
 	va_list ap2;
 	int ret = -1;
 	FILE *con = hdl == STD_OUTPUT_HANDLE ? stdout : stderr;
 	if (!strchr(fmt, '%')) {
 		size_t len = strlen(fmt);
-		if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			return fwrite(fmt, 1, len, con);
 		}
-		return rz_cons_w32_hprint(hdl, fmt, len, vmode);
+		return rz_cons_w32_hprint(cons, hdl, fmt, len, vmode);
 	}
 	va_copy(ap2, ap);
 	int num_chars = vsnprintf(NULL, 0, fmt, ap2);
@@ -425,10 +423,10 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 	char *buf = calloc(1, num_chars);
 	if (buf) {
 		(void)vsnprintf(buf, num_chars, fmt, ap);
-		if (I->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			ret = fwrite(buf, 1, num_chars - 1, con);
 		} else {
-			ret = rz_cons_w32_hprint(hdl, buf, num_chars - 1, vmode);
+			ret = rz_cons_w32_hprint(cons, hdl, buf, num_chars - 1, vmode);
 		}
 		free(buf);
 	}
@@ -436,24 +434,24 @@ RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list 
 	return ret;
 }
 
-RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) {
+RZ_API int rz_cons_win_printf(RZ_NONNULL RZ_BORROW RzCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	rz_return_val_if_fail(fmt, -1);
 
 	va_start(ap, fmt);
-	ret = rz_cons_win_vhprintf(STD_OUTPUT_HANDLE, vmode, fmt, ap);
+	ret = rz_cons_win_vhprintf(cons, STD_OUTPUT_HANDLE, vmode, fmt, ap);
 	va_end(ap);
 	return ret;
 }
 
-RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) {
+RZ_API int rz_cons_win_eprintf(RZ_NONNULL RZ_BORROW RzCons *cons, bool vmode, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 	rz_return_val_if_fail(fmt, -1);
 
 	va_start(ap, fmt);
-	ret = rz_cons_win_vhprintf(STD_ERROR_HANDLE, vmode, fmt, ap);
+	ret = rz_cons_win_vhprintf(cons, STD_ERROR_HANDLE, vmode, fmt, ap);
 	va_end(ap);
 	return ret;
 }

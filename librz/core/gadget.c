@@ -229,7 +229,7 @@ static bool gadget_hitlist_print_quiet_mode(const RzCore *core, const RzCoreAsmH
 	if (context->ret_val) {
 		rz_strbuf_appendf(context->buf, format, output_str, reset_color);
 	} else {
-		rz_cons_printf(format, output_str, reset_color);
+		rz_cons_printf(core->cons, format, output_str, reset_color);
 	}
 	free(output_str);
 	rz_asm_op_free(asmop);
@@ -275,9 +275,9 @@ static bool gadget_hitlist_print_standard_mode(const RzCore *core, const RzCoreA
 		}
 	} else {
 		if (comment) {
-			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
+			rz_cons_printf(core->cons, format, hit->addr, asm_op_hex, asm_str, reset_color, comment);
 		} else {
-			rz_cons_printf(format, hit->addr, asm_op_hex, asm_str, reset_color);
+			rz_cons_printf(core->cons, format, hit->addr, asm_op_hex, asm_str, reset_color);
 		}
 	}
 
@@ -920,22 +920,22 @@ static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *g
 	const char *highlight_color = colorize ? Color_CYAN : "";
 	const char *reset_color = colorize ? Color_RESET : "";
 	if (is_conditional) {
-		rz_cons_printf("%sGadget 0x%" PFMT64x " [Conditional]%s\n", highlight_color, gadget_info->address, reset_color);
+		rz_cons_printf(core->cons, "%sGadget 0x%" PFMT64x " [Conditional]%s\n", highlight_color, gadget_info->address, reset_color);
 	} else {
-		rz_cons_printf("Gadget 0x%" PFMT64x "\n", gadget_info->address);
+		rz_cons_printf(core->cons, "Gadget 0x%" PFMT64x "\n", gadget_info->address);
 	}
-	rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
+	rz_cons_printf(core->cons, "Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 
-	rz_cons_printf("Changed registers: ");
+	rz_cons_printf(core->cons, "Changed registers: ");
 	void **it;
 	RzGadgetRegInfo *reg_info;
 	rz_pvector_foreach (gadget_info->modified_registers, it) {
 		reg_info = *it;
-		rz_cons_printf("%s ", reg_info->name);
+		rz_cons_printf(core->cons, "%s ", reg_info->name);
 	}
-	rz_cons_printf("\n");
+	rz_cons_printf(core->cons, "\n");
 
-	rz_cons_printf("Register dependencies:\n");
+	rz_cons_printf(core->cons, "Register dependencies:\n");
 	RzListIter *iter;
 	rz_list_foreach (gadget_info->dependencies, iter, reg_info) {
 		if (rz_reg_is_role(rreg, reg_info->name, RZ_REG_NAME_SP) ||
@@ -943,20 +943,20 @@ static void gadget_print_standard_mode(const RzCore *core, const RzGadgetInfo *g
 			continue;
 		}
 		if (reg_info->is_var_write) {
-			rz_cons_printf("Var write: %s Initial value: 0x%" PFMT64x " New Value: 0x%" PFMT64x "\n",
+			rz_cons_printf(core->cons, "Var write: %s Initial value: 0x%" PFMT64x " New Value: 0x%" PFMT64x "\n",
 				reg_info->name, reg_info->init_val, reg_info->new_val);
 		} else if (reg_info->is_mem_read) {
-			rz_cons_printf("Memory Read: %s Value: 0x%" PFMT64x "\n", reg_info->name, reg_info->new_val);
+			rz_cons_printf(core->cons, "Memory Read: %s Value: 0x%" PFMT64x "\n", reg_info->name, reg_info->new_val);
 		} else if (reg_info->is_mem_write) {
-			rz_cons_printf("Memory Write: %s Initial Value: 0x%" PFMT64x " New Value: 0x%" PFMT64x "\n",
+			rz_cons_printf(core->cons, "Memory Write: %s Initial Value: 0x%" PFMT64x " New Value: 0x%" PFMT64x "\n",
 				reg_info->name, reg_info->init_val, reg_info->new_val);
 		} else if (reg_info->is_var_read) {
 			// Var read needed for cases like mov dst, src kind of instructions
-			rz_cons_printf("Var Read: %s\n", reg_info->name);
+			rz_cons_printf(core->cons, "Var Read: %s\n", reg_info->name);
 		}
 	}
 
-	rz_cons_printf("\n");
+	rz_cons_printf(core->cons, "\n");
 }
 
 static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadget_info, PJ *pj, bool is_conditional) {
@@ -1013,8 +1013,8 @@ static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadge
 	pj_end(pj);
 }
 
-static void print_modified_reg(const RzGadgetInfo *gadget_info) {
-	rz_cons_printf("Modified regs: ");
+static void print_modified_reg(RzCons *cons, const RzGadgetInfo *gadget_info) {
+	rz_cons_printf(cons, "Modified regs: ");
 	if (gadget_info->modified_registers) {
 		void **it;
 		bool first = true;
@@ -1024,16 +1024,16 @@ static void print_modified_reg(const RzGadgetInfo *gadget_info) {
 				continue;
 			}
 			if (!first) {
-				rz_cons_printf(" ");
+				rz_cons_printf(cons, " ");
 			}
-			rz_cons_printf("%s", reg_info->name);
+			rz_cons_printf(cons, "%s", reg_info->name);
 			first = false;
 		}
 	}
 }
 
-static void print_gadget_dependencies(const RzGadgetInfo *gadget_info) {
-	rz_cons_printf("Dependencies:  ");
+static void print_gadget_dependencies(RzCons *cons, const RzGadgetInfo *gadget_info) {
+	rz_cons_printf(cons, "Dependencies:  ");
 	if (gadget_info->dependencies) {
 		RzListIter *iter;
 		RzGadgetRegInfo *dep_info;
@@ -1043,15 +1043,15 @@ static void print_gadget_dependencies(const RzGadgetInfo *gadget_info) {
 				continue;
 			}
 			if (!first) {
-				rz_cons_printf(" ");
+				rz_cons_printf(cons, " ");
 			}
-			rz_cons_printf("%s", dep_info->name);
+			rz_cons_printf(cons, "%s", dep_info->name);
 			first = false;
 		}
 	}
 }
 
-static void print_gadget_long_info(const RzGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
+static void print_gadget_long_info(RzCons *cons, const RzGadgetInfo *gadget_info, RzVector /*<size_t>*/ *lens, RzVector /*<ut64>*/ *add, RzPVector /*<char *>*/ *asm_strs, RzPVector /*<char *>*/ *hex_strs, int high_pad, bool utf8, bool colorize) {
 	ut32 size = gadget_info->size;
 	size_t instr_count = 0;
 	int pad = 0;
@@ -1067,23 +1067,23 @@ static void print_gadget_long_info(const RzGadgetInfo *gadget_info, RzVector /*<
 		const char *hex = (const char *)rz_pvector_at(hex_strs, instr_count);
 		const char *asm_str = (const char *)rz_pvector_at(asm_strs, instr_count);
 		const char *reset_color = colorize ? Color_RESET : "";
-		rz_cons_printf("  0x%08" PFMT64x "  %-16s %s%s", addr + idx, hex, asm_str, reset_color);
+		rz_cons_printf(cons, "  0x%08" PFMT64x "  %-16s %s%s", addr + idx, hex, asm_str, reset_color);
 		int cur_asm_len = rz_str_ansi_len(asm_str);
 		pad = (high_pad - cur_asm_len);
 		if (pad > 0) {
-			rz_cons_printf("%*s", pad, "");
+			rz_cons_printf(cons, "%*s", pad, "");
 		}
-		rz_cons_print(utf8 ? " │ " : " | ");
+		rz_cons_print(cons, utf8 ? " │ " : " | ");
 		if (instr_count < 1) {
-			rz_cons_printf("Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
+			rz_cons_printf(cons, "Stack change: 0x%" PFMT64x "\n", gadget_info->stack_change);
 		} else if (instr_count == 1) {
-			print_modified_reg(gadget_info);
-			rz_cons_newline();
+			print_modified_reg(cons, gadget_info);
+			rz_cons_newline(cons);
 		} else if (instr_count == 2) {
-			print_gadget_dependencies(gadget_info);
-			rz_cons_newline();
+			print_gadget_dependencies(cons, gadget_info);
+			rz_cons_newline(cons);
 		} else {
-			rz_cons_newline();
+			rz_cons_newline(cons);
 		}
 		idx += *lens_elem;
 		instr_count++;
@@ -1114,16 +1114,16 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 	const char *highlight_color = colorize ? Color_CYAN : "";
 	const char *reset_color = colorize ? Color_RESET : "";
 	if (is_conditional) {
-		rz_cons_printf("%sGadget 0x%" PFMT64x " (size %d bytes) [Conditional]%s\n", highlight_color, addr, size, reset_color);
+		rz_cons_printf(core->cons, "%sGadget 0x%" PFMT64x " (size %d bytes) [Conditional]%s\n", highlight_color, addr, size, reset_color);
 	} else {
-		rz_cons_printf("Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
+		rz_cons_printf(core->cons, "Gadget 0x%" PFMT64x " (size %d bytes)\n", addr, size);
 	}
 	if (utf8) {
 		rep_str = rz_str_repeat("–", req_width);
-		rz_cons_printf("%s––%s\n", rep_str, rep_str);
+		rz_cons_printf(core->cons, "%s––%s\n", rep_str, rep_str);
 	} else {
 		rep_str = rz_str_repeat("-", req_width);
-		rz_cons_printf("%s--%s\n", rep_str, rep_str);
+		rz_cons_printf(core->cons, "%s--%s\n", rep_str, rep_str);
 	}
 	RzAsmOp asmop = RZ_EMPTY;
 	RzAnalysisOp aop = RZ_EMPTY;
@@ -1153,7 +1153,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 		rz_analysis_op_fini(&aop);
 		rz_asm_op_fini(&asmop);
 	}
-	print_gadget_long_info(gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
+	print_gadget_long_info(core->cons, gadget_info, lens, add, asm_strs, hex_strs, high_pad, utf8, colorize);
 	free(rep_str);
 	rz_asm_op_fini(&asmop);
 	rz_vector_free(lens);
@@ -1161,7 +1161,7 @@ static void gadget_print_long_mode(const RzCore *core, const RzGadgetInfo *gadge
 	rz_pvector_free(asm_strs);
 	rz_pvector_free(hex_strs);
 	free(buf);
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 }
 
 static void print_gadget_info(const RzCore *core, const RzGadgetInfo *gadget_info, const RzGadgetSearchContext *context, bool is_conditional) {
@@ -1220,7 +1220,7 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 		if (context->ret_val) {
 			rz_strbuf_appendf(context->buf, "%s0x%08" PFMT64x "%s:", addr_color, hit->addr, reset_color);
 		} else {
-			rz_cons_printf("%s0x%08" PFMT64x "%s:", addr_color, hit->addr, reset_color);
+			rz_cons_printf(core->cons, "%s0x%08" PFMT64x "%s:", addr_color, hit->addr, reset_color);
 		}
 	}
 	const ut64 addr = hit->addr;
@@ -1282,28 +1282,28 @@ static bool print_gadget_hitlist(const RzCore *core, RzPVector /*<RzCoreAsmHit *
 			if (context->ret_val) {
 				rz_strbuf_appendf(context->buf, " %s[Conditional]%s\n", highlight_color, reset_color);
 			} else {
-				rz_cons_printf(" %s[Conditional]%s\n", highlight_color, reset_color);
+				rz_cons_printf(core->cons, " %s[Conditional]%s\n", highlight_color, reset_color);
 			}
 		} else {
 			if (context->ret_val) {
 				rz_strbuf_appendf(context->buf, "\n");
 			} else {
-				rz_cons_newline();
+				rz_cons_newline(core->cons);
 			}
 		}
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		if (hit) {
 			if (is_conditional) {
-				rz_cons_printf("%sGadget size: %d [Conditional]%s\n", highlight_color, (int)size, reset_color);
+				rz_cons_printf(core->cons, "%sGadget size: %d [Conditional]%s\n", highlight_color, (int)size, reset_color);
 			} else {
-				rz_cons_printf("Gadget size: %d\n", (int)size);
+				rz_cons_printf(core->cons, "Gadget size: %d\n", (int)size);
 			}
 		}
 		if (context->ret_val) {
 			break;
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		if (is_conditional) {
@@ -1797,7 +1797,7 @@ static RzList /*<RzGadgetEndListPair *>*/ *compute_end_gadget_list(const RzCore 
 			}
 		}
 		rz_analysis_op_fini(&end_gadget);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 	}
@@ -2184,7 +2184,7 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 	// instructions, x86 and friends are weird length instructions, so
 	// we'll just assume 15 byte instructions.
 	const int gadget_depth = context->increment == 1 ? context->max_instr * max_inst_size_x86 /* wow, x86 is long */ : context->max_instr * context->increment;
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(core->intr)) {
 		return -2;
 	}
 	RzGadgetEndListPair *end_gadget = rz_list_pop(context->end_list);
@@ -2198,7 +2198,7 @@ static int handle_gadget_search_address(RzCore *core, RzGadgetSearchContext *con
 		} else if (context->increment != 1 && i < prev) {
 			i = prev;
 		}
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (i > next && !update_end_gadget(&i, gadget_depth, &end_gadget, context)) {
@@ -2283,7 +2283,7 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 	if (context->state) {
 		rz_cmd_state_output_array_start(context->state);
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	if (context->max_count == 0) {
 		context->max_count = -1;
 	}
@@ -2330,7 +2330,7 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 		const RzInterval itv = rz_itv_intersect(search_itv, map->itv);
 		context->from = itv.addr;
 		context->to = rz_itv_end(itv);
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		status = handle_gadget_search_address(core, context, rx_list);
@@ -2345,14 +2345,14 @@ RZ_API RzCmdStatus rz_core_gadget_search(RZ_NONNULL RzCore *core, RZ_NONNULL RzG
 
 cleanup:
 	ht_su_free(context->unique_hitlists);
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(core->intr)) {
 		eprintf("\n");
 	}
 
 	if (context->state) {
 		rz_cmd_state_output_array_end(context->state);
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	rz_list_free(rx_list);
 	return !status ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }

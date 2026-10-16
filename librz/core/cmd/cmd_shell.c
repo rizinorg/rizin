@@ -248,7 +248,7 @@ static ut32 vernum(const char *s) {
 
 // ascii
 RZ_IPI RzCmdStatus rz_cmd_shell_ascii_table_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%s", rz_get_ascii_table());
+	rz_cons_printf(core->cons, "%s", rz_get_ascii_table());
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -259,7 +259,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char *
 	case 1:
 		e = rz_sys_get_environ();
 		while (!RZ_STR_ISEMPTY(e)) {
-			rz_cons_println(*e);
+			rz_cons_println(core->cons, *e);
 			e++;
 		}
 		return RZ_CMD_STATUS_OK;
@@ -268,7 +268,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_env_handler(RzCore *core, int argc, const char *
 		if (!p) {
 			return RZ_CMD_STATUS_OK;
 		}
-		rz_cons_println(p);
+		rz_cons_println(core->cons, p);
 		free(p);
 		return RZ_CMD_STATUS_OK;
 	case 3:
@@ -291,7 +291,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_ls_handler(RzCore *core, int argc, const char **
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_print(res);
+	rz_cons_print(core->cons, res);
 	free(res);
 	return RZ_CMD_STATUS_OK;
 }
@@ -303,9 +303,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_rm_handler(RzCore *core, int argc, const char **
 
 // sleep
 RZ_IPI RzCmdStatus rz_cmd_shell_sleep_handler(RzCore *core, int argc, const char **argv) {
-	void *bed = rz_cons_sleep_begin();
+	void *bed = rz_interrupt_sleep_begin(core->intr);
 	rz_sys_sleep(atoi(argv[1]));
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(core->intr, bed);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -318,7 +318,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uniq_handler(RzCore *core, int argc, const char 
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_print(res);
+	rz_cons_print(core->cons, res);
 	free(res);
 	return RZ_CMD_STATUS_OK;
 }
@@ -329,11 +329,11 @@ RZ_IPI RzCmdStatus rz_cmd_shell_uname_handler(RzCore *core, int argc, const char
 	if (!si) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%s", si->sysname);
+	rz_cons_printf(core->cons, "%s", si->sysname);
 	if (argc > 1 && strcmp(argv[1], "-r") == 0) {
-		rz_cons_printf(" %s", si->release);
+		rz_cons_printf(core->cons, " %s", si->release);
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 	rz_sys_info_free(si);
 	return RZ_CMD_STATUS_OK;
 }
@@ -343,10 +343,10 @@ RZ_IPI RzCmdStatus rz_cmd_shell_echo_handler(RzCore *core, int argc, const char 
 	if (argc >= 2) {
 		char *output = rz_str_array_join(argv + 1, argc - 1, " ");
 		rz_str_unescape(output);
-		rz_cons_print(output);
+		rz_cons_print(core->cons, output);
 		free(output);
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -439,7 +439,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 	if (*path == '$') {
 		const char *oldText = rz_cmd_alias_get(core->rcmd, path, 1);
 		if (oldText) {
-			rz_cons_printf("%s\n", oldText + 1);
+			rz_cons_printf(core->cons, "%s\n", oldText + 1);
 		} else {
 			RZ_LOG_ERROR("Invalid alias\n");
 		}
@@ -447,7 +447,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_cat_handler(RzCore *core, int argc, const char *
 	}
 	char *res = rz_syscmd_cat(path);
 	if (res) {
-		rz_cons_print(res);
+		rz_cons_print(core->cons, res);
 		free(res);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -463,7 +463,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char
 	char *res = rz_syscmd_mkdir(input);
 	free(input);
 	if (res) {
-		rz_cons_print(res);
+		rz_cons_print(core->cons, res);
 		free(res);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -473,7 +473,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_mkdir_handler(RzCore *core, int argc, const char
 RZ_IPI RzCmdStatus rz_cmd_shell_pwd_handler(RzCore *core, int argc, const char **argv) {
 	char *cwd = rz_sys_getdir();
 	if (cwd) {
-		rz_cons_println(cwd);
+		rz_cons_println(core->cons, cwd);
 		free(cwd);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -488,7 +488,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char 
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_print(res);
+	rz_cons_print(core->cons, res);
 	free(res);
 	return RZ_CMD_STATUS_OK;
 }
@@ -496,13 +496,13 @@ RZ_IPI RzCmdStatus rz_cmd_shell_sort_handler(RzCore *core, int argc, const char 
 // clear
 // cls
 RZ_IPI RzCmdStatus rz_cmd_shell_clear_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_clear00();
+	rz_cons_clear00(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
 // flush
 RZ_IPI RzCmdStatus rz_cmd_shell_flush_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -513,7 +513,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_which_handler(RzCore *core, int argc, const char
 		RZ_LOG_ERROR("Could not get the full path of '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(solved);
+	rz_cons_println(core->cons, solved);
 	free(solved);
 	return RZ_CMD_STATUS_OK;
 }
@@ -541,7 +541,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char 
 	bool color = rz_config_get_i(core->config, "scr.color") > 0;
 	char *uni = rz_diff_unified_text(dff, argv[1], argv[2], false, color);
 	rz_diff_free(dff);
-	rz_cons_printf("%s\n", uni);
+	rz_cons_printf(core->cons, "%s\n", uni);
 	free(uni);
 	free(a);
 	free(b);
@@ -551,7 +551,7 @@ RZ_IPI RzCmdStatus rz_cmd_shell_diff_handler(RzCore *core, int argc, const char 
 // date
 RZ_IPI RzCmdStatus rz_cmd_shell_date_handler(RzCore *core, int argc, const char **argv) {
 	char *now = rz_time_date_now_to_string();
-	rz_cons_printf("%s\n", now);
+	rz_cons_printf(core->cons, "%s\n", now);
 	free(now);
 	return RZ_CMD_STATUS_OK;
 }
@@ -573,9 +573,9 @@ RZ_IPI RzCmdStatus rz_cmd_shell_pkill_handler(RzCore *core, int argc, const char
 }
 
 RZ_IPI RzCmdStatus rz_print_init_time_values_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("plug.init = %" PFMT64d "\n"
-		       "plug.load = %" PFMT64d "\n"
-		       "file.load = %" PFMT64d "\n",
+	rz_cons_printf(core->cons, "plug.init = %" PFMT64d "\n"
+				   "plug.load = %" PFMT64d "\n"
+				   "file.load = %" PFMT64d "\n",
 		core->times->loadlibs_init_time,
 		core->times->loadlibs_time,
 		core->times->file_open_time);
@@ -588,7 +588,7 @@ RZ_IPI RzCmdStatus rz_calculate_command_time_handler(RzCore *core, int argc, con
 	ut64 end = rz_time_now_mono();
 	double seconds = (double)(end - start) / RZ_USEC_PER_SEC;
 	core->num->value = (ut64)seconds;
-	rz_cons_printf("%lf\n", seconds);
+	rz_cons_printf(core->cons, "%lf\n", seconds);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -596,12 +596,12 @@ RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const ch
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
 		char *v = rz_version_str(core->sys_path, NULL);
-		rz_cons_printf("%s\n", v);
+		rz_cons_printf(core->cons, "%s\n", v);
 		free(v);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET: {
-		rz_cons_println(RZ_VERSION);
+		rz_cons_println(core->cons, RZ_VERSION);
 		break;
 	}
 	case RZ_OUTPUT_MODE_JSON: {
@@ -628,27 +628,27 @@ RZ_IPI RzCmdStatus rz_show_version_info_handler(RzCore *core, int argc, const ch
 }
 
 RZ_IPI RzCmdStatus rz_show_version_numeric_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", vernum(RZ_VERSION));
+	rz_cons_printf(core->cons, "%d\n", vernum(RZ_VERSION));
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_show_version_numeric2_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_NUMBER);
+	rz_cons_printf(core->cons, "%d\n", RZ_VERSION_NUMBER);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_show_version_major_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_MAJOR);
+	rz_cons_printf(core->cons, "%d\n", RZ_VERSION_MAJOR);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_show_version_minor_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_MINOR);
+	rz_cons_printf(core->cons, "%d\n", RZ_VERSION_MINOR);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_show_version_patch_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", RZ_VERSION_PATCH);
+	rz_cons_printf(core->cons, "%d\n", RZ_VERSION_PATCH);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -779,7 +779,7 @@ RZ_API RZ_OWN char *rz_core_clippy(RZ_NONNULL RzCore *core, RZ_NONNULL const cha
 RZ_IPI void rz_core_clippy_print(RzCore *core, const char *msg) {
 	char *string = rz_core_clippy(core, msg);
 	if (string) {
-		rz_cons_print(string);
+		rz_cons_print(core->cons, string);
 		free(string);
 	}
 }
@@ -790,6 +790,6 @@ RZ_IPI RzCmdStatus rz_cmd_shell_clippy_handler(RzCore *core, int argc, const cha
 		rz_core_clippy_print(core, output);
 		free(output);
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 	return RZ_CMD_STATUS_OK;
 }

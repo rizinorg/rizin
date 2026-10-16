@@ -265,7 +265,7 @@ typedef struct rz_debug_t {
 	bool create_new_console; /* Create a new console window for the debugee on debug start */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
-	bool consbreak; /* SIGINT handle for attached processes */
+	bool intrbreak; /* SIGINT handle for attached processes */
 	bool continue_all_threads;
 
 	/* tracking debugger state */
@@ -285,6 +285,7 @@ typedef struct rz_debug_t {
 
 	/* io */
 	PrintfCallback cb_printf;
+	void *cb_printf_user;
 	RzIOBind iob;
 
 	struct rz_debug_plugin_t *cur;
@@ -318,6 +319,8 @@ typedef struct rz_debug_t {
 	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
 	size_t RtlpHpHeapGlobalsOffset; ///< Related to windows heap
 	size_t RtlpLFHKeyOffset; ///< Related to windows heap
+	RzInterrupt *intr;
+	RzCons *cons; // Should we have this here?
 } RzDebug;
 
 typedef struct rz_debug_desc_plugin_t {
