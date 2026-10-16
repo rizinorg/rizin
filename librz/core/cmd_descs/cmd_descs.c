@@ -23590,7 +23590,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *arp_cd = rz_cmd_desc_group_state_new(core->rcmd, ar_cd, "arp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_profile_handler, &analysis_reg_profile_help, &arp_help);
 	rz_warn_if_fail(arp_cd);
-	RzCmdDesc *analysis_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpc", rz_analysis_reg_profile_comments_handler, &analysis_reg_profile_comments_help);
+	RzCmdDesc *analysis_reg_profile_comments_cd = rz_cmd_desc_argv_state_new(core->rcmd, arp_cd, "arpc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_profile_comments_handler, &analysis_reg_profile_comments_help);
 	rz_warn_if_fail(analysis_reg_profile_comments_cd);
 
 	RzCmdDesc *analysis_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpo", rz_analysis_reg_profile_open_handler, &analysis_reg_profile_open_help);
@@ -24745,7 +24745,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *drp_cd = rz_cmd_desc_group_state_new(core->rcmd, dr_cd, "drp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_profile_handler, &debug_reg_profile_help, &drp_help);
 	rz_warn_if_fail(drp_cd);
-	RzCmdDesc *debug_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpc", rz_debug_reg_profile_comments_handler, &debug_reg_profile_comments_help);
+	RzCmdDesc *debug_reg_profile_comments_cd = rz_cmd_desc_argv_state_new(core->rcmd, drp_cd, "drpc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_profile_comments_handler, &debug_reg_profile_comments_help);
 	rz_warn_if_fail(debug_reg_profile_comments_cd);
 
 	RzCmdDesc *debug_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpo", rz_debug_reg_profile_open_handler, &debug_reg_profile_open_help);

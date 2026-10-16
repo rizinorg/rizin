@@ -105,9 +105,9 @@ RZ_IPI RzCmdStatus HANDLER(reg_profile)(RzCore *core, int argc, const char **arg
 	return rz_reg_profile_handler(core, rreg, argc, argv, state);
 }
 
-RZ_IPI RzCmdStatus HANDLER(reg_profile_comments)(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus HANDLER(reg_profile_comments)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzReg *rreg = CMD_REGS_REG_PATH;
-	return rz_reg_profile_comments_handler(core, rreg, argc, argv);
+	return rz_reg_profile_comments_handler(core, rreg, argc, argv, state);
 }
 
 RZ_IPI RzCmdStatus HANDLER(reg_profile_open)(RzCore *core, int argc, const char **argv) {

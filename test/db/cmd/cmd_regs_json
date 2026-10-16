@@ -47,6 +47,20 @@ araj~{[1]}
 ara-
 ara-
 araj~{[0]}
+# Escape quotes, backslashes, and newlines in profile comments.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-comments
+arpcj
+drpcj
+# Comments stay with their register bank; absent comments yield an empty string.
+arpo scripts/reg-json-comments
+drpo scripts/reg-json-profile
+arpcj
+drpcj
+arpo scripts/reg-json-profile
+drpo scripts/reg-json-comments
+arpcj
+drpcj
 EOF
 EXPECT=<<EOF
 ["gpr","drx","fpu","mmx","xmm","ymm","flg","seg","sys","sec","vc","vcc","ctr"]
@@ -117,5 +131,11 @@ SN
 {"type":0,"type_str":"gpr","index":0,"size":24,"current":false}
 {"type":0,"type_str":"gpr","index":1,"size":24,"current":true}
 {"type":0,"type_str":"gpr","index":0,"size":24,"current":true}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
+{"comments":""}
+{"comments":""}
+{"comments":"# profile \"quoted\" C:\\regs\n# indented # comment\n# final comment\n"}
 EOF
 RUN

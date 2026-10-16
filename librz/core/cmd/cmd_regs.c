@@ -801,8 +801,18 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
-	if (reg->reg_profile_cmt) {
+/**
+ * \brief Show the full-line comments from the loaded register profile.
+ *
+ * Use an empty comments string in JSON so consumers do not need a separate
+ * case for profiles without notes.
+ */
+RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "comments", rz_str_get(reg->reg_profile_cmt));
+		pj_end(state->d.pj);
+	} else if (reg->reg_profile_cmt) {
 		rz_cons_println(core->cons, reg->reg_profile_cmt);
 	}
 	return RZ_CMD_STATUS_OK;
