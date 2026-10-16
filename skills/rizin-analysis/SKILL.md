@@ -1,24 +1,27 @@
 ---
 name: rizin-analysis
 description: >-
-  Analyzes binaries statically using Rizin (rizin CLI, rzpipe Python API,
-  rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign, rz-ar, rz-ax,
-  rz-hash, rz-asm companion tools) in headless mode with persistent .rzdb
-  project caching. Use when disassembling or decompiling binaries with Rizin
-  (pdg/pdgj), using CLI modifiers (@ temporary seek, ~ internal grep/JSON filter,
-  | pipes), evaluating expressions (%) or structured binary formats (pf),
-  computing statistical entropy/chi-square/serial-correlation metrics (ph),
-  managing C types/structs/noreturn/type-xrefs (t/td/tx/tn), hunting ROP/COP/JOP
-  gadgets (/R, /C, /J) or byte patterns (/p), comparing bytes/code in-CLI (c*)
-  or across files (rz-diff), recovering C++ vtables or Golang symbols, or running
-  static RzIL micro-emulation (aez*). Don't use for live dynamic malware
-  execution or non-Rizin disassemblers.
+  Analyzes binaries statically using Rizin >= 0.10.0 / dev (rizin CLI, rzpipe
+  Python API, rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign,
+  rz-ar, rz-ax, rz-hash, rz-asm companion tools) in headless mode with
+  persistent .rzdb project caching. Use when disassembling or decompiling
+  binaries with Rizin (pdg/pdgj), using CLI modifiers (@ temporary seek, ~
+  internal grep/JSON filter, | pipes) or scripting macros (( / .( / ..(),
+  evaluating expressions (%) or structured binary formats (pf), computing
+  statistical entropy/chi-square/serial-correlation metrics (ph), managing C
+  types/structs/noreturn/type-xrefs (t/td/tx/tn), hunting ROP/COP/JOP gadgets
+  (/R, /C, /J) or byte patterns (/p), comparing bytes/code in-CLI (c*) or across
+  files (rz-diff), recovering C++ vtables or Golang symbols, or running static
+  RzIL micro-emulation (aez*). Don't use for live dynamic malware execution or
+  non-Rizin disassemblers.
 license: LGPL-3.0-only
 ---
 
 # Rizin Headless Binary Analysis (`rizin`, `rzpipe` & `rz-ghidra`)
 
 Use this skill to perform static binary analysis, reverse engineering, decompilation, and automated configuration/indicator extraction using **Rizin** (`rizin` CLI, `rzpipe` Python bindings, `rz-ghidra` decompiler plugin, and `rz-*` companion tools) in headless mode.
+
+> **Minimum Version Requirement (`Rizin >= 0.10.0` / current `dev`):** This skill targets **Rizin `>= 0.10.0`** (either built from current `dev` or after the `0.10.0` release when it is out). It does **not** apply to the `0.9.x` series, which misses several important features and fixes documented here (including the rewritten `pf` grammar with width-qualified/endian-cased specifiers like `x4`, the tree-sitter `%` `RzNum` expression engine, Go `ABIInternal`/`ABI0` prologue voting and preloaded `types-golang-*.sdb` runtime types, and RzIL fixes).
 
 ## 1. CLI Command Modifiers (`@`, `~`, `|`) & Core Principles
 
@@ -81,6 +84,7 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | :--- | :--- | :--- |
 | **Temporary Seek & Modifiers** | `<cmd> @ <addr>`, `@! <sz>`, `@e:<k>=<v>`, `@x:<hex>`, `@s:<str>`, `@f:<file>`, `@a:<arch>:<bits>` | Applies to any command and restores prior state immediately after. |
 | **Internal Grep & Pipes** | `<cmd>~<pat>`, `~+<pat>`, `~!<pat>`, `~[col]`, `~:line`, `~{}`, `<cmd> \| <prog>`, `<cmd> \|` | `~` filters/slices/formats internally; trailing `\|` strips ANSI color/HTML. |
+| **Scripting Macros (`(` / `.(`)** | `(<name> [<args>]; <cmds>)`, `(`, `(-<name>`, `.(<name> [<args>])`, `..(<name> [<arg_sets>...])` | Named parameter interpolation uses `${<arg>}` (not `$0`); `..(` runs macro across `N`-tuples of args. |
 | **Auto-Analysis Level** | `aa` or `aaa` | `aa` (symbols + entry) or `aaa` (full standard analysis). Never use `aaaa`. |
 | **Analysis Config Variables** | `e analysis.in=...`, `e analysis.strings=true`, `e analysis.hasnext=true` | Config namespace is `analysis.*` (inspect all with `el analysis.`). |
 | **List Config Vars & Spaces** | `el [key]` / `elj [key]`, `el~+<kw>`; `es` | `el` lists config variables with descriptions (`elj` as JSON, `el~+<kw>` searches settings); `es` lists config spaces. |
@@ -561,7 +565,7 @@ ccc 0x403200 @! 0x100 @ 0x403000         # Show only differing hexdump lines bet
 cfj unpacked_stage.bin @! 0x1000 @ $S    # Compare on-disk file against mapped section at $S as JSON
 ```
 
-## 11. Server-Side Table Queries (`<cmd>t:...:json`) & Iterators (`@@`)
+## 11. Server-Side Table Queries (`<cmd>t:...:json`), Macros (`(` / `.(`) & Iterators (`@@`)
 
 On large (20MB+) Go, Rust, or statically linked C++ binaries, running `aflj` or `izzj` dumps megabytes of JSON. Use Rizin's **colon-separated table query syntax** (`<cmd>[:<col>/<op>/<val>...][:<output_mode>]`) to filter, sort, and slice inside Rizin before serializing to JSON:
 
@@ -582,6 +586,15 @@ ii:name/str/Virtual:json                       # Imports containing "Virtual" as
 /zt:*/head/20:json "http" li utf8              # First 20 UTF-8 search hits as JSON
 ```
 
+### Scripting Macros (`(`, `(-`, `.(...)`, `..(...)`)
+Define reusable, parameterized command sequences inside a Rizin session (`(?`, `.?`):
+- `(<name> [<arg0> <arg1> ...]; <cmd1>; <cmd2>; ...)` — Define (or update) a macro named `<name>`. Arguments are substituted into `<cmds>` before execution using **`${<arg-name>}`** (not positional `$0`/`$1`).
+- `(<name> [<arg0> ...]; <cmds>)(<val0> ...)` — Define `<name>` and immediately call it once with `<val0> ...`.
+- `(` — List all defined macros (standard text output only; `(j` does not exist).
+- `(-<name>` — Remove a defined macro named `<name>` (no space after `(-`).
+- `.(<name> [<val0> <val1> ...])` — Call macro `<name>` once with the given arguments.
+- `..(<name> <set1_arg0> <set1_arg1> <set2_arg0> <set2_arg1> ...)` — Call macro `<name>` multiple times in a single command, consuming `N` arguments per invocation (where `N` is the macro's parameter count).
+
 ### Batch Iterators (`@@`)
 Chain operations inside a single Rizin invocation without Python round-trips (`@@?`):
 - `@@F` — iterate over every function (`afva @@F`).
@@ -591,7 +604,7 @@ Chain operations inside a single Rizin invocation without Python round-trips (`@
 
 ## 12. Headless Micro-Emulation & Lifting with RzIL (`aez*`, `aoi`, `plf`)
 
-Rizin uses **RzIL** (BAP Core Theory / SMT bitvector intermediate language) for instruction semantics and micro-emulation (`aez?`). Use the RzIL Virtual Machine to resolve stack strings, XOR/RC4 loops, or computed pointers statically without executing the binary natively:
+Rizin uses **RzIL** (BAP Core Theory / SMT bitvector intermediate language) for instruction semantics and micro-emulation (`aez?`). Use the RzIL Virtual Machine to resolve stack strings, XOR/RC4 loops, lookup tables, or computed pointers statically without executing the binary natively:
 
 ### 1. RzIL Inspection & Emulation Commands
 - `aoi [<N>]` / `aoip [<N>]` — Print single-line (`aoi`) or pretty-printed (`aoip`) RzIL s-expressions for the next `N` instructions (`aoj <N>` includes `"rzil"` in JSON).
@@ -599,7 +612,7 @@ Rizin uses **RzIL** (BAP Core Theory / SMT bitvector intermediate language) for 
 - `aezi` — Initialize the RzIL Virtual Machine at the current seek offset (`s <start_va>; aezi`).
 - `aezs [<N>]` — Step `N` instructions in the RzIL VM.
 - `aezse [<N>]` / `aezsej [<N>]` — Step `N` instructions and emit all VM register/memory events (`pc_write`, `var_write`, `mem_write`, `var_read`, `mem_read`). Controlled by `e rzil.step.events.write=true` (default) and `e rzil.step.events.read=true`.
-- `aezsu <end_va>` / `aezsue <end_va>` — Step until `PC == <end_va>` (with event logging in `aezsue`).
+- `aezsu <end_va>` / `aezsue <end_va>` — Step until `PC == <end_va>` (with event logging in `aezsue`). Stepping automatically syncs RzIL VM registers into `RzReg` and updates register flags, so `@ <reg>` (e.g., `pf x4 @ R0`) immediately resolves to the register's post-emulation value.
 - `aezv [<reg_or_var> [<val>]]` / `aezvj [<reg_or_var>]` — Inspect or set RzIL VM registers/variables (as JSON with `aezvj`).
 
 ### 2. Python RzIL Stack-String / Buffer Decryption Example
@@ -620,6 +633,36 @@ rz.quit()
 ```
 
 - **Inspecting RzIL write events directly (`aezsej`):** You can also capture every register and memory write event emitted during RzIL execution as JSON via `events = rz.cmdj("aezsej 32")`, where memory writes have `{"type": "mem_write", "address": "0x...", "old": "0x...", "new": "0x..."}`.
+
+### 3. Probing Lookup / Decryptor Functions with RzIL Macros (`(tbl_val ...)` & `.(...)` / `..(...)`)
+
+Combine Rizin macros (`(` / `.(` / `..(`), RzIL stepping (`aezi`, `aezv`, `aezsu`), and `pf` (`pf x4 @ <ret_reg>`) to probe lookup or helper functions directly from a call site without writing an external script:
+
+1. **Emulate a call site until stop address `s` and dereference the returned pointer (`R0`):**
+   ```text
+   :> (tbl_val s; aezi; aezsu ${s}; pf x4 @ R0)
+   :> pd 3
+               0xfe109e08      ┌   call boot_cfg_lookup
+               0xfe109e0c      │   R0 = ##0xdb
+               0xfe109e10      └   allocframe(SP,#0x0):raw
+   :> .(tbl_val 0xfe109e14)
+   0xfe104de8 = 0x55000000 [LE]
+   ```
+2. **Override the input argument register (`aezv R0 ${v}`) before stepping to sweep lookup keys:**
+   When the call site does not immediately overwrite the argument register (e.g., `R0` is already set before the `call`), parameterize both the input register value `v` and stop address `s` to test arbitrary lookup keys individually (`.(...)`) or in bulk (`..(...)`):
+   ```text
+   :> (tbl_val v s; aezi; aezv R0 ${v}; aezsu ${s}; pf x4 @ R0)
+   :> pd 2
+               0xfe109e08      ┌   call boot_cfg_lookup
+               0xfe109e0c      └   allocframe(SP,#0x0):raw
+   :> .(tbl_val 0xff 0xfe109e10)
+   0xfe104de8 = 0x55000000 [LE]
+   :> .(tbl_val 0x99 0xfe109e10)
+   0xfe104de8 = 0xcc000000 [LE]
+   :> .(tbl_val 0xaa 0xfe109e10)
+   0xfe104de8 = 0x01020304 [LE]
+   :> ..(tbl_val 0xff 0xfe109e10 0x99 0xfe109e10 0xaa 0xfe109e10)
+   ```
 
 ## 13. Companion CLI Tools (`rz-bin`, `rz-find`, `rz-diff`, `rz-ax`, `rz-hash`, `rz-asm`, `rz-sign`, `rz-ar`)
 
