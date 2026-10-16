@@ -2589,6 +2589,11 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 			op->disp = INSOP(1).mem.disp.value;
 			op->refptr = INSOP(1).size;
 			switch (INSOP(1).mem.base) {
+			case X86_REG_NONE:
+				if (INSOP(1).mem.index == X86_REG_NONE) {
+					op->ptr = (ut64)op->disp & (UT64_MAX >> (64 - zydx->zydecode->address_width));
+				}
+				break;
 			case X86_REG_RIP:
 				op->ptr = zydx->addr + op->size + op->disp;
 				break;

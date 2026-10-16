@@ -700,6 +700,23 @@ static inline bool op_is_pointer_sized_mov_load(const RzAnalysisOp *op, int bits
 		(op->refptr == 4 || op->refptr == 8) && op->refptr == bits / 8;
 }
 
+/**
+ * \brief Exclude conditional moves and stores when tracking a known register value.
+ */
+static inline bool op_is_reg_mov_imm(const RzAnalysisOp *op) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_MOV && op->dst && !op->dst->memref &&
+		op->dst->reg && op->dst->reg->name && op->val > 0 && op->val != UT64_MAX;
+}
+
+/**
+ * \brief Only the immediately preceding register assignment can establish this target.
+ */
+static inline bool op_is_known_reg_jump(const RzAnalysisOp *op, bool last_is_reg_mov_lea,
+	const char *last_reg_mov_lea_name) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea &&
+		op->reg && last_reg_mov_lea_name && RZ_STR_EQ(op->reg, last_reg_mov_lea_name);
+}
+
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
@@ -1184,6 +1201,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		analyze_retpoline(analysis, &op);
 
+		if (op_is_known_reg_jump(&op, last_is_reg_mov_lea, last_reg_mov_lea_name)) {
+			op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op.jump = last_reg_mov_lea_val;
+		}
+
 		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
 		case RZ_ANALYSIS_OP_TYPE_MOV:
@@ -1197,8 +1219,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
 				fcn->bp_off = -sp;
 			}
-			// Is this a mov of immediate value into a register?
-			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
+			if (op_is_reg_mov_imm(&op)) {
 				free(last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.val;
