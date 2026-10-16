@@ -1408,24 +1408,14 @@ static void disasm_print_ret(const RzCore *core, const RzOutputMode mode, const 
 	}
 }
 
-/**
- * \brief Disassemble from \p addr until \p limit no of instructions and
- * prints or returns the disassembled string in \p buf
- *
- * \param core Pointer to the RzCore
- * \param addr Address to start disassembling
- * \param limit Maximum number of instructions to disassemble
- * \param mode The mode in which data has to be printed/crafted
- * \param ret_val If true, the disassembled string is stored in \p buf. Otherwise it is streamed to stdout
- * \param buf Pointer to the RzStrBuf to store the disassembled string
- *
- * \return True if there are no errors during disassembling and crafting the response. False otherwise.
- */
-RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
-	const RzOutputMode mode, const bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf) {
+static bool disasm_until_ret(RzCore *core, ut64 addr, int limit, RzOutputMode mode,
+	bool ret_val, RzStrBuf *buf, PJ *pj) {
 	rz_return_val_if_fail(core, false);
 	if (limit < 0 || (!buf && ret_val)) {
 		return false;
+	}
+	if (pj) {
+		pj_a(pj);
 	}
 	for (int i = 0; i < limit; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
@@ -1433,14 +1423,27 @@ RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const i
 			RZ_LOG_ERROR("Cannot get op at 0x%08" PFMT64x "\n", addr);
 			return false;
 		}
-		const char *mnem = op->mnemonic;
-		disasm_print_ret(core, mode, mnem, addr, ret_val, buf);
+		if (pj) {
+			pj_o(pj);
+			pj_kn(pj, "offset", addr);
+			pj_ki(pj, "size", op->size);
+			pj_ks(pj, "opcode", rz_str_get(op->mnemonic));
+			pj_ks(pj, "type", rz_analysis_optype_to_string(op->type));
+			if (op->jump != UT64_MAX) {
+				pj_kn(pj, "jump", op->jump);
+			}
+			if (op->fail != UT64_MAX) {
+				pj_kn(pj, "fail", op->fail);
+			}
+			pj_end(pj);
+		} else {
+			disasm_print_ret(core, mode, op->mnemonic, addr, ret_val, buf);
+		}
 		switch (op->type & RZ_ANALYSIS_OP_MASK_WILDCARD) {
 		case RZ_ANALYSIS_OP_TYPE_RET:
 		case RZ_ANALYSIS_OP_TYPE_UJMP:
 			rz_analysis_op_free(op);
-			goto beach;
-			break;
+			goto end;
 		default:
 			break;
 		}
@@ -1449,13 +1452,53 @@ RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const i
 		} else {
 			addr += op->size;
 		}
-		if (ret_val) {
+		if (ret_val && !pj) {
 			rz_strbuf_append(buf, "\n");
 		}
 		rz_analysis_op_free(op);
 	}
-beach:
+end:
+	if (pj) {
+		pj_end(pj);
+	}
 	return true;
+}
+
+/**
+ * \brief Disassemble a path through direct jumps, stopping at a return, an
+ * indirect jump or the instruction limit.
+ *
+ * \param core Pointer to the RzCore
+ * \param addr Address to start disassembling
+ * \param limit Maximum number of instructions to disassemble
+ * \param mode Standard, quiet or JSON output
+ * \param ret_val If true, append the output to \p buf instead of printing it
+ * \param buf Destination when \p ret_val is true
+ * \return False on invalid arguments, allocation failure or a failed decode.
+ *
+ * The limit also bounds paths containing a cycle. JSON records use the
+ * instruction keys of `pdj`, in the order in which the path is visited.
+ */
+RZ_API bool rz_core_disasm_until_ret(RZ_NONNULL RzCore *core, ut64 addr, const int limit,
+	const RzOutputMode mode, const bool ret_val, RZ_NULLABLE RZ_OUT RzStrBuf *buf) {
+	rz_return_val_if_fail(core, false);
+	PJ *pj = NULL;
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj = pj_new();
+		if (!pj) {
+			return false;
+		}
+	}
+	bool ok = disasm_until_ret(core, addr, limit, mode, ret_val, buf, pj);
+	if (ok && pj) {
+		if (ret_val) {
+			ok = rz_strbuf_append(buf, pj_string(pj));
+		} else {
+			rz_cons_println(core->cons, pj_string(pj));
+		}
+	}
+	pj_free(pj);
+	return ok;
 }
 
 static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere, RzCmdStateOutput *state) {
@@ -4398,7 +4441,8 @@ RZ_IPI RzCmdStatus rz_print_instr_until_handler(RzCore *core, int argc, const ch
 		RZ_LOG_ERROR("core: Instruction limit must be between 0 and %d\n", INT_MAX);
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	if (!rz_core_disasm_until_ret(core, core->offset, (int)limit, state->mode, false, NULL)) {
+	PJ *pj = state->mode == RZ_OUTPUT_MODE_JSON ? state->d.pj : NULL;
+	if (!disasm_until_ret(core, core->offset, (int)limit, state->mode, false, NULL, pj)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;

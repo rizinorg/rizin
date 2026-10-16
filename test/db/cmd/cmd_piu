@@ -18,6 +18,66 @@ EXPECT=
 EXIT_STATUS=1
 RUN
 
+NAME=piu and piuj direct jumps, limits, indirect jumps and cycles
+FILE=malloc://64
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+# piuj follows direct jumps and includes the terminating return
+wx 90eb02ccc3c3
+piu 8
+piuq 8
+piuj 8
+piuj 1
+piuj 0
+# piuj terminates at indirect jumps and bounds cycles
+wx ffe0c3
+piuj
+wx ebfe
+piuj 2
+EOF
+EXPECT=<<EOF
+0x00000000             nop
+0x00000001             jmp 0x0000000000000005
+0x00000005             ret
+nop
+jmp 0x0000000000000005
+ret
+[{"offset":0,"size":1,"opcode":"nop","type":"nop"},{"offset":1,"size":2,"opcode":"jmp 0x0000000000000005","type":"jmp","jump":5},{"offset":5,"size":1,"opcode":"ret","type":"ret"}]
+[{"offset":0,"size":1,"opcode":"nop","type":"nop"}]
+[]
+[{"offset":0,"size":2,"opcode":"jmp rax","type":"rjmp"}]
+[{"offset":0,"size":2,"opcode":"jmp 0x0000000000000000","type":"jmp","jump":0},{"offset":0,"size":2,"opcode":"jmp 0x0000000000000000","type":"jmp","jump":0}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=piuj rejects negative limits with a JSON status envelope
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e cfg.json.status=true -e cfg.exit.errorcode=true
+CMDS=<<EOF
+piuj -1
+EOF
+EXPECT=<<EOF
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"piuj","args":["-1"]}}
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=piuj reports a failed decode with a JSON status envelope
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e cfg.json.status=true -e cfg.exit.errorcode=true
+CMDS=<<EOF
+piuj 0
+piuj 1 @ 0x80
+EOF
+EXPECT=<<EOF
+[]
+{"error":null}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"piuj","args":["1"]}}
+EOF
+EXIT_STATUS=1
+RUN
+
 NAME=piu reports a failed decode
 FILE=malloc://64
 ARGS=-a x86 -b 64

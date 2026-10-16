@@ -842,12 +842,13 @@ commands:
           - RZ_OUTPUT_MODE_JSON
         args: []
       - name: piu
-        summary: Print all instructions until first ret/jmp
+        summary: Print instructions following direct jumps until a ret/indirect jump
         cname: print_instr_until
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_QUIET
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: limit
             type: RZ_CMD_ARG_TYPE_RZNUM

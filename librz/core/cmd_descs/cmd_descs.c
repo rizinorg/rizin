@@ -16638,7 +16638,7 @@ static const RzCmdDescArg print_instr_until_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_instr_until_help = {
-	.summary = "Print all instructions until first ret/jmp",
+	.summary = "Print instructions following direct jumps until a ret/indirect jump",
 	.args = print_instr_until_args,
 };
 
@@ -25731,7 +25731,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_instr_recursive_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pir.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_instr_recursive_at_handler, &print_instr_recursive_at_help);
 	rz_warn_if_fail(print_instr_recursive_at_cd);
 
-	RzCmdDesc *print_instr_until_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "piu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_instr_until_handler, &print_instr_until_help);
+	RzCmdDesc *print_instr_until_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "piu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_print_instr_until_handler, &print_instr_until_help);
 	rz_warn_if_fail(print_instr_until_cd);
 
 	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pi_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
