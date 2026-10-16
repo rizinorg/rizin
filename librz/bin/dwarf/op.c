@@ -1432,6 +1432,8 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 		ERR_IF_FAIL(eval);
 		if (!(rz_bin_dwarf_evaluation_evaluate(eval, result) &&
 			    RzBinDwarfEvaluationResult_to_loc(eval, result, loc))) {
+			eval = NULL;
+			result = NULL;
 			goto err;
 		}
 	}
