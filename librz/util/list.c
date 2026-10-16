@@ -559,6 +559,7 @@ RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data
 /**
  * \brief Returns the N-th element of the list
  *
+ * Walks the list from the end which is nearest to the N-th element.
  **/
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 	RzListIter *it;
@@ -569,9 +570,17 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 		return NULL;
 	}
 
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			return it->val;
+	if (n >= list->length / 2) {
+		for (it = list->tail, i = list->length - 1; it && it->val; it = it->prev, i--) {
+			if (i == n) {
+				return it->val;
+			}
+		}
+	} else {
+		for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
+			if (i == n) {
+				return it->val;
+			}
 		}
 	}
 	return NULL;
