@@ -23602,10 +23602,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arc", rz_analysis_reg_cond_handler, &analysis_reg_cond_help);
 	rz_warn_if_fail(analysis_reg_cond_cd);
 
-	RzCmdDesc *analysis_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arT", rz_analysis_reg_types_handler, &analysis_reg_types_help);
+	RzCmdDesc *analysis_reg_types_cd = rz_cmd_desc_argv_state_new(core->rcmd, ar_cd, "arT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_types_handler, &analysis_reg_types_help);
 	rz_warn_if_fail(analysis_reg_types_cd);
 
-	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arR", rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
+	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_state_new(core->rcmd, ar_cd, "arR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
 	rz_warn_if_fail(analysis_reg_roles_cd);
 
 	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
@@ -24757,10 +24757,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drc", rz_debug_reg_cond_handler, &debug_reg_cond_help);
 	rz_warn_if_fail(debug_reg_cond_cd);
 
-	RzCmdDesc *debug_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drT", rz_debug_reg_types_handler, &debug_reg_types_help);
+	RzCmdDesc *debug_reg_types_cd = rz_cmd_desc_argv_state_new(core->rcmd, dr_cd, "drT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_types_handler, &debug_reg_types_help);
 	rz_warn_if_fail(debug_reg_types_cd);
 
-	RzCmdDesc *debug_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drR", rz_debug_reg_roles_handler, &debug_reg_roles_help);
+	RzCmdDesc *debug_reg_roles_cd = rz_cmd_desc_argv_state_new(core->rcmd, dr_cd, "drR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_roles_handler, &debug_reg_roles_help);
 	rz_warn_if_fail(debug_reg_roles_cd);
 
 	RzCmdDesc *drx_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "drx", rz_debug_drx_handler, &debug_drx_help, &drx_help);

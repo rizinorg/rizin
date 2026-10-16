@@ -1,0 +1,83 @@
+NAME=register metadata JSON and text output
+FILE==
+CMDS=<<EOF
+# Both command families list the same register types.
+arTj
+drTj
+# Include roles that have no register in the active profile.
+e asm.arch=x86
+e asm.bits=64
+arRj
+# Resolve roles from an explicitly loaded profile.
+arpo scripts/reg-json-profile
+drpo scripts/reg-json-profile
+arRj
+drRj
+# Each register bank keeps its own profile.
+drpo scripts/reg-json-debug-profile
+arRj~{[0]}
+drRj~{[0]}
+# Keep text output unchanged for resolved and unresolved roles.
+arpo scripts/reg-json-profile
+drpo scripts/reg-json-profile
+arR
+drR
+EOF
+EXPECT=<<EOF
+["gpr","drx","fpu","mmx","xmm","ymm","flg","seg","sys","sec","vc","vcc","ctr"]
+["gpr","drx","fpu","mmx","xmm","ymm","flg","seg","sys","sec","vc","vcc","ctr"]
+[{"role":0,"role_str":"PC","reg":"rip"},{"role":1,"role_str":"SP","reg":"rsp"},{"role":2,"role_str":"SR"},{"role":3,"role_str":"BP","reg":"rbp"},{"role":4,"role_str":"LR"},{"role":5,"role_str":"A0","reg":"rdi"},{"role":6,"role_str":"A1","reg":"rsi"},{"role":7,"role_str":"A2","reg":"rdx"},{"role":8,"role_str":"A3","reg":"rcx"},{"role":9,"role_str":"A4","reg":"r8"},{"role":10,"role_str":"A5","reg":"r9"},{"role":11,"role_str":"A6","reg":"r10"},{"role":12,"role_str":"A7","reg":"r11"},{"role":13,"role_str":"A8"},{"role":14,"role_str":"A9"},{"role":15,"role_str":"R0"},{"role":16,"role_str":"R1"},{"role":17,"role_str":"R2"},{"role":18,"role_str":"R3"},{"role":19,"role_str":"ZF"},{"role":20,"role_str":"SF"},{"role":21,"role_str":"CF"},{"role":22,"role_str":"OF"},{"role":23,"role_str":"SN","reg":"rax"}]
+[{"role":0,"role_str":"PC","reg":"pc"},{"role":1,"role_str":"SP","reg":"sp"},{"role":2,"role_str":"SR"},{"role":3,"role_str":"BP"},{"role":4,"role_str":"LR"},{"role":5,"role_str":"A0","reg":"r0"},{"role":6,"role_str":"A1"},{"role":7,"role_str":"A2"},{"role":8,"role_str":"A3"},{"role":9,"role_str":"A4"},{"role":10,"role_str":"A5"},{"role":11,"role_str":"A6"},{"role":12,"role_str":"A7"},{"role":13,"role_str":"A8"},{"role":14,"role_str":"A9"},{"role":15,"role_str":"R0"},{"role":16,"role_str":"R1"},{"role":17,"role_str":"R2"},{"role":18,"role_str":"R3"},{"role":19,"role_str":"ZF"},{"role":20,"role_str":"SF"},{"role":21,"role_str":"CF"},{"role":22,"role_str":"OF"},{"role":23,"role_str":"SN"}]
+[{"role":0,"role_str":"PC","reg":"pc"},{"role":1,"role_str":"SP","reg":"sp"},{"role":2,"role_str":"SR"},{"role":3,"role_str":"BP"},{"role":4,"role_str":"LR"},{"role":5,"role_str":"A0","reg":"r0"},{"role":6,"role_str":"A1"},{"role":7,"role_str":"A2"},{"role":8,"role_str":"A3"},{"role":9,"role_str":"A4"},{"role":10,"role_str":"A5"},{"role":11,"role_str":"A6"},{"role":12,"role_str":"A7"},{"role":13,"role_str":"A8"},{"role":14,"role_str":"A9"},{"role":15,"role_str":"R0"},{"role":16,"role_str":"R1"},{"role":17,"role_str":"R2"},{"role":18,"role_str":"R3"},{"role":19,"role_str":"ZF"},{"role":20,"role_str":"SF"},{"role":21,"role_str":"CF"},{"role":22,"role_str":"OF"},{"role":23,"role_str":"SN"}]
+{"role":0,"role_str":"PC","reg":"pc"}
+{"role":0,"role_str":"PC","reg":"ip"}
+PC -> pc
+SP -> sp
+SR
+BP
+LR
+A0 -> r0
+A1
+A2
+A3
+A4
+A5
+A6
+A7
+A8
+A9
+R0
+R1
+R2
+R3
+ZF
+SF
+CF
+OF
+SN
+PC -> pc
+SP -> sp
+SR
+BP
+LR
+A0 -> r0
+A1
+A2
+A3
+A4
+A5
+A6
+A7
+A8
+A9
+R0
+R1
+R2
+R3
+ZF
+SF
+CF
+OF
+SN
+EOF
+RUN
