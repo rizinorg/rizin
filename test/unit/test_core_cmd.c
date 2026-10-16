@@ -316,6 +316,38 @@ beach:
 	mu_cleanup_end;
 }
 
+static bool test_disasm_until_ret_json(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RW, true), "file");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	rz_core_cmd0(core, "wx 90c3");
+	RzStrBuf buf;
+	rz_strbuf_init(&buf);
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_JSON, true, &buf), "capture JSON");
+	mu_assert_streq(rz_strbuf_get(&buf), "[{\"offset\":0,\"size\":1,\"opcode\":\"nop\",\"type\":\"nop\"},{\"offset\":1,\"size\":1,\"opcode\":\"ret\",\"type\":\"ret\"}]", "path to return");
+	rz_cons_push(core->cons);
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_JSON, false, NULL), "print JSON");
+	char *printed = rz_str_newf("%s\n", rz_strbuf_get(&buf));
+	mu_assert_streq(rz_cons_get_buffer(core->cons), printed, "console and capture agree");
+	free(printed);
+	rz_cons_pop(core->cons);
+	rz_strbuf_set(&buf, "");
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_QUIET, true, &buf), "capture text");
+	mu_assert_streq(rz_strbuf_get(&buf), "nop\nret", "quiet capture is unchanged");
+	rz_strbuf_set(&buf, "prefix");
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 0, RZ_OUTPUT_MODE_JSON, true, &buf), "empty path");
+	mu_assert_streq(rz_strbuf_get(&buf), "prefix[]", "append instead of replacing the buffer");
+	mu_assert_false(rz_core_disasm_until_ret(core, 0, -1, RZ_OUTPUT_MODE_JSON, true, &buf), "negative limit");
+	mu_assert_false(rz_core_disasm_until_ret(core, 0, 1, RZ_OUTPUT_MODE_JSON, true, NULL), "missing output buffer");
+	mu_assert_false(rz_core_disasm_until_ret(core, UT64_MAX, 1, RZ_OUTPUT_MODE_JSON, true, &buf), "failed decode");
+	mu_assert_streq(rz_strbuf_get(&buf), "prefix[]", "failed requests append no JSON");
+	rz_strbuf_fini(&buf);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
@@ -323,6 +355,7 @@ int all_tests() {
 	mu_run_test(test_arg_cmd_last_opt);
 	mu_run_test(test_last_cmd_status);
 	mu_run_test(test_cmd_str_status);
+	mu_run_test(test_disasm_until_ret_json);
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
