@@ -176,7 +176,7 @@ const char *name_of_iTyp(ut8 iTyp) {
 	}
 }
 
-const char *get_data_type(ut8 data_type) {
+const char *get_data_type166(ut8 data_type) {
 	switch (data_type) {
 	case 0: {
 		return "BIT";
@@ -304,17 +304,6 @@ bool rz_bin_checksum_omf166_ok(const ut8 *buf, size_t buf_size) {
 	return !checksum ? true : false;
 }
 
-static ut16 omf166_get_idx(const ut8 *buf, const size_t buf_size) {
-	if (buf_size < 2) {
-		return 0;
-	}
-	const ut16 ret = rz_read_le8(buf);
-	if (ret & 0x80) {
-		return (ut16)(ret & 0x7f) * 0x100 + rz_read_at_le8(buf, 1);
-	}
-	return ret;
-}
-
 static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *record, const ut8 *buf, const size_t buf_size) {
 	ut32 tmp_size = 0;
 	ut16 ct_name = 0;
@@ -403,7 +392,7 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 		sym->V = sym->REP8 >> 7;
 		sym->REP = (sym->REP8 & 0x70) >> 4;
 		sym->bpos = sym->REP8 & 0x0F;
-		sym->ti = omf166_get_idx(buf + ct, buf_size - ct);
+		sym->ti = omf_get_idx(buf + ct, buf_size - ct);
 		ct += (buf[ct] & 0x80) ? 2 : 1;
 
 		sym->is_data = is_data_ti(obj, sym->ti);
@@ -439,7 +428,7 @@ static int load_omf_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 	if (!lep) {
 		return false;
 	}
-	lep->seg_idx = omf166_get_idx(buf + 3, buf_size - 3);
+	lep->seg_idx = omf_get_idx(buf + 3, buf_size - 3);
 	if (lep->seg_idx & 0xff00) {
 		if ((!(record->type & 1) && record->size < 5) || (record->size < 7)) {
 			RZ_LOG_ERROR("Invalid Ledata record (bad size)\n");
@@ -460,9 +449,9 @@ static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const s
 		return false;
 	}
 
-	block->GroupIndex = omf166_get_idx(buf + ct, buf_size - ct);
+	block->GroupIndex = omf_get_idx(buf + ct, buf_size - ct);
 	ct++;
-	block->SectionIndex = omf166_get_idx(buf + ct, buf_size - ct);
+	block->SectionIndex = omf_get_idx(buf + ct, buf_size - ct);
 	ct++;
 	if (!block->GroupIndex && !block->SectionIndex) {
 		block->FrameNumber = rz_read_le16_offset(buf, &ct);
@@ -482,7 +471,7 @@ static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const s
 	block->PInfoProcedure = (rz_read_le8_offset(buf, &ct) & 0x80);
 
 	ct += 2; ///< RESERVED16
-	block->TI = omf166_get_idx(buf + ct, buf_size - ct);
+	block->TI = omf_get_idx(buf + ct, buf_size - ct);
 
 	if (block->n > 0) {
 		rz_pvector_push(obj->blocks_vec, block);
@@ -567,9 +556,9 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 	OMF_linnums *linnum = NULL;
 	size_t ct = 3;
 
-	const ut8 GroupIndex = omf166_get_idx(buf + ct, buf_size - ct); // ct = 3
+	const ut8 GroupIndex = omf_get_idx(buf + ct, buf_size - ct); // ct = 3
 	ct++;
-	const ut8 SectionIndex = omf166_get_idx(buf + ct, buf_size - ct); // ct = 4
+	const ut8 SectionIndex = omf_get_idx(buf + ct, buf_size - ct); // ct = 4
 	ct++;
 	ut16 FrameNumber = 0x00;
 	if (!GroupIndex && !SectionIndex) {
@@ -844,8 +833,6 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		 */
 		const ut16 raw_count = rz_read_le16_offset(buf, &cct);
 		if (raw_count == 0 || raw_count > UINT16_MAX) {
-			RZ_LOG_ERROR("Invalid component count (untrusted value)\n");
-			RZ_FREE(newtype);
 			return false;
 		}
 		newtype->label = rz_str_dup("COMPONENT_LIST_DESCRIPTOR");
@@ -1102,7 +1089,7 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 	size_t offset = 0;
 	new->type = rz_read_le8_offset(buf, &offset);
 	const ut16 raw_count = rz_read_le16_offset(buf, &offset);
-	if (raw_count == 0 || raw_count > UINT16_MAX) {
+	if (raw_count == 0 || raw_count == UINT16_MAX) {
 		RZ_LOG_ERROR("Invalid record (untrusted value)\n");
 		RZ_FREE(new);
 		return false;
@@ -1154,11 +1141,6 @@ static int line_sample_cmp(const void *a, const void *b, void *user) {
 	return strcmp(sa->filename, sb->filename);
 }
 
-static void omf166_linnums_free(void *it) {
-	OMF_linnums *p = it;
-	RZ_FREE(p);
-}
-
 static void typnew_free(OMF_type *type) {
 	if (!type) {
 		return;
@@ -1176,11 +1158,7 @@ static void typnew_free(OMF_type *type) {
 	RZ_FREE(type);
 }
 
-#define new_pv_and_check(vec, destructor) \
-	if (!((vec) = rz_pvector_new((RzPVectorFree)(destructor)))) \
-		return false;
-
-static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
+static bool rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 	obj->ht_types = ht_up_new(NULL, (HtUPFreeValue)typnew_free);
 	if (!obj->ht_types) {
 		return false;
@@ -1228,16 +1206,16 @@ static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 		}
 	}
 
-	new_pv_and_check(obj->sections_vec, free);
-	new_pv_and_check(obj->symbols_vec, free);
-	new_pv_and_check(obj->blocks_vec, free);
-	new_pv_and_check(obj->pe_vec, free);
-	new_pv_and_check(obj->lnames_vec, free);
-	new_pv_and_check(obj->deplsts_vec, free);
-	new_pv_and_check(obj->linnums_vec, omf166_linnums_free);
-	new_pv_and_check(obj->coments_vec, free);
-	new_pv_and_check(obj->includes_vec, free);
-	new_pv_and_check(obj->ledatas_vec, free);
+	new_pv_and_check(obj->sections_vec, free, false);
+	new_pv_and_check(obj->symbols_vec, free, false);
+	new_pv_and_check(obj->blocks_vec, free, false);
+	new_pv_and_check(obj->pe_vec, free, false);
+	new_pv_and_check(obj->lnames_vec, free, false);
+	new_pv_and_check(obj->deplsts_vec, free, false);
+	new_pv_and_check(obj->linnums_vec, omf_linnums_free, false);
+	new_pv_and_check(obj->coments_vec, free, false);
+	new_pv_and_check(obj->includes_vec, free, false);
+	new_pv_and_check(obj->ledatas_vec, free, false);
 	return true;
 }
 
@@ -1263,7 +1241,7 @@ static int find_symbol_by_paddr(const void *paddr, const void *sym, void *user) 
 	return addr == offset;
 }
 
-static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
+static bool rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
 	if (!obj) {
 		return false;
 	}

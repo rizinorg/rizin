@@ -322,7 +322,7 @@ struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.binsym = &binsym,
 	.symbols = &symbols,
 	.strings = &strings,
-	.baddr = baddr
+	.baddr = &baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE
