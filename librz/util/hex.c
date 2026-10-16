@@ -7,6 +7,36 @@
 #include <ctype.h>
 
 /**
+ * \brief Lookup table for decoding a hexadecimal character to its nibble value.
+ *
+ * The value is 0xff for every character which is not a hexadecimal digit.
+ * A table avoids character classification and conversion calls for
+ * every nibble in bulk decoding.
+ */
+// clang-format off
+static const ut8 hextoint[256] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+// clang-format on
+
+static const char hextochr[16] = "0123456789abcdef";
+
+/**
  * \brief Returns the byte value for a hexadecimal nibble.
  *
  * \param The hexadecimal nibble to get the raw byte value for.
@@ -27,16 +57,7 @@
  * ```
  */
 RZ_API ut8 rz_hex_digit_to_byte(const char c) {
-	if (!isxdigit(c)) {
-		return UT8_MAX;
-	}
-	// Check an ASCII table for this.
-	// Bit 6 indicates if it is A-F or a-f.
-	ut8 byte = (c & 0x40) ? 9 : 0;
-	// Bit 3-0 are the same bits for upper and lower case A-F.
-	// And 'a' & 0xf == 1, so 9 + 1 == 10.
-	byte += (c & 0xf);
-	return byte;
+	return hextoint[(ut8)c];
 }
 
 /**
@@ -61,19 +82,13 @@ RZ_API ut8 rz_hex_digit_to_byte(const char c) {
  * ```
  */
 RZ_API ut16 rz_hex_digit_pair_to_byte(const char *npair) {
-	if (!isxdigit(npair[0])) {
-		return UT16_MAX;
-	}
-	ut8 n0 = rz_hex_digit_to_byte(npair[0]);
+	ut8 n0 = hextoint[(ut8)npair[0]];
 	if (n0 == UT8_MAX) {
 		return UT16_MAX;
 	}
-	if (!isxdigit(npair[1])) {
-		return n0;
-	}
-	ut8 n1 = rz_hex_digit_to_byte(npair[1]);
+	ut8 n1 = hextoint[(ut8)npair[1]];
 	if (n1 == UT8_MAX) {
-		return UT16_MAX;
+		return n0;
 	}
 	return (n0 << 4 | n1);
 }
@@ -405,18 +420,18 @@ RZ_API int rz_hex_pair2bin(const char *arg) {
  *         is negative.
  *
  * This function encodes each input byte as two lowercase hexadecimal
- * characters (e.g., \c 0xAF becomes "af") using \c snprintf() and writes
- * them sequentially to the output buffer, followed by a NUL terminator.
+ * characters (e.g., \c 0xAF becomes "af") by looking the characters up
+ * in a table and writes them sequentially to the output buffer, followed
+ * by a NUL terminator.
  */
 RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i, idx;
-	char tmp[8];
 	if (len < 0) {
 		return 0;
 	}
 	for (idx = i = 0; i < len; i++, idx += 2) {
-		snprintf(tmp, sizeof(tmp), "%02x", in[i]);
-		memcpy(out + idx, tmp, 2);
+		out[idx] = hextochr[in[i] >> 4];
+		out[idx + 1] = hextochr[in[i] & 0xf];
 	}
 	out[idx] = 0;
 	return len;
@@ -443,7 +458,7 @@ RZ_API void rz_hex_ut2st_str(const ut32 in, RZ_INOUT char *out, const int len) {
 
 RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len) {
 	int i, idx;
-	char tmp[5], *out;
+	char *out;
 
 	if ((len + 1) * 2 < len) {
 		return NULL;
@@ -453,8 +468,8 @@ RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len) {
 		return NULL;
 	}
 	for (i = idx = 0; i < len; i++, idx += 2) {
-		snprintf(tmp, sizeof(tmp), "%02x", in[i]);
-		memcpy(out + idx, tmp, 2);
+		out[idx] = hextochr[in[i] >> 4];
+		out[idx + 1] = hextochr[in[i] & 0xf];
 	}
 	out[idx] = 0;
 	return out;
@@ -491,6 +506,9 @@ RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *
 
 	ut16 byte = 0;
 	size_t nibbles = rz_str_ansi_len(in + i);
+	// Passing strlen(in) in the loop condition below would make the function
+	// O(n^2), because strlen() is called for every iteration.
+	const size_t in_len = strlen(in);
 
 	bool odd_nibble = (nibbles % 2) == 1;
 	if (odd_nibble) {
@@ -503,7 +521,7 @@ RZ_API int rz_hex_str2bin_msb(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *
 		j++;
 	}
 
-	for (byte = rz_hex_digit_pair_to_byte(in + i); i < strlen(in) && byte <= UT8_MAX; j++, i += 2, byte = rz_hex_digit_pair_to_byte(in + i)) {
+	for (byte = rz_hex_digit_pair_to_byte(in + i); i < in_len && byte <= UT8_MAX; j++, i += 2, byte = rz_hex_digit_pair_to_byte(in + i)) {
 		out[j] = byte;
 	}
 
@@ -540,7 +558,9 @@ RZ_API int rz_hex_str2bin(RZ_NONNULL const char *in, RZ_NONNULL RZ_OUT ut8 *out)
 			in += 2;
 		}
 		/* read hex digits */
-		while (!rz_hex_to_byte(out ? &out[nibbles / 2] : &tmp, *in)) {
+		while (hextoint[(ut8)*in] != 0xff) {
+			ut8 *acc = out ? &out[nibbles / 2] : &tmp;
+			*acc = (ut8)(*acc) * 16 + hextoint[(ut8)*in];
 			nibbles++;
 			in++;
 		}
