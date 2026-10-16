@@ -11143,6 +11143,7 @@ static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 };
 static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
 	.summary = "Display double linked list for bins in an arena.",
+	.description = "In JSON mode, forward and backward list chunk addresses without the bin head.",
 	.args = cmd_heap_bins_list_print_args,
 };
 
@@ -24580,7 +24581,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhga", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
 	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
 
 	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
