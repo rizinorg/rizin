@@ -836,16 +836,18 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, c
 	if (!buf) {
 		return NULL;
 	}
+	// Appending the separator and the item separately avoids the comparably
+	// expensive printf style formatting of rz_strbuf_appendf() for every item.
+	char sep[2] = { ch, 0 };
 	const char *item;
 	rz_list_foreach (list, iter, item) {
 		if (rz_strbuf_length(buf) > 0) {
-			rz_strbuf_appendf(buf, "%c%s", ch, item);
-		} else {
-			rz_strbuf_append(buf, item);
+			rz_strbuf_append(buf, sep);
 		}
+		rz_strbuf_append(buf, item);
 	}
 	if (append_last) {
-		rz_strbuf_appendf(buf, "%c", ch);
+		rz_strbuf_append(buf, sep);
 	}
 	return rz_strbuf_drain(buf);
 }
