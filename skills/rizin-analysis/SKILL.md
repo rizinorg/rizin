@@ -4,7 +4,7 @@ description: >-
   Analyzes binaries statically using Rizin >= 0.10.0 / dev (rizin CLI, rzpipe
   Python API, rz-ghidra decompiler, and rz-bin, rz-find, rz-diff, rz-sign,
   rz-ar, rz-ax, rz-hash, rz-asm companion tools) in headless mode with
-  persistent .rzdb project caching. Use when disassembling or decompiling
+  .rzdb project session files. Use when disassembling or decompiling
   binaries with Rizin (pdg/pdgj), using CLI modifiers (@ temporary seek, ~
   internal grep/JSON filter, | pipes) or scripting macros (( / .( / ..(),
   evaluating expressions (%) or structured binary formats (pf), computing
@@ -35,11 +35,9 @@ Every Rizin command can be suffixed with `@` (temporary seek/state override), `~
    - `@! <blocksize>` — Temporarily override the command block size `$b` without changing global `b` (e.g., `ph entropy @! 0x1000 @ 0x401000`, `p8 @! $FS @ sym.main`).
    - `@(<from> <to>)` — Temporarily set `analysis.from`/`search.from` and `*.to` address range bounds for the command.
    - `@a:<arch>[:<bits>]` and `@b:<bits>` — Temporarily switch architecture and/or bitness (e.g., `pd 4 @a:arm:16 @ 0x401000`).
-   - `@e:<k>=<v>[,<k2>=<v2>]` — Temporarily override `e` configuration variables for a single command without mutating session state or `.rzdb` projects (e.g., `/zj "http" li utf8 @e:search.prefix=str_search,search.str.min_length=4`, `pd 8 @e:asm.bytes=false,asm.cmt.il=true @ sym.main`).
+   - `@e:<k>=<v>[,<k2>=<v2>]` — Temporarily override `e` configuration variables for a single command without changing the global session configuration (e.g., `/zj "http" li utf8 @e:search.prefix=str_search,search.str.min_length=4`, `pd 8 @e:asm.bytes=false,asm.cmt.il=true @ sym.main`).
    - `@f:<file>`, `@s:<string>`, `@v:<value>`, `@x:<hexpairs>` — Temporarily map the command buffer to file contents, an ASCII string, an integer value (sized by `asm.bits` and ordered by `cfg.bigendian`), or raw hexpairs (e.g., `ph sha256 @s:hello`, `pd 2 @x:4831c0c3`).
    - `@r:<reg>` — Temporarily seek to the current value of register `<reg>` (e.g., `px 64 @r:rsp`).
-   - `@i:<nth_op>` / `@B:<nth>` — Temporarily seek to the `<nth_op>` instruction relative to the current offset (`@i:`) or the `<nth>` instruction in the current basic block (`@B:`).
-   - `@F:<flagspace>`, `@k:<sdb_key>`, `@o:<fd>` — Temporarily change flagspace, seek to the address stored in SDB key `<sdb_key>`, or switch the IO file descriptor to `<fd>`.
 
 2. **`~` — Built-in Grep, Column/Line Slicing & JSON Path Selector (`~?`):**
    Filter, slice, sort, count, or extract JSON from any command directly inside Rizin without spawning external shell processes:
@@ -52,29 +50,30 @@ Every Rizin command can be suffixed with `@` (temporary seek/state override), `~
    - `cmd~$[n]` / `cmd~$![n]` — Sort lines numerically by column `n` ascending (`~$[n]`) or descending (`~$![n]`).
    - `cmd~?` / `cmd~?.` — Count matching lines (`~?`) or characters (`~?.`).
    - `cmd~{}` / `cmd~{<jq_like_path>}` — Pretty-print JSON output (`iIj~{}`) or extract nested JSON fields/projections (`iIj~{arch}`, `aflj~{.[] | {name,offset}}`).
-   - `cmd~..` / `cmd~...` — Open output in Rizin's internal pager (`~..`) or interactive HUD filter (`~...`).
 
 3. **`|` — Shell Pipes & Plain-Text Output:**
    - `<cmd> | <program>` — Pipe a Rizin command's `stdout` into an external shell command (e.g., `pd 40 @ sym.main | grep call`, `aflj | jq '.[0]'`).
    - `<cmd> |` (trailing pipe with no program) — Temporarily disable `scr.html` and `scr.color` for `<cmd>`, emitting clean uncolored plain text.
    - Multiple commands are chained sequentially with `;` (e.g., `s sym.main; pdf`).
 
-### Core Headless Principles & Performance Rules
+### Core Headless Principles & Session Rules
 
-1. **Preserve `stderr` for Errors and Command Help (Do Not Blindly Pass `-2`):**
+1. **Drive Rizin via Persistent Sessions (`rz-pipe` or Rizin MCP), Never Repeated `rizin -qc` Calls:**
+   Always interact with Rizin through a persistent session using the **Rizin MCP server** (when available) or **`rz-pipe` (`rzpipe`)** in Python. Do **not** run `rizin -qc "<cmd>"` via the command line in a loop across a project: `-q` quits Rizin immediately after `<cmd>` runs (so any in-memory state or changes from `<cmd>` are lost unless `Ps` is executed), and repeatedly loading and saving the project on every command incurs heavy startup overhead.
+2. **Preserve `stderr` for Errors and Command Help (Do Not Blindly Pass `-2`):**
    Rizin prints command syntax errors (`ERROR: Command '...' does not exist`) and automatic command help fallbacks to `stderr`. Suppressing `stderr` with `-2` blinds agents to failed commands and fallback help output.
    - **In `rzpipe` (`rz-pipe` >= 0.5 / PR #61):** Open without `-2` (`rz = rzpipe.open(path)`). `rzpipe` pipes `stdout` and `stderr` separately: `rz.cmdj("<cmd>")` reads `stdout` cleanly without `stderr` interference, while `rz.cmd("<cmd>", ret_stderr=True)` captures `stderr` diagnostics and automatic fallback help when a command fails or produces no `stdout` (explicit `<cmd>?` and `?* <prefix>` help commands print to `stdout`).
-   - **In `subprocess.run`:** Capture `stdout` and `stderr` separately (`capture_output=True`) without `-2`. Parse `res.stdout` for JSON commands and inspect `res.stderr` whenever `res.returncode != 0` or `res.stdout` is empty. Only use `-2` when piping raw CLI `stdout` directly into an external shell filter (e.g., `rizin -2 -qc "aflj" sample.bin | jq`).
-2. **Use `aa` or `aaa` and Persist Analysis in `<sha256>.rzdb` Projects:**
-   Standard analysis is `aa` (fast: symbols and entrypoints) or `aaa` (full standard analysis: calls, references, strings/Go recovery, signatures). **Never recommend `aaaa`** (`aaaa` is experimental analysis and slow/noisy). Never re-run `aa` / `aaa` on every query:
-   - **First open:** Run `rizin -qc "aaa; Ps <sha256>.rzdb; <cmd>" <binary>` to analyze once and serialize the project database.
-   - **Subsequent opens:** Load the existing project with `rizin -p <sha256>.rzdb -qc "<cmd>" <binary>`. Functions, xrefs, types, renames (`afn`), variable types (`afvt`), noreturn attributes (`tn`), and comments (`CC`) persist in `<sha256>.rzdb`.
-3. **Prefer JSON Commands (`*j`) and Server-Side Table Queries (`<cmd>t:...:json`):**
-   Append `j` to Rizin commands (`iIj`, `iSj`, `iij`, `izj`, `izxj`, `aflj`, `pdfj`, `pdj`, `pdgj`, `axtj`, `axfj`, `pxj`, `afvlj`, `avj`, `flj`) or use Rizin's colon-separated table query syntax (`aflt:size/gt/500:size/sort/rev:*/head/20:json`) and parse with `json.loads()` or `rz.cmdj()`.
-4. **Filter `codexrefs` by `"type": "CALL"` Using `x["from"]`:**
-   In `aflj` and `axtj`, cross-reference objects have keys `{"from": <int>, "to": <int>, "type": "CALL" | "CODE" | "DATA" | "STRING"}`. When counting callers of a utility function (string decryptors, API resolvers, config accessors), filter for `xref.get("type") == "CALL"` and read `xref["from"]`.
-5. **Prefer `rz-ghidra` (`pdg` / `pdgj`) for Decompilation When Present:**
-   Before falling back to raw disassembly (`pdfj` / `pdrj` / `pdj`) or RzIL (`plf` / `aoj`), check whether the `rz-ghidra` core plugin (`ghidra`) is loaded (`Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, or `Lcj`) and use `pdg @ <addr>` / `pdgj @ <addr>` for function-level recovery.
+3. **Use `aaa` for a One-Time Full Analysis and Save the Session with `Ps`:**
+   Standard analysis is `aaa` (full standard analysis: calls, references, strings/Go recovery, signatures) or `aa` (fast: symbols and entrypoints). **Never recommend `aaaa`** (`aaaa` is experimental analysis and slow/noisy).
+   - A `.rzdb` file is a **session save file**, only written when `Ps [<file.rzdb>]` is explicitly run (it is **not** an automatic cache).
+   - Run `aaa` once when starting a new session in `rzpipe` / MCP, and run `Ps <project.rzdb>` to save the current session state (functions, xrefs, types, `afn` renames, `afvt` variable types, `tn` noreturn attributes, and `CC` comments).
+   - **Version-control or snapshot `.rzdb` saves:** Create multiple numbered/named saves (`Ps step1_initial.rzdb`, `Ps step2_typed.rzdb`) or run `git commit` after every `Ps` save (optionally with `e prj.compress=false` for uncompressed SDB text diffs) so the user or agent can roll back to an earlier project state if needed.
+4. **Prefer JSON Output (`*j`) for Programmatic Parsing:**
+   Append `j` to Rizin commands (`iIj`, `iSj`, `iij`, `izj`, `izxj`, `aflj`, `pdfj`, `pdj`, `pdgj`, `axtj`, `axfj`, `pxj`, `afvlj`, `avj`, `flj`) to obtain structured JSON output and parse it via `rz.cmdj("<cmd>")`.
+5. **Use Table Queries (`<cmd>t:...`) for Server-Side Filtering, Sorting & Slicing:**
+   Append `t` to commands (`aflt`, `afvlt`, `flt`, `omlt`, `/zt`, `/xt`, `/Rt`, or default table commands `iz`, `izz`, `izx`, `ii`, `iS`) and chain colon-separated `:col/op/val` operations (`aflt:size/gt/500:size/sort/rev:*/head/20`, with optional `:json`, `:csv`, or `:quiet` output modifiers) to filter large tables inside Rizin before returning output.
+6. **Prefer `rz-ghidra` (`pdg` / `pdgj`) for Decompilation When Present:**
+   Before falling back to raw disassembly (`pdfj` / `pdrj` / `pdj` / `pi`) or RzIL (`plf` / `aez`), check whether the `rz-ghidra` core plugin (`ghidra`) is loaded (`Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, or `Lcj`) and use `pdg @ <addr>` / `pdgj @ <addr>` for function-level recovery.
 
 ## 2. Core Rizin Command & Syntax Reference
 
@@ -95,18 +94,20 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 | **String Search Config Vars** | `e search.prefix=hit`, `e search.str.min_length=8`, `e search.str.max_length=256`, `e str.encoding=utf8` | Also `e str.search.mode=auto` (`auto`, `rosections`, `raw`); override per-command via `@e:search.prefix=...`. |
 | **ROP / COP / JOP Gadget Search** | `/R[jqt]`, `/R/[jqt]`, `/Rk[jqt]`, `/Rg[j]`, `/Rs[j]`, `/Rl[j]` (and `/C*`, `/J*`); `pdp` | `/R` = ROP, `/C` = call-oriented (COP), `/J` = jump-oriented (JOP); `/Rk` queries RzIL register constraints. |
 | **Pattern & Block Similarity Search** | `/p <patternsize>`, `/P <patternsize>` | `/p` finds repeating byte patterns of `<patternsize>`; `/P` finds blocks similar to current block. |
-| **Statistical & Hash Analysis** | `phl`, `ph[j] <algo> @! <sz> @ <addr>`, `/ce[j]`, `/cef[j]` | `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr` (discover via `phl~entro`, `phl~chi`, `phl~seri`). |
+| **Statistical & Hash Analysis** | `phl[jqt]`, `ph <algo> @! <sz> @ <addr>`, `/ce[j]`, `/cef[j]` | `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr` (discover via `phl~entro`, `phl~chi`, `phl~seri`). |
 | **In-CLI Comparison (`c*`)** | `c <str>`, `cx <hex>`, `cX <addr>`, `cc <addr>`, `ccd <addr>`, `cf <file>`, `cu[1248d] <addr>` | In-session counterpart to `rz-diff` for comparing bytes, hexpairs, hexdumps, disassembly, and files. |
-| **Micro-Emulation VM (RzIL)** | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `aoi`, `aoip`, `plf`, `plF` | Always use **RzIL** (`aez*`, `aoi`, `plf`) for static micro-emulation and lifting. |
+| **Micro-Emulation VM (RzIL)** | `aezi`, `aezs`, `aezse[j]`, `aezsu`, `aezsue`, `aezv[j]`, `plf`, `plF` | Always use **RzIL** (`aez*` VM emulation, `plf`/`plF` function RzIL listing) for static micro-emulation and lifting. |
+| **Instruction Analysis (`ao`)** | `ao[j] [<N>]`, `aoi[<N>]`, `aoip[<N>]`, `aod`, `aoda` | Analyzes instruction properties (operands, size, type, cycles); `aoi`/`aoip` prints instruction RzIL expressions. |
+| **Disassembly (`pd*` / `pi*`)** | `pd[jqt] [<N>]`, `pdf[js]`, `pdr[j.]`, `pi [<N>]`, `pif[j]`, `pifc[j]`, `pir[j]`, `piu[q]` | `pd*` prints annotated disassembly; `pi*` prints compact instruction mnemonics/operands (or JSON). |
 | **Type Management (`t*`)** | `t[j]`, `td "<C>"`, `tdf`, `to <h>`, `tr <old> <new>`, `tc`, `ts[j]`, `tu[j]`, `te[j]`, `tt[j]`, `tf[j]` | `tx`/`txf`/`txl`/`txg` for type xrefs; `tn`/`tn-` for `noreturn` functions; `tp`/`tpv`/`tpx` to cast data. |
-| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '?(<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '?(<type>) <name>'` returns structured JSON; `tsj <type>` dumps struct schema. |
-| **Formatted Print (`pf` / `pfj` / `pfn`)** | `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f2/f4/f8`, `p4/p8`, `z(utf16le)`, `t(unix32)`, `G(le)` | Explicit sized/parameterised specifiers (lowercase = LE, uppercase = BE); `pfn <name> "<fmt>"` defines named formats, `pf.[j] <name>` prints them. |
+| **Cast Address to C Type** | `tp <type> @ <addr>` (text) / `pfj '?(<type>) <name>' @ <addr>` (JSON) | `tp` prints formatted struct fields; `pfj '?(<type>) <name>'` returns field offsets/sizes/values as JSON; `tsj <type>` lists member types. |
+| **Formatted Print (`pf` / `pfj` / `pfn`)** | `u1/u2/u4/u8`, `d1/d2/d4/d8`, `x1/x2/x4/x8`, `f2/f4/f8`, `p4/p8`, `z(utf16le)`, `t(unix32)`, `G(le)` | Explicit sized/parameterised specifiers (lowercase = LE, uppercase = BE); `pfn <name> "<fmt>"` defines named formats, `pf.[j] <name>` prints them (`pf- <name>` deletes). |
 | **Rename Local Variable / Arg** | `afvn <new_name> <old_name> @ <addr>` | `<new_name>` comes **first**, `<old_name>` comes **second**. |
 | **List Function Variables** | `afvl` / `afvlj` / `afvlt` | Lists all register (`reg`) and stack (`stack`) variables and arguments. |
 | **List Flags / Xrefs / Hints / Maps** | `fl` / `flj` / `flt`, `axl` / `axlj`, `ahl` / `ahlj`, `oml` / `omlj` / `omlt`, `ol` / `olj` | Explicit `l` subcommand lists all items (`j` for JSON, `t` for table). |
 | **Comments** | `CC <text> @ <addr>` or `CCu <text> @ <addr>`; `CClj` / `CCfj @ <addr>` | `CCu` sets unique comment; `CClj` lists all comments as JSON; `CCfj` lists function comments. |
 | **Seek History Undo / Redo** | `shu` (undo) / `shr` (redo) | `shj` lists seek history as JSON. |
-| **Project Save / Open** | `Ps <path>.rzdb` / `Po <path>.rzdb` / CLI `-p <path>.rzdb` | Projects are standalone `.rzdb` files. |
+| **Project Save / Open** | `Ps [<path.rzdb>]` / `Po <path.rzdb>` / `Poo <path.rzdb>` / CLI `-p <path.rzdb>` | Saves (`Ps`) or loads (`Po` / `Poo` / `-p`) session state in a `.rzdb` file (`e prj.compress=false` for plain-text SDB). |
 | **Define Structure Offset in Asm** | `aht <struct.member> @ <insn_addr>` | Use `ahts <offset>` to list matching struct members for a numeric displacement. |
 | **Link Global Typed Variable** | `avga <name> <type> @ <addr>`; `aat` | `avgp <name>` prints global value; `avglj` lists globals as JSON; `aat` propagates struct offsets. |
 | **C++ Vtables, RTTI & Devirt** | `avj`, `avra`, `avrr`, `aclj`, `avD @ <func_addr>` | `avD` (uppercase `D`) devirtualizes virtual calls in the current function. |
@@ -127,10 +128,10 @@ Rizin uses structured, consistent command trees (`librz/core/cmd_descs/*.yaml`).
 3. **Searching the Entire Help Catalog (`?+` Including Descriptions, Examples & Group Nodes):**
    - `?*` only prints 1-line summaries, and `?*j` only visits executable leaf commands (skipping `details`/`Examples` attached to group descriptors like `/z`).
    - `?+` exports the **entire** `RzCmd` descriptor tree (`summary`, `description`, `args`, `choices`, and `details`/`Examples` across all leaf, group, and `@`/`~`/`|` modifier nodes) as a single minified JSON line.
-   - **Gotcha:** Because `?+` is a single ~1 MB JSON line, `?+~<keyword>` matches the entire line. Pipe `?+` to `jq` (or traverse `rz.cmdj("?+")` in Python) to search the whole help:
+   - **Gotcha:** Because `?+` is a single ~1 MB JSON line, `?+~<keyword>` matches the entire line. Pipe `?+` to `jq` inside the Rizin session (or traverse `rz.cmdj("?+")` in `rzpipe`) to search the whole help:
      ```bash
      # Search all command summaries, descriptions, details, and examples case-insensitively:
-     rizin -2 -qc '?+ | jq -r ".. | objects | select(.cmd?) | select((.summary + \" \" + .description + \" \" + (.details | tostring)) | test(\"search.prefix\"; \"i\")) | \"\(.cmd)\(.args_str) # \(.summary)\""' -
+     ?+ | jq -r '.. | objects | select(.cmd?) | select((.summary + " " + .description + " " + (.details | tostring)) | test("search.prefix"; "i")) | "\(.cmd)\(.args_str) # \(.summary)"'
      ```
 4. **Never Run Interactive HUD Help (`?**`, `?***`, `?**e`) in Headless Mode:**
    - `?**` and `?***` launch `rz_cons_hud()` and **hang waiting for TTY input** in headless/agent mode; `?**e` fails with `Hud mode requires scr.interactive=true.` Always use `?*~+<kw>`, `<cmd>??`, `el~+<kw>`, or `?+` instead.
@@ -146,45 +147,45 @@ All math, base conversion, address translation, and expression evaluation comman
   - `% <expr>` / `%j <expr>` — Evaluate `<expr>` and display all representations (`int64`, `uint64`, `hex`, `octal`, `binary`, `float`, `bytes`, `string`) as text or JSON.
   - `%v <expr>` / `%vx <expr>` — Print only the evaluated result (`%vx` forces 8-digit hex output).
   - `%p <vaddr>` / `%P <paddr>` — Translate virtual address to physical file offset (`%p`), or physical offset to virtual address (`%P`).
-  - `%$` / `%$j` — List all built-in `$` state variables (`$$` current seek, `$b` block size, `$F` function start, `$FS` function size, `$FE` function end, `$FB` function BBs, `$S` section offset, `$SS` section size, `$j` jump target, `$f` fail addr, `$v` opcode immediate, `$?` last comparison result).
+  - `%$ [<var>]` — List all built-in `$` state variables (`$$` current seek, `$b` block size, `$F` function start, `$FS` function size, `$FE` function end, `$FB` function BBs, `$S` section offset, `$SS` section size, `$j` jump target, `$f` fail addr, `$v` opcode immediate, `$?` last comparison result), or print the value of `<var>` (`%$j` does not exist).
   - `%b64 <str>` / `%b64- <b64>` — Base64 encode or decode a string.
-  - `%B <mode>` / `%Bj <mode>` / `%Bt <mode>` — Inspect address boundaries for an `analysis.in` / `search.in` mode (`io.maps`, `bin.sections.exec`, `analysis.fcn`, etc.).
+  - `%B` / `%Bj` / `%Bt` — Inspect `[from, to)` address boundaries for the active `search.in` mode (`%Bj @e:search.in=io.maps`, `%Bj @e:search.in=bin.sections.x`, `%Bj @e:search.in=analysis.fcn`, etc.).
 - **New `RzNum` Expression Capabilities vs. Legacy Syntax:**
   - **4 Value Kinds:** 64-bit unsigned integer (`ut64`), IEEE-754 `double` (`1.5`, `1e-3`, `nan`, `inf`), arbitrary-precision **bignums** (`big`, promoted automatically for integer literals exceeding 64 bits), and **fixed-width modular bitvectors** via `u8`, `u16`, `u32`, `u64`, `u128` suffixes (e.g., `% 200u8 + 100u8` wraps modulo 256 to `0x2c`; `% len(0u32)` -> `32`).
   - **Unit & String Literals:** IEC/SI byte suffixes (`4KiB`, `2MiB`, `1GB`, `500KB`) and string-as-bytes bitvector literals (`% "ABCD"`).
-  - **Persistent Session Variables & Statement Sequencing:** Bind variables across commands with `x = 0x401000` (or `let x = 0x401000`) and chain statements with `;` (e.g., `% key = 0x403000:le32; key ^ 0xdeadbeef`).
+  - **Persistent Session Variables & Statement Sequencing:** Bind variables across commands with `x = 0x401000` (or `let x = 0x401000`) and chain statements inside a quoted `%` expression with `;` (e.g., `% "key = 0x403000:le32; key ^ 0xdeadbeef"` — quote the expression so Rizin's CLI parser does not split on `;` before passing it to `%`).
   - **Extended Operators:** Exponentiation (`**`), logarithm (`x log y`), bitwise rotate left/right (`<<<`, `>>>`), explicit two's-complement signed division/modulo/shift (`sdiv`, `smod`, `sar`), and C ternary (`cond ? a : b`, which also lifts to RzIL `ite`).
-  - **Typed Memory Dereference (`<addr>:<spec>`):** Dereference target memory directly inside expressions using `[<endian>][<kind>]<bits>` where `<endian>` is `le`/`be` (defaults to `cfg.bigendian`), `<kind>` is `u` (unsigned), `s` (signed), or `f` (float), and `<bits>` is `8..512` (defaults to `asm.bits`). Examples:
+  - **Typed Memory Dereference (`<literal_addr>:<spec>`):** Dereference target memory directly on **numeric address literals** inside expressions using `[le|be]?[s]?(8|16|32|64|128)` for integers (unsigned by default, `s` for sign-extended) or `[le|be]?f(16|32|64|128)` for IEEE-754 floats (endianness defaults to `cfg.bigendian`; bare `<literal_addr>:` defaults to `asm.bits`). Note: `:<spec>` attaches only to numeric literals (not parenthesized expressions `($$ + 8):be64` or symbol names `entry0:le32`), do **not** write `:u32` (use `:32` or `:le32`), and max dereference width is `128` bits. Examples:
     ```bash
     % 0x403000:le32 + 0x10       # Read 32-bit LE uint at 0x403000 and add 0x10 (replaces legacy [4:0x403000])
-    % ($$ + 8):be64              # Read 64-bit BE uint at current seek + 8
+    % 0x403008:be64              # Read 64-bit BE uint at 0x403008
     % 0x403000:s16               # Read sign-extended 16-bit integer at 0x403000
     % 0x403000:lef32             # Read 32-bit LE IEEE-754 float at 0x403000
     % 0x403000:128               # Read 128-bit bitvector at 0x403000
     ```
   - **Built-in Pure & IO-Backed Host Functions:**
     - Pure functions: `min(a, b)`, `max(a, b)`, `abs(x)`, `popcount(x)`, `len(x)` (bit width).
-    - IO-backed functions over `(addr, size)` in the open binary: `entropy(addr, n)` (`0.0..8.0`), `temperature(addr, n)` (`0.0..100.0` scaled entropy), `md5(addr, n)`, `sha1(addr, n)`, `sha256(addr, n)`, `sha384(addr, n)`, `sha512(addr, n)`, `hash(addr, n)`, `adler32(addr, n)`, `xxhash(addr, n)`, `crc(addr, n [, width])`, `crc8(addr, n)`, `crc16(addr, n)`, `crc32(addr, n)`, `crc64(addr, n)`.
+    - IO-backed functions over `(addr, size)` in the open binary (`size` capped at `0x10000` / 64 KiB; use `ph <algo> @! <size> @ <addr>` for buffers `> 64 KiB`): `entropy(addr, n)` (`0.0..8.0`), `temperature(addr, n)` (`0.0..100.0` scaled entropy), `md5(addr, n)`, `sha1(addr, n)`, `sha256(addr, n)`, `sha384(addr, n)`, `sha512(addr, n)`, `hash(addr, n)`, `adler32(addr, n)`, `xxhash(addr, n)`, `crc(addr, n [, width])`, `crc8(addr, n)`, `crc16(addr, n)`, `crc32(addr, n)`, `crc64(addr, n)`.
     ```bash
     % sha256($$, $FS)            # 256-bit SHA-256 bitvector of the current function
-    % entropy($S, $SS) > 7.2     # Returns 1 if the current section has entropy > 7.2 bits/byte
+    % "entropy($$, $FS) > 7.2"   # Returns 1 if current function entropy > 7.2 (quote `>` so CLI does not redirect to a file)
     ```
 
 ### 2. Changed `pf` Structured Binary Format Syntax (`doc/pf.md`)
 
-`pf` (`pf`, `pfj`, `pfo`, `pfn`, `pf.`, `pfc`, `pfd`, `pfv`, `pfw`, `pfs`) uses explicit width-qualified and parameterised specifiers:
+`pf` (`pf`, `pfj`, `pfo`, `pfn`, `pf-`, `pf.`, `pfc`, `pfd`, `pfv`, `pfw`, `pfs`) uses explicit width-qualified and parameterised specifiers:
 - **What Changed Compared to Legacy Versions:**
   - **Single-letter integer/float/string specifiers are deprecated and emit warnings:** Do **not** use legacy `b` (`u1`), `w` (`u2`), `d` (`d4`), `q` (`u8`), `x` (`x4`), `X` (`x1`), `i` (`d4`), `o` (`o4`), `f` (`f4`), `F` (`f8`), `C` (`c`), `t` (`t(unix32)`), `T` (`T(unix32)`), or `Z` (`z(utf16le)` or `z(utf16be)`).
   - **Case encodes endianness directly on every multi-byte specifier:** Lowercase is **little-endian** (`u2`, `u4`, `u8`, `d4`, `x4`, `f4`, `t(unix32)`, `G(le)`), and uppercase is **big-endian** (`U2`, `U4`, `U8`, `D4`, `X4`, `F4`, `T(unix32)`, `G(be)`).
-  - **Standalone `<` and `>` endian switches are removed:** Use `-e le` or `-e be` (`pf -e be n2n4 ...`) with context-endian `n1`/`n2`/`n4`/`n8` (which inherit endianness from `-e` or from an enclosing `V(...)` / `B(...)`), or use explicit uppercase/lowercase specifiers.
-  - **Named formats use `pfn` to define/list and `pf.` to print:** `pfn <name> "<fmt>"` registers a named format (`pfn` lists all named formats, `pfn- <name>` deletes one), while `pf.[j] [<name>]` prints data at the current seek using a registered named format.
+  - **Standalone `<` and `>` endian switches are removed:** Use explicit uppercase/lowercase specifiers, or use context-endian `n1`/`n2`/`n4`/`n8` (which inherit endianness from `cfg.bigendian` or from an enclosing `V(...,e=be)` / `B(...,e=be)`).
+  - **Named formats use `pfn` to define/list, `pf-` to delete, and `pf.` to print:** `pfn <name> "<fmt>"` registers a named format (`pfn` lists all named formats, `pf- <name>` deletes one, `pf-*` deletes all), while `pf.[j] [<name>]` prints data at the current seek using a registered named format.
   - **Removed legacy constructs:** `.pf*` (executing format output as Rizin commands), `pfw.` (leading dot when writing fields — use `pfw <fmt_name>.<field> <val>` directly), and `r (regname)` register reading.
 - **Canonical `pf` Specifier Reference:**
 
 | Category | Canonical `pf` Specifiers | Description & Examples |
 | :--- | :--- | :--- |
 | **Integers (LE / BE)** | `{u,d,x,o,b}{1,2,4,8}` (LE) / `{U,D,X,O,B}{1,2,4,8}` (BE) | Unsigned (`u`), signed (`d`), hex (`x`), octal (`o`), binary (`b`) of `1, 2, 4, 8` bytes. |
-| **Context-Endian Ints** | `n1`, `n2`, `n4`, `n8` | Unsigned integers whose endianness comes from `pf -e le\|be` or enclosing `V(...)`. |
+| **Context-Endian Ints** | `n1`, `n2`, `n4`, `n8` | Unsigned integers whose endianness comes from `cfg.bigendian` or enclosing `V(...,e=le\|be)`. |
 | **Floats (LE / BE)** | `f2`, `f4`, `f8` (LE) / `F2`, `F4`, `F8` (BE) | IEEE-754 half (`f2`), single (`f4`), and double (`f8`) precision floats. |
 | **Strings & Encodings** | `z`, `z(<enc>)`, `[N]z`, `z[W]`, `z(<enc>)[<W>b]`, `s`, `c` | `z` = NUL-terminated string; `<enc>` = `ascii`, `utf8`, `utf16le`, `utf16be`, `utf32le`, `ibm037`, etc.; `[32]z` = fixed 32-byte string; `z[2]` / `z(utf16le)[2b]` = length-prefixed string (`W` in `1,2,4,8`; `b` = prefix in bytes, e.g. BSTR); `s` = `char*` pointer; `c` = single ASCII char. |
 | **Timestamps & GUIDs** | `t(<kind>)` (LE) / `T(<kind>)` (BE); `G` / `G(ms\|le\|be)` | `<kind>` = `unix32`, `unix64`, `unixms`, `unixus`, `unixns`, `filetime`, `dos`, `hfs`, `oletime`, `webkit`, `cocoa`. |
@@ -195,86 +196,65 @@ All math, base conversion, address translation, and expression evaluation comman
 | **Arrays, Skip & Align** | `[N]<T>`, `[@<len_field>]<T>`, `.` / `[N].`, `@N`, `0...` | Fixed array `[16]u1`, dynamic array sized by an earlier field `[@count]u4`, skip `.`, align `@4`, union `0`. |
 
 ```bash
-# Parse a config header with magic, UTF-16LE BSTR, Win32 FILETIME, inline bitflags, and dynamic array:
-pfj x4z(utf16le)[2b]t(filetime)B4(SSL=1,PROXY=2,PERSIST=4)u2[@count]u4 magic mutex compiled_at flags count ports @ 0x403000
-pfj x4x4d4z(utf8)*z magic key1 sid title c2_url_ptr @ 0x403000  # Includes *z pointer-to-string dereference
+# Parse a config header with magic, UTF-16LE BSTR, Win32 FILETIME, inline bitflags, and dynamic array (quote format strings containing `(...)` or `[...]`):
+pfj "x4z(utf16le)[2b]t(filetime)B4(SSL=1,PROXY=2,PERSIST=4)u2[@count]u4" magic mutex compiled_at flags count ports @ 0x403000
+pfj "x4x4d4z(utf8)*z" magic key1 sid title c2_url_ptr @ 0x403000  # Includes *z pointer-to-string dereference
 
 # Define a named format (`pfn`), print it (`pf.` / `pf.j`), promote it to `RzTypeDB` (`tdf`), or write to a field (`pfw`):
 pfn c2_pkt "x4u2u2[@len]u1 magic cmd len body"
-pf.j c2_pkt @ 0x403000                       # Print memory at 0x403000 using registered named format `c2_pkt` as JSON
-tdf c2_pkt c2_pkt                            # Promote saved `pfn` format into `RzTypeDB`
+pfs c2_pkt                                    # Print size in bytes of a registered `pfn` format (or inline `pf` format string)
+pf.j c2_pkt @ 0x403000                        # Print memory at 0x403000 using registered named format `c2_pkt` as JSON
+tdf c2_pkt c2_pkt                             # Promote saved `pfn` format into `RzTypeDB`
 tdf pkt_hdr "x4u2u2z magic cmd_id payload_len tag"  # Or promote an inline `pf` format string directly into `RzTypeDB`
-pfw c2_pkt.cmd 0x05 @ 0x403000               # Write 0x05 to field `cmd` (requires `-w` or `e io.cache=true`)
+pfw c2_pkt.cmd 0x05 @ 0x403000                # Write 0x05 to field `cmd` (requires `-w` or `e io.cache=true`)
 ```
 
-## 4. Opening a Binary with Persistent `.rzdb` Caching & Stderr Visibility
+## 4. Persistent Session Management (`rz-pipe` / MCP), `.rzdb` Saves (`Ps`) & Stderr Visibility
 
-### Python Session Wrapper (`rizin` CLI)
+### 1. Why You Must Use `rz-pipe` (`rzpipe`) or Rizin MCP (Never Loop `rizin -qc ...`)
+- **Do not spawn `rizin -p <file.rzdb> -qc "<cmd>" <binary>` in a loop:** Every CLI invocation starts a new process, deserializes the entire `.rzdb` session file, executes one command, and exits immediately without persisting any state changes unless `Ps` was explicitly called.
+- **Keep a single persistent session open:** Use a **Rizin MCP** server (when available) or a persistent **`rzpipe.open(...)`** instance in Python so the binary is loaded once and all analysis, renames, comments, types, and RzIL VM state stay live in memory across queries.
 
-```python
-from __future__ import annotations
-import hashlib, json, os, subprocess
-from pathlib import Path
-from typing import Any
+### 2. Saving & Versioning `.rzdb` Session Files (`Ps`, `Po`, `e prj.compress=false`)
+- **`.rzdb` is an explicit session save file, not an automatic cache:** Opening a project with `-p <file.rzdb>` (or `Po <file.rzdb>`) loads the saved state into memory, and nothing is written back to disk until you explicitly run `Ps [<file.rzdb>]`.
+- **Save multiple checkpoints or commit `.rzdb` to Git so the user can revert:** Before and after major analysis phases (initial `aaa`, bulk function/variable renaming, struct/type application, or memory patching), either save numbered/named `.rzdb` snapshots (`Ps sample_01_initial.rzdb`, `Ps sample_02_typed.rzdb`) or commit the `.rzdb` file to a Git repository after each `Ps`.
+- **Tip for Git-tracked `.rzdb` projects:** Set `e prj.compress=false` before running `Ps` when storing `.rzdb` in Git so the project file is written as an uncompressed plain-text SDB database rather than a gzip blob, producing readable diffs across commits.
 
-class RizinSession:
-    """Headless Rizin wrapper with automatic <sha256>.rzdb project persistence and stderr diagnostics."""
-
-    def __init__(self, binary_path: str, project_dir: str | None = None, analysis_level: str = "aaa"):
-        self.binary_path = str(binary_path)
-        self.sha256 = hashlib.sha256(Path(self.binary_path).read_bytes()).hexdigest()
-        base_dir = Path(project_dir) if project_dir else Path(self.binary_path).parent
-        self.project_path = str(base_dir / f"{self.sha256}.rzdb")
-        if analysis_level and not os.path.exists(self.project_path):
-            self.cmd(f"{analysis_level}; Ps {self.project_path}", use_project=False)
-
-    def _run(self, command: str, use_project: bool = True) -> subprocess.CompletedProcess[str]:
-        args = ["rizin"]
-        if use_project and os.path.exists(self.project_path):
-            args.extend(["-p", self.project_path])
-        args.extend(["-qc", command, self.binary_path])
-        return subprocess.run(args, capture_output=True, text=True, check=False)
-
-    def cmd(self, command: str, use_project: bool = True, ret_stderr: bool = False) -> str:
-        res = self._run(command, use_project=use_project)
-        out, err = res.stdout.strip(), res.stderr.strip()
-        if ret_stderr or (not out and err):
-            return f"{out}\n{err}".strip() if out and err else (out or err)
-        return out
-
-    def cmdj(self, command: str, use_project: bool = True) -> Any:
-        res = self._run(command, use_project=use_project)
-        out = res.stdout.strip()
-        if not out:
-            if res.stderr.strip():
-                raise RuntimeError(f"Rizin command {command!r} failed:\n{res.stderr.strip()}")
-            return None
-        return json.loads(out)
-
-    def save(self) -> None:
-        self.cmd(f"Ps {self.project_path}")
-```
-
-### Persistent In-Process `rzpipe` Session
+### 3. Persistent In-Process `rzpipe` Session Pattern
 
 Keep one `rzpipe` session open across queries and do **not** pass `-2` so `ret_stderr=True` can retrieve command errors and help output (`rz-pipe` PR #61):
 
 ```python
-import os, rzpipe
+import hashlib, os, subprocess, rzpipe
+from pathlib import Path
 
-project_file = f"{sample_sha256}.rzdb"
-if os.path.exists(project_file):
-    rz = rzpipe.open(binary_path, flags=["-p", project_file])
-else:
-    rz = rzpipe.open(binary_path)
-    rz.cmd("aaa")
+def open_session(binary_path: str, project_file: str | None = None, git_versioned: bool = False) -> tuple[rzpipe.open, str]:
+    if project_file is None:
+        sha256 = hashlib.sha256(Path(binary_path).read_bytes()).hexdigest()
+        project_file = f"{sha256}.rzdb"
+    if os.path.exists(project_file):
+        rz = rzpipe.open(binary_path, flags=["-p", project_file])
+    else:
+        rz = rzpipe.open(binary_path)
+        if git_versioned:
+            rz.cmd("e prj.compress=false")
+        rz.cmd("aaa")
+        rz.cmd(f"Ps {project_file}")
+    return rz, project_file
+
+def checkpoint_save(rz: rzpipe.open, project_file: str, commit_msg: str | None = None) -> None:
+    """Save the current session to `.rzdb` and optionally commit it to git for rollback."""
     rz.cmd(f"Ps {project_file}")
+    if commit_msg:
+        subprocess.run(["git", "add", project_file], check=False)
+        subprocess.run(["git", "commit", "-m", commit_msg], check=False)
 
+rz, project_file = open_session(binary_path, git_versioned=True)
 info = rz.cmdj("iIj")                                    # JSON commands read stdout cleanly
 funcs = rz.cmdj("aflj")
 help_out = rz.cmd("aez?")                                # Explicit '<cmd>?' help writes to stdout
 diag = rz.cmd("af @ 0x401000", ret_stderr=True)          # ret_stderr=True captures stderr errors/fallback help
-rz.cmd(f"Ps {project_file}")                             # Persist renames/comments/types before closing
+checkpoint_save(rz, project_file, "Save function analysis and renames")
 rz.quit()
 ```
 
@@ -290,17 +270,17 @@ rz.quit()
 | **String Search (`RzSearch`)** | `/zj <pattern> <flags> <enc> [@e:search.prefix=<pfx>]` | `address`, `size`, `flag` (`<search.prefix>.string.<enc>.<N>`, default `hit`), `detail` (does **not** populate `izz`) |
 | **Byte / Hex Search** | `/xj <hex_pattern> [@e:search.prefix=<pfx>]` | `address`, `size`, `flag` (`<search.prefix>.bytes.<N>`); supports `.` nibble wildcards (e.g. `/xj 8b0485........5dc3`) |
 | **ROP / COP / JOP Search** | `/Rj [str]`, `/Rkj <constraints>`, `/Cj`, `/Jj` | Array of gadget dicts (`ret_addr`, `size`, `stack_change`, `instructions`, `modified_registers`) |
-| **Statistical / Hash Digest** | `phj <algo> @! <len> @ <addr>` | `name`, `value`, `from`, `to` (`algo`: `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr`, `sha256`, ...) |
+| **Statistical / Hash Digest** | `ph <algo> @! <len> @ <addr>` / `phlj` | `ph` prints raw float/hex digest (`algo`: `entropy`, `entropy_fract`, `minentropy`, `chisquare`, `serialcorr`, `sha256`, ...); `phlj` lists all algorithms as JSON |
 | **List Functions** | `aflj` | `offset`, `name`, `size`, `realsz`, `nbbs`, `cc`, `calltype`, `signature`, `codexrefs`, `callrefs`, `datarefs`, `indegree` |
 | **Function Details & Vars** | `afij @ <addr>` / `afvlj @ <addr>` | `afvlj` dict: `{"stack": [...], "reg": [...], "eval_pending": [...]}` with `name`, `arg`, `type`, `storage` |
 | **Disassemble Function** | `pdfj @ <addr>` or `pdrj @ <addr>` | `pdfj` returns `{"name", "size", "addr", "ops": [...]}`; `pdrj` returns `[...]` (list of op dicts directly) |
 | **Disassemble N Instrs** | `pdj <N> @ <addr>` | Array of instruction dicts (`offset`, `bytes`, `opcode`, `disasm`, `ptr`, `val`, `jump`, `fail`, `fcn_addr`) |
-| **Instruction Analysis & RzIL** | `aoj <N> @ <addr>` | `addr`, `opcode`, `disasm`, `mnemonic`, `bytes`, `size`, `type`, `rzil` (lifted RzIL tree) |
+| **Instruction Analysis** | `aoj <N> @ <addr>` | `addr`, `opcode`, `disasm`, `mnemonic`, `bytes`, `size`, `type`, `opex`, `rzil` |
 | **Decompile (`rz-ghidra`)** | `pdg @ <addr>` / `pdgj @ <addr>` | `code` (C string) and `annotations[]` (`start`, `end`, `type`, `offset`, `name`) |
 | **Xrefs TO / FROM Address** | `axtj @ <addr>` / `axfj @ <addr>` | Array of `{"from": <int>, "to": <int>, "type": "CALL" \| "CODE" \| "DATA" \| "STRING"}` |
 | **Function + Delta Lookup** | `afd @ <addr>` / `afoj @ <addr>` | `afd`: `"<fcn_name> + <delta>"`; `afoj`: `{"address": <fcn_start_va>}` |
 | **Read Raw Bytes** | `p8 <len> @ <addr>` / `pxj <len> @ <addr>` | Hex string (`p8`) or list of `0..255` ints (`pxj`) |
-| **Types & Noreturn** | `tj`, `tsj [<s_name>]`, `tuj`, `tej`, `ttj`, `tfj`, `tnj` | `tsj` dumps struct fields/offsets/sizes; `tfj` dumps function prototypes; `tnj` lists `noreturn` functions |
+| **Types & Noreturn** | `tj`, `tsj [<s_name>]`, `tuj`, `tej`, `ttj`, `tfj`, `tnj` | `tsj` dumps struct member names/types; `tfj` dumps function prototypes; `tnj` lists `noreturn` functions |
 | **List / Set Flags** | `flj` / `f <name> [<size>] @ <addr>` | `flj`: `[{"name", "realname", "size", "offset"}]` |
 | **List / Set Comments** | `CClj` / `CCu <text> @ <addr>` | `CClj`: `[{"offset", "type", "name"}]` (`CCfj @ <addr>` for current function) |
 | **Math / Base Evaluation** | `%j <expr>` / `%p <vaddr>` / `%P <paddr>` | `%j`: `{"int64", "uint64", "hex", "binary", ...}`; `%p`: physical offset |
@@ -379,9 +359,9 @@ Rizin maintains a full C type database (`RzTypeDB`, queried and modified via `t?
 | :--- | :--- | :--- |
 | **List / Inspect Types** | `t` / `tj`, `t <type>`, `tc [<type>]`, `tcd [<type>]` | List all loaded types (`t`/`tj`), show `pf` format for `<type>`, or dump C declarations (`tc`, `tcd` single-line). |
 | **Define Type from C / `pf`** | `td "<C_decl>"`, `tdf <name> <pf_fmt>` | Parse a C `struct`, `union`, `enum`, or `typedef` declaration (`td`), or promote a `pf` format into a C type (`tdf`). |
-| **Load / Edit Header Files** | `to <path.h>`, `tos <path.sdb>`, `toe <type>` | Parse C header file (`to`; respects `e dir.types`), load SDB type db (`tos`), or edit `<type>` in `$EDITOR` (`toe`). |
+| **Load Header / SDB Files** | `to <path.h>`, `tos <path.sdb>` | Parse C header file (`to`; respects `e dir.types`) or load SDB type database (`tos`). |
 | **Rename or Delete Types** | `tr <old_name> <new_name>`, `t- <type>`, `t-*` | `tr` renames `<old_name>` and updates **all** structs, unions, typedefs, and functions referencing it; `t-` deletes. |
-| **Structures & Unions** | `ts[j] [<name>]`, `tsc <name>`, `tsd <name>`, `tu[j] [<name>]`, `tuc <name>`, `tud <name>` | List structs (`ts`/`tsj`) or unions (`tu`/`tuj`), print C definition (`tsc`/`tuc`), or dump layout (`tsd`/`tud`). |
+| **Structures & Unions** | `ts[j] [<name>]`, `tsc <name>`, `tsd <name>`, `tu[j] [<name>]`, `tuc <name>`, `tud <name>` | List structs (`ts`/`tsj`) or unions (`tu`/`tuj`), or print C definition (`tsc`/`tuc` multi-line, `tsd`/`tud` single-line). |
 | **Enums & Bitfields** | `te[j] [<enum> [<val>]]`, `teb <enum> <member>`, `tec [<enum>]`, `tef <val>` | List enums (`te`/`tej`), lookup member by value (`te <enum> 0x2`), get bitmask (`teb`), or find all enums matching `<val>` (`tef`). |
 | **Typedefs & Prototypes** | `tt[j] [<name>]`, `ttc [<name>]`, `tf[j] [<func>]`, `tfc <func> [<cc>]`, `tf- <func>` | Inspect typedefs (`tt`/`ttj`) and function prototypes (`tf`/`tfj`) or calling conventions (`tfc`, `tcc[j]`) in `RzTypeDB`. |
 | **Type Cross-References (`tx`)** | `tx [<type>]`, `txf [<addr>]`, `txl`, `txg` | `tx <type>`: functions using `<type>` (`tx` with no args lists every function and its types); `txf`: types used in function at `<addr>`; `txl`: all types used by any function; `txg`: render type xref graph. |
@@ -393,9 +373,9 @@ Rizin maintains a full C type database (`RzTypeDB`, queried and modified via `t?
 # 1. Define C types, enums, and structs, then cast memory and propagate offsets:
 td "enum pkt_cmd { CMD_PING = 1, CMD_EXEC = 2, CMD_UPLOAD = 4 };"
 td "struct bot_ctx { uint8_t pad[520]; char sid[4]; uint32_t xor_key; };"
-tsj bot_ctx                                               # Dump struct member schema (names, types, offsets, sizes) as JSON
+tsj bot_ctx                                               # Dump struct member names and types as JSON
 tp bot_ctx @ 0x140008000                                  # Cast and print formatted struct at <addr>
-pfj '?(bot_ctx) ctx' @ 0x140008000                        # Cast and dump struct at <addr> as JSON (no space after `?`)
+pfj '?(bot_ctx) ctx' @ 0x140008000                        # Cast and dump struct fields (offset, size, value) at <addr> as JSON
 avga g_ctx bot_ctx @ 0x140008000; avgp g_ctx; aat         # Bind global struct, print it, and propagate field offsets
 ahts 0x208                                                # List all struct members across RzTypeDB matching displacement 0x208
 aht bot_ctx.sid @ 0x140002b3e                             # Apply struct member offset hint to instruction operand
@@ -456,9 +436,9 @@ serialcorr     LGPL3      xvilka                         Serial correlation coef
 
 ### 3. Running Statistical Analysis in CLI, `rzpipe`, and `rz-hash`
 ```bash
-# Compute metrics over a specific address and block size using `@! <size> @ <addr>`:
+# Compute metrics over a specific address and block size using `@! <size> @ <addr>` (`ph` outputs the raw float/hex digest):
 ph entropy @! 0x4000 @ 0x140008000
-phj chisquare @! 0x4000 @ 0x140008000     # JSON output: {"name": "chisquare", "value": "...", "from": ..., "to": ...}
+ph chisquare @! 0x4000 @ 0x140008000
 ph minentropy @! $SS @ $S                 # Min-entropy of the current section ($S = section start, $SS = section size)
 ph serialcorr @! $SS @ $S                 # Serial correlation of the current section
 
@@ -466,9 +446,9 @@ ph serialcorr @! $SS @ $S                 # Serial correlation of the current se
 /cej 7.5 8.0 512                          # Find 512-byte blocks with Shannon entropy in [7.5, 8.0] as JSON
 /cefj 0.90 1.0 256                        # Find 256-byte blocks with fractional entropy in [0.90, 1.0] as JSON
 
-# Evaluate entropy directly inside `%` expressions:
-% entropy(0x140008000, 0x4000)            # Float Shannon entropy [0.0-8.0]
-% temperature(0x140008000, 0x4000)        # Scaled entropy percentage [0.0-100.0]
+# Evaluate entropy directly inside `%` / `%j` expressions (up to 64 KiB):
+%j entropy(0x140008000, 0x4000)           # Float Shannon entropy [0.0-8.0] as JSON
+%j temperature(0x140008000, 0x4000)       # Scaled entropy percentage [0.0-100.0] as JSON
 
 # Compute all 5 metrics in one shot from the shell via `rz-hash`:
 rz-hash -j -a entropy,entropy_fract,minentropy,chisquare,serialcorr sample.bin
@@ -476,13 +456,14 @@ rz-hash -j -a entropy,entropy_fract,minentropy,chisquare,serialcorr sample.bin
 
 ```python
 # Automated per-section encryption vs. compression classifier in rzpipe:
+# `ph <algo>` prints a bare decimal float for statistical algorithms, so `rz.cmdj(...)` parses it directly into a Python `float`.
 for sec in rz.cmdj("iSj") or []:
     if sec.get("size", 0) >= 256 and sec.get("vaddr"):
         va, sz = sec["vaddr"], sec["size"]
-        ent = float((rz.cmdj(f"phj entropy @! {sz} @ {va}") or {}).get("value", 0.0))
-        min_e = float((rz.cmdj(f"phj minentropy @! {sz} @ {va}") or {}).get("value", 0.0))
-        chi = float((rz.cmdj(f"phj chisquare @! {sz} @ {va}") or {}).get("value", 0.0))
-        sc = float((rz.cmdj(f"phj serialcorr @! {sz} @ {va}") or {}).get("value", 0.0))
+        ent = rz.cmdj(f"ph entropy @! {sz} @ {va}")
+        min_e = rz.cmdj(f"ph minentropy @! {sz} @ {va}")
+        chi = rz.cmdj(f"ph chisquare @! {sz} @ {va}")
+        sc = rz.cmdj(f"ph serialcorr @! {sz} @ {va}")
         print(f"{sec['name']:10s} sz={sz:8d} H={ent:.3f} Hmin={min_e:.3f} chi2={chi:8.2f} serialcorr={sc:+.4f}")
 ```
 
@@ -506,14 +487,15 @@ Rizin has two separate string subsystems. Mixing them up causes missed indicator
      /zj "http" li utf16le @e:search.prefix=wstr_search                    # Separate flag prefix for UTF-16LE hits
      /zj "https?://[a-zA-Z0-9./_:-]+" ri utf8 @e:search.prefix=url_search  # Case-insensitive PCRE2 regex search in UTF-8
      /zj "ELF" l utf8 @e:search.prefix=hdr_search,search.str.min_length=3  # Temporarily lower min_length to 3 for a single search
-     fl @F:search~str_search.                                              # List only flags from the `str_search` pass
+     fl~str_search.                                                        # List only flags from the `str_search` pass
      ```
 
-### 2. Repeating Pattern Search (`/p`), Block Similarity (`/P`), Bytes (`/x`) & Assembly (`/a`, `/c`)
+### 2. Repeating Pattern Search (`/p`), Block Similarity (`/P`), Bytes (`/x`), Assembly (`/a*`) & Crypto (`/c*`)
 - **`/p <patternsize>`** — Search across `search.in` for repeating byte patterns of `<patternsize>` bytes (useful for identifying multi-byte XOR keys, repeating NOP sleds, or fixed-stride table entries).
 - **`/P <patternsize>`** — Search for byte blocks of `<patternsize>` similar to the data at the current seek offset.
 - **`/x[jqt] <hexpairs>`** — Search for raw bytes with `.` nibble wildcards (e.g., `/xj 488d0d........e8`), or `/x <hex> <mask>` with explicit bitmask.
-- **`/a[jqt] <asm>`** / **`/c[jqt] <instr_substr>`** — Assemble `<asm>` and search for matching opcodes (`/a jmp esp`), or disassemble across `search.in` and match instruction text (`/cj call qword [rax`).
+- **`/a[jqt] <asm>`** / **`/aa[j] <substr>`** / **`/ac[j] <substr>`** / **`/ad[j] <ins1;ins2>`** / **`/ad/a <regex>`** — Assemble `<asm>` and search for matching opcodes (`/aj jmp esp`), or disassemble across `search.in` and match instruction text case-insensitively (`/aaj call qword [rax`), case-sensitively (`/acj`), consecutive instruction pairs (`/adj`), or by regex (`/ad/a`).
+- **`/c*` (Cryptographic & Entropy Search)** — Search for crypto material (`/cm[j] [<type>]`), block hashes (`/ch[j] <algo> <digest>`), or blocks in an entropy range (`/ce[j] <min> <max> <blk_sz>`, `/cef[j] <min> <max> <blk_sz>`).
 - **`/m[jqt] [<magic_file>]`** — Search for embedded file headers/magic signatures (PE, ELF, ZIP, LZMA, certificates).
 
 ### 3. ROP (`/R`), COP (`/C`) & JOP (`/J`) Gadget Search and RzIL Semantic Queries
@@ -530,7 +512,7 @@ All three families (`/R*`, `/C*`, `/J*`) share the exact same subcommand structu
 | **`/R[jqt] [<filter-str>]`** | List all gadgets matching optional substring `<filter-str>` (likewise `/C[jqt]`, `/J[jqt]`). | `/Rj pop rdi` / `/Cj mov rdi` / `/Jqt jmp rax` |
 | **`/R/[jqt] [<regex>]`** | Search gadgets by regular expression (`e gadget.len` controls max instructions per gadget, default `5`). | `/R/j "pop r(di\|si); ret"` |
 | **`/Rk[jqt] <constraints>`** | **RzIL semantic constraint search**: simulates gadgets and finds those satisfying register equations (`reg=const`, `reg=reg`, `reg=reg OP const`, `reg=reg OP reg`, `reg++`, `reg--`, `reg+=val`). | `/Rkj rax=0` or `/Rkj rdi=rsi,rax=rbx+8` |
-| **`/Rg[j] [<addr>]`** | Analyze gadget(s) semantically via RzIL (reports `modified_registers`, `stack_change`, `size`, `ret_addr`). | `/Rgj @ 0x401230` |
+| **`/Rg[j] [<addr>]`** | Analyze gadget(s) semantically via RzIL (reports `modified_registers`, `stack_change`, `size`, `ret_addr`). | `/Rgj 0x401230` |
 | **`/Rs[j] "<cond>"`** | Filter gadgets by stack pointer delta condition (`=`, `<`, `>`, `<=`, `>=`). | `/Rsj "<0x40"` or `/Rsj =0x10` |
 | **`/Rl[j] "<cond>"`** | Filter gadgets by total gadget byte length condition. | `/Rlj "<0x10"` |
 | **`/R-`** / **`/C-`** / **`/J-`** | Clear the internal ROP/COP/JOP gadget cache. | `/R-` |
@@ -569,7 +551,7 @@ cfj unpacked_stage.bin @! 0x1000 @ $S    # Compare on-disk file against mapped s
 
 On large (20MB+) Go, Rust, or statically linked C++ binaries, running `aflj` or `izzj` dumps megabytes of JSON. Use Rizin's **colon-separated table query syntax** (`<cmd>[:<col>/<op>/<val>...][:<output_mode>]`) to filter, sort, and slice inside Rizin before serializing to JSON:
 
-- **Table-mode commands:** Append `t` to commands whose default mode is not already a table (`aflt`, `afvlt`, `ablt`, `avglt`, `flt`, `omlt`, `/zt`, `/xt`, `/Rt`, `/Ct`, `/Jt`, `phlt`, `tklt`). For `i*` commands (`iz`, `izz`, `izx`, `ii`, `iE`, `is`, `iS`, `iSS`, `il`, `ir`, `ic`), table mode is already the default (`iz:...` and `izt:...` both work). When a command takes arguments (such as `/zt`, `/xt`, or `/Rt`), attach the `:query:json` suffix directly to the command token before the arguments (e.g. `/zt:*/head/10:json "http" li utf8`). Run `<cmd>t:?` (e.g. `aflt:?` or `iz:?`) to see the exact column names and operators.
+- **Table-mode commands:** Append `t` to commands whose default mode is not already a table (`aflt`, `afvlt`, `ablt`, `avglt`, `flt`, `omlt`, `/zt`, `/xt`, `/Rt`, `/Ct`, `/Jt`, `phlt`, `tklt`). For `i*` commands (`iz`, `izz`, `izx`, `ii`, `iE`, `is`, `iS`, `iSS`, `il`, `ir`, `ic`), table mode is already the default (`iz:...` and `izt:...` both work). When a command takes arguments (such as `/zt`, `/xt`, or `/Rt`), attach the `:query:json` suffix directly to the command token before the arguments (e.g. `/zt:*/head/10:json "http" li utf8`). To inspect exact column names for any table command, print its header row with `<cmd>t~:0` (e.g. `aflt~:0` or `iz~:0`; note that `<cmd>t:?` is not valid table syntax).
 - **Operators:**
   - Numeric comparisons: `eq`, `ne`, `gt`, `ge`, `lt`, `le` (e.g. `size/gt/500`).
   - String matching & length: `str` (contains substring), `strlen`, `minlen`, `maxlen`, `eq`, `ne` (e.g. `name/str/decrypt`, `string/minlen/8`).
@@ -602,13 +584,13 @@ Chain operations inside a single Rizin invocation without Python round-trips (`@
 - `@@c:<cmd>` — iterate over addresses output by `<cmd>` (`axtj @@c:ii:name/str/Virtual:vaddr/cols:quiet`).
 - `@@b` / `@@i` — iterate over basic blocks of the current function (`@@b`) or instructions of the current basic block (`@@i`; chain `@@i @@b` for all instructions in a function).
 
-## 12. Headless Micro-Emulation & Lifting with RzIL (`aez*`, `aoi`, `plf`)
+## 12. Headless Micro-Emulation & Lifting with RzIL (`aez*`, `plf`, `aoi`)
 
 Rizin uses **RzIL** (BAP Core Theory / SMT bitvector intermediate language) for instruction semantics and micro-emulation (`aez?`). Use the RzIL Virtual Machine to resolve stack strings, XOR/RC4 loops, lookup tables, or computed pointers statically without executing the binary natively:
 
-### 1. RzIL Inspection & Emulation Commands
-- `aoi [<N>]` / `aoip [<N>]` — Print single-line (`aoi`) or pretty-printed (`aoip`) RzIL s-expressions for the next `N` instructions (`aoj <N>` includes `"rzil"` in JSON).
+### 1. RzIL Lifting & Emulation Commands
 - `plf @ <addr>` / `plF @ <addr>` — Print ASCII (`plf`) or Unicode (`plF`) RzIL statements for an entire function (`agI` prints the RzIL graph of the current instruction; `e asm.cmt.il=true` shows RzIL inline in `pd`/`pdf`).
+- `aoi [<N>]` / `aoip [<N>]` — Instruction analysis subcommands that print single-line (`aoi`) or pretty-printed (`aoip`) RzIL s-expressions for the next `N` instructions (`aoj <N>` includes `"rzil"` in the instruction analysis JSON).
 - `aezi` — Initialize the RzIL Virtual Machine at the current seek offset (`s <start_va>; aezi`).
 - `aezs [<N>]` — Step `N` instructions in the RzIL VM.
 - `aezse [<N>]` / `aezsej [<N>]` — Step `N` instructions and emit all VM register/memory events (`pc_write`, `var_write`, `mem_write`, `var_read`, `mem_read`). Controlled by `e rzil.step.events.write=true` (default) and `e rzil.step.events.read=true`.
@@ -806,12 +788,12 @@ Go concatenates string literals into a single read-only blob without null termin
 ## 16. Troubleshooting & Self-Help Introspection
 
 - **Command fails or returns empty output**:
-  1. Read `stderr` (`rz.cmd(cmd, ret_stderr=True)` in `rzpipe` or `res.stderr` in `subprocess.run`) — Rizin automatically prints `ERROR:` diagnostics and the parent command's help table to `stderr`.
+  1. Read `stderr` (`rz.cmd(cmd, ret_stderr=True)` in `rzpipe`) — Rizin automatically prints `ERROR:` diagnostics and the parent command's help table to `stderr`.
   2. Query built-in help directly (never run interactive `?**` / `?***` / `?**e` in headless mode):
-     - `<cmd>?` for short summary/subcommands (e.g., `afv?`, `/z?`, `aflt:?`) and **`<cmd>??`** for full extended help (`description`, `details`, `Encodings`, `Regex Flags`, `Examples`, e.g., `/z??`, `La??`).
+     - `<cmd>?` for short summary/subcommands (e.g., `afv?`, `/z?`, `aflt?`) and **`<cmd>??`** for full extended help (`description`, `details`, `Encodings`, `Regex Flags`, `Examples`, e.g., `/z??`, `La??`). To inspect table column names, run `<cmd>t~:0` (e.g., `aflt~:0` or `iz~:0`).
      - `?*~+<keyword>` or `?* <prefix>~+<keyword>` to search command names, args, and 1-line summaries case-insensitively.
      - `el~+<keyword>` (or `elj`) to search configuration variables and their descriptions.
      - `?+ | jq ...` (or `rz.cmdj("?+")` in Python) to search the **entire** command catalog tree (`summary`, `description`, `args`, `choices`, and `details`/`Examples` across all group and leaf nodes).
   3. Ensure `aa` / `aaa` (or `-p <hash>.rzdb`) has run; `pdfj` and `pdgj` require a function to be defined at `<addr>` (run `af @ <addr>` first, or use `pdj <N> @ <addr>` for raw instruction disassembly).
 - **Decompiler (`pdg` / `pdgj`) unavailable**:
-  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, `Lcj`, or `pdg?`. When `rz-ghidra` is present, always prefer `pdg` / `pdgj` for decompilation; if unavailable, fall back to `pdfj` / `pdrj` / `pdj` or `aoj` / `plf` (RzIL).
+  `pdg` requires the `rz-ghidra` core plugin (`libcore_ghidra.so`). Check loaded core plugins with `Lcq~^ghidra$`, `Lct:name/eq/ghidra:json`, `Lcj`, or `pdg?`. When `rz-ghidra` is present, always prefer `pdg` / `pdgj` for decompilation; if unavailable, fall back to raw disassembly (`pdfj` / `pdrj` / `pdj` / `pi`) or RzIL (`plf` / `aez*`).
