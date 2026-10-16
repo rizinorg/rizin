@@ -684,7 +684,7 @@ RZ_IPI RzCmdStatus rz_analysis_reg_flags_handler(RzCore *core, int argc, const c
 // "arf-"
 RZ_IPI RzCmdStatus rz_analysis_reg_flags_unset_handler(RzCore *core, int argc, const char **argv);
 // "ara"
-RZ_IPI RzCmdStatus rz_analysis_reg_arenas_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_reg_arenas_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ara+"
 RZ_IPI RzCmdStatus rz_analysis_reg_arenas_push_handler(RzCore *core, int argc, const char **argv);
 // "ara-"
@@ -1476,7 +1476,7 @@ RZ_IPI RzCmdStatus rz_debug_reg_flags_handler(RzCore *core, int argc, const char
 // "drf-"
 RZ_IPI RzCmdStatus rz_debug_reg_flags_unset_handler(RzCore *core, int argc, const char **argv);
 // "dra"
-RZ_IPI RzCmdStatus rz_debug_reg_arenas_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_debug_reg_arenas_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "dra+"
 RZ_IPI RzCmdStatus rz_debug_reg_arenas_push_handler(RzCore *core, int argc, const char **argv);
 // "dra-"

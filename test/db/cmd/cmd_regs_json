@@ -22,6 +22,31 @@ arpo scripts/reg-json-profile
 drpo scripts/reg-json-profile
 arR
 drR
+# Include empty arenas and mark the current entry for each type.
+arpo scripts/reg-json-profile
+drpo scripts/reg-json-profile
+araj
+draj
+# Arena sizes come from the selected register bank.
+drpo scripts/reg-json-debug-profile
+araj~{[1]}
+draj~{[1]}
+# Track the current arena through push, swap, and pop operations.
+arpo scripts/reg-json-profile
+ara+
+araj~{[0]}
+araj~{[1]}
+araj~{[2]}
+aras
+araj~{[0]}
+araj~{[1]}
+araj~{[2]}
+ara-
+araj~{[0]}
+araj~{[1]}
+ara-
+ara-
+araj~{[0]}
 EOF
 EXPECT=<<EOF
 ["gpr","drx","fpu","mmx","xmm","ymm","flg","seg","sys","sec","vc","vcc","ctr"]
@@ -79,5 +104,18 @@ SF
 CF
 OF
 SN
+[{"type":0,"type_str":"gpr","index":0,"size":24,"current":false},{"type":0,"type_str":"gpr","index":1,"size":24,"current":true},{"type":1,"type_str":"drx","index":0,"size":4,"current":false},{"type":1,"type_str":"drx","index":1,"size":4,"current":true},{"type":2,"type_str":"fpu","index":0,"size":0,"current":false},{"type":2,"type_str":"fpu","index":1,"size":0,"current":true},{"type":3,"type_str":"mmx","index":0,"size":0,"current":false},{"type":3,"type_str":"mmx","index":1,"size":0,"current":true},{"type":4,"type_str":"xmm","index":0,"size":0,"current":false},{"type":4,"type_str":"xmm","index":1,"size":0,"current":true},{"type":5,"type_str":"ymm","index":0,"size":0,"current":false},{"type":5,"type_str":"ymm","index":1,"size":0,"current":true},{"type":6,"type_str":"flg","index":0,"size":0,"current":false},{"type":6,"type_str":"flg","index":1,"size":0,"current":true},{"type":7,"type_str":"seg","index":0,"size":0,"current":false},{"type":7,"type_str":"seg","index":1,"size":0,"current":true},{"type":8,"type_str":"sys","index":0,"size":0,"current":false},{"type":8,"type_str":"sys","index":1,"size":0,"current":true},{"type":9,"type_str":"sec","index":0,"size":0,"current":false},{"type":9,"type_str":"sec","index":1,"size":0,"current":true},{"type":10,"type_str":"vc","index":0,"size":0,"current":false},{"type":10,"type_str":"vc","index":1,"size":0,"current":true},{"type":11,"type_str":"vcc","index":0,"size":0,"current":false},{"type":11,"type_str":"vcc","index":1,"size":0,"current":true},{"type":12,"type_str":"ctr","index":0,"size":0,"current":false},{"type":12,"type_str":"ctr","index":1,"size":0,"current":true}]
+[{"type":0,"type_str":"gpr","index":0,"size":24,"current":false},{"type":0,"type_str":"gpr","index":1,"size":24,"current":true},{"type":1,"type_str":"drx","index":0,"size":4,"current":false},{"type":1,"type_str":"drx","index":1,"size":4,"current":true},{"type":2,"type_str":"fpu","index":0,"size":0,"current":false},{"type":2,"type_str":"fpu","index":1,"size":0,"current":true},{"type":3,"type_str":"mmx","index":0,"size":0,"current":false},{"type":3,"type_str":"mmx","index":1,"size":0,"current":true},{"type":4,"type_str":"xmm","index":0,"size":0,"current":false},{"type":4,"type_str":"xmm","index":1,"size":0,"current":true},{"type":5,"type_str":"ymm","index":0,"size":0,"current":false},{"type":5,"type_str":"ymm","index":1,"size":0,"current":true},{"type":6,"type_str":"flg","index":0,"size":0,"current":false},{"type":6,"type_str":"flg","index":1,"size":0,"current":true},{"type":7,"type_str":"seg","index":0,"size":0,"current":false},{"type":7,"type_str":"seg","index":1,"size":0,"current":true},{"type":8,"type_str":"sys","index":0,"size":0,"current":false},{"type":8,"type_str":"sys","index":1,"size":0,"current":true},{"type":9,"type_str":"sec","index":0,"size":0,"current":false},{"type":9,"type_str":"sec","index":1,"size":0,"current":true},{"type":10,"type_str":"vc","index":0,"size":0,"current":false},{"type":10,"type_str":"vc","index":1,"size":0,"current":true},{"type":11,"type_str":"vcc","index":0,"size":0,"current":false},{"type":11,"type_str":"vcc","index":1,"size":0,"current":true},{"type":12,"type_str":"ctr","index":0,"size":0,"current":false},{"type":12,"type_str":"ctr","index":1,"size":0,"current":true}]
+{"type":0,"type_str":"gpr","index":1,"size":24,"current":true}
+{"type":0,"type_str":"gpr","index":1,"size":4,"current":true}
+{"type":0,"type_str":"gpr","index":0,"size":24,"current":false}
+{"type":0,"type_str":"gpr","index":1,"size":24,"current":false}
+{"type":0,"type_str":"gpr","index":2,"size":24,"current":true}
+{"type":0,"type_str":"gpr","index":0,"size":24,"current":false}
+{"type":0,"type_str":"gpr","index":1,"size":24,"current":false}
+{"type":0,"type_str":"gpr","index":2,"size":24,"current":true}
+{"type":0,"type_str":"gpr","index":0,"size":24,"current":false}
+{"type":0,"type_str":"gpr","index":1,"size":24,"current":true}
+{"type":0,"type_str":"gpr","index":0,"size":24,"current":true}
 EOF
 RUN
