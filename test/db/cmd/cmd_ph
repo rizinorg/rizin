@@ -16,3 +16,37 @@ bins/elf/analysis/x86-helloworld-gcc: 0x00000000-0x00001323 sha1: e218202875386c
 b9a2dc76a3571526786cf651570df206a93f63fa
 EOF
 RUN
+
+NAME=ph statistical floating-point digests
+FILE==
+CMDS=<<EOF
+ph entropy @s:password
+ph entropy_fract @s:password
+ph temperature @s:password
+ph temperature @s:abcdefgh
+ph temperature @s:a
+ph minentropy @s:password
+ph chisquare @s:password
+ph serialcorr @s:password
+ph ioc @s:password
+ph minentropy @s:admin
+ph chisquare @s:admin
+ph serialcorr @s:admin
+ph ioc @s:admin
+EOF
+EXPECT=<<EOF
+2.75000000
+0.91666667
+0.91666667
+1.00000000
+0.00000000
+2.00000000
+312.00000000
+-0.16463233
+0.03571429
+2.32192809
+251.00000000
+-0.18296530
+0.00000000
+EOF
+RUN

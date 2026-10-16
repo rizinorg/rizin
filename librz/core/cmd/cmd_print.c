@@ -1168,55 +1168,6 @@ static bool print_operation_transform(RzCore *core, RzCoreWriteOp op, RZ_NULLABL
 	return true;
 }
 
-static void handle_entropy(RzCore *core, const char *name, const ut8 *block, int len) {
-	RzHashSize digest_size = 0;
-	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
-	if (!digest) {
-		return;
-	}
-	double entropy = rz_read_be_double(digest);
-	rz_cons_printf("%f\n", entropy);
-	free(digest);
-}
-
-static void handle_temperature(RzCore *core, const char *name, const ut8 *block, int len) {
-	RzHashSize digest_size = 0;
-	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
-	if (!digest) {
-		return;
-	}
-	double temperature = rz_read_be_double(digest);
-	rz_cons_printf("%f\n", temperature);
-	free(digest);
-}
-
-static void handle_ssdeep(RzCore *core, const char *name, const ut8 *block, int len) {
-	RzHashSize digest_size = 0;
-	char *digest = (char *)rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
-	if (!digest) {
-		return;
-	}
-	rz_cons_printf("%s\n", digest);
-	free(digest);
-}
-
-static inline void hexprint(const ut8 *data, int len) {
-	if (!data || len < 1) {
-		return;
-	}
-	for (int i = 0; i < len; i++) {
-		rz_cons_printf("%02x", data[i]);
-	}
-	rz_cons_newline();
-}
-
-static void handle_hash_cfg(RzCore *core, const char *name, const ut8 *block, int len) {
-	RzHashSize digest_size = 0;
-	ut8 *digest = rz_hash_cfg_calculate_small_block(core->hash, name, block, len, &digest_size);
-	hexprint(digest, digest_size);
-	free(digest);
-}
-
 RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const char **argv) {
 	const RzHashPlugin *plugin = rz_hash_plugin_by_name(core->hash, argv[1]);
 
@@ -1225,16 +1176,12 @@ RZ_IPI RzCmdStatus rz_cmd_print_hash_cfg_handler(RzCore *core, int argc, const c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	if (!strncmp(plugin->name, "entropy", strlen("entropy"))) {
-		handle_entropy(core, plugin->name, core->block, core->blocksize);
-	} else if (!strncmp(plugin->name, "temperature", strlen("temperature"))) {
-		handle_temperature(core, plugin->name, core->block, core->blocksize);
-	} else if (!strcmp(plugin->name, "ssdeep")) {
-		handle_ssdeep(core, plugin->name, core->block, core->blocksize);
-	} else {
-		handle_hash_cfg(core, plugin->name, core->block, core->blocksize);
+	char *result = rz_hash_cfg_calculate_small_block_string(core->hash, plugin->name, core->block, core->blocksize, NULL, false);
+	if (!result) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-
+	rz_cons_println(result);
+	free(result);
 	return RZ_CMD_STATUS_OK;
 }
 
