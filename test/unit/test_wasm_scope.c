@@ -282,7 +282,7 @@ bool test_wasm_fallback_after_unreachable(void) {
 	mu_assert_true(rz_core_bin_load(core, NULL, 0), "bin");
 	op = rz_core_analysis_op(core, 0x19, RZ_ANALYSIS_OP_MASK_BASIC);
 	mu_assert_notnull(op, "br_if");
-	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_CJMP, "conditional jump");
+	mu_assert_eq(op->type, (ut64)(ut32)RZ_ANALYSIS_OP_TYPE_CJMP, "conditional jump");
 	mu_assert_eq(op->jump, 0x1c, "br_if 0 ends the loop past unreachable");
 	mu_assert_eq(op->fail, 0x1b, "fallthrough");
 	rz_analysis_op_free(op);
