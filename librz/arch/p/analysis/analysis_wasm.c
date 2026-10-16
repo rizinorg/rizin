@@ -35,11 +35,17 @@ static int wasm_func_cmp(const void *a, const void *b, void *user) {
 
 static WasmFuncScope *wasm_find_func(WasmContext *ctx, ut64 addr) {
 	st32 lo, hi, best;
+	size_t nfuncs;
 	if (!ctx || !ctx->funcs || rz_pvector_empty(ctx->funcs)) {
 		return NULL;
 	}
+	// Bail rather than truncate huge counts.
+	nfuncs = rz_pvector_len(ctx->funcs);
+	if (nfuncs > (size_t)ST32_MAX) {
+		return NULL;
+	}
 	lo = 0;
-	hi = (st32)rz_pvector_len(ctx->funcs) - 1;
+	hi = (st32)nfuncs - 1;
 	best = -1;
 	while (lo <= hi) {
 		st32 mid = lo + (hi - lo) / 2;
@@ -76,6 +82,9 @@ static bool wasm_cache_stale(RzAnalysis *analysis, WasmContext *ctx) {
 	if (va != ctx->used_va || !analysis->binb.get_bin_object) {
 		return true;
 	}
+	if (analysis->iob.io != ctx->iob_io) {
+		return true;
+	}
 	obj = analysis->binb.get_bin_object(analysis->binb.bin);
 	if (!obj) {
 		return true;
@@ -110,6 +119,10 @@ static bool wasm_build_cache(RzAnalysis *analysis, WasmContext *ctx) {
 		return false;
 	}
 	bf = rz_bin_cur(analysis->binb.bin);
+	// Clear stale cache. Never duplicate slots.
+	if (ctx->funcs || rz_vector_len(&ctx->calls)) {
+		wasm_context_clear_cache(ctx);
+	}
 	defined = rz_pvector_new(NULL);
 	ctx->funcs = rz_pvector_new(free);
 	if (!defined || !ctx->funcs) {
@@ -142,7 +155,8 @@ static bool wasm_build_cache(RzAnalysis *analysis, WasmContext *ctx) {
 		ut64 addr;
 		WasmFuncScope *fn;
 		addr = va ? rz_bin_object_get_vaddr(obj, sym->paddr, sym->vaddr) : sym->paddr;
-		if (!sym->size || sym->size > WASM_INDEX_MAX_BODY || addr == UT64_MAX) {
+		// Track all bodies. Index skips oversized.
+		if (!sym->size || addr == UT64_MAX) {
 			continue;
 		}
 		fn = RZ_NEW0(WasmFuncScope);
@@ -151,13 +165,14 @@ static bool wasm_build_cache(RzAnalysis *analysis, WasmContext *ctx) {
 			goto beach;
 		}
 		fn->addr = addr;
-		fn->len = (ut32)sym->size;
+		fn->len = sym->size;
 	}
 	rz_pvector_sort(ctx->funcs, wasm_func_cmp, NULL);
 	ctx->bin_obj = obj;
 	ctx->bin_id = bf ? bf->id : UT32_MAX;
 	ctx->bin_size = obj->size;
 	ctx->nsyms = (ut32)rz_pvector_len(syms);
+	ctx->iob_io = analysis->iob.io;
 	ctx->used_va = va;
 	ctx->indexed = true;
 	wasm_hook_writes(analysis, ctx);
@@ -229,9 +244,12 @@ static void wasm_on_io_write(RzEvent *ev, int type, void *user, void *data) {
 	RzAnalysis *analysis = user;
 	RzEventIOWrite *iow = data;
 	WasmContext *ctx;
-	(void)ev;
 	(void)type;
-	if (!analysis || !iow) {
+	if (!analysis || !iow || !ev) {
+		return;
+	}
+	// Ignore stale buses. Only current IO invalidates.
+	if (!analysis->iob.io || ev != analysis->iob.io->event) {
 		return;
 	}
 	if (analysis->cur != &rz_analysis_plugin_wasm) {
@@ -260,7 +278,7 @@ static void wasm_hook_writes(RzAnalysis *analysis, WasmContext *ctx) {
 static WasmScopeIndex *wasm_index_body(RzAnalysis *analysis, WasmFuncScope *fn) {
 	ut8 *buf;
 	WasmScopeIndex *idx;
-	if (fn->unindexable) {
+	if (fn->unindexable || fn->len > WASM_INDEX_MAX_BODY) {
 		return NULL;
 	}
 	if (fn->idx) {
@@ -460,14 +478,14 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case WASM_OP_BR: {
 			RzAnalysisHint *hint2 = NULL;
-			ut32 val;
+			ut32 val = 0;
 			read_u32_leb128(data + 1, data + len, &val);
 			hint2 = rz_analysis_hint_get(analysis, addr);
 			if (hint2 && hint2->jump != UT64_MAX && !wasm_fn_patched(ctx, addr)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint2->jump;
 			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
-				if (hint->opcode && !strncmp("loop", hint->opcode, 4)) {
+				if (!val && hint->opcode && !strncmp("loop", hint->opcode, 4)) {
 					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 					op->jump = hint->jump;
 				} else {
@@ -484,7 +502,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		} break;
 		case WASM_OP_BRIF: {
 			RzAnalysisHint *hint2 = NULL;
-			ut32 val;
+			ut32 val = 0;
 			read_u32_leb128(data + 1, data + len, &val);
 			hint2 = rz_analysis_hint_get(analysis, addr);
 			if (hint2 && hint2->jump != UT64_MAX && !wasm_fn_patched(ctx, addr)) {
@@ -492,7 +510,8 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->jump = hint2->jump;
 				op->fail = addr + op->size;
 			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
-				if (hint->opcode && !strncmp("loop", hint->opcode, 4)) {
+				if (!val && hint->opcode && !strncmp("loop", hint->opcode, 4)) {
+					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 					op->fail = addr + op->size;
 					op->jump = hint->jump;
 				} else {
@@ -633,6 +652,9 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case WASM_OP_NOP:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+			break;
+		case WASM_OP_TRAP:
+			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 			break;
 		case WASM_OP_CALL:
 		case WASM_OP_CALLINDIRECT:

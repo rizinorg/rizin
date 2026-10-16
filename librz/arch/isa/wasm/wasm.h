@@ -505,7 +505,7 @@ typedef struct wasm_scope_index_t WasmScopeIndex;
 
 typedef struct wasm_func_scope_t {
 	ut64 addr;
-	ut32 len;
+	ut64 len; ///< body bytes. oversized tracked, never indexed
 	WasmScopeIndex *idx;
 	bool unindexable;
 	bool patched; ///< bytes changed after caching, ignore stored hints here
@@ -522,6 +522,7 @@ typedef struct wasm_context_t {
 	ut32 bin_id;
 	ut64 bin_size;
 	ut32 nsyms;
+	const void *iob_io; ///< IO identity at build time, never dereferenced
 } WasmContext;
 
 RZ_IPI bool wasm_init(void **user); ///< initialize a context of type WasmContext
