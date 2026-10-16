@@ -80,14 +80,14 @@ RZ_IPI RzCmdStatus HANDLER(regs_args)(RzCore *core, int argc, const char **argv,
 	return rz_regs_args_handler(core, rreg, CMD_REGS_SYNC, argc, argv, mode);
 }
 
-RZ_IPI RzCmdStatus HANDLER(reg_types)(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus HANDLER(reg_types)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzReg *rreg = CMD_REGS_REG_PATH;
-	return rz_reg_types_handler(core, rreg, argc, argv);
+	return rz_reg_types_handler(core, rreg, argc, argv, state);
 }
 
-RZ_IPI RzCmdStatus HANDLER(reg_roles)(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus HANDLER(reg_roles)(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzReg *rreg = CMD_REGS_REG_PATH;
-	return rz_reg_roles_handler(core, rreg, argc, argv);
+	return rz_reg_roles_handler(core, rreg, argc, argv, state);
 }
 
 RZ_IPI RzCmdStatus HANDLER(reg_flags)(RzCore *core, int argc, const char **argv) {

@@ -643,22 +643,50 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	return r;
 }
 
-RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List the register types supported by Rizin.
+ */
+RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
 	for (int i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		rz_cons_println(core->cons, rz_reg_get_type(i));
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, rz_reg_get_type(i));
+		} else {
+			rz_cons_println(core->cons, rz_reg_get_type(i));
+		}
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List register roles, including those without a matching register.
+ *
+ * Use the same JSON fields as arpj/drpj so consumers can share role handling.
+ * Omit the reg field when the profile does not resolve a role to a register.
+ */
+RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
 	for (int i = 0; i < RZ_REG_NAME_LAST; i++) {
-		rz_cons_print(core->cons, rz_reg_get_role(i));
 		RzRegItem *ri = rz_reg_get_by_role(reg, i);
-		if (ri && ri->name) {
-			rz_cons_printf(core->cons, " -> %s", ri->name);
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			PJ *pj = state->d.pj;
+			pj_o(pj);
+			pj_kn(pj, "role", i);
+			pj_ks(pj, "role_str", rz_reg_get_role(i));
+			if (ri && ri->name) {
+				pj_ks(pj, "reg", ri->name);
+			}
+			pj_end(pj);
+		} else {
+			rz_cons_print(core->cons, rz_reg_get_role(i));
+			if (ri && ri->name) {
+				rz_cons_printf(core->cons, " -> %s", ri->name);
+			}
+			rz_cons_print(core->cons, "\n");
 		}
-		rz_cons_print(core->cons, "\n");
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
