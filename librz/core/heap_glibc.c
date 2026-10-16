@@ -599,7 +599,46 @@ static bool rz_heap_get_brks(RzCore *core, ut64 *brk_start, ut64 *brk_end) {
 	return false;
 }
 
-static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, int format, const RzHeapConfig *config) {
+/**
+ * \brief Keep the arena fields separate from the rendered size classes so consumers
+ * can inspect the allocator state without interpreting the terminal layout.
+ */
+static void print_arena_stats_json(PJ *pj, ut64 addr, const MallocState *arena, const RzHeapConfig *config) {
+	pj_o(pj);
+	pj_kn(pj, "addr", addr);
+	pj_kn(pj, "mutex", arena->mutex);
+	pj_kn(pj, "flags", arena->flags);
+	if (config->malloc_state.has_have_fast_chunks) {
+		pj_kn(pj, "have_fastchunks", arena->have_fast_chunks);
+	}
+	pj_ka(pj, "fastbinsY");
+	for (size_t i = 0; i < RZ_GLIBC_NFASTBINS; i++) {
+		pj_n(pj, arena->fastbinsY[i]);
+	}
+	pj_end(pj);
+	pj_kn(pj, "top", arena->top);
+	pj_kn(pj, "last_remainder", arena->last_remainder);
+	pj_ka(pj, "bins");
+	for (size_t i = 0; i < RZ_GLIBC_NBINS * 2 - 2; i++) {
+		pj_n(pj, arena->bins[i]);
+	}
+	pj_end(pj);
+	pj_ka(pj, "binmap");
+	for (size_t i = 0; i < RZ_GLIBC_BINMAPSIZE; i++) {
+		pj_n(pj, arena->binmap[i]);
+	}
+	pj_end(pj);
+	pj_kn(pj, "next", arena->next);
+	pj_kn(pj, "next_free", arena->next_free);
+	if (config->malloc_state.has_attached_threads) {
+		pj_kn(pj, "attached_threads", arena->attached_threads);
+	}
+	pj_kn(pj, "system_mem", arena->system_mem);
+	pj_kn(pj, "max_system_mem", arena->max_system_mem);
+	pj_end(pj);
+}
+
+static void print_arena_stats(RzCore *core, ut64 m_arena, MallocState *main_arena, ut64 global_max_fast, const RzHeapConfig *config) {
 	size_t i, j, k, start;
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
 	ut64 align = 12 * ptr_size + sizeof(int) * 2;
@@ -2617,9 +2656,8 @@ end:
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 m_arena = UT64_MAX, m_state = UT64_MAX;
-	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	RzHeapConfig config;
 	if (!init_glibc_config(core, &config)) {
 		return RZ_CMD_STATUS_ERROR;
@@ -2637,13 +2675,17 @@ RZ_IPI RzCmdStatus rz_cmd_main_arena_print_handler(RzCore *core, int argc, const
 		m_state = rz_num_get(NULL, argv[1]);
 	}
 	if (!rz_heap_is_arena(core, m_arena, m_state, &config)) {
-		PRINT_RA("This address is not a valid arena\n");
+		RZ_LOG_ERROR("core: This address is not a valid arena\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (!rz_heap_update_main_arena_internal(core, m_state, main_arena, &config)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	print_arena_stats(core, m_state, main_arena, global_max_fast, mode, &config);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		print_arena_stats_json(state->d.pj, m_state, main_arena, &config);
+	} else {
+		print_arena_stats(core, m_state, main_arena, global_max_fast, &config);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
