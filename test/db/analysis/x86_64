@@ -4584,3 +4584,65 @@ EXPECT=<<EOF
 0x00200562 data Cd 58
 EOF
 RUN
+
+NAME=x86-64 indirect jump resolved from lea
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d0502000000ffe0b83c000000bf2a0000000f05
+af
+afb~:0[0,1,4,5]
+axt @ 0x9~CODE
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000009 j 0x00000009
+fcn.00000000 0x7 [CODE] jmp rax
+EOF
+RUN
+
+NAME=x86-64 indirect jump resolved from mov
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 48b80c00000000000000ffe0b83c000000bf2a0000000f05
+af
+afb~:0[0,1,4,5]
+axt @ 0xc~CODE
+EOF
+EXPECT=<<EOF
+0x00000000 0x0000000c j 0x0000000c
+fcn.00000000 0xa [CODE] jmp rax
+EOF
+RUN
+
+NAME=x86-64 register overwrite prevents lea jump resolution
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d05050000004889d8ffe0b83c000000bf2a0000000f05
+af
+afb
+axt @ 0xc~CODE
+EOF
+EXPECT=<<EOF
+0x00000000 0x0000000c 00:0000 12
+EOF
+RUN
+
+NAME=x86-64 mismatched register prevents lea jump resolution
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d0502000000ffe1b83c000000bf2a0000000f05
+af
+afb
+axt @ 0x9~CODE
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000009 00:0000 9
+EOF
+RUN
