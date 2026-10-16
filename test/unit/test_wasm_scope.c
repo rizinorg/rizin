@@ -550,7 +550,7 @@ bool test_wasm_fallback_no_index(void) {
 	mu_assert_true(rz_io_read_at_mapped(core->io, 5, buf, 2), "read");
 	rz_analysis_op_init(&op);
 	mu_assert_true(rz_analysis_op(core->analysis, &op, 5, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if");
-	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_CJMP, "conditional branch");
+	mu_assert_eq(op.type, (ut64)(ut32)RZ_ANALYSIS_OP_TYPE_CJMP, "conditional branch");
 	mu_assert_eq(op.jump, 2, "br_if 0 restarts the loop");
 	mu_assert_eq(op.fail, 7, "br_if falls through");
 	rz_analysis_op_fini(&op);
@@ -575,13 +575,13 @@ bool test_wasm_fallback_no_index(void) {
 }
 
 bool test_wasm_oversized_tracked(void) {
-	// Huge body: tracked, never indexed. Header plus final end only.
+	// Huge body: tracked, never indexed. A br near the end builds the cache.
 	// Writes mark patched, end stays RET.
 	static const ut8 hdr[29] = {
 		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
 		0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 0x03, 0x02,
-		0x01, 0x00, 0x0a, 0x86, 0x80, 0x80, 0x10, 0x01,
-		0x81, 0x80, 0x80, 0x10, 0x00
+		0x01, 0x00, 0x0a, 0x87, 0x80, 0x80, 0x10, 0x01,
+		0x82, 0x80, 0x80, 0x10, 0x00
 	};
 	const ut8 end = 0x0b;
 	RzCore *core = rz_core_new();
@@ -591,16 +591,22 @@ bool test_wasm_oversized_tracked(void) {
 	WasmFuncScope *fn = NULL;
 	void **it;
 	mu_assert_notnull(core, "core");
-	cf = rz_core_file_open(core, "malloc://33554461", RZ_PERM_RW, 0);
+	cf = rz_core_file_open(core, "malloc://33554462", RZ_PERM_RW, 0);
 	mu_assert_notnull(cf, "open");
 	rz_core_cmd0(core, "e io.va=false"); // no maps before bin load: raw access
 	mu_assert_true(rz_io_write_at(core->io, 0, hdr, sizeof(hdr)), "header");
-	mu_assert_true(rz_io_write_at(core->io, 33554460, &end, 1), "final end");
+	mu_assert_true(rz_io_write_at(core->io, 33554461, &end, 1), "final end");
 	mu_assert_true(rz_core_bin_load(core, NULL, 0), "bin");
-	op = rz_core_analysis_op(core, 33554460, RZ_ANALYSIS_OP_MASK_BASIC);
+	op = rz_core_analysis_op(core, 33554461, RZ_ANALYSIS_OP_MASK_BASIC);
 	mu_assert_notnull(op, "end");
 	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "huge body end is RET");
 	mu_assert_true(op->eob, "huge body end eob");
+	rz_analysis_op_free(op);
+	// The end alone builds no cache, so a br near the body end forces
+	// a real build through the public path. Its scan needs one step.
+	rz_core_cmd0(core, "s 33554459; wx 0c00");
+	op = rz_core_analysis_op(core, 33554459, RZ_ANALYSIS_OP_MASK_BASIC);
+	mu_assert_notnull(op, "br");
 	rz_analysis_op_free(op);
 	ctx = core->analysis->plugin_data;
 	mu_assert_notnull(ctx, "ctx");
@@ -611,13 +617,13 @@ bool test_wasm_oversized_tracked(void) {
 		}
 	}
 	mu_assert_notnull(fn, "huge body tracked");
-	mu_assert_eq(fn->len, 33554432, "full size kept, not truncated");
+	mu_assert_eq(fn->len, 33554433, "full size kept, not truncated");
 	mu_assert_null(fn->idx, "huge body never indexed");
 	mu_assert_false(fn->unindexable, "no poison");
 	mu_assert_false(fn->patched, "not patched yet");
 	rz_core_cmd0(core, "s 29; wx 01");
 	mu_assert_true(fn->patched, "write marks huge body patched");
-	op = rz_core_analysis_op(core, 33554460, RZ_ANALYSIS_OP_MASK_BASIC);
+	op = rz_core_analysis_op(core, 33554461, RZ_ANALYSIS_OP_MASK_BASIC);
 	mu_assert_notnull(op, "end again");
 	mu_assert_eq(op->type, RZ_ANALYSIS_OP_TYPE_RET, "still RET after patch");
 	rz_analysis_op_free(op);

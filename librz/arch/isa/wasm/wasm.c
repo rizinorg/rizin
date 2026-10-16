@@ -1320,13 +1320,15 @@ RZ_IPI bool wasm_scope_index_query(const WasmScopeIndex *idx, ut32 from, ut32 de
 	const WasmScope *s;
 	st32 lo, hi, best;
 	ut32 n, d;
+	size_t len;
 	if (!idx || !jump_off) {
 		return false;
 	}
-	n = (ut32)rz_vector_len(&idx->scopes);
-	if (!n) {
+	len = rz_vector_len(&idx->scopes);
+	if (!len || len > (size_t)ST32_MAX) {
 		return false;
 	}
+	n = (ut32)len;
 	lo = 0;
 	hi = (st32)n - 1;
 	best = -1;
