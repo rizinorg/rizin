@@ -959,6 +959,7 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
+		rz_json_free(json);
 		return false;
 	}
 
