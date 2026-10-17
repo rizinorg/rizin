@@ -25,4 +25,18 @@ d "b .s1 0x40;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,
 d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0001000b" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
 
 # a full 32-byte fetch packet, compact header and mixed widths
-d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+
+# In a packet with a compact header, a 32-bit word carries its own parallel
+# bit in bit 0; the header's bits only cover the 16-bit slots. The compact
+# moves to and from the whole register file take a five-bit register number,
+# with its top bits in bits 11:10 (mv .d2 b7,b9).
+d "xor .l2 b4,b7,b7;|| pack2 .s2 b5,b5,b5;packl4 .l2 b5,b5,b7;|| extu .s2 b7,0x18,0x18,b5;cmpeq .l2 b5,b4,b0;|| mv .s2 b6,b4;|| mv .d2 b7,b9;[b0] lddw .d2 *b4,b5:b4;|| [!b0] b .s1 0x8248;.fphead n, l, w, bu, nobr, nosat, 0011000b" fb8d9c03f2af94021bad9403e3bb69a64f83d727e703102211090030800100e3 0x8200
+
+# A compact CALLP counts its displacement in words, as the 32-bit form does,
+# not in half-words like the other compact branches.
+d "callp .s2 0x8000;|| mvk .l2 0x1,b4;|| mvkh .s1 0x0,a4;bnop .s2x a1,0x4;mv .l1 a5,a4;mvkh .s1 0x0,a4;addkpc .s2 0x8318,b3,0;bnop .s2x a1,0x3;.fphead n, l, w, bu, br, nosat, 0000001b" 1bd027266800000262938400d80f1402680000026201860162738400038020e0 0x8300
+
+# The compact non-aligned double-word loads and stores do not scale their
+# offset: *+a4(0x8) is eight bytes on.
+d "pack2 .l2 b6,b9,b5;packl4 .l1x a8,b4,a8;packl4 .l1x a9,b5,a9;|| xor .s1 a8,a7,a7;xor .l1 a9,a6,a6;stdw .d1 a7:a6,*a5;ldndw .d1 *+a4(0x8),a7:a6;lddw .d1 *+a3[0x1],a19:a18;.fphead n, l, dw, w, nobr, nosat, 0100000b" 1ac0a402181d1104193d9504e0029d03f82d1903e4007c0864230c09000004e4

@@ -15,7 +15,7 @@
  * Packet boundaries come from the parallel bit, but where that bit lives
  * depends on the fetch packet. A fetch packet is eight words; when its last
  * word is a compact header (bits 31:28 == 1110) the other seven words may hold
- * two 16-bit opcodes each, and then the parallel bits for all fourteen slots
+ * two 16-bit opcodes each, and then the parallel bits of those 16-bit slots
  * sit in the header rather than in the opcodes. That is the common case: most
  * of a C674x image is compact.
  *
@@ -32,6 +32,7 @@ typedef enum {
 	C6X_FPH_TAG_SHIFT = 28, ///< bits 31:28, C6X_FP_HEADER_TAG marks a header
 	C6X_FPH_LAYOUT_SHIFT = 21, ///< bits 27:21, which words hold two 16-bit opcodes
 	C6X_FPH_LAYOUT_MASK = 0x7f,
+	C6X_FPH_PROT_SHIFT = 20, ///< bit 20, protected mode: loads insert four NOP cycles
 	C6X_FPH_PBITS_MASK = 0x3fff, ///< bits 13:0, the parallel bit of each slot
 } C6xFetchPacketHeader;
 
@@ -64,14 +65,17 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 			out[n].size = C6X_WORD_SIZE;
 			out[n].opcode = w[i];
 			out[n].parallel = w[i] & 1;
+			out[n].header = false;
+			out[n].prot = false;
 			n++;
 		}
 		return n;
 	}
 	// Layout says which of words 0..6 hold two 16-bit opcodes; the parallel bits
-	// for all fourteen possible slots are packed into the header instead.
+	// of those are packed into the header instead.
 	ut32 layout = (w[7] >> C6X_FPH_LAYOUT_SHIFT) & C6X_FPH_LAYOUT_MASK;
 	ut32 pbits = w[7] & C6X_FPH_PBITS_MASK;
+	bool prot = (w[7] >> C6X_FPH_PROT_SHIFT) & 1;
 	for (size_t i = 0; i < 7; i++) {
 		if (layout & (1u << i)) {
 			ut32 lo = big_endian ? (w[i] >> 16) : (w[i] & 0xffff);
@@ -80,26 +84,37 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 			out[n].size = C6X_COMPACT_SIZE;
 			out[n].opcode = lo;
 			out[n].parallel = (pbits >> (2 * i)) & 1;
+			out[n].header = false;
+			out[n].prot = prot;
 			n++;
 			out[n].addr = base + i * 4 + 2;
 			out[n].size = C6X_COMPACT_SIZE;
 			out[n].opcode = hi;
 			out[n].parallel = (pbits >> (2 * i + 1)) & 1;
+			out[n].header = false;
+			out[n].prot = prot;
 			n++;
 		} else {
+			// a 32-bit opcode keeps its own parallel bit even here; the two
+			// header bits of its word are unused (binutils tic6x-dis.c agrees)
 			out[n].addr = base + i * 4;
 			out[n].size = C6X_WORD_SIZE;
 			out[n].opcode = w[i];
-			out[n].parallel = (pbits >> (2 * i)) & 1;
+			out[n].parallel = w[i] & 1;
+			out[n].header = false;
+			out[n].prot = prot;
 			n++;
 		}
 	}
-	// the header itself is not an instruction and always ends the packet
+	// The header itself is not an instruction. It belongs to no execute packet:
+	// one that is still open when the header is reached carries on into the
+	// next fetch packet, so c6x_packet_at() steps over it.
 	out[n].addr = base + 7 * 4;
 	out[n].size = C6X_WORD_SIZE;
 	out[n].opcode = w[7];
 	out[n].parallel = false;
 	out[n].header = true;
+	out[n].prot = prot;
 	n++;
 	return n;
 }
@@ -109,13 +124,17 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
  *
  * An execute packet runs from a slot whose predecessor has its parallel bit
  * clear up to and including the first slot whose own parallel bit is clear. It
- * can cross a fetch-packet boundary, so up to two fetch packets are read.
+ * can cross a fetch-packet boundary, so up to two fetch packets are read, and a
+ * compact header met on the way is stepped over rather than ending it: the
+ * header is not an instruction and takes no part in the packet. Asked for the
+ * header itself, this returns a packet of just the header.
  *
  * \param read Reader for image bytes; must fill the whole request.
  * \param user Passed through to \p read.
  * \param pc Any address inside the wanted packet.
  * \param big_endian Byte order of the image.
- * \param out Receives the packet.
+ * \param out Receives the packet; its \c next is where the following packet
+ *            starts, past a header that sits in between.
  *
  * \return false if the image could not be read.
  */
@@ -137,27 +156,47 @@ RZ_IPI bool c6x_packet_at(C6xReadFn read, void *user, ut64 pc, bool big_endian,
 	n += c6x_fetch_packet_slots(fp + C6X_FETCH_PACKET_SIZE,
 		base + C6X_FETCH_PACKET_SIZE, big_endian, slots + n);
 
-	// walk to the start of the execute packet holding pc
-	size_t start = 0;
+	size_t at = n;
 	for (size_t i = 0; i < n; i++) {
 		if (slots[i].addr <= pc && pc < slots[i].addr + slots[i].size) {
-			// step back while the previous slot claims parallel execution
-			start = i;
-			while (start > 0 && slots[start - 1].parallel) {
-				start--;
-			}
+			at = i;
 			break;
 		}
 	}
 	out->n = 0;
-	for (size_t i = start; i < n && out->n < C6X_FP_SLOTS; i++) {
+	if (at == n) {
+		return false;
+	}
+	if (slots[at].header) {
+		out->slots[out->n++] = slots[at];
+		out->addr = slots[at].addr;
+		out->next = slots[at].addr + slots[at].size;
+		return true;
+	}
+	// step back while the previous instruction claims parallel execution; a
+	// header never sits before an instruction of its own fetch packet
+	size_t start = at;
+	while (start > 0 && !slots[start - 1].header && slots[start - 1].parallel) {
+		start--;
+	}
+	size_t i = start;
+	for (; i < n && out->n < C6X_FP_SLOTS; i++) {
+		if (slots[i].header) {
+			continue; // not part of the packet, which may go on past it
+		}
 		out->slots[out->n++] = slots[i];
 		if (!slots[i].parallel) {
+			i++;
 			break;
 		}
 	}
-	out->addr = out->n ? out->slots[0].addr : pc;
-	return out->n > 0;
+	// the next packet starts at the next instruction, never at a header
+	while (i < n && slots[i].header) {
+		i++;
+	}
+	out->addr = out->slots[0].addr;
+	out->next = i < n ? slots[i].addr : C6X_PACKET_END(*out);
+	return true;
 }
 
 /**

@@ -37,226 +37,240 @@ typedef enum {
 	OSHAPE_CMP_DP, ///< src1/src2 are pairs, dst is a single sint (DP compares)
 	OSHAPE_CMP_LONG, ///< src2 is a pair (40-bit long), dst and src1 are singles
 	OSHAPE_TO_DP, ///< src2 single widens into a pair dst; src1 (if any) single
-	OSHAPE_LONG_DST, ///< src1 single, src2 a pair, dst a pair (long ADD)
+	OSHAPE_LONG_DST, ///< src1 single, src2 a pair, dst a pair (40-bit add, sub, shift)
 } C6xOShape;
 
-// Printed form of every opcode, indexed by C6xInsnId, so an opcode is named
-// exactly once and the decode tables carry identity instead of text.
-static const char *const c6x_ins_names[C6X_INS_LAST] = {
-	[C6X_INS_FPHEAD] = ".fphead",
-	[C6X_INS_ABS] = "abs",
-	[C6X_INS_ABS2] = "abs2",
-	[C6X_INS_ABSDP] = "absdp",
-	[C6X_INS_ABSSP] = "abssp",
-	[C6X_INS_ADD] = "add",
-	[C6X_INS_ADD2] = "add2",
-	[C6X_INS_ADD4] = "add4",
-	[C6X_INS_ADDAB] = "addab",
-	[C6X_INS_ADDAD] = "addad",
-	[C6X_INS_ADDAH] = "addah",
-	[C6X_INS_ADDAW] = "addaw",
-	[C6X_INS_ADDDP] = "adddp",
-	[C6X_INS_ADDK] = "addk",
-	[C6X_INS_ADDKPC] = "addkpc",
-	[C6X_INS_ADDSP] = "addsp",
-	[C6X_INS_ADDU] = "addu",
-	[C6X_INS_AND] = "and",
-	[C6X_INS_ANDN] = "andn",
-	[C6X_INS_AVG2] = "avg2",
-	[C6X_INS_AVGU4] = "avgu4",
-	[C6X_INS_B] = "b",
-	[C6X_INS_BDEC] = "bdec",
-	[C6X_INS_BITC4] = "bitc4",
-	[C6X_INS_BITR] = "bitr",
-	[C6X_INS_BNOP] = "bnop",
-	[C6X_INS_BPOS] = "bpos",
-	[C6X_INS_CALLP] = "callp",
-	[C6X_INS_CLR] = "clr",
-	[C6X_INS_CMATMPY] = "cmatmpy",
-	[C6X_INS_CMATMPYR1] = "cmatmpyr1",
-	[C6X_INS_CMPEQ] = "cmpeq",
-	[C6X_INS_CMPEQ2] = "cmpeq2",
-	[C6X_INS_CMPEQ4] = "cmpeq4",
-	[C6X_INS_CMPEQDP] = "cmpeqdp",
-	[C6X_INS_CMPEQSP] = "cmpeqsp",
-	[C6X_INS_CMPGT] = "cmpgt",
-	[C6X_INS_CMPGT2] = "cmpgt2",
-	[C6X_INS_CMPGTDP] = "cmpgtdp",
-	[C6X_INS_CMPGTSP] = "cmpgtsp",
-	[C6X_INS_CMPGTU] = "cmpgtu",
-	[C6X_INS_CMPGTU4] = "cmpgtu4",
-	[C6X_INS_CMPLT] = "cmplt",
-	[C6X_INS_CMPLTDP] = "cmpltdp",
-	[C6X_INS_CMPLTSP] = "cmpltsp",
-	[C6X_INS_CMPLTU] = "cmpltu",
-	[C6X_INS_CMPY] = "cmpy",
-	[C6X_INS_CMPYR] = "cmpyr",
-	[C6X_INS_CMPYR1] = "cmpyr1",
-	[C6X_INS_DADD] = "dadd",
-	[C6X_INS_DCCMPYR1] = "dccmpyr1",
-	[C6X_INS_DCMPYR1] = "dcmpyr1",
-	[C6X_INS_DDOTPH2] = "ddotph2",
-	[C6X_INS_DDOTPL2] = "ddotpl2",
-	[C6X_INS_DEAL] = "deal",
-	[C6X_INS_DINT] = "dint",
-	[C6X_INS_DMPYSP] = "dmpysp",
-	[C6X_INS_DOTP2] = "dotp2",
-	[C6X_INS_DOTP4H] = "dotp4h",
-	[C6X_INS_DOTPN2] = "dotpn2",
-	[C6X_INS_DOTPNRSU2] = "dotpnrsu2",
-	[C6X_INS_DOTPRSU2] = "dotprsu2",
-	[C6X_INS_DOTPSU4] = "dotpsu4",
-	[C6X_INS_DOTPSU4H] = "dotpsu4h",
-	[C6X_INS_DOTPU4] = "dotpu4",
-	[C6X_INS_DPINT] = "dpint",
-	[C6X_INS_DPSP] = "dpsp",
-	[C6X_INS_DPTRUNC] = "dptrunc",
-	[C6X_INS_DSUB] = "dsub",
-	[C6X_INS_EXT] = "ext",
-	[C6X_INS_EXTU] = "extu",
-	[C6X_INS_GMPY] = "gmpy",
-	[C6X_INS_GMPY4] = "gmpy4",
-	[C6X_INS_IDLE] = "idle",
-	[C6X_INS_INTDP] = "intdp",
-	[C6X_INS_INTDPU] = "intdpu",
-	[C6X_INS_INTSP] = "intsp",
-	[C6X_INS_INTSPU] = "intspu",
-	[C6X_INS_LDB] = "ldb",
-	[C6X_INS_LDBU] = "ldbu",
-	[C6X_INS_LDDW] = "lddw",
-	[C6X_INS_LDH] = "ldh",
-	[C6X_INS_LDHU] = "ldhu",
-	[C6X_INS_LDNDW] = "ldndw",
-	[C6X_INS_LDNW] = "ldnw",
-	[C6X_INS_LDW] = "ldw",
-	[C6X_INS_LMBD] = "lmbd",
-	[C6X_INS_MAX2] = "max2",
-	[C6X_INS_MAXU4] = "maxu4",
-	[C6X_INS_MIN2] = "min2",
-	[C6X_INS_MINU4] = "minu4",
-	[C6X_INS_MPY] = "mpy",
-	[C6X_INS_MPY2] = "mpy2",
-	[C6X_INS_MPY32] = "mpy32",
-	[C6X_INS_MPY32SU] = "mpy32su",
-	[C6X_INS_MPY32U] = "mpy32u",
-	[C6X_INS_MPY32US] = "mpy32us",
-	[C6X_INS_MPYDP] = "mpydp",
-	[C6X_INS_MPYH] = "mpyh",
-	[C6X_INS_MPYHI] = "mpyhi",
-	[C6X_INS_MPYHIR] = "mpyhir",
-	[C6X_INS_MPYHL] = "mpyhl",
-	[C6X_INS_MPYHLU] = "mpyhlu",
-	[C6X_INS_MPYHSLU] = "mpyhslu",
-	[C6X_INS_MPYHSU] = "mpyhsu",
-	[C6X_INS_MPYHU] = "mpyhu",
-	[C6X_INS_MPYHULS] = "mpyhuls",
-	[C6X_INS_MPYHUS] = "mpyhus",
-	[C6X_INS_MPYI] = "mpyi",
-	[C6X_INS_MPYID] = "mpyid",
-	[C6X_INS_MPYLH] = "mpylh",
-	[C6X_INS_MPYLHU] = "mpylhu",
-	[C6X_INS_MPYLI] = "mpyli",
-	[C6X_INS_MPYLIR] = "mpylir",
-	[C6X_INS_MPYLSHU] = "mpylshu",
-	[C6X_INS_MPYLUHS] = "mpyluhs",
-	[C6X_INS_MPYSP] = "mpysp",
-	[C6X_INS_MPYSP2DP] = "mpysp2dp",
-	[C6X_INS_MPYSPDP] = "mpyspdp",
-	[C6X_INS_MPYSU] = "mpysu",
-	[C6X_INS_MPYSU4] = "mpysu4",
-	[C6X_INS_MPYU] = "mpyu",
-	[C6X_INS_MPYU4] = "mpyu4",
-	[C6X_INS_MPYUS] = "mpyus",
-	[C6X_INS_MV] = "mv",
-	[C6X_INS_MVC] = "mvc",
-	[C6X_INS_MVD] = "mvd",
-	[C6X_INS_MVK] = "mvk",
-	[C6X_INS_MVKH] = "mvkh",
-	[C6X_INS_NEG] = "neg",
-	[C6X_INS_NOP] = "nop",
-	[C6X_INS_NORM] = "norm",
-	[C6X_INS_NOT] = "not",
-	[C6X_INS_OR] = "or",
-	[C6X_INS_PACK2] = "pack2",
-	[C6X_INS_PACKH2] = "packh2",
-	[C6X_INS_PACKH4] = "packh4",
-	[C6X_INS_PACKHL2] = "packhl2",
-	[C6X_INS_PACKL4] = "packl4",
-	[C6X_INS_PACKLH2] = "packlh2",
-	[C6X_INS_QMPY32] = "qmpy32",
-	[C6X_INS_QMPYSP] = "qmpysp",
-	[C6X_INS_QSMPY32R1] = "qsmpy32r1",
-	[C6X_INS_RINT] = "rint",
-	[C6X_INS_ROTL] = "rotl",
-	[C6X_INS_RPACK2] = "rpack2",
-	[C6X_INS_RSQRDP] = "rsqrdp",
-	[C6X_INS_SADD] = "sadd",
-	[C6X_INS_SADD2] = "sadd2",
-	[C6X_INS_SADDU4] = "saddu4",
-	[C6X_INS_SADDUS2] = "saddus2",
-	[C6X_INS_SAT] = "sat",
-	[C6X_INS_SET] = "set",
-	[C6X_INS_SHFL] = "shfl",
-	[C6X_INS_SHL] = "shl",
-	[C6X_INS_SHLMB] = "shlmb",
-	[C6X_INS_SHR] = "shr",
-	[C6X_INS_SHR2] = "shr2",
-	[C6X_INS_SHRMB] = "shrmb",
-	[C6X_INS_SHRU] = "shru",
-	[C6X_INS_SHRU2] = "shru2",
-	[C6X_INS_SMPY] = "smpy",
-	[C6X_INS_SMPY2] = "smpy2",
-	[C6X_INS_SMPYH] = "smpyh",
-	[C6X_INS_SMPYHL] = "smpyhl",
-	[C6X_INS_SMPYLH] = "smpylh",
-	[C6X_INS_SPACK2] = "spack2",
-	[C6X_INS_SPACKU4] = "spacku4",
-	[C6X_INS_SPDP] = "spdp",
-	[C6X_INS_SPINT] = "spint",
-	[C6X_INS_SPLOOP] = "sploop",
-	[C6X_INS_SPLOOPD] = "sploopd",
-	[C6X_INS_SPLOOPW] = "sploopw",
-	[C6X_INS_SPKERNEL] = "spkernel",
-	[C6X_INS_SPKERNELR] = "spkernelr",
-	[C6X_INS_SPMASK] = "spmask",
-	[C6X_INS_SPMASKR] = "spmaskr",
-	[C6X_INS_SPTRUNC] = "sptrunc",
-	[C6X_INS_SSHL] = "sshl",
-	[C6X_INS_SSHVL] = "sshvl",
-	[C6X_INS_SSHVR] = "sshvr",
-	[C6X_INS_SSUB] = "ssub",
-	[C6X_INS_SSUB2] = "ssub2",
-	[C6X_INS_STB] = "stb",
-	[C6X_INS_STDW] = "stdw",
-	[C6X_INS_STH] = "sth",
-	[C6X_INS_STNDW] = "stndw",
-	[C6X_INS_STNW] = "stnw",
-	[C6X_INS_STW] = "stw",
-	[C6X_INS_SUB] = "sub",
-	[C6X_INS_SUB2] = "sub2",
-	[C6X_INS_SUB4] = "sub4",
-	[C6X_INS_SUBAB] = "subab",
-	[C6X_INS_SUBAH] = "subah",
-	[C6X_INS_SUBAW] = "subaw",
-	[C6X_INS_SUBC] = "subc",
-	[C6X_INS_SUBDP] = "subdp",
-	[C6X_INS_SUBSP] = "subsp",
-	[C6X_INS_SUBU] = "subu",
-	[C6X_INS_SWAP4] = "swap4",
-	[C6X_INS_UNPKHU4] = "unpkhu4",
-	[C6X_INS_UNPKLU4] = "unpklu4",
-	[C6X_INS_XOR] = "xor",
-	[C6X_INS_XORMPY] = "xormpy",
-	[C6X_INS_XPND2] = "xpnd2",
-	[C6X_INS_XPND4] = "xpnd4",
-	[C6X_INS_ZERO] = "zero",
+// Every opcode by C6xInsnId: its printed form, so an opcode is named exactly
+// once and the decode tables carry identity instead of text, and its timing.
+// The timing column is the number of delay slots before the result can be
+// read (SPRUFE8B and SPRUGH7, the "Delay Slots" line of each instruction; a
+// branch's own delay is not a result latency and is handled separately). A
+// result written as a register pair lands as one unless lo_early is set, in
+// which case the low word lands one cycle before the high word (the
+// double-precision forms write the pair over two cycles).
+typedef struct {
+	const char *name; ///< printed mnemonic
+	ut8 delay; ///< delay slots before the result (its high word, for a pair) is readable
+	bool lo_early; ///< the low word of a pair result lands one cycle earlier
+} C6xInsInfo;
+
+// clang-format off
+static const C6xInsInfo c6x_ins_info[C6X_INS_LAST] = {
+	[C6X_INS_FPHEAD] = { ".fphead" },
+	[C6X_INS_ABS] = { "abs" },
+	[C6X_INS_ABS2] = { "abs2" },
+	[C6X_INS_ABSDP] = { "absdp", 1, true },
+	[C6X_INS_ABSSP] = { "abssp" },
+	[C6X_INS_ADD] = { "add" },
+	[C6X_INS_ADD2] = { "add2" },
+	[C6X_INS_ADD4] = { "add4" },
+	[C6X_INS_ADDAB] = { "addab" },
+	[C6X_INS_ADDAD] = { "addad" },
+	[C6X_INS_ADDAH] = { "addah" },
+	[C6X_INS_ADDAW] = { "addaw" },
+	[C6X_INS_ADDDP] = { "adddp", 6, true },
+	[C6X_INS_ADDK] = { "addk" },
+	[C6X_INS_ADDKPC] = { "addkpc" },
+	[C6X_INS_ADDSP] = { "addsp", 3, false },
+	[C6X_INS_ADDU] = { "addu" },
+	[C6X_INS_AND] = { "and" },
+	[C6X_INS_ANDN] = { "andn" },
+	[C6X_INS_AVG2] = { "avg2", 1, false },
+	[C6X_INS_AVGU4] = { "avgu4", 1, false },
+	[C6X_INS_B] = { "b" },
+	[C6X_INS_BDEC] = { "bdec" },
+	[C6X_INS_BITC4] = { "bitc4", 1, false },
+	[C6X_INS_BITR] = { "bitr", 1, false },
+	[C6X_INS_BNOP] = { "bnop" },
+	[C6X_INS_BPOS] = { "bpos" },
+	[C6X_INS_CALLP] = { "callp" },
+	[C6X_INS_CLR] = { "clr" },
+	[C6X_INS_CMATMPY] = { "cmatmpy", 3, false },
+	[C6X_INS_CMATMPYR1] = { "cmatmpyr1", 3, false },
+	[C6X_INS_CMPEQ] = { "cmpeq" },
+	[C6X_INS_CMPEQ2] = { "cmpeq2" },
+	[C6X_INS_CMPEQ4] = { "cmpeq4" },
+	[C6X_INS_CMPEQDP] = { "cmpeqdp", 1, false },
+	[C6X_INS_CMPEQSP] = { "cmpeqsp" },
+	[C6X_INS_CMPGT] = { "cmpgt" },
+	[C6X_INS_CMPGT2] = { "cmpgt2" },
+	[C6X_INS_CMPGTDP] = { "cmpgtdp", 1, false },
+	[C6X_INS_CMPGTSP] = { "cmpgtsp" },
+	[C6X_INS_CMPGTU] = { "cmpgtu" },
+	[C6X_INS_CMPGTU4] = { "cmpgtu4" },
+	[C6X_INS_CMPLT] = { "cmplt" },
+	[C6X_INS_CMPLTDP] = { "cmpltdp", 1, false },
+	[C6X_INS_CMPLTSP] = { "cmpltsp" },
+	[C6X_INS_CMPLTU] = { "cmpltu" },
+	[C6X_INS_CMPY] = { "cmpy", 3, false },
+	[C6X_INS_CMPYR] = { "cmpyr", 3, false },
+	[C6X_INS_CMPYR1] = { "cmpyr1", 3, false },
+	[C6X_INS_DADD] = { "dadd" },
+	[C6X_INS_DCCMPYR1] = { "dccmpyr1", 3, false },
+	[C6X_INS_DCMPYR1] = { "dcmpyr1", 3, false },
+	[C6X_INS_DDOTPH2] = { "ddotph2", 3, false },
+	[C6X_INS_DDOTPL2] = { "ddotpl2", 3, false },
+	[C6X_INS_DEAL] = { "deal", 1, false },
+	[C6X_INS_DINT] = { "dint" },
+	[C6X_INS_DMPYSP] = { "dmpysp", 3, false },
+	[C6X_INS_DOTP2] = { "dotp2", 3, false },
+	[C6X_INS_DOTP4H] = { "dotp4h", 3, false },
+	[C6X_INS_DOTPN2] = { "dotpn2", 3, false },
+	[C6X_INS_DOTPNRSU2] = { "dotpnrsu2", 3, false },
+	[C6X_INS_DOTPRSU2] = { "dotprsu2", 3, false },
+	[C6X_INS_DOTPSU4] = { "dotpsu4", 3, false },
+	[C6X_INS_DOTPSU4H] = { "dotpsu4h", 3, false },
+	[C6X_INS_DOTPU4] = { "dotpu4", 3, false },
+	[C6X_INS_DPINT] = { "dpint", 3, false },
+	[C6X_INS_DPSP] = { "dpsp", 3, false },
+	[C6X_INS_DPTRUNC] = { "dptrunc", 3, false },
+	[C6X_INS_DSUB] = { "dsub" },
+	[C6X_INS_EXT] = { "ext" },
+	[C6X_INS_EXTU] = { "extu" },
+	[C6X_INS_GMPY] = { "gmpy", 3, false },
+	[C6X_INS_GMPY4] = { "gmpy4", 3, false },
+	[C6X_INS_IDLE] = { "idle" },
+	[C6X_INS_INTDP] = { "intdp", 4, true },
+	[C6X_INS_INTDPU] = { "intdpu", 4, true },
+	[C6X_INS_INTSP] = { "intsp", 3, false },
+	[C6X_INS_INTSPU] = { "intspu", 3, false },
+	[C6X_INS_LDB] = { "ldb", 4, false },
+	[C6X_INS_LDBU] = { "ldbu", 4, false },
+	[C6X_INS_LDDW] = { "lddw", 4, false },
+	[C6X_INS_LDH] = { "ldh", 4, false },
+	[C6X_INS_LDHU] = { "ldhu", 4, false },
+	[C6X_INS_LDNDW] = { "ldndw", 4, false },
+	[C6X_INS_LDNW] = { "ldnw", 4, false },
+	[C6X_INS_LDW] = { "ldw", 4, false },
+	[C6X_INS_LMBD] = { "lmbd" },
+	[C6X_INS_MAX2] = { "max2" },
+	[C6X_INS_MAXU4] = { "maxu4" },
+	[C6X_INS_MIN2] = { "min2" },
+	[C6X_INS_MINU4] = { "minu4" },
+	[C6X_INS_MPY] = { "mpy", 1, false },
+	[C6X_INS_MPY2] = { "mpy2", 3, false },
+	[C6X_INS_MPY32] = { "mpy32", 3, false },
+	[C6X_INS_MPY32SU] = { "mpy32su", 3, false },
+	[C6X_INS_MPY32U] = { "mpy32u", 3, false },
+	[C6X_INS_MPY32US] = { "mpy32us", 3, false },
+	[C6X_INS_MPYDP] = { "mpydp", 9, true },
+	[C6X_INS_MPYH] = { "mpyh", 1, false },
+	[C6X_INS_MPYHI] = { "mpyhi", 3, false },
+	[C6X_INS_MPYHIR] = { "mpyhir", 3, false },
+	[C6X_INS_MPYHL] = { "mpyhl", 1, false },
+	[C6X_INS_MPYHLU] = { "mpyhlu", 1, false },
+	[C6X_INS_MPYHSLU] = { "mpyhslu", 1, false },
+	[C6X_INS_MPYHSU] = { "mpyhsu", 1, false },
+	[C6X_INS_MPYHU] = { "mpyhu", 1, false },
+	[C6X_INS_MPYHULS] = { "mpyhuls", 1, false },
+	[C6X_INS_MPYHUS] = { "mpyhus", 1, false },
+	[C6X_INS_MPYI] = { "mpyi", 8, false },
+	[C6X_INS_MPYID] = { "mpyid", 9, true },
+	[C6X_INS_MPYLH] = { "mpylh", 1, false },
+	[C6X_INS_MPYLHU] = { "mpylhu", 1, false },
+	[C6X_INS_MPYLI] = { "mpyli", 3, false },
+	[C6X_INS_MPYLIR] = { "mpylir", 3, false },
+	[C6X_INS_MPYLSHU] = { "mpylshu", 1, false },
+	[C6X_INS_MPYLUHS] = { "mpyluhs", 1, false },
+	[C6X_INS_MPYSP] = { "mpysp", 3, false },
+	[C6X_INS_MPYSP2DP] = { "mpysp2dp", 4, true },
+	[C6X_INS_MPYSPDP] = { "mpyspdp", 6, true },
+	[C6X_INS_MPYSU] = { "mpysu", 1, false },
+	[C6X_INS_MPYSU4] = { "mpysu4", 3, false },
+	[C6X_INS_MPYU] = { "mpyu", 1, false },
+	[C6X_INS_MPYU4] = { "mpyu4", 3, false },
+	[C6X_INS_MPYUS] = { "mpyus", 1, false },
+	[C6X_INS_MV] = { "mv" },
+	[C6X_INS_MVC] = { "mvc" },
+	[C6X_INS_MVD] = { "mvd", 3, false },
+	[C6X_INS_MVK] = { "mvk" },
+	[C6X_INS_MVKH] = { "mvkh" },
+	[C6X_INS_NEG] = { "neg" },
+	[C6X_INS_NOP] = { "nop" },
+	[C6X_INS_NORM] = { "norm" },
+	[C6X_INS_NOT] = { "not" },
+	[C6X_INS_OR] = { "or" },
+	[C6X_INS_PACK2] = { "pack2" },
+	[C6X_INS_PACKH2] = { "packh2" },
+	[C6X_INS_PACKH4] = { "packh4" },
+	[C6X_INS_PACKHL2] = { "packhl2" },
+	[C6X_INS_PACKL4] = { "packl4" },
+	[C6X_INS_PACKLH2] = { "packlh2" },
+	[C6X_INS_QMPY32] = { "qmpy32", 3, false },
+	[C6X_INS_QMPYSP] = { "qmpysp", 3, false },
+	[C6X_INS_QSMPY32R1] = { "qsmpy32r1", 3, false },
+	[C6X_INS_RINT] = { "rint" },
+	[C6X_INS_ROTL] = { "rotl", 1, false },
+	[C6X_INS_RPACK2] = { "rpack2" },
+	[C6X_INS_RSQRDP] = { "rsqrdp", 1, true },
+	[C6X_INS_SADD] = { "sadd" },
+	[C6X_INS_SADD2] = { "sadd2" },
+	[C6X_INS_SADDU4] = { "saddu4" },
+	[C6X_INS_SADDUS2] = { "saddus2" },
+	[C6X_INS_SAT] = { "sat" },
+	[C6X_INS_SET] = { "set" },
+	[C6X_INS_SHFL] = { "shfl", 1, false },
+	[C6X_INS_SHL] = { "shl" },
+	[C6X_INS_SHLMB] = { "shlmb" },
+	[C6X_INS_SHR] = { "shr" },
+	[C6X_INS_SHR2] = { "shr2" },
+	[C6X_INS_SHRMB] = { "shrmb" },
+	[C6X_INS_SHRU] = { "shru" },
+	[C6X_INS_SHRU2] = { "shru2" },
+	[C6X_INS_SMPY] = { "smpy", 1, false },
+	[C6X_INS_SMPY2] = { "smpy2", 3, false },
+	[C6X_INS_SMPYH] = { "smpyh", 1, false },
+	[C6X_INS_SMPYHL] = { "smpyhl", 1, false },
+	[C6X_INS_SMPYLH] = { "smpylh", 1, false },
+	[C6X_INS_SPACK2] = { "spack2" },
+	[C6X_INS_SPACKU4] = { "spacku4" },
+	[C6X_INS_SPDP] = { "spdp", 1, true },
+	[C6X_INS_SPINT] = { "spint", 3, false },
+	[C6X_INS_SPLOOP] = { "sploop" },
+	[C6X_INS_SPLOOPD] = { "sploopd" },
+	[C6X_INS_SPLOOPW] = { "sploopw" },
+	[C6X_INS_SPKERNEL] = { "spkernel" },
+	[C6X_INS_SPKERNELR] = { "spkernelr" },
+	[C6X_INS_SPMASK] = { "spmask" },
+	[C6X_INS_SPMASKR] = { "spmaskr" },
+	[C6X_INS_SPTRUNC] = { "sptrunc", 3, false },
+	[C6X_INS_SSHL] = { "sshl" },
+	[C6X_INS_SSHVL] = { "sshvl", 1, false },
+	[C6X_INS_SSHVR] = { "sshvr", 1, false },
+	[C6X_INS_SSUB] = { "ssub" },
+	[C6X_INS_SSUB2] = { "ssub2" },
+	[C6X_INS_STB] = { "stb" },
+	[C6X_INS_STDW] = { "stdw" },
+	[C6X_INS_STH] = { "sth" },
+	[C6X_INS_STNDW] = { "stndw" },
+	[C6X_INS_STNW] = { "stnw" },
+	[C6X_INS_STW] = { "stw" },
+	[C6X_INS_SUB] = { "sub" },
+	[C6X_INS_SUB2] = { "sub2" },
+	[C6X_INS_SUB4] = { "sub4" },
+	[C6X_INS_SUBAB] = { "subab" },
+	[C6X_INS_SUBAH] = { "subah" },
+	[C6X_INS_SUBAW] = { "subaw" },
+	[C6X_INS_SUBC] = { "subc" },
+	[C6X_INS_SUBDP] = { "subdp", 6, true },
+	[C6X_INS_SUBSP] = { "subsp", 3, false },
+	[C6X_INS_SUBU] = { "subu" },
+	[C6X_INS_SWAP4] = { "swap4" },
+	[C6X_INS_UNPKHU4] = { "unpkhu4" },
+	[C6X_INS_UNPKLU4] = { "unpklu4" },
+	[C6X_INS_XOR] = { "xor" },
+	[C6X_INS_XORMPY] = { "xormpy", 3, false },
+	[C6X_INS_XPND2] = { "xpnd2", 1, false },
+	[C6X_INS_XPND4] = { "xpnd4", 1, false },
+	[C6X_INS_ZERO] = { "zero" },
 };
+// clang-format on
 
 /**
  * Printed mnemonic of \p id, or NULL when the opcode is not recognised.
  */
 RZ_IPI const char *c6x_ins_name(C6xInsnId id) {
-	return id > C6X_INS_INVALID && id < C6X_INS_LAST ? c6x_ins_names[id] : NULL;
+	return id > C6X_INS_INVALID && id < C6X_INS_LAST ? c6x_ins_info[id].name : NULL;
 }
 
 // Record identity and printed form together so the two cannot drift apart.
@@ -285,23 +299,26 @@ static const C6xRow c6x_l_rows[] = {
 	{ 0x23, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_TO_DP },
 	{ 0x21, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
 	{ 0x02, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
-	{ 0x20, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
-	{ 0x2b, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
-	{ 0x29, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x20, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST },
+	{ 0x2b, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_TO_DP },
+	{ 0x29, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
 	{ 0x07, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
 	{ 0x17, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_UNIFORM, true },
 	{ 0x27, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP },
 	{ 0x37, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP, true },
 	{ 0x06, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
-	{ 0x24, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x24, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_LONG_DST },
 	{ 0x4b, C6X_INS_SUBC, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
-	{ 0x2f, C6X_INS_SUBU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x2f, C6X_INS_SUBU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP },
 	// unsigned subtract widening into a register pair: both sources stay single
 	{ 0x3f, C6X_INS_SUBU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP, true },
 	{ 0x0f, C6X_INS_SSUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
 	{ 0x0e, C6X_INS_SSUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x2c, C6X_INS_SSUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_LONG_DST },
 	{ 0x13, C6X_INS_SADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
 	{ 0x12, C6X_INS_SADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x31, C6X_INS_SADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
+	{ 0x30, C6X_INS_SADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST },
 	{ 0x7f, C6X_INS_OR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
 	{ 0x7e, C6X_INS_OR, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
 	{ 0x7b, C6X_INS_AND, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
@@ -311,23 +328,23 @@ static const C6xRow c6x_l_rows[] = {
 	{ 0x7c, C6X_INS_ANDN, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
 	{ 0x53, C6X_INS_CMPEQ, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
 	{ 0x52, C6X_INS_CMPEQ, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
-	{ 0x51, C6X_INS_CMPEQ, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x51, C6X_INS_CMPEQ, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
 	{ 0x50, C6X_INS_CMPEQ, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
 	{ 0x47, C6X_INS_CMPGT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
 	{ 0x46, C6X_INS_CMPGT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
-	{ 0x45, C6X_INS_CMPGT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x45, C6X_INS_CMPGT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
 	{ 0x44, C6X_INS_CMPGT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
 	{ 0x4f, C6X_INS_CMPGTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
 	{ 0x4e, C6X_INS_CMPGTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
-	{ 0x4d, C6X_INS_CMPGTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x4d, C6X_INS_CMPGTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
 	{ 0x4c, C6X_INS_CMPGTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
 	{ 0x57, C6X_INS_CMPLT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
 	{ 0x56, C6X_INS_CMPLT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
-	{ 0x55, C6X_INS_CMPLT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x55, C6X_INS_CMPLT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
 	{ 0x54, C6X_INS_CMPLT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
 	{ 0x5f, C6X_INS_CMPLTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
 	{ 0x5e, C6X_INS_CMPLTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
-	{ 0x5d, C6X_INS_CMPLTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x5d, C6X_INS_CMPLTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
 	{ 0x5c, C6X_INS_CMPLTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
 	{ 0x6b, C6X_INS_LMBD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV },
 	{ 0x6a, C6X_INS_LMBD, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV },
@@ -420,19 +437,23 @@ static const C6xRow c6x_s_rows[] = {
 	{ 0x01, C6X_INS_ADD2, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
 	{ 0x11, C6X_INS_SUB2, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
 	// Shifts (S3/S3i, SPRUFE8 SHL/SHR/SHRU/SSHL opcode maps). op bit 0 selects
-	// the register (1) vs ucst5 (0) src1 form. The slong (40-bit, register-pair)
-	// variants are omitted; they need src2/dst-only pairing that this shared
-	// path cannot yet express.
+	// the register (1) vs ucst5 (0) src1 form. The 40-bit forms shift a long
+	// held in a register pair, or widen a single register into one; the count
+	// is always a single register or a constant.
 	{ 0x33, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
 	{ 0x32, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
-	{ 0x31, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, true },
+	{ 0x31, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_LONG_DST },
 	{ 0x30, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, true },
-	{ 0x13, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
-	{ 0x12, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 0x13, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_TO_DP },
+	{ 0x12, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_TO_DP },
 	{ 0x37, C6X_INS_SHR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR },
 	{ 0x36, C6X_INS_SHR, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR },
+	{ 0x35, C6X_INS_SHR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR, false, OSHAPE_LONG_DST },
+	{ 0x34, C6X_INS_SHR, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR, false, OSHAPE_LONG_DST },
 	{ 0x27, C6X_INS_SHRU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR },
 	{ 0x26, C6X_INS_SHRU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 0x25, C6X_INS_SHRU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_LONG_DST },
+	{ 0x24, C6X_INS_SHRU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_LONG_DST },
 	{ 0x23, C6X_INS_SSHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
 	{ 0x22, C6X_INS_SSHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
 	{ 0x1f, C6X_INS_AND, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
@@ -923,6 +944,62 @@ static void fill_src1(C6xOperand *o, ut32 w, ut8 side, C6xSrc1Kind kind) {
 	}
 }
 
+// C66x gives the bitwise ops 64-bit forms on register pairs. They reuse the
+// opfield of the 32-bit form under the creg = 0, z = 1 signature, which a
+// predicated instruction cannot carry; the constant form of XOR applies its
+// scst5 to both words (SPRUGH7 opcode maps).
+typedef struct {
+	ut8 op; ///< opfield, bits 11:5 on .L and 11:6 on .S
+	C6xInsnId id;
+	bool cst; ///< src1 is an scst5 rather than a pair
+	_RzAnalysisOpType type;
+} C6xPairLogicRow;
+
+static const C6xPairLogicRow c6x_l_pair_logic_rows[] = {
+	{ 0x6f, C6X_INS_XOR, false, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x6e, C6X_INS_XOR, true, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x7f, C6X_INS_OR, false, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x7b, C6X_INS_AND, false, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x7c, C6X_INS_ANDN, false, RZ_ANALYSIS_OP_TYPE_AND },
+};
+
+static const C6xPairLogicRow c6x_s_pair_logic_rows[] = {
+	{ 0x0b, C6X_INS_XOR, false, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x0a, C6X_INS_XOR, true, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x1b, C6X_INS_OR, false, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x1f, C6X_INS_AND, false, RZ_ANALYSIS_OP_TYPE_AND },
+};
+
+// Decode \p op as one of \p rows when the word has the C66x signature.
+static bool decode_pair_logic(C6xInsn *insn, const C6xArchDesc *d, const C6xPairLogicRow *rows, size_t n, ut8 op, C6xUnit unit) {
+	ut32 w = insn->word;
+	if (BITS(w, 31, 29) || !BIT(w, 28) || !feat_ok(d, FEAT_C66X)) {
+		return false;
+	}
+	for (size_t i = 0; i < n; i++) {
+		if (rows[i].op != op) {
+			continue;
+		}
+		ut8 s = BIT(w, 1);
+		ut8 x = BIT(w, 12);
+		set_ins(insn, rows[i].id);
+		insn->op_type = rows[i].type;
+		insn->unit = unit;
+		insn->unit_side = s;
+		insn->cross = x != 0;
+		if (rows[i].cst) {
+			fill_src1(&OP(0), w, s, SRC1_SCST5);
+		} else {
+			op_regpair(&OP(0), s, BITS(w, 17, 13));
+		}
+		op_regpair(&OP(1), x ? !s : s, BITS(w, 22, 18));
+		op_regpair(&OP(2), s, BITS(w, 27, 23));
+		insn->nops = 3;
+		return true;
+	}
+	return false;
+}
+
 // .L/.S/.M 3-operand form: dst, src2 (cross-pathable), src1 (reg or const).
 // Double-precision rows read and write 64-bit register pairs instead of scalars.
 static void decode_3op(C6xInsn *insn, const C6xRow *row) {
@@ -1140,7 +1217,9 @@ static void decode_ldst(C6xInsn *insn, C6xInsnId id, bool store, bool dword) {
 	mem.v.mem.mode = ldst_mode(BITS(w, 12, 9), &reg_off);
 	mem.v.mem.base = BITS(w, 22, 18);
 	mem.v.mem.base_side = y;
-	mem.v.mem.scaled = true; // [] bracket scaling by access size
+	// [] bracket scaling by access size; the nonaligned doubleword forms spend
+	// bit 23 on choosing it, and read the offset in bytes without it
+	mem.v.mem.scaled = (id != C6X_INS_LDNDW && id != C6X_INS_STNDW) || BIT(w, 23);
 	if (reg_off) {
 		mem.v.mem.off_reg = BITS(w, 17, 13);
 	} else {
@@ -1589,6 +1668,9 @@ static bool decode_unit(const C6xArchDesc *d, C6xInsn *insn) {
 			insn->nops = 3;
 			return true;
 		}
+		if (decode_pair_logic(insn, d, c6x_l_pair_logic_rows, RZ_ARRAY_SIZE(c6x_l_pair_logic_rows), BITS(w, 11, 5), C6X_UNIT_L)) {
+			return true;
+		}
 		const C6xRow *r = row_find(c6x_l_rows, RZ_ARRAY_SIZE(c6x_l_rows), BITS(w, 11, 5), d);
 		if (r) {
 			decode_3op(insn, r);
@@ -1831,6 +1913,9 @@ static bool decode_unit(const C6xArchDesc *d, C6xInsn *insn) {
 				op_imm(&OP(insn->nops++), n);
 			}
 			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		if (decode_pair_logic(insn, d, c6x_s_pair_logic_rows, RZ_ARRAY_SIZE(c6x_s_pair_logic_rows), sop, C6X_UNIT_S)) {
 			return true;
 		}
 		const C6xRow *r = row_find(c6x_s_rows, RZ_ARRAY_SIZE(c6x_s_rows), sop, d);
@@ -2096,12 +2181,21 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			return;
 		}
 		if (b5 == 0) { // G-1 / G-2: MV (mvto has bit6 = 0, mvfr has bit6 = 1)
+			// These move between the compact register subset and the whole
+			// file: bits 11:10 extend one operand to a full five-bit register
+			// number, src2 for LSDmvto and dst for LSDmvfr.
+			ut8 full = ((w >> 10) & 0x3) << 3;
 			set_ins(insn, C6X_INS_MV);
 			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
 			insn->unit = unit;
 			insn->cross = x;
-			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
-			compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			if (b6 == 0) {
+				op_reg(&OP(0), x ? !s : s, full | ((w >> 7) & 0x7)); // src2
+				compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			} else {
+				compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+				op_reg(&OP(1), s, full | ((w >> 13) & 0x7)); // dst
+			}
 			insn->nops = 2;
 			return;
 		}
@@ -2254,12 +2348,12 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		bool ld = (w >> 3) & 1;
 		ut8 prim = (dsz >> 2) & 1, sec = dsz & 0x3;
 		C6xInsnId mn;
-		bool dwpair = false;
+		bool dwpair = false, na = false;
 		if (sz == 0 && prim == 1) {
 			// Doubleword-primary access (Doff4DW/DindDW/DincDW/DdecDW): the
 			// register is an even pair encoded at bits 6:5, and na (bit 4)
 			// selects aligned (DW) versus nonaligned (NDW).
-			ut8 na = (w >> 4) & 1;
+			na = (w >> 4) & 1;
 			mn = na ? (ld ? C6X_INS_LDNDW : C6X_INS_STNDW) : (ld ? C6X_INS_LDDW : C6X_INS_STDW);
 			dwpair = true;
 		} else if (sz == 0) {
@@ -2307,6 +2401,11 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		} else { // Ddec: *--ptr[ucst2]
 			mem.v.mem.mode = C6X_AM_PREDEC_CST;
 			mem.v.mem.off_cst = ((w >> 13) & 1) + 1;
+		}
+		if (dwpair && na && !dstk && (mem.v.mem.mode == C6X_AM_POS_CST || mem.v.mem.mode == C6X_AM_POS_REG)) {
+			// the nonaligned Doff4DW and DindDW offsets count bytes, while
+			// DincDW and DdecDW still step by doublewords (binutils agrees)
+			mem.v.mem.scaled = false;
 		}
 		C6xOperand reg = { 0 };
 		if (dwpair) {
@@ -2432,10 +2531,12 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			insn->unit = C6X_UNIT_S;
 			ut8 b4 = (w >> 4) & 1, b5 = (w >> 5) & 1;
 			if (b5 == 0 && b4 == 1) { // Scs10: CALLP scst10, 5
+				// unlike the compact branches, CALLP counts its displacement
+				// in words, as the 32-bit form does (binutils agrees)
 				set_ins(insn, C6X_INS_CALLP);
 				insn->op_type = RZ_ANALYSIS_OP_TYPE_CALL;
 				OP(0).kind = C6X_OP_PCREL;
-				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 2;
+				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 4;
 				insn->nops = 1;
 				return;
 			}
@@ -2568,68 +2669,40 @@ RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void) {
 }
 
 /**
- * \brief Delay slots \p insn leaves for the instructions that follow it.
+ * \brief Delay slots before one word of the result of \p insn can be read.
  *
- * A C6000 branch resolves five execute packets after it issues. CALLP is
- * protected -- the hardware fills its slots with an implied NOP 5 -- so it
- * leaves none, and BNOP fills a given number of its own, leaving the rest.
+ * A result written in the cycle the instruction issues has none; a load's has
+ * four, so the four execute packets after it still read the old value. The
+ * figure comes from the timing column of the instruction table. MVC is the one
+ * instruction whose latency depends on its operands: writing ILC or RILC takes
+ * effect four cycles on, which is why SPLOOPD waits that long before reading
+ * the count.
  *
- * \return 0 when the instruction opens no visible delay slots.
+ * \param insn The instruction.
+ * \param high For a register-pair result, the odd (high) word rather than the
+ *             even one; the double-precision forms write the low word a cycle
+ *             earlier.
  */
-RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn) {
-	switch (insn->id) {
-	case C6X_INS_B:
-	case C6X_INS_BDEC:
-	case C6X_INS_BPOS:
-		return 5;
-	case C6X_INS_BNOP: {
-		// the NOP count is the last operand
-		ut8 filled = insn->nops ? (ut8)OP(insn->nops - 1).v.imm.value : 0;
-		return filled < 5 ? 5 - filled : 0;
-	}
-	default:
+RZ_IPI ut8 c6x_write_delay(const C6xInsn *insn, bool high) {
+	if (insn->id <= C6X_INS_INVALID || insn->id >= C6X_INS_LAST) {
 		return 0;
 	}
+	if (insn->id == C6X_INS_MVC) {
+		const C6xOperand *d = insn->nops ? &OP(insn->nops - 1) : NULL;
+		bool loop_count = d && d->kind == C6X_OP_CTRLREG && d->v.ctrl &&
+			(!strcmp(d->v.ctrl, "ilc") || !strcmp(d->v.ctrl, "rilc"));
+		return loop_count ? 3 : 0;
+	}
+	const C6xInsInfo *info = &c6x_ins_info[insn->id];
+	if (!high && info->lo_early && info->delay) {
+		return info->delay - 1;
+	}
+	return info->delay;
 }
 
 /**
- * \brief Execute packets between \p insn issuing and its result being readable.
- *
- * A load's destination is written four packets on, an extended multiply's three
- * and an ordinary multiply's one; most instructions land in the same cycle. An
- * instruction issued in a branch's delay slots can therefore write after the
- * branch has transferred, which is why the value matters here rather than only
- * inside a packet.
+ * \brief Delay slots before the whole result of \p insn can be read.
  */
 RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn) {
-	switch (insn->id) {
-	case C6X_INS_LDW:
-	case C6X_INS_LDB:
-	case C6X_INS_LDBU:
-	case C6X_INS_LDH:
-	case C6X_INS_LDHU:
-	case C6X_INS_LDDW:
-	case C6X_INS_LDNW:
-	case C6X_INS_LDNDW:
-		return 4;
-	case C6X_INS_MPY32:
-	case C6X_INS_MPY32U:
-	case C6X_INS_MPY32SU:
-	case C6X_INS_MPY32US:
-		return 3;
-	case C6X_INS_MPY:
-	case C6X_INS_MPYH:
-	case C6X_INS_MPYLH:
-	case C6X_INS_MPYHL:
-	case C6X_INS_MPYU:
-	case C6X_INS_MPYSU:
-	case C6X_INS_MPYUS:
-	case C6X_INS_SMPY:
-	case C6X_INS_SMPYH:
-	case C6X_INS_SMPYHL:
-	case C6X_INS_SMPYLH:
-		return 1;
-	default:
-		return 0;
-	}
+	return c6x_write_delay(insn, true);
 }

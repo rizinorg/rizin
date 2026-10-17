@@ -169,8 +169,8 @@ wx 4616c636f90400030818a701e2bbe8a5f8cba0c0f8ab8cd020a13690000020e1
 pd 10
 EOF
 EXPECT=<<EOF
-0x00000000      mv    .l1x b4,a0
-0x00000002      mv    .l1x b5,a1
+0x00000000      mv    .l1x b4,a8
+0x00000002      mv    .l1x b5,a9
 0x00000004      zero  .l1 a7:a6
 0x00000008      ||    extu .s1 a9,24,24,a3
 0x0000000c      extu  .s1 a7,0x18,0x18,a5
@@ -495,6 +495,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# 0x8148 is mvkh || callp: the 32-bit words of a header-based fetch packet
+# carry their own parallel bit, so the call goes with the mvkh, and CALLP's
+# five NOP cycles cover the whole wait for the transfer.
 NAME=c6x RzIL on a real C674x ELF (emulateme)
 FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
 CMDS=<<EOF
@@ -504,7 +507,7 @@ s 0x8148
 ao~rzil
 EOF
 EXPECT=<<EOF
-rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
+rzil: (seq (set _xs0 (var a4)) (set _xs1 (var b3)) (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0))) (set _xc0 (var a4)) (set a4 (var _xs0)) (set b3 (bv 32 0x8150)) (set _xc1 (var b3)) (set a4 (var _xc0)) (set b3 (var _xc1)) (jmp (bv 32 0x8000)))
 EOF
 RUN
 

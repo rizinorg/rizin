@@ -886,10 +886,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# A compact branch window taken from a real C674x image: a 16-bit bnop with a
-# parallel load whose result the following branch must not see. Decoding a
-# compact slot as if it were 32 bits yields an unrelated instruction, so this
-# covers the path the hand-written 32-bit cases cannot reach.
+# A compact branch window taken from a real C674x image: a 16-bit bnop that is
+# not taken, in parallel with a load of a function pointer and an mvk. The NOP
+# count of a BNOP runs whether or not it branches, so the load has landed by
+# the time the indirect call after it reads b4, and the call goes to the loaded
+# pointer with addkpc's return address in b3. Decoding a compact slot as if it
+# were 32 bits yields an unrelated instruction, so this covers the path the
+# hand-written 32-bit cases cannot reach.
 NAME=c6x a compact branch window from real firmware
 FILE=malloc://256
 CMDS=<<EOF
@@ -905,13 +908,16 @@ aezi
 ar a0=0
 ar b5=0x70
 ar b4=0x11223344
+ar b3=0
 aezs
 ar b4
+ar b3
 aezv PC
 EOF
 EXPECT=<<EOF
 b4 = 0xfeedface
- PC: 0x00000018
+b3 = 0x00000024
+ PC: 0xfeedface
 EOF
 RUN
 
@@ -973,5 +979,647 @@ EXPECT=<<EOF
             0x00000004      add   .l1 a3,a4,a5
 a5 = 0x00000011
 a3 = 0x0000000f
+EOF
+RUN
+
+# A multi-cycle NOP in the delay slots of a branch counts as the cycles it
+# takes, not as one packet: NOP 5 covers all five delay slots, so the branch
+# takes effect right after it and none of the adds behind it run.
+NAME=c6x a multi-cycle nop fills the delay slots of a branch
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 1008000000800000582084005820840058208400582084000000000000000000
+s 0
+pd 3
+aezi
+ar a1=0
+aezs
+ar a1
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      nop   5
+        |   0x00000008      add   .l1 0x1,a1,a1
+a1 = 0x00000000
+ PC: 0x00000040
+EOF
+RUN
+
+# ADDSP has three delay slots, so the ADD in the packet after it still reads
+# the old a3; the sum lands after that.
+NAME=c6x a floating-point add lands after its delay slots
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 1822880178609002000000000000000000000000
+s 0
+pd 2
+aezi
+ar a1=0x3f800000
+ar a2=0x40000000
+ar a3=0x10
+ar a4=0
+aezs 2
+ar a5
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      addsp .l1 a1,a2,a3
+            0x00000004      add   .l1 a3,a4,a5
+a5 = 0x00000010
+a3 = 0x40400000
+EOF
+RUN
+
+# Both halves of a double-word load land four cycles late, so the ADD in the
+# next packet still adds the old pair.
+NAME=c6x both halves of a pair load land late
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6403100078000401000000000000000000000000
+wv4 0x11111111 @ 0x100
+wv4 0x22222222 @ 0x104
+s 0
+pd 2
+aezi
+ar a4=0x100
+ar a0=1
+ar a1=2
+aezs 2
+ar a2
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      lddw  .d1 *a4,a1:a0
+            0x00000004      add   .l1 a0,a1,a2
+a2 = 0x00000003
+a0 = 0x11111111
+a1 = 0x22222222
+EOF
+RUN
+
+# A load reads its address register when it issues. The MVK after it
+# changes a4 while the load is still in flight, which must not redirect it.
+NAME=c6x a load uses the address it issued with
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 640290022800010278a01803000000000000000000000000
+wv4 0xfeedface @ 0x100
+wv4 0xdeadbeef @ 0x200
+s 0
+pd 3
+aezi
+ar a4=0x100
+ar a5=0x11
+ar a6=0
+aezs
+ar a5
+ar a6
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      mvk   .s1 0x200,a4
+            0x00000008      add   .l1 a5,a6,a6
+a5 = 0xfeedface
+a6 = 0x00000011
+a4 = 0x00000200
+EOF
+RUN
+
+# The predicate of a load is read when it issues as well, so clearing a1
+# in the next packet does not cancel the load.
+NAME=c6x a load keeps the predicate it issued with
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 640290822800800078a01803000000000000000000000000
+wv4 0xfeedface @ 0x100
+s 0
+pd 3
+aezi
+ar a1=1
+ar a4=0x100
+ar a5=0x11
+ar a6=0
+aezs
+ar a5
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      [a1]  ldw .d1 *a4,a5
+            0x00000004      mvk   .s1 0x0,a1
+            0x00000008      add   .l1 a5,a6,a6
+a5 = 0xfeedface
+a1 = 0x00000000
+EOF
+RUN
+
+# An MVC to a control register does not cost the rest of its execute packet.
+NAME=c6x a packet writing a control register runs in full
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx a303980078000401000000000000000000000000
+s 0
+pd 2
+aezi
+ar a0=1
+ar a1=2
+ar a2=0
+aezs
+ar a2
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      mvc   .s2 b6,csr
+            0x00000004      ||    add .l1 a0,a1,a2
+a2 = 0x00000003
+ PC: 0x00000008
+EOF
+RUN
+
+# A branch issued in the delay slots of another takes effect one cycle after
+# it, so exactly one packet at the first target runs before control moves on
+# to the second one.
+NAME=c6x a branch in the delay slots of another runs one packet of its target
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800001110000058200801000000000000000000000000
+wx 58208c0158208c01 @ 0x40
+s 0
+pd 3
+aezi
+ar a2=0
+ar a3=0
+aezs
+ar a2
+ar a3
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+       ,==< 0x00000004      b     .s1 0x80
+       ||   0x00000008      ||    add .l1 0x1,a2,a2
+a2 = 0x00000001
+a3 = 0x00000001
+ PC: 0x00000080
+EOF
+RUN
+
+# The 40-bit long forms read and write register pairs, bits 39:32 in the low
+# byte of the odd register. They used to make the lifter warn.
+NAME=c6x 40-bit long forms lift without warnings
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx f8c7f565
+ao 1~rzil
+wx b83b6863
+ao 1~rzil
+wx 38b4b310
+ao 1~rzil
+EOF
+EXPECT=<<EOF
+rzil: (branch (! (is_zero (var b2))) (seq (set _d (& (- (cast 64 false (var a14)) (cast 64 false (var a29))) (bv 64 0xffffffffff))) (set a10 (cast 32 false (var _d))) (set a11 (cast 32 false (>> (var _d) (bv 32 0x20) false)))) nop)
+rzil: (branch (! (is_zero (var b2))) (set a6 (ite (&& (ule (cast 64 false (var b1)) (& (append (var a27) (var a26)) (bv 64 0xffffffffff))) (! (== (cast 64 false (var b1)) (& (append (var a27) (var a26)) (bv 64 0xffffffffff))))) (bv 32 0x1) (bv 32 0x0))) nop)
+rzil: (seq (set _d (& (+ (cast 64 (msb (var b29)) (var b29)) (>> (<< (append (var a13) (var a12)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a13) (var a12)) (bv 32 0x18) false)))) (bv 64 0xffffffffff))) (set a0 (cast 32 false (var _d))) (set a1 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+EOF
+EXPECT_ERR=
+RUN
+
+# Stepping goes on from the packet the last step left the pc at.
+NAME=c6x the pc carries over from one step to the next
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 5820840058200801000000000000000000000000
+s 0
+aezi
+aezs 1
+aezs 1
+ar a1
+ar a2
+aezv PC
+EOF
+EXPECT=<<EOF
+a1 = 0x00000001
+a2 = 0x00000001
+ PC: 0x00000008
+EOF
+RUN
+
+# An SPLOOP runs its body from the loop buffer ILC times, then execution goes
+# on after the SPKERNEL packet. A count moved into ILC takes four cycles to
+# arrive, and with a count of zero the body does not run at all.
+NAME=c6x an SPLOOP runs its body ILC times
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx aa010003a203980600400000008003000140030058208400580004010000000000000000
+s 0
+pd 8
+aezi
+ar a1=0
+ar a2=0
+aezsu 0x1c
+ar a1
+ar a2
+ar ilc
+aezv PC
+wx 2a000003 @ 0
+s 0
+aezi
+ar a1=0
+ar a2=0x55
+aezsu 0x1c
+ar a1
+ar a2
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .s2 0x3,b6
+            0x00000004      mvc   .s2 b6,ilc
+            0x00000008      nop   3
+            0x0000000c      sploop 1
+            0x00000010      spkernel 0
+            0x00000014      ||    add .l1 0x1,a1,a1
+            0x00000018      mv    .l1 a1,a2
+            0x0000001c      nop
+a1 = 0x00000003
+a2 = 0x00000003
+ilc = 0x00000000
+ PC: 0x0000001c
+a1 = 0x00000000
+a2 = 0x00000000
+EOF
+RUN
+
+# With SPKERNEL 0 the code after a loop starts as soon as the last iteration
+# has started, beside the rest of the epilog. Here it reads a2 before the
+# last iteration has added to it, which lifting the epilog first would get
+# wrong, so the loop is not lifted rather than lifted wrong.
+NAME=c6x code overlapping the epilog of an SPLOOP is not lifted
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 00800300582084000000000001400300582008015800880100000000000000000000000000000000
+s 0
+pd 6
+aezi
+ar ilc=2
+ar a1=0
+ar a2=0
+aezs
+ar a1
+ar a2
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      sploop 1
+            0x00000004      add   .l1 0x1,a1,a1
+            0x00000008      nop
+            0x0000000c      spkernel 0
+            0x00000010      ||    add .l1 0x1,a2,a2
+            0x00000014      mv    .l1 a2,a3
+a1 = 0x00000000
+a2 = 0x00000000
+ PC: 0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: lifting not implemented at address 0x00000000
+EOF
+RUN
+
+# The same loop with its SPKERNEL holding the code after it back until the
+# epilog is over: fstg 2 at ii 1 is the two epilog cycles.
+NAME=c6x the SPKERNEL delay holds back the code after the loop
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 00800300582084000000000001400304582008015800880100000000000000000000000000000000
+s 0
+pd 6
+aezi
+ar ilc=2
+ar a1=0
+ar a2=0
+ar a3=0x55
+aezs 2
+ar a1
+ar a2
+ar a3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      sploop 1
+            0x00000004      add   .l1 0x1,a1,a1
+            0x00000008      nop
+            0x0000000c      spkernel 16
+            0x00000010      ||    add .l1 0x1,a2,a2
+            0x00000014      mv    .l1 a2,a3
+a1 = 0x00000002
+a2 = 0x00000002
+a3 = 0x00000002
+ PC: 0x00000018
+EOF
+RUN
+
+# All of main, as cl6x compiled it, run in the RzIL VM: the SPLOOPD in
+# uart_write_text, the SPLOOPW in c_strlen and the software-pipelined
+# decryption loop. The startup code would set seckrit and uart_address, so
+# they are set here, and argv is put in scratch memory.
+NAME=c6x RzIL VM: emulateme main decrypts seckrit (c674x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+w AnyColourYouLike @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+Decrypted: Hello from RzIL!
+
+0x0000000c  0x0000001c                                   ....
+a4 = 0x00000000
+EOF
+RUN
+
+NAME=c6x RzIL VM: emulateme main rejects a wrong key (c674x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+w AnyColourYouLikX @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+wrong key.
+
+0x0000000c  0x0000000b                                   ....
+a4 = 0x00000001
+EOF
+RUN
+
+NAME=c6x RzIL VM: emulateme main rejects a key of the wrong length (c674x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+w short @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+wrong length.
+
+0x0000000c  0x0000000e                                   ....
+a4 = 0x00000001
+EOF
+RUN
+
+NAME=c6x RzIL VM: emulateme main prints its usage without a key (c674x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=1
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+usage: emulateme [key]
+
+0x0000000c  0x00000017                                   ....
+a4 = 0x00000001
+EOF
+RUN
+
+# A newer cl6x pipelines the decryption loop with an SPLOOPD whose epilog
+# overlaps the code after it; that code only reads what the loop is done
+# with, so it lifts.
+NAME=c6x RzIL VM: emulateme main decrypts seckrit (c674x, ccsv7)
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+w AnyColourYouLike @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+Decrypted: Hello from RzIL!
+
+0x0000000c  0x0000001c                                   ....
+a4 = 0x00000000
+EOF
+RUN
+
+# For the C66x, cl6x xors whole register pairs.
+NAME=c6x RzIL VM: emulateme main decrypts seckrit (c66x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c66x.eabi.rel.elf
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ obj.seckrit
+wv4 0x20c00 @ obj.uart_address
+wv4 0 @ obj.uart_position
+w AnyColourYouLike @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=loc.__TI_STATIC_BASE
+ar b15=loc.__TI_STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ obj.uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+Decrypted: Hello from RzIL!
+
+0x0000000c  0x0000001c                                   ....
+a4 = 0x00000000
+EOF
+RUN
+
+# For the C62x, cl6x counts the loops in 40-bit longs.
+NAME=c6x RzIL VM: emulateme main decrypts seckrit (c62x)
+FILE=bins/tms320/emulateme_nostd.ccsv5.c62x.ticoff2.dbg.coff
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c62x
+e asm.cpu=c62x
+e io.cache=true
+o malloc://0x1000 0x20000
+wx 51534d775814515f456c177f6e787f1c00 @ sym._seckrit
+wv4 0x20c00 @ sym._uart_address
+wv4 0 @ sym._uart_position
+w AnyColourYouLike @ 0x20b00
+wv4 0x20b40 @ 0x20b20
+wv4 0x20b00 @ 0x20b24
+s sym._main
+aezi
+ar a4=2
+ar b4=0x20b20
+ar b14=8
+ar b15=sym.__STACK_END
+ar b3=0x20ff0
+aezsu 0x20ff0
+ps @ 0x20c00
+pxw 4 @ sym._uart_position
+ar a4
+EOF
+EXPECT=<<EOF
+Decrypted: Hello from RzIL!
+
+0x00000010  0x0000001c                                   ....
+a4 = 0x00000000
 EOF
 RUN

@@ -97,13 +97,14 @@ static void fmt_mem(RzStrBuf *sb, const C6xOperand *o) {
 	if (plain) {
 		return;
 	}
-	rz_strbuf_append(sb, "[");
+	// brackets scale the offset by the access size, parentheses count bytes
+	rz_strbuf_append(sb, o->v.mem.scaled ? "[" : "(");
 	if (reg) {
 		fmt_reg(sb, o->v.mem.base_side, o->v.mem.off_reg);
 	} else {
 		rz_strbuf_appendf(sb, "0x%x", o->v.mem.off_cst);
 	}
-	rz_strbuf_append(sb, "]");
+	rz_strbuf_append(sb, o->v.mem.scaled ? "]" : ")");
 }
 
 // SPMASK names the units it protects, low bit first, as the assembler spells

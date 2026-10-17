@@ -25,12 +25,28 @@ instruction table and a per-generation feature gate, as the C55 engine serves
 C54x, C55x and C55x+. Analysis reconstructs execute packets, and the scalar
 move, ALU, shift, multiply, load and store core is lifted to RzIL.
 
-A whole execute packet is lifted on its first instruction. Every slot reads the
-register file as it stood when the packet issued, through snapshot variables,
-and all the writes land together. A parallel swap such as `mv a0,a1 || mv a1,a0`
-is therefore exact. A branch is lifted together with the packets in its delay
-slots. A load or multiply result read before it lands is written only once the
-packets in between have run. `test/db/rzil/tms320` covers each case.
+The pipeline is lifted with the code, by a cycle simulator (`c6x/c6x_sim.c`)
+that runs at lift time. From an address it issues one execute packet per
+cycle, counting multi-cycle NOPs and the NOPs of BNOP, ADDKPC and CALLP, until
+nothing is in flight, and the effect ends with a jump to the packet that issues
+next. Every slot reads the register file as it stood when the packet issued, so
+a parallel swap such as `mv a0,a1 || mv a1,a0` is exact. A result lands after
+the delay slots the instruction table gives it, both halves of a register pair
+included. Predicates, addresses and register branch targets are read at issue,
+a branch takes effect six cycles later, and a predicate that cannot be known
+when lifting forks the simulation into the arms of an RzIL branch.
+
+The SPLOOP buffer is modelled too: the loop body is lifted as its prolog, a
+kernel repeated while ILC or the SPLOOPW predicate says so, and the epilog,
+with SPMASK, the delayed start of SPLOOPD and the abrupt end of SPLOOPW. On the
+hardware the code after a loop starts during its epilog, after the delay
+SPKERNEL gives; the lifter checks, cycle by cycle, that this code cannot tell
+the epilog ran first.
+
+What the simulator does not model is not lifted, rather than lifted wrong:
+SPLOOP reload (`SPKERNELR`, `SPMASKR`), a branch or a nested loop in a loop
+body, and loops that are software-pipelined around branches, as cl6x builds
+them for C62x and C67x. `test/db/rzil/tms320` covers each case.
 
 ## c28x
 
