@@ -9,12 +9,7 @@
 #include <rz_util.h>
 #include <rz_asm.h>
 #include <common_gnu/disas-asm.h>
-
-typedef struct {
-	unsigned long Offset;
-	RzStrBuf *buf_global;
-	unsigned char bytes[4];
-} LanaiContext;
+#include <lanai/lanai_ctx.h>
 
 static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info, void *data) {
 	LanaiContext *ctx = (LanaiContext *)data;
@@ -90,6 +85,10 @@ static int lanai_gnu_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, in
 static bool lanai_gnu_init(void **user) {
 	LanaiContext *ctx = RZ_NEW0(LanaiContext);
 	rz_return_val_if_fail(ctx, false);
+	if (!lanai_dis_context_init(ctx)) {
+		RZ_FREE(ctx);
+		return false;
+	}
 	*user = ctx;
 	return true;
 }
@@ -97,6 +96,7 @@ static bool lanai_gnu_init(void **user) {
 static bool lanai_gnu_fini(void *p) {
 	LanaiContext *ctx = (LanaiContext *)p;
 	if (ctx) {
+		lanai_dis_context_fini(ctx);
 		RZ_FREE(ctx);
 	}
 	return true;
