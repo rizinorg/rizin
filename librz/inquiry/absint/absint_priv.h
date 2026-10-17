@@ -18,12 +18,12 @@ RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_create(RZ_NONNULL RzAbsIntInstan
 RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_at(RZ_NONNULL RzAbsIntRunContext *ctx, ut64 addr);
 RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block);
 
-static inline ut64 rz_absint_block_get_start(RzAbsIntBlock *block) {
+static inline ut64 rz_absint_block_get_start(const RzAbsIntBlock *block) {
 	return block->entry_state->pc;
 }
 
 /** end is inclusive */
-static inline ut64 rz_absint_block_get_end(RzAbsIntBlock *block) {
+static inline ut64 rz_absint_block_get_end(const RzAbsIntBlock *block) {
 	return block->node->end;
 }
 
