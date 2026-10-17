@@ -489,6 +489,20 @@ static void log_reg_read(RZ_BORROW HexPkt *pkt, ut8 reg_num, HexRegClass reg_cla
 		rz_warn_if_reached();
 		RZ_LOG_WARN("Register reads of register class %d are not yet tracked!", reg_class);
 		break;
+	case HEX_REG_CLASS_SYS_REGS64:
+		if (tmp_reg) {
+			rz_bv_set(pkt->il_op_stats.sys_tmp_read, (reg_num + 1), true);
+		} else {
+			rz_bv_set(pkt->il_op_stats.sys_read, (reg_num + 1), true);
+		}
+		// fallthrough
+	case HEX_REG_CLASS_SYS_REGS:
+		if (tmp_reg) {
+			rz_bv_set(pkt->il_op_stats.sys_tmp_read, reg_num, true);
+		} else {
+			rz_bv_set(pkt->il_op_stats.sys_read, reg_num, true);
+		}
+		break;
 	case HEX_REG_CLASS_DOUBLE_REGS:
 	case HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS:
 		if (tmp_reg) {
@@ -549,6 +563,12 @@ static void log_reg_write(RZ_BORROW HexInsnPktBundle *bundle, ut8 reg_num, HexRe
 	default:
 		rz_warn_if_reached();
 		RZ_LOG_WARN("Register writes of register class %d are not yet tracked!", reg_class);
+		break;
+	case HEX_REG_CLASS_SYS_REGS64:
+		rz_bv_set(pkt->il_op_stats.sys_written, (reg_num + 1), true);
+		// fallthrough
+	case HEX_REG_CLASS_SYS_REGS:
+		rz_bv_set(pkt->il_op_stats.sys_written, reg_num, true);
 		break;
 	case HEX_REG_CLASS_DOUBLE_REGS:
 	case HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS:
@@ -638,6 +658,21 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_write_reg(RZ_BORROW HexInsnPktBundle *bundle, co
 		rz_warn_if_reached();
 		RZ_LOG_WARN("Writing ops of class %d is not implemented yet.", op->class);
 		return NULL;
+	case HEX_REG_CLASS_SYS_REGS64:
+		high_name = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, reg_num + 1, false, true, true);
+		if (!high_name) {
+			return NULL;
+		}
+		high_val = SHIFTR0(DUP(val), U8(HEX_GPR_WIDTH));
+		// fallthrough
+	case HEX_REG_CLASS_SYS_REGS:
+		low_name = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, reg_num, false, true, true);
+		if (!low_name) {
+			rz_il_op_pure_free(high_val);
+			return NULL;
+		}
+		low_val = CAST(HEX_GPR_WIDTH, IL_FALSE, val);
+		break;
 	case HEX_REG_CLASS_DOUBLE_REGS:
 	case HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS:
 		high_name = hex_get_reg_in_class(HEX_REG_CLASS_INT_REGS, reg_num + 1, false, true, true);
@@ -752,6 +787,9 @@ static bool x_reg_rw_overlap(const HexPkt *pkt, const HexOp *op, ut32 reg_num) {
 		rz_warn_if_reached();
 		RZ_LOG_WARN("Checking rw overlap of class %d not implemented yet.", op->class);
 		return false;
+	case HEX_REG_CLASS_SYS_REGS:
+	case HEX_REG_CLASS_SYS_REGS64:
+		return (rz_bv_get(pkt->il_op_stats.sys_written, reg_num)) && (rz_bv_get(pkt->il_op_stats.sys_read, reg_num)) && op->isa_id == 'x';
 	case HEX_REG_CLASS_INT_REGS:
 	case HEX_REG_CLASS_INT_REGS_LOW8:
 	case HEX_REG_CLASS_GENERAL_SUB_REGS:
@@ -792,6 +830,29 @@ RZ_IPI RZ_OWN RzILOpPure *hex_read_reg(RZ_BORROW HexPkt *pkt, const HexOp *op, b
 		rz_warn_if_reached();
 		RZ_LOG_WARN("Writing ops of class %d is not implemented yet.", op->class);
 		return NULL;
+	case HEX_REG_CLASS_SYS_REGS64:
+		if (x_reg_rw_overlap(pkt, op, reg_num + 1)) {
+			// If read and writes overlap, return the new register for each read.
+			tmp_reg = true;
+		}
+		high_name = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, reg_num + 1, false, tmp_reg, true);
+		if (!high_name) {
+			return NULL;
+		}
+		high_val = SHIFTL0(CAST(HEX_GPR64_WIDTH, IL_FALSE, VARG(high_name)), U8(HEX_GPR_WIDTH));
+		val_width = HEX_GPR64_WIDTH;
+		// fallthrough
+	case HEX_REG_CLASS_SYS_REGS:
+		if (x_reg_rw_overlap(pkt, op, reg_num)) {
+			// If read and writes overlap, return the new register for each read.
+			tmp_reg = true;
+		}
+		low_name = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, reg_num, false, tmp_reg, true);
+		if (!low_name) {
+			return NULL;
+		}
+		low_val = VARG(low_name);
+		break;
 	case HEX_REG_CLASS_DOUBLE_REGS:
 	case HEX_REG_CLASS_GENERAL_DOUBLE_LOW8_REGS:
 		if (x_reg_rw_overlap(pkt, op, reg_num + 1)) {
@@ -925,9 +986,12 @@ RZ_IPI void hex_il_pkt_stats_fini(HexILExecData *stats) {
 	rz_bv_free(stats->slot_cancelled);
 	rz_bv_free(stats->ctr_written);
 	rz_bv_free(stats->gpr_written);
+	rz_bv_free(stats->sys_written);
 	rz_bv_free(stats->pred_written);
 	rz_bv_free(stats->ctr_read);
 	rz_bv_free(stats->gpr_read);
+	rz_bv_free(stats->sys_read);
+	rz_bv_free(stats->sys_tmp_read);
 	rz_bv_free(stats->pred_read);
 	rz_bv_free(stats->ctr_tmp_read);
 	rz_bv_free(stats->gpr_tmp_read);
@@ -939,12 +1003,15 @@ RZ_IPI void hex_il_pkt_stats_init(HexILExecData *stats) {
 	stats->slot_cancelled = rz_bv_new(64);
 	stats->ctr_written = rz_bv_new(64);
 	stats->gpr_written = rz_bv_new(64);
+	stats->sys_written = rz_bv_new(128);
 	stats->pred_written = rz_bv_new(32);
 	stats->ctr_read = rz_bv_new(64);
 	stats->gpr_read = rz_bv_new(64);
+	stats->sys_read = rz_bv_new(128);
 	stats->pred_read = rz_bv_new(32);
 	stats->ctr_tmp_read = rz_bv_new(64);
 	stats->gpr_tmp_read = rz_bv_new(64);
+	stats->sys_tmp_read = rz_bv_new(128);
 	stats->pred_tmp_read = rz_bv_new(32);
 }
 
