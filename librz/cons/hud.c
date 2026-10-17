@@ -167,7 +167,7 @@ static RzList /*<char *>*/ *hud_filter(RzCons *cons, RzList /*<char *>*/ *list, 
 					rz_list_append(res, str);
 				} else {
 					// Otherwise we print the matching characters uppercase
-					for (j = 0; p[j]; j++) {
+					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
 						if (mask[j]) {
 							p[j] = toupper((unsigned char)p[j]);
 						}
