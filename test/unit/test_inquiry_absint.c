@@ -26,7 +26,9 @@ static RzAbsIntLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **bloc
 	return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
 }
 
-static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+static TestInterp *interp_new_with_trace(
+	const char *arch, int bits, ut64 baddr, const char *url,
+	RzAbsIntTraceOptions trace_opts) {
 	// for debugging, uncomment:
 	// eprintf("rz -a %s -b %d -m 0x%" PFMT64x " %s\n", arch, bits, baddr, url);
 	TestInterp *interp = RZ_NEW(TestInterp);
@@ -35,12 +37,19 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	rz_analysis_set_bits(interp->analysis, bits);
 	interp->io = rz_io_new();
 	interp->io->va = 1;
-	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
+
+	RzILCacheConfig cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
+	if (trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
+		cache_config |= RZ_IL_CACHE_CONFIG_TRACE;
+	}
+	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, cache_config);
+
 	RzAbsIntConfig config = {
 		.val_domain = rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST),
 		.cb_user = interp,
 		.io_read = io_read,
-		.lift_block = lift_block
+		.lift_block = lift_block,
+		.trace_opts = trace_opts,
 	};
 	interp->inst = rz_absint_instance_new(interp->analysis, &config);
 	RzIODesc *desc = rz_io_open_at(interp->io, url, RZ_PERM_RX, 0644, baddr, NULL);
@@ -49,6 +58,10 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 		return NULL;
 	}
 	return interp;
+}
+
+static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+	return interp_new_with_trace(arch, bits, baddr, url, RZ_ABSINT_TRACE_NONE);
 }
 
 static void interp_free(TestInterp *interp) {
@@ -589,6 +602,61 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	mu_end;
 }
 
+bool test_absint_cfg_register_indirect_jmp_at_block_end(void) {
+
+	TestInterp *interp = interp_new_with_trace("x86", 64, 0x10000, "hex://" // clang-format off
+		"48b80c00010000000000" // 0x10000: movabs rax, 0x1000c
+		"ffe0"                // 0x1000a: jmp rax
+		"b82a000000"          // 0x1000c: mov eax, 42
+		"c3",                  // 0x10011: ret
+		// clang-format on
+		RZ_ABSINT_TRACE_EVAL_BLOCK | RZ_ABSINT_TRACE_IL_BLOCK
+	);
+	mu_assert_notnull(interp, "init");
+
+	RzAbsIntResult *res = NULL;
+	RzAbsIntResultCode code = rz_absint_run(
+		interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_XREFS, &res);
+
+	mu_assert_eq(code, RZ_ABSINT_RESULT_OK, "result code");
+	mu_assert_notnull(res, "result");
+	mu_assert_eq(rz_vector_len(&res->xrefs), 1, "xrefs count");
+
+	ASSERT_XREF(0, 0x1000a, 0x1000c, RZ_ANALYSIS_XREF_TYPE_CODE);
+
+	rz_absint_result_free(interp->inst, res);
+	interp_free(interp);
+	mu_end;
+}
+
+bool test_absint_cfg_register_indirect_jmp_after_block_end(void) {
+
+	TestInterp *interp = interp_new_with_trace("x86", 64, 0x10000, "hex://" // clang-format off
+		"48b80d00010000000000" // 0x10000: movabs rax, 0x1000d
+		"ffe0"                // 0x1000a: jmp rax
+		"90"                  // 0x1000c: nop
+		"b82a000000"          // 0x1000d: mov eax, 42
+		"c3",                  // 0x10012: ret
+		// clang-format on
+		RZ_ABSINT_TRACE_EVAL_BLOCK
+	);
+	mu_assert_notnull(interp, "init");
+
+	RzAbsIntResult *res = NULL;
+	RzAbsIntResultCode code = rz_absint_run(
+		interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_XREFS, &res);
+
+	mu_assert_eq(code, RZ_ABSINT_RESULT_OK, "result code");
+	mu_assert_notnull(res, "result");
+	mu_assert_eq(rz_vector_len(&res->xrefs), 1, "xrefs count");
+
+	ASSERT_XREF(0, 0x1000a, 0x1000d, RZ_ANALYSIS_XREF_TYPE_CODE);
+
+	rz_absint_result_free(interp->inst, res);
+	interp_free(interp);
+	mu_end;
+}
+
 bool test_absint_cfg_call_link_register(void) {
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
@@ -890,6 +958,8 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp, true);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp_before);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp_inside_self);
+	mu_run_test(test_absint_cfg_register_indirect_jmp_at_block_end);
+	mu_run_test(test_absint_cfg_register_indirect_jmp_after_block_end);
 	mu_run_test(test_absint_cfg_multi_entry_fallthrough_jmp_inside_other);
 	mu_run_test(test_absint_cfg_call_link_register);
 	mu_run_test(test_absint_cfg_call_multi_insn);

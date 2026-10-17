@@ -138,6 +138,7 @@ static void report_yield_xref(
 	}
 
 	ut64 to_addr = rz_bv_to_ut64(&to_bv);
+
 	RzAnalysisXRef *xref = rz_vector_push(&ctx->res->xrefs, NULL);
 	if (!xref) {
 		goto cleanup;
@@ -287,26 +288,41 @@ static bool set_abstr_pc(RzAbsIntInstance *inst, RzAbsIntState *state, RzAbsIntV
  * https://doi.org/10.1145/3033019.3033028
  * https://web.archive.org/web/20250904202421/https://hexhive.epfl.ch/publications/files/17CC.pdf
  */
-static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal *val) {
+static bool pure_is_pc_constant(const RzILOpPure *op) {
+	if (!op) {
+		return false;
+	}
+	switch (op->code) {
+	case RZ_IL_OP_BITV:
+		return op->op.bitv.is_pc;
+	case RZ_IL_OP_CAST:
+		return pure_is_pc_constant(op->op.cast.val);
+	default:
+		return false;
+	}
+}
+
+/**
+ * \brief Decide whether the given value, when stored, may be assumed to be a return address.
+ *
+ * Return-address detection relies on PC provenance: a constant matching the end of the
+ * current IL block is only considered a return address if it originates from the PC.
+ * This avoids misclassifying arbitrary constants that happen to match the block end.
+ *
+ * SPARC is handled separately because its call instruction stores the instruction PC
+ * into o8, while the return instruction jumps to o7+8.
+ */
+static bool value_indicates_ret_addr_write(RzAbsIntRunContext *ctx, RzAbsIntVal *val, bool is_pc) {
 	RzBitVector bv;
 	rz_bv_init(&bv, 64);
-	// Hint: pc addrs coming from the lifters are currently just opaque bitvectors.
-	// So we do not know whether the constant contents of val are actually taken from the architecture's
-	// pc register or match the instruction address by chance only.
-	// We could add a flag to RzILOpArgsBV that would be set by lifters to indicate that the constant value
-	// originates from the pc and use that here.
-	// This may also help with the sparc workaround.
-	// The downside is that a pattern like this in non-relocatable code would not be detected as call:
-	// 0x42 mov lr, 0x4a
-	// 0x46 mov pc, r0
-	// 0x4a ...
-	// but it is questionable whether that should be even detected at all, since there is no way to know
-	// if it is intended as call or jump.
+
 	bool ret = val_domain(ctx->inst)->to_concrete_const(val, &bv) &&
-		(rz_bv_to_ut64(&bv) == ctx->il_block_end ||
+		((is_pc && rz_bv_to_ut64(&bv) == ctx->il_block_end) ||
 			// Sparc stores the call instruction PC into o8.
 			// The return instruction jumps then to o7+8.
-			(rz_str_startswith(ctx->inst->arch_name, "sparc") && rz_bv_to_ut64(&bv) == ctx->astate->pc - 4));
+			(rz_str_startswith(ctx->inst->arch_name, "sparc") &&
+			 rz_bv_to_ut64(&bv) == ctx->astate->pc - 4));
+
 	rz_bv_fini(&bv);
 	return ret;
 }
@@ -614,7 +630,8 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		EVAL_PURE_OR_RETURN(effect->op.set.x);
 		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
 		write_var_to_state(ctx->inst, ctx->astate, kind, vhash, eval_out);
-		if (value_indicates_ret_addr_write(ctx, eval_out) &&
+		bool is_pc = pure_is_pc_constant(effect->op.set.x);
+		if (value_indicates_ret_addr_write(ctx, eval_out, is_pc) &&
 			kind == RZ_IL_VAR_KIND_GLOBAL) {
 			// Hint: this ret-addr store detection currently only works across a single interp block.
 			// Consider the following ARMv4 code for an indirect call (blx was introduced in ARMv5):
@@ -733,7 +750,8 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			rz_bv_fini(&st_addr_bv);
 			val_domain(ctx->inst)->val_free(st_addr);
 		});
-		if (value_indicates_ret_addr_write(ctx, eval_out)) {
+		bool is_pc = pure_is_pc_constant(pval);
+		if (value_indicates_ret_addr_write(ctx, eval_out, is_pc)) {
 			ctx->block_stores_ret_addr = true;
 			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
 				RZ_LOG_INFO("  store/storew: value indicates ret addr write\n");
