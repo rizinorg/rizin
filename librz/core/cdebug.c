@@ -197,6 +197,36 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 	return true;
 }
 
+
+static ut64 get_vm_pc(RzAnalysis *analysis) {
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm) {
+		RZ_LOG_ERROR("No IL VM initialzied.\n");
+		return UT64_MAX;
+	}
+	return rz_bv_to_ut64(vm->vm->pc);
+}
+
+static ut64 get_fallthrough(RzAnalysis *analysis) {
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm) {
+		RZ_LOG_ERROR("No IL VM initialzied.\n");
+		return UT64_MAX;
+	}
+	ut64 addr = rz_bv_to_ut64(vm->vm->pc);
+	ut8 code[64] = { 0 };
+	RzAnalysisOp op = { 0 };
+	rz_analysis_get_callbacks(analysis)->read_at(analysis, addr, code, sizeof(code));
+	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_INSN_PKT);
+	if (!r) {
+		RZ_LOG_ERROR("Failed to decode instruction packet.\n");
+		return UT64_MAX;
+	}
+	ut64 ft = addr + op.size;
+	rz_analysis_op_fini(&op);
+	return ft;
+}
+
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
@@ -206,15 +236,29 @@ RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 			rz_core_debug_step_one(core, 1);
 		}
 	} else {
-		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		RzAnalysisILVM *vm = rz_analysis_get_il_vm(core->analysis);
+		if (!vm) {
+			RZ_LOG_ERROR("No RzIL VM initialized! Run aezi\n");
+			return;
+		}
+		ut64 fallthrough = get_fallthrough(core->analysis);
+		if (fallthrough == UT64_MAX) {
+			RZ_LOG_ERROR("Failed to get fall through address.\n");
+			return;
+		}
+		rz_core_il_step(core, 1);
 		rz_core_reg_update_flags(core);
+		ut64 pc = get_vm_pc(core->analysis);
+		if (fallthrough != pc) {
+			rz_core_seek_and_save(core, pc, false);
+		}
 	}
 }
 
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_b(core->config, "io.cache");
-	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_core_is_debug(core)) {
+		rz_config_set_b(core->config, "io.cache", false);
 		if (core->print->cur_enabled) {
 			rz_interrupt_break_push(core->intr, rz_core_static_debug_stop, core->dbg);
 			rz_reg_arena_swap(core->dbg->reg, true);
@@ -228,10 +272,20 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 			rz_core_dbg_follow_seek_register(core);
 			rz_core_reg_update_flags(core);
 		}
+		rz_config_set_b(core->config, "io.cache", io_cache);
 	} else {
-		rz_core_analysis_esil_step_over(core);
+		ut64 fallthrough = get_fallthrough(core->analysis);
+		if (fallthrough == UT64_MAX) {
+			RZ_LOG_ERROR("Failed to get fall through address.\n");
+			return;
+		}
+		rz_core_il_step_until(core, fallthrough);
+		rz_core_reg_update_flags(core);
+		ut64 pc = get_vm_pc(core->analysis);
+		if (fallthrough != pc) {
+			rz_core_seek_and_save(core, pc, false);
+		}
 	}
-	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
 /**
