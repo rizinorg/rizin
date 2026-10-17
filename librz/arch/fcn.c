@@ -2520,6 +2520,7 @@ static void update_analysis(RzAnalysis *analysis, RzList /*<RzAnalysisFunction *
 		rz_analysis_block_automerge(dup_bbs);
 		rz_analysis_function_delete_unused_vars(fcn);
 		rz_pvector_free(dup_bbs);
+		ht_up_free(ht);
 	}
 	analysis->opt.jmpmid = old_jmpmid;
 }
