@@ -1,6 +1,19 @@
 // SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+/**
+ * \file This file implements conflict resolution, for a block which are used by multiple functions.
+ *
+ * There are a few reasons for a functions using the same block:
+ *
+ * 1. The block is simply shared code. This is common in hand-written assembly.
+ * 2. The block is not actually part of the function, but it is the target of a tail call
+ *    and was mistakingly added to the function, because the tail call was not identified as such.
+ *    In this case the block and its successors are their own function.
+ *    And all the successors only call it.
+ */
+
+
 #include "./absint_priv.h"
 
 typedef enum {
@@ -70,10 +83,16 @@ RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbs
 }
 
 RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts) {
-	// 2. Non-strippable function symbols point to a function entry point.
-	// 7. When a jump edge crosses a function entry point, then the jump is likely to be a tail-call.
-	// 8. call target is jump instruction, likely function entry.
-	// 11. Jump target is noop (hard to say), unlikly to be a function entry (-> shared)
-	// 14. Cond. jump targets are unlikely a function entry.
-	// 15. Basic blocks before the main entry point of a binary are unlikely to be a function.
+	// Positive hints that the block is actually a function entry point:
+	// - Non-strippable function symbols point to the block.
+	// - A known call instruction targets this block (an CALL xref to it exists).
+	// - When a jump edge to the block crosses a function entry point, then the jump is likely to be a tail-call.
+	//
+	// Negative hints that the block is a function entry point.
+	// - Block starts with a noop instruction (-> shared)
+	// - An successor of this block is a conditional jump.
+	// - Basic blocks before the entry point of a binary are unlikely to be a function.
+	//
+	// Definitely an invalid block.
+	// - Block is located at address 0x0
 }
