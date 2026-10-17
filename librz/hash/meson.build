@@ -98,6 +98,7 @@ hash_plugins_list = [
   'ioc',
   'minentropy',
   'serialcorr',
+  'djb2',
 ]
 
 hash_plugins = {
@@ -155,6 +156,7 @@ rz_hash_sources = [
   'p/algo_ioc.c',
   'p/algo_minentropy.c',
   'p/algo_serialcorr.c',
+  'p/algo_djb2.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
