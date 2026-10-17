@@ -197,7 +197,6 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 	return true;
 }
 
-
 static ut64 get_vm_pc(RzAnalysis *analysis) {
 	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
 	if (!vm) {
