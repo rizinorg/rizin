@@ -2425,7 +2425,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 668,
+    "id": 742,
     "opex": {
       "operands": [
         {
@@ -3337,7 +3337,7 @@ mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
 prefix: 0
-id: 665
+id: 737
 bytes: 55
 refptr: 0
 size: 1
