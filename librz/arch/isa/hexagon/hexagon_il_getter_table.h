@@ -2675,7 +2675,7 @@ static HexILInsn hex_il_getter_lt[] = {
 	{ { (HexILOpGetter)hex_il_op_l4_loadruh_ur, HEX_IL_INSN_ATTR_MEM_READ },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
-	{ { (HexILOpGetter)hex_il_op_l4_loadw_phys, HEX_IL_INSN_ATTR_INVALID },
+	{ { (HexILOpGetter)hex_il_op_l4_loadw_phys, HEX_IL_INSN_ATTR_MEM_READ },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID },
 		{ (HexILOpGetter)NULL, HEX_IL_INSN_ATTR_INVALID } },
 	{ { (HexILOpGetter)hex_il_op_l4_or_memopb_io, HEX_IL_INSN_ATTR_MEM_WRITE | HEX_IL_INSN_ATTR_MEM_READ },
