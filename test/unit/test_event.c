@@ -176,6 +176,38 @@ bool test_rz_event_unhook_by_callback_many(void) {
 	mu_end;
 }
 
+bool test_rz_event_unhook_by_callback_mixed(void) {
+	// One callback on two types and on all events. A single type drains
+	// only that type, RZ_EVENT_ALL drains every registration.
+	int shared = 0;
+	int other = 0;
+	RzEvent *ev = rz_event_new(NULL);
+	mu_assert_notnull(ev, "rz_event_new ()");
+	rz_event_hook(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_ALL, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_META_DEL, callback_inc, &shared);
+	rz_event_hook(ev, RZ_EVENT_ALL, callback_inc, &other);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	rz_event_send(ev, RZ_EVENT_META_DEL, NULL);
+	mu_assert_eq(shared, 4, "both types and all fire");
+	mu_assert_eq(other, 2, "other all fires");
+
+	rz_event_unhook_by_callback(ev, RZ_EVENT_META_SET, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	rz_event_send(ev, RZ_EVENT_META_DEL, NULL);
+	mu_assert_eq(shared, 7, "only the type hook removed");
+	mu_assert_eq(other, 4, "other kept");
+
+	rz_event_unhook_by_callback(ev, RZ_EVENT_ALL, callback_inc, &shared);
+	rz_event_send(ev, RZ_EVENT_META_SET, NULL);
+	rz_event_send(ev, RZ_EVENT_META_DEL, NULL);
+	mu_assert_eq(shared, 7, "all registrations drained");
+	mu_assert_eq(other, 6, "other still kept");
+
+	rz_event_free(ev);
+	mu_end;
+}
+
 typedef struct {
 	int type;
 	int counter;
@@ -252,6 +284,7 @@ int all_tests() {
 	mu_run_test(test_rz_event_self_unhook, RZ_EVENT_META_SET, RZ_EVENT_META_SET);
 	mu_run_test(test_rz_event_unhook_by_callback);
 	mu_run_test(test_rz_event_unhook_by_callback_many);
+	mu_run_test(test_rz_event_unhook_by_callback_mixed);
 	mu_run_test(test_rz_event_unhook_by_callback_dispatch);
 	mu_run_test(test_rz_event_unhook_by_callback_dispatch_many);
 	return tests_passed != tests_run;
