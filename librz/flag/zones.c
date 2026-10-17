@@ -4,7 +4,12 @@
 #include <rz_flag.h>
 #include <rz_util.h>
 
-static RzFlagZoneItem *rz_flag_zone_get(RzFlag *f, const char *name) {
+/**
+ * \brief Find a named zone without transferring ownership.
+ * \return A zone borrowed from \p f, or NULL if no zone matches.
+ */
+static RZ_BORROW RzFlagZoneItem *rz_flag_zone_get(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(f && name, NULL);
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (f->zones, iter, zi) {
@@ -15,7 +20,12 @@ static RzFlagZoneItem *rz_flag_zone_get(RzFlag *f, const char *name) {
 	return NULL;
 }
 
-static RzFlagZoneItem *rz_flag_zone_get_inrange(RzFlag *f, ut64 from, ut64 to) {
+/**
+ * \brief Find a zone starting in the range without transferring ownership.
+ * \return A zone borrowed from \p f, or NULL if no zone matches.
+ */
+static RZ_BORROW RzFlagZoneItem *rz_flag_zone_get_inrange(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 from, ut64 to) {
+	rz_return_val_if_fail(f, NULL);
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (f->zones, iter, zi) {
@@ -26,7 +36,7 @@ static RzFlagZoneItem *rz_flag_zone_get_inrange(RzFlag *f, ut64 from, ut64 to) {
 	return NULL;
 }
 
-RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
+RZ_API bool rz_flag_zone_add(RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name, ut64 addr) {
 	rz_return_val_if_fail(f && name && *name, false);
 	RzFlagZoneItem *zi = rz_flag_zone_get(f, name);
 	if (zi) {
@@ -127,7 +137,14 @@ RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const c
 	return true;
 }
 
-RZ_API RzList /*<char *>*/ *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) {
+/**
+ * \brief Collect zone labels for a bar display.
+ * \return A list to free with rz_list_free(), or NULL on allocation failure.
+ * Entries borrow zone names from \p f or refer to the static empty string.
+ * Do not free or modify the strings. Removing zones can invalidate their names.
+ */
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_zone_barlist(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 from, ut64 bsize, int rows) {
+	rz_return_val_if_fail(f, NULL);
 	RzList *list = rz_list_newf(NULL);
 	int i;
 	for (i = 0; i < rows; i++) {

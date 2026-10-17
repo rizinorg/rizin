@@ -96,34 +96,34 @@ typedef struct rz_flag_bind_t {
 RZ_API void rz_flag_bind(RzFlag *io, RzFlagBind *bnd);
 
 #ifdef RZ_API
-RZ_API RzFlag *rz_flag_new(void);
-RZ_API RzFlag *rz_flag_free(RzFlag *f);
+RZ_API RZ_OWN RzFlag *rz_flag_new(void);
+RZ_API void rz_flag_free(RZ_OWN RZ_NULLABLE RzFlag *f);
 RZ_API bool rz_flag_exist_at(RzFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
-RZ_API RzFlagItem *rz_flag_get(RzFlag *f, const char *name);
-RZ_API RzFlagItem *rz_flag_get_i(RzFlag *f, ut64 off);
-RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_i(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_by_spaces(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off, ...);
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_preferred_item(RZ_NONNULL RzFlag *f, ut64 off);
-RZ_API RzFlagItem *rz_flag_get_at(RzFlag *f, ut64 off, bool closest);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off, bool closest);
 RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool closest, ut64 off, ...);
-RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RzFlag *f, bool by_space);
+RZ_API RZ_OWN RzList /*<RzFlagItem *>*/ *rz_flag_all_list(RZ_BORROW RZ_NONNULL RzFlag *f, bool by_space);
 RZ_API const RzList /*<RzFlagItem *>*/ *rz_flag_get_list(RzFlag *f, ut64 off);
 RZ_API bool rz_flag_reset_obj_flags(RZ_NONNULL RZ_BORROW RzFlag *flags, RZ_NULLABLE const char *backup_filename);
-RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off);
+RZ_API RZ_OWN char *rz_flag_get_liststr(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off);
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item);
 RZ_API bool rz_flag_unset_name(RzFlag *f, const char *name);
 RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 addr);
 RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off);
 RZ_API void rz_flag_unset_all(RzFlag *f);
 RZ_API void rz_flag_unset_all_in_space(RzFlag *f, const char *space_name);
-RZ_API RzFlagItem *rz_flag_set(RzFlag *fo, const char *name, ut64 addr, ut32 size);
-RZ_API RzFlagItem *rz_flag_set_next(RzFlag *fo, const char *name, ut64 addr, ut32 size);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_set(RZ_BORROW RZ_NONNULL RzFlag *fo, RZ_NONNULL const char *name, ut64 addr, ut32 size);
+RZ_API RZ_BORROW RzFlagItem *rz_flag_set_next(RZ_BORROW RZ_NONNULL RzFlag *fo, RZ_NONNULL const char *name, ut64 addr, ut32 size);
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias);
 RZ_API void rz_flag_item_free(RzFlagItem *item);
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment);
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname);
 RZ_API const char *rz_flag_item_set_color(RzFlagItem *item, const char *color);
-RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item);
-RZ_API RzFlagItem *rz_flag_item_add_ref(RzFlagItem *item);
+RZ_API RZ_OWN RzFlagItem *rz_flag_item_clone(RZ_BORROW RZ_NONNULL RzFlagItem *item);
+RZ_API RZ_OWN RzFlagItem *rz_flag_item_add_ref(RZ_BORROW RZ_NONNULL RzFlagItem *item);
 RZ_API int rz_flag_unset_glob(RzFlag *f, const char *name);
 RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name);
 RZ_API int rz_flag_relocate(RzFlag *f, ut64 off, ut64 off_mask, ut64 to);
@@ -137,11 +137,11 @@ RZ_API void rz_flag_foreach_space(RzFlag *f, const RzSpace *space, RzFlagItemCb 
 RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RzSpace *space, RzFlagItemCb cb, void *user);
 
 /* spaces */
-static inline RzSpace *rz_flag_space_get(RzFlag *f, const char *name) {
+static inline RZ_BORROW RzSpace *rz_flag_space_get(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NULLABLE const char *name) {
 	return rz_spaces_get(&f->spaces, name);
 }
 
-static inline RzSpace *rz_flag_space_cur(RzFlag *f) {
+static inline RZ_BORROW RzSpace *rz_flag_space_cur(RZ_BORROW RZ_NONNULL RzFlag *f) {
 	return rz_spaces_current(&f->spaces);
 }
 
@@ -149,7 +149,7 @@ static inline const char *rz_flag_space_cur_name(RzFlag *f) {
 	return rz_spaces_current_name(&f->spaces);
 }
 
-static inline RzSpace *rz_flag_space_set(RzFlag *f, const char *name) {
+static inline RZ_BORROW RzSpace *rz_flag_space_set(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NULLABLE const char *name) {
 	return rz_spaces_set(&f->spaces, name);
 }
 
@@ -183,16 +183,16 @@ static inline bool rz_flag_space_is_empty(RzFlag *f) {
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_tags_list(RzFlag *f);
 RZ_API void rz_flag_tags_set(RzFlag *f, const char *name, const char *words);
 RZ_API void rz_flag_tags_reset(RzFlag *f, const char *name);
-RZ_API RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RzFlag *f, const char *name);
+RZ_API RZ_OWN RzList /*<RzFlagItem *>*/ *rz_flag_tags_get(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name);
 
 /* zones */
 
 RZ_API void rz_flag_zone_item_free(void *a);
-RZ_API bool rz_flag_zone_add(RzFlag *fz, const char *name, ut64 addr);
+RZ_API bool rz_flag_zone_add(RZ_NONNULL RzFlag *fz, RZ_NONNULL const char *name, ut64 addr);
 RZ_API bool rz_flag_zone_del(RzFlag *fz, const char *name);
 RZ_API bool rz_flag_zone_around(RzFlag *fz, ut64 addr, const char **prev, const char **next);
 RZ_API bool rz_flag_zone_reset(RzFlag *f);
-RZ_API RzList /*<char *>*/ *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
+RZ_API RZ_OWN RzList /*<char *>*/ *rz_flag_zone_barlist(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 from, ut64 bsize, int rows);
 
 /* serialize */
 
