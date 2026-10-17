@@ -14,6 +14,12 @@
 #define GDB_TYPE_SZ   16
 #define GDB_GROUPS_SZ 128
 
+/**
+ * The characters the regex "\s" matched when profile lines were split with
+ * PCRE2 (ASCII only, no Unicode properties).
+ */
+#define IS_PROFILE_WHITESPACE(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\v' || (x) == '\f' || (x) == '\r')
+
 static void rz_reg_profile_def_free(RzRegProfileDef *def) {
 	if (!def) {
 		return;
@@ -227,8 +233,12 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 			goto reg_parse_error;
 		}
 		if (comment_flag[0] == '#') {
-			// Remove # from the comment
-			def->comment = rz_str_dup(comment_flag + 1);
+			// Remove # and the whitespace after it from the comment
+			const char *comment = comment_flag + 1;
+			while (IS_PROFILE_WHITESPACE(*comment)) {
+				comment++;
+			}
+			def->comment = rz_str_dup(comment);
 		} else {
 			def->flags = rz_str_dup(comment_flag);
 		}
@@ -241,6 +251,43 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 reg_parse_error:
 	rz_reg_profile_def_free(def);
 	return false;
+}
+
+/**
+ * \brief Splits one register profile line into its fields.
+ *
+ * Fields are separated by IS_PROFILE_WHITESPACE characters. The first '#' ends
+ * the fields and the rest of the line, starting at that '#', becomes one last
+ * token. Later '#' characters are part of the comment. The line is expected to
+ * be trimmed already, so the comment token has no trailing whitespace.
+ */
+static RZ_OWN RzList /*<char *>*/ *split_profile_line(RZ_NONNULL const char *p) {
+	RzList *toks = rz_list_newf(free);
+	if (!toks) {
+		return NULL;
+	}
+	while (*p) {
+		// fast forward through whitespace characters and ignore them
+		while (IS_PROFILE_WHITESPACE(*p)) {
+			p++;
+		}
+
+		// comment start: the rest of the line is one token, '#' included
+		if (*p == '#') {
+			rz_list_append(toks, rz_str_dup(p));
+			break;
+		}
+
+		// non-whitespace non-comment character, consume until end of string, start of a comment, or whitespace
+		const char *start = p;
+		while (*p && *p != '#' && !IS_PROFILE_WHITESPACE(*p)) {
+			p++;
+		}
+		if (p > start) {
+			rz_list_append(toks, rz_str_ndup(start, p - start));
+		}
+	}
+	return toks;
 }
 
 /**
@@ -287,23 +334,10 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		if (RZ_STR_ISEMPTY(line)) {
 			continue;
 		}
-		if (rz_str_strchr(line, "#")) {
-			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
-			char *raw_comment = rz_str_dup(rz_list_last_val(line_and_cmt));
-			if (!raw_comment) {
-				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
-				continue;
-			}
-			char *comment = rz_str_prepend(raw_comment, "#");
-			if (!comment) {
-				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
-				continue;
-			}
-			toks = rz_str_split_duplist_n_regex(rz_list_first_val(line_and_cmt), "\\s+", 0, true);
-			rz_list_append(toks, comment);
-			rz_list_free(line_and_cmt);
-		} else {
-			toks = rz_str_split_duplist_n_regex(line, "\\s+", 0, true);
+		toks = split_profile_line(line);
+		if (!toks) {
+			RZ_LOG_WARN("Could not split register profile line \"%s\" at line %d.\n", line, l);
+			continue;
 		}
 		ut32 toks_len = rz_list_length(toks);
 		if (rz_list_empty(toks)) {
