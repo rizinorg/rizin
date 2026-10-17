@@ -571,39 +571,98 @@ RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
+// Quicksort with median-of-three pivot selection and an insertion sort
+// cutoff for small ranges.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
+
+/**
+ * Maximum range size which is sorted with insertion sort instead of quicksort.
+ * Insertion sort has lower constant costs, so it is faster for small ranges.
+ */
+#define RZ_VECTOR_SORT_CUTOFF 16
+
+static inline bool vector_elem_less(const void *x, const void *y, RzVectorComparator cmp, bool reverse, void *user) {
+	int c = cmp(x, y, user);
+	return (c < 0 && !reverse) || (c > 0 && reverse);
+}
+
+static inline void vector_swap_elems(void *x, void *y, size_t elem_size, void *t) {
+	if (x == y) {
+		return;
+	}
+	memcpy(t, x, elem_size);
+	memcpy(x, y, elem_size);
+	memcpy(y, t, elem_size);
+}
+
+static void vector_insertion_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t) {
+	for (size_t i = 1; i < len; i++) {
+		char *cur = VEC_INDEX(a, i);
+		size_t j = i;
+		while (j > 0 && vector_elem_less(cur, VEC_INDEX(a, j - 1), cmp, reverse, user)) {
+			j--;
+		}
+		if (j != i) {
+			memcpy(t, cur, elem_size);
+			memmove(VEC_INDEX(a, j + 1), VEC_INDEX(a, j), elem_size * (i - j));
+			memcpy(VEC_INDEX(a, j), t, elem_size);
+		}
+	}
+}
 
 // Recursive quicksort. \p t and \p pivot are caller-provided scratch buffers of
 // elem_size bytes each; they are reused across the whole recursion so the sort
 // performs no per-call allocation.
 static void vector_quick_sort_rec(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
-	if (len <= 1) {
-		return;
-	}
-	size_t i = rand() % len, j = 0;
-
-	memcpy(pivot, VEC_INDEX(a, i), elem_size);
-	if (i != len - 1) {
-		memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
-	}
-	for (i = 0; i < len - 1; i++) {
-		int c = cmp(VEC_INDEX(a, i), pivot, user);
-		if ((c < 0 && !reverse) || (c > 0 && reverse)) {
-			if (j != i) {
-				memcpy(t, VEC_INDEX(a, i), elem_size);
-				memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
-				memcpy(VEC_INDEX(a, j), t, elem_size);
+	while (len > RZ_VECTOR_SORT_CUTOFF) {
+		// Median-of-three pivot selection: order a[0], a[len/2], a[len-1]
+		// so that the median of the three is at a[len/2]. This avoids the
+		// quadratic worst case for already sorted or reversed input without
+		// having to call rand() for every partition.
+		size_t mid = len / 2;
+		void *first = VEC_INDEX(a, 0);
+		void *mmid = VEC_INDEX(a, mid);
+		void *last = VEC_INDEX(a, len - 1);
+		if (vector_elem_less(mmid, first, cmp, reverse, user)) {
+			vector_swap_elems(mmid, first, elem_size, t);
+		}
+		if (vector_elem_less(last, mmid, cmp, reverse, user)) {
+			vector_swap_elems(last, mmid, elem_size, t);
+			if (vector_elem_less(mmid, first, cmp, reverse, user)) {
+				vector_swap_elems(mmid, first, elem_size, t);
 			}
-			j++;
+		}
+		memcpy(pivot, mmid, elem_size);
+		// The element at len-1 is >= the pivot. Put it out of the way by
+		// moving it to the (now unused) median slot.
+		memcpy(mmid, last, elem_size);
+
+		size_t j = 0;
+		for (size_t i = 0; i < len - 1; i++) {
+			if (vector_elem_less(VEC_INDEX(a, i), pivot, cmp, reverse, user)) {
+				vector_swap_elems(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size, t);
+				j++;
+			}
+		}
+		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+		memcpy(VEC_INDEX(a, j), pivot, elem_size);
+
+		// Recurse into the smaller partition and iterate over the bigger one
+		// to limit the stack depth to O(log(n)).
+		size_t left_len = j;
+		size_t right_len = len - j - 1;
+		if (left_len < right_len) {
+			vector_quick_sort_rec(a, elem_size, left_len, cmp, reverse, user, t, pivot);
+			a = VEC_INDEX(a, j + 1);
+			len = right_len;
+		} else {
+			vector_quick_sort_rec(VEC_INDEX(a, j + 1), elem_size, right_len, cmp, reverse, user, t, pivot);
+			len = left_len;
 		}
 	}
-	if (j != len - 1) {
-		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+	if (len > 1) {
+		vector_insertion_sort(a, elem_size, len, cmp, reverse, user, t);
 	}
-	memcpy(VEC_INDEX(a, j), pivot, elem_size);
-	vector_quick_sort_rec(a, elem_size, j, cmp, reverse, user, t, pivot);
-	vector_quick_sort_rec(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user, t, pivot);
 }
 
 #define RZ_VECTOR_SORT_TMP_SIZE 256
@@ -876,26 +935,80 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
-	if (n <= 1) {
-		return;
+// Quicksort with median-of-three pivot selection and an insertion sort
+// cutoff for small ranges.
+
+/**
+ * Maximum range size which is sorted with insertion sort instead of quicksort.
+ * Insertion sort has lower constant costs, so it is faster for small ranges.
+ */
+#define RZ_PVECTOR_SORT_CUTOFF 16
+
+static void pvector_insertion_sort(void **a, size_t len, RzPVectorComparator cmp, void *user) {
+	for (size_t i = 1; i < len; i++) {
+		void *v = a[i];
+		size_t j = i;
+		while (j > 0 && cmp(a[j - 1], v, user) > 0) {
+			a[j] = a[j - 1];
+			j--;
+		}
+		a[j] = v;
 	}
-	size_t i = rand() % n, j = 0;
-	void *t, *pivot = a[i];
-	a[i] = a[n - 1];
-	for (i = 0; i < n - 1; i++) {
-		if (cmp(a[i], pivot, user) < 0) {
-			t = a[i];
-			a[i] = a[j];
-			a[j] = t;
-			j++;
+}
+
+static void pvector_quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
+	while (n > RZ_PVECTOR_SORT_CUTOFF) {
+		// Median-of-three pivot selection: order a[0], a[n/2], a[n-1] so that
+		// the median of the three is at a[n/2]. This avoids the quadratic worst
+		// case for already sorted or reversed input without having to call
+		// rand() for every partition.
+		size_t mid = n / 2;
+		if (cmp(a[mid], a[0], user) < 0) {
+			void *t = a[mid];
+			a[mid] = a[0];
+			a[0] = t;
+		}
+		if (cmp(a[n - 1], a[mid], user) < 0) {
+			void *t = a[n - 1];
+			a[n - 1] = a[mid];
+			a[mid] = t;
+			if (cmp(a[mid], a[0], user) < 0) {
+				t = a[mid];
+				a[mid] = a[0];
+				a[0] = t;
+			}
+		}
+		void *pivot = a[mid];
+		// The element at n-1 is >= the pivot. Put it out of the way by moving
+		// it to the (now unused) median slot.
+		a[mid] = a[n - 1];
+
+		size_t j = 0;
+		for (size_t i = 0; i < n - 1; i++) {
+			if (cmp(a[i], pivot, user) < 0) {
+				void *t = a[i];
+				a[i] = a[j];
+				a[j] = t;
+				j++;
+			}
+		}
+		a[n - 1] = a[j];
+		a[j] = pivot;
+
+		// Recurse into the smaller partition and iterate over the bigger one
+		// to limit the stack depth to O(log(n)).
+		if (j < n - j - 1) {
+			pvector_quick_sort(a, j, cmp, user);
+			a += j + 1;
+			n = n - j - 1;
+		} else {
+			pvector_quick_sort(a + j + 1, n - j - 1, cmp, user);
+			n = j;
 		}
 	}
-	a[n - 1] = a[j];
-	a[j] = pivot;
-	quick_sort(a, j, cmp, user);
-	quick_sort(a + j + 1, n - j - 1, cmp, user);
+	if (n > 1) {
+		pvector_insertion_sort(a, n, cmp, user);
+	}
 }
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
@@ -903,7 +1016,7 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 	if (rz_pvector_empty(vec)) {
 		return;
 	}
-	quick_sort(vec->v.a, vec->v.len, cmp, user);
+	pvector_quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
 
 /**
