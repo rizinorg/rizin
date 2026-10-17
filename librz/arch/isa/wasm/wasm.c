@@ -1150,6 +1150,9 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			++op->len;
 			rz_strbuf_setf(sb, "%s %d", opdef->txt, lane);
 		} break;
+		default:
+			// unhandled simd subopcodes must not decode as valid
+			goto err;
 		}
 	} else {
 		goto err;
@@ -1284,7 +1287,7 @@ RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
 			}
 			top = *(ut32 *)rz_vector_tail(&stack);
 			sc = scope_at(idx, top);
-			// Skip recording a stray else; consuming it keeps earlier scopes valid.
+			// Skip recording a stray else, consuming it keeps earlier scopes valid.
 			if (sc->is_if && sc->else_at == UT32_MAX) {
 				sc->else_at = off;
 			}

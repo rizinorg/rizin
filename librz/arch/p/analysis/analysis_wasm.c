@@ -319,7 +319,23 @@ static ut64 get_cf_offset(RzAnalysis *analysis, const ut8 *data, int len) {
 	return *(ut64 *)rz_vector_index_ptr(&ctx->calls, fcn_id);
 }
 
-static bool advance_till_scope_end(RzAnalysis *analysis, RzAnalysisOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
+// Slot hint of the depth-th enclosing opener, NULL when unknown.
+static RzAnalysisHint *wasm_scope_opener(RzAnalysis *analysis, WasmContext *ctx, ut32 depth) {
+	RzAnalysisHint *hint;
+	if (!ctx || ctx->scope_hint == UT64_MAX || depth > UT64_MAX - ctx->scope_hint) {
+		return NULL;
+	}
+	hint = rz_analysis_hint_get(analysis, ctx->scope_hint + depth);
+	if (!hint || !hint->opcode || hint->jump == UT64_MAX ||
+		(strncmp("loop", hint->opcode, 4) && strncmp("block", hint->opcode, 5) &&
+			strncmp("if", hint->opcode, 2))) {
+		rz_analysis_hint_free(hint);
+		return NULL;
+	}
+	return hint;
+}
+
+static bool advance_till_scope_end(RzAnalysis *analysis, RzAnalysisOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else, bool may_scan) {
 	WasmContext *ctx = analysis->plugin_data;
 	ut8 buffer[16];
 	ut8 *end = buffer + sizeof(buffer);
@@ -333,6 +349,11 @@ static bool advance_till_scope_end(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 			return true;
 		}
 	}
+	// A forward scan never sees the opener it starts behind, so without a
+	// proven non loop target it would answer with a loop end for a loop.
+	if (!may_scan) {
+		return false;
+	}
 	while (analysis->iob.read_at(analysis->iob.io, address, buffer, sizeof(buffer))) {
 		WasmOp wop = { 0 };
 		int size = wasm_dis(&wop, buffer, (int)(end - buffer));
@@ -341,7 +362,7 @@ static bool advance_till_scope_end(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 		bool core = wop.type == WASM_TYPE_OP_CORE && !stop;
 		free(wop.txt);
 		if (stop) {
-			// invalid stops here; unreachable is skipped.
+			// invalid stops here, unreachable is skipped.
 			break;
 		}
 		if (core) {
@@ -462,7 +483,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				rz_analysis_hint_set_opcode(analysis, ctx->scope_hint, "if");
 				rz_analysis_hint_set_jump(analysis, ctx->scope_hint, addr);
 			}
-			if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, 0, true)) {
+			if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, 0, true, true)) {
 				op->fail = addr + op->size;
 			}
 			break;
@@ -473,35 +494,36 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint->jump;
 			} else {
-				advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, 0, true);
+				advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, 0, true, true);
 			}
 			break;
 		case WASM_OP_BR: {
 			RzAnalysisHint *hint2 = NULL;
+			RzAnalysisHint *opener = NULL;
 			ut32 val = 0;
 			read_u32_leb128(data + 1, data + len, &val);
 			hint2 = rz_analysis_hint_get(analysis, addr);
 			if (hint2 && hint2->jump != UT64_MAX && !wasm_fn_patched(ctx, addr)) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = hint2->jump;
-			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
-				if (!val && hint->opcode && !strncmp("loop", hint->opcode, 4)) {
+			} else if ((opener = wasm_scope_opener(analysis, ctx, val)) != NULL) {
+				if (!strncmp("loop", opener->opcode, 4)) {
 					op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-					op->jump = hint->jump;
+					op->jump = opener->jump;
 				} else {
-					advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, val, false);
+					advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, val, false, true);
 				}
+				rz_analysis_hint_free(opener);
+			} else if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, val, false, false)) {
+				RZ_LOG_ERROR("wasm: cannot find jump type for br (using block type)\n");
 			} else {
-				if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_JMP, val, false)) {
-					RZ_LOG_ERROR("wasm: cannot find jump type for br (using block type)\n");
-				} else {
-					RZ_LOG_ERROR("wasm: cannot find jump for br\n");
-				}
+				RZ_LOG_ERROR("wasm: cannot find jump for br\n");
 			}
 			rz_analysis_hint_free(hint2);
 		} break;
 		case WASM_OP_BRIF: {
 			RzAnalysisHint *hint2 = NULL;
+			RzAnalysisHint *opener = NULL;
 			ut32 val = 0;
 			read_u32_leb128(data + 1, data + len, &val);
 			hint2 = rz_analysis_hint_get(analysis, addr);
@@ -509,23 +531,20 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = hint2->jump;
 				op->fail = addr + op->size;
-			} else if ((hint = rz_analysis_hint_get(analysis, ctx->scope_hint))) {
-				if (!val && hint->opcode && !strncmp("loop", hint->opcode, 4)) {
+			} else if ((opener = wasm_scope_opener(analysis, ctx, val)) != NULL) {
+				if (!strncmp("loop", opener->opcode, 4)) {
 					op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 					op->fail = addr + op->size;
-					op->jump = hint->jump;
-				} else {
-					if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, val, false)) {
-						op->fail = addr + op->size;
-					}
-				}
-			} else {
-				if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, val, false)) {
-					RZ_LOG_ERROR("wasm: cannot find jump type for br_if (using block type)\n");
+					op->jump = opener->jump;
+				} else if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, val, false, true)) {
 					op->fail = addr + op->size;
-				} else {
-					RZ_LOG_ERROR("wasm: cannot find jump for br_if\n");
 				}
+				rz_analysis_hint_free(opener);
+			} else if (advance_till_scope_end(analysis, op, addr + op->size, RZ_ANALYSIS_OP_TYPE_CJMP, val, false, false)) {
+				RZ_LOG_ERROR("wasm: cannot find jump type for br_if (using block type)\n");
+				op->fail = addr + op->size;
+			} else {
+				RZ_LOG_ERROR("wasm: cannot find jump for br_if\n");
 			}
 			rz_analysis_hint_free(hint2);
 		} break;
@@ -657,15 +676,18 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 			break;
 		case WASM_OP_CALL:
-		case WASM_OP_CALLINDIRECT:
-			// call_indirect encodes type/table immediates, not a fcn
-			// index, resolving it is legacy best-effort, not a table lookup.
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			op->jump = get_cf_offset(analysis, data, len);
 			op->fail = addr + op->size;
 			if (op->jump != UT64_MAX) {
 				op->ptr = op->jump;
 			}
+			break;
+		case WASM_OP_CALLINDIRECT:
+			// the immediate is a type index and the table is resolved at
+			// runtime so no static target exists
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			op->fail = addr + op->size;
 			break;
 		case WASM_OP_RETURN:
 			// should be ret, but if there the analisys is stopped.

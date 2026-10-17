@@ -10,7 +10,7 @@
 #include "../../librz/arch/isa/wasm/wasm.c"
 
 bool test_wasm_scope_br_if(void) {
-	/* block; nop; br_if 0; end; end. Scan starts on the block end. */
+	/* block, nop, br_if 0, end, end. Scan starts on the block end. */
 	const ut8 buf[] = { 0x02, 0x40, 0x01, 0x0d, 0x00, 0x0b, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -22,7 +22,7 @@ bool test_wasm_scope_br_if(void) {
 }
 
 bool test_wasm_scope_if_else(void) {
-	/* if; nop; else; nop; end; end */
+	/* if, nop, else, nop, end, end */
 	const ut8 buf[] = { 0x04, 0x40, 0x01, 0x05, 0x01, 0x0b, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -36,7 +36,7 @@ bool test_wasm_scope_if_else(void) {
 }
 
 bool test_wasm_scope_loop_br(void) {
-	/* loop; nop; br 0; end. Query starts on the byte after br. */
+	/* loop, nop, br 0, end. Query starts on the byte after br. */
 	const ut8 buf[] = { 0x03, 0x40, 0x01, 0x0c, 0x00, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -48,7 +48,7 @@ bool test_wasm_scope_loop_br(void) {
 }
 
 bool test_wasm_scope_outer_br(void) {
-	/* block; block; br_if 1; end; end */
+	/* block, block, br_if 1, end, end */
 	const ut8 buf[] = { 0x02, 0x40, 0x02, 0x40, 0x0d, 0x01, 0x0b, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -62,7 +62,7 @@ bool test_wasm_scope_outer_br(void) {
 }
 
 bool test_wasm_scope_unreachable(void) {
-	// loop; unreachable; br 0; end; end. unreachable must not end the index.
+	// loop, unreachable, br 0, end, end. unreachable must not end the index.
 	const ut8 buf[] = { 0x03, 0x40, 0x00, 0x0c, 0x00, 0x0b, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -74,7 +74,7 @@ bool test_wasm_scope_unreachable(void) {
 }
 
 bool test_wasm_scope_br_in_then(void) {
-	// if; br 0; else; nop; end; end. br 0 targets the if end, not the else body.
+	// if, br 0, else, nop, end, end. br 0 targets the if end, not the else body.
 	const ut8 buf[] = { 0x04, 0x40, 0x0c, 0x00, 0x05, 0x01, 0x0b, 0x0b };
 	WasmScopeIndex *idx = wasm_scope_index_new(buf, sizeof(buf));
 	ut32 jump = UT32_MAX;
@@ -151,7 +151,7 @@ bool test_wasm_calls_three_functions(void) {
 }
 
 bool test_wasm_calls_and_aav(void) {
-	// import func, import memory, import func, defined body: call 0; call 1; call 2.
+	// import func, import memory, import func, defined body: call 0, call 1, call 2.
 	// Function index 2 is the defined body. Imports have no code address.
 	// export "go" of function 2. An export must not insert another call slot.
 	const char *uri = "hex://0061736d01000000010401600000021c0303656e760161000003656e76036d656d02000103656e76016200000302010007060102676f00020a0a0108001000100110020b";
@@ -267,7 +267,7 @@ bool test_wasm_dis_empty(void) {
 }
 
 bool test_wasm_patch_no_index(void) {
-	// fn1's call builds the cache and hook without indexing; fn0 sees only
+	// fn1's call builds the cache and hook without indexing, fn0 sees only
 	// slot pushes. Patching fn0 must still mark it patched and recompute.
 	const char *uri = "hex://0061736d01000000010401600000030302000007060102676f00000a100208000240010d000b0b050010000b0b";
 	RzCore *core = rz_core_new();
@@ -382,7 +382,7 @@ bool test_wasm_patch_invalidates(void) {
 }
 
 bool test_wasm_fallback_after_unreachable(void) {
-	// loop; br_if 0; unreachable; end; 0xff; end. The 0xff stops indexing,
+	// loop, br_if 0, unreachable, end, 0xff, end. The 0xff stops indexing,
 	// but the loop closed before it stays queryable, so br_if 0 targets the
 	// loop start exactly like the indexed path.
 	const ut8 body[] = { 0x03, 0x40, 0x0d, 0x00, 0x00, 0x0b, 0xff, 0x0b };
@@ -454,7 +454,7 @@ bool test_wasm_call_oob_index(void) {
 }
 
 bool test_wasm_calls_va(void) {
-	// Flipping io.va rebuilds the cache; wasm has no VA shift, targets hold.
+	// Flipping io.va rebuilds the cache, wasm has no VA shift, targets hold.
 	const char *uri = "hex://0061736d01000000010401600000020b0103656e7603696d700000030403000000071202067365636f6e64000205746869726400030a1d030a0010001001100210030b08000240010d000b0b070002400c000b0b";
 	RzCore *core = rz_core_new();
 	RzCoreFile *cf;
@@ -569,6 +569,92 @@ bool test_wasm_fallback_no_index(void) {
 	ctx = core->analysis->plugin_data;
 	mu_assert_notnull(ctx, "ctx");
 	mu_assert_false(ctx->indexed, "no cache without symbols");
+	rz_core_file_close(cf);
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_wasm_loop_needs_opener(void) {
+	// block { loop { br 1, br 0, br_if 1, br_if 0 } end } end with no
+	// binary and no opener analyzed. The scan-only path cant see the
+	// enclosing loop so it must stay unresolved instead of answering
+	// with the loop end. Once the openers are analyzed every branch
+	// resolves and br 0 targets the loop start.
+	const char *uri = "hex://0061736d01000000010401600000030201000a12011000024003400c010c000d010d000b0b0b";
+	RzCore *core = rz_core_new();
+	RzCoreFile *cf;
+	RzAnalysisOp op;
+	ut8 buf[2];
+	WasmContext *ctx;
+	mu_assert_notnull(core, "core");
+	cf = rz_core_file_open(core, uri, RZ_PERM_R, 0);
+	mu_assert_notnull(cf, "open");
+	mu_assert_true(rz_analysis_use(core->analysis, "wasm"), "use wasm");
+	rz_core_cmd0(core, "e io.va=false"); // no maps w/o a binary: raw access
+	// no opener analyzed yet, so nothing can prove the target.
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1b, buf, 2), "read br 1");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1b, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br 1");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_UNK, "br 1 unresolved");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1d, buf, 2), "read br 0");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1d, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br 0");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_UNK, "br 0 unresolved");
+	mu_assert_neq(op.jump, 0x23, "br 0 does not target the loop end");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1f, buf, 2), "read br_if 1");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1f, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if 1");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_UNK, "br_if 1 unresolved");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x21, buf, 2), "read br_if 0");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x21, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if 0");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_UNK, "br_if 0 unresolved");
+	mu_assert_neq(op.jump, 0x23, "br_if 0 does not target the loop end");
+	rz_analysis_op_fini(&op);
+	// analyze both openers, which records the scope stack.
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x17, buf, 2), "read block");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x17, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "block");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_NOP, "block opener");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x19, buf, 2), "read loop");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x19, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "loop");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_NOP, "loop opener");
+	rz_analysis_op_fini(&op);
+	// now every branch has a proven enclosing scope.
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1d, buf, 2), "read br 0 again");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1d, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br 0 again");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_JMP, "br 0 branch");
+	mu_assert_eq(op.jump, 0x19, "br 0 restarts the loop");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x21, buf, 2), "read br_if 0 again");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x21, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if 0 again");
+	mu_assert_eq(op.type, (ut64)(ut32)RZ_ANALYSIS_OP_TYPE_CJMP, "br_if 0 conditional");
+	mu_assert_eq(op.jump, 0x19, "br_if 0 restarts the loop");
+	mu_assert_eq(op.fail, 0x23, "br_if 0 falls through");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1b, buf, 2), "read br 1 again");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1b, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br 1 again");
+	mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_JMP, "outer branch");
+	mu_assert_eq(op.jump, 0x24, "br 1 targets the block end");
+	rz_analysis_op_fini(&op);
+	mu_assert_true(rz_io_read_at_mapped(core->io, 0x1f, buf, 2), "read br_if 1 again");
+	rz_analysis_op_init(&op);
+	mu_assert_true(rz_analysis_op(core->analysis, &op, 0x1f, buf, 2, RZ_ANALYSIS_OP_MASK_BASIC) > 0, "br_if 1 again");
+	mu_assert_eq(op.type, (ut64)(ut32)RZ_ANALYSIS_OP_TYPE_CJMP, "br_if 1 conditional");
+	mu_assert_eq(op.jump, 0x24, "br_if 1 targets the block end");
+	mu_assert_eq(op.fail, 0x21, "br_if 1 falls through");
+	rz_analysis_op_fini(&op);
+	ctx = core->analysis->plugin_data;
+	mu_assert_notnull(ctx, "ctx");
+	mu_assert_false(ctx->indexed, "still no index without symbols");
 	rz_core_file_close(cf);
 	rz_core_free(core);
 	mu_end;
@@ -797,6 +883,7 @@ bool all_tests(void) {
 	mu_run_test(test_wasm_patch_no_index);
 	mu_run_test(test_wasm_oversized_tracked);
 	mu_run_test(test_wasm_fallback_no_index);
+	mu_run_test(test_wasm_loop_needs_opener);
 	mu_run_test(test_wasm_hook_single);
 	mu_run_test(test_wasm_index_fallback_agree);
 	mu_run_test(test_wasm_dis_bounds);

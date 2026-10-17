@@ -86,7 +86,8 @@ RZ_API void rz_event_free(RzEvent *ev);
 RZ_API RzEventCallbackHandle rz_event_hook(RzEvent *ev, int type, RzEventCallback cb, void *user);
 RZ_API void rz_event_unhook(RzEvent *ev, RzEventCallbackHandle handle);
 /** \brief Remove every callback matching \p cb and \p user for \p type.
- * Needs no stored handle; lets an owner keep at most one subscription. */
+ * RZ_EVENT_ALL removes the matching registrations for every event type.
+ * It needs no stored handle and lets an owner keep at most one subscription. */
 RZ_API void rz_event_unhook_by_callback(RzEvent *ev, int type, RzEventCallback cb, void *user);
 RZ_API void rz_event_send(RzEvent *ev, int type, void *data);
 
