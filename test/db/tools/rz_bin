@@ -20,7 +20,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=baddr (2)
+NAME=baddr (2 - 0x800000)
 FILE=bins/elf/analysis/hello-linux-x86_64
 TOOL=rz-bin
 ARGS=-B 0x800000 -qe

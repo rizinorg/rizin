@@ -709,7 +709,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=M68k, HPPA, Sparc, x86
+NAME=cmd_open: M68k, HPPA, Sparc, x86 iA
 FILE=bins/mach0/2048-NeXTSTEP
 CMDS=<<EOF
 iA
@@ -725,7 +725,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=M68k, HPPA, Sparc, x86
+NAME=cmd_open: M68k, HPPA, Sparc, x86 obs slice selection
 FILE=bins/mach0/2048-NeXTSTEP
 CMDS=<<EOF
 

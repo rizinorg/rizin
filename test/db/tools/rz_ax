@@ -222,7 +222,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-ax Tx23
+NAME=rz-ax Tx23 (repeat)
 TOOL=rz-ax
 ARGS=Tx23
 EXPECT=<<EOF
@@ -624,7 +624,7 @@ octal   011064
 EOF
 RUN
 
-NAME=rz-ax -p
+NAME=rz-ax -p 0xb3
 TOOL=rz-ax
 ARGS=-p 0xb3
 EXPECT=<<EOF
@@ -634,7 +634,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-ax -p
+NAME=rz-ax -p 110
 TOOL=rz-ax
 ARGS=-p 110
 EXPECT=<<EOF

@@ -16,7 +16,7 @@ swift
 EOF
 RUN
 
-NAME=tcc
+NAME=tcc (list calling conventions)
 FILE=bins/elf/ls
 CMDS=tcc
 EXPECT=<<EOF
@@ -48,7 +48,7 @@ rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;
 EOF
 RUN
 
-NAME=tcc
+NAME=tcc (custom calling convention definition)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

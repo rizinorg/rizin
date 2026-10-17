@@ -1,4 +1,4 @@
-NAME=pe entrypoint
+NAME=pe entrypoint (ie)
 FILE=bins/pe/base.exe
 CMDS=ie~program
 EXPECT=<<EOF
@@ -1413,7 +1413,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pe32 imported libs (il)
+NAME=pe32 imported libs (il) imports_1210
 FILE=bins/pe/imports_1210.exe
 CMDS=il
 EXPECT=<<EOF
@@ -1566,7 +1566,7 @@ nth      vaddr bind type lib          name
 EOF
 RUN
 
-NAME=pe32 imported libs (il)
+NAME=pe32 imported libs (il) single_import
 FILE=bins/pe/single_import.exe
 CMDS=il
 EXPECT=<<EOF

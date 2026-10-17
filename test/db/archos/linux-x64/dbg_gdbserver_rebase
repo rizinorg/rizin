@@ -1,4 +1,4 @@
-NAME=function rebase
+NAME=gdbserver: function rebase
 FILE=bins/elf/analysis/pie
 BROKEN=1
 CMDS=<<EOF
@@ -14,7 +14,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bp rebase
+NAME=gdbserver: bp rebase
 FILE=bins/elf/analysis/pie
 BROKEN=1
 CMDS=<<EOF
@@ -32,7 +32,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ref rebase
+NAME=gdbserver: ref rebase
 FILE=bins/elf/hello_world
 BROKEN=1
 CMDS=<<EOF
@@ -49,7 +49,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=flag rebase
+NAME=gdbserver: flag rebase
 FILE=bins/elf/analysis/pie
 BROKEN=1
 CMDS=<<EOF
@@ -67,7 +67,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=var rebase
+NAME=gdbserver: var rebase
 FILE=bins/elf/hello_world
 BROKEN=1
 CMDS=<<EOF

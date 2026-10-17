@@ -193,7 +193,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wf
+NAME=cmd_w: wfx
 FILE==
 CMDS=<<EOF
 wx 0102030405060708
@@ -216,7 +216,7 @@ hello
 EOF
 RUN
 
-NAME=wx
+NAME=cmd_w: wx
 FILE==
 CMDS=<<EOF
 wx 553344
@@ -234,7 +234,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wa
+NAME=cmd_w: wa
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -320,7 +320,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wo
+NAME=cmd_w: wo
 FILE==
 CMDS=<<EOF
 b 10
@@ -335,7 +335,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wd
+NAME=cmd_w: wd
 FILE==
 CMDS=<<EOF
 wx 010203 @ 0x10

@@ -1,4 +1,4 @@
-NAME=Search file error - no file
+NAME=cmd_search_F: Search file error - no file
 FILE=malloc://64
 CMDS=<<EOF
 /F doesnt_exist

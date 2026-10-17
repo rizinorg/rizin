@@ -1,4 +1,4 @@
-NAME=snes speed_test_v51
+NAME=analysis: snes speed_test_v51
 FILE=bins/snes/speed_test_v51.sfc
 CMDS=<<EOF
 e analysis.hasnext=true
@@ -72,7 +72,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=snes cx4test
+NAME=analysis: snes cx4test
 FILE=bins/snes/cx4test.sfc
 CMDS=<<EOF
 aaa

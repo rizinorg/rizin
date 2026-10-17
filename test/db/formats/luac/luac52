@@ -33,7 +33,7 @@ machine  Lua 5.2 VM
 EOF
 RUN
 
-NAME=LUAC: broken file
+NAME=LUAC: broken file 5.2 (random52)
 FILE=bins/luac/random52.luac
 CMDS=<<EOF
 EOF

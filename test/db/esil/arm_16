@@ -65,7 +65,7 @@ addw_emulation
 EOF
 RUN
 
-NAME=cmp neq unchanged zf
+NAME=arm_16: cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -84,7 +84,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp neq changed zf
+NAME=arm_16: cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -104,7 +104,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp eq unchanged zf
+NAME=arm_16: cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -125,7 +125,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp eq changed zf
+NAME=arm_16: cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -165,7 +165,7 @@ r0 = 0x11223344
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1]
+NAME=arm_16: ldrd r2, r3, [r1]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -186,7 +186,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1, #4]
+NAME=arm_16: ldrd r2, r3, [r1, #4]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -227,7 +227,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1, #4]!
+NAME=arm_16: ldrd r2, r3, [r1, #4]!
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -250,7 +250,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1], #4
+NAME=arm_16: ldrd r2, r3, [r1], #4
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -482,7 +482,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ldr r2, [r3, r1]
+NAME=arm_16: ldr r2, [r3, r1]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -934,7 +934,7 @@ r7 = 0xffff8833
 EOF
 RUN
 
-NAME=cbz/cbnz likeliness
+NAME=arm_16: cbz/cbnz likeliness
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -962,7 +962,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pc points to next instruction
+NAME=arm_16: pc points to next instruction
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -977,7 +977,7 @@ r0 = 0x00000002
 EOF
 RUN
 
-NAME=lr correct after bl
+NAME=arm_16: lr correct after bl
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm

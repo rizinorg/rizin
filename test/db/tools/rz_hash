@@ -544,7 +544,7 @@ hexadecimal: 0x00000000-0x00000000 md2: 8350e5a3e24c153df2275c9f80692773
 EOF
 RUN
 
-NAME=rz-hash -c with correct expected hash
+NAME=rz-hash -c with correct expected md2 hash
 TOOL=rz-hash
 ARGS=-a md2 -s admin -c 3e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=<<EOF
@@ -552,7 +552,7 @@ string: 0x00000000-0x00000005 md2: computed hash matches the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with incorrect expected hash
+NAME=rz-hash -c with incorrect expected md2 hash
 TOOL=rz-hash
 ARGS=-a md2 -s admin -c 4e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=<<EOF
@@ -560,13 +560,13 @@ string: 0x00000000-0x00000005 md2: computed hash doesn't match the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with correct expected hash and quiet
+NAME=rz-hash -c with correct expected md2 hash and quiet
 TOOL=rz-hash
 ARGS=-qqa md2 -s admin -c 3e3e6b0e5c1c68644fc5ce3cf060211d
 EXPECT=true
 RUN
 
-NAME=rz-hash -c with missing nibble
+NAME=rz-hash -c with missing nibble (md2)
 TOOL=rz-hash
 ARGS=-a md2 -s admin -c 21232f297a57a5a743894a0e4a801fc
 EXIT_STATUS=1
@@ -608,7 +608,7 @@ EXPECT=<<EOF
 hexadecimal: 0x00000000-0x00000000 md4: 31d6cfe0d16ae931b73c59d7e0c089c0
 EOF
 RUN
-NAME=rz-hash -c with correct expected hash
+NAME=rz-hash -c with correct expected md4 hash
 TOOL=rz-hash
 ARGS=-a md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a46
 EXPECT=<<EOF
@@ -616,7 +616,7 @@ string: 0x00000000-0x00000005 md4: computed hash matches the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with incorrect expected hash
+NAME=rz-hash -c with incorrect expected md4 hash
 TOOL=rz-hash
 ARGS=-a md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a47
 EXPECT=<<EOF
@@ -624,13 +624,13 @@ string: 0x00000000-0x00000005 md4: computed hash doesn't match the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with correct expected hash and quiet
+NAME=rz-hash -c with correct expected md4 hash and quiet
 TOOL=rz-hash
 ARGS=-qqa md4 -s admin -c f9d4049dd6a4dc35d40e5265954b2a46
 EXPECT=true
 RUN
 
-NAME=rz-hash -c with missing nibble
+NAME=rz-hash -c with missing nibble (md4)
 TOOL=rz-hash
 ARGS=-a md4 -s admin -c 21232f297a57a5a743894a0e4a801fc
 EXIT_STATUS=1
@@ -672,7 +672,7 @@ hexadecimal: 0x00000000-0x00000000 sha1: da39a3ee5e6b4b0d3255bfef95601890afd8070
 EOF
 RUN
 
-NAME=rz-hash -c with correct expected hash
+NAME=rz-hash -c with correct expected md5 hash
 TOOL=rz-hash
 ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
@@ -680,7 +680,7 @@ string: 0x00000000-0x00000005 md5: computed hash matches the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with incorrect expected hash
+NAME=rz-hash -c with incorrect expected md5 hash
 TOOL=rz-hash
 ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc4
 EXPECT=<<EOF
@@ -688,13 +688,13 @@ string: 0x00000000-0x00000005 md5: computed hash doesn't match the expected one
 EOF
 RUN
 
-NAME=rz-hash -c with correct expected hash and quiet
+NAME=rz-hash -c with correct expected md5 hash and quiet
 TOOL=rz-hash
 ARGS=-qqa md5 -s admin -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=true
 RUN
 
-NAME=rz-hash -c with missing nibble
+NAME=rz-hash -c with missing nibble (md5)
 TOOL=rz-hash
 ARGS=-a md5 -s admin -c 21232f297a57a5a743894a0e4a801fc
 EXIT_STATUS=1

@@ -477,7 +477,7 @@ WARNING: The segment 40 at 0x900 seems to be invalid.
 EOF
 RUN
 
-NAME=core regs openbsd sparc64
+NAME=core regs linux sparc64
 FILE=bins/elf/core/core-linux-sparc64
 CMDS=<<EOF
 ar

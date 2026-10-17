@@ -681,14 +681,6 @@ CMDS=<<EOF
 pfo~?elf32
 pfo~?elf64
 pfo~?mz
-
-NAME=pfo lists each known FDF file once (no duplicates)
-FILE=bins/elf/echo
-ARGS=-nn
-CMDS=<<EOF
-pfo~?elf32
-pfo~?elf64
-pfo~?mz
 EOF
 EXPECT=<<EOF
 1
@@ -729,12 +721,6 @@ EXPECT=<<EOF
 1
 EOF
 RUN
-
-NAME=pf v(N) bitvector basic 8-bit MSB
-FILE==
-CMDS=<<EOF
-wx ab
-pf v(8) bits
 
 NAME=pf v(N) bitvector basic 8-bit MSB
 FILE==
