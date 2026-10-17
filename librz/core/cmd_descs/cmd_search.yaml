@@ -443,6 +443,42 @@ commands:
                 comment: "/Cl \"<0x20\""
               - text: "Search COP gadgets with the size 0x10"
                 comment: "/Cl =0x10"
+      - name: "/Cw"
+        cname: cmd_cop_gadget_search_written
+        summary: Search cop gadgets given written registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search COP gadgets which write rax"
+                comment: "/Cw rax"
+              - text: "Search COP gadgets which write rax, but do not write rbx"
+                comment: "/Cw rax,!rbx"
+      - name: "/Cr"
+        cname: cmd_cop_gadget_search_read
+        summary: Search cop gadgets given read registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search COP gadgets which read rdi"
+                comment: "/Cr rdi"
+              - text: "Search COP gadgets which do not read rbp"
+                comment: "/Cr !rbp"
   - name: "/d"
     summary: Search for a deltified sequence of bytes.
     cname: cmd_search_deltified
@@ -611,6 +647,42 @@ commands:
                 comment: "/Jl \"<0x20\""
               - text: "Search JOP gadgets with the size 0x10"
                 comment: "/Jl =0x10"
+      - name: "/Jw"
+        cname: cmd_jop_gadget_search_written
+        summary: Search JOP gadgets given written registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search JOP gadgets which write rax"
+                comment: "/Jw rax"
+              - text: "Search JOP gadgets which write rax, but do not write rbx"
+                comment: "/Jw rax,!rbx"
+      - name: "/Jr"
+        cname: cmd_jop_gadget_search_read
+        summary: Search JOP gadgets given read registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search JOP gadgets which read rdi"
+                comment: "/Jr rdi"
+              - text: "Search JOP gadgets which do not read rbp"
+                comment: "/Jr !rbp"
 
   - name: "/o"
     summary: Show offset of n instructions backward.
@@ -865,6 +937,42 @@ commands:
                 comment: "/Rl \"<0x20\""
               - text: "Search ROP gadgets with the size 0x10"
                 comment: "/Rl =0x10"
+      - name: "/Rw"
+        cname: cmd_rop_gadget_search_written
+        summary: Search rop gadgets given written registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search ROP gadgets which write rax"
+                comment: "/Rw rax"
+              - text: "Search ROP gadgets which write rax, but do not write rbx"
+                comment: "/Rw rax,!rbx"
+      - name: "/Rr"
+        cname: cmd_rop_gadget_search_read
+        summary: Search rop gadgets given read registers
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args:
+          - name: Registers
+            type: RZ_CMD_ARG_TYPE_STRING
+            optional: false
+        details:
+          - name: Usage example
+            entries:
+              - text: "Search ROP gadgets which read rdi"
+                comment: "/Rr rdi"
+              - text: "Search ROP gadgets which do not read rbp"
+                comment: "/Rr !rbp"
   - name: "/v"
     summary: Value search.
     subcommands:

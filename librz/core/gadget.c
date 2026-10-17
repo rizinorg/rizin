@@ -1011,6 +1011,7 @@ static void gadget_print_json_mode(const RzCore *core, const RzGadgetInfo *gadge
 		pj_end(pj);
 	}
 	pj_end(pj);
+	pj_end(pj);
 }
 
 static void print_modified_reg(RzCons *cons, const RzGadgetInfo *gadget_info) {
@@ -1375,7 +1376,12 @@ static bool process_instruction(const RzGadgetType type, const RzCore *core, RzA
 }
 
 static bool is_invalid_instruction(const char *opst, const int end_gadget_cnt) {
-	rz_return_val_if_fail(opst, false);
+	// The analysis layer does not always provide a mnemonic for a decoded
+	// instruction (for example for some PowerPC instructions), so only treat
+	// the instruction as invalid when a mnemonic is actually available.
+	if (!opst) {
+		return false;
+	}
 	return !rz_str_ncasecmp(opst, "invalid", strlen("invalid")) ||
 		!rz_str_ncasecmp(opst, ".byte", strlen(".byte")) ||
 		end_gadget_cnt > 1;
@@ -1998,6 +2004,32 @@ static bool match_constraints(const RzGadgetInfo *gadget_info, const RzPVector /
 	return true;
 }
 
+/**
+ * \brief Check whether a gadget satisfies all the given register conditions.
+ * \param gadget_info Pointer to the RzGadgetInfo object to check.
+ * \param filters RZ_NULLABLE Vector of RzGadgetRegFilter conditions, matched with AND semantics.
+ * \param mask Either RZ_GADGET_DETAIL_SEARCH_WRITE or RZ_GADGET_DETAIL_SEARCH_READ.
+ * \return true if all conditions are satisfied, false otherwise.
+ */
+static bool match_reg_filters(const RzGadgetInfo *gadget_info, const RzPVector /*<RzGadgetRegFilter *>*/ *filters,
+	RzGadgetDetailSearchMask mask) {
+	if (!gadget_info || !filters || rz_pvector_empty(filters)) {
+		return true;
+	}
+
+	void **it;
+	rz_pvector_foreach (filters, it) {
+		const RzGadgetRegFilter *filter = *it;
+		const bool used = (mask & RZ_GADGET_DETAIL_SEARCH_WRITE)
+			? rz_core_gadget_info_has_register(gadget_info, filter->name)
+			: rz_core_gadget_reg_info_has_event(gadget_info, RZ_GADGET_EVENT_VAR_READ, filter->name);
+		if (used == filter->negate) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool apply_post_build_filters(RzCore *core, RzGadgetSearchContext *context,
 	RzPVector /*<RzCoreAsmHit *>*/ *hitlist, int delay_size, ut64 gadget_addr) {
 
@@ -2024,6 +2056,11 @@ static bool apply_post_build_filters(RzCore *core, RzGadgetSearchContext *contex
 				return false;
 			}
 			if (!match_detail_search(search_val, cmp_op, target)) {
+				return false;
+			}
+		}
+		if (context->detail_mask & (RZ_GADGET_DETAIL_SEARCH_WRITE | RZ_GADGET_DETAIL_SEARCH_READ)) {
+			if (!match_reg_filters(gadget_info, context->reg_filters, context->detail_mask)) {
 				return false;
 			}
 		}
