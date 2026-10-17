@@ -1332,7 +1332,8 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 			esilprintf(op, "ctr,pc,=");
 			break;
 		case PPC_INS_BCTRL: // switch table here
-			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
+			op->fail = addr + op->size;
 			esilprintf(op, "pc,lr,=,ctr,pc,=");
 			break;
 #if CS_API_MAJOR == 5 && CS_NEXT_VERSION < 6
@@ -1454,16 +1455,26 @@ static int ppc_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 
 		case PPC_INS_BCLRL:
 		case PPC_INS_BCCTR:
 		case PPC_INS_BCCTRL: {
+			// blr and bctrl may be reported with the generic BCLR/BCCTRL IDs
+			// (Capstone aliases), so the instruction ID alone cannot tell a
+			// conditional branch from an unconditional one. The BO field does:
+			// a branch is conditional as soon as it tests a CR bit or CTR.
+			// The BO field is decoded from the raw instruction bytes, so this
+			// works on every supported Capstone version.
+			ut8 bo = PPC_READ_BO_FIELD;
+			bool tests_cr = !(bo & PPC_BO_IGNORE_CR);
+			bool tests_ctr = !(bo & PPC_BO_IGNORE_CTR);
+			bool branch_conditional = tests_cr || tests_ctr;
 			if (insn->id == PPC_INS_BC || insn->id == PPC_INS_BCCTR) {
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			} else if (insn->id == PPC_INS_B || insn->id == PPC_INS_BA) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			} else if (insn->id == PPC_INS_BCLR || insn->id == PPC_INS_BCLRL) {
-				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
+				op->type = branch_conditional ? RZ_ANALYSIS_OP_TYPE_CRET : RZ_ANALYSIS_OP_TYPE_RET;
 			} else if (insn->id == PPC_INS_BLR || insn->id == PPC_INS_BLRL) {
 				op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			} else if (insn->id == PPC_INS_BCCTRL) {
-				op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
+				op->type = branch_conditional ? RZ_ANALYSIS_OP_TYPE_CCALL : RZ_ANALYSIS_OP_TYPE_UCALL;
 			}
 			bool cr_cond_set = true;
 			bool ctr_cond_set = true;
