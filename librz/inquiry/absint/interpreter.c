@@ -1086,6 +1086,34 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 	}
 }
 
+static void add_block_to_conflict_list(RzAnalysis *analysis, RzAbsIntCFGConflicts *conflicts, RzAbsIntBlock *block, ut64 fcn_addr) {
+	ut64 start = rz_absint_block_get_start(block);
+	RzAbsIntCFGConflictAddResult res = rz_abs_int_cfg_conflict_add(conflicts, fcn_addr, block);
+	if (res == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
+		RZ_LOG_ERROR("Failed add block @ 0x%" PFMT64x " to the conflict list.\n", start);
+		return;
+	} else if (res == RZ_ABSINT_CONFLICT_BLOCK_KNOWN) {
+		return;
+	}
+	// This is the first time the two conflicting blocks are detected.
+	// We need to find the block which is already assigned to a function
+	// and add it to the conflict list. So the list is complete.
+	RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
+	if (!abb) {
+		rz_warn_if_reached();
+		return;
+	}
+	if (rz_list_length(abb->fcns) != 1) {
+		rz_warn_if_reached();
+		return;
+	}
+	RzAnalysisFunction *fcn = rz_list_get_n(abb->fcns, 0);
+	if (rz_abs_int_cfg_conflict_add(conflicts, fcn->addr, block) == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
+		rz_warn_if_reached();
+		return;
+	}
+}
+
 /**
  * \brief Applies the results of the abstract interpreter to RzAnalysis.
  *
@@ -1098,8 +1126,8 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
  *
  * \return True for success, false in case of failure.
  */
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name) {
-	rz_return_val_if_fail(res && analysis, false);
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RZ_NULLABLE const char *fcn_name) {
+	rz_return_val_if_fail(res && analysis && conflicts, false);
 	char name_alt[32] = { 0 };
 	RzAnalysisFunction *func = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
 	if (!func) {
@@ -1145,12 +1173,10 @@ RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, R
 			block = next_block;
 		}
 
+		// Returns NULL for failures or if the block is already used by another function.
 		RzAnalysisBlock *abb = rz_analysis_create_block(analysis, start, end_excl - start);
 		if (!abb) {
-			// TODO: Handle the case of existing blocks better, e.g. just use the existing block
-			// and optionally update its contents with some new information we have gained.
-			RZ_LOG_ERROR("Failed to create block @ 0x%" PFMT64x "%s\n", start,
-				rz_analysis_get_block_at(analysis, start) ? " because there is already a block and handling this is not yet implemented" : "");
+			add_block_to_conflict_list(analysis, conflicts, block, func->addr);
 			continue;
 		}
 

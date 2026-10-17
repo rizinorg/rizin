@@ -94,6 +94,27 @@ typedef struct rz_absint_block_t {
 	RzVector /*<ut64>*/ jump_targets; ///< Explicit jump targets, does not contain fallthrough address
 } RzAbsIntBlock;
 
+typedef struct {
+	/**
+	 * \brief Holds all the basic blocks which have the same successor but belong to different functions.
+	 * Indexed by block addresses.
+	 * Values are Vectors of the <const RzAbsIntBlock *block, ut64 fcn_addr> pairs.
+	 * So every pair is the association of the block with a function.
+	 */
+	HtUP /*<RzVector *>*/ *cfg_conflicts;
+} RzAbsIntCFGConflicts;
+
+typedef enum {
+	RZ_ABSINT_CONFLICT_BLOCK_ERROR,
+	RZ_ABSINT_CONFLICT_BLOCK_NEW,
+	RZ_ABSINT_CONFLICT_BLOCK_KNOWN,
+} RzAbsIntCFGConflictAddResult;
+
+RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_abs_int_cfg_conflict_new();
+RZ_API void rz_abs_int_cfg_conflict_free(RZ_OWN RZ_NULLABLE RzAbsIntCFGConflicts *conflicts);
+RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbsIntCFGConflicts *conflicts, ut64 fcn_id, const RzAbsIntBlock *block);
+RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts);
+
 typedef struct rz_absint_instance_t RzAbsIntInstance;
 
 typedef struct rz_absint_value_domain_t {
@@ -252,7 +273,7 @@ typedef enum rz_absint_result_code_t {
 
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name);
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RZ_NULLABLE const char *fcn_name);
 
 typedef enum rz_absint_builtin_value_domain_t {
 	RZ_ABSINT_VALUE_DOMAIN_CONST
