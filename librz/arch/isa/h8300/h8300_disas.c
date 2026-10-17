@@ -1115,6 +1115,20 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 	default:
 		break;
 	}
+	/* 4-byte forms. h8300_decode_2() must not call these: it runs for len >= 2. */
+	switch (instr[0]) {
+	case 0x5a:
+		cmd->id = H8300_INSN_JMP;
+		return decode_abs16_4(instr, cmd);
+	case 0x5e:
+		cmd->id = H8300_INSN_JSR;
+		return decode_abs16_4(instr, cmd);
+	case 0x6e:
+		cmd->id = H8300_INSN_MOV_B;
+		return decode_rd3216r8_4(instr, cmd);
+	default:
+		break;
+	}
 	return -1;
 }
 
@@ -1406,10 +1420,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	case 0x6d:
 		cmd->id = H8300_INSN_MOV_W;
 		ret = decode_incdecr16(instr, cmd);
-		break;
-	case 0x6e:
-		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_rd3216r8_4(instr, cmd);
 		break;
 
 	default: break;
