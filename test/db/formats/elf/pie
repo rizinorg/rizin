@@ -23,7 +23,7 @@ baddr    0x00300000
 EOF
 RUN
 
-NAME=ELF: rz-bin entrypoint with baddr
+NAME=ELF: rz-bin info baddr with -B
 TOOL=rz-bin
 ARGS=-I -B 0x300000 bins/elf/analysis/pie
 REGEXP_FILTER_OUT=baddr.+
@@ -41,7 +41,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: sym.main
+NAME=ELF: sym.main (pie)
 FILE=bins/elf/analysis/pie
 CMDS=%v sym.main
 EXPECT=<<EOF
@@ -49,7 +49,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ELF: simple.elf - code
+NAME=ELF: pie - code (-n)
 FILE=bins/elf/analysis/pie
 ARGS=-n
 CMDS=<<EOF
@@ -69,7 +69,7 @@ ret
 EOF
 RUN
 
-NAME=ELF: simple.elf - code
+NAME=ELF: pie - code (-n -b32)
 FILE=bins/elf/analysis/pie
 ARGS=-n -b32
 CMDS=<<EOF

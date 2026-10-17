@@ -1,4 +1,4 @@
-NAME=dmhja/dmhjb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
+NAME=freebsd-x64: dmhja/dmhjb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -43,7 +43,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
+NAME=freebsd-x64: dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -88,7 +88,7 @@ Extent @ 0x7faa2cc16500
 EOF
 RUN
 
-NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
+NAME=freebsd-x64: dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_riscv64.bin
 ARGS=-n
 CMDS=<<EOF

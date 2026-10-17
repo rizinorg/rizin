@@ -445,7 +445,7 @@ mr r10, r4
 EOF
 RUN
 
-NAME=rz-asm #1900
+NAME=rz-asm #1900 mov [0x33], eax
 TOOL=rz-asm
 FILE=mov [0x33], eax
 ARGS=-a x86 -b 32
@@ -454,7 +454,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm #1900
+NAME=rz-asm #1900 mov eax, 33
 TOOL=rz-asm
 FILE=mov eax, 33
 ARGS=-a x86 -b 32
@@ -463,7 +463,7 @@ b821000000
 EOF
 RUN
 
-NAME=rz-asm #1900
+NAME=rz-asm #1900 mov eax, 0x33
 TOOL=rz-asm
 FILE=mov eax, 0x33
 ARGS=-a x86 -b 32

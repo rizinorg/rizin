@@ -521,7 +521,7 @@ Environment variables
 EOF
 RUN
 
-NAME=rz-find -h
+NAME=tools/rz: rz-find -h
 TOOL=rz-find
 ARGS=-h
 EXPECT=<<EOF
@@ -601,7 +601,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-hash -h
+NAME=tools/rz: rz-hash -h
 TOOL=rz-hash
 ARGS=-h
 EXPECT=<<EOF

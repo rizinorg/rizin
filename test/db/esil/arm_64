@@ -791,7 +791,7 @@ vf = 0x0
 EOF
 RUN
 
-NAME=cbz/cbnz likeliness
+NAME=arm_64: cbz/cbnz likeliness
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -919,7 +919,7 @@ x0 = 0x0000000022114433
 EOF
 RUN
 
-NAME=lr correct after bl
+NAME=arm_64: lr correct after bl
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm

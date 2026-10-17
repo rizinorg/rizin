@@ -1384,7 +1384,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Function definition
+NAME=x86_64: Function definition
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 aaa
@@ -1396,7 +1396,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afvt
+NAME=afvt (arg)
 FILE=bins/mach0/arg
 CMDS=<<EOF
 s sym._call
@@ -1412,7 +1412,7 @@ arg int64_t arg2 @ rsi
 EOF
 RUN
 
-NAME=afvt
+NAME=afvt (macho)
 FILE=bins/mach0/macho
 CMDS=<<EOF
 s 0x100000b60
@@ -1895,7 +1895,7 @@ entry0 0xffffffffffff100a [CALL] call qword [sym.imp.msvcrt.dll_printf]
 EOF
 RUN
 
-NAME=ax-
+NAME=ax- (with address argument)
 FILE==
 CMDS=<<EOF
 ax 10 @ 20
@@ -1908,7 +1908,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ax-
+NAME=ax- (with seek)
 FILE==
 CMDS=<<EOF
 s 20
@@ -1982,7 +1982,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aoj pushf
+NAME=x86_64: aoj pushf
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -3358,7 +3358,7 @@ stackptr: 8
 EOF
 RUN
 
-NAME=af jmp after ret
+NAME=af jmp after ret (count)
 FILE=malloc://512
 CMDS=<<EOF
 e analysis.hasnext=0
@@ -3373,7 +3373,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af jmp after ret
+NAME=af jmp after ret (size)
 FILE=malloc://512
 CMDS=<<EOF
 e analysis.hasnext=0
@@ -3518,7 +3518,7 @@ mov rbp, rsp
 EOF
 RUN
 
-NAME=mac-ls switch count
+NAME=x86_64: mac-ls switch count
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 e analysis.jmp.tbl=true
@@ -4329,7 +4329,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=X86_INSTR_POP wrong order
+NAME=analysis: X86_INSTR_POP wrong order
 FILE==
 CMDS=<<EOF
 e io.va=true

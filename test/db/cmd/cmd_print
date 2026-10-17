@@ -295,7 +295,7 @@ mov edi, str.Hello_World
 EOF
 RUN
 
-NAME=pif bsz
+NAME=pif bsz (2)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -316,7 +316,7 @@ ret
 EOF
 RUN
 
-NAME=pi~?
+NAME=pi~? (2)
 FILE=malloc://1024
 CMDS=<<EOF
 pi 200~?
@@ -330,7 +330,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tmpbits
+NAME=tmpbits 64 to 32
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -344,7 +344,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tmpbits
+NAME=tmpbits 32 to 64
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -358,7 +358,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pi 3
+NAME=pi 3 (2)
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
@@ -386,7 +386,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pi 6
+NAME=pi 6 (2)
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
@@ -540,7 +540,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tmpbits
+NAME=tmpbits both
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

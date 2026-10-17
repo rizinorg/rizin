@@ -1,4 +1,4 @@
-NAME=pd call sym bug
+NAME=pd call sym bug (pd with af)
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
 e asm.lines.bb=0
@@ -84,7 +84,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd call sym bug
+NAME=pd call sym bug (pi 2)
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
 e asm.lines.bb=0

@@ -1,4 +1,4 @@
-NAME=1: k syscall/
+NAME=linux-x64: 1: k syscall/
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
@@ -11,7 +11,7 @@ stat
 EOF
 RUN
 
-NAME=2: k syscall/
+NAME=linux-x64: 2: k syscall/
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86

@@ -1,4 +1,4 @@
-NAME=Printing il statements in various formats
+NAME=arm64: Printing il statements in various formats
 FILE=bins/elf/emulateme.arm64
 CMDS=<<EOF
 s sym.decrypt

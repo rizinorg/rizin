@@ -1,4 +1,4 @@
-NAME=./pe32
+NAME=./pe32: pe.exe
 FILE=bins/pe/pe.exe
 CMDS=s
 EXPECT=<<EOF
@@ -6,7 +6,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=./pe32
+NAME=./pe32: vista-glass.exe
 FILE=bins/pe/vista-glass.exe
 CMDS=q!
 EXPECT=

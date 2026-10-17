@@ -1,4 +1,4 @@
-NAME=dcu + read
+NAME=linux-arm64: dcu + read
 FILE=bins/arm/elf/hello-linux-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -17,7 +17,7 @@ ret
 EOF
 RUN
 
-NAME=maps
+NAME=linux-arm64: maps
 FILE=bins/arm/elf/hello-linux-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -46,7 +46,7 @@ x8 = 0x00000000000000e2
 EOF
 RUN
 
-NAME=write gpr
+NAME=linux-arm64: write gpr
 FILE=bins/arm/elf/hello-linux-arm64
 ARGS=-d
 CMDS=<<EOF

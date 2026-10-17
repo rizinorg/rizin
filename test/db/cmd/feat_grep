@@ -99,7 +99,7 @@ works
 EOF
 RUN
 
-NAME=echo~[0]
+NAME=echo~[0] hex values
 FILE=malloc://1024
 CMDS=echo 0x3~[0];echo 0x999~[0]
 EXPECT=<<EOF
@@ -108,7 +108,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=echo~[0]
+NAME=echo~[0] words
 FILE=malloc://1024
 CMDS=<<EOF
 echo hello world~[0]
@@ -232,7 +232,7 @@ hello world
 EOF
 RUN
 
-NAME=colgrep
+NAME=colgrep hex
 FILE==
 CMDS=<<EOF
 echo 0x3~[0]
@@ -244,7 +244,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=colgrep
+NAME=colgrep words
 FILE==
 CMDS=<<EOF
 echo "hello world"~[0]
@@ -256,7 +256,7 @@ world
 EOF
 RUN
 
-NAME=colgrep
+NAME=colgrep multiline
 FILE==
 CMDS=<<EOF
 echo "a\na b\na b c"~[0]
@@ -273,7 +273,7 @@ c
 EOF
 RUN
 
-NAME=colgrep
+NAME=colgrep px
 FILE=malloc://1024
 CMDS=<<EOF
 wx 10203040

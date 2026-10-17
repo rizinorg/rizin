@@ -15,7 +15,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-run hex encoding input
+NAME=rz-run hex encoding input with command substitution
 FILE==
 CMDS=!rz-run input=':!rz-ax -s 3431343134313431' -- rz-ax -S
 EXPECT=<<EOF

@@ -55,7 +55,7 @@ rsp
 EOF
 RUN
 
-NAME=write gpr
+NAME=openbsd-x64: write gpr
 FILE=/home/build/bin/rz-asm
 ARGS=-d
 CMDS=<<EOF

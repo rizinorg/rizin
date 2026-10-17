@@ -37,7 +37,7 @@ EXPECT=<<EOF
 EOF1
 RUN
 
-NAME=aoj pushf
+NAME=x86_16: aoj pushf
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

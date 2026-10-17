@@ -178,7 +178,7 @@ EOF
 RUN
 
 
-NAME=rz-diff functions comparison
+NAME=rz-diff functions comparison (quiet)
 TOOL=rz-diff
 ARGS=-q -t functions -e flirt.sigdb.load.system=false -e flirt.sigdb.load.home=false bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
@@ -966,7 +966,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-diff functions comparison
+NAME=rz-diff functions comparison (table)
 TOOL=rz-diff
 ARGS=-e scr.utf8=false -e scr.utf8.curvy=false -e analysis.fcnprefix=test -e analysis.limits=true -e analysis.from=0x401460 -e analysis.to=0x4033d0 -t functions bins/other/rz-diff/true bins/other/rz-diff/false
 EXPECT=<<EOF
