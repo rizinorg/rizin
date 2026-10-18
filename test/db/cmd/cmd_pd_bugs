@@ -288,3 +288,20 @@ EXPECT=<<EOF
 [64,80,17,34,51,68]
 EOF
 RUN
+
+NAME=pdj disasm field is not replaced by unrelated import flags (issue #3552)
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+e io.cache=true
+wv4 0x40612c @ 0x400200
+wx 813d0002400033221100 @ 0x402f00
+wx 0f2f9f8c050000 @ 0x402f0a
+wx 0f8208000000 @ 0x402f11
+pdj 3 @ 0x402f00~{.[]\|{opcode,disasm}}
+EOF
+EXPECT=<<EOF
+[{"opcode":"cmp dword [0x400200], 0x112233","disasm":"cmp dword [0x400200], 0x112233"},{"opcode":"comiss xmm3, dword [edi+0x58c]","disasm":"comiss xmm3, dword [edi+0x58c]"},{"opcode":"jb 0x402f1f","disasm":"jb 0x402f1f"}]
+EOF
+RUN
