@@ -315,7 +315,7 @@ EXPECT=<<EOF
 |  |||||    0x000001b2      movlw 0x2
 |  |||||    0x000001b4      movff plusw2, 0x5c4
 | ,=======< 0x000001b8      call  fcn.0000104c, 0
-| ========< 0x000001bc      bra   0x15
+| ||||||    0x000001bc      bra   0x15
 | |`------> 0x000001be      movlb 0x5
 | | ||||    0x000001c0      movf  t2con, 0, 1
 | |,======< 0x000001c2      bnz   0x12
@@ -328,13 +328,13 @@ EXPECT=<<EOF
 | ||||||    0x000001d4      movf  plusw2, 0, 0
 | ||||||    0x000001d6      bsf   status, 0, 0
 | ||||||    0x000001d8      subfwb 0x0b, 0, 0
-| ========< 0x000001da      bnc   0x6
+| ||||||    0x000001da      bnc   0x6
 | ||||||    0x000001dc      movlw 0x1
 | ||||||    0x000001de      movff plusw2, 0x5c3
 | ||||||    0x000001e2      movlw 0x2
 | ||||||    0x000001e4      movff plusw2, 0x5c4
 | ||||||    ; CODE XREF from fcn.0000002c @ 0x1bc
-| -`------> 0x000001e8      movlw 0x1
+| |`------> 0x000001e8      movlw 0x1
 | | ||||    0x000001ea      movff plusw2, fsr0l
 | | ||||    0x000001ee      movlw 0x2
 | | ||||    0x000001f0      movff plusw2, fsr0h
@@ -455,9 +455,9 @@ EXPECT=<<EOF
 | |||||||   0x00000310      movlw 0xf4
 | |||||||   0x00000312      movf  plusw2, 0, 0
 | |||||||   0x00000314      subwf 0x0b, 0, 0
-| ========< 0x00000316      bc    0x2
-| ========< 0x00000318      call  fcn.00001766, 0
-| ---`--`-> 0x0000031c      movf  indf2, 0, 0
+| |||||||   0x00000316      bc    0x2
+| |||||||   0x00000318      call  fcn.00001766, 0
+| |||`--`-> 0x0000031c      movf  indf2, 0, 0
 | ||| ||,=< 0x0000031e      bra   0x0
 | || ||||   ; CODE XREF from fcn.0000002c @ 0x31e
 | ||| ||`-> 0x00000320      movwf 0x0b, 0

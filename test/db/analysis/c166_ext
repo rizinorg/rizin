@@ -34,7 +34,7 @@ c166-bininfo:
    ||||||   ;-- isr.user_07:
   ,=======< 0x00c0001c      fac01c05       jmps  0xc0051c
   |||||||   ;-- isr.user_08:
-  ========< 0x00c00020      fac01e05       jmps  0xc0051e
+  |||||||   0x00c00020      fac01e05       jmps  0xc0051e
 
 0 3 c166-16 ba:0x00c00000 sz:48 hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
 arch     c166
@@ -122,13 +122,13 @@ c166-bininfo:
    ||||||   ;-- isr.user_07:
   ,=======< 0x00c0001c      fac01c05       jmps  0xc0051c
   |||||||   ;-- isr.user_08:
-  ========< 0x00c00020      fac01e05       jmps  0xc0051e
+  |||||||   0x00c00020      fac01e05       jmps  0xc0051e
   |||||||   ;-- isr.user_09:
-  ========< 0x00c00024      fac02005       jmps  0xc00520
+  |||||||   0x00c00024      fac02005       jmps  0xc00520
   |||||||   ;-- isr.Class_B_trap:
-  ========< 0x00c00028      fac02205       jmps  0xc00522
+  |||||||   0x00c00028      fac02205       jmps  0xc00522
   |||||||   ;-- isr.reserved_0B:
-  ========< 0x00c0002c      fac02405       jmps  0xc00524
+  |||||||   0x00c0002c      fac02405       jmps  0xc00524
 
 0 3 c166-16 ba:0x00c00000 sz:48 hex://fac0da060000fffffac00605fac01405fac01605fac01805fac01a05fac01c05fac01e05fac02005fac02205fac02405
 arch     c166
