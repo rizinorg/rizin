@@ -223,105 +223,105 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.INT5:
   ,=======< 0x00000018      jmp   sym.handler.INT5
   |||||||   ;-- vector.INT6:
-  ========< 0x0000001c      jmp   sym.__bad_interrupt
+  |||||||   0x0000001c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.INT7:
-  ========< 0x00000020      jmp   sym.__bad_interrupt
+  |||||||   0x00000020      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.PCINT0:
-  ========< 0x00000024      jmp   sym.__bad_interrupt
+  |||||||   0x00000024      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.PCINT1:
-  ========< 0x00000028      jmp   sym.__bad_interrupt
+  |||||||   0x00000028      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.PCINT2:
-  ========< 0x0000002c      jmp   sym.__bad_interrupt
+  |||||||   0x0000002c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.WDT:
-  ========< 0x00000030      jmp   sym.__bad_interrupt
+  |||||||   0x00000030      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_COMPA:
-  ========< 0x00000034      jmp   sym.__bad_interrupt
+  |||||||   0x00000034      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_COMPB:
-  ========< 0x00000038      jmp   sym.__bad_interrupt
+  |||||||   0x00000038      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_OVF:
-  ========< 0x0000003c      jmp   sym.__bad_interrupt
+  |||||||   0x0000003c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_CAPT:
-  ========< 0x00000040      jmp   sym.__bad_interrupt
+  |||||||   0x00000040      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPA:
-  ========< 0x00000044      jmp   sym.__bad_interrupt
+  |||||||   0x00000044      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x00000048      jmp   sym.__bad_interrupt
+  |||||||   0x00000048      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPC:
-  ========< 0x0000004c      jmp   sym.__bad_interrupt
+  |||||||   0x0000004c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x00000050      jmp   sym.__bad_interrupt
+  |||||||   0x00000050      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPA:
-  ========< 0x00000054      jmp   sym.__bad_interrupt
+  |||||||   0x00000054      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPB:
-  ========< 0x00000058      jmp   sym.__bad_interrupt
+  |||||||   0x00000058      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x0000005c      jmp   sym.__bad_interrupt
+  |||||||   0x0000005c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPI_STC:
-  ========< 0x00000060      jmp   sym.__bad_interrupt
+  |||||||   0x00000060      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART0_RXC:
-  ========< 0x00000064      jmp   sym.__bad_interrupt
+  |||||||   0x00000064      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART0_UDRE:
-  ========< 0x00000068      jmp   sym.__bad_interrupt
+  |||||||   0x00000068      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART0_TXC:
-  ========< 0x0000006c      jmp   sym.__bad_interrupt
+  |||||||   0x0000006c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x00000070      jmp   sym.__bad_interrupt
+  |||||||   0x00000070      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x00000074      jmp   sym.__bad_interrupt
+  |||||||   0x00000074      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x00000078      jmp   sym.__bad_interrupt
+  |||||||   0x00000078      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_CAPT:
-  ========< 0x0000007c      jmp   sym.__bad_interrupt
+  |||||||   0x0000007c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_COMPA:
-  ========< 0x00000080      jmp   sym.handler.TIM3_COMPA
+  |||||||   0x00000080      jmp   sym.handler.TIM3_COMPA
   |||||||   ;-- vector.TIM3_COMPB:
-  ========< 0x00000084      jmp   sym.__bad_interrupt
+  |||||||   0x00000084      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_COMPC:
-  ========< 0x00000088      jmp   sym.__bad_interrupt
+  |||||||   0x00000088      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_OVF:
-  ========< 0x0000008c      jmp   sym.__bad_interrupt
+  |||||||   0x0000008c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_RXC:
-  ========< 0x00000090      jmp   sym.__bad_interrupt
+  |||||||   0x00000090      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_UDRE:
-  ========< 0x00000094      jmp   sym.__bad_interrupt
+  |||||||   0x00000094      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_TXC:
-  ========< 0x00000098      jmp   sym.__bad_interrupt
+  |||||||   0x00000098      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TWI:
-  ========< 0x0000009c      jmp   sym.__bad_interrupt
+  |||||||   0x0000009c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPM_RDY:
-  ========< 0x000000a0      jmp   sym.__bad_interrupt
+  |||||||   0x000000a0      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_CAPT:
-  ========< 0x000000a4      jmp   sym.__bad_interrupt
+  |||||||   0x000000a4      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPA:
-  ========< 0x000000a8      jmp   sym.__bad_interrupt
+  |||||||   0x000000a8      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPB:
-  ========< 0x000000ac      jmp   sym.__bad_interrupt
+  |||||||   0x000000ac      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPC:
-  ========< 0x000000b0      jmp   sym.__bad_interrupt
+  |||||||   0x000000b0      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_OVF:
-  ========< 0x000000b4      jmp   sym.__bad_interrupt
+  |||||||   0x000000b4      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM5_CAPT:
-  ========< 0x000000b8      jmp   sym.__bad_interrupt
+  |||||||   0x000000b8      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM5_COMPA:
-  ========< 0x000000bc      jmp   sym.__bad_interrupt
+  |||||||   0x000000bc      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM5_COMPB:
-  ========< 0x000000c0      jmp   sym.__bad_interrupt
+  |||||||   0x000000c0      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM5_COMPC:
-  ========< 0x000000c4      jmp   sym.__bad_interrupt
+  |||||||   0x000000c4      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM5_OVF:
-  ========< 0x000000c8      jmp   sym.__bad_interrupt
+  |||||||   0x000000c8      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART2_RXC:
-  ========< 0x000000cc      jmp   sym.__bad_interrupt
+  |||||||   0x000000cc      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART2_UDRE:
-  ========< 0x000000d0      jmp   sym.__bad_interrupt
+  |||||||   0x000000d0      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART2_TXC:
-  ========< 0x000000d4      jmp   sym.__bad_interrupt
+  |||||||   0x000000d4      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART3_RXC:
-  ========< 0x000000d8      jmp   sym.__bad_interrupt
+  |||||||   0x000000d8      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART3_UDRE:
-  ========< 0x000000dc      jmp   sym.__bad_interrupt
+  |||||||   0x000000dc      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART3_TXC:
-  ========< 0x000000e0      jmp   sym.__bad_interrupt
+  |||||||   0x000000e0      jmp   sym.__bad_interrupt
   |||||||   ;-- main:
   |||||||   ;-- entry.init0:
   |||||||   ;-- handler.RESET:
@@ -910,77 +910,77 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.Reserved_7:
   ,=======< 0x00000018      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.INT6:
-  ========< 0x0000001c      jmp   sym.__bad_interrupt
+  |||||||   0x0000001c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.Reserved_9:
-  ========< 0x00000020      jmp   sym.__bad_interrupt
+  |||||||   0x00000020      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.PCINT0:
-  ========< 0x00000024      jmp   sym.__bad_interrupt
+  |||||||   0x00000024      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.GEN_USB:
-  ========< 0x00000028      jmp   sym.handler.GEN_USB
+  |||||||   0x00000028      jmp   sym.handler.GEN_USB
   |||||||   ;-- vector.END_USB:
-  ========< 0x0000002c      jmp   sym.__bad_interrupt
+  |||||||   0x0000002c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.WDT:
-  ========< 0x00000030      jmp   sym.handler.WDT
+  |||||||   0x00000030      jmp   sym.handler.WDT
   |||||||   ;-- vector.Reserved_14:
-  ========< 0x00000034      jmp   sym.__bad_interrupt
+  |||||||   0x00000034      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.Reserved_15:
-  ========< 0x00000038      jmp   sym.__bad_interrupt
+  |||||||   0x00000038      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.Reserved_16:
-  ========< 0x0000003c      jmp   sym.__bad_interrupt
+  |||||||   0x0000003c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_CAPT:
-  ========< 0x00000040      jmp   sym.__bad_interrupt
+  |||||||   0x00000040      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPA:
-  ========< 0x00000044      jmp   sym.handler.TIM1_COMPA
+  |||||||   0x00000044      jmp   sym.handler.TIM1_COMPA
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x00000048      jmp   sym.__bad_interrupt
+  |||||||   0x00000048      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPC:
-  ========< 0x0000004c      jmp   sym.__bad_interrupt
+  |||||||   0x0000004c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x00000050      jmp   sym.__bad_interrupt
+  |||||||   0x00000050      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPA:
-  ========< 0x00000054      jmp   sym.__bad_interrupt
+  |||||||   0x00000054      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPB:
-  ========< 0x00000058      jmp   sym.__bad_interrupt
+  |||||||   0x00000058      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x0000005c      jmp   sym.__bad_interrupt
+  |||||||   0x0000005c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPI:
-  ========< 0x00000060      jmp   sym.__bad_interrupt
+  |||||||   0x00000060      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_RXC:
-  ========< 0x00000064      jmp   sym.__bad_interrupt
+  |||||||   0x00000064      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_UDRE:
-  ========< 0x00000068      jmp   sym.__bad_interrupt
+  |||||||   0x00000068      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART1_TXC:
-  ========< 0x0000006c      jmp   sym.__bad_interrupt
+  |||||||   0x0000006c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x00000070      jmp   sym.__bad_interrupt
+  |||||||   0x00000070      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x00000074      jmp   sym.__bad_interrupt
+  |||||||   0x00000074      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x00000078      jmp   sym.__bad_interrupt
+  |||||||   0x00000078      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_CAPT:
-  ========< 0x0000007c      jmp   sym.__bad_interrupt
+  |||||||   0x0000007c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_COMPA:
-  ========< 0x00000080      jmp   sym.__bad_interrupt
+  |||||||   0x00000080      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_COMPB:
-  ========< 0x00000084      jmp   sym.__bad_interrupt
+  |||||||   0x00000084      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_COMPC:
-  ========< 0x00000088      jmp   sym.__bad_interrupt
+  |||||||   0x00000088      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM3_OVF:
-  ========< 0x0000008c      jmp   sym.__bad_interrupt
+  |||||||   0x0000008c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TWI:
-  ========< 0x00000090      jmp   sym.__bad_interrupt
+  |||||||   0x00000090      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPM_RDY:
-  ========< 0x00000094      jmp   sym.__bad_interrupt
+  |||||||   0x00000094      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPA:
-  ========< 0x00000098      jmp   sym.__bad_interrupt
+  |||||||   0x00000098      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPB:
-  ========< 0x0000009c      jmp   sym.__bad_interrupt
+  |||||||   0x0000009c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_COMPD:
-  ========< 0x000000a0      jmp   sym.__bad_interrupt
+  |||||||   0x000000a0      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_OVF:
-  ========< 0x000000a4      jmp   sym.__bad_interrupt
+  |||||||   0x000000a4      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM4_FPF:
-  ========< 0x000000a8      jmp   sym.__bad_interrupt
+  |||||||   0x000000a8      jmp   sym.__bad_interrupt
   |||||||   0x000000ac      sub   r15, r17
   |||||||   0x000000ae      cp    r5, r17
   |||||||   0x000000b0      cp    r5, r23
@@ -1158,43 +1158,43 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.WDT:
   ,=======< 0x0000000c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_COMPA:
-  ========< 0x0000000e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000000e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_COMPB:
-  ========< 0x00000010      rjmp  sym.__bad_interrupt
+  |||||||   0x00000010      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM2_OVF:
-  ========< 0x00000012      rjmp  sym.__bad_interrupt
+  |||||||   0x00000012      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_CAPT:
-  ========< 0x00000014      rjmp  sym.__bad_interrupt
+  |||||||   0x00000014      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPA:
-  ========< 0x00000016      rjmp  sym.__bad_interrupt
+  |||||||   0x00000016      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x00000018      rjmp  sym.__bad_interrupt
+  |||||||   0x00000018      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x0000001a      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001a      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPA:
-  ========< 0x0000001c      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPB:
-  ========< 0x0000001e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x00000020      rjmp  sym.__bad_interrupt
+  |||||||   0x00000020      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.SPI_STC:
-  ========< 0x00000022      rjmp  sym.__bad_interrupt
+  |||||||   0x00000022      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_RXC:
-  ========< 0x00000024      rjmp  sym.__bad_interrupt
+  |||||||   0x00000024      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_UDRE:
-  ========< 0x00000026      rjmp  sym.__bad_interrupt
+  |||||||   0x00000026      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_TXC:
-  ========< 0x00000028      rjmp  sym.__bad_interrupt
+  |||||||   0x00000028      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x0000002a      rjmp  sym.__bad_interrupt
+  |||||||   0x0000002a      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x0000002c      rjmp  sym.__bad_interrupt
+  |||||||   0x0000002c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x0000002e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000002e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TWI:
-  ========< 0x00000030      rjmp  sym.__bad_interrupt
+  |||||||   0x00000030      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.SPM_RDY:
-  ========< 0x00000032      rjmp  sym.__bad_interrupt
+  |||||||   0x00000032      rjmp  sym.__bad_interrupt
   |||||||   0x00000034      muls  r16, r25
   |||||||   0x00000036      invalid
   |||||||   0x00000038      movw  r0, r2
@@ -1563,45 +1563,45 @@ paddr vaddr len size section type string
    |||||    ;-- vector.PCINT2:
   ,=======< 0x00000014      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.WDT:
-  ========< 0x00000018      jmp   sym.__bad_interrupt
+  ||||||    0x00000018      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM2_COMPA:
-  ========< 0x0000001c      jmp   sym.__bad_interrupt
+  ||||||    0x0000001c      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM2_COMPB:
-  ========< 0x00000020      jmp   sym.__bad_interrupt
+  ||||||    0x00000020      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM2_OVF:
-  ========< 0x00000024      jmp   sym.handler.TIM2_OVF
+  ||||||    0x00000024      jmp   sym.handler.TIM2_OVF
   ||||||    ;-- vector.TIM1_CAPT:
-  ========< 0x00000028      jmp   sym.__bad_interrupt
+  ||||||    0x00000028      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM1_COMPA:
-  ========< 0x0000002c      jmp   sym.handler.TIM1_COMPA
+  ||||||    0x0000002c      jmp   sym.handler.TIM1_COMPA
   ||||||    ;-- vector.TIM1_COMPB:
-  ========< 0x00000030      jmp   sym.__bad_interrupt
+  ||||||    0x00000030      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM1_OVF:
-  ========< 0x00000034      jmp   sym.__bad_interrupt
+  ||||||    0x00000034      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM0_COMPA:
-  ========< 0x00000038      jmp   sym.__bad_interrupt
+  ||||||    0x00000038      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM0_COMPB:
-  ========< 0x0000003c      jmp   sym.__bad_interrupt
+  ||||||    0x0000003c      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TIM0_OVF:
-  ========< 0x00000040      jmp   sym.__bad_interrupt
+  ||||||    0x00000040      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.SPI_STC:
-  ========< 0x00000044      jmp   sym.__bad_interrupt
+  ||||||    0x00000044      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.USART_RXC:
-  ========< 0x00000048      jmp   sym.handler.USART_RXC
+  ||||||    0x00000048      jmp   sym.handler.USART_RXC
   ||||||    ;-- vector.USART_UDRE:
-  ========< 0x0000004c      jmp   sym.__bad_interrupt
+  ||||||    0x0000004c      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.USART_TXC:
-  ========< 0x00000050      jmp   sym.__bad_interrupt
+  ||||||    0x00000050      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.ADC:
-  ========< 0x00000054      jmp   sym.__bad_interrupt
+  ||||||    0x00000054      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.EE_RDY:
-  ========< 0x00000058      jmp   sym.__bad_interrupt
+  ||||||    0x00000058      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.ANA_COMP:
-  ========< 0x0000005c      jmp   sym.__bad_interrupt
+  ||||||    0x0000005c      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.TWI:
-  ========< 0x00000060      jmp   sym.__bad_interrupt
+  ||||||    0x00000060      jmp   sym.__bad_interrupt
   ||||||    ;-- vector.SPM_RDY:
-  ========< 0x00000064      jmp   sym.__bad_interrupt
+  ||||||    0x00000064      jmp   sym.__bad_interrupt
   ||||||    0x00000068      sbci  r16, 0xa8
   ||||||    0x0000006a      cpi   r29, 0xb7
   ||||||,=< 0x0000006c      rjmp  0xfffffffffffffce4
@@ -1755,31 +1755,31 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.PCINT3:
   ,=======< 0x0000000c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.WDT:
-  ========< 0x0000000e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000000e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_CAPT:
-  ========< 0x00000010      rjmp  sym.__bad_interrupt
+  |||||||   0x00000010      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPA:
-  ========< 0x00000012      rjmp  sym.__bad_interrupt
+  |||||||   0x00000012      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x00000014      rjmp  sym.__bad_interrupt
+  |||||||   0x00000014      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x00000016      rjmp  sym.__bad_interrupt
+  |||||||   0x00000016      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPA:
-  ========< 0x00000018      rjmp  sym.__bad_interrupt
+  |||||||   0x00000018      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMPB:
-  ========< 0x0000001a      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001a      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x0000001c      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.SPI_STC:
-  ========< 0x0000001e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x00000020      rjmp  sym.__bad_interrupt
+  |||||||   0x00000020      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x00000022      rjmp  sym.__bad_interrupt
+  |||||||   0x00000022      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x00000024      rjmp  sym.__bad_interrupt
+  |||||||   0x00000024      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TWI:
-  ========< 0x00000026      rjmp  sym.__bad_interrupt
+  |||||||   0x00000026      rjmp  sym.__bad_interrupt
   |||||||   ;-- main:
   |||||||   ;-- entry.init0:
   |||||||   ;-- handler.RESET:
@@ -1945,33 +1945,33 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.TIM1_COMPA:
   ,=======< 0x00000018      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x0000001c      jmp   sym.__bad_interrupt
+  |||||||   0x0000001c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x00000020      jmp   sym.handler.TIM1_OVF
+  |||||||   0x00000020      jmp   sym.handler.TIM1_OVF
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x00000024      jmp   sym.__bad_interrupt
+  |||||||   0x00000024      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPI_STC:
-  ========< 0x00000028      jmp   sym.__bad_interrupt
+  |||||||   0x00000028      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART_RXC:
-  ========< 0x0000002c      jmp   sym.handler.USART_RXC
+  |||||||   0x0000002c      jmp   sym.handler.USART_RXC
   |||||||   ;-- vector.USART_UDRE:
-  ========< 0x00000030      jmp   sym.__bad_interrupt
+  |||||||   0x00000030      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.USART_TXC:
-  ========< 0x00000034      jmp   sym.__bad_interrupt
+  |||||||   0x00000034      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x00000038      jmp   sym.__bad_interrupt
+  |||||||   0x00000038      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x0000003c      jmp   sym.__bad_interrupt
+  |||||||   0x0000003c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x00000040      jmp   sym.__bad_interrupt
+  |||||||   0x00000040      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TWSI:
-  ========< 0x00000044      jmp   sym.__bad_interrupt
+  |||||||   0x00000044      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.EXT_INT2:
-  ========< 0x00000048      jmp   sym.__bad_interrupt
+  |||||||   0x00000048      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_COMP:
-  ========< 0x0000004c      jmp   sym.__bad_interrupt
+  |||||||   0x0000004c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.SPM_RDY:
-  ========< 0x00000050      jmp   sym.__bad_interrupt
+  |||||||   0x00000050      jmp   sym.__bad_interrupt
   |||||||   0x00000054      ori   r22, 0x43
   |||||||   0x00000056      ori   r22, 0xe9
   |||||||   0x00000058      andi  r22, 0x0f
@@ -2123,29 +2123,29 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.TIM1_COMPA:
   ,=======< 0x0000000c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_COMPB:
-  ========< 0x0000000e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000000e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM1_OVF:
-  ========< 0x00000010      rjmp  sym.__bad_interrupt
+  |||||||   0x00000010      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TIM0_OVF:
-  ========< 0x00000012      rjmp  sym.__bad_interrupt
+  |||||||   0x00000012      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.SPI_STC:
-  ========< 0x00000014      rjmp  sym.__bad_interrupt
+  |||||||   0x00000014      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_RXC:
-  ========< 0x00000016      rjmp  sym.__bad_interrupt
+  |||||||   0x00000016      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_UDRE:
-  ========< 0x00000018      rjmp  sym.__bad_interrupt
+  |||||||   0x00000018      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.USART_TXC:
-  ========< 0x0000001a      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001a      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ADC:
-  ========< 0x0000001c      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001c      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.EE_RDY:
-  ========< 0x0000001e      rjmp  sym.__bad_interrupt
+  |||||||   0x0000001e      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.ANA_COMP:
-  ========< 0x00000020      rjmp  sym.__bad_interrupt
+  |||||||   0x00000020      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.TWSI:
-  ========< 0x00000022      rjmp  sym.__bad_interrupt
+  |||||||   0x00000022      rjmp  sym.__bad_interrupt
   |||||||   ;-- vector.SPM_RDY:
-  ========< 0x00000024      rjmp  sym.__bad_interrupt
+  |||||||   0x00000024      rjmp  sym.__bad_interrupt
   |||||||   0x00000026      mulsu r16, r20
   |||||||   0x00000028      cpc   r0, r9
   |||||||   0x0000002a      fmul  r17, r20
@@ -2339,61 +2339,61 @@ paddr vaddr len size section type string
    ||||||   ;-- vector.unknown_c:
   ,=======< 0x00000018      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_e:
-  ========< 0x0000001c      jmp   sym.__bad_interrupt
+  |||||||   0x0000001c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_10:
-  ========< 0x00000020      jmp   sym.__bad_interrupt
+  |||||||   0x00000020      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_12:
-  ========< 0x00000024      jmp   sym.__bad_interrupt
+  |||||||   0x00000024      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_14:
-  ========< 0x00000028      jmp   sym.__bad_interrupt
+  |||||||   0x00000028      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_16:
-  ========< 0x0000002c      jmp   sym.__bad_interrupt
+  |||||||   0x0000002c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_18:
-  ========< 0x00000030      jmp   sym.__bad_interrupt
+  |||||||   0x00000030      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_1a:
-  ========< 0x00000034      jmp   sym.__bad_interrupt
+  |||||||   0x00000034      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_1c:
-  ========< 0x00000038      jmp   sym.__bad_interrupt
+  |||||||   0x00000038      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_1e:
-  ========< 0x0000003c      jmp   sym.__bad_interrupt
+  |||||||   0x0000003c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_20:
-  ========< 0x00000040      jmp   sym.handler.unknown_20
+  |||||||   0x00000040      jmp   sym.handler.unknown_20
   |||||||   ;-- vector.unknown_22:
-  ========< 0x00000044      jmp   sym.__bad_interrupt
+  |||||||   0x00000044      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_24:
-  ========< 0x00000048      jmp   sym.handler.unknown_24
+  |||||||   0x00000048      jmp   sym.handler.unknown_24
   |||||||   ;-- vector.unknown_26:
-  ========< 0x0000004c      jmp   sym.handler.unknown_26
+  |||||||   0x0000004c      jmp   sym.handler.unknown_26
   |||||||   ;-- vector.unknown_28:
-  ========< 0x00000050      jmp   sym.__bad_interrupt
+  |||||||   0x00000050      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_2a:
-  ========< 0x00000054      jmp   sym.__bad_interrupt
+  |||||||   0x00000054      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_2c:
-  ========< 0x00000058      jmp   sym.__bad_interrupt
+  |||||||   0x00000058      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_2e:
-  ========< 0x0000005c      jmp   sym.__bad_interrupt
+  |||||||   0x0000005c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_30:
-  ========< 0x00000060      jmp   sym.__bad_interrupt
+  |||||||   0x00000060      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_32:
-  ========< 0x00000064      jmp   sym.__bad_interrupt
+  |||||||   0x00000064      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_34:
-  ========< 0x00000068      jmp   sym.__bad_interrupt
+  |||||||   0x00000068      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_36:
-  ========< 0x0000006c      jmp   sym.__bad_interrupt
+  |||||||   0x0000006c      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_38:
-  ========< 0x00000070      jmp   sym.__bad_interrupt
+  |||||||   0x00000070      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_3a:
-  ========< 0x00000074      jmp   sym.__bad_interrupt
+  |||||||   0x00000074      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_3c:
-  ========< 0x00000078      jmp   sym.handler.unknown_3c
+  |||||||   0x00000078      jmp   sym.handler.unknown_3c
   |||||||   ;-- vector.unknown_3e:
-  ========< 0x0000007c      jmp   sym.handler.unknown_3e
+  |||||||   0x0000007c      jmp   sym.handler.unknown_3e
   |||||||   ;-- vector.unknown_40:
-  ========< 0x00000080      jmp   sym.__bad_interrupt
+  |||||||   0x00000080      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_42:
-  ========< 0x00000084      jmp   sym.__bad_interrupt
+  |||||||   0x00000084      jmp   sym.__bad_interrupt
   |||||||   ;-- vector.unknown_44:
-  ========< 0x00000088      jmp   sym.__bad_interrupt
+  |||||||   0x00000088      jmp   sym.__bad_interrupt
   |||||||   0x0000008c      nop
   |||||||   0x0000008e      sbc   r0, r0
   |||||||   0x00000090      sbc   r0, r25
