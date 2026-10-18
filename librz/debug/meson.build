@@ -25,7 +25,7 @@ rz_debug_sources = [
   'dreg.c',
   'desil.c',
   'dmap.c',
-  'pid.c',
+  'process.c',
   'plugin.c',
   'dsession.c',
   'dsignal.c',

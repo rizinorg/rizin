@@ -504,14 +504,21 @@ RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
 /* process handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-RZ_API RzDebugProcess *rz_debug_pid_new(const char *path, int pid, int uid, char status);
-RZ_API RzDebugProcess *rz_debug_pid_free(RzDebugProcess *pid);
-RZ_API RzList /*<RzDebugProcess *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
+RZ_API RZ_OWN RzDebugProcess *rz_debug_process_new(RZ_NULLABLE const char *path, int pid, int uid, RzDebugProcessState state);
+RZ_API void rz_debug_process_free(RZ_NULLABLE RzDebugProcess *process);
+RZ_API RZ_OWN RzList /*<RzDebugProcess *>*/ *rz_debug_process_list(RZ_NONNULL RzDebug *dbg, int pid);
+RZ_API RZ_BORROW RzDebugProcess *rz_debug_process_find(RZ_NONNULL RzDebug *dbg, int pid);
+RZ_API void rz_debug_process_remove(RZ_NONNULL RzDebug *dbg, int pid);
 
 /*thread handling */
 RZ_API RzDebugThread *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
 RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
-RZ_API RzDebugThread *rz_debug_thread_free(RzDebugThread *th);
+RZ_API RZ_OWN RzDebugThread *rz_debug_thread_new(int tid, int process_pid, RzDebugThreadState state, ut64 pc);
+RZ_API void rz_debug_thread_free(RZ_NULLABLE RzDebugThread *thread);
+RZ_API RZ_BORROW RzDebugThread *rz_debug_thread_find(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API int rz_debug_thread_owner_pid(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API bool rz_debug_thread_add(RZ_NONNULL RzDebug *dbg, RZ_NONNULL RzDebugProcess *process, RZ_NONNULL RZ_OWN RzDebugThread *thread);
+RZ_API void rz_debug_thread_remove(RZ_NONNULL RzDebug *dbg, int tid);
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
