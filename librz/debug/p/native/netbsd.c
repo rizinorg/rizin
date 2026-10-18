@@ -47,7 +47,7 @@ static int netbsd_owner_pid(RzDebug *dbg, int tid) {
 
 /* thread list of the selected process, or NULL */
 static RzList *netbsd_cur_threads(RzDebug *dbg) {
-	RzDebugProcess *p = netbsd_find_process(dbg, dbg->main_pid);
+	RzDebugProcess *p = netbsd_find_process(dbg, dbg->pid);
 	return p ? p->threads : NULL;
 }
 
@@ -69,7 +69,7 @@ static bool netbsd_thread_add(RzDebug *dbg, RzDebugProcess *proc, RzDebugThread 
 		return false;
 	}
 	ht_up_update(dbg->threads, (ut64)th->tid, th);
-	if (proc->pid == dbg->main_pid) {
+	if (proc->pid == dbg->pid) {
 		dbg->n_threads = rz_list_length(proc->threads);
 	}
 	return true;
@@ -85,7 +85,7 @@ static void netbsd_remove_thread(RzDebug *dbg, int tid) {
 	RzDebugProcess *proc = netbsd_find_process(dbg, th->process_pid);
 	if (proc && proc->threads) {
 		rz_list_delete_data(proc->threads, th); // free callback frees th
-		if (proc->pid == dbg->main_pid) {
+		if (proc->pid == dbg->pid) {
 			dbg->n_threads = rz_list_length(proc->threads);
 		}
 	}
@@ -102,7 +102,7 @@ static void netbsd_remove_process(RzDebug *dbg, int pid) {
 		ht_up_delete(dbg->threads, (ut64)th->tid);
 	}
 	rz_list_delete_data(dbg->processes, proc); // rz_debug_pid_free must free proc->threads
-	if (pid == dbg->main_pid) {
+	if (pid == dbg->pid) {
 		dbg->n_threads = 0;
 	}
 }
@@ -160,21 +160,21 @@ static bool rz_debug_native_step(RzDebug *dbg) {
 // 	return (pid == th->pid) ? 0 : 1;
 // }
 
-static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
+static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg, NULL);
 	RzList *list = rz_list_new();
 	if (!list) {
 		RZ_LOG_ERROR("Cannot create thread list\n");
 		return NULL;
 	}
-	list = bsd_thread_list(dbg, main_pid, list);
-	dbg->main_pid = main_pid;
+	list = bsd_thread_list(dbg, pid, list);
+	dbg->pid = pid;
 	return list;
 }
 
 static int rz_debug_native_attach(RzDebug *dbg, int pid) {
-	if (!netbsd_find_process(dbg, dbg->main_pid)) {
-		dbg->main_pid = pid;
+	if (!netbsd_find_process(dbg, dbg->pid)) {
+		dbg->pid = pid;
 		return pid;
 	}
 	if (!netbsd_find_process(dbg, pid)) {

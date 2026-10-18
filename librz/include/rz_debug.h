@@ -255,7 +255,6 @@ typedef struct rz_debug_t {
 	RZ_DEPRECATE int bits; ///< bad indicator for the bitness of the debuggee
 	int hitinfo;
 
-	int main_pid;
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
