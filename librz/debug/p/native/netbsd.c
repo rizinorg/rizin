@@ -25,6 +25,114 @@
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
 
+static RzDebugProcess *netbsd_find_process(RzDebug *dbg, int pid) {
+	RzListIter *it;
+	RzDebugProcess *p;
+	rz_list_foreach (dbg->processes, it, p) {
+		if (p->pid == pid) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+static RzDebugThread *netbsd_find_thread(RzDebug *dbg, int tid) {
+	return dbg->threads ? (RzDebugThread *)ht_up_find(dbg->threads, (ut64)tid, NULL) : NULL;
+}
+
+static int netbsd_owner_pid(RzDebug *dbg, int tid) {
+	RzDebugThread *th = netbsd_find_thread(dbg, tid);
+	return th ? th->process_pid : dbg->pid;
+}
+
+/* thread list of the selected process, or NULL */
+static RzList *netbsd_cur_threads(RzDebug *dbg) {
+	RzDebugProcess *p = netbsd_find_process(dbg, dbg->main_pid);
+	return p ? p->threads : NULL;
+}
+
+/* The ONLY way to add a thread: the list owns it, the index only points to it. */
+static bool netbsd_thread_add(RzDebug *dbg, RzDebugProcess *proc, RzDebugThread *th) {
+	if (!dbg->threads) {
+		dbg->threads = ht_up_new(NULL, NULL); // non-owning; check the signature in your tree
+		if (!dbg->threads) {
+			return false;
+		}
+	}
+	if (!proc->threads) {
+		proc->threads = rz_list_newf((RzListFree)&rz_debug_thread_free);
+		if (!proc->threads) {
+			return false;
+		}
+	}
+	if (!rz_list_append(proc->threads, th)) {
+		return false;
+	}
+	ht_up_update(dbg->threads, (ut64)th->tid, th);
+	if (proc->pid == dbg->main_pid) {
+		dbg->n_threads = rz_list_length(proc->threads);
+	}
+	return true;
+}
+
+/* The ONLY way to remove a thread: unindex BEFORE the list frees it. */
+static void netbsd_remove_thread(RzDebug *dbg, int tid) {
+	RzDebugThread *th = netbsd_find_thread(dbg, tid);
+	if (!th) {
+		return;
+	}
+	ht_up_delete(dbg->threads, (ut64)tid);
+	RzDebugProcess *proc = netbsd_find_process(dbg, th->process_pid);
+	if (proc && proc->threads) {
+		rz_list_delete_data(proc->threads, th); // free callback frees th
+		if (proc->pid == dbg->main_pid) {
+			dbg->n_threads = rz_list_length(proc->threads);
+		}
+	}
+}
+
+static void netbsd_remove_process(RzDebug *dbg, int pid) {
+	RzDebugProcess *proc = netbsd_find_process(dbg, pid);
+	if (!proc) {
+		return;
+	}
+	RzListIter *it;
+	RzDebugThread *th;
+	rz_list_foreach (proc->threads, it, th) {
+		ht_up_delete(dbg->threads, (ut64)th->tid);
+	}
+	rz_list_delete_data(dbg->processes, proc); // rz_debug_pid_free must free proc->threads
+	if (pid == dbg->main_pid) {
+		dbg->n_threads = 0;
+	}
+}
+
+/* Build one RzDebugProcess via the kvm-based bsd_pid_list (no procfs on NetBSD). */
+static RzDebugProcess *netbsd_new_process_info(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_new();
+	if (!list) {
+		return NULL;
+	}
+	RzList *res = bsd_pid_list(dbg, pid, list);
+	if (!res) {
+		rz_list_free(list); // bsd_pid_list does not free it on failure
+		return NULL;
+	}
+	RzDebugProcess *found = NULL, *p;
+	RzListIter *it;
+	rz_list_foreach (res, it, p) {
+		if (p->pid == pid) {
+			found = p;
+			break;
+		}
+	}
+	if (found) {
+		rz_list_split(res, found); // detach it from the list so it isn't freed with it
+	}
+	rz_list_free(res);
+	return found;
+}
+
 static int rz_debug_handle_signals(RzDebug *dbg) {
 	return bsd_handle_signals(dbg);
 }
@@ -46,11 +154,11 @@ static bool rz_debug_native_step(RzDebug *dbg) {
 	return true;
 }
 
-static int match_pid(const void *pid_o, const void *th_o, void *user) {
-	int pid = *(int *)pid_o;
-	RzDebugPid *th = (RzDebugPid *)th_o;
-	return (pid == th->pid) ? 0 : 1;
-}
+// static int match_pid(const void *pid_o, const void *th_o, void *user) {
+// 	int pid = *(int *)pid_o;
+// 	RzDebugPid *th = (RzDebugPid *)th_o;
+// 	return (pid == th->pid) ? 0 : 1;
+// }
 
 static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
 	rz_return_val_if_fail(dbg, NULL);
@@ -65,22 +173,24 @@ static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug 
 }
 
 static int rz_debug_native_attach(RzDebug *dbg, int pid) {
-	if (!dbg->threads) {
-		dbg->threads = get_pid_thread_list(dbg, pid);
+	if (!netbsd_find_process(dbg, dbg->main_pid)) {
+		dbg->main_pid = pid;
 		return pid;
 	}
-	if (!rz_list_find(dbg->threads, &pid, &match_pid, NULL)) {
-		int ret = ptrace(PTRACE_ATTACH, pid, 0, 0);
-		if (ret == -1) {
+	if (!netbsd_find_process(dbg, pid)) {
+		if (ptrace(PTRACE_ATTACH, pid, 0, 0) == -1) {
 			RZ_LOG_ERROR("Trying to attach to %d\n", pid);
 			rz_sys_perror("ptrace (PT_ATTACH)");
+			return pid;
 		}
 	}
 	return pid;
 }
 
 static int rz_debug_native_detach(RzDebug *dbg, int pid) {
-	return ptrace(PT_DETACH, pid, NULL, 0);
+	int ret = ptrace(PT_DETACH, pid, NULL, 0);
+	netbsd_remove_process(dbg, pid);
+	return ret;
 }
 
 static int rz_debug_native_continue_syscall(RzDebug *dbg, int pid, int num) {
@@ -125,8 +235,11 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		if (WIFEXITED(status)) {
 			if (dbg->pid == pid) {
 				RZ_LOG_WARN("(%d) Process exited with status=0x%x\n", pid, WEXITSTATUS(status));
+				netbsd_remove_process(dbg, pid);
 			} else {
+				// threads are LWPs in NetBSD and most likely do not trigger waitpid exit status and this block is unreachable
 				RZ_LOG_WARN("(%d) Thread exited with status=0x%x\n", pid, WEXITSTATUS(status));
+				netbsd_remove_thread(dbg, pid);
 			}
 			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED(status)) {
@@ -420,8 +533,8 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	if (pid == 0) {
 		pid = dbg->pid;
 	}
-	if (sig == SIGKILL && dbg->threads) {
-		rz_list_free(dbg->threads);
+	if (sig == SIGKILL) {
+		netbsd_find_process(dbg, pid);
 		dbg->threads = NULL;
 	}
 	if ((rz_sys_kill(pid, sig) != -1)) {
