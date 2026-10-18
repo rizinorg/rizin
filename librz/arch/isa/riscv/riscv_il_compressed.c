@@ -35,8 +35,9 @@ RzILOpEffect *rz_riscv_lift_c_slli(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ
 		riscv_operand_is(insn, 0, RISCV_OP_REG) &&
 		riscv_reg_id(insn, 0) == RISCV_REG_X0 &&
 		riscv_operand_is(insn, 1, RISCV_OP_IMM)) {
-		// Capstone exposes the c.slli hint form as the same public ID as c.slli.
-		// It should later fix this by having a different public ID for the hint form.
+		// Capstone exposes the c.slli hint form as the same public ID as c.slli:
+		// https://github.com/capstone-engine/capstone/issues/3131
+		// It should later fix this by having a different public ID for the hint form
 		return NOP();
 	}
 	return rz_riscv_lift_slli(analysis, op, insn, current_addr, size);

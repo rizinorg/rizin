@@ -71,7 +71,6 @@ static inline bool riscv_il_require_64_bit(RZ_NONNULL RzAnalysis *analysis, RZ_N
 	if (rz_analysis_get_bits(analysis) == 64) {
 		return true;
 	}
-	// RZ_LOG_ERROR("[%s (%d)] Expected 64-bit analysis, found %d bits\n", insn->mnemonic, insn->id, rz_analysis_get_bits(analysis));
 	return false;
 }
 
