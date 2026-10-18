@@ -5590,13 +5590,7 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 
 	cdb->oplen = rz_asm_op_get_size(&cdb->as_op);
 
-	core->parser->subrel_addr = 0;
-	if (core->parser->subrel) {
-		ut64 subrel_addr = UT64_MAX;
-		if (rz_io_read_i(core->io, cdb->an_op.ptr, &subrel_addr, cdb->an_op.refptr, ctx->big_endian)) {
-			core->parser->subrel_addr = subrel_addr;
-		}
-	}
+	rz_core_calc_subrel_addr(core, &cdb->an_op);
 
 	bool is_x86 = rz_asm_is_arch(core->rasm, "x86");
 	char *opcode = rz_strbuf_get(&cdb->as_op.buf_asm);
