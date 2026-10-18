@@ -28,7 +28,7 @@ typedef struct {
 	int score[CFG_CONFLICT_BLOCK_N];
 } CFGConflictScore;
 
-RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_abs_int_cfg_conflict_new() {
+RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_absint_cfg_conflict_new() {
 	RzAbsIntCFGConflicts *conflicts = RZ_NEW0(RzAbsIntCFGConflicts);
 	if (!conflicts) {
 		return NULL;
@@ -41,7 +41,7 @@ RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_abs_int_cfg_conflict_new() {
 	return conflicts;
 }
 
-RZ_API void rz_abs_int_cfg_conflict_free(RZ_OWN RZ_NULLABLE RzAbsIntCFGConflicts *conflicts) {
+RZ_API void rz_absint_cfg_conflict_free(RZ_OWN RZ_NULLABLE RzAbsIntCFGConflicts *conflicts) {
 	if (!conflicts) {
 		return;
 	}
@@ -63,7 +63,7 @@ typedef struct {
  *
  * \return True if the block was added successfully, false in case of failure.
  */
-RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbsIntCFGConflicts *conflicts, ut64 fcn_id, const RzAbsIntBlock *block) {
+RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsIntCFGConflicts *conflicts, ut64 fcn_id, const RzAbsIntBlock *block) {
 	rz_return_val_if_fail(conflicts, RZ_ABSINT_CONFLICT_BLOCK_ERROR);
 	ut64 block_addr = rz_absint_block_get_start(block);
 	RzVector *blocks = ht_up_find(conflicts->cfg_conflicts, block_addr, NULL);
@@ -83,14 +83,14 @@ RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbs
 	return res;
 }
 
-CFGConflictVerdict cfg_conflict_resolve(ut64 conflict_block_addr, RzPVector *block_versions, RzAbsIntCFGConflictSolutionCfg cfg) {
+CFGConflictVerdict cfg_conflict_solve(ut64 conflict_block_addr, RzPVector *block_versions, RzAbsIntCFGConflictSolutionCfg cfg) {
 	if (conflict_block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
 		// Clearly a malformed jump.
 		return CFG_CONFLICT_BLOCK_DROP_SUCC;
 	}
 }
 
-RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RzAbsIntCFGConflictSolutionCfg cfg) {
+RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RzAbsIntCFGConflictSolutionCfg cfg) {
 	rz_return_val_if_fail(analysis && conflicts, false);
 	RzIterator iter = { 0 };
 	if (!ht_up_as_iter_kv(conflicts->cfg_conflicts, &iter)) {
@@ -101,7 +101,7 @@ RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_
 	rz_iterator_foreach(&iter, kv) {
 		ut64 conflict_block_addr = kv->key;
 		RzPVector *block_versions = kv->value;
-		CFGConflictVerdict verdict = cfg_conflict_resolve(conflict_block_addr, block_versions, cfg);
+		CFGConflictVerdict verdict = cfg_conflict_solve(conflict_block_addr, block_versions, cfg);
 		switch (verdict) {
 		case CFG_CONFLICT_BLOCK_DROP_SUCC:
 		case CFG_CONFLICT_BLOCK_DROP:

@@ -130,7 +130,7 @@ static size_t blocks_count(RzAbsIntRunContext *ctx) {
 }
 
 bool test_absint_block_resolve_bounds_single(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"000080d2"  // 0x00  mov   x0, 0
 					// ---
@@ -318,7 +318,7 @@ bool test_absint_block_resolve_bounds_split(bool single_op_existing_block, bool 
 }
 
 bool test_absint_cfg_single_block(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"c0035fd6"  // 0x04  ret
@@ -340,12 +340,12 @@ bool test_absint_cfg_single_block(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10008, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_direct_jmp(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"03000014"  // 0x04  b     0x10      ---
@@ -373,12 +373,12 @@ bool test_absint_cfg_direct_jmp(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 1), 0x10010, 0x10018, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_branch(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"69000054"  // 0x04  b.ls  0x10      ---
@@ -408,12 +408,12 @@ bool test_absint_cfg_branch(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 2), 0x10010, 0x10018, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_branch_join(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"1f8c04f1"  // 0x00  cmp   x0, 0x123
 		"69000054"  // 0x04  b.ls  0x10      ---
@@ -448,12 +448,12 @@ bool test_absint_cfg_branch_join(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x10014, 0x10018, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	// This is about a sequence of instructions that ends with some control flow instruction,
 	// but has two entrypoints into it, where one entrypoint falls through into the other.
 	// The swapping of the branches is there because potential bugs in the interpreter may
@@ -499,12 +499,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x10014, 0x1001c, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"400880d2"  // 0x00  mov   x0, 0x42   <--
 		"1f8c04f1"  // 0x04  cmp   x0, 0x123     |
@@ -532,12 +532,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 2), 0x1000c, 0x10010, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--
@@ -565,12 +565,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 2), 0x1000c, 0x10010, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--------
@@ -602,12 +602,12 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 3), 0x10014, 0x10018, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_call_link_register(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"ff430094"  // 0x04  bl    0x11000
@@ -631,12 +631,12 @@ bool test_absint_cfg_call_link_register(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x1000c, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_call_multi_insn(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 32, 0x10000, "hex://" // clang-format off
 		// this pattern is common on ARMv4 to perform an indirect call
 		"110aa0e3"  // 0x00  mov   r0, 0xff000
@@ -662,12 +662,12 @@ bool test_absint_cfg_call_multi_insn(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x10010, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_call_ret_in_memory(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("x86", 64, 0x10000, "hex://" // clang-format off
 		"89c1"            // 0x00  mov   ecx, eax
 		"ff14cde0000008"  // 0x02  call  qword [rcx*8+0x80000e0]
@@ -691,12 +691,12 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 0), 0x10000, 0x1000a, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_cfg_merge_multiple_consecutive(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	// multiple consecutive interp blocks should be merged, but only until the next in-edge
 	// or until there is another non-fallthrough out-edge.
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
@@ -746,7 +746,7 @@ bool test_absint_cfg_merge_multiple_consecutive(void) {
 	ASSERT_ANALYSIS_BLOCK(rz_pvector_at(fcn->bbs, 4), 0x10020, 0x10024, UT64_MAX, UT64_MAX);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
@@ -757,7 +757,7 @@ static int xref_cmp(const void *a, const void *b, void *user) {
 }
 
 bool test_absint_xrefs(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
@@ -799,12 +799,12 @@ bool test_absint_xrefs(void) {
 	rz_list_free(l);
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_comments(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
@@ -848,12 +848,12 @@ bool test_absint_comments(void) {
 	mu_assert_streq(acmt, "x0 = 0x43; <-", "analysis comment");
 
 	interp_free(interp);
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
 bool test_absint_driver(size_t n_threads) {
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	rz_cons_new();
 	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "arm");
@@ -899,7 +899,7 @@ bool test_absint_driver(size_t n_threads) {
 	rz_analysis_free(analysis);
 	rz_io_free(io);
 	rz_cons_free();
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 	mu_end;
 }
 
