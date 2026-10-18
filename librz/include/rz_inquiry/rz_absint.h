@@ -110,10 +110,15 @@ typedef enum {
 	RZ_ABSINT_CONFLICT_BLOCK_KNOWN,
 } RzAbsIntCFGConflictAddResult;
 
+typedef enum {
+	RZ_ABSINT_CONFLICT_SOLUTION_DEFAULT = 0,
+	RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR = 1 << 0, ///< Treat CFG blocks at address 0x0 as valid.
+} RzAbsIntCFGConflictSolutionCfg;
+
 RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_abs_int_cfg_conflict_new();
 RZ_API void rz_abs_int_cfg_conflict_free(RZ_OWN RZ_NULLABLE RzAbsIntCFGConflicts *conflicts);
 RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbsIntCFGConflicts *conflicts, ut64 fcn_id, const RzAbsIntBlock *block);
-RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts);
+RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RzAbsIntCFGConflictSolutionCfg cfg);
 
 typedef struct rz_absint_instance_t RzAbsIntInstance;
 

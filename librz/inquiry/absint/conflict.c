@@ -17,7 +17,8 @@
 #include "./absint_priv.h"
 
 typedef enum {
-	CFG_CONFLICT_BLOCK_DROP, ///< The block should be dropped.
+	CFG_CONFLICT_BLOCK_DROP, ///< The block should be dropped, in/out edges be removed.
+	CFG_CONFLICT_BLOCK_DROP_SUCC, ///< The block, its in/out edges, and all its successor blocks should be dropped.
 	CFG_CONFLICT_BLOCK_SHARED, ///< The block is shared with another function.
 	CFG_CONFLICT_BLOCK_FCN_ENTRY, ///< The block is a symbol entry point, and therefore referenced by multiple functions.
 	CFG_CONFLICT_BLOCK_N,
@@ -82,7 +83,33 @@ RZ_API RzAbsIntCFGConflictAddResult rz_abs_int_cfg_conflict_add(RZ_NONNULL RzAbs
 	return res;
 }
 
-RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts) {
+CFGConflictVerdict cfg_conflict_resolve(ut64 conflict_block_addr, RzPVector *block_versions, RzAbsIntCFGConflictSolutionCfg cfg) {
+	if (conflict_block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
+		// Clearly a malformed jump.
+		return CFG_CONFLICT_BLOCK_DROP_SUCC;
+	}
+}
+
+RZ_API bool rz_abs_int_cfg_conflict_resolve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RzAbsIntCFGConflictSolutionCfg cfg) {
+	rz_return_val_if_fail(analysis && conflicts, false);
+	RzIterator iter = { 0 };
+	if (!ht_up_as_iter_kv(conflicts->cfg_conflicts, &iter)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	const HtUPKv *kv;
+	rz_iterator_foreach(&iter, kv) {
+		ut64 conflict_block_addr = kv->key;
+		RzPVector *block_versions = kv->value;
+		CFGConflictVerdict verdict = cfg_conflict_resolve(conflict_block_addr, block_versions, cfg);
+		switch (verdict) {
+		case CFG_CONFLICT_BLOCK_DROP_SUCC:
+		case CFG_CONFLICT_BLOCK_DROP:
+		case CFG_CONFLICT_BLOCK_SHARED:
+		case CFG_CONFLICT_BLOCK_FCN_ENTRY:
+		case CFG_CONFLICT_BLOCK_N: break;
+		}
+	}
 	// Positive hints that the block is actually a function entry point:
 	// - Non-strippable function symbols point to the block.
 	// - A known call instruction targets this block (an CALL xref to it exists).
