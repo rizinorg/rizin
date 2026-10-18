@@ -15,47 +15,200 @@
 
 #include "./absint_priv.h"
 
-typedef enum {
-	CFG_CONFLICT_BLOCK_DROP, ///< The block should be dropped, in/out edges be removed.
-	CFG_CONFLICT_BLOCK_DROP_SUCC, ///< The block, its in/out edges, and all its successor blocks should be dropped.
-	CFG_CONFLICT_BLOCK_SHARED, ///< The block is shared with another function.
-	CFG_CONFLICT_BLOCK_FCN_ENTRY, ///< The block is a symbol entry point, and therefore referenced by multiple functions.
-	CFG_CONFLICT_BLOCK_N,
-} CFGConflictVerdict;
+#define SCORE_RULED_OUT        -50
+#define SCORE_STRONGLY_DISFAV  -40
+#define SCORE_VERY_UNLIKELY    -30
+#define SCORE_UNLIKELY         -20
+#define SCORE_SLIGHTLY_AGAINST -10
+#define SCORE_NEUTRAL          0
+#define SCORE_SLIGHT_HINT      10
+#define SCORE_LIKELY           20
+#define SCORE_VERY_LIKELY      30
+#define SCORE_STRONG_FAVOR     40
+#define SCORE_CERTAIN          50
 
-typedef struct {
-	int score[CFG_CONFLICT_BLOCK_N];
-} CFGConflictScore;
+typedef enum {
+	CFG_CONFLICT_VERDICT_DROP = 0, ///< The block should be dropped.
+	CFG_CONFLICT_VERDICT_DROP_SUCC, ///< The block and its successors should be dropped.
+	CFG_CONFLICT_VERDICT_SHARED, ///< The block is shared with another function.
+	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a function entry point.
+	CFG_CONFLICT_VERDICT_N,
+} CFGConflictVerdict;
 
 /**
  * \brief Different hints that a block is a function entry point, shared by functions,
  * or should be blocked.
  *
- * Most of the hints are take from:
+ * Some of the hints are take from:
  * https://dl.acm.org/doi/10.1145/3611643.3616366
  * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
  */
 typedef enum {
 	// Positive hints that the block is actually a function entry point:
 	CFG_CONFLICT_OBSV_SYMBOL = 1 << 0, ///< The block is located at a symbol's address.
-	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The block is the target of a call instruction. CALL xref to it exists.
-	CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB = 1 << 2, ///< A successor block jumps over a symbol to reach this block. Block is likely a tail called function entry.
+	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The block is the target of a call instruction.
+	CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB = 1 << 2, ///< A successor jumps over a symbol to reach this block (tail-call signal).
+	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY = 1 << 3, ///< The block has a PE .pdata / x64 unwind entry.
+	CFG_CONFLICT_OBSV_IN_EH_FRAME = 1 << 4, ///< The block is listed in exception-handling metadata (.eh_frame).
+	CFG_CONFLICT_OBSV_MULTIPLE_CALLERS = 1 << 5, ///< The block is called from many distinct locations.
+	CFG_CONFLICT_OBSV_IS_PLT_THUNK = 1 << 6, ///< The block is a PLT/GOT trampoline.
+	CFG_CONFLICT_OBSV_IS_IMPORT_THUNK = 1 << 7, ///< The block is an import thunk.
+	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME = 1 << 8, ///< The block grows the stack frame.
 
 	// Negative hints that the block is a function entry point.
-	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 3, ///< Block starts with a noop instruction
-	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 4, ///< An successor of this block is a conditional jump.
-	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 5, ///< Basic block is before the entry point of the binary.
+	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 9, ///< Block starts with a noop instruction.
+	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 10, ///< A successor of this block is a conditional jump.
+	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 11, ///< Basic block is before the entry point of the binary.
+	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 12, ///< Block is reached by fall-through from the current function.
+	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 13, ///< Block is reached by a normal in-function jump.
+	CFG_CONFLICT_OBSV_ENDS_WITH_RET = 1 << 14, ///< Block ends with a return instruction.
+	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 15, ///< Block contains a stack-frame epilogue.
+	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 16, ///< The block shrinks the stack frame.
+	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 17, ///< The block loops back to itself.
 
-	// Positive hint that the block should be dropped.
-	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 6, ///< Block is mapped as non-executable.
+	// Positive hints that the block should be dropped.
+	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 18, ///< Block is mapped as non-executable.
+
+	CFG_CONFLICT_OBSV_N = 19,
 } CFGConflictObservations;
+
+typedef struct {
+	CFGConflictVerdict verdict;
+	int score;
+} CFGConflictScoreEntry;
+
+typedef struct {
+	CFGConflictObservations obs;
+	CFGConflictScoreEntry scores[CFG_CONFLICT_VERDICT_N + 1];
+} CFGConflictHintScore;
+
+static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
+	{ CFG_CONFLICT_OBSV_SYMBOL,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_IS_CALLED,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_IN_EH_FRAME,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_MULTIPLE_CALLERS,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_IS_PLT_THUNK,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_IS_IMPORT_THUNK,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_GROWS_STACK_FRAME,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_STARTS_NOOP,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_STARTS_COND_JMP,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_ENDS_WITH_RET,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_SELF_LOOP,
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_NOT_X_MAPPED,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+};
+
+typedef struct {
+	int score[CFG_CONFLICT_VERDICT_N];
+} CFGConflictScore;
 
 // If the best result is below SCORE_VERDICT_MIN and
 // its margin to the second is less then SCORE_VERDICT_MARGIN
 // the verdict defaults to SCORE_VERDICT_UNKNOWN.
 #define SCORE_VERDICT_MIN     20
 #define SCORE_VERDICT_MARGIN  15
-#define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_BLOCK_SHARED
+#define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_VERDICT_SHARED
 
 #define SCORE_RULED_OUT        -50
 #define SCORE_STRONGLY_DISFAV  -40
@@ -125,28 +278,19 @@ RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsI
 }
 
 static inline void score_add(CFGConflictScore *s, CFGConflictVerdict v, int d) {
-	s->score[(int)v] += d;
+	s->score[v] += d;
 }
 
 static void cfg_conflict_score(CFGConflictObservations obs, CFGConflictScore *score) {
-	// score_init(score);
-	switch (obs) {
-	case CFG_CONFLICT_OBSV_SYMBOL:
-		score_add(score, CFG_CONFLICT_BLOCK_FCN_ENTRY, SCORE_CERTAIN);
-		break;
-	case CFG_CONFLICT_OBSV_IS_CALLED:
-	case CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB:
-	case CFG_CONFLICT_OBSV_STARTS_NOOP:
-	case CFG_CONFLICT_OBSV_STARTS_COND_JMP:
-	case CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY:
-	case CFG_CONFLICT_OBSV_NOT_X_MAPPED: break;
+	for (size_t i = 0; cfg_conflict_hint_scores[obs].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
+		score_add(score, cfg_conflict_hint_scores[obs].scores[i].verdict, cfg_conflict_hint_scores[obs].scores[i].score);
 	}
 }
 
 static CFGConflictVerdict cfg_conflict_pick(const CFGConflictScore *s) {
 	int best = 0, second = 1;
 
-	for (int i = 1; i < CFG_CONFLICT_BLOCK_N; ++i) {
+	for (int i = 1; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		if (s->score[i] > s->score[best]) {
 			second = best;
 			best = i;
@@ -169,16 +313,18 @@ static CFGConflictVerdict cfg_conflict_solve(RzAnalysis *analysis,
 	RzAbsIntCFGConflictSolutionCfg cfg) {
 	if (conflict_block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
 		// Clearly a malformed jump.
-		return CFG_CONFLICT_BLOCK_DROP_SUCC;
+		return CFG_CONFLICT_VERDICT_DROP_SUCC;
 	}
 	CFGConflictScore score = { 0 };
 	void **it;
 	rz_pvector_foreach (block_versions, it) {
 		CFGConflictBlock *cfb = *it;
 		ut64 block_addr = rz_absint_block_get_start(cfb->block);
+		// CFG_CONFLICT_OBSV_SYMBOL
 		if (rz_analysis_get_function_at(analysis, block_addr)) {
 			cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
 		}
+		// CFG_CONFLICT_OBSV_IS_CALLED
 		if (rz_analysis_has_xrefs_to(analysis, block_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
 			cfg_conflict_score(CFG_CONFLICT_OBSV_IS_CALLED, &score);
 		}
@@ -200,11 +346,11 @@ RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 		RzPVector *block_versions = kv->value;
 		CFGConflictVerdict verdict = cfg_conflict_solve(analysis, conflict_block_addr, block_versions, cfg);
 		switch (verdict) {
-		case CFG_CONFLICT_BLOCK_DROP_SUCC:
-		case CFG_CONFLICT_BLOCK_DROP:
-		case CFG_CONFLICT_BLOCK_SHARED:
-		case CFG_CONFLICT_BLOCK_FCN_ENTRY:
-		case CFG_CONFLICT_BLOCK_N: break;
+		case CFG_CONFLICT_VERDICT_DROP_SUCC:
+		case CFG_CONFLICT_VERDICT_DROP:
+		case CFG_CONFLICT_VERDICT_SHARED:
+		case CFG_CONFLICT_VERDICT_FCN_ENTRY:
+		case CFG_CONFLICT_VERDICT_N: break;
 		}
 	}
 
