@@ -8,11 +8,10 @@
  *
  * 1. The block is simply shared code. This is common in hand-written assembly.
  * 2. The block is not actually part of the function, but it is the target of a tail call
- *    and was mistakingly added to the function, because the tail call was not identified as such.
+ *    and was mistakenly added to the function, because the tail call was not identified as such.
  *    In this case the block and its successors are their own function.
  *    And all the successors only call it.
  */
-
 
 #include "./absint_priv.h"
 
@@ -27,6 +26,48 @@ typedef enum {
 typedef struct {
 	int score[CFG_CONFLICT_BLOCK_N];
 } CFGConflictScore;
+
+/**
+ * \brief Different hints that a block is a function entry point, shared by functions,
+ * or should be blocked.
+ *
+ * Most of the hints are take from:
+ * https://dl.acm.org/doi/10.1145/3611643.3616366
+ * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
+ */
+typedef enum {
+	// Positive hints that the block is actually a function entry point:
+	CFG_CONFLICT_OBSV_SYMBOL = 1 << 0, ///< The block is located at a symbol's address.
+	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The block is the target of a call instruction. CALL xref to it exists.
+	CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB = 1 << 2, ///< A successor block jumps over a symbol to reach this block. Block is likely a tail called function entry.
+
+	// Negative hints that the block is a function entry point.
+	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 3, ///< Block starts with a noop instruction
+	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 4, ///< An successor of this block is a conditional jump.
+	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 5, ///< Basic block is before the entry point of the binary.
+
+	// Positive hint that the block should be dropped.
+	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 6, ///< Block is mapped as non-executable.
+} CFGConflictObservations;
+
+// If the best result is below SCORE_VERDICT_MIN and
+// its margin to the second is less then SCORE_VERDICT_MARGIN
+// the verdict defaults to SCORE_VERDICT_UNKNOWN.
+#define SCORE_VERDICT_MIN     20
+#define SCORE_VERDICT_MARGIN  15
+#define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_BLOCK_SHARED
+
+#define SCORE_RULED_OUT        -50
+#define SCORE_STRONGLY_DISFAV  -40
+#define SCORE_VERY_UNLIKELY    -30
+#define SCORE_UNLIKELY         -20
+#define SCORE_SLIGHTLY_AGAINST -10
+#define SCORE_NEUTRAL          0
+#define SCORE_SLIGHT_HINT      10
+#define SCORE_LIKELY           20
+#define SCORE_VERY_LIKELY      30
+#define SCORE_STRONG_FAVOR     40
+#define SCORE_CERTAIN          50
 
 RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_absint_cfg_conflict_new() {
 	RzAbsIntCFGConflicts *conflicts = RZ_NEW0(RzAbsIntCFGConflicts);
@@ -83,11 +124,67 @@ RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsI
 	return res;
 }
 
-CFGConflictVerdict cfg_conflict_solve(ut64 conflict_block_addr, RzPVector *block_versions, RzAbsIntCFGConflictSolutionCfg cfg) {
+static inline void score_add(CFGConflictScore *s, CFGConflictVerdict v, int d) {
+	s->score[(int)v] += d;
+}
+
+static void cfg_conflict_score(CFGConflictObservations obs, CFGConflictScore *score) {
+	// score_init(score);
+	switch (obs) {
+	case CFG_CONFLICT_OBSV_SYMBOL:
+		score_add(score, CFG_CONFLICT_BLOCK_FCN_ENTRY, SCORE_CERTAIN);
+		break;
+	case CFG_CONFLICT_OBSV_IS_CALLED:
+	case CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB:
+	case CFG_CONFLICT_OBSV_STARTS_NOOP:
+	case CFG_CONFLICT_OBSV_STARTS_COND_JMP:
+	case CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY:
+	case CFG_CONFLICT_OBSV_NOT_X_MAPPED: break;
+	}
+}
+
+static CFGConflictVerdict cfg_conflict_pick(const CFGConflictScore *s) {
+	int best = 0, second = 1;
+
+	for (int i = 1; i < CFG_CONFLICT_BLOCK_N; ++i) {
+		if (s->score[i] > s->score[best]) {
+			second = best;
+			best = i;
+		} else if (i != best && s->score[i] > s->score[second]) {
+			second = i;
+		}
+	}
+
+	int margin = s->score[best] - s->score[second];
+	if (s->score[best] < SCORE_VERDICT_MIN || margin < SCORE_VERDICT_MARGIN) {
+		return SCORE_VERDICT_UNKNOWN;
+	}
+
+	return (CFGConflictVerdict)best;
+}
+
+static CFGConflictVerdict cfg_conflict_solve(RzAnalysis *analysis,
+	ut64 conflict_block_addr,
+	RzPVector *block_versions,
+	RzAbsIntCFGConflictSolutionCfg cfg) {
 	if (conflict_block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
 		// Clearly a malformed jump.
 		return CFG_CONFLICT_BLOCK_DROP_SUCC;
 	}
+	CFGConflictScore score = { 0 };
+	void **it;
+	rz_pvector_foreach (block_versions, it) {
+		CFGConflictBlock *cfb = *it;
+		ut64 block_addr = rz_absint_block_get_start(cfb->block);
+		if (rz_analysis_get_function_at(analysis, block_addr)) {
+			cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
+		}
+		if (rz_analysis_has_xrefs_to(analysis, block_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
+			cfg_conflict_score(CFG_CONFLICT_OBSV_IS_CALLED, &score);
+		}
+		// TODO
+	}
+	return cfg_conflict_pick(&score);
 }
 
 RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RzAbsIntCFGConflictSolutionCfg cfg) {
@@ -101,7 +198,7 @@ RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 	rz_iterator_foreach(&iter, kv) {
 		ut64 conflict_block_addr = kv->key;
 		RzPVector *block_versions = kv->value;
-		CFGConflictVerdict verdict = cfg_conflict_solve(conflict_block_addr, block_versions, cfg);
+		CFGConflictVerdict verdict = cfg_conflict_solve(analysis, conflict_block_addr, block_versions, cfg);
 		switch (verdict) {
 		case CFG_CONFLICT_BLOCK_DROP_SUCC:
 		case CFG_CONFLICT_BLOCK_DROP:
@@ -110,16 +207,6 @@ RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis, RZ_NO
 		case CFG_CONFLICT_BLOCK_N: break;
 		}
 	}
-	// Positive hints that the block is actually a function entry point:
-	// - Non-strippable function symbols point to the block.
-	// - A known call instruction targets this block (an CALL xref to it exists).
-	// - When a jump edge to the block crosses a function entry point, then the jump is likely to be a tail-call.
-	//
-	// Negative hints that the block is a function entry point.
-	// - Block starts with a noop instruction (-> shared)
-	// - An successor of this block is a conditional jump.
-	// - Basic blocks before the entry point of a binary are unlikely to be a function.
-	//
-	// Definitely an invalid block.
-	// - Block is located at address 0x0
+
+	return true;
 }

@@ -530,6 +530,38 @@ RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xref
 }
 
 /**
+ * \brief Checks if there is an xref to the given \p addr of \p type.
+ *
+ * \param analysis The analysis instance.
+ * \param addr The address a potential xref points to.
+ * \param type The xref type. Should be RZ_ANALYSIS_XREF_TYPE_NULL if any xref is valid.
+ *
+ * \return True if there exists such an xref, false if not or in case of error.
+ */
+RZ_API bool rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type) {
+	rz_return_val_if_fail(analysis, false);
+	HtUP *xrefs_to = ht_up_find(analysis->ht_xrefs_to, to_addr, NULL);
+	if (!xrefs_to) {
+		return false;
+	} else if (type == RZ_ANALYSIS_XREF_TYPE_NULL) {
+		return true;
+	}
+
+	RzIterator iter = { 0 };
+	if (!ht_up_as_iter(xrefs_to, &iter)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	RzAnalysisXRef *xref;
+	rz_iterator_foreach(&iter, xref) {
+		if (xref->type == type) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * \brief Get the gadget cache for a specific gadget type.
  * \param analysis Pointer to the RzAnalysis object.
  * \param type The RzGadgetType of gadget cache to retrieve.
