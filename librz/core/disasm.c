@@ -6073,6 +6073,14 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 	return ret;
 }
 
+/**
+ * \brief Disassembles \p nb_opcodes ops, \p nb_bytes bytes or both at \p addr
+ * into JSON objects added to \p pj; negative counts go backwards.
+ *
+ * \param buf The bytes at \p addr, or NULL to read them from io as needed
+ * \param nb_bytes Number of bytes to disassemble, 0 for no limit with a NULL \p buf
+ * \param nb_opcodes Number of ops to disassemble, 0 for no limit
+ */
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
 	RzIterator iter = (RzIterator){ 0 };
