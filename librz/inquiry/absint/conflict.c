@@ -200,6 +200,7 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 };
 
 typedef struct {
+	size_t total_obsv; ///< Total number of observations which went into the score.
 	int score[CFG_CONFLICT_VERDICT_N];
 } CFGConflictScore;
 
@@ -277,11 +278,16 @@ RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsI
 	return res;
 }
 
+static inline void score_inc_obsv(CFGConflictScore *s) {
+	s->total_obsv++;
+}
+
 static inline void score_add(CFGConflictScore *s, CFGConflictVerdict v, int d) {
 	s->score[v] += d;
 }
 
 static void cfg_conflict_score(CFGConflictObservations obs, CFGConflictScore *score) {
+	score_inc_obsv(score);
 	for (size_t i = 0; cfg_conflict_hint_scores[obs].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
 		score_add(score, cfg_conflict_hint_scores[obs].scores[i].verdict, cfg_conflict_hint_scores[obs].scores[i].score);
 	}
@@ -308,28 +314,38 @@ static CFGConflictVerdict cfg_conflict_pick(const CFGConflictScore *s) {
 }
 
 static CFGConflictVerdict cfg_conflict_solve(RzAnalysis *analysis,
-	ut64 conflict_block_addr,
+	ut64 block_addr,
 	RzPVector *block_versions,
 	RzAbsIntCFGConflictSolutionCfg cfg) {
-	if (conflict_block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
+	if (block_addr == 0x0 && !(cfg & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
 		// Clearly a malformed jump.
 		return CFG_CONFLICT_VERDICT_DROP_SUCC;
 	}
 	CFGConflictScore score = { 0 };
+
+	// Block versions are all the same block, but there were attempts to assign them
+	// to different functions.
+	ssize_t jmp_xrefs_to = rz_analysis_has_xrefs_to(analysis, block_addr, RZ_ANALYSIS_XREF_TYPE_CODE);
+	ssize_t call_xrefs_to = rz_analysis_has_xrefs_to(analysis, block_addr, RZ_ANALYSIS_XREF_TYPE_CALL);
+
+	if (rz_analysis_get_function_at(analysis, block_addr)) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
+	}
+	if (call_xrefs_to == 1) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_IS_CALLED, &score);
+	} else if (call_xrefs_to > 1) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, &score);
+	}
+	if (jmp_xrefs_to) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
+	}
+
 	void **it;
 	rz_pvector_foreach (block_versions, it) {
 		CFGConflictBlock *cfb = *it;
-		ut64 block_addr = rz_absint_block_get_start(cfb->block);
-		// CFG_CONFLICT_OBSV_SYMBOL
-		if (rz_analysis_get_function_at(analysis, block_addr)) {
-			cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
-		}
-		// CFG_CONFLICT_OBSV_IS_CALLED
-		if (rz_analysis_has_xrefs_to(analysis, block_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
-			cfg_conflict_score(CFG_CONFLICT_OBSV_IS_CALLED, &score);
-		}
 		// TODO
 	}
+	// TODO: Normalize scores
 	return cfg_conflict_pick(&score);
 }
 
