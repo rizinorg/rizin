@@ -536,29 +536,28 @@ RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xref
  * \param addr The address a potential xref points to.
  * \param type The xref type. Should be RZ_ANALYSIS_XREF_TYPE_NULL if any xref is valid.
  *
- * \return True if there exists such an xref, false if not or in case of error.
+ * \return The number of xrefs with the given type, or -1 in case of error.
  */
-RZ_API bool rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type) {
-	rz_return_val_if_fail(analysis, false);
+RZ_API ssize_t rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type) {
+	rz_return_val_if_fail(analysis, -1);
 	HtUP *xrefs_to = ht_up_find(analysis->ht_xrefs_to, to_addr, NULL);
+	ssize_t c = 0;
 	if (!xrefs_to) {
-		return false;
-	} else if (type == RZ_ANALYSIS_XREF_TYPE_NULL) {
-		return true;
+		return c;
 	}
 
 	RzIterator iter = { 0 };
 	if (!ht_up_as_iter(xrefs_to, &iter)) {
 		rz_warn_if_reached();
-		return false;
+		return -1;
 	}
 	RzAnalysisXRef *xref;
 	rz_iterator_foreach(&iter, xref) {
-		if (xref->type == type) {
-			return true;
+		if (type == RZ_ANALYSIS_XREF_TYPE_NULL || xref->type == type) {
+			c++;
 		}
 	}
-	return false;
+	return c;
 }
 
 /**

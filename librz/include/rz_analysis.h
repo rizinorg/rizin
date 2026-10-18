@@ -1435,7 +1435,7 @@ RZ_API void rz_analysis_set_il_vm(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE R
 RZ_API RZ_BORROW RzAnalysisOptions *rz_analysis_get_options(RZ_NONNULL RzAnalysis *analysis);
 RZ_API RZ_BORROW HtSP *rz_analysis_get_virtual_xrefs(RZ_NONNULL RzAnalysis *analysis);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysis);
-RZ_API bool rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type);
+RZ_API ssize_t rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type);
 RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to);
