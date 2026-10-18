@@ -1229,10 +1229,10 @@ repeat:
 		return 0;
 	}
 
-// #if __linux__
-// 	just_followed_child = followed_child;
-// 	followed_child = false;
-// #endif
+	// #if __linux__
+	// 	just_followed_child = followed_child;
+	// 	followed_child = false;
+	// #endif
 
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
@@ -1252,33 +1252,33 @@ repeat:
 	}
 
 #if __linux__
-// 	// After following a fork, the child still has the SIGSTOP that the kernel
-// 	// raised on it at fork time pending. The first continue surfaces that as a
-// 	// signal-stop at the libc fork() return instead of running on to the user's
-// 	// breakpoint. Swallow that one SIGSTOP so following a child behaves like
-// 	// gdb's "set follow-fork-mode child", which lands directly on the breakpoint.
-// 	if (just_followed_child && reason == RZ_DEBUG_REASON_SIGNAL &&
-// 		dbg->reason.signum == SIGSTOP) {
-// 		goto repeat;
-// 	}
-// 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
-// #if DEBUGGER
-// 		// dbg->pid is still the parent here. linux_attach_new_process() detaches
-// 		// the parent (without restoring its original code bytes) and switches to
-// 		// the forked child. The parent shares the inherited software breakpoints
-// 		// (int3) with the child, so the now-untraced parent would take a fatal
-// 		// SIGTRAP the moment it executed one of them. Remove the breakpoints from
-// 		// the parent before it is detached; the child keeps its own int3 bytes
-// 		// via copy-on-write, so its breakpoints keep working without reinstalling.
-// 		rz_debug_bp_update(dbg);
-// 		rz_bp_restore(dbg->bp, false);
-// 		linux_attach_new_process(dbg, dbg->forked_pid);
-// 		followed_child = true;
-// #endif
-// 		goto repeat;
-// 	}
+	// 	// After following a fork, the child still has the SIGSTOP that the kernel
+	// 	// raised on it at fork time pending. The first continue surfaces that as a
+	// 	// signal-stop at the libc fork() return instead of running on to the user's
+	// 	// breakpoint. Swallow that one SIGSTOP so following a child behaves like
+	// 	// gdb's "set follow-fork-mode child", which lands directly on the breakpoint.
+	// 	if (just_followed_child && reason == RZ_DEBUG_REASON_SIGNAL &&
+	// 		dbg->reason.signum == SIGSTOP) {
+	// 		goto repeat;
+	// 	}
+	// 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+	// #if DEBUGGER
+	// 		// dbg->pid is still the parent here. linux_attach_new_process() detaches
+	// 		// the parent (without restoring its original code bytes) and switches to
+	// 		// the forked child. The parent shares the inherited software breakpoints
+	// 		// (int3) with the child, so the now-untraced parent would take a fatal
+	// 		// SIGTRAP the moment it executed one of them. Remove the breakpoints from
+	// 		// the parent before it is detached; the child keeps its own int3 bytes
+	// 		// via copy-on-write, so its breakpoints keep working without reinstalling.
+	// 		rz_debug_bp_update(dbg);
+	// 		rz_bp_restore(dbg->bp, false);
+	// 		linux_attach_new_process(dbg, dbg->forked_pid);
+	// 		followed_child = true;
+	// #endif
+	// 		goto repeat;
+	// 	}
 
-	if(reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child){
+	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
 		rz_bp_restore(dbg->bp, false);
 		rz_debug_select(dbg, dbg->forked_pid, dbg->forked_pid);
 		goto repeat;
@@ -1810,34 +1810,41 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 }
 
 /**
- * \brief Switches to the first thread in the given debug context.
+ * \brief Switches to the first thread of the current process.
  * \param debug The debug context.
  */
 RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
 	rz_return_if_fail(debug);
-	RzList *threads = rz_debug_pids(debug, debug->pid);
+	if (!debug->cur || !debug->cur->threads) {
+		return;
+	}
+	RzList *threads = debug->cur->threads(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first_val(threads);
-		rz_debug_select(debug, debug->pid, th->pid);
+		RzDebugThread *th = rz_list_first_val(threads);
+		rz_debug_select(debug, debug->pid, th->tid);
 	}
 	rz_list_free(threads);
 }
 
-static int thread_find(int *tid, RzDebugPid *t, void *user) {
-	return (t && (t->pid == *tid)) ? 0 : 1;
+static int thread_find(const int *tid, const RzDebugThread *t, void *user) {
+	return (t && (t->tid == *tid)) ? 0 : 1;
 }
 
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
+/**
+ * \brief Finds a thread by its ID in a thread list.
+ * \param th_list List of threads to search, may be NULL.
+ * \param tid Thread ID.
+ * \return The thread, or NULL if it is not in the list.
+ */
+RZ_API RZ_BORROW RzDebugThread *rz_debug_get_thread(RZ_NULLABLE RzList /*<RzDebugThread *>*/ *th_list, int tid) {
 	if (!th_list) {
 		return NULL;
 	}
-
-	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find, NULL);
+	RzListIter *it = rz_list_find(th_list, &tid, (RzListComparator)thread_find, NULL);
 	if (!it) {
 		return NULL;
 	}
-	return (RzDebugPid *)rz_list_val(it);
+	return (RzDebugThread *)rz_list_val(it);
 }
 
 #if !DEBUGGER
