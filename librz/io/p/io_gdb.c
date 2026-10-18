@@ -114,6 +114,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			desc->pid = i_pid;
 			if (gdbr_attach(desc, i_pid) < 0) {
 				eprintf("gdbr: Failed to attach to PID %i\n", i_pid);
+				RZ_FREE(desc);
 				return NULL;
 			}
 		} else if ((i_pid = desc->pid) < 0) {
