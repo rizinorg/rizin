@@ -5449,11 +5449,15 @@ static bool analysis_op_context_init(AnalysisOpContext *ctx, RzCore *core, ut64 
 }
 
 static bool analysis_op_context_can_continue(AnalysisOpContext *ctx) {
+	if (ctx->itv.size > 0 && !rz_itv_contain(ctx->itv, ctx->current)) {
+		return false;
+	}
+
 	if (ctx->max_ops > 0) {
 		return ctx->ops_count < ctx->max_ops;
 	}
 
-	return rz_itv_contain(ctx->itv, ctx->current);
+	return true;
 }
 
 static RzAnalysisOp *analysis_op_context_iter_next(RzIterator *it) {
@@ -5509,24 +5513,38 @@ RZ_API bool rz_core_analysis_op_chunk_iter(
 	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
 }
 
+/**
+ * \brief Bytes available to decode an op from when reading from io; only
+ * longer ops can be cut by the end of the window.
+ */
+#define CORE_DECODED_BYTES_LOOKAHEAD 256
+
 typedef struct core_decoded_bytes_s {
 	RzCore *core;
 	bool asm_sub_var;
 	bool big_endian;
-	RzInterval itv;
+	RzInterval itv; ///< Byte range to decode, empty for no byte limit when reading from io
 	ut64 current;
 	ut64 max_ops;
 	ut64 ops_count;
-	const ut8 *bytes;
+	const ut8 *bytes; ///< Caller buffer holding the itv bytes, NULL to read from io
+	ut8 *window; ///< io bytes at window_addr, when reading from io
+	size_t window_size;
+	ut64 window_addr;
+	bool window_loaded;
 	RzCoreDecodedBytes cdb;
 } CoreDecodedBytes;
 
 static bool core_decoded_bytes_can_continue(CoreDecodedBytes *ctx) {
+	if (ctx->itv.size > 0 && !rz_itv_contain(ctx->itv, ctx->current)) {
+		return false;
+	}
+
 	if (ctx->max_ops > 0) {
 		return ctx->ops_count < ctx->max_ops;
 	}
 
-	return rz_itv_contain(ctx->itv, ctx->current);
+	return true;
 }
 
 static void core_decoded_bytes_set_mnemonic(RzCoreDecodedBytes *cdb, bool is_x86) {
@@ -5552,6 +5570,28 @@ static void core_decoded_bytes_set_mnemonic(RzCoreDecodedBytes *cdb, bool is_x86
 
 static void analysis_bytes_iter_fini(RzCoreDecodedBytes *cdb);
 
+/**
+ * \brief Points \p ptr at the io bytes from ctx->current, refilling the window
+ * when the lookahead no longer fits in it.
+ *
+ * \return The number of bytes at \p ptr, at least CORE_DECODED_BYTES_LOOKAHEAD.
+ */
+static size_t core_decoded_bytes_io_window(CoreDecodedBytes *ctx, const ut8 **ptr) {
+	if (!ctx->window_loaded || ctx->current < ctx->window_addr ||
+		ctx->current - ctx->window_addr > ctx->window_size - CORE_DECODED_BYTES_LOOKAHEAD) {
+		RzIO *io = ctx->core->io;
+		// unreadable bytes decode as the fill byte, like in the text disassembly,
+		// instead of failing the whole read
+		memset(ctx->window, io->Oxff, ctx->window_size);
+		rz_io_read_at_mapped(io, ctx->current, ctx->window, ctx->window_size);
+		ctx->window_addr = ctx->current;
+		ctx->window_loaded = true;
+	}
+	ut64 off = ctx->current - ctx->window_addr;
+	*ptr = ctx->window + off;
+	return ctx->window_size - off;
+}
+
 static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	CoreDecodedBytes *ctx = it->u;
 	if (!core_decoded_bytes_can_continue(ctx)) {
@@ -5565,9 +5605,17 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 	RzCoreDecodedBytes *cdb = &ctx->cdb;
 	char disasm[512] = { 0 };
 
-	size_t pos = ctx->current - rz_itv_begin(ctx->itv);
-	size_t left = rz_itv_end(ctx->itv) - ctx->current;
-	const ut8 *ptr = ctx->bytes + pos;
+	const ut8 *ptr = NULL;
+	size_t left = 0;
+	if (ctx->bytes) {
+		ptr = ctx->bytes + (ctx->current - rz_itv_begin(ctx->itv));
+		left = rz_itv_end(ctx->itv) - ctx->current;
+	} else {
+		left = core_decoded_bytes_io_window(ctx, &ptr);
+		if (ctx->itv.size > 0) {
+			left = RZ_MIN(left, rz_itv_end(ctx->itv) - ctx->current);
+		}
+	}
 
 	rz_asm_set_pc(core->rasm, ctx->current);
 	rz_analysis_op_init(&cdb->an_op);
@@ -5582,7 +5630,8 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 		cdb->opcode = rz_str_dup("invalid");
 		cdb->disasm = rz_str_dup("invalid");
 		cdb->mnemonic = rz_str_dup("invalid");
-		cdb->bytes = rz_hex_bin2strdup(ptr, cdb->oplen);
+		// the minimum op size can exceed the bytes left at the end of the buffer
+		cdb->bytes = rz_hex_bin2strdup(ptr, RZ_MIN(left, (size_t)cdb->oplen));
 		ctx->current += RZ_MAX(cdb->oplen, 1);
 		ctx->ops_count++;
 		return cdb;
@@ -5615,10 +5664,11 @@ static RzCoreDecodedBytes *core_decoded_bytes_next(RzIterator *it) {
 
 	// only this instruction's mask is kept, so only its bytes are masked: masking
 	// the rest of the range made every op cost that much, and a run of n ops O(n^2)
-	ut8 *amask = rz_analysis_mask(core->analysis, RZ_MIN(left, (size_t)cdb->oplen), ptr, ctx->current);
-	cdb->mask = rz_hex_bin2strdup(amask, cdb->oplen);
+	size_t op_bytes = RZ_MIN(left, (size_t)cdb->oplen);
+	ut8 *amask = rz_analysis_mask(core->analysis, op_bytes, ptr, ctx->current);
+	cdb->mask = rz_hex_bin2strdup(amask, op_bytes);
 	free(amask);
-	cdb->bytes = rz_hex_bin2strdup(ptr, cdb->oplen);
+	cdb->bytes = rz_hex_bin2strdup(ptr, op_bytes);
 
 	// apply pseudo if needed
 	cdb->pseudo = rz_parse_pseudocode(core->parser, disasm);
@@ -5652,10 +5702,29 @@ static void analysis_bytes_iter_fini(RzCoreDecodedBytes *cdb) {
 	memset(cdb, 0, sizeof(RzCoreDecodedBytes));
 }
 
+static void core_decoded_bytes_free(CoreDecodedBytes *ctx) {
+	if (!ctx) {
+		return;
+	}
+	free(ctx->window);
+	free(ctx);
+}
+
 static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 start_addr, const ut8 *buf, ut64 n_bytes, ut64 max_ops) {
-	if (n_bytes < 1) {
+	if (buf && n_bytes < 1) {
 		RZ_LOG_ERROR("core: n_bytes must be > 0.");
 		return false;
+	}
+	if (!buf && n_bytes < 1 && max_ops < 1) {
+		RZ_LOG_ERROR("core: n_bytes & max_ops are zeros. One of them must be > 0.\n");
+		return false;
+	}
+	if (!buf) {
+		ctx->window_size = RZ_MAX(core->blocksize, 2 * CORE_DECODED_BYTES_LOOKAHEAD);
+		ctx->window = malloc(ctx->window_size);
+		if (!ctx->window) {
+			return false;
+		}
 	}
 
 	ctx->core = core;
@@ -5678,16 +5747,17 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
  *
  * \param core     The RzCore instance
  * \param start_addr Address to start analysis from
- * \param buf      data to analysis
- * \param n_bytes  analysis len bytes
- * \param max_ops  analysis n ops
+ * \param buf      The bytes at \p start_addr, or NULL to read them from io as needed,
+ *                 with unreadable bytes set to the io fill byte
+ * \param n_bytes  Maximum number of bytes to decode, 0 for no limit if \p buf is NULL
+ * \param max_ops  Maximum number of ops to decode, 0 for no limit
  * \param iterator Output parameter, filled with an iterator of RzCoreDecodedBytes on success
  *
  * \return True on success, false on failure.
  */
 RZ_API bool rz_core_analysis_bytes(
-	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_NONNULL RZ_OUT RzIterator *iterator) {
-	rz_return_val_if_fail(core && buf, false);
+	RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NULLABLE const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_NONNULL RZ_OUT RzIterator *iterator) {
+	rz_return_val_if_fail(core, false);
 
 	// TODO: this should be removed once rz_config is refactored.
 	core->parser->subrel = rz_config_get_i(core->config, "asm.sub.rel");
@@ -5695,12 +5765,12 @@ RZ_API bool rz_core_analysis_bytes(
 
 	CoreDecodedBytes *ctx = RZ_NEW0(CoreDecodedBytes);
 	if (!ctx || !core_decoded_bytes_init(ctx, core, start_addr, buf, n_bytes, max_ops)) {
-		free(ctx);
+		core_decoded_bytes_free(ctx);
 		*iterator = (RzIterator){ 0 };
 		return false;
 	}
 
-	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, free, ctx, iterator);
+	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, (rz_iterator_free_cb)core_decoded_bytes_free, ctx, iterator);
 }
 
 /**

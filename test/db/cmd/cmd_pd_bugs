@@ -405,3 +405,81 @@ EXPECT=<<EOF
 |           0x00004297      cmp   rdx, 0x01
 EOF
 RUN
+
+NAME=pdj N decodes N instructions whatever the block size
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 9090909090909090
+b 4
+pdj 8~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"nop"},{"offset":1,"opcode":"nop"},{"offset":2,"opcode":"nop"},{"offset":3,"opcode":"nop"},{"offset":4,"opcode":"nop"},{"offset":5,"opcode":"nop"},{"offset":6,"opcode":"nop"},{"offset":7,"opcode":"nop"}]
+EOF
+RUN
+
+NAME=pdj N output does not depend on the block size
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+b 16
+pdj 10 @ 0x401000~{.[]\|{offset,opcode}}
+b 0x100
+pdj 10 @ 0x401000~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":4198400,"opcode":"push ebp"},{"offset":4198401,"opcode":"mov ebp, esp"},{"offset":4198403,"opcode":"sub esp, 0x18"},{"offset":4198406,"opcode":"mov dword [ebp-0x08], ebx"},{"offset":4198409,"opcode":"mov eax, dword [ebp+0x08]"},{"offset":4198412,"opcode":"xor ebx, ebx"},{"offset":4198414,"opcode":"mov dword [ebp-0x04], esi"},{"offset":4198417,"opcode":"mov eax, dword [eax]"},{"offset":4198419,"opcode":"xor esi, esi"},{"offset":4198421,"opcode":"mov eax, dword [eax]"}]
+[{"offset":4198400,"opcode":"push ebp"},{"offset":4198401,"opcode":"mov ebp, esp"},{"offset":4198403,"opcode":"sub esp, 0x18"},{"offset":4198406,"opcode":"mov dword [ebp-0x08], ebx"},{"offset":4198409,"opcode":"mov eax, dword [ebp+0x08]"},{"offset":4198412,"opcode":"xor ebx, ebx"},{"offset":4198414,"opcode":"mov dword [ebp-0x04], esi"},{"offset":4198417,"opcode":"mov eax, dword [eax]"},{"offset":4198419,"opcode":"xor esi, esi"},{"offset":4198421,"opcode":"mov eax, dword [eax]"}]
+EOF
+RUN
+
+NAME=pdj N keeps decoding when its ops span several io reads
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+b 16
+pdj 300 @ 0x401000~{[299].offset}
+pdj 300 @ 0x401000~{[299].opcode}
+b 0x1000
+pdj 300 @ 0x401000~{[299].offset}
+pdj 300 @ 0x401000~{[299].opcode}
+EOF
+EXPECT=<<EOF
+4199406
+jz 0x401407
+4199406
+jz 0x401407
+EOF
+RUN
+
+NAME=pdj N decodes ops longer than the max op size the arch reports
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=wasm
+e asm.bits=32
+wx 42204220
+pdj 1~{.[]\|{offset,opcode,bytes}}
+pdj 2~{.[]\|{offset,opcode,bytes}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"i64.const 32","bytes":"4220"}]
+[{"offset":0,"opcode":"i64.const 32","bytes":"4220"},{"offset":2,"opcode":"i64.const 32","bytes":"4220"}]
+EOF
+RUN
+
+NAME=pdj N prints the readable ops next to an unreadable map
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90909090
+om 3 8 32 0 w
+b 4
+pdj 1~{.[]\|{offset,opcode}}
+pdj 3 @ 6~{.[]\|{offset,opcode,bytes}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"nop"}]
+[{"offset":6,"opcode":"add byte [rax], al","bytes":"0000"},{"offset":8,"opcode":"invalid","bytes":"ff"},{"offset":9,"opcode":"invalid","bytes":"ff"}]
+EOF
+RUN
