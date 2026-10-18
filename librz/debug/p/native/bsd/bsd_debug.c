@@ -340,7 +340,7 @@ RzList *bsd_pid_list(RzDebug *dbg, int pid, RzList *list) {
 		entry = kp + i;
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || KP_PID(entry) == pid || KP_PPID(entry) == pid) {
-			RzDebugPid *p = rz_debug_pid_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), 's', 0);
+			RzDebugProcess *p = rz_debug_pid_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), 's');
 			if (p) {
 				p->ppid = KP_PPID(entry);
 				rz_list_append(list, p);
@@ -699,8 +699,8 @@ static RzList *openbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	for (i = 0; i < max; i++) {
 		int pid_stat = get_rz_status(kp[i].p_stat);
 
-		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_tid,
-			kp[i].p_uid, pid_stat, (ut64)kp[i].p_wchan);
+		RzDebugProcess *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_tid,
+			kp[i].p_uid, pid_stat);
 
 		rz_list_append(list, pid_info);
 	}
@@ -753,7 +753,7 @@ static RzList *kfbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	for (i = 0; i < max; i++) {
 		int pid_stat = get_rz_status(kp[i].ki_stat);
 
-		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].ki_comm, kp[i].ki_tid,
+		RzDebugProcess *pid_info = rz_debug_pid_new(kp[i].ki_comm, kp[i].ki_tid,
 			kp[i].ki_uid, pid_stat, (ut64)kp[i].ki_wchan);
 
 		rz_list_append(list, pid_info);
@@ -816,7 +816,7 @@ static RzList *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	for (i = 0; i < max; i++) {
 		int pid_stat = get_rz_status(kp[i].p_stat);
 
-		RzDebugPid *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
+		RzDebugProcess *pid_info = rz_debug_pid_new(kp[i].p_comm, kp[i].p_pid,
 			kp[i].p_uid, pid_stat, (ut64)kp[i].p_wchan);
 
 		if (pid_info) {
