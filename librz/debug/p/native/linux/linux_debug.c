@@ -89,7 +89,7 @@ static int linux_owner_pid(RzDebug *dbg, int tid) {
 
 /* thread list of the debugged (main) process, or NULL */
 static RzList *linux_cur_threads(RzDebug *dbg) {
-	RzDebugProcess *p = linux_find_process(dbg, dbg->main_pid);
+	RzDebugProcess *p = linux_find_process(dbg, dbg->pid);
 	return p ? p->threads : NULL;
 }
 
@@ -111,7 +111,7 @@ static bool linux_thread_add(RzDebug *dbg, RzDebugProcess *proc, RzDebugThread *
 		return false;
 	}
 	ht_up_update(dbg->threads, (ut64)th->tid, th);
-	if (proc->pid == dbg->main_pid) {
+	if (proc->pid == dbg->pid) {
 		dbg->n_threads = rz_list_length(proc->threads);
 	}
 	return true;
@@ -127,7 +127,7 @@ static void linux_remove_thread(RzDebug *dbg, int tid) {
 	RzDebugProcess *proc = linux_find_process(dbg, th->process_pid);
 	if (proc && proc->threads) {
 		rz_list_delete_data(proc->threads, th); // free callback frees th
-		if (proc->pid == dbg->main_pid) {
+		if (proc->pid == dbg->pid) {
 			dbg->n_threads = rz_list_length(proc->threads);
 		}
 	}
@@ -144,7 +144,7 @@ static void linux_remove_process(RzDebug *dbg, int pid) {
 		ht_up_delete(dbg->threads, (ut64)th->tid);
 	}
 	rz_list_delete_data(dbg->processes, proc); // rz_debug_pid_free must free proc->threads
-	if (pid == dbg->main_pid) {
+	if (pid == dbg->pid) {
 		dbg->n_threads = 0;
 	}
 }
@@ -468,20 +468,20 @@ static void linux_detach_all(RzDebug *dbg) {
 	RzDebugThread *th;
 	RzListIter *it;
 	rz_list_foreach (th_list, it, th) {
-		if (th->tid != dbg->main_pid) {
+		if (th->tid != dbg->pid) {
 			if (rz_debug_ptrace(dbg, PTRACE_DETACH, th->tid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
 				perror("PTRACE_DETACH");
 			}
 		}
 	}
-	if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->main_pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
+	if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
 		perror("PTRACE_DETACH");
 	}
 }
 
 bool linux_attach_new_process(RzDebug *dbg, int pid) {
 	linux_detach_all(dbg);
-	linux_remove_process(dbg, dbg->main_pid); // unindexes its threads, then frees them
+	linux_remove_process(dbg, dbg->pid); // unindexes its threads, then frees them
 
 	if (!linux_attach(dbg, pid)) {
 		return false;
@@ -570,7 +570,7 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 			}
 
 			if (WIFEXITED(status)) {
-				if (tid == dbg->main_pid) {
+				if (tid == dbg->pid) {
 					linux_remove_process(dbg, tid);
 					reason = RZ_DEBUG_REASON_DEAD;
 					RZ_LOG_WARN("(%d) Process terminated with status %d\n", tid, WEXITSTATUS(status));
@@ -713,19 +713,19 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-/* Builds the process entry for main_pid, its owned thread list, and indexes every thread. */
-static bool linux_build_main_process(RzDebug *dbg, int main_pid) {
+/* Builds the process entry for pid, its owned thread list, and indexes every thread. */
+static bool linux_build_main_process(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->processes, false);
 	RzList *list = rz_list_new();
 	if (!list) {
 		return false;
 	}
-	dbg->main_pid = main_pid;
-	list = linux_thread_list(dbg, main_pid, list);
+	dbg->pid = pid;
+	list = linux_thread_list(dbg, pid, list);
 	if (!list) {
 		return false;
 	}
-	RzDebugProcess *proc = linux_new_process_info(main_pid);
+	RzDebugProcess *proc = linux_new_process_info(pid);
 	if (!proc || !rz_list_append(dbg->processes, proc)) {
 		rz_debug_pid_free(proc);
 		rz_list_free(list);
@@ -745,7 +745,7 @@ static bool linux_build_main_process(RzDebug *dbg, int main_pid) {
 }
 
 int linux_attach(RzDebug *dbg, int tid) {
-	if (!linux_find_process(dbg, dbg->main_pid)) {
+	if (!linux_find_process(dbg, dbg->pid)) {
 		linux_build_main_process(dbg, tid);
 	} else if (!linux_find_thread(dbg, tid)) {
 		linux_attach_single_pid(dbg, tid);
