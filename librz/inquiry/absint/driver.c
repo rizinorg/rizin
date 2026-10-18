@@ -265,7 +265,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	if (config->trace_opts & RZ_ABSINT_TRACE_IL_BLOCK) {
 		il_cache_config |= RZ_IL_CACHE_CONFIG_TRACE;
 	}
-	RzAbsIntCFGConflicts *conflicts = rz_abs_int_cfg_conflict_new();
+	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	if (!conflicts) {
 		goto err_conflicts;
 	}
@@ -394,7 +394,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	if (map && map->perm & RZ_PERM_X) {
 		cfg = RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR;
 	}
-	if (!rz_abs_int_cfg_conflict_resolve(config->analysis, conflicts, cfg)) {
+	if (!rz_absint_cfg_conflicts_solve(config->analysis, conflicts, cfg)) {
 		RZ_LOG_WARN("Failed to resolve all CFG lock conflicts. Results analysis quality might be affected.\n");
 	}
 
@@ -417,7 +417,7 @@ err_entry_points_ch:
 err_il_cache:
 	rz_il_cache_free(il_cache);
 err_conflicts:
-	rz_abs_int_cfg_conflict_free(conflicts);
+	rz_absint_cfg_conflict_free(conflicts);
 err_none:
 	return return_code && !breaked;
 }

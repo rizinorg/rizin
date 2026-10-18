@@ -1088,7 +1088,7 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 
 static void add_block_to_conflict_list(RzAnalysis *analysis, RzAbsIntCFGConflicts *conflicts, RzAbsIntBlock *block, ut64 fcn_addr) {
 	ut64 start = rz_absint_block_get_start(block);
-	RzAbsIntCFGConflictAddResult res = rz_abs_int_cfg_conflict_add(conflicts, fcn_addr, block);
+	RzAbsIntCFGConflictAddResult res = rz_absint_cfg_conflict_add(conflicts, fcn_addr, block);
 	if (res == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
 		RZ_LOG_ERROR("Failed add block @ 0x%" PFMT64x " to the conflict list.\n", start);
 		return;
@@ -1108,7 +1108,7 @@ static void add_block_to_conflict_list(RzAnalysis *analysis, RzAbsIntCFGConflict
 		return;
 	}
 	RzAnalysisFunction *fcn = rz_list_get_n(abb->fcns, 0);
-	if (rz_abs_int_cfg_conflict_add(conflicts, fcn->addr, block) == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
+	if (rz_absint_cfg_conflict_add(conflicts, fcn->addr, block) == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
 		rz_warn_if_reached();
 		return;
 	}
