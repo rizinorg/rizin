@@ -14,6 +14,7 @@
  */
 
 #include "./absint_priv.h"
+#include "rz_analysis.h"
 #include <rz_core.h>
 
 #define SCORE_RULED_OUT        -50
@@ -31,8 +32,8 @@
 typedef enum {
 	CFG_CONFLICT_VERDICT_DROP = 0, ///< The block should be dropped.
 	CFG_CONFLICT_VERDICT_DROP_SUCC, ///< The block and its successors should be dropped.
-	CFG_CONFLICT_VERDICT_SHARED, ///< The block is shared with another function.
-	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a function entry point.
+	CFG_CONFLICT_VERDICT_SHARED, ///< The block is likely shared with another function.
+	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a likely function entry point.
 	CFG_CONFLICT_VERDICT_N,
 } CFGConflictVerdict;
 
@@ -68,6 +69,7 @@ typedef enum {
 
 	// Positive hints that the block should be dropped.
 	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 17, ///< Block is mapped as non-executable.
+	CFG_CONFLICT_OBSV_NOT_MAPPED = 1 << 18, ///< Block is not mapped at all.
 
 	CFG_CONFLICT_OBSV_N = 19,
 } CFGConflictObservations;
@@ -180,6 +182,12 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_NOT_MAPPED,
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 };
 
@@ -305,7 +313,7 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	RzAbsIntCFGConflictSolutionCfg config) {
 	ut64 block_addr = rz_absint_block_get_start(block);
 	ut64 block_addr_end = rz_absint_block_get_end(block);
-	if (block_addr == 0x0 && !(config & RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR)) {
+	if (block_addr == 0x0 && (config & RZ_ABSINT_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
 		// Clearly a malformed jump.
 		return CFG_CONFLICT_VERDICT_DROP_SUCC;
 	}
@@ -316,6 +324,15 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 
 	CFGConflictScore score = { 0 };
 
+	// CHARACTERISTICS: Block
+	RzIOMap *map = rz_io_map_get(io, block_addr);
+	if (!map) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_MAPPED, &score);
+		// Ignore all other characteristics
+		goto verdict;
+	} else if (!(map->perm & RZ_PERM_X)) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
+	}
 	const RzAnalysisFunction *fcn;
 	if ((fcn = rz_analysis_get_function_at(analysis, block_addr))) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
@@ -324,6 +341,13 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 		}
 	}
 
+	// CHARACTERISTICS: Block outgoing edges
+	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
+	if (block_addr < bin_entry) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
+	}
+
+	// CHARACTERISTICS: Block incoming edges
 	ssize_t jmp_xrefs_to = 0;
 	ssize_t call_xrefs_to = 0;
 	RzAnalysisXRef *xref;
@@ -356,21 +380,12 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	if (jmp_xrefs_to > 0) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
 	}
-
-	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
-	if (block_addr < bin_entry) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
-	}
 	if (block->fallthrough_in) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
 	}
-	// CFG_CONFLICT_OBSV_IS_IMPORT_THUNK
+
 	// CFG_CONFLICT_OBSV_STARTS_COND_JMP
 	// CFG_CONFLICT_OBSV_ENDS_WITH_RET
-	RzIOMap *map = rz_io_map_get(io, block_addr);
-	if (!map) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
-	}
 
 	// TODO
 	// CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY
@@ -380,6 +395,7 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
 	// CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME
 
+verdict:
 	// TODO: Normalize scores
 	return cfg_conflict_pick(&score);
 }

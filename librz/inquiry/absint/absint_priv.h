@@ -5,6 +5,7 @@
 #ifndef RZ_ABSINT_PRIV_H
 #define RZ_ABSINT_PRIV_H
 
+#include "rz_vector.h"
 #include <rz_inquiry/rz_absint.h>
 
 // These functions are actually internal, but need RZ_API to be called from unit tests
