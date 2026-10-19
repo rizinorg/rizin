@@ -341,7 +341,7 @@ static bool test_rz_core_annotated_code_print(void) {
 			       "}\n";
 	RzCons *cons = rz_cons_new();
 	rz_cons_push(cons);
-	rz_core_annotated_code_print(cons, code, NULL);
+	rz_core_annotated_code_print(code, NULL, cons);
 	actual = rz_cons_get_buffer_dup(cons);
 	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected_first, "pdg OUTPUT DOES NOT MATCH");
@@ -356,7 +356,7 @@ static bool test_rz_core_annotated_code_print(void) {
 				"    0x0000115f    |    return;\n"
 				"                  |}\n";
 	rz_cons_push(cons);
-	rz_core_annotated_code_print(cons, code, offsets);
+	rz_core_annotated_code_print(code, offsets, cons);
 	free(actual);
 	actual = rz_cons_get_buffer_dup(cons);
 	rz_cons_pop(cons);
@@ -377,7 +377,7 @@ static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 			 "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n";
 	RzCons *cons = rz_cons_new();
 	rz_cons_push(cons);
-	rz_core_annotated_code_print_comment_cmds(cons, code);
+	rz_core_annotated_code_print_comment_cmds(code, cons);
 	actual = rz_cons_get_buffer_dup(cons);
 	rz_cons_pop(cons);
 	mu_assert_streq(actual, expected, "pdg* OUTPUT DOES NOT MATCH");

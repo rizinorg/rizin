@@ -1407,9 +1407,9 @@ RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* DECOMPILER PRINTING FUNCTIONS */
+RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets, RZ_NONNULL RzCons *cons);
 RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons);
-RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets);
-RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL RzAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* serialize */
 
