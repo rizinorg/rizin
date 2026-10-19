@@ -87,6 +87,7 @@ typedef struct rz_absint_block_t {
 	bool bounds_resolved; ///< Set to true once insn_offsets and node->end are filled.
 	bool uninterpreted; ///< True if the entry state has not yet been started to interpret, i.e. the block is part of RzAbsIntFunctionState.queue
 	bool non_fallthrough_in; ///< True if there is an in-edge to this block that is not only a fallthrough. Used when merging consecutive blocks after interpretation.
+	bool fallthrough_in; ///< True if there is at least one in-edge to this block that is fallthrough.
 	bool added_to_analysis; ///< Only used after interpretation, when adding to analysis. Marks blocks that have been merged with the previous.
 
 	// Out-edges

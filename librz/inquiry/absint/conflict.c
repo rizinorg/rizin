@@ -60,7 +60,7 @@ typedef enum {
 	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 9, ///< Block starts with a noop instruction.
 	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 10, ///< A successor of this block is a conditional jump.
 	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 11, ///< Basic block is before the entry point of the binary.
-	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 12, ///< Block is reached by fall-through from the current function.
+	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 12, ///< Block is reached by at least one fall-through edge.
 	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 13, ///< Block is reached by a normal in-function jump.
 	CFG_CONFLICT_OBSV_ENDS_WITH_RET = 1 << 14, ///< Block ends with a return instruction.
 	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 15, ///< Block contains a stack-frame epilogue.
@@ -85,7 +85,7 @@ typedef struct {
 
 static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 	{ CFG_CONFLICT_OBSV_SYMBOL,
-		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
@@ -97,7 +97,7 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB,
-		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY,
@@ -361,11 +361,12 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	if (block_addr < bin_entry) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
 	}
+	if (block->fallthrough_in) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
+	}
 	// CFG_CONFLICT_OBSV_IS_IMPORT_THUNK
 	// CFG_CONFLICT_OBSV_STARTS_COND_JMP
-	// CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH
 	// CFG_CONFLICT_OBSV_ENDS_WITH_RET
-	// CFG_CONFLICT_OBSV_SELF_LOOP
 	RzIOMap *map = rz_io_map_get(io, block_addr);
 	if (!map) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
