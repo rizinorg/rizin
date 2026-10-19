@@ -52,23 +52,22 @@ typedef enum {
 	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY = 1 << 3, ///< The block has a PE .pdata / x64 unwind entry.
 	CFG_CONFLICT_OBSV_IN_EH_FRAME = 1 << 4, ///< The block is listed in exception-handling metadata (.eh_frame).
 	CFG_CONFLICT_OBSV_MULTIPLE_CALLERS = 1 << 5, ///< The block is called from many distinct locations.
-	CFG_CONFLICT_OBSV_IS_PLT_THUNK = 1 << 6, ///< The block is a PLT/GOT trampoline.
-	CFG_CONFLICT_OBSV_IS_IMPORT_THUNK = 1 << 7, ///< The block is an import thunk.
-	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME = 1 << 8, ///< The block grows the stack frame.
+	CFG_CONFLICT_OBSV_IMPORT = 1 << 6, ///< The block is a trampoline to an imported function.
+	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME = 1 << 7, ///< The block grows the stack frame.
 
 	// Negative hints that the block is a function entry point.
-	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 9, ///< Block starts with a noop instruction.
-	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 10, ///< A successor of this block is a conditional jump.
-	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 11, ///< Basic block is before the entry point of the binary.
-	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 12, ///< Block is reached by at least one fall-through edge.
-	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 13, ///< Block is reached by a normal in-function jump.
-	CFG_CONFLICT_OBSV_ENDS_WITH_RET = 1 << 14, ///< Block ends with a return instruction.
-	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 15, ///< Block contains a stack-frame epilogue.
-	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 16, ///< The block shrinks the stack frame.
-	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 17, ///< The block loops back to itself.
+	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 8, ///< Block starts with a noop instruction.
+	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 9, ///< A successor of this block is a conditional jump.
+	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 10, ///< Basic block is before the entry point of the binary.
+	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 11, ///< Block is reached by at least one fall-through edge.
+	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 12, ///< Block is reached by a normal in-function jump.
+	CFG_CONFLICT_OBSV_ENDS_WITH_RET = 1 << 13, ///< Block ends with a return instruction.
+	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 14, ///< Block contains a stack-frame epilogue.
+	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 15, ///< The block shrinks the stack frame.
+	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 16, ///< The block loops back to itself.
 
 	// Positive hints that the block should be dropped.
-	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 18, ///< Block is mapped as non-executable.
+	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 17, ///< Block is mapped as non-executable.
 
 	CFG_CONFLICT_OBSV_N = 19,
 } CFGConflictObservations;
@@ -118,13 +117,7 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IS_PLT_THUNK,
-		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IS_IMPORT_THUNK,
+	{ CFG_CONFLICT_OBSV_IMPORT,
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
@@ -323,8 +316,12 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 
 	CFGConflictScore score = { 0 };
 
-	if (rz_analysis_get_function_at(analysis, block_addr)) {
+	const RzAnalysisFunction *fcn;
+	if ((fcn = rz_analysis_get_function_at(analysis, block_addr))) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
+		if (fcn->imports) {
+			cfg_conflict_score(CFG_CONFLICT_OBSV_IMPORT, &score);
+		}
 	}
 
 	ssize_t jmp_xrefs_to = 0;
@@ -338,13 +335,16 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 		} else if (xref->type == RZ_ANALYSIS_XREF_TYPE_CODE) {
 			jmp_xrefs_to++;
 		}
-		const RzAnalysisFunction *fcn = rz_analysis_fcn_next(analysis, xref->from);
-		if (fcn && fcn->addr < xref->to) {
-			// The xref jumped over a function entry point to this block.
-			cfg_conflict_score(CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, &score);
-		}
 		if (RZ_BETWEEN(block_addr, xref->from, block_addr_end)) {
 			cfg_conflict_score(CFG_CONFLICT_OBSV_SELF_LOOP, &score);
+		}
+		const RzAnalysisFunction *pred_fcn = rz_analysis_fcn_next(analysis, xref->from);
+		if (!pred_fcn) {
+			continue;
+		}
+		if (pred_fcn->addr < xref->to) {
+			// The xref jumped over a function entry point to this block.
+			cfg_conflict_score(CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, &score);
 		}
 	}
 	rz_list_free(xrefs_to);
@@ -375,7 +375,6 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	// TODO
 	// CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY
 	// CFG_CONFLICT_OBSV_IN_EH_FRAME
-	// CFG_CONFLICT_OBSV_IS_PLT_THUNK
 	// CFG_CONFLICT_OBSV_GROWS_STACK_FRAME
 	// CFG_CONFLICT_OBSV_STARTS_NOOP
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
