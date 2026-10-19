@@ -5,6 +5,10 @@
 #include <rz_types.h>
 #include <rz_util/rz_stack.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*RzInterruptEvent)(void *user);
 typedef bool (*RzInterruptIsBreaked)(void *user);
 typedef void *(*RzInterruptSleepBegin)(void *user);
@@ -62,5 +66,9 @@ static inline void rz_interrupt_set_hook_signals(RZ_NULLABLE RzInterrupt *intr, 
 		intr->hook_signals = hook;
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
