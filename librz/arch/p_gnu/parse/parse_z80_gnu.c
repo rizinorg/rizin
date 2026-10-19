@@ -156,7 +156,5 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 RzParsePlugin rz_parse_plugin_z80_gnu_pseudo = {
 	.name = "z80.pseudo",
 	.desc = "z80 pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
 	.parse = parse,
 };
