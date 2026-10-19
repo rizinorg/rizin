@@ -381,6 +381,50 @@ bool test_rz_str_rchr(void) {
 	mu_end;
 }
 
+ bool test_rz_str_ansi_trim(void) {
+      char buf[64];
+
+      strcpy(buf, "hello world");
+      mu_assert_eq(rz_str_ansi_trim(buf, -1, 5), 5, "trim ascii string");
+      mu_assert_streq(buf, "hello", "trimmed ascii content");
+
+      strcpy(buf, "ab\x1b]xxxxxrgb:0123456789");
+      mu_assert_eq(rz_str_ansi_trim(buf, -1, 5), 23,
+         "rgb: probe must be relative to the escape sequence");
+
+      strcpy(buf, "\x1b]xxxxxrgb:0123456789");
+      mu_assert_eq(rz_str_ansi_trim(buf, -1, 1), 20,
+         "rgb: sequence at offset 0 is still recognized");
+
+      strcpy(buf, "\x1b[1");
+      mu_assert_eq(rz_str_ansi_trim(buf, -1, 1), 3,
+         "unterminated CSI must be clamped to str_len");
+
+      mu_end;
+   }
+
+   bool test_rz_str_ansi_trim_bounds(void) {
+      static const char *const cases[] = {
+         "\x1b",           
+         "\x1b[1",        
+         "\x1b]",          
+         "\x1b]xy",        
+         "\x1b]xxxxxrgb:", 
+         "\x1b[?2004h",    
+      };
+      for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+         size_t len = strlen(cases[i]);
+         char *buf = malloc(len + 1);
+         mu_assert_notnull(buf, "allocation");
+         memcpy(buf, cases[i], len + 1);
+         int used = rz_str_ansi_trim(buf, len, 1);
+         mu_assert(used >= 0 && (size_t)used <= len, "returned length must fit the buffer");
+         mu_assert_eq(used, (int)strlen(buf), "returned length must match the string");
+         free(buf);
+      }
+      mu_end;
+   }
+
 bool test_rz_str_ansi_len(void) {
 	int len;
 
@@ -1073,6 +1117,8 @@ bool all_tests() {
 	mu_run_test(test_rz_sub_str_lchr);
 	mu_run_test(test_rz_sub_str_rchr);
 	mu_run_test(test_rz_str_rchr);
+	mu_run_test(test_rz_str_ansi_trim);
+    mu_run_test(test_rz_str_ansi_trim_bounds);
 	mu_run_test(test_rz_str_ansi_len);
 	mu_run_test(test_rz_str_utf8_ansi_cols);
 	mu_run_test(test_rz_str_utf8_charsize);
