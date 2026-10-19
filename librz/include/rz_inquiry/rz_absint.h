@@ -113,7 +113,7 @@ typedef enum {
 
 typedef enum {
 	RZ_ABSINT_CONFLICT_SOLUTION_DEFAULT = 0,
-	RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR = 1 << 0, ///< Treat CFG blocks at address 0x0 as valid.
+	RZ_ABSINT_CONFLICT_SOLUTION_REJECT_0_ADDR = 1 << 0, ///< Totally reject any block at address 0x0.
 } RzAbsIntCFGConflictSolutionCfg;
 
 RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_absint_cfg_conflict_new();
