@@ -391,8 +391,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	RzAbsIntCFGConflictSolutionCfg cfg = RZ_ABSINT_CONFLICT_SOLUTION_DEFAULT;
 	RzIO *io = rz_analysis_get_io_bind(config->analysis)->io;
 	RzIOMap *map = rz_io_map_get(io, 0x0);
-	if (map && map->perm & RZ_PERM_X) {
-		cfg = RZ_ABSINT_CONFLICT_SOLUTION_ALLOW_0_ADDR;
+	if (!(map && map->perm & RZ_PERM_X)) {
+		cfg = RZ_ABSINT_CONFLICT_SOLUTION_REJECT_0_ADDR;
 	}
 	if (!rz_absint_cfg_conflicts_solve(config->analysis, conflicts, cfg)) {
 		RZ_LOG_WARN("Failed to resolve all CFG lock conflicts. Results analysis quality might be affected.\n");
