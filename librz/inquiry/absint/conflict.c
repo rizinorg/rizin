@@ -151,9 +151,9 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY,
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH,
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
@@ -325,6 +325,9 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 		return CFG_CONFLICT_VERDICT_DROP_SUCC;
 	}
 	RzIO *io = rz_analysis_get_io_bind(analysis)->io;
+	RzCore *core = rz_analysis_get_core_bind(analysis)->core;
+	RzBin *bin = rz_core_get_bin(core);
+	RzBinObject *obj = rz_bin_cur_object(bin);
 
 	CFGConflictScore score = { 0 };
 
@@ -359,9 +362,12 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
 	}
 
+	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
+	if (block_addr < bin_entry) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
+	}
 	// CFG_CONFLICT_OBSV_IS_IMPORT_THUNK
 	// CFG_CONFLICT_OBSV_STARTS_COND_JMP
-	// CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY
 	// CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH
 	// CFG_CONFLICT_OBSV_ENDS_WITH_RET
 	// CFG_CONFLICT_OBSV_SELF_LOOP

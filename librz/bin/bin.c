@@ -1061,7 +1061,7 @@ RZ_API const char *rz_bin_entry_type_string(int etype) {
 }
 
 /**
- * \brief Returns a first possible entry point address of the object.
+ * \brief Returns a first (lowest address) possible entry point address of the object.
  * If no entry point could be determined, it just returns 0, which is also a valid address.
  *
  * If the object has entry points defined, it returns the first one.
@@ -1072,15 +1072,19 @@ RZ_API const char *rz_bin_entry_type_string(int etype) {
  *
  * \param obj The object file to get the entry point from.
  *
- * \return The entry point address of the binary.
+ * \return The lowest entry point address of the binary.
  */
 RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
+	ut64 addr = UT64_MAX;
 	if (!obj) {
 		return 0;
 	} else if (obj->entries && rz_pvector_len(obj->entries) > 0) {
 		// The binary loader specified entry points. Use the first one.
-		const RzBinAddr *entry = rz_pvector_at(obj->entries, 0);
-		ut64 addr = entry->vaddr ? entry->vaddr : entry->paddr;
+		void **it;
+		rz_pvector_foreach (obj->entries, it) {
+			const RzBinAddr *entry = *it;
+			addr = RZ_MIN(addr, entry->vaddr ? entry->vaddr : entry->paddr);
+		}
 		return addr;
 	}
 	const RzPVector *sections = rz_bin_object_get_sections_all(obj);
@@ -1093,7 +1097,7 @@ RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
 	rz_pvector_foreach (sections, iter) {
 		RzBinSection *s = *iter;
 		if (s->perm & RZ_PERM_X) {
-			ut64 addr = s->vaddr ? s->vaddr : s->paddr;
+			addr = RZ_MIN(addr, s->vaddr ? s->vaddr : s->paddr);
 			return addr;
 		}
 	}
