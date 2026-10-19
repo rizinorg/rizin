@@ -12,6 +12,11 @@
 #define C166_SP_SIZE  16
 #define C166_CSP_SIZE 16
 
+#define SEGMENTED_ADDR(csp, ip) \
+	ADD( \
+		SHIFTL0(UNSIGNED(32, csp), U32(14)), \
+		UNSIGNED(32, ip))
+
 #define SET_E2(x) \
 	SETG("e", \
 		ITE( \
@@ -29,13 +34,16 @@
 #define SET_Ex(x, b)  SETG("e", ITE(EQ(x, U##b(1 << (b - 1))), IL_TRUE, IL_FALSE))
 #define SET_DEx(x, b) SETG("e", ITE(EQ(DUP(x), U##b(1 << (b - 1))), IL_TRUE, IL_FALSE))
 
+#define SET_Nx(x, b) SETG("n", MSB(UNSIGNED(b, x)))
+
 #define SET_DE(x)  SET_DEx(x, 16)
 #define SET_DE8(x) SET_DEx(x, 8)
 #define SET_E(x)   SET_Ex(x, 16)
 #define SET_E8(x)  SET_Ex(x, 8)
 #define SET_Z(x)   SETG("z", ITE(IS_ZERO(x), IL_TRUE, IL_FALSE))
 #define SET_DZ(x)  SETG("z", ITE(IS_ZERO(DUP(x)), IL_TRUE, IL_FALSE))
-#define SET_N(x)   SETG("n", MSB(x))
+#define SET_N(x)   SET_Nx(x, 16)
+#define SET_N8(x)  SET_Nx(x, 8)
 #define SET_DN(x)  SETG("n", MSB(DUP(x)))
 #define SET_C(x)   SETG("c", ITE(EQ(x, U16(0xFFFF)), IL_TRUE, IL_FALSE))
 #define SET_DC(x)  SETG("c", ITE(EQ(DUP(x), U16(0xFFFF)), IL_TRUE, IL_FALSE))
@@ -59,7 +67,7 @@
 
 #define READ_RL8(x) LOGAND(UNSIGNED(8, x), U8(0xFF))
 #define READ_RL(x)  LOGAND(x, U16(0xFF))
-#define READ_RH8(x) SHIFTR0(UNSIGNED(8, x), U16(8))
+#define READ_RH8(x) UNSIGNED(8, SHIFTR0(x, U16(8)))
 #define READ_RH(x)  SHIFTR0(VARG(x), U16(8))
 
 #define GET_BIT16(src_varl, bit) SHIFTR0(LOGAND(src_varl, U16(1 << bit)), U16(bit))
