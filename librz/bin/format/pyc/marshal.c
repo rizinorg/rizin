@@ -698,6 +698,7 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 	}
 
 	if (!add_string_to_cache(pyc, addr, ret->data, size, size, RZ_STRING_ENC_8BIT)) {
+		free(ret->data);
 		RZ_FREE(ret);
 		return NULL;
 	}
