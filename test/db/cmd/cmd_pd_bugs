@@ -368,3 +368,23 @@ EXPECT=<<EOF
 \           0x00007eda      pop   {r4, r5, r6, r7, pc}
 EOF
 RUN
+
+NAME=pdj prints the instructions when the read window ends in an unmapped region
+FILE=bins/elf/x86_64_relocs.o
+CMDS=<<EOF
+pdj 2~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":134217792,"opcode":"nop"},{"offset":134217793,"opcode":"nop"}]
+EOF
+RUN
+
+NAME=pdj prints the instructions when the read window ends in an unreadable map
+FILE=bins/elf/hello.loongarch32.o
+CMDS=<<EOF
+pdj 2 @ 0x80000a0~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":134217888,"opcode":"ret"},{"offset":134217892,"opcode":"invalid"}]
+EOF
+RUN

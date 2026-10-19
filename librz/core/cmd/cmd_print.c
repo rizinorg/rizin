@@ -2774,11 +2774,10 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return false;
 	}
-	bool ret = true;
 	if (!rz_io_read_at_mapped(core->io, offset, buf, n_bytes + 1)) {
 		// Even with an error, keep on disassembling as at least some data may be read successfully
+		// Do not fail the command: the output would be discarded in JSON mode.
 		RZ_LOG_WARN("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " from io.\n", (ut64)(n_bytes + 1), offset);
-		ret = false;
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -2802,7 +2801,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	}
 	free(buf);
 
-	return ret;
+	return true;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
