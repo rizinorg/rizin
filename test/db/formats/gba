@@ -14,3 +14,23 @@ EXPECT=<<EOF
 0x00000000 0x105cc 0x08000000 0x2000000   0x0 -r-x ROM       
 EOF
 RUN
+
+NAME=GBA: 3D - Header
+FILE=bins/gba/3D.gba
+CMDS=<<EOF
+iH
+EOF
+EXPECT=<<EOF
+gba:
+  entry_point: 0xea00002e
+  title: "3D"
+  game_code: ""
+  maker_code: "01"
+  fixed_value: 0x96
+  main_unit_code: 0x0
+  device_type: 0x80
+  software_version: 0x0
+  complement_check: 0xf9
+
+EOF
+RUN
