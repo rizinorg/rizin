@@ -145,6 +145,8 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 	}
 	if (!is_fallthrough) {
 		block->non_fallthrough_in = true;
+	} else {
+		block->fallthrough_in = true;
 	}
 }
 
