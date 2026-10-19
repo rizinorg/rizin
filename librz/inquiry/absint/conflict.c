@@ -62,7 +62,7 @@ typedef enum {
 	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 10, ///< Basic block is before the entry point of the binary.
 	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 11, ///< Block is reached by at least one fall-through edge.
 	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 12, ///< Block is reached by a normal in-function jump.
-	CFG_CONFLICT_OBSV_ENDS_WITH_RET = 1 << 13, ///< Block ends with a return instruction.
+	CFG_CONFLICT_OBSV_UNCOND_RETURNS = 1 << 13, ///< Block contains an unconditional return instruction.
 	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 14, ///< Block contains a stack-frame epilogue.
 	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 15, ///< The block shrinks the stack frame.
 	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 16, ///< The block loops back to itself.
@@ -153,11 +153,9 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_ENDS_WITH_RET,
+	{ CFG_CONFLICT_OBSV_UNCOND_RETURNS,
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN,
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
@@ -383,17 +381,22 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	if (block->fallthrough_in) {
 		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
 	}
-
-	// CFG_CONFLICT_OBSV_STARTS_COND_JMP
-	// CFG_CONFLICT_OBSV_ENDS_WITH_RET
+	ssize_t ret_insn = rz_analysis_op_type_contains(analysis, block_addr, block_addr_end - block_addr, -1, RZ_ANALYSIS_OP_TYPE_RET, RZ_ANALYSIS_OP_TYPE_MASK);
+	if (ret_insn >= 1) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
+	}
+	ssize_t cond_branch_insn = rz_analysis_op_type_contains(analysis, block_addr, block_addr_end - block_addr, 2, RZ_ANALYSIS_OP_TYPE_CJMP, RZ_ANALYSIS_OP_TYPE_CJMP);
+	if (cond_branch_insn >= 1) {
+		cfg_conflict_score(CFG_CONFLICT_OBSV_STARTS_COND_JMP, &score);
+	}
 
 	// TODO
 	// CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY
 	// CFG_CONFLICT_OBSV_IN_EH_FRAME
 	// CFG_CONFLICT_OBSV_GROWS_STACK_FRAME
+	// CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME
 	// CFG_CONFLICT_OBSV_STARTS_NOOP
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
-	// CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME
 
 verdict:
 	// TODO: Normalize scores

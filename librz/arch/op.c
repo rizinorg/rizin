@@ -347,6 +347,53 @@ RZ_API const char *rz_analysis_op_to_esil_string(RzAnalysis *analysis, RzAnalysi
 	return rz_strbuf_get(&op->esil);
 }
 
+/**
+ * \brief Disassembles all instructions in the range `[\p addr, \p addr + \p len]`
+ * or at most \p n instructions and compares their types:
+ * `op->type & type_mask == type & type_mask`.
+ * It returns the number of instructions of matching types.
+ * NOTE: Instructions which cross `addr + len` are not checked.
+ *
+ * \param analysis The analysis instance to use.
+ * \param addr The address to start disassembling.
+ * \param len The number of bytes to disassemble.
+ * \param n The maximum number of instructions to decode. -1 for all.
+ * \param type The type to look for.
+ * \param type_mask The mask to apply to the type before comparing.
+ *
+ * \return The number of found instructions with the given type, or -1 in case of error.
+ */
+RZ_API ssize_t rz_analysis_op_type_contains(RZ_NONNULL RzAnalysis *analysis, ut64 addr, size_t len, ssize_t n, _RzAnalysisOpType type, ut64 type_mask) {
+	rz_return_val_if_fail(analysis, -1);
+	RzIO *io = rz_analysis_get_io_bind(analysis)->io;
+	ut8 *buf = RZ_NEWS0(ut8, len);
+	if (!io || !buf || !rz_io_read_at_mapped(io, addr, buf, len)) {
+		free(buf);
+		return -1;
+	}
+	size_t k = 0;
+	ssize_t cnt = 0;
+	for (size_t i = 0; i < len;) {
+		k++;
+		RzAnalysisOp op = { 0 };
+		rz_analysis_op_init(&op);
+		int r = rz_analysis_op(analysis, &op, addr + i, buf + i, len - i, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (r <= 0) {
+			rz_analysis_op_fini(&op);
+			break;
+		}
+		if ((op.type & type_mask) == (type & type_mask)) {
+			cnt++;
+		}
+		i += op.size;
+		rz_analysis_op_fini(&op);
+		if (k == n) {
+			break;
+		}
+	}
+	return cnt;
+}
+
 // TODO: use esil here?
 RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	RzAnalysisBlock *bb;
