@@ -29,7 +29,7 @@ d ".word 0x1200" 12
 d "stallam 0x00;mov [-r2], r1" 44008812
 
 # These are made up from the C166 manual
-d "add r6, r2" 0062 0 (seq (set val (var r2)) (set res (+ (var r6) (var val))) (set r6 (var res)) (set e (ite (== (var val) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set v false) (set c (ite (== (var res) (bv 16 0xffff)) true false)) (set n (msb (var res))))
+d "add r6, r2" 0062 0x0 (seq (set op2 (var r2)) (set op1 (var r6)) (set res (+ (var op1) (var op2))) (set r6 (var res)) (set e (ite (== (var op2) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set v (&& (== (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false) (>> (& (var op2) (bv 16 0x8000)) (bv 16 0xf) false)) (! (== (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false) (>> (& (var res) (bv 16 0x8000)) (bv 16 0xf) false))))) (set c (! (ule (+ (cast 32 false (var op1)) (cast 32 false (var op2))) (bv 32 0xffff)))) (set c (ite (== (var res) (bv 16 0xffff)) true false)) (set n (msb (cast 16 false (var res)))))
 d "add r1, #0" 0810
 d "add r3, [r2]" 083A
 d "add r2, [r0+]" 082C
