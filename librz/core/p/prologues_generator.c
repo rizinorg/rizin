@@ -28,7 +28,7 @@
 RzCorePlugin rz_core_plugin_prologues_generator;
 
 typedef struct core_prologues_generator_context_t {
-	RzCmdDesc *cmd_desc;
+	RzCmdDesc *cmd_desc; ///< cmd desc of plugin's cmd
 	ut64 prologue_len; ///< cfg: prologue length used for generation
 	double entropy_threshold; ///< cfg: threshold for node split entropy used for generalization
 	char *entropy_threshold_str; ///< string corresponding to the `entropy_threshold` to store in config system
@@ -1240,12 +1240,12 @@ static bool rz_cmd_prologues_gen_init(RzCore *core, RZ_OUT void **user) {
 	if (!rcmd) {
 		goto error;
 	}
-	RzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
-	if (!root_cd) {
+	RzCmdDesc *p_root_cd = rz_cmd_get_desc(rcmd, "p");
+	if (!p_root_cd) {
 		goto error;
 	}
 
-	RzCmdDesc *pg = rz_cmd_desc_group_modes_new(rcmd, root_cd, "pg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
+	RzCmdDesc *pg = rz_cmd_desc_group_modes_new(rcmd, p_root_cd, "pg", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON,
 		rz_cmd_prologues_gen_handler, &cmd_prologues_gen_help, &prologues_gen_help);
 
 	if (!pg) {
