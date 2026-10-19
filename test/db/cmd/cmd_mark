@@ -255,3 +255,41 @@ EXPECT=<<EOF
 0x000000f0  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
 RUN
+
+NAME=m, m+, and mm preserve active flagspace and keep mark flags in marks space
+FILE=malloc://1024
+CMDS=<<EOF
+f sym.foo 4 @ 0x10
+m my_mark 0x20 @ 0x10
+m+ my_mark2 0x28 @ 0x10
+fsl
+fl
+fs symbols
+f sym.bar 4 @ 0x20
+mm my_mark 0x30 0x40
+fsl
+fl
+fs marks
+fl
+EOF
+EXPECT=<<EOF
+    0 * classes
+    2 * marks
+    0 * relocs
+    0 * sections
+    0 * segments
+    0 * symbols
+0x00000010 4 sym.foo
+0x00000010 16 my_mark
+0x00000010 24 my_mark2
+    0 . classes
+    2 . marks
+    0 . relocs
+    0 . sections
+    0 . segments
+    1 * symbols
+0x00000020 4 sym.bar
+0x00000010 24 my_mark2
+0x00000030 16 my_mark
+EOF
+RUN
