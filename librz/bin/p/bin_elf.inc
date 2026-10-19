@@ -960,6 +960,20 @@ static RzPVector /*<RzBinSection *>*/ *sections_obj(ELFOBJ *obj, size_t psize) {
 		ptr->vsize = ehdr_size;
 		ptr->perm = RZ_PERM_RW;
 		ptr->is_segment = true;
+		/*
+		 * The ELF header is data, never code. Some binaries (for
+		 * example prelinked ones) have the entry point pointing exactly
+		 * at the beginning of the file (see issue #1729), which makes
+		 * the analysis disassemble the header itself as code and spread
+		 * garbage functions over it.
+		 * The meta is only set when the entry point resolves to the
+		 * very beginning of the file.
+		 **/
+		if (ehdr_size > 0 && Elf_(rz_bin_elf_get_entry_offset)(obj) == 0) {
+			ptr->layout.type = RZ_META_TYPE_DATA;
+			ptr->layout.element_size = ehdr_size;
+			ptr->layout.count = 1;
+		}
 		rz_pvector_push(ret, ptr);
 	}
 
