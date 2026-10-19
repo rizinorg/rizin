@@ -8,6 +8,7 @@
 #include <rz_util/ht_pu.h>
 #include <ctype.h>
 #include <limits.h>
+#include <string.h>
 #include "core_private.h"
 
 /*
@@ -2874,6 +2875,147 @@ static void set_layout(RzAGraph *g) {
 	rz_interrupt_break_pop(g->intr);
 }
 
+/** First ';' preceded by blank within [line, end); NULL if none.
+ * ANSI CSI params contain ';' but never preceded by blank, so no special-casing needed. */
+static const char *graph_find_comment(const char *line, const char *end) {
+	for (const char *p = line; p < end; ++p) {
+		if (*p == ';' && p != line && (p[-1] == ' ' || p[-1] == '\t')) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+/** Display width of [line, semi), trailing blanks excluded, ANSI CSI skipped.
+ * Counts UTF-8 codepoints, not terminal cells: CJK wide chars occupy 2 cells
+ * but count 1 here. That undercounts widths containing CJK (placing ';' one
+ * cell too far left per wide char). Accepted because code prefixes are
+ * addresses, mnemonics and operands, i.e. ASCII in practice; the exact
+ * measurer (rz_str_utf8_ansi_cols) needs a NUL-terminated copy per line. */
+static unsigned int graph_prefix_cols(const char *line, const char *semi) {
+	const char *end = semi;
+	while (end > line && (end[-1] == ' ' || end[-1] == '\t')) {
+		--end;
+	}
+	unsigned int cols = 0;
+	for (const char *p = line; p < end;) {
+		if (*p == '\x1b' && p + 1 < end && p[1] == '[') {
+			p += 2;
+			while (p < end && (unsigned char)*p >= 0x30 && (unsigned char)*p <= 0x3F) {
+				++p;
+			}
+			while (p < end && (unsigned char)*p >= 0x20 && (unsigned char)*p <= 0x2F) {
+				++p;
+			}
+			if (p < end) {
+				++p;
+			}
+			continue;
+		}
+		unsigned char c = (unsigned char)*p;
+		if (c < 0x80) {
+			p += 1;
+		} else if ((c & 0xE0) == 0xC0) {
+			p += 2;
+		} else if ((c & 0xF0) == 0xE0) {
+			p += 3;
+		} else if ((c & 0xF8) == 0xF0) {
+			p += 4;
+		} else {
+			p += 1;
+		}
+		if (p > end) {
+			break;
+		}
+		++cols;
+	}
+	return cols;
+}
+
+/** Widest rtrimmed code prefix among trailing-comment lines; allocation-free. */
+static unsigned int graph_body_max_code_cols(const char *body) {
+	unsigned int max_cols = 0;
+	if (!body) {
+		return 0;
+	}
+	for (const char *line = body;;) {
+		const char *eol = strchr(line, '\n');
+		const char *end = eol ? eol : line + strlen(line);
+		const char *semi = graph_find_comment(line, end);
+		if (semi) {
+			unsigned int cols = graph_prefix_cols(line, semi);
+			if (cols > max_cols) {
+				max_cols = cols;
+			}
+		}
+		if (!eol) {
+			break;
+		}
+		line = eol + 1;
+	}
+	return max_cols;
+}
+
+/**
+ * \brief Align trailing ';' comments within a single graph node body.
+ *
+ * Node width is derived from the body text, so padding to a global column
+ * (e.g. asm.cmt.col) would widen every node. Instead, measure the widest
+ * code prefix in this body and pad each trailing comment to that column.
+ * Lines without a trailing comment, full-line comments starting with
+ * ';', and comment-only lines with a whitespace-only prefix pass through
+ * untouched.
+ * Code prefixes are decoded instructions and never contain quoted ';'
+ * (db lines don't occur in function graph bodies); the first ';' preceded
+ * by blank ends the code.
+ *
+ * \param body Node body as produced by pD (asm.cmt.col=0, single space).
+ * \return Heap-allocated aligned copy, or NULL on OOM/invalid input.
+ */
+static char *align_graph_comments(const char *body) {
+	if (!body) {
+		return NULL;
+	}
+	const unsigned int max_cols = graph_body_max_code_cols(body);
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	bool first = true;
+	for (const char *line = body;;) {
+		const char *eol = strchr(line, '\n');
+		const char *end = eol ? eol : line + strlen(line);
+		if (!first) {
+			rz_strbuf_append(&sb, "\n");
+		}
+		first = false;
+		const char *semi = graph_find_comment(line, end);
+		if (!semi) {
+			rz_strbuf_append_n(&sb, line, (size_t)(end - line));
+		} else {
+			const char *trim = semi;
+			while (trim > line && (trim[-1] == ' ' || trim[-1] == '\t')) {
+				--trim;
+			}
+			if (trim == line) {
+				rz_strbuf_append_n(&sb, line, (size_t)(end - line));
+			} else {
+				const unsigned int cols = graph_prefix_cols(line, semi);
+				rz_strbuf_append_n(&sb, line, (size_t)(trim - line));
+				/* cols <= max_cols: this line contributed to the max. */
+				unsigned int pad = cols >= max_cols ? 1 : max_cols - cols + 1;
+				for (unsigned int i = 0; i < pad; i++) {
+					rz_strbuf_append(&sb, " ");
+				}
+				rz_strbuf_append_n(&sb, semi, (size_t)(end - semi));
+			}
+		}
+		if (!eol) {
+			break;
+		}
+		line = eol + 1;
+	}
+	return rz_strbuf_drain(&sb);
+}
+
 static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	char *body;
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -2924,6 +3066,13 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 		body = rz_core_cmd_strf(core, "%s 0x%08" PFMT64x, "aeab", addr);
 	} else {
 		body = rz_core_cmd_strf(core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
+	}
+	if (body && ((opts & BODY_SUMMARY) || o_cmtright)) {
+		char *aligned = align_graph_comments(body);
+		if (aligned) {
+			free(body);
+			body = aligned;
+		}
 	}
 	rz_config_set_i(core->config, "scr.html", html);
 
