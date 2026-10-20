@@ -33,7 +33,7 @@
 #define VARIABLE_KEY_LEN
 #define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 2
-// Hash table HtUP that has void* as key and ut64 as value
+// Hash table HtUP that has ut64 as key and void* as value
 #define HtName_(name)              name##UP
 #define Ht_(name)                  ht_up_##name
 #define HT_(name)                  HtUP##name

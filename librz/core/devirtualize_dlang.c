@@ -52,7 +52,7 @@ typedef struct dlang_vtable_index_t {
 typedef struct dlang_caller_replay_context_t {
 	DlangVTableIndex *vtable_index;
 	RzSetU *allocator_calls;
-	HtUP *known_classes;
+	HtUU *known_classes;
 	const DlangCallSeed *argument_regs;
 } DlangCallerReplayContext;
 
@@ -642,7 +642,7 @@ static RZ_OWN RzVector /*<ut64>*/ *call_sites_to(RzCore *core, ut64 target) {
 	return result;
 }
 
-static RZ_OWN RzSetU *allocator_xrefs(RzCore *core, HtUP *known_classes) {
+static RZ_OWN RzSetU *allocator_xrefs(RzCore *core, HtUU *known_classes) {
 	RzSetU *result = rz_set_u_new();
 	if (!result) {
 		return NULL;
@@ -660,13 +660,7 @@ static RZ_OWN RzSetU *allocator_xrefs(RzCore *core, HtUP *known_classes) {
 		rz_vector_foreach (call_sites, call_site) {
 			rz_set_u_add(result, *call_site);
 			if (known_class) {
-				ut64 *value = RZ_NEW(ut64);
-				if (value) {
-					*value = known_class;
-					if (!ht_up_insert(known_classes, *call_site, value)) {
-						free(value);
-					}
-				}
+				ht_uu_insert(known_classes, *call_site, known_class);
 			}
 		}
 		rz_vector_free(call_sites);
@@ -674,12 +668,12 @@ static RZ_OWN RzSetU *allocator_xrefs(RzCore *core, HtUP *known_classes) {
 	return result;
 }
 
-static ut64 replay_allocator(RzCore *core, RzAnalysisOp *op, HtUP *known_classes, const char *arg0, const char *ret_reg, ut64 object_addr) {
+static ut64 replay_allocator(RzCore *core, RzAnalysisOp *op, HtUU *known_classes, const char *arg0, const char *ret_reg, ut64 object_addr) {
 	bool found = false;
-	ut64 *known_class = ht_up_find(known_classes, op->addr, &found);
+	ut64 known_class = ht_uu_find(known_classes, op->addr, &found);
 	ut64 class_info_addr = get_reg_value(core->analysis, arg0);
 	if (found) {
-		class_info_addr = *known_class;
+		class_info_addr = known_class;
 	}
 	ut64 object_size = allocate_object(core, class_info_addr, object_addr);
 	if (is_valid_reg(core, ret_reg)) {
@@ -699,7 +693,7 @@ typedef struct dlang_function_replay_context_t {
 	ut64 end;
 	DlangVTableIndex *vtable_index;
 	RzSetU *allocator_calls;
-	HtUP *known_classes;
+	HtUU *known_classes;
 	const DlangCallSeed *seed;
 	HtUP *calls;
 } DlangFunctionReplayContext;
@@ -874,13 +868,13 @@ RZ_IPI void rz_core_analysis_devirtualize_dlang_methods(RZ_NULLABLE RzCore *core
 	if (!index) {
 		return;
 	}
-	HtUP *known_classes = ht_up_new(NULL, free);
+	HtUU *known_classes = ht_uu_new();
 	RzSetU *allocator_calls = NULL;
 	if (known_classes) {
 		allocator_calls = allocator_xrefs(core, known_classes);
 	}
 	if (!known_classes || !allocator_calls) {
-		ht_up_free(known_classes);
+		ht_uu_free(known_classes);
 		rz_set_u_free(allocator_calls);
 		vtable_index_free(index);
 		return;
@@ -902,7 +896,7 @@ RZ_IPI void rz_core_analysis_devirtualize_dlang_methods(RZ_NULLABLE RzCore *core
 	if (!calls) {
 		rz_vector_free(seeds);
 		rz_set_u_free(allocator_calls);
-		ht_up_free(known_classes);
+		ht_uu_free(known_classes);
 		vtable_index_free(index);
 		return;
 	}
@@ -929,6 +923,6 @@ RZ_IPI void rz_core_analysis_devirtualize_dlang_methods(RZ_NULLABLE RzCore *core
 	ht_up_free(calls);
 	rz_vector_free(seeds);
 	rz_set_u_free(allocator_calls);
-	ht_up_free(known_classes);
+	ht_uu_free(known_classes);
 	vtable_index_free(index);
 }
