@@ -1663,7 +1663,10 @@ IL_LIFTER(call) {
 	 * We also need to push the code segment register in case 16 and 32 bit modes.
 	 */
 
-	RzILOpEffect *push_pc = x86_push_helper(UN(analysis->bits, pc), analysis->bits / BITS_PER_BYTE);
+	RzILOpEffect *push_pc = x86_push_helper(
+	    rz_il_op_new_bitv_from_ut64_pc(analysis->bits, pc),
+	    analysis->bits / BITS_PER_BYTE
+	);
 	return SEQ2(push_pc, JMP(x86_il_get_op(0)));
 }
 

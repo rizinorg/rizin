@@ -60,6 +60,7 @@ typedef struct rz_il_op_effect_t RzILOpEffect;
  */
 typedef struct rz_il_op_args_bv_t {
 	RzBitVector *value; ///< value of bitvector
+	bool is_pc; ///< true if this constant represents the architecture program counter
 } RzILOpArgsBV;
 
 /**
@@ -767,6 +768,7 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_xor(RZ_NONNULL RzILOpBool *x, RZ_NON
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_bool_inv(RZ_NONNULL RzILOpBool *x);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv(RZ_NONNULL RzBitVector *value);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 number);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64_pc(ut32 length, ut64 number);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_msb(RZ_NONNULL RzILOpPure *val);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_lsb(RZ_NONNULL RzILOpPure *val);

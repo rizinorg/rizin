@@ -202,9 +202,27 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64(ut32 length, ut64 num
 }
 
 /**
- *  \brief op structure for bitvector converted from st64
+ *  \brief op structure for bitvector converted from ut64
  *
  *  value is a bitvector constant.
+ */
+/**
+ * Create a bitvector constant that represents the architecture program counter.
+ * This provenance is used by analyses that need to distinguish PC-derived
+ * values from ordinary constants with the same numeric value.
+ */
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_ut64_pc(ut32 length, ut64 number) {
+	RzILOpBitVector *ret = rz_il_op_new_bitv_from_ut64(length, number);
+	if (ret) {
+		ret->op.bitv.is_pc = true;
+	}
+	return ret;
+}
+
+/**
+ * \brief Create a bitvector constant from a signed 64-bit integer.
+ *
+ * The value is stored as a bitvector constant.
  */
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_bitv_from_st64(ut32 length, st64 number) {
 	RzBitVector *value = rz_bv_new_from_st64(length, number);
@@ -1342,6 +1360,7 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 		break;
 	case RZ_IL_OP_BITV:
 		r->op.bitv.value = rz_bv_dup(op->op.bitv.value);
+		r->op.bitv.is_pc = op->op.bitv.is_pc;
 		break;
 	case RZ_IL_OP_MSB:
 		DUP_OP1(msb, bv);
