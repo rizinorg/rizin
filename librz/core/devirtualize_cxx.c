@@ -592,6 +592,7 @@ static RzCppVariableBook *core_analysis_mark_classes(RzCore *core) {
 		free_taint_state(state);
 		rz_list_free(list);
 		RZ_FREE(bytes);
+		return NULL;
 	}
 	var_book->class_variables = ht_up_new(NULL, NULL);
 	var_book->function = function;
