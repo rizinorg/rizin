@@ -388,3 +388,20 @@ EXPECT=<<EOF
 [{"offset":134217888,"opcode":"ret"},{"offset":134217892,"opcode":"invalid"}]
 EOF
 RUN
+
+NAME=pdf describes pointed data like pd
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+e asm.bytes=false
+af @ main
+pdf @ main~0x0000413c,0x00004297
+pd 1 @ 0x413c
+pd 1 @ 0x4297
+EOF
+EXPECT=<<EOF
+| 0x0000413c      lea   rbp, qword [0x00019190]
+| 0x00004297      cmp   rdx, 0x01
+|           0x0000413c      lea   rbp, qword [0x00019190]
+|           0x00004297      cmp   rdx, 0x01
+EOF
+RUN
