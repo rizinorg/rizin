@@ -340,7 +340,7 @@ RZ_API st64 rz_core_search_preludes(RzCore *core, RZ_NULLABLE RzList /*<RzSearch
 		// no prologues provided, use prologues from arch plugin
 		prologues = rz_analysis_preludes(core->analysis);
 		if (!prologues) {
-			RZ_LOG_ERROR("core: no prologues available for current architecture."
+			RZ_LOG_ERROR("core: no function prologues available for current architecture."
 				     " Please use 'aapf' or 'aapk'  to provide prologues.\n");
 			return -1;
 		}

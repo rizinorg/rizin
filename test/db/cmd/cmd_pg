@@ -223,6 +223,7 @@ prologues:
     mask: "ffffffffffffffffffffffffffffffff"
 
 EOF
+RUN
 
 NAME=archive processing support (.a)
 FILE=bins/ar/libgdbr.a
