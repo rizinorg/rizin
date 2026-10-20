@@ -1,7 +1,7 @@
 [wrap-git]
 directory = zydis
 url = https://github.com/zyantific/zydis.git
-revision = a95bb71013436547f689fc0b380f48edf663066e
+revision = 6372690e30389a94db65ece2d8a1f0a2310475ed
 clone-recursive = true
 depth = 2
 lead_directory_missing = true
