@@ -725,6 +725,10 @@ RZ_API bool rz_prologues_trie_feed_file(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ
 	return res;
 }
 
+static int cmp_file_name(const void *a, const void *b, void *user) {
+	return rz_str_cmp(a, b, -1);
+}
+
 /**
  * \brief Feed function prologues from every file in a directory.
  *
@@ -757,6 +761,7 @@ RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_tri
 	if (!files) {
 		return -1;
 	}
+	rz_list_sort(files, cmp_file_name, NULL); // to keep output independent of file's order
 
 	RzListIter *it;
 	char *file;
