@@ -275,15 +275,21 @@ static void score_add(BlockObservations obs, BlockScore *score) {
 	}
 }
 
+static void normalize_verdict(BlockScore *s) {
+	for (int i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
+		s->score[i] /= s->total_obsv;
+	}
+}
+
 static BlockVerdict pick_verdict(const BlockScore *s) {
 	int best = 0, second = 1;
 
-	for (int i = 1; i < CFG_CONFLICT_VERDICT_N; ++i) {
-		if (s->score[i] > s->score[best]) {
+	for (int verdict = 1; verdict < CFG_CONFLICT_VERDICT_N; ++verdict) {
+		if (s->score[verdict] > s->score[best]) {
 			second = best;
-			best = i;
-		} else if (i != best && s->score[i] > s->score[second]) {
-			second = i;
+			best = verdict;
+		} else if (verdict != best && s->score[verdict] > s->score[second]) {
+			second = verdict;
 		}
 	}
 
@@ -390,7 +396,7 @@ RZ_API BlockVerdict rz_absint_block_judge(RzAnalysis *analysis,
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
 
 verdict:
-	// TODO: Normalize scores
+	normalize_verdict(&score);
 	return pick_verdict(&score);
 }
 
