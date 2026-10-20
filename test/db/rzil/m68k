@@ -20,7 +20,9 @@ a7 = 0x200080
  d0: 0x00000001
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: core: no function prologues available for current architecture. Please use 'aapf' or 'aapk'  to provide prologues.
+EOF
 RUN
 
 NAME=m68k aez MOVEM predecrement uses CPU-specific base value
@@ -3444,5 +3446,7 @@ a7 = 0x200080
  d0: 0x00000001
 Hello from RzIL!
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: core: no function prologues available for current architecture. Please use 'aapf' or 'aapk'  to provide prologues.
+EOF
 RUN
