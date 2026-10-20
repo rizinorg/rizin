@@ -71,6 +71,7 @@ RZ_API void rz_bin_xtrdata_free(RZ_NULLABLE void /*RzBinXtrData*/ *data_) {
 		free(data->metadata->libname);
 		free(data->metadata->arch);
 		free(data->metadata->machine);
+		free(data->metadata->type);
 		free(data->metadata);
 	}
 	free(data->file);
