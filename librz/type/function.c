@@ -153,6 +153,7 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
  */
 RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
 	rz_return_val_if_fail(typedb && callable && callable->name, false);
+	rz_type_db_load_pending(typedb);
 	if (rz_type_func_exist(typedb, callable->name)) {
 		return false;
 	}
@@ -168,6 +169,7 @@ RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable)
  */
 RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
 	rz_return_val_if_fail(typedb && callable && callable->name, false);
+	rz_type_db_load_pending(typedb);
 	if (!ht_sp_update(typedb->callables, callable->name, (void *)callable)) {
 		rz_type_callable_free(callable);
 		return false;
@@ -183,6 +185,7 @@ RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callabl
  */
 RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	RzCallable *callable = ht_sp_find(typedb->callables, name, &found);
 	if (!found || !callable) {
@@ -200,6 +203,7 @@ RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const
  */
 RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
+	rz_type_db_load_pending(typedb);
 	ht_sp_delete(typedb->callables, name);
 	return true;
 }
@@ -208,6 +212,7 @@ RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  * \brief Removes all RzCallable types
  */
 RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	ht_sp_free(typedb->callables);
 	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 }
@@ -220,6 +225,7 @@ RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
  */
 RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	return ht_sp_find(typedb->callables, name, &found) && found;
 }
@@ -682,6 +688,7 @@ static bool function_names_collect_cb(void *user, RZ_UNUSED const char *k, const
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *result = rz_list_newf(free);
 	ht_sp_foreach(typedb->callables, function_names_collect_cb, result);
 	return result;
@@ -703,6 +710,7 @@ static bool noreturn_function_names_collect_cb(void *user, RZ_UNUSED const char 
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *noretl = rz_list_newf(free);
 	ht_sp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);
 	return noretl;

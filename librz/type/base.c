@@ -56,6 +56,7 @@ RZ_API RZ_BORROW const char *rz_type_base_type_kind_as_string(RzBaseTypeKind kin
  */
 RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
+	rz_type_db_load_pending(typedb);
 
 	bool found = false;
 	RzBaseType *btype = ht_sp_find(typedb->types, name, &found);
@@ -73,6 +74,7 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_base_type(const RzTypeDB *typedb, RZ
  */
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
+	rz_type_db_load_pending(typedb);
 	ht_sp_delete(typedb->types, type->name);
 	return true;
 }
@@ -99,6 +101,7 @@ static bool base_type_kind_collect_cb(void *user, RZ_UNUSED const char *k, const
  */
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *types = rz_list_new();
 	struct list_kind lk = { types, kind };
 	ht_sp_foreach(typedb->types, base_type_kind_collect_cb, &lk);
@@ -119,6 +122,7 @@ static bool base_type_collect_cb(void *user, RZ_UNUSED const char *k, const void
  */
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *types = rz_list_new();
 	ht_sp_foreach(typedb->types, base_type_collect_cb, types);
 	return types;
@@ -270,6 +274,7 @@ RZ_API RZ_OWN RzBaseType *rz_type_base_type_new(RzBaseTypeKind kind) {
  */
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
+	rz_type_db_load_pending(typedb);
 	if (!ht_sp_insert(typedb->types, type->name, (void *)type)) {
 		rz_type_base_type_free(type);
 		return false;
@@ -285,6 +290,7 @@ RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type) 
  */
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type) {
 	rz_return_val_if_fail(typedb && type && type->name, false);
+	rz_type_db_load_pending(typedb);
 	if (!ht_sp_update(typedb->types, type->name, (void *)type)) {
 		rz_type_base_type_free(type);
 		return false;
@@ -446,6 +452,7 @@ static void base_type_rename_formats(RzTypeDB *typedb, const char *from, const c
  */
 RZ_API bool rz_type_db_rename_base_type(RzTypeDB *typedb, RZ_NONNULL const char *from, RZ_NONNULL const char *to) {
 	rz_return_val_if_fail(typedb && from && to, false);
+	rz_type_db_load_pending(typedb);
 	if (RZ_STR_EQ(from, to)) {
 		return true;
 	}

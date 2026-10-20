@@ -132,6 +132,7 @@ static bool filter_func(void *user, const SdbKv *kv) {
 
 static bool sdb_load_callables(RzTypeDB *typedb, Sdb *sdb) {
 	rz_return_val_if_fail(typedb && sdb, false);
+	rz_type_db_load_pending(typedb);
 	HtSP *type_str_cache = ht_sp_new(HT_STR_DUP, NULL, NULL); // cache from a known C type extr to its RzType representation for skipping the parser if possible
 	if (!type_str_cache) {
 		return false;
@@ -249,6 +250,7 @@ static bool export_callable_cb(void *user, RZ_UNUSED const char *k, const void *
 }
 
 static bool callable_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	struct typedb_sdb tdb = { typedb, db };
 	ht_sp_foreach(typedb->callables, export_callable_cb, &tdb);
 	return true;
