@@ -671,6 +671,7 @@ RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL Rz
  */
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	const char *result = ht_ss_find(typedb->formats, name, &found);
 	if (!found || !result) {
@@ -687,6 +688,7 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
  */
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
+	rz_type_db_load_pending(typedb);
 	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
 }
 
@@ -708,6 +710,7 @@ static bool format_collect_cb(void *user, const char *k, const char *v) {
  */
 RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *formats = rz_list_newf(free);
 	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
 	return formats;
@@ -720,5 +723,6 @@ RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typed
  */
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
 	rz_return_if_fail(typedb && name);
+	rz_type_db_load_pending(typedb);
 	ht_ss_delete(typedb->formats, name);
 }
