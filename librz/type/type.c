@@ -8,6 +8,27 @@
 #include <rz_type.h>
 #include <string.h>
 #include <sdb.h>
+#include "type_internal.h"
+
+/**
+ * An rz_type_db_init() call whose type libraries are not loaded yet.
+ */
+typedef struct rz_type_db_pending_load_t {
+	char *types_dir;
+	char *arch;
+	int bits;
+	char *os;
+} RzTypeDBPendingLoad;
+
+static void pending_load_free(RzTypeDBPendingLoad *load) {
+	if (!load) {
+		return;
+	}
+	free(load->types_dir);
+	free(load->arch);
+	free(load->os);
+	free(load);
+}
 
 /**
  * \brief Creates a new instance of the RzTypeDB
@@ -43,6 +64,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	if (!typedb->parser) {
 		goto rz_type_db_new_fail;
 	}
+	rz_type_parser_set_typedb(typedb->parser, typedb);
 	typedb->format_internal_data = RZ_NEW0(RzFormatDataInternal);
 	if (!typedb->format_internal_data) {
 		goto rz_type_db_new_fail;
@@ -68,6 +90,7 @@ rz_type_db_new_fail:
  * Destroys hashtables for RzBaseType, RzCallable, type formats.
  */
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
+	rz_list_free(typedb->pending_loads);
 	rz_type_parser_free(typedb->parser);
 	ht_sp_free(typedb->callables);
 	ht_sp_free(typedb->types);
@@ -86,18 +109,22 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
  * Destroys all loaded base types and callable types.
  */
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
+	// Pending loads also set type formats, which survive the purge
+	rz_type_db_load_pending(typedb);
 	ht_sp_free(typedb->callables);
 	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 	ht_sp_free(typedb->types);
 	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
+	rz_type_parser_set_typedb(typedb->parser, typedb);
 }
 
 /**
  * \brief Purges formats in the instance of the RzTypeDB
  */
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	ht_ss_free(typedb->formats);
 	typedb->formats = ht_ss_new(HT_STR_DUP, HT_STR_OWN);
 }
@@ -227,24 +254,7 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return true;
 }
 
-/**
- * \brief Initializes the types database for specified arch, bits, OS
- *
- * Loads pre-shipped type libraries for base types and function types.
- * Different architectures, operating systems, bitness affects
- * on what exact types are loaded, also some atomic types sizes are different.
- * In some cases the same type, for example, structure type could have
- * a different layout, depending on the operating system or bitness.
- *
- * \param typedb Types Database instance
- * \param types_dir Directory where all type libraries are installed
- * \param arch Architecture of the analysis session
- * \param bits Bitness of the analysis session
- * \param os Operating system of the analysis session
- */
-RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
-	rz_return_if_fail(typedb && typedb->types && typedb->formats);
-
+static void type_db_load(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
 	// A workaround to fix loading incorrectly detected MacOS binaries
 	if (RZ_STR_ISNOTEMPTY(os) && !strcmp(os, "darwin")) {
 		os = "macos";
@@ -335,6 +345,74 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char 
 		}
 		free(dbpath);
 	}
+}
+
+/**
+ * \brief Initializes the types database for specified arch, bits, OS
+ *
+ * Loads pre-shipped type libraries for base types and function types.
+ * Different architectures, operating systems, bitness affects
+ * on what exact types are loaded, also some atomic types sizes are different.
+ * In some cases the same type, for example, structure type could have
+ * a different layout, depending on the operating system or bitness.
+ *
+ * Loading is deferred until the types are first used (see rz_type_db_load_pending()),
+ * because setting the arch, bits and OS of an analysis session reloads the database
+ * for every intermediate combination, and many sessions never look up a type.
+ * The deferred loads are applied in the same order as the calls.
+ *
+ * \param typedb Types Database instance
+ * \param types_dir Directory where all type libraries are installed
+ * \param arch Architecture of the analysis session
+ * \param bits Bitness of the analysis session
+ * \param os Operating system of the analysis session
+ */
+RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
+	rz_return_if_fail(typedb && typedb->types && typedb->formats);
+	if (!typedb->pending_loads) {
+		typedb->pending_loads = rz_list_newf((RzListFree)pending_load_free);
+		if (!typedb->pending_loads) {
+			type_db_load(typedb, types_dir, arch, bits, os);
+			return;
+		}
+	}
+	RzTypeDBPendingLoad *load = RZ_NEW0(RzTypeDBPendingLoad);
+	if (!load) {
+		type_db_load(typedb, types_dir, arch, bits, os);
+		return;
+	}
+	load->types_dir = rz_str_dup(types_dir);
+	load->arch = rz_str_dup(arch);
+	load->bits = bits;
+	load->os = rz_str_dup(os);
+	rz_list_append(typedb->pending_loads, load);
+}
+
+/**
+ * \brief Applies the rz_type_db_init() calls whose loading was deferred
+ *
+ * Every RzTypeDB API that reads or changes the types, callables, formats or
+ * uses the parser calls it first. Code that accesses these fields of RzTypeDB
+ * directly must call it before.
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API void rz_type_db_load_pending(RZ_NONNULL const RzTypeDB *typedb) {
+	rz_return_if_fail(typedb);
+	if (!typedb->pending_loads) {
+		return;
+	}
+	// Loading is logically const: it materializes the state the earlier calls asked for.
+	RzTypeDB *db = (RzTypeDB *)typedb;
+	// Detached first, because loading uses APIs that call this function
+	RzList *pending = db->pending_loads;
+	db->pending_loads = NULL;
+	RzListIter *iter;
+	RzTypeDBPendingLoad *load;
+	rz_list_foreach (pending, iter, load) {
+		type_db_load(db, load->types_dir, load->arch, load->bits, load->os);
+	}
+	rz_list_free(pending);
 }
 
 /**

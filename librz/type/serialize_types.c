@@ -638,6 +638,7 @@ void sdb_save_base_type(const RzTypeDB *typedb, RZ_NONNULL Sdb *sdb, const RzBas
 }
 
 RZ_IPI bool types_load_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	return sdb_load_base_types(typedb, db);
 }
 
@@ -654,6 +655,7 @@ static bool export_base_type_cb(void *user, RZ_UNUSED const char *k, const void 
 }
 
 static bool types_export_sdb(RZ_NONNULL Sdb *db, RZ_NONNULL const RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	struct typedb_sdb tdb = { typedb, db };
 	ht_sp_foreach(typedb->types, export_base_type_cb, &tdb);
 	return true;
