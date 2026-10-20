@@ -37,6 +37,14 @@ typedef enum {
 	CFG_CONFLICT_VERDICT_N,
 } BlockVerdict;
 
+const char *block_verdict_names[] = {
+	[CFG_CONFLICT_VERDICT_DROP] = "drop",
+	[CFG_CONFLICT_VERDICT_DROP_SUCC] = "drop_succ",
+	[CFG_CONFLICT_VERDICT_SHARED] = "shared",
+	[CFG_CONFLICT_VERDICT_FCN_ENTRY] = "fcn_entry",
+	[CFG_CONFLICT_VERDICT_N] = "num_verdicts",
+};
+
 /**
  * \brief Different hints that a block is a function entry point, shared by functions,
  * or should be blocked.
@@ -417,6 +425,8 @@ RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis,
 		RzPVector *block_versions = kv->value;
 		const CFGConflictBlock *cfb = rz_pvector_head(block_versions);
 		BlockVerdict verdict = rz_absint_block_judge(analysis, cfb->block, cfg);
+		printf("Block 0x%08lx: %s\n", kv->key, block_verdict_names[verdict]);
+
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP_SUCC:
 		case CFG_CONFLICT_VERDICT_DROP:
