@@ -226,7 +226,7 @@ RZ_API RZ_OWN RzAbsIntCFGConflicts *rz_absint_cfg_conflict_new() {
 	if (!conflicts) {
 		return NULL;
 	}
-	conflicts->cfg_conflicts = ht_up_new(NULL, NULL);
+	conflicts->cfg_conflicts = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!conflicts->cfg_conflicts) {
 		free(conflicts);
 		return NULL;
