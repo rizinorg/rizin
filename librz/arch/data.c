@@ -15,11 +15,7 @@ static bool get_string(const ut8 *buf, int size, RzDetectedString **dstr, RzStrE
 		.check_ascii_freq = false,
 	};
 
-	if (rz_scan_strings_single_raw(buf, size, &opt, encoding, dstr) && (*dstr)->addr) {
-		rz_detected_string_free(*dstr);
-		*dstr = NULL;
-	}
-	return *dstr;
+	return rz_scan_strings_single_at_start_raw(buf, size, &opt, encoding, dstr);
 }
 
 static int is_number(const ut8 *buf, int size) {
