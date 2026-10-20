@@ -16,6 +16,9 @@
 
 #define DEFAULT_NARGS 4
 #define FLAG_PREFIX   ";-- "
+// Bytes read at a pointer operand to describe what it points to, the same in
+// every view; string comments show at most 128 characters anyway
+#define DS_PTR_DATA_SIZE 512
 
 #define COLOR(ds, field)       ((ds)->show_color ? (ds)->core->cons->context->pal.field : "")
 #define COLOR_ARG(ds, field)   ((ds)->show_color && (ds)->show_color_args ? (ds)->core->cons->context->pal.field : "")
@@ -5610,7 +5613,7 @@ toro:
 			ds_build_op_str(ds, false);
 			ds_print_cmt_esil(ds);
 			ds_print_cmt_il(ds);
-			ds_print_ptr(ds, len + 256, idx);
+			ds_print_ptr(ds, DS_PTR_DATA_SIZE, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
 			ds_print_color_reset(ds);
@@ -5724,7 +5727,7 @@ toro:
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_cmt_esil(ds);
 				ds_print_cmt_il(ds);
-				ds_print_ptr(ds, len + 256, idx);
+				ds_print_ptr(ds, DS_PTR_DATA_SIZE, idx);
 				ds_print_sysregs(ds);
 				ds_print_fcn_name(ds);
 				ds_print_color_reset(ds);
