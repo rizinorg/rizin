@@ -130,7 +130,6 @@ static size_t blocks_count(RzAbsIntRunContext *ctx) {
 }
 
 bool test_absint_block_resolve_bounds_single(void) {
-	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"000080d2"  // 0x00  mov   x0, 0
 					// ---

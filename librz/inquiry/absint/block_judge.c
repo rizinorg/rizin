@@ -35,7 +35,7 @@ typedef enum {
 	CFG_CONFLICT_VERDICT_SHARED, ///< The block is likely shared with another function.
 	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a likely function entry point.
 	CFG_CONFLICT_VERDICT_N,
-} CFGConflictVerdict;
+} BlockVerdict;
 
 /**
  * \brief Different hints that a block is a function entry point, shared by functions,
@@ -72,19 +72,19 @@ typedef enum {
 	CFG_CONFLICT_OBSV_NOT_MAPPED = 1 << 18, ///< Block is not mapped at all.
 
 	CFG_CONFLICT_OBSV_N = 19,
-} CFGConflictObservations;
+} BlockObservations;
 
 typedef struct {
-	CFGConflictVerdict verdict;
+	BlockVerdict verdict;
 	int score;
-} CFGConflictScoreEntry;
+} HintScoreEntry;
 
 typedef struct {
-	CFGConflictObservations obs;
-	CFGConflictScoreEntry scores[CFG_CONFLICT_VERDICT_N + 1];
-} CFGConflictHintScore;
+	BlockObservations obs;
+	HintScoreEntry scores[CFG_CONFLICT_VERDICT_N + 1];
+} HintScores;
 
-static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
+static const HintScores hint_scores[] = {
 	{ CFG_CONFLICT_OBSV_SYMBOL,
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
@@ -192,7 +192,7 @@ static const CFGConflictHintScore cfg_conflict_hint_scores[] = {
 typedef struct {
 	size_t total_obsv; ///< Total number of observations which went into the score.
 	int score[CFG_CONFLICT_VERDICT_N];
-} CFGConflictScore;
+} BlockScore;
 
 // If the best result is below SCORE_VERDICT_MIN and
 // its margin to the second is less then SCORE_VERDICT_MARGIN
@@ -268,22 +268,14 @@ RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsI
 	return res;
 }
 
-static inline void score_inc_obsv(CFGConflictScore *s) {
-	s->total_obsv++;
-}
-
-static inline void score_add(CFGConflictScore *s, CFGConflictVerdict v, int d) {
-	s->score[v] += d;
-}
-
-static void cfg_conflict_score(CFGConflictObservations obs, CFGConflictScore *score) {
-	score_inc_obsv(score);
-	for (size_t i = 0; cfg_conflict_hint_scores[obs].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
-		score_add(score, cfg_conflict_hint_scores[obs].scores[i].verdict, cfg_conflict_hint_scores[obs].scores[i].score);
+static void score_add(BlockObservations obs, BlockScore *score) {
+	score->total_obsv++;
+	for (size_t i = 0; hint_scores[obs].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
+		score->score[hint_scores[obs].scores[i].verdict] += hint_scores[obs].scores[i].score;
 	}
 }
 
-static CFGConflictVerdict cfg_conflict_pick(const CFGConflictScore *s) {
+static BlockVerdict pick_verdict(const BlockScore *s) {
 	int best = 0, second = 1;
 
 	for (int i = 1; i < CFG_CONFLICT_VERDICT_N; ++i) {
@@ -300,13 +292,13 @@ static CFGConflictVerdict cfg_conflict_pick(const CFGConflictScore *s) {
 		return SCORE_VERDICT_UNKNOWN;
 	}
 
-	return (CFGConflictVerdict)best;
+	return (BlockVerdict)best;
 }
 
 /**
  * \brief This function has a high runtime complexity!
  */
-RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
+RZ_API BlockVerdict rz_absint_block_judge(RzAnalysis *analysis,
 	const RzAbsIntBlock *block,
 	RzAbsIntCFGConflictSolutionCfg config) {
 	ut64 block_addr = rz_absint_block_get_start(block);
@@ -317,32 +309,31 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 	}
 	RzIO *io = rz_analysis_get_io_bind(analysis)->io;
 	RzCore *core = rz_analysis_get_core_bind(analysis)->core;
-	RzBin *bin = rz_core_get_bin(core);
-	RzBinObject *obj = rz_bin_cur_object(bin);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
 
-	CFGConflictScore score = { 0 };
+	BlockScore score = { 0 };
 
 	// CHARACTERISTICS: Block
 	RzIOMap *map = rz_io_map_get(io, block_addr);
 	if (!map) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_MAPPED, &score);
+		score_add(CFG_CONFLICT_OBSV_NOT_MAPPED, &score);
 		// Ignore all other characteristics
 		goto verdict;
 	} else if (!(map->perm & RZ_PERM_X)) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
+		score_add(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
 	}
 	const RzAnalysisFunction *fcn;
 	if ((fcn = rz_analysis_get_function_at(analysis, block_addr))) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_SYMBOL, &score);
+		score_add(CFG_CONFLICT_OBSV_SYMBOL, &score);
 		if (fcn->imports) {
-			cfg_conflict_score(CFG_CONFLICT_OBSV_IMPORT, &score);
+			score_add(CFG_CONFLICT_OBSV_IMPORT, &score);
 		}
 	}
 
 	// CHARACTERISTICS: Block outgoing edges
 	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
 	if (block_addr < bin_entry) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
+		score_add(CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, &score);
 	}
 
 	// CHARACTERISTICS: Block incoming edges
@@ -358,7 +349,7 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 			jmp_xrefs_to++;
 		}
 		if (RZ_BETWEEN(block_addr, xref->from, block_addr_end)) {
-			cfg_conflict_score(CFG_CONFLICT_OBSV_SELF_LOOP, &score);
+			score_add(CFG_CONFLICT_OBSV_SELF_LOOP, &score);
 		}
 		const RzAnalysisFunction *pred_fcn = rz_analysis_fcn_next(analysis, xref->from);
 		if (!pred_fcn) {
@@ -366,28 +357,28 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 		}
 		if (pred_fcn->addr < xref->to) {
 			// The xref jumped over a function entry point to this block.
-			cfg_conflict_score(CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, &score);
+			score_add(CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, &score);
 		}
 	}
 	rz_list_free(xrefs_to);
 	if (call_xrefs_to == 1) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_IS_CALLED, &score);
+		score_add(CFG_CONFLICT_OBSV_IS_CALLED, &score);
 	} else if (call_xrefs_to > 1) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, &score);
+		score_add(CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, &score);
 	}
 	if (jmp_xrefs_to > 0) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
+		score_add(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
 	}
 	if (block->fallthrough_in) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
+		score_add(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
 	}
 	ssize_t ret_insn = rz_analysis_op_type_contains(analysis, block_addr, block_addr_end - block_addr, -1, RZ_ANALYSIS_OP_TYPE_RET, RZ_ANALYSIS_OP_TYPE_MASK);
 	if (ret_insn >= 1) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
+		score_add(CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, &score);
 	}
 	ssize_t cond_branch_insn = rz_analysis_op_type_contains(analysis, block_addr, block_addr_end - block_addr, 2, RZ_ANALYSIS_OP_TYPE_CJMP, RZ_ANALYSIS_OP_TYPE_CJMP);
 	if (cond_branch_insn >= 1) {
-		cfg_conflict_score(CFG_CONFLICT_OBSV_STARTS_COND_JMP, &score);
+		score_add(CFG_CONFLICT_OBSV_STARTS_COND_JMP, &score);
 	}
 
 	// TODO
@@ -400,7 +391,7 @@ RZ_API CFGConflictVerdict rz_absint_cfg_block_judge(RzAnalysis *analysis,
 
 verdict:
 	// TODO: Normalize scores
-	return cfg_conflict_pick(&score);
+	return pick_verdict(&score);
 }
 
 /**
@@ -419,7 +410,7 @@ RZ_API bool rz_absint_cfg_conflicts_solve(RZ_NONNULL RzAnalysis *analysis,
 	rz_iterator_foreach(&iter, kv) {
 		RzPVector *block_versions = kv->value;
 		const CFGConflictBlock *cfb = rz_pvector_head(block_versions);
-		CFGConflictVerdict verdict = rz_absint_cfg_block_judge(analysis, cfb->block, cfg);
+		BlockVerdict verdict = rz_absint_block_judge(analysis, cfb->block, cfg);
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP_SUCC:
 		case CFG_CONFLICT_VERDICT_DROP:
