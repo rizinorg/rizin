@@ -386,6 +386,7 @@ Detailed project load info:
   project migrated from version 23 to 24.
   project migrated from version 24 to 25.
   project migrated from version 25 to 26.
+  project migrated from version 26 to 27.
 EOF
 RUN
 

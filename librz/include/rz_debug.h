@@ -591,7 +591,6 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 RZ_API void rz_debug_esil_watch_reset(RzDebug *dbg);
 RZ_API RZ_BORROW RzList /*<RzDebugEsilWatchpoint *>*/ *rz_debug_esil_watch_list(RzDebug *dbg);
 RZ_API int rz_debug_esil_watch_empty(RzDebug *dbg);
-RZ_API void rz_debug_esil_prestep(RzDebug *d, int p);
 
 /* record & replay */
 RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg);

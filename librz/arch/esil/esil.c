@@ -4,6 +4,8 @@
 
 #include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
+#include "esil_internal.h"
+
 #define EANALYSIS(e) ((RzAnalysis *)(esil->panalysis))
 
 #define FLG(x) RZ_ANALYSIS_ESIL_FLAG_##x
@@ -29,7 +31,7 @@ static inline ut64 genmask(int bits) {
 }
 
 #define ESIL_LOG(fmtstr, ...) \
-	if (esil->verbose) { \
+	if (esil->config->verbose) { \
 		RZ_LOG_WARN(fmtstr, ##__VA_ARGS__); \
 	}
 
@@ -75,29 +77,74 @@ static bool popRN(RzAnalysisEsil *esil, ut64 *n) {
 }
 
 /* RZ_ANALYSIS_ESIL API */
+RZ_API void rz_esil_config_fini(RZ_NULLABLE RzEsilConfig *cfg) {
+	if (!cfg) {
+		return;
+	}
+	RZ_FREE(cfg->mdev_range);
+	RZ_FREE(cfg->cmd_step);
+	RZ_FREE(cfg->cmd_stepout);
+	RZ_FREE(cfg->cmd_mdev);
+	RZ_FREE(cfg->cmd_intr);
+	RZ_FREE(cfg->cmd_trap);
+	RZ_FREE(cfg->cmd_todo);
+	RZ_FREE(cfg->cmd_ioer);
+}
 
-RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
+/**
+ * \brief      Initializes the RzEsilConfig to use.
+ *
+ * \param[in]  RzEsilConfig  The esil configuration to initialize
+ */
+RZ_API void rz_esil_config_init(RZ_NONNULL RzEsilConfig *cfg) {
+	rz_return_if_fail(cfg);
+
+	cfg->prestep = true;
+	cfg->fillstack = 0;
+	cfg->verbose = 0;
+	cfg->gotolimit = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
+	cfg->stack_depth = RZ_ANALYSIS_ESIL_STACK_DEPTH_DEFAULT;
+	cfg->stack_size = RZ_ANALYSIS_ESIL_STACK_SIZE_DEFAULT;
+	cfg->stack_addr = RZ_ANALYSIS_ESIL_STACK_ADDR_DEFAULT;
+	cfg->addr_size = RZ_ANALYSIS_ESIL_ADDR_SIZE_DEFAULT;
+	cfg->breakoninvalid = false;
+	cfg->timeout_sec = 0;
+	cfg->exectrap = false;
+	cfg->iotrap = true;
+	cfg->romem = false;
+	cfg->stats = false;
+	cfg->no_null = false;
+	cfg->mdev_range = NULL;
+	cfg->cmd_step = NULL;
+	cfg->cmd_stepout = NULL;
+	cfg->cmd_mdev = NULL;
+	cfg->cmd_intr = NULL;
+	cfg->cmd_trap = NULL;
+	cfg->cmd_todo = NULL;
+	cfg->cmd_ioer = NULL;
+}
+
+RZ_API RzAnalysisEsil *rz_analysis_esil_new(RZ_NONNULL const RzEsilConfig *cfg) {
+	rz_return_val_if_fail(cfg, NULL);
+
+	if (cfg->stack_depth < 3) {
+		return NULL;
+	}
 	RzAnalysisEsil *esil = RZ_NEW0(RzAnalysisEsil);
 	if (!esil) {
 		return NULL;
 	}
-	if (stacksize < 3) {
+	esil->stack_size = cfg->stack_depth;
+	if (!(esil->stack = RZ_NEWS0(char *, esil->stack_size))) {
 		free(esil);
 		return NULL;
 	}
-	if (!(esil->stack = calloc(sizeof(char *), stacksize))) {
-		free(esil);
-		return NULL;
-	}
-	esil->verbose = false;
-	esil->stacksize = stacksize;
-	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
+	esil->config = cfg;
 	esil->ops = ht_sp_new(HT_STR_DUP, NULL, free);
-	esil->iotrap = iotrap;
 	esil->in_cmd_step = false;
 	rz_analysis_esil_sources_init(esil);
 	rz_analysis_esil_interrupts_init(esil);
-	esil->addrmask = genmask(addrsize - 1);
+	esil->addrmask = genmask(cfg->addr_size - 1);
 	rz_strbuf_init(&esil->current_opstr);
 	esil->esilinterstate = RZ_NEW0(RzAnalysisEsilInterState);
 	return esil;
@@ -125,14 +172,38 @@ RZ_API bool rz_analysis_esil_set_op(RzAnalysisEsil *esil, const char *op, RzAnal
 	return true;
 }
 
-static bool rz_analysis_esil_fire_trap(RzAnalysisEsil *esil, int trap_type, int trap_code) {
+/**
+ * \brief      Calls the cmd callback unless `cmd` or `command` is NULL.
+ *
+ * \param      esil     The esil context
+ * \param[in]  command  The command to execute
+ * \param[in]  arg0     The argument 0
+ * \param[in]  arg1     The argument 1
+ *
+ * \return     On success return true, otherwise false
+ */
+RZ_API bool rz_analysis_esil_call_cmd(RZ_NONNULL RzAnalysisEsil *esil, RZ_NULLABLE const char *command, ut64 arg0, ut64 arg1) {
 	rz_return_val_if_fail(esil, false);
-	if (esil->cmd) {
-		if (esil->cmd(esil, esil->cmd_trap, trap_type, trap_code)) {
-			return true;
-		}
+
+	if (RZ_STR_ISEMPTY(command) || !esil->cmd) {
+		return false;
 	}
+
+	return esil->cmd(esil, command, arg0, arg1);
+}
+
+RZ_IPI bool rz_analysis_esil_call_cmd_in_mdev(RzAnalysisEsil *esil, ut64 addr, const char *command, ut64 arg0, ut64 arg1) {
+	if (RZ_STR_ISNOTEMPTY(esil->config->mdev_range) &&
+		rz_str_range_in(esil->config->mdev_range, addr)) {
+		return rz_analysis_esil_call_cmd(esil, command, arg0, arg1);
+	}
+
 	return false;
+}
+
+static bool rz_analysis_esil_fire_trap(RzAnalysisEsil *esil, int trap_type, int trap_code) {
+	rz_return_val_if_fail(esil && esil->config, false);
+	return rz_analysis_esil_call_cmd(esil, esil->config->cmd_trap, trap_type, trap_code);
 }
 
 RZ_API bool rz_analysis_esil_set_pc(RzAnalysisEsil *esil, ut64 addr) {
@@ -152,6 +223,7 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	}
 	ht_sp_free(esil->ops);
 	esil->ops = NULL;
+	esil->config = NULL;
 	rz_analysis_esil_interrupts_fini(esil);
 	rz_analysis_esil_sources_fini(esil);
 	sdb_free(esil->stats);
@@ -164,13 +236,6 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	rz_strbuf_fini(&esil->current_opstr);
 	rz_analysis_esil_trace_free(esil->trace);
 	esil->trace = NULL;
-	free(esil->cmd_intr);
-	free(esil->cmd_trap);
-	free(esil->cmd_mdev);
-	free(esil->cmd_todo);
-	free(esil->cmd_step);
-	free(esil->cmd_step_out);
-	free(esil->cmd_ioer);
 	free(esil->esilinterstate);
 	free(esil);
 }
@@ -185,25 +250,19 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 	rz_return_val_if_fail(esil && EANALYSIS(esil) && EANALYSIS(esil)->iob.io, 0);
 
 	addr &= esil->addrmask;
-	if (esil->cmd_mdev && esil->mdev_range) {
-		if (rz_str_range_in(esil->mdev_range, addr)) {
-			if (esil->cmd(esil, esil->cmd_mdev, addr, 0)) {
-				return true;
-			}
-		}
+	if (rz_analysis_esil_call_cmd_in_mdev(esil, addr, esil->config->cmd_mdev, addr, 0)) {
+		return true;
 	}
 	// TODO: Check if error return from read_at.(on previous version of r2 this call always return len)
 	(void)EANALYSIS(esil)->iob.read_at(EANALYSIS(esil)->iob.io, addr, buf, len);
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
-		if (esil->iotrap) {
+		if (esil->config->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
-		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd(esil, esil->cmd_ioer, esil->address, 0);
-		}
+		rz_analysis_esil_call_cmd(esil, esil->config->cmd_ioer, esil->address, 0);
 	}
 	return len;
 }
@@ -217,7 +276,7 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
-		if (esil->iotrap) {
+		if (esil->config->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
@@ -235,7 +294,7 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 	if (!ret && esil->cb.mem_read) {
 		ret = esil->cb.mem_read(esil, addr, buf, len);
 		if (ret != len) {
-			if (esil->iotrap) {
+			if (esil->config->iotrap) {
 				esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 				esil->trap_code = addr;
 			}
@@ -250,12 +309,8 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 		return 0;
 	}
 	addr &= esil->addrmask;
-	if (esil->cmd_mdev && esil->mdev_range) {
-		if (rz_str_range_in(esil->mdev_range, addr)) {
-			if (esil->cmd(esil, esil->cmd_mdev, addr, 1)) {
-				return true;
-			}
-		}
+	if (rz_analysis_esil_call_cmd_in_mdev(esil, addr, esil->config->cmd_mdev, addr, 1)) {
+		return true;
 	}
 	if (EANALYSIS(esil)->iob.write_at(EANALYSIS(esil)->iob.io, addr, buf, len)) {
 		ret = len;
@@ -263,13 +318,11 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
-		if (esil->iotrap) {
+		if (esil->config->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
-		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd(esil, esil->cmd_ioer, esil->address, 0);
-		}
+		rz_analysis_esil_call_cmd(esil, esil->config->cmd_ioer, esil->address, 0);
 	}
 	return ret;
 }
@@ -289,7 +342,7 @@ static int internal_esil_mem_write_no_null(RzAnalysisEsil *esil, ut64 addr, cons
 	// check if request address is mapped , if don't fire trap and esil ioer callback
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!EANALYSIS(esil)->iob.is_valid_offset(EANALYSIS(esil)->iob.io, addr, false)) {
-		if (esil->iotrap) {
+		if (esil->config->iotrap) {
 			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
@@ -369,7 +422,7 @@ RZ_API bool rz_analysis_esil_pushnum(RzAnalysisEsil *esil, ut64 num) {
 }
 
 RZ_API bool rz_analysis_esil_push(RzAnalysisEsil *esil, const char *str) {
-	if (!str || !esil || !*str || esil->stackptr > (esil->stacksize - 1)) {
+	if (!str || !esil || !*str || esil->stackptr > (esil->stack_size - 1)) {
 		return false;
 	}
 	esil->stack[esil->stackptr++] = rz_str_dup(str);
@@ -2515,7 +2568,7 @@ static bool esil_num(RzAnalysisEsil *esil) {
 
 /* duplicate the last element in the stack */
 static bool esil_dup(RzAnalysisEsil *esil) {
-	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1)) {
+	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stack_size - 1)) {
 		return false;
 	}
 	return rz_analysis_esil_push(esil, esil->stack[esil->stackptr - 1]);
@@ -2729,8 +2782,8 @@ static bool runword(RzAnalysisEsil *esil, const char *word) {
 	if (!word) {
 		return false;
 	}
-	esil->parse_goto_count--;
-	if (esil->parse_goto_count < 1) {
+	esil->parse_goto_recursion_counter--;
+	if (esil->parse_goto_recursion_counter < 1) {
 		ESIL_LOG("ESIL infinite loop detected\n");
 		esil->trap = 1; // INTERNAL ERROR
 		esil->parse_stop = 1; // INTERNAL ERROR
@@ -2841,13 +2894,14 @@ static int evalWord(RzAnalysisEsil *esil, const char *ostr, const char **str) {
 	return 3;
 }
 
-static bool __stepOut(RzAnalysisEsil *esil, const char *cmd) {
-	bool ret = false;
-	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
-		esil->in_cmd_step = true;
-		ret = esil->cmd(esil, cmd, esil->address, 0);
-		esil->in_cmd_step = false;
+static bool esil_step_out(RzAnalysisEsil *esil, const char *cmd) {
+	if (!esil) {
+		return false;
 	}
+
+	esil->in_cmd_step = true;
+	bool ret = rz_analysis_esil_call_cmd(esil, cmd, esil->address, 0);
+	esil->in_cmd_step = false;
 	return ret;
 }
 
@@ -2858,16 +2912,14 @@ RZ_API bool rz_analysis_esil_parse(RzAnalysisEsil *esil, const char *str) {
 	const char *ostr = str;
 	rz_return_val_if_fail(esil && RZ_STR_ISNOTEMPTY(str), 0);
 
-	if (__stepOut(esil, esil->cmd_step)) {
-		(void)__stepOut(esil, esil->cmd_step_out);
+	if (esil_step_out(esil, esil->config->cmd_step)) {
+		(void)esil_step_out(esil, esil->config->cmd_stepout);
 		return true;
 	}
 	const char *hashbang = strstr(str, "#!");
 	esil->trap = 0;
-	if (esil->cmd && esil->cmd_todo) {
-		if (!strncmp(str, "TODO", 4)) {
-			esil->cmd(esil, esil->cmd_todo, esil->address, 0);
-		}
+	if (!strncmp(str, "TODO", 4)) {
+		rz_analysis_esil_call_cmd(esil, esil->config->cmd_todo, esil->address, 0);
 	}
 loop:
 	esil->repeat = 0;
@@ -2876,7 +2928,7 @@ loop:
 	esil->parse_stop = 0;
 	// memleak or failing aetr test. wat du
 	//	rz_analysis_esil_stack_free (esil);
-	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
+	esil->parse_goto_recursion_counter = esil->config->gotolimit;
 	str = ostr;
 repeat:
 	wordi = 0;
@@ -2889,7 +2941,7 @@ repeat:
 		}
 		if (wordi > 62) {
 			ESIL_LOG("Invalid esil string\n");
-			__stepOut(esil, esil->cmd_step_out);
+			esil_step_out(esil, esil->config->cmd_stepout);
 			return -1;
 		}
 		dorunword = 0;
@@ -2904,7 +2956,7 @@ repeat:
 		if (dorunword) {
 			if (*word) {
 				if (!runword(esil, word)) {
-					__stepOut(esil, esil->cmd_step_out);
+					esil_step_out(esil, esil->config->cmd_stepout);
 					return 0;
 				}
 				word[wordi] = ',';
@@ -2912,12 +2964,12 @@ repeat:
 				switch (evalWord(esil, ostr, &str)) {
 				case 0: goto loop;
 				case 1:
-					__stepOut(esil, esil->cmd_step_out);
+					esil_step_out(esil, esil->config->cmd_stepout);
 					return 0;
 				case 2: continue;
 				}
 				if (dorunword == 1) {
-					__stepOut(esil, esil->cmd_step_out);
+					esil_step_out(esil, esil->config->cmd_stepout);
 					return 0;
 				}
 			}
@@ -2933,18 +2985,18 @@ repeat:
 	word[wordi] = 0;
 	if (*word) {
 		if (!runword(esil, word)) {
-			__stepOut(esil, esil->cmd_step_out);
+			esil_step_out(esil, esil->config->cmd_stepout);
 			return 0;
 		}
 		switch (evalWord(esil, ostr, &str)) {
 		case 0: goto loop;
 		case 1:
-			__stepOut(esil, esil->cmd_step_out);
+			esil_step_out(esil, esil->config->cmd_stepout);
 			return 0;
 		case 2: goto repeat;
 		}
 	}
-	__stepOut(esil, esil->cmd_step_out);
+	esil_step_out(esil, esil->config->cmd_stepout);
 	return 1;
 }
 
@@ -3151,19 +3203,18 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 }
 
 /* register callbacks using this analysis module. */
-RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *panalysis, int romem, int stats, int nonull, void /*RzCore*/ *pcore) {
-	rz_return_val_if_fail(esil, false);
+RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *panalysis, void /*RzCore*/ *pcore) {
+	rz_return_val_if_fail(esil && esil->config, false);
 
 	esil->pcore = pcore;
 	esil->panalysis = panalysis;
-	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	esil->trap = 0;
 	esil->trap_code = 0;
 	// esil->user = NULL;
 	esil->cb.reg_read = internal_esil_reg_read;
 	esil->cb.mem_read = internal_esil_mem_read;
 
-	if (nonull) {
+	if (esil->config->no_null) {
 		// this is very questionable, most platforms allow accessing NULL
 		// never writes zero to PC, BP, SP, why? because writing
 		// zeros to these registers is equivalent to accessing NULL
@@ -3176,8 +3227,8 @@ RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *pa
 		esil->cb.mem_read = internal_esil_mem_read;
 		esil->cb.mem_write = internal_esil_mem_write;
 	}
-	rz_analysis_esil_mem_ro(esil, romem);
-	rz_analysis_esil_stats(esil, stats);
+	rz_analysis_esil_mem_ro(esil, esil->config->romem);
+	rz_analysis_esil_stats(esil, esil->config->stats);
 	rz_analysis_esil_setup_ops(esil);
 
 	RzAnalysis *analysis = panalysis;

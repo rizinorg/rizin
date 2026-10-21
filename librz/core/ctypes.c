@@ -751,19 +751,17 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	bool stack_set = false;
 	bool resolved = false;
 	int dbg_follow = rz_config_get_i(core->config, "dbg.follow");
+	const RzEsilConfig *esil_config = rz_analysis_get_esil_config(core->analysis);
 	RzAnalysisEsil *esil;
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	const char *pc_name = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
 	const char *sp_name = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
 	RzRegItem *pc = rz_reg_get(rreg, pc_name, -1);
 
-	if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+	if (!(esil = rz_analysis_esil_new(esil_config))) {
 		return;
 	}
-	rz_analysis_esil_setup(esil, core->analysis, 0, 0, 0, core);
+	rz_analysis_esil_setup(esil, core->analysis, core);
 	int i, ret, bsize = RZ_MAX(64, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int maxinstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);

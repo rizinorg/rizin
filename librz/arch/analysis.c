@@ -176,6 +176,7 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	analysis->lea_jmptbl_ip = UT64_MAX;
 	analysis->gnu_thumb1_case_uqi_addr = 0;
 	analysis->ht_virtual_xrefs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_set_u_free);
+	rz_esil_config_init(&analysis->esil_config);
 	return analysis;
 }
 
@@ -238,6 +239,7 @@ RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	rz_analysis_debug_info_free(a->debug_info);
 	ht_sp_free(a->ht_virtual_xrefs);
 	free(a->sdb_types_path);
+	rz_esil_config_fini(&a->esil_config);
 	free(a);
 }
 
@@ -1416,6 +1418,11 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL Rz
 RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil) {
 	rz_return_if_fail(analysis);
 	analysis->esil = esil;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzEsilConfig *rz_analysis_get_esil_config(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->esil_config;
 }
 
 /**

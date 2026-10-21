@@ -12,7 +12,11 @@
 extern "C" {
 #endif
 
-#define RZ_ANALYSIS_ESIL_GOTO_LIMIT 4096
+#define RZ_ANALYSIS_ESIL_GOTO_LIMIT          4096
+#define RZ_ANALYSIS_ESIL_STACK_DEPTH_DEFAULT 256
+#define RZ_ANALYSIS_ESIL_STACK_SIZE_DEFAULT  0x000f0000ull
+#define RZ_ANALYSIS_ESIL_STACK_ADDR_DEFAULT  0x00100000ull
+#define RZ_ANALYSIS_ESIL_ADDR_SIZE_DEFAULT   64
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
 
@@ -120,26 +124,48 @@ typedef struct rz_analysis_esil_inter_state_t {
 	bool callbacks_set;
 } RzAnalysisEsilInterState;
 
+typedef struct rz_esil_config_t {
+	bool prestep; ///< Step before esil evaluation in `de` commands
+	char fillstack; ///< Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)
+	ut64 verbose; ///< Show ESIL verbose level (0, 1, 2)
+	ut64 gotolimit; ///< Maximum number of gotos per ESIL expression
+	ut64 stack_depth; ///< Number of elements that can be pushed on the esilstack
+	ut64 stack_size; ///< Set stack size in ESIL VM
+	ut64 stack_addr; ///< Set stack address in ESIL VM
+	char stack_pattern; ///< Specify fill pattern to initialize the stack (0, w, d, i)
+	ut64 addr_size; ///< Maximum address size in accessed by the ESIL VM
+	bool breakoninvalid; ///< Break esil execution when instruction is invalid
+	ut64 timeout_sec; ///< A timeout (in seconds) for when we should give up emulating
+	bool exectrap; ///< trap when executing code in non-executable memory
+	bool iotrap; ///< invalid read or writes produce a trap exception
+	bool romem; ///< Set memory as read-only for ESIL
+	bool stats; ///< Statistics from ESIL emulation stored in sdb
+	bool no_null; ///< Prevent memory read, memory write at null pointer
+	char *mdev_range; ///< Specify a range of memory to be handled by cmd.esil.mdev
+	char *cmd_step; ///< Command to run before performing a step in the emulator
+	char *cmd_stepout; ///< Command to run after performing a step in the emulator
+	char *cmd_mdev; ///< Command to run when memory device address is accessed
+	char *cmd_intr; ///< Command to run when an esil interrupt happens
+	char *cmd_trap; ///< Command to run when an esil trap happens
+	char *cmd_todo; ///< Command to run when the esil instruction contains TODO
+	char *cmd_ioer; ///< Command to run when esil fails to IO (invalid read/write)
+} RzEsilConfig;
+
 struct rz_analysis_esil_t {
 	void *pcore;
 	void *panalysis;
+	size_t stack_size;
 	char **stack;
+	ut64 address;
 	ut64 addrmask;
-	int stacksize;
 	int stackptr;
 	ut32 skip;
 	int nowrite;
-	int iotrap;
-	int exectrap;
 	int repeat;
 	int parse_stop;
 	int parse_goto;
-	int parse_goto_count;
-	int verbose;
+	size_t parse_goto_recursion_counter;
 	ut64 flags;
-	ut64 address;
-	ut64 stack_addr;
-	ut32 stack_size;
 	int delay; // mapped to $ds in ESIL
 	ut64 jump_target; // mapped to $jt in ESIL
 	int jump_target_set; // mapped to $js in ESIL
@@ -158,21 +184,12 @@ struct rz_analysis_esil_t {
 	Sdb *stats;
 	RzAnalysisEsilTrace *trace;
 	RzAnalysisEsilCallbacks cb;
-	// this is so cursed, can we please remove external commands from esil internals.
-	// Function pointers are fine, but not commands
-	char *cmd_step; // rizin (external) command to run before a step is performed
-	char *cmd_step_out; // rizin (external) command to run after a step is performed
-	char *cmd_intr; // rizin (external) command to run when an interrupt occurs
-	char *cmd_trap; // rizin (external) command to run when a trap occurs
-	char *cmd_mdev; // rizin (external) command to run when an memory mapped device address is used
-	char *cmd_todo; // rizin (external) command to run when esil expr contains TODO
-	char *cmd_ioer; // rizin (external) command to run when esil fails to IO
-	char *mdev_range; // string containing the rz_str_range to match for read/write accesses
 	bool (*cmd)(RzAnalysisEsil *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd; // ahem, let's not do this
 	bool in_cmd_step;
 	RzAnalysisEsilInterState *esilinterstate;
+	const RzEsilConfig *config; ///< not owned pointer
 };
 
 /* Alias RegChange and MemChange */
@@ -232,9 +249,11 @@ typedef struct rz_analysis_esil_memory_region_t {
 	size_t size; ///< size of the region
 } RzAnalysisEsilMemoryRegion;
 
-RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned int addrsize);
+RZ_API void rz_esil_config_init(RZ_NONNULL RzEsilConfig *cfg);
+RZ_API void rz_esil_config_fini(RZ_NULLABLE RzEsilConfig *cfg);
+RZ_API RzAnalysisEsil *rz_analysis_esil_new(RZ_NONNULL const RzEsilConfig *cfg);
 RZ_API bool rz_analysis_esil_set_pc(RzAnalysisEsil *esil, ut64 addr);
-RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *analysis, int romem, int stats, int nonull, void /*RzCore*/ *core);
+RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, void /*RzAnalysis*/ *panalysis, void /*RzCore*/ *pcore);
 RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil);
 RZ_API bool rz_analysis_esil_runword(RzAnalysisEsil *esil, const char *word);
 RZ_API bool rz_analysis_esil_parse(RzAnalysisEsil *esil, const char *str);
@@ -251,6 +270,7 @@ RZ_API void rz_analysis_esil_stack_free(RzAnalysisEsil *esil);
 RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str);
 RZ_API int rz_analysis_esil_get_parm(RzAnalysisEsil *esil, const char *str, ut64 *num);
 RZ_API int rz_analysis_esil_condition(RzAnalysisEsil *esil, const char *str);
+RZ_API bool rz_analysis_esil_call_cmd(RZ_NONNULL RzAnalysisEsil *esil, RZ_NULLABLE const char *command, ut64 arg0, ut64 arg1);
 
 // esil_interrupt.c
 RZ_API void rz_analysis_esil_interrupts_init(RzAnalysisEsil *esil);

@@ -23,42 +23,15 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 
 static ut64 initializeEsil(RzCore *core) {
 	ut64 addr = 0;
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats = rz_config_get_i(core->config, "esil.stats");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int exectrap = rz_config_get_i(core->config, "esil.exectrap");
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-	RzAnalysisEsil *esil = rz_analysis_esil_new(stacksize, iotrap, addrsize);
+	const RzEsilConfig *config = rz_analysis_get_esil_config(core->analysis);
+	RzAnalysisEsil *esil = rz_analysis_esil_new(config);
 	if (!esil) {
 		return UT64_MAX;
 	}
 	rz_analysis_set_esil(core->analysis, esil);
-	esil->verbose = rz_config_get_i(core->config, "esil.verbose");
 	esil->cmd = rz_core_esil_cmd;
-	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL, core); // setup io
-	{
-		const char *cmd_esil_step = rz_config_get(core->config, "cmd.esil.step");
-		if (cmd_esil_step && *cmd_esil_step) {
-			esil->cmd_step = rz_str_dup(cmd_esil_step);
-		}
-		const char *cmd_esil_step_out = rz_config_get(core->config, "cmd.esil.stepout");
-		if (cmd_esil_step_out && *cmd_esil_step_out) {
-			esil->cmd_step_out = rz_str_dup(cmd_esil_step_out);
-		}
-		{
-			const char *s = rz_config_get(core->config, "cmd.esil.intr");
-			if (s) {
-				char *my = rz_str_dup(s);
-				if (my) {
-					rz_config_set(core->config, "cmd.esil.intr", my);
-					free(my);
-				}
-			}
-		}
-	}
-	esil->exectrap = exectrap;
+	rz_analysis_esil_setup(esil, core->analysis, core); // setup io
+
 	RzBinObject *obj = rz_bin_cur_object(core->bin);
 	RzPVector *entries = obj ? (RzPVector *)rz_bin_object_get_entries(obj) : NULL;
 	RzBinAddr *entry = NULL;
@@ -87,14 +60,13 @@ RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_ex
 	ut8 code[32];
 	RzAnalysisOp op = { 0 };
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const RzEsilConfig *esil_config = rz_analysis_get_esil_config(core->analysis);
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	const char *name = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
 	ut64 addr = 0;
-	bool breakoninvalid = rz_config_get_i(core->config, "esil.breakoninvalid");
-	int esiltimeout = rz_config_get_i(core->config, "esil.timeout");
-	ut64 startTime;
+	ut64 startTime = 0;
 
-	if (esiltimeout > 0) {
+	if (esil_config->timeout_sec > 0) {
 		startTime = rz_time_now_mono();
 	}
 	rz_interrupt_break_push(core->intr, NULL, NULL);
@@ -105,10 +77,10 @@ repeat:
 		return_tail(0);
 	}
 	// Break if we have exceeded esil.timeout
-	if (esiltimeout > 0) {
+	if (esil_config->timeout_sec > 0) {
 		ut64 elapsedTime = rz_time_now_mono() - startTime;
 		elapsedTime >>= 20;
-		if (elapsedTime >= esiltimeout) {
+		if (elapsedTime >= esil_config->timeout_sec) {
 			RZ_LOG_WARN("core: esil: timeout exceeded.\n");
 			return_tail(0);
 		}
@@ -127,7 +99,7 @@ repeat:
 	if (prev_addr) {
 		*prev_addr = addr;
 	}
-	if (esil->exectrap) {
+	if (esil->config->exectrap) {
 		if (!rz_io_is_valid_offset(core->io, addr, RZ_PERM_X)) {
 			esil->trap = RZ_ANALYSIS_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
@@ -145,10 +117,8 @@ repeat:
 	// update the esil pointer because RzAnalysis.op() can change it
 	esil = rz_analysis_get_esil(core->analysis);
 	if (op.size < 1 || ret < 1) {
-		if (esil->cmd && esil->cmd_trap) {
-			esil->cmd(esil, esil->cmd_trap, addr, RZ_ANALYSIS_TRAP_INVALID);
-		}
-		if (breakoninvalid) {
+		rz_analysis_esil_call_cmd(esil, esil->config->cmd_trap, addr, RZ_ANALYSIS_TRAP_INVALID);
+		if (esil_config->breakoninvalid) {
 			RZ_LOG_ERROR("core: esil: Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
 			return_tail(0);
 		}
@@ -231,7 +201,7 @@ repeat:
 		}
 		tail_return_value = 1;
 	}
-	// esil->verbose ?
+	// esil->config->verbose ?
 	// eprintf ("REPE 0x%" PFMT64x " %s => 0x%" PFMT64x "\n", addr, RZ_STRBUF_SAFEGET (&op.esil), rz_reg_getv (rreg, "PC"));
 
 	ut64 pc = rz_reg_getv(rreg, name);
@@ -262,14 +232,14 @@ repeat:
 	}
 	// check esil
 	if (esil && esil->trap) {
-		if (esil->verbose) {
+		if (esil->config->verbose) {
 			RZ_LOG_WARN("core: TRAP\n");
 		}
 		return_tail(0);
 	}
 	if (until_expr) {
 		if (rz_analysis_esil_condition(esil, until_expr)) {
-			if (esil->verbose) {
+			if (esil->config->verbose) {
 				RZ_LOG_WARN("core: ESIL BREAK!\n");
 			}
 			return_tail(0);
@@ -386,28 +356,13 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 }
 
 static void core_esil_init(RzCore *core) {
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats = rz_config_get_i(core->config, "esil.stats");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	int verbose = rz_config_get_i(core->config, "esil.verbose");
-	RzAnalysisEsil *esil = rz_analysis_esil_new(stacksize, iotrap, addrsize);
+	const RzEsilConfig *config = rz_analysis_get_esil_config(core->analysis);
+	RzAnalysisEsil *esil = rz_analysis_esil_new(config);
 	if (!esil) {
 		return;
 	}
-	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL, core); // setup io
-	esil->verbose = verbose;
+	rz_analysis_esil_setup(esil, core->analysis, core); // setup io
 	rz_analysis_set_esil(core->analysis, esil);
-	const char *s = rz_config_get(core->config, "cmd.esil.intr");
-	if (s) {
-		char *my = rz_str_dup(s);
-		if (my) {
-			rz_config_set(core->config, "cmd.esil.intr", my);
-			free(my);
-		}
-	}
 }
 
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core) {
@@ -446,37 +401,36 @@ RZ_API void rz_core_analysis_esil_deinit(RZ_NONNULL RzCore *core) {
 	rz_analysis_esil_free(esil);
 }
 
-static void initialize_stack(RzCore *core, ut64 addr, ut64 size) {
-	const char *mode = rz_config_get(core->config, "esil.fillstack");
-	if (mode && *mode && *mode != '0') {
-		const ut64 bs = 4096 * 32;
-		ut64 i;
-		for (i = 0; i < size; i += bs) {
-			ut64 left = RZ_MIN(bs, size - i);
-			//	rz_core_cmdf (core, "wx 10203040 @ 0x%" PFMT64x, addr);
-			switch (*mode) {
-			case 'd': { // "debrujn"
-				ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
-				if (buf) {
-					if (!rz_core_write_at(core, addr + i, buf, left)) {
-						RZ_LOG_ERROR("core: cannot write at %" PFMT64x "\n", addr + i);
-					}
-					free(buf);
-				} else {
-					RZ_LOG_ERROR("core: cannot generate pattern of length %" PFMT64d "\n", left);
+static void initialize_stack(RzCore *core, const RzEsilConfig *esil_cfg) {
+	const ut64 bs = 4096 * 32;
+	const ut64 size = esil_cfg->stack_size;
+	const ut64 addr = esil_cfg->stack_addr;
+	for (ut64 i = 0; i < size; i += bs) {
+		ut64 left = RZ_MIN(bs, size - i);
+		//	rz_core_cmdf (core, "wx 10203040 @ 0x%" PFMT64x, addr);
+		switch (esil_cfg->fillstack) {
+		case 'd': { // "debrujn"
+			ut8 *buf = (ut8 *)rz_debruijn_pattern(left, 0, NULL);
+			if (buf) {
+				if (!rz_core_write_at(core, addr + i, buf, left)) {
+					RZ_LOG_ERROR("core: cannot write at %" PFMT64x "\n", addr + i);
 				}
-			} break;
-			case 's': // "seq"
-				rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
-				break;
-			case 'r': // "random"
-				rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
-				break;
-			case 'z': // "zero"
-			case '0':
-				rz_core_cmdf(core, "wb 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
-				break;
+				free(buf);
+			} else {
+				RZ_LOG_ERROR("core: cannot generate pattern of length %" PFMT64d "\n", left);
 			}
+		} break;
+		case 's': // "seq"
+			rz_core_cmdf(core, "woe 1 0xff 1 4 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+			break;
+		case 'r': // "random"
+			rz_core_cmdf(core, "woR %" PFMT64u " @ 0x%" PFMT64x "!0x%" PFMT64x, left, addr + i, left);
+			break;
+		case 'z': // "zero"
+			rz_core_cmdf(core, "wb 00 @ 0x%" PFMT64x "!0x%" PFMT64x, addr + i, left);
+			break;
+		default:
+			return;
 		}
 	}
 }
@@ -523,6 +477,7 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	rz_return_if_fail(core && core->analysis);
 	ut64 current_offset = core->offset;
 	rz_core_analysis_esil_init(core);
+	RzEsilConfig *esil_cfg = rz_analysis_get_esil_config(core->analysis);
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	if (!esil) {
 		RZ_LOG_ERROR("core: cannot initialize esil\n");
@@ -537,7 +492,6 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 			(void)rz_io_fd_close(core->io, fd);
 		}
 	}
-	const char *pattern = rz_config_get(core->config, "esil.stack.pattern");
 	char *stack_name = get_esil_stack_name(core, name, &addr, &size);
 
 	char uri[32];
@@ -557,36 +511,21 @@ RZ_API void rz_core_analysis_esil_init_mem(RZ_NONNULL RzCore *core, RZ_NULLABLE 
 	sdb_set(core->sdb, "aeim.fd", v);
 
 	rz_config_set_b(core->config, "io.va", true);
-	if (pattern && *pattern) {
-		switch (*pattern) {
-		case '0':
-			// do nothing
-			break;
-		case 'd':
-			rz_core_cmdf(core, "wopD %d @ 0x%" PFMT64x, size, addr);
-			break;
-		case 'i':
-			rz_core_cmdf(core, "woe 0 255 1 @ 0x%" PFMT64x "!%d", addr, size);
-			break;
-		case 'w':
-			rz_core_cmdf(core, "woe 0 0xffff 1 4 @ 0x%" PFMT64x "!%d", addr, size);
-			break;
-		}
-	}
+
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	rz_reg_set_value_by_role(rreg, RZ_REG_NAME_SP, addr + (size / 2)); // size / 2 to have free space in both directions
 	rz_reg_set_value_by_role(rreg, RZ_REG_NAME_BP, addr + (size / 2));
 	rz_reg_set_value_by_role(rreg, RZ_REG_NAME_PC, current_offset);
 	rz_core_reg_update_flags(core);
-	esil->stack_addr = addr;
-	esil->stack_size = size;
-	initialize_stack(core, addr, size);
+	esil_cfg->stack_addr = addr;
+	esil_cfg->stack_size = size;
+	initialize_stack(core, esil_cfg);
 	rz_core_seek(core, current_offset, false);
 }
 
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
 	rz_core_analysis_esil_init(core);
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	RzEsilConfig *esil_cfg = rz_analysis_get_esil_config(core->analysis);
 	ut64 addr = 0x100000;
 	ut32 size = 0xf0000;
 	RzFlagItem *fi = rz_flag_get(core->flags, "aeim.stack");
@@ -596,11 +535,10 @@ RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core) {
 	} else {
 		rz_core_analysis_esil_init_mem(core, NULL, UT64_MAX, UT32_MAX);
 	}
-	if (esil) {
-		esil->stack_addr = addr;
-		esil->stack_size = size;
-	}
-	initialize_stack(core, addr, size);
+
+	esil_cfg->stack_addr = addr;
+	esil_cfg->stack_size = size;
+	initialize_stack(core, esil_cfg);
 	return;
 }
 
@@ -679,7 +617,6 @@ RZ_IPI void rz_core_analysis_esil_references_all_functions(RzCore *core) {
  * stop there.
  */
 RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_addr, int off) {
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	int i = 0, j = 0;
 	ut8 *buf = NULL;
 	RzAnalysisOp aop = { 0 };
@@ -688,13 +625,12 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	const char *pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	ut64 addrsize = rz_config_get_i(core->config, "esil.addr.size");
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 
 	if (!esil) {
 		RZ_LOG_WARN("core: cmd_espc: creating new esil instance\n");
-		if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+		const RzEsilConfig *config = rz_analysis_get_esil_config(core->analysis);
+		if (!(esil = rz_analysis_esil_new(config))) {
 			return;
 		}
 		rz_analysis_set_esil(core->analysis, esil);
@@ -707,7 +643,7 @@ RZ_IPI void rz_core_analysis_esil_emulate(RzCore *core, ut64 addr, ut64 until_ad
 	if (addr == -1) {
 		addr = rz_reg_getv(rreg, pc);
 	}
-	(void)rz_analysis_esil_setup(esil, core->analysis, 0, 0, 0, core); // int romem, int stats, int nonull) {
+	(void)rz_analysis_esil_setup(esil, core->analysis, core); // int romem, int stats, int nonull) {
 	ut64 cursp = rz_reg_getv(rreg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_DISASM;

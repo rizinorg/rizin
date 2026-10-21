@@ -22,7 +22,6 @@
 // TODO: Kill those globals
 RzDebug *dbg = NULL;
 static int has_match = 0;
-static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
 static RzList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
@@ -203,10 +202,6 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *
 	return 1; // fallback
 }
 
-RZ_API void rz_debug_esil_prestep(RzDebug *d, int p) {
-	prestep = p;
-}
-
 RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	RzAnalysisOp op = { 0 };
 	RzAnalysisEsil *esil = rz_analysis_get_esil(d->analysis);
@@ -214,7 +209,8 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!esil) {
-		esil = rz_analysis_esil_new(32, true, 64);
+		const RzEsilConfig *config = rz_analysis_get_esil_config(d->analysis);
+		esil = rz_analysis_esil_new(config);
 		// TODO setup something?
 		if (!esil) {
 			return 0;
@@ -233,7 +229,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	esil->cb.hook_reg_read = &esilbreak_reg_read;
 	esil->cb.hook_reg_write = &esilbreak_reg_write;
 
-	if (prestep) {
+	if (esil->config->prestep) {
 		// required when a exxpression is like <= == ..
 		// otherwise it will stop at the next instruction
 		if (rz_debug_step(dbg, 1) < 1) {
@@ -258,7 +254,7 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 		}
 	}
 	rz_analysis_op_fini(&op);
-	if (!prestep) {
+	if (!esil->config->prestep) {
 		if (ret && !has_match) {
 			if (rz_debug_step(dbg, 1) < 1) {
 				eprintf("Step failed\n");
