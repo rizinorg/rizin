@@ -1204,7 +1204,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		RZ_DEBUG_REG_T regs;
 		memset(&regs, 0, sizeof(regs));
 		memset(buf, 0, size);
-#if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
+#if (__arm64__ || __aarch64__) && defined(PTRACE_GETREGSET)
 		struct iovec io = {
 			.iov_base = &regs,
 			.iov_len = sizeof(regs)
@@ -1214,8 +1214,6 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 			rz_sys_perror("PTRACE_GETREGSET");
 			return false;
 		}
-#elif __BSD__ && (__POWERPC__ || __sparc__)
-		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, &regs, NULL);
 #else
 		/* linux -{arm/mips/riscv/x86/x86_64} */
 		ret = rz_debug_ptrace(dbg, PTRACE_GETREGS, pid, NULL, &regs);
@@ -1292,16 +1290,12 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #endif
 	}
 	if (type == RZ_REG_TYPE_GPR) {
-#if __arm64__ || __aarch64__ || __s390x__
+#if __arm64__ || __aarch64__
 		struct iovec io = {
 			.iov_base = (void *)buf,
 			.iov_len = sizeof(RZ_DEBUG_REG_T)
 		};
 		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void *)(size_t)NT_PRSTATUS, (rz_ptrace_data_t)(size_t)&io);
-#elif __sparc__ // in sparc data is ignored
-		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, buf, NULL);
-#elif __POWERPC__
-		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, 0, (void *)buf);
 #else
 		int ret = rz_debug_ptrace(dbg, PTRACE_SETREGS, pid, 0, (void *)buf);
 #endif
