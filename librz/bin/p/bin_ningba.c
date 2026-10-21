@@ -92,24 +92,19 @@ static bool ningba_parse_header(RzBuffer *buf, gba_header_t *hdr) {
 		return false;
 	}
 
-	memset(hdr, 0, sizeof(*hdr));
-
 	ut64 off = 0;
-	if (!rz_buf_read_le32_offset(buf, &off, &hdr->entry_point) ||
-		!rz_buf_read_offset(buf, &off, hdr->nintendo_logo, sizeof(hdr->nintendo_logo)) ||
-		!rz_buf_read_offset(buf, &off, (ut8 *)hdr->title, sizeof(hdr->title)) ||
-		!rz_buf_read_offset(buf, &off, (ut8 *)hdr->game_code, sizeof(hdr->game_code)) ||
-		!rz_buf_read_offset(buf, &off, (ut8 *)hdr->maker_code, sizeof(hdr->maker_code)) ||
-		!rz_buf_read8_offset(buf, &off, &hdr->fixed_value) ||
-		!rz_buf_read8_offset(buf, &off, &hdr->main_unit_code) ||
-		!rz_buf_read8_offset(buf, &off, &hdr->device_type) ||
-		!rz_buf_read_offset(buf, &off, hdr->reserved_area_1, sizeof(hdr->reserved_area_1)) ||
-		!rz_buf_read8_offset(buf, &off, &hdr->software_version) ||
-		!rz_buf_read8_offset(buf, &off, &hdr->complement_check) ||
-		!rz_buf_read_offset(buf, &off, hdr->reserved_area_2, sizeof(hdr->reserved_area_2))) {
-		return false;
-	}
-	return true;
+	return rz_buf_read_le32_offset(buf, &off, &hdr->entry_point) &&
+		rz_buf_read_offset(buf, &off, hdr->nintendo_logo, sizeof(hdr->nintendo_logo)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->title, sizeof(hdr->title)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->game_code, sizeof(hdr->game_code)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->maker_code, sizeof(hdr->maker_code)) &&
+		rz_buf_read8_offset(buf, &off, &hdr->fixed_value) &&
+		rz_buf_read8_offset(buf, &off, &hdr->main_unit_code) &&
+		rz_buf_read8_offset(buf, &off, &hdr->device_type) &&
+		rz_buf_read_offset(buf, &off, hdr->reserved_area_1, sizeof(hdr->reserved_area_1)) &&
+		rz_buf_read8_offset(buf, &off, &hdr->software_version) &&
+		rz_buf_read8_offset(buf, &off, &hdr->complement_check) &&
+		rz_buf_read_offset(buf, &off, hdr->reserved_area_2, sizeof(hdr->reserved_area_2));
 }
 
 static RzStructuredData *ningba_structure(RzBinFile *bf) {
