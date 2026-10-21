@@ -116,6 +116,7 @@ if get_option('enable_tests')
     'sdb_diff',
     'sdb_sdb',
     'sdb_util',
+    'search',
     'serialize_analysis',
     'serialize_mark',
     'serialize_config',
