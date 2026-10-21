@@ -15,8 +15,49 @@ static bool check_buffer(RzBuffer *b) {
 	return !memcmp(lict, lic_gba, 156);
 }
 
+static bool ningba_parse_header(RzBuffer *buf, gba_header_t *hdr) {
+	rz_return_val_if_fail(buf && hdr, false);
+	const ut64 sz = rz_buf_size(buf);
+	if (sz < GBA_ROM_CARTRIDGE_HEADER_SIZE) {
+		return false;
+	}
+
+	ut64 off = 0;
+	return rz_buf_read_le32_offset(buf, &off, &hdr->entry_point) &&
+		rz_buf_read_offset(buf, &off, hdr->nintendo_logo, sizeof(hdr->nintendo_logo)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->title, sizeof(hdr->title)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->game_code, sizeof(hdr->game_code)) &&
+		rz_buf_read_offset(buf, &off, (ut8 *)hdr->maker_code, sizeof(hdr->maker_code)) &&
+		rz_buf_read8_offset(buf, &off, &hdr->fixed_value) &&
+		rz_buf_read8_offset(buf, &off, &hdr->main_unit_code) &&
+		rz_buf_read8_offset(buf, &off, &hdr->device_type) &&
+		rz_buf_read_offset(buf, &off, hdr->reserved_area_1, sizeof(hdr->reserved_area_1)) &&
+		rz_buf_read8_offset(buf, &off, &hdr->software_version) &&
+		rz_buf_read8_offset(buf, &off, &hdr->complement_check) &&
+		rz_buf_read_offset(buf, &off, hdr->reserved_area_2, sizeof(hdr->reserved_area_2));
+}
+
 static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	return check_buffer(buf);
+	gba_header_t *hdr = RZ_NEW0(gba_header_t);
+	if (!hdr) {
+		return false;
+	}
+
+	if (!ningba_parse_header(buf, hdr)) {
+		free(hdr);
+		return false;
+	}
+
+	obj->bin_obj = hdr;
+	return true;
+}
+
+static void destroy(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return;
+	}
+
+	RZ_FREE(bf->o->bin_obj);
 }
 
 static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
@@ -85,34 +126,9 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static bool ningba_parse_header(RzBuffer *buf, gba_header_t *hdr) {
-	rz_return_val_if_fail(buf && hdr, false);
-	const ut64 sz = rz_buf_size(buf);
-	if (sz < GBA_ROM_CARTRIDGE_HEADER_SIZE) {
-		return false;
-	}
-
-	ut64 off = 0;
-	return rz_buf_read_le32_offset(buf, &off, &hdr->entry_point) &&
-		rz_buf_read_offset(buf, &off, hdr->nintendo_logo, sizeof(hdr->nintendo_logo)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->title, sizeof(hdr->title)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->game_code, sizeof(hdr->game_code)) &&
-		rz_buf_read_offset(buf, &off, (ut8 *)hdr->maker_code, sizeof(hdr->maker_code)) &&
-		rz_buf_read8_offset(buf, &off, &hdr->fixed_value) &&
-		rz_buf_read8_offset(buf, &off, &hdr->main_unit_code) &&
-		rz_buf_read8_offset(buf, &off, &hdr->device_type) &&
-		rz_buf_read_offset(buf, &off, hdr->reserved_area_1, sizeof(hdr->reserved_area_1)) &&
-		rz_buf_read8_offset(buf, &off, &hdr->software_version) &&
-		rz_buf_read8_offset(buf, &off, &hdr->complement_check) &&
-		rz_buf_read_offset(buf, &off, hdr->reserved_area_2, sizeof(hdr->reserved_area_2));
-}
-
 static RzStructuredData *ningba_structure(RzBinFile *bf) {
-	rz_return_val_if_fail(bf && bf->buf, NULL);
-	gba_header_t hdr;
-	if (!ningba_parse_header(bf->buf, &hdr)) {
-		return NULL;
-	}
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	const gba_header_t *hdr = bf->o->bin_obj;
 	RzStructuredData *map = rz_structured_data_new_map();
 	if (!map) {
 		return NULL;
@@ -123,15 +139,15 @@ static RzStructuredData *ningba_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	rz_structured_data_map_add_unsigned(gba, "entry_point", hdr.entry_point, true);
-	rz_structured_data_map_add_string_n(gba, "title", hdr.title, sizeof(hdr.title));
-	rz_structured_data_map_add_string_n(gba, "game_code", hdr.game_code, sizeof(hdr.game_code));
-	rz_structured_data_map_add_string_n(gba, "maker_code", hdr.maker_code, sizeof(hdr.maker_code));
-	rz_structured_data_map_add_unsigned(gba, "fixed_value", hdr.fixed_value, true);
-	rz_structured_data_map_add_unsigned(gba, "main_unit_code", hdr.main_unit_code, true);
-	rz_structured_data_map_add_unsigned(gba, "device_type", hdr.device_type, true);
-	rz_structured_data_map_add_unsigned(gba, "software_version", hdr.software_version, true);
-	rz_structured_data_map_add_unsigned(gba, "complement_check", hdr.complement_check, true);
+	rz_structured_data_map_add_unsigned(gba, "entry_point", hdr->entry_point, true);
+	rz_structured_data_map_add_string_n(gba, "title", hdr->title, sizeof(hdr->title));
+	rz_structured_data_map_add_string_n(gba, "game_code", hdr->game_code, sizeof(hdr->game_code));
+	rz_structured_data_map_add_string_n(gba, "maker_code", hdr->maker_code, sizeof(hdr->maker_code));
+	rz_structured_data_map_add_unsigned(gba, "fixed_value", hdr->fixed_value, true);
+	rz_structured_data_map_add_unsigned(gba, "main_unit_code", hdr->main_unit_code, true);
+	rz_structured_data_map_add_unsigned(gba, "device_type", hdr->device_type, true);
+	rz_structured_data_map_add_unsigned(gba, "software_version", hdr->software_version, true);
+	rz_structured_data_map_add_unsigned(gba, "complement_check", hdr->complement_check, true);
 
 	return map;
 }
@@ -142,6 +158,7 @@ RzBinPlugin rz_bin_plugin_ningba = {
 	.license = "LGPL3",
 	.author = "condret",
 	.load_buffer = &load_buffer,
+	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.entries = &entries,
 	.info = &info,
