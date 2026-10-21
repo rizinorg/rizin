@@ -553,6 +553,7 @@ static RzCppVariableBook *core_analysis_mark_classes(RzCore *core) {
 	}
 	if (!function) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
+		rz_list_free(list);
 		return NULL;
 	}
 
