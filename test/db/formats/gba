@@ -1,9 +1,11 @@
-NAME=GBA: 3D - Maps
+NAME=GBA: 3D
 FILE=bins/gba/3D.gba
 CMDS=<<EOF
 oml
 echo ---
 iS
+echo ---
+iH
 EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x080105cc - 0x09ffffff r-x mmap.ROM
@@ -12,15 +14,7 @@ EXPECT=<<EOF
      paddr    size      vaddr     vsize align perm name type flags 
 -------------------------------------------------------------------
 0x00000000 0x105cc 0x08000000 0x2000000   0x0 -r-x ROM       
-EOF
-RUN
-
-NAME=GBA: 3D - Header
-FILE=bins/gba/3D.gba
-CMDS=<<EOF
-iH
-EOF
-EXPECT=<<EOF
+---
 gba:
   entry_point: 0xea00002e
   title: "3D"
