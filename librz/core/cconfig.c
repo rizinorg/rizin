@@ -2977,6 +2977,8 @@ static bool var_validator_int_positive(void *user, const void *value) {
 	return (st64)val > 0;
 }
 
+#include "config/cconfig_pdb.c"
+
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3009,14 +3011,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETCB("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
 	/* pdb */
-	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
-	{
-		char *pdb_path = rz_path_home_prefix(RZ_PDB);
-		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
-		RZ_FREE(pdb_path);
+	if (!core_config_init_pdb(core)) {
+		return 0;
 	}
-	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
-	SETI("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
+
 
 	/* elf */
 	SETBPREF("elf.checks.sections", "true", "Check elf sections during loading");

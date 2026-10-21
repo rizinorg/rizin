@@ -5466,7 +5466,7 @@ RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
 	free(filename);
 
 	// Last chance: Check if file is in downstream symbol store
-	const char *symstore_path = rz_config_get(core->config, "pdb.symstore");
+	const char *symstore_path = rz_config_get_string(core->config, "pdb.symstore");
 	return rz_str_newf("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s",
 		symstore_path, basename, info->guid, basename);
 }

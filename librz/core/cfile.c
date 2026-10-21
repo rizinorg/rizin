@@ -605,7 +605,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	char tmpbuf[64];
 	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
-	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
+	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get_string(core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv("RZ_FILE", desc->name);
 		rz_sys_setenv("RZ_SIZE", rz_strf(tmpbuf, "%" PFMT64d, rz_io_desc_size(desc)));

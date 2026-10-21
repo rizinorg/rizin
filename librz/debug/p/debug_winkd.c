@@ -193,8 +193,8 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	}
 	char *exepath, *pdbpath;
 	if (!winkd_download_module_and_pdb(mod,
-		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server"),
-		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore"),
+		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.server"),
+		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.symstore"),
 		    &exepath, &pdbpath)) {
 		RZ_LOG_ERROR("Failed to download module and pdb\n");
 		rz_list_free(modules);

@@ -461,6 +461,36 @@ static void __consPop(RzCore *core) {
 	rz_cons_pop(core->cons);
 }
 
+static ut64 core_config_get_integer(void *pcore, const char *key) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_get_integer(core->config, key);
+}
+
+static bool core_config_get_bool(void *pcore, const char *key) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_get_bool(core->config, key);
+}
+
+static const char *core_config_get_string(void *pcore, const char *key) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_get_string(core->config, key);
+}
+
+static bool core_config_set_string(void *pcore, const char *key, const char *value) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_set_string(core->config, key, value);
+}
+
+static bool core_config_set_bool(void *pcore, const char *key, bool value) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_set_bool(core->config, key, value);
+}
+
+static bool core_config_set_integer(void *pcore, const char *key, ut64 value) {
+	RzCore *core = (RzCore *)pcore;
+	return rz_config_set_integer(core->config, key, value);
+}
+
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RzCoreDebugBpHit)rz_core_debug_breakpoint_hit;
@@ -474,15 +504,24 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->getName = (RzCoreGetName)getName;
 	bnd->getNameDelta = (RzCoreGetNameDelta)getNameDelta;
 	bnd->archbits = (RzCoreSeekArchBits)archbits;
-	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
-	bnd->cfgGet = (RzCoreConfigGet)cfgget;
-	bnd->cfgSetI = (RzCoreConfigSetI)cfgseti;
-	bnd->cfgSet = (RzCoreConfigSet)cfgset;
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->flagsGet = (RzCoreFlagsGet)__flagsGet;
 	bnd->applyBinInfo = (RzCoreBinApplyInfo)rz_core_bin_apply_info;
 	bnd->consPush = (RzCoreConsPush)__consPush;
 	bnd->consPop = (RzCoreConsPop)__consPop;
+
+	bnd->config_get_integer = core_config_get_integer;
+	bnd->config_get_bool = core_config_get_bool;
+	bnd->config_get_string = core_config_get_string;
+	bnd->config_set_string = core_config_set_string;
+	bnd->config_set_bool = core_config_set_bool;
+	bnd->config_set_integer = core_config_set_integer;
+
+	/* deprecated */
+	bnd->cfggeti = (RzCoreConfigGetI)cfggeti;
+	bnd->cfgGet = (RzCoreConfigGet)cfgget;
+	bnd->cfgSetI = (RzCoreConfigSetI)cfgseti;
+	bnd->cfgSet = (RzCoreConfigSet)cfgset;
 	return true;
 }
 
