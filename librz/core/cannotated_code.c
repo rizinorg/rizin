@@ -13,7 +13,7 @@
  * The function will print the output in console using the function rz_cons_printf();
  *
  * \param code Pointer to a RzAnnotatedCode.
- * \param cons Poitner to RzCons.
+ * \param cons Pointer to RzCons.
  */
 RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	rz_return_if_fail(code && cons);
@@ -161,9 +161,10 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
  *
  * \param code Pointer to a RzAnnotatedCode.
  * \param line_offsets Pointer to a \ref RzVector that contains offsets for the decompiled code.
+ * \param cons Pointer to RzCons.
  */
-RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets) {
-	rz_return_if_fail(cons && code);
+RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets, RZ_NONNULL RzCons *cons) {
+	rz_return_if_fail(code && cons);
 
 	if (code->annotations.len == 0) {
 		rz_cons_printf(cons, "%s\n", code->code);
@@ -301,11 +302,11 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
  * This function is used for the output of command pdg*
  * Output will be printed in console using the function rz_cons_printf();
  *
- * \param cons Pointer to RzCons.
  * \param code Pointer to a RzAnnotatedCode.
+ * \param cons Pointer to RzCons.
  */
-RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL RzAnnotatedCode *code) {
-	rz_return_if_fail(cons && code);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_return_if_fail(code && cons);
 
 	RzCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new(NULL, NULL);
