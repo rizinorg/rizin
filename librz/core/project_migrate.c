@@ -812,6 +812,17 @@ RZ_API bool rz_project_migrate_v25_v26(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 26 -> 27
+//
+// Changes from <commit not yet known>:
+//      Added "baddr" to "/core/file".
+
+RZ_API bool rz_project_migrate_v26_v27(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the change was only additive
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -838,6 +849,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v23_v24,
 	rz_project_migrate_v24_v25,
 	rz_project_migrate_v25_v26,
+	rz_project_migrate_v26_v27,
 };
 
 /// Migrate the given project to the current version in-place
