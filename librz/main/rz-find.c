@@ -742,10 +742,8 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 	}
 done:
-	if (core) {
-		rz_cons_free(core->cons);
-		rz_bin_free(bin);
-	}
+	rz_core_free(core);
+	rz_bin_free(bin);
 err:
 	free(efile);
 	rz_search_free(rs);
