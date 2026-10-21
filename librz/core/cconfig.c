@@ -2978,6 +2978,7 @@ static bool var_validator_int_positive(void *user, const void *value) {
 }
 
 #include "config/cconfig_pdb.c"
+#include "config/cconfig_elf.c"
 
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
@@ -3010,16 +3011,16 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	}
 #endif
 	SETCB("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
+
 	/* pdb */
 	if (!core_config_init_pdb(core)) {
 		return 0;
 	}
 
-
 	/* elf */
-	SETBPREF("elf.checks.sections", "true", "Check elf sections during loading");
-	SETBPREF("elf.checks.segments", "true", "Check elf segments during loading");
-	SETBPREF("elf.load.sections", "true", "Automatically load elf sections");
+	if (!core_config_init_elf(core)) {
+		return 0;
+	}
 
 	/* analysis */
 	SETBPREF("analysis.detectwrites", "false", "Automatically reanalyze function after a write");

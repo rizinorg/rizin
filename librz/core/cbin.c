@@ -62,9 +62,9 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 
 	rz_bin_options_init(opts, fd, baseaddr, loadaddr, patch_relocs);
 
-	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
-	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
-	opts->obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opts->obj_opts.elf_load_sections = rz_config_get_bool(core->config, "elf.load.sections");
+	opts->obj_opts.elf_checks_sections = rz_config_get_bool(core->config, "elf.checks.sections");
+	opts->obj_opts.elf_checks_segments = rz_config_get_bool(core->config, "elf.checks.segments");
 	opts->obj_opts.big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 }
 
