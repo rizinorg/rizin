@@ -25,11 +25,6 @@
 #define PROC_PERM_SZ        5
 #define PROC_UNKSTR_SZ      128
 
-static int rz_debug_handle_srz_debug_handle_signalsignals(RzDebug *dbg) {
-	RZ_LOG_ERROR("Warning: signal handling is not supported on this platform\n");
-	return 0;
-}
-
 static char *rz_debug_native_reg_profile(RzDebug *dbg) {
 #if _x86_64__ || __amd64__
 #include "reg/openbsd-x64.h"
