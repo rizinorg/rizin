@@ -53,8 +53,6 @@ static RzDebugProcess *netbsd_new_process_info(RzDebug *dbg, int pid) {
 	}
 	rz_list_free(res);
 	return copy;
-	rz_list_free(res);
-	return found;
 }
 
 /**
@@ -481,20 +479,16 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 }
 
 static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	bool ret = false;
 	if (pid == 0) {
 		pid = dbg->pid;
+	}
+	if (rz_sys_kill(pid, sig) == -1) {
+		return false;
 	}
 	if (sig == SIGKILL) {
 		rz_debug_process_remove(dbg, pid);
 	}
-	if ((rz_sys_kill(pid, sig) != -1)) {
-		ret = true;
-	}
-	if (errno == 1) {
-		ret = -true; // EPERM
-	}
-	return ret;
+	return true;
 }
 
 #if __i386__ || __x86_64__
