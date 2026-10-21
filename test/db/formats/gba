@@ -29,8 +29,10 @@ gba:
   fixed_value: 0x96
   main_unit_code: 0x0
   device_type: 0x80
+  reserved_area_1: "00 00 00 00 00 00 00                            |.......         |"
   software_version: 0x0
   complement_check: 0xf9
+  reserved_area_2: "00 00                                           |..              |"
 
 EOF
 RUN

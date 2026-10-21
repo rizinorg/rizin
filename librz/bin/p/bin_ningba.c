@@ -146,8 +146,10 @@ static RzStructuredData *ningba_structure(RzBinFile *bf) {
 	rz_structured_data_map_add_unsigned(gba, "fixed_value", hdr->fixed_value, true);
 	rz_structured_data_map_add_unsigned(gba, "main_unit_code", hdr->main_unit_code, true);
 	rz_structured_data_map_add_unsigned(gba, "device_type", hdr->device_type, true);
+	rz_structured_data_map_add_bytes(gba, "reserved_area_1", hdr->reserved_area_1, sizeof(hdr->reserved_area_1), RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
 	rz_structured_data_map_add_unsigned(gba, "software_version", hdr->software_version, true);
 	rz_structured_data_map_add_unsigned(gba, "complement_check", hdr->complement_check, true);
+	rz_structured_data_map_add_bytes(gba, "reserved_area_2", hdr->reserved_area_2, sizeof(hdr->reserved_area_2), RZ_STRUCTURED_DATA_FORMAT_HEXDUMP);
 
 	return map;
 }
