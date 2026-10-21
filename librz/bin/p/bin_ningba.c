@@ -78,22 +78,21 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	ut8 rom_info[16];
 	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 
 	if (!ret) {
 		return NULL;
 	}
 
-	if (!bf || !bf->buf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		free(ret);
 		return NULL;
 	}
+	const gba_header_t *hdr = bf->o->bin_obj;
 
 	ret->lang = NULL;
-	rz_buf_read_at(bf->buf, 0xa0, rom_info, 16);
-	ret->file = rz_str_ndup((const char *)rom_info, 12);
-	ret->type = rz_str_ndup((char *)&rom_info[12], 4);
+	ret->file = rz_str_ndup(hdr->title, sizeof(hdr->title));
+	ret->type = rz_str_ndup(hdr->game_code, sizeof(hdr->game_code));
 	ret->machine = rz_str_dup("GameBoy Advance");
 	ret->os = rz_str_dup("any");
 	ret->arch = rz_str_dup("arm");
