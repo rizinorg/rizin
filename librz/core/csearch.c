@@ -10,6 +10,7 @@
 #include <rz_util/rz_file.h>
 #include <rz_core.h>
 #include <rz_search.h>
+#include "core_private.h"
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_str_search.h>
 
@@ -34,6 +35,20 @@ RZ_API RZ_OWN RzSearchFindOpt *rz_core_setup_default_search_find_opts(RzCore *co
 		return NULL;
 	}
 	return fopts;
+}
+
+/**
+ * \brief Tells whether searches print their running hit count.
+ *
+ * \param core The core whose configuration and console to check.
+ *
+ * \return True if search.show_progress asks for it and the console is interactive.
+ */
+RZ_IPI bool rz_core_search_shows_hit_count(RZ_NONNULL RzCore *core) {
+	rz_return_val_if_fail(core, false);
+	// the count is redrawn in place, so it is only useful on a terminal
+	const char *show_progress = rz_config_get(core->config, "search.show_progress");
+	return rz_cons_is_interactive(core->cons) && !rz_str_is_false(show_progress) && !RZ_STR_EQ(show_progress, "intervals");
 }
 
 /**
@@ -78,6 +93,9 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_setup_io_search_parameters(RzCore 
 			RZ_LOG_ERROR("core: Failed to setup search options.\n");
 			goto fail;
 		}
+		if (rz_search_opt_get_show_progress(search_opts) == RZ_SEARCH_PROGRESS_NUM_HITS && !rz_core_search_shows_hit_count(core)) {
+			rz_search_opt_set_show_progress(search_opts, RZ_SEARCH_PROGRESS_DISABLED);
+		}
 
 		RzSearchFindOpt *fopts = rz_core_setup_default_search_find_opts(core);
 		if (!fopts) {
@@ -91,11 +109,6 @@ RZ_API RZ_OWN RzList /*<RzIOMap *>*/ *rz_core_setup_io_search_parameters(RzCore 
 fail:
 	rz_list_free(boundaries);
 	return NULL;
-}
-
-static bool default_search_no_cancel(void *user, size_t n_hits, RzSearchCancelReason invoke_reason) {
-	RzCore *core = (RzCore *)user;
-	return rz_interrupt_is_breaked(core->intr);
 }
 
 static RzList /*<RzSearchHit *>*/ *perform_search_on_core_io(RzCore *core, RZ_BORROW RzSearchOpt *search_opts, RZ_BORROW RzList /*<RzIOMap *>*/ *boundaries, RZ_BORROW RzSearchCollection *collection) {
@@ -115,8 +128,8 @@ static RzSearchOpt *default_search_options(RzCore *core) {
 	if (!def_options) {
 		RZ_LOG_ERROR("search: Failed to allocate search options.\n");
 		return NULL;
-	} else if (!rz_search_opt_set_cancel_cb(def_options, default_search_no_cancel, core)) {
-		RZ_LOG_ERROR("search: Failed to setup callback for search options.\n");
+	} else if (!rz_search_opt_set_interrupt(def_options, core->intr)) {
+		RZ_LOG_ERROR("search: Failed to setup interrupt for search options.\n");
 		rz_search_opt_free(def_options);
 		return NULL;
 	}

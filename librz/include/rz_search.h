@@ -169,11 +169,6 @@ typedef struct rz_search_hit_t {
 	RzSearchHitDetail *detail; ///< A detail about the hit. Used to set as flag comment. Optional, can be NULL.
 } RzSearchHit;
 
-typedef enum {
-	RZ_SEARCH_CANCEL_REGULAR_CHECK, ///< Regular cancel check. Repeated every RZ_SEARCH_CANCEL_CHECK_INTERVAL_USEC microseconds.
-	RZ_SEARCH_CANCEL_SIGINT, ///< Interrupt signal (likely ctrl + c).
-} RzSearchCancelReason;
-
 RZ_API RZ_OWN char *rz_search_hit_flag_name(RZ_NONNULL const RzSearchHit *hit, size_t hit_id, RZ_NULLABLE const char *prefix);
 RZ_API RZ_OWN char *rz_search_hit_detail_as_string(RZ_NONNULL const RzSearchHit *hit);
 RZ_API void rz_search_hit_detail_as_json(RZ_NONNULL const RzSearchHit *hit, RZ_NONNULL PJ *json);
@@ -187,22 +182,10 @@ RZ_API RZ_OWN RzSearchBytesPattern *rz_search_parse_byte_pattern(const char *byt
 RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern *hp);
 RZ_API const char *rz_search_bytes_pattern_desc(RZ_NONNULL const RzSearchBytesPattern *bp);
 
-/**
- * \brief The cancel callback. It is invoked to check, if the search should be stopped.
- *
- * \param user The private user data.
- * \param n_hits Number of hits already found during the search.
- * \param invoe_reason The reason it is called.
- *
- * \return True, if the search should be canceled.
- * \return False, if the search should continue.
- */
-typedef bool (*RzSearchCancelCallback)(void *user, size_t n_hits, RzSearchCancelReason invoke_reason);
-
 typedef enum {
 	RZ_SEARCH_PROGRESS_DISABLED = 0, ///< Don't show any search progress.
 	RZ_SEARCH_PROGRESS_NUM_HITS, ///< Show running count of hits.
-	RZ_SEARCH_PROGRESS_INTERVALS, ///< Above + show hits per interval.
+	RZ_SEARCH_PROGRESS_INTERVALS, ///< Show the hits of each searched interval.
 } RzSearchProgress;
 
 RZ_API RZ_OWN RzSearchOpt *rz_search_opt_new();
@@ -212,8 +195,9 @@ RZ_API bool rz_search_opt_set_chunk_size(RZ_NONNULL RzSearchOpt *opt, ut64 chunk
 RZ_API bool rz_search_opt_set_max_threads(RZ_NONNULL RzSearchOpt *opt, RzThreadNCores max_threads);
 RZ_API size_t rz_search_opt_get_max_threads(RZ_NONNULL const RzSearchOpt *opt);
 RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt, const char *show_progress);
+RZ_API bool rz_search_opt_set_show_progress(RZ_NONNULL RzSearchOpt *opt, RzSearchProgress show_progress);
 RZ_API RzSearchProgress rz_search_opt_get_show_progress(RZ_NONNULL RzSearchOpt *opt);
-RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user);
+RZ_API bool rz_search_opt_set_interrupt(RZ_NONNULL RzSearchOpt *opt, RZ_NULLABLE RZ_BORROW RzInterrupt *intr);
 RZ_API bool rz_search_opt_set_find_options(RZ_NONNULL RzSearchOpt *opt, RZ_OWN RzSearchFindOpt *find_opts);
 RZ_API const RzSearchFindOpt *rz_search_opt_get_find_options(RZ_NONNULL const RzSearchOpt *opt);
 
