@@ -723,7 +723,10 @@ static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
 	}
 	for (; i < varFileInfo->numOfChildren; i++) {
 		snprintf(key, 20, "var%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
@@ -777,7 +780,10 @@ static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
 	free(encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf(key, 20, "string%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
@@ -795,7 +801,10 @@ static Sdb *Pe_r_bin_store_string_file_info(StringFileInfo *stringFileInfo) {
 	}
 	for (; i < stringFileInfo->numOfChildren; i++) {
 		snprintf(key, 30, "stringtable%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]));
+		if (!sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
@@ -835,13 +844,22 @@ static Sdb *Pe_r_bin_store_resource_version_info(PE_VS_VERSIONINFO *vs_VersionIn
 		return NULL;
 	}
 	if (vs_VersionInfo->Value) {
-		sdb_ns_set(sdb, "fixed_file_info", Pe_r_bin_store_fixed_file_info(vs_VersionInfo->Value));
+		if (!sdb_ns_set(sdb, "fixed_file_info", Pe_r_bin_store_fixed_file_info(vs_VersionInfo->Value))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	if (vs_VersionInfo->varFileInfo) {
-		sdb_ns_set(sdb, "var_file_info", Pe_r_bin_store_var_file_info(vs_VersionInfo->varFileInfo));
+		if (!sdb_ns_set(sdb, "var_file_info", Pe_r_bin_store_var_file_info(vs_VersionInfo->varFileInfo))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	if (vs_VersionInfo->stringFileInfo) {
-		sdb_ns_set(sdb, "string_file_info", Pe_r_bin_store_string_file_info(vs_VersionInfo->stringFileInfo));
+		if (!sdb_ns_set(sdb, "string_file_info", Pe_r_bin_store_string_file_info(vs_VersionInfo->stringFileInfo))) {
+			sdb_free(sdb);
+			return NULL;
+		}
 	}
 	return sdb;
 }
@@ -1518,7 +1536,9 @@ static void _store_resource_sdb(RzBinPEObj *bin) {
 		sdb_set(sdb, key, rs->language);
 		index++;
 	}
-	sdb_ns_set(bin->kv, "pe_resource", sdb);
+	if (!sdb_ns_set(bin->kv, "pe_resource", sdb)) {
+		sdb_free(sdb);
+	}
 }
 
 RZ_API void PE_(bin_pe_parse_resource)(RzBinPEObj *bin) {

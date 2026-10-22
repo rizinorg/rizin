@@ -350,6 +350,8 @@ static bool rz_bin_mz_init(struct rz_bin_mz_obj_t *bin) {
 	bin->kv = sdb_new0();
 	if (!rz_bin_mz_init_hdr(bin)) {
 		RZ_LOG_WARN("File is not MZ\n");
+		sdb_free(bin->kv);
+		bin->kv = NULL;
 		return false;
 	}
 	return true;

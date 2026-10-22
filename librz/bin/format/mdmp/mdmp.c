@@ -125,6 +125,7 @@ void rz_bin_mdmp_free(MiniDmpObj *obj) {
 	rz_buf_free(obj->b);
 	free(obj->hdr);
 	obj->b = NULL;
+	sdb_free(obj->kv);
 	free(obj);
 
 	return;
@@ -1164,9 +1165,13 @@ static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 				}
 			}
 			if (dup) {
+				free(b);
+				rz_buf_free(buf);
 				continue;
 			}
 			if (!(pe32_bin = RZ_NEW0(struct Pe32_rz_bin_mdmp_pe_bin))) {
+				free(b);
+				rz_buf_free(buf);
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers(buf);
@@ -1183,9 +1188,13 @@ static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 				}
 			}
 			if (dup) {
+				free(b);
+				rz_buf_free(buf);
 				continue;
 			}
 			if (!(pe64_bin = RZ_NEW0(struct Pe64_rz_bin_mdmp_pe_bin))) {
+				free(b);
+				rz_buf_free(buf);
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers(buf);
@@ -1195,6 +1204,7 @@ static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 
 			rz_list_append(obj->pe64_bins, pe64_bin);
 		}
+		free(b);
 		rz_buf_free(buf);
 	}
 	return true;
