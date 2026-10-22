@@ -674,7 +674,6 @@ EOF
 RUN
 
 NAME=dlang interfaces and vtables
-BROKEN=1
 FILE=bins/elf/dlang_pet
 CMDS=<<EOF
 aaa

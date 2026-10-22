@@ -1354,7 +1354,6 @@ EOF
 RUN
 
 NAME=dlang devirtualization elf (dlang_pet)
-BROKEN=1
 FILE=bins/elf/dlang_pet
 CMDS=<<EOF
 aaa
@@ -1381,7 +1380,7 @@ EXPECT=<<EOF
 |           ; arg struct pets.Runner *runner @ stack + 0x344
 |           ; arg struct pets.Speaker *speaker @ stack + 0x344
 |           ; var ulong result @ rbx
-|           0x00400c2c      push  rbp                                  ; pets.d:67  ; ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)
+|           0x00400c2c      push  rbp                                  ; pets.d:67 ; ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)
 |           0x00400c2d      mov   rbp, rsp
 |           0x00400c30      sub   rsp, 0x30
 |           0x00400c34      mov   qword [var_30h], rbx
@@ -1389,24 +1388,24 @@ EXPECT=<<EOF
 |           0x00400c3c      mov   qword [var_20h], rsi                 ; arg2
 |           0x00400c40      mov   qword [var_18h], rdx                 ; arg3
 |           0x00400c44      mov   qword [var_10h], rcx                 ; arg4
-|           0x00400c48      mov   rdi, qword [var_10h]                 ; pets.d:68 export extern(D) size_t dispatch(Speaker speaker, Runner runner, Pet pet, BasePet base) {
+|           0x00400c48      mov   rdi, qword [var_10h]                 ; pets.d:68
 |           0x00400c4c      mov   rax, qword [rdi]
 |           0x00400c4f      call  qword [rax+0x08]                     ; 8 ; Virtual call: sym._THUNK4 / loc.unknown_12 / sym._THUNK7
 |           0x00400c53      mov   rbx, rax
-|           0x00400c56      mov   rdi, qword [var_18h]                 ; pets.d:69 size_t result = speaker.speak();
+|           0x00400c56      mov   rdi, qword [var_18h]                 ; pets.d:69
 |           0x00400c5a      mov   rcx, qword [rdi]
 |           0x00400c5d      call  qword [rcx+0x08]                     ; 8 ; Virtual call: sym._THUNK3
 |           0x00400c61      add   rbx, rax
-|           0x00400c64      mov   rdi, qword [var_20h]                 ; pets.d:70 result += runner.runSpeed();
+|           0x00400c64      mov   rdi, qword [var_20h]                 ; pets.d:70
 |           0x00400c68      mov   rdx, qword [rdi]
 |           0x00400c6b      call  qword [rdx+0x18]                     ; 24 ; Virtual call: sym._THUNK2 / sym._THUNK10 / sym._THUNK6
 |           0x00400c6f      add   rbx, rax
-|           0x00400c72      mov   rdi, qword [var_28h]                 ; pets.d:71 result += pet.petValue();
+|           0x00400c72      mov   rdi, qword [var_28h]                 ; pets.d:71
 |           0x00400c76      mov   rax, qword [rdi]
 |           0x00400c79      call  qword [rax+0x40]                     ; 64 ; Virtual call: sym.ulong_pets.LoudPet.classValue / sym.ulong_pets.BasePet.classValue
 |           0x00400c7d      add   rbx, rax
 |           0x00400c80      mov   rax, rbx
-|           0x00400c83      mov   rbx, qword [var_30h]                 ; pets.d:73 return result;
+|           0x00400c83      mov   rbx, qword [var_30h]                 ; pets.d:73
 |           0x00400c87      mov   rsp, rbp
 |           0x00400c8a      pop   rbp
 \           0x00400c8b      ret
@@ -1414,7 +1413,6 @@ EOF
 RUN
 
 NAME=dlang devirtualization (PE)
-BROKEN=1
 FILE=bins/pe/dlang_pet/dlang_pet.exe
 CMDS=<<EOF
 idp bins/pe/dlang_pet/dlang_pet.pdb
