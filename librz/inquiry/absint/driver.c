@@ -23,6 +23,7 @@
  *     For io and instruction requests, main replies with the result to the thread that sent the request.
  */
 
+#include "rz_inquiry/rz_cfg.h"
 #include <rz_inquiry/rz_absint.h>
 #include <rz_core.h>
 
@@ -251,6 +252,11 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
+static bool add_res_blocks_to_cfgs(const RzAbsIntResult *res, RzCFGMap *cfgs) {
+	RzGraph *cfg = rz_cfg_map_get_cfg(cfgs, res->entry);
+	return true;
+}
+
 /**
  * \brief The main loop of multi-threaded abstract interpretation.
  * It initialises: The IL cache, communication channels with the interpreter threads and collects the entry points to analyze.
@@ -268,6 +274,10 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 	RzAbsIntCFGConflicts *conflicts = rz_absint_cfg_conflict_new();
 	if (!conflicts) {
 		goto err_conflicts;
+	}
+	RzCFGMap *cfg_map = rz_cfg_map_new();
+	if (!cfg_map) {
+		goto err_fcn_cfgs;
 	}
 	RzILCache *il_cache = rz_il_cache_new(config->analysis, config->io, il_cache_config);
 	if (!il_cache) {
@@ -370,6 +380,9 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
+				if (!add_res_blocks_to_cfgs(res, cfg_map)) {
+					RZ_LOG_WARN("Failed to copy blocks to CFG\n");
+				}
 				char *name = config->choose_fcn_name ? config->choose_fcn_name(res->entry, config->choose_fcn_name_priv_data) : NULL;
 				if (!rz_absint_result_apply_to_analysis(res, config->analysis, conflicts, name)) {
 					RZ_LOG_WARN("Failed to apply to analysis\n");
@@ -388,8 +401,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 	}
 
-	RzAbsIntCFGConflictSolutionCfg cfg = RZ_ABSINT_CONFLICT_SOLUTION_DEFAULT;
-	if (!rz_absint_cfg_conflicts_solve(config->analysis, conflicts, cfg)) {
+	RzAbsIntCFGConflictSolutionCfg solv_config = RZ_ABSINT_CONFLICT_SOLUTION_DEFAULT;
+	if (!rz_absint_cfg_conflicts_solve(config->analysis, conflicts, solv_config)) {
 		RZ_LOG_WARN("Failed to resolve all CFG lock conflicts. Results analysis quality might be affected.\n");
 	}
 
@@ -411,6 +424,8 @@ err_entry_points_ch:
 	rz_th_queue_free(driver.entry_points_ch);
 err_il_cache:
 	rz_il_cache_free(il_cache);
+err_fcn_cfgs:
+	ht_up_free(cfg_map);
 err_conflicts:
 	rz_absint_cfg_conflict_free(conflicts);
 err_none:
