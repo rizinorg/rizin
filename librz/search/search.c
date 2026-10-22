@@ -539,8 +539,10 @@ static void *search_cancel_th(void *user) {
 			break;
 		}
 		print_intervals(ctx->finished_intervals);
-		size_t n_hits = rz_th_queue_size(ctx->hits);
-		if (opt->cancel_cb(opt->cancel_usr, n_hits, RZ_SEARCH_CANCEL_REGULAR_CHECK)) {
+		if (opt->show_progress == RZ_SEARCH_PROGRESS_NUM_HITS) {
+			eprintf("Searching... hits: %" PFMTSZu "\r", rz_th_queue_size(ctx->hits));
+		}
+		if (rz_interrupt_is_breaked(opt->intr)) {
 			rz_atomic_bool_set(ctx->loop, false);
 			break;
 		}
@@ -720,7 +722,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	ctx.hits = hits;
 	ctx.finished_intervals = intervals;
 
-	if (opt->cancel_cb) {
+	if (opt->intr || opt->show_progress != RZ_SEARCH_PROGRESS_DISABLED) {
 		// create cancel thread
 		cancel_th = rz_th_new(search_cancel_th, &ctx);
 		if (!cancel_th) {
@@ -838,7 +840,7 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 	ctx.hits = hits;
 	ctx.finished_intervals = intervals;
 
-	if (opt->cancel_cb) {
+	if (opt->intr || opt->show_progress != RZ_SEARCH_PROGRESS_DISABLED) {
 		// create cancel thread
 		cancel_th = rz_th_new(search_cancel_th, &ctx);
 		if (!cancel_th) {
