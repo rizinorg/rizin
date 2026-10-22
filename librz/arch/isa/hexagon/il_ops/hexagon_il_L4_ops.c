@@ -1929,7 +1929,29 @@ RzILOpEffect *hex_il_op_l4_loadruh_ur(HexInsnPktBundle *bundle) {
 
 // Rd = memw_phys(Rs,Rt)
 RzILOpEffect *hex_il_op_l4_loadw_phys(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	// FIXME Hand written!
+	// Please replace when system emulation is implemented.
+	// This one is ignoring the 3 high page table bits.
+
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	// Declare: ut32 EA;
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	const HexOp *Rt_op = ISA2REG(hi, 't', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+	RzILOpPure *Rt = READ_REG(pkt, Rt_op, false);
+	const HexOp *Rd_op = ISA2REG(hi, 'd', false);
+
+	// EA = ((Rs&0x7ff) | (Rt<<11));
+	RzILOpEffect *phys_addr = SETL("EA", LOGOR(LOGAND(Rs, U32(0x7ff)), SHIFTL0(Rt, U32(11))));
+
+	// Rd = ((st32) ((ut32) mem_load_32(EA)));
+	RzILOpPure *ml_EA_9 = LOADW(32, VARL("EA"));
+	RzILOpEffect *op_ASSIGN_12 = WRITE_REG(bundle, Rd_op, CAST(32, IL_FALSE, CAST(32, IL_FALSE, ml_EA_9)));
+
+	RzILOpEffect *instruction_sequence = SEQN(2, phys_addr, op_ASSIGN_12);
+	return instruction_sequence;
 }
 
 // memb(Rs+Ii) |= Rt
