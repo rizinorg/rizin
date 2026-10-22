@@ -248,6 +248,13 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	hex_il_pkt_stats_reset(&p->il_op_stats);
 }
 
+RZ_IPI void hexagon_state_clear_cache(RZ_NONNULL HexState *state) {
+	rz_return_if_fail(state);
+	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		hex_clear_pkt(&state->pkts[i]);
+	}
+}
+
 /**
  * \brief Gives the least used packet.
  *

@@ -1463,3 +1463,28 @@ Semantic of endloop jumps
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Test sys instructions
+ARGS=-a hexagon -m 0x5000
+FILE==
+CMDS=<<EOF
+wx 00c0006f00c0006d01c0806e01c0006700c0c1a002e20392
+pi 6
+aoi 6
+EOF
+EXPECT=<<EOF
+[   R1:0 = SGP1:0
+[   SGP1:0 = R1:0
+[   R1 = SGP0
+[   SGP1 = R0
+[   dczeroa(R1)
+[   R2 = memw_phys(R3,R2)
+0x5000 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set R0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0)))))) (set R1_tmp (cast 32 false (>> (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0))) (bv 8 0x20) false))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (jmp (bv 32 0x5004)))
+0x5004 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set S0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0)))))) (set S1_tmp (cast 32 false (>> (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0))) (bv 8 0x20) false))) empty (set S0 (var S0_tmp)) (set S1 (var S1_tmp)) (jmp (bv 32 0x5008)))
+0x5008 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set R1_tmp (cast 32 false (cast 32 false (var S0)))) empty (set R1 (var R1_tmp)) (jmp (bv 32 0x500c)))
+0x500c (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set S1_tmp (cast 32 false (cast 32 false (var R0)))) empty (set S1 (var S1_tmp)) (jmp (bv 32 0x5010)))
+0x5010 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) nop empty (jmp (bv 32 0x5014)))
+0x5014 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set EA (| (& (var R3) (bv 32 0x7ff)) (<< (var R2) (bv 32 0xb) false))) (set R2_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R2 (var R2_tmp)) (jmp (bv 32 0x5018)))
+EOF
+EXPECT_ERR=
+RUN

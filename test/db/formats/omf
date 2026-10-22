@@ -445,6 +445,7 @@ EOF
 EXPECT_ERR=<<EOF
 WARNING: File may be corrupted (Overflow detected).
 WARNING: The binary loader searches strings only in the read only sections, but the binary has no sections.
+WARNING: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the same address 0xef02
 EOF
 RUN
 
@@ -462,6 +463,7 @@ EOF
 EXPECT_ERR=<<EOF
 R: Invalid sym record (overflow)
 G: The binary loader searches strings only in the read only sections, but the binary has no sections.
+G: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the same address 0xef02
 EOF
 RUN
 
@@ -549,6 +551,7 @@ EOF
 EXPECT_ERR=<<EOF
 WARNING: File may be corrupted (Overflow detected).
 WARNING: The binary loader searches strings only in the read only sections, but the binary has no sections.
+WARNING: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the same address 0xef02
 EOF
 RUN
 
@@ -566,6 +569,7 @@ EOF
 EXPECT_ERR=<<EOF
 R: Invalid sym record (overflow)
 G: The binary loader searches strings only in the read only sections, but the binary has no sections.
+G: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the same address 0xef02
 EOF
 RUN
 

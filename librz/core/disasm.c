@@ -16,6 +16,9 @@
 
 #define DEFAULT_NARGS 4
 #define FLAG_PREFIX   ";-- "
+// Bytes read at a pointer operand to describe what it points to, the same in
+// every view; string comments show at most 128 characters anyway
+#define DS_PTR_DATA_SIZE 512
 
 #define COLOR(ds, field)       ((ds)->show_color ? (ds)->core->cons->context->pal.field : "")
 #define COLOR_ARG(ds, field)   ((ds)->show_color && (ds)->show_color_args ? (ds)->core->cons->context->pal.field : "")
@@ -979,6 +982,37 @@ static void ds_opstr_try_colorize(RzDisasmState *ds, bool print_color) {
 	ds->opstr = new_opstr;
 }
 
+/**
+ * \brief Compute core->parser->subrel_addr for the given instruction.
+ *
+ * subrel_addr is the address whose flag name may replace a numeric operand
+ * of the instruction during rz_parse_filter() (asm.sub.rel). For LEA/MOV/CMP
+ * instructions the referenced address itself (op->ptr) is used, without
+ * dereferencing it, while for any other instruction that accesses memory
+ * (refptr != 0, e.g. a call or a jmp through an IAT/GOT slot) the pointer
+ * value stored at op->ptr is read from io and used instead. The value is
+ * also reset to 0 for every instruction, so that a stale address never
+ * leaks from one opcode to the next one.
+ */
+RZ_IPI void rz_core_calc_subrel_addr(RZ_NONNULL RzCore *core, RZ_NONNULL const RzAnalysisOp *op) {
+	rz_return_if_fail(core && op);
+	RzParse *parser = core->parser;
+	parser->subrel_addr = 0;
+	if (parser->subrel &&
+		(op->type == RZ_ANALYSIS_OP_TYPE_LEA ||
+			op->type == RZ_ANALYSIS_OP_TYPE_MOV ||
+			op->type == RZ_ANALYSIS_OP_TYPE_CMP) &&
+		op->ptr != UT64_MAX) {
+		parser->subrel_addr = op->ptr;
+	}
+	if (parser->subrel && op->refptr && parser->subrel_addr == 0) {
+		ut64 sub_address = UT64_MAX;
+		const int be = rz_asm_is_big_endian_set(core->rasm);
+		rz_io_read_i(core->io, op->ptr, &sub_address, op->refptr, be);
+		parser->subrel_addr = sub_address;
+	}
+}
+
 static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	RzCore *core = ds->core;
 
@@ -1034,10 +1068,7 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 	/* initialize */
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
-	core->parser->subrel_addr = 0;
-	if (core->parser->subrel && (ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_LEA || ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_MOV || ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_CMP) && ds->analysis_op.ptr != UT64_MAX) {
-		core->parser->subrel_addr = ds->analysis_op.ptr;
-	}
+	rz_core_calc_subrel_addr(core, &ds->analysis_op);
 	if (ds->subvar && ds->opstr) {
 		ut64 at = ds->vat;
 		RzAnalysisFunction *f = fcnIn(ds, at, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -1087,15 +1118,6 @@ static void ds_build_op_str(RzDisasmState *ds, bool print_color) {
 				core->parser->flagspace = NULL;
 			}
 		}
-		if (core->parser->subrel && ds->analysis_op.refptr) {
-			if (core->parser->subrel_addr == 0) {
-				ut64 sub_address = UT64_MAX;
-				const int be = rz_asm_is_big_endian_set(core->rasm);
-				rz_io_read_i(core->io, ds->analysis_op.ptr, &sub_address, ds->analysis_op.refptr, be);
-				core->parser->subrel_addr = sub_address;
-			}
-		}
-
 		ds_opstr_try_colorize(ds, print_color);
 		rz_parse_filter(core->parser, ds->vat, core->flags, ds->hint, ds->opstr,
 			ds->str, sizeof(ds->str), core->print->big_endian);
@@ -5591,7 +5613,7 @@ toro:
 			ds_build_op_str(ds, false);
 			ds_print_cmt_esil(ds);
 			ds_print_cmt_il(ds);
-			ds_print_ptr(ds, len + 256, idx);
+			ds_print_ptr(ds, DS_PTR_DATA_SIZE, idx);
 			ds_print_sysregs(ds);
 			ds_print_fcn_name(ds);
 			ds_print_color_reset(ds);
@@ -5705,7 +5727,7 @@ toro:
 			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_cmt_esil(ds);
 				ds_print_cmt_il(ds);
-				ds_print_ptr(ds, len + 256, idx);
+				ds_print_ptr(ds, DS_PTR_DATA_SIZE, idx);
 				ds_print_sysregs(ds);
 				ds_print_fcn_name(ds);
 				ds_print_color_reset(ds);
@@ -6051,6 +6073,14 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 	return ret;
 }
 
+/**
+ * \brief Disassembles \p nb_opcodes ops, \p nb_bytes bytes or both at \p addr
+ * into JSON objects added to \p pj; negative counts go backwards.
+ *
+ * \param buf The bytes at \p addr, or NULL to read them from io as needed
+ * \param nb_bytes Number of bytes to disassemble, 0 for no limit with a NULL \p buf
+ * \param nb_opcodes Number of ops to disassemble, 0 for no limit
+ */
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
 	bool res = true;
 	RzIterator iter = (RzIterator){ 0 };

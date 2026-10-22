@@ -2751,6 +2751,15 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
 	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
 
+	if (state->mode == RZ_OUTPUT_MODE_JSON && n_instrs > 0) {
+		// read from io as the ops need it, so neither the block size nor a
+		// guessed op size cuts the count short
+		rz_cmd_state_output_array_start(state);
+		bool ret = rz_core_print_disasm_json(core, offset, NULL, 0, n_instrs, state->d.pj);
+		rz_cmd_state_output_array_end(state);
+		return ret;
+	}
+
 	if (n_bytes == 0) {
 		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 		if (max_op_size < 1) {
@@ -2774,11 +2783,10 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return false;
 	}
-	bool ret = true;
 	if (!rz_io_read_at_mapped(core->io, offset, buf, n_bytes + 1)) {
 		// Even with an error, keep on disassembling as at least some data may be read successfully
+		// Do not fail the command: the output would be discarded in JSON mode.
 		RZ_LOG_WARN("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " from io.\n", (ut64)(n_bytes + 1), offset);
-		ret = false;
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -2802,7 +2810,7 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 	}
 	free(buf);
 
-	return ret;
+	return true;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_bytes_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

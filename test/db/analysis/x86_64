@@ -1056,7 +1056,7 @@ EXPECT=<<EOF
 |  | | |                                                               ; [0x21300:4]=0
 |  | | |    0x00003cda      mov   byte [rip+0x1d33f], 0x01             ; data.00021020
 |  | | |                                                               ; [0x21020:1]=0
-| ========< 0x00003ce1      jmp   0x3cf9
+|  | | |    0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
 |  | `----> 0x00003ce3      mov   esi, 0x05                            ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
@@ -1064,7 +1064,7 @@ EXPECT=<<EOF
 |  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
-| --------> 0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
+|  |   |    0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
 |  |   |                                                               ; 0x18cb4 ; "QUOTING_STYLE" ; const char *name
 EOF
 RUN
@@ -1102,7 +1102,7 @@ EXPECT=<<EOF
 |  | | |                                                               ; [0x21300:4]=0
 |  | | |    0x00003cda      mov   byte [rip+0x1d33f], 0x01             ; data.00021020
 |  | | |                                                               ; [0x21020:1]=0
-| ========< 0x00003ce1      jmp   0x3cf9
+|  | | |    0x00003ce1      jmp   0x3cf9
 |  | | |    ; CODE XREF from main @ 0x3cb2
 |  | `----> 0x00003ce3      mov   esi, 0x05                            ; int64_t arg2
 |  |   |    0x00003ce8      xor   edi, edi                             ; int64_t arg1
@@ -1110,7 +1110,7 @@ EXPECT=<<EOF
 |  |   |                                                               ; [0x21300:4]=0
 |  |   |    0x00003cf4      call  fcn.00012740
 |  |   |    ; CODE XREFS from main @ 0x3ce1, 0x4602, 0x4c38
-| --------> 0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
+|  |   |    0x00003cf9      lea   rdi, qword [rip+0x14fb4]             ; str.QUOTING_STYLE
 |  |   |                                                               ; 0x18cb4 ; "QUOTING_STYLE" ; const char *name
 EOF
 RUN

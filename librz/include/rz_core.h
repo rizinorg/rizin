@@ -889,7 +889,7 @@ typedef struct rz_core_decoded_bytes_t {
 	int oplen;
 } RzCoreDecodedBytes;
 
-RZ_API bool rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_core_analysis_bytes(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NULLABLE const ut8 *buf, ut64 n_bytes, ut64 max_ops, RZ_OUT RZ_NONNULL RzIterator *iterator);
 RZ_API bool rz_core_analysis_op_chunk_iter(RZ_NONNULL RzCore *core, ut64 start_addr, ut64 n_bytes, ut64 max_ops, RzAnalysisOpMask mask, RZ_OUT RZ_NONNULL RzIterator *iterator);
 RZ_API bool rz_core_analysis_op_function_iter(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzAnalysisFunction *fcn, RzAnalysisOpMask mask, RZ_OUT RZ_NONNULL RzIterator *iterator);
 RZ_API ut64 rz_core_analysis_ops_size(RZ_NONNULL RzCore *core, ut64 start_addr, RZ_NONNULL const ut8 *buf, ut64 len, ut64 nops);
@@ -1407,9 +1407,9 @@ RZ_API ut16 rz_core_flirt_os_from_option_list(RZ_NONNULL const char *os_list);
 RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list);
 
 /* DECOMPILER PRINTING FUNCTIONS */
+RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets, RZ_NONNULL RzCons *cons);
 RZ_API void rz_core_annotated_code_print_json(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons);
-RZ_API void rz_core_annotated_code_print(RZ_NONNULL RzCons *cons, RZ_NONNULL RzAnnotatedCode *code, RZ_NULLABLE RzVector /*<ut64>*/ *line_offsets);
-RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL RzAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RZ_NONNULL RzAnnotatedCode *code, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* serialize */
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_platform.h>
+#include <rz_util/rz_log.h>
 
 /**
  * \brief Frees an RzPlatformProfile type
@@ -104,7 +105,14 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 		return false;
 	}
 	void **iter;
-	RzPVector *items = sdb_get_items(sdb, false);
+	/*
+	 * Iterate the items in the sorted (by key) order, so that the name
+	 * resolved for the MMIO registers sharing the same address does not
+	 * depend on the SDB hash table layout, but only on the data itself.
+	 * Conflicting registers with the same address are reported to make
+	 * broken CPU profile data visible.
+	 */
+	RzPVector *items = sdb_get_items(sdb, true);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_key(kv), "PC")) {
@@ -131,14 +139,26 @@ static bool sdb_load_arch_profile(RzPlatformTarget *t, Sdb *sdb) {
 			char *argument_key = rz_str_newf("%s.address", io_name);
 			ut64 io_address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
-			ht_up_insert(c->registers_mmio, io_address, (char *)io_name);
+			if (!ht_up_insert(c->registers_mmio, io_address, (char *)io_name)) {
+				const char *existing = ht_up_find(c->registers_mmio, io_address, NULL);
+				if (existing && strcmp(existing, io_name)) {
+					RZ_LOG_WARN("arch: MMIO registers \"%s\" and \"%s\" in the CPU profile share the same address 0x%" PFMT64x "\n",
+						existing, io_name, io_address);
+				}
+			}
 		}
 		if (!strcmp(sdbkv_value(kv), "ext_io")) {
 			const char *ext_io_name = sdbkv_key(kv);
 			char *argument_key = rz_str_newf("%s.address", ext_io_name);
 			ut64 ext_io_address = sdb_num_get(sdb, argument_key);
 			free(argument_key);
-			ht_up_insert(c->registers_extended, ext_io_address, (char *)ext_io_name);
+			if (!ht_up_insert(c->registers_extended, ext_io_address, (char *)ext_io_name)) {
+				const char *existing = ht_up_find(c->registers_extended, ext_io_address, NULL);
+				if (existing && strcmp(existing, ext_io_name)) {
+					RZ_LOG_WARN("arch: extended registers \"%s\" and \"%s\" in the CPU profile share the same address 0x%" PFMT64x "\n",
+						existing, ext_io_name, ext_io_address);
+				}
+			}
 		}
 	}
 	rz_pvector_free(items);

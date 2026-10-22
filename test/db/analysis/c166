@@ -779,7 +779,7 @@ EXPECT=<<EOF
 |  |||||,=< 0x00c00214      3d07           jmpr  cc_NZ/NE, sym.a166_FAR._C_FPXSUB
 |  ||||||   0x00c00216      46f58000       cmp   r5, #0x0080
 | ,=======< 0x00c0021a      2d02           jmpr  cc_Z/EQ, 0xc00220
-| ==``-`--> 0x00c0021c      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
+| ||``-`--> 0x00c0021c      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
 | ||  | |                                                              ; 0xc005b2
 \ ``--`,==< 0x00c00220      ea00ba05       jmpa+ cc_UC, ?C_FPINFRSL    ; sym.a166_NEAR._C_FPINFRSL
 \      ||                                                              ; 0xc005ba

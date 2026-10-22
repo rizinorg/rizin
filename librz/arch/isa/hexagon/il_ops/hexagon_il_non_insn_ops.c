@@ -948,6 +948,15 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_commit_packet(HexInsnPktBundle *bundle) {
 		commit_seq = SEQ2(commit_seq, SETG(dest_reg, VARG(src_reg)));
 	}
 
+	for (ut8 i = 0; i <= HEX_REG_SYS_REGS_S80; ++i) {
+		if (!(rz_bv_get(stats->sys_written, i))) {
+			continue;
+		}
+		const char *dest_reg = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, i, false, false, false);
+		const char *src_reg = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, i, false, true, false);
+		commit_seq = SEQ2(commit_seq, SETG(dest_reg, VARG(src_reg)));
+	}
+
 	for (ut8 i = 0; i <= HEX_REG_PRED_REGS_P3; ++i) {
 		if (!(rz_bv_get(stats->pred_written, i))) {
 			continue;

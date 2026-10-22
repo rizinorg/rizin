@@ -446,6 +446,8 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->type = type;
 	string->string = rz_str_dup(data);
 	if (!rz_pvector_push(pyc->strings_cache, string)) {
+		free(string->string);
+		free(string);
 		return false;
 	}
 	return true;
@@ -698,6 +700,7 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 	}
 
 	if (!add_string_to_cache(pyc, addr, ret->data, size, size, RZ_STRING_ENC_8BIT)) {
+		free(ret->data);
 		RZ_FREE(ret);
 		return NULL;
 	}
@@ -1356,7 +1359,12 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	free(prefix);
 	return true;
 fail:
-
+	if (section) {
+		free(section->name);
+	}
+	if (symbol) {
+		free(symbol->name);
+	}
 	free(section);
 	free(prefix);
 	free(symbol);

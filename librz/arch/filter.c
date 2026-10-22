@@ -138,7 +138,18 @@ static char *find_next_number(char *str) {
 	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
 		ansi = true;
 	}
-	const char *search = (ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" :
+	// In both modes the number must not directly follow a visible '\w', '.' or
+	// '*' character, so that number fragments inside identifiers are never
+	// picked up. This matters for flag names inserted earlier (case labels
+	// like case.<switch-address>.<case-number>, see issue #4238) and for the
+	// default stack variable/argument names (var_78h, arg_10h), whose
+	// hex-offset tail is NOT a numeric literal. Without this rule in the
+	// ansi mode, the colored opstr tokenizes e.g. "var_78h" into separately
+	// colored "var", "_" and "78h" segments, the "78h" tail is picked up as
+	// a number token and evaluated, which both breaks the identifier and
+	// makes RzNum warn about the deprecated trailing-'h' base suffix on
+	// every colored disassembly line.
+	const char *search = (ansi ? "((?:[^\\w.*\x1b]|^)(?:\x1b\\[[0-9;]*m)+(?<number>(0x[a-fA-F0-9]+)|\\d+))" :
 				   // The exclusion pattern [^\w.*] excludes all numbers with a '\w', '.' and '*' prefix.
 				   // This is only done because the previous parsing did it like this.
 				   // And not doing it, breaks substitutions from before.

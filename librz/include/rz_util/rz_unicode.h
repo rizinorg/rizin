@@ -19,6 +19,10 @@
  * \brief String width of "\U00hhhhhh"
  */
 #define RZ_UNICODE_ESCAPED_STR_WIDTH 10
+/**
+ * \brief Size of the longest byte order mark, the UTF-32 one
+ */
+#define RZ_UNICODE_MAX_BOM_SIZE 4
 
 struct rz_unicode_range_name_entry_t {
 	ut32 from;

@@ -51,12 +51,34 @@ RzILOpEffect *hex_il_op_y4_siad(HexInsnPktBundle *bundle) {
 
 // Rdd = Sss
 RzILOpEffect *hex_il_op_y4_tfrscpp(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Sss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Sss = READ_REG(pkt, Sss_op, false);
+
+	// Rdd = Sss;
+	RzILOpEffect *op_ASSIGN_1 = WRITE_REG(bundle, Rdd_op, Sss);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_1;
+	return instruction_sequence;
 }
 
 // Sdd = Rss
 RzILOpEffect *hex_il_op_y4_tfrspcp(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Sdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+
+	// Sdd = Rss;
+	RzILOpEffect *op_ASSIGN_1 = WRITE_REG(bundle, Sdd_op, Rss);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_1;
+	return instruction_sequence;
 }
 
 // trace(Rs)

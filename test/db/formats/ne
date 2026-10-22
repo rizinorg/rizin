@@ -310,7 +310,7 @@ ne:
     |||||   0000:0dc8     cmp   ax, 0x02
    ,======< 0000:0dcb     jnz   0xdd0
   ,=======< 0000:0dcd     jmp   0x1352
-  =`------> 0000:0dd0     jmp   0x13b7
+  |`------> 0000:0dd0     jmp   0x13b7
 ---
             ;-- entry2:
             ;-- DIAL_ABOUT:

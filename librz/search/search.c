@@ -862,7 +862,6 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 		rz_atomic_bool_set(ctx.loop, false);
 		rz_th_wait(cancel_th);
 		rz_th_free(cancel_th);
-		rz_atomic_bool_free(ctx.loop);
 	}
 
 	rz_th_lock_free(ctx.io_lock);

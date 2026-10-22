@@ -382,6 +382,21 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 
 	rz_return_val_if_fail(core->cons && analysis && analysis->reflines, NULL);
 
+	/*
+	 * Reflines whose level does not fit into the visible columns are not
+	 * rendered at all: their vertical bars and corner characters always land
+	 * outside of the visible (rightmost "lineswidth") columns, but the
+	 * horizontal fills drawn for their corners are still written into the
+	 * visible area, erasing the reflines that are actually visible. This
+	 * results in stray full-width horizontal runs (the corner itself is
+	 * truncated away), in visible vertical bars disappearing under those runs
+	 * and in dangling bars on the "CODE XREF" comment lines that do not line
+	 * up with the instruction below them (see issue #3568). Thus such
+	 * reflines are skipped completely.
+	 */
+	int lw = analysis->lineswidth;
+	int max_visible_level = wide ? (lw - 1) / 2 : lw;
+
 	RzList *lvls = rz_list_new();
 	if (!lvls) {
 		return NULL;
@@ -391,6 +406,9 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 		if (core->cons && rz_interrupt_is_breaked(core->cons->intr)) {
 			rz_list_free(lvls);
 			return NULL;
+		}
+		if (lw > 0 && ref->level > max_visible_level) {
+			continue;
 		}
 		if (in_refline(addr, ref) && refline_kept(ref, middle_after, addr)) {
 			rz_list_add_sorted(lvls, (void *)ref, (RzListComparator)cmp_by_ref_lvl, NULL);

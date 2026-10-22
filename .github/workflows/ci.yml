@@ -17,6 +17,8 @@ on:
       - dev
       - stable
       - "release-*"
+  merge_group:
+    types: [checks_requested]
 
 # Automatically cancel any previous workflow on new push.
 concurrency:
@@ -33,7 +35,8 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
-          base: ${{ github.ref }}
+          # Compare the entire merge group, not the queue branch against itself.
+          base: ${{ github.event.merge_group.base_sha || github.ref }}
           filters: |
             edited:
               - '**.c'
