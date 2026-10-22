@@ -29,9 +29,9 @@ aB "ldmdbeQ r2, {r0, r1}" 03001209
 aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
 aB "ldmeq r5, {r0, r1, r2}" 07009508
 aB "ldmeq r6, {r0, r1}" 03009608
-aB "ldrbeq r5, [r7, -1]" 01505705
+a "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrne r2, [r3, ip]" dc208311
-aB "ldreq r0, [fp, -180]" b4001b05
+a "ldreq r0, [fp, -180]" b4001b05
 aB "ldrheq r0, [r3, r0]" b0009301
 aB "ldrex r0, [r3]" 9f0f93e1
 aB "lslne r1, r1, 2" 0111a011
@@ -73,12 +73,12 @@ a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008
 aB "stmeq ip, {r0, r1, r2}" 07008c08
 aB "stmeq ip, {r0, r1, r2, r3}" 0f008c08
-aB "strbeq ip, [r2, -1]" 01c04205
-aB "strbeq r3, [r5]" 0030c505
+a "strbeq ip, [r2, -1]" 01c04205
+a "strbeq r3, [r5]" 0030c505
 aB "strdeq r2, [r4]" f020c401
 aB "strdeq r4, [r8, 80]" f045c801
-aB "streq r3, [r5, -4]" 04300505
-aB "streq r1, [fp, -304]" 30110b05
+a "streq r3, [r5, -4]" 04300505
+a "streq r1, [fp, -304]" 30110b05
 aB "strhne r3, [fp, -50]" b2334b11
 aB "strheq r3, [fp, -56]" b8334b01
 aB "strheq r1, [r0]" b010c001
@@ -93,10 +93,10 @@ aB "uxtbeq r1, r0" 7010ef06
 aB "uxtheq r0, r0" 7000ff06
 aB "vstreq d0, [r0]" 000b800d
 a "ldr r1, [r2, r3]" 031092e7
-aB "ldr r1, [r2, r3, lsl 2]" 031192e7
-aB "ldr r1, [r2, r3, lsr 5]" a31292e7
-aB "ldr r1, [r2, r3, asr 6]" 431392e7
-aB "ldr r1, [r2, r3, ror 9]" e31492e7
+a "ldr r1, [r2, r3, lsl 2]" 031192e7
+a "ldr r1, [r2, r3, lsr 5]" a31292e7
+a "ldr r1, [r2, r3, asr 6]" 431392e7
+a "ldr r1, [r2, r3, ror 9]" e31492e7
 a "mrc p5, 1, r4, c2, c4, 6" d44532ee
 a "mrc p4, 4, r5, c2, c2" 125492ee
 a "mrc p3, 0, r5, c3, c5, 6" d55313ee
@@ -269,9 +269,9 @@ aB "ldmdbeq r2, {r0, r1}" 03001209
 aB "ldmeq r3, {r0, r1, r2, r3}" 0f009308
 aB "ldmeq r5, {r0, r1, r2}" 07009508
 aB "ldmeq r6, {r0, r1}" 03009608
-aB "ldrbeq r5, [r7, -1]" 01505705
+a "ldrbeq r5, [r7, -1]" 01505705
 aB "ldrdne r2, r3, [r3, ip]" dc208311
-aB "ldreq r0, [fp, -0xb4]" b4001b05
+a "ldreq r0, [fp, -0xb4]" b4001b05
 aB "ldrheq r0, [r3, r0]" b0009301
 aB "lslne r1, r1, 2" 0111a011
 aB "lsreq r0, r0, 0x10" 2008a001
@@ -301,12 +301,12 @@ a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008
 aB "stmeq ip, {r0, r1, r2}" 07008c08
 aB "stmeq ip, {r0, r1, r2, r3}" 0f008c08
-aB "strbeq ip, [r2, -1]" 01c04205
-aB "strbeq r3, [r5]" 0030c505
+a "strbeq ip, [r2, -1]" 01c04205
+a "strbeq r3, [r5]" 0030c505
 aB "strdeq r2, r3, [r4]" f020c401
 aB "strdeq r4, r5, [r8, 0x50]" f045c801
-aB "streq r3, [r5, -4]" 04300505
-aB "streq r1, [fp, -0x130]" 30110b05
+a "streq r3, [r5, -4]" 04300505
+a "streq r1, [fp, -0x130]" 30110b05
 aB "strhne r3, [fp, -0x32]" b2334b11
 aB "strheq r3, [fp, -0x38]" b8334b01
 aB "strheq r1, [r0]" b010c001
@@ -802,3 +802,21 @@ d "vst3.8 {d0, d1, d2}, [r0]" 0f0400f4 0x0 (seq empty (storew 0 (var r0) (cast 8
 d "vst4.8 {d0, d1, d2, d3}, [r0]" 0f0000f4 0x0 (seq empty (storew 0 (var r0) (cast 8 false (>> (var d0) (bv 8 0x0) false))) (storew 0 (+ (var r0) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x0) false))) (storew 0 (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x0) false))) (storew 0 (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x0) false))) (storew 0 (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x8) false))) (storew 0 (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x8) false))) (storew 0 (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x8) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x8) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x10) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x10) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x10) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x10) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x18) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x18) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x18) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x18) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x20) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x20) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x20) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x20) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x28) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x28) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x28) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x28) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x30) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x30) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x30) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x30) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d0) (bv 8 0x38) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d1) (bv 8 0x38) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d2) (bv 8 0x38) false))) (storew 0 (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (+ (var r0) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (bv 32 0x1)) (cast 8 false (>> (var d3) (bv 8 0x38) false))) empty)
 
 
+a "ldr r0, [r1, -4]" 040011e5
+a "ldr r0, [r1, #-4]" 040011e5
+a "str r0, [r1], 8" 080081e4
+a "str r0, [r1], -8" 080001e4
+a "str r0, [r1, 8]!" 0800a1e5
+a "str r0, [r1, -8]!" 080021e5
+a "strb r3, [fp, -0xfff]" ff3f4be5
+a "ldr r0, [r1, -r2]" 020011e7
+a "ldr r0, [r1], -r2, asr 3" c20111e6
+a "ldr r0, [r1, r2, lsl 2]!" 0201b1e7
+a "str lr, [r0, -r6, lsl 31]" 86ef00e7
+a "ldr r0, [r1, r2, lsr 32]" 220091e7
+a "ldrb r0, [r1, 4]" 0400d1e5
+a "ldrb r0, [r1], -r2" 020051e6
+a "ldrbne r5, [r6]" 0050d615
+a "strb r0, [r1], 4" 0400c1e4
+a "strbt r1, [r2], -4" 041062e4
+a "strbt r12, [r2], r2, asr 29" c2cee2e6
