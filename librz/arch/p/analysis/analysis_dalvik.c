@@ -10,9 +10,22 @@
 #include "dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"
 
+/**
+ * \brief Require complete payloads so unmapped bytes cannot become switch targets.
+ */
+static bool read_switch_payload(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
+	if (addr > UT64_MAX - len) {
+		return false;
+	}
+	return analysis->cb.read_at && analysis->cb.read_at(analysis, addr, buf, len);
+}
+
+/**
+ * \brief Decode signed keys and instruction-relative targets in a packed switch.
+ */
 static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
 	ut8 payload_header[8];
-	if (!analysis->cb.read_at || !analysis->cb.read_at(analysis, payload_addr, payload_header, 8)) {
+	if (!read_switch_payload(analysis, payload_addr, payload_header, sizeof(payload_header))) {
 		return NULL;
 	}
 
@@ -21,20 +34,20 @@ static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut6
 	}
 
 	ut16 size = rz_read_at_le16(payload_header, 2);
-	ut32 first_key = rz_read_at_le32(payload_header, 4);
-	ut32 last_key = first_key + size - 1;
+	st64 first_key = (st32)rz_read_at_le32(payload_header, 4);
+	st64 last_key = first_key + size - 1;
 	ut8 *table;
 
-	if (size == 0 || !(table = rz_mem_alloc(size * 4))) {
+	if (size == 0 || last_key > ST32_MAX || !(table = rz_mem_alloc(size * 4))) {
 		return NULL;
 	}
 
-	if (!analysis->cb.read_at(analysis, payload_addr + 8, table, size * 4)) {
+	if (!read_switch_payload(analysis, payload_addr + 8, table, size * 4)) {
 		rz_mem_free(table);
 		return NULL;
 	}
 
-	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, 0);
+	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, addr + 6);
 
 	if (!result) {
 		rz_mem_free(table);
@@ -42,7 +55,7 @@ static RzAnalysisSwitchOp *parse_packed_switch_payload(RzAnalysis *analysis, ut6
 	}
 
 	for (ut16 i = 0; i < size; i++) {
-		ut32 target = rz_read_at_le32(table, i * 4);
+		st64 target = (st32)rz_read_at_le32(table, i * 4);
 		if (!rz_analysis_switch_op_add_case(result, addr, first_key + i, addr + target * 2)) {
 			goto error;
 		}
@@ -57,9 +70,12 @@ error:
 	return NULL;
 }
 
+/**
+ * \brief Decode sparse keys and targets relative to the switch, not the payload.
+ */
 static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut64 addr, ut64 payload_addr) {
 	ut8 payload_header[4];
-	if (!analysis->cb.read_at || !analysis->cb.read_at(analysis, payload_addr, payload_header, 4)) {
+	if (!read_switch_payload(analysis, payload_addr, payload_header, sizeof(payload_header))) {
 		return NULL;
 	}
 
@@ -74,14 +90,14 @@ static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut6
 		return NULL;
 	}
 
-	if (!analysis->cb.read_at(analysis, payload_addr + 4, table, size * 8)) {
+	if (!read_switch_payload(analysis, payload_addr + 4, table, size * 8)) {
 		rz_mem_free(table);
 		return NULL;
 	}
 
-	ut32 first_key = rz_read_at_le32(table, 0);
-	ut32 last_key = rz_read_at_le32(table, size * 4 - 4);
-	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, 0);
+	st64 first_key = (st32)rz_read_at_le32(table, 0);
+	st64 last_key = (st32)rz_read_at_le32(table, size * 4 - 4);
+	RzAnalysisSwitchOp *result = rz_analysis_switch_op_new(addr, first_key, last_key, addr + 6);
 
 	if (!result) {
 		rz_mem_free(table);
@@ -89,8 +105,8 @@ static RzAnalysisSwitchOp *parse_sparse_switch_payload(RzAnalysis *analysis, ut6
 	}
 
 	for (ut16 i = 0; i < size; i++) {
-		ut32 key = rz_read_at_le32(table, i * 4);
-		ut32 target = rz_read_at_le32(table, (size + i) * 4);
+		st64 key = (st32)rz_read_at_le32(table, i * 4);
+		st64 target = (st32)rz_read_at_le32(table, (size + i) * 4);
 
 		if (!rz_analysis_switch_op_add_case(result, addr, key, addr + target * 2)) {
 			goto error;
@@ -402,14 +418,19 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		}
 		break;
-	case 0x2b:
-		op->switch_op = parse_packed_switch_payload(analysis, addr, addr + 2 * rz_read_at_le32(data, 2));
+	case 0x2b: // packed-switch
+	case 0x2c: { // sparse-switch
+		// DEX offsets are signed counts of 16-bit code units.
+		st64 offset = (st32)rz_read_at_le32(data, 2);
+		ut64 payload_addr = addr + offset * 2;
+		op->switch_op = data[0] == 0x2b
+			? parse_packed_switch_payload(analysis, addr, payload_addr)
+			: parse_sparse_switch_payload(analysis, addr, payload_addr);
 		op->type = RZ_ANALYSIS_OP_TYPE_SWITCH;
+		op->fail = addr + sz;
+		op->eob = true;
 		break;
-	case 0x2c:
-		op->switch_op = parse_sparse_switch_payload(analysis, addr, addr + 2 * rz_read_at_le32(data, 2));
-		op->type = RZ_ANALYSIS_OP_TYPE_SWITCH;
-		break;
+	}
 	case 0x3e: // glitch 0 width instruction .. invalid instruction
 	case 0x43:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;

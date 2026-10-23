@@ -1128,6 +1128,27 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_NOP:
 			// do nothing, because the nopskip goes before this switch
 			break;
+		case RZ_ANALYSIS_OP_TYPE_SWITCH:
+			if (op.switch_op) {
+				RzListIter *iter;
+				RzAnalysisCaseOp *caseop;
+				rz_list_foreach (op.switch_op->cases, iter, caseop) {
+					rz_analysis_xrefs_set(analysis, op.addr, caseop->jump, RZ_ANALYSIS_XREF_TYPE_CODE);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, caseop->jump, sp);
+				}
+			}
+			if (op.fail != UT64_MAX) {
+				rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
+			}
+			if (!overlapped) {
+				set_bb_branches(bb, UT64_MAX, op.fail);
+				// Keep decoded cases alive for CFG traversal after the op is finalized.
+				rz_analysis_switch_op_free(bb->switch_op);
+				bb->switch_op = op.switch_op;
+				op.switch_op = NULL;
+			}
+			gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if (op.jump == UT64_MAX) {
 				gotoBeach(RZ_ANALYSIS_RET_END);

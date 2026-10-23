@@ -372,7 +372,174 @@ bool test_rz_core_il_print_rzil() {
 	mu_end;
 }
 
+static bool test_dalvik_switch_offsets() {
+	static const struct {
+		ut8 opcode;
+		ut64 addr;
+		ut32 payload_offset;
+		const char *payload;
+		ut64 first_target;
+		ut64 last_target;
+		st64 first_key;
+		st64 last_key;
+	} cases[] = {
+		{ 0x2b, 0x100000020, 0xfffffff0, "00010200ffffffffffffffff05000000",
+			0x10000001e, 0x10000002a, -1, 0 },
+		{ 0x2c, 0x100000020, 0xfffffff0, "00020200f6ffffffffffff7fffffffff05000000",
+			0x10000001e, 0x10000002a, -10, ST32_MAX },
+		{ 0x2b, 0x200000000, 0x80000000, "000102000000008000000080ffffff7f",
+			0x100000000, 0x2fffffffe, ST32_MIN, ST32_MIN + 1 },
+		{ 0x2c, 2, 0x7fffffff, "0002020000000080ffffff7f00000000ffffff7f",
+			2, 0x100000000, ST32_MIN, ST32_MAX },
+	};
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_core_arch_configure(core, "dalvik", 32, NULL, NULL, NULL);
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://32", RZ_PERM_RWX, 0644,
+				  0x100000000, NULL),
+		"payload mapping");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		ut8 payload[32];
+		int size = rz_hex_str2bin(cases[i].payload, payload);
+		mu_assert_true(rz_io_write_at(core->io, 0x100000000, payload, size), "write payload");
+		ut8 bytes[6] = { cases[i].opcode, 0 };
+		rz_write_le32(bytes + 2, cases[i].payload_offset);
+		RzAnalysisOp op;
+		mu_assert_eq(rz_analysis_op(core->analysis, &op, cases[i].addr, bytes,
+				     sizeof(bytes), RZ_ANALYSIS_OP_MASK_BASIC),
+			6, "switch size");
+		mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_SWITCH, "switch type");
+		mu_assert_eq(op.fail, cases[i].addr + 6, "default fall-through");
+		mu_assert_true(op.eob, "switch terminates its block");
+		mu_assert_notnull(op.switch_op, "signed payload offset");
+		mu_assert_eq(op.switch_op->min_val, (ut64)cases[i].first_key, "first key");
+		mu_assert_eq(op.switch_op->max_val, (ut64)cases[i].last_key, "last key");
+		mu_assert_eq(op.switch_op->def_val, op.fail, "default address");
+		mu_assert_eq(rz_list_length(op.switch_op->cases), 2, "case count");
+		RzAnalysisCaseOp *first = rz_list_get_n(op.switch_op->cases, 0);
+		RzAnalysisCaseOp *last = rz_list_get_n(op.switch_op->cases, 1);
+		mu_assert_eq(first->value, (ut64)cases[i].first_key, "first case value");
+		mu_assert_eq(last->value, (ut64)cases[i].last_key, "last case value");
+		mu_assert_eq(first->jump, cases[i].first_target, "first signed target");
+		mu_assert_eq(last->jump, cases[i].last_target, "last signed target");
+		rz_analysis_op_fini(&op);
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_dalvik_switch_payload_bounds() {
+	static const struct {
+		ut8 opcode;
+		const char *payload;
+	} cases[] = {
+		{ 0x2b, "000102" },
+		{ 0x2b, "0001010000000000" },
+		{ 0x2b, "00010200ffffff7f0400000005000000" },
+		{ 0x2b, "0001000000000000" },
+		{ 0x2b, "000201000000000004000000" },
+		{ 0x2c, "000201" },
+		{ 0x2c, "00020200000000000100000004000000" },
+		{ 0x2c, "00020000" },
+		{ 0x2c, "000101000000000004000000" },
+	};
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_core_arch_configure(core, "dalvik", 32, NULL, NULL, NULL);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		ut8 payload[32];
+		int size = rz_hex_str2bin(cases[i].payload, payload);
+		ut64 addr = 0x100 + i * 0x40;
+		char uri[32];
+		rz_strf(uri, "malloc://%d", size);
+		mu_assert_notnull(rz_io_open_at(core->io, uri, RZ_PERM_RWX, 0644,
+					  addr + 0x10, NULL),
+			"short payload mapping");
+		mu_assert_true(rz_io_write_at(core->io, addr + 0x10, payload, size), "write payload");
+		ut8 bytes[] = { cases[i].opcode, 0, 8, 0, 0, 0 };
+		RzAnalysisOp op;
+		mu_assert_eq(rz_analysis_op(core->analysis, &op, addr, bytes, sizeof(bytes),
+				     RZ_ANALYSIS_OP_MASK_BASIC),
+			6, "switch size");
+		mu_assert_null(op.switch_op, "no cases from invalid or empty payload");
+		mu_assert_eq(op.fail, addr + 6, "default survives missing cases");
+		rz_analysis_op_fini(&op);
+	}
+	// A payload may cross adjacent maps; only actual gaps should reject it.
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://2", RZ_PERM_RWX,
+				  0644, 0x1000, NULL),
+		"payload first map");
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://10", RZ_PERM_RWX,
+				  0644, 0x1002, NULL),
+		"payload second map");
+	const ut8 payload[] = { 0, 1, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0 };
+	mu_assert_true(rz_io_write_at(core->io, 0x1000, payload, sizeof(payload)), "write split payload");
+	const ut8 bytes[] = { 0x2b, 0, 8, 0, 0, 0 };
+	RzAnalysisOp op;
+	mu_assert_eq(rz_analysis_op(core->analysis, &op, 0xff0, bytes, sizeof(bytes),
+			     RZ_ANALYSIS_OP_MASK_BASIC),
+		6, "switch size");
+	mu_assert_notnull(op.switch_op, "payload spanning adjacent maps");
+	mu_assert_eq(rz_list_length(op.switch_op->cases), 1, "split payload case count");
+	rz_analysis_op_fini(&op);
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_dalvik_switch_blocks() {
+	const ut64 base = 0x100000000;
+	for (ut8 opcode = 0x2b; opcode <= 0x2c; opcode++) {
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		rz_core_arch_configure(core, "dalvik", 32, NULL, NULL, NULL);
+		mu_assert_notnull(rz_io_open_at(core->io, "malloc://128", RZ_PERM_RWX,
+					  0644, base, NULL),
+			"method mapping");
+		ut8 bytes[128] = { 0 };
+		// Enter the switch after two case blocks, which share one of their targets.
+		rz_hex_str2bin("280812100f0012200f00", bytes);
+		rz_hex_str2bin("2b001000000012300f00", bytes + 0x10);
+		bytes[0x10] = opcode;
+		const char *payload = opcode == 0x2b
+			? "00010300fffffffff9fffffffbfffffffbffffff"
+			: "00020300ffffffff0000000001000000f9fffffffbfffffffbffffff";
+		rz_hex_str2bin(payload, bytes + 0x30);
+		mu_assert_true(rz_io_write_at(core->io, base, bytes, sizeof(bytes)), "write method");
+		mu_assert_true(rz_core_analysis_fcn(core, base, UT64_MAX,
+				       RZ_ANALYSIS_XREF_TYPE_NULL, 5),
+			"analyze method");
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, base);
+		mu_assert_notnull(fcn, "function");
+		mu_assert_eq(rz_pvector_len(fcn->bbs), 5, "entry, switch, two cases and default");
+		RzAnalysisBlock *block = rz_analysis_get_block_at(core->analysis, base + 0x10);
+		mu_assert_notnull(block, "switch block");
+		mu_assert_eq(block->size, 6, "switch ends the block");
+		mu_assert_eq(block->fail, base + 0x16, "default successor");
+		mu_assert_notnull(block->switch_op, "retained switch metadata");
+		mu_assert_eq(rz_list_length(block->switch_op->cases), 3, "shared cases retained");
+		const ut64 targets[] = { base + 2, base + 6, base + 0x16 };
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(targets); i++) {
+			block = rz_analysis_get_block_at(core->analysis, targets[i]);
+			mu_assert_notnull(block, "case/default block");
+			mu_assert_true(rz_list_contains(block->fcns, fcn), "case belongs to function");
+			mu_assert_eq(block->size, 4, "case includes its return");
+			RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, targets[i]);
+			mu_assert_notnull(xrefs, "case/default xrefs");
+			mu_assert_eq(rz_list_length(xrefs), 1, "shared target has one xref");
+			RzAnalysisXRef *xref = rz_list_get_n(xrefs, 0);
+			mu_assert_eq(xref->from, base + 0x10, "xref originates at switch");
+			mu_assert_eq(xref->type, RZ_ANALYSIS_XREF_TYPE_CODE, "code xref");
+			rz_list_free(xrefs);
+		}
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_dalvik_switch_offsets);
+	mu_run_test(test_dalvik_switch_payload_bounds);
+	mu_run_test(test_dalvik_switch_blocks);
 	mu_run_test(test_rz_analysis_op_val);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_analysis_bytes_respect_buffer_len);
