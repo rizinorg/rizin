@@ -164,13 +164,83 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "winedbg://", 10));
 }
 
+/**
+ * \brief check whether given command to run winedbg is properlty sanitized
+ * \param cmd Generated command for running winedbg to open a file
+ * \return true if command is acceptable
+ * \return false otherwise
+ *
+ * checks whether a command is safe to run by disallowing a few characters
+ * and making sure that there is only one outer 'quote' to make sure that
+ * winedbg gets only one argument, the file path
+ */
+static bool winedbg_cmd_is_safe(const char *cmd) {
+	rz_return_val_if_fail(cmd != NULL, NULL);
+
+	const char *prefix = "winedbg ";
+	if (!rz_str_startswith(cmd, prefix) || rz_str_sep(cmd, "\"$`")) {
+		return false;
+	}
+	const char *p = cmd + strlen(prefix);
+	if (*p != '\'') {
+		return false;
+	}
+	bool in_quote = false;
+	while (*p) {
+		if (in_quote) {
+			if (*p == '\'') {
+				in_quote = false;
+			}
+			p++;
+		} else if (*p == '\'') {
+			in_quote = true;
+			p++;
+		} else if (p[0] == '\\' && p[1] == '\'') {
+			p += 2;
+		} else {
+			return false;
+		}
+	}
+	return !in_quote;
+}
+
+/**
+ * \brief WineDbg IO plugin file open handler
+ * \param io RzIO instance
+ * \param pathname Name of executable file to open in winedbg.
+ *        Characters $, " and ` are not allowed in file name
+ * \param rw UNUSED
+ * \param mode UNUSED
+ * \return non NULL RzIODesc instance on success
+ * \return NULL otherwise
+ *
+ * Opens a communication socket with winedbg for debugging.
+ */
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open(io, pathname, 0)) {
 		if (gs) {
 			return NULL;
 		}
+		const char *file = pathname + 10;
+		if (!rz_file_exists(file)) {
+			RZ_LOG_ERROR("winedbg: cannot find file '%s'\n", file);
+			return NULL;
+		}
+		char *file_esc = rz_str_replace(rz_str_dup(file), "'", "'\\''", true);
+		if (!file_esc) {
+			return NULL;
+		}
+		char *cmd = rz_str_newf("winedbg '%s'", file_esc);
+		free(file_esc);
+		if (!cmd) {
+			return NULL;
+		}
+		if (!winedbg_cmd_is_safe(cmd)) {
+			RZ_LOG_ERROR("winedbg: refusing to run unsafe command for file '%s'\n", file);
+			free(cmd);
+			return NULL;
+		}
 		gs = rz_socket_new(0);
-		char *cmd = rz_str_newf("winedbg '%s'", pathname + 10);
 		int res = rz_socket_spawn(gs, cmd, 1000);
 		free(cmd);
 		if (!res) {
