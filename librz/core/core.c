@@ -1409,26 +1409,11 @@ static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 }
 
 /**
- * \brief Read complete analysis data without accepting padding in unmapped regions.
- *
- * Decoders use the result to validate out-of-line data such as switch payloads.
- * Adjacent mappings are allowed, but holes and short reads must fail.
+ * \brief Read analysis data, including cached bytes and padding across mapping gaps.
  */
 static bool rz_core_analysis_read_at(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
 	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
-	if (len <= 0 || addr > UT64_MAX - len) {
-		return false;
-	}
-	while (len > 0) {
-		int read = rz_io_nread_at(iob->io, addr, buf, len);
-		if (read <= 0) {
-			return false;
-		}
-		addr += read;
-		buf += read;
-		len -= read;
-	}
-	return true;
+	return rz_io_read_at_mapped(iob->io, addr, buf, len);
 }
 
 static void rz_core_break(RzCore *core) {

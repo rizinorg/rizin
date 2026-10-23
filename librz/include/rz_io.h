@@ -198,6 +198,7 @@ typedef RzIODesc *(*RzIOOpen)(RzIO *io, const char *uri, int flags, int mode);
 typedef RzIODesc *(*RzIOOpenAt)(RzIO *io, const char *uri, int flags, int mode, ut64 at, RZ_NULLABLE RZ_OUT RzIOMap **map);
 typedef bool (*RzIOClose)(RzIO *io, int fd);
 typedef bool (*RzIOReadAt)(RzIO *io, ut64 addr, ut8 *buf, size_t req_len);
+typedef int (*RzIONReadAt)(RzIO *io, ut64 addr, ut8 *buf, size_t len);
 typedef bool (*RzIOWriteAt)(RzIO *io, ut64 addr, const ut8 *buf, size_t len);
 typedef char *(*RzIOSystem)(RzIO *io, const char *cmd);
 typedef int (*RzIOFdOpen)(RzIO *io, const char *uri, int flags, int mode);
@@ -240,6 +241,7 @@ typedef struct rz_io_bind_t {
 	RzIOOpenAt open_at;
 	RzIOClose close;
 	RzIOReadAt read_at;
+	RzIONReadAt nread_at;
 	RzIOWriteAt write_at;
 	RzIOSystem system;
 	RzIOFdOpen fd_open;

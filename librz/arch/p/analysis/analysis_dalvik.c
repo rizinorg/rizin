@@ -12,12 +12,28 @@
 
 /**
  * \brief Require complete payloads so unmapped bytes cannot become switch targets.
+ *
+ * Use counted IO reads here without changing the shared analysis callback,
+ * which also serves instruction fetches from cached, unmapped memory.
  */
 static bool read_switch_payload(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
-	if (addr > UT64_MAX - len) {
+	if (len <= 0 || addr > UT64_MAX - len) {
 		return false;
 	}
-	return analysis->cb.read_at && analysis->cb.read_at(analysis, addr, buf, len);
+	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
+	if (!iob->nread_at) {
+		return analysis->cb.read_at && analysis->cb.read_at(analysis, addr, buf, len);
+	}
+	while (len > 0) {
+		int read = iob->nread_at(iob->io, addr, buf, len);
+		if (read <= 0 || read > len) {
+			return false;
+		}
+		addr += read;
+		buf += read;
+		len -= read;
+	}
+	return true;
 }
 
 /**

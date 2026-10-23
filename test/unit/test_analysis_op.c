@@ -372,6 +372,35 @@ bool test_rz_core_il_print_rzil() {
 	mu_end;
 }
 
+static bool test_analysis_read_cache() {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://2", RZ_PERM_RWX,
+				  0644, 0x1000, NULL),
+		"first mapping");
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://2", RZ_PERM_RWX,
+				  0644, 0x1004, NULL),
+		"second mapping");
+	const ut8 bytes[] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+	mu_assert_true(rz_io_write_at(core->io, 0x1000, bytes, 2), "write first map");
+	mu_assert_true(rz_io_write_at(core->io, 0x1004, bytes + 4, 2), "write second map");
+	rz_config_set_b(core->config, "io.cache", true);
+	mu_assert_true(rz_io_write_at(core->io, 0x1002, bytes + 2, 2), "cache in map gap");
+	mu_assert_true(rz_io_write_at(core->io, 0x1006, bytes + 6, 2), "cache after map");
+
+	// RzIL instruction fetches must see cached patches, including unmapped bytes.
+	RzAnalysisCallbacks *cb = rz_analysis_get_callbacks(core->analysis);
+	ut8 actual[sizeof(bytes)] = { 0 };
+	mu_assert_true(cb->read_at(core->analysis, 0x1000, actual, sizeof(actual)),
+		"analysis read spanning maps and cache");
+	mu_assert_memeq(actual, bytes, sizeof(bytes), "cached bytes across map boundaries");
+	mu_assert_true(cb->read_at(core->analysis, 0x1006, actual, 2),
+		"analysis read entirely in cache");
+	mu_assert_memeq(actual, bytes + 6, 2, "unmapped cached bytes");
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_dalvik_switch_offsets() {
 	static const struct {
 		ut8 opcode;
@@ -482,6 +511,26 @@ static bool test_dalvik_switch_payload_bounds() {
 	mu_assert_notnull(op.switch_op, "payload spanning adjacent maps");
 	mu_assert_eq(rz_list_length(op.switch_op->cases), 1, "split payload case count");
 	rz_analysis_op_fini(&op);
+	// Cached edits inside mapped payloads remain visible to the counted read.
+	rz_config_set_b(core->config, "io.cache", true);
+	const ut8 target[] = { 5, 0, 0, 0 };
+	mu_assert_true(rz_io_write_at(core->io, 0x1008, target, sizeof(target)), "cache target");
+	mu_assert_eq(rz_analysis_op(core->analysis, &op, 0xff0, bytes, sizeof(bytes),
+			     RZ_ANALYSIS_OP_MASK_BASIC),
+		6, "cached switch size");
+	mu_assert_notnull(op.switch_op, "cached payload");
+	RzAnalysisCaseOp *caseop = rz_list_get_n(op.switch_op->cases, 0);
+	mu_assert_eq(caseop->jump, 0xffa, "cached case target");
+	rz_analysis_op_fini(&op);
+	// Keep supporting clients that only supply an analysis read callback.
+	rz_analysis_get_io_bind(core->analysis)->nread_at = NULL;
+	mu_assert_eq(rz_analysis_op(core->analysis, &op, 0xff0, bytes, sizeof(bytes),
+			     RZ_ANALYSIS_OP_MASK_BASIC),
+		6, "callback switch size");
+	mu_assert_notnull(op.switch_op, "callback payload");
+	caseop = rz_list_get_n(op.switch_op->cases, 0);
+	mu_assert_eq(caseop->jump, 0xffa, "callback case target");
+	rz_analysis_op_fini(&op);
 	rz_core_free(core);
 	mu_end;
 }
@@ -537,6 +586,7 @@ static bool test_dalvik_switch_blocks() {
 }
 
 int all_tests() {
+	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
 	mu_run_test(test_dalvik_switch_payload_bounds);
 	mu_run_test(test_dalvik_switch_blocks);
