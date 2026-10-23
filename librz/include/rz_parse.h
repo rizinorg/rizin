@@ -38,13 +38,8 @@ typedef struct rz_parse_t {
 typedef struct rz_parse_plugin_t {
 	char *name;
 	char *desc;
-	bool (*init)(RzParse *p, void *user);
-	int (*fini)(RzParse *p, void *user);
 	bool (*parse)(RzParse *p, const char *data, RzStrBuf *sb);
-	bool (*assemble)(RzParse *p, char *data, char *str);
-	int (*filter)(RzParse *p, ut64 addr, RzFlag *f, char *data, char *str, int len, bool big_endian);
 	bool (*subvar)(RzParse *p, RzAnalysisFunction *f, RzAnalysisOp *op, char *data, char *str, int len);
-	int (*replace)(int argc, const char *argv[], char *newstr);
 } RzParsePlugin;
 
 #ifdef RZ_API
@@ -61,7 +56,6 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name);
 
 /* action */
 RZ_API char *rz_parse_pseudocode(RzParse *p, const char *data);
-RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
 RZ_API bool rz_parse_subvar(RzParse *p, RZ_NULLABLE RzAnalysisFunction *f, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL RZ_IN char *data, RZ_BORROW RZ_NONNULL RZ_OUT char *str, int len);
 RZ_API char *rz_parse_immtrim(char *opstr);
