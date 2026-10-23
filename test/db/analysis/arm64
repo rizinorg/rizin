@@ -427,5 +427,6 @@ axl
 EOF
 EXPECT=<<EOF
                           fcn.00000000+4 0x4 ->      DATA -> 0x10 fcn.00000000+16
+                          fcn.00000000+4 0x4 ->      DATA -> 0x200 fcn.00000000+512
 EOF
 RUN
