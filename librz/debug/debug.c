@@ -1261,7 +1261,7 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 		}
 
 		if (dbg->session && dbg->trace_continue) {
-			while (!rz_cons_is_breaked()) {
+			while (!rz_interrupt_is_breaked(dbg->intr)) {
 				if (rz_debug_step(dbg, 1) != 1) {
 					break;
 				}
@@ -1297,21 +1297,11 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 				}
 			}
 		}
-<<<<<<< HEAD
-	}
-	if (reason == RZ_DEBUG_REASON_BREAKPOINT &&
-		((bp && !bp->enabled) || (!bp && !rz_interrupt_is_breaked(dbg->intr) && dbg->corebind.core && dbg->corebind.cfggeti(dbg->corebind.core, "dbg.bpsysign")))) {
-		goto repeat;
-	}
-=======
-
 		// Disabled Breakpoints
 		if (reason == RZ_DEBUG_REASON_BREAKPOINT &&
-			((bp && !bp->enabled) || (!bp && !rz_cons_is_breaked() && dbg->corebind.core && dbg->corebind.cfggeti(dbg->corebind.core, "dbg.bpsysign")))) {
+			((bp && !bp->enabled) || (!bp && !rz_interrupt_is_breaked(dbg->intr) && dbg->corebind.core && dbg->corebind.cfggeti(dbg->corebind.core, "dbg.bpsysign")))) {
 			continue;
 		}
->>>>>>> 6491b4936b (use loop instead of goto and labels)
-
 #if __linux__
 		// New Process Forked
 		if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
