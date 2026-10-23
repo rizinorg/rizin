@@ -4,6 +4,7 @@
 #include <rz_inquiry/rz_cfg.h>
 
 struct rz_cfg_map_t {
+	RzVector /* ut64 */ fcn_addrs; ///< Sorted vector of all function addresses in the map.
 	HtUP /* fcn_addr, RzGraph */ *map;
 };
 
@@ -33,7 +34,7 @@ RZ_API RZ_BORROW RzGraph *rz_cfg_map_get_cfg(RZ_NONNULL RZ_BORROW RzCFGMap *map,
 	rz_return_val_if_fail(map, NULL);
 	RzGraph *cfg = ht_up_find(map->map, entry_point, NULL);
 	if (!cfg) {
-		if (!(cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, (RzGraphNodeDataFree)rz_cfg_node_free, NULL))) {
+		if (!(cfg = rz_cfg_new())) {
 			rz_warn_if_reached();
 			return NULL;
 		}
@@ -58,4 +59,17 @@ RZ_API void rz_cfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *node) {
 	}
 	rz_vector_fini(&node->insn_offsets);
 	free(node);
+}
+
+RZ_API RZ_OWN RzGraph *rz_cfg_new() {
+	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, (RzGraphNodeDataFree)rz_cfg_node_free, NULL);
+	if (!cfg) {
+		rz_warn_if_reached();
+		return NULL;
+	}
+	return cfg;
+}
+
+RZ_API void rz_cfg_free(RZ_NULLABLE RZ_OWN RzGraph *cfg) {
+	rz_graph_free(cfg);
 }
