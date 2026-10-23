@@ -1408,6 +1408,9 @@ static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 	return !!rz_analysis_function_get_var_byname(fcn, str);
 }
 
+/**
+ * \brief Read analysis data, including cached bytes and padding across mapping gaps.
+ */
 static bool rz_core_analysis_read_at(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
 	RzIOBind *iob = rz_analysis_get_io_bind(analysis);
 	return rz_io_read_at_mapped(iob->io, addr, buf, len);
