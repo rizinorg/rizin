@@ -23,7 +23,8 @@
  *     For io and instruction requests, main replies with the result to the thread that sent the request.
  */
 
-#include "rz_inquiry/rz_cfg.h"
+#include "inquiry/absint/absint_priv.h"
+#include <rz_inquiry/rz_cfg.h>
 #include <rz_inquiry/rz_absint.h>
 #include <rz_core.h>
 
@@ -425,7 +426,7 @@ err_entry_points_ch:
 err_il_cache:
 	rz_il_cache_free(il_cache);
 err_fcn_cfgs:
-	ht_up_free(cfg_map);
+	rz_cfg_map_free(cfg_map);
 err_conflicts:
 	rz_absint_cfg_conflict_free(conflicts);
 err_none:
