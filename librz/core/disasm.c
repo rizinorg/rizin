@@ -4088,6 +4088,26 @@ static inline bool is_filtered_flag(RzDisasmState *ds, const char *name) {
 	return false;
 }
 
+/**
+ * \brief Tells whether a string is known at the target of \p xref, flagged with \p f.
+ */
+static bool xref_to_string(RzCore *core, const RzAnalysisXRef *xref, const RzFlagItem *f) {
+	return xref->type == RZ_ANALYSIS_XREF_TYPE_STRING ||
+		(f->space && RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STRINGS)) ||
+		rz_meta_get_string(core->analysis, RZ_META_TYPE_STRING, xref->to);
+}
+
+/**
+ * \brief Reads the pointer an instruction loads from \p ptr, or UT64_MAX.
+ */
+static ut64 loaded_pointer(RzCore *core, ut64 ptr, int size) {
+	ut8 buf[8];
+	if (ptr == UT64_MAX || (size != 4 && size != 8) || !rz_io_read_at_mapped(core->io, ptr, buf, size)) {
+		return UT64_MAX;
+	}
+	return rz_read_ble(buf, core->print->big_endian, size * 8);
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzCore *core = ds->core;
@@ -4145,9 +4165,15 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *list = rz_analysis_xrefs_get_from(core->analysis, ds->at);
+	ut64 loaded = list ? loaded_pointer(core, p, refptr) : UT64_MAX;
 	rz_list_foreach (list, iter, xref) {
 		if (xref->type == RZ_ANALYSIS_XREF_TYPE_STRING || xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			if ((f = rz_flag_get_i(core->flags, xref->to))) {
+				// a loaded pointer only says more than the operand when it leads to a string
+				if (xref->to == loaded && !xref_to_string(core, xref, f)) {
+					f = NULL;
+					continue;
+				}
 				refaddr = xref->to;
 				break;
 			}
