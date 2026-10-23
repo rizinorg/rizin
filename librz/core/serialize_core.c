@@ -196,11 +196,8 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return;
 	}
 	sdb_set(db, "raw", filename);
-	char baddr_str[0x20];
-	if (snprintf(baddr_str, sizeof(baddr_str), "0x%" PFMT64x, rz_bin_get_baddr(core->bin)) < 0) {
-		return;
-	}
-	sdb_set(db, "baddr", baddr_str);
+	char baddr_str[32];
+	sdb_set(db, "baddr", rz_strf(baddr_str, "0x%" PFMT64x, rz_bin_get_baddr(core->bin)));
 	char *abs = rz_file_abspath(filename);
 	if (!abs) {
 		return;
