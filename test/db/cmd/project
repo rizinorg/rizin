@@ -17,6 +17,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=load with file and base address set with -B
+FILE=bins/elf/analysis/pie
+ARGS=-B 0x300000
+CMDS=<<EOF
+e asm.bytes=true
+Ps .tmp_load_baddr.rzdb
+o--
+Po .tmp_load_baddr.rzdb
+rm .tmp_load_baddr.rzdb
+pdq 3 @ 0x300450
+EOF
+EXPECT=<<EOF
+0x00300450   entry0:
+0x00300450                 31ed  xor ebp, ebp
+0x00300452                   5e  pop esi
+0x00300453                 89e1  mov ecx, esp
+EOF
+RUN
+
 NAME=load with file using saved absolute file path after project file was moved
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
@@ -386,6 +405,7 @@ Detailed project load info:
   project migrated from version 23 to 24.
   project migrated from version 24 to 25.
   project migrated from version 25 to 26.
+  project migrated from version 26 to 27.
 EOF
 RUN
 
