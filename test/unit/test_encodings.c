@@ -457,6 +457,9 @@ bool test_rz_unicode_undefined(void) {
 	mu_assert_false(rz_unicode_code_point_is_defined(888), "Not defined.");
 	mu_assert_false(rz_unicode_code_point_is_defined(889), "Not defined.");
 	mu_assert_true(rz_unicode_code_point_is_defined(890), "Defined.");
+	// Unicode 18.0.0 assignment (U+0558 was undefined in Unicode 17.0.0)
+	mu_assert_true(rz_unicode_code_point_is_defined(0x0558), "Unicode 18.0.0 code point should be defined.");
+	mu_assert_true(rz_unicode_code_point_is_printable(0x0558), "Unicode 18.0.0 code point should be printable.");
 	// Last
 	mu_assert_true(rz_unicode_code_point_is_defined(1114109), "Defined.");
 	mu_assert_false(rz_unicode_code_point_is_defined(1114110), "Not defined.");
@@ -550,6 +553,12 @@ bool test_rz_unicode_lowercase_mapping(void) {
 	mu_assert_eq(mv.val[0], 105, "Incorrect lowercase value");
 	mu_assert_eq(mv.val[1], 775, "Incorrect lowercase value");
 
+	// Unicode 18.0.0 mapping
+	RzUnicodeCaseMapping unicode18 = rz_unicode_code_point_find_lower(0xA7DD);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&unicode18), "Should not be empty");
+	mu_assert_eq(unicode18.key, 0xA7DD, "Mismatched key");
+	mu_assert_eq(unicode18.val[0], 0x0277, "Incorrect Unicode 18.0.0 lowercase value");
+
 	// last element
 	RzUnicodeCaseMapping l = rz_unicode_code_point_find_lower(125217);
 	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
@@ -578,6 +587,15 @@ bool test_rz_unicode_uppercase_mapping(void) {
 	mv = rz_unicode_code_point_find_upper(944);
 	mu_assert_eq(mv.key, 944, "Mismatched key");
 	mu_assert_true(mv.val[0] == 933 && mv.val[1] == 776 && mv.val[2] == 769, "Incorrect uppercase value");
+
+	// Unicode 18.0.0 mappings
+	RzUnicodeCaseMapping unicode18 = rz_unicode_code_point_find_upper(0x1DF41);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&unicode18), "Should not be empty");
+	mu_assert_eq(unicode18.key, 0x1DF41, "Mismatched key");
+	mu_assert_eq(unicode18.val[0], 0x1DF40, "Incorrect Unicode 18.0.0 uppercase value");
+	unicode18 = rz_unicode_code_point_find_upper(0x1DF95);
+	mu_assert_false(rz_unicode_case_mapping_is_empty(&unicode18), "Should not be empty");
+	mu_assert_true(unicode18.val[0] == 'S' && unicode18.val[1] == 'S', "Incorrect Unicode 18.0.0 multi-value uppercase value");
 
 	// last element
 	RzUnicodeCaseMapping l = rz_unicode_code_point_find_upper(125248);
