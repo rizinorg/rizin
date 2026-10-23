@@ -869,12 +869,42 @@ typedef struct rz_analysis_op_t {
 	ut64 jump; /* true jmp */
 	ut64 fail; /* false jmp */
 	RzAnalysisOpDirection direction;
-	st64 ptr; /* reference to memory */ /* XXX signed? */
+	/**
+	 * \brief Address of the memory the instruction refers to, if the instruction gives it.
+	 *
+	 * The address of an absolute or PC-relative memory operand, or of one
+	 * relative to a register the plugin knows the value of (gp on MIPS): e.g.
+	 * the literal pool slot that `ldr r0, [pc, 8]` loads, the slot that
+	 * `call [rip + 0x100]` calls through, or the address `lea` and `adr`
+	 * compute. x86 also gives an immediate that can be an address, as in
+	 * `mov eax, 0x401000`, and for a `call` or `jmp` through a register, the
+	 * displacement: 8 for `call [rbx + 8]`. UT64_MAX if there is none, as
+	 * rz_analysis_op_init() sets it; where it is taken as an address, 0 and
+	 * UT32_MAX count as none too.
+	 *
+	 * With `stackop` set, it is instead the offset of a frame-pointer-relative
+	 * access, which can be negative and whose sign differs between plugins:
+	 * ARM gives -8 for `str r2, [fp, 8]`, AArch64 16 for `ldr x0, [x29, 0x10]`.
+	 * Addresses use all 64 bits, with bit 63 set e.g. in x86-64 kernel code,
+	 * so compare one as unsigned.
+	 */
+	st64 ptr;
 	ut64 val; /* reference to value */ /* XXX signed? */
 	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
-	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	/**
+	 * \brief Size in bytes of the memory access at `ptr`, 0 if there is none.
+	 *
+	 * The size of what a load reads or a store writes there, or of the pointer
+	 * an indirect call or jump goes through, so that reading `refptr` bytes at
+	 * `ptr` gives that value. Plugins differ, e.g. x86 gives the size of a
+	 * memory operand also without `ptr` and for `lea`, which accesses no
+	 * memory, but for a `call` or `jmp` only when RIP-relative; 32-bit ARM
+	 * gives 4 for any PC-relative load, with the size of `ldrb` and `ldrh` in
+	 * `ptrsize`, and 1 for `adr`. So check `ptr`, the type and `ptrsize` too.
+	 */
+	int refptr;
 	ut8 mmios_count; ///< used MMIO count
 	ut64 mmios[4]; ///< MMIO addresses
 	RzAnalysisValue *src[8];
