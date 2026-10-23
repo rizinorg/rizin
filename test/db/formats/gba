@@ -1,9 +1,11 @@
-NAME=GBA: 3D - Maps
+NAME=GBA: 3D
 FILE=bins/gba/3D.gba
 CMDS=<<EOF
 oml
 echo ---
 iS
+echo ---
+iH
 EOF
 EXPECT=<<EOF
  1 fd: 4 +0x00000000 0x080105cc - 0x09ffffff r-x mmap.ROM
@@ -12,5 +14,19 @@ EXPECT=<<EOF
      paddr    size      vaddr     vsize align perm name type flags 
 -------------------------------------------------------------------
 0x00000000 0x105cc 0x08000000 0x2000000   0x0 -r-x ROM       
+---
+gba:
+  entry_point: 0xea00002e
+  title: "3D"
+  game_code: ""
+  maker_code: "01"
+  fixed_value: 0x96
+  main_unit_code: 0x0
+  device_type: 0x80
+  reserved_area_1: "00 00 00 00 00 00 00                            |.......         |"
+  software_version: 0x0
+  complement_check: 0xf9
+  reserved_area_2: "00 00                                           |..              |"
+
 EOF
 RUN
