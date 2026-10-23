@@ -253,6 +253,159 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
+static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
+	if (abb->jump == UT64_MAX && abb->fail != target) {
+		abb->jump = target;
+	} else if (abb->fail == UT64_MAX && abb->jump != target) {
+		abb->fail = target;
+	} else if (abb->fail != target && abb->jump != target) {
+		RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
+			    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x "\n",
+			abb->addr, abb->jump, abb->fail,
+			target);
+	}
+}
+
+static void add_block_to_conflict_list(RzAnalysis *analysis, RzAbsIntCFGConflicts *conflicts, RzAbsIntBlock *block, ut64 fcn_addr) {
+	ut64 start = rz_absint_block_get_start(block);
+	RzAbsIntCFGConflictAddResult res = rz_absint_cfg_conflict_add(conflicts, fcn_addr, block);
+	if (res == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
+		RZ_LOG_ERROR("Failed add block @ 0x%" PFMT64x " to the conflict list.\n", start);
+		return;
+	} else if (res == RZ_ABSINT_CONFLICT_BLOCK_KNOWN) {
+		return;
+	}
+	// This is the first time the two conflicting blocks are detected.
+	// We need to find the block which is already assigned to a function
+	// and add it to the conflict list. So the list is complete.
+	RzAnalysisBlock *abb = rz_analysis_get_block_at(analysis, start);
+	if (!abb) {
+		rz_warn_if_reached();
+		return;
+	}
+	if (rz_list_length(abb->fcns) != 1) {
+		rz_warn_if_reached();
+		return;
+	}
+	RzAnalysisFunction *fcn = rz_list_get_n(abb->fcns, 0);
+	if (rz_absint_cfg_conflict_add(conflicts, fcn->addr, block) == RZ_ABSINT_CONFLICT_BLOCK_ERROR) {
+		rz_warn_if_reached();
+		return;
+	}
+}
+
+/**
+ * \brief Applies the results of the abstract interpreter to RzAnalysis.
+ *
+ * It converts the \p res->blocks to a function with name \p fcn_name (or a generated name if NULL).
+ * Directly applicable results like xrefs and comments are simply added to RzAnalysis.
+ *
+ * \param res The results.
+ * \param analysis The RzAnalysis instance to add the results to.
+ * \param fcn_name Optionally given function name for the function it creates for the \p res->blocks.
+ *
+ * \return True for success, false in case of failure.
+ */
+RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RZ_NULLABLE const char *fcn_name) {
+	rz_return_val_if_fail(res && analysis && conflicts, false);
+	char name_alt[32] = { 0 };
+	RzAnalysisFunction *func = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
+	if (!func) {
+		// TODO: handle better than skipping everything
+		// rz_analysis_create_function() already prints the more detailed reason if there is any
+		RZ_LOG_ERROR("Could not apply analysis result as function @ 0x%" PFMT64x ": func == NULL\n", res->entry);
+		return false;
+	}
+	RzIntervalTreeIter it;
+	RzAbsIntBlock *block;
+	rz_interval_tree_foreach (&res->blocks, it, block) {
+		if (block->added_to_analysis) {
+			// has been merged into the previous already
+			continue;
+		}
+		ut64 start = rz_absint_block_get_start(block);
+		ut64 end_excl = rz_absint_block_get_end(block) + 1;
+
+		// Merge consecutive blocks if there is no in-edge between them.
+		// Splits like this happen in the first place because interp blocks only reach until the
+		// first jump. This may be a call however, which just falls through.
+		RzIntervalTreeIter next_it = it;
+		while (block->is_fallthrough && rz_vector_empty(&block->jump_targets)) {
+			rz_rbtree_iter_next(&next_it);
+			RzIntervalNode *next_node = NULL;
+			while (rz_rbtree_iter_has(&next_it)) {
+				RzIntervalNode *n = rz_interval_tree_iter_get(&next_it);
+				if (n->start >= end_excl) {
+					if (n->start == end_excl) {
+						next_node = n;
+					}
+					break;
+				}
+				rz_rbtree_iter_next(&next_it);
+			}
+			RzAbsIntBlock *next_block;
+			if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
+				// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
+				break;
+			}
+			next_block->added_to_analysis = true;
+			end_excl = next_node->end + 1;
+			block = next_block;
+		}
+
+		// Returns NULL for failures or if the block is already used by another function.
+		RzAnalysisBlock *abb = rz_analysis_create_block(analysis, start, end_excl - start);
+		if (!abb) {
+			add_block_to_conflict_list(analysis, conflicts, block, func->addr);
+			continue;
+		}
+
+		// TODO: analyze_ops should eventually not be used here since it does its own analysis.
+		// Instead, we should manually apply our analysis info to it.
+		// Keep in mind we might have to add info from multiple merged blocks here (see merging above)
+		// and that our interp block works on instruction packets, not instructions
+		rz_analysis_block_analyze_ops(abb);
+
+		rz_analysis_function_add_block(func, abb);
+		abb->jump = UT64_MAX;
+		abb->fail = UT64_MAX;
+		ut64 *target;
+		rz_vector_foreach (&block->jump_targets, target) {
+			bb_add_target(abb, *target);
+		}
+		if (block->is_fallthrough) {
+			bb_add_target(abb, end_excl);
+		}
+	}
+
+	// Hint: Some of the xrefs, specifically code and call ones, could be determined from
+	// the information in blocks as well. So an optimization could be to make the interpreter
+	// only emit explicit xref info for all remaining events, e.g. mem read/write.
+	RzAnalysisXRef *xref;
+	rz_vector_foreach (&res->xrefs, xref) {
+		if (!rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type)) {
+			RZ_LOG_ERROR("failed to set xref\n");
+		}
+	}
+
+	if (res->comments) {
+		RzIterator it = (RzIterator){ 0 };
+		if (!ht_up_as_iter_keys(res->comments, &it)) {
+			return false;
+		}
+		ut64 *k;
+		rz_iterator_foreach(&it, k) {
+			const char *cmt = ht_up_find(res->comments, *k, NULL);
+			if (cmt) {
+				rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, *k, cmt);
+			}
+		}
+		rz_iterator_fini(&it);
+	}
+
+	return true;
+}
+
 static bool add_res_blocks_to_cfgs(const RzAbsIntResult *res, RzCFGMap *cfgs) {
 	RzGraph *cfg = rz_cfg_map_get_cfg(cfgs, res->entry);
 	return true;
