@@ -11,6 +11,15 @@
 
 RZ_LIB_VERSION(rz_debug);
 
+#if __linux__ && DEBUGGER
+// Defined by the native Linux debugger plugin, which is compiled into this same
+// library (librz_debug) under the same conditions as this file. Declared here so
+// that rz_debug_continue() can switch to a forked child without resorting to a
+// fragile runtime dlsym() lookup (the symbol has hidden visibility and cannot be
+// resolved that way).
+extern bool linux_attach_new_process(RzDebug *dbg, int pid);
+#endif
+
 // Size of the lookahead buffers used in rz_debug functions
 #define DBG_BUF_SIZE 512
 
@@ -389,7 +398,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->pid = -1;
 	dbg->tid = -1;
 	dbg->tree = rz_tree_new();
-	dbg->tracenodes = ht_up_new(NULL, free);
+	dbg->tracenodes = ht_up_new(NULL, NULL);
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
@@ -398,8 +407,9 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
 	dbg->plugin_data = NULL;
-	dbg->threads = NULL;
+	dbg->threads = ht_up_new();
 	dbg->hitinfo = 1;
+	dbg->processes = rz_list_new();
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
 	dbg->maps_user = rz_debug_map_list_new();
@@ -431,7 +441,7 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	free(dbg->snap_path);
 	rz_list_free(dbg->maps);
 	rz_list_free(dbg->maps_user);
-	rz_list_free(dbg->threads);
+	ht_up_free(dbg->threads);
 	rz_num_free(dbg->num);
 	sdb_free(dbg->sgnls);
 	rz_tree_free(dbg->tree);
@@ -1154,6 +1164,12 @@ RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
 	int ret = 0;
 	RzBreakpointItem *bp = NULL;
+#if __linux__
+	// Tracks the iteration on which we just followed a forked child, so its
+	// pending post-fork SIGSTOP can be swallowed on the next wait (see below).
+	bool followed_child = false;
+	bool just_followed_child = false;
+#endif
 
 	if (!dbg) {
 		return 0;
@@ -1213,6 +1229,11 @@ repeat:
 		return 0;
 	}
 
+	// #if __linux__
+	// 	just_followed_child = followed_child;
+	// 	followed_child = false;
+	// #endif
+
 	if (dbg->corebind.core) {
 		RzCore *core = (RzCore *)dbg->corebind.core;
 		RzNum *num = core->num;
@@ -1231,18 +1252,35 @@ repeat:
 	}
 
 #if __linux__
+	// 	// After following a fork, the child still has the SIGSTOP that the kernel
+	// 	// raised on it at fork time pending. The first continue surfaces that as a
+	// 	// signal-stop at the libc fork() return instead of running on to the user's
+	// 	// breakpoint. Swallow that one SIGSTOP so following a child behaves like
+	// 	// gdb's "set follow-fork-mode child", which lands directly on the breakpoint.
+	// 	if (just_followed_child && reason == RZ_DEBUG_REASON_SIGNAL &&
+	// 		dbg->reason.signum == SIGSTOP) {
+	// 		goto repeat;
+	// 	}
+	// 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
+	// #if DEBUGGER
+	// 		// dbg->pid is still the parent here. linux_attach_new_process() detaches
+	// 		// the parent (without restoring its original code bytes) and switches to
+	// 		// the forked child. The parent shares the inherited software breakpoints
+	// 		// (int3) with the child, so the now-untraced parent would take a fatal
+	// 		// SIGTRAP the moment it executed one of them. Remove the breakpoints from
+	// 		// the parent before it is detached; the child keeps its own int3 bytes
+	// 		// via copy-on-write, so its breakpoints keep working without reinstalling.
+	// 		rz_debug_bp_update(dbg);
+	// 		rz_bp_restore(dbg->bp, false);
+	// 		linux_attach_new_process(dbg, dbg->forked_pid);
+	// 		followed_child = true;
+	// #endif
+	// 		goto repeat;
+	// 	}
+
 	if (reason == RZ_DEBUG_REASON_NEW_PID && dbg->follow_child) {
-#if DEBUGGER
-		/// if the plugin is not compiled link fails, so better do runtime linking
-		/// until this code gets fixed
-		static bool (*linux_attach_new_process)(RzDebug *dbg, int pid) = NULL;
-		if (!linux_attach_new_process) {
-			linux_attach_new_process = rz_sys_dlsym(NULL, "linux_attach_new_process");
-		}
-		if (linux_attach_new_process) {
-			linux_attach_new_process(dbg, dbg->forked_pid);
-		}
-#endif
+		rz_bp_restore(dbg->bp, false);
+		rz_debug_select(dbg, dbg->forked_pid, dbg->forked_pid);
 		goto repeat;
 	}
 
@@ -1772,34 +1810,41 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 }
 
 /**
- * \brief Switches to the first thread in the given debug context.
+ * \brief Switches to the first thread of the current process.
  * \param debug The debug context.
  */
 RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
 	rz_return_if_fail(debug);
-	RzList *threads = rz_debug_pids(debug, debug->pid);
+	if (!debug->cur || !debug->cur->threads) {
+		return;
+	}
+	RzList *threads = debug->cur->threads(debug, debug->pid);
 	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first_val(threads);
-		rz_debug_select(debug, debug->pid, th->pid);
+		RzDebugThread *th = rz_list_first_val(threads);
+		rz_debug_select(debug, debug->pid, th->tid);
 	}
 	rz_list_free(threads);
 }
 
-static int thread_find(int *tid, RzDebugPid *t, void *user) {
-	return (t && (t->pid == *tid)) ? 0 : 1;
+static int thread_find(const int *tid, const RzDebugThread *t, void *user) {
+	return (t && (t->tid == *tid)) ? 0 : 1;
 }
 
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
+/**
+ * \brief Finds a thread by its ID in a thread list.
+ * \param th_list List of threads to search, may be NULL.
+ * \param tid Thread ID.
+ * \return The thread, or NULL if it is not in the list.
+ */
+RZ_API RZ_BORROW RzDebugThread *rz_debug_get_thread(RZ_NULLABLE RzList /*<RzDebugThread *>*/ *th_list, int tid) {
 	if (!th_list) {
 		return NULL;
 	}
-
-	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find, NULL);
+	RzListIter *it = rz_list_find(th_list, &tid, (RzListComparator)thread_find, NULL);
 	if (!it) {
 		return NULL;
 	}
-	return (RzDebugPid *)rz_list_val(it);
+	return (RzDebugThread *)rz_list_val(it);
 }
 
 #if !DEBUGGER
