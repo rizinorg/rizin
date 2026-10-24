@@ -265,7 +265,7 @@ typedef struct rz_debug_t {
 	bool create_new_console; /* Create a new console window for the debugee on debug start */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
-	bool intrbreak; /* SIGINT handle for attached processes */
+	bool consbreak; /* Kill process on ^C */
 	bool continue_all_threads;
 
 	/* tracking debugger state */
