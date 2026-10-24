@@ -44,6 +44,7 @@ typedef struct rz_type_db_t {
 	RzNum *num;
 	RzIOBind iob; // for RzIO in formats
 	RZ_DEPRECATE RzFormatDataInternal *format_internal_data; // for rz_type_format_data_internal state
+	RzList /*<RzTypeDBPendingLoad *>*/ *pending_loads; ///< rz_type_db_init() calls not applied yet, see rz_type_db_load_pending()
 } RzTypeDB;
 
 // All types in RzTypeDB module are either concrete,
@@ -266,6 +267,7 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os);
 RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *dir_prefix);
+RZ_API void rz_type_db_load_pending(RZ_NONNULL const RzTypeDB *typedb);
 RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 // Base types
