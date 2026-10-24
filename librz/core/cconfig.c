@@ -2422,7 +2422,7 @@ static bool core_dbg_swstep_get(void *user, void *pvalue) {
 static bool cb_consbreak(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->dbg->intrbreak = node->i_value;
+	core->dbg->consbreak = node->i_value;
 	return true;
 }
 
@@ -3527,7 +3527,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB("dbg.execs", "false", &cb_dbg_execs, "Stop execution if new thread is created");
 	SETICB("dbg.gdb.page_size", 4096, &cb_dbg_gdb_page_size, "Page size on gdb target (useful for QEMU)");
 	SETICB("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");
-	SETCB("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
+	SETCB("dbg.consbreak", "false", &cb_consbreak, "Kill process on ^C");
 
 	SETBPREF("dbg.bpsysign", "false", "Ignore system breakpoints");
 	SETICB("dbg.btdepth", 128, &cb_dbgbtdepth, "Depth of backtrace");
