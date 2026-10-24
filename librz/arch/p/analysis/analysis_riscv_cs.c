@@ -2220,7 +2220,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"gpr	ft9	.64	488	0\n" // =f29
 			"gpr	ft10	.64	496	0\n" // =f30
 			"gpr	ft11	.64	504	0\n" // =f31
-			"gpr	fcsr	.32	512	0\n"
+			"gpr	fcsr	.64	512	0\n"
 			// vector registers
 			// assume each register is 512 bits (64 bytes) for maximum compatibility
 			// TODO: make the width accurately reflect the exact width defined in the binary
