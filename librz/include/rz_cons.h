@@ -199,7 +199,9 @@ typedef struct rcolor_t {
 
 typedef struct rz_cons_palette_t {
 	RzColor b0x00;
+	RzColor b0xlo;
 	RzColor b0x7f;
+	RzColor b0xhi;
 	RzColor b0xff;
 	RzColor args;
 	RzColor bin;
@@ -279,7 +281,9 @@ typedef struct rz_cons_palette_t {
 
 typedef struct rz_cons_printable_palette_t {
 	char *b0x00;
+	char *b0xlo;
 	char *b0x7f;
+	char *b0xhi;
 	char *b0xff;
 	char *args;
 	char *bin;

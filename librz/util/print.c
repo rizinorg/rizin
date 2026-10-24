@@ -157,12 +157,12 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)calloc((strlen(str) + 2), 32);
-	int colors = p->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_0x00 = "";
-	const char *color_0x7f = "";
-	const char *color_0xff = "";
-	const char *color_text = "";
-	const char *color_other = "";
+	bool colors = p->flags & RZ_PRINT_FLAGS_COLOR;
+	const char *color_0x00 = rz_print_byte_color(p, 0x00);
+	const char *color_0x7f = rz_print_byte_color(p, 0x7f);
+	const char *color_0xff = rz_print_byte_color(p, 0xff);
+	const char *color_text = rz_print_byte_color(p, 'A');
+	const char *color_hi = rz_print_byte_color(p, 0xee);
 	int bs = p->bytespace;
 	/* XXX That is hacky but it partially works */
 	/* TODO: Use rz_print_set_cursor for win support */
@@ -170,19 +170,6 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	int ocur = RZ_MAX(p->cur, p->ocur);
 	int ch, i;
 
-	if (colors) {
-#define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
-		color_0x00 = P(b0x00)
-		    : Color_GREEN;
-		color_0x7f = P(b0x7f)
-		    : Color_YELLOW;
-		color_0xff = P(b0xff)
-		    : Color_RED;
-		color_text = P(btext)
-		    : Color_MAGENTA;
-		color_other = P(other)
-		    : "";
-	}
 	if (p->cur_enabled && cur == -1) {
 		cur = ocur;
 	}
@@ -223,7 +210,7 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 				if (IS_PRINTABLE(ch)) {
 					lastcol = color_text;
 				} else {
-					lastcol = color_other;
+					lastcol = color_hi;
 				}
 			}
 			memcat(d, lastcol);
@@ -248,24 +235,60 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	*d = '\0';
 	return dst;
 }
+#undef P
 
-#define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
-RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
-	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
+/**
+ * \brief Get the color for the given \p byte.
+ *
+ * \param pal The palette to use. If NULL, some default colors will be returned.
+ * \param byte The byte to get the color for.
+ * \param use_color If false, returned color will be gray scale only.
+ *
+ * \return A terminal escape string encoding the specific color.
+ *         Or an empty string.
+ */
+RZ_API const char *rz_print_byte_color_pal(RZ_NULLABLE const RzConsPrintablePalette *pal, ut8 byte, bool use_color) {
+#define P(x) (pal && pal->x) ? pal->x
 	if (!use_color) {
-		return NULL;
+		return "";
 	}
-	switch (ch) {
-	case 0x00: return P(b0x00)
-	    : Color_GREEN;
-	case 0x7F: return P(b0x7f)
-	    : Color_YELLOW;
-	case 0xFF: return P(b0xff)
-	    : Color_RED;
-	default: return IS_PRINTABLE(ch) ? P(btext) : Color_MAGENTA : P(other)
-	    : Color_WHITE;
+	switch (byte) {
+	case 0x00:
+		return P(b0x00) : Color_GREEN;
+	case 0x7F:
+		return P(b0x7f) : Color_YELLOW;
+	case 0xFF:
+		return P(b0xff) : Color_RED;
+	default:
+		break;
 	}
-	return NULL;
+	if (RZ_BETWEEN(0x01, byte, 0x7e)) {
+		return P(b0xlo) : IS_PRINTABLE(byte) ? P(btext) : Color_MAGENTA : P(other)
+		    : Color_WHITE;
+	} else if (RZ_BETWEEN(0x80, byte, 0xfe)) {
+		return P(b0xhi) : P(other) : Color_WHITE;
+	}
+	return Color_WHITE;
+#undef P
+}
+
+/**
+ * \brief Get the color for the given \p byte.
+ *
+ * \param p The RzPrint instance to use. If NULL, some default colors will be returned.
+ * \param byte The byte to get the color for.
+ * \param use_color If false, returned color will be gray scale only.
+ *
+ * \return A terminal escape string encoding the specific color.
+ *         Or an empty string.
+ */
+RZ_API const char *rz_print_byte_color(RZ_NULLABLE const RzPrint *p, ut8 ch) {
+	RzConsPrintablePalette *pal = NULL;
+	if (p && p->cons && p->cons->context) {
+		pal = &p->cons->context->pal;
+	}
+	const bool use_color = p && p->flags & RZ_PRINT_FLAGS_COLOR;
+	return rz_print_byte_color_pal(pal, ch, use_color);
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {

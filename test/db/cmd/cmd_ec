@@ -69,7 +69,9 @@ EXPECT=<<EOF
  [1;91m##[0m invalid             Color for invalid instructions
  [37m##[0m other               Color for other elements
  [32m##[0m b0x00               Color for null bytes (0x00)
+ [33m##[0m b0xlo               Color for byte range [0x01,0x7e]
  [36m##[0m b0x7f               Color for 0x7f bytes
+ [37m##[0m b0xhi               Color for byte range [0x80,0xfe]
  [31m##[0m b0xff               Color for 0xff bytes
  [33m##[0m math                Color for math operations
  [36m##[0m bin                 Color for binary information
@@ -142,7 +144,9 @@ EXPECT=<<EOF
  [1;91m##[0m invalid             Color for invalid instructions
  [97m##[0m other               Color for other elements
  [92m##[0m b0x00               Color for null bytes (0x00)
+ [33m##[0m b0xlo               Color for byte range [0x01,0x7e]
  [96m##[0m b0x7f               Color for 0x7f bytes
+ [37m##[0m b0xhi               Color for byte range [0x80,0xfe]
  [91m##[0m b0xff               Color for 0xff bytes
  [93m##[0m math                Color for math operations
  [96m##[0m bin                 Color for binary information
@@ -277,7 +281,7 @@ CMDS=<<EOF
 ecoj
 EOF
 EXPECT=<<EOF
-["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","durian","focus","gb","gentoo","lima","mars","matrix","monokai","nord","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","underwater","white","white2","xvilka","zenburn"]
+["ayu","basic","behelit","bold","bright","cga","consonance","cutter","dark","darkda","default","defragger","durian","focus","gb","gentoo","lima","mars","matrix","monokai","neon_city","nord","ogray","onedark","pink","rasta","sepia","smyck","solarized","tango","twilight","underwater","white","white2","xvilka","zenburn"]
 EOF
 RUN
 
