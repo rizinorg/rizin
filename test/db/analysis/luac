@@ -841,7 +841,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=LUAC: pseudo 5.5
+NAME=LUAC: pseudo 5.5 (class55)
 FILE=bins/luac/class55.luac
 CMDS=<<EOF
 e asm.pseudo=true
@@ -1057,7 +1057,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=LUAC: pseudo 5.5
+NAME=LUAC: pseudo 5.5 (sample0-55)
 FILE=bins/luac/sample0-55.luac
 CMDS=<<EOF
 e asm.pseudo=true

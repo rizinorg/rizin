@@ -13,7 +13,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-find -X -s
+NAME=rz-find -X -s (repeat)
 TOOL=rz-find
 ARGS=-X -s 250382 bins/elf/ioli/crackme0x00
 COLOR=1

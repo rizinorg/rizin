@@ -1,4 +1,4 @@
-NAME=Testing the decryption in emulateme
+NAME=msp430: Testing the decryption in emulateme
 FILE=bins/msp430/emulateme.msp430
 TIMEOUT=10
 CMDS=<<EOF

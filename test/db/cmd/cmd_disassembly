@@ -1,4 +1,4 @@
-NAME=pD@x:90
+NAME=cmd_disassembly: pD@x:90
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -11,7 +11,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd@x:90
+NAME=cmd_disassembly: pd@x:90
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -112,7 +112,7 @@ call 0x3535
 EOF
 RUN
 
-NAME=unaligned arm code
+NAME=unaligned arm code (16-bit)
 FILE==
 CMDS=<<EOF
 wx 00000000
@@ -125,7 +125,7 @@ unaligned
 EOF
 RUN
 
-NAME=unaligned arm code
+NAME=unaligned arm code (32-bit)
 FILE==
 CMDS=<<EOF
 wx 00000000

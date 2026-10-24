@@ -9,7 +9,7 @@ mov ecx, esp
 EOF
 RUN
 
-NAME=function rebase
+NAME=dbg_aslr: function rebase
 FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
@@ -23,7 +23,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bp rebase
+NAME=dbg_aslr: bp rebase
 FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
@@ -39,7 +39,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ref rebase
+NAME=dbg_aslr: ref rebase
 FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF
@@ -54,7 +54,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=flag rebase
+NAME=dbg_aslr: flag rebase
 FILE=bins/elf/analysis/pie
 ARGS=-d
 CMDS=<<EOF
@@ -71,7 +71,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=var rebase
+NAME=dbg_aslr: var rebase
 FILE=bins/elf/hello_world
 ARGS=-d
 CMDS=<<EOF

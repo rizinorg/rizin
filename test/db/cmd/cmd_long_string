@@ -8,7 +8,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pD@x:90
+NAME=cmd_long_string: pD@x:90
 FILE=bins/mach0/bin_longstring
 ARGS=-e asm.cmt.right=false
 CMDS=s 0x10000088a; pd 3~?string

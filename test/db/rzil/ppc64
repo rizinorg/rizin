@@ -1,4 +1,4 @@
-NAME=Printing il statements in various formats
+NAME=ppc64: Printing il statements in various formats
 FILE=bins/elf/ppc/ppc64le_uplifted
 CMDS=<<EOF
 echo -- oneline
@@ -774,7 +774,7 @@ var_write(name: ca, old: 0x0, new: 0x1)
 EOF
 RUN
 
-NAME=emulateme-big-endian
+NAME=ppc64: emulateme-big-endian
 FILE=bins/elf/ppc/emulateme-ppc64be
 TIMEOUT=60
 ARGS=-T
@@ -800,7 +800,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=emulateme-little-endian
+NAME=ppc64: emulateme-little-endian
 FILE=bins/elf/ppc/emulateme-ppc64le
 TIMEOUT=60
 ARGS=-T

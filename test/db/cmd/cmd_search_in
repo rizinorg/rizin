@@ -1,4 +1,4 @@
-NAME=/z search.in=io.maps without -m
+NAME=/z search.in=io.maps with -m 0x80000
 FILE=bins//wasm/inc.wast
 ARGS=-m 0x80000
 CMDS=<<EOF

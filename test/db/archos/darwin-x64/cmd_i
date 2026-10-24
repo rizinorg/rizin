@@ -1,5 +1,5 @@
 # Should not be run on Windows
-NAME=utf8 (possibly malformed) filenames with non-printable chars
+NAME=darwin-x64: utf8 (possibly malformed) filenames with non-printable chars
 FILE==
 CMDS=<<EOF
 cd `e dir.tmp`

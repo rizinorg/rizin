@@ -8513,7 +8513,7 @@ typedef goo_t (0xf8) "p[10]c? a b (anonymous struct 4)q"
 EOF
 RUN
 
-NAME=Types with nested callables containing mixed pointers and arrays
+NAME=types: Types with nested callables containing mixed pointers and arrays
 FILE=--
 CMDS=<<EOF
 td "struct foo { wchar_t (*(*bar)[])(int, const char*); };"

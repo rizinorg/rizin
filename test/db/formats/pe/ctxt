@@ -12,7 +12,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=PE: corkami ctxt.dll - entrypoint
+NAME=PE: corkami ctxt.dll - entrypoint (repeat)
 FILE=bins/pe/ctxt.dll
 CMDS=s
 EXPECT=<<EOF

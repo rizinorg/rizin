@@ -40,7 +40,7 @@ imul rax, r11, 0x33666667
 EOF
 RUN
 
-NAME=esil x86-64 pd deinit
+NAME=esil x86-64 pd deinit (pd with emu=true)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -60,7 +60,7 @@ rax = 0x0000000000000021
 EOF
 RUN
 
-NAME=esil x86-64 pd deinit
+NAME=esil x86-64 pd deinit (pd with emu=false)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -80,7 +80,7 @@ rax = 0x0000000000000021
 EOF
 RUN
 
-NAME=esil x86-64 pd deinit
+NAME=esil x86-64 pd deinit (pi with emu=true)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -170,7 +170,7 @@ rbx = 0x0000000000000005
 EOF
 RUN
 
-NAME=esil x86-64 aesu
+NAME=esil x86-64 aesu (repeat)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -190,7 +190,7 @@ rbx = 0x0000000000000005
 EOF
 RUN
 
-NAME=esil x86-64
+NAME=esil x86-64 (lea rsi, [rdi+0x68])
 FILE==
 CMDS=<<EOF
 echo
@@ -206,7 +206,7 @@ esil: 0x68,rdi,+,rsi,=
 EOF
 RUN
 
-NAME=esil x86-64
+NAME=esil x86-64 (lea rdi, [rbp-0x440])
 FILE==
 CMDS=<<EOF
 echo
@@ -222,7 +222,7 @@ esil: 0x440,rbp,-,rdi,=
 EOF
 RUN
 
-NAME=esil x86-64
+NAME=esil x86-64 (mov dword [rip+0x40dd], 0x01)
 FILE==
 CMDS=<<EOF
 echo
@@ -353,7 +353,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86-64 linux syscall emulation
+NAME=x86-64 linux syscall emulation (4aes)
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF
 s entry0
@@ -367,7 +367,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86-64 linux syscall emulation
+NAME=x86-64 linux syscall emulation (4ds)
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF
 s entry0
@@ -406,7 +406,7 @@ sf = 0x1
 EOF
 RUN
 
-NAME=neg
+NAME=esil x86-64 neg
 FILE==
 CMDS=<<EOF
 wx f6dbf6df66f7dbf7db48f7db

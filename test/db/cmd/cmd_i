@@ -4049,7 +4049,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ik
+NAME=ik elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 ik elf.relro
@@ -4653,7 +4653,7 @@ laddr    0x00000000
 EOF
 RUN
 
-NAME=ik
+NAME=ik mach0
 FILE=bins/mach0/fatmach0-3true
 CMDS=ik mach0.entry.vaddr
 ARGS=-a ppc -b 64
@@ -4831,7 +4831,7 @@ index name type            vaddr      paddr   size lang         timestamp       
 EOF
 RUN
 
-NAME=izz
+NAME=cmd_i: izz
 FILE=bins/mach0/fatmach0-3true
 CMDS=izz~http~codesigning
 EXPECT=<<EOF

@@ -1,4 +1,4 @@
-NAME=pe entrypoint
+NAME=pe entrypoint (peio)
 FILE=bins/pe/base.exe
 CMDS=<<EOF
 s entry0

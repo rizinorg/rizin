@@ -1,4 +1,4 @@
-NAME=PE: corkami tinyXP.exe - open
+NAME=PE: corkami tinydllXP - open
 FILE=bins/pe/tinyXP.exe
 ARGS=-A
 CMDS=q!
