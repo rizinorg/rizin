@@ -63,6 +63,23 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 }
 #endif
 
+/**
+ * \brief Determine whether a signal was externally sent or internally generated.
+ *
+ * \param si_code Signal code from siginfo_t::si_code.
+ * \return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL if the signal was sent via
+ *         kill(), sigqueue(), tkill()/tgkill(), otherwise
+ *         RZ_DEBUG_SIGNAL_SOURCE_INTERNAL.
+ */
+static RzDebugSignalSource find_signal_source(int si_code) {
+	if (si_code == SI_USER ||
+		si_code == SI_QUEUE ||
+		si_code == SI_LWP) {
+		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
+	}
+	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
+}
+
 int bsd_handle_signals(RzDebug *dbg) {
 #if __KFBSD__ || __NetBSD__
 	siginfo_t siginfo;
@@ -95,6 +112,7 @@ int bsd_handle_signals(RzDebug *dbg) {
 #endif
 	dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 	dbg->reason.signum = siginfo.si_signo;
+	dbg->reason.sig_source = find_signal_source(siginfo.si_code);
 
 	switch (dbg->reason.signum) {
 	case SIGABRT:
