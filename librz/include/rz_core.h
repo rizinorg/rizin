@@ -365,7 +365,6 @@ struct rz_core_t {
 	int curtab; // current tab
 	int seltab; // selected tab
 	char *cmdremote;
-	char *cmdfilter;
 	char *curtheme;
 	bool break_loop;
 	bool binat;
