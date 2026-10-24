@@ -514,7 +514,6 @@ RZ_API RZ_BORROW RzDebugProcess *rz_debug_process_find(RZ_NONNULL RzDebug *dbg, 
 RZ_API void rz_debug_process_remove(RZ_NONNULL RzDebug *dbg, int pid);
 
 /*thread handling */
-RZ_API RzDebugThread *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
 RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
 RZ_API RZ_OWN RzDebugThread *rz_debug_thread_new(int tid, int process_pid, RzDebugThreadState state, ut64 pc);
 RZ_API void rz_debug_thread_free(RZ_NULLABLE RzDebugThread *thread);
@@ -522,6 +521,7 @@ RZ_API RZ_BORROW RzDebugThread *rz_debug_thread_find(RZ_NONNULL RzDebug *dbg, in
 RZ_API int rz_debug_thread_owner_pid(RZ_NONNULL RzDebug *dbg, int tid);
 RZ_API bool rz_debug_thread_add(RZ_NONNULL RzDebug *dbg, RZ_NONNULL RzDebugProcess *process, RZ_NONNULL RZ_OWN RzDebugThread *thread);
 RZ_API void rz_debug_thread_remove(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *dbg);
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
@@ -531,8 +531,6 @@ RZ_API RzDebugInfo *rz_debug_info(RzDebug *dbg, const char *arg);
 RZ_API void rz_debug_info_free(RzDebugInfo *rdi);
 
 RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
-
-RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug);
 
 /* send signals */
 RZ_API void rz_debug_signal_init(RzDebug *dbg);

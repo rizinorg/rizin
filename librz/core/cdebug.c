@@ -897,7 +897,7 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 	if (dbg->cur && dbg->cur->pids && dbg->pid != -1) {
 		RzList *list = dbg->cur->pids(dbg, dbg->pid);
 		RzListIter *iter;
-		RzDebugPid *p;
+		RzDebugProcess *p;
 		if (list) {
 			rz_list_foreach (list, iter, p) {
 				rz_debug_kill(dbg, p->pid, p->pid, SIGKILL);
@@ -933,7 +933,7 @@ RZ_API bool rz_core_debug_process_detach(RzCore *core) {
 	if (dbg->cur && dbg->cur->pids && dbg->pid != -1) {
 		RzList *list = dbg->cur->pids(dbg, dbg->pid);
 		RzListIter *iter;
-		RzDebugPid *p;
+		RzDebugProcess *p;
 		if (list) {
 			rz_list_foreach (list, iter, p) {
 				rz_debug_detach(dbg, p->pid);
@@ -1218,13 +1218,13 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 		return false;
 	}
 	RzListIter *iter;
-	RzDebugPid *p;
+	RzDebugProcess *p;
 	char status[2];
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "sdddss", "current",
 		"ppid", "pid", "uid", "status", "path");
 	rz_list_foreach (list, iter, p) {
-		rz_strf(status, "%c", p->status);
+		rz_strf(status, "%c", p->state);
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
@@ -1267,54 +1267,52 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 		return false;
 	}
 	RzListIter *iter;
-	RzDebugPid *p;
-	RzDebugMap *map = NULL;
-	RzStrBuf *path = NULL;
+	RzDebugThread *th;
 	char status[2];
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "bdss", "current",
-		"pid", "status", "path");
-	rz_list_foreach (list, iter, p) {
-		path = rz_strbuf_new(p->path);
-		if (p->pc != 0) {
-			map = rz_debug_map_get(dbg, p->pc);
-			if (map && map->name && map->name[0]) {
-				rz_strbuf_appendf(path, " %s", map->name);
+	rz_cmd_state_output_set_columnsf(state, "bdss", "current", "pid", "status", "path");
+	rz_list_foreach (list, iter, th) {
+		bool current = dbg->tid == th->tid;
+		RzStrBuf *loc = rz_strbuf_new("");
+		if (loc && th->pc) {
+			RzDebugMap *map = rz_debug_map_get(dbg, th->pc);
+			if (map && RZ_STR_ISNOTEMPTY(map->name)) {
+				rz_strbuf_appendf(loc, "%s ", map->name);
 			}
-
-			rz_strbuf_appendf(path, " (0x%" PFMT64x ")", p->pc);
-
-			char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, p->pc);
-			if (name_delta) {
-				bool has_delta = strchr(name_delta, '+') || strchr(name_delta, '-');
-				rz_strbuf_appendf(path, " %s %s", has_delta ? "in" : "at", name_delta);
-				free(name_delta);
+			rz_strbuf_appendf(loc, "(0x%" PFMT64x ")", th->pc);
+			if (dbg->corebind.getNameDelta) {
+				char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, th->pc);
+				if (name_delta) {
+					bool has_delta = strchr(name_delta, '+') || strchr(name_delta, '-');
+					rz_strbuf_appendf(loc, " %s %s", has_delta ? "in" : "at", name_delta);
+					free(name_delta);
+				}
 			}
 		}
-		rz_strf(status, "%c", p->status);
+		const char *loc_str = loc ? rz_strbuf_get(loc) : "";
+		rz_strf(status, "%c", (char)th->state);
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_kb(state->d.pj, "current", dbg->tid == p->pid);
-			pj_ki(state->d.pj, "pid", p->pid);
+			pj_kb(state->d.pj, "current", current);
+			pj_ki(state->d.pj, "tid", th->tid);
 			pj_ks(state->d.pj, "status", status);
-			pj_ks(state->d.pj, "path", rz_strbuf_get(path));
+			pj_ks(state->d.pj, "path", loc_str);
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "bdss", dbg->pid == p->pid, p->pid,
-				status, rz_strbuf_get(path));
+			rz_table_add_rowf(state->d.t, "bdss", current, th->tid, status, loc_str);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf(dbg->cons, " %c %d %s %s\n",
-				dbg->tid == p->pid ? '*' : '-',
-				p->pid, status, rz_strbuf_get(path));
+				dbg->tid == th->tid ? '*' : '-',
+				th->tid, status);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		rz_strbuf_free(path);
+		rz_strbuf_free(loc);
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);

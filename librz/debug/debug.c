@@ -376,7 +376,6 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->bits = RZ_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
-	dbg->main_pid = -1;
 	dbg->n_threads = 0;
 	dbg->trace_clone = 0;
 	dbg->egg = rz_egg_new();
@@ -398,7 +397,8 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
 	dbg->plugin_data = NULL;
-	dbg->threads = NULL;
+	dbg->threads = ht_up_new(NULL, NULL); // the hash table never owns the RzDebugThread for each thread
+	dbg->processes = rz_list_newf((RzListFree)rz_debug_process_free);
 	dbg->hitinfo = 1;
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
@@ -431,7 +431,8 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	free(dbg->snap_path);
 	rz_list_free(dbg->maps);
 	rz_list_free(dbg->maps_user);
-	rz_list_free(dbg->threads);
+	rz_list_free(dbg->processes);
+	ht_up_free(dbg->threads);
 	rz_num_free(dbg->num);
 	sdb_free(dbg->sgnls);
 	rz_tree_free(dbg->tree);
@@ -1861,45 +1862,3 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 		bp->delta = bp->addr - dbg->bp->baddr;
 	}
 }
-
-/**
- * \brief Switches to the first thread in the given debug context.
- * \param debug The debug context.
- */
-RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
-	rz_return_if_fail(debug);
-	RzList *threads = rz_debug_pids(debug, debug->pid);
-	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first_val(threads);
-		rz_debug_select(debug, debug->pid, th->pid);
-	}
-	rz_list_free(threads);
-}
-
-static int thread_find(int *tid, RzDebugPid *t, void *user) {
-	return (t && (t->pid == *tid)) ? 0 : 1;
-}
-
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
-	if (!th_list) {
-		return NULL;
-	}
-
-	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find, NULL);
-	if (!it) {
-		return NULL;
-	}
-	return (RzDebugPid *)rz_list_val(it);
-}
-
-#if !DEBUGGER
-// Empty stubs are needed for compilation on s390x platform when debugger is disabled
-RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
-	return 0;
-}
-
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
-	return rz_list_new();
-}
-#endif

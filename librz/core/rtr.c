@@ -220,7 +220,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	RzRegItem *r;
 	ut64 m_off, reg_val;
 	bool be;
-	RzDebugPid *dbgpid;
+	RzDebugThread *dbg_th;
 	if (!core_ptr || !cmd) {
 		return -1;
 	}
@@ -270,12 +270,12 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 					memset(out_buf, 0, max_len);
 					out_buf[0] = 'm';
 					ret = 1;
-					rz_list_foreach (list, iter, dbgpid) {
+					rz_list_foreach (list, iter, dbg_th) {
 						// Max length of a hex pid = 8?
 						if (ret >= max_len - 9) {
 							break;
 						}
-						snprintf(out_buf + ret, max_len - ret - 1, "%x,", dbgpid->pid);
+						snprintf(out_buf + ret, max_len - ret - 1, "%x,", dbg_th->tid);
 						ret = strlen(out_buf);
 					}
 					if (ret > 1) {

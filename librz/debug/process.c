@@ -191,3 +191,18 @@ RZ_API void rz_debug_thread_remove(RZ_NONNULL RzDebug *dbg, int tid) {
 		}
 	}
 }
+
+/**
+ * \brief Switches to the first thread in the given debug context.
+ * \param debug The debug context.
+ */
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *dbg) {
+	rz_return_if_fail(dbg);
+	RzDebugProcess *proc = rz_debug_process_find(dbg, dbg->pid);
+	RzList *threads = proc->threads;
+	if (rz_list_length(threads) > 0) {
+		RzDebugThread *th = rz_list_first_val(threads);
+		rz_debug_select(dbg, dbg->pid, th->tid);
+	}
+	rz_list_free(threads);
+}

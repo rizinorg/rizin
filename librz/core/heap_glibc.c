@@ -1028,26 +1028,26 @@ static bool parse_tcache_from_addr(RzCore *core, const ut64 tls_addr, const ut64
 /**
  * \brief Parses Thread-Local Storage (TLS) data for a given thread ID to identify tcache structures.
  * \param core RzCore Pointer to the Rizin's core
- * \param th RzDebugPid Pointer to the Rizin's Debug PID structure representing the thread.
+ * \param th RzDebugThread Pointer to the Rizin's Debug PID structure representing the thread.
  * \param tid Thread ID.
  * \return True if tcache and bin structures were successfully parsed from TLS data else False.
  *
  * Parse the TLS data and identify the tcache and tcache-bins for the given thread ID.
  */
 
-static bool parse_tls_data(RzCore *core, RZ_NONNULL RzDebugPid *th, ut64 tid, const RzHeapConfig *config) {
+static bool parse_tls_data(RzCore *core, RZ_NONNULL RzDebugThread *th, ut64 tid, const RzHeapConfig *config) {
 	rz_return_val_if_fail(th, false);
 	ut64 tls_addr = UT64_MAX;
 	ut64 addr = UT64_MAX;
 	const ut8 ptr_size = config ? config->ptr_size : rz_heap_ptr_size(core);
 
-	if (!th->tls) {
+	if (!th->tls_base) {
 		return false;
 	}
 
 #if __x86_64__
 	ut8 dtv[sizeof(ut64)] = { 0 };
-	rz_io_nread_at(core->io, th->tls + ptr_size, dtv, sizeof(ut64));
+	rz_io_nread_at(core->io, th->tls_base + ptr_size, dtv, sizeof(ut64));
 	addr = read_val(core, dtv, false);
 	memset(dtv, 0, sizeof(dtv));
 	/*
@@ -1060,7 +1060,7 @@ static bool parse_tls_data(RzCore *core, RZ_NONNULL RzDebugPid *th, ut64 tid, co
 	/*
 	 * https://github.com/jart/cosmopolitan/blob/06839ab3017d86e87db3ec740a2b5e00d9fe9e11/libc/runtime/enable_tls.c#L79
 	 */
-	addr = th->tls + ptr_size * 2;
+	addr = th->tls_base + ptr_size * 2;
 #endif
 	const ut64 end = addr + 0x10 * ptr_size * 2;
 	// Parse tls data and check if it complies with tcache struct
@@ -1079,31 +1079,41 @@ static bool parse_tls_data(RzCore *core, RZ_NONNULL RzDebugPid *th, ut64 tid, co
  * Resolves the TLS base for every thread and parse to identify the tcache structures.
  */
 static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig *config) {
-	RzDebugPid *th;
-	RzListIter *it;
-	ut64 tid = 1;
 	RzDebug *dbg = core->dbg;
-
-	rz_list_foreach (dbg->threads, it, th) {
-		// First try: fetch tls value and update debug pid
-		if (!th->tls) {
-			th->tls = rz_debug_get_tls(core->dbg, th->pid);
+	RzDebugProcess *process = rz_debug_process_find(dbg, dbg->pid);
+	if (!process) {
+		return;
+	}
+	RzList *fresh = NULL;
+	RzDebugThread *th;
+	RzListIter *it;
+	ut64 idx = 1;
+	rz_list_foreach (process->threads, it, th) {
+		ut64 thread_idx = idx++;
+		// First try: fetch the TLS base if we don't have it yet
+		if (!th->tls_base) {
+			th->tls_base = rz_debug_get_tls(dbg, th->tid);
 		}
-		if (!parse_tls_data(core, th, tid++, config)) {
-			// Second try: Update the thread list if the tls parsing fails.
-			RzList *thread_list = rz_debug_native_threads(dbg, dbg->pid);
-			RzDebugPid *thread_dbg = rz_debug_get_thread(thread_list, th->pid);
-			if (thread_dbg) {
-				parse_tls_data(core, thread_dbg, tid, config);
-			}
+		if (parse_tls_data(core, th, thread_idx, config)) {
+			continue;
+		}
+		// Second try: refresh the thread data and retry with the new TLS base
+		if (!fresh) {
+			fresh = rz_debug_native_threads(dbg, dbg->pid);
+		}
+		RzDebugThread *fresh_th = rz_debug_get_thread(fresh, th->tid);
+		if (fresh_th && fresh_th->tls_base != th->tls_base) {
+			th->tls_base = fresh_th->tls_base; // keep the tracked thread up to date
+			parse_tls_data(core, th, thread_idx, config);
 		}
 	}
+	rz_list_free(fresh);
 }
 
 RZ_API RZ_OWN bool resolve_heap_tcache(RZ_NONNULL RzCore *core, ut64 arena_base, const RzHeapConfig *config) {
 	RzDebug *dbg = core->dbg;
-
-	if (rz_config_get_b(core->config, "cfg.debug") && dbg->threads) {
+	RzDebugProcess *process = rz_debug_process_find(dbg, dbg->pid);
+	if (rz_config_get_b(core->config, "cfg.debug") && process && !rz_list_empty(process->threads)) {
 		resolve_tcache_perthread(core, config);
 		return true;
 	}
