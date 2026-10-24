@@ -250,7 +250,7 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 			ret = rz_debug_ptrace(dbg, PTRACE_GETFPXREGS, pid, NULL, &fpxregs);
 			if (ret == 0) {
 				if (showfpu) {
-					print_fpu((void *)&fpxregs);
+					print_fpu((void *)&fpxregs, dbg->cons);
 				}
 				size = RZ_MIN(sizeof(fpxregs), size);
 				memcpy(buf, &fpxregs, size);
@@ -258,7 +258,7 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 			} else {
 				ret = rz_debug_ptrace(dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 				if (showfpu) {
-					print_fpu((void *)&fpregs);
+					print_fpu((void *)&fpregs, dbg->cons);
 				}
 				if (ret != 0) {
 					rz_sys_perror("PTRACE_GETFPREGS");

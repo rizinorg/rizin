@@ -1009,6 +1009,7 @@ static int h8300_decode_4(const ut8 *instr, H8300Instruction *cmd) {
 	}
 
 	switch (x2 & 0xff00) {
+		CASE_F_F(decode_rd3216r8_4, 0x6e00, MOV_B);
 		CASE_F_F(decode_rd3216r16_4, 0x6f00, MOV_W);
 	default:
 		break;
@@ -1406,10 +1407,6 @@ static int h8300_decode_2(const ut8 *instr, H8300Instruction *cmd) {
 	case 0x6d:
 		cmd->id = H8300_INSN_MOV_W;
 		ret = decode_incdecr16(instr, cmd);
-		break;
-	case 0x6e:
-		cmd->id = H8300_INSN_MOV_B;
-		ret = decode_rd3216r8_4(instr, cmd);
 		break;
 
 	default: break;

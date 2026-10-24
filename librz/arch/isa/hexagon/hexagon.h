@@ -198,6 +198,9 @@ typedef struct {
 	RzBitVector *gpr_read; ///< GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *gpr_tmp_read; ///< Tmp GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *gpr_written; ///< GPR register (R0-R31) written, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_read; ///< System register (S0-S75...) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_tmp_read; ///< TmpSystem register (S0-S75...) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_written; ///< System register (S0-S75...) written, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_read; ///< Control register (C0-C31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_tmp_read; ///< Tmp control register (C0-C31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_written; ///< Control register (C0-C31) written, if flags set at (1 << reg_num) are set.

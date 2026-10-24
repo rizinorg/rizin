@@ -103,15 +103,36 @@ RZ_API bool rz_search_opt_set_show_progress_from_str(RZ_NONNULL RzSearchOpt *opt
 	return true;
 }
 
+/**
+ * \brief Sets the progress shown while searching.
+ *
+ * \param opt The search options to update.
+ * \param show_progress The progress to show.
+ *
+ * \return True if options were correctly updated, false otherwise.
+ */
+RZ_API bool rz_search_opt_set_show_progress(RZ_NONNULL RzSearchOpt *opt, RzSearchProgress show_progress) {
+	rz_return_val_if_fail(opt, false);
+	opt->show_progress = show_progress;
+	return true;
+}
+
 RZ_API RzSearchProgress rz_search_opt_get_show_progress(RZ_NONNULL RzSearchOpt *opt) {
 	rz_return_val_if_fail(opt, RZ_SEARCH_PROGRESS_DISABLED);
 	return opt->show_progress;
 }
 
-RZ_API bool rz_search_opt_set_cancel_cb(RZ_NONNULL RzSearchOpt *opt, RzSearchCancelCallback callback, void *user) {
+/**
+ * \brief Sets the interrupt checked during the search, to cancel it.
+ *
+ * \param opt The search options to update.
+ * \param intr The interrupt, or NULL to not cancel the search.
+ *
+ * \return True if options were correctly updated, false otherwise.
+ */
+RZ_API bool rz_search_opt_set_interrupt(RZ_NONNULL RzSearchOpt *opt, RZ_NULLABLE RZ_BORROW RzInterrupt *intr) {
 	rz_return_val_if_fail(opt, false);
-	opt->cancel_cb = callback;
-	opt->cancel_usr = user;
+	opt->intr = intr;
 	return true;
 }
 

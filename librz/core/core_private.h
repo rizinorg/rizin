@@ -30,6 +30,7 @@ RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
 
 RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
 RZ_IPI bool rz_core_get_string_at(RzCore *core, ut64 address, char **string, size_t *length, RzStrEnc *encoding, bool can_search);
+RZ_IPI bool rz_core_search_shows_hit_count(RZ_NONNULL RzCore *core);
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
@@ -47,6 +48,7 @@ RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW 
 RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_dlang_methods(RZ_NULLABLE RzCore *core);
 RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
 RZ_IPI bool rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
 RZ_IPI bool rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024-2026 mostafa <ubermenchun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_log.h"
+#include <rz_util/rz_log.h>
 #include <sys/ptrace.h>
 #include <sys/uio.h>
 
