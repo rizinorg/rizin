@@ -271,6 +271,7 @@ nth      paddr      vaddr bind  type   size lib name
 0x00072000   0x130 0x00000000   0x130   0x0 sr-x .lib        STYP_LIB
 0x00000000     0x0 0x00000000     0x0   0x0 -r-- rsrc        STYP_RESOURCE
 === init0 ===
+            ; DATA XREFS from fcn.00400938 @ 0x400f98, 0x401384
             ;-- section..text:
 / entry.init0(int32_t arg_4h, int32_t arg1);
 |           ; arg int32_t arg1 @ a0
