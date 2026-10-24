@@ -1691,7 +1691,8 @@ static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 		"fpu	fp5		.80	294	0\n" // FPU data register 5, 80-bit extended precision
 		"fpu	fp6		.80	304	0\n" // FPU data register 6, 80-bit extended precision
 		"fpu	fp7		.80	314	0\n" // FPU data register 7, 80-bit extended precision
-		"gpr	cp_external_data	.32	324	0\n";
+		"gpr	cp_external_data	.32	324	0\n"
+		"gpr	fpu_state	.32	328	0\n";
 	return rz_str_dup(p);
 }
 

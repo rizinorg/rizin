@@ -617,9 +617,9 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NO
 	if (rz_m68k_op_detail_is_invalid(op)) {
 		return true;
 	}
-	// A GPR cannot supply an FPU-sized operand (e.g. fmove.x d0, fp0 is illegal).
+	// Only single-precision real operands fit in a data register.
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && rz_m68k_op_is_gpr(op)) {
-		return true;
+		return !rz_m68k_reg_is_dreg(op->reg) || m68k->op_size.fpu_size != M68K_FPU_SIZE_SINGLE;
 	}
 	// FP immediates use dedicated M68K_OP_FP_* types; an integer immediate
 	// cannot encode an FPU-sized value.
