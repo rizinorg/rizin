@@ -378,7 +378,7 @@ RZ_API void rz_regex_free(RZ_OWN RzRegex *regex) {
  * \param regex The RzRegex16 to free.
  */
 RZ_API void rz_regex_free_16(RZ_OWN RzRegex16 *regex) {
-	pcre2_code_free_8(regex);
+	pcre2_code_free_16(regex);
 }
 
 /**
@@ -387,7 +387,7 @@ RZ_API void rz_regex_free_16(RZ_OWN RzRegex16 *regex) {
  * \param regex The RzRegex32 to free.
  */
 RZ_API void rz_regex_free_32(RZ_OWN RzRegex32 *regex) {
-	pcre2_code_free_8(regex);
+	pcre2_code_free_32(regex);
 }
 
 /**

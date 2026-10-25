@@ -29,6 +29,70 @@ bool test_rz_reg_set_profile_string(void) {
 	mu_end;
 }
 
+bool test_rz_reg_set_profile_string_fields(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	mu_assert_true(rz_reg_set_profile_string(reg,
+			       "# profile comment line\n"
+			       "###\n"
+			       "#comment#another\n"
+			       " \t  \t \n"
+			       "\n"
+			       "=PC\tpc\n"
+			       "gpr\tpc\t.32\t0\t0\n"
+			       "gpr   r0    .32   4    0   # first   register  \n"
+			       "gpr\tr1\t.32\t8\t0\t#second register\n"
+			       "gpr\tr2\t.32\t20\t0#glued comment\n"
+			       "ctr \t csr\t .32 \t12\t0\t# Control status register\n"
+			       "flg\tzf\t.1\t16.0\t0\tz\n"
+			       "gpr\tr3\t.32\t24\t0\t###\n"
+			       "gpr\tr4\t.32\t28\t0\t#comment#another\n"),
+		"set profile with comments and flags");
+	mu_assert_streq(rz_reg_get_name(reg, RZ_REG_NAME_PC), "pc", "PC alias");
+
+	RzRegItem *item = rz_reg_get(reg, "r0", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r0 exists");
+	mu_assert_eq(item->offset, 4 * 8, "r0 offset");
+	mu_assert_eq(item->size, 32, "r0 size");
+	mu_assert_streq(item->comment, "first   register", "r0 comment is trimmed, inner spaces kept");
+	mu_assert_null(item->flags, "r0 has no flags");
+
+	item = rz_reg_get(reg, "r1", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r1 exists");
+	mu_assert_streq(item->comment, "second register", "comment without space after #");
+
+	item = rz_reg_get(reg, "r2", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r2 exists");
+	mu_assert_eq(item->packed_size, 0, "r2 packed size is not swallowed by a glued comment");
+	mu_assert_streq(item->comment, "glued comment", "# directly after a field starts the comment");
+
+	item = rz_reg_get(reg, "csr", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "csr exists with mixed spaces and tabs");
+	mu_assert_eq(item->offset, 12 * 8, "csr offset");
+	mu_assert_streq(item->comment, "Control status register", "csr comment");
+
+	item = rz_reg_get(reg, "zf", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "zf exists");
+	mu_assert_eq(item->offset, 16 * 8, "zf offset");
+	mu_assert_eq(item->size, 1, "zf size");
+	mu_assert_streq(item->flags, "z", "zf flags");
+	mu_assert_null(item->comment, "zf has no comment");
+
+	item = rz_reg_get(reg, "r3", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r3 exists");
+	mu_assert_eq(item->offset, 24 * 8, "r3 offset");
+	mu_assert_streq(item->comment, "##", "only the first # starts the comment");
+
+	item = rz_reg_get(reg, "r4", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r4 exists");
+	mu_assert_eq(item->offset, 28 * 8, "r4 offset");
+	mu_assert_streq(item->comment, "comment#another", "a later # is part of the comment");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
 bool test_rz_reg_get_value_gpr(void) {
 	RzReg *reg;
 	ut64 value;
@@ -452,6 +516,7 @@ bool test_rz_reg_profile_to_cc(void) {
 
 int all_tests() {
 	mu_run_test(test_rz_reg_set_profile_string);
+	mu_run_test(test_rz_reg_set_profile_string_fields);
 	mu_run_test(test_rz_reg_get_value_gpr);
 	mu_run_test(test_rz_reg_get_value_flag);
 	mu_run_test(test_rz_reg_get);
