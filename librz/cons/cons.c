@@ -601,6 +601,7 @@ RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons) {
 	RZ_FREE(cons->input->readbuffer);
 	RZ_FREE(cons->input);
 	RZ_FREE(cons->break_word);
+	RZ_FREE(cons->highlight);
 	cons_context_deinit(cons->context);
 	if (cons->context != &cons->default_context) {
 		RZ_FREE(cons->context);
