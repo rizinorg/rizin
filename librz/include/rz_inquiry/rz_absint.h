@@ -94,6 +94,12 @@ typedef struct rz_absint_block_t {
 	// Out-edges
 	bool is_fallthrough; ///< if true, there is an edge to the block after the end of this one
 	RzVector /*<ut64>*/ jump_targets; ///< Explicit jump targets, does not contain fallthrough address
+	/**
+	 * \brief Explicit call targets, does not contain fallthrough address
+	 * NOTE: There is a certain error rate in these. It is not guaranteed that all if them are actually calls.
+	 * We use a heuristic to detect them (backs up the PC before jump).
+	 */
+	RzVector /*<ut64>*/ call_targets;
 } RzAbsIntBlock;
 
 typedef struct {

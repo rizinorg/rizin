@@ -28,6 +28,7 @@ static void interp_block_free(RzAbsIntInstance *inst, RzAbsIntBlock *block) {
 	rz_absint_state_free(inst, block->entry_state);
 	rz_vector_fini(&block->insn_offsets);
 	rz_vector_fini(&block->jump_targets);
+	rz_vector_fini(&block->call_targets);
 	free(block);
 }
 
@@ -68,7 +69,7 @@ RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_create(RZ_NONNULL RzAbsIntInstan
 	return block;
 }
 
-RZ_IPI void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 target) {
+RZ_IPI void interp_block_add_jump_target(RzAbsIntBlock *block, ut64 target) {
 	// linear search may be inefficient, but practically the number of targets is often small
 	if (rz_vector_contains(&block->jump_targets, &target)) {
 		return;
@@ -244,8 +245,11 @@ RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ
 		interp_block_resize(ctx, preceding, block_start - 1);
 		preceding->is_fallthrough = true;
 		rz_vector_fini(&interp_block->jump_targets);
+		rz_vector_fini(&interp_block->call_targets);
 		memmove(&interp_block->jump_targets, &preceding->jump_targets, sizeof(interp_block->jump_targets));
+		memmove(&interp_block->call_targets, &preceding->call_targets, sizeof(interp_block->call_targets));
 		rz_vector_init(&preceding->jump_targets, interp_block->jump_targets.elem_size, interp_block->jump_targets.free, interp_block->jump_targets.free_user);
+		rz_vector_init(&preceding->call_targets, interp_block->call_targets.elem_size, interp_block->call_targets.free, interp_block->call_targets.free_user);
 
 		// The state reachable from the preceding block reaching our start address must be joined into our block's entry state.
 		// Hint: For performance, it would actually be better to reinterpret the preceding block before our block, otherwise
@@ -321,7 +325,10 @@ RZ_IPI bool interp_block_tree_as_str(const RzIntervalTree /* RzAbsIntBlock */ *b
 		}
 		ut64 *it;
 		rz_vector_foreach (&interp_block->jump_targets, it) {
-			rz_strbuf_appendf(sb, "  -> 0x%" PFMT64x "\n", *it);
+			rz_strbuf_appendf(sb, "  -j-> 0x%" PFMT64x "\n", *it);
+		}
+		rz_vector_foreach (&interp_block->call_targets, it) {
+			rz_strbuf_appendf(sb, "  -c-> 0x%" PFMT64x "\n", *it);
 		}
 		rz_strbuf_append(sb, "\n");
 	}
