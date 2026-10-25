@@ -32,7 +32,7 @@ typedef struct rz_absint_result_t RzAbsIntResult;
  * \brief An abstract value representing a set of RzILVal
  *
  * The actual abstraction and structure of this is defined by the plugin in use.
- * `struct rz_absint_val_opaque` is defined nowhere. Is is used to ensure
+ * `struct rz_absint_val_opaque` is defined nowhere. Is used to ensure
  * type-checking of passing this opaque pointer.
  */
 typedef struct rz_absint_val_opaque RzAbsIntVal;
@@ -280,7 +280,8 @@ typedef enum rz_absint_result_code_t {
 
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAbsIntCFGConflicts *conflicts, RZ_NULLABLE const char *fcn_name);
+RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, RZ_BORROW RZ_NONNULL RzAbsIntResult *res);
+RZ_API bool rz_absint_apply_icfg_to_analysis(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzICFG *icfg, RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name);
 
 typedef enum rz_absint_builtin_value_domain_t {
 	RZ_ABSINT_VALUE_DOMAIN_CONST
@@ -295,10 +296,10 @@ typedef struct rz_absint_driver_config_t {
 	RzAbsIntResultDimen dimens; ///< The results the interpreter can detect.
 	RzAbsIntTraceOptions trace_opts; ///< Trace options, to choose which logs to print.
 	size_t n_threads; ///< Number of interpreter threads spawned.
-	char *(*choose_fcn_name)(ut64 addr, void *priv_data); ///< Callback to generate a function name for the given address.
+	RzAnalysisFcnNameChooser choose_fcn_name; ///< Callback to generate a function name for the given address.
 	void *choose_fcn_name_priv_data; ///< Private data for the function name chooser.
 } RzAbsIntDriverConfig;
 
-RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config);
+RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config, RZ_NONNULL RZ_BORROW RzICFG *icfg);
 
 #endif // RZ_ABSINT

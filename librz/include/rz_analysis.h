@@ -1332,6 +1332,8 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block);
 
 /* function.c */
 
+typedef char *(*RzAnalysisFcnNameChooser)(ut64 addr, void *priv_data);
+
 RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis);
 RZ_API void rz_analysis_function_free(void *fcn);
 

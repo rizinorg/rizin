@@ -3,47 +3,46 @@
 
 #include <rz_inquiry/rz_cfg.h>
 
-struct rz_cfg_map_t {
-	RzVector /* ut64 */ fcn_addrs; ///< Sorted vector of all function addresses in the map.
-	HtUP /* fcn_addr, RzGraph */ *map;
+struct rz_icfg_t {
+	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
+	RzGraph /*<RzCFGNode *, RzCFGEdgeType>*/ *icfg;
 };
 
-RZ_API RZ_OWN RzCFGMap *rz_cfg_map_new() {
-	RzCFGMap *m = RZ_NEW0(RzCFGMap);
+struct rz_cfg_t {
+	ut64 entry;
+	RzIterator *cfg_nodes; ///< An iterator over the sub-graph in the iCFG belonging to the function.
+};
+
+RZ_API RZ_OWN RzICFG *rz_icfg_new() {
+	RzICFG *m = RZ_NEW0(RzICFG);
 	if (!m) {
 		return NULL;
 	}
-	HtUP *fcn_cfgs = ht_up_new(NULL, (HtUPFreeValue)rz_graph_free);
-	if (!fcn_cfgs) {
+	RzGraph *icfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, (RzGraphNodeDataFree)rz_icfg_node_free, NULL);
+	if (!icfg) {
 		free(m);
 		return NULL;
 	}
-	m->map = fcn_cfgs;
+	m->icfg = icfg;
 	return m;
 }
 
-RZ_API void rz_cfg_map_free(RZ_NULLABLE RZ_OWN RzCFGMap *map) {
+RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *map) {
 	if (!map) {
 		return;
 	}
-	ht_up_free(map->map);
+	rz_graph_free(map->icfg);
 	free(map);
 }
 
-RZ_API RZ_BORROW RzGraph *rz_cfg_map_get_cfg(RZ_NONNULL RZ_BORROW RzCFGMap *map, ut64 entry_point) {
-	rz_return_val_if_fail(map, NULL);
-	RzGraph *cfg = ht_up_find(map->map, entry_point, NULL);
-	if (!cfg) {
-		if (!(cfg = rz_cfg_new())) {
-			rz_warn_if_reached();
-			return NULL;
-		}
-		ht_up_insert(map->map, entry_point, cfg);
-	}
-	return cfg;
+RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out) {
+	rz_return_val_if_fail(icfg, false);
+	// TODO
+	rz_warn_if_reached();
+	return false;
 }
 
-RZ_API RZ_OWN RzCFGNode *rz_cfg_node_new() {
+RZ_API RZ_OWN RzCFGNode *rz_icfg_node_new() {
 	RzCFGNode *node = RZ_NEW0(RzCFGNode);
 	if (!node) {
 		return NULL;
@@ -52,7 +51,7 @@ RZ_API RZ_OWN RzCFGNode *rz_cfg_node_new() {
 	return node;
 }
 
-RZ_API void rz_cfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *node) {
+RZ_API void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *node) {
 	rz_return_if_fail(node);
 	if (!node) {
 		return;
@@ -61,15 +60,9 @@ RZ_API void rz_cfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *node) {
 	free(node);
 }
 
-RZ_API RZ_OWN RzGraph *rz_cfg_new() {
-	RzGraph *cfg = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, (RzGraphNodeDataFree)rz_cfg_node_free, NULL);
+RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg) {
 	if (!cfg) {
-		rz_warn_if_reached();
-		return NULL;
+		return;
 	}
-	return cfg;
-}
-
-RZ_API void rz_cfg_free(RZ_NULLABLE RZ_OWN RzGraph *cfg) {
-	rz_graph_free(cfg);
+	rz_iterator_fini(cfg->cfg_nodes);
 }
