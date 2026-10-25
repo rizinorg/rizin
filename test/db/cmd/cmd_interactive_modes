@@ -132,7 +132,7 @@ EXPECT=<<EOF
    % | Usage: %[j] <expr>   # Evaluate numerical expression <expr>                                  
    % | │ % <expr>     # Evaluate numerical expression <expr>                                        
    % | │ %j <expr>    # Evaluate numerical expression <expr> (JSON mode)                            
-   %j | Usage: %j[j] <expr>   # Evaluate numerical expression <expr> (JSON mode)                    [0;0H0> %l|                                                                                              [0;0H0> %l|
+   % | Expression syntax and functions:                                                             [0;0H0> %l|                                                                                              [0;0H0> %l|
  - %L | Usage: %L[q] <str>   # Calculate length of string <str>. Quiet mode stores value in `$?`    
    %L |                        register.                                                            
    %L | │ %L <str>     # Calculate length of string <str>. Quiet mode stores value in `$?` register.
