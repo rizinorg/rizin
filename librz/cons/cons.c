@@ -601,6 +601,7 @@ RZ_API RzCons *rz_cons_free(RZ_NONNULL RzCons *cons) {
 	RZ_FREE(cons->input->readbuffer);
 	RZ_FREE(cons->input);
 	RZ_FREE(cons->break_word);
+	RZ_FREE(cons->highlight);
 	cons_context_deinit(cons->context);
 	if (cons->context != &cons->default_context) {
 		RZ_FREE(cons->context);
@@ -1757,7 +1758,7 @@ RZ_API void rz_cons_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const char *wor
 
 		/* Pass NULL for out - cons->context->buffer already holds the original string */
 		l = rz_str_ansi_filter(clean, NULL, &cpos, -1);
-		if (l <= 0 || !cpos) {
+		if (!cpos) {
 			free(clean);
 			free(cpos);
 			return;
