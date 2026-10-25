@@ -6,7 +6,7 @@ on:
       - "master"
       - "dev"
       - "stable"
-      - "container-*"
+      - "docker-special-*"
     tags:
       - v*
   schedule:
