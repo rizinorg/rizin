@@ -6284,7 +6284,12 @@ RZ_IPI RzCmdStatus rz_load_and_analyze_all_preludes_handler(RzCore *core, int ar
 			file_path,
 			info->arch, info->bits, info->big_endian ? 'B' : 'L',
 			file_arch, file_bits, file_big_endian ? 'B' : 'L');
-		goto cleanup;
+		if (!rz_cons_is_interactive(core->cons)) {
+			goto cleanup;
+		}
+		if (!rz_cons_yesno(core->cons, 'n', "Do you still want to use this prologues for current binary? (y/N)")) {
+			goto cleanup;
+		}
 	}
 
 	const RzJson *prologues_js = rz_json_get(json, "prologues");
