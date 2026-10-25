@@ -122,8 +122,10 @@ RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set) {
 /**
  * \brief Return number of elements saved in the set.
  */
-RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
-	rz_return_val_if_fail(set, 0);
+RZ_API ut32 rz_set_s_size(const RZ_NULLABLE RzSetS *set) {
+	if (!set) {
+		return 0;
+	}
 	return ht_sp_size((HtSP *)set);
 }
 
