@@ -189,11 +189,52 @@ bool test_cons_misc(void) {
 	mu_end;
 }
 
+bool test_cons_highlight(void) {
+	RzCons *cons = rz_cons_new();
+
+	rz_cons_reset(cons);
+	rz_cons_strcat(cons, "foo bar");
+	rz_cons_highlight(cons, "foo");
+	mu_assert_streq(rz_cons_get_buffer(cons), "\x1b[7mfoo\x1b[27m bar", "highlight plain word");
+
+	rz_cons_reset(cons);
+	rz_cons_strcat(cons, "foo foo");
+	rz_cons_highlight(cons, "foo");
+	mu_assert_streq(rz_cons_get_buffer(cons), "\x1b[7mfoo\x1b[27m \x1b[7mfoo\x1b[27m", "highlight all occurrences");
+
+	rz_cons_reset(cons);
+	rz_cons_strcat(cons, "\x1b[32mfoo\x1b[0m bar");
+	rz_cons_highlight(cons, "foo");
+	mu_assert_streq(rz_cons_get_buffer(cons), "\x1b[32m\x1b[7mfoo\x1b[27m bar", "highlight word inside ansi");
+
+	// A buffer with only ansi escapes has no visible text, but the word must
+	// still be remembered, otherwise rz_cons_flush calls highlight nothing
+	rz_cons_reset(cons);
+	rz_cons_strcat(cons, "\x1b[32m\x1b[0m");
+	rz_cons_highlight(cons, "bar");
+	mu_assert_streq(cons->highlight, "bar", "word recorded for ansi-only buffer");
+	mu_assert_streq(rz_cons_get_buffer(cons), "\x1b[32m\x1b[0m", "ansi-only buffer unchanged");
+
+	rz_cons_reset(cons);
+	rz_cons_strcat(cons, "foo bar");
+	rz_cons_highlight(cons, "");
+	mu_assert_streq(rz_cons_get_buffer(cons), "foo bar", "empty word does not change buffer");
+	mu_assert_null(cons->highlight, "empty word clears highlight");
+
+	rz_cons_reset(cons);
+	rz_cons_highlight(cons, "foo");
+	mu_assert_null(rz_cons_get_buffer(cons), "empty buffer stays empty");
+
+	rz_cons_free(cons);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_justify);
 	mu_run_test(test_cons_at);
 	mu_run_test(test_cons_misc);
+	mu_run_test(test_cons_highlight);
 	return tests_passed != tests_run;
 }
 
