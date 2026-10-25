@@ -6596,6 +6596,10 @@ static char *choose_function_name_cb(ut64 addr, void *user) {
 }
 
 static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
+	RzICFG *icfg = rz_icfg_new();
+	if (!icfg) {
+		return false;
+	}
 	RzAbsIntDriverConfig config = {
 		.intr = core->intr,
 		.analysis = core->analysis,
@@ -6610,7 +6614,7 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	if (rz_config_get_bool(core->config, "inquiry.comment")) {
 		config.dimens |= RZ_ABSINT_RESULT_DIMEN_COMMENTS;
 	}
-	bool success = rz_absint_driver_run(&config);
+	bool success = rz_absint_driver_run(&config, icfg);
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
 	}

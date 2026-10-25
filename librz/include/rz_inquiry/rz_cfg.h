@@ -11,9 +11,14 @@
 #include <rz_util.h>
 
 /**
- * \brief A map from function entry point addresses to the respective function CFGs.
+ * \brief The inter-procedural CFG of the program.
  */
-typedef struct rz_cfg_map_t RzCFGMap;
+typedef struct rz_icfg_t RzICFG;
+
+/**
+ * \brief The CFG of a single procedure.
+ */
+typedef struct rz_cfg_t RzCFG;
 
 typedef enum {
 	RZ_CFG_NODE_NON = 0, ///< No attributes.
@@ -34,6 +39,10 @@ typedef struct rz_cfg_node_t {
 	 */
 	RzVector /*<ut16>*/ insn_offsets;
 	/**
+	 * \brief The function entry points this block can be reached from without walking a call edge.
+	 */
+	RzVector /*<ut64>*/ fcn_memberships;
+	/**
 	 * \brief Block attributes. Kept in sync with the CFG.
 	 * Used for accessing most important information, without the need to access the CFG edges.
 	 */
@@ -49,19 +58,21 @@ typedef enum rz_cfg_edge_type_t {
 	 * - manipulates some kind of stack
 	 * - manipulates the argument registers.
 	 * Not all of them have to be present of course.
+	 *
+	 * NOTE: Tail calls are call edges as well, even though they are often
+	 * "jump" instructions in assembly.
 	 */
 	RZ_CFG_EDGE_TYPE_CALL,
 	RZ_CFG_EDGE_TYPE_RETURN, ///< Return from procedure.
 } RzCFGEdgeType;
 
-RZ_API RZ_OWN RzCFGMap *rz_cfg_map_new();
-RZ_API void rz_cfg_map_free(RZ_NULLABLE RZ_OWN RzCFGMap *);
-RZ_API RZ_BORROW RzGraph *rz_cfg_map_get_cfg(RZ_NONNULL RZ_BORROW RzCFGMap *map, ut64 entry_point);
+RZ_API RZ_OWN RzICFG *rz_icfg_new();
+RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *);
+RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out);
 
-RZ_API RZ_OWN RzGraph *rz_cfg_new();
-RZ_API void rz_cfg_free(RZ_NULLABLE RZ_OWN RzGraph *);
+RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg);
 
-RZ_API RZ_OWN RzCFGNode *rz_cfg_node_new();
-RZ_API void rz_cfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *);
+RZ_API RZ_OWN RzCFGNode *rz_icfg_node_new();
+RZ_API void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *);
 
 #endif // RZ_CFG
