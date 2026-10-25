@@ -263,7 +263,7 @@ RZ_API const char *rz_print_byte_color_pal(RZ_NULLABLE const RzConsPrintablePale
 		break;
 	}
 	if (RZ_BETWEEN(0x01, byte, 0x7e)) {
-		return P(b0xlo) : IS_PRINTABLE(byte) ? P(btext) : Color_MAGENTA : P(other)
+		return IS_PRINTABLE(byte) && P(btext) : P(b0xlo) : P(other)
 		    : Color_WHITE;
 	} else if (RZ_BETWEEN(0x80, byte, 0xfe)) {
 		return P(b0xhi) : P(other) : Color_WHITE;
