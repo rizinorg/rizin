@@ -54,6 +54,7 @@ const char *block_verdict_names[] = {
  * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
  */
 typedef enum {
+	CFG_CONFLICT_OBSV_INVALID = 0,
 	// Positive hints that the block is actually a function entry point:
 	CFG_CONFLICT_OBSV_SYMBOL = 1 << 0, ///< The block is located at a symbol's address.
 	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The block is the target of a call instruction.
@@ -279,9 +280,11 @@ RZ_API RzAbsIntCFGConflictAddResult rz_absint_cfg_conflict_add(RZ_NONNULL RzAbsI
 }
 
 static void score_add(BlockObservations obs, BlockScore *score) {
+	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N && rz_bits_count_ones_ut64(obs) == 1);
+	size_t idx = rz_bits_trailing_zeros(obs);
 	score->total_obsv++;
-	for (size_t i = 0; hint_scores[obs].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
-		score->score[hint_scores[obs].scores[i].verdict] += hint_scores[obs].scores[i].score;
+	for (size_t i = 0; hint_scores[idx].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
+		score->score[hint_scores[idx].scores[i].verdict] += hint_scores[idx].scores[i].score;
 	}
 }
 
