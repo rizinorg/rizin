@@ -185,18 +185,6 @@ static void report_yield_xref(
 		// TODO: we might also want to report multiple values here depending on the value domain
 		goto cleanup;
 	}
-	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(ctx->inst->arch_name, "hexagon") &&
-		from + insn_pkt_size == rz_bv_to_ut64(&to_bv)) {
-		// Ugly work around.
-		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
-		// end of each and every instruction packet.
-		// This is necessary because the RzIL VM would otherwise just add 4 to the PC,
-		// which is too little for a packet with 2+ instructions.
-		// We don't want to report the code references to the next instruction
-		// packet. So skip them here.
-		goto cleanup;
-	}
 
 	ut64 to_addr = rz_bv_to_ut64(&to_bv);
 	RzAnalysisXRef *xref = rz_vector_push(&ctx->res->xrefs, NULL);
@@ -719,12 +707,12 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		bool is_call = ctx->block_stores_ret_addr;
 
 		if (is_const) {
-			RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", ctx->astate->pc, rz_bv_to_ut64(&eval_out_bv));
-			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
+			ut64 dst = rz_bv_to_ut64(&eval_out_bv);
+			RZ_LOG_DEBUG("prototype: %s - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", is_call ? "CALL (skipped)" : "JMP", ctx->astate->pc, dst);
 			if (is_call) {
-				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
+				rz_vector_push(&ctx->block->call_targets, &dst);
 			}
-			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, eval_out, xref_type);
+			// The jump targets are added after the block is finished.
 		}
 
 		if (is_call) {
@@ -880,7 +868,7 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 		}
 		if (interp_is_collecting_states(ctx) && astate->pc != next_pc) {
 			// Constant jump other than fallthrough, meaning interpretation will continue in another block
-			interp_block_add_non_fallthrough_target(ctx->block, astate->pc);
+			interp_block_add_jump_target(ctx->block, astate->pc);
 			break;
 		}
 	}

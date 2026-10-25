@@ -40,7 +40,7 @@ RZ_IPI bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState 
 
 RZ_IPI void interp_blocks_init(RzAbsIntRunContext *ctx);
 RZ_IPI void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks);
-RZ_IPI void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 target);
+RZ_IPI void interp_block_add_jump_target(RzAbsIntBlock *block, ut64 target);
 RZ_IPI bool interp_block_tree_as_str(const RzIntervalTree /* RzAbsIntBlock */ *blocks, RZ_NONNULL RZ_OUT RzStrBuf *sb);
 RZ_IPI void interp_block_mark_uninterpreted(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *block);
 
