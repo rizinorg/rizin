@@ -190,7 +190,7 @@ if get_option('enable_tests')
         rz_mark_dep,
         rzheap_dep,
         lrt,
-      ] + (test == 'unum' ? [mth] : []),
+      ] + (test in ['unum', 'json'] ? [mth] : []),
       install: false,
       install_rpath: rpath_exe,
       implicit_include_directories: false,

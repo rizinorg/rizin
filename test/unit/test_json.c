@@ -5,6 +5,8 @@
 
 #include <rz_util/rz_json.h>
 #include <rz_util/rz_strbuf.h>
+#include <float.h>
+#include <fenv.h>
 #include "minunit.h"
 
 typedef struct json_test_t {
@@ -1029,6 +1031,21 @@ static int check_expected_60(RzJson *j) {
 	return MU_PASSED;
 }
 
+static int check_expected_61(RzJson *j) {
+	mu_assert_eq(j->type, RZ_JSON_ARRAY, "array type");
+	mu_assert_eq(j->children.count, 3, "array size");
+	const RzJson *child = j->children.first;
+	mu_assert_eq(child->type, RZ_JSON_DOUBLE, "double type");
+	mu_assert_true(child->num.dbl_value == DBL_MIN, "smallest normal value");
+	child = child->next;
+	mu_assert_eq(child->type, RZ_JSON_DOUBLE, "double type");
+	mu_assert_true(child->num.dbl_value == 4.9406564584124654e-324, "smallest subnormal value");
+	child = child->next;
+	mu_assert_eq(child->type, RZ_JSON_DOUBLE, "double type");
+	mu_assert_true(child->num.dbl_value == 0.0 && signbit(child->num.dbl_value), "underflow to -0.0");
+	return MU_PASSED;
+}
+
 JsonTest tests[] = {
 	{ // 0
 		"    {\n      \"some-int\": 195,\n      \"array1\": [ 3, 5.1, -7, \"nin"
@@ -1277,6 +1294,12 @@ JsonTest tests[] = {
 	{ // 60
 		"{\n \"bla\": \"foo\"\n}\n",
 		check_expected_60 },
+	{ // 61
+		"[2.2250738585072014e-308, 4.94065645841247e-324, -1e-400]",
+		check_expected_61 },
+	{ // 62
+		"[1e400]",
+		NULL },
 };
 
 static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {
@@ -1291,6 +1314,51 @@ static int test_json(int test_number, char *input, int (*check)(RzJson *j)) {
 		rz_json_free(json);
 	}
 	mu_end;
+}
+
+static int test_json_float_range() {
+	const char *values[] = {
+		"18446744073709551616.0", "-9223372036854775809.0",
+		"123456789012345678901234567890e-20"
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(values); i++) {
+		char *input = strdup(values[i]);
+		RzJson *json = rz_json_parse(input);
+		bool valid = json && json->type == RZ_JSON_DOUBLE &&
+			json->num.dbl_value == strtod(values[i], NULL);
+		rz_json_free(json);
+		free(input);
+		mu_assert(values[i], valid);
+	}
+	mu_end;
+}
+
+static int test_json_overflow_rounding() {
+#if defined(FE_TONEAREST) && defined(FE_DOWNWARD) && defined(FE_UPWARD) && defined(FE_TOWARDZERO)
+	const int modes[] = { FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO };
+	int saved = fegetround();
+	if (saved < 0) {
+		mu_ignore;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(modes); i++) {
+		if (fesetround(modes[i])) {
+			continue;
+		}
+		char positive[] = "1e400";
+		char negative[] = "-1e400";
+		RzJson *a = rz_json_parse(positive);
+		RzJson *b = rz_json_parse(negative);
+		bool rejected = !a && !b;
+		rz_json_free(a);
+		rz_json_free(b);
+		int restored = fesetround(saved);
+		mu_assert_eq(restored, 0, "restore rounding mode");
+		mu_assert_true(rejected, "overflow must fail even when rounded to a finite value");
+	}
+	mu_end;
+#else
+	mu_ignore;
+#endif
 }
 
 static int test_json_eq() {
@@ -1333,6 +1401,8 @@ static int all_tests(void) {
 		mu_run_test_named(test_json, testname, i, input, tests[i].check);
 		free(input);
 	}
+	mu_run_test(test_json_float_range);
+	mu_run_test(test_json_overflow_rounding);
 	mu_run_test(test_json_eq);
 	return tests_passed != tests_run;
 }
