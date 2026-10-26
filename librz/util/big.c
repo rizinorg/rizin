@@ -34,12 +34,17 @@ RZ_API void rz_big_fini(RzNumBig *b) {
 	_r_big_zero_out(b);
 }
 
+/** \brief Assign a signed 64-bit value, including ST64_MIN, to a bignum. */
 RZ_API void rz_big_from_int(RzNumBig *b, st64 n) {
 	rz_return_if_fail(b);
 
 	_r_big_zero_out(b);
 	b->sign = (n < 0) ? -1 : 1;
-	RZ_BIG_DTYPE_TMP v = n * b->sign;
+	// Unsigned negation can represent the magnitude of ST64_MIN.
+	RZ_BIG_DTYPE_TMP v = (RZ_BIG_DTYPE_TMP)n;
+	if (n < 0) {
+		v = (RZ_BIG_DTYPE_TMP)0 - v;
+	}
 
 	/* Endianness issue if machine is not little-endian? */
 #ifdef RZ_BIG_WORD_SIZE
