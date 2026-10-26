@@ -31,7 +31,9 @@ static struct {
 	{ "invalid", rz_offsetof(RzConsPrintablePalette, invalid), rz_offsetof(RzConsPalette, invalid) },
 	{ "other", rz_offsetof(RzConsPrintablePalette, other), rz_offsetof(RzConsPalette, other) },
 	{ "b0x00", rz_offsetof(RzConsPrintablePalette, b0x00), rz_offsetof(RzConsPalette, b0x00) },
+	{ "b0xlo", rz_offsetof(RzConsPrintablePalette, b0xlo), rz_offsetof(RzConsPalette, b0xlo) },
 	{ "b0x7f", rz_offsetof(RzConsPrintablePalette, b0x7f), rz_offsetof(RzConsPalette, b0x7f) },
+	{ "b0xhi", rz_offsetof(RzConsPrintablePalette, b0xhi), rz_offsetof(RzConsPalette, b0xhi) },
 	{ "b0xff", rz_offsetof(RzConsPrintablePalette, b0xff), rz_offsetof(RzConsPalette, b0xff) },
 	{ "math", rz_offsetof(RzConsPrintablePalette, math), rz_offsetof(RzConsPalette, math) },
 	{ "bin", rz_offsetof(RzConsPrintablePalette, bin), rz_offsetof(RzConsPalette, bin) },
@@ -162,7 +164,9 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	memset(&ctx->cpal, 0, sizeof(ctx->cpal));
 
 	ctx->cpal.b0x00 = (RzColor)RzColor_GREEN;
+	ctx->cpal.b0xlo = (RzColor)RzColor_YELLOW;
 	ctx->cpal.b0x7f = (RzColor)RzColor_CYAN;
+	ctx->cpal.b0xhi = (RzColor)RzColor_WHITE;
 	ctx->cpal.b0xff = (RzColor)RzColor_RED;
 	ctx->cpal.args = (RzColor)RzColor_YELLOW;
 	ctx->cpal.bin = (RzColor)RzColor_CYAN;

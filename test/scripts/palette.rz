@@ -15,7 +15,9 @@ ec input rgb:cccccc
 ec invalid rgb:e74856 . bold
 ec other rgb:cccccc
 ec b0x00 rgb:13a10e
+ec b0xlo rgb:c19c00
 ec b0x7f rgb:3a96dd
+ec b0xhi rgb:cccccc
 ec b0xff rgb:c50f1f
 ec math rgb:c19c00
 ec bin rgb:3a96dd

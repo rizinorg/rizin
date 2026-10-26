@@ -12,12 +12,10 @@ static bool load_theme(RzCore *core, const char *path) {
 	if (!rz_file_exists(path)) {
 		return false;
 	}
-	core->cmdfilter = "ec ";
 	bool res = rz_core_cmd_file(core, path);
 	if (res) {
 		rz_cons_pal_update_event(core->cons);
 	}
-	core->cmdfilter = NULL;
 	return res;
 }
 
@@ -262,7 +260,11 @@ RZ_IPI RzCmdStatus rz_cmd_eval_color_list_help_handler(RzCore *core, int argc, c
 
 RZ_IPI RzCmdStatus rz_cmd_eval_color_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc == 3) {
-		if (!rz_cons_pal_set(core->cons, argv[1], argv[2])) {
+		const char *color_var = argv[2];
+		if (rz_str_startswith(argv[2], "$")) {
+			color_var = rz_cmd_alias_get(core->rcmd, color_var, 0);
+		}
+		if (!rz_cons_pal_set(core->cons, argv[1], color_var)) {
 			return RZ_CMD_STATUS_ERROR;
 		}
 		rz_cons_pal_update_event(core->cons);

@@ -4,6 +4,7 @@
 
 #include <rz_cons.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_print.h>
 
 #define DEFAULT_SPEED 1
 #define ZOOM_DEFAULT  1
@@ -500,28 +501,6 @@ RZ_API void rz_histogram_interactive_zoom_out(RzHistogramInteractive *hist) {
 	}
 }
 
-// Return the colour string used by `px` for a single byte (mirrors
-// rz_print_byte_color). Caller is responsible for resetting after.
-// Returns Color_RESET ("") when colour rendering is disabled.
-static const char *hex_byte_color(const RzConsPrintablePalette *pal, bool use_color, ut8 b) {
-	if (!use_color) {
-		return "";
-	}
-	if (b == 0x00) {
-		return pal && pal->b0x00 ? pal->b0x00 : Color_GREEN;
-	}
-	if (b == 0x7f) {
-		return pal && pal->b0x7f ? pal->b0x7f : Color_YELLOW;
-	}
-	if (b == 0xff) {
-		return pal && pal->b0xff ? pal->b0xff : Color_RED;
-	}
-	if (IS_PRINTABLE(b)) {
-		return pal && pal->btext ? pal->btext : Color_WHITE;
-	}
-	return pal && pal->other ? pal->other : Color_MAGENTA;
-}
-
 // Append one row of 16 bytes as 8 space-separated pairs ("4865 6c6c ..."),
 // px-style: each byte wrapped in its colour code when opts->color is set,
 // missing bytes (idx >= bytes_len) rendered as two spaces to keep width stable.
@@ -533,7 +512,7 @@ static void append_hex_preview_row(RzStrBuf *buf, const RzHistogramOptions *opts
 		ut32 idx = offset + i;
 		if (bytes && idx < bytes_len) {
 			ut8 b = bytes[idx];
-			const char *col = hex_byte_color(pal, use_color, b);
+			const char *col = rz_print_byte_color_pal(pal, b, use_color);
 			if (use_color && *col) {
 				rz_strbuf_appendf(buf, "%s%02x%s", col, b, Color_RESET);
 			} else {
