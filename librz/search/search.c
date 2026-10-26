@@ -547,11 +547,16 @@ static void *search_cancel_th(void *user) {
 		if (!rz_atomic_bool_get(ctx->loop)) {
 			break;
 		}
+		if (ctx->opt->max_hits && rz_th_queue_size(ctx->hits) >= ctx->opt->max_hits) {
+			rz_atomic_bool_set(ctx->loop, false);
+			break;
+		}
+
 		print_intervals(ctx->finished_intervals, false);
 		if (opt->show_progress == RZ_SEARCH_PROGRESS_NUM_HITS) {
 			eprintf("Searching... hits: %" PFMTSZu "\r", rz_th_queue_size(ctx->hits));
 		}
-		if (rz_interrupt_is_breaked(opt->intr)) {
+		if (opt->intr && rz_interrupt_is_breaked(opt->intr)) {
 			rz_atomic_bool_set(ctx->loop, false);
 			break;
 		}
@@ -731,17 +736,15 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 	ctx.hits = hits;
 	ctx.finished_intervals = intervals;
 
-	if (opt->intr || opt->show_progress != RZ_SEARCH_PROGRESS_DISABLED) {
-		// create cancel thread
-		cancel_th = rz_th_new(search_cancel_th, &ctx);
-		if (!cancel_th) {
-			RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
-			rz_th_queue_free(hits);
-			rz_th_queue_free(intervals);
-			rz_atomic_bool_free(ctx.loop);
-			rz_list_free(windows);
-			return NULL;
-		}
+	// create cancel thread
+	cancel_th = rz_th_new(search_cancel_th, &ctx);
+	if (!cancel_th) {
+		RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
+		rz_th_queue_free(hits);
+		rz_th_queue_free(intervals);
+		rz_atomic_bool_free(ctx.loop);
+		rz_list_free(windows);
+		return NULL;
 	}
 
 	if (!rz_th_iterate_list(windows, search_iterator_io_map_cb, opt->max_threads, &ctx)) {
@@ -766,6 +769,10 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_io(
 
 	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
 	rz_list_sorted_uniq(results, (RzListComparator)rz_search_hit_cmp, NULL);
+
+	while (opt->max_hits && rz_list_length(results) > opt->max_hits) {
+		rz_search_hit_free(rz_list_pop(results));
+	}
 	return results;
 }
 
@@ -849,17 +856,15 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 	ctx.hits = hits;
 	ctx.finished_intervals = intervals;
 
-	if (opt->intr || opt->show_progress != RZ_SEARCH_PROGRESS_DISABLED) {
-		// create cancel thread
-		cancel_th = rz_th_new(search_cancel_th, &ctx);
-		if (!cancel_th) {
-			RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
-			rz_th_queue_free(hits);
-			rz_th_queue_free(intervals);
-			rz_atomic_bool_free(ctx.loop);
-			rz_list_free(windows);
-			return NULL;
-		}
+	// create cancel thread
+	cancel_th = rz_th_new(search_cancel_th, &ctx);
+	if (!cancel_th) {
+		RZ_LOG_ERROR("search: cannot allocate cancel thread.\n");
+		rz_th_queue_free(hits);
+		rz_th_queue_free(intervals);
+		rz_atomic_bool_free(ctx.loop);
+		rz_list_free(windows);
+		return NULL;
 	}
 
 	if (!rz_th_iterate_list(windows, search_iterator_io_map_cb, opt->max_threads, &ctx)) {
@@ -885,6 +890,10 @@ RZ_API RZ_OWN RzList /*<RzSearchHit *>*/ *rz_search_on_buffer(
 
 	rz_list_sort(results, (RzListComparator)rz_search_hit_cmp, NULL);
 	rz_list_sorted_uniq(results, (RzListComparator)rz_search_hit_cmp, NULL);
+
+	while (opt->max_hits && rz_list_length(results) > opt->max_hits) {
+		rz_search_hit_free(rz_list_pop(results));
+	}
 	return results;
 }
 
