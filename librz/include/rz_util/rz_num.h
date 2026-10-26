@@ -24,7 +24,7 @@ extern "C" {
  */
 typedef enum {
 	RZ_NUM_KIND_NONE = 0, ///< default / uninitialised
-	RZ_NUM_KIND_UT64, ///< ordinary 64-bit unsigned integer
+	RZ_NUM_KIND_UT64, ///< 64-bit integer bits, with signedness in RzNumValue.negative
 	RZ_NUM_KIND_BIG, ///< arbitrary-precision integer, see RzNumBig
 	RZ_NUM_KIND_BITVECTOR, ///< fixed-width bit-vector, see RzBitVector
 	RZ_NUM_KIND_FLOAT, ///< IEEE-754 float, currently double-precision
@@ -66,10 +66,16 @@ typedef enum {
  * A value with err != RZ_NUM_ERR_OK is still a well-formed RzNumValue, so a
  * caller can always release it with rz_num_value_fini(); on error the payload
  * is typically RZ_NUM_KIND_UT64 / 0, but consumers must not rely on that.
+ *
+ * For RZ_NUM_KIND_UT64, negative distinguishes negative integers from unsigned
+ * values with the same bits. The supported range is [-2^63, 2^64). A negative
+ * value uses two's complement in val.n and must have its high bit set.
+ * Zero is never negative. Other kinds ignore this flag.
  */
 typedef struct rz_num_value_t {
 	RzNumKind kind;
 	RzNumError err;
+	bool negative; ///< true only for a negative RZ_NUM_KIND_UT64 value
 	union {
 		ut64 n; ///< valid when kind == RZ_NUM_KIND_UT64
 		double d; ///< valid when kind == RZ_NUM_KIND_FLOAT
@@ -88,6 +94,7 @@ static inline void rz_num_value_init(RzNumValue *v) {
 	}
 	v->kind = RZ_NUM_KIND_NONE;
 	v->err = RZ_NUM_ERR_OK;
+	v->negative = false;
 	v->val.n = 0;
 }
 
@@ -184,6 +191,7 @@ static inline void rz_num_value_fini(RzNumValue *v) {
 	}
 	v->kind = RZ_NUM_KIND_NONE;
 	v->err = RZ_NUM_ERR_OK;
+	v->negative = false;
 	v->val.n = 0;
 }
 

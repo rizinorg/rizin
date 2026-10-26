@@ -302,36 +302,138 @@ static bool float_binop_of(TSSymbol sym, RzNumExpressionOp *out) {
 	return true;
 }
 
-// Evaluate the sub-expression a node spans to a concrete value and emit
-// it as a constant leaf (used for constructs with no structural form).
-static RzNumExpression *build_ground(BuildCtx *c, TSNode n) {
+// Evaluate the sub-expression a node spans to a concrete value.
+static bool eval_subexpr(BuildCtx *c, TSNode n, RzNumValue *v) {
+	rz_num_value_init(v);
 	char *text = node_text(n, c->src);
 	if (!text) {
 		build_set_err(c, "out of memory");
-		return NULL;
+		return false;
 	}
-	RzNumValue v;
-	rz_num_value_init(&v);
 	char *everr = NULL;
-	bool ok = rz_num_math_value_ex(c->num, text, c->opts, &v, &everr);
+	bool ok = rz_num_math_value_ex(c->num, text, c->opts, v, &everr);
 	free(text);
 	if (!ok) {
 		build_set_err(c, "cannot ground sub-expression: %s",
 			everr ? everr : "evaluation failed");
 		free(everr);
-		rz_num_value_fini(&v);
-		return NULL;
+		rz_num_value_fini(v);
+		return false;
 	}
 	free(everr);
+	return true;
+}
+
+/**
+ * \brief Restrict sign inspection to literal arithmetic that is safe to repeat.
+ *
+ * Reads, callbacks and assignments may change between evaluations. Nested
+ * comparisons also need grounding because RzNum returns integers where RzIL
+ * returns booleans. The depth budget bounds this optional structural path;
+ * larger expressions fall back to the evaluator's own depth checks.
+ */
+static bool is_literal_arithmetic(TSNode n, unsigned budget) {
+	if (!budget) {
+		return false;
+	}
+	const RzNumSymCache *s = rz_num_parse_syms();
+	TSSymbol sym = ts_node_symbol(n);
+	if (sym == s->sym_number) {
+		return true;
+	}
+	if (sym == s->sym_expression || sym == s->sym_source_file ||
+		sym == s->sym_parenthesized_expression || sym == s->sym_argument) {
+		return ts_node_named_child_count(n) == 1 &&
+			is_literal_arithmetic(ts_node_named_child(n, 0), budget - 1);
+	}
+	if (sym == s->sym_unary_minus || sym == s->sym_unary_plus || sym == s->sym_logical_negation) {
+		return is_literal_arithmetic(EXPR_FIELD(n, "right"), budget - 1);
+	}
+	RzNumExpressionOp op;
+	return binop_of(sym, &op) && op != RZ_NUM_EXPRESSION_OP_EQ &&
+		op != RZ_NUM_EXPRESSION_OP_ULE &&
+		is_literal_arithmetic(EXPR_FIELD(n, "left"), budget - 1) &&
+		is_literal_arithmetic(EXPR_FIELD(n, "right"), budget - 1);
+}
+
+/**
+ * \brief Select an IL operation only when it preserves the evaluator's value.
+ *
+ * Mixed signed/unsigned values need more than 64 signed bits. RzIL also gives
+ * smod a different sign from C when only the divisor is negative. Ground these
+ * cases instead of emitting an operation with different semantics.
+ */
+static bool select_integer_op(BuildCtx *c, TSNode l, TSNode r, RzNumExpressionOp *op) {
+	if (!is_literal_arithmetic(l, 64) || !is_literal_arithmetic(r, 64)) {
+		return false;
+	}
+	RzNumValue lv, rv;
+	if (!eval_subexpr(c, l, &lv)) {
+		return false;
+	}
+	if (!eval_subexpr(c, r, &rv)) {
+		rz_num_value_fini(&lv);
+		return false;
+	}
+	bool keep = false;
+	bool division = *op == RZ_NUM_EXPRESSION_OP_DIV || *op == RZ_NUM_EXPRESSION_OP_SDIV ||
+		*op == RZ_NUM_EXPRESSION_OP_MOD || *op == RZ_NUM_EXPRESSION_OP_SMOD;
+	if (lv.kind == RZ_NUM_KIND_BITVECTOR && rv.kind == RZ_NUM_KIND_BITVECTOR) {
+		keep = rz_bv_len(lv.val.bv) == rz_bv_len(rv.val.bv);
+		if (division && rz_bv_is_zero_vector(rv.val.bv)) {
+			build_set_err(c, "division by zero");
+			keep = false;
+		}
+	} else if (lv.kind == RZ_NUM_KIND_UT64 && rv.kind == RZ_NUM_KIND_UT64) {
+		keep = true;
+		if (division && !rv.val.n) {
+			build_set_err(c, "division by zero");
+			keep = false;
+		} else if (*op == RZ_NUM_EXPRESSION_OP_SMOD) {
+			keep = (st64)lv.val.n < 0 || (st64)rv.val.n >= 0;
+		} else if (*op != RZ_NUM_EXPRESSION_OP_SDIV && (lv.negative || rv.negative)) {
+			bool fits = (lv.negative || lv.val.n <= (ut64)ST64_MAX) &&
+				(rv.negative || rv.val.n <= (ut64)ST64_MAX);
+			switch (*op) {
+			case RZ_NUM_EXPRESSION_OP_DIV:
+				*op = RZ_NUM_EXPRESSION_OP_SDIV;
+				keep = fits;
+				break;
+			case RZ_NUM_EXPRESSION_OP_MOD:
+				*op = RZ_NUM_EXPRESSION_OP_SMOD;
+				keep = fits && lv.negative;
+				break;
+			case RZ_NUM_EXPRESSION_OP_EQ:
+				keep = fits;
+				break;
+			default:
+				keep = false;
+				break;
+			}
+		}
+	}
+	rz_num_value_fini(&lv);
+	rz_num_value_fini(&rv);
+	return keep;
+}
+
+// Evaluate the sub-expression a node spans to a concrete value and emit
+// it as a constant leaf (used for constructs with no structural form).
+static RzNumExpression *build_ground(BuildCtx *c, TSNode n) {
+	RzNumValue v;
+	if (!eval_subexpr(c, n, &v)) {
+		return NULL;
+	}
 	// Width follows the grounded value's kind: a bit-vector keeps its
 	// width, everything else projects to the default 64-bit domain.
-	ut32 width = EXPR_DEFAULT_WIDTH;
 	if (v.kind == RZ_NUM_KIND_BITVECTOR && v.val.bv) {
-		width = rz_bv_len(v.val.bv);
+		RzBitVector *bv = rz_bv_dup(v.val.bv);
+		rz_num_value_fini(&v);
+		return expr_bv(bv);
 	}
 	ut64 value = rz_num_value_to_ut64(&v);
 	rz_num_value_fini(&v);
-	return expr_bv(rz_bv_new_from_ut64(width ? width : EXPR_DEFAULT_WIDTH, value));
+	return expr_bv(rz_bv_new_from_ut64(EXPR_DEFAULT_WIDTH, value));
 }
 
 // Numeric literal -> float constant (for a '.'/'e' literal) or a grounded
@@ -414,7 +516,9 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 				bool lf = is_float_subexpr(c->src, l);
 				bool rf = is_float_subexpr(c->src, r);
 				if (lf && rf) {
-					return expr_binop(fop, build_node(c, l), build_node(c, r));
+					RzNumExpression *left = build_node(c, l);
+					RzNumExpression *right = build_node(c, r);
+					return expr_binop(fop, left, right);
 				}
 				if (lf != rf) {
 					return build_ground(c, n);
@@ -434,7 +538,16 @@ static RzNumExpression *build_node(BuildCtx *c, TSNode n) {
 				// bit-vector op: ground the whole node.
 				return build_ground(c, n);
 			}
-			return expr_binop(iop, build_node(c, l), build_node(c, r));
+			if ((iop == RZ_NUM_EXPRESSION_OP_DIV || iop == RZ_NUM_EXPRESSION_OP_MOD ||
+				    iop == RZ_NUM_EXPRESSION_OP_EQ || iop == RZ_NUM_EXPRESSION_OP_ULE ||
+				    iop == RZ_NUM_EXPRESSION_OP_SDIV || iop == RZ_NUM_EXPRESSION_OP_SMOD) &&
+				!select_integer_op(c, l, r, &iop)) {
+				return c->err ? NULL : build_ground(c, n);
+			}
+			// Grounded callbacks must run in the evaluator's left-to-right order.
+			RzNumExpression *left = build_node(c, l);
+			RzNumExpression *right = build_node(c, r);
+			return expr_binop(iop, left, right);
 		}
 	}
 

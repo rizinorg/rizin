@@ -458,10 +458,23 @@ RUN
 
 NAME=rz-ax float suffix on integers
 TOOL=rz-ax
-ARGS=10f -10f
+ARGS=10f -10f 18446744073709551615f
 EXPECT=<<EOF
 Fx41200000
 Fxc1200000
+Fx5f800000
+EOF
+RUN
+
+NAME=rz-ax floats and decimals of negative numbers
+TOOL=rz-ax
+ARGS=-1+sqrt(4) 0xffffffffffffffff+0.5
+EXPECT=<<EOF
+float   1
+scifmt  1
+hex     0x3ff0000000000000
+decimal 18446744073709551615.5
+scifmt  1.8446744073709552e+19
 EOF
 RUN
 
@@ -511,6 +524,18 @@ hex     0x40000000000000000000000000000000
 width   128 bits (approx)
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=rz-ax comparisons of negative numbers
+TOOL=rz-ax
+ARGS=-1<0 0>-1 -2<-1 -1==0xffffffffffffffff 0xffffffffffffffff>0
+EXPECT=<<EOF
+0x1
+0x1
+0x1
+0x0
+0x1
+EOF
 RUN
 
 NAME=rz-ax -L 0

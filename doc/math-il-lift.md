@@ -74,13 +74,13 @@ Operator glyphs at a glance
 | RzNum operator       | RzIL pure-op           | Unicode | ASCII   |
 |----------------------|------------------------|---------|---------|
 | `+` `-` `*`          | `add` `sub` `mul`      | `+` `-` `*` | `+` `-` `*` |
-| `/` `%`              | `div` `mod`            | `/` `%` | `/` `%` |
+| `/` `%`              | `div` `mod`, or `sdiv` `smod` on a negative operand | `/` `%` | `/` `%` |
 | `sdiv` `smod`        | `sdiv` `smod`          | `/⁺` `%⁺` | `/+` `%+` |
 | `&` `\|` `^`         | `logand` `logor` `logxor` | `&` `\|` `⊕` | `&` `\|` `^` |
 | `<<` `>>` (logical)  | `shiftl` `shiftr`      | `≪` `≫` | `<<` `>>` |
 | `sar` (arithmetic)   | `shiftr`, sign fill    | `≫` | `>>` |
 | `==`                 | `eq`                   | `≡` | `==` |
-| `<=` (unsigned)      | `ule`                  | `≦` | `<=` |
+| `<=`                 | `ule`, grounded on a negative operand | `≦` | `<=` |
 | `~`                  | `lognot`               | `~` | `~` |
 | unary `-`            | `neg`                  | `−` | `-` |
 | `? :` (ternary)      | `ite`                  | `↠` | `->` |
@@ -157,6 +157,27 @@ Division and modulo, signed and unsigned:
     10 smod 3                   => (0xa₆₄ %⁺ 0x3₆₄)
     256 sar 2                   => (0x100₆₄ ≫ 0x2₆₄ ↑0x100₆₄)
 
+For integer literal arithmetic, `/` and `%` use signed IL operations
+when an operand is negative and both operands fit the signed range:
+
+    -4 / 2                      => (−0x4₆₄ /⁺ 0x2₆₄)
+    -7 % 3                      => (−0x7₆₄ %⁺ 0x3₆₄)
+
+When a 64-bit IL operation would change the result, the lift evaluates
+the expression and embeds a constant. This covers mixed signed/unsigned
+division outside the signed range and the difference between C's remainder
+and RzIL's `smod` when only the divisor is negative:
+
+    7 % -3                      => 0x1₆₄
+    7 smod -3                   => 0x1₆₄
+    -4 / 0xfffffffffffffffe     => 0x0₆₄
+
+Sign inspection is limited to literal arithmetic. Expressions containing
+callbacks, reads or assignments are grounded as a whole, so choosing an
+operation does not evaluate them twice. Grounding also preserves bignum
+arithmetic and mixed bit-vector widths before converting the result to IL.
+Callbacks run in left-to-right order.
+
 `sar` (arithmetic right shift) is the same `shiftr` op with the shifted
 value's top bit `↑x` as the fill, so the sign is propagated instead of
 zero-filled.
@@ -171,11 +192,18 @@ the declared width through:
 Comparisons
 -----------
 
-`==` and `<=` (unsigned) have direct RzIL pure-ops and lift
-structurally:
+`==` and `<=` have direct RzIL pure-ops and lift structurally:
 
     1 == 1                      => (0x1₆₄ ≡ 0x1₆₄)
     5 <= 10                     => (0x5₆₄ ≦ 0xa₆₄)
+
+RzIL's `ule` compares unsigned values, and `eq` compares bit patterns.
+The lift therefore grounds `<=` with a negative integer and `==` when
+different signs can share the same bits:
+
+    -1 <= 0                     => 0x1₆₄
+    -1 == 0xffffffffffffffff    => 0x0₆₄
+    -1 == -1                    => (−0x1₆₄ ≡ −0x1₆₄)
 
 `<`, `>`, `>=`, `!=` compose from `eq`, `ule` and `lognot` in RzIL
 proper but have no single glyph the Unicode exporter emits, so the
