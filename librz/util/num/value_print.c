@@ -291,7 +291,7 @@ RZ_API void rz_num_value_print_ex(RZ_NONNULL const RzNumValue *v,
  * \brief Compact one-line stringification of an RzNumValue.
  *
  * Suitable for inline display where the multi-line print would be
- * too noisy.
+ * too noisy. A negative ut64 shows its sign, e.g. -0x2.
  * On error returns NULL.
  */
 RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
@@ -301,7 +301,9 @@ RZ_API RZ_OWN char *rz_num_value_tostring(RZ_NONNULL const RzNumValue *v) {
 	}
 	switch (v->kind) {
 	case RZ_NUM_KIND_UT64:
-		return rz_str_newf("0x%" PFMT64x, v->val.n);
+		return v->negative
+			? rz_str_newf("-0x%" PFMT64x, (ut64)0 - v->val.n)
+			: rz_str_newf("0x%" PFMT64x, v->val.n);
 	case RZ_NUM_KIND_FLOAT: {
 		double d = v->val.d;
 		if (isnan(d) && signbit(d)) {

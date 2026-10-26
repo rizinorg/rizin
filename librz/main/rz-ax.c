@@ -249,7 +249,11 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 		printf("%" PFMT64d "\n", (st64)n);
 		break;
 	case '0':
-		printf("0x%" PFMT64x "\n", n);
+		if (negative) {
+			printf("-0x%" PFMT64x "\n", (ut64)0 - n);
+		} else {
+			printf("0x%" PFMT64x "\n", n);
+		}
 		break;
 	case 'F': {
 		RZ_STATIC_ASSERT(sizeof(float) == 4);
@@ -358,6 +362,7 @@ static int help(bool verbose) {
 		NULL, NULL, "int     -> hex",     "rz-ax 10",
 		NULL, NULL, "hex     -> int",     "rz-ax 0xa",
 		NULL, NULL, "-int    -> hex",     "rz-ax -77",
+		NULL, NULL, "-int    -> bits",    "rz-ax '-77 & 0xffffffffffffffff'",
 		NULL, NULL, "-hex    -> int",     "rz-ax 0xffffffb3",
 		NULL, NULL, "int     -> bin",     "rz-ax b30",
 		NULL, NULL, "int     -> ternary", "rz-ax t42",

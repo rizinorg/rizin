@@ -112,7 +112,37 @@ NAME=rz-ax -1
 TOOL=rz-ax
 ARGS=-1
 EXPECT=<<EOF
+-0x1
+EOF
+RUN
+
+NAME=rz-ax (-4)/2
+TOOL=rz-ax
+ARGS=(-4)/2
+EXPECT=<<EOF
+-0x2
+EOF
+RUN
+
+NAME=rz-ax negative quotients and remainders
+TOOL=rz-ax
+ARGS=-7/2 -7%3 7%(-3) 0-4 0xfffffffffffffffc/2 18446744073709551615 -0x4/2
+EXPECT=<<EOF
+-0x3
+-0x1
+0x1
+-0x4
+0x7ffffffffffffffe
 0xffffffffffffffff
+-2
+EOF
+RUN
+
+NAME=rz-ax two's complement bits of a negative number
+TOOL=rz-ax
+ARGS=-4&0xffffffffffffffff
+EXPECT=<<EOF
+0xfffffffffffffffc
 EOF
 RUN
 

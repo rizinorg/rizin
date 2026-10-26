@@ -865,6 +865,16 @@ bool test_rz_num_math_value_negative() {
 	free(err);
 	err = NULL;
 
+	// Compact output must distinguish a negative value from identical unsigned bits.
+	mu_assert_true(rz_num_math_value(NULL, "(-4) / 2", &v, &err), "(-4) / 2");
+	s = rz_num_value_tostring(&v);
+	mu_assert_streq_free(s, "-0x2", "tostring of -2");
+	rz_num_value_fini(&v);
+	mu_assert_true(rz_num_math_value(NULL, "0xfffffffffffffffe", &v, &err), "0xfffffffffffffffe");
+	s = rz_num_value_tostring(&v);
+	mu_assert_streq_free(s, "0xfffffffffffffffe", "tostring of 2^64 - 2");
+	rz_num_value_fini(&v);
+	free(err);
 
 	mu_end;
 }
