@@ -456,6 +456,26 @@ Fxc2f3c000
 EOF
 RUN
 
+NAME=rz-ax float suffix on integers
+TOOL=rz-ax
+ARGS=10f -10f
+EXPECT=<<EOF
+Fx41200000
+Fxc1200000
+EOF
+RUN
+
+NAME=rz-ax hex numbers ending with f or d
+TOOL=rz-ax
+ARGS=1+0xf 0x10+0xd 2*0xad -77&0xffffffffffffffff
+EXPECT=<<EOF
+0x10
+0x1d
+0x15a
+0xffffffffffffffb3
+EOF
+RUN
+
 NAME=rz-ax -0xf
 TOOL=rz-ax
 ARGS=-0xf
