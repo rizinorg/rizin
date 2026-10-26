@@ -10,7 +10,7 @@
 #ifndef RZ_ABSINT
 #define RZ_ABSINT
 
-#include <rz_inquiry/rz_cfg.h>
+#include <rz_inquiry/rz_icfg.h>
 #include <rz_inquiry/rz_il_cache.h>
 #include <rz_arch.h>
 #include <rz_io.h>
