@@ -484,6 +484,35 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-ax negation of the most negative integer
+TOOL=rz-ax
+ARGS=-0x8000000000000000
+EXPECT=<<EOF
+-9223372036854775808
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rz-ax abs of the most negative integer
+TOOL=rz-ax
+ARGS=abs(0x8000000000000000)
+EXPECT=<<EOF
+0x8000000000000000
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rz-ax power of the most negative integer
+TOOL=rz-ax
+ARGS=0x8000000000000000**2
+EXPECT=<<EOF
+decimal 85070591730234615865843651857942052864
+hex     0x40000000000000000000000000000000
+width   128 bits (approx)
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=rz-ax -L 0
 TOOL=rz-ax
 ARGS=-L 0

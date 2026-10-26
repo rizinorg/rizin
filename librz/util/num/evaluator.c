@@ -1664,14 +1664,10 @@ static RzNumValue builtin_abs(EvalCtx *c, RzNumValue *a, int n) {
 				      : rz_big_decimal_dup(a[0].val.bigdec);
 		return r ? val_bigdecimal(r) : val_u64(0);
 	}
-	if (a[0].kind == RZ_NUM_KIND_UT64) {
-		st64 s = (st64)a[0].val.n;
-		return val_u64(s < 0 ? (ut64)(-s) : (ut64)s);
-	}
-	// Bignum / bitvector: no width-independent sign interpretation
-	// is meaningful, so just project to ut64 absolute value.
-	st64 s = (st64)to_u64(&a[0]);
-	return val_u64(s < 0 ? (ut64)(-s) : (ut64)s);
+	// Keep abs()'s signed 64-bit projection. Unsigned negation also
+	// handles ST64_MIN, whose magnitude does not fit in st64.
+	ut64 bits = to_u64(&a[0]);
+	return val_u64((st64)bits < 0 ? (ut64)0 - bits : bits);
 }
 
 static RzNumValue builtin_popcount(EvalCtx *c, RzNumValue *a, int n) {
@@ -2909,7 +2905,7 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 				demote_big_if_fits(&out);
 			}
 		} else {
-			out = val_u64((ut64)(-(st64)to_u64(&rv)));
+			out = val_u64((ut64)0 - to_u64(&rv));
 		}
 	} else {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "unhandled unary operator: %s", op);

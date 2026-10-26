@@ -15,6 +15,12 @@ static bool test_rz_big_from_to_int(void) {
 	rz_big_from_int(a, -0x7fff);
 	mu_assert_eq(-0x7fff, rz_big_to_int(a), "Failed rz_big_from_int");
 
+	// Its magnitude does not fit an st64
+	rz_big_from_int(a, INT64_MIN);
+	mu_assert_eq(rz_big_to_int(a), INT64_MIN, "rz_big_from_int INT64_MIN");
+	char *str = rz_big_to_hexstr(a);
+	mu_assert_streq_free(str, "-0x8000000000000000", "rz_big_from_int INT64_MIN hexstr");
+
 	rz_big_free(a);
 	mu_end;
 }
