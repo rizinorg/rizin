@@ -3,7 +3,7 @@
 
 rz_inquiry_sources = [
   'il_cache.c',
-  'cfg.c',
+  'icfg.c',
   'absint/block.c',
   'absint/block_judge.c',
   'absint/interpreter.c',
