@@ -25,11 +25,12 @@ static int ignoreMask(const ut8 *bm, int len) {
  * \return The initialized RzSearchKeyword or NULL in case of failure.
  */
 RZ_API RZ_OWN RzSearchKeyword *rz_search_keyword_new(const ut8 *kw_buf, int kw_len, RZ_NULLABLE const ut8 *bm_buf, int bm_buf_len, RZ_NULLABLE const char *data) {
-	RzSearchKeyword *kw;
+	rz_return_val_if_fail(kw_buf, NULL);
 	if (kw_len < 1 || bm_buf_len < 0) {
 		return NULL;
 	}
-	kw = RZ_NEW0(RzSearchKeyword);
+
+	RzSearchKeyword *kw = RZ_NEW0(RzSearchKeyword);
 	if (!kw) {
 		return NULL;
 	}
