@@ -4,7 +4,6 @@
 #include "../../librz/inquiry/absint/absint_priv.h"
 
 #include "minunit.h"
-#include "rz_inquiry/rz_cfg.h"
 
 typedef struct test_absint_t {
 	RzAnalysis *analysis;

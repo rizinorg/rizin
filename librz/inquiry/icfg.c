@@ -4,7 +4,7 @@
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_log.h"
-#include <rz_inquiry/rz_cfg.h>
+#include <rz_inquiry/rz_icfg.h>
 
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
@@ -15,7 +15,7 @@ struct rz_icfg_t {
 typedef struct {
 	ut64 from;
 	ut64 to;
-	RzCFGEdgeType type;
+	RzICFGEdgeType type;
 } ICFGEdge;
 
 struct rz_icfg_node_t {
@@ -34,7 +34,7 @@ struct rz_icfg_node_t {
 	 * \brief Block attributes. Kept in sync with the CFG.
 	 * Used for accessing most important information, without the need to access the CFG edges.
 	 */
-	RzCFGNodeAttr attrs;
+	RzICFGNodeAttr attrs;
 };
 
 struct rz_cfg_t {
@@ -158,7 +158,7 @@ success:
  *
  * NOTE: After all edges were added, rz_icfg_apply() *must* be run to copy the edges to the graph.
  */
-RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, ut64 to, RzCFGEdgeType type) {
+RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, ut64 to, RzICFGEdgeType type) {
 	rz_return_val_if_fail(icfg, false);
 	ICFGEdge edge = { .from = from, .to = to, .type = type };
 	rz_vector_push(&icfg->prepared_edges, &edge);

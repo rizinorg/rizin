@@ -24,7 +24,7 @@
  */
 
 #include "inquiry/absint/absint_priv.h"
-#include <rz_inquiry/rz_cfg.h>
+#include <rz_inquiry/rz_icfg.h>
 #include <rz_inquiry/rz_absint.h>
 #include <rz_core.h>
 
