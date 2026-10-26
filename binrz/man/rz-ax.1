@@ -98,6 +98,14 @@ prints as hexadecimal.
   $ rz-ax 0x3+0b11+3
   0x9
 .Pp
+A negative result prints as a negative hexadecimal number; masking it
+shows its two's complement bits:
+.Pp
+  $ rz-ax '(\-4)/2'
+  \-0x2
+  $ rz-ax '\-77 & 0xffffffffffffffff'
+  0xffffffffffffffb3
+.Pp
 Prefix an argument with
 .Cm =
 to force the output base for the arguments that follow it:
@@ -116,6 +124,7 @@ keeps the input base.
   int     \->  hex     rz-ax 10
   hex     \->  int     rz-ax 0xa
   \-int    \->  hex     rz-ax \-77
+  \-int    \->  bits    rz-ax '\-77 & 0xffffffffffffffff'
   \-hex    \->  int     rz-ax 0xffffffb3
   int     \->  bin     rz-ax b30
   int     \->  ternary rz-ax t42

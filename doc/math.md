@@ -493,7 +493,8 @@ read it through a typed address.
 The `%` shell command and `rz-ax` use the result kind to choose an
 output layout (multi-base table for `ut64`, decimal scientific +
 hex bit pattern for `float`, exact decimal + hex + bit-width for
-`big`, and width + hex + binary for a bit-vector).
+`big`, and width + hex + binary for a bit-vector). `rz-ax` prints a
+negative `ut64` with a minus sign, `-0x2` for `(-4)/2`.
 
 
 Bit-vectors
