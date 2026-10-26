@@ -141,6 +141,15 @@ static bool is_digit_in_base(ut8 c, ut32 base) {
 	return v < base;
 }
 
+/** \brief Keep hexadecimal digits and identifier endings out of suffix handling. */
+static bool has_number_suffix(const char *s) {
+	const char *p = s + strlen(s);
+	while (p > s && (isalnum((ut8)p[-1]) || p[-1] == '.')) {
+		p--;
+	}
+	return isdigit((ut8)*p) && rz_num_base_prefix(p, NULL, NULL) != RZ_NUM_BASE_PREFIX_HEX;
+}
+
 static bool rax_eval(RzNum *num, const char *s, RzNumValue *out) {
 	rz_num_value_init(out);
 	char *err = NULL;
@@ -235,23 +244,27 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	}
 	switch (mode) {
 	case 'I':
-		printf("%" PFMT64d "\n", n);
+		printf("%" PFMT64d "\n", (st64)n);
 		break;
 	case '0':
 		printf("0x%" PFMT64x "\n", n);
 		break;
 	case 'F': {
-		int n2 = (int)n;
-		float *f = (float *)&n2;
-		printf("%ff\n", *f);
+		RZ_STATIC_ASSERT(sizeof(float) == 4);
+		ut32 bits = (ut32)n;
+		float f;
+		memcpy(&f, &bits, sizeof(f));
+		printf("%ff\n", f);
 	} break;
 	case 'f': printf("%.01lf\n", num->fvalue); break;
-	case 'l':
+	case 'l': {
 		RZ_STATIC_ASSERT(sizeof(float) == 4);
-		float f = (float)num->fvalue;
-		ut32 *p = (ut32 *)&f;
-		printf("Fx%08x\n", *p);
+		float f = (float)(st64)n;
+		ut32 bits;
+		memcpy(&bits, &f, sizeof(bits));
+		printf("Fx%08x\n", bits);
 		break;
+	}
 	case 'O': printf("0%" PFMT64o "\n", n); break;
 	case 'B':
 		if (n) {
@@ -526,7 +539,7 @@ static int rax(RzNum *num, char *str, int len, int last, ut64 *_flags, int *fm) 
 				if (str[1] >= '0' && str[1] <= '9') {
 					if (str[2] == 'x') {
 						out_mode = 'I';
-					} else if (rz_str_endswith(str, "f")) {
+					} else if (rz_str_endswith(str, "f") && has_number_suffix(str)) {
 						out_mode = 'l';
 					}
 					return format_output(num, out_mode, str, *fm, flags);
@@ -694,7 +707,7 @@ dotherax:
 		} else if (n >> 7) {
 			n = (st64)(st8)n;
 		}
-		printf("%" PFMT64d "\n", n);
+		printf("%" PFMT64d "\n", (st64)n);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEXSTR)) { // -N
 		RzNumValue v;
@@ -992,13 +1005,13 @@ dotherax:
 	} else if (rz_str_startswith(str, "Ox")) {
 		out_mode = 'O';
 		*str = '0';
-	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "d")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "d") && has_number_suffix(str)) {
 		out_mode = 'I';
 		str[strlen(str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "f")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "f") && has_number_suffix(str)) {
 		out_mode = 'l';
-	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "dt")) {
+	} else if (isdigit((ut8)str[0]) && rz_str_endswith(str, "dt") && has_number_suffix(str)) {
 		out_mode = 'I';
 		str[strlen(str) - 2] = 't';
 		str[strlen(str) - 1] = '\0';
