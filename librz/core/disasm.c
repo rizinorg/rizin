@@ -4673,16 +4673,16 @@ static void ds_print_esil_analysis_init(RzDisasmState *ds) {
 		return;
 	}
 	if (!esil) {
-		int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-		int esd = rz_config_get_i(core->config, "esil.stack.depth");
-		unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
-		if (!(esil = rz_analysis_esil_new(esd, iotrap, addrsize))) {
+		RzEsilConfig *esil_config = rz_analysis_get_esil_config(core->analysis);
+		const bool no_null = esil_config->no_null;
+		esil_config->no_null = true;
+		if (!(esil = rz_analysis_esil_new(esil_config))) {
 			RZ_FREE(ds->esil_regstate);
 			return;
 		}
-		rz_analysis_esil_setup(esil, core->analysis, 0, 0, 1, core);
+		rz_analysis_esil_setup(esil, core->analysis, core);
 		rz_analysis_set_esil(core->analysis, esil);
+		esil_config->no_null = no_null;
 	}
 	esil->user = ds;
 	free(ds->esil_regstate);

@@ -4,6 +4,7 @@
 
 #include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
+#include "esil_internal.h"
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)(y))->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)(y))->idx)
@@ -20,7 +21,7 @@ static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegO
 }
 
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
+	rz_return_val_if_fail(esil && esil->config && esil->config->stack_addr > 0 && esil->config->stack_size > 0, NULL);
 	RzAnalysis *analysis = esil->panalysis;
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
@@ -43,9 +44,9 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		goto error;
 	}
 	// Save initial ESIL stack memory
-	trace->stack_addr = esil->stack_addr;
-	trace->stack_size = esil->stack_size;
-	trace->stack_data = malloc(esil->stack_size);
+	trace->stack_addr = esil->config->stack_addr;
+	trace->stack_size = esil->config->stack_size;
+	trace->stack_data = malloc(trace->stack_size);
 	if (!trace->stack_data) {
 		RZ_LOG_ERROR("esil: Cannot allocate stack for trace\n");
 		goto error;
@@ -282,7 +283,7 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE
 		return;
 	}
 	/* save old callbacks */
-	int esil_verbose = esil->verbose;
+	RzEsilConfig *config = (RzEsilConfig *)esil->config;
 	if (esil->esilinterstate->callbacks_set) {
 		RZ_LOG_ERROR("esil: Cannot call recursively\n");
 	}
@@ -296,7 +297,8 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE
 	RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
 	add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
 	/* set hooks */
-	esil->verbose = 0;
+	const ut64 verbose_save = config->verbose;
+	config->verbose = 0;
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;
@@ -308,7 +310,7 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE
 	/* restore hooks */
 	esil->cb = esil->esilinterstate->callbacks;
 	esil->esilinterstate->callbacks_set = false;
-	esil->verbose = esil_verbose;
+	config->verbose = verbose_save;
 	/* increment idx */
 	esil->trace->idx++;
 	esil->trace->end_idx++;

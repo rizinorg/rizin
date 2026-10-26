@@ -891,7 +891,7 @@ RZ_IPI bool rz_config_var_set_integer(RzConfigVar *var, ut64 value) {
 }
 
 static bool config_var_has_option(RzConfigVar *var, const char *value) {
-	if (!var->options || rz_set_s_size(var->options) < 1) {
+	if (rz_set_s_size(var->options) < 1) {
 		// there are no options so the value is always valid.
 		return true;
 	}

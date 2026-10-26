@@ -1365,35 +1365,6 @@ static bool cb_dbgbackend(void *user, void *data) {
 	return true;
 }
 
-static bool cb_gotolimit(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->parse_goto_count = node->i_value;
-	}
-	return true;
-}
-
-static bool cb_esilverbose(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->verbose = node->i_value;
-	}
-	return true;
-}
-
-static bool cb_esilstackdepth(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->i_value < 3) {
-		RZ_LOG_ERROR("core: esil.stack.depth: value must be greater than 2\n");
-		node->i_value = 32;
-	}
-	return true;
-}
-
 static bool cb_fixrows(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -1862,101 +1833,6 @@ RZ_API void rz_core_config_print_all(RzConfig *cfg, const char *str, RzCmdStateO
 	}
 }
 
-static bool cb_cmd_esil_ioer(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_ioer);
-		esil->cmd_ioer = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_todo(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_todo);
-		esil->cmd_todo = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_intr(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_intr);
-		esil->cmd_intr = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_mdevrange(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->mdev_range);
-		esil->mdev_range = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_step(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_step);
-		esil->cmd_step = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_step_out(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_step_out);
-		esil->cmd_step_out = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_mdev(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		free(esil->cmd_mdev);
-		esil->cmd_mdev = rz_str_dup(node->value);
-	}
-	return true;
-}
-
-static bool cb_cmd_esil_trap(void *user, void *data) {
-	RzCore *core = (RzCore *)user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->cmd = rz_core_esil_cmd;
-		esil->cmd_trap = rz_str_dup(node->value);
-	}
-	return true;
-}
-
 static bool cb_cmddepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	int c = RZ_MAX(((RzConfigNode *)data)->i_value, 0);
@@ -2283,26 +2159,6 @@ static bool cb_graphformat(void *user, void *data) {
 	if (RZ_STR_EQ(node->value, "?")) {
 		rz_cons_printf(core->cons, "png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
-	}
-	return true;
-}
-
-static bool cb_exectrap(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->exectrap = node->i_value;
-	}
-	return true;
-}
-
-static bool cb_iotrap(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode *)data;
-	RzCore *core = (RzCore *)user;
-	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (esil) {
-		esil->iotrap = node->i_value;
 	}
 	return true;
 }
@@ -2977,6 +2833,10 @@ static bool var_validator_int_positive(void *user, const void *value) {
 	return (st64)val > 0;
 }
 
+#include "config/cconfig_pdb.c"
+#include "config/cconfig_elf.c"
+#include "config/cconfig_esil.c"
+
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3008,20 +2868,16 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	}
 #endif
 	SETCB("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
+
 	/* pdb */
-	SETPREF("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
-	{
-		char *pdb_path = rz_path_home_prefix(RZ_PDB);
-		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
-		RZ_FREE(pdb_path);
+	if (!core_config_init_pdb(core)) {
+		return 0;
 	}
-	SETI("pdb.extract", 1, "Avoid extract of the pdb file, just download");
-	SETI("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
 	/* elf */
-	SETBPREF("elf.checks.sections", "true", "Check elf sections during loading");
-	SETBPREF("elf.checks.segments", "true", "Check elf segments during loading");
-	SETBPREF("elf.load.sections", "true", "Automatically load elf sections");
+	if (!core_config_init_elf(core)) {
+		return 0;
+	}
 
 	/* analysis */
 	SETBPREF("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
@@ -3146,17 +3002,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"1511", "1607", "1703", "1709", "1803", "1809",
 		"1903", "1909", "2004", "20H2", "21H1", "21H2", "22H2", NULL);
 
-	SETBPREF("esil.prestep", "true", "Step before esil evaluation in `de` commands");
-	SETPREF("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
-	SETICB("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
-	SETICB("esil.gotolimit", RZ_ANALYSIS_ESIL_GOTO_LIMIT, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
-	SETICB("esil.stack.depth", 256, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
-	SETI("esil.stack.size", 0xf0000, "Set stack size in ESIL VM");
-	SETI("esil.stack.addr", 0x100000, "Set stack address in ESIL VM");
-	SETPREF("esil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
-	SETI("esil.addr.size", 64, "Maximum address size in accessed by the ESIL VM");
-	SETBPREF("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
-	SETI("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
+	/* esil */
+	if (!core_config_init_esil(core)) {
+		return 0;
+	}
+
 	/* asm */
 	// asm.os needs to be first, since other asm.* depend on it
 	n = NODECB("asm.os", "none", &cb_asm_os_set);
@@ -3553,14 +3403,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF("cmd.visual", "", "Replace current print mode");
 	SETPREF("cmd.vprompt", "", "Visual prompt commands");
 
-	SETCB("cmd.esil.step", "", &cb_cmd_esil_step, "Command to run before performing a step in the emulator");
-	SETCB("cmd.esil.stepout", "", &cb_cmd_esil_step_out, "Command to run after performing a step in the emulator");
-	SETCB("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
-	SETCB("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
-	SETCB("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
-	SETCB("cmd.esil.todo", "", &cb_cmd_esil_todo, "Command to run when the esil instruction contains TODO");
-	SETCB("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "Command to run when esil fails to IO (invalid read/write)");
-
 	/* hexdump */
 	SETCB("hex.header", "true", &cb_hex_header, "Show header in hexdump");
 	SETCB("hex.bytes", "true", &cb_hex_bytes, "Show bytes column in hexdump");
@@ -3669,13 +3511,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* hud */
 	SETPREF("hud.path", "", "Set a custom path for the HUD file");
-
-	SETCB("esil.exectrap", "false", &cb_exectrap, "trap when executing code in non-executable memory");
-	SETCB("esil.iotrap", "true", &cb_iotrap, "invalid read or writes produce a trap exception");
-	SETBPREF("esil.romem", "false", "Set memory as read-only for ESIL");
-	SETBPREF("esil.stats", "false", "Statistics from ESIL emulation stored in sdb");
-	SETBPREF("esil.nonull", "false", "Prevent memory read, memory write at null pointer");
-	SETCB("esil.mdev.range", "", &cb_mdevrange, "Specify a range of memory to be handled by cmd.esil.mdev");
 
 	/* scr */
 #if __EMSCRIPTEN__

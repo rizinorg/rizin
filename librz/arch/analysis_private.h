@@ -51,6 +51,7 @@ struct rz_analysis_t {
 	RzCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	ut32 pcalign; // asm.pcalign
+	RzEsilConfig esil_config; ///< Esil configuration.
 	RzAnalysisEsil *esil;
 	RzAnalysisILVM *il_vm; ///< user-faced VM, NEVER use this for any analysis passes!
 	RzAnalysisPlugin *cur;

@@ -605,7 +605,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	char tmpbuf[64];
 	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
-	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
+	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get_string(core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv("RZ_FILE", desc->name);
 		rz_sys_setenv("RZ_SIZE", rz_strf(tmpbuf, "%" PFMT64d, rz_io_desc_size(desc)));
@@ -732,9 +732,9 @@ static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *fi
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
-	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
-	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
-	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+	opt.obj_opts.elf_load_sections = rz_config_get_bool(r->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_bool(r->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_bool(r->config, "elf.checks.segments");
 	opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);

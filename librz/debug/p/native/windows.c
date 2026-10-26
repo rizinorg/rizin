@@ -116,7 +116,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		if (native_info && native_info->lib) {
 			/* Check if autoload PDB is set, and load PDB information if yes */
 			RzCore *core = dbg->corebind.core;
-			bool autoload_pdb = dbg->corebind.cfggeti(core, "pdb.autoload");
+			bool autoload_pdb = dbg->corebind.config_get_bool(core, "pdb.autoload");
 			if (autoload_pdb) {
 				PLIB_ITEM lib = native_info->lib;
 				if (rz_file_exists(lib->Path)) {

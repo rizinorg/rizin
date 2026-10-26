@@ -36,12 +36,12 @@ static void showreg(RzCons *cons, RzAnalysisEsil *esil, const char *rn, const ch
 }
 
 RZ_IPI bool rz_core_visual_esil(RzCore *core) {
+	RzEsilConfig esil_config = { 0 };
 	const int nbits = sizeof(ut64) * 8;
 	char *word = NULL;
 	int x = 0;
 	RzAnalysisOp aop = { 0 };
 	ut8 buf[sizeof(ut64)];
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
 	RzLine *line = core->cons->line;
 	RzCons *cons = core->cons;
 
@@ -49,7 +49,13 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 		return false;
 	}
 	memcpy(buf, core->block, sizeof(ut64));
-	RzAnalysisEsil *esil = rz_analysis_esil_new(20, 0, addrsize);
+	rz_esil_config_init(&esil_config);
+
+	esil_config.stack_depth = 20;
+	esil_config.iotrap = false;
+	esil_config.addr_size = rz_config_get_integer(core->config, "esil.addr.size");
+
+	RzAnalysisEsil *esil = rz_analysis_esil_new(&esil_config);
 	esil->pcore = core;
 	esil->panalysis = core->analysis;
 	rz_analysis_esil_set_pc(esil, core->offset);
@@ -181,6 +187,7 @@ RZ_IPI bool rz_core_visual_esil(RzCore *core) {
 	}
 beach:
 	rz_analysis_esil_free(esil);
+	rz_esil_config_fini(&esil_config);
 	free(word);
 	return true;
 }

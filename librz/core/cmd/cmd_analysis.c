@@ -858,6 +858,7 @@ static void showmem_json(RzList /*<RzAnalysisEsilMemoryRegion *>*/ *list, PJ *pj
 
 static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	RzAnalysisEsil *esil = NULL;
+	const RzEsilConfig *esil_config = NULL;
 	bool ret = false;
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	int ptr = 0, ops = 0, ops_end = 0, len = 0, buf_sz = 0, maxopsize = 0;
@@ -898,14 +899,10 @@ static bool cmd_aea(RzCore *core, int mode, ut64 addr, int length) {
 	aea_stats_init(&stats);
 
 	rz_reg_arena_push(rreg);
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	bool iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats1 = rz_config_get_i(core->config, "esil.stats");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-	esil = rz_analysis_esil_new(stacksize, iotrap, addrsize);
-	rz_analysis_esil_setup(esil, core->analysis, romem, stats1, noNULL, core); // setup io
+
+	esil_config = rz_analysis_get_esil_config(core->analysis);
+	esil = rz_analysis_esil_new(esil_config);
+	rz_analysis_esil_setup(esil, core->analysis, core); // setup io
 #define hasNext(x) (x & 1) ? (addr < addr_end) : (ops < ops_end)
 
 	RzAnalysisEsilInterState *estate = esil->esilinterstate;
@@ -6477,21 +6474,17 @@ RZ_IPI RzCmdStatus rz_analysis_data_trampoline_handler(RzCore *core, int argc, c
 }
 
 static RzCmdStatus emulate_esil_expr(RzCore *core, const char *expr) {
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int romem = rz_config_get_i(core->config, "esil.romem");
-	int stats = rz_config_get_i(core->config, "esil.stats");
-	int noNULL = rz_config_get_i(core->config, "esil.noNULL");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (!esil && !(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
-		RZ_LOG_ERROR("Failed to init ESIL VM.\n");
-		return RZ_CMD_STATUS_ERROR;
+	if (!esil) {
+		const RzEsilConfig *cfg = rz_analysis_get_esil_config(core->analysis);
+		if (!(esil = rz_analysis_esil_new(cfg))) {
+			RZ_LOG_ERROR("Failed to init ESIL VM.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
 	}
 	rz_analysis_set_esil(core->analysis, esil);
 
-	rz_analysis_esil_setup(esil, core->analysis, romem, stats, noNULL, core); // setup io
+	rz_analysis_esil_setup(esil, core->analysis, core); // setup io
 	rz_analysis_esil_set_pc(esil, core->offset);
 	rz_analysis_esil_parse(esil, expr);
 	rz_core_esil_dumpstack(esil, core->cons);

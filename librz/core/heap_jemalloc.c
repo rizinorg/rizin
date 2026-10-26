@@ -50,9 +50,9 @@ static ut64 je_get_va_symbol(RzCore *core, const char *path, const char *sym_nam
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
-	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
-	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
-	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opt.obj_opts.elf_load_sections = rz_config_get_bool(core->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_bool(core->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_bool(core->config, "elf.checks.segments");
 
 	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
 	if (!libc_bf) {

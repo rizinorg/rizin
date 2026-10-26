@@ -536,8 +536,8 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 		}
 	}
 	if (!symbol_path_set) {
-		const char *store = io->corebind.cfgGet(core, "pdb.symstore");
-		const char *server = io->corebind.cfgGet(core, "pdb.server");
+		const char *store = io->corebind.config_get_string(core, "pdb.symstore");
+		const char *server = io->corebind.config_get_string(core, "pdb.server");
 		char *s = rz_str_dup(server);
 		rz_str_replace_ch(s, ';', '*', true);
 		char *sympath = rz_str_newf("cache*;srv*%s*%s", store, s);

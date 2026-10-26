@@ -766,7 +766,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_BIN_PDBSERVER"))) {
-		rz_config_set(core.config, "pdb.server", tmp);
+		rz_config_set_string(core.config, "pdb.server", tmp);
 		free(tmp);
 	}
 	if ((tmp = rz_sys_getenv("RZ_COLOR"))) {
@@ -1173,9 +1173,9 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 	RzBinOptions bo;
 	rz_bin_options_init(&bo, fd, baddr, laddr, false);
-	bo.obj_opts.elf_load_sections = rz_config_get_b(core.config, "elf.load.sections");
-	bo.obj_opts.elf_checks_sections = rz_config_get_b(core.config, "elf.checks.sections");
-	bo.obj_opts.elf_checks_segments = rz_config_get_b(core.config, "elf.checks.segments");
+	bo.obj_opts.elf_load_sections = rz_config_get_bool(core.config, "elf.load.sections");
+	bo.obj_opts.elf_checks_sections = rz_config_get_bool(core.config, "elf.checks.sections");
+	bo.obj_opts.elf_checks_segments = rz_config_get_bool(core.config, "elf.checks.segments");
 	bo.obj_opts.big_endian = rz_config_get_b(core.config, "cfg.bigendian");
 	bo.xtr_idx = xtr_idx;
 
@@ -1280,14 +1280,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	free(machine);
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
 		SPDBOptions pdbopts;
-		pdbopts.symbol_server = (char *)rz_config_get(core.config, "pdb.server");
-		pdbopts.extract = rz_config_get_i(core.config, "pdb.extract");
+		pdbopts.symbol_server = rz_config_get_string(core.config, "pdb.server");
+		pdbopts.extract = rz_config_get_bool(core.config, "pdb.extract");
 
 		if ((tmp = rz_sys_getenv("RZ_BIN_SYMSTORE"))) {
 			rz_config_set(core.config, "pdb.symstore", tmp);
 			RZ_FREE(tmp);
 		}
-		pdbopts.symbol_store_path = (char *)rz_config_get(core.config, "pdb.symstore");
+		pdbopts.symbol_store_path = rz_config_get_string(core.config, "pdb.symstore");
 		result = rz_bin_pdb_download(core.bin, state.mode == RZ_OUTPUT_MODE_JSON ? state.d.pj : NULL, ismodejson, &pdbopts, core.cons);
 	}
 	if (action & RZ_BIN_REQ_DEBUGINFOD) {

@@ -572,16 +572,13 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	RzListIter *iter;
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
-	RzAnalysisEsil *esil;
+	RzAnalysisEsil *esil = NULL;
 	int align = core->search->align;
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
 	int bits = rz_asm_get_bits(core->rasm);
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-
-	if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+	const RzEsilConfig *esil_config = rz_analysis_get_esil_config(core->analysis);
+	if (!(esil = rz_analysis_esil_new(esil_config))) {
 		return;
 	}
 	int *previnstr = calloc(MAXINSTR + 1, sizeof(int));

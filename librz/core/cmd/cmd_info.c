@@ -527,9 +527,9 @@ RZ_IPI RzCmdStatus rz_cmd_info_pdb_show_handler(RzCore *core, int argc, const ch
 
 RZ_IPI RzCmdStatus rz_cmd_info_pdb_download_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	SPDBOptions pdbopts;
-	pdbopts.extract = rz_config_get_i(core->config, "pdb.extract");
-	pdbopts.symbol_store_path = rz_config_get(core->config, "pdb.symstore");
-	pdbopts.symbol_server = rz_config_get(core->config, "pdb.server");
+	pdbopts.extract = rz_config_get_integer(core->config, "pdb.extract");
+	pdbopts.symbol_store_path = rz_config_get_string(core->config, "pdb.symstore");
+	pdbopts.symbol_server = rz_config_get_string(core->config, "pdb.server");
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		pj_o(state->d.pj);
 	}

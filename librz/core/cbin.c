@@ -62,9 +62,9 @@ RZ_API void rz_core_bin_options_init(RzCore *core, RZ_OUT RzBinOptions *opts, in
 
 	rz_bin_options_init(opts, fd, baseaddr, loadaddr, patch_relocs);
 
-	opts->obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
-	opts->obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
-	opts->obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opts->obj_opts.elf_load_sections = rz_config_get_bool(core->config, "elf.load.sections");
+	opts->obj_opts.elf_checks_sections = rz_config_get_bool(core->config, "elf.checks.sections");
+	opts->obj_opts.elf_checks_segments = rz_config_get_bool(core->config, "elf.checks.segments");
 	opts->obj_opts.big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 }
 
@@ -5466,7 +5466,7 @@ RZ_API RZ_OWN char *rz_core_bin_pdb_get_filename(RZ_NONNULL RzCore *core) {
 	free(filename);
 
 	// Last chance: Check if file is in downstream symbol store
-	const char *symstore_path = rz_config_get(core->config, "pdb.symstore");
+	const char *symstore_path = rz_config_get_string(core->config, "pdb.symstore");
 	return rz_str_newf("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s",
 		symstore_path, basename, info->guid, basename);
 }

@@ -134,9 +134,9 @@ static ut64 rz_heap_get_va_symbol(RzCore *core, const char *path, const char *sy
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
-	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
-	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
-	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opt.obj_opts.elf_load_sections = rz_config_get_bool(core->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_bool(core->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_bool(core->config, "elf.checks.segments");
 
 	RzBinFile *libc_bf = rz_bin_open(bin, path, &opt);
 	if (!libc_bf) {
@@ -260,9 +260,9 @@ static ut8 *get_glibc_banner(RzCore *core, const char *section_name,
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, -1, 0, 0, false);
-	opt.obj_opts.elf_load_sections = rz_config_get_b(core->config, "elf.load.sections");
-	opt.obj_opts.elf_checks_sections = rz_config_get_b(core->config, "elf.checks.sections");
-	opt.obj_opts.elf_checks_segments = rz_config_get_b(core->config, "elf.checks.segments");
+	opt.obj_opts.elf_load_sections = rz_config_get_bool(core->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_bool(core->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_bool(core->config, "elf.checks.segments");
 
 	RzBinFile *libc_buf = rz_bin_open(bin, libc_path, &opt);
 	if (!libc_buf) {

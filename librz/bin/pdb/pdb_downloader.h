@@ -14,7 +14,7 @@ extern "C" {
 typedef struct SPDBOptions {
 	const char *symbol_server;
 	const char *symbol_store_path;
-	ut64 extract;
+	bool extract;
 } SPDBOptions;
 
 typedef struct SPDBDownloaderOpt {
@@ -22,7 +22,7 @@ typedef struct SPDBDownloaderOpt {
 	const char *dbg_file;
 	const char *guid;
 	const char *symbol_store_path;
-	ut64 extract;
+	bool extract;
 } SPDBDownloaderOpt;
 
 typedef struct SPDBDownloader {

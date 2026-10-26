@@ -76,7 +76,7 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 
 static void show_config_options(RzCore *core, const char *name) {
 	const RzSetS *options = rz_config_get_options(core->config, name);
-	if (rz_set_s_size(options) == 0) {
+	if (rz_set_s_size(options) < 1) {
 		return;
 	}
 

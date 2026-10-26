@@ -3431,14 +3431,12 @@ RZ_IPI RzCmdStatus rz_cmd_debug_esil_continue_handler(RzCore *core, int argc, co
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_analysis_esil_reinit(core);
-	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
 	rz_debug_esil_continue(core->dbg);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_esil_reinit(core);
-	rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
 	rz_debug_esil_step(core->dbg, rz_num_math(core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
@@ -3448,7 +3446,6 @@ RZ_IPI RzCmdStatus rz_cmd_debug_esil_step_until_handler(RzCore *core, int argc, 
 	rz_core_analysis_esil_reinit(core);
 	ut64 addr = rz_debug_reg_get(core->dbg, "PC");
 	while (addr != fin) {
-		rz_debug_esil_prestep(core->dbg, rz_config_get_b(core->config, "esil.prestep"));
 		rz_debug_esil_step(core->dbg, 1);
 		ut64 naddr = rz_debug_reg_get(core->dbg, "PC");
 		if (naddr == addr) {

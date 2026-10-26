@@ -804,11 +804,26 @@ RZ_API bool rz_project_migrate_v24_v25(RzProject *prj, RzSerializeResultInfo *re
 // --
 // Migration 25 -> 26
 //
-// Changes from <commit not yet known>:
+// Changes from a084234d7f35235087f45261dcddd170feebb651:
 //      Added 'w' xref type.
 
 RZ_API bool rz_project_migrate_v25_v26(RzProject *prj, RzSerializeResultInfo *res) {
 	// there is nothing to be done since the change was only additive
+	return true;
+}
+
+// --
+// Migration 26 -> 27
+//
+// Changes from <commit not yet known>:
+//      Removed "esil.stack.pattern" option.
+
+RZ_API bool rz_project_migrate_v26_v27(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	Sdb *config_db;
+	RZ_SERIALIZE_SUB(core_db, config_db, res, "config", return false;);
+	sdb_remove(config_db, "esil.stack.pattern");
 	return true;
 }
 
@@ -838,6 +853,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v23_v24,
 	rz_project_migrate_v24_v25,
 	rz_project_migrate_v25_v26,
+	rz_project_migrate_v26_v27,
 };
 
 /// Migrate the given project to the current version in-place
