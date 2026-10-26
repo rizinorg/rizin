@@ -200,14 +200,28 @@ left-associative except exponentiation, which is right-associative.
 
 Notes:
 
-- Division and modulo with a zero right-hand side raise
-  `RZ_NUM_ERR_DIV_ZERO` (for both the unsigned `/` `%` and the signed
-  `sdiv` `smod`).
+- Division and modulo by zero raise `RZ_NUM_ERR_DIV_ZERO` for `/`, `%`,
+  `sdiv` and `smod`.
+- Ordinary integers represent values in [-2^63, 2^64). Negation and
+  subtraction preserve negative results in this range. Literals, flags,
+  registers and untyped memory reads remain unsigned; signed typed reads
+  retain their sign. `+`, `-`, `*` and negation wrap modulo 2^64 to a
+  non-negative value when the result falls outside the supported range.
+- `/` and `%` use the operands' values, including their signs. Division
+  truncates toward zero, and the remainder has the dividend's sign:
+  `-4 / 2` is `-2`, `-7 % 3` is `-1` and `-4 / 0xfffffffffffffffe` is
+  `0`. A quotient below -2^63 wraps to ut64. Unsigned address arithmetic
+  is preserved: `0xfffffffffffffffb / 2` is a large positive number.
+- Integer comparisons, `min` and `max` place negative values below all
+  non-negative values. Thus `-1 < 0` is `1`, and
+  `-1 == 0xffffffffffffffff` is `0`, despite the matching bits. Bit-vector
+  operands compare as unsigned values at their common width. Decimal
+  comparisons keep their precision unless an operand is a binary float.
 - `sdiv`, `smod` and `sar` interpret their operands as two's-complement
-  signed 64-bit values. `/`, `%` and `>>` are unsigned. For example
-  `-5 sdiv 2` is `-2` while `0xfffffffffffffffb / 2` is a large
-  positive number; `0xffffffffffffff00 sar 4` sign-extends to
-  `0xfffffffffffffff0` whereas `>> 4` does not.
+  signed 64-bit values, whether negative or not, so
+  `0xfffffffffffffffb sdiv 2` is `-2`. `>>` is unsigned:
+  `0xffffffffffffff00 sar 4` sign-extends to `0xfffffffffffffff0`
+  whereas `>> 4` does not.
 - Rotations `<<<` and `>>>` on a `ut64` or big number rotate a 64-bit
   projection of the operand (a big number has no width-independent
   rotate). On a *bit-vector* they rotate within that value's own width
@@ -452,12 +466,21 @@ payload:
 | `RZ_NUM_KIND_BIG`          | `RzNumBig*` | overflowing integer literals      |
 | `RZ_NUM_KIND_BITVECTOR`    | `RzBitVector*` | width-suffixed literals (`5u8`)   |
 
+For `RZ_NUM_KIND_UT64`, `RzNumValue.negative` distinguishes negative
+integers from unsigned values with the same bits. Division, remainder,
+comparisons and numeric conversions use this flag; legacy ut64-returning
+APIs still expose the two's-complement bits.
+
 When a sub-expression mixes kinds, the more general kind wins:
 
     ut64 + ut64       -> ut64
     ut64 + big        -> big   (or demoted ut64 if the result fits)
     ut64 + float      -> float
     big  + float      -> float (big projected to double)
+
+Integer-to-float and integer-to-decimal conversions preserve this sign:
+`-1 + sqrt(4)` is `1.0`, while `0xffffffffffffffff + 0.5` is
+`18446744073709551615.5`.
 
 There is no cast operator and no implicit C-style cast, so a mixed
 expression never *fails* for want of a cast - it promotes by the rule

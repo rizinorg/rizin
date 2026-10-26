@@ -224,6 +224,7 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	}
 
 	ut64 n = v.val.n;
+	bool negative = v.negative;
 	if (num) {
 		num->value = n;
 	}
@@ -241,6 +242,7 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 		if (mode == 'I' && !force_mode) {
 			mode = '0';
 		}
+		negative = false;
 	}
 	switch (mode) {
 	case 'I':
@@ -259,7 +261,7 @@ static int format_output(RzNum *num, char mode, const char *s, int force_mode, u
 	case 'f': printf("%.01lf\n", num->fvalue); break;
 	case 'l': {
 		RZ_STATIC_ASSERT(sizeof(float) == 4);
-		float f = (float)(st64)n;
+		float f = negative ? (float)(st64)n : (float)n;
 		ut32 bits;
 		memcpy(&bits, &f, sizeof(bits));
 		printf("Fx%08x\n", bits);
@@ -707,7 +709,7 @@ dotherax:
 		} else if (n >> 7) {
 			n = (st64)(st8)n;
 		}
-		printf("%" PFMT64d "\n", (st64)n);
+		printf("%" PFMT64d "\n", n);
 		return true;
 	} else if (has_flag(flags, RZ_AX_FLAG_NUMBER_TO_HEXSTR)) { // -N
 		RzNumValue v;

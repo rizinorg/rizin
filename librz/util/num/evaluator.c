@@ -326,6 +326,124 @@ static RzNumValue val_u64(ut64 n) {
 	return v;
 }
 
+/**
+ * \brief Represent a negative integer without signed overflow.
+ * \param mag Magnitude, at most 2^63. Zero remains non-negative.
+ */
+static RzNumValue val_neg(ut64 mag) {
+	RzNumValue v = val_u64((ut64)0 - mag);
+	v.negative = mag != 0;
+	return v;
+}
+
+static RzNumValue val_s64(st64 s) {
+	RzNumValue v = val_u64((ut64)s);
+	v.negative = s < 0;
+	return v;
+}
+
+/** \brief Return the magnitude as ut64 so that |ST64_MIN| is representable. */
+static ut64 int_magnitude(const RzNumValue *v) {
+	return v->negative ? (ut64)0 - v->val.n : v->val.n;
+}
+
+/**
+ * \brief Preserve the sign of sums in [-2^63, 2^64).
+ *
+ * Results outside this range wrap to a non-negative value. Keeping the
+ * original modulo-2^64 bits preserves compatibility with address consumers.
+ */
+static RzNumValue int_add(const RzNumValue *a, const RzNumValue *b) {
+	ut64 bits = a->val.n + b->val.n;
+	if (!a->negative && !b->negative) {
+		return val_u64(bits);
+	}
+	ut64 ma = int_magnitude(a);
+	ut64 mb = int_magnitude(b);
+	if (a->negative && b->negative) {
+		return mb <= ((ut64)ST64_MAX + 1) - ma ? val_neg(ma + mb) : val_u64(bits);
+	}
+	ut64 pos = a->negative ? mb : ma;
+	ut64 neg = a->negative ? ma : mb;
+	return pos >= neg ? val_u64(pos - neg) : val_neg(neg - pos);
+}
+
+/** \brief Preserve the sign of differences in [-2^63, 2^64). */
+static RzNumValue int_sub(const RzNumValue *a, const RzNumValue *b) {
+	ut64 bits = a->val.n - b->val.n;
+	ut64 ma = int_magnitude(a);
+	ut64 mb = int_magnitude(b);
+	if (!a->negative && !b->negative) {
+		if (ma >= mb) {
+			return val_u64(bits);
+		}
+		return mb - ma <= ((ut64)ST64_MAX + 1) ? val_neg(mb - ma) : val_u64(bits);
+	}
+	if (a->negative && b->negative) {
+		return ma > mb ? val_neg(ma - mb) : val_u64(mb - ma);
+	}
+	if (a->negative) {
+		return mb <= ((ut64)ST64_MAX + 1) - ma ? val_neg(ma + mb) : val_u64(bits);
+	}
+	return val_u64(bits);
+}
+
+/** \brief Preserve the sign of products in [-2^63, 2^64). */
+static RzNumValue int_mul(const RzNumValue *a, const RzNumValue *b) {
+	ut64 bits = a->val.n * b->val.n;
+	if (a->negative == b->negative) {
+		return val_u64(bits);
+	}
+	ut64 ma = int_magnitude(a);
+	ut64 mb = int_magnitude(b);
+	if (!ma || !mb || ma <= ((ut64)ST64_MAX + 1) / mb) {
+		return val_neg(ma * mb);
+	}
+	return val_u64(bits);
+}
+
+/**
+ * \brief Divide integer magnitudes to avoid signed overflow at ST64_MIN / -1.
+ *
+ * Division truncates toward zero; the remainder has the dividend's sign.
+ * The caller must reject a zero divisor. Results below -2^63 wrap to ut64.
+ */
+static RzNumValue int_div(const RzNumValue *a, const RzNumValue *b, bool remainder) {
+	if (!a->negative && !b->negative) {
+		return val_u64(remainder ? a->val.n % b->val.n : a->val.n / b->val.n);
+	}
+	ut64 ma = int_magnitude(a);
+	ut64 mb = int_magnitude(b);
+	if (remainder) {
+		ut64 r = ma % mb;
+		return a->negative ? val_neg(r) : val_u64(r);
+	}
+	ut64 q = ma / mb;
+	if (a->negative == b->negative) {
+		return val_u64(q);
+	}
+	return q <= ((ut64)ST64_MAX + 1) ? val_neg(q) : val_u64((ut64)0 - q);
+}
+
+/** \brief Negate in the same range as integer addition and subtraction. */
+static RzNumValue int_neg(const RzNumValue *v) {
+	if (v->negative) {
+		return val_u64(int_magnitude(v));
+	}
+	return v->val.n <= ((ut64)ST64_MAX + 1) ? val_neg(v->val.n) : val_u64((ut64)0 - v->val.n);
+}
+
+/**
+ * \brief Compare integer values, distinguishing equal bits with different signs.
+ * \return Negative, zero or positive when a is less than, equal to or greater than b.
+ */
+static int int_cmp(const RzNumValue *a, const RzNumValue *b) {
+	if (a->negative != b->negative) {
+		return a->negative ? -1 : 1;
+	}
+	return a->val.n < b->val.n ? -1 : a->val.n > b->val.n;
+}
+
 static RzNumValue val_f64(double d) {
 	RzNumValue v = { .kind = RZ_NUM_KIND_FLOAT };
 	v.val.d = d;
@@ -523,9 +641,19 @@ static RzNumBig *value_to_big(const RzNumValue *v) {
 	}
 }
 
-// New RzBigDecimal holding the same value (for exact decimal arithmetic).
-// Integer kinds use their *signed* value, matching to_double()'s signed
-// projection so e.g. 0.5 + (-1 as ut64) behaves the same in both paths.
+static RzBigDecimal *bigdecimal_from_u64(ut64 n) {
+	if (n <= (ut64)ST64_MAX) {
+		return rz_big_decimal_new_from_int((st64)n);
+	}
+	// The signed constructor cannot represent values above ST64_MAX.
+	char buf[32];
+	snprintf(buf, sizeof(buf), "%" PFMT64u, n);
+	return rz_big_decimal_new_from_str(buf);
+}
+
+/**
+ * \brief Convert to decimal without interpreting unsigned addresses as negative.
+ */
 static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
 	if (!v) {
 		return NULL;
@@ -534,7 +662,7 @@ static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
 	case RZ_NUM_KIND_BIGDECIMAL:
 		return v->val.bigdec ? rz_big_decimal_dup(v->val.bigdec) : NULL;
 	case RZ_NUM_KIND_UT64:
-		return rz_big_decimal_new_from_int((st64)v->val.n);
+		return v->negative ? rz_big_decimal_new_from_int((st64)v->val.n) : bigdecimal_from_u64(v->val.n);
 	case RZ_NUM_KIND_BIG: {
 		char *dec = v->val.big ? rz_big_to_decstr(v->val.big) : NULL;
 		RzBigDecimal *d = dec ? rz_big_decimal_new_from_str(dec) : NULL;
@@ -542,7 +670,7 @@ static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
 		return d;
 	}
 	case RZ_NUM_KIND_BITVECTOR:
-		return rz_big_decimal_new_from_int((st64)(v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0));
+		return bigdecimal_from_u64(v->val.bv ? rz_bv_to_ut64(v->val.bv) : 0);
 	case RZ_NUM_KIND_FLOAT: {
 		// Defensive: decimal arithmetic never mixes in a raw double, but
 		// if asked, round-trip through the double's shortest decimal.
@@ -559,7 +687,7 @@ static RzBigDecimal *value_to_bigdecimal(const RzNumValue *v) {
 static double to_double(const RzNumValue *v) {
 	switch (v->kind) {
 	case RZ_NUM_KIND_UT64:
-		return (double)v->val.n;
+		return v->negative ? (double)(st64)v->val.n : (double)v->val.n;
 	case RZ_NUM_KIND_FLOAT:
 		return v->val.d;
 	case RZ_NUM_KIND_BIG: {
@@ -619,9 +747,10 @@ static bool value_int_is_negative(const RzNumValue *v) {
 }
 
 // Signed-aware double projection. Identical to to_double() except that
-// a ut64 with its top bit set is read as a negative st64 (so -2
-// becomes -2.0, not ~1.8e19). Used by the operators whose result
-// depends on operand sign (** with a negative base or exponent).
+// any ut64 with its top bit set is read as a negative st64 (so
+// 0xfffffffffffffffe becomes -2.0, not ~1.8e19). Used by the operators
+// whose result depends on operand sign (** with a negative base or
+// exponent).
 static double to_double_signed(const RzNumValue *v) {
 	if (v->kind == RZ_NUM_KIND_UT64) {
 		return (double)(st64)v->val.n;
@@ -640,6 +769,14 @@ static RzNumBig *value_to_big_signed(const RzNumValue *v) {
 			rz_big_from_int(b, (st64)v->val.n);
 		}
 		return b;
+	}
+	return value_to_big(v);
+}
+
+/** \brief Preserve integer signedness when promoting to a bignum. */
+static RzNumBig *value_to_big_exact(const RzNumValue *v) {
+	if (v->kind == RZ_NUM_KIND_UT64 && v->negative) {
+		return value_to_big_signed(v);
 	}
 	return value_to_big(v);
 }
@@ -820,8 +957,10 @@ static void demote_big_if_fits(RzNumValue *v) {
 		return;
 	}
 	if (rz_big_cmp(v->val.big, check) == 0) {
+		bool negative = v->val.big->sign < 0 && u;
 		rz_big_free(v->val.big);
 		v->kind = RZ_NUM_KIND_UT64;
+		v->negative = negative;
 		v->val.n = u;
 	}
 	rz_big_free(check);
@@ -839,6 +978,7 @@ static RzNumValue *value_dup_heap(const RzNumValue *src) {
 	}
 	dst->kind = src->kind;
 	dst->err = src->err;
+	dst->negative = src->negative;
 	switch (src->kind) {
 	case RZ_NUM_KIND_BIG:
 		dst->val.big = rz_big_new();
@@ -1310,7 +1450,7 @@ static RzNumValue eval_address_typed(EvalCtx *c, TSNode n) {
 		if (is_signed) {
 			// Sign-extend the width_bits value to a full st64, stored
 			// back as ut64 (its two's-complement bit pattern).
-			return val_u64(sign_extend_u64(bits, width_bits));
+			return val_s64((st64)sign_extend_u64(bits, width_bits));
 		}
 		return val_u64(bits);
 	}
@@ -1612,6 +1752,47 @@ typedef struct {
 	builtin_fn fn;
 } BuiltinEntry;
 
+/** \brief Compare exact decimals without losing low digits in a double conversion. */
+static int decimal_cmp(EvalCtx *c, const RzNumValue *a, const RzNumValue *b) {
+	RzBigDecimal *da = value_to_bigdecimal(a);
+	RzBigDecimal *db = value_to_bigdecimal(b);
+	int result = 0;
+	if (da && db) {
+		result = rz_big_decimal_cmp(da, db);
+	} else {
+		set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory in decimal comparison");
+	}
+	rz_big_decimal_free(da);
+	rz_big_decimal_free(db);
+	return result;
+}
+
+/** \brief Match integer comparison rules when selecting a min/max operand. */
+static int minmax_cmp(EvalCtx *c, const RzNumValue *a, const RzNumValue *b) {
+	if (any_bigdecimal(a, b) && !any_real_float(a, b)) {
+		return decimal_cmp(c, a, b);
+	}
+	if (any_big(a, b)) {
+		return big_cmp(a, b);
+	}
+	if (!any_bitvector(a, b)) {
+		return int_cmp(a, b);
+	}
+	ut32 width = combined_bv_width(a, b);
+	RzBitVector *ba = value_to_bv_width(a, width);
+	RzBitVector *bb = value_to_bv_width(b, width);
+	int result = 0;
+	if (ba && bb) {
+		result = rz_bv_eq(ba, bb) ? 0 : rz_bv_ule(ba, bb) ? -1
+								  : 1;
+	} else {
+		set_err_code(c, RZ_NUM_ERR_OUT_OF_MEMORY, "out of memory in bitvector comparison");
+	}
+	rz_bv_free(ba);
+	rz_bv_free(bb);
+	return result;
+}
+
 static RzNumValue builtin_min(EvalCtx *c, RzNumValue *a, int n) {
 	if (n != 2) {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "min expects 2 arguments, got %d", n);
@@ -1621,15 +1802,12 @@ static RzNumValue builtin_min(EvalCtx *c, RzNumValue *a, int n) {
 	// answer that reflects the true ordering rather than a lossy
 	// projection. Then return the original chosen operand so the
 	// kind is preserved.
-	if (value_is_float_like(&a[0]) || value_is_float_like(&a[1])) {
+	if (any_real_float(&a[0], &a[1])) {
 		return to_double(&a[0]) < to_double(&a[1])
 			? a[0]
 			: a[1];
 	}
-	if (a[0].kind == RZ_NUM_KIND_BIG || a[1].kind == RZ_NUM_KIND_BIG) {
-		return big_cmp(&a[0], &a[1]) < 0 ? a[0] : a[1];
-	}
-	return a[0].val.n < a[1].val.n ? a[0] : a[1];
+	return minmax_cmp(c, &a[0], &a[1]) < 0 ? a[0] : a[1];
 }
 
 static RzNumValue builtin_max(EvalCtx *c, RzNumValue *a, int n) {
@@ -1637,15 +1815,12 @@ static RzNumValue builtin_max(EvalCtx *c, RzNumValue *a, int n) {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "max expects 2 arguments, got %d", n);
 		return val_u64(0);
 	}
-	if (value_is_float_like(&a[0]) || value_is_float_like(&a[1])) {
+	if (any_real_float(&a[0], &a[1])) {
 		return to_double(&a[0]) > to_double(&a[1])
 			? a[0]
 			: a[1];
 	}
-	if (a[0].kind == RZ_NUM_KIND_BIG || a[1].kind == RZ_NUM_KIND_BIG) {
-		return big_cmp(&a[0], &a[1]) > 0 ? a[0] : a[1];
-	}
-	return a[0].val.n > a[1].val.n ? a[0] : a[1];
+	return minmax_cmp(c, &a[0], &a[1]) > 0 ? a[0] : a[1];
 }
 
 static RzNumValue builtin_abs(EvalCtx *c, RzNumValue *a, int n) {
@@ -1782,7 +1957,7 @@ static RzNumValue float_to_int_kind(double d) {
 		return val_u64((ut64)d);
 	}
 	if (d < 0.0 && d >= -9223372036854775808.0) { // [-2^63, 0)
-		return val_u64((ut64)(st64)d);
+		return val_s64((st64)d);
 	}
 	return val_f64(d);
 }
@@ -2117,10 +2292,16 @@ static RzNumValue eval_function(EvalCtx *c, TSNode n) {
 // operation has additional preconditions (e.g. nonzero divisor).
 typedef void (*big_binop_fn)(RzNumBig *c, RzNumBig *a, RzNumBig *b);
 
+/**
+ * \brief Promote operands for arithmetic or bitwise bignum operations.
+ * \param exact Preserve signed values for arithmetic; use raw ut64 bits otherwise.
+ *
+ * The bignum bitwise API accepts only non-negative operands.
+ */
 static RzNumValue do_big_binop(EvalCtx *c, const RzNumValue *lv,
-	const RzNumValue *rv, big_binop_fn fn) {
-	RzNumBig *a = value_to_big(lv);
-	RzNumBig *b = value_to_big(rv);
+	const RzNumValue *rv, big_binop_fn fn, bool exact) {
+	RzNumBig *a = exact ? value_to_big_exact(lv) : value_to_big(lv);
+	RzNumBig *b = exact ? value_to_big_exact(rv) : value_to_big(rv);
 	RzNumBig *r = rz_big_new();
 	if (!a || !b || !r) {
 		rz_big_free(a);
@@ -2138,8 +2319,8 @@ static RzNumValue do_big_binop(EvalCtx *c, const RzNumValue *lv,
 }
 
 static int big_cmp(const RzNumValue *lv, const RzNumValue *rv) {
-	RzNumBig *a = value_to_big(lv);
-	RzNumBig *b = value_to_big(rv);
+	RzNumBig *a = value_to_big_exact(lv);
+	RzNumBig *b = value_to_big_exact(rv);
 	int r = 0;
 	if (a && b) {
 		r = rz_big_cmp(a, b);
@@ -2454,9 +2635,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		} else if (float_mode) {
 			out = val_f64(to_double(&lv) + to_double(&rv));
 		} else if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_add);
+			out = do_big_binop(c, &lv, &rv, rz_big_add, true);
 		} else {
-			out = val_u64(lv.val.n + rv.val.n);
+			out = int_add(&lv, &rv);
 		}
 	} else if (!strcmp(op, "-")) {
 		if (decimal_mode) {
@@ -2464,9 +2645,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		} else if (float_mode) {
 			out = val_f64(to_double(&lv) - to_double(&rv));
 		} else if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_sub);
+			out = do_big_binop(c, &lv, &rv, rz_big_sub, true);
 		} else {
-			out = val_u64(lv.val.n - rv.val.n);
+			out = int_sub(&lv, &rv);
 		}
 	} else if (!strcmp(op, "*")) {
 		if (decimal_mode) {
@@ -2474,9 +2655,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		} else if (float_mode) {
 			out = val_f64(to_double(&lv) * to_double(&rv));
 		} else if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_mul);
+			out = do_big_binop(c, &lv, &rv, rz_big_mul, true);
 		} else {
-			out = val_u64(lv.val.n * rv.val.n);
+			out = int_mul(&lv, &rv);
 		}
 	} else if (!strcmp(op, "/")) {
 		if (decimal_mode) {
@@ -2502,7 +2683,7 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 				set_err_code(c, RZ_NUM_ERR_DIV_ZERO, "division by zero");
 				out = val_u64(0);
 			} else {
-				out = do_big_binop(c, &lv, &rv, rz_big_div);
+				out = do_big_binop(c, &lv, &rv, rz_big_div, true);
 			}
 		} else if (rv.val.n == 0) {
 			if (c->num) {
@@ -2511,7 +2692,7 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 			set_err_code(c, RZ_NUM_ERR_DIV_ZERO, "division by zero");
 			out = val_u64(0);
 		} else {
-			out = val_u64(lv.val.n / rv.val.n);
+			out = int_div(&lv, &rv, false);
 		}
 	} else if (!strcmp(op, "%")) {
 		if (float_mode) {
@@ -2527,13 +2708,13 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 				set_err_code(c, RZ_NUM_ERR_DIV_ZERO, "modulo by zero");
 				out = val_u64(0);
 			} else {
-				out = do_big_binop(c, &lv, &rv, rz_big_mod);
+				out = do_big_binop(c, &lv, &rv, rz_big_mod, true);
 			}
 		} else if (rv.val.n == 0) {
 			set_err_code(c, RZ_NUM_ERR_DIV_ZERO, "modulo by zero");
 			out = val_u64(0);
 		} else {
-			out = val_u64(lv.val.n % rv.val.n);
+			out = int_div(&lv, &rv, true);
 		}
 	} else if (!strcmp(op, "sdiv")) {
 		// Signed (two's-complement) division. Operands are taken as
@@ -2551,9 +2732,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		} else if (a == INT64_MIN && b == -1) {
 			// INT64_MIN / -1 overflows st64; the wrapped two's
 			// complement result is INT64_MIN again.
-			out = val_u64((ut64)INT64_MIN);
+			out = val_s64(INT64_MIN);
 		} else {
-			out = val_u64((ut64)(a / b));
+			out = val_s64(a / b);
 		}
 	} else if (!strcmp(op, "smod")) {
 		st64 a = (st64)to_u64(&lv);
@@ -2564,7 +2745,7 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		} else if (a == INT64_MIN && b == -1) {
 			out = val_u64(0); // remainder of the overflowing division
 		} else {
-			out = val_u64((ut64)(a % b));
+			out = val_s64(a % b);
 		}
 	} else if (!strcmp(op, "sar")) {
 		// Arithmetic shift right: sign-propagating. The shift amount
@@ -2573,9 +2754,9 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		st64 a = (st64)to_u64(&lv);
 		ut64 sh = to_u64(&rv);
 		if (sh >= 64) {
-			out = val_u64((ut64)(a >> 63)); // all sign bits
+			out = val_s64(a >> 63); // all sign bits
 		} else {
-			out = val_u64((ut64)(a >> sh));
+			out = val_s64(a >> sh);
 		}
 	} else if (!strcmp(op, "**")) {
 		// Power. Both operands are read as signed, the same way a
@@ -2676,19 +2857,19 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		}
 	} else if (!strcmp(op, "&")) {
 		if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_and);
+			out = do_big_binop(c, &lv, &rv, rz_big_and, false);
 		} else {
 			out = val_u64(to_u64(&lv) & to_u64(&rv));
 		}
 	} else if (!strcmp(op, "|")) {
 		if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_or);
+			out = do_big_binop(c, &lv, &rv, rz_big_or, false);
 		} else {
 			out = val_u64(to_u64(&lv) | to_u64(&rv));
 		}
 	} else if (!strcmp(op, "^")) {
 		if (big_mode) {
-			out = do_big_binop(c, &lv, &rv, rz_big_xor);
+			out = do_big_binop(c, &lv, &rv, rz_big_xor, false);
 		} else {
 			out = val_u64(to_u64(&lv) ^ to_u64(&rv));
 		}
@@ -2747,52 +2928,64 @@ static RzNumValue eval_binop(EvalCtx *c, TSNode n, const char *op) {
 		ut64 s = to_u64(&rv) & 63;
 		out = val_u64(s ? (v >> s) | (v << (64 - s)) : v);
 	} else if (!strcmp(op, "<")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) < 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) < to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) < 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n < rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) < 0 ? 1 : 0);
 		}
 	} else if (!strcmp(op, "<=")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) <= 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) <= to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) <= 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n <= rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) <= 0 ? 1 : 0);
 		}
 	} else if (!strcmp(op, ">")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) > 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) > to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) > 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n > rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) > 0 ? 1 : 0);
 		}
 	} else if (!strcmp(op, ">=")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) >= 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) >= to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) >= 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n >= rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) >= 0 ? 1 : 0);
 		}
 	} else if (!strcmp(op, "==")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) == 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) == to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) == 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n == rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) == 0 ? 1 : 0);
 		}
 	} else if (!strcmp(op, "!=")) {
-		if (float_mode) {
+		if (decimal_mode) {
+			out = val_u64(decimal_cmp(c, &lv, &rv) != 0);
+		} else if (float_mode) {
 			out = val_u64(to_double(&lv) != to_double(&rv) ? 1 : 0);
 		} else if (big_mode) {
 			out = val_u64(big_cmp(&lv, &rv) != 0 ? 1 : 0);
 		} else {
-			out = val_u64(lv.val.n != rv.val.n ? 1 : 0);
+			out = val_u64(int_cmp(&lv, &rv) != 0 ? 1 : 0);
 		}
 	} else {
 		set_err_code(c, RZ_NUM_ERR_NOT_IMPLEMENTED, "unhandled operator: %s", op);
@@ -2835,6 +3028,9 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 				out = val_big(nb);
 				demote_big_if_fits(&out);
 			}
+		} else if (rv.kind == RZ_NUM_KIND_UT64) {
+			RzNumValue one = val_u64(1);
+			out = int_add(&rv, &one);
 		} else {
 			out = val_u64(to_u64(&rv) + 1);
 		}
@@ -2857,6 +3053,9 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 				out = val_big(nb);
 				demote_big_if_fits(&out);
 			}
+		} else if (rv.kind == RZ_NUM_KIND_UT64) {
+			RzNumValue one = val_u64(1);
+			out = int_sub(&rv, &one);
 		} else {
 			out = val_u64(to_u64(&rv) - 1);
 		}
@@ -2879,6 +3078,7 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 			}
 		} else {
 			out = val_u64(to_u64(&rv));
+			out.negative = rv.kind == RZ_NUM_KIND_UT64 && rv.negative;
 		}
 	} else if (!strcmp(op, "u-")) {
 		// Unary minus.
@@ -2904,6 +3104,8 @@ static RzNumValue eval_unop_right(EvalCtx *c, TSNode n, const char *op) {
 				out = val_big(nb);
 				demote_big_if_fits(&out);
 			}
+		} else if (rv.kind == RZ_NUM_KIND_UT64) {
+			out = int_neg(&rv);
 		} else {
 			out = val_u64((ut64)0 - to_u64(&rv));
 		}

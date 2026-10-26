@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include <rz_il/rz_il_opcodes.h>
+#include <rz_il/rz_il_vm.h>
 #include <math.h>
 #include "minunit.h"
 
@@ -765,6 +766,193 @@ bool test_rz_num_math_value_signed_arith() {
 	mu_end;
 }
 
+static bool check_integer_sign(const char *expression, ut64 expected, bool negative) {
+	RzNumValue value;
+	char *err = NULL;
+	bool ok = rz_num_math_value(NULL, expression, &value, &err);
+	free(err);
+	mu_assert_true(ok, expression);
+	mu_assert_eq(value.kind, RZ_NUM_KIND_UT64, expression);
+	mu_assert_eq(value.val.n, expected, expression);
+	mu_assert_eq(value.negative, negative, expression);
+	rz_num_value_fini(&value);
+	mu_end;
+}
+
+#define ASSERT_SIGN(expr, want, neg) mu_assert_true(check_integer_sign(expr, (ut64)(want), neg), expr)
+
+bool test_rz_num_math_value_negative() {
+	// #6937: / and % divide negative numbers as signed numbers
+	ASSERT_SIGN("(-4) / 2", -2, true);
+	ASSERT_SIGN("-4 / 2", -2, true);
+	ASSERT_SIGN("4 / (-2)", -2, true);
+	ASSERT_SIGN("(-4) / (-2)", 2, false);
+	ASSERT_SIGN("-7 / 2", -3, true); // truncated toward zero
+	ASSERT_SIGN("-7 % 3", -1, true); // the remainder takes the sign of the dividend
+	ASSERT_SIGN("7 % -3", 1, false);
+	ASSERT_SIGN("-7 % -3", -1, true);
+	ASSERT_SIGN("-6 % 3", 0, false);
+	ASSERT_U64("(-4) / 2 == -2", 1);
+	// Without a negative operand they stay unsigned
+	ASSERT_SIGN("0xfffffffffffffffc / 2", 0x7ffffffffffffffe, false);
+	ASSERT_SIGN("0xffffffff81000123 % 0x1000", 0x123, false);
+	// Mixed signed/unsigned division uses magnitudes before applying the sign.
+	ASSERT_SIGN("-4 / 0xfffffffffffffffe", 0, false);
+	ASSERT_SIGN("(-0x7fffffffffffffff - 1) / 0x8000000000000000", -1, true);
+	ASSERT_SIGN("(-0x7fffffffffffffff - 1) / -1", 0x8000000000000000, false);
+	ASSERT_SIGN("(-0x7fffffffffffffff - 1) % -1", 0, false);
+	// -(2^64 - 1) lies below -2^63, so it wraps
+	ASSERT_SIGN("0xffffffffffffffff / -1", 1, false);
+
+	// Negation and subtraction make negative numbers, which + - * keep
+	ASSERT_SIGN("-4", -4, true);
+	ASSERT_SIGN("-0", 0, false);
+	ASSERT_SIGN("-(-4)", 4, false);
+	ASSERT_SIGN("0 - 4", -4, true);
+	ASSERT_SIGN("(1 - 9) * 3 / 4", -6, true);
+	ASSERT_SIGN("-4 + 1", -3, true);
+	ASSERT_SIGN("-4 + 5", 1, false);
+	ASSERT_SIGN("-4 * -2", 8, false);
+	ASSERT_SIGN("-4 - -6", 2, false);
+	ASSERT_SIGN("--(-4)", -5, true);
+	ASSERT_SIGN("++(-1)", 0, false);
+	ASSERT_SIGN("+(-4)", -4, true);
+	ASSERT_SIGN("-0x8000000000000000", 0x8000000000000000, true);
+	ASSERT_SIGN("x = -4; x / 2", -2, true);
+	ASSERT_SIGN("1 ? -4 : 4", -4, true);
+	// Results in [2^63, 2^64) are non-negative, others wrap
+	ASSERT_SIGN("0x7fffffffffffffff + 1", 0x8000000000000000, false);
+	ASSERT_SIGN("0xffffffffffffffff + 1", 0, false);
+	ASSERT_SIGN("-1 - 0x7fffffffffffffff", 0x8000000000000000, true);
+	ASSERT_SIGN("-2 - 0x7fffffffffffffff", 0x7fffffffffffffff, false);
+	ASSERT_SIGN("0x8000000000000000 * -1", 0x8000000000000000, true);
+	ASSERT_SIGN("0x8000000000000001 * -1", 0x7fffffffffffffff, false);
+	ASSERT_SIGN("0 - 0xffffffffffffffff", 1, false);
+	ASSERT_SIGN("-0x8000000000000000 + -1", 0x7fffffffffffffff, false);
+	ASSERT_SIGN("-0x8000000000000000 + 0x8000000000000000", 0, false);
+	ASSERT_SIGN("-0x8000000000000000 - -0x8000000000000000", 0, false);
+	ASSERT_SIGN("-0x8000000000000000 * 0", 0, false);
+	ASSERT_SIGN("-0x8000000000000000 * -1", 0x8000000000000000, false);
+	// The signed operators and float to integer conversions make negative numbers too
+	ASSERT_SIGN("0xfffffffffffffffb sdiv 2", -2, true);
+	ASSERT_SIGN("0xfffffffffffffffb smod 3", -2, true);
+	ASSERT_SIGN("0xffffffffffffff00 sar 4", -16, true);
+	ASSERT_SIGN("floor(-1.5)", -2, true);
+	// Bignum results keep their sign when they fit, and divide exactly
+	ASSERT_SIGN("-99999999999999999999 + 99999999999999999998", -1, true);
+	ASSERT_SIGN("0x10000000000000000 - 0x18000000000000000", 0x8000000000000000, true);
+	ASSERT_SIGN("-0x10000000000000000 / 2", 0x8000000000000000, true);
+	ASSERT_SIGN("-7 / 0x10000000000000000", 0, false);
+	ASSERT_SIGN("-99999999999999999999 % 7", -1, true);
+	// Bitwise results are bit patterns
+	ASSERT_SIGN("-4 | 0", 0xfffffffffffffffc, false);
+	ASSERT_SIGN("~0", 0xffffffffffffffff, false);
+
+	// A negative number keeps its sign against a bignum
+	RzNumValue v;
+	char *err = NULL;
+	mu_assert_true(rz_num_math_value(NULL, "-4 + 99999999999999999999", &v, &err), "-4 + big");
+	mu_assert_eq(v.kind, RZ_NUM_KIND_BIG, "-4 + big is big");
+	char *s = rz_num_value_tostring(&v);
+	mu_assert_streq_free(s, "0x56bc75e2d630ffffb", "-4 + big");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	mu_assert_false(rz_num_math_value(NULL, "-4 / 0", &v, &err), "-4 / 0");
+	mu_assert_eq(v.err, RZ_NUM_ERR_DIV_ZERO, "-4 / 0 -> DIV_ZERO");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+
+	mu_end;
+}
+
+bool test_rz_num_math_value_negative_compare() {
+	// A negative number is below every non-negative one
+	ASSERT_U64("-1 < 0", 1);
+	ASSERT_U64("-1 <= 0", 1);
+	ASSERT_U64("-1 > 0", 0);
+	ASSERT_U64("-1 >= 0", 0);
+	ASSERT_U64("0 > -1", 1);
+	ASSERT_U64("-2 < -1", 1);
+	ASSERT_U64("(-0x7fffffffffffffff - 1) < -1", 1);
+	ASSERT_U64("-1 < 0x8000000000000000", 1);
+	ASSERT_U64("-1 < 0xffffffffffffffff", 1);
+	// Equal bit patterns can represent different integer values.
+	ASSERT_U64("-1 == -1", 1);
+	ASSERT_U64("-1 == 0xffffffffffffffff", 0);
+	ASSERT_U64("-1 != 0xffffffffffffffff", 1);
+	// Without a negative operand the comparison is unsigned
+	ASSERT_U64("0xffffffffffffffff > 0", 1);
+	ASSERT_U64("0x8000000000000000 > 0x7fffffffffffffff", 1);
+	// Against floats, decimals and bignums
+	ASSERT_U64("-1 < 0.5", 1);
+	ASSERT_U64("-1 < sqrt(4)", 1);
+	ASSERT_U64("0xffffffffffffffff > 0.5", 1);
+	ASSERT_U64("0xffffffffffffffff > 18446744073709551614.5", 1);
+	ASSERT_U64("-1 > -1.00000000000000001", 1);
+	ASSERT_U64("-1 == -1.00000000000000001", 0);
+	ASSERT_U64("-1 != -1.00000000000000001", 1);
+	ASSERT_U64("-1 <= -1.00000000000000001", 0);
+	ASSERT_U64("-1 >= -1.00000000000000001", 1);
+	ASSERT_U64("-1.00000000000000001 < -1", 1);
+	ASSERT_U64("min(-1, -1.00000000000000001) < -1", 1);
+	ASSERT_U64("max(-1, -1.00000000000000001) == -1", 1);
+	ASSERT_U64("-1 < 99999999999999999999", 1);
+	ASSERT_U64("-1 > -99999999999999999999", 1);
+	// Bit-vectors stay unsigned at their width
+	ASSERT_U64("-1 < 5u8", 0);
+
+	ASSERT_SIGN("min(-4, 2)", -4, true);
+	ASSERT_SIGN("max(-4, 2)", 2, false);
+	ASSERT_SIGN("min(-4, 0xffffffffffffffff)", -4, true);
+	ASSERT_SIGN("max(-4, -5)", -4, true);
+	ASSERT_U64("min(5u8, 3u8) == 3u8", 1);
+	ASSERT_U64("min(3u8, 5u8) == 3u8", 1);
+	ASSERT_U64("max(5u8, 3u8) == 5u8", 1);
+	ASSERT_U64("max(3u8, 5u8) == 5u8", 1);
+	ASSERT_U64("min(-1, 5u8) == 5u8", 1);
+	ASSERT_SIGN("max(-1, 5u8)", -1, true);
+	ASSERT_U64("min(0x10000000000000000u128, 1u128) == 1u128", 1);
+	mu_end;
+}
+
+#undef ASSERT_SIGN
+
+static bool check_decimal_value(const char *expression, const char *expected) {
+	RzNumValue value;
+	char *err = NULL;
+	bool ok = rz_num_math_value(NULL, expression, &value, &err);
+	free(err);
+	mu_assert_true(ok, expression);
+	mu_assert_eq(value.kind, RZ_NUM_KIND_BIGDECIMAL, expression);
+	char *text = rz_num_value_tostring(&value);
+	rz_num_value_fini(&value);
+	mu_assert_streq_free(text, expected, expression);
+	mu_end;
+}
+
+bool test_rz_num_math_value_negative_float() {
+#define ASSERT_DEC(expr, want) mu_assert_true(check_decimal_value(expr, want), expr)
+
+	// Conversion preserves negative values and the full unsigned range.
+	ASSERT_F64("-1 + sqrt(4)", 1.0);
+	ASSERT_F64("-1 * sqrt(4)", -2.0);
+	ASSERT_F64("(1 - 9) / sqrt(16)", -2.0);
+	ASSERT_F64("0xffffffffffffffff * sqrt(1)", 18446744073709551615.0);
+	ASSERT_DEC("-1 + 0.5", "-0.5");
+	ASSERT_DEC("(-0x7fffffffffffffff - 1) * 0.5", "-4611686018427387904");
+	ASSERT_DEC("0xffffffffffffffff + 0.5", "18446744073709551615.5");
+	ASSERT_DEC("0xffffffffffffffffu64 + 0.5", "18446744073709551615.5");
+	// Domain checks must receive the negative argument, not its unsigned bits.
+	ASSERT_FAIL("sqrt(-4)");
+	ASSERT_FAIL("log(-1)");
+#undef ASSERT_DEC
+	mu_end;
+}
+
 bool test_rz_num_math_value_len() {
 	// len() of a bit-vector is its width in BITS.
 	ASSERT_U64("len(5u8)", 8);
@@ -831,6 +1019,16 @@ bool test_rz_num_math_value_persistent_vars() {
 	mu_assert_true(rz_num_math_value_ex(NULL, "top - base", &opt, &v, &err), "read top");
 	mu_assert_eq(rz_num_value_to_ut64(&v), 0x100, "top - base");
 	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	mu_assert_true(rz_num_math_value_ex(NULL, "negative = -4", &opt, &v, &err), "store negative");
+	rz_num_value_fini(&v);
+	mu_assert_true(rz_num_math_value_ex(NULL, "negative / 2", &opt, &v, &err), "load negative");
+	mu_assert_eq(v.val.n, (ut64)-2, "persisted negative quotient");
+	mu_assert_true(v.negative, "persistent copy preserves sign");
+	rz_num_value_fini(&v);
+	mu_assert_false(v.negative, "fini clears sign");
 	free(err);
 	err = NULL;
 
@@ -1617,6 +1815,7 @@ bool test_rz_num_math_value_typed_reads() {
 		"signed s32 read");
 	mu_assert_eq(v.kind, RZ_NUM_KIND_UT64, "s32 kind");
 	mu_assert_eq(v.val.n, (ut64)(-1), "0xffffffff:s32 == -1");
+	mu_assert_true(v.negative, "0xffffffff:s32 is negative");
 	rz_num_value_fini(&v);
 	free(err);
 	err = NULL;
@@ -1625,6 +1824,7 @@ bool test_rz_num_math_value_typed_reads() {
 	mu_assert_true(rz_num_math_value_ex(NULL, "0xffffffff:le32", &opt, &v, &err),
 		"unsigned le32 read");
 	mu_assert_eq(v.val.n, 0xffffffff, "0xffffffff:le32 == 0xffffffff");
+	mu_assert_false(v.negative, "0xffffffff:le32 is not negative");
 	rz_num_value_fini(&v);
 	free(err);
 	err = NULL;
@@ -1633,6 +1833,14 @@ bool test_rz_num_math_value_typed_reads() {
 	mu_assert_true(rz_num_math_value_ex(NULL, "0xfffe:s16", &opt, &v, &err),
 		"signed s16 read");
 	mu_assert_eq(v.val.n, (ut64)(-2), "0xfffe:s16 == -2");
+	rz_num_value_fini(&v);
+	free(err);
+	err = NULL;
+
+	// It divides as a signed number
+	mu_assert_true(rz_num_math_value_ex(NULL, "0xfffe:s16 / 2", &opt, &v, &err),
+		"signed s16 read / 2");
+	mu_assert_eq(v.val.n, (ut64)(-1), "0xfffe:s16 / 2 == -1");
 	rz_num_value_fini(&v);
 	free(err);
 	err = NULL;
@@ -1942,10 +2150,10 @@ bool test_rz_num_math_value_math_functions() {
 	ASSERT_F64("log(2.718281828459045)", log(2.718281828459045));
 	// log() is natural; the base-b logarithm is the `b log x` operator.
 	ASSERT_F64("ln(100)", log(100.0));
-	// Integers are unsigned here, so sqrt(-1) is sqrt(2^64-1), not a
-	// domain error (same model that makes 0 - 1 == 2^64-1). Genuine
-	// domain errors come from negative floats; see below.
-	ASSERT_F64("sqrt(-1)", sqrt((double)UT64_MAX));
+	// A negative integer is a domain error, like the negative floats
+	// below, while 2^64 - 1 is not.
+	ASSERT_FAIL("sqrt(-1)");
+	ASSERT_F64("sqrt(0xffffffffffffffff)", sqrt((double)UT64_MAX));
 
 	// floor/ceil/round bridge float to ut64 (two's complement for
 	// negatives). C round() rounds halves away from zero.
@@ -2343,6 +2551,19 @@ bool test_rz_num_il_lift() {
 	// superscript plus marks signedness): sdiv -> /+, smod -> %+.
 	ASSERT_LIFT("10 sdiv 3", "(0xa\u2086\u2084 /\u207a 0x3\u2086\u2084)");
 	ASSERT_LIFT("10 smod 3", "(0xa\u2086\u2084 %\u207a 0x3\u2086\u2084)");
+	// Signed IL operations must agree with RzNum for negative operands.
+	ASSERT_LIFT("10 / 3", "(0xa\u2086\u2084 / 0x3\u2086\u2084)");
+	ASSERT_LIFT("-4 / 2", "(\u22120x4\u2086\u2084 /\u207a 0x2\u2086\u2084)");
+	ASSERT_LIFT("-7 % 3", "(\u22120x7\u2086\u2084 %\u207a 0x3\u2086\u2084)");
+	ASSERT_LIFT("(1 - 9) / 4", "((0x1\u2086\u2084 - 0x9\u2086\u2084) /\u207a 0x4\u2086\u2084)");
+	// These cases need more than a single signed 64-bit IL operation.
+	ASSERT_LIFT("7 % -3", "0x1\u2086\u2084");
+	ASSERT_LIFT("-4 / 0xfffffffffffffffe", "0x0\u2086\u2084");
+	// Unsigned comparison and bitwise equality cannot represent these comparisons.
+	ASSERT_LIFT("-1 <= 0", "0x1\u2086\u2084");
+	ASSERT_LIFT("-1 == 0xffffffffffffffff", "0x0\u2086\u2084");
+	ASSERT_LIFT("-1 == -1", "(\u22120x1\u2086\u2084 \u2261 \u22120x1\u2086\u2084)");
+	ASSERT_LIFT("5 <= 10", "(0x5\u2086\u2084 \u2266 0xa\u2086\u2084)");
 	// Arithmetic shift right is a plain RzIL shiftr whose fill bit is the
 	// sign bit (msb, the \u2191 glyph) of the shifted value.
 	ASSERT_LIFT("256 sar 2",
@@ -2400,6 +2621,111 @@ bool test_rz_num_il_lift() {
 	free(err);
 	err = NULL;
 
+	mu_end;
+}
+
+static void tfn_tick(void *user, const RzNumValue *args, int argc, RzNumCallbackResult *out) {
+	int *calls = user;
+	(*calls)++;
+	out->ok = true;
+	out->kind = RZ_NUM_KIND_UT64;
+	out->val.n = 8 / *calls;
+}
+
+bool test_rz_num_il_lift_negative_values() {
+	const char *expressions[] = {
+		"-4 / 2",
+		"4 / -2",
+		"-4 / -2",
+		"-7 % 3",
+		"7 % -3",
+		"-7 % -3",
+		"7 smod -3",
+		"-7 smod -3",
+		"-0x8000000000000000 / -1",
+		"-4 / 0xfffffffffffffffe",
+		"-4 / 0x10000000000000000",
+		"-4 % 0x10000000000000000",
+		"-1 == 0xffffffffffffffff",
+		"-1 <= 0",
+		"-1 == -1",
+		"(-1 == -1) / 2",
+		"(-1 <= 0) / 2",
+		"5u8 / 2",
+		"0x10000000000000000u128 / 1",
+		"7u8 smod 0xfdu8",
+	};
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
+	mu_assert_notnull(vm, "create IL VM");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(expressions); i++) {
+		char *err = NULL;
+		RzNumValue value;
+		mu_assert_true(rz_num_math_value(NULL, expressions[i], &value, &err), expressions[i]);
+		RzILOpPure *op = rz_il_lift_num(NULL, expressions[i], NULL, &err);
+		mu_assert_notnull(op, expressions[i]);
+		RzILVal *result = rz_il_evaluate_val(vm, op);
+		mu_assert_notnull(result, expressions[i]);
+		if (value.kind == RZ_NUM_KIND_BITVECTOR) {
+			mu_assert_eq(result->type, RZ_IL_TYPE_PURE_BITVECTOR, expressions[i]);
+			mu_assert_true(rz_bv_eq(result->data.bv, value.val.bv), expressions[i]);
+		} else {
+			ut64 bits = result->type == RZ_IL_TYPE_PURE_BOOL
+				? result->data.b->b
+				: rz_bv_to_ut64(result->data.bv);
+			mu_assert_eq(bits, value.val.n, expressions[i]);
+		}
+		rz_il_value_free(result);
+		rz_il_op_pure_free(op);
+		rz_num_value_fini(&value);
+		free(err);
+	}
+	const char *invalid[] = { "-4 / 0", "7 smod 0", "7u8 % 0u8", "5 sdiv 0" };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(invalid); i++) {
+		char *err = NULL;
+		RzILOpPure *op = rz_il_lift_num(NULL, invalid[i], NULL, &err);
+		mu_assert_null(op, invalid[i]);
+		mu_assert_notnull(err, "division by zero must report an error");
+		free(err);
+	}
+	rz_il_vm_free(vm);
+	mu_end;
+}
+
+bool test_rz_num_il_lift_evaluates_once() {
+	const struct {
+		const char *expression;
+		ut64 result;
+		int calls;
+	} cases[] = {
+		{ "-tick() / 2", (ut64)-4, 1 },
+		{ "tick() % -3", 2, 1 },
+		{ "tick() smod -3", 2, 1 },
+		{ "tick() == 8", 1, 1 },
+		{ "tick() <= 8", 1, 1 },
+		{ "-tick() / 2 - -tick() / 2", (ut64)-2, 2 },
+	};
+	int calls = 0;
+	RzNumFuncRegistry *reg = rz_num_func_registry_new();
+	mu_assert_notnull(reg, "create function registry");
+	mu_assert_true(rz_num_func_registry_add(reg, "tick", 0, tfn_tick, &calls), "register tick");
+	RzNumMathOptions opts = { .funcs = reg };
+	RzILVM *vm = rz_il_vm_new(0, 64, false, RZ_IL_EVENT_EXC_NONE);
+	mu_assert_notnull(vm, "create IL VM");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		calls = 0;
+		char *err = NULL;
+		RzILOpPure *op = rz_il_lift_num(NULL, cases[i].expression, &opts, &err);
+		mu_assert_notnull(op, cases[i].expression);
+		mu_assert_eq(calls, cases[i].calls, "lifting must not repeat a callback");
+		RzBitVector *result = rz_il_evaluate_bitv(vm, op);
+		mu_assert_notnull(result, cases[i].expression);
+		mu_assert_eq(rz_bv_to_ut64(result), cases[i].result, cases[i].expression);
+		rz_bv_free(result);
+		rz_il_op_pure_free(op);
+		free(err);
+	}
+	rz_il_vm_free(vm);
+	rz_num_func_registry_free(reg);
 	mu_end;
 }
 
@@ -2641,6 +2967,9 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_value_sequence);
 	mu_run_test(test_rz_num_math_value_conditional);
 	mu_run_test(test_rz_num_math_value_signed_arith);
+	mu_run_test(test_rz_num_math_value_negative);
+	mu_run_test(test_rz_num_math_value_negative_float);
+	mu_run_test(test_rz_num_math_value_negative_compare);
 	mu_run_test(test_rz_num_math_value_len);
 	mu_run_test(test_rz_num_math_value_persistent_vars);
 	mu_run_test(test_rz_num_math_value_address_typed);
@@ -2663,6 +2992,8 @@ bool all_tests() {
 	mu_run_test(test_rz_num_math_ut64_legacy_compat);
 	mu_run_test(test_rz_num_math_ut64_segment);
 	mu_run_test(test_rz_num_il_lift);
+	mu_run_test(test_rz_num_il_lift_negative_values);
+	mu_run_test(test_rz_num_il_lift_evaluates_once);
 	mu_run_test(test_rz_big_decimal);
 	mu_run_test(test_rz_num_get_leading);
 	return tests_passed != tests_run;
