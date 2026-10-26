@@ -329,7 +329,7 @@ static char *parse_value(RzJson *parent, const char *key, char *p) {
 		} else {
 			js->num.u_value = (ut64)strtoull(p, &pe, 10);
 		}
-		if (pe == p || errno == ERANGE) {
+		if (pe == p) {
 			RZ_JSON_REPORT_ERROR("invalid number", p);
 			return NULL; // error
 		}
@@ -337,11 +337,16 @@ static char *parse_value(RzJson *parent, const char *key, char *p) {
 			js->type = RZ_JSON_DOUBLE;
 			errno = 0;
 			js->num.dbl_value = strtod(p, &pe);
-			if (pe == p || errno == ERANGE) {
+			// Accept underflow, but reject overflow even if rounding returns a finite value.
+			if (pe == p || (errno == ERANGE && fabs(js->num.dbl_value) > DBL_MIN)) {
 				RZ_JSON_REPORT_ERROR("invalid fractional number", p);
 				return NULL; // error
 			}
 		} else {
+			if (errno == ERANGE) {
+				RZ_JSON_REPORT_ERROR("invalid integer", p);
+				return NULL;
+			}
 			if (*p == '-') {
 				js->num.dbl_value = (double)js->num.s_value;
 			} else {
