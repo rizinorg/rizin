@@ -16,6 +16,11 @@
 typedef struct rz_icfg_t RzICFG;
 
 /**
+ * \brief An iCFG node.
+ */
+typedef struct rz_icfg_node_t RzICFGNode;
+
+/**
  * \brief The CFG of a single procedure.
  */
 typedef struct rz_cfg_t RzCFG;
@@ -31,23 +36,6 @@ typedef enum {
 	// TODO: Other attributes of interest could be:
 	// - Privilege level of that block (TEE, SM, hypervisor, guest, kernel, user etc.)
 } RzCFGNodeAttr;
-
-typedef struct rz_cfg_node_t {
-	/**
-	 * \brief The offsets of the instructions (packets), from the block start address.
-	 * Starting at the second instruction in the block (since first is always 0), offsets from the start of the block
-	 */
-	RzVector /*<ut16>*/ insn_offsets;
-	/**
-	 * \brief The function entry points this block can be reached from without walking a call edge.
-	 */
-	RzVector /*<ut64>*/ fcn_memberships;
-	/**
-	 * \brief Block attributes. Kept in sync with the CFG.
-	 * Used for accessing most important information, without the need to access the CFG edges.
-	 */
-	RzCFGNodeAttr attrs;
-} RzCFGNode;
 
 typedef enum rz_cfg_edge_type_t {
 	RZ_CFG_EDGE_TYPE_FALLTHROUGH = 0, ///< Fall through between two blocks.
@@ -68,11 +56,12 @@ typedef enum rz_cfg_edge_type_t {
 
 RZ_API RZ_OWN RzICFG *rz_icfg_new();
 RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *);
+
+RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_t size, RZ_NONNULL const RzVector *insn_offsets, ut64 fcn_membership);
+RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, ut64 to, RzCFGEdgeType type);
+RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg);
+
 RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out);
-
 RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg);
-
-RZ_API RZ_OWN RzCFGNode *rz_icfg_node_new();
-RZ_API void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzCFGNode *);
 
 #endif // RZ_CFG
