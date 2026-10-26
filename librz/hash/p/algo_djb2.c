@@ -46,7 +46,7 @@ static bool plugin_djb2_update(void *context, const ut8 *data, ut64 size) {
 	RzDjb2 *ctx = (RzDjb2 *)context;
 	ut32 hash = *ctx;
 	for (ut64 i = 0; i < size; ++i) {
-		hash=((hash<<5)+hash)+data[i];
+		hash = ((hash << 5) + hash) + data[i];
 	}
 	*ctx = hash;
 	return true;
