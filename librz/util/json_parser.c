@@ -7,6 +7,7 @@
 #include <rz_util/rz_utf8.h>
 #include <rz_util/rz_hex.h>
 #include <rz_util/rz_json.h>
+#include <rz_util/rz_num.h>
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_pj.h>
 #include <float.h>
@@ -336,7 +337,7 @@ static char *parse_value(RzJson *parent, const char *key, char *p) {
 		if (*pe == '.' || *pe == 'e' || *pe == 'E') { // double value
 			js->type = RZ_JSON_DOUBLE;
 			errno = 0;
-			js->num.dbl_value = strtod(p, &pe);
+			js->num.dbl_value = rz_num_str_to_double(p, &pe);
 			// Accept underflow, but reject overflow even if rounding returns a finite value.
 			if (pe == p || (errno == ERANGE && fabs(js->num.dbl_value) > DBL_MIN)) {
 				RZ_JSON_REPORT_ERROR("invalid fractional number", p);

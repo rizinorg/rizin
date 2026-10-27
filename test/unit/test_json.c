@@ -7,6 +7,7 @@
 #include <rz_util/rz_strbuf.h>
 #include <float.h>
 #include <fenv.h>
+#include <locale.h>
 #include "minunit.h"
 
 typedef struct json_test_t {
@@ -1392,6 +1393,36 @@ static int test_json_eq() {
 	mu_end;
 }
 
+static int test_json_locale() {
+	// Exercise both comma and multibyte decimal points.
+	static const char *locales[] = { "de_DE.UTF-8", "ps_AF.UTF-8", "German_Germany.1252" };
+	char *got[RZ_ARRAY_SIZE(locales)] = { 0 };
+	bool tested[RZ_ARRAY_SIZE(locales)] = { 0 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(locales); i++) {
+		if (!setlocale(LC_NUMERIC, locales[i])) {
+			continue;
+		}
+		tested[i] = true;
+		char text[] = "{\"a\":[1.5,-2.5e-3,0.1,1e2],\"b\":0.5}";
+		RzJson *json = rz_json_parse(text);
+		got[i] = json ? rz_json_as_string(json, false) : NULL;
+		rz_json_free(json);
+	}
+	// Restore the locale before assertions can return from the test.
+	setlocale(LC_NUMERIC, "C");
+	bool any = false;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(locales); i++) {
+		if (tested[i]) {
+			any = true;
+			mu_assert_streq_free(got[i], "{\"a\":[1.5,-0.0025,0.1,100.0],\"b\":0.5}", locales[i]);
+		}
+	}
+	if (!any) {
+		mu_ignore;
+	}
+	mu_end;
+}
+
 static int all_tests(void) {
 	size_t i;
 	for (i = 1; i < sizeof(tests) / sizeof(tests[0]); i++) {
@@ -1404,6 +1435,7 @@ static int all_tests(void) {
 	mu_run_test(test_json_float_range);
 	mu_run_test(test_json_overflow_rounding);
 	mu_run_test(test_json_eq);
+	mu_run_test(test_json_locale);
 	return tests_passed != tests_run;
 }
 

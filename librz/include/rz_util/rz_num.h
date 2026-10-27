@@ -445,6 +445,7 @@ RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_get_float(RzNum *num, const char *str);
 RZ_API RZ_BORROW RZ_NONNULL char *rz_num_double_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, double d);
 RZ_API RZ_BORROW RZ_NONNULL char *rz_num_float_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, float f);
+RZ_API double rz_num_str_to_double(RZ_NONNULL const char *str, RZ_NULLABLE RZ_OUT char **end);
 RZ_API bool rz_num_is_hex_prefix(const char *p);
 
 /**
