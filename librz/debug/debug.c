@@ -392,7 +392,7 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
-	dbg->cb_printf = (PrintfCallback)rz_cb_default_printf;
+	// dbg->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	dbg->reg = rz_reg_new();
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
@@ -780,8 +780,8 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			int what = rz_debug_signal_what(dbg, dbg->reason.signum);
 			const char *name = rz_signal_to_string(dbg->reason.signum);
 			if (name && strcmp("SIGTRAP", name)) {
-				rz_cons_printf(dbg->cons, "[+] signal %d aka %s received %d\n",
-					dbg->reason.signum, name, what);
+				// rz_cons_printf(dbg->cons, "[+] signal %d aka %s received %d\n",
+				// dbg->reason.signum, name, what);
 			}
 		}
 	}
@@ -1151,26 +1151,26 @@ RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps) {
 	return steps;
 }
 
-static bool skip_current_instruction(RzDebug *dbg) {
-	ut8 buf[64];
-	RzAnalysisOp op = { 0 };
-	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
+// static bool skip_current_instruction(RzDebug *dbg) {
+// 	ut8 buf[64];
+// 	RzAnalysisOp op = { 0 };
+// 	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 
-	dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
+// 	dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
 
-	rz_analysis_op_init(&op);
-	rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf),
-		RZ_ANALYSIS_OP_MASK_BASIC);
+// 	rz_analysis_op_init(&op);
+// 	rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf),
+// 		RZ_ANALYSIS_OP_MASK_BASIC);
 
-	if (op.size <= 0) {
-		rz_analysis_op_fini(&op);
-		return false;
-	}
+// 	if (op.size <= 0) {
+// 		rz_analysis_op_fini(&op);
+// 		return false;
+// 	}
 
-	rz_debug_reg_set_by_role(dbg, RZ_REG_NAME_PC, pc + op.size);
-	rz_analysis_op_fini(&op);
-	return true;
-}
+// 	rz_debug_reg_set_by_role(dbg, RZ_REG_NAME_PC, pc + op.size);
+// 	rz_analysis_op_fini(&op);
+// 	return true;
+// }
 
 static int session_forward_to_breakpoint(RzDebug *dbg) {
 	bool has_bp = false;
@@ -1647,9 +1647,9 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 	while (true) {
 		RzDebugReasonType reason;
 
-		if (rz_interrupt_is_breaked(dbg->intr)) {
-			break;
-		}
+		// if (rz_interrupt_is_breaked(dbg->intr)) {
+		// 	break;
+		// }
 #if __linux__
 		// step is needed to avoid dupped contsc results
 		/* XXX(jjd): actually one stop is before the syscall, the other is

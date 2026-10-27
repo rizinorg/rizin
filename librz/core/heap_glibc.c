@@ -1101,7 +1101,7 @@ static void resolve_tcache_perthread(RZ_NONNULL RzCore *core, const RzHeapConfig
 		if (!fresh) {
 			fresh = rz_debug_native_threads(dbg, dbg->pid);
 		}
-		RzDebugThread *fresh_th = rz_debug_get_thread(fresh, th->tid);
+		RzDebugThread *fresh_th = rz_debug_thread_find(dbg, th->tid);
 		if (fresh_th && fresh_th->tls_base != th->tls_base) {
 			th->tls_base = fresh_th->tls_base; // keep the tracked thread up to date
 			parse_tls_data(core, th, thread_idx, config);

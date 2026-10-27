@@ -259,7 +259,7 @@ typedef struct rz_debug_t {
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
-	HT_UP_H /*<RzDebugThread> */ *threads; /*Non owning hash table*/
+	HtUP /*<RzDebugThread> */ *threads; /*Non owning hash table*/
 	RzList /*<RzDebugProcess>*/ *processes;
 	// RzDebugProcess *cur_proc;
 

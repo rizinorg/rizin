@@ -85,7 +85,8 @@ RZ_API void rz_debug_process_remove(RZ_NONNULL RzDebug *dbg, int pid) {
 	rz_list_foreach (process->threads, it, thread) {
 		ht_up_delete(dbg->threads, (ut64)thread->tid); // unindex before the free
 	}
-	rz_list_delete_data(dbg->processes, process);
+	rz_list_delete_val(dbg->processes, process);
+	// rz_list_delete_data(dbg->processes, process);
 	if (pid == dbg->pid) {
 		dbg->n_threads = 0;
 	}
@@ -185,7 +186,8 @@ RZ_API void rz_debug_thread_remove(RZ_NONNULL RzDebug *dbg, int tid) {
 	ht_up_delete(dbg->threads, (ut64)tid); // unindex before the free
 	RzDebugProcess *process = rz_debug_process_find(dbg, thread->process_pid);
 	if (process && process->threads) {
-		rz_list_delete_data(process->threads, thread);
+		rz_list_delete_val(process->threads, thread);
+		// rz_list_delete_data(process->threads, thread);
 		if (process->pid == dbg->pid) {
 			dbg->n_threads = rz_list_length(process->threads);
 		}

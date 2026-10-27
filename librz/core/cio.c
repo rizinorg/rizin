@@ -22,7 +22,7 @@ RZ_API int rz_core_setup_debugger(RzCore *r, const char *debugbackend, bool atta
 	// NOTE: pid could be negative here, but it must be passed to the debug
 	// plugin as is, so we don't check it here. The plugin should handle it and
 	// return an error if it's invalid.
-	r->dbg->main_pid = pid;
+	r->dbg->pid = pid;
 	rz_debug_select(r->dbg, pid, r->dbg->tid);
 	if (attach) {
 		rz_debug_attach(r->dbg, pid);

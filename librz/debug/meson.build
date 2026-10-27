@@ -32,14 +32,15 @@ rz_debug_sources = [
   'serialize_debug.c',
   'snap.c',
   'trace.c',
-  'p/common_windows.c',
-  'p/common_winkd.c',
-  'p/debug_bochs.c',
-  'p/debug_dmp.c',
-  'p/debug_gdb.c',
-  'p/debug_io.c',
-  'p/debug_null.c',
-  'p/debug_winkd.c',
+  #'p/common_windows.c',
+  #'p/common_winkd.c',
+  #'p/debug_bochs.c',
+  #'p/debug_dmp.c',
+  #'p/debug_gdb.c',
+  #'p/debug_io.c',
+  #'p/debug_null.c',
+  #'p/debug_winkd.c',
+  
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
   #'p/native/bt/generic-x64.c',
@@ -73,7 +74,7 @@ rz_debug_deps = [
 
 if get_option('use_gpl')
   rz_debug_deps += dependency('rzqnx')
-  rz_debug_sources += 'p/debug_qnx.c'
+  # rz_debug_sources += 'p/debug_qnx.c'
 endif
 
 if has_debugger
@@ -216,7 +217,7 @@ endif
 
 if host_machine.system() == 'windows'
   rz_debug_sources += [
-    'p/debug_windbg.c',
+    # 'p/debug_windbg.c',
     'p/native/maps/windows_maps.c',
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',

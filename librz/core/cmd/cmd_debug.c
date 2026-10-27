@@ -3145,7 +3145,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_pid_attach_fd_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_cmd_debug_pid_select_handler(RzCore *core, int argc, const char **argv) {
 	int pid = rz_num_math(core->num, argv[1]);
 	rz_debug_select(core->dbg, pid, core->dbg->tid);
-	core->dbg->main_pid = pid;
+	core->dbg->pid = pid;
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3161,7 +3161,7 @@ RZ_IPI RzCmdStatus rz_cmd_debug_pid_select_forked_handler(RzCore *core, int argc
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_debug_select(core->dbg, core->dbg->forked_pid, core->dbg->tid);
-	core->dbg->main_pid = core->dbg->forked_pid;
+	core->dbg->pid = core->dbg->forked_pid;
 	core->dbg->n_threads = 0;
 	core->dbg->forked_pid = -1;
 	return RZ_CMD_STATUS_OK;
