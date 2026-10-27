@@ -146,8 +146,8 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	rz_set_u_add(node->proc_memberships, proc_membership);
 
 success:
-	if (rz_vector_find_sorted(&icfg->proc_entries, &addr, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
-		rz_vector_insert_sorted(&icfg->proc_entries, &addr, (RzVectorComparator)uint_cmp, NULL);
+	if (rz_vector_find_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+		rz_vector_insert_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL);
 	}
 	return true;
 }
