@@ -43,6 +43,7 @@ typedef enum {
 	SD_UNSIGNED,
 	SD_SIGNED,
 	SD_DOUBLE,
+	SD_FLOAT,
 	SD_STRING, //<< str points at borrowed external memory
 	SD_CHAR, //<< a single printable char, stored in chbuf
 } SdScalarKind;
@@ -53,6 +54,7 @@ typedef struct {
 	ut64 u; //<< SD_UNSIGNED
 	st64 s; //<< SD_SIGNED
 	double d; //<< SD_DOUBLE
+	float f; //<< SD_FLOAT
 	const char *str; //<< SD_STRING (borrowed; never NULL)
 	char chbuf[2]; //<< SD_CHAR backing store (self-contained, copy-safe)
 } SdScalar;
@@ -130,7 +132,7 @@ static SdScalar sd_classify_scalar(const RzPfValue *v, int k) {
 		break;
 	case RZ_PF_FLOAT16:
 	case RZ_PF_FLOAT32:
-		out.kind = SD_DOUBLE, out.d = (double)s->v_f32;
+		out.kind = SD_FLOAT, out.f = s->v_f32;
 		break;
 	case RZ_PF_FLOAT64:
 		out.kind = SD_DOUBLE, out.d = s->v_f64;
@@ -165,6 +167,9 @@ static void sd_array_add(RzStructuredData *arr, const SdScalar *c) {
 	case SD_DOUBLE:
 		rz_structured_data_array_add_double(arr, c->d);
 		break;
+	case SD_FLOAT:
+		rz_structured_data_array_add_float(arr, c->f);
+		break;
 	case SD_STRING:
 	case SD_CHAR:
 		rz_structured_data_array_add_string(arr, sd_str_of(c));
@@ -184,6 +189,9 @@ static void sd_map_add(RzStructuredData *m, const char *key,
 		break;
 	case SD_DOUBLE:
 		rz_structured_data_map_add_double(m, key, c->d);
+		break;
+	case SD_FLOAT:
+		rz_structured_data_map_add_float(m, key, c->f);
 		break;
 	case SD_STRING:
 	case SD_CHAR:

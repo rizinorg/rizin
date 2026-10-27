@@ -130,6 +130,11 @@ static void builder_yaml_val_double(RZ_NULLABLE void *user, double d) {
 	builder_yaml_val_float_str((StructYamlPrinter *)user, d, rz_num_double_to_str(num, sizeof(num), d));
 }
 
+static void builder_yaml_val_float(RZ_NULLABLE void *user, float f) {
+	char num[RZ_NUM_FLOAT_STR_SIZE];
+	builder_yaml_val_float_str((StructYamlPrinter *)user, f, rz_num_float_to_str(num, sizeof(num), f));
+}
+
 static void builder_yaml_val_bool(RZ_NULLABLE void *user, bool b) {
 	const char *s = b ? "true" : "false";
 	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
@@ -222,4 +227,5 @@ static const RzStructuredDataIterator builder_yaml_iterator = {
 	.val_bool = builder_yaml_val_bool,
 	.val_string = builder_yaml_val_string,
 	.val_null = builder_yaml_val_null,
+	.val_float = builder_yaml_val_float,
 };

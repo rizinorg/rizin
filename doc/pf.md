@@ -298,8 +298,8 @@ caller, not by the format string):
   YAML (`rz_structured_data_to_json` / `_to_yaml`) or walk with the
   generic iterator. The top level is a map keyed by field name (unnamed
   fields become `field_<n>`); scalars map to typed unsigned/signed/
-  double/string entries, arrays and bitvectors to arrays, nested structs
-  to sub-maps with a `_type` key, and raw/GUID payloads to byte blocks.
+  float/double/string entries (`f2` and `f4` are floats), arrays and bitvectors
+  to arrays, nested structs to sub-maps with a `_type` key, and raw/GUID payloads to byte blocks.
   Timestamps emit a formatted string plus a `<name>_raw` sibling.
 
 ## Write mode (`pfw`)
