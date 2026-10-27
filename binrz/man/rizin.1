@@ -133,6 +133,8 @@ Target log level/severity when to abort
 (0:DEBUG, 1:VERBOSE, 2:INFO, 3:WARN, 4:ERROR, 5:FATAL)
 .It Ev RZ_CURL
 Whether to use curl (for SSL support)
+.It Ev RZ_DEBUG
+Show error messages and crash signal information when defined
 .It Ev RZ_DEBUG_ASSERT
 Set a breakpoint when hitting an assert
 .It Ev RZ_DEBUG_TOOL
@@ -154,6 +156,8 @@ Should the log output contain src info (filename:lineno)
 rzpipe cmd input (file descriptor)
 .It Ev RZ_PIPE_OUT
 rzpipe cmd output (file descriptor)
+.It Ev RZ_NOPLUGINS
+Do not load shared plugins
 .It Ev RZ_PREFIX
 Default prefix rizin was compiled for
 .It Ev RZ_RCFILE
