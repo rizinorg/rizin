@@ -55,10 +55,34 @@ static bool test_structured_data_map_add_null_duplicate_key(void) {
 	mu_end;
 }
 
+static bool test_structured_data_double(void) {
+	RzStructuredData *sd = rz_structured_data_new_map();
+	mu_assert_notnull(sd, "map created");
+	rz_structured_data_map_add_double(sd, "tenth", 0.1);
+	rz_structured_data_map_add_double(sd, "tiny", 1e-9);
+	rz_structured_data_map_add_double(sd, "one", 1.0);
+	RzStructuredData *arr = rz_structured_data_map_add_array(sd, "special");
+	mu_assert_notnull(arr, "array created");
+	rz_structured_data_array_add_double(arr, -0.0);
+	rz_structured_data_array_add_double(arr, F64_NAN);
+	rz_structured_data_array_add_double(arr, F64_PINF);
+	rz_structured_data_array_add_double(arr, F64_NINF);
+
+	char *json = rz_structured_data_to_json(sd);
+	mu_assert_streq_free(json, "{\"tenth\":0.1,\"tiny\":1.0e-09,\"one\":1.0,\"special\":[-0.0,\"NaN\",\"Infinity\",\"-Infinity\"]}", "json doubles");
+
+	char *yaml = rz_structured_data_to_yaml(sd);
+	mu_assert_streq_free(yaml, "tenth: 0.1\ntiny: 1.0e-09\none: 1.0\nspecial:\n  - -0.0\n  - .nan\n  - .inf\n  - -.inf\n", "yaml doubles");
+
+	rz_structured_data_free(sd);
+	mu_end;
+}
+
 static bool all_tests() {
 	mu_run_test(test_structured_data_map_add_null);
 	mu_run_test(test_structured_data_array_add_null);
 	mu_run_test(test_structured_data_map_add_null_duplicate_key);
+	mu_run_test(test_structured_data_double);
 	return tests_passed != tests_run;
 }
 
