@@ -991,6 +991,91 @@ RZ_API RZ_BORROW RZ_NONNULL char *rz_num_float_to_str(RZ_NONNULL RZ_OUT char *bu
 	return buf;
 }
 
+/**
+ * \brief Parse a C-locale number without changing the current locale.
+ *
+ * Accept the syntax of strtod(), including hexadecimal and non-finite values,
+ * but always use `.` as the decimal point. Parsing may allocate for long inputs
+ * in non-C locales; allocation failure returns zero with \p end set to \p str.
+ *
+ * \param str String to read
+ * \param end Receives the first unparsed character, or \p str if conversion failed; may be NULL
+ * \return The parsed value, with conversion errors reported through errno as by strtod()
+ */
+RZ_API double rz_num_str_to_double(RZ_NONNULL const char *str, RZ_NULLABLE RZ_OUT char **end) {
+	rz_return_val_if_fail(str, 0.0);
+	// Unlike localeconv(), snprintf() does not rewrite shared locale data.
+	char point[16];
+	int point_len = snprintf(point, sizeof(point), "%.1f", 0.5);
+	if (point_len <= 2 || point_len >= (int)sizeof(point) || !strcmp(point, "0.5")) {
+		return strtod(str, end);
+	}
+	point[point_len - 1] = '\0';
+	const char *dp = point + 1;
+	// Bound the input so a locale's decimal point cannot consume a separator.
+	const char *p = str + strspn(str, " \t\n\v\f\r");
+	if (*p == '+' || *p == '-') {
+		p++;
+	}
+	if (IS_ALPHA(*p)) {
+		// Non-finite spellings do not depend on the decimal point.
+		return strtod(str, end);
+	}
+	bool hex = p[0] == '0' && (p[1] == 'x' || p[1] == 'X');
+	const char *digits = hex ? "0123456789abcdefABCDEF" : "0123456789";
+	p += hex ? 2 : 0;
+	p += strspn(p, digits);
+	const char *dot = NULL;
+	if (*p == '.') {
+		dot = p++;
+		p += strspn(p, digits);
+	}
+	if (*p == (hex ? 'p' : 'e') || *p == (hex ? 'P' : 'E')) {
+		const char *e = p + 1 + (p[1] == '+' || p[1] == '-');
+		if (IS_DIGIT(*e)) {
+			p = e + strspn(e, "0123456789");
+		}
+	}
+
+	size_t len = p - str;
+	size_t head = dot ? (size_t)(dot - str) : len;
+	size_t dp_len = strlen(dp);
+	char stack_copy[64];
+	char *copy = len + dp_len < sizeof(stack_copy) ? stack_copy : malloc(len + dp_len + 1);
+	if (!copy) {
+		if (end) {
+			*end = (char *)str;
+		}
+		return 0.0;
+	}
+	memcpy(copy, str, head);
+	size_t copy_len = head;
+	if (dot) {
+		memcpy(copy + copy_len, dp, dp_len);
+		copy_len += dp_len;
+		memcpy(copy + copy_len, dot + 1, len - head - 1);
+		copy_len += len - head - 1;
+	}
+	copy[copy_len] = '\0';
+
+	// Let libc report failed conversions too; some implementations set EINVAL.
+	char *copy_end;
+	double d = strtod(copy, &copy_end);
+	int err = errno;
+	size_t used = copy_end - copy;
+	if (used > head) {
+		used -= dp_len - 1;
+	}
+	if (copy != stack_copy) {
+		free(copy);
+	}
+	errno = err;
+	if (end) {
+		*end = (char *)str + used;
+	}
+	return d;
+}
+
 RZ_API int rz_num_to_bits(char *out, ut64 num) {
 	int size = 64, i;
 

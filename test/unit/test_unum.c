@@ -3107,6 +3107,119 @@ bool test_rz_num_float_str_locale() {
 	mu_end;
 }
 
+typedef struct {
+	double d;
+	size_t used;
+	int err;
+} StrToDouble;
+
+static StrToDouble str_to_double(const char *s, bool rz) {
+	StrToDouble r;
+	char *end;
+	errno = 0;
+	r.d = rz ? rz_num_str_to_double(s, &end) : strtod(s, &end);
+	r.err = errno;
+	r.used = end - s;
+	return r;
+}
+
+static bool same_str_to_double(StrToDouble a, StrToDouble b) {
+	bool same_value = (isnan(a.d) && isnan(b.d)) || !memcmp(&a.d, &b.d, sizeof(a.d));
+	return same_value && a.used == b.used && a.err == b.err;
+}
+
+#define STR_TO_DOUBLE_RANDOM 20000
+
+bool test_rz_num_str_to_double() {
+	static const char *fixed[] = {
+		"1.5",
+		"  -2.5e-3x",
+		".5",
+		"5.",
+		"1,5",
+		"1.5,6",
+		"-0.0",
+		"0x1.8p1",
+		"0x.8",
+		"0x",
+		"1e",
+		"1e+",
+		"1.e5",
+		"inf",
+		"-Infinity",
+		"nan",
+		".",
+		"-",
+		"",
+		"abc",
+		",5",
+		"1e400",
+		"-1e400",
+		"1e-400",
+		"4.94065645841247e-324",
+		"0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+		"123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890.5e-80",
+	};
+	static const char alphabet[] = "0123456789..eE+-xXpP ,in";
+	static char random[STR_TO_DOUBLE_RANDOM][16];
+	ut64 state = 0x2545f4914f6cdd1dULL;
+	for (size_t i = 0; i < STR_TO_DOUBLE_RANDOM; i++) {
+		size_t len = xorshift64(&state) % (sizeof(random[i]) - 1);
+		for (size_t k = 0; k < len; k++) {
+			random[i][k] = alphabet[xorshift64(&state) % (sizeof(alphabet) - 1)];
+		}
+		random[i][len] = '\0';
+	}
+	// Use the host C library as the reference for values, end pointers and errno.
+	static StrToDouble want_fixed[RZ_ARRAY_SIZE(fixed)], want_random[STR_TO_DOUBLE_RANDOM];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(fixed); i++) {
+		want_fixed[i] = str_to_double(fixed[i], false);
+	}
+	for (size_t i = 0; i < STR_TO_DOUBLE_RANDOM; i++) {
+		want_random[i] = str_to_double(random[i], false);
+	}
+	mu_assert_eq(str_to_double("  -2.5e-3x", false).used, 9, "reference spans the number");
+	mu_assert_eq(str_to_double(",5", false).used, 0, "reference reads nothing from ,5");
+	mu_assert_eq(str_to_double("1e400", false).err, ERANGE, "reference overflow");
+
+	// Exercise both comma and multibyte decimal points.
+	static const char *locales[] = { "C", "de_DE.UTF-8", "ps_AF.UTF-8", "German_Germany.1252" };
+	static StrToDouble got_fixed[RZ_ARRAY_SIZE(fixed)], got_random[STR_TO_DOUBLE_RANDOM];
+	char msg[128];
+	int tested = 0;
+	for (size_t l = 0; l < RZ_ARRAY_SIZE(locales); l++) {
+		if (!setlocale(LC_NUMERIC, locales[l])) {
+			continue;
+		}
+		tested++;
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(fixed); i++) {
+			got_fixed[i] = str_to_double(fixed[i], true);
+		}
+		for (size_t i = 0; i < STR_TO_DOUBLE_RANDOM; i++) {
+			got_random[i] = str_to_double(random[i], true);
+		}
+		// Restore the locale before assertions can return from the test.
+		setlocale(LC_NUMERIC, "C");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(fixed); i++) {
+			snprintf(msg, sizeof(msg), "%s: \"%.40s\"", locales[l], fixed[i]);
+			mu_assert(msg, same_str_to_double(got_fixed[i], want_fixed[i]));
+		}
+		for (size_t i = 0; i < STR_TO_DOUBLE_RANDOM; i++) {
+			snprintf(msg, sizeof(msg), "%s: \"%.*s\"",
+				locales[l], (int)sizeof(random[i]) - 1, random[i]);
+			mu_assert(msg, same_str_to_double(got_random[i], want_random[i]));
+		}
+	}
+	char *end;
+	mu_assert_true(rz_num_str_to_double("2.5", NULL) == 2.5, "end can be NULL");
+	mu_assert_true(rz_num_str_to_double("x", &end) == 0.0 && !strcmp(end, "x"), "nothing read");
+	if (tested < 2) {
+		// No non-C locale was available.
+		mu_ignore;
+	}
+	mu_end;
+}
+
 bool test_rz_num_get_leading() {
 	// rz_num_get_leading evaluates only the numeric literal at the head of
 	// the string and reports where it stopped, so a trailing operand,
@@ -3204,6 +3317,7 @@ bool all_tests() {
 	mu_run_test(test_rz_num_float_to_str);
 	mu_run_test(test_rz_num_float_str_round_trip);
 	mu_run_test(test_rz_num_float_str_locale);
+	mu_run_test(test_rz_num_str_to_double);
 	return tests_passed != tests_run;
 }
 
