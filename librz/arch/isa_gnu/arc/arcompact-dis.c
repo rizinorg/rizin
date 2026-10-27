@@ -486,18 +486,8 @@ my_sprintf(struct arcDisState *state, char *buf, const char *format, ...) {
 				inc_bp();
 			} break;
 			case '*': {
-#if 0
-	    va_arg(ap,char*);
-	    inc_bp();
-	    break;
-#elif 1 /* used for prefetch to skip an argument.  */
 				va_arg(ap, int);
 				break;
-#else
-				extern void abort(void);
-
-				abort();
-#endif
 			}
 
 				/* SIMD operands follow*/
@@ -2751,11 +2741,6 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 		     version of it
 		   - Scaled index is encoded as 'addrWriteBack', even though it isn't
 		     actually doing a write back;  it is legitimate with a LIMM.  */
-#if 0
-      /* Check if address writeback is allowed before decoding the
-	 address writeback field of a load instruction.*/
-      if (fieldBisReg && (fieldB != 62))
-#endif
 		addrWriteBack = BITS(state->words[0], 22, 23);
 		signExtend = BIT(state->words[0], 16);
 
