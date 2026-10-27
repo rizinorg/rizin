@@ -842,3 +842,25 @@ WARNING: pf: 'v(N,?)' unknown bit-order keyword (use 'lsb' or 'msb'); defaulting
 WARNING: pf: 'v(N,?)' unknown bit-order keyword (use 'lsb' or 'msb'); defaulting to msb
 EOF
 RUN
+
+NAME=pfj f8 values read back as the same double
+FILE==
+CMDS=<<EOF
+wv8 0x3e112e0be826d695 @ 0
+wv8 0x3ff3c0ca428c59fb @ 8
+wv8 0x7ff8000000000000 @ 16
+wv8 0x7ff0000000000000 @ 24
+wv8 0x54b249ad2594c37d @ 32
+wv8 0xfff0000000000000 @ 40
+wv8 0x7fefffffffffffff @ 48
+wv8 0x1 @ 56
+wv8 0x8000000000000000 @ 64
+wv8 0x3ff0000000000000 @ 72
+pfj "f8f8f8f8f8f8f8f8f8f8 tiny precise nan inf huge ninf max subnormal nzero one"
+pfj "f8f8f8f8f8f8f8f8f8f8 tiny precise nan inf huge ninf max subnormal nzero one"~{[7].value}
+EOF
+EXPECT=<<EOF
+[{"name":"tiny","type":"float64","size":8,"offset":0,"endian":"little","value":1.0e-09},{"name":"precise","type":"float64","size":8,"offset":8,"endian":"little","value":1.2345678901234567},{"name":"nan","type":"float64","size":8,"offset":16,"endian":"little","value":"NaN"},{"name":"inf","type":"float64","size":8,"offset":24,"endian":"little","value":"Infinity"},{"name":"huge","type":"float64","size":8,"offset":32,"endian":"little","value":1.0e+100},{"name":"ninf","type":"float64","size":8,"offset":40,"endian":"little","value":"-Infinity"},{"name":"max","type":"float64","size":8,"offset":48,"endian":"little","value":1.7976931348623157e+308},{"name":"subnormal","type":"float64","size":8,"offset":56,"endian":"little","value":4.94065645841247e-324},{"name":"nzero","type":"float64","size":8,"offset":64,"endian":"little","value":-0.0},{"name":"one","type":"float64","size":8,"offset":72,"endian":"little","value":1.0}]
+4.94065645841247e-324
+EOF
+RUN
