@@ -681,14 +681,6 @@ CMDS=<<EOF
 pfo~?elf32
 pfo~?elf64
 pfo~?mz
-
-NAME=pfo lists each known FDF file once (no duplicates)
-FILE=bins/elf/echo
-ARGS=-nn
-CMDS=<<EOF
-pfo~?elf32
-pfo~?elf64
-pfo~?mz
 EOF
 EXPECT=<<EOF
 1
@@ -862,5 +854,24 @@ EOF
 EXPECT=<<EOF
 [{"name":"tiny","type":"float64","size":8,"offset":0,"endian":"little","value":1.0e-09},{"name":"precise","type":"float64","size":8,"offset":8,"endian":"little","value":1.2345678901234567},{"name":"nan","type":"float64","size":8,"offset":16,"endian":"little","value":"NaN"},{"name":"inf","type":"float64","size":8,"offset":24,"endian":"little","value":"Infinity"},{"name":"huge","type":"float64","size":8,"offset":32,"endian":"little","value":1.0e+100},{"name":"ninf","type":"float64","size":8,"offset":40,"endian":"little","value":"-Infinity"},{"name":"max","type":"float64","size":8,"offset":48,"endian":"little","value":1.7976931348623157e+308},{"name":"subnormal","type":"float64","size":8,"offset":56,"endian":"little","value":4.94065645841247e-324},{"name":"nzero","type":"float64","size":8,"offset":64,"endian":"little","value":-0.0},{"name":"one","type":"float64","size":8,"offset":72,"endian":"little","value":1.0}]
 4.94065645841247e-324
+EOF
+RUN
+
+NAME=pfj f4 and f2 values read back as the same float
+FILE==
+CMDS=<<EOF
+wv4 0x3dcccccd @ 0
+wv4 0x3089705f @ 4
+wv4 0x7f7fffff @ 8
+wv4 0xff800000 @ 12
+wv2 0x3c00 @ 16
+wv2 0x2e66 @ 18
+wv2 0x7e00 @ 20
+wv2 0x0001 @ 22
+wv2 0x7bff @ 24
+pfj "f4f4f4f4f2f2f2f2f2 tenth tiny max ninf one h_tenth h_nan h_subnormal h_max"
+EOF
+EXPECT=<<EOF
+[{"name":"tenth","type":"float32","size":4,"offset":0,"endian":"little","value":0.1},{"name":"tiny","type":"float32","size":4,"offset":4,"endian":"little","value":1.0e-09},{"name":"max","type":"float32","size":4,"offset":8,"endian":"little","value":3.4028235e+38},{"name":"ninf","type":"float32","size":4,"offset":12,"endian":"little","value":"-Infinity"},{"name":"one","type":"float16","size":2,"offset":16,"endian":"little","value":1.0},{"name":"h_tenth","type":"float16","size":2,"offset":18,"endian":"little","value":0.099975586},{"name":"h_nan","type":"float16","size":2,"offset":20,"endian":"little","value":"NaN"},{"name":"h_subnormal","type":"float16","size":2,"offset":22,"endian":"little","value":5.9604645e-08},{"name":"h_max","type":"float16","size":2,"offset":24,"endian":"little","value":65504.0}]
 EOF
 RUN
