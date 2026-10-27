@@ -413,7 +413,30 @@ static void add_block_to_conflict_list(RzAnalysis *analysis, RzAbsIntCFGConflict
 // }
 
 RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, RZ_BORROW RZ_NONNULL RzAbsIntResult *res) {
-	return false;
+	rz_return_val_if_fail(icfg && res, false);
+	bool success = true;
+	RzAbsIntBlock *block;
+	RzIntervalTreeIter it;
+	rz_interval_tree_foreach(&res->blocks, it, block) {
+		ut64 start = rz_absint_block_get_start(block);
+		ut64 end = rz_absint_block_get_end(block);
+		if (!rz_icfg_add_node(icfg, start, end - start, &block->insn_offsets, res->entry)) {
+			RZ_LOG_WARN("Failed to add block 0x%" PFMT64x " to iCFG.\n", start);
+			success = false;
+			continue;
+		}
+		ut64 *to;
+		rz_vector_foreach(&block->jump_targets, to) {
+			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_JUMP);
+		}
+		rz_vector_foreach(&block->call_targets, to) {
+			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_CALL);
+		}
+		if (block->is_fallthrough) {
+			rz_icfg_prepare_edge(icfg, start, end + 1, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
+		}
+	}
+	return success;
 }
 
 RZ_API bool rz_absint_apply_icfg_to_analysis(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzICFG *icfg, RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name) {
