@@ -119,7 +119,7 @@ static RzStructuredData *mk68_opex(csh handle, cs_insn *insn) {
 			break;
 		case M68K_OP_FP_SINGLE:
 			rz_structured_data_map_add_string(operand, "type", "fp_single");
-			rz_structured_data_map_add_double(operand, "value", op->simm);
+			rz_structured_data_map_add_float(operand, "value", op->simm);
 			break;
 		case M68K_OP_FP_DOUBLE:
 			rz_structured_data_map_add_string(operand, "type", "fp_double");

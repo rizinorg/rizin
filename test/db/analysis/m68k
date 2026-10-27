@@ -1877,3 +1877,18 @@ move16 (a0), 0x1.l
 6
 EOF
 RUN
+
+NAME=M68k fp_single opex keeps float digits
+FILE==
+CMDS=<<EOF
+e asm.arch=m68k
+e asm.bits=32
+wx f23c44803dcccccd
+aoj~{[0].opex}
+ao~value: 0
+EOF
+EXPECT=<<EOF
+{"operands":[{"type":"fp_single","value":0.1},{"type":"reg","value":"fp1"}]}
+      value: 0.1
+EOF
+RUN

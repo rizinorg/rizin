@@ -78,11 +78,65 @@ static bool test_structured_data_double(void) {
 	mu_end;
 }
 
+static bool test_structured_data_float(void) {
+	RzStructuredData *sd = rz_structured_data_new_map();
+	mu_assert_notnull(sd, "map created");
+	rz_structured_data_map_add_float(sd, "tenth", 0.1f);
+	rz_structured_data_map_add_double(sd, "widened", 0.1f);
+	RzStructuredData *arr = rz_structured_data_map_add_array(sd, "list");
+	mu_assert_notnull(arr, "array created");
+	rz_structured_data_array_add_float(arr, 1e-9f);
+	rz_structured_data_array_add_float(arr, F32_NAN);
+	rz_structured_data_array_add_float(arr, F32_NINF);
+
+	char *json = rz_structured_data_to_json(sd);
+	mu_assert_streq_free(json, "{\"tenth\":0.1,\"widened\":0.10000000149011612,\"list\":[1.0e-09,\"NaN\",\"-Infinity\"]}", "json floats");
+
+	char *yaml = rz_structured_data_to_yaml(sd);
+	mu_assert_streq_free(yaml, "tenth: 0.1\nwidened: 0.10000000149011612\nlist:\n  - 1.0e-09\n  - .nan\n  - -.inf\n", "yaml floats");
+
+	rz_structured_data_free(sd);
+	mu_end;
+}
+
+static void nop_new_struct(void *user, RzStructuredDataBlock block, size_t n_elems) {
+}
+
+static void nop_end_struct(void *user) {
+}
+
+static void nop_key(void *user, const char *key) {
+}
+
+static void collect_double(void *user, double d) {
+	*(double *)user = d;
+}
+
+static bool test_structured_data_float_without_val_float(void) {
+	// An iterator written before val_float existed
+	const RzStructuredDataIterator it = {
+		.new_struct = nop_new_struct,
+		.end_struct = nop_end_struct,
+		.key = nop_key,
+		.val_double = collect_double,
+	};
+	RzStructuredData *sd = rz_structured_data_new_array();
+	mu_assert_notnull(sd, "array created");
+	rz_structured_data_array_add_float(sd, 0.1f);
+	double got = 0.0;
+	rz_structured_data_iterate(sd, &it, &got);
+	mu_assert_true(got == (double)0.1f, "val_double gets the float widened");
+	rz_structured_data_free(sd);
+	mu_end;
+}
+
 static bool all_tests() {
 	mu_run_test(test_structured_data_map_add_null);
 	mu_run_test(test_structured_data_array_add_null);
 	mu_run_test(test_structured_data_map_add_null_duplicate_key);
 	mu_run_test(test_structured_data_double);
+	mu_run_test(test_structured_data_float);
+	mu_run_test(test_structured_data_float_without_val_float);
 	return tests_passed != tests_run;
 }
 
