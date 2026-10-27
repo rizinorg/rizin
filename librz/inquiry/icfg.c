@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_assert.h"
-#include "rz_util/rz_graph.h"
-#include "rz_util/rz_log.h"
 #include <rz_inquiry/rz_icfg.h>
 
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
 	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
+	RzSetU *block_conflicts; ///< Blocks which could be shared by procedures or are their own procedure.
 	RzGraph /*<RzCFGNode *, RzCFGEdgeType>*/ *graph;
 };
 
@@ -73,15 +72,19 @@ RZ_API RZ_OWN RzICFG *rz_icfg_new() {
 	m->graph = icfg;
 	rz_vector_init(&m->prepared_edges, sizeof(ICFGEdge), NULL, NULL);
 	rz_vector_init(&m->proc_entries, sizeof(ut64), NULL, NULL);
+	m->block_conflicts = rz_set_u_new();
 	return m;
 }
 
-RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *map) {
-	if (!map) {
+RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg) {
+	if (!icfg) {
 		return;
 	}
-	rz_graph_free(map->graph);
-	free(map);
+	rz_graph_free(icfg->graph);
+	rz_vector_fini(&icfg->prepared_edges);
+	rz_vector_fini(&icfg->proc_entries);
+	rz_set_u_free(icfg->block_conflicts);
+	free(icfg);
 }
 
 static RZ_OWN RzICFGNode *icfg_node_new(ut64 addr, size_t size, RZ_NONNULL const RzVector *insn_offsets) {
@@ -144,6 +147,10 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	// END
 
 	rz_set_u_add(node->proc_memberships, proc_membership);
+
+	if (rz_set_u_size(node->proc_memberships) > 1) {
+		rz_set_u_add(icfg->block_conflicts, node->addr);
+	}
 
 success:
 	if (rz_vector_find_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
