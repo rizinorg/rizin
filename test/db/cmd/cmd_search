@@ -1020,3 +1020,26 @@ EXPECT=<<EOF
 0x00040000 5 hit.bytes.1
 EOF
 RUN
+
+NAME=Max hits is respected
+FILE==
+CMDS=<<EOF
+w AAAAAAAbbbbbbAAAAAccccAAAAAA
+px 32
+e str.encoding=ascii
+e search.str.min_length=1
+e search.maxhits=1
+/z A
+e search.maxhits=2
+/x 63
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  4141 4141 4141 4162 6262 6262 6241 4141  AAAAAAAbbbbbbAAA
+0x00000010  4141 6363 6363 4141 4141 4141 0000 0000  AAccccAAAAAA....
+0x00000000 1 hit.string.ascii.0 1
+0x00000012 1 hit.bytes.0
+0x00000013 1 hit.bytes.1
+EOF
+EXPECT_ERR=
+RUN
