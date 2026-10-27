@@ -107,7 +107,8 @@ static void scalar_json(PJ *j, const RzPfValue *val, int k) {
 		break;
 	case RZ_PF_FLOAT16:
 	case RZ_PF_FLOAT32:
-		pj_d(j, (double)s->v_f32);
+		// As a double, 0.1f would print as 0.10000000149011612. A float16 is exact in a float.
+		pj_f(j, s->v_f32);
 		break;
 	case RZ_PF_FLOAT64:
 		pj_d(j, s->v_f64);
