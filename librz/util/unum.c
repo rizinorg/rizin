@@ -2,8 +2,41 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <errno.h>
+#include <float.h>
 #include <math.h> /* for ceill */
 #include <rz_util.h>
+
+// Older C libraries may not define the C11 round-trip precision limits.
+#ifndef FLT_DECIMAL_DIG
+#define FLT_DECIMAL_DIG 9
+#endif
+#ifndef DBL_DECIMAL_DIG
+#define DBL_DECIMAL_DIG 17
+#endif
+
+/**
+ * \brief Normalize a finite `%g` result for JSON and YAML.
+ *
+ * \p num must have room for 2 more characters.
+ */
+static void num_float_str_fix(char *num) {
+	// An embedder may have selected a non-ASCII or multibyte decimal point.
+	char *dp = num + strspn(num, "+-0123456789e");
+	if (*dp) {
+		size_t dp_len = strcspn(dp, "0123456789");
+		*dp = '.';
+		memmove(dp + 1, dp + dp_len, strlen(dp + dp_len) + 1);
+		return;
+	}
+	// YAML 1.1 requires a decimal point even in exponent notation.
+	char *exponent = strchr(num, 'e');
+	if (exponent) {
+		memmove(exponent + 2, exponent, strlen(exponent) + 1);
+		memcpy(exponent, ".0", 2);
+	} else {
+		memcpy(dp, ".0", 3);
+	}
+}
 
 /**
  * \brief Checks if the first two chars of \p p equal "0x".
@@ -890,6 +923,72 @@ RZ_API double rz_num_get_float(RzNum *num, const char *str) {
 	double d = 0.0f;
 	(void)sscanf(str, "%lf", &d);
 	return d;
+}
+
+/**
+ * \brief Format a double without losing precision when read back.
+ *
+ * Use `%g` with DBL_DIG through DBL_DECIMAL_DIG significant digits, stopping
+ * at the first precision that round-trips. This is not a shortest-decimal
+ * conversion. The decimal point is always `.`, and a fractional part keeps
+ * integral values and signed zero recognizable as floats in JSON and YAML.
+ * Round-trip conversion assumes the default round-to-nearest mode.
+ * NaN and infinities are printed as `nan`, `inf` and `-inf`.
+ *
+ * \param buf Output buffer; RZ_NUM_FLOAT_STR_SIZE bytes suffice for every value
+ * \param size Buffer size including the terminator; smaller buffers truncate the result
+ * \param d Value to print
+ * \return \p buf
+ */
+RZ_API RZ_BORROW RZ_NONNULL char *rz_num_double_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, double d) {
+	rz_return_val_if_fail(buf && size, buf);
+	char s[64];
+	if (isnan(d)) {
+		rz_str_ncpy(buf, "nan", size);
+		return buf;
+	}
+	if (isinf(d)) {
+		rz_str_ncpy(buf, d < 0 ? "-inf" : "inf", size);
+		return buf;
+	}
+	for (int prec = DBL_DIG; prec <= DBL_DECIMAL_DIG; prec++) {
+		snprintf(s, sizeof(s), "%.*g", prec, d);
+		if (strtod(s, NULL) == d) {
+			break;
+		}
+	}
+	num_float_str_fix(s);
+	rz_str_ncpy(buf, s, size);
+	return buf;
+}
+
+/**
+ * \brief Format a float without losing precision when read back.
+ *
+ * Use the notation of rz_num_double_to_str(), with FLT_DIG through
+ * FLT_DECIMAL_DIG significant digits. Check both direct float parsing and
+ * conversion through double, since JSON readers commonly use doubles.
+ *
+ * \param buf Output buffer; RZ_NUM_FLOAT_STR_SIZE bytes suffice for every value
+ * \param size Buffer size including the terminator; smaller buffers truncate the result
+ * \param f Value to print
+ * \return \p buf
+ */
+RZ_API RZ_BORROW RZ_NONNULL char *rz_num_float_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, float f) {
+	rz_return_val_if_fail(buf && size, buf);
+	char s[64];
+	if (isnan(f) || isinf(f)) {
+		return rz_num_double_to_str(buf, size, f);
+	}
+	for (int prec = FLT_DIG; prec <= FLT_DECIMAL_DIG; prec++) {
+		snprintf(s, sizeof(s), "%.*g", prec, f);
+		if (strtof(s, NULL) == f && (float)strtod(s, NULL) == f) {
+			break;
+		}
+	}
+	num_float_str_fix(s);
+	rz_str_ncpy(buf, s, size);
+	return buf;
 }
 
 RZ_API int rz_num_to_bits(char *out, ut64 num) {

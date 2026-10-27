@@ -9,6 +9,8 @@
 #include <rz_util/ht_sp.h>
 
 #define RZ_NUMCALC_STRSZ 1024
+/// Buffer size, including the terminator, for formatted floats and doubles.
+#define RZ_NUM_FLOAT_STR_SIZE 32
 
 #ifdef __cplusplus
 extern "C" {
@@ -441,6 +443,8 @@ RZ_API RzList /*<char *>*/ *rz_num_str_split_list(char *str);
 RZ_API void *rz_num_dup(ut64 n);
 RZ_API size_t rz_num_base_of_string(RzNum *num, RZ_NONNULL const char *str);
 RZ_API double rz_num_get_float(RzNum *num, const char *str);
+RZ_API RZ_BORROW RZ_NONNULL char *rz_num_double_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, double d);
+RZ_API RZ_BORROW RZ_NONNULL char *rz_num_float_to_str(RZ_NONNULL RZ_OUT char *buf, size_t size, float f);
 RZ_API bool rz_num_is_hex_prefix(const char *p);
 
 /**

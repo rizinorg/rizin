@@ -238,7 +238,7 @@ static int check_expected_7(RzJson *j) {
 	mu_assert_eq(j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert("double value",
 		j->num.dbl_value < (-1.0e-2 + 1.0e-13) && j->num.dbl_value > (-1.0e-2 - 1.0e-13));
-	mu_assert_streq_free(rz_json_as_string(j, true), "-0.010000", "double as string");
+	mu_assert_streq_free(rz_json_as_string(j, true), "-0.01", "double as string");
 	return MU_PASSED;
 }
 
@@ -1003,9 +1003,9 @@ static int check_expected_57(RzJson *j) {
 
 static int check_expected_58(RzJson *j) {
 	char *json_str =
-		"{\"some-int\":195,\"array1\":[3,5.100000,-7,\"nine\",true,false,\"last\"],"
+		"{\"some-int\":195,\"array1\":[3,5.1,-7,\"nine\",true,false,\"last\"],"
 		"\"array2\":[\"/*\",\"*/\"],\"some-bool\":true,\"other-bool\":false,"
-		"\"some-dbl\":-0.000100,\"some-null\":null,\"hello\":\"world!\","
+		"\"some-dbl\":-0.0001,\"some-null\":null,\"hello\":\"world!\","
 		"\"str1\":\"//\",\"str2\":\"\\\\\","
 		"\"str3\":\"text /*text*/ text\",\"str4\":\"\\\\text\\\\\","
 		"\"str5\":\"\\\\?text\\\\?\",\"str\\t6\\\\\":\"text\\ntext\\ttext\","

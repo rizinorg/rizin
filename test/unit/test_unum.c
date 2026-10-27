@@ -4,6 +4,9 @@
 #include <rz_util.h>
 #include <rz_il/rz_il_opcodes.h>
 #include <rz_il/rz_il_vm.h>
+#include <errno.h>
+#include <float.h>
+#include <locale.h>
 #include <math.h>
 #include "minunit.h"
 
@@ -2913,6 +2916,197 @@ bool test_rz_big_decimal() {
 	mu_end;
 }
 
+bool test_rz_num_double_to_str() {
+	// Non-finite constants require runtime initialization.
+	const struct {
+		double d;
+		const char *str;
+	} cases[] = {
+		{ 1e-9, "1.0e-09" },
+		{ 1.2345678901234567, "1.2345678901234567" },
+		{ 1e100, "1.0e+100" },
+		{ 0.1, "0.1" },
+		{ 0.0001, "0.0001" },
+		{ 1.0, "1.0" },
+		{ 0.0, "0.0" },
+		{ -0.0, "-0.0" },
+		{ -42.0, "-42.0" },
+		{ 1e15, "1.0e+15" },
+		{ 1234567890123456.0, "1234567890123456.0" },
+		{ 9007199254740993.0, "9007199254740992.0" },
+		{ DBL_MAX, "1.7976931348623157e+308" },
+		{ -DBL_MAX, "-1.7976931348623157e+308" },
+		{ DBL_MIN, "2.2250738585072014e-308" },
+		{ 4.9406564584124654e-324, "4.94065645841247e-324" },
+		{ F64_NAN, "nan" },
+		{ -F64_NAN, "nan" },
+		{ F64_PINF, "inf" },
+		{ F64_NINF, "-inf" },
+	};
+	char s[RZ_NUM_FLOAT_STR_SIZE];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_streq(rz_num_double_to_str(s, sizeof(s), cases[i].d), cases[i].str, "double");
+	}
+	char small[4];
+	mu_assert_streq(rz_num_double_to_str(small, sizeof(small), 1.25), "1.2", "truncated to the buffer");
+	mu_end;
+}
+
+bool test_rz_num_float_to_str() {
+	const struct {
+		float f;
+		const char *str;
+	} cases[] = {
+		{ 0.1f, "0.1" },
+		{ 0.3f, "0.3" },
+		{ 1e-9f, "1.0e-09" },
+		{ 1.0f, "1.0" },
+		{ -0.0f, "-0.0" },
+		{ 16777216.0f, "16777216.0" },
+		{ FLT_MAX, "3.4028235e+38" },
+		{ FLT_MIN, "1.1754944e-38" },
+		{ 1.40129846e-45f, "1.4013e-45" },
+		{ F32_NAN, "nan" },
+		{ F32_PINF, "inf" },
+		{ F32_NINF, "-inf" },
+	};
+	char s[RZ_NUM_FLOAT_STR_SIZE];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_streq(rz_num_float_to_str(s, sizeof(s), cases[i].f), cases[i].str, "float");
+	}
+	mu_end;
+}
+
+/**
+ * \return Whether \p s is a JSON number with an explicit fractional part.
+ */
+static bool is_float_literal(const char *s) {
+	if (*s == '-') {
+		s++;
+	}
+	if (*s == '0') {
+		s++;
+	} else if (*s >= '1' && *s <= '9') {
+		while (IS_DIGIT(*s)) {
+			s++;
+		}
+	} else {
+		return false;
+	}
+	if (*s++ != '.' || !IS_DIGIT(*s)) {
+		return false;
+	}
+	while (IS_DIGIT(*s)) {
+		s++;
+	}
+	if (*s == 'e') {
+		s++;
+		if (*s != '+' && *s != '-') {
+			return false;
+		}
+		s++;
+		if (!IS_DIGIT(*s)) {
+			return false;
+		}
+		while (IS_DIGIT(*s)) {
+			s++;
+		}
+	}
+	return !*s;
+}
+
+static bool double_reads_back(double d) {
+	char s[RZ_NUM_FLOAT_STR_SIZE];
+	rz_num_double_to_str(s, sizeof(s), d);
+	double back = strtod(s, NULL);
+	return is_float_literal(s) && !memcmp(&back, &d, sizeof(d));
+}
+
+static bool float_reads_back(float f) {
+	char s[RZ_NUM_FLOAT_STR_SIZE];
+	rz_num_float_to_str(s, sizeof(s), f);
+	float back = strtof(s, NULL);
+	return is_float_literal(s) && !memcmp(&back, &f, sizeof(f)) && (float)strtod(s, NULL) == f;
+}
+
+static const char *value_msg(char *msg, size_t size, const char *what, double d) {
+	snprintf(msg, size, "%s %a does not read back", what, d);
+	return msg;
+}
+
+static ut64 xorshift64(ut64 *state) {
+	*state ^= *state << 13;
+	*state ^= *state >> 7;
+	*state ^= *state << 17;
+	return *state;
+}
+
+bool test_rz_num_float_str_round_trip() {
+	char msg[128];
+	ut64 state = 0x9e3779b97f4a7c15ULL;
+	// Sample across the exponent range, including subnormal values.
+	for (int i = 0; i < 200000; i++) {
+		ut64 bits = xorshift64(&state);
+		double d;
+		memcpy(&d, &bits, sizeof(d));
+		ut32 bits32 = (ut32)(bits >> 32);
+		float f;
+		memcpy(&f, &bits32, sizeof(f));
+		if (isfinite(d)) {
+			mu_assert(value_msg(msg, sizeof(msg), "double", d), double_reads_back(d));
+		}
+		if (isfinite(f)) {
+			mu_assert(value_msg(msg, sizeof(msg), "float", f), float_reads_back(f));
+		}
+	}
+	for (int e = -323; e <= 308; e++) {
+		double d = strtod(rz_strf(msg, "-1e%d", e), NULL);
+		mu_assert(value_msg(msg, sizeof(msg), "double", d), double_reads_back(d));
+	}
+	for (int e = -45; e <= 38; e++) {
+		float f = strtof(rz_strf(msg, "1e%d", e), NULL);
+		mu_assert(value_msg(msg, sizeof(msg), "float", f), float_reads_back(f));
+	}
+	for (int i = -1000; i <= 1000; i++) {
+		mu_assert(value_msg(msg, sizeof(msg), "integer", i), double_reads_back(i) && float_reads_back(i));
+	}
+	mu_end;
+}
+
+bool test_rz_num_float_str_locale() {
+	// Exercise both comma and multibyte decimal points.
+	static const char *locales[] = { "de_DE.UTF-8", "ps_AF.UTF-8", "German_Germany.1252" };
+	char got[RZ_ARRAY_SIZE(locales)][4][RZ_NUM_FLOAT_STR_SIZE] = { 0 };
+	bool tested[RZ_ARRAY_SIZE(locales)] = { 0 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(locales); i++) {
+		if (!setlocale(LC_NUMERIC, locales[i])) {
+			continue;
+		}
+		tested[i] = true;
+		rz_num_double_to_str(got[i][0], sizeof(got[i][0]), 1.5);
+		rz_num_double_to_str(got[i][1], sizeof(got[i][1]), -1e-9);
+		rz_num_double_to_str(got[i][2], sizeof(got[i][2]), 1.2345678901234567);
+		rz_num_float_to_str(got[i][3], sizeof(got[i][3]), 0.1f);
+	}
+	// Restore the locale before assertions can return from the test.
+	setlocale(LC_NUMERIC, "C");
+	bool any = false;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(locales); i++) {
+		if (!tested[i]) {
+			continue;
+		}
+		any = true;
+		mu_assert_streq(got[i][0], "1.5", locales[i]);
+		mu_assert_streq(got[i][1], "-1.0e-09", locales[i]);
+		mu_assert_streq(got[i][2], "1.2345678901234567", locales[i]);
+		mu_assert_streq(got[i][3], "0.1", locales[i]);
+	}
+	if (!any) {
+		mu_ignore;
+	}
+	mu_end;
+}
+
 bool test_rz_num_get_leading() {
 	// rz_num_get_leading evaluates only the numeric literal at the head of
 	// the string and reports where it stopped, so a trailing operand,
@@ -3006,6 +3200,10 @@ bool all_tests() {
 	mu_run_test(test_rz_num_il_lift_evaluates_once);
 	mu_run_test(test_rz_big_decimal);
 	mu_run_test(test_rz_num_get_leading);
+	mu_run_test(test_rz_num_double_to_str);
+	mu_run_test(test_rz_num_float_to_str);
+	mu_run_test(test_rz_num_float_str_round_trip);
+	mu_run_test(test_rz_num_float_str_locale);
 	return tests_passed != tests_run;
 }
 

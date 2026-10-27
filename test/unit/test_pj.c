@@ -3,6 +3,8 @@
 
 #include <rz_types.h>
 #include <rz_util/rz_pj.h>
+#include <rz_util/rz_float.h>
+#include <float.h>
 #include "minunit.h"
 
 bool test_pj_reset() {
@@ -65,10 +67,80 @@ bool test_pj_drain() {
 	mu_end;
 }
 
+static const char *float_json(PJ *j, double d, bool single) {
+	pj_reset(j);
+	if (single) {
+		pj_f(j, (float)d);
+	} else {
+		pj_d(j, d);
+	}
+	return pj_string(j);
+}
+
+bool test_pj_d() {
+	// Not static: F64_NAN and F64_PINF are function calls
+	const struct {
+		double d;
+		const char *json;
+	} cases[] = {
+		{ 1e-9, "1.0e-09" },
+		{ 1.2345678901234567, "1.2345678901234567" },
+		{ 1e100, "1.0e+100" },
+		{ 0.1, "0.1" },
+		{ 1.0, "1.0" },
+		{ -0.0, "-0.0" },
+		{ DBL_MAX, "1.7976931348623157e+308" },
+		{ 4.9406564584124654e-324, "4.94065645841247e-324" },
+		{ F64_NAN, "\"NaN\"" },
+		{ -F64_NAN, "\"NaN\"" },
+		{ F64_PINF, "\"Infinity\"" },
+		{ F64_NINF, "\"-Infinity\"" },
+	};
+	PJ *j = pj_new();
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_streq(float_json(j, cases[i].d, false), cases[i].json, "pj_d");
+	}
+	pj_reset(j);
+	pj_a(j);
+	pj_d(j, 0.5);
+	pj_d(j, F64_NAN);
+	pj_o(j);
+	pj_kd(j, "inf", F64_PINF);
+	pj_kf(j, "f", 2.0f);
+	pj_end(j);
+	pj_end(j);
+	mu_assert_streq(pj_string(j), "[0.5,\"NaN\",{\"inf\":\"Infinity\",\"f\":2.0}]", "separators around floats");
+	pj_free(j);
+	mu_end;
+}
+
+bool test_pj_f() {
+	const struct {
+		float f;
+		const char *json;
+	} cases[] = {
+		{ 0.1f, "0.1" },
+		{ 1e-9f, "1.0e-09" },
+		{ 16777216.0f, "16777216.0" },
+		{ FLT_MAX, "3.4028235e+38" },
+		{ F32_NAN, "\"NaN\"" },
+		{ F32_PINF, "\"Infinity\"" },
+		{ F32_NINF, "\"-Infinity\"" },
+	};
+	PJ *j = pj_new();
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_streq(float_json(j, cases[i].f, true), cases[i].json, "pj_f");
+	}
+	pj_free(j);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_pj_reset);
 	mu_run_test(test_depth_limit);
 	mu_run_test(test_pj_drain);
+	mu_run_test(test_pj_d);
+	mu_run_test(test_pj_f);
 	return tests_passed != tests_run;
 }
 
