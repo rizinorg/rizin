@@ -3,6 +3,7 @@
 
 #include "../../binrz/rz-test-ui/load.c"
 #include "../../binrz/rz-test-ui/vscreen.c"
+#include "../../binrz/rz-test-ui/worker.c"
 #include "minunit.h"
 
 static void feed(RzVScreen *screen, const char *text) {
@@ -83,6 +84,13 @@ static bool test_screen_wide_erase(void) {
 	mu_end;
 }
 
+static bool test_snapshot_normalization(void) {
+	char *text = normalize_screen("  first  \n\n next \n\n");
+	mu_assert_streq(text, "  first\n\n next", "interior blank rows and indentation matter");
+	free(text);
+	mu_end;
+}
+
 static bool test_screen_bounded_strings(void) {
 	RzVScreen *s = rz_vscreen_new(4, 2);
 	feed(s, "\x1b]title");
@@ -155,6 +163,25 @@ static bool test_loader_invalid(void) {
 	mu_end;
 }
 
+static bool test_assertion_bounds(void) {
+	RzVScreen *s = rz_vscreen_new(3, 2);
+	RzTestUiResult result = { 0 };
+	RzTestUiStep step = { .kind = RZ_UI_STEP_EXPECT_NOLINE, .arg_n = 2, .arg_s = "absent" };
+	check_step(&result, s, &step);
+	mu_assert_true(result.assertion_failed, "out-of-range negative assertion fails");
+	free(result.fail_diag);
+	memset(&result, 0, sizeof(result));
+	step.kind = RZ_UI_STEP_EXPECT_AT;
+	step.arg_n = 0;
+	step.arg_col = 2;
+	step.arg_s = "  ";
+	check_step(&result, s, &step);
+	mu_assert_true(result.assertion_failed, "spaces past right edge fail");
+	free(result.fail_diag);
+	rz_vscreen_free(s);
+	mu_end;
+}
+
 static bool test_screen_random_stream(void) {
 	RzVScreen *s = rz_vscreen_new(7, 3);
 	ut32 state = 12345;
@@ -173,17 +200,54 @@ static bool test_screen_random_stream(void) {
 	mu_end;
 }
 
+static bool test_text_read_limit(void) {
+	char *path = NULL;
+	int fd = rz_file_mkstemp("rz-test-ui-read", &path);
+	mu_assert_true(fd >= 0 && path, "temporary fixture");
+	close(fd);
+	mu_assert_true(rz_file_dump(path, (const ut8 *)"abcd", 4, false), "write fixture");
+	char *text = rz_test_ui_read_text(path, 4);
+	mu_assert_streq(text, "abcd", "exact size is accepted and terminated");
+	free(text);
+	text = rz_test_ui_read_text(path, 3);
+	mu_assert_null(text, "read limit is enforced while reading");
+	mu_assert_true(rz_file_dump(path, (const ut8 *)"ab\0d", 4, false), "write NUL fixture");
+	text = rz_test_ui_read_text(path, 4);
+	mu_assert_null(text, "embedded NUL cannot hide trailing directives");
+	rz_file_rm(path);
+	free(path);
+	mu_end;
+}
+
+static bool test_snapshot_capture_limit(void) {
+	RzVScreen *screen = rz_vscreen_new(3, 1);
+	feed(screen, "abc");
+	RzTestUiResult result = { .capture_size = RZ_TEST_UI_MAX_FILE_SIZE - 2 };
+	RzTestUiStep step = { .kind = RZ_UI_STEP_EXPECT_SCR, .arg_s = "abc" };
+	check_snapshot(&result, screen, &step);
+	mu_assert_true(result.run_failed, "capture exhaustion is an infrastructure failure");
+	mu_assert_true(rz_pvector_empty(result.fixups), "oversized capture is not retained");
+	rz_pvector_free(result.fixups);
+	free(result.fail_diag);
+	rz_vscreen_free(screen);
+	mu_end;
+}
+
 static bool all_tests(void) {
 	mu_run_test(test_screen_wrap_erase);
 	mu_run_test(test_screen_scroll_region);
 	mu_run_test(test_screen_resize_saved);
 	mu_run_test(test_screen_chunking);
 	mu_run_test(test_screen_wide_erase);
+	mu_run_test(test_snapshot_normalization);
 	mu_run_test(test_screen_bounded_strings);
 	mu_run_test(test_screen_editing);
 	mu_run_test(test_loader_valid);
 	mu_run_test(test_loader_invalid);
+	mu_run_test(test_assertion_bounds);
 	mu_run_test(test_screen_random_stream);
+	mu_run_test(test_text_read_limit);
+	mu_run_test(test_snapshot_capture_limit);
 	return tests_passed != tests_run;
 }
 

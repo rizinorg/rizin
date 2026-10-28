@@ -72,3 +72,14 @@ if get_option('enable_tests') and cli_enabled
     test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env, suite: 'integration')
   endforeach
 endif
+
+if get_option('enable_tests') and cli_enabled and get_option('enable_rz_test')
+  test('tui_lifecycle', py3_exe,
+    args: [files('test_rz_test_ui.py'), rz_test_ui_exe.full_path()],
+    depends: rz_test_ui_exe,
+    env: unit_test_env,
+    suite: 'integration',
+    timeout: 60,
+  )
+
+endif

@@ -15,6 +15,7 @@ else
 endif
 if get_option('enable_rz_test')
   subdir('rz-test')
+  subdir('rz-test-ui')
 endif
 
 install_man(
