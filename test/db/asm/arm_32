@@ -655,7 +655,7 @@ d "vmov.f32 s0, s1" 600ab0ee 0x0 (set d0 (| (& (var d0) (bv 64 0xffffffff0000000
 d "vorr d0, d1, d1" 110121f2 0x0 (set d0 (| (var d1) (var d1)))
 d "vmrs r0, fpscr" 100af1ee 0x0 (set r0 (var fpscr))
 d "vmsr fpscr, r0" 100ae1ee 0x0 (set fpscr (var r0))
-dB "vmrs apsr_nzcv, fpscr" 10faf1ee 0x0 (seq (set nf (! (is_zero (& (var fpscr) (bv 32 0x80000000))))) (set zf (! (is_zero (& (var fpscr) (bv 32 0x40000000))))) (set cf (! (is_zero (& (var fpscr) (bv 32 0x20000000))))) (set vf (! (is_zero (& (var fpscr) (bv 32 0x10000000))))))
+d "vmrs APSR_nzcv, fpscr" 10faf1ee 0x0 (seq (set nf (! (is_zero (& (var fpscr) (bv 32 0x80000000))))) (set zf (! (is_zero (& (var fpscr) (bv 32 0x40000000))))) (set cf (! (is_zero (& (var fpscr) (bv 32 0x20000000))))) (set vf (! (is_zero (& (var fpscr) (bv 32 0x10000000))))))
 d "vand q0, q1, q2" 540102f2 0x0 (seq (set d0 (cast 64 false (& (append (var d3) (var d2)) (append (var d5) (var d4))))) (set d1 (cast 64 false (>> (& (append (var d3) (var d2)) (append (var d5) (var d4))) (bv 8 0x40) false))))
 d "vand d0, d1, d2" 120101f2 0x0 (set d0 (& (var d1) (var d2)))
 d "vand d0, d0, d1" 110100f2 0x0 (set d0 (& (var d0) (var d1)))
