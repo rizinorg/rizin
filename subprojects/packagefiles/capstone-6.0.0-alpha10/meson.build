@@ -1,5 +1,5 @@
 project('capstone', 'c',
-  version: 'next',
+  version: '6.0.0-Alpha10',
   meson_version: '>=0.55.0',
 )
 
