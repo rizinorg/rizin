@@ -10,12 +10,43 @@
 
 #if __WINDOWS__
 #include <windows.h>
-#define printf(...) rz_cons_win_printf(cons, false, __VA_ARGS__)
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <signal.h>
 #endif
+
+/** \brief Keep prompt output on the same terminal as the console backend. */
+static void line_print(RzCons *cons, const char *format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	if (cons->backend.write) {
+		RzStrBuf text;
+		rz_strbuf_init(&text);
+		rz_strbuf_vappendf(&text, format, ap);
+		cons->backend.write(cons->backend_user, rz_strbuf_get(&text), rz_strbuf_length(&text));
+		rz_strbuf_fini(&text);
+	} else {
+#if __WINDOWS__
+		RzStrBuf text;
+		rz_strbuf_init(&text);
+		rz_strbuf_vappendf(&text, format, ap);
+		rz_cons_win_printf(cons, false, "%s", rz_strbuf_get(&text));
+		rz_strbuf_fini(&text);
+#else
+		vprintf(format, ap);
+#endif
+	}
+	va_end(ap);
+}
+
+static void line_write(RzCons *cons, const char *text, size_t length) {
+	if (cons->backend.write) {
+		cons->backend.write(cons->backend_user, text, length);
+	} else {
+		fwrite(text, 1, length, stdout);
+	}
+}
 
 static const char *rz_line_nullstr = "";
 static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
@@ -728,7 +759,7 @@ static void selection_widget_draw(RzLine *line) {
 		pos_y = rz_cons_get_cur_line();
 		if (pos_y + sel_widget->h > cons->rows) {
 			char *pad = rz_str_pad('\n', sel_widget->h);
-			printf("%s\n", pad);
+			line_print(cons, "%s\n", pad);
 			free(pad);
 			pos_y = cons->rows - sel_widget->h - 1;
 		}
@@ -829,7 +860,7 @@ static void selection_widget_erase(RzLine *line) {
 			cons->cb_task_oneshot(line, NULL, &core->tasks);
 		}
 	}
-	printf("%s", RZ_CONS_CLEAR_FROM_CURSOR_TO_END);
+	line_print(cons, "%s", RZ_CONS_CLEAR_FROM_CURSOR_TO_END);
 }
 
 static void selection_widget_select(RzLine *line) {
@@ -1197,14 +1228,14 @@ static void __print_prompt(RzLine *line) {
 	}
 	rz_cons_clear_line(line->cons, stdout);
 	if (cons->context->color_mode > 0) {
-		printf("\r%s%s", Color_RESET, line->prompt);
+		line_print(cons, "\r%s%s", Color_RESET, line->prompt);
 	} else {
-		printf("\r%s", line->prompt);
+		line_print(cons, "\r%s", line->prompt);
 	}
-	fwrite(line->buffer.data, 1, RZ_MIN(cols, chars), stdout);
-	printf("\r%s", line->prompt);
+	line_write(cons, line->buffer.data, RZ_MIN(cols, chars));
+	line_print(cons, "\r%s", line->prompt);
 	if (line->buffer.index > cols) {
-		printf("< ");
+		line_print(cons, "< ");
 		i = line->buffer.index - cols;
 		if (i > sizeof(line->buffer.data)) {
 			i = sizeof(line->buffer.data) - 1;
@@ -1214,7 +1245,7 @@ static void __print_prompt(RzLine *line) {
 	}
 	len = line->buffer.index - i;
 	if (len > 0 && (i + len) <= line->buffer.length) {
-		fwrite(line->buffer.data + i, 1, len, stdout);
+		line_write(cons, line->buffer.data + i, len);
 	}
 	fflush(stdout);
 }
@@ -1678,7 +1709,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 			if (!line->buffer.data[0]) { /* eof */
 				if (line->echo) {
 					__print_prompt(line);
-					printf("\n");
+					line_print(cons, "\n");
 				}
 				rz_cons_set_raw(line->cons, false);
 				rz_interrupt_break_pop(intr);
@@ -2231,7 +2262,7 @@ RZ_API const char *rz_line_readline_cb(RZ_NONNULL RzLine *line, RzLineReadCallba
 					}
 				}
 				const char *prompt = gcomp_is_rev ? "reverse-i-search" : "forward-i-search";
-				printf("\r (%s (%s)): %s\r", prompt, line->buffer.data, gcomp_line);
+				line_print(cons, "\r (%s (%s)): %s\r", prompt, line->buffer.data, gcomp_line);
 			} else {
 				__print_prompt(line);
 			}
@@ -2248,7 +2279,7 @@ _end:
 	rz_cons_set_raw(line->cons, 0);
 	rz_cons_enable_mouse(line->cons, mouse_status);
 	if (line->echo) {
-		printf("\r%s%s\n", line->prompt, line->buffer.data);
+		line_print(cons, "\r%s%s\n", line->prompt, line->buffer.data);
 		fflush(stdout);
 	}
 

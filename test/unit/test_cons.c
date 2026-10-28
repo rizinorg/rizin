@@ -229,8 +229,64 @@ bool test_cons_highlight(void) {
 	mu_end;
 }
 
+typedef struct {
+	RzStrBuf output;
+	ut32 timeout;
+	unsigned reads;
+} BackendTest;
+
+static int backend_test_read(void *user, RzCons *cons, ut32 timeout) {
+	BackendTest *state = user;
+	state->reads++;
+	state->timeout = timeout;
+	return timeout ? -1 : 0xc3;
+}
+
+static void backend_test_write(void *user, const char *text, size_t len) {
+	BackendTest *state = user;
+	rz_strbuf_append_n(&state->output, text, len);
+}
+
+static bool backend_test_size(void *user, int *width, int *height) {
+	*width = 37;
+	*height = 11;
+	return true;
+}
+
+static bool test_cons_backend(void) {
+	RzCons *cons = rz_cons_new();
+	BackendTest state = { 0 };
+	rz_strbuf_init(&state.output);
+	RzConsBackend backend = { backend_test_read, backend_test_write, backend_test_size };
+	mu_assert_true(rz_cons_set_backend(cons, &backend, &state), "attach backend");
+	int rows;
+	mu_assert_eq(rz_cons_get_size(cons, &rows), 37, "backend dimensions");
+	mu_assert_eq(rows, 11, "backend rows");
+	rz_cons_strcat(cons, "pending");
+	mu_assert_eq(rz_cons_readchar(cons), 0xc3, "unsigned UTF-8 byte");
+	mu_assert_streq(rz_strbuf_get(&state.output), "pending", "output flushed before input");
+	mu_assert_true(rz_cons_readpush(cons, "\xff", 1), "push byte");
+	mu_assert_eq(rz_cons_readchar(cons), 255, "read buffer remains unsigned");
+	mu_assert_eq(state.reads, 1, "buffer has priority");
+	mu_assert_eq(rz_cons_readchar_timeout(cons, 50), -1, "timed backend read");
+	mu_assert_eq(state.timeout, 50, "timeout forwarded without native wait");
+	rz_cons_gotoxy(cons, 4, 2);
+	rz_cons_flush(cons);
+	mu_assert_true(strstr(rz_strbuf_get(&state.output), "\x1b[2;4H") != NULL, "portable cursor positioning");
+	rz_cons_set_cup(cons, true);
+	mu_assert_true(strstr(rz_strbuf_get(&state.output), "\x1b[?1049h") != NULL, "alternate screen routed");
+	RzConsBackend incomplete = { 0 };
+	mu_assert_false(rz_cons_set_backend(cons, &incomplete, NULL), "partial backend rejected");
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 37, "rejection preserves current backend");
+	mu_assert_true(rz_cons_set_backend(cons, NULL, NULL), "detach backend");
+	rz_cons_free(cons);
+	rz_strbuf_fini(&state.output);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
+	mu_run_test(test_cons_backend);
 	mu_run_test(test_cons_justify);
 	mu_run_test(test_cons_at);
 	mu_run_test(test_cons_misc);
