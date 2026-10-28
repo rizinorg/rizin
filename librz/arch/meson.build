@@ -366,21 +366,11 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   # plugins
   arch_plugins_list += [
     'cbpf_cs',
-    'riscv_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_cbpf_cs.c',
-    'p/arch_riscv_cs.c',
-  ]
-
-  # isa sources
-  arch_isa_sources += [
-    'isa/riscv/riscv_il.c',
-    'isa/riscv/riscv_il_integer.c',
-    'isa/riscv/riscv_il_m.c',
-    'isa/riscv/riscv_il_compressed.c',
   ]
 endif
 
@@ -420,6 +410,7 @@ if capstone_dep.version() == 'next'
     'hppa_cs',
     'loongarch_cs',
     'xtensa_cs',
+    'riscv_cs',
   ]
 
   # plugins sources
@@ -428,6 +419,7 @@ if capstone_dep.version() == 'next'
     'p/arch_loongarch_cs.c',
     'p/arch_hppa_cs.c',
     'p/arch_xtensa_cs.c',
+    'p/arch_riscv_cs.c',
   ]
 
   # isa sources
@@ -435,6 +427,10 @@ if capstone_dep.version() == 'next'
     'isa/xtensa/xtensa.c',
     'isa/xtensa/xtensa_esil.c',
     'isa/xtensa/xtensa_il.c',
+    'isa/riscv/riscv_il.c',
+    'isa/riscv/riscv_il_integer.c',
+    'isa/riscv/riscv_il_m.c',
+    'isa/riscv/riscv_il_compressed.c',
   ]
 endif
 
