@@ -5,6 +5,7 @@
 #define RIZIN_RZTEST_H
 
 #include <rz_util.h>
+#include "rz_test_result.h"
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define RZ_TEST_OS "freebsd"
@@ -179,13 +180,6 @@ typedef struct rz_test_asm_test_output_t {
 	char *disas_err;
 	char *il_err;
 } RzAsmTestOutput;
-
-typedef enum rz_test_test_result_t {
-	RZ_TEST_RESULT_OK,
-	RZ_TEST_RESULT_FAILED,
-	RZ_TEST_RESULT_BROKEN,
-	RZ_TEST_RESULT_FIXED
-} RzTestResult;
 
 typedef struct rz_test_test_result_info_t {
 	RzTest *test;
