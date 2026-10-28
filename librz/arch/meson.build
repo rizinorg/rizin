@@ -306,10 +306,6 @@ arch_isa_sources = [
   'isa/pyc/opcode_analysis.c',
   'isa/pyc/opcode_arg_fmt.c',
   'isa/pyc/pyc_dis.c',
-  'isa/riscv/riscv_il.c',
-  'isa/riscv/riscv_il_integer.c',
-  'isa/riscv/riscv_il_m.c',
-  'isa/riscv/riscv_il_compressed.c',
   'isa/rl78/rl78.c',
   'isa/rl78/rl78_instr.c',
   'isa/rl78/rl78_maps.c',
@@ -377,6 +373,14 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   arch_plugin_sources += [
     'p/arch_cbpf_cs.c',
     'p/arch_riscv_cs.c',
+  ]
+
+  # isa sources
+  arch_isa_sources += [
+    'isa/riscv/riscv_il.c',
+    'isa/riscv/riscv_il_integer.c',
+    'isa/riscv/riscv_il_m.c',
+    'isa/riscv/riscv_il_compressed.c',
   ]
 endif
 
