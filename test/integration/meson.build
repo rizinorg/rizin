@@ -81,5 +81,16 @@ if get_option('enable_tests') and cli_enabled and get_option('enable_rz_test')
     suite: 'integration',
     timeout: 60,
   )
-
+  # Muon can retain a build-relative argv[0] after changing to the source tree.
+  # Pass the worker directory explicitly so re-execution uses this build.
+  test('tui', rz_test_ui_exe,
+    args: [
+      '-V', '-r', join_paths(meson.project_build_root(), 'binrz', 'rz-test-ui'),
+      join_paths(meson.project_source_root(), 'test', 'tui'),
+    ],
+    workdir: meson.project_source_root(),
+    env: unit_test_env,
+    suite: 'integration',
+    timeout: 180,
+  )
 endif

@@ -1,0 +1,16 @@
+# `k` scrolls back up; after jjj then kkk we are back at the start.
+NAME=hexdump scrolls back up with k
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEYS jjj
+WAIT 150
+KEYS kkk
+WAIT 200
+EXPECT_LINE 0 [0x00000000
+QUIT
+STEPEOF

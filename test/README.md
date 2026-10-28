@@ -39,6 +39,13 @@ each failed test and it will ask for your input on how to treat the issue. It
 can automatically fix the test so that it matches the new output (if that is the
 right behaviour!) or it can mark it as broken for you.
 
+## UI tests
+
+Run `rz-test -j 4 @ui` from this directory to test interactive visual modes.
+The portable worker uses an injectable RzCons console without a PTY. See
+[tui/README.md](tui/README.md) for fixtures, snapshot acceptance, and scope.
+`meson test -C build tui tui_lifecycle` runs the UI integration checks.
+
 ## Unit tests
 
 To run unit tests, just use `ninja -C build test` (or `meson test -C build`)

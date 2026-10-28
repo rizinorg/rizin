@@ -1,0 +1,15 @@
+# `a` runs analysis from the browser; a function is discovered at 0x0.
+NAME=functions browser analyzes a function
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS Vv<ENTER>
+WAIT 400
+KEY a
+WAIT 500
+EXPECT_REGEX 0x00000000
+EXPECT_REGEX fcn.00000
+QUIT
+STEPEOF

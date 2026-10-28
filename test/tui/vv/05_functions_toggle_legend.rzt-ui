@@ -1,0 +1,15 @@
+# `=` toggles the legend off, leaving only the header line.
+NAME=functions browser hides the legend
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS Vv<ENTER>
+WAIT 400
+KEY =
+WAIT 300
+EXPECT_LINE 0 -[ functions ]
+EXPECT_NOREGEX \(a\) analyze \(-\) delete
+QUIT
+STEPEOF

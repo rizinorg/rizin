@@ -1,0 +1,12 @@
+# The panels menu bar lists all the top level menus.
+NAME=panels menu bar lists the menus
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=120
+ROWS=24
+STEPS=<<STEPEOF
+KEYS v<ENTER>
+WAIT 500
+EXPECT_REGEX File  Settings  Edit  View  Tools  Search  Emulate  Debug  Analyze  Help
+QUIT
+STEPEOF

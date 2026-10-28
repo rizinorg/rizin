@@ -1,0 +1,37 @@
+# Full-screen golden snapshot of the default panels layout (generated with `-a`).
+NAME=panels full screen snapshot
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=120
+ROWS=24
+STEPS=<<STEPEOF
+KEYS v<ENTER>
+WAIT 500
+EXPECT_SCREEN <<SCR
+  File  Settings  Edit  View  Tools  Search  Emulate  Debug  Analyze  Help                          Tab [1] [0x00000000]
+.-------------------------------------------------------------------------------.--------------------------------------.
+|[X] Disassembly (pd 20)                                            [Cache] Off |[X]   Functions (afl)     [Cache] Off |
+|   0x00000000      push  rbp                                                   |                                      |
+|   0x00000001      mov   rbp, rsp                                              |                                      |
+|   0x00000004      mov   dword [rbp-0x04], edi                                 |                                      |
+|   0x00000007      mov   eax, dword [rdi]                                      |                                      |
+|   0x00000009      ret                                                         |                                      |
+|   0x0000000a      add   byte [rax], al                                        |                                      |
+|   0x0000000c      add   byte [rax], al                                        |                                      |
+|   0x0000000e      add   byte [rax], al                                        |                                      |
+|   0x00000010      add   byte [rax], al                                        |                                      |
+|   0x00000012      add   byte [rax], al                                        |--------------------------------------.
+|   0x00000014      add   byte [rax], al                                        |[X]   Symbols (isq)       [Cache] Off |
+|   0x00000016      add   byte [rax], al                                        |                                      |
+|   0x00000018      add   byte [rax], al                                        |                                      |
+|   0x0000001a      add   byte [rax], al                                        |                                      |
+|   0x0000001c      add   byte [rax], al                                        |                                      |
+|   0x0000001e      add   byte [rax], al                                        |                                      |
+|   0x00000020      add   byte [rax], al                                        |                                      |
+|   0x00000022      add   byte [rax], al                                        |                                      |
+|   0x00000024      add   byte [rax], al                                        |                                      |
+|   0x00000026      add   byte [rax], al                                        |                                      |
+`-------------------------------------------------------------------------------'--------------------------------------'
+SCR
+QUIT
+STEPEOF

@@ -1,0 +1,15 @@
+NAME=colored UTF-8 panels use the same virtual console
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLOR=1
+UTF8=1
+COLS=120
+ROWS=30
+STEPS=<<STEPS_END
+KEYS v<ENTER>
+EXPECT_LINE 0 File
+EXPECT_REGEX Disassembly
+EXPECT_REGEX Functions
+EXPECT_NOREGEX definitely_absent_marker
+QUIT
+STEPS_END
