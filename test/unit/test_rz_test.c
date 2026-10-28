@@ -5,6 +5,8 @@
 #include "../../binrz/rz-test/rz-test.c"
 #include "../../binrz/rz-test/load.c"
 #include "../../binrz/rz-test/run.c"
+#include "../../binrz/rz-test-ui/load.c"
+#include "../../binrz/rz-test-ui/run.c"
 #undef main
 
 #include "minunit.h"
