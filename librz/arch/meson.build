@@ -362,51 +362,11 @@ arch_isa_includes = [
   'isa',
 ]
 
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
-  # plugins
-  arch_plugins_list += [
-    'cbpf_cs',
-  ]
-
-  # plugins sources
-  arch_plugin_sources += [
-    'p/arch_cbpf_cs.c',
-  ]
-endif
-
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 5
-  # plugins
-  arch_plugins_list += [
-    'bpf_cs',
-  ]
-
-  # plugins sources
-  arch_plugin_sources += [
-    'p/arch_bpf_cs.c',
-  ]
-endif
-
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
-  # plugins
-  arch_plugins_list += [
-    'tricore_cs',
-  ]
-
-  # plugins sources
-  arch_plugin_sources += [
-    'p/arch_tricore_cs.c',
-  ]
-
-  # isa sources
-  arch_isa_sources += [
-    'isa/tricore/tricore_il.c',
-  ]
-endif
-
 if capstone_dep.version() == 'next'
   # plugins
   arch_plugins_list += [
     'alpha_cs',
+    'cbpf_cs',
     'hppa_cs',
     'loongarch_cs',
     'riscv_cs',
@@ -416,6 +376,7 @@ if capstone_dep.version() == 'next'
   # plugins sources
   arch_plugin_sources += [
     'p/arch_alpha.c',
+    'p/arch_cbpf_cs.c',
     'p/arch_hppa_cs.c',
     'p/arch_loongarch_cs.c',
     'p/arch_riscv_cs.c',
@@ -431,6 +392,35 @@ if capstone_dep.version() == 'next'
     'isa/xtensa/xtensa.c',
     'isa/xtensa/xtensa_esil.c',
     'isa/xtensa/xtensa_il.c',
+  ]
+endif
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() >= 6
+  # plugins
+  arch_plugins_list += [
+    'bpf_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_bpf_cs.c',
+  ]
+endif
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() >= 5
+  # plugins
+  arch_plugins_list += [
+    'tricore_cs',
+  ]
+
+  # plugins sources
+  arch_plugin_sources += [
+    'p/arch_tricore_cs.c',
+  ]
+
+  # isa sources
+  arch_isa_sources += [
+    'isa/tricore/tricore_il.c',
   ]
 endif
 
