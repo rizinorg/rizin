@@ -39,6 +39,7 @@ EXPECT=<<EOF
 | [1-9]    follow jmp/call identified by shortcut (like ;[1])
 | ,file    add a link to the text file
 | /*+-[]   change block size, [] = resize hex.cols
+| {}       shift bitstream 1 bit left/right (in bitstream mode)
 | <,>      seek aligned to block size (in cursor slurp or dump files)
 | a/A      (a)ssemble code, visual (A)ssembler
 | b        browse evals, symbols, flags, evals, classes, ...
