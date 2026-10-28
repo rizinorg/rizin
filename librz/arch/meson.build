@@ -409,28 +409,28 @@ if capstone_dep.version() == 'next'
     'alpha_cs',
     'hppa_cs',
     'loongarch_cs',
-    'xtensa_cs',
     'riscv_cs',
+    'xtensa_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
     'p/arch_alpha.c',
-    'p/arch_loongarch_cs.c',
     'p/arch_hppa_cs.c',
-    'p/arch_xtensa_cs.c',
+    'p/arch_loongarch_cs.c',
     'p/arch_riscv_cs.c',
+    'p/arch_xtensa_cs.c',
   ]
 
   # isa sources
   arch_isa_sources += [
-    'isa/xtensa/xtensa.c',
-    'isa/xtensa/xtensa_esil.c',
-    'isa/xtensa/xtensa_il.c',
     'isa/riscv/riscv_il.c',
     'isa/riscv/riscv_il_integer.c',
     'isa/riscv/riscv_il_m.c',
     'isa/riscv/riscv_il_compressed.c',
+    'isa/xtensa/xtensa.c',
+    'isa/xtensa/xtensa_esil.c',
+    'isa/xtensa/xtensa_il.c',
   ]
 endif
 
