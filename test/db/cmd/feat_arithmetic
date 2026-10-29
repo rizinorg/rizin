@@ -81,7 +81,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=binary
+NAME=binary Bxff3f0000fcff
 TOOL=rz-ax
 ARGS=Bxff3f0000fcff
 EXPECT=<<EOF
@@ -89,7 +89,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=binary
+NAME=binary Bxff3ffcff
 TOOL=rz-ax
 ARGS=Bxff3ffcff
 EXPECT=<<EOF

@@ -1,4 +1,4 @@
-NAME=wfx
+NAME=cmd_wfs: wfx
 FILE==
 CMDS=<<EOF
 w hello

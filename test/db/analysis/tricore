@@ -26,7 +26,7 @@ mov d0, d0
 EOF
 RUN
 
-NAME=TriCore multi
+NAME=TriCore multi (repeat)
 TOOL=rz-asm
 ARGS=-a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF

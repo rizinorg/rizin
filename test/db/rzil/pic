@@ -1,4 +1,4 @@
-NAME=Testing the decryption in emulateme
+NAME=pic: Testing the decryption in emulateme
 FILE=bins/pic/emulateme.pic18f2520.elf
 TIMEOUT=30
 CMDS=<<EOF

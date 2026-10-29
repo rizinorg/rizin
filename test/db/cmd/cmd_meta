@@ -83,7 +83,7 @@ hello
 EOF
 RUN
 
-NAME=Cs
+NAME=cmd_meta: Cs
 FILE==
 CMDS=<<EOF
 w "Friendly Conversation"

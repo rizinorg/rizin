@@ -1,4 +1,4 @@
-NAME=mdt analysis
+NAME=cmd_aar: mdt analysis
 FILE=bins/mdt/bin-mdt/load-test.mdt
 CMDS=<<EOF
 oml~vmap

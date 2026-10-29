@@ -7,7 +7,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip entrypoints for c.class
+NAME=io-zip entrypoints for c.class (path)
 FILE=zip://bins/java/example.zip//research_data/experiment/decompiler/dumped_jar_dec/c.class
 CMDS=ieq
 EXPECT=<<EOF
@@ -18,7 +18,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip entrypoints for c.class
+NAME=io-zip entrypoints for c.class (index)
 FILE=zip://bins/java/example.zip::0
 CMDS=ieq
 EXPECT=<<EOF
@@ -29,7 +29,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip hello.apk
+NAME=io-zip hello.apk (apk scheme)
 FILE=apk://bins/dex/Hello.apk
 CMDS=ieq
 EXPECT=<<EOF
@@ -37,7 +37,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io-zip hello.apk
+NAME=io-zip hello.apk (zip scheme)
 FILE=zip://bins/dex/Hello.apk
 BROKEN=1
 CMDS=ieq

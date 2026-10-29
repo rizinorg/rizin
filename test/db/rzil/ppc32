@@ -1,4 +1,4 @@
-NAME=Printing il statements in various formats
+NAME=ppc32: Printing il statements in various formats
 FILE=bins/elf/ppc/emulateme-ppc32be
 CMDS=<<EOF
 echo -- oneline
@@ -181,7 +181,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=emulateme-big-endian
+NAME=ppc32: emulateme-big-endian
 FILE=bins/elf/ppc/emulateme-ppc32be
 TIMEOUT=30
 CMDS=<<EOF
@@ -209,7 +209,7 @@ WARNING: Fetching registers from core file not supported for this architecture.
 EOF
 RUN
 
-NAME=emulateme-little-endian
+NAME=ppc32: emulateme-little-endian
 FILE=bins/elf/ppc/emulateme-ppc32le
 TIMEOUT=30
 CMDS=<<EOF

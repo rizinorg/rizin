@@ -1,4 +1,4 @@
-NAME=Printing il statements in various formats
+NAME=avr: Printing il statements in various formats
 FILE=bins/elf/avr-sbrx-rjmp.elf
 CMDS=<<EOF
 echo -- oneline

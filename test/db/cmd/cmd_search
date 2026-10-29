@@ -164,7 +164,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/a search from/to (seek 0)
+NAME=/a search from/to (seek 0) (repeat)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
@@ -269,7 +269,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/x search from/to (seek beyond data)
+NAME=/x search from/to (seek beyond data) file
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e io.va=false
@@ -505,7 +505,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/x search from/to (seek beyond data)
+NAME=/x search from/to (seek beyond data) malloc
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -569,7 +569,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search range hex
+NAME=search range hex (0x50..0x150)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -583,7 +583,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search range hex
+NAME=search range hex (0x50..0x90)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -595,7 +595,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=search range hex
+NAME=search range hex (0x100..0x104)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -609,7 +609,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search range hex
+NAME=search range hex (0x101..0x104)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -621,7 +621,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=search range hex
+NAME=search range hex (0x100..0x103)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -634,7 +634,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search range hex @(A..B)
+NAME=search range hex @(A..B) (0x50..0x150)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -648,7 +648,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search range hex @(A..B)
+NAME=search range hex @(A..B) (0x50..0x90)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -660,7 +660,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=search hex
+NAME=search hex (0x100..0x104)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -674,7 +674,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search hex
+NAME=search hex (0x100..0x103)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -686,7 +686,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=search hex
+NAME=search hex (0x101..0x104)
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
@@ -698,7 +698,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=/x with bin mask
+NAME=/x with bin mask (middle mask)
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
@@ -709,7 +709,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/x with bin mask
+NAME=/x with bin mask (prefix mask)
 FILE=malloc://1024
 CMDS=<<EOF
 wx aaaaaabb
@@ -762,7 +762,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx and /x with bin mask, both ignoring spaces
+NAME=wx and /x with bin mask, both ignoring spaces (simple)
 FILE=malloc://1024
 CMDS=<<EOF
 wx a5 a5 a5 bf
@@ -773,7 +773,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wx and /x with bin mask, both ignoring spaces
+NAME=wx and /x with bin mask, both ignoring spaces (offset)
 FILE=malloc://1024
 CMDS=<<EOF
 wx 00 cafe 5a5a 5abf affe @ 0x123

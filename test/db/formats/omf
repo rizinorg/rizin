@@ -192,7 +192,7 @@ CMDS=q!
 EXPECT=
 RUN
 
-NAME=omf166 modinfo check
+NAME=omf166 modinfo check (measure)
 FILE=bins/omf/omf166/measure
 CMDS=<<EOF
 e bin.baddr
@@ -361,7 +361,7 @@ omf166:
 EOF
 RUN
 
-NAME=omf166 modinfo check
+NAME=omf166 modinfo check (emulateme)
 FILE=bins/omf/omf166/emulateme
 CMDS=<<EOF
 e bin.baddr
@@ -467,7 +467,7 @@ G: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the same add
 EOF
 RUN
 
-NAME=omf166 modinfo check
+NAME=omf166 modinfo check (emulateme repeat)
 FILE=bins/omf/omf166/emulateme
 CMDS=<<EOF
 e bin.baddr
@@ -537,7 +537,7 @@ omf166:
 EOF
 RUN
 
-NAME=omf166 THEADR overflow check
+NAME=omf166 THEADR overflow check (repeat)
 FILE=bins/omf/omf166/sym_overflow_theadr
 CMDS=<<EOF
 e bin.baddr
@@ -555,7 +555,7 @@ WARNING: arch: MMIO registers "C1IR" and "C1UAR" in the CPU profile share the sa
 EOF
 RUN
 
-NAME=omf166 sym overflow check
+NAME=omf166 sym overflow check (repeat)
 FILE=bins/omf/omf166/sym_overflow
 CMDS=<<EOF
 e bin.baddr

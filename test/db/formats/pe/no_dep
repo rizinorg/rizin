@@ -1,4 +1,4 @@
-NAME=PE: corkami dep.exe - open
+NAME=PE (no_dep): corkami dep.exe - open
 FILE=bins/pe/dep.exe
 CMDS=q!
 EXPECT=

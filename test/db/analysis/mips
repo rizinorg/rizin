@@ -516,7 +516,7 @@ fcn.80100020();
 EOF
 RUN
 
-NAME=mips branch delay function sizing.
+NAME=mips branch delay function sizing (with -m 0x80100000)
 FILE=malloc://20
 ARGS=-m 0x80100000
 CMDS=<<EOF
@@ -542,7 +542,7 @@ fcn.80100000();
 EOF
 RUN
 
-NAME=mips branch delay function sizing.
+NAME=mips branch delay function sizing
 FILE=malloc://20
 CMDS=<<EOF
 e asm.calls=false
@@ -936,7 +936,7 @@ afvW
 EOF
 RUN
 
-NAME=pdf main mips be
+NAME=pdf main mips be (mipsbe-ip)
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
 aa
@@ -1578,7 +1578,7 @@ family: crpt
 EOF
 RUN
 
-NAME=pdf main mips be
+NAME=agf mips be (crackmips)
 FILE=bins/elf/analysis/crackmips
 CMDS=<<EOF
 aaa
@@ -1721,7 +1721,7 @@ esil: at,sp,&=
 EOF
 RUN
 
-NAME=data xrefs outside functions marked as data
+NAME=mips: data xrefs outside functions marked as data
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
 aaa

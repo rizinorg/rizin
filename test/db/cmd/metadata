@@ -33,7 +33,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cs
+NAME=metadata: Cs
 FILE=malloc://1024
 CMDS=<<EOF
 w hello world

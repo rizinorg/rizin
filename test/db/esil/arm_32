@@ -445,7 +445,7 @@ cpsr = 0x40000000
 EOF
 RUN
 
-NAME=cmp neq unchanged zf
+NAME=arm_32: cmp neq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -464,7 +464,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp neq changed zf
+NAME=arm_32: cmp neq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -484,7 +484,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp eq unchanged zf
+NAME=arm_32: cmp eq unchanged zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -505,7 +505,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmp eq changed zf
+NAME=arm_32: cmp eq changed zf
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -605,7 +605,7 @@ r0 = 0xbbbbaaaa
 EOF
 RUN
 
-NAME=ldr r2, [r3, r1]
+NAME=arm_32: ldr r2, [r3, r1]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -662,7 +662,7 @@ r1 = 0x000000aa
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1]
+NAME=arm_32: ldrd r2, r3, [r1]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -683,7 +683,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1, #4]
+NAME=arm_32: ldrd r2, r3, [r1, #4]
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -724,7 +724,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1, #4]!
+NAME=arm_32: ldrd r2, r3, [r1, #4]!
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -747,7 +747,7 @@ r3 = 0xdeadbeef
 EOF
 RUN
 
-NAME=ldrd r2, r3, [r1], #4
+NAME=arm_32: ldrd r2, r3, [r1], #4
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -2427,7 +2427,7 @@ r6 = 0x00000001
 EOF
 RUN
 
-NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1
+NAME=strle r5, [r6, 5] zf==0 nf==0, vf==1 (repeat)
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -2763,7 +2763,7 @@ r0 = 0x0000000a
 EOF
 RUN
 
-NAME=pc points to next instruction
+NAME=arm_32: pc points to next instruction
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
@@ -2778,7 +2778,7 @@ r0 = 0x00000004
 EOF
 RUN
 
-NAME=lr correct after bl
+NAME=arm_32: lr correct after bl
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm

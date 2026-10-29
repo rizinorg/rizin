@@ -1126,7 +1126,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String search regex - utf32le
+NAME=String search regex - utf32le (hit 0)
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 # Requires increasing the block size because -.-
@@ -1145,7 +1145,7 @@ EXPECT_ERR=
 RUN
 
 
-NAME=String search regex - utf32le
+NAME=String search regex - utf32le (hit 0 and 1)
 FILE=bins/cmd/search/string_encodings/Russian-Lipsum.utf32le
 CMDS=<<EOF
 # Requires increasing the block size because -.-
@@ -1205,7 +1205,7 @@ Alignment=16
 EOF
 RUN
 
-NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin
+NAME=String Search - minimal string - Encoding: ebcdic_uk - Latin (check offset)
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_uk
 CMDS=<<EOF
 e search.str.min_length=2
@@ -1246,7 +1246,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - minimal string - Encoding: ebcdic_us - Latin
+NAME=String Search - minimal string - Encoding: ebcdic_us - Latin (check offset)
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_us
 CMDS=<<EOF
 e search.str.min_length=2
@@ -1287,7 +1287,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - minimal string - Encoding: ebcdic_es - Latin
+NAME=String Search - minimal string - Encoding: ebcdic_es - Latin (check offset)
 FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ebcdic_es
 CMDS=<<EOF
 e search.str.min_length=2

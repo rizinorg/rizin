@@ -727,12 +727,6 @@ FILE==
 CMDS=<<EOF
 wx ab
 pf v(8) bits
-
-NAME=pf v(N) bitvector basic 8-bit MSB
-FILE==
-CMDS=<<EOF
-wx ab
-pf v(8) bits
 EOF
 EXPECT=<<EOF
 0x00000000 : bits = [ 1 0 1 0 1 0 1 1 ] (8-bit)

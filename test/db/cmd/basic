@@ -1,4 +1,4 @@
-NAME=t/basic
+NAME=t/basic /z search.in=block
 FILE=malloc://1024
 CMDS=<<EOF
 w test
@@ -17,7 +17,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=t/basic
+NAME=t/basic /x search hex block 0x100
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 b 0x100
@@ -30,7 +30,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=t/basic
+NAME=t/basic /x search decimal block 100
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 b 100

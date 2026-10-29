@@ -188,7 +188,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd_ccd
+NAME=cmd_ccd 0x5a8d
 FILE=bins/elf/ls
 CMDS=<<EOF
 ccd 0x5a8d
@@ -255,7 +255,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd_ccd
+NAME=cmd_cf bins/elf/echo
 FILE=bins/elf/ls
 CMDS=<<EOF
 cf bins/elf/echo

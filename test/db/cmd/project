@@ -194,7 +194,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=flags
+NAME=project: flags
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 fr sym.main sym.renamedmain
