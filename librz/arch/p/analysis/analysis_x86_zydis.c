@@ -3216,7 +3216,7 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	}
 	zydx->addr = addr;
 	ZydisDecodedInstruction zydecode;
-	ZydisDecodedOperand zydeop[ZYDIS_MAX_OPERAND_COUNT];
+	ZydisDecodedOperand zydeop[ZYDIS_MAX_OPERAND_COUNT] = { 0 };
 	zydx->zydecode = &zydecode;
 	zydx->zydeop = zydeop;
 	bool check = false;
