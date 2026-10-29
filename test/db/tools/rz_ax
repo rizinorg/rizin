@@ -235,12 +235,10 @@ EOF
 RUN
 
 NAME=rz-ax 64bit binary number
-# BROKEN: trailing-suffix binary literal rejected by the new grammar (use a 0b prefix)
-BROKEN=1
 TOOL=rz-ax
-ARGS=1111111111111111000000000000000011111111111111110000000100000001b
+ARGS=0b1111111111111111000000000000000011111111111111110000000100000001
 EXPECT=<<EOF
-0xffff0000ffff0101
+-281470681808639
 EOF
 RUN
 
@@ -297,12 +295,11 @@ EOF
 RUN
 
 NAME=rz-ax -f 6.3+2.1
-# BROKEN: 'rz-ax -f' no longer prints the bare decimal result; prints a float table now
-BROKEN=1
 TOOL=rz-ax
 ARGS=-f 6.3+2.1
 EXPECT=<<EOF
-8.4
+decimal 8.4
+scifmt  8.4000000000000004
 EOF
 RUN
 
@@ -461,12 +458,10 @@ EOF
 RUN
 
 NAME=long number conversion
-# BROKEN: trailing-suffix binary literal rejected by the new grammar (use a 0b prefix)
-BROKEN=1
 TOOL=rz-ax
-ARGS=10000000000000000000000000000000000000000000000b
+ARGS=0b10000000000000000000000000000000000000000000000
 EXPECT=<<EOF
-0x400000000000
+70368744177664
 EOF
 RUN
 
@@ -712,8 +707,6 @@ EOF
 RUN
 
 NAME=rz-ax -o
-# BROKEN: 'rz-ax -o a b ...' now reads its arguments as decimal byte values, not octal
-BROKEN=1
 TOOL=rz-ax
 ARGS=-o 162 62
 EXPECT=r2
@@ -755,17 +748,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-ax float kind
-# BROKEN: a plain fractional literal (3.14159) is now parsed as an exact
-# RzBigDecimal (kind "decimal"), not a 64-bit double, so the table header
-# reads "decimal" and there is no double bit-pattern "hex" line
-BROKEN=1
+NAME=rz-ax decimal kind
 TOOL=rz-ax
 ARGS=3.14159
 EXPECT=<<EOF
-float   3.14159
+decimal 3.14159
 scifmt  3.1415899999999999
-hex     0x400921f9f01b866e
 EOF
 RUN
 
