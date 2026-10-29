@@ -41,16 +41,15 @@ RUN
 NAME=dpa issue
 FILE==
 CMDS=<<EOF
-!sh -c "./bins/mach0/sleep-macos-arm64 100 >/dev/null 2>&1 &"
-dpa $(!pgrep sleep-macos-arm64)
-pi 3 @ pc
-!pkill sleep-macos-arm64
+# Popen waits for exec and closes inherited capture descriptors before returning.
+# Attach only to this child once the test binary is running.
+dpa $(!python3 -c 'import subprocess; print(subprocess.Popen(["./bins/mach0/sleep-macos-arm64", "100"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True).pid)')
+dr x8=1337
+dr x8
+dk 9
 EOF
-REGEXP_FILTER_OUT=((b\.lo)|(pacibsp)|(stp fp, lr, \[sp, -0x10\]!))
 EXPECT=<<EOF
-b.lo
-pacibsp
-stp fp, lr, [sp, -0x10]!
+x8 = 0x0000000000000539
 EOF
 RUN
 
