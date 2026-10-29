@@ -156,12 +156,12 @@ RzList /*<RzDebugProcess *>*/ *bsd_pid_list(RzDebug *dbg, int pid, RzList *list)
 		return NULL;
 	}
 
-	list->free = (RzListFree)&rz_debug_pid_free;
+	list->free = (RzListFree)&rz_debug_process_free;
 	for (i = 0; i < cnt; i++) {
 		entry = kp + i;
 		// Unless pid 0 is requested, only add the requested pid and its child processes
 		if (0 == pid || KP_PID(entry) == pid || KP_PPID(entry) == pid) {
-			RzDebugProcess *p = rz_debug_pid_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), RZ_DBG_PROC_STOP);
+			RzDebugProcess *p = rz_debug_process_new(KP_COMM(entry), KP_PID(entry), KP_UID(entry), RZ_DBG_PROC_STOP);
 			if (p) {
 				p->ppid = KP_PPID(entry);
 				p->gid = KP_GID(entry);
@@ -173,7 +173,6 @@ RzList /*<RzDebugProcess *>*/ *bsd_pid_list(RzDebug *dbg, int pid, RzList *list)
 	kvm_close(kd);
 	return list;
 }
-
 
 RzList *bsd_native_sysctl_map(RzDebug *dbg) {
 	return NULL;
@@ -247,6 +246,28 @@ fail:
 	return NULL;
 }
 
+static RzDebugThreadState get_netbsd_thread_state(int stat) {
+	switch (stat) {
+	case LSIDL:
+	case LSRUN:
+	case LSONPROC:
+		return RZ_DBG_THREAD_RUN;
+	case LSSLEEP:
+		return RZ_DBG_THREAD_SLEEP;
+	case LSSTOP:
+	case LSSUSPENDED:
+		return RZ_DBG_THREAD_STOP;
+	case LSZOMB:
+		return RZ_DBG_THREAD_ZOMBIE;
+#ifdef LSDEAD
+	case LSDEAD:
+		return RZ_DBG_THREAD_DEAD;
+#endif
+	default:
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+}
+
 static RzList /*<RzDebugThread *>*/ *netbsd_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	int mib[5] = { CTL_KERN, KERN_LWP, pid, sizeof(struct kinfo_lwp), 0 };
 	struct kinfo_lwp *kl;
@@ -277,7 +298,7 @@ static RzList /*<RzDebugThread *>*/ *netbsd_thread_list(RzDebug *dbg, int pid, R
 	max = len / sizeof(*kl);
 	for (i = 0; i < max; i++) {
 		RzDebugThread *th = rz_debug_thread_new(kl[i].l_lid, pid,
-			get_rz_thread_state(kl[i].l_stat), 0);
+			get_netbsd_thread_state(kl[i].l_stat), 0);
 		if (th) {
 			rz_list_append(list, th);
 		}

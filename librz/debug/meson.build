@@ -1,14 +1,14 @@
 debug_plugins_list = [
-  'bochs',
-  'dmp',
-  'gdb',
-  'io',
-  'null',
-  'winkd',
+ # 'bochs',
+ # 'dmp',
+ # 'gdb',
+ # 'io',
+ # 'null',
+ # 'winkd',
 ]
 
 if get_option('use_gpl')
-  debug_plugins_list += 'qnx'
+#  debug_plugins_list += 'qnx'
 endif
 
 if has_debugger

@@ -1209,6 +1209,19 @@ RZ_API void rz_core_debug_clear_register_flags(RzCore *core) {
 	foreach_reg_set_or_clear(core, false);
 }
 
+static const char *process_state_str(RzDebugProcessState state) {
+	switch (state) {
+	case RZ_DBG_PROC_RUN: return "running";
+	case RZ_DBG_PROC_SLEEP: return "sleeping";
+	case RZ_DBG_PROC_WAIT: return "waiting";
+	case RZ_DBG_PROC_STOP: return "stopped";
+	case RZ_DBG_PROC_ZOMBIE: return "zombie";
+	case RZ_DBG_PROC_DEAD: return "dead";
+	case RZ_DBG_PROC_RAISED: return "raised";
+	default: return "unknown";
+	}
+}
+
 RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *state) {
 	if (!dbg || !dbg->cur || !dbg->cur->pids) {
 		return false;
@@ -1219,47 +1232,56 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 	}
 	RzListIter *iter;
 	RzDebugProcess *p;
-	char status[2];
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "sdddss", "current",
-		"ppid", "pid", "uid", "status", "path");
+	rz_cmd_state_output_set_columnsf(state, "bdddss", "current",
+		"ppid", "pid", "uid", "state", "path");
 	rz_list_foreach (list, iter, p) {
-		rz_strf(status, "%c", p->state);
+		bool current = dbg->pid == p->pid;
+		const char *state_str = process_state_str(p->state);
+		const char *path = p->path ? p->path : "";
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
-			pj_kb(state->d.pj, "current", dbg->pid == p->pid);
+			pj_kb(state->d.pj, "current", current);
 			pj_ki(state->d.pj, "ppid", p->ppid);
 			pj_ki(state->d.pj, "pid", p->pid);
 			pj_ki(state->d.pj, "uid", p->uid);
-			pj_ks(state->d.pj, "status", status);
-			pj_ks(state->d.pj, "path", p->path);
+			pj_ks(state->d.pj, "state", state_str);
+			pj_ks(state->d.pj, "path", path);
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "sdddss", dbg->pid == p->pid ? "true" : "", p->ppid,
-				p->pid, p->uid, status, p->path);
+			rz_table_add_rowf(state->d.t, "bdddss", current, p->ppid,
+				p->pid, p->uid, state_str, path);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf(dbg->cons, " %c %d ppid:%d uid:%d %s %s\n",
-				dbg->pid == p->pid ? '*' : '-',
-				p->pid, p->ppid, p->uid, status, p->path);
+				current ? '*' : '-', p->pid, p->ppid, p->uid, state_str, path);
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
 	}
-	rz_list_free(list);
 	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
 	return true;
 }
 
-RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state) {
-	if (pid == -1) {
-		return false;
+static const char *thread_state_str(RzDebugThreadState state) {
+	switch (state) {
+	case RZ_DBG_THREAD_RUN: return "running";
+	case RZ_DBG_THREAD_SLEEP: return "sleeping";
+	case RZ_DBG_THREAD_WAIT: return "waiting";
+	case RZ_DBG_THREAD_STOP: return "stopped";
+	case RZ_DBG_THREAD_ZOMBIE: return "zombie";
+	case RZ_DBG_THREAD_DEAD: return "dead";
+	default: return "unknown";
 	}
-	if (!dbg || !dbg->cur || !dbg->cur->threads) {
+}
+
+RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *state) {
+	if (pid == -1 || !dbg || !dbg->cur || !dbg->cur->threads) {
 		return false;
 	}
 	RzList *list = dbg->cur->threads(dbg, pid);
@@ -1268,51 +1290,53 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 	}
 	RzListIter *iter;
 	RzDebugThread *th;
-	char status[2];
 	rz_cmd_state_output_array_start(state);
-	rz_cmd_state_output_set_columnsf(state, "bdss", "current", "pid", "status", "path");
+	rz_cmd_state_output_set_columnsf(state, "bddsxs", "current", "tid", "pid", "state", "pc", "location");
 	rz_list_foreach (list, iter, th) {
 		bool current = dbg->tid == th->tid;
-		RzStrBuf *loc = rz_strbuf_new("");
-		if (loc && th->pc) {
-			RzDebugMap *map = rz_debug_map_get(dbg, th->pc);
-			if (map && RZ_STR_ISNOTEMPTY(map->name)) {
-				rz_strbuf_appendf(loc, "%s ", map->name);
-			}
-			rz_strbuf_appendf(loc, "(0x%" PFMT64x ")", th->pc);
+		const char *state_str = thread_state_str(th->state);
+		char *location = NULL;
+		if (th->pc) {
 			if (dbg->corebind.getNameDelta) {
-				char *name_delta = dbg->corebind.getNameDelta(dbg->corebind.core, th->pc);
-				if (name_delta) {
-					bool has_delta = strchr(name_delta, '+') || strchr(name_delta, '-');
-					rz_strbuf_appendf(loc, " %s %s", has_delta ? "in" : "at", name_delta);
-					free(name_delta);
+				location = dbg->corebind.getNameDelta(dbg->corebind.core, th->pc);
+			}
+			if (!location) {
+				RzDebugMap *map = rz_debug_map_get(dbg, th->pc);
+				if (map && RZ_STR_ISNOTEMPTY(map->name)) {
+					location = rz_str_dup(map->name);
 				}
 			}
 		}
-		const char *loc_str = loc ? rz_strbuf_get(loc) : "";
-		rz_strf(status, "%c", (char)th->state);
+		const char *loc_str = location ? location : "";
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_JSON:
 			pj_o(state->d.pj);
 			pj_kb(state->d.pj, "current", current);
 			pj_ki(state->d.pj, "tid", th->tid);
-			pj_ks(state->d.pj, "status", status);
-			pj_ks(state->d.pj, "path", loc_str);
+			pj_ki(state->d.pj, "pid", th->process_pid);
+			pj_ks(state->d.pj, "state", state_str);
+			pj_kn(state->d.pj, "pc", th->pc);
+			pj_ks(state->d.pj, "location", loc_str);
 			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE:
-			rz_table_add_rowf(state->d.t, "bdss", current, th->tid, status, loc_str);
+			rz_table_add_rowf(state->d.t, "bddsxs", current, th->tid, th->process_pid,
+				state_str, th->pc, loc_str);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf(dbg->cons, " %c %d %s %s\n",
-				dbg->tid == th->tid ? '*' : '-',
-				th->tid, status);
+			if (th->pc) {
+				rz_cons_printf(dbg->cons, " %c %d %d %s 0x%08" PFMT64x " %s\n",
+					current ? '*' : '-', th->tid, th->process_pid, state_str, th->pc, loc_str);
+			} else {
+				rz_cons_printf(dbg->cons, " %c %d %d %s -\n",
+					current ? '*' : '-', th->tid, th->process_pid, state_str);
+			}
 			break;
 		default:
 			rz_warn_if_reached();
 			break;
 		}
-		rz_strbuf_free(loc);
+		free(location);
 	}
 	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
