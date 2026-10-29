@@ -1,45 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_util/rz_assert.h"
 #include <rz_inquiry/rz_icfg.h>
-
-struct rz_icfg_t {
-	RzVector /* ICFGEdge */ prepared_edges;
-	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
-	RzSetU *block_conflicts; ///< Blocks which could be shared by procedures or are their own procedure.
-	RzGraph /*<RzCFGNode *, RzCFGEdgeType>*/ *graph;
-};
-
-typedef struct {
-	ut64 from;
-	ut64 to;
-	RzICFGEdgeType type;
-} ICFGEdge;
-
-struct rz_icfg_node_t {
-	ut64 addr; ///< Address of the corresponding block.
-	size_t size; ///< Size the corresponding block covers in memorfromy (in bytes).
-	/**
-	 * \brief The offsets of the instructions (packets), from the block start address.
-	 * Starting at the second instruction in the block (since first is always 0), offsets from the start of the block
-	 */
-	RzVector /*<ut16>*/ insn_offsets;
-	/**
-	 * \brief The procedures entry points this block can be reached from without walking a call edge.
-	 */
-	RzSetU *proc_memberships;
-	/**
-	 * \brief Block attributes. Kept in sync with the CFG.
-	 * Used for accessing most important information, without the need to access the CFG edges.
-	 */
-	RzICFGNodeAttr attrs;
-};
-
-struct rz_cfg_t {
-	ut64 entry;
-	RzIterator *cfg_nodes; ///< An iterator over the sub-graph in the iCFG belonging to the function.
-};
+#include "icfg_priv.h"
 
 static void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzICFGNode *node) {
 	rz_return_if_fail(node);
@@ -72,7 +35,7 @@ RZ_API RZ_OWN RzICFG *rz_icfg_new() {
 	m->graph = icfg;
 	rz_vector_init(&m->prepared_edges, sizeof(ICFGEdge), NULL, NULL);
 	rz_vector_init(&m->proc_entries, sizeof(ut64), NULL, NULL);
-	m->block_conflicts = rz_set_u_new();
+	m->node_conflicts = rz_set_u_new();
 	return m;
 }
 
@@ -83,7 +46,7 @@ RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg) {
 	rz_graph_free(icfg->graph);
 	rz_vector_fini(&icfg->prepared_edges);
 	rz_vector_fini(&icfg->proc_entries);
-	rz_set_u_free(icfg->block_conflicts);
+	rz_set_u_free(icfg->node_conflicts);
 	free(icfg);
 }
 
@@ -149,7 +112,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	rz_set_u_add(node->proc_memberships, proc_membership);
 
 	if (rz_set_u_size(node->proc_memberships) > 1) {
-		rz_set_u_add(icfg->block_conflicts, node->addr);
+		rz_set_u_add(icfg->node_conflicts, (utptr)node);
 	}
 
 success:
@@ -175,7 +138,7 @@ RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, u
 /**
  * \brief Applies all prepared edges to the iCFG.
  * This function will return the number of edges which miss a node.
- * Or SIZE_MAX in case of error.
+ * Or SZT_MAX in case of error.
  *
  * \param icfg The iCFG to update.
  */
