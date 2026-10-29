@@ -325,6 +325,11 @@ static bool test_rz_big_mul(void) {
 }
 
 static bool test_rz_big_mul_multiword(void) {
+	if (HAVE_LIB_GMP || HAVE_LIB_SSL) {
+		// does not wrap, different semantics
+		mu_ignore;
+	}
+
 	RzNumBig *a = rz_big_new();
 	RzNumBig *b = rz_big_new();
 	RzNumBig *c = rz_big_new();
