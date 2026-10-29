@@ -4,8 +4,8 @@
 rz_inquiry_sources = [
   'il_cache.c',
   'icfg.c',
+  'icfg_judge.c',
   'absint/block.c',
-  'absint/block_judge.c',
   'absint/interpreter.c',
   'absint/driver.c',
   'absint/val_domain_constant.c',
