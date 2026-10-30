@@ -36,6 +36,7 @@
 #define HAVE_LIB_XXHASH             @HAVE_LIB_XXHASH@
 #define USE_LIB_XXHASH              @USE_LIB_XXHASH@
 #define USE_SYS_ZYDIS               @USE_SYS_ZYDIS@
+#define HAVE_LIB_GMP                @HAVE_GMP@
 #define HAVE_LIB_SSL                @HAVE_OPENSSL@
 #define HAVE_LIB_SSL_SM3            @HAVE_OPENSSL_SM3@
 #define HAVE_PTRACE                 @HAVE_PTRACE@
