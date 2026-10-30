@@ -1095,12 +1095,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				ret = 1;
 				goto beach;
 			}
-			rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
-				rz_io_fd_size(r->io, fh->fd));
-			rz_io_write_at(r->io, mapaddr, (const ut8 *)buf, sz);
-			rz_core_block_read(r);
-			free(buf);
-			free(path);
+			//	rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
+			//		rz_io_fd_size(r->io, fh->fd));
+			//	rz_io_write_at(r->io, mapaddr, (const ut8 *)buf, sz);
+
 			if (asmarch) {
 				rz_config_set(r->config, "asm.arch", asmarch);
 			}
@@ -1113,7 +1111,60 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (endianness != RZ_SYS_ENDIAN_NONE) {
 				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
 			}
-			// TODO: load rbin thing
+
+			int written = rz_io_fd_write_at(r->io, fh->fd, 0LL, (const ut8 *)buf, sz);
+
+			if (written != sz) {
+				RZ_LOG_ERROR("Error in writing this binary content!\n");
+				free(buf);
+				free(path);
+				ret = 1;
+				goto beach;
+			}
+
+			if (load_bin == LOAD_BIN_ALL) {
+				rz_core_bin_load(r, path, baddr);
+			} else {
+				rz_io_map_new(r->io, fh->fd, perms, 0LL, mapaddr, sz);
+				if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
+					rz_core_bin_load_structs(r, path);
+				}
+			}
+
+			if (asmarch) {
+				rz_config_set(r->config, "asm.arch", asmarch);
+			}
+			if (asmbits) {
+				rz_config_set(r->config, "asm.bits", asmbits);
+			}
+			if (asmos) {
+				rz_config_set(r->config, "asm.os", asmos);
+			}
+			if (endianness != RZ_SYS_ENDIAN_NONE) {
+				rz_config_set_b(r->config, "cfg.bigendian", endianness == RZ_SYS_ENDIAN_BIG);
+			}
+			rz_list_foreach (evals, iter, cmdn) {
+				rz_config_eval(r->config, cmdn);
+				rz_cons_flush(r->cons);
+			}
+			RzBinObject *o = rz_bin_cur_object(r->bin);
+			if (!debug && o && !o->regstate) {
+				const RzFlagItem *entry0 = rz_flag_get(r->flags, "entry0");
+				if (entry0) {
+					rz_core_seek(r, entry0->offset, true);
+				} else {
+					rz_core_seek(r, rz_bin_get_first_entrypoint(o), true);
+				}
+			}
+			if (s_seek) {
+				seek = rz_num_math(r->num, s_seek);
+				if (seek != UT64_MAX) {
+					rz_core_seek(r, seek, true);
+				}
+			}
+			rz_core_seek(r, r->offset, true); // read current block
+			free(buf);
+			free(path);
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
