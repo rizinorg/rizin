@@ -1,3 +1,27 @@
+NAME=agf ARM switch edges
+FILE=malloc://96
+ARGS=-a arm -b 16 -m 0x100d8
+CMDS=<<EOF
+wx 08b5034b7b44186800f004f8002008bd58000100032806d8dfe800f002130f0b0a4b7b441b680a4b7b441a6801321a607047084b7b441b68f5e7074b7b441b68f1e7064b7b441b68ede700bf3a00010034000100280001002000010018000100
+s 0x100ec
+af
+agf cmd~^age
+EOF
+EXPECT=<<EOF
+age "0x100ec" "0x100fe"
+age "0x100ec" "0x100f0"
+age "0x100f0" "0x100f8"
+age "0x100f0" "0x1011a"
+age "0x100f0" "0x10112"
+age "0x100f0" "0x1010a"
+age "0x100f8" "0x100fe"
+age "0x1011a" "0x100fe"
+age "0x10112" "0x100fe"
+age "0x1010a" "0x100fe"
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=agf j resolv reloc symbols
 FILE=bins/elf/ls
 CMDS=<<EOF
