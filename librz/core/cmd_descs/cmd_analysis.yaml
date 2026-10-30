@@ -360,6 +360,19 @@ commands:
           - name: afs
             cname: analysis_function_signature
             summary: Get/Set function signature at current address
+            description: >
+              Without an argument, prints the signature of the function. An argument is
+              followed by its location when an argument variable has the same name and type.
+              With an argument, sets the signature from a C prototype, like the one `afT` prints.
+            details:
+              - name: Examples
+                entries:
+                  - text: afs
+                    arg_str: ""
+                    comment: "Print the signature, e.g. int main(int argc @ rdi, char **argv @ rsi, char **envp);"
+                  - text: afs
+                    arg_str: " int main(int argc, char **argv)"
+                    comment: Set the signature from a C prototype
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -385,6 +398,13 @@ commands:
             args:
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+      - name: afT
+        cname: analysis_function_type
+        summary: Show the type of the function at current address
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: afo
         cname: analysis_function_address
         summary: Show address of current function
