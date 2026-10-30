@@ -1773,7 +1773,8 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache) {
 /**
  * \brief Returns the argument of \p fcn that a signature shows as \p type \p name, if any
  */
-static RzAnalysisVar *sig_arg_var(RzAnalysisFunction *fcn, const char *name, const RzType *type) {
+RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_fcn_sig_arg_var(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *name, RZ_NULLABLE const RzType *type) {
+	rz_return_val_if_fail(fcn, NULL);
 	if (!name || !type) {
 		return NULL;
 	}
@@ -1789,7 +1790,7 @@ typedef struct {
 } SigStorageCtx;
 
 static void sig_append_storage(SigStorageCtx *ctx, RzStrBuf *sb, const char *name, const RzType *type) {
-	RzAnalysisVar *var = sig_arg_var(ctx->fcn, name, type);
+	RzAnalysisVar *var = rz_analysis_fcn_sig_arg_var(ctx->fcn, name, type);
 	if (!var || rz_pvector_contains(ctx->shown, var)) {
 		return;
 	}
@@ -1814,7 +1815,9 @@ static void sig_callable_arg_storage(RzStrBuf *sb, const RzCallableArg *arg, voi
  *
  * \param shown Gets the arguments of \p fcn whose storage was printed
  */
-static char *callable_with_storage(RzAnalysis *analysis, RzAnalysisFunction *fcn, const RzCallable *callable, RzPVector /*<RzAnalysisVar *>*/ *shown) {
+RZ_IPI RZ_OWN char *rz_analysis_fcn_callable_with_storage(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn,
+	RZ_NONNULL const RzCallable *callable, RZ_NONNULL RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown) {
+	rz_return_val_if_fail(analysis && fcn && callable && shown, NULL);
 	SigStorageCtx ctx = { analysis, fcn, shown };
 	return rz_type_callable_as_string_with_suffix(analysis->typedb, callable, sig_callable_arg_storage, &ctx);
 }
@@ -1828,7 +1831,7 @@ static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunct
 		return NULL;
 	}
 	if (ctx->shown) {
-		return callable_with_storage(analysis, fcn, callable, ctx->shown);
+		return rz_analysis_fcn_callable_with_storage(analysis, fcn, callable, ctx->shown);
 	}
 	return rz_type_callable_as_string(analysis->typedb, callable);
 }

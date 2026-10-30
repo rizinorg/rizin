@@ -447,7 +447,7 @@ EXPECT=<<EOF
 arch     tms320
 cpu      c55x
 16
-int main(int argc);
+int main(int argc @ ar4);
 arg int argc @ ar4
 7
 global nstd_uint8_t * uart_address @ 0x800000
@@ -475,7 +475,7 @@ EOF
 EXPECT=<<EOF
 cpu      c55x
 16
-int main(int argc);
+int main(int argc @ ar4);
 arg int argc @ ar4
 7
 stackframe: 9
@@ -497,7 +497,7 @@ EOF
 EXPECT=<<EOF
 cpu      c55x
 16
-int main(int argc);
+int main(int argc @ ar4);
 arg int argc @ ar4
 7
 args: 1

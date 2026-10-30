@@ -1971,8 +1971,7 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 	return argc;
 }
 
-// tfj and afsj call this function
-RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+static char *function_json(RzAnalysisFunction *function, bool storage) {
 	char *tmp = NULL;
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
@@ -2007,12 +2006,58 @@ RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) 
 		if (cc_arg) {
 			pj_ks(pj, "cc", cc_arg);
 		}
+		RzAnalysisVar *var = storage ? rz_analysis_fcn_sig_arg_var(function, arg_name, arg_type) : NULL;
+		if (var) {
+			rz_analysis_var_storage_dump_pj(pj, var, &var->storage);
+		}
 		pj_end(pj);
 	}
 	pj_end(pj);
 	pj_end(pj);
 	free(ret_type_str);
 	return pj_drain(pj);
+}
+
+/**
+ * \brief Returns the type of the function as JSON
+ *
+ * Used by `tfj` and `afTj`.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+	return function_json(function, false);
+}
+
+/**
+ * \brief Returns the type of the function as JSON, with the storage of its arguments
+ *
+ * Like rz_analysis_function_get_json(), with a "storage" object in every argument that
+ * an argument variable of \p function (same name and type) describes. Used by `afsj`.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_json_with_storage(RZ_NONNULL RzAnalysisFunction *function) {
+	rz_return_val_if_fail(function, NULL);
+	return function_json(function, true);
+}
+
+static char *function_signature(RzAnalysisFunction *function, bool storage) {
+	RzAnalysis *a = function->analysis;
+
+	RzCallable *callable = rz_analysis_function_derive_type(a, function);
+	if (!callable) {
+		return NULL;
+	}
+	char *signature;
+	if (storage) {
+		RzPVector shown;
+		rz_pvector_init(&shown, NULL);
+		signature = rz_analysis_fcn_callable_with_storage(a, function, callable, &shown);
+		rz_pvector_fini(&shown);
+	} else {
+		signature = rz_type_callable_as_string(a->typedb, callable);
+	}
+	rz_type_callable_free(callable);
+	char *result = rz_str_newf("%s;", signature);
+	free(signature);
+	return result;
 }
 
 /**
@@ -2023,17 +2068,20 @@ RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) 
  */
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function) {
 	rz_return_val_if_fail(function, NULL);
-	RzAnalysis *a = function->analysis;
+	return function_signature(function, false);
+}
 
-	RzCallable *callable = rz_analysis_function_derive_type(a, function);
-	if (!callable) {
-		return NULL;
-	}
-	char *signature = rz_type_callable_as_string(a->typedb, callable);
-	rz_type_callable_free(callable);
-	char *result = rz_str_newf("%s;", signature);
-	free(signature);
-	return result;
+/**
+ * \brief Returns type signature (prototype) of the function, with the storage of its arguments
+ *
+ * Like rz_analysis_function_get_signature(), with each argument that an argument variable of
+ * \p function (same name and type) describes followed by its storage, as in
+ * `int main(int argc @ rdi, char **argv @ rsi);`. The result is no C prototype anymore,
+ * use rz_analysis_function_get_signature() for one.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_signature_with_storage(RZ_NONNULL RzAnalysisFunction *function) {
+	rz_return_val_if_fail(function, NULL);
+	return function_signature(function, true);
 }
 
 /**
