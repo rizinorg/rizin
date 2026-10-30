@@ -243,6 +243,14 @@ string: 0x00000000-0x0000000b jenkins: c652f619
 EOF
 RUN
 
+NAME=rz-hash -a djb2 -s abc
+TOOL=rz-hash
+ARGS=-a djb2 -s abc
+EXPECT=<<EOF
+string: 0x00000000-0x00000003 djb2: 0b885c8b
+EOF
+RUN
+
 NAME=rz-hash -L
 TOOL=rz-hash
 ARGS=-L
@@ -308,6 +316,7 @@ ____h_ crc8rohc       LGPL3      deroad                         CRC-8 ROHC check
 ____h_ crc8smbus      LGPL3      deroad                         CRC-8 SMBUS checksum
 ____h_ crc8wcdma      LGPL3      deroad                         CRC-8 WCDMA checksum
 ____h_ crca           LGPL3      deroad                         CRC-16/CRCA checksum
+____h_ djb2           LGPL3      okay0017                       djb2 32-bit non-cryptographic hash
 ____h_ entropy        LGPL3      deroad                         Entropy [0.0-8.0] range
 ____h_ entropy_fract  LGPL3      deroad                         Fractional entropy [0.0-1.0] range
 ____h_ fletcher16     LGPL3      deroad                         Fletcher16 checksum
@@ -793,6 +802,7 @@ string: 0x00000000-0x00000005 crc8rohc: computed hash doesn't match the expected
 string: 0x00000000-0x00000005 crc8smbus: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crc8wcdma: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 crca: computed hash doesn't match the expected one
+string: 0x00000000-0x00000005 djb2: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 entropy: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 entropy_fract: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 fletcher16: computed hash doesn't match the expected one
