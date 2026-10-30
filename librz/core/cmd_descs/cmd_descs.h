@@ -448,6 +448,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_bytes_handler(RzCore *core, in
 RZ_IPI RzCmdStatus rz_analysis_function_signature_editor_handler(RzCore *core, int argc, const char **argv);
 // "afsr"
 RZ_IPI RzCmdStatus rz_analysis_function_signature_type_handler(RzCore *core, int argc, const char **argv);
+// "afT"
+RZ_IPI RzCmdStatus rz_analysis_function_type_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "afo"
 RZ_IPI RzCmdStatus rz_analysis_function_address_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "afu"

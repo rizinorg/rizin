@@ -2188,9 +2188,9 @@ afs "char type(int a, char **b);"
 afs
 EOF
 EXPECT=<<EOF
-void fcn.004e2420(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_8h);
-void no_type(int a, char **b);
-char type(int a, char **b);
+void fcn.004e2420(int64_t arg1 @ rdi, int64_t arg2 @ rsi, int64_t arg3 @ rdx, int64_t arg4 @ rcx, int64_t arg5 @ r8, int64_t arg6 @ r9, int64_t arg_8h @ stack + 0x8);
+void no_type(int a @ rdi, char **b @ rsi);
+char type(int a @ rdi, char **b @ rsi);
 EOF
 RUN
 
@@ -2205,9 +2205,9 @@ afs "char foo.bar(int a, ...);"
 afs
 EOF
 EXPECT=<<EOF
-void entry0(int64_t arg3);
+void entry0(int64_t arg3 @ rdx);
 void foo.bar();
-char foo.bar(int a);
+char foo.bar(int a @ rdi);
 EOF
 RUN
 
@@ -2235,7 +2235,7 @@ afvl
 afi~name,convention
 EOF
 EXPECT=<<EOF
-int fastcalled(int sarg0, int sarg1, int sarg2, int sarg3);
+int fastcalled(int sarg0 @ ecx, int sarg1 @ edx, int sarg2 @ stack + 0x4, int sarg3 @ stack + 0x8);
 var int32_t var_24h @ stack - 0x24
 var int32_t var_20h @ stack - 0x20
 var int32_t var_14h @ stack - 0x14

@@ -904,7 +904,7 @@ false  ap   va_list                  DWARF  loclist: [(0x80000c22, 20): CFA+0,	(
 false  arg5 int32_t                  rizin  a4
 true   fmt  const char *             DWARF  loclist: [(0x80000c22, 10): a4,	(0x80000c2c, 15): a6,	(0x80000c3b, 1): <evaluation waiting>]
 false  ans  int                      DWARF  empty
-int printf(const char *fmt, ...);
+int printf(const char *fmt @ a6, ...);
             ; CALL XREFS from dbg.main @ 0x8000054e, 0x80000636
 / int printf(const char *fmt @ a6, ...)
 |           ; var int32_t arg5 @ a4
@@ -922,7 +922,7 @@ true   str  void *                   DWARF  loclist: [(0x80000c04, 6): a4,	(0x80
 false  arg5 int32_t                  rizin  a4
 true   buf  const char *             DWARF  loclist: [(0x80000c04, 12): a5,	(0x80000c10, 3): a4,	(0x80000c13, 15): <evaluation waiting>]
 true   n    size_t                   DWARF  loclist: [(0x80000c04, 10): d4,	(0x80000c0e, 5): d5,	(0x80000c13, 7): d15,	(0x80000c1a, 8): <evaluation waiting>]
-void * prout(void *str, const char *buf, size_t n);
+void * prout(void *str @ a15, const char *buf @ a5, size_t n @ d4);
 / void * prout(void *str @ a15, const char *buf @ a5, size_t n @ d4)
 |           ; var int32_t arg5 @ a4
 |           0x80000c04      mov.aa a15, a4                             ; printf.c:5 ; arg5
@@ -951,7 +951,7 @@ false  b_normal_exp int                          DWARF  loclist: [(0x80003cc0, 3
 false  a_fraction   fractype                     DWARF  loclist: [(0x80003cd4, 104): composite: [(.0, 32): d10,	(.0, 32): d11],	(0x80003d44, 12): composite: [(.0, 32): d10,	(.0, 32): d11],	(0x80003d50, 2): a4+12,	(0x80003d52, 176): composite: [(.0, 32): d10,	(.0, 32): d11]]
 false  tfraction    intfrac                      DWARF  composite: [(.0, 32): d2,	(.0, 32): d3]
 false  b_fraction   fractype                     DWARF  loclist: [(0x80003cd8, 48): composite: [(.0, 32): d8,	(.0, 32): d9],	(0x80003d0e, 244): composite: [(.0, 32): d8,	(.0, 32): d9]]
-fp_number_type * _fpadd_parts(fp_number_type *a, fp_number_type *b, fp_number_type *tmp);
+fp_number_type * _fpadd_parts(fp_number_type *a @ a13, fp_number_type *b @ a12, fp_number_type *tmp @ a15);
             ; CALL XREF from dbg.__adddf3 @ 0x80003e32
             ; CALL XREF from dbg.__subdf3 @ 0x80003e72
 / fp_number_type * _fpadd_parts(fp_number_type *a @ a13, fp_number_type *b @ a12, fp_number_type *tmp @ a15)
@@ -973,7 +973,7 @@ is_arg name    type         constraints origin addr
 false  sc      const char *             DWARF  a2
 true   s       const char *             DWARF  loclist: [(0x800030ca, 18): a4,	(0x800030dc, 4): <evaluation waiting>,	(0x800030e0, 10): a4,	(0x800030ea, 2): a2]
 true   maxsize size_t                   DWARF  loclist: [(0x800030ca, 8): d4,	(0x800030ea, 2): d4]
-size_t strnlen_s(const char *s, size_t maxsize);
+size_t strnlen_s(const char *s @ a4, size_t maxsize @ d4);
             ; CALL XREF from dbg._Fail_s @ 0x8000191e
 / size_t strnlen_s(const char *s @ a4, size_t maxsize @ d4)
 |           ; var const char *sc @ a2
@@ -995,7 +995,7 @@ false  arg5     int32_t                 rizin  a4
 false  arg6     int32_t                 rizin  a5
 true   wc       wchar_t                 DWARF  loclist: [(0x800018a6, 21): d4,	(0x800018bb, 49): d15]
 false  pmbstate _Statab *               DWARF  empty
-int _Wctomb(char *s, wchar_t wc, mbstate_t *pst);
+int _Wctomb(char *s @ a15, wchar_t wc @ d15, mbstate_t *pst @ a12);
             ; CALL XREF from dbg._Putstr @ 0x800014d2
 / int _Wctomb(char *s @ a15, wchar_t wc @ d15, mbstate_t *pst @ a12)
 |           ; var int32_t arg5 @ a4
@@ -1014,7 +1014,7 @@ true   pwc  wchar_t *                DWARF  loclist: [(0x80003084, 23): a4,	(0x8
 true   s    const char *             DWARF  loclist: [(0x80003084, 23): a5,	(0x8000309b, 21): a13]
 true   pst  mbstate_t *              DWARF  loclist: [(0x80003084, 23): a6,	(0x8000309b, 21): a12]
 true   nin  size_t                   DWARF  loclist: [(0x80003084, 23): d4,	(0x8000309b, 21): d15]
-int _Mbtowc(wchar_t *pwc, const char *s, size_t nin, mbstate_t *pst);
+int _Mbtowc(wchar_t *pwc @ a4, const char *s @ a5, size_t nin @ d4, mbstate_t *pst @ a6);
             ; CALL XREF from dbg._Printf @ 0x80000d02
 / int _Mbtowc(wchar_t *pwc @ a4, const char *s @ a5, size_t nin @ d4, mbstate_t *pst @ a6)
 |           0x80003084      movh.a a15, #0xd000                        ; xmbtowc.c:150
@@ -1023,7 +1023,7 @@ arg int except @ d4
 is_arg name   type constraints origin addr 
 -------------------------------------------
 true   except int              DWARF  d4
-int feraiseexcept(int except);
+int feraiseexcept(int except @ d4);
             ; CALL XREF from dbg._Feraise @ 0x8000343e
 / int feraiseexcept(int except @ d4)
 |           0x800037d8      mov   d2, #0                               ; feraiseexcept.c:173
@@ -1065,7 +1065,7 @@ false  size_arg size_t                    rizin  a0
 false  arg5     int32_t                   rizin  a4
 false  arg6     int32_t                   rizin  a5
 false  arg7     int32_t                   rizin  a6
-void dbg.fn1(int a, char *g, double q, struct Some *gg, some_t **out);
+void dbg.fn1(int a @ stack - 0x4, char *g @ stack - 0x8, double q @ stack - 0x10, struct Some *gg @ stack - 0x14, some_t **out @ stack - 0x18);
             ; CALL XREF from dbg.main @ 0x8000059e
 / _Bool fn1(int a @ stack - 0x4, char *g @ stack - 0x8, double q @ stack - 0x10, struct Some *gg @ stack - 0x14, some_t **out @ stack - 0x18)
 |           ; var int32_t arg5 @ a4
