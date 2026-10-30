@@ -96,6 +96,20 @@ RZ_IPI RzILOpBool *m68k_ccr_bit(ut32 bit) {
 	return NON_ZERO(LOGAND(UNSIGNED(8, VARG("sr")), U8(1u << bit)));
 }
 
+RZ_IPI RzILOpBool *m68k_fpsr_bit(ut32 bit) {
+	rz_return_val_if_fail(bit < 32, NULL);
+	return NON_ZERO(LOGAND(UNSIGNED(32, VARG("fpsr")), U32(1u << bit)));
+}
+
+RZ_IPI RzILOpEffect *m68k_set_fpsr_cc(RzILOpBool *n, RzILOpBool *z, RzILOpBool *i, RzILOpBool *nan) {
+	RzILOpPure *cc = U32(0);
+	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(n, 32), U8(M68K_FPSR_CC_N)));
+	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(z, 32), U8(M68K_FPSR_CC_Z)));
+	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(i, 32), U8(M68K_FPSR_CC_I)));
+	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(nan, 32), U8(M68K_FPSR_CC_NAN)));
+	return SETG("fpsr", LOGOR(LOGAND(UNSIGNED(32, VARG("fpsr")), U32(~M68K_FPSR_CC_MASK)), cc));
+}
+
 static RzILOpBool *cacr_eusp(RzILOpPure *cacr) {
 	return NON_ZERO(LOGAND(UNSIGNED(32, cacr), U32(1u << M68K_CACR_EUSP)));
 }
