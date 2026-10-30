@@ -490,20 +490,39 @@ RZ_IPI RzCmdStatus rz_regs_valgroup_handler(RzCore *core, RzReg *reg, RzCmdRegSy
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List the saved arenas for each register type.
+ *
+ * Identify JSON entries by type and stack index; allocation addresses in the
+ * text output are not useful identifiers for consumers.
+ */
+RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
 	int i, j;
 	RzRegArena *a;
 	RzListIter *iter;
+	rz_cmd_state_output_array_start(state);
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegSet *rs = &reg->regset[i];
 		j = 0;
 		rz_list_foreach (rs->pool, iter, a) {
-			rz_cons_printf(core->cons, "%s %p %d %d %s %d\n",
-				(a == rs->arena) ? "*" : ".", a,
-				i, j, rz_reg_get_type(i), a->size);
+			if (state->mode == RZ_OUTPUT_MODE_JSON) {
+				PJ *pj = state->d.pj;
+				pj_o(pj);
+				pj_kn(pj, "type", i);
+				pj_ks(pj, "type_str", rz_reg_get_type(i));
+				pj_kn(pj, "index", j);
+				pj_kn(pj, "size", a->size);
+				pj_kb(pj, "current", a == rs->arena);
+				pj_end(pj);
+			} else {
+				rz_cons_printf(core->cons, "%s %p %d %d %s %d\n",
+					(a == rs->arena) ? "*" : ".", a,
+					i, j, rz_reg_get_type(i), a->size);
+			}
 			j++;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -643,22 +662,50 @@ RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync s
 	return r;
 }
 
-RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List the register types supported by Rizin.
+ */
+RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
 	for (int i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		rz_cons_println(core->cons, rz_reg_get_type(i));
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, rz_reg_get_type(i));
+		} else {
+			rz_cons_println(core->cons, rz_reg_get_type(i));
+		}
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
+/**
+ * \brief List register roles, including those without a matching register.
+ *
+ * Use the same JSON fields as arpj/drpj so consumers can share role handling.
+ * Omit the reg field when the profile does not resolve a role to a register.
+ */
+RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	rz_cmd_state_output_array_start(state);
 	for (int i = 0; i < RZ_REG_NAME_LAST; i++) {
-		rz_cons_print(core->cons, rz_reg_get_role(i));
 		RzRegItem *ri = rz_reg_get_by_role(reg, i);
-		if (ri && ri->name) {
-			rz_cons_printf(core->cons, " -> %s", ri->name);
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			PJ *pj = state->d.pj;
+			pj_o(pj);
+			pj_kn(pj, "role", i);
+			pj_ks(pj, "role_str", rz_reg_get_role(i));
+			if (ri && ri->name) {
+				pj_ks(pj, "reg", ri->name);
+			}
+			pj_end(pj);
+		} else {
+			rz_cons_print(core->cons, rz_reg_get_role(i));
+			if (ri && ri->name) {
+				rz_cons_printf(core->cons, " -> %s", ri->name);
+			}
+			rz_cons_print(core->cons, "\n");
 		}
-		rz_cons_print(core->cons, "\n");
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -754,8 +801,18 @@ RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv) {
-	if (reg->reg_profile_cmt) {
+/**
+ * \brief Show the full-line comments from the loaded register profile.
+ *
+ * Use an empty comments string in JSON so consumers do not need a separate
+ * case for profiles without notes.
+ */
+RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state) {
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "comments", rz_str_get(reg->reg_profile_cmt));
+		pj_end(state->d.pj);
+	} else if (reg->reg_profile_cmt) {
 		rz_cons_println(core->cons, reg->reg_profile_cmt);
 	}
 	return RZ_CMD_STATUS_OK;

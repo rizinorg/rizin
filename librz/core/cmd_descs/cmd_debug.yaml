@@ -1139,6 +1139,10 @@ commands:
           - name: dra
             summary: Show all currently allocated register arenas
             cname: debug_reg_arenas
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: dra+
             summary: Push a new set of arenas to the stack
@@ -1194,6 +1198,10 @@ commands:
           - name: drpc
             summary: Show register profile comments
             cname: debug_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: drpo
             summary: Load a new register profile from file
@@ -1260,11 +1268,19 @@ commands:
       - name: drT
         summary: List all register types
         cname: debug_reg_types
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
       - name: drR
         summary: List all register roles
         cname: debug_reg_roles
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
   # ... to here

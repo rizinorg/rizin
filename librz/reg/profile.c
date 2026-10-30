@@ -291,7 +291,7 @@ static RZ_OWN RzList /*<char *>*/ *split_profile_line(RZ_NONNULL const char *p) 
 }
 
 /**
- * \brief Parses a register profile string. Each line is either a register alias or a register definiton.
+ * \brief Parse register aliases, definitions, and full-line comments.
  *
  * A register alias string is of the following form:
  * "=<alias>  <name>\n"
@@ -313,13 +313,15 @@ static RZ_OWN RzList /*<char *>*/ *split_profile_line(RZ_NONNULL const char *p) 
  * * comment: A comment about the register.
  * * Flags this register holds.
  *
- * \param reg Register struct which holds all register items.
- * \param profile Register profile string.
+ * \param alias_list Parsed role aliases.
+ * \param def_list Parsed register definitions.
+ * \param profile_str Register profile string.
+ * \param comments Receives full-line comments, with one newline per comment.
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, const char *profile_str) {
-	rz_return_val_if_fail(alias_list && def_list && profile_str, false);
+static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, const char *profile_str, RZ_OUT RzStrBuf *comments) {
+	rz_return_val_if_fail(alias_list && def_list && profile_str && comments, false);
 
 	RzList *def_lines = rz_str_split_duplist_n(profile_str, "\n", 0, true);
 	rz_return_val_if_fail(def_lines, false);
@@ -334,6 +336,13 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		if (RZ_STR_ISEMPTY(line)) {
 			continue;
 		}
+		if (line[0] == '#') {
+			if (!rz_strbuf_append(comments, line) || !rz_strbuf_append(comments, "\n")) {
+				rz_list_free(def_lines);
+				return false;
+			}
+			continue;
+		}
 		toks = split_profile_line(line);
 		if (!toks) {
 			RZ_LOG_WARN("Could not split register profile line \"%s\" at line %d.\n", line, l);
@@ -345,9 +354,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 
 		const char *first_tok = rz_list_get_n(toks, 0);
-		if (first_tok[0] == '#') { // Comment line
-			goto free_toks_continue;
-		} else if (first_tok[0] == '=') { // Alias
+		if (first_tok[0] == '=') { // Alias
 			if (toks_len != 2) {
 				RZ_LOG_WARN("Invalid number of %d columns in alias \"%s\" at line %d. 2 needed.\n", toks_len, line, l);
 				goto free_toks_continue;
@@ -460,11 +467,14 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 }
 
 /**
- * \brief Parses a register profile string and sets up all registers accordingly in \p reg.
+ * \brief Replace the registers in \p reg with those from a profile string.
  *
- * \param reg The RzReg struct which should hold the register data.
- * \param profile The register profile string.
- * \return false On failure;
+ * Keep full-line comments in reg_profile_cmt so callers can display profile
+ * notes separately from the comments attached to individual registers.
+ *
+ * \param reg Register state to replace.
+ * \param profile_str Register profile to load.
+ * \return false On failure.
  * \return true On success.
  */
 RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile_str) {
@@ -486,7 +496,15 @@ RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const ch
 	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
 	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.alias, true);
 
-	if (!parse_reg_profile_str(reg->reg_profile.alias, reg->reg_profile.defs, profile_str)) {
+	RzStrBuf comments;
+	rz_strbuf_init(&comments);
+	bool parsed = parse_reg_profile_str(reg->reg_profile.alias, reg->reg_profile.defs, profile_str, &comments);
+	if (parsed && !rz_strbuf_is_empty(&comments)) {
+		reg->reg_profile_cmt = rz_strbuf_drain_nofree(&comments);
+		parsed = reg->reg_profile_cmt != NULL;
+	}
+	rz_strbuf_fini(&comments);
+	if (!parsed) {
 		RZ_LOG_WARN("Could not parse register profile string.\n");
 		rz_reg_free_internal(reg, false);
 		return false;
