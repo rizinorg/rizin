@@ -3508,7 +3508,7 @@ RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode
 		signature = rz_str_dup(pj_string(j));
 		pj_free(j);
 	} else {
-		signature = rz_analysis_fcn_format_sig(core->analysis, fcn, fcn_name, NULL, NULL, NULL);
+		signature = rz_analysis_fcn_format_sig(core->analysis, fcn, fcn_name, NULL, NULL, NULL, NULL);
 	}
 	return signature;
 }
