@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_util/rz_pj.h>
+#include <rz_types.h>
 #include <rz_cmd.h>
 #include <rz_util.h>
 #include <stdio.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
+#include "../core_private.h"
+
+#define CMD_EXPORT_VERSION 1
 
 /*!
  * Number of sub-commands to show as options when displaying the help of a
@@ -73,17 +78,18 @@ static const RzCmdDescHelp root_help = {
 static const struct argv_modes_t {
 	const char *suffix;
 	const char *summary_suffix;
+	const char *name;
 	RzOutputMode mode;
 } argv_modes[] = {
-	{ "", "", RZ_OUTPUT_MODE_STANDARD },
-	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
-	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
-	{ "Q", " (quietest mode)", RZ_OUTPUT_MODE_QUIETEST },
-	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
-	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
-	{ "J", " (verbose JSON mode)", RZ_OUTPUT_MODE_LONG_JSON },
-	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
-	{ "g", " (graph mode)", RZ_OUTPUT_MODE_GRAPH },
+	{ "", "", "standard", RZ_OUTPUT_MODE_STANDARD },
+	{ "j", " (JSON mode)", "json", RZ_OUTPUT_MODE_JSON },
+	{ "q", " (quiet mode)", "quiet", RZ_OUTPUT_MODE_QUIET },
+	{ "Q", " (quietest mode)", "quietest", RZ_OUTPUT_MODE_QUIETEST },
+	{ "k", " (sdb mode)", "sdb", RZ_OUTPUT_MODE_SDB },
+	{ "l", " (verbose mode)", "long", RZ_OUTPUT_MODE_LONG },
+	{ "J", " (verbose JSON mode)", "long_json", RZ_OUTPUT_MODE_LONG_JSON },
+	{ "t", " (table mode)", "table", RZ_OUTPUT_MODE_TABLE },
+	{ "g", " (graph mode)", "graph", RZ_OUTPUT_MODE_GRAPH },
 };
 
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode) {
@@ -104,6 +110,85 @@ RZ_IPI const char *rz_output_mode_to_summary(RzOutputMode mode) {
 		}
 	}
 	return "";
+}
+
+/**
+ * \brief Convert \p status to a stable, machine-readable string.
+ *
+ * Scripts and rzpipe consumers match on these strings, so they must not change.
+ *
+ * \param status The command status to convert.
+ * \return A static string, e.g. "WRONG_ARGS".
+ */
+RZ_API const char *rz_cmd_status_tostring(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "OK";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "WRONG_ARGS";
+	case RZ_CMD_STATUS_ERROR:
+		return "ERROR";
+	case RZ_CMD_STATUS_INVALID:
+		return "INVALID";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "NONEXISTINGCMD";
+	case RZ_CMD_STATUS_EXIT:
+		return "EXIT";
+	}
+	rz_warn_if_reached();
+	return "UNKNOWN";
+}
+
+static const char *cmd_status_message(RzCmdStatus status) {
+	switch (status) {
+	case RZ_CMD_STATUS_OK:
+		return "Command executed successfully";
+	case RZ_CMD_STATUS_WRONG_ARGS:
+		return "Wrong number or type of arguments";
+	case RZ_CMD_STATUS_ERROR:
+		return "Command execution failed";
+	case RZ_CMD_STATUS_INVALID:
+		return "Invalid command or expression";
+	case RZ_CMD_STATUS_NONEXISTINGCMD:
+		return "Command does not exist";
+	case RZ_CMD_STATUS_EXIT:
+		return "Command requested to exit the prompt";
+	}
+	rz_warn_if_reached();
+	return "Unknown command status";
+}
+
+/**
+ * \brief Print the status object reported by `_sj` and `cfg.json.status`.
+ *
+ * \param pj Where to print `{"error":null}` on success or
+ *           `{"error":{"code":...,"message":...}}` otherwise
+ * \param status Status to report
+ * \param args Command that returned \p status, added to the error object as
+ *             `command` and `args` unless NULL
+ */
+RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABLE RzCmdParsedArgs *args) {
+	rz_return_if_fail(pj);
+	pj_o(pj);
+	if (status == RZ_CMD_STATUS_OK) {
+		pj_knull(pj, "error");
+	} else {
+		pj_ko(pj, "error");
+		pj_ks(pj, "code", rz_cmd_status_tostring(status));
+		pj_ks(pj, "message", cmd_status_message(status));
+		if (args) {
+			pj_ks(pj, "command", rz_cmd_parsed_args_cmd(args));
+			pj_ka(pj, "args");
+			int i;
+			const char *arg;
+			rz_cmd_parsed_args_foreach_arg(args, i, arg) {
+				pj_s(pj, arg);
+			}
+			pj_end(pj);
+		}
+		pj_end(pj);
+	}
+	pj_end(pj);
 }
 
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
@@ -586,7 +671,9 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 		const char *ji = rz_cmd_alias_get(cmd, input, 1);
 		if (ji) {
 			if (*ji == '$') {
-				rz_cons_strcat(ji + 1);
+				if (cmd->has_cons) {
+					rz_cons_strcat(cmd->core->cons, ji + 1);
+				}
 				return true;
 			} else {
 				nstr = rz_str_newf("R! %s", input);
@@ -770,8 +857,8 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 				return RZ_CMD_STATUS_INVALID;
 			}
 		}
-		if (res == RZ_CMD_STATUS_OK) {
-			rz_cmd_state_output_print(&state);
+		if (res == RZ_CMD_STATUS_OK && cmd->has_cons) {
+			rz_cmd_state_output_print(&state, cmd->core->cons);
 		}
 		rz_cmd_state_output_fini(&state);
 		return res;
@@ -803,13 +890,70 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	}
 }
 
-RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
-	RzCmdDesc *cd = rz_cmd_get_desc(cmd, rz_cmd_parsed_args_cmd(args));
+// A missing command has no output modes, so its suffix is all there is
+static bool cmd_runs_in_json_mode(RzCmdDesc *cd, const char *cmdid) {
 	if (!cd) {
-		return RZ_CMD_STATUS_NONEXISTINGCMD;
+		return rz_str_endswith(cmdid, "j") || rz_str_endswith(cmdid, "J");
 	}
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(cd);
+	if (!exec_cd) {
+		return false;
+	}
+	RzOutputMode mode = cd_suffix2mode(exec_cd, cmdid);
+	return mode == RZ_OUTPUT_MODE_JSON || mode == RZ_OUTPUT_MODE_LONG_JSON;
+}
 
-	return call_cd(cmd, cd, args);
+// The line would corrupt output that is processed further: captured, e.g. by
+// $(...), a plugin, an rzpipe script run by #!pipe, `>` or `|`, or grepped (is_pipe)
+static bool cmd_output_is_consumed(RzCore *core) {
+	RzStack *stack = core->cons->context->cons_stack;
+	return core->is_pipe || (stack && !rz_stack_is_empty(stack));
+}
+
+static bool cmd_has_json_status(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid) {
+	return core_config_get_b(cmd->core, "cfg.json.status") && !cmd_output_is_consumed(cmd->core) &&
+		cmd_runs_in_json_mode(cd, cmdid);
+}
+
+static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status, RzCons *cons) {
+	PJ *pj = pj_new();
+	if (!pj) {
+		return;
+	}
+	rz_cmd_status_json(pj, status, args);
+	// Consumers read the status from the last line, but e.g. `tj int` ends without a newline
+	int len = rz_cons_get_buffer_len(cons);
+	if (len > 0 && rz_cons_get_buffer(cons)[len - 1] != '\n') {
+		rz_cons_newline(cons);
+	}
+	rz_cons_println(cons, pj_string(pj));
+	pj_free(pj);
+}
+
+/**
+ * \brief Execute the command described by \p args.
+ *
+ * When `cfg.json.status` is true, a command run in a JSON output mode is
+ * followed by a line with its status object, see `_sj`, unless its output is
+ * captured, redirected, piped or grepped.
+ *
+ * \param cmd RzCmd instance
+ * \param args Name and arguments of the command, as parsed
+ * \return The status returned by the command
+ */
+RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
+	const char *cmdid = rz_cmd_parsed_args_cmd(args);
+	RzCmdDesc *cd = rz_cmd_get_desc(cmd, cmdid);
+	// Copied as typed, since the command may rearrange its arguments
+	RzCmdParsedArgs *typed = cmd_has_json_status(cmd, cd, cmdid)
+		? rz_cmd_parsed_args_new(cmdid, args->argc - 1, args->argv + 1)
+		: NULL;
+	RzCmdStatus res = cd ? call_cd(cmd, cd, args) : RZ_CMD_STATUS_NONEXISTINGCMD;
+	if (typed) {
+		cmd_print_json_status(typed, res, cmd->core->cons);
+		rz_cmd_parsed_args_free(typed);
+	}
+	return res;
 }
 
 static size_t utf8strcols0(const char *s) {
@@ -894,7 +1038,7 @@ static bool show_children_shortcut(const RzCmdDesc *cd) {
 static void fill_colored_args(RzCmd *cmd, RzStrBuf *sb, const char *line, bool use_color, const char *reset_color) {
 	const char *pal_args_color = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_args_color = cons->context->pal.args;
 	}
 
@@ -920,9 +1064,9 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	bool is_interactive = false;
 	const char *help_color = "";
 	if (cmd->has_cons) {
-		RzCons *cons = rz_cons_singleton();
-		cols = rz_cons_get_size(NULL);
-		is_interactive = rz_cons_is_interactive();
+		RzCons *cons = cmd->core->cons;
+		cols = rz_cons_get_size(cons, NULL);
+		is_interactive = rz_cons_is_interactive(cons);
 		help_color = use_color ? cons->context->pal.help : "";
 	}
 	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
@@ -1014,7 +1158,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_label_color = cons->context->pal.label;
 		pal_args_color = cons->context->pal.args;
 		pal_input_color = cons->context->pal.input;
@@ -1102,7 +1246,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd, c
 		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_args_color = cons->context->pal.args;
 		pal_opt_color = cons->context->pal.reset;
 		pal_help_color = cons->context->pal.help;
@@ -1178,7 +1322,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutte
 			   *pal_reset = "";
 
 		if (cmd->has_cons && use_color) {
-			RzCons *cons = rz_cons_singleton();
+			RzCons *cons = cmd->core->cons;
 			pal_args_color = cons->context->pal.args;
 			pal_input_color = cons->context->pal.input;
 			pal_reset = cons->context->pal.reset;
@@ -1250,7 +1394,7 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 		   *pal_args_color = "",
 		   *pal_reset = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_help_color = cons->context->pal.help;
 		pal_input_color = cons->context->pal.input;
 		pal_label_color = cons->context->pal.label;
@@ -1326,7 +1470,7 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 	RzStrBuf *sb = rz_strbuf_new(NULL);
 	const char *pal_reset = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton();
+		RzCons *cons = cmd->core->cons;
 		pal_reset = cons->context->pal.reset;
 	}
 
@@ -1501,16 +1645,11 @@ static void fill_details_json(const RzCmdDescDetail *details, PJ *j) {
  *
  * \return returns false if an invalid argument was given, otherwise true.
  */
-RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
-	rz_return_val_if_fail(cmd && cd && j, false);
-	pj_ko(j, cd->name);
-	pj_ks(j, "cmd", cd->name);
-	const char *type = "unknown";
-	switch (cd->type) {
+static const char *cmd_desc_type_name(RzCmdDescType type) {
+	switch (type) {
 #define CASE_CDTYPE(x, y) \
 	case (x): \
-		type = (y); \
-		break
+		return (y)
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV, "argv");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_GROUP, "group");
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_INNER, "inner");
@@ -1519,9 +1658,23 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		CASE_CDTYPE(RZ_CMD_DESC_TYPE_ARGV_STATE, "argv_state");
 #undef CASE_CDTYPE
 	default:
-		break;
+		return "unknown";
 	}
-	pj_ks(j, "type", type);
+}
+
+/**
+ * \brief Generates a JSON tree describing the command tree
+ * \param cmd RzCmd instance containing the command tree
+ * \param cd the current command descriptor to be printed
+ * \param j the PJ builder object to write the output json into
+ *
+ * \return returns false if any argument is null, otherwise it builds in PJ and returns true.
+ */
+RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDesc *cd, RZ_NONNULL RZ_OUT PJ *j) {
+	rz_return_val_if_fail(cmd && cd && j, false);
+	pj_ko(j, cd->name);
+	pj_ks(j, "cmd", cd->name);
+	pj_ks(j, "type", cmd_desc_type_name(cd->type));
 	if (cd->help->args_str) {
 		pj_ks(j, "args_str", cd->help->args_str);
 	} else {
@@ -1536,6 +1689,152 @@ RZ_API bool rz_cmd_get_help_json(RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 	pj_ks(j, "summary", rz_str_get(cd->help->summary));
 	fill_details_json(cd->help->details, j);
 	pj_end(j);
+	return true;
+}
+
+/**
+ * \brief Runs a callback for each node in the tree, the pre callback runs before instance
+ * \param cmd RzCmd instance containing the command tree
+ * \param cd the current command descriptor to be processed
+ * \param pre If given, a callback that will run before processing any children of the descriptor
+ * \param post If given, a callback that will run after processing all children of the descriptor
+ * \param user Custom callback-specific data to be passed to the two callbacks along with the descriptor
+ *
+ */
+static void cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *cd, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
+	if (!cd || !cmd) {
+		return;
+	}
+	if (pre) {
+		pre(cmd, cd, user);
+	}
+
+	void **it_cd;
+	rz_cmd_desc_children_foreach(cd, it_cd) {
+		RzCmdDesc *child = *it_cd;
+		cmd_desc_foreach_tree(cmd, child, pre, post, user);
+	}
+
+	if (post) {
+		post(cmd, cd, user);
+	}
+}
+
+/**
+ * \brief Visit every real command descriptor in a subtree.
+ *
+ * The pre callback is called before visiting children. The post callback is
+ * called after all children have been visited. Traversal starts at the root descriptor.
+ *
+ * \param cmd RzCmd instance containing the command descriptor tree
+ * \param pre Callback to run before visting any of the children of each descriptor in the tree
+ * \param post Callback to run after visting all the children of each descriptor in the tree
+ * \param user Custom arbitrary data passed to both callbacks on every invocation
+ */
+RZ_API void rz_cmd_desc_foreach_tree(RZ_NONNULL RzCmd *cmd, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
+	rz_return_if_fail(cmd);
+	cmd_desc_foreach_tree(cmd, rz_cmd_get_root(cmd), pre, post, user);
+}
+
+/**
+ * \brief Visit every real command descriptor in a subtree.
+ *
+ * The pre callback is called before visiting children. The post callback is
+ * called after all children have been visited. Traversal starts at \p begin.
+ * \param cmd RzCmd instance containing the descriptor tree
+ * \param begin the descriptor to start processing
+ * \param pre Callback to run before visting any children
+ * \param post Callback to run after vising all children
+ * \param user custom data to pass to the callbacks on every call
+ */
+RZ_API void rz_cmd_desc_foreach_tree_from(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RzCmdDesc *begin, RZ_NULLABLE RzCmdDescVisitCb pre, RZ_NULLABLE RzCmdDescVisitCb post, RZ_NULLABLE void *user) {
+	rz_return_if_fail(cmd && begin);
+	cmd_desc_foreach_tree(cmd, begin, pre, post, user);
+}
+
+static void cmd_tree_json_modes(const RzCmdDesc *cd, RZ_NONNULL RZ_OUT PJ *j) {
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec((RzCmdDesc *)cd);
+	pj_ka(j, "modes");
+
+	if (!exec_cd) {
+		pj_end(j);
+		return;
+	}
+
+	int modes = 0;
+	switch (exec_cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		modes = exec_cd->d.argv_modes_data.modes;
+		break;
+	case RZ_CMD_DESC_TYPE_ARGV_STATE:
+		modes = exec_cd->d.argv_state_data.modes;
+		break;
+	default:
+		break;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (modes & argv_modes[i].mode) {
+			pj_s(j, argv_modes[i].name);
+		}
+	}
+
+	pj_end(j);
+}
+
+typedef struct cmd_tree_json_t {
+	PJ *j;
+	RzStrBuf *args;
+} CmdTreeJson;
+
+static void cmd_tree_json_pre(RzCmd *cmd, const RzCmdDesc *cd, void *user) {
+	CmdTreeJson *ctx = user;
+	PJ *j = ctx->j;
+	pj_o(j);
+	pj_ks(j, "cmd", cd->name);
+	pj_ks(j, "type", cmd_desc_type_name(cd->type));
+	pj_ks(j, "summary", rz_str_get(cd->help->summary));
+	pj_ks(j, "description", rz_str_get(cd->help->description));
+	if (cd->help->args_str) {
+		pj_ks(j, "args_str", cd->help->args_str);
+	} else {
+		rz_strbuf_set(ctx->args, "");
+		fill_args(ctx->args, cd);
+		pj_ks(j, "args_str", rz_strbuf_get(ctx->args));
+	}
+	fill_args_json(cmd, cd, j);
+	fill_details_json(cd->help->details, j);
+	pj_kb(j, "executable", rz_cmd_desc_has_handler(cd));
+	pj_ki(j, "n_children", cd->n_children);
+	cmd_tree_json_modes(cd, j);
+	pj_ka(j, "children");
+}
+
+static void cmd_tree_json_post(RZ_UNUSED RzCmd *cmd, RZ_UNUSED const RzCmdDesc *cd, void *user) {
+	CmdTreeJson *ctx = user;
+	PJ *j = ctx->j;
+	pj_end(j);
+	pj_end(j);
+}
+
+/**
+ * \brief Generates a recursive JSON representation of the command descriptor tree.
+ * \param cmd The command tree to be printed as json
+ * \parma j The json builder object used to build the json output
+ */
+RZ_API bool rz_cmd_get_tree_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL RZ_OUT PJ *j) {
+	rz_return_val_if_fail(cmd && j, false);
+	RzStrBuf args;
+	rz_strbuf_init(&args);
+	CmdTreeJson ctx = {
+		.j = j,
+		.args = &args,
+	};
+	pj_o(j);
+	pj_ki(j, "version", CMD_EXPORT_VERSION);
+	pj_k(j, "root");
+	rz_cmd_desc_foreach_tree(cmd, cmd_tree_json_pre, cmd_tree_json_post, &ctx);
+	pj_end(j);
+	rz_strbuf_fini(&args);
 	return true;
 }
 
@@ -1766,7 +2065,9 @@ static RzCmdStatus macro_call(RzCmd *cmd, const RzCmdMacro *macro, const char **
 		code = rz_str_replace(code, rz_strf(key, "${%s}", macro->args[i]), argv[i], true);
 	}
 	RzCmdStatus res = rz_core_cmd_lines_rzshell(cmd->core, code);
-	rz_cons_flush();
+	if (cmd->has_cons) {
+		rz_cons_flush(cmd->core->cons);
+	}
 	free(code);
 	return res;
 }
@@ -2639,18 +2940,18 @@ RZ_API bool rz_cmd_state_output_init(RZ_NONNULL RzCmdStateOutput *state, RzOutpu
  * output was already printed to console for those types that output as they go
  * (e.g. STANDARD, QUIET).
  */
-RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state) {
-	rz_return_if_fail(state);
+RZ_API void rz_cmd_state_output_print(RZ_NONNULL RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_return_if_fail(state && cons);
 
 	char *s;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
 	case RZ_OUTPUT_MODE_LONG_JSON:
-		rz_cons_println(pj_string(state->d.pj));
+		rz_cons_println(cons, pj_string(state->d.pj));
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
 		s = rz_table_tostring(state->d.t);
-		rz_cons_printf("%s", s);
+		rz_cons_printf(cons, "%s", s);
 		free(s);
 		break;
 	default:

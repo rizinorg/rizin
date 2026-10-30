@@ -101,7 +101,9 @@ RZ_API size_t MACH0_(chained_imports_count)(struct MACH0_(obj_t) * obj) {
 
 /**
  * Copy contents of a dyld_chained_import* of the binary into \p dst
+ * \param obj Mach-O object to read the import from
  * \param ordinal index of the import, given by chained pointers
+ * \param dst where the import is copied to
  * \return true if an import with the given ordinal was found and read successfully
  */
 RZ_API bool MACH0_(get_chained_import)(struct MACH0_(obj_t) * obj, ut32 ordinal, struct MACH0_(chained_import_t) * dst) {
@@ -167,7 +169,7 @@ RZ_API RZ_OWN char *MACH0_(read_chained_symbol)(struct MACH0_(obj_t) * obj, ut32
 		return NULL;
 	}
 	paddr += name_offset;
-	return rz_buf_get_nstring(obj->b, paddr, RZ_BIN_MACH0_STRING_LENGTH);
+	return rz_buf_get_nstring(obj->b, paddr, RZ_BIN_MACH0_STRING_LENGTH, false);
 }
 
 RZ_IPI bool MACH0_(parse_chained_fixups)(struct MACH0_(obj_t) * bin, ut32 offset, ut32 size) {

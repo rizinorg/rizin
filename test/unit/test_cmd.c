@@ -738,6 +738,48 @@ bool test_foreach_cmdname(void) {
 	mu_end;
 }
 
+typedef struct cmd_desc_visit_state_t {
+	const char *pre[5];
+	const char *post[5];
+	size_t n_pre;
+	size_t n_post;
+} CmdDescVisitState;
+
+static void foreach_tree_pre_cb(RZ_UNUSED RzCmd *cmd, const RzCmdDesc *desc, void *user) {
+	CmdDescVisitState *state = user;
+	state->pre[state->n_pre++] = desc->name;
+}
+
+static void foreach_tree_post_cb(RZ_UNUSED RzCmd *cmd, const RzCmdDesc *desc, void *user) {
+	CmdDescVisitState *state = user;
+	state->post[state->n_post++] = desc->name;
+}
+
+bool test_foreach_tree_pre_post(void) {
+	RzCmd *cmd = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new(cmd, root, "a", NULL, NULL, &fake_help);
+	RzCmdDesc *ab_cd = rz_cmd_desc_group_new(cmd, a_cd, "ab", NULL, NULL, &fake_help);
+	rz_cmd_desc_argv_new(cmd, ab_cd, "abd", zd_handler, &fake_help);
+	RzCmdDesc *ac_cd = rz_cmd_desc_group_new(cmd, a_cd, "ac", NULL, NULL, &fake_help);
+	rz_cmd_desc_argv_new(cmd, ac_cd, "ace", zd_handler, &fake_help);
+
+	CmdDescVisitState state = { 0 };
+	rz_cmd_desc_foreach_tree_from(cmd, a_cd, foreach_tree_pre_cb, foreach_tree_post_cb, &state);
+
+	const char *exp_pre[] = { "a", "ab", "abd", "ac", "ace" };
+	const char *exp_post[] = { "abd", "ab", "ace", "ac", "a" };
+	mu_assert_eq(state.n_pre, RZ_ARRAY_SIZE(exp_pre), "pre callback count");
+	mu_assert_eq(state.n_post, RZ_ARRAY_SIZE(exp_post), "post callback count");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(exp_pre); i++) {
+		mu_assert_streq(state.pre[i], exp_pre[i], "pre callback order");
+		mu_assert_streq(state.post[i], exp_post[i], "post callback order");
+	}
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
 bool test_foreach_cmdname_begin(void) {
 	RzCmd *cmd = rz_cmd_new(NULL, false);
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -1042,11 +1084,11 @@ bool test_sort_subcommands(void) {
 	mu_end;
 }
 
-static void func1_output(RzCmdStateOutput *state) {
+static void func1_output(RzCmdStateOutput *state, RzCons *cons) {
 	rz_cmd_state_output_set_columnsf(state, "d", "val");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("val=33\n");
+		rz_cons_printf(cons, "val=33\n");
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -1057,18 +1099,18 @@ static void func1_output(RzCmdStateOutput *state) {
 		rz_table_add_rowf(state->d.t, "d", 33);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("33\n");
+		rz_cons_printf(cons, "33\n");
 		break;
 	default:
 		break;
 	}
 }
 
-static void func2_output(RzCmdStateOutput *state) {
+static void func2_output(RzCmdStateOutput *state, RzCons *cons) {
 	rz_cmd_state_output_set_columnsf(state, "sd", "name", "val");
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("name=second,val=55\n");
+		rz_cons_printf(cons, "name=second,val=55\n");
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);
@@ -1080,7 +1122,7 @@ static void func2_output(RzCmdStateOutput *state) {
 		rz_table_add_rowf(state->d.t, "sd", "second", 55);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("second=55\n");
+		rz_cons_printf(cons, "second=55\n");
 		break;
 	default:
 		break;
@@ -1091,42 +1133,44 @@ bool test_state_output_concat_standard(void) {
 	RzCmdStateOutput state;
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, NULL), "state is initialized correctly");
 
-	rz_cons_flush();
-	rz_cons_push();
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
-	const char *s = rz_cons_get_buffer();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
+	const char *s = rz_cons_get_buffer(cons);
 	mu_assert_streq(s, "val=33\n", "standard output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
-
-	rz_cons_flush();
-	rz_cons_push();
-	func1_output(&state);
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
-	s = rz_cons_get_buffer();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
+	func1_output(&state, cons);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
+	s = rz_cons_get_buffer(cons);
 	mu_assert_streq(s, "val=33\nname=second,val=55\n", "standard output was printed concatenated");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
 
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_state_output_concat_table(void) {
 	RzCmdStateOutput state;
 
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp = "val \n"
 			  "----\n"
 			  " 33\n"
@@ -1134,71 +1178,73 @@ bool test_state_output_concat_table(void) {
 			  "-----------\n"
 			  "second  55\n";
 	mu_assert_streq(s, exp, "tables output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
 
+	rz_cons_free(cons);
 	mu_end;
 }
 
 bool test_state_output_concat_mix(void) {
 	RzCmdStateOutput state;
-
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_TABLE, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp = "val \n"
 			  "----\n"
 			  " 33\n"
 			  "second=55\n";
 	mu_assert_streq(s, exp, "table+quiet output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
 	rz_cmd_state_output_fini(&state);
+	rz_cons_free(cons);
 
 	mu_end;
 }
 
 bool test_state_output_concat_json(void) {
 	RzCmdStateOutput state;
-
-	rz_cons_flush();
-	rz_cons_push();
+	RzCons *cons = rz_cons_new();
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
-	func1_output(&state);
-	rz_cmd_state_output_print(&state);
+	func1_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
-	func2_output(&state);
-	rz_cmd_state_output_print(&state);
+	func2_output(&state, cons);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	const char *s = rz_cons_get_buffer();
+	const char *s = rz_cons_get_buffer(cons);
 	const char *exp_union = "{\"val\":33}\n"
 				"{\"name\":\"second\",\"val\":55}\n";
 	mu_assert_streq(s, exp_union, "json+json output was printed");
-	rz_cons_pop();
-
-	rz_cons_flush();
-	rz_cons_push();
+	rz_cons_pop(cons);
+	rz_cons_flush(cons);
+	rz_cons_push(cons);
 	mu_assert_true(rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_JSON, NULL), "state is initialized correctly");
 	pj_o(state.d.pj);
 	pj_k(state.d.pj, "first");
-	func1_output(&state);
+	func1_output(&state, cons);
 	pj_k(state.d.pj, "second");
-	func2_output(&state);
+	func2_output(&state, cons);
 	pj_end(state.d.pj);
-	rz_cmd_state_output_print(&state);
+	rz_cmd_state_output_print(&state, cons);
 	rz_cmd_state_output_fini(&state);
-	s = rz_cons_get_buffer();
+	s = rz_cons_get_buffer(cons);
 	const char *exp_comp = "{\"first\":{\"val\":33},\"second\":{\"name\":\"second\",\"val\":55}}\n";
 	mu_assert_streq(s, exp_comp, "json composition output was printed");
-	rz_cons_pop();
+	rz_cons_pop(cons);
+	rz_cons_free(cons);
 
 	mu_end;
 }
@@ -1365,7 +1411,7 @@ static RzCmdStatus b_handler(RzCore *core, int argc, const char **argv) {
 
 bool test_call_macros(void) {
 	RzCore *core = RZ_NEW0(RzCore);
-	core->cons = rz_cons_singleton();
+	core->cons = rz_cons_new();
 	RzCmd *cmd = rz_core_cmd_new(core, false);
 	core->rcmd = cmd;
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -1397,12 +1443,13 @@ bool test_call_macros(void) {
 	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "c command should not exist");
 
 	rz_cmd_free(cmd);
+	rz_cons_free(core->cons);
 	mu_end;
 }
 
 bool test_call_multiple_macros(void) {
 	RzCore *core = RZ_NEW0(RzCore);
-	core->cons = rz_cons_singleton();
+	core->cons = rz_cons_new();
 	RzCmd *cmd = rz_core_cmd_new(core, false);
 	core->rcmd = cmd;
 	RzCmdDesc *root = rz_cmd_get_root(cmd);
@@ -1427,6 +1474,7 @@ bool test_call_multiple_macros(void) {
 	status = rz_cmd_macro_call(cmd, "macro2", macro_args_val_wrong);
 	mu_assert_eq(status, RZ_CMD_STATUS_INVALID, "macro2 should be called with a multiple of arguments");
 	rz_cmd_free(cmd);
+	rz_cons_free(core->cons);
 	mu_end;
 }
 
@@ -1456,8 +1504,18 @@ bool test_cmd_descriptor_folder_arg(void) {
 	mu_end;
 }
 
+bool test_cmd_status_tostring(void) {
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_OK), "OK", "OK status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_WRONG_ARGS), "WRONG_ARGS", "WRONG_ARGS status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_ERROR), "ERROR", "ERROR status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_INVALID), "INVALID", "INVALID status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_NONEXISTINGCMD), "NONEXISTINGCMD", "NONEXISTINGCMD status string");
+	mu_assert_streq(rz_cmd_status_tostring(RZ_CMD_STATUS_EXIT), "EXIT", "EXIT status string");
+	mu_end;
+}
+
 int all_tests() {
-	rz_cons_new();
+	mu_run_test(test_cmd_status_tostring);
 	mu_run_test(test_parsed_args_noargs);
 	mu_run_test(test_parsed_args_onearg);
 	mu_run_test(test_parsed_args_args);
@@ -1479,6 +1537,7 @@ int all_tests() {
 	mu_run_test(test_cmd_argv_state);
 	mu_run_test(test_cmd_group_argv_modes);
 	mu_run_test(test_foreach_cmdname);
+	mu_run_test(test_foreach_tree_pre_post);
 	mu_run_test(test_foreach_cmdname_begin);
 	mu_run_test(test_arg_escaping);
 	mu_run_test(test_double_quoted_arg_escaping);

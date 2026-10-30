@@ -1,0 +1,294 @@
+NAME=glibc 2.31 32-bit text and JSON bin walks
+FILE=malloc://0x8000
+ARGS=-a x86 -b 32 -e dbg.glibc.version=2.31 -e log.level=4
+CMDS=<<EOF
+# dmhgb 32-bit bin heads use the glibc layout
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+e dbg.glibc.fc_offset=0
+wx 00500000 @ 0x1034
+wx 00100000 @ 0x1444
+wx 00200000 @ 0x1450
+wx 00400000 @ 0x103c
+wx 40400000 @ 0x1040
+wx 40400000 @ 0x4008
+wx 34100000 @ 0x400c
+wx 34100000 @ 0x4048
+wx 00400000 @ 0x404c
+wx 24140000 @ 0x142c
+wx 24140000 @ 0x1430
+dmhgb 0
+dmhgb 126
+# dmhgbj 32-bit populated and empty bins
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 00500000 @ 0x1034
+wx 00100000 @ 0x1444
+wx 00200000 @ 0x1450
+wx 00400000 @ 0x103c
+wx 40400000 @ 0x1040
+wx 40400000 @ 0x4008
+wx 34100000 @ 0x400c
+wx 34100000 @ 0x4048
+wx 00400000 @ 0x404c
+wx 24140000 @ 0x142c
+wx 24140000 @ 0x1430
+dmhgbj 0
+dmhgbj 126
+dmhgbj 0:0x1000
+EOF
+EXPECT=<<EOF
+  Bin 000:
+  double linked list unsorted bin {
+    0x1034->fd = 0x4000->fd = 0x4040->fd = 0x1034
+    0x1034->bk = 0x4040->bk = 0x4000->bk = 0x1034
+  }
+  Bin 126:
+  double linked list large bin {
+    0x1424->fd = 0x1424
+    0x1424->bk = 0x1424
+  }
+[{"bin_num":0,"bin_type":"unsorted","addr":4148,"forward":[16384,16448],"backward":[16448,16384]}]
+[{"bin_num":126,"bin_type":"large","addr":5156,"forward":[],"backward":[]}]
+[{"bin_num":0,"bin_type":"unsorted","addr":4148,"forward":[16384,16448],"backward":[16448,16384]}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=glibc 2.31 64-bit arena, bin walks and error reporting
+FILE=malloc://0x8000
+ARGS=-a x86 -b 64 -E little -e dbg.glibc.version=2.31 -e dbg.glibc.tcache=true -e log.level=4 -e cfg.exit.errorcode=true
+EXIT_STATUS=1
+TIMEOUT=5
+CMDS=<<EOF
+# dmhgmj 64-bit little-endian glibc 2.31
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+wx 00000080 @ 0x1000
+wx 02000000 @ 0x1004
+wx 0040000000000080 @ 0x1010
+wx 004f000000000000 @ 0x1058
+wx 0050000000000000 @ 0x1060
+wx 0041000000000000 @ 0x1068
+wx 0042000000000000 @ 0x1070
+wx 0043000000000000 @ 0x1858
+wx ffffffff @ 0x1860
+wx 01000000 @ 0x186c
+wx 0010000000000000 @ 0x1870
+wx 0000000000000000 @ 0x1878
+wx 0200000000000000 @ 0x1880
+wx 0020000000000000 @ 0x1888
+wx 0030000000000000 @ 0x1890
+wx 01000000 @ 0x1008
+dmhgmj
+dmhgmj 0x1000
+# dmhgb 64-bit bin heads use the glibc layout
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+dmhgb 0
+dmhgb 126
+# dmhgbj 64-bit populated and empty bins
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+dmhgbj 0
+dmhgbj 126
+dmhgbj 0:0x1000
+# dmhgbj lists all 127 initialized bins
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wv8 $$-(($$-0x1070)%16)-16 @@s:0x1070 0x1860 8
+dmhgbj~{.[]\|{bin_num}}
+dmhgbj~{[0]}
+dmhgbj~{[1]}
+dmhgbj~{[126]}
+# dmhgb stops at a cycle which does not include the bin head
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wx 0040000000000000 @ 0x4010
+dmhgb 0
+_s
+# dmhgbj rejects cycle without partial JSON
+e cfg.json.status=true
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wx 0040000000000000 @ 0x4010
+dmhgbj 0
+# dmhgbj rejects invalid tail without partial JSON
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wx 0040000000000000 @ 0x1078
+dmhgbj 0
+# dmhgbj rejects out-of-range link without partial JSON
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+wx 0080000000000000 @ 0x4010
+dmhgbj 0
+# dmhgbj rejects invalid bin without partial JSON
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+dmhgbj 127
+# dmhgbj rejects invalid arena without partial JSON
+w0 0x8000 @ 0
+e dbg.glibc.fc_offset=0
+wx 0050000000000000 @ 0x1060
+wx 0010000000000000 @ 0x1870
+wx 0020000000000000 @ 0x1888
+wx 0040000000000000 @ 0x1070
+wx 4040000000000000 @ 0x1078
+wx 4040000000000000 @ 0x4010
+wx 6010000000000000 @ 0x4018
+wx 6010000000000000 @ 0x4050
+wx 0040000000000000 @ 0x4058
+wx 4018000000000000 @ 0x1850
+wx 4018000000000000 @ 0x1858
+dmhgbj 0:0x3000
+# dmhgmj rejects an invalid arena without terminal text
+w0 0x8000 @ 0
+wx 00000080 @ 0x1000
+wx 02000000 @ 0x1004
+wx 0040000000000080 @ 0x1010
+wx 004f000000000000 @ 0x1058
+wx 0050000000000000 @ 0x1060
+wx 0041000000000000 @ 0x1068
+wx 0042000000000000 @ 0x1070
+wx 0043000000000000 @ 0x1858
+wx ffffffff @ 0x1860
+wx 01000000 @ 0x186c
+wx 0010000000000000 @ 0x1870
+wx 0000000000000000 @ 0x1878
+wx 0200000000000000 @ 0x1880
+wx 0020000000000000 @ 0x1888
+wx 0030000000000000 @ 0x1890
+wx 01000000 @ 0x1008
+dmhgmj 0x3000
+EOF
+EXPECT=<<EOF
+{"addr":4096,"mutex":2147483648,"flags":2,"have_fastchunks":1,"fastbinsY":[9223372036854792192,0,0,0,0,0,0,0,0,20224],"top":20480,"last_remainder":16640,"bins":[16896,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17152],"binmap":[4294967295,0,0,1],"next":4096,"next_free":0,"attached_threads":2,"system_mem":8192,"max_system_mem":12288}
+{"addr":4096,"mutex":2147483648,"flags":2,"have_fastchunks":1,"fastbinsY":[9223372036854792192,0,0,0,0,0,0,0,0,20224],"top":20480,"last_remainder":16640,"bins":[16896,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17152],"binmap":[4294967295,0,0,1],"next":4096,"next_free":0,"attached_threads":2,"system_mem":8192,"max_system_mem":12288}
+  Bin 000:
+  double linked list unsorted bin {
+    0x1060->fd = 0x4000->fd = 0x4040->fd = 0x1060
+    0x1060->bk = 0x4040->bk = 0x4000->bk = 0x1060
+  }
+  Bin 126:
+  double linked list large bin {
+    0x1840->fd = 0x1840
+    0x1840->bk = 0x1840
+  }
+[{"bin_num":0,"bin_type":"unsorted","addr":4192,"forward":[16384,16448],"backward":[16448,16384]}]
+[{"bin_num":126,"bin_type":"large","addr":6208,"forward":[],"backward":[]}]
+[{"bin_num":0,"bin_type":"unsorted","addr":4192,"forward":[16384,16448],"backward":[16448,16384]}]
+[{"bin_num":0},{"bin_num":1},{"bin_num":2},{"bin_num":3},{"bin_num":4},{"bin_num":5},{"bin_num":6},{"bin_num":7},{"bin_num":8},{"bin_num":9},{"bin_num":10},{"bin_num":11},{"bin_num":12},{"bin_num":13},{"bin_num":14},{"bin_num":15},{"bin_num":16},{"bin_num":17},{"bin_num":18},{"bin_num":19},{"bin_num":20},{"bin_num":21},{"bin_num":22},{"bin_num":23},{"bin_num":24},{"bin_num":25},{"bin_num":26},{"bin_num":27},{"bin_num":28},{"bin_num":29},{"bin_num":30},{"bin_num":31},{"bin_num":32},{"bin_num":33},{"bin_num":34},{"bin_num":35},{"bin_num":36},{"bin_num":37},{"bin_num":38},{"bin_num":39},{"bin_num":40},{"bin_num":41},{"bin_num":42},{"bin_num":43},{"bin_num":44},{"bin_num":45},{"bin_num":46},{"bin_num":47},{"bin_num":48},{"bin_num":49},{"bin_num":50},{"bin_num":51},{"bin_num":52},{"bin_num":53},{"bin_num":54},{"bin_num":55},{"bin_num":56},{"bin_num":57},{"bin_num":58},{"bin_num":59},{"bin_num":60},{"bin_num":61},{"bin_num":62},{"bin_num":63},{"bin_num":64},{"bin_num":65},{"bin_num":66},{"bin_num":67},{"bin_num":68},{"bin_num":69},{"bin_num":70},{"bin_num":71},{"bin_num":72},{"bin_num":73},{"bin_num":74},{"bin_num":75},{"bin_num":76},{"bin_num":77},{"bin_num":78},{"bin_num":79},{"bin_num":80},{"bin_num":81},{"bin_num":82},{"bin_num":83},{"bin_num":84},{"bin_num":85},{"bin_num":86},{"bin_num":87},{"bin_num":88},{"bin_num":89},{"bin_num":90},{"bin_num":91},{"bin_num":92},{"bin_num":93},{"bin_num":94},{"bin_num":95},{"bin_num":96},{"bin_num":97},{"bin_num":98},{"bin_num":99},{"bin_num":100},{"bin_num":101},{"bin_num":102},{"bin_num":103},{"bin_num":104},{"bin_num":105},{"bin_num":106},{"bin_num":107},{"bin_num":108},{"bin_num":109},{"bin_num":110},{"bin_num":111},{"bin_num":112},{"bin_num":113},{"bin_num":114},{"bin_num":115},{"bin_num":116},{"bin_num":117},{"bin_num":118},{"bin_num":119},{"bin_num":120},{"bin_num":121},{"bin_num":122},{"bin_num":123},{"bin_num":124},{"bin_num":125},{"bin_num":126}]
+{"bin_num":0,"bin_type":"unsorted","addr":4192,"forward":[],"backward":[]}
+{"bin_num":1,"bin_type":"small","addr":4208,"forward":[],"backward":[]}
+{"bin_num":126,"bin_type":"large","addr":6208,"forward":[],"backward":[]}
+  Bin 000:
+  double linked list unsorted bin {
+    0x1060->fd = 0x4000->fd = 0x4000
+  }
+ERROR
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgbj","args":["0"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgbj","args":["0"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgbj","args":["0"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgbj","args":["127"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgbj","args":["0:0x3000"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgmj","args":["0x3000"]}}
+EOF
+EXPECT_ERR=<<EOF
+ERROR: core: Corrupted double linked list at 0x4000
+ERROR: core: Corrupted double linked list at 0x4000
+ERROR: core: Corrupted double linked list at 0x1060
+ERROR: core: Corrupted double linked list at 0x8000
+ERROR: The number of bins is greater than 126
+ERROR: core: This address is not part of the arenas
+ERROR: core: This address is not a valid arena
+EOF
+RUN

@@ -176,6 +176,7 @@ RZ_API RzAnalysis *rz_analysis_new(RZ_NULLABLE const char *sdb_types_path) {
 	analysis->lea_jmptbl_ip = UT64_MAX;
 	analysis->gnu_thumb1_case_uqi_addr = 0;
 	analysis->ht_virtual_xrefs = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_set_u_free);
+	rz_esil_config_init(&analysis->esil_config);
 	return analysis;
 }
 
@@ -238,6 +239,7 @@ RZ_API void rz_analysis_free(RZ_NULLABLE RzAnalysis *a) {
 	rz_analysis_debug_info_free(a->debug_info);
 	ht_sp_free(a->ht_virtual_xrefs);
 	free(a->sdb_types_path);
+	rz_esil_config_fini(&a->esil_config);
 	free(a);
 }
 
@@ -262,9 +264,9 @@ RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis) 
 	return analysis->cur;
 }
 
-RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis) {
-	rz_return_val_if_fail(analysis, NULL);
-	return ht_sp_as_iter(analysis->plugins);
+RZ_API bool rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RZ_OWN RzIterator *iter) {
+	rz_return_val_if_fail(analysis, false);
+	return ht_sp_as_iter(analysis->plugins, iter);
 }
 
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *p) {
@@ -295,9 +297,12 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		return true;
 	}
 
-	RzIterator *it = ht_sp_as_iter(analysis->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(analysis->plugins, &it)) {
+		return false;
+	}
 	RzAnalysisPlugin **val;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzAnalysisPlugin *h = *val;
 		if (!h || !h->name || strcmp(h->name, name)) {
 			continue;
@@ -309,17 +314,17 @@ RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 		rz_analysis_set_cpu(analysis, name);
 		if (h->init && !h->init(&analysis->plugin_data)) {
 			RZ_LOG_ERROR("analysis plugin '%s' failed to initialize.\n", h->name);
-			rz_iterator_free(it);
+			rz_iterator_fini(&it);
 			return false;
 		}
 		rz_analysis_set_reg_profile(analysis);
 		if (analysis->il_vm) {
 			rz_analysis_il_vm_setup(analysis);
 		}
-		rz_iterator_free(it);
+		rz_iterator_fini(&it);
 		return true;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return false;
 }
 
@@ -903,8 +908,10 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, ut32 size, const ut8 *data, u
 		if ((oplen = rz_analysis_op(analysis, op, at, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}
-		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
-			memset(ret + idx + op->nopcode, 0, oplen - op->nopcode);
+		ut32 avail = size - idx;
+		ut32 safe_oplen = (ut32)oplen > avail ? avail : (ut32)oplen;
+		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0 && op->nopcode <= safe_oplen) {
+			memset(ret + idx + op->nopcode, 0, safe_oplen - op->nopcode);
 		}
 		idx += oplen;
 		at += oplen;
@@ -979,11 +986,18 @@ RZ_API bool rz_analysis_op_is_eob(const RzAnalysisOp *op) {
  */
 RZ_API bool rz_analysis_op_is_call(RZ_NONNULL const RzAnalysisOp *op) {
 	rz_return_val_if_fail(op, false);
-	if ((op->type & RZ_ANALYSIS_OP_TYPE_CALL) == RZ_ANALYSIS_OP_TYPE_CALL ||
-		(op->type & RZ_ANALYSIS_OP_TYPE_UCALL) == RZ_ANALYSIS_OP_TYPE_UCALL) {
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
 		return true;
+	default:
+		return false;
 	}
-	return false;
 }
 
 RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
@@ -1404,4 +1418,20 @@ RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL Rz
 RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil) {
 	rz_return_if_fail(analysis);
 	analysis->esil = esil;
+}
+
+RZ_DEPRECATE RZ_API RZ_BORROW RzEsilConfig *rz_analysis_get_esil_config(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, NULL);
+	return &analysis->esil_config;
+}
+
+/**
+ * \brief Set interrupt instance for analysis operations.
+ *
+ * \param analysis Pointer to the RzAnalysis context.
+ * \param intr Pointer to the RzInterrupt instance, or NULL to detach.
+ */
+RZ_API void rz_analysis_set_interrupt(RZ_NONNULL RzAnalysis *analysis, RzInterrupt *intr) {
+	rz_return_if_fail(analysis);
+	analysis->intr = intr;
 }

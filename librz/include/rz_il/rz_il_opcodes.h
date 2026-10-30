@@ -6,6 +6,7 @@
 #define RZ_IL_OPCODES_H
 
 #include <rz_il/definitions/definitions.h>
+#include <rz_util/rz_num_expression.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -368,13 +369,36 @@ typedef RzILOpArgsUnopFloat RzILOpArgsFsucc;
 typedef RzILOpArgsUnopFloat RzILOpArgsFpred;
 
 /**
+ * \brief Selects how a floating-point rounding-mode argument is represented.
+ */
+typedef enum rz_il_op_arg_float_rmode_kind_t {
+	RZ_IL_OP_ARG_FLOAT_RMODE_STATIC, ///< Stored directly as an RzFloatRMode.
+	RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC, ///< Evaluated at run time from a 32-bit bitvector IL expression.
+} RzILOpArgFloatRModeKind;
+
+/**
+ * \brief A floating-point rounding-mode argument.
+ *
+ * Static rounding modes are stored directly as an RzFloatRMode. Dynamic
+ * rounding modes are represented by a 32-bit bitvector IL expression that is
+ * evaluated at run time to obtain an RzFloatRMode.
+ */
+typedef struct rz_il_op_arg_float_rmode_t {
+	RzILOpArgFloatRModeKind kind;
+	union {
+		RzFloatRMode static_mode;
+		RzILOpBitVector *dynamic_mode;
+	} value;
+} RzILOpArgFloatRMode;
+
+/**
  * \brief op structure for cast to bv from float
  * [FCAST_INT] `f_cast_int s rm x` returns an integer closest to x.
  * [FCAST_SINT] `f_cast_sint s rm x` returns an integer closest to x.
  */
 typedef struct rz_il_op_args_float_cast_int_t {
 	ut32 length;
-	RzFloatRMode mode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *f;
 } RzILOpArgsFCastInt;
 
@@ -391,7 +415,7 @@ typedef RzILOpArgsFCastInt RzILOpArgsFCastsint;
  */
 typedef struct rz_il_op_args_float_cast_float_t {
 	RzFloatFormat format;
-	RzFloatRMode mode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpBitVector *bv;
 } RzILOpArgsFCastFloat;
 
@@ -405,7 +429,7 @@ typedef struct rz_il_op_args_float_cast_float_t RzILOpArgsFCastSFloat;
  */
 typedef struct rz_il_op_args_float_fconvert_t {
 	RzFloatFormat format;
-	RzFloatRMode mode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *f;
 } RzILOpArgsFconvert;
 
@@ -437,7 +461,7 @@ typedef struct rz_il_op_args_float_binop_t {
  * [FRSQRT] reverse sqrt, rsqrt m x is the closest floating-point number to 1 / sqrt x.
  */
 typedef struct rz_il_op_args_float_alg_unop_t {
-	RzFloatRMode rmode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *f;
 } RzILOpArgsFloatAlgUnop;
 
@@ -454,9 +478,15 @@ typedef struct rz_il_op_args_float_expect_t {
  * \brief op structure for float basic arithmetic operations (binary op with rmode)
  * rmode -> 'f float -> 'f float -> 'f float
  * [FADD]
+ * [FSUB]
+ * [FMUL]
+ * [FDIV]
+ * [FMOD]
+ * [FHYPOT]
+ * [FPOW]
  */
 typedef struct rz_il_op_args_float_alg_binop_t {
-	RzFloatRMode rmode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *x;
 	RzILOpFloat *y;
 } RzILOpArgsFloatAlgBinop;
@@ -474,7 +504,7 @@ typedef RzILOpArgsFloatAlgBinop RzILOpArgsFpow;
  * rmode -> 'f float -> 'f float -> 'f float -> 'f float
  */
 typedef struct rz_il_op_args_float_alg_terop_t {
-	RzFloatRMode rmode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *x;
 	RzILOpFloat *y;
 	RzILOpFloat *z;
@@ -486,7 +516,7 @@ typedef RzILOpArgsFloatAlgTernop RzILOpArgsFmad;
  * rmode -> 'f float -> 'a bitv -> 'f float
  */
 typedef struct rz_il_op_args_float_alg_hybrid_binop_t {
-	RzFloatRMode rmode;
+	RzILOpArgFloatRMode rmode;
 	RzILOpFloat *f;
 	RzILOpBitVector *n;
 } RzILOpArgsFloatAlgHybridBinop;
@@ -792,7 +822,12 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int(ut32 length, RzFloatRMode 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint(ut32 length, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_int_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_op_new_fcast_sint_dyn_rmode(ut32 length, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_float_dyn_rmode(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpBitVector *bv);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcast_sfloat_dyn_rmode(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpBitVector *bv);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert(RzFloatFormat format, RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fconvert_dyn_rmode(RzFloatFormat format, RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_frequal(RzFloatRMode x, RzFloatRMode y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsucc(RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpred(RZ_NONNULL RzILOpFloat *f);
@@ -800,18 +835,32 @@ RZ_API RZ_OWN RzILOpBool *rz_il_op_new_forder(RZ_NONNULL RzILOpFloat *x, RZ_NONN
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fdiv(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmod(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmul_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fdiv_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmod_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpown_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcompound_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
 
 RZ_API RZ_OWN RzILOpBitVector *rz_il_extract32(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_extract64(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length);
@@ -821,6 +870,10 @@ RZ_API RZ_OWN RzILOpBitVector *rz_il_deposit64(RZ_BORROW RzILOpBitVector *value,
 RZ_API RZ_OWN RzILOpBitVector *rz_il_deposit32(RZ_BORROW RzILOpBitVector *value, RZ_BORROW RzILOpBitVector *start, RZ_BORROW RzILOpBitVector *length, RZ_BORROW RzILOpBitVector *fieldval);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap16(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap32(RZ_BORROW RzILOpBitVector *t);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_bitrev32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_popcount_bytes32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_deinterleave32(RZ_OWN RzILOpBitVector *x);
+RZ_API RZ_OWN RzILOpBitVector *rz_il_interleave32(RZ_OWN RzILOpBitVector *x);
 RZ_API RZ_OWN RzILOpBitVector *rz_il_bswap64(RZ_BORROW RzILOpBitVector *t);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_ne(RZ_NONNULL RzILOpPure *x, RZ_NONNULL RzILOpPure *y);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fneq(RZ_NONNULL RZ_OWN RzILOpFloat *x, RZ_NONNULL RZ_OWN RzILOpFloat *y);
@@ -903,6 +956,12 @@ RZ_API void rz_il_op_effect_json(RZ_NONNULL RzILOpEffect *op, RZ_NONNULL PJ *pj)
 
 RZ_API bool rz_il_op_pure_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpPure *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
 RZ_API bool rz_il_op_effect_stringify_unicode(RZ_NONNULL RZ_BORROW RzILStringifyCtx *ctx, RZ_NONNULL RZ_BORROW RzILOpEffect *op, RZ_NONNULL RZ_BORROW RzStrBuf *sb);
+
+// Lift an RzNum expression (the self-contained IR that librz_util produces,
+// independent of tree-sitter) into a typed RzILOpPure. Defined in il_num.c.
+RZ_API RZ_OWN RzILOpPure *rz_il_op_pure_from_num_expression(RZ_NONNULL const RzNumExpression *expr);
+RZ_API RZ_OWN RzILOpPure *rz_il_lift_num(RZ_NULLABLE RzNum *num, RZ_NONNULL const char *expr,
+	RZ_NULLABLE const RzNumMathOptions *opts, RZ_NULLABLE char **error_msg);
 
 #ifdef __cplusplus
 }

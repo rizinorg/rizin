@@ -35,7 +35,7 @@ _d___ 32         lm32        BSD     Lattice Micro 32 ISA disassembler (by Felix
 _dA__ 32 64      loongarch   LGPL3   Loongson LoongArch disassembler
 adA__ 32         luac        LGPL3   Lua bytecode (LUAC) disassembler
 _dA__ 8 32       m680x       BSD     Motorola 680X Capstone-based disassembler
-_dA__ 32         m68k        BSD     Motorola 68K Capstone-based disassembler
+_dA_I 32         m68k        BSD     Motorola 68K Capstone-based disassembler
 _dA__ 32         malbolge    LGPL3   Malbolge Ternary VM bytecode disassembler (by condret)
 _dA__ 32         mcore       LGPL3   Motorola MCORE disassembler
 _dA__ 16         mcs96       LGPL3   Intel MCS-96 disassembler (by condret)
@@ -49,7 +49,7 @@ _dAeI 32 64      ppc         BSD     PowerPC Capstone-based disassembler (by pan
 a____ 32 64      ppc.as      LGPL3   as PPC Assembler (use RZ_PPC_AS environment) (by eagleoflqj)
 _dA__ 32         propeller   LGPL3   Parallax Propeller disassembler
 _dA__ 8 16       pyc         LGPL3   Python bytecode (PYC) disassembler
-_dA__ 32 64      riscv       BSD     RISC-V Capstone-based disassembler
+_dA_I 32 64      riscv       BSD     RISC-V Capstone-based disassembler
 adA__ 32         rl78        LGPL3   Renesas RL78 disassembler (by Bastian Engel)
 _dA__ 32         rsp         LGPL3   Nintendo N64 Reality Signal Processor disassembler
 _dA__ 32         rx          LGPL3   Renesas RX Family disassembler (by Heersin)
@@ -58,7 +58,7 @@ _dA__ 8 16       snes        LGPL3   SuperNES CPU disassembler
 _dA_I 32 64      sparc       BSD     Sun SPARC Capstone-based disassembler
 _dA__ 16         spc700      LGPL3   Sony SPC700 (Nintendo SuperNES sound-chip) disassembler
 _dA__ 32 64      sysz        BSD     IBM SystemZ (S/390) Capstone-based disassembler
-_dA_I 32         tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c64x) disassembler
+_dA_I 16 32      tms320      LGPL3   Texas Instruments TMS320 DSP family (c54x,c55x,c55x+,c2x,c5x,c28x,c6x) disassembler
 _dA_I 32         tricore     BSD     Siemens TriCore Capstone-based disassembler (by billow)
 _dAeI 32         v810        LGPL3   NEC V810 disassembler (by pancake)
 _dAeI 32         v850        LGPL3   NEC/Renesas V850 disassembler
@@ -124,6 +124,7 @@ noptr64         Special MIPS configuration to disable support for 64-bit pointer
 nofloat         Special MIPS configuration to disable support for floating-points
 esp32           Xtensa microcontroller with Wi-Fi and Bluetooth capabilities
 esp32s2         Xtensa microcontroller with Wi-Fi and USB OTG support
+esp32s3         Xtensa microcontroller with Wi-Fi, USB OTG support, and HIFI3
 esp8266         Xtensa microcontroller with Wi-Fi support
 v8              ARMv8 version
 cortexm         ARM Cortex-M family
@@ -184,9 +185,16 @@ ps              PowerPC with Paired Single SIMD extension
 qpx             PowerPC with Quad Processing eXtensions
 v9              SPARC V9: 64-bit RISC architecture specification
 c54x            Texas Instruments TMS320C54x DSP family
+c2x             Texas Instruments TMS320C2x legacy fixed-point DSP family
+c5x             Texas Instruments TMS320C5x fixed-point DSP family (C2x-compatible superset)
+c28x            Texas Instruments TMS320C28x fixed-point DSP family (C2000)
 c55x            Texas Instruments TMS320C55x DSP family
 c55x+           Texas Instruments TMS320C55x+ DSP family
-c64x            Texas Instruments TMS320C64x DSP family
+c62x            Texas Instruments TMS320C62x fixed-point VLIW DSP family
+c64x            Texas Instruments TMS320C64x/C64x+ fixed-point VLIW DSP family
+c67x            Texas Instruments TMS320C67x/C67x+ floating-point VLIW DSP family
+c674x           Texas Instruments TMS320C674x unified fixed/floating-point DSP family
+c66x            Texas Instruments TMS320C66x VLIW DSP family
 tricore         Generic TriCore CPU family by Infineon
 EOF
 RUN

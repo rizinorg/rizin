@@ -721,11 +721,12 @@ bool test_ht_uu_iter(void) {
 	ut32 icnt = 0;
 	const ut64 *im_elem;
 
-	RzIterator *it = ht_uu_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
 	ht_uu_insert(ht, 0x1010101, 0x1010101);
 	ht_uu_insert(ht, 0x2020202, 0x2020202);
@@ -733,8 +734,9 @@ bool test_ht_uu_iter(void) {
 	ht_uu_insert(ht, 0x4040404, 0x4040404);
 	ht_uu_insert(ht, 0x5050505, 0x5050505);
 	icnt = 0;
-	it = ht_uu_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
 			*im_elem == 0x1010101 ||
@@ -744,19 +746,20 @@ bool test_ht_uu_iter(void) {
 				*im_elem == 0x5050505,
 			"Value mismtach");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
 	ut64 *m_elem;
-	it = ht_uu_as_iter_mut(ht);
-	rz_iterator_foreach(it, m_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_mut(ht, &it), "ht_uu_as_iter_mut failed");
+	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (*m_elem == 0x1010101) {
 			*m_elem = 0x0;
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	bool found = false;
 	ut64 v = ht_uu_find(ht, 0x1010101, &found);
@@ -766,16 +769,64 @@ bool test_ht_uu_iter(void) {
 	mu_end;
 }
 
+bool test_ht_uu_iter_kv(void) {
+	HtUU *ht = ht_uu_new();
+	ut32 icnt = 0;
+	const HtUUKv *kv;
+
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
+	rz_iterator_foreach(&it, kv) {
+		icnt++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(icnt, 0, "Wrong number of iterations");
+
+	ht_uu_insert(ht, 0x11, 0x1111);
+	ht_uu_insert(ht, 0x22, 0x2222);
+	ht_uu_insert(ht, 0x33, 0x3333);
+
+	bool found_1 = false;
+	bool found_2 = false;
+	bool found_3 = false;
+
+	icnt = 0;
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
+	rz_iterator_foreach(&it, kv) {
+		icnt++;
+		if (kv->key == 0x11 && kv->value == 0x1111) {
+			found_1 = true;
+		}
+		if (kv->key == 0x22 && kv->value == 0x2222) {
+			found_2 = true;
+		}
+		if (kv->key == 0x33 && kv->value == 0x3333) {
+			found_3 = true;
+		}
+	}
+	rz_iterator_fini(&it);
+
+	mu_assert_eq(icnt, 3, "Wrong number of iterations");
+	mu_assert_true(found_1, "key not found");
+	mu_assert_true(found_2, "key not found");
+	mu_assert_true(found_3, "key not found");
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
 bool test_ht_ss_iter(void) {
 	HtSS *ht = ht_ss_new(HT_STR_CONST, HT_STR_CONST);
 	ut32 icnt = 0;
 	const char **im_elem;
 
-	RzIterator *it = ht_ss_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
 
 	ht_ss_insert(ht, "0x1010101", "0x1010101");
@@ -784,8 +835,9 @@ bool test_ht_ss_iter(void) {
 	ht_ss_insert(ht, "0x4040404", "0x4040404");
 	ht_ss_insert(ht, "0x5050505", "0x5050505");
 	icnt = 0;
-	it = ht_ss_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
 			RZ_STR_EQ(*im_elem, "0x1010101") ||
@@ -795,19 +847,20 @@ bool test_ht_ss_iter(void) {
 				RZ_STR_EQ(*im_elem, "0x5050505"),
 			"Value mismtach");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
 	char **m_elem;
-	it = ht_ss_as_iter_mut(ht);
-	rz_iterator_foreach(it, m_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter_mut(ht, &it), "ht_ss_as_iter_mut failed");
+	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (RZ_STR_EQ(*m_elem, "0x1010101")) {
 			*m_elem = "0x0";
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	bool found = false;
 	const char *v = ht_ss_find(ht, "0x1010101", &found);
@@ -839,13 +892,14 @@ bool test_set_u(void) {
 
 	size_t x = 0;
 	const ut64 *im_elem;
-	RzIterator *it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = *im_elem == 0x5050505 || *im_elem == 0x6060606;
 		mu_assert_true(matches, "Set contained ill-formed value.");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 
 	rz_set_u_delete(set_u, 0x6060606);
@@ -853,11 +907,12 @@ bool test_set_u(void) {
 	rz_set_u_delete(set_u, 0x5050505);
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Length wrong.");
 
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	rz_set_u_add(set_u, 0x53e0);
 	rz_set_u_add(set_u, 0x53bc);
 
@@ -869,11 +924,12 @@ bool test_set_u(void) {
 	rz_set_u_add(set_u, 0x53bc);
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 	rz_set_u_delete(set_u, 0x53e0);
 	rz_set_u_delete(set_u, 0x53bc);
@@ -890,11 +946,12 @@ bool test_set_u(void) {
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
 	rz_set_u_clear(set_u);
@@ -931,13 +988,14 @@ bool test_set_s(void) {
 	size_t x = 0;
 	const char **im_elem;
 
-	RzIterator *it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = RZ_STR_EQ(*im_elem, "0x5050505") || RZ_STR_EQ(*im_elem, "0x6060606");
 		mu_assert_true(matches, "Set contained ill-formed value.");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 
 	rz_set_s_delete(set_s, "0x6060606");
@@ -945,19 +1003,19 @@ bool test_set_s(void) {
 	rz_set_s_delete(set_s, "0x5050505");
 	mu_assert_eq(rz_set_s_size(set_s), 0, "Length wrong.");
 
-	it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	rz_set_s_add(set_s, "0x53e0");
 	rz_set_s_add(set_s, "0x53bc");
 	x = 0;
-	it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 	rz_set_s_delete(set_s, "0x53e0");
 	rz_set_s_delete(set_s, "0x53bc");
@@ -992,6 +1050,7 @@ int all_tests() {
 	mu_run_test(test_insert_update_ex);
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_iter);
+	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
 	mu_run_test(test_set_u);
 	mu_run_test(test_set_s);

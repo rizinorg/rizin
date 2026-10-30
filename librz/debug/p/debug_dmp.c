@@ -145,8 +145,8 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	char *kernel_pdb = NULL;
 	if (mod.name) {
 		core->bin->cur->o->opts.baseaddr = mod.addr;
-		const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
-		const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
+		const char *server = dbg->corebind.config_get_string(dbg->corebind.core, "pdb.server");
+		const char *symstore = dbg->corebind.config_get_string(dbg->corebind.core, "pdb.symstore");
 		char *pdbpath, *exepath;
 		if (winkd_download_module_and_pdb(&mod, server, symstore, &exepath, &pdbpath)) {
 			// TODO: Convert to API call
@@ -861,8 +861,8 @@ RzList /*<RzDebugFrame *>*/ *rz_debug_dmp_frames(RzDebug *dbg, ut64 at) {
 	if (!ctx->windctx.is_arm && ctx->windctx.is_64bit) {
 		RzList *modules = NULL;
 		struct context_type_amd64 context = { 0 };
-		const char *server = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server");
-		const char *symstore = dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore");
+		const char *server = dbg->corebind.config_get_string(dbg->corebind.core, "pdb.server");
+		const char *symstore = dbg->corebind.config_get_string(dbg->corebind.core, "pdb.symstore");
 		ut64 last_rsp = 0;
 		while (!backtrace_windows_x64(dbg, &ret, &context)) {
 			if (last_rsp == context.rsp) {

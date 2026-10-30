@@ -544,7 +544,7 @@ static RzAnalysisLiftedILOp madd_f(RzAsmTriCoreContext *ctx) {
 		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
-	return SEQN(12,
+	return SEQN(13,
 		SETL("_fa", _32F64(VARG(R(1)))),
 		SETL("_fb", _32F64(VARG(R(2)))),
 		SETL("_fc", _32F64(VARG(R(3)))),
@@ -577,7 +577,7 @@ static RzAnalysisLiftedILOp msub_f(RzAsmTriCoreContext *ctx) {
 		set_PSW_FX(BOOL_TO_BV32(AND(VARG("set_FX"), INV(VARG("set_FI"))))),
 		set_FS_or_FI_FV_FU_FX);
 
-	return SEQN(12,
+	return SEQN(13,
 		SETL("_fa", _32F64(VARG(R(1)))),
 		SETL("_fb", _32F64(VARG(R(2)))),
 		SETL("_fc", _32F64(VARG(R(3)))),

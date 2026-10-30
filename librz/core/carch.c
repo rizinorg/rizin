@@ -89,8 +89,7 @@ RZ_DEPRECATE static void core_update_config_bits_options(RzCore *core, const cha
 		return;
 	}
 
-	node->options->free = free;
-	rz_list_purge(node->options);
+	rz_set_s_clear(node->options);
 	if (!core->rasm) {
 		return;
 	}
@@ -98,20 +97,21 @@ RZ_DEPRECATE static void core_update_config_bits_options(RzCore *core, const cha
 	ut32 bits = rz_asm_get_plugin_bits(core->rasm);
 	for (ut32 i = 1; i <= bits; i <<= 1) {
 		if (i & bits) {
-			rz_list_append(node->options, rz_str_newf("%u", i));
+			char *s = rz_str_newf("%u", i);
+			rz_set_s_add(node->options, s);
+			free(s);
 		}
 	}
 }
 
 RZ_DEPRECATE static void core_update_config_options(RzConfigNode *node, const char *list_comma_sep) {
 	if (RZ_STR_ISEMPTY(list_comma_sep)) {
-		node->options->free = free;
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
-	rz_list_free(node->options);
-	node->options = rz_str_split_duplist(list_comma_sep, ",", true);
+	rz_set_s_free(node->options);
+	node->options = rz_str_split_dupset(list_comma_sep, ",", true);
 }
 
 // copied from cconfig.c & cleaned
@@ -120,8 +120,7 @@ RZ_DEPRECATE static void core_update_config_cpu_options(RzCore *core, const char
 	if (!node) {
 		return;
 	} else if (!core->rasm) {
-		node->options->free = free;
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
@@ -135,8 +134,7 @@ static void core_update_config_platform_options(RzCore *core, const char *name) 
 	if (!node) {
 		return;
 	} else if (!core->rasm) {
-		node->options->free = free;
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 
@@ -150,8 +148,7 @@ static void core_update_config_features_options(RzCore *core, const char *name) 
 	if (!node) {
 		return;
 	} else if (!core->rasm) {
-		node->options->free = free;
-		rz_list_purge(node->options);
+		rz_set_s_clear(node->options);
 		return;
 	}
 

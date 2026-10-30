@@ -176,6 +176,7 @@ rz_bin_sources = [
 
 
   'format/bflt/bflt.c',
+  'format/c166/c166_raw.c',
   'format/coff/coff.c',
   'format/coff/coff_reloc.c',
   'format/dex/dex.c',
@@ -349,6 +350,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
     rz_crypto_dep,
     rz_type_dep,
     libmspack_dep,
+    mth,
   ],
   install: true,
   implicit_include_directories: false,

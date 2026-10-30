@@ -1011,6 +1011,17 @@ static bool test_vector_shrink(void) {
 
 	init_test_vector(&v, 0, 8, NULL, NULL);
 	rz_vector_shrink(&v);
+	mu_assert_eq(v.len, 0, "shrink to 0");
+	mu_assert_eq(rz_vector_capacity(&v), 0, "shrink to 0");
+	mu_assert_null(v.a, "shrink to 0 frees");
+	rz_vector_fini(&v);
+
+	init_test_vector(&v, 0, 8, NULL, NULL);
+	rz_vector_shrink(&v);
+	rz_vector_reserve(&v, 8);
+	mu_assert_eq(v.len, 0, "reserve after 0-shrink");
+	mu_assert_eq(rz_vector_capacity(&v), 8, "reserve after 0-shrink");
+	mu_assert_notnull(v.a, "sreserve after 0-shrink");
 	rz_vector_fini(&v);
 
 	mu_end;
@@ -1843,7 +1854,48 @@ static bool test_array_bounds_fuzz(void) {
 	mu_end;
 }
 
+/**
+ * \brief Check pointer sorting around the cutoff and across input patterns.
+ */
+static bool test_pvector_sort_patterns(void) {
+	const size_t sizes[] = { 0, 1, 2, 15, 16, 17, 31, 32, 33, 257 };
+	for (size_t s = 0; s < RZ_ARRAY_SIZE(sizes); s++) {
+		for (size_t pattern = 0; pattern < 4; pattern++) {
+			ut32 data[257], expected[257];
+			RzPVector v;
+			rz_pvector_init(&v, NULL);
+			for (size_t i = 0; i < sizes[s]; i++) {
+				switch (pattern) {
+				case 0:
+					data[i] = i;
+					break;
+				case 1:
+					data[i] = sizes[s] - i;
+					break;
+				case 2:
+					data[i] = 7;
+					break;
+				default:
+					data[i] = (i * 37) % 23;
+					break;
+				}
+				expected[i] = data[i];
+				mu_assert_notnull(rz_pvector_push(&v, &data[i]), "push sort input");
+			}
+			qsort(expected, sizes[s], sizeof(*expected), qsort_u32_asc);
+			rz_pvector_sort(&v, cmp_u32, NULL);
+			mu_assert_eq(rz_pvector_len(&v), sizes[s], "sort preserves length");
+			for (size_t i = 0; i < sizes[s]; i++) {
+				mu_assert_eq(*(ut32 *)rz_pvector_at(&v, i), expected[i], "sorted permutation");
+			}
+			rz_pvector_fini(&v);
+		}
+	}
+	mu_end;
+}
+
 static int all_tests(void) {
+	mu_run_test(test_pvector_sort_patterns);
 	time_t seed = time(0);
 	printf("Gillian Seed: %" PFMT64u "\n", (ut64)seed);
 	srand(seed);

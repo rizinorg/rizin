@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+#include "i/private.h"
 
-#define RZCOLOR_AT(i) (RzColor *)(((ut8 *)&(rz_cons_singleton()->context->cpal)) + keys[i].coff)
-#define COLOR_AT(i)   (char **)(((ut8 *)&(rz_cons_singleton()->context->pal)) + keys[i].off)
+#define RZCOLOR_AT(i) (RzColor *)(((ut8 *)&(cons->context->cpal)) + keys[i].coff)
+#define COLOR_AT(i)   (char **)(((ut8 *)&(cons->context->pal)) + keys[i].off)
 
 static struct {
 	const char *name;
@@ -30,7 +31,9 @@ static struct {
 	{ "invalid", rz_offsetof(RzConsPrintablePalette, invalid), rz_offsetof(RzConsPalette, invalid) },
 	{ "other", rz_offsetof(RzConsPrintablePalette, other), rz_offsetof(RzConsPalette, other) },
 	{ "b0x00", rz_offsetof(RzConsPrintablePalette, b0x00), rz_offsetof(RzConsPalette, b0x00) },
+	{ "b0xlo", rz_offsetof(RzConsPrintablePalette, b0xlo), rz_offsetof(RzConsPalette, b0xlo) },
 	{ "b0x7f", rz_offsetof(RzConsPrintablePalette, b0x7f), rz_offsetof(RzConsPalette, b0x7f) },
+	{ "b0xhi", rz_offsetof(RzConsPrintablePalette, b0xhi), rz_offsetof(RzConsPalette, b0xhi) },
 	{ "b0xff", rz_offsetof(RzConsPrintablePalette, b0xff), rz_offsetof(RzConsPalette, b0xff) },
 	{ "math", rz_offsetof(RzConsPrintablePalette, math), rz_offsetof(RzConsPalette, math) },
 	{ "bin", rz_offsetof(RzConsPrintablePalette, bin), rz_offsetof(RzConsPalette, bin) },
@@ -79,6 +82,8 @@ static struct {
 	{ "diff.new", rz_offsetof(RzConsPrintablePalette, diff_new), rz_offsetof(RzConsPalette, diff_new) },
 	{ "diff.match", rz_offsetof(RzConsPrintablePalette, diff_match), rz_offsetof(RzConsPalette, diff_match) },
 	{ "diff.unmatch", rz_offsetof(RzConsPrintablePalette, diff_unmatch), rz_offsetof(RzConsPalette, diff_unmatch) },
+	{ "gui.match.perfect", rz_offsetof(RzConsPrintablePalette, gui_match_perfect), rz_offsetof(RzConsPalette, gui_match_perfect) },
+	{ "gui.match.partial", rz_offsetof(RzConsPrintablePalette, gui_match_partial), rz_offsetof(RzConsPalette, gui_match_partial) },
 
 	{ "gui.cflow", rz_offsetof(RzConsPrintablePalette, gui_cflow), rz_offsetof(RzConsPalette, gui_cflow) },
 	{ "gui.dataoffset", rz_offsetof(RzConsPrintablePalette, gui_dataoffset), rz_offsetof(RzConsPalette, gui_dataoffset) },
@@ -159,7 +164,9 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	memset(&ctx->cpal, 0, sizeof(ctx->cpal));
 
 	ctx->cpal.b0x00 = (RzColor)RzColor_GREEN;
+	ctx->cpal.b0xlo = (RzColor)RzColor_YELLOW;
 	ctx->cpal.b0x7f = (RzColor)RzColor_CYAN;
+	ctx->cpal.b0xhi = (RzColor)RzColor_WHITE;
 	ctx->cpal.b0xff = (RzColor)RzColor_RED;
 	ctx->cpal.args = (RzColor)RzColor_YELLOW;
 	ctx->cpal.bin = (RzColor)RzColor_CYAN;
@@ -242,6 +249,8 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.diff_new = (RzColor)RzColor_RED;
 	ctx->cpal.diff_match = (RzColor)RzColor_GRAY;
 	ctx->cpal.diff_unmatch = (RzColor)RzColor_YELLOW;
+	ctx->cpal.gui_match_partial = (RzColor)RzColor_RED;
+	ctx->cpal.gui_match_perfect = (RzColor)RzColor_GREEN;
 
 	rz_cons_pal_free(ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
@@ -271,18 +280,18 @@ RZ_API void rz_cons_pal_copy(RzConsContext *dst, RzConsContext *src) {
 	__cons_pal_update_event(dst);
 }
 
-RZ_API void rz_cons_pal_random(void) {
+RZ_API void rz_cons_pal_random(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	int i;
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		rcolor = RZCOLOR_AT(i);
-		*rcolor = rz_cons_color_random(ALPHA_FG);
+		*rcolor = rz_cons_color_random(cons, ALPHA_FG);
 	}
-	rz_cons_pal_update_event();
+	rz_cons_pal_update_event(cons);
 }
 
 /* Return NULL if outcol is given */
-RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
+RZ_API char *rz_cons_pal_parse(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str, RzColor *outcol) {
 	int i;
 	RzColor rcolor = (RzColor)RzColor_BLACK;
 	rcolor.id16 = -1;
@@ -309,9 +318,9 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 
 	// Handle first color (fgcolor)
 	if (!strcmp(fgcolor, "random")) {
-		rcolor = rz_cons_color_random(ALPHA_FG);
+		rcolor = rz_cons_color_random(cons, ALPHA_FG);
 		if (!outcol) {
-			rz_cons_rgb_str(out, sizeof(out), &rcolor);
+			rz_cons_rgb_str(cons, out, sizeof(out), &rcolor);
 		}
 	} else if (!strncmp(fgcolor, "#", 1)) { // "#00ff00" HTML format
 		if (strlen(fgcolor) == 7) {
@@ -320,7 +329,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 				eprintf("Error while parsing HTML color: %s\n", fgcolor);
 			}
 			if (!outcol) {
-				rz_cons_rgb_str(out, sizeof(out), &rcolor);
+				rz_cons_rgb_str(cons, out, sizeof(out), &rcolor);
 			}
 		} else {
 			eprintf("Invalid html color code\n");
@@ -331,14 +340,14 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 			rcolor.g = rgbnum(fgcolor[5], '0');
 			rcolor.b = rgbnum(fgcolor[6], '0');
 			if (!outcol) {
-				rz_cons_rgb_str(out, sizeof(out), &rcolor);
+				rz_cons_rgb_str(cons, out, sizeof(out), &rcolor);
 			}
 		} else if (strlen(fgcolor) == 10) {
 			rcolor.r = rgbnum(fgcolor[4], fgcolor[5]);
 			rcolor.g = rgbnum(fgcolor[6], fgcolor[7]);
 			rcolor.b = rgbnum(fgcolor[8], fgcolor[9]);
 			if (!outcol) {
-				rz_cons_rgb_str(out, sizeof(out), &rcolor);
+				rz_cons_rgb_str(cons, out, sizeof(out), &rcolor);
 			}
 		}
 	}
@@ -351,7 +360,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 			rcolor.b2 = rgbnum(bgcolor[6], '0');
 			if (!outcol) {
 				size_t len = strlen(out);
-				rz_cons_rgb_str(out + len, sizeof(out) - len, &rcolor);
+				rz_cons_rgb_str(cons, out + len, sizeof(out) - len, &rcolor);
 			}
 		} else if (strlen(bgcolor) == 10) {
 			rcolor.a |= ALPHA_BG;
@@ -360,7 +369,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 			rcolor.b2 = rgbnum(bgcolor[8], bgcolor[9]);
 			if (!outcol) {
 				size_t len = strlen(out);
-				rz_cons_rgb_str(out + len, sizeof(out) - len, &rcolor);
+				rz_cons_rgb_str(cons, out + len, sizeof(out) - len, &rcolor);
 			}
 		}
 	}
@@ -422,9 +431,9 @@ RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 	return (*out && !outcol) ? rz_str_dup(out) : NULL;
 }
 
-static void rz_cons_pal_show_gs(void) {
+static void rz_cons_pal_show_gs(RzCons *cons) {
 	int i, n;
-	rz_cons_print("\nGreyscale:\n");
+	rz_cons_print(cons, "\nGreyscale:\n");
 	RzColor rcolor = RzColor_BLACK;
 	for (i = 0x08, n = 0; i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
@@ -437,19 +446,19 @@ static void rz_cons_pal_show_gs(void) {
 		} else {
 			strcpy(fg, Color_BLACK);
 		}
-		rz_cons_rgb_str(bg, sizeof(bg), &rcolor);
-		rz_cons_printf("%s%s rgb:%02x%02x%02x " Color_RESET,
+		rz_cons_rgb_str(cons, bg, sizeof(bg), &rcolor);
+		rz_cons_printf(cons, "%s%s rgb:%02x%02x%02x " Color_RESET,
 			fg, bg, i, i, i);
 		if (n++ == 5) {
 			n = 0;
-			rz_cons_newline();
+			rz_cons_newline(cons);
 		}
 	}
 }
 
-static void rz_cons_pal_show_256(void) {
+static void rz_cons_pal_show_256(RzCons *cons) {
 	RzColor rc = RzColor_BLACK;
-	rz_cons_print("\n\nXTerm colors:\n");
+	rz_cons_print(cons, "\n\nXTerm colors:\n");
 	int r = 0;
 	int g = 0;
 	int b = 0;
@@ -470,19 +479,19 @@ static void rz_cons_pal_show_256(void) {
 					rc.g = 0x5f;
 				}
 				const char *fg = ((rc.r <= 0x5f) && (rc.g <= 0x5f)) ? Color_WHITE : Color_BLACK;
-				rz_cons_rgb_str(bg, sizeof(bg), &rc);
-				rz_cons_printf("%s%s rgb:%02x%02x%02x " Color_RESET, fg, bg, rc.r, rc.g, rc.b);
+				rz_cons_rgb_str(cons, bg, sizeof(bg), &rc);
+				rz_cons_printf(cons, "%s%s rgb:%02x%02x%02x " Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 			}
-			rz_cons_newline();
+			rz_cons_newline(cons);
 		}
 	}
 }
 
-static void rz_cons_pal_show_rgb(void) {
+static void rz_cons_pal_show_rgb(RzCons *cons) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RzColor rc = RzColor_BLACK;
-	rz_cons_print("\n\nRGB:\n");
+	rz_cons_print(cons, "\n\nRGB:\n");
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
 			for (j = 0; j <= 0xf; j += inc) {
@@ -491,32 +500,32 @@ static void rz_cons_pal_show_rgb(void) {
 				rc.g = j * 16;
 				rc.b = k * 16;
 				strcpy(fg, ((i < 6) && (j < 5)) ? Color_WHITE : Color_BLACK);
-				rz_cons_rgb_str(bg, sizeof(bg), &rc);
-				rz_cons_printf("%s%s rgb:%02x%02x%02x " Color_RESET, fg, bg, rc.r, rc.g, rc.b);
+				rz_cons_rgb_str(cons, bg, sizeof(bg), &rc);
+				rz_cons_printf(cons, "%s%s rgb:%02x%02x%02x " Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 				if (n++ == 5) {
 					n = 0;
-					rz_cons_newline();
+					rz_cons_newline(cons);
 				}
 			}
 		}
 	}
 }
 
-RZ_API void rz_cons_pal_show(void) {
+RZ_API void rz_cons_pal_show(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	for (size_t i = 0; colors[i].name; i++) {
-		rz_cons_printf("%s%s__" Color_RESET " %s\n",
+		rz_cons_printf(cons, "%s%s__" Color_RESET " %s\n",
 			colors[i].code,
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (rz_cons_singleton()->context->color_mode) {
+	switch (cons->context->color_mode) {
 	case COLOR_MODE_256: // 256 color palette
-		rz_cons_pal_show_gs();
-		rz_cons_pal_show_256();
+		rz_cons_pal_show_gs(cons);
+		rz_cons_pal_show_256(cons);
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		rz_cons_pal_show_gs();
-		rz_cons_pal_show_rgb();
+		rz_cons_pal_show_gs(cons);
+		rz_cons_pal_show_rgb(cons);
 		break;
 	default:
 		break;
@@ -526,10 +535,11 @@ RZ_API void rz_cons_pal_show(void) {
 /**
  * \brief Returns the palette as a json
  *
+ * \param cons The cons instance
  * \param pj  The JSON structure to write to.
  */
-RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj) {
-	rz_return_if_fail(pj);
+RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL PJ *pj) {
+	rz_return_if_fail(cons && pj);
 
 	pj_o(pj); // {
 
@@ -566,9 +576,11 @@ RZ_API void rz_cons_pal_list_as_json(RZ_NONNULL PJ *pj) {
 /**
  * \brief Prints the palette as a css string
  *
+ * \param cons The cons instance
  * \param name_prefix The name prefix to apply.
  */
-RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
+RZ_API void rz_cons_pal_list_as_css(RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NULLABLE const char *name_prefix) {
+	rz_return_if_fail(cons);
 	if (RZ_STR_ISEMPTY(name_prefix)) {
 		name_prefix = "";
 	} else {
@@ -581,24 +593,24 @@ RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
 		char *name = rz_str_dup(keys[i].name);
 		rz_str_replace_char(name, '.', '_');
 
-		rz_cons_printf(".%s%s { color: rgb(%u, %u, %u);",
+		rz_cons_printf(cons, ".%s%s { color: rgb(%u, %u, %u);",
 			name_prefix, name, (ut32)color->r, (ut32)color->g, (ut32)color->b);
 
 		// blink is deprecated for css, requires animation.
 		if (color->attr & RZ_CONS_ATTR_BOLD) {
-			rz_cons_print(" font-weight: bold;");
+			rz_cons_print(cons, " font-weight: bold;");
 		}
 		if (color->attr & RZ_CONS_ATTR_DIM) {
-			rz_cons_print(" filter: brightness(50%);");
+			rz_cons_print(cons, " filter: brightness(50%);");
 		}
 		if (color->attr & RZ_CONS_ATTR_ITALIC) {
-			rz_cons_print(" font-style: italic;");
+			rz_cons_print(cons, " font-style: italic;");
 		}
 		if (color->attr & RZ_CONS_ATTR_UNDERLINE) {
-			rz_cons_print(" text-decoration: underline;");
+			rz_cons_print(cons, " text-decoration: underline;");
 		}
 
-		rz_cons_printf(" }\n");
+		rz_cons_printf(cons, " }\n");
 		free(name);
 	}
 }
@@ -606,39 +618,39 @@ RZ_API void rz_cons_pal_list_as_css(RZ_NULLABLE const char *name_prefix) {
 /**
  * \brief Prints the palette visually on the console output
  */
-RZ_API void rz_cons_pal_list_visual(void) {
+RZ_API void rz_cons_pal_list_visual(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	for (size_t i = 0; keys[i].name; i++) {
 		RzColor *color = RZCOLOR_AT(i);
-		rz_cons_printf(" r:%-3u g:%-3u b:%-3u  %s", (ut32)color->r, (ut32)color->g, (ut32)color->b, keys[i].name);
+		rz_cons_printf(cons, " r:%-3u g:%-3u b:%-3u  %s", (ut32)color->r, (ut32)color->g, (ut32)color->b, keys[i].name);
 		if (color->attr & RZ_CONS_ATTR_BOLD) {
-			rz_cons_print(" bold");
+			rz_cons_print(cons, " bold");
 		}
 		if (color->attr & RZ_CONS_ATTR_DIM) {
-			rz_cons_print(" dim");
+			rz_cons_print(cons, " dim");
 		}
 		if (color->attr & RZ_CONS_ATTR_ITALIC) {
-			rz_cons_print(" italic");
+			rz_cons_print(cons, " italic");
 		}
 		if (color->attr & RZ_CONS_ATTR_UNDERLINE) {
-			rz_cons_print(" underline");
+			rz_cons_print(cons, " underline");
 		}
 		if (color->attr & RZ_CONS_ATTR_BLINK) {
-			rz_cons_print(" blink");
+			rz_cons_print(cons, " blink");
 		}
-		rz_cons_printf("\n");
+		rz_cons_printf(cons, "\n");
 	}
 }
 
 /* Modify the palette to set a color value.
  * rz_cons_pal_update_event () must be called after this function
  * so the changes take effect. */
-RZ_API int rz_cons_pal_set(const char *key, const char *val) {
+RZ_API int rz_cons_pal_set(RZ_NONNULL RZ_BORROW RzCons *cons, const char *key, const char *val) {
 	int i;
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp(key, keys[i].name)) {
 			rcolor = RZCOLOR_AT(i);
-			rz_cons_pal_parse(val, rcolor);
+			rz_cons_pal_parse(cons, val, rcolor);
 			return true;
 		}
 	}
@@ -647,7 +659,7 @@ RZ_API int rz_cons_pal_set(const char *key, const char *val) {
 }
 
 /* Get the named RzColor */
-RZ_API RzColor rz_cons_pal_get(const char *key) {
+RZ_API RzColor rz_cons_pal_get(RZ_NONNULL RZ_BORROW RzCons *cons, const char *key) {
 	int i;
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
@@ -660,12 +672,12 @@ RZ_API RzColor rz_cons_pal_get(const char *key) {
 }
 
 /* Get the RzColor at specified index */
-RZ_API RzColor rz_cons_pal_get_i(int index) {
+RZ_API RzColor rz_cons_pal_get_i(RZ_NONNULL RZ_BORROW RzCons *cons, int index) {
 	return *(RZCOLOR_AT(index));
 }
 
 /* Get color name at index */
-RZ_API const char *rz_cons_pal_get_name(int index) {
+RZ_API const char *rz_cons_pal_get_name(RZ_NONNULL RZ_BORROW RzCons *cons, int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
@@ -673,8 +685,8 @@ RZ_API int rz_cons_pal_len(void) {
 	return keys_len;
 }
 
-RZ_API void rz_cons_pal_update_event(void) {
-	__cons_pal_update_event(rz_cons_singleton()->context);
+RZ_API void rz_cons_pal_update_event(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	__cons_pal_update_event(cons->context);
 }
 
 RZ_API void rz_cons_rainbow_new(RzConsContext *ctx, int sz) {
@@ -694,8 +706,7 @@ RZ_API void rz_cons_rainbow_free(RzConsContext *ctx) {
 	RZ_FREE(ctx->pal.rainbow);
 }
 
-RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg) {
-	RzCons *cons = rz_cons_singleton();
+RZ_API char *rz_cons_rainbow_get(RZ_NONNULL RZ_BORROW RzCons *cons, int idx, int last, bool bg) {
 	if (last < 0) {
 		last = cons->context->pal.rainbow_sz;
 	}
@@ -708,9 +719,9 @@ RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg) {
 	const char *a = cons->context->pal.rainbow[x];
 	if (bg) {
 		char *dup = rz_str_newf("%s %s", a, a);
-		char *res = rz_cons_pal_parse(dup, NULL);
+		char *res = rz_cons_pal_parse(cons, dup, NULL);
 		free(dup);
 		return res;
 	}
-	return rz_cons_pal_parse(a, NULL);
+	return rz_cons_pal_parse(cons, a, NULL);
 }

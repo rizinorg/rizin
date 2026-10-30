@@ -33,7 +33,7 @@
 #define VARIABLE_KEY_LEN
 #define VARIABLE_VALUE_LEN
 #elif HT_TYPE == 2
-// Hash table HtUP that has void* as key and ut64 as value
+// Hash table HtUP that has ut64 as key and void* as value
 #define HtName_(name)              name##UP
 #define Ht_(name)                  ht_up_##name
 #define HT_(name)                  HtUP##name
@@ -304,7 +304,9 @@ RZ_API void Ht_(free_iter_state)(RZ_NULLABLE HT_(IterState) *state);
 RZ_API RZ_BORROW VALUE_TYPE *Ht_(iter_next_mut)(RzIterator *it);
 RZ_API const VALUE_TYPE *Ht_(iter_next)(RzIterator *it);
 RZ_API const KEY_TYPE *Ht_(iter_next_key)(RzIterator *it);
+RZ_API const HT_(Kv) *Ht_(iter_next_kv)(RzIterator *it);
 
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht);
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht);
-RZ_API RZ_OWN RzIterator /* <HtName_(Ht)> */ *Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht);
+RZ_API bool Ht_(as_iter_mut)(RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool Ht_(as_iter)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool Ht_(as_iter_keys)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool Ht_(as_iter_kv)(const RZ_NONNULL HtName_(Ht) *ht, RZ_OUT RZ_NONNULL RzIterator *iterator);

@@ -27,9 +27,12 @@ commands:
         cname: cmd_heap_bins_list_print
         summary: >
           Display double linked list for bins in an arena.
+        description: In JSON mode, forward and backward list chunk addresses without the bin head.
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_GRAPH
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: bin_num|bin_num:malloc_state
             type: RZ_CMD_ARG_TYPE_STRING
@@ -77,8 +80,10 @@ commands:
       - name: dmhgm
         cname: cmd_main_arena_print
         summary: List all elements of struct malloc_state
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: malloc_state
             type: RZ_CMD_ARG_TYPE_RZNUM

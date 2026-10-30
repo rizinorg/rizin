@@ -125,6 +125,7 @@ const char *format_CALL_FUNCTION_EX_36(ut32 oparg);
 const char *format_MAKE_FUNCTION_arg_36(ut32 oparg);
 const char *format_value_flags_36(ut32 oparg);
 const char *format_extended_arg_36(ut32 oparg);
+const char *format_COMPARE_OP_313(ut32 oparg);
 
 struct op_parameter {
 	pyc_opcode_object *op_obj;

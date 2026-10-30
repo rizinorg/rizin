@@ -68,6 +68,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=command catalog root child count
+FILE==
+CMDS=?+j~{.root.n_children}
+EXPECT=<<EOF
+52
+EOF
+RUN
+
 NAME=recursive help (old style)
 FILE==
 CMDS=<<EOF
@@ -299,11 +307,11 @@ e scr.columns=70
 /z??~:-6..
 EOF
 EXPECT=<<EOF
-| /z (ABC*)D li     # Search the exact string "(ABC*)D" but case
-                      insensitive.
-| /z \\d\\sC*\\w ri # Search the regular expression "\d\sC*\w" but
-                      case insensitive.
-| /z "и.{3}м" ei    # Search the extended regular expression
-                      "и.{3}м" but case insensitive.
+                                             "и.{3}м" but case
+                                             insensitive. Search hit
+                                             flags will be prefixed
+                                             with 'cyrillic'.
+| /z "(*LF).+" r ascii          # Search any ASCII string where line
+                                  feed is a newline.
 EOF
 RUN

@@ -72,6 +72,14 @@ typedef enum rz_float_round_enum {
 	RZ_FLOAT_RMODE_UNK ///< end
 } RzFloatRMode; ///< Rounding Mode
 
+/** Precision used by SoftFloat binary80 arithmetic. */
+typedef enum rz_float_rprecision_enum {
+	RZ_FLOAT_RPREC_32 = 32, ///< 24-bit significand precision
+	RZ_FLOAT_RPREC_64 = 64, ///< 53-bit significand precision
+	RZ_FLOAT_RPREC_80 = 80, ///< full binary80 precision
+	RZ_FLOAT_RPREC_UNK = 0
+} RzFloatRPrecision;
+
 typedef enum rz_float_exception_enum {
 	RZ_FLOAT_E_INVALID_OP = 1, ///< Invalid operation
 	RZ_FLOAT_E_DIV_ZERO = 2, ///< Divide zero
@@ -205,4 +213,6 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
 RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
 RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
 RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode);
+RZ_API RzFloatRPrecision rz_float_ext80_get_rounding_precision(void);
+RZ_API bool rz_float_ext80_set_rounding_precision(RzFloatRPrecision precision);
 #endif // RZ_FLOAT_H

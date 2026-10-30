@@ -852,7 +852,7 @@ static ut32 convert_alu_group_mask(ut32 X, int n) {
 			encoded_g_n = 0;
 		} else {
 			int msb = 31;
-			while (msb > 0 && !(residual & (1 << msb))) {
+			while (msb > 0 && !(residual & (1U << msb))) {
 				msb--;
 			}
 
@@ -889,7 +889,7 @@ static ut32 convert_ldr_group_mask(ut32 X, int n) {
 		}
 
 		int msb = 31;
-		while (msb > 0 && !(residual & (1 << msb))) {
+		while (msb > 0 && !(residual & (1U << msb))) {
 			msb--;
 		}
 
@@ -904,6 +904,262 @@ static ut32 convert_ldr_group_mask(ut32 X, int n) {
 	}
 
 	return 0;
+}
+
+/** A C6000 fetch packet, which PC-relative branches are measured from. */
+#define C6000_FETCH_PACKET_SIZE 32
+
+/**
+ * \brief How a C6000 relocation's field sits inside its container.
+ *
+ * SPRAB89 Table 13-6 gives each relocation a field as [CS, O, FS]: the size of
+ * the addressable container at r_offset, the offset of the field within it, and
+ * the field's size. The relocated value is scaled down by \p scale before it is
+ * deposited, which is how the branch and base-relative forms encode a target
+ * that is known to be aligned.
+ */
+typedef struct {
+	ut8 container; ///< CS, in bits: 8, 16 or 32
+	ut8 offset; ///< O, the field's least-significant bit within the container
+	ut8 size; ///< FS, the field's width in bits
+	ut8 scale; ///< right shift applied to the result before it is deposited
+	bool high; ///< deposit the upper half of the result rather than the low one
+} C6000RelocField;
+
+/**
+ * \brief The field layout of \p type, or NULL when it has none to patch.
+ *
+ * Only the static relocations are described. The GOT, DSBT and thread-local
+ * forms need a dynamic loader's view of the image rather than the file's, and
+ * R_C6000_COPY moves bytes at load time rather than editing a field.
+ */
+static const C6000RelocField *c6000_reloc_field(ut32 type) {
+	// clang-format off
+	static const C6000RelocField abs32     = { 32, 0, 32, 0, false };
+	static const C6000RelocField abs16     = { 16, 0, 16, 0, false };
+	static const C6000RelocField abs8      = { 8, 0, 8, 0, false };
+	static const C6000RelocField pcr_s21   = { 32, 7, 21, 2, false };
+	static const C6000RelocField pcr_s12   = { 32, 16, 12, 2, false };
+	static const C6000RelocField pcr_s10   = { 32, 13, 10, 2, false };
+	static const C6000RelocField pcr_s7    = { 32, 16, 7, 2, false };
+	static const C6000RelocField f16_lo    = { 32, 7, 16, 0, false };
+	static const C6000RelocField f16_hi    = { 32, 7, 16, 0, true };
+	static const C6000RelocField u15_b     = { 32, 8, 15, 0, false };
+	static const C6000RelocField u15_h     = { 32, 8, 15, 1, false };
+	static const C6000RelocField u15_w     = { 32, 8, 15, 2, false };
+	static const C6000RelocField l16_h     = { 32, 7, 16, 1, false };
+	static const C6000RelocField l16_w     = { 32, 7, 16, 2, false };
+	static const C6000RelocField prel31    = { 32, 0, 31, 1, false };
+	// clang-format on
+	switch (type) {
+	case R_C6000_ABS32:
+	case R_C6000_JUMP_SLOT:
+	case R_C6000_EHTYPE: return &abs32;
+	case R_C6000_ABS16: return &abs16;
+	case R_C6000_ABS8: return &abs8;
+	case R_C6000_PCR_S21: return &pcr_s21;
+	case R_C6000_PCR_S12: return &pcr_s12;
+	case R_C6000_PCR_S10: return &pcr_s10;
+	case R_C6000_PCR_S7: return &pcr_s7;
+	case R_C6000_ABS_S16:
+	case R_C6000_ABS_L16:
+	case R_C6000_SBR_S16:
+	case R_C6000_SBR_L16_B:
+	case R_C6000_PCR_L16: return &f16_lo;
+	case R_C6000_ABS_H16:
+	case R_C6000_SBR_H16_B:
+	case R_C6000_SBR_H16_H:
+	case R_C6000_SBR_H16_W:
+	case R_C6000_PCR_H16: return &f16_hi;
+	case R_C6000_SBR_U15_B: return &u15_b;
+	case R_C6000_SBR_U15_H: return &u15_h;
+	case R_C6000_SBR_U15_W: return &u15_w;
+	case R_C6000_SBR_L16_H: return &l16_h;
+	case R_C6000_SBR_L16_W: return &l16_w;
+	case R_C6000_PREL31: return &prel31;
+	default: return NULL;
+	}
+}
+
+/**
+ * \brief Patch one TMS320C6000 relocation.
+ *
+ * The value comes from SPRAB89 Table 13-5 -- S+A for the absolute forms, S+A-P
+ * for the PC-relative branches, S+A-B against the static base for the
+ * base-relative ones -- and is deposited into the field Table 13-6 gives for
+ * the type, leaving the rest of the instruction word alone.
+ *
+ * \param buf_patched Image being patched.
+ * \param patch_addr Address of the container to edit.
+ * \param rel The relocation.
+ * \param big_endian Byte order of the image.
+ * \param fs Values the relocation formula is computed from.
+ */
+static void patch_reloc_c6000(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
+	const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	const C6000RelocField *f = c6000_reloc_field(rel->type);
+	if (!f) {
+		return;
+	}
+	ut64 val = 0;
+	switch (rel->type) {
+	case R_C6000_PCR_S21:
+	case R_C6000_PCR_S12:
+	case R_C6000_PCR_S10:
+	case R_C6000_PCR_S7:
+		// branches are relative to the fetch packet the branch sits in, not to
+		// the instruction, so the place is rounded down to the packet
+		val = fs->S + fs->A - (fs->P & ~(ut64)(C6000_FETCH_PACKET_SIZE - 1));
+		break;
+	case R_C6000_PREL31: val = fs->S + fs->A - fs->P; break;
+	case R_C6000_PCR_H16:
+	case R_C6000_PCR_L16: val = fs->S + fs->A - fs->P; break;
+	case R_C6000_SBR_U15_B:
+	case R_C6000_SBR_U15_H:
+	case R_C6000_SBR_U15_W:
+	case R_C6000_SBR_S16:
+	case R_C6000_SBR_L16_B:
+	case R_C6000_SBR_L16_H:
+	case R_C6000_SBR_L16_W:
+	case R_C6000_SBR_H16_B:
+	case R_C6000_SBR_H16_H:
+	case R_C6000_SBR_H16_W:
+	case R_C6000_EHTYPE: val = fs->S + fs->A - fs->B; break;
+	default: val = fs->S + fs->A; break;
+	}
+	val >>= f->scale;
+	if (f->high) {
+		val >>= 16; // the H16 forms carry the upper half of the same result
+	}
+
+	ut8 buf[4] = { 0 };
+	ut32 nbytes = f->container / 8;
+	if (rz_buf_read_at(buf_patched, patch_addr, buf, nbytes) != (int)nbytes) {
+		return;
+	}
+	ut32 mask = f->size >= 32 ? UT32_MAX : (((ut32)1 << f->size) - 1);
+	ut32 field = ((ut32)val & mask) << f->offset;
+	if (nbytes == 4) {
+		ut32 word = rz_read_ble32(buf, big_endian);
+		word = (word & ~(mask << f->offset)) | field;
+		rz_write_ble32(buf, word, big_endian);
+	} else if (nbytes == 2) {
+		ut16 word = rz_read_ble16(buf, big_endian);
+		word = (word & ~(mask << f->offset)) | field;
+		rz_write_ble16(buf, word, big_endian);
+	} else {
+		buf[0] = (buf[0] & ~(mask << f->offset)) | field;
+	}
+	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+}
+
+/**
+ * \brief Field layout of a C28x relocation.
+ *
+ * A container is one or two 16-bit words, and \p offset counts bits in the
+ * first. SPRAC71C Table 11-6 covers only some types and omits the DP scaling,
+ * so the layouts were measured: reference an external symbol, link it at a
+ * known address with lnk2000, and diff against the relocatable object.
+ */
+typedef struct {
+	ut8 container; ///< bits of the first word this occupies: 16 or 32
+	ut8 offset; ///< least-significant bit of the field within that word
+	ut8 size; ///< field width in bits
+	ut8 scale; ///< right shift applied to the result before it is deposited
+	bool split22; ///< 22-bit form: high six bits here, low sixteen in the next word
+} C28xRelocField;
+
+/**
+ * \brief The field layout of \p type, or NULL when it has none to patch.
+ *
+ * NEGWORD, NEGBYTE and ABS13_SE16 compute something the generic S+A machinery
+ * does not express, and are left alone rather than patched wrongly.
+ */
+static const C28xRelocField *c28x_reloc_field(ut32 type) {
+	// clang-format off
+	static const C28xRelocField abs32   = { 32, 0, 32, 0, false };
+	static const C28xRelocField abs16   = { 16, 0, 16, 0, false };
+	static const C28xRelocField abs8    = { 16, 0,  8, 0, false };
+	static const C28xRelocField abslo6  = { 16, 0,  6, 0, false };
+	static const C28xRelocField abslo7  = { 16, 0,  7, 0, false };
+	static const C28xRelocField abs22   = { 16, 0,  6, 16, true };
+	// DP holds a page: an address is (DP << 6) | 6bit, so DP is addr >> 6
+	static const C28xRelocField dp_hi16 = { 16, 0, 16, 6, false };
+	static const C28xRelocField pcrel16 = { 16, 0, 16, 0, false };
+	static const C28xRelocField pcrel8  = { 16, 0,  8, 0, false };
+	// clang-format on
+	switch (type) {
+	case R_C28X_ABS32: return &abs32;
+	case R_C28X_ABS16: return &abs16;
+	case R_C28X_ABS8: return &abs8;
+	case R_C28X_ABSLO6: return &abslo6;
+	case R_C28X_ABSLO7: return &abslo7;
+	case R_C28X_ABS22:
+	case R_C28X_ABS22_BR: return &abs22;
+	case R_C28X_DP_HI16: return &dp_hi16;
+	case R_C28X_PCREL16: return &pcrel16;
+	case R_C28X_PCREL8: return &pcrel8;
+	default: return NULL;
+	}
+}
+
+/**
+ * \brief Patch one TMS320C28x relocation.
+ *
+ * The value is S+A, or S+A-P for the PC-relative types, shifted right by the
+ * field's scale and deposited into the field c28x_reloc_field() gives. The
+ * 22-bit form also writes the low sixteen bits of the value to the next word.
+ *
+ * \param buf_patched Image being patched.
+ * \param patch_addr Address of the container to edit.
+ * \param rel The relocation.
+ * \param big_endian Byte order of the image.
+ * \param fs Values the relocation formula is computed from.
+ */
+static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
+	const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	const C28xRelocField *f = c28x_reloc_field(rel->type);
+	if (!f) {
+		return;
+	}
+	ut64 result;
+	switch (rel->type) {
+	case R_C28X_PCREL16:
+	case R_C28X_PCREL8:
+		result = fs->S + fs->A - fs->P;
+		break;
+	default:
+		result = fs->S + fs->A;
+		break;
+	}
+	ut64 val = result >> f->scale;
+
+	ut8 buf[4] = { 0 };
+	ut32 nbytes = f->container / 8;
+	if (rz_buf_read_at(buf_patched, patch_addr, buf, nbytes) != (int)nbytes) {
+		return;
+	}
+	ut32 mask = f->size >= 32 ? UT32_MAX : (((ut32)1 << f->size) - 1);
+	if (nbytes == 4) {
+		ut32 word = rz_read_ble32(buf, big_endian);
+		word = (word & ~mask) | ((ut32)val & mask);
+		rz_write_ble32(buf, word, big_endian);
+	} else {
+		ut16 word = rz_read_ble16(buf, big_endian);
+		word = (word & ~(ut16)(mask << f->offset)) |
+			(ut16)(((ut32)val & mask) << f->offset);
+		rz_write_ble16(buf, word, big_endian);
+	}
+	rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
+
+	if (f->split22) {
+		// the low sixteen bits of the same result live in the following word
+		ut8 lo[2] = { 0 };
+		rz_write_ble16(lo, (ut16)(result & 0xffff), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr + 2, lo, sizeof(lo));
+	}
 }
 
 /**
@@ -3643,8 +3899,12 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_VIDEOCORE3: ARCH_MISSING("EM_VIDEOCORE3");
 	case EM_LATTICEMICO32: ARCH_MISSING("EM_LATTICEMICO32");
 	case EM_SE_C17: ARCH_MISSING("EM_SE_C17");
-	case EM_TI_C6000: ARCH_MISSING("EM_TI_C6000");
-	case EM_TI_C2000: ARCH_MISSING("EM_TI_C2000");
+	case EM_TI_C6000:
+		patch_reloc_c6000(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
+		break;
+	case EM_TI_C2000:
+		patch_reloc_c28x(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
+		break;
 	case EM_TI_C5500: ARCH_MISSING("EM_TI_C5500");
 	case EM_TI_ARP32: ARCH_MISSING("EM_TI_ARP32");
 	case EM_TI_PRU: ARCH_MISSING("EM_TI_PRU");

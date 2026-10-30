@@ -38,6 +38,24 @@ static const RzCmdDescHelp cmd_last_opt_help = {
 	.args = cmd_last_opt_args,
 };
 
+static const RzCmdDescArg no_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp fail_help = {
+	.summary = "fail help",
+	.args = no_args,
+};
+static const RzCmdDescHelp peek_help = {
+	.summary = "peek help",
+	.args = no_args,
+};
+static const RzCmdDescHelp quit_help = {
+	.summary = "quit help",
+	.args = no_args,
+};
+
+static RzCmdStatus peeked_status;
+
 static RzCmdStatus string_handler(RzCore *core, int argc, const char **argv) {
 	return argc == 2 ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
@@ -68,6 +86,19 @@ static RzCmdStatus cmd_last_opt_handler(RzCore *core, int argc, const char **arg
 	return RZ_CMD_STATUS_OK;
 }
 
+static RzCmdStatus fail_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus peek_handler(RzCore *core, int argc, const char **argv) {
+	peeked_status = core->last_cmd_status;
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus quit_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_EXIT;
+}
+
 static RzCmd *old_rcmd = NULL;
 
 static RzCore *fake_core_new(void) {
@@ -80,6 +111,9 @@ static RzCore *fake_core_new(void) {
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last", cmd_last_handler, &cmd_last_help);
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last_with_at", cmd_last_with_at_handler, &cmd_last_help);
 	rz_cmd_desc_argv_new(core->rcmd, root, "cmd_last_opt", cmd_last_opt_handler, &cmd_last_opt_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "fail", fail_handler, &fail_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "peek", peek_handler, &peek_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "quit", quit_handler, &quit_help);
 	return core;
 }
 
@@ -123,6 +157,45 @@ static bool test_arg_cmd_last_opt(void) {
 	mu_end;
 }
 
+static bool test_last_cmd_status(void) {
+	RzCore *core = fake_core_new();
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_INVALID, "no command ran yet");
+	rz_core_cmd0_rzshell(core, "string hello");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_OK, "success should be tracked");
+	rz_core_cmd0_rzshell(core, "zzz");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_NONEXISTINGCMD, "unknown command should be tracked");
+	rz_core_cmd0_rzshell(core, "string");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_WRONG_ARGS, "wrong arguments should be tracked");
+	rz_core_cmd0_rzshell(core, "fail; peek");
+	mu_assert_eq(peeked_status, RZ_CMD_STATUS_ERROR, "a statement should see the status of the previous one");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR, "the line should keep the status of its failing statement");
+	rz_core_cmd0_rzshell(core, "quit");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_EXIT, "quitting should be tracked");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "fail; quit"), RZ_CMD_STATUS_EXIT, "the line should still quit");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR, "quitting should not hide an earlier failure");
+	rz_core_cmd0_rzshell(core, "string \"hello");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_INVALID, "parse errors should be tracked");
+	fake_core_free(core);
+	mu_end;
+}
+
+static bool test_cmd_str_status(void) {
+	RzCore *core = rz_core_new();
+	RzCmdStatus status = RZ_CMD_STATUS_INVALID;
+	char *out = rz_core_cmd_str_status(core, "echo hello", &status);
+	mu_assert_streq_free(out, "hello\n", "output of a successful command");
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "status of a successful command");
+	out = rz_core_cmd_str_status(core, "zzz", &status);
+	mu_assert_streq_free(out, "", "a missing command prints nothing");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a missing command");
+	out = rz_core_cmd_str_status(core, "echo partial; zzz", &status);
+	mu_assert_streq_free(out, "partial\n", "the output should be kept on failure");
+	mu_assert_eq(status, RZ_CMD_STATUS_NONEXISTINGCMD, "status of a failed command line");
+	mu_assert_null(rz_core_cmd_str(core, "echo partial; zzz"), "rz_core_cmd_str() should still discard a failed output");
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_hist_push(void) {
 	RzCore *core = rz_core_new();
 	RzLine *line = core->cons->line;
@@ -131,7 +204,7 @@ static bool test_hist_push(void) {
 
 	rz_line_hist_add(line, cmd);
 	int history_top = line->history.top;
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 
 	free(core->cmdqueue);
 	core->cmdqueue = rz_str_newf("< \\x12%s\\n", mark);
@@ -145,7 +218,7 @@ static bool test_hist_push(void) {
 	mu_assert_notnull(res, "reverse-search result should not be null");
 	mu_assert_streq(res, cmd, "reverse-search should resolve to prior history, not the injector command");
 
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 	rz_core_free(core);
 	mu_end;
 }
@@ -158,7 +231,7 @@ static bool test_hist_push_seq(void) {
 
 	rz_line_hist_add(line, cmd);
 	int history_top = line->history.top;
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 
 	free(core->cmdqueue);
 	core->cmdqueue = rz_str_newf("echo %s; < \\x12%s\\n", mark, mark);
@@ -172,7 +245,7 @@ static bool test_hist_push_seq(void) {
 	mu_assert_notnull(res, "reverse-search result should not be null");
 	mu_assert_streq(res, cmd, "reverse-search should resolve to prior history, not the injector command");
 
-	rz_cons_readflush();
+	rz_cons_readflush(core->cons);
 	rz_core_free(core);
 	mu_end;
 }
@@ -243,11 +316,46 @@ beach:
 	mu_cleanup_end;
 }
 
+static bool test_disasm_until_ret_json(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RW, true), "file");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	rz_core_cmd0(core, "wx 90c3");
+	RzStrBuf buf;
+	rz_strbuf_init(&buf);
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_JSON, true, &buf), "capture JSON");
+	mu_assert_streq(rz_strbuf_get(&buf), "[{\"offset\":0,\"size\":1,\"opcode\":\"nop\",\"type\":\"nop\"},{\"offset\":1,\"size\":1,\"opcode\":\"ret\",\"type\":\"ret\"}]", "path to return");
+	rz_cons_push(core->cons);
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_JSON, false, NULL), "print JSON");
+	char *printed = rz_str_newf("%s\n", rz_strbuf_get(&buf));
+	mu_assert_streq(rz_cons_get_buffer(core->cons), printed, "console and capture agree");
+	free(printed);
+	rz_cons_pop(core->cons);
+	rz_strbuf_set(&buf, "");
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 8, RZ_OUTPUT_MODE_QUIET, true, &buf), "capture text");
+	mu_assert_streq(rz_strbuf_get(&buf), "nop\nret", "quiet capture is unchanged");
+	rz_strbuf_set(&buf, "prefix");
+	mu_assert_true(rz_core_disasm_until_ret(core, 0, 0, RZ_OUTPUT_MODE_JSON, true, &buf), "empty path");
+	mu_assert_streq(rz_strbuf_get(&buf), "prefix[]", "append instead of replacing the buffer");
+	mu_assert_false(rz_core_disasm_until_ret(core, 0, -1, RZ_OUTPUT_MODE_JSON, true, &buf), "negative limit");
+	mu_assert_false(rz_core_disasm_until_ret(core, 0, 1, RZ_OUTPUT_MODE_JSON, true, NULL), "missing output buffer");
+	mu_assert_false(rz_core_disasm_until_ret(core, UT64_MAX, 1, RZ_OUTPUT_MODE_JSON, true, &buf), "failed decode");
+	mu_assert_streq(rz_strbuf_get(&buf), "prefix[]", "failed requests append no JSON");
+	rz_strbuf_fini(&buf);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
 	mu_run_test(test_arg_cmd_last_opt);
+	mu_run_test(test_last_cmd_status);
+	mu_run_test(test_cmd_str_status);
+	mu_run_test(test_disasm_until_ret_json);
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);

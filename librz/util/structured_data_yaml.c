@@ -105,16 +105,34 @@ static void builder_yaml_val_signed(RZ_NULLABLE void *user, st64 n) {
 	yaml->first = false;
 }
 
-static void builder_yaml_val_double(RZ_NULLABLE void *user, double d) {
-	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
-
+/**
+ * \brief Append a formatted float using YAML's non-finite spellings.
+ *
+ * YAML interprets bare `nan` and `inf` as strings rather than numbers.
+ */
+static void builder_yaml_val_float_str(StructYamlPrinter *yaml, double d, const char *num) {
+	if (isnan(d)) {
+		num = ".nan";
+	} else if (isinf(d)) {
+		num = d < 0 ? "-.inf" : ".inf";
+	}
 	if (builder_yaml_is_array(yaml)) {
 		builder_yaml_add_padding(yaml);
-		rz_strbuf_appendf(&yaml->sb, "- %f\n", d);
+		rz_strbuf_appendf(&yaml->sb, "- %s\n", num);
 	} else {
-		rz_strbuf_appendf(&yaml->sb, " %f\n", d);
+		rz_strbuf_appendf(&yaml->sb, " %s\n", num);
 	}
 	yaml->first = false;
+}
+
+static void builder_yaml_val_double(RZ_NULLABLE void *user, double d) {
+	char num[RZ_NUM_FLOAT_STR_SIZE];
+	builder_yaml_val_float_str((StructYamlPrinter *)user, d, rz_num_double_to_str(num, sizeof(num), d));
+}
+
+static void builder_yaml_val_float(RZ_NULLABLE void *user, float f) {
+	char num[RZ_NUM_FLOAT_STR_SIZE];
+	builder_yaml_val_float_str((StructYamlPrinter *)user, f, rz_num_float_to_str(num, sizeof(num), f));
 }
 
 static void builder_yaml_val_bool(RZ_NULLABLE void *user, bool b) {
@@ -187,6 +205,18 @@ static void builder_yaml_val_string(RZ_NULLABLE void *user, RZ_NONNULL const cha
 	}
 }
 
+static void builder_yaml_val_null(RZ_NULLABLE void *user) {
+	StructYamlPrinter *yaml = (StructYamlPrinter *)user;
+
+	if (builder_yaml_is_array(yaml)) {
+		builder_yaml_add_padding(yaml);
+		rz_strbuf_append(&yaml->sb, "- null\n");
+	} else {
+		rz_strbuf_append(&yaml->sb, " null\n");
+	}
+	yaml->first = false;
+}
+
 static const RzStructuredDataIterator builder_yaml_iterator = {
 	.new_struct = builder_yaml_new_struct,
 	.end_struct = builder_yaml_end_struct,
@@ -196,4 +226,6 @@ static const RzStructuredDataIterator builder_yaml_iterator = {
 	.val_double = builder_yaml_val_double,
 	.val_bool = builder_yaml_val_bool,
 	.val_string = builder_yaml_val_string,
+	.val_null = builder_yaml_val_null,
+	.val_float = builder_yaml_val_float,
 };

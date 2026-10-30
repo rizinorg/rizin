@@ -285,7 +285,9 @@ static bool init_symbols_info_aux(ELFOBJ *bin) {
 		return false;
 	}
 
-	return sdb_ns_set(bin->kv, "versioninfo", info);
+	bool r = sdb_ns_set(bin->kv, "versioninfo", info);
+	sdb_free(info);
+	return r;
 }
 
 static void init_symbols_info(ELFOBJ *bin) {

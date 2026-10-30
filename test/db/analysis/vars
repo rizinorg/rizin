@@ -469,7 +469,7 @@ afvW
 |           ; var int32_t var_4h @ stack - 0x4
 |           0x00000000      80b4           push  {r7}
 |           0x00000002      83b0           sub   sp, 0xc
-|           0x00000004      00af           add   r7, var_10h
+|           0x00000004      00af           add   r7, sp, 0
 |           0x00000006      7860           str   r0, [var_ch]
 |           0x00000008      0b46           mov   r3, r1
 |           0x0000000a      7b80           strh  r3, [var_eh]
@@ -696,7 +696,7 @@ EXPECT=<<EOF
 |           ; arg int a @ stack - 0xa
 |           0x000005e0      push  {r7, lr}
 |           0x000005e2      sub   sp, 0x18
-|           0x000005e4      add   r7, var_20h
+|           0x000005e4      add   r7, sp, 0
 |           0x000005e6      str   r0, [r7, 0x14]
 |           0x000005e8      str   r1, [r7, 0x10]
 |           0x000005ea      vstr  d0, [r7, 8]
@@ -763,7 +763,7 @@ EXPECT=<<EOF
 |           ; var int16_t var_20h @ stack - 0x20
 |           0x000005e0      push  {r7, lr}
 |           0x000005e2      sub   sp, 0x18
-|           0x000005e4      add   r7, var_20h
+|           0x000005e4      add   r7, sp, 0
 |           0x000005e6      str   r0, [r7, 0x14]
 |           0x000005e8      str   r1, [r7, 0x10]
 |           0x000005ea      vstr  d0, [r7, 8]
@@ -829,7 +829,7 @@ EXPECT=<<EOF
 |           ; var int16_t var_20h @ stack - 0x20
 |           0x000005e0      push  {r7, lr}
 |           0x000005e2      sub   sp, 0x18
-|           0x000005e4      add   r7, var_20h
+|           0x000005e4      add   r7, sp, 0
 |           0x000005e6      str   r0, [r7, 0x14]
 |           0x000005e8      str   r1, [r7, 0x10]
 |           0x000005ea      vstr  d0, [r7, 8]

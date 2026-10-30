@@ -3,6 +3,7 @@
 
 #include <rz_util.h>
 #include <rz_cons.h>
+#include "i/private.h"
 
 static void rz_line_nscompletion_init(RzLineNSCompletion *c) {
 	c->run = NULL;
@@ -19,7 +20,7 @@ static void undo_free(RzLine *line) {
 	line->undo_continue = false;
 }
 
-RZ_API RZ_OWN RzLine *rz_line_new(void) {
+RZ_API RZ_OWN RzLine *rz_line_new(RzCons *cons) {
 	RzLine *line = RZ_NEW0(RzLine);
 	if (!line) {
 		return NULL;
@@ -27,8 +28,9 @@ RZ_API RZ_OWN RzLine *rz_line_new(void) {
 	line->prompt = rz_str_dup("> ");
 	line->kill_ring = rz_list_newf(free);
 	line->kill_ring_ptr = -1;
+	line->cons = cons;
 #if __WINDOWS__
-	line->vtmode = rz_cons_detect_vt_mode();
+	line->vtmode = rz_cons_detect_vt_mode(cons);
 #else
 	line->vtmode = RZ_VIRT_TERM_MODE_COMPLETE;
 #endif
@@ -65,8 +67,7 @@ RZ_API void rz_line_set_prompt(RZ_NONNULL RzLine *line, RZ_NONNULL const char *p
 	rz_return_if_fail(line && prompt);
 	free(line->prompt);
 	line->prompt = rz_str_dup(prompt);
-	RzCons *cons = rz_cons_singleton();
-	line->cb_fkey = cons->cb_fkey;
+	line->cb_fkey = line->cons->cb_fkey;
 }
 
 // handle const or dynamic prompts?

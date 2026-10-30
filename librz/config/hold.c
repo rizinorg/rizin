@@ -3,15 +3,6 @@
 
 #include "config_internal.h"
 
-static RzList /*<char *>*/ *config_hold_dup_safe_list(RzConfigVar *var) {
-	// we do not know if the strings returned are
-	// safe or not to be owned, so we just dup them
-	RzList /*<const char *>*/ *list = rz_config_var_get_list(var);
-	RzList *safe_list = rz_config_dup_list(list);
-	rz_list_free(list);
-	return safe_list;
-}
-
 static void config_hold_value_init_from_node(ConfigValue *cv, RzConfigNode *node) {
 	cv->name = node->name;
 	if (rz_config_node_is_bool(node)) {
@@ -35,8 +26,8 @@ static void config_hold_value_init_from_var(ConfigValue *cv, RzConfigVar *var) {
 	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		const char *str = rz_config_var_get_string(var);
 		cv->value.string = rz_str_dup(str);
-	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-		cv->value.list = config_hold_dup_safe_list(var);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		cv->value.set = rz_config_var_get_set(var);
 	} else if (RZ_CONFIG_VAR_IS_TYPE(var->flags, RZ_CONFIG_VAR_TYPE_INT)) {
 		cv->value.integer = rz_config_var_get_integer(var);
 	} else {
@@ -104,8 +95,8 @@ static void config_hold_value_fini(void *e, void *user) {
 	ConfigValue *cv = (ConfigValue *)e;
 	if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 		free(cv->value.string);
-	} else if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-		rz_list_free(cv->value.list);
+	} else if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+		rz_set_s_free(cv->value.set);
 	}
 }
 
@@ -211,10 +202,10 @@ RZ_API void rz_config_hold_restore(RZ_NULLABLE RzConfigHold *hold) {
 			config_hold_set_integer(entry, cv->value.integer, cfg_user);
 		} else if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_STR)) {
 			config_hold_set_string(entry, cv->value.string, cfg_user);
-		} else if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_LIST)) {
-			// ownership of list moved to var.
-			rz_config_var_set_list(&entry->var, cv->value.list);
-			cv->value.list = NULL;
+		} else if (RZ_CONFIG_VAR_IS_TYPE(cv->flags, RZ_CONFIG_VAR_TYPE_SET)) {
+			// ownership of set moved to var.
+			rz_config_var_set_set2(&entry->var, cv->value.set);
+			cv->value.set = NULL;
 		} else { /// RZ_CONFIG_VAR_TYPE_ITV
 			rz_config_var_set_interval(&entry->var, cv->value.interval);
 		}

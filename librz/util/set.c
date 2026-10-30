@@ -4,6 +4,8 @@
 
 #include <rz_util/rz_set.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_str.h>
+#include <rz_list.h>
 
 /**
  * \brief Create a new hash set with C-string as elements.
@@ -11,6 +13,37 @@
  */
 RZ_API RZ_OWN RzSetS *rz_set_s_new(HtStrOption opt) {
 	return ht_sp_new(opt, NULL, NULL);
+}
+
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzSetS with the result.
+ *
+ * Split a string \p str according to the delimiter specified in \p c. It can
+ * optionally trim (aka remove spaces) the tokens. The result is a \p RzSetS with newly allocated strings for each
+ * token.
+ *
+ * \param _str Input string to split
+ * \param c Delimiter string used to split \p str
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNULL const char *c, bool trim) {
+	rz_return_val_if_fail(_str && c, NULL);
+	RzList *list = rz_str_split_duplist(_str, c, trim);
+	if (!list) {
+		return NULL;
+	}
+	RzSetS *set = rz_set_s_new(HT_STR_DUP);
+	if (!set) {
+		rz_list_free(list);
+		return NULL;
+	}
+	RzListIter *it;
+	const char *val;
+	rz_list_foreach (list, it, val) {
+		rz_set_s_add(set, val);
+	}
+	rz_list_free(list);
+	return set;
 }
 
 /**
@@ -38,13 +71,16 @@ RZ_API void rz_set_s_delete(RZ_NONNULL RzSetS *set, const char *str) {
 }
 
 /**
- * \brief Returns an iterator over the \p set with immutable elements.
+ * \brief Fills \p iter with an iterator over \p set, yielding immutable elements.
  *
- * \return Iterator yielding immutable elements.
+ * \param set The set to create the iterator for.
+ * \param iter Output parameter, filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RzIterator /* <RzSetS> */ *rz_set_s_as_iter(const RZ_NONNULL RzSetS *set) {
-	rz_return_val_if_fail(set, NULL);
-	return ht_sp_as_iter_keys((const HtSP *)set);
+RZ_API bool rz_set_s_as_iter(const RZ_NONNULL RzSetS *set, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(set, false);
+	return ht_sp_as_iter_keys((const HtSP *)set, iter);
 }
 
 static bool push_to_pvector(void *user, const char *k, RZ_UNUSED const void *v) {
@@ -86,8 +122,10 @@ RZ_API void rz_set_s_clear(RZ_NONNULL RzSetS *set) {
 /**
  * \brief Return number of elements saved in the set.
  */
-RZ_API ut32 rz_set_s_size(const RZ_NONNULL RzSetS *set) {
-	rz_return_val_if_fail(set, 0);
+RZ_API ut32 rz_set_s_size(const RZ_NULLABLE RzSetS *set) {
+	if (!set) {
+		return 0;
+	}
 	return ht_sp_size((HtSP *)set);
 }
 
@@ -169,11 +207,14 @@ RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set) {
 }
 
 /**
- * \brief Returns an iterator over the \p set with immutable elements.
+ * \brief Fills \p iterator with an iterator over the \p set, yielding immutable elements.
  *
- * \return Iterator yielding immutable elements.
+ * \param set The set to create the iterator for.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
  */
-RZ_API RzIterator /* <RzSetU> */ *rz_set_u_as_iter(const RZ_NONNULL RzSetU *set) {
-	rz_return_val_if_fail(set, NULL);
-	return ht_up_as_iter_keys((const HtUP *)set);
+RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(set, false);
+	return ht_up_as_iter_keys((const HtUP *)set, iterator);
 }

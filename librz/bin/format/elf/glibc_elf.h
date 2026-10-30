@@ -4608,6 +4608,66 @@ ARM32 relocations:
 #define R_AVR_PORT5          35
 #define R_AVR_32_PCREL       36
 
+/* TMS320C28x (C28x EABI) Relocations, SPRAC71C Table 11-5. That table lists
+   ABS22_BR as a duplicate of ABS22 at 5, but the assembler emits 20; verified
+   against ti-cgt-c2000 25.11.1.LTS output. */
+#define R_C28X_NONE       0
+#define R_C28X_ABS8       1
+#define R_C28X_ABS16      2
+#define R_C28X_ABS32      3
+#define R_C28X_ABSLO6     4 /* also R_C28X_ABSLO6_BLKD, blocked access */
+#define R_C28X_ABS22      5
+#define R_C28X_HI6        6
+#define R_C28X_DP_HI10    7
+#define R_C28X_DP_HI16    8
+#define R_C28X_PCREL16    9
+#define R_C28X_PCREL8     10
+#define R_C28X_HI16       11
+#define R_C28X_NEGWORD    12
+#define R_C28X_NEGBYTE    13
+#define R_C28X_ABS8_HI    14
+#define R_C28X_ABS13_SE16 15
+#define R_CLA_ABS16       16
+#define R_C28X_ABSLO7     17
+#define R_C28X_PREL31     18
+#define R_C28X_ABS22_BR   20
+
+/* TMS320C6000 (C6000 EABI) Relocations */
+#define R_C6000_NONE          0
+#define R_C6000_ABS32         1
+#define R_C6000_ABS16         2
+#define R_C6000_ABS8          3
+#define R_C6000_PCR_S21       4 /* 21-bit PC-relative branch displacement */
+#define R_C6000_PCR_S12       5
+#define R_C6000_PCR_S10       6
+#define R_C6000_PCR_S7        7
+#define R_C6000_ABS_S16       8
+#define R_C6000_ABS_L16       9 /* low 16 bits, MVKL */
+#define R_C6000_ABS_H16       10 /* high 16 bits, MVKH */
+#define R_C6000_SBR_U15_B     11 /* static-base-relative, unsigned, byte */
+#define R_C6000_SBR_U15_H     12 /* halfword */
+#define R_C6000_SBR_U15_W     13 /* word */
+#define R_C6000_SBR_S16       14
+#define R_C6000_SBR_L16_B     15
+#define R_C6000_SBR_L16_H     16
+#define R_C6000_SBR_L16_W     17
+#define R_C6000_SBR_H16_B     18
+#define R_C6000_SBR_H16_H     19
+#define R_C6000_SBR_H16_W     20
+#define R_C6000_SBR_GOT_U15_W 21
+#define R_C6000_SBR_GOT_L16_W 22
+#define R_C6000_SBR_GOT_H16_W 23
+#define R_C6000_DSBT_INDEX    24
+#define R_C6000_PREL31        25
+#define R_C6000_COPY          26
+#define R_C6000_JUMP_SLOT     27
+#define R_C6000_EHTYPE        28
+#define R_C6000_PCR_H16       29
+#define R_C6000_PCR_L16       30
+#define R_C6000_ALIGN         253
+#define R_C6000_FPHEAD        254
+#define R_C6000_NOCMP         255
+
 /* Dynamic array tags */
 
 #define DT_HEXAGON_SYMSZ 0x70000000

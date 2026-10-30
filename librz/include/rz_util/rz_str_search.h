@@ -43,11 +43,13 @@ typedef struct {
 	bool prefer_big_endian; ///< True if the preferred endianess for UTF strings is big-endian
 	bool check_ascii_freq; ///< If true, perform check on ASCII frequencies when looking for false positives
 	RzVector /*<RzCodePoint>*/ *user_unprintable; ///< Borrowed vector of user-defined non-printable code points
+	size_t max_matches; ///< Stop scanning once this many strings are detected, 0 for no limit
 } RzUtilStrScanOptions;
 
 RZ_API void rz_detected_string_free(RzDetectedString *str);
 
 RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type, RZ_NONNULL RzDetectedString **output);
+RZ_API bool rz_scan_strings_single_at_start_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type, RZ_NONNULL RzDetectedString **output);
 RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
 	const ut64 from, const ut64 to, RzStrEnc type);
 RZ_API int rz_scan_strings(RZ_NONNULL RzBuffer *buf_to_scan, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,

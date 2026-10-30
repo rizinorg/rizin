@@ -618,7 +618,6 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				}
 			}
 			copy_sym_name_with_namespace(class_name, name, method);
-			RZ_FREE(name);
 		}
 
 		r = va2pa(m.types, NULL, &left, bf);
@@ -640,17 +639,22 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 					goto error;
 				}
 				if (rz_buf_read_at(buf, r, (ut8 *)rtype, left) != left) {
-					free(rtype);
 					goto error;
 				}
 				rtype[left] = 0;
 			}
 			method->rtype = rz_str_dup(rtype);
-			RZ_FREE(rtype);
 		}
 
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
+			RZ_FREE(name);
+			RZ_FREE(rtype);
+			if (method) {
+				RZ_FREE(method->name);
+				RZ_FREE(method->rtype);
+				RZ_FREE(method->classname);
+			}
 			RZ_FREE(method);
 			goto next;
 		}
@@ -671,8 +675,14 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 	}
 	return;
 error:
-	RZ_FREE(method);
 	RZ_FREE(name);
+	RZ_FREE(rtype);
+	if (method) {
+		RZ_FREE(method->name);
+		RZ_FREE(method->rtype);
+		RZ_FREE(method->classname);
+	}
+	RZ_FREE(method);
 	return;
 }
 
@@ -1339,16 +1349,21 @@ static RzPVector /*<RzBinClass *>*/ *MACH0_(parse_categories)(RzBinFile *bf, RzB
 			goto error;
 		}
 		if (!(klass->fields = rz_list_newf((RzListFree)rz_bin_class_field_free))) {
+			rz_list_free(klass->methods);
 			RZ_FREE(klass);
 			goto error;
 		}
 		if (!read_ptr_pa(bf, buf, paddr + i, &p)) {
+			rz_list_free(klass->methods);
+			rz_list_free(klass->fields);
 			RZ_FREE(klass);
 			goto error;
 		}
 		MACH0_(get_category_t)
 		(p, bf, buf, klass, relocs, oi);
 		if (!klass->name) {
+			rz_list_free(klass->methods);
+			rz_list_free(klass->fields);
 			RZ_FREE(klass);
 			continue;
 		}

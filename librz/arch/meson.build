@@ -158,6 +158,7 @@ arch_isa_sources = [
   'isa/avr/disassembler.c',
   'isa/cil/cil_dis.c',
   'isa/cr16/cr16_disas.c',
+  'isa/c166/c166_common.c',
   'isa/dcpu16/asm.c',
   'isa/dcpu16/dis.c',
   'isa/ebc/ebc_disas.c',
@@ -248,6 +249,9 @@ arch_isa_sources = [
   'isa/luac/luajit/asm_2.1.c',
   'isa/luac/luajit/opcode_2.1.c',
   'isa/mcore/mcore.c',
+  'isa/m68k/m68k_cs.c',
+  'isa/m68k/m68k_il.c',
+  'isa/m68k/m68k_il_helpers.c',
   'isa/milstd1750/milstd1750_disas.c',
   'isa/mips/mips_assembler.c',
   'isa/mips/mips_esil.c',
@@ -321,12 +325,27 @@ arch_isa_sources = [
   'isa/tms320/c55_ir.c',
   'isa/tms320/c54x/c54x.c',
   'isa/tms320/c54x/c54x_il.c',
+  'isa/tms320/c2x/c2x.c',
+  'isa/tms320/c2x/c2x_il.c',
+  'isa/tms320/c5x/c5x.c',
+  'isa/tms320/c5x/c5x_decode.c',
+  'isa/tms320/c5x/c5x_il.c',
   'isa/tms320/c55x_plus/c55plus_arch.c',
   'isa/tms320/c55x/c55x_analysis.c',
   'isa/tms320/c55x_plus/c55plus_analysis.c',
   'isa/tms320/c55x_plus/c55plus_il_config.c',
   'isa/tms320/c55x_plus/ins.c',
-  'isa/tms320/c64x/c64x.c',
+  'isa/tms320/c6x/c6x_decode.c',
+  'isa/tms320/c6x/c6x_format.c',
+  'isa/tms320/c6x/c6x_analysis.c',
+  'isa/tms320/c6x/c6x_il.c',
+  'isa/tms320/c6x/c6x_packet.c',
+  'isa/tms320/c28x/c28x_decode.c',
+  'isa/tms320/c28x/c28x_format.c',
+  'isa/tms320/c28x/c28x_analysis.c',
+  'isa/tms320/c28x/c28x_il.c',
+  'isa/tms320/c28x/c28x_il_vcu.c',
+  'isa/tms320/c28x/c28x_il_fpu.c',
   'isa/tms320/tms320c55x_insn.c',
   'isa/v810/v810_disas.c',
   'isa/v810/v810_il.c',
@@ -343,21 +362,40 @@ arch_isa_includes = [
   'isa',
 ]
 
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 6
+if capstone_dep.version() == 'next'
   # plugins
   arch_plugins_list += [
+    'alpha_cs',
     'cbpf_cs',
+    'hppa_cs',
+    'loongarch_cs',
     'riscv_cs',
+    'xtensa_cs',
   ]
 
   # plugins sources
   arch_plugin_sources += [
+    'p/arch_alpha.c',
     'p/arch_cbpf_cs.c',
+    'p/arch_hppa_cs.c',
+    'p/arch_loongarch_cs.c',
     'p/arch_riscv_cs.c',
+    'p/arch_xtensa_cs.c',
+  ]
+
+  # isa sources
+  arch_isa_sources += [
+    'isa/riscv/riscv_il.c',
+    'isa/riscv/riscv_il_integer.c',
+    'isa/riscv/riscv_il_m.c',
+    'isa/riscv/riscv_il_compressed.c',
+    'isa/xtensa/xtensa.c',
+    'isa/xtensa/xtensa_esil.c',
+    'isa/xtensa/xtensa_il.c',
   ]
 endif
 
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 5
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() >= 6
   # plugins
   arch_plugins_list += [
     'bpf_cs',
@@ -369,7 +407,7 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   ]
 endif
 
-if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() >= 5
   # plugins
   arch_plugins_list += [
     'tricore_cs',
@@ -383,31 +421,6 @@ if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_i
   # isa sources
   arch_isa_sources += [
     'isa/tricore/tricore_il.c',
-  ]
-endif
-
-if capstone_dep.version() == 'next'
-  # plugins
-  arch_plugins_list += [
-    'alpha_cs',
-    'hppa_cs',
-    'loongarch_cs',
-    'xtensa_cs',
-  ]
-
-  # plugins sources
-  arch_plugin_sources += [
-    'p/arch_alpha.c',
-    'p/arch_loongarch_cs.c',
-    'p/arch_hppa_cs.c',
-    'p/arch_xtensa_cs.c',
-  ]
-
-  # isa sources
-  arch_isa_sources += [
-    'isa/xtensa/xtensa.c',
-    'isa/xtensa/xtensa_esil.c',
-    'isa/xtensa/xtensa_il.c',
   ]
 endif
 
@@ -483,10 +496,12 @@ arch_common_sources = [
   'platform_target_index.c',
   'reflines.c',
   'rtti.c',
+  'rtti_dlang.c',
   'rtti_itanium.c',
   'rtti_msvc.c',
   'serialize_analysis.c',
   'similarity.c',
+  'rtti_rust.c',
   'swift_rtti.c',
   'switch.c',
   'types.c',

@@ -1037,7 +1037,7 @@ EXPECT=<<EOF
 |                                                                      ; x9
 |           0x1000078e8      mov   x0, x8
 |           0x1000078ec      bl    fcn.100007bf8
-|           0x1000078f0      add   x8, var_48h
+|           0x1000078f0      add   x8, sp, 0x38
 |           0x1000078f4      str   x0, [var_48h]
 |           0x1000078f8      ldr   x9, [var_48h]                       ; x1
 |                                                                      ; [0x38:4]=-1
@@ -1207,7 +1207,7 @@ EXPECT=<<EOF
 |           0x100007934      add   x8, x8, 0x70                        ; 0x100008070 ; "X\x80\U00000001"
 |           0x100007938      mov   x0, x8                              ; void *instance
 |           0x10000793c      bl    sym.imp.objc_retain                 ; void objc_retain(void *instance)
-|           0x100007940      add   x8, var_48h
+|           0x100007940      add   x8, sp, 0x38
 |           0x100007944      str   x0, [var_48h]
 |           0x100007948      ldr   x9, [var_48h]                       ; [0x38:4]=-1 ; 56
 |           0x10000794c      adrp  x0, data.100007000                  ; 0x100007000
@@ -1257,5 +1257,573 @@ EXPECT=<<EOF
 |           0x100003e8c      ldp   fp, lr, [var_10h]
 |           0x100003e90      add   sp, sp, 0x30
 \           0x100003e94      ret
+EOF
+RUN
+
+NAME=dlang class devirtualization
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+avD @ 0x4d900
+pdf @ 0x4d900
+avD @ 0x4d8d8
+pdf @ 0x4d8d8
+avD @ 0x4d8f0
+pdf @ 0x4d8f0
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from main @ 0x4d9bc
+            ;-- rip:
+/ sym._Dmain(int64_t arg2);
+|           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           0x0004d900      push  rbp
+|           0x0004d901      mov   rbp, rsp
+|           0x0004d904      sub   rsp, 0x20
+|           0x0004d908      lea   rdi, qword obj.class_dlang.Polygon.__Class ; D11class_dlang7Polygon7__ClassZ
+|                                                                      ; 0xa4030 ; "pF\n" ; int64_t arg1
+|           0x0004d90f      call  sym._d_newclass
+|           0x0004d914      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d917      call  sym.class_dlang.Polygon_class_dlang.Polygon.__ctor
+|           0x0004d91c      mov   qword [var_20h], rax
+|           0x0004d920      lea   rdi, qword obj.class_dlang.Rectangle.__Class ; D11class_dlang9Rectangle7__ClassZ
+|                                                                      ; 0xa4140 ; "pF\n" ; int64_t arg1
+|           0x0004d927      call  sym._d_newclass
+|           0x0004d92c      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d92f      call  sym.class_dlang.Rectangle_class_dlang.Rectangle.__ctor
+|           0x0004d934      mov   qword [var_18h], rax
+|           0x0004d938      lea   rdi, qword obj.class_dlang.Triangle.__Class ; D11class_dlang8Triangle7__ClassZ
+|                                                                      ; 0xa4250 ; "pF\n" ; int64_t arg1
+|           0x0004d93f      call  sym._d_newclass
+|           0x0004d944      mov   rdi, rax                             ; int64_t arg1
+|           0x0004d947      call  sym.class_dlang.Triangle_class_dlang.Triangle.__ctor
+|           0x0004d94c      mov   qword [var_10h], rax
+|           0x0004d950      mov   edx, 0x04
+|           0x0004d955      mov   esi, 0x05
+|           0x0004d95a      mov   rdi, qword [var_20h]
+|           0x0004d95e      mov   rcx, qword [rdi]
+|           0x0004d961      call  qword [rcx+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d965      mov   edx, 0x04
+|           0x0004d96a      mov   esi, 0x05
+|           0x0004d96f      mov   rdi, qword [var_18h]
+|           0x0004d973      mov   rax, qword [rdi]
+|           0x0004d976      call  qword [rax+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d97a      mov   edx, 0x04
+|           0x0004d97f      mov   esi, 0x05
+|           0x0004d984      mov   rdi, qword [var_10h]
+|           0x0004d988      mov   rcx, qword [rdi]
+|           0x0004d98b      call  qword [rcx+0x28]                     ; Virtual call: sym.void_class_dlang.Polygon.set_values_int__int
+|           0x0004d98f      mov   rdi, qword [var_20h]                 ; int64_t arg1
+|           0x0004d993      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d998      mov   rdi, qword [var_20h]                 ; int64_t arg1
+|           0x0004d99c      call  sym.void_class_dlang.printSides_class_dlang.Polygon
+|           0x0004d9a1      mov   rdi, qword [var_18h]                 ; int64_t arg1
+|           0x0004d9a5      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d9aa      mov   rdi, qword [var_10h]                 ; int64_t arg1
+|           0x0004d9ae      call  sym.void_class_dlang.printArea_class_dlang.Polygon
+|           0x0004d9b3      xor   eax, eax
+|           0x0004d9b5      leave
+\           0x0004d9b6      ret
+            ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
+            ;-- rip:
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
+|           0x0004d8d9      mov   rbp, rsp
+|           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8df      call  qword [rax+0x30]                     ; Virtual call: sym.int_class_dlang.Polygon.area / sym.int_class_dlang.Rectangle.area / sym.int_class_dlang.Triangle.area
+|           0x0004d8e3      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8e5      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8ea      pop   rbp
+\           0x0004d8eb      ret
+            ; CALL XREF from sym._Dmain @ 0x4d99c
+/ sym.void_class_dlang.printSides_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8ec      push  rbp                                  ; void class_dlang.printSides(class_dlang.Polygon)
+|           0x0004d8ed      mov   rbp, rsp
+|           ;-- rip:
+|           0x0004d8f0      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8f3      call  qword [rax+0x38]                     ; Virtual call: sym.int_class_dlang.Polygon.sides
+|           0x0004d8f7      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8f9      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8fe      pop   rbp
+\           0x0004d8ff      ret
+EOF
+RUN
+
+NAME=dlang devirtualization elf (dlang_pet)
+FILE=bins/elf/dlang_pet
+CMDS=<<EOF
+aaa
+avD @ 0x400c2c
+pdf @ 0x400c2c
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from dbg._Dmain @ 0x400d1b, 0x400d58, 0x400d93
+            ;-- ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet):
+            ;-- dbg.ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet:
+            ;-- rip:
+/ ulong ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)(struct pets.BasePet *base, struct pets.Pet *pet, struct pets.Runner *runner, struct pets.Speaker *speaker)
+|           ; var int64_t arg1 @ rdi
+|           ; var int64_t arg2 @ rsi
+|           ; var int64_t arg3 @ rdx
+|           ; var int64_t arg4 @ rcx
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_28h @ stack - 0x28
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; arg struct pets.BasePet *base @ stack + 0x344
+|           ; arg struct pets.Pet *pet @ stack + 0x344
+|           ; arg struct pets.Runner *runner @ stack + 0x344
+|           ; arg struct pets.Speaker *speaker @ stack + 0x344
+|           ; var ulong result @ rbx
+|           0x00400c2c      push  rbp                                  ; pets.d:67 ; ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)
+|           0x00400c2d      mov   rbp, rsp
+|           0x00400c30      sub   rsp, 0x30
+|           0x00400c34      mov   qword [var_30h], rbx
+|           0x00400c38      mov   qword [var_28h], rdi                 ; arg1
+|           0x00400c3c      mov   qword [var_20h], rsi                 ; arg2
+|           0x00400c40      mov   qword [var_18h], rdx                 ; arg3
+|           0x00400c44      mov   qword [var_10h], rcx                 ; arg4
+|           0x00400c48      mov   rdi, qword [var_10h]                 ; pets.d:68
+|           0x00400c4c      mov   rax, qword [rdi]
+|           0x00400c4f      call  qword [rax+0x08]                     ; 8 ; Virtual call: sym._THUNK4 / loc.unknown_12 / sym._THUNK7
+|           0x00400c53      mov   rbx, rax
+|           0x00400c56      mov   rdi, qword [var_18h]                 ; pets.d:69
+|           0x00400c5a      mov   rcx, qword [rdi]
+|           0x00400c5d      call  qword [rcx+0x08]                     ; 8 ; Virtual call: sym._THUNK3
+|           0x00400c61      add   rbx, rax
+|           0x00400c64      mov   rdi, qword [var_20h]                 ; pets.d:70
+|           0x00400c68      mov   rdx, qword [rdi]
+|           0x00400c6b      call  qword [rdx+0x18]                     ; 24 ; Virtual call: sym._THUNK2 / sym._THUNK10 / sym._THUNK6
+|           0x00400c6f      add   rbx, rax
+|           0x00400c72      mov   rdi, qword [var_28h]                 ; pets.d:71
+|           0x00400c76      mov   rax, qword [rdi]
+|           0x00400c79      call  qword [rax+0x40]                     ; 64 ; Virtual call: sym.ulong_pets.LoudPet.classValue / sym.ulong_pets.BasePet.classValue
+|           0x00400c7d      add   rbx, rax
+|           0x00400c80      mov   rax, rbx
+|           0x00400c83      mov   rbx, qword [var_30h]                 ; pets.d:73
+|           0x00400c87      mov   rsp, rbp
+|           0x00400c8a      pop   rbp
+\           0x00400c8b      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (PE)
+FILE=bins/pe/dlang_pet/dlang_pet.exe
+CMDS=<<EOF
+idp bins/pe/dlang_pet/dlang_pet.pdb
+aaa
+avD @ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm
+pdf @ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm
+EOF
+EXPECT=<<EOF
+            ; CODE XREF from sym.dlang_pet_Og.exe_ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet @ 0x1400056f5
+            ;-- rip:
+/ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           ; arg int64_t arg4 @ r9
+|           ; var int64_t var_18h @ stack - 0x18
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; var int64_t var_8h @ stack + 0x8
+|           ; var int64_t var_20h @ stack + 0x20
+|           0x14000cb50      push  rbp
+|           0x14000cb51      mov   rbp, rsp
+|           0x14000cb54      sub   rsp, 0x30
+|           0x14000cb58      mov   qword [var_18h], rbx
+|           0x14000cb5c      mov   qword [var_10h], rsi
+|           0x14000cb60      mov   qword [var_8h], rcx                 ; arg1
+|           0x14000cb64      mov   qword [var_8h + 0x8], rdx           ; arg2
+|           0x14000cb68      mov   qword [var_8h + 0x10], r8           ; arg3
+|           0x14000cb6c      mov   qword [var_20h], r9                 ; arg4
+|           0x14000cb70      mov   rcx, qword [var_20h]
+|           0x14000cb74      mov   rax, qword [rcx]
+|           0x14000cb77      call  qword [rax+0x08]                    ; 8 ; Virtual call: interface_0x10_0x8 / interface_0x28_0x8
+|           0x14000cb7b      mov   rsi, rax
+|           0x14000cb7e      mov   rcx, qword [var_8h + 0x10]
+|           0x14000cb82      mov   rdx, qword [rcx]
+|           0x14000cb85      call  qword [rdx+0x08]                    ; 8 ; Virtual call: interface_0x18_0x8
+|           0x14000cb89      add   rsi, rax
+|           0x14000cb8c      mov   rcx, qword [var_8h + 0x8]
+|           0x14000cb90      mov   rbx, qword [rcx]
+|           0x14000cb93      call  qword [rbx+0x18]                    ; 24 ; Virtual call: interface_0x10_0x18
+|           0x14000cb97      add   rsi, rax
+|           0x14000cb9a      mov   rcx, qword [var_8h]
+|           0x14000cb9e      mov   rax, qword [rcx]
+|           0x14000cba1      call  qword [rax+0x40]                    ; 64 ; Virtual call: virtual_0x40
+|           0x14000cba5      add   rsi, rax
+|           0x14000cba8      mov   rax, rsi
+|           0x14000cbab      mov   rbx, qword [var_18h]
+|           0x14000cbaf      mov   rsi, qword [var_10h]
+|           0x14000cbb3      mov   rsp, rbp
+|           0x14000cbb6      pop   rbp
+\           0x14000cbb7      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (MachO)
+FILE=bins/mach0/dlang-hello
+CMDS=<<EOF
+aaa
+avD @ 0x100001eb0
+pdf @ 0x100001eb0
+EOF
+EXPECT=<<EOF
+            ;-- func.100001eb0:
+            ;-- rip:
+/ sym.nothrow__trusted_ulong_std.bitmanip.FloatRep.__xtoHash_ref_const_std.bitmanip.FloatRep(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x100001eb0      push  r14                                 ; nothrow @trusted ulong std.bitmanip.FloatRep.__xtoHash(ref const(std.bitmanip.FloatRep))
+|           0x100001eb2      push  rbx
+|           0x100001eb3      push  rax
+|           0x100001eb4      mov   rbx, rdi                            ; arg1
+|           0x100001eb7      mov   rdi, qword [reloc.TypeInfo_xf.__init] ; [0x100072030:8]=0x100079f80 sym.TypeInfo_xf.__init
+|           0x100001ebe      mov   rax, qword [rdi]
+|           0x100001ec1      mov   rsi, rbx
+|           0x100001ec4      call  qword [rax+0x28]                    ; 40 ; Virtual call: sym.const_nothrow__safe_ulong_object.TypeInfo_Const.getHash_const_void
+|           0x100001ec7      mov   r14, rax
+|           0x100001eca      mov   rdi, qword [reloc.TypeInfo_xk.__init] ; [0x100072048:8]=0x1000779d0 rdi
+|           0x100001ed1      mov   rax, qword [rdi]
+|           0x100001ed4      mov   rsi, rbx
+|           0x100001ed7      call  qword [rax+0x28]                    ; 40 ; Virtual call: sym.const_nothrow__safe_ulong_object.TypeInfo_Const.getHash_const_void
+|           0x100001eda      add   rax, r14
+|           0x100001edd      add   rsp, 0x08
+|           0x100001ee1      pop   rbx
+|           0x100001ee2      pop   r14
+\           0x100001ee4      ret
+EOF
+RUN
+
+NAME=dlang devirtualization (elf)
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+acvl class_dlang_Polygon
+avD @ 0x4d8d8
+pdf @ 0x4d8d8
+EOF
+EXPECT=<<EOF
+class_dlang_Polygon:
+     0 vtable 0xa40e0 @ +0x0 size:+0x40
+            ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
+            ;-- rip:
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
+|           ; arg int64_t arg1 @ rdi
+|           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
+|           0x0004d8d9      mov   rbp, rsp
+|           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1
+|           0x0004d8df      call  qword [rax+0x30]                     ; Virtual call: sym.int_class_dlang.Polygon.area / sym.int_class_dlang.Rectangle.area / sym.int_class_dlang.Triangle.area
+|           0x0004d8e3      mov   edi, eax                             ; int64_t arg1
+|           0x0004d8e5      call  sym._safe_void_std.stdio.writeln__int_.writeln_int
+|           0x0004d8ea      pop   rbp
+\           0x0004d8eb      ret
+EOF
+RUN
+
+
+NAME=Rust Any
+FILE=bins/elf/rust_any
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any::run.h0a82aaa13d7b7fdd @ 0x13a6b
+            ;-- rust_any::call::he67fe7e46be4f205:
+            ;-- method.rust_any::call.he67fe7e46be4f205:
+            ;-- rip:
+/ void call()
+|           ; var unsigned long arg4 @ rcx
+|           ; var int64_t arg3 @ rdx
+|           ; var unsigned long arg7 @ xmm0
+|           ; arg struct &dyn rust_any::Pet p @ COMPOSITE
+|           ; arg struct &dyn core::any::Any a @ COMPOSITE
+|           0x00013a80      push  r15                                  ; rust_any.rs:23 ; rust_any::call::he67fe7e46be4f205
+|           0x00013a82      push  r14
+|           0x00013a84      push  rbx
+|           0x00013a85      sub   rsp, 0x10
+|           0x00013a89      mov   rbx, rcx                             ; arg4
+|           0x00013a8c      mov   r14, rdx                             ; arg3
+|           0x00013a8f      call  qword [rsi+0x18]                     ; rust_any.rs:24 ; Rust Virtual Call: <rust_any::Dog as rust_any::Pet>::say::h068f985a4f49ea94
+|           0x00013a92      mov   r15, rax
+|           0x00013a95      mov   rdi, rsp                             ; rust_any.rs
+|           0x00013a98      mov   rsi, r14                             ; any.rs:201
+|           0x00013a9b      call  qword [rbx+0x18]                     ; Any::type_id: impl_T
+|           0x00013a9e      movdqa xmm0, xmmword [rsp]                 ; any.rs:764
+|           0x00013aa3      pcmpeqb xmm0, xmmword [data.00004d30]      ; arg7 ; Any downcast: impl_T
+|           0x00013aab      pmovmskb ecx, xmm0
+|           0x00013aaf      xor   eax, eax
+|           0x00013ab1      cmp   ecx, data.0000ffff                   ; 0xffff ; "" ; arg4
+|           0x00013ab7      setz  al
+|           0x00013aba      add   rax, r15                             ; rust_any.rs:25
+|           0x00013abd      add   rsp, 0x10                            ; rust_any.rs:26
+|           0x00013ac1      pop   rbx
+|           0x00013ac2      pop   r14
+|           0x00013ac4      pop   r15
+\           0x00013ac6      ret
+EOF
+RUN
+
+NAME=Rust ARM
+FILE=bins/elf/rust_any_arm
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any_9c71d8365cea50ec_.run @ 0x8160
+            ;-- rust_any[9c71d8365cea50ec]::call:
+            ;-- method.rust_any_9c71d8365cea50ec_.call:
+            ;-- pc:
+/ void call()
+|           ; var const char *arg2 @ x1
+|           ; var int64_t arg4 @ x3
+|           ; var int64_t arg3 @ x2
+|           ; var int64_t arg1 @ x0
+|           ; var int64_t var_30h @ stack - 0x30
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_10h @ stack - 0x10
+|           ; arg struct &dyn rust_any::Pet p @ COMPOSITE
+|           ; arg struct &dyn core::any::Any a @ COMPOSITE
+|           0x00008170      sub   sp, sp, 0x30                         ; rust_any.rs:20 ; rust_any[9c71d8365cea50ec]::call
+|           0x00008174      stp   fp, lr, [var_20h]
+|           0x00008178      stp   x20, x19, [var_10h]
+|           0x0000817c      add   fp, sp, 0x10
+|           ; DATA XREF from method._addr2line_1dc6989b2d131d62_::Context_gimli_a40298600a05aaa2_::read::endian_slice::EndianSlice_gimli_a40298600a05aaa2_::endianity::LittleEndian___.find_unit @ 0x17d38
+|           0x00008180      ldr   x8, [x1, 0x18]                       ; rust_any.rs:21 ; aav.0x00000018
+|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f" ; arg2
+|           0x00008184      mov   x19, x3                              ; rust_any.rs ; arg4
+|           0x00008188      mov   x20, x2                              ; arg3
+|           0x0000818c      blr   x8                                   ; rust_any.rs:21 ; Rust Virtual Call: <rust_any[9c71d8365cea50ec]::Dog as rust_any[9c71d8365cea50ec]::Pet>::say
+|           0x00008190      ldr   x9, [x19, 0x18]                      ; any.rs:201 ; aav.0x00000018
+|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f"
+|           0x00008194      mov   x19, x0                              ; rust_any.rs:21 ; arg1
+|           0x00008198      mov   x8, sp                               ; any.rs:201
+|           0x0000819c      mov   x0, x20
+|           0x000081a0      blr   x9                                   ; Any::type_id: impl_rust_any_9c71d8365cea50ec_::Dog
+|           0x000081a4      mov   x10, 0xf57b                          ; any.rs
+|           0x000081a8      ldp   x8, x9, [sp]                         ; any.rs:764
+|           0x000081ac      movk  x10, 0x1d02, lsl 16
+|           0x000081b0      movk  x10, 0x70c1, lsl 32
+|           0x000081b4      movk  x10, 0xe3bd, lsl 48
+|           0x000081b8      cmp   x8, x10
+|           0x000081bc      mov   x8, 0x5f43                           ; 'C_'
+|           0x000081c0      movk  x8, 0xfa86, lsl 16
+|           0x000081c4      movk  x8, 0x9d95, lsl 32
+|           0x000081c8      movk  x8, 0x641c, lsl 48
+|           0x000081cc      ccmp  x9, x8, 0, eq
+|           0x000081d0      cinc  x0, x19, eq                          ; rust_any.rs:22
+|           0x000081d4      ldp   x20, x19, [var_10h]                  ; rust_any.rs:23
+|           0x000081d8      ldp   fp, lr, [var_20h]
+|           0x000081dc      add   sp, sp, 0x30
+|           ; XREFS: DATA 0x0000ae50  DATA 0x00018380  DATA 0x000183c8
+|           ; XREFS: DATA 0x000183e4  DATA 0x00018400  DATA 0x0001841c
+\           0x000081e0      ret
+EOF
+RUN
+
+NAME=Rust PE
+FILE=bins/pe/rust_any.exe
+BROKEN=1
+CMDS=<<EOF
+aaa
+avrr
+avD @ dbg.call
+pdf @ dbg.call
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from method.rust_any_90e241cba78717c0_.run @ 0x1400014eb
+            ;-- rust_any[90e241cba78717c0]::call:
+            ;-- method.rust_any_90e241cba78717c0_.call:
+            ;-- rip:
+/ void call()
+|           ; var int64_t arg4 @ r9
+|           ; var int64_t arg3 @ r8
+|           ; var int64_t var_28h @ stack - 0x28
+|           0x140001500      push  rsi                                 ; rust_any.rs:20 ; rust_any[90e241cba78717c0]::call
+|           0x140001501      push  rdi
+|           0x140001502      push  rbx
+|           0x140001503      sub   rsp, 0x30
+|           0x140001507      mov   rsi, r9                             ; arg4
+|           0x14000150a      mov   rdi, r8                             ; arg3
+|           0x14000150d      call  qword [rdx+0x18]                    ; rust_any.rs:21 ; 24 ; Rust Virtual Call: <rust_any[90e241cba78717c0]::Dog as rust_any[90e241cba78717c0]::Pet>::say
+|           0x140001510      mov   rbx, rax
+|           0x140001513      lea   rcx, qword [var_28h]
+|           0x140001518      mov   rdx, rdi                            ; library\core\src\any.rs:201
+|           0x14000151b      call  qword [rsi+0x18]                    ; 24 ; Any::type_id: impl_rust_any_90e241cba78717c0_::Dog
+|           0x14000151e      movdqa xmm0, xmmword [var_28h]            ; library\core\src\any.rs:764
+|           0x140001524      pcmpeqb xmm0, xmmword [section..rdata]    ; Any downcast: impl_rust_any_90e241cba78717c0_::Dog
+|           0x14000152c      pmovmskb ecx, xmm0
+|           0x140001530      xor   eax, eax
+|           0x140001532      cmp   ecx, 0xffff
+|           0x140001538      setz  al
+|           0x14000153b      add   rax, rbx                            ; rust_any.rs:22
+|           0x14000153e      add   rsp, 0x30                           ; rust_any.rs:23
+|           0x140001542      pop   rbx
+|           0x140001543      pop   rdi
+|           0x140001544      pop   rsi
+\           0x140001545      ret
+EOF
+RUN
+
+NAME=Rust devirtualization
+FILE=bins/elf/dwarf_rust_bubble
+CMDS=<<EOF
+aaa
+avD @ 0x000287e0
+pdf @ 0x000287e0
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from method._core::str::Utf8Error_as_core::fmt::Debug_::fmt.h74d4f645257c333c @ 0x250eb
+            ;-- core::fmt::builders::DebugStruct::field::h1e815875a24d07eb:
+            ;-- rip:
+/ method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb(long long unsigned int arg1, int64_t arg5, int64_t arg4, int64_t arg3, int64_t arg2);
+|           ; var long long unsigned int arg1 @ rdi
+|           ; var int64_t arg5 @ r8
+|           ; var int64_t arg4 @ rcx
+|           ; var int64_t arg3 @ rdx
+|           ; var int64_t arg2 @ rsi
+|           ; var int64_t var_99h @ stack - 0x99
+|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int64_t var_88h @ stack - 0x88
+|           ; var int64_t var_78h @ stack - 0x78
+|           ; var int64_t var_68h @ stack - 0x68
+|           ; var int64_t var_58h @ stack - 0x58
+|           ; var int64_t var_50h @ stack - 0x50
+|           ; var int64_t var_48h @ stack - 0x48
+|           ; var int64_t var_44h @ stack - 0x44
+|           ; var int64_t var_40h @ stack - 0x40
+|           ; arg struct DebugStruct *self @ rbx
+|           ; arg struct &str name @ ...
+|           ; arg struct &Debug value @ ...
+|           0x000287e0      push  rbp                                  ; builders.rs:136 ; core::fmt::builders::DebugStruct::field::h1e815875a24d07eb
+|           0x000287e1      push  r15
+|           0x000287e3      push  r14
+|           0x000287e5      push  r13
+|           0x000287e7      push  r12
+|           0x000287e9      push  rbx
+|           0x000287ea      sub   rsp, 0x78
+|           0x000287ee      mov   rbx, rdi                             ; arg1
+|           0x000287f1      mov   r13b, 0x01
+|           0x000287f4      cmp   byte [rdi+0x08], 0x00                ; builders.rs:137 ; arg1
+|       ,=< 0x000287f8      jz    0x28814                              ; result.rs:727
+|       |   ; CODE XREF from method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb @ 0x28984
+| ......--> 0x000287fa      mov   byte [rbx+0x08], r13b                ; builders.rs:137
+| ::::::|   0x000287fe      mov   byte [rbx+0x09], 0x01                ; builders.rs:158
+| ::::::|   0x00028802      mov   rax, rbx                             ; builders.rs:160
+| ::::::|   0x00028805      add   rsp, 0x78
+| ::::::|   0x00028809      pop   rbx
+| ::::::|   0x0002880a      pop   r12
+| ::::::|   0x0002880c      pop   r13
+| ::::::|   0x0002880e      pop   r14
+| ::::::|   0x00028810      pop   r15
+| ::::::|   0x00028812      pop   rbp
+| ::::::|   0x00028813      ret
+| ::::::`-> 0x00028814      mov   r14, r8                              ; builders.rs ; arg5
+| ::::::    0x00028817      mov   r15, rcx                             ; arg4
+| ::::::    0x0002881a      mov   r12, rdx                             ; arg3
+| ::::::    0x0002881d      mov   rbp, rsi                             ; arg2
+| ::::::    0x00028820      mov   rax, qword [rbx]                     ; builders.rs:256
+| ::::::    0x00028823      mov   edx, dword [rax+0x30]                ; mod.rs:1711
+| ::::::    0x00028826      mov   cl, byte [rbx+0x09]                  ; builders.rs
+| ::::::    0x00028829      test  dl, 0x04                             ; mod.rs:1711
+| ::::::,=< 0x0002882c      jnz   0x288a3                              ; builders.rs:138
+| ::::::|   0x0002882e      xor   edx, edx                             ; builders.rs
+| ::::::|   0x00028830      test  cl, cl
+| ::::::|   0x00028832      lea   rcx, qword obj.anon.99084305e5fecf16f700a7399605ba78.11.llvm.12252731403998365491 ; builders.rs:150 ; 0x2dde5 ; " { } }(\n(,)\n[]"
+| ::::::|   0x00028839      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.10.llvm.12252731403998365491 ; 0x2dde3 ; ",  { } }(\n(,)\n[]"
+| ::::::|   0x00028840      cmovz rsi, rcx
+| ::::::|   0x00028844      setz  dl                                   ; builders.rs
+| ::::::|   0x00028847      or    rdx, 0x02                            ; builders.rs:150
+| ::::::|   0x0002884b      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x0002884f      mov   rax, qword [rax+0x28]
+| ::::::|   0x00028853      call  qword [rax+0x18]
+| ::::::|   0x00028856      test  al, al                               ; builders.rs:151
+| ::::::|   0x00028858      jnz   0x287fa
+| ::::::|   0x0002885a      mov   rax, qword [rbx]                     ; builders.rs:152
+| ::::::|   0x0002885d      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x00028861      mov   rax, qword [rax+0x28]
+| ::::::|   0x00028865      mov   rsi, rbp
+| ::::::|   0x00028868      mov   rdx, r12
+| ::::::|   0x0002886b      call  qword [rax+0x18]
+| ::::::|   0x0002886e      test  al, al                               ; builders.rs:152
+| ::::::|   0x00028870      jnz   0x287fa
+| ::::::|   0x00028872      mov   rax, qword [rbx]                     ; builders.rs:153
+| ::::::|   0x00028875      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| ::::::|   0x00028879      mov   rax, qword [rax+0x28]
+| ::::::|   0x0002887d      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.8.llvm.12252731403998365491 ; 0x2dddf ; ": ,\n,  { } }(\n(,)\n[]"
+| ::::::|   0x00028884      mov   edx, 0x02
+| ::::::|   0x00028889      call  qword [rax+0x18]
+| ::::::|   0x0002888c      test  al, al                               ; builders.rs:153
+| `=======< 0x0002888e      jnz   0x287fa
+|  :::::|   0x00028894      mov   rsi, qword [rbx]                     ; builders.rs:154
+|  :::::|   0x00028897      mov   rdi, r15
+|  :::::|   0x0002889a      call  qword [r14+0x18]
+| ,=======< 0x0002889e      jmp   0x28981
+| |:::::`-> 0x000288a3      test  cl, cl                               ; builders.rs
+| |:::::,=< 0x000288a5      jnz   0x288cc                              ; builders.rs:139
+| |:::::|   0x000288a7      mov   rdi, qword [rax+0x20]                ; mod.rs:1461
+| |:::::|   0x000288ab      mov   rax, qword [rax+0x28]
+| |:::::|   0x000288af      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.7.llvm.12252731403998365491 ; 0x2dddc ; " {\n: ,\n,  { } }(\n(,)\n[]"
+| |:::::|   0x000288b6      mov   edx, 0x03
+| |:::::|   0x000288bb      call  qword [rax+0x18]
+| |:::::|   0x000288be      test  al, al                               ; builders.rs:140
+| |`======< 0x000288c0      jnz   0x287fa
+| | ::::|   0x000288c6      mov   rax, qword [rbx]                     ; builders.rs:144
+| | ::::|   0x000288c9      mov   edx, dword [rax+0x30]                ; mod.rs:1140
+| | ::::`-> 0x000288cc      mov   byte [var_99h], 0x01                 ; builders.rs:143
+| | ::::    0x000288d1      movups xmm0, xmmword [rax+0x20]            ; mod.rs:1137
+| | ::::    0x000288d5      movaps xmmword [var_98h], xmm0             ; builders.rs:25
+| | ::::    0x000288da      lea   rcx, qword [var_99h]
+| | ::::    0x000288df      mov   qword [var_88h], rcx
+| | ::::    0x000288e4      mov   ecx, dword [rax+0x34]                ; mod.rs:1141
+| | ::::    0x000288e7      mov   sil, byte [rax+0x38]                 ; mod.rs:1142
+| | ::::    0x000288eb      movups xmm0, xmmword [rax]                 ; mod.rs:1143
+| | ::::    0x000288ee      movups xmm1, xmmword [rax+0x10]            ; mod.rs:1144
+| | ::::    0x000288f2      mov   dword [var_48h], edx                 ; mod.rs:1135
+| | ::::    0x000288f6      mov   dword [var_44h], ecx
+| | ::::    0x000288fa      mov   byte [var_40h], sil
+| | ::::    0x000288ff      movaps xmmword [var_78h], xmm0
+| | ::::    0x00028904      movaps xmmword [var_68h], xmm1
+| | ::::    0x00028909      lea   rdi, qword [var_98h]
+| | ::::    0x0002890e      mov   qword [var_58h], rdi
+| | ::::    0x00028913      lea   rax, qword vtable.impl_core::fmt::builders::PadAdapter_as_core::fmt::Write.0 ; r13
+| | ::::                                                               ; 0x396b8 ; "\xb0^\U00000002"
+| | ::::    0x0002891a      mov   qword [var_50h], rax
+| | ::::    0x0002891f      mov   rax, qword [data.000396d0]           ; mod.rs:1461 ; [0x396d0:8]=0x28360 rbp ; "`\x83\U00000002"
+| | ::::    0x00028926      mov   rsi, rbp
+| | ::::    0x00028929      mov   rdx, r12
+| | ::::    0x0002892c      mov   rbp, rax
+| | ::::    0x0002892f      call  rax
+| | ::::    0x00028931      test  al, al                               ; builders.rs:145
+| | `=====< 0x00028933      jnz   0x287fa
+| |  :::    0x00028939      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.8.llvm.12252731403998365491 ; mod.rs:1461 ; 0x2dddf ; ": ,\n,  { } }(\n(,)\n[]"
+| |  :::    0x00028940      lea   rdi, qword [var_98h]                 ; mod.rs
+| |  :::    0x00028945      mov   edx, 0x02                            ; mod.rs:1461
+| |  :::    0x0002894a      call  rbp
+| |  :::    0x0002894c      test  al, al                               ; builders.rs:146
+| |  `====< 0x0002894e      jnz   0x287fa
+| |   ::    0x00028954      lea   rsi, qword [var_78h]                 ; builders.rs
+| |   ::    0x00028959      mov   rdi, r15                             ; builders.rs:147
+| |   ::    0x0002895c      call  qword [r14+0x18]
+| |   ::    0x00028960      test  al, al
+| |   `===< 0x00028962      jnz   0x287fa
+| |    :    0x00028968      mov   rdi, qword [var_58h]                 ; mod.rs:1461
+| |    :    0x0002896d      mov   rax, qword [var_50h]
+| |    :    0x00028972      lea   rsi, qword obj.anon.99084305e5fecf16f700a7399605ba78.9.llvm.12252731403998365491 ; 0x2dde1 ; ",\n,  { } }(\n(,)\n[]"
+| |    :    0x00028979      mov   edx, 0x02
+| |    :    0x0002897e      call  qword [rax+0x18]                     ; Rust Virtual Call: <core::fmt::builders::PadAdapter as core::fmt::Write>::write_str::h31390fd94230d396
+| |    :    ; CODE XREF from method.core::fmt::builders::DebugStruct::field.h1e815875a24d07eb @ 0x2889e
+| `-------> 0x00028981      mov   r13d, eax                            ; builders.rs
+\      `==< 0x00028984      jmp   0x287fa
 EOF
 RUN

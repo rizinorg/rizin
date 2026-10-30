@@ -20,7 +20,7 @@
  *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
  *               bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>], labels?: {<str>:<ut64>}}
  *   /xrefs
- *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"s"}]
+ *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"w"|"s"}]
  *
  *   /meta
  *     0x<addr>=[{size?:<ut64, interpreted as 1 if not present>, type:<str>, subtype?:<int>, str?:<str>, space?:<str>}]
@@ -959,6 +959,7 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
+		rz_json_free(json);
 		return false;
 	}
 
@@ -1481,6 +1482,8 @@ static bool xrefs_load_cb(void *user, const SdbKv *kv) {
 			case RZ_ANALYSIS_XREF_TYPE_CODE:
 			case RZ_ANALYSIS_XREF_TYPE_CALL:
 			case RZ_ANALYSIS_XREF_TYPE_DATA:
+			// identical to DATA: case RZ_ANALYSIS_XREF_TYPE_MEM_READ:
+			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 			case RZ_ANALYSIS_XREF_TYPE_STRING:
 				type = baby->str_value[0];
 				break;

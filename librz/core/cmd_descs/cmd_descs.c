@@ -65,7 +65,9 @@ static const RzCmdDescDetail analysis_hint_set_val_details[2];
 static const RzCmdDescDetail analysis_hint_set_optype_details[2];
 static const RzCmdDescDetail analysis_hint_set_immbase_details[3];
 static const RzCmdDescDetail analysis_hint_set_offset_details[2];
+static const RzCmdDescDetail analyze_n_ins_details[2];
 static const RzCmdDescDetail analyze_esil_insn_access_details[4];
+static const RzCmdDescDetail aI_details[2];
 static const RzCmdDescDetail basefind_compute_details[2];
 static const RzCmdDescDetail cmd_cmp_unified_details[2];
 static const RzCmdDescDetail cw_details[2];
@@ -1079,12 +1081,24 @@ static const RzCmdDescHelp system_to_cons_help = {
 	.args = system_to_cons_args,
 };
 
+static const RzCmdDescHelp last_cmd_help = {
+	.summary = "Last command introspection",
+};
 static const RzCmdDescArg last_output_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp last_output_help = {
 	.summary = "Print last output",
 	.args = last_output_args,
+};
+
+static const RzCmdDescArg last_cmd_status_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp last_cmd_status_help = {
+	.summary = "Print the status of the last executed command",
+	.description = "Print the status of the previous statement of the same command line, or of the previous command line: OK, WRONG_ARGS, ERROR, INVALID, NONEXISTINGCMD or EXIT. It is INVALID until a command runs. The JSON mode prints {\"error\":null} on success and {\"error\":{\"code\":\"...\",\"message\":\"...\"}} otherwise.",
+	.args = last_cmd_status_args,
 };
 
 static const RzCmdDescDetailEntry hash_bang_Examples_detail_entries[] = {
@@ -2900,7 +2914,8 @@ static const RzCmdDescDetailEntry slash_z_Examples_detail_entries[] = {
 	{ .text = "/z", .arg_str = " (ABC*)", .comment = "Search the exact string \"(ABC*)\"." },
 	{ .text = "/z", .arg_str = " (ABC*)D li", .comment = "Search the exact string \"(ABC*)D\" but case insensitive." },
 	{ .text = "/z", .arg_str = " \\\\d\\\\sC*\\\\w ri", .comment = "Search the regular expression \"\\d\\sC*\\w\" but case insensitive." },
-	{ .text = "/z", .arg_str = " \"и.{3}м\" ei", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive." },
+	{ .text = "/z", .arg_str = " \"и.{3}м\" ei @e:search.prefix=cyrillic", .comment = "Search the extended regular expression \"и.{3}м\" but case insensitive. Search hit flags will be prefixed with 'cyrillic'." },
+	{ .text = "/z", .arg_str = " \"(*LF).+\" r ascii", .comment = "Search any ASCII string where line feed is a newline." },
 	{ 0 },
 };
 static const RzCmdDescDetail slash_z_details[] = {
@@ -3212,6 +3227,14 @@ static const RzCmdDescArg cmd_help_search_interactive_everything_args[] = {
 static const RzCmdDescHelp cmd_help_search_interactive_everything_help = {
 	.summary = "Search command summaries and their extended help interactively.",
 	.args = cmd_help_search_interactive_everything_args,
+};
+
+static const RzCmdDescArg cmd_catalog_json_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp cmd_catalog_json_help = {
+	.summary = "Export full command catalog as JSON",
+	.args = cmd_catalog_json_args,
 };
 
 static const RzCmdDescHelp cmd_math_help = {
@@ -7947,6 +7970,14 @@ static const RzCmdDescHelp analyze_n_bytes_size_help = {
 static const RzCmdDescHelp ao_help = {
 	.summary = "Analyze N instructions",
 };
+static const RzCmdDescDetailEntry analyze_n_ins_empty_detail_entries[] = {
+	{ .text = "Details include information like: jump targets, operand details, conditions, size, disassembly, bytes, RzIL, address", .arg_str = NULL, .comment = "" },
+	{ 0 },
+};
+static const RzCmdDescDetail analyze_n_ins_details[] = {
+	{ .name = "", .entries = analyze_n_ins_empty_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg analyze_n_ins_args[] = {
 	{
 		.name = "n_instructions",
@@ -7957,7 +7988,8 @@ static const RzCmdDescArg analyze_n_ins_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analyze_n_ins_help = {
-	.summary = "Analyze next N instructions",
+	.summary = "Analyze next N instructions and print all details Rizin knows about them.",
+	.details = analyze_n_ins_details,
 	.args = analyze_n_ins_args,
 };
 
@@ -8447,6 +8479,37 @@ static const RzCmdDescHelp analyze_esil_insn_access_help = {
 	.summary = "Show register and memory access of the next [len] instructions or bytes.",
 	.details = analyze_esil_insn_access_details,
 	.args = analyze_esil_insn_access_args,
+};
+
+static const RzCmdDescDetailEntry aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries[] = {
+	{ .text = "Analysis Results", .arg_str = NULL, .comment = "In the early stage the results will be less comprehensive than the old analysis. This won't be the case for long. You can track the progress here: https://github.com/orgs/rizinorg/projects/18" },
+	{ .text = "Design", .arg_str = NULL, .comment = "The algorithms are designed with performance, extensibility, formal correctness, and compatibility for VLIW architectures in mind." },
+	{ .text = "Future's Base", .arg_str = NULL, .comment = "The commands' module will be the foundation for future analysis development." },
+	{ .text = "RzIL", .arg_str = NULL, .comment = "The IL for the the analysis is exclusively RzIL with support for many more architectures than ESIL had." },
+	{ 0 },
+};
+static const RzCmdDescDetail aI_details[] = {
+	{ .name = "What is the difference to the old analysis?", .entries = aI_What_space_is_space_the_space_difference_space_to_space_the_space_old_space_analysis_question__detail_entries },
+	{ 0 },
+};
+static const RzCmdDescHelp aI_help = {
+	.summary = "Experimental RzIL based analysis",
+	.details = aI_details,
+};
+static const RzCmdDescArg inquiry_analyze_function_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_function_help = {
+	.summary = "analyze function at current seek",
+	.args = inquiry_analyze_function_args,
+};
+
+static const RzCmdDescArg inquiry_analyze_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp inquiry_analyze_all_help = {
+	.summary = "analyze all functions",
+	.args = inquiry_analyze_all_args,
 };
 
 static const RzCmdDescHelp b_help = {
@@ -11080,6 +11143,7 @@ static const RzCmdDescArg cmd_heap_bins_list_print_args[] = {
 };
 static const RzCmdDescHelp cmd_heap_bins_list_print_help = {
 	.summary = "Display double linked list for bins in an arena.",
+	.description = "In JSON mode, forward and backward list chunk addresses without the bin head.",
 	.args = cmd_heap_bins_list_print_args,
 };
 
@@ -12234,7 +12298,9 @@ static const RzCmdDescDetailEntry cmd_eval_color_list_help_Color_space_Palette_s
 	{ .text = "invalid", .arg_str = NULL, .comment = "Color for invalid instructions" },
 	{ .text = "other", .arg_str = NULL, .comment = "Color for other elements" },
 	{ .text = "b0x00", .arg_str = NULL, .comment = "Color for null bytes (0x00)" },
+	{ .text = "b0xlo", .arg_str = NULL, .comment = "Color for byte range [0x01,0x7e]" },
 	{ .text = "b0x7f", .arg_str = NULL, .comment = "Color for 0x7f bytes" },
+	{ .text = "b0xhi", .arg_str = NULL, .comment = "Color for byte range [0x80,0xfe]" },
 	{ .text = "b0xff", .arg_str = NULL, .comment = "Color for 0xff bytes" },
 	{ .text = "math", .arg_str = NULL, .comment = "Color for math operations" },
 	{ .text = "bin", .arg_str = NULL, .comment = "Color for binary information" },
@@ -12280,6 +12346,8 @@ static const RzCmdDescDetailEntry cmd_eval_color_list_help_Color_space_Palette_s
 	{ .text = "diff.new", .arg_str = NULL, .comment = "Color for new diff" },
 	{ .text = "diff.match", .arg_str = NULL, .comment = "Color for matched diff" },
 	{ .text = "diff.unmatch", .arg_str = NULL, .comment = "Color for unmatched diff" },
+	{ .text = "gui.match.perfect", .arg_str = NULL, .comment = "Color for perfectly matched GUI diff" },
+	{ .text = "gui.match.partial", .arg_str = NULL, .comment = "Color for partially matched GUI diff" },
 	{ .text = "gui.cflow", .arg_str = NULL, .comment = "Color for GUI control flow" },
 	{ .text = "gui.dataoffset", .arg_str = NULL, .comment = "Color for GUI data offset" },
 	{ .text = "gui.background", .arg_str = NULL, .comment = "Color for GUI background" },
@@ -16573,7 +16641,7 @@ static const RzCmdDescArg print_instr_until_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp print_instr_until_help = {
-	.summary = "Print all instructions until first ret/jmp",
+	.summary = "Print instructions following direct jumps until a ret/indirect jump",
 	.args = print_instr_until_args,
 };
 
@@ -22517,8 +22585,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *system_to_cons_cd = rz_cmd_desc_argv_new(core->rcmd, escl__cd, "!!", rz_system_to_cons_handler, &system_to_cons_help);
 	rz_warn_if_fail(system_to_cons_cd);
 
-	RzCmdDesc *last_output_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help);
-	rz_warn_if_fail(last_output_cd);
+	RzCmdDesc *last_cmd_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help, &last_cmd_help);
+	rz_warn_if_fail(last_cmd_cd);
+	RzCmdDesc *last_cmd_status_cd = rz_cmd_desc_argv_state_new(core->rcmd, last_cmd_cd, "_s", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_last_cmd_status_handler, &last_cmd_status_help);
+	rz_warn_if_fail(last_cmd_status_cd);
 
 	RzCmdDesc *hash_bang_cd = rz_cmd_desc_argv_new(core->rcmd, root_cd, "#!", rz_hash_bang_handler, &hash_bang_help);
 	rz_warn_if_fail(hash_bang_cd);
@@ -22853,6 +22923,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_help_search_interactive_everything_cd = rz_cmd_desc_argv_new(core->rcmd, question__star__cd, "?***", rz_cmd_help_search_interactive_everything_handler, &cmd_help_search_interactive_everything_help);
 	rz_warn_if_fail(cmd_help_search_interactive_everything_cd);
+
+	RzCmdDesc *cmd_catalog_json_cd = rz_cmd_desc_argv_modes_new(core->rcmd, root_cd, "?+", RZ_OUTPUT_MODE_JSON, rz_cmd_catalog_json_handler, &cmd_catalog_json_help);
+	rz_warn_if_fail(cmd_catalog_json_cd);
+	rz_cmd_desc_set_default_mode(cmd_catalog_json_cd, RZ_OUTPUT_MODE_JSON);
 
 	RzCmdDesc *cmd_math_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "%", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_calculate_expr_handler, &calculate_expr_help, &cmd_math_help);
 	rz_warn_if_fail(cmd_math_cd);
@@ -23263,10 +23337,11 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
 	rz_warn_if_fail(analysis_function_import_list_del_cd);
 
-	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
+	RzCmdDesc *afis_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afis", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_opcode_stat_handler, &analysis_function_opcode_stat_help, &afis_help);
 	rz_warn_if_fail(afis_cd);
-	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
+	RzCmdDesc *analysis_function_all_opcode_stat_cd = rz_cmd_desc_argv_state_new(core->rcmd, afis_cd, "afisa", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_function_all_opcode_stat_handler, &analysis_function_all_opcode_stat_help);
 	rz_warn_if_fail(analysis_function_all_opcode_stat_cd);
+	rz_cmd_desc_set_default_mode(analysis_function_all_opcode_stat_cd, RZ_OUTPUT_MODE_TABLE);
 
 	RzCmdDesc *afn_cd = rz_cmd_desc_group_new(core->rcmd, af_cd, "afn", rz_analysis_function_rename_handler, &analysis_function_rename_help, &afn_help);
 	rz_warn_if_fail(afn_cd);
@@ -23535,7 +23610,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
 	rz_warn_if_fail(ai_cd);
-	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD, rz_global_imports_handler, &global_imports_help, &aii_help);
+	RzCmdDesc *aii_cd = rz_cmd_desc_group_state_new(core->rcmd, ai_cd, "aii", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_global_imports_handler, &global_imports_help, &aii_help);
 	rz_warn_if_fail(aii_cd);
 	RzCmdDesc *delete_global_imports_cd = rz_cmd_desc_argv_state_new(core->rcmd, aii_cd, "aii-", RZ_OUTPUT_MODE_STANDARD, rz_delete_global_imports_handler, &delete_global_imports_help);
 	rz_warn_if_fail(delete_global_imports_cd);
@@ -23591,7 +23666,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_rtti_demangle_class_name_cd = rz_cmd_desc_argv_new(core->rcmd, av_cd, "avrD", rz_analysis_rtti_demangle_class_name_handler, &analysis_rtti_demangle_class_name_help);
 	rz_warn_if_fail(analysis_rtti_demangle_class_name_cd);
 
-	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
+	RzCmdDesc *analysis_virtual_xrefs_cd = rz_cmd_desc_argv_state_new(core->rcmd, av_cd, "avx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_analysis_virtual_xrefs_handler, &analysis_virtual_xrefs_help);
 	rz_warn_if_fail(analysis_virtual_xrefs_cd);
 
 	RzCmdDesc *ax_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ax", rz_analysis_xrefs_set_0_handler, &analysis_xrefs_set_0_help, &ax_help);
@@ -23907,6 +23982,14 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *aea_cd = rz_cmd_desc_group_modes_new(core->rcmd, ae_cd, "aea", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analyze_esil_insn_access_handler, &analyze_esil_insn_access_help, &aea_help);
 	rz_warn_if_fail(aea_cd);
 
+	RzCmdDesc *aI_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "aI", NULL, NULL, &aI_help);
+	rz_warn_if_fail(aI_cd);
+	RzCmdDesc *inquiry_analyze_function_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIf", rz_inquiry_analyze_function_handler, &inquiry_analyze_function_help);
+	rz_warn_if_fail(inquiry_analyze_function_cd);
+
+	RzCmdDesc *inquiry_analyze_all_cd = rz_cmd_desc_argv_new(core->rcmd, aI_cd, "aIa", rz_inquiry_analyze_all_handler, &inquiry_analyze_all_help);
+	rz_warn_if_fail(inquiry_analyze_all_cd);
+
 	RzCmdDesc *b_cd = rz_cmd_desc_group_state_new(core->rcmd, root_cd, "b", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_block_handler, &block_help, &b_help);
 	rz_warn_if_fail(b_cd);
 	RzCmdDesc *block_decrease_cd = rz_cmd_desc_argv_new(core->rcmd, b_cd, "b-", rz_block_decrease_handler, &block_decrease_help);
@@ -23967,7 +24050,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cw_cd = rz_cmd_desc_group_new(core->rcmd, c_cd, "cw", rz_cmd_cmp_add_memory_watcher_handler, &cmd_cmp_add_memory_watcher_help, &cw_help);
 	rz_warn_if_fail(cw_cd);
-	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
+	RzCmdDesc *cmd_cmp_list_compare_watchers_cd = rz_cmd_desc_argv_modes_new(core->rcmd, cw_cd, "cwl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_cmp_list_compare_watchers_handler, &cmd_cmp_list_compare_watchers_help);
 	rz_warn_if_fail(cmd_cmp_list_compare_watchers_cd);
 
 	RzCmdDesc *cmd_cmp_reset_watcher_cd = rz_cmd_desc_argv_new(core->rcmd, cw_cd, "cwr", rz_cmd_cmp_reset_watcher_handler, &cmd_cmp_reset_watcher_help);
@@ -24390,7 +24473,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *dt_cd = rz_cmd_desc_group_new(core->rcmd, d_cd, "dt", rz_cmd_debug_trace_handler, &cmd_debug_trace_help, &dt_help);
 	rz_warn_if_fail(dt_cd);
-	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
+	RzCmdDesc *cmd_debug_traces_cd = rz_cmd_desc_argv_state_new(core->rcmd, dt_cd, "dtl", RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_debug_traces_handler, &cmd_debug_traces_help);
 	rz_warn_if_fail(cmd_debug_traces_cd);
 
 	RzCmdDesc *cmd_debug_traces_ascii_cd = rz_cmd_desc_argv_new(core->rcmd, dt_cd, "dtl=", rz_cmd_debug_traces_ascii_handler, &cmd_debug_traces_ascii_help);
@@ -24500,7 +24583,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_arena_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhga", rz_cmd_arena_print_handler, &cmd_arena_print_help);
 	rz_warn_if_fail(cmd_arena_print_cd);
 
-	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
+	RzCmdDesc *cmd_heap_bins_list_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmhg_cd, "dmhgb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_GRAPH | RZ_OUTPUT_MODE_JSON, rz_cmd_heap_bins_list_print_handler, &cmd_heap_bins_list_print_help);
 	rz_warn_if_fail(cmd_heap_bins_list_print_cd);
 
 	RzCmdDesc *cmd_heap_chunk_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgc", rz_cmd_heap_chunk_print_handler, &cmd_heap_chunk_print_help);
@@ -24518,7 +24601,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_heap_info_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgi", rz_cmd_heap_info_print_handler, &cmd_heap_info_print_help);
 	rz_warn_if_fail(cmd_heap_info_print_cd);
 
-	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_modes_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
+	RzCmdDesc *cmd_main_arena_print_cd = rz_cmd_desc_argv_state_new(core->rcmd, dmhg_cd, "dmhgm", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_main_arena_print_handler, &cmd_main_arena_print_help);
 	rz_warn_if_fail(cmd_main_arena_print_cd);
 
 	RzCmdDesc *cmd_heap_tcache_print_cd = rz_cmd_desc_argv_new(core->rcmd, dmhg_cd, "dmhgt", rz_cmd_heap_tcache_print_handler, &cmd_heap_tcache_print_help);
@@ -24967,7 +25050,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *apply_signatures_from_sigdb_cd = rz_cmd_desc_argv_new(core->rcmd, F_cd, "Fa", rz_apply_signatures_from_sigdb_handler, &apply_signatures_from_sigdb_help);
 	rz_warn_if_fail(apply_signatures_from_sigdb_cd);
 
-	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
+	RzCmdDesc *list_signatures_in_sigdb_cd = rz_cmd_desc_argv_state_new(core->rcmd, F_cd, "Fl", RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_JSON, rz_list_signatures_in_sigdb_handler, &list_signatures_in_sigdb_help);
 	rz_warn_if_fail(list_signatures_in_sigdb_cd);
 	rz_cmd_desc_set_default_mode(list_signatures_in_sigdb_cd, RZ_OUTPUT_MODE_TABLE);
 
@@ -25651,7 +25734,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_instr_recursive_at_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "pir.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_instr_recursive_at_handler, &print_instr_recursive_at_help);
 	rz_warn_if_fail(print_instr_recursive_at_cd);
 
-	RzCmdDesc *print_instr_until_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "piu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_instr_until_handler, &print_instr_until_help);
+	RzCmdDesc *print_instr_until_cd = rz_cmd_desc_argv_state_new(core->rcmd, pi_cd, "piu", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_print_instr_until_handler, &print_instr_until_help);
 	rz_warn_if_fail(print_instr_until_cd);
 
 	RzCmdDesc *assembly_of_hex_alias_cd = rz_cmd_desc_argv_modes_new(core->rcmd, pi_cd, "pix", RZ_OUTPUT_MODE_STANDARD, rz_assembly_of_hex_alias_handler, &assembly_of_hex_alias_help);
@@ -25787,13 +25870,13 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *print_string_as_libcpp_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "ps+", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_string_as_libcpp_string_handler, &print_string_as_libcpp_string_help);
 	rz_warn_if_fail(print_string_as_libcpp_string_cd);
 
-	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET, rz_print_strings_current_block_handler, &print_strings_current_block_help);
+	RzCmdDesc *print_strings_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psb", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON, rz_print_strings_current_block_handler, &print_strings_current_block_help);
 	rz_warn_if_fail(print_strings_current_block_cd);
 
 	RzCmdDesc *print_string_c_cpp_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psc", RZ_OUTPUT_MODE_STANDARD, rz_print_string_c_cpp_handler, &print_string_c_cpp_help);
 	rz_warn_if_fail(print_string_c_cpp_cd);
 
-	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
+	RzCmdDesc *print_first_string_current_block_cd = rz_cmd_desc_argv_state_new(core->rcmd, ps_cd, "psi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_first_string_current_block_handler, &print_first_string_current_block_help);
 	rz_warn_if_fail(print_first_string_current_block_cd);
 
 	RzCmdDesc *print_pascal_string_cd = rz_cmd_desc_argv_modes_new(core->rcmd, ps_cd, "psp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_print_pascal_string_handler, &print_pascal_string_help);
@@ -26448,7 +26531,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *write_cache_commit_all_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wci", rz_write_cache_commit_all_handler, &write_cache_commit_all_help);
 	rz_warn_if_fail(write_cache_commit_all_cd);
 
-	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD, rz_write_pcache_list_handler, &write_pcache_list_help);
+	RzCmdDesc *write_pcache_list_cd = rz_cmd_desc_argv_state_new(core->rcmd, wc_cd, "wcp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_write_pcache_list_handler, &write_pcache_list_help);
 	rz_warn_if_fail(write_pcache_list_cd);
 
 	RzCmdDesc *write_pcache_commit_cd = rz_cmd_desc_argv_new(core->rcmd, wc_cd, "wcpi", rz_write_pcache_commit_handler, &write_pcache_commit_help);

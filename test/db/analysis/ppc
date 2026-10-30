@@ -111,7 +111,6 @@ fcn.10003450:
 
 fcn.100034d0:
     fcn.100030f0
-    sym.imp.elf_flagscn
 
 fcn.10003630:
     fcn.100030f0
@@ -308,11 +307,7 @@ fcn.10008f70:
     sym.imp.error
 
 fcn.10009270:
-    fcn.10003bc0
-    sym.imp.elf_flagscn
     sym.imp.error
-    fcn.10008f70
-    sym.imp.__assert_fail
 
 fcn.10009f00:
     fcn.10002d10
@@ -358,9 +353,6 @@ fcn.1000b8e0:
     fcn.1000cb20
     fcn.1000c490
     sym.imp.qsort
-
-fcn.1000c490:
-    sym.imp.abort
 
 fcn.1000c650:
     sym.imp.free
@@ -408,12 +400,6 @@ fcn.1000f620:
 
 fcn.100139b0:
     sym.imp.qsort
-    sym.imp.calloc
-    sym.imp.memset
-    fcn.100139b0
-    sym.imp.error
-    fcn.10025b30
-    fcn.10003230
 
 fcn.1001ce70:
     sym.imp.error
@@ -781,5 +767,216 @@ ensure that the endianness is kept
         |   0x00000014      e_addi r10 r4 0xffffffff
         |   0x00000018      e_srwi r10 r10 0x2
         |   0x0000001c      e_addi r7 r10 0x2
+EOF
+RUN
+
+NAME=PPC indirect branch types (32/64-bit, big/little endian)
+FILE=malloc://68
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+
+# One 4-byte word per branch instruction. BO is the PowerISA branch option
+# field (bits 21..25 of the word, see PPC_READ_BO_FIELD); a branch is
+# unconditional only when BO[0] and BO[2] are both set, i.e. it tests neither
+# a CR bit nor CTR. The old code took this from the instruction ID alone, so
+# every generic BCLR/BCCTRL alias came out as conditional.
+#
+#  off  encoding  disassembly      BO    expected
+#  00   4e800020  blr               20   ret    unconditional (BO=10100)
+#  04   4e800021  blrl              20   ret    unconditional, also sets LR
+#  08   4c800020  bflr lt            4   cret   tests CR0[LT]
+#  0c   4d800020  btlr lt           12   cret   tests CR0[LT]
+#  10   4e800420  bctr              20   ujmp   unconditional, via CTR
+#  14   4e800421  bctrl             20   ucall  unconditional, via CTR, sets LR
+#  18   4c800421  bfctrl lt          4   ccall  tests CR0[LT]
+#  1c   4e000020  bdnzlr            16   cret   decrements and tests CTR
+#  20   4e400020  bdzlr             18   cret   decrements and tests CTR
+#  24   4c830020  bflr un            4   cret   tests CR0[SO]
+# The next seven are generic forms: same BCLR/BCCTRL instruction ID, but a
+# BO/BI/BH that no alias covers, which is why the BO field has to be decoded.
+#  28   4ea00020  bclr 0x15,lt,0    21   ret    unconditional, BO=0x15
+#  2c   4ec00020  bclr 0x16,lt,0    22   ret    unconditional, BO=0x16
+#  30   4ee00020  bclr 0x17,lt,0    23   ret    unconditional, BO=0x17
+#  34   4e810020  bclr 0x14,gt,0    20   ret    unconditional, BI=gt
+#  38   4e800820  bclr 0x14,lt,1    20   ret    unconditional, BH=1
+#  3c   4e800821  bclrl 0x14,lt,1   20   ret    as above, and sets LR
+#  40   4e810421  bcctrl 0x14,gt,0  20   ucall  unconditional, BI=gt
+wx 4e8000204e8000214c8000204d8000204e8004204e8004214c8004214e0000204e4000204c8300204ea000204ec000204ee000204e8100204e8008204e8008214e810421
+ao 17~^type:
+
+# Same 17 instructions, now in 64-bit mode...
+e asm.bits=64
+ao 17~^type:
+
+# ...and then little-endian, where every 4-byte word is byte-reversed.
+e asm.bits=32
+e cfg.bigendian=false
+wx 2000804e2100804e2000804c2000804d2004804e2104804e2104804c2000004e2000404e2000834c2000a04e2000c04e2000e04e2000814e2008804e2108804e2104814e
+ao 17~^type:
+e asm.bits=64
+ao 17~^type:
+e asm.bits=32
+e cfg.bigendian=true
+
+# bctrl, then a generic bctrl with BI=gt, then a generic conditional bctrl:
+# each one must report the address right after the call as its fallthrough.
+wx 4e8004214e8104214c800421 @ 0
+ao 3~^fail:
+EOF
+EXPECT=<<EOF
+type: ret
+type: ret
+type: cret
+type: cret
+type: ujmp
+type: ucall
+type: ccall
+type: cret
+type: cret
+type: cret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ucall
+type: ret
+type: ret
+type: cret
+type: cret
+type: ujmp
+type: ucall
+type: ccall
+type: cret
+type: cret
+type: cret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ucall
+type: ret
+type: ret
+type: cret
+type: cret
+type: ujmp
+type: ucall
+type: ccall
+type: cret
+type: cret
+type: cret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ucall
+type: ret
+type: ret
+type: cret
+type: cret
+type: ujmp
+type: ucall
+type: ccall
+type: cret
+type: cret
+type: cret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ret
+type: ucall
+fail: 0x00000004
+fail: 0x00000008
+fail: 0x0000000c
+EOF
+RUN
+
+NAME=PPC branch types drive function boundaries
+FILE=malloc://80
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+e analysis.hasnext=false
+
+# Three blocks, each ending in a return followed by a second "function" that
+# must NOT be swallowed. Reported sizes come from afl~[2]:
+#   0x00  li r3, 1 ; blr          BO=20, unconditional  -> stops here, size 8
+#   0x20  li r3, 1 ; bclr 0x15,lt BO=21, generic       -> stops here, size 8
+#   0x40  li r3, 1 ; bflr lt      BO=4,  tests CR      -> falls through, size 16
+wx 386000014e800020386000024e80002000000000000000000000000000000000386000014ea00020386000024e80002000000000000000000000000000000000386000014c800020386000024e800020
+s 0
+af
+s 0x20
+af
+s 0x40
+af
+afl~[2]
+EOF
+EXPECT=<<EOF
+8
+8
+16
+EOF
+RUN
+
+NAME=PPC ROP/COP search finds returns and indirect calls
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+e gadget.conditional=false
+
+# Each snippet is written to its own address because the gadget cache is keyed
+# on the search range: reusing a range after rewriting the bytes there would
+# return the previous result instead of rescanning.
+
+# li r3, 1 ; blr (BO=20): a default ROP search must find both gadgets.
+wx 386000014e800020 @ 0x00
+e search.from=0
+e search.to=8
+/Rq
+
+# li r3, 1 ; bflr lt (BO=4): conditional return, so not a valid terminator
+# unless gadget.conditional is enabled.
+wx 386000014c800020 @ 0x10
+e search.from=0x10
+e search.to=0x18
+/R~Gadget~?
+e gadget.conditional=true
+/R~Gadget~?
+
+# li r3, 1 ; bclr 0x15,lt (BO=21): the generic spelling of an unconditional
+# return is found by a default ROP search too.
+e gadget.conditional=false
+wx 386000014ea00020 @ 0x20
+e search.from=0x20
+e search.to=0x28
+/R~Gadget~?
+
+# li r3, 1 ; bctrl: an indirect call, which a COP search accepts.
+wx 386000014e800421 @ 0x30
+e search.from=0x30
+e search.to=0x38
+/Cq
+EOF
+EXPECT=<<EOF
+0x00000000: li r3, 1; blr;
+0x00000004: blr;
+0
+2
+2
+0x00000030: li r3, 1; bctrl;
+0x00000034: bctrl;
 EOF
 RUN

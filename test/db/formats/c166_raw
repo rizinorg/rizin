@@ -1,0 +1,17 @@
+NAME=c166 base address check
+FILE=bins/c166/measure_raw.bin
+CMDS=<<EOF
+e bin.baddr
+echo
+iH
+EOF
+EXPECT=<<EOF
+0x00c00000
+
+cpu: "c166-generic"
+c166-bininfo:
+  isr_count: 4
+  base_addr: 0xc00000
+
+EOF
+RUN

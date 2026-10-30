@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "omf.h"
+#include "omf166.h"
 
 /**
  * \file omf166.c
@@ -119,7 +119,7 @@ RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, const ut16 ti_index)
 	}
 	case POINTER_DESCRIPTOR: {
 		const char *x = name_of_ti(obj, type->descriptor.pointer.ti);
-		static char x2[255] = { 0 };
+		static char x2[MAX_NAME_LEN] = { 0 };
 		if (type->descriptor.pointer.attrib == 1)
 			rz_snprintf(x2, sizeof(buffer), "%s *", x); ///< "POINTER: 1 = Data pointer (PAGE:OFFSET)"
 		if (type->descriptor.pointer.attrib == 2)
@@ -147,8 +147,6 @@ RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, const ut16 ti_index)
 		return NULL;
 	}
 	}
-	rz_warn_if_reached();
-	return NULL;
 }
 
 const char *name_of_iTyp(ut8 iTyp) {
@@ -168,11 +166,11 @@ const char *name_of_iTyp(ut8 iTyp) {
 	case ITYP_OBJECT_INPUTFILE: {
 		return "Object-Inputfile";
 	}
-	case ITYP_COMMANDLINE: {
-		return "Commandline";
+	case ITYP_INVOCATION_LINE: {
+		return "InvocationLine";
 	}
 	default: {
-		rz_warn_if_reached();
+		RZ_LOG_WARN("UNKNOWN iTyp (%" PFMT32x ").\n", iTyp);
 		return "UNKNOWN";
 	}
 	}
@@ -223,7 +221,7 @@ ut32 c166_get_perms_from_class(const ut8 class_id) {
 	case C166_CLASS_ICODE:
 	case C166_CLASS_FCODE:
 	case C166_CLASS_NCODE:
-		return RZ_PERM_RW;
+		return RZ_PERM_RX;
 	case C166_CLASS_FCONST:
 	case C166_CLASS_HCONST:
 	case C166_CLASS_XCONST:
@@ -251,12 +249,6 @@ ut32 c166_get_perms_from_class(const ut8 class_id) {
 	default:
 		return RZ_PERM_R;
 	}
-}
-
-ut64 rz_bin_omf166_get_abs_addr(ut8 SegmentNumber8, ut16 Offset) {
-	ut64 offset = 0;
-	offset = (SegmentNumber8 << 16) | Offset;
-	return offset;
 }
 
 static bool is_valid_omf166_type(ut8 type) {
@@ -323,23 +315,23 @@ static ut16 omf166_get_idx(const ut8 *buf, const size_t buf_size) {
 	return ret;
 }
 
-static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *record, const ut8 *buf, const size_t buf_size, ut64 global_ct) {
+static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *record, const ut8 *buf, const size_t buf_size) {
 	ut32 tmp_size = 0;
-	ut32 ct_name = 0;
+	ut16 ct_name = 0;
 
 	OMF_lnames *lname = NULL;
 	if (!(record && buf) || record->size <= 3) {
 		return false;
 	}
 
-	while ((int)tmp_size < (int)(record->size - 1)) {
+	while (tmp_size < record->size - 1) {
 		const int next = buf[3 + tmp_size] + 1;
 		if (next < 1)
 			break;
 		tmp_size += next;
 	}
 	tmp_size = 0;
-	while ((int)tmp_size < (int)(record->size - 1)) {
+	while (tmp_size < record->size - 1) {
 		// sometimes there is a name with a null size so we just skip it
 		const ut8 cb = buf[3 + tmp_size];
 		if (record->size + 3 < tmp_size + cb) {
@@ -351,7 +343,8 @@ static bool load_omf166_lnames(const rz_bin_omf166_obj *obj, const OMF_record *r
 			return false;
 		}
 		if ((tmp_size + 4 + cb) < buf_size) {
-			memcpy(lname->name, buf + 3 + tmp_size + 1, cb);
+			rz_mem_copy(lname->name, MAX_NAME_LEN,
+				buf + 3 + tmp_size + 1, cb);
 			lname->index = ct_name;
 		}
 
@@ -371,7 +364,7 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 		return false;
 	}
 	if (record->type == OMF166_DEBSYM) {
-		if ((buf[ct] == 0x02)) {
+		if (buf[ct] == 0x02) {
 			ct++;
 			base = rz_read_le8_offset(buf, &ct);
 		} else {
@@ -380,8 +373,9 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 			ct++;
 			base = rz_read_le32_offset(buf, &ct);
 		}
-	} else
+	} else {
 		base = rz_read_le32_offset(buf, &ct);
+	}
 
 	if (record->size <= ct) {
 		RZ_LOG_ERROR("Invalid sym record (bad size)\n");
@@ -396,7 +390,12 @@ static int load_omf166_global_sym_record(const rz_bin_omf166_obj *obj, const OMF
 		sym->rec_type = record->type;
 		sym->base = base;
 		sym->n = rz_read_le8_offset(buf, &ct);
-		rz_str_ncpy(sym->name2, (const char *)&buf[ct], sym->n + 1);
+		if (ct + sym->n + 1 > buf_size) {
+			RZ_LOG_ERROR("Invalid sym record (overflow)\n");
+			RZ_FREE(sym);
+			continue;
+		}
+		rz_mem_copy(sym->name2, MAX_NAME_LEN, buf + ct, sym->n);
 
 		ct += sym->n;
 		sym->offset = rz_read_le16_offset(buf, &ct);
@@ -454,7 +453,7 @@ static int load_omf_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 	return true;
 }
 
-static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const size_t buf_size, ut64 global_ct) {
+static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const size_t buf_size) {
 	size_t ct = 3;
 	OMF_blocks *block = RZ_NEW0(OMF_blocks);
 	if (!block) {
@@ -470,7 +469,12 @@ static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const s
 	}
 
 	block->n = rz_read_le8_offset(buf, &ct);
-	rz_str_ncpy(block->name, (const char *)&buf[ct], block->n + 1);
+	if (ct + block->n + 1 > buf_size) {
+		RZ_LOG_ERROR("Invalid record (overflow)\n");
+		RZ_FREE(block);
+		return true;
+	}
+	rz_mem_copy(block->name, MAX_NAME_LEN, buf + ct, block->n);
 
 	ct += block->n;
 	block->BlockOffset16 = rz_read_le16_offset(buf, &ct);
@@ -488,7 +492,7 @@ static int load_omf_blkdef(const rz_bin_omf166_obj *obj, const ut8 *buf, const s
 	return true;
 }
 
-static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
+static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record) {
 	if (!(obj && obj->coments_vec)) {
 		return false;
 	}
@@ -504,17 +508,14 @@ static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const
 	comment->nopurge = (ComTyp_b1 & 0x80) >> 7;
 	comment->is_filename = (ComTyp_b2 == 0x4b);
 	comment->n = record->size + 3 - ct;
-	rz_str_ncpy(comment->text,
-		(const char *)&buf[ct], comment->n);
+	rz_mem_copy(comment->text, MAX_NAME_LEN, buf + ct, comment->n);
 	rz_pvector_push(obj->coments_vec, comment);
 	return true;
 }
 
 static int load_grpdef_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, ut64 global_ct) {
-	if (!obj) {
-		return false;
-	}
-
+	(void)obj;
+	(void)buf;
 	/*
 	 * Group Definition Record - Used to combine sections
 	 *
@@ -531,12 +532,6 @@ static int load_grpdef_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 static int load_deplst_data(const ut8 *buf, const OMF_record *record) {
 #if RZ_BUILD_DEBUG
 	size_t ct = 3;
-	const ut8 some_byte = rz_read_le8_offset(buf, &ct);
-	(void)some_byte;
-	const ut8 info_n = rz_read_le8_offset(buf, &ct);
-	char info[255] = RZ_EMPTY;
-	rz_str_ncpy(info, (const char *)&buf[ct], info_n + 1);
-	ct += info_n;
 	while (ct < record->size) {
 		/**
 		 * iTyp | Mark8 | Time32 | Name(s)
@@ -550,10 +545,14 @@ static int load_deplst_data(const ut8 *buf, const OMF_record *record) {
 		In case of iTyp 4, more than one pathname may be specified.
 		*/
 		const ut8 iTyp = rz_read_le8_offset(buf, &ct);
-		const ut8 Mark8 = rz_read_le8_offset(buf, &ct);
-		const ut32 Time32 = rz_read_le32_offset(buf, &ct);
+		ut8 Mark8 = 0;
+		ut32 Time32 = 0;
+		if (iTyp != ITYP_INVOCATION_LINE) {
+			Mark8 = rz_read_le8_offset(buf, &ct);
+			Time32 = rz_read_le32_offset(buf, &ct);
+		}
 		const ut8 n = rz_read_le8_offset(buf, &ct);
-		char pathname[255] = RZ_EMPTY;
+		char pathname[MAX_NAME_LEN] = RZ_EMPTY;
 		rz_str_ncpy(pathname,
 			(const char *)&buf[ct], n + 1);
 		RZ_LOG_DEBUG("iTyp: [0x%02x] `%16s`, Mark8: 0x%02x, Time32: %d, n: %3d `%s`\n",
@@ -585,7 +584,7 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 		linnum->LineNumber = rz_read_le16_offset(buf, &ct); // start with ct = 5
 		const ut16 offset = rz_read_le16_offset(buf, &ct);
 		linnum->address = ((ut64)FrameNumber << 16) | offset;
-		OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
+		const OMF_coments *comment = rz_pvector_tail(obj->coments_vec);
 		if (!comment) {
 			RZ_FREE(linnum);
 			return false;
@@ -597,7 +596,7 @@ static int load_linnum_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const 
 	return true;
 }
 
-static int load_omf_pedata(const rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, const ut64 global_ct) {
+static int load_omf_pedata(rz_bin_omf166_obj *obj, const ut8 *buf, const OMF_record *record, const ut64 global_ct) {
 	if (!(obj && obj->pe_vec)) {
 		return false;
 	}
@@ -620,8 +619,15 @@ static int load_omf_pedata(const rz_bin_omf166_obj *obj, const ut8 *buf, const O
 	 *
 	 *    DatTyp	0: BIT  1: DATA  2: CODE  3: CONST
 	 */
-	pe->size = pe->psize = record->size - 1 - (ct - 3);
+	pe->psize = record->size - 1 - (ct - 3);
+	pe->size = pe->psize;
 	pe->paddr = global_ct + ct;
+
+	if (pe->isVector) {
+		obj->base_addr = (ut32)pe->SegmentNumber8 << 16;
+		ut64 addr = obj->base_addr + pe->offset;
+		rz_vector_push(obj->interrupts, &addr);
+	}
 	rz_pvector_push(obj->pe_vec, pe);
 	return true;
 }
@@ -651,7 +657,7 @@ static int load_omf_unk1(const rz_bin_omf166_obj *obj, const ut8 *buf, const siz
 
 static int load_omf_unk2(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
-	char name[255] = RZ_EMPTY;
+	char name[MAX_NAME_LEN] = RZ_EMPTY;
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
@@ -666,7 +672,7 @@ static int load_omf_unk2(const ut8 *buf, const size_t buf_size, const OMF_record
 
 static int load_omf_unk3(const ut8 *buf, const size_t buf_size, const OMF_record *record, const ut64 global_ct) {
 #if RZ_BUILD_DEBUG
-	char name[255] = RZ_EMPTY;
+	char name[MAX_NAME_LEN] = RZ_EMPTY;
 	size_t offset = 7;
 	const ut8 n = rz_read_le8_offset(buf, &offset);
 	rz_str_ncpy(name, (const char *)&buf[offset], n + 1); // cct = 12
@@ -838,6 +844,8 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		 */
 		const ut16 raw_count = rz_read_le16_offset(buf, &cct);
 		if (raw_count == 0 || raw_count > UINT16_MAX) {
+			RZ_LOG_ERROR("Invalid component count (untrusted value)\n");
+			RZ_FREE(newtype);
 			return false;
 		}
 		newtype->label = rz_str_dup("COMPONENT_LIST_DESCRIPTOR");
@@ -860,7 +868,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 			component->REP8 = rz_read_le8_offset(buf, &cct);
 			component->POS8 = rz_read_le8_offset(buf, &cct);
 			component->n = rz_read_le8_offset(buf, &cct);
-			rz_str_ncpy(component->name, (const char *)&buf[cct], component->n + 1);
+			rz_mem_copy(component->name, MAX_NAME_LEN, buf + cct, component->n);
 			cct += component->n;
 		}
 		break;
@@ -883,7 +891,7 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.array.attrib = rz_read_le8_offset(buf, &cct);
 		newtype->descriptor.array.ti = rz_read_le16_offset(buf, &cct);
 		newtype->descriptor.array.dimsz = rz_read_le32_offset(buf, &cct);
-		char array_length[255] = RZ_EMPTY;
+		char array_length[MAX_NAME_LEN] = RZ_EMPTY;
 		if (newtype->descriptor.array.dimsz != 0xFFFFFFFF) {
 			rz_strf(array_length, "%d", newtype->descriptor.array.dimsz);
 		}
@@ -912,10 +920,9 @@ static int load_omf_typnew(rz_bin_omf166_obj *obj, const ut8 *buf) {
 		newtype->descriptor.struct_union.member_ti = rz_read_le16_offset(buf, &cct);
 		newtype->descriptor.struct_union.n = rz_read_le8_offset(buf, &cct);
 
-		rz_str_ncpy(
-			newtype->descriptor.struct_union.tagname,
-			(const char *)&buf[cct],
-			newtype->descriptor.struct_union.n + 1);
+		rz_mem_copy(newtype->descriptor.struct_union.tagname,
+			MAX_NAME_LEN, buf + cct,
+			newtype->descriptor.struct_union.n);
 		newtype->label = rz_str_dup(newtype->descriptor.struct_union.tagname);
 		break;
 	}
@@ -944,7 +951,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 
 	switch (record->type) {
 	case OMF166_LNAMES: {
-		return load_omf166_lnames(obj, record, buf, buf_size, global_ct);
+		return load_omf166_lnames(obj, record, buf, buf_size);
 	}
 	case OMF166_GLBDEF:
 	case OMF166_LOCSYM:
@@ -953,7 +960,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return load_omf166_global_sym_record(obj, record, buf, buf_size);
 	}
 	case OMF166_BLKDEF: {
-		return load_omf_blkdef(obj, buf, buf_size, global_ct);
+		return load_omf_blkdef(obj, buf, buf_size);
 	}
 	case OMF166_VECTAB:
 	case OMF166_PEDATA: {
@@ -961,10 +968,14 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 	}
 	case OMF166_LHEADR:
 	case OMF166_THEADR: {
-		char name[255] = RZ_EMPTY;
+		char name[MAX_NAME_LEN] = RZ_EMPTY;
 		size_t offset = 3;
-		ut8 n = rz_read_le8_offset(buf, &offset);
-		rz_str_ncpy(name, (const char *)&buf[offset], n + 1);
+		const ut8 n = rz_read_le8_offset(buf, &offset);
+		if (n + 1 + offset > buf_size) {
+			RZ_LOG_WARN("File may be corrupted (Overflow detected).\n");
+		} else {
+			rz_mem_copy(name, MAX_NAME_LEN, buf + offset, n);
+		}
 		RZ_LOG_DEBUG("load_omf = %s  =  [0x%08" PFMT64x "] (%05d) `%s`\n",
 			record->type == OMF166_THEADR ? "THEADR" : "LHEADR",
 			global_ct,
@@ -999,7 +1010,7 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		return true;
 	}
 	case OMF166_COMMENT: {
-		return load_comment_data(obj, buf, record, global_ct);
+		return load_comment_data(obj, buf, record);
 	}
 	case OMF166_GRPDEF: {
 		return load_grpdef_data(obj, buf, record, global_ct);
@@ -1037,9 +1048,13 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 		*/
 		size_t left = 14;
 		while (record->size - 1 > left) {
-			char name[255] = RZ_EMPTY;
+			char name[MAX_NAME_LEN + 1] = RZ_EMPTY;
 			const ut8 n = rz_read_le8_offset(buf, &left);
-			rz_str_ncpy(name, (const char *)&buf[left], n + 1);
+			if (n + 1 + left > buf_size) {
+				RZ_LOG_WARN("File may be corrupted (Overflow detected).\n");
+			} else {
+				rz_mem_copy(name, MAX_NAME_LEN, buf + left, n);
+			}
 			left += n;
 		}
 		return true;
@@ -1055,6 +1070,11 @@ static int rz_bin_format_omf166_load_content(rz_bin_omf166_obj *obj, OMF_record 
 	}
 	case OMF166_UNKNOWN4: {
 		return load_omf_unk4(buf, buf_size, record, global_ct);
+	}
+	case OMF166_SSKDEF: {
+		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\n",
+			record->size, global_ct, record->type, buf_size);
+		return true;
 	}
 	default: {
 		RZ_LOG_DEBUG("load_omf: [%05d] [0x%08" PFMT64x "] 0x%02x (%" PFMTSZu ")\t",
@@ -1083,6 +1103,8 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 	new->type = rz_read_le8_offset(buf, &offset);
 	const ut16 raw_count = rz_read_le16_offset(buf, &offset);
 	if (raw_count == 0 || raw_count > UINT16_MAX) {
+		RZ_LOG_ERROR("Invalid record (untrusted value)\n");
+		RZ_FREE(new);
 		return false;
 	}
 	new->size = raw_count;
@@ -1102,6 +1124,7 @@ static OMF_record *rz_bin_format_omf166_load_record(rz_bin_omf166_obj *obj, cons
 }
 
 static int line_sample_cmp(const void *a, const void *b, void *user) {
+	(void)user;
 	const OMF_linnums *sa = a;
 	const OMF_linnums *sb = b;
 	// first, sort by addr
@@ -1119,20 +1142,20 @@ static int line_sample_cmp(const void *a, const void *b, void *user) {
 		return 1;
 	}
 	// and eventually by file because this is the most expensive operation
-	if (!strlen(sa->filename) && !strlen(sb->filename)) {
+	if (!strnlen(sa->filename, MAX_NAME_LEN) && !strnlen(sb->filename, MAX_NAME_LEN)) {
 		return 0;
 	}
-	if (!strlen(sa->filename)) {
+	if (!strnlen(sa->filename, MAX_NAME_LEN)) {
 		return -1;
 	}
-	if (!strlen(sb->filename)) {
+	if (!strnlen(sb->filename, MAX_NAME_LEN)) {
 		return 1;
 	}
 	return strcmp(sa->filename, sb->filename);
 }
 
 static void omf166_linnums_free(void *it) {
-	OMF_linnums *p = (OMF_linnums *)it;
+	OMF_linnums *p = it;
 	RZ_FREE(p);
 }
 
@@ -1219,6 +1242,7 @@ static int rz_bin_format_omf166_init_internal_storage(rz_bin_omf166_obj *obj) {
 }
 
 static int block_cmp(const void *a, const void *b, void *user) {
+	(void)user;
 	const OMF_blocks *sa = a;
 	const OMF_blocks *sb = b;
 	// first, sort by addr
@@ -1232,10 +1256,11 @@ static int block_cmp(const void *a, const void *b, void *user) {
 }
 
 static int find_symbol_by_paddr(const void *paddr, const void *sym, void *user) {
-	const OMF_symbol *p = (OMF_symbol *)sym;
+	(void)user;
+	const OMF_symbol *p = sym;
 	const ut32 offset = p->base | p->offset;
-	const ut32 addr = *(ut32 *)paddr;
-	return (addr == offset);
+	const ut32 addr = *(const ut32 *)paddr;
+	return addr == offset;
 }
 
 static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const ut8 *buf, const ut64 size) {
@@ -1275,7 +1300,7 @@ static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const u
 				sym->base = block->FrameNumber << 16;
 				sym->n = block->n;
 
-				rz_str_ncpy(sym->name2, (const char *)block->name, block->n + 1);
+				rz_str_ncpy(sym->name2, block->name, block->n + 1);
 				sym->size = block->BlockLength16;
 				sym->seg_idx = block->FrameNumber;
 				sym->offset = offset & 0xFFFF;
@@ -1283,7 +1308,7 @@ static int rz_bin_format_omf166_load_all_records(rz_bin_omf166_obj *obj, const u
 				sym->rec_type = OMF166_BLKDEF;
 				rz_pvector_push(obj->symbols_vec, sym);
 			} else {
-				OMF_symbol *sym = (OMF_symbol *)*iter;
+				OMF_symbol *sym = *iter;
 				sym->size = block->BlockLength16;
 			}
 		}
@@ -1323,9 +1348,11 @@ rz_bin_omf166_obj *rz_bin_format_omf166_load(const ut8 *buf, ut64 size) {
 	if (!ret) {
 		return NULL;
 	}
+	ret->interrupts = rz_vector_new(sizeof(ut64), NULL, NULL);
 
 	if (!rz_bin_format_omf166_load_all_records(ret, buf, size)) {
 		rz_bin_format_omf166_free_all_records(ret);
+		RZ_FREE(ret);
 		return NULL;
 	}
 	return ret;
@@ -1336,7 +1363,7 @@ void rz_bin_format_omf166_fini(rz_bin_omf166_obj *obj) {
 	RZ_FREE(obj);
 }
 
-bool rz_bin_omf166_get_entry(rz_bin_omf166_obj *obj, RzBinAddr *addr) {
+bool rz_bin_omf166_get_entry(const rz_bin_omf166_obj *obj, RzBinAddr *addr) {
 	if (!obj) {
 		return false;
 	}

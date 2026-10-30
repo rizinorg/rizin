@@ -24,9 +24,9 @@ typedef struct {
 	bool quiet;
 } RzAsmState;
 
-static void __load_plugins(RzAsmState *as);
+static void asm_load_plugins(RzAsmState *as);
 
-static void __as_set_archbits(RzAsmState *as) {
+static void asm_as_set_archbits(RzAsmState *as) {
 	rz_asm_use(as->a, RZ_SYS_ARCH);
 	rz_analysis_use(as->analysis, RZ_SYS_ARCH);
 	int sysbits = (RZ_SYS_BITS & RZ_SYS_BITS_64) ? 64 : 32;
@@ -34,7 +34,7 @@ static void __as_set_archbits(RzAsmState *as) {
 	rz_analysis_set_bits(as->analysis, sysbits);
 }
 
-static RzAsmState *__as_new(void) {
+static RzAsmState *asm_as_new(void) {
 	RzAsmState *as = RZ_NEW0(RzAsmState);
 	if (!as) {
 		return NULL;
@@ -43,12 +43,12 @@ static RzAsmState *__as_new(void) {
 	as->a = rz_asm_new();
 	as->analysis = rz_analysis_new(NULL);
 	as->sys_path = rz_path_new();
-	__load_plugins(as);
-	__as_set_archbits(as);
+	asm_load_plugins(as);
+	asm_as_set_archbits(as);
 	return as;
 }
 
-static void __as_free(RzAsmState *as) {
+static void asm_as_free(RzAsmState *as) {
 	rz_asm_free(as->a);
 	rz_analysis_free(as->analysis);
 	rz_lib_free(as->l);
@@ -490,12 +490,11 @@ static bool lib_arch_cb(RzLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static void __load_plugins(RzAsmState *as) {
-	char *tmp = rz_sys_getenv("RZ_NOPLUGINS");
-	if (tmp) {
-		free(tmp);
+static void asm_load_plugins(RzAsmState *as) {
+	if (rz_sys_getenv_as_bool("RZ_NOPLUGINS", false)) {
 		return;
 	}
+
 	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins (deprecated)", &lib_asm_cb, NULL, as);
 	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins (deprecated)", &lib_analysis_cb, NULL, as);
 	rz_lib_add_handler(as->l, RZ_LIB_TYPE_ARCH, "(dis)assembly/analysis/emulation plugins", &lib_arch_cb, NULL, as);
@@ -513,11 +512,10 @@ static void __load_plugins(RzAsmState *as) {
 	if (extraplugindir) {
 		rz_lib_opendir(as->l, extraplugindir, false);
 	}
+
 	free(homeplugindir);
 	free(sysplugindir);
 	free(extraplugindir);
-
-	free(tmp);
 	free(path);
 }
 
@@ -543,7 +541,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		return rasm_show_help(1);
 	}
 
-	RzAsmState *as = __as_new();
+	RzAsmState *as = asm_as_new();
 
 	char *rz_arch = rz_sys_getenv("RZ_ARCH");
 	if (rz_arch) {
@@ -628,9 +626,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			} else {
 				rz_core_asm_plugins_print(core, &state, NULL);
 			}
-			rz_cmd_state_output_print(&state);
+			rz_cmd_state_output_print(&state, core->cons);
 			rz_cmd_state_output_fini(&state);
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			core->rasm = tmp_asm;
 			core->analysis = tmp_analysis;
 			rz_core_free(core);
@@ -642,7 +640,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			RzAsm *tmp_asm = core->rasm;
 			core->rasm = as->a;
 			RzCmdStatus status = rz_core_cpu_descs_print(core, opt.arg);
-			rz_cons_flush();
+			rz_cons_flush(core->cons);
 			core->rasm = tmp_asm;
 			rz_core_free(core);
 			ret = (status == RZ_CMD_STATUS_OK) ? 0 : 1;
@@ -667,12 +665,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		case 's':
 			if (*opt.arg == '?') {
 				printf("att\nintel\nmasm\njz\nregnum\n");
-				__as_free(as);
+				asm_as_free(as);
 				return 0;
 			} else {
 				int syntax = rz_asm_syntax_from_string(opt.arg);
 				if (syntax == -1) {
-					__as_free(as);
+					asm_as_free(as);
 					return 1;
 				}
 				rz_asm_set_syntax(as->a, syntax);
@@ -736,11 +734,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		rz_analysis_set_big_endian(as->analysis, canbebig);
 	}
 	if (whatsop) {
-		const char *s = rz_asm_describe(as->a, opt.argv[opt.ind]);
+		char *s = rz_asm_describe(as->a, opt.argv[opt.ind]);
 		ret = 1;
 		if (s) {
 			printf("%s\n", s);
 			ret = 0;
+			free(s);
 		}
 		goto beach;
 	}
@@ -904,7 +903,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		ret = !ret;
 	}
 beach:
-	__as_free(as);
+	asm_as_free(as);
 
 	free(rz_arch);
 	if (fd != -1) {

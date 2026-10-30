@@ -58,7 +58,7 @@ RZ_IPI RzCmdStatus rz_resize_handler(RzCore *core, int argc, const char **argv, 
 			break;
 		}
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("%" PFMT64d "\n", oldsize);
+			rz_cons_printf(core->cons, "%" PFMT64d "\n", oldsize);
 			break;
 		default:
 			rz_warn_if_reached();
@@ -88,6 +88,6 @@ RZ_IPI RzCmdStatus rz_resize_human_handler(RzCore *core, int argc, const char **
 	}
 	char humansz[8];
 	rz_num_units(humansz, sizeof(humansz), oldsize);
-	rz_cons_println(humansz);
+	rz_cons_println(core->cons, humansz);
 	return RZ_CMD_STATUS_OK;
 }

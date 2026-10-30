@@ -1,0 +1,4 @@
+[wrap-file]
+directory = rizin-math-parser
+
+# In-tree subproject. See subprojects/rizin-math-parser/.

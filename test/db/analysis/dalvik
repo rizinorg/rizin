@@ -243,7 +243,7 @@ EXPECT=<<EOF
   :::`----> 0x1000001ea      sget-object v1, Ljava/lang/System;->out Ljava/io/PrintStream;
   ::: |||   0x1000001ee      const-string v2, str.one
   ::: |||   0x1000001f2      invoke-virtual {v1, v2}, Ljava/io/PrintStream;->println(Ljava/lang/String;)V
-  ========< 0x1000001f8      goto  0x1000001e8
+  ::: |||   0x1000001f8      goto  0x1000001e8
   ::: `---> 0x1000001fa      sget-object v1, Ljava/lang/System;->out Ljava/io/PrintStream;
   :::  ||   0x1000001fe      const-string v2, str.two
   :::  ||   0x100000202      invoke-virtual {v1, v2}, Ljava/io/PrintStream;->println(Ljava/lang/String;)V

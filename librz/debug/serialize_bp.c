@@ -85,9 +85,9 @@ enum {
 /**
  * \brief Create a new RzSerializeBpParser instance
  *
- * \return NULL if fail, new instance otherwise
+ * \return A new parser to free with rz_key_parser_free(), or NULL on allocation failure.
  */
-RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void) {
+RZ_API RZ_OWN RzSerializeBpParser rz_serialize_bp_parser_new(void) {
 	RzSerializeBpParser parser = rz_key_parser_new();
 	if (!parser) {
 		return NULL;

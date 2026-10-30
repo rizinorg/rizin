@@ -12,6 +12,7 @@
 #ifndef HEXAGON_H
 #define HEXAGON_H
 
+#include "rz_il/rz_il_opcodes.h"
 #include <rz_asm.h>
 #include <rz_config.h>
 #include <rz_list.h>
@@ -197,6 +198,9 @@ typedef struct {
 	RzBitVector *gpr_read; ///< GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *gpr_tmp_read; ///< Tmp GPR register (R0-R31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *gpr_written; ///< GPR register (R0-R31) written, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_read; ///< System register (S0-S75...) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_tmp_read; ///< TmpSystem register (S0-S75...) read, if flags set at (1 << reg_num) are set.
+	RzBitVector *sys_written; ///< System register (S0-S75...) written, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_read; ///< Control register (C0-C31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_tmp_read; ///< Tmp control register (C0-C31) read, if flags set at (1 << reg_num) are set.
 	RzBitVector *ctr_written; ///< Control register (C0-C31) written, if flags set at (1 << reg_num) are set.
@@ -243,6 +247,21 @@ typedef struct {
 typedef struct {
 	const HexInsn *insn;
 	HexPkt *pkt;
+
+	/**
+	 * \brief Every packet has a jump target.
+	 * Either it is the next packet, or one or two jump/call instructions
+	 * set a target.
+	 *
+	 * For our abstract interpretation it is required that every target address
+	 * is written to a local variable before the rest of the packet is executed.
+	 * The different elements for that procedure are below.
+	 * Check out the code to see how they are used.
+	 */
+	const char *jmp_targets[2]; ///< The name of the local variables holding the jump/call targets.
+	const char *jmp_flags[2]; ///< The local flags a jump/call sets if it is taken.
+	RzILOpEffect *jmp_set_addr[2]; ///< Effects to set the respective target addresses.
+	size_t jmp_cnt; ///< Number of calls/jumps lifted.
 } HexInsnPktBundle;
 
 typedef struct {
@@ -259,6 +278,12 @@ typedef enum {
 	HEX_BUF_NEW = 2, ///< Instruction is written to a new packet (overwrites old one).
 } HexBufferAction;
 
+typedef enum {
+	HEX_PRINT_SIGN_NONE = 0,
+	HEX_PRINT_SIGN_ALL = -1,
+	HEX_PRINT_SIGN_SOME = -256,
+} HexPrintSign;
+
 /**
  * \brief Buffer packets for reversed instructions.
  */
@@ -271,7 +296,7 @@ typedef struct {
 	bool might_have_jumped; ///< Is set if a previous IL packet was a branch. Indicates the next decoded packet is valid.
 
 	bool imm_hash; ///< Display ## before 32bit immediates and # before immidiates with other width.
-	bool imm_sign; ///< True: Print them with sign. False: Print signed immediates in unsigned representation.
+	HexPrintSign imm_sign; ///< Print all, none, or only some signed values as signed.
 	bool sdk; ///< Print packet syntax in objdump style.
 	bool reg_alias; ///< Print the alias of registers (Alias from C0 = SA0).
 } HexState;

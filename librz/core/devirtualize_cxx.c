@@ -592,6 +592,7 @@ static RzCppVariableBook *core_analysis_mark_classes(RzCore *core) {
 		free_taint_state(state);
 		rz_list_free(list);
 		RZ_FREE(bytes);
+		return NULL;
 	}
 	var_book->class_variables = ht_up_new(NULL, NULL);
 	var_book->function = function;
@@ -932,7 +933,7 @@ RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core) 
 }
 
 static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
-	rz_cons_printf("C 0x%08" PFMT64x " ", key);
+	rz_cons_printf(core->cons, "C 0x%08" PFMT64x " ", key);
 	rz_core_seek(core, key, true);
 	int nb_opcodes = 1;
 	int nb_bytes = 0;
@@ -941,21 +942,32 @@ static bool print_virtual_xrefs(RzCore *core, ut64 key, void *val) {
 	return true;
 }
 
-/**
- * \brief print xrefs of a virtual function
- */
-RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc) {
-	rz_return_if_fail(core && vfunc);
-
+static RzSetU *virtual_xrefs_get(RzCore *core, const char *vfunc) {
 	HtSP *ht_virtual_xrefs = rz_analysis_get_virtual_xrefs(core->analysis);
 	bool found = false;
 	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
 	if (!found) {
 		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s\n", vfunc);
-		return;
+		return NULL;
 	}
-	rz_cons_printf("Virtual xrefs to %s\n", vfunc);
+	return set;
+}
+
+/**
+ * \brief print xrefs of a virtual function
+ *
+ * \return false if \p vfunc has no virtual xrefs
+ */
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc) {
+	rz_return_val_if_fail(core && vfunc, false);
+
+	RzSetU *set = virtual_xrefs_get(core, vfunc);
+	if (!set) {
+		return false;
+	}
+	rz_cons_printf(core->cons, "Virtual xrefs to %s\n", vfunc);
 	ht_up_foreach(set, (HtUPForeachCallback)print_virtual_xrefs, core);
+	return true;
 }
 
 static bool add_virtual_xref_row(RzTable *table, const ut64 addr, void *val) {
@@ -965,17 +977,41 @@ static bool add_virtual_xref_row(RzTable *table, const ut64 addr, void *val) {
 
 /**
  * \brief print xrefs of virtual functions as table
+ *
+ * \return false if \p vfunc has no virtual xrefs
  */
-RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table) {
-	rz_return_if_fail(core && vfunc && table);
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table) {
+	rz_return_val_if_fail(core && vfunc && table, false);
 
-	HtSP *ht_virtual_xrefs = rz_analysis_get_virtual_xrefs(core->analysis);
-	bool found = false;
-	RzSetU *set = ht_sp_find(ht_virtual_xrefs, vfunc, &found);
-	if (!found) {
-		RZ_LOG_ERROR("Cannot find virtual xrefs to function %s\n", vfunc);
-		return;
+	RzSetU *set = virtual_xrefs_get(core, vfunc);
+	if (!set) {
+		return false;
 	}
-
 	ht_up_foreach(set, (HtUPForeachCallback)add_virtual_xref_row, table);
+	return true;
+}
+
+static bool add_virtual_xref_json(PJ *pj, const ut64 addr, void *val) {
+	pj_o(pj);
+	pj_kn(pj, "from", addr);
+	pj_end(pj);
+	return true;
+}
+
+/**
+ * \brief print xrefs of virtual functions as a JSON array
+ *
+ * \return false if \p vfunc has no virtual xrefs
+ */
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print_json(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL PJ *pj) {
+	rz_return_val_if_fail(core && vfunc && pj, false);
+
+	RzSetU *set = virtual_xrefs_get(core, vfunc);
+	if (!set) {
+		return false;
+	}
+	pj_a(pj);
+	ht_up_foreach(set, (HtUPForeachCallback)add_virtual_xref_json, pj);
+	pj_end(pj);
+	return true;
 }

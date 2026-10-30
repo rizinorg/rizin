@@ -1732,6 +1732,170 @@ static bool test_il_validate_pure_fconvert() {
 	mu_end;
 }
 
+static bool test_il_validate_float_rmode_argument() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+
+	const RzFloatRMode valid_modes[] = {
+		RZ_FLOAT_RMODE_RNE,
+		RZ_FLOAT_RMODE_RNA,
+		RZ_FLOAT_RMODE_RTP,
+		RZ_FLOAT_RMODE_RTN,
+		RZ_FLOAT_RMODE_RTZ,
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(valid_modes); i++) {
+		RzILOpPure *valid_op = rz_il_op_new_fadd(
+			valid_modes[i],
+			rz_il_op_new_float_from_f32(1.0f),
+			rz_il_op_new_float_from_f32(2.0f));
+		mu_assert_true(rz_il_validate_pure(valid_op, ctx, &sort, &report), "explicitly supported static rounding mode");
+		mu_assert_null(report, "no report for a supported static rounding mode");
+		rz_il_op_pure_free(valid_op);
+	}
+
+	RzILOpPure *op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_UNK,
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	bool val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "invalid static rounding-mode value");
+	mu_assert_streq_free(report, "Static rounding-mode value of fadd op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd(
+		(RzFloatRMode)(RZ_FLOAT_RMODE_UNK + 7),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "positive unknown static rounding-mode value");
+	mu_assert_streq_free(report, "Static rounding-mode value of fadd op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
+#define CHECK_INVALID_STATIC_RMODE(op_expr, opcode_name) \
+	do { \
+		op = (op_expr); \
+		val = rz_il_validate_pure(op, ctx, &sort, &report); \
+		mu_assert_false(val, "invalid static rounding mode reaches the shared validator"); \
+		mu_assert_streq_free(report, "Static rounding-mode value of " opcode_name " op is invalid.", "report"); \
+		rz_il_op_pure_free(op); \
+	} while (0)
+
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fcast_int(32, RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f)),
+		"fcast_int");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fcast_float(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_UNK, rz_il_op_new_bitv_from_ut64(32, 1)),
+		"fcast_float");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_frsqrt(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f)),
+		"frsqrt");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fhypot(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		"fhypot");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fmad(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_float_from_f32(3.0f)),
+		"fmad");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fcompound(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_bitv_from_ut64(32, 2)),
+		"fcompound");
+
+#undef CHECK_INVALID_STATIC_RMODE
+
+	op = rz_il_op_new_fadd(
+		(RzFloatRMode)-1,
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "negative static rounding-mode value");
+	mu_assert_streq_free(report, "Static rounding-mode value of fadd op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	op->op.fadd.rmode.kind = (RzILOpArgFloatRModeKind)(RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC + 1);
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "unknown rounding-mode argument tag");
+	mu_assert_streq_free(report, "Rounding-mode argument kind of fadd op is invalid.", "report");
+	op->op.fadd.rmode.kind = RZ_IL_OP_ARG_FLOAT_RMODE_STATIC;
+	op->op.fadd.rmode.value.static_mode = RZ_FLOAT_RMODE_RNE;
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd(
+		RZ_FLOAT_RMODE_RNE,
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	op->op.fadd.rmode.kind = RZ_IL_OP_ARG_FLOAT_RMODE_DYNAMIC;
+	op->op.fadd.rmode.value.dynamic_mode = NULL;
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "dynamic rounding-mode argument must not be NULL");
+	mu_assert_streq_free(report, "Rounding-mode operand of fadd op is NULL.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "32-bit runtime rounding mode");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), "sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(8, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime rounding mode must be 32-bit");
+	mu_assert_streq_free(report, "Rounding-mode operand of fadd op must be 32 bits, got 8.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd_dyn_rmode(
+		rz_il_op_new_b0(),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime rounding mode must be a bitvector");
+	mu_assert_streq_free(report, "Rounding-mode operand of fadd op is not a bitvector.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fadd_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f64(2.0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime-rmode binary operands retain static format checks");
+	mu_assert_streq_free(report,
+		"Op fadd formats of left operand (float:0) and right operand (float:1) do not agree.",
+		"report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fconvert_dyn_rmode(
+		RZ_FLOAT_IEEE754_BIN_32,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f64(1.0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_true(val, "runtime-rmode fconvert retains target format");
+	mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), "converted sort");
+	mu_assert_null(report, "no report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fconvert_dyn_rmode(
+		RZ_FLOAT_UNK,
+		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f64(1.0));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime-rmode fconvert rejects an invalid target format");
+	mu_assert_streq_free(report, "Target format of fconvert op is invalid.", "report");
+	rz_il_op_pure_free(op);
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_validate_pure_null);
 	mu_run_test(test_il_validate_pure_bitv);
@@ -1775,6 +1939,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_pure_fcast_to_int);
 	mu_run_test(test_il_validate_pure_icast_to_float);
 	mu_run_test(test_il_validate_pure_fconvert);
+	mu_run_test(test_il_validate_float_rmode_argument);
 
 	return tests_passed != tests_run;
 }

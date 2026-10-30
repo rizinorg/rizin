@@ -39,7 +39,7 @@ tasks:
         # Running the unit tests
         ninja -C build test
     - test: |
-        python3 -m pip install --user requests
+        python3 -m pip install --user psutil requests
         cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}

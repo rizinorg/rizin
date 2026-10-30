@@ -4415,13 +4415,6 @@ arc_opcode_supported (const struct arc_opcode *opcode)
 int
 arc_opval_supported (const struct arc_operand_value *opval ATTRIBUTE_UNUSED)
 {
-#if 0 /* I'm leaving this is a place holder, we don't discrimnate */
-  if (ARC_OPVAL_CPU (opval->flags) == 0)
-    return 1;
-  if (ARC_OPVAL_CPU (opval->flags) & ARC_HAVE_CPU (cpu_type))
-    return 1;
-  return 0;
-#endif
   return(1);
 }
 

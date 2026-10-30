@@ -87,20 +87,59 @@ static inline bool rz_list_has_next(RZ_NONNULL const RzListIter *iter) {
 	return iter->next != NULL;
 }
 
+/**
+ * \brief Return the value stored in the previous list node.
+ *
+ **/
+static inline RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NULLABLE RzListIter *iter) {
+	return (iter && iter->prev) ? iter->prev->val : NULL;
+}
+
+/**
+ * \brief Return the value stored in the next list node.
+ *
+ **/
+static inline RZ_BORROW void *rz_list_iter_get_next_data(RZ_NULLABLE RzListIter *iter) {
+	return (iter && iter->next) ? iter->next->val : NULL;
+}
+
+/**
+ * \brief Returns the length of the list
+ **/
+static inline ut32 rz_list_length(RZ_NULLABLE const RzList *list) {
+	return list ? list->length : 0;
+}
+
+/**
+ * \brief Returns the value stored in the first node of the list.
+ **/
+static inline RZ_BORROW void *rz_list_first_val(RZ_NULLABLE const RzList *list) {
+	return (list && list->head) ? list->head->val : NULL;
+}
+
+/**
+ * \brief Returns the value stored in the last node of the list.
+ **/
+static inline RZ_BORROW void *rz_list_last_val(RZ_NULLABLE const RzList *list) {
+	return (list && list->tail) ? list->tail->val : NULL;
+}
+
+/**
+ * \brief Return the first list iterator.
+ **/
+static inline RZ_BORROW RzListIter *rz_list_iterator(RZ_NULLABLE const RzList *list) {
+	return list ? list->head : NULL;
+}
+
 RZ_API RZ_OWN RzList *rz_list_new(void);
 RZ_API RZ_OWN RzList *rz_list_newf(RZ_NULLABLE RzListFree f);
 RZ_API RZ_OWN RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RZ_OWN RzList *rz_list_new_from_iterator(RZ_BORROW RZ_NONNULL RzIterator *iter);
-RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter);
-RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter);
 RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
 RZ_API bool rz_list_iter_swap_data(RZ_NONNULL RzListIter *iter0, RZ_NONNULL RzListIter *iter1);
 RZ_API RZ_BORROW RzListIter *rz_list_append(RZ_NONNULL RzList *list, RZ_NONNULL void *data);
 RZ_API RZ_BORROW RzListIter *rz_list_prepend(RZ_NONNULL RzList *list, RZ_NONNULL void *data);
 RZ_API RZ_BORROW RzListIter *rz_list_insert(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data);
-RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list);
-RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_add_sorted(RZ_NONNULL RzList *list, RZ_NONNULL void *data, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
 RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user);
@@ -116,7 +155,6 @@ RZ_API RZ_OWN RzListIter *rz_list_item_new(RZ_NULLABLE void *data);
 RZ_API bool rz_list_join(RZ_NONNULL RzList *list1, RZ_NONNULL RzList *list2);
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n);
 RZ_API ut32 rz_list_del_n(RZ_NONNULL RzList *list, ut32 n);
-RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list);
 RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item);
 RZ_API RZ_OWN void *rz_list_pop(RZ_NONNULL RzList *list);
 RZ_API RZ_OWN void *rz_list_pop_head(RZ_NONNULL RzList *list);

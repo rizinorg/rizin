@@ -1,0 +1,75 @@
+NAME=glibc 2.23 32-bit arena and single-chunk bin JSON
+FILE=malloc://0x8000
+ARGS=-a x86 -b 32 -E little -e dbg.glibc.version=2.23 -e dbg.glibc.tcache=false -e log.level=4
+CMDS=<<EOF
+# dmhgmj 32-bit little-endian glibc 2.23
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+wx 00000080 @ 0x1000
+wx 02000000 @ 0x1004
+wx 00400080 @ 0x1008
+wx 004f0000 @ 0x102c
+wx 00500000 @ 0x1030
+wx 00410000 @ 0x1034
+wx 00420000 @ 0x1038
+wx 00430000 @ 0x142c
+wx ffffffff @ 0x1430
+wx 01000000 @ 0x143c
+wx 00100000 @ 0x1440
+wx 00000000 @ 0x1444
+wx 02000000 @ 0x1448
+wx 00200000 @ 0x144c
+wx 00300000 @ 0x1450
+dmhgmj
+dmhgmj 0x1000
+# dmhgbj 32-bit glibc 2.23 single chunk
+w0 0x8000 @ 0
+wx 00500000 @ 0x1030
+wx 00100000 @ 0x1440
+wx 00200000 @ 0x144c
+wx 00400000 @ 0x1038
+wx 00400000 @ 0x103c
+wx 30100000 @ 0x4008
+wx 30100000 @ 0x400c
+dmhgbj 0
+EOF
+EXPECT=<<EOF
+{"addr":4096,"mutex":2147483648,"flags":2,"fastbinsY":[2147500032,0,0,0,0,0,0,0,0,20224],"top":20480,"last_remainder":16640,"bins":[16896,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17152],"binmap":[4294967295,0,0,1],"next":4096,"next_free":0,"attached_threads":2,"system_mem":8192,"max_system_mem":12288}
+{"addr":4096,"mutex":2147483648,"flags":2,"fastbinsY":[2147500032,0,0,0,0,0,0,0,0,20224],"top":20480,"last_remainder":16640,"bins":[16896,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17152],"binmap":[4294967295,0,0,1],"next":4096,"next_free":0,"attached_threads":2,"system_mem":8192,"max_system_mem":12288}
+[{"bin_num":0,"bin_type":"unsorted","addr":4144,"forward":[16384],"backward":[16384]}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dmhgbj 64-bit glibc 2.23 single chunk
+FILE=malloc://0x8000
+ARGS=-a x86 -b 64 -e dbg.glibc.version=2.23 -e dbg.glibc.tcache=false -e log.level=4
+CMDS=<<EOF
+om 3 0x1000 0x1000 0x1000 rw- arena
+om 3 0x4000 0x2000 0x4000 rw- [heap]
+wx 0050000000000000 @ 0x1058
+wx 0010000000000000 @ 0x1868
+wx 0020000000000000 @ 0x1880
+wx 0040000000000000 @ 0x1068
+wx 0040000000000000 @ 0x1070
+wx 5810000000000000 @ 0x4010
+wx 5810000000000000 @ 0x4018
+dmhgbj 0
+EOF
+EXPECT=<<EOF
+[{"bin_num":0,"bin_type":"unsorted","addr":4184,"forward":[16384],"backward":[16384]}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=dmhgmj without an arena reports an error
+FILE=malloc://64
+ARGS=-a x86 -b 64 -e cfg.json.status=true -e cfg.exit.errorcode=true
+CMDS=<<EOF
+dmhgmj
+EOF
+EXPECT=<<EOF
+{"error":{"code":"ERROR","message":"Command execution failed","command":"dmhgmj","args":[]}}
+EOF
+EXIT_STATUS=1
+RUN

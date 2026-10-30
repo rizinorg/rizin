@@ -173,10 +173,24 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 				op->il_op = rz_il_op_new_empty();
 			}
 			if (op->il_op && delayed_branch->cond) {
-				// The branch is conditionally and annuls the delay slot if not taken (skips op->il_op).
-				op->il_op = rz_il_op_new_branch(delayed_branch->cond,
-					rz_il_op_new_seq(delayed_branch->set_ea, rz_il_op_new_seq(op->il_op, delayed_branch->perform_jmp)),
-					delayed_branch->perform_fail_jmp);
+				// The branch is conditional and optionally annuls the delay slot if not taken (skips op->il_op).
+				// clang-format off
+				if (delayed_branch->annulled_bit) {
+					op->il_op = rz_il_op_new_branch(delayed_branch->cond,
+						rz_il_op_new_seq(
+							delayed_branch->set_ea, rz_il_op_new_seq(
+							op->il_op,
+							delayed_branch->perform_jmp)),
+						rz_il_op_new_nop());
+				} else {
+					op->il_op = rz_il_op_new_seq(
+						delayed_branch->set_ea, rz_il_op_new_seq(
+						op->il_op,
+						rz_il_op_new_branch(delayed_branch->cond,
+							delayed_branch->perform_jmp,
+							rz_il_op_new_nop())));
+				}
+				// clang-format on
 			} else if (op->il_op) {
 				op->il_op = rz_il_op_new_seq(delayed_branch->set_ea, rz_il_op_new_seq(op->il_op, delayed_branch->perform_jmp));
 			}
@@ -753,16 +767,18 @@ static bool sparc_fini(void *user) {
 	if (!sparc) {
 		return true;
 	}
-	RzIterator *iter = ht_up_as_iter(sparc->delayed_branch);
+	RzIterator iter = { 0 };
+	if (!ht_up_as_iter(sparc->delayed_branch, &iter)) {
+		return false;
+	}
 	RzSparcDelatedBranchOp **eff;
-	rz_iterator_foreach(iter, eff) {
-		rz_il_op_effect_free((*eff)->perform_fail_jmp);
+	rz_iterator_foreach(&iter, eff) {
 		rz_il_op_effect_free((*eff)->perform_jmp);
 		rz_il_op_effect_free((*eff)->set_ea);
 		free(*eff);
 	}
 	ht_up_free(sparc->delayed_branch);
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	if (sparc->handle != 0) {
 		cs_close(&sparc->handle);
 	}

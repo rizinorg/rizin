@@ -6,32 +6,6 @@
 #include <rz_util.h>
 
 /**
- * \brief returns the value stored in the prev RzList iterator
- *
- **/
-RZ_API RZ_BORROW void *rz_list_iter_get_prev_data(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	RzListIter *p = iter->prev;
-	if (!p) {
-		return NULL;
-	}
-	return p->val;
-}
-
-/**
- * \brief returns the value stored in the next RzList iterator
- *
- **/
-RZ_API RZ_BORROW void *rz_list_iter_get_next_data(RZ_NONNULL RzListIter *iter) {
-	rz_return_val_if_fail(iter, NULL);
-	RzListIter *n = iter->next;
-	if (!n) {
-		return NULL;
-	}
-	return n->val;
-}
-
-/**
  * \brief swaps the data held by two iterators and returns true if succeeds
  *
  **/
@@ -44,38 +18,11 @@ RZ_API bool rz_list_iter_swap_data(RZ_NONNULL RzListIter *iter0, RZ_NONNULL RzLi
 }
 
 /**
- * \brief returns the first RzList iterator int the list
- *
- **/
-RZ_API RZ_BORROW RzListIter *rz_list_iterator(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->head;
-}
-
-/**
  * \brief Alias for rz_list_append
  *
  **/
 RZ_API RZ_BORROW RzListIter *rz_list_push(RZ_NONNULL RzList *list, void *item) {
 	return rz_list_append(list, item);
-}
-
-/**
- * \brief Returns the value stored in the first node of the list.
- *
- **/
-RZ_API RZ_BORROW void *rz_list_first_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->head ? list->head->val : NULL;
-}
-
-/**
- * \brief Returns the value stored in the last node of the list.
- *
- **/
-RZ_API RZ_BORROW void *rz_list_last_val(RZ_NONNULL const RzList *list) {
-	rz_return_val_if_fail(list, NULL);
-	return list->tail ? list->tail->val : NULL;
 }
 
 /**
@@ -90,17 +37,6 @@ RZ_API void rz_list_init(RZ_NONNULL RzList *list) {
 	list->free = NULL;
 	list->length = 0;
 	list->sorted = false;
-}
-
-/**
- * \brief Returns the length of the list
- *
- **/
-RZ_API ut32 rz_list_length(RZ_NONNULL const RzList *list) {
-	if (!list) {
-		return 0;
-	}
-	return list->length;
 }
 
 static void _list_purge_with_free(RzList *list) {
@@ -559,6 +495,7 @@ RZ_API ut32 rz_list_set_n(RZ_NONNULL RzList *list, ut32 n, RZ_NONNULL void *data
 /**
  * \brief Returns the N-th element of the list
  *
+ * Walks the list from the end which is nearest to the N-th element.
  **/
 RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 	RzListIter *it;
@@ -569,9 +506,17 @@ RZ_API RZ_BORROW void *rz_list_get_n(RZ_NONNULL const RzList *list, ut32 n) {
 		return NULL;
 	}
 
-	for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
-		if (i == n) {
-			return it->val;
+	if (n >= list->length / 2) {
+		for (it = list->tail, i = list->length - 1; it && it->val; it = it->prev, i--) {
+			if (i == n) {
+				return it->val;
+			}
+		}
+	} else {
+		for (it = list->head, i = 0; it && it->val; it = it->next, i++) {
+			if (i == n) {
+				return it->val;
+			}
 		}
 	}
 	return NULL;
@@ -622,7 +567,7 @@ RZ_API RZ_BORROW RzListIter *rz_list_find(RZ_NONNULL const RzList *list, const v
 	return NULL;
 }
 
-static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user) {
+static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparator cmp, void *user, RZ_NULLABLE RZ_OUT RzListIter **tail) {
 	RzListIter *next = NULL, *result = NULL, *head = NULL;
 	while (first || second) {
 		if (!second) {
@@ -650,6 +595,12 @@ static RzListIter *_merge(RzListIter *first, RzListIter *second, RzListComparato
 	}
 	head->prev = NULL;
 	next->next = NULL;
+	// \p next is the last element which was placed. So it is the new tail of
+	// the merged list. Passing it to the caller avoids walking the whole list
+	// for updating RzList.tail afterwards.
+	if (tail) {
+		*tail = next;
+	}
 	return head;
 }
 
@@ -671,15 +622,18 @@ static RzListIter *_r_list_half_split(RzListIter *head) {
 	return tmp;
 }
 
-static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp, void *user) {
+static RzListIter *_merge_sort(RzListIter *head, RzListComparator cmp, void *user, RZ_NULLABLE RZ_OUT RzListIter **tail) {
 	RzListIter *second;
 	if (!head || !head->next) {
+		if (tail) {
+			*tail = head;
+		}
 		return head;
 	}
 	second = _r_list_half_split(head);
-	head = _merge_sort(head, cmp, user);
-	second = _merge_sort(second, cmp, user);
-	return _merge(head, second, cmp, user);
+	head = _merge_sort(head, cmp, user, tail);
+	second = _merge_sort(second, cmp, user, NULL);
+	return _merge(head, second, cmp, user, tail);
 }
 
 /**
@@ -690,14 +644,8 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
 	rz_return_if_fail(list && cmp);
 
 	if (!list->sorted && list->head && cmp) {
-		RzListIter *iter;
-		list->head = _merge_sort(list->head, cmp, user);
-		// update tail reference
-		iter = list->head;
-		while (iter && iter->next) {
-			iter = iter->next;
-		}
-		list->tail = iter;
+		// The new tail of the list is passed by _merge_sort().
+		list->head = _merge_sort(list->head, cmp, user, &list->tail);
 	}
 	list->sorted = true;
 }
@@ -705,6 +653,8 @@ RZ_API void rz_list_merge_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCompara
 /**
  * \brief Insertion sorts the list via the RzListComparator
  *
+ * Nodes are relinked instead of swapping their values.
+ * Already sorted lists are processed in O(n) time.
  **/
 RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListComparator cmp, void *user) {
 	rz_return_if_fail(list && cmp);
@@ -712,16 +662,35 @@ RZ_API void rz_list_insertion_sort(RZ_NONNULL RzList *list, RZ_NONNULL RzListCom
 	if (list->sorted) {
 		return;
 	}
-	RzListIter *it;
-	RzListIter *it2;
-	for (it = list->head; it && it->val; it = it->next) {
-		for (it2 = it->next; it2 && it2->val; it2 = it2->next) {
-			if (cmp(it->val, it2->val, user) > 0) {
-				void *t = it->val;
-				it->val = it2->val;
-				it2->val = t;
-			}
+	RzListIter *sorted_tail = list->head;
+	while (sorted_tail && sorted_tail->next) {
+		RzListIter *node = sorted_tail->next;
+		if (cmp(sorted_tail->val, node->val, user) <= 0) {
+			// The node is already at the right position.
+			sorted_tail = node;
+			continue;
 		}
+		// Unlink the node from its current position.
+		sorted_tail->next = node->next;
+		if (node->next) {
+			node->next->prev = sorted_tail;
+		} else {
+			list->tail = sorted_tail;
+		}
+		// Find the first node which should come after the unlinked node.
+		RzListIter *pos = list->head;
+		while (cmp(pos->val, node->val, user) <= 0) {
+			pos = pos->next;
+		}
+		// Insert the node before \p pos.
+		node->next = pos;
+		node->prev = pos->prev;
+		if (pos->prev) {
+			pos->prev->next = node;
+		} else {
+			list->head = node;
+		}
+		pos->prev = node;
 	}
 	list->sorted = true;
 }
@@ -803,16 +772,18 @@ RZ_API RZ_OWN char *rz_list_to_str(RZ_NONNULL RzList /*<const char *>*/ *list, c
 	if (!buf) {
 		return NULL;
 	}
+	// Appending the separator and the item separately avoids the comparably
+	// expensive printf style formatting of rz_strbuf_appendf() for every item.
+	char sep[2] = { ch, 0 };
 	const char *item;
 	rz_list_foreach (list, iter, item) {
 		if (rz_strbuf_length(buf) > 0) {
-			rz_strbuf_appendf(buf, "%c%s", ch, item);
-		} else {
-			rz_strbuf_append(buf, item);
+			rz_strbuf_append(buf, sep);
 		}
+		rz_strbuf_append(buf, item);
 	}
 	if (append_last) {
-		rz_strbuf_appendf(buf, "%c", ch);
+		rz_strbuf_append(buf, sep);
 	}
 	return rz_strbuf_drain(buf);
 }

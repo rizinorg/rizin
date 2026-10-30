@@ -192,9 +192,10 @@ RZ_IPI RzILOpEffectHandler rz_il_op_handler_effect_table_default[RZ_IL_OP_EFFECT
 
 /**
  * Load data from memory by given key and generates an RZ_IL_EVENT_MEM_READ event
- * \param  vm     RzILVM, pointer to VM
- * \param  key    RzBitVector, aka address, a key to load data from memory
- * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
+ * \param vm Pointer to the VM
+ * \param index Index of the memory to read
+ * \param key Address to load the data from
+ * \return Data at the address, `vm->min_unit_size` wide
  */
 RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVector *key) {
 	rz_return_val_if_fail(vm && key, NULL);
@@ -212,9 +213,10 @@ RZ_API RzBitVector *rz_il_vm_mem_load(RzILVM *vm, RzILMemIndex index, RzBitVecto
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
  * an RZ_IL_EVENT_MEM_WRITE event
- * \param  vm    RzILVM* pointer to VM
- * \param  key   RzBitVector, aka address, a key to store data from memory
- * \param  value RzBitVector, aka value to store in memory
+ * \param vm Pointer to the VM
+ * \param index Index of the memory to store data into
+ * \param key Address to store the data at
+ * \param value Value to store in memory
  */
 RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value) {
 	rz_return_if_fail(vm && key && value);
@@ -231,9 +233,11 @@ RZ_API void rz_il_vm_mem_store(RzILVM *vm, RzILMemIndex index, RzBitVector *key,
 
 /**
  * Load data from memory by given key and generates an RZ_IL_EVENT_MEM_READ event
- * \param  vm     RzILVM, pointer to VM
- * \param  key    RzBitVector, aka address, a key to load data from memory
- * \return val    Bitvector, data at the address, has `vm->min_unit_size` length
+ * \param vm Pointer to the VM
+ * \param index Index of the memory to read
+ * \param key Address to load the data from
+ * \param n_bits Amount of bits to load
+ * \return Data at the address, \p n_bits wide
  */
 RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVector *key, ut32 n_bits) {
 	rz_return_val_if_fail(vm && key, NULL);
@@ -251,10 +255,10 @@ RZ_API RzBitVector *rz_il_vm_mem_loadw(RzILVM *vm, RzILMemIndex index, RzBitVect
  * Store data to memory by key, will create a key-value pair
  * or update the key-value pair if key existed; also generates
  * an RZ_IL_EVENT_MEM_WRITE event
- * \param  index RzILMemIndex, index of the memory to store data
- * \param  vm    RzILVM* pointer to VM
- * \param  key   RzBitVector, aka address, a key to store data from memory
- * \param  value RzBitVector, aka value to store in memory
+ * \param vm Pointer to the VM
+ * \param index Index of the memory to store data into
+ * \param key Address to store the data at
+ * \param value Value to store in memory
  */
 RZ_API void rz_il_vm_mem_storew(RzILVM *vm, RzILMemIndex index, RzBitVector *key, RzBitVector *value) {
 	rz_return_if_fail(vm && key && value);
@@ -275,8 +279,8 @@ end:
 
 /**
  * Adds to the VM a new event into the VM event list
- * \param vm, RzILVM, pointer to the VM
- * \param evt, RzILEvent, pointer to the event
+ * \param vm Pointer to the VM
+ * \param evt Pointer to the event
  */
 RZ_API void rz_il_vm_event_add(RzILVM *vm, RzILEvent *evt) {
 	rz_return_if_fail(vm && vm->events && evt);
@@ -299,8 +303,8 @@ RZ_API void rz_il_vm_clear_events(RzILVM *vm) {
 
 /**
  * Execute the opcodes uplifted from raw instructions.A list may contain multiple opcode trees
- * \param vm pointer to VM
- * \param op_list, a list of op roots.
+ * \param vm Pointer to the VM
+ * \param op Root of the op tree to evaluate
  * \param fallthrough_addr initial address to set PC to. Thus also the address to "step to" if no explicit jump occurs.
  */
 RZ_API bool rz_il_vm_step(RzILVM *vm, RzILOpEffect *op, ut64 fallthrough_addr) {
@@ -359,6 +363,23 @@ static const char *pure_type_name(RzILTypePure type) {
 	}
 }
 
+static void pure_result_free(void *res, RzILTypePure type) {
+	switch (type) {
+	case RZ_IL_TYPE_PURE_BITVECTOR:
+		rz_bv_free(res);
+		break;
+	case RZ_IL_TYPE_PURE_BOOL:
+		rz_il_bool_free(res);
+		break;
+	case RZ_IL_TYPE_PURE_FLOAT:
+		rz_float_free(res);
+		break;
+	default:
+		free(res);
+		break;
+	}
+}
+
 /**
  * Evaluate the given pure op, asserting it returns a bitvector.
  * \return value in bitvector, or NULL if an error occurred (e.g. the op returned some other type)
@@ -374,6 +395,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzBitVector *rz_il_evaluate_bitv(RZ_NONNULL RzILVM *vm
 	}
 	if (type != RZ_IL_TYPE_PURE_BITVECTOR) {
 		RZ_LOG_ERROR("RzIL: type error: expected bitvector, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;
@@ -394,6 +416,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzILBool *rz_il_evaluate_bool(RZ_NONNULL RzILVM *vm, R
 	}
 	if (type != RZ_IL_TYPE_PURE_BOOL) {
 		RZ_LOG_ERROR("RzIL: type error: expected bool, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;
@@ -458,6 +481,7 @@ RZ_API RZ_NULLABLE RZ_OWN RzFloat *rz_il_evaluate_float(RZ_NONNULL RzILVM *vm, R
 	}
 	if (type != RZ_IL_TYPE_PURE_FLOAT) {
 		RZ_LOG_ERROR("RzIL: type error: expected float, got %s\n", pure_type_name(type));
+		pure_result_free(res, type);
 		return NULL;
 	}
 	return res;

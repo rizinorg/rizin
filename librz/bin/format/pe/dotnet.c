@@ -921,6 +921,7 @@ int bin_pe_dotnet_init_metadata(Pe_image_clr *clr, bool big_endian, RzBuffer *b,
 	return -1;
 fail:
 	RZ_LOG_WARN("read (metadata header)\n");
+	free(metadata->VersionString);
 	free(metadata);
 	clr->metadata_header = NULL;
 	return 0;

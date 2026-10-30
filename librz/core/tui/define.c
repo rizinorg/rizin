@@ -40,13 +40,13 @@ static void handleHints(RzCore *core) {
 	char ch[64] = RZ_EMPTY;
 	const char *lines[] = { "[dh]- Define analysis hint:", " b [16,32,64]     set bits hint", NULL };
 	for (i = 0; lines[i]; i++) {
-		rz_cons_fill_line();
-		rz_cons_printf("\r%s\n", lines[i]);
+		rz_cons_fill_line(core->cons);
+		rz_cons_printf(core->cons, "\r%s\n", lines[i]);
 	}
 	RzLine *line = core->cons->line;
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	rz_line_set_prompt(line, "analysis hint: ");
-	if (rz_cons_fgets(ch, sizeof(ch), 0, NULL) > 0) {
+	if (rz_cons_fgets(core->cons, ch, sizeof(ch), 0, NULL) > 0) {
 		switch (ch[0]) {
 		case 'b': {
 			char *arg = ch + 1;
@@ -83,20 +83,20 @@ RZ_IPI void rz_core_visual_define(RzCore *core, const char *args, int distance) 
 		off += cur;
 		p += cur;
 	}
-	(void)rz_cons_get_size(&h);
+	(void)rz_cons_get_size(core->cons, &h);
 	h -= 19;
 	if (h < 0) {
 		h = 0;
-		rz_cons_clear00();
+		rz_cons_clear00(core->cons);
 	} else {
-		rz_cons_gotoxy(0, 3);
+		rz_cons_gotoxy(core->cons, 0, 3);
 	}
 	const char *lines[] = { "", "[Vd]- Define current block as:", " $    define flag size", " 1    edit bits", " a    assembly", " b    as byte (1 byte)", " B    define half word (16 bit, 2 byte size)", " c    as code (unset any data / string / format) in here", " C    define flag color (fc)", " d    set as data", " e    end of function", " f    analyze function", " F    format", " h    define hint (for half-word, see 'B')", " i    (ahi) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))", " I    (ahi1) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))", " j    merge down (join this and next functions)", " k    merge up (join this and previous function)", " h    define analysis hint", " m    manpage for current call", " n    rename flag used at cursor", " N    edit function signature (afs!)", " o    opcode string", " r    rename function", " R    find references /r", " s    set string", " S    set strings in current block", " t    set opcode type via aht hints (call, nop, jump, ...)", " u    undefine metadata here", " v    rename variable at offset that matches some hex digits", " x    find xrefs to current address (./r)", " w    set as 32bit word", " W    set as 64bit word", " q    quit menu", " z    zone flag", NULL };
 	for (i = 0; lines[i]; i++) {
-		rz_cons_fill_line();
-		rz_cons_printf("\r%s\n", lines[i]);
+		rz_cons_fill_line(core->cons);
+		rz_cons_printf(core->cons, "\r%s\n", lines[i]);
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	int wordsize = 0;
 	// get ESC+char, return 'hjkl' char
 repeat:
@@ -104,7 +104,7 @@ repeat:
 		ch = *args;
 		args++;
 	} else {
-		ch = rz_cons_arrow_to_hjkl(rz_cons_readchar());
+		ch = rz_cons_arrow_to_hjkl(core->cons, rz_cons_readchar(core->cons));
 	}
 
 onemoretime:
@@ -115,15 +115,15 @@ onemoretime:
 		break;
 	case 'F': {
 		char cmd[128];
-		rz_cons_show_cursor(true);
+		rz_cons_show_cursor(core->cons, true);
 		rz_core_cmd0(core, "pf?");
-		rz_cons_flush();
+		rz_cons_flush(core->cons);
 		rz_line_set_prompt(line, "format: ");
 		strcpy(cmd, "Cf 0 ");
-		if (rz_cons_fgets(cmd + 5, sizeof(cmd) - 5, 0, NULL) > 0) {
+		if (rz_cons_fgets(core->cons, cmd + 5, sizeof(cmd) - 5, 0, NULL) > 0) {
 			rz_core_cmdf(core, "%s @ 0x%08" PFMT64x, cmd, off);
-			rz_cons_set_raw(1);
-			rz_cons_show_cursor(false);
+			rz_cons_set_raw(core->cons, 1);
+			rz_cons_show_cursor(core->cons, false);
 		}
 	} break;
 	case '1':
@@ -132,9 +132,9 @@ onemoretime:
 	case 't':
 	case 'o': {
 		char str[128];
-		rz_cons_show_cursor(true);
+		rz_cons_show_cursor(core->cons, true);
 		rz_line_set_prompt(line, ch == 't' ? "type: " : "opstr: ");
-		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
+		if (rz_cons_fgets(core->cons, str, sizeof(str), 0, NULL) > 0) {
 			rz_core_cmdf(core, "ah%c %s @ 0x%" PFMT64x, ch, str, off);
 		}
 	} break;
@@ -143,18 +143,18 @@ onemoretime:
 		break;
 	case 'i': {
 		char str[128];
-		rz_cons_show_cursor(true);
+		rz_cons_show_cursor(core->cons, true);
 		rz_line_set_prompt(line, "immbase: ");
-		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
+		if (rz_cons_fgets(core->cons, str, sizeof(str), 0, NULL) > 0) {
 			int base = rz_num_base_of_string(core->num, str);
 			rz_analysis_hint_set_immbase(core->analysis, off, base);
 		}
 	} break;
 	case 'I': {
 		char str[128];
-		rz_cons_show_cursor(true);
+		rz_cons_show_cursor(core->cons, true);
 		rz_line_set_prompt(line, "immbase: ");
-		if (rz_cons_fgets(str, sizeof(str), 0, NULL) > 0) {
+		if (rz_cons_fgets(core->cons, str, sizeof(str), 0, NULL) > 0) {
 			rz_core_cmdf(core, "ahi1 %s @ 0x%" PFMT64x, str, off);
 		}
 	} break;
@@ -210,12 +210,12 @@ onemoretime:
 			if (p) {
 				*p = 0;
 			}
-			rz_cons_clear();
-			rz_cons_flush();
+			rz_cons_clear(core->cons);
+			rz_cons_flush(core->cons);
 			rz_sys_cmdf("man %s", man);
 			free(man);
 		}
-		rz_cons_any_key(NULL);
+		rz_cons_any_key(core->cons, NULL);
 	} break;
 	case 'n': {
 		RzAnalysisOp op = { 0 };
@@ -232,7 +232,7 @@ onemoretime:
 		RzAnalysisVar *var = rz_analysis_get_used_function_var(core->analysis, op.addr);
 		if (var) {
 			char *inputstr = rz_str_newf("New variable name for '%s': ", var->name);
-			char *newname = rz_cons_input(inputstr);
+			char *newname = rz_cons_input(core->cons, inputstr);
 			if (RZ_STR_ISNOTEMPTY(newname)) {
 				rz_analysis_var_rename(var, newname, true);
 				free(newname);
@@ -243,19 +243,19 @@ onemoretime:
 			RzFlagItem *f = rz_flag_get_i(core->flags, tgt_addr);
 			if (fcn) {
 				char *msg = rz_str_newf("Rename function %s to: ", fcn->name);
-				char *newname = rz_cons_input(msg);
+				char *newname = rz_cons_input(core->cons, msg);
 				free(msg);
 				rz_core_analysis_function_rename(core, tgt_addr, newname);
 				free(newname);
 			} else if (f) {
 				char *msg = rz_str_newf("Rename flag %s to: ", f->name);
-				char *newname = rz_cons_input(msg);
+				char *newname = rz_cons_input(core->cons, msg);
 				free(msg);
 				rz_flag_rename(core->flags, f, newname);
 				free(newname);
 			} else {
 				char *msg = rz_str_newf("Create flag at 0x%" PFMT64x " named: ", tgt_addr);
-				char *newname = rz_cons_input(msg);
+				char *newname = rz_cons_input(core->cons, msg);
 				free(msg);
 				rz_flag_set(core->flags, newname, tgt_addr, 1);
 				free(newname);
@@ -269,35 +269,35 @@ onemoretime:
 		RzFlagItem *item = rz_flag_get_i(core->flags, off);
 		if (item) {
 			char cmd[128];
-			rz_cons_show_cursor(true);
-			rz_cons_flush();
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_flush(core->cons);
 			rz_line_set_prompt(line, "color: ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) > 0) {
 				rz_flag_item_set_color(item, cmd);
-				rz_cons_set_raw(1);
-				rz_cons_show_cursor(false);
+				rz_cons_set_raw(core->cons, 1);
+				rz_cons_show_cursor(core->cons, false);
 			}
 		} else {
 			eprintf("Sorry. No flag here\n");
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 		}
 	} break;
 	case '$': {
 		RzFlagItem *item = rz_flag_get_i(core->flags, off);
 		if (item) {
 			char cmd[128];
-			rz_cons_printf("Current flag size is: %" PFMT64d "\n", item->size);
-			rz_cons_show_cursor(true);
-			rz_cons_flush();
+			rz_cons_printf(core->cons, "Current flag size is: %" PFMT64d "\n", item->size);
+			rz_cons_show_cursor(core->cons, true);
+			rz_cons_flush(core->cons);
 			rz_line_set_prompt(line, "new size: ");
-			if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) > 0) {
+			if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) > 0) {
 				item->size = rz_num_math(core->num, cmd);
-				rz_cons_set_raw(1);
-				rz_cons_show_cursor(false);
+				rz_cons_set_raw(core->cons, 1);
+				rz_cons_show_cursor(core->cons, false);
 			}
 		} else {
 			eprintf("Sorry. No flag here\n");
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 		}
 	} break;
 	case 'e':
@@ -326,7 +326,7 @@ onemoretime:
 	} break;
 	case 'k':
 		eprintf("TODO: merge up\n");
-		rz_cons_any_key(NULL);
+		rz_cons_any_key(core->cons, NULL);
 		break;
 	// very weak and incomplete
 	case 'h': // "Vdh"
@@ -450,21 +450,21 @@ onemoretime:
 		if (fcn) {
 			rz_analysis_function_resize(fcn, core->offset - fcn->addr);
 		}
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 		// required for thumb autodetection
 		rz_core_analysis_function_add(core, NULL, off, false);
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 	} break;
 	case 'v': {
 		ut64 N;
 		char *endptr = NULL;
-		char *end_off = rz_cons_input("Last hexadecimal digits of instruction: ");
+		char *end_off = rz_cons_input(core->cons, "Last hexadecimal digits of instruction: ");
 		if (end_off) {
 			N = strtoull(end_off, &endptr, 16);
 		}
 		if (!end_off || end_off == endptr) {
 			eprintf("Invalid numeric input\n");
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 			free(end_off);
 			break;
 		}
@@ -504,7 +504,7 @@ onemoretime:
 
 		if (var) {
 			char *inputstr = rz_str_newf("New variable name for '%s': ", var->name);
-			char *newname = rz_cons_input(inputstr);
+			char *newname = rz_cons_input(core->cons, inputstr);
 			if (RZ_STR_ISNOTEMPTY(newname)) {
 				rz_analysis_var_rename(var, newname, true);
 				free(newname);
@@ -512,7 +512,7 @@ onemoretime:
 			free(inputstr);
 		} else {
 			eprintf("Cannot find instruction with a variable\n");
-			rz_cons_any_key(NULL);
+			rz_cons_any_key(core->cons, NULL);
 		}
 
 		rz_analysis_op_free(op);

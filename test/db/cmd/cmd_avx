@@ -83,3 +83,50 @@ C 0x1000077c0 bl sym.imp.objc_msgSend
 0x1000077c0
 EOF
 RUN
+
+NAME=dlang virtual xrefs
+FILE=bins/elf/analysis/class_dlang
+CMDS=<<EOF
+aaa
+avD @ 0x4d8d8
+avx sym.int_class_dlang.Rectangle.area
+EOF
+EXPECT=<<EOF
+Virtual xrefs to sym.int_class_dlang.Rectangle.area
+C 0x0004d8df call qword [rax+0x30]
+EOF
+RUN
+
+NAME=cxx virtual xrefs multiple with JSON output (arm64)
+FILE=bins/mach0/arm64-class-conditional
+CMDS=<<EOF
+aaaa
+avD @ main
+avxj method.Dog.run
+EOF
+EXPECT=<<EOF
+[{"from":4294977692},{"from":4294977880},{"from":4294977804}]
+EOF
+RUN
+
+NAME=virtual xrefs to an unknown function
+FILE==
+CMDS=<<EOF
+avx foo
+_s
+avxt foo
+_s
+avxj foo
+_s
+EOF
+EXPECT=<<EOF
+ERROR
+ERROR
+ERROR
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot find virtual xrefs to function foo
+ERROR: Cannot find virtual xrefs to function foo
+ERROR: Cannot find virtual xrefs to function foo
+EOF
+RUN

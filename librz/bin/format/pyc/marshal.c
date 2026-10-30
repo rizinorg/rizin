@@ -69,6 +69,8 @@ static double get_float64(RzBuffer *buffer, bool *error) {
 }
 
 static ut8 *get_bytes(RzBuffer *buffer, ut32 size) {
+	rz_return_val_if_fail(size < ST32_MAX && buffer, NULL);
+
 	ut8 *ret = RZ_NEWS0(ut8, size + 1);
 	if (!ret) {
 		return NULL;
@@ -208,14 +210,14 @@ static pyc_object *get_long_object(RzBuffer *buffer) {
 			tmp |= n << left;
 			left += 15;
 
-			while (left >= 4) {
+			while (left >= 4 && j > 0) {
 				hexstr[--j] = digist2hex[tmp & 0xf];
 				tmp >>= 4;
 				left -= 4;
 			}
 		}
 
-		if (tmp) {
+		if (tmp && j > 0) {
 			hexstr[--j] = digist2hex[tmp & 0xf];
 		}
 
@@ -332,12 +334,13 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 	}
 	ut8 *s1 = malloc(n1 + 1);
 	if (!s1) {
+		free(ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
 	if (rz_buf_read(buffer, s1, n1) != n1) {
-		RZ_FREE(s1);
-		RZ_FREE(ret);
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	s1[n1] = '\0';
@@ -348,27 +351,31 @@ static pyc_object *get_complex_object(RzBinPycObj *pyc, RzBuffer *buffer) {
 		n2 = get_st32(buffer, &error);
 	}
 	if (error || UT32_ADD_OVFCHK(n2, 1)) {
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	ut8 *s2 = malloc(n2 + 1);
 	if (!s2) {
+		free(s1);
+		free(ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
 	if (rz_buf_read(buffer, s2, n2) != n2) {
-		RZ_FREE(s1);
-		RZ_FREE(s2);
-		RZ_FREE(ret);
+		free(s1);
+		free(s2);
+		free(ret);
 		return NULL;
 	}
 	s2[n2] = '\0';
 
 	ret->type = TYPE_COMPLEX;
 	ret->data = rz_str_newf("%s+%sj", s1, s2);
-	RZ_FREE(s1);
-	RZ_FREE(s2);
+	free(s1);
+	free(s2);
 	if (!ret->data) {
-		RZ_FREE(ret);
+		free(ret);
 		return NULL;
 	}
 	return ret;
@@ -439,6 +446,8 @@ static bool add_string_to_cache(RzBinPycObj *pyc, ut64 addr, const char *data, u
 	string->type = type;
 	string->string = rz_str_dup(data);
 	if (!rz_pvector_push(pyc->strings_cache, string)) {
+		free(string->string);
+		free(string);
 		return false;
 	}
 	return true;
@@ -691,6 +700,7 @@ static pyc_object *get_ascii_object_generic(RzBinPycObj *pyc, RzBuffer *buffer, 
 	}
 
 	if (!add_string_to_cache(pyc, addr, ret->data, size, size, RZ_STRING_ENC_8BIT)) {
+		free(ret->data);
 		RZ_FREE(ret);
 		return NULL;
 	}
@@ -1349,7 +1359,12 @@ static bool extract_sections_symbols(RzBinPycObj *pyc, pyc_object *obj, RzPVecto
 	free(prefix);
 	return true;
 fail:
-
+	if (section) {
+		free(section->name);
+	}
+	if (symbol) {
+		free(symbol->name);
+	}
 	free(section);
 	free(prefix);
 	free(symbol);

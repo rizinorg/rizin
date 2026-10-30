@@ -54,8 +54,8 @@ typedef struct {
 	bool show_asciidot; ///< When true, dots `.` are placed instead of unprintable ASCII characters.
 	bool esc_bslash; ///< When true, backslashes `\` are quoted with `\\`
 	bool esc_double_quotes; ///< When true, double quotes `"` are quoted with `\"`
-	bool dot_nl; ///< When true, \n is converted into the graphiz-compatible newline \l
-	bool keep_printable; ///< Keep all printable characters (excludes \n, \t etc.).
+	bool dot_nl; ///< When true, `\n` is converted into the graphiz-compatible newline `\l`
+	bool keep_printable; ///< Keep all printable characters (excludes `\n`, `\t` etc.).
 } RzStrEscOptions;
 
 /**
@@ -157,9 +157,9 @@ RZ_API char *rz_str_newlen(const char *str, int len);
 RZ_API const char *rz_str_sysbits(const int v);
 RZ_API char *rz_str_trunc_ellipsis(const char *str, int len);
 RZ_API const char *rz_str_bool(int b);
-RZ_API bool rz_str_is_true(const char *s);
+RZ_API bool rz_str_is_true(RZ_NULLABLE const char *s);
 RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s);
-RZ_API bool rz_str_is_bool(const char *val);
+RZ_API bool rz_str_is_bool(RZ_NULLABLE const char *val);
 RZ_API const char *rz_str_ansi_chrn(const char *str, size_t n);
 RZ_API size_t rz_str_ansi_len(const char *str);
 RZ_API size_t rz_str_ansi_nlen(const char *str, size_t len);
@@ -201,7 +201,7 @@ RZ_API char *rz_str_ichr(char *str, char chr);
 RZ_API bool rz_str_ccmp(const char *dst, const char *orig, int ch);
 RZ_API bool rz_str_cmp_list(const char *list, const char *item, char sep);
 RZ_API int rz_str_cmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig, int len);
-RZ_API int rz_str_casecmp(const char *dst, const char *orig);
+RZ_API int rz_str_casecmp(RZ_NULLABLE const char *dst, RZ_NULLABLE const char *orig);
 RZ_API int rz_str_ncasecmp(const char *dst, const char *orig, size_t n);
 RZ_API int rz_str_ccpy(char *dst, const char *orig, int ch);
 static inline const char *rz_str_get(const char *str) {

@@ -37,7 +37,9 @@ static void RzBinDwarfAbbrevTable_free(RzBinDwarfAbbrevTable *table) {
 
 static void RzBinDwarfAbbrevs_fini(RzBinDwarfAbbrev *abbrevs) {
 	ht_up_free(abbrevs->by_offset);
+	abbrevs->by_offset = NULL;
 	R_free(abbrevs->R);
+	abbrevs->R = NULL;
 }
 
 static bool RzBinDwarfAbbrevs_init(RzBinDwarfAbbrev *abbrevs) {

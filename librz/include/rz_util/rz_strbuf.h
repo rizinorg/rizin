@@ -7,11 +7,17 @@
 extern "C" {
 #endif
 
+typedef void (*RzProgressCallback)(void *user, int percentage);
+
+#define RZ_PROGRESS_INTERVAL 1
+
 typedef struct {
 	char buf[32];
 	size_t len; // string length in chars or binary buffer size
 	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
 	size_t ptrlen; // string length + 1 or binary buffer size
+	RzProgressCallback progress_cb;
+	void *progress_user;
 } RzStrBuf;
 
 #define RZ_STRBUF_SAFEGET(sb) (rz_strbuf_get(sb) ? rz_strbuf_get(sb) : "")
@@ -26,6 +32,7 @@ RZ_API bool rz_strbuf_append(RzStrBuf *sb, const char *s);
 RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l);
 RZ_API bool rz_strbuf_prepend(RzStrBuf *sb, const char *s);
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API bool rz_strbuf_append_signed_hex(RzStrBuf *sb, st64 n);
 RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap);
 RZ_API char *rz_strbuf_get(RzStrBuf *sb);
 RZ_API RZ_OWN char *rz_strbuf_drain(RZ_OWN RZ_NONNULL RzStrBuf *sb);
@@ -39,6 +46,7 @@ RZ_API bool rz_strbuf_copy(RzStrBuf *dst, RzStrBuf *src);
 RZ_API bool rz_strbuf_equals(RzStrBuf *sa, RzStrBuf *sb);
 RZ_API bool rz_strbuf_reserve(RzStrBuf *sb, size_t len);
 RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb);
+RZ_API void rz_strbuf_set_progress_cb(RzStrBuf *sb, RzProgressCallback cb, void *user);
 
 #ifdef __cplusplus
 }

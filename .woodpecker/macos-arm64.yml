@@ -26,7 +26,7 @@ steps:
   rz-test:
     image: /bin/bash
     commands:
+      - pip3 install --user psutil
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
-      - rm -f db/archos/not-windows-any/http
       - rz-test -V -L

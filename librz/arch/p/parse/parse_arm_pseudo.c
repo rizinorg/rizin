@@ -208,29 +208,6 @@ static bool parse(RzParse *p, const char *assembly, RzStrBuf *sb) {
 	return rz_pseudo_convert(&arm_config, assembly, sb);
 }
 
-static bool op_is_stack_addr_addition(RzAnalysisOp *op) {
-	if (!op || (op->type != RZ_ANALYSIS_OP_TYPE_ADD && op->type != RZ_ANALYSIS_OP_TYPE_SUB)) {
-		return false;
-	} else if (op->dst && op->dst->reg &&
-		RZ_STR_ISNOTEMPTY(op->dst->reg->name) &&
-		(!rz_str_casecmp(op->dst->reg->name, "fp") ||
-			!rz_str_casecmp(op->dst->reg->name, "sp"))) {
-		// we do not want additions/subtractions which modifies the stack
-		return false;
-	}
-	for (size_t j = 0; j < 3; j++) {
-		if (!op->src[j] || !op->src[j]->reg ||
-			RZ_STR_ISEMPTY(op->src[j]->reg->name)) {
-			continue;
-		}
-		const char *reg_name = op->src[j]->reg->name;
-		if (!rz_str_casecmp(reg_name, "fp") || !rz_str_casecmp(reg_name, "sp")) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFunction *f, char *tstr) {
 	const ut64 addr = op->addr;
 
@@ -241,25 +218,14 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	const char *re_str;
 	int group_idx_sign = -1;
 	int group_idx_addend = 2;
-	bool brackets = true;
+	// Stack variables can only replace bracketed memory operands. Keep
+	// unbracketed address calculations such as "add r4, sp, 8" unchanged.
 	if (p->pseudo) {
 		// match e.g. "fp - 0x42"
 		// capturing "fp", "-", "0x42"
 		re_str = "\\[([a-z][0-9a-z][0-9]?)\\s*(\\+|-)\\s*(-?(0x)?[0-9a-f]+)\\]";
 		group_idx_sign = 2;
 		group_idx_addend = 3;
-	} else if (op_is_stack_addr_addition(op)) {
-		// only in add instructions like "add r7, sp, 0x42" we want to match
-		// without brackets around the "sp, 0x42". That is because we want to
-		// avoid matching cases like the following:
-		//  * sub r7, sp, 0x42
-		//  * sub sp, 0x42
-		//  * add fp, sp, 4
-
-		// match e.g. "fp, -0x42"
-		// capturing "fp", "-0x42"
-		re_str = "([a-z][0-9a-z][0-9]?),\\s+(-?(0x)?[0-9a-f]+)";
-		brackets = false;
 	} else if (strchr(tstr, '[')) {
 		// match e.g. "[fp, -0x42]"
 		// capturing "fp", "-0x42"
@@ -316,16 +282,12 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	// reserve with a bit of padding for brackets, reg, whitespace, ...
 	rz_strbuf_reserve(&sb, match_full->start + strlen(varstr) + tail_len + 32);
 	rz_strbuf_append_n(&sb, tstr, match_full->start);
-	if (brackets) {
-		rz_strbuf_append(&sb, "[");
-	}
+	rz_strbuf_append(&sb, "[");
 	if (!p->localvar_only) {
 		rz_strbuf_appendf(&sb, "%s %c ", reg_str, reg_addend < 0 ? '-' : '+');
 	}
 	rz_strbuf_append(&sb, varstr);
-	if (brackets) {
-		rz_strbuf_append(&sb, "]");
-	}
+	rz_strbuf_append(&sb, "]");
 	rz_strbuf_append_n(&sb, tstr + match_full->start + match_full->len, tail_len);
 	free(reg_str);
 	free(varstr);

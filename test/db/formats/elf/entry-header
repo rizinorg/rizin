@@ -1,0 +1,35 @@
+NAME=ELF entry point pointing at the file beginning is not analyzed as code (issue #1729)
+FILE=bins/elf/analysis/arm-ls
+CMDS=<<EOF
+!cp -f bins/elf/analysis/arm-ls ./entry-hdr.elf__
+!rizin -w -q -c "wv4 0x10000 @ 0x10018" ./entry-hdr.elf__
+o ./entry-hdr.elf__
+echo -- entry --
+ie~program
+echo -- header is data --
+pd 2 @ 0x10000
+echo -- no entry0 function after analysis --
+aaa
+afl~entry0
+echo -- done --
+rm ./entry-hdr.elf__
+EOF
+EXPECT=<<EOF
+-- entry --
+0x00010000 0x00000000 0x00010018 0x00000018 program
+-- header is data --
+            ;-- segment.LOAD0:
+            ;-- segment.ehdr:
+            ;-- entry0:
+            0x00010000 hex length=52 delta=0
+0x00010000  7f45 4c46 0101 0100 0000 0000 0000 0000  .ELF............
+0x00010010  0200 2800 0100 0000 0000 0100 3400 0000  ..(.........4...
+0x00010020  3474 0100 0204 0005 3400 2000 0900 2800  4t......4. ...(.
+0x00010030  1b00 1a00                                ....
+
+            ;-- segment.PHDR:
+            0x00010034      andvc r0, r0, r1
+-- no entry0 function after analysis --
+-- done --
+EOF
+RUN

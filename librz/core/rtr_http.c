@@ -114,12 +114,12 @@ static int rz_core_rtr_http_handler_get_cmd(RzCore *core, RzSocketHTTPRequest *r
 			if (httpcmd && *httpcmd) {
 				int len; // do remote http query and proxy response
 				char *res, *bar = rz_str_newf("%s/%s", httpcmd, cmd);
-				void *bed = rz_cons_sleep_begin();
+				void *bed = rz_interrupt_sleep_begin(core->intr);
 				res = rz_socket_http_get(bar, NULL, &len);
-				rz_cons_sleep_end(bed);
+				rz_interrupt_sleep_end(core->intr, bed);
 				if (res) {
 					res[len] = 0;
-					rz_cons_println(res);
+					rz_cons_println(core->cons, res);
 				}
 				free(bar);
 			} else {
@@ -306,22 +306,18 @@ static bool is_localhost(const char *address) {
 		!strcmp(address, "local");
 }
 
-static int rtr_http_stop(RzCore *u) {
+static void rtr_http_stop(void *u) {
 	RzCore *core = (RzCore *)u;
 	const int timeout = 1; // 1 second
 	const char *port;
 	RzSocket *sock;
 
-#if __WINDOWS__
-	rz_socket_http_server_set_breaked(&rz_cons_singleton()->context->breaked);
-#endif
 	if (((size_t)u) > 0xff) {
 		port = rz_config_get(core->config, "http.port");
 		sock = rz_socket_new(0);
 		(void)rz_socket_connect(sock, "localhost", port, RZ_SOCKET_PROTO_TCP, timeout);
 		rz_socket_free(sock);
 	}
-	return 0;
 }
 
 // return 1 on error
@@ -417,8 +413,8 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 
 	core->block = newblk;
 	// TODO: handle mutex lock/unlock here
-	rz_cons_break_push((RzConsBreak)rtr_http_stop, core);
-	while (!rz_cons_is_breaked()) {
+	rz_interrupt_break_push(core->intr, (RzInterruptBreakCallback)rtr_http_stop, core);
+	while (!rz_interrupt_is_breaked(core->intr)) {
 
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
@@ -435,9 +431,12 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 		/* this is blocking */
 		activateDieTime(core);
 
-		void *bed = rz_cons_sleep_begin();
+#if __WINDOWS__
+		so.breaked = rz_interrupt_is_breaked(core->intr);
+#endif
+		void *bed = rz_interrupt_sleep_begin(core->intr);
 		rs = rz_socket_http_accept(s, &so);
-		rz_cons_sleep_end(bed);
+		rz_interrupt_sleep_end(core->intr, bed);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -449,9 +448,9 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 		core->http_up = 1;
 
 		if (!rs) {
-			bed = rz_cons_sleep_begin();
+			bed = rz_interrupt_sleep_begin(core->intr);
 			rz_sys_usleep(100);
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(core->intr, bed);
 			continue;
 		}
 		if (allow && *allow) {
@@ -489,6 +488,8 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 
 		if (!rs->auth) {
 			rz_socket_http_response(rs, 401, "", 0, NULL);
+			rz_socket_http_close(rs);
+			continue;
 		}
 
 		if (rz_config_get_i(core->config, "http.verbose")) {
@@ -519,7 +520,7 @@ static int rz_core_rtr_http_run(RzCore *core, bool open_browser) {
 		free(dir);
 	}
 the_end:
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	core->http_up = false;
 	free(pfile);
 	rz_socket_free(s);

@@ -6,6 +6,7 @@
 #include <rz_util/rz_itv.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_regex.h>
+#include <rz_util/rz_str.h>
 
 /**
  * \brief Parses a string to a bounded interval.
@@ -74,13 +75,17 @@ RZ_API bool rz_itv_str_to_bounded_itv_ut64(RZ_NONNULL const char *itv_str, RZ_OU
 		rz_warn_if_reached();
 		goto error;
 	}
-	ut64 a = rz_num_math(NULL, itv_str + match->start);
+	char *a_str = rz_str_ndup(itv_str + match->start, match->len);
+	ut64 a = rz_num_math(NULL, a_str);
+	free(a_str);
 
 	if (!(match = rz_pvector_at(matches, b_group))) {
 		rz_warn_if_reached();
 		goto error;
 	}
-	ut64 b = rz_num_math(NULL, itv_str + match->start);
+	char *b_str = rz_str_ndup(itv_str + match->start, match->len);
+	ut64 b = rz_num_math(NULL, b_str);
+	free(b_str);
 
 	if (a > b) {
 		RZ_LOG_ERROR("a > b is not defined.\n");

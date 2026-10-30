@@ -11,6 +11,8 @@
 #include <rz_bin.h>
 #include "omf_specs.h"
 
+#define MAX_NAME_LEN UT8_MAX
+
 #define FINAL_TYPE 0x00
 /**
  * <b>COMPONENT-LIST Descriptor</b><br>
@@ -218,18 +220,28 @@ typedef enum omf_ityp_t {
 	 */
 	ITYP_COMMANDFILE = 0x03, ///< Commandfile descriptor.
 	/**
-	 * Used when @file was given in the invocation line.
+	 * Used when \@file was given in the invocation line.
 	 */
 	ITYP_OBJECT_INPUTFILE = 0x04, ///< Object-Inputfile descriptor.
 	/**
 	 * Used to specify an object file as input for L166.
 	 */
-	ITYP_COMMANDLINE = 0x05, ///< Commandline descriptor.
+	ITYP_INVOCATION_LINE = 0xFF, ///< Invocation Line descriptor.
 	/**
 	 * Contains the invocation line to the translator
 	 * including all invocation controls.
 	 */
 } OMF_ITYP;
+
+/**
+ * \brief OMF_SEC_TYPE in SECDEF record, specifies the type of the section
+ */
+typedef enum omf_sec_t {
+	OMF_SEC_TYPE_BIT = 0x00, ///< BIT.
+	OMF_SEC_TYPE_DATA = 0x01, ///< DATA.
+	OMF_SEC_TYPE_CODE = 0x02, ///< CODE.
+	OMF_SEC_TYPE_CONST = 0x03, ///< CONST.
+} OMF_SEC_TYPE;
 
 typedef enum {
 	C166_CLASS_ICODE,
@@ -300,7 +312,7 @@ typedef struct {
 	ut32 base; ///< specifies the local address base for the following symbolic formation using the base address format.
 	ut8 n; ///< n max 255, so name array len is 255
 	char *name;
-	char name2[255]; ///< represents the symbol name
+	char name2[MAX_NAME_LEN]; ///< represents the symbol name
 	ut64 size;
 	ut16 seg_idx;
 	ut32 offset; ///< is a 16 Bit offset of the symbol with respect to the referent value pecified by ’LocBase’.
@@ -360,7 +372,7 @@ typedef struct {
 	ut8 SectionIndex;
 	ut16 FrameNumber; // (optional) if GroupIndex and SectionIndex equals 0
 	ut8 n; ///< Pathname length, n max 255, so name array len is 255
-	char name[255]; ///< is the block name. If the record describes an unnamed block, then a null name is used.
+	char name[MAX_NAME_LEN]; ///< is the block name. If the record describes an unnamed block, then a null name is used.
 	ut16 BlockOffset16; ///< is a 16 Bit value which is the offset of the first byte of the block with respect to the referent value specified by ’BlockBase’.
 	ut16 BlockLength16; ///< this field gives the length of the block in bytes.
 
@@ -451,7 +463,7 @@ typedef struct {
 
 typedef struct {
 	ut16 index;
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_lnames;
 
 /**
@@ -483,7 +495,7 @@ typedef struct {
 	ut8 mark; ///< Byte, required to be zero.
 	ut32 timestamp; ///< File creation date in Microsoft’s ’fstat()’ format.
 	ut8 n; ///< Pathname length, n max 255, so name array len is 255
-	char pathname[255]; ///< specifies the Pathname of one file. In case of iTyp 4, more than one pathname may be specified.
+	char pathname[MAX_NAME_LEN]; ///< specifies the Pathname of one file. In case of iTyp 4, more than one pathname may be specified.
 } OMF_deplsts;
 
 /**
@@ -509,7 +521,7 @@ typedef struct {
 	ut16 LineNumber; ///< gives the line number in range 0 to 32767. The most significant bit is reserved for future use and is always zero.
 	ut64 address; ///< Specifies the address of the following line numbers using the base address + offset format.
 	ut8 n;
-	char filename[255];
+	char filename[MAX_NAME_LEN];
 } OMF_linnums;
 
 typedef struct {
@@ -535,7 +547,8 @@ typedef struct {
  * +------+-------+-----+
  * | E8 | R16 | N |
  * +------+-------+-----+
- *  *
+ * ```
+ *
  * ```
  * **************************************************************
  * * 0x94 | RecLen | AddressBase | LinNum16 | Offset16 | ChkSum *
@@ -559,7 +572,7 @@ typedef struct {
 	bool nopurge; ///< NOPURGE bit; 1 = comment may not be purged from the file
 	bool is_filename;
 	ut8 n;
-	char text[255]; ///< this field provides the commentary text.
+	char text[MAX_NAME_LEN]; ///< this field provides the commentary text.
 } OMF_coments;
 
 typedef struct {
@@ -577,7 +590,7 @@ typedef struct {
 typedef struct {
 	ut16 index;
 	ut8 n; ///< n max 255, so name array len is 255
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_debug_includes;
 
 typedef struct {
@@ -593,7 +606,7 @@ typedef struct {
 	ut8 REP8;
 	ut8 POS8;
 	ut8 n; ///< n max 255, so name array len is 255
-	char name[255];
+	char name[MAX_NAME_LEN];
 } OMF_component;
 
 typedef struct {
@@ -678,9 +691,9 @@ typedef struct {
 		struct {
 			bool is_struct; ///< 1 = struct, 2 = union
 			ut8 n; ///< struct/union-tag name length
-			char tagname[255]; ///< struct/union-tag name in OMF166 name format
+			char tagname[MAX_NAME_LEN]; ///< struct/union-tag name in OMF166 name format
 			ut32 size; ///< sizeof struct or union
-			ut16 member_ti; ///< reference to component list or <void>
+			ut16 member_ti; ///< reference to component list or `<void>`
 		} struct_union;
 		struct {
 			ut16 ti; ///< base scalar type of the field [uchar, uint, long ]
@@ -709,35 +722,13 @@ typedef struct {
 	ut8 REP8;
 	ut8 POS8; ///< contains a bit position if REP8 contains method 1 (RegBit)
 	ut8 n; ///< member name length
-	char name[255]; ///< member name in OMF166 name format
+	char name[MAX_NAME_LEN]; ///< member name in OMF166 name format
 } OMF_type_components;
 
 typedef struct {
 	ut16 NrOfComp16; ///< Specifies the number of components
-	OMF_type_components components[255];
+	OMF_type_components components[MAX_NAME_LEN];
 } OMF_type_component_list;
-
-typedef struct {
-	ut8 bits;
-	ut8 modinfo;
-	int TI_INDEX;
-	int SEC_INDEX;
-	RzTypeDB *typedb;
-	HtUP /*<OMF_type *>*/ *ht_types;
-	RzPVector /*<OMF_debug_includes *>*/ *includes_vec;
-	RzPVector /*<OMF_ledatas *>*/ *ledatas_vec;
-	RzPVector /*<OMF_lnames *>*/ *lnames_vec;
-	RzPVector /*<OMF_deplsts *>*/ *deplsts_vec;
-	RzPVector /*<OMF_linnums *>*/ *linnums_vec;
-	RzPVector /*<OMF_regmsks *>*/ *regmsks_vec;
-	RzPVector /*<OMF_coments *>*/ *coments_vec;
-	RzPVector /*<OMF_sections *>*/ *sections_vec;
-	RzPVector /*<OMF_symbol *>*/ *symbols_vec;
-	RzPVector /*<OMF_blocks *>*/ *blocks_vec;
-	RzPVector /*<OMF_pes *>*/ *pe_vec;
-	RzVector /*<ut64>*/ *interrupts;
-	ut32 nb_symbol;
-} rz_bin_omf166_obj;
 
 // this value was chosen arbitrarily to made the loader work correctly
 // if someone want to implement rellocation for omf he has to remove this
@@ -751,23 +742,15 @@ typedef struct {
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
 rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size);
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj);
-bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RzBinAddr *addr);
-int rz_bin_omf_get_bits(rz_bin_omf_obj *obj);
-int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, OMF_segment *section, rz_bin_omf_obj *obj);
-ut64 rz_bin_omf_get_paddr_sym(rz_bin_omf_obj *obj, OMF_symbol *sym);
-ut64 rz_bin_omf_get_vaddr_sym(rz_bin_omf_obj *obj, OMF_symbol *sym);
+bool rz_bin_omf_get_entry(const rz_bin_omf_obj *obj, RzBinAddr *addr);
+int rz_bin_omf_get_bits(const rz_bin_omf_obj *obj);
+int rz_bin_omf_send_sections(RzPVector /*<RzBinSection *>*/ *vec, const OMF_segment *section, const rz_bin_omf_obj *obj);
+ut64 rz_bin_omf_get_paddr_sym(const rz_bin_omf_obj *obj, const OMF_symbol *sym);
+ut64 rz_bin_omf_get_vaddr_sym(const rz_bin_omf_obj *obj, const OMF_symbol *sym);
 
 RZ_API ut8 memory_model_type(ut8 modinfo);
 RZ_API char *get_memory_model(ut8 modinfo);
 ut32 get_perm_by_type(ut8 data_type);
 ut32 c166_get_perms_from_class(const ut8 class_id);
 const char *get_data_type(ut8 data_type);
-RZ_API const char *name_of_ti(const rz_bin_omf166_obj *obj, ut16 ti_index);
-rz_bin_omf166_obj *rz_bin_format_omf166_load(const ut8 *buf, ut64 size);
-void rz_bin_format_omf166_fini(rz_bin_omf166_obj *obj);
-void rz_bin_free_all_omf166_obj(rz_bin_omf166_obj *obj);
-bool rz_bin_omf166_get_entry(rz_bin_omf166_obj *obj, RzBinAddr *addr);
-ut64 rz_bin_omf166_get_paddr_sym(rz_bin_omf166_obj *obj, OMF_symbol *sym);
-ut64 rz_bin_omf166_get_vaddr_sym(rz_bin_omf166_obj *obj, OMF_symbol *sym);
-const char *rz_bin_omf166_get_module_information(rz_bin_omf166_obj *obj);
 #endif

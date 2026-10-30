@@ -62,7 +62,7 @@ RZ_IPI RzCmdStatus rz_cmd_javac_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_as_json(jclass, pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	} else {
 		RzStrBuf *sb = rz_strbuf_new("");
@@ -71,7 +71,7 @@ RZ_IPI RzCmdStatus rz_cmd_javac_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_as_text(jclass, sb);
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 
@@ -95,7 +95,7 @@ RZ_IPI RzCmdStatus rz_cmd_javap_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_const_pool_as_json(jclass, pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	} else {
 		RzStrBuf *sb = rz_strbuf_new("");
@@ -104,7 +104,7 @@ RZ_IPI RzCmdStatus rz_cmd_javap_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_const_pool_as_text(jclass, sb);
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 
@@ -128,7 +128,7 @@ RZ_IPI RzCmdStatus rz_cmd_javai_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_interfaces_as_json(jclass, pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	} else {
 		RzStrBuf *sb = rz_strbuf_new("");
@@ -137,7 +137,7 @@ RZ_IPI RzCmdStatus rz_cmd_javai_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_interfaces_as_text(jclass, sb);
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 
@@ -161,7 +161,7 @@ RZ_IPI RzCmdStatus rz_cmd_javam_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_methods_as_json(jclass, pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	} else {
 		RzStrBuf *sb = rz_strbuf_new("");
@@ -170,7 +170,7 @@ RZ_IPI RzCmdStatus rz_cmd_javam_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_methods_as_text(jclass, sb);
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 
@@ -194,7 +194,7 @@ RZ_IPI RzCmdStatus rz_cmd_javaf_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_fields_as_json(jclass, pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	} else {
 		RzStrBuf *sb = rz_strbuf_new("");
@@ -203,7 +203,7 @@ RZ_IPI RzCmdStatus rz_cmd_javaf_handler(RzCore *core, int argc, const char **arg
 		}
 
 		rz_bin_java_class_fields_as_text(jclass, sb);
-		rz_cons_print(rz_strbuf_get(sb));
+		rz_cons_print(core->cons, rz_strbuf_get(sb));
 		rz_strbuf_free(sb);
 	}
 
@@ -226,7 +226,7 @@ RZ_IPI RzCmdStatus rz_cmd_javas_handler(RzCore *core, int argc, const char **arg
 	}
 
 	rz_bin_java_class_as_source_code(jclass, sb);
-	rz_cons_print(rz_strbuf_get(sb));
+	rz_cons_print(core->cons, rz_strbuf_get(sb));
 	rz_strbuf_free(sb);
 	return RZ_CMD_STATUS_OK;
 }
@@ -257,9 +257,9 @@ RZ_IPI RzCmdStatus rz_cmd_javar_handler(RzCore *core, int argc, const char **arg
 	RzDemanglerFlag dflags = rz_demangler_get_flags(core->bin->demangler);
 	char *demangled = rz_demangler_java(resolved, dflags);
 	if (demangled) {
-		rz_cons_println(demangled);
+		rz_cons_println(core->cons, demangled);
 	} else {
-		rz_cons_println(resolved);
+		rz_cons_println(core->cons, resolved);
 	}
 
 	free(resolved);

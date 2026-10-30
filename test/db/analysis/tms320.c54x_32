@@ -141,22 +141,22 @@ EXPECT=<<EOF
 type: nop
 size: 2
 type: jmp
-jump: 0x00000100
+jump: 0x00000200
 type: jmp
-jump: 0x00000100
+jump: 0x00000200
 type: call
-jump: 0x00000100
+jump: 0x00000200
 fail: 0x00000004
 stackptr: 2
 type: cjmp
-jump: 0x00000120
+jump: 0x00000240
 fail: 0x00000004
 type: ccall
-jump: 0x00000120
+jump: 0x00000240
 fail: 0x00000004
 stackptr: 2
 type: cjmp
-jump: 0x00000120
+jump: 0x00000240
 fail: 0x00000004
 type: ujmp
 fail: 0x00000002
@@ -248,7 +248,7 @@ direction: exec
 stackop: inc
 stackptr: 2
 type: call
-jump: 0x00000100
+jump: 0x00000200
 direction: exec
 EOF
 RUN
@@ -322,7 +322,7 @@ val: 0x00001234
 val: 0x00001234
 val: 0x0000000f
 type: jmp
-jump: 0x00002010
+jump: 0x00004020
 EOF
 RUN
 
@@ -391,7 +391,7 @@ arch     tms320
 cpu      c54x
 bintype  coff
 endian   LE
-12
+13
 1
 EOF
 RUN
@@ -407,7 +407,7 @@ EOF
 EXPECT=<<EOF
 arch     tms320
 cpu      c54x
-8
+9
 EOF
 RUN
 

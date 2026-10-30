@@ -139,11 +139,6 @@ typedef enum {
 typedef struct {
 	RzILOpEffect *set_ea; ///< The RzIL Effect to write the target jump address to the local variable EA.
 	RzILOpEffect *perform_jmp; ///< The RzIL Effect to performing the jump to EA.
-	/**
-	 * \brief The RzIL Effect to performing the jump if the branch condition is false.
-	 * Might be NULL if no condition exists.
-	 */
-	RzILOpEffect *perform_fail_jmp;
 	RzILOpPure *cond; ///< The branch condition. NULL if branch has none.
 	bool annulled_bit; ///< The annulled bit.
 } RzSparcDelatedBranchOp;

@@ -246,5 +246,6 @@ pyc_opcodes *opcode_314(void) {
 	ret->jump_use_instruction_offset = true;
 
 	rz_list_purge(ret->opcode_arg_fmt);
+	add_arg_fmt(ret, "COMPARE_OP", format_COMPARE_OP_313);
 	return ret;
 }

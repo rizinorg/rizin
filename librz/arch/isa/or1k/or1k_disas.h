@@ -107,14 +107,14 @@ typedef struct {
 	char *name;
 	int type;
 	int opcode_mask;
-	int insn_type; /**< One of \link _RzAnalysisOpType \endlink */
+	int insn_type; /**< One of the RzAnalysisOpType values */
 } insn_extra_t;
 
 typedef struct {
 	ut32 opcode;
 	char *name;
 	int type;
-	int insn_type; /**< One of \link _RzAnalysisOpType \endlink */
+	int insn_type; /**< One of the RzAnalysisOpType values */
 	insn_extra_t *extra;
 } insn_t;
 

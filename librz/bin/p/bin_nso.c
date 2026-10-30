@@ -236,6 +236,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	sdb_num_set(kv, "nso_header.size", 0x40);
 	sdb_set(kv, "nso_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3");
 	sdb_ns_set(bf->sdb, "info", kv);
+	sdb_free(kv); // only decrefs, there is still a reference from bf->sdb above
 	return kv;
 }
 
@@ -323,12 +324,14 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	ut32 tmp;
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_pvector_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->size = tmp;
 
 	if (!rz_buf_read_le32_at(b, NSO_OFF(text_memoffset), &tmp)) {
 		rz_pvector_free(ret);
+		free(ptr);
 		return NULL;
 	}
 	ptr->vsize = tmp;

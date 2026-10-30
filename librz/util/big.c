@@ -34,36 +34,17 @@ RZ_API void rz_big_fini(RzNumBig *b) {
 	_r_big_zero_out(b);
 }
 
+/** \brief Assign a signed 64-bit value, including ST64_MIN, to a bignum. */
 RZ_API void rz_big_from_int(RzNumBig *b, st64 n) {
 	rz_return_if_fail(b);
 
 	_r_big_zero_out(b);
 	b->sign = (n < 0) ? -1 : 1;
-	RZ_BIG_DTYPE_TMP v = n * b->sign;
-
-	/* Endianness issue if machine is not little-endian? */
-#ifdef RZ_BIG_WORD_SIZE
-#if (RZ_BIG_WORD_SIZE == 1)
-	b->array[0] = (v & 0x000000ff);
-	b->array[1] = (v & 0x0000ff00) >> 8;
-	b->array[2] = (v & 0x00ff0000) >> 16;
-	b->array[3] = (v & 0xff000000) >> 24;
-#elif (RZ_BIG_WORD_SIZE == 2)
-	b->array[0] = (v & 0x0000ffff);
-	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (RZ_BIG_WORD_SIZE == 4)
-	b->array[0] = v;
-	RZ_BIG_DTYPE_TMP num_32 = 32;
-	RZ_BIG_DTYPE_TMP tmp = v >> num_32;
-	b->array[1] = tmp;
-#endif
-#endif
-}
-
-static void rz_big_from_unsigned(RzNumBig *b, ut64 v) {
-	rz_return_if_fail(b);
-
-	_r_big_zero_out(b);
+	// Unsigned negation can represent the magnitude of ST64_MIN.
+	RZ_BIG_DTYPE_TMP v = (RZ_BIG_DTYPE_TMP)n;
+	if (n < 0) {
+		v = (RZ_BIG_DTYPE_TMP)0 - v;
+	}
 
 	/* Endianness issue if machine is not little-endian? */
 #ifdef RZ_BIG_WORD_SIZE
@@ -154,7 +135,14 @@ RZ_API void rz_big_from_hexstr(RzNumBig *n, const char *str) {
 	}
 }
 
-RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
+/**
+ * \brief Format a big number as a hexadecimal string.
+ *
+ * \param b Value to render
+ * \return Owned "0x"-prefixed string (leading '-' for negatives, "0x0" for
+ *         zero), or NULL on allocation failure
+ */
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b) {
 	rz_return_val_if_fail(b, NULL);
 
 	int j = RZ_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
@@ -162,10 +150,11 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	size_t k = 0; /* Leading zero's amount */
 	size_t z, last_z = 2 * RZ_BIG_WORD_SIZE;
 
-	for (; b->array[j] == 0 && j >= 0; j--) {
+	for (; j >= 0 && b->array[j] == 0; j--) {
 	}
 	if (j == -1) {
-		return "0x0";
+		// Callers free the result, so zero cannot be a string literal.
+		return rz_str_dup("0x0");
 	}
 
 	size_t size = 3 + 2 * RZ_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0) ? 0 : 1);
@@ -197,11 +186,82 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	return ret_str;
 }
 
+/**
+ * \brief Format a bignum as a lossless base-10 string.
+ *
+ * \param b Value to render.
+ * \return Owned decimal string (leading '-' for negatives, "0" for
+ *         zero), or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
+	if (rz_big_is_zero(b)) {
+		return rz_str_dup("0");
+	}
+
+	// Divide an absolute-value copy so the loop ignores signs.
+	RzNumBig work, q, r, divisor;
+	rz_big_assign(&work, b);
+	work.sign = 1;
+
+	// 10^9 fits one ut32 word, so each remainder prints with "%09u".
+	rz_big_init(&divisor);
+	rz_big_from_int(&divisor, 1000000000);
+
+	// Size from the fixed width (bits/3 > bits*log10(2)) plus slack,
+	// so the maximal value still fits; emit 9 digits per iteration.
+	char chunks[(RZ_BIG_ARRAY_SIZE * RZ_BIG_WORD_SIZE * 8) / 3 + 16];
+	int pos = (int)sizeof(chunks);
+	chunks[--pos] = '\0';
+
+	while (!rz_big_is_zero(&work)) {
+		rz_big_init(&q);
+		rz_big_init(&r);
+		rz_big_divmod(&q, &r, &work, &divisor);
+		ut32 chunk = (ut32)rz_big_to_int(&r);
+		rz_big_assign(&work, &q);
+		// The most significant chunk (extracted last, when work hits
+		// zero) is unpadded; interior chunks need zero-padding.
+		char tmp[16];
+		int n = rz_big_is_zero(&work)
+			? snprintf(tmp, sizeof(tmp), "%u", (unsigned)chunk)
+			: snprintf(tmp, sizeof(tmp), "%09u", (unsigned)chunk);
+		if (n < 0 || n > pos) {
+			return NULL;
+		}
+		pos -= n;
+		memcpy(chunks + pos, tmp, (size_t)n);
+	}
+
+	const char *digits = chunks + pos;
+	return b->sign < 0 ? rz_str_newf("-%s", digits) : rz_str_dup(digits);
+}
+
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src) {
 	rz_return_if_fail(dst);
 	rz_return_if_fail(src);
 
 	memcpy(dst, src, sizeof(RzNumBig));
+}
+
+// Compare magnitudes |a| vs |b| ignoring sign: 1 if |a|>|b|, -1 if <, else
+// 0. The inner add/sub helpers operate on magnitudes (the caller factors
+// out the signs), so they must order operands by magnitude, not by the
+// signed rz_big_cmp() - otherwise a negative operand fed in by rz_big_add's
+// dispatch makes the magnitude subtraction borrow past zero.
+static int rz_big_cmp_mag(RzNumBig *a, RzNumBig *b) {
+	int i = RZ_BIG_ARRAY_SIZE;
+	do {
+		i -= 1;
+		if (a->array[i] > b->array[i]) {
+			return 1;
+		}
+		if (a->array[i] < b->array[i]) {
+			return -1;
+		}
+	} while (i != 0);
+	return 0;
 }
 
 static void rz_big_add_inner(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
@@ -221,7 +281,7 @@ static void rz_big_sub_inner(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	RZ_BIG_DTYPE_TMP tmp1;
 	RZ_BIG_DTYPE_TMP tmp2;
 	int borrow = 0;
-	int sign = rz_big_cmp(a, b);
+	int sign = rz_big_cmp_mag(a, b);
 	c->sign = (sign >= 0 ? 1 : -1);
 	if (sign < 0) {
 		tmp = a;
@@ -289,40 +349,58 @@ RZ_API void rz_big_sub(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	}
 }
 
-RZ_API void rz_big_mul(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
+/**
+ * \brief Count the words up to the most significant non-zero one.
+ */
+static size_t big_significant_words(const RzNumBig *a) {
+	size_t n = RZ_BIG_ARRAY_SIZE;
+	while (n && !a->array[n - 1]) {
+		n--;
+	}
+	return n;
+}
+
+/**
+ * \brief Multiply two big numbers.
+ *
+ * \param c Receives a * b, wrapped to the fixed width like the other
+ *          operations; may alias \p a or \p b
+ * \param a Multiplicand
+ * \param b Multiplier
+ */
+RZ_API void rz_big_mul(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
 	rz_return_if_fail(a);
 	rz_return_if_fail(b);
 	rz_return_if_fail(c);
 
-	RzNumBig *row = rz_big_new();
-	RzNumBig *tmp = rz_big_new();
-	RzNumBig *res = rz_big_new();
-	int i, j;
-
-	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
-		_r_big_zero_out(row);
-
-		for (j = 0; j < RZ_BIG_ARRAY_SIZE; j++) {
-			if (i + j < RZ_BIG_ARRAY_SIZE) {
-				_r_big_zero_out(tmp);
-				RZ_BIG_DTYPE_TMP intermediate = ((RZ_BIG_DTYPE_TMP)a->array[i] * (RZ_BIG_DTYPE_TMP)b->array[j]);
-				rz_big_from_unsigned(tmp, intermediate);
-				_lshift_word(tmp, i + j);
-				rz_big_add(row, row, tmp);
-			}
+	// Accumulate over the significant words only, so the cost follows the
+	// operand sizes rather than the fixed width, and into a local so that
+	// c may alias an operand.
+	RZ_BIG_DTYPE res[RZ_BIG_ARRAY_SIZE] = { 0 };
+	size_t na = big_significant_words(a);
+	size_t nb = big_significant_words(b);
+	for (size_t i = 0; i < na; i++) {
+		if (!a->array[i]) {
+			continue;
 		}
-		rz_big_add(res, row, res);
+		RZ_BIG_DTYPE_TMP carry = 0;
+		size_t j;
+		for (j = 0; j < nb && i + j < RZ_BIG_ARRAY_SIZE; j++) {
+			// Cannot overflow: (B - 1)^2 + 2 * (B - 1) == B^2 - 1 for word base B.
+			RZ_BIG_DTYPE_TMP t = (RZ_BIG_DTYPE_TMP)a->array[i] * b->array[j];
+			t += res[i + j] + carry;
+			res[i + j] = (RZ_BIG_DTYPE)t;
+			carry = t >> (8 * RZ_BIG_WORD_SIZE);
+		}
+		// Earlier rows end below i + nb, so this word is still zero.
+		if (i + j < RZ_BIG_ARRAY_SIZE) {
+			res[i + j] = (RZ_BIG_DTYPE)carry;
+		}
 	}
 
-	res->sign = a->sign * b->sign;
-	if (rz_big_is_zero(res)) {
-		res->sign = 1; // For -1 * 0 case
-	}
-	rz_big_assign(c, res);
-
-	rz_big_free(row);
-	rz_big_free(tmp);
-	rz_big_free(res);
+	int sign = a->sign * b->sign;
+	memcpy(c->array, res, sizeof(res));
+	c->sign = rz_big_is_zero(c) ? 1 : sign; // no negative zero
 }
 
 RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
@@ -342,7 +420,7 @@ RZ_API void rz_big_div(RzNumBig *c, RzNumBig *a, RzNumBig *b) {
 	rz_big_assign(tmp, denom); // tmp = denom = b
 	_lshift_one_bit(tmp); // tmp <= 1
 
-	while (rz_big_cmp(tmp, a) != 1) { // while (tmp <= a)
+	while (rz_big_cmp_mag(tmp, a) != 1) { // while (tmp <= |a|)
 		if ((denom->array[RZ_BIG_ARRAY_SIZE - 1] >> (RZ_BIG_WORD_SIZE * 8 - 1)) == 1) {
 			break; // Reach the max value
 		}
@@ -587,6 +665,53 @@ RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m) {
 
 	rz_big_free(bcopy);
 	rz_big_free(acopy);
+}
+
+/**
+ * \brief Non-modular exponentiation by squaring: c = a ^ b.
+ *
+ * A negative exponent yields zero, since an integer power with a
+ * negative exponent is not an integer. The caller must keep the
+ * result within the fixed bignum width; an oversized base/exponent
+ * silently overflows, as with every other rz_big operation.
+ *
+ * \param c Result (overwritten).
+ * \param a Base.
+ * \param b Exponent.
+ */
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
+	rz_return_if_fail(a && b && c);
+
+	if (b->sign < 0) {
+		rz_big_from_int(c, 0);
+		return;
+	}
+
+	RzNumBig *bcopy = rz_big_new();
+	RzNumBig *base = rz_big_new();
+	if (!bcopy || !base) {
+		rz_big_free(bcopy);
+		rz_big_free(base);
+		rz_big_from_int(c, 0);
+		return;
+	}
+	rz_big_assign(bcopy, b);
+	rz_big_assign(base, a);
+	rz_big_from_int(c, 1);
+
+	// Square-and-multiply, like rz_big_powm() without the reduction.
+	while (!rz_big_is_zero(bcopy)) {
+		if (rz_big_to_int(bcopy) % 2 == 1) {
+			rz_big_mul(c, c, base);
+		}
+		_rshift_one_bit(bcopy);
+		if (!rz_big_is_zero(bcopy)) {
+			rz_big_mul(base, base, base);
+		}
+	}
+
+	rz_big_free(bcopy);
+	rz_big_free(base);
 }
 
 RZ_API void rz_big_isqrt(RzNumBig *b, RzNumBig *a) {

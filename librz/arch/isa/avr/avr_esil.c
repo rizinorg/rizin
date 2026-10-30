@@ -1586,12 +1586,13 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 
 	// perform writing
 	// RZ_LOG_DEBUG("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
-	if (!(t = malloc(1 << page_size_bits))) {
+	if (!(t = malloc((ut64)1 << page_size_bits))) {
 		RZ_LOG_ERROR("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
 	}
 	rz_analysis_esil_mem_read(esil, tmp_page, (ut8 *)t, 1 << page_size_bits);
 	rz_analysis_esil_mem_write(esil, addr, (ut8 *)t, 1 << page_size_bits);
+	free(t);
 
 	return true;
 }

@@ -121,7 +121,22 @@ RZ_API RzStrEnc rz_str_enc_string_as_type(RZ_NULLABLE const char *encoding) {
 	return RZ_STRING_ENC_GUESS;
 }
 
-RZ_API int rz_str_casecmp(const char *s1, const char *s2) {
+/**
+ * \brief Case-insensitive string comparison, accepting NULL.
+ *
+ * NULL is a defined input: two NULLs compare equal, and a NULL sorts before any
+ * non-NULL pointer. Only the underlying strcasecmp is undefined on NULL, which
+ * is why a caller holding an optional string would otherwise have to guard it
+ * itself.
+ *
+ * \param s1 first string, may be NULL
+ * \param s2 second string, may be NULL
+ * \return <0, 0 or >0 as \p s1 sorts before, with or after \p s2
+ */
+RZ_API int rz_str_casecmp(RZ_NULLABLE const char *s1, RZ_NULLABLE const char *s2) {
+	if (!s1 || !s2) {
+		return s1 == s2 ? 0 : (s1 ? 1 : -1);
+	}
 #ifdef _MSC_VER
 	return stricmp(s1, s2);
 #else
@@ -3941,16 +3956,18 @@ RZ_API const char *rz_str_bool(int b) {
 	return b ? "true" : "false";
 }
 
-RZ_API bool rz_str_is_true(const char *s) {
+/**
+ * \brief Returns true if string is case insensitive equal to: yes, on, true, 1
+ */
+RZ_API bool rz_str_is_true(RZ_NULLABLE const char *s) {
+	if (!s) {
+		return false;
+	}
 	return !rz_str_casecmp("yes", s) || !rz_str_casecmp("on", s) || !rz_str_casecmp("true", s) || !rz_str_casecmp("1", s);
 }
 
 /**
- * \brief Returns true if string is case insensitive equal to:
- * - no
- * - off
- * - false
- * - 0
+ * \brief Returns true if string is case insensitive equal to: no off false 0
  */
 RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
 	if (!s) {
@@ -3959,7 +3976,10 @@ RZ_API bool rz_str_is_false(RZ_NULLABLE const char *s) {
 	return !rz_str_casecmp("no", s) || !rz_str_casecmp("off", s) || !rz_str_casecmp("false", s) || !rz_str_casecmp("0", s) || !*s;
 }
 
-RZ_API bool rz_str_is_bool(const char *val) {
+/**
+ * \brief Returns true if the string is case insensitive is a valid boolean value
+ */
+RZ_API bool rz_str_is_bool(RZ_NULLABLE const char *val) {
 	return rz_str_is_true(val) || rz_str_is_false(val);
 }
 

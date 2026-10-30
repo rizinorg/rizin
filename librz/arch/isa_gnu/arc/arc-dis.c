@@ -28,6 +28,7 @@
 #include <common_gnu/disas-asm.h>
 #include <common_gnu/elf-bfd.h>
 #include <common_gnu/opintl.h>
+#include <arc/arc_ctx.h>
 
 #include <string.h>
 #include <stdarg.h>
@@ -198,7 +199,8 @@ mwerror(struct arcDisState *state, const char *msg) {
 
 static const char *
 post_address(struct arcDisState *state, int addr) {
-	static char id[3 * ARRAY_SIZE(state->addresses)];
+	ArcContext *ctx = (ArcContext *)state->user_data;
+	char *id = ctx->post_address_buf;
 	unsigned int j, i = state->acnt;
 
 	if (i < ARRAY_SIZE(state->addresses)) {
@@ -1057,6 +1059,7 @@ int ARCTangent_decodeInstr(bfd_vma address, disassemble_info *info, void *data) 
 	}
 
 	s._this = &s;
+	s.user_data = data;
 	s.coreRegName = _coreRegName;
 	s.auxRegName = _auxRegName;
 	s.condCodeName = _condCodeName;

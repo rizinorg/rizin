@@ -278,7 +278,10 @@ caller, not by the format string):
   names, bitflag names) use `pal.flag`. Users can re-theme this via the
   standard `eco` mechanism.
 - **json** -- JSON array of field objects, with nested struct fields under
-  `"fields"` and the struct name under `"struct_type"`.
+  `"fields"` and the struct name under `"struct_type"`. Floating-point values
+  retain enough precision to round-trip: `f8` uses double precision, and
+  `f4` and `f2` use float precision. NaN and
+  infinities are the strings `"NaN"`, `"Infinity"` and `"-Infinity"`.
 - **cstruct** -- C `struct { ... }` declaration mirroring the field types and
   their decoded values in comments. When invoked as `pfc <name>` against a
   typedb-registered format, the format name is included after the `struct`
@@ -295,8 +298,8 @@ caller, not by the format string):
   YAML (`rz_structured_data_to_json` / `_to_yaml`) or walk with the
   generic iterator. The top level is a map keyed by field name (unnamed
   fields become `field_<n>`); scalars map to typed unsigned/signed/
-  double/string entries, arrays and bitvectors to arrays, nested structs
-  to sub-maps with a `_type` key, and raw/GUID payloads to byte blocks.
+  float/double/string entries (`f2` and `f4` are floats), arrays and bitvectors
+  to arrays, nested structs to sub-maps with a `_type` key, and raw/GUID payloads to byte blocks.
   Timestamps emit a formatted string plus a `<name>_raw` sibling.
 
 ## Write mode (`pfw`)

@@ -22,11 +22,11 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
-static int nullprinter(const char *a, ...) {
+static int nullprinter(void *user, const char *a, ...) {
 	return 0;
 }
 
-static int libc_printf(const char *format, ...) {
+static int libc_printf(void *user, const char *format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	vprintf(format, ap);
@@ -56,8 +56,8 @@ RZ_API RzPrint *rz_print_new(void) {
 	rz_io_bind_init(p->iob);
 	p->pairs = true;
 	p->resetbg = true;
-	p->cb_printf = libc_printf;
-	p->oprintf = nullprinter;
+	p->cb_printf = (PrintfCallback)libc_printf;
+	p->oprintf = (PrintfCallback)nullprinter;
 	p->bits = 32;
 	p->stride = 0;
 	p->bytespace = 0;
@@ -157,12 +157,12 @@ RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len) {
 RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)calloc((strlen(str) + 2), 32);
-	int colors = p->flags & RZ_PRINT_FLAGS_COLOR;
-	const char *color_0x00 = "";
-	const char *color_0x7f = "";
-	const char *color_0xff = "";
-	const char *color_text = "";
-	const char *color_other = "";
+	bool colors = p->flags & RZ_PRINT_FLAGS_COLOR;
+	const char *color_0x00 = rz_print_byte_color(p, 0x00);
+	const char *color_0x7f = rz_print_byte_color(p, 0x7f);
+	const char *color_0xff = rz_print_byte_color(p, 0xff);
+	const char *color_text = rz_print_byte_color(p, 'A');
+	const char *color_hi = rz_print_byte_color(p, 0xee);
 	int bs = p->bytespace;
 	/* XXX That is hacky but it partially works */
 	/* TODO: Use rz_print_set_cursor for win support */
@@ -170,19 +170,6 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	int ocur = RZ_MAX(p->cur, p->ocur);
 	int ch, i;
 
-	if (colors) {
-#define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
-		color_0x00 = P(b0x00)
-		    : Color_GREEN;
-		color_0x7f = P(b0x7f)
-		    : Color_YELLOW;
-		color_0xff = P(b0xff)
-		    : Color_RED;
-		color_text = P(btext)
-		    : Color_MAGENTA;
-		color_other = P(other)
-		    : "";
-	}
 	if (p->cur_enabled && cur == -1) {
 		cur = ocur;
 	}
@@ -223,7 +210,7 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 				if (IS_PRINTABLE(ch)) {
 					lastcol = color_text;
 				} else {
-					lastcol = color_other;
+					lastcol = color_hi;
 				}
 			}
 			memcat(d, lastcol);
@@ -248,24 +235,60 @@ RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	*d = '\0';
 	return dst;
 }
+#undef P
 
-#define P(x) (p->cons && p->cons->context->pal.x) ? p->cons->context->pal.x
-RZ_API const char *rz_print_byte_color(RzPrint *p, int ch) {
-	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
+/**
+ * \brief Get the color for the given \p byte.
+ *
+ * \param pal The palette to use. If NULL, some default colors will be returned.
+ * \param byte The byte to get the color for.
+ * \param use_color If false, returned color will be gray scale only.
+ *
+ * \return A terminal escape string encoding the specific color.
+ *         Or an empty string.
+ */
+RZ_API const char *rz_print_byte_color_pal(RZ_NULLABLE const RzConsPrintablePalette *pal, ut8 byte, bool use_color) {
+#define P(x) (pal && pal->x) ? pal->x
 	if (!use_color) {
-		return NULL;
+		return "";
 	}
-	switch (ch) {
-	case 0x00: return P(b0x00)
-	    : Color_GREEN;
-	case 0x7F: return P(b0x7f)
-	    : Color_YELLOW;
-	case 0xFF: return P(b0xff)
-	    : Color_RED;
-	default: return IS_PRINTABLE(ch) ? P(btext) : Color_MAGENTA : P(other)
-	    : Color_WHITE;
+	switch (byte) {
+	case 0x00:
+		return P(b0x00) : Color_GREEN;
+	case 0x7F:
+		return P(b0x7f) : Color_YELLOW;
+	case 0xFF:
+		return P(b0xff) : Color_RED;
+	default:
+		break;
 	}
-	return NULL;
+	if (RZ_BETWEEN(0x01, byte, 0x7e)) {
+		return IS_PRINTABLE(byte) && P(btext) : P(b0xlo) : P(other)
+		    : Color_WHITE;
+	} else if (RZ_BETWEEN(0x80, byte, 0xfe)) {
+		return P(b0xhi) : P(other) : Color_WHITE;
+	}
+	return Color_WHITE;
+#undef P
+}
+
+/**
+ * \brief Get the color for the given \p byte.
+ *
+ * \param p The RzPrint instance to use. If NULL, some default colors will be returned.
+ * \param byte The byte to get the color for.
+ * \param use_color If false, returned color will be gray scale only.
+ *
+ * \return A terminal escape string encoding the specific color.
+ *         Or an empty string.
+ */
+RZ_API const char *rz_print_byte_color(RZ_NULLABLE const RzPrint *p, ut8 ch) {
+	RzConsPrintablePalette *pal = NULL;
+	if (p && p->cons && p->cons->context) {
+		pal = &p->cons->context->pal;
+	}
+	const bool use_color = p && p->flags & RZ_PRINT_FLAGS_COLOR;
+	return rz_print_byte_color_pal(pal, ch, use_color);
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {
@@ -307,11 +330,11 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 	bool show_offset = rp->show_offset;
 
 	if (rp->flags & RZ_PRINT_FLAGS_HEADER) {
-		p("         ");
+		p(rp->cons, "         ");
 		for (i = 0; i < step; i++) {
-			p("%3X", i);
+			p(rp->cons, "%3X", i);
 		}
-		p("\n");
+		p(rp->cons, "\n");
 	}
 
 	for (i = 0; i < len; i += step) {
@@ -320,25 +343,25 @@ RZ_API void rz_print_hexii(RzPrint *rp, ut64 addr, const ut8 *buf, int len, int 
 			continue;
 		}
 		if (show_offset) {
-			p("%8" PFMT64x ":", addr + i);
+			p(rp->cons, "%8" PFMT64x ":", addr + i);
 		}
 		for (j = 0; j < inc; j++) {
 			ut8 ch = buf[i + j];
 			if (ch == 0x00) {
-				p("   ");
+				p(rp->cons, "   ");
 			} else if (ch == 0xff) {
-				p("%s ##%s", color_0xff, color_reset);
+				p(rp->cons, "%s ##%s", color_0xff, color_reset);
 			} else if (IS_PRINTABLE(ch) && !(rp->flags & RZ_PRINT_FLAGS_NODOT)) {
-				p("%s .%c%s", color_text, ch, color_reset);
+				p(rp->cons, "%s .%c%s", color_text, ch, color_reset);
 			} else if (IS_PRINTABLE(ch) && (rp->flags & RZ_PRINT_FLAGS_NODOT)) {
-				p("%s  %c%s", color_text, ch, color_reset);
+				p(rp->cons, "%s  %c%s", color_text, ch, color_reset);
 			} else {
-				p("%s %02x%s", color_other, ch, color_reset);
+				p(rp->cons, "%s %02x%s", color_other, ch, color_reset);
 			}
 		}
-		p("\n");
+		p(rp->cons, "\n");
 	}
-	p("%8" PFMT64x ": ]\n", addr + i);
+	p(rp->cons, "%8" PFMT64x ": ]\n", addr + i);
 }
 
 /**
@@ -366,9 +389,9 @@ RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr) {
 	if (p->screen_bounds == 1) {
 		int rc;
 		if (!p->rows) {
-			(void)p->consbind.get_size(&p->rows);
+			(void)p->consbind.get_size(p->cons, &p->rows);
 		}
-		(void)p->consbind.get_cursor(&rc);
+		(void)p->consbind.get_cursor(p->cons, &rc);
 
 		if (rc > p->rows - 1) {
 			p->screen_bounds = addr;
@@ -463,7 +486,7 @@ RZ_API void rz_print_addr(RzPrint *p, ut64 addr) {
 	rz_strbuf_init(&sb);
 	print_addr(&sb, p, addr);
 	char *s = rz_strbuf_drain_nofree(&sb);
-	p->cb_printf("%s", s);
+	p->cb_printf(p->cb_printf_user, "%s", s);
 	free(s);
 }
 
@@ -526,7 +549,7 @@ RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch) {
 	rz_strbuf_init(&sb);
 	print_byte(&sb, p, fmt, idx, ch);
 	char *s = rz_strbuf_drain_nofree(&sb);
-	p->cb_printf("%s", s);
+	p->cb_printf(p->cb_printf_user, "%s", s);
 	free(s);
 }
 
@@ -749,7 +772,7 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 	bool isPxr = p->flags & RZ_PRINT_FLAGS_REFS;
 
 	for (i = j = 0; i < len; i += (stride ? stride : inc)) {
-		if (p->cons && p->cons->context && p->cons->context->breaked) {
+		if (p->cons && p->cons->context && rz_interrupt_is_breaked(p->cons->context->intr)) {
 			break;
 		}
 		rowbytes = inc;
@@ -1204,9 +1227,9 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 	int i;
 	if (p) {
 		for (i = 0; i < len; i++) {
-			p->cb_printf(fmt, buf[i]);
+			p->cb_printf(p->cb_printf_user, fmt, buf[i]);
 		}
-		p->cb_printf("\n");
+		p->cb_printf(p->cb_printf_user, "\n");
 	} else {
 		for (i = 0; i < len; i++) {
 			printf(fmt, buf[i]);
@@ -1216,7 +1239,7 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 }
 
 RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
-	p->write(buf, len);
+	p->write(p->cons, buf, len);
 }
 
 /* TODO: handle screen width */
@@ -1561,4 +1584,13 @@ RZ_API void rz_print_colored_help(const char **options, size_t options_len, bool
 		print_colored_help_option(options[i], options[i + 1], options[i + 2], max_flag_n_arg_len,
 			have_examples ? options[i + 3] : NULL, max_desc_len);
 	}
+}
+
+// TODO: should we put this here?
+RZ_API int rz_cb_default_printf(void *user, const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	int ret = vprintf(fmt, ap);
+	va_end(ap);
+	return ret;
 }

@@ -80,6 +80,7 @@ typedef struct {
 		RzRegex32 *re32;
 	};
 	void *jit_stack; ///< The JIT stack for this pattern. Must be used only by one thread at a time.
+	RzRegexCompContext *ccontext;
 } RzRegexMulti;
 
 typedef struct {
@@ -106,7 +107,7 @@ RZ_API RZ_OWN RzRegex16 *rz_regex_new_16(RZ_NONNULL const char *pattern, RzRegex
 RZ_API RZ_OWN RzRegex32 *rz_regex_new_32(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext);
 RZ_API RZ_OWN RzRegexMulti *rz_regex_new_multi(RZ_NONNULL const char *pattern, RzRegexFlags cflags, RzRegexFlags jflags,
-	RzRegexCompContext *ccontext, RzRegexType type);
+	RzRegexType type);
 RZ_API RZ_OWN RzRegex *rz_regex_new_bytes(RZ_NONNULL const ut8 *pattern, size_t pattern_len, RzRegexFlags cflags, RzRegexFlags jflags,
 	RzRegexCompContext *ccontext);
 RZ_API void rz_regex_free(RZ_OWN RzRegex *regex);

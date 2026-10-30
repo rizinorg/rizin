@@ -88,12 +88,12 @@ static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 	return (width == 8) ? rz_read_ble64(buf, endian) : (ut64)rz_read_ble32(buf, endian);
 }
 
-static void print_arg_str(int argcnt, const char *name, bool color) {
+static void print_arg_str(RzCons *cons, int argcnt, const char *name, bool color) {
 	if (color) {
-		rz_cons_printf(Color_BYELLOW " arg [%d]" Color_RESET " -" Color_BCYAN " %s" Color_RESET " : ",
+		rz_cons_printf(cons, Color_BYELLOW " arg [%d]" Color_RESET " -" Color_BCYAN " %s" Color_RESET " : ",
 			argcnt, name);
 	} else {
-		rz_cons_printf(" arg [%d] -  %s : ", argcnt, name);
+		rz_cons_printf(cons, " arg [%d] -  %s : ", argcnt, name);
 	}
 }
 
@@ -118,9 +118,9 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 	}
 	if (onstack || ((opt != 'd' && opt != 'x') && !onstack)) {
 		if (color) {
-			rz_cons_printf(Color_BGREEN "0x%08" PFMT64x Color_RESET " --> ", bval);
+			rz_cons_printf(core->cons, Color_BGREEN "0x%08" PFMT64x Color_RESET " --> ", bval);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x " --> ", bval);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x " --> ", bval);
 		}
 		rz_io_read_at_mapped(core->io, bval, buf, bsize);
 	}
@@ -130,56 +130,56 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 			rz_io_read_at_mapped(core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
-	rz_cons_print(color ? Color_BGREEN : "");
+	rz_cons_print(core->cons, color ? Color_BGREEN : "");
 	switch (opt) {
 	case 'z': // Null terminated string
-		rz_cons_print(color ? Color_RESET Color_BWHITE : "");
-		rz_cons_print("\"");
+		rz_cons_print(core->cons, color ? Color_RESET Color_BWHITE : "");
+		rz_cons_print(core->cons, "\"");
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
 				break;
 			}
 			ut8 b = buf[i];
 			if (IS_PRINTABLE(b)) {
-				rz_cons_printf("%c", b);
+				rz_cons_printf(core->cons, "%c", b);
 			} else {
-				rz_cons_printf("\\x%02x", b);
+				rz_cons_printf(core->cons, "\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-				rz_cons_print("..."); // To show string is truncated
+				rz_cons_print(core->cons, "..."); // To show string is truncated
 			}
 		}
-		rz_cons_print("\"");
-		rz_cons_newline();
+		rz_cons_print(core->cons, "\"");
+		rz_cons_newline(core->cons);
 		break;
 	case 'd': // integer
 	case 'x':
-		rz_cons_printf("0x%08" PFMT64x, bval);
-		rz_cons_newline();
+		rz_cons_printf(core->cons, "0x%08" PFMT64x, bval);
+		rz_cons_newline(core->cons);
 		break;
 	case 'c': // char
-		rz_cons_print("\'");
+		rz_cons_print(core->cons, "\'");
 		ut8 ch = buf[0];
 		if (IS_PRINTABLE(ch)) {
-			rz_cons_printf("%c", ch);
+			rz_cons_printf(core->cons, "%c", ch);
 		} else {
-			rz_cons_printf("\\x%02x", ch);
+			rz_cons_printf(core->cons, "\\x%02x", ch);
 		}
-		rz_cons_print("\'");
-		rz_cons_newline();
+		rz_cons_print(core->cons, "\'");
+		rz_cons_newline(core->cons);
 		break;
 	case 'p': // pointer
 	{
 		// Try to deref the pointer once again
-		rz_cons_printf("0x%08" PFMT64x, get_buf_val(buf, endian, width));
-		rz_cons_newline();
+		rz_cons_printf(core->cons, "0x%08" PFMT64x, get_buf_val(buf, endian, width));
+		rz_cons_newline(core->cons);
 		break;
 	}
 	default:
 		// TODO: support types like structs and unions
-		rz_cons_println("unk_format");
+		rz_cons_println(core->cons, "unk_format");
 	}
-	rz_cons_print(Color_RESET);
+	rz_cons_print(core->cons, Color_RESET);
 	free(buf);
 }
 
@@ -228,7 +228,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 				if (arg->cc_source && !strncmp(arg->cc_source, "stack", 5)) {
 					onstack = true;
 				}
-				print_arg_str(argcnt, arg->name, color);
+				print_arg_str(core->cons, argcnt, arg->name, color);
 				print_format_values(core, arg->fmt, onstack, arg->src, color);
 				argcnt++;
 			}
@@ -239,9 +239,9 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			const char *cc = rz_analysis_cc_default(core->analysis); // or use "reg" ?
 			for (i = 0; i < nargs; i++) {
 				ut64 v = rz_core_arg_get(core, cc, i);
-				print_arg_str(i, "", color);
-				rz_cons_printf("0x%08" PFMT64x, v);
-				rz_cons_newline();
+				print_arg_str(core->cons, i, "", color);
+				rz_cons_printf(core->cons, "0x%08" PFMT64x, v);
+				rz_cons_newline(core->cons);
 			}
 			//} else {
 			//	print_arg_str (0, "void", color);

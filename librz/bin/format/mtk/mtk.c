@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file Implementation of MediaTek GFH firmware image parser (md1rom).
+ * \file
+ * Implementation of MediaTek GFH firmware image parser (md1rom).
  *
  * The GFH (Generic File Header) format is used by MediaTek for bootloader
  * and modem firmware images. The file starts with a chain of GFH headers

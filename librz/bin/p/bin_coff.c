@@ -82,8 +82,9 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 		if ((bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0) {
 			const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
 			if (sc_hdr->s_flags & loadable) {
-				ptr->vaddr = s->n_value;
-				ptr->paddr = sc_hdr->s_scnptr + (s->n_value - sc_hdr->s_vaddr);
+				const ut32 scale = rz_coff_addr_scale(bin);
+				ptr->vaddr = (ut64)s->n_value * scale;
+				ptr->paddr = sc_hdr->s_scnptr + (ut64)(s->n_value - sc_hdr->s_vaddr) * scale;
 			} else {
 				// Symbol belongs to a non-loadable section (DWARF/debug, build
 				// attributes, .pinit). Its n_value is not an address in the
@@ -97,9 +98,11 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 				ptr->paddr = sc_hdr->s_scnptr + s->n_value;
 			}
 		} else {
-			ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+			const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+			const ut32 scale = (sc_hdr->s_flags & loadable) ? rz_coff_addr_scale(bin) : 1;
+			ptr->paddr = sc_hdr->s_scnptr + (ut64)s->n_value * scale;
 			if (bin->scn_va) {
-				ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+				ptr->vaddr = bin->scn_va[s->n_scnum - 1] + (ut64)s->n_value * scale;
 			}
 		}
 	}
@@ -300,8 +303,11 @@ static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 			return ret;
 		}
 		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
-		ptr->psize = hdr->s_size;
-		ptr->vsize = hdr->s_size;
+		// Only loadable sections are counted in target address units; debug
+		// sections are byte streams even on a word-addressed target.
+		const ut32 scale = (hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		ptr->psize = (ut64)hdr->s_size * scale;
+		ptr->vsize = (ut64)hdr->s_size * scale;
 		ptr->paddr = hdr->s_scnptr;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
@@ -355,8 +361,10 @@ static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
-		ptr->size = scn_hdr->s_size;
-		ptr->vsize = scn_hdr->s_size;
+		const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+		const ut32 scale = (scn_hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		ptr->size = (ut64)scn_hdr->s_size * scale;
+		ptr->vsize = (ut64)scn_hdr->s_size * scale;
 		ptr->paddr = scn_hdr->s_scnptr;
 		ptr->flags = scn_hdr->s_flags;
 		if (obj->scn_va) {
@@ -640,10 +648,34 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 		ret->cpu = rz_str_dup("r10000");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+		// Original TI COFF (version 0) carried the target id directly in the
+		// file header's f_magic, so a target-id constant is matched here on the
+		// same field that holds COFF_FILE_MACHINE_TI_1/_2 for newer files.
+		// COFF1/COFF2 moved the id into the separate target_id field, handled
+		// by the COFF_FILE_MACHINE_TI_1/_2 case below.
+		// The id is shared by the C1x/C2x/C5x assemblers, so default to the C2x
+		// disassembler (override with -c c5x for a C5x image).
+		ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+		ret->cpu = rz_str_dup("c2x");
+		ret->arch = rz_str_dup("tms320");
+		ret->bits = 16;
+		break;
 	case COFF_FILE_MACHINE_TI_1:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
 		switch (obj->target_id) {
+		case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+			// First-generation TI fixed-point COFF id, shared by the TMS320C1x/
+			// C2x/C5x assemblers. Map it to the legacy single-accumulator C2x
+			// disassembler by default; override with -c for a C5x image. (The
+			// id is rarely present on raw firmware dumps; verify on real object
+			// files before relying on autodetection.)
+			ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+			ret->cpu = rz_str_dup("c2x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 16;
+			break;
 		case COFF_FILE_TARGET_TI_TMS320C3x4x:
 			ret->machine = rz_str_dup("TMS320C3x/4x");
 			/* TMS320C3x/C4x is a floating-point DSP family that

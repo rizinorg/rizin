@@ -85,6 +85,7 @@ rz_util_files = [
   'rz_util/rz_graph_drawable.h',
   'rz_util/rz_hex.h',
   'rz_util/rz_idpool.h',
+  'rz_util/rz_interrupt.h',
   'rz_util/rz_intervaltree.h',
   'rz_util/rz_iterator.h',
   'rz_util/rz_itv.h',
@@ -96,6 +97,7 @@ rz_util_files = [
   'rz_util/rz_mem.h',
   'rz_util/rz_name.h',
   'rz_util/rz_num.h',
+  'rz_util/rz_num_expression.h',
   'rz_util/rz_panels.h',
   'rz_util/rz_path.h',
   'rz_util/rz_pj.h',
@@ -124,6 +126,7 @@ rz_util_files = [
   'rz_util/rz_th_ht.h',
   'rz_util/rz_time.h',
   'rz_util/rz_tree.h',
+  'rz_util/rz_trie.h',
   'rz_util/rz_uleb128.h',
   'rz_util/rz_unicode.h',
   'rz_util/rz_utf16.h',
@@ -141,6 +144,12 @@ rz_util_files = [
   'rz_util/ht_su.h',
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
+
+rz_inquiry_files = [
+  'rz_inquiry/rz_absint.h',
+  'rz_inquiry/rz_il_cache.h'
+]
+install_headers(rz_inquiry_files, install_dir: join_paths(rizin_incdir, 'rz_inquiry'))
 
 rz_il_definitions_files = [
   'rz_il/definitions/bool.h',

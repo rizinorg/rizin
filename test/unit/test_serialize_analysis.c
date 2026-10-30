@@ -643,6 +643,8 @@ Sdb *xrefs_ref_db() {
 	sdb_set(db, "0x29a", "[{\"to\":333,\"type\":\"s\"}]");
 	sdb_set(db, "0x1337", "[{\"to\":4242},{\"to\":4243,\"type\":\"c\"}]");
 	sdb_set(db, "0x2a", "[{\"to\":4321,\"type\":\"d\"}]");
+	sdb_set(db, "0x2b", "[{\"to\":4322,\"type\":\"d\"}]");
+	sdb_set(db, "0x2c", "[{\"to\":4323,\"type\":\"w\"}]");
 	sdb_set(db, "0x4d2", "[{\"to\":4243,\"type\":\"C\"}]");
 	return db;
 }
@@ -654,6 +656,8 @@ bool test_analysis_xrefs_save() {
 	rz_analysis_xrefs_set(analysis, 0x1337, 4243, RZ_ANALYSIS_XREF_TYPE_CODE);
 	rz_analysis_xrefs_set(analysis, 1234, 4243, RZ_ANALYSIS_XREF_TYPE_CALL);
 	rz_analysis_xrefs_set(analysis, 42, 4321, RZ_ANALYSIS_XREF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, 43, 4322, RZ_ANALYSIS_XREF_TYPE_MEM_READ);
+	rz_analysis_xrefs_set(analysis, 44, 4323, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 	rz_analysis_xrefs_set(analysis, 666, 333, RZ_ANALYSIS_XREF_TYPE_STRING);
 
 	Sdb *db = sdb_new0();
@@ -674,7 +678,7 @@ bool test_analysis_xrefs_load() {
 
 	bool succ = rz_serialize_analysis_xrefs_load(db, analysis, NULL);
 	mu_assert("load success", succ);
-	mu_assert_eq(rz_analysis_xrefs_count(analysis), 5, "xrefs count");
+	mu_assert_eq(rz_analysis_xrefs_count(analysis), 7, "xrefs count");
 
 	RzList *xrefs = rz_analysis_xrefs_get_from(analysis, 0x1337);
 	mu_assert_eq(rz_list_length(xrefs), 2, "xrefs from count");
@@ -698,6 +702,20 @@ bool test_analysis_xrefs_load() {
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 42, "xref from");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4321, "xref to");
 	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_DATA, "xref type");
+	rz_list_free(xrefs);
+
+	xrefs = rz_analysis_xrefs_get_from(analysis, 43);
+	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 43, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4322, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_MEM_READ, "xref type");
+	rz_list_free(xrefs);
+
+	xrefs = rz_analysis_xrefs_get_from(analysis, 44);
+	mu_assert_eq(rz_list_length(xrefs), 1, "xrefs from count");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->from, 44, "xref from");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->to, 4323, "xref to");
+	mu_assert_eq(((RzAnalysisXRef *)rz_list_get_n(xrefs, 0))->type, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE, "xref type");
 	rz_list_free(xrefs);
 
 	xrefs = rz_analysis_xrefs_get_from(analysis, 666);

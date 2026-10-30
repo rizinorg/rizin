@@ -151,7 +151,7 @@ typedef enum {
 	OP_UNM, ///<		A B	R[A] := -R[B]
 	OP_BNOT, ///<		A B	R[A] := ~R[B]
 	OP_NOT, ///<		A B	R[A] := not R[B]
-	OP_LEN, ///<		A B	R[A] := #R[B] (length operator)
+	OP_LEN, ///<		A B	`R[A] := #R[B]` (length operator)
 
 	OP_CONCAT, ///<		A B	R[A] := R[A].. ... ..R[A + B - 1]
 
@@ -180,7 +180,7 @@ typedef enum {
 	OP_RETURN1, ///<	A	return R[A]
 
 	OP_FORLOOP, ///<	A Bx	update counters; if loop continues then pc-=Bx;
-	OP_FORPREP, ///<	A Bx	<check values and prepare counters>; if not to run then pc+=Bx+1;
+	OP_FORPREP, ///<	A Bx	`<check values and prepare counters>`; if not to run then pc+=Bx+1;
 
 	OP_TFORPREP, ///<	A Bx	create upvalue for R[A + 3]; pc+=Bx
 	OP_TFORCALL, ///<	A C	R[A+4], ... ,R[A+3+C] := R[A](R[A+1], R[A+2]);

@@ -117,7 +117,7 @@ static RzBinReloc *add_reloc(RzPVector *l, ut64 paddr, ut64 vaddr, ut64 target_v
 }
 
 bool test_rz_bin_reloc_storage(void) {
-	RzPVector *l = rz_pvector_new(NULL);
+	RzPVector *l = rz_pvector_new(free);
 	RzBinReloc *r0 = add_reloc(l, 0x108, 0x1000, 0x2004);
 	mu_assert_notnull(r0, "reloc");
 	RzBinReloc *r1 = add_reloc(l, 0x2002, 0x1003, 0x2008);

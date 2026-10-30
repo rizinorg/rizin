@@ -9,13 +9,13 @@ to navigate the codebase.
 - [RzUtil](util/README.md)
 - [RzIO](io/README.md)
 - [RzBin](bin/README.md)
-- [RzAnalysis](analysis/README.md)
-- [RzAsm](asm/README.md)
+- RzAnalysis
+- RzAsm
 - [RzCons](cons/README.md)
 - [RzDebug](debug/README.md)
 - [RzFlag](flag/README.md)
 - [RzCore](core/README.md)
-- [RzBp](bp/README.md)
+- RzBp
 - [RzConfig](config/README.md)
 - [RzCrypto](crypto/README.md)
 - [RzDemangler](demangler/README.md)
@@ -26,7 +26,7 @@ to navigate the codebase.
 - [RzLang](lang/README.md)
 - [RzMagic](magic/README.md)
 - [RzMain](main/README.md)
-- [RzParse](parse/README.md)
+- RzParse
 - [RzReg](reg/README.md)
 - [RzSearch](search/README.md)
 - [RzSign](sign/README.md)

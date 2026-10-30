@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2021-2026 RizinOrg <info@rizin.re>
+// SPDX-FileCopyrightText: 2021-2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2009-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
@@ -30,10 +32,13 @@ typedef struct {
 	bool widestr;
 	bool nonstop;
 	bool json;
+	bool use_colors;
+	bool force_raw;
 	int mode;
 	int align;
 	ut8 *buf;
 	ut64 bsize;
+	ut64 buflen; /* length of valid data in buf */
 	ut64 from;
 	ut64 to;
 	ut64 cur;
@@ -49,6 +54,7 @@ typedef struct {
 static void rzfind_options_fini(RzfindOptions *ro) {
 	free(ro->buf);
 	ro->cur = 0;
+	ro->buflen = 0;
 }
 
 static void rzfind_options_init(RzfindOptions *ro) {
@@ -59,6 +65,7 @@ static void rzfind_options_init(RzfindOptions *ro) {
 	ro->keywords = rz_list_newf(NULL);
 	ro->exec_command = NULL;
 	ro->rizin_command = NULL;
+	ro->use_colors = rz_sys_getenv_as_unsigned("RZ_COLOR", 1);
 }
 
 static int rzfind_open(RzfindOptions *ro, const char *file);
@@ -67,78 +74,83 @@ typedef struct {
 	RzfindOptions *opt;
 	const char *filename;
 	RzCore *core;
+	RzIO *io;
 } RzfindContext;
+
+static void str_iterate_wide(RzStrBuf *sb, char *buf, uint64_t len, uint64_t start) {
+	uint64_t i, j = 0;
+	for (i = start; i < len && buf[i]; i++) {
+		char ch = buf[i];
+		if (ch == '"' || ch == '\\') {
+			ch = '\'';
+		}
+		if (!IS_PRINTABLE(ch)) {
+			break;
+		}
+		rz_strbuf_append_n(sb, &ch, 1);
+		j++;
+		i++;
+		if (j > 80) {
+			rz_strbuf_append(sb, "...");
+			break;
+		}
+		if (i >= len || buf[i]) {
+			break;
+		}
+	}
+}
+
+static void str_iterate(bool widestr, RzStrBuf *sb, char *buf, uint64_t len, uint64_t start) {
+	if (widestr) {
+		str_iterate_wide(sb, buf, len, start);
+		return;
+	}
+
+	for (uint64_t i = start; i < len; i++) {
+		char ch = buf[i];
+		if (ch == '"' || ch == '\\') {
+			ch = '\'';
+		}
+		if (!ch || !IS_PRINTABLE(ch)) {
+			break;
+		}
+		rz_strbuf_append_n(sb, &ch, 1);
+	}
+}
 
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzfindContext *ctx = (RzfindContext *)user;
 	RzfindOptions *ro = ctx->opt;
 	int delta = addr - ro->cur;
-	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
+	bool search_leftover = false;
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	RzStrBuf leftover;
+	if (ro->cur > addr) {
 		// This case occurs when there is hit in search left over
-		delta = ro->cur - addr;
+		delta = ro->widestr ? (ro->cur - addr) : 0;
+		search_leftover = true;
+		rz_strbuf_init(&leftover);
 	}
-	if (delta < 0 || delta >= ro->bsize) {
-		eprintf("Invalid delta\n");
+	if (delta < 0 || delta >= ro->buflen) {
+		RZ_LOG_ERROR("Invalid delta\n");
 		return 0;
 	}
 	if (!ro->quiet && !ro->json) {
 		printf("File: %s\n", ctx->filename);
 	}
-	char _str[128];
-	char *str = _str;
-	*_str = 0;
-	if (ro->showstr) {
-		if (ro->widestr) {
-			str = _str;
-			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof(_str); i++) {
-				char ch = ro->buf[i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[j++] = ch;
-				i++;
-				if (j > 80) {
-					strcpy(str + j, "...");
-					j += 3;
-					break;
-				}
-				if (ro->buf[i]) {
-					break;
-				}
-			}
-			str[j] = 0;
-		} else {
-			size_t i;
-			for (i = 0; i < sizeof(_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
-				if (ch == '"' || ch == '\\') {
-					ch = '\'';
-				}
-				if (!ch || !IS_PRINTABLE(ch)) {
-					break;
-				}
-				str[i] = ch;
-			}
-			str[i] = 0;
+
+	bool is_widestr = ro->widestr;
+	if (!is_widestr && ro->showstr && search_leftover && rz_strbuf_reserve(&leftover, ro->cur - addr)) {
+		int ret = rz_io_pread_at(ctx->io, addr, (uint8_t *)rz_strbuf_get(&leftover), ro->cur - addr);
+		if (ret > 0) {
+			str_iterate(is_widestr, &sb, rz_strbuf_get(&leftover), ret, 0);
 		}
-	} else {
-		size_t i;
-		for (i = 0; i < sizeof(_str) - 1; i++) {
-			char ch = ro->buf[delta + i];
-			if (ch == '"' || ch == '\\') {
-				ch = '\'';
-			}
-			if (!ch || !IS_PRINTABLE(ch)) {
-				break;
-			}
-			str[i] = ch;
-		}
-		str[i] = 0;
+		rz_strbuf_fini(&leftover);
 	}
+	str_iterate(is_widestr, &sb, (char *)ro->buf, ro->buflen, delta);
+
+	char *str = rz_strbuf_get(&sb);
 	if (ro->json) {
 		const char *type = "string";
 		printf("%s{\"offset\":%" PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
@@ -167,6 +179,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			RZ_LOG_ERROR("Failed to execute command: %s\n", command);
 		}
 		free(command);
+		rz_strbuf_fini(&sb);
 		return 1;
 	}
 	if (ro->rizin_command && ctx->core) {
@@ -176,8 +189,10 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			printf("%s", output);
 			free(output);
 		}
+		rz_strbuf_fini(&sb);
 		return 1;
 	}
+	rz_strbuf_fini(&sb);
 	return 1;
 }
 
@@ -222,9 +237,9 @@ static void print_bin_string(RzBinFile *bf, RzBinString *string, RzfindOptions *
 	}
 }
 
-static int show_help(const char *argv0, int line) {
+static int show_help(const char *argv0, bool line) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
+	printf("rz-find [-mXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..\n");
 	if (line) {
 		return 0;
 	}
@@ -232,6 +247,8 @@ static int show_help(const char *argv0, int line) {
 		// clang-format off
 		"-a",    "align",   "Only accept aligned hits",
 		"-b",    "size",    "Set block size",
+		"-B",    "",        "Force to load the files as raw buffers",
+		"-C",    "",        "Disable colors",
 		"-e",    "regex",   "Search for regex matches (can be used multiple times)",
 		"-E",    "cmd",     "Execute shell command for each file found.",
 		"-R",    "cmd",     "Execute Rizin command for each search hit.",
@@ -414,6 +431,10 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		rz_io_bind(rio, &bin->iob);
 		rz_bin_options_init(&opt, 0, 0, 0, false);
 
+		if (ro->force_raw) {
+			rz_bin_force_plugin(bin, "any");
+		}
+
 		bf = rz_bin_open(bin, file, &opt);
 		if (!bf) {
 			result = 1;
@@ -521,29 +542,30 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 		rz_core_bin_load(core, NULL, UT64_MAX);
 	}
-	RzfindContext ctx = { .opt = ro, .filename = file, .core = core };
+	RzfindContext ctx = { .opt = ro, .filename = file, .core = core, .io = io };
 	rz_search_set_callback(rs, &hit, &ctx);
 	ut64 to = ro->to;
 	if (to == -1) {
 		to = rz_io_size(io);
 	}
 
-	if (!rz_cons_new()) {
-		result = 1;
-		goto err;
-	}
-
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, 0, 0, 0, false);
 	RzBin *bin = rz_bin_new();
 	rz_io_bind(io, &bin->iob);
-	io->cb_printf = printf;
+	io->cb_printf = (PrintfCallback)rz_cb_default_printf;
+
+	if (ro->force_raw) {
+		rz_bin_force_plugin(bin, "any");
+	}
 	RzBinFile *bf = rz_bin_open(bin, file, &opt);
 
 	if (ro->mode == RZ_SEARCH_STRING) {
 		RzBinStringSearchOpt search_opt = bin->str_search_cfg;
 		// enforce raw binary search
 		search_opt.mode = RZ_BIN_STRING_SEARCH_MODE_RAW_BINARY;
+		// do not have a max region size.
+		search_opt.max_region_size = SZT_MAX;
 
 		ro->curfile = file;
 		RzPVector *vec = rz_bin_file_strings(bf, &search_opt);
@@ -710,8 +732,9 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 			result = 1;
 			break;
 		}
-		if (ret != bsize && ret > 0) {
+		if (ret > 0) {
 			bsize = ret;
+			ro->buflen = ret;
 		}
 
 		if (rz_search_update(rs, ro->cur, ro->buf, ret) == -1) {
@@ -719,7 +742,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 		}
 	}
 done:
-	rz_cons_free();
+	rz_core_free(core);
 	rz_bin_free(bin);
 err:
 	free(efile);
@@ -773,25 +796,25 @@ static int rzfind_open(RzfindOptions *ro, const char *file) {
 		: rzfind_open_file(ro, file, NULL, -1);
 }
 
-RZ_API int rz_main_rz_find(int argc, const char **argv) {
-	RzfindOptions ro;
-	rzfind_options_init(&ro);
+static void find_set_log_level(void) {
+	RzLogLevel level = rz_sys_getenv_as_unsigned("RZ_LOGLEVEL", RZ_DEFAULT_LOGLVL);
+	if (level < RZ_LOGLVL_DEBUG || level >= RZ_LOGLVL_SIZE) {
+		RZ_LOG_ERROR("Invalid log level %d.\n", (int)level);
+		level = RZ_DEFAULT_LOGLVL;
+	}
+	rz_log_set_level(level);
+}
 
+RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	int c;
 	const char *file = NULL;
+	RzGetopt opt = { 0 };
+	RzfindOptions ro = { 0 };
 
-	int n = RZ_DEFAULT_LOGLVL;
-	char *log_level = rz_sys_getenv("RZ_LOGLEVEL");
-	if (RZ_STR_ISNOTEMPTY(log_level)) {
-		n = atoi(log_level);
-		free(log_level);
-	}
-	if (n >= 0 && n < RZ_LOGLVL_SIZE) {
-		rz_log_set_level((RzLogLevel)n);
-	}
+	rzfind_options_init(&ro);
+	find_set_log_level();
 
-	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnhvVZ");
+	rz_getopt_init(&opt, argc, argv, "a:ie:b:jmM:s:w:S:I:x:Xzf:F:t:E:R:qnChvVBZ");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -807,6 +830,12 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			break;
 		case 'j':
 			ro.json = true;
+			break;
+		case 'C':
+			ro.use_colors = false;
+			break;
+		case 'B':
+			ro.force_raw = true;
 			break;
 		case 'n':
 			ro.nonstop = 1;
@@ -931,6 +960,11 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		ro.comma = "";
 		printf("[");
 	}
+
+	if (!ro.use_colors && ro.pr) {
+		ro.pr->flags &= ~RZ_PRINT_FLAGS_COLOR;
+	}
+
 	int overall_result = 0;
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];

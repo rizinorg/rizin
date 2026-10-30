@@ -167,8 +167,9 @@ static bool is_valid_guid(const char *guid) {
  * \param pj Optional PJ instance for json output
  * \param isradjson Use pj for json output
  * \param options symbol server options for downloading the PDB file
+ * \param cons RzCons instance
  */
-RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options) {
+RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int isradjson, RZ_NONNULL SPDBOptions *options, RZ_NULLABLE RzCons *cons) {
 	rz_return_val_if_fail(bin && options, 1);
 	SPDBDownloaderOpt opt;
 	RzBinObject *obj = rz_bin_cur_object(bin);
@@ -204,8 +205,8 @@ RZ_API int rz_bin_pdb_download(RZ_NONNULL RzBin *bin, RZ_NULLABLE PJ *pj, int is
 		pj_ks(pj, "path", path);
 		pj_kb(pj, "download", (bool)path);
 		pj_end(pj);
-	} else {
-		rz_cons_printf("PDB \"%s\" download %s\n",
+	} else if (cons) {
+		rz_cons_printf(cons, "PDB \"%s\" download %s\n",
 			opt.dbg_file, path ? "success" : "failed");
 	}
 	free(path);

@@ -277,3 +277,23 @@ bcc 0x2F, tc1
 mov xar0, ac3
 EOF
 RUN
+
+NAME=TMS320C6000 COFF relocation application
+FILE=bins/tms320/coff2/c6x_reloc.ticoff2.obj
+CMDS=<<EOF
+ir
+s section..text
+pxw 12
+s section..data
+pxw 8
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type            name   
+--------------------------------------------------------
+0x00000030 0x000000fd 0x00000050 R_C6000_STFLD   _value
+0x00000034 0x00000101 0x00000050 R_C6000_STFLD   _value
+0x00000054 0x00000121 0x00000050 R_C6000_RELLONG _value
+0x00000030  0x00002828 0x00000068 0x00800264             ((..h...d...
+0x00000050  0x0000600d 0x00000050                        .`..P...
+EOF
+RUN

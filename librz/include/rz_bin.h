@@ -364,7 +364,7 @@ typedef struct rz_bin_object_t {
 	RzBinAddr *binsym[RZ_BIN_SPECIAL_SYMBOL_LAST];
 	struct rz_bin_plugin_t *plugin;
 	RzBinLanguage lang;
-	RZ_DEPRECATE RZ_BORROW Sdb *kv; ///< deprecated, put info in C structures instead of this (holds a copy of another pointer.)
+	RZ_DEPRECATE RZ_OWN Sdb *kv; ///< deprecated, put info in C structures instead of this
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
 
@@ -416,6 +416,7 @@ struct rz_bin_t {
 	HtSP /*<RzBinPlugin *>*/ *plugins;
 	HtSP /*<RzBinXtrPlugin *>*/ *binxtrs;
 	RzList /*<RzBinFile *>*/ *binfiles;
+	void *cb_printf_user;
 	PrintfCallback cb_printf;
 	int loadany;
 	RzIOBind iob;

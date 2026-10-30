@@ -7,6 +7,7 @@
 #include <rz_bin.h>
 #include <rz_diff.h>
 #include <rz_util.h>
+#include <rz_util/rz_mutual_info.h>
 #include <rz_main.h>
 
 #define RZ_DIFF_DISTANCE_MAX_SIZE (1024 * 1024) // 1 miB
@@ -34,6 +35,7 @@ typedef enum {
 	DIFF_DISTANCE_LEVENSHTEIN,
 	DIFF_DISTANCE_LCS_ROLLING,
 	DIFF_DISTANCE_SSDEEP,
+	DIFF_DISTANCE_MUTUALINFO,
 } DiffDistance;
 
 typedef enum {
@@ -134,6 +136,7 @@ typedef struct diff_hex_view_t {
 	DiffIO *io_b;
 	bool column_descr;
 	DiffColors colors;
+	RzCons *cons;
 	RzConsCanvas *canvas;
 	DiffScreen screen;
 } DiffHexView;
@@ -268,22 +271,12 @@ static bool rz_diff_is_file(const char *file) {
 	return true;
 }
 
-static bool diff_env_get_bool(const char *key, bool def_value) {
-	bool value = def_value;
-	char *tmp = rz_sys_getenv(key);
-	if (RZ_STR_ISNOTEMPTY(tmp)) {
-		value = rz_num_get(NULL, tmp) != 0;
-	}
-	free(tmp);
-	return value;
-}
-
 static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ctx) {
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *screen = NULL;
 	memset((void *)ctx, 0, sizeof(DiffContext));
-	ctx->colors = diff_env_get_bool("RZ_COLOR", true);
+	ctx->colors = rz_sys_getenv_as_unsigned("RZ_COLOR", 1);
 	ctx->evars = rz_list_newf(free);
 
 	if (!ctx->evars) {
@@ -355,6 +348,8 @@ static void rz_diff_parse_arguments(int argc, const char **argv, DiffContext *ct
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_LCS_ROLLING);
 		} else if (!strcmp(algorithm, "ssdeep")) {
 			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_SSDEEP);
+		} else if (!strcmp(algorithm, "mutualinfo")) {
+			rz_diff_ctx_set_dist(ctx, DIFF_DISTANCE_MUTUALINFO);
 		} else {
 			rz_diff_error_opt(ctx, DIFF_OPT_ERROR, "option -d argument '%s' is not a recognized algorithm.\n", algorithm);
 		}
@@ -530,8 +525,10 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 	ut8 *a_buffer = NULL;
 	ut8 *b_buffer = NULL;
 	ut32 distance = 0;
+	ut32 overlap = 0;
 	st32 chunk_size = 0;
 	double similarity = 0.0;
+	double coverage = 0.0;
 
 	if (ctx->command_line) {
 		if (!(a_buffer = (ut8 *)rz_str_dup(ctx->file_a))) {
@@ -588,6 +585,18 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		break;
+	case DIFF_DISTANCE_MUTUALINFO: {
+		RzMutualInfo mi_ctx;
+		rz_mutual_info_init(&mi_ctx);
+		size_t len = RZ_MIN(a_size, b_size);
+		rz_mutual_info_update(&mi_ctx, a_buffer, b_buffer, len);
+		similarity = rz_mutual_info_final(&mi_ctx);
+		overlap = (ut32)len;
+		if (RZ_MAX(a_size, b_size) > 0) {
+			coverage = 100.0 * (double)len / (double)RZ_MAX(a_size, b_size);
+		}
+		break;
+	}
 	default:
 		rz_diff_error("unknown distance algorithm\n");
 		goto rz_diff_calculate_distance_bad;
@@ -600,8 +609,14 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 			goto rz_diff_calculate_distance_bad;
 		}
 		pj_o(pj);
-		pj_kd(pj, "similarity", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			pj_kd(pj, "bits", similarity);
+			pj_kd(pj, "coverage", coverage);
+			pj_kn(pj, "overlap", overlap);
+		} else {
+			pj_kd(pj, "similarity", similarity);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			pj_kn(pj, "distance", distance);
 		}
 		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
@@ -612,13 +627,23 @@ static bool rz_diff_calculate_distance(DiffContext *ctx) {
 		pj_free(pj);
 	} else if (ctx->mode == DIFF_MODE_QUIET) {
 		printf("%.3f\n", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			printf("%.3f\n", coverage);
+			printf("%u\n", overlap);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("%d\n", distance);
 		}
 	} else {
 		// DIFF_MODE_STANDARD
-		printf("similarity: %.3f\n", similarity);
-		if (ctx->distance != DIFF_DISTANCE_SSDEEP) {
+		if (ctx->distance == DIFF_DISTANCE_MUTUALINFO) {
+			printf("mutual information: %.3f bits\n", similarity);
+			printf("coverage: %.3f%%\n", coverage);
+			printf("overlap: %u\n", overlap);
+		} else {
+			printf("similarity: %.3f\n", similarity);
+		}
+		if (ctx->distance != DIFF_DISTANCE_SSDEEP && ctx->distance != DIFF_DISTANCE_MUTUALINFO) {
 			printf("distance: %u\n", distance);
 		}
 		if (ctx->distance == DIFF_DISTANCE_LCS_ROLLING) {
@@ -1534,10 +1559,10 @@ static void graphviz_dot_header(RzCore *core_a) {
 	const char *gv_edge = get_config_or_default(core_a, "graph.gv.edge", "arrowhead=\"normal\"");
 	const char *gv_node = get_config_or_default(core_a, "graph.gv.node", "fillcolor=gray style=filled shape=box");
 	const char *gv_spline = get_config_or_default(core_a, "graph.gv.spline", "splines=\"ortho\"");
-	rz_cons_printf("digraph code {\n"
-		       "\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" %s];\n"
-		       "\tnode [%s];\n"
-		       "\tedge [%s];\n",
+	rz_cons_printf(core_a->cons, "digraph code {\n"
+				     "\tgraph [bgcolor=azure fontsize=8 fontname=\"%s\" %s];\n"
+				     "\tnode [%s];\n"
+				     "\tedge [%s];\n",
 		font, gv_spline, gv_node, gv_edge);
 }
 
@@ -1545,8 +1570,8 @@ static void print_color_node(RzCore *core, RzAnalysisBlock *bbi) {
 	bool color_current = rz_config_get_b(core->config, "graph.gv.current");
 	bool current = rz_analysis_block_contains(bbi, core->offset);
 	if (current && color_current) {
-		rz_cons_printf("\t\"0x%08" PFMT64x "\" ", bbi->addr);
-		rz_cons_printf("\t[fillcolor=gray style=filled shape=box];\n");
+		rz_cons_printf(core->cons, "\t\"0x%08" PFMT64x "\" ", bbi->addr);
+		rz_cons_printf(core->cons, "\t[fillcolor=gray style=filled shape=box];\n");
 	}
 }
 
@@ -1568,7 +1593,7 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 	rz_config_set_i(core->config, "asm.comments", 0);
 	rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
 
-	rz_cons_push();
+	rz_cons_push(core->cons);
 	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, bbi->addr);
 	if (!b) {
 		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", bbi->addr);
@@ -1586,12 +1611,12 @@ static char *basic_block_opcodes(RzCore *core, RzAnalysisBlock *bbi) {
 		.cbytes = 2,
 	};
 	rz_core_print_disasm(core, b->addr, block, b->size, 9999, NULL, &disasm_options);
-	rz_cons_filter();
-	const char *retstr = rz_str_get(rz_cons_get_buffer());
+	rz_cons_filter(core->cons);
+	const char *retstr = rz_str_get(rz_cons_get_buffer(core->cons));
 	opcodes = rz_str_dup(retstr);
 exit:
-	rz_cons_pop();
-	rz_cons_echo(NULL);
+	rz_cons_pop(core->cons);
+	rz_cons_echo(core->cons, NULL);
 	free(block);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
@@ -1643,9 +1668,9 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 
 				rz_str_replace_char(diffstr, '"', '\'');
 				diffstr = rz_str_replace(diffstr, "\n", "\\l", 1);
-				rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-					       "color=\"black\", fontname=\"%s\","
-					       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+				rz_cons_printf(core_a->cons, "\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+							     "color=\"black\", fontname=\"%s\","
+							     " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
 					bbi->addr, fillcolor, font, diffstr, fcn_a->name,
 					bbi->addr);
 				free(diffstr);
@@ -1662,9 +1687,9 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 
 		rz_str_replace_char(original, '"', '\'');
 		original = rz_str_replace(original, "\n", "\\l", 1);
-		rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
-			       "color=\"black\", fontname=\"%s\","
-			       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+		rz_cons_printf(core_a->cons, "\t\"0x%08" PFMT64x "\" [fillcolor=\"%s\","
+					     "color=\"black\", fontname=\"%s\","
+					     " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
 			bbi->addr, fillcolor, font, original, fcn_a->name, bbi->addr);
 		free(original);
 	}
@@ -1678,9 +1703,9 @@ static void graphviz_dot_nodes(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 
 		rz_str_replace_char(opcodes, '"', '\'');
 		opcodes = rz_str_replace(opcodes, "\n", "\\l", 1);
-		rz_cons_printf("\t\"0x%08" PFMT64x "\" [fillcolor=\"white\","
-			       "color=\"black\", fontname=\"%s\","
-			       " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
+		rz_cons_printf(core_a->cons, "\t\"0x%08" PFMT64x "\" [fillcolor=\"white\","
+					     "color=\"black\", fontname=\"%s\","
+					     " label=\"%s\", URL=\"%s/0x%08" PFMT64x "\"]\n",
 			bbi->addr, font, opcodes, fcn_a->name, bbi->addr);
 		free(opcodes);
 	}
@@ -1696,13 +1721,13 @@ static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 	rz_pvector_foreach (fcn->bbs, iter) {
 		bbi = (RzAnalysisBlock *)*iter;
 		if (bbi->jump != UT64_MAX) {
-			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
+			rz_cons_printf(core->cons, "\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"%s\"];\n",
 				bbi->addr, bbi->jump,
 				bbi->fail != UT64_MAX ? PAL_TRUE : PAL_JUMP);
 			print_color_node(core, bbi);
 		}
 		if (bbi->fail != UT64_MAX) {
-			rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
+			rz_cons_printf(core->cons, "\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
 				bbi->addr, bbi->fail);
 			print_color_node(core, bbi);
 		}
@@ -1711,12 +1736,12 @@ static void graphviz_dot_edges(RzCore *core, RzAnalysisFunction *fcn) {
 			RzListIter *iter2;
 
 			if (bbi->fail != UT64_MAX) {
-				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
+				rz_cons_printf(core->cons, "\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color=\"" PAL_FAIL "\"];\n",
 					bbi->addr, bbi->fail);
 				print_color_node(core, bbi);
 			}
 			rz_list_foreach (bbi->switch_op->cases, iter2, caseop) {
-				rz_cons_printf("\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"" PAL_FAIL "\"];\n",
+				rz_cons_printf(core->cons, "\t\"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" [color2=\"" PAL_FAIL "\"];\n",
 					caseop->addr, caseop->jump);
 				print_color_node(core, bbi);
 			}
@@ -1733,9 +1758,9 @@ static void graphviz_dot_graph(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 		graphviz_dot_nodes(core_a, fcn_a, core_b, fcn_b, result);
 		graphviz_dot_edges(core_a, fcn_a);
 	} else {
-		rz_cons_printf("\t\"0x%08" PFMT64x "\";\n", fcn_a->addr);
+		rz_cons_printf(core_a->cons, "\t\"0x%08" PFMT64x "\";\n", fcn_a->addr);
 	}
-	rz_cons_printf("}\n");
+	rz_cons_printf(core_a->cons, "}\n");
 }
 
 static void graph_basic_block_json(const char *name, RzAnalysisBlock *bbi, PJ *pj) {
@@ -1906,16 +1931,23 @@ static void diff_graph_as_json(RzCore *core_a, RzAnalysisFunction *fcn_a, RzCore
 }
 
 static bool diff_progess_status(const size_t n_left, const size_t n_matches, void *user) {
-	rz_cons_clear_line(stderr);
+	RzCore *core = (RzCore *)user;
+	if (!core) {
+		return true;
+	}
+	rz_cons_clear_line(core->cons, stderr);
 	fprintf(stderr, "rz-diff: to check %" PFMTSZu " | matches %" PFMTSZu "\r", n_left, n_matches);
-	return !rz_cons_is_breaked();
+	return !rz_interrupt_is_breaked(core->intr);
 }
 
 static bool diff_check_ctrl_c(const size_t n_left, const size_t n_matches, void *user) {
-	return !rz_cons_is_breaked();
+	RzCore *core = (RzCore *)user;
+	return !rz_interrupt_is_breaked(core->intr);
 }
 
-static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, RzAnalysis *analysis_b, RzAnalysisFunction *find, bool verbose) {
+static RzAnalysisFunction *find_best_matching_function(RzCore *core_a, RzCore *core_b, RzAnalysisFunction *find, bool verbose) {
+	RzAnalysis *analysis_a = core_a->analysis;
+	RzAnalysis *analysis_b = core_b->analysis;
 	RzAnalysisMatchPair *pair = NULL;
 	RzAnalysisFunction *match = NULL;
 	RzAnalysisMatchResult *result = NULL;
@@ -1929,6 +1961,7 @@ static RzAnalysisFunction *find_best_matching_function(RzAnalysis *analysis_a, R
 	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
 	opts.analysis_a = analysis_a;
 	opts.analysis_b = analysis_b;
+	opts.user = core_a;
 
 	RzList *fcns_b = rz_analysis_function_list(analysis_b);
 	result = rz_analysis_match_functions(list_a, fcns_b, &opts);
@@ -1976,7 +2009,7 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 
 	if (addr_b == UT64_MAX) {
 		// find matching function on core B
-		fcn_b = find_best_matching_function(core_a->analysis, core_b->analysis, fcn_a, verbose);
+		fcn_b = find_best_matching_function(core_a, core_b, fcn_a, verbose);
 		if (!fcn_b) {
 			RZ_LOG_ERROR("rz-diff: cannot find best matching function for function at 0x%" PFMT64x "\n", addr_a);
 			return;
@@ -1992,6 +2025,7 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
 	opts.analysis_a = core_a->analysis;
 	opts.analysis_b = core_b->analysis;
+	opts.user = core_a;
 
 	// calculate all the matches between the basic blocks of the 2 functions.
 	result = rz_analysis_match_basic_blocks(fcn_a, fcn_b, &opts);
@@ -2014,14 +2048,14 @@ static void core_show_function_diff(RzCore *core_a, ut64 addr_a, RzCore *core_b,
 		}
 
 		diff_graph_as_json(core_a, fcn_a, core_b, fcn_b, result, pj);
-		rz_cons_printf("%s\n", pj_string(pj));
+		rz_cons_printf(core_a->cons, "%s\n", pj_string(pj));
 		pj_free(pj);
 		break;
 	default:
 		graphviz_dot_graph(core_a, fcn_a, core_b, fcn_b, result);
 		break;
 	}
-	rz_cons_flush();
+	rz_cons_flush(core_a->cons);
 
 	rz_analysis_match_result_free(result);
 }
@@ -2172,6 +2206,7 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 	opts.callback = verbose ? diff_progess_status : diff_check_ctrl_c;
 	opts.analysis_a = core_a->analysis;
 	opts.analysis_b = core_b->analysis;
+	opts.user = core_a;
 
 	// calculate all the matches between the functions of the 2 different core files.
 	result = rz_analysis_match_functions(fcns_a, fcns_b, &opts);
@@ -2261,22 +2296,22 @@ static void core_diff_show(RzCore *core_a, RzCore *core_b, const char *addr_a, D
 	case DIFF_MODE_JSON:
 		pj_end(pj); // ] -- list of pairs end
 		output = pj_drain(pj);
-		rz_cons_printf("%s\n", output);
+		rz_cons_printf(core_a->cons, "%s\n", output);
 		pj = NULL;
 		break;
 	case DIFF_MODE_STANDARD:
 		output = rz_table_tofancystring(table);
-		rz_cons_printf("%s", output);
+		rz_cons_printf(core_a->cons, "%s", output);
 		break;
 	default: // DIFF_MODE_QUIET
 		rz_table_align(table, 0, RZ_TABLE_ALIGN_RIGHT);
 		rz_table_show_header(table, false);
 		output = rz_table_tosimplestring(table);
-		rz_cons_printf("%s", output);
+		rz_cons_printf(core_a->cons, "%s", output);
 		break;
 	}
 
-	rz_cons_flush();
+	rz_cons_flush(core_a->cons);
 
 fail:
 	free(output);
@@ -2551,7 +2586,7 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 	const char *reset = hview->colors.reset;
 	const char *legenda = hview->colors.legenda;
 	const char *toolbar = NULL;
-	bool utf8 = rz_cons_singleton()->use_utf8;
+	bool utf8 = hview->cons->use_utf8;
 	const char *arrow_up = utf8 ? RUNE_ARROW_UP " " : "/\\";
 	const char *arrow_down = utf8 ? RUNE_ARROW_DOWN " " : "\\/";
 	const char *arrow_right = utf8 ? RUNE_ARROW_RIGHT " " : "> ";
@@ -2611,8 +2646,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		read_b = rz_io_pread_at(io_b->io, hview->address_b, hview->buffer_b, hview->size_b);
 	}
 
-	rz_cons_goto_origin_reset();
-	rz_cons_clear();
+	rz_cons_goto_origin_reset(hview->cons);
+	rz_cons_clear(hview->cons);
 	rz_cons_canvas_clear(canvas);
 	shift = seek_min_shift(hview);
 	for (ut64 h = 0, pos = 0; h < max_rows; ++h) {
@@ -2731,8 +2766,8 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 		rz_cons_canvas_write(canvas, line);
 	}
 
-	rz_cons_canvas_print(canvas);
-	rz_cons_flush();
+	rz_cons_canvas_print(hview->cons, canvas);
+	rz_cons_flush(hview->cons);
 
 	// allow to refresh the terminal
 	// before printing again the ui
@@ -2741,13 +2776,14 @@ static bool rz_diff_draw_tui(DiffHexView *hview, bool show_help) {
 }
 
 static char *visual_prompt(DiffHexView *hview, const char *prompt) {
+	RzCons *cons = hview->cons;
 	char buf[1024];
-	rz_cons_gotoxy(0, hview->screen.height);
-	rz_cons_clear_line(stdout);
-	rz_cons_printf("%s%s ", hview->colors.reset, prompt);
-	rz_line_set_prompt(rz_cons_singleton()->line, ":> ");
-	rz_cons_flush();
-	rz_cons_fgets(buf, sizeof(buf), 0, NULL);
+	rz_cons_gotoxy(cons, 0, hview->screen.height);
+	rz_cons_clear_line(cons, stdout);
+	rz_cons_printf(cons, "%s%s ", hview->colors.reset, prompt);
+	rz_line_set_prompt(cons->line, ":> ");
+	rz_cons_flush(cons);
+	rz_cons_fgets(cons, buf, sizeof(buf), 0, NULL);
 	if (*buf) {
 		return rz_str_dup(buf);
 	}
@@ -2904,7 +2940,7 @@ static void find_prev_diff(DiffHexView *hview, ut64 seek) {
 }
 
 static void rz_diff_resize_buffer(DiffHexView *hview) {
-	int height, width = rz_cons_get_size(&height);
+	int height, width = rz_cons_get_size(hview->cons, &height);
 
 	ut64 size_a = ((st64)(width / 2) * (height - 2));
 	ut64 size_b = ((st64)(width / 2) * (height - 2));
@@ -2922,7 +2958,7 @@ static void rz_diff_resize_buffer(DiffHexView *hview) {
 		return;
 	}
 
-	RzConsCanvas *new_canvas = rz_cons_canvas_new(width, height);
+	RzConsCanvas *new_canvas = rz_cons_canvas_new(width, height, hview->cons);
 	if (!new_canvas) {
 		free(new_line);
 		free(new_buf_a);
@@ -2976,13 +3012,13 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 
 	rz_core_parse_rizinrc(core);
 
-	console = rz_cons_singleton();
+	console = core->cons;
 	if (!console) {
 		rz_diff_error("cannot get console.\n");
 		goto rz_diff_hex_visual_fail;
 	}
 
-	rz_cons_set_interactive(false);
+	rz_cons_set_interactive(console, false);
 
 	io_a = rz_diff_io_open(ctx->file_a);
 	if (!io_a) {
@@ -2995,14 +3031,14 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	}
 
 	if (width < 1 && height < 1) {
-		width = rz_cons_get_size(&height);
+		width = rz_cons_get_size(console, &height);
 		if (width < 1 && height < 1) {
 			rz_diff_error("invalid screen size; use -S WxH to define the sizes.\n");
 			goto rz_diff_hex_visual_fail;
 		}
 	}
 
-	canvas = rz_cons_canvas_new(width, height);
+	canvas = rz_cons_canvas_new(width, height, console);
 	if (!canvas) {
 		rz_diff_error("cannot allocate canvas. try to use -S WxH to define the sizes.\n");
 		goto rz_diff_hex_visual_fail;
@@ -3042,22 +3078,23 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	hview.address_a = 0;
 	hview.address_b = 0;
 	hview.column_descr = true;
+	hview.cons = console;
 	rz_diff_get_colors(&hview.colors, console->context, ctx->colors);
 
-	rz_cons_show_cursor(false);
-	rz_cons_enable_mouse(false);
+	rz_cons_show_cursor(console, false);
+	rz_cons_enable_mouse(console, false);
 
 	console->event_data = &hview;
 	console->event_resize = (RzConsEvent)rz_diff_resize_buffer;
 
 	int seekmin = 0;
-	while (draw_visual && !rz_cons_is_breaked()) {
+	while (draw_visual && !rz_interrupt_is_breaked(core->intr)) {
 		if (!rz_diff_draw_tui(&hview, show_help)) {
 			break;
 		}
 		seekmin = seek_min_value(&hview);
-		read = rz_cons_readchar();
-		pressed = rz_cons_arrow_to_hjkl(read);
+		read = rz_cons_readchar(console);
+		pressed = rz_cons_arrow_to_hjkl(console, read);
 
 		if (show_help && (pressed == 'q' || pressed == 'Q')) {
 			// allow to close the help without closing the util
@@ -3159,11 +3196,11 @@ static bool rz_diff_hex_visual(DiffContext *ctx) {
 	console->event_data = NULL;
 	console->event_resize = NULL;
 
-	rz_cons_show_cursor(true);
-	rz_cons_goto_origin_reset();
-	rz_cons_clear();
-	rz_cons_print(Color_RESET_TERMINAL);
-	rz_cons_flush();
+	rz_cons_show_cursor(console, true);
+	rz_cons_goto_origin_reset(console);
+	rz_cons_clear(console);
+	rz_cons_print(console, Color_RESET_TERMINAL);
+	rz_cons_flush(console);
 
 rz_diff_hex_visual_fail:
 	free(hview.line);
@@ -3173,7 +3210,7 @@ rz_diff_hex_visual_fail:
 	rz_diff_io_close(io_a);
 	rz_diff_io_close(io_b);
 	rz_core_free(core);
-	rz_cons_free();
+	rz_cons_free(console);
 	return true;
 }
 

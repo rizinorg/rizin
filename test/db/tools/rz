@@ -71,6 +71,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rizin command catalog json forms
+FILE==
+CMDS=<<EOF
+echo --cmd-catalog
+!!rizin -Nq --cmd-catalog
+echo --cmd-catalog=json
+!!rizin -Nq --cmd-catalog=json
+echo --cmd-catalog json
+!!rizin -Nq --cmd-catalog json
+EOF
+REGEXP_FILTER_OUT=(--cmd-catalog=json|--cmd-catalog json|--cmd-catalog|"n_children":52)
+EXPECT=<<EOF
+--cmd-catalog
+"n_children":52
+--cmd-catalog=json
+--cmd-catalog json
+"n_children":52
+EOF
+REGEXP_FILTER_ERR=illegal option -- cmd-catalog=json
+EXPECT_ERR=<<EOF
+illegal option -- cmd-catalog=json
+EOF
+RUN
+
 NAME=no-nl-at-eof script
 FILE==
 CMDS=!rizin -i scripts/no-nl-at-eof.rz -Nq =
@@ -221,50 +245,51 @@ ARGS=-h
 EXPECT=<<EOF
 [36mUsage: [0mrizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
              [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
- [32m--[0m         [0mRun rizin without opening any file
- [32m=[0m          [0mSame as 'rizin malloc://512'
- [32m- [0m         [0mRead file from stdin
- [32m-=[0m         [0mPerform R=! command to run all commands remotely
- [32m-0[0m         [0mPrint \x00 after init and every command
- [32m-1[0m         [0mRedirect stderr to stdout
- [32m-2[0m         [0mClose stderr file descriptor (silent warning messages)
- [32m-a[0m[33m arch [0m   [0mSet asm.arch
- [32m-A[0m         [0mRun 'aaa' command to analyze all referenced code
- [32m-b[0m[33m bits [0m   [0mSet asm.bits
- [32m-B[0m[33m baddr [0m  [0mSet base address for PIE binaries
- [32m-c[0m[33m 'cmd..' [0m[0mExecute rizin command
- [32m-C[0m         [0mFile is host:port (alias for -cR+http://%%s/cmd/)
- [32m-d[0m         [0mDebug the executable 'file' or running process 'pid'
- [32m-D[0m[33m backend [0m[0mEnable debug mode (e cfg.debug=true)
- [32m-e[0m[33m k=v [0m    [0mEvaluate config var
- [32m-E[0m[33m endian [0m [0mEndianness -E big or -E little
- [32m-f[0m         [0mBlock size = file size
- [32m-F[0m[33m binplug [0m[0mForce to use that rbin plugin
- [32m-h, -hh[0m    [0mShow help message, -hh for long
- [32m-H[0m[33m [var] [0m  [0mDisplay variable
- [32m-i[0m[33m file [0m   [0mRun script file
- [32m-I[0m[33m file [0m   [0mRun script file before the file is opened
- [32m-k[0m[33m OS/kern [0m[0mSet asm.os (linux, macos, w32, netbsd, ...)
- [32m-l[0m[33m lib [0m    [0mLoad plugin file
- [32m-L[0m         [0mList supported IO plugins
- [32m-m[0m[33m addr [0m   [0mMap file at given address (loadaddr)
- [32m-M[0m         [0mDo not demangle symbol names
- [32m-n, -nn[0m    [0mDo not load RzBin info (-nn only load bin structures)
- [32m-N[0m         [0mDo not load user settings and scripts
- [32m-NN[0m        [0mDo not load any script or plugin
- [32m-q[0m         [0mQuiet mode (no prompt) and quit after -i and -c
- [32m-qq[0m        [0mQuiet mode (no prompt) and force quit
- [32m-p[0m[33m p.rzdb [0m [0mLoad project file
- [32m-r[0m[33m rz-run [0m [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
- [32m-R[0m[33m rule [0m   [0mSpecify custom rz-run directive
- [32m-s[0m[33m addr [0m   [0mInitial seek
- [32m-T[0m         [0mDo not compute file hashes
- [32m-u[0m         [0mSet bin.filter=false to get raw sym/sec/cls names
- [32m-v, -V[0m     [0mShow rizin version (-V show lib versions)
- [32m-w[0m         [0mOpen file in write mode
- [32m-x[0m         [0mOpen without exec-flag (asm.emu will not work), See io.exec
- [32m-X[0m         [0mSame as -e bin.usextr=false (useful for dyldcache)
- [32m-z, -zz[0m    [0mDo not load strings or load them even in raw
+ [32m--[0m                   [0mRun rizin without opening any file
+ [32m=[0m                    [0mSame as 'rizin malloc://512'
+ [32m- [0m                   [0mRead file from stdin
+ [32m-=[0m                   [0mPerform R=! command to run all commands remotely
+ [32m-0[0m                   [0mPrint \x00 after init and every command
+ [32m-1[0m                   [0mRedirect stderr to stdout
+ [32m-2[0m                   [0mClose stderr file descriptor (silent warning messages)
+ [32m-a[0m[33m arch [0m             [0mSet asm.arch
+ [32m-A[0m                   [0mRun 'aaa' command to analyze all referenced code
+ [32m-b[0m[33m bits [0m             [0mSet asm.bits
+ [32m-B[0m[33m baddr [0m            [0mSet base address for PIE binaries
+ [32m-c[0m[33m 'cmd..' [0m          [0mExecute rizin command
+ [32m-C[0m                   [0mFile is host:port (alias for -cR+http://%%s/cmd/)
+ [32m--cmd-catalog[0m[33m [json] [0m[0mPrint command tree catalog and exit
+ [32m-d[0m                   [0mDebug the executable 'file' or running process 'pid'
+ [32m-D[0m[33m backend [0m          [0mEnable debug mode (e cfg.debug=true)
+ [32m-e[0m[33m k=v [0m              [0mEvaluate config var
+ [32m-E[0m[33m endian [0m           [0mEndianness -E big or -E little
+ [32m-f[0m                   [0mBlock size = file size
+ [32m-F[0m[33m binplug [0m          [0mForce to use that rbin plugin
+ [32m-h, -hh[0m              [0mShow help message, -hh for long
+ [32m-H[0m[33m [var] [0m            [0mDisplay variable
+ [32m-i[0m[33m file [0m             [0mRun script file
+ [32m-I[0m[33m file [0m             [0mRun script file before the file is opened
+ [32m-k[0m[33m OS/kern [0m          [0mSet asm.os (linux, macos, w32, netbsd, ...)
+ [32m-l[0m[33m lib [0m              [0mLoad plugin file
+ [32m-L[0m                   [0mList supported IO plugins
+ [32m-m[0m[33m addr [0m             [0mMap file at given address (loadaddr)
+ [32m-M[0m                   [0mDo not demangle symbol names
+ [32m-n, -nn[0m              [0mDo not load RzBin info (-nn only load bin structures)
+ [32m-N[0m                   [0mDo not load user settings and scripts
+ [32m-NN[0m                  [0mDo not load any script or plugin
+ [32m-q[0m                   [0mQuiet mode (no prompt) and quit after -i and -c
+ [32m-qq[0m                  [0mQuiet mode (no prompt) and force quit
+ [32m-p[0m[33m p.rzdb [0m           [0mLoad project file
+ [32m-r[0m[33m rz-run [0m           [0mSpecify rz-run profile to load (same as -e dbg.profile=X)
+ [32m-R[0m[33m rule [0m             [0mSpecify custom rz-run directive
+ [32m-s[0m[33m addr [0m             [0mInitial seek
+ [32m-T[0m                   [0mDo not compute file hashes
+ [32m-u[0m                   [0mSet bin.filter=false to get raw sym/sec/cls names
+ [32m-v, -V[0m               [0mShow rizin version (-V show lib versions)
+ [32m-w[0m                   [0mOpen file in write mode
+ [32m-x[0m                   [0mOpen without exec-flag (asm.emu will not work), See io.exec
+ [32m-X[0m                   [0mSame as -e bin.usextr=false (useful for dyldcache)
+ [32m-z, -zz[0m              [0mDo not load strings or load them even in raw
 EOF
 RUN
 
@@ -317,56 +342,46 @@ NAME=rz-ax -h
 TOOL=rz-ax
 ARGS=-h
 EXPECT=<<EOF
-[36mUsage:[0m rz-ax [options] [expr ...]
-If expr is not provided, reads from stdin
- [0mint     ->  hex               ;  rz-ax 10
- [0mhex     ->  int               ;  rz-ax 0xa
- [0m-int    ->  hex               ;  rz-ax -77
- [0m-hex    ->  int               ;  rz-ax 0xffffffb3
- [0mint     ->  bin               ;  rz-ax b30
- [0mint     ->  ternary           ;  rz-ax t42
- [0mbin     ->  int               ;  rz-ax 1010d
- [0mternary ->  int               ;  rz-ax 1010dt
- [0mfloat   ->  hex               ;  rz-ax 3.33f
- [0mhex     ->  float             ;  rz-ax Fx40551ed8
- [0moct     ->  hex               ;  rz-ax 35o
- [0mhex     ->  oct               ;  rz-ax Ox12 (O is a letter)
- [0mbin     ->  hex               ;  rz-ax 1100011b
- [0mhex     ->  bin               ;  rz-ax Bx63
- [0mternary ->  hex               ;  rz-ax 212t
- [0mhex     ->  ternary           ;  rz-ax Tx23
- [0mraw     ->  hex               ;  rz-ax [32m-S[0m < /binfile
- [0mhex     ->  raw               ;  rz-ax [32m-s[0m 414141
- [32m=[0m[33m base [0m  [0m                      ;  rz-ax [32m=[33m10[0m 0x46 -> output in base 10
- [32m-l[0m      [0m                      ;  append newline to output (for [32m-E[0m/[32m-D[0m/[32m-r[0m/..
- [32m-a[0m      [0mshow ascii table      ;  rz-ax [32m-a[0m
- [32m-b[0m      [0mbin -> str            ;  rz-ax [32m-b[0m 01000101 01110110
- [32m-B[0m      [0mstr -> bin            ;  rz-ax [32m-B[0m hello
- [32m-d[0m      [0mforce integer         ;  rz-ax [32m-d[0m 3 -> 3 instead of 0x3
- [32m-e[0m      [0mswap endianness       ;  rz-ax [32m-e[0m 0x33
- [32m-D[0m      [0mbase64 decode
- [32m-E[0m      [0mbase64 encode
- [32m-f[0m      [0mfloating point        ;  rz-ax [32m-f[0m 6.3+2.1
- [32m-F[0m      [0mstdin slurp code hex  ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
- [32m-h[0m      [0mshow this help        ;  rz-ax [32m-h[0m
- [32m-i[0m      [0mdump as C byte array  ;  rz-ax [32m-i[0m < bytes
- [32m-I[0m      [0mIP address <-> LONG   ;  rz-ax [32m-I[0m 3530468537
- [32m-k[0m      [0mkeep base             ;  rz-ax [32m-k[0m 33+3 -> 36
- [32m-L[0m      [0mbin -> hex(bignum)    ;  rz-ax [32m-L[0m 111111111 # 0x1ff
- [32m-n[0m      [0mint value -> hexpairs ;  rz-ax [32m-n[0m 0x1234 # 34120000
- [32m-o[0m      [0moctalstr -> raw       ;  rz-ax [32m-o[0m \162 \172 # rz
- [32m-N[0m      [0mbinary number         ;  rz-ax [32m-N[0m 0x1234 # \x34\x12\x00\x00
- [32m-r[0m      [0mrz style output       ;  rz-ax [32m-r[0m 0x1234
- [32m-s[0m      [0mhexstr -> raw         ;  rz-ax [32m-s[0m 43 4a 50
- [32m-S[0m      [0mraw -> hexstr         ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
- [32m-t[0m      [0mUnix tstamp -> str    ;  rz-ax [32m-t[0m 1234567890
- [32m-m[0m      [0mMS-DOS tstamp -> str  ;  rz-ax [32m-m[0m 1234567890
- [32m-W[0m      [0mWin32 tstamp -> str   ;  rz-ax [32m-W[0m 1234567890
- [32m-x[0m      [0mhash string           ;  rz-ax [32m-x[0m linux osx
- [32m-u[0m      [0munits                 ;  rz-ax [32m-u[0m 389289238 # 317.0M
- [32m-w[0m      [0msigned word           ;  rz-ax [32m-w[0m 16 0xffff
- [32m-v[0m      [0mversion               ;  rz-ax [32m-v[0m
- [32m-p[0m      [0mposition of set bits  ;  rz-ax [32m-p[0m 0xb3
+[36mUsage:[0m rz-ax [options] [expression ...]
+
+Converts numbers between bases and evaluates RzNum expressions.
+Without an expression, reads one per line from stdin.
+
+[36mOptions[0m
+ [32m=N[0m  [0mprint the result in base N   ;  rz-ax [32m=[33m10[0m 0x46
+ [32m-a[0m  [0mshow the ascii table         ;  rz-ax [32m-a[0m
+ [32m-b[0m  [0mbin -> str                   ;  rz-ax [32m-b[0m 01000101 01110110
+ [32m-B[0m  [0mstr -> bin                   ;  rz-ax [32m-B[0m hello
+ [32m-d[0m  [0mprint integers in base 10    ;  rz-ax [32m-d[0m 3           # 3, not 0x3
+ [32m-D[0m  [0mbase64 decode                ;  rz-ax [32m-D[0m cml6aW4=
+ [32m-e[0m  [0mswap endianness              ;  rz-ax [32m-e[0m 0x33
+ [32m-E[0m  [0mbase64 encode                ;  rz-ax [32m-E[0m rizin
+ [32m-f[0m  [0mkeep the fractional part     ;  rz-ax [32m-f[0m 6.3+2.1
+ [32m-F[0m  [0mslurp code from stdin as hex ;  rz-ax [32m-F[0m < shellcode.[c/py/js]
+ [32m-h[0m  [0mshow this help
+ [32m-H[0m  [0mshow the long help           ;  conversions, syntax, operators
+ [32m-i[0m  [0mdump as a C byte array       ;  rz-ax [32m-i[0m < bytes
+ [32m-I[0m  [0mIP address <-> LONG          ;  rz-ax [32m-I[0m 3530468537
+ [32m-k[0m  [0mkeep the input base          ;  rz-ax [32m-k[0m 33+3       # 36
+ [32m-l[0m  [0mappend a newline to output   ;  for [32m-E[0m / [32m-D[0m / [32m-r[0m / ...
+ [32m-L[0m  [0mbin -> hex (big number)      ;  rz-ax [32m-L[0m 111111111  # 0x1ff
+ [32m-m[0m  [0mMS-DOS timestamp -> str      ;  rz-ax [32m-m[0m 1234567890
+ [32m-n[0m  [0mint -> hex pairs             ;  rz-ax [32m-n[0m 0x1234     # 34120000
+ [32m-N[0m  [0mint -> escaped raw bytes     ;  rz-ax [32m-N[0m 0x1234     # \x34\x12\x00\x00
+ [32m-o[0m  [0moctal str -> raw             ;  rz-ax [32m-o[0m \162 \172   # rz
+ [32m-p[0m  [0mpositions of the set bits    ;  rz-ax [32m-p[0m 0xb3
+ [32m-r[0m  [0mrizin command output         ;  rz-ax [32m-r[0m 0x1234
+ [32m-s[0m  [0mhex str -> raw               ;  rz-ax [32m-s[0m 43 4a 50
+ [32m-S[0m  [0mraw -> hex str               ;  rz-ax [32m-S[0m < /bin/ls > ls.hex
+ [32m-t[0m  [0mUnix timestamp -> str        ;  rz-ax [32m-t[0m 1234567890
+ [32m-u[0m  [0mhuman readable units         ;  rz-ax [32m-u[0m 389289238  # 371.3M
+ [32m-v[0m  [0mshow the version
+ [32m-w[0m  [0msign-extend a signed word    ;  rz-ax [32m-w[0m 16 0xffff
+ [32m-W[0m  [0mWin32 timestamp -> str       ;  rz-ax [32m-W[0m 1234567890
+ [32m-x[0m  [0mdjb2 hash of a string        ;  rz-ax [32m-x[0m linux osx
+
+Run [32mrz-ax -H[0m for the conversion table, the expression
+syntax and the operator list, or see the rz-ax(1) man page.
 EOF
 RUN
 
@@ -510,9 +525,11 @@ NAME=rz-find -h
 TOOL=rz-find
 ARGS=-h
 EXPECT=<<EOF
-[36mUsage: [0mrz-find [-mXnzZhqvV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
+[36mUsage: [0mrz-find [-mXnzZhqvCBV] [-a align] [-b sz] [-f/t from/to] [-[e|s|w|S|I] str] [-x hex] [-R cmd] -|file|dir ..
  [32m-a[0m[33m align [0m[0mOnly accept aligned hits
  [32m-b[0m[33m size [0m [0mSet block size
+ [32m-B[0m       [0mForce to load the files as raw buffers
+ [32m-C[0m       [0mDisable colors
  [32m-e[0m[33m regex [0m[0mSearch for regex matches (can be used multiple times)
  [32m-E[0m[33m cmd [0m  [0mExecute shell command for each file found.
  [32m-R[0m[33m cmd [0m  [0mExecute Rizin command for each search hit.

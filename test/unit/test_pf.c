@@ -2846,18 +2846,28 @@ static bool test_pf_render_sd_autoname(void) {
 
 /* Signed, unsigned-decimal, and float scalars keep their kind. */
 static bool test_pf_render_sd_signed_and_float(void) {
-	/* d4 = -1 (0xffffffff LE), u4 = 5, f4 = 1.5 */
+	/* d4 = -1 (0xffffffff LE), u4 = 5, f4 = 1.5, f4 = 0.1, f8 = 0.1, [2]f4 = { 0.1, 1e-9 } */
 	const ut8 buf[] = { 0xff, 0xff, 0xff, 0xff,
 		0x05, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0xc0, 0x3f };
-	char *json = sd_json_of("d4u4f4 neg pos frac", buf, sizeof(buf));
+		0x00, 0x00, 0xc0, 0x3f,
+		0xcd, 0xcc, 0xcc, 0x3d,
+		0x9a, 0x99, 0x99, 0x99, 0x99, 0x99, 0xb9, 0x3f,
+		0xcd, 0xcc, 0xcc, 0x3d,
+		0x5f, 0x70, 0x89, 0x30 };
+	char *json = sd_json_of("d4u4f4f4f8[2]f4 neg pos frac tenth dtenth pair", buf, sizeof(buf));
 	mu_assert_notnull(json, "sd json");
 	mu_assert_true(strstr(json, "\"neg\":-1") != NULL,
 		"signed decimal stays signed");
 	mu_assert_true(strstr(json, "\"pos\":5") != NULL,
 		"unsigned decimal");
-	mu_assert_true(strstr(json, "\"frac\":1.5") != NULL,
-		"float renders as double");
+	mu_assert_true(strstr(json, "\"frac\":1.5,") != NULL,
+		"float");
+	mu_assert_true(strstr(json, "\"tenth\":0.1,") != NULL,
+		"float keeps the digits of a float");
+	mu_assert_true(strstr(json, "\"dtenth\":0.1,") != NULL,
+		"double");
+	mu_assert_true(strstr(json, "\"pair\":[0.1,1.0e-09]") != NULL,
+		"float array");
 	free(json);
 	mu_end;
 }

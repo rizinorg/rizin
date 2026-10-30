@@ -15,10 +15,11 @@ static void rz_bp_item_free(RzBreakpointItem *b) {
 }
 
 /**
- * Construct a new RzBreakpoint instance
+ * \brief Construct a new RzBreakpoint instance
  * \param ctx global context in which the instance will operate (giving mappings, etc)
+ * \return A new instance to free with rz_bp_free(), or NULL on failure.
  */
-RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
+RZ_API RZ_OWN RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	rz_return_val_if_fail(ctx, NULL);
 
 	RzBreakpoint *bp = RZ_NEW0(RzBreakpoint);
@@ -30,7 +31,7 @@ RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx) {
 	bp->bps_idx = RZ_NEWS0(RzBreakpointItem *, bp->bps_idx_count);
 	bp->stepcont = RZ_BP_CONT_NORMAL;
 	bp->traces = rz_bp_traptrace_new();
-	bp->cb_printf = (PrintfCallback)printf;
+	bp->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	bp->opcode = NULL;
 	bp->bps = rz_list_newf((RzListFree)rz_bp_item_free);
 	bp->nhwbps = 0;
@@ -117,7 +118,13 @@ static inline bool matchProt(RzBreakpointItem *b, int perm) {
 	return (!perm || (perm && b->perm));
 }
 
-RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm) {
+/**
+ * \brief Get a breakpoint covering the given address and matching the permission filter.
+ * \return A breakpoint owned by \p bp, or NULL if none matches.
+ * The returned pointer is invalidated when the breakpoint is removed or \p bp is freed.
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_in(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int perm) {
+	rz_return_val_if_fail(bp, NULL);
 	RzBreakpointItem *b;
 	RzListIter *iter;
 	rz_list_foreach (bp->bps, iter, b) {
@@ -130,7 +137,13 @@ RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm) {
 	return NULL;
 }
 
-RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count) {
+/**
+ * \brief Set the enabled state and toggle count of a breakpoint covering the given address.
+ * \return The updated breakpoint, still owned by \p bp, or NULL if none matches.
+ * The returned pointer is invalidated when the breakpoint is removed or \p bp is freed.
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_enable(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int set, int count) {
+	rz_return_val_if_fail(bp, NULL);
 	RzBreakpointItem *b = rz_bp_get_in(bp, addr, 0);
 	if (b) {
 		b->enabled = set;
@@ -190,7 +203,12 @@ RZ_IPI void rz_bp_item_insert(RzBreakpoint *bp, RzBreakpointItem *b) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
+/**
+ * \brief Create and register a breakpoint with its owning manager.
+ * \return A breakpoint owned by \p bp, or NULL on failure.
+ */
+static RZ_BORROW RzBreakpointItem *rz_bp_add(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
+	rz_return_val_if_fail(bp, NULL);
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
@@ -266,7 +284,13 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut6
 	return item;
 }
 
-RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int perm) {
+/**
+ * \brief Add a hardware breakpoint owned by the breakpoint manager.
+ * \return A breakpoint owned by \p bp, or NULL on failure.
+ * The returned pointer is invalidated when the breakpoint is removed or \p bp is freed.
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_hw(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm) {
+	rz_return_val_if_fail(bp, NULL);
 	return rz_bp_add(bp, NULL, addr, size, RZ_BP_TYPE_HW, perm);
 }
 
@@ -313,7 +337,13 @@ RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 	return true;
 }
 
-RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx) {
+/**
+ * \brief Get a breakpoint by its index in the manager.
+ * \return A breakpoint owned by \p bp, or NULL if the index is invalid or unused.
+ * The returned pointer is invalidated when the breakpoint is removed or \p bp is freed.
+ */
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_index(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, int idx) {
+	rz_return_val_if_fail(bp, NULL);
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		return bp->bps_idx[idx];
 	}

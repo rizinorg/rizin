@@ -6,7 +6,9 @@
 #include <rz_type.h>
 #include <rz_util.h>
 #include <rz_arch.h>
+#include <rz_parse.h>
 #include "analysis_private.h"
+#include "rz_analysis.h"
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -136,7 +138,18 @@ static char *find_next_number(char *str) {
 	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
 		ansi = true;
 	}
-	const char *search = (ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" :
+	// In both modes the number must not directly follow a visible '\w', '.' or
+	// '*' character, so that number fragments inside identifiers are never
+	// picked up. This matters for flag names inserted earlier (case labels
+	// like case.<switch-address>.<case-number>, see issue #4238) and for the
+	// default stack variable/argument names (var_78h, arg_10h), whose
+	// hex-offset tail is NOT a numeric literal. Without this rule in the
+	// ansi mode, the colored opstr tokenizes e.g. "var_78h" into separately
+	// colored "var", "_" and "78h" segments, the "78h" tail is picked up as
+	// a number token and evaluated, which both breaks the identifier and
+	// makes RzNum warn about the deprecated trailing-'h' base suffix on
+	// every colored disassembly line.
+	const char *search = (ansi ? "((?:[^\\w.*\x1b]|^)(?:\x1b\\[[0-9;]*m)+(?<number>(0x[a-fA-F0-9]+)|\\d+))" :
 				   // The exclusion pattern [^\w.*] excludes all numbers with a '\w', '.' and '*' prefix.
 				   // This is only done because the previous parsing did it like this.
 				   // And not doing it, breaks substitutions from before.
@@ -209,6 +222,12 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
+	bool c16x = false;
+	if (p && p->analb.analysis) {
+		if (strstr(p->analb.analysis->cur->arch, "c166")) {
+			c16x = true;
+		}
+	}
 	if (p && p->cur && p->cur->name) {
 		if (strstr(p->cur->name, "x86")) {
 			x86 = true;
@@ -261,7 +280,15 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				;
 			}
 		}
+		// Evaluate only the number token, not the trailing operand
+		// syntax (']', separators, comments) that follows it. ptr2 is
+		// the token boundary computed just above; terminate the string
+		// there so the evaluator receives a clean expression, then put
+		// the byte back so the surrounding code can keep using it.
+		char saved_sep = *ptr2;
+		*ptr2 = '\0';
 		off = rz_num_math(NULL, ptr);
+		*ptr2 = saved_sep;
 		if (off >= p->minval) {
 			fcn = p->analb.get_fcn_in(p->analb.analysis, off, 0);
 			if (fcn && fcn->addr == off) {
@@ -445,7 +472,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				}
 			}
 		}
-		if (hint) {
+		if (hint && !c16x) {
 			char *num_start = ptr;
 			char *num_end = ptr2;
 			const int nw = hint->nword;

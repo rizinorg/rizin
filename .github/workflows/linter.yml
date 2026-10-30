@@ -8,6 +8,8 @@ on:
     - 'stable'
     - 'container-*'
   pull_request:
+  merge_group:
+    types: [checks_requested]
 
 # Automatically cancel any previous workflow on new push.
 concurrency:
@@ -33,6 +35,7 @@ jobs:
             - '**.yml'
             - '**.yaml'
             - '.github/workflows/linter.yml'
+            - 'sys/check_cmd_json_modes.py'
           bindgen-linter:
             - '**.c'
             - '**.h'
@@ -60,6 +63,9 @@ jobs:
     if: ${{ needs.changes.outputs.yaml == 'true' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # PR checks use HEAD^1; merge groups fetch their base explicitly below.
+          fetch-depth: 2
       - name: Install tools
         run: sudo apt-get install yamllint python3-yaml
       - name: Check YamlLint
@@ -69,6 +75,16 @@ jobs:
         run: |
           ./librz/core/cmd_descs/cmd_descs_generate.py --output-dir /tmp ./librz/core/cmd_descs/*.yaml
           diff /tmp/cmd_descs.c ./librz/core/cmd_descs/cmd_descs.c && diff /tmp/cmd_descs.h ./librz/core/cmd_descs/cmd_descs.h
+      - name: Fetch merge group base
+        if: github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.merge_group.base_sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE_SHA"
+      - name: Check JSON output modes of new commands
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.merge_group.base_sha || 'HEAD^1' }}
+        run: ./sys/check_cmd_json_modes.py --base "$BASE_SHA"
 
   bindgen-linter:
     needs: changes
@@ -80,10 +96,10 @@ jobs:
         with:
           path: rizin
       - name: Checkout rz-bindgen (stable)
-        if: github.ref == 'refs/heads/stable'
+        if: (github.event.merge_group.base_ref || github.ref) == 'refs/heads/stable'
         run: git clone --depth 1 -b stable https://github.com/rizinorg/rz-bindgen
       - name: Checkout rz-bindgen (dev)
-        if: github.ref != 'refs/heads/stable'
+        if: (github.event.merge_group.base_ref || github.ref) != 'refs/heads/stable'
         run: git clone --depth 1 -b dev https://github.com/rizinorg/rz-bindgen
       - name: Install dependencies
         run: |

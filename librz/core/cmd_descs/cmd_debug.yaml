@@ -578,6 +578,7 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
       - name: dtl=
         summary: List all traces in ascii art
         cname: cmd_debug_traces_ascii

@@ -350,13 +350,14 @@ typedef enum {
 } _RzAnalysisOpType;
 
 typedef enum {
-	RZ_ANALYSIS_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-	RZ_ANALYSIS_OP_MASK_ESIL = (1 << 0), // It fills RzAnalysisop->esil info
-	RZ_ANALYSIS_OP_MASK_VAL = (1 << 1), // It fills RzAnalysisop->dst/src info
-	RZ_ANALYSIS_OP_MASK_HINT = (1 << 2), // It calls rz_analysis_op_hint to override analysis options
-	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), // It fills RzAnalysisop->opex info
-	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), // It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
-	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), // It fills RzAnalysisop->il_op
+	RZ_ANALYSIS_OP_MASK_BASIC = 0, ///< Just fills basic op info , it's fast
+	RZ_ANALYSIS_OP_MASK_ESIL = (1 << 0), ///< It fills RzAnalysisop->esil info
+	RZ_ANALYSIS_OP_MASK_VAL = (1 << 1), ///< It fills RzAnalysisop->dst/src info
+	RZ_ANALYSIS_OP_MASK_HINT = (1 << 2), ///< It calls rz_analysis_op_hint to override analysis options
+	RZ_ANALYSIS_OP_MASK_OPEX = (1 << 3), ///< It fills RzAnalysisop->opex info
+	RZ_ANALYSIS_OP_MASK_DISASM = (1 << 4), ///< It fills RzAnalysisop->mnemonic // should be RzAnalysisOp->disasm // only from rz_core_analysis_op()
+	RZ_ANALYSIS_OP_MASK_IL = (1 << 5), ///< It fills RzAnalysisop->il_op
+	RZ_ANALYSIS_OP_MASK_INSN_PKT = (1 << 6), ///< Set op.size to the size of the instruction packet, not the single instruction.
 	RZ_ANALYSIS_OP_MASK_ALL = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_OPEX | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_IL
 } RzAnalysisOpMask;
 
@@ -874,7 +875,8 @@ typedef struct rz_analysis_op_t {
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
 	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	ut64 mmio_address; // mmio address
+	ut8 mmios_count; ///< used MMIO count
+	ut64 mmios[4]; ///< MMIO addresses
 	RzAnalysisValue *src[8];
 	RzAnalysisValue *dst;
 	RzList /*<RzAnalysisValue *>*/ *access; /* RzAnalysisValue access information */
@@ -955,10 +957,18 @@ typedef struct rz_analysis_task_item {
 
 typedef enum {
 	RZ_ANALYSIS_XREF_TYPE_NULL = 0,
-	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', // code ref
+	RZ_ANALYSIS_XREF_TYPE_CODE = 'c', ///< Unspecified code reference.
 	RZ_ANALYSIS_XREF_TYPE_CALL = 'C', // code ref (call)
-	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', // mem ref
-	RZ_ANALYSIS_XREF_TYPE_STRING = 's' // string ref
+	RZ_ANALYSIS_XREF_TYPE_DATA = 'd', ///< Unspecified data memory access.
+	RZ_ANALYSIS_XREF_TYPE_STRING = 's', ///< String reference
+	/**
+	 * \brief Memory read reference.
+	 * Currently only an alias for data as that is commonly in use for generic
+	 * memory references. Code where it is known that the access is a read can
+	 * use this to explicitly state the intent and ease future changes.
+	 */
+	RZ_ANALYSIS_XREF_TYPE_MEM_READ = RZ_ANALYSIS_XREF_TYPE_DATA,
+	RZ_ANALYSIS_XREF_TYPE_MEM_WRITE = 'w', ///< Memory write reference
 } RzAnalysisXRefType;
 
 typedef struct rz_analysis_ref_t {
@@ -1398,7 +1408,7 @@ RZ_DEPRECATE RZ_API bool rz_analysis_plugin_is_arch(RZ_NONNULL RzAnalysis *analy
 RZ_API bool rz_analysis_plugin_add(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
 RZ_API bool rz_analysis_plugin_del(RzAnalysis *analysis, RZ_NONNULL RzAnalysisPlugin *foo);
 RZ_API const RzAnalysisPlugin *rz_analysis_plugin_current(RzAnalysis *analysis);
-RZ_API RZ_OWN RzIterator *rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis);
+RZ_API bool rz_analysis_plugin_iterator(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RZ_OWN RzIterator *iter);
 RZ_API RZ_BORROW HtSP /*<RzAnalysisPlugin *>*/ *rz_analysis_get_plugins(RZ_NONNULL RzAnalysis *analysis);
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
@@ -1449,6 +1459,7 @@ RZ_DEPRECATE RZ_API void rz_analysis_set_core(RZ_NONNULL RzAnalysis *analysis, R
 RZ_DEPRECATE RZ_API void rz_analysis_set_event(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzEvent *ev);
 RZ_DEPRECATE RZ_API RZ_BORROW RzAnalysisEsil *rz_analysis_get_esil(RZ_NONNULL RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API void rz_analysis_set_esil(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisEsil *esil);
+RZ_DEPRECATE RZ_API RZ_BORROW RzEsilConfig *rz_analysis_get_esil_config(RZ_NONNULL RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API const char *rz_analysis_get_arch(RZ_NONNULL const RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API int rz_analysis_get_bits(RZ_NONNULL const RzAnalysis *analysis);
 RZ_DEPRECATE RZ_API bool rz_analysis_is_big_endian_set(RZ_NONNULL const RzAnalysis *analysis);
@@ -1533,13 +1544,13 @@ RZ_API void rz_analysis_il_vm_free(RZ_NULLABLE RzAnalysisILVM *vm);
 RZ_API void rz_analysis_il_vm_sync_from_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
 RZ_API bool rz_analysis_il_vm_sync_to_reg(RzAnalysisILVM *vm, RZ_NONNULL RzReg *reg);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg);
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while(
-	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg, RZ_NONNULL RZ_BORROW RzCons *cons,
 	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
 RZ_API RzAnalysisILStepResult rz_analysis_il_vm_step_while_with_events(
 	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisILVM *vm, RZ_NULLABLE RzReg *reg,
-	RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
+	RZ_NONNULL RZ_BORROW RzCons *cons, RZ_NONNULL RzAnalysisILVMCondCallback cond, RZ_NULLABLE void *user);
 RZ_API bool rz_analysis_il_vm_setup(RzAnalysis *analysis);
 RZ_API void rz_analysis_il_vm_cleanup(RzAnalysis *analysis);
 RZ_API bool rz_analysis_il_vm_set_unsigned(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *var_name, ut64 value);
@@ -2081,27 +2092,29 @@ RZ_API ut64 rz_analysis_vtable_info_get_size(RVTableContext *context, RVTableInf
 RZ_API bool rz_analysis_vtable_begin(RzAnalysis *analysis, RVTableContext *context);
 RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 addr);
 RZ_API RzList /*<RVTableInfo *>*/ *rz_analysis_vtable_search(RVTableContext *context);
-RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode);
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* rtti */
 RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, const char *name);
-RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
-RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict);
+RZ_API void rz_analysis_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API bool rz_analysis_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, bool strict, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
+RZ_API void rz_analysis_rtti_dlang(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_swift(RzAnalysis *analysis);
 RZ_API void rz_analysis_rtti_objc(RZ_NONNULL RzAnalysis *analysis);
+RZ_API void rz_analysis_rtti_rust(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_API char *rz_analysis_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name);
-RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode);
+RZ_API bool rz_analysis_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_itanium_recover_all(RVTableContext *vt_context, RzList /*<RVTableInfo *>*/ *vtables);
 RZ_API void rz_analysis_no_rtti_analysis(RZ_NONNULL RVTableContext *context, RZ_NONNULL RzList /*<RVTableInfo *>*/ *vtables);
 
 RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const char *name);
-RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode);
-RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode);
+RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, RzOutputMode mode, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
 
 RZ_API RzList /*<RzSearchKeyword *>*/ *rz_analysis_preludes(RzAnalysis *analysis);
@@ -2210,6 +2223,9 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *
 RZ_API void rz_analysis_omf166_integrate_functions(RzAnalysis *analysis);
 RZ_API RzAnalysisDebugInfo *rz_analysis_debug_info_new();
 RZ_API void rz_analysis_debug_info_free(RzAnalysisDebugInfo *debuginfo);
+
+/* interrupt */
+RZ_API void rz_analysis_set_interrupt(RZ_NONNULL RzAnalysis *analysis, RzInterrupt *intr);
 
 /* serialize */
 

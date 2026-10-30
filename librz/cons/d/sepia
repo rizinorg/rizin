@@ -4,7 +4,9 @@
 # requires e scr.color=3
 
 ec b0x00 rgb:431
+ec b0xlo rgb:fec
 ec b0x7f rgb:fd9
+ec b0xhi rgb:ba6
 ec b0xff rgb:960
 ec bin rgb:fec
 ec crypto rgb:0000ff
@@ -79,3 +81,6 @@ ec diff.unknown rgb:881798
 ec diff.new rgb:c50f1f
 ec diff.match rgb:767676
 ec diff.unmatch rgb:c19c00
+
+ec gui.match.perfect rgb:00ff00
+ec gui.match.partial rgb:ff0000

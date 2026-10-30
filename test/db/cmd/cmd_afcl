@@ -9,6 +9,8 @@ EOF
 EXPECT=<<EOF
 amd64
 amd64syscall
+golang
+golang_abi0
 ms
 reg
 swift
@@ -73,6 +75,7 @@ afcl
 EOF
 EXPECT=<<EOF
 arm64
+golang
 reg
 swift
 EOF

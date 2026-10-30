@@ -58,6 +58,32 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=arm preserve stack address calculation and memory substitution (#4583)
+FILE=malloc://14
+ARGS=-a arm -b 16 -e asm.cpu=cortexA8
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bytes=false
+e asm.comments=false
+e asm.lines.bb=false
+e asm.lines.fcn=false
+e asm.offset=false
+wx b0b584b002ac0290029904b0b0bd
+af
+pd 3 @ 4
+e asm.pseudo=true
+pd 3 @ 4
+EOF
+EXPECT=<<EOF
+     add   r4, sp, 8
+     str   r0, [var_18h]
+     ldr   r1, [var_18h]
+     r4 = sp + 8
+     [var_18h] = r0
+     r1 = [var_18h]
+EOF
+RUN
+
 NAME=pd call sym bug
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
@@ -260,5 +286,200 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000002  4050 1122 3344                           @P."3D
 [64,80,17,34,51,68]
+EOF
+RUN
+
+NAME=pdj disasm field is not replaced by unrelated import flags (issue #3552)
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.bytes=false
+e asm.lines=false
+e io.cache=true
+wv4 0x40612c @ 0x400200
+wx 813d0002400033221100 @ 0x402f00
+wx 0f2f9f8c050000 @ 0x402f0a
+wx 0f8208000000 @ 0x402f11
+pdj 3 @ 0x402f00~{.[]\|{opcode,disasm}}
+EOF
+EXPECT=<<EOF
+[{"opcode":"cmp dword [0x400200], 0x112233","disasm":"cmp dword [0x400200], 0x112233"},{"opcode":"comiss xmm3, dword [edi+0x58c]","disasm":"comiss xmm3, dword [edi+0x58c]"},{"opcode":"jb 0x402f1f","disasm":"jb 0x402f1f"}]
+EOF
+RUN
+
+NAME=pdf reflines are rendered consistently in the presence of multiple code xrefs (issue #3568)
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+e analysis.jmp.tbl=false
+aa
+pdf @ sym._Unwind_VRS_Pop
+EOF
+EXPECT=<<EOF
+            ; CALL XREFS from sym.__gnu_unwind_execute @ 0x81a8, 0x837a
+/ sym._Unwind_VRS_Pop(int16_t arg1, int16_t arg2, int16_t arg3);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
+|           0x00007c8e      push  {r4, r5, r6, r7, lr}
+|           0x00007c90      adds  r4, r0, 0                            ; arg1
+|           0x00007c92      sub   sp, 0x11c
+|           0x00007c94      adds  r7, r2, 0                            ; arg3
+|           0x00007c96      adds  r5, r3, 0
+|           0x00007c98      cmp   r1, 4                                ; arg2
+|       ,=< 0x00007c9a      bls   0x7c9e
+|      ,==< 0x00007c9c      b     0x7da6
+|      |`-> 0x00007c9e      adds  r0, r1, 0
+|      |    0x00007ca0      bl    sym.__gnu_thumb1_case_uqi
+|      |    0x00007ca4      adds  r3, r0, 4
+|      |    0x00007ca6      cmp   r3, 0x81
+|      |    0x00007ca8      lsls  r7, r2, 1
+|      |    0x00007caa      movs  r0, 2
+|      |    0x00007cac      cmp   r3, 0
+|      |,=< 0x00007cae      beq   0x7cb2
+|     ,===< 0x00007cb0      b     0x7ed8
+|     ||`-> 0x00007cb2      lsls  r2, r2, 0x10
+|     ||    0x00007cb4      ldr   r3, [r4, 0x38]
+|     ||    0x00007cb6      lsrs  r2, r2, 0x10
+|     ||    0x00007cb8      movs  r1, 1
+|     ||.-> 0x00007cba      adds  r0, r1, 0
+|     ||:   0x00007cbc      lsls  r0, r5
+|     ||:   0x00007cbe      tst   r2, r0
+|    ,====< 0x00007cc0      beq   0x7ccc
+|    |||:   0x00007cc2      lsls  r0, r5, 2
+|    |||:   0x00007cc4      ldr   r6, [r3]
+|    |||:   0x00007cc6      adds  r0, r4, r0
+|    |||:   0x00007cc8      adds  r3, 4
+|    |||:   0x00007cca      str   r6, [r0, 4]
+|    `----> 0x00007ccc      adds  r5, 1
+|     ||:   0x00007cce      cmp   r5, 0x10
+|     ||`=< 0x00007cd0      bne   0x7cba
+|     ||    0x00007cd2      movs  r0, 0
+|     ||    0x00007cd4      lsls  r1, r7, 0x12
+|     ||,=< 0x00007cd6      bpl   0x7cda
+|    ,====< 0x00007cd8      b     0x7ed8
+|    |||`-> 0x00007cda      str   r3, [r4, 0x38]
+|    |||,=< 0x00007cdc      b     0x7ed8
+..
+| |||||||   ; CODE XREF from sym._Unwind_VRS_Pop @ 0x7c9c
+| |``--`--> 0x00007da6      movs  r0, 2
+| |  ||,==< 0x00007da8      b     0x7ed8
+..
+|    ||||   ; CODE XREFS from sym._Unwind_VRS_Pop @ 0x7cb0, 0x7cd8, 0x7cdc, 0x7da8
+|    ````-> 0x00007ed8      add   sp, 0x11c
+\           0x00007eda      pop   {r4, r5, r6, r7, pc}
+EOF
+RUN
+
+NAME=pdj prints the instructions when the read window ends in an unmapped region
+FILE=bins/elf/x86_64_relocs.o
+CMDS=<<EOF
+pdj 2~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":134217792,"opcode":"nop"},{"offset":134217793,"opcode":"nop"}]
+EOF
+RUN
+
+NAME=pdj prints the instructions when the read window ends in an unreadable map
+FILE=bins/elf/hello.loongarch32.o
+CMDS=<<EOF
+pdj 2 @ 0x80000a0~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":134217888,"opcode":"ret"},{"offset":134217892,"opcode":"invalid"}]
+EOF
+RUN
+
+NAME=pdf describes pointed data like pd
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+e asm.bytes=false
+af @ main
+pdf @ main~0x0000413c,0x00004297
+pd 1 @ 0x413c
+pd 1 @ 0x4297
+EOF
+EXPECT=<<EOF
+| 0x0000413c      lea   rbp, qword [0x00019190]
+| 0x00004297      cmp   rdx, 0x01
+|           0x0000413c      lea   rbp, qword [0x00019190]
+|           0x00004297      cmp   rdx, 0x01
+EOF
+RUN
+
+NAME=pdj N decodes N instructions whatever the block size
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 9090909090909090
+b 4
+pdj 8~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"nop"},{"offset":1,"opcode":"nop"},{"offset":2,"opcode":"nop"},{"offset":3,"opcode":"nop"},{"offset":4,"opcode":"nop"},{"offset":5,"opcode":"nop"},{"offset":6,"opcode":"nop"},{"offset":7,"opcode":"nop"}]
+EOF
+RUN
+
+NAME=pdj N output does not depend on the block size
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+b 16
+pdj 10 @ 0x401000~{.[]\|{offset,opcode}}
+b 0x100
+pdj 10 @ 0x401000~{.[]\|{offset,opcode}}
+EOF
+EXPECT=<<EOF
+[{"offset":4198400,"opcode":"push ebp"},{"offset":4198401,"opcode":"mov ebp, esp"},{"offset":4198403,"opcode":"sub esp, 0x18"},{"offset":4198406,"opcode":"mov dword [ebp-0x08], ebx"},{"offset":4198409,"opcode":"mov eax, dword [ebp+0x08]"},{"offset":4198412,"opcode":"xor ebx, ebx"},{"offset":4198414,"opcode":"mov dword [ebp-0x04], esi"},{"offset":4198417,"opcode":"mov eax, dword [eax]"},{"offset":4198419,"opcode":"xor esi, esi"},{"offset":4198421,"opcode":"mov eax, dword [eax]"}]
+[{"offset":4198400,"opcode":"push ebp"},{"offset":4198401,"opcode":"mov ebp, esp"},{"offset":4198403,"opcode":"sub esp, 0x18"},{"offset":4198406,"opcode":"mov dword [ebp-0x08], ebx"},{"offset":4198409,"opcode":"mov eax, dword [ebp+0x08]"},{"offset":4198412,"opcode":"xor ebx, ebx"},{"offset":4198414,"opcode":"mov dword [ebp-0x04], esi"},{"offset":4198417,"opcode":"mov eax, dword [eax]"},{"offset":4198419,"opcode":"xor esi, esi"},{"offset":4198421,"opcode":"mov eax, dword [eax]"}]
+EOF
+RUN
+
+NAME=pdj N keeps decoding when its ops span several io reads
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+b 16
+pdj 300 @ 0x401000~{[299].offset}
+pdj 300 @ 0x401000~{[299].opcode}
+b 0x1000
+pdj 300 @ 0x401000~{[299].offset}
+pdj 300 @ 0x401000~{[299].opcode}
+EOF
+EXPECT=<<EOF
+4199406
+jz 0x401407
+4199406
+jz 0x401407
+EOF
+RUN
+
+NAME=pdj N decodes ops longer than the max op size the arch reports
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=wasm
+e asm.bits=32
+wx 42204220
+pdj 1~{.[]\|{offset,opcode,bytes}}
+pdj 2~{.[]\|{offset,opcode,bytes}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"i64.const 32","bytes":"4220"}]
+[{"offset":0,"opcode":"i64.const 32","bytes":"4220"},{"offset":2,"opcode":"i64.const 32","bytes":"4220"}]
+EOF
+RUN
+
+NAME=pdj N prints the readable ops next to an unreadable map
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 90909090
+om 3 8 32 0 w
+b 4
+pdj 1~{.[]\|{offset,opcode}}
+pdj 3 @ 6~{.[]\|{offset,opcode,bytes}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"opcode":"nop"}]
+[{"offset":6,"opcode":"add byte [rax], al","bytes":"0000"},{"offset":8,"opcode":"invalid","bytes":"ff"},{"offset":9,"opcode":"invalid","bytes":"ff"}]
 EOF
 RUN

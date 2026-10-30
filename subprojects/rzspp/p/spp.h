@@ -80,6 +80,7 @@ static TAG_CALLBACK(spp_get) {
 	var = spp_var_get (buf);
 	if (var) {
 		out_printf (out, "%s", var);
+		free(var);
 	}
 	return 0;
 }
@@ -230,6 +231,7 @@ static TAG_CALLBACK(spp_ifeq) {
 		else state->echo[state->ifl + 1] = 0;
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, value, echo[ifl]);
 	}
+	free(value);
 	return 1;
 }
 

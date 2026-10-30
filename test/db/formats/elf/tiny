@@ -137,3 +137,37 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 \           0x00010025      cd80           int   0x80
 EOF
 RUN
+
+NAME=aa tiny.elf
+FILE=bins/elf/analysis/tiny.elf
+ARGS=-1 -e log.level=4
+CMDS=<<EOF
+e log.level=3  # Default log.level
+aa
+echo \# Trying again
+e analysis.in=io.maps
+aa
+pdf
+echo
+afb+ entry0 entry0 `aos 4`
+pdf
+EOF
+EXPECT=<<EOF
+WARNING: entry0 (0x00010020) is not mapped or not executable.
+[2K# Trying again
+[2K/ entry0();
+|           0x00010020      mov   bl, 0x2a                             ; '*' ; 42
+|           0x00010022      xor   eax, eax
+|           0x00010024      inc   eax
+|           0x00010025      int   0x80
+|           0x00010027      add   byte [eax+eax*1], dh
+|           0x0001002a      and   byte [eax], al
+\           0x0001002c      add   edi, edi
+
+/ entry0();
+|           0x00010020      mov   bl, 0x2a                             ; '*' ; 42
+|           0x00010022      xor   eax, eax
+|           0x00010024      inc   eax
+\           0x00010025      int   0x80
+EOF
+RUN

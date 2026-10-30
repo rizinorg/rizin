@@ -75,6 +75,105 @@ bool test_path_prefix(void) {
 	mu_end;
 }
 
+bool test_getopt_long_option(void) {
+	RzGetopt opt;
+	int c;
+	RzPVector cmd_catalog_values;
+	rz_pvector_init(&cmd_catalog_values, NULL);
+	rz_pvector_push(&cmd_catalog_values, "json");
+	enum {
+		TEST_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
+	};
+	RzGetoptLong cmd_catalog = {
+		"cmd-catalog", TEST_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
+	};
+	RzVector longopts;
+	rz_vector_init(&longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&longopts, &cmd_catalog);
+
+	const char *argv_default[] = { "test", "--cmd-catalog" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_default), argv_default, "", &longopts);
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "long option should return descriptor value");
+	mu_assert_streq(opt.arg, "json", "long option should use default value");
+	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_default), "long option should be consumed");
+
+	const char *argv_arg[] = { "test", "--cmd-catalog", "json" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_arg), argv_arg, "", &longopts);
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "long option with separated argument should return descriptor value");
+	mu_assert_streq(opt.arg, "json", "separated long option value should be available in opt.arg");
+	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_arg), "long option with separated argument should consume option and value");
+
+	const char *argv_eq_arg[] = { "test", "--cmd-catalog=json" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_eq_arg), argv_eq_arg, "", &longopts);
+	opt.err = 0;
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, '?', "long option with inline argument should not be supported");
+	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_eq_arg), "unsupported inline long option argument should be consumed");
+
+	const char *argv_bad_separated_arg[] = { "test", "--cmd-catalog", "yaml" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_bad_separated_arg), argv_bad_separated_arg, "", &longopts);
+	opt.err = 0;
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, '?', "unknown separated long option value should be rejected");
+	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_bad_separated_arg), "long option with bad separated value should consume option and value");
+
+	const char *argv_next_option[] = { "test", "--cmd-catalog", "--cmd-catalog" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_next_option), argv_next_option, "", &longopts);
+	opt.err = 0;
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, '?', "long option should reject another long option as its value");
+	mu_assert_eq(opt.ind, 2, "invalid long-option value should not consume the next long option");
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "unconsumed long option should be parsed next");
+
+	const char *argv_end[] = { "test", "--", "--cmd-catalog" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_end), argv_end, "", &longopts);
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, -1, "exact -- should end option parsing");
+	mu_assert_eq(opt.ind, 2, "exact -- should be consumed");
+
+	RzGetoptLong flag = { "flag", TEST_LONG_CMD_CATALOG, NULL, NULL };
+	RzVector flag_longopts;
+	rz_vector_init(&flag_longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&flag_longopts, &flag);
+	const char *argv_flag[] = { "test", "--flag", "positional" };
+	rz_getopt_init_long(&opt, RZ_ARRAY_SIZE(argv_flag), argv_flag, "", &flag_longopts);
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, TEST_LONG_CMD_CATALOG, "flag long option should return descriptor value");
+	mu_assert_null(opt.arg, "flag long option should not have an argument");
+	mu_assert_eq(opt.ind, 2, "flag long option should not consume following argv entry");
+
+	const char *argv_compat[] = { "test", "--cmd-catalog" };
+	rz_getopt_init(&opt, RZ_ARRAY_SIZE(argv_compat), argv_compat, "-");
+	c = rz_getopt_next(&opt);
+	mu_assert_eq(c, -1, "long-option parsing should be opt-in");
+	mu_assert_eq(opt.ind, RZ_ARRAY_SIZE(argv_compat), "legacy -- handling should be preserved without longopts");
+	rz_vector_fini(&flag_longopts);
+	rz_vector_fini(&longopts);
+	rz_pvector_fini(&cmd_catalog_values);
+	mu_end;
+}
+
+bool test_getopt_reentrant(void) {
+	// Test grouped options because they retain meaningful state between calls.
+	const char *argv_first[] = { "test", "-ab" };
+	const char *argv_second[] = { "test", "-xy" };
+	RzGetopt first;
+	RzGetopt second;
+	rz_getopt_init(&first, RZ_ARRAY_SIZE(argv_first), argv_first, "ab");
+	rz_getopt_init(&second, RZ_ARRAY_SIZE(argv_second), argv_second, "xy");
+
+	mu_assert_eq(rz_getopt_next(&first), 'a', "first parser should consume its first grouped option");
+	mu_assert_eq(rz_getopt_next(&second), 'x', "second parser should consume its first grouped option");
+	mu_assert_eq(rz_getopt_next(&first), 'b', "first parser should retain its grouped-option state");
+	mu_assert_eq(rz_getopt_next(&second), 'y', "second parser should retain its grouped-option state");
+	mu_assert_eq(rz_getopt_next(&first), -1, "first parser should reach the end of its arguments");
+	mu_assert_eq(rz_getopt_next(&second), -1, "second parser should reach the end of its arguments");
+	mu_end;
+}
+
 bool test_path_normalize_expand(void) {
 	char *out;
 
@@ -128,6 +227,8 @@ int all_tests() {
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
 	mu_run_test(test_path_prefix);
+	mu_run_test(test_getopt_long_option);
+	mu_run_test(test_getopt_reentrant);
 	mu_run_test(test_path_normalize_expand);
 	return tests_passed != tests_run;
 }

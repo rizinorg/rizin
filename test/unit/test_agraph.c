@@ -23,26 +23,26 @@ bool test_graph_to_agraph() {
 	mu_assert_notnull(graph, "Couldn't create the graph");
 	mu_assert_eq(rz_graph_count_nodes(graph), 4, "Wrong node count");
 
-	RzAGraph *agraph = rz_core_create_agraph_from_graph(graph, false);
+	RzAGraph *agraph = rz_core_create_agraph_from_graph(graph, false, core->cons);
 	mu_assert_notnull(agraph, "Couldn't create the agraph");
 	mu_assert_eq(rz_graph_count_nodes(agraph->graph), 4, "Wrong agraph node count");
 
-	RzIterator *iter = rz_graph_get_nodes(agraph->graph);
-	mu_assert_notnull(iter, "get_nodes iterator");
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_get_nodes(agraph->graph, &iter), "get_nodes iterator");
 	RzGraphNode *node;
 	int i = 0;
-	rz_iterator_foreach(iter, node) {
+	rz_iterator_foreach(&iter, node) {
 		const RzANode *info = rz_graph_node_get_data(node);
 		switch (i++) {
 		case 0:
 			mu_assert_streq(info->title, "A", "Wrong node name");
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 2, "Wrong node out-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter A");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(agraph->graph, node, &out_iter), "out_neighbors iter A");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -53,7 +53,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 1:
@@ -61,11 +61,11 @@ bool test_graph_to_agraph() {
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(agraph->graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter B");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(agraph->graph, node, &out_iter), "out_neighbors iter B");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -73,7 +73,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 2:
@@ -81,11 +81,11 @@ bool test_graph_to_agraph() {
 			mu_assert_eq(rz_graph_out_degree(agraph->graph, node), 1, "Wrong node out-nodes");
 			mu_assert_eq(rz_graph_in_degree(agraph->graph, node), 1, "Wrong node in-nodes");
 			{
-				RzIterator *out_iter = rz_graph_out_neighbors(agraph->graph, node);
-				mu_assert_notnull(out_iter, "out_neighbors iter C");
+				RzIterator out_iter = (RzIterator){ 0 };
+				mu_assert_true(rz_graph_out_neighbors(agraph->graph, node, &out_iter), "out_neighbors iter C");
 				RzGraphNode *out_node;
 				int j = 0;
-				rz_iterator_foreach(out_iter, out_node) {
+				rz_iterator_foreach(&out_iter, out_node) {
 					const RzANode *out_info = rz_graph_node_get_data(out_node);
 					switch (j++) {
 					case 0:
@@ -93,7 +93,7 @@ bool test_graph_to_agraph() {
 						break;
 					}
 				}
-				rz_iterator_free(out_iter);
+				rz_iterator_fini(&out_iter);
 			}
 			break;
 		case 3:
@@ -104,7 +104,8 @@ bool test_graph_to_agraph() {
 			break;
 		}
 	}
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
+
 	rz_core_free(core);
 	rz_graph_free(graph);
 	rz_agraph_free(agraph);
@@ -124,12 +125,11 @@ static RzANode *find_anode(RzAGraph *ag, const char *title) {
 /*
  * build_agraph: allocate an RzAGraph with the given nodes and edges.
  * The caller must keep a live RzCons (rz_cons_new) for the lifetime of the
- * graph, because set_layout calls rz_cons_is_breaked() internally.
- * The caller is responsible for rz_agraph_free() and rz_cons_free().
+ * graph, because set_layout calls rz_interrupt_is_breaked(cons->intr) internally.
+ * The caller is responsible for rz_agraph_free() and rz_cons_free(cons).
  */
-static RzAGraph *build_agraph(const char **titles, int n_titles,
-	const char *edges[][2], int n_edges) {
-	RzAGraph *ag = rz_agraph_new(NULL);
+static RzAGraph *build_agraph(const char **titles, int n_titles, const char *edges[][2], int n_edges, RzCons *cons) {
+	RzAGraph *ag = rz_agraph_new(NULL, cons);
 	if (!ag) {
 		return NULL;
 	}
@@ -182,7 +182,7 @@ bool test_layout_back_edge_simple() {
 		{ "B", "C" },
 		{ "C", "A" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -217,7 +217,7 @@ bool test_layout_back_edge_simple() {
 	mu_assert_true(nB->layer < nExit->layer, "B->exit is a forward edge");
 
 	rz_agraph_free(ag);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -262,7 +262,7 @@ bool test_layout_back_edge_complex() {
 		{ "C", "D" },
 		{ "D", "A" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 6);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 6, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -291,7 +291,7 @@ bool test_layout_back_edge_complex() {
 	mu_assert_true(nC->layer < nD->layer, "C->D is a forward edge");
 
 	rz_agraph_free(ag);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -324,7 +324,7 @@ bool test_layout_topo_sort_diamond() {
 		{ "B", "D" },
 		{ "C", "D" },
 	};
-	RzAGraph *ag = build_agraph(titles, 4, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 4, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -351,7 +351,7 @@ bool test_layout_topo_sort_diamond() {
 	mu_assert_true(nC->layer < nD->layer, "topo: C < D");
 
 	rz_agraph_free(ag);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 
@@ -376,7 +376,7 @@ bool test_layout_topo_sort_chain() {
 		{ "C", "D" },
 		{ "D", "E" },
 	};
-	RzAGraph *ag = build_agraph(titles, 5, edges, 4);
+	RzAGraph *ag = build_agraph(titles, 5, edges, 4, cons);
 	mu_assert_notnull(ag, "build_agraph");
 
 	rz_agraph_compute_layout(ag);
@@ -399,7 +399,7 @@ bool test_layout_topo_sort_chain() {
 	mu_assert_eq(nE->layer, 4, "layer E");
 
 	rz_agraph_free(ag);
-	rz_cons_free();
+	rz_cons_free(cons);
 	mu_end;
 }
 

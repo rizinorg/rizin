@@ -265,7 +265,7 @@ typedef struct rz_debug_t {
 	bool create_new_console; /* Create a new console window for the debugee on debug start */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
-	bool consbreak; /* SIGINT handle for attached processes */
+	bool consbreak; /* Kill process on ^C */
 	bool continue_all_threads;
 
 	/* tracking debugger state */
@@ -285,6 +285,7 @@ typedef struct rz_debug_t {
 
 	/* io */
 	PrintfCallback cb_printf;
+	void *cb_printf_user;
 	RzIOBind iob;
 
 	struct rz_debug_plugin_t *cur;
@@ -318,6 +319,8 @@ typedef struct rz_debug_t {
 	bool nt_x86_xstate_supported; ///< Track whether X86_FEATURE_XSAVE feature is supported on current kernel
 	size_t RtlpHpHeapGlobalsOffset; ///< Related to windows heap
 	size_t RtlpLFHKeyOffset; ///< Related to windows heap
+	RzInterrupt *intr;
+	RzCons *cons; // Should we have this here?
 } RzDebug;
 
 typedef struct rz_debug_desc_plugin_t {
@@ -520,6 +523,7 @@ RZ_API int rz_debug_map_dealloc(RzDebug *dbg, RzDebugMap *map);
 RZ_API RzList /*<RzDebugMap *>*/ *rz_debug_map_list_new(void);
 RZ_API RzDebugMap *rz_debug_map_get(RzDebug *dbg, ut64 addr);
 RZ_API RZ_OWN RzDebugMap *rz_debug_map_new(RZ_NULLABLE char *name, ut64 begin, ut64 end, int perm, int user);
+RZ_API RZ_OWN RzDebugMap *rz_debug_map_clone(RZ_NONNULL RzDebugMap *m);
 RZ_API void rz_debug_map_free(RZ_NULLABLE RzDebugMap *map);
 RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input, int colors);
 RZ_API RZ_BORROW RzList /*<RzDebugMap *>*/ *rz_debug_map_list(RzDebug *dbg, bool user_map);
@@ -587,7 +591,6 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 RZ_API void rz_debug_esil_watch_reset(RzDebug *dbg);
 RZ_API RZ_BORROW RzList /*<RzDebugEsilWatchpoint *>*/ *rz_debug_esil_watch_list(RzDebug *dbg);
 RZ_API int rz_debug_esil_watch_empty(RzDebug *dbg);
-RZ_API void rz_debug_esil_prestep(RzDebug *d, int p);
 
 /* record & replay */
 RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg);

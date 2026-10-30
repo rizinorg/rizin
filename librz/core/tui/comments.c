@@ -23,8 +23,8 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 	RzIntervalTree *tmeta = rz_analysis_get_meta(core->analysis);
 
 	for (;;) {
-		rz_cons_clear00();
-		rz_cons_strcat("Comments:\n");
+		rz_cons_clear00(core->cons);
+		rz_cons_strcat(core->cons, "Comments:\n");
 		RzIntervalTreeIter it;
 		RzAnalysisMetaItem *item;
 		i = 0;
@@ -39,20 +39,20 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 				size = 1; // XXX: remove this thing size for comments is useless d->size;
 				free(p);
 				p = rz_str_dup(str);
-				rz_cons_printf("  >  %s\n", str);
+				rz_cons_printf(core->cons, "  >  %s\n", str);
 			} else {
-				rz_cons_printf("     %s\n", str);
+				rz_cons_printf(core->cons, "     %s\n", str);
 			}
 			i++;
 		}
 		if (!i) {
 			if (--option < 0) {
-				rz_cons_any_key("No comments");
+				rz_cons_any_key(core->cons, "No comments");
 				break;
 			}
 			continue;
 		}
-		rz_cons_newline();
+		rz_cons_newline(core->cons);
 
 		switch (format) {
 		case 0:
@@ -72,9 +72,9 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 		if (*cmd) {
 			rz_core_cmd(core, cmd, 0);
 		}
-		rz_cons_visual_flush();
-		ch = rz_cons_readchar();
-		ch = rz_cons_arrow_to_hjkl(ch); // get ESC+char, return 'hjkl' char
+		rz_cons_visual_flush(core->cons);
+		ch = rz_cons_readchar(core->cons);
+		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'a':
 			// TODO
@@ -125,8 +125,8 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 			return true;
 		case '?':
 		case 'h':
-			rz_cons_clear00();
-			rz_cons_printf(
+			rz_cons_clear00(core->cons);
+			rz_cons_printf(core->cons,
 				"\nVT: Visual Comments/Analysis help:\n\n"
 				" q     - quit menu\n"
 				" j/k   - down/up keys\n"
@@ -134,8 +134,8 @@ RZ_IPI int rz_core_visual_comments(RzCore *core) {
 				" l/' ' - accept current selection\n"
 				" a/d/e - add/delete/edit comment/analysis symbol\n"
 				" p/P   - rotate print format\n");
-			rz_cons_flush();
-			rz_cons_any_key(NULL);
+			rz_cons_flush(core->cons);
+			rz_cons_any_key(core->cons, NULL);
 			break;
 		}
 		RZ_FREE(p);

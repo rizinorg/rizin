@@ -126,6 +126,7 @@ RZ_IPI RZ_OWN LuaJITTable *luajit_new_table() {
 	new_table->hash_keys = rz_list_newf((RzListFree)luajit_value_free);
 
 	if (!(new_table->array_items && new_table->hash_values && new_table->hash_keys)) {
+		luajit_table_free(new_table);
 		return NULL;
 	}
 	return new_table;
@@ -266,6 +267,7 @@ static LuaJITBinInfo *luajit_build_info_new() {
 		rz_pvector_free(ret->sections);
 		rz_list_free(ret->strings);
 		rz_list_free(ret->symbol_list);
+		free(ret);
 		return NULL;
 	}
 	return ret;

@@ -54,8 +54,6 @@ p=r
 echo -------
 p=r 0.73 0.06
 echo -------
-p=rj 0.73 0.06
-echo -------
 p=rq 0.73 0.06
 echo -------
 p=rl 0.73 0.06
@@ -96,8 +94,6 @@ size (of block):  10  0xa
 0x00070200 Rising entropy edge
 0x00073200 Falling entropy edge
 0x00074300 Falling entropy edge
--------
-[{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.730819},{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.730736},{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.733761},{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.730632},{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.757028},{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.042506},{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.058047},{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.760109},{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.000000},{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.024685}]
 -------
 0x00010a00
 0x00017200
@@ -166,6 +162,29 @@ size (of block):  10  0xa
 0x00000066 002 001e |##
 0x00000099 003 0028 |#######
 0x000000cc 004 001e |######
+EOF
+RUN
+
+NAME=p=rj
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+p=rj 0.73 0.06
+EOF
+# Ignore low-order digits affected by libm and FMA rounding.
+REGEXP_FILTER_OUT=(\{[^}]*"entropy_value":\d+(\.\d{1,10})?)
+EXPECT=<<EOF
+{"addr":68096,"index":266,"edge_type":"rising entropy edge","entropy_value":0.7308194928
+{"addr":94720,"index":370,"edge_type":"rising entropy edge","entropy_value":0.7307356762
+{"addr":98048,"index":383,"edge_type":"rising entropy edge","entropy_value":0.7337613937
+{"addr":305152,"index":1192,"edge_type":"rising entropy edge","entropy_value":0.7306319349
+{"addr":389120,"index":1520,"edge_type":"rising entropy edge","entropy_value":0.7570282641
+{"addr":408832,"index":1597,"edge_type":"falling entropy edge","entropy_value":0.0425055081
+{"addr":409600,"index":1600,"edge_type":"falling entropy edge","entropy_value":0.0
+{"addr":445696,"index":1741,"edge_type":"falling entropy edge","entropy_value":0.0580469770
+{"addr":459264,"index":1794,"edge_type":"rising entropy edge","entropy_value":0.7601086664
+{"addr":471552,"index":1842,"edge_type":"falling entropy edge","entropy_value":0.0
+{"addr":475904,"index":1859,"edge_type":"falling entropy edge","entropy_value":0.0246845355
 EOF
 RUN
 

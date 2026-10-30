@@ -54,7 +54,7 @@ static RzList /*<char *>*/ *__childrenFlagsOf(RzCore *core, RzList /*<RzFlagItem
 		if (prefix_len > strlen(f->name)) {
 			continue;
 		}
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		const char *name = f->name;
@@ -142,7 +142,7 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 			continue;
 		}
 		char *pad = rz_str_pad(' ', name_len);
-		rz_cons_printf("%s %s\n", pad, fn + name_len);
+		rz_cons_printf(core->cons, "%s %s\n", pad, fn + name_len);
 		free(pad);
 
 		__printRecursive(core, flags, fn, mode, depth + 1);
@@ -153,6 +153,7 @@ static void __printRecursive(RzCore *core, RzList /*<RzFlagItem *>*/ *flags, con
 typedef struct {
 	RzAnalysisFunction *fcn;
 	RzCmdStateOutput *state;
+	RzCons *cons;
 } PrintFcnLabelsCtx;
 
 static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
@@ -165,10 +166,10 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 		pj_end(ctx->state->d.pj);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s\n", name);
+		rz_cons_printf(ctx->cons, "%s\n", name);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " %s   [%s + %" PFMT64d "]\n",
+		rz_cons_printf(ctx->cons, "0x%08" PFMT64x " %s   [%s + %" PFMT64d "]\n",
 			addr,
 			name, ctx->fcn->name,
 			addr - ctx->fcn->addr);
@@ -260,7 +261,7 @@ RZ_IPI RzCmdStatus rz_flag_local_list_handler(RzCore *core, int argc, const char
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cmd_state_output_array_start(state);
-	PrintFcnLabelsCtx ctx = { fcn, state };
+	PrintFcnLabelsCtx ctx = { fcn, state, core->cons };
 	ht_up_foreach(fcn->labels, print_function_labels_cb, &ctx);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
@@ -355,9 +356,9 @@ RZ_IPI void rz_core_flag_describe(RzCore *core, ut64 addr, bool strict_offset, R
 		// Print realname if exists and asm.flags.real is enabled
 		const char *name = core->flags->realnames && f->realname ? f->realname : f->name;
 		if (f->offset != addr) {
-			rz_cons_printf("%s + %d\n", name, (int)(addr - f->offset));
+			rz_cons_printf(core->cons, "%s + %d\n", name, (int)(addr - f->offset));
 		} else {
-			rz_cons_println(name);
+			rz_cons_println(core->cons, name);
 		}
 		break;
 	}
@@ -408,9 +409,9 @@ RZ_IPI RzCmdStatus rz_flag_describe_at_handler(RzCore *core, int argc, const cha
 		case RZ_OUTPUT_MODE_STANDARD: {
 			// Print realname if exists and asm.flags.real is enabled
 			if (core->flags->realnames && flag->realname) {
-				rz_cons_println(flag->realname);
+				rz_cons_println(core->cons, flag->realname);
 			} else {
-				rz_cons_println(flag->name);
+				rz_cons_println(core->cons, flag->name);
 			}
 			break;
 		}
@@ -451,14 +452,14 @@ RZ_IPI RzCmdStatus rz_flag_describe_closest_handler(RzCore *core, int argc, cons
 	char *match = (curseek - loff) < (uoff - curseek) ? lmatch : umatch;
 	if (match) {
 		if (*match) {
-			rz_cons_println(match);
+			rz_cons_println(core->cons, match);
 		}
 	}
 	rz_list_free(temp);
 	return RZ_CMD_STATUS_OK;
 }
 
-static void flag_zone_list(RzFlag *f, RzCmdStateOutput *state) {
+static void flag_zone_list(RzCons *cons, RzFlag *f, RzCmdStateOutput *state) {
 	if (!f->zones) {
 		return;
 	}
@@ -476,7 +477,7 @@ static void flag_zone_list(RzFlag *f, RzCmdStateOutput *state) {
 			pj_end(pj);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("0x08%" PFMT64x "  0x%08" PFMT64x "  %s\n",
+			rz_cons_printf(cons, "0x08%" PFMT64x "  0x%08" PFMT64x "  %s\n",
 				zi->from, zi->to, zi->name);
 			break;
 		default:
@@ -505,12 +506,12 @@ RZ_IPI RzCmdStatus rz_flag_zone_remove_all_handler(RzCore *core, int argc, const
 RZ_IPI RzCmdStatus rz_flag_zone_around_handler(RzCore *core, int argc, const char **argv) {
 	const char *a = NULL, *b = NULL;
 	rz_flag_zone_around(core->flags, core->offset, &a, &b);
-	rz_cons_printf("%s %s\n", a ? a : "~", b ? b : "~");
+	rz_cons_printf(core->cons, "%s %s\n", a ? a : "~", b ? b : "~");
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_flag_zone_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	flag_zone_list(core->flags, state);
+	flag_zone_list(core->cons, core->flags, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -527,7 +528,7 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;
 	}
-	rz_cons_printf("0x%08" PFMT64x " ", fi->offset);
+	rz_cons_printf(u->core->cons, "0x%08" PFMT64x " ", fi->offset);
 	RzBarOptions opts = {
 		.unicode = false,
 		.thinline = false,
@@ -542,14 +543,14 @@ static bool flagbar_foreach(RzFlagItem *fi, void *user) {
 	if (!strbuf) {
 		RZ_LOG_ERROR("Cannot generate rangebar\n");
 	} else {
-		rz_cons_print(rz_strbuf_drain(strbuf));
+		rz_cons_print(u->core->cons, rz_strbuf_drain(strbuf));
 	}
-	rz_cons_printf("  %s\n", fi->name);
+	rz_cons_printf(u->core->cons, "  %s\n", fi->name);
 	return true;
 }
 
 static void flagbars(RzCore *core, const char *glob) {
-	int cols = rz_cons_get_size(NULL);
+	int cols = rz_cons_get_size(core->cons, NULL);
 	cols -= 80;
 	if (cols < 0) {
 		cols += 80;
@@ -609,7 +610,7 @@ static void flag_tag_print(RzCore *core, const char *tag, RzCmdStateOutput *stat
 		break;
 	}
 	case RZ_OUTPUT_MODE_LONG: {
-		rz_cons_printf("%s:\n", tag);
+		rz_cons_printf(core->cons, "%s:\n", tag);
 		RzList *flags = rz_flag_tags_get(core->flags, tag);
 		if (!flags) {
 			break;
@@ -617,13 +618,13 @@ static void flag_tag_print(RzCore *core, const char *tag, RzCmdStateOutput *stat
 		RzListIter *iter;
 		RzFlagItem *flag;
 		rz_list_foreach (flags, iter, flag) {
-			rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
 		}
 		rz_list_free(flags);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%s\n", tag);
+		rz_cons_printf(core->cons, "%s\n", tag);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -655,7 +656,7 @@ RZ_IPI RzCmdStatus rz_flag_tag_search_handler(RzCore *core, int argc, const char
 	RzListIter *iter;
 	RzFlagItem *flag;
 	rz_list_foreach (flags, iter, flag) {
-		rz_cons_printf("0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "  %s\n", flag->offset, flag->name);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -688,7 +689,7 @@ static void flag_ordinals(RzCore *core, const char *glob) {
 	free(pfx);
 }
 
-static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool selected, RzCmdStateOutput *state) {
+static void print_space_stack(RzCons *cons, RzFlag *f, int ordinal, const char *name, bool selected, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		char *ename = rz_str_escape(name);
@@ -704,7 +705,7 @@ static void print_space_stack(RzFlag *f, int ordinal, const char *name, bool sel
 		break;
 	}
 	default:
-		rz_cons_printf("%-2d %s%s\n", ordinal, name, selected ? " (selected)" : "");
+		rz_cons_printf(cons, "%-2d %s%s\n", ordinal, name, selected ? " (selected)" : "");
 		break;
 	}
 }
@@ -758,10 +759,10 @@ RZ_IPI RzCmdStatus rz_flag_space_stack_list_handler(RzCore *core, int argc, cons
 	char *space;
 	int i = 0;
 	rz_list_foreach (core->flags->spaces.spacestack, iter, space) {
-		print_space_stack(core->flags, i++, space, false, state);
+		print_space_stack(core->cons, core->flags, i++, space, false, state);
 	}
 	const char *cur_name = rz_flag_space_cur_name(core->flags);
-	print_space_stack(core->flags, i++, cur_name, true, state);
+	print_space_stack(core->cons, core->flags, i++, cur_name, true, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -804,7 +805,7 @@ RZ_IPI RzCmdStatus rz_flag_exists_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_flag_distance_handler(RzCore *core, int argc, const char **argv) {
-	rz_cons_printf("%d\n", flag_to_flag(core, argv[1]));
+	rz_cons_printf(core->cons, "%d\n", flag_to_flag(core, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -820,7 +821,7 @@ RZ_IPI RzCmdStatus rz_flag_length_handler(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 2) {
-		rz_cons_printf("0x%08" PFMT64x "\n", item->size);
+		rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", item->size);
 	} else {
 		item->size = rz_num_math(core->num, argv[1]);
 	}
@@ -835,7 +836,7 @@ RZ_IPI RzCmdStatus rz_flag_realname_handler(RzCore *core, int argc, const char *
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc < 3) {
-		rz_cons_printf("%s\n", item->realname);
+		rz_cons_printf(core->cons, "%s\n", item->realname);
 	} else {
 		rz_flag_item_set_realname(core->flags, item, argv[2]);
 	}
@@ -859,7 +860,7 @@ RZ_IPI RzCmdStatus rz_flag_color_handler(RzCore *core, int argc, const char **ar
 	}
 	const char *ret = rz_flag_item_set_color(fi, argv[2]);
 	if (ret) {
-		rz_cons_println(ret);
+		rz_cons_println(core->cons, ret);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -879,7 +880,7 @@ RZ_IPI RzCmdStatus rz_flag_comment_handler(RzCore *core, int argc, const char **
 			RZ_LOG_ERROR("Cannot find the flag\n");
 			return RZ_CMD_STATUS_ERROR;
 		} else if (item->comment) {
-			rz_cons_println(item->comment);
+			rz_cons_println(core->cons, item->comment);
 		}
 	}
 	return RZ_CMD_STATUS_OK;
@@ -914,7 +915,7 @@ RZ_IPI RzCmdStatus rz_flag_hexdump_handler(RzCore *core, int argc, const char **
 		RZ_LOG_ERROR("Cannot find flag '%s'\n", argv[1]);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("0x%08" PFMT64x "\n", item->offset);
+	rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", item->offset);
 	// FIXME: Use the API directly instead of calling the command
 	snprintf(cmd, sizeof(cmd), "px@%" PFMT64d ":%" PFMT64d, item->offset, item->size);
 	rz_core_cmd0(core, cmd);
@@ -924,19 +925,19 @@ RZ_IPI RzCmdStatus rz_flag_hexdump_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_flag_range_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	if (argc > 1) {
 		ut64 size = rz_num_math(core->num, argv[1]);
-		rz_core_flag_range_print(core->flags, state, core->offset, core->offset + size);
+		rz_core_flag_range_print(core->flags, state, core->offset, core->offset + size, core->cons);
 	} else {
-		rz_core_flag_range_print(core->flags, state, core->offset, core->offset + core->blocksize);
+		rz_core_flag_range_print(core->flags, state, core->offset, core->offset + core->blocksize, core->cons);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_flag_list_at_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_flag_range_print(core->flags, state, core->offset, core->offset + 1);
+	rz_core_flag_range_print(core->flags, state, core->offset, core->offset + 1, core->cons);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_flag_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	rz_core_flag_print(core->flags, state);
+	rz_core_flag_print(core->flags, state, core->cons);
 	return RZ_CMD_STATUS_OK;
 }

@@ -41,7 +41,7 @@ typedef struct {
 } RapThread;
 
 RZ_API void rz_core_wait(RzCore *core) {
-	rz_cons_singleton()->context->breaked = true;
+	rz_interrupt_set_breaked(core->intr, true);
 }
 
 static void http_logf(RzCore *core, const char *fmt, ...) {
@@ -85,12 +85,12 @@ static char *rtrcmd(TextLog T, const char *str) {
 
 static void showcursor(RzCore *core, int x) {
 	if (core && core->vmode) {
-		rz_cons_show_cursor(x);
-		rz_cons_enable_mouse(x ? rz_config_get_i(core->config, "scr.wheel") : false);
+		rz_cons_show_cursor(core->cons, x);
+		rz_cons_enable_mouse(core->cons, x ? rz_config_get_i(core->config, "scr.wheel") : false);
 	} else {
-		rz_cons_enable_mouse(false);
+		rz_cons_enable_mouse(core->cons, false);
 	}
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 }
 
 static char *rtr_dir_files(const char *path) {
@@ -397,6 +397,11 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		break;
 	case 'm':
 		sscanf(cmd + 1, "%" PFMT64x ",%x", &m_off, &ret);
+		if (ret < 1) {
+			return -1;
+		} else if (ret > max_len) {
+			ret = max_len;
+		}
 		if (rz_io_read_at_mapped(core->io, m_off, (ut8 *)out_buf, ret)) {
 			return ret;
 		}
@@ -445,6 +450,7 @@ static bool rz_core_rtr_gdb_run(RzCore *core, ut32 port, const char *file_path, 
 		return false;
 	}
 	gdbr_init(g, true);
+	gdbr_set_interrupt(g, core->intr);
 	g->server_debug = debug_msg;
 	int arch = rz_sys_arch_id(rz_config_get(core->config, "asm.arch"));
 	int bits = rz_config_get_i(core->config, "asm.bits");
@@ -541,7 +547,7 @@ RZ_API void rz_core_rtr_list(RzCore *core) {
 		case RTR_PROTOCOL_UDP: proto = "udp"; break;
 		case RTR_PROTOCOL_UNIX: proto = "unix"; break;
 		}
-		rz_cons_printf("%d fd:%i %s://%s:%i/%s\n",
+		rz_cons_printf(core->cons, "%d fd:%i %s://%s:%i/%s\n",
 			i, (int)rtr_host[i].fd->fd, proto, rtr_host[i].host,
 			rtr_host[i].port, rtr_host[i].file);
 	}
@@ -752,7 +758,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		// ensure the termination
 		rz_socket_close(s);
 		cmd_output[maxlen] = 0;
-		rz_cons_println(cmd_output);
+		rz_cons_println(core->cons, cmd_output);
 		free((void *)cmd_output);
 		return;
 	}
@@ -772,7 +778,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 		}
 		core->num->value = 0;
 		str[len] = 0;
-		rz_cons_print(str);
+		rz_cons_print(core->cons, str);
 		free((void *)str);
 		free((void *)uri);
 		return;
@@ -849,16 +855,16 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 	}
 
 	RZ_LOG_INFO("core: listening for commands on port %s\n", port);
-	rz_cons_break_push((RzConsBreak)rz_stop_pipe_stop, sp);
+	rz_interrupt_break_push(core->intr, (RzInterruptBreakCallback)rz_stop_pipe_stop, sp);
 	for (;;) {
 		// wait for connection
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
-		void *bed = rz_cons_sleep_begin();
+		void *bed = rz_interrupt_sleep_begin(core->intr);
 		RzStopPipeSelectResult spr = rz_stop_pipe_select_single(sp, s, false, UT64_MAX);
 		if (spr != RZ_STOP_PIPE_SOCKET_READY) {
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(core->intr, bed);
 			if (spr == RZ_STOP_PIPE_ERROR) {
 				RZ_LOG_ERROR("Failed to select on stop pipe and listening socket\n");
 			}
@@ -866,7 +872,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 		}
 		RzSocket *ch = rz_socket_accept(s);
 		if (!ch) {
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(core->intr, bed);
 			RZ_LOG_ERROR("Failed to accept");
 			break;
 		}
@@ -877,7 +883,7 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 		while (buf_filled < sizeof(buf) - 1) {
 			RzStopPipeSelectResult spr = rz_stop_pipe_select_single(sp, ch, false, UT64_MAX);
 			if (spr != RZ_STOP_PIPE_SOCKET_READY) {
-				rz_cons_sleep_end(bed);
+				rz_interrupt_sleep_end(core->intr, bed);
 				if (spr == RZ_STOP_PIPE_ERROR) {
 					RZ_LOG_ERROR("Failed to select on stop pipe and child socket\n");
 				}
@@ -902,25 +908,25 @@ RZ_API void rz_core_rtr_cmds(RzCore *core, const char *port) {
 				break;
 			}
 		}
-		rz_cons_sleep_end(bed);
+		rz_interrupt_sleep_end(core->intr, bed);
 
 		// run command and reply
 		if (buf_filled > 0) {
 			char *str = rz_core_cmd_str(core, (const char *)buf);
-			bed = rz_cons_sleep_begin();
+			bed = rz_interrupt_sleep_begin(core->intr);
 			if (str && *str) {
 				rz_socket_write(ch, str, strlen(str));
 			} else {
 				rz_socket_write(ch, "\n", 1);
 			}
-			rz_cons_sleep_end(bed);
+			rz_interrupt_sleep_end(core->intr, bed);
 			free(str);
 		}
 		rz_socket_close(ch);
 		rz_socket_free(ch);
 	}
 break_outer:
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 err_socket:
 	rz_socket_free(s);
 err_sp:

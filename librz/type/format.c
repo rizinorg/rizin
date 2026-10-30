@@ -234,7 +234,7 @@ static void base_type_to_format_unfold(const RzTypeDB *typedb, RZ_NONNULL RzBase
 /**
  * \brief Represents the RzBaseType as a `pf` format string
  *
- * Produces the pair of of <format> <fields>. If the type
+ * Produces the pair of of `<format> <fields>`. If the type
  * is atomic it searches if the type database has predefined
  * format assigned to it and uses it.
  *
@@ -258,7 +258,7 @@ RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL Rz
 /**
  * \brief Represents the RzBaseType as a `pf` format string
  *
- * Produces the pair of of <format> <fields>. If the type
+ * Produces the pair of of `<format> <fields>`. If the type
  * is atomic it searches if the type database has predefined
  * format assigned to it and uses it.
  *
@@ -554,8 +554,8 @@ static void type_to_format(const RzTypeDB *typedb, RzStrBuf *buf, RzType *type) 
  * \brief Represents the RzType as a `pf` format string
  *
  * Different from the similar function for the RzBaseType,
- * since the latter shows the pair of <format> <fields>,
- * while this implementation produces only the <format> part.
+ * since the latter shows the pair of `<format> <fields>`,
+ * while this implementation produces only the `<format>` part.
  *
  * \param typedb Types Database instance
  * \param type RzType type
@@ -636,7 +636,7 @@ static bool type_to_format_pair(const RzTypeDB *typedb, RzStrBuf *format, RzStrB
  *
  * Different from the similar `rz_type_as_format` and similar
  * to the `rz_base_type_as_format` since the latter shows
- * the pair of <format> <fields>.
+ * the pair of `<format> <fields>`.
  *
  * \param typedb Types Database instance
  * \param type RzType type
@@ -671,6 +671,7 @@ RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL Rz
  */
 RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	const char *result = ht_ss_find(typedb->formats, name, &found);
 	if (!found || !result) {
@@ -687,6 +688,7 @@ RZ_API const char *rz_type_db_format_get(const RzTypeDB *typedb, const char *nam
  */
 RZ_API void rz_type_db_format_set(RzTypeDB *typedb, const char *name, const char *fmt) {
 	rz_return_if_fail(typedb && name && fmt);
+	rz_type_db_load_pending(typedb);
 	ht_ss_insert(typedb->formats, name, rz_str_dup(fmt));
 }
 
@@ -708,6 +710,7 @@ static bool format_collect_cb(void *user, const char *k, const char *v) {
  */
 RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *formats = rz_list_newf(free);
 	ht_ss_foreach(typedb->formats, format_collect_cb, formats);
 	return formats;
@@ -720,5 +723,6 @@ RZ_API RZ_OWN RzList /*<RzTypeFormat *>*/ *rz_type_db_format_all(RzTypeDB *typed
  */
 RZ_API void rz_type_db_format_delete(RzTypeDB *typedb, const char *name) {
 	rz_return_if_fail(typedb && name);
+	rz_type_db_load_pending(typedb);
 	ht_ss_delete(typedb->formats, name);
 }

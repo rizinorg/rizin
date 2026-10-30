@@ -119,8 +119,8 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
 
-RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
-RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
+#define rz_buf_get_string(b, addr) rz_buf_get_nstring(b, addr, rz_buf_size(b), true)
+RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size, bool must_find_null);
 RZ_API ut64 rz_buf_read_string(RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE char **s);
 RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);

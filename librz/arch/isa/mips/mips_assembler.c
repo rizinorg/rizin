@@ -660,6 +660,7 @@ RZ_IPI int mips_assemble_opcode(const char *line, ut64 pc, RzStrBuf *out, bool b
 
 	const char *token = rz_list_get_n(tokens, 0);
 	if (RZ_STR_ISEMPTY(token)) {
+		rz_list_free(tokens);
 		return -1;
 	}
 

@@ -5139,7 +5139,51 @@ static ut64 getnum(const RzAsm *a, const char *s) {
 	if (*s == '$') {
 		s++;
 	}
-	return rz_num_math(NULL, s);
+	// The assembler may hand getnum an operand fragment that still carries
+	// trailing operand syntax: ',' (the next operand), ']' (the close of a
+	// memory operand), or an unmatched ')' (the close of "st(2)" after the
+	// caller has consumed the matching '('). The strict evaluator rejects
+	// that trailing text, where the legacy reader stopped at it, so evaluate
+	// only the leading number/expression. A *matched* ')' is kept so that
+	// parenthesised immediates such as "(0x10 + 0x20)" still evaluate.
+	size_t n = 0;
+	int depth = 0;
+	for (; s[n]; n++) {
+		const char c = s[n];
+		if (c == '(') {
+			depth++;
+		} else if (c == ')') {
+			if (depth == 0) {
+				break;
+			}
+			depth--;
+		} else if (c == ',' || c == ']') {
+			break;
+		}
+	}
+	char *num = rz_str_ndup(s, n);
+	if (!num) {
+		return 0;
+	}
+	// An immediate wider than 64 bits saturates to UT64_MAX, matching the
+	// legacy assembler: "mov rax, 0x112233445566778899" encodes as
+	// "mov rax, -1" rather than silently wrapping to the low 64 bits. The
+	// evaluator promotes such a literal to RZ_NUM_KIND_BIG, so detect that
+	// here; everything else keeps the lenient ut64 reading (which also
+	// recovers seg:off and other forms the strict parse rejects).
+	RzNumValue val;
+	rz_num_value_init(&val);
+	char *err = NULL;
+	ut64 v;
+	if (rz_num_math_value(NULL, num, &val, &err)) {
+		v = (val.kind == RZ_NUM_KIND_BIG) ? UT64_MAX : rz_num_value_to_ut64(&val);
+	} else {
+		v = rz_num_math(NULL, num);
+	}
+	rz_num_value_fini(&val);
+	free(err);
+	free(num);
+	return v;
 }
 
 static int oprep(const RzAsm *a, ut8 *data, const Opcode *op) {

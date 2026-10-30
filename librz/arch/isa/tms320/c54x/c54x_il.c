@@ -116,6 +116,9 @@ static RzILOpPure *c54x_ea(const C55Operand *m) {
 }
 
 // Byte address of the current stack top: SP is a 16-bit word pointer.
+// Program addresses count 16-bit words; the VM runs in the byte address space.
+#define C54X_WORD_BYTES 2
+
 static RzILOpPure *c54x_sp_ea(void) {
 	return MUL(UNSIGNED(24, VARG("sp")), UN(24, C54X_WORD_BYTES));
 }
@@ -1152,7 +1155,7 @@ RZ_IPI RzILOpEffect *c54x_lift(const C55Insn *insn, ut64 pc) {
 		if (!pred) {
 			return NULL;
 		}
-		return BRANCH(pred, JMP(UN(24, (ut32)op[0]->imm)), NOP());
+		return BRANCH(pred, JMP(UN(24, (ut32)op[0]->imm * C54X_WORD_BYTES)), NOP());
 	}
 
 	// conditional return
@@ -1185,7 +1188,7 @@ RZ_IPI RzILOpEffect *c54x_lift(const C55Insn *insn, ut64 pc) {
 		}
 		// Test the AR before its post-modify, which happens regardless of branch.
 		RzILOpEffect *grab = SETL("take", BOOL_TO_BV(INV(IS_ZERO(VARG(ar))), 1));
-		RzILOpEffect *br = BRANCH(NON_ZERO(VARL("take")), JMP(UN(24, (ut32)op[0]->imm)), NOP());
+		RzILOpEffect *br = BRANCH(NON_ZERO(VARL("take")), JMP(UN(24, (ut32)op[0]->imm * C54X_WORD_BYTES)), NOP());
 		RzILOpEffect *post = c55_post_effect(a, op[1]);
 		return post ? SEQ3(grab, post, br) : SEQ2(grab, br);
 	}

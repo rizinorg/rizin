@@ -2,11 +2,136 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 #include "bench_utils.h"
 #include <rz_util.h>
+#include <rz_util/rz_num.h>
 
 /**
  * \file bench_list.c
- * \brief Benchmarks for `RzList` functions - comparing rz_list_purge implementations
+ * \brief Benchmarks for `RzList` operations and purge implementations.
  */
+
+#define LIST_SORT_N  4096
+#define LIST_SMALL_N 32
+#define LIST_GETN_N  4096
+#define LIST_TOSTR_N 512
+
+static int list_cmp_ptr_as_u64(const void *a, const void *b, void *user) {
+	(void)user;
+	ut64 x = (ut64)(size_t)a, y = (ut64)(size_t)b;
+	return (x > y) - (x < y);
+}
+
+/**
+ * \brief Sort a descending list repeatedly, including the cost of reversal.
+ */
+static void bench_list_sort_large(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	for (ut32 j = 0; j < LIST_SORT_N; ++j) {
+		rz_list_append(list, (void *)(size_t)rz_num_rand32(UT32_MAX));
+	}
+	rz_list_sort(list, list_cmp_ptr_as_u64, NULL);
+	RZ_BENCH_RUN("[RzList] reverse+sort 4k descending", t_out, 300, {
+		rz_list_reverse(list);
+		list->sorted = false;
+		rz_list_sort(list, list_cmp_ptr_as_u64, NULL);
+	});
+	rz_list_free(list);
+}
+
+/**
+ * \brief Sort a small list repeatedly through the insertion sort path.
+ *
+ * The "presorted" variant shows the best case behaviour of the sort.
+ */
+static void bench_list_sort_small(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	for (ut32 j = 0; j < LIST_SMALL_N; ++j) {
+		rz_list_append(list, (void *)(size_t)rz_num_rand32(UT32_MAX));
+	}
+	rz_list_sort(list, list_cmp_ptr_as_u64, NULL);
+	RZ_BENCH_RUN("[RzList] reverse+sort 32 descending", t_out, 5000, {
+		rz_list_reverse(list);
+		list->sorted = false;
+		rz_list_sort(list, list_cmp_ptr_as_u64, NULL);
+	});
+	// list is now sorted ascending
+	RZ_BENCH_RUN("[RzList] rz_list_sort 32 presorted", t_out, 5000, {
+		list->sorted = false; // force sorting although the list is sorted
+		rz_list_sort(list, list_cmp_ptr_as_u64, NULL);
+	});
+	rz_list_free(list);
+}
+
+static void bench_list_get_n(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	for (ut32 j = 0; j < LIST_GETN_N; ++j) {
+		rz_list_append(list, (void *)(size_t)(j + 1));
+	}
+	RZ_BENCH_RUN("[RzList] rz_list_get_n random idx 4k", t_out, 20000, {
+		ut32 n = rz_num_rand32(LIST_GETN_N - 1);
+		RZ_DONT_OPTIMIZE(void *, rz_list_get_n(list, n));
+	});
+	rz_list_free(list);
+}
+
+static void bench_list_to_str(RzTable *t_out) {
+	RzList *list = rz_list_newf(free);
+	for (ut32 j = 0; j < LIST_TOSTR_N; ++j) {
+		char buf[16];
+		snprintf(buf, sizeof(buf), "item%03u", j);
+		rz_list_append(list, rz_str_dup(buf));
+	}
+	RZ_BENCH_RUN("[RzList] rz_list_to_str 512 items", t_out, 2000, {
+		char *s = rz_list_to_str(list, ',', false);
+		free(s);
+	});
+	rz_list_free(list);
+}
+
+static void bench_list_append_pop(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	RZ_BENCH_RUN("[RzList] append+pop 1k cycle", t_out, 3000, {
+		for (ut32 j = 0; j < 1000; ++j) {
+			rz_list_append(list, (void *)(size_t)(j + 1));
+		}
+		for (ut32 j = 0; j < 1000; ++j) {
+			rz_list_pop(list);
+		}
+	});
+	rz_list_free(list);
+}
+
+/**
+ * \brief Repeat accessor calls to measure their aggregate cost.
+ *
+ * The trivial getters are called all over Rizin. Bench them amplified,
+ * because the per-call costs are below the clock resolution of the framework.
+ */
+static void bench_list_accessors(RzTable *t_out) {
+	RzList *list = rz_list_new();
+	for (ut32 j = 0; j < 1024; ++j) {
+		rz_list_append(list, (void *)(size_t)(j + 1));
+	}
+	RzListIter *mid = rz_list_head(list);
+	for (ut32 j = 0; j < 512; ++j) {
+		mid = rz_list_next(mid);
+	}
+	RZ_BENCH_RUN("[RzList] rz_list_length x1000", t_out, 20000, {
+		for (ut32 k = 0; k < 1000; ++k) {
+			RZ_DONT_OPTIMIZE(ut32, rz_list_length(list));
+		}
+	});
+	RZ_BENCH_RUN("[RzList] rz_list_first_val x1000", t_out, 20000, {
+		for (ut32 k = 0; k < 1000; ++k) {
+			RZ_DONT_OPTIMIZE(void *, rz_list_first_val(list));
+		}
+	});
+	RZ_BENCH_RUN("[RzList] rz_list_iter_get_next_data x1000", t_out, 20000, {
+		for (ut32 k = 0; k < 1000; ++k) {
+			RZ_DONT_OPTIMIZE(void *, rz_list_iter_get_next_data(mid));
+		}
+	});
+	rz_list_free(list);
+}
 
 // Helper to populate a list with n non-null elements
 static void populate_list(RzList *list, ut32 n) {
@@ -336,6 +461,14 @@ static void bench_purge_v4_empty(RzTable *t_out) {
 int main() {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
+
+	// Hot-path benchmarks
+	bench_list_sort_large(t);
+	bench_list_sort_small(t);
+	bench_list_get_n(t);
+	bench_list_to_str(t);
+	bench_list_append_pop(t);
+	bench_list_accessors(t);
 
 	// Empty list - base overhead
 	bench_purge_v1_empty(t);

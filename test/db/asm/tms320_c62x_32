@@ -1,0 +1,42 @@
+# TMS320C62x (fixed-point VLIW) native disassembler
+# The shared engine serves the C62x base ISA; floating-point opcodes do
+# not decode here (see the mpysp word, which is invalid on C62x).
+d "nop" 00000000 0x0 nop
+d "mvk .s1 0x0,a0" 28000000 0x0 (set a0 (bv 32 0x0))
+d "add .l1 a0,a1,a2" 78000401 0x0 (set a2 (+ (var a0) (var a1)))
+d "and .l1 0x8,a3,a0" 580f0d00 0x0 (set a0 (& (bv 32 0x8) (var a3)))
+d "ldb .d1 *a4,a3" 24029001 0x0 (set a3 (cast 32 (msb (loadw 0 8 (+ (var a4) (bv 32 0x0)))) (loadw 0 8 (+ (var a4) (bv 32 0x0)))))
+d "b .s1 0x20" 10040000 0x0 (jmp (bv 32 0x20))
+d "b .s2 b3" 62030c00 0x0 (jmp (var b3))
+d "smpy .m1 a0,a1,a2" 000d0401 0x0 (set a2 (let _p (* (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0))) (cast 32 (msb (cast 16 false (var a1))) (cast 16 false (var a1)))) (ite (== (var _p) (bv 32 0x40000000)) (bv 32 0x7fffffff) (<< (var _p) (bv 32 0x1) false))))
+d "smpylh .m1 a0,a1,a2" 00090401 0x0 (set a2 (let _p (* (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0))) (cast 32 (msb (cast 16 false (>> (var a1) (bv 32 0x10) false))) (cast 16 false (>> (var a1) (bv 32 0x10) false)))) (ite (== (var _p) (bv 32 0x40000000)) (bv 32 0x7fffffff) (<< (var _p) (bv 32 0x1) false))))
+# address arithmetic, saturating ALU and shift-with-saturation (RzIL)
+d "addab .d1 a4,a5,a6" 40b81003 0x0 (set a6 (+ (var a4) (var a5)))
+d "addah .d1 a4,a5,a6" 40ba1003 0x0 (set a6 (+ (var a4) (<< (var a5) (bv 32 0x1) false)))
+d "addaw .d1 a4,a5,a6" 40bc1003 0x0 (set a6 (+ (var a4) (<< (var a5) (bv 32 0x2) false)))
+d "subab .d1 a4,a5,a6" c0b81003 0x0 (set a6 (- (var a4) (var a5)))
+d "subah .d1 a4,a5,a6" c0ba1003 0x0 (set a6 (- (var a4) (<< (var a5) (bv 32 0x1) false)))
+d "subaw .d1 a4,a5,a6" c0bc1003 0x0 (set a6 (- (var a4) (<< (var a5) (bv 32 0x2) false)))
+d "sadd .l1 a0,a1,a2" 78020401 0x0 (set a2 (let _s (+ (cast 64 (msb (var a0)) (var a0)) (cast 64 (msb (var a1)) (var a1))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
+d "ssub .l1 a0,a1,a2" f8010401 0x0 (set a2 (let _s (- (cast 64 (msb (var a0)) (var a0)) (cast 64 (msb (var a1)) (var a1))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
+d "sshl .s1 a0,a1,a2" e0280001 0x0 (set a2 (let _s (<< (cast 64 (msb (var a0)) (var a0)) (& (var a1) (bv 32 0x1f)) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
+# bit-field set/clear and leftmost-bit/normalize (RzIL)
+d "set .s1 a1,8,16,a2" 88100501 0x0 (set a2 (| (var a1) (bv 32 0x1ff00)))
+d "clr .s1 a1,8,16,a2" c8100501 0x0 (set a2 (& (var a1) (bv 32 0xfffe00ff)))
+d "lmbd .l1 a0,a1,a2" 780d0401 0x0 (seq (set _clzv (let _lm (var a1) (ite (is_zero (& (var a0) (bv 32 0x1))) (~ (var _lm)) (var _lm)))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (var _n)))
+d "norm .l1 a1,a2" 780c0401 0x0 (seq (set _clzv (let _nm (var a1) (^ (var _nm) (>> (var _nm) (bv 32 0x1f) (msb (var _nm)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x1))))
+# subtract-conditional divide step (RzIL)
+d "subc .l1 a0,a1,a2" 78090401 0x0 (set a2 (let _s1 (var a0) (let _df (- (var _s1) (var a1)) (ite (|| (! (sle (var _df) (bv 32 0x0))) (== (var _df) (bv 32 0x0))) (| (<< (var _df) (bv 32 0x1) false) (bv 32 0x1)) (<< (var _s1) (bv 32 0x1) false)))))
+# NORM long (register-pair) form
+d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))
+# 40-bit long ABS and SAT (decode)
+d "abs .l1 a1:a0,a3:a2" 18070001 0x0 (seq (set _d (let _a (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (ite (|| (! (sle (var _a) (bv 64 0x0))) (== (var _a) (bv 64 0x0))) (var _a) (ite (== (var _a) (bv 64 0xffffff8000000000)) (bv 64 0x7fffffffff) (~- (var _a)))))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "sat .l1 a1:a0,a2" 18080001 0x0 (set a2 (let _s (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
+
+# The loop buffer and interrupt-enable opcodes are C64x+ additions: asm6x
+# rejects them for -mv6200, so they must not decode here (idle and nop do).
+d "invalid" 00400010 0x0
+d "invalid" 00600010 0x0
+d "invalid" 00000300 0x0
+d "invalid" 00800300 0x0
+d "idle" 00e00100 0x0 nop

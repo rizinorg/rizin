@@ -149,10 +149,143 @@ bool test_rz_parse_filter_ansi_short_passthrough(void) {
 	mu_end;
 }
 
+// Shared setup for the substitution tests: a parser bound to a real (x86)
+// analysis and a flag space holding one flag at 0x8000 whose name contains a
+// dot (so filter()'s isvalidflag() accepts it).
+typedef struct {
+	RzAnalysis *analysis;
+	RzFlag *flags;
+	RzParse *p;
+} FilterSubstCtx;
+
+static bool filter_subst_ctx_init(FilterSubstCtx *ctx) {
+	ctx->analysis = rz_analysis_new(NULL);
+	ctx->flags = rz_flag_new();
+	ctx->p = rz_parse_new();
+	if (!ctx->analysis || !ctx->flags || !ctx->p) {
+		return false;
+	}
+	rz_analysis_use(ctx->analysis, "x86");
+	rz_analysis_set_bits(ctx->analysis, 64);
+	rz_analysis_bind(ctx->analysis, &ctx->p->analb);
+	ctx->p->flag_get = rz_flag_get_i;
+	ctx->p->minval = 0x100;
+	rz_parse_use(ctx->p, "x86.pseudo");
+	mu_assert_notnull(rz_flag_set(ctx->flags, "loc.sub_8000", 0x8000, 1),
+		"set flag at 0x8000");
+	return true;
+}
+
+static void filter_subst_ctx_fini(FilterSubstCtx *ctx) {
+	rz_parse_free(ctx->p);
+	rz_flag_free(ctx->flags);
+	rz_analysis_free(ctx->analysis);
+}
+
+// A genuine standalone number in a colored operand must still be substituted
+// with the flag at that address (positive control: the identifier-exclusion
+// rule must not disable ansi-mode number matching altogether).
+bool test_rz_parse_filter_ansi_number_substituted(void) {
+	FilterSubstCtx ctx;
+	mu_assert_true(filter_subst_ctx_init(&ctx), "ctx init");
+
+	const int len = 1024;
+	RzStrBuf *sb = rz_strbuf_new("");
+	append_colored_token(sb, "mov");
+	append_colored_token(sb, " ");
+	append_colored_token(sb, "eax");
+	append_colored_token(sb, ", ");
+	append_colored_token(sb, "0x8000");
+	char *data = rz_strbuf_drain(sb);
+
+	char *str = malloc(len);
+	mu_assert_notnull(str, "malloc");
+	memset(str, 0xff, len);
+
+	rz_parse_filter(ctx.p, 0x1000, ctx.flags, NULL, data, str, len, false);
+
+	mu_assert_notnull(strstr(str, "loc.sub_8000"),
+		"standalone colored number 0x8000 must be substituted with the flag name");
+
+	free(str);
+	free(data);
+	filter_subst_ctx_fini(&ctx);
+	mu_end;
+}
+
+// The default stack-variable naming scheme produces identifiers like
+// "var_78h" or "arg_10h" whose hex-offset tail ("78h") is NOT a numeric
+// literal. When the disassembler colorizes such an operand, each of "var",
+// "_" and "78h" becomes its own SGR-wrapped segment, so "78h" directly
+// follows an escape sequence. Picking it up as a number would both evaluate a
+// name fragment (potentially substituting a flag in the middle of the
+// identifier) and trigger RzNum's deprecated trailing-'h' suffix warning on
+// every colored disassembly line. The hex tail must stay untouched.
+bool test_rz_parse_filter_ansi_varname_hex_tail_not_number(void) {
+	FilterSubstCtx ctx;
+	mu_assert_true(filter_subst_ctx_init(&ctx), "ctx init");
+
+	const int len = 1024;
+	RzStrBuf *sb = rz_strbuf_new("");
+	append_colored_token(sb, "lea");
+	append_colored_token(sb, "   ");
+	append_colored_token(sb, "rax");
+	append_colored_token(sb, ", ");
+	append_colored_token(sb, "qword");
+	append_colored_token(sb, " [");
+	append_colored_token(sb, "var");
+	append_colored_token(sb, "_");
+	append_colored_token(sb, "8000h");
+	append_colored_token(sb, "]");
+	char *data = rz_strbuf_drain(sb);
+
+	char *str = malloc(len);
+	mu_assert_notnull(str, "malloc");
+	memset(str, 0xff, len);
+
+	rz_parse_filter(ctx.p, 0x1000, ctx.flags, NULL, data, str, len, false);
+
+	mu_assert_streq(str, data,
+		"hex-offset tail of a colored stack var name must not be treated as a number");
+
+	free(str);
+	free(data);
+	filter_subst_ctx_fini(&ctx);
+	mu_end;
+}
+
+// Same as above, but for the uncolorized operand: the plain-text regex has
+// always excluded numbers preceded by '\w' (see issue #4238), so the var name
+// must pass through untouched here as well.
+bool test_rz_parse_filter_plain_varname_hex_tail_not_number(void) {
+	FilterSubstCtx ctx;
+	mu_assert_true(filter_subst_ctx_init(&ctx), "ctx init");
+
+	const int len = 1024;
+	char *data = rz_str_dup("lea   rax, qword [var_8000h]");
+
+	char *str = malloc(len);
+	mu_assert_notnull(str, "malloc");
+	memset(str, 0xff, len);
+
+	rz_parse_filter(ctx.p, 0x1000, ctx.flags, NULL, data, str, len, false);
+
+	mu_assert_streq(str, data,
+		"hex-offset tail of a plain stack var name must not be treated as a number");
+
+	free(str);
+	free(data);
+	filter_subst_ctx_fini(&ctx);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_parse_filter_ansi_truncation_no_partial_escape);
 	mu_run_test(test_rz_parse_filter_ansi_truncation_realistic_symbol);
 	mu_run_test(test_rz_parse_filter_ansi_short_passthrough);
+	mu_run_test(test_rz_parse_filter_ansi_number_substituted);
+	mu_run_test(test_rz_parse_filter_ansi_varname_hex_tail_not_number);
+	mu_run_test(test_rz_parse_filter_plain_varname_hex_tail_not_number);
 	return tests_passed != tests_run;
 }
 

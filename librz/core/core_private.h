@@ -18,6 +18,7 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABLE RzCmdParsedArgs *args);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
 RZ_IPI bool rz_core_is_core_dump(RzCore *core);
 RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);
@@ -29,6 +30,7 @@ RZ_IPI int fcn_cmpaddr(const void *_a, const void *_b, void *user);
 
 RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
 RZ_IPI bool rz_core_get_string_at(RzCore *core, ut64 address, char **string, size_t *length, RzStrEnc *encoding, bool can_search);
+RZ_IPI bool rz_core_search_shows_hit_count(RZ_NONNULL RzCore *core);
 RZ_IPI int rz_core_analysis_set_reg(RzCore *core, const char *regname, ut64 val);
 RZ_IPI void rz_core_analysis_esil_init(RzCore *core);
 RZ_IPI void rz_core_analysis_esil_init_mem_p(RzCore *core);
@@ -43,18 +45,21 @@ RZ_IPI void rz_core_debug_esil_watch_print(RzDebug *dbg, RzCmdStateOutput *state
 RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *varname, RzOutputMode mode);
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj);
 RZ_IPI void rz_core_il_cons_print(RZ_NONNULL RzCore *core, RZ_NONNULL RZ_BORROW RzIterator *iter, bool pretty, bool unicode);
-RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt);
+RZ_IPI void rz_core_il_colorize_body(RZ_NONNULL RzConsContext *ctx, RZ_NULLABLE const char *il_stmt, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 RZ_IPI void rz_core_analysis_devirtualize_cxx_methods(RZ_NULLABLE RzCore *core);
+RZ_IPI void rz_core_analysis_devirtualize_dlang_methods(RZ_NULLABLE RzCore *core);
 RZ_IPI void rz_core_analysis_devirtualize_objc_methods(RZ_NULLABLE RzCore *core);
-RZ_IPI void rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
-RZ_IPI void rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc);
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print_table(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL RzTable *table);
+RZ_IPI bool rz_core_analysis_virtual_xrefs_print_json(RZ_NONNULL RzCore *core, RZ_NONNULL const char *vfunc, RZ_NONNULL PJ *pj);
+RZ_IPI void rz_core_analysis_devirtualize_rust_methods(RZ_NULLABLE RzCore *core);
 
 RZ_IPI bool rz_core_analysis_var_rename(RzCore *core, const char *name, const char *newname);
 RZ_IPI char *rz_core_analysis_function_signature(RzCore *core, RzOutputMode mode, char *fcn_name);
 RZ_IPI bool rz_core_analysis_function_delete_var(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisVarStorageType kind, const char *id);
 RZ_IPI char *rz_core_analysis_all_vars_display(RzCore *core, RzAnalysisFunction *fcn, bool add_name);
-RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name);
+RZ_IPI bool rz_analysis_var_global_list_show(RzAnalysis *analysis, RzCmdStateOutput *state, RZ_NULLABLE const char *name, RZ_NONNULL RZ_BORROW RzCons *cons);
 RZ_IPI bool rz_core_analysis_types_propagation(RzCore *core);
 RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunction *fcn, const char *newsig);
 RZ_IPI void rz_core_analysis_function_signature_editor(RzCore *core, ut64 addr);
@@ -104,7 +109,7 @@ RZ_IPI RZ_OWN char *rz_core_types_typedef_as_c_all(RzTypeDB *typedb);
 RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *type, bool multiline);
 
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
-RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
@@ -139,12 +144,12 @@ RZ_IPI bool rz_core_agraph_apply(RzCore *core, RzGraph /*<RzGraphNodeInfo *, NUL
 RZ_IPI bool rz_core_graph_print_graph(RZ_NONNULL RzCore *core, RZ_NONNULL RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, RzCoreGraphFormat format, bool use_offset);
 RZ_IPI bool rz_core_graph_print(RzCore *core, ut64 addr, RzCoreGraphType type, RzCoreGraphFormat format);
 
-RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_core_bin_plugin_print(const RzBinPlugin *bp, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_IPI RzCmdStatus rz_core_binxtr_plugin_print(const RzBinXtrPlugin *bx, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* creg.c */
 RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg);
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items);
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* cdebug.c */
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core);
@@ -165,13 +170,13 @@ RZ_IPI RzCoreIOMapInfo *rz_core_io_map_info_new(RzCoreFile *cf, int perm_orig);
 RZ_IPI void rz_core_io_map_info_free(RzCoreIOMapInfo *info);
 
 /* cmark.c */
-RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state);
-RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
+RZ_IPI void rz_core_mark_print(RzMark *b, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_IPI void rz_core_mark_range_print(RzMark *b, RzCmdStateOutput *state, ut64 range_from, ut64 range_to, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* cflag.c */
-RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state);
-RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state);
-RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to);
+RZ_IPI void rz_core_flag_print(RzFlag *f, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_IPI void rz_core_flag_real_name_print(RzFlag *f, RzCmdStateOutput *state, RZ_NONNULL RZ_BORROW RzCons *cons);
+RZ_IPI void rz_core_flag_range_print(RzFlag *f, RzCmdStateOutput *state, ut64 range_from, ut64 range_to, RZ_NONNULL RZ_BORROW RzCons *cons);
 
 /* cdisasm.c */
 RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, st64 i_bytes);
@@ -189,6 +194,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address);
 RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address);
 RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len);
+RZ_IPI void rz_core_calc_subrel_addr(RZ_NONNULL RzCore *core, RZ_NONNULL const RzAnalysisOp *op);
 
 /* cmd_seek.c */
 RZ_IPI bool rz_core_seek_to_register(RzCore *core, const char *input, bool is_silent);
@@ -432,7 +438,7 @@ RZ_IPI void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 RZ_IPI void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
 RZ_IPI int rz_core_visual_xrefs(RzCore *core, bool xref_to, bool fcnInsteadOfAddr);
-RZ_IPI void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
+RZ_IPI void rz_core_visual_append_help(RzCore *core, RzStrBuf *p, const char *title, const char **help);
 
 /* tui/biteditor.c */
 RZ_IPI bool rz_core_visual_bit_editor(RzCore *core);

@@ -3,6 +3,7 @@
 
 #include <rz_esil/rz_esil.h>
 #include "analysis_private.h"
+#include "esil_internal.h"
 
 static void interrupt_free(RzAnalysisEsilInterrupt *i) {
 	rz_analysis_esil_interrupt_free(i->esil, i);
@@ -48,7 +49,8 @@ RZ_API bool rz_analysis_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilI
 RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
 	rz_return_val_if_fail(esil, false);
 
-	if (esil->cmd && esil->cmd(esil, esil->cmd_intr, intr_num, 0)) { // compatibility
+	if (rz_analysis_esil_call_cmd(esil, esil->config->cmd_intr, intr_num, 0)) {
+		// compatibility
 		return true;
 	}
 

@@ -100,7 +100,7 @@ static const struct machine_name_translation machine_name_translation_table[] = 
 	{ EM_68HC12, "Motorola M68HC12" },
 	{ EM_MMA, "Fujitsu MMA Multimedia Accelerator" },
 	{ EM_PCP, "Siemens PCP" },
-	{ EM_NCPU, "Sony nCPU embeeded RISC" },
+	{ EM_NCPU, "Sony nCPU embedded RISC" },
 	{ EM_NDR1, "Denso NDR1 microprocessor" },
 	{ EM_STARCORE, "Motorola Start*Core processor" },
 	{ EM_ME16, "Toyota ME16 processor" },
@@ -361,6 +361,8 @@ static const struct arch_translation arch_translation_table[] = {
 	{ EM_VIDEOCORE3, "vc4" },
 	{ EM_VIDEOCORE4, "vc4" },
 	{ EM_MSP430, "msp430" },
+	{ EM_TI_C6000, "tms320" },
+	{ EM_TI_C2000, "tms320" },
 	{ EM_SH, "sh" },
 	{ EM_V810, "v810" },
 	{ EM_V800, "v850" },
@@ -780,7 +782,7 @@ static riscv_attr_type get_riscv_attribute_from_section(RzBuffer *sec, ut64 attr
 	// format byte
 	ut8 format = 0;
 	if (!sec || !rz_buf_read8_offset(sec, &curr, &format) || format != 'A') {
-		RZ_LOG_ERROR("Can't read the format byte of the RISCV attrbiute section or found a different format (expected 'A' at section start)\n");
+		RZ_LOG_ERROR("Can't read the format byte of the RISCV attribute section or found a different format (expected 'A' at section start)\n");
 		return RISCV_ATTR_NONE;
 	}
 
@@ -924,6 +926,14 @@ static inline bool arch_is_arcompact(ELFOBJ *bin) {
 
 static inline bool arch_is_parisc(ELFOBJ *bin) {
 	return arch_is(bin, EM_PARISC);
+}
+
+static inline bool arch_is_c6x(ELFOBJ *bin) {
+	return arch_is(bin, EM_TI_C6000);
+}
+
+static inline bool arch_is_c2000(ELFOBJ *bin) {
+	return arch_is(bin, EM_TI_C2000);
 }
 
 static inline bool arch_is_riscv(ELFOBJ *bin) {
@@ -1500,6 +1510,25 @@ static char *get_cpu_hppa(ELFOBJ *bin) {
 	return strdup("Unknown HP PARISC ISA");
 }
 
+// EM_TI_C6000 objects (COFF ABI and the C6000 EABI, SPRAB89) do not record the
+// exact C6x ISA variant in the ELF header, so default to the C674x superset (the
+// unified C64x+/C67x+ ISA the EABI targets); a narrower variant can be forced
+// with -c on the shared tms320 c6x decoder.
+static RZ_OWN char *get_cpu_c6x(ELFOBJ *bin) {
+	return rz_str_dup("c674x");
+}
+
+/**
+ * \brief The cpu of an EM_TI_C2000 object.
+ *
+ * EM_TI_C2000 covers the whole C2000 line, but every part rizin can decode runs
+ * the C28x core; the C27x object mode is only entered out of reset and is
+ * selectable with -c on the shared tms320 decoder.
+ */
+static char *get_cpu_c2000(ELFOBJ *bin) {
+	return rz_str_dup("c28x");
+}
+
 static char *get_cpu_h8xx(ELFOBJ *bin) {
 	if (bin->ehdr.e_machine == EM_H8_300H) {
 		return rz_str_dup("h8300h");
@@ -1526,7 +1555,9 @@ static char *get_cpu_h8xx(ELFOBJ *bin) {
 static char *get_cpu_riscv(ELFOBJ *bin) {
 	char bin_arch[256] = { 0 };
 	size_t len = 0;
-	riscv_attr_type typ = get_riscv_attribute_from_section(get_riscv_attributes_section(bin), T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	RzBuffer *sec = get_riscv_attributes_section(bin);
+	riscv_attr_type typ = get_riscv_attribute_from_section(sec, T_RISCV_arch, sizeof(bin_arch), (ut8 *)bin_arch, &len);
+	rz_buf_free(sec);
 	len = RZ_MIN(len, sizeof(bin_arch));
 	if (typ == RISCV_ATTR_NT_STRING) {
 		return rz_str_ndup((const char *)bin_arch, len);
@@ -2125,6 +2156,10 @@ RZ_OWN char *Elf_(rz_bin_elf_get_cpu)(RZ_NONNULL ELFOBJ *bin) {
 		return bin->ehdr.e_machine == EM_SPARC ? strdup("v8") : strdup("v9");
 	} else if (arch_is_parisc(bin)) {
 		return get_cpu_hppa(bin);
+	} else if (arch_is_c6x(bin)) {
+		return get_cpu_c6x(bin);
+	} else if (arch_is_c2000(bin)) {
+		return get_cpu_c2000(bin);
 	} else if (arch_is_arm(bin)) {
 		return get_cpu_arm(bin);
 	} else if (arch_is_h8xx(bin)) {
@@ -2364,6 +2399,20 @@ bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin) {
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin) {
 	rz_return_val_if_fail(bin, false);
 	return bin->ehdr.e_type == ET_REL;
+}
+
+/**
+ * \brief How many bytes one unit of the object's address fields covers.
+ *
+ * C2000 objects mix units: sh_addr, p_vaddr, st_value and r_offset count 16-bit
+ * words, while sh_size and p_memsz count bytes. Rizin addresses bytes, so only
+ * the word-counting fields are scaled, as rz_coff_addr_scale() does for COFF.
+ *
+ * \return 2 for EM_TI_C2000, otherwise 1
+ */
+RZ_IPI ut32 Elf_(rz_bin_elf_addr_scale)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_val_if_fail(bin, 1);
+	return bin->ehdr.e_machine == EM_TI_C2000 ? 2 : 1;
 }
 
 /**

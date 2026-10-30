@@ -1,0 +1,194 @@
+NAME=c2x analysis: register profile (PC alias resolves)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+arp~^=PC
+EOF
+EXPECT=<<EOF
+=PC	pc
+EOF
+RUN
+
+NAME=c2x analysis: register profile (accumulator present)
+FILE==
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+arp~acc
+EOF
+EXPECT=<<EOF
+=R0	acc
+ctr acc  .32 0  0
+gpr accl .16 0  0
+gpr acch .16 2  0
+EOF
+RUN
+
+NAME=c2x analysis: opcode classification (batched)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+wx 5500
+ao 1 @ 0~^type
+ao 1 @ 0~^size
+wx 0409
+ao 1 @ 0~^type
+wx ca05
+ao 1 @ 0~^type
+wx ff800040
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx f6800060
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+ao 1 @ 0~^fail
+wx fe800050
+ao 1 @ 0~^type
+ao 1 @ 0~^jump
+wx ce26
+ao 1 @ 0~^type
+wx ce25
+ao 1 @ 0~^type
+EOF
+EXPECT=<<EOF
+type: nop
+size: 2
+type: add
+type: mov
+type: jmp
+jump: 0x00000080
+type: cjmp
+jump: 0x000000c0
+fail: 0x00000004
+type: call
+jump: 0x000000a0
+type: ret
+type: ujmp
+EOF
+RUN
+
+NAME=c2x analysis: RzIL lift of accumulator immediates
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+wx ca00
+ao 1 @ 0~^rzil
+wx cc02
+ao 1 @ 0~^rzil
+EOF
+EXPECT=<<EOF
+rzil: (set acc (bv 32 0x0))
+rzil: (seq (set oa (var acc)) (set av (bv 32 0x2)) (set na (+ (var oa) (var av))) (set ovn (msb (& (^ (var na) (var av)) (^ (var oa) (var na))))) (set acc (ite (&& (var ovm) (var ovn)) (ite (&& (sle (var oa) (bv 32 0x0)) (! (== (var oa) (bv 32 0x0)))) (bv 32 0x80000000) (bv 32 0x7fffffff)) (var na))) (set c (&& (ule (var na) (var oa)) (! (== (var na) (var oa))))) (set ov (|| (var ov) (var ovn))))
+EOF
+RUN
+
+# Original TI COFF: the target id is the file magic. COFF2 below carries it in
+# a separate field, so the loader reaches the two by different paths.
+
+NAME=c2x bin: open original TI COFF (target id as file magic)
+FILE=bins/tms320/c2x/hello_c2x.ticoff0.coff
+CMDS=<<EOF
+i~^arch
+i~^cpu
+i~^bits
+i~^machine
+iS~[6]
+is~[6]
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c2x
+bits     16
+machine  TMS320C1x/C2x/C5x
+name
+.text
+lib
+add
+main
+EOF
+RUN
+
+NAME=c2x bin: open TI COFF (target_id 0x0092 autodetects cpu c2x)
+FILE=bins/tms320/c2x/hello_c2x.ticoff2.coff
+CMDS=<<EOF
+i~^arch
+i~^cpu
+i~^bits
+i~^machine
+EOF
+EXPECT=<<EOF
+arch     tms320
+cpu      c2x
+bits     16
+machine  TMS320C1x/C2x/C5x
+EOF
+RUN
+
+NAME=c2x analysis: register argument detection (ar0/ar1 via calling convention)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=16
+e analysis.cpu=c2x
+wx 7010711120100011ce26
+af
+afc
+afvl
+EOF
+EXPECT=<<EOF
+c2x
+arg int16_t arg1 @ ar0
+arg int16_t arg2 @ ar1
+EOF
+RUN
+
+NAME=c2x analysis: op fields filled (direct data pointer, access direction, register source)
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.bits=16
+e analysis.cpu=c2x
+wx 2010
+ao 1 @ 0~^direction
+ao 1 @ 0~^ptr
+wx 6010
+ao 1 @ 0~^type
+ao 1 @ 0~^direction
+ao 1 @ 0~^ptr
+wx 7010
+ao 1 @ 0~^type
+ao 1 @ 0~^reg
+ao 1 @ 0~^direction
+EOF
+EXPECT=<<EOF
+direction: read
+ptr: 0x00000010
+type: store
+direction: write
+ptr: 0x00000010
+type: store
+reg: ar0
+direction: write
+EOF
+RUN
+
+# Whole-image recovery: emulateme.bin is the RzIL exerciser, whose "dbl"
+# subroutine sits at word 0x4e.
+
+NAME=c2x analysis: emulateme function recovery
+FILE=bins/tms320/c2x_legacy/emulateme.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+aaa
+afl~[0,2]
+axt @ 0x9c
+EOF
+EXPECT=<<EOF
+0x00000000 156
+0x0000009c 8
+fcn.00000000 0x80 [CALL] call 0x4e
+EOF
+RUN

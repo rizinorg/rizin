@@ -62,6 +62,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+          sudo apt update
           sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libarchive-dev
           sudo python3 -m pip install ninja
 
@@ -96,7 +97,7 @@ jobs:
 
     - name: Install test dependencies
       run: |
-          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' requests
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python' psutil requests
           sudo apt-get update
           sudo apt-get --assume-yes install libc6 libc6-i386 debuginfod gdbserver
 
