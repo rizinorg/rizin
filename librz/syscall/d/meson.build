@@ -24,6 +24,7 @@ sdb_files = [
 
 foreach file : sdb_files
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
+ if py3_exe.found()
   pre_sdb_txt = custom_target(tmp_outfile,
     input: '@0@.sdb.txt'.format(file),
     output: tmp_outfile,
@@ -31,6 +32,9 @@ foreach file : sdb_files
     build_by_default: true,
     install: false
   )
+ else
+  pre_sdb_txt = files('@0@.sdb.txt'.format(file))
+endif  
 
   outfile = '@0@.sdb'.format(file)
   custom_target(outfile,
