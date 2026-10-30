@@ -326,8 +326,7 @@ EXPECT=<<EOF
             ;-- _main:
             ;-- func.100002878:
             ;-- pc:
-/ entry0(int64_t arg1);
-|           ; arg int64_t arg1 @ x0
+/ entry0(int64_t arg1 @ x0);
 |           ; var int64_t var_70h @ stack - 0x70
 |           ; var int64_t var_68h @ stack - 0x68
 |           ; var int64_t var_60h @ stack - 0x60
@@ -440,8 +439,7 @@ EXPECT=<<EOF
             ;-- _main:
             ;-- func.10000282c:
             ;-- pc:
-/ entry0(int64_t arg1);
-|           ; arg int64_t arg1 @ x0
+/ entry0(int64_t arg1 @ x0);
 |           ; var int64_t var_58h @ stack - 0x58
 |           ; var int64_t var_50h @ stack - 0x50
 |           ; var int64_t var_48h @ stack - 0x48
@@ -563,8 +561,7 @@ EXPECT=<<EOF
             ;-- _main:
             ;-- func.100002ea0:
             ;-- pc:
-/ entry0(int64_t arg1);
-|           ; arg int64_t arg1 @ x0
+/ entry0(int64_t arg1 @ x0);
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var int64_t var_24h @ stack - 0x24
 |           ; var struct C *var_20h @ stack - 0x20
@@ -678,8 +675,7 @@ EXPECT=<<EOF
             ;-- _main:
             ;-- func.100002c70:
             ;-- pc:
-/ entry0(int64_t arg1);
-|           ; arg int64_t arg1 @ x0
+/ entry0(int64_t arg1 @ x0);
 |           ; var int64_t var_40h @ stack - 0x40
 |           ; var int64_t var_38h @ stack - 0x38
 |           ; var struct Dog *var_20h @ stack - 0x20
@@ -738,9 +734,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- _main:
             ;-- func.1000018c0:
-/ entry0(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
+/ entry0(int64_t arg1 @ rdi, int64_t arg2 @ rsi);
 |           ; var int var_a8h @ stack - 0xa8
 |           ; var int var_a4h @ stack - 0xa4
 |           ; var int var_a0h @ stack - 0xa0
@@ -897,9 +891,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- _main:
             ;-- func.100007714:
-/ entry0(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ x0
-|           ; arg int64_t arg2 @ x1
+/ entry0(int64_t arg1 @ x0, int64_t arg2 @ x1);
 |           ; var int64_t var_80h @ stack - 0x80
 |           ; var int64_t var_68h @ stack - 0x68
 |           ; var int64_t var_60h @ stack - 0x60
@@ -1067,9 +1059,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- _main:
             ;-- func.100007760:
-/ entry0(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ x0
-|           ; arg int64_t arg2 @ x1
+/ entry0(int64_t arg1 @ x0, int64_t arg2 @ x1);
 |           ; var int64_t var_80h @ stack - 0x80
 |           ; var int64_t var_68h @ stack - 0x68
 |           ; var int64_t var_60h @ stack - 0x60
@@ -1233,9 +1223,7 @@ EOF
 EXPECT=<<EOF
             ;-- public int Dog::speak():
             ;-- func.100003e48:
-/ method.Dog.speak(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ x0
-|           ; arg int64_t arg2 @ x1
+/ method.Dog.speak(int64_t arg1 @ x0, int64_t arg2 @ x1);
 |           ; var int64_t var_10h @ stack - 0x10
 |           0x100003e48      sub   sp, sp, 0x30                        ; public int Dog::speak()
 |           0x100003e4c      stp   fp, lr, [var_10h]
@@ -1274,8 +1262,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from main @ 0x4d9bc
             ;-- rip:
-/ sym._Dmain(int64_t arg2);
-|           ; arg int64_t arg2 @ rsi
+/ sym._Dmain(int64_t arg2 @ rsi);
 |           ; var int64_t var_20h @ stack - 0x20
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
@@ -1328,8 +1315,7 @@ EXPECT=<<EOF
 \           0x0004d9b6      ret
             ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
             ;-- rip:
-/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1 @ rdi);
 |           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
 |           0x0004d8d9      mov   rbp, rsp
 |           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1
@@ -1339,8 +1325,7 @@ EXPECT=<<EOF
 |           0x0004d8ea      pop   rbp
 \           0x0004d8eb      ret
             ; CALL XREF from sym._Dmain @ 0x4d99c
-/ sym.void_class_dlang.printSides_class_dlang.Polygon(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ sym.void_class_dlang.printSides_class_dlang.Polygon(int64_t arg1 @ rdi);
 |           0x0004d8ec      push  rbp                                  ; void class_dlang.printSides(class_dlang.Polygon)
 |           0x0004d8ed      mov   rbp, rsp
 |           ;-- rip:
@@ -1365,7 +1350,7 @@ EXPECT=<<EOF
             ;-- ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet):
             ;-- dbg.ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet:
             ;-- rip:
-/ ulong ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)(struct pets.BasePet *base, struct pets.Pet *pet, struct pets.Runner *runner, struct pets.Speaker *speaker)
+/ ulong ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)(struct pets.BasePet *base @ stack + 0x344, struct pets.Pet *pet @ stack + 0x344, struct pets.Runner *runner @ stack + 0x344, struct pets.Speaker *speaker @ stack + 0x344)
 |           ; var int64_t arg1 @ rdi
 |           ; var int64_t arg2 @ rsi
 |           ; var int64_t arg3 @ rdx
@@ -1375,10 +1360,6 @@ EXPECT=<<EOF
 |           ; var int64_t var_20h @ stack - 0x20
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
-|           ; arg struct pets.BasePet *base @ stack + 0x344
-|           ; arg struct pets.Pet *pet @ stack + 0x344
-|           ; arg struct pets.Runner *runner @ stack + 0x344
-|           ; arg struct pets.Speaker *speaker @ stack + 0x344
 |           ; var ulong result @ rbx
 |           0x00400c2c      push  rbp                                  ; pets.d:67 ; ulong pets.dispatch(pets.Speaker, pets.Runner, pets.Pet, pets.BasePet)
 |           0x00400c2d      mov   rbp, rsp
@@ -1423,11 +1404,7 @@ EOF
 EXPECT=<<EOF
             ; CODE XREF from sym.dlang_pet_Og.exe_ulong_pets.dispatch_pets.Speaker__pets.Runner__pets.Pet__pets.BasePet @ 0x1400056f5
             ;-- rip:
-/ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
-|           ; arg int64_t arg1 @ rcx
-|           ; arg int64_t arg2 @ rdx
-|           ; arg int64_t arg3 @ r8
-|           ; arg int64_t arg4 @ r9
+/ pdb.dlang_pet._D4pets8dispatchFCQq7SpeakerCQBb6RunnerCQBm3PetCQBu7BasePetZm(int64_t arg1 @ rcx, int64_t arg2 @ rdx, int64_t arg3 @ r8, int64_t arg4 @ r9);
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack + 0x8
@@ -1476,8 +1453,7 @@ EOF
 EXPECT=<<EOF
             ;-- func.100001eb0:
             ;-- rip:
-/ sym.nothrow__trusted_ulong_std.bitmanip.FloatRep.__xtoHash_ref_const_std.bitmanip.FloatRep(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ sym.nothrow__trusted_ulong_std.bitmanip.FloatRep.__xtoHash_ref_const_std.bitmanip.FloatRep(int64_t arg1 @ rdi);
 |           0x100001eb0      push  r14                                 ; nothrow @trusted ulong std.bitmanip.FloatRep.__xtoHash(ref const(std.bitmanip.FloatRep))
 |           0x100001eb2      push  rbx
 |           0x100001eb3      push  rax
@@ -1512,8 +1488,7 @@ class_dlang_Polygon:
      0 vtable 0xa40e0 @ +0x0 size:+0x40
             ; CALL XREFS from sym._Dmain @ 0x4d993, 0x4d9a5, 0x4d9ae
             ;-- rip:
-/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ sym.void_class_dlang.printArea_class_dlang.Polygon(int64_t arg1 @ rdi);
 |           0x0004d8d8      push  rbp                                  ; void class_dlang.printArea(class_dlang.Polygon)
 |           0x0004d8d9      mov   rbp, rsp
 |           0x0004d8dc      mov   rax, qword [rdi]                     ; arg1

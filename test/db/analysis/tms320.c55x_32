@@ -793,8 +793,7 @@ pdf @ sym._uart_write_hex
 EOF
 EXPECT=<<EOF
             ;-- _uart_write_hex:
-/ void uart_write_hex(nstd_uint8_t value)
-|           ; arg nstd_uint8_t value @ ar4
+/ void uart_write_hex(nstd_uint8_t value @ ar4)
 |           ; var nstd_uint8_t low @ cdp
 |           ; var nstd_uint8_t high @ bk47
 |           ; var nstd_uint8_t value @ ac0
@@ -842,8 +841,7 @@ EXPECT=<<EOF
             ;-- .text:
             ;-- ___text__:
             ;-- _uart_write_text:
-/ void uart_write_text(nstd_size_t len)
-|           ; arg nstd_size_t len @ ac0
+/ void uart_write_text(nstd_size_t len @ ac0)
 |           ; var nstd_size_t i @ ac3
 |           0x00000100      mov   0x0, ac1                             ; [01] -r-x section size 730 named .text
 |           0x00000102      cmpu  ac1 >= ac0, tc1

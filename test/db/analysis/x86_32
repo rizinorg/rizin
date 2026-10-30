@@ -176,15 +176,11 @@ NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
 CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
-/ sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
-| ; arg int32_t arg1 @ ecx
-| ; arg int32_t arg2 @ edx
+/ sym.fastcaslled(int32_t arg1 @ ecx, int32_t arg2 @ edx, int32_t arg_4h @ stack + 0x4, int32_t arg_8h @ stack + 0x8);
 | ; var int32_t var_24h @ stack - 0x24
 | ; var int32_t var_20h @ stack - 0x20
 | ; var int32_t var_14h @ stack - 0x14
 | ; var int32_t var_10h @ stack - 0x10
-| ; arg int32_t arg_4h @ stack + 0x4
-| ; arg int32_t arg_8h @ stack + 0x8
 | 0x08048421      894de4         mov   dword [var_20h], ecx            ; arg1
 | 0x08048424      8955e0         mov   dword [var_24h], edx            ; arg2
 | 0x08048427      8b55e4         mov   edx, dword [var_20h]
@@ -3756,12 +3752,9 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+┌ fcn.00000000(int32_t arg_4h @ stack + 0x4, int32_t arg_1ch @ stack + 0x1c, int32_t arg_2ch @ stack + 0x2c);
 │           ; var int32_t var_30h @ stack - 0x30
 │           ; var int32_t var_20h @ stack - 0x20
-│           ; arg int32_t arg_4h @ stack + 0x4
-│           ; arg int32_t arg_1ch @ stack + 0x1c
-│           ; arg int32_t arg_2ch @ stack + 0x2c
 │           0x00000000      xor   eax, eax
 │           0x00000002      cmp   esi, edx
 │       ┌─< 0x00000004      jb    0x50
@@ -3819,12 +3812,9 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
+/ fcn.00000000(int32_t arg_4h @ stack + 0x4, int32_t arg_1ch @ stack + 0x1c, int32_t arg_2ch @ stack + 0x2c);
 |           ; var int32_t var_30h @ stack - 0x30
 |           ; var int32_t var_20h @ stack - 0x20
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_1ch @ stack + 0x1c
-|           ; arg int32_t arg_2ch @ stack + 0x2c
 |           0x00000000      xor   eax, eax
 |           0x00000002      cmp   esi, edx
 |       ,=< 0x00000004      jb    0x50
@@ -3898,16 +3888,10 @@ afva
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
+/ fcn.00000000(int32_t arg_4h @ stack + 0x4, int32_t arg_8h @ stack + 0x8, int32_t arg_ch @ stack + 0xc, int32_t arg_10h @ stack + 0x10, int32_t arg_18h @ stack + 0x18, int32_t arg_1ch @ stack + 0x1c);
 |           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
-|           ; arg int32_t arg_ch @ stack + 0xc
-|           ; arg int32_t arg_10h @ stack + 0x10
-|           ; arg int32_t arg_18h @ stack + 0x18
-|           ; arg int32_t arg_1ch @ stack + 0x1c
 |           0x00000000      83ec10         sub   esp, 0x10
 |           0x00000003      8b442418       mov   eax, dword [arg_8h]
 |           0x00000007      99             cdq

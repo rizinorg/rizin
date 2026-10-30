@@ -464,8 +464,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ; CALL XREF from sym.__libc_start_main @ 0x5e98
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ R0
+/ int main(int argc @ R0, char **argv, char **envp);
 |           0x00005110      [   allocframe(SP,#0x8):raw
 EOF
 RUN
@@ -478,21 +477,20 @@ s main
 agf
 EOF
 EXPECT=<<EOF
-          .---------------------------------------------------.
-          |  0x5110                                           |
-          |   ; CALL XREF from sym.__libc_start_main @ 0x5e98 |
-          | int main(int argc, char **argv, char **envp);     |
-          | ; arg int argc @ R0                               |
-          | [   allocframe(SP,#0x8):raw                       |
-          | [   R2 = add(FP,##-0x4)                           |
-          | [   memw(R2+#0x0) = ##0x0                         |
-          | [   R2 = add(FP,##-0x8)                           |
-          | [   memw(R2+#0x0) = ##0x0                         |
-          | [   jump 0x5128                                   |
-          `---------------------------------------------------'
-              v
-              |
-              '------.
+         .----------------------------------------------------.
+         |  0x5110                                            |
+         |   ; CALL XREF from sym.__libc_start_main @ 0x5e98  |
+         | int main(int argc @ R0, char **argv, char **envp); |
+         | [   allocframe(SP,#0x8):raw                        |
+         | [   R2 = add(FP,##-0x4)                            |
+         | [   memw(R2+#0x0) = ##0x0                          |
+         | [   R2 = add(FP,##-0x8)                            |
+         | [   memw(R2+#0x0) = ##0x0                          |
+         | [   jump 0x5128                                    |
+         `----------------------------------------------------'
+             v
+             |
+             '-------.
 .----------------------.
 |                    | |
 |              .-----------------------------------------.

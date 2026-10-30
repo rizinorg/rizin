@@ -104,6 +104,12 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
 }
 
+static bool storage_is_loclist(RZ_NULLABLE const RzAnalysisVar *var) {
+	return var && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF &&
+		var->origin.dw_var && var->origin.dw_var->location &&
+		var->origin.dw_var->location->kind == RzBinDwarfLocationKind_LOCLIST;
+}
+
 RZ_API void rz_analysis_var_storage_dump(
 	RZ_NONNULL RZ_BORROW RzAnalysis *a,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzStrBuf *sb,
@@ -126,9 +132,7 @@ RZ_API void rz_analysis_var_storage_dump(
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING:
 		/// Omit storage information
-		if (var && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF &&
-			var->origin.dw_var && var->origin.dw_var->location &&
-			var->origin.dw_var->location->kind == RzBinDwarfLocationKind_LOCLIST) {
+		if (storage_is_loclist(var)) {
 			rz_strbuf_append(sb, "LOCLIST");
 		} else {
 			rz_strbuf_append(sb, "...");
@@ -1766,13 +1770,65 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache) {
 	rz_list_free(cache->arg_vars);
 }
 
-static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, char *fcn_name, const char *fcn_name_pre, const char *fcn_name_post) {
+/**
+ * \brief Returns the argument of \p fcn that a signature shows as \p type \p name, if any
+ */
+static RzAnalysisVar *sig_arg_var(RzAnalysisFunction *fcn, const char *name, const RzType *type) {
+	if (!name || !type) {
+		return NULL;
+	}
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
+	// A variable of another type is not the argument the signature describes
+	return var && var->type && rz_analysis_var_is_arg(var) && rz_types_equal(var->type, type) ? var : NULL;
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	RzAnalysisFunction *fcn;
+	RzPVector /*<RzAnalysisVar *>*/ *shown;
+} SigStorageCtx;
+
+static void sig_append_storage(SigStorageCtx *ctx, RzStrBuf *sb, const char *name, const RzType *type) {
+	RzAnalysisVar *var = sig_arg_var(ctx->fcn, name, type);
+	if (!var || rz_pvector_contains(ctx->shown, var)) {
+		return;
+	}
+	// "..." reads as variadic arguments in a signature, and says nothing anyway
+	if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING || storage_is_loclist(var)) {
+		rz_strbuf_append(sb, " @ ");
+		rz_analysis_var_storage_dump(ctx->analysis, sb, var, &var->storage);
+	}
+	rz_pvector_push(ctx->shown, var);
+}
+
+static void sig_callable_arg_storage(RzStrBuf *sb, const RzCallableArg *arg, void *user) {
+	// A function pointer is printed with the name of its callable, so the argument would lose its name
+	if (arg->type && rz_type_is_callable_ptr_nested(arg->type)) {
+		return;
+	}
+	sig_append_storage(user, sb, arg->name, arg->type);
+}
+
+/**
+ * \brief Returns \p callable as C, with the storage of the arguments of \p fcn after the ones it describes
+ *
+ * \param shown Gets the arguments of \p fcn whose storage was printed
+ */
+static char *callable_with_storage(RzAnalysis *analysis, RzAnalysisFunction *fcn, const RzCallable *callable, RzPVector /*<RzAnalysisVar *>*/ *shown) {
+	SigStorageCtx ctx = { analysis, fcn, shown };
+	return rz_type_callable_as_string_with_suffix(analysis->typedb, callable, sig_callable_arg_storage, &ctx);
+}
+
+static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, char *fcn_name, SigStorageCtx *ctx) {
 	if (!fcn->has_debuginfo || !rz_str_startswith(fcn_name, "dbg."))
 		return NULL;
 
 	RzCallable *callable = rz_type_func_get(analysis->typedb, fcn_name + 4);
 	if (!callable) {
 		return NULL;
+	}
+	if (ctx->shown) {
+		return callable_with_storage(analysis, fcn, callable, ctx->shown);
 	}
 	return rz_type_callable_as_string(analysis->typedb, callable);
 }
@@ -1786,16 +1842,21 @@ static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunct
  * \param reuse_cache The function variable cache to speed up the process
  * \param fcn_name_pre The prefix to use to highlight the function name
  * \param fcn_name_post The suffix to use to highlight the function name
+ * \param shown_args If not NULL, every argument of the signature that describes an argument
+ * variable of \p fcn (same name and type) is followed by its storage, as in `int argc @ rdi`,
+ * and that variable is appended to \p shown_args
  * \return {return}
  */
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
-	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post) {
+	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post,
+	RZ_NULLABLE RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown_args) {
 	fcn_name = !fcn_name ? fcn->name : fcn_name;
 	if (!fcn_name) {
 		return NULL;
 	}
 
-	char *sig = sig_from_debuginfo(analysis, fcn, fcn_name, fcn_name_pre, fcn_name_post);
+	SigStorageCtx ctx = { analysis, fcn, shown_args };
+	char *sig = sig_from_debuginfo(analysis, fcn, fcn_name, &ctx);
 	if (RZ_STR_ISNOTEMPTY(sig)) {
 		return sig;
 	}
@@ -1852,7 +1913,11 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				comma = false;
 			}
 			const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-			rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
+			rz_strbuf_appendf(buf, "%s%s%s", type_str, sp, name);
+			if (shown_args) {
+				sig_append_storage(&ctx, buf, name, type);
+			}
+			rz_strbuf_append(buf, comma ? ", " : "");
 			free(type_str);
 		}
 		goto beach;
@@ -1864,9 +1929,13 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	rz_list_foreach (cache->arg_vars, iter, var) {
 		char *vartype = rz_type_as_string(analysis->typedb, var->type);
 		size_t tmp_len = strlen(vartype);
-		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
+		rz_strbuf_appendf(buf, "%s%s%s", vartype,
 			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-			var->name, rz_list_has_next(iter) ? ", " : "");
+			var->name);
+		if (shown_args) {
+			sig_append_storage(&ctx, buf, var->name, var->type);
+		}
+		rz_strbuf_append(buf, rz_list_has_next(iter) ? ", " : "");
 		free(vartype);
 	}
 

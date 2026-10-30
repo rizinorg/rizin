@@ -1720,7 +1720,8 @@ RZ_API RZ_OWN RzAnalysisFcnVarsCache *rz_analysis_fcn_vars_cache_from_fcn(
 RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache);
 
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
-	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post);
+	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post,
+	RZ_NULLABLE RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown_args);
 
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 

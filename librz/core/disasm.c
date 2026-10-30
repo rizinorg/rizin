@@ -206,6 +206,7 @@ typedef struct {
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
+	bool show_fcnsig_storage;
 	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
@@ -613,6 +614,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
+	ds->show_fcnsig_storage = rz_config_get_b(core->config, "asm.fcn.signature.storage");
 	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
@@ -1985,13 +1987,37 @@ static void ds_show_fn_var_line(
 	ds_newline(ds);
 }
 
+/**
+ * \brief Whether the line of \p var shows more than a signature, which has only its type, name and storage
+ */
+static bool var_line_adds_info(RzAnalysisVar *var) {
+	if (var->comment) {
+		return true;
+	}
+	char *constr = rz_analysis_var_get_constraints_readable(var);
+	bool has_constr = constr;
+	free(constr);
+	return has_constr;
+}
+
 static void ds_show_fn_vars_lines(
 	RzDisasmState *ds,
 	RzAnalysisFunction *f,
-	RzAnalysisFcnVarsCache *vars_cache) {
+	RzAnalysisFcnVarsCache *vars_cache,
+	RzPVector /*<RzAnalysisVar *>*/ *sig_vars) {
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+	RzList *vars = vars_cache->sorted_vars;
+	RzList *line_vars = rz_pvector_empty(sig_vars) ? NULL : rz_list_new();
+	if (line_vars) {
+		rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+			if (!rz_pvector_contains(sig_vars, var) || var_line_adds_info(var)) {
+				rz_list_append(line_vars, var);
+			}
+		}
+		vars = line_vars;
+	}
+	rz_list_foreach (vars, iter, var) {
 		// fold same-typed variables
 		ut32 iter_mov = fold_variables(ds->core, ds, iter);
 		if (iter_mov > 0) {
@@ -2004,6 +2030,7 @@ static void ds_show_fn_vars_lines(
 		}
 		ds_show_fn_var_line(ds, f, var);
 	}
+	rz_list_free(line_vars);
 }
 
 static void ds_show_functions(RzDisasmState *ds) {
@@ -2089,8 +2116,14 @@ static void ds_show_functions(RzDisasmState *ds) {
 		}
 	}
 
-	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, fname), COLOR_RESET(ds));
-	if (sig && fcnsig) {
+	// The storage goes in the signature only when it replaces the lines of the arguments
+	bool sig_storage = ds->show_fcnsig_storage && ds->show_vars && !ds->show_varsum;
+	RzPVector sig_vars;
+	rz_pvector_init(&sig_vars, NULL);
+	char *sig = fcnsig ? rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache,
+				     COLOR(ds, fname), COLOR_RESET(ds), sig_storage ? &sig_vars : NULL)
+			   : NULL;
+	if (sig) {
 		rz_cons_print(ds->core->cons, sig);
 		RZ_FREE(sig);
 	} else {
@@ -2106,9 +2139,10 @@ static void ds_show_functions(RzDisasmState *ds) {
 		if (ds->show_varsum && ds->show_varsum != -1) { // show_varsum = 1 and 2
 			printVarSummary(ds, vars_cache.sorted_vars);
 		} else {
-			ds_show_fn_vars_lines(ds, f, &vars_cache);
+			ds_show_fn_vars_lines(ds, f, &vars_cache, &sig_vars);
 		}
 	}
+	rz_pvector_fini(&sig_vars);
 	ds->show_varsum = o_varsum;
 	rz_analysis_fcn_vars_cache_fini(&vars_cache);
 	if (fcn_name_alloc) {
