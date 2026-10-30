@@ -53,3 +53,6 @@ ad "getfield r2 r0 0" 0e010000
 ad "sub r2 r2 r1" 23010201
 ad "mmbin r2 r1 7" 2e010107
 ad "setfield r0 0 r2" 12000002
+ad "getvarg r0 r1 r2" 51000102
+ad "errnnil r0 1" 52800000
+

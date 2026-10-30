@@ -83,6 +83,7 @@ ut32 get_instruction55(const ut8 opcode, const char *arg_start) {
 	case OP_BORK:
 	case OP_BXORK:
 	case OP_GETFIELD:
+	case OP_GETVARG:
 	// iABC k instruction
 	case OP_TAILCALL:
 	case OP_RETURN:
@@ -161,6 +162,7 @@ ut32 get_instruction55(const ut8 opcode, const char *arg_start) {
 	case OP_TFORLOOP:
 	case OP_TFORPREP:
 	case OP_CLOSURE:
+	case OP_ERRNNIL:
 		instruction = encode_instruction(opcode, arg_start, PARAM_A | PARAM_Bx);
 		break;
 	// A sBx
