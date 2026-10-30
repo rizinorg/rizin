@@ -982,7 +982,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		analyze_retpoline(analysis, &op);
 
 		// Resolve a register jump when its target was just loaded.
-		if (op.type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea && op.reg && last_reg_mov_lea_name && !strcmp(op.reg, last_reg_mov_lea_name)) {
+		if (op.type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea && op.reg && last_reg_mov_lea_name && RZ_STR_EQ(op.reg, last_reg_mov_lea_name)) {
 			op.type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op.jump = last_reg_mov_lea_val;
 		}
