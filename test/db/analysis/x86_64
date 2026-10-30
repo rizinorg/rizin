@@ -4584,3 +4584,79 @@ EXPECT=<<EOF
 0x00200562 data Cd 58
 EOF
 RUN
+
+NAME=x86-64 resolve register jumps loaded by mov/lea
+FILE=malloc://256
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d0502000000ffe0c3 @ 0x00
+wx 48b82c00000000000000ffe0c3 @ 0x20
+wx 488d05050000004889d8ffe0c3 @ 0x40
+wx 488d0502000000ffe1c3 @ 0x60
+wx 488d05060000004883c008ffe0c3 @ 0x80
+echo "=== lea, then jmp through the same register: resolved ==="
+pi 3 @ 0x00
+af @ 0x00
+afb @ 0x00
+axt @ 0x09
+echo "=== mov, then jmp through the same register: resolved ==="
+pi 3 @ 0x20
+af @ 0x20
+afb @ 0x20
+axt @ 0x2c
+echo "=== lea, register overwritten, then jmp: not resolved ==="
+pi 4 @ 0x40
+af @ 0x40
+afb @ 0x40
+axt @ 0x4c
+echo "=== lea, then jmp through a different register: not resolved ==="
+pi 3 @ 0x60
+af @ 0x60
+afb @ 0x60
+axt @ 0x69
+echo "=== lea, register changed by add, then jmp: not resolved ==="
+pi 4 @ 0x80
+af @ 0x80
+afb @ 0x80
+axt @ 0x8d
+EOF
+EXPECT=<<EOF
+=== lea, then jmp through the same register: resolved ===
+lea rax, qword [0x00000009]
+jmp rax
+ret
+0x00000000 0x00000009 00:0000 9 j 0x00000009
+0x00000009 0x0000000a 00:0000 1
+fcn.00000000 0x0 [DATA] lea rax, qword [0x00000009]
+fcn.00000000 0x7 [CODE] jmp rax
+=== mov, then jmp through the same register: resolved ===
+mov rax, 0x2c
+jmp rax
+ret
+0x00000020 0x0000002c 00:0000 12 j 0x0000002c
+0x0000002c 0x0000002d 00:0000 1
+fcn.00000020 0x20 [DATA] mov rax, 0x2c
+fcn.00000020 0x2a [CODE] jmp rax
+=== lea, register overwritten, then jmp: not resolved ===
+lea rax, qword [0x0000004c]
+mov rax, rbx
+jmp rax
+ret
+0x00000040 0x0000004c 00:0000 12
+fcn.00000040 0x40 [DATA] lea rax, qword [0x0000004c]
+=== lea, then jmp through a different register: not resolved ===
+lea rax, qword [0x00000069]
+jmp rcx
+ret
+0x00000060 0x00000069 00:0000 9
+fcn.00000060 0x60 [DATA] lea rax, qword [0x00000069]
+=== lea, register changed by add, then jmp: not resolved ===
+lea rax, qword [0x0000008d]
+add rax, 0x08
+jmp rax
+ret
+0x00000080 0x0000008d 00:0000 13
+fcn.00000080 0x80 [DATA] lea rax, qword [0x0000008d]
+EOF
+RUN
