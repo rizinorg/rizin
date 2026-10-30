@@ -504,7 +504,7 @@ static const char *retpoline_reg(RzAnalysis *analysis, ut64 addr) {
 }
 
 static void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
-	if (analysis->opt.retpoline) {
+	if (analysis->opt.retpoline && (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_JMP) {
 		const char *rr = retpoline_reg(analysis, op->jump);
 		if (rr) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
