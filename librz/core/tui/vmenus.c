@@ -327,26 +327,27 @@ static const char *help_var_visual[] = {
 	NULL
 };
 
+/* rz_core_visual_append_help consumes command, arguments, description triples. */
 static const char *help_vv_visual[] = {
-	"j,k", "select next/prev item or scroll if tab pressed",
-	"J,K", "scroll next/prev page \"\"",
-	"f,F", "set/reset filter keyword",
-	"h,q", "go back, quit",
-	"p,P", "switch next/prev print mode",
-	"v", "view selected function arguments and variables",
-	"x,X", "see xrefs to the selected function",
-	"tab", "toggle disasm column selection (to scroll in code)",
-	"!", "run 'afls' to sort all functions by address",
-	".", "seek to current function address",
-	":", "run rizin commands",
-	"_", "hud mode. same as: s $(afl~...)",
-	"enter", "enter function view (variables), xrefs",
+	"j,k", "", "select next/prev item or scroll if tab pressed",
+	"J,K", "", "scroll next/prev page \"\"",
+	"f,F", "", "set/reset filter keyword",
+	"h,q", "", "go back, quit",
+	"p,P", "", "switch next/prev print mode",
+	"v", "", "view selected function arguments and variables",
+	"x,X", "", "see xrefs to the selected function",
+	"tab", "", "toggle disasm column selection (to scroll in code)",
+	"!", "", "run 'afls' to sort all functions by address",
+	".", "", "seek to current function address",
+	":", "", "run rizin commands",
+	"_", "", "hud mode. same as: s $(afl~...)",
+	"enter", "", "enter function view (variables), xrefs",
 	NULL
 };
 
 static const char *help_vv_actions_visual[] = {
-	" functions:", "Add, Modify, Delete, Xrefs Calls Vars",
-	" variables:", "Add, Modify, Delete",
+	" functions:", "", "Add, Modify, Delete, Xrefs Calls Vars",
+	" variables:", "", "Add, Modify, Delete",
 	NULL
 };
 

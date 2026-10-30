@@ -5,7 +5,7 @@
 #include <rz_util.h>
 
 #if __WINDOWS__
-#include <WinInet.h>
+#include <wininet.h>
 #endif
 
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000

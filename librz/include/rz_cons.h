@@ -547,7 +547,15 @@ typedef enum {
 	WHEEL_DOWN,
 } MouseEvent;
 
+typedef struct rz_cons_backend_t {
+	int (*read)(void *user, struct rz_cons_t *cons, ut32 timeout_ms);
+	void (*write)(void *user, const char *buf, size_t length);
+	bool (*get_size)(void *user, int *columns, int *rows);
+} RzConsBackend;
+
 typedef struct rz_cons_t {
+	RzConsBackend backend;
+	void *backend_user;
 	RzConsContext *context;
 	RzConsContext default_context;
 	RzConsInputContext *input;
@@ -936,6 +944,7 @@ RZ_API char *rz_cons_lastline_utf8_ansi_len(RZ_NONNULL RZ_BORROW RzCons *cons, i
 RZ_API void rz_cons_set_click(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y, MouseEvent event);
 RZ_API bool rz_cons_get_click(RZ_NONNULL RZ_BORROW RzCons *cons, int *x, int *y);
 
+RZ_API bool rz_cons_set_backend(RZ_NONNULL RzCons *cons, RZ_NULLABLE const RzConsBackend *backend, RZ_NULLABLE void *user);
 RZ_API bool rz_cons_is_interactive(RZ_NONNULL RZ_BORROW RzCons *cons);
 
 RZ_API void rz_cons_push(RZ_NONNULL RZ_BORROW RzCons *cons);

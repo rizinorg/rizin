@@ -5,6 +5,7 @@
 #define RIZIN_RZTEST_H
 
 #include <rz_util.h>
+#include "../rz-test-ui/rz_test_ui.h"
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define RZ_TEST_OS "freebsd"
@@ -138,7 +139,8 @@ typedef enum rz_test_test_type_t {
 	RZ_TEST_TYPE_CMD,
 	RZ_TEST_TYPE_ASM,
 	RZ_TEST_TYPE_JSON,
-	RZ_TEST_TYPE_FUZZ
+	RZ_TEST_TYPE_FUZZ,
+	RZ_TEST_TYPE_UI
 } RzTestType;
 
 typedef struct rz_test_test_t {
@@ -149,6 +151,7 @@ typedef struct rz_test_test_t {
 		RzAsmTest *asm_test;
 		RzJsonTest *json_test;
 		RzFuzzTest *fuzz_test;
+		RzTestUi *ui_test;
 	};
 } RzTest;
 
@@ -180,13 +183,6 @@ typedef struct rz_test_asm_test_output_t {
 	char *il_err;
 } RzAsmTestOutput;
 
-typedef enum rz_test_test_result_t {
-	RZ_TEST_RESULT_OK,
-	RZ_TEST_RESULT_FAILED,
-	RZ_TEST_RESULT_BROKEN,
-	RZ_TEST_RESULT_FIXED
-} RzTestResult;
-
 typedef struct rz_test_test_result_info_t {
 	RzTest *test;
 	RzTestResult result;
@@ -195,6 +191,7 @@ typedef struct rz_test_test_result_info_t {
 	ut64 time_elapsed;
 	union {
 		RzSubprocessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
+		RzTestUiResult *ui_out;
 		RzAsmTestOutput *asm_out; // for test->type == RZ_TEST_TYPE_ASM
 	};
 } RzTestResultInfo;

@@ -1,0 +1,10 @@
+NAME=Escape cancels command input without consuming the next key
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+STEPS=<<STEPS_END
+KEYS V<ENTER>
+KEYS :this_is_not_a_command<ESC>
+KEY j
+EXPECT_LINE 0 [0x00000010
+QUIT
+STEPS_END

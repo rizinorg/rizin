@@ -148,6 +148,13 @@ bool xnu_step(RzDebug *dbg) {
 	return ret;
 }
 
+/**
+ * \brief Attach only after receiving the initial Mach SIGSTOP exception.
+ *
+ * A scheduling delay or an interrupted receive must not leave the attach stop
+ * queued for the first continue/step command. Register access is enabled only
+ * after this handshake has completed.
+ */
 int xnu_attach(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
 	RzXnuDebug *ctx = dbg->plugin_data;
@@ -161,6 +168,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
 		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d\n", pid);
+		return -1;
 	}
 
 	// First start listening to exceptions, which will also deliver signals to us
@@ -174,15 +182,22 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	if (r < 0) {
 		perror("ptrace(PT_ATTACHEXC)");
 		RZ_LOG_ERROR("Failed to attach to process\n");
+		xnu_restore_exception_ports(ctx, pid);
 		return -1;
 	}
 
 	// PT_ATTACHEXC will cause a SIGSTOP in the debuggee, so wait for it
 	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
-	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
+	RzDebugReasonType reas;
+	rz_interrupt_break_push(dbg->intr, NULL, NULL);
+	do {
+		reas = xnu_wait_for_exception(dbg, pid, 0, true);
+	} while (reas == RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED && !rz_interrupt_is_breaked(dbg->intr));
+	rz_interrupt_break_pop(dbg->intr);
 	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
 		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed\n");
-		xnu_stop(dbg, pid);
+		xnu_detach(dbg, pid);
+		return -1;
 	}
 
 	ctx->last_attached_pid = pid;
@@ -193,6 +208,7 @@ int xnu_detach(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, false);
 	RzXnuDebug *ctx = dbg->plugin_data;
 	// Not calling PT_DETACH results in a zombie
+	ctx->last_attached_pid = -1;
 	int r = rz_debug_ptrace(dbg, PT_DETACH, pid, 0, 0);
 	if (r < 0) {
 		perror("ptrace(PT_DETACH)");
@@ -294,6 +310,9 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
 	RzXnuDebug *ctx = dbg->plugin_data;
+	if (ctx->last_attached_pid != dbg->pid) {
+		return 0;
+	}
 	bool ret;
 	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
@@ -336,6 +355,11 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, 0);
 	RzXnuDebug *ctx = dbg->plugin_data;
+	// Selecting an IO descriptor can request registers before attach initializes
+	// the target's CPU type and suspends its threads.
+	if (ctx->last_attached_pid != dbg->pid) {
+		return 0;
+	}
 	xnu_thread_t *th = rz_xnu_get_thread(dbg, rz_xnu_get_cur_thread(dbg));
 	if (!th) {
 		return 0;
@@ -599,8 +623,8 @@ static void get_mach_header_sizes(size_t *mach_header_sz,
  */
 static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	int mib[CTL_MAXNAME];
-	size_t len = CTL_MAXNAME;
-	cpu_type_t cpu_type;
+	size_t len = RZ_ARRAY_SIZE(mib) - 1;
+	cpu_type_t cpu_type = 0;
 	size_t cpu_type_len = sizeof(cpu_type_t);
 
 	if (sysctlnametomib("sysctl.proc_cputype", mib, &len) == -1) {
@@ -612,8 +636,9 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 		perror("sysctl");
 		return 0;
 	}
-	if (cpu_type_len > 0)
+	if (cpu_type_len == sizeof(cpu_type)) {
 		return cpu_type;
+	}
 	return 0;
 }
 

@@ -1,0 +1,21 @@
+# From visual, `b` opens the browse menu and `1` enters the bit editor (vd1).
+NAME=bit editor opens from the browse menu
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEY b
+WAIT 250
+KEY 1
+WAIT 300
+EXPECT_LINE 0 chr:
+EXPECT_LINE 1 dec:
+EXPECT_LINE 2 hex:
+EXPECT_LINE 3 bit:
+EXPECT_LINE 10 offset: 0x00000000
+EXPECT_LINE 11 hex: 55
+QUIT
+STEPEOF

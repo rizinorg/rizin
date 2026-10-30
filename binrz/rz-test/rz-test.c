@@ -91,7 +91,7 @@ static int help(bool verbose) {
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
-		printf("Supported test types: @json @unit @fuzz @cmds\n"
+		printf("Supported test types: @json @unit @fuzz @cmds @ui\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
@@ -418,6 +418,8 @@ int rz_test_main(int argc, const char **argv) {
 						eprintf("Failed to load fuzz tests from \"%s\"\n", fuzz_dir);
 					}
 					continue;
+				} else if (!strcmp(arg, "ui")) {
+					arg = "tui";
 				} else if (!strcmp(arg, "json")) {
 					arg = "db/json";
 				} else if (!strcmp(arg, "dasm")) {
@@ -667,6 +669,10 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 		pj_s(pj, "json");
 		pj_ks(pj, "cmd", test->json_test->cmd);
 		break;
+	case RZ_TEST_TYPE_UI:
+		pj_s(pj, "ui");
+		pj_ks(pj, "name", test->ui_test->name);
+		break;
 	case RZ_TEST_TYPE_FUZZ:
 		pj_s(pj, "fuzz");
 		pj_ks(pj, "file", test->fuzz_test->file);
@@ -827,6 +833,14 @@ static void print_asm_exit_status(const char *mode, bool timeout, int ret, const
 }
 
 static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result) {
+	if (result->test->type == RZ_TEST_TYPE_UI) {
+		RzTestUiResult *ui = result->ui_out;
+		if (ui) {
+			printf("%s:%" PFMT64u ": %s\n%s\n", ui->test->path, ui->fail_line,
+				ui->fail_diag ? ui->fail_diag : "", ui->actual_screen ? ui->actual_screen : "");
+		}
+		return;
+	}
 	if (result->run_failed) {
 		printf(Color_RED "RUN FAILED (e.g. wrong rizin path)" Color_RESET "\n");
 		return;
@@ -902,6 +916,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		free(expect_hex);
 		break;
 	}
+	case RZ_TEST_TYPE_UI:
 	case RZ_TEST_TYPE_JSON:
 		break;
 	case RZ_TEST_TYPE_FUZZ:

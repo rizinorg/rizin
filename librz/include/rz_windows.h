@@ -69,6 +69,10 @@ typedef int socklen_t;
 #ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
 #define ENABLE_VIRTUAL_TERMINAL_INPUT 0
 #endif
+#if defined(__MINGW32__)
+#include <versionhelpers.h>
+#else
 #include <VersionHelpers.h>
+#endif
 #endif
 #endif

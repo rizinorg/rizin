@@ -1,0 +1,26 @@
+# Boundary/position checks for the panels layout. The default layout draws a
+# full-height Disassembly panel on the left and a stacked Functions/Symbols
+# column on the right, so the box borders sit at fixed columns: the left edge at
+# 0, the column divider at 80, and the right edge at the last column (119 here,
+# addressed as -1). EXPECT_VLINE/EXPECT_HLINE assert the borders are unbroken.
+NAME=panels layout boundaries
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=120
+ROWS=24
+STEPS=<<STEPEOF
+KEYS v<ENTER>
+WAIT 500
+EXPECT_AT 0 2 File
+EXPECT_AT 2 1 [X] Disassembly
+EXPECT_CELL 1 0 .
+EXPECT_CELL 1 80 .
+EXPECT_CELL 1 -1 .
+EXPECT_CELL 2 0 |
+EXPECT_CELL 2 80 |
+EXPECT_CELL 2 -1 |
+EXPECT_VLINE 0 2 13 |
+EXPECT_VLINE 80 2 13 |
+EXPECT_HLINE 1 1 79 -
+QUIT
+STEPEOF

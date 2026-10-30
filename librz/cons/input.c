@@ -330,6 +330,26 @@ RZ_API int rz_cons_fgets(RZ_NONNULL RZ_BORROW RzCons *cons, char *buf, int len, 
 	if (cons->user_fgets) {
 		RETURN(cons->user_fgets(buf, len, cons->user_fgets_user));
 	}
+	if (cons->backend.read) {
+		if (len < 1) {
+			RETURN(-1);
+		}
+		rz_cons_strcat(cons, cons->line->prompt);
+		int n = 0;
+		while (n < len - 1) {
+			int ch = rz_cons_readchar(cons);
+			if (ch < 0) {
+				buf[n] = 0;
+				RETURN(n ? n : -1);
+			}
+			if (ch == '\r' || ch == '\n') {
+				break;
+			}
+			buf[n++] = ch;
+		}
+		buf[n] = 0;
+		RETURN(n);
+	}
 	printf("%s", cons->line->prompt);
 	fflush(stdout);
 	*buf = '\0';
@@ -556,7 +576,11 @@ static int __cons_readchar_w32(RzCons *cons, ut32 usec) {
 RZ_API int rz_cons_readchar_timeout(RZ_NONNULL RZ_BORROW RzCons *cons, ut32 usec) {
 	char ch;
 	if (rz_cons_readbuffer_readchar(cons, &ch)) {
-		return ch;
+		return (ut8)ch;
+	}
+	if (cons->backend.read) {
+		rz_cons_flush(cons);
+		return cons->backend.read(cons->backend_user, cons, usec);
 	}
 #if __UNIX__
 	struct timeval tv;
@@ -616,7 +640,11 @@ RZ_API int rz_cons_readchar(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	char buf[2], ch;
 	buf[0] = -1;
 	if (rz_cons_readbuffer_readchar(cons, &ch)) {
-		return ch;
+		return (ut8)ch;
+	}
+	if (cons->backend.read) {
+		rz_cons_flush(cons);
+		return cons->backend.read(cons->backend_user, cons, 0);
 	}
 	rz_cons_set_raw(cons, 1);
 #if __WINDOWS__

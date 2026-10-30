@@ -450,7 +450,7 @@ static bool has_file_arg(int argc, const char **argv, RzGetopt *opt) {
 	return (argc >= 2 && argv[opt->ind] && strcmp(argv[opt->ind], "--")) || ((!strcmp(argv[opt->ind - 1], "--") && argv[opt->ind]));
 }
 
-RZ_API int rz_main_rizin(int argc, const char **argv) {
+static int main_rizin(int argc, const char **argv, const RzConsBackend *backend, void *user) {
 	RzCore *r;
 	bool forcequit = false;
 	bool cmd_had_error = false;
@@ -531,6 +531,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		LISTS_FREE();
 		free(envprofile);
 		return 1;
+	}
+	if (backend) {
+		rz_cons_set_backend(r->cons, backend, user);
+		rz_cons_get_size(r->cons, NULL);
 	}
 	r->rz_main_rizin = rz_main_rizin;
 	r->rz_main_rz_diff = rz_main_rz_diff;
@@ -1708,4 +1712,21 @@ beach:
 	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
 	return ret;
+}
+
+/** \brief Run the CLI with its native console. */
+RZ_API int rz_main_rizin(int argc, const char **argv) {
+	return main_rizin(argc, argv, NULL, NULL);
+}
+
+/**
+ * \brief Run the same CLI against an embedding application's console.
+ *
+ * The backend is installed before argument processing so startup commands and
+ * interactive modes share the same I/O. As with rz_main_rizin(), this is a
+ * process entry point, not a reentrant library session API.
+ */
+RZ_API int rz_main_rizin_with_cons(int argc, const char **argv, RZ_NONNULL const RzConsBackend *backend, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(backend && backend->read && backend->write && backend->get_size, 1);
+	return main_rizin(argc, argv, backend, user);
 }

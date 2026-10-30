@@ -1,0 +1,18 @@
+# `p` cycles the print mode; the first switch shows the disassembly view.
+NAME=p switches to the disassembly view
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEY p
+WAIT 250
+EXPECT_LINE 0 [xAdvc]
+EXPECT_REGEX push\s+rbp
+EXPECT_REGEX mov\s+rbp, rsp
+EXPECT_REGEX mov\s+dword \[rbp-0x04\], edi
+EXPECT_REGEX mov\s+eax, dword \[rdi\]
+QUIT
+STEPEOF
