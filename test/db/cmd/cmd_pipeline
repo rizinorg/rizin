@@ -13,8 +13,12 @@ NAME=sort pipelining
 FILE==
 CMDS=<<EOF
 echo "3\n2\n1" | sort
+_
 EOF
 EXPECT=<<EOF
+1
+2
+3
 1
 2
 3
