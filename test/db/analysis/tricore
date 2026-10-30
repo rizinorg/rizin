@@ -477,8 +477,7 @@ EXPECT=<<EOF
 |           0x80080024      lea   a15, [a15]#-0x757c
 \           0x80080028      ji    a15
             ; CALL XREF from section..text @ +0xc
-/ fcn.800842f0(int32_t arg5);
-|           ; arg int32_t arg5 @ a4
+/ fcn.800842f0(int32_t arg5 @ a4);
 |           0x800842f0      mov.aa a14, sp
 |           0x800842f2      sub.a sp, #0x68
 |           0x800842f4      st.a  [a14]#-0x64, a4                      ; arg5
@@ -830,31 +829,27 @@ EXPECT=<<EOF
 .-----------.
 |  sym.fn1  |
 `-----------'
-                               .-------------------------------------------------------------------.
-                               |  0x800004ce                                                       |
-                               |   ; CALL XREF from main @ 0x80000642                              |
-                               | sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7); |
-                               | ; arg size_t nbytes @ a0                                          |
-                               | ; arg int32_t arg5 @ a4                                           |
-                               | ; arg int32_t arg6 @ a5                                           |
-                               | ; arg int32_t arg7 @ a6                                           |
-                               | mov.aa a14, sp                                                    |
-                               | sub.a sp, #0x18                                                   |
-                               | st.w [a14]#-4, d4                                                 |
-                               | ; arg5                                                            |
-                               | st.a [a14]#-8, a4                                                 |
-                               | st.d [a14]#-0x10, e6                                              |
-                               | ; arg6                                                            |
-                               | st.a [a14]#-0x14, a5                                              |
-                               | ; arg7                                                            |
-                               | st.a [a14]#-0x18, a6                                              |
-                               | ld.w d15, [a14]#-0x14                                             |
-                               | jz d15, 0x800004f2                                                |
-                               `-------------------------------------------------------------------'
-                                       f t
-                                       | |
-                                       | '------------------------------------.
-                                       '----.                                 |
+                     .---------------------------------------------------------------------------------------.
+                     |  0x800004ce                                                                           |
+                     |   ; CALL XREF from main @ 0x80000642                                                  |
+                     | sym.fn1(size_t nbytes @ a0, int32_t arg5 @ a4, int32_t arg6 @ a5, int32_t arg7 @ a6); |
+                     | mov.aa a14, sp                                                                        |
+                     | sub.a sp, #0x18                                                                       |
+                     | st.w [a14]#-4, d4                                                                     |
+                     | ; arg5                                                                                |
+                     | st.a [a14]#-8, a4                                                                     |
+                     | st.d [a14]#-0x10, e6                                                                  |
+                     | ; arg6                                                                                |
+                     | st.a [a14]#-0x14, a5                                                                  |
+                     | ; arg7                                                                                |
+                     | st.a [a14]#-0x18, a6                                                                  |
+                     | ld.w d15, [a14]#-0x14                                                                 |
+                     | jz d15, 0x800004f2                                                                    |
+                     `---------------------------------------------------------------------------------------'
+                             f t
+                             | |
+                             | '----------------------------------------------.
+                             '--------------.                                 |
                                             |                                 |
                                         .-----------------------.             |
                                         |  0x800004ec           |             |
@@ -916,11 +911,7 @@ EXPECT=<<EOF
                                 `---------------------------------------'
 ---
   ; CALL XREF from main @ 0x80000642
-/ sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
-| ; arg size_t nbytes @ a0
-| ; arg int32_t arg5 @ a4
-| ; arg int32_t arg6 @ a5
-| ; arg int32_t arg7 @ a6
+/ sym.fn1(size_t nbytes @ a0, int32_t arg5 @ a4, int32_t arg6 @ a5, int32_t arg7 @ a6);
 | 0x800004ce      mov.aa a14, sp
 | 0x800004d0      sub.a sp, #0x18
 | 0x800004d2      st.w  [a14]#-4, d4
@@ -973,11 +964,7 @@ EXPECT=<<EOF
 \ 0x8000054e      ret
 
             ; CALL XREF from main @ 0x80000642
-/ sym.fn1(size_t nbytes, int32_t arg5, int32_t arg6, int32_t arg7);
-|           ; arg size_t nbytes @ a0
-|           ; arg int32_t arg5 @ a4
-|           ; arg int32_t arg6 @ a5
-|           ; arg int32_t arg7 @ a6
+/ sym.fn1(size_t nbytes @ a0, int32_t arg5 @ a4, int32_t arg6 @ a5, int32_t arg7 @ a6);
 |           0x800004ce      mov.aa a14, sp
 |           0x800004d0      sub.a sp, #0x18
 |           0x800004d2      st.w  [a14]#-4, d4

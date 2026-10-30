@@ -315,10 +315,7 @@ pdf @ sym._Unwind_VRS_Pop
 EOF
 EXPECT=<<EOF
             ; CALL XREFS from sym.__gnu_unwind_execute @ 0x81a8, 0x837a
-/ sym._Unwind_VRS_Pop(int16_t arg1, int16_t arg2, int16_t arg3);
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
-|           ; arg int16_t arg3 @ r2
+/ sym._Unwind_VRS_Pop(int16_t arg1 @ r0, int16_t arg2 @ r1, int16_t arg3 @ r2);
 |           0x00007c8e      push  {r4, r5, r6, r7, lr}
 |           0x00007c90      adds  r4, r0, 0                            ; arg1
 |           0x00007c92      sub   sp, 0x11c

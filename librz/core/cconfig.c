@@ -3096,6 +3096,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("asm.lines.right", "false", "Show lines before opcode instead of offset");
 	SETBPREF("asm.lines.wide", "false", "Put a space between lines");
 	SETBPREF("asm.fcn.signature", "true", "Show function signature in disasm");
+	rz_config_add_bool(cfg, "asm.fcn.signature.location", "Show the location of the arguments in the function signature. If false, it shows each argument on one line.", true);
 	SETBPREF("asm.fcn.size", "false", "Show function size in disasm");
 	SETICB("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
