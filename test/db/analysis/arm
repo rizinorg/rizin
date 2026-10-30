@@ -28,6 +28,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm ldr pc-rel datarefs through literal pool
+FILE=malloc://0x400
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 28409fe52c309fe524209fe51eff2fe100000000000000000000000000000000000000000000000000000000000000000003000000000000b6a85f2d00000000
+af @ 0
+axt @ 0x300
+axt @ 0x38
+axt @ 0x34
+axt @ 0
+axt @ 0x2d5fa8b6
+EOF
+EXPECT=<<EOF
+fcn.00000000 0x0 [DATA] ldr r4, [0x00000030]
+fcn.00000000 0x4 [DATA] ldr r3, [0x00000038]
+fcn.00000000 0x8 [DATA] ldr r2, [0x00000034]
+EOF
+RUN
+
 NAME=thumb ldr pc-rel emulation
 FILE=malloc://32
 CMDS=<<EOF
@@ -1360,7 +1381,7 @@ EXPECT=<<EOF
             ;-- r15:
 / fcn.00000100();
 |           0x00000100      isb   sy
-|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x10c:4]=0xbd80b672 ; "r\xb6\x80\xbd"
+|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x19c:4]=268 ; 412
 \           0x00000106      mov   pc, r0
             0x00000108      pop   {r7, pc}
             0x0000010a      movs  r0, r0
