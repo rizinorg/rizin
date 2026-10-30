@@ -169,8 +169,7 @@ typedef struct rz_reg_flags_t {
 } RzRegFlags;
 
 #ifdef RZ_API
-RZ_API void rz_reg_free(RzReg *reg);
-RZ_API void rz_reg_free_internal(RzReg *reg, bool init);
+RZ_API void rz_reg_free(RZ_NULLABLE RzReg *reg);
 RZ_API RzReg *rz_reg_new(void);
 RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile);
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg);
