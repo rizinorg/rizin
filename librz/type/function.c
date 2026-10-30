@@ -532,7 +532,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 	}
 }
 
-static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla) {
+static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla, RzCallableArgSuffixCb arg_suffix, void *user) {
 	rz_return_val_if_fail(buf && typedb && callable && wrapper_type_infos, false);
 
 	if (callable->noret) {
@@ -551,6 +551,9 @@ static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL
 			char *argstr = rz_type_identifier_declaration_as_string(typedb, arg->type, rz_str_get(arg->name));
 			const char *comma = first ? "" : ", ";
 			rz_strbuf_appendf(buf, "%s%s", comma, argstr);
+			if (arg_suffix) {
+				arg_suffix(buf, arg, user);
+			}
 			first = false;
 			free(argstr);
 		}
@@ -583,7 +586,7 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
 		return NULL;
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, zero_vla)) {
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, zero_vla, NULL, NULL)) {
 		rz_vector_free(wrapper_type_infos);
 		rz_strbuf_free(buf);
 
@@ -601,11 +604,23 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
  * \param callable RzCallable instance
  */
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+	return rz_type_callable_as_string_with_suffix(typedb, callable, NULL, NULL);
+}
+
+/**
+ * \brief Returns the callable C representation, with text added after its arguments
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ * \param arg_suffix Called after each argument is printed, to append text after it
+ * \param user Passed to \p arg_suffix
+ */
+RZ_API RZ_OWN char *rz_type_callable_as_string_with_suffix(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NULLABLE RzCallableArgSuffixCb arg_suffix, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(typedb && callable, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 
 	RzVector *wrapper_type_infos = rz_vector_new(sizeof(st64), NULL, free);
-	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, false)) {
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, false, arg_suffix, user)) {
 		rz_strbuf_free(buf);
 		rz_vector_free(wrapper_type_infos);
 

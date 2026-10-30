@@ -2046,6 +2046,38 @@ bool test_callable_unspecified_parameters(void) {
 	mu_end;
 }
 
+static void arg_suffix_cb(RzStrBuf *sb, const RzCallableArg *arg, void *user) {
+	int *calls = user;
+	(*calls)++;
+	rz_strbuf_appendf(sb, " @ %s", arg->name ? arg->name : "?");
+}
+
+bool test_callable_as_string_with_suffix(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	RzCallable *callable = rz_type_func_new(typedb, "f", rz_type_identifier_of_base_type_str(typedb, "int"));
+	RzType *type = rz_type_array_of_base_type_str(typedb, "char", 4);
+	rz_type_callable_arg_add(callable, rz_type_callable_arg_new(typedb, "a", type));
+	type = rz_type_identifier_of_base_type_str(typedb, "void *");
+	rz_type_callable_arg_add(callable, rz_type_callable_arg_new(typedb, "p", type));
+	callable->has_unspecified_parameters = true;
+
+	int calls = 0;
+	mu_assert_streq_free(rz_type_callable_as_string_with_suffix(typedb, callable, arg_suffix_cb, &calls),
+		"int f(char a[4] @ a, void * p @ p, ...)", "suffix after each argument, before the varargs");
+	mu_assert_eq(calls, 2, "called once per argument");
+	mu_assert_streq_free(rz_type_callable_as_string_with_suffix(typedb, callable, NULL, NULL),
+		"int f(char a[4], void * p, ...)", "no suffix");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable),
+		"int f(char a[4], void * p, ...)", "same as without a callback");
+
+	rz_type_callable_free(callable);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_type_format_to_c_declaration_struct(void) {
 	char *s = rz_type_format_to_c_declaration("rgba", "x1x1x1x1 r g b a", NULL);
 	mu_assert_streq_free(s,
@@ -2160,6 +2192,7 @@ int all_tests() {
 	mu_run_test(test_offset_by_path_struct);
 	mu_run_test(test_offset_by_path_array);
 	mu_run_test(test_callable_unspecified_parameters);
+	mu_run_test(test_callable_as_string_with_suffix);
 	return tests_passed != tests_run;
 }
 
