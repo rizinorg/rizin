@@ -194,6 +194,15 @@ RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
 	return -1;
 }
 
+/**
+ * \brief Clear register metadata, optionally preserving the arena pools.
+ *
+ * Profile parsing can recreate register lists after a failure has freed the
+ * arena pools. Free the lists independently so replacement also drops old items.
+ *
+ * \param reg Register state to clear.
+ * \param init Keep arena pools for profile replacement.
+ */
 RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	rz_return_if_fail(reg);
 	ut32 i;
@@ -211,15 +220,14 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		ht_sp_free(reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
+		rz_list_free(reg->regset[i].regs);
+		reg->regset[i].regs = NULL;
 		if (!reg->regset[i].pool) {
 			continue;
 		}
 		if (init) {
-			rz_list_free(reg->regset[i].regs);
 			reg->regset[i].regs = rz_list_newf((RzListFree)rz_reg_item_free);
 		} else {
-			rz_list_free(reg->regset[i].regs);
-			reg->regset[i].regs = NULL;
 			// Ensure arena is freed and its registered in the pool
 			if (!rz_list_delete_val(reg->regset[i].pool, reg->regset[i].arena)) {
 				rz_reg_arena_free(reg->regset[i].arena);
