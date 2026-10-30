@@ -194,12 +194,14 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			rz_strf(str, " v%i, v%i, 0x%08" PFMT64x, vA, vB, a->pc + (vC * 2));
 			strasm = rz_str_append(strasm, str);
 			break;
-		case fmtopvAApBBBBBBBB:
+		case fmtopvAApBBBBBBBB: {
 			vA = (int)buf[1];
-			vB = (short)(buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			rz_strf(str, " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2) + 8);
+			// Payload offsets are signed code units relative to this instruction.
+			st64 payload_offset = (st32)rz_read_at_le32(buf, 2);
+			rz_strf(str, " v%i, 0x%08" PFMT64x, vA, a->pc + payload_offset * 2);
 			strasm = rz_str_append(strasm, str);
 			break;
+		}
 		case fmtoptinlineI:
 			vA = (int)(buf[1] & 0x0f);
 			vB = (buf[3] << 8) | buf[2];
