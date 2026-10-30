@@ -515,7 +515,6 @@ typedef struct rz_cons_context_t {
 
 	char *lastOutput;
 	int lastLength;
-	bool lastMode;
 	bool lastEnabled;
 	bool is_interactive;
 	bool last_interactive_option; ///< To be deprecated for a push/pop behavior
