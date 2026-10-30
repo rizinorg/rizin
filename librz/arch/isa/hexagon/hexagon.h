@@ -35,7 +35,7 @@
 #define HEX_INVALID_INSN_F 0xffffffff
 
 #define MAX_CONST_EXT      512
-#define HEXAGON_STATE_PKTS 8
+#define HEXAGON_STATE_PKTS 50
 #define ARRAY_LEN(a)       (sizeof(a) / sizeof((a)[0]))
 
 #define ALIAS2OP(alias, is_new)         hex_alias_to_op(alias, is_new)

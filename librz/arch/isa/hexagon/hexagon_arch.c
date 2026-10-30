@@ -671,7 +671,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
  * \param pkt The packet which predecessor will be updated.
  */
 static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
-	HexInsnContainer *tmp = rz_list_get_n(pkt->bin, 0);
+	HexInsnContainer *tmp = rz_list_last_val(pkt->bin);
 	if (!tmp) {
 		return;
 	}
