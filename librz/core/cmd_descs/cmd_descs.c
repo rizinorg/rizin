@@ -15112,6 +15112,7 @@ static const RzCmdDescArg open_maps_map_args[] = {
 };
 static const RzCmdDescHelp open_maps_map_help = {
 	.summary = "Create a new map",
+	.description = "When omitted, paddr defaults to 0. Specify it explicitly when maps of the same fd must use different physical ranges.",
 	.args = open_maps_map_args,
 };
 
