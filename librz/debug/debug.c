@@ -376,7 +376,6 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->bits = RZ_SYS_BITS;
 	dbg->trace_forks = 1;
 	dbg->forked_pid = -1;
-	dbg->main_pid = -1;
 	dbg->n_threads = 0;
 	dbg->trace_clone = 0;
 	dbg->egg = rz_egg_new();
@@ -393,12 +392,13 @@ RZ_API RZ_OWN RzDebug *rz_debug_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *bp
 	dbg->swstep = false;
 	dbg->stop_all_threads = false;
 	dbg->trace = rz_debug_trace_new();
-	dbg->cb_printf = (PrintfCallback)rz_cb_default_printf;
+	// dbg->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	dbg->reg = rz_reg_new();
 	dbg->num = rz_num_new(rz_debug_num_callback, rz_debug_str_callback, dbg);
 	dbg->cur = NULL;
 	dbg->plugin_data = NULL;
-	dbg->threads = NULL;
+	dbg->threads = ht_up_new(NULL, NULL); // the hash table never owns the RzDebugThread for each thread
+	dbg->processes = rz_list_newf((RzListFree)rz_debug_process_free);
 	dbg->hitinfo = 1;
 	/* TODO: needs a redesign? */
 	dbg->maps = rz_debug_map_list_new();
@@ -431,7 +431,8 @@ RZ_API void rz_debug_free(RzDebug *dbg) {
 	free(dbg->snap_path);
 	rz_list_free(dbg->maps);
 	rz_list_free(dbg->maps_user);
-	rz_list_free(dbg->threads);
+	rz_list_free(dbg->processes);
+	ht_up_free(dbg->threads);
 	rz_num_free(dbg->num);
 	sdb_free(dbg->sgnls);
 	rz_tree_free(dbg->tree);
@@ -779,8 +780,8 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 			int what = rz_debug_signal_what(dbg, dbg->reason.signum);
 			const char *name = rz_signal_to_string(dbg->reason.signum);
 			if (name && strcmp("SIGTRAP", name)) {
-				rz_cons_printf(dbg->cons, "[+] signal %d aka %s received %d\n",
-					dbg->reason.signum, name, what);
+				// rz_cons_printf(dbg->cons, "[+] signal %d aka %s received %d\n",
+				// dbg->reason.signum, name, what);
 			}
 		}
 	}
@@ -1150,6 +1151,97 @@ RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps) {
 	return steps;
 }
 
+// static bool skip_current_instruction(RzDebug *dbg) {
+// 	ut8 buf[64];
+// 	RzAnalysisOp op = { 0 };
+// 	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
+
+// 	dbg->iob.read_at(dbg->iob.io, pc, buf, sizeof(buf));
+
+// 	rz_analysis_op_init(&op);
+// 	rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf),
+// 		RZ_ANALYSIS_OP_MASK_BASIC);
+
+// 	if (op.size <= 0) {
+// 		rz_analysis_op_fini(&op);
+// 		return false;
+// 	}
+
+// 	rz_debug_reg_set_by_role(dbg, RZ_REG_NAME_PC, pc + op.size);
+// 	rz_analysis_op_fini(&op);
+// 	return true;
+// }
+
+static int session_forward_to_breakpoint(RzDebug *dbg) {
+	bool has_bp = false;
+	RzRegItem *ripc = rz_reg_get_by_role(dbg->reg, RZ_REG_NAME_PC);
+	if (!ripc) {
+		return 0;
+	}
+	RzVector *vreg = ht_up_find(dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
+	RzDebugChangeReg *reg;
+	rz_vector_foreach_prev (vreg, reg) {
+		if (reg->cnum <= dbg->session->cnum) {
+			continue;
+		}
+		has_bp = rz_bp_get_in(dbg->bp, reg->data, RZ_PERM_X) != NULL;
+		if (has_bp) {
+			eprintf("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+			rz_debug_goto_cnum(dbg, reg->cnum);
+			return dbg->tid;
+		}
+	}
+
+	rz_debug_goto_cnum(dbg, dbg->session->maxcnum);
+	return dbg->tid;
+}
+
+/**
+ * \brief Resume the debuggee and run until a user-visible stop event occurs.
+ *
+ * Core execution loop of the debugger. It resumes the target process, handles
+ * internal background events silently (looping back to continue execution),
+ * and only returns control to the caller when a legitimate stop occurs, such
+ * as a user breakpoint or an unexpected crash.
+ *
+ * The function works in three phases:
+ *
+ * 1. Resumption and recoil
+ *    - If a reverse-debugging (time-travel) session is being inspected in the
+ *      past, live execution is skipped and the session is advanced through the
+ *      recorded snapshots instead.
+ *    - If the program counter sits on a breakpoint, the breakpoint is
+ *      temporarily lifted, the target single-steps one instruction, the
+ *      breakpoint is restored, and execution resumes. This prevents the
+ *      debugger from getting stuck on the same instruction.
+ *
+ * 2. Silent event filtering
+ *    After each stop (\ref rz_debug_wait), internal events are handled without
+ *    returning to the caller:
+ *    - Conditional breakpoints: the condition is evaluated and execution
+ *      resumes if it is false.
+ *    - Disabled breakpoints: skipped over.
+ *    - OS events (Linux/Windows): forks, new threads (NEW_TID), thread exits
+ *      and library loads are processed automatically.
+ *    - Tracepoints: the trace data is logged, the tracepoint is stepped over,
+ *      and execution continues.
+ *    - Signals: either passed to the target's own signal handler, or the
+ *      faulting instruction is stepped over to bypass the handler entirely.
+ *
+ * 3. Cleanup and halt
+ *    When a real stop condition is reached, the loop exits and:
+ *    - the debugger's current thread is synchronized to the thread that
+ *      caused the stop,
+ *    - software breakpoints are restored into target memory,
+ *    - if recording is active, a time-travel checkpoint is saved so the user
+ *      can later rewind to this exact stop.
+ *
+ * \param dbg The debugger instance.
+ * \param sig Signal to deliver to the target when resuming (0 for none).
+ *
+ * \return The thread ID (TID) on which the debugger halted, or 0 if the
+ *         process died.
+ */
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
 	int ret = 0;
@@ -1555,9 +1647,9 @@ RZ_API int rz_debug_continue_syscalls(RzDebug *dbg, int *sc, int n_sc) {
 	while (true) {
 		RzDebugReasonType reason;
 
-		if (rz_interrupt_is_breaked(dbg->intr)) {
-			break;
-		}
+		// if (rz_interrupt_is_breaked(dbg->intr)) {
+		// 	break;
+		// }
 #if __linux__
 		// step is needed to avoid dupped contsc results
 		/* XXX(jjd): actually one stop is before the syscall, the other is
@@ -1770,45 +1862,3 @@ RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
 		bp->delta = bp->addr - dbg->bp->baddr;
 	}
 }
-
-/**
- * \brief Switches to the first thread in the given debug context.
- * \param debug The debug context.
- */
-RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug) {
-	rz_return_if_fail(debug);
-	RzList *threads = rz_debug_pids(debug, debug->pid);
-	if (rz_list_length(threads) > 0) {
-		RzDebugPid *th = rz_list_first_val(threads);
-		rz_debug_select(debug, debug->pid, th->pid);
-	}
-	rz_list_free(threads);
-}
-
-static int thread_find(int *tid, RzDebugPid *t, void *user) {
-	return (t && (t->pid == *tid)) ? 0 : 1;
-}
-
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid) {
-	if (!th_list) {
-		return NULL;
-	}
-
-	RzListIter *it = rz_list_find(th_list, (const void *)(size_t)&tid,
-		(RzListComparator)&thread_find, NULL);
-	if (!it) {
-		return NULL;
-	}
-	return (RzDebugPid *)rz_list_val(it);
-}
-
-#if !DEBUGGER
-// Empty stubs are needed for compilation on s390x platform when debugger is disabled
-RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
-	return 0;
-}
-
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
-	return rz_list_new();
-}
-#endif

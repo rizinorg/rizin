@@ -60,10 +60,25 @@ typedef enum {
 	RZ_DBG_PROC_STOP = 's',
 	RZ_DBG_PROC_RUN = 'r',
 	RZ_DBG_PROC_SLEEP = 'S',
+	RZ_DBG_PROC_WAIT = 'D',
 	RZ_DBG_PROC_ZOMBIE = 'z',
 	RZ_DBG_PROC_DEAD = 'd',
-	RZ_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
-} RzDebugPidState;
+	RZ_DBG_PROC_RAISED = 'R', // has produced a signal, breakpoint, etc.
+	RZ_DBG_PROC_UNKNOWN = '?'
+} RzDebugProcessState;
+
+/*
+ * states a thread can be in
+ */
+typedef enum {
+	RZ_DBG_THREAD_RUN = 'r',
+	RZ_DBG_THREAD_SLEEP = 'S',
+	RZ_DBG_THREAD_WAIT = 'D',
+	RZ_DBG_THREAD_STOP = 's',
+	RZ_DBG_THREAD_ZOMBIE = 'z',
+	RZ_DBG_THREAD_DEAD = 'd',
+	RZ_DBG_THREAD_UNKNOWN = '?'
+} RzDebugThreadState;
 
 // signal handling must support application and debugger level options
 typedef enum {
@@ -240,12 +255,13 @@ typedef struct rz_debug_t {
 	RZ_DEPRECATE int bits; ///< bad indicator for the bitness of the debuggee
 	int hitinfo;
 
-	int main_pid;
 	int pid; /* selected process id */
 	int tid; /* selected thread id */
 	int forked_pid; /* last pid created by fork */
 	int n_threads;
-	RzList /*<void *>*/ *threads; /* NOTE: list contents are platform-specific */
+	HtUP /*<RzDebugThread> */ *threads; /*Non owning hash table*/
+	RzList /*<RzDebugProcess>*/ *processes;
+	// RzDebugProcess *cur_proc;
 
 	char *malloc; /*choose malloc parser: 0 = glibc, 1 = jemalloc*/
 
@@ -370,8 +386,8 @@ typedef struct rz_debug_plugin_t {
 	int (*attach)(RzDebug *dbg, int pid);
 	int (*detach)(RzDebug *dbg, int pid);
 	int (*select)(RzDebug *dbg, int pid, int tid);
-	RzList /*<RzDebugPid *>*/ *(*threads)(RzDebug *dbg, int pid);
-	RzList /*<RzDebugPid *>*/ *(*pids)(RzDebug *dbg, int pid);
+	RzList /*<RzDebugThread *>*/ *(*threads)(RzDebug *dbg, int pid);
+	RzList /*<RzDebugProcess *>*/ *(*pids)(RzDebug *dbg, int pid);
 	/* flow */
 	int (*stop)(RzDebug *dbg);
 	bool (*step)(RzDebug *dbg);
@@ -401,19 +417,27 @@ typedef struct rz_debug_plugin_t {
 	// TODO: use RzList here
 } RzDebugPlugin;
 
+typedef struct rz_debug_thread_t {
+	int tid;
+	int process_pid;
+	ut64 pc;
+	ut64 tls_base;
+	RzDebugThreadState state;
+	void *native; // OS Specific structs
+} RzDebugThread;
+
 // TODO: rename to rz_debug_process_t ? maybe a thread too ?
-typedef struct rz_debug_pid_t {
+typedef struct rz_debug_process_t {
 	int pid;
 	int ppid;
-	char status; /* stopped, running, zombie, sleeping ,... */
+	RzDebugProcessState state; /* stopped, running, zombie, sleeping ,... */
 	int runnable; /* when using 'run', 'continue', .. this proc will be runnable */
 	bool signalled;
 	char *path;
 	int uid;
 	int gid;
-	ut64 pc;
-	ut64 tls; ///< Thread local storage base (used for accessing thread specific variables)
-} RzDebugPid;
+	RzList /* <RzDebugThread*>*/ *threads;
+} RzDebugProcess;
 
 typedef struct rz_backtrace_t {
 	RzDebugFrame *frame;
@@ -481,13 +505,23 @@ RZ_API int rz_debug_continue(RzDebug *dbg);
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int signal);
 RZ_API int rz_debug_continue_pass_exception(RzDebug *dbg);
 
-/* process/thread handling */
+/* process handling */
 RZ_API bool rz_debug_select(RzDebug *dbg, int pid, int tid);
-RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc);
-RZ_API RzDebugPid *rz_debug_pid_free(RzDebugPid *pid);
-RZ_API RzList /*<RzDebugPid *>*/ *rz_debug_pids(RzDebug *dbg, int pid);
-RZ_API RzDebugPid *rz_debug_get_thread(RzList /*<RzList *>*/ *th_list, int tid);
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API RZ_OWN RzDebugProcess *rz_debug_process_new(RZ_NULLABLE const char *path, int pid, int uid, RzDebugProcessState state);
+RZ_API void rz_debug_process_free(RZ_NULLABLE RzDebugProcess *process);
+RZ_API RZ_OWN RzList /*<RzDebugProcess *>*/ *rz_debug_process_list(RZ_NONNULL RzDebug *dbg, int pid);
+RZ_API RZ_BORROW RzDebugProcess *rz_debug_process_find(RZ_NONNULL RzDebug *dbg, int pid);
+RZ_API void rz_debug_process_remove(RZ_NONNULL RzDebug *dbg, int pid);
+
+/*thread handling */
+RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid);
+RZ_API RZ_OWN RzDebugThread *rz_debug_thread_new(int tid, int process_pid, RzDebugThreadState state, ut64 pc);
+RZ_API void rz_debug_thread_free(RZ_NULLABLE RzDebugThread *thread);
+RZ_API RZ_BORROW RzDebugThread *rz_debug_thread_find(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API int rz_debug_thread_owner_pid(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API bool rz_debug_thread_add(RZ_NONNULL RzDebug *dbg, RZ_NONNULL RzDebugProcess *process, RZ_NONNULL RZ_OWN RzDebugThread *thread);
+RZ_API void rz_debug_thread_remove(RZ_NONNULL RzDebug *dbg, int tid);
+RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *dbg);
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid);
 
 RZ_API bool rz_debug_set_arch(RzDebug *dbg, const char *arch, int bits);
@@ -497,8 +531,6 @@ RZ_API RzDebugInfo *rz_debug_info(RzDebug *dbg, const char *arg);
 RZ_API void rz_debug_info_free(RzDebugInfo *rdi);
 
 RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file);
-
-RZ_API void rz_debug_switch_to_first_thread(RZ_NONNULL RzDebug *debug);
 
 /* send signals */
 RZ_API void rz_debug_signal_init(RzDebug *dbg);

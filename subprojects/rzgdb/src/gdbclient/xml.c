@@ -171,7 +171,7 @@ static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags);
 static int _resolve_arch(libgdbr_t *g, char *xml_data);
 static RzList *_extract_flags(char *flagstr);
 static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias);
-static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
+static RzDebugProcess *_extract_pid_info(const char *info, const char *path, int pid);
 
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	char *regstr, *flagstr, *tmp, *profile = NULL, pc_alias[64], flag_bits[65];
@@ -350,6 +350,13 @@ exit_err:
 	return -1;
 }
 
+static void gdbr_process_free(RzDebugProcess *process) {
+	if (process) {
+		free(process->path);
+		free(process);
+	}
+}
+
 /* Reference:
 <osdata type="processes">
 <item>
@@ -362,32 +369,25 @@ exit_err:
 */
 static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RzList *list) {
 	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[4096];
-	char *itemstr, *column, *column_end, *proc_filename;
-	int ret = -1, ipid, column_data_len;
-	RzDebugPid *pid_info = NULL;
+	char *itemstr, *column, *column_end;
+	int ipid, column_data_len;
+	RzDebugProcess *pid_info = NULL;
 
 	// Make sure the given xml is valid
 	if (!rz_str_startswith(xml_data, "<osdata type=\"processes\">")) {
-		ret = -1;
-		goto end;
+		return -1;
 	}
 
 	column = xml_data;
 	while ((itemstr = strstr(column, "<item>"))) {
 		if (!strstr(itemstr, "</item>")) {
-			ret = -1;
-			goto end;
+			goto fail;
 		}
 		// Get PID
-		if (!(column = strstr(itemstr, "<column name=\"pid\">"))) {
-			ret = -1;
-			goto end;
+		if (!(column = strstr(itemstr, "<column name=\"pid\">")) ||
+			!(column_end = strstr(column, "</column>"))) {
+			goto fail;
 		}
-		if (!(column_end = strstr(column, "</column>"))) {
-			ret = -1;
-			goto end;
-		}
-
 		column += sizeof("<column name=\"pid\">") - 1;
 		column_data_len = column_end - column;
 
@@ -397,28 +397,22 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		memcpy(pidstr, column, column_data_len);
 		pidstr[column_data_len] = '\0';
-
 		ipid = atoi(pidstr);
 
 		// Get cmdline
-		if (!(column = strstr(itemstr, "<column name=\"command\">"))) {
-			ret = -1;
-			goto end;
+		if (!(column = strstr(itemstr, "<column name=\"command\">")) ||
+			!(column_end = strstr(column, "</column>"))) {
+			goto fail;
 		}
-		if (!(column_end = strstr(column, "</column>"))) {
-			ret = -1;
-			goto end;
-		}
-
 		column += sizeof("<column name=\"command\">") - 1;
-		column_data_len = column_end - column;
-		memcpy(cmdline, column, RZ_MIN(column_data_len, sizeof(cmdline)));
+		column_data_len = RZ_MIN(column_end - column, (int)sizeof(cmdline) - 1);
+		memcpy(cmdline, column, column_data_len);
 		cmdline[column_data_len] = '\0';
 
 		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
 		// correct pid and cmdline from the xml with everything else set to default
-		proc_filename = rz_str_newf("/proc/%d/status", ipid);
-		if (gdbr_open_file(g, proc_filename, O_RDONLY, 0) == 0) {
+		char *proc_filename = rz_str_newf("/proc/%d/status", ipid);
+		if (proc_filename && gdbr_open_file(g, proc_filename, O_RDONLY, 0) == 0) {
 			if (gdbr_read_file(g, (unsigned char *)status, sizeof(status)) != -1) {
 				pid_info = _extract_pid_info(status, cmdline, ipid);
 			} else {
@@ -429,35 +423,33 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			}
 		} else {
 			eprintf("Failed to open procfs file of pid (%d)\n", ipid);
-			if (!(pid_info = RZ_NEW0(RzDebugPid)) || !(pid_info->path = strdup(cmdline))) {
-				ret = -1;
-				goto end;
+		}
+		free(proc_filename);
+
+		if (!pid_info) {
+			if (!(pid_info = RZ_NEW0(RzDebugProcess)) || !(pid_info->path = strdup(cmdline))) {
+				goto fail;
 			}
 			pid_info->pid = ipid;
 			pid_info->ppid = 0;
 			pid_info->uid = pid_info->gid = -1;
 			pid_info->runnable = true;
-			pid_info->status = RZ_DBG_PROC_STOP;
+			pid_info->state = RZ_DBG_PROC_STOP;
 		}
+
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
 			rz_list_append(list, pid_info);
 		} else {
-			if (pid_info) {
-				free(pid_info);
-				pid_info = NULL;
-			}
+			gdbr_process_free(pid_info);
 		}
+		pid_info = NULL;
 	}
+	return 0;
 
-	ret = 0;
-end:
-	if (ret != 0) {
-		if (pid_info) {
-			free(pid_info);
-		}
-	}
-	return ret;
+fail:
+	gdbr_process_free(pid_info);
+	return -1;
 }
 
 // If xml target description is supported, read it
@@ -680,33 +672,24 @@ exit_err:
 	return NULL;
 }
 
-static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
-	RzDebugPid *pid_info = RZ_NEW0(RzDebugPid);
+static RzDebugProcess *_extract_pid_info(const char *info, const char *path, int pid) {
+	RzDebugProcess *pid_info = RZ_NEW0(RzDebugProcess);
 	if (!pid_info) {
 		return NULL;
 	}
+	pid_info->state = RZ_DBG_PROC_UNKNOWN;
 	char *ptr = strstr(info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {
-		case 'R':
-			pid_info->status = RZ_DBG_PROC_RUN;
-			break;
-		case 'S':
-			pid_info->status = RZ_DBG_PROC_SLEEP;
-			break;
+		case 'R': pid_info->state = RZ_DBG_PROC_RUN; break;
+		case 'S': pid_info->state = RZ_DBG_PROC_SLEEP; break;
+		case 'D': pid_info->state = RZ_DBG_PROC_WAIT; break;
 		case 'T':
-		case 't':
-			pid_info->status = RZ_DBG_PROC_STOP;
-			break;
-		case 'Z':
-			pid_info->status = RZ_DBG_PROC_ZOMBIE;
-			break;
+		case 't': pid_info->state = RZ_DBG_PROC_STOP; break;
+		case 'Z': pid_info->state = RZ_DBG_PROC_ZOMBIE; break;
 		case 'X':
-			pid_info->status = RZ_DBG_PROC_DEAD;
-			break;
-		default:
-			pid_info->status = RZ_DBG_PROC_SLEEP;
-			break;
+		case 'x': pid_info->state = RZ_DBG_PROC_DEAD; break;
+		default: pid_info->state = RZ_DBG_PROC_UNKNOWN; break;
 		}
 	}
 	ptr = strstr(info, "PPid:");
@@ -721,10 +704,9 @@ static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid
 	if (ptr) {
 		pid_info->gid = atoi(ptr + 5);
 	}
-	pid_info->pid = tid;
+	pid_info->pid = pid;
 	pid_info->path = path ? strdup(path) : NULL;
 	pid_info->runnable = true;
-	pid_info->pc = 0;
 	return pid_info;
 }
 

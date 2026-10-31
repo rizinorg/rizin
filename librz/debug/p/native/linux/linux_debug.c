@@ -57,12 +57,29 @@ long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) 
 static void linux_detach_all(RzDebug *dbg);
 static char *read_link(int pid, const char *file);
 static bool linux_attach_single_pid(RzDebug *dbg, int ptid);
-static void linux_remove_thread(RzDebug *dbg, int pid);
-static void linux_add_new_thread(RzDebug *dbg, int tid);
+static void linux_add_new_thread(RzDebug *dbg, int pid, int tid);
 static bool linux_stop_thread(RzDebug *dbg, int tid);
 static bool linux_kill_thread(int tid, int signo);
 static void linux_dbg_wait_break(RzDebug *dbg);
 static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid);
+static RzDebugThread *fill_thread_state_info(const char *info, int tid, int process_pid);
+static ut64 linux_get_pc_for_tid(RzDebug *dbg, int tid);
+RzDebugProcess *fill_pid_info(const char *info, const char *path, int tid);
+
+/* thread list of the debugged (main) process, or NULL */
+static RzList *linux_cur_threads(RzDebug *dbg) {
+	RzDebugProcess *p = rz_debug_process_find(dbg, dbg->pid);
+	return p ? p->threads : NULL;
+}
+
+static RzDebugProcess *linux_new_process_info(int pid) {
+	char path[PATH_MAX] = { 0 }, info[PATH_MAX] = { 0 };
+	procfs_pid_slurp(pid, "cmdline", path, sizeof(path));
+	if (!procfs_pid_slurp(pid, "status", info, sizeof(info))) {
+		return fill_pid_info(info, path, pid);
+	}
+	return rz_debug_process_new(path, pid, 0, RZ_DBG_PROC_STOP);
+}
 
 int linux_handle_signals(RzDebug *dbg, int tid) {
 	siginfo_t siginfo = { 0 };
@@ -217,20 +234,17 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		/* NOTE: this case is handled by linux_handle_signals */
 		break;
 	case PTRACE_EVENT_CLONE:
-		// Get the tid of the new thread
 		if (rz_debug_ptrace(dbg, PTRACE_GETEVENTMSG, ptid, 0, (rz_ptrace_data_t)(size_t)&data) == -1) {
 			rz_sys_perror("ptrace GETEVENTMSG");
 			return RZ_DEBUG_REASON_ERROR;
 		}
 		if (dowait) {
-			// The new child has a pending SIGSTOP.  We can't affect it until it
-			// hits the SIGSTOP, but we're already attached.  */
 			if (waitpid((int)data, &status, 0) == -1) {
 				perror("waitpid");
 			}
 		}
-
-		linux_add_new_thread(dbg, (int)data);
+		/* the new thread belongs to whichever process the cloning thread belongs to */
+		linux_add_new_thread(dbg, rz_debug_thread_owner_pid(dbg, ptid), (int)data);
 		if (dbg->trace_clone) {
 			rz_debug_select(dbg, dbg->pid, (int)data);
 		}
@@ -238,27 +252,34 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
 		return RZ_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
-		// Get the pid of the new process
 		if (rz_debug_ptrace(dbg, PTRACE_GETEVENTMSG, ptid, 0, (rz_ptrace_data_t)(size_t)&data) == -1) {
 			rz_sys_perror("ptrace GETEVENTMSG");
 			return RZ_DEBUG_REASON_ERROR;
 		}
 		dbg->forked_pid = data;
 		if (dowait) {
-			// The new child has a pending SIGSTOP. We can't affect it until it
-			// hits the SIGSTOP, but we're already attached.  */
 			if (waitpid(dbg->forked_pid, &status, 0) == -1) {
 				perror("waitpid");
 			}
 		}
-		RZ_LOG_WARN("(%d) Created process %d\n", ptid, (int)data);
-		if (!dbg->trace_forks) {
-			// We need to do this even if the new process will be detached since the
-			// breakpoints are inherited from the parent
-			linux_remove_fork_bps(dbg);
-			if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
-				perror("PTRACE_DETACH");
+		RzDebugProcess *forked_child = linux_new_process_info((int)data);
+		if (forked_child) {
+			forked_child->state = RZ_DBG_PROC_STOP;
+			if (!dbg->processes || !rz_list_append(dbg->processes, forked_child)) {
+				rz_debug_process_free(forked_child);
+			} else {
+				RzDebugThread *main_th = rz_debug_thread_new((int)data, (int)data, RZ_DBG_THREAD_STOP, 0);
+				if (main_th) {
+					main_th->pc = linux_get_pc_for_tid(dbg, (int)data);
+					if (!rz_debug_thread_add(dbg, forked_child, main_th)) {
+						rz_debug_thread_free(main_th);
+					}
+				}
 			}
+		}
+		RZ_LOG_WARN("(%d) Created process %d\n", ptid, (int)data);
+		if (!dbg->trace_forks && !dbg->follow_child) {
+			linux_remove_fork_bps(dbg);
 		}
 		return RZ_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
@@ -292,32 +313,27 @@ RzDebugReasonType linux_ptrace_event(RzDebug *dbg, int ptid, int status, bool do
  */
 static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid) {
 	int ret, status;
-	if (dbg->threads) {
-		RzDebugPid *th;
-		RzListIter *it;
-		// Search for SIGTRAP with PTRACE_EVENT_* in other threads.
-		rz_list_foreach (dbg->threads, it, th) {
-			if (th->pid == tid) {
+	RzListIter *pit, *it;
+	RzDebugProcess *proc;
+	RzDebugThread *th;
+	rz_list_foreach (dbg->processes, pit, proc) {
+		rz_list_foreach (proc->threads, it, th) {
+			if (th->tid == tid) {
 				continue;
 			}
-			// Retrieve the signal without consuming it with PTRACE_GETSIGINFO
 			siginfo_t siginfo = { 0 };
-			ret = rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, th->pid, 0, (rz_ptrace_data_t)(size_t)&siginfo);
-			// Skip if PTRACE_GETSIGINFO fails when the thread is running.
+			ret = rz_debug_ptrace(dbg, PTRACE_GETSIGINFO, th->tid, 0, (rz_ptrace_data_t)(size_t)&siginfo);
 			if (ret == -1) {
 				continue;
 			}
 #ifdef PT_GETEVENTMSG
-			// NOTE: This API was added in Linux 2.5.46
 			if (siginfo.si_signo == SIGTRAP) {
-				// si_code = (SIGTRAP | PTRACE_EVENT_* << 8)
 				int pt_evt = siginfo.si_code >> 8;
-				// Handle PTRACE_EVENT_* that creates a new task (fork/clone)
 				switch (pt_evt) {
 				case PTRACE_EVENT_CLONE:
 				case PTRACE_EVENT_VFORK:
 				case PTRACE_EVENT_FORK:
-					ret = waitpid(th->pid, &status, 0);
+					ret = waitpid(th->tid, &status, 0);
 					return linux_ptrace_event(dbg, ret, status, false);
 				default:
 					break;
@@ -371,63 +387,43 @@ bool linux_set_options(RzDebug *dbg, int pid) {
 }
 
 static void linux_detach_all(RzDebug *dbg) {
-	RzList *th_list = dbg->threads;
-	if (th_list) {
-		RzDebugPid *th;
-		RzListIter *it;
-		rz_list_foreach (th_list, it, th) {
-			if (th->pid != dbg->main_pid) {
-				if (rz_debug_ptrace(dbg, PTRACE_DETACH, th->pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
-					perror("PTRACE_DETACH");
-				}
+	RzList *th_list = linux_cur_threads(dbg);
+	RzDebugThread *th;
+	RzListIter *it;
+	rz_list_foreach (th_list, it, th) {
+		if (th->tid != dbg->pid) {
+			if (rz_debug_ptrace(dbg, PTRACE_DETACH, th->tid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
+				perror("PTRACE_DETACH");
 			}
 		}
 	}
-
-	// Detaching from main proc
-	if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->main_pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
+	if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
 		perror("PTRACE_DETACH");
 	}
 }
 
-static void linux_remove_thread(RzDebug *dbg, int tid) {
-	if (dbg->threads) {
-		RzDebugPid *th;
-		RzListIter *it;
-		rz_list_foreach (dbg->threads, it, th) {
-			if (th->pid == tid) {
-				rz_list_delete(dbg->threads, it);
-				dbg->n_threads--;
-				break;
-			}
-		}
+bool linux_attach_new_process(RzDebug *dbg, int pid) {
+	linux_detach_all(dbg);
+	rz_debug_process_remove(dbg, dbg->pid); // unindexes its threads, then frees them
+
+	if (linux_attach(dbg, pid) < 0) {
+		return false;
 	}
+	dbg->pid = pid;
+	dbg->tid = pid;
+	rz_debug_select(dbg, pid, pid);
+	return true;
 }
 
 bool linux_select(RzDebug *dbg, int pid, int tid) {
 	if (dbg->pid != -1 && dbg->pid != pid) {
+		/* already a tracee via a fork event: nothing to attach */
+		if (rz_debug_process_find(dbg, pid)) {
+			return true;
+		}
 		return linux_attach_new_process(dbg, pid);
 	}
-	return linux_attach(dbg, tid);
-}
-
-bool linux_attach_new_process(RzDebug *dbg, int pid) {
-	linux_detach_all(dbg);
-	if (dbg->threads) {
-		rz_list_free(dbg->threads);
-		dbg->threads = NULL;
-	}
-
-	if (!linux_attach(dbg, pid)) {
-		return false;
-	}
-
-	// Call select to syncrhonize the thread's data.
-	dbg->pid = pid;
-	dbg->tid = pid;
-	rz_debug_select(dbg, pid, pid);
-
-	return true;
+	return linux_attach(dbg, tid) >= 0;
 }
 
 static void linux_dbg_wait_break(RzDebug *dbg) {
@@ -497,25 +493,25 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 			}
 
 			if (WIFEXITED(status)) {
-				if (tid == dbg->main_pid) {
-					rz_list_free(dbg->threads);
-					dbg->threads = NULL;
+				if (tid == dbg->pid) {
+					rz_debug_process_remove(dbg, tid);
 					reason = RZ_DEBUG_REASON_DEAD;
 					RZ_LOG_WARN("(%d) Process terminated with status %d\n", tid, WEXITSTATUS(status));
 					break;
 				} else {
 					RZ_LOG_WARN("(%d) Child terminated with status %d\n", tid, WEXITSTATUS(status));
-					linux_remove_thread(dbg, tid);
+					if (rz_debug_process_find(dbg, tid)) {
+						rz_debug_process_remove(dbg, tid);
+					} else {
+						rz_debug_thread_remove(dbg, tid);
+					}
 					continue;
 				}
 			} else if (WIFSIGNALED(status)) {
 				RZ_LOG_WARN("child received signal %d\n", WTERMSIG(status));
 				reason = RZ_DEBUG_REASON_SIGNAL;
 			} else if (WIFSTOPPED(status)) {
-				// If tid is not in the thread list and stopped by SIGSTOP,
-				// handle it as a new task.
-				if (!rz_list_find(dbg->threads, &tid, &match_pid, NULL) &&
-					WSTOPSIG(status) == SIGSTOP) {
+				if (!rz_debug_thread_find(dbg, tid) && WSTOPSIG(status) == SIGSTOP) {
 					reason = linux_handle_new_task(dbg, tid);
 					if (reason != RZ_DEBUG_REASON_UNKNOWN) {
 						break;
@@ -555,36 +551,30 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 	return reason;
 }
 
-int match_pid(const void *pid_o, const void *th_o, void *user) {
-	int pid = *(int *)pid_o;
-	RzDebugPid *th = (RzDebugPid *)th_o;
-	return (pid == th->pid) ? 0 : 1;
-}
-
-static void linux_add_new_thread(RzDebug *dbg, int tid) {
-	int uid = getuid(); // XXX
+static void linux_add_new_thread(RzDebug *dbg, int pid, int tid) {
 	char info[1024] = { 0 };
-	RzDebugPid *tid_info;
+	RzDebugThread *tid_info;
 
+	RzDebugProcess *proc = rz_debug_process_find(dbg, pid);
+	if (!proc) {
+		return;
+	}
 	if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
-		tid_info = fill_pid_info(info, NULL, tid);
+		tid_info = fill_thread_state_info(info, tid, pid);
 	} else {
-		tid_info = rz_debug_pid_new("new_path", tid, uid, 's', 0);
+		tid_info = rz_debug_thread_new(tid, pid, RZ_DBG_THREAD_STOP, 0);
 	}
+	if (!tid_info) {
+		return;
+	}
+	tid_info->pc = linux_get_pc_for_tid(dbg, tid);
+#if !__ANDROID__
+	tid_info->tls_base = get_linux_tls_val(dbg, tid);
+#endif
 	linux_set_options(dbg, tid);
-	rz_list_append(dbg->threads, tid_info);
-	dbg->n_threads++;
-}
-
-static bool linux_kill_thread(int tid, int signo) {
-	int ret = syscall(__NR_tkill, tid, signo);
-
-	if (ret == -1) {
-		perror("tkill");
-		return false;
+	if (!rz_debug_thread_add(dbg, proc, tid_info)) {
+		rz_debug_thread_free(tid_info);
 	}
-
-	return true;
 }
 
 static bool linux_stop_thread(RzDebug *dbg, int tid) {
@@ -607,16 +597,25 @@ static bool linux_stop_thread(RzDebug *dbg, int tid) {
 	return false;
 }
 
+static bool linux_kill_thread(int tid, int signo) {
+	int ret = syscall(__NR_tkill, tid, signo);
+
+	if (ret == -1) {
+		perror("tkill");
+		return false;
+	}
+
+	return true;
+}
+
 bool linux_stop_threads(RzDebug *dbg, int except) {
 	bool ret = true;
-	if (dbg->threads) {
-		RzDebugPid *th;
-		RzListIter *it;
-		rz_list_foreach (dbg->threads, it, th) {
-			if (th->pid && th->pid != except) {
-				if (!linux_stop_thread(dbg, th->pid)) {
-					ret = false;
-				}
+	RzDebugThread *th;
+	RzListIter *it;
+	rz_list_foreach (linux_cur_threads(dbg), it, th) {
+		if (th->tid && th->tid != except) {
+			if (!linux_stop_thread(dbg, th->tid)) {
+				ret = false;
 			}
 		}
 	}
@@ -656,28 +655,49 @@ static bool linux_attach_single_pid(RzDebug *dbg, int ptid) {
 	return true;
 }
 
-static RZ_OWN RzList /*<RzDebugPid *>*/ *get_pid_thread_list(RZ_NONNULL RzDebug *dbg, int main_pid) {
-	rz_return_val_if_fail(dbg, NULL);
+/* Builds the process entry for pid, its owned thread list, and indexes every thread. */
+static bool linux_build_main_process(RzDebug *dbg, int pid) {
+	rz_return_val_if_fail(dbg && dbg->processes, false);
 	RzList *list = rz_list_new();
-	if (list) {
-		list = linux_thread_list(dbg, main_pid, list);
-		dbg->main_pid = main_pid;
+	if (!list) {
+		return false;
 	}
-	return list;
-}
-
-int linux_attach(RzDebug *dbg, int pid) {
-	// First time we run: We try to attach to all "possible" threads and to the main pid
-	if (!dbg->threads) {
-		dbg->threads = get_pid_thread_list(dbg, pid);
-	} else {
-		// This means we did a first run, so we probably attached to all possible threads already.
-		// So check if the requested thread is being traced already. If not, attach it
-		if (!rz_list_find(dbg->threads, &pid, &match_pid, NULL)) {
-			linux_attach_single_pid(dbg, pid);
+	dbg->pid = pid;
+	list = linux_thread_list(dbg, pid, list);
+	if (!list) {
+		return false;
+	}
+	RzDebugProcess *proc = linux_new_process_info(pid);
+	if (!proc || !rz_list_append(dbg->processes, proc)) {
+		rz_debug_process_free(proc);
+		rz_list_free(list);
+		return false;
+	}
+	/* move the threads into the process, indexing each one */
+	RzListIter *it;
+	RzDebugThread *th;
+	list->free = NULL; // ownership moves to proc->threads
+	rz_list_foreach (list, it, th) {
+		if (!rz_debug_thread_add(dbg, proc, th)) {
+			rz_debug_thread_free(th);
 		}
 	}
-	return pid;
+	rz_list_free(list);
+	return true;
+}
+
+int linux_attach(RzDebug *dbg, int tid) {
+	if (!rz_debug_process_find(dbg, dbg->pid)) {
+		if (!linux_build_main_process(dbg, tid)) {
+			return -1;
+		}
+	} else if (!rz_debug_thread_find(dbg, tid)) {
+		if (!linux_attach_single_pid(dbg, tid)) {
+			return -1;
+		}
+		linux_add_new_thread(dbg, rz_debug_thread_owner_pid(dbg, tid), tid);
+	}
+	return tid;
 }
 
 static char *read_link(int pid, const char *file) {
@@ -700,70 +720,42 @@ RzDebugInfo *linux_info(RzDebug *dbg, const char *arg) {
 		return NULL;
 	}
 
-	RzList *th_list;
-	bool list_alloc = false;
-	if (dbg->threads) {
-		th_list = dbg->threads;
-	} else {
-		th_list = rz_list_new();
-		list_alloc = true;
-		if (th_list) {
-			th_list = linux_thread_list(dbg, dbg->pid, th_list);
-		}
-	}
-	RzDebugPid *th;
-	RzListIter *it;
-	bool found = false;
-	rz_list_foreach (th_list, it, th) {
-		if (th->pid == dbg->pid) {
-			found = true;
-			break;
-		}
-	}
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
-	rdi->uid = found ? th->uid : -1;
-	rdi->gid = found ? th->gid : -1;
+
+	RzDebugProcess *proc = rz_debug_process_find(dbg, dbg->pid);
+	rdi->uid = proc ? proc->uid : -1;
+	rdi->gid = proc ? proc->gid : -1;
+	rdi->status = proc ? proc->state : RZ_DBG_PROC_STOP;
+
 	rdi->cwd = read_link(rdi->pid, "cwd");
 	rdi->exe = read_link(rdi->pid, "exe");
 	snprintf(proc_buff, sizeof(proc_buff), "/proc/%d/cmdline", rdi->pid);
 	rdi->cmdline = rz_file_slurp(proc_buff, NULL);
 	snprintf(proc_buff, sizeof(proc_buff), "/proc/%d/stack", rdi->pid);
 	rdi->kernel_stack = rz_file_slurp(proc_buff, NULL);
-	rdi->status = found ? th->status : RZ_DBG_PROC_STOP;
-	if (list_alloc) {
-		rz_list_free(th_list);
-	}
+
 	return rdi;
 }
 
-RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
-	RzDebugPid *pid_info = RZ_NEW0(RzDebugPid);
+RzDebugProcess *fill_pid_info(const char *info, const char *path, int tid) {
+	RzDebugProcess *pid_info = RZ_NEW0(RzDebugProcess);
 	if (!pid_info) {
 		return NULL;
 	}
+	pid_info->state = RZ_DBG_PROC_UNKNOWN;
 	const char *ptr = strstr(info, "State:");
 	if (ptr) {
 		switch (*(ptr + 7)) {
-		case 'R':
-			pid_info->status = RZ_DBG_PROC_RUN;
-			break;
-		case 'S':
-			pid_info->status = RZ_DBG_PROC_SLEEP;
-			break;
+		case 'R': pid_info->state = RZ_DBG_PROC_RUN; break;
+		case 'S': pid_info->state = RZ_DBG_PROC_SLEEP; break;
+		case 'D': pid_info->state = RZ_DBG_PROC_WAIT; break;
 		case 'T':
-		case 't':
-			pid_info->status = RZ_DBG_PROC_STOP;
-			break;
-		case 'Z':
-			pid_info->status = RZ_DBG_PROC_ZOMBIE;
-			break;
+		case 't': pid_info->state = RZ_DBG_PROC_STOP; break;
+		case 'Z': pid_info->state = RZ_DBG_PROC_ZOMBIE; break;
 		case 'X':
-			pid_info->status = RZ_DBG_PROC_DEAD;
-			break;
-		default:
-			pid_info->status = RZ_DBG_PROC_SLEEP;
-			break;
+		case 'x': pid_info->state = RZ_DBG_PROC_DEAD; break;
+		default: pid_info->state = RZ_DBG_PROC_UNKNOWN; break;
 		}
 	}
 	ptr = strstr(info, "PPid:");
@@ -778,45 +770,35 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (ptr) {
 		pid_info->gid = atoi(ptr + 5);
 	}
-
 	pid_info->pid = tid;
 	pid_info->path = rz_str_dup(path);
 	pid_info->runnable = true;
-	pid_info->pc = 0;
 	return pid_info;
 }
 
-RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *list) {
-	list->free = (RzListFree)&rz_debug_pid_free;
-	DIR *dh = NULL;
+RzList /*<RzDebugProcess *>*/ *linux_pid_list(int pid, RzList /*<RzDebugProcess *>*/ *list) {
+	list->free = (RzListFree)&rz_debug_process_free;
 	struct dirent *de = NULL;
-	char path[PATH_MAX], info[PATH_MAX];
-	int i = -1;
-	RzDebugPid *pid_info = NULL;
-	dh = opendir("/proc");
+	DIR *dh = opendir("/proc");
 	if (!dh) {
 		rz_sys_perror("opendir /proc");
 		rz_list_free(list);
 		return NULL;
 	}
 	while ((de = readdir(dh))) {
-		path[0] = 0;
-		info[0] = 0;
-		// For each existing pid file
-		if ((i = atoi(de->d_name)) <= 0) {
+		int i = atoi(de->d_name);
+		if (i <= 0) {
 			continue;
 		}
-
-		procfs_pid_slurp(i, "cmdline", path, sizeof(path));
-		if (!procfs_pid_slurp(i, "status", info, sizeof(info))) {
-			// Get information about pid (status, pc, etc.)
-			pid_info = fill_pid_info(info, path, i);
-		} else {
-			pid_info = rz_debug_pid_new(path, i, 0, RZ_DBG_PROC_STOP, 0);
+		RzDebugProcess *pid_info = linux_new_process_info(i);
+		if (!pid_info) {
+			continue;
 		}
-		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		// Unless pid 0 is requested, only add the requested pid and its child processes
 		if (0 == pid || i == pid || pid_info->ppid == pid) {
 			rz_list_append(list, pid_info);
+		} else {
+			rz_debug_process_free(pid_info);
 		}
 	}
 	closedir(dh);
@@ -867,7 +849,7 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	}
 #endif
 	// Must execute this block everytime
-	if (dbg->tid != tid) {
+	if (prev_tid != tid) {
 		linux_attach_single_pid(dbg, prev_tid);
 		dbg->tid = prev_tid;
 		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
@@ -877,106 +859,120 @@ RZ_API ut64 get_linux_tls_val(RZ_NONNULL RzDebug *dbg, int tid) {
 	return tls;
 }
 
-RzList /*<RzDebugPid *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugPid *>*/ *list) {
-	int i = 0, thid = 0;
-	char *ptr, buf[PATH_MAX];
-	RzDebugPid *pid_info = NULL;
-	ut64 pc = 0;
-	ut64 tls = 0;
+static ut64 linux_get_pc_for_tid(RzDebug *dbg, int tid) {
 	int prev_tid = dbg->tid;
+	if (prev_tid != tid) {
+		linux_attach_single_pid(dbg, tid);
+		dbg->tid = tid;
+	}
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	ut64 pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
+	if (prev_tid != tid) {
+		linux_attach_single_pid(dbg, prev_tid);
+		dbg->tid = prev_tid;
+		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+	}
+	return pc;
+}
+
+static RzDebugThreadState linux_parse_thread_state(const char *info) {
+	const char *ptr = strstr(info, "State:");
+	if (!ptr) {
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+	switch (*(ptr + 7)) {
+	case 'R':
+		return RZ_DBG_THREAD_RUN;
+	case 'S':
+		return RZ_DBG_THREAD_SLEEP;
+	case 'D':
+		return RZ_DBG_THREAD_WAIT;
+	case 'T':
+	case 't':
+		return RZ_DBG_THREAD_STOP;
+	case 'Z':
+		return RZ_DBG_THREAD_ZOMBIE;
+	case 'X':
+	case 'x':
+		return RZ_DBG_THREAD_DEAD;
+	default:
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+}
+
+static RzDebugThread *fill_thread_state_info(const char *info, int tid, int process_pid) {
+	RzDebugThread *thread_info = RZ_NEW0(RzDebugThread);
+	if (!thread_info) {
+		return NULL;
+	}
+	thread_info->tid = tid;
+	thread_info->process_pid = process_pid;
+	thread_info->state = linux_parse_thread_state(info);
+	return thread_info;
+}
+
+RzList /*<RzDebugThread *>*/ *linux_thread_list(RzDebug *dbg, int pid, RzList /*<RzDebugThread *>*/ *list) {
+	char *ptr, buf[PATH_MAX];
 
 	if (!pid) {
 		rz_list_free(list);
 		return NULL;
 	}
 
-	list->free = (RzListFree)&rz_debug_pid_free;
-	/* if this process has a task directory, use that */
+	list->free = (RzListFree)&rz_debug_thread_free;
+
 	snprintf(buf, sizeof(buf), "/proc/%d/task", pid);
 	if (rz_file_is_directory(buf)) {
 		struct dirent *de;
 		DIR *dh = opendir(buf);
-		// Update the process' memory maps to set correct paths
+		if (!dh) {
+			return list;
+		}
 		rz_debug_map_sync(dbg);
+
 		while ((de = readdir(dh))) {
 			if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) {
 				continue;
 			}
 			int tid = atoi(de->d_name);
 			char info[PATH_MAX];
-			int uid = 0;
-			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
-				ptr = strstr(info, "Uid:");
-				if (ptr) {
-					uid = atoi(ptr + 4);
-				}
-				ptr = strstr(info, "Tgid:");
-				if (ptr) {
-					int tgid = atoi(ptr + 5);
-					if (tgid != pid) {
-						/* Ignore threads that aren't in the pid's thread group */
-						continue;
-					}
-				}
+
+			if (procfs_pid_slurp(tid, "status", info, sizeof(info)) == -1) {
+				continue;
+			}
+			ptr = strstr(info, "Tgid:");
+			if (ptr && atoi(ptr + 5) != pid) {
+				continue;
 			}
 
-			// Switch to the currently inspected thread to get it's program counter
-			if (dbg->tid != tid) {
-				linux_attach_single_pid(dbg, tid);
-				dbg->tid = tid;
+			RzDebugThread *thread_info = fill_thread_state_info(info, tid, pid);
+			if (!thread_info) {
+				continue;
 			}
-
-			rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(dbg, "PC");
+			thread_info->pc = linux_get_pc_for_tid(dbg, tid);
 #if !__ANDROID__
-			tls = get_linux_tls_val(dbg, dbg->tid);
+			thread_info->tls_base = get_linux_tls_val(dbg, tid);
 #endif
-			if (!procfs_pid_slurp(tid, "status", info, sizeof(info))) {
-				// Get information about pid (status, pc, etc.)
-				pid_info = fill_pid_info(info, NULL, tid);
-				pid_info->pc = pc;
-			} else {
-				pid_info = rz_debug_pid_new(NULL, tid, uid, 's', pc);
-			}
-			// Handle it in the caller if tls is not found. Setting it here anyways.
-			pid_info->tls = tls;
-			rz_list_append(list, pid_info);
+			rz_list_append(list, thread_info);
 		}
-		dbg->n_threads = rz_list_length(list);
 		closedir(dh);
-		// Return to the original thread
-		linux_attach_single_pid(dbg, prev_tid);
-		dbg->tid = prev_tid;
-		rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
+		/* no restore here: both helpers restore dbg->tid before returning */
 	} else {
-		/* Some linux configurations might hide threads from /proc, use this workaround instead */
+		/* Some Linux configurations hide threads from /proc; brute-force fallback.
+		 * No ptrace switching here, so pc/tls stay zeroed. */
 #undef MAXPID
 #define MAXPID 99999
-		/* otherwise, brute force the pids */
-		for (i = pid; i < MAXPID; i++) { // XXX
+		for (int i = pid; i < MAXPID; i++) {
 			if (procfs_pid_slurp(i, "status", buf, sizeof(buf)) == -1) {
 				continue;
 			}
-			int uid = 0;
-			/* look for a thread group id */
-			ptr = strstr(buf, "Uid:");
-			if (ptr) {
-				uid = atoi(ptr + 4);
-			}
 			ptr = strstr(buf, "Tgid:");
-			if (ptr) {
-				int tgid = atoi(ptr + 5);
-
-				/* if it is not in our thread group, we don't want it */
-				if (tgid != pid) {
-					continue;
-				}
-
-				if (procfs_pid_slurp(i, "comm", buf, sizeof(buf)) == -1) {
-					/* fall back to auto-id */
-					snprintf(buf, sizeof(buf), "thread_%d", thid++);
-				}
-				rz_list_append(list, rz_debug_pid_new(buf, i, uid, 's', 0));
+			if (!ptr || atoi(ptr + 5) != pid) {
+				continue;
+			}
+			RzDebugThread *thread_info = fill_thread_state_info(buf, i, pid);
+			if (thread_info) {
+				rz_list_append(list, thread_info);
 			}
 		}
 	}

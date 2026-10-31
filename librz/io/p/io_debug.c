@@ -441,7 +441,7 @@ static int get_pid_of(RzIO *io, const char *procname) {
 	RzCore *c = io->corebind.core;
 	if (c && c->dbg && c->dbg->cur) {
 		RzListIter *iter;
-		RzDebugPid *proc;
+		RzDebugProcess *proc;
 		RzDebug *d = c->dbg;
 		RzList *pids = d->cur->pids(d, 0);
 		rz_list_foreach (pids, iter, proc) {

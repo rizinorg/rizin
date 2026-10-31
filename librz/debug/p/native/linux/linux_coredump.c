@@ -1050,7 +1050,7 @@ void write_note_hdr(note_type_t type, ut8 **note_data) {
 static int *get_unique_thread_id(RzDebug *dbg, int n_threads) {
 	RzListIter *it;
 	RzList *list;
-	RzDebugPid *th;
+	RzDebugThread *th;
 	int *thread_id = NULL;
 	int i = 0;
 	bool found = false;
@@ -1065,19 +1065,19 @@ static int *get_unique_thread_id(RzDebug *dbg, int n_threads) {
 			return NULL; /* free list */
 		}
 		rz_list_foreach (list, it, th) {
-			if (th->pid) {
+			if (th->tid) {
 				int j;
 				for (j = 0; j < i && !found; j++) {
-					if (th->pid == thread_id[j]) {
+					if (th->tid == thread_id[j]) {
 						found = true;
 						break;
 					}
 				}
 				if (!found) {
 					/* Adding to array and attaching to thread */
-					thread_id[i] = th->pid;
+					thread_id[i] = th->tid;
 					/* The main thread is already being traced */
-					if (th->pid != dbg->pid) {
+					if (th->tid != dbg->pid) {
 						if (rz_debug_ptrace(dbg, PTRACE_ATTACH, thread_id[i], 0, 0) < 0) {
 							perror("Could not attach to thread");
 						}

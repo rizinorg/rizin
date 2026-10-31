@@ -458,7 +458,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		if (core->file) {
 			newpid = rz_io_fd_get_pid(core->io, core->file->fd);
 #if __linux__
-			core->dbg->main_pid = newpid;
+			core->dbg->pid = newpid;
 			newtid = newpid;
 #else
 			newtid = rz_io_fd_get_tid(core->io, core->file->fd);
