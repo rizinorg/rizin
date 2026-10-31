@@ -661,7 +661,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Install Inno Setup
         run: choco install innosetup
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -871,7 +871,7 @@ jobs:
             bits: 32
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
       - name: Install pkg-config and cmake
         shell: pwsh
         run: |
