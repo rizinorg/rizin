@@ -360,6 +360,11 @@ commands:
           - name: afs
             cname: analysis_function_signature
             summary: Get/Set function signature at current address
+            description: >
+              Without an argument, prints the signature with the storage of every argument
+              that has an argument variable of the same name and type, as in
+              `int main(int argc @ rdi)`. `afT` prints the signature as a C prototype,
+              which is what setting the signature takes.
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -385,6 +390,13 @@ commands:
             args:
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+      - name: afT
+        cname: analysis_function_type
+        summary: Show the type of the function at current address
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: afo
         cname: analysis_function_address
         summary: Show address of current function

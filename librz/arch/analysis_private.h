@@ -101,4 +101,8 @@ struct rz_analysis_t {
 	RzInterrupt *intr; ///< Interrupt handler for cancellation and timeouts
 };
 
+RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_fcn_sig_arg_var(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *name, RZ_NULLABLE const RzType *type);
+RZ_IPI RZ_OWN char *rz_analysis_fcn_callable_with_storage(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn,
+	RZ_NONNULL const RzCallable *callable, RZ_NONNULL RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown);
+
 #endif // RZ_ANALYSIS_PRIVATE_H

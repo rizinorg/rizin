@@ -139,8 +139,7 @@ features o32 n32
             ;-- __start:
             ;-- _start:
             ;-- pc:
-/ entry0(int32_t arg4);
-|           ; arg int32_t arg4 @ a3
+/ entry0(int32_t arg4 @ a3);
 \           0x004003d4      move  fp, zero                             ; [08] -r-x section size 474 named .text
 |           0x004003d6      lapc.h t0, sym._start_c
 |           0x004003da      lapc.h a1, obj._DYNAMIC
@@ -725,9 +724,7 @@ EOF
 EXPECT=<<EOF
 0x8060b4f8      00000000   nop
 0x8060b4fc      00000000   nop
-fcn.8060b500(int32_t arg1, int32_t arg2);
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+fcn.8060b500(int32_t arg1 @ a0, int32_t arg2 @ a1);
 0x8060b500      002e0500   sll   a1, a1, 0x18
 0x8060b504      032e0500   sra   a1, a1, 0x18
 0x8060b508      0f008010   beqz  a0, 0x8060b548
@@ -748,9 +745,7 @@ fcn.8060b500(int32_t arg1, int32_t arg2);
 0x8060b544      21100000   move  v0, zero
 0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
-fcn.8060b550(int32_t arg1, int32_t arg2);
-; arg int32_t arg1 @ a0
-; arg int32_t arg2 @ a1
+fcn.8060b550(int32_t arg1 @ a0, int32_t arg2 @ a1);
 0x8060b550      0000a290   lbu   v0, (arg2)
 0x8060b554      05004010   beqz  v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
@@ -796,9 +791,7 @@ EOF
 EXPECT=<<EOF
   0x8060b4f8      00000000   nop
   0x8060b4fc      00000000   nop
-/ fcn.8060b500(int32_t arg1, int32_t arg2);
-| ; arg int32_t arg1 @ a0
-| ; arg int32_t arg2 @ a1
+/ fcn.8060b500(int32_t arg1 @ a0, int32_t arg2 @ a1);
 | 0x8060b500      002e0500   sll   a1, a1, 0x18
 | 0x8060b504      032e0500   sra   a1, a1, 0x18
 | 0x8060b508      0f008010   beqz  a0, 0x8060b548
@@ -819,9 +812,7 @@ EXPECT=<<EOF
 | 0x8060b544      21100000   move  v0, zero
 | 0x8060b548      0800e003   jr    ra
 \ 0x8060b54c      00000000   nop
-/ fcn.8060b550(int32_t arg1, int32_t arg2);
-| ; arg int32_t arg1 @ a0
-| ; arg int32_t arg2 @ a1
+/ fcn.8060b550(int32_t arg1 @ a0, int32_t arg2 @ a1);
 | 0x8060b550      0000a290   lbu   v0, (arg2)
 | 0x8060b554      05004010   beqz  v0, 0x8060b56c
 | 0x8060b558      0100a524   addiu a1, a1, 1
@@ -876,15 +867,10 @@ pdf
 afvx
 EOF
 EXPECT=<<EOF
-/ sym.varfunc(int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch, int32_t arg_20h, int32_t arg_24h);
+/ sym.varfunc(int32_t arg_10h @ stack + 0x10, int32_t arg_18h @ stack + 0x18, int32_t arg_1ch @ stack + 0x1c, int32_t arg_20h @ stack + 0x20, int32_t arg_24h @ stack + 0x24);
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
-|           ; arg int32_t arg_10h @ stack + 0x10
-|           ; arg int32_t arg_18h @ stack + 0x18
-|           ; arg int32_t arg_1ch @ stack + 0x1c
-|           ; arg int32_t arg_20h @ stack + 0x20
-|           ; arg int32_t arg_24h @ stack + 0x24
 |           0x00000794      lui   gp, 2
 |           0x00000798      addiu gp, gp, -0x7db4
 |           0x0000079c      addu  gp, gp, t9
@@ -943,10 +929,7 @@ aa
 pdf @ main
 EOF
 EXPECT=<<EOF
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ a0
-|           ; arg char **argv @ a1
-|           ; arg char **envp @ a2
+/ int main(int argc @ a0, char **argv @ a1, char **envp @ a2);
 |           ; var int32_t var_40h @ stack - 0x40
 |           ; var int32_t var_38h @ stack - 0x38
 |           ; var int32_t var_30h @ stack - 0x30
@@ -1755,8 +1738,7 @@ nth vaddr bind type lib name
 -----------------------------
 []
 ---
-/ sym._dl_malloc(int32_t arg1);
-|       :   ; arg int32_t arg1 @ a0
+/ sym._dl_malloc(int32_t arg1 @ a0);
 |       :   ; var int32_t var_4h @ stack - 0x4
 |       :   0x00002a1c      lui   gp, 2
 |       :   0x00002a20      addiu gp, gp, -sym._dl_parse_relocation_information
@@ -1779,7 +1761,7 @@ nth vaddr bind type lib name
 \           0x00002a64      addiu sp, sp, 8
 ---
             ; CALL XREF from sym._dl_malloc @ 0x2a60
-/ fcn.000028dc(int32_t arg_10h);
+/ fcn.000028dc(int32_t arg_10h @ stack + 0x10);
 |           ; var int32_t var_50h @ stack - 0x50
 |           ; var int32_t var_4ch @ stack - 0x4c
 |           ; var int32_t var_18h @ stack - 0x18
@@ -1788,7 +1770,6 @@ nth vaddr bind type lib name
 |           ; var int32_t var_ch @ stack - 0xc
 |           ; var int32_t var_8h @ stack - 0x8
 |           ; var int32_t var_4h @ stack - 0x4
-|           ; arg int32_t arg_10h @ stack + 0x10
 |           0x000028dc      lui   gp, 2
 |           0x000028e0      addiu gp, gp, -0x38dc
 |           0x000028e4      addu  gp, gp, t9

@@ -119,9 +119,7 @@ Shared buffer size 0x10e8
             ;-- main:
             ;-- _main:
             ;-- func.100000f70:
-/ entry0(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
+/ entry0(int64_t arg1 @ rdi, int64_t arg2 @ rsi);
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_ch @ stack - 0xc

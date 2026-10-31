@@ -290,9 +290,87 @@ afs
 afsj
 EOF
 EXPECT=<<EOF
-void fcn.00013c70(int64_t arg1, int64_t arg2, int64_t arg3);
-{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[{"name":"arg1","type":"int64_t","cc":"rdi"},{"name":"arg2","type":"int64_t","cc":"rsi"},{"name":"arg3","type":"int64_t","cc":"rdx"}]}
+void fcn.00013c70(int64_t arg1 @ rdi, int64_t arg2 @ rsi, int64_t arg3 @ rdx);
+{"name":"fcn.00013c70","noreturn":false,"ret":"void","cc":"amd64","args":[{"name":"arg1","type":"int64_t","cc":"rdi","storage":{"type":"reg","reg":"rdi"}},{"name":"arg2","type":"int64_t","cc":"rsi","storage":{"type":"reg","reg":"rsi"}},{"name":"arg3","type":"int64_t","cc":"rdx","storage":{"type":"reg","reg":"rdx"}}]}
 EOF
+RUN
+
+NAME=afs: argument storage, afT: function type
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+afs
+afT
+afsj
+afTj
+EOF
+EXPECT=<<EOF
+void fcn.00000000(int64_t arg1 @ rcx, int64_t arg2 @ rdx, int64_t arg3 @ r8);
+void fcn.00000000(int64_t arg1, int64_t arg2, int64_t arg3);
+{"name":"fcn.00000000","noreturn":false,"ret":"void","cc":"ms","args":[{"name":"arg1","type":"int64_t","cc":"rdi","storage":{"type":"reg","reg":"rcx"}},{"name":"arg2","type":"int64_t","cc":"rsi","storage":{"type":"reg","reg":"rdx"}},{"name":"arg3","type":"int64_t","cc":"rdx","storage":{"type":"reg","reg":"r8"}}]}
+{"name":"fcn.00000000","noreturn":false,"ret":"void","cc":"ms","args":[{"name":"arg1","type":"int64_t","cc":"rdi"},{"name":"arg2","type":"int64_t","cc":"rsi"},{"name":"arg3","type":"int64_t","cc":"rdx"}]}
+EOF
+RUN
+
+NAME=afs: argument storage of a signature from the types
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+s 0x18
+afn strlen
+afs
+afvn s arg1
+afs
+afvt s "const char *"
+afs
+afT
+afsj
+EOF
+EXPECT=<<EOF
+size_t strlen(const char *s);
+size_t strlen(const char *s);
+size_t strlen(const char *s @ rcx);
+size_t strlen(const char *s);
+{"name":"strlen","noreturn":false,"ret":"size_t","cc":"ms","args":[{"name":"s","type":"const char *","cc":"rdi","storage":{"type":"reg","reg":"rcx"}}]}
+EOF
+RUN
+
+NAME=afT: set the type it prints
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+afs "int sum(int a, int b)"
+afT
+afs `afT`
+afT
+afs
+EOF
+EXPECT=<<EOF
+int sum(int a, int b);
+int sum(int a, int b);
+int sum(int a @ rcx, int b @ rdx);
+EOF
+RUN
+
+NAME=afT: no function
+FILE==
+CMDS=<<EOF
+afT
+afTj
+EOF
+EXPECT=
 RUN
 
 NAME=float args afli

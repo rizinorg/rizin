@@ -586,8 +586,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
-/ fcn.00000000(int64_t arg_2h);
-| ; arg int64_t arg_2h @ stack + 0x2
+/ fcn.00000000(int64_t arg_2h @ stack + 0x2);
 | 0x00000000      7507           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000002
 | 0x00000002      0000           add   byte [rax], al
@@ -597,8 +596,7 @@ EXPECT=<<EOF
 | ----------- true: 0x00000009
 \ 0x00000009      c3             ret
 
-/ fcn.00000000(int64_t arg_2h);
-| ; arg int64_t arg_2h @ stack + 0x2
+/ fcn.00000000(int64_t arg_2h @ stack + 0x2);
 | 0x00000000      e802000000     call  0x7
 | 0x00000005      7502           jnz   0x9
 | ----------- true: 0x00000009  false: 0x00000007

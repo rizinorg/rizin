@@ -578,8 +578,7 @@ EXPECT=<<EOF
             ;-- .L0 :
             ;-- .text:
             ;-- main:
-/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0(int64_t arg6);
-|           ; arg int64_t arg6 @ a5
+/ loc._xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0(int64_t arg6 @ a5);
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x08000040      addi  sp, sp, -0x10                        ; RELOC TARGET 0 .L0  @ 0x08000040 ; [01] -r-x section size 42 named .text
@@ -713,8 +712,7 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- test:
-/ loc._x.0(int64_t arg1);
-|           ; arg int64_t arg1 @ a0
+/ loc._x.0(int64_t arg1 @ a0);
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x08000040      addi  sp, sp, -0x10                        ; [02] -r-x section size 36 named .text

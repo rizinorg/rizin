@@ -179,8 +179,7 @@ pdb.exceptions_test._guard_icall_checks_enforced 0x140007344 [DATA] lea rcx, qwo
 |           0x140007350      lea   rcx, qword data.14000101e           ; 0x14000101e
 pdb.exceptions_test.__crt_debugger_hook 0x140006a64 [DATA] mov dword [pdb.exceptions_test.__scrt_debugger_hook_flag], 0x00
   ; CALL XREFS from pdb.exceptions_test.__scrt_fastfail @ 0x140006aab, 0x140006c04
-/ fcn.140001366(int64_t arg1);
-| ; arg int64_t arg1 @ rcx
+/ fcn.140001366(int64_t arg1 @ rcx);
 \ 0x140001366      jmp   pdb.exceptions_test.__crt_debugger_hook
 | ----------- true: 0x140006a60
 pdb.exceptions_test.__scrt_get_dyn_tls_init_callback 0x140006a40 [DATA] lea rax, qword pdb.exceptions_test.__dyn_tls_init_callback

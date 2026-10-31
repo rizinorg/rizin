@@ -84,8 +84,8 @@ global struct s7_point s7_gp @ 0x100
 global struct s7_coord s7_gp @ 0x100
 arg struct s9_point *localp @ stack + 0x8
 arg struct s9_coord *localp @ stack + 0x8
-int myfunc(struct s8_point *p);
-int myfunc(struct s8_coord *p);
+int myfunc(struct s8_point *p @ rdi);
+int myfunc(struct s8_coord *p @ rdi);
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Type "nonexistent" does not exist

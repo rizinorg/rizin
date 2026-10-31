@@ -6,7 +6,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ r0, char **argv @ r1, char **envp);
 EOF
 RUN
 
@@ -18,7 +18,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ r0, char **argv @ r1, char **envp);
 EOF
 RUN
 
@@ -30,7 +30,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc, char **argv @ a1, char **envp);
 EOF
 RUN
 
@@ -43,7 +43,7 @@ s main
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ a0, char **argv @ a1, char **envp @ a2);
 EOF
 RUN
 
@@ -67,7 +67,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ r3, char **argv @ r4, char **envp);
 EOF
 RUN
 
@@ -79,7 +79,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ rdi, char **argv @ rsi, char **envp);
 EOF
 RUN
 
@@ -91,7 +91,7 @@ e scr.utf8=false
 afs @ main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ stack + 0x4, char **argv, char **envp);
 EOF
 RUN
 
@@ -103,7 +103,7 @@ e scr.utf8=false
 afs @ sym._main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ stack + 0x4, char **argv, char **envp);
 EOF
 RUN
 
@@ -115,6 +115,6 @@ e scr.utf8=false
 afs @ sym.main
 EOF
 EXPECT=<<EOF
-int main(int argc, char **argv, char **envp);
+int main(int argc @ rcx, char **argv @ rdx, char **envp);
 EOF
 RUN

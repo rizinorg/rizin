@@ -13,8 +13,7 @@ EXPECT=<<EOF
 0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
 0x000128a0    6 83   -> 75   sym.mpsort
             ; CALL XREF from fcn.00008cac @ 0x8d43
-/ sym.mpsort(int64_t arg_8h);
-|           ; arg int64_t arg_8h @ stack + 0x8
+/ sym.mpsort(int64_t arg_8h @ stack + 0x8);
 |           0x000128a0      endbr64
 |           0x000128a4      push  r12
 \ 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
@@ -1130,9 +1129,7 @@ s 0x00012740
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00012740(int64_t arg1, int64_t arg2);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
+/ fcn.00012740(int64_t arg1 @ rdi, int64_t arg2 @ rsi);
 |           ; var int64_t var_10h @ stack - 0x10
 |           0x00012740      push  rbp
 |           0x00012741      mov   rbp, rsp
@@ -1521,15 +1518,11 @@ EOF
 EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
-/ sym.fastcaslled(int32_t arg1, int32_t arg2, int32_t arg_4h, int32_t arg_8h);
-|           ; arg int32_t arg1 @ ecx
-|           ; arg int32_t arg2 @ edx
+/ sym.fastcaslled(int32_t arg1 @ ecx, int32_t arg2 @ edx, int32_t arg_4h @ stack + 0x4, int32_t arg_8h @ stack + 0x8);
 |           ; var int32_t var_24h @ stack - 0x24
 |           ; var int32_t var_20h @ stack - 0x20
 |           ; var int32_t var_14h @ stack - 0x14
 |           ; var int32_t var_10h @ stack - 0x10
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
 |           0x0804841b      55             push  ebp
 |           0x0804841c      89e5           mov   ebp, esp
 |           0x0804841e      83ec28         sub   esp, 0x28
@@ -1568,13 +1561,9 @@ EOF
 EXPECT=<<EOF
 cdecl
             ; CALL XREF from main @ 0x80484db
-/ sym.nonfastcaslled(int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h);
+/ sym.nonfastcaslled(int32_t arg_4h @ stack + 0x4, int32_t arg_8h @ stack + 0x8, int32_t arg_ch @ stack + 0xc, int32_t arg_10h @ stack + 0x10);
 |           ; var int32_t var_14h @ stack - 0x14
 |           ; var int32_t var_10h @ stack - 0x10
-|           ; arg int32_t arg_4h @ stack + 0x4
-|           ; arg int32_t arg_8h @ stack + 0x8
-|           ; arg int32_t arg_ch @ stack + 0xc
-|           ; arg int32_t arg_10h @ stack + 0x10
 |           0x08048456      55             push  ebp
 |           0x08048457      89e5           mov   ebp, esp
 |           0x08048459      83ec18         sub   esp, 0x18
@@ -1623,8 +1612,7 @@ afvn my_local var_20h
 pd 1
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ fcn.00000000(int64_t arg1 @ rdi);
 |           ; var int64_t my_local @ stack - 0x20
 |           0x00000000      0000           add   byte [rax], al
 EOF
@@ -3963,11 +3951,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.140001080(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
-|           ; arg int64_t arg1 @ rcx
-|           ; arg int64_t arg2 @ rdx
-|           ; arg int64_t arg3 @ r8
-|           ; arg int64_t arg4 @ r9
+/ fcn.140001080(int64_t arg1 @ rcx, int64_t arg2 @ rdx, int64_t arg3 @ r8, int64_t arg4 @ r9);
 |           ; var int64_t var_28h @ stack - 0x28
 |           ; var int64_t var_8h @ stack + 0x8
 |           ; var int64_t var_10h @ stack + 0x10
@@ -4057,12 +4041,10 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int64_t arg_3h, int64_t arg_4h);
+/ fcn.00000000(int64_t arg_3h @ stack + 0x3, int64_t arg_4h @ stack + 0x4);
 |           ; var int64_t var_13h @ stack - 0x13
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_4h @ stack - 0x4
-|           ; arg int64_t arg_3h @ stack + 0x3
-|           ; arg int64_t arg_4h @ stack + 0x4
 |           0x00000000      54             push  rsp
 |           0x00000001      4889e5         mov   rbp, rsp
 |           0x00000004      b402           mov   ah, 0x02
@@ -4098,12 +4080,10 @@ aa
 pd 19
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int64_t arg_3h, int64_t arg_4h);
+/ fcn.00000000(int64_t arg_3h @ stack + 0x3, int64_t arg_4h @ stack + 0x4);
 |           ; var int64_t var_13h @ stack - 0x13
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_4h @ stack - 0x4
-|           ; arg int64_t arg_3h @ stack + 0x3
-|           ; arg int64_t arg_4h @ stack + 0x4
 |           0x00000000      54             push rsp
 |           0x00000001      4889e5         rbp = rsp
 |           0x00000004      b402           ah = 0x02
@@ -4224,7 +4204,7 @@ afs
 afvl
 EOF
 EXPECT=<<EOF
-void fcn.00010270(int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5);
+void fcn.00010270(int64_t arg1 @ rdi, int64_t arg2 @ rsi, int64_t arg3 @ rdx, int64_t arg4 @ rcx, int64_t arg5 @ r8);
 var int64_t var_c8h @ stack - 0xc8
 var int64_t var_c7h @ stack - 0xc7
 var int64_t var_c0h @ stack - 0xc0
@@ -4245,7 +4225,7 @@ arg int64_t arg4 @ rcx
 arg int64_t arg1 @ rdi
 arg int64_t arg3 @ rdx
 arg int64_t arg2 @ rsi
-void fcn.00010270(int64_t arg1, int64_t arg2, const char **s, int64_t arg4, int64_t arg5);
+void fcn.00010270(int64_t arg1 @ rdi, int64_t arg2 @ rsi, const char **s @ rdx, int64_t arg4 @ rcx, int64_t arg5 @ r8);
 var const char *s2 @ stack - 0xc8
 var void *s1 @ stack - 0xc0
 var unsigned long var_b8h @ stack - 0xb8
@@ -4407,7 +4387,7 @@ EXPECT=<<EOF
             ; CALL XREFS from sym.win_line @ 0x181983, 0x185a31
             ; CALL XREF from sym.syn_get_foldlevel @ 0x1ba870
             ; CALL XREF from sym.syn_get_id @ 0x1baad1
-/ sym.syntax_start(int64_t arg_fh);
+/ sym.syntax_start(int64_t arg_fh @ stack + 0xf);
 |           ; var int64_t var_70h @ stack - 0x70
 |           ; var int64_t var_64h @ stack - 0x64
 |           ; var int64_t var_60h @ stack - 0x60
@@ -4415,7 +4395,6 @@ EXPECT=<<EOF
 |           ; var int64_t var_50h @ stack - 0x50
 |           ; var int64_t var_48h @ stack - 0x48
 |           ; var int64_t var_40h @ stack - 0x40
-|           ; arg int64_t arg_fh @ stack + 0xf
 |           0x001b9b30      push  r15
 |           0x001b9b32      push  r14
 EOF
@@ -4465,9 +4444,7 @@ pdf @ main
 EOF
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x140001433
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ rcx
-|           ; arg char **argv @ rdx
+/ int main(int argc @ rcx, char **argv @ rdx, char **envp);
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_8h @ stack + 0x8
 |           0x140001010      mov   qword [var_8h], rbx

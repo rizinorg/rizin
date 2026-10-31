@@ -160,6 +160,11 @@ typedef struct rz_callable_at {
 	bool has_unspecified_parameters : 1;
 } RzCallable;
 
+/**
+ * \brief Appends to \p sb what to print after \p arg in the C representation of a callable
+ */
+typedef void (*RzCallableArgSuffixCb)(RZ_NONNULL RzStrBuf *sb, RZ_NONNULL const RzCallableArg *arg, RZ_NULLABLE void *user);
+
 struct rz_type_t {
 	RzTypeKind kind;
 	union {
@@ -456,6 +461,7 @@ RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
+RZ_API RZ_OWN char *rz_type_callable_as_string_with_suffix(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NULLABLE RzCallableArgSuffixCb arg_suffix, RZ_NULLABLE void *user);
 RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, bool zero_vla);
 
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
