@@ -595,6 +595,20 @@ var int64_t var_ch @ stack - 0xc
 EOF
 RUN
 
+NAME="Global variables in a relocatable object"
+FILE=bins/elf/dwarf/rel_globals.o
+CMDS=<<EOF
+aaa
+avgl
+EOF
+EXPECT=<<EOF
+global int initialized_global @ 0x8000078 ././rel_globals.c:25
+global long int static_global @ 0x8000080 ././rel_globals.c:413
+global int uninitialized_global @ 0x8000088 ././rel_globals.c:35
+global const char * string_global @ 0x8000090 ././rel_globals.c:513
+EOF
+RUN
+
 NAME="Global and static variables"
 FILE=bins/elf/dwarf_go_tree
 CMDS=<<EOF
@@ -6432,7 +6446,7 @@ The File Name Table:
 	6	3	0	0	stdlib.h
 Line table statements:
 	0x0000005a DW_LNS_set_file	0
-	0x0000005c DW_LNE_set_address	0x0
+	0x0000005c DW_LNE_set_address	0x8000040
 	0x00000067 DW_LNS_advance_line	14
 	0x00000069 DW_LNS_copy
 	0x0000006a DW_LNS_set_column	7
@@ -6641,88 +6655,88 @@ Line table statements:
 	0x00000182 DW_LNE_end_sequence
 
 
-0x00000000	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
-0x00000020	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
-0x0000002c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
-0x00000034	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
-0x00000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
-0x00000048	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
-0x0000004c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
-0x0000005c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
-0x00000064	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
-0x00000068	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
-0x0000006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
-0x00000070	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
-0x00000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
-0x00000078	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
-0x0000007c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
-0x00000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
-0x00000084	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
-0x00000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
-0x0000008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
-0x00000094	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
-0x0000009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
-0x000000a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
-0x000000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
-0x000000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
-0x000000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
-0x000000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
-0x000000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
-0x000000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
-0x000000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
-0x000000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
-0x000000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
-0x000000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
-0x000000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
-0x000000f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
-0x000000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
-0x00000108	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
-0x0000010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
-0x00000118	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
-0x00000130	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
-0x00000140	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
-0x00000150	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
-0x00000154	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
-0x00000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
-0x0000015c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
-0x00000160	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
-0x00000164	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
-0x00000168	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
-0x0000016c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
-0x00000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
-0x00000178	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
-0x00000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
-0x00000184	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
-0x00000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
-0x00000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
-0x00000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
-0x000001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
-0x000001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
-0x000001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
-0x000001bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
-0x000001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
-0x000001cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
-0x000001e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
-0x000001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
-0x000001e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
-0x000001f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
-0x000001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
-0x00000204	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
-0x00000208	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
-0x0000020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
-0x00000214	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
-0x0000021c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
-0x00000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
-0x0000022c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
-0x00000234	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
-0x0000023c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
-0x00000240	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
-0x00000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
-0x00000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
-0x00000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
-0x0000025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
-0x00000260	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
-0x0000026c	-	0	0
+0x08000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
+0x08000060	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
+0x0800006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
+0x08000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
+0x08000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
+0x08000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
+0x0800008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
+0x0800009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
+0x080000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
+0x080000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
+0x080000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
+0x080000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
+0x080000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
+0x080000b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
+0x080000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
+0x080000c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
+0x080000c4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
+0x080000c8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
+0x080000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
+0x080000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
+0x080000dc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
+0x080000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
+0x080000e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
+0x080000e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
+0x080000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
+0x080000f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
+0x080000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
+0x080000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
+0x0800010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x08000114	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x08000120	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
+0x0800012c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
+0x08000134	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
+0x08000138	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
+0x0800013c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
+0x08000148	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
+0x0800014c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
+0x08000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
+0x08000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
+0x08000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
+0x08000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x08000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
+0x08000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
+0x0800019c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
+0x080001a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
+0x080001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
+0x080001a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x080001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
+0x080001b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
+0x080001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
+0x080001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
+0x080001c4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
+0x080001d0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
+0x080001d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
+0x080001d8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
+0x080001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
+0x080001ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
+0x080001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
+0x080001fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
+0x08000200	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
+0x0800020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
+0x08000220	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
+0x08000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
+0x08000228	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
+0x08000230	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
+0x08000238	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
+0x08000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
+0x08000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
+0x0800024c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
+0x08000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
+0x0800025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
+0x08000264	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
+0x0800026c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
+0x08000274	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
+0x0800027c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x08000280	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
+0x08000284	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x08000288	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
+0x08000294	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
+0x0800029c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x080002a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x080002ac	-	0	0
 EOF
 RUN
 
@@ -8515,7 +8529,7 @@ The File Name Table:
 	6	3	0	0	stdlib.h
 Line table statements:
 	0x0000005a DW_LNS_set_file	0
-	0x0000005c DW_LNE_set_address	0x0
+	0x0000005c DW_LNE_set_address	0x8000040
 	0x00000067 DW_LNS_advance_line	14
 	0x00000069 DW_LNS_copy
 	0x0000006a DW_LNS_set_column	7
@@ -8724,88 +8738,88 @@ Line table statements:
 	0x00000182 DW_LNE_end_sequence
 
 
-0x00000000	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
-0x00000020	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
-0x0000002c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
-0x00000034	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
-0x00000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
-0x00000048	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
-0x0000004c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
-0x0000005c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
-0x00000064	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
-0x00000068	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
-0x0000006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
-0x00000070	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
-0x00000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
-0x00000078	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
-0x0000007c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
-0x00000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
-0x00000084	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
-0x00000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
-0x0000008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
-0x00000094	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
-0x0000009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
-0x000000a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
-0x000000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
-0x000000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
-0x000000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
-0x000000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
-0x000000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
-0x000000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
-0x000000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
-0x000000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
-0x000000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
-0x000000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
-0x000000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
-0x000000f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
-0x000000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
-0x00000108	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
-0x0000010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
-0x00000118	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
-0x00000130	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
-0x00000140	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
-0x00000150	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
-0x00000154	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
-0x00000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
-0x0000015c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
-0x00000160	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
-0x00000164	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
-0x00000168	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
-0x0000016c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
-0x00000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
-0x00000178	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
-0x00000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
-0x00000184	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
-0x00000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
-0x00000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
-0x00000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
-0x000001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
-0x000001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
-0x000001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
-0x000001bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
-0x000001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
-0x000001cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
-0x000001e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
-0x000001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
-0x000001e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
-0x000001f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
-0x000001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
-0x00000204	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
-0x00000208	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
-0x0000020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
-0x00000214	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
-0x0000021c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
-0x00000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
-0x0000022c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
-0x00000234	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
-0x0000023c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
-0x00000240	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
-0x00000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
-0x00000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
-0x00000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
-0x0000025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
-0x00000260	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
-0x0000026c	-	0	0
+0x08000040	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	15	0
+0x08000060	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	7
+0x0800006c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	10
+0x08000074	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	14
+0x08000080	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	16	6
+0x08000088	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	0	6
+0x0800008c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	17	3
+0x0800009c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	19
+0x080000a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	3
+0x080000a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	19	7
+0x080000ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	14
+0x080000b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	4
+0x080000b4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	3
+0x080000b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	20	12
+0x080000bc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	12
+0x080000c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	11
+0x080000c4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	18
+0x080000c8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	21
+0x080000cc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	21	2
+0x080000d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	21
+0x080000dc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	4
+0x080000e0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	3
+0x080000e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	22	12
+0x080000e8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	16
+0x080000ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	4
+0x080000f0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	3
+0x080000f4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	23	14
+0x080000fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	24	2
+0x0800010c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x08000114	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	25	1
+0x08000120	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	27	0
+0x0800012c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	29
+0x08000134	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	28	15
+0x08000138	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	9
+0x0800013c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	29	2
+0x08000148	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	9
+0x0800014c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	30	2
+0x08000158	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	33	0
+0x08000170	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	35	4
+0x08000180	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	36	4
+0x08000190	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x08000194	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	17
+0x08000198	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	15
+0x0800019c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	21
+0x080001a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	25
+0x080001a4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	19
+0x080001a8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	13
+0x080001ac	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	37	9
+0x080001b0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	35
+0x080001b8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	38
+0x080001c0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	41
+0x080001c4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	38	2
+0x080001d0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	14
+0x080001d4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	39	10
+0x080001d8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	7
+0x080001e4	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	40	6
+0x080001ec	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	41	3
+0x080001f8	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	20
+0x080001fc	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	43	15
+0x08000200	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	16
+0x0800020c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	19
+0x08000220	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	37
+0x08000224	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	40
+0x08000228	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	7
+0x08000230	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	44	6
+0x08000238	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	45	3
+0x08000244	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	60
+0x08000248	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	63
+0x0800024c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	4
+0x08000254	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	13
+0x0800025c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	22
+0x08000264	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	31
+0x0800026c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	40
+0x08000274	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	49
+0x0800027c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x08000280	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	61
+0x08000284	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	49	58
+0x08000288	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	48	2
+0x08000294	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	50	2
+0x0800029c	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x080002a0	/Users/aya/CLionProjects/rizin/test/bins/elf/float_ex1/float_ex1.c	51	1
+0x080002ac	-	0	0
 EOF
 RUN
 
