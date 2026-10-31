@@ -1,0 +1,120 @@
+# Every .aq/.rl/.aqrl variant is listed because each is a distinct capstone id with its own
+# lifter table entry in riscv_il.c, even though they all lift to the same IL.
+# ----------------------------- LR.W -----------------------------
+d "lr.w a0, (a5)" 2fa50710 0x0 (set a0 (let _v32 (loadw 0 32 (var a5)) (cast 64 (msb (var _v32)) (var _v32))))
+d "lr.w.aq a1, (t0)" afa50214 0x0 (set a1 (let _v32 (loadw 0 32 (var t0)) (cast 64 (msb (var _v32)) (var _v32))))
+d "lr.w.rl a2, (t1)" 2f260312 0x0 (set a2 (let _v32 (loadw 0 32 (var t1)) (cast 64 (msb (var _v32)) (var _v32))))
+d "lr.w.aqrl a3, (t2)" afa60316 0x0 (set a3 (let _v32 (loadw 0 32 (var t2)) (cast 64 (msb (var _v32)) (var _v32))))
+d "lr.w zero, (a0)" 2f200510 0x0 empty
+# ----------------------------- LR.D -----------------------------
+d "lr.d a4, (s1)" 2fb70410 0x0 (set a4 (loadw 0 64 (var s1)))
+d "lr.d.aq a5, (s2)" af370914 0x0 (set a5 (loadw 0 64 (var s2)))
+d "lr.d.rl t0, (s3)" afb20912 0x0 (set t0 (loadw 0 64 (var s3)))
+d "lr.d.aqrl t1, (a0)" 2f330516 0x0 (set t1 (loadw 0 64 (var a0)))
+# ----------------------------- SC.W -----------------------------
+d "sc.w t2, a5, (a1)" afa3f518 0x0 (seq (storew 0 (var a1) (cast 32 false (var a5))) (set t2 (bv 64 0x0)))
+d "sc.w.aq s1, t0, (a2)" af24561c 0x0 (seq (storew 0 (var a2) (cast 32 false (var t0))) (set s1 (bv 64 0x0)))
+d "sc.w.rl s2, t1, (a3)" 2fa9661a 0x0 (seq (storew 0 (var a3) (cast 32 false (var t1))) (set s2 (bv 64 0x0)))
+d "sc.w.aqrl s3, t2, (a4)" af29771e 0x0 (seq (storew 0 (var a4) (cast 32 false (var t2))) (set s3 (bv 64 0x0)))
+d "sc.w zero, a1, (a0)" 2f20b518 0x0 (seq (storew 0 (var a0) (cast 32 false (var a1))) empty)
+d "sc.w a0, a0, (a0)" 2f25a518 0x0 (seq (storew 0 (var a0) (cast 32 false (var a0))) (set a0 (bv 64 0x0)))
+# ----------------------------- SC.D -----------------------------
+d "sc.d a0, s1, (a5)" 2fb59718 0x0 (seq (storew 0 (var a5) (var s1)) (set a0 (bv 64 0x0)))
+d "sc.d.aq a1, s2, (t0)" afb5221d 0x0 (seq (storew 0 (var t0) (var s2)) (set a1 (bv 64 0x0)))
+d "sc.d.rl a2, s3, (t1)" 2f36331b 0x0 (seq (storew 0 (var t1) (var s3)) (set a2 (bv 64 0x0)))
+d "sc.d.aqrl a3, a0, (t2)" afb6a31e 0x0 (seq (storew 0 (var t2) (var a0)) (set a3 (bv 64 0x0)))
+# ----------------------------- AMOSWAP.W -----------------------------
+d "amoswap.w a4, a1, (s1)" 2fa7b408 0x0 (seq (set _a (var s1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a1))) (storew 0 (var _a) (var _r32)) (set a4 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoswap.w.aq a5, a2, (s2)" af27c90c 0x0 (seq (set _a (var s2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a2))) (storew 0 (var _a) (var _r32)) (set a5 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoswap.w.rl t0, a3, (s3)" afa2d90a 0x0 (seq (set _a (var s3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a3))) (storew 0 (var _a) (var _r32)) (set t0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoswap.w.aqrl t1, a4, (a0)" 2f23e50e 0x0 (seq (set _a (var a0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a4))) (storew 0 (var _a) (var _r32)) (set t1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoswap.w a0, zero, (a1)" 2fa50508 0x0 (seq (set _a (var a1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (bv 64 0x0))) (storew 0 (var _a) (var _r32)) (set a0 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOSWAP.D -----------------------------
+d "amoswap.d t2, a5, (a1)" afb3f508 0x0 (seq (set _a (var a1)) (set _v (loadw 0 64 (var _a))) (set _r (var a5)) (storew 0 (var _a) (var _r)) (set t2 (var _v)))
+d "amoswap.d.aq s1, t0, (a2)" af34560c 0x0 (seq (set _a (var a2)) (set _v (loadw 0 64 (var _a))) (set _r (var t0)) (storew 0 (var _a) (var _r)) (set s1 (var _v)))
+d "amoswap.d.rl s2, t1, (a3)" 2fb9660a 0x0 (seq (set _a (var a3)) (set _v (loadw 0 64 (var _a))) (set _r (var t1)) (storew 0 (var _a) (var _r)) (set s2 (var _v)))
+d "amoswap.d.aqrl s3, t2, (a4)" af39770e 0x0 (seq (set _a (var a4)) (set _v (loadw 0 64 (var _a))) (set _r (var t2)) (storew 0 (var _a) (var _r)) (set s3 (var _v)))
+d "amoswap.d zero, a1, (a0)" 2f30b508 0x0 (seq (set _a (var a0)) (set _v (loadw 0 64 (var _a))) (set _r (var a1)) (storew 0 (var _a) (var _r)) empty)
+# ----------------------------- AMOADD.W -----------------------------
+d "amoadd.w a0, s1, (a5)" 2fa59700 0x0 (seq (set _a (var a5)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s1))) (storew 0 (var _a) (+ (var _v32) (var _r32))) (set a0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoadd.w.aq a1, s2, (t0)" afa52205 0x0 (seq (set _a (var t0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s2))) (storew 0 (var _a) (+ (var _v32) (var _r32))) (set a1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoadd.w.rl a2, s3, (t1)" 2f263303 0x0 (seq (set _a (var t1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s3))) (storew 0 (var _a) (+ (var _v32) (var _r32))) (set a2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoadd.w.aqrl a3, a0, (t2)" afa6a306 0x0 (seq (set _a (var t2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a0))) (storew 0 (var _a) (+ (var _v32) (var _r32))) (set a3 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoadd.w zero, a1, (a0)" 2f20b500 0x0 (seq (set _a (var a0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a1))) (storew 0 (var _a) (+ (var _v32) (var _r32))) empty)
+d "amoadd.w a0, a0, (a0)" 2f25a500 0x0 (seq (set _a (var a0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a0))) (storew 0 (var _a) (+ (var _v32) (var _r32))) (set a0 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOADD.D -----------------------------
+d "amoadd.d a4, a1, (s1)" 2fb7b400 0x0 (seq (set _a (var s1)) (set _v (loadw 0 64 (var _a))) (set _r (var a1)) (storew 0 (var _a) (+ (var _v) (var _r))) (set a4 (var _v)))
+d "amoadd.d.aq a5, a2, (s2)" af37c904 0x0 (seq (set _a (var s2)) (set _v (loadw 0 64 (var _a))) (set _r (var a2)) (storew 0 (var _a) (+ (var _v) (var _r))) (set a5 (var _v)))
+d "amoadd.d.rl t0, a3, (s3)" afb2d902 0x0 (seq (set _a (var s3)) (set _v (loadw 0 64 (var _a))) (set _r (var a3)) (storew 0 (var _a) (+ (var _v) (var _r))) (set t0 (var _v)))
+d "amoadd.d.aqrl t1, a4, (a0)" 2f33e506 0x0 (seq (set _a (var a0)) (set _v (loadw 0 64 (var _a))) (set _r (var a4)) (storew 0 (var _a) (+ (var _v) (var _r))) (set t1 (var _v)))
+d "amoadd.d a0, a0, (a0)" 2f35a500 0x0 (seq (set _a (var a0)) (set _v (loadw 0 64 (var _a))) (set _r (var a0)) (storew 0 (var _a) (+ (var _v) (var _r))) (set a0 (var _v)))
+# ----------------------------- AMOXOR.W -----------------------------
+d "amoxor.w t2, a5, (a1)" afa3f520 0x0 (seq (set _a (var a1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a5))) (storew 0 (var _a) (^ (var _v32) (var _r32))) (set t2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoxor.w.aq s1, t0, (a2)" af245624 0x0 (seq (set _a (var a2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t0))) (storew 0 (var _a) (^ (var _v32) (var _r32))) (set s1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoxor.w.rl s2, t1, (a3)" 2fa96622 0x0 (seq (set _a (var a3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t1))) (storew 0 (var _a) (^ (var _v32) (var _r32))) (set s2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoxor.w.aqrl s3, t2, (a4)" af297726 0x0 (seq (set _a (var a4)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t2))) (storew 0 (var _a) (^ (var _v32) (var _r32))) (set s3 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOXOR.D -----------------------------
+d "amoxor.d a0, s1, (a5)" 2fb59720 0x0 (seq (set _a (var a5)) (set _v (loadw 0 64 (var _a))) (set _r (var s1)) (storew 0 (var _a) (^ (var _v) (var _r))) (set a0 (var _v)))
+d "amoxor.d.aq a1, s2, (t0)" afb52225 0x0 (seq (set _a (var t0)) (set _v (loadw 0 64 (var _a))) (set _r (var s2)) (storew 0 (var _a) (^ (var _v) (var _r))) (set a1 (var _v)))
+d "amoxor.d.rl a2, s3, (t1)" 2f363323 0x0 (seq (set _a (var t1)) (set _v (loadw 0 64 (var _a))) (set _r (var s3)) (storew 0 (var _a) (^ (var _v) (var _r))) (set a2 (var _v)))
+d "amoxor.d.aqrl a3, a0, (t2)" afb6a326 0x0 (seq (set _a (var t2)) (set _v (loadw 0 64 (var _a))) (set _r (var a0)) (storew 0 (var _a) (^ (var _v) (var _r))) (set a3 (var _v)))
+# ----------------------------- AMOAND.W -----------------------------
+d "amoand.w a4, a1, (s1)" 2fa7b460 0x0 (seq (set _a (var s1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a1))) (storew 0 (var _a) (& (var _v32) (var _r32))) (set a4 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoand.w.aq a5, a2, (s2)" af27c964 0x0 (seq (set _a (var s2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a2))) (storew 0 (var _a) (& (var _v32) (var _r32))) (set a5 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoand.w.rl t0, a3, (s3)" afa2d962 0x0 (seq (set _a (var s3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a3))) (storew 0 (var _a) (& (var _v32) (var _r32))) (set t0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoand.w.aqrl t1, a4, (a0)" 2f23e566 0x0 (seq (set _a (var a0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a4))) (storew 0 (var _a) (& (var _v32) (var _r32))) (set t1 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOAND.D -----------------------------
+d "amoand.d t2, a5, (a1)" afb3f560 0x0 (seq (set _a (var a1)) (set _v (loadw 0 64 (var _a))) (set _r (var a5)) (storew 0 (var _a) (& (var _v) (var _r))) (set t2 (var _v)))
+d "amoand.d.aq s1, t0, (a2)" af345664 0x0 (seq (set _a (var a2)) (set _v (loadw 0 64 (var _a))) (set _r (var t0)) (storew 0 (var _a) (& (var _v) (var _r))) (set s1 (var _v)))
+d "amoand.d.rl s2, t1, (a3)" 2fb96662 0x0 (seq (set _a (var a3)) (set _v (loadw 0 64 (var _a))) (set _r (var t1)) (storew 0 (var _a) (& (var _v) (var _r))) (set s2 (var _v)))
+d "amoand.d.aqrl s3, t2, (a4)" af397766 0x0 (seq (set _a (var a4)) (set _v (loadw 0 64 (var _a))) (set _r (var t2)) (storew 0 (var _a) (& (var _v) (var _r))) (set s3 (var _v)))
+# ----------------------------- AMOOR.W -----------------------------
+d "amoor.w a0, s1, (a5)" 2fa59740 0x0 (seq (set _a (var a5)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s1))) (storew 0 (var _a) (| (var _v32) (var _r32))) (set a0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoor.w.aq a1, s2, (t0)" afa52245 0x0 (seq (set _a (var t0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s2))) (storew 0 (var _a) (| (var _v32) (var _r32))) (set a1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoor.w.rl a2, s3, (t1)" 2f263343 0x0 (seq (set _a (var t1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s3))) (storew 0 (var _a) (| (var _v32) (var _r32))) (set a2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amoor.w.aqrl a3, a0, (t2)" afa6a346 0x0 (seq (set _a (var t2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a0))) (storew 0 (var _a) (| (var _v32) (var _r32))) (set a3 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOOR.D -----------------------------
+d "amoor.d a4, a1, (s1)" 2fb7b440 0x0 (seq (set _a (var s1)) (set _v (loadw 0 64 (var _a))) (set _r (var a1)) (storew 0 (var _a) (| (var _v) (var _r))) (set a4 (var _v)))
+d "amoor.d.aq a5, a2, (s2)" af37c944 0x0 (seq (set _a (var s2)) (set _v (loadw 0 64 (var _a))) (set _r (var a2)) (storew 0 (var _a) (| (var _v) (var _r))) (set a5 (var _v)))
+d "amoor.d.rl t0, a3, (s3)" afb2d942 0x0 (seq (set _a (var s3)) (set _v (loadw 0 64 (var _a))) (set _r (var a3)) (storew 0 (var _a) (| (var _v) (var _r))) (set t0 (var _v)))
+d "amoor.d.aqrl t1, a4, (a0)" 2f33e546 0x0 (seq (set _a (var a0)) (set _v (loadw 0 64 (var _a))) (set _r (var a4)) (storew 0 (var _a) (| (var _v) (var _r))) (set t1 (var _v)))
+# ----------------------------- AMOMIN.W -----------------------------
+d "amomin.w t2, a5, (a1)" afa3f580 0x0 (seq (set _a (var a1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a5))) (storew 0 (var _a) (ite (&& (sle (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set t2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomin.w.aq s1, t0, (a2)" af245684 0x0 (seq (set _a (var a2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t0))) (storew 0 (var _a) (ite (&& (sle (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set s1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomin.w.rl s2, t1, (a3)" 2fa96682 0x0 (seq (set _a (var a3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t1))) (storew 0 (var _a) (ite (&& (sle (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set s2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomin.w.aqrl s3, t2, (a4)" af297786 0x0 (seq (set _a (var a4)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t2))) (storew 0 (var _a) (ite (&& (sle (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set s3 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOMIN.D -----------------------------
+d "amomin.d a0, s1, (a5)" 2fb59780 0x0 (seq (set _a (var a5)) (set _v (loadw 0 64 (var _a))) (set _r (var s1)) (storew 0 (var _a) (ite (&& (sle (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a0 (var _v)))
+d "amomin.d.aq a1, s2, (t0)" afb52285 0x0 (seq (set _a (var t0)) (set _v (loadw 0 64 (var _a))) (set _r (var s2)) (storew 0 (var _a) (ite (&& (sle (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a1 (var _v)))
+d "amomin.d.rl a2, s3, (t1)" 2f363383 0x0 (seq (set _a (var t1)) (set _v (loadw 0 64 (var _a))) (set _r (var s3)) (storew 0 (var _a) (ite (&& (sle (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a2 (var _v)))
+d "amomin.d.aqrl a3, a0, (t2)" afb6a386 0x0 (seq (set _a (var t2)) (set _v (loadw 0 64 (var _a))) (set _r (var a0)) (storew 0 (var _a) (ite (&& (sle (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a3 (var _v)))
+# ----------------------------- AMOMAX.W -----------------------------
+d "amomax.w a4, a1, (s1)" 2fa7b4a0 0x0 (seq (set _a (var s1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a1))) (storew 0 (var _a) (ite (! (sle (var _v32) (var _r32))) (var _v32) (var _r32))) (set a4 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomax.w.aq a5, a2, (s2)" af27c9a4 0x0 (seq (set _a (var s2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a2))) (storew 0 (var _a) (ite (! (sle (var _v32) (var _r32))) (var _v32) (var _r32))) (set a5 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomax.w.rl t0, a3, (s3)" afa2d9a2 0x0 (seq (set _a (var s3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a3))) (storew 0 (var _a) (ite (! (sle (var _v32) (var _r32))) (var _v32) (var _r32))) (set t0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomax.w.aqrl t1, a4, (a0)" 2f23e5a6 0x0 (seq (set _a (var a0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a4))) (storew 0 (var _a) (ite (! (sle (var _v32) (var _r32))) (var _v32) (var _r32))) (set t1 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOMAX.D -----------------------------
+d "amomax.d t2, a5, (a1)" afb3f5a0 0x0 (seq (set _a (var a1)) (set _v (loadw 0 64 (var _a))) (set _r (var a5)) (storew 0 (var _a) (ite (! (sle (var _v) (var _r))) (var _v) (var _r))) (set t2 (var _v)))
+d "amomax.d.aq s1, t0, (a2)" af3456a4 0x0 (seq (set _a (var a2)) (set _v (loadw 0 64 (var _a))) (set _r (var t0)) (storew 0 (var _a) (ite (! (sle (var _v) (var _r))) (var _v) (var _r))) (set s1 (var _v)))
+d "amomax.d.rl s2, t1, (a3)" 2fb966a2 0x0 (seq (set _a (var a3)) (set _v (loadw 0 64 (var _a))) (set _r (var t1)) (storew 0 (var _a) (ite (! (sle (var _v) (var _r))) (var _v) (var _r))) (set s2 (var _v)))
+d "amomax.d.aqrl s3, t2, (a4)" af3977a6 0x0 (seq (set _a (var a4)) (set _v (loadw 0 64 (var _a))) (set _r (var t2)) (storew 0 (var _a) (ite (! (sle (var _v) (var _r))) (var _v) (var _r))) (set s3 (var _v)))
+# ----------------------------- AMOMINU.W -----------------------------
+d "amominu.w a0, s1, (a5)" 2fa597c0 0x0 (seq (set _a (var a5)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s1))) (storew 0 (var _a) (ite (&& (ule (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set a0 (cast 64 (msb (var _v32)) (var _v32))))
+d "amominu.w.aq a1, s2, (t0)" afa522c5 0x0 (seq (set _a (var t0)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s2))) (storew 0 (var _a) (ite (&& (ule (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set a1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amominu.w.rl a2, s3, (t1)" 2f2633c3 0x0 (seq (set _a (var t1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var s3))) (storew 0 (var _a) (ite (&& (ule (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set a2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amominu.w.aqrl a3, a0, (t2)" afa6a3c6 0x0 (seq (set _a (var t2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a0))) (storew 0 (var _a) (ite (&& (ule (var _v32) (var _r32)) (! (== (var _v32) (var _r32)))) (var _v32) (var _r32))) (set a3 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOMINU.D -----------------------------
+d "amominu.d a4, a1, (s1)" 2fb7b4c0 0x0 (seq (set _a (var s1)) (set _v (loadw 0 64 (var _a))) (set _r (var a1)) (storew 0 (var _a) (ite (&& (ule (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a4 (var _v)))
+d "amominu.d.aq a5, a2, (s2)" af37c9c4 0x0 (seq (set _a (var s2)) (set _v (loadw 0 64 (var _a))) (set _r (var a2)) (storew 0 (var _a) (ite (&& (ule (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set a5 (var _v)))
+d "amominu.d.rl t0, a3, (s3)" afb2d9c2 0x0 (seq (set _a (var s3)) (set _v (loadw 0 64 (var _a))) (set _r (var a3)) (storew 0 (var _a) (ite (&& (ule (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set t0 (var _v)))
+d "amominu.d.aqrl t1, a4, (a0)" 2f33e5c6 0x0 (seq (set _a (var a0)) (set _v (loadw 0 64 (var _a))) (set _r (var a4)) (storew 0 (var _a) (ite (&& (ule (var _v) (var _r)) (! (== (var _v) (var _r)))) (var _v) (var _r))) (set t1 (var _v)))
+# ----------------------------- AMOMAXU.W -----------------------------
+d "amomaxu.w t2, a5, (a1)" afa3f5e0 0x0 (seq (set _a (var a1)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var a5))) (storew 0 (var _a) (ite (! (ule (var _v32) (var _r32))) (var _v32) (var _r32))) (set t2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomaxu.w.aq s1, t0, (a2)" af2456e4 0x0 (seq (set _a (var a2)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t0))) (storew 0 (var _a) (ite (! (ule (var _v32) (var _r32))) (var _v32) (var _r32))) (set s1 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomaxu.w.rl s2, t1, (a3)" 2fa966e2 0x0 (seq (set _a (var a3)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t1))) (storew 0 (var _a) (ite (! (ule (var _v32) (var _r32))) (var _v32) (var _r32))) (set s2 (cast 64 (msb (var _v32)) (var _v32))))
+d "amomaxu.w.aqrl s3, t2, (a4)" af2977e6 0x0 (seq (set _a (var a4)) (set _v32 (loadw 0 32 (var _a))) (set _r32 (cast 32 false (var t2))) (storew 0 (var _a) (ite (! (ule (var _v32) (var _r32))) (var _v32) (var _r32))) (set s3 (cast 64 (msb (var _v32)) (var _v32))))
+# ----------------------------- AMOMAXU.D -----------------------------
+d "amomaxu.d a0, s1, (a5)" 2fb597e0 0x0 (seq (set _a (var a5)) (set _v (loadw 0 64 (var _a))) (set _r (var s1)) (storew 0 (var _a) (ite (! (ule (var _v) (var _r))) (var _v) (var _r))) (set a0 (var _v)))
+d "amomaxu.d.aq a1, s2, (t0)" afb522e5 0x0 (seq (set _a (var t0)) (set _v (loadw 0 64 (var _a))) (set _r (var s2)) (storew 0 (var _a) (ite (! (ule (var _v) (var _r))) (var _v) (var _r))) (set a1 (var _v)))
+d "amomaxu.d.rl a2, s3, (t1)" 2f3633e3 0x0 (seq (set _a (var t1)) (set _v (loadw 0 64 (var _a))) (set _r (var s3)) (storew 0 (var _a) (ite (! (ule (var _v) (var _r))) (var _v) (var _r))) (set a2 (var _v)))
+d "amomaxu.d.aqrl a3, a0, (t2)" afb6a3e6 0x0 (seq (set _a (var t2)) (set _v (loadw 0 64 (var _a))) (set _r (var a0)) (storew 0 (var _a) (ite (! (ule (var _v) (var _r))) (var _v) (var _r))) (set a3 (var _v)))
