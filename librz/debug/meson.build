@@ -3,7 +3,7 @@ debug_plugins_list = [
  # 'dmp',
  # 'gdb',
  # 'io',
- # 'null',
+  'null',
  # 'winkd',
 ]
 
@@ -38,7 +38,7 @@ rz_debug_sources = [
   #'p/debug_dmp.c',
   #'p/debug_gdb.c',
   #'p/debug_io.c',
-  #'p/debug_null.c',
+  'p/debug_null.c',
   #'p/debug_winkd.c',
   
   #'p/native/arm.c',
