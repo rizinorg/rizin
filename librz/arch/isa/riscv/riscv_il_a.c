@@ -71,8 +71,9 @@
 // — this file MUST be revisited.
 
 // Load-Reserved: plain load as in riscv_il_integer.h; reservation is not modelled
+// The load is bound to a local because SIGNED duplicates its operand, which would read memory twice.
 DEFINE_LIFTER(lr_w, DECODE_RD_MEM,
-	analysis->bits == 32 ? LOADW(32, addr) : SIGNED(analysis->bits, LOADW(32, addr)))
+	analysis->bits == 32 ? LOADW(32, addr) : LET("_v32", LOADW(32, addr), SIGNED(analysis->bits, VARLP("_v32"))))
 DEFINE_ALIAS_LIFTER(lr_w_aq, lr_w)
 DEFINE_ALIAS_LIFTER(lr_w_rl, lr_w)
 DEFINE_ALIAS_LIFTER(lr_w_aqrl, lr_w)
