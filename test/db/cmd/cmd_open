@@ -886,3 +886,185 @@ v7
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=o winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_o_q'a$b"
+echo x > ".tmp/winedbg_o_q'a\`b"
+o winedbg://.tmp/winedbg_o_missing
+o "winedbg://';touch .tmp/winedbg_o_injected;'"
+o "winedbg://.tmp/winedbg_o_q'a$b"
+o "winedbg://.tmp/winedbg_o_q'a\`b"
+rm ".tmp/winedbg_o_q'a$b"
+rm ".tmp/winedbg_o_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_o_missing'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_o_missing'
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_o_injected;''
+ERROR: Cannot open file 'winedbg://';touch .tmp/winedbg_o_injected;''
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_o_q'a$b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_o_q'a$b'
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_o_q'a`b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_o_q'a`b'
+EOF
+RUN
+
+NAME=o+ winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_owrite_q'a$b"
+echo x > ".tmp/winedbg_owrite_q'a\`b"
+o+ winedbg://.tmp/winedbg_owrite_missing
+o+ "winedbg://';touch .tmp/winedbg_owrite_injected;'"
+o+ "winedbg://.tmp/winedbg_owrite_q'a$b"
+o+ "winedbg://.tmp/winedbg_owrite_q'a\`b"
+rm ".tmp/winedbg_owrite_q'a$b"
+rm ".tmp/winedbg_owrite_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_owrite_missing'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_owrite_missing'
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_owrite_injected;''
+ERROR: Cannot open file 'winedbg://';touch .tmp/winedbg_owrite_injected;''
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_owrite_q'a$b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_owrite_q'a$b'
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_owrite_q'a`b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_owrite_q'a`b'
+EOF
+RUN
+
+NAME=oc winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_oc_q'a$b"
+echo x > ".tmp/winedbg_oc_q'a\`b"
+oc winedbg://.tmp/winedbg_oc_missing
+oc "winedbg://';touch .tmp/winedbg_oc_injected;'"
+oc "winedbg://.tmp/winedbg_oc_q'a$b"
+oc "winedbg://.tmp/winedbg_oc_q'a\`b"
+rm ".tmp/winedbg_oc_q'a$b"
+rm ".tmp/winedbg_oc_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_oc_missing'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oc_missing'
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_oc_injected;''
+ERROR: Cannot open file 'winedbg://';touch .tmp/winedbg_oc_injected;''
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_oc_q'a$b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oc_q'a$b'
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_oc_q'a`b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oc_q'a`b'
+EOF
+RUN
+
+NAME=on winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_on_q'a$b"
+echo x > ".tmp/winedbg_on_q'a\`b"
+on winedbg://.tmp/winedbg_on_missing
+on "winedbg://';touch .tmp/winedbg_on_injected;'"
+on "winedbg://.tmp/winedbg_on_q'a$b"
+on "winedbg://.tmp/winedbg_on_q'a\`b"
+rm ".tmp/winedbg_on_q'a$b"
+rm ".tmp/winedbg_on_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_on_missing'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_on_missing' at 0.
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_on_injected;''
+ERROR: Cannot open 'winedbg://';touch .tmp/winedbg_on_injected;'' at 0.
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_on_q'a$b'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_on_q'a$b' at 0.
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_on_q'a`b'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_on_q'a`b' at 0.
+EOF
+RUN
+
+NAME=on+ winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_onwrite_q'a$b"
+echo x > ".tmp/winedbg_onwrite_q'a\`b"
+on+ winedbg://.tmp/winedbg_onwrite_missing
+on+ "winedbg://';touch .tmp/winedbg_onwrite_injected;'"
+on+ "winedbg://.tmp/winedbg_onwrite_q'a$b"
+on+ "winedbg://.tmp/winedbg_onwrite_q'a\`b"
+rm ".tmp/winedbg_onwrite_q'a$b"
+rm ".tmp/winedbg_onwrite_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_onwrite_missing'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_onwrite_missing' at 0.
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_onwrite_injected;''
+ERROR: Cannot open 'winedbg://';touch .tmp/winedbg_onwrite_injected;'' at 0.
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_onwrite_q'a$b'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_onwrite_q'a$b' at 0.
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_onwrite_q'a`b'
+ERROR: Cannot open 'winedbg://.tmp/winedbg_onwrite_q'a`b' at 0.
+EOF
+RUN
+
+NAME=obf winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_obf_q'a$b"
+echo x > ".tmp/winedbg_obf_q'a\`b"
+obf winedbg://.tmp/winedbg_obf_missing
+obf "winedbg://';touch .tmp/winedbg_obf_injected;'"
+obf "winedbg://.tmp/winedbg_obf_q'a$b"
+obf "winedbg://.tmp/winedbg_obf_q'a\`b"
+rm ".tmp/winedbg_obf_q'a$b"
+rm ".tmp/winedbg_obf_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_obf_missing'
+ERROR: Could not open file winedbg://.tmp/winedbg_obf_missing
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_obf_injected;''
+ERROR: Could not open file winedbg://';touch .tmp/winedbg_obf_injected;'
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_obf_q'a$b'
+ERROR: Could not open file winedbg://.tmp/winedbg_obf_q'a$b
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_obf_q'a`b'
+ERROR: Could not open file winedbg://.tmp/winedbg_obf_q'a`b
+EOF
+RUN
+
+NAME=oodf winedbg:// with missing and unsafe file names
+FILE=malloc://16
+CMDS=<<EOF
+mkdir .tmp
+echo x > ".tmp/winedbg_oodf_q'a$b"
+echo x > ".tmp/winedbg_oodf_q'a\`b"
+oodf winedbg://.tmp/winedbg_oodf_missing
+oodf "winedbg://';touch .tmp/winedbg_oodf_injected;'"
+oodf "winedbg://.tmp/winedbg_oodf_q'a$b"
+oodf "winedbg://.tmp/winedbg_oodf_q'a\`b"
+rm ".tmp/winedbg_oodf_q'a$b"
+rm ".tmp/winedbg_oodf_q'a\`b"
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_oodf_missing'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oodf_missing'
+ERROR: winedbg: cannot find file '';touch .tmp/winedbg_oodf_injected;''
+ERROR: Cannot open file 'winedbg://';touch .tmp/winedbg_oodf_injected;''
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_oodf_q'a$b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oodf_q'a$b'
+ERROR: winedbg: refusing to run unsafe command for file '.tmp/winedbg_oodf_q'a`b'
+ERROR: Cannot open file 'winedbg://.tmp/winedbg_oodf_q'a`b'
+EOF
+RUN

@@ -530,3 +530,25 @@ ERROR.+
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rz-find winedbg:// missing file
+TOOL=rz-find
+ARGS=-s x winedbg://.tmp/winedbg_rzfind_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzfind_missing'
+Cannot open file 'winedbg://.tmp/winedbg_rzfind_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-find winedbg:// issue #6952 payload
+TOOL=rz-find
+ARGS=-s x winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+Cannot open file 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN

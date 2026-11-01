@@ -165,43 +165,37 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 }
 
 /**
- * \brief check whether given command to run winedbg is properlty sanitized
- * \param cmd Generated command for running winedbg to open a file
- * \return true if command is acceptable
- * \return false otherwise
+ * \brief build the command to run winedbg on a file
+ * \param file Path of the file to open in winedbg
+ * \return the command on success
+ * \return NULL if the file name contains a disallowed character
  *
- * checks whether a command is safe to run by disallowing a few characters
- * and making sure that there is only one outer 'quote' to make sure that
- * winedbg gets only one argument, the file path
+ * The file path is put in a single 'quote', with every ' in it written
+ * as '\'' so that winedbg gets only one argument, the file path.
+ * Characters $, " and ` are not allowed in the file name.
  */
-static bool winedbg_cmd_is_safe(const char *cmd) {
-	rz_return_val_if_fail(cmd != NULL, NULL);
-
-	const char *prefix = "winedbg ";
-	if (!rz_str_startswith(cmd, prefix) || rz_str_sep(cmd, "\"$`")) {
-		return false;
-	}
-	const char *p = cmd + strlen(prefix);
-	if (*p != '\'') {
-		return false;
-	}
-	bool in_quote = false;
-	while (*p) {
-		if (in_quote) {
-			if (*p == '\'') {
-				in_quote = false;
-			}
-			p++;
-		} else if (*p == '\'') {
-			in_quote = true;
-			p++;
-		} else if (p[0] == '\\' && p[1] == '\'') {
-			p += 2;
-		} else {
-			return false;
+static char *winedbg_cmd_new(const char *file) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_append(&sb, "winedbg '");
+	for (const char *p = file; *p; p++) {
+		if (*p == '"' || *p == '$' || *p == '`') {
+			goto fail;
+		}
+		bool ok = *p == '\''
+			? rz_strbuf_append(&sb, "'\\''")
+			: rz_strbuf_append_n(&sb, p, 1);
+		if (!ok) {
+			goto fail;
 		}
 	}
-	return !in_quote;
+	if (!rz_strbuf_append(&sb, "'")) {
+		goto fail;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+fail:
+	rz_strbuf_fini(&sb);
+	return NULL;
 }
 
 /**
@@ -226,18 +220,9 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			RZ_LOG_ERROR("winedbg: cannot find file '%s'\n", file);
 			return NULL;
 		}
-		char *file_esc = rz_str_replace(rz_str_dup(file), "'", "'\\''", true);
-		if (!file_esc) {
-			return NULL;
-		}
-		char *cmd = rz_str_newf("winedbg '%s'", file_esc);
-		free(file_esc);
+		char *cmd = winedbg_cmd_new(file);
 		if (!cmd) {
-			return NULL;
-		}
-		if (!winedbg_cmd_is_safe(cmd)) {
 			RZ_LOG_ERROR("winedbg: refusing to run unsafe command for file '%s'\n", file);
-			free(cmd);
 			return NULL;
 		}
 		gs = rz_socket_new(0);

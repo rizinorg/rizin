@@ -49,3 +49,25 @@ rz-sign: bins/flirt/elf-x86/libcurl.a.pat was converted to .tmp/converted.sig.
 rz-sign: .tmp/converted.sig was converted to .tmp/converted.pat.
 EOF
 RUN
+
+NAME=rz-sign winedbg:// missing file
+TOOL=rz-sign
+ARGS=-o .tmp/winedbg_rzsign.sig winedbg://.tmp/winedbg_rzsign_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzsign_missing'
+ERROR: rz-sign: Could not open file winedbg://.tmp/winedbg_rzsign_missing
+EOF
+EXIT_STATUS=255
+RUN
+
+NAME=rz-sign winedbg:// issue #6952 payload
+TOOL=rz-sign
+ARGS=-o .tmp/winedbg_rzsign.sig winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+ERROR: rz-sign: Could not open file winedbg://';id;'
+EOF
+EXIT_STATUS=255
+RUN
