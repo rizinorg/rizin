@@ -830,9 +830,14 @@ jobs:
         working-directory: rz-bindgen
       - name: Test python lang plugin
         run: rizin -qc "Ll" | grep "Python SWIG"
+      - name: Checkout our Testsuite Binaries
+        uses: actions/checkout@v7
+        with:
+          repository: rizinorg/rizin-testbins
+          path: rz-bindgen/test/bins
       - name: Run rz-test
-        run: rz-test -L tests/
-        working-directory: rz-bindgen
+        run: rz-test -L db/examples
+        working-directory: rz-bindgen/test
 
   test-macos-pkg:
     name: Test macOS pkg
