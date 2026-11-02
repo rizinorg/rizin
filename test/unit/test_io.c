@@ -744,7 +744,92 @@ bool test_rz_io_boundaries(void) {
 	mu_end;
 }
 
+// Synthetic members generated with Python gzip.compress(payload, mtime=0).
+static const ut8 gzip_first[] = { 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x73, 0xf3, 0x0c, 0x0a, 0x0e, 0x01, 0x00, 0xe7, 0x2c, 0x25, 0x65, 0x05, 0x00, 0x00, 0x00 };
+static const ut8 gzip_second[] = { 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x0b, 0x76, 0x75, 0xf6, 0xf7, 0x73, 0x01, 0x00, 0xef, 0xd6, 0xe7, 0x46, 0x06, 0x00, 0x00, 0x00 };
+static const ut8 gzip_empty[] = { 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+static const ut8 gzip_binary[] = { 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x63, 0xa8, 0x60, 0x00, 0x00, 0xec, 0x2a, 0xa7, 0x18, 0x03, 0x00, 0x00, 0x00 };
+
+bool test_rz_io_gzip_members(void) {
+	const struct {
+		const ut8 *members[3];
+		size_t lengths[3];
+		const char *expected;
+		size_t size;
+	} cases[] = {
+		{ { gzip_first }, { sizeof(gzip_first) }, "FIRST", 5 },
+		{ { gzip_first, gzip_second }, { sizeof(gzip_first), sizeof(gzip_second) }, "FIRSTSECOND", 11 },
+		{ { gzip_first, gzip_second, gzip_first }, { sizeof(gzip_first), sizeof(gzip_second), sizeof(gzip_first) }, "FIRSTSECONDFIRST", 16 },
+		{ { gzip_first, gzip_empty, gzip_second }, { sizeof(gzip_first), sizeof(gzip_empty), sizeof(gzip_second) }, "FIRSTSECOND", 11 },
+		{ { gzip_empty, gzip_first }, { sizeof(gzip_empty), sizeof(gzip_first) }, "FIRST", 5 },
+		{ { gzip_empty }, { sizeof(gzip_empty) }, "", 0 },
+		{ { gzip_first, gzip_binary }, { sizeof(gzip_first), sizeof(gzip_binary) }, "FIRST\0x\0", 8 },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		ut8 compressed[128];
+		size_t length = 0;
+		for (size_t j = 0; j < 3 && cases[i].members[j]; j++) {
+			memcpy(compressed + length, cases[i].members[j], cases[i].lengths[j]);
+			length += cases[i].lengths[j];
+		}
+		char *filename = NULL;
+		int fd = rz_file_mkstemp("rizin-gzip-", &filename);
+		mu_assert_neq(fd, -1, "create gzip fixture");
+		close(fd);
+		mu_assert_true(rz_file_dump(filename, compressed, length, false), "write gzip fixture");
+		char *uri = rz_str_newf("gzip://%s", filename);
+		RzIO *io = rz_io_new();
+		RzIODesc *desc = rz_io_open(io, uri, RZ_PERM_R, 0);
+		rz_file_rm(filename);
+		free(filename);
+		free(uri);
+		mu_assert_notnull(desc, "open gzip members");
+		mu_assert_eq(rz_io_desc_size(desc), cases[i].size, "combined gzip size");
+		ut8 output[32] = { 0 };
+		mu_assert_eq(rz_io_desc_read_at(desc, 0, output, cases[i].size), cases[i].size, "read gzip members");
+		mu_assert_memeq(output, (const ut8 *)cases[i].expected, cases[i].size, "combined gzip content");
+		if (cases[i].size > 5) {
+			mu_assert_eq(rz_io_desc_read_at(desc, 3, output, 4), 4, "read across member boundary");
+			mu_assert_memeq(output, (const ut8 *)cases[i].expected + 3, 4, "member boundary content");
+		}
+		rz_io_free(io);
+	}
+	mu_end;
+}
+
+bool test_rz_io_gzip_invalid_later_member(void) {
+	for (size_t invalid = 0; invalid < 3; invalid++) {
+		ut8 compressed[sizeof(gzip_first) + sizeof(gzip_second)];
+		memcpy(compressed, gzip_first, sizeof(gzip_first));
+		memcpy(compressed + sizeof(gzip_first), gzip_second, sizeof(gzip_second));
+		size_t length = sizeof(compressed);
+		if (invalid == 0) {
+			length--; // Truncated trailer in the second member.
+		} else if (invalid == 1) {
+			compressed[length - 8] ^= 1; // Invalid CRC in the second member.
+		} else {
+			compressed[sizeof(gzip_first)] = 0; // Invalid second member header.
+		}
+		char *filename = NULL;
+		int fd = rz_file_mkstemp("rizin-gzip-invalid-", &filename);
+		mu_assert_neq(fd, -1, "create invalid gzip fixture");
+		close(fd);
+		mu_assert_true(rz_file_dump(filename, compressed, length, false), "write invalid gzip fixture");
+		char *uri = rz_str_newf("gzip://%s", filename);
+		RzIO *io = rz_io_new();
+		RzIODesc *desc = rz_io_open(io, uri, RZ_PERM_R, 0);
+		rz_file_rm(filename);
+		free(filename);
+		free(uri);
+		mu_assert_null(desc, "reject incomplete or invalid gzip instead of exposing a prefix");
+		rz_io_free(io);
+	}
+	mu_end;
+}
+
 bool all_tests(void) {
+	mu_run_test(test_rz_io_gzip_members);
+	mu_run_test(test_rz_io_gzip_invalid_later_member);
 	mu_run_test(test_rz_io_read_at_mapped);
 	mu_run_test(test_rz_io_nread_at);
 	mu_run_test(test_rz_io_cache);
