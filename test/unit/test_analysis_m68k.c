@@ -774,14 +774,14 @@ static bool test_m68k_fpu_binary_rounding(void) {
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
 		for (ut32 sign = 0; sign < 2; sign++) {
 			for (ut32 mode = 0; mode < 4; mode++) {
-				for (ut32 explicit = 0; explicit < 2; explicit++) {
+				for (ut32 explicit_precision = 0; explicit_precision < 2; explicit_precision++) {
 					ut32 prec = cases[i].precision == 24 ? 1 : 2;
 					ut16 exp0 = cases[i].exp0 ^ (sign << 15);
 					ut16 exp1 = cases[i].exp1 ^ (cases[i].operation < 2 ? sign << 15 : 0);
 					mu_assert_true(m68k_fp_load_pair(core, exp0, cases[i].mant0, exp1, cases[i].mant1), "load exact FP80 operands");
-					rz_reg_setv(reg, "fpcr", (explicit ? 0 : prec << 6) | mode << 4);
+					rz_reg_setv(reg, "fpcr", (explicit_precision ? 0 : prec << 6) | mode << 4);
 					char hex[9];
-					snprintf(hex, sizeof(hex), "f20004%02x", opcodes[explicit ? prec : 0][cases[i].operation]);
+					snprintf(hex, sizeof(hex), "f20004%02x", opcodes[explicit_precision ? prec : 0][cases[i].operation]);
 					mu_assert_true(m68k_step(core, hex), "binary FPU operation executes");
 					bool up = mode == 0 ? cases[i].above : mode == (sign ? 2 : 3);
 					ut64 expected = 0x8000000000000000ULL | (up ? 1ULL << (64 - cases[i].precision) : 0);

@@ -7105,7 +7105,7 @@ static RzILOpEffect *fscale_bind_denormal(void) {
 		OR(UGT(VARL("denorm_remainder"), VARL("denorm_half")),
 			AND(EQ(VARL("denorm_remainder"), VARL("denorm_half")), LSB(VARL("denorm_truncated")))));
 	RzILOpBool *discarded = NON_ZERO(VARL("denorm_remainder"));
-	RzILOpBool *directed_increment = AND(DUP(discarded),
+	RzILOpBool *directed_increment = AND(discarded,
 		OR(AND(IS_ZERO(VARL("dst_sign")), EQ(VARL("round_mode"), U32(RZ_FLOAT_RMODE_RTP))),
 			AND(NON_ZERO(VARL("dst_sign")), EQ(VARL("round_mode"), U32(RZ_FLOAT_RMODE_RTN)))));
 	RzILOpBool *increment = ITE(EQ(VARL("round_mode"), U32(RZ_FLOAT_RMODE_RNE)),
