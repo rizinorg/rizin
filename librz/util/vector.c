@@ -834,6 +834,40 @@ RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL 
 }
 
 /**
+ * \brief Binary search for the \p elem in the \p pvec sorted by \p cmp.
+ * \param pvec the RzPVector to search in, must be sorted according to \p cmp
+ * \param elem the value that elements in pvector compare against by \p cmp
+ * \param cmp the comparator function
+ * \param user the user data passed to \p cmp
+ * \param out set to the matching element of the vector, or NULL if not found. May be NULL itself to only check for existence.
+ * \return true if the element was found, false otherwise
+ */
+RZ_API bool rz_pvector_bin_search(RZ_NONNULL RzPVector *pvec, RZ_NONNULL void *elem, RZ_NONNULL RzPVectorComparator cmp, RZ_NULLABLE void *user, RZ_NULLABLE void **out) {
+	rz_return_val_if_fail(pvec && elem && cmp, false);
+
+	void **arr = (void **)pvec->v.a;
+	size_t lo = 0, hi = pvec->v.len;
+	while (lo < hi) {
+		size_t mid = lo + ((hi - lo) >> 1);
+		if (cmp(elem, arr[mid], user) > 0) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	if (lo < pvec->v.len && cmp(elem, arr[lo], user) == 0) {
+		if (out) {
+			*out = arr[lo];
+		}
+		return true;
+	}
+	if (out) {
+		*out = NULL;
+	}
+	return false;
+}
+
+/**
  * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
  *
  **/

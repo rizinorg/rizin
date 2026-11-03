@@ -1244,6 +1244,53 @@ static bool test_pvector_find_index(void) {
 	mu_end;
 }
 
+static bool test_pvector_bin_search(void) {
+	RzPVector v;
+	int num = 77;
+	ut32 e_val0 = 0;
+	ut32 e_val2 = 2;
+	ut32 e_val4 = 4;
+	ut32 e_val6 = 6;
+	void *out = NULL;
+
+	// empty vector
+	init_test_pvector(&v, 0, 0);
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out), "empty vector not found");
+	mu_assert_null(out, "out is NULL on empty vector");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, NULL), "empty vector, out is NULL");
+	rz_pvector_clear(&v);
+
+	// single element vector
+	init_test_pvector(&v, 1, 0);
+	mu_assert("single element found", rz_pvector_bin_search(&v, &e_val0, compare_int, &num, &out));
+	mu_assert_notnull(out, "single element out is not NULL");
+	mu_assert_eq(*(ut32 *)out, e_val0, "single element value");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out), "single element not found");
+	mu_assert_null(out, "out is NULL when not found");
+	rz_pvector_clear(&v);
+
+	// regular cases
+	init_test_pvector(&v, 5, 0);
+	bool found = rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out);
+	mu_assert("found", found);
+	mu_assert_eq(*(ut32 *)out, e_val2, "bin search value");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	found = rz_pvector_bin_search(&v, &e_val0, compare_int, &num, &out);
+	mu_assert("found first", found);
+	mu_assert_eq(*(ut32 *)out, e_val0, "bin search first value");
+	found = rz_pvector_bin_search(&v, &e_val4, compare_int, &num, &out);
+	mu_assert("found last", found);
+	mu_assert_eq(*(ut32 *)out, e_val4, "bin search last value");
+	found = rz_pvector_bin_search(&v, &e_val6, compare_int, &num, &out);
+	mu_assert_false(found, "not found");
+	mu_assert_null(out, "out is NULL when not found");
+	// optional out
+	mu_assert_true(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, NULL), "found, out is NULL");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val6, compare_int, &num, NULL), "not found, out is NULL");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_join(void) {
 	RzPVector m, n;
 	init_test_pvector(&m, 5, 0);
@@ -1938,6 +1985,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
 	mu_run_test(test_pvector_find_index);
+	mu_run_test(test_pvector_bin_search);
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);
