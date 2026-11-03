@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2020 HoundThe <cgkajm@gmail.com>
 // SPDX-FileCopyrightText: 2025 heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -403,12 +404,81 @@ bool test_layout_topo_sort_chain() {
 	mu_end;
 }
 
+static bool test_function_switch_edges(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis,
+		"switch_edges", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+	const ut64 addresses[] = { 0x100, 0x110, 0x120, 0x130, 0x140 };
+	RzAnalysisBlock *blocks[RZ_ARRAY_SIZE(addresses)];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(addresses); i++) {
+		blocks[i] = rz_analysis_create_block(core->analysis, addresses[i], 4);
+		mu_assert_notnull(blocks[i], "create basic block");
+		rz_analysis_function_add_block(fcn, blocks[i]);
+		rz_analysis_block_unref(blocks[i]);
+	}
+	blocks[0]->jump = 0x110;
+	blocks[0]->fail = 0x140;
+	blocks[1]->jump = 0x140;
+	blocks[3]->jump = 0x130;
+
+	RzAnalysisSwitchOp *sw = rz_analysis_switch_op_new(0x102, 0, 5, 0x140);
+	mu_assert_notnull(sw, "create switch");
+	blocks[0]->switch_op = sw;
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x110, 0, 0x110), "case address equals target");
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x102, 1, 0x120), "case address is the switch instruction");
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x200, 2, 0x130), "case address is a table entry");
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x204, 3, 0x100), "case loops back to the switch");
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x208, 4, 0x110), "case shares a target");
+	mu_assert_notnull(rz_analysis_switch_op_add_case(sw, 0x20c, 5, UT64_MAX), "case target is unknown");
+
+	RzGraph *graph = rz_core_graph(core, RZ_CORE_GRAPH_TYPE_NORMAL, fcn->addr);
+	mu_assert_notnull(graph, "create function graph");
+	mu_assert_eq(rz_graph_count_nodes(graph), RZ_ARRAY_SIZE(addresses), "only basic blocks become nodes");
+	mu_assert_eq(rz_graph_count_edges(graph), 7, "only control-flow edges are added");
+	RzGraphNode *nodes[RZ_ARRAY_SIZE(addresses)] = { 0 };
+	RzIterator it = { 0 };
+	mu_assert_true(rz_graph_get_nodes(graph, &it), "iterate nodes");
+	RzGraphNode *node;
+	rz_iterator_foreach(&it, node) {
+		const RzGraphNodeInfo *info = rz_graph_node_get_data(node);
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(addresses); i++) {
+			if (info->def.offset == addresses[i]) {
+				nodes[i] = node;
+			}
+		}
+	}
+	rz_iterator_fini(&it);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(nodes); i++) {
+		mu_assert_notnull(nodes[i], "basic block has a graph node");
+	}
+	const bool expected_edges[5][5] = {
+		{ true, true, true, true, true },
+		{ false, false, false, false, true },
+		{ false, false, false, false, false },
+		{ false, false, false, true, false },
+		{ false, false, false, false, false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(nodes); i++) {
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(nodes); j++) {
+			mu_assert_eq(rz_graph_find_edge(graph, nodes[i], nodes[j]) != NULL,
+				expected_edges[i][j], "switch edges preserve real loops and terminal blocks");
+		}
+	}
+
+	rz_graph_free(graph);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_graph_to_agraph);
 	mu_run_test(test_layout_back_edge_simple);
 	mu_run_test(test_layout_back_edge_complex);
 	mu_run_test(test_layout_topo_sort_diamond);
 	mu_run_test(test_layout_topo_sort_chain);
+	mu_run_test(test_function_switch_edges);
 	return tests_passed != tests_run;
 }
 
