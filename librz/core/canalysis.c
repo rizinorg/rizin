@@ -6609,6 +6609,7 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 		.intr = core->intr,
 		.analysis = core->analysis,
 		.io = core->io,
+		.bin = core->bin,
 		.fcn_entry_points = fcn_entry_points,
 		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS,
 		.trace_opts = absint_trace_opts(core),

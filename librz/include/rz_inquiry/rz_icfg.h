@@ -68,7 +68,8 @@ RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, u
 RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg);
 
 RZ_API bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
-	RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzBin *bin,
+	RZ_NONNULL RzIO *io,
 	RzICFGConflictSolutionCfg cfg);
 
 RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out);

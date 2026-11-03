@@ -261,7 +261,12 @@ typedef enum rz_absint_result_code_t {
 RZ_API RzAbsIntResultCode rz_absint_run(RZ_BORROW RZ_NONNULL RzAbsIntInstance *inst, ut64 entry_point, RzAbsIntResultDimen dimen, RZ_NONNULL RZ_OUT RzAbsIntResult **res_out);
 RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_NULLABLE RzAbsIntResult *res);
 RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNULL RzAbsIntResult *res);
-RZ_API bool rz_absint_apply_icfg_to_analysis(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzICFG *icfg, RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name);
+RZ_API bool rz_absint_apply_icfg_to_analysis(
+	RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzBin *bin,
+	RZ_NONNULL RzIO *io,
+	RZ_NONNULL RzICFG *icfg,
+	RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name);
 
 typedef enum rz_absint_builtin_value_domain_t {
 	RZ_ABSINT_VALUE_DOMAIN_CONST
@@ -271,8 +276,9 @@ RZ_API RZ_NULLABLE const RzAbsIntValueDomain *rz_absint_builtin_value_domain(RzA
 
 typedef struct rz_absint_driver_config_t {
 	RZ_NONNULL RzInterrupt *intr;
-	RZ_NONNULL RzAnalysis *analysis;
-	RZ_NONNULL RzIO *io;
+	RZ_BORROW RZ_NONNULL RzAnalysis *analysis;
+	RZ_BORROW RZ_NONNULL RzBin *bin;
+	RZ_BORROW RZ_NONNULL RzIO *io;
 	RZ_NONNULL RzSetU *fcn_entry_points; ///< Addresses considered function entry points.
 	RzAbsIntResultDimen dimens; ///< The results the interpreter can detect.
 	RzAbsIntTraceOptions trace_opts; ///< Trace options, to choose which logs to print.
