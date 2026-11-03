@@ -170,6 +170,7 @@ RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg) {
 			break;
 		}
 	}
+	rz_vector_clear(&icfg->prepared_edges);
 	(void)existed;
 	return missing_node;
 }
