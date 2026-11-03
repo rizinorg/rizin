@@ -243,6 +243,9 @@ static bool edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to
 		return false;
 	}
 	size_t n_procs = rz_vector_len(proc_entries);
+	if (n_procs == 0) {
+		return false;
+	}
 	size_t lo = 0, hi = n_procs;
 
 	ut64 low_addr = RZ_MIN(from, to);
