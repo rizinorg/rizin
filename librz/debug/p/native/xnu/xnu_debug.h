@@ -186,7 +186,7 @@ typedef struct {
 
 #if defined(__ppc__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ PPC_THREAD_STATE, PPC_THREAD_STATE_COUNT },
 		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
@@ -198,7 +198,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__ppc64__)
 
-coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
 		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
@@ -210,7 +210,7 @@ coredump_thread_state_flavor_t
 
 #elif defined(__i386__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
 		{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
@@ -221,7 +221,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__x86_64__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
 		{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
@@ -232,7 +232,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__aarch64__) || defined(__arm64__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT }
 	};
@@ -241,7 +241,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__arm__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
 	};
