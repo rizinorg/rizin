@@ -23,6 +23,17 @@ static bool rz_debug_reg_sync_from_regstate(RzDebug *dbg) {
 	return rz_reg_arena_set_bytes(dbg->reg, bf->o->regstate) == 0;
 }
 
+/**
+ * \brief Synchronize the registers in \p dbg->reg with the debugged target.
+ *
+ * A type without registers in its own arena is synced through the arena that
+ * holds them, e.g. flg through gpr.
+ *
+ * \param dbg The debugger.
+ * \param type Register type to sync, or RZ_REG_TYPE_ANY for all types.
+ * \param write Write \p dbg->reg to the target if true, read it otherwise.
+ * \return false if syncing fails, true otherwise; types the target can not read are left unchanged.
+ */
 RZ_API bool rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	int i, n, size;
 	if (!dbg || !dbg->reg) {
@@ -63,7 +74,8 @@ RZ_API bool rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	i = (type == RZ_REG_TYPE_ANY) ? RZ_REG_TYPE_GPR : type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
-	if (i >= RZ_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
+	// (a regset without registers has no list, e.g. flg, which lives in the gpr arena)
+	if (i >= RZ_REG_TYPE_GPR && rz_list_empty(dbg->reg->regset[i].regs)) {
 		// seek into the other arena for redirections.
 		for (n = RZ_REG_TYPE_GPR; n < RZ_REG_TYPE_LAST; n++) {
 			// get regset mask
