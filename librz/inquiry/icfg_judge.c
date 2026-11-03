@@ -23,6 +23,13 @@
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
 
+// If the best result is below SCORE_VERDICT_MIN and
+// its margin to the second is less then SCORE_VERDICT_MARGIN
+// the verdict defaults to SCORE_VERDICT_UNKNOWN.
+#define SCORE_VERDICT_MIN     20
+#define SCORE_VERDICT_MARGIN  15
+#define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_VERDICT_SHARED
+
 #define SCORE_RULED_OUT        -50
 #define SCORE_STRONGLY_DISFAV  -40
 #define SCORE_VERY_UNLIKELY    -30
@@ -189,25 +196,6 @@ typedef struct {
 	size_t total_obsv; ///< Total number of observations which went into the score.
 	int verdict_score[CFG_CONFLICT_VERDICT_N];
 } NodeScore;
-
-// If the best result is below SCORE_VERDICT_MIN and
-// its margin to the second is less then SCORE_VERDICT_MARGIN
-// the verdict defaults to SCORE_VERDICT_UNKNOWN.
-#define SCORE_VERDICT_MIN     20
-#define SCORE_VERDICT_MARGIN  15
-#define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_VERDICT_SHARED
-
-#define SCORE_RULED_OUT        -50
-#define SCORE_STRONGLY_DISFAV  -40
-#define SCORE_VERY_UNLIKELY    -30
-#define SCORE_UNLIKELY         -20
-#define SCORE_SLIGHTLY_AGAINST -10
-#define SCORE_NEUTRAL          0
-#define SCORE_SLIGHT_HINT      10
-#define SCORE_LIKELY           20
-#define SCORE_VERY_LIKELY      30
-#define SCORE_STRONG_FAVOR     40
-#define SCORE_CERTAIN          50
 
 static void score_add(NodeObservations obs, NodeScore *score) {
 	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N && rz_bits_count_ones_ut64(obs) == 1);
