@@ -2672,15 +2672,15 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_threads_stmt) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (dbg && dbg->cur && dbg->cur->threads) {
 		int origtid = dbg->tid;
-		RzDebugPid *p;
+		RzDebugThread *th;
 		RzList *list = dbg->cur->threads(dbg, dbg->pid);
 		if (!list) {
 			return RZ_CMD_STATUS_INVALID;
 		}
 		RzListIter *iter;
-		rz_list_foreach (list, iter, p) {
-			rz_debug_select(dbg, dbg->pid, p->pid);
-			rz_cons_printf(core->cons, "PID %d\n", p->pid);
+		rz_list_foreach (list, iter, th) {
+			rz_debug_select(dbg, dbg->pid, th->tid);
+			rz_cons_printf(core->cons, "PID %d\n", th->tid);
 			RzCmdStatus cmd_res = handle_ts_stmt(state, command);
 			UPDATE_CMD_STATUS_RES(res, cmd_res, err);
 		}

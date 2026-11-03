@@ -73,13 +73,14 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		rz_interrupt_break_push(dbg->intr, (RzInterruptBreakCallback)interrupt_process, dbg);
 	}
 
-	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
-		RzDebugPid *th;
+	RzDebugProcess *proc = rz_debug_process_find(dbg, dbg->pid);
+	if (dbg->continue_all_threads && proc && !rz_list_empty(proc->threads)) {
+		RzDebugThread *th;
 		RzListIter *it;
-		rz_list_foreach (dbg->threads, it, th) {
-			ret = rz_debug_ptrace(dbg, PTRACE_CONT, th->pid, 0, 0);
+		rz_list_foreach (proc->threads, it, th) {
+			ret = rz_debug_ptrace(dbg, PTRACE_CONT, th->tid, 0, 0);
 			if (ret) {
-				RZ_LOG_ERROR("(%d) is running or dead.\n", th->pid);
+				RZ_LOG_ERROR("(%d) is running or dead.\n", th->tid);
 			}
 		}
 	} else {
@@ -418,21 +419,16 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 }
 
 static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	bool ret = false;
 	if (pid == 0) {
 		pid = dbg->pid;
 	}
-	if (sig == SIGKILL && dbg->threads) {
-		rz_list_free(dbg->threads);
-		dbg->threads = NULL;
+	if (rz_sys_kill(pid, sig) == -1) {
+		return false;
 	}
-	if ((rz_sys_kill(pid, sig) != -1)) {
-		ret = true;
+	if (sig == SIGKILL) {
+		rz_debug_process_remove(dbg, pid);
 	}
-	if (errno == 1) {
-		ret = -true; // EPERM
-	}
-	return ret;
+	return true;
 }
 
 static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {

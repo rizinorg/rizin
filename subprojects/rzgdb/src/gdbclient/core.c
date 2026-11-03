@@ -1756,12 +1756,12 @@ end:
 	return ret;
 }
 
-RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
+RzList /*<RzDebugProcess *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
 	char *ptr, *ptr2, *exec_file;
-	RzDebugPid *dpid = NULL;
+	RzDebugProcess *dpid = NULL;
 	RzListIter *iter = NULL;
 
 	if (!g) {
@@ -1812,7 +1812,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 					goto next;
 				}
 			}
-			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
+			if (!(dpid = RZ_NEW0(RzDebugProcess)) || !(dpid->path = strdup(exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -1823,7 +1823,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 			}
 			dpid->uid = dpid->gid = -1;
 			dpid->runnable = true;
-			dpid->status = RZ_DBG_PROC_STOP;
+			dpid->state = RZ_DBG_PROC_STOP;
 			rz_list_append(list, dpid);
 			ptr = ptr2;
 		}
@@ -1861,102 +1861,70 @@ end:
 	return list;
 }
 
-RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
-	int ret = -1;
-	RzList *list = NULL;
-	int tpid = -1, ttid = -1;
-	char *ptr, *ptr2, *exec_file;
-	RzDebugPid *dpid = NULL;
-	RzListIter *iter = NULL;
-
+RzList /*<RzDebugThread *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 	if (!g) {
 		return NULL;
 	}
-
 	if (!gdbr_lock_enter(g)) {
-		goto end;
+		return NULL;
 	}
-	if (!g->stub_features.qXfer_exec_file_read || !(exec_file = gdbr_exec_file_read(g, pid))) {
-		exec_file = "";
+	RzList *list = NULL;
+	int tpid = -1, ttid = -1;
+
+	// TODO: use the XML thread description when g->stub_features.qXfer_threads_read is set
+	if (send_msg(g, "qfThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 ||
+		g->data_len == 0 || g->data[0] != 'm') {
+		goto fail;
 	}
-	if (g->stub_features.qXfer_threads_read) {
-		// XML thread description is supported
-		// TODO: Handle this case
+	// threads own no heap data here (native is unused), so plain free() releases them
+	list = rz_list_newf(free);
+	if (!list) {
+		goto fail;
 	}
-	if (send_msg(g, "qfThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 || g->data_len == 0 || g->data[0] != 'm') {
-		ret = -1;
-		goto end;
-	}
-	if (!(list = rz_list_new())) {
-		ret = -1;
-		goto end;
-	}
-	while (1) {
+	while (true) {
 		g->data[g->data_len] = '\0';
-		ptr = g->data + 1;
+		char *ptr = g->data + 1;
 		while (ptr) {
-			if ((ptr2 = strchr(ptr, ','))) {
-				*ptr2 = '\0';
-				ptr2++;
+			char *next = strchr(ptr, ',');
+			if (next) {
+				*next++ = '\0';
 			}
-			if (read_thread_id(ptr, &tpid, &ttid,
-				    g->stub_features.multiprocess) < 0) {
-				ptr = ptr2;
-				continue;
+			if (read_thread_id(ptr, &tpid, &ttid, g->stub_features.multiprocess) >= 0 &&
+				(!g->stub_features.multiprocess || tpid == pid)) {
+				RzDebugThread *thread = RZ_NEW0(RzDebugThread);
+				if (!thread || !rz_list_append(list, thread)) {
+					free(thread);
+					goto fail;
+				}
+				thread->tid = ttid;
+				thread->process_pid = pid;
+				// TODO: get the real thread state from GDB; STOP mirrors the native fallback
+				thread->state = RZ_DBG_THREAD_STOP;
 			}
-			if (g->stub_features.multiprocess && tpid != pid) {
-				ptr = ptr2;
-				continue;
-			}
-			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
-				ret = -1;
-				goto end;
-			}
-			dpid->uid = dpid->gid = -1; // TODO
-			dpid->pid = ttid;
-			dpid->runnable = true;
-			// This is what linux native does as fallback, but
-			// probably not correct.
-			// TODO: Implement getting correct thread status from GDB
-			dpid->status = RZ_DBG_PROC_STOP;
-			rz_list_append(list, dpid);
-			ptr = ptr2;
+			ptr = next;
 		}
-		if (send_msg(g, "qsThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 || g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
-			ret = -1;
-			goto end;
+		if (send_msg(g, "qsThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 ||
+			g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
+			goto fail;
 		}
 		if (g->data[0] == 'l') {
 			break;
 		}
 	}
-	// This is the all I've been able to extract from gdb so far
-	rz_list_foreach (list, iter, dpid) {
-		if (gdbr_is_thread_dead(g, pid, dpid->pid)) {
-			dpid->status = RZ_DBG_PROC_DEAD;
+	RzListIter *iter;
+	RzDebugThread *thread;
+	rz_list_foreach (list, iter, thread) {
+		if (gdbr_is_thread_dead(g, pid, thread->tid)) {
+			thread->state = RZ_DBG_THREAD_DEAD;
 		}
 	}
-
-	ret = 0;
-end:
 	gdbr_lock_leave(g);
-	if (ret != 0) {
-		if (dpid) {
-			free(dpid);
-		}
-		// We can't use rz_debug_pid_free here
-		if (list) {
-			rz_list_foreach (list, iter, dpid) {
-				if (dpid->path) {
-					free(dpid->path);
-				}
-				free(dpid);
-			}
-			rz_list_free(list);
-		}
-		return NULL;
-	}
 	return list;
+
+fail:
+	gdbr_lock_leave(g);
+	rz_list_free(list);
+	return NULL;
 }
 
 ut64 gdbr_get_baddr(libgdbr_t *g) {
