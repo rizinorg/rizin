@@ -61,7 +61,7 @@ typedef enum {
 } RzICFGConflictSolutionCfg;
 
 RZ_API RZ_OWN RzICFG *rz_icfg_new();
-RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *);
+RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg);
 
 RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_t size, RZ_NONNULL const RzVector *insn_offsets, ut64 fcn_membership);
 RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, ut64 to, RzICFGEdgeType type);

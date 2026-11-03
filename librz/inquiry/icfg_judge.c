@@ -19,6 +19,7 @@
 #include "rz_inquiry/rz_icfg.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
+#include "rz_util/rz_iterator.h"
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
 
@@ -36,7 +37,6 @@
 
 const char *node_verdict_names[] = {
 	[CFG_CONFLICT_VERDICT_DROP] = "drop",
-	[CFG_CONFLICT_VERDICT_DROP_SUCC] = "drop_succ",
 	[CFG_CONFLICT_VERDICT_SHARED] = "shared",
 	[CFG_CONFLICT_VERDICT_FCN_ENTRY] = "fcn_entry",
 	[CFG_CONFLICT_VERDICT_N] = "num_verdicts",
@@ -81,125 +81,113 @@ typedef enum {
 } NodeObservations;
 
 typedef struct {
-	ICFGNodeVerdict verdict;
+	ICFGNodeVerdict id;
 	int score;
 } HintScoreEntry;
 
 typedef struct {
 	NodeObservations obs;
-	HintScoreEntry scores[CFG_CONFLICT_VERDICT_N + 1];
+	const char *name;
+	HintScoreEntry verdict[CFG_CONFLICT_VERDICT_N + 1];
 } HintScores;
 
 static const HintScores hint_scores[] = {
-	{ CFG_CONFLICT_OBSV_SYMBOL,
+	{ CFG_CONFLICT_OBSV_SYMBOL, "CFG_CONFLICT_OBSV_SYMBOL",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IS_CALLED,
+	{ CFG_CONFLICT_OBSV_IS_CALLED, "CFG_CONFLICT_OBSV_IS_CALLED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB,
+	{ CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, "CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY,
+	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY, "CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IN_EH_FRAME,
+	{ CFG_CONFLICT_OBSV_IN_EH_FRAME, "CFG_CONFLICT_OBSV_IN_EH_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_MULTIPLE_CALLERS,
+	{ CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, "CFG_CONFLICT_OBSV_MULTIPLE_CALLERS",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IMPORT,
+	{ CFG_CONFLICT_OBSV_IMPORT, "CFG_CONFLICT_OBSV_IMPORT",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_GROWS_STACK_FRAME,
+	{ CFG_CONFLICT_OBSV_GROWS_STACK_FRAME, "CFG_CONFLICT_OBSV_GROWS_STACK_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_STARTS_NOOP,
+	{ CFG_CONFLICT_OBSV_STARTS_NOOP, "CFG_CONFLICT_OBSV_STARTS_NOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_STARTS_COND_JMP,
+	{ CFG_CONFLICT_OBSV_STARTS_COND_JMP, "CFG_CONFLICT_OBSV_STARTS_COND_JMP",
 		// Only a slight hint because some architectures have a NULL check with
 		// and early fail as prologue.
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY,
+	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, "CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH,
+	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP,
+	{ CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, "CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_UNCOND_RETURNS,
+	{ CFG_CONFLICT_OBSV_UNCOND_RETURNS, "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN,
+	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN, "CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME,
+	{ CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME, "CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SELF_LOOP,
+	{ CFG_CONFLICT_OBSV_SELF_LOOP, "CFG_CONFLICT_OBSV_SELF_LOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_NOT_X_MAPPED,
+	{ CFG_CONFLICT_OBSV_NOT_X_MAPPED, "CFG_CONFLICT_OBSV_NOT_X_MAPPED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_NOT_MAPPED,
+	{ CFG_CONFLICT_OBSV_NOT_MAPPED, "CFG_CONFLICT_OBSV_NOT_MAPPED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP_SUCC, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 };
 
 typedef struct {
 	size_t total_obsv; ///< Total number of observations which went into the score.
-	int score[CFG_CONFLICT_VERDICT_N];
+	int verdict_score[CFG_CONFLICT_VERDICT_N];
 } NodeScore;
 
 // If the best result is below SCORE_VERDICT_MIN and
@@ -223,16 +211,22 @@ typedef struct {
 
 static void score_add(NodeObservations obs, NodeScore *score) {
 	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N && rz_bits_count_ones_ut64(obs) == 1);
-	size_t idx = rz_bits_trailing_zeros(obs);
+	size_t obsv_idx = rz_bits_trailing_zeros(obs);
+	rz_return_if_fail(obsv_idx < CFG_CONFLICT_OBSV_N);
+
 	score->total_obsv++;
-	for (size_t i = 0; hint_scores[idx].scores[i].verdict != CFG_CONFLICT_VERDICT_N; ++i) {
-		score->score[hint_scores[idx].scores[i].verdict] += hint_scores[idx].scores[i].score;
+	for (size_t i = 0; hint_scores[obsv_idx].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
+		ICFGNodeVerdict v = hint_scores[obsv_idx].verdict[i].id;
+		int s = hint_scores[obsv_idx].verdict[i].score;
+		score->verdict_score[v] += s;
 	}
 }
 
 static void normalize_verdict(NodeScore *s) {
+	printf("total obvs: %d\n", s->total_obsv);
 	for (int i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
-		s->score[i] /= s->total_obsv;
+		printf("%s: %d normed: %zu\n", node_verdict_names[i], s->verdict_score[i], s->verdict_score[i] / s->total_obsv);
+		s->verdict_score[i] /= s->total_obsv;
 	}
 }
 
@@ -240,16 +234,16 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 	int best = 0, second = 1;
 
 	for (int verdict = 1; verdict < CFG_CONFLICT_VERDICT_N; ++verdict) {
-		if (s->score[verdict] > s->score[best]) {
+		if (s->verdict_score[verdict] > s->verdict_score[best]) {
 			second = best;
 			best = verdict;
-		} else if (verdict != best && s->score[verdict] > s->score[second]) {
+		} else if (verdict != best && s->verdict_score[verdict] > s->verdict_score[second]) {
 			second = verdict;
 		}
 	}
 
-	int margin = s->score[best] - s->score[second];
-	if (s->score[best] < SCORE_VERDICT_MIN || margin < SCORE_VERDICT_MARGIN) {
+	int margin = s->verdict_score[best] - s->verdict_score[second];
+	if (s->verdict_score[best] < SCORE_VERDICT_MIN || margin < SCORE_VERDICT_MARGIN) {
 		return SCORE_VERDICT_UNKNOWN;
 	}
 
@@ -310,7 +304,7 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	ut64 node_addr_end = node->addr + node->size;
 	if (node_addr == 0x0 && (config & RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
 		// Clearly a malformed jump.
-		return CFG_CONFLICT_VERDICT_DROP_SUCC;
+		return CFG_CONFLICT_VERDICT_DROP;
 	}
 	RzIO *io = rz_analysis_get_io_bind(analysis)->io;
 	RzCore *core = rz_analysis_get_core_bind(analysis)->core;
@@ -374,6 +368,8 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 			break;
 		}
 	}
+	rz_iterator_fini(&in_iter);
+
 	if (calls_in == 1) {
 		score_add(CFG_CONFLICT_OBSV_IS_CALLED, &score);
 	} else if (calls_in > 1) {
@@ -427,7 +423,6 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 		printf("Node 0x%08lx: %s\n", node->addr, node_verdict_names[verdict]);
 
 		switch (verdict) {
-		case CFG_CONFLICT_VERDICT_DROP_SUCC:
 		case CFG_CONFLICT_VERDICT_DROP:
 		case CFG_CONFLICT_VERDICT_SHARED:
 		case CFG_CONFLICT_VERDICT_FCN_ENTRY:
@@ -439,5 +434,6 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 		}
 	}
 
+	rz_iterator_fini(&iter);
 	return true;
 }

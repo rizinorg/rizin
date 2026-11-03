@@ -30,7 +30,6 @@
 #include "rz_vector.h"
 #include <rz_inquiry/rz_icfg.h>
 #include <rz_inquiry/rz_absint.h>
-#include <rz_core.h>
 
 typedef struct interp_thread InterpThread;
 
