@@ -3,6 +3,7 @@
 
 #include <rz_inquiry/rz_icfg.h>
 #include "icfg_priv.h"
+#include "rz_util/rz_set.h"
 
 static void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzICFGNode *node) {
 	rz_return_if_fail(node);
@@ -10,6 +11,7 @@ static void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzICFGNode *node) {
 		return;
 	}
 	rz_vector_fini(&node->insn_offsets);
+	rz_set_u_free(node->proc_memberships);
 	free(node);
 }
 

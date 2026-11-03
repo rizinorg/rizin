@@ -47,7 +47,6 @@ struct rz_cfg_t {
 
 typedef enum {
 	CFG_CONFLICT_VERDICT_DROP = 0, ///< The block should be dropped.
-	CFG_CONFLICT_VERDICT_DROP_SUCC, ///< The block and its successors should be dropped.
 	CFG_CONFLICT_VERDICT_SHARED, ///< The block is likely shared with another function.
 	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a likely function entry point.
 	CFG_CONFLICT_VERDICT_SKIP, ///< Node was already handled.

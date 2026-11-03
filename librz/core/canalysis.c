@@ -13,6 +13,7 @@
 #include <rz_util/rz_path.h>
 
 #include "core_private.h"
+#include "rz_util/rz_assert.h"
 #include "rz_util/rz_iterator.h"
 
 HEAPTYPE(ut64);
@@ -6524,7 +6525,11 @@ static char *cinquiry_choose_function_name(RzCore *core, ut64 addr) {
 	return rz_str_newf("inq.0x%" PFMT64x, addr);
 }
 
-static void cinquiry_collect_entrypoints_all(RzCore *core, RzSetU *res) {
+/**
+ * \brief Helper function to collect all entry points for the RzIL based analysis.
+ */
+RZ_API void rz_core_inquiry_collect_entrypoints_all(RzCore *core, RZ_OUT RzSetU *res) {
+	rz_return_if_fail(core && res);
 	RzPVector *vector;
 	const RzBinAddr *binmain;
 	RzBinAddr *entry;
@@ -6618,6 +6623,7 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	if (!success) {
 		RZ_LOG_ERROR("Analysis failed.\n");
 	}
+	rz_icfg_free(icfg);
 	return success;
 }
 
@@ -6643,7 +6649,7 @@ RZ_API bool rz_core_inquiry_analyze_all(RZ_NONNULL RzCore *core) {
 	if (!entry_points) {
 		return false;
 	}
-	cinquiry_collect_entrypoints_all(core, entry_points);
+	rz_core_inquiry_collect_entrypoints_all(core, entry_points);
 	bool ret = cinquiry_absint_run(core, entry_points);
 	rz_set_u_free(entry_points);
 	return ret;

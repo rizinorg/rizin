@@ -391,6 +391,7 @@ RZ_API ssize_t rz_analysis_op_type_contains(RZ_NONNULL RzAnalysis *analysis, ut6
 			break;
 		}
 	}
+	free(buf);
 	return cnt;
 }
 
