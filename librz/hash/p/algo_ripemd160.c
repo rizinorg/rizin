@@ -27,6 +27,7 @@ static bool plugin_ripemd160_init(void *context) {
 	rz_return_val_if_fail(context, false);
 
 	rz_ripemd160_init((RzRipemd160 *)context);
+	return true;
 }
 
 static bool plugin_ripemd160_update(void *context, const ut8 *data, ut64 size) {

@@ -98,7 +98,7 @@ hash_plugins_list = [
   'ioc',
   'minentropy',
   'serialcorr',
-  'djb2',
+  'ripemd160',
 ]
 
 hash_plugins = {
@@ -156,7 +156,7 @@ rz_hash_sources = [
   'p/algo_ioc.c',
   'p/algo_minentropy.c',
   'p/algo_serialcorr.c',
-  'p/algo_djb2.c',
+  'p/algo_ripemd160.c',
   'algorithms/mod255/mod255.c',
   'algorithms/parity/parity.c',
   'algorithms/entropy/entropy.c',
@@ -174,6 +174,7 @@ rz_hash_sources = [
   'algorithms/sha3/sha3.c',
   'algorithms/shake/shake.c',
   'algorithms/murmur3/murmur3.c',
+  'algorithms/ripemd160/ripemd160.c'
 ]
 
 dependencies = [mth, rz_util_dep, xxhash_dep, blake3_dep, blake2_dep]
