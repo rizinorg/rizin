@@ -5,6 +5,7 @@
 #include <rz_list.h>
 #include <rz_reg.h>
 #include <rz_util.h>
+#include "reg_private.h"
 
 RZ_LIB_VERSION(rz_reg);
 
@@ -194,9 +195,19 @@ RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
 	return -1;
 }
 
-RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
-	rz_return_if_fail(reg);
-	ut32 i;
+/**
+ * \brief Clear register metadata, optionally preserving the arena pools.
+ *
+ * Free register lists even if a failed profile parse has removed their arena
+ * pools. Profile loading creates new lists as needed; cleanup allocates nothing.
+ *
+ * \param reg Register state to clear, or NULL.
+ * \param keep_arenas Preserve arena pools during profile replacement.
+ */
+RZ_IPI void rz_reg_free_internal(RZ_NULLABLE RzReg *reg, bool keep_arenas) {
+	if (!reg) {
+		return;
+	}
 
 	rz_list_free(reg->roregs);
 	reg->roregs = NULL;
@@ -204,35 +215,28 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 	RZ_FREE(reg->reg_profile_cmt);
 	rz_list_free(reg->reg_profile.alias);
 	rz_list_free(reg->reg_profile.defs);
-	reg->reg_profile.alias = 0;
-	reg->reg_profile.defs = 0;
+	reg->reg_profile.alias = NULL;
+	reg->reg_profile.defs = NULL;
 	memset(reg->by_role, 0, sizeof(reg->by_role));
 
-	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
+	for (size_t i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		ht_sp_free(reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
-		if (!reg->regset[i].pool) {
+		rz_list_free(reg->regset[i].regs);
+		reg->regset[i].regs = NULL;
+		if (keep_arenas || !reg->regset[i].pool) {
 			continue;
 		}
-		if (init) {
-			rz_list_free(reg->regset[i].regs);
-			reg->regset[i].regs = rz_list_newf((RzListFree)rz_reg_item_free);
-		} else {
-			rz_list_free(reg->regset[i].regs);
-			reg->regset[i].regs = NULL;
-			// Ensure arena is freed and its registered in the pool
-			if (!rz_list_delete_val(reg->regset[i].pool, reg->regset[i].arena)) {
-				rz_reg_arena_free(reg->regset[i].arena);
-			}
-			reg->regset[i].arena = NULL;
-			rz_list_free(reg->regset[i].pool);
-			reg->regset[i].pool = NULL;
+		// Free the active arena even if it is not part of the pool.
+		if (!rz_list_delete_val(reg->regset[i].pool, reg->regset[i].arena)) {
+			rz_reg_arena_free(reg->regset[i].arena);
 		}
+		reg->regset[i].arena = NULL;
+		rz_list_free(reg->regset[i].pool);
+		reg->regset[i].pool = NULL;
 	}
-	if (!init) {
-		rz_list_free(reg->allregs);
-		reg->allregs = NULL;
-	}
+	rz_list_free(reg->allregs);
+	reg->allregs = NULL;
 	reg->size = 0;
 }
 
@@ -278,11 +282,13 @@ RZ_API RzRegItem *rz_reg_index_get(RzReg *reg, int idx) {
 	return NULL;
 }
 
-RZ_API void rz_reg_free(RzReg *reg) {
-	if (reg) {
-		rz_reg_free_internal(reg, false);
-		free(reg);
-	}
+/**
+ * \brief Free a register state and all its owned data. Accepts NULL.
+ * \param reg Register state to free, or NULL.
+ */
+RZ_API void rz_reg_free(RZ_NULLABLE RzReg *reg) {
+	rz_reg_free_internal(reg, false);
+	free(reg);
 }
 
 RZ_API RzReg *rz_reg_new(void) {

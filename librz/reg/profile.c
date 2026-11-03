@@ -9,6 +9,7 @@
 #include <rz_util/rz_assert.h>
 #include <rz_lib.h>
 #include <string.h>
+#include "reg_private.h"
 
 #define GDB_NAME_SZ   16
 #define GDB_TYPE_SZ   16
