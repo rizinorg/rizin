@@ -274,7 +274,7 @@ RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNU
 	bool success = true;
 	RzAbsIntBlock *block;
 	RzIntervalTreeIter it;
-	rz_interval_tree_foreach(&res->blocks, it, block) {
+	rz_interval_tree_foreach (&res->blocks, it, block) {
 		ut64 start = rz_absint_block_get_start(block);
 		ut64 end = rz_absint_block_get_end(block);
 		if (!rz_icfg_add_node(icfg, start, end - start, &block->insn_offsets, res->entry)) {
@@ -283,10 +283,10 @@ RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNU
 			continue;
 		}
 		ut64 *to;
-		rz_vector_foreach(&block->jump_targets, to) {
+		rz_vector_foreach (&block->jump_targets, to) {
 			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_JUMP);
 		}
-		rz_vector_foreach(&block->call_targets, to) {
+		rz_vector_foreach (&block->call_targets, to) {
 			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_CALL);
 		}
 		if (block->is_fallthrough) {
@@ -296,13 +296,18 @@ RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNU
 	return success;
 }
 
-RZ_API bool rz_absint_apply_icfg_to_analysis(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzICFG *icfg, RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name) {
+RZ_API bool rz_absint_apply_icfg_to_analysis(
+	RZ_NONNULL RzAnalysis *analysis,
+	RZ_NONNULL RzBin *bin,
+	RZ_NONNULL RzIO *io,
+	RZ_NONNULL RzICFG *icfg,
+	RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name) {
 	rz_return_val_if_fail(analysis && icfg, false);
 	size_t missing_nodes = rz_icfg_apply(icfg);
 	if (missing_nodes > 0) {
 		RZ_LOG_WARN("The analysis didn't find nodes for all edges.\n");
 	}
-	rz_icfg_solve_conflicts(icfg, analysis, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR);
+	rz_icfg_solve_conflicts(icfg, bin, io, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR);
 	// TODO Copy to analysis.
 	return false;
 }
@@ -313,7 +318,7 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(RZ_NONNULL RzAnalysis *analysis, RZ
  * It then spawns n interpreter threads, serving them IO requests, IL block lifting requests, collecting their results.
  */
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config, RZ_NONNULL RZ_BORROW RzICFG *icfg) {
-	rz_return_val_if_fail(config && config->analysis && config->io && config->fcn_entry_points && config->n_threads > 0 && icfg, false);
+	rz_return_val_if_fail(config && config->analysis && config->io && config->bin && config->fcn_entry_points && config->n_threads > 0 && icfg, false);
 	bool return_code = false;
 	bool breaked = false;
 
@@ -438,7 +443,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 	}
 
-	if (!rz_absint_apply_icfg_to_analysis(config->analysis, icfg, &config->choose_fcn_name)) {
+	if (!rz_absint_apply_icfg_to_analysis(config->analysis, config->bin, config->io, icfg, &config->choose_fcn_name)) {
 		RZ_LOG_WARN("Failed to convert resolved icfg to analysis.\n");
 		return_code = false;
 	}

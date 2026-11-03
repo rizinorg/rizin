@@ -26,6 +26,7 @@ static RzAbsIntDriverConfig *driver_new_all(const char *arch, int bits, ut64 bad
 	dconfig->dimens = RZ_ABSINT_RESULT_DIMEN_BASE | RZ_ABSINT_RESULT_DIMEN_XREFS;
 	dconfig->fcn_entry_points = rz_set_u_new();
 	dconfig->io = core->io;
+	dconfig->bin = core->bin;
 	dconfig->analysis = core->analysis;
 	dconfig->n_threads = 1;
 	rz_core_inquiry_collect_entrypoints_all(core, dconfig->fcn_entry_points);
