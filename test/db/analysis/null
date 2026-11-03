@@ -10,11 +10,15 @@ ar drx
 ar all
 ar 64
 ar=
+arf
+arf-
 arj
 arj gpr
 arj all
 EOF
 EXPECT=<<EOF
+fss+ registers
+fss-
 {}
 {}
 {}
