@@ -1063,20 +1063,18 @@ RZ_API const char *rz_bin_entry_type_string(int etype) {
 
 /**
  * \brief Returns a first (lowest address) possible entry point address of the object.
- * If no entry point could be determined, it just returns 0, which is also a valid address.
  *
- * If the object has entry points defined, it returns the first one.
- * If it doesn't it returns the start address of the first executable section.
- * Otherwise 0.
- *
- * It always prioritizes virtual addresses.
+ * If the object has entry points defined, it returns the first (lowest address) one.
+ * If it doesn't, it returns the start address of the first executable section.
+ * If no virtual addresses are defined, it returns a pysical address.
  *
  * \param obj The object file to get the entry point from.
  *
- * \return The lowest entry point address of the binary.
+ * \return The lowest entry point address of the binary, or 0 in case of error.
  */
 RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
-	ut64 addr = UT64_MAX;
+	ut64 vaddr = UT64_MAX;
+	ut64 paddr = UT64_MAX;
 	if (!obj) {
 		return 0;
 	} else if (obj->entries && rz_pvector_len(obj->entries) > 0) {
@@ -1084,9 +1082,14 @@ RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
 		void **it;
 		rz_pvector_foreach (obj->entries, it) {
 			const RzBinAddr *entry = *it;
-			addr = RZ_MIN(addr, entry->vaddr ? entry->vaddr : entry->paddr);
+			if (entry->vaddr != 0) {
+				vaddr = RZ_MIN(vaddr, entry->vaddr);
+			}
+			if (entry->paddr != 0) {
+				paddr = RZ_MIN(paddr, entry->paddr);
+			}
 		}
-		return addr;
+		return vaddr != UT64_MAX ? vaddr : paddr != UT64_MAX ? paddr : 0;
 	}
 	const RzPVector *sections = rz_bin_object_get_sections_all(obj);
 	if (!sections) {
@@ -1098,11 +1101,15 @@ RZ_API ut64 rz_bin_get_first_entrypoint(RZ_NULLABLE RzBinObject *obj) {
 	rz_pvector_foreach (sections, iter) {
 		RzBinSection *s = *iter;
 		if (s->perm & RZ_PERM_X) {
-			addr = RZ_MIN(addr, s->vaddr ? s->vaddr : s->paddr);
-			return addr;
+			if (s->vaddr != 0) {
+				vaddr = RZ_MIN(vaddr, s->vaddr);
+			}
+			if (s->paddr != 0) {
+				paddr = RZ_MIN(paddr, s->paddr);
+			}
 		}
 	}
-	return 0;
+	return vaddr != UT64_MAX ? vaddr : paddr != UT64_MAX ? paddr : 0;
 }
 
 RZ_API void rz_bin_load_filter(RzBin *bin, ut64 rules) {
