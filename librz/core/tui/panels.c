@@ -172,7 +172,7 @@ static const char *entropy_rotate[] = {
 };
 
 static const char *hexdump_rotate[] = {
-	"xc", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
+	"xc", "pxa", "pxr", "prx", "pxb", "pxB", "pxh", "pxw", "pxq", "pxd", "pxr",
 	NULL
 };
 

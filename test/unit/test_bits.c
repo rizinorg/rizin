@@ -82,12 +82,53 @@ bool test_rz_bits_ut64_width(void) {
 	mu_end;
 }
 
+bool test_rz_bits_extract_stream_byte(void) {
+	// buf: 0xca (11001010), 0xf0 (11110000), 0x55 (01010101)
+	const ut8 buf[] = { 0xca, 0xf0, 0x55 };
+	const size_t buflen = sizeof(buf);
+
+	// Zero shift
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 0, 0), 0xca, "Zero shift byte 0 mismatch");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 1, 0), 0xf0, "Zero shift byte 1 mismatch");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 2, 0), 0x55, "Zero shift byte 2 mismatch");
+
+	// Shift 1: 0xca (11001010) and 0xf0 (11110000) -> 10010101 (0x95)
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 0, 1), 0x95, "Shift 1 byte 0 mismatch");
+	// Shift 1: 0xf0 (11110000) and 0x55 (01010101) -> 11100000 (0xe0)
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 1, 1), 0xe0, "Shift 1 byte 1 mismatch");
+
+	// Shift 3: 0xca (11001010) and 0xf0 (11110000) -> 01010111 (0x57)
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 0, 3), 0x57, "Shift 3 byte 0 mismatch");
+
+	// Shift 7: 0xca (11001010) and 0xf0 (11110000) -> 01111000 (0x78)
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 0, 7), 0x78, "Shift 7 byte 0 mismatch");
+
+	// End of buffer behavior: last byte (index 2) with shift 3: 0x55 << 3 = 0xa8, next byte is 0
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 2, 3), 0xa8, "Shift at buffer end mismatch");
+
+	// 1-byte buffer: final byte with shift 1 zero-pads unavailable next byte: (0xca << 1) & 0xff = 0x94
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, 1, 0, 1), 0x94, "1-byte buffer shift 1 zero-pads next byte");
+	// 1-byte buffer: final byte with shift 7 zero-pads unavailable next byte: (0xca << 7) & 0xff = 0x00
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, 1, 0, 7), 0x00, "1-byte buffer shift 7 zero-pads next byte");
+
+	// Out of bounds and overflow safety
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, 3, 0), 0, "Out of bounds mismatch");
+	mu_assert_eq(rz_bits_extract_stream_byte(NULL, buflen, 0, 0), 0, "Null buffer mismatch");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, 0, 0, 0), 0, "0-length buffer zero shift out of bounds");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, 0, 0, 1), 0, "0-length buffer with shift out of bounds");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, SIZE_MAX, 1), 0, "SIZE_MAX byte_pos out of bounds");
+	mu_assert_eq(rz_bits_extract_stream_byte(buf, buflen, SIZE_MAX - 1, 1), 0, "SIZE_MAX - 1 byte_pos out of bounds");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bits_count);
 	mu_run_test(test_rz_bits_spread);
 	mu_run_test(test_rz_bits_trailing_zero);
 	mu_run_test(test_rz_bits_copy);
 	mu_run_test(test_rz_bits_ut64_width);
+	mu_run_test(test_rz_bits_extract_stream_byte);
 
 	return tests_passed != tests_run;
 }
