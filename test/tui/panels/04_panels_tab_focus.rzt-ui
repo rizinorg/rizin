@@ -1,0 +1,14 @@
+# Tab moves the focus between panels; a Symbols panel becomes visible.
+NAME=panels tab cycles the focused panel
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=120
+ROWS=24
+STEPS=<<STEPEOF
+KEYS v<ENTER>
+WAIT 500
+KEY <TAB>
+WAIT 300
+EXPECT_REGEX Symbols \(isq\)
+QUIT
+STEPEOF

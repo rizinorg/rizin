@@ -6,6 +6,7 @@
 #define RZ_MAIN_H
 
 #include <rz_types.h>
+#include <rz_cons.h>
 #include <rz_getopt.h>
 
 #ifdef __cplusplus
@@ -35,6 +36,7 @@ RZ_API int rz_main_rz_run(int argc, const char **argv);
 RZ_API int rz_main_rz_hash(int argc, const char **argv);
 RZ_API int rz_main_rz_bin(int argc, const char **argv);
 RZ_API int rz_main_rizin(int argc, const char **argv);
+RZ_API int rz_main_rizin_with_cons(int argc, const char **argv, RZ_NONNULL const RzConsBackend *backend, RZ_NULLABLE void *user);
 RZ_API int rz_main_rz_asm(int argc, const char **argv);
 RZ_API int rz_main_rz_find(int argc, const char **argv);
 RZ_API int rz_main_rz_diff(int argc, const char **argv);

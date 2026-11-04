@@ -1,0 +1,16 @@
+# The functions browser shows a legend of the available actions.
+NAME=functions browser shows the action legend
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS Vv<ENTER>
+WAIT 400
+EXPECT_REGEX \(a\) analyze \(-\) delete \(x\) xrefs to \(X\) xrefs from
+EXPECT_REGEX \(r\) rename \(c\) calls \(d\) define \(:\) shell \(v\) vars
+EXPECT_REGEX \(j/k\) next/prev \(tab\) column \(_\) hud \(\?\) help
+EXPECT_REGEX \(f/F\) set/reset filter \(s\) function signature \(q\) quit
+EXPECT_REGEX \(=\) show/hide legend \(h/l\) short/full function name
+QUIT
+STEPEOF

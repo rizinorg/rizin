@@ -1,0 +1,17 @@
+# `:` opens a command prompt; `s 0x40` seeks and a second ENTER redraws the view.
+NAME=colon command seeks to a new offset
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEYS :s 0x40<ENTER>
+WAIT 200
+KEY <ENTER>
+WAIT 250
+EXPECT_LINE 0 [0x00000040
+EXPECT_LINE 2 0x00000040
+QUIT
+STEPEOF

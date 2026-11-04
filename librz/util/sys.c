@@ -87,7 +87,6 @@ extern char **environ;
 #if __WINDOWS__
 #include <io.h>
 #include <rz_windows.h>
-#include <VersionHelpers.h>
 #include <signal.h>
 #define TMP_BUFSIZE 4096
 #ifdef _MSC_VER

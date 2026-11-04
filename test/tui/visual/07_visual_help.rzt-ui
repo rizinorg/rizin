@@ -1,0 +1,19 @@
+# `?` opens the visual help screen listing the top level keys.
+NAME=question mark opens visual help
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEY ?
+WAIT 250
+EXPECT_REGEX Visual Help:
+EXPECT_REGEX \| \?  full help
+EXPECT_REGEX \| b  browse mode
+EXPECT_REGEX \| c  toggle cursor
+EXPECT_REGEX \| p  print commands and modes
+EXPECT_REGEX \| v  view management
+QUIT
+STEPEOF
