@@ -192,6 +192,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	ht_sp_free(o->glue_to_class_method);
 	ht_sp_free(o->name_to_class_object);
 	ht_sp_free(o->import_name_symbols);
+	ht_sp_free(o->name_to_symbol);
 	ht_up_free(o->vaddr_to_class_method);
 	rz_bin_info_free(o->info);
 	rz_structured_data_free(o->structured_data);

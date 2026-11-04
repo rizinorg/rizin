@@ -1355,6 +1355,15 @@ static void set_bin_relocs(RzCore *r, RzBinObject *o, RzBinReloc *reloc, bool va
 	}
 }
 
+RZ_API RzBinSymbol *rz_core_bin_get_symbol_by_name(RZ_NONNULL const RzCore *core, const char *name) {
+	rz_return_val_if_fail(core && name, NULL);
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	if (!obj || !obj->name_to_symbol) {
+		return NULL;
+	}
+	return ht_sp_find(obj->name_to_symbol, name, NULL);
+}
+
 RZ_API bool rz_core_bin_apply_relocs(RzCore *core, RzBinFile *binfile, bool va_bool) {
 	rz_return_val_if_fail(core && binfile, false);
 	RzBinObject *o = binfile->o;
