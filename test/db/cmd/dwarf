@@ -8809,7 +8809,7 @@ Line table statements:
 EOF
 RUN
 
-NAME="ARM types"
+NAME="ARM types (cortexm real flags)"
 FILE=
 CMDS=<<EOF
 e asm.cpu=cortexm
@@ -8862,7 +8862,7 @@ var double c @ ...
 EOF
 RUN
 
-NAME="ARM types"
+NAME="ARM types (direct load)"
 FILE=bins/elf/test_app2/test_app2.elf
 CMDS=<<EOF
 aaa
@@ -9592,7 +9592,7 @@ Line table statements:
 EOF
 RUN
 
-NAME="Debugging Information in dwo"
+NAME="Debugging Information in dwo (runtime config)"
 FILE=bins/dwarf/demo_dwo
 CMDS=<<EOF
 iS
@@ -9658,7 +9658,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME="Debugging Information in dwo"
+NAME="Debugging Information in dwo (command line arg)"
 FILE=bins/dwarf/demo_dwo
 ARGS=-e bin.dbginfo.dwo_path=bins/dwarf/demo_dwo-demo.dwo
 CMDS=<<EOF

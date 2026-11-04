@@ -9,7 +9,7 @@ HelloWorld
 EOF
 RUN
 
-NAME=(msg x;echo ${x})
+NAME=(msg x;echo ${x}) with trailing echo
 FILE==
 CMDS=<<EOF
 (msg x;echo ${x})
@@ -106,7 +106,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=%v
+NAME=cmd_macros: %v
 FILE==
 CMDS=<<EOF
 f foo.one @ 1

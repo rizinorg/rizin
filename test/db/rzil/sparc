@@ -1,4 +1,4 @@
-NAME=Run all instructions - Sparc64
+NAME=Run all instructions - Sparc64 (insn_all)
 FILE=bins/elf/sparc/sparc64_insn_all.bin
 ARGS=-eio.cache=1
 CMDS=<<EOF
@@ -590,7 +590,7 @@ y          bitv 0x00000000
 EOF
 RUN
 
-NAME=Run all instructions - Sparc64
+NAME=Run all instructions - Sparc64 (emulateme)
 FILE=bins/elf/sparc/sparc64_emulateme.bin
 ARGS=-eio.cache=1
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME=Testing the decryption in emulateme
+NAME=xtensa: Testing the decryption in emulateme
 FILE=bins/xtensa/emulateme.xtensa-esp32-elf
 TIMEOUT=30
 CMDS=<<EOF

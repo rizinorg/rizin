@@ -87,7 +87,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Testing the decryption in emulateme
+NAME=x86: Testing the decryption in emulateme
 FILE=bins/elf/emulateme.x86
 TIMEOUT=30
 CMDS=<<EOF

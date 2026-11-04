@@ -1,4 +1,4 @@
-NAME=Testing the decryption in emulateme
+NAME=tricore: Testing the decryption in emulateme
 FILE=bins/tricore/emulateme.tricore
 TIMEOUT=30
 CMDS=<<EOF
@@ -16,7 +16,7 @@ Hello from RzIL!
 EOF
 RUN
 
-NAME=Testing the decryption in emulateme
+NAME=tricore: Testing the floating point instructions in emulateme-fp
 FILE=bins/tricore/emulateme-fp.tricore.elf
 TIMEOUT=30
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME=VSF: Rocky Horror Picture Show norom
+NAME=VSF: Rocky Horror Picture Show norom (rhps-rom suite)
 FILE=bins/vsf/c128-rhps-norom.vsf
 CMDS=<<EOF
 iI~os
@@ -13,7 +13,7 @@ os       C128
 EOF
 RUN
 
-NAME=VSF: Rocky Horror Picture Show norom- open
+NAME=VSF: Rocky Horror Picture Show norom- open (rhps-rom suite)
 FILE=bins/vsf/c128-rhps-norom.vsf
 ARGS=-A
 CMDS=q!

@@ -37,7 +37,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=no flags
+NAME=cmd_flags: no flags
 FILE==
 CMDS=f
 EXPECT=
@@ -366,7 +366,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Set/get
+NAME=cmd_flags: Set/get
 FILE==
 CMDS=<<EOF
 f cat

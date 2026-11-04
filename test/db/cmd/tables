@@ -1,4 +1,4 @@
-NAME=tables sum
+NAME=tables sum flt
 FILE=bins/elf/analysis/elf-virtualtable
 CMDS=<<EOF
 flt:size/sum
@@ -191,7 +191,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tables sum
+NAME=tables afbt format variants
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 s main

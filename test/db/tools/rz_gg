@@ -473,7 +473,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r
+NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r (output)
 TOOL=rz-gg
 ARGS=-k darwin -a x86 -b 32 bins/other/rz-gg/simple_cmp.r
 EXPECT=<<EOF
@@ -481,7 +481,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r
+NAME=rz-gg -k darwin -a x86 -b 32 simple_cmp.r (exit code)
 FILE==
 CMDS=<<EOF
 !rz-gg -k darwin -a x86 -b 32 -o /dev/null bins/other/rz-gg/simple_cmp.r

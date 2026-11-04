@@ -1,4 +1,4 @@
-NAME=dmhg/dmhga with memory dump
+NAME=linux-ppc: dmhg/dmhga with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -19,7 +19,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgt with memory dump
+NAME=linux-ppc: dmhgt with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -38,7 +38,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgl with memory dump
+NAME=linux-ppc: dmhgl with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -65,7 +65,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgc with memory dump
+NAME=linux-ppc: dmhgc with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME=Types with nested callables containing mixed pointers and arrays
+NAME=types_format: Types with nested callables containing mixed pointers and arrays
 FILE==
 CMDS=<<EOF
 wx 3948674596873958645860982304349896923857493465

@@ -62,7 +62,7 @@ C 0x100001914 call qword [reloc.objc_msgSend]
 EOF
 RUN
 
-NAME=objc msg dispatch (arm64)
+NAME=avx: objc msg dispatch (arm64e)
 FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=<<EOF
 aaaa

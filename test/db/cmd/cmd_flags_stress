@@ -1,4 +1,4 @@
-NAME=no flags
+NAME=cmd_flags_stress: no flags after f-*
 FILE==
 CMDS=<<EOF
 f patata
@@ -10,7 +10,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=no flags
+NAME=cmd_flags_stress: no flags after fs * and f-*
 FILE=bins/elf/analysis/elf-relro
 CMDS=<<EOF
 f patata

@@ -1,4 +1,4 @@
-NAME=function rebase
+NAME=windows-x64: function rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
@@ -12,7 +12,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bp rebase
+NAME=windows-x64: bp rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
@@ -27,7 +27,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ref rebase
+NAME=windows-x64: ref rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
@@ -42,7 +42,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=flag rebase
+NAME=windows-x64: flag rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF
@@ -58,7 +58,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=var rebase
+NAME=windows-x64: var rebase
 FILE=bins/pe/hello_world/hello_world_od64bit.exe
 ARGS=-d
 CMDS=<<EOF

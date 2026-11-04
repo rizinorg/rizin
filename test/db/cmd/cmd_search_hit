@@ -1,4 +1,4 @@
-NAME=cmd.hit sugar for /x
+NAME=cmd.hit sugar for /x (via e cmd.hit)
 FILE=malloc://1024
 CMDS=<<EOF
 wx 90 @ 10
@@ -45,7 +45,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit sugar for /x
+NAME=cmd.hit sugar for /x (via @@/x)
 FILE=malloc://1024
 CMDS=<<EOF
 wx 90 @ 10
@@ -57,7 +57,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit sugar for /
+NAME=cmd.hit sugar for / (via @@/z)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -71,7 +71,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit sugar for /
+NAME=cmd.hit sugar for / (via @@/ad)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86

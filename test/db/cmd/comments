@@ -1,4 +1,4 @@
-NAME=add comment
+NAME=add comment at 0x123
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello @ 0x123
@@ -24,7 +24,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=add comment
+NAME=add comment at current offset
 FILE=malloc://1024
 CMDS=<<EOF
 CC hello

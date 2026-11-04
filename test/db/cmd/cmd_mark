@@ -84,7 +84,7 @@ EOF
 EXPECT=
 RUN
 
-NAME=Set/get
+NAME=cmd_mark: Set/get
 FILE==
 CMDS=<<EOF
 m south 0x20

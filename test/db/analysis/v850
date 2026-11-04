@@ -1,4 +1,4 @@
-NAME=v850 preludes
+NAME=v850 preludes (hello-v850e)
 FILE=bins/v850/hello-v850e
 CMDS=<<EOF
 aap
@@ -119,7 +119,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=v850 preludes
+NAME=v850 preludes (ired_v850)
 FILE=bins/v850/ired_v850
 CMDS=<<EOF
 aap

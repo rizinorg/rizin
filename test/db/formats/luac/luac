@@ -395,7 +395,7 @@ luac-info:
 EOF
 RUN
 
-NAME=LUAC: plugin load 5.4 version
+NAME=LUAC: plugin load 5.4 version (class54)
 FILE=bins/luac/class54.luac
 CMDS=<<EOF
 e asm.arch=luac
@@ -582,7 +582,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=LUAC: plugin load 5.4 version
+NAME=LUAC: plugin load 5.4 version (test_long_string54)
 FILE=bins/luac/test_long_string54.luac
 CMDS=<<EOF
 e asm.arch=luac
@@ -1001,7 +1001,7 @@ EOF
 RUN
 
 # see https://travis-ci.com/github/rizinorg/rizin/jobs/492588616
-NAME=LUAC: broken file
+NAME=LUAC: broken file (random)
 FILE=bins/luac/random.luac
 CMDS=<<EOF
 EOF

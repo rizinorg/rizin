@@ -18,7 +18,7 @@ Total extents found: 16
 EOF
 RUN
 
-NAME=dmhja/dmhjb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
+NAME=linux-arm64: dmhja/dmhjb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -64,7 +64,7 @@ EOF
 RUN
 
 
-NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
+NAME=linux-arm64: dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -109,7 +109,7 @@ Extent @ 0x7faa2cc16500
 EOF
 RUN
 
-NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
+NAME=linux-arm64: dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
 FILE=bins/heap/linux_jemalloc-5.3.0_riscv64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -154,7 +154,7 @@ Extent @ 0x7fff96016500
 EOF
 RUN
 
-NAME=dmhja/dmhjb/dmhje/dmhjei with jemalloc 5.3.0 core dump (linux-amd64-4k_page)
+NAME=linux-arm64: dmhja/dmhjb/dmhje/dmhjei with jemalloc 5.3.0 core dump (linux-amd64-4k_page)
 FILE=bins/heap/segfault-jemalloc5.3.0-amd64-core
 CMDS=<<EOF
 dmhja~narena

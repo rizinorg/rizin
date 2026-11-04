@@ -1,4 +1,4 @@
-NAME=Printing il statements in various formats
+NAME=bf: Printing il statements in various formats
 FILE=bins/bf/hello-ok.bf
 CMDS=<<EOF
 e asm.arch=bf

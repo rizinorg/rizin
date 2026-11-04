@@ -1,4 +1,4 @@
-NAME=rz-run repeat error
+NAME=rz-run repeat error: invalid string after @<num>@
 TOOL=rz-run
 ARGS=arg1=@32@ -- echo
 EXIT_STATUS=1
@@ -8,7 +8,7 @@ ERROR: rz-run: invalid string after @<num>@ in `@32@`
 EOF
 RUN
 
-NAME=rz-run repeat error
+NAME=rz-run repeat error: invalid @<num>@
 TOOL=rz-run
 ARGS=arg1=@32aaa -- echo
 EXIT_STATUS=1

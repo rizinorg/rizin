@@ -1,4 +1,4 @@
-NAME=issue 3479
+NAME=issue 3479 /x 616163
 FILE=malloc://1024
 CMDS=<<EOF
 w aac
@@ -13,7 +13,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=issue 3479
+NAME=issue 3479 /x 6163
 FILE=malloc://1024
 CMDS=<<EOF
 w aac

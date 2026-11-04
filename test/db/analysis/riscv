@@ -3441,7 +3441,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=_start
+NAME=_start (repeat)
 FILE=bins/elf/riscv_compressed_push_pop
 CMDS=<<EOF
 e asm.bytes=true
@@ -4164,7 +4164,7 @@ Gadget size: 4
 EOF
 RUN
 
-NAME=data xrefs outside functions marked as data
+NAME=riscv: data xrefs outside functions marked as data
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
 aaa

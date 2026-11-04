@@ -241,7 +241,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=emulateme nostdlib mips64
+NAME=emulateme nostdlib mips64 (repeat)
 FILE=bins/elf/emulateme.nostd.mips64
 TIMEOUT=60
 CMDS=<<EOF

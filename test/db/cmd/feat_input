@@ -67,7 +67,7 @@ bar
 EOF
 RUN
 
-NAME=at3 %vi $$ @ 3; echo bar
+NAME=at3 %vi $$ @ 3;echo bar (no space)
 FILE=malloc://1024
 CMDS=%vi $$ @ 3;echo bar
 EXPECT=<<EOF
@@ -76,7 +76,7 @@ bar
 EOF
 RUN
 
-NAME=at3 %vi $$ @ 3; echo bar
+NAME=at3 %vi $$ @ 3; echo bar (with space)
 FILE=malloc://1024
 CMDS=%vi $$ @ 3; echo bar
 EXPECT=<<EOF

@@ -40,7 +40,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=entitlements with rz-bin
+NAME=entitlements with rz-bin -OC
 FILE=bins/mach0/AppIOSEntitlements.ios
 CMDS=!rz-bin -OC `i~file:0[1]`
 EXPECT=<<EOF
@@ -82,7 +82,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=entitlements with rz-bin
+NAME=entitlements with iC (arm64e)
 FILE=bins/mach0/flow-mac-arm64e
 CMDS=iI;iC
 EXPECT=<<EOF

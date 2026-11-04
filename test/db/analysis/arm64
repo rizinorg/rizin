@@ -43,7 +43,7 @@ fstat
 EOF
 RUN
 
-NAME=noreturn errno
+NAME=arm64: noreturn errno
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
 e emu.str=1
@@ -320,7 +320,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tail call
+NAME=arm64: tail call
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00401ae0
@@ -355,7 +355,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=data xrefs outside functions marked as data
+NAME=arm64: data xrefs outside functions marked as data
 FILE=bins/elf/libarm64.so
 CMDS=<<EOF
 aaa

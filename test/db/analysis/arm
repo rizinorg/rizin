@@ -1,4 +1,4 @@
-NAME=noreturn errno
+NAME=arm: noreturn errno
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
@@ -13,7 +13,7 @@ size: 32
 EOF
 RUN
 
-NAME=thumb ldr pc-rel analysis
+NAME=thumb ldr pc-rel analysis (ldr.w)
 FILE=malloc://32
 CMDS=<<EOF
 e asm.bytes=true
@@ -58,7 +58,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=thumb ldr pc-rel analysis
+NAME=thumb ldr pc-rel analysis (ldr)
 FILE=malloc://32
 CMDS=<<EOF
 e asm.bytes=true
@@ -182,7 +182,7 @@ blx 0x33b8
 EOF
 RUN
 
-NAME=arm-or-thumb visual bug
+NAME=arm-or-thumb visual bug (visual)
 FILE=bins/mach0/arm-or-thumb
 CMDS=<<EOF
 e scr.interactive=1
@@ -196,7 +196,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm-or-thumb visual bug
+NAME=arm-or-thumb visual bug (af)
 FILE=bins/mach0/arm-or-thumb
 CMDS=<<EOF
 af
@@ -500,7 +500,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm subrel
+NAME=arm subrel (arm1.bin)
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 e asm.arch=arm
@@ -522,7 +522,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm subrel
+NAME=arm subrel (arm-ls)
 FILE=bins/elf/analysis/arm-ls
 BROKEN=1
 CMDS=<<EOF
@@ -818,7 +818,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm jump table
+NAME=arm jump table (callback.elf)
 FILE=bins/elf/analysis/callback.elf
 CMDS=<<EOF
 af @ sym.input_handler2
@@ -829,7 +829,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm jump table
+NAME=arm jump table (mobile_bank)
 FILE=bins/elf/analysis/mobile_bank.45115ff5f655d94fc26cb5244928b3fc
 CMDS=<<EOF
 af @ 0x11284
@@ -1263,7 +1263,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Function definition
+NAME=arm: Function definition
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 afr @ main

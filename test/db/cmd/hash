@@ -1,4 +1,4 @@
-NAME=search count
+NAME=hash: search count (/ch crc32)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 ph crc32 @ 0x804830a

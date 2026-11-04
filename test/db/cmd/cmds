@@ -12,7 +12,7 @@ add byte [rax], al
 EOF
 RUN
 
-NAME=quotes multicommands 2
+NAME=quotes multicommands 2 (wa nop nop)
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
@@ -27,7 +27,7 @@ add byte [eax], al
 EOF
 RUN
 
-NAME=quotes multicommands 2
+NAME=quotes multicommands 2 (wa with semicolons)
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
@@ -130,7 +130,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 asm with pa
+NAME=r2 asm with pa (flag TEST)
 FILE==
 BROKEN=1
 CMDS=<<EOF
@@ -144,7 +144,7 @@ b821000000
 EOF
 RUN
 
-NAME=r2 asm with pa
+NAME=r2 asm with pa (immediate 33)
 FILE==
 CMDS=<<EOF
 e asm.arch=x86

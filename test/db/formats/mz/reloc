@@ -1,4 +1,4 @@
-NAME=MZ: chkdsk.exe - open
+NAME=MZ: chkdsk.exe - reloc
 FILE=bins/mz/chkdsk.exe
 ARGS=-A
 CMDS=ir

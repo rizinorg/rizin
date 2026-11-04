@@ -1,4 +1,4 @@
-NAME=spawn + attach and suspend
+NAME=darwin-x64: spawn + attach and suspend
 FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
@@ -15,7 +15,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=dcu + read
+NAME=darwin-x64: dcu + read
 FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
@@ -37,7 +37,7 @@ hit breakpoint at: 0x100000bf8
 EOF
 RUN
 
-NAME=maps
+NAME=darwin-x64: maps
 FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
@@ -51,7 +51,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=maps as flags
+NAME=darwin-x64: maps as flags
 FILE=bins/mach0/hello-objc-osx
 ARGS=-d
 CMDS=<<EOF
@@ -93,7 +93,7 @@ hit breakpoint at: 0x100000f0c
 EOF
 RUN
 
-NAME=break multiple times and check regs
+NAME=darwin-x64: break multiple times and check regs
 FILE=bins/mach0/hello-osx-x86_64
 ARGS=-d
 CMDS=<<EOF

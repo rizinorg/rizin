@@ -1,4 +1,4 @@
-NAME=Setting breakpoints on symbols works
+NAME=linux-riscv32: Setting breakpoints on symbols works
 FILE=bins/elf/riscv_bitmanip_32
 ARGS=-d
 CMDS=<<EOF
@@ -22,7 +22,7 @@ pc = 0x75546400
 EOF
 RUN
 
-NAME=Disabling breakpoints works
+NAME=linux-riscv32: Disabling breakpoints works
 FILE=bins/elf/riscv_bitmanip_32
 ARGS=-d
 CMDS=<<EOF
@@ -75,7 +75,7 @@ Device flags after disable: 0x00001000
 EOF
 RUN
 
-NAME=Stacktraces work
+NAME=linux-riscv32: Stacktraces work
 FILE=bins/elf/riscv_bitmanip_32
 ARGS=-d
 CMDS=<<EOF
@@ -99,7 +99,7 @@ pc = 0x86ae5400
 EOF
 RUN
 
-NAME=Single-stepping into function calls
+NAME=linux-riscv32: Single-stepping into function calls
 FILE=bins/elf/riscv_bitmanip_32
 ARGS=-d
 CMDS=<<EOF
@@ -149,7 +149,7 @@ Device flags after disable: 0x00001000
 EOF
 RUN
 
-NAME=Stepping over function calls to the next instruction
+NAME=linux-riscv32: Stepping over function calls to the next instruction
 FILE=bins/elf/riscv_bitmanip_32
 ARGS=-d
 CMDS=<<EOF

@@ -87,7 +87,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdq asm.flags.middle=0
+NAME=pdq asm.flags.middle=0 (64-bit)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -269,7 +269,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdq asm.flags.middle=0
+NAME=pdq asm.flags.middle=0 (32-bit)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86

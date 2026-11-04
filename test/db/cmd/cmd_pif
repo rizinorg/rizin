@@ -1,4 +1,4 @@
-NAME=pif invalid instruction
+NAME=pif invalid instruction at sym.parse__IO_FILE__
 FILE=bins/elf/mentalminer
 ARGS=-A -B 0x555555554000
 BROKEN=1
@@ -16,7 +16,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pif invalid instruction
+NAME=pif invalid instruction at entry
 FILE=bins/elf/mentalminer
 ARGS=-A -B 0x555555554000
 CMDS=<<EOF

@@ -1957,7 +1957,7 @@ pc = 0x0042
 EOF
 RUN
 
-NAME=op: bcs #$40
+NAME=op: bpl #$40
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei
@@ -2339,7 +2339,7 @@ V = 0x0
 EOF
 RUN
 
-NAME=flags
+NAME=esil 6502: flags
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=6502; e asm.bits=8; aei

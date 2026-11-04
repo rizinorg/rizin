@@ -1,4 +1,4 @@
-NAME=x86 openbsd syscalls asl ascii
+NAME=x86-32 openbsd syscalls asl ascii
 FILE==
 ARGS=-ax86 -b32 -k openbsd
 CMDS=asn read
@@ -7,7 +7,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86 openbsd syscalls asl ascii
+NAME=x86-64 openbsd syscalls asl ascii
 FILE==
 ARGS=-ax86 -b64 -k openbsd
 CMDS=asn accept
@@ -16,7 +16,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86 windows syscalls asl ascii
+NAME=x86-32 windows syscalls asl ascii
 FILE==
 ARGS=-ax86 -b32 -k windows
 CMDS=asn NtAllocateVirtualMemory
@@ -25,7 +25,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86 windows syscalls asl ascii
+NAME=x86-64 windows syscalls asl ascii
 FILE==
 ARGS=-ax86 -b64 -k windows
 CMDS=asn NtAllocateVirtualMemory
@@ -34,7 +34,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86 linux syscalls asl ascii
+NAME=x86 linux syscalls asn read
 FILE==
 ARGS=-ax86 -b64 -k linux
 CMDS=asn read
@@ -43,7 +43,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=x86 linux syscalls asl ascii
+NAME=x86 linux syscalls asr 0
 FILE==
 ARGS=-ax86 -b64 -k linux
 CMDS=asr 0

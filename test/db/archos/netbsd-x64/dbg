@@ -1,4 +1,4 @@
-NAME=dcu + read
+NAME=netbsd-x64: dcu + read
 FILE=bins/elf/netbsd-hello-x64
 ARGS=-d
 CMDS=<<EOF
@@ -16,7 +16,7 @@ Hello World
 EOF
 RUN
 
-NAME=maps
+NAME=netbsd-x64: maps
 FILE=bins/elf/netbsd-hello-x64
 ARGS=-d
 CMDS=dm~hello~[3-9]
@@ -27,7 +27,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=step and check pc
+NAME=netbsd-x64: step and check pc
 FILE=bins/elf/netbsd-calculate-x64
 ARGS=-d
 CMDS=<<EOF
@@ -45,7 +45,7 @@ Result = 42
 EOF
 RUN
 
-NAME=write gpr
+NAME=netbsd-x64: write gpr
 FILE=bins/elf/netbsd-calculate-x64
 ARGS=-d
 CMDS=<<EOF

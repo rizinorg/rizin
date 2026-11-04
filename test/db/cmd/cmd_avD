@@ -884,7 +884,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=objc msg dispatch (arm64)
+NAME=avD: objc msg dispatch (arm64)
 FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=<<EOF
 aaaa
@@ -1054,7 +1054,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=objc msg dispatch (arm64)
+NAME=avD: objc msg dispatch (arm64e)
 FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=<<EOF
 aaaa

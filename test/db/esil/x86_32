@@ -2402,7 +2402,7 @@ ar eflags
 EOF
 RUN
 
-NAME=X86_INSTR_POP wrong order
+NAME=esil: X86_INSTR_POP wrong order
 FILE==
 CMDS=<<EOF
 e io.va=true

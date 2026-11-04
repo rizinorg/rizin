@@ -1,4 +1,4 @@
-NAME=af localflag
+NAME=cmd_af: af localflag
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 e analysis.calls=false

@@ -17,7 +17,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rop search without maxhits
+NAME=rop search with maxhits=2
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e search.maxhits=2

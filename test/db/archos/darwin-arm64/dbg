@@ -1,4 +1,4 @@
-NAME=spawn + attach and suspend
+NAME=darwin-arm64: spawn + attach and suspend
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -14,7 +14,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dcu + read
+NAME=darwin-arm64: dcu + read
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -79,7 +79,7 @@ WARNING: core: Writing to file '.tmp/core.issue3054'
 EOF
 RUN
 
-NAME=maps
+NAME=darwin-arm64: maps
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -121,7 +121,7 @@ hello-macos-arm64
 EOF
 RUN
 
-NAME=maps as flags
+NAME=darwin-arm64: maps as flags
 FILE=bins/mach0/hello-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -144,7 +144,7 @@ hello-macos-arm64 r--   16K
 EOF
 RUN
 
-NAME=step and check pc
+NAME=darwin-arm64: step and check pc
 FILE=bins/mach0/calculate-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -173,7 +173,7 @@ f30
 EOF
 RUN
 
-NAME=break multiple times and check regs
+NAME=darwin-arm64: break multiple times and check regs
 FILE=bins/mach0/calculate-macos-arm64
 ARGS=-d
 CMDS=<<EOF
@@ -215,7 +215,7 @@ f48
 EOF
 RUN
 
-NAME=write gpr
+NAME=darwin-arm64: write gpr
 FILE=bins/mach0/calculate-macos-arm64
 ARGS=-d
 CMDS=<<EOF

@@ -1,4 +1,4 @@
-NAME=Search file error - no file
+NAME=cmd_search_g: Search file error - no file
 FILE=bins/elf/analysis/x86-jmpeax
 CMDS=<<EOF
 aaa

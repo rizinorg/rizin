@@ -16,7 +16,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io.cache: Writing after end of file
+NAME=io.cache: Writing after end of file (file)
 FILE=bins/other/0x3
 CMDS=<<EOF
 e io.cache=true
@@ -29,7 +29,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=io.cache: Writing after end of file
+NAME=io.cache: Writing after end of file (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 echo

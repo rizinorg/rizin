@@ -1,4 +1,4 @@
-NAME=search count
+NAME=hex: search count ($?)
 FILE=malloc://1024
 CMDS=<<EOF
 wx 2f @ 0x100
@@ -13,7 +13,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search count
+NAME=hex: search hit offset
 FILE=malloc://1024
 CMDS=<<EOF
 wx 01020304 @ 0x100
@@ -55,7 +55,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=binmask seek search (mips)
+NAME=binmask seek search (mips 4-byte)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=mips
@@ -74,7 +74,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=binmask seek search (mips)
+NAME=binmask seek search (mips 2-byte)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=mips

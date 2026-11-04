@@ -243,7 +243,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af analysis.endsize
+NAME=af analysis.endsize=0
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
 e analysis.endsize=0
@@ -256,7 +256,7 @@ name: main
 EOF
 RUN
 
-NAME=af analysis.endsize
+NAME=af analysis.endsize=1
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
 e analysis.endsize=1
@@ -563,7 +563,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Main in disassembly
+NAME=Main in disassembly (ls2)
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 aa
@@ -574,7 +574,7 @@ mov rdi, main
 EOF
 RUN
 
-NAME=Main in disassembly
+NAME=Main in disassembly (ls_main_bug)
 FILE=bins/elf/analysis/ls_main_bug
 CMDS=<<EOF
 aa
@@ -596,7 +596,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mac-ls switch count
+NAME=x86_32: mac-ls switch count
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 aaa
@@ -3269,7 +3269,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=aoj pushf
+NAME=x86_32: aoj pushf
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
@@ -4225,7 +4225,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tail call
+NAME=x86_32: tail call
 FILE=bins/pe/bcc1.ex
 CMDS=<<EOF
 af

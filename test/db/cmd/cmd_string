@@ -1,4 +1,4 @@
-NAME=izz
+NAME=cmd_string: izz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izz
 EXPECT=<<EOF

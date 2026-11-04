@@ -28,7 +28,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=map sections correctly
+NAME=map sections correctly (repeat)
 FILE=bins/dex/Hello.dex
 ARGS=-n -m 0xf0000000
 BROKEN=1

@@ -55,7 +55,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=LUAC: broken file
+NAME=LUAC: broken file 5.3 (random53)
 FILE=bins/luac/random53.luac
 CMDS=<<EOF
 EOF

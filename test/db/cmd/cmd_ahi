@@ -210,7 +210,7 @@ mov eax, 'AAAA'
 EOF
 RUN
 
-NAME=ahl
+NAME=cmd_ahi: ahl after ahi
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=x86

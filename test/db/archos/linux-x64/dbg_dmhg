@@ -40,7 +40,7 @@ size=0x__40
 EOF
 RUN
 
-NAME=dmhg/dmhga with memory dump
+NAME=linux-x64: dmhg/dmhga with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -61,7 +61,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgt with memory dump
+NAME=linux-x64: dmhgt with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -80,7 +80,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgl with memory dump
+NAME=linux-x64: dmhgl with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -126,7 +126,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgc with memory dump
+NAME=linux-x64: dmhgc with memory dump
 FILE=bins/heap/linux_glibc-2.30_x64.bin
 ARGS=-n
 CMDS=<<EOF
@@ -164,7 +164,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dmhgb/dmhgg/dmhgm
+NAME=dmhgb/dmhgg/dmhgm (repeat)
 FILE=bins/elf/glibc-heap-2.31
 ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
 CMDS=<<EOF

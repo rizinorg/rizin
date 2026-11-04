@@ -1,4 +1,4 @@
-NAME=hello-arm32
+NAME=hello-arm32 ($M and $s)
 FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
 %v $M
@@ -10,7 +10,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=hello-arm32
+NAME=hello-arm32 ($M and $s with -B 0x4000)
 FILE=bins/elf/analysis/hello-arm32
 ARGS=-B 0x4000
 CMDS=<<EOF
@@ -363,7 +363,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=%p and %P
+NAME=%p and %P (valid address)
 FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
 %p 0x08000060
@@ -375,7 +375,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=%p and %P
+NAME=%p and %P (unmapped address)
 FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
 %p 0xdeadbeef

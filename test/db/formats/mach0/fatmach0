@@ -131,7 +131,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 entry1 rz-bin
+NAME=fatmach0 entry1 rz-bin -qe
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=!rz-bin -a x86 -b 32 -qe bins/mach0/fatmach0-3true
@@ -140,7 +140,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 entry1 rz-bin
+NAME=fatmach0 entry1 rz-bin -p -qe
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
 CMDS=!rz-bin -p -a x86 -b 32 -qe bins/mach0/fatmach0-3true
@@ -312,7 +312,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=M68k, HPPA, Sparc, x86
+NAME=fatmach0: M68k, HPPA, Sparc, x86
 FILE=bins/mach0/2048-NeXTSTEP
 CMDS=<<EOF
 iA

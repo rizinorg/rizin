@@ -314,7 +314,7 @@ var int16_t var_2h @ stack - 0x2
 EOF
 RUN
 
-NAME=h8300 analysis main.elf
+NAME=h8300 analysis main-nodebug.elf
 FILE=bins/elf/h8300/main-nodebug.elf
 CMDS=<<EOF
 aaa

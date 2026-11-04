@@ -1,4 +1,4 @@
-NAME=to
+NAME=to s1.h
 FILE==
 CMDS=to bins/headers/s1.h;t S1
 EXPECT=<<EOF
@@ -6,7 +6,7 @@ pf "d4d4d4 x y z"
 EOF
 RUN
 
-NAME=to
+NAME=to s2.h
 FILE==
 CMDS=to bins/headers/s2.h; t S1
 EXPECT=<<EOF

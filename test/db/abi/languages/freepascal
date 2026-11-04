@@ -1,4 +1,4 @@
-NAME=LANGUAGES : freepascal detection
+NAME=LANGUAGES : freepascal detection (pick_random)
 FILE=bins/abi_bins/elf/languages/freepascal/pick_random
 BROKEN=1
 CMDS=<<EOF
@@ -20,7 +20,7 @@ EXPECT=
 EXPECT_ERR=
 RUN
 
-NAME=LANGUAGES : freepascal detection
+NAME=LANGUAGES : freepascal detection (freepascal_test_dwarf)
 FILE=bins/efi/freepascal_test_dwarf
 CMDS=<<EOF
 iI~lang

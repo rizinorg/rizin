@@ -11,7 +11,7 @@ hello-freebsd-x64
 EOF
 RUN
 
-NAME=spawn + attach and suspend
+NAME=freebsd-x64: spawn + attach and suspend
 FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -23,7 +23,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dcu + read
+NAME=freebsd-x64: dcu + read
 FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -44,7 +44,7 @@ pop rbp
 EOF
 RUN
 
-NAME=maps
+NAME=freebsd-x64: maps
 FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -58,7 +58,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=maps as flags
+NAME=freebsd-x64: maps as flags
 FILE=bins/elf/hello-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -75,7 +75,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=step and check pc
+NAME=freebsd-x64: step and check pc
 FILE=bins/elf/calculate-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -91,7 +91,7 @@ rip = 0x00000000002018ac
 EOF
 RUN
 
-NAME=break multiple times and check regs
+NAME=freebsd-x64: break multiple times and check regs
 FILE=bins/elf/calculate-freebsd-x64
 ARGS=-d
 CMDS=<<EOF
@@ -116,7 +116,7 @@ rax = 0x0000000000000064
 EOF
 RUN
 
-NAME=write gpr
+NAME=freebsd-x64: write gpr
 FILE=bins/elf/calculate-freebsd-x64
 ARGS=-d
 CMDS=<<EOF

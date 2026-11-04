@@ -957,7 +957,7 @@ z80
 EOF
 RUN
 
-NAME=Print the asm/analysis plugins with filtering
+NAME=Print the asm/analysis plugins with filtering (La)
 FILE==
 CMDS=<<EOF
 La a
@@ -1101,7 +1101,7 @@ z80
 EOF
 RUN
 
-NAME=Print the asm/analysis plugins with filtering
+NAME=Print the asm/analysis plugins with filtering (La, Laj, Lat, Laq)
 FILE==
 CMDS=<<EOF
 La a
