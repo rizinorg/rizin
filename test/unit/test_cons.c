@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2020 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2026 Maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
@@ -229,12 +230,109 @@ bool test_cons_highlight(void) {
 	mu_end;
 }
 
+static bool test_cons_last_filtered(void) {
+	static const struct {
+		const char *input;
+		const char *filter;
+		const char *expected;
+	} cases[] = {
+		{ "one keep\nzero drop\ntwo keep\n", "keep", "one keep\ntwo keep\n" },
+		{ "one keep\nzero drop\ntwo keep\n", "[0]", "one\nzero\ntwo\n" },
+		{ "one\ntwo\nthree\n", ":1", "two\n" },
+		{ "{\"value\":42}\n", "{.value}", "42\n" },
+		{ "one\ntwo\n", "missing", NULL },
+	};
+	RzCons *cons = rz_cons_new();
+	mu_assert_notnull(cons, "create console");
+	FILE *sink = rz_sys_fopen(RZ_SYS_DEVNULL, "w");
+	mu_assert_notnull(sink, "open output sink");
+	cons->fdout = fileno(sink);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		rz_cons_println(cons, "previous");
+		rz_cons_flush(cons);
+		rz_cons_print(cons, cases[i].input);
+		rz_cons_grep_process(cons, rz_str_dup(cases[i].filter));
+		rz_cons_flush(cons);
+		rz_cons_last(cons);
+		mu_assert_streq(rz_cons_get_buffer(cons), cases[i].expected, "replay filtered output");
+		rz_cons_reset(cons);
+	}
+
+	fclose(sink);
+	rz_cons_free(cons);
+	mu_end;
+}
+
+static bool test_cons_last_capture(void) {
+	RzCons *cons = rz_cons_new();
+	mu_assert_notnull(cons, "create console");
+	FILE *sink = rz_sys_fopen(RZ_SYS_DEVNULL, "w");
+	mu_assert_notnull(sink, "open output sink");
+	cons->fdout = fileno(sink);
+
+	rz_cons_last(cons);
+	mu_assert_null(rz_cons_get_buffer(cons), "no output to replay initially");
+	rz_cons_println(cons, "one keep\nzero drop\ntwo keep");
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	rz_cons_grep_process(cons, rz_str_dup("keep"));
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	rz_cons_grep_process(cons, rz_str_dup("two"));
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "two keep\n", "successive filters replace saved output");
+	rz_cons_flush(cons);
+	rz_cons_flush(cons);
+
+	rz_cons_push(cons);
+	rz_cons_last(cons);
+	rz_cons_grep_process(cons, rz_str_dup("[0]"));
+	rz_cons_flush(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "two keep\n", "nested flush is deferred");
+	rz_cons_filter(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "two\n", "nested capture can filter saved output");
+	rz_cons_pop(cons);
+	rz_cons_last(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "two keep\n", "capture and empty flush preserve saved output");
+	rz_cons_reset(cons);
+	rz_cons_println(cons, "replacement");
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "replacement\n", "capture does not suppress the next snapshot");
+	rz_cons_reset(cons);
+
+	cons->context->lastEnabled = false;
+	rz_cons_println(cons, "not saved");
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	mu_assert_null(rz_cons_get_buffer(cons), "disabled cache cannot be replayed");
+	cons->context->lastEnabled = true;
+	rz_cons_last(cons);
+	mu_assert_streq(rz_cons_get_buffer(cons), "replacement\n", "disabled cache preserves saved output");
+	rz_cons_reset(cons);
+
+	const char binary[] = { 'a', '\0', 'b', '\n' };
+	rz_cons_memcat(cons, binary, sizeof(binary));
+	rz_cons_flush(cons);
+	rz_cons_last(cons);
+	mu_assert_eq(rz_cons_get_buffer_len(cons), sizeof(binary), "replay preserves binary length");
+	mu_assert_memeq((const ut8 *)rz_cons_get_buffer(cons), (const ut8 *)binary, sizeof(binary), "replay preserves binary output");
+
+	fclose(sink);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_justify);
 	mu_run_test(test_cons_at);
 	mu_run_test(test_cons_misc);
 	mu_run_test(test_cons_highlight);
+	mu_run_test(test_cons_last_filtered);
+	mu_run_test(test_cons_last_capture);
 	return tests_passed != tests_run;
 }
 
