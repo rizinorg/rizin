@@ -797,7 +797,7 @@ bool test_rz_analysis_block_automerge() {
 
 		rz_analysis_block_automerge(shuffled_blocks);
 		assert_block_invariants(analysis);
-		// mu_assert_eq (rz_list_length (shuffled_blocks), 4, "length after automerge");
+		mu_assert_eq(rz_pvector_len(shuffled_blocks), 4, "length after automerge");
 		mu_assert("remaining blocks a", rz_pvector_contains(shuffled_blocks, a));
 		mu_assert("remaining blocks b", rz_pvector_contains(shuffled_blocks, b));
 		mu_assert("remaining blocks c", rz_pvector_contains(shuffled_blocks, c));
