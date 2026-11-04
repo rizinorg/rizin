@@ -1389,6 +1389,10 @@ commands:
           - name: ara
             summary: Show all currently allocated register arenas
             cname: analysis_reg_arenas
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: ara+
             summary: Push a new set of arenas to the stack
@@ -1444,6 +1448,10 @@ commands:
           - name: arpc
             summary: Show register profile comments
             cname: analysis_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: arpo
             summary: Load a new register profile from file
@@ -1510,11 +1518,19 @@ commands:
       - name: arT
         summary: List all register types
         cname: analysis_reg_types
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
       - name: arR
         summary: List all register roles
         cname: analysis_reg_roles
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
   # ... to here
