@@ -7,6 +7,7 @@
 #include <rz_core.h>
 #include <rz_io.h>
 #include <rz_socket.h>
+#include <fcntl.h>
 #include "../core_private.h"
 
 static void cmd_write_fail(RzCore *core) {
@@ -241,6 +242,109 @@ RZ_IPI RzCmdStatus rz_write_from_file_handler(RzCore *core, int argc, const char
 err:
 	free(data);
 	return res;
+}
+
+typedef struct {
+	RzInterval range;
+	ut64 file_offset;
+	const char *filename;
+	bool overwrite;
+} WriteToFileRequest;
+
+static bool parse_write_to_file_request(RzCore *core, const char **argv, bool with_offset, bool overwrite, WriteToFileRequest *req) {
+	rz_return_val_if_fail(core && argv && req, false);
+	if (RZ_STR_ISEMPTY(argv[3])) {
+		RZ_LOG_ERROR("core: Invalid file name\n");
+		return false;
+	}
+
+	req->range.addr = rz_num_math(core->num, argv[1]);
+	if (core->num->nc.errors) {
+		RZ_LOG_ERROR("Could not convert start to number\n");
+		return false;
+	}
+	req->range.size = rz_num_math(core->num, argv[2]);
+	if (core->num->nc.errors) {
+		RZ_LOG_ERROR("Could not convert size to number\n");
+		return false;
+	}
+	req->file_offset = 0;
+	if (with_offset) {
+		req->file_offset = rz_num_math(core->num, argv[4]);
+		if (core->num->nc.errors) {
+			RZ_LOG_ERROR("Could not convert offset to number\n");
+			return false;
+		}
+	}
+	req->filename = argv[3];
+	req->overwrite = overwrite;
+	return true;
+}
+
+static RzCmdStatus write_memory_to_file(RzCore *core, const WriteToFileRequest *req) {
+	rz_return_val_if_fail(core && req && req->filename, RZ_CMD_STATUS_ERROR);
+
+	const int perm = O_RDWR | O_CREAT | (req->overwrite ? O_TRUNC : 0);
+	RzBuffer *dst = rz_buf_new_file(req->filename, perm, 0644);
+	if (!dst) {
+		RZ_LOG_ERROR("core: Cannot open file '%s'\n", req->filename);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 file_offset = req->overwrite ? req->file_offset : rz_buf_size(dst);
+
+	ut8 *buf = RZ_NEWS(ut8, 0x10000);
+	if (!buf) {
+		rz_buf_free(dst);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut64 copied = 0;
+	while (copied < req->range.size) {
+		const size_t chunk = (size_t)RZ_MIN(req->range.size - copied, (ut64)0x10000);
+		if (UT64_ADD_OVFCHK(req->range.addr, copied) || UT64_ADD_OVFCHK(file_offset, copied)) {
+			RZ_LOG_ERROR("core: Integer overflow while copying data\n");
+			free(buf);
+			rz_buf_free(dst);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		const ut64 src = req->range.addr + copied;
+		const ut64 dst_off = file_offset + copied;
+
+		if (!rz_io_read_at_mapped(core->io, src, buf, chunk)) {
+			RZ_LOG_ERROR("core: Failed to read at 0x%08" PFMT64x "\n", src);
+			free(buf);
+			rz_buf_free(dst);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (rz_buf_write_at(dst, dst_off, buf, chunk) != (st64)chunk) {
+			RZ_LOG_ERROR("core: Failed to write to '%s' at offset 0x%08" PFMT64x "\n", req->filename, dst_off);
+			free(buf);
+			rz_buf_free(dst);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		copied += chunk;
+	}
+
+	free(buf);
+	rz_buf_free(dst);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_write_to_file_handler(RzCore *core, int argc, const char **argv) {
+	WriteToFileRequest req = { 0 };
+	if (!parse_write_to_file_request(core, argv, false, true, &req)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return write_memory_to_file(core, &req);
+}
+
+RZ_IPI RzCmdStatus rz_write_to_file_append_handler(RzCore *core, int argc, const char **argv) {
+	WriteToFileRequest req = { 0 };
+	if (!parse_write_to_file_request(core, argv, false, false, &req)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return write_memory_to_file(core, &req);
 }
 
 RZ_IPI RzCmdStatus rz_write_from_socket_handler(RzCore *core, int argc, const char **argv) {
