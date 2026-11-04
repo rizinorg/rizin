@@ -621,6 +621,8 @@ RZ_API RZ_OWN RzList /*<RzCmdMacro *>*/ *rz_cmd_macro_list(RZ_NONNULL RzCmd *cmd
 RZ_API RzCmdStatus rz_cmd_macro_call(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
 RZ_API RzCmdStatus rz_cmd_macro_call_multiple(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const char *name, RZ_NONNULL const char **argv);
 RZ_API void rz_cmd_macro_foreach(RZ_NONNULL RzCmd *cmd, RzCmdForeachMacroCb cb, void *user);
+RZ_API void rz_serialize_macros_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCmd *cmd);
+RZ_API bool rz_serialize_macros_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCmd *cmd, RZ_NULLABLE RzSerializeResultInfo *res);
 
 RZ_API bool rz_cmd_alias_del(RzCmd *cmd, const char *k);
 RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz);

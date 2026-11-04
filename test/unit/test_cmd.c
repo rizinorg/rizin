@@ -1393,6 +1393,30 @@ bool test_remove_macros(void) {
 	mu_end;
 }
 
+bool test_serialize_macros(void) {
+	Sdb *db = sdb_new0();
+	RzCmd *src = rz_cmd_new(NULL, false);
+	RzCmd *dst = rz_cmd_new(NULL, false);
+	const char *args[] = { "a", "b", NULL };
+
+	mu_assert_notnull(db, "database created");
+	mu_assert_true(rz_cmd_macro_add(src, "macro", args, "pd ${a} @ ${b}"), "macro added");
+	rz_serialize_macros_save(db, src);
+	mu_assert_true(rz_serialize_macros_load(db, dst, NULL), "macros loaded");
+
+	const RzCmdMacro *macro = rz_cmd_macro_get(dst, "macro");
+	mu_assert_notnull(macro, "macro restored");
+	mu_assert_eq(macro->nargs, 2, "argument count restored");
+	mu_assert_streq(macro->args[0], "a", "first argument restored");
+	mu_assert_streq(macro->args[1], "b", "second argument restored");
+	mu_assert_streq(macro->code, "pd ${a} @ ${b}", "code restored");
+
+	rz_cmd_free(dst);
+	rz_cmd_free(src);
+	sdb_free(db);
+	mu_end;
+}
+
 static RzCmdStatus a_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
@@ -1557,6 +1581,7 @@ int all_tests() {
 	mu_run_test(test_no_macros);
 	mu_run_test(test_simple_macros);
 	mu_run_test(test_remove_macros);
+	mu_run_test(test_serialize_macros);
 	mu_run_test(test_call_macros);
 	mu_run_test(test_call_multiple_macros);
 	mu_run_test(test_cmd_descriptor_folder_arg);

@@ -72,6 +72,7 @@ rz_core_sources = [
   #'rtr_shell.c',
   'seek.c',
   'serialize_core.c',
+  'serialize_macros.c',
   'task.c',
   'yank.c',
   'p/core_dex.c',

@@ -789,6 +789,23 @@ static bool test_migrate_v24_v25_asm_demangle() {
 	mu_end;
 }
 
+static bool test_migrate_v27_v28_macros() {
+	RzProject *prj = sdb_new0();
+	mu_assert_notnull(prj, "project new");
+	Sdb *core_db = sdb_ns(prj, "core", true);
+	mu_assert_notnull(core_db, "core ns");
+	RzSerializeResultInfo *res = rz_serialize_result_info_new();
+	mu_assert_notnull(res, "result info new");
+
+	bool s = rz_project_migrate_v27_v28(prj, res);
+	mu_assert_true(s, "migrate success");
+	mu_assert_notnull(sdb_ns(core_db, "macros", false), "macros ns");
+
+	rz_serialize_result_info_free(res);
+	rz_project_free(prj);
+	mu_end;
+}
+
 /// Load project of given version from file into core and check the log for migration success messages
 #define BEGIN_LOAD_TEST(core, version, file) \
 	do { \
@@ -1228,6 +1245,7 @@ int all_tests() {
 	mu_run_test(test_migrate_v22_v23_enum);
 	mu_run_test(test_migrate_v23_v24_bitfield);
 	mu_run_test(test_migrate_v24_v25_asm_demangle);
+	mu_run_test(test_migrate_v27_v28_macros);
 	mu_run_test(test_load_v1_noreturn);
 	mu_run_test(test_load_v1_noreturn_empty);
 	mu_run_test(test_load_v1_unknown_type);

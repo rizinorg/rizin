@@ -827,6 +827,18 @@ RZ_API bool rz_project_migrate_v26_v27(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 27 -> 28
+//
+// Changes:
+// Added "/core/macros" namespace for command macro serialization.
+
+RZ_API bool rz_project_migrate_v27_v28(RzProject *prj, RzSerializeResultInfo *res) {
+	Sdb *core_db;
+	RZ_SERIALIZE_SUB(prj, core_db, res, "core", return false;);
+	return sdb_ns(core_db, "macros", true) != NULL;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -854,6 +866,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v24_v25,
 	rz_project_migrate_v25_v26,
 	rz_project_migrate_v26_v27,
+	rz_project_migrate_v27_v28,
 };
 
 /// Migrate the given project to the current version in-place

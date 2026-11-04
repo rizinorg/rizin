@@ -75,6 +75,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	rz_serialize_mark_save(sdb_ns(db, "marks", true), core->marks);
 	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
 	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
+	rz_serialize_macros_save(sdb_ns(db, "macros", true), core->rcmd);
 	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
 
 	char buf[0x20];
@@ -103,6 +104,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("marks", rz_serialize_mark_load(subdb, core->marks, res));
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
+	SUB("macros", rz_serialize_macros_load(subdb, core->rcmd, res));
 	SUB("seek", rz_serialize_core_seek_load(subdb, core, res));
 
 	const char *str = sdb_const_get(db, "offset");
