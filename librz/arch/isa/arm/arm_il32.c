@@ -167,7 +167,7 @@ static bool is_core_reg(arm_reg reg) {
  */
 static RzILOpBitVector *read_reg(ut64 pc, arm_reg reg) {
 	if (reg == ARM_REG_PC) {
-		return U32(pc);
+		return rz_il_op_new_bitv_from_ut64_pc(32, pc);
 	}
 	if (reg >= ARM_REG_S0 && reg <= ARM_REG_S31) {
 		ut32 idx = reg - ARM_REG_S0;
