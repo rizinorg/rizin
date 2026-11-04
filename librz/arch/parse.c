@@ -40,13 +40,6 @@ RZ_API void rz_parse_free(RzParse *p) {
 	if (!p) {
 		return;
 	}
-	RzListIter *it, *tmp;
-	RzParsePlugin *plugin;
-	rz_list_foreach_safe (p->parsers, it, tmp, plugin) {
-		if (plugin->fini) {
-			plugin->fini(p, p->user);
-		}
-	}
 	rz_list_free(p->parsers);
 	free(p);
 }
@@ -54,22 +47,13 @@ RZ_API void rz_parse_free(RzParse *p) {
 RZ_API bool rz_parse_plugin_add(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 	rz_return_val_if_fail(p && plugin, false);
 
-	bool itsFine = true;
-	if (plugin->init) {
-		itsFine = plugin->init(p, p->user);
-	}
-	if (itsFine) {
-		rz_list_append(p->parsers, plugin);
-	}
+	rz_list_append(p->parsers, plugin);
 	return true;
 }
 
 RZ_API bool rz_parse_plugin_del(RzParse *p, RZ_NONNULL RzParsePlugin *plugin) {
 	rz_return_val_if_fail(p && plugin, false);
 	if (p->cur == plugin) {
-		if (plugin->fini && !plugin->fini(p, p->user)) {
-			return false;
-		}
 		p->cur = NULL;
 	}
 	return rz_list_delete_val(p->parsers, plugin);
@@ -87,38 +71,6 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name) {
 	}
 	p->cur = NULL;
 	return false;
-}
-
-// this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
-// and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
-RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str) {
-	char *in = rz_str_dup(str);
-	bool ret = false;
-	char *s, *o;
-
-	data[0] = '\0';
-	if (p->cur && p->cur->assemble) {
-		o = data + strlen(data);
-		do {
-			s = strchr(str, ';');
-			if (s) {
-				*s = '\0';
-			}
-			ret = p->cur->assemble(p, o, str);
-			if (!ret) {
-				break;
-			}
-			if (s) {
-				str = s + 1;
-				o += strlen(data);
-				o[0] = '\n';
-				o[1] = '\0';
-				o++;
-			}
-		} while (s);
-	}
-	free(in);
-	return ret;
 }
 
 /**

@@ -260,7 +260,5 @@ static bool parse(RzParse *parse, const char *assembly, RzStrBuf *sb) {
 RzParsePlugin rz_parse_plugin_dalvik_pseudo = {
 	.name = "dalvik.pseudo",
 	.desc = "DALVIK pseudo syntax",
-	.init = NULL,
-	.fini = NULL,
 	.parse = parse,
 };
