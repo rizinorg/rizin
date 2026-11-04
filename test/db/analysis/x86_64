@@ -4044,6 +4044,17 @@ EOF
 EXPECT=
 RUN
 
+NAME=x86_64 retpoline call does not end function
+FILE=bins/elf/retpoline-call.o
+CMDS=<<EOF
+af @ sym.hook
+afl
+EOF
+EXPECT=<<EOF
+0x08000040    3 48           sym.hook
+EOF
+RUN
+
 NAME=lea pseudo improvements (pseudo disabled)
 FILE==
 CMDS=<<EOF
