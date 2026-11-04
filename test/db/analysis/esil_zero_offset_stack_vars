@@ -1,0 +1,36 @@
+NAME=ESIL handles stack pointer offsets (Thumb)
+FILE==
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 84b000af84b000200090009901a808b07047
+af
+afv- *
+aaef
+afvs
+afvR
+afvW
+EOF
+EXPECT=<<EOF
+var int32_t var_20h @ stack - 0x20
+var int32_t var_1ch @ stack - 0x1c
+   var_20h  0xa
+   var_1ch
+   var_20h  0x8
+   var_1ch
+EOF
+RUN
+
+NAME=ESIL ignores an SP register copy (x86-64)
+FILE==
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e analysis.cc=amd64
+wx 4883ec104889e04883c410c3
+af
+afv- *
+aaef
+afvs
+EOF
+EXPECT=
+RUN
