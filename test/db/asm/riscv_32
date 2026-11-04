@@ -229,13 +229,13 @@ d "sra a4, a0, a4" 3357e540 0x0 (set a4 (>> (var a0) (& (var a4) (bv 32 0x1f)) (
 d "sra a4, a1, a4" 33d7e540 0x0 (set a4 (>> (var a1) (& (var a4) (bv 32 0x1f)) (msb (var a1))))
 d "sra a2, a0, a2" 3356c540 0x0 (set a2 (>> (var a0) (& (var a2) (bv 32 0x1f)) (msb (var a0))))
 # ----------------------------- LB -----------------------------
-d "lb a4, 0x108(a0)" 03078510 0x0 (set a4 (cast 32 (msb (loadw 0 8 (+ (var a0) (bv 32 0x108)))) (loadw 0 8 (+ (var a0) (bv 32 0x108)))))
-d "lb a7, 0(t3)" 83080e00 0x0 (set a7 (cast 32 (msb (loadw 0 8 (+ (var t3) (bv 32 0x0)))) (loadw 0 8 (+ (var t3) (bv 32 0x0)))))
-d "lb a2, 1(a4)" 03061700 0x0 (set a2 (cast 32 (msb (loadw 0 8 (+ (var a4) (bv 32 0x1)))) (loadw 0 8 (+ (var a4) (bv 32 0x1)))))
+d "lb a4, 0x108(a0)" 03078510 0x0 (set a4 (let _v8 (loadw 0 8 (+ (var a0) (bv 32 0x108))) (cast 32 (msb (var _v8)) (var _v8))))
+d "lb a7, 0(t3)" 83080e00 0x0 (set a7 (let _v8 (loadw 0 8 (+ (var t3) (bv 32 0x0))) (cast 32 (msb (var _v8)) (var _v8))))
+d "lb a2, 1(a4)" 03061700 0x0 (set a2 (let _v8 (loadw 0 8 (+ (var a4) (bv 32 0x1))) (cast 32 (msb (var _v8)) (var _v8))))
 # ----------------------------- LH -----------------------------
-d "lh a5, 6(a6)" 83176800 0x0 (set a5 (cast 32 (msb (loadw 0 16 (+ (var a6) (bv 32 0x6)))) (loadw 0 16 (+ (var a6) (bv 32 0x6)))))
-d "lh a5, 0x334(s7)" 83974b33 0x0 (set a5 (cast 32 (msb (loadw 0 16 (+ (var s7) (bv 32 0x334)))) (loadw 0 16 (+ (var s7) (bv 32 0x334)))))
-d "lh a4, -0x148(a4)" 031787eb 0x0 (set a4 (cast 32 (msb (loadw 0 16 (+ (var a4) (bv 32 0xfffffeb8)))) (loadw 0 16 (+ (var a4) (bv 32 0xfffffeb8)))))
+d "lh a5, 6(a6)" 83176800 0x0 (set a5 (let _v16 (loadw 0 16 (+ (var a6) (bv 32 0x6))) (cast 32 (msb (var _v16)) (var _v16))))
+d "lh a5, 0x334(s7)" 83974b33 0x0 (set a5 (let _v16 (loadw 0 16 (+ (var s7) (bv 32 0x334))) (cast 32 (msb (var _v16)) (var _v16))))
+d "lh a4, -0x148(a4)" 031787eb 0x0 (set a4 (let _v16 (loadw 0 16 (+ (var a4) (bv 32 0xfffffeb8))) (cast 32 (msb (var _v16)) (var _v16))))
 # ----------------------------- LW -----------------------------
 d "lw s1, 8(s7)" 83a48b00 0x0 (set s1 (loadw 0 32 (+ (var s7) (bv 32 0x8))))
 d "lw a1, 0x18(sp)" e245 0x0 (set a1 (loadw 0 32 (+ (var sp) (bv 32 0x18))))

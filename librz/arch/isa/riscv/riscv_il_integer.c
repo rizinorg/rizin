@@ -78,9 +78,10 @@ DEFINE_LIFTER_WITH_EFFECT(sw, DECODE_RS_RS_IMM_MEM,
 		: STOREW(ADD(rs2, imm), CAST(32, IL_FALSE, rs1)))
 DEFINE_LIFTER_WITH_EFFECT(sd, DECODE_RS_RS_IMM_MEM, STOREW(ADD(rs2, imm), rs1))
 
-DEFINE_LIFTER(lw, DECODE_RD_RS_IMM_MEM, rz_analysis_get_bits(analysis) == 32 ? LOADW(32, ADD(rs, imm)) : SIGNED(rz_analysis_get_bits(analysis), LOADW(32, ADD(rs, imm))))
-DEFINE_LIFTER(lb, DECODE_RD_RS_IMM_MEM, SIGNED(rz_analysis_get_bits(analysis), LOADW(8, ADD(rs, imm))))
-DEFINE_LIFTER(lh, DECODE_RD_RS_IMM_MEM, SIGNED(rz_analysis_get_bits(analysis), LOADW(16, ADD(rs, imm))))
+// Sign-extending loads bind the loaded value to a local because SIGNED duplicates its operand, which would read memory twice.
+DEFINE_LIFTER(lw, DECODE_RD_RS_IMM_MEM, rz_analysis_get_bits(analysis) == 32 ? LOADW(32, ADD(rs, imm)) : LET("_v32", LOADW(32, ADD(rs, imm)), SIGNED(rz_analysis_get_bits(analysis), VARLP("_v32"))))
+DEFINE_LIFTER(lb, DECODE_RD_RS_IMM_MEM, LET("_v8", LOADW(8, ADD(rs, imm)), SIGNED(rz_analysis_get_bits(analysis), VARLP("_v8"))))
+DEFINE_LIFTER(lh, DECODE_RD_RS_IMM_MEM, LET("_v16", LOADW(16, ADD(rs, imm)), SIGNED(rz_analysis_get_bits(analysis), VARLP("_v16"))))
 DEFINE_LIFTER(lbu, DECODE_RD_RS_IMM_MEM, UNSIGNED(rz_analysis_get_bits(analysis), LOADW(8, ADD(rs, imm))))
 DEFINE_LIFTER(lhu, DECODE_RD_RS_IMM_MEM, UNSIGNED(rz_analysis_get_bits(analysis), LOADW(16, ADD(rs, imm))))
 DEFINE_LIFTER(ld, DECODE_RD_RS_IMM_MEM, LOADW(64, ADD(rs, imm)))
