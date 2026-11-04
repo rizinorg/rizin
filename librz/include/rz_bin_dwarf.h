@@ -988,6 +988,7 @@ typedef struct {
 	ut64 offset;
 	bool big_endian;
 	HtUP *relocations;
+	ut64 relocations_base; ///< offset of data in the section, used to look up relocations
 } RzBinEndianReader;
 
 typedef struct {
