@@ -35,6 +35,16 @@ elif cc.has_argument('-w')
     add_project_arguments('-w', language: 'c')
 endif
 
+# Can't use custom_target() here.
+# Because the amalgamate.py hard codes its output path to `zydis/amalgamated-dist`.
+# and creates it when run.
+# custom_target() would run the scrpt during compile time,
+# but it checks the include dir during config time and fails.
+# Because amalgamate.py didn't run yet and didn't create the directory.
+# So use run_command here instead (executes immediatedly) and call it a day.
+python3 = find_program('python3')
+r = run_command(python3, 'assets/amalgamate.py', check: true)
+
 zydis_sources = [
   'amalgamated-dist/Zydis.c'
 ]

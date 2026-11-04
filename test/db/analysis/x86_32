@@ -3234,7 +3234,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 1771,
+    "id": 1864,
     "opex": {
       "operands": [
         {
@@ -3712,7 +3712,7 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 668,
+    "id": 742,
     "opex": {
       "operands": [
         {
@@ -3959,7 +3959,7 @@ mnemonic: nop
 description: no operation
 mask: ff
 prefix: 0
-id: 487
+id: 556
 bytes: 90
 refptr: 0
 size: 1
