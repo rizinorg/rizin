@@ -9,7 +9,7 @@ project('rizin', 'c',
   ]
 )
 
-py3_exe = import('python').find_installation()
+py3_exe = find_program('python3', 'python2' , 'python' , required: false)
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 
@@ -70,7 +70,7 @@ if is_static_build
   if cc.get_id() == 'msvc'
     # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
     if get_option('b_vscrt') == 'from_buildtype'
-      warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
+       warning('To avoid warnings due to multiple /M options, please also set -Db_vscrt=mt or -Db_vscrt=mtd.')
       add_project_arguments('/MT', language: 'c')
     endif
   else
@@ -170,8 +170,13 @@ load_dirs = {
 # Calcualte BINDIR's depth to be able to find the root directory during runtime
 # in portable builds
 py_cmd = 'import os; from pathlib import Path; print(len(Path(os.path.normpath(r"@0@")).parents) - len(Path(os.path.normpath(r"@1@")).parents))'.format(rizin_prefix / rizin_bindir, rizin_prefix)
-py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
-bindir_depth = py_cmd.stdout().strip()
+if py3_exe.found()
+  py_cmd = run_command(py3_exe, '-c', py_cmd, check: true)
+  bindir_depth = py_cmd.stdout().strip()
+else
+  py_cmd = 'some_default_value'
+  bindir_depth = ''
+endif
 
 foreach load_dir, default_subdir : load_dirs
   val = get_option(load_dir)
@@ -185,9 +190,11 @@ foreach load_dir, default_subdir : load_dirs
     set_variable(load_dir, val)
   endif
 endforeach
-
-cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx', check: true).stdout().strip()
-
+if py3_exe.found()
+ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, rizin_prefix, rizin_cmakedir / 'xxx', check: true).stdout().strip()
+else
+ cmake_package_relative_path = ''
+endif
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
@@ -197,10 +204,12 @@ capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
   if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
+   if py3_exe.found()
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false)
     if r.returncode() == 1 and get_option('subprojects_check')
       error(subproject_clean_error_msg)
     endif
+   endif
     capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'])
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
@@ -339,9 +348,11 @@ if (sys_libmspack_opt.auto() and not libmspack_dep.found()) or sys_libmspack_opt
 endif
 
 # handle xxhash library
-r = run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'xxhash', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 sys_xxhash_opt = get_option('use_sys_xxhash')
@@ -357,11 +368,12 @@ if (sys_xxhash_opt.auto() and not xxhash_dep.found()) or sys_xxhash_opt.disabled
 endif
 
 # handle libdemangle
-r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'libdemangle', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
-
 libdemangle_options = [
   'default_library=static',
   'use_swift_demangler=false',
@@ -383,9 +395,11 @@ endif
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
 # handle tree-sitter
-r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 tree_sitter_dep = dependency('tree-sitter', required: get_option('use_sys_tree_sitter'), static: is_static_build, fallback: [])
@@ -396,9 +410,11 @@ if not tree_sitter_dep.found()
 endif
 
 # handle rizin-grammar-c
-r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'rizin-grammar-c', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 rizin_grammar_c_proj = subproject('rizin-grammar-c', default_options: ['default_library=static', 'werror=false'])
@@ -688,7 +704,7 @@ rz_version_h = configure_file(
   install_dir: rizin_incdir
 )
 
-if git_exe.found() and fs.exists('.git')
+if py3_exe.found() and git_exe.found() and fs.exists('.git')
   gittip_file = custom_target('gittip_file',
     build_always_stale: true,
     build_by_default: true,
@@ -696,16 +712,19 @@ if git_exe.found() and fs.exists('.git')
     command: [py3_exe, git_exe_repo_py, git_exe, repo, '@OUTPUT@', 'rev-parse', 'HEAD'],
     install: true,
     install_dir: rizin_datdir_rz
-  )
+)
 endif
 
 # handle zlib dependency
 zlib_dep = disabler()
 if get_option('use_zlib')
+ if py3_exe.found()
   r = run_command(py3_exe, check_meson_subproject_py, 'zlib', check: false)
   if r.returncode() == 1 and get_option('subprojects_check')
     error(subproject_clean_error_msg)
-  endif
+  endif 
+ endif
+endif
 
   zlib_dep = dependency('zlib', required: get_option('use_sys_zlib'), static: is_static_build)
   if not zlib_dep.found()
@@ -713,12 +732,13 @@ if get_option('use_zlib')
     zlib_dep = zlib_proj.get_variable('zlib_dep')
     meson.override_dependency('zlib', zlib_dep)
   endif
-endif
 
 # handle lz4 dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'lz4', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'lz4', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 lz4_dep = dependency('liblz4', required: get_option('use_sys_lz4'), static: is_static_build)
@@ -729,7 +749,7 @@ endif
 
 # handle lzma dependency
 liblzma_dep = disabler()
-if get_option('use_lzma')
+if get_option('use_lzma') and py3_exe.found()
   r = run_command(py3_exe, check_meson_subproject_py, 'lzma', check: false)
   if r.returncode() == 1 and get_option('subprojects_check')
     error(subproject_clean_error_msg)
@@ -744,11 +764,12 @@ if get_option('use_lzma')
 endif
 
 # handle softfloat dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'softfloat', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
-
 use_sys_softfloat = get_option('use_sys_softfloat')
 # Keep the system probes method-specific so a rejected system dependency does
 # not occupy the generic name overridden by the bundled subproject.
@@ -800,12 +821,13 @@ if meson.is_cross_build()
   softfloat_cross_native_dep = softfloat_cross_native_proj.get_variable('softfloat_dep')
 endif
 
-# handle zip dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+# handle zip dependency 
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'libzip', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
-
 libzip_dep = dependency('libzip', required: get_option('use_sys_libzip'), static: is_static_build)
 if not libzip_dep.found()
   libzip_proj = subproject('libzip', default_options: [
@@ -825,9 +847,11 @@ if host_machine.system() == 'serenity' and libzip_dep.found()
 endif
 
 # handle zstd dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'zstd', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 libzstd_dep = dependency('libzstd', required: get_option('use_sys_libzstd'), static: is_static_build, fallback: [])
@@ -841,9 +865,11 @@ if not libzstd_dep.found()
 endif
 
 # handle yxml dependency
-r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
-if r.returncode() == 1 and get_option('subprojects_check')
+if py3_exe.found()
+ r = run_command(py3_exe, check_meson_subproject_py, 'yxml', check: false)
+ if r.returncode() == 1 and get_option('subprojects_check')
   error(subproject_clean_error_msg)
+ endif
 endif
 
 yxml_proj = subproject('yxml', default_options: ['default_library=static'])
@@ -926,10 +952,12 @@ endif
 subdir('librz')
 
 if get_option('install_sigdb')
-  r = run_command(py3_exe, check_meson_subproject_py, 'sigdb', check: false)
-  if r.returncode() == 1 and get_option('subprojects_check')
+ if py3_exe.found()
+   r = run_command(py3_exe, check_meson_subproject_py, 'sigdb', check: false)
+   if r.returncode() == 1 and get_option('subprojects_check')
     error(subproject_clean_error_msg)
-  endif
+   endif
+ endif
   subproject('sigdb', default_options: ['sigdb_path=@0@'.format(get_option('prefix') / rizin_sigdb)])
 endif
 
