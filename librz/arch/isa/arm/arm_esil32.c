@@ -260,11 +260,95 @@ static void arm32mathaddsub(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		(!strcmp(opchar, "+") ? "30,$c,31,$c,^,31,$c" : "30,$c,31,$c,^,32,$b"));
 }
 
+/**
+ * \brief Get the cpsr bits that an MSR writes.
+ *
+ * APSR, also as the part of the M-profile xPSR, is a view of cpsr. SPSR, the
+ * banked registers and the other M-profile special registers are not, so no
+ * cpsr bits are written for them.
+ *
+ * \return Mask of the written cpsr bits, 0 if there are none
+ */
+static ut32 msr_cpsr_mask(cs_insn *insn) {
+	const cs_arm_op *dst = &INSOP(0);
+	bool f = false, s = false, x = false, c = false;
+#if CS_NEXT_VERSION >= 6
+	if (dst->type == ARM_OP_CPSR) {
+		f = dst->sysop.psr_bits & ARM_FIELD_CPSR_F;
+		s = dst->sysop.psr_bits & ARM_FIELD_CPSR_S;
+		x = dst->sysop.psr_bits & ARM_FIELD_CPSR_X;
+		c = dst->sysop.psr_bits & ARM_FIELD_CPSR_C;
+	} else if (dst->type == ARM_OP_SYSREG) {
+		// The plain APSR, IAPSR, EAPSR and XPSR equal their _NZCVQ forms
+		switch (dst->sysop.reg.mclasssysreg) {
+		case ARM_MCLASSSYSREG_APSR_NZCVQG:
+		case ARM_MCLASSSYSREG_IAPSR_NZCVQG:
+		case ARM_MCLASSSYSREG_EAPSR_NZCVQG:
+		case ARM_MCLASSSYSREG_XPSR_NZCVQG:
+			s = true;
+			// fallthrough
+		case ARM_MCLASSSYSREG_APSR_NZCVQ:
+		case ARM_MCLASSSYSREG_IAPSR_NZCVQ:
+		case ARM_MCLASSSYSREG_EAPSR_NZCVQ:
+		case ARM_MCLASSSYSREG_XPSR_NZCVQ:
+			f = true;
+			break;
+		case ARM_MCLASSSYSREG_APSR_G:
+		case ARM_MCLASSSYSREG_IAPSR_G:
+		case ARM_MCLASSSYSREG_EAPSR_G:
+		case ARM_MCLASSSYSREG_XPSR_G:
+			s = true;
+			break;
+		default:
+			break;
+		}
+	}
+#else
+	if (dst->type == ARM_OP_SYSREG) {
+		switch (dst->reg) {
+		case ARM_SYSREG_APSR_NZCVQG:
+		case ARM_SYSREG_IAPSR_NZCVQG:
+		case ARM_SYSREG_EAPSR_NZCVQG:
+		case ARM_SYSREG_XPSR_NZCVQG:
+			s = true;
+			// fallthrough
+		case ARM_SYSREG_APSR:
+		case ARM_SYSREG_APSR_NZCVQ:
+		case ARM_SYSREG_IAPSR:
+		case ARM_SYSREG_IAPSR_NZCVQ:
+		case ARM_SYSREG_EAPSR:
+		case ARM_SYSREG_EAPSR_NZCVQ:
+		case ARM_SYSREG_XPSR:
+		case ARM_SYSREG_XPSR_NZCVQ:
+			f = true;
+			break;
+		case ARM_SYSREG_APSR_G:
+		case ARM_SYSREG_IAPSR_G:
+		case ARM_SYSREG_EAPSR_G:
+		case ARM_SYSREG_XPSR_G:
+			s = true;
+			break;
+		default:
+			// Below APSR the values are OR-combined CPSR or SPSR fields
+			if (dst->reg < ARM_SYSREG_APSR) {
+				f = dst->reg & ARM_SYSREG_CPSR_F;
+				s = dst->reg & ARM_SYSREG_CPSR_S;
+				x = dst->reg & ARM_SYSREG_CPSR_X;
+				c = dst->reg & ARM_SYSREG_CPSR_C;
+			}
+			break;
+		}
+	}
+#endif
+	// MSR never writes the execution state bits (IT, J, T). Without a tracked
+	// processor mode, the privileged bits (A, I, F, M) are always written.
+	return (f ? 0xf8000000 : 0) | (s ? 0x000f0000 : 0) | (x ? 0x00000300 : 0) | (c ? 0x000000df : 0);
+}
+
 RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
 	char str[32][32];
-	int msr_flags;
 	int pcdelta = (thumb ? 4 : 8);
 	ut32 mask = UT32_MAX;
 	int str_ldr_bytes = 4;
@@ -861,31 +945,26 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM_INS_MRS:
 		// TODO: esil for MRS
 		break;
-	case ARM_INS_MSR:
-		if (insn->detail->arm.operands[0].type != ARM_OP_REG) {
-			// New sysop operands added in Capstone v6 are not supported in ESIL.
+	case ARM_INS_MSR: {
+		ut32 psr_mask = msr_cpsr_mask(insn);
+		if (!psr_mask) {
 			break;
 		}
-#if CS_NEXT_VERSION >= 6
-		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
-#else
-		msr_flags = insn->detail->arm.operands[0].reg >> 4;
-#endif
-		rz_strbuf_appendf(&op->esil, "0,");
-		if (msr_flags & 1) {
-			rz_strbuf_appendf(&op->esil, "0xFF,|,");
+		if (ISREG(1)) {
+			rz_strbuf_appendf(&op->esil, "%s,0x%" PFMT32x ",&,cpsr,0x%" PFMT32x ",&,|,cpsr,=",
+				REG(1), psr_mask, ~psr_mask);
+		} else if (ISIMM(1)) {
+			ut32 imm = IMM(1);
+			if (OPCOUNT() > 2 && ISIMM(2)) {
+				// A non-canonical modified immediate comes as its bits and rotation
+				ut32 rot = IMM(2) & 31;
+				imm = rot ? (imm >> rot) | (imm << (32 - rot)) : imm;
+			}
+			rz_strbuf_appendf(&op->esil, "0x%" PFMT32x ",cpsr,0x%" PFMT32x ",&,|,cpsr,=",
+				imm & psr_mask, ~psr_mask);
 		}
-		if (msr_flags & 2) {
-			rz_strbuf_appendf(&op->esil, "0xFF00,|,");
-		}
-		if (msr_flags & 4) {
-			rz_strbuf_appendf(&op->esil, "0xFF0000,|,");
-		}
-		if (msr_flags & 8) {
-			rz_strbuf_appendf(&op->esil, "0xFF000000,|,");
-		}
-		rz_strbuf_appendf(&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
+	}
 	case ARM_INS_UBFX:
 		if (IMM(3) > 0 && IMM(3) <= 32 - IMM(2)) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,%d,%" PFMT64u ",<<,&,>>,%s,=",
