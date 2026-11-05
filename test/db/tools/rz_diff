@@ -1071,3 +1071,25 @@ EXPECT=<<EOF
 `----------------------------------------------------------------------------------------------------------------------------'
 EOF
 RUN
+
+NAME=rz-diff winedbg:// missing file
+TOOL=rz-diff
+ARGS=-t bytes winedbg://.tmp/winedbg_rzdiff_missing winedbg://.tmp/winedbg_rzdiff_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzdiff_missing'
+ERROR: rz-diff: error, cannot open file 'winedbg://.tmp/winedbg_rzdiff_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-diff winedbg:// issue #6952 payload
+TOOL=rz-diff
+ARGS=-t bytes winedbg://';id;' winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+ERROR: rz-diff: error, cannot open file 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN

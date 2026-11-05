@@ -1403,3 +1403,25 @@ nx       false
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=rz-bin winedbg:// missing file
+TOOL=rz-bin
+ARGS=-I winedbg://.tmp/winedbg_rzbin_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzbin_missing'
+rz_core: Cannot open file 'winedbg://.tmp/winedbg_rzbin_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-bin winedbg:// issue #6952 payload
+TOOL=rz-bin
+ARGS=-I winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+rz_core: Cannot open file 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN

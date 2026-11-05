@@ -672,3 +672,49 @@ Examples:
   rz-sign -o libc.sig libc.so.6
 EOF
 RUN
+
+NAME=rizin winedbg:// missing file
+FILE=winedbg://.tmp/winedbg_rz_missing
+CMDS=echo hi
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rz_missing'
+ERROR: [r] Cannot open 'winedbg://.tmp/winedbg_rz_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rizin winedbg:// issue #6952 payload
+FILE=winedbg://';id;'
+CMDS=echo hi
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+ERROR: [r] Cannot open 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rizin -n winedbg:// missing file
+FILE=winedbg://.tmp/winedbg_rz_n_missing
+ARGS=-n
+CMDS=echo hi
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rz_n_missing'
+ERROR: [r] Cannot open 'winedbg://.tmp/winedbg_rz_n_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rizin -n winedbg:// issue #6952 payload
+FILE=winedbg://';id;'
+ARGS=-n
+CMDS=echo hi
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+ERROR: [r] Cannot open 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN
