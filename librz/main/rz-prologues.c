@@ -122,7 +122,7 @@ static bool generate_prologues(RzCons *cons, const char *input_path, bool is_dir
 	rz_io_bind(io, &bin->iob);
 
 	bool ret = false;
-	RzSetS *files = rz_set_s_new(HT_STR_DUP);
+	RzSetU *files = rz_set_u_new();
 	if (is_dir) {
 		// dir
 		int res = rz_prologues_trie_feed_directory(pg_trie, bin, input_path, prologue_len,
@@ -153,7 +153,7 @@ static bool generate_prologues(RzCons *cons, const char *input_path, bool is_dir
 	}
 	RzStructuredData *sd = NULL;
 	if (trie_mode) {
-		sd = rz_prologues_trie_to_structured_data(pg_trie, prologue_len, &arch_info, files);
+		sd = rz_prologues_trie_to_structured_data(pg_trie, prologue_len, &arch_info);
 	} else {
 		sd = rz_prologues_to_structured_data(prologues, prologue_len, &arch_info);
 	}
@@ -173,7 +173,7 @@ err:
 	rz_bin_free(bin);
 	rz_io_free(io);
 	rz_trie_free(pg_trie);
-	rz_set_s_free(files);
+	rz_set_u_free(files);
 	return ret;
 }
 

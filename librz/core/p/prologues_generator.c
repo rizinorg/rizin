@@ -353,15 +353,32 @@ RZ_API bool rz_prologues_arch_check(RZ_BORROW RZ_NONNULL const RzBinInfo *info, 
  * \param [in]	   binfile          already open/loaded RzBinFile with symbols available.
  * \param [in]	   prologue_len     number of bytes to read per function entry point (must be > 0).
  * \param [in,out] arch_info        optional target arch to check/adopt.
- * \param [in,out] processed_files  optional set of processed file paths to skip processed file or else update.
+ * \param [in,out] processed_files  optional set of processed file's hashes to skip processed file or else update.
  *
  * \return true on success, false on error or if skipped.
  */
 RZ_API bool rz_prologues_trie_feed_binfile(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBinFile *binfile, ut64 prologue_len,
-	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files) {
 	rz_return_val_if_fail(pg_trie && binfile && prologue_len > 0, false);
 
-	if (processed_files && binfile->file && rz_set_s_contains(processed_files, binfile->file)) {
+	const ut64 sz = rz_buf_size(binfile->buf);
+	if (sz == 0 || sz == UT64_MAX) {
+		return false;
+	}
+	ut8 *content = RZ_NEWS(ut8, sz);
+	if (!content) {
+		return false;
+	}
+	const st64 n_bytes = rz_buf_read_at(binfile->buf, 0, content, sz);
+	if (n_bytes < 0 || (ut64)n_bytes != sz) {
+		RZ_LOG_ERROR("Failed to read full buffer for file '%s'.\n", binfile->file);
+		RZ_FREE(content);
+		return false;
+	}
+	const ut64 file_hash = rz_hash_xxhash64(content, n_bytes);
+	RZ_FREE(content);
+
+	if (processed_files && rz_set_u_contains(processed_files, file_hash)) {
 		RZ_LOG_WARN("Skipping file '%s', already processed.\n", binfile->file);
 		return false;
 	}
@@ -391,8 +408,8 @@ RZ_API bool rz_prologues_trie_feed_binfile(RZ_BORROW RZ_NONNULL RzTrie *pg_trie,
 		return false;
 	}
 
-	if (processed_files && binfile->file) {
-		rz_set_s_add(processed_files, binfile->file);
+	if (processed_files) {
+		rz_set_u_add(processed_files, file_hash);
 	}
 
 	return true;
@@ -438,7 +455,7 @@ static bool is_ar_archive(const char *file_path) {
 }
 
 static bool process_archive(const char *ar_file, RzTrie *pg_trie, RzBin *bin, ut64 prologue_len,
-	RZ_NULLABLE RzProloguesArchInfo *arch_info, RzSetS *processed_files) {
+	RZ_NULLABLE RzProloguesArchInfo *arch_info, RzSetU *processed_files) {
 
 	const char *f_base = rz_file_basename(ar_file);
 	RzList /*<RzArFp>*/ *ar_fp_list = ar_open_all(ar_file, O_RDONLY);
@@ -501,49 +518,46 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
 	}
 
 	RzProloguesArchInfo arch_info = { 0 };
+	RzSetU *processed_files = rz_set_u_new();
+	RzVector *prologues = NULL;
+	int res = RZ_CMD_STATUS_OK;
 
 	if (is_ar_archive(binfile->file)) {
-		if (!process_archive(binfile->file, pg_trie, bin, ctx->prologue_len, &arch_info, NULL)) {
-			rz_prologues_arch_info_fini(&arch_info);
-			rz_trie_free(pg_trie);
-			return RZ_CMD_STATUS_ERROR;
+		if (!process_archive(binfile->file, pg_trie, bin, ctx->prologue_len, &arch_info, processed_files)) {
+			res = RZ_CMD_STATUS_ERROR;
+			goto cleanup;
 		}
-	} else if (!rz_prologues_trie_feed_binfile(pg_trie, binfile, ctx->prologue_len, &arch_info, NULL)) {
-		rz_prologues_arch_info_fini(&arch_info);
-		rz_trie_free(pg_trie);
-		return RZ_CMD_STATUS_ERROR;
+	} else if (!rz_prologues_trie_feed_binfile(pg_trie, binfile, ctx->prologue_len, &arch_info, processed_files)) {
+		res = RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 
-	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
+	prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
-		rz_prologues_arch_info_fini(&arch_info);
-		rz_trie_free(pg_trie);
-		return RZ_CMD_STATUS_ERROR;
+		res = RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 
 	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
-		rz_vector_free(prologues);
-		rz_prologues_arch_info_fini(&arch_info);
-		rz_trie_free(pg_trie);
-		return RZ_CMD_STATUS_ERROR;
+		res = RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 
 	if (!print_sd(root, mode, core->cons)) {
 		rz_structured_data_free(root);
-		rz_vector_free(prologues);
-		rz_prologues_arch_info_fini(&arch_info);
-		rz_trie_free(pg_trie);
-		return RZ_CMD_STATUS_ERROR;
+		res = RZ_CMD_STATUS_ERROR;
+		goto cleanup;
 	}
 
 	rz_structured_data_free(root);
+cleanup:
 	rz_vector_free(prologues);
 	rz_prologues_arch_info_fini(&arch_info);
 	rz_trie_free(pg_trie);
-
-	return RZ_CMD_STATUS_OK;
+	rz_set_u_free(processed_files);
+	return res;
 }
 
 /**
@@ -560,12 +574,12 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_handler(RzCore *core, int argc, const ch
  * \param [in] 		bin              bin session containing the files.
  * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
  * \param [in,out] 	arch_info        optional target arch to check/adopt.
- * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
+ * \param [in,out] 	processed_files  optional set of processed file's hashes to skip processed file or else update.
  *
  * \return The number of files successfully processed, or -1 on error.
  */
 RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, ut64 prologue_len,
-	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && prologue_len > 0, -1);
 
 	RzList *binfiles = bin ? bin->binfiles : NULL;
@@ -607,7 +621,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+	RzSetU *processed_files = rz_set_u_new();
 
 	RzProloguesArchInfo arch_info = { 0 };
 	const RzConfig *cfg = rz_core_get_config(core);
@@ -618,7 +632,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 
 	st64 fcnt = rz_prologues_trie_feed_all_binfiles(pg_trie, bin, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -628,7 +642,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -637,7 +651,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
 		rz_vector_free(prologues);
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -646,7 +660,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 	if (!print_sd(root, mode, core->cons)) {
 		rz_structured_data_free(root);
 		rz_vector_free(prologues);
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -654,7 +668,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
 
 	rz_structured_data_free(root);
 	rz_vector_free(prologues);
-	rz_set_s_free(processed_files);
+	rz_set_u_free(processed_files);
 	rz_prologues_arch_info_fini(&arch_info);
 	rz_trie_free(pg_trie);
 
@@ -676,30 +690,21 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_all_handler(RzCore *core, int argc, cons
  * \param [in] 		file_path        path to regular file or archive on disk.
  * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
  * \param [in,out] 	arch_info        optional target arch to check/adopt.
- * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
+ * \param [in,out] 	processed_files  optional set of processed file's hashes to skip processed file or else update.
  *
  * \return true on success, false on error or if skipped.
  */
 RZ_API bool rz_prologues_trie_feed_file(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin,
 	RZ_NONNULL const char *file_path, ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info,
-	RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
+	RZ_BORROW RZ_NULLABLE RzSetU *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && file_path && prologue_len > 0, false);
 
 	if (!rz_file_is_regular(file_path)) {
 		return false;
 	}
 
-	if (processed_files && rz_set_s_contains(processed_files, file_path)) {
-		RZ_LOG_WARN("Skipping file '%s', already processed.\n", file_path);
-		return false;
-	}
-
 	if (is_ar_archive(file_path)) {
-		bool res = process_archive(file_path, pg_trie, bin, prologue_len, arch_info, processed_files);
-		if (res && processed_files) {
-			rz_set_s_add(processed_files, file_path);
-		}
-		return res;
+		return process_archive(file_path, pg_trie, bin, prologue_len, arch_info, processed_files);
 	}
 
 	// using rz_buf... + rz_bin_open_buf instead of rz_bin_open to avoid RzIO
@@ -745,12 +750,12 @@ static int cmp_file_name(const void *a, const void *b, void *user) {
  * \param [in] 		dir_path         directory containing the input files.
  * \param [in]		prologue_len     number of bytes to read per function entry point (must be > 0).
  * \param [in,out] 	arch_info        optional target arch to check/adopt.
- * \param [in,out] 	processed_files  optional set of processed file paths to skip processed file or else update.
+ * \param [in,out] 	processed_files  optional set of processed file's hashes to skip processed file or else update.
  *
  * \return The number of files successfully processed, or -1 on error.
  */
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
-	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files) {
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files) {
 	rz_return_val_if_fail(pg_trie && bin && dir_path && prologue_len > 0, -1);
 
 	if (!rz_file_is_directory(dir_path)) {
@@ -792,7 +797,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+	RzSetU *processed_files = rz_set_u_new();
 
 	RzProloguesArchInfo arch_info = { 0 };
 	const RzConfig *cfg = rz_core_get_config(core);
@@ -803,7 +808,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 
 	st64 fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, dir_path, ctx->prologue_len, &arch_info, processed_files);
 	if (fcnt == -1) {
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -812,7 +817,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	RzVector *prologues = rz_prologues_generalize_and_extract(pg_trie, ctx->prologue_len, ctx->entropy_threshold);
 	if (!prologues) {
 		RZ_LOG_ERROR("Failed to generalize prologues from trie\n");
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -821,7 +826,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	RzStructuredData *root = rz_prologues_to_structured_data(prologues, ctx->prologue_len, &arch_info);
 	if (!root) {
 		rz_vector_free(prologues);
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -830,7 +835,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 	if (!print_sd(root, mode, core->cons)) {
 		rz_structured_data_free(root);
 		rz_vector_free(prologues);
-		rz_set_s_free(processed_files);
+		rz_set_u_free(processed_files);
 		rz_prologues_arch_info_fini(&arch_info);
 		rz_trie_free(pg_trie);
 		return RZ_CMD_STATUS_ERROR;
@@ -838,7 +843,7 @@ RZ_IPI RzCmdStatus rz_cmd_prologues_gen_dir_handler(RzCore *core, int argc, cons
 
 	rz_structured_data_free(root);
 	rz_vector_free(prologues);
-	rz_set_s_free(processed_files);
+	rz_set_u_free(processed_files);
 	rz_prologues_arch_info_fini(&arch_info);
 	rz_trie_free(pg_trie);
 
@@ -1133,12 +1138,11 @@ static void add_session_metadata_to_sd(RzStructuredData *root, const RzPrologues
  * \param [in] pg_trie       trie to serialize.
  * \param [in] prologue_len  length of each prologue in bytes.
  * \param [in] arch_info     optional architecture metadata.
- * \param [in] files         optional set of input file paths.
  *
  * \return structured data, or NULL on error.
  */
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW RZ_NONNULL const RzTrie *pg_trie,
-	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE const RzSetS *files) {
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info) {
 	rz_return_val_if_fail(pg_trie && prologue_len > 0, NULL);
 
 	HtPUOptions opt = { 0 };
@@ -1158,21 +1162,6 @@ RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW R
 
 	PGTrieNodeData *rd = pg_trie->root->data;
 	rz_structured_data_map_add_unsigned(root, "total_prologues_analyzed", rd->hit_cnt, false);
-
-	if (files) {
-		RzStructuredData *files_arr = rz_structured_data_map_add_array(root, "files");
-		RzIterator it = (RzIterator){ 0 };
-		if (!rz_set_s_as_iter(files, &it)) {
-			ht_pu_free(node_ids);
-			rz_structured_data_free(root);
-			return NULL;
-		}
-		const char **file;
-		rz_iterator_foreach(&it, file) {
-			rz_structured_data_array_add_string(files_arr, *file);
-		}
-		rz_iterator_fini(&it);
-	}
 
 	RzStructuredData *arr = rz_structured_data_map_add_array(root, "prefix_tree");
 

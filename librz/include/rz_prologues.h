@@ -29,19 +29,19 @@ RZ_API bool rz_prologues_arch_check(RZ_BORROW RZ_NONNULL const RzBinInfo *info, 
 RZ_API RZ_OWN RzTrie *rz_prologues_trie_new(void);
 
 RZ_API bool rz_prologues_trie_feed_binfile(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBinFile *binfile, ut64 prologue_len,
-	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files);
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files);
 RZ_API st64 rz_prologues_trie_feed_all_binfiles(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, ut64 prologue_len,
-	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files);
+	RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files);
 RZ_API bool rz_prologues_trie_feed_file(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *file_path,
-	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files);
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files);
 RZ_API st64 rz_prologues_trie_feed_directory(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, RZ_BORROW RZ_NONNULL RzBin *bin, RZ_NONNULL const char *dir_path,
-	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetS *processed_files);
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE RzSetU *processed_files);
 
 RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_generalize_and_extract(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len, double entropy_threshold);
 RZ_API RZ_OWN RzVector /*<RzPrologue>*/ *rz_prologues_extract_raw_from_trie(RZ_BORROW RZ_NONNULL RzTrie *pg_trie, ut64 prologue_len);
 
 RZ_API RZ_OWN RzStructuredData *rz_prologues_trie_to_structured_data(RZ_BORROW RZ_NONNULL const RzTrie *pg_trie,
-	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info, RZ_BORROW RZ_NULLABLE const RzSetS *files);
+	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info);
 RZ_API RZ_OWN RzStructuredData *rz_prologues_to_structured_data(RZ_BORROW RZ_NONNULL const RzVector /*<RzPrologue>*/ *prologues,
 	ut64 prologue_len, RZ_BORROW RZ_NULLABLE const RzProloguesArchInfo *arch_info);
 

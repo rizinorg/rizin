@@ -130,11 +130,11 @@ bool test_prologues_generate() {
 	RzBinFile *bf3 = open_bin_file(bin, "bins/elf/graphascii.c-clang-arm64-O0.o");
 	mu_assert_notnull(bf3, "couldn't open 3rd file");
 
-	RzSetS *processed_files = rz_set_s_new(HT_STR_DUP);
+	RzSetU *processed_files = rz_set_u_new();
 	mu_assert_notnull(processed_files, "couldn't create processed files set");
 	st64 fcnt = rz_prologues_trie_feed_all_binfiles(pg_trie, bin, 8, &arch_info, processed_files);
 	mu_assert_eq(fcnt, 3, "valid processed file count mismatch");
-	mu_assert_eq(rz_set_s_size(processed_files), 3, "processed file set size mismatch");
+	mu_assert_eq(rz_set_u_size(processed_files), 3, "processed file set size mismatch");
 
 	prologues = rz_prologues_generalize_and_extract(pg_trie, 8, 0.7);
 	mu_assert_notnull(prologues, "Failed to generalize prologues from trie");
@@ -148,7 +148,7 @@ bool test_prologues_generate() {
 	RZ_FREE(output);
 	rz_structured_data_free(sd);
 	rz_vector_free(prologues);
-	rz_set_s_free(processed_files);
+	rz_set_u_free(processed_files);
 	rz_trie_free(pg_trie);
 	rz_bin_file_delete(bin, bf1);
 	rz_bin_file_delete(bin, bf2);
@@ -176,14 +176,14 @@ bool test_prologues_generate() {
 	// dir
 	rz_prologues_arch_info_init(&arch_info, "mips", 32, false);
 
-	processed_files = rz_set_s_new(HT_STR_DUP);
+	processed_files = rz_set_u_new();
 	pg_trie = rz_prologues_trie_new();
 	// nonexistent
 	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "nonexistent/dir", 8, NULL, NULL);
 	mu_assert_eq(fcnt, -1, "non-existent directory should return -1");
 	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "bins/elf", 8, &arch_info, processed_files);
 	mu_assert_eq(fcnt, 4, "valid processed file count mismatch");
-	mu_assert_eq(rz_set_s_size(processed_files), 4, "processed file set size mismatch");
+	mu_assert_eq(rz_set_u_size(processed_files), 4, "processed file set size mismatch");
 
 	prologues = rz_prologues_generalize_and_extract(pg_trie, 8, 0.7);
 	mu_assert_notnull(prologues, "Failed to generalize prologues from trie");
@@ -198,7 +198,7 @@ bool test_prologues_generate() {
 	rz_structured_data_free(sd);
 	rz_vector_free(prologues);
 
-	rz_set_s_free(processed_files);
+	rz_set_u_free(processed_files);
 	rz_trie_free(pg_trie);
 
 	// trie output
@@ -207,13 +207,13 @@ bool test_prologues_generate() {
 
 	RzBinFile *bf4 = open_bin_file(bin, "bins/elf/graphascii.c-clang-arm64-O0.o");
 	mu_assert_notnull(bf4, "couldn't open file");
-	processed_files = rz_set_s_new(HT_STR_DUP);
+	processed_files = rz_set_u_new();
 	mu_assert_notnull(processed_files, "couldn't create processed files set");
 	mu_assert_true(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, processed_files),
 		"Failed to feed binfile into prologues trie");
 
 	prologues = rz_prologues_generalize_and_extract(pg_trie, 3, 0.8);
-	sd = rz_prologues_trie_to_structured_data(pg_trie, 3, &arch_info, processed_files);
+	sd = rz_prologues_trie_to_structured_data(pg_trie, 3, &arch_info/*, processed_files*/);
 	mu_assert_notnull(sd, "Failed to convert prologues trie to structured data");
 	output = rz_structured_data_to_yaml(sd);
 	mu_assert_notnull(output, "Failed to convert structured data to YAML");
@@ -222,7 +222,7 @@ bool test_prologues_generate() {
 	// skip duplicate feed
 	mu_assert_false(rz_prologues_trie_feed_binfile(pg_trie, bf4, 3, &arch_info, processed_files),
 		"Duplicate feed should be skipped");
-	mu_assert_eq(rz_set_s_size(processed_files), 1, "processed file set size should still be 1");
+	mu_assert_eq(rz_set_u_size(processed_files), 1, "processed file set size should still be 1");
 	rz_prologues_arch_info_fini(&arch_info);
 
 	// arch mismatch
@@ -234,7 +234,7 @@ bool test_prologues_generate() {
 	rz_prologues_arch_info_fini(&mips_arch);
 
 	rz_vector_free(prologues);
-	rz_set_s_free(processed_files);
+	rz_set_u_free(processed_files);
 	RZ_FREE(output);
 	rz_structured_data_free(sd);
 	rz_trie_free(pg_trie);
