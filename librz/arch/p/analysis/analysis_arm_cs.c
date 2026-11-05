@@ -2124,6 +2124,13 @@ static void patch_capstone_bugs(cs_insn *insn, int bits, bool big_endian) {
 }
 #endif
 
+/**
+ * \brief Check if \p cpu is an M-profile one.
+ */
+static bool cpu_is_mclass(RZ_NULLABLE const char *cpu) {
+	return cpu && (strstr(cpu, "cortexm") || strstr(cpu, "cortex-m"));
+}
+
 static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	AnalysisArmCSContext *ctx = (AnalysisArmCSContext *)a->plugin_data;
 
@@ -2133,7 +2140,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	const char *cpu = rz_analysis_get_cpu(a);
 	if (RZ_STR_ISNOTEMPTY(cpu)) {
-		if (strstr(cpu, "cortexm") || strstr(cpu, "cortex-m")) {
+		if (cpu_is_mclass(cpu)) {
 			mode |= CS_MODE_MCLASS;
 		}
 		if (a->bits != 64 && strstr(cpu, "v8")) {
@@ -2220,6 +2227,29 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	//		cs_close (&handle);
 	return op->size;
 }
+
+/**
+ * The M-profile special registers. ipsr holds the exception number, 0 in
+ * Thread mode. sp is the stack pointer in use, msp and psp hold the main and
+ * process ones while they are not. None shares a byte with another: in big
+ * endian, RzReg writes a field starting at a byte as whole bytes.
+ */
+static const char *reg_profile_mclass =
+	"sys	msp	.32	0	0\n"
+	"sys	psp	.32	4	0\n"
+	"sys	msplim	.32	8	0\n"
+	"sys	psplim	.32	12	0\n"
+	"sys	ipsr	.32	16	0\n"
+	"sys	primask	.1	.160	0\n"
+	"sys	basepri	.8	21	0\n"
+	"sys	faultmask	.1	.176	0\n"
+	"sys	control	.8	23	0\n";
+
+/**
+ * The SPSR of the A- and R-profile. There are no processor modes, so it is the
+ * one of the current mode, without the banked ones.
+ */
+static const char *reg_profile_spsr = "sys	spsr	.32	0	0\n";
 
 static char *get_reg_profile(RzAnalysis *analysis) {
 	const char *p;
@@ -2607,7 +2637,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 			"fpu	q15	.128	308	0\n"
 			"flg    fpscr .32   324 0\n";
 	}
-	return rz_str_dup(p);
+	return rz_str_newf("%s%s", p, cpu_is_mclass(rz_analysis_get_cpu(analysis)) ? reg_profile_mclass : reg_profile_spsr);
 }
 
 static int archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
@@ -2810,7 +2840,7 @@ static RzAnalysisILConfig *il_config(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
 		return rz_arm_cs_64_il_config(analysis->big_endian);
 	}
-	return rz_arm_cs_32_il_config(analysis->big_endian);
+	return rz_arm_cs_32_il_config(analysis->big_endian, cpu_is_mclass(rz_analysis_get_cpu(analysis)));
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arm_cs = {

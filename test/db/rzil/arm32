@@ -453,3 +453,219 @@ r3 = 0x40159999
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=arm msr and mrs of the spsr and cpsr
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 03f06ce1 @ 0x0 # msr spsr_fs, r3
+wx 00204fe1 @ 0x4 # mrs r2, spsr
+wx 00f26ee1 @ 0x8 # msr spsr_fiq, r0
+wx 03f02ce1 @ 0xc # msr apsr_nzcvqg, r3
+wx 00200fe1 @ 0x10 # mrs r2, apsr
+aoi 1 @ 0x0
+aoi 1 @ 0x4
+aoi 1 @ 0x8
+aoi 1 @ 0xc
+aoi 1 @ 0x10
+EOF
+EXPECT=<<EOF
+0x0 (set spsr (| (& (var spsr) (bv 32 0xffff)) (& (var r3) (bv 32 0xffff0000))))
+0x4 (set r2 (var spsr))
+0xc (seq (set gef (cast 4 false (>> (var r3) (bv 5 0x10) false))) (set nf (! (is_zero (& (var r3) (bv 32 0x80000000))))) (set zf (! (is_zero (& (var r3) (bv 32 0x40000000))))) (set cf (! (is_zero (& (var r3) (bv 32 0x20000000))))) (set vf (! (is_zero (& (var r3) (bv 32 0x10000000))))) (set qf (! (is_zero (& (var r3) (bv 32 0x8000000))))))
+0x10 (set r2 (| (ite (var nf) (bv 32 0x80000000) (bv 32 0x0)) (| (ite (var zf) (bv 32 0x40000000) (bv 32 0x0)) (| (ite (var cf) (bv 32 0x20000000) (bv 32 0x0)) (| (ite (var vf) (bv 32 0x10000000) (bv 32 0x0)) (| (ite (var qf) (bv 32 0x8000000) (bv 32 0x0)) (<< (cast 32 false (var gef)) (bv 5 0x10) false)))))))
+EOF
+RUN
+
+NAME=arm msr spsr leaves the cpsr flags alone
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 0000b0e3 @ 0x0 # movs r0, 0
+wx 01f06fe1 @ 0x4 # msr spsr_fsxc, r1
+wx 02f068e1 @ 0x8 # msr spsr_f, r2
+wx 00304fe1 @ 0xc # mrs r3, spsr
+aezi
+ar r1=0x800001d3
+ar r2=0x20000000
+aezs 4
+ar zf
+ar nf
+ar spsr
+ar r3
+EOF
+EXPECT=<<EOF
+zf = 0x1
+nf = 0x0
+spsr = 0x200001d3
+r3 = 0x200001d3
+EOF
+RUN
+
+NAME=cortex-m msr lifts no other security state
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 80f30588 @ 0x0 # msr ipsr, r0
+wx 80f38888 @ 0x4 # msr msp_ns, r0
+wx 80f39888 @ 0x8 # msr sp_ns, r0
+wx 80f39488 @ 0xc # msr control_ns, r0
+wx 80f30188 @ 0x10 # msr iapsr_nzcvq, r0
+aoi 1 @ 0x0
+aoi 1 @ 0x4
+aoi 1 @ 0x8
+aoi 1 @ 0xc
+aoi 1 @ 0x10
+EOF
+EXPECT=<<EOF
+0x0 nop
+0x10 (seq (set nf (! (is_zero (& (var r0) (bv 32 0x80000000))))) (set zf (! (is_zero (& (var r0) (bv 32 0x40000000))))) (set cf (! (is_zero (& (var r0) (bv 32 0x20000000))))) (set vf (! (is_zero (& (var r0) (bv 32 0x10000000))))) (set qf (! (is_zero (& (var r0) (bv 32 0x8000000))))))
+EOF
+RUN
+
+NAME=cortex-m msr in thread mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 80f30888 @ 0x0 # msr msp, r0
+wx 81f30988 @ 0x4 # msr psp, r1
+wx 82f31488 @ 0x8 # msr control, r2
+wx adf1040d @ 0xc # sub.w sp, sp, 4
+wx 83f31488 @ 0x10 # msr control, r3
+wx 84f31188 @ 0x14 # msr basepri, r4
+wx 85f31288 @ 0x18 # msr basepri_max, r5
+wx 86f31288 @ 0x1c # msr basepri_max, r6
+wx 87f31388 @ 0x20 # msr faultmask, r7
+wx 87f31088 @ 0x24 # msr primask, r7
+wx 80f30a88 @ 0x28 # msr msplim, r0
+wx 87f31488 @ 0x2c # msr control, r7
+wx 83f31088 @ 0x30 # msr primask, r3
+wx 83f30888 @ 0x34 # msr msp, r3
+wx 83f30588 @ 0x38 # msr ipsr, r3
+aezi
+ar r0=0x20001003
+ar r1=0x20000806
+ar r2=2
+ar r3=0
+ar r4=0x140
+ar r5=0x80
+ar r6=0x20
+ar r7=1
+aezs 3
+ar sp
+ar msp
+ar psp
+aezs 2
+ar sp
+ar msp
+ar psp
+aezs 10
+ar pc
+ar sp
+ar sys
+EOF
+EXPECT=<<EOF
+sp = 0x20000804
+msp = 0x20001000
+psp = 0x20000804
+sp = 0x20001000
+msp = 0x20001000
+psp = 0x20000800
+pc = 0x0000003c
+sp = 0x20001000
+msp = 0x20001000
+psp = 0x20000800
+msplim = 0x20001000
+psplim = 0x00000000
+ipsr = 0x00000000
+primask = 0x1
+basepri = 0x20
+faultmask = 0x1
+control = 0x01
+EOF
+RUN
+
+NAME=cortex-m msr in handler mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 87f31388 @ 0x0 # msr faultmask, r7
+wx 82f31488 @ 0x4 # msr control, r2
+wx 81f30988 @ 0x8 # msr psp, r1
+wx 80f30888 @ 0xc # msr msp, r0
+wx 83f31388 @ 0x10 # msr faultmask, r3
+aezi
+ar r0=0x20001003
+ar r1=0x20000806
+ar r2=2
+ar r3=0
+ar r7=1
+ar sp=0x20002000
+ar ipsr=3 # HardFault
+ar control=1
+aezs 1
+ar faultmask
+aezs 1
+ar sp
+ar control
+aezs 1
+ar sp
+ar psp
+aezs 1
+ar sp
+ar msp
+ar faultmask=1
+aezs 1
+ar faultmask
+EOF
+EXPECT=<<EOF
+faultmask = 0x0
+sp = 0x20002000
+control = 0x02
+sp = 0x20002000
+psp = 0x20000804
+sp = 0x20001000
+msp = 0x20001000
+faultmask = 0x0
+EOF
+RUN
+
+NAME=cortex-m msr in big endian
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=true
+wx f3808813 @ 0x0 # msr faultmask, r0
+wx f3808814 @ 0x4 # msr control, r0
+wx f3808810 @ 0x8 # msr primask, r0
+aezi
+ar r0=7
+ar ipsr=3 # HardFault
+aezs 2
+ar faultmask
+ar control
+ar ipsr=0
+aezs 1
+ar primask
+EOF
+EXPECT=<<EOF
+faultmask = 0x0
+control = 0x07
+primask = 0x0
+EOF
+RUN
