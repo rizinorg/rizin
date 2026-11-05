@@ -315,3 +315,48 @@ EXPECT=<<EOF
                                   feed is a newline.
 EOF
 RUN
+
+NAME=table mode help and query help
+FILE==
+CMDS=<<EOF
+aflt?
+aflt:?~..3
+EOF
+EXPECT=<<EOF
+Usage: afl[jqlt]   # List all functions
+| afl        # List all functions
+| aflj       # List all functions (JSON mode)
+| aflq       # List all functions (quiet mode)
+| afll       # List all functions (verbose mode)
+| aflt       # List all functions (table mode)
+
+Table queries are colon-attached (e.g. aflt:<query>). Run 'aflt:?' for query help.
+EOF
+EXPECT_ERR=<<EOF
+RzTableQuery> colon-separated (e.g. <cmd>t:c/gt/0x800:c/sort/rev:*/head/10). 'c' stands for column name.
+ c/sort[/rev]      sort rows by given colname (append /rev for descending)
+ c/sortlen[/rev]   sort rows by strlen() (append /rev for descending)
+ c/cols/c1/c2      only show selected columns
+ c                 only show column c
+ c/gt/0x800        grep rows matching col0 > 0x800
+ c/ge/0x800        grep rows matching col0 >= 0x800
+ c/lt/0x800        grep rows matching col0 < 0x800
+ c/le/0x800        grep rows matching col0 <= 0x800
+ c/eq/0x800        grep rows matching col0 == 0x800
+ c/ne/0x800        grep rows matching col0 != 0x800
+ */uniq            get the first row of each that col0 is unique
+ */head/10         same as | head -n 10
+ */tail/10         same as | tail -n 10
+ */page/1/10       show the first 10 rows (/page/2/10 will show the 2nd)
+ c/str/warn        grep rows matching col(name).str(warn)
+ c/strlen/3        grep rows matching strlen(col) == X
+ c/minlen/3        grep rows matching strlen(col) > X
+ c/maxlen/3        grep rows matching strlen(col) < X
+ c/sum             sum all the values of given column
+ :csv              .tostring() == .tocsv()
+ :json             .tostring() == .tojson()
+ :fancy            fancy table output with lines
+ :simple           simple table output without lines
+ :quiet            do not print column names header, implies :simple
+EOF
+RUN
