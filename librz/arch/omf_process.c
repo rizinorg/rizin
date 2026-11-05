@@ -175,6 +175,7 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 		if (!cal->args) {
 			rz_type_base_type_free(bt);
 			free(newtype);
+			free(cal->name);
 			free(cal);
 			return false;
 		}
@@ -188,6 +189,7 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 					rz_type_base_type_free(bt);
 					free(newtype);
 					free(cal->args);
+					free(cal->name);
 					free(cal);
 					return NULL;
 				}
