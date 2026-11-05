@@ -1,9 +1,27 @@
 NAME=null regs
 FILE=
+ARGS=-e cfg.exit.errorcode=true
 CMDS=<<EOF
 e asm.arch=x86 # populate reg profile
 e analysis.arch=null # reset to null
 ar
+ar gpr
+ar drx
+ar all
+ar 64
+ar=
+arf
+arf-
+arj
+arj gpr
+arj all
 EOF
-EXPECT=
+EXPECT=<<EOF
+fss+ registers
+fss-
+{}
+{}
+{}
+EOF
+EXPECT_ERR=
 RUN

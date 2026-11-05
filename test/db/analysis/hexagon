@@ -1514,6 +1514,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# The packet at 0x8f30 is first decoded without its predecessor (0x8f20-0x8f2c, 4 words) in the buffer,
+# so it is marked invalid. Decoding the predecessor afterwards must mark the following packet valid.
+NAME=hexagon packet after multi-word packet becomes valid
+FILE=bins/elf/analysis/hexagon-hello-loop
+CMDS=<<EOF
+pi 1 @ 0x00008f34
+pi 1 @ 0x00008f20
+pi 1 @ 0x00008f30
+EOF
+EXPECT=<<EOF
+/   jump sym._Mbtowcx
+/   R1:0 = combine(R18,R19)
+[   R17:16 = memd(R29+#0x8) ; R19:18 = memd(R29+#0x0)
+EOF
+RUN
+
 NAME=hexagon instructions buffer edge cases. 4 instr.
 FILE=bins/elf/analysis/hexagon-hello-loop
 CMDS=<<EOF

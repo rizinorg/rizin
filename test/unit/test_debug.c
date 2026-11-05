@@ -83,6 +83,7 @@ typedef struct {
 typedef struct {
 	ut64 pc;
 	ut8 a; ///< accumulator
+	ut8 flags; ///< flags register, in the gpr arena like x86 rflags
 	bool running;
 	RzStrBuf output; ///< output of print instructions
 	bool is_thumb; ///< only used in multibits variant below
@@ -198,7 +199,7 @@ RzDebugReasonType dbg_mock_wait(RzDebug *dbg, int pid) {
 	return r;
 }
 
-#define DBG_MOCK_REG_PROFILE_SIZE 9
+#define DBG_MOCK_REG_PROFILE_SIZE 10
 
 int dbg_mock_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	if (type != RZ_REG_TYPE_GPR) {
@@ -211,6 +212,7 @@ int dbg_mock_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	}
 	rz_write_at_le64(buf, ctx->pc, 0);
 	buf[8] = ctx->a;
+	buf[9] = ctx->flags;
 	return DBG_MOCK_REG_PROFILE_SIZE;
 }
 
@@ -225,6 +227,7 @@ int dbg_mock_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	}
 	ctx->pc = rz_read_at_le64(buf, 0);
 	ctx->a = buf[8];
+	ctx->flags = buf[9];
 	return DBG_MOCK_REG_PROFILE_SIZE;
 }
 
@@ -232,7 +235,8 @@ char *dbg_mock_reg_profile(RzDebug *dbg) {
 	return strdup(
 		"=PC	pc\n"
 		"gpr	pc	.64	0	0\n"
-		"gpr	a	.8	8	0\n");
+		"gpr	a	.8	8	0\n"
+		"flg	f	.8	9	0\n");
 }
 
 static int dbg_mock_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
@@ -747,6 +751,36 @@ static bool test_debug_hw_watch(void) {
 	mu_end;
 }
 
+/**
+ * \brief Sync a register type whose registers live in another arena
+ * Like rflags in the x86-64 profiles, the mock flags register lives in the
+ * gpr arena, the only one the mock plugin transfers.
+ */
+static bool test_debug_reg_sync_flg(void) {
+	RzDebug *dbg;
+	RzIO *io;
+	SETUP_DEBUG(&dbg_mock_plugin, &bp_ctx);
+
+	int r = rz_debug_attach(dbg, 42);
+	mu_assert_false(dbg_mock_failed, "global failure");
+	mu_assert_true(r, "attach");
+	mu_assert_true(rz_list_empty(dbg->reg->regset[RZ_REG_TYPE_FLG].regs), "no register lives in the flg arena");
+
+	DebugMockCtx *ctx = dbg->plugin_data;
+	ctx->flags = 0x24;
+	mu_assert_true(rz_debug_reg_sync(dbg, RZ_REG_TYPE_FLG, false), "read flags");
+	mu_assert_eq(rz_reg_getv(dbg->reg, "f"), 0x24, "flags read through the gpr arena");
+
+	mu_assert_true(rz_reg_setv(dbg->reg, "f", 0x42), "set flags");
+	mu_assert_true(rz_debug_reg_sync(dbg, RZ_REG_TYPE_FLG, true), "write flags");
+	mu_assert_eq(ctx->flags, 0x42, "flags written through the gpr arena");
+	mu_assert_false(dbg_mock_failed, "global failure");
+
+	rz_debug_free(dbg);
+	rz_io_free(io);
+	mu_end;
+}
+
 int all_tests() {
 	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
@@ -755,6 +789,7 @@ int all_tests() {
 	mu_run_test(test_debug_sw_bp_multibits);
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
+	mu_run_test(test_debug_reg_sync_flg);
 	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }
