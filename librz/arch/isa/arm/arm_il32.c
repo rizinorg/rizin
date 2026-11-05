@@ -44,6 +44,98 @@ RZ_IPI bool rz_arm_cs_is_group_member(RZ_NONNULL const cs_insn *insn, arm_insn_g
 }
 
 /**
+ * \brief Combine the c, x, s and f fields of an MSR into RzArmPsrField bits
+ */
+static ut32 psr_fields(bool c, bool x, bool s, bool f) {
+	return (c ? RZ_ARM_PSR_FIELD_C : 0) | (x ? RZ_ARM_PSR_FIELD_X : 0) | (s ? RZ_ARM_PSR_FIELD_S : 0) | (f ? RZ_ARM_PSR_FIELD_F : 0);
+}
+
+/**
+ * \brief Get the fields of the CPSR or of the SPSR that an MSR writes.
+ *
+ * APSR, also as the part of the M-profile xPSR, is a view of the f and s
+ * fields of the CPSR. The banked and the other special registers get no
+ * fields.
+ *
+ * \param insn The MSR
+ * \param spsr Set to whether the fields are of the SPSR
+ * \return The written fields, a combination of RzArmPsrField
+ */
+RZ_IPI ut32 rz_arm_cs_msr_psr_fields(RZ_NONNULL const cs_insn *insn, RZ_NONNULL RZ_OUT bool *spsr) {
+	rz_return_val_if_fail(insn && insn->detail && spsr, 0);
+	const cs_arm_op *dst = &INSOP(0);
+	*spsr = false;
+#if CS_NEXT_VERSION >= 6
+	if (dst->type == ARM_OP_CPSR || dst->type == ARM_OP_SPSR) {
+		ut32 bits = dst->sysop.psr_bits;
+		*spsr = dst->type == ARM_OP_SPSR;
+		return *spsr
+			? psr_fields(bits & ARM_FIELD_SPSR_C, bits & ARM_FIELD_SPSR_X, bits & ARM_FIELD_SPSR_S, bits & ARM_FIELD_SPSR_F)
+			: psr_fields(bits & ARM_FIELD_CPSR_C, bits & ARM_FIELD_CPSR_X, bits & ARM_FIELD_CPSR_S, bits & ARM_FIELD_CPSR_F);
+	}
+	if (dst->type != ARM_OP_SYSREG) {
+		return 0;
+	}
+	// The plain APSR, IAPSR, EAPSR and XPSR equal their _NZCVQ forms
+	switch (dst->sysop.reg.mclasssysreg) {
+	case ARM_MCLASSSYSREG_APSR_NZCVQG:
+	case ARM_MCLASSSYSREG_IAPSR_NZCVQG:
+	case ARM_MCLASSSYSREG_EAPSR_NZCVQG:
+	case ARM_MCLASSSYSREG_XPSR_NZCVQG:
+		return RZ_ARM_PSR_FIELD_F | RZ_ARM_PSR_FIELD_S;
+	case ARM_MCLASSSYSREG_APSR_NZCVQ:
+	case ARM_MCLASSSYSREG_IAPSR_NZCVQ:
+	case ARM_MCLASSSYSREG_EAPSR_NZCVQ:
+	case ARM_MCLASSSYSREG_XPSR_NZCVQ:
+		return RZ_ARM_PSR_FIELD_F;
+	case ARM_MCLASSSYSREG_APSR_G:
+	case ARM_MCLASSSYSREG_IAPSR_G:
+	case ARM_MCLASSSYSREG_EAPSR_G:
+	case ARM_MCLASSSYSREG_XPSR_G:
+		return RZ_ARM_PSR_FIELD_S;
+	default:
+		return 0;
+	}
+#else
+	if (dst->type != ARM_OP_SYSREG) {
+		return 0;
+	}
+	switch (dst->reg) {
+	case ARM_SYSREG_APSR_NZCVQG:
+	case ARM_SYSREG_IAPSR_NZCVQG:
+	case ARM_SYSREG_EAPSR_NZCVQG:
+	case ARM_SYSREG_XPSR_NZCVQG:
+		return RZ_ARM_PSR_FIELD_F | RZ_ARM_PSR_FIELD_S;
+	case ARM_SYSREG_APSR:
+	case ARM_SYSREG_APSR_NZCVQ:
+	case ARM_SYSREG_IAPSR:
+	case ARM_SYSREG_IAPSR_NZCVQ:
+	case ARM_SYSREG_EAPSR:
+	case ARM_SYSREG_EAPSR_NZCVQ:
+	case ARM_SYSREG_XPSR:
+	case ARM_SYSREG_XPSR_NZCVQ:
+		return RZ_ARM_PSR_FIELD_F;
+	case ARM_SYSREG_APSR_G:
+	case ARM_SYSREG_IAPSR_G:
+	case ARM_SYSREG_EAPSR_G:
+	case ARM_SYSREG_XPSR_G:
+		return RZ_ARM_PSR_FIELD_S;
+	default:
+		break;
+	}
+	if (dst->reg >= ARM_SYSREG_APSR) {
+		// From APSR up the values are register ids, below them OR-combined
+		// CPSR or SPSR fields
+		return 0;
+	}
+	*spsr = dst->reg & (ARM_SYSREG_SPSR_C | ARM_SYSREG_SPSR_X | ARM_SYSREG_SPSR_S | ARM_SYSREG_SPSR_F);
+	return *spsr
+		? psr_fields(dst->reg & ARM_SYSREG_SPSR_C, dst->reg & ARM_SYSREG_SPSR_X, dst->reg & ARM_SYSREG_SPSR_S, dst->reg & ARM_SYSREG_SPSR_F)
+		: psr_fields(dst->reg & ARM_SYSREG_CPSR_C, dst->reg & ARM_SYSREG_CPSR_X, dst->reg & ARM_SYSREG_CPSR_S, dst->reg & ARM_SYSREG_CPSR_F);
+#endif
+}
+
+/**
  * All regs available as global IL variables
  */
 static const char *regs_bound_32[] = {
@@ -1735,11 +1827,16 @@ static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
 }
 
 /**
- * \brief Mask of the SPSR bits that the c, x, s and f fields of an MSR write
+ * \brief Mask of the SPSR bits that the fields of an MSR write
+ *
+ * \param fields A combination of RzArmPsrField
  */
-static ut32 spsr_field_mask(bool c, bool x, bool s, bool f) {
+static ut32 spsr_field_mask(ut32 fields) {
 	// Whole bytes: unlike the CPSR, the SPSR takes the execution state bits too
-	return (c ? 0x000000ff : 0) | (x ? 0x0000ff00 : 0) | (s ? 0x00ff0000 : 0) | (f ? 0xff000000 : 0);
+	return (fields & RZ_ARM_PSR_FIELD_C ? 0x000000ff : 0) |
+		(fields & RZ_ARM_PSR_FIELD_X ? 0x0000ff00 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_S ? 0x00ff0000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_F ? 0xff000000 : 0);
 }
 
 /**
@@ -1756,78 +1853,11 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 	// Of the status registers the IL has the CPSR flags and the SPSR of the
 	// current mode: writing a banked or another special register leaves them
 	// alone.
-	bool update_f = false;
-	bool update_s = false;
-	ut32 spsr_mask = 0;
-#if CS_NEXT_VERSION >= 6
-	if (dst->type == ARM_OP_CPSR) {
-		update_f = dst->sysop.psr_bits & ARM_FIELD_CPSR_F;
-		update_s = dst->sysop.psr_bits & ARM_FIELD_CPSR_S;
-	} else if (dst->type == ARM_OP_SPSR) {
-		spsr_mask = spsr_field_mask(dst->sysop.psr_bits & ARM_FIELD_SPSR_C, dst->sysop.psr_bits & ARM_FIELD_SPSR_X,
-			dst->sysop.psr_bits & ARM_FIELD_SPSR_S, dst->sysop.psr_bits & ARM_FIELD_SPSR_F);
-	} else if (dst->type == ARM_OP_SYSREG) {
-		// The plain APSR, IAPSR, EAPSR and XPSR equal their _NZCVQ forms
-		switch (dst->sysop.reg.mclasssysreg) {
-		case ARM_MCLASSSYSREG_APSR_NZCVQG:
-		case ARM_MCLASSSYSREG_IAPSR_NZCVQG:
-		case ARM_MCLASSSYSREG_EAPSR_NZCVQG:
-		case ARM_MCLASSSYSREG_XPSR_NZCVQG:
-			update_s = true;
-			// fallthrough
-		case ARM_MCLASSSYSREG_APSR_NZCVQ:
-		case ARM_MCLASSSYSREG_IAPSR_NZCVQ:
-		case ARM_MCLASSSYSREG_EAPSR_NZCVQ:
-		case ARM_MCLASSSYSREG_XPSR_NZCVQ:
-			update_f = true;
-			break;
-		case ARM_MCLASSSYSREG_APSR_G:
-		case ARM_MCLASSSYSREG_IAPSR_G:
-		case ARM_MCLASSSYSREG_EAPSR_G:
-		case ARM_MCLASSSYSREG_XPSR_G:
-			update_s = true;
-			break;
-		default:
-			break;
-		}
-	}
-#else
-	if (dst->type == ARM_OP_SYSREG) {
-		switch (dst->reg) {
-		case ARM_SYSREG_APSR_NZCVQG:
-		case ARM_SYSREG_IAPSR_NZCVQG:
-		case ARM_SYSREG_EAPSR_NZCVQG:
-		case ARM_SYSREG_XPSR_NZCVQG:
-			update_s = true;
-			// fallthrough
-		case ARM_SYSREG_APSR:
-		case ARM_SYSREG_APSR_NZCVQ:
-		case ARM_SYSREG_IAPSR:
-		case ARM_SYSREG_IAPSR_NZCVQ:
-		case ARM_SYSREG_EAPSR:
-		case ARM_SYSREG_EAPSR_NZCVQ:
-		case ARM_SYSREG_XPSR:
-		case ARM_SYSREG_XPSR_NZCVQ:
-			update_f = true;
-			break;
-		case ARM_SYSREG_APSR_G:
-		case ARM_SYSREG_IAPSR_G:
-		case ARM_SYSREG_EAPSR_G:
-		case ARM_SYSREG_XPSR_G:
-			update_s = true;
-			break;
-		default:
-			// Below APSR the values are OR-combined CPSR or SPSR fields
-			if (dst->reg < ARM_SYSREG_APSR) {
-				update_f = dst->reg & ARM_SYSREG_CPSR_F;
-				update_s = dst->reg & ARM_SYSREG_CPSR_S;
-				spsr_mask = spsr_field_mask(dst->reg & ARM_SYSREG_SPSR_C, dst->reg & ARM_SYSREG_SPSR_X,
-					dst->reg & ARM_SYSREG_SPSR_S, dst->reg & ARM_SYSREG_SPSR_F);
-			}
-			break;
-		}
-	}
-#endif
+	bool spsr;
+	ut32 fields = rz_arm_cs_msr_psr_fields(insn, &spsr);
+	ut32 spsr_mask = spsr ? spsr_field_mask(fields) : 0;
+	bool update_f = !spsr && fields & RZ_ARM_PSR_FIELD_F;
+	bool update_s = !spsr && fields & RZ_ARM_PSR_FIELD_S;
 	if (spsr_mask) {
 		RzILOpBitVector *val = ARG(1);
 		if (!val) {
