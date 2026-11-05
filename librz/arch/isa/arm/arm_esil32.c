@@ -263,86 +263,20 @@ static void arm32mathaddsub(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 /**
  * \brief Get the cpsr bits that an MSR writes.
  *
- * APSR, also as the part of the M-profile xPSR, is a view of cpsr. SPSR, the
- * banked registers and the other M-profile special registers are not, so no
- * cpsr bits are written for them.
- *
  * \return Mask of the written cpsr bits, 0 if there are none
  */
 static ut32 msr_cpsr_mask(cs_insn *insn) {
-	const cs_arm_op *dst = &INSOP(0);
-	bool f = false, s = false, x = false, c = false;
-#if CS_NEXT_VERSION >= 6
-	if (dst->type == ARM_OP_CPSR) {
-		f = dst->sysop.psr_bits & ARM_FIELD_CPSR_F;
-		s = dst->sysop.psr_bits & ARM_FIELD_CPSR_S;
-		x = dst->sysop.psr_bits & ARM_FIELD_CPSR_X;
-		c = dst->sysop.psr_bits & ARM_FIELD_CPSR_C;
-	} else if (dst->type == ARM_OP_SYSREG) {
-		// The plain APSR, IAPSR, EAPSR and XPSR equal their _NZCVQ forms
-		switch (dst->sysop.reg.mclasssysreg) {
-		case ARM_MCLASSSYSREG_APSR_NZCVQG:
-		case ARM_MCLASSSYSREG_IAPSR_NZCVQG:
-		case ARM_MCLASSSYSREG_EAPSR_NZCVQG:
-		case ARM_MCLASSSYSREG_XPSR_NZCVQG:
-			s = true;
-			// fallthrough
-		case ARM_MCLASSSYSREG_APSR_NZCVQ:
-		case ARM_MCLASSSYSREG_IAPSR_NZCVQ:
-		case ARM_MCLASSSYSREG_EAPSR_NZCVQ:
-		case ARM_MCLASSSYSREG_XPSR_NZCVQ:
-			f = true;
-			break;
-		case ARM_MCLASSSYSREG_APSR_G:
-		case ARM_MCLASSSYSREG_IAPSR_G:
-		case ARM_MCLASSSYSREG_EAPSR_G:
-		case ARM_MCLASSSYSREG_XPSR_G:
-			s = true;
-			break;
-		default:
-			break;
-		}
+	bool spsr;
+	ut32 fields = rz_arm_cs_msr_psr_fields(insn, &spsr);
+	if (spsr) {
+		return 0;
 	}
-#else
-	if (dst->type == ARM_OP_SYSREG) {
-		switch (dst->reg) {
-		case ARM_SYSREG_APSR_NZCVQG:
-		case ARM_SYSREG_IAPSR_NZCVQG:
-		case ARM_SYSREG_EAPSR_NZCVQG:
-		case ARM_SYSREG_XPSR_NZCVQG:
-			s = true;
-			// fallthrough
-		case ARM_SYSREG_APSR:
-		case ARM_SYSREG_APSR_NZCVQ:
-		case ARM_SYSREG_IAPSR:
-		case ARM_SYSREG_IAPSR_NZCVQ:
-		case ARM_SYSREG_EAPSR:
-		case ARM_SYSREG_EAPSR_NZCVQ:
-		case ARM_SYSREG_XPSR:
-		case ARM_SYSREG_XPSR_NZCVQ:
-			f = true;
-			break;
-		case ARM_SYSREG_APSR_G:
-		case ARM_SYSREG_IAPSR_G:
-		case ARM_SYSREG_EAPSR_G:
-		case ARM_SYSREG_XPSR_G:
-			s = true;
-			break;
-		default:
-			// Below APSR the values are OR-combined CPSR or SPSR fields
-			if (dst->reg < ARM_SYSREG_APSR) {
-				f = dst->reg & ARM_SYSREG_CPSR_F;
-				s = dst->reg & ARM_SYSREG_CPSR_S;
-				x = dst->reg & ARM_SYSREG_CPSR_X;
-				c = dst->reg & ARM_SYSREG_CPSR_C;
-			}
-			break;
-		}
-	}
-#endif
 	// MSR never writes the execution state bits (IT, J, T). Without a tracked
 	// processor mode, the privileged bits (A, I, F, M) are always written.
-	return (f ? 0xf8000000 : 0) | (s ? 0x000f0000 : 0) | (x ? 0x00000300 : 0) | (c ? 0x000000df : 0);
+	return (fields & RZ_ARM_PSR_FIELD_F ? 0xf8000000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_S ? 0x000f0000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_X ? 0x00000300 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_C ? 0x000000df : 0);
 }
 
 RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {

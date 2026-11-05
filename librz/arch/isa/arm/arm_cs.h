@@ -22,6 +22,18 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 
 RZ_IPI bool rz_arm_cs_is_group_member(RZ_NONNULL const cs_insn *insn, arm_insn_group feature);
 
+/**
+ * \brief Fields of the CPSR or SPSR that an MSR writes, as in the mask of its encoding
+ */
+typedef enum {
+	RZ_ARM_PSR_FIELD_C = 1 << 0, ///< Control, bits [7:0]
+	RZ_ARM_PSR_FIELD_X = 1 << 1, ///< Extension, bits [15:8]
+	RZ_ARM_PSR_FIELD_S = 1 << 2, ///< Status, bits [23:16]
+	RZ_ARM_PSR_FIELD_F = 1 << 3, ///< Flags, bits [31:24]
+} RzArmPsrField;
+
+RZ_IPI ut32 rz_arm_cs_msr_psr_fields(RZ_NONNULL const cs_insn *insn, RZ_NONNULL RZ_OUT bool *spsr);
+
 #if CS_NEXT_VERSION >= 6
 RZ_IPI bool rz_arm_cs_is_float_insn(const cs_insn *insn);
 RZ_IPI const char *rz_arm32_cs_esil_prefix_cond(RzAnalysisOp *op, ARMCC_CondCodes cond_type);
