@@ -480,11 +480,11 @@ dB "mrrc2 p8, 3, sb, sp, c2" 5dec3298
 a "mrrc2 p8, 3, r9, r13, c2" 5dfc3298
 d "mrs r8, apsr" eff30088
 a "mrs r8, cpsr" eff30088
-d "mrs sl, spsr" fff3008a
+d "mrs sl, spsr" fff3008a 0x0 (set r10 (var spsr))
 a "mrs r10, spsr" fff3008a
 ad "mrs r3, apsr" eff30083
 ad "msr cpsr_sxc, r8" 88f30087
-ad "msr spsr_fx, r2" 92f3008a
+ad "msr spsr_fx, r2" 92f3008a 0x0 (set spsr (| (& (var spsr) (bv 32 0xff00ff)) (& (var r2) (bv 32 0xff00ff00))))
 ad "msr apsr_nzcvq, r6" 86f30088
 d "msr apsr_g, sl" 8af30084
 a "msr apsr_g, r10" 8af30084
