@@ -270,6 +270,85 @@ r0 = 0x00000000
 EOF
 RUN
 
+NAME=arm parallel add and subtract set the ge flags
+FILE=malloc://0x100
+ARGS=-aarm -b32
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 120f11e6720f51e6320f51e6520f51e6920f51e6f20f51e6f20f11e6
+aezi
+ar gef=0
+echo -- sadd16 0x7fff8000, 0x00018000
+ar r1=0x7fff8000
+ar r2=0x00018000
+aezs
+ar gef
+echo -- usub16 0x00018000, 0x00027fff
+ar r1=0x00018000
+ar r2=0x00027fff
+aezs
+ar gef
+echo -- uasx 0xffff0001, 0x00010002
+ar r1=0xffff0001
+ar r2=0x00010002
+aezs
+ar gef
+echo -- usax 0x0001ffff, 0x00010002
+ar r1=0x0001ffff
+ar r2=0x00010002
+aezs
+ar gef
+echo -- uadd8 0x80ff7f01, 0x80017fff
+ar r1=0x80ff7f01
+ar r2=0x80017fff
+aezs
+ar gef
+echo -- usub8 0x10ff2080, 0x2001ff7f
+ar r1=0x10ff2080
+ar r2=0x2001ff7f
+aezs
+ar gef
+echo -- ssub8 0x10ff2080, 0x2001ff7f
+aezs
+ar gef
+EOF
+EXPECT=<<EOF
+-- sadd16 0x7fff8000, 0x00018000
+gef = 0xc
+-- usub16 0x00018000, 0x00027fff
+gef = 0x3
+-- uasx 0xffff0001, 0x00010002
+gef = 0xf
+-- usax 0x0001ffff, 0x00010002
+gef = 0x3
+-- uadd8 0x80ff7f01, 0x80017fff
+gef = 0xd
+-- usub8 0x10ff2080, 0x2001ff7f
+gef = 0x5
+-- ssub8 0x10ff2080, 0x2001ff7f
+gef = 0x2
+EOF
+RUN
+
+NAME=thumb usub8 and sel take the bytewise maximum
+FILE=malloc://0x100
+ARGS=-aarm -b16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx c0fa41f2a0fa81f2
+aezi
+ar r0=0x10ff2080
+ar r1=0x2001ff7f
+aezs 2
+ar gef
+ar r2
+EOF
+EXPECT=<<EOF
+gef = 0x5
+r2 = 0x20ffff80
+EOF
+RUN
+
 NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
 TIMEOUT=60
