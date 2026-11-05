@@ -349,6 +349,73 @@ r2 = 0x20ffff80
 EOF
 RUN
 
+NAME=arm halving parallel add and subtract
+FILE=malloc://0x100
+ARGS=-aarm -b32
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 320f31e6520f31e6320f71e6520f71e6920f31e6920f71e6f20f31e6f20f71e6
+aezi
+ar gef=0xa
+echo -- shasx 0x00040002, 0x00020006
+ar r1=0x00040002
+ar r2=0x00020006
+aezs
+ar r0
+echo -- shsax 0x00040002, 0x00020006
+aezs
+ar r0
+echo -- uhasx 0xffff0001, 0x0003ffff
+ar r1=0xffff0001
+ar r2=0x0003ffff
+aezs
+ar r0
+echo -- uhsax 0xffff0001, 0x0003ffff
+aezs
+ar r0
+echo -- shadd8 0x7f80ff01, 0x7f80ff01
+ar r1=0x7f80ff01
+ar r2=0x7f80ff01
+aezs
+ar r0
+echo -- uhadd8 0xff80ff01, 0x01807f03
+ar r1=0xff80ff01
+ar r2=0x01807f03
+aezs
+ar r0
+echo -- shsub8 0x7f80017f, 0x807f7f80
+ar r1=0x7f80017f
+ar r2=0x807f7f80
+aezs
+ar r0
+echo -- uhsub8 0x00ff1080, 0xff001080
+ar r1=0x00ff1080
+ar r2=0xff001080
+aezs
+ar r0
+ar gef
+EOF
+EXPECT=<<EOF
+-- shasx 0x00040002, 0x00020006
+r0 = 0x00050000
+-- shsax 0x00040002, 0x00020006
+r0 = 0xffff0002
+-- uhasx 0xffff0001, 0x0003ffff
+r0 = 0xffffffff
+-- uhsax 0xffff0001, 0x0003ffff
+r0 = 0x00000002
+-- shadd8 0x7f80ff01, 0x7f80ff01
+r0 = 0x7f80ff01
+-- uhadd8 0xff80ff01, 0x01807f03
+r0 = 0x8080bf02
+-- shsub8 0x7f80017f, 0x807f7f80
+r0 = 0x7f80c17f
+-- uhsub8 0x00ff1080, 0xff001080
+r0 = 0x807f0000
+gef = 0xa
+EOF
+RUN
+
 NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
 TIMEOUT=60

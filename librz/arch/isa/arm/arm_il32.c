@@ -2035,8 +2035,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	bool l_add = false;
 	bool h_add = false;
 	switch (insn->id) {
-	case ARM_INS_SHSAX:
-	case ARM_INS_UHSAX:
+	case ARM_INS_SHASX:
+	case ARM_INS_UHASX:
 		halve = true;
 		// fallthrough
 	case ARM_INS_SASX:
@@ -2046,8 +2046,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 		h_add = true;
 		break;
 
-	case ARM_INS_SHASX:
-	case ARM_INS_UHASX:
+	case ARM_INS_SHSAX:
+	case ARM_INS_UHSAX:
 		halve = true;
 		// fallthrough
 	case ARM_INS_SSAX:
@@ -2158,28 +2158,26 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	bool set_ge = !halve;
 	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 ||
 		insn->id == ARM_INS_SHSUB8;
-	if (set_ge) {
-		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
-		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
-		r0->op.add.x = cast(9, r0->op.add.x);
-		r0->op.add.y = cast(9, r0->op.add.y);
-		r1->op.add.x = cast(9, r1->op.add.x);
-		r1->op.add.y = cast(9, r1->op.add.y);
-		r2->op.add.x = cast(9, r2->op.add.x);
-		r2->op.add.y = cast(9, r2->op.add.y);
-		r3->op.add.x = cast(9, r3->op.add.x);
-		r3->op.add.y = cast(9, r3->op.add.y);
-	}
+	// Retroactively patch the ops to extend to 9 before the calculation because ge and the halving need the carry
+	// Note: add/sub members here use the same structure, so using just `.add` is fine.
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	r0->op.add.x = cast(9, r0->op.add.x);
+	r0->op.add.y = cast(9, r0->op.add.y);
+	r1->op.add.x = cast(9, r1->op.add.x);
+	r1->op.add.y = cast(9, r1->op.add.y);
+	r2->op.add.x = cast(9, r2->op.add.x);
+	r2->op.add.y = cast(9, r2->op.add.y);
+	r3->op.add.x = cast(9, r3->op.add.x);
+	r3->op.add.y = cast(9, r3->op.add.y);
 	RzILOpBitVector *res;
 	if (halve) {
 		res = APPEND(
 			APPEND(
-				SHIFTRA(VARL("res3"), UN(3, 1)),
-				SHIFTRA(VARL("res2"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res3"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res2"), UN(3, 1)))),
 			APPEND(
-				SHIFTRA(VARL("res1"), UN(3, 1)),
-				SHIFTRA(VARL("res0"), UN(3, 1))));
+				UNSIGNED(8, SHIFTRA(VARL("res1"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res0"), UN(3, 1)))));
 	} else {
 		res = APPEND(
 			APPEND(
