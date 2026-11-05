@@ -13,6 +13,24 @@ commands:
     args:
       - name: expr
         type: RZ_CMD_ARG_TYPE_STRING
+    details:
+      - name: Expression syntax and functions
+        entries:
+          - text: "%"
+            arg_str: " <addr>:[le|be]?[s|f]?(8|16|32|64|128)"
+            comment: Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)
+          - text: "%"
+            arg_str: " <num>u<width>"
+            comment: Construct bit-vector literal of explicit bit-width (e.g. 0xffu8, 42u128)
+          - text: "%"
+            arg_str: " entropy(<addr>, <len>)"
+            comment: Compute Shannon entropy (0.0 to 8.0) of <len> bytes at <addr>
+          - text: "%"
+            arg_str: " temperature(<addr>, <len>)"
+            comment: Compute byte temperature of <len> bytes at <addr>
+          - text: "%"
+            arg_str: " sha256(<addr>, <len>)"
+            comment: Compute SHA-256 digest of <len> bytes at <addr> (also md5, sha1, sha384, sha512, xxhash, crc)
   - name: "%$"
     summary: Print Rizin variables and their values
     cname: list_rizin_vars

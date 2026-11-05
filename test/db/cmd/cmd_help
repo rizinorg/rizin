@@ -315,3 +315,22 @@ EXPECT=<<EOF
                                   feed is a newline.
 EOF
 RUN
+
+NAME=%?? expression help
+FILE==
+CMDS=<<EOF
+%??
+EOF
+EXPECT=<<EOF
+Usage: %[j] <expr>   # Evaluate numerical expression <expr>
+| % <expr>     # Evaluate numerical expression <expr>
+| %j <expr>    # Evaluate numerical expression <expr> (JSON mode)
+
+Expression syntax and functions:
+| % <addr>:[le|be]?[s|f]?(8|16|32|64|128) # Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)
+| % <num>u<width>                     # Construct bit-vector literal of explicit bit-width (e.g. 0xffu8, 42u128)
+| % entropy(<addr>, <len>)            # Compute Shannon entropy (0.0 to 8.0) of <len> bytes at <addr>
+| % temperature(<addr>, <len>)        # Compute byte temperature of <len> bytes at <addr>
+| % sha256(<addr>, <len>)             # Compute SHA-256 digest of <len> bytes at <addr> (also md5, sha1, sha384, sha512, xxhash, crc)
+EOF
+RUN

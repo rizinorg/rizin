@@ -32,6 +32,7 @@ static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
 static const RzCmdDescDetail slash_z_details[4];
+static const RzCmdDescDetail calculate_expr_details[2];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -3240,6 +3241,18 @@ static const RzCmdDescHelp cmd_catalog_json_help = {
 static const RzCmdDescHelp cmd_math_help = {
 	.summary = "Math commands",
 };
+static const RzCmdDescDetailEntry calculate_expr_Expression_space_syntax_space_and_space_functions_detail_entries[] = {
+	{ .text = "%", .arg_str = " <addr>:[le|be]?[s|f]?(8|16|32|64|128)", .comment = "Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)" },
+	{ .text = "%", .arg_str = " <num>u<width>", .comment = "Construct bit-vector literal of explicit bit-width (e.g. 0xffu8, 42u128)" },
+	{ .text = "%", .arg_str = " entropy(<addr>, <len>)", .comment = "Compute Shannon entropy (0.0 to 8.0) of <len> bytes at <addr>" },
+	{ .text = "%", .arg_str = " temperature(<addr>, <len>)", .comment = "Compute byte temperature of <len> bytes at <addr>" },
+	{ .text = "%", .arg_str = " sha256(<addr>, <len>)", .comment = "Compute SHA-256 digest of <len> bytes at <addr> (also md5, sha1, sha384, sha512, xxhash, crc)" },
+	{ 0 },
+};
+static const RzCmdDescDetail calculate_expr_details[] = {
+	{ .name = "Expression syntax and functions", .entries = calculate_expr_Expression_space_syntax_space_and_space_functions_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg calculate_expr_args[] = {
 	{
 		.name = "expr",
@@ -3251,6 +3264,7 @@ static const RzCmdDescArg calculate_expr_args[] = {
 };
 static const RzCmdDescHelp calculate_expr_help = {
 	.summary = "Evaluate numerical expression <expr>",
+	.details = calculate_expr_details,
 	.args = calculate_expr_args,
 };
 
