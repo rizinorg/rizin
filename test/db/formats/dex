@@ -1931,3 +1931,16 @@ EXPECT=<<EOF
  6 - r-x 0x0000000a vfile://1/reloc-targets
 EOF
 RUN
+
+NAME=DEX: iij imports without a descriptor print no runtime check warning
+FILE=bins/dex/Hello.dex
+CMDS=<<EOF
+iij~{[0]}
+iij~?
+EOF
+EXPECT=<<EOF
+{"ordinal":0,"bind":"WEAK","type":"FIELD","classname":"System","name":"out","libname":"java.lang.System"}
+1
+EOF
+EXPECT_ERR=
+RUN

@@ -2202,9 +2202,13 @@ static bool symbols_print(RzCore *core, RzBinFile *bf, RzCmdStateOutput *state, 
 			pj_ks(state->d.pj, "flagname", sn.nameflag);
 			pj_ks(state->d.pj, "realname", symbol->name);
 			pj_ki(state->d.pj, "ordinal", symbol->ordinal);
-			pj_ks(state->d.pj, "bind", symbol->bind);
+			if (symbol->bind) {
+				pj_ks(state->d.pj, "bind", symbol->bind);
+			}
 			pj_kn(state->d.pj, "size", size);
-			pj_ks(state->d.pj, "type", symbol->type);
+			if (symbol->type) {
+				pj_ks(state->d.pj, "type", symbol->type);
+			}
 			if (addr != UT64_MAX) {
 				pj_kn(state->d.pj, "vaddr", addr);
 			}
@@ -2328,7 +2332,9 @@ RZ_API bool rz_core_bin_imports_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzBinF
 			}
 			if (import->classname && import->classname[0]) {
 				pj_ks(state->d.pj, "classname", import->classname);
-				pj_ks(state->d.pj, "descriptor", import->descriptor);
+				if (import->descriptor) {
+					pj_ks(state->d.pj, "descriptor", import->descriptor);
+				}
 			}
 			pj_ks(state->d.pj, "name", symname);
 			if (import->dname) {
