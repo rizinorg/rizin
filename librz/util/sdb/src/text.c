@@ -67,18 +67,59 @@ static int cmp_ns(const void *a, const void *b, void *user) {
 	return strcmp(nsa->name, cia->name);
 }
 
+typedef struct {
+	int fd;
+	size_t len;
+	bool ok;
+	char buf[65536];
+} SdbTextBuf;
+
+static void text_buf_raw_write(SdbTextBuf *tb, const char *data, size_t sz) {
+	if (!tb->ok) {
+		return;
+	}
+	ssize_t written = write(tb->fd, data, sz);
+	if (written < 0 || (size_t)written != sz) {
+		SDB_V_NOT(-1, -1);
+		tb->ok = false;
+	}
+}
+
+static void text_buf_flush(SdbTextBuf *tb) {
+	if (tb->len > 0) {
+		text_buf_raw_write(tb, tb->buf, tb->len);
+		tb->len = 0;
+	}
+}
+
+static void text_buf_write(SdbTextBuf *tb, const char *data, size_t sz) {
+	if (!tb->ok) {
+		return;
+	}
+	if (sz >= sizeof(tb->buf)) {
+		text_buf_flush(tb);
+		text_buf_raw_write(tb, data, sz);
+		return;
+	}
+	if (tb->len + sz > sizeof(tb->buf)) {
+		text_buf_flush(tb);
+	}
+	memcpy(tb->buf + tb->len, data, sz);
+	tb->len += sz;
+}
+
 // n = position we are currently looking at
 // p = position until we have already written everything
 // flush a block of text that doesn't have to be escaped
 #define FLUSH \
 	do { \
 		if (p != n) { \
-			write_(fd, p, n - p); \
+			text_buf_write(tb, p, n - p); \
 			p = n; \
 		} \
 	} while (0)
-// write and escape a string from str to fd
-#define ESCAPE_LOOP(fd, str, escapes) \
+// write and escape a string from str to tb
+#define ESCAPE_LOOP(tb, str, escapes) \
 	do { \
 		const char *p = str; \
 		const char *n = p; \
@@ -92,11 +133,11 @@ static int cmp_ns(const void *a, const void *b, void *user) {
 	case c: \
 		FLUSH; \
 		p++; \
-		write_(fd, "\\" repl, replsz + 1); \
+		text_buf_write(tb, "\\" repl, replsz + 1); \
 		break;
 
-static void write_path(int fd, RzList /*<char *>*/ *path) {
-	write_(fd, "/", 1); // always print a /, even if path is empty
+static void write_path(SdbTextBuf *tb, RzList /*<char *>*/ *path) {
+	text_buf_write(tb, "/", 1); // always print a /, even if path is empty
 	RzListIter *it;
 	const char *path_token;
 	bool first = true;
@@ -104,9 +145,9 @@ static void write_path(int fd, RzList /*<char *>*/ *path) {
 		if (first) {
 			first = false;
 		} else {
-			write_(fd, "/", 1);
+			text_buf_write(tb, "/", 1);
 		}
-		ESCAPE_LOOP(fd, path_token,
+		ESCAPE_LOOP(tb, path_token,
 			ESCAPE('\\', "\\", 1);
 			ESCAPE('/', "/", 1);
 			ESCAPE('\n', "n", 1);
@@ -114,20 +155,20 @@ static void write_path(int fd, RzList /*<char *>*/ *path) {
 	}
 }
 
-static void write_key(int fd, const char *k) {
+static void write_key(SdbTextBuf *tb, const char *k) {
 	// escape leading '/'
 	if (*k == '/') {
-		write_(fd, "\\", 1);
+		text_buf_write(tb, "\\", 1);
 	}
-	ESCAPE_LOOP(fd, k,
+	ESCAPE_LOOP(tb, k,
 		ESCAPE('\\', "\\", 1);
 		ESCAPE('=', "=", 1);
 		ESCAPE('\n', "n", 1);
 		ESCAPE('\r', "r", 1););
 }
 
-static void write_value(int fd, const char *v) {
-	ESCAPE_LOOP(fd, v,
+static void write_value(SdbTextBuf *tb, const char *v) {
+	ESCAPE_LOOP(tb, v,
 		ESCAPE('\\', "\\", 1);
 		ESCAPE('\n', "n", 1);
 		ESCAPE('\r', "r", 1););
@@ -137,18 +178,18 @@ static void write_value(int fd, const char *v) {
 #undef ESCAPE
 
 static bool save_kv_cb(void *user, const SdbKv *kv) {
-	int fd = *(int *)user;
-	write_key(fd, sdbkv_key(kv));
-	write_(fd, "=", 1);
-	write_value(fd, sdbkv_value(kv));
-	write_(fd, "\n", 1);
+	SdbTextBuf *tb = (SdbTextBuf *)user;
+	write_key(tb, sdbkv_key(kv));
+	text_buf_write(tb, "=", 1);
+	write_value(tb, sdbkv_value(kv));
+	text_buf_write(tb, "\n", 1);
 	return true;
 }
 
-static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
+static bool text_save(Sdb *s, SdbTextBuf *tb, bool sort, RzList /*<char *>*/ *path) {
 	// path
-	write_path(fd, path);
-	write_(fd, "\n", 1);
+	write_path(tb, path);
+	text_buf_write(tb, "\n", 1);
 
 	// k=v entries
 	if (sort) {
@@ -156,12 +197,12 @@ static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
 		void **it;
 		rz_pvector_foreach (items, it) {
 			SdbKv *kv = *it;
-			save_kv_cb(&fd, kv);
+			save_kv_cb(tb, kv);
 		}
 		rz_pvector_free(items);
 	} else {
 		// This is faster when sorting is not needed.
-		sdb_foreach(s, save_kv_cb, &fd);
+		sdb_foreach(s, save_kv_cb, tb);
 	}
 
 	// sub-namespaces
@@ -173,9 +214,9 @@ static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
 	SdbNs *ns;
 	RzListIter *it;
 	rz_list_foreach (l, it, ns) {
-		write_(fd, "\n", 1);
+		text_buf_write(tb, "\n", 1);
 		rz_list_append(path, ns->name);
-		text_save(ns->sdb, fd, sort, path);
+		text_save(ns->sdb, tb, sort, path);
 		rz_list_pop(path);
 	}
 	if (l != s->ns) {
@@ -186,14 +227,32 @@ static bool text_save(Sdb *s, int fd, bool sort, RzList /*<char *>*/ *path) {
 }
 #undef write_
 
+/**
+ * \brief Save an Sdb database in plaintext format to a file descriptor using buffered writes.
+ * \param s Sdb instance to serialize
+ * \param fd Destination file descriptor
+ * \param sort Whether to sort keys and sub-namespaces lexicographically
+ * \return true on success, false on allocation failure
+ */
 RZ_API bool sdb_text_save_fd(Sdb *s, int fd, bool sort) {
 	RzList *path = rz_list_new();
 	if (!path) {
 		return false;
 	}
-	bool r = text_save(s, fd, sort, path);
+	SdbTextBuf *tb = malloc(sizeof(SdbTextBuf));
+	if (!tb) {
+		rz_list_free(path);
+		return false;
+	}
+	tb->fd = fd;
+	tb->len = 0;
+	tb->ok = true;
+	bool r = text_save(s, tb, sort, path);
+	text_buf_flush(tb);
+	bool ok = r && tb->ok;
+	free(tb);
 	rz_list_free(path);
-	return r;
+	return ok;
 }
 
 RZ_API bool sdb_text_save(Sdb *s, const char *file, bool sort) {
