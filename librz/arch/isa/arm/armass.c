@@ -57,8 +57,8 @@ static int strcmpnull(const char *a, const char *b) {
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
 
 static ArmOp ops[] = {
-	{ "adc", 0xa000, TYPE_ARI },
 	{ "adcs", 0xb000, TYPE_ARI },
+	{ "adc", 0xa000, TYPE_ARI },
 	{ "adds", 0x9000, TYPE_ARI },
 	{ "add", 0x8000, TYPE_ARI },
 	{ "bkpt", 0x2001, TYPE_BKP },
@@ -66,11 +66,12 @@ static ArmOp ops[] = {
 	{ "sub", 0x4000, TYPE_ARI },
 	{ "sbcs", 0xd000, TYPE_ARI },
 	{ "sbc", 0xc000, TYPE_ARI },
-	{ "rsb", 0x6000, TYPE_ARI },
 	{ "rsbs", 0x7000, TYPE_ARI },
-	{ "rsc", 0xe000, TYPE_ARI },
+	{ "rsb", 0x6000, TYPE_ARI },
 	{ "rscs", 0xf000, TYPE_ARI },
-	{ "bic", 0x0000c0e1, TYPE_ARI },
+	{ "rsc", 0xe000, TYPE_ARI },
+	{ "bics", 0xd001, TYPE_ARI },
+	{ "bic", 0xc001, TYPE_ARI },
 
 	{ "udf", 0xf000f000, TYPE_UDF },
 
@@ -112,7 +113,8 @@ static ArmOp ops[] = {
 	{ "movw", 0x3, TYPE_MOVW },
 	{ "movt", 0x4003, TYPE_MOVT },
 	{ "mov", 0xa001, TYPE_MOV },
-	{ "mvn", 0xe000, TYPE_MOV },
+	{ "mvns", 0xf001, TYPE_MOV },
+	{ "mvn", 0xe001, TYPE_MOV },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 	{ "hlt", 0x70000001, TYPE_HLT }, // ???u
 
@@ -1144,6 +1146,11 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 			cond = i;
 			break;
 		}
+	}
+	if (!strcmpnull(c, "hs")) {
+		cond = 2;
+	} else if (!strcmpnull(c, "lo")) {
+		cond = 3;
 	}
 	ao->o |= cond << 4;
 	return cond;
@@ -5661,24 +5668,6 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	return 0;
 }
 
-static int findyz(int x, int *y, int *z) {
-	int i, j;
-	for (i = 0; i < 0xff; i++) {
-		for (j = 0; j < 0xf; j++) {
-			int v = i << j;
-			if (v > x) {
-				continue;
-			}
-			if (v == x) {
-				*y = i;
-				*z = 16 - (j / 2);
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
 static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	int i, j, ret, reg, a, b;
 	int coproc, opc;
@@ -6006,21 +5995,12 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					a = getreg(ao->a[0]);
 					b = getreg(ao->a[1]);
 					if (b == -1) {
-						int y, z;
-						b = getnum(ao->a[1], &err);
-						if (b >= 0 && b <= 0xff) {
-							ao->o = 0x50e3;
-							// TODO: if (b>255) -> automatic multiplier
-							ao->o |= (a << 8);
-							ao->o |= ((b & 0xff) << 24);
-						} else if (findyz(b, &y, &z)) {
-							ao->o = 0x50e3;
-							ao->o |= (y << 24);
-							ao->o |= (z << 16);
-						} else {
-							RZ_LOG_ERROR("assembler: arm: %s: parameter %d is out of range (0-255)\n", ops[i].name, b);
+						ut32 immed = getimmed8(ao->a[1], &err);
+						if (err) {
+							RZ_LOG_ERROR("assembler: arm: %s: immediate cannot be encoded\n", ops[i].name);
 							return 0;
 						}
+						ao->o |= 2 | (a << 8) | (immed & 0xff) << 24 | (immed >> 8) << 16;
 					} else {
 						ao->o |= (a << 8);
 						ao->o |= (b << 24);
