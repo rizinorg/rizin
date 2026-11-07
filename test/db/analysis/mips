@@ -943,6 +943,7 @@ aa
 pdf @ main
 EOF
 EXPECT=<<EOF
+            ; DATA XREF from entry0 @ 0x402088
 / int main(int argc, char **argv, char **envp);
 |           ; arg int argc @ a0
 |           ; arg char **argv @ a1

@@ -1914,6 +1914,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd small loaded value named by a flag
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 0c009fe50c109fe50c209fe50c309fe51eff2fe18001000040000000c001000000010000
+f obj.named @ 0x180
+f obj.low @ 0x40
+f obj.min @ 0x100
+pd 4 @ 0
+e asm.sub.varmin=0x181
+pd 1 @ 0
+e asm.sub.varmin=0x80000000
+pd 1 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=0x180 obj.named
+            0x00000004      ldr   r1, [0x00000018]                     ; [0x18:4]=64
+            0x00000008      ldr   r2, [0x0000001c]                     ; [0x1c:4]=448
+            0x0000000c      ldr   r3, [0x00000020]                     ; [0x20:4]=0x100 obj.min
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=384
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=384
+EOF
+RUN
+
 NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
 FILE=bins/elf/redpill
 CMDS=<<EOF
