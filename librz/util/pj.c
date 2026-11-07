@@ -183,9 +183,9 @@ RZ_API PJ *pj_ka(PJ *j, const char *k) {
 }
 
 RZ_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	rz_return_val_if_fail(j && k && v, j);
+	rz_return_val_if_fail(j && k, j);
 	pj_k(j, k);
-	pj_s(j, v);
+	pj_s(j, rz_str_get(v));
 	return j;
 }
 
