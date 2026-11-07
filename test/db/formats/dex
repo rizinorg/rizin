@@ -1939,7 +1939,7 @@ iij~{[0]}
 iij~?
 EOF
 EXPECT=<<EOF
-{"ordinal":0,"bind":"WEAK","type":"FIELD","classname":"System","name":"out","libname":"java.lang.System"}
+{"ordinal":0,"bind":"WEAK","type":"FIELD","classname":"System","descriptor":"","name":"out","libname":"java.lang.System"}
 1
 EOF
 EXPECT_ERR=

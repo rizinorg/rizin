@@ -44,7 +44,7 @@ isj~{[0]}
 isj~?
 EOF
 EXPECT=<<EOF
-{"name":"NMI_VECTOR_START_ADDRESS","flagname":"sym.NMI_VECTOR_START_ADDRESS","realname":"NMI_VECTOR_START_ADDRESS","ordinal":0,"size":2,"vaddr":65530,"paddr":65530,"is_imported":false,"lib":""}
+{"name":"NMI_VECTOR_START_ADDRESS","flagname":"sym.NMI_VECTOR_START_ADDRESS","realname":"NMI_VECTOR_START_ADDRESS","ordinal":0,"bind":"","size":2,"type":"","vaddr":65530,"paddr":65530,"is_imported":false,"lib":""}
 1
 EOF
 EXPECT_ERR=
