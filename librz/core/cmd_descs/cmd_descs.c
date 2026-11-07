@@ -4691,6 +4691,7 @@ static const RzCmdDescArg analysis_function_signature_args[] = {
 };
 static const RzCmdDescHelp analysis_function_signature_help = {
 	.summary = "Get/Set function signature at current address",
+	.description = "Without an argument, prints the signature with the storage of every argument that has an argument variable of the same name and type, as in `int main(int argc @ rdi)`. `afT` prints the signature as a C prototype, which is what setting the signature takes.",
 	.args = analysis_function_signature_args,
 };
 
@@ -4722,6 +4723,14 @@ static const RzCmdDescArg analysis_function_signature_type_args[] = {
 static const RzCmdDescHelp analysis_function_signature_type_help = {
 	.summary = "Change type for current function",
 	.args = analysis_function_signature_type_args,
+};
+
+static const RzCmdDescArg analysis_function_type_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_type_help = {
+	.summary = "Show the type of the function at current address",
+	.args = analysis_function_type_args,
 };
 
 static const RzCmdDescArg analysis_function_address_args[] = {
@@ -23224,6 +23233,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *analysis_function_signature_type_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afsr", rz_analysis_function_signature_type_handler, &analysis_function_signature_type_help);
 	rz_warn_if_fail(analysis_function_signature_type_cd);
+
+	RzCmdDesc *analysis_function_type_cd = rz_cmd_desc_argv_modes_new(core->rcmd, af_cd, "afT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_type_handler, &analysis_function_type_help);
+	rz_warn_if_fail(analysis_function_type_cd);
 
 	RzCmdDesc *analysis_function_address_cd = rz_cmd_desc_argv_modes_new(core->rcmd, af_cd, "afo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_address_handler, &analysis_function_address_help);
 	rz_warn_if_fail(analysis_function_address_cd);

@@ -296,8 +296,7 @@ af
 pd 4
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg2);
-|           ; arg int32_t arg2 @ r1
+/ fcn.00000000(int32_t arg2 @ r1);
 |           0x00000000      021081e0       add   r1, r1, r2            ; arg2
 |           0x00000004      1eff2f01       bxeq  lr
 |           0x00000008      0020a0e3       mov   r2, 0
@@ -652,8 +651,7 @@ pdf@ sym.call
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468
-/ sym.call(int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+/ sym.call(int32_t arg1 @ r0);
 |           ; var int32_t var_ch @ stack - 0xc
 |           0x00010420      00482de9       push  {fp, lr}
 |           0x00010424      04b08de2       add   fp, sp, 4
@@ -679,9 +677,7 @@ afva@ main
 pdf@ main
 EOF
 EXPECT=<<EOF
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ r0
-|           ; arg char **argv @ r1
+/ int main(int argc @ r0, char **argv @ r1, char **envp);
 |           ; var int32_t var_10h @ stack - 0x10
 |           ; var int32_t var_ch @ stack - 0xc
 |           0x00010450      00482de9       push  {fp, lr}
@@ -1221,8 +1217,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+/ fcn.00000000(int32_t arg1 @ r0);
 |           0x00000000      push  {r4, lr}
 |           0x00000004      mov   r4, r0                               ; arg1
 |           0x00000008      add   lr, pc, 0
@@ -2259,9 +2254,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from fcn.000080de @ 0x80ea
             ; CALL XREFS from sym.__gnu_unwind_execute @ 0x812a, 0x815c, 0x81d6, 0x8240
-/ sym._Unwind_VRS_Get(int16_t arg1, int16_t arg2);
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
+/ sym._Unwind_VRS_Get(int16_t arg1 @ r0, int16_t arg2 @ r1);
 |           0x000078ea      push  {r4, lr}
 |           0x000078ec      adds  r4, r0, 0                            ; arg1
 |           0x000078ee      cmp   r1, 4                                ; arg2

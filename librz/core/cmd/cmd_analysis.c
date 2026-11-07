@@ -2038,11 +2038,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc
 		char *str = NULL;
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD: {
-			str = rz_analysis_function_get_signature(f);
+			str = rz_analysis_function_get_signature_with_storage(f);
 			break;
 		}
 		case RZ_OUTPUT_MODE_JSON: {
-			str = rz_analysis_function_get_json(f);
+			str = rz_analysis_function_get_json_with_storage(f);
 			break;
 		}
 		default:
@@ -2052,6 +2052,20 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc
 		rz_cons_println(core->cons, str);
 		free(str);
 	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_analysis_function_type_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	RzAnalysisFunction *f = analysis_get_function_in(core->analysis, core->offset);
+	if (!f) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *str = mode == RZ_OUTPUT_MODE_JSON ? rz_analysis_function_get_json(f) : rz_analysis_function_get_signature(f);
+	if (!str) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println(core->cons, str);
+	free(str);
 	return RZ_CMD_STATUS_OK;
 }
 
