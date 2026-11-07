@@ -350,11 +350,11 @@ EXPECT=<<EOF
 |           0x100002894      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
 |       ,=< 0x100002898      b     0x10000289c
 |       |   ; CODE XREF from entry0 @ 0x100002898
-|       `-> 0x10000289c      ldr   x8, [var_48h]                       ; [0x28:4]=-1 ; 40
+|       `-> 0x10000289c      ldr   x8, [var_48h]
 |           0x1000028a0      stur  x8, [var_20h]
 |           0x1000028a4      ldur  x0, [var_20h]
 |           0x1000028a8      ldr   x8, [x0]
-|           0x1000028ac      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x1000028ac      ldr   x8, [x8, 0x10]
 |           0x1000028b0      blr   x8                                  ; Virtual Call : method.Dog.run
 |           0x1000028b4      mov   x0, 8
 |           0x1000028b8      bl    sym.imp.operator_new_unsigned_long
@@ -362,11 +362,11 @@ EXPECT=<<EOF
 |           0x1000028c0      bl    method.Cat.Cat                      ;  method.Cat.Cat(int64_t arg1)
 |       ,=< 0x1000028c4      b     0x1000028c8
 |       |   ; CODE XREF from entry0 @ 0x1000028c4
-|       `-> 0x1000028c8      ldr   x8, [var_50h]                       ; [0x20:4]=-1 ; 32
+|       `-> 0x1000028c8      ldr   x8, [var_50h]
 |           0x1000028cc      stur  x8, [var_28h]
 |           0x1000028d0      ldur  x0, [var_28h]
 |           0x1000028d4      ldr   x8, [x0]
-|           0x1000028d8      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x1000028d8      ldr   x8, [x8, 0x10]
 |           0x1000028dc      blr   x8                                  ; Virtual Call : method.Cat.run
 |           0x1000028e0      mov   x0, 8
 |           0x1000028e4      bl    sym.imp.operator_new_unsigned_long
@@ -374,11 +374,11 @@ EXPECT=<<EOF
 |           0x1000028ec      bl    method.Human.Human                  ;  method.Human.Human(int64_t arg1)
 |       ,=< 0x1000028f0      b     0x1000028f4
 |       |   ; CODE XREF from entry0 @ 0x1000028f0
-|       `-> 0x1000028f4      ldr   x8, [var_58h]                       ; [0x18:4]=-1 ; 24
+|       `-> 0x1000028f4      ldr   x8, [var_58h]
 |           0x1000028f8      stur  x8, [var_30h]
 |           0x1000028fc      ldur  x0, [var_30h]
 |           0x100002900      ldr   x8, [x0]
-|           0x100002904      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002904      ldr   x8, [x8, 0x10]
 |           0x100002908      blr   x8                                  ; Virtual Call : method.Human.run
 |           0x10000290c      ldur  x8, [var_20h]
 |           0x100002910      str   x8, [var_60h]
@@ -387,9 +387,9 @@ EXPECT=<<EOF
 |       ,=< 0x10000291c      tbnz  w8, 0, 0x100002938
 |      ,==< 0x100002920      b     0x100002924
 |      ||   ; CODE XREF from entry0 @ 0x100002920
-|      `--> 0x100002924      ldr   x0, [var_60h]                       ; [0x10:4]=-1 ; 16
+|      `--> 0x100002924      ldr   x0, [var_60h]
 |       |   0x100002928      ldr   x8, [x0]
-|       |   0x10000292c      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x10000292c      ldr   x8, [x8, 8]
 |       |   0x100002930      blr   x8                                  ; Virtual Call : sym.Dog::_Dog_0x100002c18
 |      ,==< 0x100002934      b     0x100002938
 |      ||   ; CODE XREF from entry0 @ 0x100002934
@@ -400,9 +400,9 @@ EXPECT=<<EOF
 |       ,=< 0x100002948      tbnz  w8, 0, 0x100002964
 |      ,==< 0x10000294c      b     0x100002950
 |      ||   ; CODE XREF from entry0 @ 0x10000294c
-|      `--> 0x100002950      ldr   x0, [var_68h]                       ; [0x8:4]=-1 ; 8
+|      `--> 0x100002950      ldr   x0, [var_68h]
 |       |   0x100002954      ldr   x8, [x0]
-|       |   0x100002958      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002958      ldr   x8, [x8, 8]
 |       |   0x10000295c      blr   x8                                  ; Virtual Call : sym.Cat::_Cat_0x100003940
 |      ,==< 0x100002960      b     0x100002964
 |      ||   ; CODE XREF from entry0 @ 0x100002960
@@ -415,7 +415,7 @@ EXPECT=<<EOF
 |      ||   ; CODE XREF from entry0 @ 0x100002978
 |      `--> 0x10000297c      ldr   x0, [sp]
 |       |   0x100002980      ldr   x8, [x0]
-|       |   0x100002984      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002984      ldr   x8, [x8, 8]
 |       |   0x100002988      blr   x8                                  ; Virtual Call : sym.Human::_Human_0x100003adc
 |      ,==< 0x10000298c      b     0x100002990
 |      ||   ; CODE XREF from entry0 @ 0x10000298c
@@ -476,11 +476,11 @@ EXPECT=<<EOF
 |       |   0x100002880      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
 |      ,==< 0x100002884      b     0x100002888
 |      ||   ; CODE XREF from entry0 @ 0x100002884
-|      `--> 0x100002888      ldr   x8, [var_40h]                       ; [0x20:4]=-1 ; 32
+|      `--> 0x100002888      ldr   x8, [var_40h]
 |       |   0x10000288c      stur  x8, [var_20h.var_20h]
 |       |   0x100002890      ldur  x0, [var_20h.var_20h]
 |       |   0x100002894      ldr   x8, [x0]
-|       |   0x100002898      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|       |   0x100002898      ldr   x8, [x8, 0x10]
 |       |   0x10000289c      blr   x8                                  ; Virtual Call : method.Dog.run / method.Human.run / method.Cat.run
 |      ,==< 0x1000028a0      b     0x100002980
 ..
@@ -500,11 +500,11 @@ EXPECT=<<EOF
 |     |||   0x1000028f0      bl    method.Cat.Cat                      ;  method.Cat.Cat(int64_t arg1)
 |    ,====< 0x1000028f4      b     0x1000028f8
 |    ||||   ; CODE XREF from entry0 @ 0x1000028f4
-|    `----> 0x1000028f8      ldr   x8, [var_48h]                       ; [0x18:4]=-1 ; 24
+|    `----> 0x1000028f8      ldr   x8, [var_48h]
 |     |||   0x1000028fc      stur  x8, [var_20h.var_20h]
 |     |||   0x100002900      ldur  x0, [var_20h.var_20h]
 |     |||   0x100002904      ldr   x8, [x0]
-|     |||   0x100002908      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|     |||   0x100002908      ldr   x8, [x8, 0x10]
 |     |||   0x10000290c      blr   x8                                  ; Virtual Call : method.Dog.run / method.Human.run / method.Cat.run
 |    ,====< 0x100002910      b     0x10000297c
 ..
@@ -514,11 +514,11 @@ EXPECT=<<EOF
 |   ||||    0x10000293c      bl    method.Human.Human                  ;  method.Human.Human(int64_t arg1)
 |   ||||,=< 0x100002940      b     0x100002944
 |   |||||   ; CODE XREF from entry0 @ 0x100002940
-|   ||||`-> 0x100002944      ldr   x8, [var_50h]                       ; [0x10:4]=-1 ; 16
+|   ||||`-> 0x100002944      ldr   x8, [var_50h]
 |   ||||    0x100002948      stur  x8, [var_20h.var_20h]
 |   ||||    0x10000294c      ldur  x0, [var_20h.var_20h]
 |   ||||    0x100002950      ldr   x8, [x0]
-|   ||||    0x100002954      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|   ||||    0x100002954      ldr   x8, [x8, 0x10]
 |   ||||    0x100002958      blr   x8                                  ; Virtual Call : method.Dog.run / method.Human.run / method.Cat.run
 |   ||||,=< 0x10000295c      b     0x10000297c
 ..
@@ -527,7 +527,7 @@ EXPECT=<<EOF
 | ||| ||    ; CODE XREFS from entry0 @ 0x1000028a0, 0x10000297c
 | `----`--> 0x100002980      ldur  x0, [var_20h.var_20h]
 |  || |     0x100002984      ldr   x8, [x0]
-|  || |     0x100002988      ldr   x8, [x8, 0x18]                      ; [0x18:4]=-1 ; 24
+|  || |     0x100002988      ldr   x8, [x8, 0x18]
 |  || |     0x10000298c      blr   x8                                  ; Virtual Call : method.Dog.walk / method.Human.walk / method.Cat.walk
 |  || |     0x100002990      ldur  x8, [var_20h.var_20h]
 |  || |     0x100002994      str   x8, [var_58h]
@@ -536,9 +536,9 @@ EXPECT=<<EOF
 |  || | ,=< 0x1000029a0      tbnz  w8, 0, 0x1000029bc
 |  || |,==< 0x1000029a4      b     0x1000029a8
 |  || |||   ; CODE XREF from entry0 @ 0x1000029a4
-|  || |`--> 0x1000029a8      ldr   x0, [var_58h]                       ; [0x8:4]=-1 ; 8
+|  || |`--> 0x1000029a8      ldr   x0, [var_58h]
 |  || | |   0x1000029ac      ldr   x8, [x0]
-|  || | |   0x1000029b0      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|  || | |   0x1000029b0      ldr   x8, [x8, 8]
 |  || | |   0x1000029b4      blr   x8                                  ; Virtual Call : sym.Dog::_Dog_0x100002bf0 / sym.Human::_Human_0x100003ab4 / sym.Cat::_Cat_0x100003918
 |  || |,==< 0x1000029b8      b     0x1000029bc
 |  || |||   ; CODE XREF from entry0 @ 0x1000029b8
@@ -585,19 +585,19 @@ EXPECT=<<EOF
 |           0x100002ecc      bl    method.C.C                          ;  method.C.C(int64_t arg1)
 |           0x100002ed0      ldr   x0, [sp]
 |           0x100002ed4      str   x0, [var_20h]
-|           0x100002ed8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002ed8      ldr   x0, [var_20h]
 |           0x100002edc      ldr   x8, [x0]
 |           0x100002ee0      ldr   x8, [x8]
 |           0x100002ee4      blr   x8                                  ; Virtual Call : sym.non_virtual_thunk_to_C::showB / method.C.showA
-|           0x100002ee8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002ee8      ldr   x0, [var_20h]
 |           0x100002eec      ldr   x8, [x0]
-|           0x100002ef0      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|           0x100002ef0      ldr   x8, [x8, 8]
 |           0x100002ef4      blr   x8                                  ; Virtual Call : method.C.showB
-|           0x100002ef8      ldr   x0, [var_20h]                       ; [0x10:4]=-1 ; 16
+|           0x100002ef8      ldr   x0, [var_20h]
 |           0x100002efc      ldr   x8, [x0]
-|           0x100002f00      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002f00      ldr   x8, [x8, 0x10]
 |           0x100002f04      blr   x8                                  ; Virtual Call : method.C.showC
-|           0x100002f08      ldr   w0, [var_24h]                       ; [0xc:4]=-1 ; 12
+|           0x100002f08      ldr   w0, [var_24h]
 |           0x100002f0c      ldp   fp, lr, [var_10h]
 |           0x100002f10      add   sp, sp, 0x30
 \           0x100002f14      ret
@@ -696,15 +696,15 @@ EXPECT=<<EOF
 |           0x100002c8c      bl    method.Dog.Dog                      ;  method.Dog.Dog(int64_t arg1)
 |       ,=< 0x100002c90      b     0x100002c94
 |       |   ; CODE XREF from entry0 @ 0x100002c90
-|       `-> 0x100002c94      ldr   x8, [var_38h]                       ; [0x8:4]=-1 ; 8
+|       `-> 0x100002c94      ldr   x8, [var_38h]
 |           0x100002c98      stur  x8, [var_20h]
 |           0x100002c9c      ldur  x0, [var_20h]
 |           0x100002ca0      ldr   x8, [x0]
-|           0x100002ca4      ldr   x8, [x8, 0x18]                      ; [0x18:4]=-1 ; 24
+|           0x100002ca4      ldr   x8, [x8, 0x18]
 |           0x100002ca8      blr   x8                                  ; Virtual Call : method.Dog.walk
 |           0x100002cac      ldur  x0, [var_20h]
 |           0x100002cb0      ldr   x8, [x0]
-|           0x100002cb4      ldr   x8, [x8, 0x10]                      ; [0x10:4]=-1 ; 16
+|           0x100002cb4      ldr   x8, [x8, 0x10]
 |           0x100002cb8      blr   x8                                  ; Virtual Call : method.Dog.eat / sym.non_virtual_thunk_to_Dog::walk
 |           0x100002cbc      ldur  x8, [var_20h]
 |           0x100002cc0      str   x8, [sp]
@@ -715,7 +715,7 @@ EXPECT=<<EOF
 |      ||   ; CODE XREF from entry0 @ 0x100002cd0
 |      `--> 0x100002cd4      ldr   x0, [sp]
 |       |   0x100002cd8      ldr   x8, [x0]
-|       |   0x100002cdc      ldr   x8, [x8, 8]                         ; [0x8:4]=-1 ; 8
+|       |   0x100002cdc      ldr   x8, [x8, 8]
 |       |   0x100002ce0      blr   x8                                  ; Virtual Call : sym.non_virtual_thunk_to_Dog::_Dog_0x100003068 / sym.Dog::_Dog_0x100002fbc
 |      ,==< 0x100002ce4      b     0x100002ce8
 |      ||   ; CODE XREF from entry0 @ 0x100002ce4
@@ -930,19 +930,19 @@ EXPECT=<<EOF
 |           0x100007740      bl    section.1.__TEXT.__stubs            ;  section.1.__TEXT.__stubs(void)
 |           0x100007744      adrp  x8, reloc.NSLog                     ; 0x10000c000
 |           0x100007748      add   x8, x8, 0x220                       ; 0x10000c220 ; "`\xc2"
-|           0x10000774c      ldr   x0, [x8]                            ; [0x10000c220:4]=0xc260 ; "`\xc2"
+|           0x10000774c      ldr   x0, [x8]                            ; 0x10000c220 ; "`\xc2"
 |           0x100007750      str   x8, [var_58h]
 |           0x100007754      bl    fcn.100007bbc
 |           0x100007758      stur  x0, [var_28h]
 |           0x10000775c      ldur  x0, [var_28h]
 |           0x100007760      adrp  x8, reloc.NSLog                     ; 0x10000c000
 |           0x100007764      add   x8, x8, 0x1f0
-|           0x100007768      ldr   x1, [x8]                            ; [0x100007ea9:4]=0x48796173 ; "sayHello"
+|           0x100007768      ldr   x1, [x8]                            ; 0x100007ea9 ; "sayHello"
 |           0x10000776c      str   x8, [var_60h]
 |           0x100007770      bl    fcn.100007bec                       ; Message dispatch to method_Employee_sayHello
-|           0x100007774      ldr   x8, [var_58h]                       ; [0x28:4]=-1 ; 40
+|           0x100007774      ldr   x8, [var_58h]
 |           0x100007778      ldr   x0, [x8]
-|           0x10000777c      ldr   x9, [var_60h]                       ; [0x20:4]=-1 ; 32
+|           0x10000777c      ldr   x9, [var_60h]
 |           0x100007780      ldr   x1, [x9]
 |           0x100007784      bl    fcn.100007bec                       ; Message dispatch to method_Employee_sayHello
 |           0x100007788      ldur  x8, [var_28h]
@@ -954,7 +954,7 @@ EXPECT=<<EOF
 |           0x1000077a0      ldur  x8, [var_28h]
 |           0x1000077a4      adrp  x9, reloc.NSLog                     ; 0x10000c000
 |           0x1000077a8      add   x9, x9, 0x1f8
-|           0x1000077ac      ldr   x1, [x9]                            ; [0x100007eb2:4]=0x65736162 ; "base"
+|           0x1000077ac      ldr   x1, [x9]                            ; 0x100007eb2 ; "base"
 |           0x1000077b0      mov   x0, x8
 |           0x1000077b4      bl    fcn.100007bec                       ; Message dispatch to method_Employee_base
 |           0x1000077b8      stur  x0, [var_30h]
@@ -1039,8 +1039,7 @@ EXPECT=<<EOF
 |           0x1000078ec      bl    fcn.100007bf8
 |           0x1000078f0      add   x8, sp, 0x38
 |           0x1000078f4      str   x0, [var_48h]
-|           0x1000078f8      ldr   x9, [var_48h]                       ; x1
-|                                                                      ; [0x38:4]=-1
+|           0x1000078f8      ldr   x9, [var_48h]
 |           0x1000078fc      adrp  x0, data.100007000                  ; 0x100007000
 |           0x100007900      add   x0, x0, 0xe02                       ; 0x100007e02 ; "%p\n"
 |           0x100007904      mov   x10, sp
@@ -1101,19 +1100,20 @@ EXPECT=<<EOF
 |           0x100007794      adrp  x8, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
 |           0x100007798      add   x8, x8, 0x1d0                       ; 0x10000c1d0
 |                                                                      ; section.14.__DATA.__objc_classrefs
-|           0x10000779c      ldr   x0, [x8]                            ; [0x10000c1d0:4]=0xc210 ; section.14.__DATA.__objc_classrefs
+|           0x10000779c      ldr   x0, [x8]                            ; 0x10000c1d0
+|                                                                      ; section.14.__DATA.__objc_classrefs
 |           0x1000077a0      str   x8, [var_58h]
 |           0x1000077a4      bl    sym.imp.objc_alloc_init
 |           0x1000077a8      stur  x0, [instance]
 |           0x1000077ac      ldur  x0, [instance]                      ; void *instance
 |           0x1000077b0      adrp  x8, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
 |           0x1000077b4      add   x8, x8, 0x1a0
-|           0x1000077b8      ldr   x1, [x8]                            ; [0x100007ea9:4]=0x48796173 ; "sayHello" ; char *selector
+|           0x1000077b8      ldr   x1, [x8]                            ; 0x100007ea9 ; "sayHello" ; char *selector
 |           0x1000077bc      str   x8, [var_60h]
 |           0x1000077c0      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_sayHello ; void *objc_msgSend(void *instance, char *selector)
-|           0x1000077c4      ldr   x8, [var_58h]                       ; [0x28:4]=-1 ; 40
+|           0x1000077c4      ldr   x8, [var_58h]
 |           0x1000077c8      ldr   x0, [x8]                            ; void *instance
-|           0x1000077cc      ldr   x9, [var_60h]                       ; [0x20:4]=-1 ; 32
+|           0x1000077cc      ldr   x9, [var_60h]
 |           0x1000077d0      ldr   x1, [x9]                            ; char *selector
 |           0x1000077d4      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_sayHello ; void *objc_msgSend(void *instance, char *selector)
 |           0x1000077d8      ldur  x8, [instance]
@@ -1125,7 +1125,7 @@ EXPECT=<<EOF
 |           0x1000077f0      ldur  x8, [instance]
 |           0x1000077f4      adrp  x9, sym.__OBJC_METACLASS_RO___Employee ; 0x10000c000
 |           0x1000077f8      add   x9, x9, 0x1a8
-|           0x1000077fc      ldr   x1, [x9]                            ; [0x100007eb2:4]=0x65736162 ; "base" ; char *selector
+|           0x1000077fc      ldr   x1, [x9]                            ; 0x100007eb2 ; "base" ; char *selector
 |           0x100007800      mov   x0, x8                              ; void *instance
 |           0x100007804      bl    sym.imp.objc_msgSend                ; Message dispatch to method_Employee_base ; void *objc_msgSend(void *instance, char *selector)
 |           0x100007808      stur  x0, [var_30h]
@@ -1209,7 +1209,7 @@ EXPECT=<<EOF
 |           0x10000793c      bl    sym.imp.objc_retain                 ; void objc_retain(void *instance)
 |           0x100007940      add   x8, sp, 0x38
 |           0x100007944      str   x0, [var_48h]
-|           0x100007948      ldr   x9, [var_48h]                       ; [0x38:4]=-1 ; 56
+|           0x100007948      ldr   x9, [var_48h]
 |           0x10000794c      adrp  x0, data.100007000                  ; 0x100007000
 |           0x100007950      add   x0, x0, 0xe02                       ; 0x100007e02 ; "%p\n" ; const char *format
 |           0x100007954      mov   x10, sp
@@ -1249,10 +1249,10 @@ EXPECT=<<EOF
 |           0x100003e6c      mov   x0, sp                              ; void *instance
 |           0x100003e70      str   x8, [sp]
 |           0x100003e74      adrp  x8, reloc.NSLog                     ; 0x100004000
-|           0x100003e78      ldr   x8, [x8, 0x88]                      ; [0x100004088:4]=0x8178 ; "x\x81"
+|           0x100003e78      ldr   x8, [x8, 0x88]                      ; 0x100004088 ; "x\x81"
 |           0x100003e7c      str   x8, [sp, 8]
 |           0x100003e80      adrp  x8, sym.__OBJC_METACLASS_RO___Animal ; 0x100008000
-|           0x100003e84      ldr   x1, [x8, 0x120]                     ; [0x100003f96:4]=0x61657073 ; "speak" ; char *selector
+|           0x100003e84      ldr   x1, [x8, 0x120]                     ; 0x100003f96 ; "speak" ; char *selector
 |           0x100003e88      bl    sym.imp.objc_msgSendSuper2          ; Super message dispatch to method_Animal_speak ; void *objc_msgSendSuper2(void *instance, char *selector)
 |           0x100003e8c      ldp   fp, lr, [var_10h]
 |           0x100003e90      add   sp, sp, 0x30
@@ -1585,7 +1585,7 @@ EXPECT=<<EOF
             ;-- method.rust_any_9c71d8365cea50ec_.call:
             ;-- pc:
 / void call()
-|           ; var const char *arg2 @ x1
+|           ; var int64_t arg2 @ x1
 |           ; var int64_t arg4 @ x3
 |           ; var int64_t arg3 @ x2
 |           ; var int64_t arg1 @ x0
@@ -1599,13 +1599,11 @@ EXPECT=<<EOF
 |           0x00008178      stp   x20, x19, [var_10h]
 |           0x0000817c      add   fp, sp, 0x10
 |           ; DATA XREF from method._addr2line_1dc6989b2d131d62_::Context_gimli_a40298600a05aaa2_::read::endian_slice::EndianSlice_gimli_a40298600a05aaa2_::endianity::LittleEndian___.find_unit @ 0x17d38
-|           0x00008180      ldr   x8, [x1, 0x18]                       ; rust_any.rs:21 ; aav.0x00000018
-|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f" ; arg2
+|           0x00008180      ldr   x8, [x1, 0x18]                       ; rust_any.rs:21 ; arg2
 |           0x00008184      mov   x19, x3                              ; rust_any.rs ; arg4
 |           0x00008188      mov   x20, x2                              ; arg3
 |           0x0000818c      blr   x8                                   ; rust_any.rs:21 ; Rust Virtual Call: <rust_any[9c71d8365cea50ec]::Dog as rust_any[9c71d8365cea50ec]::Pet>::say
-|           0x00008190      ldr   x9, [x19, 0x18]                      ; any.rs:201 ; aav.0x00000018
-|                                                                      ; [0x18:4]=0x7fc0 sym._start ; "\xc0\U0000007f"
+|           0x00008190      ldr   x9, [x19, 0x18]                      ; any.rs:201
 |           0x00008194      mov   x19, x0                              ; rust_any.rs:21 ; arg1
 |           0x00008198      mov   x8, sp                               ; any.rs:201
 |           0x0000819c      mov   x0, x20
