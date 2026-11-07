@@ -383,3 +383,49 @@ EXPECT=<<EOF
             0x00000818      add   x9, x8, 1
 EOF
 RUN
+
+NAME=aarch64 ptr and refptr of loads
+FILE=malloc://1024
+ARGS=-a arm -b 64 -m 0xffffffc000081000
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 081140f94000001840000058400000984000001c4000005c4000009c
+ao 7~ptr,disasm
+EOF
+EXPECT=<<EOF
+disasm: ldr x8, [x8, 0x20]
+refptr: 0
+disasm: ldr w0, 0xffffffc00008100c
+ptr: 0xffffffc00008100c
+refptr: 4
+disasm: ldr x0, 0xffffffc000081010
+ptr: 0xffffffc000081010
+refptr: 8
+disasm: ldrsw x0, 0xffffffc000081014
+ptr: 0xffffffc000081014
+refptr: 4
+disasm: ldr s0, 0xffffffc000081018
+ptr: 0xffffffc000081018
+refptr: 4
+disasm: ldr d0, 0xffffffc00008101c
+ptr: 0xffffffc00008101c
+refptr: 8
+disasm: ldr q0, 0xffffffc000081020
+ptr: 0xffffffc000081020
+refptr: 16
+EOF
+RUN
+
+NAME=aarch64 data xrefs only from literal loads
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 081140f961000058c0035fd6000000000002000000000000
+af
+axl
+EOF
+EXPECT=<<EOF
+                          fcn.00000000+4 0x4 ->      DATA -> 0x10 fcn.00000000+16
+EOF
+RUN

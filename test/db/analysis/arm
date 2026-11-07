@@ -2084,8 +2084,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: e10b40b9
-ptr: 0x00000008
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load
@@ -2166,8 +2165,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: 105be83c
-ptr: 0x00000000
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load
@@ -2227,8 +2225,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: fdc743f8
-ptr: 0x0000003c
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load

@@ -776,6 +776,25 @@ static bool is_system_hint(const cs_insn *insn) {
 }
 #endif
 
+/**
+ * \brief Size in bytes of what an AArch64 literal load reads, from its destination register
+ */
+static int arm64_literal_size(csh handle, cs_insn *insn) {
+	if (insn->id == ARM64_INS_LDRSW) {
+		return 4;
+	}
+	const char *reg = cs_reg_name(handle, REGID64(0));
+	switch (reg ? reg[0] : 0) {
+	case 'x':
+	case 'd':
+		return 8;
+	case 'q':
+		return 16;
+	default: // w, s
+		return 4;
+	}
+}
+
 static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 	csh handle = ctx->handle;
 	ut64 addr = op->addr;
@@ -1221,10 +1240,11 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 				op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 				op->ptr = IMM64(1);
 				op->refptr = 8;
-			} else {
-				int d = (int)MEMDISP64(1);
-				op->ptr = (d < 0) ? -d : d;
-				op->refptr = 4;
+			} else if (ISMEM64(1) && REGBASE64(1) == ARM64_REG_INVALID) {
+				// A literal, whose address Capstone next gives as the displacement:
+				// with a base register, the displacement is no address.
+				op->ptr = MEMDISP64(1);
+				op->refptr = arm64_literal_size(handle, insn);
 			}
 		}
 		break;
