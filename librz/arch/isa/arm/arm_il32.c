@@ -44,15 +44,122 @@ RZ_IPI bool rz_arm_cs_is_group_member(RZ_NONNULL const cs_insn *insn, arm_insn_g
 }
 
 /**
+ * \brief Combine the c, x, s and f fields of an MSR into RzArmPsrField bits
+ */
+static ut32 psr_fields(bool c, bool x, bool s, bool f) {
+	return (c ? RZ_ARM_PSR_FIELD_C : 0) | (x ? RZ_ARM_PSR_FIELD_X : 0) | (s ? RZ_ARM_PSR_FIELD_S : 0) | (f ? RZ_ARM_PSR_FIELD_F : 0);
+}
+
+/**
+ * \brief Get the fields of the CPSR or of the SPSR that an MSR writes.
+ *
+ * APSR, also as the part of the M-profile xPSR, is a view of the f and s
+ * fields of the CPSR. The banked and the other special registers get no
+ * fields.
+ *
+ * \param insn The MSR
+ * \param spsr Set to whether the fields are of the SPSR
+ * \return The written fields, a combination of RzArmPsrField
+ */
+RZ_IPI ut32 rz_arm_cs_msr_psr_fields(RZ_NONNULL const cs_insn *insn, RZ_NONNULL RZ_OUT bool *spsr) {
+	rz_return_val_if_fail(insn && insn->detail && spsr, 0);
+	const cs_arm_op *dst = &INSOP(0);
+	*spsr = false;
+#if CS_NEXT_VERSION >= 6
+	if (dst->type == ARM_OP_CPSR || dst->type == ARM_OP_SPSR) {
+		ut32 bits = dst->sysop.psr_bits;
+		*spsr = dst->type == ARM_OP_SPSR;
+		return *spsr
+			? psr_fields(bits & ARM_FIELD_SPSR_C, bits & ARM_FIELD_SPSR_X, bits & ARM_FIELD_SPSR_S, bits & ARM_FIELD_SPSR_F)
+			: psr_fields(bits & ARM_FIELD_CPSR_C, bits & ARM_FIELD_CPSR_X, bits & ARM_FIELD_CPSR_S, bits & ARM_FIELD_CPSR_F);
+	}
+	if (dst->type != ARM_OP_SYSREG) {
+		return 0;
+	}
+	// The plain APSR, IAPSR, EAPSR and XPSR equal their _NZCVQ forms
+	switch (dst->sysop.reg.mclasssysreg) {
+	case ARM_MCLASSSYSREG_APSR_NZCVQG:
+	case ARM_MCLASSSYSREG_IAPSR_NZCVQG:
+	case ARM_MCLASSSYSREG_EAPSR_NZCVQG:
+	case ARM_MCLASSSYSREG_XPSR_NZCVQG:
+		return RZ_ARM_PSR_FIELD_F | RZ_ARM_PSR_FIELD_S;
+	case ARM_MCLASSSYSREG_APSR_NZCVQ:
+	case ARM_MCLASSSYSREG_IAPSR_NZCVQ:
+	case ARM_MCLASSSYSREG_EAPSR_NZCVQ:
+	case ARM_MCLASSSYSREG_XPSR_NZCVQ:
+		return RZ_ARM_PSR_FIELD_F;
+	case ARM_MCLASSSYSREG_APSR_G:
+	case ARM_MCLASSSYSREG_IAPSR_G:
+	case ARM_MCLASSSYSREG_EAPSR_G:
+	case ARM_MCLASSSYSREG_XPSR_G:
+		return RZ_ARM_PSR_FIELD_S;
+	default:
+		return 0;
+	}
+#else
+	if (dst->type != ARM_OP_SYSREG) {
+		return 0;
+	}
+	switch (dst->reg) {
+	case ARM_SYSREG_APSR_NZCVQG:
+	case ARM_SYSREG_IAPSR_NZCVQG:
+	case ARM_SYSREG_EAPSR_NZCVQG:
+	case ARM_SYSREG_XPSR_NZCVQG:
+		return RZ_ARM_PSR_FIELD_F | RZ_ARM_PSR_FIELD_S;
+	case ARM_SYSREG_APSR:
+	case ARM_SYSREG_APSR_NZCVQ:
+	case ARM_SYSREG_IAPSR:
+	case ARM_SYSREG_IAPSR_NZCVQ:
+	case ARM_SYSREG_EAPSR:
+	case ARM_SYSREG_EAPSR_NZCVQ:
+	case ARM_SYSREG_XPSR:
+	case ARM_SYSREG_XPSR_NZCVQ:
+		return RZ_ARM_PSR_FIELD_F;
+	case ARM_SYSREG_APSR_G:
+	case ARM_SYSREG_IAPSR_G:
+	case ARM_SYSREG_EAPSR_G:
+	case ARM_SYSREG_XPSR_G:
+		return RZ_ARM_PSR_FIELD_S;
+	default:
+		break;
+	}
+	if (dst->reg >= ARM_SYSREG_APSR) {
+		// From APSR up the values are register ids, below them OR-combined
+		// CPSR or SPSR fields
+		return 0;
+	}
+	*spsr = dst->reg & (ARM_SYSREG_SPSR_C | ARM_SYSREG_SPSR_X | ARM_SYSREG_SPSR_S | ARM_SYSREG_SPSR_F);
+	return *spsr
+		? psr_fields(dst->reg & ARM_SYSREG_SPSR_C, dst->reg & ARM_SYSREG_SPSR_X, dst->reg & ARM_SYSREG_SPSR_S, dst->reg & ARM_SYSREG_SPSR_F)
+		: psr_fields(dst->reg & ARM_SYSREG_CPSR_C, dst->reg & ARM_SYSREG_CPSR_X, dst->reg & ARM_SYSREG_CPSR_S, dst->reg & ARM_SYSREG_CPSR_F);
+#endif
+}
+
+/**
  * All regs available as global IL variables
  */
 static const char *regs_bound_32[] = {
+	"lr", "sp",
+	"qf", "vf", "cf", "zf", "nf", "gef",
+	"fpscr", "spsr",
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
+	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
+	"d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
+	NULL
+};
+
+/**
+ * All regs available as global IL variables on the M-profile
+ */
+static const char *regs_bound_32_mclass[] = {
 	"lr", "sp",
 	"qf", "vf", "cf", "zf", "nf", "gef",
 	"fpscr",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
 	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
 	"d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
+	"msp", "psp", "msplim", "psplim", "ipsr",
+	"primask", "basepri", "faultmask", "control",
 	NULL
 };
 
@@ -1543,19 +1650,17 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
 	if (!ISREG(0) || !(ISREG(1) || ISPSRFLAGS(1))) {
 		return NULL;
 	}
-	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_SPSR && REGID(1) != ARM_REG_APSR && !ISPSRFLAGS(1)) {
-		// only these regs supported
-		return NULL;
-	}
 #else
 	if (!ISREG(0) || !(ISREG(1))) {
 		return NULL;
 	}
-	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_SPSR && REGID(1) != ARM_REG_APSR) {
-		// only these regs supported
+#endif
+	if (REGID(1) == ARM_REG_SPSR) {
+		return write_reg(REGID(0), VARG("spsr"));
+	}
+	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_APSR) {
 		return NULL;
 	}
-#endif
 	// There are more bits in ARM, but this is all we have:
 	return write_reg(REGID(0),
 		LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
@@ -1567,58 +1672,199 @@ static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
 }
 
 /**
+ * M-profile special registers, apart from the APSR
+ */
+typedef enum {
+	MSYSREG_NONE = 0, ///< Not one, or one not in the IL
+	MSYSREG_IEPSR, ///< IPSR, EPSR or IEPSR
+	MSYSREG_MSP,
+	MSYSREG_PSP,
+	MSYSREG_MSPLIM,
+	MSYSREG_PSPLIM,
+	MSYSREG_PRIMASK,
+	MSYSREG_BASEPRI,
+	MSYSREG_BASEPRI_MAX,
+	MSYSREG_FAULTMASK,
+	MSYSREG_CONTROL,
+} MSysReg;
+
+/**
+ * \brief Get the M-profile special register of \p op, apart from the APSR.
+ *
+ * The registers of the other Security state and the PAC keys are not in the
+ * IL, as it has neither Security states nor pointer authentication.
+ */
+static MSysReg msysreg(const cs_arm_op *op) {
+	if (op->type != ARM_OP_SYSREG) {
+		return MSYSREG_NONE;
+	}
+#if CS_NEXT_VERSION >= 6
+	switch (op->sysop.reg.mclasssysreg) {
+	case ARM_MCLASSSYSREG_IPSR:
+	case ARM_MCLASSSYSREG_EPSR:
+	case ARM_MCLASSSYSREG_IEPSR: return MSYSREG_IEPSR;
+	case ARM_MCLASSSYSREG_MSP: return MSYSREG_MSP;
+	case ARM_MCLASSSYSREG_PSP: return MSYSREG_PSP;
+	case ARM_MCLASSSYSREG_MSPLIM: return MSYSREG_MSPLIM;
+	case ARM_MCLASSSYSREG_PSPLIM: return MSYSREG_PSPLIM;
+	case ARM_MCLASSSYSREG_PRIMASK: return MSYSREG_PRIMASK;
+	case ARM_MCLASSSYSREG_BASEPRI: return MSYSREG_BASEPRI;
+	case ARM_MCLASSSYSREG_BASEPRI_MAX: return MSYSREG_BASEPRI_MAX;
+	case ARM_MCLASSSYSREG_FAULTMASK: return MSYSREG_FAULTMASK;
+	case ARM_MCLASSSYSREG_CONTROL: return MSYSREG_CONTROL;
+	default: return MSYSREG_NONE;
+	}
+#else
+	switch (op->reg) {
+	case ARM_SYSREG_IPSR:
+	case ARM_SYSREG_EPSR:
+	case ARM_SYSREG_IEPSR: return MSYSREG_IEPSR;
+	case ARM_SYSREG_MSP: return MSYSREG_MSP;
+	case ARM_SYSREG_PSP: return MSYSREG_PSP;
+#if CS_API_MAJOR >= 5
+	case ARM_SYSREG_MSPLIM: return MSYSREG_MSPLIM;
+	case ARM_SYSREG_PSPLIM: return MSYSREG_PSPLIM;
+#endif
+	case ARM_SYSREG_PRIMASK: return MSYSREG_PRIMASK;
+	case ARM_SYSREG_BASEPRI: return MSYSREG_BASEPRI;
+	case ARM_SYSREG_BASEPRI_MAX: return MSYSREG_BASEPRI_MAX;
+	case ARM_SYSREG_FAULTMASK: return MSYSREG_FAULTMASK;
+	case ARM_SYSREG_CONTROL: return MSYSREG_CONTROL;
+	default: return MSYSREG_NONE;
+	}
+#endif
+}
+
+/**
+ * \brief CurrentModeIsPrivileged() of the M-profile: Handler mode or CONTROL.nPRIV clear
+ */
+static RzILOpBool *mprofile_privileged(void) {
+	return OR(NON_ZERO(VARG("ipsr")), INV(LSB(VARG("control"))));
+}
+
+/**
+ * \brief CONTROL.SPSEL of the M-profile
+ */
+static RzILOpBool *mprofile_spsel(void) {
+	return NON_ZERO(LOGAND(VARG("control"), UN(8, 1 << 1)));
+}
+
+/**
+ * \brief Whether sp is the process stack pointer, as LookUpSP() of the M-profile
+ */
+static RzILOpBool *mprofile_sp_is_psp(void) {
+	return AND(IS_ZERO(VARG("ipsr")), mprofile_spsel());
+}
+
+/**
+ * \brief MSR to an M-profile special register, apart from the APSR.
+ *
+ * As in Armv8-M without the Security and PACBTI Extensions.
+ *
+ * \param reg The register, not MSYSREG_NONE
+ * \param val The value to write
+ * \return The effect, NULL if the register is not in the IL
+ */
+static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
+	RzILOpEffect *eff;
+	switch (reg) {
+	case MSYSREG_IEPSR:
+		// Read-only
+		rz_il_op_pure_free(val);
+		return NOP();
+	case MSYSREG_MSP:
+		eff = SEQ2(SETG("msp", LOGAND(val, U32(~3u))),
+			BRANCH(mprofile_sp_is_psp(), NOP(), SETG("sp", VARG("msp"))));
+		break;
+	case MSYSREG_PSP:
+		eff = SEQ2(SETG("psp", LOGAND(val, U32(~3u))),
+			BRANCH(mprofile_sp_is_psp(), SETG("sp", VARG("psp")), NOP()));
+		break;
+	case MSYSREG_MSPLIM:
+		eff = SETG("msplim", LOGAND(val, U32(~7u)));
+		break;
+	case MSYSREG_PSPLIM:
+		eff = SETG("psplim", LOGAND(val, U32(~7u)));
+		break;
+	case MSYSREG_PRIMASK:
+		eff = SETG("primask", LSB(val));
+		break;
+	case MSYSREG_BASEPRI:
+		eff = SETG("basepri", UNSIGNED(8, val));
+		break;
+	case MSYSREG_BASEPRI_MAX:
+		// Only raises the masked priority: lower values are higher, 0 masks none
+		eff = BRANCH(AND(NON_ZERO(UNSIGNED(8, val)),
+				     OR(IS_ZERO(VARG("basepri")), UGT(VARG("basepri"), UNSIGNED(8, DUP(val))))),
+			SETG("basepri", UNSIGNED(8, DUP(val))),
+			NOP());
+		break;
+	case MSYSREG_FAULTMASK:
+		// Setting it needs an execution priority above -1: not in the NMI (2)
+		// or HardFault (3) handler
+		eff = SETG("faultmask",
+			AND(LSB(val),
+				OR(VARG("faultmask"),
+					AND(INV(EQ(VARG("ipsr"), U32(2))), INV(EQ(VARG("ipsr"), U32(3)))))));
+		break;
+	case MSYSREG_CONTROL:
+		// Switching SPSEL in Thread mode switches the stack pointer in use.
+		// Only nPRIV, SPSEL and FPCA: SFPA and bits [7:4] need the Security
+		// and PACBTI Extensions.
+		eff = SEQ2(
+			BRANCH(AND(IS_ZERO(VARG("ipsr")), XOR(mprofile_spsel(), NON_ZERO(LOGAND(val, U32(1u << 1))))),
+				BRANCH(mprofile_spsel(),
+					SEQ2(SETG("psp", VARG("sp")), SETG("sp", VARG("msp"))),
+					SEQ2(SETG("msp", VARG("sp")), SETG("sp", VARG("psp")))),
+				NOP()),
+			SETG("control", LOGOR(LOGAND(VARG("control"), UN(8, 0xf8)), LOGAND(UNSIGNED(8, DUP(val)), UN(8, 0x7)))));
+		break;
+	default:
+		rz_il_op_pure_free(val);
+		return NULL;
+	}
+	return BRANCH(mprofile_privileged(), eff, NOP());
+}
+
+/**
+ * \brief Mask of the SPSR bits that the fields of an MSR write
+ *
+ * \param fields A combination of RzArmPsrField
+ */
+static ut32 spsr_field_mask(ut32 fields) {
+	// Whole bytes: unlike the CPSR, the SPSR takes the execution state bits too
+	return (fields & RZ_ARM_PSR_FIELD_C ? 0x000000ff : 0) |
+		(fields & RZ_ARM_PSR_FIELD_X ? 0x0000ff00 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_S ? 0x00ff0000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_F ? 0xff000000 : 0);
+}
+
+/**
  * Capstone: ARM_INS_MSR
  * ARM: msr
  */
 static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
-	cs_arm_op *dst = &insn->detail->arm.operands[0];
-#if CS_NEXT_VERSION >= 6
-	if ((dst->type != ARM_OP_SYSREG) && (dst->type != ARM_OP_CPSR) && (dst->type != ARM_OP_SPSR)) {
-		return NULL;
+	cs_arm_op *dst = &INSOP(0);
+	MSysReg mreg = msysreg(dst);
+	if (mreg != MSYSREG_NONE) {
+		RzILOpBitVector *val = ARG(1);
+		return val ? msr_mprofile(mreg, val) : NULL;
 	}
-	// check if the reg+mask contains any of the flags we have:
-	bool update_f = false;
-	bool update_s = false;
-	switch (dst->reg) {
-	case ARM_MCLASSSYSREG_APSR_NZCVQ:
-		update_f = true;
-		break;
-	case ARM_MCLASSSYSREG_APSR_G:
-		update_s = true;
-		break;
-	case ARM_MCLASSSYSREG_APSR_NZCVQG:
-		update_f = true;
-		update_s = true;
-		break;
-	default:
-		update_f = (dst->sysop.psr_bits & ARM_FIELD_CPSR_F) || (dst->sysop.psr_bits & ARM_FIELD_SPSR_F);
-		update_s = (dst->sysop.psr_bits & ARM_FIELD_CPSR_S) || (dst->sysop.psr_bits & ARM_FIELD_SPSR_S);
-		break;
+	// Of the status registers the IL has the CPSR flags and the SPSR of the
+	// current mode: writing a banked or another special register leaves them
+	// alone.
+	bool spsr;
+	ut32 fields = rz_arm_cs_msr_psr_fields(insn, &spsr);
+	ut32 spsr_mask = spsr ? spsr_field_mask(fields) : 0;
+	bool update_f = !spsr && fields & RZ_ARM_PSR_FIELD_F;
+	bool update_s = !spsr && fields & RZ_ARM_PSR_FIELD_S;
+	if (spsr_mask) {
+		RzILOpBitVector *val = ARG(1);
+		if (!val) {
+			return NULL;
+		}
+		return SETG("spsr", spsr_mask == UT32_MAX ? val : LOGOR(LOGAND(VARG("spsr"), U32(~spsr_mask)), LOGAND(val, U32(spsr_mask))));
 	}
-#else
-	if (dst->type != ARM_OP_SYSREG) {
-		return NULL;
-	}
-	// check if the reg+mask contains any of the flags we have:
-	bool update_f = false;
-	bool update_s = false;
-	switch (dst->reg) {
-	case ARM_SYSREG_APSR_NZCVQ:
-		update_f = true;
-		break;
-	case ARM_SYSREG_APSR_G:
-		update_s = true;
-		break;
-	case ARM_SYSREG_APSR_NZCVQG:
-		update_f = true;
-		update_s = true;
-		break;
-	default:
-		update_f = (dst->reg & ARM_SYSREG_CPSR_F) || (dst->reg & ARM_SYSREG_SPSR_F);
-		update_s = (dst->reg & ARM_SYSREG_CPSR_S) || (dst->reg & ARM_SYSREG_SPSR_S);
-		break;
-	}
-#endif
 	if (!update_f && !update_s) {
 		// no flags we know
 		return NULL;
@@ -1994,8 +2240,8 @@ static RzILOpEffect *rfe(cs_insn *insn, bool is_thumb) {
 	return SEQ5(
 		SETL("addr", addr),
 		SETL("tgt", LOADW(32, VARL("addr"))),
-		SETL("spsr", LOADW(32, ADD(VARL("addr"), U32(4)))),
-		update_flags_from_cpsr(VARL("spsr"), true, true),
+		SETL("spsr_value", LOADW(32, ADD(VARL("addr"), U32(4)))),
+		update_flags_from_cpsr(VARL("spsr_value"), true, true),
 		wb ? SEQ2(wb, JMP(VARL("tgt"))) : JMP(VARL("tgt")));
 }
 
@@ -4549,9 +4795,15 @@ RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
 
 #include <rz_il/rz_il_opbuilder_end.h>
 
-RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian) {
+/**
+ * \brief Get the IL config of 32-bit ARM.
+ *
+ * \param big_endian Big endian memory
+ * \param mclass The M-profile, with its special registers
+ */
+RZ_IPI RzAnalysisILConfig *rz_arm_cs_32_il_config(bool big_endian, bool mclass) {
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, big_endian, 32);
-	r->reg_bindings = regs_bound_32;
+	r->reg_bindings = mclass ? regs_bound_32_mclass : regs_bound_32;
 	RzILEffectLabel *svc_label = rz_il_effect_label_new("svc", EFFECT_LABEL_SYSCALL);
 	svc_label->hook = label_svc;
 	rz_analysis_il_config_add_label(r, svc_label);
