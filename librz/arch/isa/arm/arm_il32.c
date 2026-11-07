@@ -2032,25 +2032,29 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	bh = cast(17, bh);
 	RzILOpBitVector *l, *h;
 	bool halve = false;
+	bool l_add = false;
+	bool h_add = false;
 	switch (insn->id) {
-	case ARM_INS_SHSAX:
-	case ARM_INS_UHSAX:
+	case ARM_INS_SHASX:
+	case ARM_INS_UHASX:
 		halve = true;
 		// fallthrough
 	case ARM_INS_SASX:
 	case ARM_INS_UASX:
 		l = SUB(al, bh);
 		h = ADD(ah, bl);
+		h_add = true;
 		break;
 
-	case ARM_INS_SHASX:
-	case ARM_INS_UHASX:
+	case ARM_INS_SHSAX:
+	case ARM_INS_UHSAX:
 		halve = true;
 		// fallthrough
 	case ARM_INS_SSAX:
 	case ARM_INS_USAX:
 		l = ADD(al, bh);
 		h = SUB(ah, bl);
+		l_add = true;
 		break;
 
 	case ARM_INS_SHSUB16:
@@ -2070,6 +2074,8 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 	default: // ARM_INS_SADD16, ARM_INS_SHADD16, ARM_INS_UADD16, ARM_INS_UHADD16
 		l = ADD(al, bl);
 		h = ADD(ah, bh);
+		l_add = true;
+		h_add = true;
 		break;
 	}
 	bool set_ge = !halve;
@@ -2084,13 +2090,14 @@ static RzILOpEffect *sadd16(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	if (set_ge) {
-		ut64 tval = is_signed ? 0 : 3;
-		ut64 fval = 3 - tval;
+		// GE is the carry out of an unsigned sum, otherwise whether the result is >= 0
+		ut64 l_tval = !is_signed && l_add ? 3 : 0;
+		ut64 h_tval = !is_signed && h_add ? 3 : 0;
 		eff = SEQ2(
-			SETL("gef",
+			SETG("gef",
 				APPEND(
-					ITE(MSB(VARL("res1")), UN(2, tval), UN(2, fval)),
-					ITE(MSB(VARL("res0")), UN(2, tval), UN(2, fval)))),
+					ITE(MSB(VARL("res1")), UN(2, h_tval), UN(2, 3 - h_tval)),
+					ITE(MSB(VARL("res0")), UN(2, l_tval), UN(2, 3 - l_tval)))),
 			eff);
 	}
 	return SEQ3(SETL("res0", l), SETL("res1", h), eff);
@@ -2122,6 +2129,7 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 	RzILOpBitVector *b3 = UNSIGNED(8, SHIFTR0(DUP(b), UN(5, 24)));
 	RzILOpBitVector *r0, *r1, *r2, *r3;
 	bool halve = false;
+	bool add = false;
 	switch (insn->id) {
 	case ARM_INS_SHSUB8:
 	case ARM_INS_UHSUB8:
@@ -2144,33 +2152,32 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 		r1 = ADD(a1, b1);
 		r2 = ADD(a2, b2);
 		r3 = ADD(a3, b3);
+		add = true;
 		break;
 	}
 	bool set_ge = !halve;
 	bool is_signed = insn->id == ARM_INS_SADD8 || insn->id == ARM_INS_SHADD8 || insn->id == ARM_INS_SSUB8 ||
 		insn->id == ARM_INS_SHSUB8;
-	if (set_ge) {
-		// Retroactively patch the ops to extend to 8 before the calculation because this is needed for ge
-		// Note: add/sub members here use the same structure, so using just `.add` is fine.
-		RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
-		r0->op.add.x = cast(9, r0->op.add.x);
-		r0->op.add.y = cast(9, r0->op.add.y);
-		r1->op.add.x = cast(9, r1->op.add.x);
-		r1->op.add.y = cast(9, r1->op.add.y);
-		r2->op.add.x = cast(9, r2->op.add.x);
-		r2->op.add.y = cast(9, r2->op.add.y);
-		r3->op.add.x = cast(9, r3->op.add.x);
-		r3->op.add.y = cast(9, r3->op.add.y);
-	}
+	// Retroactively patch the ops to extend to 9 before the calculation because ge and the halving need the carry
+	// Note: add/sub members here use the same structure, so using just `.add` is fine.
+	RzILOpBitVector *(*cast)(ut32 length, RzILOpBitVector *val) = is_signed ? rz_il_op_new_signed : rz_il_op_new_unsigned;
+	r0->op.add.x = cast(9, r0->op.add.x);
+	r0->op.add.y = cast(9, r0->op.add.y);
+	r1->op.add.x = cast(9, r1->op.add.x);
+	r1->op.add.y = cast(9, r1->op.add.y);
+	r2->op.add.x = cast(9, r2->op.add.x);
+	r2->op.add.y = cast(9, r2->op.add.y);
+	r3->op.add.x = cast(9, r3->op.add.x);
+	r3->op.add.y = cast(9, r3->op.add.y);
 	RzILOpBitVector *res;
 	if (halve) {
 		res = APPEND(
 			APPEND(
-				SHIFTRA(VARL("res3"), UN(3, 1)),
-				SHIFTRA(VARL("res2"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res3"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res2"), UN(3, 1)))),
 			APPEND(
-				SHIFTRA(VARL("res1"), UN(3, 1)),
-				SHIFTRA(VARL("res0"), UN(3, 1))));
+				UNSIGNED(8, SHIFTRA(VARL("res1"), UN(3, 1))),
+				UNSIGNED(8, SHIFTRA(VARL("res0"), UN(3, 1)))));
 	} else {
 		res = APPEND(
 			APPEND(
@@ -2189,10 +2196,11 @@ static RzILOpEffect *sadd8(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	if (set_ge) {
-		ut64 tval = is_signed ? 0 : 1;
+		// GE is the carry out of an unsigned sum, otherwise whether the result is >= 0
+		ut64 tval = !is_signed && add ? 1 : 0;
 		ut64 fval = 1 - tval;
 		eff = SEQ2(
-			SETL("gef",
+			SETG("gef",
 				APPEND(
 					APPEND(
 						ITE(MSB(VARL("res3")), UN(1, tval), UN(1, fval)),
