@@ -111,6 +111,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 		default:
 			eprintf("Invalid word size with asm.bits\n");
 			rz_list_free(list);
+			free(stack);
 			return NULL;
 		}
 		if (iscallret(dbg, addr)) {
