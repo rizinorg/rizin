@@ -38,6 +38,7 @@ RZ_API void rz_set_u_clear(RZ_NONNULL RzSetU *set);
 RZ_API ut32 rz_set_u_size(const RZ_NONNULL RzSetU *set);
 RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzIterator *iterator);
 RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...);
+RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...);
 
 #ifdef __cplusplus
 }
