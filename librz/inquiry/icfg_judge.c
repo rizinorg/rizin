@@ -290,7 +290,7 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	RzICFGConflictSolutionCfg config) {
 	RzVector *proc_entries = &icfg->proc_entries;
 
-	if (rz_set_u_size(node->proc_memberships) <= 1) {
+	if (node->memberships_n <= 1) {
 		return CFG_CONFLICT_VERDICT_SKIP;
 	}
 	ut64 node_addr = node->addr;

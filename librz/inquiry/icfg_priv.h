@@ -7,6 +7,9 @@
 #include "rz_inquiry/rz_icfg.h"
 #include <rz_analysis.h>
 #include <rz_core.h>
+#include <rz_util/rz_set.h>
+
+#define RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT 4
 
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
@@ -32,8 +35,14 @@ struct rz_icfg_node_t {
 	RzVector /*<ut16>*/ insn_offsets;
 	/**
 	 * \brief The procedures entry points this block can be reached from without walking a call edge.
+	 * Stored inline in \p arr as long as there are at most RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT members.
+	 * Otherwise a set is allocated and the members are moved into it.
 	 */
-	RzSetU *proc_memberships;
+	size_t memberships_n;
+	union {
+		RzSetU *set;
+		ut64 arr[RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT];
+	} proc_memberships;
 	/**
 	 * \brief Block attributes. Kept in sync with the CFG.
 	 * Used for accessing most important information, without the need to access the CFG edges.
