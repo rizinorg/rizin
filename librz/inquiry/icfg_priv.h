@@ -9,8 +9,6 @@
 #include <rz_core.h>
 #include <rz_util/rz_set.h>
 
-#define RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT 4
-
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
 	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
@@ -41,7 +39,7 @@ struct rz_icfg_node_t {
 	size_t memberships_n;
 	union {
 		RzSetU *set;
-		ut64 arr[RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT];
+		ut64 m;
 	} proc_memberships;
 	/**
 	 * \brief Block attributes. Kept in sync with the CFG.

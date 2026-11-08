@@ -6,15 +6,10 @@
 #include "rz_util/rz_set.h"
 
 static bool icfg_proc_memberships_contains(const RzICFGNode *node, ut64 proc_membership) {
-	if (node->memberships_n > RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+	if (node->memberships_n > 1) {
 		return rz_set_u_contains(node->proc_memberships.set, proc_membership);
 	}
-	for (size_t i = 0; i < node->memberships_n; ++i) {
-		if (node->proc_memberships.arr[i] == proc_membership) {
-			return true;
-		}
-	}
-	return false;
+	return node->proc_memberships.m == proc_membership;
 }
 
 /**
@@ -29,18 +24,17 @@ static bool icfg_proc_memberships_add(RZ_NONNULL RzICFGNode *node, ut64 proc_mem
 	if (icfg_proc_memberships_contains(node, proc_membership)) {
 		return false;
 	}
-	if (node->memberships_n < RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
-		node->proc_memberships.arr[node->memberships_n++] = proc_membership;
+	if (node->memberships_n < 1) {
+		node->proc_memberships.m = proc_membership;
+		node->memberships_n++;
 		return true;
 	}
-	if (node->memberships_n == RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+	if (node->memberships_n == 1) {
 		RzSetU *set = rz_set_u_new();
 		if (!set) {
 			return false;
 		}
-		for (size_t i = 0; i < node->memberships_n; ++i) {
-			rz_set_u_add(set, node->proc_memberships.arr[i]);
-		}
+		rz_set_u_add(set, node->proc_memberships.m);
 		node->proc_memberships.set = set;
 		node->memberships_n++;
 		rz_set_u_add(set, proc_membership);
@@ -52,7 +46,7 @@ static bool icfg_proc_memberships_add(RZ_NONNULL RzICFGNode *node, ut64 proc_mem
 }
 
 static void icfg_proc_memberships_fini(RzICFGNode *node) {
-	if (node->memberships_n > RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+	if (node->memberships_n > 1) {
 		rz_set_u_free(node->proc_memberships.set);
 	}
 	node->memberships_n = 0;
