@@ -218,3 +218,63 @@ RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzI
 	rz_return_val_if_fail(set, false);
 	return ht_up_as_iter_keys((const HtUP *)set, iterator);
 }
+
+/**
+ * \brief Determines the union set of all given sets.
+ *
+ * \param union_set Optional pointer to the set where the union is written to.
+ *                  Already existing elements in the set are kept.
+ * \param ... The sets to build the union from. They are of type (const RzSetU *).
+ *            The list must be terminated by NULL.
+ *
+ * \return The size of the union set or SZT_MAX in case of error.
+ */
+RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
+	va_list ap;
+	va_start(ap, union_set);
+
+	RzSetU *s = union_set;
+	bool created = !s;
+	if (!s) {
+		s = rz_set_u_new();
+		if (!s) {
+			va_end(ap);
+			rz_warn_if_reached();
+			return SZT_MAX;
+		}
+	}
+
+	bool failed = false;
+	for (;;) {
+		const RzSetU *cur = va_arg(ap, const RzSetU *);
+		if (!cur) {
+			break;
+		}
+		if (cur == s) {
+			// Its elements are already part of the union and inserting
+			// them would modify the set we are iterating over.
+			continue;
+		}
+		RzIterator it = (RzIterator){ 0 };
+		if (!rz_set_u_as_iter(cur, &it)) {
+			failed = true;
+			rz_warn_if_reached();
+			break;
+		}
+		const ut64 *u;
+		rz_iterator_foreach(&it, u) {
+			rz_set_u_add(s, *u);
+		}
+		rz_iterator_fini(&it);
+		if (failed) {
+			break;
+		}
+	}
+	va_end(ap);
+
+	size_t size = rz_set_u_size(s);
+	if (created) {
+		rz_set_u_free(s);
+	}
+	return failed ? SZT_MAX : size;
+}

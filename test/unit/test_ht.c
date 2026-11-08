@@ -965,6 +965,58 @@ bool test_set_u(void) {
 	mu_end;
 }
 
+bool test_set_u_union(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	rz_set_u_add(a, 1);
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+	rz_set_u_add(b, 2);
+	rz_set_u_add(b, 3);
+	rz_set_u_add(b, 4);
+	rz_set_u_add(c, 5);
+
+	// Compute union into a freshly allocated set
+	size_t union_size = rz_set_u_union(NULL, a, b, c, NULL);
+	mu_assert_eq(union_size, 5, "Wrong union size");
+	union_size = rz_set_u_union(NULL, NULL);
+	mu_assert_eq(union_size, 0, "Wrong union size for empty list");
+
+	// Compute union into a caller-provided set
+	RzSetU *u = rz_set_u_new();
+	rz_set_u_add(u, 100);
+	union_size = rz_set_u_union(u, a, b, c, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size");
+	mu_assert_true(rz_set_u_contains(u, 100), "Union did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(u, 4), "Union does not contain all elements");
+	mu_assert_true(rz_set_u_contains(u, 5), "Union does not contain all elements");
+
+	// Passing the union set itself must not change the result
+	union_size = rz_set_u_union(u, a, u, b, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size when passing the union set itself");
+
+	// Passing the same set multiple times must not change the result
+	union_size = rz_set_u_union(NULL, a, a, a, b, NULL);
+	mu_assert_eq(union_size, 4, "Wrong union size when passing a set multiple times");
+	union_size = rz_set_u_union(NULL, a, a, a, NULL);
+	mu_assert_eq(union_size, 3, "Wrong union size when passing a set multiple times");
+	union_size = rz_set_u_union(u, a, a, b, b, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size when passing sets multiple times");
+	mu_assert_true(rz_set_u_contains(u, 100), "Union did not keep previous elements");
+
+	// A set in the list must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(b), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(u);
+	rz_set_u_free(c);
+	rz_set_u_free(b);
+	rz_set_u_free(a);
+	mu_end;
+}
+
 bool test_set_s(void) {
 	RzSetS *set_s = rz_set_s_new(HT_STR_CONST);
 	rz_set_s_add(set_s, "0x5050505");
@@ -1053,6 +1105,7 @@ int all_tests() {
 	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
 	mu_run_test(test_set_u);
+	mu_run_test(test_set_u_union);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }
