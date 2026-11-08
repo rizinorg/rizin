@@ -4385,6 +4385,10 @@ RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, in
 
 RZ_IPI RzCmdStatus rz_analysis_function_add_nodepth_handler(RzCore *core, int argc, const char **argv) {
 	rz_core_analysis_fcn(core, core->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, core->offset, 0);
+	if (fcn && (!strncmp(fcn->name, "sym.go.", 7) || (fcn->cc && !strncmp(fcn->cc, "golang", 6)))) {
+		rz_core_analysis_resolve_golang_fcn_strings(core, fcn);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 

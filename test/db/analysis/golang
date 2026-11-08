@@ -504,7 +504,7 @@ TAIL
 0x1000872ad 6 6 []byte
 0x10008ca10 36 36 syntax error scanning complex number
 0x10008b454 29 29 syntax error scanning boolean
-1709
+1708
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
 0x10008be19 32 32 slice bounds out of range [::%x]
@@ -870,7 +870,7 @@ TAIL
 0x4ae5d3 6 6 enable
 0x4ae40d 4 4 name
 0x4ae3a1 3 3 bar
-20681
+20680
 EOF
 RUN
 
@@ -935,5 +935,42 @@ TAIL
 0x4a2d4d 4 4 name
 0x4a2ce1 3 3 bar
 3249
+EOF
+RUN
+
+NAME=Recover Golang symbols lazily without eager function analysis
+FILE=bins/golang/go-re-sample-linux-amd64-go121
+CMDS=<<EOF
+e analysis.golang.fcns=false
+aalg
+fl~sym.go.~?
+afl~?
+af @ sym.main.main
+afc @ sym.main.main
+pdfs @ sym.main.main ~str.
+aF @ sym.os.Exit
+afi @ sym.os.Exit ~noreturn
+EOF
+EXPECT=<<EOF
+1587
+0
+golang
+0x004875b7 str.foo
+0x00487612 str.enable
+0x00487620 str.enable
+0x00487630 str.name
+0x00487640 str.name
+0x00487672 str.bar
+0x004876cd str.level
+0x004876db str.level
+0x004877c8 str.subcommand__bar
+0x00487815 str.level:
+0x0048789d str.tail:
+0x00487942 str.subcommand__foo
+0x00487995 str.enable:
+0x00487a12 str.name:
+0x00487a9e str.tail:
+0x00487b00 str.expected__foo__or__bar__subcommands
+noreturn: true
 EOF
 RUN
