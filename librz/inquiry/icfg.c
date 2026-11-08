@@ -5,13 +5,66 @@
 #include "icfg_priv.h"
 #include "rz_util/rz_set.h"
 
+static bool icfg_proc_memberships_contains(const RzICFGNode *node, ut64 proc_membership) {
+	if (node->memberships_n > RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+		return rz_set_u_contains(node->proc_memberships.set, proc_membership);
+	}
+	for (size_t i = 0; i < node->memberships_n; ++i) {
+		if (node->proc_memberships.arr[i] == proc_membership) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Adds a procedure entry point to the memberships of \p node.
+ *
+ * Memberships are kept inline in an array as long as there are at most RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT of them.
+ * Only if more are needed, a set is allocated and all members are moved into it.
+ *
+ * \return True if \p proc_membership was newly added, false if it was already a member or on allocation failure.
+ */
+static bool icfg_proc_memberships_add(RZ_NONNULL RzICFGNode *node, ut64 proc_membership) {
+	if (icfg_proc_memberships_contains(node, proc_membership)) {
+		return false;
+	}
+	if (node->memberships_n < RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+		node->proc_memberships.arr[node->memberships_n++] = proc_membership;
+		return true;
+	}
+	if (node->memberships_n == RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+		RzSetU *set = rz_set_u_new();
+		if (!set) {
+			return false;
+		}
+		for (size_t i = 0; i < node->memberships_n; ++i) {
+			rz_set_u_add(set, node->proc_memberships.arr[i]);
+		}
+		node->proc_memberships.set = set;
+		node->memberships_n++;
+		rz_set_u_add(set, proc_membership);
+		return true;
+	}
+	rz_set_u_add(node->proc_memberships.set, proc_membership);
+	node->memberships_n++;
+	return true;
+}
+
+static void icfg_proc_memberships_fini(RzICFGNode *node) {
+	if (node->memberships_n > RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT) {
+		rz_set_u_free(node->proc_memberships.set);
+	}
+	node->memberships_n = 0;
+}
+
 static void rz_icfg_node_free(RZ_NULLABLE RZ_OWN RzICFGNode *node) {
 	rz_return_if_fail(node);
 	if (!node) {
 		return;
 	}
 	rz_vector_fini(&node->insn_offsets);
-	rz_set_u_free(node->proc_memberships);
+	icfg_proc_memberships_fini(node);
 	free(node);
 }
 
@@ -58,11 +111,6 @@ static RZ_OWN RzICFGNode *icfg_node_new(ut64 addr, size_t size, RZ_NONNULL const
 	if (!node) {
 		return NULL;
 	}
-	node->proc_memberships = rz_set_u_new();
-	if (!node->proc_memberships) {
-		free(node);
-		return NULL;
-	}
 	node->addr = addr;
 	node->size = size;
 	rz_vector_clone_into(&node->insn_offsets, insn_offsets);
@@ -89,7 +137,11 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 			rz_warn_if_reached();
 			return false;
 		}
-		rz_set_u_add(node->proc_memberships, proc_membership);
+		if (!icfg_proc_memberships_add(node, proc_membership)) {
+			rz_icfg_node_free(node);
+			rz_warn_if_reached();
+			return false;
+		}
 		if (rz_graph_add_node(icfg->graph, node, NULL) != RZ_GRAPH_STATUS_OK) {
 			rz_warn_if_reached();
 			return false;
@@ -111,9 +163,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	}
 	// END
 
-	rz_set_u_add(node->proc_memberships, proc_membership);
-
-	if (rz_set_u_size(node->proc_memberships) > 1) {
+	if (icfg_proc_memberships_add(node, proc_membership) && node->memberships_n > 1) {
 		rz_set_u_add(icfg->node_conflicts, (utptr)node);
 	}
 
