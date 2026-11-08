@@ -396,7 +396,7 @@ verdict:
 }
 
 /**
- * \brief It requires symbol and function information to be set.
+ * \brief Resolves conflicts for blocks which were executed by multiple functions.
  */
 RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	RZ_NONNULL RzBin *bin,
@@ -406,17 +406,74 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	if (rz_set_u_size(icfg->node_conflicts) == 0) {
 		return true;
 	}
-
-	RzIterator iter = { 0 };
-	if (!rz_set_u_as_iter(icfg->node_conflicts, &iter)) {
-		rz_warn_if_reached();
+	if (rz_vector_len(&icfg->prepared_edges) != 0) {
+		RZ_LOG_ERROR("All ICFG edges must be applied before resolving conflicts.\n");
 		return false;
 	}
-	utptr *nit;
-	rz_iterator_foreach(&iter, nit) {
-		const RzICFGNode *node = *(const RzICFGNode **)nit;
-		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, node, cfg);
-		printf("Node 0x%08lx: %s\n", node->addr, node_verdict_names[verdict]);
+
+	RzIterator iter = { 0 };
+	while (rz_set_u_size(icfg->node_conflicts) > 0) {
+		utptr nptr = rz_set_u_take(icfg->node_conflicts);
+		const RzICFGNode *cf_node = (const RzICFGNode *)nptr;
+
+		if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter) || cf_node->memberships_n == 1) {
+			// This node shouldn't be a conflict node to begin with.
+			// Conflict nodes require at least two incoming edges.
+			rz_warn_if_reached();
+			continue;
+		}
+
+		// Check if the intersection of the parent
+		// function memberships is the same as the conflict node's memberships.
+		// If that is the case, the current conflict node can be ignored.
+		// Because it can't be an entry point of a potentially tail called
+		// CFG.
+		//
+		// Example:
+		// node(membership_0, membership_1, ...)
+		//
+		// Case I: Ths is the case we test for here:
+		//
+		// parent0(A, B)-+
+		//               +->conflict(A, B)
+		// parent1(A, B)-+
+		//
+		// Case II: On the contrary, if we have the following situation:
+		// parent0(C)----+
+		//               +->conflict(A, B, C)
+		// parent1(A, B)-+
+		//
+		// We have to make a decission again, if conflict(A, B, C) node is an
+		// entry point or shared between A, B, C.
+		RzSetU *inter_set = rz_set_u_new();
+		if (!inter_set) {
+			rz_warn_if_reached();
+			return false;
+		}
+		bool is_case_2 = false;
+		RzGraphEdge *in_edge;
+		rz_iterator_foreach(&iter, in_edge) {
+			const RzGraphNode *g_pnode = rz_graph_edge_get_from(in_edge);
+			const RzICFGNode *parent = rz_graph_node_get_data(g_pnode);
+			if (parent->memberships_n == 1) {
+				// The conflict node has at least 2 memberships.
+				// So we know we have Case II here.
+				is_case_2 = true;
+				break;
+			}
+			if (rz_set_u_intersection(inter_set, inter_set, parent->proc_memberships.set, NULL) != cf_node->memberships_n) {
+				is_case_2 = true;
+				break;
+			}
+		}
+		rz_iterator_fini(&iter);
+		if (!is_case_2) {
+			// Node doesn't have to be solved. It is part of another
+			// conflict node's subgraph.
+			continue;
+		}
+		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_node, cfg);
+		printf("Node 0x%08lx: %s\n", cf_node->addr, node_verdict_names[verdict]);
 
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP:
