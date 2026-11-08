@@ -473,6 +473,38 @@ bool test_sdb_text_save() {
 	mu_end;
 }
 
+bool test_sdb_text_save_large_buffer() {
+	Sdb *db = sdb_new0();
+	Sdb *sub = sdb_ns(db, "large_ns", true);
+	for (int i = 0; i < 3000; i++) {
+		char k[64], v[96];
+		snprintf(k, sizeof(k), "sym.go.pkg.func_%04d", i);
+		snprintf(v, sizeof(v), "{\"addr\":%d,\"name\":\"sym.go.pkg.func_%04d\",\"cc\":\"golang\"}", 0x401000 + i * 16, i);
+		sdb_set(sub, k, v);
+	}
+	char *huge_val = malloc(70000);
+	mu_assert_notnull(huge_val, "alloc huge_val");
+	memset(huge_val, 'A', 69999);
+	huge_val[69999] = '\0';
+	sdb_set(sub, "huge_blob", huge_val);
+	free(huge_val);
+
+	mu_assert_false(sdb_text_save_fd(db, -1, false), "buffered text save to invalid fd fails");
+
+	const char *fname = ".text_save_large";
+	mu_assert_true(sdb_text_save(db, fname, false), "buffered text save >64KB");
+
+	Sdb *loaded = sdb_new0();
+	mu_assert_true(sdb_text_load(loaded, fname), "buffered text load >64KB");
+	unlink(fname);
+
+	bool eq = sdb_diff(db, loaded, NULL, NULL);
+	sdb_free(db);
+	sdb_free(loaded);
+	mu_assert_true(eq, "roundtrip equality across >64KB buffered chunks and direct oversized write");
+	mu_end;
+}
+
 static void diff_cb(const SdbDiff *diff, void *user) {
 	char buf[2048];
 	if (sdb_diff_format(buf, sizeof(buf), diff) < 0) {
@@ -641,6 +673,7 @@ int all_tests() {
 	mu_run_test(test_sdb_text_save_simple_unsorted);
 	mu_run_test(test_sdb_text_load_simple);
 	mu_run_test(test_sdb_text_save);
+	mu_run_test(test_sdb_text_save_large_buffer);
 	mu_run_test(test_sdb_text_load);
 	mu_run_test(test_sdb_text_load_bad_nl);
 	mu_run_test(test_sdb_text_load_broken);
