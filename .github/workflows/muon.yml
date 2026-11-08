@@ -11,6 +11,7 @@ on:
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/muon.yml'
+    - '.github/actions/cache-subprojects/**'
     branches:
     - 'dev'
     - 'stable'
@@ -25,6 +26,7 @@ on:
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/muon.yml'
+    - '.github/actions/cache-subprojects/**'
     branches:
     - 'dev'
     - 'stable'
@@ -58,6 +60,9 @@ jobs:
           build/muon-bootstrap setup build
           ninja -C build
           sudo cp build/muon /usr/bin/muon
+
+    - name: Cache and pre-download subprojects
+      uses: ./.github/actions/cache-subprojects
 
     - name: Muon setup
       run: muon setup build

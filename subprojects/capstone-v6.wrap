@@ -1,5 +1,6 @@
 [wrap-file]
 source_url = https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha10/capstone-6.0.0-Alpha10.tar.xz
+source_fallback_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/capstone-6.0.0-Alpha10.tar.xz
 source_filename = capstone-6.0.0-Alpha10.tar.xz
 source_hash = 3eabbad2c6e6b6904c78c72110527e5c560a245421fcc2dfbb135aa292a95e94
 directory = capstone-6.0.0-Alpha10
