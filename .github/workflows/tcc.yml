@@ -11,6 +11,7 @@ on:
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/tcc.yml'
+    - '.github/actions/cache-subprojects/**'
     branches:
     - 'dev'
     - 'stable'
@@ -27,6 +28,7 @@ on:
     - 'subprojects/**'
     - 'test/**'
     - '.github/workflows/tcc.yml'
+    - '.github/actions/cache-subprojects/**'
     branches:
     - 'dev'
     - 'stable'
@@ -83,6 +85,9 @@ jobs:
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
+
+    - name: Cache and pre-download subprojects
+      uses: ./.github/actions/cache-subprojects
 
     - name: Muon setup
       env:
