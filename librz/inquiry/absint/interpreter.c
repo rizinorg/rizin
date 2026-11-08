@@ -405,22 +405,27 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 	}
 	case RZ_IL_OP_ITE: {
 		EVAL_SUB_OR_RETURN(pure->op.ite.condition, out);
-		RzBitVector cond_bv;
-		rz_bv_init(&cond_bv, 64);
-		if (!val_domain(ctx->inst)->to_concrete_const(out, &cond_bv)) {
-			// Can't decide which pure to evaluate.
-			// TODO: must eval both and join instead!
-			rz_bv_fini(&cond_bv);
-			goto map_to_top;
-		}
-		bool cond_bool = !rz_bv_is_zero_vector(&cond_bv);
-		rz_bv_fini(&cond_bv);
-
-		// TODO: eval both if top
-		if (cond_bool) {
+		bool may_be_true = val_domain(ctx->inst)->may_be_bool(out, true);
+		bool may_be_false = val_domain(ctx->inst)->may_be_bool(out, false);
+		if (may_be_true && !may_be_false) {
+			// the condition is definitely true
 			EVAL_SUB_OR_RETURN(pure->op.ite.x, out);
-		} else {
+		} else if (may_be_false && !may_be_true) {
+			// the condition is definitely false
 			EVAL_SUB_OR_RETURN(pure->op.ite.y, out);
+		} else {
+			// Can't decide which pure to evaluate
+			// Must eval both and join, as the TOP condition may concretize to either true or false
+			EVAL_SUB_OR_RETURN(pure->op.ite.x, out);
+			// false arm
+			RzAbsIntVal *another = val_domain(ctx->inst)->val_new_top();
+			if (!another) {
+				goto map_to_top;
+			}
+			EVAL_SUB_OR_RETURN_CLEANUP(pure->op.ite.y, another, { val_domain(ctx->inst)->val_free(another); });
+
+			val_domain(ctx->inst)->join(out, another);
+			val_domain(ctx->inst)->val_free(another);
 		}
 		break;
 	}
