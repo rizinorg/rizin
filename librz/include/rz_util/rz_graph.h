@@ -122,6 +122,11 @@ struct rz_graph_visitor_t_new {
 	void (*tree_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
 	void (*back_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
 	void (*fcross_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
+	/**
+	 * \brief Returns false if edge should not be walked.
+	 * The handlers above won't be called for this edge.
+	 */
+	bool (*edge_selector)(const RzGraphEdge *e, RzGraphVisitor *vis);
 	void *visitor_data; ///< caller-owned context passed to node/edge callbacks
 };
 
