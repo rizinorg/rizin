@@ -145,6 +145,11 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "serialcorr", .expected = "-0.16463233" },
 	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" },
 	{ INDATA("password"), .algo = "ripemd160", .expected = "2c08e8f5884750a7b99f6f2f342fc638db25ff31" },
+
+	// Edge case tests for ripemd160 (idk if i shouldve put it here)
+	{ INDATA(""), .algo = "ripemd160", .expected = "9c1185a5c5e9fc54612808977ee8f548b2258d31" },
+	{ INDATA("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), .algo = "ripemd160", .expected = "eed82d19d597ab275b550ff3d6e0bc2a75350388" } // long input
+
 #undef INDATA
 };
 
