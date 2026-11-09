@@ -128,6 +128,19 @@ RZ_API ut32 rz_hash_xxhash(RZ_NONNULL const ut8 *input, size_t size) {
 }
 
 /**
+ * \brief      Calculates the xxhash digest (64bit) of the given input
+ *
+ * \param[in]  input  The input buffer
+ * \param[in]  size   The size of the input
+ *
+ * \return     The resulting 64 bit digest of the input
+ */
+RZ_API ut64 rz_hash_xxhash64(RZ_NONNULL const ut8 *input, size_t size) {
+	rz_return_val_if_fail(input, 0);
+	return XXH64(input, size, 0);
+}
+
+/**
  * \brief      Calculates the information temperature of the given input
  *
  * \param[in]  data  The input buffer
