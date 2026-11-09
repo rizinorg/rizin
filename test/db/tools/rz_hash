@@ -1631,3 +1631,25 @@ EXPECT=<<EOF
 bins/elf/analysis/hello-arm32: 0x00000000-0x0000090c ssdeep: 48:p/701NYJSaSiTBBhd8KHk/MYBWQ3Vtx/J0:p/7EqTBBvI/MYBW+ZJ0
 EOF
 RUN
+
+NAME=rz-hash winedbg:// missing file
+TOOL=rz-hash
+ARGS=-a md5 winedbg://.tmp/winedbg_rzhash_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzhash_missing'
+ERROR: rz-hash: error, cannot open file 'winedbg://.tmp/winedbg_rzhash_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-hash winedbg:// issue #6952 payload
+TOOL=rz-hash
+ARGS=-a md5 winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+ERROR: rz-hash: error, cannot open file 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
+RUN

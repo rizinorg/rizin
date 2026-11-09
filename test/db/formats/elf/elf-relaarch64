@@ -121,9 +121,9 @@ EXPECT=<<EOF
             ;-- reloc..data.8000130:
             0x08000130      adrp  x0, 0xfffffffffffff000               ; RELOC 0 .data @ 0x08000178
             ;-- reloc..data.8000134:
-            0x08000134      ldr   x0, [x0, 0x6000]                     ; [0x6000:4]=-1; RELOC 0 .data @ 0x08000178
+            0x08000134      ldr   x0, [x0, 0x6000]                     ; RELOC 0 .data @ 0x08000178
             ;-- reloc..data.8000138:
-            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:4]=-1; RELOC 32 .data @ 0x08000178 - 0x8000138
+            0x08000138      ldr   x1, 0x7fffffc                        ; [0x7fffffc:8]=0x464c457fffffffff; RELOC 32 .data @ 0x08000178 - 0x8000138
 EOF
 RUN
 
@@ -147,19 +147,19 @@ EXPECT=<<EOF
             ;-- reloc..data.80000c0:
             0x080000c0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xa
             ;-- reloc..data.80000c4:
-            0x080000c4      ldrh  w1, [x0, 0x800]                      ; [0x800:4]=-1 ; 2048; RELOC 64 .data @ 0x08000178 + 0xa
+            0x080000c4      ldrh  w1, [x0, 0x800]                      ; RELOC 64 .data @ 0x08000178 + 0xa
             ;-- reloc..data.80000c8:
             0x080000c8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0xc
             ;-- reloc..data.80000cc:
-            0x080000cc      ldr   w1, [x0, 0x1000]                     ; [0x1000:4]=-1; RELOC 64 .data @ 0x08000178 + 0xc
+            0x080000cc      ldr   w1, [x0, 0x1000]                     ; RELOC 64 .data @ 0x08000178 + 0xc
             ;-- reloc..data.80000d0:
             0x080000d0      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x10
             ;-- reloc..data.80000d4:
-            0x080000d4      ldr   x1, [x0, 0x2000]                     ; [0x2000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x10
+            0x080000d4      ldr   x1, [x0, 0x2000]                     ; RELOC 64 .data @ 0x08000178 + 0x10
             ;-- reloc..data.80000d8:
             0x080000d8      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 .data @ 0x08000178 + 0x20
             ;-- reloc..data.80000dc:
-            0x080000dc      ldr   q0, [x0, 0x4000]                     ; [0x4000:4]=-1; RELOC 64 .data @ 0x08000178 + 0x20
+            0x080000dc      ldr   q0, [x0, 0x4000]                     ; RELOC 64 .data @ 0x08000178 + 0x20
 EOF
 RUN
 
@@ -216,8 +216,8 @@ EXPECT=<<EOF
             ;-- _start:
             0x08000040      adrp  x0, segment.ehdr                     ; 0x8000000; RELOC 0 _GLOBAL_OFFSET_TABLE_ ; [02] -r-x section size 12 named .text
             ;-- reloc.global1:
-            0x08000044      ldr   x0, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global1 @ 0x00000008
+            0x08000044      ldr   x0, [x0, 0x7ff8]                     ; RELOC 0 global1 @ 0x00000008
             ;-- reloc.global2:
-            0x08000048      ldr   x1, [x0, 0x7ff8]                     ; [0x7ff8:4]=-1; RELOC 0 global2 @ 0x00000008
+            0x08000048      ldr   x1, [x0, 0x7ff8]                     ; RELOC 0 global2 @ 0x00000008
 EOF
 RUN

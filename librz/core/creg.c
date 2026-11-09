@@ -59,11 +59,9 @@ RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64
 
 /// Construct the list of registers that should be applied as flags by default
 /// (e.g. because their size matches the pointer size)
+/// \return The candidates, empty without general-purpose registers, NULL on allocation failure
 RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg) {
 	const RzList *l = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
-	if (!l) {
-		return NULL;
-	}
 	int size = rz_analysis_get_address_bits(core->analysis);
 	RzList *ret = rz_list_new();
 	if (!ret) {

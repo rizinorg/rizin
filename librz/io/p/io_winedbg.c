@@ -164,13 +164,68 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "winedbg://", 10));
 }
 
+/**
+ * \brief build the command to run winedbg on a file
+ * \param file Path of the file to open in winedbg
+ * \return the command on success
+ * \return NULL if the file name contains a disallowed character
+ *
+ * The file path is put in a single 'quote', with every ' in it written
+ * as '\'' so that winedbg gets only one argument, the file path.
+ * Characters $, " and ` are not allowed in the file name.
+ */
+static char *winedbg_cmd_new(const char *file) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_append(&sb, "winedbg '");
+	for (const char *p = file; *p; p++) {
+		if (*p == '"' || *p == '$' || *p == '`') {
+			goto fail;
+		}
+		bool ok = *p == '\''
+			? rz_strbuf_append(&sb, "'\\''")
+			: rz_strbuf_append_n(&sb, p, 1);
+		if (!ok) {
+			goto fail;
+		}
+	}
+	if (!rz_strbuf_append(&sb, "'")) {
+		goto fail;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+fail:
+	rz_strbuf_fini(&sb);
+	return NULL;
+}
+
+/**
+ * \brief WineDbg IO plugin file open handler
+ * \param io RzIO instance
+ * \param pathname Name of executable file to open in winedbg.
+ *        Characters $, " and ` are not allowed in file name
+ * \param rw UNUSED
+ * \param mode UNUSED
+ * \return non NULL RzIODesc instance on success
+ * \return NULL otherwise
+ *
+ * Opens a communication socket with winedbg for debugging.
+ */
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open(io, pathname, 0)) {
 		if (gs) {
 			return NULL;
 		}
+		const char *file = pathname + 10;
+		if (!rz_file_exists(file)) {
+			RZ_LOG_ERROR("winedbg: cannot find file '%s'\n", file);
+			return NULL;
+		}
+		char *cmd = winedbg_cmd_new(file);
+		if (!cmd) {
+			RZ_LOG_ERROR("winedbg: refusing to run unsafe command for file '%s'\n", file);
+			return NULL;
+		}
 		gs = rz_socket_new(0);
-		char *cmd = rz_str_newf("winedbg '%s'", pathname + 10);
 		int res = rz_socket_spawn(gs, cmd, 1000);
 		free(cmd);
 		if (!res) {

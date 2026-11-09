@@ -33,12 +33,18 @@ HEAPTYPE(ut64);
 		rz_core_reg_update_flags(core); \
 	} while (0)
 
+/**
+ * \brief Select registers by name, role, type, or size.
+ *
+ * Empty register classes may have no list after profile replacement.
+ * \return A list of borrowed items, or NULL for an invalid filter or allocation failure.
+ */
 static RzList /*<RzRegItem *>*/ *filter_reg_items(RzReg *reg, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(reg, NULL);
-	// default
 	if (RZ_STR_ISEMPTY(filter)) {
-		// default selection (only gpr, omit smaller regs that are fully covered by larger ones)
-		return rz_reg_filter_items_covered(reg->regset[RZ_REG_TYPE_GPR].regs);
+		// Select general-purpose registers and omit covered subregisters.
+		const RzList *items = reg->regset[RZ_REG_TYPE_GPR].regs;
+		return items ? rz_reg_filter_items_covered(items) : rz_list_new();
 	}
 	// all
 	if (!strcmp(filter, "all")) {
@@ -64,7 +70,8 @@ static RzList /*<RzRegItem *>*/ *filter_reg_items(RzReg *reg, RZ_NULLABLE const 
 	// type
 	int type = rz_reg_type_by_name(filter);
 	if (type >= 0) {
-		return rz_list_clone(reg->regset[type].regs);
+		const RzList *items = reg->regset[type].regs;
+		return items ? rz_list_clone(items) : rz_list_new();
 	}
 	// role
 	int role = rz_reg_role_by_name(filter);
@@ -193,7 +200,8 @@ static const char *get_reg_role_name(RzReg *reg, RzRegItem *item) {
  * \param reg The RzReg instance
  * \param sync_cb Callback for synchronizing register state in command
  * \param filter Filter registers
- * \return List of RzRegItem
+ * \return An owned list of borrowed register items, possibly empty.
+ * Returns NULL for an invalid filter, allocation failure, or synchronization failure.
  */
 RZ_API RZ_OWN RzList /*<RzRegItem *>*/ *rz_core_reg_filter_items_sync(RZ_NONNULL RzCore *core, RZ_NONNULL RzReg *reg, RzCmdRegSync sync_cb, RZ_NULLABLE const char *filter) {
 	rz_return_val_if_fail(core && reg, NULL);

@@ -513,6 +513,40 @@ static void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
 	}
 }
 
+/**
+ * \brief Record an additional data xref to the pointer loaded by a pointer-sized load.
+ *
+ * Loads of pointer-sized values from a computable address, such as ARM
+ * PC-relative literal pools (`ldr r4, [pc, #imm]`) or MIPS GOT slots, usually
+ * load a pointer to the data that the function actually accesses. Resolving
+ * this single level of indirection makes the datarefs of a function contain
+ * the final destination and not only the intermediate pointer, which is what
+ * other tools (e.g. IDA) show for such instructions.
+ *
+ * The direct xref to the pointer location itself is kept, the pointer is only
+ * followed when its value is a valid (readable and mapped) address, and no
+ * recursion is performed. Like the ESIL analysis, values below 0x100 and
+ * all-ones values are not taken as pointers, since NULL or unrelocated slots
+ * hold them.
+ */
+static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op) {
+	RzIOBind *iob = &analysis->iob;
+	if (!iob->read_at) {
+		return;
+	}
+	ut8 buf[8] = { 0 };
+	if (!iob->read_at(iob->io, op->ptr, buf, op->refptr)) {
+		return;
+	}
+	ut64 ref = rz_read_ble(buf, analysis->big_endian, op->refptr * 8);
+	if (ref < 0x100 || ref == UT32_MAX || ref == UT64_MAX || ref == op->ptr) {
+		return;
+	}
+	// rz_analysis_xrefs_set() itself discards targets that are not valid
+	// (readable and mapped) addresses.
+	rz_analysis_xrefs_set(analysis, op->addr, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+}
+
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
@@ -977,7 +1011,15 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters
-			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+			bool ptr_ref = rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+			// Follow one level of pointer indirection for pointer-sized
+			// loads (e.g. ARM PC-relative literal pools or MIPS GOT slots),
+			// so datarefs also contain the pointed-to data.
+			if (ptr_ref && (op.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_LOAD &&
+				(op.refptr == 4 || op.refptr == 8) &&
+				(!op.ptrsize || op.ptrsize == op.refptr)) {
+				analysis_fcn_follow_pointer_load(analysis, &op);
+			}
 		}
 		analyze_retpoline(analysis, &op);
 
@@ -1128,6 +1170,27 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		case RZ_ANALYSIS_OP_TYPE_NOP:
 			// do nothing, because the nopskip goes before this switch
 			break;
+		case RZ_ANALYSIS_OP_TYPE_SWITCH:
+			if (op.switch_op) {
+				RzListIter *iter;
+				RzAnalysisCaseOp *caseop;
+				rz_list_foreach (op.switch_op->cases, iter, caseop) {
+					rz_analysis_xrefs_set(analysis, op.addr, caseop->jump, RZ_ANALYSIS_XREF_TYPE_CODE);
+					rz_analysis_task_item_new(analysis, tasks, fcn, NULL, caseop->jump, sp);
+				}
+			}
+			if (op.fail != UT64_MAX) {
+				rz_analysis_xrefs_set(analysis, op.addr, op.fail, RZ_ANALYSIS_XREF_TYPE_CODE);
+				rz_analysis_task_item_new(analysis, tasks, fcn, NULL, op.fail, sp);
+			}
+			if (!overlapped) {
+				set_bb_branches(bb, UT64_MAX, op.fail);
+				// Keep decoded cases alive for CFG traversal after the op is finalized.
+				rz_analysis_switch_op_free(bb->switch_op);
+				bb->switch_op = op.switch_op;
+				op.switch_op = NULL;
+			}
+			gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if (op.jump == UT64_MAX) {
 				gotoBeach(RZ_ANALYSIS_RET_END);

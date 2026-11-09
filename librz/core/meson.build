@@ -55,6 +55,7 @@ rz_core_sources = [
   'devirtualize_cxx.c',
   'devirtualize_dlang.c',
   'devirtualize_objc.c',
+  'devirtualize_rust.c',
   'disasm.c',
   'fortune.c',
   'golang.c',
