@@ -395,6 +395,124 @@ verdict:
 	return pick_verdict(&score);
 }
 
+// Check if the intersection of the parent
+// function memberships is the same as the conflict node's memberships.
+// If that is the case, the current conflict node can be ignored.
+// Because it can't be an entry point of a potentially tail called
+// CFG.
+//
+// Example:
+// node(membership_0, membership_1, ...)
+//
+// Case I - Here we do not need to resolve the conflict node. It is part
+// the the sub-graph of its parents. They will be solved once their entry point
+// conflict is solved:
+//
+// parent0(A, B)-+
+//               +->conflict(A, B)
+// parent1(A, B)-+
+//
+// Case II - On the contrary, if we have the following situation,
+// we have to make a decission again, if conflict(A, B, C) node is an
+// entry point or shared between A, B, C.
+//
+// parent0(C)----+
+//               +->conflict(A, B, C)
+// parent1(A, B)-+
+//
+static bool node_needs_judgement(RzICFG *icfg, const RzICFGNode *cf_node) {
+	RzSetU *inter_set = rz_set_u_new();
+	if (!inter_set) {
+		rz_warn_if_reached();
+		return false;
+	}
+	RzIterator iter = { 0 };
+
+	if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter) || cf_node->memberships_n == 1) {
+		// This node shouldn't be a conflict node to begin with.
+		// Conflict nodes require at least two incoming edges.
+		rz_warn_if_reached();
+		return false;
+	}
+	bool needs_judgement = false;
+	RzGraphEdge *in_edge;
+	rz_iterator_foreach(&iter, in_edge) {
+		const RzGraphNode *g_pnode = rz_graph_edge_get_from(in_edge);
+		const RzICFGNode *parent = rz_graph_node_get_data(g_pnode);
+		if (parent->memberships_n == 1) {
+			// The conflict node has at least 2 memberships, but the parent doesn't.
+			// So we know we have Case II here.
+			needs_judgement = true;
+			break;
+		}
+		if (rz_set_u_intersection(inter_set, inter_set, parent->proc_memberships.set, NULL) != cf_node->memberships_n) {
+			needs_judgement = true;
+			break;
+		}
+	}
+	rz_iterator_fini(&iter);
+	return needs_judgement;
+}
+
+static bool edge_selector(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	switch (type) {
+	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
+	case RZ_ICFG_EDGE_TYPE_JUMP:
+		return true;
+	case RZ_ICFG_EDGE_TYPE_CALL:
+	case RZ_ICFG_EDGE_TYPE_RETURN:
+		return false;
+	}
+}
+
+typedef struct {
+	RzICFG *icfg;
+	ut64 membership;
+} VisitorBundle;
+
+static void change_membership(RzGraphNode *n, RzGraphVisitor *vis) {
+	VisitorBundle *bundle = vis->visitor_data;
+	RzICFGNode *block = rz_graph_node_get_data_mut(n);
+	if (node_needs_judgement(bundle->icfg, block)) {
+		// Don't update memberships.
+		// It is another conflict node.
+		return;
+	}
+
+	rz_set_u_free(block->proc_memberships.set);
+	block->proc_memberships.set = NULL;
+	block->memberships_n = 1;
+	block->proc_memberships.m = bundle->membership;
+}
+
+static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_node) {
+	// Make all incoming edges of the node "call" edges.
+	RzIterator iter = { 0 };
+	if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter)) {
+		rz_warn_if_reached();
+		return false;
+	}
+	RzGraphEdge *e;
+	rz_iterator_foreach(&iter, e) {
+		rz_graph_edge_set_data(e, RZ_GRAPH_INT_AS_DATA(RZ_ICFG_EDGE_TYPE_CALL));
+	}
+
+	// Update membership of all its successors
+	VisitorBundle bundle = { .icfg = icfg, .membership = cf_node->addr };
+	RzGraphVisitor visitor = { 0 };
+	visitor.edge_selector = edge_selector;
+	visitor.discover_node = change_membership;
+	visitor.visitor_data = &bundle;
+	RzGraphNode *n = rz_graph_find_node(icfg->graph, cf_node->addr);
+	if (!n) {
+		rz_warn_if_reached();
+		return false;
+	}
+	rz_graph_dfs_from_node(icfg->graph, n, &visitor);
+	return true;
+}
+
 /**
  * \brief Resolves conflicts for blocks which were executed by multiple functions.
  */
@@ -411,66 +529,11 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 		return false;
 	}
 
-	RzIterator iter = { 0 };
 	while (rz_set_u_size(icfg->node_conflicts) > 0) {
 		utptr nptr = rz_set_u_take(icfg->node_conflicts);
 		const RzICFGNode *cf_node = (const RzICFGNode *)nptr;
 
-		if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter) || cf_node->memberships_n == 1) {
-			// This node shouldn't be a conflict node to begin with.
-			// Conflict nodes require at least two incoming edges.
-			rz_warn_if_reached();
-			continue;
-		}
-
-		// Check if the intersection of the parent
-		// function memberships is the same as the conflict node's memberships.
-		// If that is the case, the current conflict node can be ignored.
-		// Because it can't be an entry point of a potentially tail called
-		// CFG.
-		//
-		// Example:
-		// node(membership_0, membership_1, ...)
-		//
-		// Case I - Here we do not need to resolve the conflict node. It is part
-		// the the sub-graph of its parents. They will be solved once their entry point
-		// conflict is solved:
-		//
-		// parent0(A, B)-+
-		//               +->conflict(A, B)
-		// parent1(A, B)-+
-		//
-		// Case II - On the contrary, if we have the following situation,
-		// we have to make a decission again, if conflict(A, B, C) node is an
-		// entry point or shared between A, B, C.
-		//
-		// parent0(C)----+
-		//               +->conflict(A, B, C)
-		// parent1(A, B)-+
-		//
-		RzSetU *inter_set = rz_set_u_new();
-		if (!inter_set) {
-			rz_warn_if_reached();
-			return false;
-		}
-		bool needs_judgement = false;
-		RzGraphEdge *in_edge;
-		rz_iterator_foreach(&iter, in_edge) {
-			const RzGraphNode *g_pnode = rz_graph_edge_get_from(in_edge);
-			const RzICFGNode *parent = rz_graph_node_get_data(g_pnode);
-			if (parent->memberships_n == 1) {
-				// The conflict node has at least 2 memberships, but the parent doesn't.
-				// So we know we have Case II here.
-				needs_judgement = true;
-				break;
-			}
-			if (rz_set_u_intersection(inter_set, inter_set, parent->proc_memberships.set, NULL) != cf_node->memberships_n) {
-				needs_judgement = true;
-				break;
-			}
-		}
-		rz_iterator_fini(&iter);
-		if (!needs_judgement) {
+		if (!node_needs_judgement(icfg, cf_node)) {
 			continue;
 		}
 
@@ -479,16 +542,22 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP:
-		case CFG_CONFLICT_VERDICT_SHARED:
-		case CFG_CONFLICT_VERDICT_FCN_ENTRY:
+			rz_graph_del_node_by_id(icfg->graph, cf_node->addr);
+			break;
+		case CFG_CONFLICT_VERDICT_FCN_ENTRY: {
+			if (!convert_subgraph_to_procedure(icfg, cf_node)) {
+				rz_warn_if_reached();
+			}
+			break;
+		}
 		case CFG_CONFLICT_VERDICT_N:
 			rz_warn_if_reached();
-			break;
+			return false;
+		case CFG_CONFLICT_VERDICT_SHARED:
 		case CFG_CONFLICT_VERDICT_SKIP:
-			continue;
+			break;
 		}
 	}
 
-	rz_iterator_fini(&iter);
 	return true;
 }

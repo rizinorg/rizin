@@ -55,6 +55,13 @@ struct rz_cfg_t {
 
 typedef enum {
 	CFG_CONFLICT_VERDICT_DROP = 0, ///< The block should be dropped.
+	// NOTE: There is intentionally no "drop node and _all_ its successors" rule here.
+	// It might be tempting to add it, to delete vast invalid subgraphs, but
+	// it is too easy to exploit.
+	// Malware could specifically craft a node which fullfills this role and
+	// let it jump to a valid code region. That would invalidate the
+	// analysis in that code region.
+
 	CFG_CONFLICT_VERDICT_SHARED, ///< The block is likely shared with another function.
 	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a likely function entry point.
 	CFG_CONFLICT_VERDICT_SKIP, ///< Node was already handled.
