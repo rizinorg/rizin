@@ -42,14 +42,18 @@ typedef enum rz_icfg_edge_type_t {
 	RZ_ICFG_EDGE_TYPE_FALLTHROUGH = 0, ///< Fall through between two blocks.
 	RZ_ICFG_EDGE_TYPE_JUMP, ///< Jumps to another address.
 	/**
-	 * \brief Calling a procedure. A jump which usually does something like:
-	 * - back up its return address
-	 * - manipulates some kind of stack
-	 * - manipulates the argument registers.
-	 * Not all of them have to be present of course.
+	 * \brief Calling a procedure.
+	 * A control flow which usually does something like:
+	 * 1. Changing control flow to a procedure entry point.
+	 * 2. back up its return address
+	 * 3. manipulates some kind of stack
+	 * 4. manipulates the argument registers.
 	 *
-	 * NOTE: Tail calls are call edges as well, even though they are often
+	 * 2.-4. do not need to be present to classify a call edge as such.
+	 * E.g. tail calls are call edges as well, even though they are often
 	 * "jump" instructions in assembly.
+	 * Similary are fall-through edges classified as call as well,
+	 * if they lead to a procedure entry point.
 	 */
 	RZ_ICFG_EDGE_TYPE_CALL,
 	RZ_ICFG_EDGE_TYPE_RETURN, ///< Return from procedure.
