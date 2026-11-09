@@ -75,7 +75,19 @@ static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid);
 static RzDebugSignalSource find_signal_source(int si_code) {
 	if (si_code == SI_USER ||
 		si_code == SI_QUEUE ||
-		si_code == SI_TKILL) {
+		si_code == SI_TIMER ||
+		si_code == SI_MESGQ ||
+		si_code == SI_ASYNCIO
+#ifdef SI_TKILL
+		|| si_code == SI_TKILL
+#endif
+#ifdef SI_SIGIO
+		|| si_code == SI_SIGIO
+#endif
+#ifdef SI_ASYNCNL
+		|| si_code == SI_ASYNCNL
+#endif
+	) {
 		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
 	}
 	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
