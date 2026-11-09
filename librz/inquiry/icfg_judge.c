@@ -432,46 +432,48 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 		// Example:
 		// node(membership_0, membership_1, ...)
 		//
-		// Case I: Ths is the case we test for here:
+		// Case I - Here we do not need to resolve the conflict node. It is part
+		// the the sub-graph of its parents. They will be solved once their entry point
+		// conflict is solved:
 		//
 		// parent0(A, B)-+
 		//               +->conflict(A, B)
 		// parent1(A, B)-+
 		//
-		// Case II: On the contrary, if we have the following situation:
+		// Case II - On the contrary, if we have the following situation,
+		// we have to make a decission again, if conflict(A, B, C) node is an
+		// entry point or shared between A, B, C.
+		//
 		// parent0(C)----+
 		//               +->conflict(A, B, C)
 		// parent1(A, B)-+
 		//
-		// We have to make a decission again, if conflict(A, B, C) node is an
-		// entry point or shared between A, B, C.
 		RzSetU *inter_set = rz_set_u_new();
 		if (!inter_set) {
 			rz_warn_if_reached();
 			return false;
 		}
-		bool is_case_2 = false;
+		bool needs_judgement = false;
 		RzGraphEdge *in_edge;
 		rz_iterator_foreach(&iter, in_edge) {
 			const RzGraphNode *g_pnode = rz_graph_edge_get_from(in_edge);
 			const RzICFGNode *parent = rz_graph_node_get_data(g_pnode);
 			if (parent->memberships_n == 1) {
-				// The conflict node has at least 2 memberships.
+				// The conflict node has at least 2 memberships, but the parent doesn't.
 				// So we know we have Case II here.
-				is_case_2 = true;
+				needs_judgement = true;
 				break;
 			}
 			if (rz_set_u_intersection(inter_set, inter_set, parent->proc_memberships.set, NULL) != cf_node->memberships_n) {
-				is_case_2 = true;
+				needs_judgement = true;
 				break;
 			}
 		}
 		rz_iterator_fini(&iter);
-		if (!is_case_2) {
-			// Node doesn't have to be solved. It is part of another
-			// conflict node's subgraph.
+		if (!needs_judgement) {
 			continue;
 		}
+
 		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_node, cfg);
 		printf("Node 0x%08lx: %s\n", cf_node->addr, node_verdict_names[verdict]);
 
