@@ -602,6 +602,9 @@ RZ_API void rz_test_test_free(RzTest *test) {
 	case RZ_TEST_TYPE_JSON:
 		rz_test_json_test_free(test->json_test);
 		break;
+	case RZ_TEST_TYPE_UI:
+		rz_test_ui_free(test->ui_test);
+		break;
 	case RZ_TEST_TYPE_FUZZ:
 		rz_test_fuzz_test_free(test->fuzz_test);
 		break;
@@ -629,6 +632,9 @@ RZ_API void rz_test_test_database_free(RzTestDatabase *db) {
 }
 
 static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
+	if (rz_str_endswith(path, ".rzt-ui")) {
+		return RZ_TEST_TYPE_UI;
+	}
 	RzTestType ret = RZ_TEST_TYPE_CMD;
 	char *pathdup = strdup(path);
 	RzList *tokens = rz_str_split_list(pathdup, RZ_SYS_DIR, 0);
@@ -700,7 +706,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 		rz_strbuf_init(&subpath);
 		bool ret = true;
 		rz_list_foreach (dir, it, subname) {
-			if (*subname == '.') {
+			if (*subname == '.' || !strcmp(subname, "README.md")) {
 				continue;
 			}
 			if (!strcmp(subname, "extras")) {
@@ -792,6 +798,29 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 		rz_pvector_free(json_tests);
 		break;
 	}
+	case RZ_TEST_TYPE_UI: {
+		RzPVector *ui_tests = rz_test_ui_load_file(path);
+		if (!ui_tests) {
+			return false;
+		}
+		while (!rz_pvector_empty(ui_tests)) {
+			RzTest *test = RZ_NEW0(RzTest);
+			if (!test) {
+				rz_pvector_free(ui_tests);
+				return false;
+			}
+			test->type = RZ_TEST_TYPE_UI;
+			test->path = pooled_path;
+			test->ui_test = rz_pvector_remove_at(ui_tests, 0);
+			if (!rz_pvector_push(&db->tests, test)) {
+				rz_test_test_free(test);
+				rz_pvector_free(ui_tests);
+				return false;
+			}
+		}
+		rz_pvector_free(ui_tests);
+		break;
+	}
 	case RZ_TEST_TYPE_FUZZ:
 		// shouldn't come here, fuzz tests are loaded differently
 		break;
@@ -838,7 +867,7 @@ RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path
 		rz_strbuf_init(&subpath);
 		bool ret = true;
 		rz_list_foreach (dir, it, subname) {
-			if (*subname == '.') {
+			if (*subname == '.' || !strcmp(subname, "README.md")) {
 				continue;
 			}
 			rz_strbuf_setf(&subpath, "%s%s%s", path, RZ_SYS_DIR, subname);

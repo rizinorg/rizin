@@ -1,0 +1,17 @@
+# The bit editor decodes the bytes under the cursor to asm and RzIL.
+NAME=bit editor shows asm and rzil
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEY b
+WAIT 250
+KEY 1
+WAIT 300
+EXPECT_LINE 14 asm: push rbp
+EXPECT_REGEX rzil:
+QUIT
+STEPEOF

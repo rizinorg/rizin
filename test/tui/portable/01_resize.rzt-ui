@@ -1,0 +1,14 @@
+NAME=visual resize redraws at an input boundary
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+STEPS=<<STEPS_END
+KEYS V<ENTER>
+EXPECT_LINE 1 - offset -
+RESIZE 100x30
+EXPECT_LINE 1 - offset -
+EXPECT_LINE 2 5548 89e5 897d fc8b 07c3
+RESIZE 60x16
+EXPECT_LINE 0 malloc://128
+EXPECT_LINE 1 - offset -
+QUIT
+STEPS_END

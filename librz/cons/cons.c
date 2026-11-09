@@ -157,6 +157,10 @@ static void cons_context_deinit(RzConsContext *context) {
 }
 
 static inline void __cons_write_ll(RzCons *cons, const char *buf, int len) {
+	if (cons->backend.write) {
+		cons->backend.write(cons->backend_user, buf, len);
+		return;
+	}
 #if __WINDOWS__
 	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(cons->fdout, buf, len);
@@ -332,6 +336,32 @@ RZ_API void rz_cons_context_break_pop(RzConsContext *context) {
 	rz_interrupt_break_pop(context->intr);
 }
 
+/**
+ * \brief Redirect a console to an embedding application's terminal.
+ *
+ * The callback table is copied; user data is borrowed until detached. A backend
+ * supplies all three operations so input cannot accidentally reach the host
+ * terminal. Read returns an unsigned byte or -1 for EOF/timeout; timeout_ms == 0
+ * requests a blocking read. Output is the ANSI/UTF-8 stream before native
+ * console translation. Callbacks run synchronously and must not recursively
+ * read or flush this console. Buffered input retains priority over the backend.
+ * This is per instance, allowing unrelated consoles to retain their own I/O.
+ */
+RZ_API bool rz_cons_set_backend(RZ_NONNULL RzCons *cons, RZ_NULLABLE const RzConsBackend *backend, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(cons, false);
+	if (backend && (!backend->read || !backend->write || !backend->get_size)) {
+		return false;
+	}
+	if (backend) {
+		cons->backend = *backend;
+		cons->backend_user = user;
+	} else {
+		memset(&cons->backend, 0, sizeof(cons->backend));
+		cons->backend_user = NULL;
+	}
+	return true;
+}
+
 RZ_API bool rz_cons_is_interactive(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	return cons->context->is_interactive;
 }
@@ -413,6 +443,11 @@ RZ_API void rz_cons_enable_highlight(RZ_NONNULL RZ_BORROW RzCons *cons, const bo
 }
 
 RZ_API bool rz_cons_enable_mouse(RZ_NONNULL RZ_BORROW RzCons *cons, const bool enable) {
+	if (cons->backend.write) {
+		cons->mouse = enable;
+		__cons_write(cons, enable ? "\x1b[?1000h" : "\x1b[?1000l", 8);
+		return true;
+	}
 	if ((cons->mouse && enable) || (!cons->mouse && !enable)) {
 		return cons->mouse;
 	}
@@ -655,6 +690,10 @@ RZ_API int rz_cons_eof(RZ_NONNULL RZ_BORROW RzCons *cons) {
 }
 
 RZ_API void rz_cons_gotoxy(RZ_NONNULL RZ_BORROW RzCons *cons, int x, int y) {
+	if (cons->backend.write) {
+		rz_cons_printf(cons, "\x1b[%d;%dH", y, x);
+		return;
+	}
 #if __WINDOWS__
 	rz_cons_w32_gotoxy(cons, 1, x, y);
 #else
@@ -692,6 +731,10 @@ RZ_API void rz_cons_fill_line(RZ_NONNULL RZ_BORROW RzCons *cons) {
  */
 RZ_API void rz_cons_clear_line(RZ_NONNULL RZ_BORROW RzCons *cons, FILE *stream) {
 	rz_return_if_fail(stream == stdout || stream == stderr);
+	if (cons->backend.write) {
+		__cons_write(cons, RZ_CONS_CLEAR_LINE, -1);
+		return;
+	}
 #if __WINDOWS__
 	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		fprintf(stream, "%s", RZ_CONS_CLEAR_LINE);
@@ -723,6 +766,11 @@ RZ_API void rz_cons_reset_colors(RZ_NONNULL RZ_BORROW RzCons *cons) {
 }
 
 RZ_API void rz_cons_clear(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	if (cons->backend.write) {
+		cons->lines = 0;
+		rz_cons_strcat(cons, Color_RESET RZ_CONS_CLEAR_SCREEN);
+		return;
+	}
 	cons->lines = 0;
 #if __WINDOWS__
 	rz_cons_w32_clear(cons);
@@ -1012,7 +1060,7 @@ RZ_API void rz_cons_visual_flush(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	if (!cons->null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-		if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
+		if (cons->backend.write || cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 			rz_cons_visual_write(cons, cons->context->buffer);
 		} else {
 			rz_cons_w32_print(cons, cons->context->buffer, cons->context->buffer_len, true);
@@ -1387,6 +1435,19 @@ static bool __pty_get_size(RzCons *cons) {
 
 // XXX: if this function returns <0 in rows or cols expect MAYHEM
 RZ_API int rz_cons_get_size(RZ_NONNULL RZ_BORROW RzCons *cons, int *rows) {
+	if (cons->backend.get_size) {
+		int width = 80, height = 24;
+		if (!cons->backend.get_size(cons->backend_user, &width, &height) || width < 1 || height < 1) {
+			width = 80;
+			height = 24;
+		}
+		cons->columns = width;
+		cons->rows = height;
+		if (rows) {
+			*rows = height;
+		}
+		return width;
+	}
 #if __WINDOWS__
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	bool ret = GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
@@ -1561,6 +1622,10 @@ RZ_API RzVirtTermMode rz_cons_detect_vt_mode(RZ_NONNULL RZ_BORROW RzCons *cons) 
 #endif
 
 RZ_API void rz_cons_show_cursor(RZ_NONNULL RZ_BORROW RzCons *cons, int cursor) {
+	if (cons->backend.write) {
+		__cons_write(cons, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+		return;
+	}
 #if __WINDOWS__
 	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 #endif
@@ -1597,6 +1662,9 @@ RZ_API void rz_cons_show_cursor(RZ_NONNULL RZ_BORROW RzCons *cons, int cursor) {
  *
  */
 RZ_API void rz_cons_set_raw(RZ_NONNULL RZ_BORROW RzCons *cons, bool is_raw) {
+	if (cons->backend.read) {
+		return;
+	}
 	if (cons->oldraw != -1) {
 		if (is_raw == cons->oldraw) {
 			return;
@@ -1656,6 +1724,10 @@ RZ_API void rz_cons_invert(RZ_NONNULL RZ_BORROW RzCons *cons, int set, int color
   rmcup: enable terminal scrolling (normal mode)
 */
 RZ_API bool rz_cons_set_cup(RZ_NONNULL RZ_BORROW RzCons *cons, bool enable) {
+	if (cons->backend.write) {
+		__cons_write(cons, enable ? "\x1b[?1049h" : "\x1b[?1049l", 8);
+		return true;
+	}
 #if __UNIX__
 	const char *code = enable
 		? "\x1b[?1049h"
@@ -1714,6 +1786,10 @@ RZ_API void rz_cons_set_last_interactive(RZ_NONNULL RZ_BORROW RzCons *cons) {
 }
 
 RZ_API void rz_cons_set_title(RZ_NONNULL RZ_BORROW RzCons *cons, const char *str) {
+	if (cons->backend.write) {
+		rz_cons_printf(cons, "\x1b]0;%s\007", str);
+		return;
+	}
 #if __WINDOWS__
 #if defined(_UNICODE)
 	wchar_t *wstr = rz_utf8_to_utf16_l(str, strlen(str));
@@ -1979,6 +2055,12 @@ RZ_API void rz_cons_cmd_help(RZ_NONNULL RZ_BORROW RzCons *cons, const char *help
 }
 
 RZ_API void rz_cons_clear_buffer(RZ_NONNULL RZ_BORROW RzCons *cons) {
+	if (cons->backend.write) {
+		__cons_write(cons, "\x1b"
+				   "c\x1b[3J",
+			6);
+		return;
+	}
 	if (cons->vtmode != RZ_VIRT_TERM_MODE_DISABLE) {
 		rz_xwrite(1, "\x1b"
 			     "c\x1b[3J",

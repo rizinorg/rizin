@@ -695,6 +695,8 @@ RZ_API char *rz_test_test_name(RzTest *test) {
 		return rz_str_newf("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
 	case RZ_TEST_TYPE_JSON:
 		return rz_str_newf("<json> %s", test->json_test->cmd ? test->json_test->cmd : "");
+	case RZ_TEST_TYPE_UI:
+		return rz_str_dup(test->ui_test->name);
 	case RZ_TEST_TYPE_FUZZ:
 		return rz_str_newf("<fuzz> %s", test->fuzz_test->file);
 	}
@@ -709,6 +711,8 @@ RZ_API bool rz_test_broken(RzTest *test) {
 		return test->asm_test->mode & RZ_ASM_TEST_MODE_BROKEN ? true : false;
 	case RZ_TEST_TYPE_JSON:
 		return test->json_test->broken;
+	case RZ_TEST_TYPE_UI:
+		return test->ui_test->broken;
 	case RZ_TEST_TYPE_FUZZ:
 		return false;
 	}
@@ -755,6 +759,22 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		ret->run_failed = !out;
 		break;
 	}
+	case RZ_TEST_TYPE_UI: {
+		RzTestUiRunConfig ui_config = { 0 };
+		ui_config.bin_path = config->bin_path;
+		ui_config.timeout_ms = config->timeout_ms;
+		ret->ui_out = rz_test_ui_run(&ui_config, test->ui_test);
+		if (ret->ui_out) {
+			ret->result = ret->ui_out->result;
+			ret->timeout = ret->ui_out->timeout;
+			ret->run_failed = ret->ui_out->run_failed;
+		} else {
+			ret->result = RZ_TEST_RESULT_FAILED;
+			ret->run_failed = true;
+		}
+		ret->time_elapsed = rz_time_now_mono() - start_time;
+		return ret;
+	}
 	case RZ_TEST_TYPE_FUZZ: {
 		RzFuzzTest *fuzz_test = test->fuzz_test;
 		RzSubprocessOutput *out = rz_test_run_fuzz_test(config, fuzz_test, subprocess_runner, NULL);
@@ -786,6 +806,9 @@ RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result) {
 		case RZ_TEST_TYPE_JSON:
 		case RZ_TEST_TYPE_FUZZ:
 			rz_subprocess_output_free(result->proc_out);
+			break;
+		case RZ_TEST_TYPE_UI:
+			rz_test_ui_result_free(result->ui_out);
 			break;
 		case RZ_TEST_TYPE_ASM:
 			rz_test_asm_test_output_free(result->asm_out);

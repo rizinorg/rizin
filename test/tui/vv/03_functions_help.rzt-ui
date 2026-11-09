@@ -1,0 +1,20 @@
+# `?` inside the functions browser shows its usage help.
+NAME=functions browser help
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS Vv<ENTER>
+WAIT 400
+KEY ?
+WAIT 300
+EXPECT_REGEX Usage: vv
+EXPECT_REGEX Actions supported:
+EXPECT_REGEX Keys:
+EXPECT_REGEX functions: +Add, Modify, Delete, Xrefs Calls Vars
+EXPECT_REGEX variables: +Add, Modify, Delete
+EXPECT_REGEX j,k +select next/prev item or scroll if tab pressed
+EXPECT_REGEX enter +enter function view \(variables\), xrefs
+QUIT
+STEPEOF

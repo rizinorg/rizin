@@ -112,6 +112,7 @@ if get_option('enable_tests')
     'rop_constraint',
     'run',
     'rz_test',
+    'rz_test_ui',
     'sdb_array',
     'sdb_diff',
     'sdb_sdb',

@@ -1,0 +1,18 @@
+# The bit editor shows the byte / nibble / bit position and length.
+NAME=bit editor shows byte and bit position
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=80
+ROWS=24
+STEPS=<<STEPEOF
+KEYS V<ENTER>
+WAIT 300
+KEY b
+WAIT 250
+KEY 1
+WAIT 300
+EXPECT_LINE 7 byte 0 | nibble H | bit 0 [0] | LE
+EXPECT_LINE 12 len: 1
+EXPECT_LINE 13 shift: >> 0 << 7
+QUIT
+STEPEOF

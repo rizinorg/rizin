@@ -17,7 +17,7 @@
 #if HAVE_COPYFILE
 #include <copyfile.h>
 #endif
-#if _MSC_VER
+#if __WINDOWS__
 #include <rz_windows.h>
 #include <process.h>
 #endif

@@ -1,0 +1,14 @@
+# `v` enters panels mode with the menu bar and the default panels.
+NAME=panels mode opens
+FILE=malloc://128
+ARGS=-a x86 -b 64 -c "wx 554889e5897dfc8b07c3"
+COLS=120
+ROWS=24
+STEPS=<<STEPEOF
+KEYS v<ENTER>
+WAIT 500
+EXPECT_LINE 0 File
+EXPECT_LINE 0 Tab [1] [0x00000000]
+EXPECT_REGEX Disassembly \(pd 20\)
+QUIT
+STEPEOF
