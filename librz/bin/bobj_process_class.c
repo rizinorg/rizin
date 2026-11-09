@@ -73,6 +73,7 @@ RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 	RzBin *bin = bf->rbin;
 	RzBinPlugin *plugin = o->plugin;
 
+	o->classes_sorted = false;
 	rz_pvector_free(o->classes);
 	if (!(bin->filter_rules & (RZ_BIN_REQ_CLASSES | RZ_BIN_REQ_CLASSES_SOURCES)) ||
 		!plugin->classes || !(o->classes = plugin->classes(bf))) {

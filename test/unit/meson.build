@@ -30,6 +30,7 @@ if get_option('enable_tests')
     'base64',
     'base85',
     'big',
+    'bin_classes',
     'bin_lines',
     'bin_mach0',
     'bitvector',

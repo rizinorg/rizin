@@ -310,7 +310,9 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 		if (super && !oclass->super) {
 			oclass->super = rz_str_dup(super);
 		}
-		if (oclass->addr == UT64_MAX) {
+		if (oclass->addr == UT64_MAX && vaddr != UT64_MAX) {
+			// Plugin-provided classes can have duplicate names, ordered by address.
+			o->classes_sorted = false;
 			oclass->addr = vaddr;
 		}
 		return oclass;
@@ -321,8 +323,18 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 		return NULL;
 	}
 
-	rz_pvector_push(o->classes, oclass);
-	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
+	// Plugin-provided classes need not arrive sorted. Establish their order
+	// on the first insertion, then keep it without sorting the whole vector.
+	if (!o->classes_sorted) {
+		rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
+		o->classes_sorted = true;
+	}
+	size_t index;
+	rz_pvector_upper_bound(o->classes, oclass, index, rz_bin_compare_class);
+	if (!rz_pvector_insert(o->classes, index, oclass)) {
+		rz_bin_class_free(oclass);
+		return NULL;
+	}
 	ht_sp_insert(o->name_to_class_object, name, oclass);
 	return oclass;
 }

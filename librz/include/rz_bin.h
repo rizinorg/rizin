@@ -366,6 +366,7 @@ typedef struct rz_bin_object_t {
 	RzBinLanguage lang;
 	RZ_DEPRECATE RZ_OWN Sdb *kv; ///< deprecated, put info in C structures instead of this
 	void *bin_obj; // internal pointer used by formats
+	bool classes_sorted; ///< whether classes are ordered for incremental insertion
 } RzBinObject;
 
 // XXX: RbinFile may hold more than one RzBinObject
