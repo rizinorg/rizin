@@ -5,8 +5,9 @@
 #include "minunit.h"
 
 // The decoder is RZ_IPI, so it is built into the test, as test_c6x_packet does
-// with the packet code.
+// with the packet code, which the decoder reads a SPKERNEL's SPLOOP with.
 #include "../../librz/arch/isa/tms320/c6x/c6x_decode.c"
+#include "../../librz/arch/isa/tms320/c6x/c6x_packet.c"
 
 // Two fetch packets from C674x images, mapped one after the other at 0. Only
 // the header in each last word says which words hold two compact slots: word 0

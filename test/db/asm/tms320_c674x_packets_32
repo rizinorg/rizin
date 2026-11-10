@@ -58,3 +58,8 @@ d "callp .s2 0x40,b3;callp .s1 0x0,a3;nop;nop;nop;nop;nop;nop;.fphead n, l, w, b
 # what the MV wrote.
 dE "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0b0001000" 008ca36201bc94f6053c62f4024e4646d04ca12003966f1001888162e1000040
 dE "mv .l1 a4,a0;add .l1 0x1,a0,a0;mv .l2 b4,b0;add .l2 0x2,b0,b0;nop 1;nop 1;nop 1;nop 1;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0001111" 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000
+
+# A compact SPLOOPD with bit 15 set is predicated on A0, or on B0 when bit 0 is
+# set (Uspldr, SPRUFE8B Figure H-6); TI-assembled. rz-asm has no image to find
+# the SPLOOP before the SPKERNEL, so its stage/cycle field stays whole.
+d "[a0] sploopd 3;add .l1 a4,a5,a6;nop 1;nop 1;nop 1;spkernel 0x22;nop 1;nop 1;nop 1;[b0] sploopd 3;add .l1 a4,a5,a6;nop 1;nop 1;nop 1;.fphead n, l, w, bu, nobr, nosat, 0b1111111" 668de0826e0c6e0c6e0c671d6e0c6e0c6e0c678de0826e0c6e0c6e0c0000e0ef

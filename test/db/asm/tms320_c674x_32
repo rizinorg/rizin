@@ -233,8 +233,12 @@ d "sploop 1" 00800300 0x0
 d "sploopd 1" 00a00300 0x0
 d "sploopw 1" 00e00300 0x0
 d "[a0] sploopw 6" 00e083c2 0x0
-d "spkernel 0" 01400300 0x0
-d "spkernel 40" 0140030a 0x0
+# rz-asm has no image to find the SPLOOP a SPKERNEL closes, and so the ii its
+# stage/cycle field splits by: the field stays whole, in hex, as dis6x prints
+# it without the loop. SPKERNELR has no operand.
+d "spkernel 0x0" 01400300 0x0
+d "spkernel 0x28" 0140030a 0x0
+d "spkernelr" 00600300 0x0
 d "spmask s1" 01001300 0x0
 d "spmask l1,s2" 00002700 0x0
 d "spmask m2" 00000302 0x0
