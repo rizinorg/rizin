@@ -975,3 +975,91 @@ a5 = 0x00000011
 a3 = 0x0000000f
 EOF
 RUN
+
+# A compact move reaches a register beyond the low eight through bits 11:10:
+# these write a12 from b6 and b2 from b29, where the 3-bit fields alone name a4
+# and b5.
+NAME=c6x compact moves reach registers above the low eight
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 4e97974e000000000000000000000000000000000000000000000000000020e0
+s 0
+pd 2
+aezi
+ar b6=0x11111111
+ar b29=0x22222222
+aezs 2
+ar a12
+ar b2
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .s1x b6,a12
+            0x00000002      mv    .d2 b29,b2
+a12 = 0x11111111
+b2 = 0x22222222
+a4 = 0x00000000
+EOF
+RUN
+
+# Compact SET and CLR change the bit of their src2 in place, and leave the A0/B0
+# predicate registers that compact EXTU writes alone.
+NAME=c6x compact set and clr change their source register
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 438aa2f98312c2030000000000000000000000000000000000000000000060e0
+s 0
+pd 2
+aezi
+ar b4=0xffffffff
+ar a3=0x00000001
+ar b0=0x55555555
+ar a0=0x66666666
+aezs 2
+ar b4
+ar a3
+ar b0
+ar a0
+EOF
+EXPECT=<<EOF
+            0x00000000      clr   .s2 b4,0xc,0xc,b4
+            0x00000002      set   .s1 a3,0x1f,0x1f,a3
+b4 = 0xffffefff
+a3 = 0x80000001
+b0 = 0x55555555
+a0 = 0x66666666
+EOF
+RUN
+
+# A compact shift by a constant encodes a count of 8 as 7.
+NAME=c6x compact shift by eight
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx bae66b0daad40a2c0000000000000000000000000000000000000000000060e0
+s 0
+pd 1
+aezi
+ar a5=0x1
+aezs 1
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      shl   .s1 a5,0x8,a3
+a3 = 0x00000100
+EOF
+RUN

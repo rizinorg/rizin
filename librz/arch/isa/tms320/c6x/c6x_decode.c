@@ -2096,12 +2096,22 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			return;
 		}
 		if (b5 == 0) { // G-1 / G-2: MV (mvto has bit6 = 0, mvfr has bit6 = 1)
+			// These moves link the eight registers the header RS bit selects
+			// to all 32: the source of mvto and the destination of mvfr have
+			// bits 11:10 (srcms/dstms) above their 3-bit field, and the five
+			// bits name the register outright, so RS does not apply to them.
+			ut8 ms = (w >> 10) & 0x3;
 			set_ins(insn, C6X_INS_MV);
 			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
 			insn->unit = unit;
 			insn->cross = x;
-			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
-			compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			if (b6) {
+				compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+				op_reg(&OP(1), s, (ms << 3) | ((w >> 13) & 0x7)); // dst
+			} else {
+				op_reg(&OP(0), x ? !s : s, (ms << 3) | ((w >> 7) & 0x7)); // src2
+				compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			}
 			insn->nops = 2;
 			return;
 		}
@@ -2338,10 +2348,12 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		}
 		// Sx2 shift-by-constant (Appendix F): bits 3:1 == 101 with bit 10 set.
 		// The count is a 3-bit field whose zero encoding means 16, since a
-		// shift by zero would be a no-op and needs no encoding. A header BR
-		// bit re-purposes the bit-3 forms as branches, so this only applies
-		// when the packet is not a branch packet.
+		// shift by zero would be a no-op and needs no encoding, and whose
+		// seven means 8 (Figure F-23). A header BR bit re-purposes the bit-3
+		// forms as branches, so this only applies when the packet is not a
+		// branch packet.
 		if (!br && ((w >> 1) & 0x7) == C6X_CFMT_SX1_3REG && ((w >> 10) & 1)) {
+			static const ut8 counts[8] = { 16, 1, 2, 3, 4, 5, 6, 8 };
 			ut8 cnt = (w >> 13) & 0x7;
 			bool x = (w >> 12) & 1;
 			set_ins(insn, ((w >> 11) & 1) ? C6X_INS_SHR : C6X_INS_SHL);
@@ -2349,7 +2361,7 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			insn->unit = C6X_UNIT_S;
 			insn->cross = x;
 			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
-			op_imm(&OP(1), cnt ? cnt : 16);
+			op_imm(&OP(1), counts[cnt]);
 			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs); // dst
 			insn->nops = 3;
 			return;
@@ -2399,7 +2411,7 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 				insn->nops = 3;
 				return;
 			}
-			if (op != 3) { // Sc5: EXTU/SET/CLR with a ucst5 field (dst is A0/B0)
+			if (op != 3) { // Sc5: EXTU/SET/CLR with a ucst5 field
 				static const C6xInsnId mn[3] = { C6X_INS_EXTU, C6X_INS_SET, C6X_INS_CLR };
 				static const _RzAnalysisOpType ty[3] = { RZ_ANALYSIS_OP_TYPE_SHR,
 					RZ_ANALYSIS_OP_TYPE_OR, RZ_ANALYSIS_OP_TYPE_AND };
@@ -2408,7 +2420,13 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2
 				op_imm(&OP(1), ucst5);
 				op_imm(&OP(2), op == 0 ? 31 : ucst5); // EXTU pairs with 31
-				op_reg(&OP(3), s, 0); // dst A0/B0
+				// EXTU writes A0/B0, while SET and CLR change the bits of src2
+				// in place (Figure F-27).
+				if (op == 0) {
+					op_reg(&OP(3), s, 0);
+				} else {
+					OP(3) = OP(0);
+				}
 				insn->nops = 4;
 				return;
 			}
