@@ -1063,3 +1063,33 @@ EXPECT=<<EOF
 a3 = 0x00000100
 EOF
 RUN
+
+NAME=c6x big-endian compact pair runs its less significant half first
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=true
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000
+s 0
+pd 4
+aezi
+ar a4=0x10
+ar a0=0x100
+ar b4=0x20
+ar b0=0x200
+aezs 4
+ar a0
+ar b0
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a4,a0
+            0x00000002      add   .l1 0x1,a0,a0
+            0x00000004      mv    .l2 b4,b0
+            0x00000006      add   .l2 0x2,b0,b0
+a0 = 0x00000011
+b0 = 0x00000022
+EOF
+RUN

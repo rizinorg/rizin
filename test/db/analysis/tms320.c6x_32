@@ -636,6 +636,51 @@ fcn();
 EOF
 RUN
 
+# The packet above as big-endian memory holds it: each word keeps its value,
+# so the less significant half, now at the higher address, is still the first
+# slot (TI cl6x and dis6x), and the second slot of a word is read from before it.
+# The packet at 0x20 runs a compact pair in parallel, as its header says. pad
+# decodes the packet it is given at 0x20, whose second slots take their halves
+# from that hex rather than from the packet already there.
+NAME=c6x big-endian compact slots keep the order of their word
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=true
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx eaba024601ca742801e005e8018002740250e02a026005ea02002276e0208000
+pD 8
+b 2
+pd 1 @ 2
+ao 1 @ 2~^size:
+ao 1 @ 2~^type:
+pD 2 @ 0
+b 32
+wx 008ca36201bc94f6053c62f4024e4646d04ca12003966f1001888162e1000040 @ 0x20
+pd 2 @ 0x2c
+s 0x20
+pad 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000~:0..4
+EOF
+EXPECT=<<EOF
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000004      mvk   .s1 -0x6b18,a3
+0x00000002      [!a0] bnop .s1 0x154,0x5
+size: 2
+type: cjmp
+0x00000000      mv    .l1 a4,a0
+0x0000002c      mv    .l1 a4,a10
+0x0000002e      ||    mv .s1 a4,a0
+mv .l1 a4,a0
+add .l1 0x1,a0,a0
+mv .l2 b4,b0
+add .l2 0x2,b0,b0
+EOF
+RUN
+
 # main() calls c_strlen, decrypt and uart_write_text through compact CALLPs,
 # whose displacement counts words: counted in half words, they land inside
 # functions.
