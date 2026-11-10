@@ -570,7 +570,7 @@ EXPECT=<<EOF
 0x0000000e      ldw   .d1 *a4++[0x1],a3
 0x00000010      nop   3
 0x00000012      nop   1
-0x00000014      spkernel 40
+0x00000014      spkernel 5,0
 0x00000016      ||    add .l1 a3,a5,a5
 0x00000018      bnop  .s2 b3,0x4
 0x0000001a      mv    .l1 a5,a4
@@ -593,6 +593,60 @@ EXPECT=<<EOF
 0x00000016      stw   .d2 b4,*+b15[0x2]
 EOF
 
+RUN
+
+# A SPKERNEL's stage/cycle field splits by the ii of the SPLOOP that opens its
+# loop (SPRUFE8B Table 3-29), read from the image before it, where dis6x takes
+# the SPLOOP it listed last. TI-assembled loops of ii 9 and 14, compact and
+# 32-bit, the first across a fetch-packet boundary.
+NAME=c6x a SPKERNEL splits its stage and cycle by the ii of its SPLOOP
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e scr.color=0
+e asm.bytes=false
+wx 6e0c6e0ce71e6e0c6e0c6e0c664ca0006e0c6e0c6e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0ce69f6e0c6e0c6e0c664ca0006e0c6e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0c6e0c67dc6e0c6e0c6e0ce64ea0006e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0ce75e6e0c6e0c6e0c0000e0efe64ea0006e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c0000e0ef00000000000000000040830c0000000000000000000000000000000000000000 @ 0x100
+pd 1 @ 0x10c
+pd 1 @ 0x126
+pd 1 @ 0x150
+pd 1 @ 0x174
+pd 1 @ 0x180
+pd 1 @ 0x1a8
+EOF
+EXPECT=<<EOF
+            0x0000010c      sploop 9
+            0x00000126      spkernel 2,7
+            0x00000150      sploop 14
+            0x00000174      spkernel 1,13
+            0x00000180      sploop 14
+            0x000001a8      spkernel 3,2
+EOF
+RUN
+
+# A SPKERNEL closes the loop of the last SPLOOP before it, so one that follows
+# another without a SPLOOP between them keeps its field whole, as in dis6x.
+NAME=c6x a SPKERNEL without a SPLOOP of its own keeps its stage and cycle field whole
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e scr.color=0
+e asm.bytes=false
+wx 008003040000000000000000000000000040c30f0000000000000000000000000040c30f00000000000000000000000000000000000000000000000000000000
+pd 1 @ 0
+pd 1 @ 0x10
+pd 1 @ 0x20
+EOF
+EXPECT=<<EOF
+            0x00000000      sploop 9
+            0x00000010      spkernel 3,15
+            0x00000020      spkernel 0x3f
+EOF
 RUN
 
 # A compact slot is laid out by the header that ends its fetch packet, up to 28

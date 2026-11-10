@@ -133,8 +133,9 @@ static void fmt_operand(RzStrBuf *sb, const C6xInsn *insn, ut64 pc, const C6xOpe
 	case C6X_OP_IMM:
 		// Counts read as counts: NOP cycles, bit positions and widths stay
 		// decimal. Everything else is a value, so it reads in hex, negative
-		// ones signed rather than as a two's-complement pattern.
-		if (o->v.imm.decimal || insn->unit == C6X_UNIT_NONE) {
+		// ones signed rather than as a two's-complement pattern; that includes
+		// the whole stage/cycle field of a SPKERNEL whose loop is unknown.
+		if (o->v.imm.decimal || (insn->unit == C6X_UNIT_NONE && insn->id != C6X_INS_SPKERNEL)) {
 			rz_strbuf_appendf(sb, "%" PFMT64d, (st64)o->v.imm.value);
 		} else {
 			rz_strbuf_append_signed_hex(sb, (st64)o->v.imm.value);
