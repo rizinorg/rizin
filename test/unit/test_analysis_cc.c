@@ -52,6 +52,15 @@ bool test_rz_analysis_cc_set() {
 	assert_sdb_eq(analysis_cc, ref, "set cc");
 	sdb_free(ref);
 
+	mu_assert_true(rz_analysis_cc_set(analysis, "rax empty()"), "set empty cc");
+	mu_assert_eq(rz_analysis_cc_max_arg(analysis, "empty"), 0, "empty cc has no arguments");
+	mu_assert_null(rz_analysis_cc_arg(analysis, "empty", 0), "empty cc has no argument register");
+	mu_assert_true(rz_analysis_cc_set(analysis, "rax spaces(   )"), "set whitespace-only cc");
+	mu_assert_eq(rz_analysis_cc_max_arg(analysis, "spaces"), 0, "whitespace is not an argument");
+	mu_assert_true(rz_analysis_cc_set(analysis, "rax stack_only(stack)"), "set stack-only cc");
+	mu_assert_eq(rz_analysis_cc_max_arg(analysis, "stack_only"), 0, "stack is not a register argument");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "stack_only", 0), "stack", "stack fallback");
+
 	rz_analysis_free(analysis);
 	mu_end;
 }

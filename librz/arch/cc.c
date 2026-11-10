@@ -35,6 +35,12 @@ RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 	cc_sdb_unsetf(DB, "cc.%s.error", name);
 }
 
+/**
+ * \brief Define a calling convention from a return register, name and argument list.
+ *
+ * The expression has the form "ret name(arg0, arg1, stack)". The optional stack
+ * entry is a fallback for arguments without a register; an empty list has none.
+ */
 RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 	rz_return_val_if_fail(analysis && expr, false);
 	char *e = rz_str_dup(expr);
@@ -53,7 +59,7 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 		return false;
 	}
 	*end++ = 0;
-	rz_str_trim(p);
+	rz_str_trim(args);
 	rz_str_trim(e);
 	char *ccname = strchr(e, ' ');
 	if (ccname) {
@@ -67,7 +73,7 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 	sdb_set(DB, ccname, "cc");
 	cc_sdb_setf(DB, e, "cc.%s.ret", ccname);
 
-	RzList *ccArgs = rz_str_split_list(args, ",", 0);
+	RzList *ccArgs = RZ_STR_ISEMPTY(args) ? NULL : rz_str_split_list(args, ",", 0);
 	RzListIter *iter;
 	const char *arg;
 	int n = 0;
