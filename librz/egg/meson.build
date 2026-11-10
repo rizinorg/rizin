@@ -27,6 +27,7 @@ rz_egg = library('rz_egg', rz_egg_sources,
     rz_util_dep,
     rz_syscall_dep,
     rz_arch_dep,
+    rz_bin_dep,
   ],
   install: true,
   implicit_include_directories: false,
@@ -43,6 +44,6 @@ meson.override_dependency('rz_egg', rz_egg_dep)
 
 modules += { 'rz_egg': {
     'target': rz_egg,
-    'dependencies': ['rz_util', 'rz_arch', 'rz_syscall'],
+    'dependencies': ['rz_util', 'rz_arch', 'rz_syscall', 'rz_bin'],
     'plugins': [egg_plugins]
 }}
