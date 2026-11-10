@@ -29,8 +29,8 @@ d "b .s1 0x20" 10040000 0x0 (jmp (bv 32 0x20))
 d "b .s2 b3" 62030c00 0x0 (jmp (var b3))
 d "bpos .s1 0x8,a5" 20408002 0x0 (branch (|| (! (sle (var a5) (bv 32 0x0))) (== (var a5) (bv 32 0x0))) (jmp (bv 32 0x8)) nop)
 d "bdec .s1 0x4,a5" 20308002 0x0 (branch (|| (! (sle (var a5) (bv 32 0x0))) (== (var a5) (bv 32 0x0))) (seq (set a5 (- (var a5) (bv 32 0x1))) (jmp (bv 32 0x4))) nop)
-d ".fphead n, l, w, bu, nobr, nosat, 0001000b" 000000e1 0x1c
-d ".fphead n, l, w, b, nobr, nosat, 1111010b" 082841ef 0x5c
+d ".fphead n, l, w, bu, nobr, nosat, 0b0001000" 000000e1 0x1c
+d ".fphead n, l, w, b, nobr, nosat, 0b1111010" 082841ef 0x5c
 d "[b0] bnop .s1 0x40,0x4" 21810820 0x38 (branch (! (is_zero (var b0))) (jmp (bv 32 0x40)) nop)
 d "dint" 00400010 0x0
 d "rint" 00600010 0x0

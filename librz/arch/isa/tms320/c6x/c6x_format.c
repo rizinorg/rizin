@@ -162,9 +162,11 @@ static void fmt_operand(RzStrBuf *sb, const C6xInsn *insn, ut64 pc, const C6xOpe
 
 /** Render a decoded instruction to a newly allocated asm string. \p pc is the
  *  instruction address, used to resolve PC-relative branch targets. */
-// The fetch-packet header layout field, L7..L1, spelled out as the bit string
-// the assembler listing shows.
+// The fetch-packet header layout field, L7..L1, as a binary literal. dis6x
+// writes the bits with a trailing "b", a base suffix that RzNum warns about
+// whenever the disassembly filter evaluates the numbers of a line.
 static void fmt_layout_bits(RzStrBuf *sb, ut32 w) {
+	rz_strbuf_append(sb, "0b");
 	for (int b = 27; b >= 21; b--) {
 		rz_strbuf_append(sb, (w >> b) & 1 ? "1" : "0");
 	}
@@ -188,12 +190,11 @@ RZ_IPI RZ_OWN char *c6x_format(const C6xArchDesc *desc, const C6xInsn *insn, ut6
 		rz_strbuf_appendf(sb, ".fphead %s, %s, %s, %s, %s, %s, ",
 			(w >> 20) & 1 ? "p" : "n", // PROT: protected loads
 			(w >> 19) & 1 ? "h" : "l", // RS: high/low register set
-			dsz < 4 ? "w" : "dw", // primary data size
+			dsz < 4 ? "w" : "dw/ndw", // primary data size, as dis6x names it
 			sec_dsz[dsz], // secondary data size
 			(w >> 15) & 1 ? "br" : "nobr", // BR: S-unit compact are branches
 			(w >> 14) & 1 ? "sat" : "nosat"); // SAT: compact saturate
 		fmt_layout_bits(sb, w);
-		rz_strbuf_append(sb, "b");
 		return rz_strbuf_drain(sb);
 	}
 	if (insn->cont) {
