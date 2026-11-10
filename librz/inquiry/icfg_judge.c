@@ -211,32 +211,28 @@ static void score_add(NodeObservations obs, NodeScore *score) {
 	}
 }
 
-static void normalize_verdict(NodeScore *s) {
-	printf("total obvs: %d\n", s->total_obsv);
-	for (int i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
-		printf("%s: %d normed: %zu\n", node_verdict_names[i], s->verdict_score[i], s->verdict_score[i] / s->total_obsv);
-		s->verdict_score[i] /= s->total_obsv;
-	}
-}
-
 static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
-	int best = 0, second = 1;
-
-	for (int verdict = 1; verdict < CFG_CONFLICT_VERDICT_N; ++verdict) {
-		if (s->verdict_score[verdict] > s->verdict_score[best]) {
-			second = best;
-			best = verdict;
-		} else if (verdict != best && s->verdict_score[verdict] > s->verdict_score[second]) {
-			second = verdict;
+	RzVector scores = { 0 };
+	rz_vector_init(&scores, sizeof(int), NULL, NULL);
+	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
+		rz_vector_push(&scores, (void *)&s->verdict_score[i]);
+	}
+	RzIterator it = { 0 };
+	if (!rz_vector_as_iter(&scores, &it)) {
+		rz_warn_if_reached();
+		return CFG_CONFLICT_VERDICT_N;
+	}
+	// TODO: What about cases where two verdicts are of equal probability or very close?
+	// We should check a margin at which we make a decision and
+	// below that stay undecided.
+	st64 softmax_score = rz_math_softmax_st64(&it);
+	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
+		if (s->verdict_score[i] == softmax_score) {
+			return (ICFGNodeVerdict)i;
 		}
 	}
-
-	int margin = s->verdict_score[best] - s->verdict_score[second];
-	if (s->verdict_score[best] < SCORE_VERDICT_MIN || margin < SCORE_VERDICT_MARGIN) {
-		return SCORE_VERDICT_UNKNOWN;
-	}
-
-	return (ICFGNodeVerdict)best;
+	rz_warn_if_reached();
+	return CFG_CONFLICT_VERDICT_N;
 }
 
 static bool edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to) {
@@ -391,7 +387,6 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
 
 verdict:
-	normalize_verdict(&score);
 	return pick_verdict(&score);
 }
 
