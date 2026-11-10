@@ -20349,6 +20349,7 @@ static const RzCmdDescArg type_xrefs_list_args[] = {
 };
 static const RzCmdDescHelp type_xrefs_list_help = {
 	.summary = "List functions using the type",
+	.description = "Without a type, list each function with its distinct variable and argument types. JSON records contain name, addr and types. With a type, list only matching functions, with name and addr in JSON. Return types are excluded.",
 	.args = type_xrefs_list_args,
 };
 
@@ -20364,6 +20365,7 @@ static const RzCmdDescArg type_xrefs_function_args[] = {
 };
 static const RzCmdDescHelp type_xrefs_function_help = {
 	.summary = "List all types used in the function",
+	.description = "List distinct variable and argument types at the function's entry address, excluding its return type. JSON output is an array of full type expressions.",
 	.args = type_xrefs_function_args,
 };
 
@@ -20380,6 +20382,7 @@ static const RzCmdDescArg type_xrefs_list_all_args[] = {
 };
 static const RzCmdDescHelp type_xrefs_list_all_help = {
 	.summary = "List all types used by any function",
+	.description = "List sorted, distinct type identifiers from function variables and arguments. Pointer and array types contribute their underlying identifiers. JSON output is an array of strings.",
 	.args = type_xrefs_list_all_args,
 };
 
@@ -26424,15 +26427,15 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_union_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, tu_cd, "tud", rz_type_union_c_nl_handler, &type_union_c_nl_help);
 	rz_warn_if_fail(type_union_c_nl_cd);
 
-	RzCmdDesc *tx_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tx", rz_type_xrefs_list_handler, &type_xrefs_list_help, &tx_help);
+	RzCmdDesc *tx_cd = rz_cmd_desc_group_state_new(core->rcmd, t_cd, "tx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_xrefs_list_handler, &type_xrefs_list_help, &tx_help);
 	rz_warn_if_fail(tx_cd);
-	RzCmdDesc *type_xrefs_function_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txf", rz_type_xrefs_function_handler, &type_xrefs_function_help);
+	RzCmdDesc *type_xrefs_function_cd = rz_cmd_desc_argv_state_new(core->rcmd, tx_cd, "txf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_xrefs_function_handler, &type_xrefs_function_help);
 	rz_warn_if_fail(type_xrefs_function_cd);
 
 	RzCmdDesc *type_xrefs_graph_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txg", rz_type_xrefs_graph_handler, &type_xrefs_graph_help);
 	rz_warn_if_fail(type_xrefs_graph_cd);
 
-	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_new(core->rcmd, tx_cd, "txl", rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
+	RzCmdDesc *type_xrefs_list_all_cd = rz_cmd_desc_argv_state_new(core->rcmd, tx_cd, "txl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_xrefs_list_all_handler, &type_xrefs_list_all_help);
 	rz_warn_if_fail(type_xrefs_list_all_cd);
 
 	RzCmdDesc *tk_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tk", rz_type_typeclass_handler, &type_typeclass_help, &tk_help);

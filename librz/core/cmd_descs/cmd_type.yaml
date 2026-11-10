@@ -343,14 +343,29 @@ commands:
     subcommands:
       - name: tx
         cname: type_xrefs_list
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: List functions using the type
+        description: >
+          Without a type, list each function with its distinct variable and argument
+          types. JSON records contain name, addr and types. With a type, list only
+          matching functions, with name and addr in JSON. Return types are excluded.
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_ANY_TYPE
             optional: true
       - name: txf
         cname: type_xrefs_function
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: List all types used in the function
+        description: >
+          List distinct variable and argument types at the function's entry address,
+          excluding its return type. JSON output is an array of full type expressions.
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: address
             type: RZ_CMD_ARG_TYPE_STRING
@@ -361,7 +376,15 @@ commands:
         args: []
       - name: txl
         cname: type_xrefs_list_all
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: List all types used by any function
+        description: >
+          List sorted, distinct type identifiers from function variables and arguments.
+          Pointer and array types contribute their underlying identifiers.
+          JSON output is an array of strings.
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args: []
   - name: tk
     summary: Manage the typeclasses of types

@@ -2614,13 +2614,13 @@ RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **
 // "tud"
 RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char **argv);
 // "tx"
-RZ_IPI RzCmdStatus rz_type_xrefs_list_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_xrefs_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "txf"
-RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "txg"
 RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const char **argv);
 // "txl"
-RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "tk"
 RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv);
 // "tkl"
