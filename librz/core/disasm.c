@@ -5909,6 +5909,26 @@ RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, 
 }
 
 /**
+ * \brief Bytes to read at once for \p nb_opcodes instructions.
+ *
+ * An instruction can need bytes past itself, as a packet header, so take the
+ * architecture's largest decode. The bytes are read as a block is, so they are
+ * held to the maximum block size.
+ *
+ * \return The byte count, or 0 with an error logged when it exceeds the limit.
+ */
+static st32 disasm_bytes_for_opcodes(RzCore *core, st64 nb_opcodes) {
+	int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+	ut64 bytes = (ut64)RZ_MAX(max_op_size, MAX_OPSIZE) * RZ_ABS(nb_opcodes) + 1;
+	ut64 limit = RZ_MIN((ut64)(core->blocksize_max ? core->blocksize_max : ST32_MAX), (ut64)ST32_MAX - 1);
+	if (bytes > limit) {
+		RZ_LOG_ERROR("Disassembly range is too large: 0x%" PFMT64x " bytes, the limit is 0x%" PFMT64x " (see `bm`).\n", bytes, limit);
+		return 0;
+	}
+	return (st32)bytes;
+}
+
+/**
  * \brief Disassemble \p nb_bytes bytes or \p nb_opcodes instructions, the length is
  *      constrained by both of them. Set one of them to 0 will disable its constraint.
  *      Both of them cannot be 0 at the same time.
@@ -5933,7 +5953,10 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 
 	// set the parameter equaling 0 to a value that won't affect another parameter
 	if (nb_bytes == 0 && nb_opcodes != 0) {
-		nb_bytes = MAX_OPSIZE * RZ_ABS(nb_opcodes) + 1;
+		nb_bytes = disasm_bytes_for_opcodes(core, nb_opcodes);
+		if (!nb_bytes) {
+			return 0;
+		}
 	}
 	if (nb_bytes != 0 && nb_opcodes == 0) {
 		nb_opcodes = nb_bytes / MIN_OPSIZE + 1;
