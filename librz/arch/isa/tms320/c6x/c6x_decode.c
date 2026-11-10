@@ -2445,16 +2445,20 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		}
 		if (br && ((w >> 3) & 1)) {
 			// Branch forms (Sbs7/Sbu8/Scs10 and their conditional variants). The
-			// displacement is packet-relative and scaled to the 16-bit slot, so
-			// the analysis filler resolves it against the fetch-packet base.
+			// displacement is packet-relative, so the analysis filler resolves
+			// it against the fetch-packet base.
 			insn->unit = C6X_UNIT_S;
 			ut8 b4 = (w >> 4) & 1, b5 = (w >> 5) & 1;
 			if (b5 == 0 && b4 == 1) { // Scs10: CALLP scst10, 5
+				// Counted in words, unlike the half words of the BNOP forms;
+				// TI-built code reaches its callees only so.
 				set_ins(insn, C6X_INS_CALLP);
 				insn->op_type = RZ_ANALYSIS_OP_TYPE_CALL;
 				OP(0).kind = C6X_OP_PCREL;
-				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 2;
-				insn->nops = 1;
+				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 4;
+				// the link register is implied, as in the 32-bit form
+				op_reg(&OP(1), insn->unit_side, 3); // A3 on .S1, B3 on .S2
+				insn->nops = 2;
 				return;
 			}
 			// Sbu8/Sbu8c carry an 8-bit unsigned constant instead of a signed 7-bit one

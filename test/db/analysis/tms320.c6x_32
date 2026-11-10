@@ -635,3 +635,27 @@ fcn();
 0x00000002      [!a0] bnop .s1 0x154,0x5
 EOF
 RUN
+
+# main() calls c_strlen, decrypt and uart_write_text through compact CALLPs,
+# whose displacement counts words: counted in half words, they land inside
+# functions.
+NAME=c6x compact CALLP reaches its callee in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+e asm.comments=false
+e asm.flags=false
+pd 1 @ 0x8158
+pd 1 @ 0x8178
+pd 1 @ 0x819a
+ao 1 @ 0x819a~^jump
+EOF
+EXPECT=<<EOF
+0x00008158      callp .s2 sym.c_strlen,b3
+0x00008178      callp .s2 sym.decrypt,b3
+0x0000819a      callp .s2 sym.uart_write_text,b3
+jump: 0x00008000
+EOF
+RUN
