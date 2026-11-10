@@ -51,7 +51,7 @@ static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 			}
 		}
 		if (!c6x_decode(c6x, raw, want, pkt->slots[i].addr,
-			    analysis->big_endian, &out[i])) {
+			    analysis->big_endian, c6x_read_io, analysis, &out[i])) {
 			return 0;
 		}
 		if (out[i].size != pkt->slots[i].size) {
@@ -298,7 +298,7 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	const C6xArchDesc *c6x = c6x_desc_from_cpu(cpu);
 	if (c6x) {
 		C6xInsn insn;
-		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, &insn)) {
+		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, c6x_read_io, analysis, &insn)) {
 			return -1;
 		}
 		c6x_fill_analysis(c6x, &insn, addr, op);
