@@ -32,6 +32,7 @@ static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
 static const RzCmdDescDetail slash_z_details[4];
+static const RzCmdDescDetail calculate_expr_details[2];
 static const RzCmdDescDetail base64_encode_details[2];
 static const RzCmdDescDetail base64_decode_details[2];
 static const RzCmdDescDetail print_boundaries_prot_details[2];
@@ -45,6 +46,7 @@ static const RzCmdDescDetail exec_cmd_if_core_num_value_negative_details[2];
 static const RzCmdDescDetail push_escaped_details[3];
 static const RzCmdDescDetail analysis_all_esil_details[2];
 static const RzCmdDescDetail analyze_all_preludes_details[2];
+static const RzCmdDescDetail analysis_function_signature_details[2];
 static const RzCmdDescDetail analysis_functions_merge_details[2];
 static const RzCmdDescDetail analysis_appcall_details[2];
 static const RzCmdDescDetail analysis_graph_write_details[2];
@@ -3240,6 +3242,18 @@ static const RzCmdDescHelp cmd_catalog_json_help = {
 static const RzCmdDescHelp cmd_math_help = {
 	.summary = "Math commands",
 };
+static const RzCmdDescDetailEntry calculate_expr_Expression_space_syntax_space_and_space_functions_detail_entries[] = {
+	{ .text = "%", .arg_str = " <addr>:[le|be]?[s|f]?(8|16|32|64|128)", .comment = "Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)" },
+	{ .text = "%", .arg_str = " <num>u<width>", .comment = "Construct bit-vector literal of explicit bit-width (e.g. 0xffu8, 42u128)" },
+	{ .text = "%", .arg_str = " entropy(<addr>, <len>)", .comment = "Compute Shannon entropy (0.0 to 8.0) of <len> bytes at <addr>" },
+	{ .text = "%", .arg_str = " temperature(<addr>, <len>)", .comment = "Compute byte temperature of <len> bytes at <addr>" },
+	{ .text = "%", .arg_str = " sha256(<addr>, <len>)", .comment = "Compute SHA-256 digest of <len> bytes at <addr> (also md5, sha1, sha384, sha512, xxhash, crc, ...)" },
+	{ 0 },
+};
+static const RzCmdDescDetail calculate_expr_details[] = {
+	{ .name = "Expression syntax and functions", .entries = calculate_expr_Expression_space_syntax_space_and_space_functions_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg calculate_expr_args[] = {
 	{
 		.name = "expr",
@@ -3251,6 +3265,7 @@ static const RzCmdDescArg calculate_expr_args[] = {
 };
 static const RzCmdDescHelp calculate_expr_help = {
 	.summary = "Evaluate numerical expression <expr>",
+	.details = calculate_expr_details,
 	.args = calculate_expr_args,
 };
 
@@ -4679,6 +4694,15 @@ static const RzCmdDescHelp analysis_function_setbits_help = {
 static const RzCmdDescHelp afs_help = {
 	.summary = "Function signatures commands",
 };
+static const RzCmdDescDetailEntry analysis_function_signature_Examples_detail_entries[] = {
+	{ .text = "afs", .arg_str = "", .comment = "Print the signature, e.g. int main(int argc @ rdi, char **argv @ rsi, char **envp);" },
+	{ .text = "afs", .arg_str = " int main(int argc, char **argv)", .comment = "Set the signature from a C prototype" },
+	{ 0 },
+};
+static const RzCmdDescDetail analysis_function_signature_details[] = {
+	{ .name = "Examples", .entries = analysis_function_signature_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescArg analysis_function_signature_args[] = {
 	{
 		.name = "signature",
@@ -4691,6 +4715,8 @@ static const RzCmdDescArg analysis_function_signature_args[] = {
 };
 static const RzCmdDescHelp analysis_function_signature_help = {
 	.summary = "Get/Set function signature at current address",
+	.description = "Without an argument, prints the signature of the function. An argument is followed by its location when an argument variable has the same name and type. With an argument, sets the signature from a C prototype, like the one `afT` prints.",
+	.details = analysis_function_signature_details,
 	.args = analysis_function_signature_args,
 };
 
@@ -4722,6 +4748,14 @@ static const RzCmdDescArg analysis_function_signature_type_args[] = {
 static const RzCmdDescHelp analysis_function_signature_type_help = {
 	.summary = "Change type for current function",
 	.args = analysis_function_signature_type_args,
+};
+
+static const RzCmdDescArg analysis_function_type_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp analysis_function_type_help = {
+	.summary = "Show the type of the function at current address",
+	.args = analysis_function_type_args,
 };
 
 static const RzCmdDescArg analysis_function_address_args[] = {
@@ -6502,7 +6536,8 @@ static const RzCmdDescArg analysis_reg_profile_comments_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp analysis_reg_profile_comments_help = {
-	.summary = "Show register profile comments",
+	.summary = "Show the full-line comments of the register profile",
+	.description = "A comment after a register definition describes that register, and `arpj` shows it as the `comment` of the register.",
 	.args = analysis_reg_profile_comments_args,
 };
 
@@ -11915,7 +11950,8 @@ static const RzCmdDescArg debug_reg_profile_comments_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp debug_reg_profile_comments_help = {
-	.summary = "Show register profile comments",
+	.summary = "Show the full-line comments of the register profile",
+	.description = "A comment after a register definition describes that register, and `drpj` shows it as the `comment` of the register.",
 	.args = debug_reg_profile_comments_args,
 };
 
@@ -23225,6 +23261,9 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_signature_type_cd = rz_cmd_desc_argv_new(core->rcmd, afs_cd, "afsr", rz_analysis_function_signature_type_handler, &analysis_function_signature_type_help);
 	rz_warn_if_fail(analysis_function_signature_type_cd);
 
+	RzCmdDesc *analysis_function_type_cd = rz_cmd_desc_argv_modes_new(core->rcmd, af_cd, "afT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_type_handler, &analysis_function_type_help);
+	rz_warn_if_fail(analysis_function_type_cd);
+
 	RzCmdDesc *analysis_function_address_cd = rz_cmd_desc_argv_modes_new(core->rcmd, af_cd, "afo", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_address_handler, &analysis_function_address_help);
 	rz_warn_if_fail(analysis_function_address_cd);
 
@@ -23565,7 +23604,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, arf_cd, "arf-", rz_analysis_reg_flags_unset_handler, &analysis_reg_flags_unset_help);
 	rz_warn_if_fail(analysis_reg_flags_unset_cd);
 
-	RzCmdDesc *ara_cd = rz_cmd_desc_group_new(core->rcmd, ar_cd, "ara", rz_analysis_reg_arenas_handler, &analysis_reg_arenas_help, &ara_help);
+	RzCmdDesc *ara_cd = rz_cmd_desc_group_state_new(core->rcmd, ar_cd, "ara", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_arenas_handler, &analysis_reg_arenas_help, &ara_help);
 	rz_warn_if_fail(ara_cd);
 	RzCmdDesc *analysis_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, ara_cd, "ara+", rz_analysis_reg_arenas_push_handler, &analysis_reg_arenas_push_help);
 	rz_warn_if_fail(analysis_reg_arenas_push_cd);
@@ -23590,7 +23629,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *arp_cd = rz_cmd_desc_group_state_new(core->rcmd, ar_cd, "arp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_profile_handler, &analysis_reg_profile_help, &arp_help);
 	rz_warn_if_fail(arp_cd);
-	RzCmdDesc *analysis_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpc", rz_analysis_reg_profile_comments_handler, &analysis_reg_profile_comments_help);
+	RzCmdDesc *analysis_reg_profile_comments_cd = rz_cmd_desc_argv_state_new(core->rcmd, arp_cd, "arpc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_profile_comments_handler, &analysis_reg_profile_comments_help);
 	rz_warn_if_fail(analysis_reg_profile_comments_cd);
 
 	RzCmdDesc *analysis_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, arp_cd, "arpo", rz_analysis_reg_profile_open_handler, &analysis_reg_profile_open_help);
@@ -23602,10 +23641,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arc", rz_analysis_reg_cond_handler, &analysis_reg_cond_help);
 	rz_warn_if_fail(analysis_reg_cond_cd);
 
-	RzCmdDesc *analysis_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arT", rz_analysis_reg_types_handler, &analysis_reg_types_help);
+	RzCmdDesc *analysis_reg_types_cd = rz_cmd_desc_argv_state_new(core->rcmd, ar_cd, "arT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_types_handler, &analysis_reg_types_help);
 	rz_warn_if_fail(analysis_reg_types_cd);
 
-	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, ar_cd, "arR", rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
+	RzCmdDesc *analysis_reg_roles_cd = rz_cmd_desc_argv_state_new(core->rcmd, ar_cd, "arR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_reg_roles_handler, &analysis_reg_roles_help);
 	rz_warn_if_fail(analysis_reg_roles_cd);
 
 	RzCmdDesc *ai_cd = rz_cmd_desc_group_state_new(core->rcmd, cmd_analysis_cd, "ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_info_show_handler, &analysis_info_show_help, &ai_help);
@@ -24720,7 +24759,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_reg_flags_unset_cd = rz_cmd_desc_argv_new(core->rcmd, drf_cd, "drf-", rz_debug_reg_flags_unset_handler, &debug_reg_flags_unset_help);
 	rz_warn_if_fail(debug_reg_flags_unset_cd);
 
-	RzCmdDesc *dra_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "dra", rz_debug_reg_arenas_handler, &debug_reg_arenas_help, &dra_help);
+	RzCmdDesc *dra_cd = rz_cmd_desc_group_state_new(core->rcmd, dr_cd, "dra", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_arenas_handler, &debug_reg_arenas_help, &dra_help);
 	rz_warn_if_fail(dra_cd);
 	RzCmdDesc *debug_reg_arenas_push_cd = rz_cmd_desc_argv_new(core->rcmd, dra_cd, "dra+", rz_debug_reg_arenas_push_handler, &debug_reg_arenas_push_help);
 	rz_warn_if_fail(debug_reg_arenas_push_cd);
@@ -24745,7 +24784,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *drp_cd = rz_cmd_desc_group_state_new(core->rcmd, dr_cd, "drp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_profile_handler, &debug_reg_profile_help, &drp_help);
 	rz_warn_if_fail(drp_cd);
-	RzCmdDesc *debug_reg_profile_comments_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpc", rz_debug_reg_profile_comments_handler, &debug_reg_profile_comments_help);
+	RzCmdDesc *debug_reg_profile_comments_cd = rz_cmd_desc_argv_state_new(core->rcmd, drp_cd, "drpc", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_profile_comments_handler, &debug_reg_profile_comments_help);
 	rz_warn_if_fail(debug_reg_profile_comments_cd);
 
 	RzCmdDesc *debug_reg_profile_open_cd = rz_cmd_desc_argv_new(core->rcmd, drp_cd, "drpo", rz_debug_reg_profile_open_handler, &debug_reg_profile_open_help);
@@ -24757,10 +24796,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *debug_reg_cond_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drc", rz_debug_reg_cond_handler, &debug_reg_cond_help);
 	rz_warn_if_fail(debug_reg_cond_cd);
 
-	RzCmdDesc *debug_reg_types_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drT", rz_debug_reg_types_handler, &debug_reg_types_help);
+	RzCmdDesc *debug_reg_types_cd = rz_cmd_desc_argv_state_new(core->rcmd, dr_cd, "drT", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_types_handler, &debug_reg_types_help);
 	rz_warn_if_fail(debug_reg_types_cd);
 
-	RzCmdDesc *debug_reg_roles_cd = rz_cmd_desc_argv_new(core->rcmd, dr_cd, "drR", rz_debug_reg_roles_handler, &debug_reg_roles_help);
+	RzCmdDesc *debug_reg_roles_cd = rz_cmd_desc_argv_state_new(core->rcmd, dr_cd, "drR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_debug_reg_roles_handler, &debug_reg_roles_help);
 	rz_warn_if_fail(debug_reg_roles_cd);
 
 	RzCmdDesc *drx_cd = rz_cmd_desc_group_new(core->rcmd, dr_cd, "drx", rz_debug_drx_handler, &debug_drx_help, &drx_help);

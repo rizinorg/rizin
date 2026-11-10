@@ -223,6 +223,28 @@ bool test_rz_flag_get_preferred_item_keep_aav_when_only_aav() {
 	mu_end;
 }
 
+bool test_rz_flag_unset_all_off(void) {
+	RzFlag *flags = rz_flag_new();
+	mu_assert_notnull(flags, "rz_flag_new() failed");
+
+	mu_assert_false(rz_flag_unset_all_off(flags, 0x2000), "no flags at 0x2000");
+
+	RzFlagItem *f1 = rz_flag_set(flags, "sym.alpha", 0x2000, 4);
+	rz_flag_item_set_realname(flags, f1, "alpha::real");
+	rz_flag_set(flags, "reloc.alpha", 0x2000, 8);
+	rz_flag_set(flags, "sym.beta", 0x2010, 4);
+
+	mu_assert_true(rz_flag_unset_all_off(flags, 0x2000), "unset multiple flags at 0x2000");
+	mu_assert_null(rz_flag_get(flags, "sym.alpha"), "sym.alpha removed");
+	mu_assert_null(rz_flag_get(flags, "alpha::real"), "realname removed");
+	mu_assert_null(rz_flag_get(flags, "reloc.alpha"), "reloc.alpha removed");
+	mu_assert_null(rz_flag_get_list(flags, 0x2000), "offset list removed");
+	mu_assert_notnull(rz_flag_get(flags, "sym.beta"), "neighbor flag preserved");
+
+	rz_flag_free(flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test(test_rz_flag_get_set);
 	mu_run_test(test_rz_flag_by_spaces);
@@ -231,6 +253,7 @@ int all_tests(void) {
 	mu_run_test(test_rz_flag_get_preferred_item);
 	mu_run_test(test_rz_flag_get_preferred_item_fallback_non_aav);
 	mu_run_test(test_rz_flag_get_preferred_item_keep_aav_when_only_aav);
+	mu_run_test(test_rz_flag_unset_all_off);
 	return tests_passed != tests_run;
 }
 

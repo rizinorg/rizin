@@ -65,17 +65,12 @@ EXPECT=<<EOF
 0x00001260    6 335          dbg.main
 0x000013b0    1 9            sym._fini
             ; CALL XREF from dbg.main @ 0x132a
-/ _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+/ _Bool fn1(int a @ stack - 0x10, char *g @ stack - 0x18, double q @ stack - 0x20, struct Some *gg @ stack - 0x28, some_t **out @ stack - 0x30)
 |           ; var char **arg1 @ rdi
 |           ; var const char *arg2 @ rsi
 |           ; var int64_t arg7 @ xmm0
 |           ; var unsigned long arg3 @ rdx
 |           ; var some_t *arg4 @ rcx
-|           ; arg int a @ stack - 0x10
-|           ; arg char *g @ stack - 0x18
-|           ; arg double q @ stack - 0x20
-|           ; arg struct Some *gg @ stack - 0x28
-|           ; arg some_t **out @ stack - 0x30
 |           0x00001180      push  rbp                                  ; float_ex1.c:15
 |           0x00001181      mov   rbp, rsp
 |           0x00001184      sub   rsp, 0x30
