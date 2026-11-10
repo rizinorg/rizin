@@ -247,3 +247,28 @@ EXPECT=<<EOF
 Hello world!
 EOF
 RUN
+
+NAME=dmS lists the sections of a module of the process
+FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-d
+CMDS=<<EOF
+db @ main
+dc
+dmS 0x08048000 .text
+dmSj 0x08048000 .text~{[0].addr}
+dmSj 0x08048000 .text~{[0].sections}
+echo ----
+dc
+EOF
+EXPECT=<<EOF
+[Sections]
+     paddr  size      vaddr vsize align perm name                     type     flags         
+---------------------------------------------------------------------------------------------
+0x00000300 0x194 0x08048300 0x194   0x0 -r-x x86-helloworld-gcc..text PROGBITS alloc,execute
+
+134512640
+[{"name":".text","size":404,"vsize":404,"perm":"-r-x","type":"PROGBITS","flags":["alloc","execute"],"paddr":768,"vaddr":134513408}]
+----
+Hello world!
+EOF
+RUN
