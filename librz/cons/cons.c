@@ -42,6 +42,38 @@ static void ctx_rowcol_calc_reset(RzCons *cons) {
 	cons->context->rowcol_calc_start = 0;
 }
 
+/**
+ * \brief Replaces the output that `_` replays with the current, filtered one.
+ *
+ * Each copy gets its exact size, so `lastLength` is always the length of what
+ * `lastOutput` holds. An empty or too long output, or a failed allocation,
+ * leaves nothing to replay rather than a stale result.
+ */
+static void cons_save_last(RzConsContext *context) {
+	RZ_FREE(context->lastOutput);
+	context->lastLength = 0;
+	// rz_cons_memcat() and rz_str_newlen() take an int length
+	if (!context->buffer_len || context->buffer_len > INT_MAX) {
+		return;
+	}
+	// Not rz_str_ndup(): the output may contain NUL bytes
+	context->lastOutput = rz_str_newlen(context->buffer, (int)context->buffer_len);
+	if (context->lastOutput) {
+		context->lastLength = (int)context->buffer_len;
+	}
+}
+
+/**
+ * \brief Tells whether this flush replaces the output that `_` replays.
+ *
+ * Decided before filtering: an empty filter result replaces the saved output,
+ * an empty flush does not.
+ */
+static inline bool cons_flush_saves_last(const RzCons *cons) {
+	return cons->context->lastEnabled && cons->context->buffer_len > 0 &&
+		!cons->filter && !cons->context->grep.less && !cons->is_html;
+}
+
 static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
 	RzCons *cons = s->cons;
@@ -863,16 +895,14 @@ RZ_API void rz_cons_context_break(RzConsContext *context) {
 	rz_interrupt_raise(context->intr);
 }
 
+/**
+ * \brief Append the last saved output so it can be displayed or filtered again.
+ */
 RZ_API void rz_cons_last(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	if (!cons->context->lastEnabled) {
 		return;
 	}
-	cons->context->lastMode = true;
 	rz_cons_memcat(cons, cons->context->lastOutput, cons->context->lastLength);
-}
-
-static bool lastMatters(RzCons *cons) {
-	return (cons->context->buffer_len > 0) && (cons->context->lastEnabled && !cons->filter && cons->context->grep.nstrings < 1 && !cons->context->grep.tokens_used && !cons->context->grep.less && !cons->context->grep.json && !cons->is_html);
 }
 
 RZ_API void rz_cons_echo(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
@@ -894,6 +924,11 @@ RZ_API void rz_cons_echo(RZ_NONNULL RZ_BORROW RzCons *cons, const char *msg) {
 	}
 }
 
+/**
+ * \brief Flush console output, retaining filtered text for later replay.
+ *
+ * Nested captures defer flushing so they do not replace the saved output.
+ */
 RZ_API void rz_cons_flush(RZ_NONNULL RZ_BORROW RzCons *cons) {
 	const char *tee = cons->teefile;
 	if (cons->context->noflush) {
@@ -903,20 +938,11 @@ RZ_API void rz_cons_flush(RZ_NONNULL RZ_BORROW RzCons *cons) {
 		rz_cons_reset(cons);
 		return;
 	}
-	if (lastMatters(cons) && !cons->context->lastMode) {
-		// snapshot of the output
-		if (cons->context->buffer_len > cons->context->lastLength || !cons->context->lastOutput) {
-			free(cons->context->lastOutput);
-			cons->context->lastOutput = malloc(cons->context->buffer_len + 1);
-		}
-		cons->context->lastLength = cons->context->buffer_len;
-		if (cons->context->lastOutput) {
-			memcpy(cons->context->lastOutput, cons->context->buffer, cons->context->buffer_len);
-		}
-	} else {
-		cons->context->lastMode = false;
-	}
+	bool save_last = cons_flush_saves_last(cons);
 	rz_cons_filter(cons);
+	if (save_last) {
+		cons_save_last(cons->context);
+	}
 	if (rz_cons_is_interactive(cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (cons->context->pageable && cons->context->buffer && cons->pager && *cons->pager && cons->context->buffer_len > 0 && rz_str_char_count(cons->context->buffer, '\n') >= cons->rows) {
