@@ -435,7 +435,7 @@ aapk "0xf00000a9:0xf00000ff"
 aflt
 EOF
 EXPECT=<<EOF
-        addr name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn
+        addr name           size xrefsTo xrefsFrom calls nbbs edges cc cost noreturn 
 -------------------------------------------------------------------------------------
 0x558ce375bc fcn.558ce375bc   20       0         1     1    1     0  1    1 false
 0x558ce375d0 fcn.558ce375d0   20       0         1     0    1     0  1    1 false
@@ -466,7 +466,7 @@ aapf .tmp/arm_64_prologues.json
 aflt
 EOF
 EXPECT=<<EOF
-      addr name                                           size xrefsTo xrefsFrom calls nbbs edges  cc cost noreturn
+      addr name                                           size xrefsTo xrefsFrom calls nbbs edges  cc cost noreturn 
 --------------------------------------------------------------------------------------------------------------------
 0x004002a0 sym..plt                                         16      11         1     0    1     0   1    1 false
 0x004002b0 fcn.004002b0                                     16      80         1     0    1     0   1    1 false
