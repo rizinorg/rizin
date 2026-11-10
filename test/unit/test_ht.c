@@ -870,6 +870,49 @@ bool test_ht_ss_iter(void) {
 	mu_end;
 }
 
+bool test_ht_uu_iter_clone(void) {
+	HtUU *ht = ht_uu_new();
+	ht_uu_insert(ht, 0x11, 0x1111);
+	ht_uu_insert(ht, 0x22, 0x2222);
+	ht_uu_insert(ht, 0x33, 0x3333);
+	ht_uu_insert(ht, 0x44, 0x4444);
+	ht_uu_insert(ht, 0x55, 0x5555);
+
+	// take two steps, then clone
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_keys(ht, &it), "ht_uu_as_iter_keys failed");
+	const ut64 *k;
+	mu_assert_notnull(rz_iterator_next(&it), "first element");
+	mu_assert_notnull(rz_iterator_next(&it), "second element");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+
+	// both continue over the remaining elements, independently
+	// (icnt counts the elements consumed by the clone: 2 before cloning, 1 shared step)
+	ut32 icnt = 3;
+	const ut64 *k_clone;
+	mu_assert_notnull(k = rz_iterator_next(&it), "next original");
+	mu_assert_notnull(k_clone = rz_iterator_next(&it_clone), "next clone");
+	mu_assert_eq(*k, *k_clone, "original and clone diverged");
+	rz_iterator_fini(&it);
+
+	// Iterate clone without the original
+	while ((k = rz_iterator_next(&it_clone))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(icnt, 5, "Wrong number of clone iterations");
+
+	// cloning an uninitialized iterator fails
+	RzIterator uninit = (RzIterator){ 0 };
+	RzIterator uninit_clone = (RzIterator){ 0 };
+	mu_assert_false(rz_iterator_clone(&uninit, &uninit_clone), "clone of uninit succeeded");
+	mu_assert_true(rz_iterator_is_uninit(&uninit_clone), "failed clone left initialized iterator");
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
 bool test_set_u(void) {
 	RzSetU *set_u = rz_set_u_new();
 	rz_set_u_add(set_u, 0x5050505);
@@ -1231,6 +1274,7 @@ int all_tests() {
 	mu_run_test(test_ht_uu_iter);
 	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
+	mu_run_test(test_ht_uu_iter_clone);
 	mu_run_test(test_set_u);
 	mu_run_test(test_set_u_union);
 	mu_run_test(test_set_u_intersection);

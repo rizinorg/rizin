@@ -336,6 +336,14 @@ static void *pvecotr_iter_next(RzIterator *iter) {
 	return NULL;
 }
 
+static void *pvector_clone_iter_state(const void *state) {
+	RzGraphListIterState *clone = RZ_NEW(RzGraphListIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(RzGraphListIterState));
+	}
+	return clone;
+}
+
 /**
  * \brief Wrap an RzPVector as a read-only RzIterator.
  *
@@ -362,13 +370,7 @@ static bool pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec, RZ_OUT RZ_NONNUL
 	state->cur_id = 0;
 	state->vec = vec;
 
-	*iterator = (RzIterator){
-		.next = (rz_iterator_next_cb)pvecotr_iter_next,
-		.free = NULL,
-		.free_u = free,
-		.u = state
-	};
-	return true;
+	return rz_iterator_init((rz_iterator_next_cb)pvecotr_iter_next, NULL, free, pvector_clone_iter_state, state, iterator);
 }
 
 /**
@@ -798,6 +800,17 @@ static void *matrix_edge_iter_next(RzIterator *it) {
 }
 
 /**
+ * \brief Duplicates a matrix edge iterator state.
+ */
+static void *matrix_edge_clone_iter_state(const void *state) {
+	RzGraphMatrixIterState *clone = RZ_NEW(RzGraphMatrixIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(RzGraphMatrixIterState));
+	}
+	return clone;
+}
+
+/**
  * \brief Create a matrix edge iterator for a given node.
  *
  * Wraps the matrix scan logic into an RzIterator. The iterator scans
@@ -813,6 +826,7 @@ static void *matrix_edge_iter_next(RzIterator *it) {
 static bool matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*/ *g, ut64 node_vid, bool scan_out, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	RzGraphMatrixIterState *state = RZ_NEW0(RzGraphMatrixIterState);
 	if (!state) {
+		*iterator = (RzIterator){ 0 };
 		return false;
 	}
 	state->g = g;
@@ -820,13 +834,7 @@ static bool matrix_edge_as_iter(const RzGraph /*<NodeType *, EdgeType *>*/ *g, u
 	state->cur = 0;
 	state->scan_out = scan_out;
 
-	*iterator = (RzIterator){
-		.next = (rz_iterator_next_cb)matrix_edge_iter_next,
-		.free = NULL,
-		.free_u = free,
-		.u = state
-	};
-	return true;
+	return rz_iterator_init((rz_iterator_next_cb)matrix_edge_iter_next, NULL, free, matrix_edge_clone_iter_state, state, iterator);
 }
 
 /**
@@ -1732,6 +1740,30 @@ static void neighbour_iter_free(void *user_data) {
 }
 
 /**
+ * \brief Clone callback for neighbour iterator state.
+ *
+ * Duplicates the state including the inner edge iterator.
+ *
+ * \param state the RzNeighbourIterState to clone
+ * \return the cloned state, or NULL on failure
+ */
+static void *neighbour_iter_clone(const void *state) {
+	const RzNeighbourIterState *s = state;
+	RzNeighbourIterState *clone = RZ_NEW(RzNeighbourIterState);
+	if (!clone) {
+		return NULL;
+	}
+	*clone = *s;
+	if (rz_iterator_is_uninit(&s->edge_iter)) {
+		clone->edge_iter = (RzIterator){ 0 };
+	} else if (!rz_iterator_clone(&s->edge_iter, &clone->edge_iter)) {
+		free(clone);
+		return NULL;
+	}
+	return clone;
+}
+
+/**
  * \brief Wrap an edge iterator as a neighbour node iterator.
  *
  * Takes ownership of \p edge_iter and produces an iterator that yields
@@ -1747,18 +1779,13 @@ static bool as_neighbour_iter(RZ_OWN RzIterator edge_iter, bool use_from, RZ_OUT
 	RzNeighbourIterState *state = RZ_NEW0(RzNeighbourIterState);
 	if (!state) {
 		rz_iterator_fini(&edge_iter);
+		*iterator = (RzIterator){ 0 };
 		return false;
 	}
 	state->edge_iter = edge_iter;
 	state->use_from = use_from;
 
-	*iterator = (RzIterator){
-		.next = neighbour_iter_next,
-		.free = NULL,
-		.free_u = neighbour_iter_free,
-		.u = state
-	};
-	return true;
+	return rz_iterator_init(neighbour_iter_next, NULL, neighbour_iter_free, neighbour_iter_clone, state, iterator);
 }
 
 /**

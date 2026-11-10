@@ -5510,7 +5510,9 @@ RZ_API bool rz_core_analysis_op_chunk_iter(
 		return false;
 	}
 
-	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, ctx, iterator);
+	// no clone callback: the yielded RzAnalysisOp lives inside the state, so the iterator cannot be cloned
+	// Otherwise we can get use after frees on these RzAnalysisOp.
+	return rz_iterator_init((rz_iterator_next_cb)analysis_op_context_iter_next, (rz_iterator_free_cb)rz_analysis_op_fini, free, NULL, ctx, iterator);
 }
 
 /**
@@ -5742,8 +5744,7 @@ static bool core_decoded_bytes_init(CoreDecodedBytes *ctx, RzCore *core, ut64 st
 }
 
 /**
- *
- * Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
+ * \brief Analyze and disassemble bytes use rz_analysis_op and rz_asm_disassemble
  *
  * \param core     The RzCore instance
  * \param start_addr Address to start analysis from
@@ -5770,7 +5771,9 @@ RZ_API bool rz_core_analysis_bytes(
 		return false;
 	}
 
-	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, (rz_iterator_free_cb)core_decoded_bytes_free, ctx, iterator);
+	// no clone callback: the yielded RzCoreDecodedBytes lives inside the state, so the iterator cannot be cloned.
+	// Otherwise we can get use after frees on these RzCoreDecodedBytes.
+	return rz_iterator_init((rz_iterator_next_cb)core_decoded_bytes_next, (rz_iterator_free_cb)analysis_bytes_iter_fini, (rz_iterator_free_cb)core_decoded_bytes_free, NULL, ctx, iterator);
 }
 
 /**

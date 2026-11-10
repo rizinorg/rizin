@@ -14,6 +14,8 @@
  * \param next A pointer to the function that defines the 'next' behavior of the iterator.
  * \param free A pointer to the function that is used to free the inner object.
  * \param free_u A pointer to the function that is used to free the user object `u`.
+ * \param clone_u A pointer to the function that duplicates the user object \p u, or NULL
+ *                if the iterator does not support cloning (see rz_iterator_clone()).
  * \param u A generic pointer to user data.
  * \param iterator Output parameter, filled with the constructed iterator on success.
  *
@@ -23,6 +25,7 @@ RZ_API bool rz_iterator_init(
 	RZ_NONNULL rz_iterator_next_cb next,
 	RZ_NULLABLE rz_iterator_free_cb free,
 	RZ_NULLABLE rz_iterator_free_cb free_u,
+	RZ_NULLABLE rz_iterator_clone_cb clone_u,
 	RZ_NONNULL RZ_OWN void *u,
 	RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	if (!(next && u)) {
@@ -37,6 +40,7 @@ RZ_API bool rz_iterator_init(
 	iterator->u = u;
 	iterator->free = free;
 	iterator->free_u = free_u;
+	iterator->clone_u = clone_u;
 	return true;
 }
 
@@ -70,4 +74,41 @@ RZ_API void rz_iterator_fini(RzIterator *it) {
 	if (it->free_u) {
 		it->free_u(it->u);
 	}
+}
+
+/**
+ * \brief Clone \p iter into \p iter_clone, at the state \p iter is in at the moment of cloning.
+ *
+ * The clone and the original are independent of each other, i.e. advancing or
+ * finalizing one of them does not affect the other. Both continue to yield
+ * the same elements from their current position on.
+ *
+ * If \p iter does not support cloning,
+ * false is returned and \p iter_clone is set to an uninitialized iterator.
+ *
+ * \param iter The iterator to clone.
+ * \param iter_clone Filled with the cloned iterator on success.
+ *
+ * \return True on success, false on failure or if the iterator does not support cloning.
+ */
+RZ_API bool rz_iterator_clone(const RzIterator *iter, RZ_OUT RzIterator *iter_clone) {
+	rz_return_val_if_fail(iter_clone, false);
+	*iter_clone = (RzIterator){ 0 };
+	if (rz_iterator_is_uninit(iter)) {
+		return false;
+	}
+	if (!iter->clone_u) {
+		// This iterator does not have a clone callback,
+		// so its state cannot be duplicated (see rz_iterator_init())
+		return false;
+	}
+	void *u_clone = iter->clone_u(iter->u);
+	if (!u_clone) {
+		return false;
+	}
+	if (!rz_iterator_init(iter->next, iter->free, iter->free_u, iter->clone_u, u_clone, iter_clone)) {
+		return false;
+	}
+	iter_clone->cur = iter->cur;
+	return true;
 }

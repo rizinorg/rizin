@@ -737,6 +737,14 @@ static void vector_free_iter_state(void *state) {
 	free(state);
 }
 
+static void *vector_clone_iter_state(const void *state) {
+	VectorIterState *clone = RZ_NEW(VectorIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(VectorIterState));
+	}
+	return clone;
+}
+
 /**
  * \brief Returns an iterator over \p vec, yielding pointers to the
  * elements in the vector.
@@ -755,7 +763,7 @@ RZ_API bool rz_vector_as_iter(const RZ_NONNULL RzVector *vec, RZ_OUT RZ_NONNULL 
 		return false;
 	}
 	state->vec = vec;
-	if (!rz_iterator_init((rz_iterator_next_cb)vector_iter_next, NULL, vector_free_iter_state, state, iter)) {
+	if (!rz_iterator_init((rz_iterator_next_cb)vector_iter_next, NULL, vector_free_iter_state, vector_clone_iter_state, state, iter)) {
 		vector_free_iter_state(state);
 		return false;
 	}

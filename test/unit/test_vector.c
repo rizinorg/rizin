@@ -1168,6 +1168,26 @@ static bool test_vector_as_iter(void) {
 	mu_assert_eq(v.len, 5, "vector length changed by the iterator");
 	mu_assert_notnull(v.a, "vector data freed by the iterator");
 
+	// clone at the current state and continue iterating independently
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_vector_as_iter(&v, &it), "rz_vector_as_iter failed");
+	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 0, "first value");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 1, "second value original");
+	mu_assert_eq(*((ut32 *)rz_iterator_next(&it_clone)), 1, "second value clone");
+	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 2, "third value original");
+	mu_assert_eq(*((ut32 *)rz_iterator_next(&it_clone)), 2, "third value clone");
+	rz_iterator_fini(&it);
+	// the clone is unaffected by finalizing the original
+	ut32 clone_count = 3;
+	rz_iterator_foreach(&it_clone, elem) {
+		mu_assert_eq(*elem, clone_count, "clone value mismatch");
+		clone_count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(clone_count, 5, "wrong number of clone iterations");
+
 	rz_vector_clear(&v);
 	mu_end;
 }
