@@ -45,7 +45,10 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 
 // Enums
 
-static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
+/**
+ * \brief Keep the enum JSON shape when selecting a single member by value.
+ */
+static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value, RzOutputMode mode) {
 	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
@@ -54,7 +57,22 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(core->cons, enum_member);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_o(pj);
+		pj_ks(pj, "name", enum_name);
+		pj_ko(pj, "values");
+		pj_kn(pj, enum_member, value);
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(core->cons, pj_string(pj));
+		pj_free(pj);
+	} else {
+		rz_cons_println(core->cons, enum_member);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -424,7 +442,7 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 	if (argc > 1) {
 		if (argc > 2) {
 			// TODO: Reconsider the `te <enum_name> <member_value>` syntax change
-			return types_enum_member_find(core, argv[1], argv[2]);
+			return types_enum_member_find(core, argv[1], argv[2], mode);
 		} else {
 			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);

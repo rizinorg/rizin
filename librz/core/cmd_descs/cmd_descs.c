@@ -19917,6 +19917,7 @@ static const RzCmdDescArg type_list_enum_args[] = {
 };
 static const RzCmdDescHelp type_list_enum_help = {
 	.summary = "List loaded enums / Show enum member",
+	.description = "JSON output for a named enum contains its name and a values object. Providing a value restricts that object to the matching member.",
 	.args = type_list_enum_args,
 };
 

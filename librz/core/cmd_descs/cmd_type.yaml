@@ -101,6 +101,9 @@ commands:
       - name: te
         cname: type_list_enum
         summary: List loaded enums / Show enum member
+        description: >
+          JSON output for a named enum contains its name and a values object.
+          Providing a value restricts that object to the matching member.
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON

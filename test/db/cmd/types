@@ -481,10 +481,24 @@ td "enum FOO { A=1, B=0x100, C=0xFF, D=4, E=5 };"
 td "enum BAR { G=0x800, Z=0xEE, P=4, E=5 };"
 tej FOO
 tej BAR
+tej FOO 0x100
+tej BAR 0x800
+td "enum WIDE { ZERO=0, HIGH=0x100000000 };"
+tej WIDE 0
+tej WIDE 0x100000000
+e cfg.json.status=true
+tej missing 0
+tej WIDE 1
 EOF
 EXPECT=<<EOF
 {"name":"FOO","values":{"A":1,"B":256,"C":255,"D":4,"E":5}}
 {"name":"BAR","values":{"G":2048,"Z":238,"P":4,"E":5}}
+{"name":"FOO","values":{"B":256}}
+{"name":"BAR","values":{"G":2048}}
+{"name":"WIDE","values":{"ZERO":0}}
+{"name":"WIDE","values":{"HIGH":4294967296}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"tej","args":["missing","0"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"tej","args":["WIDE","1"]}}
 EOF
 RUN
 
