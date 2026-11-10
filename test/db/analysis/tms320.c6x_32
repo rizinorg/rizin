@@ -759,6 +759,27 @@ jump: 0x00008000
 EOF
 RUN
 
+# The compact callp issues with the mv that sets up the argument of c_strlen.
+NAME=c6x a call runs the rest of its execute packet in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x8158
+aezi
+ar a3=0x1234
+ar a4=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00001234
+b3 = 0x00008160
+ PC: 0x00008088
+EOF
+RUN
+
 # dis6x writes the layout field of a fetch-packet header with a trailing "b",
 # which RzNum warns about when asm.sub.names evaluates the numbers of a line.
 # The second header has a doubleword primary size, named as dis6x names it.

@@ -435,6 +435,7 @@ typedef struct {
 /** One execute packet: the instructions that issue in the same cycle. */
 typedef struct {
 	ut64 addr; ///< address of the first slot
+	ut64 next; ///< address of the execute packet after it
 	C6xSlotRef slots[C6X_FP_SLOTS];
 	size_t n;
 } C6xPacketRef;
@@ -456,6 +457,8 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret);
 
 /** Local carrying a deferred branch's predicate from issue to transfer. */
 #define C6X_PRED_TAKEN "_br_taken"

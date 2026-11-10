@@ -74,6 +74,17 @@ static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx
 	return false;
 }
 
+// The CALLP in a packet, which shares it with no other branch.
+static bool c6x_packet_call(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx) {
+	for (size_t i = 0; i < n; i++) {
+		if (insns[i].id == C6X_INS_CALLP) {
+			*idx = i;
+			return true;
+		}
+	}
+	return false;
+}
+
 // Does any packet up to \p depth ahead read \p reg?
 static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 from,
 	ut8 depth, const C6xOperand *reg, RZ_OUT ut64 *end) {
@@ -89,6 +100,9 @@ static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 		ut8 bs;
 		if (c6x_packet_branch(ins, n, &bi, &bs)) {
 			return false; // a branch owns its own window; leave it alone
+		}
+		if (c6x_packet_call(ins, n, &bi)) {
+			return false; // the call's NOPs let every result land before the callee
 		}
 		for (size_t i = 0; i < n; i++) {
 			for (ut8 o = 0; o + 1 < ins[i].nops; o++) {
@@ -166,6 +180,31 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
 }
 
 /**
+ * CALLP fills its delay slots with NOPs, so every result of its packet lands
+ * before the callee runs: the packet is lifted whole, the call last since a
+ * jump has to end the effect, returning to the packet after it.
+ */
+static RzILOpEffect *c6x_lift_call_packet(const C6xInsn *slots, size_t n, const C6xPacketRef *pkt, size_t ci) {
+	RzILOpEffect *eff = n > 1 ? c6x_lift_packet(slots, n, pkt->addr, 1u << ci) : NULL;
+	if (!eff) {
+		// nothing for the packet pass to stage, or a slot it cannot: the rest in
+		// order is the next best
+		for (size_t i = 0; i < n; i++) {
+			RzILOpEffect *e = i != ci ? c6x_lift(&slots[i], pkt->slots[i].addr) : NULL;
+			if (e) {
+				eff = eff ? rz_il_op_new_seq(eff, e) : e;
+			}
+		}
+	}
+	RzILOpEffect *call = c6x_lift_call(&slots[ci], pkt->slots[ci].addr, pkt->next);
+	if (!call) {
+		rz_il_op_effect_free(eff);
+		return NULL;
+	}
+	return eff ? rz_il_op_new_seq(eff, call) : call;
+}
+
+/**
  * Lift the IL for \p addr.
  *
  * A C6000 branch resolves five execute packets after it issues, and the packets
@@ -174,8 +213,9 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
  * inside that window lift to nothing, since the window already covers them --
  * which is why every address looks back far enough to notice it is inside one.
  *
- * Without a branch a packet is lifted on its own, and a packet of one slot takes
- * the plain per-instruction path.
+ * A call fills its own delay slots, so its packet is lifted on its own with the
+ * call last. Without a branch a packet is lifted on its own, and a packet of one
+ * slot takes the plain per-instruction path.
  */
 static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 	const C6xInsn *insn, ut64 addr) {
@@ -206,6 +246,11 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 			return rz_il_op_new_nop(); // covered by that branch's window
 		}
 		probe = prev.addr;
+	}
+	size_t cidx;
+	if (c6x_packet_call(slots, n, &cidx)) {
+		RzILOpEffect *call = c6x_lift_call_packet(slots, n, &pkt, cidx);
+		return call ? call : c6x_lift(insn, addr);
 	}
 	size_t bidx;
 	ut8 bslots;

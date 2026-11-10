@@ -64,6 +64,7 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 			out[n].size = C6X_WORD_SIZE;
 			out[n].opcode = w[i];
 			out[n].parallel = w[i] & 1;
+			out[n].header = false;
 			n++;
 		}
 		return n;
@@ -82,17 +83,20 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 			out[n].size = C6X_COMPACT_SIZE;
 			out[n].opcode = lo;
 			out[n].parallel = (pbits >> (2 * i)) & 1;
+			out[n].header = false;
 			n++;
 			out[n].addr = base + i * 4 + 2;
 			out[n].size = C6X_COMPACT_SIZE;
 			out[n].opcode = hi;
 			out[n].parallel = (pbits >> (2 * i + 1)) & 1;
+			out[n].header = false;
 			n++;
 		} else {
 			out[n].addr = base + i * 4;
 			out[n].size = C6X_WORD_SIZE;
 			out[n].opcode = w[i];
 			out[n].parallel = (pbits >> (2 * i)) & 1;
+			out[n].header = false;
 			n++;
 		}
 	}
@@ -152,13 +156,20 @@ RZ_IPI bool c6x_packet_at(C6xReadFn read, void *user, ut64 pc, bool big_endian,
 		}
 	}
 	out->n = 0;
+	size_t last = start;
 	for (size_t i = start; i < n && out->n < C6X_FP_SLOTS; i++) {
 		out->slots[out->n++] = slots[i];
+		last = i;
 		if (!slots[i].parallel) {
 			break;
 		}
 	}
 	out->addr = out->n ? out->slots[0].addr : pc;
+	// a header holds no instruction, so the next execute packet starts past it
+	out->next = slots[last].addr + slots[last].size;
+	if (last + 1 < n && slots[last + 1].header) {
+		out->next += C6X_WORD_SIZE;
+	}
 	return out->n > 0;
 }
 

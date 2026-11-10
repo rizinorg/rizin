@@ -107,6 +107,15 @@ bool test_packet_from_any_address(void) {
 	mu_end;
 }
 
+bool test_next_packet(void) {
+	C6xPacketRef p = { 0 };
+	mu_assert_true(c6x_packet_at(read_compact, NULL, FP_BASE + 12, false, &p), "found");
+	mu_assert_eq(p.next, FP_BASE + 16, "the next packet follows the pair");
+	mu_assert_true(c6x_packet_at(read_compact, NULL, FP_BASE + 24, false, &p), "found");
+	mu_assert_eq(p.next, FP_BASE + 32, "and starts past the header after the last word");
+	mu_end;
+}
+
 bool test_unreadable_image(void) {
 	C6xPacketRef p = { 0 };
 	mu_assert_false(c6x_packet_at(read_compact, NULL, 0x1000, false, &p), "unmapped fails");
@@ -118,6 +127,7 @@ bool all_tests(void) {
 	mu_run_test(test_big_endian_slots);
 	mu_run_test(test_plain_header_slots);
 	mu_run_test(test_packet_from_any_address);
+	mu_run_test(test_next_packet);
 	mu_run_test(test_unreadable_image);
 	return tests_passed != tests_run;
 }
