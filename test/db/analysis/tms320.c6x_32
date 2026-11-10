@@ -594,3 +594,44 @@ EXPECT=<<EOF
 EOF
 
 RUN
+
+# A compact slot is laid out by the header that ends its fetch packet, up to 28
+# bytes on. pD, pd with a count, ao and pdb decode from the range, the block or
+# the basic block, which can stop short of it: the decoder then read the word
+# as a 32-bit opcode, or found a half word undecodable, and a 32-bit branch
+# lost the half-word scaling of its packet (#6751).
+NAME=c6x compact slots decode the same from a short buffer
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=false
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx 4602baea2874ca01e805e001740280012ae05002ea05600276220002008020e0
+pD 8
+b 4
+ao 1 @ 0~^size:
+ao 1 @ 0~^type:
+b 2
+pd 1 @ 2
+wx 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1 @ 0x20
+pD 4 @ 0x30
+af+ fcn
+afb+ 0 0 4 0x154 4
+pdb @ 0
+EOF
+EXPECT=<<EOF
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000004      mvk   .s1 -0x6b18,a3
+size: 2
+type: mov
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000030      [!a0] bnop .s1 0xb8,0x5
+fcn();
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+EOF
+RUN

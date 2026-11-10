@@ -2460,18 +2460,40 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 	}
 }
 
+// The header ends the fetch packet, up to 28 bytes past the slot. A caller
+// holding fewer bytes, as one decoding a block or a basic block that stops
+// mid-packet does, has it read from the image instead, so that a slot decodes
+// the same however much of its packet is in hand.
+static bool fp_header(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut32 *hdr) {
+	int off = 0x1c - (int)(pc & 0x1f); // header lives at packet offset 0x1c
+	if (off + 4 <= len) {
+		*hdr = rz_read_ble32(buf + off, big_endian);
+		return true;
+	}
+	ut8 word[4];
+	if (!read || !read(user, c6x_packet_base(pc) + 0x1c, word, sizeof(word))) {
+		return false;
+	}
+	*hdr = rz_read_ble32(word, big_endian);
+	return true;
+}
+
 /**
- * Decode one 32-bit C6000 opcode.
+ * Decode the C6000 instruction at \p pc.
  * \param desc variant descriptor (feature gate)
- * \param buf input bytes (>= 4)
+ * \param buf input bytes (>= 2)
  * \param len available bytes
  * \param pc address \p buf starts at, for PC-relative operands
  * \param big_endian byte order of \p buf
+ * \param read reader for the fetch-packet header when \p buf stops short of
+ *        it, or NULL to decode from \p buf alone
+ * \param user passed through to \p read
  * \param insn output, filled on success
- * \return true if a 4-byte opcode was consumed (even when unrecognised, in
- *         which case \ref C6xInsn::mnemonic is NULL)
+ * \return true if an instruction slot was consumed, 4 bytes or the 2 of a
+ *         compact one (even when unrecognised, in which case
+ *         \ref C6xInsn::mnemonic is NULL)
  */
-RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_OUT C6xInsn *insn) {
+RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_NULLABLE C6xReadFn read, RZ_NULLABLE void *user, RZ_OUT C6xInsn *insn) {
 	rz_return_val_if_fail(desc && buf && insn, false);
 	if (len < 2) {
 		return false;
@@ -2483,15 +2505,13 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// that header ahead of the current word; if this slot is compact, decode a
 	// 16-bit instruction and take the parallel bit from the header p-bit field.
 	// Only families with the compact set are probed, so C62x/C67x are untouched.
-	// When the header is not reachable the packet's layout is unknown, and a
-	// word that is really two compact instructions cannot be told from a 32-bit
-	// one; the caller is given the 32-bit reading, which is why the analysis
-	// path reconstructs the whole packet rather than relying on this.
+	// When neither the buffer nor the reader reaches the header, the packet's
+	// layout is unknown: a word then gets its 32-bit reading, as in a packet
+	// without a header, while a half word cannot be decoded at all.
 	if (desc->features & C6X_FEAT_SIMD) {
 		ut32 fp_off = (ut32)(pc & 0x1f);
-		int hdr_off = 0x1c - (int)fp_off; // header lives at packet offset 0x1c
-		if (fp_off < 0x1c && hdr_off + 4 <= len) {
-			ut32 hdr = rz_read_ble32(buf + hdr_off, big_endian);
+		ut32 hdr;
+		if (fp_off < 0x1c && fp_header(buf, len, pc, big_endian, read, user, &hdr)) {
 			ut8 slot = fp_off >> 2;
 			// A branch anywhere in a compact packet is half-word scaled, so
 			// the packet's nature matters even for a slot the header does not
@@ -2506,6 +2526,13 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 					(hdr >> 16) & 0x7, (hdr >> 15) & 1);
 				return true;
 			}
+		} else if (fp_off < 0x1c && (fp_off & 2)) {
+			// 32-bit opcodes are word aligned, so a half word can only be a
+			// compact slot, and one cannot be decoded without its header
+			insn->word = rz_read_ble16(buf, big_endian);
+			insn->size = C6X_COMPACT_SIZE;
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+			return true;
 		}
 	}
 	if (len < 4) {
