@@ -1140,7 +1140,9 @@ static void decode_ldst(C6xInsn *insn, C6xInsnId id, bool store, bool dword) {
 	mem.v.mem.mode = ldst_mode(BITS(w, 12, 9), &reg_off);
 	mem.v.mem.base = BITS(w, 22, 18);
 	mem.v.mem.base_side = y;
-	mem.v.mem.scaled = true; // [] bracket scaling by access size
+	// [] scales the offset by the access size; LDNDW and STNDW take bit 23 as
+	// sc, which can leave it a byte offset, their pair living in bits 27:24
+	mem.v.mem.scaled = (id != C6X_INS_LDNDW && id != C6X_INS_STNDW) || BIT(w, 23);
 	if (reg_off) {
 		mem.v.mem.off_reg = BITS(w, 17, 13);
 	} else {
@@ -2317,6 +2319,11 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		} else { // Ddec: *--ptr[ucst2]
 			mem.v.mem.mode = C6X_AM_PREDEC_CST;
 			mem.v.mem.off_cst = ((w >> 13) & 1) + 1;
+		}
+		// LDNDW and STNDW offset by bytes in Doff4DW and DindDW; only the forms
+		// that modify the pointer scale (SPRUFE8B Figures C-9 to C-15)
+		if ((mn == C6X_INS_LDNDW || mn == C6X_INS_STNDW) && (mem.v.mem.mode == C6X_AM_POS_CST || mem.v.mem.mode == C6X_AM_POS_REG)) {
+			mem.v.mem.scaled = false;
 		}
 		C6xOperand reg = { 0 };
 		if (dwpair) {
