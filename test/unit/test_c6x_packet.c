@@ -56,6 +56,26 @@ bool test_compact_header_slots(void) {
 	mu_end;
 }
 
+bool test_big_endian_slots(void) {
+	// the same words, stored most significant byte first
+	ut8 be[sizeof(compact_fp)];
+	for (size_t i = 0; i < sizeof(be); i += 4) {
+		rz_write_be32(be + i, rz_read_le32(compact_fp + i));
+	}
+	C6xSlotRef le_slots[C6X_FP_SLOTS];
+	C6xSlotRef be_slots[C6X_FP_SLOTS];
+	size_t n = c6x_fetch_packet_slots(compact_fp, FP_BASE, false, le_slots);
+	mu_assert_eq(c6x_fetch_packet_slots(be, FP_BASE, true, be_slots), n, "as many slots in either byte order");
+	for (size_t i = 0; i < n; i++) {
+		mu_assert_eq(be_slots[i].addr, le_slots[i].addr, "at the same addresses");
+		mu_assert_eq(be_slots[i].size, le_slots[i].size, "of the same sizes");
+		// a word's less significant half is its first slot either way
+		mu_assert_eq(be_slots[i].opcode, le_slots[i].opcode, "holding the same opcodes");
+		mu_assert_eq(be_slots[i].parallel, le_slots[i].parallel, "with the same parallel bits");
+	}
+	mu_end;
+}
+
 bool test_plain_header_slots(void) {
 	// no header in the last word, so each word carries its own parallel bit
 	ut8 fp[32] = { 0 };
@@ -95,6 +115,7 @@ bool test_unreadable_image(void) {
 
 bool all_tests(void) {
 	mu_run_test(test_compact_header_slots);
+	mu_run_test(test_big_endian_slots);
 	mu_run_test(test_plain_header_slots);
 	mu_run_test(test_packet_from_any_address);
 	mu_run_test(test_unreadable_image);

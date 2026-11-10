@@ -74,8 +74,10 @@ RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian,
 	ut32 pbits = w[7] & C6X_FPH_PBITS_MASK;
 	for (size_t i = 0; i < 7; i++) {
 		if (layout & (1u << i)) {
-			ut32 lo = big_endian ? (w[i] >> 16) : (w[i] & 0xffff);
-			ut32 hi = big_endian ? (w[i] & 0xffff) : (w[i] >> 16);
+			// the less significant half comes first in either byte order
+			// (SPRUFE8B Table 3-16), wherever big-endian memory puts it
+			ut32 lo = w[i] & 0xffff;
+			ut32 hi = w[i] >> 16;
 			out[n].addr = base + i * 4;
 			out[n].size = C6X_COMPACT_SIZE;
 			out[n].opcode = lo;
