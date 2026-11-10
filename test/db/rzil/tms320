@@ -1225,3 +1225,41 @@ b3 = 0x00000008
  PC: 0x00000014
 EOF
 RUN
+
+# cl6x 7.4.4 output: stores write no register, so the packet pass has nothing to
+# stage; both stores of the packet and the store in the delay slot still run.
+NAME=c6x every store of a packet and of a delay slot runs
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 75029000f60290009003000074021401006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+s 0
+pd 4
+aezi
+ar a1=0x11111111
+ar b1=0x22222222
+ar a2=0x33333333
+ar a4=0x100
+ar b4=0x104
+ar a5=0x108
+aezs 3
+pv4 @ 0x100
+pv4 @ 0x104
+pv4 @ 0x108
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      stw   .d1 a1,*a4
+            0x00000004      ||    stw .d2 b1,*b4
+        ,=< 0x00000008      b     .s1 0x1c
+        |   0x0000000c      stw   .d1 a2,*a5
+0x11111111
+0x22222222
+0x33333333
+ PC: 0x0000001c
+EOF
+RUN

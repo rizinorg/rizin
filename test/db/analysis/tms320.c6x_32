@@ -780,6 +780,42 @@ b3 = 0x00008160
 EOF
 RUN
 
+# A call through b5: the addkpc in the delay slot of the branch sets the return
+# address, though the packet pass does not model its operands.
+NAME=c6x the addkpc beside a register call sets its return address in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x84b8
+aezi
+ar b5=0x8000
+ar b3=0
+aezs 1
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+b3 = 0x000084c4
+ PC: 0x00008000
+EOF
+RUN
+
+# The SPLOOP buffer is not modelled, so the packet of "sploop 1" is not lifted
+# at all rather than run without it: its mv, then the loop body once.
+NAME=c6x a packet with a slot that has no IL is not lifted in part in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x86a0
+aezi
+aezs 1
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x000086a0
+EOF
+RUN
+
 # dis6x writes the layout field of a fetch-packet header with a trailing "b",
 # which RzNum warns about when asm.sub.names evaluates the numbers of a line.
 # The second header has a doubleword primary size, named as dis6x names it.

@@ -118,6 +118,53 @@ static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 	return false;
 }
 
+// Whether \p insn moves the program counter.
+static bool c6x_transfers(const C6xInsn *insn) {
+	switch (insn->op_type) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+		return true;
+	default:
+		return false;
+	}
+}
+
+// The slots of a packet outside \p skip, staged by the packet pass. It declines
+// a packet that needs no staging and one with a slot shape it does not model:
+// in order is right for the first and the next best for the other.
+static RzILOpEffect *c6x_lift_slots(const C6xInsn *slots, const C6xPacketRef *pkt, ut32 skip) {
+	RzILOpEffect *eff = c6x_lift_packet(slots, pkt->n, pkt->addr, skip);
+	if (eff) {
+		return eff;
+	}
+	for (size_t i = 0; i < pkt->n; i++) {
+		if (!(skip & (1u << i)) && c6x_transfers(&slots[i])) {
+			return NULL; // a branch inside another one's window is not modelled
+		}
+	}
+	for (size_t i = 0; i < pkt->n; i++) {
+		if (skip & (1u << i)) {
+			continue;
+		}
+		RzILOpEffect *e = c6x_lift(&slots[i], pkt->slots[i].addr);
+		if (!e) {
+			// without it the packet would run as if the slot were not there,
+			// a SPLOOP its loop body once
+			rz_il_op_effect_free(eff);
+			return NULL;
+		}
+		if (e->code == RZ_IL_OP_NOP) {
+			// a packet of NOPs, as in delay slots, stays an empty effect
+			rz_il_op_effect_free(e);
+			continue;
+		}
+		eff = eff ? rz_il_op_new_seq(eff, e) : e;
+	}
+	return eff;
+}
+
 /**
  * A result that lands late only matters when something reads it too soon. In
  * straight-line code the compiler normally schedules the consumer far enough
@@ -151,7 +198,7 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
 	if (!hold) {
 		return NULL;
 	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, pkt->addr, hold);
+	RzILOpEffect *eff = c6x_lift_slots(slots, pkt, hold);
 	ut64 at = after;
 	while (at < window_end) {
 		C6xPacketRef p;
@@ -160,7 +207,7 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
 		if (!pn) {
 			break;
 		}
-		RzILOpEffect *pe = c6x_lift_packet(ins, pn, p.addr, 0);
+		RzILOpEffect *pe = c6x_lift_slots(ins, &p, 0);
 		if (pe) {
 			eff = eff ? rz_il_op_new_seq(eff, pe) : pe;
 		}
@@ -184,18 +231,8 @@ static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArch
  * before the callee runs: the packet is lifted whole, the call last since a
  * jump has to end the effect, returning to the packet after it.
  */
-static RzILOpEffect *c6x_lift_call_packet(const C6xInsn *slots, size_t n, const C6xPacketRef *pkt, size_t ci) {
-	RzILOpEffect *eff = n > 1 ? c6x_lift_packet(slots, n, pkt->addr, 1u << ci) : NULL;
-	if (!eff) {
-		// nothing for the packet pass to stage, or a slot it cannot: the rest in
-		// order is the next best
-		for (size_t i = 0; i < n; i++) {
-			RzILOpEffect *e = i != ci ? c6x_lift(&slots[i], pkt->slots[i].addr) : NULL;
-			if (e) {
-				eff = eff ? rz_il_op_new_seq(eff, e) : e;
-			}
-		}
-	}
+static RzILOpEffect *c6x_lift_call_packet(const C6xInsn *slots, const C6xPacketRef *pkt, size_t ci) {
+	RzILOpEffect *eff = c6x_lift_slots(slots, pkt, 1u << ci);
 	RzILOpEffect *call = c6x_lift_call(&slots[ci], pkt->slots[ci].addr, pkt->next);
 	if (!call) {
 		rz_il_op_effect_free(eff);
@@ -249,7 +286,7 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 	}
 	size_t cidx;
 	if (c6x_packet_call(slots, n, &cidx)) {
-		RzILOpEffect *call = c6x_lift_call_packet(slots, n, &pkt, cidx);
+		RzILOpEffect *call = c6x_lift_call_packet(slots, &pkt, cidx);
 		return call ? call : c6x_lift(insn, addr);
 	}
 	size_t bidx;
@@ -259,15 +296,8 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 		if (lat) {
 			return lat;
 		}
-		if (n > 1) {
-			RzILOpEffect *pe = c6x_lift_packet(slots, n, addr, 0);
-			if (pe) {
-				return pe;
-			}
-			// a slot the packet pass cannot stage, e.g. a destination shape it
-			// does not model; per-instruction IL is better than none
-		}
-		return c6x_lift(insn, addr);
+		RzILOpEffect *pe = n > 1 ? c6x_lift_slots(slots, &pkt, 0) : NULL;
+		return pe ? pe : c6x_lift(insn, addr);
 	}
 	// The branch's own packet, with the transfer held back. Slots whose result
 	// lands beyond the last delay-slot packet are held back too and emitted
@@ -288,7 +318,7 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 			hold |= 1u << i;
 		}
 	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, addr, hold);
+	RzILOpEffect *eff = c6x_lift_slots(slots, &pkt, hold);
 	if (sample) {
 		eff = eff ? rz_il_op_new_seq(sample, eff) : sample;
 	}
@@ -306,7 +336,7 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 		for (size_t i = 0; i < dn; i++) {
 			crosses |= k + c6x_result_latency(&dins[i]) > bslots;
 		}
-		RzILOpEffect *de = c6x_lift_packet(dins, dn, dp.addr, 0);
+		RzILOpEffect *de = c6x_lift_slots(dins, &dp, 0);
 		if (de) {
 			if (crosses) {
 				late = late ? rz_il_op_new_seq(late, de) : de;
