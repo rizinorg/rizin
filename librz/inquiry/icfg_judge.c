@@ -515,6 +515,50 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 	return true;
 }
 
+// TODO Remove after debug.
+RZ_OWN char *node_fmt(const RzGraphNode *n) {
+	const RzICFGNode *node = rz_graph_node_get_data(n);
+	RzStrBuf sb = { 0 };
+	rz_strbuf_init(&sb);
+	rz_strbuf_appendf(&sb, "0x%08" PFMT64x " m: (", node->addr);
+	if (node->memberships_n == 1) {
+		rz_strbuf_appendf(&sb, "%" PFMT64d, node->proc_memberships.m);
+	} else {
+		RzIterator it;
+		rz_set_u_as_iter(node->proc_memberships.set, &it);
+		size_t i = 0;
+		ut64 *m;
+		rz_iterator_foreach(&it, m) {
+			if (i > 0) {
+				rz_strbuf_append(&sb, ",");
+			}
+			rz_strbuf_appendf(&sb, "0x%08" PFMT64x, *m);
+			i++;
+		}
+		rz_iterator_fini(&it);
+	}
+	rz_strbuf_append(&sb, ")");
+	char *s = rz_strbuf_drain_nofree(&sb);
+	rz_strbuf_fini(&sb);
+	return s;
+}
+
+RZ_OWN char *edge_fmt(const RzGraphEdge *e) {
+	RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	switch (type) {
+	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
+		return RZ_STR_DUP("f");
+	case RZ_ICFG_EDGE_TYPE_JUMP:
+		return RZ_STR_DUP("j");
+	case RZ_ICFG_EDGE_TYPE_CALL:
+		return RZ_STR_DUP("c");
+	case RZ_ICFG_EDGE_TYPE_RETURN:
+		return RZ_STR_DUP("r");
+	}
+	return RZ_STR_DUP("broken");
+}
+// END
+
 /**
  * \brief Resolves conflicts for blocks which were executed by multiple functions.
  */
@@ -560,6 +604,9 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 			return false;
 		}
 	}
+	char *icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
+	printf("%s\n", icfg_dot);
+	free(icfg_dot);
 
 	return true;
 }
