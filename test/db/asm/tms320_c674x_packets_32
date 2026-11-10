@@ -45,3 +45,7 @@ d "set .s2 b18,0x4,0x4,b18;extu .s1 a20,0x8,0x1f,a0;nop;nop;nop;nop;nop;nop;.fph
 # The 3-bit count of a compact shift by a constant is translated rather than
 # taken as is: 0 means 16 and 7 means 8 (SPRUFE8B Figure F-23).
 d "shl .s1 a5,0x8,a3;shr .s2 b2,0x10,b6;shl .s1x b1,0x6,a2;shr .s1 a0,0x1,a0;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0000011b" bae66b0daad40a2c0000000000000000000000000000000000000000000060e0
+
+# The displacement of a compact CALLP counts words, unlike that of the compact
+# BNOP forms: from the packet at 0x20, +8 reaches 0x40 and -8 reaches 0.
+d "callp .s2 0x40,b3;callp .s1 0x0,a3;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, br, nosat, 0000001b" 1b021afe000000000000000000000000000000000000000000000000008020e0 0x20
