@@ -13,6 +13,9 @@
 
 // Calling conventions
 
+/**
+ * \brief Use the same JSON record for a named convention as for the full listing.
+ */
 static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	rz_return_if_fail(cc);
 	if (strchr(cc, '(')) {
@@ -25,9 +28,11 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 		if (result) {
 			if (mode == RZ_OUTPUT_MODE_JSON) {
 				PJ *pj = pj_new();
-				pj_a(pj);
-				pj_ks(pj, "cc", result);
-				pj_end(pj);
+				if (!pj) {
+					free(result);
+					return;
+				}
+				rz_core_analysis_cc_print(core, ccname, pj);
 				rz_cons_println(core->cons, pj_string(pj));
 				pj_free(pj);
 			} else {
