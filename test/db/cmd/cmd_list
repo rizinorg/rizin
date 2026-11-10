@@ -573,6 +573,7 @@ murmur3-x64-128 MIT     Austin Appleby             MurmurHash3 x64 128-bit non-c
 murmur3-x86-128 MIT     Austin Appleby             MurmurHash3 x86 128-bit non-cryptographic hash
 murmur3-x86-32  MIT     Austin Appleby             MurmurHash3 x86 32-bit non-cryptographic hash
 parity          LGPL3   deroad                     Parity checksum
+ripemd160       LGPL3   Duck                       Ripemd-160 cryptographic hash
 serialcorr      LGPL3   xvilka                     Serial correlation coefficient [-1.0-1.0]
 sha1            LGPL3   deroad                     SHA-1 cryptographic hash
 sha256          BSD-3   Aaron D. Gifford           SHA-256 cryptographic hash
