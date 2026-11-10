@@ -21,27 +21,28 @@
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
 #include "rz_util/rz_iterator.h"
+#include "rz_util/rz_math.h"
 #include "rz_util/rz_set.h"
 #include "rz_vector.h"
 
 // If the best result is below SCORE_VERDICT_MIN and
 // its margin to the second is less then SCORE_VERDICT_MARGIN
 // the verdict defaults to SCORE_VERDICT_UNKNOWN.
-#define SCORE_VERDICT_MIN     20
-#define SCORE_VERDICT_MARGIN  15
+#define SCORE_VERDICT_MIN     2
+#define SCORE_VERDICT_MARGIN  1
 #define SCORE_VERDICT_UNKNOWN CFG_CONFLICT_VERDICT_SHARED
 
-#define SCORE_RULED_OUT        -50
-#define SCORE_STRONGLY_DISFAV  -40
-#define SCORE_VERY_UNLIKELY    -30
-#define SCORE_UNLIKELY         -20
-#define SCORE_SLIGHTLY_AGAINST -10
+#define SCORE_RULED_OUT        -5
+#define SCORE_STRONGLY_DISFAV  -4
+#define SCORE_VERY_UNLIKELY    -3
+#define SCORE_UNLIKELY         -2
+#define SCORE_SLIGHTLY_AGAINST -1
 #define SCORE_NEUTRAL          0
-#define SCORE_SLIGHT_HINT      10
-#define SCORE_LIKELY           20
-#define SCORE_VERY_LIKELY      30
-#define SCORE_STRONG_FAVOR     40
-#define SCORE_CERTAIN          50
+#define SCORE_SLIGHT_HINT      1
+#define SCORE_LIKELY           2
+#define SCORE_VERY_LIKELY      3
+#define SCORE_STRONG_FAVOR     4
+#define SCORE_CERTAIN          5
 
 const char *node_verdict_names[] = {
 	[CFG_CONFLICT_VERDICT_DROP] = "drop",
@@ -63,10 +64,9 @@ typedef enum {
 	// Positive hints that the node is actually a function entry point:
 	CFG_CONFLICT_OBSV_SYMBOL = 1 << 0, ///< The node is located at a symbol's address.
 	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The node is the target of a call instruction.
-	CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB = 1 << 2, ///< A successor jumps over a symbol to reach this node (tail-call signal).
-	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY = 1 << 3, ///< The node has a PE .pdata / x64 unwind entry.
-	CFG_CONFLICT_OBSV_IN_EH_FRAME = 1 << 4, ///< The node is listed in exception-handling metadata (.eh_frame).
-	CFG_CONFLICT_OBSV_MULTIPLE_CALLERS = 1 << 5, ///< The node is called from many distinct locations.
+	CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB = 1 << 2, ///< A successor jumps over a symbol to reach this node (tail-call signal).
+	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY = 1 << 4, ///< The node has a PE .pdata / x64 unwind entry.
+	CFG_CONFLICT_OBSV_IN_EH_FRAME = 1 << 5, ///< The node is listed in exception-handling metadata (.eh_frame).
 	CFG_CONFLICT_OBSV_IMPORT = 1 << 6, ///< The node is a trampoline to an imported function.
 	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME = 1 << 7, ///< The node grows the stack frame.
 
@@ -75,17 +75,17 @@ typedef enum {
 	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 9, ///< A successor of this block is a conditional jump.
 	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 10, ///< Basic block is before the entry point of the binary.
 	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 11, ///< Node is reached by at least one fall-through edge.
-	CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP = 1 << 12, ///< Node is reached by a normal in-function jump.
 	CFG_CONFLICT_OBSV_UNCOND_RETURNS = 1 << 13, ///< Node contains an unconditional return instruction.
 	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 14, ///< Node contains a stack-frame epilogue.
 	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 15, ///< The block shrinks the stack frame.
 	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 16, ///< The block loops back to itself.
+	CFG_CONFLICT_OBSV_JUMP_TARGET = 1 << 17, ///< Block is target of a jump instruction.
 
 	// Positive hints that the block should be dropped.
-	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 17, ///< Node is mapped as non-executable.
-	CFG_CONFLICT_OBSV_NOT_MAPPED = 1 << 18, ///< Node is not mapped at all.
+	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 18, ///< Node is mapped as non-executable.
+	CFG_CONFLICT_OBSV_NOT_MAPPED = 1 << 19, ///< Node is not mapped at all.
 
-	CFG_CONFLICT_OBSV_N = 19,
+	CFG_CONFLICT_OBSV_N = 20,
 } NodeObservations;
 
 typedef struct {
@@ -102,41 +102,41 @@ typedef struct {
 static const HintScores hint_scores[] = {
 	{ CFG_CONFLICT_OBSV_SYMBOL, "CFG_CONFLICT_OBSV_SYMBOL",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_IS_CALLED, "CFG_CONFLICT_OBSV_IS_CALLED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, "CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB",
+	{ CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB, "CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY, "CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_IN_EH_FRAME, "CFG_CONFLICT_OBSV_IN_EH_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
-			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
-			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, "CFG_CONFLICT_OBSV_MULTIPLE_CALLERS",
-		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_IMPORT, "CFG_CONFLICT_OBSV_IMPORT",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_GROWS_STACK_FRAME, "CFG_CONFLICT_OBSV_GROWS_STACK_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
+			// The drop condition hint points depend on the architecture.
+			// Archs for which data bytes often decode to stack allocating,
+			// should give a higher score _pro_ dropping.
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_STARTS_NOOP, "CFG_CONFLICT_OBSV_STARTS_NOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
@@ -147,24 +147,29 @@ static const HintScores hint_scores[] = {
 		// and early fail as prologue.
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
+			// The drop condition hint points depend on the architecture.
+			// Archs for which data bytes often decode to cond. jumps,
+			// should give a higher score _pro_ dropping.
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, "CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, "CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP",
-		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
-			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
-			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_UNCOND_RETURNS, "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			// The drop condition hint points depend on the architecture.
+			// Archs for which data bytes often decode to cond. returns,
+			// should give a higher score _pro_ dropping.
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN, "CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
@@ -179,6 +184,11 @@ static const HintScores hint_scores[] = {
 	{ CFG_CONFLICT_OBSV_SELF_LOOP, "CFG_CONFLICT_OBSV_SELF_LOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ CFG_CONFLICT_OBSV_JUMP_TARGET, "CFG_CONFLICT_OBSV_JUMP_TARGET",
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ CFG_CONFLICT_OBSV_NOT_X_MAPPED, "CFG_CONFLICT_OBSV_NOT_X_MAPPED",
@@ -327,8 +337,6 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 		rz_warn_if_reached();
 		return CFG_CONFLICT_VERDICT_SKIP;
 	}
-	ssize_t jmps_in = 0;
-	ssize_t calls_in = 0;
 	RzGraphEdge *in_edge;
 	rz_iterator_foreach(&in_iter, in_edge) {
 		RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(in_edge);
@@ -337,17 +345,17 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 			rz_warn_if_reached();
 			break;
 		case RZ_ICFG_EDGE_TYPE_CALL:
-			calls_in++;
+			score_add(CFG_CONFLICT_OBSV_IS_CALLED, &score);
 			break;
 		case RZ_ICFG_EDGE_TYPE_JUMP:
-			jmps_in++;
+			score_add(CFG_CONFLICT_OBSV_JUMP_TARGET, &score);
 			const RzGraphNode *from_node = rz_graph_edge_get_from(in_edge);
 			ut64 from_addr = rz_graph_node_get_id(from_node);
 			if (from_addr == node_addr) {
 				score_add(CFG_CONFLICT_OBSV_SELF_LOOP, &score);
 			} else if (edge_crosses_symbol(proc_entries, from_addr, node_addr)) {
 				// The in edge jumps over a function entry point to this block.
-				score_add(CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB, &score);
+				score_add(CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB, &score);
 			}
 			break;
 		case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
@@ -356,15 +364,6 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 		}
 	}
 	rz_iterator_fini(&in_iter);
-
-	if (calls_in == 1) {
-		score_add(CFG_CONFLICT_OBSV_IS_CALLED, &score);
-	} else if (calls_in > 1) {
-		score_add(CFG_CONFLICT_OBSV_MULTIPLE_CALLERS, &score);
-	}
-	if (jmps_in > 0) {
-		score_add(CFG_CONFLICT_OBSV_REACHED_BY_NORMAL_JMP, &score);
-	}
 	// TODO: Return attributes should be generated by the interpreter which supports stack variables.
 	// That way we don't have to disassemble again everything from scratch.
 	RzCore *core = io->corebind.core;
