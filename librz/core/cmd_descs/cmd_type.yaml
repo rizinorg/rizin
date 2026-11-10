@@ -103,6 +103,9 @@ commands:
       - name: te
         cname: type_list_enum
         summary: List loaded enums / Show enum member
+        description: >
+          With an enum name, show its members and their values. Providing a value
+          restricts the output to the matching member.
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_JSON
