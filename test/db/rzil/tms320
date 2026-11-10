@@ -1064,6 +1064,45 @@ a3 = 0x00000100
 EOF
 RUN
 
+# cl6x 7.4.4 output: a compact LDNDW adds its offset in bytes where it leaves
+# the pointer as it is, whether a constant or a register.
+NAME=c6x compact ldndw offsets its pointer by bytes
+FILE=malloc://0x200
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 263da105763da1056e0c7c2074206c207c4074406c407ce074e06ce0000084ef
+wx 74f5910364f511037c247424242b9003742b90032429100374291003000084e0 @ 0x20
+wx 00112233445566778899aabbccddeeff00112233 @ 0x100
+pd 1 @ 0xa
+pd 1 @ 0x28
+s 0xa
+aezi
+ar a4=0x100
+aezs 1
+ar a6
+ar a7
+s 0x28
+aezi
+ar a4=0x100
+ar a1=3
+aezs 1
+ar a6
+ar a7
+EOF
+EXPECT=<<EOF
+            0x0000000a      ldndw .d1 *+a4(0x1),a7:a6
+            0x00000028      ldndw .d1 *+a4(a1),a7:a6
+a6 = 0x44332211
+a7 = 0x88776655
+a6 = 0x66554433
+a7 = 0xaa998877
+EOF
+RUN
+
 NAME=c6x big-endian compact pair runs its less significant half first
 FILE=malloc://64
 CMDS=<<EOF
