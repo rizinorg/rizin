@@ -1132,3 +1132,96 @@ a0 = 0x00000011
 b0 = 0x00000022
 EOF
 RUN
+
+# cl6x 7.4.4 output: callp issues with the mv after it, so it returns past both
+# rather than to the word after itself.
+NAME=c6x CALLP returns to the execute packet after its own
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 2808000213040010d80f900200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+s 0
+pd 3
+aezi
+ar a5=0
+aezs 2
+ar a5
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .s1 0x10,a4
+            0x00000004      callp .s2 0x20,b3
+            0x00000008      ||    mv .l1 a4,a5
+a5 = 0x00000010
+b3 = 0x0000000c
+ PC: 0x00000020
+EOF
+RUN
+
+# cl6x 7.4.4 output: the next execute packet after a callp that ends a compact
+# fetch packet starts past the header.
+NAME=c6x CALLP returns past the fetch-packet header
+FILE=malloc://4096
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 462246424662468246a246c246e246064622464246624682925e01100000e0e746026e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c46a246c246a246c246a20000e0ef
+s 0x18
+pd 1
+pd 1 @ 0x20
+aezi
+aezs 1
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000018      callp .s2 0xaf4,b3
+            0x00000020      mv    .l1 a4,a0
+b3 = 0x00000020
+ PC: 0x00000af4
+EOF
+RUN
+
+# cl6x 7.4.4 output: the mv after the call reads the loaded register, but only
+# once the call returns, so the load lands before the callee rather than
+# holding the call back in a window.
+NAME=c6x a load's latency window stops at a call
+FILE=malloc://128
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6402900292020010c6c26e0c6e0c6e0c6e0c6e0c0000000000000000000080e3
+wv4 0xfeedface @ 0x40
+s 0
+pd 3
+aezi
+ar a4=0x40
+ar a5=0
+ar a6=0
+aezs 2
+ar a5
+ar a6
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      callp .s2 0x14,b3
+            0x00000008      mv    .l1 a5,a6
+a5 = 0xfeedface
+a6 = 0x00000000
+b3 = 0x00000008
+ PC: 0x00000014
+EOF
+RUN
