@@ -94,6 +94,13 @@ d "stb .d1 a3,*a4" 34029001 0x0 (storew 0 (+ (var a4) (bv 32 0x0)) (cast 8 false
 d "sth .d1 a3,*a4" 54029001 0x0 (storew 0 (+ (var a4) (bv 32 0x0)) (cast 16 false (var a3)))
 # Non-aligned doubleword store (STNDW): same 64-bit data path as STDW.
 d "stndw .d1 a3:a2,*a4" 74039001 0x0 (seq (set ea (+ (var a4) (bv 32 0x0))) (storew 0 (var ea) (var a2)) (storew 0 (+ (var ea) (bv 32 0x4)) (var a3)))
+# A clear sc bit (23) leaves the offset of LDNDW and STNDW in bytes, which TI
+# writes in parentheses; a set one scales it by eight (TI cl6x and dis6x).
+d "ldndw .d1 *+a8(0x1),a11:a10" 24232005 0x0 (seq (set ea (+ (var a8) (bv 32 0x1))) (set a10 (loadw 0 32 (var ea))) (set a11 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "ldndw .d1 *+a8[0x1],a11:a10" 2423a005 0x0 (seq (set ea (+ (var a8) (bv 32 0x8))) (set a10 (loadw 0 32 (var ea))) (set a11 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "stndw .d1 a11:a10,*+a8(0x7)" 74e32005 0x0 (seq (set ea (+ (var a8) (bv 32 0x7))) (storew 0 (var ea) (var a10)) (storew 0 (+ (var ea) (bv 32 0x4)) (var a11)))
+d "ldndw .d1 *-a4(a1),a7:a6" 24291003 0x0 (seq (set ea (- (var a4) (var a1))) (set a6 (loadw 0 32 (var ea))) (set a7 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "ldndw .d1 *+a4[a1],a7:a6" 242b9003 0x0 (seq (set ea (+ (var a4) (* (var a1) (bv 32 0x8)))) (set a6 (loadw 0 32 (var ea))) (set a7 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
 # MVC reads of further control registers: irp (common to all C6000) and ssr
 # (C64x+ extension), confirming the control-register bindings resolve.
 d "mvc .s2 irp,b4" e2031802 0x0 (set b4 (var irp))
