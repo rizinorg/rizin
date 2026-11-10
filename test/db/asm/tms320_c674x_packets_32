@@ -25,4 +25,23 @@ d "b .s1 0x40;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,
 d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0001000b" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
 
 # a full 32-byte fetch packet, compact header and mixed widths
-d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+
+# Compact moves between the eight registers of the header register set and all
+# 32: the source of mvto and the destination of mvfr have bits 11:10 above
+# their 3-bit field (SPRUFE8B Figures G-1 and G-2). The first is from a C674x
+# image; the last keeps 11:10 clear.
+d "mv .s1x b6,a12;mv .d2 b29,b2;mv .l1 a10,a3;mv .l2x a1,b23;mv .s2x a31,b0;mv .l1 a4,a0;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0000111b" 4e97974e0665c7f88f1f4602000000000000000000000000000000000000e0e0
+
+# The header RS bit moves only the 3-bit field to registers 16-23; the five-bit
+# one names its register outright.
+d "mv .l1 a5,a18;mv .l1 a19,a9;mv .l1 a19,a16;mv .l1x b31,a16;nop;nop;nop;nop;nop;.fphead n, h, w, bu, nobr, nosat, 0000011b" 8642c6258609861f0000000000000000000000000000000000000000000068e0
+
+# Compact SET and CLR change the bit of their src2 in place; only EXTU writes a
+# fixed A0/B0 (SPRUFE8B Figure F-27). The first is from a C674x image.
+d "clr .s2 b4,0xc,0xc,b4;set .s1 a3,0x1f,0x1f,a3;extu .s2 b5,0x10,0x1f,b0;clr .s1 a7,0x0,0x0,a7;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0000011b" 438aa2f98312c2030000000000000000000000000000000000000000000060e0
+d "set .s2 b18,0x4,0x4,b18;extu .s1 a20,0x8,0x1f,a0;nop;nop;nop;nop;nop;nop;.fphead n, h, w, bu, nobr, nosat, 0000001b" 2381020a000000000000000000000000000000000000000000000000000028e0
+
+# The 3-bit count of a compact shift by a constant is translated rather than
+# taken as is: 0 means 16 and 7 means 8 (SPRUFE8B Figure F-23).
+d "shl .s1 a5,0x8,a3;shr .s2 b2,0x10,b6;shl .s1x b1,0x6,a2;shr .s1 a0,0x1,a0;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0000011b" bae66b0daad40a2c0000000000000000000000000000000000000000000060e0
