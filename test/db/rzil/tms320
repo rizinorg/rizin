@@ -886,10 +886,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# A compact branch window taken from a real C674x image: a 16-bit bnop with a
-# parallel load whose result the following branch must not see. Decoding a
-# compact slot as if it were 32 bits yields an unrelated instruction, so this
-# covers the path the hand-written 32-bit cases cannot reach.
+# A compact branch window taken from a real C674x image: a 16-bit bnop issuing
+# with a 32-bit load and move. Decoding a compact slot as if it were 32 bits
+# yields an unrelated instruction, so this covers the path the hand-written
+# 32-bit cases cannot reach. The bnop is taken, which leaves the load and the
+# branch in its delay slot predicated off: untaken, that branch would issue
+# inside the window, which a window does not model.
 NAME=c6x a compact branch window from real firmware
 FILE=malloc://256
 CMDS=<<EOF
@@ -902,16 +904,18 @@ wx d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e16281810164022
 wv4 0xfeedface @ 0x70
 s 0xe
 aezi
-ar a0=0
+ar a0=1
 ar b5=0x70
 ar b4=0x11223344
 aezs
 ar b4
+ar a10
 aezv PC
 EOF
 EXPECT=<<EOF
-b4 = 0xfeedface
- PC: 0x00000018
+b4 = 0x11223344
+a10 = 0xffffffff
+ PC: 0x00000060
 EOF
 RUN
 
@@ -1226,6 +1230,65 @@ b3 = 0x00000008
 EOF
 RUN
 
+# cl6x 7.4.4 output: the header of a compact fetch packet leaves the p-bit of a
+# 32-bit word clear, so the mvkh joins the mv by its own one.
+NAME=c6x a 32-bit opcode in a compact fetch packet keeps its own parallel bit
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d80f1000691a090246a247026e0c6e0c6e0c6e0c0000000000000000000080e3
+s 0
+pd 3
+aezi
+ar a4=0x5678
+ar a5=0
+aezs 2
+ar a4
+ar a5
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a4,a0
+            0x00000004      mvkh  .s1 0x1234,a4
+            0x00000008      ||    mv .l1 a4,a5
+a4 = 0x12345678
+a5 = 0x00005678
+EOF
+RUN
+
+# cl6x 7.4.4 output: a 32-bit callp in a compact fetch packet issues with the
+# compact mv after it by its own p-bit, and returns past both.
+NAME=c6x a 32-bit CALLP in a compact fetch packet returns past its packet
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d80f10001302001046a247026e0c6e0c46206e0c0000000000000000000080e3
+s 4
+pd 2
+aezi
+ar a4=0x5678
+ar a5=0
+aezs 1
+ar a5
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000004      callp .s2 0x10,b3
+            0x00000008      ||    mv .l1 a4,a5
+a5 = 0x00005678
+b3 = 0x0000000a
+ PC: 0x00000010
+EOF
+RUN
+
 # cl6x 7.4.4 output: stores write no register, so the packet pass has nothing to
 # stage; both stores of the packet and the store in the delay slot still run.
 NAME=c6x every store of a packet and of a delay slot runs
@@ -1261,5 +1324,39 @@ EXPECT=<<EOF
 0x22222222
 0x33333333
  PC: 0x0000001c
+EOF
+RUN
+
+# cl6x 7.4.4 output: an execute packet running on into the next fetch packet
+# issues once, however the steps land on it.
+NAME=c6x an execute packet across a fetch-packet boundary runs once
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 00000000000000000000000000000000000000000000000059208400a121080140298c0100000000000000000000000000000000000000000000000000000000
+s 0x18
+pd 3
+aezi
+ar a1=0
+ar a2=0
+ar a3=0
+aezs 3
+ar a1
+ar a2
+ar a3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000018      add   .l1 0x1,a1,a1
+            0x0000001c      ||    add .s1 0x1,a2,a2
+            0x00000020      ||    add .d1 a3,0x1,a3
+a1 = 0x00000001
+a2 = 0x00000001
+a3 = 0x00000001
+ PC: 0x00000024
 EOF
 RUN

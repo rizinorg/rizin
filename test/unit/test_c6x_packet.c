@@ -89,6 +89,26 @@ bool test_plain_header_slots(void) {
 	mu_end;
 }
 
+bool test_word_parallel_bit(void) {
+	// cl6x 7.4.4 output for "mv a4,a0; mvkh 0x12340000,a4 || mv a4,a5": the
+	// header leaves the p-bits of the 32-bit words clear
+	static const ut8 fp[32] = {
+		0xd8, 0x0f, 0x10, 0x00, 0x69, 0x1a, 0x09, 0x02,
+		0x46, 0xa2, 0x47, 0x02, 0x6e, 0x0c, 0x6e, 0x0c,
+		0x6e, 0x0c, 0x6e, 0x0c, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xe3
+	};
+	C6xSlotRef slots[C6X_FP_SLOTS];
+	size_t n = c6x_fetch_packet_slots(fp, 0x1000, false, slots);
+	mu_assert_true(n > 2, "slots found");
+	mu_assert_eq(slots[1].size, C6X_WORD_SIZE, "the mvkh is a 32-bit opcode");
+	mu_assert_true(slots[1].parallel, "its own p-bit joins it to the mv");
+	mu_assert_eq(slots[2].size, C6X_COMPACT_SIZE, "the mv is compact");
+	mu_assert_false(slots[2].parallel, "and its header bit ends the packet");
+	mu_assert_false(slots[0].parallel, "the mv before them runs alone");
+	mu_end;
+}
+
 bool test_packet_from_any_address(void) {
 	C6xPacketRef first = { 0 };
 	C6xPacketRef second = { 0 };
@@ -116,6 +136,45 @@ bool test_next_packet(void) {
 	mu_end;
 }
 
+// Two fetch packets of a TI-built C674x ELF from 0x81a0: a compact callp, the
+// mvk beside it and, past the header, a 32-bit mvkh issue together.
+static const ut8 span_fp[64] = {
+	0xd8, 0x1f, 0x14, 0x02, 0x28, 0x02, 0x47, 0x02,
+	0x1b, 0xe6, 0x27, 0x26, 0x68, 0x00, 0x00, 0x02,
+	0x0a, 0x85, 0x26, 0x06, 0x28, 0x03, 0x47, 0x02,
+	0x1b, 0xe6, 0x27, 0x6e, 0x30, 0xb0, 0x80, 0xea,
+	0x68, 0x00, 0x00, 0x02, 0x58, 0xa3, 0x04, 0x02,
+	0x62, 0xb3, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+#define SPAN_BASE 0x81a0ULL
+
+static bool read_span(void *user, ut64 addr, ut8 *buf, size_t len) {
+	ut64 off = addr - SPAN_BASE;
+	if (off >= sizeof(span_fp) || len > sizeof(span_fp) - off) {
+		return false;
+	}
+	memcpy(buf, span_fp + (size_t)off, len);
+	return true;
+}
+
+bool test_packet_across_header(void) {
+	C6xPacketRef p = { 0 };
+	mu_assert_true(c6x_packet_at(read_span, NULL, SPAN_BASE + 0x20, false, &p), "found");
+	mu_assert_eq(p.addr, SPAN_BASE + 0x18, "the mvkh continues the packet of the callp");
+	mu_assert_eq(p.n, 3, "which holds the callp, the mvk and the mvkh");
+	mu_assert_eq(p.slots[2].addr, SPAN_BASE + 0x20, "but not the header between");
+	mu_assert_eq(p.next, SPAN_BASE + 0x24, "and ends past the mvkh");
+	C6xPacketRef q = { 0 };
+	mu_assert_true(c6x_packet_at(read_span, NULL, SPAN_BASE + 0x18, false, &q), "found");
+	mu_assert_eq(q.n, p.n, "the same packet from its first slot");
+	mu_assert_true(c6x_packet_at(read_span, NULL, SPAN_BASE + 0x1c, false, &q), "found");
+	mu_assert_true(q.n == 1 && q.slots[0].header, "the header stands alone");
+	mu_end;
+}
+
 bool test_unreadable_image(void) {
 	C6xPacketRef p = { 0 };
 	mu_assert_false(c6x_packet_at(read_compact, NULL, 0x1000, false, &p), "unmapped fails");
@@ -126,8 +185,10 @@ bool all_tests(void) {
 	mu_run_test(test_compact_header_slots);
 	mu_run_test(test_big_endian_slots);
 	mu_run_test(test_plain_header_slots);
+	mu_run_test(test_word_parallel_bit);
 	mu_run_test(test_packet_from_any_address);
 	mu_run_test(test_next_packet);
+	mu_run_test(test_packet_across_header);
 	mu_run_test(test_unreadable_image);
 	return tests_passed != tests_run;
 }

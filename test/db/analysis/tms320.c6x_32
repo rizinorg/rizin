@@ -504,7 +504,7 @@ s 0x8148
 ao~rzil
 EOF
 EXPECT=<<EOF
-rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
+rzil: (seq (set _pk0 (var a4)) (set a4 (var _pk0)) (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0))) (set _c0_0 (var a4)) (set a4 (var _c0_0)) (set b3 (bv 32 0x8150)) (jmp (bv 32 0x8000)))
 EOF
 RUN
 
@@ -813,6 +813,121 @@ aezv PC
 EOF
 EXPECT=<<EOF
  PC: 0x000086a0
+EOF
+RUN
+
+# $C$L3 is a jump target four packets after "b .s1 memset", which issues in
+# the delay slots of a bnop and so gets no window of its own: the call at
+# $C$L3 is in no window and runs when jumped to.
+NAME=c6x a jump target after a branch inside a window runs in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x83f0
+aezi
+aezs 1
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00008620
+EOF
+RUN
+
+# .text starts at 0x20, after bytes that are no code and partly unmapped: the
+# packet at its start is the section's first, whatever their last bit says.
+NAME=c6x the first packet of a section starts with it in a TI-built COFF
+FILE=bins/tms320/emulateme_nostd.ccsv5.c64xp.ticoff2.dbg.coff
+CMDS=<<EOF
+e asm.cpu=c64x+
+ao 1 @ 0x20~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a8 (var b4))
+EOF
+RUN
+
+# Bytes mapped right before code at a fetch-packet boundary are no part of its
+# packets: here NOPs with their p-bit set end the map before the one of the add.
+NAME=c6x an execute packet does not run across the start of an IO map
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+o malloc://64 0x20
+wx 0100000001000000010000000100000001000000010000000100000001000000 @ 0
+wx 5820840000000000 @ 0x20
+ao 1 @ 0x20~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a1 (+ (bv 32 0x1) (var a1)))
+EOF
+RUN
+
+# The packet of the compact callp runs past the header of its fetch packet to
+# the mv that sets up the argument of uart_write_text.
+NAME=c6x a call's execute packet runs past the fetch-packet header in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x819a
+aezi
+ar b5=0x4321
+ar a4=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00004321
+b3 = 0x000081a4
+ PC: 0x00008000
+EOF
+RUN
+
+# The compact callp past the header continues the packet of the mvkh before
+# it, and its displacement counts from its own fetch packet, not from that of
+# the packet's first slot.
+NAME=c6x a call continuing a packet past the fetch-packet header in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x8138
+aezi
+ar a4=0x12345678
+ar b3=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00005678
+b3 = 0x00008142
+ PC: 0x00008000
+EOF
+RUN
+
+# Past the header the addkpc counts from its own fetch packet, to the return
+# label at 0x84e8, not from the one where its packet starts.
+NAME=c6x an addkpc past the fetch-packet header counts from its own fetch packet in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x84da
+aezi
+ar b3=0
+ar b6=0x77
+ar b4=0
+aezs 1
+ar b3
+ar b4
+EOF
+EXPECT=<<EOF
+b3 = 0x000084e8
+b4 = 0x00000077
 EOF
 RUN
 
