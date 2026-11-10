@@ -19,6 +19,14 @@ typedef struct tms_cs_context_t {
 	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } TmsContext;
 
+// A compact C6000 slot needs the header at the end of its fetch packet, which
+// callers decoding a block or a basic block often stop short of. RzAsm has no
+// IO of its own; inside RzCore the analysis binding reads the image.
+static bool c6x_read_image(void *user, ut64 addr, ut8 *buf, size_t len) {
+	RzAnalysis *analysis = user;
+	return analysis->iob.read_at && analysis->iob.read_at(analysis->iob.io, addr, buf, len);
+}
+
 static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	TmsContext *ctx = (TmsContext *)a->plugin_data;
 	// The native shared engine handles the whole TMS320C6000 VLIW family
@@ -26,7 +34,8 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 	const C6xArchDesc *c6x = c6x_desc_from_cpu(a->cpu);
 	if (c6x) {
 		C6xInsn insn;
-		if (c6x_decode(c6x, buf, len, a->pc, a->big_endian, &insn)) {
+		RzAnalysis *analysis = rz_asm_to_rz_analysis(a);
+		if (c6x_decode(c6x, buf, len, a->pc, a->big_endian, analysis ? c6x_read_image : NULL, analysis, &insn)) {
 			c6x_mark_parallel(&insn, a->pc, &ctx->c6x_prev_end, &ctx->c6x_prev_par);
 			char *s = c6x_format(c6x, &insn, a->pc);
 			if (s) {

@@ -257,3 +257,8 @@ d "subu .l2x a3,b6,b7:b6" fb771803 0x0
 # ordinary instruction; emitting a .fphead here put packet metadata in the
 # middle of code (#6751).
 d "ldh .d1 *+a14[0x10],b21" 4602baea 0x0
+
+# A 32-bit opcode is word aligned, so a half word can only be a compact slot,
+# which cannot be decoded without the header rz-asm is not given here. It was
+# read as a 32-bit word straddling the next slot, losing the word alignment.
+d "invalid;mvk .s1 -0x6b18,a3" 46022874ca01 0x2
