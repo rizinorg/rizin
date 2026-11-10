@@ -2500,6 +2500,28 @@ static bool fp_header(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xRead
 	return true;
 }
 
+// A word holds the same value in either byte order, and its less significant
+// half is its first compact slot (SPRUFE8B Table 3-16 gives that half the
+// word's first p-bit). Big-endian memory puts that half at the higher address,
+// so there a slot's bytes are those of the other half word: past the slot for
+// the first one, before it for the second, where only the image reaches.
+static bool compact_half(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut16 *half) {
+	if (!big_endian) {
+		*half = rz_read_le16(buf);
+		return true;
+	}
+	if (!(pc & 2) && len >= 4) {
+		*half = rz_read_be16(buf + 2);
+		return true;
+	}
+	ut8 bytes[2];
+	if (!read || !read(user, pc ^ 2, bytes, sizeof(bytes))) {
+		return false;
+	}
+	*half = rz_read_be16(bytes);
+	return true;
+}
+
 /**
  * Decode the C6000 instruction at \p pc.
  * \param desc variant descriptor (feature gate)
@@ -2507,8 +2529,9 @@ static bool fp_header(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xRead
  * \param len available bytes
  * \param pc address \p buf starts at, for PC-relative operands
  * \param big_endian byte order of \p buf
- * \param read reader for the fetch-packet header when \p buf stops short of
- *        it, or NULL to decode from \p buf alone
+ * \param read reader for what \p buf lacks: the fetch-packet header past its
+ *        end, and in big endian the half word before a second compact slot;
+ *        or NULL to decode from \p buf alone
  * \param user passed through to \p read
  * \param insn output, filled on success
  * \return true if an instruction slot was consumed, 4 bytes or the 2 of a
@@ -2540,10 +2563,15 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 			// split into two 16-bit instructions.
 			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
 			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
-				ut16 w16 = rz_read_ble16(buf, big_endian);
 				ut8 half = (fp_off >> 1) & 1;
-				insn->word = w16;
 				insn->parallel = (hdr >> (slot * 2 + half)) & 1;
+				insn->size = C6X_COMPACT_SIZE;
+				ut16 w16;
+				if (!compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+					insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+					return true;
+				}
+				insn->word = w16;
 				decode_compact(insn, w16, (hdr >> 19) & 1, (hdr >> 14) & 1,
 					(hdr >> 16) & 0x7, (hdr >> 15) & 1);
 				return true;
@@ -2551,7 +2579,10 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 		} else if (fp_off < 0x1c && (fp_off & 2)) {
 			// 32-bit opcodes are word aligned, so a half word can only be a
 			// compact slot, and one cannot be decoded without its header
-			insn->word = rz_read_ble16(buf, big_endian);
+			ut16 w16;
+			if (compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+				insn->word = w16;
+			}
 			insn->size = C6X_COMPACT_SIZE;
 			insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
 			return true;

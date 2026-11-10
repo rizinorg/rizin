@@ -49,3 +49,12 @@ d "shl .s1 a5,0x8,a3;shr .s2 b2,0x10,b6;shl .s1x b1,0x6,a2;shr .s1 a0,0x1,a0;nop
 # The displacement of a compact CALLP counts words, unlike that of the compact
 # BNOP forms: from the packet at 0x20, +8 reaches 0x40 and -8 reaches 0.
 d "callp .s2 0x40,b3;callp .s1 0x0,a3;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, br, nosat, 0000001b" 1b021afe000000000000000000000000000000000000000000000000008020e0 0x20
+
+# A word holds the same value in either byte order, so a compact pair still runs
+# its less significant half first, which big-endian memory stores at the higher
+# address (TI cl6x and dis6x). rz-asm has no image: the second slot of a word
+# comes from the bytes it handed over for the first. The first is the full
+# mixed-width packet from above, the second a TI-assembled pair whose ADD reads
+# what the MV wrote.
+dE "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 008ca36201bc94f6053c62f4024e4646d04ca12003966f1001888162e1000040
+dE "mv .l1 a4,a0;add .l1 0x1,a0,a0;mv .l2 b4,b0;add .l2 0x2,b0,b0;nop 1;nop 1;nop 1;nop 1;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0001111b" 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000

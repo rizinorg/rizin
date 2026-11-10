@@ -58,8 +58,9 @@ static bool same_insn(const C6xInsn *a, const C6xInsn *b) {
 		!memcmp(a->ops, b->ops, sizeof(a->ops));
 }
 
-// Decode every slot of \p img, first with the whole image in hand and then from
-// every shorter buffer, and count the slots.
+// Decode every slot of \p img, first with the rest of the image in hand and then
+// from every shorter buffer, and count the slots. Both get the reader, as the
+// second slot of a big-endian word lies before its own address.
 static size_t walk_image(const Image *img) {
 	const C6xArchDesc *c674x = c6x_desc_from_cpu("c674x");
 	C6xInsn whole = { 0 };
@@ -67,7 +68,7 @@ static size_t walk_image(const Image *img) {
 	size_t slots = 0;
 	for (ut64 pc = 0; pc < img->size; pc += whole.size) {
 		int avail = (int)(img->size - pc);
-		if (!c6x_decode(c674x, img->bytes + pc, avail, pc, img->big_endian, NULL, NULL, &whole)) {
+		if (!c6x_decode(c674x, img->bytes + pc, avail, pc, img->big_endian, read_image, (void *)img, &whole)) {
 			return 0;
 		}
 		for (int len = whole.size; len < avail; len++) {
@@ -104,12 +105,39 @@ bool test_header_out_of_reach(void) {
 	mu_assert_eq(insn.size, C6X_COMPACT_SIZE, "a half word is a compact slot");
 	mu_assert_eq(insn.id, C6X_INS_INVALID, "that cannot be decoded without its header");
 	mu_assert_null(insn.mnemonic, "and prints as invalid");
+
+	// the header is in reach, but in big endian the slot at 2 is the half word at 0
+	mu_assert_true(c6x_decode(c674x, image_be + 2, (int)sizeof(image_be) - 2, 2, true, NULL, NULL, &insn), "consumed");
+	mu_assert_eq(insn.size, C6X_COMPACT_SIZE, "a big-endian second slot is a compact slot");
+	mu_assert_eq(insn.id, C6X_INS_INVALID, "that cannot be decoded without the half word before it");
+	mu_end;
+}
+
+bool test_big_endian_is_the_same_program(void) {
+	// TI keeps a word's value in either byte order and runs its less significant
+	// half first, so image_be holds the instructions of the first packet of
+	// image_le, in the same order
+	const C6xArchDesc *c674x = c6x_desc_from_cpu("c674x");
+	Image le = { image_le, sizeof(image_be), false };
+	Image be = { image_be, sizeof(image_be), true };
+	C6xInsn a = { 0 };
+	C6xInsn b = { 0 };
+	size_t slots = 0;
+	for (ut64 pc = 0; pc < sizeof(image_be); pc += a.size) {
+		int avail = (int)(sizeof(image_be) - pc);
+		mu_assert_true(c6x_decode(c674x, image_le + pc, avail, pc, false, read_image, &le, &a), "little endian decodes");
+		mu_assert_true(c6x_decode(c674x, image_be + pc, avail, pc, true, read_image, &be, &b), "big endian decodes");
+		mu_assert_true(same_insn(&a, &b), "to the same instruction");
+		slots++;
+	}
+	mu_assert_eq(slots, 9, "slot by slot");
 	mu_end;
 }
 
 bool all_tests(void) {
 	mu_run_test(test_slots_decode_with_any_buffer_length);
 	mu_run_test(test_header_out_of_reach);
+	mu_run_test(test_big_endian_is_the_same_program);
 	return tests_passed != tests_run;
 }
 
