@@ -1907,6 +1907,65 @@ static bool test_pvector_uniq(void) {
 	mu_end;
 }
 
+static bool test_pvector_as_iter(void) {
+	RzPVector v;
+	int arr[5] = { 10, 11, 12, 13, 14 };
+	rz_pvector_init(&v, NULL);
+	for (int i = 0; i < 5; i++) {
+		rz_pvector_push(&v, (void *)&arr[i]);
+	}
+
+	// iterate over all elements
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
+	int *elem;
+	int count = 0;
+	rz_iterator_foreach(&it, elem) {
+		mu_assert_eq(*elem, arr[count], "value mismatch");
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 5, "wrong number of iterations");
+
+	// NULL elements, as left behind e.g. by rz_pvector_set(), are skipped
+	rz_pvector_set(&v, 1, NULL);
+	rz_pvector_set(&v, 3, NULL);
+	mu_assert_eq(rz_pvector_len(&v), 5, "set failed");
+	count = 0;
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
+	rz_iterator_foreach(&it, elem) {
+		mu_assert_true(elem == &arr[0] || elem == &arr[2] || elem == &arr[4], "unexpected element after set");
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 3, "wrong number of iterations after set. NULL should have been skipped.");
+
+	// clone at the current state and continue iterating independently
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 10, "first value");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 12, "second value original");
+	mu_assert_eq(*(int *)rz_iterator_next(&it_clone), 12, "second value clone");
+	rz_iterator_fini(&it);
+	// the clone is unaffected by finalizing the original
+	count = 2;
+	rz_iterator_foreach(&it_clone, elem) {
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "wrong number of clone iterations");
+
+	// fini does not touch the vector itself
+	mu_assert_eq(rz_pvector_len(&v), 5, "vector length changed by the iterator");
+	mu_assert_notnull(v.v.a, "vector data freed by the iterator");
+
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
 static size_t lower_bound_slow(st64 *a, size_t count, st64 v) {
 	size_t i;
 	for (i = 0; i < count; i++) {
@@ -2059,6 +2118,7 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_bounds);
 	mu_run_test(test_pvector_tips);
 	mu_run_test(test_pvector_uniq);
+	mu_run_test(test_pvector_as_iter);
 	mu_run_test(test_pvector_remove_data);
 
 	mu_run_test(test_array_bounds_fuzz);

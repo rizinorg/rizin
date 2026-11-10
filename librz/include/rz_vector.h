@@ -384,6 +384,8 @@ static inline void **rz_pvector_push_front(RzPVector *vec, void *x) {
 // sort vec using quick sort.
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user);
 
+RZ_API bool rz_pvector_as_iter(const RZ_NONNULL RzPVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter);
+
 // Returns a new RzPVector which contains only unique values
 RZ_API RZ_OWN RzPVector *rz_pvector_uniq(RZ_NONNULL const RzPVector *vec, RZ_NONNULL RzPVectorComparator cmp, void *user);
 

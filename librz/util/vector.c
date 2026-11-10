@@ -1106,6 +1106,62 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 	pvector_quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
 
+typedef struct pvector_iter_state_t {
+	RZ_BORROW const RzPVector *vec;
+	size_t i;
+} PVectorIterState;
+
+// NULL entries cannot be yielded through an iterator, so they are skipped
+static void *pvector_iter_next(RzIterator *it) {
+	rz_return_val_if_fail(it && it->u, NULL);
+	PVectorIterState *state = it->u;
+	while (state->i < rz_pvector_len(state->vec)) {
+		void *elem = rz_pvector_at(state->vec, state->i++);
+		if (elem) {
+			return elem;
+		}
+	}
+	return NULL;
+}
+
+static void pvector_free_iter_state(void *state) {
+	free(state);
+}
+
+static void *pvector_clone_iter_state(const void *state) {
+	PVectorIterState *clone = RZ_NEW(PVectorIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(PVectorIterState));
+	}
+	return clone;
+}
+
+/**
+ * \brief Returns an iterator over \p vec, yielding the pointers in the vector.
+ *
+ * NULL elements in the pvector are not yielded, but skipped!
+ *
+ * \param vec The pvector to create the iterator for.
+ * \param iter Filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
+ */
+RZ_API bool rz_pvector_as_iter(const RZ_NONNULL RzPVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(vec && iter, false);
+	PVectorIterState *state = RZ_NEW0(PVectorIterState);
+	if (!state) {
+		rz_warn_if_reached();
+		*iter = (RzIterator){ 0 };
+		return false;
+	}
+	state->vec = vec;
+	if (!rz_iterator_init((rz_iterator_next_cb)pvector_iter_next, NULL, pvector_free_iter_state, pvector_clone_iter_state, state, iter)) {
+		pvector_free_iter_state(state);
+		return false;
+	}
+	return true;
+}
+
 /**
  * \brief Find the unique values in the \p vec and push it in a new RzPVector.
  * \param vec the RzPVector to search in.

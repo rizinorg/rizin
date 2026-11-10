@@ -309,70 +309,6 @@ static RzGraphEdge *rz_graph_list_impl_find_edge(RzGraph /*<NodeType *, EdgeType
 	return rz_pvector_at(out_vec, eid);
 }
 
-// no build-in vector iter
-typedef struct {
-	RZ_BORROW const RzPVector /*<RzGraphEdge *>*/ *vec; // borrow
-	ut64 cur_id;
-} RzGraphListIterState;
-
-/**
- * \brief Iterator next callback for RzPVector-backed iteration.
- *
- * Returns the next element in the borrowed pvector, or NULL when exhausted.
- *
- * \param iter the iterator
- * \return next element pointer, or NULL
- */
-static void *pvecotr_iter_next(RzIterator *iter) {
-	RzGraphListIterState *state = (RzGraphListIterState *)iter->u;
-	ut64 vec_size = rz_pvector_len(state->vec);
-	while (state->cur_id < vec_size) {
-		void *elem = rz_pvector_at(state->vec, state->cur_id);
-		state->cur_id += 1;
-		if (elem) {
-			return elem;
-		}
-	}
-	return NULL;
-}
-
-static void *pvector_clone_iter_state(const void *state) {
-	RzGraphListIterState *clone = RZ_NEW(RzGraphListIterState);
-	if (clone) {
-		memcpy(clone, state, sizeof(RzGraphListIterState));
-	}
-	return clone;
-}
-
-/**
- * \brief Wrap an RzPVector as a read-only RzIterator.
- *
- * The iterator borrows the vector; finalizing the iterator does not
- * free the underlying vector elements.
- *
- * \param vec The pvector to iterate over (borrowed).
- * \param iterator Output parameter, filled with the constructed iterator on success.
- *
- * \return True on success, false on failure.
- */
-static bool pvector_as_iter(RzPVector /*<RzGraphEdge *>*/ *vec, RZ_OUT RZ_NONNULL RzIterator *iterator) {
-	if (!vec) {
-		*iterator = (RzIterator){ 0 };
-		return false;
-	}
-
-	// free state only, dont broke pvector nodes of graph
-	RzGraphListIterState *state = RZ_NEW0(RzGraphListIterState);
-	if (!state) {
-		*iterator = (RzIterator){ 0 };
-		return false;
-	}
-	state->cur_id = 0;
-	state->vec = vec;
-
-	return rz_iterator_init((rz_iterator_next_cb)pvecotr_iter_next, NULL, free, pvector_clone_iter_state, state, iterator);
-}
-
 /**
  * \brief Fills \p iterator with an iterator over all outgoing edges of \p node (list impl).
  *
@@ -389,7 +325,7 @@ static bool rz_graph_list_impl_get_out_edges(RzGraph /*<NodeType *, EdgeType *>*
 	if (!out_vec || rz_pvector_empty(out_vec)) {
 		return false;
 	}
-	return pvector_as_iter(out_vec, iterator);
+	return rz_pvector_as_iter(out_vec, iterator);
 }
 
 /**
@@ -408,7 +344,7 @@ static bool rz_graph_list_impl_get_in_edges(RzGraph /*<NodeType *, EdgeType *>*/
 	if (!in_vec || rz_pvector_empty(in_vec)) {
 		return false;
 	}
-	return pvector_as_iter(in_vec, iterator);
+	return rz_pvector_as_iter(in_vec, iterator);
 }
 
 /**
@@ -1652,7 +1588,7 @@ RZ_API RZ_BORROW RzGraphEdge *rz_graph_find_edge(RzGraph /*<NodeType *, EdgeType
  */
 RZ_API bool rz_graph_get_nodes(const RzGraph /*<NodeType *, EdgeType *>*/ *g, RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	rz_return_val_if_fail(g, false);
-	return pvector_as_iter(g->node_vec, iterator);
+	return rz_pvector_as_iter(g->node_vec, iterator);
 }
 
 /**
