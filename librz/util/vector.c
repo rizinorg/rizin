@@ -718,6 +718,50 @@ RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, 
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
+typedef struct vector_iter_state_t {
+	const RzVector *vec;
+	size_t i;
+} VectorIterState;
+
+static void *vector_iter_next(RzIterator *it) {
+	rz_return_val_if_fail(it && it->u, NULL);
+	VectorIterState *state = it->u;
+	if (state->i >= state->vec->len) {
+		return NULL;
+	}
+	void *elem = rz_vector_index_ptr(state->vec, state->i++);
+	return elem;
+}
+
+static void vector_free_iter_state(void *state) {
+	free(state);
+}
+
+/**
+ * \brief Returns an iterator over \p vec, yielding pointers to the
+ * elements in the vector.
+ *
+ * \param vec The vector to create the iterator for.
+ * \param iter Filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
+ */
+RZ_API bool rz_vector_as_iter(const RZ_NONNULL RzVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(vec && iter, false);
+	VectorIterState *state = RZ_NEW0(VectorIterState);
+	if (!state) {
+		rz_warn_if_reached();
+		*iter = (RzIterator){ 0 };
+		return false;
+	}
+	state->vec = vec;
+	if (!rz_iterator_init((rz_iterator_next_cb)vector_iter_next, NULL, vector_free_iter_state, state, iter)) {
+		vector_free_iter_state(state);
+		return false;
+	}
+	return true;
+}
+
 // pvector
 
 static void pvector_free_elem(void *e, void *user) {

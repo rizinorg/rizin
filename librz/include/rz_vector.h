@@ -3,6 +3,7 @@
 
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>
+#include <rz_util/rz_iterator.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -157,6 +158,8 @@ RZ_API void *rz_vector_push(RzVector *vec, void *x);
 RZ_API void *rz_vector_push_front(RzVector *vec, void *x);
 
 RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL void *elem);
+
+RZ_API bool rz_vector_as_iter(const RZ_NONNULL RzVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter);
 
 /**
  * \brief Swap two elements of the vector

@@ -1136,6 +1136,42 @@ static bool test_vector_tips(void) {
 	mu_end;
 }
 
+static bool test_vector_as_iter(void) {
+	RzVector v;
+	rz_vector_init(&v, sizeof(ut32), NULL, NULL);
+
+	// iterate over an empty vector
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_vector_as_iter(&v, &it), "rz_vector_as_iter failed");
+	ut32 *elem;
+	ut32 count = 0;
+	rz_iterator_foreach(&it, elem) {
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 0, "wrong number of iterations");
+
+	// iterate over a filled vector
+	ut32 vals[5] = { 0, 1, 2, 3, 4 };
+	rz_vector_insert_range(&v, 0, vals, 5);
+	count = 0;
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_vector_as_iter(&v, &it), "rz_vector_as_iter failed");
+	rz_iterator_foreach(&it, elem) {
+		mu_assert_eq(*elem, count, "value mismatch");
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 5, "wrong number of iterations");
+
+	// fini does not touch the vector itself
+	mu_assert_eq(v.len, 5, "vector length changed by the iterator");
+	mu_assert_notnull(v.a, "vector data freed by the iterator");
+
+	rz_vector_clear(&v);
+	mu_end;
+}
+
 static bool test_pvector_init(void) {
 	RzPVector v;
 	rz_pvector_init(&v, (void *)1337);
@@ -1974,6 +2010,7 @@ static int all_tests(void) {
 	mu_run_test(test_vector_shrink);
 	mu_run_test(test_vector_flush);
 	mu_run_test(test_vector_foreach);
+	mu_run_test(test_vector_as_iter);
 	mu_run_test(test_vector_bounds);
 	mu_run_test(test_vector_tips);
 
