@@ -3595,30 +3595,80 @@ static void ds_print_sysregs(RzDisasmState *ds) {
 		return;
 	}
 	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
-	switch (ds->analysis_op.type) {
-	case RZ_ANALYSIS_OP_TYPE_IO: {
+	if (!sysc) {
+		return;
+	}
+
+	if (ds->analysis_op.type == RZ_ANALYSIS_OP_TYPE_IO) {
 		const int imm = (int)ds->analysis_op.val;
-		const char *ioname = rz_sysreg_get(sysc, "mmio", imm);
-		if (ioname) {
+		const RzSysregItem *item = rz_sysreg_get_item(sysc, imm);
+		if (item && (!strcmp(item->type, "mmio") || !strcmp(item->type, "io"))) {
 			CMT_ALIGN;
-			ds_comment(ds, true, "; IO %s", ioname);
+			if (RZ_STR_ISNOTEMPTY(item->comment) && RZ_STR_ISNOTEMPTY(item->name) && strcmp(item->name, item->comment) != 0) {
+				ds_comment(ds, true, "; IO %s - %s", item->name, item->comment);
+			} else {
+				ds_comment(ds, true, "; IO %s", item->name ? item->name : item->comment);
+			}
 			ds->has_description = true;
 		}
-	} break;
-	// Then sysregs
+		return;
+	}
+
+	switch (ds->analysis_op.type) {
 	case RZ_ANALYSIS_OP_TYPE_MOV:
 	case RZ_ANALYSIS_OP_TYPE_LEA:
 	case RZ_ANALYSIS_OP_TYPE_LOAD:
-	case RZ_ANALYSIS_OP_TYPE_STORE: {
-		const int imm = (int)ds->analysis_op.ptr;
-		const char *sr = rz_sysreg_get(sysc, "reg", imm);
-		if (sr) {
+	case RZ_ANALYSIS_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_CMP: {
+		const RzSysregItem *item_ptr = NULL;
+		const RzSysregItem *item_val = NULL;
+
+		if (ds->analysis_op.ptr != UT64_MAX && ds->analysis_op.ptr != 0) {
+			item_ptr = rz_sysreg_get_item(sysc, ds->analysis_op.ptr);
+			if (item_ptr && strcmp(item_ptr->type, "reg") != 0 && strcmp(item_ptr->type, "io") != 0 && strcmp(item_ptr->type, "mmio") != 0) {
+				item_ptr = NULL;
+			}
+		}
+		if (ds->analysis_op.val != UT64_MAX && ds->analysis_op.val != 0) {
+			item_val = rz_sysreg_get_item(sysc, ds->analysis_op.val);
+			if (item_val && strcmp(item_val->type, "reg") != 0 && strcmp(item_val->type, "io") != 0 && strcmp(item_val->type, "mmio") != 0) {
+				item_val = NULL;
+			}
+		}
+
+		if (item_ptr && item_val && item_ptr != item_val) {
 			CMT_ALIGN;
-			ds_comment(ds, true, "; REG %s - %s", sr, "");
-			// TODO: add register description description
+			const char *name_ptr = item_ptr->name ? item_ptr->name : item_ptr->comment;
+			const char *name_val = item_val->name ? item_val->name : item_val->comment;
+			ds_comment(ds, true, "; %s %s, %s", item_ptr->type, name_ptr, name_val);
+			ds->has_description = true;
+		} else if (item_ptr) {
+			CMT_ALIGN;
+			const char *name = item_ptr->name ? item_ptr->name : item_ptr->comment;
+			if (RZ_STR_ISNOTEMPTY(item_ptr->comment) && item_ptr->name && strcmp(item_ptr->name, item_ptr->comment) != 0) {
+				ds_comment(ds, true, "; %s %s - %s", item_ptr->type, name, item_ptr->comment);
+			} else {
+				ds_comment(ds, true, "; %s %s", item_ptr->type, name);
+			}
+			ds->has_description = true;
+		} else if (item_val) {
+			CMT_ALIGN;
+			const char *name = item_val->name ? item_val->name : item_val->comment;
+			if (RZ_STR_ISNOTEMPTY(item_val->comment) && item_val->name && strcmp(item_val->name, item_val->comment) != 0) {
+				ds_comment(ds, true, "; %s %s - %s", item_val->type, name, item_val->comment);
+			} else {
+				ds_comment(ds, true, "; %s %s", item_val->type, name);
+			}
 			ds->has_description = true;
 		}
 	} break;
+	default:
+		break;
 	}
 }
 
