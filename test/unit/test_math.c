@@ -85,10 +85,68 @@ static bool test_welford_geometric(void) {
 	mu_end;
 }
 
+static bool test_softmax(void) {
+	RzVector ps = { 0 };
+	rz_vector_init(&ps, sizeof(double), NULL, NULL);
+	RzVector v = { 0 };
+	rz_vector_init(&v, sizeof(st64), NULL, NULL);
+	st64 n[5] = { -3, -1, 1, 2, 8 };
+	rz_vector_insert_range(&v, 0, n, RZ_ARRAY_SIZE(n));
+
+	RzIterator iter = { 0 };
+	mu_assert_true(rz_vector_as_iter(&v, &iter), "Iter init failed.");
+
+	char val[16] = { 0 };
+	mu_assert_eq(rz_math_softmax_st64(&iter, &ps), 8, "Wrong softmax result.");
+	rz_iterator_reset(&iter);
+
+	double p_out;
+	double p = rz_math_softmax_p_zi_st64(-3, &iter);
+	rz_strf(val, "%.6f", p);
+	mu_assert_streq(val, "0.000017", "p 1 is wrong");
+	rz_vector_pop_front(&ps, &p_out);
+	mu_assert_true(p == p_out, "p mismatch");
+
+	rz_iterator_reset(&iter);
+	p = rz_math_softmax_p_zi_st64(-1, &iter);
+	rz_strf(val, "%.6f", p);
+	mu_assert_streq(val, "0.000123", "p 1 is wrong");
+	rz_vector_pop_front(&ps, &p_out);
+	mu_assert_true(p == p_out, "p mismatch");
+
+	rz_iterator_reset(&iter);
+	p = rz_math_softmax_p_zi_st64(1, &iter);
+	rz_strf(val, "%.6f", p);
+	mu_assert_streq(val, "0.000909", "p 1 is wrong");
+	rz_vector_pop_front(&ps, &p_out);
+	mu_assert_true(p == p_out, "p mismatch");
+
+	rz_iterator_reset(&iter);
+	p = rz_math_softmax_p_zi_st64(2, &iter);
+	rz_strf(val, "%.6f", p);
+	mu_assert_streq(val, "0.002470", "p 2 is wrong");
+	rz_vector_pop_front(&ps, &p_out);
+	mu_assert_true(p == p_out, "p mismatch");
+
+	rz_iterator_reset(&iter);
+	p = rz_math_softmax_p_zi_st64(8, &iter);
+	rz_strf(val, "%.6f", p);
+	mu_assert_streq(val, "0.996482", "p 8 is wrong");
+	rz_vector_pop_front(&ps, &p_out);
+	mu_assert_true(p == p_out, "p mismatch");
+
+	rz_iterator_fini(&iter);
+	rz_vector_fini(&ps);
+	rz_vector_fini(&v);
+
+	mu_end;
+}
+
 static int all_tests(void) {
 
 	mu_run_test(test_welford_arithmetic);
 	mu_run_test(test_welford_geometric);
+	mu_run_test(test_softmax);
 
 	return tests_passed != tests_run;
 }
