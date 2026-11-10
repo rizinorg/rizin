@@ -174,20 +174,20 @@ bool test_prologues_generate() {
 	rz_prologues_arch_info_fini(&arch_info);
 
 	// dir
-	rz_prologues_arch_info_init(&arch_info, "mips", 32, false);
+	rz_prologues_arch_info_init(&arch_info, "tms320", 32, false);
 
 	processed_files = rz_set_u_new();
 	pg_trie = rz_prologues_trie_new();
 	// nonexistent
 	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "nonexistent/dir", 8, NULL, NULL);
 	mu_assert_eq(fcnt, -1, "non-existent directory should return -1");
-	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "bins/elf", 8, &arch_info, processed_files);
-	mu_assert_eq(fcnt, 4, "valid processed file count mismatch");
-	mu_assert_eq(rz_set_u_size(processed_files), 4, "processed file set size mismatch");
+	fcnt = rz_prologues_trie_feed_directory(pg_trie, bin, "bins/tms320", 8, &arch_info, processed_files);
+	mu_assert_eq(fcnt, 56, "valid processed file count mismatch");
+	mu_assert_eq(rz_set_u_size(processed_files), 56, "processed file set size mismatch");
 
 	prologues = rz_prologues_generalize_and_extract(pg_trie, 8, 0.7);
 	mu_assert_notnull(prologues, "Failed to generalize prologues from trie");
-	mu_assert_eq(rz_vector_len(prologues), 11, "no. of prologues extracted differs");
+	mu_assert_eq(rz_vector_len(prologues), 33, "no. of prologues extracted differs");
 	sd = rz_prologues_to_structured_data(prologues, 8, &arch_info);
 	mu_assert_notnull(sd, "Failed to convert prologues to structured data");
 
