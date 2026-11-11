@@ -229,7 +229,7 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 	}
 	// TODO: This softmax does here effectively the same as max().
 	// That needs to be replaced, checking the probabilities of the verdicts against each other.
-	st64 softmax_score = rz_math_softmax_st64(&it);
+	st64 softmax_score = rz_math_softmax_st64(&it, NULL);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		if (s->verdict_score[i] == softmax_score) {
 			return (ICFGNodeVerdict)i;
