@@ -798,7 +798,7 @@ static bool test_migrate_v27_v28_analysis_prelude() {
 	mu_assert_notnull(core_db, "core ns");
 	Sdb *config_db = sdb_ns(core_db, "config", false);
 	mu_assert_notnull(config_db, "config ns");
-	mu_assert_notnull(sdb_get(config_db, "analysis.prelude"), "analysis.prelude exists before migration");
+	mu_assert_notnull(sdb_const_get(config_db, "analysis.prelude"), "analysis.prelude exists before migration");
 
 	bool s = rz_project_migrate_v27_v28(prj, res);
 	mu_assert_true(s, "migrate success");
