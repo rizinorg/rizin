@@ -1173,7 +1173,7 @@ static bool test_vector_as_iter(void) {
 	mu_assert_true(rz_vector_as_iter(&v, &it), "rz_vector_as_iter failed");
 	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 0, "first value");
 	RzIterator it_clone = (RzIterator){ 0 };
-	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
 	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 1, "second value original");
 	mu_assert_eq(*((ut32 *)rz_iterator_next(&it_clone)), 1, "second value clone");
 	mu_assert_eq(*((ut32 *)rz_iterator_next(&it)), 2, "third value original");
@@ -1946,7 +1946,7 @@ static bool test_pvector_as_iter(void) {
 	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
 	mu_assert_eq(*(int *)rz_iterator_next(&it), 10, "first value");
 	RzIterator it_clone = (RzIterator){ 0 };
-	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
 	mu_assert_eq(*(int *)rz_iterator_next(&it), 12, "second value original");
 	mu_assert_eq(*(int *)rz_iterator_next(&it_clone), 12, "second value clone");
 	rz_iterator_fini(&it);
@@ -1957,6 +1957,38 @@ static bool test_pvector_as_iter(void) {
 	}
 	rz_iterator_fini(&it_clone);
 	mu_assert_eq(count, 3, "wrong number of clone iterations");
+
+	// a reset clone starts over from the first element,
+	// while the original keeps its position
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 10, "first value");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, true), "rz_iterator_clone failed");
+	// the clone yields all non-NULL elements again
+	count = 0;
+	rz_iterator_foreach(&it_clone, elem) {
+		mu_assert_eq(*elem, arr[count * 2], "reset clone value mismatch");
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "wrong number of reset clone iterations");
+	// the original was untouched by the reset and continues at the second element
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 12, "original position changed by clone reset");
+	rz_iterator_fini(&it);
+
+	// rz_iterator_reset() rewinds the iterator itself
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_pvector_as_iter(&v, &it), "rz_pvector_as_iter failed");
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 10, "first value");
+	mu_assert_eq(*(int *)rz_iterator_next(&it), 12, "second value");
+	mu_assert_true(rz_iterator_reset(&it), "rz_iterator_reset failed");
+	count = 0;
+	rz_iterator_foreach(&it, elem) {
+		mu_assert_eq(*elem, arr[count * 2], "reset value mismatch");
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 3, "wrong number of iterations after reset");
 
 	// fini does not touch the vector itself
 	mu_assert_eq(rz_pvector_len(&v), 5, "vector length changed by the iterator");

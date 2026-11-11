@@ -885,7 +885,7 @@ bool test_ht_uu_iter_clone(void) {
 	mu_assert_notnull(rz_iterator_next(&it), "first element");
 	mu_assert_notnull(rz_iterator_next(&it), "second element");
 	RzIterator it_clone = (RzIterator){ 0 };
-	mu_assert_true(rz_iterator_clone(&it, &it_clone), "rz_iterator_clone failed");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
 
 	// both continue over the remaining elements, independently
 	// (icnt counts the elements consumed by the clone: 2 before cloning, 1 shared step)
@@ -906,8 +906,41 @@ bool test_ht_uu_iter_clone(void) {
 	// cloning an uninitialized iterator fails
 	RzIterator uninit = (RzIterator){ 0 };
 	RzIterator uninit_clone = (RzIterator){ 0 };
-	mu_assert_false(rz_iterator_clone(&uninit, &uninit_clone), "clone of uninit succeeded");
+	mu_assert_false(rz_iterator_clone(&uninit, &uninit_clone, false), "clone of uninit succeeded");
 	mu_assert_true(rz_iterator_is_uninit(&uninit_clone), "failed clone left initialized iterator");
+
+	// a reset clone starts over from the first element,
+	// while the original keeps its position
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_keys(ht, &it), "ht_uu_as_iter_keys failed");
+	mu_assert_notnull(rz_iterator_next(&it), "first element");
+	mu_assert_notnull(rz_iterator_next(&it), "second element");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, true), "rz_iterator_clone failed");
+	// the clone yields all 5 elements again
+	icnt = 0;
+	while ((k = rz_iterator_next(&it_clone))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(icnt, 5, "Wrong number of reset clone iterations");
+	// the original was untouched by the reset and continues at the third element
+	icnt = 2;
+	while ((k = rz_iterator_next(&it))) {
+		icnt++;
+	}
+	mu_assert_eq(icnt, 5, "Wrong number of original iterations");
+
+	// rz_iterator_reset() rewinds the iterator itself
+	mu_assert_true(rz_iterator_reset(&it), "rz_iterator_reset failed");
+	icnt = 0;
+	while ((k = rz_iterator_next(&it))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations after reset");
+
+	// resetting an uninitialized iterator fails
+	mu_assert_false(rz_iterator_reset(&uninit), "reset of uninit succeeded");
 
 	ht_uu_free(ht);
 	mu_end;
