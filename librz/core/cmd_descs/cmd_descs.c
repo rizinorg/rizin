@@ -21,13 +21,16 @@ static const RzCmdDescDetail cmd_search_cryptographic_material_details[2];
 static const RzCmdDescDetail cmd_query_cop_gadget_details[5];
 static const RzCmdDescDetail cmd_cop_search_stack_details[2];
 static const RzCmdDescDetail cmd_cop_gadget_search_size_details[2];
+static const RzCmdDescDetail slash_C_details[2];
 static const RzCmdDescDetail cmd_search_file_details[2];
 static const RzCmdDescDetail cmd_query_jop_gadget_details[5];
 static const RzCmdDescDetail cmd_jop_search_stack_details[2];
 static const RzCmdDescDetail cmd_jop_gadget_search_size_details[2];
+static const RzCmdDescDetail slash_J_details[2];
 static const RzCmdDescDetail cmd_query_rop_gadget_details[5];
 static const RzCmdDescDetail cmd_rop_search_stack_details[2];
 static const RzCmdDescDetail cmd_rop_gadget_search_size_details[2];
+static const RzCmdDescDetail slash_R_details[2];
 static const RzCmdDescDetail cmd_search_value_details[3];
 static const RzCmdDescDetail cmd_search_hex_details[2];
 static const RzCmdDescDetail cmd_search_hex_regex_details[2];
@@ -1957,8 +1960,21 @@ static const RzCmdDescHelp cmd_search_cryptographic_material_help = {
 	.args = cmd_search_cryptographic_material_args,
 };
 
+static const RzCmdDescDetailEntry slash_C_Examples_detail_entries[] = {
+	{ .text = "/C", .arg_str = NULL, .comment = "List call-terminated gadgets in the search range" },
+	{ .text = "/Cq \"pop rdi\"", .arg_str = NULL, .comment = "Filter x86-64 gadgets by instruction text; print one line per gadget" },
+	{ .text = "/C/q \"pop r(di|si)\"", .arg_str = NULL, .comment = "Match x86-64 pop rdi or pop rsi using a regular expression" },
+	{ .text = "/Cj \"pop rdi\"", .arg_str = NULL, .comment = "Print matching x86-64 gadgets as JSON" },
+	{ .text = "/C-", .arg_str = NULL, .comment = "Clear the gadget cache before searching modified bytes" },
+	{ 0 },
+};
+static const RzCmdDescDetail slash_C_details[] = {
+	{ .name = "Examples", .entries = slash_C_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp slash_C_help = {
 	.summary = "Search, List, Query for COP Gadgets",
+	.details = slash_C_details,
 };
 static const RzCmdDescArg cmd_info_cop_gadget_args[] = {
 	{
@@ -2166,8 +2182,21 @@ static const RzCmdDescHelp cmd_search_file_help = {
 	.args = cmd_search_file_args,
 };
 
+static const RzCmdDescDetailEntry slash_J_Examples_detail_entries[] = {
+	{ .text = "/J", .arg_str = NULL, .comment = "List jump-terminated gadgets in the search range" },
+	{ .text = "/Jq \"pop rdi\"", .arg_str = NULL, .comment = "Filter x86-64 gadgets by instruction text; print one line per gadget" },
+	{ .text = "/J/q \"pop r(di|si)\"", .arg_str = NULL, .comment = "Match x86-64 pop rdi or pop rsi using a regular expression" },
+	{ .text = "/Jj \"pop rdi\"", .arg_str = NULL, .comment = "Print matching x86-64 gadgets as JSON" },
+	{ .text = "/J-", .arg_str = NULL, .comment = "Clear the gadget cache before searching modified bytes" },
+	{ 0 },
+};
+static const RzCmdDescDetail slash_J_details[] = {
+	{ .name = "Examples", .entries = slash_J_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp slash_J_help = {
 	.summary = "Search, List, Query for JOP Gadgets",
+	.details = slash_J_details,
 };
 static const RzCmdDescArg cmd_info_jop_gadget_args[] = {
 	{
@@ -2505,8 +2534,21 @@ static const RzCmdDescHelp cmd_search_reference_execute_help = {
 	.args = cmd_search_reference_execute_args,
 };
 
+static const RzCmdDescDetailEntry slash_R_Examples_detail_entries[] = {
+	{ .text = "/R", .arg_str = NULL, .comment = "List return-terminated gadgets in the search range" },
+	{ .text = "/Rq \"pop rdi\"", .arg_str = NULL, .comment = "Filter x86-64 gadgets by instruction text; print one line per gadget" },
+	{ .text = "/R/q \"pop r(di|si)\"", .arg_str = NULL, .comment = "Match x86-64 pop rdi or pop rsi using a regular expression" },
+	{ .text = "/Rj \"pop rdi\"", .arg_str = NULL, .comment = "Print matching x86-64 gadgets as JSON" },
+	{ .text = "/R-", .arg_str = NULL, .comment = "Clear the gadget cache before searching modified bytes" },
+	{ 0 },
+};
+static const RzCmdDescDetail slash_R_details[] = {
+	{ .name = "Examples", .entries = slash_R_Examples_detail_entries },
+	{ 0 },
+};
 static const RzCmdDescHelp slash_R_help = {
 	.summary = "Search, List, Query for ROP Gadgets",
+	.details = slash_R_details,
 };
 static const RzCmdDescArg cmd_info_rop_gadget_args[] = {
 	{
