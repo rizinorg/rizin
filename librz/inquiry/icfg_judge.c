@@ -60,30 +60,29 @@ const char *node_verdict_names[] = {
  * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
  */
 typedef enum {
-	CFG_CONFLICT_OBSV_INVALID = 0,
 	// Positive hints that the node is actually a function entry point:
-	CFG_CONFLICT_OBSV_SYMBOL = 1 << 0, ///< The node is located at a symbol's address.
-	CFG_CONFLICT_OBSV_IS_CALLED = 1 << 1, ///< The node is the target of a call instruction.
-	CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB = 1 << 2, ///< A successor jumps over a symbol to reach this node (tail-call signal).
-	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY = 1 << 4, ///< The node has a PE .pdata / x64 unwind entry.
-	CFG_CONFLICT_OBSV_IN_EH_FRAME = 1 << 5, ///< The node is listed in exception-handling metadata (.eh_frame).
-	CFG_CONFLICT_OBSV_IMPORT = 1 << 6, ///< The node is a trampoline to an imported function.
-	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME = 1 << 7, ///< The node grows the stack frame.
+	CFG_CONFLICT_OBSV_SYMBOL = 0, ///< The node is located at a symbol's address.
+	CFG_CONFLICT_OBSV_IS_CALLED, ///< The node is the target of a call instruction.
+	CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB, ///< A successor jumps over a symbol to reach this node (tail-call signal).
+	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY, ///< The node has a PE .pdata / x64 unwind entry.
+	CFG_CONFLICT_OBSV_IN_EH_FRAME, ///< The node is listed in exception-handling metadata (.eh_frame).
+	CFG_CONFLICT_OBSV_IMPORT, ///< The node is a trampoline to an imported function.
+	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME, ///< The node grows the stack frame.
 
 	// Negative hints that the block is a function entry point.
-	CFG_CONFLICT_OBSV_STARTS_NOOP = 1 << 8, ///< Node starts with a noop instruction.
-	CFG_CONFLICT_OBSV_STARTS_COND_JMP = 1 << 9, ///< A successor of this block is a conditional jump.
-	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY = 1 << 10, ///< Basic block is before the entry point of the binary.
-	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH = 1 << 11, ///< Node is reached by at least one fall-through edge.
-	CFG_CONFLICT_OBSV_UNCOND_RETURNS = 1 << 13, ///< Node contains an unconditional return instruction.
-	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN = 1 << 14, ///< Node contains a stack-frame epilogue.
-	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME = 1 << 15, ///< The block shrinks the stack frame.
-	CFG_CONFLICT_OBSV_SELF_LOOP = 1 << 16, ///< The block loops back to itself.
-	CFG_CONFLICT_OBSV_JUMP_TARGET = 1 << 17, ///< Block is target of a jump instruction.
+	CFG_CONFLICT_OBSV_STARTS_NOOP, ///< Node starts with a noop instruction.
+	CFG_CONFLICT_OBSV_STARTS_COND_JMP, ///< A successor of this block is a conditional jump.
+	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, ///< Basic block is before the entry point of the binary.
+	CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, ///< Node is reached by at least one fall-through edge.
+	CFG_CONFLICT_OBSV_UNCOND_RETURNS, ///< Node contains an unconditional return instruction.
+	CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN, ///< Node contains a stack-frame epilogue.
+	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME, ///< The block shrinks the stack frame.
+	CFG_CONFLICT_OBSV_SELF_LOOP, ///< The block loops back to itself.
+	CFG_CONFLICT_OBSV_JUMP_TARGET, ///< Block is target of a jump instruction.
 
 	// Positive hints that the block should be dropped.
-	CFG_CONFLICT_OBSV_NOT_X_MAPPED = 1 << 18, ///< Node is mapped as non-executable.
-	CFG_CONFLICT_OBSV_NOT_MAPPED = 1 << 19, ///< Node is not mapped at all.
+	CFG_CONFLICT_OBSV_NOT_X_MAPPED, ///< Node is mapped as non-executable.
+	CFG_CONFLICT_OBSV_NOT_MAPPED, ///< Node is not mapped at all.
 
 	CFG_CONFLICT_OBSV_N = 20,
 } NodeObservations;
@@ -94,43 +93,42 @@ typedef struct {
 } HintScoreEntry;
 
 typedef struct {
-	NodeObservations obs;
 	const char *name;
 	HintScoreEntry verdict[CFG_CONFLICT_VERDICT_N + 1];
 } HintScores;
 
 static const HintScores hint_scores[] = {
-	{ CFG_CONFLICT_OBSV_SYMBOL, "CFG_CONFLICT_OBSV_SYMBOL",
+	{ "CFG_CONFLICT_OBSV_SYMBOL",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IS_CALLED, "CFG_CONFLICT_OBSV_IS_CALLED",
+	{ "CFG_CONFLICT_OBSV_IS_CALLED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB, "CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB",
+	{ "CFG_CONFLICT_OBSV_SUCC_CROSS_SYMB",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY, "CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY",
+	{ "CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IN_EH_FRAME, "CFG_CONFLICT_OBSV_IN_EH_FRAME",
+	{ "CFG_CONFLICT_OBSV_IN_EH_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_IMPORT, "CFG_CONFLICT_OBSV_IMPORT",
+	{ "CFG_CONFLICT_OBSV_IMPORT",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_GROWS_STACK_FRAME, "CFG_CONFLICT_OBSV_GROWS_STACK_FRAME",
+	{ "CFG_CONFLICT_OBSV_GROWS_STACK_FRAME",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			// The drop condition hint points depend on the architecture.
@@ -138,11 +136,11 @@ static const HintScores hint_scores[] = {
 			// should give a higher score _pro_ dropping.
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_STARTS_NOOP, "CFG_CONFLICT_OBSV_STARTS_NOOP",
+	{ "CFG_CONFLICT_OBSV_STARTS_NOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_STARTS_COND_JMP, "CFG_CONFLICT_OBSV_STARTS_COND_JMP",
+	{ "CFG_CONFLICT_OBSV_STARTS_COND_JMP",
 		// Only a slight hint because some architectures have a NULL check with
 		// and early fail as prologue.
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
@@ -152,18 +150,18 @@ static const HintScores hint_scores[] = {
 			// should give a higher score _pro_ dropping.
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, "CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY",
+	{ "CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH, "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
+	{ "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_UNCOND_RETURNS, "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
+	{ "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			// The drop condition hint points depend on the architecture.
@@ -171,32 +169,32 @@ static const HintScores hint_scores[] = {
 			// should give a higher score _pro_ dropping.
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN, "CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN",
+	{ "CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME, "CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME",
+	{ "CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_VERY_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_SELF_LOOP, "CFG_CONFLICT_OBSV_SELF_LOOP",
+	{ "CFG_CONFLICT_OBSV_SELF_LOOP",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_JUMP_TARGET, "CFG_CONFLICT_OBSV_JUMP_TARGET",
+	{ "CFG_CONFLICT_OBSV_JUMP_TARGET",
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_NOT_X_MAPPED, "CFG_CONFLICT_OBSV_NOT_X_MAPPED",
+	{ "CFG_CONFLICT_OBSV_NOT_X_MAPPED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
-	{ CFG_CONFLICT_OBSV_NOT_MAPPED, "CFG_CONFLICT_OBSV_NOT_MAPPED",
+	{ "CFG_CONFLICT_OBSV_NOT_MAPPED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_RULED_OUT },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_CERTAIN },
@@ -210,13 +208,10 @@ typedef struct {
 
 static void score_add(NodeObservations obs, NodeScore *score) {
 	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N && rz_bits_count_ones_ut64(obs) == 1);
-	size_t obsv_idx = rz_bits_trailing_zeros(obs);
-	rz_return_if_fail(obsv_idx < CFG_CONFLICT_OBSV_N);
-
 	score->total_obsv++;
-	for (size_t i = 0; hint_scores[obsv_idx].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
-		ICFGNodeVerdict v = hint_scores[obsv_idx].verdict[i].id;
-		int s = hint_scores[obsv_idx].verdict[i].score;
+	for (size_t i = 0; hint_scores[obs].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
+		ICFGNodeVerdict v = hint_scores[obs].verdict[i].id;
+		int s = hint_scores[obs].verdict[i].score;
 		score->verdict_score[v] += s;
 	}
 }
