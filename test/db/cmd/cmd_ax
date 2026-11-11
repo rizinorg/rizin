@@ -58,7 +58,7 @@ axtl @ sym.mf_write
 EOF
 EXPECT=<<EOF
 ;------------------------------------------
-void sym.mf_release(unsigned long arg1, int64_t arg2, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h, int64_t arg_10h);
+void sym.mf_release(unsigned long arg1, int64_t arg2);
 ; Xref from: sym.mf_release @ 0x00219836
 |       :   0x00219830      mov   rsi, rbx                             ; int64_t arg2
 |       :   0x00219833      mov   rdi, rbp                             ; int64_t arg1
@@ -67,7 +67,7 @@ void sym.mf_release(unsigned long arg1, int64_t arg2, int64_t arg_28h, int64_t a
 |       `=< 0x0021983d      jz    0x2197b0
 |           0x00219843      mov   rax, qword [rbx+0x18]
 ;------------------------------------------
-void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, int64_t arg_490h);
+void sym.mf_sync(int64_t arg1, int64_t arg2);
 ; Xref from: sym.mf_sync @ 0x0021a454
 |           ; CODE XREF from sym.mf_sync @ 0x21a5c3
 |           0x0021a44e      mov   rsi, rbx                             ; int64_t arg2
@@ -77,7 +77,7 @@ void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, 
 |       ,=< 0x0021a45b      jnz   0x21a469
 |       |   0x0021a45d      test  r13d, r13d
 ;------------------------------------------
-void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, int64_t arg_490h);
+void sym.mf_sync(int64_t arg1, int64_t arg2);
 ; Xref from: sym.mf_sync @ 0x0021a59d
 |           0x0021a597      mov   rdi, rbp                             ; int64_t arg1
 |           0x0021a59a      xor   r13d, r13d
@@ -86,7 +86,7 @@ void sym.mf_sync(int64_t arg1, int64_t arg2, int64_t arg_49ch, int64_t arg_10h, 
 |           0x0021a5a4      setnz r13b
 |           0x0021a5a8      test  r14d, r14d
 ;------------------------------------------
-void sym.mf_release_all(int64_t arg_10h, int64_t arg_28h, int64_t arg_20h, int64_t arg_30h, int64_t arg_498h, int64_t arg_38h, int64_t arg_48h, int64_t arg_40h);
+void sym.mf_release_all();
 ; Xref from: sym.mf_release_all @ 0x0021a756
 |       :   0x0021a750      mov   rsi, rbx                             ; int64_t arg2
 |       :   0x0021a753      mov   rdi, rbp                             ; int64_t arg1

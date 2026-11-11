@@ -13,7 +13,7 @@ EXPECT=<<EOF
 0x000125e0   35 696  -> 679  sym.mpsort_with_tmp.part.0
 0x000128a0    6 83   -> 75   sym.mpsort
             ; CALL XREF from fcn.00008cac @ 0x8d43
-/ sym.mpsort(int64_t arg_8h @ stack + 0x8);
+/ sym.mpsort();
 |           0x000128a0      endbr64
 |           0x000128a4      push  r12
 \ 0x000128ee      jmp   sym.mpsort_with_tmp.part.0
@@ -4206,7 +4206,6 @@ EOF
 EXPECT=<<EOF
 void fcn.00010270(int64_t arg1 @ rdi, int64_t arg2 @ rsi, int64_t arg3 @ rdx, int64_t arg4 @ rcx, int64_t arg5 @ r8);
 var int64_t var_c8h @ stack - 0xc8
-var int64_t var_c7h @ stack - 0xc7
 var int64_t var_c0h @ stack - 0xc0
 var int64_t var_b8h @ stack - 0xb8
 var int64_t var_b0h @ stack - 0xb0
@@ -4387,7 +4386,7 @@ EXPECT=<<EOF
             ; CALL XREFS from sym.win_line @ 0x181983, 0x185a31
             ; CALL XREF from sym.syn_get_foldlevel @ 0x1ba870
             ; CALL XREF from sym.syn_get_id @ 0x1baad1
-/ sym.syntax_start(int64_t arg_fh @ stack + 0xf);
+/ sym.syntax_start();
 |           ; var int64_t var_70h @ stack - 0x70
 |           ; var int64_t var_64h @ stack - 0x64
 |           ; var int64_t var_60h @ stack - 0x60

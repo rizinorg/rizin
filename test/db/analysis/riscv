@@ -1894,6 +1894,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           ; var int64_t var_118h @ stack - 0x118
 |           ; var int64_t var_110h @ stack - 0x110
 |           ; var int64_t var_108h @ stack - 0x108
+|           ; var int64_t var_100h @ stack - 0x100
 |           ; var int64_t var_f8h @ stack - 0xf8
 |           ; var int64_t var_f0h @ stack - 0xf0
 |           ; var int64_t var_e8h @ stack - 0xe8
@@ -1924,7 +1925,6 @@ nth      paddr      vaddr bind   type   size lib name
 |           ; var int64_t var_18h @ stack - 0x18
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
-|           ; arg int64_t arg_30h @ stack + 0x30
 |           0x000105c0      7350a100       csrwi vxrm, 2               ; [09] -r-x section size 5118 named .text
 |           0x000105c4      6971           addi  sp, sp, -0x130
 |           0x000105c6      0566           lui   a2, 1

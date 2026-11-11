@@ -2337,3 +2337,26 @@ EXPECT=<<EOF
             0x000011d8      .dword 0x40047000
 EOF
 RUN
+
+NAME=arm-ls main does not treat global fp accesses as stack arguments
+FILE=bins/elf/analysis/arm-ls
+ARGS=-A
+REGEXP_FILTER_ERR=(WARNING|ERROR):[^\r\n]*
+CMDS=<<EOF
+s main
+afij~{[0].nargs}
+afvr
+afva
+afij~{[0].nargs}
+afvr
+EOF
+EXPECT=<<EOF
+2
+arg int argc @ r0
+arg char **argv @ r1
+2
+arg int argc @ r0
+arg char **argv @ r1
+EOF
+EXPECT_ERR=
+RUN
