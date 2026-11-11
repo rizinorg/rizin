@@ -1360,3 +1360,28 @@ a3 = 0x00000001
  PC: 0x00000024
 EOF
 RUN
+
+# 0x18130c42 is no instruction at all (dis6x lists it as .word), so the third
+# step has nothing to run. The VM stops there, and the message has to say so
+# even though the register profile is synced back from bound variables too.
+NAME=c6x a missing lift is reported where the VM stopped
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 0000000000000000420c1318
+s 0
+aezi
+aezs 3
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00000008
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: lifting not implemented at address 0x00000008
+EOF
+RUN
