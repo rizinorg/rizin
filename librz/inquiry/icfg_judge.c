@@ -216,7 +216,7 @@ static void score_add(NodeObservations obs, NodeScore *score) {
 	}
 }
 
-static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
+static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
 	RzVector scores = { 0 };
 	rz_vector_init(&scores, sizeof(st64), NULL, NULL);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
@@ -234,6 +234,8 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 	st64 softmax_score = rz_math_softmax_st64(&it, NULL);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		if (s->verdict_score[i] == softmax_score) {
+			rz_iterator_reset(&it);
+			*verdict_p = rz_math_softmax_p_zi_st64(s->verdict_score[i], &it);
 			rz_iterator_fini(&it);
 			rz_vector_fini(&scores);
 			return (ICFGNodeVerdict)i;
@@ -385,8 +387,12 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	// CFG_CONFLICT_OBSV_STARTS_NOOP
 	// CFG_CONFLICT_OBSV_HAS_EPILOGUE_PATTERN
 
-verdict:
-	return pick_verdict(&score);
+verdict: {
+	double p;
+	ICFGNodeVerdict verdict = pick_verdict(&score, &p);
+	printf("Node 0x%08lx: %s (s=%d, p=%.06f)\n", node->addr, node_verdict_names[verdict], score.verdict_score[verdict], p);
+	return verdict;
+}
 }
 
 // Check if the intersection of the parent
@@ -517,7 +523,7 @@ RZ_OWN char *node_fmt(const RzGraphNode *n) {
 	rz_strbuf_init(&sb);
 	rz_strbuf_appendf(&sb, "0x%08" PFMT64x " m: (", node->addr);
 	if (node->memberships_n == 1) {
-		rz_strbuf_appendf(&sb, "%" PFMT64d, node->proc_memberships.m);
+		rz_strbuf_appendf(&sb, "0x%08" PFMT64x, node->proc_memberships.m);
 	} else {
 		RzIterator it;
 		rz_set_u_as_iter(node->proc_memberships.set, &it);
@@ -579,7 +585,6 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 		}
 
 		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_node, cfg);
-		printf("Node 0x%08lx: %s\n", cf_node->addr, node_verdict_names[verdict]);
 
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP:
