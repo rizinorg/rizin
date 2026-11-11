@@ -19824,6 +19824,7 @@ static const RzCmdDescHelp type_del_all_help = {
 
 static const RzCmdDescHelp tc_help = {
 	.summary = "List loaded types in C format",
+	.description = "C declarations use scr.color and the active console palette for syntax highlighting.",
 };
 static const RzCmdDescArg type_list_c_args[] = {
 	{

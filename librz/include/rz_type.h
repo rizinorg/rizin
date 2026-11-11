@@ -7,6 +7,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_print.h>
+#include <rz_util/rz_annotated_code.h>
 #include <rz_bind.h>
 #include <rz_io.h>
 #include <rz_list.h>
@@ -354,6 +355,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
+RZ_API RZ_OWN RzAnnotatedCode *rz_type_c_highlight(RZ_NONNULL RZ_BORROW const char *source);
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables);
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);

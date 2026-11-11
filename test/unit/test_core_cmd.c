@@ -348,7 +348,109 @@ static bool test_disasm_until_ret_json(void) {
 	mu_end;
 }
 
+static bool test_type_command_colors(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"td \"struct Point { int x; const char *name; };\"; "
+		"td \"union Value { int i; char c; };\"; "
+		"td \"enum Mode { READ = 1, WRITE = 2 };\"; "
+		"td \"typedef struct Point PointAlias;\"; "
+		"td \"int process(const struct Point *p);\"";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "define test types");
+	mu_assert_true(rz_analysis_cc_set(core->analysis, "rax example_cc(rdi, rsi)"), "calling convention");
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "example", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function for type references");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzType *type = rz_type_parse_string_single(typedb->parser, "struct Point", NULL);
+	mu_assert_notnull(type, "variable type");
+	RzAnalysisVarStorage storage;
+	rz_analysis_var_storage_init_stack(&storage, -0x10);
+	RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &storage, type, 0, "point");
+	rz_type_free(type);
+	mu_assert_notnull(var, "variable for type references");
+	const struct {
+		const char *cmd;
+		bool colored;
+	} cases[] = {
+		{ "tc", true },
+		{ "tc Point", true },
+		{ "tcd", true },
+		{ "tcd Point", true },
+		{ "tsc", true },
+		{ "tsc Point", true },
+		{ "tsd", true },
+		{ "tsd Point", true },
+		{ "tuc", true },
+		{ "tuc Value", true },
+		{ "tud", true },
+		{ "tud Value", true },
+		{ "tec", true },
+		{ "tec Mode", true },
+		{ "ted", true },
+		{ "ted Mode", true },
+		{ "ttc", true },
+		{ "ttc PointAlias", true },
+		{ "tt PointAlias", true },
+		{ "tf", true },
+		{ "tf process", true },
+		{ "tsl", true },
+		{ "tul", true },
+		{ "tcc example_cc", true },
+		{ "tccl", true },
+		{ "tx", true },
+		{ "txf 0x100", true },
+		{ "txl", false },
+		{ "txg", false },
+		{ "t", false },
+		{ "ts", false },
+		{ "tu", false },
+		{ "te", false },
+		{ "tt", true },
+		{ "tcc", false },
+		{ "tccj", false },
+		{ "tj", false },
+		{ "tsj", false },
+		{ "tuj", false },
+		{ "tej", false },
+		{ "ttj", false },
+		{ "tfj", false },
+		{ "t Point", false },
+		{ "ts Point", false },
+		{ "tu Value", false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
+		char *plain = rz_core_cmd_str(core, cases[i].cmd);
+		mu_assert_notnull(plain, cases[i].cmd);
+		mu_assert_null(strchr(plain, '\x1b'), "plain output has no escapes");
+		rz_config_set_i(core->config, "scr.color", COLOR_MODE_16);
+		char *colored = rz_core_cmd_str(core, cases[i].cmd);
+		mu_assert_notnull(colored, cases[i].cmd);
+		mu_assert_eq(strchr(colored, '\x1b') != NULL, cases[i].colored, cases[i].cmd);
+		rz_str_ansi_filter(colored, NULL, NULL, -1);
+		mu_assert_streq(colored, plain, cases[i].cmd);
+		free(plain);
+		free(colored);
+	}
+	rz_core_cmd0(core, "ec func_var_type red");
+	char *custom = rz_core_cmd_str(core, "tc Point");
+	mu_assert_notnull(custom, "custom palette output");
+	mu_assert_notnull(strstr(custom, Color_RED "char" Color_RESET), "active type color");
+	free(custom);
+	char *source = rz_core_types_as_c(core, "Point", true);
+	mu_assert_notnull(source, "C source for editor/API callers");
+	mu_assert_null(strchr(source, '\x1b'), "source APIs stay uncolored");
+	free(source);
+	rz_core_cmd0(core, "t-*");
+	char *empty = rz_core_cmd_str(core, "tc");
+	mu_assert_streq_free(empty, "", "empty type listing adds no newline");
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_type_command_colors);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
