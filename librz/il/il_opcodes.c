@@ -72,6 +72,23 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_
 }
 
 /**
+ * \brief Hash of an IL variable name, as the var, let and set ops keep it.
+ *
+ * FNV-1a over 64 bits. The DJB2 variant of rz_str_djb2_hash() is linear over
+ * GF(2), so short names collide under it: a30 and csr, both C6000 registers,
+ * hash alike, and analysis keyed by the hash cannot tell them apart.
+ */
+RZ_API ut64 rz_il_var_name_hash(RZ_NONNULL const char *name) {
+	rz_return_val_if_fail(name, 0);
+	ut64 h = 0xcbf29ce484222325ULL;
+	for (const ut8 *c = (const ut8 *)name; *c; c++) {
+		h ^= *c;
+		h *= 0x100000001b3ULL;
+	}
+	return h;
+}
+
+/**
  *  \brief op structure for `var` ('a var -> 'a pure)
  *
  *  var v is the value of the variable v.
@@ -80,7 +97,7 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *v, RzILVarKind
 	rz_return_val_if_fail(v, NULL);
 	RzILOpPure *ret;
 	rz_il_op_new_2(Pure, RZ_IL_OP_VAR, RzILOpArgsVar, var, v, kind);
-	ret->op.var.hash = rz_str_djb2_hash(v);
+	ret->op.var.hash = rz_il_var_name_hash(v);
 	return ret;
 }
 
@@ -91,7 +108,7 @@ RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNU
 	rz_return_val_if_fail(name && exp && body, NULL);
 	RzILOpPure *ret;
 	rz_il_op_new_3(Pure, RZ_IL_OP_LET, RzILOpArgsLet, let, name, exp, body);
-	ret->op.let.hash = rz_str_djb2_hash(name);
+	ret->op.let.hash = rz_il_var_name_hash(name);
 	return ret;
 }
 
@@ -594,7 +611,7 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_set(RZ_NONNULL const char *v, bool is_l
 	rz_return_val_if_fail(v && x, NULL);
 	RzILOpEffect *ret;
 	rz_il_op_new_3(Effect, RZ_IL_OP_SET, RzILOpArgsSet, set, v, is_local, x);
-	ret->op.set.hash = rz_str_djb2_hash(v);
+	ret->op.set.hash = rz_il_var_name_hash(v);
 	return ret;
 }
 

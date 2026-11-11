@@ -225,3 +225,31 @@ EXPECT=<<EOF
 0x80002a0   32      0      8                        0x080001e4       
 EOF
 RUN
+
+# eepmov.b lifts to a repeat moving r5 on, so after it r5 holds no known
+# value: the jump through it has no target, rather than the one r5 had before.
+# The bytes it moves are stored to memory, which is warned about for as long
+# as RzInquiry does not model memory.
+NAME=Repeat forgets what it writes h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 790510007b5c598f5950
+pd 3
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x1000,r5
+            0x00000004      eepmov.b
+            0x00000008      jmp   @r5
+0x00000000    1 10           inq.0x0
+EOF
+EXPECT_ERR=<<EOF
+WARNING: The repeat at 0x4 stores to memory, which is not forgotten: memory is not modelled yet.
+EOF
+RUN

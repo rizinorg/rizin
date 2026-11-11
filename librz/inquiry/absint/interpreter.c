@@ -81,10 +81,10 @@ RZ_API RZ_OWN RzAbsIntInstance *rz_absint_instance_new(RzAnalysis *analysis, RZ_
 	}
 	for (size_t i = 0; i < il_ctx->reg_binding->regs_count; i++) {
 		const char *rname = il_ctx->reg_binding->regs[i].name;
-		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
-		if (!ht_up_insert(inst->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
-			RZ_LOG_ERROR("DJB2 hash collision of the register name %s. DJB2 hash = 0x%" PFMT64x "\n",
-				rname, djb2_reg_hash);
+		ut64 reg_hash = rz_il_var_name_hash(rname);
+		if (!ht_up_insert(inst->var_name_hashes, reg_hash, rz_str_dup(rname))) {
+			RZ_LOG_ERROR("Hash collision of the register name %s. Hash = 0x%" PFMT64x "\n",
+				rname, reg_hash);
 			goto err_var_name_hashes;
 		}
 	}
@@ -627,6 +627,53 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	rz_iterator_fini(&it);
 }
 
+// Forget every variable \p effect may write. A repeat runs its body any number
+// of times, so what it writes may hold anything afterwards. So may the memory
+// it stores to, which is not forgotten as long as memory is not modelled:
+// returns false when \p effect holds a store.
+static bool forget_written_vars(RzAbsIntRunContext *ctx, const RzILOpEffect *effect) {
+	if (!effect) {
+		return true;
+	}
+	bool all = true;
+	switch (effect->code) {
+	case RZ_IL_OP_SET: {
+		RzAbsIntVal *top = val_domain(ctx->inst)->val_new_top();
+		if (!top) {
+			break;
+		}
+		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
+		write_var_to_state(ctx->inst, ctx->astate, kind, effect->op.set.hash, top);
+		val_domain(ctx->inst)->val_free(top);
+		break;
+	}
+	case RZ_IL_OP_SEQ:
+		all = forget_written_vars(ctx, effect->op.seq.x);
+		all = forget_written_vars(ctx, effect->op.seq.y) && all;
+		break;
+	case RZ_IL_OP_BRANCH:
+		all = forget_written_vars(ctx, effect->op.branch.true_eff);
+		all = forget_written_vars(ctx, effect->op.branch.false_eff) && all;
+		break;
+	case RZ_IL_OP_REPEAT:
+		all = forget_written_vars(ctx, effect->op.repeat.data_eff);
+		break;
+	case RZ_IL_OP_BLK:
+		all = forget_written_vars(ctx, effect->op.blk.data_eff);
+		all = forget_written_vars(ctx, effect->op.blk.ctrl_eff) && all;
+		break;
+	case RZ_IL_OP_STORE:
+	case RZ_IL_OP_STOREW:
+		// TODO: set what it may store to top, with memory abstractions.
+		// See: https://github.com/rizinorg/rizin/issues/6749
+		all = false;
+		break;
+	default:
+		break;
+	}
+	return all;
+}
+
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
 	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, EVAL_RESULT_ERROR);
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) \
@@ -806,9 +853,15 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		rz_bv_fini(&st_addr_bv);
 		break;
 	}
+	case RZ_IL_OP_REPEAT:
+		// The body is data effects only, so forgetting what it writes covers
+		// any number of repetitions.
+		if (!forget_written_vars(ctx, effect->op.repeat.data_eff) && interp_is_analyzing(ctx)) {
+			RZ_LOG_WARN("The repeat at 0x%" PFMT64x " stores to memory, which is not forgotten: memory is not modelled yet.\n", ctx->insn_addr);
+		}
+		break;
 	case RZ_IL_OP_GOTO:
 	case RZ_IL_OP_BLK:
-	case RZ_IL_OP_REPEAT:
 		RZ_LOG_WARN("Unhandled effect %" PFMT32d "\n", effect->code);
 		// Ignore for now.
 		break;
