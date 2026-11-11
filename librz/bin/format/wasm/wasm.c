@@ -250,6 +250,15 @@ static void bin_wasm_import_free(RzBinWasmImportEntry *wi) {
 	free(wi);
 }
 
+static void bin_wasm_export_free(RzBinWasmExportEntry *we) {
+	if (!we) {
+		return;
+	}
+
+	free(we->field_str);
+	free(we);
+}
+
 // Parsing
 static RzBinWasmName *bin_wasm_name_new(RzBuffer *b, ut64 max) {
 	RzBinWasmName *wn = RZ_NEW0(RzBinWasmName);
@@ -392,6 +401,21 @@ static void *parse_import_entry(RzBuffer *b, ut64 max) {
 beach:
 	bin_wasm_import_free(ptr);
 	return NULL;
+}
+
+static bool bin_wasm_name_free_cb(void *user, void *data, ut32 id) {
+	(void)user;
+	(void)id;
+	bin_wasm_name_free(data);
+	return true;
+}
+
+static void bin_wasm_names_free(RzIDStorage *names) {
+	if (!names) {
+		return;
+	}
+	rz_id_storage_foreach(names, bin_wasm_name_free_cb, NULL);
+	rz_id_storage_free(names);
 }
 
 static void *parse_export_entry(RzBuffer *b, ut64 max) {
@@ -686,7 +710,7 @@ static RzList /*<RzBinWasmImportEntry *>*/ *rz_bin_wasm_get_import_entries(RzBin
 }
 
 static RzList /*<RzBinWasmExportEntry *>*/ *rz_bin_wasm_get_export_entries(RzBinWasmObj *bin, RzBinWasmSection *sec) {
-	return get_entries_from_section(bin, sec, parse_export_entry, (RzListFree)free);
+	return get_entries_from_section(bin, sec, parse_export_entry, (RzListFree)bin_wasm_export_free);
 }
 
 static RzList /*<RzBinWasmCodeEntry *>*/ *rz_bin_wasm_get_code_entries(RzBinWasmObj *bin, RzBinWasmSection *sec) {
@@ -821,29 +845,28 @@ void rz_bin_wasm_destroy(RzBinFile *bf) {
 	rz_list_foreach (bin->g_names, iter, nam) {
 		switch (nam->type) {
 		case RZ_BIN_WASM_NAMETYPE_Module:
-			if (nam->mod_name) {
-				free(nam->mod_name);
-			}
+			bin_wasm_name_free(nam->mod_name);
 			break;
 		case RZ_BIN_WASM_NAMETYPE_Function:
 			if (nam->func) {
-				rz_id_storage_free(nam->func->names);
+				bin_wasm_names_free(nam->func->names);
+				free(nam->func);
 			}
 			break;
 		case RZ_BIN_WASM_NAMETYPE_Local:
-			if (nam->local && nam->local->locals) {
-				RzListIter *iter;
+			if (nam->local) {
+				RzListIter *it;
 				RzBinWasmCustomNameLocalName *local;
-				rz_list_foreach (nam->local->locals, iter, local) {
-					if (local->names) {
-						rz_id_storage_free(local->names);
-					}
+				rz_list_foreach (nam->local->locals, it, local) {
+					bin_wasm_names_free(local->names);
+					free(local);
 				}
-
 				rz_list_free(nam->local->locals);
+				free(nam->local);
 			}
 			break;
 		}
+		free(nam);
 	}
 	rz_list_free(bin->g_names);
 

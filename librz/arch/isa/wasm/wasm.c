@@ -480,6 +480,22 @@ err:
 // disassemble an instruction from the given buffer.
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	RzStrBuf *sb = rz_strbuf_new("");
+	if (!op) {
+		rz_strbuf_free(sb);
+		return -1;
+	}
+	if (!sb) {
+		if (op) {
+			op->failed = true;
+			op->len = 1;
+			op->txt = NULL;
+		}
+		return 1;
+	}
+	if (!buf || buf_len < 1) {
+		goto err;
+	}
+	op->failed = false;
 	int id = buf[0];
 	if (id < 0xc0) {
 		op->type = WASM_TYPE_OP_CORE;
@@ -889,7 +905,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_I64ATOMICRMW32UXCHG: {
 			ut32 flag = 0, offset = 0;
 			size_t n = read_u32_leb128(buf + 2, buf + buf_len, &flag);
-			if (!(n > 0 && n < buf_len)) {
+			if (!(n > 0 && op->len + n <= (size_t)buf_len)) {
 				goto err;
 			}
 			op->len += n;
@@ -910,7 +926,7 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		ut32 simdop;
 		op->type = WASM_TYPE_OP_SIMD;
 		size_t simdop_size = read_u32_leb128(buf + 1, buf + buf_len, &simdop);
-		if (simdop_size > buf_len) {
+		if (simdop_size < 1 || simdop > 0xff) {
 			goto err;
 		}
 		op->len = 1 + simdop_size;
@@ -1096,7 +1112,8 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		} break;
 		case WASM_OP_V128CONST:
 		case WASM_OP_V8X16SHUFFLE: {
-			if (buf_len < 18) {
+			// The simd opcode itself may be multi-byte encoded.
+			if (op->len + 16 > buf_len) {
 				goto err;
 			}
 			op->len += 16;
@@ -1126,13 +1143,16 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		case WASM_OP_F32X4REPLACELANE:
 		case WASM_OP_F64X2EXTRACTLANE:
 		case WASM_OP_F64X2REPLACELANE: {
-			if (buf_len < 3) {
+			if (op->len + 1 > buf_len) {
 				goto err;
 			}
-			unsigned char lane = buf[1 + simdop_size];
+			unsigned char lane = buf[op->len];
 			++op->len;
 			rz_strbuf_setf(sb, "%s %d", opdef->txt, lane);
 		} break;
+		default:
+			// unhandled simd subopcodes must not decode as valid
+			goto err;
 		}
 	} else {
 		goto err;
@@ -1141,10 +1161,221 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	return op->len;
 
 err:
+	op->failed = true;
 	op->len = 1;
 	rz_strbuf_set(sb, "invalid");
 	op->txt = rz_strbuf_drain(sb);
 	return op->len;
+}
+
+/** \brief Drop cached scopes and call targets. Does not free \p ctx. */
+RZ_IPI void wasm_context_clear_cache(WasmContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+	if (ctx->funcs) {
+		void **it;
+		rz_pvector_foreach (ctx->funcs, it) {
+			WasmFuncScope *fn = *it;
+			wasm_scope_index_free(fn->idx);
+			fn->idx = NULL;
+		}
+		rz_pvector_free(ctx->funcs);
+		ctx->funcs = NULL;
+	}
+	rz_vector_clear(&ctx->calls);
+	ctx->indexed = false;
+	ctx->bin_obj = NULL;
+	ctx->bin_id = UT32_MAX;
+	ctx->bin_size = 0;
+	ctx->nsyms = 0;
+	ctx->iob_io = NULL;
+	ctx->scope_hint = UT64_MAX;
+	ctx->addr_old = UT64_MAX;
+}
+
+// Offsets are relative to the function body. That body starts after the locals.
+typedef struct {
+	ut32 start;
+	ut32 end;
+	ut32 else_at;
+	st32 parent;
+	bool is_if;
+	bool is_loop;
+} WasmScope;
+
+struct wasm_scope_index_t {
+	RzVector /*<WasmScope>*/ scopes;
+};
+
+static WasmScope *scope_at(const WasmScopeIndex *idx, ut32 i) {
+	return rz_vector_index_ptr(&idx->scopes, i);
+}
+
+static bool scope_contains(const WasmScope *s, ut32 from) {
+	return s->end != UT32_MAX && s->start < from && from <= s->end;
+}
+
+/** \brief Index one function body, tolerating trailing malformation.
+ *
+ * \p buf is one exact body (first opcode through the final end). Stops at the
+ * first undecodable byte or a closed root, ignoring later bytes. stray else
+ * bytes are skipped.
+ * Only fully closed scopes answer queries, so partial results stay correct.
+ * NULL means nothing was learned (empty input) or allocation failure. */
+RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len) {
+	WasmScopeIndex *idx;
+	RzVector stack;
+	WasmScope root = { 0 };
+	ut32 root_id = 0;
+	ut32 off = 0;
+	if (!buf || len < 1) {
+		return NULL;
+	}
+	idx = RZ_NEW0(WasmScopeIndex);
+	if (!idx) {
+		return NULL;
+	}
+	rz_vector_init(&idx->scopes, sizeof(WasmScope), NULL, NULL);
+	rz_vector_init(&stack, sizeof(ut32), NULL, NULL);
+	root.end = UT32_MAX;
+	root.else_at = UT32_MAX;
+	root.parent = -1;
+	if (!rz_vector_push(&idx->scopes, &root) || !rz_vector_push(&stack, &root_id)) {
+		rz_vector_fini(&idx->scopes);
+		rz_vector_fini(&stack);
+		free(idx);
+		return NULL;
+	}
+	// A byte after the function end must not read an empty scope stack.
+	while (off < (ut32)len && !rz_vector_empty(&stack)) {
+		WasmOp wop = { 0 };
+		int n = wasm_dis(&wop, buf + off, len - (int)off);
+		ut8 core = 0;
+		bool control = false;
+		if (n < 1 || wop.failed) {
+			free(wop.txt);
+			break;
+		}
+		if (wop.type == WASM_TYPE_OP_CORE) {
+			core = (ut8)wop.op.core;
+			control = true;
+		}
+		free(wop.txt);
+		if (control && (core == WASM_OP_BLOCK || core == WASM_OP_LOOP || core == WASM_OP_IF)) {
+			WasmScope sc = { 0 };
+			ut32 parent = *(ut32 *)rz_vector_tail(&stack);
+			ut32 id;
+			sc.start = off;
+			sc.end = UT32_MAX;
+			sc.else_at = UT32_MAX;
+			sc.parent = (st32)parent;
+			sc.is_if = core == WASM_OP_IF;
+			sc.is_loop = core == WASM_OP_LOOP;
+			if (!rz_vector_push(&idx->scopes, &sc)) {
+				break;
+			}
+			id = (ut32)rz_vector_len(&idx->scopes) - 1;
+			if (!rz_vector_push(&stack, &id)) {
+				break;
+			}
+		} else if (control && core == WASM_OP_ELSE) {
+			ut32 top;
+			WasmScope *sc;
+			if (rz_vector_empty(&stack)) {
+				break;
+			}
+			top = *(ut32 *)rz_vector_tail(&stack);
+			sc = scope_at(idx, top);
+			// Skip recording a stray else, consuming it keeps earlier scopes valid.
+			if (sc->is_if && sc->else_at == UT32_MAX) {
+				sc->else_at = off;
+			}
+		} else if (control && core == WASM_OP_END) {
+			ut32 top;
+			if (rz_vector_empty(&stack)) {
+				break;
+			}
+			rz_vector_pop(&stack, &top);
+			scope_at(idx, top)->end = off;
+		}
+		off += (ut32)n;
+	}
+	rz_vector_fini(&stack);
+	if (rz_vector_len(&idx->scopes) < 2 && scope_at(idx, 0)->end == UT32_MAX) {
+		wasm_scope_index_free(idx);
+		return NULL;
+	}
+	return idx;
+}
+
+/** \brief Free a scope index. \p idx may be NULL. */
+RZ_IPI void wasm_scope_index_free(WasmScopeIndex *idx) {
+	if (!idx) {
+		return;
+	}
+	rz_vector_fini(&idx->scopes);
+	free(idx);
+}
+
+/** \brief Resolve a branch. \p from is the byte after it, depth 0 is innermost. */
+RZ_IPI bool wasm_scope_index_query(const WasmScopeIndex *idx, ut32 from, ut32 depth, bool use_else, ut32 *jump_off) {
+	const WasmScope *s;
+	st32 lo, hi, best;
+	ut32 n, d;
+	size_t len;
+	if (!idx || !jump_off) {
+		return false;
+	}
+	len = rz_vector_len(&idx->scopes);
+	if (!len || len > (size_t)ST32_MAX) {
+		return false;
+	}
+	n = (ut32)len;
+	lo = 0;
+	hi = (st32)n - 1;
+	best = -1;
+	while (lo <= hi) {
+		st32 mid = lo + (hi - lo) / 2;
+		if (scope_at(idx, (ut32)mid)->start < from) {
+			best = mid;
+			lo = mid + 1;
+		} else {
+			hi = mid - 1;
+		}
+	}
+	while (best >= 0 && !scope_contains(scope_at(idx, (ut32)best), from)) {
+		best = scope_at(idx, (ut32)best)->parent;
+	}
+	if (best < 0) {
+		return false;
+	}
+	for (d = 0; d < depth; d++) {
+		best = scope_at(idx, (ut32)best)->parent;
+		if (best < 0) {
+			return false;
+		}
+	}
+	s = scope_at(idx, (ut32)best);
+	if (s->end == UT32_MAX) {
+		return false;
+	}
+	if (s->is_loop) {
+		*jump_off = s->start;
+	} else if (use_else && s->else_at != UT32_MAX && s->else_at >= from) {
+		*jump_off = s->else_at + 1;
+	} else {
+		*jump_off = s->end;
+	}
+	return true;
+}
+
+/** \brief Body end offset, UT32_MAX if none. */
+RZ_IPI ut32 wasm_scope_index_root_end(const WasmScopeIndex *idx) {
+	if (!idx || !rz_vector_len(&idx->scopes)) {
+		return UT32_MAX;
+	}
+	return scope_at(idx, 0)->end;
 }
 
 RZ_IPI bool wasm_init(void **user) {
@@ -1154,12 +1385,15 @@ RZ_IPI bool wasm_init(void **user) {
 	}
 	ctx->scope_hint = UT64_MAX;
 	ctx->addr_old = UT64_MAX;
+	rz_vector_init(&ctx->calls, sizeof(ut64), NULL, NULL);
 	*user = ctx;
 	return true;
 }
 
 RZ_IPI bool wasm_fini(void *user) {
 	WasmContext *ctx = user;
+	wasm_context_clear_cache(ctx);
+	rz_vector_fini(&ctx->calls);
 	free(ctx);
 	return true;
 }
