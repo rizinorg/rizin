@@ -575,6 +575,8 @@ RZ_IPI ut8 c6x_delay_slots(const C6xInsn *insn, bool high);
 
 RZ_IPI ut8 c6x_nop_cycles(const C6xInsn *insn);
 
+RZ_IPI ut32 c6x_spkernel_delay(const C6xInsn *insn, ut8 ii);
+
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 
 #ifdef __cplusplus

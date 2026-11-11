@@ -21,6 +21,20 @@
  * delay slots of another one is followed into the first one's target, where
  * the second takes over. Results still in flight when control leaves are
  * written at the transfer, since the code at a target is not in hand.
+ *
+ * A software-pipelined loop (SPRUFE8B chapter 7) starts an iteration of its
+ * body every ii cycles, overlaid on those still running, until ILC runs out
+ * or the condition of a SPLOOPW fails. Its periods of ii cycles are lifted as
+ * the body of a repeat, every slot guarded by whether its iteration runs in
+ * that period; the results in flight across a period boundary are kept in
+ * locals that move up a period on every repetition, and the epilog drains
+ * beside the code after the loop.
+ *
+ * Without SPLOOP, a loop is pipelined around its branch: the kernel branches to
+ * itself every iteration, and the branch takes effect iterations later, the
+ * prolog having issued those due before. Its iterations are the body of a
+ * repeat as well, with the taken flags of the branches in flight moving up an
+ * iteration on every repetition beside the results in flight.
  */
 
 #include <rz_util.h>
@@ -40,6 +54,18 @@
 #define C6X_BRANCH_CYCLES 6
 /** How many packets ahead a hazard is looked for, enough for the longest delay. */
 #define C6X_WIN_LOOKAHEAD 16
+/** Instructions one cycle may issue: a packet, and the stages of a loop beside it. */
+#define C6X_CYCLE_SLOTS 32
+/** Cycles a SPLOOP body may take (SPRUFE8B 7.7), and so its execute packets. */
+#define C6X_LOOP_DYNLEN 48
+/** Instructions a SPLOOP body may hold: the loop buffer's fourteen packets of eight. */
+#define C6X_LOOP_SLOTS 128
+/** Loops one lift may run into. */
+#define C6X_WIN_LOOPS 4
+/** Loop cycles one lift may issue, over all its paths. */
+#define C6X_LOOP_CYCLES 256
+/** Execute packets the kernel of a loop pipelined around its branch may hold. */
+#define C6X_BLOOP_PACKETS 16
 
 // RzIL keeps a variable name as a const char * and never copies it, so the
 // names a lift hands out are string literals: values in flight, whether they
@@ -66,6 +92,21 @@ static const char *const c6x_target_names[] = {
 #undef C6X_N10
 // clang-format on
 
+// The locals of a SPLOOP: the period it is in, its iterations, the period it
+// stops before, whether a SPLOOPW still runs, and the samples of its condition
+// the stage boundaries test.
+#define C6X_LOOP_PERIOD "_lp"
+#define C6X_LOOP_ITERS  "_ln"
+#define C6X_LOOP_END    "_le"
+#define C6X_LOOP_RUNS   "_lr"
+static const char *const c6x_sample_names[] = { "_lw0", "_lw1", "_lw2", "_lw3" };
+
+// The locals of a loop pipelined around its branch: whether it runs another
+// iteration, and the taken flags of its branches in flight, by the iteration
+// each takes effect at the start of.
+#define C6X_BLOOP_RUNS "_bl"
+static const char *const c6x_bq_names[C6X_BRANCH_CYCLES] = { "_bq0", "_bq1", "_bq2", "_bq3", "_bq4", "_bq5" };
+
 /** A result in flight. */
 typedef struct {
 	const char *reg; ///< the register it lands in
@@ -83,7 +124,63 @@ typedef struct {
 	ut8 creg; ///< the predicate of a branch taken on it alone, 0 for any other
 	bool z; ///< its sense
 	ut32 pred_written; ///< one past the cycle of the last write to it the branch saw
+	bool loop; ///< issued by a loop pipelined around its branch that has exited
 } C6xFlight;
+
+/** An instruction of a SPLOOP body. */
+typedef struct {
+	C6xInsn insn;
+	ut64 addr;
+	ut8 stage; ///< the stage it issues in: its cycle in the body over ii
+	ut8 offset; ///< its cycle within the stage
+	ut8 unit; ///< its bit in an SPMASK unit list, UT8_MAX without a unit
+	bool masked; ///< SPMASKed: issued from program memory in the first iteration only
+} C6xLoopSlot;
+
+/** An SPMASK, inhibiting buffered instructions on its units in the cycle it issues in. */
+typedef struct {
+	ut8 stage;
+	ut8 offset;
+	ut8 units;
+} C6xLoopMask;
+
+/** A SPLOOP and the body it buffers. */
+typedef struct {
+	C6xInsnId kind; ///< C6X_INS_SPLOOP, C6X_INS_SPLOOPD or C6X_INS_SPLOOPW
+	ut8 creg; ///< the condition of a SPLOOPW
+	bool z;
+	ut8 ii; ///< cycles from one iteration starting to the next
+	ut8 dynlen; ///< cycles of one iteration
+	ut8 stages; ///< dynlen over ii, rounded up
+	ut32 delay; ///< cycles of the epilog before the code after the loop issues
+	ut64 post; ///< the execute packet after the SPKERNEL one
+	C6xLoopSlot slot[C6X_LOOP_SLOTS];
+	size_t nslot;
+	C6xLoopMask mask[C6X_LOOP_DYNLEN];
+	size_t nmask;
+} C6xLoop;
+
+/**
+ * A loop pipelined around its branch: a kernel at the target of its own branch,
+ * which takes effect some iterations after it issues, as TI's compiler builds
+ * loops for C6000s without SPLOOP.
+ */
+typedef struct {
+	ut64 start; ///< the kernel's first execute packet, its branch's target
+	ut64 end; ///< the execute packet after the kernel
+	ut32 len; ///< cycles of an iteration
+	ut32 lag; ///< iterations from the branch issuing to it taking effect
+	ut64 pc[C6X_BLOOP_PACKETS]; ///< the kernel's execute packets
+	ut32 at[C6X_BLOOP_PACKETS]; ///< the cycle of an iteration each issues in
+	size_t n;
+} C6xBLoop;
+
+/** Whether a name a lift hands out is in use on a path. */
+typedef enum {
+	C6X_NAME_FREE = 0,
+	C6X_NAME_USED,
+	C6X_NAME_PINNED, ///< read again on the next repetition of the loop body being lifted
+} C6xNameState;
 
 /** Where one path through the lift stands. */
 typedef struct {
@@ -93,8 +190,15 @@ typedef struct {
 	size_t nland;
 	C6xFlight br[C6X_WIN_BRANCHES];
 	size_t nbr;
-	size_t nval, nflag, ntaken, ntarget; ///< locals handed out on this path
+	ut8 val_state[RZ_ARRAY_SIZE(c6x_val_names)]; ///< C6xNameState of each value name
+	ut8 flag_state[RZ_ARRAY_SIZE(c6x_flag_names)]; ///< and of each flag name
+	size_t ntaken, ntarget; ///< branch locals handed out on this path
 	ut32 pred_written[8]; ///< by creg: one past the cycle of the last write to the register
+	const C6xLoop *epi; ///< a loop whose epilog drains beside this code, NULL when none
+	ut32 epi_base; ///< the cycle the epilog's period epi_first starts in
+	ut32 epi_end; ///< the cycle after its last one
+	ut8 epi_first;
+	ut32 idle; ///< cycles before the next packet issues while an epilog drains
 } C6xWinState;
 
 typedef struct {
@@ -102,8 +206,11 @@ typedef struct {
 	void *user;
 	ut64 fall; ///< where the caller falls through to, or C6X_FALL_TO_END
 	size_t budget; ///< packets left to issue
+	size_t loop_budget; ///< loop cycles left to issue
 	ut64 end; ///< where the fallthrough path leaves the code covered
 	bool has_end;
+	C6xLoop *loops[C6X_WIN_LOOPS]; ///< the loops run into, owned
+	size_t nloops;
 } C6xWin;
 
 /** A register an instruction writes. */
@@ -116,9 +223,10 @@ typedef struct {
 	const char *flag; ///< the local saying whether it was written, when staged and cond
 } C6xWrite;
 
-/** An instruction of the packet being issued. */
+/** An instruction of the cycle being issued. */
 typedef struct {
 	const C6xInsn *insn;
+	ut64 addr;
 	RzILOpEffect *body;
 	C6xWrite w[C6X_WIN_WRITES];
 	size_t nw;
@@ -131,8 +239,51 @@ typedef struct {
 	const char *target;
 } C6xIssue;
 
+typedef enum {
+	C6X_ISSUE_FAIL,
+	C6X_ISSUE_OK,
+	C6X_ISSUE_LOOP, ///< not issued: the packet starts a SPLOOP
+} C6xIssueResult;
+
 static const char *c6x_take_name(const char *const *tbl, size_t len, size_t *next) {
 	return *next < len ? tbl[(*next)++] : NULL;
+}
+
+static const char *c6x_name_take(const char *const *tbl, ut8 *state, size_t len, C6xNameState as) {
+	for (size_t i = 0; i < len; i++) {
+		if (state[i] == C6X_NAME_FREE) {
+			state[i] = as;
+			return tbl[i];
+		}
+	}
+	return NULL;
+}
+
+// Set the state of \p name, a name from \p tbl; a pinned one is not freed.
+static void c6x_name_set(const char *const *tbl, ut8 *state, size_t len, const char *name, C6xNameState to) {
+	for (size_t i = 0; name && i < len; i++) {
+		if (tbl[i] == name) {
+			if (to != C6X_NAME_FREE || state[i] != C6X_NAME_PINNED) {
+				state[i] = to;
+			}
+			return;
+		}
+	}
+}
+
+static const char *c6x_val_take(C6xWinState *st, C6xNameState as) {
+	return c6x_name_take(c6x_val_names, st->val_state, RZ_ARRAY_SIZE(c6x_val_names), as);
+}
+
+static const char *c6x_flag_take(C6xWinState *st, C6xNameState as) {
+	return c6x_name_take(c6x_flag_names, st->flag_state, RZ_ARRAY_SIZE(c6x_flag_names), as);
+}
+
+// Mark the names of \p l as \p to: free once it has landed, so that a long
+// lift does not run out of them.
+static void c6x_landing_names(C6xWinState *st, const C6xLanding *l, C6xNameState to) {
+	c6x_name_set(c6x_val_names, st->val_state, RZ_ARRAY_SIZE(c6x_val_names), l->val, to);
+	c6x_name_set(c6x_flag_names, st->flag_state, RZ_ARRAY_SIZE(c6x_flag_names), l->flag, to);
 }
 
 // Whether \p insn names \p reg in an operand, tests it as its predicate or
@@ -464,6 +615,7 @@ static void c6x_land_before(C6xWinState *st, ut32 cycle, RzPVector /*<RzILOpEffe
 		}
 		rz_pvector_push(steps, c6x_landing_write(&st->land[best]));
 		c6x_note_write(st, st->land[best].reg, st->land[best].due);
+		c6x_landing_names(st, &st->land[best], C6X_NAME_FREE);
 		memmove(&st->land[best], &st->land[best + 1], (st->nland - best - 1) * sizeof(C6xLanding));
 		st->nland--;
 	}
@@ -471,10 +623,14 @@ static void c6x_land_before(C6xWinState *st, ut32 cycle, RzPVector /*<RzILOpEffe
 
 // Every result in flight, in the order they land, leaving the state as it is.
 static void c6x_land_copy(const C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps) {
-	C6xWinState tmp;
-	tmp.nland = st->nland;
-	memcpy(tmp.land, st->land, st->nland * sizeof(C6xLanding));
-	c6x_land_before(&tmp, UT32_MAX, steps);
+	C6xWinState *tmp = RZ_NEW0(C6xWinState);
+	if (!tmp) {
+		return;
+	}
+	tmp->nland = st->nland;
+	memcpy(tmp->land, st->land, st->nland * sizeof(C6xLanding));
+	c6x_land_before(tmp, UT32_MAX, steps);
+	free(tmp);
 }
 
 // Fold \p n effects into a balanced sequence, so the depth grows with the
@@ -522,71 +678,23 @@ static void c6x_issues_fini(C6xIssue *is, size_t n) {
 	}
 }
 
-// Issue the execute packet at st->pc from the slot there on, in cycle
-// st->cycle: every slot reads the state the packet found, and what lands later
-// or is read again within the packet goes into flight.
-static bool c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps) {
-	if (!win->budget) {
-		RZ_LOG_DEBUG("c6x: lifting at 0x%" PFMT64x " issues more packets than one lift may\n", st->pc);
-		return false;
-	}
-	win->budget--;
-	C6xInsn slots[C6X_FP_SLOTS];
-	C6xPacketRef pkt;
-	size_t n = win->packet(win->user, st->pc, slots, &pkt);
-	if (!n || (pkt.n == 1 && pkt.slots[0].header)) {
-		RZ_LOG_DEBUG("c6x: no execute packet to lift at 0x%" PFMT64x "\n", st->pc);
-		return false;
-	}
-	size_t first = 0;
-	while (first < n && pkt.slots[first].addr != st->pc) {
-		first++;
-	}
-	if (first == n) {
-		return false;
-	}
+// Issue the \p n instructions of cycle st->cycle, which own their bodies: every
+// one runs against the state the cycle found, and what lands later or is read
+// again within the cycle goes into flight. A delayed result goes into flight
+// when the code fetched from \p ahead, issuing from \p next_cycle on, touches
+// it before it lands, or with \p blind, when that code is not all there is.
+static bool c6x_issue_cycle(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps, C6xIssue *is, size_t n, ut64 ahead, ut32 next_cycle, bool blind) {
 	ut32 cycle = st->cycle;
-	ut32 next_cycle = cycle + c6x_packet_cycles(slots, first, n);
-	// A load and a store to the same location in one packet load the old value
-	// (SPRUFE8B 4.2), so the slots reading memory run first. A load into the
-	// register its address mode updates writes it twice, so it issues as two:
-	// the address lands with the cycle, what it loads after the delay slots.
-	size_t order[2 * C6X_FP_SLOTS];
-	size_t nord = 0;
-	for (size_t i = first; i < n; i++) {
-		if (!c6x_writes_memory(&slots[i])) {
-			order[nord++] = i;
-			if (c6x_load_into_base(&slots[i])) {
-				order[nord++] = i;
-			}
-		}
-	}
-	for (size_t i = first; i < n; i++) {
-		if (c6x_writes_memory(&slots[i])) {
-			order[nord++] = i;
-		}
-	}
-	C6xIssue is[2 * C6X_FP_SLOTS];
-	memset(is, 0, sizeof(is));
 	size_t jumps = 0;
-	for (size_t o = 0; o < nord; o++) {
-		size_t i = order[o];
+	for (size_t o = 0; o < n; o++) {
 		C6xIssue *x = &is[o];
-		x->insn = &slots[i];
-		bool twice = c6x_load_into_base(&slots[i]);
-		x->at_once = twice && !(o && order[o - 1] == i);
-		x->body = twice ? c6x_lift_load_part(&slots[i], pkt.slots[i].addr, x->at_once) : c6x_slot_body(&slots[i], pkt.slots[i].addr, &pkt);
-		if (!x->body) {
-			RZ_LOG_DEBUG("c6x: no IL for %s at 0x%" PFMT64x "\n", rz_str_get_null(c6x_ins_name(slots[i].id)), pkt.slots[i].addr);
-			goto fail;
-		}
 		if (c6x_effect_jumps(x->body)) {
 			x->taken = c6x_take_name(c6x_taken_names, RZ_ARRAY_SIZE(c6x_taken_names), &st->ntaken);
 			x->target = c6x_take_name(c6x_target_names, RZ_ARRAY_SIZE(c6x_target_names), &st->ntarget);
 			bool ok = x->taken && x->target;
 			x->body = c6x_capture_jump(x->body, false, x, &ok);
 			if (!ok || st->nbr + jumps >= C6X_WIN_BRANCHES) {
-				RZ_LOG_DEBUG("c6x: too many branches in flight at 0x%" PFMT64x "\n", pkt.slots[i].addr);
+				RZ_LOG_DEBUG("c6x: too many branches in flight at 0x%" PFMT64x "\n", x->addr);
 				goto fail;
 			}
 			jumps++;
@@ -596,28 +704,28 @@ static bool c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffec
 		}
 	}
 	// A write is staged -- kept in a local until it lands -- when anything could
-	// see it early: a later slot of the packet touching the register, a packet
+	// see it early: a later slot of the cycle touching the register, a packet
 	// before it lands doing so, or an earlier result still in flight to it.
-	for (size_t o = 0; o < nord; o++) {
+	for (size_t o = 0; o < n; o++) {
 		for (size_t k = 0; k < is[o].nw; k++) {
 			C6xWrite *w = &is[o].w[k];
 			bool stage = false;
-			for (size_t p = o + 1; p < nord && !stage; p++) {
+			for (size_t p = o + 1; p < n && !stage; p++) {
 				stage = c6x_touches(is[p].insn, w->reg);
 			}
 			for (size_t l = 0; l < st->nland && !stage; l++) {
 				stage = RZ_STR_EQ(st->land[l].reg, w->reg);
 			}
 			if (!stage && w->delay) {
-				stage = c6x_touched_ahead(win, pkt.next, next_cycle, w->reg, cycle + w->delay);
+				stage = blind || c6x_touched_ahead(win, ahead, next_cycle, w->reg, cycle + w->delay);
 			}
 			w->staged = stage;
 		}
 	}
 	// every writer of a staged register is staged, so that they land in order
-	for (size_t o = 0; o < nord; o++) {
+	for (size_t o = 0; o < n; o++) {
 		for (size_t k = 0; k < is[o].nw; k++) {
-			for (size_t p = 0; p < nord; p++) {
+			for (size_t p = 0; p < n; p++) {
 				for (size_t q = 0; q < is[p].nw; q++) {
 					if (is[p].w[q].staged && RZ_STR_EQ(is[p].w[q].reg, is[o].w[k].reg)) {
 						is[o].w[k].staged = true;
@@ -627,18 +735,18 @@ static bool c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffec
 		}
 	}
 	// snapshots of the staged registers, which each slot is run against
-	const char *staged[C6X_FP_SLOTS * C6X_WIN_WRITES];
-	const char *snap[C6X_FP_SLOTS * C6X_WIN_WRITES];
-	bool dirty[C6X_FP_SLOTS * C6X_WIN_WRITES] = { 0 };
+	const char *staged[RZ_ARRAY_SIZE(c6x_snap_names)];
+	const char *snap[RZ_ARRAY_SIZE(c6x_snap_names)];
+	bool dirty[RZ_ARRAY_SIZE(c6x_snap_names)] = { 0 };
 	size_t nstaged = 0;
-	for (size_t o = 0; o < nord; o++) {
+	for (size_t o = 0; o < n; o++) {
 		for (size_t k = 0; k < is[o].nw; k++) {
 			C6xWrite *w = &is[o].w[k];
 			if (!w->staged) {
 				continue;
 			}
-			w->val = c6x_take_name(c6x_val_names, RZ_ARRAY_SIZE(c6x_val_names), &st->nval);
-			w->flag = w->cond ? c6x_take_name(c6x_flag_names, RZ_ARRAY_SIZE(c6x_flag_names), &st->nflag) : NULL;
+			w->val = c6x_val_take(st, C6X_NAME_USED);
+			w->flag = w->cond ? c6x_flag_take(st, C6X_NAME_USED) : NULL;
 			if (!w->val || (w->cond && !w->flag)) {
 				RZ_LOG_DEBUG("c6x: too many results in flight at 0x%" PFMT64x "\n", st->pc);
 				goto fail;
@@ -661,9 +769,9 @@ static bool c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffec
 	for (size_t j = 0; j < nstaged; j++) {
 		rz_pvector_push(steps, SETL(snap[j], VARG(staged[j])));
 	}
-	for (size_t o = 0; o < nord; o++) {
+	for (size_t o = 0; o < n; o++) {
 		C6xIssue *x = &is[o];
-		// run against the state the packet found
+		// run against the state the cycle found
 		for (size_t j = 0; j < nstaged; j++) {
 			if (dirty[j] && c6x_touches(x->insn, staged[j])) {
 				rz_pvector_push(steps, SETG(staged[j], VARL(snap[j])));
@@ -723,18 +831,179 @@ static bool c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffec
 			b->pred_written = b->creg ? st->pred_written[b->creg & 7] : 0;
 		}
 	}
-	// the packet's own writes land at the end of its cycle at the earliest
+	// the cycle's own writes land at its end at the earliest
 	for (size_t j = 0; j < nstaged; j++) {
 		if (dirty[j]) {
 			rz_pvector_push(steps, SETG(staged[j], VARL(snap[j])));
 		}
 	}
-	st->pc = pkt.next;
-	st->cycle = next_cycle;
 	return true;
 fail:
-	c6x_issues_fini(is, nord);
+	c6x_issues_fini(is, n);
 	return false;
+}
+
+// Put \p body, what the instruction \p insn at \p addr or a part of it does
+// when \p guard holds, into the cycle being put together. With \p at_once its
+// writes land with the cycle.
+static bool c6x_cycle_put(C6xIssue *is, size_t *n, const C6xInsn *insn, ut64 addr, RZ_OWN RzILOpEffect *body, RZ_NULLABLE RZ_OWN RzILOpPure *guard, bool at_once) {
+	if (!body) {
+		RZ_LOG_DEBUG("c6x: no IL for %s at 0x%" PFMT64x "\n", rz_str_get_null(c6x_ins_name(insn->id)), addr);
+		rz_il_op_pure_free(guard);
+		return false;
+	}
+	if (*n >= C6X_CYCLE_SLOTS) {
+		RZ_LOG_DEBUG("c6x: too many instructions in the cycle at 0x%" PFMT64x "\n", addr);
+		rz_il_op_effect_free(body);
+		rz_il_op_pure_free(guard);
+		return false;
+	}
+	C6xIssue *x = &is[(*n)++];
+	memset(x, 0, sizeof(*x));
+	x->insn = insn;
+	x->addr = addr;
+	x->body = guard ? BRANCH(guard, body, NOP()) : body;
+	x->at_once = at_once;
+	return true;
+}
+
+// Add the instruction \p insn at \p addr, of the packet \p pkt when it is
+// issued from one, to the cycle being put together; it runs when \p guard holds.
+static bool c6x_cycle_add(C6xIssue *is, size_t *n, const C6xInsn *insn, ut64 addr, RZ_NULLABLE const C6xPacketRef *pkt, RZ_NULLABLE RZ_OWN RzILOpPure *guard) {
+	if (!c6x_load_into_base(insn)) {
+		RzILOpEffect *body = pkt ? c6x_slot_body(insn, addr, pkt) : c6x_lift(insn, addr);
+		return c6x_cycle_put(is, n, insn, addr, body, guard, false);
+	}
+	// It writes the register twice, so it issues as two: the address lands with
+	// the cycle, what it loads after the delay slots.
+	RzILOpPure *again = guard ? rz_il_op_pure_dup(guard) : NULL;
+	if (!c6x_cycle_put(is, n, insn, addr, c6x_lift_load_part(insn, addr, true), guard, true)) {
+		rz_il_op_pure_free(again);
+		return false;
+	}
+	return c6x_cycle_put(is, n, insn, addr, c6x_lift_load_part(insn, addr, false), again, false);
+}
+
+// Whether \p insn starts a software-pipelined loop.
+static bool c6x_is_sploop(const C6xInsn *insn) {
+	return insn->id == C6X_INS_SPLOOP || insn->id == C6X_INS_SPLOOPD || insn->id == C6X_INS_SPLOOPW;
+}
+
+// The slots of the epilog draining in cycle st->cycle: the later stages of the
+// last iterations, period by period.
+static size_t c6x_epi_slots(const C6xWinState *st, const C6xLoopSlot **out, size_t max) {
+	const C6xLoop *lp = st->epi;
+	if (!lp || st->cycle >= st->epi_end) {
+		return 0;
+	}
+	ut32 t = st->cycle - st->epi_base;
+	ut32 e = st->epi_first + t / lp->ii;
+	ut32 r = t % lp->ii;
+	size_t n = 0;
+	for (size_t i = 0; i < lp->nslot && n < max; i++) {
+		const C6xLoopSlot *ls = &lp->slot[i];
+		if (!ls->masked && ls->offset == r && ls->stage > e) {
+			out[n++] = ls;
+		}
+	}
+	return n;
+}
+
+// Put the epilog slots of cycle st->cycle, whose stores go last, into the cycle.
+static bool c6x_cycle_add_epi(const C6xWinState *st, C6xIssue *is, size_t *n, bool stores) {
+	const C6xLoopSlot *ls[C6X_CYCLE_SLOTS];
+	size_t m = c6x_epi_slots(st, ls, RZ_ARRAY_SIZE(ls));
+	for (size_t i = 0; i < m; i++) {
+		if (c6x_writes_memory(&ls[i]->insn) == stores &&
+			!c6x_cycle_add(is, n, &ls[i]->insn, ls[i]->addr, NULL, NULL)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// Move on to the next cycle, dropping the epilog once it has drained.
+static void c6x_next_cycle(C6xWinState *st, ut32 cycles) {
+	st->cycle += cycles;
+	if (st->epi && st->cycle >= st->epi_end) {
+		st->epi = NULL;
+	}
+}
+
+// Issue the execute packet at st->pc from the slot there on, in cycle
+// st->cycle, beside the epilog of a loop draining in it.
+static C6xIssueResult c6x_win_issue(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps) {
+	if (!win->budget) {
+		RZ_LOG_DEBUG("c6x: lifting at 0x%" PFMT64x " issues more packets than one lift may\n", st->pc);
+		return C6X_ISSUE_FAIL;
+	}
+	C6xInsn slots[C6X_FP_SLOTS];
+	C6xPacketRef pkt;
+	size_t n = win->packet(win->user, st->pc, slots, &pkt);
+	if (!n || (pkt.n == 1 && pkt.slots[0].header)) {
+		RZ_LOG_DEBUG("c6x: no execute packet to lift at 0x%" PFMT64x "\n", st->pc);
+		return C6X_ISSUE_FAIL;
+	}
+	size_t first = 0;
+	while (first < n && pkt.slots[first].addr != st->pc) {
+		first++;
+	}
+	if (first == n) {
+		return C6X_ISSUE_FAIL;
+	}
+	if (c6x_is_sploop(&slots[first])) {
+		return C6X_ISSUE_LOOP;
+	}
+	win->budget--;
+	ut32 extra = c6x_packet_cycles(slots, first, n) - 1;
+	C6xIssue *is = RZ_NEWS0(C6xIssue, C6X_CYCLE_SLOTS);
+	if (!is) {
+		return C6X_ISSUE_FAIL;
+	}
+	// a load and a store to the same location in one cycle load the old value
+	// (SPRUFE8B 4.2), so the slots reading memory run first
+	size_t nis = 0;
+	bool ok = true;
+	for (int stores = 0; stores < 2 && ok; stores++) {
+		for (size_t i = first; i < n && ok; i++) {
+			if (c6x_writes_memory(&slots[i]) == stores) {
+				ok = c6x_cycle_add(is, &nis, &slots[i], pkt.slots[i].addr, &pkt, NULL);
+			}
+		}
+		ok = ok && c6x_cycle_add_epi(st, is, &nis, stores);
+	}
+	// while an epilog drains, every cycle of a multi-cycle NOP issues its slots
+	bool draining = st->epi;
+	ut32 next_cycle = st->cycle + 1 + (draining ? 0 : extra);
+	ok = ok && c6x_issue_cycle(win, st, steps, is, nis, pkt.next, next_cycle, draining);
+	if (!ok) {
+		c6x_issues_fini(is, nis);
+		free(is);
+		return C6X_ISSUE_FAIL;
+	}
+	free(is);
+	st->pc = pkt.next;
+	st->idle = draining ? extra : 0;
+	c6x_next_cycle(st, next_cycle - st->cycle);
+	return C6X_ISSUE_OK;
+}
+
+// Issue a cycle no packet issues in, the epilog of a loop draining in it.
+static bool c6x_win_idle(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps) {
+	C6xIssue *is = RZ_NEWS0(C6xIssue, C6X_CYCLE_SLOTS);
+	if (!is) {
+		return false;
+	}
+	size_t nis = 0;
+	bool ok = c6x_cycle_add_epi(st, is, &nis, false) && c6x_cycle_add_epi(st, is, &nis, true) &&
+		c6x_issue_cycle(win, st, steps, is, nis, 0, st->cycle + 1, true);
+	if (!ok) {
+		c6x_issues_fini(is, nis);
+	}
+	free(is);
+	st->idle--;
+	c6x_next_cycle(st, 1);
+	return ok;
 }
 
 static RzILOpEffect *c6x_flight_jump(const C6xFlight *b) {
@@ -742,10 +1011,14 @@ static RzILOpEffect *c6x_flight_jump(const C6xFlight *b) {
 }
 
 static RzILOpEffect *c6x_win_run(C6xWin *win, C6xWinState *st, bool main_path, bool issue_first);
+static bool c6x_bloop_find(C6xWin *win, const C6xWinState *st, C6xBLoop *lp);
+static RzILOpEffect *c6x_win_bloop(C6xWin *win, C6xWinState *st, const C6xBLoop *lp);
 
 // The transfer of branch \p b out of the steps so far: when taken, control
 // leaves with every result in flight written, unless a later branch is still
-// in flight, which is followed into the target until it takes over.
+// in flight, which is followed into the target until it takes over, or runs
+// the loop the target starts when it is pipelined around its branch. A loop
+// buffer goes idle once a branch is taken, so its epilog stops draining.
 static RzILOpEffect *c6x_win_taken(C6xWin *win, const C6xWinState *st, const C6xFlight *b, ut32 at) {
 	RzPVector steps;
 	rz_pvector_init(&steps, NULL);
@@ -763,6 +1036,8 @@ static RzILOpEffect *c6x_win_taken(C6xWin *win, const C6xWinState *st, const C6x
 	*fork = *st;
 	fork->pc = b->target_const;
 	fork->cycle = at;
+	fork->epi = NULL;
+	fork->idle = 0;
 	c6x_settle(fork, b, true);
 	// two branches taking effect in one cycle are undefined, so those landing
 	// with this one are not taken
@@ -789,16 +1064,34 @@ static RzILOpEffect *c6x_win_taken(C6xWin *win, const C6xWinState *st, const C6x
 		free(fork);
 		return leave;
 	}
-	if (b->target) {
-		// A computed target is not in hand to be followed, so the branches
-		// still in flight are dropped, which is wrong when one of them is
-		// taken too.
-		RZ_LOG_DEBUG("c6x: a branch to a computed target drops the branches in flight\n");
+	if (b->target || b->loop) {
+		// A computed target is not in hand to be followed, and a pipelined
+		// loop is not run again once one of its branches was not taken, so the
+		// branches still in flight are dropped, which is wrong when one of them
+		// is taken too. TI's compiler keeps a loop's branches from being taken
+		// after one was not.
+		if (b->target) {
+			RZ_LOG_DEBUG("c6x: a branch to a computed target drops the branches in flight\n");
+		} else {
+			RZ_LOG_DEBUG("c6x: a branch to the loop at 0x%" PFMT64x " after it exited drops the branches in flight\n", b->target_const);
+		}
 		rz_il_op_pure_free(later);
 		free(fork);
 		return leave;
 	}
-	RzILOpEffect *follow = c6x_win_run(win, fork, false, true);
+	RzILOpEffect *follow = NULL;
+	C6xBLoop bl;
+	if (c6x_bloop_find(win, fork, &bl)) {
+		C6xWinState *ls = RZ_NEW(C6xWinState);
+		if (ls) {
+			*ls = *fork;
+			follow = c6x_win_bloop(win, ls, &bl);
+			free(ls);
+		}
+	}
+	if (!follow) {
+		follow = c6x_win_run(win, fork, false, true);
+	}
 	free(fork);
 	if (!follow || surely) {
 		rz_il_op_pure_free(later);
@@ -808,67 +1101,910 @@ static RzILOpEffect *c6x_win_taken(C6xWin *win, const C6xWinState *st, const C6x
 	return BRANCH(later, follow, leave);
 }
 
+// The cycle of a period at whose start a SPLOOPW samples its condition for the
+// stage boundary \p lag periods later: three cycles before that boundary
+// (SPRUFE8B 7.10.2).
+static void c6x_loop_sample_at(const C6xLoop *lp, RZ_OUT ut8 *lag, RZ_OUT ut8 *offset) {
+	*lag = (lp->ii + 3) / lp->ii - 1;
+	*offset = *lag * lp->ii + lp->ii - 4;
+}
+
+// When slot \p ls issues in period \p k, or in the period held in
+// C6X_LOOP_PERIOD with \p dyn: a stage of an iteration that has started and
+// not ended, the first iteration's alone for a masked slot, and not beside a
+// masked slot on its unit. NULL when it always does, and *never set when it
+// does not at all.
+static RzILOpPure *c6x_loop_guard(const C6xLoop *lp, const C6xLoopSlot *ls, bool dyn, ut32 k, bool *never) {
+	*never = false;
+	bool w = lp->kind == C6X_INS_SPLOOPW;
+	RzILOpPure *g = NULL;
+	if (dyn) {
+		if (ls->masked) {
+			g = EQ(VARL(C6X_LOOP_PERIOD), U32(ls->stage));
+		} else if (w) {
+			g = ls->stage ? ULE(U32(ls->stage), VARL(C6X_LOOP_PERIOD)) : NULL;
+		} else {
+			// iterations count up from 0, so one that has not started wraps
+			g = ULT(SUB(VARL(C6X_LOOP_PERIOD), U32(ls->stage)), VARL(C6X_LOOP_ITERS));
+		}
+	} else if (ls->masked ? k != ls->stage : k < ls->stage) {
+		*never = true;
+		return NULL;
+	} else if (!ls->masked && !w) {
+		g = ULT(U32(k - ls->stage), VARL(C6X_LOOP_ITERS));
+	}
+	for (size_t i = 0; !ls->masked && ls->unit != UT8_MAX && i < lp->nmask; i++) {
+		const C6xLoopMask *m = &lp->mask[i];
+		if (m->offset != ls->offset || m->stage == ls->stage || !((m->units >> ls->unit) & 1)) {
+			continue;
+		}
+		if (!dyn) {
+			if (k == m->stage) {
+				rz_il_op_pure_free(g);
+				*never = true;
+				return NULL;
+			}
+			continue;
+		}
+		RzILOpPure *free_unit = INV(EQ(VARL(C6X_LOOP_PERIOD), U32(m->stage)));
+		g = g ? AND(g, free_unit) : free_unit;
+	}
+	if (w && !dyn) {
+		// a period lifted on its own may follow the boundary the loop ended on
+		g = g ? AND(VARL(C6X_LOOP_RUNS), g) : VARL(C6X_LOOP_RUNS);
+	}
+	return g;
+}
+
+// Issue cycle \p r of a period of loop \p lp: period \p k, or the one held in
+// C6X_LOOP_PERIOD with \p dyn.
+static bool c6x_loop_cycle(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps, const C6xLoop *lp, ut8 r, bool dyn, ut32 k) {
+	if (!win->loop_budget) {
+		RZ_LOG_DEBUG("c6x: lifting a SPLOOP issues more cycles than one lift may\n");
+		return false;
+	}
+	win->loop_budget--;
+	c6x_land_before(st, st->cycle, steps);
+	if (lp->kind == C6X_INS_SPLOOPW) {
+		ut8 lag, at;
+		c6x_loop_sample_at(lp, &lag, &at);
+		if (r == at) {
+			RzILOpPure *v = VARG(c6x_pred_reg_name(lp->creg));
+			rz_pvector_push(steps, SETL(c6x_sample_names[0], lp->z ? IS_ZERO(v) : NON_ZERO(v)));
+		}
+	}
+	C6xIssue *is = RZ_NEWS0(C6xIssue, C6X_CYCLE_SLOTS);
+	if (!is) {
+		return false;
+	}
+	size_t n = 0;
+	bool ok = true;
+	for (int stores = 0; stores < 2 && ok; stores++) {
+		for (size_t i = 0; i < lp->nslot && ok; i++) {
+			const C6xLoopSlot *ls = &lp->slot[i];
+			if (ls->offset != r || c6x_writes_memory(&ls->insn) != stores) {
+				continue;
+			}
+			bool never;
+			RzILOpPure *g = c6x_loop_guard(lp, ls, dyn, k, &never);
+			if (never) {
+				continue;
+			}
+			ok = c6x_cycle_add(is, &n, &ls->insn, ls->addr, NULL, g);
+		}
+	}
+	ok = ok && c6x_issue_cycle(win, st, steps, is, n, 0, st->cycle + 1, true);
+	if (!ok) {
+		c6x_issues_fini(is, n);
+	}
+	free(is);
+	st->cycle++;
+	return ok;
+}
+
+// The stage boundary ending period \p k, or the one in C6X_LOOP_PERIOD with
+// \p dyn: a SPLOOPW stops on it when its condition failed three cycles before.
+static void c6x_loop_boundary(const C6xLoop *lp, RzPVector /*<RzILOpEffect *>*/ *steps, bool dyn, ut32 k) {
+	if (lp->kind != C6X_INS_SPLOOPW) {
+		return;
+	}
+	ut8 lag, at;
+	c6x_loop_sample_at(lp, &lag, &at);
+	const char *sample = c6x_sample_names[lag];
+	// the boundaries of the first three cycles are not tested
+	if (dyn) {
+		RzILOpPure *runs = lag ? OR(ULT(VARL(C6X_LOOP_PERIOD), U32(lag)), VARL(sample)) : VARL(sample);
+		rz_pvector_push(steps, SETL(C6X_LOOP_RUNS, runs));
+	} else if (k >= lag) {
+		rz_pvector_push(steps, SETL(C6X_LOOP_RUNS, AND(VARL(C6X_LOOP_RUNS), VARL(sample))));
+	}
+	for (ut8 j = lag; j > 0; j--) {
+		rz_pvector_push(steps, SETL(c6x_sample_names[j], VARL(c6x_sample_names[j - 1])));
+	}
+}
+
+// Read the body of the SPLOOP \p lp from \p pc on, up to the execute packet of
+// its SPKERNEL. False for what is not lifted: a reload, a branch in the body,
+// a body too large for the loop buffer, or an instruction without IL.
+static bool c6x_loop_decode(C6xWin *win, C6xLoop *lp, ut64 pc) {
+	ut32 o = 0;
+	for (size_t p = 0; p < C6X_LOOP_DYNLEN; p++) {
+		C6xInsn slots[C6X_FP_SLOTS];
+		C6xPacketRef pkt;
+		size_t n = win->packet(win->user, pc, slots, &pkt);
+		if (!n || pkt.addr != pc) {
+			return false;
+		}
+		ut8 units = 0;
+		bool kernel = false;
+		for (size_t i = 0; i < n; i++) {
+			switch (slots[i].id) {
+			case C6X_INS_SPMASK:
+				units |= slots[i].ops[0].v.units;
+				break;
+			case C6X_INS_SPKERNEL:
+				kernel = true;
+				lp->delay = c6x_spkernel_delay(&slots[i], lp->ii);
+				break;
+			case C6X_INS_SPKERNELR:
+			case C6X_INS_SPMASKR:
+			case C6X_INS_SPLOOP:
+			case C6X_INS_SPLOOPD:
+			case C6X_INS_SPLOOPW:
+				RZ_LOG_DEBUG("c6x: a SPLOOP that reloads or nests at 0x%" PFMT64x " is not lifted\n", pkt.slots[i].addr);
+				return false;
+			default:
+				break;
+			}
+		}
+		if (units) {
+			lp->mask[lp->nmask++] = (C6xLoopMask){ o / lp->ii, o % lp->ii, units };
+		}
+		for (size_t i = 0; i < n; i++) {
+			const C6xInsn *insn = &slots[i];
+			if (insn->id == C6X_INS_NOP || insn->id == C6X_INS_SPMASK || insn->id == C6X_INS_SPKERNEL) {
+				continue;
+			}
+			RzILOpEffect *eff = c6x_lift(insn, pkt.slots[i].addr);
+			bool ok = eff && !c6x_effect_jumps(eff) && lp->nslot < C6X_LOOP_SLOTS;
+			rz_il_op_effect_free(eff);
+			if (!ok) {
+				RZ_LOG_DEBUG("c6x: %s at 0x%" PFMT64x " in a SPLOOP body is not lifted\n", rz_str_get_null(c6x_ins_name(insn->id)), pkt.slots[i].addr);
+				return false;
+			}
+			C6xLoopSlot *ls = &lp->slot[lp->nslot++];
+			ls->insn = *insn;
+			ls->addr = pkt.slots[i].addr;
+			ls->stage = o / lp->ii;
+			ls->offset = o % lp->ii;
+			ls->unit = c6x_unit_bit(insn);
+			ls->masked = ls->unit != UT8_MAX && ((units >> ls->unit) & 1);
+		}
+		o += c6x_packet_cycles(slots, 0, n);
+		if (o > C6X_LOOP_DYNLEN) {
+			return false;
+		}
+		if (kernel) {
+			lp->dynlen = o;
+			lp->stages = (o + lp->ii - 1) / lp->ii;
+			lp->post = pkt.next;
+			// SPRUFE8B 7.7.3.3: the assembler rejects shorter bodies
+			return o >= lp->ii + (lp->kind != C6X_INS_SPLOOPW);
+		}
+		pc = pkt.next;
+	}
+	return false;
+}
+
+// The results the periods of \p lp leave in flight across a stage boundary,
+// into \p out: a slot at offset r whose result lands d cycles after it issues
+// leaves it in flight over (r + d) / ii boundaries, due ii cycles sooner after
+// each.
+static bool c6x_loop_carried(const C6xLoop *lp, C6xLanding *out, size_t *n) {
+	*n = 0;
+	for (size_t i = 0; i < lp->nslot; i++) {
+		const C6xLoopSlot *ls = &lp->slot[i];
+		C6xIssue tmp = { 0 };
+		tmp.insn = &ls->insn;
+		RzILOpEffect *body = c6x_lift(&ls->insn, ls->addr);
+		bool ok = c6x_collect_writes(body, false, &tmp);
+		rz_il_op_effect_free(body);
+		if (!ok) {
+			return false;
+		}
+		for (size_t k = 0; k < tmp.nw; k++) {
+			ut32 d = ls->offset + tmp.w[k].delay;
+			for (ut32 a = 1; a <= d / lp->ii; a++) {
+				ut32 due = d - a * lp->ii;
+				for (size_t j = 0; j < *n; j++) {
+					if (out[j].due == due && RZ_STR_EQ(out[j].reg, tmp.w[k].reg)) {
+						RZ_LOG_DEBUG("c6x: two results of a SPLOOP land in %s at once\n", tmp.w[k].reg);
+						return false;
+					}
+				}
+				if (*n >= C6X_WIN_LANDINGS) {
+					return false;
+				}
+				out[(*n)++] = (C6xLanding){ tmp.w[k].reg, NULL, NULL, due };
+			}
+		}
+	}
+	return true;
+}
+
+// The carried result \p canon holds what lands in \p reg in cycle \p due, or NULL.
+static C6xLanding *c6x_carried_find(C6xLanding *canon, size_t n, const char *reg, ut32 due) {
+	for (size_t i = 0; i < n; i++) {
+		if (canon[i].due == due && RZ_STR_EQ(canon[i].reg, reg)) {
+			return &canon[i];
+		}
+	}
+	return NULL;
+}
+
+static int c6x_landing_cmp_due(const void *a, const void *b) {
+	const C6xLanding *const *x = a;
+	const C6xLanding *const *y = b;
+	return (int)(x[0]->due > y[0]->due) - (int)(x[0]->due < y[0]->due);
+}
+
+// Move what \p st has in flight into the carried results \p canon, each due
+// \p shift cycles sooner than what it moves in, and keep those in flight
+// instead; a carried result nothing moves into is cleared.
+static bool c6x_loop_carry(C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps, C6xLanding *canon, size_t ncanon, ut32 shift) {
+	bool hit[C6X_WIN_LANDINGS] = { 0 };
+	const C6xLanding *pair[C6X_WIN_LANDINGS][2];
+	size_t npair = 0;
+	for (size_t i = 0; i < st->nland; i++) {
+		const C6xLanding *l = &st->land[i];
+		C6xLanding *c = l->due >= shift ? c6x_carried_find(canon, ncanon, l->reg, l->due - shift) : NULL;
+		if (!c || hit[c - canon]) {
+			RZ_LOG_DEBUG("c6x: a result in flight to %s is not carried through the loop\n", l->reg);
+			return false;
+		}
+		hit[c - canon] = true;
+		pair[npair][0] = c;
+		pair[npair][1] = l;
+		npair++;
+	}
+	// a carried result moving up a period is read before the one behind it takes its place
+	qsort(pair, npair, sizeof(pair[0]), c6x_landing_cmp_due);
+	for (size_t i = 0; i < npair; i++) {
+		const C6xLanding *c = pair[i][0], *l = pair[i][1];
+		if (c->val == l->val) {
+			continue;
+		}
+		rz_pvector_push(steps, SETL(c->val, VARL(l->val)));
+		rz_pvector_push(steps, SETL(c->flag, l->flag ? VARL(l->flag) : IL_TRUE));
+	}
+	for (size_t i = 0; i < ncanon; i++) {
+		if (!hit[i]) {
+			rz_pvector_push(steps, SETL(canon[i].flag, IL_FALSE));
+		}
+	}
+	return true;
+}
+
+// Run loop \p lp from its first cycle, st->cycle, then what follows it: its
+// periods, those whose guards depend on the period alone as the body of a
+// repeat. The iterations of a SPLOOP are the ILC it found, of a SPLOOPD the
+// ILC its packet leaves plus those it runs regardless (SPRUFE8B Table 7-4); a
+// SPLOOPW runs until its condition fails, and its epilog is skipped.
+static RzILOpEffect *c6x_loop_run(C6xWin *win, C6xWinState *st, const C6xLoop *lp, bool main_path) {
+	RzPVector steps;
+	rz_pvector_init(&steps, NULL);
+	RzILOpEffect *tail = NULL;
+	ut8 ii = lp->ii;
+	ut32 stages = lp->stages;
+	bool w = lp->kind == C6X_INS_SPLOOPW;
+	if (lp->kind == C6X_INS_SPLOOPD) {
+		rz_pvector_push(&steps, SETL(C6X_LOOP_ITERS, ADD(VARG("ilc"), U32(1 + 3 / ii))));
+	}
+	// The code after the loop issues once the epilog has run for the SPKERNEL
+	// delay, or once it has drained when that is sooner, or when the loop
+	// exits before its kernel; then the buffer has only run whole stages.
+	ut32 delay = RZ_MIN(lp->delay, (ut32)lp->dynlen - ii);
+	ut32 skip = delay / ii, fetch = delay % ii;
+	if (!w) {
+		RzILOpPure *early = ITE(IS_ZERO(VARL(C6X_LOOP_ITERS)), U32(stages), ADD(VARL(C6X_LOOP_ITERS), U32(stages - 1)));
+		rz_pvector_push(&steps, SETL(C6X_LOOP_END, ITE(ULT(VARL(C6X_LOOP_ITERS), U32(stages)), early, ADD(VARL(C6X_LOOP_ITERS), U32(skip)))));
+	} else {
+		rz_pvector_push(&steps, SETL(C6X_LOOP_RUNS, IL_TRUE));
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(c6x_sample_names); j++) {
+			rz_pvector_push(&steps, SETL(c6x_sample_names[j], IL_TRUE));
+		}
+	}
+	// the loop's own cycles count from its first period
+	ut32 base = st->cycle;
+	ut32 last = 0;
+	for (size_t i = 0; i < st->nland; i++) {
+		st->land[i].due -= base;
+		last = RZ_MAX(last, st->land[i].due + 1);
+	}
+	st->cycle = 0;
+	memset(st->pred_written, 0, sizeof(st->pred_written));
+	// the periods results from before the loop land in are lifted on their own
+	ut32 peel = (last + ii - 1) / ii;
+	if (!w && peel > stages) {
+		RZ_LOG_DEBUG("c6x: a result lands too late in the SPLOOP before 0x%" PFMT64x "\n", lp->post);
+		goto fail;
+	}
+	for (ut32 k = 0; k < peel; k++) {
+		for (ut8 r = 0; r < ii; r++) {
+			if (!c6x_loop_cycle(win, st, &steps, lp, r, false, k)) {
+				goto fail;
+			}
+		}
+		c6x_loop_boundary(lp, &steps, false, k);
+	}
+	c6x_land_before(st, st->cycle, &steps);
+	for (size_t i = 0; i < st->nland; i++) {
+		st->land[i].due -= st->cycle;
+	}
+	st->cycle = 0;
+	// what one period leaves in flight for the next one is carried in locals
+	// the repetitions share
+	C6xLanding canon[C6X_WIN_LANDINGS];
+	size_t ncanon;
+	if (!c6x_loop_carried(lp, canon, &ncanon)) {
+		goto fail;
+	}
+	for (size_t i = 0; i < ncanon; i++) {
+		canon[i].val = c6x_val_take(st, C6X_NAME_PINNED);
+		canon[i].flag = c6x_flag_take(st, C6X_NAME_PINNED);
+		if (!canon[i].val || !canon[i].flag) {
+			RZ_LOG_DEBUG("c6x: too many results in flight in the SPLOOP before 0x%" PFMT64x "\n", lp->post);
+			goto fail;
+		}
+		rz_pvector_push(&steps, SETL(canon[i].val, U32(0)));
+	}
+	if (!c6x_loop_carry(st, &steps, canon, ncanon, 0)) {
+		goto fail;
+	}
+	for (size_t i = 0; i < st->nland; i++) {
+		c6x_landing_names(st, &st->land[i], C6X_NAME_FREE);
+	}
+	memcpy(st->land, canon, ncanon * sizeof(C6xLanding));
+	st->nland = ncanon;
+	rz_pvector_push(&steps, SETL(C6X_LOOP_PERIOD, U32(peel)));
+	// the repeated period
+	C6xWinState *bs = RZ_NEW(C6xWinState);
+	if (!bs) {
+		goto fail;
+	}
+	*bs = *st;
+	RzPVector body;
+	rz_pvector_init(&body, NULL);
+	bool ok = true;
+	for (ut8 r = 0; r < ii && ok; r++) {
+		ok = c6x_loop_cycle(win, bs, &body, lp, r, true, 0);
+	}
+	if (ok) {
+		c6x_land_before(bs, ii, &body);
+		c6x_loop_boundary(lp, &body, true, 0);
+		ok = c6x_loop_carry(bs, &body, canon, ncanon, ii);
+	}
+	free(bs);
+	if (!ok) {
+		c6x_steps_free(&body);
+		rz_pvector_fini(&body);
+		goto fail;
+	}
+	rz_pvector_push(&body, SETL(C6X_LOOP_PERIOD, ADD(VARL(C6X_LOOP_PERIOD), U32(1))));
+	RzILOpPure *again = w ? VARL(C6X_LOOP_RUNS) : ULT(VARL(C6X_LOOP_PERIOD), VARL(C6X_LOOP_END));
+	rz_pvector_push(&steps, REPEAT(again, c6x_seal(&body, NULL)));
+	rz_pvector_fini(&body);
+	for (size_t i = 0; i < st->nland; i++) {
+		c6x_landing_names(st, &st->land[i], C6X_NAME_USED);
+	}
+	// what the loop wrote is not known cycle by cycle
+	for (size_t c = 0; c < RZ_ARRAY_SIZE(st->pred_written); c++) {
+		st->pred_written[c] = 1;
+	}
+	st->pc = lp->post;
+	if (w) {
+		tail = c6x_win_run(win, st, main_path, false);
+		if (!tail) {
+			goto fail;
+		}
+	} else {
+		// ILC counts down to zero; after an early exit the code after the
+		// loop issues with the buffer drained, otherwise the epilog drains
+		// beside it
+		rz_pvector_push(&steps, SETG("ilc", U32(0)));
+		C6xWinState *es = RZ_NEW(C6xWinState);
+		if (!es) {
+			goto fail;
+		}
+		*es = *st;
+		RzILOpEffect *exit_early = c6x_win_run(win, es, false, false);
+		free(es);
+		if (!exit_early) {
+			goto fail;
+		}
+		if (skip + 1 < stages) {
+			st->epi = lp;
+			st->epi_first = (ut8)skip;
+			st->epi_base = 0;
+			st->epi_end = lp->dynlen - (skip + 1) * ii;
+			st->idle = fetch;
+		}
+		RzILOpEffect *drain = c6x_win_run(win, st, main_path, false);
+		if (!drain) {
+			rz_il_op_effect_free(exit_early);
+			goto fail;
+		}
+		tail = BRANCH(ULT(VARL(C6X_LOOP_ITERS), U32(stages)), exit_early, drain);
+	}
+	RzILOpEffect *eff = c6x_seal(&steps, tail);
+	rz_pvector_fini(&steps);
+	return eff;
+fail:
+	c6x_steps_free(&steps);
+	rz_pvector_fini(&steps);
+	return NULL;
+}
+
+// Whether control, just taken to st->pc with branches to there still in flight,
+// enters a loop pipelined around its branch, into \p lp: those branches take
+// effect a whole number of iterations apart, an iteration being the packets
+// from st->pc issued in the cycles until the first of them does, and those
+// packets hold one branch, back to st->pc, taking effect at the start of an
+// iteration too.
+static bool c6x_bloop_find(C6xWin *win, const C6xWinState *st, C6xBLoop *lp) {
+	memset(lp, 0, sizeof(*lp));
+	lp->start = st->pc;
+	lp->len = UT32_MAX;
+	for (size_t i = 0; i < st->nbr; i++) {
+		const C6xFlight *o = &st->br[i];
+		if (o->target || o->target_const != st->pc || o->loop) {
+			return false;
+		}
+		lp->len = RZ_MIN(lp->len, o->issued + C6X_BRANCH_CYCLES - st->cycle);
+	}
+	if (!st->nbr) {
+		return false;
+	}
+	ut32 lands = 0;
+	for (size_t i = 0; i < st->nbr; i++) {
+		// two branches taking effect in one cycle are undefined
+		ut32 d = st->br[i].issued + C6X_BRANCH_CYCLES - st->cycle;
+		if (d % lp->len || (lands >> d) & 1) {
+			return false;
+		}
+		lands |= 1u << d;
+	}
+	ut64 pc = st->pc;
+	ut32 cycles = 0;
+	ut32 branch_at = UT32_MAX;
+	while (cycles < lp->len) {
+		C6xInsn slots[C6X_FP_SLOTS];
+		C6xPacketRef pkt;
+		size_t n = win->packet(win->user, pc, slots, &pkt);
+		if (!n || pkt.addr != pc || (pkt.n == 1 && pkt.slots[0].header) || lp->n >= C6X_BLOOP_PACKETS) {
+			return false;
+		}
+		for (size_t i = 0; i < n; i++) {
+			if (c6x_is_sploop(&slots[i])) {
+				return false;
+			}
+			RzILOpEffect *eff = c6x_slot_body(&slots[i], pkt.slots[i].addr, &pkt);
+			if (!eff) {
+				return false;
+			}
+			if (c6x_effect_jumps(eff)) {
+				C6xIssue tmp = { 0 };
+				tmp.taken = c6x_taken_names[0];
+				tmp.target = c6x_target_names[0];
+				bool ok = true;
+				eff = c6x_capture_jump(eff, false, &tmp, &ok);
+				if (!ok || branch_at != UT32_MAX || !tmp.target_is_const || tmp.target_const != lp->start) {
+					rz_il_op_effect_free(eff);
+					return false;
+				}
+				branch_at = cycles;
+			}
+			rz_il_op_effect_free(eff);
+		}
+		lp->pc[lp->n] = pc;
+		lp->at[lp->n++] = cycles;
+		cycles += c6x_packet_cycles(slots, 0, n);
+		pc = pkt.next;
+	}
+	lp->end = pc;
+	if (cycles != lp->len || branch_at == UT32_MAX || (branch_at + C6X_BRANCH_CYCLES) % lp->len) {
+		return false;
+	}
+	lp->lag = (branch_at + C6X_BRANCH_CYCLES) / lp->len;
+	return true;
+}
+
+static bool c6x_bloop_add(C6xLanding *out, size_t *n, const char *reg, ut32 due) {
+	if (c6x_carried_find(out, *n, reg, due)) {
+		return true;
+	}
+	if (*n >= C6X_WIN_LANDINGS) {
+		RZ_LOG_DEBUG("c6x: too many results in flight in a loop\n");
+		return false;
+	}
+	out[(*n)++] = (C6xLanding){ reg, NULL, NULL, due };
+	return true;
+}
+
+// The results in flight across an iteration boundary of loop \p lp, into
+// \p out: those the kernel leaves in flight, and those in flight in \p st as
+// the loop starts, each due an iteration sooner after every boundary.
+static bool c6x_bloop_carried(C6xWin *win, const C6xBLoop *lp, const C6xWinState *st, C6xLanding *out, size_t *n) {
+	*n = 0;
+	for (size_t p = 0; p < lp->n; p++) {
+		C6xInsn slots[C6X_FP_SLOTS];
+		C6xPacketRef pkt;
+		size_t ns = win->packet(win->user, lp->pc[p], slots, &pkt);
+		for (size_t i = 0; i < ns; i++) {
+			C6xIssue tmp = { 0 };
+			tmp.insn = &slots[i];
+			RzILOpEffect *body = c6x_slot_body(&slots[i], pkt.slots[i].addr, &pkt);
+			bool ok = c6x_collect_writes(body, false, &tmp);
+			rz_il_op_effect_free(body);
+			if (!ok) {
+				return false;
+			}
+			for (size_t k = 0; k < tmp.nw; k++) {
+				ut32 d = lp->at[p] + tmp.w[k].delay;
+				for (ut32 a = 1; a <= d / lp->len; a++) {
+					if (!c6x_bloop_add(out, n, tmp.w[k].reg, d - a * lp->len)) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	for (size_t i = 0; i < st->nland; i++) {
+		const C6xLanding *l = &st->land[i];
+		for (ut32 a = 0; a <= l->due / lp->len; a++) {
+			if (!c6x_bloop_add(out, n, l->reg, l->due - a * lp->len)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+// Issue the kernel packet at \p pc of loop \p lp in cycle \p at of an iteration.
+static bool c6x_bloop_cycle(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps, ut64 pc, ut32 at) {
+	if (!win->loop_budget) {
+		RZ_LOG_DEBUG("c6x: lifting a loop issues more cycles than one lift may\n");
+		return false;
+	}
+	win->loop_budget--;
+	c6x_land_before(st, at, steps);
+	st->cycle = at;
+	C6xInsn slots[C6X_FP_SLOTS];
+	C6xPacketRef pkt;
+	size_t n = win->packet(win->user, pc, slots, &pkt);
+	C6xIssue *is = RZ_NEWS0(C6xIssue, C6X_CYCLE_SLOTS);
+	if (!n || !is) {
+		free(is);
+		return false;
+	}
+	size_t nis = 0;
+	bool ok = true;
+	for (int stores = 0; stores < 2 && ok; stores++) {
+		for (size_t i = 0; i < n && ok; i++) {
+			if (c6x_writes_memory(&slots[i]) == stores) {
+				ok = c6x_cycle_add(is, &nis, &slots[i], pkt.slots[i].addr, &pkt, NULL);
+			}
+		}
+	}
+	// the iteration repeats, so what lands later is kept in flight
+	ok = ok && c6x_issue_cycle(win, st, steps, is, nis, 0, at + 1, true);
+	if (!ok) {
+		c6x_issues_fini(is, nis);
+	}
+	free(is);
+	st->cycle = at + 1;
+	return ok;
+}
+
+// Run loop \p lp, pipelined around its branch, from st->pc, where a branch has
+// just taken control, then what follows it. Its iterations are the body of a
+// repeat: one runs when the branch taking effect at its start is taken, as the
+// iteration lag before it decided when its branch issued. The taken flags of
+// the branches in flight move up an iteration on every repetition, and so do
+// the results in flight across a boundary, those from before the loop among
+// them. When a branch is not taken, the code after the kernel issues with the
+// later branches and results still in flight.
+static RzILOpEffect *c6x_win_bloop(C6xWin *win, C6xWinState *st, const C6xBLoop *lp) {
+	RzPVector steps;
+	rz_pvector_init(&steps, NULL);
+	ut32 len = lp->len, lag = lp->lag;
+	// the loop's own cycles count from its first iteration
+	ut32 base = st->cycle;
+	for (size_t i = 0; i < st->nland; i++) {
+		st->land[i].due -= base;
+	}
+	for (ut32 k = 1; k < lag; k++) {
+		const C6xFlight *o = NULL;
+		for (size_t i = 0; i < st->nbr && !o; i++) {
+			if (st->br[i].issued + C6X_BRANCH_CYCLES - base == k * len) {
+				o = &st->br[i];
+			}
+		}
+		RzILOpPure *v;
+		if (!o) {
+			// without a branch taking effect at its start, control leaves the kernel
+			v = IL_FALSE;
+		} else {
+			v = o->taken ? VARL(o->taken) : IL_TRUE;
+		}
+		rz_pvector_push(&steps, SETL(c6x_bq_names[k - 1], v));
+	}
+	st->nbr = 0;
+	st->cycle = 0;
+	C6xLanding canon[C6X_WIN_LANDINGS];
+	size_t ncanon;
+	if (!c6x_bloop_carried(win, lp, st, canon, &ncanon)) {
+		goto fail;
+	}
+	for (size_t i = 0; i < ncanon; i++) {
+		canon[i].val = c6x_val_take(st, C6X_NAME_PINNED);
+		canon[i].flag = c6x_flag_take(st, C6X_NAME_PINNED);
+		if (!canon[i].val || !canon[i].flag) {
+			RZ_LOG_DEBUG("c6x: too many results in flight in the loop at 0x%" PFMT64x "\n", lp->start);
+			goto fail;
+		}
+		rz_pvector_push(&steps, SETL(canon[i].val, U32(0)));
+	}
+	if (!c6x_loop_carry(st, &steps, canon, ncanon, 0)) {
+		goto fail;
+	}
+	for (size_t i = 0; i < st->nland; i++) {
+		c6x_landing_names(st, &st->land[i], C6X_NAME_FREE);
+	}
+	memcpy(st->land, canon, ncanon * sizeof(C6xLanding));
+	st->nland = ncanon;
+	rz_pvector_push(&steps, SETL(C6X_BLOOP_RUNS, IL_TRUE));
+	// the repeated iteration
+	C6xWinState *bs = RZ_NEW(C6xWinState);
+	if (!bs) {
+		goto fail;
+	}
+	*bs = *st;
+	RzPVector body;
+	rz_pvector_init(&body, NULL);
+	bool ok = true;
+	for (size_t i = 0; i < lp->n && ok; i++) {
+		ok = c6x_bloop_cycle(win, bs, &body, lp->pc[i], lp->at[i]);
+	}
+	if (ok) {
+		c6x_land_before(bs, len, &body);
+		ok = bs->nbr == 1;
+	}
+	if (ok) {
+		// the branch of this iteration takes effect at the start of the one lag on
+		const char *taken = bs->br[0].taken;
+		rz_pvector_push(&body, SETL(c6x_bq_names[lag - 1], taken ? VARL(taken) : IL_TRUE));
+		bs->nbr = 0;
+		rz_pvector_push(&body, SETL(C6X_BLOOP_RUNS, VARL(c6x_bq_names[0])));
+		for (ut32 k = 0; k + 1 < lag; k++) {
+			rz_pvector_push(&body, SETL(c6x_bq_names[k], VARL(c6x_bq_names[k + 1])));
+		}
+		ok = c6x_loop_carry(bs, &body, canon, ncanon, len);
+	}
+	free(bs);
+	if (!ok) {
+		c6x_steps_free(&body);
+		rz_pvector_fini(&body);
+		goto fail;
+	}
+	rz_pvector_push(&steps, REPEAT(VARL(C6X_BLOOP_RUNS), c6x_seal(&body, NULL)));
+	rz_pvector_fini(&body);
+	// cycles count on from where the loop exited, late enough for its last
+	// branches to have issued in them
+	st->cycle = C6X_BRANCH_CYCLES;
+	for (size_t i = 0; i < st->nland; i++) {
+		c6x_landing_names(st, &st->land[i], C6X_NAME_USED);
+		st->land[i].due += st->cycle;
+	}
+	// what the loop wrote is not known cycle by cycle
+	for (size_t c = 0; c < RZ_ARRAY_SIZE(st->pred_written); c++) {
+		st->pred_written[c] = st->cycle;
+	}
+	for (ut32 k = 1; k < lag; k++) {
+		C6xFlight *o = &st->br[st->nbr++];
+		memset(o, 0, sizeof(*o));
+		o->issued = st->cycle + k * len - C6X_BRANCH_CYCLES;
+		o->taken = c6x_bq_names[k - 1];
+		o->target_const = lp->start;
+		o->loop = true;
+	}
+	st->pc = lp->end;
+	RzILOpEffect *tail = c6x_win_run(win, st, false, true);
+	if (!tail) {
+		goto fail;
+	}
+	RzILOpEffect *eff = c6x_seal(&steps, tail);
+	rz_pvector_fini(&steps);
+	return eff;
+fail:
+	c6x_steps_free(&steps);
+	rz_pvector_fini(&steps);
+	return NULL;
+}
+
+// Lift the SPLOOP whose execute packet is at st->pc and what follows it: the
+// packet's other slots issue once, then the loop runs. A branch issued before
+// may take effect as the loop would start, as when a function returns early
+// in place of a loop it began in the delay slots: the loop buffer goes idle
+// once a branch is taken, so the loop runs only when that one is not.
+// Reloading loops are not lifted.
+static RzILOpEffect *c6x_win_sploop(C6xWin *win, C6xWinState *st, RzPVector /*<RzILOpEffect *>*/ *steps, bool main_path) {
+	if (st->epi || win->nloops >= C6X_WIN_LOOPS) {
+		RZ_LOG_DEBUG("c6x: a SPLOOP at 0x%" PFMT64x " beside another loop is not lifted\n", st->pc);
+		return NULL;
+	}
+	C6xInsn slots[C6X_FP_SLOTS];
+	C6xPacketRef pkt;
+	size_t n = win->packet(win->user, st->pc, slots, &pkt);
+	size_t first = 0;
+	while (first < n && pkt.slots[first].addr != st->pc) {
+		first++;
+	}
+	C6xLoop *lp = RZ_NEW0(C6xLoop);
+	if (first == n || !lp) {
+		free(lp);
+		return NULL;
+	}
+	win->loops[win->nloops++] = lp;
+	const C6xInsn *sp = &slots[first];
+	lp->kind = sp->id;
+	lp->ii = (ut8)sp->ops[0].v.imm.value;
+	lp->creg = sp->creg;
+	lp->z = sp->z;
+	bool w = lp->kind == C6X_INS_SPLOOPW;
+	if (!lp->ii || w != !!c6x_pred_reg_name(lp->creg)) {
+		// a predicated SPLOOP(D) reloads, and a SPLOOPW is always predicated
+		RZ_LOG_DEBUG("c6x: a SPLOOP that reloads at 0x%" PFMT64x " is not lifted\n", st->pc);
+		return NULL;
+	}
+	if (!c6x_loop_decode(win, lp, pkt.next)) {
+		return NULL;
+	}
+	if (lp->kind == C6X_INS_SPLOOP) {
+		rz_pvector_push(steps, SETL(C6X_LOOP_ITERS, VARG("ilc")));
+	}
+	// the slots beside the SPLOOP issue once
+	C6xIssue *is = RZ_NEWS0(C6xIssue, C6X_CYCLE_SLOTS);
+	if (!is) {
+		return NULL;
+	}
+	size_t nis = 0;
+	bool ok = true;
+	size_t nbr = st->nbr;
+	for (int stores = 0; stores < 2 && ok; stores++) {
+		for (size_t i = first + 1; i < n && ok; i++) {
+			if (c6x_writes_memory(&slots[i]) == stores) {
+				ok = c6x_cycle_add(is, &nis, &slots[i], pkt.slots[i].addr, &pkt, NULL);
+			}
+		}
+	}
+	ok = ok && c6x_issue_cycle(win, st, steps, is, nis, 0, st->cycle + 1, true);
+	if (!ok) {
+		c6x_issues_fini(is, nis);
+	}
+	free(is);
+	if (!ok) {
+		return NULL;
+	}
+	st->pc = pkt.next;
+	st->cycle++;
+	c6x_land_before(st, st->cycle, steps);
+	if (st->nbr != nbr || st->nbr > 1 || (st->nbr && st->br[0].issued + C6X_BRANCH_CYCLES != st->cycle)) {
+		RZ_LOG_DEBUG("c6x: a SPLOOP at 0x%" PFMT64x " running into a branch is not lifted\n", pkt.slots[first].addr);
+		return NULL;
+	}
+	if (!st->nbr) {
+		return c6x_loop_run(win, st, lp, main_path);
+	}
+	C6xFlight b = st->br[0];
+	st->nbr = 0;
+	RzILOpEffect *taken = c6x_win_taken(win, st, &b, st->cycle);
+	if (!taken) {
+		return NULL;
+	}
+	if (!b.taken) {
+		if (main_path && !win->has_end) {
+			win->end = st->pc;
+			win->has_end = true;
+		}
+		return taken;
+	}
+	RzILOpEffect *run = c6x_loop_run(win, st, lp, main_path);
+	if (!run) {
+		rz_il_op_effect_free(taken);
+		return NULL;
+	}
+	return BRANCH(VARL(b.taken), taken, run);
+}
+
 // Lift from \p st on: issue packets until no branch is in flight and nothing
 // reads a result before it lands, then write what is in flight and leave.
 static RzILOpEffect *c6x_win_run(C6xWin *win, C6xWinState *st, bool main_path, bool issue_first) {
 	RzPVector steps;
 	rz_pvector_init(&steps, NULL);
 	RzILOpEffect *tail = NULL;
-	if (issue_first && !c6x_win_issue(win, st, &steps)) {
-		goto fail;
-	}
-	for (;;) {
-		c6x_land_before(st, st->cycle, &steps);
-		size_t bi = SIZE_MAX;
-		for (size_t i = 0; i < st->nbr; i++) {
-			if (bi == SIZE_MAX || st->br[i].issued < st->br[bi].issued) {
-				bi = i;
-			}
+	for (bool check = !issue_first;; check = true) {
+		if (!st->epi && st->idle) {
+			st->cycle += st->idle;
+			st->idle = 0;
 		}
-		if (bi != SIZE_MAX && st->br[bi].issued + C6X_BRANCH_CYCLES <= st->cycle) {
-			C6xFlight b = st->br[bi];
-			memmove(&st->br[bi], &st->br[bi + 1], (st->nbr - bi - 1) * sizeof(C6xFlight));
-			st->nbr--;
-			ut32 at = b.issued + C6X_BRANCH_CYCLES;
-			RzILOpEffect *taken = c6x_win_taken(win, st, &b, at);
-			if (!taken) {
-				goto fail;
+		if (check) {
+			c6x_land_before(st, st->cycle, &steps);
+			size_t bi = SIZE_MAX;
+			for (size_t i = 0; i < st->nbr; i++) {
+				if (bi == SIZE_MAX || st->br[i].issued < st->br[bi].issued) {
+					bi = i;
+				}
 			}
-			if (!b.taken) {
-				if (main_path && !win->has_end) {
+			if (bi != SIZE_MAX && st->br[bi].issued + C6X_BRANCH_CYCLES <= st->cycle) {
+				C6xFlight b = st->br[bi];
+				memmove(&st->br[bi], &st->br[bi + 1], (st->nbr - bi - 1) * sizeof(C6xFlight));
+				st->nbr--;
+				ut32 at = b.issued + C6X_BRANCH_CYCLES;
+				RzILOpEffect *taken = c6x_win_taken(win, st, &b, at);
+				if (!taken) {
+					goto fail;
+				}
+				if (!b.taken) {
+					if (main_path && !win->has_end) {
+						win->end = st->pc;
+						win->has_end = true;
+					}
+					tail = taken;
+					break;
+				}
+				c6x_settle(st, &b, false);
+				RzILOpEffect *rest = c6x_win_run(win, st, main_path, false);
+				if (!rest) {
+					rz_il_op_effect_free(taken);
+					goto fail;
+				}
+				tail = BRANCH(VARL(b.taken), taken, rest);
+				break;
+			}
+			if (!st->nbr && !st->epi && !c6x_hazard_ahead(win, st)) {
+				c6x_land_before(st, UT32_MAX, &steps);
+				if (main_path) {
 					win->end = st->pc;
 					win->has_end = true;
 				}
-				tail = taken;
+				if (!main_path || (win->fall != C6X_FALL_TO_END && win->fall != st->pc)) {
+					tail = JMP(U32((ut32)st->pc));
+				}
 				break;
 			}
-			c6x_settle(st, &b, false);
-			RzILOpEffect *rest = c6x_win_run(win, st, main_path, false);
-			if (!rest) {
-				rz_il_op_effect_free(taken);
+		}
+		if (st->idle) {
+			if (!c6x_win_idle(win, st, &steps)) {
 				goto fail;
 			}
-			tail = BRANCH(VARL(b.taken), taken, rest);
-			break;
+			continue;
 		}
-		if (!st->nbr && !c6x_hazard_ahead(win, st)) {
-			c6x_land_before(st, UT32_MAX, &steps);
-			if (main_path) {
-				win->end = st->pc;
-				win->has_end = true;
-			}
-			if (!main_path || (win->fall != C6X_FALL_TO_END && win->fall != st->pc)) {
-				tail = JMP(U32((ut32)st->pc));
+		C6xIssueResult r = c6x_win_issue(win, st, &steps);
+		if (r == C6X_ISSUE_LOOP) {
+			tail = c6x_win_sploop(win, st, &steps, main_path);
+			if (!tail) {
+				goto fail;
 			}
 			break;
 		}
-		if (!c6x_win_issue(win, st, &steps)) {
+		if (r != C6X_ISSUE_OK) {
 			goto fail;
 		}
 	}
-	RzILOpEffect *r = c6x_seal(&steps, tail);
+	RzILOpEffect *eff = c6x_seal(&steps, tail);
 	rz_pvector_fini(&steps);
-	return r;
+	return eff;
 fail:
 	c6x_steps_free(&steps);
 	rz_pvector_fini(&steps);
@@ -889,8 +2025,8 @@ fail:
  *            to 0 when the packet at \p addr could not be decoded.
  *
  * \return The effect, or NULL when the code cannot be lifted: an instruction
- *         without IL, a packet that cannot be read, or a branch to follow
- *         into a computed target.
+ *         without IL, a packet that cannot be read, a branch to follow into a
+ *         computed target, or a SPLOOP that reloads.
  */
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_window(C6xPacketFn packet, void *user, ut64 addr, ut64 fall, RZ_OUT ut64 *end) {
 	rz_return_val_if_fail(packet && end, NULL);
@@ -905,7 +2041,12 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_window(C6xPacketFn packet, void *user, ut64
 		*end = pkt.next;
 		return fall == C6X_FALL_TO_END || fall == pkt.next ? NOP() : JMP(U32((ut32)pkt.next));
 	}
-	C6xWin win = { packet, user, fall, C6X_WIN_PACKETS, 0, false };
+	C6xWin win = { 0 };
+	win.packet = packet;
+	win.user = user;
+	win.fall = fall;
+	win.budget = C6X_WIN_PACKETS;
+	win.loop_budget = C6X_LOOP_CYCLES;
 	C6xWinState *st = RZ_NEW0(C6xWinState);
 	if (!st) {
 		return NULL;
@@ -913,6 +2054,9 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_window(C6xPacketFn packet, void *user, ut64
 	st->pc = addr;
 	RzILOpEffect *eff = c6x_win_run(&win, st, true, true);
 	free(st);
+	for (size_t i = 0; i < win.nloops; i++) {
+		free(win.loops[i]);
+	}
 	*end = win.has_end ? win.end : pkt.next;
 	return eff;
 }

@@ -3588,8 +3588,9 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 		return c6x_lift_ldst(insn, pc);
 	default:
 		// Reached by design: the fetch-packet header is not an instruction, and
-		// the SPLOOP buffer controls are deliberately not modelled. Returning
-		// nothing leaves the caller to fall back, which is not a bug to warn on.
+		// a SPLOOP and its buffer controls are lifted with the whole loop by
+		// c6x_lift_window(). Returning nothing leaves the caller to fall back,
+		// which is not a bug to warn on.
 		return NULL;
 	}
 }

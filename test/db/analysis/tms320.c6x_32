@@ -800,19 +800,74 @@ b3 = 0x000084c4
 EOF
 RUN
 
-# The SPLOOP buffer is not modelled, so the packet of "sploop 1" is not lifted
-# at all rather than run without it: its mv, then the loop body once.
-NAME=c6x a packet with a slot that has no IL is not lifted in part in a TI-built ELF
+# TI's memset stores 16 bytes in each iteration of its SPLOOP, and the bytes
+# around them before and after the loop: here 37 from an odd address.
+NAME=c6x memset stores the blocks of its SPLOOP in a TI-built ELF
 FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
 CMDS=<<EOF
+e io.cache=true
 e asm.cpu=c674x
-s 0x86a0
+o malloc://0x1000 0x20000 rw
+wx eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee @ 0x20000
+pd 1 @ 0x86a0
+s sym.memset
 aezi
-aezs 1
-aezv PC
+ar a4=0x20013
+ar b4=0xab
+ar a6=37
+ar b3=0x20800
+aezsu 0x20800
+p8 0x40 @ 0x20000
+ar a4
 EOF
 EXPECT=<<EOF
- PC: 0x000086a0
+            ;-- $C$L1:
+            0x000086a0      sploop 1
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeabababababababababababababababababababababababababababababababababababababeeeeeeeeeeeeeeee
+a4 = 0x00020013
+EOF
+RUN
+
+# TI's memcpy issues its SPLOOP in the delay slots of a return taken for
+# copies under 24 bytes: once that return is taken the loop buffer goes idle,
+# so the loop runs only for the longer copy, here from an odd source.
+NAME=c6x memcpy returns in place of the SPLOOP it began in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e io.cache=true
+e asm.cpu=c674x
+o malloc://0x1000 0x20000 rw
+wx eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee @ 0x20000
+wx 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40 @ 0x20101
+pd 2 @ 0x8804
+pd 1 @ 0x8838
+s sym.memcpy
+aezi
+ar a4=0x20010
+ar b4=0x20101
+ar a6=7
+ar b3=0x20800
+aezsu 0x20800
+p8 0x20 @ 0x20000
+ar a4
+s sym.memcpy
+aezi
+ar a4=0x20010
+ar b4=0x20101
+ar a6=33
+ar b3=0x20800
+aezsu 0x20800
+p8 0x40 @ 0x20000
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00008804      [b2]  b .s2 b3
+            0x00008808      ||    [b0] ldndw .d2 *b4++[0x1],b17:b16
+            0x00008838      sploop 2
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee01020304050607eeeeeeeeeeeeeeeeee
+a4 = 0x00020010
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+a4 = 0x00020010
 EOF
 RUN
 

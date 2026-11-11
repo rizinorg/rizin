@@ -3210,28 +3210,53 @@ static ut8 sploop_ii(const C6xArchDesc *desc, ut64 pc, bool big_endian, C6xReadF
 }
 
 // SPKERNEL's field holds the stage from its top bit down, lowest stage bit
-// first, and the cycle in as many low bits as ii needs (SPRUFE8B Table 3-29),
-// so it splits only once the loop's ii is known. Without it the field stays
-// whole, as dis6x prints it.
+// first, and the cycle in as many low bits as ii needs (SPRUFE8B Table 3-29).
+static void stage_cycle_split(ut8 field, ut8 ii, RZ_OUT ut8 *stage, RZ_OUT ut8 *cycle) {
+	ut8 cycle_bits = 0;
+	while ((1u << cycle_bits) < ii) {
+		cycle_bits++;
+	}
+	*stage = 0;
+	for (ut8 b = 0; b + cycle_bits < 6; b++) {
+		*stage |= ((field >> (5 - b)) & 1) << b;
+	}
+	*cycle = field & ((1u << cycle_bits) - 1);
+}
+
+// The field splits only once the loop's ii is known. Without it the field
+// stays whole, as dis6x prints it.
 static void spkernel_stage_cycle(const C6xArchDesc *desc, C6xInsn *insn, ut64 pc, bool big_endian, C6xReadFn read, void *user) {
 	ut8 ii = read ? sploop_ii(desc, pc, big_endian, read, user) : 0;
 	if (!ii) {
 		return;
 	}
-	ut8 field = (ut8)OP(0).v.imm.value;
-	ut8 cycle_bits = 0;
-	while ((1u << cycle_bits) < ii) {
-		cycle_bits++;
-	}
-	ut8 stage = 0;
-	for (ut8 b = 0; b + cycle_bits < 6; b++) {
-		stage |= ((field >> (5 - b)) & 1) << b;
-	}
+	ut8 stage, cycle;
+	stage_cycle_split((ut8)OP(0).v.imm.value, ii, &stage, &cycle);
 	op_imm(&OP(0), stage);
 	OP(0).v.imm.decimal = true;
-	op_imm(&OP(1), field & ((1u << cycle_bits) - 1));
+	op_imm(&OP(1), cycle);
 	OP(1).v.imm.decimal = true;
 	insn->nops = 2;
+}
+
+/**
+ * \brief The fetch delay of the SPKERNEL \p insn ending a loop of iteration
+ *        interval \p ii.
+ *
+ * \return The cycles of the epilog before the code after the loop issues,
+ *         fstg * ii + fcyc (SPRUFE8B 7.9.4), whether the decoder could split
+ *         the operand or not.
+ */
+RZ_IPI ut32 c6x_spkernel_delay(const C6xInsn *insn, ut8 ii) {
+	rz_return_val_if_fail(insn && insn->id == C6X_INS_SPKERNEL && ii, 0);
+	ut8 stage, cycle;
+	if (insn->nops >= 2) {
+		stage = (ut8)insn->ops[0].v.imm.value;
+		cycle = (ut8)insn->ops[1].v.imm.value;
+	} else {
+		stage_cycle_split((ut8)insn->ops[0].v.imm.value, ii, &stage, &cycle);
+	}
+	return (ut32)stage * ii + cycle;
 }
 
 /**
