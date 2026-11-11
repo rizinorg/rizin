@@ -315,6 +315,19 @@ commands:
               comment: "Searches for DER/BER encoded X.509 certificates."
   - name: "/C"
     summary: Search, List, Query for COP Gadgets
+    details:
+      - name: Examples
+        entries:
+          - text: "/C"
+            comment: "List call-terminated gadgets in the search range"
+          - text: "/Cq \"pop rdi\""
+            comment: "Filter x86-64 gadgets by instruction text; print one line per gadget"
+          - text: "/C/q \"pop r(di|si)\""
+            comment: "Match x86-64 pop rdi or pop rsi using a regular expression"
+          - text: "/Cj \"pop rdi\""
+            comment: "Print matching x86-64 gadgets as JSON"
+          - text: "/C-"
+            comment: "Clear the gadget cache before searching modified bytes"
     subcommands:
       - name: "/C"
         cname: cmd_info_cop_gadget
@@ -483,6 +496,19 @@ commands:
             comment: "Number of bytes to read from the <file>."
   - name: "/J"
     summary: Search, List, Query for JOP Gadgets
+    details:
+      - name: Examples
+        entries:
+          - text: "/J"
+            comment: "List jump-terminated gadgets in the search range"
+          - text: "/Jq \"pop rdi\""
+            comment: "Filter x86-64 gadgets by instruction text; print one line per gadget"
+          - text: "/J/q \"pop r(di|si)\""
+            comment: "Match x86-64 pop rdi or pop rsi using a regular expression"
+          - text: "/Jj \"pop rdi\""
+            comment: "Print matching x86-64 gadgets as JSON"
+          - text: "/J-"
+            comment: "Clear the gadget cache before searching modified bytes"
     subcommands:
       - name: "/J"
         cname: cmd_info_jop_gadget
@@ -737,6 +763,19 @@ commands:
 
   - name: "/R"
     summary: Search, List, Query for ROP Gadgets
+    details:
+      - name: Examples
+        entries:
+          - text: "/R"
+            comment: "List return-terminated gadgets in the search range"
+          - text: "/Rq \"pop rdi\""
+            comment: "Filter x86-64 gadgets by instruction text; print one line per gadget"
+          - text: "/R/q \"pop r(di|si)\""
+            comment: "Match x86-64 pop rdi or pop rsi using a regular expression"
+          - text: "/Rj \"pop rdi\""
+            comment: "Print matching x86-64 gadgets as JSON"
+          - text: "/R-"
+            comment: "Clear the gadget cache before searching modified bytes"
     subcommands:
       - name: "/R"
         cname: cmd_info_rop_gadget
