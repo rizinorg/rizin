@@ -207,7 +207,7 @@ typedef struct {
 } NodeScore;
 
 static void score_add(NodeObservations obs, NodeScore *score) {
-	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N && rz_bits_count_ones_ut64(obs) == 1);
+	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N);
 	score->total_obsv++;
 	for (size_t i = 0; hint_scores[obs].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
 		ICFGNodeVerdict v = hint_scores[obs].verdict[i].id;
@@ -218,12 +218,14 @@ static void score_add(NodeObservations obs, NodeScore *score) {
 
 static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 	RzVector scores = { 0 };
-	rz_vector_init(&scores, sizeof(int), NULL, NULL);
+	rz_vector_init(&scores, sizeof(st64), NULL, NULL);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
-		rz_vector_push(&scores, (void *)&s->verdict_score[i]);
+		st64 v_score = s->verdict_score[i];
+		rz_vector_push(&scores, &v_score);
 	}
 	RzIterator it = { 0 };
 	if (!rz_vector_as_iter(&scores, &it)) {
+		rz_vector_fini(&scores);
 		rz_warn_if_reached();
 		return CFG_CONFLICT_VERDICT_N;
 	}
@@ -232,9 +234,13 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 	st64 softmax_score = rz_math_softmax_st64(&it, NULL);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		if (s->verdict_score[i] == softmax_score) {
+			rz_iterator_fini(&it);
+			rz_vector_fini(&scores);
 			return (ICFGNodeVerdict)i;
 		}
 	}
+	rz_iterator_fini(&it);
+	rz_vector_fini(&scores);
 	rz_warn_if_reached();
 	return CFG_CONFLICT_VERDICT_N;
 }
