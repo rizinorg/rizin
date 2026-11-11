@@ -1667,7 +1667,6 @@ var int16_t var_43h @ stack - 0x43
 var int8_t var_42h @ stack - 0x42
 var int8_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
-arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
 arg char **argv @ rsi
 var uint8_t var_80h @ stack - 0x80
@@ -1680,7 +1679,6 @@ var int16_t var_43h @ stack - 0x43
 var int8_t var_42h @ stack - 0x42
 var int8_t var_41h @ stack - 0x41
 var int64_t var_40h @ stack - 0x40
-arg int64_t arg_5h @ stack + 0x5
 arg int argc @ rdi
 arg char **argv @ rsi
 var var_70h = 0x00000028 = [ 'h', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '@', '.', '8', '.', '.', '.', '@', '.' ]
