@@ -51,7 +51,7 @@ d "mpy32 .m1 a0,a1,a2" 00080401 0x0 (set a2 (* (var a0) (var a1)))
 d "mpy32u .m1 a0,a1,a3:a2" 30060401 0x0 (seq (set _d (* (cast 64 false (var a0)) (cast 64 false (var a1)))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 # C64x+ address/rotate/byte-merge/packed-shift/pack (RzIL)
 d "addad .d1 a4,a5,a6" 40be1003 0x0 (set a6 (+ (var a4) (<< (var a5) (bv 32 0x3) false)))
-d "rotl .m1 a1,a0,a2" 70270001 0x0 (set a2 (let _rv (var a0) (let _rn (& (var a1) (bv 32 0x1f)) (| (<< (var _rv) (var _rn) false) (>> (var _rv) (- (bv 32 0x20) (var _rn)) false)))))
+d "rotl .m1 a0,a1,a2" 70270001 0x0 (set a2 (let _rv (var a0) (let _rn (& (var a1) (bv 32 0x1f)) (| (<< (var _rv) (var _rn) false) (>> (var _rv) (- (bv 32 0x20) (var _rn)) false)))))
 d "shlmb .s1 a0,a1,a2" 700e0401 0x0 (set a2 (| (<< (var a1) (bv 32 0x8) false) (& (>> (var a0) (bv 32 0x18) false) (bv 32 0xff))))
 d "shrmb .s1 a0,a1,a2" b00e0401 0x0 (set a2 (| (>> (var a1) (bv 32 0x8) false) (<< (& (var a0) (bv 32 0xff)) (bv 32 0x18) false)))
 d "shr2 .s1 a0,a1,a2" f02d0001 0x0 (set a2 (let _sv (var a0) (let _sn (cast 16 false (& (var a1) (bv 32 0xf))) (append (>> (cast 16 false (>> (var _sv) (bv 32 0x10) false)) (var _sn) (msb (cast 16 false (>> (var _sv) (bv 32 0x10) false)))) (>> (cast 16 false (var _sv)) (var _sn) (msb (cast 16 false (var _sv))))))))
@@ -85,3 +85,14 @@ d "mpyhir .m1 a0,a1,a2" 30040401 0x0 (set a2 (cast 32 false (>> (+ (* (cast 64 (
 d "mpylir .m1 a0,a1,a2" b0030401 0x0 (set a2 (cast 32 false (>> (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000)) (bv 32 0xf) (msb (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 32 (msb (cast 16 false (var a0))) (cast 16 false (var a0)))) (cast 64 (msb (var a1)) (var a1))) (bv 64 0x4000))))))
 d "spacku4 .s1 a0,a1,a2" 300d0401 0x0 (set a2 (let _a (var a0) (let _b (var a1) (let _h3 (cast 32 (msb (cast 16 false (>> (var _a) (bv 32 0x10) false))) (cast 16 false (>> (var _a) (bv 32 0x10) false))) (let _h2 (cast 32 (msb (cast 16 false (var _a))) (cast 16 false (var _a))) (let _h1 (cast 32 (msb (cast 16 false (>> (var _b) (bv 32 0x10) false))) (cast 16 false (>> (var _b) (bv 32 0x10) false))) (let _h0 (cast 32 (msb (cast 16 false (var _b))) (cast 16 false (var _b))) (| (| (<< (ite (&& (sle (var _h3) (bv 32 0x0)) (! (== (var _h3) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h3) (bv 32 0xff))) (bv 32 0xff) (var _h3))) (bv 32 0x18) false) (<< (ite (&& (sle (var _h2) (bv 32 0x0)) (! (== (var _h2) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h2) (bv 32 0xff))) (bv 32 0xff) (var _h2))) (bv 32 0x10) false)) (| (<< (ite (&& (sle (var _h1) (bv 32 0x0)) (! (== (var _h1) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h1) (bv 32 0xff))) (bv 32 0xff) (var _h1))) (bv 32 0x8) false) (ite (&& (sle (var _h0) (bv 32 0x0)) (! (== (var _h0) (bv 32 0x0)))) (bv 32 0x0) (ite (! (sle (var _h0) (bv 32 0xff))) (bv 32 0xff) (var _h0))))))))))))
 d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))
+
+# The C64x+ complex and Galois-field multiplies, which cl6x emits for -mv6400+
+d "cmpy .m1x a4,b4,a5:a4" b0921012 0x0
+d "cmpyr .m1x a4,b4,a4" f0921012 0x0
+d "cmpyr1 .m1x a4,b4,a4" 30931012 0x0
+d "ddotpl2 .m1x a5:a4,b4,a5:a4" b0951012 0x0
+d "ddotph2 .m1x a5:a4,b4,a5:a4" f0951012 0x0
+d "xormpy .m1x a4,b4,a4" f0961012 0x0
+d "gmpy .m1 a2,a4,a6" f0471013 0x0
+d "gmpy .m2 b2,b4,b6" f2471013 0x0
+d "gmpy4 .m1 a2,a4,a6" 70441003 0x0

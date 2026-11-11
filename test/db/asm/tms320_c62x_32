@@ -40,3 +40,28 @@ d "invalid" 00600010 0x0
 d "invalid" 00000300 0x0
 d "invalid" 00800300 0x0
 d "idle" 00e00100 0x0 nop
+
+# C62x has sixteen registers a side and no A0 predicate: a register above B15,
+# a predicate on A0 and an offset register above B15 are invalid
+d "ldw .d2 *-b1[b5],b12" e6a80406 0x0
+d "invalid" e6a804c6 0x0
+d "invalid" e6a8040e 0x0
+d "invalid" e6a84406 0x0
+
+# C62x and C67x compare unsigned against a ucst4: with the field's MSB set the result is invalid
+# (SPRU732J CMPGTU, CMPLTU); dis6x prints the low four bits, or all five for a long src2
+d "cmpgtu .l2 0xc,b11,b13" da89ad06 0x0 (set b13 (ite (! (ule (bv 32 0xc) (var b11))) (bv 32 0x1) (bv 32 0x0)))
+d "cmpltu .l2 0xf,b7:b6,b13" 9aeb9906 0x0
+# dis6x: [ A1] CMPLTU.L2 0xc,B11,B13
+d "invalid" da8baf86 0x0
+# dis6x: [!A1] CMPGTU.L2 0x17,B13:B12,B13
+d "invalid" 9ae9b296 0x0
+# No MVC on .S1, and the B14/B15 + ucst15 ADDAB, ADDAH and ADDAW are C64x+
+# dis6x: [!B1] MVC.S1 NRP,A7
+d "invalid" e0739d53 0x0
+# dis6x: [ B1] MVC.S1 A7,CSR
+d "invalid" a0a39c40 0x0
+# dis6x: ADDAW.D2 B15,29702,B7
+d "invalid" fe06f413 0x0
+# dis6x: ADDAB.D1X B14,20623,A10
+d "invalid" 3c8f5015 0x0

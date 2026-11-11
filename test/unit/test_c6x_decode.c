@@ -33,6 +33,20 @@ static const ut8 image_be[32] = {
 	0x02, 0x00, 0x22, 0x76, 0xe0, 0x20, 0x80, 0x00
 };
 
+// A C64x+ SPLOOP body cl6x assembled: a 32-bit SPMASK L1,M2 starting a packet
+// of MV .L1, MPY .M2 and a compact ADD .S1, then a compact SPMASK L2,S1,D1
+// starting one of a compact ADD .L2, SUB .S1 and, past the header, LDW .D1.
+static const ut8 image_spmask[64] = {
+	0x00, 0x80, 0x83, 0x00, 0x01, 0x00, 0x07, 0x02,
+	0xd9, 0x0f, 0x0c, 0x02, 0x83, 0x2c, 0x88, 0x01,
+	0x5a, 0x21, 0x6e, 0x0c, 0xe6, 0x6d, 0x41, 0x21,
+	0xe1, 0x25, 0x08, 0x03, 0x00, 0x0c, 0x00, 0xe6,
+	0x64, 0x02, 0xa8, 0x05, 0x00, 0x40, 0x03, 0x00,
+	0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 typedef struct {
 	const ut8 *bytes;
 	size_t size;
@@ -97,9 +111,11 @@ bool test_header_out_of_reach(void) {
 	// the word at 0 is two compact slots, but nothing says so
 	mu_assert_true(c6x_decode(c674x, image_le, 4, 0, false, NULL, NULL, &insn), "decoded");
 	mu_assert_eq(insn.size, C6X_WORD_SIZE, "a word gets its 32-bit reading");
-	mu_assert_eq(insn.id, C6X_INS_LDH, "as in a packet without a header");
+	mu_assert_eq(insn.word, 0xeaba0246, "as in a packet without a header");
+	mu_assert_eq(insn.id, C6X_INS_INVALID, "which has creg 111, reserved outside a header");
 	mu_assert_true(c6x_decode(c674x, image_le, 4, 0, false, read_nothing, NULL, &insn), "decoded");
-	mu_assert_eq(insn.id, C6X_INS_LDH, "an image that cannot be read is the same");
+	mu_assert_eq(insn.size, C6X_WORD_SIZE, "an image that cannot be read is the same");
+	mu_assert_eq(insn.word, 0xeaba0246, "word for word");
 
 	// a 32-bit opcode never starts at a half word, so this is a compact slot
 	mu_assert_true(c6x_decode(c674x, image_le + 2, 4, 2, false, NULL, NULL, &insn), "consumed");
@@ -135,10 +151,37 @@ bool test_big_endian_is_the_same_program(void) {
 	mu_end;
 }
 
+bool test_spmask_marks_its_packet(void) {
+	// dis6x marks the MV, the MPY, the ADD .L2, the SUB and the LDW with "^"
+	static const ut64 marked[] = { 0x08, 0x0c, 0x16, 0x18, 0x20 };
+	const C6xArchDesc *c674x = c6x_desc_from_cpu("c674x");
+	Image img = { image_spmask, sizeof(image_spmask), false };
+	C6xInsn insn = { 0 };
+	ut64 prev_end = UT64_MAX;
+	bool prev_par = false;
+	ut8 masks = 0;
+	size_t n = 0;
+	for (ut64 pc = 0; pc < img.size; pc += insn.size) {
+		int avail = (int)(img.size - pc);
+		mu_assert_true(c6x_decode(c674x, img.bytes + pc, avail, pc, false, read_image, &img, &insn), "decodes");
+		c6x_mark_parallel(&insn, pc, &prev_end, &prev_par, &masks);
+		bool want = n < RZ_ARRAY_SIZE(marked) && marked[n] == pc;
+		n += want;
+		mu_assert_eq(insn.masked, want, "the look-back marks what dis6x marks");
+		ut8 units = 0;
+		ut8 bit = c6x_unit_bit(&insn);
+		mu_assert_true(c6x_packet_masks(c674x, read_image, &img, pc, false, &units), "the packet is in reach");
+		mu_assert_eq(bit < 8 && (units & (1u << bit)), want, "and so does rebuilding the packet");
+	}
+	mu_assert_eq(n, RZ_ARRAY_SIZE(marked), "every marked slot");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_slots_decode_with_any_buffer_length);
 	mu_run_test(test_header_out_of_reach);
 	mu_run_test(test_big_endian_is_the_same_program);
+	mu_run_test(test_spmask_marks_its_packet);
 	return tests_passed != tests_run;
 }
 

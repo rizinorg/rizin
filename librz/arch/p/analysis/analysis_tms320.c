@@ -17,6 +17,7 @@
 typedef struct tms320_ctx_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	ut8 c6x_prev_masks; ///< units the SPMASKs of its execute packet name (for the "^" mark)
 	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } Tms320Context;
 
@@ -411,13 +412,18 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 			return -1;
 		}
 		c6x_fill_analysis(c6x, &insn, addr, op);
-		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par);
+		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par, &context->c6x_prev_masks);
 		// The look-back only knows about the previous call, so seeking into the
-		// middle of an execute packet loses the "||". Rebuilding the packet from
-		// the image settles it for any address.
+		// middle of an execute packet loses the "||" and the "^". Rebuilding the
+		// packet from the image settles them for any address.
 		bool cont = false;
 		if (c6x_continues_packet(c6x_read_io, &view, addr, analysis->big_endian, &cont)) {
 			insn.cont = cont;
+			ut8 units = 0;
+			ut8 bit = c6x_unit_bit(&insn);
+			if (cont && bit < 8 && c6x_packet_masks(c6x, c6x_read_io, &view, addr, analysis->big_endian, &units)) {
+				insn.masked = units & (1u << bit);
+			}
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			op->opex = c6x_opex(&insn);

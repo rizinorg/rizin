@@ -1418,10 +1418,10 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		return c6x_wr(&OP(2), c6x_sats32(SHIFTL0(SIGNED(64, v), LOGAND(n, U32(0x1f)))));
 	}
 	case C6X_INS_ROTL: {
-		// rotate src2 left by src1[4:0]: (v << n) | (v >>u (32 - n)); this .M-unit
-		// form decodes src1 (the count) into ops[0] and src2 (the value) into ops[1]
-		RzILOpPure *v = c6x_src(&OP(1));
-		RzILOpPure *cnt = c6x_src(&OP(0));
+		// rotate src2 left by src1[4:0]: (v << n) | (v >>u (32 - n)); both forms
+		// decode src2 (the value) into ops[0] and src1 (the count) into ops[1]
+		RzILOpPure *v = c6x_src(&OP(0));
+		RzILOpPure *cnt = c6x_src(&OP(1));
 		if (!v || !cnt) {
 			rz_il_op_pure_free(v);
 			rz_il_op_pure_free(cnt);

@@ -15,7 +15,7 @@ d "add2 .s1 a1,a2,a3" 60208801 0x0 (set a3 (append (+ (cast 16 false (>> (var a1
 d "sub2 .s2 b1,b2,b3" 62248801 0x0 (set b3 (append (- (cast 16 false (>> (var b1) (bv 32 0x10) false)) (cast 16 false (>> (var b2) (bv 32 0x10) false))) (- (cast 16 false (var b1)) (cast 16 false (var b2)))))
 d "ldb .d1 *a4,a3" 24029001 0x0 (set a3 (cast 32 (msb (loadw 0 8 (+ (var a4) (bv 32 0x0)))) (loadw 0 8 (+ (var a4) (bv 32 0x0)))))
 d "ldbu .d1 *+a3[0x1],a3" 14228c01 0x0 (set a3 (cast 32 false (loadw 0 8 (+ (var a3) (bv 32 0x1)))))
-d "ldw .d2 *-b1[b5],b28" e6a8041e 0x0 (set b28 (loadw 0 32 (- (var b1) (* (var b5) (bv 32 0x4)))))
+d "ldw .d2 *-b1[b5],b28" e6a8040e 0x0 (set b28 (loadw 0 32 (- (var b1) (* (var b5) (bv 32 0x4)))))
 d "ldnw .d1 *a5,a0" 34031400 0x0 (set a0 (loadw 0 32 (+ (var a5) (bv 32 0x0))))
 d "lddw .d1 *a4,a1:a0" 64031000 0x0 (seq (set ea (+ (var a4) (bv 32 0x0))) (set a0 (loadw 0 32 (var ea))) (set a1 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
 d "[a0] stb .d2 b0,*b4++[0x1]" b63610c0 0x0 (branch (! (is_zero (var a0))) (seq (storew 0 (var b4) (cast 8 false (var b0))) (set b4 (+ (var b4) (bv 32 0x1)))) nop)
@@ -53,7 +53,12 @@ d "adddp .s1x a5:a4,b11:b10,a7:a6" 589e2803 0x0 (seq (set _d (fbits (+. rne (flo
 d "xor .d2x b7,a4,b5" b3fb9002 0x0 (set b5 (^ (var b7) (var a4)))
 d "add .d1x 0x8,b15,a4" f01a3d02 0x0 (set a4 (+ (bv 32 0x8) (var b15)))
 d "mpy32u .m1 a8,a5,a7:a6" 30061503 0x0 (seq (set _d (* (cast 64 false (var a8)) (cast 64 false (var a5)))) (set a6 (cast 32 false (var _d))) (set a7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
-d "mpyspdp .m1x b4,a11:a10,a7:a6" b0952803 0x0 (seq (set _d (fbits (*. rne (fconvert ieee754-bin64 rne (float 0 (var b4) )) (float 1 (append (var a11) (var a10)) )))) (set a6 (cast 32 false (var _d))) (set a7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+# MPYSPDP crosses its DP src2, as .M crosses only src2 (SPRUFE8B 2.4); dis6x crosses src1
+# dis6x: MPYSPDP.M1X B4,A11:A10,A7:A6
+d "mpyspdp .m1x a4,b11:b10,a7:a6" b0952803 0x0 (seq (set _d (fbits (*. rne (fconvert ieee754-bin64 rne (float 0 (var a4) )) (float 1 (append (var b11) (var b10)) )))) (set a6 (cast 32 false (var _d))) (set a7 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+# dis6x: MPYSPDP.M2X A5,B5:B4,B5:B4
+d "mpyspdp .m2x b5,a5:a4,b5:b4" b2b51002 0x0 (seq (set _d (fbits (*. rne (fconvert ieee754-bin64 rne (float 0 (var b5) )) (float 1 (append (var a5) (var a4)) )))) (set b4 (cast 32 false (var _d))) (set b5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
+d "mpyspdp .m1 a3,a9:a8,a5:a4" b0652002 0x0 (seq (set _d (fbits (*. rne (fconvert ieee754-bin64 rne (float 0 (var a3) )) (float 1 (append (var a9) (var a8)) )))) (set a4 (cast 32 false (var _d))) (set a5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 d "mpysu .m1 0xc,a11,a3" 008fad01 0x0 (set a3 (* (cast 32 (msb (cast 16 false (bv 32 0xc))) (cast 16 false (bv 32 0xc))) (cast 32 false (cast 16 false (var a11)))))
 # Assembler idioms rendered like the TI reference (dis6x): MV/NEG/NOT/ZERO and
 # the negative-constant SUB, plus the 40-bit (slong) SUB/ADD pair destinations.
@@ -172,7 +177,7 @@ d "sadd .l1 a0,a1,a2" 78020401 0x0 (set a2 (let _s (+ (cast 64 (msb (var a0)) (v
 d "ssub .l1 a0,a1,a2" f8010401 0x0 (set a2 (let _s (- (cast 64 (msb (var a0)) (var a0)) (cast 64 (msb (var a1)) (var a1))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
 d "sshl .s1 a0,a1,a2" e0280001 0x0 (set a2 (let _s (<< (cast 64 (msb (var a0)) (var a0)) (& (var a1) (bv 32 0x1f)) false) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
 d "addad .d1 a4,a5,a6" 40be1003 0x0 (set a6 (+ (var a4) (<< (var a5) (bv 32 0x3) false)))
-d "rotl .m1 a1,a0,a2" 70270001 0x0 (set a2 (let _rv (var a0) (let _rn (& (var a1) (bv 32 0x1f)) (| (<< (var _rv) (var _rn) false) (>> (var _rv) (- (bv 32 0x20) (var _rn)) false)))))
+d "rotl .m1 a0,a1,a2" 70270001 0x0 (set a2 (let _rv (var a0) (let _rn (& (var a1) (bv 32 0x1f)) (| (<< (var _rv) (var _rn) false) (>> (var _rv) (- (bv 32 0x20) (var _rn)) false)))))
 d "shlmb .s1 a0,a1,a2" 700e0401 0x0 (set a2 (| (<< (var a1) (bv 32 0x8) false) (& (>> (var a0) (bv 32 0x18) false) (bv 32 0xff))))
 d "shrmb .s1 a0,a1,a2" b00e0401 0x0 (set a2 (| (>> (var a1) (bv 32 0x8) false) (<< (& (var a0) (bv 32 0xff)) (bv 32 0x18) false)))
 d "shr2 .s1 a0,a1,a2" f02d0001 0x0 (set a2 (let _sv (var a0) (let _sn (cast 16 false (& (var a1) (bv 32 0xf))) (append (>> (cast 16 false (>> (var _sv) (bv 32 0x10) false)) (var _sn) (msb (cast 16 false (>> (var _sv) (bv 32 0x10) false)))) (>> (cast 16 false (var _sv)) (var _sn) (msb (cast 16 false (var _sv))))))))
@@ -221,10 +226,25 @@ d "absdp .s1 a1:a0,a3:a2" 200b0401 0x0 (seq (set _d (& (append (var a1) (var a0)
 d "cmpeqsp .s1 a0,a1,a2" 200e0401 0x0 (set a2 (ite (! (|| (|| (is_nan (float 0 (var a0) )) (is_nan (float 0 (var a1) ))) (|| (<. (float 0 (var a0) ) (float 0 (var a1) )) (<. (float 0 (var a1) ) (float 0 (var a0) ))))) (bv 32 0x1) (bv 32 0x0)))
 d "cmpeqdp .s1 a1:a0,a3:a2,a4" 200a0802 0x0 (set a4 (ite (! (|| (|| (is_nan (float 1 (append (var a1) (var a0)) )) (is_nan (float 1 (append (var a3) (var a2)) ))) (|| (<. (float 1 (append (var a1) (var a0)) ) (float 1 (append (var a3) (var a2)) )) (<. (float 1 (append (var a3) (var a2)) ) (float 1 (append (var a1) (var a0)) ))))) (bv 32 0x1) (bv 32 0x0)))
 d "mpysp2dp .m1 a0,a1,a3:a2" f0050401 0x0 (seq (set _d (fbits (*. rne (fconvert ieee754-bin64 rne (float 0 (var a0) )) (fconvert ieee754-bin64 rne (float 0 (var a1) ))))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
-# double-precision -> int/single conversions (decode + RzIL; encoded per SPRUFE8, not disassembled by dis6x)
-d "dpint .l1 a1:a0,a2" 18010401 0x0 (set a2 (fcast_sint 32 rne (float 1 (append (var a1) (var a0)) )))
-d "dpsp .l1 a1:a0,a2" 38010401 0x0 (set a2 (fbits (fconvert ieee754-bin32 rne (float 1 (append (var a1) (var a0)) ))))
-d "dptrunc .l1 a1:a0,a2" 38000401 0x0 (set a2 (fcast_sint 32 rtz (float 1 (append (var a1) (var a0)) )))
+# double-precision -> int/single conversions (decode + RzIL), as SPRUFE8B's opcode figures show them
+d "dpint .l1 a1:a0,a2" 18010001 0x0 (set a2 (fcast_sint 32 rne (float 1 (append (var a1) (var a0)) )))
+d "dpsp .l1 a1:a0,a2" 38010001 0x0 (set a2 (fbits (fconvert ieee754-bin32 rne (float 1 (append (var a1) (var a0)) ))))
+d "dptrunc .l1 a1:a0,a2" 38000001 0x0 (set a2 (fcast_sint 32 rtz (float 1 (append (var a1) (var a0)) )))
+# They read the low word through src1 and the high one through src2: TI's assembler puts the
+# pair's odd register in src2 and its even one in src1, words dis6x lists as data
+# dis6x: .word 0x01948118
+d "dpint .l1 a5:a4,a3" 18819401 0x0 (set a3 (fcast_sint 32 rne (float 1 (append (var a5) (var a4)) )))
+# dis6x: .word 0x01948038
+d "dptrunc .l1 a5:a4,a3" 38809401 0x0 (set a3 (fcast_sint 32 rtz (float 1 (append (var a5) (var a4)) )))
+# dis6x: .word 0x02148138
+d "dpsp .l1 a5:a4,a4" 38811402 0x0 (set a4 (fbits (fconvert ieee754-bin32 rne (float 1 (append (var a5) (var a4)) ))))
+# dis6x: .word 0x0235811a
+d "dpint .l2 b13:b12,b4" 1a813502 0x0 (set b4 (fcast_sint 32 rne (float 1 (append (var b13) (var b12)) )))
+# MVC is .S2 only: its opcode fixes bit 1
+# dis6x: [!B0] MVC.S1 NRP,A28
+d "invalid" e0031d3e 0x0
+# dis6x: [!A2] MVC.S1X B3,CSR
+d "invalid" a0b38cb0 0x0
 d "ddotpl2 .m1 a1:a0,a2,a5:a4" b0050812 0x0 (seq (set _d (let _e (var a0) (let _o (var a1) (let _c (var a2) (append (let _s (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false))))) (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 64 (msb (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))) (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (let _s (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false))))) (* (cast 64 (msb (cast 32 (msb (cast 16 false (var _e))) (cast 16 false (var _e)))) (cast 32 (msb (cast 16 false (var _e))) (cast 16 false (var _e)))) (cast 64 (msb (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))) (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s)))))))))) (set a4 (cast 32 false (var _d))) (set a5 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 d "ddotph2 .m1 a5:a4,a6,a9:a8" f0851814 0x0 (seq (set _d (let _e (var a4) (let _o (var a5) (let _c (var a6) (append (let _s (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _o) (bv 32 0x10) false))) (cast 16 false (>> (var _o) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _o) (bv 32 0x10) false))) (cast 16 false (>> (var _o) (bv 32 0x10) false)))) (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false))))) (* (cast 64 (msb (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 64 (msb (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))) (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))) (let _s (+ (* (cast 64 (msb (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 32 (msb (cast 16 false (var _o))) (cast 16 false (var _o)))) (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _c) (bv 32 0x10) false))) (cast 16 false (>> (var _c) (bv 32 0x10) false))))) (* (cast 64 (msb (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 32 (msb (cast 16 false (>> (var _e) (bv 32 0x10) false))) (cast 16 false (>> (var _e) (bv 32 0x10) false)))) (cast 64 (msb (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))) (cast 32 (msb (cast 16 false (var _c))) (cast 16 false (var _c)))))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s)))))))))) (set a8 (cast 32 false (var _d))) (set a9 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 
@@ -240,6 +260,10 @@ d "sploop 1" 00800300 0x0
 d "sploopd 1" 00a00300 0x0
 d "sploopw 1" 00e00300 0x0
 d "[a0] sploopw 6" 00e083c2 0x0
+# creg 0 with z set is no predicate
+d "invalid" 00800310 0x0
+d "invalid" 00a00310 0x0
+d "invalid" 00e00310 0x0
 # rz-asm has no image to find the SPLOOP a SPKERNEL closes, and so the ii its
 # stage/cycle field splits by: the field stays whole, in hex, as dis6x prints
 # it without the loop. SPKERNELR has no operand.
@@ -267,9 +291,103 @@ d "subu .l2x a3,b6,b7:b6" fb771803 0x0
 # it sits at packet offset 0x1c. rz-asm decodes at pc 0, so this one is an
 # ordinary instruction; emitting a .fphead here put packet metadata in the
 # middle of code (#6751).
-d "ldh .d1 *+a14[0x10],b21" 4602baea 0x0
+d "ldh .d1 *+a14[0x10],b21" 4602ba0a 0x0
 
 # A 32-bit opcode is word aligned, so a half word can only be a compact slot,
 # which cannot be decoded without the header rz-asm is not given here. It was
 # read as a 32-bit word straddling the next slot, losing the word alignment.
 d "invalid;mvk .s1 -0x6b18,a3" 46022874ca01 0x2
+
+# MVC to a control register reads its source over the cross path
+d "[b0] mvc .s2x a3,ilc" a2138c26 0x0
+
+# ADDU and SUBU write a 40-bit pair; in the long forms of ADD, SUB, SADD, SSUB
+# and CMPGTU the operand that crosses is src1
+d "addu .l1x a4,b7,a5:a4" 78951c02 0x0
+d "addu .l1 a3,a5:a4,a5:a4" 38651002 0x0
+d "subu .l1 a2,a4,a7:a6" f8451003 0x0
+d "sub .l1 a5:a4,0x1,a5:a4" 18e41302 0x0
+d "sadd .l1 a2,a5:a4,a7:a6" 38461003 0x0
+d "ssub .l1 -0x3,a5:a4,a7:a6" 98a51303 0x0
+d "cmpgtu .l1x b9,a7:a6,a1" b8399900 0x0
+d "[b2] cmpltu .l1x b1,a27:a26,a6" b83b6863 0x0
+
+# The long shifts, whose count is a single register or a constant
+d "shl .s1 a5:a4,a30,a19:a18" 60cc1309 0x0
+d "shl .s1 a4,0x3,a7:a6" a0641003 0x0
+d "shr .s1 a5:a4,0x7,a7:a6" 20ed1003 0x0
+d "shru .s1 a5:a4,a2,a7:a6" 60491003 0x0
+
+# SUB, RCPSP, RSQRSP, SHR2 and ADD2 forms of .S and .D, and UNPKLU4 and UNPKHU4
+# on .S
+d "sub .s1x b16,a4,a3" 709dc001 0x0
+d "rcpsp .s2 b6,b7" 620f9803 0x0
+d "rsqrsp .s2 b4,b6" a20f1003 0x0
+d "shr2 .s1 a4,a2,a6" f04d1003 0x0
+d "add2 .d1x a2,b4,a6" 30591003 0x0
+d "unpklu4 .s2 b5,b4" 224f1402 0x0
+d "unpkhu4 .s1x b5,a4" 207f1402 0x0
+
+# The C64x+ dual-result forms and RPACK2, nonconditional on .L, .M and .S
+d "addsub .l1 a2,a4,a7:a6" 98411013 0x0
+d "addsub2 .l1 a2,a4,a7:a6" b8411013 0x0
+d "saddsub .l1 a2,a4,a7:a6" d8411013 0x0
+d "saddsub2 .l1 a2,a4,a7:a6" f8411013 0x0
+d "dpack2 .l1 a2,a4,a7:a6" 98461013 0x0
+d "dpackx2 .l1 a0,a1,a3:a2" 78060411 0x0
+d "shfl3 .l1 a0,a1,a3:a2" d8060411 0x0
+d "mpy2ir .m2 b2,b5,b9:b8" f2431414 0x0
+d "ddotp4 .m1x a4,b5,a9:a8" 30961414 0x0
+d "ddotph2r .m1 a5:a4,a6,a8" 70851814 0x0
+d "ddotpl2r .m2x b5:b4,a6,b8" 32951814 0x0
+d "smpy32 .m1 a0,a1,a2" 70060411 0x0
+d "rpack2 .s1 a2,a4,a6" f04e1013 0x0
+d "subabs4 .l1 a2,a8,a9" 584ba004 0x0
+
+# DMV, SWE and SWENR
+d "dmv .s1 a2,a4,a7:a6" f04e1003 0x0
+d "dmv .s2x b2,a4,b7:b6" f25e1003 0x0
+d "swe" 00000010 0x0
+d "swenr" 00200010 0x0
+
+# The register forms of EXTU, EXT, SET and CLR print src2 first
+d "extu .s1 a4,a2,a6" e04a1003 0x0
+d "ext .s1 a4,a2,a6" e04b1003 0x0
+d "set .s1 a4,a2,a6" e04e1003 0x0
+d "clr .s1x b4,a2,a6" e05f1003 0x0
+
+# Forms of .S, .D, .M and .L whose operand fields others share
+d "min2 .s1 a2,a4,a6" 304f1003 0x0
+d "max2 .s2x b2,a4,b6" 725f1003 0x0
+d "packh2 .s1 a2,a4,a6" 60421003 0x0
+d "shr2 .s1 a4,0x3,a6" 20661003 0x0
+d "sadd .s1 a2,a4,a6" 20481003 0x0
+d "subab .d1 a4,0x2,a6" c0591003 0x0
+d "add2 .d1 a2,a4,a6" 30491003 0x0
+d "sub .d2 b2,b4,b6" c2880803 0x0
+d "mpyi .m1 -0x2,a4,a6" 00c31303 0x0
+d "mpyid .m1 0x3,a4,a7:a6" 00661003 0x0
+d "subsp .s1x b4,a2,a6" b85e1003 0x0
+d "subdp .s1 a5:a4,a3:a2,a7:a6" 788e0803 0x0
+d "rcpdp .s1 a5:a4,a7:a6" 608b1403 0x0
+d "dotp2 .m1 a2,a4,a7:a6" f0421003 0x0
+d "rotl .m1 a4,a2,a6" 70471003 0x0
+d "rotl .m1 a4,0x8,a6" b0071103 0x0
+
+# Words with a reserved field are invalid: creg 111, the nonconditional form of a load,
+# address modes 0110 and 0011 and an LDDW to an odd register
+d "invalid" 4602baea 0x0
+d "invalid" e6a8041e 0x0
+d "invalid" e6ac040e 0x0
+d "invalid" e6a6040e 0x0
+d "invalid" e443bc06 0x0
+# SPRUFE8B has no PLD; dis6x prints one for an LDHU slot with bit 8 set; dis6x: [ A0] PLD.D1 *-B9(B6),6
+d "invalid" 84c924c3 0x0
+# crhi 11111 reaches no register SPRUFE8B lists; dis6x: [ B2] MVC.S1X B7,BRK_EN
+d "invalid" a0f31f68 0x0
+# SPRUFE8B's register branch is to IRP or NRP only; dis6x: [ B2] B.S2 TSCH
+d "invalid" e2002c6c 0x0
+# CALLP has bits 6:2 00100 (SPRUFE8B Figure F-12); dis6x reads the ADDK pattern as one too
+d "invalid" 50000010 0x0
+# BNOP with a register is a .S2 instruction; dis6x: [!B2] BNOP.S1 A24,2
+d "invalid" 6043e070 0x0
