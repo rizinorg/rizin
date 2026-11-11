@@ -26,47 +26,50 @@
 
 /* RzIL VM */
 
-// IL-VM register bindings: the 32+32 general-purpose registers (a0-a31,
-// b0-b31), pce1 (the program counter, named as the register profile does), then
-// the control registers MVC reaches -- the set common to every C6000, followed
-// by the C64x+ extension. A single flat table doubles as the name lookup for a
-// general-register operand: side A occupies indices 0-31 and side B 32-63, so
-// c6x_reg_name(side, num) indexes it directly and never reaches pce1 or the
-// control registers past it.
-// Predicate registers by creg code; 0 and 7 are reserved.
-static const char *const c6x_pred_regs[8] = { NULL, "b0", "b1", "b2", "a1", "a2", "a0", NULL };
+// IL-VM register bindings: the general-purpose registers, then the control
+// registers MVC reaches -- the set common to every C6000, the C64x+ extension
+// and the floating-point configuration registers, each where the variant has
+// them, since binding a register the profile does not declare fails the VM
+// setup. PCE1 is left to the VM's own program counter: bound as a variable it
+// would be written back over the profile's PC after every run of steps.
+//
+// The 32+32 table doubles as the name lookup for a general-register operand:
+// side A occupies indices 0-31 and side B 32-63, so c6x_reg_name(side, num)
+// indexes it directly and never reaches the control registers past it.
+// clang-format off
+#define C6X_IL_A_LO "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", \
+	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15"
+#define C6X_IL_A_HI "a16", "a17", "a18", "a19", "a20", "a21", "a22", "a23", \
+	"a24", "a25", "a26", "a27", "a28", "a29", "a30", "a31"
+#define C6X_IL_B_LO "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", \
+	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15"
+#define C6X_IL_B_HI "b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23", \
+	"b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31"
+#define C6X_IL_CTRL "amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp"
+#define C6X_IL_CTRL_C64XP "dier", "dnum", "ecr", "efr", "gplya", "gplyb", "ierr", "ilc", "itsr", \
+	"ntsr", "rep", "rilc", "ssr", "tsch", "tscl", "tsr"
+#define C6X_IL_CTRL_FP "fadcr", "faucr", "fmcr"
 
 static const char *const c6x_il_regs[] = {
-	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15",
-	"a16", "a17", "a18", "a19", "a20", "a21", "a22", "a23",
-	"a24", "a25", "a26", "a27", "a28", "a29", "a30", "a31",
-	"b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7",
-	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
-	"b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23",
-	"b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31",
-	"pce1",
-	// control registers common to all C6000 variants
-	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
-	// C64x+ control-register extension
-	"dier", "dnum", "ecr", "efr", "gplya", "gplyb", "ierr", "ilc", "itsr",
-	"ntsr", "rep", "rilc", "ssr", "tsch", "tscl", "tsr",
-	NULL
+	C6X_IL_A_LO, C6X_IL_A_HI, C6X_IL_B_LO, C6X_IL_B_HI, C6X_IL_CTRL, C6X_IL_CTRL_C64XP, NULL
 };
 
-// C62x/C67x expose only the low 16 registers per side and lack the C64x+
-// control-register extension; their register profile omits a16-a31/b16-b31 and
-// that extension, so bind only the matching subset -- the IL-VM setup fails if
-// asked to bind a register the profile never declares.
-static const char *const c6x_il_regs16[] = {
-	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-	"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15",
-	"b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7",
-	"b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
-	"pce1",
-	"amr", "csr", "gfpgfr", "icr", "ier", "ifr", "irp", "isr", "istp", "nrp",
-	NULL
+static const char *const c6x_il_regs_fp[] = {
+	C6X_IL_A_LO, C6X_IL_A_HI, C6X_IL_B_LO, C6X_IL_B_HI, C6X_IL_CTRL, C6X_IL_CTRL_C64XP, C6X_IL_CTRL_FP, NULL
 };
+
+// C62x/C67x have 16 registers per side and no C64x+ extension
+static const char *const c6x_il_regs16[] = {
+	C6X_IL_A_LO, C6X_IL_B_LO, C6X_IL_CTRL, NULL
+};
+
+static const char *const c6x_il_regs16_fp[] = {
+	C6X_IL_A_LO, C6X_IL_B_LO, C6X_IL_CTRL, C6X_IL_CTRL_FP, NULL
+};
+// clang-format on
+
+// Predicate registers by creg code; 0 and 7 are reserved.
+static const char *const c6x_pred_regs[8] = { NULL, "b0", "b1", "b2", "a1", "a2", "a0", NULL };
 
 /** RzIL configuration (register bindings, PC/memory widths) for the C6000 VM. */
 RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis) {
@@ -77,7 +80,12 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 		return NULL;
 	}
 	const C6xArchDesc *desc = c6x_desc_from_cpu(rz_analysis_get_cpu(analysis));
-	cfg->reg_bindings = (const char **)((desc && desc->num_regs <= 16) ? c6x_il_regs16 : c6x_il_regs);
+	bool fp = desc && (desc->features & C6X_FEAT_FP);
+	if (desc && desc->num_regs <= 16) {
+		cfg->reg_bindings = (const char **)(fp ? c6x_il_regs16_fp : c6x_il_regs16);
+	} else {
+		cfg->reg_bindings = (const char **)(fp ? c6x_il_regs_fp : c6x_il_regs);
+	}
 	return cfg;
 }
 
@@ -114,6 +122,7 @@ static RzILOpEffect *c6x_reg_write(const char *name, RzILOpPure *v) {
 
 // 32-bit value of a register or immediate source operand, or NULL for kinds
 // this core does not model as a scalar (pairs, quads, control regs, memory).
+// NULL is not an error: it leaves a form this core does not lift unlifted.
 static RzILOpPure *c6x_src(const C6xOperand *o) {
 	switch (o->kind) {
 	case C6X_OP_REG:
@@ -121,7 +130,6 @@ static RzILOpPure *c6x_src(const C6xOperand *o) {
 	case C6X_OP_IMM:
 		return S32(o->v.imm.value);
 	default:
-		rz_warn_if_reached();
 		return NULL;
 	}
 }
@@ -131,31 +139,72 @@ static RzILOpEffect *c6x_wr(const C6xOperand *o, RzILOpPure *v) {
 	if (o->kind == C6X_OP_REG) {
 		return c6x_reg_write(c6x_reg_name(o->v.reg.side, o->v.reg.num), v);
 	}
-	rz_warn_if_reached();
 	rz_il_op_pure_free(v);
 	return NULL;
 }
 
+static RzILOpBitVector *c6x_pair64(const C6xOperand *o);
+static RzILOpBitVector *c6x_long40(const C6xOperand *o);
+static RzILOpEffect *c6x_wr_pair64(const C6xOperand *o, RzILOpBitVector *v);
+
+/** The 40 bits a long keeps (SPRUFE8B 2.1). */
+#define C6X_LONG_MASK 0xffffffffffULL
+
+// Whether \p insn has a register-pair operand, which in the integer forms
+// means a 40-bit long source or result.
+static bool c6x_has_pair(const C6xInsn *insn) {
+	for (ut8 i = 0; i < insn->nops; i++) {
+		if (OP(i).kind == C6X_OP_REGPAIR) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// A source of 40-bit long arithmetic, widened to 64 bits: a pair is read as a
+// long, which ignores the 24 MSBs of its odd register, and a 32-bit source is
+// widened by the signedness of the form.
+static RzILOpBitVector *c6x_long_src(const C6xOperand *o, bool sgn) {
+	if (o->kind == C6X_OP_REGPAIR) {
+		return sgn ? c6x_long40(o) : LOGAND(c6x_pair64(o), U64(C6X_LONG_MASK));
+	}
+	RzILOpPure *s = c6x_src(o);
+	if (!s) {
+		return NULL;
+	}
+	return sgn ? SIGNED(64, s) : UNSIGNED(64, s);
+}
+
+// Write the low 40 bits of \p v as a long; the 24 MSBs of the odd register are
+// zero-filled.
+static RzILOpEffect *c6x_wr_long40(const C6xOperand *o, RzILOpBitVector *v) {
+	return c6x_wr_pair64(o, LOGAND(v, U64(C6X_LONG_MASK)));
+}
+
 // dst = src1 OP src2, the shared shape of the register/immediate ALU ops. `mk`
-// builds the value from the two decoded sources.
+// builds the value from the two decoded sources. ADD and SUB also have long
+// forms, signed but for ADDU and SUBU.
 static RzILOpEffect *c6x_alu3(const C6xInsn *insn, rz_il_pure_2args_op *mk) {
-	RzILOpPure *s1 = c6x_src(&OP(0));
-	RzILOpPure *s2 = c6x_src(&OP(1));
+	bool lng = c6x_has_pair(insn);
+	bool sgn = insn->id != C6X_INS_ADDU && insn->id != C6X_INS_SUBU;
+	RzILOpPure *s1 = lng ? c6x_long_src(&OP(0), sgn) : c6x_src(&OP(0));
+	RzILOpPure *s2 = lng ? c6x_long_src(&OP(1), sgn) : c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
 	}
-	return c6x_wr(&OP(2), mk(s1, s2));
+	return lng ? c6x_wr_long40(&OP(2), mk(s1, s2)) : c6x_wr(&OP(2), mk(s1, s2));
 }
 
-// dst = (src1 CMP src2) ? 1 : 0, the shared shape of the compare ops.
+// dst = (src1 CMP src2) ? 1 : 0, the shared shape of the compare ops. A long
+// src2 is compared at 40 bits, unsigned for CMPGTU and CMPLTU.
 static RzILOpEffect *c6x_cmp(const C6xInsn *insn, rz_il_bool_2args_op *mk) {
-	RzILOpPure *s1 = c6x_src(&OP(0));
-	RzILOpPure *s2 = c6x_src(&OP(1));
+	bool lng = c6x_has_pair(insn);
+	bool sgn = insn->id != C6X_INS_CMPGTU && insn->id != C6X_INS_CMPLTU;
+	RzILOpPure *s1 = lng ? c6x_long_src(&OP(0), sgn) : c6x_src(&OP(0));
+	RzILOpPure *s2 = lng ? c6x_long_src(&OP(1), sgn) : c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
@@ -354,7 +403,6 @@ static RzILOpEffect *c6x_fsp(const C6xInsn *insn, c6x_fbin_op *mk) {
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
 	if (!s1 || !s2) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(s1);
 		rz_il_op_pure_free(s2);
 		return NULL;
@@ -365,7 +413,9 @@ static RzILOpEffect *c6x_fsp(const C6xInsn *insn, c6x_fbin_op *mk) {
 // Read a register pair as one 64-bit value: the even member is the low word and
 // the odd member the high word, matching how LDDW loads a doubleword.
 static RzILOpBitVector *c6x_pair64(const C6xOperand *o) {
-	rz_return_val_if_fail(o->kind == C6X_OP_REGPAIR, NULL);
+	if (o->kind != C6X_OP_REGPAIR) {
+		return NULL;
+	}
 	return APPEND(c6x_reg_read(c6x_reg_name(o->v.reg.side, o->v.reg.num + 1)), c6x_reg_read(c6x_reg_name(o->v.reg.side, o->v.reg.num)));
 }
 
@@ -373,7 +423,6 @@ static RzILOpBitVector *c6x_pair64(const C6xOperand *o) {
 // binding it to a local so both halves read the same result.
 static RzILOpEffect *c6x_wr_pair64(const C6xOperand *o, RzILOpBitVector *v) {
 	if (o->kind != C6X_OP_REGPAIR) {
-		rz_warn_if_reached();
 		rz_il_op_pure_free(v);
 		return NULL;
 	}
@@ -390,6 +439,28 @@ static RzILOpBitVector *c6x_long40(const C6xOperand *o) {
 		return NULL;
 	}
 	return SHIFTRA(SHIFTL0(p, U32(24)), U32(24));
+}
+
+// The even (low) or odd (high) register of a pair operand.
+static RzILOpPure *c6x_pair_reg(const C6xOperand *o, bool odd) {
+	return o->kind == C6X_OP_REGPAIR ? c6x_reg_read(c6x_reg_name(o->v.reg.side, o->v.reg.num + odd)) : NULL;
+}
+
+// A 32-bit operand that may be a constant applied to both halves of a pair, or
+// one register of a pair: the lane \p odd of a double-word source.
+static RzILOpPure *c6x_dw_lane(const C6xOperand *o, bool odd) {
+	return o->kind == C6X_OP_REGPAIR ? c6x_pair_reg(o, odd) : c6x_src(o);
+}
+
+// Write \p odd and \p even into the pair dst, as the parallel halves of the
+// dual-result forms.
+static RzILOpEffect *c6x_wr_dual(const C6xOperand *o, RzILOpBitVector *odd, RzILOpBitVector *even) {
+	if (!odd || !even) {
+		rz_il_op_pure_free(odd);
+		rz_il_op_pure_free(even);
+		return NULL;
+	}
+	return c6x_wr_pair64(o, APPEND(odd, even));
 }
 
 // Double-precision float op over register pairs (binary64, round to nearest
@@ -559,6 +630,60 @@ static RzILOpEffect *c6x_mem_seq(RzILOpEffect *access, RzILOpEffect *wb, bool pr
 	return pre ? SEQ2(wb, access) : SEQ2(access, wb);
 }
 
+// Whether the mode of \p m writes its base register back.
+static bool c6x_ea_modifies(const C6xOperand *m) {
+	switch (m->v.mem.mode) {
+	case C6X_AM_PREDEC_CST:
+	case C6X_AM_PREINC_CST:
+	case C6X_AM_POSTDEC_CST:
+	case C6X_AM_POSTINC_CST:
+	case C6X_AM_PREDEC_REG:
+	case C6X_AM_PREINC_REG:
+	case C6X_AM_POSTDEC_REG:
+	case C6X_AM_POSTINC_REG:
+		return true;
+	default:
+		return false;
+	}
+}
+
+// Whether the address of \p m is computed from register \p num of file \p side.
+static bool c6x_ea_reads(const C6xOperand *m, C6xSide side, ut8 num) {
+	if (m->v.mem.base_side != side) {
+		return false;
+	}
+	switch (m->v.mem.mode) {
+	case C6X_AM_NEG_REG:
+	case C6X_AM_POS_REG:
+	case C6X_AM_PREDEC_REG:
+	case C6X_AM_PREINC_REG:
+	case C6X_AM_POSTDEC_REG:
+	case C6X_AM_POSTINC_REG:
+		return m->v.mem.base == num || m->v.mem.off_reg == num;
+	default:
+		return m->v.mem.base == num;
+	}
+}
+
+// Whether a load into \p d has to read its address before it writes: the
+// post-modify update reads its registers as the instruction found them.
+static bool c6x_load_clobbers_ea(const C6xOperand *m, const C6xOperand *d, bool pre) {
+	if (pre || !c6x_ea_modifies(m)) {
+		return false;
+	}
+	return c6x_ea_reads(m, d->v.reg.side, d->v.reg.num) ||
+		(d->kind == C6X_OP_REGPAIR && c6x_ea_reads(m, d->v.reg.side, d->v.reg.num + 1));
+}
+
+// Whether a store from \p r reads a register the pre-modify update has
+// written by then: it stores what the instruction found there.
+static bool c6x_store_reads_wb(const C6xOperand *m, const C6xOperand *r, bool pre) {
+	if (!pre || !c6x_ea_modifies(m) || m->v.mem.base_side != r->v.reg.side) {
+		return false;
+	}
+	return m->v.mem.base == r->v.reg.num || (r->kind == C6X_OP_REGPAIR && m->v.mem.base == r->v.reg.num + 1);
+}
+
 // Load: dst = extend(mem[EA]). `sign` selects sign- vs zero-extension to 32.
 static RzILOpEffect *c6x_load(const C6xInsn *insn, ut8 bytes, bool sign) {
 	// single-register widths only; pairs go through c6x_load_pair
@@ -569,9 +694,11 @@ static RzILOpEffect *c6x_load(const C6xInsn *insn, ut8 bytes, bool sign) {
 	if (!ea) {
 		return NULL;
 	}
-	RzILOpPure *val = bytes == 4 ? LOADW(32, ea) : (sign ? SIGNED(32, LOADW(bytes * 8, ea)) : UNSIGNED(32, LOADW(bytes * 8, ea)));
+	bool early = c6x_load_clobbers_ea(&OP(0), &OP(1), pre);
+	RzILOpPure *at = early ? VARL("ea") : ea;
+	RzILOpPure *val = bytes == 4 ? LOADW(32, at) : (sign ? SIGNED(32, LOADW(bytes * 8, at)) : UNSIGNED(32, LOADW(bytes * 8, at)));
 	RzILOpEffect *set = c6x_reg_write(c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num), val);
-	return c6x_mem_seq(set, wb, pre);
+	return early ? SEQ3(SETL("ea", ea), wb, set) : c6x_mem_seq(set, wb, pre);
 }
 
 // Store: mem[EA] = truncate(src). Pairs use c6x_store_pair.
@@ -583,9 +710,11 @@ static RzILOpEffect *c6x_store(const C6xInsn *insn, ut8 bytes) {
 	if (!ea) {
 		return NULL;
 	}
+	bool early = c6x_store_reads_wb(&OP(1), &OP(0), pre);
 	RzILOpPure *src = c6x_reg_read(c6x_reg_name(OP(0).v.reg.side, OP(0).v.reg.num));
-	RzILOpEffect *st = bytes == 4 ? STOREW(ea, src) : STOREW(ea, UNSIGNED(bytes * 8, src));
-	return c6x_mem_seq(st, wb, pre);
+	RzILOpPure *val = early ? VARL("_v") : src;
+	RzILOpEffect *st = bytes == 4 ? STOREW(ea, val) : STOREW(ea, UNSIGNED(bytes * 8, val));
+	return early ? SEQ3(SETL("_v", src), wb, st) : c6x_mem_seq(st, wb, pre);
 }
 
 // Doubleword load into a register pair: the even member gets mem[EA] and the
@@ -602,10 +731,12 @@ static RzILOpEffect *c6x_load_pair(const C6xInsn *insn) {
 	}
 	const char *lo = c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num);
 	const char *hi = c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num + 1);
-	RzILOpEffect *body = SEQ3(SETL("ea", ea),
-		c6x_reg_write(lo, LOADW(32, VARL("ea"))),
-		c6x_reg_write(hi, LOADW(32, ADD(VARL("ea"), U32(4)))));
-	return c6x_mem_seq(body, wb, pre);
+	RzILOpEffect *set_lo = c6x_reg_write(lo, LOADW(32, VARL("ea")));
+	RzILOpEffect *set_hi = c6x_reg_write(hi, LOADW(32, ADD(VARL("ea"), U32(4))));
+	if (c6x_load_clobbers_ea(&OP(0), &OP(1), pre)) {
+		return SEQ4(SETL("ea", ea), wb, set_lo, set_hi);
+	}
+	return c6x_mem_seq(SEQ3(SETL("ea", ea), set_lo, set_hi), wb, pre);
 }
 
 // Doubleword store from a register pair: mem[EA] <- even member, mem[EA+4] <-
@@ -620,6 +751,11 @@ static RzILOpEffect *c6x_store_pair(const C6xInsn *insn) {
 	}
 	const char *lo = c6x_reg_name(OP(0).v.reg.side, OP(0).v.reg.num);
 	const char *hi = c6x_reg_name(OP(0).v.reg.side, OP(0).v.reg.num + 1);
+	if (c6x_store_reads_wb(&OP(1), &OP(0), pre)) {
+		return SEQ6(SETL("_v", c6x_reg_read(lo)), SETL("_w", c6x_reg_read(hi)), wb, SETL("ea", ea),
+			STOREW(VARL("ea"), VARL("_v")),
+			STOREW(ADD(VARL("ea"), U32(4)), VARL("_w")));
+	}
 	RzILOpEffect *body = SEQ3(SETL("ea", ea),
 		STOREW(VARL("ea"), c6x_reg_read(lo)),
 		STOREW(ADD(VARL("ea"), U32(4)), c6x_reg_read(hi)));
@@ -859,6 +995,19 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 		// address computation, no control transfer
 		return c6x_wr(&OP(1), U32((ut32)(c6x_packet_base(pc) + OP(0).v.imm.value)));
 	}
+	case C6X_INS_DINT: {
+		// TSR.SGIE (bit 1) takes TSR.GIE (bit 0); GIE is then cleared in TSR and
+		// in CSR, where it is the same physical bit
+		RzILOpPure *gie = SHIFTL0(LOGAND(VARG("tsr"), U32(1)), U32(1));
+		return SEQ2(c6x_reg_write("tsr", LOGOR(LOGAND(VARG("tsr"), U32(~3u)), gie)),
+			c6x_reg_write("csr", LOGAND(VARG("csr"), U32(~1u))));
+	}
+	case C6X_INS_RINT: {
+		// GIE in TSR and CSR takes TSR.SGIE, which is then cleared
+		RzILOpPure *sgie = LOGAND(SHIFTR0(VARG("tsr"), U32(1)), U32(1));
+		return SEQ2(c6x_reg_write("csr", LOGOR(LOGAND(VARG("csr"), U32(~1u)), DUP(sgie))),
+			c6x_reg_write("tsr", LOGOR(LOGAND(VARG("tsr"), U32(~3u)), sgie)));
+	}
 	default:
 		break;
 	}
@@ -893,8 +1042,16 @@ static RzILOpEffect *c6x_lift_move(const C6xInsn *insn, ut64 pc) {
 		// register; a plain copy, so status-register side effects are not modelled
 		const C6xOperand *s = &OP(0);
 		const C6xOperand *d = &OP(1);
+		if (s->kind == C6X_OP_CTRLREG && s->v.ctrl && RZ_STR_EQ(s->v.ctrl, "pce1")) {
+			// PCE1 is the address of the fetch packet; it is the VM's program
+			// counter rather than a variable, and read-only
+			return c6x_wr(d, U32((ut32)c6x_packet_base(pc)));
+		}
 		const char *sn = s->kind == C6X_OP_CTRLREG ? s->v.ctrl : (s->kind == C6X_OP_REG ? c6x_reg_name(s->v.reg.side, s->v.reg.num) : NULL);
 		const char *dn = d->kind == C6X_OP_CTRLREG ? d->v.ctrl : (d->kind == C6X_OP_REG ? c6x_reg_name(d->v.reg.side, d->v.reg.num) : NULL);
+		if (dn && RZ_STR_EQ(dn, "pce1")) {
+			return NULL;
+		}
 		return sn && dn ? c6x_reg_write(dn, c6x_reg_read(sn)) : NULL;
 	}
 	default:
@@ -903,8 +1060,35 @@ static RzILOpEffect *c6x_lift_move(const C6xInsn *insn, ut64 pc) {
 	return NULL;
 }
 
+// The C66x double-word AND, ANDN, OR and XOR: the operation on each register
+// of the pairs, a scst5 src1 applying to both.
+static RzILOpEffect *c6x_dw_logic(const C6xInsn *insn) {
+	RzILOpBitVector *r[2] = { NULL, NULL };
+	for (ut8 i = 0; i < 2; i++) {
+		RzILOpPure *a = c6x_dw_lane(&OP(0), i);
+		RzILOpPure *b = c6x_dw_lane(&OP(1), i);
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			rz_il_op_pure_free(r[0]);
+			return NULL;
+		}
+		switch (insn->id) {
+		case C6X_INS_AND: r[i] = LOGAND(a, b); break;
+		case C6X_INS_ANDN: r[i] = LOGAND(a, LOGNOT(b)); break;
+		case C6X_INS_OR: r[i] = LOGOR(a, b); break;
+		default: r[i] = LOGXOR(a, b); break;
+		}
+	}
+	return c6x_wr_dual(&OP(2), r[1], r[0]);
+}
+
 // Integer add/subtract, bitwise and compare.
 static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
+	bool logic = insn->id == C6X_INS_AND || insn->id == C6X_INS_ANDN || insn->id == C6X_INS_OR || insn->id == C6X_INS_XOR;
+	if (logic && insn->nops == 3 && OP(2).kind == C6X_OP_REGPAIR) {
+		return c6x_dw_logic(insn);
+	}
 	switch (insn->id) {
 	case C6X_INS_ADD:
 	case C6X_INS_ADDU: {
@@ -918,16 +1102,15 @@ static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
 		return c6x_alu3(insn, rz_il_op_new_log_and);
 	}
 	case C6X_INS_ANDN: {
-		// dst = src2 & ~src1 (src1 is the complemented operand)
+		// dst = src1 & ~src2, as SPRUFE8B's example and cl6x's code for a & ~b have it
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
 		}
-		return c6x_wr(&OP(2), LOGAND(s2, LOGNOT(s1)));
+		return c6x_wr(&OP(2), LOGAND(s1, LOGNOT(s2)));
 	}
 	case C6X_INS_OR: {
 		return c6x_alu3(insn, rz_il_op_new_log_or);
@@ -938,21 +1121,11 @@ static RzILOpEffect *c6x_lift_alu(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_CMPEQ: {
 		return c6x_cmp(insn, rz_il_op_new_eq);
 	}
-	case C6X_INS_CMPGT:
+	case C6X_INS_CMPGT: {
+		return c6x_cmp(insn, rz_il_op_new_sgt);
+	}
 	case C6X_INS_CMPGTU: {
-		bool uns = insn->id == C6X_INS_CMPGTU;
-		if (OP(1).kind == C6X_OP_REGPAIR) {
-			// long form: a 32-bit src1 compared against a 40-bit long src2
-			RzILOpPure *s1 = c6x_src(&OP(0));
-			if (!s1) {
-				return NULL;
-			}
-			RzILOpBool *cmp = uns
-				? UGT(UNSIGNED(64, s1), LOGAND(c6x_pair64(&OP(1)), SN(64, 0xffffffffffLL)))
-				: SGT(SIGNED(64, s1), c6x_long40(&OP(1)));
-			return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
-		}
-		return c6x_cmp(insn, uns ? rz_il_op_new_ugt : rz_il_op_new_sgt);
+		return c6x_cmp(insn, rz_il_op_new_ugt);
 	}
 	case C6X_INS_CMPLT: {
 		return c6x_cmp(insn, rz_il_op_new_slt);
@@ -994,6 +1167,10 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		return NULL;
 	}
 	case C6X_INS_NEG: {
+		if (OP(0).kind == C6X_OP_REGPAIR) {
+			RzILOpBitVector *v = c6x_long40(&OP(0));
+			return v ? c6x_wr_long40(&OP(1), NEG(v)) : NULL;
+		}
 		RzILOpPure *s = c6x_src(&OP(0));
 		return s ? c6x_wr(&OP(1), NEG(s)) : NULL;
 	}
@@ -1024,7 +1201,6 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		// saturate a 40-bit long in a register pair to a signed 32-bit int
 		RzILOpBitVector *v = c6x_long40(&OP(0));
 		if (!v) {
-			rz_warn_if_reached();
 			return NULL;
 		}
 		return c6x_wr(&OP(1), c6x_sats32(v));
@@ -1062,6 +1238,19 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_EXT: {
 		// field extract: dst = (src << csta) >> cstb, right shift logical for
 		// extu and arithmetic (sign-extending) for ext
+		if (insn->nops == 3) {
+			// register form: csta in src1[9:5], cstb in src1[4:0]
+			RzILOpPure *s = c6x_src(&OP(0));
+			RzILOpPure *f = c6x_src(&OP(1));
+			if (!s || !f) {
+				rz_il_op_pure_free(s);
+				rz_il_op_pure_free(f);
+				return NULL;
+			}
+			RzILOpPure *shl = SHIFTL0(s, LOGAND(SHIFTR0(VARLP("_f"), U32(5)), U32(0x1f)));
+			RzILOpPure *n = LOGAND(VARLP("_f"), U32(0x1f));
+			return c6x_wr(&OP(2), LET("_f", f, insn->id == C6X_INS_EXTU ? SHIFTR0(shl, n) : SHIFTRA(shl, n)));
+		}
 		if (OP(1).kind != C6X_OP_IMM || OP(2).kind != C6X_OP_IMM) {
 			return NULL;
 		}
@@ -1077,16 +1266,31 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 	}
 	case C6X_INS_SET:
 	case C6X_INS_CLR: {
-		// bit field set/clear: dst = src2 set/cleared over bits [csta, cstb].
-		// Only the constant form is modeled; the register form takes the field
-		// bounds from src1 at run time.
+		// bit field set/clear: dst = src2 set/cleared over bits [csta, cstb];
+		// for cstb < csta src2 is copied
+		bool set = insn->id == C6X_INS_SET;
+		if (insn->nops == 3) {
+			// register form: csta in src1[9:5], cstb in src1[4:0]
+			RzILOpPure *s = c6x_src(&OP(0));
+			RzILOpPure *f = c6x_src(&OP(1));
+			if (!s || !f) {
+				rz_il_op_pure_free(s);
+				rz_il_op_pure_free(f);
+				return NULL;
+			}
+			// the field cstb - csta + 1 bits wide, shifted to csta
+			RzILOpPure *mask = SHIFTL0(SHIFTR0(U32(0xffffffff), SUB(U32(31), SUB(VARLP("_cb"), VARLP("_ca")))), VARLP("_ca"));
+			RzILOpPure *v = set ? LOGOR(VARLP("_s"), mask) : LOGAND(VARLP("_s"), LOGNOT(mask));
+			return c6x_wr(&OP(2), LET("_s", s, LET("_f", f, LET("_ca", LOGAND(SHIFTR0(VARLP("_f"), U32(5)), U32(0x1f)), LET("_cb", LOGAND(VARLP("_f"), U32(0x1f)), ITE(UGE(VARLP("_cb"), VARLP("_ca")), v, VARLP("_s")))))));
+		}
 		if (OP(1).kind != C6X_OP_IMM || OP(2).kind != C6X_OP_IMM) {
 			return NULL;
 		}
 		ut32 csta = (ut32)OP(1).v.imm.value & 0x1f;
 		ut32 cstb = (ut32)OP(2).v.imm.value & 0x1f;
 		if (cstb < csta) {
-			return NULL;
+			RzILOpPure *s = c6x_src(&OP(0));
+			return s ? c6x_wr(&OP(3), s) : NULL;
 		}
 		ut32 width = cstb - csta + 1;
 		ut32 mask = width >= 32 ? 0xffffffff : (((ut32)1 << width) - 1) << csta;
@@ -1094,7 +1298,7 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		if (!s) {
 			return NULL;
 		}
-		RzILOpPure *v = insn->id == C6X_INS_SET ? LOGOR(s, U32(mask)) : LOGAND(s, U32(~mask));
+		RzILOpPure *v = set ? LOGOR(s, U32(mask)) : LOGAND(s, U32(~mask));
 		return c6x_wr(&OP(3), v);
 	}
 	case C6X_INS_LMBD: {
@@ -1199,20 +1403,21 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_SUBC: {
-		// subtract-conditional divide step: d = src1 - src2;
-		// dst = d >= 0 ? (d << 1) | 1 : src1 << 1
+		// subtract-conditional divide step: dst = ((src1 - src2) << 1) | 1 when
+		// src1 - src2 >= 0, else src1 << 1. Both operands are uint, so the
+		// difference is not negative when src1 >= src2 unsigned, though its 32
+		// bits read as a negative int when the operands are 2^31 or more apart.
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
 		}
 		RzILOpPure *v = LET("_s1", s1,
-			LET("_df", SUB(VARLP("_s1"), s2),
-				ITE(SGE(VARLP("_df"), S32(0)),
-					LOGOR(SHIFTL0(VARLP("_df"), U32(1)), U32(1)),
+			LET("_s2", s2,
+				ITE(UGE(VARLP("_s1"), VARLP("_s2")),
+					LOGOR(SHIFTL0(SUB(VARLP("_s1"), VARLP("_s2")), U32(1)), U32(1)),
 					SHIFTL0(VARLP("_s1"), U32(1)))));
 		return c6x_wr(&OP(2), v);
 	}
@@ -1222,7 +1427,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1236,7 +1440,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1252,7 +1455,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1270,7 +1472,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1336,19 +1537,24 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		return c6x_wr(d, ADD(c6x_reg_read(c6x_reg_name(d->v.reg.side, d->v.reg.num)), S32(OP(0).v.imm.value)));
 	}
 	case C6X_INS_SHL: {
-		if (OP(0).kind == C6X_OP_REGPAIR) {
-			// 40-bit long shifted left by src1, truncated back to 40 bits
-			RzILOpBitVector *v = c6x_long40(&OP(0));
-			RzILOpPure *n = c6x_src(&OP(1));
+		// only the six LSBs of a register count shift (SPRUFE8B SHL)
+		RzILOpPure *n = c6x_src(&OP(1));
+		if (n && OP(1).kind == C6X_OP_REG) {
+			n = LOGAND(n, U32(0x3f));
+		}
+		if (OP(2).kind == C6X_OP_REGPAIR) {
+			// a 40-bit long, or a zero-extended 32-bit value, shifted left by
+			// src1 and truncated back to 40 bits
+			bool lng = OP(0).kind == C6X_OP_REGPAIR;
+			RzILOpBitVector *v = lng ? c6x_long40(&OP(0)) : c6x_src(&OP(0));
 			if (!v || !n) {
 				rz_il_op_pure_free(v);
 				rz_il_op_pure_free(n);
 				return NULL;
 			}
-			return c6x_wr_pair64(&OP(2), LOGAND(SHIFTL0(v, n), SN(64, 0xffffffffffLL)));
+			return c6x_wr_pair64(&OP(2), LOGAND(SHIFTL0(lng ? v : UNSIGNED(64, v), n), SN(64, 0xffffffffffLL)));
 		}
 		RzILOpPure *v = c6x_src(&OP(0));
-		RzILOpPure *n = c6x_src(&OP(1));
 		if (!v || !n) {
 			rz_il_op_pure_free(v);
 			rz_il_op_pure_free(n);
@@ -1358,15 +1564,20 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 	}
 	case C6X_INS_SHR:
 	case C6X_INS_SHRU: {
-		RzILOpPure *v = c6x_src(&OP(0));
+		// shr is arithmetic (sign-propagating); shru is logical
+		bool lng = OP(0).kind == C6X_OP_REGPAIR;
+		RzILOpPure *v = lng ? c6x_long_src(&OP(0), insn->id == C6X_INS_SHR) : c6x_src(&OP(0));
 		RzILOpPure *n = c6x_src(&OP(1));
+		if (n && OP(1).kind == C6X_OP_REG) {
+			n = LOGAND(n, U32(0x3f)); // the six LSBs of a register count
+		}
 		if (!v || !n) {
 			rz_il_op_pure_free(v);
 			rz_il_op_pure_free(n);
 			return NULL;
 		}
-		// shr is arithmetic (sign-propagating); shru is logical
-		return c6x_wr(&OP(2), insn->id == C6X_INS_SHRU ? SHIFTR0(v, n) : SHIFTRA(v, n));
+		RzILOpPure *r = insn->id == C6X_INS_SHRU ? SHIFTR0(v, n) : SHIFTRA(v, n);
+		return lng ? c6x_wr_long40(&OP(2), r) : c6x_wr(&OP(2), r);
 	}
 	case C6X_INS_ADDAB: {
 		return c6x_addr(insn, false, 0);
@@ -1391,19 +1602,25 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 	}
 	case C6X_INS_SADD:
 	case C6X_INS_SSUB: {
-		// signed add/subtract saturating to the 32-bit range (src1 - src2 for
-		// ssub, matching the SUB operand order)
-		RzILOpPure *s1 = c6x_src(&OP(0));
-		RzILOpPure *s2 = c6x_src(&OP(1));
-		if (!s1 || !s2) {
-			rz_warn_if_reached();
-			rz_il_op_pure_free(s1);
-			rz_il_op_pure_free(s2);
+		// signed add/subtract saturating to the 32-bit range, or to the 40-bit
+		// range for the long forms (src1 - src2 for ssub, matching the SUB
+		// operand order)
+		bool lng = c6x_has_pair(insn);
+		RzILOpBitVector *w1 = c6x_long_src(&OP(0), true);
+		RzILOpBitVector *w2 = c6x_long_src(&OP(1), true);
+		if (!w1 || !w2) {
+			rz_il_op_pure_free(w1);
+			rz_il_op_pure_free(w2);
 			return NULL;
 		}
-		RzILOpBitVector *w1 = SIGNED(64, s1);
-		RzILOpBitVector *w2 = SIGNED(64, s2);
-		return c6x_wr(&OP(2), c6x_sats32(insn->id == C6X_INS_SSUB ? SUB(w1, w2) : ADD(w1, w2)));
+		RzILOpBitVector *r = insn->id == C6X_INS_SSUB ? SUB(w1, w2) : ADD(w1, w2);
+		if (lng) {
+			return c6x_wr_long40(&OP(2),
+				LET("_s", r,
+					ITE(SGT(VARLP("_s"), SN(64, 0x7fffffffffLL)), SN(64, 0x7fffffffffLL),
+						ITE(SLT(VARLP("_s"), SN(64, -0x8000000000LL)), SN(64, -0x8000000000LL), VARLP("_s")))));
+		}
+		return c6x_wr(&OP(2), c6x_sats32(r));
 	}
 	case C6X_INS_SSHL: {
 		// dst = saturate32(src2 << (src1 & 0x1f)); the shift is done in 64 bits
@@ -1437,7 +1654,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1449,8 +1665,9 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 	}
 	case C6X_INS_SHR2:
 	case C6X_INS_SHRU2: {
-		// per-halfword shift right by src1[3:0], arithmetic for shr2 and logical
-		// (zero-extended) for shru2, lanes independent
+		// per-halfword shift right by src1[4:0], arithmetic for shr2 and logical
+		// (zero-extended) for shru2, lanes independent; counts of 16 to 31 fill
+		// each lane with its sign or with zeros
 		RzILOpPure *v = c6x_src(&OP(0));
 		RzILOpPure *cnt = c6x_src(&OP(1));
 		if (!v || !cnt) {
@@ -1460,13 +1677,12 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		}
 		bool ar = insn->id == C6X_INS_SHR2;
 		return c6x_wr(&OP(2),
-			LET("_sv", v, LET("_sn", UNSIGNED(16, LOGAND(cnt, U32(0xf))), APPEND(ar ? SHIFTRA(UNSIGNED(16, SHIFTR0(VARLP("_sv"), U32(16))), VARLP("_sn")) : SHIFTR0(UNSIGNED(16, SHIFTR0(VARLP("_sv"), U32(16))), VARLP("_sn")), ar ? SHIFTRA(UNSIGNED(16, VARLP("_sv")), VARLP("_sn")) : SHIFTR0(UNSIGNED(16, VARLP("_sv")), VARLP("_sn"))))));
+			LET("_sv", v, LET("_sn", UNSIGNED(16, LOGAND(cnt, U32(0x1f))), APPEND(ar ? SHIFTRA(UNSIGNED(16, SHIFTR0(VARLP("_sv"), U32(16))), VARLP("_sn")) : SHIFTR0(UNSIGNED(16, SHIFTR0(VARLP("_sv"), U32(16))), VARLP("_sn")), ar ? SHIFTRA(UNSIGNED(16, VARLP("_sv")), VARLP("_sn")) : SHIFTR0(UNSIGNED(16, VARLP("_sv")), VARLP("_sn"))))));
 	}
 	case C6X_INS_SWAP4: {
 		// exchange the two bytes within each halfword
 		RzILOpPure *v = c6x_src(&OP(0));
 		if (!v) {
-			rz_warn_if_reached();
 			return NULL;
 		}
 		return c6x_wr(&OP(1),
@@ -1481,7 +1697,6 @@ static RzILOpEffect *c6x_lift_packed(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1623,7 +1838,6 @@ static RzILOpEffect *c6x_lift_pack(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1671,7 +1885,6 @@ static RzILOpEffect *c6x_lift_dotp(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1685,7 +1898,6 @@ static RzILOpEffect *c6x_lift_dotp(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1700,7 +1912,6 @@ static RzILOpEffect *c6x_lift_dotp(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1731,6 +1942,12 @@ static RzILOpEffect *c6x_lift_dotp(const C6xInsn *insn, ut64 pc) {
 			rz_il_op_pure_free(s1hi);
 			rz_il_op_pure_free(s2hi);
 			return NULL;
+		}
+		if (OP(2).kind == C6X_OP_REGPAIR) {
+			// the long DOTP2: the sum sign-extended into a pair
+			RzILOpBitVector *lo = MUL(SIGNED(64, c6x_low16s(s1lo)), SIGNED(64, c6x_low16s(s2lo)));
+			RzILOpBitVector *hi = MUL(SIGNED(64, c6x_high16s(s1hi)), SIGNED(64, c6x_high16s(s2hi)));
+			return c6x_wr_pair64(&OP(2), neg ? SUB(hi, lo) : ADD(lo, hi));
 		}
 		RzILOpBitVector *lo = MUL(c6x_low16s(s1lo), c6x_low16s(s2lo));
 		RzILOpBitVector *hi = MUL(c6x_high16s(s1hi), c6x_high16s(s2hi));
@@ -1775,6 +1992,1086 @@ static RzILOpEffect *c6x_lift_dotp(const C6xInsn *insn, ut64 pc) {
 	return NULL;
 }
 
+// The 16-bit lane \p high of a 32-bit value, sign-extended to 64 bits.
+static RzILOpBitVector *c6x_h16s64(RzILOpPure *v, bool high) {
+	return SIGNED(64, UNSIGNED(16, high ? SHIFTR0(v, U32(16)) : v));
+}
+
+// Two 16-bit lanes of a and b combined by \p sub, saturating when \p sat, as
+// ADD2/SUB2 or SADD2/SSUB2 do; a and b are bound to locals by the caller.
+static RzILOpBitVector *c6x_lanes2(const char *a, const char *b, bool sub, bool sat) {
+	RzILOpBitVector *lanes[2];
+	for (ut8 i = 0; i < 2; i++) {
+		RzILOpBitVector *la = UNSIGNED(16, i ? SHIFTR0(VARLP(a), U32(16)) : VARLP(a));
+		RzILOpBitVector *lb = UNSIGNED(16, i ? SHIFTR0(VARLP(b), U32(16)) : VARLP(b));
+		lanes[i] = sat ? c6x_sat_s(sub ? SUB(SIGNED(32, la), SIGNED(32, lb)) : ADD(SIGNED(32, la), SIGNED(32, lb)), 16)
+			       : (sub ? SUB(la, lb) : ADD(la, lb));
+	}
+	return APPEND(lanes[1], lanes[0]);
+}
+
+// msb16(sat32(p + q + 0x8000)), the rounded halves DDOTPH2R and DDOTPL2R pack.
+static RzILOpBitVector *c6x_rnd_hi16(RzILOpBitVector *p, RzILOpBitVector *q) {
+	return UNSIGNED(16, SHIFTR0(c6x_sats32(ADD(ADD(p, q), SN(64, 0x8000))), U32(16)));
+}
+
+// The dual-result and double-word forms: two results computed side by side
+// from the same sources, one per register of a pair or per half of a word.
+static RzILOpEffect *c6x_lift_dual(const C6xInsn *insn, ut64 pc) {
+	switch (insn->id) {
+	case C6X_INS_ADDSUB:
+	case C6X_INS_SADDSUB: {
+		// dst_o = src1 + src2, dst_e = src1 - src2, saturated for SADDSUB
+		bool sat = insn->id == C6X_INS_SADDSUB;
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			return NULL;
+		}
+		RzILOpBitVector *sum = sat ? c6x_sats32(ADD(SIGNED(64, VARLP("_a")), SIGNED(64, VARLP("_b")))) : ADD(VARLP("_a"), VARLP("_b"));
+		RzILOpBitVector *dif = sat ? c6x_sats32(SUB(SIGNED(64, VARLP("_a")), SIGNED(64, VARLP("_b")))) : SUB(VARLP("_a"), VARLP("_b"));
+		return c6x_wr_pair64(&OP(2), LET("_a", a, LET("_b", b, APPEND(sum, dif))));
+	}
+	case C6X_INS_ADDSUB2:
+	case C6X_INS_SADDSUB2: {
+		// ADD2 into dst_o and SUB2 into dst_e, per halfword, saturated for SADDSUB2
+		bool sat = insn->id == C6X_INS_SADDSUB2;
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			return NULL;
+		}
+		return c6x_wr_pair64(&OP(2), LET("_a", a, LET("_b", b, APPEND(c6x_lanes2("_a", "_b", false, sat), c6x_lanes2("_a", "_b", true, sat)))));
+	}
+	case C6X_INS_DMV: {
+		// dst_o = src1, dst_e = src2
+		return c6x_wr_dual(&OP(2), c6x_src(&OP(0)), c6x_src(&OP(1)));
+	}
+	case C6X_INS_DPACK2: {
+		// dst_o = PACKH2(src1, src2), dst_e = PACK2(src1, src2)
+		return c6x_wr_dual(&OP(2), APPEND(c6x_half(&OP(0), true), c6x_half(&OP(1), true)),
+			APPEND(c6x_half(&OP(0), false), c6x_half(&OP(1), false)));
+	}
+	case C6X_INS_DPACKX2: {
+		// dst_o = PACKLH2(src2, src1), dst_e = PACKLH2(src1, src2)
+		return c6x_wr_dual(&OP(2), APPEND(c6x_half(&OP(1), false), c6x_half(&OP(0), true)),
+			APPEND(c6x_half(&OP(0), false), c6x_half(&OP(1), true)));
+	}
+	case C6X_INS_SHFL3: {
+		// interleave src2[15:0], src1[15:0] and src1[31:16] bit by bit into a
+		// 48-bit result, OR-ed as a balanced tree to keep the IL shallow
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			return NULL;
+		}
+		RzILOpBitVector *t[48];
+		for (ut8 i = 0; i < 16; i++) {
+			static const char *const src[3] = { "_b", "_a", "_a" };
+			for (ut8 k = 0; k < 3; k++) {
+				ut8 bit = i + (k == 2 ? 16 : 0);
+				RzILOpBitVector *v = LOGAND(SHIFTR0(UNSIGNED(64, VARLP(src[k])), U32(bit)), U64(1));
+				t[3 * i + k] = SHIFTL0(v, U32(3 * i + k));
+			}
+		}
+		for (size_t n = 48; n > 1; n = (n + 1) / 2) {
+			for (size_t j = 0; j < n / 2; j++) {
+				t[j] = LOGOR(t[2 * j], t[2 * j + 1]);
+			}
+			if (n & 1) {
+				t[n / 2] = t[n - 1];
+			}
+		}
+		return c6x_wr_pair64(&OP(2), LET("_a", a, LET("_b", b, t[0])));
+	}
+	case C6X_INS_MPY2IR: {
+		// each halfword of src1 times src2, rounded and shifted right by 15;
+		// 8000h times 8000 0000h saturates to 7FFF FFFFh
+		RzILOpBitVector *r[2];
+		for (ut8 i = 0; i < 2; i++) {
+			RzILOpPure *a = c6x_src(&OP(0));
+			RzILOpPure *b = c6x_src(&OP(1));
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(i ? r[0] : NULL);
+				return NULL;
+			}
+			RzILOpBitVector *h = UNSIGNED(16, i ? a : SHIFTR0(a, U32(16)));
+			r[i] = LET("_h", h, LET("_v", b, ITE(AND(EQ(VARLP("_h"), UN(16, 0x8000)), EQ(VARLP("_v"), U32(0x80000000))), U32(0x7fffffff), UNSIGNED(32, SHIFTRA(ADD(MUL(SIGNED(64, VARLP("_h")), SIGNED(64, VARLP("_v"))), SN(64, 0x4000)), U32(15))))));
+		}
+		return c6x_wr_dual(&OP(2), r[0], r[1]);
+	}
+	case C6X_INS_DDOTP4: {
+		// two DOTP2s of src1's halfwords with the sign-extended bytes of each
+		// halfword of src2: the low halfword into dst_e, the high into dst_o
+		RzILOpBitVector *r[2];
+		for (ut8 i = 0; i < 2; i++) {
+			RzILOpPure *a1 = c6x_src(&OP(0));
+			RzILOpPure *a2 = c6x_src(&OP(0));
+			RzILOpPure *b1 = c6x_src(&OP(1));
+			RzILOpPure *b2 = c6x_src(&OP(1));
+			if (!a1 || !a2 || !b1 || !b2) {
+				rz_il_op_pure_free(a1);
+				rz_il_op_pure_free(a2);
+				rz_il_op_pure_free(b1);
+				rz_il_op_pure_free(b2);
+				rz_il_op_pure_free(i ? r[0] : NULL);
+				return NULL;
+			}
+			ut8 sh = i ? 16 : 0;
+			RzILOpBitVector *hb = SIGNED(32, UNSIGNED(8, SHIFTR0(b1, U32(sh + 8))));
+			RzILOpBitVector *lb = SIGNED(32, UNSIGNED(8, sh ? SHIFTR0(b2, U32(sh)) : b2));
+			r[i] = ADD(MUL(c6x_high16s(a1), hb), MUL(c6x_low16s(a2), lb));
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	case C6X_INS_DDOTPH2R:
+	case C6X_INS_DDOTPL2R: {
+		// two rounded dot products of src2 with windows of the src1 pair, each
+		// saturated to 32 bits and packed by its high halfword
+		bool h2 = insn->id == C6X_INS_DDOTPH2R;
+		RzILOpPure *o1 = c6x_pair_reg(&OP(0), true);
+		RzILOpPure *o2 = c6x_pair_reg(&OP(0), true);
+		RzILOpPure *e1 = c6x_pair_reg(&OP(0), false);
+		RzILOpPure *e2 = c6x_pair_reg(&OP(0), false);
+		RzILOpPure *b[4];
+		for (ut8 i = 0; i < 4; i++) {
+			b[i] = c6x_src(&OP(1));
+		}
+		if (!o1 || !o2 || !e1 || !e2 || !b[0] || !b[1] || !b[2] || !b[3]) {
+			rz_il_op_pure_free(o1);
+			rz_il_op_pure_free(o2);
+			rz_il_op_pure_free(e1);
+			rz_il_op_pure_free(e2);
+			for (ut8 i = 0; i < 4; i++) {
+				rz_il_op_pure_free(b[i]);
+			}
+			return NULL;
+		}
+		// the window shared by both: lsb16(src1_o) x msb16(src2) + msb16(src1_e) x lsb16(src2)
+		RzILOpBitVector *mid = c6x_rnd_hi16(MUL(c6x_h16s64(o1, false), c6x_h16s64(b[0], true)), MUL(c6x_h16s64(e1, true), c6x_h16s64(b[1], false)));
+		// DDOTPH2R adds the halves of src1_o, DDOTPL2R those of src1_e
+		RzILOpPure *w = h2 ? o2 : e2;
+		rz_il_op_pure_free(h2 ? e2 : o2);
+		RzILOpBitVector *own = LET("_w", w, c6x_rnd_hi16(MUL(c6x_h16s64(VARLP("_w"), true), c6x_h16s64(b[2], true)), MUL(c6x_h16s64(VARLP("_w"), false), c6x_h16s64(b[3], false))));
+		return c6x_wr(&OP(2), h2 ? APPEND(own, mid) : APPEND(mid, own));
+	}
+	case C6X_INS_SMPY32: {
+		// msb32(sat(src1 x src2 << 1)): only 8000 0000h squared overflows
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			return NULL;
+		}
+		return c6x_wr(&OP(2), LET("_a", a, LET("_b", b, ITE(AND(EQ(VARLP("_a"), U32(0x80000000)), EQ(VARLP("_b"), U32(0x80000000))), U32(0x7fffffff), UNSIGNED(32, SHIFTRA(MUL(SIGNED(64, VARLP("_a")), SIGNED(64, VARLP("_b"))), U32(31)))))));
+	}
+	case C6X_INS_SUBABS4: {
+		// |src1 - src2| per unsigned byte
+		RzILOpBitVector *acc = NULL;
+		for (ut8 i = 0; i < 4; i++) {
+			RzILOpPure *a = c6x_src(&OP(0));
+			RzILOpPure *b = c6x_src(&OP(1));
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(acc);
+				return NULL;
+			}
+			RzILOpBitVector *la = UNSIGNED(8, i ? SHIFTR0(a, U32(8 * i)) : a);
+			RzILOpBitVector *lb = UNSIGNED(8, i ? SHIFTR0(b, U32(8 * i)) : b);
+			RzILOpBitVector *lane = LET("_x", la, LET("_y", lb, ITE(UGE(VARLP("_x"), VARLP("_y")), SUB(VARLP("_x"), VARLP("_y")), SUB(VARLP("_y"), VARLP("_x")))));
+			acc = acc ? APPEND(lane, acc) : lane;
+		}
+		return c6x_wr(&OP(2), acc);
+	}
+	case C6X_INS_DADD:
+	case C6X_INS_DSUB: {
+		// two 32-bit adds or subtracts, one per register of the pairs; a scst5
+		// src1 applies to both
+		bool sub = insn->id == C6X_INS_DSUB;
+		RzILOpBitVector *r[2];
+		for (ut8 i = 0; i < 2; i++) {
+			RzILOpPure *a = c6x_dw_lane(&OP(0), i);
+			RzILOpPure *b = c6x_dw_lane(&OP(1), i);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(i ? r[0] : NULL);
+				return NULL;
+			}
+			r[i] = sub ? SUB(a, b) : ADD(a, b);
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	default:
+		break;
+	}
+	return NULL;
+}
+
+// One step of SPRUFE8B's gmpy(): src1 (local _ga) added to the partial product
+// \p pp when bit \p bit of src2 (local _gb) is set, then the product shifted,
+// the polynomial (local _gp) added when bit 31 shifts out. Each step binds its
+// own _gs; the previous one is out of scope by then.
+static RzILOpBitVector *c6x_gmpy_step(RzILOpBitVector *pp, ut8 bit, bool poly) {
+	RzILOpBitVector *v = LOGXOR(pp, ITE(LSB(SHIFTR0(VARLP("_gb"), U32(bit))), VARLP("_ga"), U32(0)));
+	if (!poly) {
+		return SHIFTL0(v, U32(1));
+	}
+	return LET("_gs", v, ITE(MSB(VARLP("_gs")), LOGXOR(SHIFTL0(VARLP("_gs"), U32(1)), VARLP("_gp")), SHIFTL0(VARLP("_gs"), U32(1))));
+}
+
+// Byte \p i of GMPY4: Horner's rule over the bits of src2's byte (local _gb), in
+// the field of size _gm (SIZE + 1) whose generator, x^m included, is _gg.
+static RzILOpBitVector *c6x_gmpy4_byte(ut8 i) {
+	RzILOpBitVector *a = LOGAND(SHIFTR0(VARLP("_ga"), U32(8 * i)), U32(0xff));
+	RzILOpBitVector *pp = ITE(LSB(SHIFTR0(VARLP("_gb"), U32(8 * i + 7))), a, U32(0));
+	for (int bit = 6; bit >= 0; bit--) {
+		RzILOpBitVector *t = LET("_g4", SHIFTL0(pp, U32(1)), ITE(LSB(SHIFTR0(VARLP("_g4"), VARLP("_gm"))), LOGXOR(VARLP("_g4"), VARLP("_gg")), VARLP("_g4")));
+		a = LOGAND(SHIFTR0(VARLP("_ga"), U32(8 * i)), U32(0xff));
+		pp = LOGXOR(t, ITE(LSB(SHIFTR0(VARLP("_gb"), U32(8 * i + bit))), a, U32(0)));
+	}
+	return UNSIGNED(8, pp);
+}
+
+// The Galois-field multiplies: GMPY and XORMPY of 32 bits by 9 (SPRUFE8B's
+// gmpy(), the polynomial from GPLYA or GPLYB for GMPY, none for XORMPY), and
+// GMPY4 per byte in the field GFPGFR sets. GMPY4 is exact for elements of the
+// field; SPRUFE8B does not say what the hardware does with bytes above it.
+static RzILOpEffect *c6x_lift_gf(const C6xInsn *insn, ut64 pc) {
+	RzILOpPure *a = c6x_src(&OP(0));
+	RzILOpPure *b = c6x_src(&OP(1));
+	if (!a || !b) {
+		rz_il_op_pure_free(a);
+		rz_il_op_pure_free(b);
+		return NULL;
+	}
+	if (insn->id == C6X_INS_GMPY4) {
+		RzILOpBitVector *r = APPEND(APPEND(c6x_gmpy4_byte(3), c6x_gmpy4_byte(2)), APPEND(c6x_gmpy4_byte(1), c6x_gmpy4_byte(0)));
+		RzILOpPure *size = ADD(LOGAND(SHIFTR0(c6x_reg_read("gfpgfr"), U32(24)), U32(7)), U32(1));
+		RzILOpPure *gen = LOGOR(LOGAND(c6x_reg_read("gfpgfr"), U32(0xff)), SHIFTL0(U32(1), VARLP("_gm")));
+		return c6x_wr(&OP(2), LET("_ga", a, LET("_gb", b, LET("_gm", size, LET("_gg", gen, r)))));
+	}
+	bool poly = insn->id == C6X_INS_GMPY;
+	// bits 8 to 1 of src2 each add src1 before a shift, bit 0 after the last
+	RzILOpBitVector *pp = U32(0);
+	for (int bit = 8; bit >= 1; bit--) {
+		pp = c6x_gmpy_step(pp, bit, poly);
+	}
+	pp = LOGXOR(pp, ITE(LSB(VARLP("_gb")), VARLP("_ga"), U32(0)));
+	if (poly) {
+		pp = LET("_gp", c6x_reg_read(insn->unit_side ? "gplyb" : "gplya"), pp);
+	}
+	return c6x_wr(&OP(2), LET("_ga", a, LET("_gb", b, pp)));
+}
+
+// What a C66x double-word form does to each register of its pairs: the C64x+
+// single-word operation of the same name, or one only the double-word forms have.
+typedef enum {
+	C6X_DW_ADD2,
+	C6X_DW_SUB2,
+	C6X_DW_SADD,
+	C6X_DW_SADD2,
+	C6X_DW_SSUB,
+	C6X_DW_SSUB2,
+	C6X_DW_APYS2,
+	C6X_DW_MAX2,
+	C6X_DW_MIN2,
+	C6X_DW_MAXU4,
+	C6X_DW_MINU4,
+	C6X_DW_AVG2,
+	C6X_DW_AVGNR2,
+	C6X_DW_AVGU4,
+	C6X_DW_AVGNRU4,
+	C6X_DW_PACK2,
+	C6X_DW_PACKH2,
+	C6X_DW_PACKHL2,
+	C6X_DW_PACKLH2,
+	C6X_DW_PACKH4,
+	C6X_DW_PACKL4,
+	C6X_DW_SPACKU4,
+} C6xDwOp;
+
+// The negation of a signed 16-bit lane, 8000h saturating to 7FFFh.
+static RzILOpBitVector *c6x_satneg16(RzILOpBitVector *h) {
+	return LET("_n", h, ITE(EQ(VARLP("_n"), UN(16, 0x8000)), UN(16, 0x7fff), NEG(VARLP("_n"))));
+}
+
+// Lane x of src1 and y of src2 combined by \p op, a 16-bit or an 8-bit lane.
+static RzILOpBitVector *c6x_dw_lane_op(C6xDwOp op, RzILOpBitVector *x, RzILOpBitVector *y) {
+	switch (op) {
+	case C6X_DW_ADD2: return ADD(x, y);
+	case C6X_DW_SUB2: return SUB(x, y);
+	case C6X_DW_SADD2: return c6x_sat_s(ADD(SIGNED(32, x), SIGNED(32, y)), 16);
+	case C6X_DW_SSUB2: return c6x_sat_s(SUB(SIGNED(32, x), SIGNED(32, y)), 16);
+	case C6X_DW_AVG2: return UNSIGNED(16, SHIFTRA(ADD(ADD(SIGNED(32, x), SIGNED(32, y)), U32(1)), U32(1)));
+	case C6X_DW_AVGNR2: return UNSIGNED(16, SHIFTRA(ADD(SIGNED(32, x), SIGNED(32, y)), U32(1)));
+	case C6X_DW_AVGU4: return UNSIGNED(8, SHIFTR0(ADD(ADD(UNSIGNED(16, x), UNSIGNED(16, y)), UN(16, 1)), U32(1)));
+	case C6X_DW_AVGNRU4: return UNSIGNED(8, SHIFTR0(ADD(UNSIGNED(16, x), UNSIGNED(16, y)), U32(1)));
+	default: break;
+	}
+	RzILOpBitVector *r;
+	switch (op) {
+	case C6X_DW_APYS2:
+		// src1's sign negates src2's lane
+		r = ITE(MSB(VARLP("_lx")), c6x_satneg16(VARLP("_ly")), VARLP("_ly"));
+		break;
+	case C6X_DW_MAX2: r = ITE(SGE(VARLP("_lx"), VARLP("_ly")), VARLP("_lx"), VARLP("_ly")); break;
+	case C6X_DW_MIN2: r = ITE(SLE(VARLP("_lx"), VARLP("_ly")), VARLP("_lx"), VARLP("_ly")); break;
+	case C6X_DW_MAXU4: r = ITE(UGE(VARLP("_lx"), VARLP("_ly")), VARLP("_lx"), VARLP("_ly")); break;
+	default: r = ITE(ULE(VARLP("_lx"), VARLP("_ly")), VARLP("_lx"), VARLP("_ly")); break;
+	}
+	return LET("_lx", x, LET("_ly", y, r));
+}
+
+// Byte \p i of the 32-bit local \p v.
+static RzILOpBitVector *c6x_byte_of(const char *v, ut8 i) {
+	return UNSIGNED(8, i ? SHIFTR0(VARLP(v), U32(8 * i)) : VARLP(v));
+}
+
+// Halfword \p high of the 32-bit local \p v.
+static RzILOpBitVector *c6x_half_of(const char *v, bool high) {
+	return UNSIGNED(16, high ? SHIFTR0(VARLP(v), U32(16)) : VARLP(v));
+}
+
+// A signed 16-bit halfword of the local \p v clamped to an unsigned byte.
+static RzILOpBitVector *c6x_satu8_of(const char *v, bool high) {
+	return LET("_h", c6x_half_of(v, high),
+		ITE(MSB(VARLP("_h")), UN(8, 0), ITE(UGT(VARLP("_h"), UN(16, 0xff)), UN(8, 0xff), UNSIGNED(8, VARLP("_h")))));
+}
+
+// The 32-bit result of \p op on the words \p a of src1 and \p b of src2.
+static RzILOpBitVector *c6x_dw_word(C6xDwOp op, RzILOpPure *a, RzILOpPure *b) {
+	RzILOpBitVector *r;
+	switch (op) {
+	case C6X_DW_SADD: return c6x_sats32(ADD(SIGNED(64, a), SIGNED(64, b)));
+	case C6X_DW_SSUB: return c6x_sats32(SUB(SIGNED(64, a), SIGNED(64, b)));
+	case C6X_DW_PACK2: r = APPEND(c6x_half_of("_wa", false), c6x_half_of("_wb", false)); break;
+	case C6X_DW_PACKH2: r = APPEND(c6x_half_of("_wa", true), c6x_half_of("_wb", true)); break;
+	case C6X_DW_PACKHL2: r = APPEND(c6x_half_of("_wa", true), c6x_half_of("_wb", false)); break;
+	case C6X_DW_PACKLH2: r = APPEND(c6x_half_of("_wa", false), c6x_half_of("_wb", true)); break;
+	case C6X_DW_PACKH4:
+		r = APPEND(APPEND(c6x_byte_of("_wa", 3), c6x_byte_of("_wa", 1)), APPEND(c6x_byte_of("_wb", 3), c6x_byte_of("_wb", 1)));
+		break;
+	case C6X_DW_PACKL4:
+		r = APPEND(APPEND(c6x_byte_of("_wa", 2), c6x_byte_of("_wa", 0)), APPEND(c6x_byte_of("_wb", 2), c6x_byte_of("_wb", 0)));
+		break;
+	case C6X_DW_SPACKU4:
+		r = APPEND(APPEND(c6x_satu8_of("_wa", true), c6x_satu8_of("_wa", false)), APPEND(c6x_satu8_of("_wb", true), c6x_satu8_of("_wb", false)));
+		break;
+	default: {
+		ut8 width = op == C6X_DW_MAXU4 || op == C6X_DW_MINU4 || op == C6X_DW_AVGU4 || op == C6X_DW_AVGNRU4 ? 8 : 16;
+		r = NULL;
+		for (ut8 i = 0; i < 32 / width; i++) {
+			RzILOpBitVector *x = UNSIGNED(width, i ? SHIFTR0(VARLP("_wa"), U32(i * width)) : VARLP("_wa"));
+			RzILOpBitVector *y = UNSIGNED(width, i ? SHIFTR0(VARLP("_wb"), U32(i * width)) : VARLP("_wb"));
+			RzILOpBitVector *lane = c6x_dw_lane_op(op, x, y);
+			r = r ? APPEND(lane, r) : lane;
+		}
+		break;
+	}
+	}
+	return LET("_wa", a, LET("_wb", b, r));
+}
+
+// \p op_e on the even registers of the pairs, or on two singles, into dst_e, and
+// \p op_o on the odd ones into dst_o.
+static RzILOpEffect *c6x_dw_apply(const C6xInsn *insn, C6xDwOp op_e, C6xDwOp op_o) {
+	RzILOpBitVector *r[2] = { NULL, NULL };
+	for (ut8 i = 0; i < 2; i++) {
+		RzILOpPure *a = c6x_dw_lane(&OP(0), i);
+		RzILOpPure *b = c6x_dw_lane(&OP(1), i);
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			rz_il_op_pure_free(r[0]);
+			return NULL;
+		}
+		r[i] = c6x_dw_word(i ? op_o : op_e, a, b);
+	}
+	return c6x_wr_dual(&OP(2), r[1], r[0]);
+}
+
+// \p v shifted left, right arithmetically (\p ar) or right logically by \p c.
+static RzILOpBitVector *c6x_shift_by(RzILOpPure *v, RzILOpPure *c, bool left, bool ar) {
+	if (left) {
+		return SHIFTL0(v, c);
+	}
+	return ar ? SHIFTRA(v, c) : SHIFTR0(v, c);
+}
+
+// The shift of a word, or of each halfword, of \p v by \p n, as SHL, SHR, SHRU, SHR2
+// and SHRU2 do: a register count keeps its six LSBs for a word and five for a
+// halfword, and a shift by the width or more leaves zeros or the sign.
+static RzILOpBitVector *c6x_shift_word(C6xInsnId id, RzILOpPure *v, RzILOpPure *n, bool reg) {
+	bool halves = id == C6X_INS_DSHL2 || id == C6X_INS_DSHR2 || id == C6X_INS_DSHRU2 || id == C6X_INS_SHL2;
+	bool left = id == C6X_INS_DSHL || id == C6X_INS_DSHL2 || id == C6X_INS_SHL2;
+	bool ar = id == C6X_INS_DSHR || id == C6X_INS_DSHR2;
+	if (!halves) {
+		return c6x_shift_by(v, reg ? LOGAND(n, U32(0x3f)) : n, left, ar);
+	}
+	RzILOpBitVector *lanes[2];
+	for (ut8 i = 0; i < 2; i++) {
+		RzILOpBitVector *h = UNSIGNED(16, i ? SHIFTR0(VARLP("_sv"), U32(16)) : VARLP("_sv"));
+		lanes[i] = c6x_shift_by(h, VARLP("_sn"), left, ar);
+	}
+	return LET("_sv", v, LET("_sn", UNSIGNED(16, LOGAND(n, U32(0x1f))), APPEND(lanes[1], lanes[0])));
+}
+
+// A packed compare of src1 and src2 into a bit per lane, those of src1_e and
+// src2_e in the low bits of dst, those of the odd registers above them.
+static RzILOpEffect *c6x_dw_cmp(const C6xInsn *insn, ut8 width, rz_il_bool_2args_op *mk) {
+	RzILOpBitVector *mask = NULL;
+	for (ut8 w = 0; w < 2; w++) {
+		for (ut8 i = 0; i < 32 / width; i++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), w);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), w);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(mask);
+				return NULL;
+			}
+			RzILOpBitVector *x = UNSIGNED(width, i ? SHIFTR0(a, U32(i * width)) : a);
+			RzILOpBitVector *y = UNSIGNED(width, i ? SHIFTR0(b, U32(i * width)) : b);
+			RzILOpBitVector *bit = ITE(mk(x, y), UN(1, 1), UN(1, 0));
+			mask = mask ? APPEND(bit, mask) : bit;
+		}
+	}
+	return c6x_wr(&OP(2), UNSIGNED(32, mask));
+}
+
+// CROT90 (\p rot90) multiplies a packed complex value by j, CROT270 by -j: the
+// real part is the upper halfword, and the part negated saturates.
+static RzILOpBitVector *c6x_crot(RzILOpPure *v, bool rot90) {
+	RzILOpBitVector *r = rot90 ? APPEND(c6x_satneg16(c6x_half_of("_c", false)), c6x_half_of("_c", true))
+				   : APPEND(c6x_half_of("_c", false), c6x_satneg16(c6x_half_of("_c", true)));
+	return LET("_c", v, r);
+}
+
+// Bits \p first and \p first + 1 of \p v, each widened to a halfword mask (XPND2).
+static RzILOpBitVector *c6x_xpnd2_of(RzILOpPure *v, ut8 first) {
+	RzILOpBitVector *h[2];
+	for (ut8 i = 0; i < 2; i++) {
+		h[i] = ITE(LSB(SHIFTR0(VARLP("_x"), U32(first + i))), UN(16, 0xffff), UN(16, 0));
+	}
+	return LET("_x", v, APPEND(h[1], h[0]));
+}
+
+// Bits \p first to \p first + 3 of \p v, each widened to a byte mask (XPND4).
+static RzILOpBitVector *c6x_xpnd4_of(RzILOpPure *v, ut8 first) {
+	RzILOpBitVector *b[4];
+	for (ut8 i = 0; i < 4; i++) {
+		b[i] = ITE(LSB(SHIFTR0(VARLP("_x"), U32(first + i))), UN(8, 0xff), UN(8, 0));
+	}
+	return LET("_x", v, APPEND(APPEND(b[3], b[2]), APPEND(b[1], b[0])));
+}
+
+// The C66x double-word integer forms, their shifts and compares, and the
+// rotations, unpacks and logical operations C66x adds.
+static RzILOpEffect *c6x_lift_c66x(const C6xInsn *insn, ut64 pc) {
+	switch (insn->id) {
+	case C6X_INS_DADD2: return c6x_dw_apply(insn, C6X_DW_ADD2, C6X_DW_ADD2);
+	case C6X_INS_DSUB2: return c6x_dw_apply(insn, C6X_DW_SUB2, C6X_DW_SUB2);
+	case C6X_INS_DSADD: return c6x_dw_apply(insn, C6X_DW_SADD, C6X_DW_SADD);
+	case C6X_INS_DSADD2: return c6x_dw_apply(insn, C6X_DW_SADD2, C6X_DW_SADD2);
+	case C6X_INS_DSSUB: return c6x_dw_apply(insn, C6X_DW_SSUB, C6X_DW_SSUB);
+	case C6X_INS_DSSUB2: return c6x_dw_apply(insn, C6X_DW_SSUB2, C6X_DW_SSUB2);
+	case C6X_INS_DAPYS2: return c6x_dw_apply(insn, C6X_DW_APYS2, C6X_DW_APYS2);
+	case C6X_INS_DMAX2: return c6x_dw_apply(insn, C6X_DW_MAX2, C6X_DW_MAX2);
+	case C6X_INS_DMIN2: return c6x_dw_apply(insn, C6X_DW_MIN2, C6X_DW_MIN2);
+	case C6X_INS_DMAXU4: return c6x_dw_apply(insn, C6X_DW_MAXU4, C6X_DW_MAXU4);
+	case C6X_INS_DMINU4: return c6x_dw_apply(insn, C6X_DW_MINU4, C6X_DW_MINU4);
+	case C6X_INS_DAVG2: return c6x_dw_apply(insn, C6X_DW_AVG2, C6X_DW_AVG2);
+	case C6X_INS_DAVGNR2: return c6x_dw_apply(insn, C6X_DW_AVGNR2, C6X_DW_AVGNR2);
+	case C6X_INS_DAVGU4: return c6x_dw_apply(insn, C6X_DW_AVGU4, C6X_DW_AVGU4);
+	case C6X_INS_DAVGNRU4: return c6x_dw_apply(insn, C6X_DW_AVGNRU4, C6X_DW_AVGNRU4);
+	case C6X_INS_DPACKL2: return c6x_dw_apply(insn, C6X_DW_PACK2, C6X_DW_PACK2);
+	case C6X_INS_DPACKH2: return c6x_dw_apply(insn, C6X_DW_PACKH2, C6X_DW_PACKH2);
+	case C6X_INS_DPACKHL2: return c6x_dw_apply(insn, C6X_DW_PACKHL2, C6X_DW_PACKHL2);
+	case C6X_INS_DPACKLH2: return c6x_dw_apply(insn, C6X_DW_PACKLH2, C6X_DW_PACKLH2);
+	case C6X_INS_DPACKH4: return c6x_dw_apply(insn, C6X_DW_PACKH4, C6X_DW_PACKH4);
+	case C6X_INS_DPACKL4: return c6x_dw_apply(insn, C6X_DW_PACKL4, C6X_DW_PACKL4);
+	case C6X_INS_DPACKLH4: return c6x_dw_apply(insn, C6X_DW_PACKL4, C6X_DW_PACKH4);
+	case C6X_INS_DSPACKU4: return c6x_dw_apply(insn, C6X_DW_SPACKU4, C6X_DW_SPACKU4);
+	case C6X_INS_DMVD: {
+		// DMV that lands later: dst_o = src1, dst_e = src2
+		return c6x_wr_dual(&OP(2), c6x_src(&OP(0)), c6x_src(&OP(1)));
+	}
+	case C6X_INS_DSHL:
+	case C6X_INS_DSHR:
+	case C6X_INS_DSHRU:
+	case C6X_INS_DSHL2:
+	case C6X_INS_DSHR2:
+	case C6X_INS_DSHRU2: {
+		// each register of the src2 pair shifted by the one count of src1
+		bool reg = OP(1).kind == C6X_OP_REG;
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 i = 0; i < 2; i++) {
+			RzILOpPure *v = c6x_pair_reg(&OP(0), i);
+			RzILOpPure *n = c6x_src(&OP(1));
+			if (!v || !n) {
+				rz_il_op_pure_free(v);
+				rz_il_op_pure_free(n);
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			r[i] = c6x_shift_word(insn->id, v, n, reg);
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	case C6X_INS_SHL2: {
+		RzILOpPure *v = c6x_src(&OP(0));
+		RzILOpPure *n = c6x_src(&OP(1));
+		if (!v || !n) {
+			rz_il_op_pure_free(v);
+			rz_il_op_pure_free(n);
+			return NULL;
+		}
+		return c6x_wr(&OP(2), c6x_shift_word(insn->id, v, n, true));
+	}
+	case C6X_INS_DCMPEQ2: return c6x_dw_cmp(insn, 16, rz_il_op_new_eq);
+	case C6X_INS_DCMPGT2: return c6x_dw_cmp(insn, 16, rz_il_op_new_sgt);
+	case C6X_INS_DCMPEQ4: return c6x_dw_cmp(insn, 8, rz_il_op_new_eq);
+	case C6X_INS_DCMPGTU4: return c6x_dw_cmp(insn, 8, rz_il_op_new_ugt);
+	case C6X_INS_CROT90:
+	case C6X_INS_CROT270: {
+		RzILOpPure *v = c6x_src(&OP(0));
+		return v ? c6x_wr(&OP(1), c6x_crot(v, insn->id == C6X_INS_CROT90)) : NULL;
+	}
+	case C6X_INS_DCROT90:
+	case C6X_INS_DCROT270: {
+		bool rot90 = insn->id == C6X_INS_DCROT90;
+		RzILOpPure *o = c6x_pair_reg(&OP(0), true);
+		RzILOpPure *e = c6x_pair_reg(&OP(0), false);
+		return c6x_wr_dual(&OP(1), o ? c6x_crot(o, rot90) : NULL, e ? c6x_crot(e, rot90) : NULL);
+	}
+	case C6X_INS_UNPKBU4: {
+		// each byte of src2 zero-extended to a halfword, bytes 1:0 into dst_e
+		RzILOpPure *o = c6x_src(&OP(0));
+		RzILOpPure *e = c6x_src(&OP(0));
+		RzILOpBitVector *ro = o ? LET("_u", o, APPEND(UNSIGNED(16, c6x_byte_of("_u", 3)), UNSIGNED(16, c6x_byte_of("_u", 2)))) : NULL;
+		RzILOpBitVector *re = e ? LET("_u", e, APPEND(UNSIGNED(16, c6x_byte_of("_u", 1)), UNSIGNED(16, c6x_byte_of("_u", 0)))) : NULL;
+		return c6x_wr_dual(&OP(1), ro, re);
+	}
+	case C6X_INS_UNPKH2:
+	case C6X_INS_UNPKHU2: {
+		// each halfword of src2 widened to a word, the lower into dst_e
+		bool sgn = insn->id == C6X_INS_UNPKH2;
+		RzILOpPure *o = c6x_src(&OP(0));
+		RzILOpPure *e = c6x_src(&OP(0));
+		RzILOpBitVector *ho = o ? UNSIGNED(16, SHIFTR0(o, U32(16))) : NULL;
+		RzILOpBitVector *he = e ? UNSIGNED(16, e) : NULL;
+		return c6x_wr_dual(&OP(1), ho ? (sgn ? SIGNED(32, ho) : UNSIGNED(32, ho)) : NULL, he ? (sgn ? SIGNED(32, he) : UNSIGNED(32, he)) : NULL);
+	}
+	case C6X_INS_DXPND2:
+	case C6X_INS_DXPND4: {
+		// the four (eight) LSBs of src2 widened to halfword (byte) masks, the
+		// lower ones into dst_e
+		bool x2 = insn->id == C6X_INS_DXPND2;
+		RzILOpPure *o = c6x_src(&OP(0));
+		RzILOpPure *e = c6x_src(&OP(0));
+		RzILOpBitVector *ro = o ? (x2 ? c6x_xpnd2_of(o, 2) : c6x_xpnd4_of(o, 4)) : NULL;
+		RzILOpBitVector *re = e ? (x2 ? c6x_xpnd2_of(e, 0) : c6x_xpnd4_of(e, 0)) : NULL;
+		return c6x_wr_dual(&OP(1), ro, re);
+	}
+	case C6X_INS_LAND:
+	case C6X_INS_LANDN:
+	case C6X_INS_LOR: {
+		// the sources as truth values; LANDN takes src2's negation
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		if (!a || !b) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			return NULL;
+		}
+		RzILOpBool *c;
+		if (insn->id == C6X_INS_LOR) {
+			c = OR(NON_ZERO(a), NON_ZERO(b));
+		} else if (insn->id == C6X_INS_LAND) {
+			c = AND(NON_ZERO(a), NON_ZERO(b));
+		} else {
+			c = AND(NON_ZERO(a), IS_ZERO(b));
+		}
+		return c6x_wr(&OP(2), ITE(c, U32(1), U32(0)));
+	}
+	case C6X_INS_MFENCE:
+		// the VM's memory accesses complete in order
+		return NOP();
+	default:
+		break;
+	}
+	return NULL;
+}
+
+// Register \p i of a quad operand, the least significant first.
+static RzILOpPure *c6x_quad_reg(const C6xOperand *o, ut8 i) {
+	return o->kind == C6X_OP_REGQUAD ? c6x_reg_read(c6x_reg_name(o->v.reg.side, o->v.reg.num + i)) : NULL;
+}
+
+// Write the four words \p r into the quad dst, the least significant first, all
+// computed before any register is written.
+static RzILOpEffect *c6x_wr_quad(const C6xOperand *o, RzILOpBitVector *r[4]) {
+	if (o->kind != C6X_OP_REGQUAD || !r[0] || !r[1] || !r[2] || !r[3]) {
+		for (ut8 i = 0; i < 4; i++) {
+			rz_il_op_pure_free(r[i]);
+		}
+		return NULL;
+	}
+	static const char *const tmp[4] = { "_q0", "_q1", "_q2", "_q3" };
+	RzILOpEffect *e = NULL;
+	for (int i = 3; i >= 0; i--) {
+		RzILOpEffect *w = c6x_reg_write(c6x_reg_name(o->v.reg.side, o->v.reg.num + i), VARL(tmp[i]));
+		e = e ? SEQ2(w, e) : w;
+	}
+	for (int i = 3; i >= 0; i--) {
+		e = SEQ2(SETL(tmp[i], r[i]), e);
+	}
+	return e;
+}
+
+// The 16x16 product of halfword \p high of words \p a and \p b, signed or unsigned.
+static RzILOpBitVector *c6x_mpy_half(RzILOpPure *a, RzILOpPure *b, bool high, bool sgn) {
+	return MUL(c6x_half16(a, high, sgn), c6x_half16(b, high, sgn));
+}
+
+// The doubled product SMPY2 keeps, 8000h squared saturating.
+static RzILOpBitVector *c6x_smpy_half(RzILOpPure *a, RzILOpPure *b, bool high) {
+	return LET("_p", c6x_mpy_half(a, b, high, true), ITE(EQ(VARLP("_p"), U32(0x40000000)), U32(0x7fffffff), SHIFTL0(VARLP("_p"), U32(1))));
+}
+
+// Two halfword products of byte \p i and \p i + 1 of \p a (signed when \p sgn) and \p b,
+// packed into a word as MPYU4 and MPYSU4 do.
+static RzILOpBitVector *c6x_mpy4_pair(RzILOpPure *a, RzILOpPure *b, ut8 i, bool sgn) {
+	RzILOpBitVector *p[2];
+	for (ut8 k = 0; k < 2; k++) {
+		RzILOpBitVector *x = c6x_byte_of("_ma", i + k);
+		p[k] = MUL(sgn ? SIGNED(16, x) : UNSIGNED(16, x), UNSIGNED(16, c6x_byte_of("_mb", i + k)));
+	}
+	return LET("_ma", a, LET("_mb", b, APPEND(p[1], p[0])));
+}
+
+// The product of the packed complex words \p a and \p b, or of \p a and the
+// conjugate of \p b, as 64-bit real and imaginary sums of 16x16 products. The
+// conjugate is exact: SPRUGH7's examples of DCCMPYR1 do not saturate its 8000h.
+static RzILOpBitVector *c6x_cplx_sum(bool imag, bool conj) {
+	if (conj) {
+		return imag ? SUB(MUL(SLO("_a"), SHI("_b")), MUL(SHI("_a"), SLO("_b"))) : ADD(MUL(SHI("_a"), SHI("_b")), MUL(SLO("_a"), SLO("_b")));
+	}
+	return imag ? ADD(MUL(SLO("_a"), SHI("_b")), MUL(SHI("_a"), SLO("_b"))) : SUB(MUL(SHI("_a"), SHI("_b")), MUL(SLO("_a"), SLO("_b")));
+}
+
+// CMPY of the words \p a and \p b: real (hi1 x hi2 - lo1 x lo2) in the upper word,
+// the imaginary part, saturated, in the lower. With \p b conjugated the real part
+// is the one 8000h can overflow, and saturates instead.
+static RzILOpBitVector *c6x_cmpy_word(RzILOpPure *a, RzILOpPure *b, bool conj) {
+	RzILOpBitVector *im = conj ? UNSIGNED(32, c6x_cplx_sum(true, true)) : c6x_sats32(c6x_cplx_sum(true, false));
+	RzILOpBitVector *re = conj ? c6x_sats32(c6x_cplx_sum(false, true)) : UNSIGNED(32, c6x_cplx_sum(false, false));
+	return LET("_a", a, LET("_b", b, APPEND(re, im)));
+}
+
+// CMPYR1 of the words \p a and \p b (\p b conjugated when \p conj), rounded into
+// one word, the real part above.
+static RzILOpBitVector *c6x_cmpyr1_word(RzILOpPure *a, RzILOpPure *b, bool conj) {
+	RzILOpBitVector *lo = c6x_cmpyr_half(c6x_cplx_sum(true, conj), true);
+	RzILOpBitVector *hi = c6x_cmpyr_half(c6x_cplx_sum(false, conj), true);
+	return LET("_a", a, LET("_b", b, APPEND(hi, lo)));
+}
+
+// The four-way dot product of the halfwords of the pairs (or quad halves) \p a
+// and \p b, 64 bits wide; src2's halfwords unsigned when \p su.
+static RzILOpBitVector *c6x_dotp4h_sum(RzILOpPure *a[2], RzILOpPure *b[2], bool su) {
+	RzILOpBitVector *acc = NULL;
+	for (ut8 w = 0; w < 2; w++) {
+		for (ut8 h = 0; h < 2; h++) {
+			RzILOpPure *x = h ? DUP(a[w]) : a[w];
+			RzILOpPure *y = h ? DUP(b[w]) : b[w];
+			RzILOpBitVector *hx = SIGNED(64, UNSIGNED(16, h ? SHIFTR0(x, U32(16)) : x));
+			RzILOpBitVector *hy = UNSIGNED(16, h ? SHIFTR0(y, U32(16)) : y);
+			RzILOpBitVector *p = MUL(hx, su ? UNSIGNED(64, hy) : SIGNED(64, hy));
+			acc = acc ? ADD(acc, p) : p;
+		}
+	}
+	return acc;
+}
+
+// The Q31 product sum \p p + \p q rounded and shifted right by 31, saturated,
+// computed at 96 bits since two 32x32 products overflow 64.
+static RzILOpBitVector *c6x_q31_round(RzILOpBitVector *p, RzILOpBitVector *q) {
+	RzILOpBitVector *s = SHIFTRA(ADD(q ? ADD(p, q) : p, SN(96, 1LL << 30)), U32(31));
+	return LET("_r", s,
+		ITE(SGT(VARLP("_r"), SN(96, 0x7fffffff)), U32(0x7fffffff),
+			ITE(SLT(VARLP("_r"), SN(96, -0x80000000LL)), U32(0x80000000), UNSIGNED(32, VARLP("_r")))));
+}
+
+// A signed 32x32 product at 96 bits.
+static RzILOpBitVector *c6x_mul96(RzILOpPure *a, RzILOpPure *b) {
+	return MUL(SIGNED(96, a), SIGNED(96, b));
+}
+
+// CMPY32R1 and CCMPY32R1 (\p conj, src2 conjugated) of the Q31 complex pairs, the
+// real part in the odd register.
+static RzILOpEffect *c6x_cmpy32r1(const C6xInsn *insn, bool conj) {
+	RzILOpPure *ar[2], *ai[2], *br[2], *bi[2];
+	for (ut8 i = 0; i < 2; i++) {
+		ar[i] = c6x_pair_reg(&OP(0), true);
+		ai[i] = c6x_pair_reg(&OP(0), false);
+		br[i] = c6x_pair_reg(&OP(1), true);
+		bi[i] = c6x_pair_reg(&OP(1), false);
+	}
+	if (!ar[0] || !br[0]) {
+		for (ut8 i = 0; i < 2; i++) {
+			rz_il_op_pure_free(ar[i]);
+			rz_il_op_pure_free(ai[i]);
+			rz_il_op_pure_free(br[i]);
+			rz_il_op_pure_free(bi[i]);
+		}
+		return NULL;
+	}
+	// a x b = (ar br - ai bi) + j (ar bi + ai br); a x conj(b) = (ar br + ai bi) + j (ai br - ar bi)
+	RzILOpBitVector *re_p = c6x_mul96(ar[0], br[0]);
+	RzILOpBitVector *re_q = c6x_mul96(ai[0], bi[0]);
+	RzILOpBitVector *re = c6x_q31_round(conj ? ADD(re_p, re_q) : SUB(re_p, re_q), NULL);
+	RzILOpBitVector *im = conj ? c6x_q31_round(SUB(c6x_mul96(ai[1], br[1]), c6x_mul96(ar[1], bi[1])), NULL)
+				   : c6x_q31_round(c6x_mul96(ar[1], bi[1]), c6x_mul96(ai[1], br[1]));
+	return c6x_wr_dual(&OP(2), re, im);
+}
+
+// The real or imaginary part of CMATMPY's row \p k: src1_e x src2_k + src1_o x
+// src2_(k + 2), src1 conjugated when \p conj, exact as the 34 bits the manual keeps.
+static RzILOpBitVector *c6x_cmat_sum(const C6xInsn *insn, ut8 k, bool imag, bool conj) {
+	RzILOpBitVector *sum = NULL;
+	for (ut8 w = 0; w < 2; w++) {
+		RzILOpPure *v = c6x_pair_reg(&OP(0), w);
+		RzILOpPure *m = c6x_quad_reg(&OP(1), k + 2 * w);
+		if (!v || !m) {
+			rz_il_op_pure_free(v);
+			rz_il_op_pure_free(m);
+			rz_il_op_pure_free(sum);
+			return NULL;
+		}
+		// m x conj(v) is conj(v) x m
+		RzILOpBitVector *t = LET("_a", m, LET("_b", v, c6x_cplx_sum(imag, conj)));
+		sum = sum ? ADD(sum, t) : t;
+	}
+	return sum;
+}
+
+// CMATMPY and CMATMPYR1, and CCMATMPY and CCMATMPYR1 (\p conj): the src1 vector
+// times the src2 matrix, saturated once at the end, or rounded (\p r1) into one
+// word a row.
+static RzILOpEffect *c6x_cmatmpy(const C6xInsn *insn, bool conj, bool r1) {
+	RzILOpBitVector *re[2], *im[2];
+	for (ut8 k = 0; k < 2; k++) {
+		re[k] = c6x_cmat_sum(insn, k, false, conj);
+		im[k] = c6x_cmat_sum(insn, k, true, conj);
+	}
+	if (!re[0] || !re[1] || !im[0] || !im[1]) {
+		for (ut8 k = 0; k < 2; k++) {
+			rz_il_op_pure_free(re[k]);
+			rz_il_op_pure_free(im[k]);
+		}
+		return NULL;
+	}
+	if (r1) {
+		RzILOpBitVector *w[2];
+		for (ut8 k = 0; k < 2; k++) {
+			w[k] = APPEND(c6x_cmpyr_half(re[k], true), c6x_cmpyr_half(im[k], true));
+		}
+		return c6x_wr_dual(&OP(2), w[1], w[0]);
+	}
+	RzILOpBitVector *r[4] = { c6x_sats32(im[0]), c6x_sats32(re[0]), c6x_sats32(im[1]), c6x_sats32(re[1]) };
+	return c6x_wr_quad(&OP(2), r);
+}
+
+// The C66x multiplies of halfword and byte lanes, dot products and complex forms.
+static RzILOpEffect *c6x_lift_c66x_mpy(const C6xInsn *insn, ut64 pc) {
+	switch (insn->id) {
+	case C6X_INS_MPYU2: {
+		// the unsigned products of the low halfwords into dst_e, of the high into dst_o
+		RzILOpPure *a = c6x_src(&OP(0));
+		RzILOpPure *b = c6x_src(&OP(1));
+		RzILOpPure *a2 = c6x_src(&OP(0));
+		RzILOpPure *b2 = c6x_src(&OP(1));
+		if (!a || !b || !a2 || !b2) {
+			rz_il_op_pure_free(a);
+			rz_il_op_pure_free(b);
+			rz_il_op_pure_free(a2);
+			rz_il_op_pure_free(b2);
+			return NULL;
+		}
+		return c6x_wr_dual(&OP(2), c6x_mpy_half(a, b, true, false), c6x_mpy_half(a2, b2, false, false));
+	}
+	case C6X_INS_DMPY2:
+	case C6X_INS_DMPYU2:
+	case C6X_INS_DSMPY2:
+	case C6X_INS_DMPYU4:
+	case C6X_INS_DMPYSU4: {
+		// two MPY2s (MPYU2, SMPY2, MPYU4, MPYSU4), the even registers' into the low pair
+		RzILOpBitVector *r[4];
+		for (ut8 i = 0; i < 4; i++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), i / 2);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), i / 2);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				r[i] = NULL;
+				continue;
+			}
+			switch (insn->id) {
+			case C6X_INS_DMPY2: r[i] = c6x_mpy_half(a, b, i & 1, true); break;
+			case C6X_INS_DMPYU2: r[i] = c6x_mpy_half(a, b, i & 1, false); break;
+			case C6X_INS_DSMPY2: r[i] = c6x_smpy_half(a, b, i & 1); break;
+			default: r[i] = c6x_mpy4_pair(a, b, 2 * (i & 1), insn->id == C6X_INS_DMPYSU4); break;
+			}
+		}
+		return c6x_wr_quad(&OP(2), r);
+	}
+	case C6X_INS_DOTP4H:
+	case C6X_INS_DOTPSU4H: {
+		// four halfword products of the pairs summed, saturated into a word or
+		// whole into a pair
+		bool su = insn->id == C6X_INS_DOTPSU4H;
+		RzILOpPure *a[2] = { c6x_pair_reg(&OP(0), false), c6x_pair_reg(&OP(0), true) };
+		RzILOpPure *b[2] = { c6x_pair_reg(&OP(1), false), c6x_pair_reg(&OP(1), true) };
+		if (!a[0] || !a[1] || !b[0] || !b[1]) {
+			for (ut8 i = 0; i < 2; i++) {
+				rz_il_op_pure_free(a[i]);
+				rz_il_op_pure_free(b[i]);
+			}
+			return NULL;
+		}
+		RzILOpBitVector *sum = c6x_dotp4h_sum(a, b, su);
+		return OP(2).kind == C6X_OP_REGPAIR ? c6x_wr_pair64(&OP(2), sum) : c6x_wr(&OP(2), c6x_sats32(sum));
+	}
+	case C6X_INS_DDOTP4H:
+	case C6X_INS_DDOTPSU4H: {
+		// DOTP4H of the low pairs of the quads into dst_e, of the high into dst_o
+		bool su = insn->id == C6X_INS_DDOTPSU4H;
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *a[2] = { c6x_quad_reg(&OP(0), 2 * w), c6x_quad_reg(&OP(0), 2 * w + 1) };
+			RzILOpPure *b[2] = { c6x_quad_reg(&OP(1), 2 * w), c6x_quad_reg(&OP(1), 2 * w + 1) };
+			if (!a[0] || !a[1] || !b[0] || !b[1]) {
+				for (ut8 i = 0; i < 2; i++) {
+					rz_il_op_pure_free(a[i]);
+					rz_il_op_pure_free(b[i]);
+				}
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			r[w] = c6x_sats32(c6x_dotp4h_sum(a, b, su));
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	case C6X_INS_DCMPY:
+	case C6X_INS_DCCMPY: {
+		// CMPY of each register of the pairs, src2 conjugated for DCCMPY
+		bool conj = insn->id == C6X_INS_DCCMPY;
+		RzILOpBitVector *r[4] = { NULL, NULL, NULL, NULL };
+		RzILOpBitVector *p[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), w);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), w);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(p[0]);
+				return NULL;
+			}
+			p[w] = c6x_cmpy_word(a, b, conj);
+		}
+		static const char *const pv[2] = { "_ce", "_co" };
+		for (ut8 i = 0; i < 4; i++) {
+			r[i] = UNSIGNED(32, (i & 1) ? SHIFTR0(VARL(pv[i / 2]), U32(32)) : VARL(pv[i / 2]));
+		}
+		RzILOpEffect *wr = c6x_wr_quad(&OP(2), r);
+		if (!wr) {
+			rz_il_op_pure_free(p[0]);
+			rz_il_op_pure_free(p[1]);
+			return NULL;
+		}
+		return SEQ3(SETL("_ce", p[0]), SETL("_co", p[1]), wr);
+	}
+	case C6X_INS_DCMPYR1:
+	case C6X_INS_DCCMPYR1: {
+		// CMPYR1 of each register of the pairs, src2 conjugated for DCCMPYR1
+		bool conj = insn->id == C6X_INS_DCCMPYR1;
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), w);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), w);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			r[w] = c6x_cmpyr1_word(a, b, conj);
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	case C6X_INS_CMPY32R1:
+	case C6X_INS_CCMPY32R1:
+		return c6x_cmpy32r1(insn, insn->id == C6X_INS_CCMPY32R1);
+	case C6X_INS_CMATMPY: return c6x_cmatmpy(insn, false, false);
+	case C6X_INS_CCMATMPY: return c6x_cmatmpy(insn, true, false);
+	case C6X_INS_CMATMPYR1: return c6x_cmatmpy(insn, false, true);
+	case C6X_INS_CCMATMPYR1: return c6x_cmatmpy(insn, true, true);
+	case C6X_INS_QMPY32:
+	case C6X_INS_QSMPY32R1: {
+		// four MPY32s keeping the low word, or Q31 products rounded
+		bool q31 = insn->id == C6X_INS_QSMPY32R1;
+		RzILOpBitVector *r[4];
+		for (ut8 i = 0; i < 4; i++) {
+			RzILOpPure *a = c6x_quad_reg(&OP(0), i);
+			RzILOpPure *b = c6x_quad_reg(&OP(1), i);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				r[i] = NULL;
+				continue;
+			}
+			r[i] = q31 ? c6x_q31_round(c6x_mul96(a, b), NULL) : MUL(a, b);
+		}
+		return c6x_wr_quad(&OP(2), r);
+	}
+	default:
+		break;
+	}
+	return NULL;
+}
+
+// The C66x floating-point forms: those that are older ones landing sooner, and
+// two- and four-way ones.
+static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
+	switch (insn->id) {
+	case C6X_INS_FADDSP: return c6x_fsp(insn, rz_il_op_new_fadd);
+	case C6X_INS_FSUBSP: return c6x_fsp(insn, rz_il_op_new_fsub);
+	case C6X_INS_FADDDP: return c6x_fdp(insn, rz_il_op_new_fadd);
+	case C6X_INS_FSUBDP: return c6x_fdp(insn, rz_il_op_new_fsub);
+	case C6X_INS_FMPYDP: return c6x_fdp(insn, rz_il_op_new_fmul);
+	case C6X_INS_DADDSP:
+	case C6X_INS_DSUBSP:
+	case C6X_INS_DMPYSP: {
+		// ADDSP, SUBSP or MPYSP of each register of the pairs
+		c6x_fbin_op *mk = rz_il_op_new_fmul;
+		if (insn->id != C6X_INS_DMPYSP) {
+			mk = insn->id == C6X_INS_DADDSP ? rz_il_op_new_fadd : rz_il_op_new_fsub;
+		}
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), w);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), w);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			r[w] = F2BV(mk(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b)));
+		}
+		return c6x_wr_dual(&OP(2), r[1], r[0]);
+	}
+	case C6X_INS_QMPYSP: {
+		RzILOpBitVector *r[4];
+		for (ut8 i = 0; i < 4; i++) {
+			RzILOpPure *a = c6x_quad_reg(&OP(0), i);
+			RzILOpPure *b = c6x_quad_reg(&OP(1), i);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				r[i] = NULL;
+				continue;
+			}
+			r[i] = F2BV(rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b)));
+		}
+		return c6x_wr_quad(&OP(2), r);
+	}
+	case C6X_INS_CMPYSP: {
+		// the four products of a complex multiply, the one that is subtracted
+		// negated: dst_0 = e1 x o2, dst_1 = -(e1 x e2), dst_2 = o1 x e2, dst_3 = o1 x o2
+		static const ut8 w1[4] = { 0, 0, 1, 1 };
+		static const ut8 w2[4] = { 1, 0, 0, 1 };
+		RzILOpBitVector *r[4];
+		for (ut8 i = 0; i < 4; i++) {
+			RzILOpPure *a = c6x_pair_reg(&OP(0), w1[i]);
+			RzILOpPure *b = c6x_pair_reg(&OP(1), w2[i]);
+			if (!a || !b) {
+				rz_il_op_pure_free(a);
+				rz_il_op_pure_free(b);
+				r[i] = NULL;
+				continue;
+			}
+			RzILOpFloat *p = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b));
+			r[i] = F2BV(i == 1 ? FNEG(p) : p);
+		}
+		return c6x_wr_quad(&OP(2), r);
+	}
+	case C6X_INS_DINTSP:
+	case C6X_INS_DINTSPU:
+	case C6X_INS_DSPINT: {
+		// INTSP, INTSPU or SPINT of each register of the pair
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *v = c6x_pair_reg(&OP(0), w);
+			if (!v) {
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			switch (insn->id) {
+			case C6X_INS_DINTSP: r[w] = F2BV(SINT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, v)); break;
+			case C6X_INS_DINTSPU: r[w] = F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, v)); break;
+			default: r[w] = F2SINT(32, RZ_FLOAT_RMODE_RNE, FLOATV32(v)); break;
+			}
+		}
+		return c6x_wr_dual(&OP(1), r[1], r[0]);
+	}
+	case C6X_INS_DINTHSP:
+	case C6X_INS_DINTHSPU: {
+		// each halfword of src2 as a float, the lower into dst_e
+		bool sgn = insn->id == C6X_INS_DINTHSP;
+		RzILOpBitVector *r[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *v = c6x_src(&OP(0));
+			if (!v) {
+				rz_il_op_pure_free(r[0]);
+				return NULL;
+			}
+			RzILOpBitVector *h = c6x_half16(v, w, sgn);
+			r[w] = F2BV(sgn ? SINT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, h) : INT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, h));
+		}
+		return c6x_wr_dual(&OP(1), r[1], r[0]);
+	}
+	case C6X_INS_DSPINTH: {
+		// SPINT of each register of the pair saturated to a halfword, dst_e's below
+		RzILOpBitVector *h[2] = { NULL, NULL };
+		for (ut8 w = 0; w < 2; w++) {
+			RzILOpPure *v = c6x_pair_reg(&OP(0), w);
+			if (!v) {
+				rz_il_op_pure_free(h[0]);
+				return NULL;
+			}
+			h[w] = c6x_sat_s(F2SINT(32, RZ_FLOAT_RMODE_RNE, FLOATV32(v)), 16);
+		}
+		return c6x_wr(&OP(1), APPEND(h[1], h[0]));
+	}
+	default:
+		break;
+	}
+	return NULL;
+}
+
 // Floating-point arithmetic, compares and conversions.
 static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
@@ -1791,6 +3088,11 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 		// signed 32-bit integer -> single-precision float
 		RzILOpPure *s = c6x_src(&OP(0));
 		return s ? c6x_wr(&OP(1), F2BV(SINT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, s))) : NULL;
+	}
+	case C6X_INS_INTSPU: {
+		// unsigned 32-bit integer -> single-precision float
+		RzILOpPure *s = c6x_src(&OP(0));
+		return s ? c6x_wr(&OP(1), F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, s))) : NULL;
 	}
 	case C6X_INS_SPINT: {
 		// single-precision float -> signed 32-bit integer, round to nearest even
@@ -1858,7 +3160,6 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpPure *s2 = c6x_src(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1872,7 +3173,6 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 		RzILOpPure *s1 = c6x_src(&OP(0));
 		RzILOpBitVector *s2 = c6x_pair64(&OP(1));
 		if (!s1 || !s2) {
-			rz_warn_if_reached();
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
@@ -1893,6 +3193,11 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 		// signed 32-bit integer -> double-precision float (into a pair)
 		RzILOpPure *s = c6x_src(&OP(0));
 		return s ? c6x_wr_pair64(&OP(1), F2BV(SINT2F(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, s))) : NULL;
+	}
+	case C6X_INS_INTDPU: {
+		// unsigned 32-bit integer -> double-precision float (into a pair), exact
+		RzILOpPure *s = c6x_src(&OP(0));
+		return s ? c6x_wr_pair64(&OP(1), F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, s))) : NULL;
 	}
 	case C6X_INS_SPDP: {
 		// single-precision -> double-precision (into a pair)
@@ -1987,8 +3292,10 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_BNOP:
 	case C6X_INS_BPOS:
 	case C6X_INS_CALLP:
+	case C6X_INS_DINT:
 	case C6X_INS_IDLE:
 	case C6X_INS_NOP:
+	case C6X_INS_RINT:
 		return c6x_lift_control(insn, pc);
 	case C6X_INS_MV:
 	case C6X_INS_MVC:
@@ -2128,6 +3435,116 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_SMPY2:
 	case C6X_INS_SPACKU4:
 		return c6x_lift_dotp(insn, pc);
+	case C6X_INS_ADDSUB:
+	case C6X_INS_ADDSUB2:
+	case C6X_INS_DADD:
+	case C6X_INS_DDOTP4:
+	case C6X_INS_DDOTPH2R:
+	case C6X_INS_DDOTPL2R:
+	case C6X_INS_DMV:
+	case C6X_INS_DPACK2:
+	case C6X_INS_DPACKX2:
+	case C6X_INS_DSUB:
+	case C6X_INS_MPY2IR:
+	case C6X_INS_SADDSUB:
+	case C6X_INS_SADDSUB2:
+	case C6X_INS_SHFL3:
+	case C6X_INS_SMPY32:
+	case C6X_INS_SUBABS4:
+		return c6x_lift_dual(insn, pc);
+	case C6X_INS_GMPY:
+	case C6X_INS_GMPY4:
+	case C6X_INS_XORMPY:
+		return c6x_lift_gf(insn, pc);
+	case C6X_INS_CROT270:
+	case C6X_INS_CROT90:
+	case C6X_INS_DADD2:
+	case C6X_INS_DAPYS2:
+	case C6X_INS_DAVG2:
+	case C6X_INS_DAVGNR2:
+	case C6X_INS_DAVGNRU4:
+	case C6X_INS_DAVGU4:
+	case C6X_INS_DCMPEQ2:
+	case C6X_INS_DCMPEQ4:
+	case C6X_INS_DCMPGT2:
+	case C6X_INS_DCMPGTU4:
+	case C6X_INS_DCROT270:
+	case C6X_INS_DCROT90:
+	case C6X_INS_DMAX2:
+	case C6X_INS_DMAXU4:
+	case C6X_INS_DMIN2:
+	case C6X_INS_DMINU4:
+	case C6X_INS_DMVD:
+	case C6X_INS_DPACKH2:
+	case C6X_INS_DPACKH4:
+	case C6X_INS_DPACKHL2:
+	case C6X_INS_DPACKL2:
+	case C6X_INS_DPACKL4:
+	case C6X_INS_DPACKLH2:
+	case C6X_INS_DPACKLH4:
+	case C6X_INS_DSADD:
+	case C6X_INS_DSADD2:
+	case C6X_INS_DSHL:
+	case C6X_INS_DSHL2:
+	case C6X_INS_DSHR:
+	case C6X_INS_DSHR2:
+	case C6X_INS_DSHRU:
+	case C6X_INS_DSHRU2:
+	case C6X_INS_DSPACKU4:
+	case C6X_INS_DSSUB:
+	case C6X_INS_DSSUB2:
+	case C6X_INS_DSUB2:
+	case C6X_INS_DXPND2:
+	case C6X_INS_DXPND4:
+	case C6X_INS_LAND:
+	case C6X_INS_LANDN:
+	case C6X_INS_LOR:
+	case C6X_INS_MFENCE:
+	case C6X_INS_SHL2:
+	case C6X_INS_UNPKBU4:
+	case C6X_INS_UNPKH2:
+	case C6X_INS_UNPKHU2:
+		return c6x_lift_c66x(insn, pc);
+	case C6X_INS_CCMATMPY:
+	case C6X_INS_CCMATMPYR1:
+	case C6X_INS_CCMPY32R1:
+	case C6X_INS_CMATMPY:
+	case C6X_INS_CMATMPYR1:
+	case C6X_INS_CMPY32R1:
+	case C6X_INS_DCCMPY:
+	case C6X_INS_DCCMPYR1:
+	case C6X_INS_DCMPY:
+	case C6X_INS_DCMPYR1:
+	case C6X_INS_DDOTP4H:
+	case C6X_INS_DDOTPSU4H:
+	case C6X_INS_DMPY2:
+	case C6X_INS_DMPYSU4:
+	case C6X_INS_DMPYU2:
+	case C6X_INS_DMPYU4:
+	case C6X_INS_DOTP4H:
+	case C6X_INS_DOTPSU4H:
+	case C6X_INS_DSMPY2:
+	case C6X_INS_MPYU2:
+	case C6X_INS_QMPY32:
+	case C6X_INS_QSMPY32R1:
+		return c6x_lift_c66x_mpy(insn, pc);
+	case C6X_INS_CMPYSP:
+	case C6X_INS_DADDSP:
+	case C6X_INS_DINTHSP:
+	case C6X_INS_DINTHSPU:
+	case C6X_INS_DINTSP:
+	case C6X_INS_DINTSPU:
+	case C6X_INS_DMPYSP:
+	case C6X_INS_DSPINT:
+	case C6X_INS_DSPINTH:
+	case C6X_INS_DSUBSP:
+	case C6X_INS_FADDDP:
+	case C6X_INS_FADDSP:
+	case C6X_INS_FMPYDP:
+	case C6X_INS_FSUBDP:
+	case C6X_INS_FSUBSP:
+	case C6X_INS_QMPYSP:
+		return c6x_lift_c66x_fp(insn, pc);
 	case C6X_INS_ADDDP:
 	case C6X_INS_ADDSP:
 	case C6X_INS_CMPEQDP:
@@ -2140,7 +3557,9 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	case C6X_INS_DPSP:
 	case C6X_INS_DPTRUNC:
 	case C6X_INS_INTDP:
+	case C6X_INS_INTDPU:
 	case C6X_INS_INTSP:
+	case C6X_INS_INTSPU:
 	case C6X_INS_MPYDP:
 	case C6X_INS_MPYSP:
 	case C6X_INS_MPYSP2DP:

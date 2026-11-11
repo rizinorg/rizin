@@ -306,6 +306,10 @@ static bool c6x_in_window(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 add
  */
 static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 	const C6xInsn *insn, ut64 addr) {
+	if (insn->is_header) {
+		// not an instruction: execution runs past it
+		return rz_il_op_new_nop();
+	}
 	C6xPacketRef pkt;
 	C6xInsn slots[C6X_FP_SLOTS];
 	size_t n = c6x_decode_packet(analysis, c6x, addr, slots, &pkt);
@@ -1086,6 +1090,14 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 				"ctr tsch    .32 352 0  # Time-stamp counter (high 32) register\n"
 				"ctr tscl    .32 356 0  # Time-stamp counter (low 32) register\n"
 				"ctr tsr     .32 360 0  # Task state register\n");
+		}
+		const C6xArchDesc *desc = c6x_desc_from_cpu(cpu0);
+		if (desc && (desc->features & C6X_FEAT_FP)) {
+			// floating-point configuration registers, on the C67x and later
+			rz_strbuf_append(&sb,
+				"ctr fadcr   .32 364 0  # Floating-point adder configuration register\n"
+				"ctr faucr   .32 368 0  # Floating-point auxiliary configuration register\n"
+				"ctr fmcr    .32 372 0  # Floating-point multiplier configuration register\n");
 		}
 		rz_strbuf_append(&sb,
 			"gpr	a0:a1  	.64	0	0\n"

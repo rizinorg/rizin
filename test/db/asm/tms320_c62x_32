@@ -26,7 +26,7 @@ d "clr .s1 a1,8,16,a2" c8100501 0x0 (set a2 (& (var a1) (bv 32 0xfffe00ff)))
 d "lmbd .l1 a0,a1,a2" 780d0401 0x0 (seq (set _clzv (let _lm (var a1) (ite (is_zero (& (var a0) (bv 32 0x1))) (~ (var _lm)) (var _lm)))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (var _n)))
 d "norm .l1 a1,a2" 780c0401 0x0 (seq (set _clzv (let _nm (var a1) (^ (var _nm) (>> (var _nm) (bv 32 0x1f) (msb (var _nm)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x1))))
 # subtract-conditional divide step (RzIL)
-d "subc .l1 a0,a1,a2" 78090401 0x0 (set a2 (let _s1 (var a0) (let _df (- (var _s1) (var a1)) (ite (|| (! (sle (var _df) (bv 32 0x0))) (== (var _df) (bv 32 0x0))) (| (<< (var _df) (bv 32 0x1) false) (bv 32 0x1)) (<< (var _s1) (bv 32 0x1) false)))))
+d "subc .l1 a0,a1,a2" 78090401 0x0 (set a2 (let _s1 (var a0) (let _s2 (var a1) (ite (|| (! (ule (var _s1) (var _s2))) (== (var _s1) (var _s2))) (| (<< (- (var _s1) (var _s2)) (bv 32 0x1) false) (bv 32 0x1)) (<< (var _s1) (bv 32 0x1) false)))))
 # NORM long (register-pair) form
 d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))
 # 40-bit long ABS and SAT (decode)
@@ -51,7 +51,7 @@ d "invalid" e6a84406 0x0
 # C62x and C67x compare unsigned against a ucst4: with the field's MSB set the result is invalid
 # (SPRU732J CMPGTU, CMPLTU); dis6x prints the low four bits, or all five for a long src2
 d "cmpgtu .l2 0xc,b11,b13" da89ad06 0x0 (set b13 (ite (! (ule (bv 32 0xc) (var b11))) (bv 32 0x1) (bv 32 0x0)))
-d "cmpltu .l2 0xf,b7:b6,b13" 9aeb9906 0x0
+d "cmpltu .l2 0xf,b7:b6,b13" 9aeb9906 0x0 (set b13 (ite (&& (ule (cast 64 false (bv 32 0xf)) (& (append (var b7) (var b6)) (bv 64 0xffffffffff))) (! (== (cast 64 false (bv 32 0xf)) (& (append (var b7) (var b6)) (bv 64 0xffffffffff))))) (bv 32 0x1) (bv 32 0x0)))
 # dis6x: [ A1] CMPLTU.L2 0xc,B11,B13
 d "invalid" da8baf86 0x0
 # dis6x: [!A1] CMPGTU.L2 0x17,B13:B12,B13

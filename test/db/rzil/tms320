@@ -1385,3 +1385,1453 @@ EXPECT_ERR=<<EOF
 ERROR: RzIL: lifting not implemented at address 0x00000008
 EOF
 RUN
+
+# Each run of steps starts where the last one stopped: the program counter
+# is the VM's own, not a variable written back over the profile's PC.
+NAME=c6x consecutive steps carry the program counter
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 5820840058200801
+s 0
+pd 2
+aezi
+aezs 1
+aezs 1
+ar a1
+ar a2
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      add   .l1 0x1,a1,a1
+            0x00000004      add   .l1 0x1,a2,a2
+a1 = 0x00000001
+a2 = 0x00000001
+ PC: 0x00000008
+EOF
+RUN
+
+# Straight-line code runs over the header that ends a compact fetch packet.
+NAME=c6x the VM steps over a fetch-packet header
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 000000e0 @ 0x1c
+s 0x14
+aezi
+aezsu 0x20
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00000020
+EOF
+RUN
+
+# MVC from PCE1 reads the address of the fetch packet it issues from.
+NAME=c6x mvc reads pce1 as the address of its fetch packet
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx e2034000 @ 0x28
+s 0x28
+pd 1
+aezi
+aezs 1
+ar b0
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000028      mvc   .s2 pce1,b0
+b0 = 0x00000020
+ PC: 0x0000002c
+EOF
+RUN
+
+# DINT saves GIE (bit 0 of TSR) in SGIE (bit 1) and clears GIE in TSR and CSR;
+# RINT puts SGIE back into both and clears it.
+NAME=c6x dint and rint save and restore the interrupt enable
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 0040001000600010
+s 0
+pd 2
+aezi
+ar tsr=0x5
+ar csr=0x3
+aezs 1
+ar tsr
+ar csr
+aezs 1
+ar tsr
+ar csr
+EOF
+EXPECT=<<EOF
+            0x00000000      dint
+            0x00000004      rint
+tsr = 0x00000006
+csr = 0x00000002
+tsr = 0x00000005
+csr = 0x00000003
+EOF
+RUN
+
+# INTSPU and INTDPU read their source as unsigned (SPRUFE8B's INTDPU
+# example).
+NAME=c6x intspu and intdpu convert unsigned integers
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 3809900278071003
+s 0
+pd 2
+aezi
+ar a4=0xffffffde
+aezs 2
+ar a5
+ar a6
+ar a7
+EOF
+EXPECT=<<EOF
+            0x00000000      intspu .l1 a4,a5
+            0x00000004      intdpu .l1 a4,a7:a6
+a5 = 0x4f800000
+a6 = 0xfbc00000
+a7 = 0x41efffff
+EOF
+RUN
+
+# The floating-point configuration registers are VM state MVC reaches.
+NAME=c6x mvc reaches the floating-point configuration registers
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx a2031009e203c802
+s 0
+pd 2
+aezi
+ar b4=0x200
+aezs 2
+ar b5
+ar fadcr
+EOF
+EXPECT=<<EOF
+            0x00000000      mvc   .s2 b4,fadcr
+            0x00000004      mvc   .s2 fadcr,b5
+b5 = 0x00000200
+fadcr = 0x00000200
+EOF
+RUN
+
+# ADDSUB, ADDSUB2, SADDSUB, SADDSUB2, DPACK2, DPACKX2, SHFL3, DMV and SUBABS4 on
+# the operands of SPRUFE8B's examples; the SADDSUB pair saturates the difference.
+NAME=c6x the C64x+ dual-result and packing forms execute
+FILE=malloc://320
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 98010411 @ 0x0
+wx b8010411 @ 0x20
+wx d8010411 @ 0x40
+wx f8010411 @ 0x60
+wx 98060411 @ 0x80
+wx 78160011 @ 0xa0
+wx d8060411 @ 0xc0
+wx f21e0401 @ 0xe0
+wx 584ba004 @ 0x100
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+pi 1 @ 0x60
+pi 1 @ 0x80
+pi 1 @ 0xa0
+pi 1 @ 0xc0
+pi 1 @ 0xe0
+pi 1 @ 0x100
+aezi
+ar PC=0x0
+ar a0=0x700c005
+ar a1=0xffffffff
+aezs 1
+ar a2
+ar a3
+ar PC=0x20
+ar a0=0x700c005
+ar a1=0xffff0001
+aezs 1
+ar a2
+ar a3
+ar PC=0x40
+ar a0=0x80000000
+ar a1=0x1
+aezs 1
+ar a2
+ar a3
+ar PC=0x60
+ar a0=0x700c005
+ar a1=0xffff0001
+aezs 1
+ar a2
+ar a3
+ar PC=0x80
+ar a0=0x87654321
+ar a1=0x12345678
+aezs 1
+ar a2
+ar a3
+ar PC=0xa0
+ar a0=0x3fff8000
+ar b0=0x40007777
+aezs 1
+ar a2
+ar a3
+ar PC=0xc0
+ar a0=0x87654321
+ar a1=0x12345678
+aezs 1
+ar a2
+ar a3
+ar PC=0xe0
+ar b0=0x70009
+ar a1=0x12345678
+aezs 1
+ar b2
+ar b3
+ar PC=0x100
+ar a2=0x3789f23a
+ar a8=0x4b84975
+aezs 1
+ar a9
+EOF
+EXPECT=<<EOF
+addsub .l1 a0,a1,a3:a2
+addsub2 .l1 a0,a1,a3:a2
+saddsub .l1 a0,a1,a3:a2
+saddsub2 .l1 a0,a1,a3:a2
+dpack2 .l1 a0,a1,a3:a2
+dpackx2 .l1x a0,b0,a3:a2
+shfl3 .l1 a0,a1,a3:a2
+dmv .s2x b0,a1,b3:b2
+subabs4 .l1 a2,a8,a9
+a2 = 0x0700c006
+a3 = 0x0700c004
+a2 = 0x0701c004
+a3 = 0x06ffc006
+a2 = 0x80000000
+a3 = 0x80000001
+a2 = 0x0701c004
+a3 = 0x06ffc006
+a2 = 0x43215678
+a3 = 0x87651234
+a2 = 0x80004000
+a3 = 0x77773fff
+a2 = 0x7e179306
+a3 = 0x00008c11
+b2 = 0x12345678
+b3 = 0x00070009
+a9 = 0x332fa93b
+EOF
+RUN
+
+# MPY2IR, DDOTP4, DDOTPH2R, DDOTPL2R, SMPY32 and the long DOTP2 on the operands
+# of SPRUFE8B's examples, the saturating ones among them.
+NAME=c6x the C64x+ multiplies execute
+FILE=malloc://224
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx f0531414 @ 0x0
+wx 30961414 @ 0x20
+wx 70851814 @ 0x40
+wx 30851814 @ 0x60
+wx 70060411 @ 0x80
+wx f0a21804 @ 0xa0
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+pi 1 @ 0x60
+pi 1 @ 0x80
+pi 1 @ 0xa0
+aezi
+ar PC=0x0
+ar a2=0x87654321
+ar b5=0x12345678
+aezs 1
+ar a8
+ar a9
+ar PC=0x0
+ar a2=0x80008001
+ar b5=0x80000000
+aezs 1
+ar a8
+ar a9
+ar PC=0x20
+ar a4=0x50003
+ar b5=0x1020304
+aezs 1
+ar a8
+ar a9
+ar PC=0x20
+ar a4=0x80008000
+ar b5=0x80807f7f
+aezs 1
+ar a8
+ar a9
+ar PC=0x40
+ar a4=0x46b416ba
+ar a5=0xbbaed169
+ar a6=0x340bf73b
+aezs 1
+ar a8
+ar PC=0x40
+ar a4=0x80005678
+ar a5=0x12348000
+ar a6=0x80008001
+aezs 1
+ar a8
+ar PC=0x60
+ar a4=0x46b416ba
+ar a5=0xbbaed169
+ar a6=0x340bf73b
+aezs 1
+ar a8
+ar PC=0x60
+ar a4=0x80005678
+ar a5=0x12348000
+ar a6=0x80008001
+aezs 1
+ar a8
+ar PC=0x80
+ar a0=0x87654321
+ar a1=0x12345678
+aezs 1
+ar a2
+ar PC=0xa0
+ar a5=0x6a321193
+ar a6=0xb1746ca4
+aezs 1
+ar a8
+ar a9
+EOF
+EXPECT=<<EOF
+mpy2ir .m1x a2,b5,a9:a8
+ddotp4 .m1x a4,b5,a9:a8
+ddotph2r .m1 a5:a4,a6,a8
+ddotpl2r .m1 a5:a4,a6,a8
+smpy32 .m1 a0,a1,a2
+dotp2 .m1 a5,a6,a9:a8
+a8 = 0x098c16c1
+a9 = 0xeed8e38f
+a8 = 0x7fff0000
+a9 = 0x7fffffff
+a8 = 0x0000001b
+a9 = 0x0000000b
+a8 = 0xff810000
+a9 = 0x00800000
+a8 = 0xf3b5f41b
+a8 = 0x36e67fff
+a8 = 0xf41b0d98
+a8 = 0x7fff14c4
+a2 = 0xeed8ed1a
+a8 = 0xe6dff6d4
+a9 = 0xffffffff
+EOF
+RUN
+
+# GMPY with GPLYA, XORMPY, which ignores it, and GMPY4 in the field GFPGFR resets
+# to, on the operands of SPRUFE8B's examples.
+NAME=c6x the Galois-field multiplies execute
+FILE=malloc://128
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx f0070411 @ 0x0
+wx f0060411 @ 0x20
+wx 70a49803 @ 0x40
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+aezi
+ar PC=0x0
+ar a0=0x12345678
+ar a1=0x126
+ar gplya=0x87654321
+aezs 1
+ar a2
+ar PC=0x20
+ar a0=0x12345678
+ar a1=0x126
+ar gplya=0xffffffff
+aezs 1
+ar a2
+ar PC=0x40
+ar a5=0x45230001
+ar a6=0x57340001
+ar gfpgfr=0x700001d
+aezs 1
+ar a7
+ar PC=0x40
+ar a5=0xfffe021f
+ar a6=0xfffe0201
+ar gfpgfr=0x700001d
+aezs 1
+ar a7
+EOF
+EXPECT=<<EOF
+gmpy .m1 a0,a1,a2
+xormpy .m1 a0,a1,a2
+gmpy4 .m1 a5,a6,a7
+a2 = 0xc721a0ef
+a2 = 0x1e654210
+a7 = 0x72920001
+a7 = 0xe2e3041f
+EOF
+RUN
+
+# SPRUFE8B's examples: ANDN clears the bits of src2 in src1 and SUBC compares
+# unsigned; then SHR2 by a count of 16 or more fills each half with its sign.
+NAME=c6x andn, subc, shr2, shru2 and rotl execute
+FILE=malloc://224
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 980f0401 @ 0x0
+wx 78090400 @ 0x20
+wx f28d8802 @ 0x40
+wx 328e8802 @ 0x60
+wx 72878802 @ 0x80
+wx b0079202 @ 0xa0
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+pi 1 @ 0x60
+pi 1 @ 0x80
+pi 1 @ 0xa0
+aezi
+ar PC=0x0
+ar a0=0x195721ab
+ar a1=0x81c17e6
+aezs 1
+ar a2
+ar PC=0x20
+ar a0=0x125a
+ar a1=0x1f12
+aezs 1
+ar a0
+ar PC=0x20
+ar a0=0x21a31
+ar a1=0x1f63f
+aezs 1
+ar a0
+ar PC=0x40
+ar b2=0xa6e2c179
+ar b4=0x14583b69
+aezs 1
+ar b5
+ar PC=0x60
+ar b2=0xa6e2c179
+ar b4=0x14583b69
+aezs 1
+ar b5
+ar PC=0x80
+ar b2=0xa6e2c179
+ar b4=0x14583b69
+aezs 1
+ar b5
+ar PC=0xa0
+ar a4=0x187a65fc
+aezs 1
+ar a5
+ar PC=0x40
+ar b2=0x7fff8000
+ar b4=0x13
+aezs 1
+ar b5
+EOF
+EXPECT=<<EOF
+andn .l1 a0,a1,a2
+subc .l1 a0,a1,a0
+shr2 .s2 b2,b4,b5
+shru2 .s2 b2,b4,b5
+rotl .m2 b2,b4,b5
+rotl .m1 a4,0x10,a5
+a2 = 0x11432009
+a0 = 0x000024b4
+a0 = 0x000047e5
+b5 = 0xffd3ffe0
+b5 = 0x00530060
+b5 = 0xc582f34d
+a5 = 0x65fc187a
+b5 = 0x0000ffff
+EOF
+RUN
+
+# SPRUFE8B's examples of CLR, EXT, EXTU and SET with the field in a register, and
+# of SHL and SHR, then a count with bits set above its six LSBs, NEG of a long
+# with garbage in its unused bits and SHL of a word into a long.
+NAME=c6x field and shift operands in registers
+FILE=malloc://352
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx e26f0401 @ 0x0
+wx e04b8401 @ 0x20
+wx e04a8401 @ 0x40
+wx e22e0001 @ 0x60
+wx e22c0001 @ 0x80
+wx 624c0001 @ 0xa0
+wx e22d0001 @ 0xc0
+wx 624d0001 @ 0xe0
+wx 98041003 @ 0x100
+wx a0641003 @ 0x120
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+pi 1 @ 0x60
+pi 1 @ 0x80
+pi 1 @ 0xa0
+pi 1 @ 0xc0
+pi 1 @ 0xe0
+pi 1 @ 0x100
+pi 1 @ 0x120
+aezi
+ar PC=0x0
+ar b1=0x3b6e7d5
+ar b3=0x52
+aezs 1
+ar b2
+ar PC=0x20
+ar a1=0x3b6e7d5
+ar a2=0x73
+aezs 1
+ar a3
+ar PC=0x40
+ar a1=0x3b6e7d5
+ar a2=0x156
+aezs 1
+ar a3
+ar PC=0x60
+ar b0=0x9ed31a31
+ar b1=0xc197
+aezs 1
+ar b2
+ar PC=0x80
+ar b0=0x419751a5
+ar b1=0x9
+aezs 1
+ar b2
+ar PC=0xa0
+ar b0=0x419751a5
+ar b1=0x9
+ar b2=0x22
+aezs 1
+ar b2
+ar b3
+ar PC=0xc0
+ar b0=0x14925a41
+ar b1=0x12
+aezs 1
+ar b2
+ar PC=0xe0
+ar b0=0x14925a41
+ar b1=0x12
+ar b2=0x19
+aezs 1
+ar b2
+ar b3
+ar PC=0x80
+ar b0=0x419751a5
+ar b1=0xffffffc9
+aezs 1
+ar b2
+ar PC=0xc0
+ar b0=0x14925a41
+ar b1=0x52
+aezs 1
+ar b2
+ar PC=0x100
+ar a4=0xffffffff
+ar a5=0xffffffff
+aezs 1
+ar a6
+ar a7
+ar PC=0x120
+ar a4=0xf0000001
+aezs 1
+ar a6
+ar a7
+EOF
+EXPECT=<<EOF
+clr .s2 b1,b3,b2
+ext .s1 a1,a2,a3
+extu .s1 a1,a2,a3
+set .s2 b0,b1,b2
+shl .s2 b0,b1,b2
+shl .s2 b1:b0,b2,b3:b2
+shr .s2 b0,b1,b2
+shr .s2 b1:b0,b2,b3:b2
+neg .l1 a5:a4,a7:a6
+shl .s1 a4,0x3,a7:a6
+b2 = 0x03b00001
+a3 = 0x000003b6
+a3 = 0x0000036e
+b2 = 0x9efffa31
+b2 = 0x2ea34a00
+b2 = 0x00000000
+b3 = 0x00000094
+b2 = 0x00000524
+b2 = 0x0000090a
+b3 = 0x00000000
+b2 = 0x2ea34a00
+b2 = 0x00000524
+a6 = 0x00000001
+a7 = 0x00000000
+a6 = 0x80000008
+a7 = 0x00000007
+EOF
+RUN
+
+# SPRUGH7's examples of DADD, its constant added to both halves, and DSUB; a
+# constant XOR applies to both halves as well.
+NAME=c6x C66x dadd, dsub and the pair logical operations execute
+FILE=malloc://352
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 58040207 @ 0x0
+wx 78000817 @ 0x20
+wx f8000817 @ 0x40
+wx e0010817 @ 0x60
+wx d8ad1313 @ 0x80
+wx a0a21313 @ 0xa0
+wx 784f1013 @ 0xc0
+wx 984f1013 @ 0xe0
+wx e0461013 @ 0x100
+wx 989d1002 @ 0x120
+pi 1 @ 0x0
+pi 1 @ 0x20
+pi 1 @ 0x40
+pi 1 @ 0x60
+pi 1 @ 0x80
+pi 1 @ 0xa0
+pi 1 @ 0xc0
+pi 1 @ 0xe0
+pi 1 @ 0x100
+pi 1 @ 0x120
+aezi
+ar PC=0x0
+ar a0=0x50011
+ar a1=0x10
+aezs 1
+ar a14
+ar a15
+ar PC=0x20
+ar a0=0x7fffffff
+ar a1=0x44444444
+ar a2=0x1
+ar a3=0xccccc444
+aezs 1
+ar a14
+ar a15
+ar PC=0x40
+ar a0=0x80000000
+ar a1=0x44444444
+ar a2=0xffffffff
+ar a3=0xccccc444
+aezs 1
+ar a14
+ar a15
+ar PC=0x60
+ar a0=0x7fffffff
+ar a1=0x44444444
+ar a2=0x1
+ar a3=0xccccc444
+aezs 1
+ar a14
+ar a15
+ar PC=0x80
+ar a4=0xffffffff
+ar a5=0x12345678
+aezs 1
+ar a6
+ar a7
+ar PC=0xa0
+ar a4=0xffffffff
+ar a5=0x12345678
+aezs 1
+ar a6
+ar a7
+ar PC=0xc0
+ar a2=0xff00ff00
+ar a3=0xffff
+ar a4=0x12345678
+ar a5=0x9abcdef0
+aezs 1
+ar a6
+ar a7
+ar PC=0xe0
+ar a2=0xff00ff00
+ar a3=0xffff
+ar a4=0x12345678
+ar a5=0x9abcdef0
+aezs 1
+ar a6
+ar a7
+ar PC=0x100
+ar a2=0xff00ff00
+ar a3=0xffff
+ar a4=0x12345678
+ar a5=0x9abcdef0
+aezs 1
+ar a6
+ar a7
+ar PC=0x120
+ar a4=0x11111111
+ar b4=0x22222222
+aezs 1
+ar a4
+ar a5
+EOF
+EXPECT=<<EOF
+dadd .l1 -0x10,a1:a0,a15:a14
+dadd .l1 a1:a0,a3:a2,a15:a14
+dsub .l1 a1:a0,a3:a2,a15:a14
+dadd .s1 a1:a0,a3:a2,a15:a14
+xor .l1 -0x3,a5:a4,a7:a6
+xor .s1 -0x3,a5:a4,a7:a6
+and .l1 a3:a2,a5:a4,a7:a6
+andn .l1 a3:a2,a5:a4,a7:a6
+or .s1 a3:a2,a5:a4,a7:a6
+dmv .l1x a4,b4,a5:a4
+a14 = 0x00050001
+a15 = 0x00000000
+a14 = 0x80000000
+a15 = 0x11110888
+a14 = 0x80000001
+a15 = 0x77778000
+a14 = 0x80000000
+a15 = 0x11110888
+a6 = 0x00000002
+a7 = 0xedcba985
+a6 = 0x00000002
+a7 = 0xedcba985
+a6 = 0x12005600
+a7 = 0x0000def0
+a6 = 0xed00a900
+a7 = 0x0000210f
+a6 = 0xff34ff78
+a7 = 0x9abcffff
+a4 = 0x22222222
+a5 = 0x11111111
+EOF
+RUN
+
+# SPRUGH7's examples of the C66x lane forms on register pairs
+NAME=c6x C66x two- and four-way forms on register pairs execute
+FILE=malloc://0x260
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx b8000817 @ 0x0
+wx 18070817 @ 0x20
+wx f0440013 @ 0x40
+wx 70440013 @ 0x60
+wx 30440017 @ 0x80
+wx b0440017 @ 0xa0
+wx 58080812 @ 0xc0
+wx 78480012 @ 0xe0
+wx 38480012 @ 0x100
+wx 18090814 @ 0x120
+wx 982d1811 @ 0x140
+wx 388d0810 @ 0x160
+wx 588d0810 @ 0x180
+wx 78020817 @ 0x1a0
+wx 98020817 @ 0x1c0
+wx f88c2010 @ 0x1e0
+wx 980c0817 @ 0x200
+wx 98000817 @ 0x220
+aezi
+ar PC=0x0; ar a1=0x44444444; ar a0=0x7fff0002; ar a3=0xccccc444; ar a2=0x7ff00005; aezs 1; ar a15; ar a14
+ar PC=0x20; ar a1=0x44444444; ar a0=0x7fffffff; ar a3=0xccccc444; ar a2=0x1; aezs 1; ar a15; ar a14
+ar PC=0x40; ar a3=0xc001c001; ar a2=0x40004000; ar a1=0x3fff3fff; ar a0=0x40004000; aezs 1; ar a7; ar a6
+ar PC=0x60; ar a3=0xc001c001; ar a2=0x40004000; ar a1=0x3fff3fff; ar a0=0x40004000; aezs 1; ar a7; ar a6
+ar PC=0x80; ar a3=0x1a2e5f4e; ar a2=0xfbfcfdfe; ar a1=0x9ef26e3f; ar a0=0x3020201; aezs 1; ar a15; ar a14
+ar PC=0xa0; ar a3=0x1a2e5f4e; ar a2=0xfbfcfdfe; ar a1=0x9ef26e3f; ar a0=0x3020201; aezs 1; ar a15; ar a14
+ar PC=0xc0; ar a1=0x80007fff; ar a0=0x80007fff; ar a3=0x8000; ar a2=0x8000; aezs 1; ar a5; ar a4
+ar PC=0xe0; ar a3=0xbabebeef; ar a2=0xbabebeef; ar a1=0xbeefbabe; ar a0=0xbeefbabe; aezs 1; ar a5; ar a4
+ar PC=0x100; ar a3=0x80007fff; ar a2=0x80007fff; ar a1=0x8000; ar a0=0x8000; aezs 1; ar a5; ar a4
+ar PC=0x120; ar a1=0xfffefffe; ar a0=0xfffefffe; ar a3=0xfefffeff; ar a2=0xfefffeff; aezs 1; ar a9; ar a8
+ar PC=0x140; ar a1=0x87654321; ar a6=0x12345678; aezs 1; ar a3; ar a2
+ar PC=0x160; ar a5=0xbe55ef55; ar a4=0x44556677; ar a3=0xde55ad55; ar a2=0x112233; aezs 1; ar a1; ar a0
+ar PC=0x180; ar a4=0x44556677; ar a2=0x8899aabb; aezs 1; ar a1; ar a0
+ar PC=0x1a0; ar a1=0x44444444; ar a0=0x7fffffff; ar a3=0xccccc444; ar a2=0x1; aezs 1; ar a15; ar a14
+ar PC=0x1c0; ar a1=0x44444444; ar a0=0x7fff0002; ar a3=0xccccc444; ar a2=0x7ff00005; aezs 1; ar a15; ar a14
+ar PC=0x1e0; ar a5=0x5a2e51a3; ar a4=0x436771f2; ar a9=0x802a3fa2; ar a8=0x5a2e51a3; aezs 1; ar a1; ar a0
+ar PC=0x200; ar a1=0x80007; ar a0=0x60005; ar a3=0x10001; ar a2=0x10001; aezs 1; ar a15; ar a14
+ar PC=0x220; ar a1=0x44444444; ar a0=0x7fff7fff; ar a3=0xccccc444; ar a2=0x20005; aezs 1; ar a15; ar a14
+EOF
+EXPECT=<<EOF
+a15 = 0x11100888
+a14 = 0xffef0007
+a15 = 0xccccc444
+a14 = 0x0000ffff
+a7 = 0x00000000
+a6 = 0x40004000
+a7 = 0x00000000
+a6 = 0x40004000
+a15 = 0x5c906646
+a14 = 0x7f7f7f7f
+a15 = 0x5c906747
+a14 = 0x7f7f8080
+a5 = 0x00007fff
+a4 = 0x00007fff
+a5 = 0xbeefbeef
+a4 = 0xbeefbeef
+a5 = 0x80008000
+a4 = 0x80008000
+a9 = 0xfefefefe
+a8 = 0xfefefefe
+a3 = 0x87654321
+a2 = 0x12345678
+a1 = 0xbeefdead
+a0 = 0x44660022
+a1 = 0x446688aa
+a0 = 0x557799bb
+a15 = 0x11110888
+a14 = 0x7fffffff
+a15 = 0x11100888
+a14 = 0x7fff0007
+a1 = 0x7fffffff
+a0 = 0xe939204f
+a15 = 0x00070006
+a14 = 0x00050004
+a15 = 0x77788000
+a14 = 0x7ffd7ffa
+EOF
+RUN
+
+# SPRUGH7's examples of the C66x compares, shifts, rotations, unpacks and
+# logical ops on truth values
+NAME=c6x C66x compares, shifts, rotations and unpacks execute
+FILE=malloc://0x2e0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 58438107 @ 0x0
+wx 58238107 @ 0x20
+wx 60078817 @ 0x40
+wx 20078817 @ 0x60
+wx 20058815 @ 0x80
+wx 60058815 @ 0xa0
+wx 58430307 @ 0xc0
+wx 58230307 @ 0xe0
+wx a00c0217 @ 0x100
+wx a0810011 @ 0x120
+wx a00d0217 @ 0x140
+wx 20860017 @ 0x160
+wx a0090217 @ 0x180
+wx 60860017 @ 0x1a0
+wx f0200201 @ 0x1c0
+wx f0000200 @ 0x1e0
+wx 180f8407 @ 0x200
+wx 380f8407 @ 0x220
+wx b80f8407 @ 0x240
+wx e0808017 @ 0x260
+wx 20ef0c00 @ 0x280
+wx 20cf0c00 @ 0x2a0
+aezi
+ar PC=0x0; ar a0=0x12345678; aezs 1; ar a15
+ar PC=0x20; ar a0=0x12345678; aezs 1; ar a15
+ar PC=0x40; ar a1=0x0; ar a0=0x3fff0000; ar a3=0x0; ar a2=0x3fff; aezs 1; ar a15
+ar PC=0x60; ar a1=0xabffffff; ar a0=0xff00ff00; ar a3=0xffff00; ar a2=0xffff00; aezs 1; ar a15
+ar PC=0x80; ar a1=0x7fff7fff; ar a0=0x7fff7fff; ar a3=0x80008000; ar a2=0x80008000; aezs 1; ar a11
+ar PC=0xa0; ar a1=0xff; ar a0=0xff; ar a3=0xfe; ar a2=0xfe; aezs 1; ar a11
+ar PC=0xc0; ar a1=0x12345678; ar a0=0x80005532; aezs 1; ar a15; ar a14
+ar PC=0xe0; ar a1=0x12345678; ar a0=0x55328000; aezs 1; ar a15; ar a14
+ar PC=0x100; ar a1=0x1234abff; ar a0=0xff333415; aezs 1; ar a15; ar a14
+ar PC=0x120; ar a1=0xfedc7a98; ar a0=0x1234fedc; aezs 1; ar a3; ar a2
+ar PC=0x140; ar a1=0x1234abff; ar a0=0xff333415; aezs 1; ar a15; ar a14
+ar PC=0x160; ar a1=0xfedc7a98; ar a0=0x1234fedc; aezs 1; ar a15; ar a14
+ar PC=0x180; ar a1=0x1234abff; ar a0=0xff333415; aezs 1; ar a15; ar a14
+ar PC=0x1a0; ar a1=0xfedc7a98; ar a0=0x1234fedc; aezs 1; ar a15; ar a14
+ar PC=0x1c0; ar a0=0x1; aezs 1; ar a3; ar a2
+ar PC=0x1e0; ar a0=0x1; aezs 1; ar a1; ar a0
+ar PC=0x200; ar a0=0x12340000; ar a1=0x5678; aezs 1; ar a15
+ar PC=0x220; ar a0=0x12340000; ar a1=0x0; aezs 1; ar a15
+ar PC=0x240; ar a0=0x12340000; ar a1=0x5678; aezs 1; ar a15
+ar PC=0x260; ar a0=0x1234fedc; aezs 1; ar a15
+ar PC=0x280; ar a3=0x82c47688; aezs 1; ar a1; ar a0
+ar PC=0x2a0; ar a3=0x82c47688; aezs 1; ar a1; ar a0
+EOF
+EXPECT=<<EOF
+a15 = 0x5678edcc
+a15 = 0xa9881234
+a15 = 0x0000000c
+a15 = 0x00000063
+a11 = 0x0000000f
+a11 = 0x00000011
+a15 = 0x5678edcc
+a14 = 0x55327fff
+a15 = 0xa9881234
+a14 = 0x7fff5532
+a15 = 0xabff0000
+a14 = 0x34150000
+a3 = 0xedc0a980
+a2 = 0x2340edc0
+a15 = 0x00001234
+a14 = 0xffffff33
+a15 = 0xffed07a9
+a14 = 0x0123ffed
+a15 = 0x00001234
+a14 = 0x0000ff33
+a15 = 0x0fed07a9
+a14 = 0x01230fed
+a3 = 0x00000000
+a2 = 0x0000ffff
+a1 = 0x00000000
+a0 = 0x000000ff
+a15 = 0x00000001
+a15 = 0x00000001
+a15 = 0x00000001
+a15 = 0x2340edc0
+a1 = 0xffff82c4
+a0 = 0x00007688
+a1 = 0x000082c4
+a0 = 0x00007688
+EOF
+RUN
+
+# SPRUGH7's examples of the C66x lane multiplies and dot products
+NAME=c6x C66x lane multiplies and dot products execute
+FILE=malloc://0x140
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 00041017 @ 0x0
+wx 80041017 @ 0x20
+wx 30802010 @ 0x40
+wx 80802010 @ 0x60
+wx f0410017 @ 0x80
+wx b0000815 @ 0xa0
+wx 70805914 @ 0xc0
+wx 30825d05 @ 0xe0
+wx b0862010 @ 0x100
+aezi
+ar PC=0x0; ar a3=0x321089ab; ar a2=0x321089ab; ar a1=0x321089ab; ar a0=0x321089ab; ar a7=0x87654321; ar a6=0x87654321; ar a5=0x87654321; ar a4=0x87654321; aezs 1; ar a15; ar a14
+ar PC=0x20; ar a3=0x7f7f7f7f; ar a2=0x7f7f7f7f; ar a1=0x7f7f7f7f; ar a0=0x7f7f7f7f; ar a7=0xffffffff; ar a6=0xffffffff; ar a5=0xffffffff; ar a4=0xffffffff; aezs 1; ar a15; ar a14
+ar PC=0x40; ar a5=0x12343497; ar a4=0x6a321193; ar a9=0x21ff50a7; ar a8=0xb1746ca4; aezs 1; ar a3; ar a2; ar a1; ar a0
+ar PC=0x60; ar a5=0x12343497; ar a4=0x6a321193; ar a9=0x21ff50a7; ar a8=0xb1746ca4; aezs 1; ar a3; ar a2; ar a1; ar a0
+ar PC=0x80; ar a3=0x321089ab; ar a2=0x321089ab; ar a1=0x87654321; ar a0=0x87654321; aezs 1; ar a15; ar a14
+ar PC=0xa0; ar a1=0x7fff7fff; ar a0=0x7fff7fff; ar a3=0xffffffff; ar a2=0xffffffff; aezs 1; ar a11; ar a10
+ar PC=0xc0; ar a13=0xffffffff; ar a12=0xffffffff; ar a23=0x10001; ar a22=0x10001; aezs 1; ar a11; ar a10; ar a9; ar a8
+ar PC=0xe0; ar a12=0x80018001; ar a23=0x80018001; aezs 1; ar a11; ar a10
+ar PC=0x100; ar a7=0x1; ar a6=0x1; ar a5=0x1; ar a4=0x1; ar a11=0x40000000; ar a10=0x40000000; ar a9=0x40000000; ar a8=0x40000000; aezs 1; ar a3; ar a2; ar a1; ar a0
+EOF
+EXPECT=<<EOF
+a15 = 0x92c560b6
+a14 = 0x92c560b6
+a15 = 0x7fffffff
+a14 = 0x7fffffff
+a3 = 0x026ad5cc
+a2 = 0x10917e81
+a1 = 0xdf6ab0a8
+a0 = 0x0775462c
+a3 = 0x026ad5cc
+a2 = 0x10917e81
+a1 = 0x499cb0a8
+a0 = 0x0775462c
+a15 = 0xffffffff
+a14 = 0x92c560b6
+a11 = 0x00000001
+a10 = 0xfffa0004
+a11 = 0xfffffffe
+a10 = 0xfffffffe
+a9 = 0xfffffffe
+a8 = 0xfffffffe
+a11 = 0x40010001
+a10 = 0x40010001
+a3 = 0x00000001
+a2 = 0x00000001
+a1 = 0x00000001
+a0 = 0x00000001
+EOF
+RUN
+
+# SPRUGH7's examples of the C66x complex and matrix multiplies. DCCMPYR1's show
+# its conjugate is exact, 8000h included, not the DAPYS2 the manual likens it to.
+NAME=c6x C66x complex and matrix multiplies execute
+FILE=malloc://0x1e0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 80021814 @ 0x0
+wx 82021814 @ 0x20
+wx 80031815 @ 0x40
+wx 82031815 @ 0x60
+wx 70420017 @ 0x80
+wx 00021814 @ 0xa0
+wx 02021814 @ 0xc0
+wx 00031815 @ 0xe0
+wx 02031815 @ 0x100
+wx 30420017 @ 0x120
+wx 80811816 @ 0x140
+wx b0430017 @ 0x160
+wx 00811816 @ 0x180
+wx 70430017 @ 0x1a0
+aezi
+ar PC=0x0; ar a7=0x12345678; ar a6=0x12345678; ar a3=0x12345678; ar a2=0x12345678; ar a1=0x12345678; ar a0=0x12345678; aezs 1; ar a11; ar a10; ar a9; ar a8
+ar PC=0x0; ar a7=0x80008000; ar a6=0x80008000; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a11; ar a10; ar a9; ar a8
+ar PC=0x20; ar b7=0x7fff7fff; ar b6=0x7fff8000; ar b3=0x7fff7fff; ar b2=0x7fff8000; ar b1=0x7fff8000; ar b0=0x7fff7fff; aezs 1; ar b11; ar b10; ar b9; ar b8
+ar PC=0x40; ar a7=0x12345678; ar a6=0x12345678; ar a3=0x12345678; ar a2=0x12345678; ar a1=0x12345678; ar a0=0x12345678; aezs 1; ar a11; ar a10
+ar PC=0x40; ar a7=0x80008000; ar a6=0x80008000; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a11; ar a10
+ar PC=0x60; ar b7=0x7fff7fff; ar b6=0x7fff8000; ar b3=0x7fff7fff; ar b2=0x7fff8000; ar b1=0x7fff8000; ar b0=0x7fff7fff; aezs 1; ar b11; ar b10
+ar PC=0x80; ar a3=0x0; ar a2=0x8000400; ar a1=0x0; ar a0=0x9000200; aezs 1; ar a15; ar a14
+ar PC=0x80; ar a3=0x80000000; ar a2=0x80000000; ar a1=0x80000000; ar a0=0x80000000; aezs 1; ar a15; ar a14
+ar PC=0x80; ar a3=0x7fff7fff; ar a2=0x7fff8000; ar a1=0x7fff8000; ar a0=0x7fff7fff; aezs 1; ar a15; ar a14
+ar PC=0xa0; ar a7=0x12345678; ar a6=0x12345678; ar a3=0x12345678; ar a2=0x12345678; ar a1=0x12345678; ar a0=0x12345678; aezs 1; ar a11; ar a10; ar a9; ar a8
+ar PC=0xa0; ar a7=0x80008000; ar a6=0x80008000; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a11; ar a10; ar a9; ar a8
+ar PC=0xc0; ar b7=0x7fff7fff; ar b6=0x7fff8000; ar b3=0x7fff7fff; ar b2=0x7fff8000; ar b1=0x7fff8000; ar b0=0x7fff7fff; aezs 1; ar b11; ar b10; ar b9; ar b8
+ar PC=0xe0; ar a7=0x12345678; ar a6=0x12345678; ar a3=0x12345678; ar a2=0x12345678; ar a1=0x12345678; ar a0=0x12345678; aezs 1; ar a11; ar a10
+ar PC=0xe0; ar a7=0x80008000; ar a6=0x80008000; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a11; ar a10
+ar PC=0x100; ar b7=0x7fff7fff; ar b6=0x7fff8000; ar b3=0x7fff7fff; ar b2=0x7fff8000; ar b1=0x7fff8000; ar b0=0x7fff7fff; aezs 1; ar b11; ar b10
+ar PC=0x120; ar a3=0x0; ar a2=0x8000400; ar a1=0x0; ar a0=0x9000200; aezs 1; ar a15; ar a14
+ar PC=0x120; ar a3=0x80000000; ar a2=0x80000000; ar a1=0x80000000; ar a0=0x80000000; aezs 1; ar a15; ar a14
+ar PC=0x120; ar a3=0x7fff7fff; ar a2=0x7fff8000; ar a1=0x7fff8000; ar a0=0x7fff7fff; aezs 1; ar a15; ar a14
+ar PC=0x140; ar a5=0x9fffe; ar a4=0x9fffe; ar a7=0xffff0007; ar a6=0xffff0007; aezs 1; ar a15; ar a14; ar a13; ar a12
+ar PC=0x160; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80007fff; ar a0=0x80007fff; aezs 1; ar a15; ar a14
+ar PC=0x160; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a15; ar a14
+ar PC=0x160; ar a3=0x8000400; ar a2=0x9000200; ar a1=0x9000200; ar a0=0x8000400; aezs 1; ar a15; ar a14
+ar PC=0x180; ar a5=0x9fffe; ar a4=0x9fffe; ar a7=0xffff0007; ar a6=0xffff0007; aezs 1; ar a15; ar a14; ar a13; ar a12
+ar PC=0x1a0; ar a3=0x80008000; ar a2=0x80008000; ar a1=0x80008000; ar a0=0x80008000; aezs 1; ar a15; ar a14
+ar PC=0x1a0; ar a3=0x8000400; ar a2=0x9000200; ar a1=0x9000200; ar a0=0x8000400; aezs 1; ar a15; ar a14
+ar PC=0x1a0; ar a3=0x7fff7fff; ar a2=0x7fff8000; ar a1=0x7fff8000; ar a0=0x7fff7fff; aezs 1; ar a15; ar a14
+EOF
+EXPECT=<<EOF
+a11 = 0x3d0065a0
+a10 = 0x00000000
+a9 = 0x3d0065a0
+a8 = 0x00000000
+a11 = 0x7fffffff
+a10 = 0x00000000
+a9 = 0x7fffffff
+a8 = 0x00000000
+b11 = 0x7fffffff
+b10 = 0x00000000
+b9 = 0xffff0002
+b8 = 0x00000000
+a11 = 0x7a010000
+a10 = 0x7a010000
+a11 = 0x7fff0000
+a10 = 0x7fff0000
+b11 = 0x7fff0000
+b10 = 0xfffe0000
+a15 = 0x00900068
+a14 = 0x00000000
+a15 = 0x7fffffff
+a14 = 0x00000000
+a15 = 0x7fffffff
+a14 = 0x00000002
+a11 = 0xc82d04a0
+a10 = 0x18980180
+a9 = 0xc82d04a0
+a8 = 0x18980180
+a11 = 0x00000000
+a10 = 0x7fffffff
+a9 = 0x00000000
+a8 = 0x7fffffff
+b11 = 0xffff0001
+b10 = 0xffff0002
+b9 = 0x7fffffff
+b8 = 0xffff0002
+a11 = 0x905a3130
+a10 = 0x905a3130
+a11 = 0x00007fff
+a10 = 0x00007fff
+b11 = 0xfffefffe
+b10 = 0x7ffffffe
+a15 = 0xff6fff98
+a14 = 0x00000000
+a15 = 0x00000000
+a14 = 0x7fffffff
+a15 = 0x00000000
+a14 = 0x7fffffff
+a15 = 0xffffffe9
+a14 = 0xffffffc3
+a13 = 0xffffffe9
+a12 = 0xffffffc3
+a15 = 0x00017fff
+a14 = 0x00017fff
+a15 = 0x7fff0000
+a14 = 0x7fff0000
+a15 = 0x00a00028
+a14 = 0x00a0ffd8
+a15 = 0x00000005
+a14 = 0x00000041
+a13 = 0x00000005
+a12 = 0x00000041
+a15 = 0x00007fff
+a14 = 0x00007fff
+a15 = 0x00800068
+a14 = 0x00800068
+a15 = 0x7fffffff
+a14 = 0x7fffffff
+EOF
+RUN
+
+# SPRUGH7's examples of the C66x floating-point forms that round to nearest and
+# meet no NaN or denormal, where the lifts follow IEEE 754 and not C6000
+NAME=c6x C66x floating-point forms execute
+FILE=malloc://0x1c0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 000f1910 @ 0x0
+wx 98471010 @ 0x20
+wx 58430a00 @ 0x40
+wx 58630a00 @ 0x60
+wx 008e2010 @ 0x80
+wx 58831a01 @ 0xa0
+wx 58030201 @ 0xc0
+wx b8871810 @ 0xe0
+wx 184b1000 @ 0x100
+wx 98471000 @ 0x120
+wx f0431000 @ 0x140
+wx 384b1000 @ 0x160
+wx b8270800 @ 0x180
+aezi
+ar PC=0x0; ar a9=0xc0200000; ar a8=0x4059999a; ar a7=0x4109999a; ar a6=0x416b3333; aezs 1; ar a3; ar a2; ar a1; ar a0
+ar PC=0x20; ar a3=0x41200000; ar a2=0xc1200000; ar a5=0x42300000; ar a4=0x42300000; aezs 1; ar a1; ar a0
+ar PC=0x40; ar a2=0x19651127; aezs 1; ar a1; ar a0
+ar PC=0x60; ar a2=0x19651127; aezs 1; ar a1; ar a0
+ar PC=0x80; ar a5=0xbf800000; ar a4=0x3f800000; ar a9=0xbf800000; ar a8=0x3f800000; aezs 1; ar a1; ar a0
+ar PC=0xa0; ar a7=0x4109999a; ar a6=0x4effffff; aezs 1; ar a3; ar a2
+ar PC=0xc0; ar a1=0x4109999a; ar a0=0x4109999a; aezs 1; ar a2
+ar PC=0xe0; ar a5=0x41200000; ar a4=0x40784517; ar a7=0x42300000; ar a6=0x42aeab2d; aezs 1; ar a1; ar a0
+ar PC=0x100; ar a3=0x40240000; ar a2=0x0; ar a5=0x40460000; ar a4=0x0; aezs 1; ar a1; ar a0
+ar PC=0x120; ar a2=0x41200000; ar a4=0x42300000; aezs 1; ar a0
+ar PC=0x140; ar a3=0x40213333; ar a2=0x33333333; ar a5=0xc0040000; ar a4=0x0; aezs 1; ar a1; ar a0
+ar PC=0x160; ar a3=0x40213333; ar a2=0x33333333; ar a5=0xc0040000; ar a4=0x0; aezs 1; ar a1; ar a0
+ar PC=0x180; ar a1=0x4109999a; ar a2=0xc0200000; aezs 1; ar a0
+EOF
+EXPECT=<<EOF
+a3 = 0xc1ac0000
+a2 = 0xc2130000
+a1 = 0xc247eb85
+a0 = 0x41e9eb86
+a1 = 0x42580000
+a0 = 0x42080000
+a1 = 0x45cb2800
+a0 = 0x45893800
+a1 = 0x45cb2800
+a0 = 0x45893800
+a1 = 0x3f800000
+a0 = 0x3f800000
+a3 = 0x00000009
+a2 = 0x7fffff80
+a2 = 0x00090009
+a1 = 0xc2080000
+a0 = 0xc2a6e904
+a1 = 0x404b0000
+a0 = 0x00000000
+a0 = 0x42580000
+a1 = 0xc0358000
+a0 = 0x00000000
+a1 = 0x40263333
+a0 = 0x33333333
+a0 = 0x4131999a
+EOF
+RUN
+
+# Conversions of values below one: 0.75 and -0.75 round to 1 and -1, 0.5 to the
+# even 0, -0.25 to 0; truncating, -0.75 and 0.99999994 give 0.
+NAME=c6x spint, sptrunc and dspint of values below one
+FILE=malloc://0x80
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 58018801 @ 0x0
+wx 78010001 @ 0x20
+wx 58830201 @ 0x40
+wx 58038201 @ 0x60
+aezi
+ar PC=0x0; ar a2=0x3f400000; aezs 1; ar a3
+ar PC=0x0; ar a2=0xbf400000; aezs 1; ar a3
+ar PC=0x0; ar a2=0x3f000000; aezs 1; ar a3
+ar PC=0x0; ar a2=0xbe800000; aezs 1; ar a3
+ar PC=0x20; ar a0=0xbf400000; aezs 1; ar a2
+ar PC=0x20; ar a0=0x3f7fffff; aezs 1; ar a2
+ar PC=0x40; ar a0=0xbe800000; ar a1=0x3f400000; aezs 1; ar a2; ar a3
+ar PC=0x60; ar a0=0xbf400000; ar a1=0x3f000000; aezs 1; ar a3
+EOF
+EXPECT=<<EOF
+a3 = 0x00000001
+a3 = 0xffffffff
+a3 = 0x00000000
+a3 = 0x00000000
+a2 = 0x00000000
+a2 = 0x00000000
+a2 = 0x00000000
+a3 = 0x00000001
+a3 = 0x0000ffff
+EOF
+RUN
+
+# SPRUGH7 has no example of these forms, or only one its Execution text
+# contradicts: these values follow the Execution text
+NAME=c6x C66x forms with no right example in SPRUGH7 execute
+FILE=malloc://0x1c0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx d8030812 @ 0x0
+wx 98030812 @ 0x20
+wx f00f0812 @ 0x40
+wx 20040812 @ 0x60
+wx 180d0812 @ 0x80
+wx 300d0812 @ 0xa0
+wx 58030501 @ 0xc0
+wx 58e30201 @ 0xe0
+wx 202f0201 @ 0x100
+wx 30010812 @ 0x120
+wx 000c0812 @ 0x140
+wx 00081014 @ 0x160
+wx 800e1014 @ 0x180
+aezi
+ar PC=0x0; ar a0=0xbd0fa7da; ar a1=0x12e04bd3; ar a2=0xdac8ba3c; ar a3=0x402607f5; aezs 1; ar a4; ar a5
+ar PC=0x20; ar a0=0x3d0b1ebc; ar a1=0x84d01677; ar a2=0xa1cfc84e; ar a3=0x7fff; aezs 1; ar a4; ar a5
+ar PC=0x40; ar a0=0xb26d458b; ar a1=0x40e0bcd2; ar a2=0xbe724a6f; ar a3=0x1e05b0f2; aezs 1; ar a4; ar a5
+ar PC=0x60; ar a0=0x80000001; ar a1=0x80008000; ar a2=0xcfd82e5f; ar a3=0x7fff; aezs 1; ar a4; ar a5
+ar PC=0x80; ar a0=0x7bae021e; ar a1=0xf01c663e; ar a2=0x1bc35bfd; ar a3=0x1af40759; aezs 1; ar a4; ar a5
+ar PC=0xa0; ar a0=0x7a90fd0; ar a1=0xbcac5527; ar a2=0xc28c5afc; ar a3=0xff00ff; aezs 1; ar a4; ar a5
+ar PC=0xc0; ar a1=0x7fff7fff; aezs 1; ar a2; ar a3
+ar PC=0xe0; ar a0=0xffcc6f31; ar a1=0xfffe2357; aezs 1; ar a2; ar a3
+ar PC=0x100; ar a0=0x463036; ar a1=0x3e7a0c; aezs 1; ar a2; ar a3
+ar PC=0x120; ar a0=0xd8ad0891; ar a1=0x8000; ar a2=0x6ac6f75c; ar a3=0xb226c994; aezs 1; ar a4; ar a5; ar a6; ar a7
+ar PC=0x140; ar a0=0x23fd2894; ar a1=0x80000001; ar a2=0x305547f; ar a3=0x72c9ff87; aezs 1; ar a4; ar a5; ar a6; ar a7
+ar PC=0x160; ar a0=0x84d7a92a; ar a1=0x10001; ar a2=0x1; ar a3=0xb0546844; ar a4=0x4807fbdf; ar a5=0x7dacda3d; ar a6=0x7fffffff; ar a7=0x2215022b; aezs 1; ar a8; ar a9; ar a10; ar a11
+ar PC=0x180; ar a0=0xc57d8761; ar a1=0xb2704bc3; ar a2=0xc63941c3; ar a3=0x3b147ce3; ar a4=0xb25e7e9d; ar a5=0xbaa992a9; ar a6=0xcb824521; ar a7=0xbf715352; aezs 1; ar a8; ar a9; ar a10; ar a11
+EOF
+EXPECT=<<EOF
+a4 = 0xbd0fdac8
+a5 = 0x12e04026
+a4 = 0x3d0bc84e
+a5 = 0x84d07fff
+a4 = 0x458b4a6f
+a5 = 0xbcd2b0f2
+a4 = 0x0001cfd8
+a5 = 0x80000000
+a4 = 0xae1ec3fd
+a5 = 0x1c3ef459
+a4 = 0xffff00ff
+a5 = 0x00ffffff
+a2 = 0x007f00ff
+a3 = 0x007f00ff
+a2 = 0xca4e433c
+a3 = 0xc7ee5480
+a2 = 0x4a8c606c
+a3 = 0x4a79e830
+a4 = 0x07b8341c
+a5 = 0x597085ce
+a6 = 0x64800000
+a7 = 0x00000000
+a4 = 0x0d20ca6c
+a5 = 0x0069fff1
+a6 = 0x00000087
+a7 = 0xc7000000
+a8 = 0x9ade8996
+a9 = 0x57e9da3d
+a10 = 0x7fffffff
+a11 = 0xdc920b6c
+a8 = 0x385c58ca
+a9 = 0x2d9f2bae
+a10 = 0x523c8ad7
+a11 = 0xbb0bf9e6
+EOF
+RUN
+
+# A long is the 40 bits of a register pair: an input ignores the 24 MSBs of the
+# odd register and a result zero-fills them (SPRUFE8B 2.1). The values are the
+# manual's CMPLTU, SUBU and ADD examples, with garbage in the ignored bits.
+NAME=c6x 40-bit long operands of add, subu and cmpltu
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx b83b6863f8c5756538b43300
+s 0
+pd 3
+aezi
+ar b2=1
+ar b1=0x3b8260
+ar a26=0x3a0002
+ar a27=0xffffff00
+ar a14=0x325a
+ar a29=0xffffff12
+ar b29=0x325a
+ar a12=0xffffff12
+ar a13=0x123456ff
+aezs 3
+ar a6
+ar a10
+ar a11
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      [b2]  cmpltu .l1x b1,a27:a26,a6
+            0x00000004      [b2]  subu .l1 a14,a29,a11:a10
+            0x00000008      add   .l1x b29,a13:a12,a1:a0
+a6 = 0x00000000
+a10 = 0x00003348
+a11 = 0x000000ff
+a0 = 0x0000316c
+a1 = 0x00000000
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# SPRUFE8B: for cstb < csta the field is empty and src2 is copied; the long forms saturate to 40 bits.
+# SPRUGH7: MFENCE waits for the memory accesses before it, which the VM has in order anyway.
+NAME=c6x SET and CLR of an empty field, the long SADD and SSUB, MFENCE
+FILE=malloc://0xc0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx c8a3040100800000 @ 0x0
+wx 88a3040100800000 @ 0x20
+wx 3826080200800000 @ 0x40
+wx 1aa6080200800000 @ 0x60
+wx 98a50b0200800000 @ 0x80
+wx 0080001000800000 @ 0xa0
+pi 1 @ 0x0; pi 1 @ 0x20; pi 1 @ 0x40; pi 1 @ 0x60; pi 1 @ 0x80; pi 1 @ 0xa0
+aezi
+ar PC=0x0; ar a1=0xffffffff; ar a2=0; aezs 1; ar a2
+ar PC=0x20; ar a1=0x12340000; ar a2=0; aezs 1; ar a2
+ar PC=0x40; ar a1=0x7fffffff; ar a2=0xffffff00; ar a3=0x7f; aezs 1; ar a4; ar a5
+ar PC=0x40; ar a1=0xffffffff; ar a2=0x1; ar a3=0x0; aezs 1; ar a4; ar a5
+ar PC=0x40; ar a1=0x80000000; ar a2=0x0; ar a3=0x80; aezs 1; ar a4; ar a5
+ar PC=0x60; ar b2=0xfffffffe; ar b3=0x7f; aezs 1; ar b4; ar b5
+ar PC=0x80; ar a2=0xffffffff; ar a3=0x7f; aezs 1; ar a4; ar a5
+ar PC=0x80; ar a2=0xfffffffb; ar a3=0xff; aezs 1; ar a4; ar a5
+aoi 1 @ 0xa0
+EOF
+EXPECT=<<EOF
+clr .s1 a1,5,3,a2
+set .s1 a1,5,3,a2
+sadd .l1 a1,a3:a2,a5:a4
+sadd .l2 0x5,b3:b2,b5:b4
+ssub .l1 -0x3,a3:a2,a5:a4
+mfence
+a2 = 0xffffffff
+a2 = 0x12340000
+a4 = 0xffffffff
+a5 = 0x0000007f
+a4 = 0x00000000
+a5 = 0x00000000
+a4 = 0x00000000
+a5 = 0x00000080
+b4 = 0xffffffff
+b5 = 0x0000007f
+a4 = 0x00000000
+a5 = 0x00000080
+a4 = 0x00000002
+a5 = 0x00000000
+0xa0 nop
+EOF
+RUN
+
+NAME=c6x a load or store reads its registers before it writes its address back
+FILE=malloc://0x400
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c62x
+e asm.cpu=c62x
+e scr.color=0
+e io.cache=true
+wx 147ea90500600000f63220040060000062030c0000800000
+wv1 0xa5 @ 0x240
+pi 1 @ 0x0
+pi 1 @ 0x8
+aezi; ar a10=0x240; ar a11=3; ar b8=0x280; ar b3=0x80; aezsu 0x80
+ar a10; ar a11; ar b8; pv4 @ 0x284
+EOF
+EXPECT=<<EOF
+ldbu .d1 *a10++[a11],a11
+stw .d2 b8,*++b8[0x1]
+a10 = 0x00000243
+a11 = 0x000000a5
+b8 = 0x00000284
+0x00000280
+EOF
+RUN
