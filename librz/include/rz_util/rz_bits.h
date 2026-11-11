@@ -144,6 +144,36 @@ static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, u
 }
 
 /**
+ * \brief Extracts an 8-bit byte from an MSB-first bitstream starting at byte_pos with bit shift (0..7).
+ *
+ * In MSB-first stream order, bit 0 of the stream is buf[0] bit 7, bit 7 is buf[0] bit 0,
+ * and bit 8 is buf[1] bit 7.
+ *
+ * If byte_pos is the final byte of the buffer (i.e. no next byte is available, where
+ * buflen - byte_pos <= 1) and shift > 0, the remaining trailing lower `shift` bits that
+ * would come from the next byte are explicitly zero-padded (0).
+ * If byte_pos >= buflen or buf is NULL, 0 is returned.
+ *
+ * \param buf The input buffer of bytes.
+ * \param buflen Length of the valid input buffer in bytes.
+ * \param byte_pos Byte offset in the stream.
+ * \param shift Bit shift within that byte (0 to 7).
+ * \return The extracted 8-bit byte value, with zero-padded trailing bits if next byte is unavailable.
+ */
+static inline ut8 rz_bits_extract_stream_byte(const ut8 *buf, size_t buflen, size_t byte_pos, ut8 shift) {
+	if (!buf || byte_pos >= buflen) {
+		return 0;
+	}
+	shift &= 7;
+	if (shift == 0) {
+		return buf[byte_pos];
+	}
+	ut8 high = (ut8)((buf[byte_pos] << shift) & 0xff);
+	ut8 low = (buflen - byte_pos > 1) ? (ut8)(buf[byte_pos + 1] >> (8 - shift)) : 0;
+	return high | low;
+}
+
+/**
  * \brief Sign-extends a value from a specified bit-width to full width of type.
  *
  * This macro defines an inline function that performs sign extension on an
