@@ -148,7 +148,7 @@ EOF
 EXPECT=<<EOF
 type: cjmp
 jump: 0x0000000c
-fail: 0x00000020
+fail: 0x00000038
 type: add
 stackptr: -136
 EOF
@@ -1028,5 +1028,183 @@ EXPECT=<<EOF
 seq
 EOF
 EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# B with ADDKPC setting B3 in its delay slots is the C64x+ call idiom; ADDKPC
+# writes the return address. As a jump, af followed it into the callee and
+# grew the function to 584 bytes; as a call it is 48, and the callee is a
+# function of its own.
+NAME=c6x b with addkpc b3 in its delay slots is a call
+FILE=malloc://0x1000
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx 62030c00 @ 0x7a4
+wx 90bcff0f @ 0x9d4
+wx 62018301 @ 0x9e8
+wx 62030c00 @ 0x9ec
+ao @ 0x9d4~^type
+ao @ 0x9d4~^fail
+af @ 0x9d4
+afl
+EOF
+EXPECT=<<EOF
+type: call
+fail: 0x000009ec
+0x000007a4    1 24           fcn.000007a4
+0x000009d4    1 48           fcn.000009d4
+EOF
+RUN
+
+# TI's compiler shares the packet that sets up a call between call sites: a
+# branch to it, then a branch to the callee one cycle later. The ADDKPC writing
+# B3 is at the first branch's target, so the second branch is the call. It is
+# typed ccall with its return address (the ADDKPC's) as the fallthrough, while
+# the first branch stays a cjmp into the shared packet, and the function ends
+# before the callee at 0x3c.
+NAME=c6x a call made through two consecutive branches
+FILE=malloc://0x100
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+e scr.color=0
+wx d90a1000da0f0c05900400c0900700c0a800800228010003002000001006000000800000d90f140262018301788018026203280000800000000000005820100262030c0000800000
+pd 7
+pd 5 @ 0x24
+ao @ 0xc~^type
+ao @ 0xc~^jump
+ao @ 0xc~^fail
+ao @ 0x8~^type
+ao @ 0x8~^jump
+af @ 0
+afl
+EOF
+EXPECT=<<EOF
+            0x00000000      cmplt .l1 0x0,a4,a0
+            0x00000004      ||    mv .l2 b3,b10
+        ,=< 0x00000008      [a0]  b .s1 0x24
+        |   0x0000000c      [a0]  b .s1 0x3c
+        |   0x00000010      mvk   .s1 0x1,a5
+        |   0x00000014      mvk   .s1 0x2,a6
+        |   0x00000018      nop   2
+            0x00000024      mv    .l1 a5,a4
+            0x00000028      ||    addkpc .s2 0x2c,b3,0
+            0x0000002c      add   .l1 a4,a6,a4
+            0x00000030      b     .s2 b10
+            0x00000034      nop   5
+type: ccall
+jump: 0x0000003c
+fail: 0x0000002c
+type: cjmp
+jump: 0x00000024
+0x00000000    4 56           fcn.00000000
+EOF
+RUN
+
+# Function analysis walks delay slots as instructions. NOP 5 is one of them and
+# fills all five cycles, so the return's delay slots end after it, and so does
+# the function; a conditional branch falls through to the same place.
+NAME=c6x delay slots counted in cycles for function analysis
+FILE=malloc://0x100
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx 62030c000080000058208400582084005820840058208400
+ao @ 0~^delay
+af @ 0
+afi @ 0~size
+wx 100800c00080000058208400 @ 0x40
+ao @ 0x40~^type
+ao @ 0x40~^fail
+ao @ 0x40~^delay
+EOF
+EXPECT=<<EOF
+delay: 1
+size: 8
+type: cjmp
+fail: 0x00000048
+delay: 1
+EOF
+RUN
+
+NAME=c6x a conditional branch through a register that links is a call
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c64x+
+e analysis.cpu=c64x+
+e cfg.bigendian=false
+wx 6203108062818201
+pi 2
+ao 1~^type:
+ao 1~^fail:
+EOF
+EXPECT=<<EOF
+[a1] b .s2 b4
+addkpc .s2 0x8,b3,4
+type: uccall
+fail: 0x00000008
+EOF
+RUN
+
+# TI's compiler shares the code that sets up a call between call sites: a site
+# branches to it and, up to five cycles later, to the callee. That code then
+# runs in the last delay slots of the second branch, for as many cycles as lie
+# between the two branches: four after a BNOP with three NOP cycles (0x0),
+# two after one with one (0xc). An ADDKPC that code reaches later is not run
+# (0x16), nor is one behind the second branch once the first has taken over
+# (0x20). 0x2e falls into the set-up at 0x32. The VM agrees on B3 at the callee.
+NAME=c6x a call made through two branches with NOP cycles between them
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e cfg.bigendian=false
+e io.cache=true
+wx 7a663a0d787fb0010080000020212020100d00206e8cca680a0d6e8c008020ecca660a096e0c6e0c624183016e8c0a096e0c86856241860147b66e8c008060eb622181016e8c6e0c6e0c6e0c00000000628185016e8c6e0c6e0c6e0c0000c0ec000000000080000062030c000080000000000000000000000000000000000000
+pi 2 @ 0x0
+pi 2 @ 0x32
+ao 1 @ 0x2~^type:
+ao 1 @ 0x2~^fail:
+ao 1 @ 0x10~^type:
+ao 1 @ 0x10~^fail:
+ao 1 @ 0x18~^type:
+ao 1 @ 0x22~^type:
+ao 1 @ 0x2e~^type:
+ao 1 @ 0x2e~^fail:
+aezi; ar a0=0; ar b3=0xbad; ar PC=0x0; aezsu 0x68; ar b3
+aezi; ar b0=1; ar b3=0xbad; ar PC=0xc; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x16; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x20; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x2e; aezsu 0x68; ar b3
+EOF
+EXPECT=<<EOF
+[!a0] bnop .s1 0x32,0x3
+[!a0] bnop .s1 0x68,0x0
+mv .l1 a11,a4
+addkpc .s2 0x38,b3,2
+type: ccall
+fail: 0x00000038
+type: ccall
+fail: 0x00000044
+type: jmp
+type: jmp
+type: call
+fail: 0x00000038
+b3 = 0x00000038
+b3 = 0x00000044
+b3 = 0x00000bad
+b3 = 0x00000bad
+b3 = 0x00000038
 EOF
 RUN

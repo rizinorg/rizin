@@ -253,3 +253,44 @@ EXPECT_ERR=<<EOF
 WARNING: The repeat at 0x4 stores to memory, which is not forgotten: memory is not modelled yet.
 EOF
 RUN
+
+# Each IL op covers an execute packet and the cycles its effects take to land,
+# so a call -- a branch with ADDKPC setting B3 in its delay slots -- writes the
+# address where its op ends (#6707).
+NAME=Calls tms320 c674x
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x00008138    8 148          main
+                                  main+8 0x8140 ->      CODE -> 0x8156 sym._C_L11
+                                 main+16 0x8148 ->      CALL -> 0x8000 section..text
+                              sym._C_RL0 0x8150 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L11+2 0x8158 ->      CALL -> 0x8088 sym.c_strlen
+                            sym._C_RL2+4 0x8164 ->      CODE -> 0x8178 sym._C_L12
+                           sym._C_RL2+12 0x816c ->      CALL -> 0x8000 section..text
+                              sym._C_RL4 0x8174 ->      CODE -> 0x81c8 sym._C_L14
+                              sym._C_L12 0x8178 ->      CALL -> 0x80a4 sym.decrypt
+                            sym._C_RL6+2 0x8182 ->      CODE -> 0x81b4 sym._C_L13
+                            sym._C_RL6+8 0x8188 ->      CALL -> 0x8000 section..text
+                           sym._C_RL8+10 0x819a ->      CALL -> 0x8000 section..text
+                           sym._C_RL10+4 0x81a8 ->      CALL -> 0x8000 section..text
+                             sym._C_RL12 0x81b0 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L13+4 0x81b8 ->      CALL -> 0x8000 section..text
+  addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+----------------------------------------------------------------------------------------------------------
+0x8138   10      0      4 0x00008156 0x00008142  0x00008138             
+0x8142   20      0      6 0x000081c8             0x00008138  0x00008000 
+0x8156   18      0      7 0x00008178 0x00008168  0x00008138  0x00008088  0x00008140
+0x8168   16      0      6 0x000081c8             0x00008138  0x00008000 
+0x8178   12      0      5 0x000081b4 0x00008184  0x00008138  0x000080a4  0x00008164
+0x8184   48      0     16 0x000081c8             0x00008138  0x00008000 
+0x81b4   20      0      6 0x000081c8             0x00008138  0x00008000  0x00008182
+0x81c8    4      0      1                        0x00008138              0x00008150 0x00008174 0x000081b0
+EOF
+RUN
