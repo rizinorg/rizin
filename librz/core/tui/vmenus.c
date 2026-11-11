@@ -259,20 +259,21 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		: var_functions_show(core, view->option, 0, colpos);
 	int h, w = rz_cons_get_size(core->cons, &h);
 
-	if (view->printMode == 1) { // px $r
+	if (view->printMode == 1) { // pd $r
 		addr += view->delta * 16;
 	}
 	const char *current_theme = rz_core_theme_get(core);
 	if (RZ_STR_NE(view->curtheme, current_theme)) {
 		RZ_FREE(view->output);
 		view->output_mode = -1;
-		view->output_addr = -1;
+		view->output_addr = UT64_MAX;
 	}
 	if (!view->curtheme || !current_theme || RZ_STR_NE(view->curtheme, current_theme)) {
 		free(view->curtheme);
 		view->curtheme = current_theme ? rz_str_dup(current_theme) : NULL;
 	}
-	if (view->output_mode != view->printMode || view->output_addr != addr) {
+	if (!view->output || view->output_mode != view->printMode || view->output_addr != addr ||
+		view->output_cols != w || view->output_rows != h) {
 		const char *cmd;
 		if (view->printMode > 0 && view->printMode < lastPrintMode) {
 			cmd = printCmds[view->printMode];
@@ -287,18 +288,22 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		view->output = rz_core_cmd_str(core, cmdf);
 		view->output_mode = view->printMode;
 		view->output_addr = addr;
+		view->output_cols = w;
+		view->output_rows = h;
 		free(cmdf);
+		// The cached text does not change while scrolling; count its lines once.
+		view->column_nlines = 0;
+		if (view->output) {
+			const char *s = view->output;
+			while (*s) {
+				if (*s == '\n' || !s[1]) {
+					view->column_nlines++;
+				}
+				s++;
+			}
+		}
 	}
 	if (view->output) {
-		// count the lines of output for calculating percentage
-		view->column_nlines = 0;
-		char *s = view->output;
-		while (*s) {
-			if (*s == '\n') {
-				view->column_nlines++;
-			}
-			s++;
-		}
 		// crop and print output, 'h - 2' because we have two new lines in rz_cons_printf
 		char *out;
 		if (view->printMode == 1) {
@@ -469,7 +474,9 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 
 	// print percentage at right corner
 	cols = rz_cons_get_size(core->cons, &h);
-	float p = (float)(view->delta + h - 2) / (float)(view->column_nlines);
+	float p = view->column_nlines
+		? (float)(view->delta + h - 2) / (float)view->column_nlines
+		: 1;
 	if (p > 1) {
 		p = 1;
 	}
@@ -694,6 +701,25 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			continue;
 		}
 		ch = rz_cons_arrow_to_hjkl(core->cons, ch); // get ESC+char, return 'hjkl' char
+
+		// Editors and nested views can change the bytes, analysis or display settings.
+		switch (ch) {
+		case ':':
+		case '/':
+		case 'a':
+		case 'r':
+		case 't':
+		case 'd':
+		case '-':
+		case 'x':
+		case 'X':
+		case 's':
+		case '_':
+			view->output_mode = -1;
+			break;
+		default:
+			break;
+		}
 
 		switch (ch) {
 		case '=':

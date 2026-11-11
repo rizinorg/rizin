@@ -381,8 +381,58 @@ static bool test_visual_function_preview(void) {
 	mu_end;
 }
 
+static size_t visual_render_count;
+static bool visual_resize_preview;
+
+static RzCmdStatus visual_preview_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	visual_render_count++;
+	if (visual_resize_preview) {
+		rz_config_set_i(core->config, "scr.rows", 20);
+		visual_resize_preview = false;
+	}
+	rz_cons_printf(core->cons, "preview at 0x%" PFMT64x "\n", core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_preview_cache(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://16 0x100000000; s 0x100000000; af+ first; "
+		"on malloc://16 0x200000000; s 0x200000000; af+ second; s 0x100000000";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "64-bit functions");
+	RzCmdDesc *preview = rz_cmd_desc_get_exec(rz_cmd_get_desc(core->rcmd, "pdr"));
+	mu_assert_notnull(preview, "function preview command");
+	preview->d.argv_state_data.cb = visual_preview_handler;
+	visual_render_count = 0;
+	const struct {
+		const char *keys;
+		size_t renders;
+		bool resize;
+	} cases[] = {
+		{ "\tjjkk\tqq", 1, false },
+		{ "qq", 2, false },
+		{ "jkqq", 5, false },
+		{ "\tk\tqq", 7, true },
+		{ ":e asm.bytes=true\n\nqq", 9, false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		visual_resize_preview = cases[i].resize;
+		mu_assert_true(rz_cons_readpush(core->cons, cases[i].keys, strlen(cases[i].keys)), "preview keys");
+		char *output = rz_core_cmd_str(core, "Vv");
+		mu_assert_notnull(output, "visual output");
+		free(output);
+		mu_assert_eq(visual_render_count, cases[i].renders, "reuse only the current function preview");
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
+	mu_run_test(test_visual_preview_cache);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
