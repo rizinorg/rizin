@@ -168,9 +168,7 @@ pc = 0x0000000000010458
             ;-- section..text:
             ;-- .text:
             ;-- $xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zbb1p0_zbs1p0:
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ a0
-|           ; arg char **argv @ a1
+/ int main(int argc @ a0, char **argv @ a1, char **envp);
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x00010450      addi  sp, sp, -0x10                        ; [09] -r-x section size 814 named .text
 |           0x00010452      sd    ra, 8(sp)
