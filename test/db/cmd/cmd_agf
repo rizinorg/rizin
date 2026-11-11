@@ -48,3 +48,18 @@ EXPECT=<<EOF
 {"nodes":[{"id":0,"title":"0x42","body":"fcn.00000042();\nadd byte [rax], al\ncmp rax, 0x00\njz 0x50\n","offset":66,"out_nodes":[1,2]},{"id":1,"title":"0x50","body":"add byte [rax], al\nret\n","offset":80,"out_nodes":[]},{"id":2,"title":"0x4a","body":"add byte [rax], al\nadd byte [rax], al\nadd byte [rax], al\n","offset":74,"out_nodes":[1]}]}
 EOF
 RUN
+
+NAME=agf retains unanalyzed branch targets without errors
+FILE=malloc://1
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx c3
+af+ partial
+afb+ 0 0 1 0x1000
+agf json
+EOF
+EXPECT=<<EOF
+{"nodes":[{"id":0,"title":"0x0","body":"partial();\nret\n","offset":0,"out_nodes":[1]},{"id":1,"title":"0x1000","offset":4096,"out_nodes":[]}]}
+EOF
+EXPECT_ERR=
+RUN
