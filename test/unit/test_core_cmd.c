@@ -430,9 +430,47 @@ static bool test_visual_preview_cache(void) {
 	mu_end;
 }
 
+static bool test_visual_graph_previews(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_eq(rz_core_cmd0_rzshell(core,
+			     "e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+			     "e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+			     "on malloc://512 0x1000; s 0x1000; af+ wide"),
+		RZ_CMD_STATUS_OK, "graph setup");
+	// A branching graph puts its entry beyond the leftmost preview viewport.
+	for (int i = 0; i < 31; i++) {
+		ut64 addr = 0x1000 + i * 16;
+		ut64 jump = i < 15 ? 0x1000 + (2 * i + 1) * 16 : UT64_MAX;
+		ut64 fail = i < 15 ? 0x1000 + (2 * i + 2) * 16 : UT64_MAX;
+		rz_core_cmdf(core, "wx c3 @ 0x%" PFMT64x, addr);
+		rz_core_cmdf(core, "afb+ 0x1000 0x%" PFMT64x " 1 0x%" PFMT64x " 0x%" PFMT64x,
+			addr, jump, fail);
+	}
+	for (int mode = 0; mode < 6; mode++) {
+		if (mode) {
+			mu_assert_true(rz_cons_readpush(core->cons, "pqq", 3), "next mode");
+			free(rz_core_cmd_str(core, "Vv"));
+		}
+		mu_assert_true(rz_cons_readpush(core->cons, "qq", 2), "reenter mode");
+		int length;
+		ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+		mu_assert_notnull(output, "preview output");
+		if (mode == 2 || mode == 3) {
+			const char *title = "|  0x1000";
+			mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)title, strlen(title)),
+				"graph entry is visible in the preview");
+		}
+		free(output);
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_visual_preview_cache);
+	mu_run_test(test_visual_graph_previews);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);

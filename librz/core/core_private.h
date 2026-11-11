@@ -382,6 +382,8 @@ typedef struct rz_core_visual_view_t {
 	ut64 output_addr;
 	int output_cols;
 	int output_rows;
+	int output_x;
+	int output_y;
 	int option;
 	int variable_option;
 	int printMode;
