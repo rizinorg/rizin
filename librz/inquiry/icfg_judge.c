@@ -232,9 +232,8 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s) {
 		rz_warn_if_reached();
 		return CFG_CONFLICT_VERDICT_N;
 	}
-	// TODO: What about cases where two verdicts are of equal probability or very close?
-	// We should check a margin at which we make a decision and
-	// below that stay undecided.
+	// TODO: This softmax does here effectively the same as max().
+	// That needs to be replaced, checking the probabilities of the verdicts against each other.
 	st64 softmax_score = rz_math_softmax_st64(&it);
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		if (s->verdict_score[i] == softmax_score) {
@@ -459,6 +458,7 @@ static bool edge_selector(const RzGraphEdge *e, RzGraphVisitor *vis) {
 	case RZ_ICFG_EDGE_TYPE_RETURN:
 		return false;
 	}
+	return false;
 }
 
 typedef struct {
@@ -470,8 +470,8 @@ static void change_membership(RzGraphNode *n, RzGraphVisitor *vis) {
 	VisitorBundle *bundle = vis->visitor_data;
 	RzICFGNode *block = rz_graph_node_get_data_mut(n);
 	if (node_needs_judgement(bundle->icfg, block)) {
-		// Don't update memberships.
-		// It is another conflict node.
+		// TODO: In this subgraph, replace the previously common memberships from A,B with
+		// the new procedure C. But keep other memberships like D, E.
 		return;
 	}
 
