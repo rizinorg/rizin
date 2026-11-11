@@ -290,6 +290,18 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		view->output_addr = addr;
 		view->output_cols = w;
 		view->output_rows = h;
+		view->output_x = view->output_y = 0;
+		if (view->printMode == 2 || view->printMode == 3) {
+			// A wide graph may place the entry node far beyond the left edge.
+			char title[32];
+			rz_strf(title, "0x%" PFMT64x, addr);
+			RzANode *node = rz_agraph_get_node(core->graph, title);
+			if (node) {
+				int margin = RZ_MAX(0, (w - colpos - node->w) / 2);
+				view->output_x = RZ_MAX(0, node->x + core->graph->can->sx - margin);
+				view->output_y = RZ_MAX(0, node->y + core->graph->can->sy);
+			}
+		}
 		free(cmdf);
 		// The cached text does not change while scrolling; count its lines once.
 		view->column_nlines = 0;
@@ -309,7 +321,9 @@ static void rz_core_visual_analysis_refresh_column(RzCore *core, int colpos) {
 		if (view->printMode == 1) {
 			out = rz_str_ansi_crop(view->output, 0, 0, w - colpos, h - 2);
 		} else {
-			out = rz_str_ansi_crop(view->output, 0, view->delta, w - colpos, h - 2 + view->delta);
+			int x = view->output_x;
+			int y = view->output_y + view->delta;
+			out = rz_str_ansi_crop(view->output, x, y, x + w - colpos, y + h - 2);
 		}
 		rz_cons_printf(core->cons, "\n%s\n", out);
 		free(out);
@@ -475,7 +489,7 @@ static ut64 rz_core_visual_analysis_refresh(RzCore *core) {
 	// print percentage at right corner
 	cols = rz_cons_get_size(core->cons, &h);
 	float p = view->column_nlines
-		? (float)(view->delta + h - 2) / (float)view->column_nlines
+		? (float)(view->output_y + view->delta + h - 2) / (float)view->column_nlines
 		: 1;
 	if (p > 1) {
 		p = 1;
