@@ -468,6 +468,7 @@ typedef struct {
 	ut8 nops; ///< number of valid operands
 	bool is_header; ///< compact fetch-packet header word (renders as .fphead)
 	bool compact_packet; ///< this slot sits in a packet that has a compact header
+	bool protected_load; ///< a load in a fetch packet whose header protects loads: four NOP cycles follow it
 } C6xInsn;
 
 /** Per-variant feature gate and register-set descriptor. */
@@ -514,12 +515,6 @@ RZ_IPI const char *c6x_pred_reg_name(ut8 creg);
 /** Most slots a fetch packet can hold: seven words of two compact opcodes, plus the header. */
 #define C6X_FP_SLOTS 15
 
-/** First address after execute packet \p p, i.e. where the next one starts. */
-#define C6X_PACKET_END(p) ((p).slots[(p).n - 1].addr + (p).slots[(p).n - 1].size)
-
-/** Registers one execute packet can stage; every slot writes at most a pair. */
-#define C6X_PK_REGS 16
-
 /** One instruction slot of a fetch packet, before decoding. */
 typedef struct {
 	ut64 addr; ///< where the slot starts
@@ -557,24 +552,28 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
-
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret);
 
-/** Local carrying a deferred branch's predicate from issue to transfer. */
-#define C6X_PRED_TAKEN "_br_taken"
+RZ_IPI bool c6x_load_into_base(const C6xInsn *insn);
 
-RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other);
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_load_part(const C6xInsn *insn, ut64 pc, bool update);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr);
+RZ_IPI const char *c6x_il_reg(ut8 side, ut8 num);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn);
+/**
+ * Decodes every slot of the execute packet holding \p addr into \p insns, in
+ * address order, and returns how many; 0 when it cannot be read or decoded.
+ */
+typedef size_t (*C6xPacketFn)(void *user, ut64 addr, RZ_OUT C6xInsn *insns, RZ_OUT C6xPacketRef *pkt);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled, ut64 fallthrough);
+/** The caller of c6x_lift_window() continues where the effect's code ends. */
+#define C6X_FALL_TO_END UT64_MAX
 
-RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn);
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_window(C6xPacketFn packet, void *user, ut64 addr, ut64 fall, RZ_OUT ut64 *end);
 
-RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn);
+RZ_IPI ut8 c6x_delay_slots(const C6xInsn *insn, bool high);
+
+RZ_IPI ut8 c6x_nop_cycles(const C6xInsn *insn);
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 

@@ -3266,6 +3266,9 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// When neither the buffer nor the reader reaches the header, the packet's
 	// layout is unknown: a word then gets its 32-bit reading, as in a packet
 	// without a header, while a half word cannot be decoded at all.
+	// the header's PROT bit adds four NOP cycles to every load of the packet,
+	// a 32-bit one too (SPRUFE8B 3.10.2.2)
+	bool prot = false;
 	if (desc->features & C6X_FEAT_SIMD) {
 		ut32 fp_off = (ut32)(pc & 0x1f);
 		ut32 hdr;
@@ -3275,6 +3278,7 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 			// the packet's nature matters even for a slot the header does not
 			// split into two 16-bit instructions.
 			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
+			prot = insn->compact_packet && ((hdr >> 20) & 1);
 			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
 				ut8 half = (fp_off >> 1) & 1;
 				insn->parallel = (hdr >> (slot * 2 + half)) & 1;
@@ -3287,6 +3291,7 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 				insn->word = w16;
 				decode_compact(insn, w16, (hdr >> 19) & 1, (hdr >> 14) & 1,
 					(hdr >> 16) & 0x7, (hdr >> 15) & 1);
+				insn->protected_load = prot && insn->op_type == RZ_ANALYSIS_OP_TYPE_LOAD;
 				if (insn->id == C6X_INS_SPKERNEL) {
 					spkernel_stage_cycle(desc, insn, pc, big_endian, read, user);
 				}
@@ -3352,6 +3357,7 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 		insn->z = 0;
 		insn->nops = 0;
 	}
+	insn->protected_load = prot && insn->op_type == RZ_ANALYSIS_OP_TYPE_LOAD;
 	return true;
 }
 
@@ -3378,68 +3384,217 @@ RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void) {
 	return v;
 }
 
+/** Delay slots of a result: of a single register, or of each half of a pair. */
+typedef struct {
+	ut8 lo; ///< the result, or the even register of a pair
+	ut8 hi; ///< the odd register of a pair
+} C6xDelaySlots;
+
+// Delay slots of every result that is not visible to the next execute packet,
+// from the "Delay Slots" of each instruction in SPRUFE8B and SPRUGH7, which
+// agree on the instructions both have. The pipeline tables of SPRUFE8B 4.2 say
+// when each half of a pair lands where the two differ.
+static const C6xDelaySlots c6x_delay_slots_tbl[C6X_INS_LAST] = {
+	// loads: the value lands in E5, an address update in E1
+	[C6X_INS_LDB] = { 4, 4 },
+	[C6X_INS_LDBU] = { 4, 4 },
+	[C6X_INS_LDH] = { 4, 4 },
+	[C6X_INS_LDHU] = { 4, 4 },
+	[C6X_INS_LDW] = { 4, 4 },
+	[C6X_INS_LDNW] = { 4, 4 },
+	[C6X_INS_LDDW] = { 4, 4 },
+	[C6X_INS_LDNDW] = { 4, 4 },
+	// 16x16 multiplies, two-cycle
+	[C6X_INS_MPY] = { 1, 1 },
+	[C6X_INS_MPYH] = { 1, 1 },
+	[C6X_INS_MPYHL] = { 1, 1 },
+	[C6X_INS_MPYHLU] = { 1, 1 },
+	[C6X_INS_MPYHSLU] = { 1, 1 },
+	[C6X_INS_MPYHSU] = { 1, 1 },
+	[C6X_INS_MPYHU] = { 1, 1 },
+	[C6X_INS_MPYHULS] = { 1, 1 },
+	[C6X_INS_MPYHUS] = { 1, 1 },
+	[C6X_INS_MPYLH] = { 1, 1 },
+	[C6X_INS_MPYLHU] = { 1, 1 },
+	[C6X_INS_MPYLSHU] = { 1, 1 },
+	[C6X_INS_MPYLUHS] = { 1, 1 },
+	[C6X_INS_MPYSU] = { 1, 1 },
+	[C6X_INS_MPYU] = { 1, 1 },
+	[C6X_INS_MPYUS] = { 1, 1 },
+	[C6X_INS_SMPY] = { 1, 1 },
+	[C6X_INS_SMPYH] = { 1, 1 },
+	[C6X_INS_SMPYHL] = { 1, 1 },
+	[C6X_INS_SMPYLH] = { 1, 1 },
+	// .M unit operations that are not multiplies, two-cycle
+	[C6X_INS_AVG2] = { 1, 1 },
+	[C6X_INS_AVGU4] = { 1, 1 },
+	[C6X_INS_BITC4] = { 1, 1 },
+	[C6X_INS_BITR] = { 1, 1 },
+	[C6X_INS_DEAL] = { 1, 1 },
+	[C6X_INS_ROTL] = { 1, 1 },
+	[C6X_INS_SHFL] = { 1, 1 },
+	[C6X_INS_SSHVL] = { 1, 1 },
+	[C6X_INS_SSHVR] = { 1, 1 },
+	[C6X_INS_XPND2] = { 1, 1 },
+	[C6X_INS_XPND4] = { 1, 1 },
+	[C6X_INS_DAVG2] = { 1, 1 },
+	[C6X_INS_DAVGNR2] = { 1, 1 },
+	[C6X_INS_DAVGNRU4] = { 1, 1 },
+	[C6X_INS_DAVGU4] = { 1, 1 },
+	[C6X_INS_DXPND2] = { 1, 1 },
+	[C6X_INS_DXPND4] = { 1, 1 },
+	[C6X_INS_MVD] = { 3, 3 },
+	[C6X_INS_DMVD] = { 3, 3 },
+	// extended multiplies, four-cycle
+	[C6X_INS_CMPY] = { 3, 3 },
+	[C6X_INS_CMPYR] = { 3, 3 },
+	[C6X_INS_CMPYR1] = { 3, 3 },
+	[C6X_INS_DDOTP4] = { 3, 3 },
+	[C6X_INS_DDOTPH2] = { 3, 3 },
+	[C6X_INS_DDOTPH2R] = { 3, 3 },
+	[C6X_INS_DDOTPL2] = { 3, 3 },
+	[C6X_INS_DDOTPL2R] = { 3, 3 },
+	[C6X_INS_DOTP2] = { 3, 3 },
+	[C6X_INS_DOTPN2] = { 3, 3 },
+	[C6X_INS_DOTPNRSU2] = { 3, 3 },
+	[C6X_INS_DOTPRSU2] = { 3, 3 },
+	[C6X_INS_DOTPSU4] = { 3, 3 },
+	[C6X_INS_DOTPU4] = { 3, 3 },
+	[C6X_INS_GMPY] = { 3, 3 },
+	[C6X_INS_GMPY4] = { 3, 3 },
+	[C6X_INS_MPY2] = { 3, 3 },
+	[C6X_INS_MPY2IR] = { 3, 3 },
+	[C6X_INS_MPY32] = { 3, 3 },
+	[C6X_INS_MPY32SU] = { 3, 3 },
+	[C6X_INS_MPY32U] = { 3, 3 },
+	[C6X_INS_MPY32US] = { 3, 3 },
+	[C6X_INS_MPYHI] = { 3, 3 },
+	[C6X_INS_MPYHIR] = { 3, 3 },
+	[C6X_INS_MPYLI] = { 3, 3 },
+	[C6X_INS_MPYLIR] = { 3, 3 },
+	[C6X_INS_MPYSU4] = { 3, 3 },
+	[C6X_INS_MPYU4] = { 3, 3 },
+	[C6X_INS_SMPY2] = { 3, 3 },
+	[C6X_INS_SMPY32] = { 3, 3 },
+	[C6X_INS_XORMPY] = { 3, 3 },
+	// C66x, a quad landing at once
+	[C6X_INS_CCMATMPY] = { 3, 3 },
+	[C6X_INS_CCMATMPYR1] = { 3, 3 },
+	[C6X_INS_CCMPY32R1] = { 3, 3 },
+	[C6X_INS_CMATMPY] = { 3, 3 },
+	[C6X_INS_CMATMPYR1] = { 3, 3 },
+	[C6X_INS_CMPY32R1] = { 3, 3 },
+	[C6X_INS_CMPYSP] = { 3, 3 },
+	[C6X_INS_DCCMPY] = { 3, 3 },
+	[C6X_INS_DCCMPYR1] = { 3, 3 },
+	[C6X_INS_DCMPY] = { 3, 3 },
+	[C6X_INS_DCMPYR1] = { 3, 3 },
+	[C6X_INS_DDOTP4H] = { 3, 3 },
+	[C6X_INS_DDOTPSU4H] = { 3, 3 },
+	[C6X_INS_DMPY2] = { 3, 3 },
+	[C6X_INS_DMPYSP] = { 3, 3 },
+	[C6X_INS_DMPYSU4] = { 3, 3 },
+	[C6X_INS_DMPYU2] = { 3, 3 },
+	[C6X_INS_DMPYU4] = { 3, 3 },
+	[C6X_INS_DOTP4H] = { 3, 3 },
+	[C6X_INS_DOTPSU4H] = { 3, 3 },
+	[C6X_INS_DSMPY2] = { 3, 3 },
+	[C6X_INS_FMPYDP] = { 3, 3 },
+	[C6X_INS_MPYU2] = { 3, 3 },
+	[C6X_INS_QMPY32] = { 3, 3 },
+	[C6X_INS_QMPYSP] = { 3, 3 },
+	[C6X_INS_QSMPY32R1] = { 3, 3 },
+	// C66x three-cycle floating point
+	[C6X_INS_DADDSP] = { 2, 2 },
+	[C6X_INS_DINTHSP] = { 2, 2 },
+	[C6X_INS_DINTHSPU] = { 2, 2 },
+	[C6X_INS_DINTSP] = { 2, 2 },
+	[C6X_INS_DINTSPU] = { 2, 2 },
+	[C6X_INS_DSPINT] = { 2, 2 },
+	[C6X_INS_DSPINTH] = { 2, 2 },
+	[C6X_INS_DSUBSP] = { 2, 2 },
+	[C6X_INS_FADDDP] = { 2, 2 },
+	[C6X_INS_FADDSP] = { 2, 2 },
+	[C6X_INS_FSUBDP] = { 2, 2 },
+	[C6X_INS_FSUBSP] = { 2, 2 },
+	// two-cycle DP: the even register in E1, the odd one in E2 (4.2.7)
+	[C6X_INS_ABSDP] = { 0, 1 },
+	[C6X_INS_RSQRDP] = { 0, 1 },
+	[C6X_INS_SPDP] = { 0, 1 },
+	// four-cycle (4.2.8)
+	[C6X_INS_ADDSP] = { 3, 3 },
+	[C6X_INS_DPINT] = { 3, 3 },
+	[C6X_INS_DPSP] = { 3, 3 },
+	[C6X_INS_DPTRUNC] = { 3, 3 },
+	[C6X_INS_INTSP] = { 3, 3 },
+	[C6X_INS_INTSPU] = { 3, 3 },
+	[C6X_INS_MPYSP] = { 3, 3 },
+	[C6X_INS_SPINT] = { 3, 3 },
+	[C6X_INS_SPTRUNC] = { 3, 3 },
+	[C6X_INS_SUBSP] = { 3, 3 },
+	// INTDP (4.2.9), DP compares (4.2.10), ADDDP/SUBDP (4.2.11), MPYI (4.2.12),
+	// MPYID (4.2.13), MPYDP (4.2.14), MPYSPDP (4.2.15), MPYSP2DP (4.2.16)
+	[C6X_INS_INTDP] = { 3, 4 },
+	[C6X_INS_INTDPU] = { 3, 4 },
+	[C6X_INS_CMPEQDP] = { 1, 1 },
+	[C6X_INS_CMPGTDP] = { 1, 1 },
+	[C6X_INS_CMPLTDP] = { 1, 1 },
+	[C6X_INS_ADDDP] = { 5, 6 },
+	[C6X_INS_SUBDP] = { 5, 6 },
+	[C6X_INS_MPYI] = { 8, 8 },
+	[C6X_INS_MPYID] = { 8, 9 },
+	[C6X_INS_MPYDP] = { 8, 9 },
+	[C6X_INS_MPYSPDP] = { 5, 6 },
+	[C6X_INS_MPYSP2DP] = { 3, 4 },
+};
+
 /**
- * \brief Delay slots \p insn leaves for the instructions that follow it.
+ * \brief Delay slots before a result \p insn writes is visible.
  *
- * A C6000 branch resolves five execute packets after it issues. CALLP is
- * protected -- the hardware fills its slots with an implied NOP 5 -- so it
- * leaves none, and BNOP fills a given number of its own, leaving the rest.
+ * An instruction issued \c n cycles after \p insn reads the old value of its
+ * destination for every \c n up to the delay slots, and the new one after.
+ * Only the destination is late: an address update or the link register of a
+ * call is visible to the next execute packet.
  *
- * \return 0 when the instruction opens no visible delay slots.
+ * \param insn The instruction.
+ * \param high Whether this is the odd register of a pair destination, which
+ *             some double-precision instructions write a cycle after the
+ *             even one.
+ *
+ * \return 0 when the result is visible to the next execute packet.
  */
-RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn) {
-	switch (insn->id) {
-	case C6X_INS_B:
-	case C6X_INS_BDEC:
-	case C6X_INS_BPOS:
-		return 5;
-	case C6X_INS_BNOP: {
-		// the NOP count is the last operand
-		ut8 filled = insn->nops ? (ut8)OP(insn->nops - 1).v.imm.value : 0;
-		return filled < 5 ? 5 - filled : 0;
-	}
-	default:
+RZ_IPI ut8 c6x_delay_slots(const C6xInsn *insn, bool high) {
+	rz_return_val_if_fail(insn, 0);
+	if (insn->id <= C6X_INS_INVALID || insn->id >= C6X_INS_LAST) {
 		return 0;
 	}
+	const C6xDelaySlots *d = &c6x_delay_slots_tbl[insn->id];
+	return high ? d->hi : d->lo;
 }
 
 /**
- * \brief Execute packets between \p insn issuing and its result being readable.
+ * \brief Cycles of NOP \p insn adds to its execute packet.
  *
- * A load's destination is written four packets on, an extended multiply's three
- * and an ordinary multiply's one; most instructions land in the same cycle. An
- * instruction issued in a branch's delay slots can therefore write after the
- * branch has transferred, which is why the value matters here rather than only
- * inside a packet.
+ * NOP n takes n cycles, and BNOP, ADDKPC and CALLP issue NOPs after
+ * themselves, the last an implied NOP 5, as does a protected load, NOP 4.
+ * Only one instruction of an execute packet may do so (SPRUFE8B 3.8.10), and
+ * a branch completing during the NOPs cuts them short.
  */
-RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn) {
-	switch (insn->id) {
-	case C6X_INS_LDW:
-	case C6X_INS_LDB:
-	case C6X_INS_LDBU:
-	case C6X_INS_LDH:
-	case C6X_INS_LDHU:
-	case C6X_INS_LDDW:
-	case C6X_INS_LDNW:
-	case C6X_INS_LDNDW:
+RZ_IPI ut8 c6x_nop_cycles(const C6xInsn *insn) {
+	rz_return_val_if_fail(insn, 0);
+	if (insn->protected_load) {
 		return 4;
-	case C6X_INS_MPY32:
-	case C6X_INS_MPY32U:
-	case C6X_INS_MPY32SU:
-	case C6X_INS_MPY32US:
-		return 3;
-	case C6X_INS_MPY:
-	case C6X_INS_MPYH:
-	case C6X_INS_MPYLH:
-	case C6X_INS_MPYHL:
-	case C6X_INS_MPYU:
-	case C6X_INS_MPYSU:
-	case C6X_INS_MPYUS:
-	case C6X_INS_SMPY:
-	case C6X_INS_SMPYH:
-	case C6X_INS_SMPYHL:
-	case C6X_INS_SMPYLH:
-		return 1;
+	}
+	switch (insn->id) {
+	case C6X_INS_NOP:
+		return insn->nops && OP(0).kind == C6X_OP_IMM && OP(0).v.imm.value > 1 ? (ut8)(OP(0).v.imm.value - 1) : 0;
+	case C6X_INS_BNOP:
+		// the count is the last operand: BNOP src2, src1 is B src2 then NOP src1
+		return insn->nops >= 2 && OP(insn->nops - 1).kind == C6X_OP_IMM ? (ut8)OP(insn->nops - 1).v.imm.value : 0;
+	case C6X_INS_ADDKPC:
+		return insn->nops >= 3 && OP(2).kind == C6X_OP_IMM ? (ut8)OP(2).v.imm.value : 0;
+	case C6X_INS_CALLP:
+		return 5;
 	default:
 		return 0;
 	}

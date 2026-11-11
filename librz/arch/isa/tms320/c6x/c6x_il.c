@@ -11,14 +11,9 @@
  * independent. The scalar move / ALU / shift / multiply / load / store core is
  * lifted; forms not yet handled return NULL and simply leave op->il_op unset.
  *
- * Two architectural notes bound what is modelled here. C6000 is a VLIW: every
- * instruction of an execute packet reads its sources at the packet start and
- * writes at its end, so within a packet an instruction never sees another's
- * result. That is modelled by lifting the whole packet on its first
- * instruction, as described at c6x_lift_packet(), so a "mv a,b || mv b,a" swap
- * is exact. Branches have five delay slots and loads and multiplies deliver
- * their results late: c6x_lift_il() in analysis_tms320.c lifts a branch
- * together with its delay slots and holds back a late result read too soon.
+ * An instruction is lifted as if it ran alone and wrote its results at once.
+ * When they land, and what the rest of its execute packet and the packets
+ * after it see meanwhile, is c6x_il_window.c's business.
  */
 
 #include <rz_util.h>
@@ -96,6 +91,11 @@ static const char *c6x_reg_name(ut8 side, ut8 num) {
 	return c6x_il_regs[(side & 1) * 32 + (num & 31)];
 }
 
+/** The IL variable of general-purpose register \p num on side \p side (0 = A, 1 = B). */
+RZ_IPI const char *c6x_il_reg(ut8 side, ut8 num) {
+	return c6x_reg_name(side, num);
+}
+
 // Predicate register named by the creg field (SPRU733 Table 3-9), or NULL when
 // unconditional. Mirrors the disassembler's pred_reg().
 static const char *c6x_pred_name(ut8 creg) {
@@ -106,11 +106,6 @@ static const char *c6x_pred_name(ut8 creg) {
  * Every architectural register read and write goes through one of these, so
  * that the register traffic of a lifted instruction is in one place rather than
  * spread over the opcode handlers.
- *
- * They are the plain global accessors. Packet semantics -- every instruction in
- * an execute packet seeing the register file as it stood when the packet issued
- * -- are reached instead by running each slot against restored state and
- * applying the captured results together, which leaves these untouched.
  */
 static RzILOpPure *c6x_reg_read(const char *name) {
 	return VARG(name);
@@ -913,13 +908,15 @@ static RzILOpEffect *c6x_ddotp2(const C6xInsn *insn, bool high) {
 // Count leading zero bits of \p x into the local \p out, which the caller reads
 // afterwards. \p width is 32 or 64, and clz(0) == width. Shifting left until the
 // top bit is set expresses this in one loop rather than an unrolled binary
-// search, at the cost of being an effect rather than a pure expression.
+// search, at the cost of being an effect rather than a pure expression. The
+// shifted copy is named by its width, since one lift may count both.
 static RzILOpEffect *c6x_clz_into(const char *out, RzILOpPure *x, ut32 width) {
+	const char *v = width == 64 ? "_clzv64" : "_clzv";
 	return SEQ3(
-		SETL("_clzv", x),
+		SETL(v, x),
 		SETL(out, U32(0)),
-		REPEAT(AND(ULT(VARL(out), U32(width)), INV(MSB(VARL("_clzv")))),
-			SEQ2(SETL("_clzv", SHIFTL0(VARL("_clzv"), UN(width, 1))),
+		REPEAT(AND(ULT(VARL(out), U32(width)), INV(MSB(VARL(v)))),
+			SEQ2(SETL(v, SHIFTL0(VARL(v), UN(width, 1))),
 				SETL(out, ADD(VARL(out), U32(1))))));
 }
 
@@ -3597,230 +3594,9 @@ static RzILOpEffect *c6x_lift_core(const C6xInsn *insn, ut64 pc) {
 	}
 }
 
-// RzIL keeps a variable name as a const char * and never copies it, so every
-// name a lifted packet mentions has to outlive the effect. They are drawn from a
-// bounded set -- one snapshot per staged register, one capture per register per
-// slot -- so the whole set is a table of string literals rather than anything
-// built at run time.
-// clang-format off
-static const char *const c6x_snapshot_names[C6X_PK_REGS] = {
-	"_pk0", "_pk1", "_pk2", "_pk3", "_pk4", "_pk5", "_pk6", "_pk7",
-	"_pk8", "_pk9", "_pk10", "_pk11", "_pk12", "_pk13", "_pk14", "_pk15"
-};
-
-static const char *const c6x_capture_names[C6X_FP_SLOTS][C6X_PK_REGS] = {
-#define C6X_CAP_ROW(s) \
-	{ "_c" #s "_0", "_c" #s "_1", "_c" #s "_2", "_c" #s "_3", \
-		"_c" #s "_4", "_c" #s "_5", "_c" #s "_6", "_c" #s "_7", \
-		"_c" #s "_8", "_c" #s "_9", "_c" #s "_10", "_c" #s "_11", \
-		"_c" #s "_12", "_c" #s "_13", "_c" #s "_14", "_c" #s "_15" }
-	C6X_CAP_ROW(0), C6X_CAP_ROW(1), C6X_CAP_ROW(2), C6X_CAP_ROW(3),
-	C6X_CAP_ROW(4), C6X_CAP_ROW(5), C6X_CAP_ROW(6), C6X_CAP_ROW(7),
-	C6X_CAP_ROW(8), C6X_CAP_ROW(9), C6X_CAP_ROW(10), C6X_CAP_ROW(11),
-	C6X_CAP_ROW(12), C6X_CAP_ROW(13), C6X_CAP_ROW(14)
-#undef C6X_CAP_ROW
-};
-// clang-format on
-
-// Whether a slot writes memory, i.e. is a store.
-static bool c6x_writes_memory(const C6xInsn *insn) {
-	return insn->nops && OP(insn->nops - 1).kind == C6X_OP_MEM;
-}
-
-// Registers an instruction writes.
-//
-// The ISA does not promise that the last operand is the destination -- a branch
-// ends in its target, BNOP in its NOP count, MVC in a control register -- so
-// this is a recogniser rather than a rule: it reports only the shapes it is sure
-// of and returns false for everything else, leaving the caller to lift the
-// packet the plain way. Being wrong here would stage the wrong register, so the
-// bar for adding a shape is knowing which operand it writes.
-static bool c6x_writes(const C6xInsn *insn, const char **out, size_t *n) {
-	*n = 0;
-	if (!insn->nops) {
-		return true; // nothing written, e.g. nop
-	}
-	const C6xOperand *dst = &OP(insn->nops - 1);
-	switch (dst->kind) {
-	case C6X_OP_REG: {
-		const char *r = c6x_reg_name(dst->v.reg.side, dst->v.reg.num);
-		if (!r) {
-			return false;
-		}
-		out[(*n)++] = r;
-		return true;
-	}
-	case C6X_OP_REGPAIR: {
-		const char *lo = c6x_reg_name(dst->v.reg.side, dst->v.reg.num);
-		const char *hi = c6x_reg_name(dst->v.reg.side, dst->v.reg.num + 1);
-		if (!lo || !hi) {
-			return false;
-		}
-		out[(*n)++] = lo;
-		out[(*n)++] = hi;
-		return true;
-	}
-	case C6X_OP_MEM:
-		// a store writes memory, and the base too when it writes back
-		if (dst->v.mem.mode != C6X_AM_POS_CST && dst->v.mem.mode != C6X_AM_NEG_CST &&
-			dst->v.mem.mode != C6X_AM_POS_REG && dst->v.mem.mode != C6X_AM_NEG_REG) {
-			const char *base = c6x_reg_name(dst->v.mem.base_side, dst->v.mem.base);
-			if (!base) {
-				return false;
-			}
-			out[(*n)++] = base;
-		}
-		return true;
-	default:
-		return false;
-	}
-}
-
-/**
- * \brief Lift a whole execute packet.
- *
- * Every instruction in a C6000 execute packet reads the register file as it
- * stood when the packet issued, so a packet may swap two registers without a
- * temporary and no ordering of the writes reproduces that. Rather than redirect
- * every read inside the lifters, each slot is run against the packet's starting
- * state and its result captured, and the captured results are applied together
- * at the end:
- *
- *     save the packet-start value of every register the packet writes
- *     for each slot: restore those registers, run the slot, capture its writes
- *     apply the captured writes
- *
- * Restoring before each slot is what makes the reads see packet-start state; the
- * lifters themselves are untouched.
- *
- * \param insns The decoded slots, in address order.
- * \param n How many, at least two.
- * \param pc Address of the packet.
- * \param skip Slots to hold back, by bit index, for the caller to emit later.
- *
- * \return The packet's effect, or NULL if a slot has a shape this cannot model.
- */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip) {
-	// n bounds the staging arrays below and the shift used for \p skip, so it
-	// is checked here rather than at each use
-	rz_return_val_if_fail(insns && n >= 1 && n <= C6X_FP_SLOTS, NULL);
-	const char *written[C6X_MAX_OPS * 8];
-	size_t nw = 0;
-	for (size_t i = 0; i < n; i++) {
-		if (skip & (1u << i)) {
-			continue;
-		}
-		const char *w[C6X_MAX_OPS];
-		size_t k = 0;
-		if (!c6x_writes(&insns[i], w, &k)) {
-			return NULL;
-		}
-		for (size_t j = 0; j < k && nw < RZ_ARRAY_SIZE(written); j++) {
-			bool seen = false;
-			for (size_t m = 0; m < nw; m++) {
-				seen |= RZ_STR_EQ(written[m], w[j]);
-			}
-			if (!seen) {
-				written[nw++] = w[j];
-			}
-		}
-	}
-	if (!nw) {
-		return NULL; // nothing to stage; sequential lifting is already correct
-	}
-	// the folded chain takes ownership of the steps, so the vector frees nothing
-	RzPVector *steps = rz_pvector_new(NULL);
-	if (!steps) {
-		return NULL;
-	}
-	// names for the staging locals, taken from the tables above
-	const char *snap[RZ_ARRAY_SIZE(written)];
-	const char *cap[C6X_FP_SLOTS][RZ_ARRAY_SIZE(written)];
-	for (size_t j = 0; j < nw; j++) {
-		snap[j] = j < C6X_PK_REGS ? c6x_snapshot_names[j] : NULL;
-		for (size_t i = 0; i < n; i++) {
-			cap[i][j] = j < C6X_PK_REGS ? c6x_capture_names[i][j] : NULL;
-		}
-		if (!snap[j] || !cap[n - 1][j]) {
-			rz_pvector_free(steps);
-			return NULL;
-		}
-	}
-	for (size_t j = 0; j < nw; j++) {
-		rz_pvector_push(steps, SETL(snap[j], VARG(written[j])));
-	}
-	// A load and a store to the same location in one packet load the old value
-	// and then store the new one (SPRUFE8B 4.2), so every slot that reads memory
-	// has to run before any slot that writes it. Registers are unaffected by the
-	// order, since each slot is restored to the packet's starting state and the
-	// result applied by original slot index.
-	size_t order[C6X_FP_SLOTS];
-	size_t nord = 0;
-	for (size_t i = 0; i < n; i++) {
-		if (!c6x_writes_memory(&insns[i])) {
-			order[nord++] = i;
-		}
-	}
-	for (size_t i = 0; i < n; i++) {
-		if (c6x_writes_memory(&insns[i])) {
-			order[nord++] = i;
-		}
-	}
-	for (size_t o = 0; o < nord; o++) {
-		size_t i = order[o];
-		if (skip & (1u << i)) {
-			continue; // emitted by the caller, later in the window
-		}
-		// restore packet-start state so this slot reads what the hardware would
-		for (size_t j = 0; j < nw; j++) {
-			rz_pvector_push(steps, SETG(written[j], VARL(snap[j])));
-		}
-		RzILOpEffect *body = c6x_lift(&insns[i], pc);
-		if (!body) {
-			void **it;
-			rz_pvector_foreach (steps, it) {
-				rz_il_op_effect_free(*it);
-			}
-			rz_pvector_free(steps);
-			return NULL;
-		}
-		rz_pvector_push(steps, body);
-		// capture what this slot produced before the next restore wipes it
-		for (size_t j = 0; j < nw; j++) {
-			rz_pvector_push(steps, SETL(cap[i][j], VARG(written[j])));
-		}
-	}
-	// apply the last slot that actually wrote each register
-	for (size_t j = 0; j < nw; j++) {
-		size_t last = 0;
-		for (size_t i = 0; i < n; i++) {
-			const char *w[C6X_MAX_OPS];
-			size_t k = 0;
-			c6x_writes(&insns[i], w, &k);
-			for (size_t m = 0; m < k; m++) {
-				if (RZ_STR_EQ(w[m], written[j])) {
-					last = i;
-				}
-			}
-		}
-		rz_pvector_push(steps, SETG(written[j], VARL(cap[last][j])));
-	}
-	// there is no vector form of SEQN, so fold the steps into a chain
-	RzILOpEffect *seq = NULL;
-	void **it;
-	rz_pvector_foreach (steps, it) {
-		RzILOpEffect *step = *it;
-		seq = seq ? SEQ2(seq, step) : step;
-	}
-	rz_pvector_free(steps);
-	return seq;
-}
-
-/** Lift a decoded instruction to RzIL, or NULL when the form is not yet lifted.
- *  \p pc is the instruction address (for PC-relative results). */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc) {
-	rz_return_val_if_fail(insn, NULL);
-	RzILOpEffect *eff = c6x_lift_core(insn, pc);
+// Run \p eff, which is consumed, only when the predicate of \p insn holds:
+// z = 1 tests the register for zero, z = 0 for not being zero.
+static RzILOpEffect *c6x_predicated(const C6xInsn *insn, RZ_NULLABLE RzILOpEffect *eff) {
 	if (!eff) {
 		return NULL;
 	}
@@ -3828,52 +3604,94 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc) {
 	if (!pred) {
 		return eff; // unconditional
 	}
-	// predicated: run the effect only when the predicate register satisfies the
-	// z sense (z = 1 tests == 0, z = 0 tests != 0).
 	RzILOpBool *cond = insn->z ? IS_ZERO(c6x_reg_read(pred)) : NON_ZERO(c6x_reg_read(pred));
 	return BRANCH(cond, eff, NOP());
 }
 
-/**
- * \brief Sample a branch's predicate into a local, for a transfer emitted later.
- *
- * A branch deferred past its delay slots is emitted after instructions that may
- * have overwritten the register it tests, so the test has to be taken when the
- * branch issues and the result carried to the transfer. Unconditional branches
- * need nothing.
- *
- * \return NULL when \p insn is unconditional.
- */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn) {
-	const char *pred = c6x_pred_name(insn->creg);
-	if (!pred) {
-		return NULL;
+// The bytes a load reads, which scale its offset.
+static ut8 c6x_load_bytes(const C6xInsn *insn) {
+	switch (insn->id) {
+	case C6X_INS_LDB:
+	case C6X_INS_LDBU:
+		return 1;
+	case C6X_INS_LDH:
+	case C6X_INS_LDHU:
+		return 2;
+	case C6X_INS_LDDW:
+	case C6X_INS_LDNDW:
+		return 8;
+	default:
+		return 4;
 	}
-	return SETL(C6X_PRED_TAKEN, insn->z ? IS_ZERO(VARG(pred)) : NON_ZERO(VARG(pred)));
+}
+
+/** Lift a decoded instruction to RzIL, or NULL when the form is not yet lifted.
+ *  \p pc is the instruction address (for PC-relative results). */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc) {
+	rz_return_val_if_fail(insn, NULL);
+	return c6x_predicated(insn, c6x_lift_core(insn, pc));
 }
 
 /**
- * \brief The transfer of a branch whose predicate was sampled earlier.
+ * \brief Whether \p insn loads into the register its address mode updates.
  *
- * \param insn The branch.
- * \param pc Address the branch issued from.
- * \param sampled Whether c6x_sample_predicate() ran for it.
- * \param fallthrough Where to leave the pc when the branch is not taken.
+ * It writes that register twice: the address in its own cycle and, after its
+ * delay slots, what it loaded (SPRUFE8B, LDW: baseR is written in E1, dst in
+ * E5; no delay slots for the address modification, four for the loaded value).
  */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled,
-	ut64 fallthrough) {
-	// lift the branch unconditionally, then re-apply the sampled predicate
-	C6xInsn bare = *insn;
-	bare.creg = 0;
-	bare.z = 0;
-	RzILOpEffect *xfer = c6x_lift(&bare, pc);
-	if (!xfer || !sampled) {
-		return xfer;
+RZ_IPI bool c6x_load_into_base(const C6xInsn *insn) {
+	rz_return_val_if_fail(insn, false);
+	switch (insn->id) {
+	case C6X_INS_LDB:
+	case C6X_INS_LDBU:
+	case C6X_INS_LDH:
+	case C6X_INS_LDHU:
+	case C6X_INS_LDW:
+	case C6X_INS_LDNW:
+	case C6X_INS_LDDW:
+	case C6X_INS_LDNDW:
+		break;
+	default:
+		return false;
 	}
-	// The window already ran the delay slots, so a branch that is not taken has
-	// to leave the program counter past them; otherwise the VM steps back into
-	// the window and walks it again.
-	return BRANCH(VARL(C6X_PRED_TAKEN), xfer, JMP(U32(fallthrough)));
+	if (insn->nops != 2 || OP(0).kind != C6X_OP_MEM || !c6x_ea_modifies(&OP(0)) || OP(0).v.mem.base_side != OP(1).v.reg.side) {
+		return false;
+	}
+	return OP(1).v.reg.num == OP(0).v.mem.base || (OP(1).kind == C6X_OP_REGPAIR && OP(1).v.reg.num + 1 == OP(0).v.mem.base);
+}
+
+/**
+ * \brief Lift one of the two writes of a load into its own address register.
+ *
+ * Both read the registers as the instruction found them.
+ *
+ * \param insn A load c6x_load_into_base() holds for.
+ * \param pc Its address.
+ * \param update The address update rather than the load.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_load_part(const C6xInsn *insn, ut64 pc, bool update) {
+	rz_return_val_if_fail(insn && c6x_load_into_base(insn), NULL);
+	if (update) {
+		RzILOpEffect *wb = NULL;
+		bool pre;
+		rz_il_op_pure_free(c6x_ea(&OP(0), c6x_load_bytes(insn), &wb, &pre));
+		return c6x_predicated(insn, wb);
+	}
+	// the same access with its address computed and not written back
+	C6xInsn load = *insn;
+	C6xOperand *m = &load.ops[0];
+	switch (m->v.mem.mode) {
+	case C6X_AM_PREDEC_CST: m->v.mem.mode = C6X_AM_NEG_CST; break;
+	case C6X_AM_PREINC_CST: m->v.mem.mode = C6X_AM_POS_CST; break;
+	case C6X_AM_PREDEC_REG: m->v.mem.mode = C6X_AM_NEG_REG; break;
+	case C6X_AM_PREINC_REG: m->v.mem.mode = C6X_AM_POS_REG; break;
+	default:
+		// post-modify reads at the base
+		m->v.mem.mode = C6X_AM_POS_CST;
+		m->v.mem.off_cst = 0;
+		break;
+	}
+	return c6x_lift(&load, pc);
 }
 
 /**
@@ -3897,19 +3715,6 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret
 	}
 	const char *link = c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num);
 	return SEQ2(c6x_reg_write(link, U32((ut32)ret)), JMP(tgt));
-}
-
-/** Whether \p o names the same architectural register as \p other. */
-RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other) {
-	if (o->kind != C6X_OP_REG || other->kind != C6X_OP_REG) {
-		return false;
-	}
-	return o->v.reg.side == other->v.reg.side && o->v.reg.num == other->v.reg.num;
-}
-
-/** A bare jump to \p addr, for leaving the pc past a window. */
-RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr) {
-	return JMP(U32(addr));
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>

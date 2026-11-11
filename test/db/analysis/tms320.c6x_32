@@ -504,7 +504,7 @@ s 0x8148
 ao~rzil
 EOF
 EXPECT=<<EOF
-rzil: (seq (set _pk0 (var a4)) (set a4 (var _pk0)) (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0))) (set _c0_0 (var a4)) (set a4 (var _c0_0)) (set b3 (bv 32 0x8150)) (jmp (bv 32 0x8000)))
+rzil: (seq (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0))) (set b3 (bv 32 0x8150)) (jmp (bv 32 0x8000)))
 EOF
 RUN
 
@@ -949,6 +949,28 @@ EOF
 EXPECT=<<EOF
             0x0000001c      .fphead n, l, w, bu, br, nosat, 0b0001000
             0x0000003c      .fphead n, l, dw/ndw, w, nobr, nosat, 0b1111100
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# A window covers its delay slots and the cycles to its results' landing, so
+# its IL can nest deeper than one level per packet. The sequences are balanced
+# so that the JSON stays within the 128 levels pj allows.
+NAME=c6x aoj on a long branch window
+FILE=malloc://0x200
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx d91f1402f1083004201001c000000000000000002900a000a341940245569408000000007b922002b3071c02f140c309a1ec4509a3ec21044540140800000000a10d8e01a30d9203f941c608fb011d0401ed4008033d9d0345201409c6569804 @ 0x1c
+aoj 1 @ 0x1c~{[0].addr}
+aoj 1 @ 0x1c~{[0].rzil.opcode}
+EOF
+EXPECT=<<EOF
+28
+seq
 EOF
 EXPECT_ERR=<<EOF
 EOF

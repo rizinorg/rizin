@@ -1069,7 +1069,9 @@ EOF
 RUN
 
 # cl6x 7.4.4 output: a compact LDNDW adds its offset in bytes where it leaves
-# the pointer as it is, whether a constant or a register.
+# the pointer as it is, whether a constant or a register. Each sits in a fetch
+# packet of its own here, so that no packet after it touches a7:a6 before the
+# load lands and the step stops after it.
 NAME=c6x compact ldndw offsets its pointer by bytes
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -1078,8 +1080,8 @@ e cfg.bigendian=false
 e analysis.cpu=c674x
 e asm.cpu=c674x
 e scr.color=0
-wx 263da105763da1056e0c7c2074206c207c4074406c407ce074e06ce0000084ef
-wx 74f5910364f511037c247424242b9003742b90032429100374291003000084e0 @ 0x20
+wx 00000000000000006e0c7c2000000000000000000000000000000000000084e0
+wx 00000000000000007c246e0c00000000000000000000000000000000000084e0 @ 0x20
 wx 00112233445566778899aabbccddeeff00112233 @ 0x100
 pd 1 @ 0xa
 pd 1 @ 0x28
@@ -1309,7 +1311,7 @@ ar a2=0x33333333
 ar a4=0x100
 ar b4=0x104
 ar a5=0x108
-aezs 3
+aezs 2
 pv4 @ 0x100
 pv4 @ 0x104
 pv4 @ 0x108
@@ -1344,7 +1346,7 @@ aezi
 ar a1=0
 ar a2=0
 ar a3=0
-aezs 3
+aezs 1
 ar a1
 ar a2
 ar a3
@@ -2757,6 +2759,476 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
+# NOP 5 is one execute packet and five cycles: it fills every delay slot of the
+# branch, so none of the adds after it runs (#6866, item 1).
+NAME=c6x a multi-cycle nop fills the delay slots of a branch
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 1008000000800000582084005820840058208400582084000000000000000000
+s 0
+pd 3
+aezi
+ar a1=0
+aezs
+ar a1
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      nop   5
+        |   0x00000008      add   .l1 0x1,a1,a1
+a1 = 0x00000000
+ PC: 0x00000040
+EOF
+RUN
+
+# ADDSP has three delay slots, so the add in the next packet reads the old a3
+# (#6866, item 2).
+NAME=c6x an addsp result lands after its delay slots
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 1822880178609002000000000000000000000000
+s 0
+pd 2
+aezi
+ar a1=0x3f800000
+ar a2=0x40000000
+ar a3=0x10
+ar a4=0
+aezs
+ar a5
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      addsp .l1 a1,a2,a3
+            0x00000004      add   .l1 a3,a4,a5
+a5 = 0x00000010
+a3 = 0x40400000
+EOF
+RUN
+
+# INTDP writes the low half of its pair in E4 and the high half in E5 (SPRUFE8B
+# 4.2.9): four cycles after it issues, the low half is new and the high one old.
+NAME=c6x intdp writes the halves of its pair a cycle apart
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 3807100300400000d90f1804a0069c04
+s 0
+pd 4
+aezi
+ar a4=0x12345679
+ar a6=0x11111111
+ar a7=0x22222222
+aezs
+ar a8
+ar a9
+ar a6
+ar a7
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      intdp .l1 a4,a7:a6
+            0x00000004      nop   3
+            0x00000008      mv    .l1 a6,a8
+            0x0000000c      ||    mv .s1 a7,a9
+a8 = 0x79000000
+a9 = 0x22222222
+a6 = 0x79000000
+a7 = 0x41b23456
+ PC: 0x00000010
+EOF
+RUN
+
+# DMPY2 has three delay slots and writes four registers, all landing together:
+# the moves a cycle on read the old a6 and a7.
+NAME=c6x the four registers of a C66x quad result land together
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 30000812d90f1804a0069c0400200000
+s 0
+pd 4
+aezi
+ar a0=0x00020003
+ar a1=0x00040005
+ar a2=0x00060007
+ar a3=0x00080009
+ar a6=0x11111111
+ar a7=0x22222222
+aezs
+ar a8
+ar a9
+ar a4
+ar a5
+ar a6
+ar a7
+EOF
+EXPECT=<<EOF
+            0x00000000      dmpy2 .m1 a1:a0,a3:a2,a7:a6:a5:a4
+            0x00000004      mv    .l1 a6,a8
+            0x00000008      ||    mv .s1 a7,a9
+            0x0000000c      nop   2
+a8 = 0x11111111
+a9 = 0x22222222
+a4 = 0x00000015
+a5 = 0x0000000c
+a6 = 0x0000002d
+a7 = 0x00000020
+EOF
+RUN
+
+# Both registers of an LDDW land together, four cycles on, so the add in the
+# next packet reads the old pair (#6866, item 3).
+NAME=c6x a doubleword load lands in both registers late
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6403100078000401000000000000000000000000
+wv4 0x11111111 @ 0x100
+wv4 0x22222222 @ 0x104
+s 0
+pd 2
+aezi
+ar a4=0x100
+ar a0=1
+ar a1=2
+aezs
+ar a2
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      lddw  .d1 *a4,a1:a0
+            0x00000004      add   .l1 a0,a1,a2
+a2 = 0x00000003
+a0 = 0x11111111
+a1 = 0x22222222
+EOF
+RUN
+
+# A load reads its address and tests its predicate when it issues: neither a
+# later mvk to a4 nor one to a1 changes what it loads (#6866, item 4).
+NAME=c6x a load reads its operands when it issues
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 640290022800010278a01803000000000000000000000000
+wv4 0xfeedface @ 0x100
+wv4 0xdeadbeef @ 0x200
+s 0
+pd 3
+aezi
+ar a4=0x100
+ar a5=0x11
+ar a6=0
+aezs
+ar a5
+ar a6
+wx 640290822800800078a01803 @ 0x40
+s 0x40
+pd 2
+aezi
+ar a1=1
+ar a4=0x100
+ar a5=0x11
+ar a6=0
+aezs
+ar a5
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      mvk   .s1 0x200,a4
+            0x00000008      add   .l1 a5,a6,a6
+a5 = 0xfeedface
+a6 = 0x00000011
+            0x00000040      [a1]  ldw .d1 *a4,a5
+            0x00000044      mvk   .s1 0x0,a1
+a5 = 0xfeedface
+EOF
+RUN
+
+# An MVC to a control register beside an add: both run, and the step ends past
+# the execute packet (#6866, item 5).
+NAME=c6x a packet writing a control register runs every slot
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx a303980078000401000000000000000000000000
+s 0
+pd 2
+aezi
+ar a0=1
+ar a1=2
+ar a2=0
+ar b6=0x100
+aezs
+ar a2
+ar csr
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      mvc   .s2 b6,csr
+            0x00000004      ||    add .l1 a0,a1,a2
+a2 = 0x00000003
+csr = 0x00000100
+ PC: 0x00000008
+EOF
+RUN
+
+# A branch issued in the delay slots of another takes over one cycle after it:
+# the first target's packet runs for that cycle, then control goes on to the
+# second target (#6866, item 6).
+NAME=c6x a branch in the delay slots of another takes over a cycle later
+FILE=malloc://1024
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800001110000058200801000000000000000000000000
+wx 58208c01 @ 0x40
+s 0
+pd 3
+pd 1 @ 0x40
+aezi
+ar a2=0
+ar a3=0
+aezs
+ar a2
+ar a3
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+       ,==< 0x00000004      b     .s1 0x80
+       ||   0x00000008      ||    add .l1 0x1,a2,a2
+            0x00000040      add   .l1 0x1,a3,a3
+a2 = 0x00000001
+a3 = 0x00000001
+ PC: 0x00000080
+EOF
+RUN
+
+# Branches on one value of one predicate are taken together or not at all, so
+# the second one has no arm of its own: the window leaves for its target or
+# past the delay slots, and nowhere else.
+NAME=c6x branches on one predicate are taken together
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 9005003062030c3000800000
+pd 3
+aoi 1 @ 0
+aezi
+ar b0=1
+ar b3=0x100
+aezs
+aezv PC
+aezi
+ar b0=0
+ar b3=0x100
+aezs
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      [!b0] b .s1 0x2c
+        |   0x00000004      [!b0] b .s2 b3
+        |   0x00000008      nop   5
+0x0 (seq (set _bt0 false) (branch (is_zero (var b0)) (set _bt0 true) nop) (set _bt1 false) (set _bg1 (bv 32 0x0)) (branch (is_zero (var b0)) (seq (set _bg1 (var b3)) (set _bt1 true)) nop) (branch (var _bt0) (jmp (var _bg1)) (jmp (bv 32 0xc))))
+ PC: 0x0000000c
+ PC: 0x00000100
+EOF
+RUN
+
+# NOP 4 is one execute packet and four cycles, so the cmpeq after it reads what
+# the ldhu loaded: the function returns 0 for a halfword of 3 and 1 otherwise.
+NAME=c6x a load result read after a multi-cycle nop
+FILE=malloc://0x8000
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx c512c12693025512dbd040be5a00bd0777c5f7716e6cefa10ef91b021280e0e6006000005a6a100200000000d83d100262a38c0046124e2329f4e702000400e4 @ 0x40
+s 0x58
+pd 7
+wv2 3 @ 0x47f2
+aezi
+ar b14=0x1000
+ar b3=0x100
+ar a4=0x55
+aezsu 0x100
+ar a4
+wv2 1 @ 0x47f2
+s 0x58
+aezi
+ar b14=0x1000
+ar b3=0x100
+ar a4=0x55
+aezsu 0x100
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00000058      ldhu  .d2 *+b14[0x1bf9],b4
+            0x0000005c      .fphead n, l, w, bu, br, nosat, 0b0110111
+            0x00000060      nop   4
+            0x00000064      cmpeq .l2 0x3,b4,b4
+            0x00000068      nop
+            0x0000006c      xor   .l1x 0x1,b4,a4
+            0x00000070      bnop  .s2 b3,0x5
+a4 = 0x00000000
+a4 = 0x00000001
+EOF
+RUN
+
+# The PROT bit of a compact header adds four NOP cycles after every load of
+# the fetch packet (SPRUFE8B 3.10.2.2), so the MV after the LDW reads what it
+# loaded; without the bit it reads A5 as it was.
+NAME=c6x a protected load lands before the next packet issues
+FILE=malloc://0x400
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+e io.cache=true
+wx 5c00c6c2efa16e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c0000f0ef
+s 0
+pd 2
+pd 1 @ 0x1c
+wv4 0x12345678 @ 0x100
+aezi
+ar a4=0x100
+ar a5=0x55
+ar b3=0x40
+aezsu 0x40
+ar a6
+wx 0000e0ef @ 0x1c
+aezi
+ar a4=0x100
+ar a5=0x55
+ar b3=0x40
+aezsu 0x40
+ar a6
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000002      mv    .l1 a5,a6
+            0x0000001c      .fphead p, l, w, bu, nobr, nosat, 0b1111111
+a6 = 0x12345678
+a6 = 0x00000055
+EOF
+RUN
+
+# The mvk and the ldb of one packet write a1 on opposite predicates, beside a
+# bnop with NOPs: with a0 set the mvk wins and the bnop leaves for 0x1ee8, with
+# a0 clear the byte loaded lands first and the branches after it take over.
+NAME=c6x predicated writes of one register beside a branch
+FILE=malloc://0x4000
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 64aa10206e6ce62825828ed0208124c0100a009011f8548ad80f0092080040e062738890620182013c606e6cf8ab8c006442908126066e4c64aa0c82000080e400600000d80f100062538800d80f000200200000000000000000000000000000 @ 0x1ea0
+s 0x1ea6
+pd 3
+aezi
+ar a0=1
+ar a2=0x100
+ar a3=0x200
+ar a4=0x55
+aezs
+ar a1
+ar a4
+aezv PC
+s 0x1ea6
+aezi
+ar a0=0
+ar a1=0x7
+ar a2=0x100
+ar a3=0x200
+ar a4=0x55
+aezs
+ar a1
+ar a4
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00001ea6      [a0]  mvk .l1 0x1,a1
+            0x00001ea8      ||    [!a0] ldb .d1 *+a3[0x14],a1
+        ,=< 0x00001eac      ||    [a0] bnop .s1 0x1ee8,0x4
+a1 = 0x00000001
+a4 = 0x00000055
+ PC: 0x00001ee8
+a1 = 0x00000000
+a4 = 0x00000000
+ PC: 0x00000100
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# No effect may follow a jump in a sequence; the window writes what is still in
+# flight before the transfer, and nests what follows a conditional one in its
+# other arm, so the validator aoi runs has nothing to report.
+NAME=c6x a branch window is valid IL
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800000000000000000000000000006402900100000000
+aoi 1 @ 0~?Encountered
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 # SPRUFE8B: for cstb < csta the field is empty and src2 is copied; the long forms saturate to 40 bits.
 # SPRUGH7: MFENCE waits for the memory accesses before it, which the VM has in order anyway.
 NAME=c6x SET and CLR of an empty field, the long SADD and SSUB, MFENCE
@@ -2833,5 +3305,52 @@ a10 = 0x00000243
 a11 = 0x000000a5
 b8 = 0x00000284
 0x00000280
+EOF
+RUN
+
+NAME=c6x a load into the register its address mode updates writes it twice
+FILE=malloc://0x400
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+e io.cache=true
+wx 4c0c46a26c006e0c46e24606c6b8102247c26e4cda0f9003643728050000e0e2d80f280600400000d80fa806d80f2c0762030c0000800000
+wv4 0x11223344 @ 0x200
+wv4 0x55667788 @ 0x204
+wv2 0x8001 @ 0x2fc
+wv8 0x0123456789abcdef @ 0x240
+pi 1 @ 0x0
+pi 1 @ 0xc
+pi 1 @ 0x18
+aezi; ar a4=0x200; ar b0=1; ar b4=0x300; ar b5=2; ar a10=0x240; ar b3=0x80; aezsu 0x80
+ar a4; ar a5; ar a6; ar a7; ar a8
+ar b4; ar b6; ar b7
+ar a10; ar a11; ar a12; ar a13; ar a14
+aezi; ar a4=0x200; ar b0=0; ar b4=0x300; ar b5=2; ar a10=0x240; ar b3=0x80; aezsu 0x80
+ar b4; ar b6; ar b7
+EOF
+EXPECT=<<EOF
+ldw .d1 *a4++[0x1],a4
+[b0] ldh .d2 *--b4[b5],b4
+lddw .d1 *a10++[0x1],a11:a10
+a4 = 0x11223344
+a5 = 0x00000204
+a6 = 0x55667788
+a7 = 0x00000204
+a8 = 0x11223344
+b4 = 0xffff8001
+b6 = 0x000002fc
+b7 = 0xffff8001
+a10 = 0x89abcdef
+a11 = 0x01234567
+a12 = 0x00000248
+a13 = 0x89abcdef
+a14 = 0x01234567
+b4 = 0x00000300
+b6 = 0x00000300
+b7 = 0x00000300
 EOF
 RUN
