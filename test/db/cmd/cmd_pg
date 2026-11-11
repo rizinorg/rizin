@@ -300,6 +300,9 @@ RUN
 NAME=archive processing support (directory)
 FILE=
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e cfg.bigendian=false
 pgd bins/ar
 EOF
 EXPECT=<<EOF
