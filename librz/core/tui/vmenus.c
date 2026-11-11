@@ -829,7 +829,7 @@ RZ_IPI void rz_core_visual_analysis(RzCore *core, const char *input) {
 			break;
 		case 'P':
 			if (view->printMode == 0) {
-				view->printMode = lastPrintMode;
+				view->printMode = lastPrintMode - 1;
 			} else {
 				(view->printMode)--;
 			}

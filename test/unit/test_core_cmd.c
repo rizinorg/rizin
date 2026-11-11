@@ -348,7 +348,41 @@ static bool test_disasm_until_ret_json(void) {
 	mu_end;
 }
 
+static bool visual_hexdump_shown;
+
+static RzCmdStatus visual_hexdump_handler(RzCore *core, int argc, const char **argv) {
+	visual_hexdump_shown = true;
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_function_preview(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://0x2001; wx c3; wx 90 @ 0x2000; "
+		"af+ sparse; afb+ 0 0 1; afb+ 0 0x2000 1";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "sparse function");
+	rz_analysis_set_gp(core->analysis, 0x12345678);
+	RzCmdDesc *hexdump = rz_cmd_get_desc(core->rcmd, "pxa");
+	mu_assert_notnull(hexdump, "hexdump command");
+	hexdump->d.argv_data.cb = visual_hexdump_handler;
+	visual_hexdump_shown = false;
+	mu_assert_true(rz_cons_readpush(core->cons, "Ppqq", 4), "preview keys");
+	int length;
+	ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+	mu_assert_notnull(output, "visual output");
+	mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)"0x00002000", 10), "preview includes the distant block");
+	mu_assert_true(visual_hexdump_shown, "P wraps to the last representation");
+	mu_assert_eq(rz_analysis_get_gp(core->analysis), 0x12345678, "preview preserves the global pointer");
+	free(output);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
