@@ -873,6 +873,99 @@ bool test_absint_driver(size_t n_threads) {
 	mu_end;
 }
 
+/**
+ * Lift callback serving a single prebuilt IL block. Every other address fails to lift,
+ * which leaves jump targets as empty blocks but still records the edge.
+ */
+static RzAbsIntLiftBlockResult lift_handmade_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
+	const RzILCacheBlock *block = user;
+	if (addr != block->addr) {
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
+	}
+	*block_out = block;
+	return RZ_ABSINT_LIFT_BLOCK_RESULT_OK;
+}
+
+/**
+ * Run the interpreter on a single instruction at address 0 consisting of \p effect
+ * and return the single jump target recorded for it, or UT64_MAX.
+ */
+static ut64 run_single_effect_jump_target(RZ_OWN RzILOpEffect *effect) {
+	ut64 target = UT64_MAX;
+	TestInterp *interp = interp_new("arm", 64, 0, "hex://1f2003d5");
+	if (!interp) {
+		rz_il_op_effect_free(effect);
+		return target;
+	}
+	RzILCacheInsnPkt pkt = { .effect = effect, .insn_pkt_size = 4 };
+	RzILCacheBlock block = { .il_ops = rz_pvector_new(NULL), .size = 4, .addr = 0 };
+	rz_pvector_push(block.il_ops, &pkt);
+	interp->inst->config.lift_block = lift_handmade_block;
+	interp->inst->config.cb_user = &block;
+
+	RzAbsIntResult *res = NULL;
+	if (rz_absint_run(interp->inst, 0, RZ_ABSINT_RESULT_DIMEN_BASE, &res) == RZ_ABSINT_RESULT_OK && res) {
+		RzAbsIntBlock *entry = rz_interval_tree_at(&res->blocks, 0);
+		if (entry && rz_vector_len(&entry->jump_targets) == 1) {
+			target = *(ut64 *)rz_vector_index_ptr(&entry->jump_targets, 0);
+		}
+	}
+	rz_absint_result_free(interp->inst, res);
+	rz_pvector_free(block.il_ops);
+	rz_il_op_effect_free(effect);
+	interp_free(interp);
+	return target;
+}
+
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+/**
+ * With an unknown condition, both arms are evaluated and joined.
+ * Identical arms join to the same constant:
+ *   jmp (ite (is_zero x0) 0x10 0x10)   ==> jmp 0x10
+ */
+bool test_absint_ite_top_cond_identical_arms(void) {
+	RzILOpEffect *eff = JMP(ITE(IS_ZERO(VARG("x0")), U64(0x10), U64(0x10)));
+	ut64 target = run_single_effect_jump_target(eff);
+	mu_assert_eq(target, 0x10, "identical arms join to their common constant");
+	mu_end;
+}
+
+/**
+ * Arms that differ syntactically but evaluate to the same constant also join to it:
+ *   jmp (ite (is_zero x0) 0x10 (0x8 + 0x8))   ==> jmp 0x10
+ */
+bool test_absint_ite_top_cond_equal_valued_arms(void) {
+	RzILOpEffect *eff = JMP(ITE(IS_ZERO(VARG("x0")), U64(0x10), ADD(U64(0x8), U64(0x8))));
+	ut64 target = run_single_effect_jump_target(eff);
+	mu_assert_eq(target, 0x10, "equal-valued arms join to their common constant");
+	mu_end;
+}
+
+/**
+ * Arms with different constants join to top, so no jump target is known:
+ *   jmp (ite (is_zero x0) 0x10 0x20)   ==> no target
+ */
+bool test_absint_ite_top_cond_different_arms(void) {
+	RzILOpEffect *eff = JMP(ITE(IS_ZERO(VARG("x0")), U64(0x10), U64(0x20)));
+	ut64 target = run_single_effect_jump_target(eff);
+	mu_assert_eq(target, UT64_MAX, "different arms join to top");
+	mu_end;
+}
+
+/**
+ * A constant condition selects exactly one arm:
+ *   jmp (ite (is_zero 0) 0x10 0x20)   ==> jmp 0x10
+ */
+bool test_absint_ite_const_cond(void) {
+	RzILOpEffect *eff = JMP(ITE(IS_ZERO(U64(0)), U64(0x10), U64(0x20)));
+	ut64 target = run_single_effect_jump_target(eff);
+	mu_assert_eq(target, 0x10, "constant condition selects the true arm");
+	mu_end;
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
 bool all_tests() {
 	mu_run_test(test_absint_block_resolve_bounds_single);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, false);
@@ -898,6 +991,10 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_merge_multiple_consecutive);
 	mu_run_test(test_absint_xrefs);
 	mu_run_test(test_absint_comments);
+	mu_run_test(test_absint_ite_top_cond_identical_arms);
+	mu_run_test(test_absint_ite_top_cond_equal_valued_arms);
+	mu_run_test(test_absint_ite_top_cond_different_arms);
+	mu_run_test(test_absint_ite_const_cond);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);
 	return tests_passed != tests_run;
