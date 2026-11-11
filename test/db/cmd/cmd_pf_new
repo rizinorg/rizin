@@ -875,3 +875,74 @@ EXPECT=<<EOF
 [{"name":"tenth","type":"float32","size":4,"offset":0,"endian":"little","value":0.1},{"name":"tiny","type":"float32","size":4,"offset":4,"endian":"little","value":1.0e-09},{"name":"max","type":"float32","size":4,"offset":8,"endian":"little","value":3.4028235e+38},{"name":"ninf","type":"float32","size":4,"offset":12,"endian":"little","value":"-Infinity"},{"name":"one","type":"float16","size":2,"offset":16,"endian":"little","value":1.0},{"name":"h_tenth","type":"float16","size":2,"offset":18,"endian":"little","value":0.099975586},{"name":"h_nan","type":"float16","size":2,"offset":20,"endian":"little","value":"NaN"},{"name":"h_subnormal","type":"float16","size":2,"offset":22,"endian":"little","value":5.9604645e-08},{"name":"h_max","type":"float16","size":2,"offset":24,"endian":"little","value":65504.0}]
 EOF
 RUN
+
+NAME=pf help examples
+FILE==
+CMDS=<<EOF
+e cfg.bigendian=false
+e asm.bits=64
+wx 44332211feff0800000000000000686900
+pf "x4d2u8z magic ver size name"
+wx 00000105
+pf "B4(R=1,W=2,X=4,KERN=0x100) perms"
+wx 024433221188776655
+pf "u1[@count]x4 count items"
+wx 040041004200
+pf "z(utf16le)[2b] bstr"
+wx 8544332211
+pf ":1:7x4 flag rest tail"
+wx 00112233445566778899aabbccddeeff
+pf "G(be) uuid"
+wx 01040011223344
+pf "V(t=u1,l=u2,e=le) record"
+wx 00803ed5deb19d01
+pf "t(filetime) created"
+wx 010000000200000003000000
+pf "3 0x4d4 a b"
+wx 0100000002000000
+pfn point "x4x4 x y"; pf "? (point)pos"
+wx 1234fffffffe0800000000000000
+pf "X2D4u8 bigWord signedValue qword"
+wx 0100000034127856000044332211
+pf "x1@4[2]x2[2].x4 tag words tail"
+wx 81
+pf "v(8,lsb) bits"
+wx 443322110200
+pfn header "x4u2 magic ver"; pf. header.ver
+EOF
+EXPECT=<<EOF
+0x00000000 : magic = 0x11223344 [LE]
+0x00000004 :   ver = -2 [LE]
+0x00000006 :  size = 8 [LE]
+0x0000000e :  name = "hi"
+0x00000000 : perms = 0x00000105 : R | X | KERN [BE]
+0x00000000 : count = 2 [LE]
+0x00000001 : items = [ 0x11223344, 0x55667788 ] [LE]
+0x00000000 : bstr = "AB"
+0x00000000 : flag = 1 (1-bit)
+0x00000000 : rest = 5 (7-bit)
+0x00000001 : tail = 0x11223344 [LE]
+0x00000000 : uuid = 00112233-4455-6677-8899-aabbccddeeff
+0x00000000 : record = tag=0x1 len=4
+  11 22 33 44
+0x00000000 : created = [filetime] [LE] 1970-01-01 00:00:00.000000000 UTC
+0x00000000 : a = 0x00000001 [LE]
+0x00000000 : b = 1 [LE]
+0x00000004 : a = 0x00000002 [LE]
+0x00000004 : b = 2 [LE]
+0x00000008 : a = 0x00000003 [LE]
+0x00000008 : b = 3 [LE]
+0x00000000 : pos = struct<point> {
+   0x00000000 : x = 0x00000001 [LE]
+   0x00000004 : y = 0x00000002 [LE]
+}
+0x00000000 :     bigWord = 0x1234 [BE]
+0x00000002 : signedValue = -2 [BE]
+0x00000006 :       qword = 8 [LE]
+0x00000000 :   tag = 0x01 [LE]
+0x00000004 : words = [ 0x1234, 0x5678 ] [LE]
+0x0000000a :  tail = 0x11223344 [LE]
+0x00000000 : bits = [ 1 0 0 0 0 0 0 1 ] (8-bit)
+0x00000004 :   ver = 2 [LE]
+EOF
+RUN

@@ -16263,28 +16263,29 @@ static const RzCmdDescDetailEntry pf_Skip_space__slash__space_repeat_space__slas
 };
 
 static const RzCmdDescDetailEntry pf_Examples_detail_entries[] = {
-	{ .text = "pf 'x4 d2 u8 z magic ver size name'", .arg_str = NULL, .comment = "header with hex u32, signed s16, unsigned u64, NUL-terminated string" },
-	{ .text = "pf 'B4(R=1,W=2,X=4,KERN=0x100) perms'", .arg_str = NULL, .comment = "inline bitfield with named flags" },
-	{ .text = "pf 'u1 [@count] x4 count items'", .arg_str = NULL, .comment = "u8 count, then that many u32 hex values" },
-	{ .text = "pf 'z(utf16le)[2b] bstr'", .arg_str = NULL, .comment = "BSTR-style: 2-byte length prefix counting bytes, UTF-16 LE body" },
-	{ .text = "pf ':1 :7 x4 flag rest tail'", .arg_str = NULL, .comment = "bit-level: 1 bit then 7 bits, then 4 bytes" },
-	{ .text = "pf 'G(be) uuid'", .arg_str = NULL, .comment = "RFC 4122 big-endian UUID" },
-	{ .text = "pf 'V(t=u1,l=u2,d=usb_desc) record'", .arg_str = NULL, .comment = "TLV dispatched via the 'usb_desc' tag-to-format table" },
-	{ .text = "pf 't(filetime) created'", .arg_str = NULL, .comment = "8-byte Windows FILETIME timestamp" },
-	{ .text = "pf '3 0x4d4 a b'", .arg_str = NULL, .comment = "repeat 3 times, union with fields x4 and d4" },
-	{ .text = "pf '? (mytype) field'", .arg_str = NULL, .comment = "nested struct of typedb format 'mytype'" },
+	{ .text = "pf \"x4d2u8z magic ver size name\"", .arg_str = NULL, .comment = "Header with hex u32, signed s16, unsigned u64 and a NUL-terminated string" },
+	{ .text = "pf \"B4(R=1,W=2,X=4,KERN=0x100) perms\"", .arg_str = NULL, .comment = "Big-endian inline bitfield with named flags" },
+	{ .text = "pf \"u1[@count]x4 count items\"", .arg_str = NULL, .comment = "u8 count followed by that many u32 hex values" },
+	{ .text = "pf \"z(utf16le)[2b] bstr\"", .arg_str = NULL, .comment = "2-byte length prefix counting bytes, followed by UTF-16 LE text" },
+	{ .text = "pf \":1:7x4 flag rest tail\"", .arg_str = NULL, .comment = "One bit, seven bits, then a 4-byte hex value" },
+	{ .text = "pf \"G(be) uuid\"", .arg_str = NULL, .comment = "UUID with RFC 4122 byte order" },
+	{ .text = "pf \"V(t=u1,l=u2,e=le) record\"", .arg_str = NULL, .comment = "TLV with a u8 tag, LE u16 byte length and raw payload" },
+	{ .text = "pf \"t(filetime) created\"", .arg_str = NULL, .comment = "8-byte Windows FILETIME timestamp" },
+	{ .text = "pf \"3 0x4d4 a b\"", .arg_str = NULL, .comment = "Repeat a union of x4 and d4 three times" },
+	{ .text = "pfn point \"x4x4 x y\"; pf \"? (point)pos\"", .arg_str = NULL, .comment = "Define a named format and embed it as a nested field" },
+	{ .text = "pf \"X2D4u8 bigWord signedValue qword\"", .arg_str = NULL, .comment = "BE u16, BE s32 and LE u64 in one record" },
+	{ .text = "pf \"x1@4[2]x2[2].x4 tag words tail\"", .arg_str = NULL, .comment = "Align to 4 bytes, read an array, skip 2 bytes, then read a u32" },
+	{ .text = "pf \"v(8,lsb) bits\"", .arg_str = NULL, .comment = "Read a bitvector in least-significant-bit-first order" },
+	{ .text = "pfn header \"x4u2 magic ver\"; pf. header.ver", .arg_str = NULL, .comment = "Print one field of a named format" },
 	{ 0 },
 };
 
 static const RzCmdDescDetailEntry pf_Notes_detail_entries[] = {
-	{ .text = "bit order", .arg_str = NULL, .comment = ":N defaults to MSB-first (matches DWARF and most network protocols); use <N for LSB-first" },
+	{ .text = "bit order", .arg_str = NULL, .comment = ":N defaults to MSB-first (matches DWARF and most network protocols); use :N< for LSB-first" },
 	{ .text = "endian via case", .arg_str = NULL, .comment = "lowercase specifier = little-endian, UPPERCASE = big-endian" },
 	{ .text = "context endian", .arg_str = NULL, .comment = "n1/n2/n4/n8 take the active pf parsing context's current endian setting, not the spec's case" },
 	{ .text = "skip vs alignment", .arg_str = NULL, .comment = "'.' / '[N].' skip an exact number of bytes; '@N' pads to the next N-byte boundary" },
 	{ .text = "deprecation", .arg_str = NULL, .comment = "bare-letter codes (b, C, d, f, F, i, o, q, t, T, w, x, X, Z) still parse with a one-time warning; use the sized or parenthesised forms in new code" },
-	{ .text = "pf 'X2D4u8 bigWord beef qword'", .arg_str = NULL, .comment = "BE u16, BE s32, LE u64 -- one of every endianness/sign combination" },
-	{ .text = "pfn foo 'rr (eax)reg1 (eip)reg2'", .arg_str = NULL, .comment = "Create object foo referencing two registers" },
-	{ .text = "pf 't(unix32)t(unix32) troll plop'", .arg_str = NULL, .comment = "Print two unix-epoch (32-bit) timestamps with labels 'troll' and 'plop'" },
 	{ 0 },
 };
 static const RzCmdDescDetail pf_details[] = {
