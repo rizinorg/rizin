@@ -24,8 +24,8 @@ RZ_API RZ_OWN RzAbsIntState *rz_absint_state_new(
 			rz_warn_if_reached();
 			goto err_globals;
 		}
-		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
-		if (!ht_up_insert(state->globals, djb2_reg_hash, aval)) {
+		ut64 reg_hash = rz_il_var_name_hash(rname);
+		if (!ht_up_insert(state->globals, reg_hash, aval)) {
 			RZ_LOG_ERROR("Failed to add %s to the global variable map.", rname);
 			goto err_globals;
 		}
@@ -97,8 +97,8 @@ RZ_IPI bool reset_state(RzAbsIntInstance *inst, RZ_BORROW RzAbsIntState *state, 
 	}
 	ut64 *k;
 	rz_iterator_foreach(&it, k) {
-		ut64 djb2_reg_name = *k;
-		RzAbsIntVal *av = ht_up_find(state->globals, djb2_reg_name, NULL);
+		ut64 reg_hash = *k;
+		RzAbsIntVal *av = ht_up_find(state->globals, reg_hash, NULL);
 		if (av) {
 			val_domain(inst)->set_top(av);
 		}
@@ -165,8 +165,8 @@ RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 	ut64 *k;
 	bool all_top = true;
 	rz_iterator_foreach(&it, k) {
-		ut64 djb2_reg_name = *k;
-		RzAbsIntVal *av = ht_up_find(astate->globals, djb2_reg_name, NULL);
+		ut64 reg_hash = *k;
+		RzAbsIntVal *av = ht_up_find(astate->globals, reg_hash, NULL);
 		if (!av || val_domain(inst)->is_top(av)) {
 			continue;
 		}
@@ -175,7 +175,7 @@ RZ_API bool rz_absint_state_as_str_short(RZ_NONNULL RzAbsIntInstance *inst, RZ_N
 			rz_strbuf_append(sb, ", ");
 		}
 		first = false;
-		const char *varname = ht_up_find(inst->var_name_hashes, djb2_reg_name, NULL);
+		const char *varname = ht_up_find(inst->var_name_hashes, reg_hash, NULL);
 		rz_strbuf_appendf(sb, "%s = ", varname);
 		val_domain(inst)->val_as_str(av, sb);
 	}

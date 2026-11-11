@@ -225,3 +225,62 @@ EXPECT=<<EOF
 0x80002a0   32      0      8                        0x080001e4       
 EOF
 RUN
+
+# eepmov.b lifts to a repeat moving r5 on while r4l counts down. With r4l
+# unknown, so is how often the repeat runs, and r5 is top after it: the load
+# through it has no address. The bytes the repeat moves are stored to memory,
+# which is warned about for as long as RzInquiry does not model memory.
+NAME=Repeat of an unknown count sets what it writes to top h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 790510007b5c598f69505470
+pd 4
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x1000,r5
+            0x00000004      eepmov.b
+            0x00000008      mov.w @r5,r0
+            0x0000000a      rts
+0x00000000    1 12           inq.0x0
+EOF
+EXPECT_ERR=<<EOF
+WARNING: The repeat at 0x4 stores to memory, which is not set to top: memory is not modelled yet.
+EOF
+RUN
+
+# With r4 known the repeat runs its four times, each reading a byte where r5
+# points, and r5 is 0x1004 after it.
+NAME=Repeat of a known count runs h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 79040004790510007b5c598f69505470
+pd 5
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x4,r4
+            0x00000004      mov.w #0x1000,r5
+            0x00000008      eepmov.b
+            0x0000000c      mov.w @r5,r0
+            0x0000000e      rts
+0x00000000    1 16           inq.0x0
+                               inq.0x0+8 0x8 ->      DATA -> 0x1000 inq.0x0+4096
+                               inq.0x0+8 0x8 ->      DATA -> 0x1001 inq.0x0+4097
+                               inq.0x0+8 0x8 ->      DATA -> 0x1002 inq.0x0+4098
+                               inq.0x0+8 0x8 ->      DATA -> 0x1003 inq.0x0+4099
+                              inq.0x0+12 0xc ->      DATA -> 0x1004 inq.0x0+4100
+EOF
+RUN
