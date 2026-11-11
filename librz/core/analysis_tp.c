@@ -24,11 +24,9 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	core->dbg->trace = rz_debug_trace_new();
 	esil->trace = rz_analysis_esil_trace_new(esil);
 
-	rz_config_hold_var(hc, "esil.romem", "dbg.trace",
-		"esil.nonull", "dbg.follow", NULL);
+	rz_config_hold_var(hc, "esil.romem", "dbg.trace", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
 	rz_config_set(core->config, "dbg.trace", "true");
-	rz_config_set(core->config, "esil.nonull", "true");
 	rz_config_set_i(core->config, "dbg.follow", false);
 	const char *bp = rz_reg_get_name(rreg, RZ_REG_NAME_BP);
 	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
