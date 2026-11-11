@@ -28,6 +28,13 @@ typedef enum {
 } EvalResult;
 
 /**
+ * Runs of a repeat's body in a row while its condition stays true. Past them
+ * the condition is taken as unknown: a loop the code never leaves, such as one
+ * polling memory, which is not modelled, would run forever otherwise.
+ */
+#define REPEAT_RUNS_MAX 0x1000
+
+/**
  * \brief Adds a comment to \p addr.
  * If there is already a comment at this address \p cmt will be appended to it.
  */
@@ -81,10 +88,10 @@ RZ_API RZ_OWN RzAbsIntInstance *rz_absint_instance_new(RzAnalysis *analysis, RZ_
 	}
 	for (size_t i = 0; i < il_ctx->reg_binding->regs_count; i++) {
 		const char *rname = il_ctx->reg_binding->regs[i].name;
-		ut64 djb2_reg_hash = rz_str_djb2_hash(rname);
-		if (!ht_up_insert(inst->var_name_hashes, djb2_reg_hash, rz_str_dup(rname))) {
-			RZ_LOG_ERROR("DJB2 hash collision of the register name %s. DJB2 hash = 0x%" PFMT64x "\n",
-				rname, djb2_reg_hash);
+		ut64 reg_hash = rz_il_var_name_hash(rname);
+		if (!ht_up_insert(inst->var_name_hashes, reg_hash, rz_str_dup(rname))) {
+			RZ_LOG_ERROR("Hash collision of the register name %s. Hash = 0x%" PFMT64x "\n",
+				rname, reg_hash);
 			goto err_var_name_hashes;
 		}
 	}
@@ -627,6 +634,52 @@ static void eval_call(RzAbsIntRunContext *ctx) {
 	rz_iterator_fini(&it);
 }
 
+// Set every variable \p effect may write to top. Returns false when \p effect
+// holds a store: the memory it may write would need to be set to top as well,
+// which is not done as long as memory is not modelled.
+static bool set_written_vars_to_top(RzAbsIntRunContext *ctx, const RzILOpEffect *effect) {
+	if (!effect) {
+		return true;
+	}
+	bool all = true;
+	switch (effect->code) {
+	case RZ_IL_OP_SET: {
+		RzAbsIntVal *top = val_domain(ctx->inst)->val_new_top();
+		if (!top) {
+			break;
+		}
+		RzILVarKind kind = effect->op.set.is_local ? RZ_IL_VAR_KIND_LOCAL : RZ_IL_VAR_KIND_GLOBAL;
+		write_var_to_state(ctx->inst, ctx->astate, kind, effect->op.set.hash, top);
+		val_domain(ctx->inst)->val_free(top);
+		break;
+	}
+	case RZ_IL_OP_SEQ:
+		all = set_written_vars_to_top(ctx, effect->op.seq.x);
+		all = set_written_vars_to_top(ctx, effect->op.seq.y) && all;
+		break;
+	case RZ_IL_OP_BRANCH:
+		all = set_written_vars_to_top(ctx, effect->op.branch.true_eff);
+		all = set_written_vars_to_top(ctx, effect->op.branch.false_eff) && all;
+		break;
+	case RZ_IL_OP_REPEAT:
+		all = set_written_vars_to_top(ctx, effect->op.repeat.data_eff);
+		break;
+	case RZ_IL_OP_BLK:
+		all = set_written_vars_to_top(ctx, effect->op.blk.data_eff);
+		all = set_written_vars_to_top(ctx, effect->op.blk.ctrl_eff) && all;
+		break;
+	case RZ_IL_OP_STORE:
+	case RZ_IL_OP_STOREW:
+		// TODO: set what it may store to top, with memory abstractions.
+		// See: https://github.com/rizinorg/rizin/issues/6749
+		all = false;
+		break;
+	default:
+		break;
+	}
+	return all;
+}
+
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
 	rz_return_val_if_fail(ctx->astate->pc_state == RZ_ABSINT_PC_CONST, EVAL_RESULT_ERROR);
 #define EVAL_SUB_OR_RETURN_CLEANUP(op, cleanup_local) \
@@ -806,9 +859,30 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		rz_bv_fini(&st_addr_bv);
 		break;
 	}
+	case RZ_IL_OP_REPEAT:
+		for (size_t runs = 0;; runs++) {
+			EVAL_PURE_OR_RETURN(effect->op.repeat.condition);
+			bool may_be_true = val_domain(ctx->inst)->may_be_bool(eval_out, true);
+			bool may_be_false = val_domain(ctx->inst)->may_be_bool(eval_out, false);
+			val_domain(ctx->inst)->val_free(eval_out);
+			eval_out = NULL;
+			if (!may_be_true) {
+				break;
+			}
+			if (may_be_false || runs == REPEAT_RUNS_MAX) {
+				// The body may run any number of times more. It holds data
+				// effects only, so setting what it writes to top covers them all.
+				bool all = set_written_vars_to_top(ctx, effect->op.repeat.data_eff);
+				if (interp_is_analyzing(ctx) && !all) {
+					RZ_LOG_WARN("The repeat at 0x%" PFMT64x " stores to memory, which is not set to top: memory is not modelled yet.\n", ctx->insn_addr);
+				}
+				break;
+			}
+			EVAL_SUB_OR_RETURN(effect->op.repeat.data_eff);
+		}
+		break;
 	case RZ_IL_OP_GOTO:
 	case RZ_IL_OP_BLK:
-	case RZ_IL_OP_REPEAT:
 		RZ_LOG_WARN("Unhandled effect %" PFMT32d "\n", effect->code);
 		// Ignore for now.
 		break;
