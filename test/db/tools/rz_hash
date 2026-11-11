@@ -370,7 +370,6 @@ ED____ aes-ecb        LGPL3      Nettle project,pancake         AES symmetric-ke
 ED____ rot            LGPL-3     pancake                        Caesar symmetric-key cipher
 __ed__ base32         LGPL-3     Ahmed Ibrahim                  Base32 encoder/decoder
 
-
 flags legenda:
     E = encryption, D = decryption
     e = encoding, d = encoding
@@ -835,7 +834,6 @@ string: 0x00000000-0x00000005 xor16: computed hash doesn't match the expected on
 string: 0x00000000-0x00000005 xor8: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xxhash32: computed hash doesn't match the expected one
 string: 0x00000000-0x00000005 xxhash64: computed hash doesn't match the expected one
-
 EOF
 RUN
 
