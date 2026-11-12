@@ -421,3 +421,20 @@ nth       addr  vt_offset type    name
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=macros are saved and loaded with the project
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+(macro ; echo hello)
+(greeting name ; echo hello ${name})
+Ps .tmp_macro_project.rzdb
+Po .tmp_macro_project.rzdb
+.(macro)
+.(greeting rizin)
+rm .tmp_macro_project.rzdb
+EOF
+EXPECT=<<EOF
+hello
+hello rizin
+EOF
+RUN
