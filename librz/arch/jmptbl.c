@@ -258,10 +258,18 @@ static bool detect_casenum_shift(RzAnalysisOp *op, RzRegItem **cmp_reg, st64 *st
 		if (op->type == RZ_ANALYSIS_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {
+			// The index arithmetic wraps at the destination register's width.
+			ut64 value = op->val;
+			int bits = op->dst->reg->size;
+			if (bits > 0 && bits < 64) {
+				ut64 sign = (ut64)1 << (bits - 1);
+				value &= (sign << 1) - 1;
+				value = (value ^ sign) - sign;
+			}
 			if (op->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-				*start_casenum_shift = -(st64)op->val;
+				*start_casenum_shift = (st64)(0 - value);
 			} else if (op->type == RZ_ANALYSIS_OP_TYPE_SUB) {
-				*start_casenum_shift = op->val;
+				*start_casenum_shift = (st64)value;
 			}
 		} else if (op->type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			*cmp_reg = op->src[0]->reg;
