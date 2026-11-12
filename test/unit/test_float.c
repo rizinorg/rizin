@@ -1993,6 +1993,37 @@ bool f80_ieee_cast_sint_test(void) {
 	mu_end;
 }
 
+// Casts a float of below one to a 32-bit integer and compares with \p expect.
+static bool cast_sint_below_one(RzFloat *f, RzFloatRMode mode, st32 expect) {
+	RzBitVector *cast_bv = rz_float_cast_sint(f, 32, mode);
+	bool ok = cast_bv && rz_bv_to_ut32(cast_bv) == (ut32)expect;
+	rz_bv_free(cast_bv);
+	rz_float_free(f);
+	return ok;
+}
+
+bool float_cast_sint_below_one_test(void) {
+	// the fraction keeps its place below the radix point whatever the exponent
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.75f), RZ_FLOAT_RMODE_RNE, 1), "cast-sint 0.75f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.9117f), RZ_FLOAT_RMODE_RNE, 1), "cast-sint 0.9117f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.5f), RZ_FLOAT_RMODE_RNE, 0), "cast-sint 0.5f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.5f), RZ_FLOAT_RMODE_RNA, 1), "cast-sint 0.5f, rna");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.3f), RZ_FLOAT_RMODE_RNE, 0), "cast-sint 0.3f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(0.00390625f), RZ_FLOAT_RMODE_RTP, 1), "cast-sint 2^-8, rtp");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.75f), RZ_FLOAT_RMODE_RNE, -1), "cast-sint -0.75f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f64(0.75), RZ_FLOAT_RMODE_RNE, 1), "cast-sint 0.75, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f64(-0.6), RZ_FLOAT_RMODE_RNE, -1), "cast-sint -0.6, rne");
+	mu_assert_true(cast_sint_below_one(new_f80_from_bytes("\x3f\xfe\xc0\x00\x00\x00\x00\x00\x00\x00"), RZ_FLOAT_RMODE_RNE, 1),
+		"cast-sint 0.75 in ieee754-bin80, rne");
+	// a negative value whose magnitude rounds to zero is zero
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.25f), RZ_FLOAT_RMODE_RNE, 0), "cast-sint -0.25f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.5f), RZ_FLOAT_RMODE_RNE, 0), "cast-sint -0.5f, rne");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.75f), RZ_FLOAT_RMODE_RTZ, 0), "cast-sint -0.75f, rtz");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.75f), RZ_FLOAT_RMODE_RTP, 0), "cast-sint -0.75f, rtp");
+	mu_assert_true(cast_sint_below_one(rz_float_new_from_f32(-0.119823f), RZ_FLOAT_RMODE_RTN, -1), "cast-sint -0.119823f, rtn");
+	mu_end;
+}
+
 bool f80_ieee_cast_sint_large_test(void) {
 	RzFloat *f80_val = new_f80_from_bytes("\x40\x1b\x80\x00\x00\x00\x00\x00\x00\x00");
 	RzBitVector *expected_bv = rz_bv_new_from_ut64(32, 1ULL << 28);
@@ -2181,6 +2212,7 @@ bool all_tests() {
 	mu_run_test(f32_ieee_cast_test);
 	mu_run_test(f80_ieee_cast_sint_test);
 	mu_run_test(f80_ieee_cast_sint_large_test);
+	mu_run_test(float_cast_sint_below_one_test);
 	mu_run_test(float_convert_range_test);
 	mu_run_test(f80_ieee_special_num_test);
 	mu_run_test(f80_ieee_add_test);
