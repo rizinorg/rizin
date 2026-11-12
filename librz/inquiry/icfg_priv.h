@@ -64,8 +64,8 @@ typedef enum {
 
 	CFG_CONFLICT_VERDICT_SHARED, ///< The block is likely shared with another function.
 	CFG_CONFLICT_VERDICT_FCN_ENTRY, ///< The block is a likely function entry point.
-	CFG_CONFLICT_VERDICT_SKIP, ///< Node was already handled.
 	CFG_CONFLICT_VERDICT_N,
+	CFG_CONFLICT_VERDICT_SKIP, ///< Node was already handled.
 } ICFGNodeVerdict;
 
 typedef enum {

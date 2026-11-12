@@ -154,11 +154,10 @@ static const HintScores hint_scores[] = {
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_VERY_UNLIKELY },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
-			{ CFG_CONFLICT_VERDICT_DROP, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
-		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
-			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONGLY_DISFAV },
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_NEUTRAL },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
@@ -207,13 +206,17 @@ typedef struct {
 } NodeScore;
 
 static void score_add(NodeObservations obs, NodeScore *score) {
-	rz_return_if_fail(obs != CFG_CONFLICT_OBSV_N);
+	rz_return_if_fail(obs < CFG_CONFLICT_OBSV_N);
+
+	printf("Score add %s: ", hint_scores[obs].name);
 	score->total_obsv++;
 	for (size_t i = 0; hint_scores[obs].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
 		ICFGNodeVerdict v = hint_scores[obs].verdict[i].id;
 		int s = hint_scores[obs].verdict[i].score;
+		printf("%s=%d ", node_verdict_names[v], s);
 		score->verdict_score[v] += s;
 	}
+	printf("\n");
 }
 
 static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
@@ -232,19 +235,32 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
 	// TODO: This softmax does here effectively the same as max().
 	// That needs to be replaced, checking the probabilities of the verdicts against each other.
 	st64 softmax_score = rz_math_softmax_st64(&it, NULL);
-	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
-		if (s->verdict_score[i] == softmax_score) {
+	size_t v = 0;
+	for (; v < CFG_CONFLICT_VERDICT_N; ++v) {
+		if (s->verdict_score[v] == softmax_score) {
 			rz_iterator_reset(&it);
-			*verdict_p = rz_math_softmax_p_zi_st64(s->verdict_score[i], &it);
-			rz_iterator_fini(&it);
-			rz_vector_fini(&scores);
-			return (ICFGNodeVerdict)i;
+			*verdict_p = rz_math_softmax_p_zi_st64(s->verdict_score[v], &it);
+			goto ret_verdict;
 		}
 	}
 	rz_iterator_fini(&it);
 	rz_vector_fini(&scores);
 	rz_warn_if_reached();
 	return CFG_CONFLICT_VERDICT_N;
+
+ret_verdict:
+	// TODO Remove after debug.
+	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
+		rz_iterator_reset(&it);
+		printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
+		       s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
+	}
+	printf("\n");
+	// END
+
+	rz_iterator_fini(&it);
+	rz_vector_fini(&scores);
+	return (ICFGNodeVerdict)v;
 }
 
 static bool edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to) {
@@ -390,7 +406,7 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 verdict: {
 	double p;
 	ICFGNodeVerdict verdict = pick_verdict(&score, &p);
-	printf("Node 0x%08lx: %s (s=%d, p=%.06f)\n", node->addr, node_verdict_names[verdict], score.verdict_score[verdict], p);
+	printf("Node 0x%08lx: %s\n\n", node->addr, node_verdict_names[verdict]);
 	return verdict;
 }
 }
@@ -505,6 +521,7 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 		// TODO: Should we really classify fall-through edges as calls?
 		rz_graph_edge_set_data(e, RZ_GRAPH_INT_AS_DATA(RZ_ICFG_EDGE_TYPE_CALL));
 	}
+	rz_iterator_fini(&iter);
 
 	// Update membership of all its successors
 	VisitorBundle bundle = { .icfg = icfg, .membership = cf_node->addr };
