@@ -4406,3 +4406,26 @@ movzx eax, word [ebp+edx*2-0x230]
 movzx edx, word [ebp+ecx*2-0x230]
 EOF
 RUN
+
+NAME=x86 switch case shift uses the index width (#3555)
+FILE=malloc://4096
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 0500feffff83f8027726ff248500020000 @ 0x100
+wx c3 @ 0x120
+wx c3 @ 0x124
+wx c3 @ 0x128
+wx c3 @ 0x130
+wx 200100002401000028010000 @ 0x200
+pi 4 @ 0x100
+af @ 0x100
+abij @ 0x10a
+EOF
+EXPECT=<<EOF
+add eax, 0xfffffe00
+cmp eax, 0x02
+jnbe 0x130
+jmp dword [eax*4+0x200]
+{"switch_op":{"addr":266,"min_val":0,"def_val":0,"max_val":0,"cases":[{"addr":288,"jump":288,"value":512},{"addr":292,"jump":292,"value":513},{"addr":296,"jump":296,"value":514}]},"opaddr":266,"addr":266,"size":7,"inputs":1,"outputs":3,"ninstr":1,"traced":false}
+EOF
+RUN
