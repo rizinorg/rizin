@@ -91,7 +91,7 @@ static int help(bool verbose) {
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
-		printf("Supported test types: @json @unit @fuzz @cmds\n"
+		printf("Supported test types: @json @unit @fuzz @dasm @cmds\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
@@ -425,7 +425,7 @@ int rz_test_main(int argc, const char **argv) {
 				} else if (!strcmp(arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = alloc_arg = rz_str_newf("db/%s", arg + 1);
+					arg = alloc_arg = rz_str_newf("db/%s", arg);
 				}
 			}
 			char *tf = rz_file_abspath_rel(cwd, arg);

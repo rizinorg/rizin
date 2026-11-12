@@ -810,7 +810,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+          sudo apt-get --assume-yes install cmake swig pkg-config clang libclang-dev llvm wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja cle
       - name: Install rizin
         run: |
           export PATH=$PATH:/usr/local/bin
@@ -836,7 +836,9 @@ jobs:
           repository: rizinorg/rizin-testbins
           path: rz-bindgen/test/bins
       - name: Run rz-test
-        run: rz-test -L db/examples
+        run: |
+          rz-test -L
+          rz-test -L @extras
         working-directory: rz-bindgen/test
 
   test-macos-pkg:
