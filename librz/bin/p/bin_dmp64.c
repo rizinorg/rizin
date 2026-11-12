@@ -286,6 +286,7 @@ static bool dmp64_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sd
 	struct rz_bin_dmp64_obj_t *res = rz_bin_dmp64_new_buf(buf);
 	if (res) {
 		sdb_ns_set(sdb, "info", res->kv);
+		sdb_free(res->kv);
 		obj->bin_obj = res;
 		return true;
 	}
