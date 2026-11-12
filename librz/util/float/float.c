@@ -1833,7 +1833,6 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	bool should_inc = false;
 	bool inexact = false;
 	RzBitVector *sig = rz_float_get_mantissa(f);
-	bool is_zero = rz_bv_is_zero_vector(sig) && exp == 0;
 
 	// binary80 stores the integer bit explicitly in the mantissa; all other
 	// normal formats use a hidden bit that must be injected here
@@ -1846,22 +1845,25 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 		tmp = round_significant(sign, sig, exp_no_bias, mode, &should_inc, &inexact);
 	} else {
 		// float 1.M..M * 2^exp, when exp < 0
-		// flatten it and we have 0.0..1M..M (|exp|+1 zeros before 1MMM...)
-		// set a fake 1 before radix point, and we can use round_significant to round
-		ut32 remained_zeros = total_len - man_len - 1;
+		// flatten it and we have 0.0..1M..M (|exp|-1 zeros before 1MMM...)
+		// set a fake 1 before its integer part 0, and we can use round_significant
+		// to round with a precision of 1, ties seeing the even 0
+		// the leading 1 is the hidden bit at man_len, or binary80's explicit one below it
+		st32 int_bit = format == RZ_FLOAT_IEEE754_BIN_80 ? man_len - 1 : man_len;
+		st32 more_zeros = -exp_no_bias - ((st32)total_len - 2 - int_bit);
 		RzBitVector *fake_f;
-		if (-exp_no_bias > remained_zeros) {
-			// prepend
-			fake_f = rz_bv_prepend_zero(sig, -exp_no_bias - remained_zeros);
+		if (more_zeros > 0) {
+			fake_f = rz_bv_prepend_zero(sig, more_zeros);
 		} else {
 			fake_f = rz_bv_dup(sig);
+			rz_bv_lshift(fake_f, (ut32)-more_zeros);
 		}
 		rz_bv_set(fake_f, rz_bv_len(fake_f) - 1, true);
-		tmp = round_significant(sign, fake_f, 0, mode, &should_inc, &inexact);
+		tmp = round_significant(sign, fake_f, 1, mode, &should_inc, &inexact);
 
 		// unset the fake 1 in tmp
-		// tmp has 3 + 1 + precision = 4
-		rz_bv_set(tmp, 0, false);
+		// tmp has 3 + 1 + precision = 5
+		rz_bv_set(tmp, 1, false);
 		rz_bv_free(fake_f);
 	}
 	rz_bv_free(sig);
@@ -1881,8 +1883,8 @@ RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length
 	tmp = NULL;
 
 	// assume we r handling absolute value
-	// now for negative, convert it to 2's complement
-	if (sign && !is_zero) {
+	// now for negative, convert it to 2's complement, unless it rounded to zero
+	if (sign && !rz_bv_is_zero_vector(rounded)) {
 		// to keep it an negative, make ret all set to bit 1
 		rz_bv_toggle_all(ret);
 		tmp = rz_bv_complement_2(rounded);
