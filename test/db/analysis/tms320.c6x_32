@@ -1155,6 +1155,28 @@ fail: 0x00000008
 EOF
 RUN
 
+# Disassembly that starts inside an execute packet has no instruction before
+# it to tell the packet from: the image does, so the first line keeps its "||"
+# and, on a unit an SPMASK before it names, its "^".
+NAME=c6x disassembly from inside an execute packet keeps its marks
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.rel.elf
+CMDS=<<EOF
+e asm.lines=false
+e asm.bytes=false
+pd 2 @ 0x84e2
+pi 1 @ 0x84f0
+pd 1 @ 0x8098
+pi 1 @ 0x84e0
+EOF
+EXPECT=<<EOF
+0x000084e2      ||    mv .l2 b4,b5
+0x000084e4      ||    mvk .s1 -0x6e2f,a4
+|| [a0] b .s1 sym._C_L18
+0x00008098      ||^   mv .l2x a4,b5
+cmpeq .l1 0x2,a4,a0
+EOF
+RUN
+
 # TI's compiler shares the code that sets up a call between call sites: a site
 # branches to it and, up to five cycles later, to the callee. That code then
 # runs in the last delay slots of the second branch, for as many cycles as lie
