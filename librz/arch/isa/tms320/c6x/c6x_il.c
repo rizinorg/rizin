@@ -388,12 +388,101 @@ static RzILOpEffect *c6x_cmp_packed(const C6xInsn *insn, ut8 lanes, rz_il_bool_2
 	return c6x_wr(&OP(2), UNSIGNED(32, mask));
 }
 
-// A binary single-precision float constructor (fadd/fsub/fmul), mirroring the
-// pure/bool 2-arg op typedefs for the shared shape of the float arithmetic.
-typedef RzILOpFloat *(c6x_fbin_op)(RzFloatRMode, RzILOpFloat *, RzILOpFloat *);
+// A float constructor of two operands rounding as an operand of its own says
+// (fadd/fsub/fmul).
+typedef RzILOpFloat *(c6x_fbin_op)(RzILOpBitVector *, RzILOpFloat *, RzILOpFloat *);
 
-// Single-precision float op: read src1/src2 as binary32, apply `mk` rounding to
-// nearest-even (the C6000 reset default), and write the result's bits back.
+// The sign bit, the bits of the infinity and of the smallest normalized number
+// (SFPN) of a float of \p n bits.
+#define C6X_FP_SIGN(n) (1ULL << ((n) - 1))
+#define C6X_FP_INF(n)  ((n) == 32 ? 0x7f800000ULL : 0x7ff0000000000000ULL)
+#define C6X_FP_SFPN(n) ((n) == 32 ? 0x00800000ULL : 0x0010000000000000ULL)
+#define C6X_FP_FMT(n)  ((n) == 32 ? RZ_FLOAT_IEEE754_BIN_32 : RZ_FLOAT_IEEE754_BIN_64)
+
+static RzILOpBitVector *c6x_fp_mag(RzILOpBitVector *v, ut8 n) {
+	return LOGAND(v, UN(n, C6X_FP_SIGN(n) - 1));
+}
+
+// Whether the float \p v of \p n bits is denormalized.
+static RzILOpBool *c6x_fp_is_den(RzILOpBitVector *v, ut8 n) {
+	return ULE(SUB(c6x_fp_mag(v, n), UN(n, 1)), UN(n, C6X_FP_SFPN(n) - 2));
+}
+
+// The rounding mode the instruction's unit is set to, as an RzFloatRMode: the
+// .M units have theirs in FMCR, and whatever else rounds takes the .L units'
+// in FADCR, on .S as well. Side 2's field is in the upper half.
+static RzILOpBitVector *c6x_fp_rmode(const C6xInsn *insn) {
+	const char *reg = insn->unit == C6X_UNIT_M ? "fmcr" : "fadcr";
+	ut32 at = insn->unit_side == C6X_SIDE_B ? 25 : 9;
+	// RMODE 1 rounds toward zero, the others are numbered as RzFloat's
+	RZ_STATIC_ASSERT(RZ_FLOAT_RMODE_RNE == 0 && RZ_FLOAT_RMODE_RTP == 2 && RZ_FLOAT_RMODE_RTN == 3);
+	return LET("_m", LOGAND(SHIFTR0(VARG(reg), U32(at)), U32(3)),
+		ITE(EQ(VARLP("_m"), U32(1)), U32(RZ_FLOAT_RMODE_RTZ), VARLP("_m")));
+}
+
+// A float source as the units take it: a denormalized one is a zero of its sign.
+static RzILOpBitVector *c6x_fp_in(RzILOpBitVector *v, ut8 n) {
+	return LET("_s", v,
+		ITE(c6x_fp_is_den(VARLP("_s"), n), LOGAND(VARLP("_s"), UN(n, C6X_FP_SIGN(n))), VARLP("_s")));
+}
+
+// A float result as the units deliver it. A NaN is NaN_out, all ones below the
+// sign \p nan_sign has in its top bit (a product's) or below none. A result
+// below the normalized numbers underflows to a zero or, rounding away from it
+// by \p rmode, to SFPN: there are no denormalized results.
+static RzILOpBitVector *c6x_fp_out(RzILOpFloat *res, RZ_NULLABLE RzILOpBitVector *rmode, RZ_NULLABLE RzILOpBitVector *nan_sign, ut8 n) {
+	RzILOpBitVector *nan = UN(n, C6X_FP_SIGN(n) - 1);
+	if (nan_sign) {
+		nan = LOGOR(nan_sign, nan);
+	}
+	RzILOpBitVector *under = LOGAND(VARLP("_r"), UN(n, C6X_FP_SIGN(n)));
+	if (rmode) {
+		RzILOpBool *away = EQ(rmode, ITE(MSB(VARLP("_r")), U32(RZ_FLOAT_RMODE_RTN), U32(RZ_FLOAT_RMODE_RTP)));
+		under = LOGOR(under, ITE(away, UN(n, C6X_FP_SFPN(n)), UN(n, 0)));
+	}
+	return LET("_r", F2BV(res),
+		ITE(UGT(c6x_fp_mag(VARLP("_r"), n), UN(n, C6X_FP_INF(n))), nan,
+			ITE(c6x_fp_is_den(VARLP("_r"), n), under, VARLP("_r"))));
+}
+
+// \p mk of the floats \p a and \p b of \p n bits, in the rounding mode of the
+// instruction's unit. A product's NaN_out has the sign its factors give.
+static RzILOpBitVector *c6x_fp_bin(const C6xInsn *insn, c6x_fbin_op *mk, RzILOpBitVector *a, RzILOpBitVector *b, ut8 n) {
+	RzILOpBitVector *nan_sign = mk == rz_il_op_new_fmul_dyn_rmode ? LOGXOR(VARLP("_x"), VARLP("_y")) : NULL;
+	RzILOpFloat *res = mk(VARLP("_rm"), BV2F(C6X_FP_FMT(n), VARLP("_x")), BV2F(C6X_FP_FMT(n), VARLP("_y")));
+	return LET("_rm", c6x_fp_rmode(insn),
+		LET("_x", c6x_fp_in(a, n),
+			LET("_y", c6x_fp_in(b, n),
+				c6x_fp_out(res, VARLP("_rm"), nan_sign, n))));
+}
+
+// The float \p v of \p n bits as a signed 32-bit integer, rounded by \p rmode
+// or, without one, toward zero. What does not fit, a NaN included, is the
+// largest integer of its sign.
+static RzILOpBitVector *c6x_fp_int(RzILOpBitVector *v, ut8 n, RZ_NULLABLE RzILOpBitVector *rmode) {
+	// the magnitudes up to which rounding stays in range: below 2^31 - 1 above
+	// zero, which a single-precision float is not close to, and below 2^31 under it
+	ut64 top = n == 32 ? 0x4effffffULL : 0x41dfffffffbfffffULL;
+	ut64 bottom = n == 32 ? 0x4effffffULL : 0x41dfffffffffffffULL;
+	RzILOpBitVector *limit = top == bottom ? UN(n, top) : ITE(MSB(VARLP("_x")), UN(n, bottom), UN(n, top));
+	RzILOpFloat *f = BV2F(C6X_FP_FMT(n), VARLP("_x"));
+	RzILOpBitVector *cast = rmode ? F2SINT_DYN_RMODE(32, rmode, f) : F2SINT(32, RZ_FLOAT_RMODE_RTZ, f);
+	return LET("_x", c6x_fp_in(v, n),
+		ITE(ULE(c6x_fp_mag(VARLP("_x"), n), limit), cast,
+			ITE(MSB(VARLP("_x")), U32(0x80000000), U32(0x7fffffff))));
+}
+
+// Whether the float \p a of \p n bits is below \p b. FORDER has a place for a
+// NaN in its order, the units have none: it is not below anything, nor
+// anything below it.
+static RzILOpBool *c6x_fp_less(RzILOpBitVector *a, RzILOpBitVector *b, ut8 n) {
+	RzILOpBool *nan = OR(IS_FNAN(BV2F(C6X_FP_FMT(n), VARLP("_x"))), IS_FNAN(BV2F(C6X_FP_FMT(n), VARLP("_y"))));
+	RzILOpBool *less = FORDER(BV2F(C6X_FP_FMT(n), VARLP("_x")), BV2F(C6X_FP_FMT(n), VARLP("_y")));
+	return LET("_x", c6x_fp_in(a, n), LET("_y", c6x_fp_in(b, n), AND(INV(nan), less)));
+}
+
+// Single-precision float op: read src1/src2 as binary32, apply `mk` and write
+// the result's bits back.
 static RzILOpEffect *c6x_fsp(const C6xInsn *insn, c6x_fbin_op *mk) {
 	RzILOpPure *s1 = c6x_src(&OP(0));
 	RzILOpPure *s2 = c6x_src(&OP(1));
@@ -402,7 +491,7 @@ static RzILOpEffect *c6x_fsp(const C6xInsn *insn, c6x_fbin_op *mk) {
 		rz_il_op_pure_free(s2);
 		return NULL;
 	}
-	return c6x_wr(&OP(2), F2BV(mk(RZ_FLOAT_RMODE_RNE, FLOATV32(s1), FLOATV32(s2))));
+	return c6x_wr(&OP(2), c6x_fp_bin(insn, mk, s1, s2, 32));
 }
 
 // Read a register pair as one 64-bit value: the even member is the low word and
@@ -458,8 +547,7 @@ static RzILOpEffect *c6x_wr_dual(const C6xOperand *o, RzILOpBitVector *odd, RzIL
 	return c6x_wr_pair64(o, APPEND(odd, even));
 }
 
-// Double-precision float op over register pairs (binary64, round to nearest
-// even).
+// Double-precision float op over register pairs (binary64).
 static RzILOpEffect *c6x_fdp(const C6xInsn *insn, c6x_fbin_op *mk) {
 	RzILOpBitVector *a = c6x_pair64(&OP(0));
 	RzILOpBitVector *b = c6x_pair64(&OP(1));
@@ -468,7 +556,7 @@ static RzILOpEffect *c6x_fdp(const C6xInsn *insn, c6x_fbin_op *mk) {
 		rz_il_op_pure_free(b);
 		return NULL;
 	}
-	return c6x_wr_pair64(&OP(2), F2BV(mk(RZ_FLOAT_RMODE_RNE, FLOATV64(a), FLOATV64(b))));
+	return c6x_wr_pair64(&OP(2), c6x_fp_bin(insn, mk, a, b, 64));
 }
 
 // The high or low halfword of a source, as a 16-bit value -- the halfword
@@ -1208,7 +1296,7 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		if (!s) {
 			return NULL;
 		}
-		return c6x_wr(&OP(1), LOGAND(s, U32(0x7fffffff)));
+		return c6x_wr(&OP(1), c6x_fp_out(FABS(FLOATV32(c6x_fp_in(s, 32))), NULL, NULL, 32));
 	}
 	case C6X_INS_ABSDP: {
 		// double-precision float abs: clear the sign bit of the 64-bit pair
@@ -1216,7 +1304,7 @@ static RzILOpEffect *c6x_lift_bitop(const C6xInsn *insn, ut64 pc) {
 		if (!s) {
 			return NULL;
 		}
-		return c6x_wr_pair64(&OP(1), LOGAND(s, SN(64, 0x7fffffffffffffffLL)));
+		return c6x_wr_pair64(&OP(1), c6x_fp_out(FABS(FLOATV64(c6x_fp_in(s, 64))), NULL, NULL, 64));
 	}
 	case C6X_INS_ABS2: {
 		// per-halfword absolute value with 0x8000 -> 0x7fff saturation
@@ -2953,18 +3041,18 @@ static RzILOpEffect *c6x_lift_c66x_mpy(const C6xInsn *insn, ut64 pc) {
 // two- and four-way ones.
 static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
-	case C6X_INS_FADDSP: return c6x_fsp(insn, rz_il_op_new_fadd);
-	case C6X_INS_FSUBSP: return c6x_fsp(insn, rz_il_op_new_fsub);
-	case C6X_INS_FADDDP: return c6x_fdp(insn, rz_il_op_new_fadd);
-	case C6X_INS_FSUBDP: return c6x_fdp(insn, rz_il_op_new_fsub);
-	case C6X_INS_FMPYDP: return c6x_fdp(insn, rz_il_op_new_fmul);
+	case C6X_INS_FADDSP: return c6x_fsp(insn, rz_il_op_new_fadd_dyn_rmode);
+	case C6X_INS_FSUBSP: return c6x_fsp(insn, rz_il_op_new_fsub_dyn_rmode);
+	case C6X_INS_FADDDP: return c6x_fdp(insn, rz_il_op_new_fadd_dyn_rmode);
+	case C6X_INS_FSUBDP: return c6x_fdp(insn, rz_il_op_new_fsub_dyn_rmode);
+	case C6X_INS_FMPYDP: return c6x_fdp(insn, rz_il_op_new_fmul_dyn_rmode);
 	case C6X_INS_DADDSP:
 	case C6X_INS_DSUBSP:
 	case C6X_INS_DMPYSP: {
 		// ADDSP, SUBSP or MPYSP of each register of the pairs
-		c6x_fbin_op *mk = rz_il_op_new_fmul;
+		c6x_fbin_op *mk = rz_il_op_new_fmul_dyn_rmode;
 		if (insn->id != C6X_INS_DMPYSP) {
-			mk = insn->id == C6X_INS_DADDSP ? rz_il_op_new_fadd : rz_il_op_new_fsub;
+			mk = insn->id == C6X_INS_DADDSP ? rz_il_op_new_fadd_dyn_rmode : rz_il_op_new_fsub_dyn_rmode;
 		}
 		RzILOpBitVector *r[2] = { NULL, NULL };
 		for (ut8 w = 0; w < 2; w++) {
@@ -2976,7 +3064,7 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 				rz_il_op_pure_free(r[0]);
 				return NULL;
 			}
-			r[w] = F2BV(mk(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b)));
+			r[w] = c6x_fp_bin(insn, mk, a, b, 32);
 		}
 		return c6x_wr_dual(&OP(2), r[1], r[0]);
 	}
@@ -2991,7 +3079,7 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 				r[i] = NULL;
 				continue;
 			}
-			r[i] = F2BV(rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b)));
+			r[i] = c6x_fp_bin(insn, rz_il_op_new_fmul_dyn_rmode, a, b, 32);
 		}
 		return c6x_wr_quad(&OP(2), r);
 	}
@@ -3010,8 +3098,8 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 				r[i] = NULL;
 				continue;
 			}
-			RzILOpFloat *p = rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, FLOATV32(a), FLOATV32(b));
-			r[i] = F2BV(i == 1 ? FNEG(p) : p);
+			RzILOpBitVector *p = c6x_fp_bin(insn, rz_il_op_new_fmul_dyn_rmode, a, b, 32);
+			r[i] = i == 1 ? LOGXOR(p, U32(C6X_FP_SIGN(32))) : p;
 		}
 		return c6x_wr_quad(&OP(2), r);
 	}
@@ -3027,9 +3115,9 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 				return NULL;
 			}
 			switch (insn->id) {
-			case C6X_INS_DINTSP: r[w] = F2BV(SINT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, v)); break;
-			case C6X_INS_DINTSPU: r[w] = F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, v)); break;
-			default: r[w] = F2SINT(32, RZ_FLOAT_RMODE_RNE, FLOATV32(v)); break;
+			case C6X_INS_DINTSP: r[w] = F2BV(SINT2F_DYN_RMODE(RZ_FLOAT_IEEE754_BIN_32, c6x_fp_rmode(insn), v)); break;
+			case C6X_INS_DINTSPU: r[w] = F2BV(INT2F_DYN_RMODE(RZ_FLOAT_IEEE754_BIN_32, c6x_fp_rmode(insn), v)); break;
+			default: r[w] = c6x_fp_int(v, 32, c6x_fp_rmode(insn)); break;
 			}
 		}
 		return c6x_wr_dual(&OP(1), r[1], r[0]);
@@ -3059,7 +3147,7 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 				rz_il_op_pure_free(h[0]);
 				return NULL;
 			}
-			h[w] = c6x_sat_s(F2SINT(32, RZ_FLOAT_RMODE_RNE, FLOATV32(v)), 16);
+			h[w] = c6x_sat_s(c6x_fp_int(v, 32, c6x_fp_rmode(insn)), 16);
 		}
 		return c6x_wr(&OP(1), APPEND(h[1], h[0]));
 	}
@@ -3073,33 +3161,33 @@ static RzILOpEffect *c6x_lift_c66x_fp(const C6xInsn *insn, ut64 pc) {
 static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
 	case C6X_INS_ADDSP: {
-		return c6x_fsp(insn, rz_il_op_new_fadd);
+		return c6x_fsp(insn, rz_il_op_new_fadd_dyn_rmode);
 	}
 	case C6X_INS_SUBSP: {
-		return c6x_fsp(insn, rz_il_op_new_fsub);
+		return c6x_fsp(insn, rz_il_op_new_fsub_dyn_rmode);
 	}
 	case C6X_INS_MPYSP: {
-		return c6x_fsp(insn, rz_il_op_new_fmul);
+		return c6x_fsp(insn, rz_il_op_new_fmul_dyn_rmode);
 	}
 	case C6X_INS_INTSP: {
 		// signed 32-bit integer -> single-precision float
 		RzILOpPure *s = c6x_src(&OP(0));
-		return s ? c6x_wr(&OP(1), F2BV(SINT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, s))) : NULL;
+		return s ? c6x_wr(&OP(1), F2BV(SINT2F_DYN_RMODE(RZ_FLOAT_IEEE754_BIN_32, c6x_fp_rmode(insn), s))) : NULL;
 	}
 	case C6X_INS_INTSPU: {
 		// unsigned 32-bit integer -> single-precision float
 		RzILOpPure *s = c6x_src(&OP(0));
-		return s ? c6x_wr(&OP(1), F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, s))) : NULL;
+		return s ? c6x_wr(&OP(1), F2BV(INT2F_DYN_RMODE(RZ_FLOAT_IEEE754_BIN_32, c6x_fp_rmode(insn), s))) : NULL;
 	}
 	case C6X_INS_SPINT: {
-		// single-precision float -> signed 32-bit integer, round to nearest even
+		// single-precision float -> signed 32-bit integer
 		RzILOpPure *s = c6x_src(&OP(0));
-		return s ? c6x_wr(&OP(1), F2SINT(32, RZ_FLOAT_RMODE_RNE, FLOATV32(s))) : NULL;
+		return s ? c6x_wr(&OP(1), c6x_fp_int(s, 32, c6x_fp_rmode(insn))) : NULL;
 	}
 	case C6X_INS_SPTRUNC: {
 		// single-precision float -> signed 32-bit integer, truncating (round to zero)
 		RzILOpPure *s = c6x_src(&OP(0));
-		return s ? c6x_wr(&OP(1), F2SINT(32, RZ_FLOAT_RMODE_RTZ, FLOATV32(s))) : NULL;
+		return s ? c6x_wr(&OP(1), c6x_fp_int(s, 32, NULL)) : NULL;
 	}
 	case C6X_INS_CMPEQSP: {
 		// single-precision float equality -> 1/0
@@ -3110,12 +3198,11 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 			rz_il_op_pure_free(b);
 			return NULL;
 		}
-		return c6x_wr(&OP(2), ITE(FEQ(FLOATV32(a), FLOATV32(b)), U32(1), U32(0)));
+		return c6x_wr(&OP(2), ITE(FEQ(FLOATV32(c6x_fp_in(a, 32)), FLOATV32(c6x_fp_in(b, 32))), U32(1), U32(0)));
 	}
 	case C6X_INS_CMPGTSP:
 	case C6X_INS_CMPLTSP: {
-		// single-precision ordered compare -> 1/0. FORDER is an ordered less-than,
-		// so GT swaps the operands.
+		// single-precision ordered compare -> 1/0, GT with the operands swapped
 		bool gt = insn->id == C6X_INS_CMPGTSP;
 		RzILOpPure *a = c6x_src(&OP(0));
 		RzILOpPure *b = c6x_src(&OP(1));
@@ -3124,8 +3211,7 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 			rz_il_op_pure_free(b);
 			return NULL;
 		}
-		RzILOpBool *cmp = gt ? FORDER(FLOATV32(b), FLOATV32(a)) : FORDER(FLOATV32(a), FLOATV32(b));
-		return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
+		return c6x_wr(&OP(2), ITE(gt ? c6x_fp_less(b, a, 32) : c6x_fp_less(a, b, 32), U32(1), U32(0)));
 	}
 	case C6X_INS_CMPEQDP: {
 		// double-precision float equality over register pairs -> 1/0
@@ -3136,7 +3222,7 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 			rz_il_op_pure_free(b);
 			return NULL;
 		}
-		return c6x_wr(&OP(2), ITE(FEQ(FLOATV64(a), FLOATV64(b)), U32(1), U32(0)));
+		return c6x_wr(&OP(2), ITE(FEQ(FLOATV64(c6x_fp_in(a, 64)), FLOATV64(c6x_fp_in(b, 64))), U32(1), U32(0)));
 	}
 	case C6X_INS_CMPGTDP:
 	case C6X_INS_CMPLTDP: {
@@ -3149,42 +3235,37 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 			rz_il_op_pure_free(b);
 			return NULL;
 		}
-		RzILOpBool *cmp = gt ? FORDER(FLOATV64(b), FLOATV64(a)) : FORDER(FLOATV64(a), FLOATV64(b));
-		return c6x_wr(&OP(2), ITE(cmp, U32(1), U32(0)));
+		return c6x_wr(&OP(2), ITE(gt ? c6x_fp_less(b, a, 64) : c6x_fp_less(a, b, 64), U32(1), U32(0)));
 	}
-	case C6X_INS_MPYSP2DP: {
-		// two single-precision sources widened to double and multiplied into a pair
-		RzILOpPure *s1 = c6x_src(&OP(0));
-		RzILOpPure *s2 = c6x_src(&OP(1));
-		if (!s1 || !s2) {
-			rz_il_op_pure_free(s1);
-			rz_il_op_pure_free(s2);
-			return NULL;
-		}
-		RzILOpFloat *a = FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(s1));
-		RzILOpFloat *b = FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(s2));
-		return c6x_wr_pair64(&OP(2), F2BV(rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, a, b)));
-	}
+	case C6X_INS_MPYSP2DP:
 	case C6X_INS_MPYSPDP: {
-		// single-precision src1 widened to double, multiplied by double src2
+		// src1 widened to double and multiplied by src2, a double or widened as well
+		bool sp2 = insn->id == C6X_INS_MPYSP2DP;
 		RzILOpPure *s1 = c6x_src(&OP(0));
-		RzILOpBitVector *s2 = c6x_pair64(&OP(1));
+		RzILOpBitVector *s2 = sp2 ? c6x_src(&OP(1)) : c6x_pair64(&OP(1));
 		if (!s1 || !s2) {
 			rz_il_op_pure_free(s1);
 			rz_il_op_pure_free(s2);
 			return NULL;
 		}
-		RzILOpFloat *a = FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(s1));
-		return c6x_wr_pair64(&OP(2), F2BV(rz_il_op_new_fmul(RZ_FLOAT_RMODE_RNE, a, FLOATV64(s2))));
+		// widening is exact, and so is the product of two widened
+		RzILOpFloat *a = FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(VARLP("_x")));
+		RzILOpFloat *b = sp2 ? FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(VARLP("_y"))) : FLOATV64(VARLP("_y"));
+		RzILOpBitVector *sign = SHIFTL0(UNSIGNED(64, VARLP("_x")), U32(32));
+		sign = LOGXOR(sign, sp2 ? SHIFTL0(UNSIGNED(64, VARLP("_y")), U32(32)) : VARLP("_y"));
+		RzILOpBitVector *res = LET("_x", c6x_fp_in(s1, 32),
+			LET("_y", c6x_fp_in(s2, sp2 ? 32 : 64),
+				c6x_fp_out(FMUL_DYN_RMODE(VARLP("_rm"), a, b), VARLP("_rm"), sign, 64)));
+		return c6x_wr_pair64(&OP(2), LET("_rm", c6x_fp_rmode(insn), res));
 	}
 	case C6X_INS_ADDDP: {
-		return c6x_fdp(insn, rz_il_op_new_fadd);
+		return c6x_fdp(insn, rz_il_op_new_fadd_dyn_rmode);
 	}
 	case C6X_INS_SUBDP: {
-		return c6x_fdp(insn, rz_il_op_new_fsub);
+		return c6x_fdp(insn, rz_il_op_new_fsub_dyn_rmode);
 	}
 	case C6X_INS_MPYDP: {
-		return c6x_fdp(insn, rz_il_op_new_fmul);
+		return c6x_fdp(insn, rz_il_op_new_fmul_dyn_rmode);
 	}
 	case C6X_INS_INTDP: {
 		// signed 32-bit integer -> double-precision float (into a pair)
@@ -3197,25 +3278,32 @@ static RzILOpEffect *c6x_lift_fp(const C6xInsn *insn, ut64 pc) {
 		return s ? c6x_wr_pair64(&OP(1), F2BV(INT2F(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, s))) : NULL;
 	}
 	case C6X_INS_SPDP: {
-		// single-precision -> double-precision (into a pair)
+		// single-precision -> double-precision (into a pair), exact
 		RzILOpPure *s = c6x_src(&OP(0));
-		return s ? c6x_wr_pair64(&OP(1), F2BV(FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(s)))) : NULL;
+		if (!s) {
+			return NULL;
+		}
+		RzILOpFloat *wide = FCONVERT(RZ_FLOAT_IEEE754_BIN_64, RZ_FLOAT_RMODE_RNE, FLOATV32(c6x_fp_in(s, 32)));
+		return c6x_wr_pair64(&OP(1), c6x_fp_out(wide, NULL, NULL, 64));
 	}
 	case C6X_INS_DPINT:
 	case C6X_INS_DPTRUNC: {
 		// double-precision float (pair src2) -> signed 32-bit integer. DPINT
-		// rounds to nearest even, DPTRUNC rounds toward zero.
+		// rounds as its unit is set to, DPTRUNC toward zero.
 		RzILOpBitVector *s = c6x_pair64(&OP(0));
 		if (!s) {
 			return NULL;
 		}
-		RzFloatRMode rmode = insn->id == C6X_INS_DPINT ? RZ_FLOAT_RMODE_RNE : RZ_FLOAT_RMODE_RTZ;
-		return c6x_wr(&OP(1), F2SINT(32, rmode, FLOATV64(s)));
+		return c6x_wr(&OP(1), c6x_fp_int(s, 64, insn->id == C6X_INS_DPINT ? c6x_fp_rmode(insn) : NULL));
 	}
 	case C6X_INS_DPSP: {
 		// double-precision (pair src2) -> single-precision
 		RzILOpBitVector *s = c6x_pair64(&OP(0));
-		return s ? c6x_wr(&OP(1), F2BV(FCONVERT(RZ_FLOAT_IEEE754_BIN_32, RZ_FLOAT_RMODE_RNE, FLOATV64(s)))) : NULL;
+		if (!s) {
+			return NULL;
+		}
+		RzILOpFloat *narrow = FCONVERT_DYN_RMODE(RZ_FLOAT_IEEE754_BIN_32, VARLP("_rm"), FLOATV64(c6x_fp_in(s, 64)));
+		return c6x_wr(&OP(1), LET("_rm", c6x_fp_rmode(insn), c6x_fp_out(narrow, VARLP("_rm"), NULL, 32)));
 	}
 	default:
 		break;

@@ -4372,6 +4372,339 @@ a4 = 0x00000053
 EOF
 RUN
 
+# SPRUGH7's examples with RMODE set: toward zero, +infinity and -infinity, an overflow going to the largest number or to infinity
+NAME=c6x C66x floating point rounds as FADCR and FMCR say
+FILE=malloc://0xe0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 1a4b1000 @ 0x0
+wx 9a471000 @ 0x20
+wx f0431000 @ 0x40
+wx f2431000 @ 0x60
+wx ba471000 @ 0x80
+wx b8871810 @ 0xa0
+aezi
+ar PC=0x0; ar fadcr=0x2000000; ar b3=0x402fc106; ar b2=0x24dd2f1b; ar b5=0x401070a3; ar b4=0xd70a3d71; aezs 1; ar b1; ar b0
+ar PC=0x0; ar fadcr=0x6000000; ar b3=0x402fc106; ar b2=0x24dd2f1b; ar b5=0x401070a3; ar b4=0xd70a3d71; aezs 1; ar b1; ar b0
+ar PC=0x20; ar fadcr=0x2000000; ar b2=0x40784517; ar b4=0x42aeab2d; aezs 1; ar b0
+ar PC=0x20; ar fadcr=0x6000000; ar b2=0x40784517; ar b4=0x42aeab2d; aezs 1; ar b0
+ar PC=0x40; ar fmcr=0x200; ar a3=0x40213333; ar a2=0x33333333; ar a5=0xc0040000; ar a4=0x0; aezs 1; ar a1; ar a0
+ar PC=0x60; ar fmcr=0x4000000; ar b3=0x40213333; ar b2=0x33333333; ar b5=0xc0040000; ar b4=0x0; aezs 1; ar b1; ar b0
+ar PC=0x80; ar fadcr=0x2000000; ar b2=0x40784517; ar b4=0xc2aeab2d; aezs 1; ar b0
+ar PC=0x80; ar fadcr=0x6000000; ar b2=0x40784517; ar b4=0xc2aeab2d; aezs 1; ar b0
+ar PC=0xa0; ar fadcr=0x200; ar a5=0x7f7fffff; ar a4=0xff7fffff; ar a7=0xff780123; ar a6=0x7f780123; aezs 1; ar a1; ar a0
+ar PC=0xa0; ar fadcr=0x400; ar a5=0x7f7fffff; ar a4=0xff7fffff; ar a7=0xff780123; ar a6=0x7f780123; aezs 1; ar a1; ar a0
+ar PC=0xa0; ar fadcr=0x600; ar a5=0x7f7fffff; ar a4=0xff7fffff; ar a7=0xff780123; ar a6=0x7f780123; aezs 1; ar a1; ar a0
+EOF
+EXPECT=<<EOF
+b1 = 0x4033fcac
+b0 = 0x083126e9
+b1 = 0x4033fcac
+b0 = 0x083126e9
+b0 = 0x42b66d55
+b0 = 0x42b66d55
+a1 = 0xc0357fff
+a0 = 0xffffffff
+b1 = 0xc0357fff
+b0 = 0xffffffff
+b0 = 0x42b66d55
+b0 = 0x42b66d55
+a1 = 0x7f7fffff
+a0 = 0xff7fffff
+a1 = 0x7f800000
+a0 = 0xff7fffff
+a1 = 0x7f7fffff
+a0 = 0xff800000
+EOF
+RUN
+
+# SPRUGH7's examples with a NaN source: NaN_out, of the sign the factors give for a product, and the largest integer for one converted
+NAME=c6x C66x floating point delivers NaN_out
+FILE=malloc://0xe0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx 008e2010 @ 0x0
+wx 000f1910 @ 0x20
+wx 020f0912 @ 0x40
+wx 58831a01 @ 0x60
+wx ba471810 @ 0x80
+wx b8871810 @ 0xa0
+aezi
+ar PC=0x0; ar a5=0x3f800000; ar a4=0xbf800000; ar a9=0xbf800000; ar a8=0x7fc00000; aezs 1; ar a1; ar a0
+ar PC=0x0; ar a5=0xbf800000; ar a4=0x3f800000; ar a9=0x7fc00000; ar a8=0x3f800000; aezs 1; ar a1; ar a0
+ar PC=0x0; ar a5=0xbf800000; ar a4=0x3f800000; ar a9=0x7fc00000; ar a8=0x7fc00000; aezs 1; ar a1; ar a0
+ar PC=0x0; ar a5=0x3f800000; ar a4=0xffc00000; ar a9=0x3f800000; ar a8=0xbf800000; aezs 1; ar a1; ar a0
+ar PC=0x20; ar a9=0x7fc00000; ar a8=0x42510000; ar a7=0x40600000; ar a6=0xc0200000; aezs 1; ar a3; ar a2; ar a1; ar a0
+ar PC=0x20; ar a9=0xffc00000; ar a8=0x42510000; ar a7=0x40600000; ar a6=0xc0200000; aezs 1; ar a3; ar a2; ar a1; ar a0
+ar PC=0x40; ar b9=0x7fc00000; ar b8=0x42510000; ar b3=0x7f900000; ar b2=0xc0200000; aezs 1; ar b7; ar b6; ar b5; ar b4
+ar PC=0x40; ar b9=0xff900033; ar b8=0x7f800000; ar b3=0x7fc00000; ar b2=0xc0200000; aezs 1; ar b7; ar b6; ar b5; ar b4
+ar PC=0x60; ar a7=0x4109999a; ar a6=0x7f900000; aezs 1; ar a3; ar a2
+ar PC=0x60; ar fadcr=0x200; ar a7=0x4109999a; ar a6=0x7fc00000; aezs 1; ar a3; ar a2
+ar PC=0x80; ar fadcr=0x2000000; ar b3=0x40784517; ar b2=0x7fc00000; ar b7=0x42aeab2d; ar b6=0x42300000; aezs 1; ar b1; ar b0
+ar PC=0xa0; ar fadcr=0x400; ar a5=0x40784517; ar a4=0x41200000; ar a7=0x42aeab2d; ar a6=0x7f900000; aezs 1; ar a1; ar a0
+EOF
+EXPECT=<<EOF
+a1 = 0xbf800000
+a0 = 0xffffffff
+a1 = 0xffffffff
+a0 = 0x3f800000
+a1 = 0xffffffff
+a0 = 0x7fffffff
+a1 = 0x3f800000
+a0 = 0x7fffffff
+a3 = 0x7fffffff
+a2 = 0xffffffff
+a1 = 0x4302a000
+a0 = 0x4336e000
+a3 = 0xffffffff
+a2 = 0x7fffffff
+a1 = 0x4302a000
+a0 = 0x4336e000
+b7 = 0x7fffffff
+b6 = 0xffffffff
+b5 = 0x4302a000
+b4 = 0x7fffffff
+b7 = 0xffffffff
+b6 = 0x7fffffff
+b5 = 0x7f800000
+b4 = 0x7fffffff
+a3 = 0x00000009
+a2 = 0x7fffffff
+a3 = 0x00000008
+a2 = 0x7fffffff
+b1 = 0xc2a6e904
+b0 = 0x7fffffff
+a1 = 0xc2a6e904
+a0 = 0x7fffffff
+EOF
+RUN
+
+# SPRUGH7's examples of a difference below the normalized numbers, in three rounding modes
+NAME=c6x C66x floating point underflows to a zero or the smallest normalized number
+FILE=malloc://0x40
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c66x
+e asm.cpu=c66x
+e scr.color=0
+wx b8871810 @ 0x0
+aezi
+ar PC=0x0; ar a5=0x8d8000; ar a4=0x808d8000; ar a7=0x8d0000; ar a6=0x808d0000; aezs 1; ar a1; ar a0
+ar PC=0x0; ar fadcr=0x400; ar a5=0x8d8000; ar a4=0x808d8000; ar a7=0x8d0000; ar a6=0x808d0000; aezs 1; ar a1; ar a0
+ar PC=0x0; ar fadcr=0x600; ar a5=0x8d8000; ar a4=0x808d8000; ar a7=0x8d0000; ar a6=0x808d0000; aezs 1; ar a1; ar a0
+EOF
+EXPECT=<<EOF
+a1 = 0x00000000
+a0 = 0x80000000
+a1 = 0x00800000
+a0 = 0x80000000
+a1 = 0x00000000
+a0 = 0x80800000
+EOF
+RUN
+
+# SPRUFE8B's notes on SPINT, SPTRUNC, DPINT and DPTRUNC: what does not fit, a NaN included, is the largest integer of its sign, and a denormalized source is zero
+NAME=c6x floating-point conversions to integers round as FADCR says and saturate
+FILE=malloc://0xa0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 58011003 @ 0x0
+wx 7a011003 @ 0x20
+wx 18811403 @ 0x40
+wx 38801403 @ 0x60
+aezi
+ar PC=0x0; ar fadcr=0x0; ar a4=0x40200000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x200; ar a4=0x40200000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x400; ar a4=0x40200000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x600; ar a4=0xc0200000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0x4f000000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0xcf000001; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0x7f800000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0xff800000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0x7fc00000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x0; ar a4=0xffc00000; aezs 1; ar a6
+ar PC=0x0; ar fadcr=0x400; ar a4=0x1; aezs 1; ar a6
+ar PC=0x20; ar fadcr=0x4000000; ar b4=0x40200000; aezs 1; ar b6
+ar PC=0x20; ar fadcr=0x6000000; ar b4=0xc0200000; aezs 1; ar b6
+ar PC=0x20; ar fadcr=0x0; ar b4=0x5f000000; aezs 1; ar b6
+ar PC=0x20; ar fadcr=0x0; ar b4=0xffc00000; aezs 1; ar b6
+ar PC=0x40; ar fadcr=0x0; ar a4=0xffe00000; ar a5=0x41dfffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x200; ar a4=0xffe00000; ar a5=0x41dfffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x600; ar a4=0x100000; ar a5=0xc1e00000; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0x100000; ar a5=0xc1e00000; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0x0; ar a5=0x7ff80000; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x400; ar a4=0x1; ar a5=0x0; aezs 1; ar a6
+ar PC=0x60; ar fadcr=0x400; ar a4=0xffe00000; ar a5=0x41dfffff; aezs 1; ar a6
+ar PC=0x60; ar fadcr=0x0; ar a4=0x200000; ar a5=0xc1e00000; aezs 1; ar a6
+EOF
+EXPECT=<<EOF
+a6 = 0x00000002
+a6 = 0x00000002
+a6 = 0x00000003
+a6 = 0xfffffffd
+a6 = 0x7fffffff
+a6 = 0x80000000
+a6 = 0x7fffffff
+a6 = 0x80000000
+a6 = 0x7fffffff
+a6 = 0x80000000
+a6 = 0x00000000
+b6 = 0x00000002
+b6 = 0xfffffffe
+b6 = 0x7fffffff
+b6 = 0x80000000
+a6 = 0x7fffffff
+a6 = 0x7fffffff
+a6 = 0x80000000
+a6 = 0x80000000
+a6 = 0x7fffffff
+a6 = 0x00000000
+a6 = 0x7fffffff
+a6 = 0x80000000
+EOF
+RUN
+
+# SPRUFE8B's tables of special inputs for the CMPxxSP and CMPxxDP forms
+NAME=c6x floating-point compares take a denormalized number as zero and a NaN as unordered
+FILE=malloc://0xe0
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 208e1403 @ 0x0
+wx a08e1403 @ 0x20
+wx 608e1403 @ 0x40
+wx 208a1804 @ 0x60
+wx a08a1804 @ 0x80
+wx 608a1804 @ 0xa0
+aezi
+ar PC=0x0; ar a4=0x1; ar a5=0x80000000; aezs 1; ar a6
+ar PC=0x0; ar a4=0x7fc00000; ar a5=0x7fc00000; aezs 1; ar a6
+ar PC=0x20; ar a4=0x80000000; ar a5=0x7fffff; aezs 1; ar a6
+ar PC=0x20; ar a4=0xffc00000; ar a5=0x3f800000; aezs 1; ar a6
+ar PC=0x20; ar a4=0xbf800000; ar a5=0x1; aezs 1; ar a6
+ar PC=0x40; ar a4=0x3f800000; ar a5=0xffc00000; aezs 1; ar a6
+ar PC=0x40; ar a4=0x7f800000; ar a5=0x7f7fffff; aezs 1; ar a6
+ar PC=0x60; ar a4=0xffffffff; ar a5=0x800fffff; ar a6=0x0; ar a7=0x0; aezs 1; ar a8
+ar PC=0x80; ar a4=0x0; ar a5=0xfff80000; ar a6=0x0; ar a7=0x3ff00000; aezs 1; ar a8
+ar PC=0xa0; ar a4=0x0; ar a5=0x3ff00000; ar a6=0x1; ar a7=0x0; aezs 1; ar a8
+ar PC=0xa0; ar a4=0x0; ar a5=0x7ff80000; ar a6=0x0; ar a7=0x0; aezs 1; ar a8
+EOF
+EXPECT=<<EOF
+a6 = 0x00000001
+a6 = 0x00000000
+a6 = 0x00000000
+a6 = 0x00000000
+a6 = 0x00000001
+a6 = 0x00000000
+a6 = 0x00000001
+a8 = 0x00000001
+a8 = 0x00000000
+a8 = 0x00000001
+a8 = 0x00000000
+EOF
+RUN
+
+# SPRUFE8B's notes on ADDSP, MPYSP, DPSP, SPDP, ABSSP, INTSP and MPYSPDP: the mode of the unit's side in FADCR or FMCR, NaN_out for a NaN, a denormalized source a zero and no denormalized result
+NAME=c6x floating point rounds, overflows, underflows and delivers NaN_out as the units do
+FILE=malloc://0x100
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 1a8e1403 @ 0x0
+wx 008e1403 @ 0x20
+wx 38811403 @ 0x40
+wx a0001004 @ 0x60
+wx 200f1003 @ 0x80
+wx 58091003 @ 0xa0
+wx b0851804 @ 0xc0
+aezi
+ar PC=0x0; ar fadcr=0x600; ar b4=0x40784517; ar b5=0x42aeab2d; aezs 1; ar b6
+ar PC=0x0; ar fadcr=0x2000400; ar b4=0x40784517; ar b5=0x42aeab2d; aezs 1; ar b6
+ar PC=0x0; ar fadcr=0x4000200; ar b4=0x40784517; ar b5=0x42aeab2d; aezs 1; ar b6
+ar PC=0x0; ar fadcr=0x6000000; ar b4=0x40784517; ar b5=0x42aeab2d; aezs 1; ar b6
+ar PC=0x20; ar fmcr=0x0; ar a4=0xbf800000; ar a5=0x7fc00000; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x0; ar a4=0x7f800000; ar a5=0x80000001; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x0; ar a4=0x800000; ar a5=0x3f000000; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x400; ar a4=0x800000; ar a5=0x3f000000; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x600; ar a4=0x80800000; ar a5=0x3f000000; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x200; ar a4=0x7f7fffff; ar a5=0x40000000; aezs 1; ar a6
+ar PC=0x20; ar fmcr=0x0; ar a4=0x7f7fffff; ar a5=0x40000000; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0xe0000001; ar a5=0x47efffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x200; ar a4=0xf0000000; ar a5=0x47efffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0xf0000000; ar a5=0x47efffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x400; ar a4=0xffffffff; ar a5=0x380fffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0xffffffff; ar a5=0x380fffff; aezs 1; ar a6
+ar PC=0x40; ar fadcr=0x0; ar a4=0x0; ar a5=0xfff40000; aezs 1; ar a6
+ar PC=0x60; ar a4=0xffc00000; aezs 1; ar a8; ar a9
+ar PC=0x60; ar a4=0x80000001; aezs 1; ar a8; ar a9
+ar PC=0x60; ar a4=0xc0200000; aezs 1; ar a8; ar a9
+ar PC=0x80; ar a4=0xff900033; aezs 1; ar a6
+ar PC=0x80; ar a4=0x807fffff; aezs 1; ar a6
+ar PC=0x80; ar a4=0xff800000; aezs 1; ar a6
+ar PC=0xa0; ar fadcr=0x0; ar a4=0x1000001; aezs 1; ar a6
+ar PC=0xa0; ar fadcr=0x400; ar a4=0x1000001; aezs 1; ar a6
+ar PC=0xa0; ar fadcr=0x200; ar a4=0xfeffffff; aezs 1; ar a6
+ar PC=0xa0; ar fadcr=0x600; ar a4=0xfeffffff; aezs 1; ar a6
+ar PC=0xc0; ar fmcr=0x0; ar a4=0xffc00000; ar a6=0x0; ar a7=0x3ff00000; aezs 1; ar a8; ar a9
+ar PC=0xc0; ar fmcr=0x200; ar a4=0x3fc00001; ar a6=0x1; ar a7=0x3ff00000; aezs 1; ar a8; ar a9
+EOF
+EXPECT=<<EOF
+b6 = 0x42b66d56
+b6 = 0x42b66d55
+b6 = 0x42b66d56
+b6 = 0x42b66d55
+a6 = 0xffffffff
+a6 = 0xffffffff
+a6 = 0x00000000
+a6 = 0x00800000
+a6 = 0x80800000
+a6 = 0x7f7fffff
+a6 = 0x7f800000
+a6 = 0x7f7fffff
+a6 = 0x7f7fffff
+a6 = 0x7f800000
+a6 = 0x00800000
+a6 = 0x00800000
+a6 = 0x7fffffff
+a8 = 0xffffffff
+a9 = 0x7fffffff
+a8 = 0x00000000
+a9 = 0x80000000
+a8 = 0x00000000
+a9 = 0xc0040000
+a6 = 0x7fffffff
+a6 = 0x00000000
+a6 = 0x7f800000
+a6 = 0x4b800000
+a6 = 0x4b800001
+a6 = 0xcb800000
+a6 = 0xcb800001
+a8 = 0xffffffff
+a9 = 0xffffffff
+a8 = 0x20000001
+a9 = 0x3ff80000
+EOF
+RUN
+
 NAME=c6x a load or store reads its registers before it writes its address back
 FILE=malloc://0x400
 CMDS=<<EOF
