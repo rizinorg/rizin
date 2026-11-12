@@ -4380,3 +4380,29 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=x86 indexed stack operands keep register names (#4003)
+FILE=hex://558bec81ec3002000064a1300000008945d88b45d88945e08b4de08b510c8b421c8945f48b4df40fb7511c83c2028955d48b45f48b4820894dd0c745f000000000eb098b55f083c2018955f08b45f03b45d473148b4dd0034df08b55f08a01888415d0fdffffebdbc645ffe0c745f800000000eb098b4df883c101894df88b55f80fb78455d0fdffff85c0743e8b4df80fb7944dd0fdffff83fa417c2c8b45f80fb78c45d0fdffff83f95a7f1c0fbe55ff8b45f80fb78c45d0fdffff2bca8b55f866898c55d0fdffffebaa8d85d0fdffff85c07509c745e400000000eb45c745ec00000000c745e800000000eb098b4de883c101894de88b55e80fb78455d0fdffff85c07417c14dec098b4de80fb7944dd0fdffff3355ec8955ecebd18b45ec8945e48b4d083b4de4750b8b55f48b42088945dceb218b4df48b118955f48b45e08b480c8b55f43b511c0f85d4feffffc745dc000000008b45dc8be55dc20400
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aa
+pi 1 @ 0x5f
+pi 1 @ 0x81
+pi 1 @ 0x90
+pi 1 @ 0xa0
+pi 1 @ 0xb4
+pi 1 @ 0xc1
+pi 1 @ 0xfa
+pi 1 @ 0x10d
+EOF
+EXPECT=<<EOF
+mov byte [ebp+edx*1-0x230], al
+movzx eax, word [ebp+edx*2-0x230]
+movzx edx, word [ebp+ecx*2-0x230]
+movzx ecx, word [ebp+eax*2-0x230]
+movzx ecx, word [ebp+eax*2-0x230]
+mov word [ebp+edx*2-0x230], cx
+movzx eax, word [ebp+edx*2-0x230]
+movzx edx, word [ebp+ecx*2-0x230]
+EOF
+RUN
