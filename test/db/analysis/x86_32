@@ -4406,3 +4406,43 @@ movzx eax, word [ebp+edx*2-0x230]
 movzx edx, word [ebp+ecx*2-0x230]
 EOF
 RUN
+
+NAME=x86 pointer loads reference the pointed-to data (#4751)
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 488b05f9010000c3 @ 0x100
+wx 488d05e9010000c3 @ 0x120
+wx 488905d9010000c3 @ 0x140
+wx 8b05ca010000c3 @ 0x160
+wx 488b05b9010000c3 @ 0x180
+wx 0005000000000000 @ 0x300
+wx 1005000000000000 @ 0x310
+wx 2005000000000000 @ 0x320
+wx 3005000000000000 @ 0x330
+wx 0020000000000000 @ 0x340
+af @ 0x100
+af @ 0x120
+af @ 0x140
+af @ 0x160
+af @ 0x180
+axtj @ 0x500
+axtj @ 0x510
+axtj @ 0x520
+axtj @ 0x530
+axtj @ 0x2000
+e asm.bits=32
+wx a150030000c3 @ 0x200
+wx 40050000 @ 0x350
+af @ 0x200
+axtj @ 0x540
+EOF
+EXPECT=<<EOF
+[{"from":768,"to":1280,"type":"DATA"}]
+[]
+[]
+[]
+[]
+[{"from":848,"to":1344,"type":"DATA"}]
+EOF
+RUN
