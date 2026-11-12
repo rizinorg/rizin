@@ -61,7 +61,7 @@ const char *node_verdict_names[] = {
  */
 typedef enum {
 	// Positive hints that the node is actually a function entry point:
-	CFG_CONFLICT_OBSV_SYMBOL = 0, ///< The node is located at a symbol's address.
+	CFG_CONFLICT_OBSV_FCN_SYMBOL = 0, ///< The node is located at a symbol's address.
 	CFG_CONFLICT_OBSV_IS_CALLED, ///< The node is the target of a call instruction.
 	CFG_CONFLICT_OBSV_IN_JMP_CROSS_SYMB, ///< A successor jumps over a symbol to reach this node (tail-call signal).
 	CFG_CONFLICT_OBSV_HAS_PDATA_ENTRY, ///< The node has a PE .pdata / x64 unwind entry.
@@ -69,7 +69,7 @@ typedef enum {
 	CFG_CONFLICT_OBSV_IMPORT, ///< The node is a trampoline to an imported function.
 	CFG_CONFLICT_OBSV_GROWS_STACK_FRAME, ///< The node grows the stack frame.
 
-	// Negative hints that the block is a function entry point.
+	// Positive hint for shared blocks.
 	CFG_CONFLICT_OBSV_STARTS_NOOP, ///< Node starts with a noop instruction.
 	CFG_CONFLICT_OBSV_STARTS_COND_JMP, ///< A successor of this block is a conditional jump.
 	CFG_CONFLICT_OBSV_BEFORE_BIN_ENTRY, ///< Basic block is before the entry point of the binary.
@@ -79,6 +79,11 @@ typedef enum {
 	CFG_CONFLICT_OBSV_SHRINKS_STACK_FRAME, ///< The block shrinks the stack frame.
 	CFG_CONFLICT_OBSV_SELF_LOOP, ///< The block loops back to itself.
 	CFG_CONFLICT_OBSV_JUMP_TARGET, ///< Block is target of a jump instruction.
+	/**
+	 * \brief Hint only triggers if symbols are present at all.
+	 * If the conflict block has no function symbol, it is a hint that it is shared.
+	 */
+	CFG_CONFLICT_OBSV_NO_SYMB,
 
 	// Positive hints that the block should be dropped.
 	CFG_CONFLICT_OBSV_NOT_X_MAPPED, ///< Node is mapped as non-executable.
@@ -98,7 +103,7 @@ typedef struct {
 } HintScores;
 
 static const HintScores hint_scores[] = {
-	{ "CFG_CONFLICT_OBSV_SYMBOL",
+	{ "CFG_CONFLICT_OBSV_FCN_SYMBOL",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_CERTAIN },
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_RULED_OUT },
@@ -156,8 +161,8 @@ static const HintScores hint_scores[] = {
 			{ CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ "CFG_CONFLICT_OBSV_REACHED_BY_FALLTHROUGH",
-		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_NEUTRAL },
-			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_NEUTRAL },
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_SLIGHT_HINT },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ "CFG_CONFLICT_OBSV_UNCOND_RETURNS",
@@ -187,6 +192,11 @@ static const HintScores hint_scores[] = {
 		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_LIKELY },
 			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_SLIGHTLY_AGAINST },
 			{ CFG_CONFLICT_VERDICT_DROP, SCORE_STRONGLY_DISFAV },
+			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
+	{ "CFG_CONFLICT_OBSV_NO_SYMB",
+		{ { CFG_CONFLICT_VERDICT_SHARED, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_STRONG_FAVOR },
+			{ CFG_CONFLICT_VERDICT_DROP, SCORE_NEUTRAL },
 			{ CFG_CONFLICT_VERDICT_N, SCORE_NEUTRAL } } },
 	{ "CFG_CONFLICT_OBSV_NOT_X_MAPPED",
 		{ { CFG_CONFLICT_VERDICT_FCN_ENTRY, SCORE_RULED_OUT },
@@ -303,6 +313,10 @@ static bool edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to
 	}
 }
 
+static inline bool is_fcn_symb(const char *type) {
+	return RZ_STR_EQ(type, RZ_BIN_TYPE_FUNC_STR) || RZ_STR_EQ(type, RZ_BIN_TYPE_METH_STR);
+}
+
 /**
  * \brief This function has a high runtime complexity!
  */
@@ -336,12 +350,15 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	} else if (!(map->perm & RZ_PERM_X)) {
 		score_add(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
 	}
+
 	const RzBinSymbol *symb;
-	if ((symb = rz_bin_object_get_symbol_at(obj, node_addr, true))) {
-		score_add(CFG_CONFLICT_OBSV_SYMBOL, &score);
+	if ((symb = rz_bin_object_get_symbol_at(obj, node_addr, true)) && is_fcn_symb(symb->type)) {
+		score_add(CFG_CONFLICT_OBSV_FCN_SYMBOL, &score);
 		if (symb->is_imported) {
 			score_add(CFG_CONFLICT_OBSV_IMPORT, &score);
 		}
+	} else if (rz_pvector_len(obj->symbols) != 0) {
+		score_add(CFG_CONFLICT_OBSV_NO_SYMB, &score);
 	}
 
 	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
