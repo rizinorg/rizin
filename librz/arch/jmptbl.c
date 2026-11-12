@@ -166,6 +166,9 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
  * Goes through each case on the jump table, adds necessary flags/metadata and
  * a new RzAnalysisTaskItem to `params->tasks` to be analyzed later.
  *
+ * Set `params->relative` for PC-relative entries that could also be valid mapped
+ * addresses, such as small offsets in a low-address mapping.
+ *
  * \param analysis Pointer to RzAnalysis instance
  * \param fcn Pointer to RzAnalysisFunction to add the new cases
  * \param block Pointer to RzAnalysisBlock that originates the switch table
@@ -224,10 +227,13 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
 		} else if (params->entry_size == 1 && is_arm) {
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
-		} else if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
+		} else if (params->relative || !analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
 			jmpptr = params->jmptbl_off + jmpdelta;
+			if (params->relative && analysis->bits == 32) {
+				jmpptr = (ut32)jmpptr;
+			}
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 				break;
 			}
