@@ -2741,92 +2741,78 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
- * \param rel_type The relocation type.
+ * \param rel The relocation, including its addend encoding.
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, const RelocFormularSymbols *fs) {
-	rz_return_if_fail(buf_patched && fs);
-	ut8 buf[4] = { 0 };
-	ut64 val = 0;
-	switch (rel_type) {
+static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr,
+	const RzBinElfReloc *rel, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	int type = rel->type;
+	ut64 val;
+	int width = 4;
+	switch (type) {
 	case R_386_NONE:
+	case R_386_COPY:
+	case R_386_IRELATIVE:
+		// COPY and IFUNC resolution require the runtime loader.
 		return;
-	case R_386_32:
-		/* fall-thru */
-	case R_386_PC32:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_le32(buf) + fs->S + fs->A;
-		if (rel_type == R_386_PC32) {
-			val -= fs->P;
+	case R_386_8:
+	case R_386_PC8:
+		width = 1;
+		break;
+	case R_386_16:
+	case R_386_PC16:
+		width = 2;
+		break;
+	}
+	ut64 addend = fs->A;
+	ut8 buf[4];
+	if (rel->mode == DT_REL) {
+		if (rz_buf_read_at(buf_patched, patch_addr, buf, width) != width) {
+			return;
 		}
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		addend = rz_read_ble(buf, false, width * 8);
+	}
+	switch (type) {
+	case R_386_32:
+	case R_386_16:
+	case R_386_8:
+		val = fs->S + addend;
+		break;
+	case R_386_PC32:
+	case R_386_PC16:
+	case R_386_PC8:
+		val = fs->S + addend - fs->P;
 		break;
 	case R_386_GOT32:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->G + fs->A - fs->GOT;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+	case R_386_GOT32X:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = fs->G + addend;
 		break;
 	case R_386_PLT32:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->L + fs->A - fs->P;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		val = fs->L + addend - fs->P;
 		break;
 	case R_386_GLOB_DAT:
-	/* fall through */
 	case R_386_JMP_SLOT:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->S;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 	case R_386_RELATIVE:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->B + fs->A;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		val = fs->B + addend;
 		break;
 	case R_386_GOTOFF:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->S + fs->A - fs->GOT;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		val = fs->S + addend - fs->GOT;
 		break;
 	case R_386_GOTPC:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->GOT + fs->A - fs->P;
-		rz_write_le32(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		break;
-
-	case R_386_16:
-	/* fall through */
-	case R_386_PC16:
-		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		if (rel_type == R_386_PC16) {
-			val -= fs->P;
-		}
-		rz_write_le16(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
-		break;
-	case R_386_8:
-	/* fall through */
-	case R_386_PC8:
-		val = fs->S + fs->A;
-		rz_buf_read_at(buf_patched, patch_addr, buf, 1);
-		if (rel_type == R_386_PC16) {
-			val -= fs->P;
-		}
-		rz_write_le8(buf, val);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 1);
+		val = fs->GOT + addend - fs->P;
 		break;
 	default:
-		UNHANDL_DEF("x86_32", rel_type);
+		UNHANDL_DEF("x86_32", type);
 		return;
 	}
+	rz_write_ble(buf, val, false, width * 8);
+	rz_buf_write_at(buf_patched, patch_addr, buf, width);
 }
 
 /**
@@ -2848,6 +2834,8 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_X86_64_NONE:
 		/* fall-thru */
 	case R_X86_64_COPY:
+	case R_X86_64_IRELATIVE:
+		// COPY and IFUNC resolution require the runtime loader.
 		return;
 	case R_X86_64_8:
 		word = 1;
@@ -2870,7 +2858,7 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_X86_64_GLOB_DAT:
 		/* fall-thru */
 	case R_X86_64_JUMP_SLOT:
-		word = 4;
+		word = 8;
 		val = fs->S;
 		break;
 	case R_X86_64_PC8:
@@ -2900,11 +2888,19 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		val = fs->B + fs->A;
 		break;
 	case R_X86_64_GOT32:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		word = 4;
 		val = fs->G + fs->A;
 		break;
 	case R_X86_64_GOTPCREL64:
-		/* fall thru */
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		word = 8;
+		val = fs->G + fs->GOT + fs->A - fs->P;
+		break;
 	case R_X86_64_GOTPCREL:
 		/* fall thru */
 	case R_X86_64_GOTPCRELX:
@@ -2916,6 +2912,9 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 	case R_X86_64_CODE_5_GOTPCRELX:
 		/* fall thru */
 	case R_X86_64_CODE_6_GOTPCRELX:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		word = 4;
 		val = fs->G + fs->GOT + fs->A - fs->P;
 		break;
@@ -2928,6 +2927,9 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		val = fs->GOT + fs->A - fs->P;
 		break;
 	case R_X86_64_GOT64:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		word = 8;
 		val = fs->G + fs->A;
 		break;
@@ -3727,6 +3729,56 @@ static void patch_reloc_riscv(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 	RZ_LOG_WARN("Relocation patching for " NAME " is not implemented.\n"); \
 	return
 
+/**
+ * \brief Patch module-relative TLS offsets when the defining module is available.
+ *
+ * A module ID or thread-pointer offset depends on the loader's TLS layout.
+ * Leave these fields and imported TLS symbols intact: synthetic import
+ * addresses are not valid TLS values.
+ */
+static bool patch_x86_tls_reloc(ELFOBJ *bin, const RzBinElfReloc *rel, ut64 patch_addr) {
+	bool is_64 = bin->ehdr.e_machine == EM_X86_64;
+	if (is_64) {
+		switch (rel->type) {
+		case R_X86_64_DTPMOD64:
+		case R_X86_64_TPOFF64:
+			return true;
+		case R_X86_64_DTPOFF64:
+			break;
+		default:
+			return false;
+		}
+	} else if (bin->ehdr.e_machine == EM_386) {
+		switch (rel->type) {
+		case R_386_TLS_DTPMOD32:
+		case R_386_TLS_TPOFF:
+			return true;
+		case R_386_TLS_DTPOFF32:
+			break;
+		default:
+			return false;
+		}
+	} else {
+		return false;
+	}
+	// In ET_REL, TLS sections have not yet been laid out into a module.
+	if (bin->ehdr.e_type != ET_DYN) {
+		return true;
+	}
+	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, rel->sym);
+	if (!symbol || !RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_TLS_STR) || symbol->vaddr == UT64_MAX) {
+		return true;
+	}
+	ut8 buf[8];
+	if (is_64) {
+		rz_write_le64(buf, symbol->vaddr + rel->addend);
+	} else {
+		rz_write_le32(buf, symbol->vaddr);
+	}
+	rz_buf_write_at(bin->buf_patched, patch_addr, buf, is_64 ? 8 : 4);
+	return true;
+}
+
 void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL) {
 	rz_return_if_fail(bin && rel && AHL);
 	ut16 e_machine = bin->ehdr.e_machine;
@@ -3748,6 +3800,9 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(bin, rel->vaddr);
 	bool big_endian = bin->big_endian;
+	if (patch_x86_tls_reloc(bin, rel, patch_addr)) {
+		return;
+	}
 	switch (e_machine) {
 	case EM_QDSP6:
 		patch_reloc_hexagon(bin->buf_patched, patch_addr, rel->type, &formular_sym);
@@ -3773,7 +3828,7 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		*AHL = formular_sym.AHL;
 		break;
 	case EM_386:
-		patch_reloc_x86_32(bin->buf_patched, patch_addr, rel->type, &formular_sym);
+		patch_reloc_x86_32(bin->buf_patched, patch_addr, rel, &formular_sym);
 		break;
 	case EM_X86_64:
 		patch_reloc_x86_64(bin->buf_patched, patch_addr, rel->type, &formular_sym);

@@ -625,12 +625,12 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
 	if (section) {
-		return section->offset;
+		return section->rva;
 	}
 
 	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
 	if (section) {
-		return section->offset;
+		return section->rva;
 	}
 
 	return 0;
@@ -723,15 +723,17 @@ static void fill_got_sym_id_off_map(ELFOBJ *obj) {
 		// Already loaded by another ELF plugin callback.
 		return;
 	}
+	// Both GOT sections use the same base in relocation formulas.
+	ut64 got_addr = get_got_addr(obj);
 	// Fill symbol id -> GOT offset map.
 	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got");
 	if (got) {
 		rz_bin_elf_foreach_relocs(obj, reloc) {
-			if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+			if (reloc->vaddr < got->rva || reloc->vaddr - got->rva >= got->size) {
 				// Not a GOT entry.
 				continue;
 			}
-			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->vaddr - got_addr);
 		}
 	}
 
@@ -740,11 +742,11 @@ static void fill_got_sym_id_off_map(ELFOBJ *obj) {
 		return;
 	}
 	rz_bin_elf_foreach_relocs(obj, reloc) {
-		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+		if (reloc->vaddr < got->rva || reloc->vaddr - got->rva >= got->size) {
 			// Not a GOT entry.
 			continue;
 		}
-		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->vaddr - got_addr);
 	}
 }
 
