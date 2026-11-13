@@ -91,6 +91,7 @@ if get_option('enable_tests')
     'intervaltree',
     'inquiry_absint',
     'io',
+    'io_gzip',
     'io_ihex',
     'itv',
     'json',
