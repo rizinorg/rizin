@@ -101,3 +101,37 @@ EXPECT=<<EOF
 done
 EOF
 RUN
+
+NAME=afvcs || accepts two-sided intervals
+FILE=bins/elf/constr_type
+CMDS=<<EOF
+e analysis.types.constraint=true
+aaa
+s sym.range_small
+afvcs var_1ch "gt 0, le 5 || gt 10, le 20"
+afvc var_1ch
+afvc- var_1ch
+echo done
+EOF
+EXPECT=<<EOF
+> 0x0 && <= 0x5 || > 0xa && <= 0x14
+done
+EOF
+RUN
+
+NAME=afvcs || rejects one-sided alternatives
+FILE=bins/elf/constr_type
+CMDS=<<EOF
+e analysis.types.constraint=true
+aaa
+s sym.range_small
+afvcs var_1ch "gt 0 || lt 5"
+afvc var_1ch
+afvc- var_1ch
+echo done
+EOF
+EXPECT=<<EOF
+> 0x0 && <= 0x9
+done
+EOF
+RUN
