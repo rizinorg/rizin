@@ -8,6 +8,8 @@
 #include <signal.h>
 
 #include <sys/mman.h>
+#include <sys/uio.h>
+#include <elf.h>
 #include "linux/linux_debug.h"
 #include "procfs.h"
 #include "bt.c"
@@ -136,21 +138,50 @@ static int rz_debug_native_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) 
 	if (size < 1) {
 		return false;
 	}
-	return linux_reg_read(dbg, type, buf, size);
+	if (type == RZ_REG_TYPE_DRX) {
+		// unsupported here; keep the value linux_reg_read returned before the split
+		return true;
+	}
+	if (type != RZ_REG_TYPE_GPR && type != RZ_REG_TYPE_SEG && type != RZ_REG_TYPE_FLG) {
+		return false;
+	}
+	int pid = dbg->tid;
+	RZ_DEBUG_REG_T regs;
+	memset(&regs, 0, sizeof(regs));
+	memset(buf, 0, size);
+	struct iovec io = {
+		.iov_base = &regs,
+		.iov_len = sizeof(regs)
+	};
+	int ret = rz_debug_ptrace(dbg, PTRACE_GETREGSET, pid, (void *)(size_t)NT_PRSTATUS, &io);
+	if (ret != 0) {
+		rz_sys_perror("PTRACE_GETREGSET");
+		return false;
+	}
+	size = RZ_MIN(sizeof(regs), size);
+	memcpy(buf, &regs, size);
+	return size;
 }
 
 static int rz_debug_native_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
-	// XXX use switch or so
 	if (type == RZ_REG_TYPE_DRX) {
 		return false;
-	} else if (type == RZ_REG_TYPE_GPR) {
-		return linux_reg_write(dbg, type, buf, size);
-	} else if (type == RZ_REG_TYPE_FPU) {
-		return linux_reg_write(dbg, type, buf, size);
-	} else {
-		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
 	}
-	return false;
+	if (type != RZ_REG_TYPE_GPR) {
+		RZ_LOG_DEBUG("TODO: reg_write_non-gpr (%d)\n", type);
+		return false;
+	}
+	int pid = dbg->tid;
+	struct iovec io = {
+		.iov_base = (void *)buf,
+		.iov_len = sizeof(RZ_DEBUG_REG_T)
+	};
+	int ret = rz_debug_ptrace(dbg, PTRACE_SETREGSET, pid, (void *)(size_t)NT_PRSTATUS, (rz_ptrace_data_t)(size_t)&io);
+	if (ret == -1) {
+		rz_sys_perror("reg_write");
+		return false;
+	}
+	return true;
 }
 
 static RzDebugMap *rz_debug_native_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp) {
