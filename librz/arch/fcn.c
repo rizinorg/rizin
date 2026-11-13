@@ -826,6 +826,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	repeat:
 		at_delta = idx;
 		at = addr + at_delta;
+		// x86 jump-table entries are data, unlike executable branch tables on ARM.
+		if (is_x86 && rz_meta_get_in(analysis, at, RZ_META_TYPE_DATA)) {
+			gotoBeach(RZ_ANALYSIS_RET_END);
+		}
 		if (rz_interrupt_is_breaked(analysis->intr)) {
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
 			break;
