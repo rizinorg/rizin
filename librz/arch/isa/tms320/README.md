@@ -25,6 +25,12 @@ instruction table and a per-generation feature gate, as the C55 engine serves
 C54x, C55x and C55x+. Analysis reconstructs execute packets, and the scalar
 move, ALU, shift, multiply, load and store core is lifted to RzIL.
 
+A compact slot decodes with the header of its fetch packet, which is read from
+the image when the bytes in hand stop short of it, so a range, a block or a
+basic block that ends mid-packet decodes as the whole packet does. `rz-asm` has
+no image: given part of a packet, it reads a word whose header it cannot see as
+a 32-bit opcode, and prints such a half word as `invalid`.
+
 A whole execute packet is lifted on its first instruction. Every slot reads the
 register file as it stood when the packet issued, through snapshot variables,
 and all the writes land together. A parallel swap such as `mv a0,a1 || mv a1,a0`

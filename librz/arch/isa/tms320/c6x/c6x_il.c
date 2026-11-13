@@ -803,6 +803,22 @@ static RzILOpEffect *c6x_addr(const C6xInsn *insn, bool sub, ut8 scale) {
 	return c6x_wr(&OP(2), sub ? SUB(base, off) : ADD(base, off));
 }
 
+// Where a branch goes: a register, or a displacement off the address of the
+// fetch packet holding the branch (PCE1).
+static RzILOpBitVector *c6x_branch_target(const C6xInsn *insn, ut64 pc) {
+	const C6xOperand *t = &OP(0);
+	switch (t->kind) {
+	case C6X_OP_PCREL:
+		return U32((ut32)(c6x_packet_base(pc) + t->v.imm.value));
+	case C6X_OP_REG:
+		return c6x_reg_read(c6x_reg_name(t->v.reg.side, t->v.reg.num));
+	case C6X_OP_CTRLREG:
+		return c6x_reg_read(t->v.ctrl); // e.g. b irp / b nrp (return from interrupt)
+	default:
+		return NULL;
+	}
+}
+
 // Control transfer, no-ops and the return-address helper.
 static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 	switch (insn->id) {
@@ -811,29 +827,16 @@ static RzILOpEffect *c6x_lift_control(const C6xInsn *insn, ut64 pc) {
 		return NOP();
 	}
 	case C6X_INS_B:
-	case C6X_INS_BNOP:
-	case C6X_INS_CALLP: {
-		// Control transfer. The target is either a register or a PC-relative
-		// displacement off the fetch-packet-aligned address (PCE1). This is the
-		// transfer alone: c6x_lift_il() in analysis_tms320.c places it after the
-		// delay slots. Call forms (a link register in ops[1]) also record the
-		// return address, the word after the branch.
-		const C6xOperand *t = &OP(0);
-		RzILOpBitVector *tgt;
-		if (t->kind == C6X_OP_PCREL) {
-			tgt = U32((ut32)(c6x_packet_base(pc) + t->v.imm.value));
-		} else if (t->kind == C6X_OP_REG) {
-			tgt = c6x_reg_read(c6x_reg_name(t->v.reg.side, t->v.reg.num));
-		} else if (t->kind == C6X_OP_CTRLREG) {
-			tgt = c6x_reg_read(t->v.ctrl); // e.g. b irp / b nrp (return from interrupt)
-		} else {
-			return NULL;
-		}
-		if (insn->nops > 1 && OP(1).kind == C6X_OP_REG) {
-			return SEQ2(c6x_reg_write(c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num), U32((ut32)(pc + insn->size))), JMP(tgt));
-		}
-		return JMP(tgt);
+	case C6X_INS_BNOP: {
+		// the transfer alone: c6x_lift_il() in analysis_tms320.c places it
+		// after the delay slots
+		RzILOpBitVector *tgt = c6x_branch_target(insn, pc);
+		return tgt ? JMP(tgt) : NULL;
 	}
+	case C6X_INS_CALLP:
+		// without its execute packet, the word after the call is the best
+		// guess at where it returns to
+		return c6x_lift_call(insn, pc, pc + insn->size);
 	case C6X_INS_BPOS:
 	case C6X_INS_BDEC: {
 		// Conditional branch on the sign of the counter register in ops[1]:
@@ -2452,6 +2455,29 @@ RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, 
 	// to leave the program counter past them; otherwise the VM steps back into
 	// the window and walks it again.
 	return BRANCH(VARL(C6X_PRED_TAKEN), xfer, JMP(U32(fallthrough)));
+}
+
+/**
+ * \brief Lift CALLP: write the return address to the link register, then jump.
+ *
+ * CALLP returns to the execute packet after its own (SPRUFE8B, CALLP), which
+ * only a view of the packet gives.
+ *
+ * \param insn The CALLP.
+ * \param pc Its own address; the displacement counts from its fetch packet.
+ * \param ret The return address.
+ */
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret) {
+	rz_return_val_if_fail(insn, NULL);
+	RzILOpBitVector *tgt = c6x_branch_target(insn, pc);
+	if (!tgt) {
+		return NULL;
+	}
+	if (insn->nops < 2 || OP(1).kind != C6X_OP_REG) {
+		return JMP(tgt);
+	}
+	const char *link = c6x_reg_name(OP(1).v.reg.side, OP(1).v.reg.num);
+	return SEQ2(c6x_reg_write(link, U32((ut32)ret)), JMP(tgt));
 }
 
 /** Whether \p o names the same architectural register as \p other. */

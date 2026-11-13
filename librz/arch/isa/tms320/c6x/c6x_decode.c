@@ -1140,7 +1140,9 @@ static void decode_ldst(C6xInsn *insn, C6xInsnId id, bool store, bool dword) {
 	mem.v.mem.mode = ldst_mode(BITS(w, 12, 9), &reg_off);
 	mem.v.mem.base = BITS(w, 22, 18);
 	mem.v.mem.base_side = y;
-	mem.v.mem.scaled = true; // [] bracket scaling by access size
+	// [] scales the offset by the access size; LDNDW and STNDW take bit 23 as
+	// sc, which can leave it a byte offset, their pair living in bits 27:24
+	mem.v.mem.scaled = (id != C6X_INS_LDNDW && id != C6X_INS_STNDW) || BIT(w, 23);
 	if (reg_off) {
 		mem.v.mem.off_reg = BITS(w, 17, 13);
 	} else {
@@ -1316,7 +1318,7 @@ static const C6xNoUnitRow c6x_sploop_rows[] = {
 	{ 24, C6X_INS_SPMASK, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_UNITS, false, FEAT_SIMD },
 	{ 25, C6X_INS_SPMASKR, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_UNITS, false, FEAT_SIMD },
 	{ 26, C6X_INS_SPKERNEL, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_STGCYC, false, FEAT_SIMD },
-	{ 27, C6X_INS_SPKERNELR, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_STGCYC, false, FEAT_SIMD },
+	{ 27, C6X_INS_SPKERNELR, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
 	{ 28, C6X_INS_SPLOOP, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
 	{ 29, C6X_INS_SPLOOPD, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
 	{ 31, C6X_INS_SPLOOPW, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
@@ -1872,6 +1874,44 @@ static st64 l3i_const(ut8 sn, ut8 cst3) {
 	return raw == 0 ? 8 : (raw < 8 ? (st64)raw : (st64)raw - 16);
 }
 
+// Compact loop-buffer group (Uspl, Uspldr, Uspk, Uspm): bits 6:1 == 110011
+// with bits 11:10 == 11. Bit 13 picks the SPMASK pair, bit 12 then SPKERNEL
+// over the SPLOOP forms (SPRUFE8B Figures H-5 to H-8). Their fields are
+// scattered over the same bits 0, 9:7 and 15:14.
+static bool decode_compact_loop(C6xInsn *insn, ut16 w) {
+	if (((w >> 1) & 0x3f) != C6X_CFMT_LOOP || ((w >> 10) & 0x3) != 0x3) {
+		return false;
+	}
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
+	insn->unit = C6X_UNIT_NONE;
+	insn->unit_side = 0;
+	insn->nops = 1;
+	if ((w >> 13) & 1) {
+		set_ins(insn, ((w >> 12) & 1) ? C6X_INS_SPMASKR : C6X_INS_SPMASK);
+		OP(0).kind = C6X_OP_UNITMASK;
+		OP(0).v.units = (ut8)((w & 1) | (((w >> 7) & 1) << 1) | (((w >> 8) & 1) << 2) |
+			(((w >> 9) & 1) << 3) | (((w >> 14) & 1) << 4) | (((w >> 15) & 1) << 5));
+		return true;
+	}
+	if ((w >> 12) & 1) {
+		// the stage/cycle field as the 32-bit form has it, bit 0 its top bit
+		set_ins(insn, C6X_INS_SPKERNEL);
+		op_imm(&OP(0), ((w >> 7) & 0x7) | (((w >> 14) & 0x3) << 3) | ((w & 1) << 5));
+		return true;
+	}
+	// Uspldr (bit 15 set) is a SPLOOPD predicated on A0, or on B0 when bit 0
+	// is set; in Uspl, bit 0 picks SPLOOPD over SPLOOP
+	if ((w >> 15) & 1) {
+		set_ins(insn, C6X_INS_SPLOOPD);
+		insn->creg = (w & 1) ? 1 : 6; // B0 : A0
+		insn->z = 0;
+	} else {
+		set_ins(insn, (w & 1) ? C6X_INS_SPLOOPD : C6X_INS_SPLOOP);
+	}
+	op_imm(&OP(0), 1 + (((w >> 7) & 0x7) | (((w >> 14) & 1) << 3)));
+	return true;
+}
+
 // Decode a 16-bit compact instruction (SPRUFE8 3.10, Appendices D and G). \p rs
 // and \p sat come from the fetch-packet header expansion field. Only the common
 // subset is handled (NOP; MV; predicated MVK; and the .L ALU/compare/MVK forms);
@@ -1976,45 +2016,7 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			}
 			insn->unit = C6X_UNIT_NONE;
 		}
-		// Compact loop-buffer group: bits 6:1 == 110011 with bits 11:10 == 11.
-		// Bit 13 picks the SPMASK pair over the SPLOOP forms and bit 12 the
-		// rounding variant. The protected units are a scattered bitmap rather
-		// than a contiguous field, so each unit is picked out by name.
-		if (((w >> 1) & 0x3f) == C6X_CFMT_LOOP && ((w >> 10) & 0x3) == 0x3 && !((w >> 13) & 1) && ((w >> 12) & 1)) {
-			// SPKERNEL: the fstg/fcyc boundary is one scattered six-bit field,
-			// reported as the combined value the way the 32-bit form is.
-			set_ins(insn, C6X_INS_SPKERNEL);
-			insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
-			insn->unit = C6X_UNIT_NONE;
-			insn->unit_side = 0;
-			op_imm(&OP(0), (((w >> 7) & 1)) | (((w >> 8) & 1) << 1) | (((w >> 9) & 1) << 2) | (((w >> 14) & 1) << 3) | (((w >> 15) & 1) << 4) | ((w & 1) << 5));
-			insn->nops = 1;
-			return;
-		}
-		if (((w >> 1) & 0x3f) == C6X_CFMT_LOOP && ((w >> 10) & 0x3) == 0x3 && !((w >> 13) & 1) && !((w >> 12) & 1)) {
-			// SPLOOP/SPLOOPD: bit 0 picks the delayed form, bit 15 predicates
-			// on B0, and the iteration interval is a scattered field.
-			set_ins(insn, (w & 1) ? C6X_INS_SPLOOPD : C6X_INS_SPLOOP);
-			insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
-			insn->unit = C6X_UNIT_NONE;
-			insn->unit_side = 0;
-			if ((w >> 15) & 1) {
-				insn->creg = 1; // B0
-				insn->z = 0;
-			}
-			op_imm(&OP(0), 1 + (((w >> 7) & 1) | (((w >> 8) & 1) << 1) | (((w >> 9) & 1) << 2) | (((w >> 14) & 1) << 3)));
-			insn->nops = 1;
-			return;
-		}
-		if (((w >> 1) & 0x3f) == C6X_CFMT_LOOP && ((w >> 10) & 0x3) == 0x3 && ((w >> 13) & 1)) {
-			set_ins(insn, ((w >> 12) & 1) ? C6X_INS_SPMASKR : C6X_INS_SPMASK);
-			insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
-			insn->unit = C6X_UNIT_NONE;
-			insn->unit_side = 0;
-			OP(0).kind = C6X_OP_UNITMASK;
-			OP(0).v.units = (ut8)((w & 1) | (((w >> 7) & 1) << 1) | (((w >> 8) & 1) << 2) |
-				(((w >> 9) & 1) << 3) | (((w >> 14) & 1) << 4) | (((w >> 15) & 1) << 5));
-			insn->nops = 1;
+		if (decode_compact_loop(insn, w)) {
 			return;
 		}
 		// Shared .L/.S/.D forms (Appendix G): bits 2:1 == 11, unit at bits 4:3.
@@ -2096,12 +2098,22 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			return;
 		}
 		if (b5 == 0) { // G-1 / G-2: MV (mvto has bit6 = 0, mvfr has bit6 = 1)
+			// These moves link the eight registers the header RS bit selects
+			// to all 32: the source of mvto and the destination of mvfr have
+			// bits 11:10 (srcms/dstms) above their 3-bit field, and the five
+			// bits name the register outright, so RS does not apply to them.
+			ut8 ms = (w >> 10) & 0x3;
 			set_ins(insn, C6X_INS_MV);
 			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
 			insn->unit = unit;
 			insn->cross = x;
-			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
-			compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			if (b6) {
+				compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+				op_reg(&OP(1), s, (ms << 3) | ((w >> 13) & 0x7)); // dst
+			} else {
+				op_reg(&OP(0), x ? !s : s, (ms << 3) | ((w >> 7) & 0x7)); // src2
+				compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			}
 			insn->nops = 2;
 			return;
 		}
@@ -2308,6 +2320,11 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			mem.v.mem.mode = C6X_AM_PREDEC_CST;
 			mem.v.mem.off_cst = ((w >> 13) & 1) + 1;
 		}
+		// LDNDW and STNDW offset by bytes in Doff4DW and DindDW; only the forms
+		// that modify the pointer scale (SPRUFE8B Figures C-9 to C-15)
+		if ((mn == C6X_INS_LDNDW || mn == C6X_INS_STNDW) && (mem.v.mem.mode == C6X_AM_POS_CST || mem.v.mem.mode == C6X_AM_POS_REG)) {
+			mem.v.mem.scaled = false;
+		}
 		C6xOperand reg = { 0 };
 		if (dwpair) {
 			// even register pair, address formed as op6:op5:0
@@ -2338,10 +2355,12 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		}
 		// Sx2 shift-by-constant (Appendix F): bits 3:1 == 101 with bit 10 set.
 		// The count is a 3-bit field whose zero encoding means 16, since a
-		// shift by zero would be a no-op and needs no encoding. A header BR
-		// bit re-purposes the bit-3 forms as branches, so this only applies
-		// when the packet is not a branch packet.
+		// shift by zero would be a no-op and needs no encoding, and whose
+		// seven means 8 (Figure F-23). A header BR bit re-purposes the bit-3
+		// forms as branches, so this only applies when the packet is not a
+		// branch packet.
 		if (!br && ((w >> 1) & 0x7) == C6X_CFMT_SX1_3REG && ((w >> 10) & 1)) {
+			static const ut8 counts[8] = { 16, 1, 2, 3, 4, 5, 6, 8 };
 			ut8 cnt = (w >> 13) & 0x7;
 			bool x = (w >> 12) & 1;
 			set_ins(insn, ((w >> 11) & 1) ? C6X_INS_SHR : C6X_INS_SHL);
@@ -2349,7 +2368,7 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 			insn->unit = C6X_UNIT_S;
 			insn->cross = x;
 			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
-			op_imm(&OP(1), cnt ? cnt : 16);
+			op_imm(&OP(1), counts[cnt]);
 			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs); // dst
 			insn->nops = 3;
 			return;
@@ -2399,7 +2418,7 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 				insn->nops = 3;
 				return;
 			}
-			if (op != 3) { // Sc5: EXTU/SET/CLR with a ucst5 field (dst is A0/B0)
+			if (op != 3) { // Sc5: EXTU/SET/CLR with a ucst5 field
 				static const C6xInsnId mn[3] = { C6X_INS_EXTU, C6X_INS_SET, C6X_INS_CLR };
 				static const _RzAnalysisOpType ty[3] = { RZ_ANALYSIS_OP_TYPE_SHR,
 					RZ_ANALYSIS_OP_TYPE_OR, RZ_ANALYSIS_OP_TYPE_AND };
@@ -2408,7 +2427,13 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2
 				op_imm(&OP(1), ucst5);
 				op_imm(&OP(2), op == 0 ? 31 : ucst5); // EXTU pairs with 31
-				op_reg(&OP(3), s, 0); // dst A0/B0
+				// EXTU writes A0/B0, while SET and CLR change the bits of src2
+				// in place (Figure F-27).
+				if (op == 0) {
+					op_reg(&OP(3), s, 0);
+				} else {
+					OP(3) = OP(0);
+				}
 				insn->nops = 4;
 				return;
 			}
@@ -2427,16 +2452,20 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 		}
 		if (br && ((w >> 3) & 1)) {
 			// Branch forms (Sbs7/Sbu8/Scs10 and their conditional variants). The
-			// displacement is packet-relative and scaled to the 16-bit slot, so
-			// the analysis filler resolves it against the fetch-packet base.
+			// displacement is packet-relative, so the analysis filler resolves
+			// it against the fetch-packet base.
 			insn->unit = C6X_UNIT_S;
 			ut8 b4 = (w >> 4) & 1, b5 = (w >> 5) & 1;
 			if (b5 == 0 && b4 == 1) { // Scs10: CALLP scst10, 5
+				// Counted in words, unlike the half words of the BNOP forms;
+				// TI-built code reaches its callees only so.
 				set_ins(insn, C6X_INS_CALLP);
 				insn->op_type = RZ_ANALYSIS_OP_TYPE_CALL;
 				OP(0).kind = C6X_OP_PCREL;
-				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 2;
-				insn->nops = 1;
+				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 4;
+				// the link register is implied, as in the 32-bit form
+				op_reg(&OP(1), insn->unit_side, 3); // A3 on .S1, B3 on .S2
+				insn->nops = 2;
 				return;
 			}
 			// Sbu8/Sbu8c carry an 8-bit unsigned constant instead of a signed 7-bit one
@@ -2460,18 +2489,136 @@ static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bo
 	}
 }
 
+// The header ends the fetch packet, up to 28 bytes past the slot. A caller
+// holding fewer bytes, as one decoding a block or a basic block that stops
+// mid-packet does, has it read from the image instead, so that a slot decodes
+// the same however much of its packet is in hand.
+static bool fp_header(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut32 *hdr) {
+	int off = 0x1c - (int)(pc & 0x1f); // header lives at packet offset 0x1c
+	if (off + 4 <= len) {
+		*hdr = rz_read_ble32(buf + off, big_endian);
+		return true;
+	}
+	ut8 word[4];
+	if (!read || !read(user, c6x_packet_base(pc) + 0x1c, word, sizeof(word))) {
+		return false;
+	}
+	*hdr = rz_read_ble32(word, big_endian);
+	return true;
+}
+
+// A word holds the same value in either byte order, and its less significant
+// half is its first compact slot (SPRUFE8B Table 3-16 gives that half the
+// word's first p-bit). Big-endian memory puts that half at the higher address,
+// so there a slot's bytes are those of the other half word: past the slot for
+// the first one, before it for the second, where only the image reaches.
+static bool compact_half(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut16 *half) {
+	if (!big_endian) {
+		*half = rz_read_le16(buf);
+		return true;
+	}
+	if (!(pc & 2) && len >= 4) {
+		*half = rz_read_be16(buf + 2);
+		return true;
+	}
+	ut8 bytes[2];
+	if (!read || !read(user, pc ^ 2, bytes, sizeof(bytes))) {
+		return false;
+	}
+	*half = rz_read_be16(bytes);
+	return true;
+}
+
+// Fetch packets back from a SPKERNEL its SPLOOP can lie: the body runs at most
+// 48 cycles (SPRUFE8B 7.7), each one execute packet of up to eight words, and
+// those span 56 fetch packets, the SPLOOP's included, even with headers.
+#define C6X_SPLOOP_REACH 56
+
+// The ii of the SPLOOP(D/W) opening the loop a SPKERNEL at \p pc closes: the
+// nearest one before it, unless a SPKERNEL comes first and so closes another
+// loop. 0 when none can be read within reach.
+static ut8 sploop_ii(const C6xArchDesc *desc, ut64 pc, bool big_endian, C6xReadFn read, void *user) {
+	ut64 base = c6x_packet_base(pc);
+	for (ut32 k = 0; k < C6X_SPLOOP_REACH; k++) {
+		ut8 fp[C6X_FETCH_PACKET_SIZE];
+		C6xSlotRef slots[C6X_FP_SLOTS] = { 0 };
+		if (!read(user, base, fp, sizeof(fp))) {
+			return 0;
+		}
+		size_t n = c6x_fetch_packet_slots(fp, base, big_endian, slots);
+		for (size_t i = n; i-- > 0;) {
+			if (slots[i].header || slots[i].addr >= pc) {
+				continue;
+			}
+			C6xInsn s = { 0 };
+			s.word = slots[i].opcode;
+			bool loop = slots[i].size == C6X_COMPACT_SIZE ? decode_compact_loop(&s, (ut16)s.word) : decode_nounit(&s, desc);
+			if (!loop) {
+				continue;
+			}
+			switch (s.id) {
+			case C6X_INS_SPLOOP:
+			case C6X_INS_SPLOOPD:
+			case C6X_INS_SPLOOPW:
+				return (ut8)s.ops[0].v.imm.value;
+			case C6X_INS_SPKERNEL:
+			case C6X_INS_SPKERNELR:
+				return 0;
+			default:
+				break;
+			}
+		}
+		if (base < C6X_FETCH_PACKET_SIZE) {
+			return 0;
+		}
+		base -= C6X_FETCH_PACKET_SIZE;
+	}
+	return 0;
+}
+
+// SPKERNEL's field holds the stage from its top bit down, lowest stage bit
+// first, and the cycle in as many low bits as ii needs (SPRUFE8B Table 3-29),
+// so it splits only once the loop's ii is known. Without it the field stays
+// whole, as dis6x prints it.
+static void spkernel_stage_cycle(const C6xArchDesc *desc, C6xInsn *insn, ut64 pc, bool big_endian, C6xReadFn read, void *user) {
+	ut8 ii = read ? sploop_ii(desc, pc, big_endian, read, user) : 0;
+	if (!ii) {
+		return;
+	}
+	ut8 field = (ut8)OP(0).v.imm.value;
+	ut8 cycle_bits = 0;
+	while ((1u << cycle_bits) < ii) {
+		cycle_bits++;
+	}
+	ut8 stage = 0;
+	for (ut8 b = 0; b + cycle_bits < 6; b++) {
+		stage |= ((field >> (5 - b)) & 1) << b;
+	}
+	op_imm(&OP(0), stage);
+	OP(0).v.imm.decimal = true;
+	op_imm(&OP(1), field & ((1u << cycle_bits) - 1));
+	OP(1).v.imm.decimal = true;
+	insn->nops = 2;
+}
+
 /**
- * Decode one 32-bit C6000 opcode.
+ * Decode the C6000 instruction at \p pc.
  * \param desc variant descriptor (feature gate)
- * \param buf input bytes (>= 4)
+ * \param buf input bytes (>= 2)
  * \param len available bytes
  * \param pc address \p buf starts at, for PC-relative operands
  * \param big_endian byte order of \p buf
+ * \param read reader for what \p buf lacks: the fetch-packet header past its
+ *        end, in big endian the half word before a second compact slot, and
+ *        the SPLOOP whose ii splits a SPKERNEL's operand; or NULL to decode
+ *        from \p buf alone
+ * \param user passed through to \p read
  * \param insn output, filled on success
- * \return true if a 4-byte opcode was consumed (even when unrecognised, in
- *         which case \ref C6xInsn::mnemonic is NULL)
+ * \return true if an instruction slot was consumed, 4 bytes or the 2 of a
+ *         compact one (even when unrecognised, in which case
+ *         \ref C6xInsn::mnemonic is NULL)
  */
-RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_OUT C6xInsn *insn) {
+RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_NULLABLE C6xReadFn read, RZ_NULLABLE void *user, RZ_OUT C6xInsn *insn) {
 	rz_return_val_if_fail(desc && buf && insn, false);
 	if (len < 2) {
 		return false;
@@ -2483,29 +2630,45 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	// that header ahead of the current word; if this slot is compact, decode a
 	// 16-bit instruction and take the parallel bit from the header p-bit field.
 	// Only families with the compact set are probed, so C62x/C67x are untouched.
-	// When the header is not reachable the packet's layout is unknown, and a
-	// word that is really two compact instructions cannot be told from a 32-bit
-	// one; the caller is given the 32-bit reading, which is why the analysis
-	// path reconstructs the whole packet rather than relying on this.
+	// When neither the buffer nor the reader reaches the header, the packet's
+	// layout is unknown: a word then gets its 32-bit reading, as in a packet
+	// without a header, while a half word cannot be decoded at all.
 	if (desc->features & C6X_FEAT_SIMD) {
 		ut32 fp_off = (ut32)(pc & 0x1f);
-		int hdr_off = 0x1c - (int)fp_off; // header lives at packet offset 0x1c
-		if (fp_off < 0x1c && hdr_off + 4 <= len) {
-			ut32 hdr = rz_read_ble32(buf + hdr_off, big_endian);
+		ut32 hdr;
+		if (fp_off < 0x1c && fp_header(buf, len, pc, big_endian, read, user, &hdr)) {
 			ut8 slot = fp_off >> 2;
 			// A branch anywhere in a compact packet is half-word scaled, so
 			// the packet's nature matters even for a slot the header does not
 			// split into two 16-bit instructions.
 			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
 			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
-				ut16 w16 = rz_read_ble16(buf, big_endian);
 				ut8 half = (fp_off >> 1) & 1;
-				insn->word = w16;
 				insn->parallel = (hdr >> (slot * 2 + half)) & 1;
+				insn->size = C6X_COMPACT_SIZE;
+				ut16 w16;
+				if (!compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+					insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+					return true;
+				}
+				insn->word = w16;
 				decode_compact(insn, w16, (hdr >> 19) & 1, (hdr >> 14) & 1,
 					(hdr >> 16) & 0x7, (hdr >> 15) & 1);
+				if (insn->id == C6X_INS_SPKERNEL) {
+					spkernel_stage_cycle(desc, insn, pc, big_endian, read, user);
+				}
 				return true;
 			}
+		} else if (fp_off < 0x1c && (fp_off & 2)) {
+			// 32-bit opcodes are word aligned, so a half word can only be a
+			// compact slot, and one cannot be decoded without its header
+			ut16 w16;
+			if (compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+				insn->word = w16;
+			}
+			insn->size = C6X_COMPACT_SIZE;
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+			return true;
 		}
 	}
 	if (len < 4) {
@@ -2535,6 +2698,9 @@ RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc
 	insn->z = BIT(w, 28);
 	insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
 	if (decode_nounit(insn, desc)) {
+		if (insn->id == C6X_INS_SPKERNEL) {
+			spkernel_stage_cycle(desc, insn, pc, big_endian, read, user);
+		}
 		return true;
 	}
 	if (!decode_unit(desc, insn)) {

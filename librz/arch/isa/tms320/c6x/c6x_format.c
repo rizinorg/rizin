@@ -97,13 +97,14 @@ static void fmt_mem(RzStrBuf *sb, const C6xOperand *o) {
 	if (plain) {
 		return;
 	}
-	rz_strbuf_append(sb, "[");
+	// brackets scale the offset by the access size, parentheses leave it bytes
+	rz_strbuf_append(sb, o->v.mem.scaled ? "[" : "(");
 	if (reg) {
 		fmt_reg(sb, o->v.mem.base_side, o->v.mem.off_reg);
 	} else {
 		rz_strbuf_appendf(sb, "0x%x", o->v.mem.off_cst);
 	}
-	rz_strbuf_append(sb, "]");
+	rz_strbuf_append(sb, o->v.mem.scaled ? "]" : ")");
 }
 
 // SPMASK names the units it protects, low bit first, as the assembler spells
@@ -133,8 +134,9 @@ static void fmt_operand(RzStrBuf *sb, const C6xInsn *insn, ut64 pc, const C6xOpe
 	case C6X_OP_IMM:
 		// Counts read as counts: NOP cycles, bit positions and widths stay
 		// decimal. Everything else is a value, so it reads in hex, negative
-		// ones signed rather than as a two's-complement pattern.
-		if (o->v.imm.decimal || insn->unit == C6X_UNIT_NONE) {
+		// ones signed rather than as a two's-complement pattern; that includes
+		// the whole stage/cycle field of a SPKERNEL whose loop is unknown.
+		if (o->v.imm.decimal || (insn->unit == C6X_UNIT_NONE && insn->id != C6X_INS_SPKERNEL)) {
 			rz_strbuf_appendf(sb, "%" PFMT64d, (st64)o->v.imm.value);
 		} else {
 			rz_strbuf_append_signed_hex(sb, (st64)o->v.imm.value);
@@ -162,9 +164,11 @@ static void fmt_operand(RzStrBuf *sb, const C6xInsn *insn, ut64 pc, const C6xOpe
 
 /** Render a decoded instruction to a newly allocated asm string. \p pc is the
  *  instruction address, used to resolve PC-relative branch targets. */
-// The fetch-packet header layout field, L7..L1, spelled out as the bit string
-// the assembler listing shows.
+// The fetch-packet header layout field, L7..L1, as a binary literal. dis6x
+// writes the bits with a trailing "b", a base suffix that RzNum warns about
+// whenever the disassembly filter evaluates the numbers of a line.
 static void fmt_layout_bits(RzStrBuf *sb, ut32 w) {
+	rz_strbuf_append(sb, "0b");
 	for (int b = 27; b >= 21; b--) {
 		rz_strbuf_append(sb, (w >> b) & 1 ? "1" : "0");
 	}
@@ -188,12 +192,11 @@ RZ_IPI RZ_OWN char *c6x_format(const C6xArchDesc *desc, const C6xInsn *insn, ut6
 		rz_strbuf_appendf(sb, ".fphead %s, %s, %s, %s, %s, %s, ",
 			(w >> 20) & 1 ? "p" : "n", // PROT: protected loads
 			(w >> 19) & 1 ? "h" : "l", // RS: high/low register set
-			dsz < 4 ? "w" : "dw", // primary data size
+			dsz < 4 ? "w" : "dw/ndw", // primary data size, as dis6x names it
 			sec_dsz[dsz], // secondary data size
 			(w >> 15) & 1 ? "br" : "nobr", // BR: S-unit compact are branches
 			(w >> 14) & 1 ? "sat" : "nosat"); // SAT: compact saturate
 		fmt_layout_bits(sb, w);
-		rz_strbuf_append(sb, "b");
 		return rz_strbuf_drain(sb);
 	}
 	if (insn->cont) {

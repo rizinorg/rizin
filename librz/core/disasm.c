@@ -5918,6 +5918,9 @@ RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, 
  * \param nb_bytes Bytes number
  * \param nb_opcodes Opcode number
  * \return Number of disassembled bytes
+ *
+ * With only an instruction limit, include the architecture's decode lookahead.
+ * Packet-based architectures may need a header beyond the instruction itself.
  */
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes) {
 	// unclear stop condition if nb_bytes and nb_opcodes are both 0
@@ -5933,7 +5936,13 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 
 	// set the parameter equaling 0 to a value that won't affect another parameter
 	if (nb_bytes == 0 && nb_opcodes != 0) {
-		nb_bytes = MAX_OPSIZE * RZ_ABS(nb_opcodes) + 1;
+		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		ut64 max_bytes = (ut64)RZ_MAX(max_op_size, MAX_OPSIZE) * RZ_ABS((st64)nb_opcodes) + 1;
+		if (max_bytes >= ST32_MAX) {
+			RZ_LOG_ERROR("Disassembly range is too large.\n");
+			return 0;
+		}
+		nb_bytes = (int)max_bytes;
 	}
 	if (nb_bytes != 0 && nb_opcodes == 0) {
 		nb_opcodes = nb_bytes / MIN_OPSIZE + 1;

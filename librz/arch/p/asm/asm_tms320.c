@@ -16,8 +16,35 @@
 typedef struct tms_cs_context_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction disassembled
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	ut64 c6x_prev_addr; ///< address of that instruction
+	ut8 c6x_prev_bytes[C6X_WORD_SIZE]; ///< the bytes handed for it, up to a word
+	ut8 c6x_prev_len; ///< how many of them there are
 	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } TmsContext;
+
+typedef struct {
+	RzAnalysis *analysis; ///< of the RzCore the RzAsm belongs to, NULL in rz-asm
+	const TmsContext *ctx; ///< holds the bytes handed for the previous instruction
+} C6xAsmImage;
+
+// A compact C6000 slot needs the header at the end of its fetch packet, which
+// callers decoding a block or a basic block often stop short of, and the second
+// slot of a big-endian word needs the half word before it. RzAsm has no IO of
+// its own. Callers hand a buffer over slot by slot, so the bytes given for the
+// slot before come first: they hold that half word, also where they are not
+// the image's, as in rz-asm or pad. Inside RzCore the analysis binding reads
+// the image for the rest.
+static bool c6x_read_image(void *user, ut64 addr, ut8 *buf, size_t len) {
+	const C6xAsmImage *img = user;
+	const TmsContext *ctx = img->ctx;
+	ut64 off = addr - ctx->c6x_prev_addr;
+	if (off < ctx->c6x_prev_len && len <= ctx->c6x_prev_len - off) {
+		memcpy(buf, ctx->c6x_prev_bytes + off, len);
+		return true;
+	}
+	RzAnalysis *analysis = img->analysis;
+	return analysis && analysis->iob.read_at && analysis->iob.read_at(analysis->iob.io, addr, buf, len);
+}
 
 static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	TmsContext *ctx = (TmsContext *)a->plugin_data;
@@ -26,7 +53,12 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 	const C6xArchDesc *c6x = c6x_desc_from_cpu(a->cpu);
 	if (c6x) {
 		C6xInsn insn;
-		if (c6x_decode(c6x, buf, len, a->pc, a->big_endian, &insn)) {
+		C6xAsmImage img = { rz_asm_to_rz_analysis(a), ctx };
+		bool ok = c6x_decode(c6x, buf, len, a->pc, a->big_endian, c6x_read_image, &img, &insn);
+		ctx->c6x_prev_addr = a->pc;
+		ctx->c6x_prev_len = len > 0 ? RZ_MIN(len, C6X_WORD_SIZE) : 0;
+		memcpy(ctx->c6x_prev_bytes, buf, ctx->c6x_prev_len);
+		if (ok) {
 			c6x_mark_parallel(&insn, a->pc, &ctx->c6x_prev_end, &ctx->c6x_prev_par);
 			char *s = c6x_format(c6x, &insn, a->pc);
 			if (s) {
