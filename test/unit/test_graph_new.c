@@ -907,6 +907,71 @@ static bool test_graph_in_out_neighbors_matrix(void) {
 	mu_end;
 }
 
+// Test cloning and resetting the neighbour node iterator (matrix impl)
+static bool test_graph_neighbor_iter_clone_reset_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
+
+	RzGraphNode *n1 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n2 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n3 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n4 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+
+	rz_graph_add_edge(g, n1, n2, NULL);
+	rz_graph_add_edge(g, n1, n3, NULL);
+	rz_graph_add_edge(g, n1, n4, NULL);
+
+	// clone at the current state and continue iterating independently
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_neighbors(g, n1, &it), "out_neighbors_iterator");
+	RzGraphNode *neighbor;
+	mu_assert_notnull(rz_iterator_next(&it), "first neighbor");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
+	mu_assert_notnull(neighbor = rz_iterator_next(&it), "second neighbor original");
+	mu_assert_notnull(neighbor = rz_iterator_next(&it_clone), "second neighbor clone");
+	rz_iterator_fini(&it);
+	// the clone is unaffected by finalizing the original
+	// (count covers the 2 neighbors the clone consumed up to here)
+	int count = 2;
+	rz_iterator_foreach(&it_clone, neighbor) {
+		mu_assert_true(neighbor == n2 || neighbor == n3 || neighbor == n4, "clone neighbor");
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "clone neighbors.count");
+
+	// a reset clone starts over from the first neighbor
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_neighbors(g, n1, &it), "out_neighbors_iterator");
+	mu_assert_notnull(rz_iterator_next(&it), "first neighbor");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, true), "rz_iterator_clone failed");
+	count = 0;
+	rz_iterator_foreach(&it_clone, neighbor) {
+		mu_assert_true(neighbor == n2 || neighbor == n3 || neighbor == n4, "reset clone neighbor");
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "reset clone neighbors.count");
+	mu_assert_notnull(neighbor = rz_iterator_next(&it), "original position changed by clone reset");
+
+	// rz_iterator_reset() rewinds the iterator itself
+	mu_assert_true(rz_iterator_reset(&it), "rz_iterator_reset failed");
+	count = 0;
+	rz_iterator_foreach(&it, neighbor) {
+		mu_assert_true(neighbor == n2 || neighbor == n3 || neighbor == n4, "neighbor after reset");
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 3, "neighbors.count after reset");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // Test node deletion
 static bool test_graph_node_deletion_matrix(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
@@ -1058,6 +1123,71 @@ static bool test_graph_get_nodes_matrix(void) {
 	mu_assert_eq(count, 3, "nodes.count");
 
 	rz_iterator_fini(&it);
+
+	rz_graph_free(g);
+	mu_end;
+}
+
+// Test cloning and resetting iterators over matrix impl out-edges
+static bool test_graph_edge_iter_clone_reset_matrix(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_MATRIX, simple_hash_base, NULL, NULL);
+
+	RzGraphNode *n1 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n2 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n3 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n4 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+
+	rz_graph_add_edge(g, n1, n2, NULL);
+	rz_graph_add_edge(g, n1, n3, NULL);
+	rz_graph_add_edge(g, n1, n4, NULL);
+
+	// clone at the current state and continue iterating independently
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_edges(g, n1, &it), "out_edges_iterator");
+	RzGraphEdge *edge;
+	mu_assert_notnull(rz_iterator_next(&it), "first edge");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
+	mu_assert_notnull(edge = rz_iterator_next(&it), "second edge original");
+	mu_assert_notnull(edge = rz_iterator_next(&it_clone), "second edge clone");
+	rz_iterator_fini(&it);
+	// the clone is unaffected by finalizing the original
+	// (count covers the 2 edges the clone consumed up to here)
+	int count = 2;
+	rz_iterator_foreach(&it_clone, edge) {
+		mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "clone edge.from");
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "clone edges.count");
+
+	// a reset clone starts over from the first edge,
+	// while the original keeps its position
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_graph_out_edges(g, n1, &it), "out_edges_iterator");
+	mu_assert_notnull(rz_iterator_next(&it), "first edge");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, true), "rz_iterator_clone failed");
+	count = 0;
+	rz_iterator_foreach(&it_clone, edge) {
+		mu_assert_ptreq(rz_graph_edge_get_from(edge), n1, "reset clone edge.from");
+		count++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(count, 3, "reset clone edges.count");
+	mu_assert_notnull(edge = rz_iterator_next(&it), "original position changed by clone reset");
+
+	// rz_iterator_reset() rewinds the iterator itself
+	mu_assert_true(rz_iterator_reset(&it), "rz_iterator_reset failed");
+	count = 0;
+	rz_iterator_foreach(&it, edge) {
+		count++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(count, 3, "edges.count after reset");
 
 	rz_graph_free(g);
 	mu_end;
@@ -1404,11 +1534,13 @@ static int all_tests(void) {
 	mu_run_test(test_graph_edges_data_update_matrix);
 	mu_run_test(test_graph_in_out_edges_matrix);
 	mu_run_test(test_graph_in_out_neighbors_matrix);
+	mu_run_test(test_graph_neighbor_iter_clone_reset_matrix);
 	mu_run_test(test_graph_node_deletion_matrix);
 	mu_run_test(test_graph_reset_matrix);
 	mu_run_test(test_graph_nth_neighbor_matrix);
 	mu_run_test(test_graph_dfs_matrix);
 	mu_run_test(test_graph_get_nodes_matrix);
+	mu_run_test(test_graph_edge_iter_clone_reset_matrix);
 	mu_run_test(test_graph_find_edge_matrix);
 	mu_run_test(test_graph_complex_matrix);
 	mu_run_test(test_graph_node_edge_data_matrix);

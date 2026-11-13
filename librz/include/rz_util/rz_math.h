@@ -5,6 +5,8 @@
 #define RZ_MATH_H
 
 #include <rz_types.h>
+#include <rz_vector.h>
+#include <rz_util/rz_iterator.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +39,9 @@ RZ_API double rz_math_welford_asums(const RzMathWelfordSums *wf);
 RZ_API double rz_math_welford_gmean(const RzMathWelfordSums *wf);
 RZ_API double rz_math_welford_gvar(const RzMathWelfordSums *wf);
 RZ_API double rz_math_welford_gstddev(const RzMathWelfordSums *wf);
+
+RZ_API double rz_math_softmax_p_zi_st64(st64 zi, RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs);
+RZ_API st64 rz_math_softmax_st64(RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs, RZ_NULLABLE RZ_OUT RzVector /*double*/ *zp);
 
 #ifdef __cplusplus
 }
