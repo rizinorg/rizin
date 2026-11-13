@@ -158,4 +158,3 @@ RZ_API void rz_heatmap_get_dimensions(RZ_NONNULL const RzHeatmap *hm, RZ_OUT siz
 #endif
 
 #endif // RZ_HEATMAP_H
-

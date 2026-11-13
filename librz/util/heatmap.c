@@ -231,7 +231,7 @@ RZ_API RZ_OWN char *rz_heatmap_render_dynamic_update(RZ_NONNULL RzHeatmap *hm) {
 	rz_strbuf_append(sb, "\x1b[s");
 
 	void *item;
-	rz_iterator_foreach (&it, item) {
+	rz_iterator_foreach(&it, item) {
 		RzHeatmapCoord *coord = (RzHeatmapCoord *)item;
 		if (!coord) {
 			continue;
@@ -256,4 +256,3 @@ RZ_API RZ_OWN char *rz_heatmap_render_dynamic_update(RZ_NONNULL RzHeatmap *hm) {
 	rz_iterator_fini(&it);
 	return rz_strbuf_drain(sb);
 }
-

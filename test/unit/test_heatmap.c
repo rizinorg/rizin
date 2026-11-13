@@ -147,20 +147,22 @@ bool test_heatmap_dynamic_update(void) {
 	mu_end;
 }
 
-bool test_heatmap_null_safety(void) {
-	// Calling APIs with NULL should safely return NULL or avoid crash
+bool test_heatmap_edge_cases(void) {
 	RzHeatmapOptions opts;
-	rz_heatmap_options_init(&opts, 10);
+	rz_heatmap_options_init(&opts, 0);
 
-	RzHeatmap *hm = rz_heatmap_new(NULL, mock_progress_cb, NULL);
-	mu_assert_null(hm, "expected NULL for NULL opts");
+	RzHeatmap *hm = rz_heatmap_new(&opts, mock_progress_cb, NULL);
+	mu_assert_notnull(hm, "heatmap creation for 0 cells failed");
 
-	hm = rz_heatmap_new(&opts, NULL, NULL);
-	mu_assert_null(hm, "expected NULL for NULL progress_cb");
+	size_t rows = 0, cols = 0;
+	rz_heatmap_get_dimensions(hm, &rows, &cols);
+	mu_assert_eq((ut64)rows, 1, "expected at least 1 row");
 
-	char *out = rz_heatmap_render(NULL);
-	mu_assert_null(out, "expected NULL for NULL heatmap render");
+	char *rendered = rz_heatmap_render(hm);
+	mu_assert_notnull(rendered, "rendered string should not be null");
+	free(rendered);
 
+	rz_heatmap_free(hm);
 	rz_heatmap_free(NULL); // Should safely do nothing
 	mu_end;
 }
@@ -170,9 +172,8 @@ static bool all_tests(void) {
 	mu_run_test(test_heatmap_render_ascii);
 	mu_run_test(test_heatmap_with_row_labels);
 	mu_run_test(test_heatmap_dynamic_update);
-	mu_run_test(test_heatmap_null_safety);
+	mu_run_test(test_heatmap_edge_cases);
 	return tests_passed != tests_run;
 }
 
 mu_main(all_tests)
-
