@@ -51,8 +51,10 @@ static void dfs_entry_free(DfsEntry *entry) {
  * \param to
  * \param edge_color color array for all nodes, used to determine edge is visited or not, and end point or not
  * \param visitor callbacks
+ *
+ * \return True if edge should be walked. False if edge should not be walked.
  */
-static void dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitor *visitor) {
+static bool dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode *from, RzGraphNode *to, ut8 *edge_color, RzGraphVisitor *visitor) {
 	// assert g, from, to, edge_color, visitor NON NULL
 
 	RzGraphEdge edge = {
@@ -63,6 +65,9 @@ static void dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode
 	RzGraphEdge *real_edge = g->impl_ops->find_edge(g, from, to);
 	if (real_edge) {
 		edge.data = real_edge->data;
+	}
+	if (visitor->edge_selector && !visitor->edge_selector(real_edge, visitor)) {
+		return false;
 	}
 
 	switch (edge_color[to->_vec_id]) {
@@ -82,6 +87,7 @@ static void dfs_edge_policy(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode
 		}
 		break;
 	}
+	return true;
 }
 
 /**
@@ -154,8 +160,8 @@ static void dfs_from_entry(RzGraph /*<NodeType *, EdgeType *>*/ *g, RzGraphNode 
 		}
 
 		// normal node (has in and out)
-		if (from && to) {
-			dfs_edge_policy(g, from, to, color, visitor);
+		if (from && to && !dfs_edge_policy(g, from, to, color, visitor)) {
+			continue;
 		}
 
 		// CORLOR changes
