@@ -5,6 +5,8 @@ if get_option('enable_rz_test')
     dependencies: [
       rz_util_dep,
       rz_diff_dep,
+      rz_arch_dep,
+      rz_il_dep,
       lrt,
     ],
     install: true,
