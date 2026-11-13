@@ -1023,6 +1023,13 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		analyze_retpoline(analysis, &op);
 
+		// Only the immediately preceding assignment establishes a known target.
+		if (op.type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea &&
+			op.reg && last_reg_mov_lea_name && RZ_STR_EQ(op.reg, last_reg_mov_lea_name)) {
+			op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op.jump = last_reg_mov_lea_val;
+		}
+
 		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
 		case RZ_ANALYSIS_OP_TYPE_MOV:
@@ -1037,7 +1044,8 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				fcn->bp_off = -sp;
 			}
 			// Is this a mov of immediate value into a register?
-			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
+			if (op.type == RZ_ANALYSIS_OP_TYPE_MOV && op.dst && !op.dst->memref &&
+				op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
 				free(last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.val;
