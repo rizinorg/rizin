@@ -5,6 +5,7 @@
 #ifndef RZ_ABSINT_PRIV_H
 #define RZ_ABSINT_PRIV_H
 
+#include "rz_vector.h"
 #include <rz_inquiry/rz_absint.h>
 
 // These functions are actually internal, but need RZ_API to be called from unit tests
@@ -18,12 +19,12 @@ RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_create(RZ_NONNULL RzAbsIntInstan
 RZ_API RZ_BORROW RzAbsIntBlock *rz_absint_block_at(RZ_NONNULL RzAbsIntRunContext *ctx, ut64 addr);
 RZ_API void rz_absint_block_resolve_bounds(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *interp_block, const RzILCacheBlock *il_block);
 
-static inline ut64 rz_absint_block_get_start(RzAbsIntBlock *block) {
+static inline ut64 rz_absint_block_get_start(const RzAbsIntBlock *block) {
 	return block->entry_state->pc;
 }
 
 /** end is inclusive */
-static inline ut64 rz_absint_block_get_end(RzAbsIntBlock *block) {
+static inline ut64 rz_absint_block_get_end(const RzAbsIntBlock *block) {
 	return block->node->end;
 }
 
@@ -39,7 +40,7 @@ RZ_IPI bool join_state(RzAbsIntInstance *inst, RZ_BORROW RZ_INOUT RzAbsIntState 
 
 RZ_IPI void interp_blocks_init(RzAbsIntRunContext *ctx);
 RZ_IPI void interp_blocks_fini(RzAbsIntInstance *inst, RzIntervalTree *blocks);
-RZ_IPI void interp_block_add_non_fallthrough_target(RzAbsIntBlock *block, ut64 target);
+RZ_IPI void interp_block_add_jump_target(RzAbsIntBlock *block, ut64 target);
 RZ_IPI bool interp_block_tree_as_str(const RzIntervalTree /* RzAbsIntBlock */ *blocks, RZ_NONNULL RZ_OUT RzStrBuf *sb);
 RZ_IPI void interp_block_mark_uninterpreted(RZ_BORROW RzAbsIntRunContext *ctx, RZ_BORROW RzAbsIntBlock *block);
 

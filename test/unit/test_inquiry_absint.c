@@ -8,6 +8,7 @@
 typedef struct test_absint_t {
 	RzAnalysis *analysis;
 	RzIO *io;
+	RzBin *bin;
 	RzILCache *il_cache;
 	RzAbsIntInstance *inst;
 } TestInterp;
@@ -35,6 +36,7 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	rz_analysis_set_bits(interp->analysis, bits);
 	interp->io = rz_io_new();
 	interp->io->va = 1;
+	interp->bin = rz_bin_new();
 	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	RzAbsIntConfig config = {
 		.val_domain = rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST),
@@ -317,6 +319,7 @@ bool test_absint_block_resolve_bounds_split(bool single_op_existing_block, bool 
 }
 
 bool test_absint_cfg_single_block(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"c0035fd6"  // 0x04  ret
@@ -330,7 +333,8 @@ bool test_absint_cfg_single_block(void) {
 	mu_assert_eq(res->entry, 0x10000, "result entry");
 	ASSERT_BLOCK(0, 0x10000, 0x10008, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -342,6 +346,7 @@ bool test_absint_cfg_single_block(void) {
 }
 
 bool test_absint_cfg_direct_jmp(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"03000014"  // 0x04  b     0x10      ---
@@ -360,7 +365,8 @@ bool test_absint_cfg_direct_jmp(void) {
 	ASSERT_BLOCK(0, 0x10000, 0x10008, false, 0x10010);
 	ASSERT_BLOCK(1, 0x10010, 0x10018, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -373,6 +379,7 @@ bool test_absint_cfg_direct_jmp(void) {
 }
 
 bool test_absint_cfg_branch(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"69000054"  // 0x04  b.ls  0x10      ---
@@ -392,7 +399,8 @@ bool test_absint_cfg_branch(void) {
 	ASSERT_BLOCK(1, 0x10008, 0x10010, false, UT64_MAX);
 	ASSERT_BLOCK(2, 0x10010, 0x10018, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -406,6 +414,7 @@ bool test_absint_cfg_branch(void) {
 }
 
 bool test_absint_cfg_branch_join(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"1f8c04f1"  // 0x00  cmp   x0, 0x123
 		"69000054"  // 0x04  b.ls  0x10      ---
@@ -429,7 +438,8 @@ bool test_absint_cfg_branch_join(void) {
 	ASSERT_BLOCK(2, 0x10010, 0x10014, true, UT64_MAX);
 	ASSERT_BLOCK(3, 0x10014, 0x10018, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -444,6 +454,7 @@ bool test_absint_cfg_branch_join(void) {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
+	RzICFG *icfg = rz_icfg_new();
 	// This is about a sequence of instructions that ends with some control flow instruction,
 	// but has two entrypoints into it, where one entrypoint falls through into the other.
 	// The swapping of the branches is there because potential bugs in the interpreter may
@@ -478,7 +489,8 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 	ASSERT_BLOCK(2, 0x1000c, 0x10014, true, UT64_MAX);
 	ASSERT_BLOCK(3, 0x10014, 0x1001c, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -493,6 +505,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"400880d2"  // 0x00  mov   x0, 0x42   <--
 		"1f8c04f1"  // 0x04  cmp   x0, 0x123     |
@@ -510,7 +523,8 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
 	ASSERT_BLOCK(1, 0x10008, 0x1000c, true, 0x10000);
 	ASSERT_BLOCK(2, 0x1000c, 0x10010, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10008);
 	mu_assert_notnull(fcn, "analysis function");
@@ -524,6 +538,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--
@@ -541,7 +556,8 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
 	ASSERT_BLOCK(1, 0x10004, 0x1000c, true, 0X10004);
 	ASSERT_BLOCK(2, 0x1000c, 0x10010, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -555,6 +571,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
 }
 
 bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600080d2"  // 0x00  mov   x0, 3
 		"000400d1"  // 0x04  sub   x0, x0, 1 <--------
@@ -575,7 +592,8 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	ASSERT_BLOCK(2, 0x10010, 0x10014, true, 0x10004);
 	ASSERT_BLOCK(3, 0x10014, 0x10018, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -590,6 +608,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 }
 
 bool test_absint_cfg_call_link_register(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"ff430094"  // 0x04  bl    0x11000
@@ -605,7 +624,8 @@ bool test_absint_cfg_call_link_register(void) {
 	ASSERT_BLOCK(0, 0x10000, 0x10008, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10008, 0x1000c, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -617,6 +637,7 @@ bool test_absint_cfg_call_link_register(void) {
 }
 
 bool test_absint_cfg_call_multi_insn(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 32, 0x10000, "hex://" // clang-format off
 		// this pattern is common on ARMv4 to perform an indirect call
 		"110aa0e3"  // 0x00  mov   r0, 0xff000
@@ -634,7 +655,8 @@ bool test_absint_cfg_call_multi_insn(void) {
 	ASSERT_BLOCK(0, 0x10000, 0x1000c, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x1000c, 0x10010, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -646,6 +668,7 @@ bool test_absint_cfg_call_multi_insn(void) {
 }
 
 bool test_absint_cfg_call_ret_in_memory(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("x86", 64, 0x10000, "hex://" // clang-format off
 		"89c1"            // 0x00  mov   ecx, eax
 		"ff14cde0000008"  // 0x02  call  qword [rcx*8+0x80000e0]
@@ -661,7 +684,8 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 	ASSERT_BLOCK(0, 0x10000, 0x10009, true, UT64_MAX);
 	ASSERT_BLOCK(1, 0x10009, 0x1000a, false, UT64_MAX);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -673,6 +697,7 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 }
 
 bool test_absint_cfg_merge_multiple_consecutive(void) {
+	RzICFG *icfg = rz_icfg_new();
 	// multiple consecutive interp blocks should be merged, but only until the next in-edge
 	// or until there is another non-fallthrough out-edge.
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
@@ -710,7 +735,8 @@ bool test_absint_cfg_merge_multiple_consecutive(void) {
 	b->bounds_resolved = true;
 	b->uninterpreted = false;
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -732,6 +758,7 @@ static int xref_cmp(const void *a, const void *b, void *user) {
 }
 
 bool test_absint_xrefs(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
@@ -762,7 +789,8 @@ bool test_absint_xrefs(void) {
 	ASSERT_XREF(2, 0x10010, 0x20010, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
 	ASSERT_XREF(3, 0x10014, 0x11000, RZ_ANALYSIS_XREF_TYPE_CALL);
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzList *l = rz_analysis_xrefs_get_from(interp->analysis, 0x1000c);
 	mu_assert_eq(rz_list_length(l), 1, "analysis xref");
@@ -777,6 +805,7 @@ bool test_absint_xrefs(void) {
 }
 
 bool test_absint_comments(void) {
+	RzICFG *icfg = rz_icfg_new();
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
 		"a9000054"  // 0x04  b.ls  0x18      ------
@@ -813,7 +842,8 @@ bool test_absint_comments(void) {
 	mu_assert_streq(ht_up_find(res->comments, 0x10010, NULL), "x1 = 0x20000, x0 = 0x43", "comment");
 	mu_assert_streq(ht_up_find(res->comments, 0x1001c, NULL), "x0 = 0x42; ->", "comment");
 
-	rz_absint_result_apply_to_analysis(res, interp->analysis, NULL);
+	rz_absint_add_result_to_icfg(icfg, res);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
 	rz_absint_result_free(interp->inst, res);
 
 	const char *acmt = rz_meta_get_string(interp->analysis, RZ_META_TYPE_COMMENT, 0x10008);
@@ -824,12 +854,14 @@ bool test_absint_comments(void) {
 }
 
 bool test_absint_driver(size_t n_threads) {
+	RzICFG *icfg = rz_icfg_new();
 	RzCons *cons = rz_cons_new(); // TODOe: we need this?
 	RzAnalysis *analysis = rz_analysis_new(NULL);
 	rz_analysis_use(analysis, "arm");
 	rz_analysis_set_bits(analysis, 64);
 	RzIO *io = rz_io_new();
 	io->va = 1;
+	RzBin *bin = rz_bin_new();
 	RzIODesc *desc = rz_io_open_at(io, "hex://" // clang-format off
 		"1f8c04f1"  // 0x00  cmp   x0, 0x123
 		"69000054"  // 0x04  b.ls  0x10      ---
@@ -850,12 +882,13 @@ bool test_absint_driver(size_t n_threads) {
 		.intr = cons->intr, // TODOe: maybe change the intr and use analysis->intr?? and set intr for others aswell??
 		.analysis = analysis,
 		.io = io,
+		.bin = bin,
 		.fcn_entry_points = entry_points,
 		.dimens = RZ_ABSINT_RESULT_DIMEN_XREFS | RZ_ABSINT_RESULT_DIMEN_COMMENTS,
 		.trace_opts = RZ_ABSINT_TRACE_NONE,
 		.n_threads = n_threads
 	};
-	rz_absint_driver_run(&config);
+	rz_absint_driver_run(&config, icfg);
 	rz_set_u_free(entry_points);
 
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, 0x10000);

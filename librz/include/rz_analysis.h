@@ -1362,6 +1362,8 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block);
 
 /* function.c */
 
+typedef char *(*RzAnalysisFcnNameChooser)(ut64 addr, void *priv_data);
+
 RZ_API RzAnalysisFunction *rz_analysis_function_new(RzAnalysis *analysis);
 RZ_API void rz_analysis_function_free(void *fcn);
 
@@ -1465,6 +1467,7 @@ RZ_API void rz_analysis_set_il_vm(RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE R
 RZ_API RZ_BORROW RzAnalysisOptions *rz_analysis_get_options(RZ_NONNULL RzAnalysis *analysis);
 RZ_API RZ_BORROW HtSP *rz_analysis_get_virtual_xrefs(RZ_NONNULL RzAnalysis *analysis);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_from(RZ_NONNULL RzAnalysis *analysis);
+RZ_API ssize_t rz_analysis_has_xrefs_to(RZ_NONNULL RzAnalysis *analysis, ut64 to_addr, RzAnalysisXRefType type);
 RZ_API void rz_analysis_set_xrefs_from(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_from);
 RZ_API RZ_BORROW HtUP *rz_analysis_get_xrefs_to(RZ_NONNULL RzAnalysis *analysis);
 RZ_API void rz_analysis_set_xrefs_to(RZ_NONNULL RzAnalysis *analysis, HtUP *xrefs_to);
@@ -1545,6 +1548,7 @@ RZ_API RzList /*<RzAnalysisOp *>*/ *rz_analysis_op_list_new(void);
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask);
 RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, const char *hexstr);
 RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op);
+RZ_API ssize_t rz_analysis_op_type_contains(RZ_NONNULL RzAnalysis *analysis, ut64 addr, size_t len, ssize_t n, _RzAnalysisOpType type, ut64 type_mask);
 
 /* Independent Trace Functions */
 RZ_API RzILTraceInstruction *rz_analysis_il_trace_instruction_new(ut64 addr);
