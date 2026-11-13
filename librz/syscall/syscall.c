@@ -151,7 +151,7 @@ static bool sdb_load_sysregs(RzSysregsDB *sysregdb, Sdb *sdb) {
 	RzPVector *items = sdb_get_items(sdb, false);
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
-		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg")) {
+		if (!strcmp(sdbkv_value(kv), "mmio") || !strcmp(sdbkv_value(kv), "reg") || !strcmp(sdbkv_value(kv), "io")) {
 			const char *name = sdbkv_key(kv);
 			RzSysregItem *sysregitem = rz_sysreg_item_new(name);
 			char *argument_key = rz_str_newf("%s.address", name);
@@ -452,8 +452,57 @@ RZ_API const char *rz_sysreg_get(RzSyscall *s, const char *type, ut64 port) {
 		return NULL;
 	}
 	RzSysregItem *item = ht_up_find(s->srdb->port, port, NULL);
-	if (item && !strcmp(item->type, type)) {
-		return item->comment;
+	if (!item) {
+		return NULL;
 	}
-	return NULL;
+	if (type) {
+		bool match = !strcmp(item->type, type) ||
+			(!strcmp(type, "mmio") && !strcmp(item->type, "io")) ||
+			(!strcmp(type, "io") && !strcmp(item->type, "mmio"));
+		if (!match) {
+			return NULL;
+		}
+	}
+	return item->comment ? item->comment : item->name;
+}
+
+/**
+ * \brief Searches the sysregs SDB database and returns the register/port name
+ *
+ * \param s reference to RzSyscall
+ * \param type reference to the type of key: mmio/reg/io (or NULL for any)
+ * \param port reference to the io port / register address
+ */
+RZ_API const char *rz_sysreg_get_name(RzSyscall *s, const char *type, ut64 port) {
+	rz_return_val_if_fail(s, NULL);
+	if (!s->srdb) {
+		return NULL;
+	}
+	RzSysregItem *item = ht_up_find(s->srdb->port, port, NULL);
+	if (!item) {
+		return NULL;
+	}
+	if (type) {
+		bool match = !strcmp(item->type, type) ||
+			(!strcmp(type, "mmio") && !strcmp(item->type, "io")) ||
+			(!strcmp(type, "io") && !strcmp(item->type, "mmio"));
+		if (!match) {
+			return NULL;
+		}
+	}
+	return item->name ? item->name : item->comment;
+}
+
+/**
+ * \brief Returns the full RzSysregItem for an address/port
+ *
+ * \param s reference to RzSyscall
+ * \param port reference to the io port / register address
+ */
+RZ_API const RzSysregItem *rz_sysreg_get_item(RzSyscall *s, ut64 port) {
+	rz_return_val_if_fail(s, NULL);
+	if (!s->srdb) {
+		return NULL;
+	}
+	return ht_up_find(s->srdb->port, port, NULL);
 }
