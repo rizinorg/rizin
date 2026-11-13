@@ -42,10 +42,9 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Install dependencies
-      run: |
-          sudo apt-get --assume-yes update
-          sudo apt-get --assume-yes install python3-wheel python3-setuptools pkgconf libcurl4-openssl-dev libpkgconf-dev libarchive-dev
-          sudo python3 -m pip install ninja
+       run: |
+             sudo apt-get --assume-yes update
+             sudo apt-get --assume-yes install ninja-build pkgconf libcurl4-openssl-dev libpkgconf-dev libarchive-dev
 
     - name: Checkout Muon repository
       run: |
