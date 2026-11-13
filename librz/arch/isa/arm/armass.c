@@ -81,13 +81,14 @@ static ArmOp ops[] = {
 	{ "nop", 0xa0e1, -1 },
 
 	{ "ldrex", 0x9f0f9000, TYPE_MEM },
+	{ "ldrb", 0xd000, TYPE_MEM },
 	{ "ldr", 0x9000, TYPE_MEM },
 
 	{ "strexh", 0x900fe000, TYPE_MEM },
 	{ "strexb", 0x900fc000, TYPE_MEM },
 	{ "strex", 0x900f8000, TYPE_MEM },
 	{ "strbt", 0x0000e0e4, TYPE_MEM },
-	{ "strb", 0x0000c0e5, TYPE_MEM },
+	{ "strb", 0xc000, TYPE_MEM },
 	{ "strd", 0xf000c0e1, TYPE_MEM },
 	{ "strh", 0xb00080e1, TYPE_MEM },
 	{ "str", 0x8000, TYPE_MEM },
@@ -1077,10 +1078,11 @@ static ut32 getshift(const char *str) {
 			if (bracket) {
 				*bracket = '\0';
 			}
-			// ensure only the bottom 5 bits are used
-			i &= 0x1f;
-			if (!i) {
-				i = 32;
+			bool err = false;
+			// a shift of 32 (lsr, asr) is encoded as 0
+			i = getnum(arg, &err) & 0x1f;
+			if (err) {
+				return 0;
 			}
 			i = (i * 8);
 			i |= shift; // lsl, ror, ...
@@ -5696,7 +5698,10 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					if (!strncmp(ops[i].name, "strex", 5)) {
 						rex = 1;
 					}
-					if (!strcmp(ops[i].name, "str") || !strcmp(ops[i].name, "ldr")) {
+					// strbt is always post-indexed, [rn] is [rn], 0
+					bool translated = !strcmp(ops[i].name, "strbt");
+					if (!strcmp(ops[i].name, "str") || !strcmp(ops[i].name, "ldr") ||
+						!strcmp(ops[i].name, "strb") || !strcmp(ops[i].name, "ldrb") || translated) {
 						if (!ao->a[2]) {
 							ao->a[2] = "0";
 						}
@@ -5754,13 +5759,41 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						return 0;
 					}
 
-					ret = getreg(ao->a[2]);
+					// [rn], off is post-indexed, [rn, off]! writes the address back
+					bool post_index = strstr(str, "],") != NULL;
+					if (translated && !post_index) {
+						// only [rn] has no offset to place
+						if (strcmp(ao->a[2], "0")) {
+							return 0;
+						}
+						post_index = true;
+					}
+					bool writeback = !rex && strchr(str, '!') != NULL;
+					if (writeback) {
+						if (post_index) {
+							return 0;
+						}
+						ao->o |= 1 << 13;
+						for (j = 2; j < 4; j++) {
+							char *bang = ao->a[j] ? strchr(ao->a[j], '!') : NULL;
+							if (bang) {
+								*bang = '\0';
+							}
+						}
+					}
+					// [rn, -off] subtracts the offset: clear the U bit and encode its magnitude
+					const char *offset = ao->a[2];
+					if (!rex && offset && *offset == '-') {
+						offset++;
+						ao->o &= ~(1 << 15);
+					}
+					ret = getreg(offset);
 					if (ret != -1) {
 						if (rex) {
 							ao->o |= 1;
 							ao->o |= (ret & 0x0f) << 8;
 						} else {
-							ao->o |= (strstr(str, "],")) ? 6 : 7;
+							ao->o |= post_index ? 6 : 7;
 							ao->o |= (ret & 0x0f) << 24;
 						}
 						if (ao->a[3]) {
@@ -5771,16 +5804,15 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 							ao->o |= high << 8;
 						}
 					} else {
-						int num = getnum(ao->a[2], &err) & 0xfff;
-						if (err) {
-							break;
+						ut64 num = getnum(offset, &err);
+						if (err || num > 0xfff) {
+							return 0;
 						}
 						if (rex) {
 							ao->o |= 1;
 						} else {
-							ao->o |= (strstr(str, "],")) ? 4 : 5;
+							ao->o |= post_index ? 4 : 5;
 						}
-						ao->o |= 1;
 						ao->o |= (num & 0xff) << 24;
 						ao->o |= ((num >> 8) & 0xf) << 16;
 					}
