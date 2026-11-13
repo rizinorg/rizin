@@ -188,15 +188,15 @@ RZ_IPI RzBinEndianReader *RzBinEndianReader_from_file(RzBinFile *binfile, const 
 	return R;
 }
 
-RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value) {
+RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value, bool is_address) {
 	rz_return_val_if_fail(R, value);
 	if (!R->relocations) {
 		return value;
 	}
-	const RzBinReloc *reloc = ht_up_find(R->relocations, offset, NULL);
+	const RzBinReloc *reloc = ht_up_find(R->relocations, R->relocations_base + offset, NULL);
 	if (reloc) {
 		RZ_LOG_DEBUG("Relocating 0x%" PFMT64x "\n", offset);
-		return reloc->addend;
+		return is_address ? reloc->target_vaddr + reloc->addend : reloc->addend;
 	}
 	return value;
 }
