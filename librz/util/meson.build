@@ -145,14 +145,19 @@ if meson.is_cross_build()
   endif
 endif
 
-if sys_openssl.found()
+if sys_gmp.found()
+  rz_util_deps += [sys_gmp]
+  rz_util_public_deps += [sys_gmp]
+  rz_util_sources += ['big-gmp.c']
+elif sys_openssl.found()
   rz_util_deps += [sys_openssl]
   rz_util_public_deps += [sys_openssl]
   rz_util_public_cmake_deps += ['OpenSSL|OpenSSL::Crypto']
   rz_util_sources += ['big-ssl.c']
 else
-  rz_util_sources += ['big.c', 'big_decimal.c']
+  rz_util_sources += ['big.c']
 endif
+rz_util_sources += ['big_decimal.c']
 
 rz_util_includes = [platform_inc, include_directories('sdb/src')]
 
@@ -198,6 +203,7 @@ if meson.is_cross_build()
   userconf_native.set10('HAVE_LIB_XXHASH', false)
   userconf_native.set10('USE_LIB_XXHASH', false)
   userconf_native.set10('HAVE_OPENSSL', false)
+  userconf_native.set10('HAVE_GMP', false)
   userconf_native.set10('HAVE_LZMA', false)
   userconf_native.set10('HAVE_ZLIB', false)
 

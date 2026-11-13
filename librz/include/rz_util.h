@@ -14,12 +14,6 @@
 #include <dirent.h>
 #include <signal.h>
 #endif
-#ifdef HAVE_LIB_GMP
-#include <gmp.h>
-#endif
-#if HAVE_LIB_SSL
-#include <openssl/bn.h>
-#endif
 #include <rz_util/rz_alloc.h>
 #include <rz_util/rz_ascii_table.h>
 #include <rz_util/rz_asn1.h>
