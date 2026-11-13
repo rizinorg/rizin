@@ -3,6 +3,9 @@
 
 #include <rz_core.h>
 #include "minunit.h"
+// rz_core_arg_set() is deprecated and no longer declared in rz_core.h;
+// declare it locally so the regression test below can call it.
+RZ_API bool rz_core_arg_set(RzCore *core, const char *cc, int num, ut64 val);
 
 static const RzCmdDescArg string_args[] = {
 	{ .name = "s", .type = RZ_CMD_ARG_TYPE_STRING },
@@ -348,6 +351,34 @@ static bool test_disasm_until_ret_json(void) {
 	mu_end;
 }
 
+static bool test_rz_core_arg_set_cc(void) {
+	RzCore *core = rz_core_new();
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+
+	// Map A0 to r2 so the generic argument fallback differs from the default convention.
+	rz_reg_set_profile_string(reg,
+		"=A0 r2\n"
+		"gpr r0 .64 0 0\n"
+		"gpr r1 .64 8 0\n"
+		"gpr r2 .64 16 0\n");
+
+	rz_analysis_cc_set(core->analysis, "r0 systemcc(r0)");
+	rz_analysis_cc_set(core->analysis, "r0 explicitcc(r1)");
+	rz_analysis_set_syscc_default(core->analysis, "systemcc");
+
+	// An explicit convention must not be replaced by the default one.
+	rz_core_arg_set(core, "explicitcc", 0, 0x1234);
+	mu_assert_eq(rz_reg_getv(reg, "r1"), 0x1234, "explicit cc arg0 -> r1");
+	mu_assert_eq(rz_reg_getv(reg, "r0"), 0, "explicit cc does not touch r0");
+
+	// A NULL convention must fall back to the default one.
+	rz_core_arg_set(core, NULL, 0, 0x5678);
+	mu_assert_eq(rz_reg_getv(reg, "r0"), 0x5678, "NULL cc uses default -> r0");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
@@ -359,6 +390,7 @@ int all_tests() {
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
+	mu_run_test(test_rz_core_arg_set_cc);
 	return tests_passed != tests_run;
 }
 
