@@ -348,7 +348,129 @@ static bool test_disasm_until_ret_json(void) {
 	mu_end;
 }
 
+static bool visual_hexdump_shown;
+
+static RzCmdStatus visual_hexdump_handler(RzCore *core, int argc, const char **argv) {
+	visual_hexdump_shown = true;
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_function_preview(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://0x2001; wx c3; wx 90 @ 0x2000; "
+		"af+ sparse; afb+ 0 0 1; afb+ 0 0x2000 1";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "sparse function");
+	rz_analysis_set_gp(core->analysis, 0x12345678);
+	RzCmdDesc *hexdump = rz_cmd_get_desc(core->rcmd, "pxa");
+	mu_assert_notnull(hexdump, "hexdump command");
+	hexdump->d.argv_data.cb = visual_hexdump_handler;
+	visual_hexdump_shown = false;
+	mu_assert_true(rz_cons_readpush(core->cons, "Ppqq", 4), "preview keys");
+	int length;
+	ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+	mu_assert_notnull(output, "visual output");
+	mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)"0x00002000", 10), "preview includes the distant block");
+	mu_assert_true(visual_hexdump_shown, "P wraps to the last representation");
+	mu_assert_eq(rz_analysis_get_gp(core->analysis), 0x12345678, "preview preserves the global pointer");
+	free(output);
+	rz_core_free(core);
+	mu_end;
+}
+
+static size_t visual_render_count;
+static bool visual_resize_preview;
+
+static RzCmdStatus visual_preview_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	visual_render_count++;
+	if (visual_resize_preview) {
+		rz_config_set_i(core->config, "scr.rows", 20);
+		visual_resize_preview = false;
+	}
+	rz_cons_printf(core->cons, "preview at 0x%" PFMT64x "\n", core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_preview_cache(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://16 0x100000000; s 0x100000000; af+ first; "
+		"on malloc://16 0x200000000; s 0x200000000; af+ second; s 0x100000000";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "64-bit functions");
+	RzCmdDesc *preview = rz_cmd_desc_get_exec(rz_cmd_get_desc(core->rcmd, "pdr"));
+	mu_assert_notnull(preview, "function preview command");
+	preview->d.argv_state_data.cb = visual_preview_handler;
+	visual_render_count = 0;
+	const struct {
+		const char *keys;
+		size_t renders;
+		bool resize;
+	} cases[] = {
+		{ "\tjjkk\tqq", 1, false },
+		{ "qq", 2, false },
+		{ "jkqq", 5, false },
+		{ "\tk\tqq", 7, true },
+		{ ":e asm.bytes=true\n\nqq", 9, false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		visual_resize_preview = cases[i].resize;
+		mu_assert_true(rz_cons_readpush(core->cons, cases[i].keys, strlen(cases[i].keys)), "preview keys");
+		char *output = rz_core_cmd_str(core, "Vv");
+		mu_assert_notnull(output, "visual output");
+		free(output);
+		mu_assert_eq(visual_render_count, cases[i].renders, "reuse only the current function preview");
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_visual_graph_previews(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_eq(rz_core_cmd0_rzshell(core,
+			     "e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+			     "e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+			     "on malloc://512 0x1000; s 0x1000; af+ wide"),
+		RZ_CMD_STATUS_OK, "graph setup");
+	// A branching graph puts its entry beyond the leftmost preview viewport.
+	for (int i = 0; i < 31; i++) {
+		ut64 addr = 0x1000 + i * 16;
+		ut64 jump = i < 15 ? 0x1000 + (2 * i + 1) * 16 : UT64_MAX;
+		ut64 fail = i < 15 ? 0x1000 + (2 * i + 2) * 16 : UT64_MAX;
+		rz_core_cmdf(core, "wx c3 @ 0x%" PFMT64x, addr);
+		rz_core_cmdf(core, "afb+ 0x1000 0x%" PFMT64x " 1 0x%" PFMT64x " 0x%" PFMT64x,
+			addr, jump, fail);
+	}
+	for (int mode = 0; mode < 6; mode++) {
+		if (mode) {
+			mu_assert_true(rz_cons_readpush(core->cons, "pqq", 3), "next mode");
+			free(rz_core_cmd_str(core, "Vv"));
+		}
+		mu_assert_true(rz_cons_readpush(core->cons, "qq", 2), "reenter mode");
+		int length;
+		ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+		mu_assert_notnull(output, "preview output");
+		if (mode == 2 || mode == 3) {
+			const char *title = "|  0x1000";
+			mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)title, strlen(title)),
+				"graph entry is visible in the preview");
+		}
+		free(output);
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_visual_function_preview);
+	mu_run_test(test_visual_preview_cache);
+	mu_run_test(test_visual_graph_previews);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);

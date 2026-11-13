@@ -376,12 +376,14 @@ typedef struct rz_core_visual_view_t {
 	int level;
 	st64 delta;
 	ut64 column_nlines;
-	// output is used to store the result of printCmds
-	// and avoid duplicated analysis while j and k is pressed
+	// Cache generated text so scrolling does not rerun the preview command.
 	char *output;
-	// output_mode labels which printCmds' result is stored in output
 	int output_mode;
-	int output_addr;
+	ut64 output_addr;
+	int output_cols;
+	int output_rows;
+	int output_x;
+	int output_y;
 	int option;
 	int variable_option;
 	int printMode;

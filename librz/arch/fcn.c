@@ -550,7 +550,7 @@ static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnaly
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
-	if (has_dst_reg && has_src_reg) {
+	if (bp_reg && sp_reg && has_dst_reg && has_src_reg && !op->dst->memref) {
 		return !strcmp(bp_reg, op->dst->reg->name) && !strcmp(sp_reg, op->src[0]->reg->name);
 	}
 	return false;
@@ -2409,6 +2409,9 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+	if (!bp_name) {
+		return false;
+	}
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp(opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp(opsreg, bp_name);
 	if (op->type == RZ_ANALYSIS_OP_TYPE_XCHG) {
@@ -2448,7 +2451,9 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_LEA: {
 				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 				const char *srcreg = op.src[0] && op.src[0]->reg ? op.src[0]->reg->name : NULL;
-				if (can_affect_bp(analysis, &op) && srcreg && sp && strcmp(srcreg, sp)) {
+				bool from_sp = srcreg && sp && !strcmp(srcreg, sp) &&
+					(op.type == RZ_ANALYSIS_OP_TYPE_LEA || !op.src[0]->memref);
+				if (can_affect_bp(analysis, &op) && !from_sp) {
 					fcn->bp_frame = false;
 					rz_analysis_op_fini(&op);
 					free(buf);
@@ -2457,6 +2462,16 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 				break;
 			}
 			case RZ_ANALYSIS_OP_TYPE_ADD:
+			case RZ_ANALYSIS_OP_TYPE_SUB:
+				// Three-operand instructions can establish a frame at sp +/- immediate.
+				if (does_arch_destroys_dst(analysis->cur->arch) &&
+					op_is_set_bp(&op, rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP),
+						rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP)) &&
+					op.src[1] && !op.src[1]->reg) {
+					break;
+				}
+				// fall through
+			case RZ_ANALYSIS_OP_TYPE_LOAD:
 			case RZ_ANALYSIS_OP_TYPE_AND:
 			case RZ_ANALYSIS_OP_TYPE_CMOV:
 			case RZ_ANALYSIS_OP_TYPE_NOT:
@@ -2466,7 +2481,6 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_SAL:
 			case RZ_ANALYSIS_OP_TYPE_SAR:
 			case RZ_ANALYSIS_OP_TYPE_SHR:
-			case RZ_ANALYSIS_OP_TYPE_SUB:
 			case RZ_ANALYSIS_OP_TYPE_XOR:
 			case RZ_ANALYSIS_OP_TYPE_SHL:
 			case RZ_ANALYSIS_OP_TYPE_XCHG:
@@ -2491,11 +2505,36 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 /**
  *  \brief This function checks whether any operation in a given function may change BP
  *
- *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
+ * Excludes frame setup and restoration. A repurposed frame pointer must not
+ * turn ordinary memory accesses into stack variables.
  */
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
+	if (fcn->bp_frame) {
+		return;
+	}
+	const char *bp = rz_reg_get_name(fcn->analysis->reg, RZ_REG_NAME_BP);
+	if (!bp) {
+		return;
+	}
+	for (size_t i = rz_pvector_len(&fcn->vars); i > 0; i--) {
+		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i - 1);
+		if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
+			continue;
+		}
+		bool removed = false;
+		for (size_t j = rz_vector_len(&var->accesses); j > 0; j--) {
+			RzAnalysisVarAccess *access = rz_vector_index_ptr(&var->accesses, j - 1);
+			if (RZ_STR_EQ(access->reg, bp)) {
+				rz_analysis_var_remove_access_at(var, fcn->addr + access->offset);
+				removed = true;
+			}
+		}
+		if (removed && rz_vector_empty(&var->accesses)) {
+			rz_analysis_function_delete_var(fcn, var);
+		}
+	}
 }
 
 typedef struct {

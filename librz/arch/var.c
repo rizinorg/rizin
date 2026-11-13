@@ -789,7 +789,7 @@ static RzAnalysisVar *var_use_from_stack(RzAnalysisFunction *fcn, ut64 addr, con
 			return NULL;
 		}
 		stack_addr += reg_addend;
-	} else if (bp_name && !rz_str_casecmp(bp_name, reg)) {
+	} else if (fcn->bp_frame && bp_name && !rz_str_casecmp(bp_name, reg)) {
 		// bp-based access
 		stack_addr = reg_addend - fcn->bp_off;
 	} else {
@@ -1280,9 +1280,16 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 
 	RzStackAddr stack_off;
 	if (is_sp) {
-		stack_off = addend - fcn->stack;
+		if (sp == RZ_STACK_ADDR_INVALID || ST64_ADD_OVFCHK(addend, sp)) {
+			goto beach;
+		}
+		// Other paths may have changed fcn->stack since this block was analyzed.
+		stack_off = addend + sp;
 	} else {
 		stack_off = addend - fcn->bp_off;
+	}
+	if (stack_off == ST64_MIN || stack_off == RZ_STACK_ADDR_INVALID) {
+		goto beach;
 	}
 	if (!stack_off) {
 		// Do not create a var/arg for the return address
@@ -1663,7 +1670,7 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	RzStackAddr shadow_store = fcn->cc ? rz_analysis_cc_shadow_store(analysis, fcn->cc) : 0;
 	const char *BP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
 	const char *SP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
-	if (BP) {
+	if (BP && fcn->bp_frame) {
 		extract_stack_var(analysis, fcn, op, BP, "+", false, sp, shadow_store);
 		extract_stack_var(analysis, fcn, op, BP, "-", false, sp, shadow_store);
 	}
