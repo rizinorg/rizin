@@ -1251,20 +1251,20 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		flags = RZ_PERM_R;
 	}
 	r->io->bits = rz_asm_get_bits(r->rasm); // TODO: we need an api for this
-	RzIODesc *fd = rz_io_open_nomap(r->io, file, flags, 0644);
+	RzIODesc *iod = rz_io_open_nomap(r->io, file, flags, 0644);
 	if (rz_interrupt_is_breaked(r->intr)) {
 		goto beach;
 	}
-	if (!fd && openmany) {
+	if (!iod && openmany) {
 		if (!(fh = rz_core_file_open_many(r, file, flags, loadaddr))) {
 			goto beach;
 		}
-		fd = rz_io_desc_get(r->io, fh->fd);
+		iod = rz_io_desc_get(r->io, fh->fd);
 	}
-	if (!fd) {
+	if (!iod) {
 		if (flags & RZ_PERM_W) {
 			//	flags |= RZ_IO_CREAT;
-			if (!(fd = rz_io_open_nomap(r->io, file, flags, 0644))) {
+			if (!(iod = rz_io_open_nomap(r->io, file, flags, 0644))) {
 				goto beach;
 			}
 		} else {
@@ -1272,12 +1272,12 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		}
 	}
 	if (rz_io_is_listener(r->io)) {
-		rz_io_desc_free(fd);
+		rz_io_desc_free(iod);
 		goto beach;
 	}
 
 	if (!fh) {
-		fh = core_file_new(r, fd->fd);
+		fh = core_file_new(r, iod->fd);
 		if (!fh) {
 			RZ_LOG_ERROR("rz_core_file_open: failed to allocate RzCoreFile.\n");
 			goto beach;
@@ -1294,7 +1294,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	}
 
 	r->file = fh;
-	rz_io_use_fd(r->io, fd->fd);
+	rz_io_use_fd(r->io, iod->fd);
 
 	if (!rz_list_find_val(r->files, fh)) {
 		rz_list_append(r->files, fh);
@@ -1306,7 +1306,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		}
 		rz_config_set_bool(r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
-		if (fd->plugin && fd->plugin->isdbg) {
+		if (iod->plugin && iod->plugin->isdbg) {
 			char *dh = rz_str_ndup(file, (strstr(file, "://") - file));
 			if (dh) {
 				rz_debug_use(r->dbg, dh);
