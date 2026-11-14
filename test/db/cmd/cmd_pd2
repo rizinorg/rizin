@@ -872,8 +872,8 @@ ARGS=-A
 CMDS=pdf
 EXPECT=<<EOF
 / entry0();
-|       :   ; var int32_t var_24h @ stack - 0x24
-|       :   ; var int32_t var_19h @ stack - 0x19
+|       :   ; var int8_t var_24h @ stack - 0x24
+|       :   ; var int8_t var_19h @ stack - 0x19
 |       :   ; var int32_t var_4h @ stack - 0x4
 |       :   0x0040149e      call  fcn.00401836
 |       `=< 0x004014a3      jmp   0x401322

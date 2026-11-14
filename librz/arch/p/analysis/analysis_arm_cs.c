@@ -1160,7 +1160,9 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
 	case ARM64_INS_STRB:
+	case ARM64_INS_STRH:
 	case ARM64_INS_STURB:
+	case ARM64_INS_STURH:
 	case ARM64_INS_STUR:
 	case ARM64_INS_STR:
 	case ARM64_INS_STP:
@@ -1187,6 +1189,9 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		break;
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
+	case ARM64_INS_LDURH:
+	case ARM64_INS_LDURSB:
+	case ARM64_INS_LDURSH:
 	case ARM64_INS_LDRSW:
 	case ARM64_INS_LDRSB:
 	case ARM64_INS_LDRSH:
@@ -1228,6 +1233,9 @@ static void anop64(AnalysisArmCSContext *ctx, RzAnalysisOp *op, cs_insn *insn) {
 		case ARM64_INS_LDRSW:
 		case ARM64_INS_LDRSH:
 		case ARM64_INS_LDRSB:
+		case ARM64_INS_LDURSW:
+		case ARM64_INS_LDURSH:
+		case ARM64_INS_LDURSB:
 			op->sign = true;
 			break;
 		}
@@ -1998,6 +2006,55 @@ static void set_opdir(RzAnalysisOp *op) {
 	}
 }
 
+/**
+ * \brief Width of one memory element, before any extension into a register.
+ * Register width alone is insufficient for byte, halfword and signed loads.
+ */
+static int arm64_mem_size(csh handle, cs_insn *insn) {
+	switch (insn->id) {
+	case ARM64_INS_LDRB:
+	case ARM64_INS_LDURB:
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDURSB:
+	case ARM64_INS_STRB:
+	case ARM64_INS_STURB:
+		return 1;
+	case ARM64_INS_LDRH:
+	case ARM64_INS_LDURH:
+	case ARM64_INS_LDRSH:
+	case ARM64_INS_LDURSH:
+	case ARM64_INS_STRH:
+	case ARM64_INS_STURH:
+		return 2;
+	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDURSW:
+	case ARM64_INS_LDPSW:
+		return 4;
+	case ARM64_INS_LDR:
+	case ARM64_INS_LDUR:
+	case ARM64_INS_LDP:
+	case ARM64_INS_LDNP:
+	case ARM64_INS_STR:
+	case ARM64_INS_STUR:
+	case ARM64_INS_STP:
+	case ARM64_INS_STNP: {
+		const char *name = cs_reg_name(handle, REGID64(0));
+		switch (name ? name[0] : 0) {
+		case 'w':
+		case 's': return 4;
+		case 'x':
+		case 'd':
+		case 'f': // fp
+		case 'l': return 8; // lr
+		case 'q': return 16;
+		default: return 0;
+		}
+	}
+	default:
+		return 0;
+	}
+}
+
 static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP(x);
 	cs_arm64_op arm64op = INSOP64(x);
@@ -2014,6 +2071,7 @@ static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *
 		case ARM64_OP_MEM:
 			val->type = RZ_ANALYSIS_VAL_MEM;
 			val->delta = arm64op.mem.disp;
+			val->memref = arm64_mem_size(*handle, insn);
 			break;
 		case ARM64_OP_IMM:
 			val->type = RZ_ANALYSIS_VAL_IMM;

@@ -13,10 +13,10 @@ EOF
 EXPECT=<<EOF
 var char **var_128h @ stack - 0x128
 var int var_11ch @ stack - 0x11c
-var int64_t var_118h @ stack - 0x118
-var int64_t var_114h @ stack - 0x114
-var int64_t var_110h @ stack - 0x110
-var int64_t var_ch @ stack - 0xc
+var int32_t var_118h @ stack - 0x118
+var int32_t var_114h @ stack - 0x114
+var int32_t var_110h @ stack - 0x110
+var int16_t var_ch @ stack - 0xc
 ---
 var char **var_128h @ stack - 0x128
 var int var_11ch @ stack - 0x11c

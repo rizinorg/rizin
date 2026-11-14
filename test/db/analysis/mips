@@ -1792,7 +1792,7 @@ nth vaddr bind type lib name
 |           0x00002924      move  fp, sp
 |           0x00002928      sw    ra, (var_4h)
 |           0x0000292c      sw    s0, (var_18h)
-|           0x00002930      sw    gp, (var_4ch + 0x2c)
+|           0x00002930      sw    gp, 0x10(sp)
 |       ,=< 0x00002934      beqz  v1, 0x29e0
 |       |   0x00002938      sltu  v1, s1, v0
 |      ,==< 0x0000293c      beqz  v1, 0x2950

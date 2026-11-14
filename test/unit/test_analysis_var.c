@@ -332,6 +332,10 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	mu_assert_streq_free(s, "var_18h.a", "expr from stack for bp in struct");
 	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -0xc);
 	mu_assert_streq_free(s, "var_18h.b", "expr from stack for bp in struct");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", 0);
+	mu_assert_null(s, "do not substitute one past the end of a variable");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", 0x420);
+	mu_assert_null(s, "do not substitute an unrelated address above the last variable");
 
 	// sp-based access, needing sp tracking info
 
@@ -362,6 +366,8 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	mu_assert_streq_free(s, "var_18h.b", "expr from stack for sp in struct");
 	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0);
 	mu_assert_null(s, "expr from stack for sp oob");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rsp", 0x18);
+	mu_assert_null(s, "do not substitute a gap between variables");
 
 	// arbitrary reg accesses from explicit RzAnalysisVarAccesses
 
@@ -411,12 +417,107 @@ bool test_rz_analysis_var_is_arg() {
 	mu_end;
 }
 
+bool test_stack_access_width_and_sp() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "arm");
+	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);
+	const struct {
+		ut8 bytes[4];
+		int width;
+		bool store;
+	} cases[] = {
+		{ { 0xe0, 0x43, 0x00, 0x39 }, 1, true }, // strb w0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x00, 0x79 }, 2, true }, // strh w0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x00, 0xb9 }, 4, true }, // str w0, [sp, 0x10]
+		{ { 0xe0, 0x0b, 0x00, 0xf9 }, 8, true }, // str x0, [sp, 0x10]
+		{ { 0xe0, 0x43, 0x40, 0x39 }, 1, false }, // ldrb w0, [sp, 0x10]
+		{ { 0xe0, 0x43, 0x80, 0x39 }, 1, false }, // ldrsb x0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x40, 0x79 }, 2, false }, // ldrh w0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x80, 0x79 }, 2, false }, // ldrsh x0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x80, 0xb9 }, 4, false }, // ldrsw x0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x40, 0xb9 }, 4, false }, // ldr w0, [sp, 0x10]
+		{ { 0xe0, 0x0b, 0x40, 0xf9 }, 8, false }, // ldr x0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x01, 0x78 }, 2, true }, // sturh w0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x41, 0x78 }, 2, false }, // ldurh w0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x81, 0x38 }, 1, false }, // ldursb x0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x81, 0x78 }, 2, false }, // ldursh x0, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x02, 0x29 }, 4, true }, // stp w0, w1, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x01, 0xa9 }, 8, true }, // stp x0, x1, [sp, 0x10]
+		{ { 0xe0, 0x87, 0x00, 0xad }, 16, true }, // stp q0, q1, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x80, 0x3d }, 16, true }, // str q0, [sp, 0x10]
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(fcn, "create function");
+		// The last visited block can have a different stack depth.
+		fcn->stack = 0x80;
+		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
+		mu_assert_eq(rz_analysis_op(analysis, &op, 0x100, cases[i].bytes, 4,
+				     RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL),
+			4, "decode stack access");
+		RzAnalysisValue *mem = cases[i].store ? op.dst : op.src[0];
+		mu_assert_notnull(mem, "memory operand");
+		mu_assert_eq(mem->type, RZ_ANALYSIS_VAL_MEM, "memory operand type");
+		mu_assert_eq(mem->memref, cases[i].width, "memory element width");
+		if (cases[i].store) {
+			rz_analysis_op_fini(&op);
+			rz_analysis_function_delete(fcn);
+			continue;
+		}
+		rz_analysis_extract_vars(analysis, fcn, &op, -0x30);
+		mu_assert_eq(rz_pvector_len(&fcn->vars), 1, "one recovered stack slot");
+		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, -0x20);
+		mu_assert_notnull(var, "use the instruction's stack pointer");
+		if (cases[i].width <= 8) {
+			mu_assert_eq(rz_analysis_var_size(analysis, var), cases[i].width * 8, "scalar access width");
+		}
+		RzAnalysisVarAccess *acc = rz_analysis_var_get_access_at(var, op.addr);
+		mu_assert_notnull(acc, "record stack access");
+		mu_assert_eq(acc->type, cases[i].store ? RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE : RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, "access direction");
+		rz_analysis_op_fini(&op);
+		rz_analysis_function_delete(fcn);
+	}
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_stack_access_unknown_or_indexed() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	fcn->stack = 0x20;
+	// mov eax, [rsp + 0x10]
+	const ut8 load[] = { 0x8b, 0x44, 0x24, 0x10 };
+	RzAnalysisOp op;
+	rz_analysis_op_init(&op);
+	rz_analysis_op(analysis, &op, 0x100, load, sizeof(load), RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL);
+	rz_analysis_extract_vars(analysis, fcn, &op, RZ_STACK_ADDR_INVALID);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "unknown SP must not use a stale function stack");
+	rz_analysis_extract_vars(analysis, fcn, &op, ST64_MAX);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "overflow is not a stack address");
+	rz_analysis_op_fini(&op);
+	// sub dword [rbp + rbx], 0x7fbf50b8: the immediate is not a stack displacement.
+	const ut8 indexed[] = { 0x81, 0x6c, 0x1d, 0x00, 0xb8, 0x50, 0xbf, 0x7f };
+	rz_analysis_op_init(&op);
+	rz_analysis_op(analysis, &op, 0x104, indexed, sizeof(indexed), RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL);
+	rz_analysis_extract_vars(analysis, fcn, &op, -0x20);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "indexed memory does not identify a fixed stack slot");
+	rz_analysis_op_fini(&op);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 #if !ASAN
 	mu_run_test(test_rz_analysis_var);
 #endif
 	mu_run_test(test_rz_analysis_function_get_stack_var_in);
 	mu_run_test(test_rz_analysis_function_var_expr_for_reg_access_at);
+	mu_run_test(test_stack_access_width_and_sp);
+	mu_run_test(test_stack_access_unknown_or_indexed);
 	mu_run_test(test_rz_analysis_var_is_arg);
 	return tests_passed != tests_run;
 }

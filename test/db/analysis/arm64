@@ -427,3 +427,31 @@ EXPECT=<<EOF
                           fcn.00000000+4 0x4 ->      DATA -> 0x200 fcn.00000000+512
 EOF
 RUN
+
+NAME=aarch64 stack access widths are independent of destination register width
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+# Byte and halfword loads extend into x registers; the stack slots stay narrow.
+wx ff8301d1e01f00b9e0430039e0270079e11f40b9e2438039e3278079ff830191c0035fd6 @ 0x100
+af @ 0x100
+afvl @ 0x100
+pi 9 @ 0x100
+EOF
+EXPECT=<<EOF
+var int8_t var_50h @ stack - 0x50
+var int16_t var_4eh @ stack - 0x4e
+var int32_t var_44h @ stack - 0x44
+arg int64_t arg1 @ x0
+sub sp, sp, 0x60
+str w0, [var_44h]
+strb w0, [var_50h]
+strh w0, [var_4eh]
+ldr w1, [var_44h]
+ldrsb x2, [var_50h]
+ldrsh x3, [var_4eh]
+add sp, sp, 0x60
+ret
+EOF
+RUN

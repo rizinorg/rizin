@@ -303,12 +303,9 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	if (rz_analysis_var_is_arg(var) || var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
 		return;
 	}
-	// We ignore overlaps between atomic types because current
-	// detection of the variable default type is suboptimal.
-	// The default type is `intXX_t` where XX is the bitness of the platform
-	// But some binaries can use variables of the smaller size by default
-	// and Rizin doesn't detect bitwidth perfectly. Thus, we skip ATOMIC
-	// types in the overlap detection.
+	// Access widths do not establish source variable boundaries: a wide
+	// initializer may cover several scalars. Keep overlapping atomic
+	// candidates until stronger type information is available.
 	if (rz_type_is_strictly_atomic(var->fcn->analysis->typedb, var->type)) {
 		return;
 	}
@@ -801,7 +798,14 @@ static RzAnalysisVar *var_use_from_stack(RzAnalysisFunction *fcn, ut64 addr, con
 		return NULL;
 	}
 	rz_return_val_if_fail(ret->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK, NULL);
-	*offset_out = stack_addr - ret->storage.stack_off;
+	ut64 offset = (ut64)stack_addr - (ut64)ret->storage.stack_off;
+	// The nearest variable may end before this address. In particular, a saved
+	// register above a local buffer is not a field of that buffer.
+	ut64 size = rz_analysis_var_size(analysis, ret);
+	if (offset && offset >= size / 8 + (size % 8 != 0)) {
+		return NULL;
+	}
+	*offset_out = offset;
 	return ret;
 }
 
@@ -1177,24 +1181,37 @@ static inline bool is_not_read_nor_write(const RzAnalysisOpDirection direction) 
 }
 
 /**
- * \brief Try to extract any args from a single op
+ * \brief Recover a stack slot from a memory operand, falling back to ESIL.
  *
  * \param reg name of the register to look at for accesses
- * \param from_sp whether \p reg is the sp or bp
+ * \param is_sp whether \p reg is the sp or bp
+ * \param sp stack pointer at this instruction, independent of block traversal order
  */
 static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, const char *reg, const char *sign, bool is_sp, RzStackAddr sp, RzStackAddr shadow_store) {
 	rz_return_if_fail(analysis && fcn && op && reg);
 	st64 addend = 0;
 	bool found_addend = false;
+	int size = rz_analysis_guessed_mem_access_width(analysis);
 	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE(op->src); i++) {
-		if (!op->src[i] || !op->src[i]->reg || !op->src[i]->reg->name) {
+	for (i = 0; i <= RZ_ARRAY_SIZE(op->src); i++) {
+		RzAnalysisValue *value = i < RZ_ARRAY_SIZE(op->src) ? op->src[i] : op->dst;
+		if (!value || value->type != RZ_ANALYSIS_VAL_MEM || !value->reg || !value->reg->name) {
 			continue;
 		}
-		if (strcmp(reg, op->src[i]->reg->name)) {
+		if (strcmp(reg, value->reg->name)) {
 			continue;
 		}
-		st64 delta = op->src[i]->delta;
+		// An indexed operand does not identify a fixed slot on the stack.
+		if (value->regdelta) {
+			return;
+		}
+		if (value->memref == 1 || value->memref == 2 || value->memref == 4 || value->memref == 8) {
+			size = value->memref;
+		}
+		if (value == op->dst) {
+			continue;
+		}
+		st64 delta = value->delta;
 		if ((delta < 0 && *sign == '+') || (delta >= 0 && *sign == '-')) {
 			continue;
 		}
@@ -1280,7 +1297,12 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 
 	RzStackAddr stack_off;
 	if (is_sp) {
-		stack_off = addend - fcn->stack;
+		if (sp == RZ_STACK_ADDR_INVALID ||
+			(sp > 0 && addend > ST64_MAX - sp) ||
+			(sp < 0 && addend < ST64_MIN - sp)) {
+			goto beach;
+		}
+		stack_off = addend + sp;
 	} else {
 		stack_off = addend - fcn->bp_off;
 	}
@@ -1343,7 +1365,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (varname) {
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_stack(&stor, stack_off);
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, rz_analysis_guessed_mem_access_width(analysis), varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, size, varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}
@@ -1359,7 +1381,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		}
 		char *varname = rz_str_newf("%s_%" PFMT64x "h", VARPREFIX, RZ_ABS(stor.stack_off));
 		if (varname) {
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, rz_analysis_guessed_mem_access_width(analysis), varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, size, varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}
