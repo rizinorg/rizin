@@ -158,6 +158,10 @@ if get_option('enable_tests')
     tests += ['analysis_op', 'analysis_m68k']
   endif
 
+  if get_option('use_gpl')
+    tests += ['analysis_z80']
+  endif
+
   unit_test_env = environment()
   if test_env_common_path != []
     unit_test_env.prepend('PATH', test_env_common_path)
