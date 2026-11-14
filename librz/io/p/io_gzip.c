@@ -6,16 +6,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include "rz_io_plugins.h"
 
+#define GZIP_MAX_OUTPUT 5000000000ULL
+
 typedef struct {
 	ut8 *buf;
-	ut32 size;
+	ut64 size;
 	ut64 offset;
 } RzIOGzip;
 
-static inline ut32 _io_malloc_sz(RzIODesc *desc) {
+static inline ut64 _io_malloc_sz(RzIODesc *desc) {
 	if (!desc) {
 		return 0;
 	}
@@ -23,7 +27,7 @@ static inline ut32 _io_malloc_sz(RzIODesc *desc) {
 	return mal ? mal->size : 0;
 }
 
-static inline void _io_malloc_set_sz(RzIODesc *desc, ut32 sz) {
+static inline void _io_malloc_set_sz(RzIODesc *desc, ut64 sz) {
 	if (!desc) {
 		return;
 	}
@@ -65,15 +69,79 @@ static inline void _io_malloc_set_off(RzIODesc *desc, ut64 off) {
 	mal->offset = off;
 }
 
+static ut8 *__inflate_members(const ut8 *data, size_t len, ut64 *out_len) {
+	if (!data || !out_len || len == 0 || len > INT_MAX) {
+		return NULL;
+	}
+	ut8 *result = NULL;
+	ut64 total = 0;
+	size_t offset = 0;
+	unsigned long long member = 0;
+	while (offset < len) {
+		int chunk_len = 0;
+		int consumed = 0;
+		ut8 *chunk = rz_inflate(data + offset, (int)(len - offset), &consumed, &chunk_len);
+		if (!chunk) {
+			eprintf("gzip: failed to decode member %llu at offset %llu\n", member, (unsigned long long)offset);
+			goto fail;
+		}
+		if (consumed <= 0) {
+			eprintf("gzip: inflate made no progress for member %llu at offset %llu\n", member, (unsigned long long)offset);
+			free(chunk);
+			goto fail;
+		}
+		ut64 chunk_size = (ut64)chunk_len;
+		if (chunk_size > GZIP_MAX_OUTPUT - total || chunk_size > (ut64)SIZE_MAX - total) {
+			eprintf("gzip: combined output exceeds the maximum allowed size\n");
+			free(chunk);
+			goto fail;
+		}
+		if (chunk_size == 0) {
+			if (!result) {
+				result = malloc(1);
+				if (!result) {
+					free(chunk);
+					goto fail;
+				}
+			}
+		} else {
+			ut8 *new_result = realloc(result, (size_t)(total + chunk_size));
+			if (!new_result) {
+				free(chunk);
+				goto fail;
+			}
+			memcpy(new_result + total, chunk, chunk_len);
+			result = new_result;
+		}
+		free(chunk);
+		total += chunk_size;
+		offset += (size_t)consumed;
+		member++;
+	}
+	if (!result) {
+		result = malloc(1);
+		if (!result) {
+			goto fail;
+		}
+	}
+	*out_len = total;
+	return result;
+
+fail:
+	free(result);
+	return NULL;
+}
+
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
-	if (_io_malloc_off(fd) > _io_malloc_sz(fd)) {
+	ut64 mallocsz = _io_malloc_sz(fd);
+	if (_io_malloc_off(fd) > mallocsz) {
 		return -1;
 	}
-	if (_io_malloc_off(fd) + count > _io_malloc_sz(fd)) {
-		count -= (_io_malloc_off(fd) + count - _io_malloc_sz(fd));
+	if (count > mallocsz - _io_malloc_off(fd)) {
+		count = (size_t)(mallocsz - _io_malloc_off(fd));
 	}
 	if (count > 0) {
 		memcpy(_io_malloc_buf(fd) + _io_malloc_off(fd), buf, count);
@@ -88,7 +156,7 @@ static bool __resize(RzIO *io, RzIODesc *fd, ut64 count) {
 	if (!fd || !fd->data || count == 0) {
 		return false;
 	}
-	ut32 mallocsz = _io_malloc_sz(fd);
+	ut64 mallocsz = _io_malloc_sz(fd);
 	if (_io_malloc_off(fd) > mallocsz) {
 		return false;
 	}
@@ -111,12 +179,12 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	ut32 mallocsz = _io_malloc_sz(fd);
+	ut64 mallocsz = _io_malloc_sz(fd);
 	if (_io_malloc_off(fd) > mallocsz) {
 		return -1;
 	}
-	if (_io_malloc_off(fd) + count >= mallocsz) {
-		count = mallocsz - _io_malloc_off(fd);
+	if (count >= mallocsz - _io_malloc_off(fd)) {
+		count = (size_t)(mallocsz - _io_malloc_off(fd));
 	}
 	memcpy(buf, _io_malloc_buf(fd) + _io_malloc_off(fd), count);
 	return count;
@@ -139,7 +207,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	if (!fd || !fd->data) {
 		return offset;
 	}
-	ut32 mallocsz = _io_malloc_sz(fd);
+	ut64 mallocsz = _io_malloc_sz(fd);
 	switch (whence) {
 	case SEEK_SET:
 		rz_offset = (offset <= mallocsz) ? offset : mallocsz;
@@ -167,14 +235,13 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		}
 		size_t len;
 		ut8 *data = (ut8 *)rz_file_slurp(pathname + 7, &len);
-		int *size = (int *)&mal->size;
-		mal->buf = rz_inflate(data, (int)len, NULL, size);
+		mal->buf = __inflate_members(data, len, &mal->size);
 		if (mal->buf) {
 			free(data);
 			return rz_io_desc_new(io, &rz_io_plugin_gzip, pathname, rw, mal);
 		}
 		free(data);
-		eprintf("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
+		eprintf("gzip://%s: failed to decode gzip members\n", pathname + 7);
 		free(mal);
 	}
 	return NULL;
