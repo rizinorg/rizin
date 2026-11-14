@@ -274,6 +274,68 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+static bool test_rz_core_print_disasm_describe(bool with_meta) {
+	const char *syntaxes[] = { "att", "masm", "intel" };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(syntaxes); i++) {
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "create core");
+		RzIODesc *desc = rz_io_open_at(core->io, "malloc://64", RZ_PERM_RX, 0644, 0, NULL);
+		mu_assert_notnull(desc, "open io");
+		mu_assert_true(rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL),
+			"configure x86");
+		rz_config_set(core->config, "asm.syntax", syntaxes[i]);
+		RzAsmSyntax syntax = rz_asm_get_syntax(core->rasm);
+		rz_config_set_i(core->config, "scr.color", 0);
+		rz_config_set_b(core->config, "asm.lines", false);
+		rz_config_set_b(core->config, "asm.describe", true);
+		rz_config_set_b(core->config, "asm.cmt.right", true);
+		rz_config_set_b(core->config, "asm.meta", true);
+		ut8 buf[32] = { 0x48, 0x89, 0xd8, 0xc3 }; // mov rax, rbx; ret
+		if (with_meta) {
+			mu_assert_true(rz_meta_set(core->analysis, RZ_META_TYPE_HIDE, 0, 3, NULL),
+				"hide first instruction");
+		}
+		RzPVector *vec = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
+		mu_assert_notnull(vec, "create disassembly vector");
+		RzCoreDisasmOptions options = {
+			.vec = vec,
+			.cbytes = 1,
+		};
+		rz_core_print_disasm(core, 0, buf, sizeof(buf), 2, NULL, &options);
+		mu_assert_eq(rz_pvector_len(vec), 2, "one line per instruction");
+		RzAnalysisDisasmText *first = rz_pvector_at(vec, 0);
+		mu_assert_eq(first->offset, 0, "first instruction offset");
+		mu_assert_strcontains(first->text, "; moves data from src to dst",
+			"first description on the right");
+		mu_assert_null(strchr(first->text, '\n'), "first description is on one line");
+		if (with_meta) {
+			mu_assert_strcontains(first->text, "(3 bytes hidden)", "metadata path");
+		} else if (!strcmp(syntaxes[i], "att")) {
+			mu_assert_strcontains(first->text, "%rbx, %rax", "AT&T operands");
+		} else {
+			mu_assert_strcontains(first->text, "rax, rbx", "Intel/MASM operands");
+		}
+		RzAnalysisDisasmText *second = rz_pvector_at(vec, 1);
+		mu_assert_eq(second->offset, 3, "second instruction offset");
+		mu_assert_strcontains(second->text, "ret", "instruction without operands");
+		mu_assert_strcontains(second->text, "; return from subroutine.",
+			"second description on the right");
+		mu_assert_null(strchr(second->text, '\n'), "second description is on one line");
+		mu_assert_eq(rz_asm_get_syntax(core->rasm), syntax, "restore disassembler syntax");
+		rz_pvector_free(vec);
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
+bool test_rz_core_print_disasm_describe_normal() {
+	return test_rz_core_print_disasm_describe(false);
+}
+
+bool test_rz_core_print_disasm_describe_meta() {
+	return test_rz_core_print_disasm_describe(true);
+}
+
 bool test_rz_core_print_disasm_resolve_aav_symbols() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "rz_core_new failed");
@@ -610,6 +672,8 @@ int all_tests() {
 	mu_run_test(test_rz_core_analysis_bytes_short_tail);
 	mu_run_test(test_rz_core_analysis_bytes_from_io);
 	mu_run_test(test_rz_core_print_disasm);
+	mu_run_test(test_rz_core_print_disasm_describe_normal);
+	mu_run_test(test_rz_core_print_disasm_describe_meta);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
 	return tests_passed != tests_run;
