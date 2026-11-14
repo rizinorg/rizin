@@ -117,6 +117,9 @@
 	}
 
 #define rz_openssl_plugin_define_hash_cfg(pluginname, evpmd, canhmac) \
+	rz_openssl_plugin_define_hash_cfg_named(pluginname, pluginname, evpmd, canhmac)
+
+#define rz_openssl_plugin_define_hash_cfg_named(pluginname, hashname, evpmd, canhmac) \
 	rz_openssl_plugin_context_new(pluginname); \
 	rz_openssl_plugin_context_free(pluginname); \
 	rz_openssl_plugin_digest_size(pluginname, evpmd); \
@@ -126,7 +129,7 @@
 	rz_openssl_plugin_final(pluginname); \
 	rz_openssl_plugin_small_block(pluginname, evpmd); \
 	RzHashPlugin rz_hash_plugin_##pluginname = { \
-		.name = #pluginname, \
+		.name = #hashname, \
 		.license = "Apache 2.0", \
 		.author = "OpenSSL Team", \
 		.support_hmac = canhmac, \
