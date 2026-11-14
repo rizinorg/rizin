@@ -237,6 +237,63 @@ static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt, HexI
 }
 
 /**
+ * \brief Seeds the packet's register temporaries from the architectural
+ * registers for every register written in the packet.
+ *
+ * The shared IL packet executor commits tmp -> architectural registers
+ * unconditionally for the registers marked as written, even when the slot
+ * writing them did not run (e.g. a call in the packet was predicated off by
+ * an earlier taken branch in the same packet). Seeding keeps the commit an
+ * identity for not-written slots.
+ */
+static RZ_OWN RzILOpEffect *hex_seed_reg_temps(const HexPkt *pkt) {
+	rz_return_val_if_fail(pkt, NULL);
+	const HexILExecData *stats = &pkt->il_op_stats;
+	RzILOpEffect *seed = EMPTY();
+	for (ut8 i = 0; i <= HEX_REG_CTR_REGS_C31; ++i) {
+		if (!rz_bv_get(stats->ctr_written, i)) {
+			continue;
+		}
+		const char *tmp = hex_get_reg_in_class(HEX_REG_CLASS_CTR_REGS, i, false, true, true);
+		const char *reg = hex_get_reg_in_class(HEX_REG_CLASS_CTR_REGS, i, false, false, false);
+		if (tmp && reg) {
+			seed = SEQ2(seed, SETG(tmp, VARG(reg)));
+		}
+	}
+	for (ut8 i = 0; i <= HEX_REG_INT_REGS_R31; ++i) {
+		if (!rz_bv_get(stats->gpr_written, i)) {
+			continue;
+		}
+		const char *tmp = hex_get_reg_in_class(HEX_REG_CLASS_INT_REGS, i, false, true, true);
+		const char *reg = hex_get_reg_in_class(HEX_REG_CLASS_INT_REGS, i, false, false, false);
+		if (tmp && reg) {
+			seed = SEQ2(seed, SETG(tmp, VARG(reg)));
+		}
+	}
+	for (ut8 i = 0; i <= HEX_REG_SYS_REGS_S80; ++i) {
+		if (!rz_bv_get(stats->sys_written, i)) {
+			continue;
+		}
+		const char *tmp = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, i, false, true, true);
+		const char *reg = hex_get_reg_in_class(HEX_REG_CLASS_SYS_REGS, i, false, false, false);
+		if (tmp && reg) {
+			seed = SEQ2(seed, SETG(tmp, VARG(reg)));
+		}
+	}
+	for (ut8 i = 0; i <= HEX_REG_PRED_REGS_P3; ++i) {
+		if (!rz_bv_get(stats->pred_written, i)) {
+			continue;
+		}
+		const char *tmp = hex_get_reg_in_class(HEX_REG_CLASS_PRED_REGS, i, false, true, false);
+		const char *reg = hex_get_reg_in_class(HEX_REG_CLASS_PRED_REGS, i, false, false, false);
+		if (tmp && reg) {
+			seed = SEQ2(seed, SETG(tmp, VARG(reg)));
+		}
+	}
+	return seed;
+}
+
+/**
  * \brief Transforms a list of HexILOps into a single sequence.
  *
  * \param pkt The hexagon packet of the
@@ -254,10 +311,25 @@ static RZ_OWN RzILOpEffect *hex_pkt_to_il_seq(HexPkt *pkt) {
 	}
 	HexInsnPktBundle bundle;
 	bundle_init(&bundle);
-	RzILOpEffect *complete_seq = EMPTY();
+
+	/* Building the instruction effects records which registers the packet
+	 * will write (pkt->il_op_stats). The commit op wipes those stats, so the
+	 * temps seed must be computed before the commit op is lifted. The seed
+	 * effects are prepended so they run before any instruction effect. */
+	RzILOpEffect **effects = RZ_NEWS0(RzILOpEffect *, rz_pvector_len(pkt->il_ops));
+	rz_return_val_if_fail(effects, NULL);
+	RzILOpEffect *seed = EMPTY();
 	for (ut32 i = 0; i < rz_pvector_len(pkt->il_ops); ++i) {
-		complete_seq = SEQ2(complete_seq, hex_il_op_to_effect((HexILOp *)rz_pvector_at(pkt->il_ops, i), pkt, &bundle));
+		if (rz_pvector_at(pkt->il_ops, i) == &hex_pkt_commit) {
+			seed = hex_seed_reg_temps(pkt);
+		}
+		effects[i] = hex_il_op_to_effect((HexILOp *)rz_pvector_at(pkt->il_ops, i), pkt, &bundle);
 	}
+	RzILOpEffect *complete_seq = seed;
+	for (ut32 i = 0; i < rz_pvector_len(pkt->il_ops); ++i) {
+		complete_seq = SEQ2(complete_seq, effects[i]);
+	}
+	RZ_FREE(effects);
 	return complete_seq;
 }
 

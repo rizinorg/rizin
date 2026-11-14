@@ -14,6 +14,25 @@
 #include <hexagon/hexagon.h>
 #include <rz_il/rz_il_opcodes.h>
 
+/*
+ * Write LR with the return address. If an earlier branch op was already
+ * registered in the packet (jmp_cnt > 0 at emission time), the write keeps
+ * the current architectural LR while that earlier branch is taken.
+ * See https://github.com/rizinorg/rizin/issues/6975
+ */
+static RzILOpEffect *hex_lr_guarded_write(HexInsnPktBundle *bundle, HexOp *lr_op, RzILOpPure *new_lr) {
+	rz_return_val_if_fail(bundle && lr_op && new_lr, NULL);
+	if (bundle->jmp_cnt == 0) {
+		return WRITE_REG(bundle, lr_op, new_lr);
+	}
+	/* an earlier branch was lifted in this packet. If it is taken, the call
+	 * must not happen: LR_tmp keeps the value the packet prologue seeds from
+	 * the architectural LR (see hex_seed_reg_temps). */
+	return BRANCH(VARL(bundle->jmp_flags[0]),
+		EMPTY(),
+		WRITE_REG(bundle, lr_op, new_lr));
+}
+
 // call Ii
 RzILOpEffect *hex_il_op_j2_call(HexInsnPktBundle *bundle) {
 	const HexInsn *hi = bundle->insn;
@@ -41,7 +60,7 @@ RzILOpEffect *hex_il_op_j2_call(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp157 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_15 = LOGAND(VARL("h_tmp157"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_16 = WRITE_REG(bundle, &lr_op, op_AND_15);
+	RzILOpEffect *op_ASSIGN_16 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_15);
 
 	// seq(seq(HYB(call_pkt); h_tmp157 = HYB(call_pkt)); lr = (h_tmp157 ...;
 	RzILOpEffect *seq_17 = SEQN(2, seq_12, op_ASSIGN_16);
@@ -86,7 +105,7 @@ RzILOpEffect *hex_il_op_j2_callf(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp158 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_21 = LOGAND(VARL("h_tmp158"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_22 = WRITE_REG(bundle, &lr_op, op_AND_21);
+	RzILOpEffect *op_ASSIGN_22 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_21);
 
 	// seq(seq(HYB(call_pkt); h_tmp158 = HYB(call_pkt)); lr = (h_tmp158 ...;
 	RzILOpEffect *seq_23 = SEQN(2, seq_18, op_ASSIGN_22);
@@ -130,7 +149,7 @@ RzILOpEffect *hex_il_op_j2_callr(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp159 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_7 = LOGAND(VARL("h_tmp159"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_8 = WRITE_REG(bundle, &lr_op, op_AND_7);
+	RzILOpEffect *op_ASSIGN_8 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_7);
 
 	// seq(seq(HYB(call_pkt); h_tmp159 = HYB(call_pkt)); lr = (h_tmp159 ...;
 	RzILOpEffect *seq_9 = SEQN(2, seq_4, op_ASSIGN_8);
@@ -167,7 +186,7 @@ RzILOpEffect *hex_il_op_j2_callrf(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp160 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_13 = LOGAND(VARL("h_tmp160"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_14 = WRITE_REG(bundle, &lr_op, op_AND_13);
+	RzILOpEffect *op_ASSIGN_14 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_13);
 
 	// seq(seq(HYB(call_pkt); h_tmp160 = HYB(call_pkt)); lr = (h_tmp160 ...;
 	RzILOpEffect *seq_15 = SEQN(2, seq_10, op_ASSIGN_14);
@@ -210,7 +229,7 @@ RzILOpEffect *hex_il_op_j2_callrh(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp161 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_7 = LOGAND(VARL("h_tmp161"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_8 = WRITE_REG(bundle, &lr_op, op_AND_7);
+	RzILOpEffect *op_ASSIGN_8 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_7);
 
 	// seq(seq(HYB(call_pkt); h_tmp161 = HYB(call_pkt)); lr = (h_tmp161 ...;
 	RzILOpEffect *seq_9 = SEQN(2, seq_4, op_ASSIGN_8);
@@ -247,7 +266,7 @@ RzILOpEffect *hex_il_op_j2_callrt(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp162 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_12 = LOGAND(VARL("h_tmp162"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_13 = WRITE_REG(bundle, &lr_op, op_AND_12);
+	RzILOpEffect *op_ASSIGN_13 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_12);
 
 	// seq(seq(HYB(call_pkt); h_tmp162 = HYB(call_pkt)); lr = (h_tmp162 ...;
 	RzILOpEffect *seq_14 = SEQN(2, seq_9, op_ASSIGN_13);
@@ -298,7 +317,7 @@ RzILOpEffect *hex_il_op_j2_callt(HexInsnPktBundle *bundle) {
 
 	// lr = (h_tmp163 & ((ut32) 0xfffffffe));
 	RzILOpPure *op_AND_20 = LOGAND(VARL("h_tmp163"), CAST(32, IL_FALSE, SN(32, 0xfffffffe)));
-	RzILOpEffect *op_ASSIGN_21 = WRITE_REG(bundle, &lr_op, op_AND_20);
+	RzILOpEffect *op_ASSIGN_21 = hex_lr_guarded_write(bundle, (HexOp *)&lr_op, op_AND_20);
 
 	// seq(seq(HYB(call_pkt); h_tmp163 = HYB(call_pkt)); lr = (h_tmp163 ...;
 	RzILOpEffect *seq_22 = SEQN(2, seq_17, op_ASSIGN_21);
