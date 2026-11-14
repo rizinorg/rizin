@@ -31,3 +31,95 @@ EXPECT=<<EOF
 48 = GetDOSVersion ()
 EOF
 RUN
+
+NAME=pusha x86_16
+FILE=malloc://0x10000
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=16
+aei
+aeim
+ar ax=0x1111
+ar cx=0x2222
+ar dx=0x3333
+ar bx=0x4444
+ar sp=0xa000
+ar bp=0x5555
+ar si=0x6666
+ar di=0x7777
+.arf
+wx 60
+aes
+.arf
+pv @ 0x00009ffe
+pv @ 0x00009ffc
+pv @ 0x00009ffa
+pv @ 0x00009ff8
+pv @ 0x00009ff6
+pv @ 0x00009ff4
+pv @ 0x00009ff2
+pv @ 0x00009ff0
+EOF
+EXPECT=<<EOF
+0x1111
+0x2222
+0x3333
+0x4444
+0xa000
+0x5555
+0x6666
+0x7777
+EOF
+RUN
+
+NAME=popa x86_16
+FILE=malloc://0x10000
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86
+e asm.bits=16
+aei
+aeim
+ar ax=0x1111
+ar cx=0x2222
+ar dx=0x3333
+ar bx=0x4444
+ar sp=0xa000
+ar bp=0x5555
+ar si=0x6666
+ar di=0x7777
+.arf
+wx 6061
+aes
+.arf
+ar ax=0x0000
+ar cx=0x0000
+ar dx=0x0000
+ar bx=0x0000
+ar bp=0x0000
+ar si=0x0000
+ar di=0x0000
+.arf
+aes
+.arf
+ar ax
+ar cx
+ar dx
+ar bx
+ar bp
+ar si
+ar di
+pv @ 0x00009ffe
+EOF
+EXPECT=<<EOF
+ax = 0x1111
+cx = 0x2222
+dx = 0x3333
+bx = 0x4444
+bp = 0x5555
+si = 0x6666
+di = 0x7777
+0x1111
+EOF
+RUN

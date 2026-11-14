@@ -1010,8 +1010,12 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		dst = getarg(a, &gop, 0, 1, NULL, DST_AR, NULL, zydx->addr);
 		esilprintf(op, "%s,%s", src, dst);
 	} break;
-	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
-	case X86_INS_PUSHAD: {
+	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI (32-bit), AX..DI (16-bit)
+	case X86_INS_PUSHAD:
+	case X86_INS_PUSHA: {
+		const char *regs16[8] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
+		const char *regs32[8] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
+		const char *const *rtab = a->bits == 16 ? regs16 : regs32;
 		esilprintf(op,
 			"0,%s,+,"
 			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
@@ -1023,14 +1027,14 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "],"
 			"%" PFMT32d ",%s,-=,%s,%s,=[%" PFMT32d "]",
 			sp,
-			rs, sp, "eax", sp, rs,
-			rs, sp, "ecx", sp, rs,
-			rs, sp, "edx", sp, rs,
-			rs, sp, "ebx", sp, rs,
-			rs, sp, "esp", rs,
-			rs, sp, "ebp", sp, rs,
-			rs, sp, "esi", sp, rs,
-			rs, sp, "edi", sp, rs);
+			rs, sp, rtab[0], sp, rs,
+			rs, sp, rtab[1], sp, rs,
+			rs, sp, rtab[2], sp, rs,
+			rs, sp, rtab[3], sp, rs,
+			rs, sp, rtab[4], rs,
+			rs, sp, rtab[5], sp, rs,
+			rs, sp, rtab[6], sp, rs,
+			rs, sp, rtab[7], sp, rs);
 	} break;
 	case X86_INS_ENTER:
 	case X86_INS_PUSH: {
@@ -1047,7 +1051,12 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 		esilprintf(op, "%s,%s,=,%s,[%" PFMT32d "],%s,=,%" PFMT32d ",%s,+=",
 			bp, sp, sp, rs, bp, rs, sp);
 		break;
-	case X86_INS_POPAD: {
+	case X86_INS_POPAD:
+	case X86_INS_POPA: {
+		// reverse order of PUSH(A): pops DI, SI, BP, SP-slot (discarded), BX, DX, CX, AX
+		const char *regs16[8] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
+		const char *regs32[8] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
+		const char *const *rtab = a->bits == 16 ? regs16 : regs32;
 		esilprintf(op,
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
@@ -1056,17 +1065,15 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
 			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
-			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=,"
-			"%s,=",
-			sp, rs, rs, sp, "edi",
-			sp, rs, rs, sp, "esi",
-			sp, rs, rs, sp, "ebp",
+			"%s,[%" PFMT32d "],%" PFMT32d ",%s,+=,%s,=",
+			sp, rs, rs, sp, rtab[7],
+			sp, rs, rs, sp, rtab[6],
+			sp, rs, rs, sp, rtab[5],
 			sp, rs, rs, sp,
-			sp, rs, rs, sp, "ebx",
-			sp, rs, rs, sp, "edx",
-			sp, rs, rs, sp, "ecx",
-			sp, rs, rs, sp, "eax",
-			sp);
+			sp, rs, rs, sp, rtab[3],
+			sp, rs, rs, sp, rtab[2],
+			sp, rs, rs, sp, rtab[1],
+			sp, rs, rs, sp, rtab[0]);
 	} break;
 	case X86_INS_POP: {
 		switch (INSOP(0).type) {
@@ -1946,6 +1953,15 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		rz_list_append(ret, val);
 		break;
 	case X86_INS_PUSHAD:
+	case X86_INS_PUSHA:
+		val = rz_analysis_value_new();
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
+		val->reg = zydis_reg2reg(reg, sp);
+		val->delta = -8 * regsz;
+		val->memref = regsz;
+		rz_list_append(ret, val);
+		break;
 	case X86_INS_PUSHF:
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
@@ -2611,8 +2627,15 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 			break;
 		}
 		break;
-	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
+	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI (32-bit), AX..DI (16-bit)
 	case X86_INS_PUSHAD:
+	case X86_INS_PUSHA:
+		// pushes all general-purpose registers; no operands to decode
+		op->type = RZ_ANALYSIS_OP_TYPE_RPUSH;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 8 * regsz;
+		op->cycles = CYCLE_MEM + CYCLE_MEM;
+		break;
 	case X86_INS_ENTER:
 	case X86_INS_PUSH:
 	case X86_INS_PUSHF:
@@ -2660,7 +2683,14 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, X86ZY
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		break;
+	// pop all general-purpose registers; no operands to decode
+	case X86_INS_POPA:
 	case X86_INS_POPAD:
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = -8 * regsz;
+		op->cycles = CYCLE_MEM + CYCLE_MEM;
+		break;
 	case X86_INS_IRET:
 	case X86_INS_IRETD:
 	case X86_INS_IRETQ:
