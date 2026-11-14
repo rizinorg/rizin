@@ -224,9 +224,6 @@ static void write_var_to_state(RzAbsIntInstance *inst,
 	case RZ_IL_VAR_KIND_LOCAL:
 		ht_vals = astate->locals;
 		break;
-	case RZ_IL_VAR_KIND_LOCAL_PURE:
-		ht_vals = astate->lets;
-		break;
 	}
 	RzAbsIntVal *av = ht_up_find(ht_vals, var_id, NULL);
 	if (!av) {
@@ -395,12 +392,54 @@ static EvalResult eval_pure(RzAbsIntRunContext *ctx, const RzILOpPure *pure, RZ_
 		break;
 	}
 	case RZ_IL_OP_LET: {
+		const RzAbsIntValueDomain *dom = val_domain(ctx->inst);
+		HtUP *lets = ctx->astate->lets;
 		ut64 vhash = pure->op.let.hash;
 		EVAL_SUB_OR_RETURN(pure->op.let.exp, out);
-		write_var_to_state(ctx->inst, ctx->astate, RZ_IL_VAR_KIND_LOCAL_PURE, vhash, out);
-		EVAL_SUB_OR_RETURN(pure->op.let.body, out);
-		// No need to free the LET variable.
-		// It is simply overwritten next time.
+
+		// Bind the variable for the duration of the body.
+		// The values in the table are heap allocated, so bound stays valid
+		// even if LETs nested in the body insert new names into the table.
+		RzAbsIntVal *new = dom->val_new_top();
+		if (!new) {
+			goto map_to_top;
+		}
+		RzAbsIntVal *bound = ht_up_find(lets, vhash, NULL);
+		RzAbsIntVal *shadowed = NULL;
+		if (bound) {
+			// The name is already bound, e.g. by an enclosing LET.
+			// Save that value, it must be visible again after the body.
+			shadowed = new;
+			dom->copy(shadowed, bound);
+		} else {
+			bound = new;
+			if (!ht_up_insert(lets, vhash, bound)) {
+				dom->val_free(bound);
+				goto map_to_top;
+			}
+		}
+		dom->copy(bound, out);
+
+		EvalResult body_res = eval_pure(ctx, pure->op.let.body, out);
+
+		// Leave the scope, the table must look exactly like before the LET.
+		if (shadowed) {
+			dom->copy(bound, shadowed);
+			dom->val_free(shadowed);
+		} else {
+			// Unbound names are removed again instead of being kept for reuse,
+			// otherwise every clone of the state would also clone these dead values.
+			ht_up_delete(lets, vhash);
+			dom->val_free(bound);
+		}
+
+		if (RZ_UNLIKELY(body_res == EVAL_RESULT_BREAK)) {
+			return EVAL_RESULT_BREAK;
+		}
+		if (RZ_UNLIKELY(body_res != EVAL_RESULT_OK)) {
+			RZ_LOG_ERROR("eval_pure failed to evaluate pure->op.let.body\n");
+			goto map_to_top;
+		}
 		break;
 	}
 	case RZ_IL_OP_ITE: {
