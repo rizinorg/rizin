@@ -232,8 +232,18 @@ static inline void bundle_update(HexInsnPktBundle *bundle, HexInsn *insn, HexPkt
 
 static RzILOpEffect *hex_il_op_to_effect(const HexILOp *il_op, HexPkt *pkt, HexInsnPktBundle *bundle) {
 	rz_return_val_if_fail(bundle && il_op && il_op->get_il_op, NULL);
+	size_t jmp_before = bundle->jmp_cnt;
 	bundle_update(bundle, il_op->hi, pkt);
-	return il_op->get_il_op(bundle);
+	RzILOpEffect *effect = il_op->get_il_op(bundle);
+	/* A branch reading a `.new` predicate is a `.new` branch. Dual `.new` jumps
+	 * are applied after non-`.new` jumps in the packet (dual-jump phase rule). */
+	const HexInsn *hi = il_op->hi;
+	if (bundle->jmp_cnt > jmp_before && hi && hi->pred == HEX_PRED_NEW) {
+		for (size_t i = jmp_before; i < bundle->jmp_cnt; i++) {
+			bundle->jmp_is_new[i] = true;
+		}
+	}
+	return effect;
 }
 
 /**
