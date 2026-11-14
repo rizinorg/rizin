@@ -7,8 +7,10 @@
 #include <rz_analysis.h>
 #include <analysis_private.h>
 #include <string.h>
-#include "omf/omf.h"
+#include "omf/omf96.h"
 #include "omf/omf166.h"
+#include "omf/omf51.h"
+#include "omf/omf_common.h"
 
 bool set_reg_val2(RzReg *areg, const char *name, const ut16 value) {
 	RzRegItem *r = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
@@ -105,7 +107,6 @@ static RzBaseType *create_new_primitive_type(const RzTypeDB *typedb, const char 
 	bt->size = size;
 	const bool result = rz_type_db_save_base_type(typedb, bt);
 	if (!result) {
-		rz_type_base_type_free(bt);
 		RZ_LOG_WARN("Not found: `%s`\n", name);
 		return NULL;
 	}
@@ -115,8 +116,8 @@ static RzBaseType *create_new_primitive_type(const RzTypeDB *typedb, const char 
 static bool types_cb(void *user, const ut64 k, const void *v) {
 	OMF_type *type = (OMF_type *)v;
 	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)user;
-
-	if (type->descr_type == FINAL_TYPE) {
+	switch (type->descr_type) {
+	case FINAL_TYPE: {
 		RzType *ret = rz_type_identifier_of_base_type_str(omf_obj->typedb, type->label);
 		if (ret) {
 			rz_type_free(ret);
@@ -126,32 +127,33 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 			omf_obj->typedb,
 			type->label,
 			type->descriptor.final_types.size);
-	}
-	if (type->descr_type == STRUCT_UNION_DESCRIPTOR) {
+	} break;
+	case STRUCT_UNION_DESCRIPTOR: {
 		RzBaseType *bt = rz_type_base_type_new(
 			type->descriptor.struct_union.is_struct == 1 ? RZ_BASE_TYPE_KIND_STRUCT : RZ_BASE_TYPE_KIND_UNION);
 		bt->name = rz_str_dup(type->descriptor.struct_union.tagname);
 		bt->size = type->descriptor.struct_union.size;
 
 		const OMF_components *components = get_component_by_ti(omf_obj, type->descriptor.struct_union.member_ti);
-		if (components) {
-			for (ut16 i = 0; i < components->count; i++) {
-				OMF_component *component = (OMF_component *)components->comp + i;
-				if (!component)
-					continue;
-
-				RzTypeStructMember member = { 0 };
-				member.name = rz_str_dup(component->name);
-				member.type = TYPE_TI(omf_obj, component->ti);
-				member.offset = component->offset;
-				member.size = 8;
-				rz_vector_push(&bt->struct_data.members, &member);
+		if (!components) {
+			break;
+		}
+		for (ut16 i = 0; i < components->count; i++) {
+			const OMF_component *component = components->comp + i;
+			if (!component) {
+				continue;
 			}
+
+			RzTypeStructMember member = { 0 };
+			member.name = rz_str_dup(component->name);
+			member.type = TYPE_TI(omf_obj, component->ti);
+			member.offset = component->offset;
+			member.size = 8;
+			rz_vector_push(&bt->struct_data.members, &member);
 		}
 		rz_type_db_save_base_type(omf_obj->typedb, bt);
-	}
-
-	if (type->descr_type == FUNCTION_DESCRIPTOR) {
+	} break;
+	case FUNCTION_DESCRIPTOR: {
 		RzBaseType *bt = rz_type_base_type_new(RZ_BASE_TYPE_KIND_TYPEDEF);
 		bt->name = rz_str_dup("some");
 		RzType *newtype = RZ_NEW0(RzType);
@@ -181,71 +183,54 @@ static bool types_cb(void *user, const ut64 k, const void *v) {
 		}
 
 		const OMF_components *components = get_component_by_ti(omf_obj, type->descriptor.function.parmlist_ti);
-		if (components) {
-			for (ut16 i = 0; i < components->count; i++) {
-				const OMF_component *component = (OMF_component *)components->comp + i;
-				RzCallableArg *cargs = RZ_NEW0(RzCallableArg);
-				if (!cargs) {
-					rz_type_base_type_free(bt);
-					free(newtype);
-					free(cal->args);
-					free(cal->name);
-					free(cal);
-					return NULL;
-				}
-
-				cargs->name = rz_str_dup(component->name);
-				cargs->type = TYPE_TI(omf_obj, component->ti);
-				rz_pvector_push(cal->args, cargs);
+		if (!components) {
+			break;
+		}
+		for (ut16 i = 0; i < components->count; i++) {
+			const OMF_component *component = components->comp + i;
+			RzCallableArg *cargs = RZ_NEW0(RzCallableArg);
+			if (!cargs) {
+				rz_type_base_type_free(bt);
+				free(newtype);
+				free(cal->args);
+				free(cal->name);
+				free(cal);
+				return NULL;
 			}
+
+			cargs->name = rz_str_dup(component->name);
+			cargs->type = TYPE_TI(omf_obj, component->ti);
+			rz_pvector_push(cal->args, cargs);
 		}
 		bt->type = newtype;
 		rz_type_db_save_base_type(omf_obj->typedb, bt);
 		type->rz_type = (void *)cal;
+	} break;
+	default:;
 	}
 	return true;
 }
 
-RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *binfile) {
-	if (!core || !binfile) {
-		return false;
-	}
+static bool rz_c166_process(RzAnalysis *analysis, const RzBinFile *binfile) {
+	SET_SP(analysis, SP_RESET_VALUE);
 
-	const char *arch = rz_config_get(core->config, "asm.arch");
-	if (!strstr(arch, "c166")) {
-		return false;
-	}
-
-	const RzBinObject *binobj = rz_bin_cur_object(core->bin);
-	RzBinInfo *info = binobj ? binobj->info : NULL;
-	if (!info) {
-		return false;
-	}
-	if (!info->rclass) {
-		return false;
-	}
-	if (RZ_STR_NE(info->rclass, "OMF166")) {
-		return false;
-	}
-
-	SET_SP(core->analysis, SP_RESET_VALUE);
-
-	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)binfile->o->bin_obj;
+	const rz_bin_omf_base_obj *base_obj = (const rz_bin_omf_base_obj *)binfile->o->bin_obj;
+	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)base_obj->target_obj;
 
 #ifdef RZ_BUILD_DEBUG
-	const char *mm_string = get_memory_model(omf_obj->modinfo);
+	const char *mm_string = c166_get_memory_model(omf_obj->modinfo);
 	RZ_LOG_DEBUG("OMF166 Memory Model: %s\n", mm_string);
 	RZ_LOG_DEBUG("Segmentation Disable/Enable Control: %s\n", (omf_obj->modinfo & 0x01) ? "Segmentation enabled" : "Segmentation disabled");
 	RZ_FREE(mm_string);
 #endif
 
-	const ut8 mm = memory_model_type(omf_obj->modinfo);
-	if (mm == OMF_MEMORY_MODEL_TINY && !(omf_obj->modinfo & 0x01)) {
+	const ut8 mm = c166_memory_model_type(omf_obj->modinfo);
+	if (mm == OMF166_MEMORY_MODEL_TINY && !(omf_obj->modinfo & 0x01)) {
 		RZ_LOG_WARN("Wrong memory model type, segmentation cannot be enabled, if mm is TINY\n");
 		return false;
 	}
 
-	SET_SGTDIS(core->analysis, !(omf_obj->modinfo & 0x01));
+	SET_SGTDIS(analysis, !(omf_obj->modinfo & 0x01));
 
 	void **it;
 	rz_pvector_foreach (omf_obj->sections_vec, it) {
@@ -256,41 +241,11 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 			section->class_index == C166_CLASS_NCONST ||
 			section->Type != 2) {
 			ut64 vaddr = (section->SegmentNumber8 << 16) + section->offset;
-			rz_meta_set(core->analysis, RZ_META_TYPE_DATA, vaddr, section->Seclen, "CONST");
+			rz_meta_set(analysis, RZ_META_TYPE_DATA, vaddr, section->Seclen, "CONST");
 		}
 	}
 
-	if (!binfile->o->lines) {
-		RzPVector *ls = omf_obj->linnums_vec;
-		void **lit;
-		ut16 index = 0;
-
-		binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
-		const size_t lc = rz_pvector_len(omf_obj->linnums_vec);
-		binfile->o->lines->samples_count = lc;
-		binfile->o->lines->samples = RZ_NEWS0(RzBinSourceLineSample, lc);
-
-		rz_pvector_foreach (ls, lit) {
-			OMF_linnums *linnum = (OMF_linnums *)*lit;
-			RzBinSourceLineSample *sample = &binfile->o->lines->samples[index];
-			sample->address = linnum->address;
-			sample->line = linnum->LineNumber;
-			sample->column = 0;
-			sample->file = rz_str_dup(linnum->filename);
-			index++;
-		}
-		rz_str_constpool_init(&binfile->o->lines->filename_pool);
-	}
-
-	omf_obj->typedb = core->analysis->typedb;
-
-	rz_type_db_purge(core->analysis->typedb);
-	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
-	if (!types_dir) {
-		return false;
-	}
-	rz_type_db_reload(core->analysis->typedb, types_dir);
-	free(types_dir);
+	omf_obj->typedb = analysis->typedb;
 
 	ht_up_foreach(omf_obj->ht_types, (HtUPForeachCallback)types_cb, (void *)omf_obj);
 
@@ -302,10 +257,10 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 		}
 		const ut32 addr = block->FrameNumber << 16 | block->BlockOffset16;
 
-		RzAnalysisFunction *fcn_blk = rz_analysis_get_function_at(core->analysis, addr);
+		RzAnalysisFunction *fcn_blk = rz_analysis_get_function_at(analysis, addr);
 		if (!fcn_blk) {
 			fcn_blk = rz_analysis_create_function(
-				core->analysis,
+				analysis,
 				block->name,
 				addr,
 				RZ_ANALYSIS_FCN_TYPE_FCN);
@@ -313,11 +268,157 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 				RZ_LOG_WARN("Can`t create function %s on 0x%08x\n", block->name, addr);
 				continue;
 			}
-			RzAnalysisBlock *bb = rz_analysis_create_block(core->analysis, addr, block->BlockLength16);
-			// bb->jump = UT64_MAX;
+			RzAnalysisBlock *bb = rz_analysis_create_block(analysis, addr, block->BlockLength16);
 			bb->fail = UT64_MAX;
 			rz_analysis_function_add_block(fcn_blk, bb);
 		}
+	}
+	return true;
+}
+
+static bool rz_c51_process(RzAnalysis *analysis, const RzBinFile *binfile) {
+	const rz_bin_omf_base_obj *base_obj = (const rz_bin_omf_base_obj *)binfile->o->bin_obj;
+	rz_bin_omf51_obj *omf_obj = (rz_bin_omf51_obj *)base_obj->target_obj;
+	void **it;
+	rz_pvector_foreach (omf_obj->sections_vec, it) {
+		const OMF_sections *section = (OMF_sections *)*it;
+		if (section->Type == 5) {
+			rz_meta_set(analysis, RZ_META_TYPE_DATA, section->offset, section->Seclen, "CONST");
+		}
+	}
+	omf_obj->typedb = analysis->typedb;
+
+	void **bvit;
+	rz_pvector_foreach (omf_obj->blocks_vec, bvit) {
+		OMF_blocks *block = (OMF_blocks *)*bvit;
+		if (!block->PInfoProcedure) {
+			continue;
+		}
+		const ut32 addr = block->FrameNumber << 16 | block->BlockOffset16;
+
+		RzAnalysisFunction *fcn_blk = rz_analysis_get_function_at(analysis, addr);
+		if (!fcn_blk) {
+			fcn_blk = rz_analysis_create_function(
+				analysis,
+				block->name,
+				addr,
+				RZ_ANALYSIS_FCN_TYPE_FCN);
+			if (!fcn_blk) {
+				RZ_LOG_WARN("Can`t create function %s on 0x%08x\n", block->name, addr);
+				continue;
+			}
+			RzAnalysisBlock *bb = rz_analysis_create_block(analysis, addr, block->BlockLength16);
+			bb->fail = UT64_MAX;
+			rz_analysis_function_add_block(fcn_blk, bb);
+		}
+	}
+	return true;
+}
+
+static bool rz_x86_process(RzAnalysis *analysis, const RzBinFile *binfile) {
+	const rz_bin_omf_base_obj *base_obj = (const rz_bin_omf_base_obj *)binfile->o->bin_obj;
+	const rz_bin_omf96_obj *omf_obj = (rz_bin_omf96_obj *)base_obj->target_obj;
+	void **it;
+	rz_pvector_foreach (omf_obj->sections_vec, it) {
+		const OMF1_1_sections *section = (OMF1_1_sections *)*it;
+		const OMF_lnames *c_lname = (OMF_lnames *)rz_pvector_at(omf_obj->lnames_vec, section->class_name_idx);
+		if (!c_lname) {
+			rz_warn_if_reached();
+		}
+		if (RZ_STR_EQ(c_lname->name, "DWARF")) {
+			rz_meta_set(analysis, RZ_META_TYPE_DATA, section->vaddr, section->seg_length, "DATA");
+		}
+	}
+	return true;
+}
+
+bool rz_core_bin_apply_omf_lines(const RzBinFile *binfile, RzPVector *ls) {
+	if (!binfile->o->lines) {
+		void **lit;
+		ut16 index = 0;
+
+		binfile->o->lines = RZ_NEW0(RzBinSourceLineInfo);
+		const size_t lc = rz_pvector_len(ls);
+		binfile->o->lines->samples_count = lc;
+		binfile->o->lines->samples = RZ_NEWS0(RzBinSourceLineSample, lc);
+
+		rz_pvector_foreach (ls, lit) {
+			const OMF_linnums *linnum = (OMF_linnums *)*lit;
+			RzBinSourceLineSample *sample = &binfile->o->lines->samples[index];
+			sample->address = linnum->address;
+			sample->line = linnum->LineNumber;
+			sample->column = 0;
+			sample->file = rz_str_dup(linnum->filename);
+			index++;
+		}
+		rz_str_constpool_init(&binfile->o->lines->filename_pool);
+	}
+	return true;
+}
+
+RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *binfile) {
+	if (!core || !binfile) {
+		return false;
+	}
+
+	const char *arch = rz_config_get(core->config, "asm.arch");
+	if (!strstr(arch, "c166") &&
+		!strstr(arch, "8051") &&
+		!strstr(arch, "x86")) {
+		return false;
+	}
+
+	const RzBinObject *binobj = rz_bin_cur_object(core->bin);
+	const RzBinInfo *info = binobj ? binobj->info : NULL;
+	if (!info) {
+		return false;
+	}
+	if (!info->rclass) {
+		return false;
+	}
+	if (RZ_STR_NE(info->rclass, "OMF166") &&
+		RZ_STR_NE(info->rclass, "OMF51") &&
+		RZ_STR_NE(info->rclass, "OMF96")) {
+		return false;
+	}
+
+	rz_type_db_purge(core->analysis->typedb);
+	char *types_dir = rz_path_system(core->sys_path, RZ_SDB_TYPES);
+	if (!types_dir) {
+		return false;
+	}
+	rz_type_db_reload(core->analysis->typedb, types_dir);
+	free(types_dir);
+
+	rz_bin_omf_base_obj *base_obj = (rz_bin_omf_base_obj *)binfile->o->bin_obj;
+	if (RZ_STR_EQ(info->rclass, "OMF166")) {
+
+		rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)base_obj->target_obj;
+		base_obj->bits = base_obj->get_bits(base_obj->target_obj);
+		omf_obj->bits = base_obj->get_bits(base_obj->target_obj);
+		RzPVector *ls = omf_obj->linnums_vec;
+		rz_core_bin_apply_omf_lines(binfile, ls);
+		return rz_c166_process(core->analysis, binfile);
+	}
+
+	if (RZ_STR_EQ(info->rclass, "OMF51")) {
+		const rz_bin_omf51_obj *omf_obj = (const rz_bin_omf51_obj *)base_obj->target_obj;
+		RzPVector *ls = omf_obj->linnums_vec;
+		rz_core_bin_apply_omf_lines(binfile, ls);
+		return rz_c51_process(core->analysis, binfile);
+	}
+
+	if (RZ_STR_EQ(info->rclass, "OMF96")) {
+		rz_bin_omf96_obj *omf_obj = (rz_bin_omf96_obj *)base_obj->target_obj;
+		omf_obj->bits = base_obj->bits;
+		RzPVector *ls = omf_obj->linnums_vec;
+		rz_core_bin_apply_omf_lines(binfile, ls);
+
+		bool autoseg = omf_obj->bits == 16 && RZ_STR_EQ(arch, "x86");
+		rz_config_set_b(core->config, "asm.segoff", autoseg);
+		rz_config_set_i(core->config, "asm.seggrn", 4);
+
+		return rz_x86_process(core->analysis, binfile);
 	}
 	return true;
 }

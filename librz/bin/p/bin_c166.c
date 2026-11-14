@@ -229,33 +229,6 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
-	RzBinStringSearchOpt opt;
-	rz_bin_string_search_opt_init(&opt);
-	opt.mode = RZ_BIN_STRING_SEARCH_MODE_READ_ONLY_SECTIONS;
-	opt.string_encoding = RZ_STRING_ENC_UTF8;
-	return rz_bin_file_strings(bf, &opt);
-}
-
-static RzBinAddr *binsym(RzBinFile *bf, RzBinSpecialSymbol type) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	const rz_bin_c166_obj *obj = bf->o->bin_obj;
-	if (type == RZ_BIN_SPECIAL_SYMBOL_ENTRY) {
-		// entrypoint is always RESET vector (0xC00000)
-		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
-		if (!ptr) {
-			RZ_FREE(ptr);
-			return NULL;
-		}
-		ptr->type = RZ_BIN_SPECIAL_SYMBOL_ENTRY;
-		ptr->vaddr = obj->base_addr;
-		return ptr;
-	}
-	return NULL;
-}
-
 static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return NULL;
@@ -319,10 +292,8 @@ struct rz_bin_plugin_t rz_bin_plugin_c166 = {
 	.sections = &sections,
 	.bin_structure = &c166_structure,
 	.info = &info,
-	.binsym = &binsym,
 	.symbols = &symbols,
-	.strings = &strings,
-	.baddr = baddr
+	.baddr = &baddr
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -14,7 +14,6 @@
 
 #include "../bin/dwarf/dwarf_private.h"
 #include "../bin/format/luac/luac_common.h"
-#include "omf/omf.h"
 #include "core_private.h"
 
 #define is_invalid_address_va(va, vaddr, paddr)  (((va) && (vaddr) == UT64_MAX) || (!(va) && (paddr) == UT64_MAX))
