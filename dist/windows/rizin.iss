@@ -30,6 +30,7 @@ LicenseFile={#LicenseLocation}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+ChangesEnvironment=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -63,11 +64,17 @@ Source: "rizin.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
-Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "Path"; ValueData: "{reg:HKCU\Environment,Path};{app}\bin"; Check: NeedsAddPath(ExpandConstant('{app}\bin'));
-Root: HKCU; SubKey: "SOFTWARE\Classes\*\shell\rizin"; ValueType: string; ValueData: "Open in Rizin"; Flags: uninsdeletekey;
-Root: HKCU; SubKey: "SOFTWARE\Classes\*\shell\rizin\command"; ValueType: string; ValueData: "{app}\bin\rizin.exe %1"; Flags: uninsdeletekey;
-Root: HKCU; SubKey: "SOFTWARE\Classes\*\shell\rizind"; ValueType: string; ValueData: "Open in Rizin debugger"; Flags: uninsdeletekey;
-Root: HKCU; SubKey: "SOFTWARE\Classes\*\shell\rizind\command"; ValueType: string; ValueData: "{app}\bin\rizin.exe -d %1"; Flags: uninsdeletekey;
+; PATH: needs one entry per hive, since the subkey name differs between them.
+; expandsz (not string/REG_SZ) preserves %VAR% references already in the user's PATH,
+; and {olddata} reads back this same entry's existing value instead of hardcoding a hive.
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; Check: IsAdminInstallMode and NeedsAddPath(ExpandConstant('{app}\bin'));
+Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}\bin"; Check: (not IsAdminInstallMode) and NeedsAddPath(ExpandConstant('{app}\bin'));
+; shell extensions: HKA follows the selected install mode automatically, and the subkey
+; name is the same in both hives, so these don't need to be split like PATH above.
+Root: HKA; SubKey: "SOFTWARE\Classes\*\shell\rizin"; ValueType: string; ValueData: "Open in Rizin"; Flags: uninsdeletekey;
+Root: HKA; SubKey: "SOFTWARE\Classes\*\shell\rizin\command"; ValueType: string; ValueData: "{app}\bin\rizin.exe %1"; Flags: uninsdeletekey;
+Root: HKA; SubKey: "SOFTWARE\Classes\*\shell\rizind"; ValueType: string; ValueData: "Open in Rizin debugger"; Flags: uninsdeletekey;
+Root: HKA; SubKey: "SOFTWARE\Classes\*\shell\rizind\command"; ValueType: string; ValueData: "{app}\bin\rizin.exe -d %1"; Flags: uninsdeletekey;
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--"; IconFilename: "{autopf}\{#MyAppName}\rizin.ico"
@@ -80,10 +87,19 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "--"; Description: "{cm:LaunchPro
 function NeedsAddPath(Param: string): boolean;
 var
   OrigPath: string;
+  RootKey: Integer;
+  SubKeyName: string;
 begin
+  if IsAdminInstallMode then begin
+    RootKey := HKEY_LOCAL_MACHINE;
+    SubKeyName := 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+  end else begin
+    RootKey := HKEY_CURRENT_USER;
+    SubKeyName := 'Environment';
+  end;
   if not RegQueryStringValue(
-    HKEY_CURRENT_USER,
-    'Environment',
+    RootKey,
+    SubKeyName,
     'Path', OrigPath)
   then begin
     Result := True;
