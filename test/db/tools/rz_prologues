@@ -1,0 +1,317 @@
+NAME=rz-prologues help
+TOOL=rz-prologues
+ARGS=-h
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+ [32m-f[0m[33m file [0m     [0mInput binary file to process
+ [32m-d[0m[33m dir [0m      [0mInput directory containing binaries to process (non-recursive)
+ [32m-o[0m[33m file [0m     [0mWrite output to file instead of stdout
+ [32m-j[0m           [0mOutput in JSON format (default is YAML)
+ [32m-l[0m[33m len [0m      [0mPrologue length in bytes (default: 16)
+ [32m-e[0m[33m threshold [0m[0mEntropy threshold for wildcard generalization [0.0-1.0] (default: 0.8)
+ [32m-r[0m           [0mOutput raw prologues without entropy-based generalization
+ [32m-t[0m           [0mOutput prefix tree (trie) structure instead of prologue list
+ [32m-a[0m[33m arch [0m     [0mFilter / target architecture (e.g. x86, arm)
+ [32m-b[0m[33m bits [0m     [0mFilter / target bitness of arch (e.g. 16, 32, 64)
+ [32m-B[0m           [0mTarget big-endian architecture (default: little-endian)
+ [32m-q[0m           [0mQuiet mode (suppress log messages)
+ [32m-v[0m           [0mShow version information
+ [32m-h[0m           [0mShow this help message
+
+[36mNotes:[0m
+  When processing a directory (-d), if architecture (-a) or bits (-b) are not
+  specified, the tool adopts the architecture of the first valid binary to
+  prevent mixing cross-architecture prologues.
+
+  Generated JSON prologues (-j) can be loaded into Rizin for function analysis
+  using the 'aapf <file>' command.
+
+[36mExamples:[0m
+  # Extract generalized JSON prologues from a binary
+  rz-prologues -f input.bin -j -o output.json
+
+  # Extract 64-bit x86 prologues from a directory in quiet mode
+  rz-prologues -d /path/to/bins -a x86 -b 64 -jq -o x86_64.json
+
+  # Extract raw prologues without entropy-based generalization
+  rz-prologues -f input.bin -rj -o raw_prologues.json
+
+  # Dump the prefix tree (trie) structure without generalization to YAML
+  rz-prologues -f input.bin -tr -o trie.yaml
+EOF
+RUN
+
+NAME=rz-prologues no args
+TOOL=rz-prologues
+ARGS=
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+EOF
+EXPECT_ERR=<<EOF
+ERROR: No input specified, please provide an input path to a file or directory
+EOF
+RUN
+
+NAME=rz-prologues invalid args
+TOOL=rz-prologues
+ARGS=-z
+EXIT_STATUS=1
+EXPECT=<<EOF
+[36mUsage: [0mrz-prologues (-f <file> | -d <dir>) [options]
+EOF
+REGEXP_FILTER_ERR=(illegal option -- z|ERROR: No input specified, please provide an input path to a file or directory)
+EXPECT_ERR=<<EOF
+illegal option -- z
+ERROR: No input specified, please provide an input path to a file or directory
+EOF
+RUN
+
+NAME=rz-prologues invalid file
+TOOL=rz-prologues
+ARGS=-f /nonexistent/file.bin
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: Failed to feed file '/nonexistent/file.bin' into prologues trie
+ERROR: Failed to generate prologues from input '/nonexistent/file.bin'
+EOF
+RUN
+
+NAME=rz-prologues invalid dir
+TOOL=rz-prologues
+ARGS=-d /nonexistent/dir
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: /nonexistent/dir is not a directory or does not exist.
+ERROR: Failed to feed directory '/nonexistent/dir' into prologues trie
+ERROR: Failed to generate prologues from input '/nonexistent/dir'
+EOF
+RUN
+
+NAME=rz-prologues invalid prologue length
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -l 0
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: Prologue length must be a positive integer.
+EOF
+RUN
+
+NAME=rz-prologues invalid entropy threshold
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -e 1.6
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+ERROR: Entropy threshold must be between 0.0 and 1.0
+EOF
+RUN
+
+
+NAME=rz-prologues arch mismatch on file
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -a arm -b 64
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+WARNING: Skipping file 'bins/elf/riscv_crypto_64': arch mismatch.
+  Trie: (arm, 64-bit, LE)
+  File: (riscv, 64-bit, LE)
+ERROR: Failed to feed file 'bins/elf/riscv_crypto_64' into prologues trie
+ERROR: Failed to generate prologues from input 'bins/elf/riscv_crypto_64'
+EOF
+RUN
+
+NAME=generate prologues from file
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+arch: "x86"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 7
+prologues:
+  - bytes: "b81709600055482d100960004883f80e"
+    mask: "076fffffffffffffffffffffffffffff"
+  - bytes: "b81009600055482d1009600048c1f803"
+    mask: "076c0a87b50032c208c407b7323e01b0"
+  - bytes: "b8196c24d84c896424e0488d2db70120"
+    mask: "076fffffffffffffffffffffffffffff"
+  - bytes: "b83d59042000007511554889e5e87eff"
+    mask: "077fffffffffffffffffffffffffffff"
+  - bytes: "b9ed4989d15e4889e24883e4f0505449"
+    mask: "07ffffffffffffffffffffffffffffff"
+  - bytes: "bbc366904883ec084883c408c3000000"
+    mask: "07ffffffffffffffffffffffffffffff"
+  - bytes: "bd4889e5bfc4054000e8d6feffffb800"
+    mask: "07ffffffffffffffffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from file json
+TOOL=rz-prologues
+ARGS=-f bins/elf/analysis/hello-linux-x86_64 -j
+EXPECT=<<EOF
+{"arch":"x86","bits":64,"endian":"little","prologue_length":16,"count":7,"prologues":[{"bytes":"b81709600055482d100960004883f80e","mask":"076fffffffffffffffffffffffffffff"},{"bytes":"b81009600055482d1009600048c1f803","mask":"076c0a87b50032c208c407b7323e01b0"},{"bytes":"b8196c24d84c896424e0488d2db70120","mask":"076fffffffffffffffffffffffffffff"},{"bytes":"b83d59042000007511554889e5e87eff","mask":"077fffffffffffffffffffffffffffff"},{"bytes":"b9ed4989d15e4889e24883e4f0505449","mask":"07ffffffffffffffffffffffffffffff"},{"bytes":"bbc366904883ec084883c408c3000000","mask":"07ffffffffffffffffffffffffffffff"},{"bytes":"bd4889e5bfc4054000e8d6feffffb800","mask":"07ffffffffffffffffffffffffffffff"}]}
+EOF
+RUN
+
+NAME=generate prologues from file with low entrpoy threshold (high generalization) and suppress warnings
+TOOL=rz-prologues
+ARGS=-f bins/elf/libc-2.32.so -e 0.5 -q
+EXPECT=<<EOF
+arch: "x86"
+bits: 64
+endian: "little"
+prologue_length: 16
+count: 29
+prologues:
+  - bytes: "f30f1efa0fbe0739c6b8000000007510"
+    mask: "ffffffff000000000000000000000000"
+  - bytes: "f30f6f060f290425000000000f0b31c0"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "f74500008000007529488bbd88000000"
+    mask: "ffb9ff7f7fff8aa39e3ccfca77ffff74"
+  - bytes: "f7c600f8ffff7458f7c60000ffff7468"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "e800000000f30f1efa5364488b1c2510"
+    mask: "ff003fffffffffffffffffffffffffff"
+  - bytes: "e8002c0d004c89c7e8e80b0000f74500"
+    mask: "ff0020ffffffffffff00f8ffff403210"
+  - bytes: "e8002cffffe803f0ffffe8feefffffb8"
+    mask: "ff0020ffffe700e2ffffff00ffffffff"
+  - bytes: "e8002cffffe803f0ffffe8fefdffffe8"
+    mask: "ff0020ffffe700e2ffffff00f2ffffff"
+  - bytes: "e8002cffffe803f0ffffe8fefdfffff7"
+    mask: "ff0020ffffe700e2ffffff00f2ffffff"
+  - bytes: "e8002cffffe803f0fffff74500008000"
+    mask: "ff0020ffffe700e2fffffbb5e1052f17"
+  - bytes: "e8002cffffe803f3ffff0fb604250000"
+    mask: "ff0020ffffe700e3ffff4841fbdaff16"
+  - bytes: "e8002cffffeb0f6f060f290425000000"
+    mask: "ff0020ffffe7ff8e03a03e1b370000f0"
+  - bytes: "e8002cffffef4500008000007529488b"
+    mask: "ff0020ffffe7b9ff7f7fff8aa39e3ccf"
+  - bytes: "e8002cffffb808000000e9897d090048"
+    mask: "ff0020ffffffffffffffffffffffffff"
+  - bytes: "e8002cffff0fb60425000000000f0b48"
+    mask: "ff0020ffffffffffffffffffffffffff"
+  - bytes: "8b050ee6130085c07506c30f1f440000"
+    mask: "f1040000002000200000000000000000"
+  - bytes: "8b02fc415483e0fb554889fd5389f374"
+    mask: "f107ffffffffffffffffffffffffffff"
+  - bytes: "8a3d61f00a0000554889f94889f57440"
+    mask: "f1ffffffffffffffffffffffffffffff"
+  - bytes: "b808000000e9897d09004889dfe8f017"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "415431c04189f4be010000005589fd53"
+    mask: "e2200200002000000000000000000000"
+  - bytes: "415431c041a422050041564989fe4155"
+    mask: "e2200200002000000000000000000000"
+  - bytes: "4154334889fb4883ec088b0785c0740a"
+    mask: "e2200200000000200000000020200000"
+  - bytes: "4154334889fb4883ec088b0785eb2090"
+    mask: "e22002000000002000000000203bc73c"
+  - bytes: "4154334889fb4883ec088b07b1c931d2"
+    mask: "e22002000000002000000000221eaa65"
+  - bytes: "4154334889fb48bf743e415541545553"
+    mask: "e22002000000002c83893d97e975a6ac"
+  - bytes: "4163c2488b57084989c00fb60c020fb6"
+    mask: "e2222882440800000004300000000000"
+  - bytes: "434889fb488b7f204885ff7405e8eeff"
+    mask: "e30c3000160000500200008ada130000"
+  - bytes: "648b04251800000085c0750c832dddc2"
+    mask: "ffffffffffffffffffffffffffffffff"
+  - bytes: "31c0415455488b2d2cf61800534889fb"
+    mask: "c180a000000000000000800000000000"
+
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=generate prologues from file raw (without generalization) and custom prologue length
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -r -l 8
+EXPECT=<<EOF
+arch: "riscv"
+bits: 64
+endian: "little"
+prologue_length: 8
+count: 9
+prologues:
+  - bytes: "4d65cd6713050502"
+    mask: "ffffffffffffffff"
+  - bytes: "411106e422e00008"
+    mask: "ffffffffffffffff"
+  - bytes: "75bf797106f422f0"
+    mask: "ffffffffffffffff"
+  - bytes: "797106f422f00018"
+    mask: "ffffffffffffffff"
+  - bytes: "011106ec22e80010"
+    mask: "ffffffffffffffff"
+  - bytes: "397106fc22f88000"
+    mask: "ffffffffffffffff"
+  - bytes: "cd6703c7870201ef"
+    mask: "ffffffffffffffff"
+  - bytes: "ef004002aa871705"
+    mask: "ffffffffffffffff"
+  - bytes: "82804d65cd671305"
+    mask: "ffffffffffffffff"
+
+EOF
+RUN
+
+NAME=generate prologues from file and save to output file
+FILE=
+CMDS=<<EOF
+mkdir -p .tmp
+rm .tmp/riscv64_prologues.json
+!rz-prologues -f bins/elf/riscv_crypto_64 -jq -o .tmp/riscv64_prologues.json
+cat .tmp/riscv64_prologues.json
+EOF
+EXPECT={"arch":"riscv","bits":64,"endian":"little","prologue_length":16,"count":5,"prologues":[{"bytes":"4d65cd6713050502938707026386a700","mask":"f38b347cce1afaf5a91deb7811c08308"},{"bytes":"75bf797106f422f00018233ca4fc2338","mask":"ffffffffffffffffffffffffffffffff"},{"bytes":"797106f422f00018233ca4fc2338b4fc","mask":"ffffffffffffffffffffffff5ff0cffe"},{"bytes":"011106ec22e80010b7e7096a93877766","mask":"c79fffefffef7fef8d7f75226bb8abad"},{"bytes":"cd6703c7870201ef411106e4eff07ffb","mask":"9018b018901ae915baec6a1c150c0200"}]}
+RUN
+
+NAME=generate prologues trie from file
+TOOL=rz-prologues
+ARGS=-f bins/elf/riscv_crypto_64 -jt -l 4
+EXPECT=<<EOF
+{"arch":"riscv","bits":64,"endian":"little","prologue_length":4,"total_prologues_analyzed":25,"prefix_tree":[{"node_id":1,"parent_id":0,"bit_val":0,"hit_cnt":22},{"node_id":2,"parent_id":1,"bit_val":1,"hit_cnt":19},{"node_id":3,"parent_id":2,"bit_val":0,"hit_cnt":4},{"node_id":4,"parent_id":3,"bit_val":0,"hit_cnt":4},{"node_id":5,"parent_id":4,"bit_val":1,"hit_cnt":4},{"node_id":6,"parent_id":5,"bit_val":1,"hit_cnt":4},{"node_id":7,"parent_id":6,"bit_val":0,"hit_cnt":4},{"node_id":8,"parent_id":7,"bit_val":1,"hit_cnt":4},{"node_id":9,"parent_id":8,"bit_val":0,"hit_cnt":4},{"node_id":10,"parent_id":9,"bit_val":1,"hit_cnt":4},{"node_id":11,"parent_id":10,"bit_val":1,"hit_cnt":4},{"node_id":12,"parent_id":11,"bit_val":0,"hit_cnt":4},{"node_id":13,"parent_id":12,"bit_val":0,"hit_cnt":4},{"node_id":14,"parent_id":13,"bit_val":1,"hit_cnt":4},{"node_id":15,"parent_id":14,"bit_val":0,"hit_cnt":4},{"node_id":16,"parent_id":15,"bit_val":1,"hit_cnt":4},{"node_id":17,"parent_id":16,"bit_val":1,"hit_cnt":4},{"node_id":18,"parent_id":17,"bit_val":1,"hit_cnt":4},{"node_id":19,"parent_id":18,"bit_val":0,"hit_cnt":4},{"node_id":20,"parent_id":19,"bit_val":0,"hit_cnt":4},{"node_id":21,"parent_id":20,"bit_val":1,"hit_cnt":4},{"node_id":22,"parent_id":21,"bit_val":1,"hit_cnt":4},{"node_id":23,"parent_id":22,"bit_val":0,"hit_cnt":4},{"node_id":24,"parent_id":23,"bit_val":1,"hit_cnt":4},{"node_id":25,"parent_id":24,"bit_val":0,"hit_cnt":4},{"node_id":26,"parent_id":25,"bit_val":1,"hit_cnt":4},{"node_id":27,"parent_id":26,"bit_val":1,"hit_cnt":4},{"node_id":28,"parent_id":27,"bit_val":0,"hit_cnt":4},{"node_id":29,"parent_id":28,"bit_val":0,"hit_cnt":4},{"node_id":30,"parent_id":29,"bit_val":1,"hit_cnt":4},{"node_id":31,"parent_id":30,"bit_val":1,"hit_cnt":4},{"node_id":32,"parent_id":31,"bit_val":1,"hit_cnt":4},{"node_id":33,"parent_id":2,"bit_val":1,"hit_cnt":15},{"node_id":34,"parent_id":33,"bit_val":1,"hit_cnt":15},{"node_id":35,"parent_id":34,"bit_val":0,"hit_cnt":1},{"node_id":36,"parent_id":35,"bit_val":1,"hit_cnt":1},{"node_id":37,"parent_id":36,"bit_val":0,"hit_cnt":1},{"node_id":38,"parent_id":37,"bit_val":1,"hit_cnt":1},{"node_id":39,"parent_id":38,"bit_val":1,"hit_cnt":1},{"node_id":40,"parent_id":39,"bit_val":0,"hit_cnt":1},{"node_id":41,"parent_id":40,"bit_val":1,"hit_cnt":1},{"node_id":42,"parent_id":41,"bit_val":1,"hit_cnt":1},{"node_id":43,"parent_id":42,"bit_val":1,"hit_cnt":1},{"node_id":44,"parent_id":43,"bit_val":1,"hit_cnt":1},{"node_id":45,"parent_id":44,"bit_val":1,"hit_cnt":1},{"node_id":46,"parent_id":45,"bit_val":1,"hit_cnt":1},{"node_id":47,"parent_id":46,"bit_val":0,"hit_cnt":1},{"node_id":48,"parent_id":47,"bit_val":1,"hit_cnt":1},{"node_id":49,"parent_id":48,"bit_val":1,"hit_cnt":1},{"node_id":50,"parent_id":49,"bit_val":1,"hit_cnt":1},{"node_id":51,"parent_id":50,"bit_val":1,"hit_cnt":1},{"node_id":52,"parent_id":51,"bit_val":0,"hit_cnt":1},{"node_id":53,"parent_id":52,"bit_val":0,"hit_cnt":1},{"node_id":54,"parent_id":53,"bit_val":1,"hit_cnt":1},{"node_id":55,"parent_id":54,"bit_val":0,"hit_cnt":1},{"node_id":56,"parent_id":55,"bit_val":1,"hit_cnt":1},{"node_id":57,"parent_id":56,"bit_val":1,"hit_cnt":1},{"node_id":58,"parent_id":57,"bit_val":1,"hit_cnt":1},{"node_id":59,"parent_id":58,"bit_val":0,"hit_cnt":1},{"node_id":60,"parent_id":59,"bit_val":0,"hit_cnt":1},{"node_id":61,"parent_id":60,"bit_val":0,"hit_cnt":1},{"node_id":62,"parent_id":61,"bit_val":1,"hit_cnt":1},{"node_id":63,"parent_id":34,"bit_val":1,"hit_cnt":14},{"node_id":64,"parent_id":63,"bit_val":0,"hit_cnt":14},{"node_id":65,"parent_id":64,"bit_val":0,"hit_cnt":14},{"node_id":66,"parent_id":65,"bit_val":1,"hit_cnt":14},{"node_id":67,"parent_id":66,"bit_val":0,"hit_cnt":14},{"node_id":68,"parent_id":67,"bit_val":1,"hit_cnt":14},{"node_id":69,"parent_id":68,"bit_val":1,"hit_cnt":14},{"node_id":70,"parent_id":69,"bit_val":1,"hit_cnt":14},{"node_id":71,"parent_id":70,"bit_val":0,"hit_cnt":14},{"node_id":72,"parent_id":71,"bit_val":0,"hit_cnt":14},{"node_id":73,"parent_id":72,"bit_val":0,"hit_cnt":14},{"node_id":74,"parent_id":73,"bit_val":1,"hit_cnt":14},{"node_id":75,"parent_id":74,"bit_val":0,"hit_cnt":14},{"node_id":76,"parent_id":75,"bit_val":0,"hit_cnt":14},{"node_id":77,"parent_id":76,"bit_val":0,"hit_cnt":14},{"node_id":78,"parent_id":77,"bit_val":0,"hit_cnt":14},{"node_id":79,"parent_id":78,"bit_val":0,"hit_cnt":14},{"node_id":80,"parent_id":79,"bit_val":1,"hit_cnt":14},{"node_id":81,"parent_id":80,"bit_val":1,"hit_cnt":14},{"node_id":82,"parent_id":81,"bit_val":0,"hit_cnt":14},{"node_id":83,"parent_id":82,"bit_val":1,"hit_cnt":14},{"node_id":84,"parent_id":83,"bit_val":1,"hit_cnt":14},{"node_id":85,"parent_id":84,"bit_val":1,"hit_cnt":14},{"node_id":86,"parent_id":85,"bit_val":1,"hit_cnt":14},{"node_id":87,"parent_id":86,"bit_val":0,"hit_cnt":14},{"node_id":88,"parent_id":87,"bit_val":1,"hit_cnt":14},{"node_id":89,"parent_id":88,"bit_val":0,"hit_cnt":14},{"node_id":90,"parent_id":89,"bit_val":0,"hit_cnt":14},{"node_id":91,"parent_id":1,"bit_val":0,"hit_cnt":3},{"node_id":92,"parent_id":91,"bit_val":0,"hit_cnt":3},{"node_id":93,"parent_id":92,"bit_val":0,"hit_cnt":3},{"node_id":94,"parent_id":93,"bit_val":0,"hit_cnt":3},{"node_id":95,"parent_id":94,"bit_val":0,"hit_cnt":3},{"node_id":96,"parent_id":95,"bit_val":0,"hit_cnt":3},{"node_id":97,"parent_id":96,"bit_val":1,"hit_cnt":3},{"node_id":98,"parent_id":97,"bit_val":0,"hit_cnt":3},{"node_id":99,"parent_id":98,"bit_val":0,"hit_cnt":3},{"node_id":100,"parent_id":99,"bit_val":0,"hit_cnt":3},{"node_id":101,"parent_id":100,"bit_val":1,"hit_cnt":3},{"node_id":102,"parent_id":101,"bit_val":0,"hit_cnt":3},{"node_id":103,"parent_id":102,"bit_val":0,"hit_cnt":3},{"node_id":104,"parent_id":103,"bit_val":0,"hit_cnt":3},{"node_id":105,"parent_id":104,"bit_val":1,"hit_cnt":3},{"node_id":106,"parent_id":105,"bit_val":0,"hit_cnt":3},{"node_id":107,"parent_id":106,"bit_val":0,"hit_cnt":3},{"node_id":108,"parent_id":107,"bit_val":0,"hit_cnt":3},{"node_id":109,"parent_id":108,"bit_val":0,"hit_cnt":3},{"node_id":110,"parent_id":109,"bit_val":0,"hit_cnt":3},{"node_id":111,"parent_id":110,"bit_val":1,"hit_cnt":3},{"node_id":112,"parent_id":111,"bit_val":1,"hit_cnt":3},{"node_id":113,"parent_id":112,"bit_val":0,"hit_cnt":3},{"node_id":114,"parent_id":113,"bit_val":1,"hit_cnt":3},{"node_id":115,"parent_id":114,"bit_val":1,"hit_cnt":3},{"node_id":116,"parent_id":115,"bit_val":1,"hit_cnt":3},{"node_id":117,"parent_id":116,"bit_val":0,"hit_cnt":3},{"node_id":118,"parent_id":117,"bit_val":1,"hit_cnt":3},{"node_id":119,"parent_id":118,"bit_val":1,"hit_cnt":3},{"node_id":120,"parent_id":119,"bit_val":0,"hit_cnt":3},{"node_id":121,"parent_id":120,"bit_val":0,"hit_cnt":3},{"node_id":122,"parent_id":0,"bit_val":1,"hit_cnt":3},{"node_id":123,"parent_id":122,"bit_val":1,"hit_cnt":3},{"node_id":124,"parent_id":123,"bit_val":0,"hit_cnt":3},{"node_id":125,"parent_id":124,"bit_val":0,"hit_cnt":3},{"node_id":126,"parent_id":125,"bit_val":1,"hit_cnt":3},{"node_id":127,"parent_id":126,"bit_val":1,"hit_cnt":3},{"node_id":128,"parent_id":127,"bit_val":0,"hit_cnt":3},{"node_id":129,"parent_id":128,"bit_val":1,"hit_cnt":3},{"node_id":130,"parent_id":129,"bit_val":0,"hit_cnt":3},{"node_id":131,"parent_id":130,"bit_val":1,"hit_cnt":3},{"node_id":132,"parent_id":131,"bit_val":1,"hit_cnt":3},{"node_id":133,"parent_id":132,"bit_val":0,"hit_cnt":3},{"node_id":134,"parent_id":133,"bit_val":0,"hit_cnt":3},{"node_id":135,"parent_id":134,"bit_val":1,"hit_cnt":3},{"node_id":136,"parent_id":135,"bit_val":1,"hit_cnt":3},{"node_id":137,"parent_id":136,"bit_val":1,"hit_cnt":3},{"node_id":138,"parent_id":137,"bit_val":0,"hit_cnt":3},{"node_id":139,"parent_id":138,"bit_val":0,"hit_cnt":3},{"node_id":140,"parent_id":139,"bit_val":0,"hit_cnt":3},{"node_id":141,"parent_id":140,"bit_val":0,"hit_cnt":3},{"node_id":142,"parent_id":141,"bit_val":0,"hit_cnt":3},{"node_id":143,"parent_id":142,"bit_val":0,"hit_cnt":3},{"node_id":144,"parent_id":143,"bit_val":1,"hit_cnt":3},{"node_id":145,"parent_id":144,"bit_val":1,"hit_cnt":3},{"node_id":146,"parent_id":145,"bit_val":1,"hit_cnt":3},{"node_id":147,"parent_id":146,"bit_val":1,"hit_cnt":3},{"node_id":148,"parent_id":147,"bit_val":0,"hit_cnt":3},{"node_id":149,"parent_id":148,"bit_val":0,"hit_cnt":3},{"node_id":150,"parent_id":149,"bit_val":0,"hit_cnt":3},{"node_id":151,"parent_id":150,"bit_val":1,"hit_cnt":3},{"node_id":152,"parent_id":151,"bit_val":1,"hit_cnt":3},{"node_id":153,"parent_id":152,"bit_val":1,"hit_cnt":3}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (riscv64)
+TOOL=rz-prologues
+ARGS=-d bins/elf/riscv -jq -l 8 -e 0.7 -a riscv -b 64
+EXPECT=<<EOF
+{"arch":"riscv","bits":64,"endian":"little","prologue_length":8,"count":32,"prologues":[{"bytes":"411106e437050100","mask":"859fffef480a481a"},{"bytes":"411106e437050103","mask":"859fffef480a481b"},{"bytes":"411106e43705010c","mask":"859fffef480a481f"},{"bytes":"411106e437050117","mask":"859fffef480a481f"},{"bytes":"411106e43705400b","mask":"859fffef480a7fff"},{"bytes":"411106e437062005","mask":"859fffef480b002f"},{"bytes":"411106e439469d45","mask":"859fffef4c3fcc3c"},{"bytes":"411106ec22e82c00","mask":"859fffefffeff50b"},{"bytes":"411106ec37050100","mask":"859fffefffffffff"},{"bytes":"411102c602c40548","mask":"859fffd9ffddf050"},{"bytes":"41112ac602c4f945","mask":"859fe29fe1ba0d34"},{"bytes":"4111a307010002c4","mask":"859f800c44084811"},{"bytes":"4112b002aa878a05","mask":"859fffffffffffff"},{"bytes":"4114b50001458280","mask":"859f4affffffffff"},{"bytes":"411bc00c1b077600","mask":"859e8ff777f0ccff"},{"bytes":"4104051063830510","mask":"859f4fef9d39786f"},{"bytes":"4104000001458280","mask":"859f4fffffffffff"},{"bytes":"41050000eff2ff7f","mask":"859fffffffffffff"},{"bytes":"41c1014582800545","mask":"85ca5bba7c3a783a"},{"bytes":"408801456357b502","mask":"85f01dc80ca841b8"},{"bytes":"45c1411106e422e0","mask":"874f38025a1bdc03"},{"bytes":"aa871377350019e7","mask":"c23fe9ffffffffff"},{"bytes":"aa871307201a6347","mask":"c23fe9ffffffffff"},{"bytes":"aa87130023b40702","mask":"c23fe9ff09845260"},{"bytes":"aa8713c901451387","mask":"c23fe9ffffffffff"},{"bytes":"aa871200e30fb57e","mask":"c23fe9ffffffffff"},{"bytes":"aa8739c1a9c93367","mask":"c23fffffffffffff"},{"bytes":"aa87930600022546","mask":"c23fffffffffffff"},{"bytes":"aa8205fd294363e7","mask":"c23fffffffffffff"},{"bytes":"aa88f5ff8dc9aa86","mask":"c23fffffffffffff"},{"bytes":"aaa73500bb07f540","mask":"c23fffffffffffff"},{"bytes":"a94763e9a7029317","mask":"c3ffffcfeff9c660"}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (sparc)
+TOOL=rz-prologues
+ARGS=-d bins/elf/sparc -jq -l 8 -e 0.7 -a sparc -b 64 -B
+EXPECT=<<EOF
+{"arch":"sparc","bits":64,"endian":"big","prologue_length":8,"count":3,"prologues":[{"bytes":"9de3bf40f077a87f","mask":"ffffffef00100000"},{"bytes":"a4042001a404a003","mask":"ffffffffffffffff"},{"bytes":"2f000400ae15e230","mask":"ffffffffffffffff"}]}
+EOF
+RUN
+
+NAME=generate prologues from dir (adopt first file arch)
+TOOL=rz-prologues
+ARGS=-d bins/elf/core -q -l 8
+EXPECT=<<EOF
+arch: "alpha"
+bits: 64
+endian: "little"
+prologue_length: 8
+count: 3
+prologues:
+  - bytes: "0180fa6b0000fe2f"
+    mask: "fdffffffffffffff"
+  - bytes: "0000a0c30200bd27"
+    mask: "fdffffffffffffff"
+  - bytes: "0000bb27c095bd23"
+    mask: "fdffffff07f0ffff"
+
+EOF
+RUN

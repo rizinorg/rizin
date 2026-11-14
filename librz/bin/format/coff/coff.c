@@ -467,6 +467,7 @@ RZ_API void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	if (!obj) {
 		return;
 	}
+	rz_buf_free(obj->b);
 	ht_up_free(obj->sym_ht);
 	ht_up_free(obj->imp_ht);
 	ht_uu_free(obj->imp_index);

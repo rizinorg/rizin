@@ -74,9 +74,30 @@ RZ_API size_t rz_search_bytes_pattern_len(RZ_NONNULL const RzSearchBytesPattern 
 	return bp->length;
 }
 
+/**
+ * \brief Get read-only pointers to the bytes and mask buffers of the search pattern.
+ *
+ * \warning The output pointers must NOT be freed or modified by the caller.
+ *
+ * \param [in]  bp	The bytes pattern structure.
+ * \param [out] bytes	Pointer to receive the address of the internal bytes buffer.
+ * \param [out] mask	Pointer to receive the address of the internal mask buffer.
+ *			Receives NULL if the pattern is an exact byte match without a mask.
+ */
+RZ_API void rz_search_bytes_pattern_get_bytes_and_mask(RZ_NONNULL const RzSearchBytesPattern *bp, RZ_NULLABLE const ut8 **bytes, RZ_NULLABLE const ut8 **mask) {
+	rz_return_if_fail(bp);
+	if (bytes) {
+		*bytes = bp->bytes;
+	}
+	if (mask) {
+		*mask = bp->mask;
+	}
+}
+
 RZ_API RZ_OWN RzSearchBytesPattern *rz_search_bytes_pattern_copy(RZ_NONNULL RZ_BORROW RzSearchBytesPattern *hp) {
 	rz_return_val_if_fail(hp, NULL);
-	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), rz_new_copy(hp->length, hp->mask), hp->length, hp->pattern_desc, hp->regex != NULL);
+	ut8 *mask = hp->mask ? rz_new_copy(hp->length, hp->mask) : NULL;
+	return rz_search_bytes_pattern_new(rz_new_copy(hp->length, hp->bytes), mask, hp->length, hp->pattern_desc, hp->regex != NULL);
 }
 
 static bool parse_custom_mask(const char *bytes_pattern, const RzRegexMatch *mask_match, const RzRegexMatch *bytes_match, ut8 *mask) {

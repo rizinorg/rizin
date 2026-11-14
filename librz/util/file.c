@@ -75,6 +75,25 @@ RZ_API bool rz_file_truncate(const char *filename, ut64 newsize) {
 	return true;
 }
 
+/**
+ * \brief Get the extension of the file.
+ *
+ * Finds the extension within the basename of \p path, ignoring dotfiles and trailing dots.
+ *
+ * \param [in] path The filepath of the file.
+ * \return Pointer to the extension inside \p path (without the dot), or NULL if none exists.
+ */
+RZ_API const char *rz_file_extension(const char *path) {
+	rz_return_val_if_fail(path, NULL);
+	const char *basename = rz_file_basename(path);
+	const char *dot = rz_str_lchr(basename, '.');
+	// reject missing dot or trailing dots or any dotfile starting with '.'
+	if (!dot || basename[0] == '.' || *(dot + 1) == '\0') {
+		return NULL;
+	}
+	return dot + 1;
+}
+
 /*
 Example:
 	str = rz_file_basename ("home/inisider/Downloads/user32.dll");
@@ -146,9 +165,8 @@ RZ_API char *rz_file_dirname(const char *path) {
 
 RZ_API bool rz_file_is_c(const char *file) {
 	rz_return_val_if_fail(file, false);
-	const char *ext = rz_str_lchr(file, '.'); // TODO: add api in rz_file_extension or rz_str_ext for this
+	const char *ext = rz_file_extension(file);
 	if (ext) {
-		ext++;
 		if (!strcmp(ext, "cparse") || !strcmp(ext, "c") || !strcmp(ext, "h")) {
 			return true;
 		}
