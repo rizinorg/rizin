@@ -1002,13 +1002,21 @@ RZ_IPI RZ_OWN RzILOpEffect *hex_il_op_next_pkt_jmp(HexInsnPktBundle *bundle) {
 		return BRANCH(VARL(bundle->jmp_flags[0]),
 			JMP(VARL(bundle->jmp_targets[0])),
 			JMP(next_pkt_addr));
-	case 2:
-		// Two jumps/calls were lifted.
-		return BRANCH(VARL(bundle->jmp_flags[0]),
-			JMP(VARL(bundle->jmp_targets[0])),
-			BRANCH(VARL(bundle->jmp_flags[1]),
-				JMP(VARL(bundle->jmp_targets[1])),
+	case 2: {
+		/* Two jumps/calls were lifted. Dual jumps execute after the other
+		 * instructions in their order of appearance, but `.new` jumps read
+		 * the packet's fresh predicate values, so a `.new` jump is applied
+		 * after any non-`.new` jump in the same packet and wins when both fire. */
+		bool n0 = bundle->jmp_is_new[0];
+		bool n1 = bundle->jmp_is_new[1];
+		ut8 first = (!n0 && n1) ? 1 : 0;
+		ut8 second = first ^ 1;
+		return BRANCH(VARL(bundle->jmp_flags[first]),
+			JMP(VARL(bundle->jmp_targets[first])),
+			BRANCH(VARL(bundle->jmp_flags[second]),
+				JMP(VARL(bundle->jmp_targets[second])),
 				JMP(next_pkt_addr)));
+	}
 	default:
 		break;
 	}

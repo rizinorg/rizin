@@ -262,6 +262,7 @@ typedef struct {
 	const char *jmp_flags[2]; ///< The local flags a jump/call sets if it is taken.
 	RzILOpEffect *jmp_set_addr[2]; ///< Effects to set the respective target addresses.
 	size_t jmp_cnt; ///< Number of calls/jumps lifted.
+	bool jmp_is_new[2]; ///< True if the lifted branch reads a `.new` predicate.
 } HexInsnPktBundle;
 
 typedef struct {
