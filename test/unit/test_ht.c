@@ -1220,6 +1220,73 @@ bool test_set_u_intersection_reduce(void) {
 	mu_end;
 }
 
+bool test_set_u_difference(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	rz_set_u_add(a, 1);
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+	rz_set_u_add(b, 2);
+	rz_set_u_add(b, 3);
+	rz_set_u_add(b, 4);
+	rz_set_u_add(c, 5);
+
+	// Count only, without a destination set
+	size_t diff_size = rz_set_u_difference(NULL, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, NULL);
+	mu_assert_eq(diff_size, 0, "Wrong difference size for empty list");
+
+	// Passing the same set multiple times must not change the result
+	diff_size = rz_set_u_difference(NULL, a, a, a, NULL);
+	mu_assert_eq(diff_size, 0, "Wrong difference size when passing a set multiple times");
+	diff_size = rz_set_u_difference(NULL, a, b, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size when passing sets multiple times");
+
+	// Compute difference into a caller-provided set
+	RzSetU *d = rz_set_u_new();
+	rz_set_u_add(d, 100);
+	diff_size = rz_set_u_difference(d, a, b, NULL);
+	mu_assert_eq(diff_size, 2, "Wrong difference size");
+	mu_assert_true(rz_set_u_contains(d, 100), "Difference did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(d, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(d, 2), "Element not part of the difference was added");
+	mu_assert_false(rz_set_u_contains(d, 3), "Element not part of the difference was added");
+
+	// If diff_set is the set to subtract from, it is reduced to the difference
+	diff_size = rz_set_u_difference(a, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(a), 1, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(a, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(a, 2), "Element not part of the difference was not deleted");
+	mu_assert_false(rz_set_u_contains(a, 3), "Element not part of the difference was not deleted");
+
+	// Rebuild a = { 1, 2, 3 }
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+
+	// If diff_set is one of the sets to subtract, its content is replaced
+	rz_set_u_add(b, 10);
+	diff_size = rz_set_u_difference(b, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(b), 1, "Wrong size after replacement");
+	mu_assert_true(rz_set_u_contains(b, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(b, 10), "Previous content was not replaced");
+
+	// The source sets must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(b);
+	rz_set_u_free(d);
+	rz_set_u_free(c);
+	rz_set_u_free(a);
+	mu_end;
+}
+
 bool test_set_s(void) {
 	RzSetS *set_s = rz_set_s_new(HT_STR_CONST);
 	rz_set_s_add(set_s, "0x5050505");
@@ -1312,6 +1379,7 @@ int all_tests() {
 	mu_run_test(test_set_u_union);
 	mu_run_test(test_set_u_intersection);
 	mu_run_test(test_set_u_intersection_reduce);
+	mu_run_test(test_set_u_difference);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }
