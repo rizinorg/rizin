@@ -486,6 +486,8 @@ Semantic of two conditional jumps
 0x8
 (seq
   empty
+  (set R31_tmp
+    (var R31))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -554,16 +556,19 @@ Semantic of two conditional jumps
         (cast 32
           false
           (var ret_val)))
-      (set R31_tmp
-        (cast 32
-          false
+      (branch
+        (var jump_flag_0)
+        empty
+        (set R31_tmp
           (cast 32
             false
-            (&
-              (var h_tmp158)
-              (cast 32
-                false
-                (bv 32 0xfffffffe))))))
+            (cast 32
+              false
+              (&
+                (var h_tmp158)
+                (cast 32
+                  false
+                  (bv 32 0xfffffffe)))))))
       (set jump_flag_1
         true))
     empty)
@@ -592,6 +597,8 @@ Semantic of two conditional jumps
 0x10
 (seq
   empty
+  (set R31_tmp
+    (var R31))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -745,6 +752,8 @@ Semantic of single jumps
 0x20
 (seq
   empty
+  (set R0_tmp
+    (var R0))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -839,6 +848,14 @@ Semantic of endloop jumps
 0x2c
 (seq
   empty
+  (set C1_tmp
+    (var C1))
+  (set C8_tmp
+    (var C8))
+  (set R1_tmp
+    (var R1))
+  (set P3_tmp
+    (var P3))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -1112,6 +1129,10 @@ Semantic of endloop jumps
 0x34
 (seq
   empty
+  (set C3_tmp
+    (var C3))
+  (set R1_tmp
+    (var R1))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -1165,6 +1186,16 @@ Semantic of endloop jumps
 0x40
 (seq
   empty
+  (set C1_tmp
+    (var C1))
+  (set C3_tmp
+    (var C3))
+  (set C8_tmp
+    (var C8))
+  (set R1_tmp
+    (var R1))
+  (set P3_tmp
+    (var P3))
   (set jump_flag_0
     false)
   (set jump_flag_1
@@ -1479,12 +1510,12 @@ EXPECT=<<EOF
 [   SGP1 = R0
 [   dczeroa(R1)
 [   R2 = memw_phys(R3,R2)
-0x5000 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set R0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0)))))) (set R1_tmp (cast 32 false (>> (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0))) (bv 8 0x20) false))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (jmp (bv 32 0x5004)))
-0x5004 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set S0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0)))))) (set S1_tmp (cast 32 false (>> (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0))) (bv 8 0x20) false))) empty (set S0 (var S0_tmp)) (set S1 (var S1_tmp)) (jmp (bv 32 0x5008)))
-0x5008 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set R1_tmp (cast 32 false (cast 32 false (var S0)))) empty (set R1 (var R1_tmp)) (jmp (bv 32 0x500c)))
-0x500c (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set S1_tmp (cast 32 false (cast 32 false (var R0)))) empty (set S1 (var S1_tmp)) (jmp (bv 32 0x5010)))
+0x5000 (seq empty (set R0_tmp (var R0)) (set R1_tmp (var R1)) (set jump_flag_0 false) (set jump_flag_1 false) (set R0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0)))))) (set R1_tmp (cast 32 false (>> (| (<< (cast 64 false (var S1)) (bv 8 0x20) false) (cast 64 false (var S0))) (bv 8 0x20) false))) empty (set R0 (var R0_tmp)) (set R1 (var R1_tmp)) (jmp (bv 32 0x5004)))
+0x5004 (seq empty (set S0_tmp (var S0)) (set S1_tmp (var S1)) (set jump_flag_0 false) (set jump_flag_1 false) (set S0_tmp (cast 32 false (cast 32 false (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0)))))) (set S1_tmp (cast 32 false (>> (| (<< (cast 64 false (var R1)) (bv 8 0x20) false) (cast 64 false (var R0))) (bv 8 0x20) false))) empty (set S0 (var S0_tmp)) (set S1 (var S1_tmp)) (jmp (bv 32 0x5008)))
+0x5008 (seq empty (set R1_tmp (var R1)) (set jump_flag_0 false) (set jump_flag_1 false) (set R1_tmp (cast 32 false (cast 32 false (var S0)))) empty (set R1 (var R1_tmp)) (jmp (bv 32 0x500c)))
+0x500c (seq empty (set S1_tmp (var S1)) (set jump_flag_0 false) (set jump_flag_1 false) (set S1_tmp (cast 32 false (cast 32 false (var R0)))) empty (set S1 (var S1_tmp)) (jmp (bv 32 0x5010)))
 0x5010 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) nop empty (jmp (bv 32 0x5014)))
-0x5014 (seq empty (set jump_flag_0 false) (set jump_flag_1 false) (set EA (| (& (var R3) (bv 32 0x7ff)) (<< (var R2) (bv 32 0xb) false))) (set R2_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R2 (var R2_tmp)) (jmp (bv 32 0x5018)))
+0x5014 (seq empty (set R2_tmp (var R2)) (set jump_flag_0 false) (set jump_flag_1 false) (set EA (| (& (var R3) (bv 32 0x7ff)) (<< (var R2) (bv 32 0xb) false))) (set R2_tmp (cast 32 false (cast 32 false (cast 32 false (cast 32 false (loadw 0 32 (var EA))))))) empty (set R2 (var R2_tmp)) (jmp (bv 32 0x5018)))
 EOF
 EXPECT_ERR=
 RUN
