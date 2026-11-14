@@ -70,6 +70,12 @@ bool test_rz_io_nread_at_new_buf(void) {
 	mu_assert_notnull(buf, "buffer should be created");
 	mu_assert_eq(rz_buf_size(buf), 8,
 		"buffer size should equal actual bytes read");
+
+	ut8 tmp[16] = { 0 };
+	mu_assert_eq(rz_buf_read(buf, tmp, sizeof(tmp)), 8,
+		"partial read buffer read size");
+	mu_assert_memeq(tmp, (const ut8 *)"abcdefgh", 8,
+		"partial read buffer content");
 	rz_buf_free(buf);
 
 	// Start inside the mapping: only 4 bytes remain.
@@ -77,6 +83,12 @@ bool test_rz_io_nread_at_new_buf(void) {
 	mu_assert_notnull(buf, "interior partial read should succeed");
 	mu_assert_eq(rz_buf_size(buf), 4,
 		"buffer size should match bytes remaining in mapping");
+
+	ut8 interior_tmp[16] = { 0 };
+	mu_assert_eq(rz_buf_read(buf, interior_tmp, sizeof(interior_tmp)), 4,
+		"interior partial read size");
+	mu_assert_memeq(interior_tmp, (const ut8 *)"efgh", 4,
+		"interior partial read content");
 	rz_buf_free(buf);
 
 	// Full read should return the requested size.
