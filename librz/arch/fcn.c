@@ -152,6 +152,147 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
 }
 
+/**
+ * \brief Check a bounds comparison without relying on basic-block discovery order.
+ */
+static bool x86_call_pop_jmptbl_bound_at(RzAnalysis *analysis, ut64 addr, ut64 dispatch,
+	RzRegItem *index, ut64 shift, RzAnalysisJmpTableParams *params) {
+	ut8 buf[32];
+	if (!analysis->iob.read_at(analysis->iob.io, addr, buf, sizeof(buf))) {
+		return false;
+	}
+	RzAnalysisOp cmp = { 0 }, branch = { 0 };
+	int size = rz_analysis_op(analysis, &cmp, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_VAL);
+	bool valid = size > 0 && size < sizeof(buf) && cmp.type == RZ_ANALYSIS_OP_TYPE_CMP &&
+		cmp.dst && !cmp.dst->memref && cmp.dst->reg == index &&
+		cmp.val < analysis->opt.jmptbl_maxcount;
+	if (valid) {
+		valid = rz_analysis_op(analysis, &branch, addr + size, buf + size,
+				sizeof(buf) - size, RZ_ANALYSIS_OP_MASK_BASIC) > 0 &&
+			branch.type == RZ_ANALYSIS_OP_TYPE_CJMP &&
+			(branch.jump == dispatch || branch.fail == dispatch);
+	}
+	bool taken = branch.jump == dispatch;
+	bool exclusive = taken ? branch.cond == RZ_TYPE_COND_LT : branch.cond == RZ_TYPE_COND_GE;
+	bool inclusive = taken ? branch.cond == RZ_TYPE_COND_LE : branch.cond == RZ_TYPE_COND_GT;
+	ut64 count = cmp.val + (inclusive ? 1 : 0);
+	valid = valid && (exclusive || inclusive) && count > shift;
+	if (valid) {
+		params->table_count = count - shift;
+		params->case_shift = shift;
+		params->default_case = taken ? branch.fail : branch.jump;
+	}
+	rz_analysis_op_fini(&cmp);
+	rz_analysis_op_fini(&branch);
+	return valid;
+}
+
+/**
+ * \brief Find a bounds check on a known control-flow path to the dispatch.
+ *
+ * The default path may reach the indirect jump before the bounds-check block
+ * has been analyzed, so pending tasks must also be considered.
+ */
+static bool x86_call_pop_jmptbl_bounds(RzAnalysis *analysis, RzAnalysisFunction *fcn,
+	ut64 dispatch, RzRegItem *index, ut64 shift, RzAnalysisJmpTableParams *params) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		RzAnalysisBlock *pred = *it;
+		if (pred->ninstr < 2 || (pred->jump != dispatch && pred->fail != dispatch)) {
+			continue;
+		}
+		ut64 addr = rz_analysis_block_get_op_addr(pred, pred->ninstr - 2);
+		if (x86_call_pop_jmptbl_bound_at(analysis, addr, dispatch, index, shift, params)) {
+			return true;
+		}
+	}
+	RzAnalysisTaskItem *task;
+	rz_vector_foreach (params->tasks, task) {
+		if (task->fcn == fcn && x86_call_pop_jmptbl_bound_at(analysis, task->start_address, dispatch, index, shift, params)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Recognize x86-32 tables whose signed entries are added to a saved PC.
+ *
+ * A call to the next instruction followed by pop supplies the table base.
+ * Keep this recognition within one basic block and require a bounds check;
+ * otherwise a register jump is not enough evidence for a switch.
+ */
+static bool x86_call_pop_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn,
+	RzAnalysisBlock *block, const RzAnalysisOp *jump, RzAnalysisJmpTableParams *params) {
+	if (jump->type != RZ_ANALYSIS_OP_TYPE_RJMP || !jump->reg ||
+		block->ninstr < 4) {
+		return false;
+	}
+	ut8 buf[64];
+	int first = block->ninstr - 4;
+	ut64 start = rz_analysis_block_get_op_addr(block, first);
+	ut64 size = jump->addr - start;
+	if (!size || size > sizeof(buf) ||
+		!analysis->iob.read_at(analysis->iob.io, start, buf, size)) {
+		return false;
+	}
+	RzAnalysisOp ops[4] = { 0 };
+	bool valid = false;
+	ut64 offset = 0;
+	for (int i = 0; i < 3; i++) {
+		if (offset >= size) {
+			goto out;
+		}
+		int len = rz_analysis_op(analysis, &ops[i], start + offset,
+			buf + offset, size - offset, RZ_ANALYSIS_OP_MASK_VAL);
+		if (len < 1) {
+			goto out;
+		}
+		offset += len;
+	}
+	RzAnalysisOp *call = &ops[0];
+	RzAnalysisOp *pop = &ops[1];
+	RzAnalysisOp *add = &ops[2];
+	if (offset != size || call->type != RZ_ANALYSIS_OP_TYPE_CALL ||
+		call->size != 5 || call->jump != pop->addr || pop->type != RZ_ANALYSIS_OP_TYPE_POP ||
+		!pop->dst || !pop->dst->reg || pop->dst->reg->size != 32 ||
+		add->type != RZ_ANALYSIS_OP_TYPE_ADD ||
+		!add->dst || add->dst->memref || add->dst->reg != pop->dst->reg ||
+		!RZ_STR_EQ(jump->reg, pop->dst->reg->name) ||
+		!add->src[0] || add->src[0]->type != RZ_ANALYSIS_VAL_MEM ||
+		add->src[0]->reg || !add->src[0]->regdelta || add->src[0]->mul != 4) {
+		goto out;
+	}
+	RzRegItem *index = add->src[0]->regdelta;
+	ut64 shift = 0;
+	ut64 dispatch = start;
+	if (first > 0) {
+		ut64 addr = rz_analysis_block_get_op_addr(block, first - 1);
+		ut64 len = start - addr;
+		RzAnalysisOp *adjust = &ops[3];
+		if (len && len <= sizeof(buf) && analysis->iob.read_at(analysis->iob.io, addr, buf, len) &&
+			rz_analysis_op(analysis, adjust, addr, buf, len, RZ_ANALYSIS_OP_MASK_VAL) == len &&
+			adjust->type == RZ_ANALYSIS_OP_TYPE_SUB && adjust->dst && !adjust->dst->memref &&
+			adjust->dst->reg == index && adjust->val != UT64_MAX) {
+			shift = adjust->val;
+			dispatch = addr;
+		}
+	}
+	if (!x86_call_pop_jmptbl_bounds(analysis, fcn, dispatch, index, shift, params)) {
+		goto out;
+	}
+	params->jmptbl_loc = (ut32)add->src[0]->delta;
+	params->jmptbl_off = pop->addr;
+	params->entry_size = 4;
+	params->relative = true;
+	valid = true;
+out:
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ops); i++) {
+		rz_analysis_op_fini(&ops[i]);
+	}
+	return valid;
+}
+
 static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
 	int i;
 	ut64 dst;
@@ -1001,6 +1142,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 		}
+		if (is_x86 && analysis->bits != 16 && op.type == RZ_ANALYSIS_OP_TYPE_CALL &&
+			op.size == 5 && op.jump == op.addr + op.size) {
+			// A call to the next instruction saves the PC without a return.
+			sp -= analysis->bits / 8;
+		}
 		sp = rz_analysis_op_apply_sp_effect(&op, sp);
 		fcn->stack = -sp;
 		if (-sp > fcn->maxstack) {
@@ -1468,7 +1614,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				};
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
-				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
+				if (is_x86 && analysis->bits == 32 && x86_call_pop_jmptbl(analysis, fcn, bb, &op, &params)) {
+					ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
+				} else if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					if (rz_analysis_get_jmptbl_info(analysis, fcn, bb, op.addr, &params)) {
 						bool case_table = false;
 						RzAnalysisOp prev_op;

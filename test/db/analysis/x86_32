@@ -4406,3 +4406,71 @@ movzx eax, word [ebp+edx*2-0x230]
 movzx edx, word [ebp+ecx*2-0x230]
 EOF
 RUN
+
+NAME=x86 switch case shift uses the index width (#3555)
+FILE=malloc://4096
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 0500feffff83f8027726ff248500020000 @ 0x100
+wx c3 @ 0x120
+wx c3 @ 0x124
+wx c3 @ 0x128
+wx c3 @ 0x130
+wx 200100002401000028010000 @ 0x200
+pi 4 @ 0x100
+af @ 0x100
+abij @ 0x10a
+EOF
+EXPECT=<<EOF
+add eax, 0xfffffe00
+cmp eax, 0x02
+jnbe 0x130
+jmp dword [eax*4+0x200]
+{"switch_op":{"addr":266,"min_val":0,"def_val":0,"max_val":0,"cases":[{"addr":288,"jump":288,"value":512},{"addr":292,"jump":292,"value":513},{"addr":296,"jump":296,"value":514}]},"opaddr":266,"addr":266,"size":7,"inputs":1,"outputs":3,"ninstr":1,"traced":false}
+EOF
+RUN
+
+NAME=x86 call-pop relative switch with pending bounds check (#3639)
+FILE=malloc://4096
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx 83f8017c0b83f8047c16eb0490909090b801000000909090909090909090909048e8000000005b031c8500020000ffe3eb2e909090909090eb26909090909090eb1e9090909090909090909090909090909090909090909090909090909090908b442404c39090909090909090909090 @ 0x100
+wx 0a000000120000001a000000 @ 0x200
+pi 2 @ 0x105
+pi 5 @ 0x120
+af @ 0x100
+abij @ 0x12e
+afvl @ 0x100
+wx 83f8017c0b83f8047c16eb0490909090b801000000909090909090909090909048e80000000059031c8500020000ffe3eb2e909090909090eb26909090909090eb1e9090909090909090909090909090909090909090909090909090909090908b442404c39090909090909090909090 @ 0x400
+wx 00050000 @ 0x42a
+wx 0a000000120000001a000000 @ 0x500
+af @ 0x400
+abij @ 0x42e
+wx e8000000005b031c8500080000ffe3 @ 0x700
+wx 0a000000120000001a000000 @ 0x800
+af @ 0x700
+abij @ 0x70d
+wx 83f802772be8000000005b031c85000a0000ffe3 @ 0x900
+wx c3 @ 0x880
+wx c3 @ 0x920
+wx c3 @ 0x928
+wx c3 @ 0x930
+wx 76ffffff160000001e000000 @ 0xa00
+af @ 0x900
+abij @ 0x912
+EOF
+EXPECT=<<EOF
+cmp eax, 0x04
+jl 0x120
+dec eax
+call 0x126
+pop ebx
+add ebx, dword [eax*4+0x200]
+jmp ebx
+{"switch_op":{"addr":302,"min_val":0,"def_val":0,"max_val":0,"cases":[{"addr":304,"jump":304,"value":1},{"addr":312,"jump":312,"value":2},{"addr":320,"jump":320,"value":3}]},"opaddr":302,"addr":288,"size":16,"inputs":2,"outputs":3,"ninstr":5,"traced":false}
+arg int32_t arg_4h @ stack + 0x4
+{"opaddr":1070,"addr":1056,"size":16,"inputs":2,"outputs":0,"ninstr":5,"traced":false}
+{"opaddr":1805,"addr":1792,"size":15,"inputs":0,"outputs":0,"ninstr":4,"traced":false}
+{"switch_op":{"addr":2322,"min_val":0,"def_val":0,"max_val":0,"cases":[{"addr":2176,"jump":2176,"value":0},{"addr":2336,"jump":2336,"value":1},{"addr":2344,"jump":2344,"value":2}]},"opaddr":2322,"addr":2309,"size":15,"inputs":1,"outputs":3,"ninstr":4,"traced":false}
+EOF
+RUN

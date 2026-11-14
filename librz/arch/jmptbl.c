@@ -166,6 +166,9 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
  * Goes through each case on the jump table, adds necessary flags/metadata and
  * a new RzAnalysisTaskItem to `params->tasks` to be analyzed later.
  *
+ * Set `params->relative` for PC-relative entries that could also be valid mapped
+ * addresses, such as small offsets in a low-address mapping.
+ *
  * \param analysis Pointer to RzAnalysis instance
  * \param fcn Pointer to RzAnalysisFunction to add the new cases
  * \param block Pointer to RzAnalysisBlock that originates the switch table
@@ -224,10 +227,13 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
 		} else if (params->entry_size == 1 && is_arm) {
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
-		} else if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
+		} else if (params->relative || !analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
 			jmpptr = params->jmptbl_off + jmpdelta;
+			if (params->relative && analysis->bits == 32) {
+				jmpptr = (ut32)jmpptr;
+			}
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 				break;
 			}
@@ -258,10 +264,18 @@ static bool detect_casenum_shift(RzAnalysisOp *op, RzRegItem **cmp_reg, st64 *st
 		if (op->type == RZ_ANALYSIS_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {
+			// The index arithmetic wraps at the destination register's width.
+			ut64 value = op->val;
+			int bits = op->dst->reg->size;
+			if (bits > 0 && bits < 64) {
+				ut64 sign = (ut64)1 << (bits - 1);
+				value &= (sign << 1) - 1;
+				value = (value ^ sign) - sign;
+			}
 			if (op->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-				*start_casenum_shift = -(st64)op->val;
+				*start_casenum_shift = (st64)(0 - value);
 			} else if (op->type == RZ_ANALYSIS_OP_TYPE_SUB) {
-				*start_casenum_shift = op->val;
+				*start_casenum_shift = (st64)value;
 			}
 		} else if (op->type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			*cmp_reg = op->src[0]->reg;

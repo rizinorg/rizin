@@ -1871,6 +1871,7 @@ typedef struct rz_jmptable_params_t {
 	ut64 default_case; ///< Code address of the default case of the switch
 	RzStackAddr sp; ///< Value of the stack pointer after the jump instruction is executed
 	RzVector /*<RzAnalysisTaskItem>*/ *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
+	bool relative; ///< Entries are signed 32-bit offsets from jmptbl_off, even if mapped as addresses.
 } RzAnalysisJmpTableParams;
 
 RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, ut64 jmp_address, ut64 lea_address, RZ_NONNULL RzAnalysisJmpTableParams *params);
