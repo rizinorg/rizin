@@ -395,7 +395,7 @@ afvW
   var_s18h  0xb
    var_78h
 / fcn.00000000();
-|           ; var int64_t var_98h @ stack - 0x98
+|           ; var int32_t var_98h @ stack - 0x98
 |           ; var int64_t var_78h @ stack - 0x78
 |           ; var int64_t var_8h @ stack - 0x8
 |           ; var int64_t var_0h @ stack + 0x0
@@ -534,10 +534,10 @@ af
 afvl
 EOF
 EXPECT=<<EOF
-var int64_t var_18h @ stack - 0x18
-var int64_t var_14h @ stack - 0x14
-var int64_t var_10h @ stack - 0x10
-var int64_t var_ch @ stack - 0xc
+var int32_t var_18h @ stack - 0x18
+var int32_t var_14h @ stack - 0x14
+var int32_t var_10h @ stack - 0x10
+var int32_t var_ch @ stack - 0xc
 EOF
 RUN
 
@@ -580,10 +580,10 @@ af
 afvl
 EOF
 EXPECT=<<EOF
-var int64_t var_10h @ stack - 0x10
-var int64_t var_ch @ stack - 0xc
-var int64_t var_8h @ stack - 0x8
-var int64_t var_4h @ stack - 0x4
+var int32_t var_10h @ stack - 0x10
+var int32_t var_ch @ stack - 0xc
+var int32_t var_8h @ stack - 0x8
+var int32_t var_4h @ stack - 0x4
 EOF
 RUN
 
@@ -626,7 +626,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x11c0
 / int foo(int num @ stack - 0x2c)
-|           ; var int64_t arg1 @ rdi
+|           ; var int32_t arg1 @ rdi
 |           ; var int int_one @ stack - 0x20
 |           ; var long int long_twenty @ stack - 0x18
 |           ; var short int minus_seven @ stack - 0x24

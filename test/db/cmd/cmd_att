@@ -87,9 +87,9 @@ EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
 | 0x004004a6      push  %rbp
 | 0x004004a7      mov   %rsp, %rbp
-| 0x004004aa      movq  var_10h + 0x10, %rax
+| 0x004004aa      movq  0x08(%rsp), %rax
 | 0x004004af      movq  var_10h, %rax
-| 0x004004b4      movq  var_10h + 0x10, %rax
+| 0x004004b4      movq  0x08(%rbp), %rax
 | 0x004004b8      movq  var_10h, %rax
 | 0x004004bc      movq  arg_10h, %rax
 | 0x004004c1      movq  var_20h, %rax
@@ -116,9 +116,9 @@ EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
 | 0x004004a6      push  %rbp
 | 0x004004a7      mov   %rsp, %rbp
-| 0x004004aa      movq  var_10h + 0x10(%rsp), %rax
+| 0x004004aa      movq  0x08(%rsp), %rax
 | 0x004004af      movq  var_10h(%rsp), %rax
-| 0x004004b4      movq  var_10h + 0x10(%rbp), %rax
+| 0x004004b4      movq  0x08(%rbp), %rax
 | 0x004004b8      movq  var_10h(%rbp), %rax
 | 0x004004bc      movq  arg_10h(%rsp), %rax
 | 0x004004c1      movq  var_20h(%rsp), %rax

@@ -591,7 +591,7 @@ arg void *q origin=DWARF @ rbp-8
 var float *arg1 @ rdi
 main
 var unsigned long long var_18h  { < 0x400} @ stack - 0x18
-var int64_t var_ch @ stack - 0xc
+var int32_t var_ch @ stack - 0xc
 EOF
 RUN
 
@@ -2792,7 +2792,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
 / int main();
-|           ; var int64_t var_ch @ stack - 0xc
+|           ; var int32_t var_ch @ stack - 0xc
 |           0x0040052d      55             push  rbp                   ; dwarftest.c:4
 EOF
 RUN
@@ -3178,7 +3178,7 @@ EXPECT=<<EOF
 |           0x00401991      66897df8       mov   word [mag], di
 |           0x00401995      668975f0       mov   word [szel], si
 |           0x00401999      b801000000     mov   eax, 0x01
-|           0x0040199e      bf01000000     mov   edi, 0x01             ; int64_t arg2
+|           0x0040199e      bf01000000     mov   edi, 0x01             ; int16_t arg2
 |           0x004019a3      89c6           mov   esi, eax              ; int64_t arg_8h
 |           0x004019a5      e8b6a10200     call  sym.unit_crt_gotoxy_tcrtcoord_tcrtcoord
 |           0x004019aa      66448b65f0     mov   r12w, word [szel]

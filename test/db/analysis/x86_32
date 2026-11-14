@@ -24,7 +24,7 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ (loc) entry0(int32_t arg_31h, int32_t arg_44h);
+/ (loc) entry0(int8_t arg_31h, int32_t arg_44h);
 |           0x006453a1      e8d8170000     call  fcn.00646b7e
 |           0x006453a6      8d642444       lea   esp, dword [arg_44h]
 |       ,=< 0x006453aa      0f85a6300000   jnz   0x648456
@@ -4281,7 +4281,6 @@ EXPECT=<<EOF
 / int main(int argc, char **argv, char **envp);
 | ; var int32_t var_3ch @ stack - 0x3c
 | ; var int32_t var_30h @ stack - 0x30
-| ; var int32_t var_2ch @ stack - 0x2c
 | ; var int32_t var_1ch @ stack - 0x1c
 | ; var int32_t var_14h @ stack - 0x14
 | ; var int32_t var_ch @ stack - 0xc
