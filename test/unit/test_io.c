@@ -58,6 +58,42 @@ bool test_rz_io_nread_at(void) {
 	mu_end;
 }
 
+bool test_rz_io_nread_at_new_buf(void) {
+	RzIO *io = rz_io_new();
+	io->va = true;
+
+	rz_io_open_at(io, "malloc://8", RZ_PERM_RW, 0, 0x10, NULL);
+	rz_io_write_at(io, 0x10, (ut8 *)"abcdefgh", 8);
+
+	// Request 16 bytes from an 8-byte mapping.
+	RzBuffer *buf = rz_io_nread_at_new_buf(io, 0x10, 16);
+	mu_assert_notnull(buf, "buffer should be created");
+	mu_assert_eq(rz_buf_size(buf), 8,
+		"buffer size should equal actual bytes read");
+	rz_buf_free(buf);
+
+	// Start inside the mapping: only 4 bytes remain.
+	buf = rz_io_nread_at_new_buf(io, 0x14, 16);
+	mu_assert_notnull(buf, "interior partial read should succeed");
+	mu_assert_eq(rz_buf_size(buf), 4,
+		"buffer size should match bytes remaining in mapping");
+	rz_buf_free(buf);
+
+	// Full read should return the requested size.
+	buf = rz_io_nread_at_new_buf(io, 0x10, 4);
+	mu_assert_notnull(buf, "full read should succeed");
+	mu_assert_eq(rz_buf_size(buf), 4,
+		"full read buffer size should equal requested size");
+	rz_buf_free(buf);
+
+	// Unmapped address should return NULL.
+	buf = rz_io_nread_at_new_buf(io, 0xdeadbeef, 4);
+	mu_assert_null(buf, "unmapped address should return NULL");
+
+	rz_io_free(io);
+	mu_end;
+}
+
 bool test_rz_io_cache(void) {
 	RzIO *io = rz_io_new();
 	rz_io_open(io, "malloc://15", RZ_PERM_RW, 0);
@@ -747,6 +783,7 @@ bool test_rz_io_boundaries(void) {
 bool all_tests(void) {
 	mu_run_test(test_rz_io_read_at_mapped);
 	mu_run_test(test_rz_io_nread_at);
+	mu_run_test(test_rz_io_nread_at_new_buf);
 	mu_run_test(test_rz_io_cache);
 	mu_run_test(test_rz_io_mapsplit);
 	mu_run_test(test_rz_io_mapsplit2);
