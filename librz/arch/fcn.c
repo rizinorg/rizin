@@ -523,13 +523,16 @@ static void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
  * the final destination and not only the intermediate pointer, which is what
  * other tools (e.g. IDA) show for such instructions.
  *
+ * For memory MOVs, record the reference from the pointer slot instead of the
+ * instruction, so references to global pointers also lead to their pointees.
+ *
  * The direct xref to the pointer location itself is kept, the pointer is only
  * followed when its value is a valid (readable and mapped) address, and no
  * recursion is performed. Like the ESIL analysis, values below 0x100 and
  * all-ones values are not taken as pointers, since NULL or unrelocated slots
  * hold them.
  */
-static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op) {
+static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op, ut64 from) {
 	RzIOBind *iob = &analysis->iob;
 	if (!iob->read_at) {
 		return;
@@ -544,7 +547,16 @@ static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnaly
 	}
 	// rz_analysis_xrefs_set() itself discards targets that are not valid
 	// (readable and mapped) addresses.
-	rz_analysis_xrefs_set(analysis, op->addr, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, from, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+}
+
+/**
+ * \brief Exclude register moves, stores and partial reads when following pointers.
+ */
+static inline bool op_is_pointer_sized_mov_load(const RzAnalysisOp *op, int bits) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_MOV &&
+		(op->direction & RZ_ANALYSIS_OP_DIR_READ) &&
+		(op->refptr == 4 || op->refptr == 8) && op->refptr == bits / 8;
 }
 
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
@@ -1018,7 +1030,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (ptr_ref && (op.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_LOAD &&
 				(op.refptr == 4 || op.refptr == 8) &&
 				(!op.ptrsize || op.ptrsize == op.refptr)) {
-				analysis_fcn_follow_pointer_load(analysis, &op);
+				analysis_fcn_follow_pointer_load(analysis, &op, op.addr);
+			} else if (ptr_ref && op_is_pointer_sized_mov_load(&op, analysis->bits)) {
+				// Preserve the pointer's location as the source of the data-to-data xref.
+				analysis_fcn_follow_pointer_load(analysis, &op, op.ptr);
 			}
 		}
 		analyze_retpoline(analysis, &op);
