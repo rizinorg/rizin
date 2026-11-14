@@ -22,7 +22,84 @@ d "b .s1 0x40;nop;nop;nop;ldw .d1 *a4,a3;nop" 1008000000000000000000000000000064
 d "b .s1 0x40;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;add .l1 0x1,a1,a1;nop" 10080000582084005820840058208400582084005820840000000000
 
 # a compact branch window taken from a C674x image
-d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0001000b" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
+d "[b0] cmpgt .l1 0x0,a4,a0;|| addad .d1 a3,a4,a11;|| mvkh .s2 0xc18c,b5;|| [!b0] mvk .s1 0x1,a0;[a0] bnop .s1 0x60,0x4;|| [!a0] ldw .d2 *b5,b4;|| mvk .l1 -1,a10;[!a0] b .s2 b4;.fphead n, l, w, bu, br, nosat, 0b0001000" d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
 
 # a full 32-byte fetch packet, compact header and mixed widths
-d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a2;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0001000b" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+d "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0b0001000" 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1
+
+# Compact moves between the eight registers of the header register set and all
+# 32: the source of mvto and the destination of mvfr have bits 11:10 above
+# their 3-bit field (SPRUFE8B Figures G-1 and G-2). The first is from a C674x
+# image; the last keeps 11:10 clear.
+d "mv .s1x b6,a12;mv .d2 b29,b2;mv .l1 a10,a3;mv .l2x a1,b23;mv .s2x a31,b0;mv .l1 a4,a0;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000111" 4e97974e0665c7f88f1f4602000000000000000000000000000000000000e0e0
+
+# The header RS bit moves only the 3-bit field to registers 16-23; the five-bit
+# one names its register outright.
+d "mv .l1 a5,a18;mv .l1 a19,a9;mv .l1 a19,a16;mv .l1x b31,a16;nop;nop;nop;nop;nop;.fphead n, h, w, bu, nobr, nosat, 0b0000011" 8642c6258609861f0000000000000000000000000000000000000000000068e0
+
+# Compact SET and CLR change the bit of their src2 in place; only EXTU writes a
+# fixed A0/B0 (SPRUFE8B Figure F-27). The first is from a C674x image.
+d "clr .s2 b4,0xc,0xc,b4;set .s1 a3,0x1f,0x1f,a3;extu .s2 b5,0x10,0x1f,b0;clr .s1 a7,0x0,0x0,a7;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000011" 438aa2f98312c2030000000000000000000000000000000000000000000060e0
+d "set .s2 b18,0x4,0x4,b18;extu .s1 a20,0x8,0x1f,a0;nop;nop;nop;nop;nop;nop;.fphead n, h, w, bu, nobr, nosat, 0b0000001" 2381020a000000000000000000000000000000000000000000000000000028e0
+
+# The 3-bit count of a compact shift by a constant is translated rather than
+# taken as is: 0 means 16 and 7 means 8 (SPRUFE8B Figure F-23).
+d "shl .s1 a5,0x8,a3;shr .s2 b2,0x10,b6;shl .s1x b1,0x6,a2;shr .s1 a0,0x1,a0;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000011" bae66b0daad40a2c0000000000000000000000000000000000000000000060e0
+
+# The displacement of a compact CALLP counts words, unlike that of the compact
+# BNOP forms: from the packet at 0x20, +8 reaches 0x40 and -8 reaches 0.
+d "callp .s2 0x40,b3;callp .s1 0x0,a3;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, br, nosat, 0b0000001" 1b021afe000000000000000000000000000000000000000000000000008020e0 0x20
+
+# A word holds the same value in either byte order, so a compact pair still runs
+# its less significant half first, which big-endian memory stores at the higher
+# address (TI cl6x and dis6x). rz-asm has no image: the second slot of a word
+# comes from the bytes it handed over for the first. The first is the full
+# mixed-width packet from above, the second a TI-assembled pair whose ADD reads
+# what the MV wrote.
+dE "bnop .s2 b3,0x5;stw .d2 b3,*b15--[0x4];stw .d2 a10,*+b15[0x3];mv .l1 a4,a10;|| mv .s1 a4,a0;[!a0] bnop .s1 0x98,0x5;b .s1 0x1cb378;addkpc .s2 0x20,b3,4;.fphead n, l, w, bu, nobr, nosat, 0b0001000" 008ca36201bc94f6053c62f4024e4646d04ca12003966f1001888162e1000040
+dE "mv .l1 a4,a0;add .l1 0x1,a0,a0;mv .l2 b4,b0;add .l2 0x2,b0,b0;nop 1;nop 1;nop 1;nop 1;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0001111" 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000
+
+# A compact SPLOOPD with bit 15 set is predicated on A0, or on B0 when bit 0 is
+# set (Uspldr, SPRUFE8B Figure H-6); TI-assembled. rz-asm has no image to find
+# the SPLOOP before the SPKERNEL, so its stage/cycle field stays whole.
+d "[a0] sploopd 3;add .l1 a4,a5,a6;nop 1;nop 1;nop 1;spkernel 0x22;nop 1;nop 1;nop 1;[b0] sploopd 3;add .l1 a4,a5,a6;nop 1;nop 1;nop 1;.fphead n, l, w, bu, nobr, nosat, 0b1111111" 668de0826e0c6e0c6e0c671d6e0c6e0c6e0c678de0826e0c6e0c6e0c0000e0ef
+
+# Compact LDNDW and STNDW offset their pointer by bytes in Doff4DW and DindDW,
+# by doublewords where they modify it; LDDW and STDW always scale. TI-assembled,
+# in a packet whose header names the doubleword size as dis6x does.
+d "ldndw .d1 *a8--[a9],b11:b10;stndw .d1 b11:b10,*a8--[a9];nop 1;ldndw .d1 *+a4(0x1),a7:a6;stndw .d1 a7:a6,*+a4(0x1);lddw .d1 *+a4[0x1],a7:a6;ldndw .d1 *+a4(0x2),a7:a6;stndw .d1 a7:a6,*+a4(0x2);lddw .d1 *+a4[0x2],a7:a6;ldndw .d1 *+a4(0x7),a7:a6;stndw .d1 a7:a6,*+a4(0x7);lddw .d1 *+a4[0x7],a7:a6;.fphead n, l, dw/ndw, w, nobr, nosat, 0b1111100" 263da105763da1056e0c7c2074206c207c4074406c407ce074e06ce0000084ef
+d "stndw .d1 a7:a6,*a4--[0xf];lddw .d1 *a4--[0xf],a7:a6;ldndw .d1 *+a4(a1),a7:a6;stndw .d1 a7:a6,*+a4(a1);ldndw .d1 *+a4[a1],a7:a6;stndw .d1 a7:a6,*+a4[a1];ldndw .d1 *-a4(a1),a7:a6;stndw .d1 a7:a6,*-a4(a1);.fphead n, l, dw/ndw, w, nobr, nosat, 0b0000100" 74f5910364f511037c247424242b9003742b90032429100374291003000084e0
+
+# A compact load in a packet whose header selects the high register set keeps
+# its base register
+d "ldndw .d2 *b4,b19:b18;ldndw .d2 *+b4(0x8),b17:b16;ldndw .d2 *+b4[0x2],b9:b8;ldndw .d2 *+b4[0x3],b7:b6;add .l2 0x8,b15,b4;stndw .d2 b19:b18,*b4;stndw .d2 b17:b16,*+b4(0x8);stndw .d2 b9:b8,*+b4[0x2];stndw .d2 b7:b6,*+b4[0x3];.fphead n, h, dw/ndw, w, nobr, nosat, 0b0010001" 3d101d18a6439004a66390035a003d0235101518f6439004f663900300002ce2
+# Compact ADD and SUB on .D (Dx2op) are no ADDAW
+d "add .l1x a3,b5,a3;add .d1 a4,a3,a4;|| add .l1 a4,a3,a12;|| mvkh .s2 0xc177,b4;|| mvk .s1 0x140,a6;ldbu .d2 *+b14[0x2eec],b5;ldb .d2 *+b14[0x3564],b4;nop 3;.fphead n, l, w, bu, nobr, nosat, 0b0000001" b072b68179800c06ebbb600228a000031eecae022e64350200400000020020e0
+# A compact ADD in a packet whose header sets SAT is a SADD
+d "ldw .d2 *++b15[0x2],a11;nop 4;nop 3;sploop 2;ldw .d1 *a4++[0x1],a5;nop 4;mpy2 .m1 a5,a5,a7:a6;nop 3;sadd .s1 a6,a7,a5;intsp .l1 a5,a3;nop 4;.fphead n, l, w, bu, nobr, sat, 0b0010111" f7656e6c6e4ce60c5c0c6e6c30a014036e4cdac358099401006000000040e0e2
+# Sx2op, the compact .S ADD and SUB with src1 the destination
+d "add .s1 a0,a0,a0;sub .s2 b0,b1,b0;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" 2e00af08000000000000000000000000000000000000000000000000000020e0
+d "add .s1x a0,b0,a0;sub .s2x b0,a0,b0;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" 2e102f18000000000000000000000000000000000000000000000000000020e0
+# Dx5p adjusts B15 on .D2 only, a Dpp pair starts at an even register, and the
+# compact MVC to ILC is a .S2 instruction
+d "invalid;invalid;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" 771df71c000000000000000000000000000000000000000000000000000020e0
+# the .D1 Dx5p and an odd Dpp pair; dis6x: ADDAW.D1 B15,0x8,B15; .word 0x0000c0f6; NOP; NOP; NOP; NOP; NOP; NOP; .fphead n, l, W, BU, nobr, nosat, 0000001b
+d "invalid;invalid;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" 760df6c0000000000000000000000000000000000000000000000000000020e0
+d "invalid;mvc .s2 b0,ilc;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" f7c16fd8000000000000000000000000000000000000000000000000000020e0
+# the compact MVC to ILC on .S1; dis6x: MVC.S1 B0,ILC; NOP 1; NOP; NOP; NOP; NOP; NOP; NOP; .fphead n, l, W, BU, nobr, nosat, 0000001b
+d "invalid;nop 1;nop;nop;nop;nop;nop;nop;.fphead n, l, w, bu, nobr, nosat, 0b0000001" 6ed86e0c000000000000000000000000000000000000000000000000000020e0
+
+# An SPMASK or SPMASKR marks the instructions after it in its execute packet on
+# the units it names with "^", as dis6x does; one before it, or in the next
+# packet, is not marked
+d "mv .l1 a3,a4;|| spmask l1,m2;||^ mpy .m2 b1,b2,b3" d90f0c0201000702822c8801
+d "spmaskr l1,m2;||^ mv .l1 a3,a4;||^ mpy .m2 b1,b2,b3;mv .l1 a3,a4" 01200702d90f0c02822c8801d80f0c02
+
+# a SPLOOP body cl6x assembled: a 32-bit SPMASK and a compact one, whose packet
+# goes on past the fetch-packet header
+d "sploop 2;spmask l1,m2;||^ mv .l1 a3,a4;||^ mpy .m2 b1,b2,b3;|| add .s1 a1,a2,a5;nop 1;spmask l2,s1,d1;||^ add .l2 b1,b2,b4;||^ sub .s1 a1,a2,a6;.fphead n, l, w, bu, nobr, nosat, 0b0110000;||^ ldw .d1 *a10,a11;spkernel 0x0;nop 5;nop;nop;nop;nop;nop" 0080830001000702d90f0c02832c88015a216e0ce66d4121e1250803000c00e66402a80500400300008000000000000000000000000000000000000000000000
+
+# The compact multiplies by halves, as cl6x packs them: MPY under a header
+# without SAT, SMPY under one with it.
+d "mpy .m1 a4,a5,a6;mpyh .m1 a4,a5,a6;mpylh .m1 a4,a5,a6;mpyhl .m1 a4,a5,a6;mpy .m2x b5,a4,b6;mpyh .m2 b4,b5,b6;smpy .m1 a4,a5,a6;smpyh .m1 a4,a5,a6;smpylh .m2 b4,b5,b6;smpyhl .m1x a4,b5,a6;.fphead n, l, w, bu, nobr, nosat, 0b0000111" 9e8ebe8ede8efe8e1fbebf8e008d14030081140302891403009514030000e0e0
+d "smpy .m1 a4,a5,a6;smpyh .m1 a4,a5,a6;smpylh .m2 b4,b5,b6;smpyhl .m1x a4,b5,a6;smpy .m2x b5,a4,b6;smpyh .m2 b4,b5,b6;nop 1;nop 1;nop 1;nop 1;nop 1;nop 1;nop 1;nop 1;.fphead n, l, w, bu, nobr, sat, 0b1111111" 9e8ebe8edf8efe9e1fbebf8e6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c0040e0ef

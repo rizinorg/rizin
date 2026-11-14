@@ -10,6 +10,7 @@ typedef struct test_absint_t {
 	RzIO *io;
 	RzILCache *il_cache;
 	RzAbsIntInstance *inst;
+	const RzILCacheBlock *handmade; ///< served for its address in place of what the cache lifts
 } TestInterp;
 
 static RzAbsIntIOReadResult io_read(RzAbsIntIOReadRequest *req, void *user) {
@@ -18,6 +19,13 @@ static RzAbsIntIOReadResult io_read(RzAbsIntIOReadRequest *req, void *user) {
 
 static RzAbsIntLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
 	TestInterp *interp = user;
+	if (interp->handmade) {
+		if (addr != interp->handmade->addr) {
+			return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
+		}
+		*block_out = interp->handmade;
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_OK;
+	}
 	const RzILCacheBlock *block = rz_il_cache_lift_il_block(interp->il_cache, addr);
 	if (block) {
 		*block_out = block;
@@ -29,7 +37,7 @@ static RzAbsIntLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **bloc
 static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
 	// for debugging, uncomment:
 	// eprintf("rz -a %s -b %d -m 0x%" PFMT64x " %s\n", arch, bits, baddr, url);
-	TestInterp *interp = RZ_NEW(TestInterp);
+	TestInterp *interp = RZ_NEW0(TestInterp);
 	interp->analysis = rz_analysis_new(NULL);
 	rz_analysis_use(interp->analysis, arch);
 	rz_analysis_set_bits(interp->analysis, bits);
@@ -776,6 +784,84 @@ bool test_absint_xrefs(void) {
 	mu_end;
 }
 
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+static void handmade_pkt_free(void *p) {
+	RzILCacheInsnPkt *pkt = p;
+	if (pkt) {
+		rz_il_op_effect_free(pkt->effect);
+		free(pkt);
+	}
+}
+
+static bool handmade_push(RzPVector /*<RzILCacheInsnPkt *>*/ *ops, RzILOpEffect *effect) {
+	RzILCacheInsnPkt *pkt = RZ_NEW0(RzILCacheInsnPkt);
+	if (!pkt || !effect) {
+		rz_il_op_effect_free(effect);
+		free(pkt);
+		return false;
+	}
+	pkt->effect = effect;
+	pkt->insn_pkt_size = 4;
+	rz_pvector_push(ops, pkt);
+	return true;
+}
+
+/**
+ * A repeat may run any number of times, so every register its body writes is
+ * unknown after it, wherever in the body the write is: on its own, under a
+ * branch, in a repeat of its own or in a blk. Stores through such registers
+ * give no xref then, while one through a register the body leaves alone does.
+ */
+bool test_absint_repeat_forgets(void) {
+	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
+		"1f2003d5"  // 0x00  nop, each standing in for the IL below
+		"1f2003d5"  // 0x04
+		"1f2003d5"  // 0x08
+		"1f2003d5"  // 0x0c
+		// clang-format on
+	);
+	mu_assert_notnull(interp, "init");
+	RzIODesc *data_desc = rz_io_open_at(interp->io, "malloc://0x10000", RZ_PERM_RW, 0644, 0x20000, NULL);
+	mu_assert_notnull(data_desc, "load data");
+
+	RzPVector *ops = rz_pvector_new(handmade_pkt_free);
+	mu_assert_notnull(ops, "ops");
+	// 0x00: every register holds an address
+	mu_assert_true(handmade_push(ops, SEQ5(SETG("x0", U64(0x21000)), SETG("x1", U64(0x22000)), SETG("x2", U64(0x23000)), SETG("x3", U64(0x24000)), SETG("x4", U64(0x25000)))), "op 0");
+	// 0x04: the loop writes x0, x2, x3 and x4, stores through x5 and counts x6 down
+	RzILOpEffect *body = SEQ6(
+		SETG("x0", ADD(VARG("x0"), U64(8))),
+		BRANCH(IS_ZERO(VARG("x7")), SETG("x2", ADD(VARG("x2"), U64(8))), NOP()),
+		REPEAT(IS_ZERO(VARG("x7")), SETG("x3", ADD(VARG("x3"), U64(8)))),
+		rz_il_op_new_blk("l", SETG("x4", ADD(VARG("x4"), U64(8))), NOP()),
+		STOREW(VARG("x5"), VARG("x6")),
+		SETG("x6", SUB(VARG("x6"), U64(1))));
+	mu_assert_true(handmade_push(ops, REPEAT(NON_ZERO(VARG("x6")), body)), "op 1");
+	// 0x08: a store through each
+	mu_assert_true(handmade_push(ops, SEQ5(STOREW(VARG("x0"), U64(0)), STOREW(VARG("x1"), U64(0)), STOREW(VARG("x2"), U64(0)), STOREW(VARG("x3"), U64(0)), STOREW(VARG("x4"), U64(0)))), "op 2");
+	// 0x0c: return
+	mu_assert_true(handmade_push(ops, JMP(VARG("x30"))), "op 3");
+	RzILCacheBlock block = { .il_ops = ops, .size = 16, .addr = 0x10000 };
+	interp->handmade = &block;
+
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_XREFS, &res);
+	EXTRACT_RESULT(code, res, 1);
+	mu_assert_eq(res->entry, 0x10000, "result entry");
+	ASSERT_BLOCK(0, 0x10000, 0x10010, false, UT64_MAX);
+	mu_assert_eq(rz_vector_len(&res->xrefs), 1, "xrefs count");
+	ASSERT_XREF(0, 0x10008, 0x22000, RZ_ANALYSIS_XREF_TYPE_MEM_WRITE);
+
+	rz_absint_result_free(interp->inst, res);
+	interp->handmade = NULL;
+	rz_pvector_free(ops);
+	interp_free(interp);
+	mu_end;
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
 bool test_absint_comments(void) {
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"600880d2"  // 0x00  mov   x0, 0x43
@@ -897,6 +983,7 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_call_ret_in_memory);
 	mu_run_test(test_absint_cfg_merge_multiple_consecutive);
 	mu_run_test(test_absint_xrefs);
+	mu_run_test(test_absint_repeat_forgets);
 	mu_run_test(test_absint_comments);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);

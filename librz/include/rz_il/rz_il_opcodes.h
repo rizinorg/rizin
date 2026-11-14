@@ -156,7 +156,7 @@ typedef RzILOpArgsShift RzILOpArgsShiftRight;
  */
 typedef struct rz_il_op_args_set_t {
 	const char *v; ///< name of variable, const one
-	ut64 hash; ///< DJB2 hash of variable name
+	ut64 hash; ///< rz_il_var_name_hash() of the variable name
 	bool is_local; ///< whether a global variable should be set or a local optionally created and set
 	RzILOpPure *x; ///< value to set the variable to
 } RzILOpArgsSet;
@@ -168,7 +168,7 @@ typedef struct rz_il_op_args_set_t {
  */
 typedef struct rz_il_op_args_let_t {
 	const char *name; ///< name of variable
-	ut64 hash; ///< DJB2 hash of variable name
+	ut64 hash; ///< rz_il_var_name_hash() of the variable name
 	RzILOpPure *exp; ///< value/expression to bind the variable to
 	RzILOpPure *body; ///< body in which the variable will be bound and that produces the result
 } RzILOpArgsLet;
@@ -251,7 +251,7 @@ typedef struct rz_il_op_args_ite_t {
  */
 typedef struct rz_il_op_args_var_t {
 	const char *v; ///< name of variable, const one
-	ut64 hash; ///< The DJB2 hash of the name.
+	ut64 hash; ///< rz_il_var_name_hash() of the name.
 	RzILVarKind kind; ///< set of variables to pick from
 } RzILOpArgsVar;
 
@@ -757,6 +757,7 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op);
 RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op);
 
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_ite(RZ_NONNULL RzILOpPure *condition, RZ_NULLABLE RzILOpPure *x, RZ_NULLABLE RzILOpPure *y);
+RZ_API ut64 rz_il_var_name_hash(RZ_NONNULL const char *name);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_var(RZ_NONNULL const char *var, RzILVarKind kind);
 RZ_API RZ_OWN RzILOpPure *rz_il_op_new_let(RZ_NONNULL const char *name, RZ_NONNULL RzILOpPure *exp, RZ_NONNULL RzILOpPure *body);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_b0();

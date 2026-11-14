@@ -49,3 +49,67 @@ nop
 nop
 EOF
 RUN
+
+NAME=pi and pd decode C64x compact instructions with the fetch-packet header
+FILE=malloc://64
+ARGS=-a tms320 -b 32
+CMDS=<<EOF
+e asm.cpu=c64x
+e asm.lines=false
+e asm.marks=false
+e asm.offset=false
+e asm.bytes=false
+e asm.comments=false
+e asm.tabs=0
+e cfg.bigendian=false
+wx 3c02326b000000000000000000000000000000000000000000000000000021e0
+pi 1
+pd 1
+pi 2
+pd 2
+pi 1 @ 2
+pd 1 @ 2
+e cfg.bigendian=true
+wx 6b32023c000000000000000000000000000000000000000000000000e0210000
+pi 1
+pd 1
+pi 2
+pd 2
+pi 1 @ 2
+pd 1 @ 2
+EOF
+EXPECT=<<EOF
+ldb .d1 *a4,a3
+ldb .d1 *a4,a3
+ldb .d1 *a4,a3
+mvk .s1 0x2b,a6
+ldb .d1 *a4,a3
+mvk .s1 0x2b,a6
+mvk .s1 0x2b,a6
+mvk .s1 0x2b,a6
+ldb .d1 *a4,a3
+ldb .d1 *a4,a3
+ldb .d1 *a4,a3
+mvk .s1 0x2b,a6
+ldb .d1 *a4,a3
+mvk .s1 0x2b,a6
+mvk .s1 0x2b,a6
+mvk .s1 0x2b,a6
+EOF
+RUN
+
+NAME=pi rejects an overflowing disassembly range
+FILE=malloc://64
+ARGS=-a tms320 -b 32
+CMDS=<<EOF
+e asm.cpu=c64x
+pi 0x4000000
+e asm.arch=null
+pi 0x8000000
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Disassembly range is too large.
+ERROR: Disassembly range is too large.
+EOF
+RUN

@@ -17,14 +17,38 @@
 typedef struct tms320_ctx_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	ut8 c6x_prev_masks; ///< units the SPMASKs of its execute packet name (for the "^" mark)
 	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } Tms320Context;
+
+// Image bytes around an instruction: the IO map holding it. An execute packet
+// does not run across the start or end of a section, and the binding's reader
+// fills unmapped bytes and succeeds, so bytes beside the code -- other data or
+// that filler -- would otherwise make slots of its packets.
+typedef struct {
+	RzAnalysis *analysis;
+	ut64 lo; ///< first address of the map
+	ut64 hi; ///< address past its end
+} C6xIOView;
+
+static C6xIOView c6x_io_view(RzAnalysis *analysis, ut64 addr) {
+	C6xIOView view = { analysis, 0, UT64_MAX };
+	RzIO *io = analysis->iob.io;
+	if (io && io->va && analysis->iob.map_get) {
+		RzIOMap *map = analysis->iob.map_get(io, addr);
+		// nothing can be read where nothing is mapped
+		view.lo = map ? rz_itv_begin(map->itv) : 1;
+		view.hi = map ? rz_itv_end(map->itv) : 0;
+	}
+	return view;
+}
 
 // Read image bytes for packet reconstruction; the buffer the analysis op is
 // handed starts at the instruction and is too short during IL VM stepping.
 static bool c6x_read_io(void *user, ut64 addr, ut8 *buf, size_t len) {
-	RzAnalysis *analysis = user;
-	if (!analysis->iob.read_at) {
+	const C6xIOView *view = user;
+	RzAnalysis *analysis = view->analysis;
+	if (addr < view->lo || addr > view->hi || len > view->hi - addr || !analysis->iob.read_at) {
 		return false;
 	}
 	return analysis->iob.read_at(analysis->iob.io, addr, buf, len);
@@ -34,24 +58,20 @@ static bool c6x_read_io(void *user, ut64 addr, ut8 *buf, size_t len) {
 // them decoded, so a caller can fall back rather than lift half a packet.
 static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 addr,
 	RZ_OUT C6xInsn *out, RZ_OUT C6xPacketRef *pkt) {
-	if (!c6x_packet_at(c6x_read_io, analysis, addr, analysis->big_endian, pkt)) {
+	C6xIOView view = c6x_io_view(analysis, addr);
+	if (!c6x_packet_at(c6x_read_io, &view, addr, analysis->big_endian, pkt)) {
 		return 0;
 	}
 	for (size_t i = 0; i < pkt->n; i++) {
 		// A compact slot is only decodable with its fetch-packet header, which
-		// sits at the end of the packet, so hand the decoder everything from the
-		// slot to past that header rather than the slot's own bytes: four bytes
-		// of a 16-bit slot decode as an unrelated 32-bit instruction.
-		ut8 raw[C6X_FETCH_PACKET_SIZE * 2];
-		size_t want = sizeof(raw);
-		if (!c6x_read_io(analysis, pkt->slots[i].addr, raw, want)) {
-			want = C6X_FETCH_PACKET_SIZE;
-			if (!c6x_read_io(analysis, pkt->slots[i].addr, raw, want)) {
-				return 0;
-			}
-		}
-		if (!c6x_decode(c6x, raw, want, pkt->slots[i].addr,
-			    analysis->big_endian, &out[i])) {
+		// ends the fetch packet, so hand the decoder the rest of the fetch packet
+		// rather than the slot's own bytes: four bytes of a 16-bit slot decode as
+		// an unrelated 32-bit instruction.
+		ut64 at = pkt->slots[i].addr;
+		ut8 raw[C6X_FETCH_PACKET_SIZE];
+		size_t want = c6x_packet_base(at) + C6X_FETCH_PACKET_SIZE - at;
+		if (!c6x_read_io(&view, at, raw, want) ||
+			!c6x_decode(c6x, raw, want, at, analysis->big_endian, c6x_read_io, &view, &out[i])) {
 			return 0;
 		}
 		if (out[i].size != pkt->slots[i].size) {
@@ -61,234 +81,214 @@ static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 	return pkt->n;
 }
 
-// The branch in a packet, if it opens delay slots.
-static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx, RZ_OUT ut8 *slots) {
-	for (size_t i = 0; i < n; i++) {
-		ut8 s = c6x_branch_slots(&insns[i]);
-		if (s) {
-			*idx = i;
-			*slots = s;
-			return true;
-		}
-	}
-	return false;
+// What c6x_lift_window() reads packets with.
+typedef struct {
+	RzAnalysis *analysis;
+	const C6xArchDesc *c6x;
+} C6xPacketReader;
+
+static size_t c6x_read_packet(void *user, ut64 addr, RZ_OUT C6xInsn *insns, RZ_OUT C6xPacketRef *pkt) {
+	const C6xPacketReader *rd = user;
+	return c6x_decode_packet(rd->analysis, rd->c6x, addr, insns, pkt);
 }
 
-// Does any packet up to \p depth ahead read \p reg?
-static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 from,
-	ut8 depth, const C6xOperand *reg, RZ_OUT ut64 *end) {
-	ut64 at = from;
-	for (ut8 k = 0; k < depth; k++) {
-		C6xPacketRef p;
-		C6xInsn ins[C6X_FP_SLOTS];
-		size_t n = c6x_decode_packet(analysis, c6x, at, ins, &p);
+/**
+ * Lift the IL for \p addr: what runs from there until the effects it starts
+ * have landed, as c6x_lift_window() describes. Without the image around it, as
+ * when lifting from a buffer alone, the instruction on its own.
+ *
+ * \param sized Whether the op is sized to the code the IL covers
+ *              (RZ_ANALYSIS_OP_MASK_INSN_PKT); otherwise the IL ends with a jump
+ *              past that code unless it is the next instruction.
+ * \param end Set past the code the IL covers, or to 0 without the image.
+ */
+static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
+	const C6xInsn *insn, ut64 addr, bool sized, RZ_OUT ut64 *end) {
+	C6xPacketReader rd = { analysis, c6x };
+	ut64 fall = sized ? C6X_FALL_TO_END : addr + insn->size;
+	RzILOpEffect *eff = c6x_lift_window(c6x_read_packet, &rd, addr, fall, end);
+	if (!eff && !*end) {
+		return insn->is_header ? rz_il_op_new_nop() : c6x_lift(insn, addr);
+	}
+	return eff;
+}
+
+/** The delay slots of a branch, walked the way function analysis walks them. */
+typedef struct {
+	ut32 slots; ///< instructions, and fetch-packet headers, after the branch and before its target issues
+	ut64 end; ///< the address past them, where the branch falls through to
+	bool links; ///< an ADDKPC among them writes B3
+	ut64 ret; ///< the address it writes
+	ut32 link_cycle; ///< the cycle it issues in, counted from the branch's
+} C6xDelayWalk;
+
+// Whether \p insn is the ADDKPC of the call idiom, setting the return address.
+static bool c6x_sets_b3(const C6xInsn *insn) {
+	return insn->id == C6X_INS_ADDKPC && insn->nops >= 2 && insn->ops[0].kind == C6X_OP_PCREL &&
+		insn->ops[1].kind == C6X_OP_REG && insn->ops[1].v.reg.side == C6X_SIDE_B && insn->ops[1].v.reg.num == 3;
+}
+
+// Walk the delay slots of the branch at \p addr: its target issues six cycles
+// after it, a multi-cycle NOP counting all its cycles. Function analysis steps
+// over instructions rather than cycles, and over a header like any of them.
+static bool c6x_walk_delay(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 addr, RZ_OUT C6xDelayWalk *dw) {
+	memset(dw, 0, sizeof(*dw));
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	ut64 pc = addr;
+	ut32 cycle = 0;
+	for (int k = 0; k < 8 && cycle < 6; k++) {
+		size_t n = c6x_decode_packet(analysis, c6x, pc, ins, &p);
 		if (!n) {
 			return false;
 		}
-		size_t bi;
-		ut8 bs;
-		if (c6x_packet_branch(ins, n, &bi, &bs)) {
-			return false; // a branch owns its own window; leave it alone
+		ut8 extra = 0;
+		for (size_t i = 0; i < n; i++) {
+			if (p.slots[i].addr < pc || (k == 0 && p.slots[i].addr == addr)) {
+				continue; // before the branch, or the branch itself
+			}
+			dw->slots++;
+			if (c6x_sets_b3(&ins[i])) {
+				dw->links = true;
+				dw->ret = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+				dw->link_cycle = cycle;
+			}
 		}
 		for (size_t i = 0; i < n; i++) {
-			for (ut8 o = 0; o + 1 < ins[i].nops; o++) {
-				const C6xOperand *s = &ins[i].ops[o];
-				if (c6x_same_reg(s, reg)) {
-					*end = C6X_PACKET_END(p);
-					return true;
-				}
-			}
+			extra = RZ_MAX(extra, c6x_nop_cycles(&ins[i]));
 		}
-		at = C6X_PACKET_END(p);
+		if (p.next != p.slots[n - 1].addr + p.slots[n - 1].size) {
+			dw->slots++; // the header ending the fetch packet
+		}
+		cycle += 1 + extra;
+		pc = p.next;
 	}
-	return false;
+	dw->end = pc;
+	return true;
 }
 
-/**
- * A result that lands late only matters when something reads it too soon. In
- * straight-line code the compiler normally schedules the consumer far enough
- * away and fills the gap with NOPs, in which case the write can stay where the
- * instruction sits. Where it does not -- a register reused across a load, say --
- * the packets in between have to run before the write becomes visible, so lift
- * them as a window with the write held to the end.
- *
- * \return NULL when no result of this packet is read too soon.
- */
-static RzILOpEffect *c6x_lift_latency_window(RzAnalysis *analysis, const C6xArchDesc *c6x,
-	const C6xInsn *slots, size_t n, const C6xPacketRef *pkt) {
-	ut32 hold = 0;
-	ut64 window_end = 0;
-	ut64 after = C6X_PACKET_END(*pkt);
-	for (size_t i = 0; i < n; i++) {
-		ut8 lat = c6x_result_latency(&slots[i]);
-		if (!lat || !slots[i].nops) {
-			continue;
-		}
-		const C6xOperand *d = &slots[i].ops[slots[i].nops - 1];
-		if (d->kind != C6X_OP_REG) {
-			continue; // pairs and stores are left to the plain path
-		}
-		ut64 end = 0;
-		if (c6x_reads_reg_ahead(analysis, c6x, after, lat, d, &end)) {
-			hold |= 1u << i;
-			window_end = end > window_end ? end : window_end;
-		}
-	}
-	if (!hold) {
-		return NULL;
-	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, pkt->addr, hold);
-	ut64 at = after;
-	while (at < window_end) {
-		C6xPacketRef p;
-		C6xInsn ins[C6X_FP_SLOTS];
-		size_t pn = c6x_decode_packet(analysis, c6x, at, ins, &p);
-		if (!pn) {
-			break;
-		}
-		RzILOpEffect *pe = c6x_lift_packet(ins, pn, p.addr, 0);
-		if (pe) {
-			eff = eff ? rz_il_op_new_seq(eff, pe) : pe;
-		}
-		at = C6X_PACKET_END(p);
-	}
-	for (size_t i = 0; i < n; i++) {
-		if (!(hold & (1u << i))) {
-			continue;
-		}
-		RzILOpEffect *held = c6x_lift(&slots[i], pkt->slots[i].addr);
-		if (held) {
-			eff = eff ? rz_il_op_new_seq(eff, held) : held;
-		}
-	}
-	// the window ran the packets in between, so leave the pc past them
-	return eff ? rz_il_op_new_seq(eff, c6x_jump_to(at)) : NULL;
+// Whether \p insn branches to a displacement, taking effect six cycles later.
+static bool c6x_disp_branch(const C6xInsn *insn) {
+	return (insn->id == C6X_INS_B || insn->id == C6X_INS_BNOP) && insn->nops >= 1 &&
+		insn->ops[0].kind == C6X_OP_PCREL;
 }
 
-/**
- * Lift the IL for \p addr.
- *
- * A C6000 branch resolves five execute packets after it issues, and the packets
- * in between still execute. So a branch is lifted as a window: its own packet,
- * then the packets filling its delay slots, then the transfer. The addresses
- * inside that window lift to nothing, since the window already covers them --
- * which is why every address looks back far enough to notice it is inside one.
- *
- * Without a branch a packet is lifted on its own, and a packet of one slot takes
- * the plain per-instruction path.
- */
-static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
-	const C6xInsn *insn, ut64 addr) {
-	C6xPacketRef pkt;
-	C6xInsn slots[C6X_FP_SLOTS];
-	size_t n = c6x_decode_packet(analysis, c6x, addr, slots, &pkt);
-	if (!n) {
-		return c6x_lift(insn, addr);
+// The cycles the packet of \p n instructions takes, none for a fetch-packet header.
+static ut32 c6x_packet_cycles(const C6xInsn *ins, const C6xPacketRef *pkt, size_t n) {
+	if (n == 1 && pkt->slots[0].header) {
+		return 0;
 	}
-	if (addr != pkt.addr) {
-		return rz_il_op_new_nop(); // lifted at the packet's first address
-	}
-	// inside an earlier branch's window?
-	ut64 probe = pkt.addr;
-	for (ut8 back = 0; back < 5 && probe; back++) {
-		C6xPacketRef prev;
-		C6xInsn pins[C6X_FP_SLOTS];
-		if (probe < C6X_COMPACT_SIZE) {
-			break;
-		}
-		size_t pn = c6x_decode_packet(analysis, c6x, probe - C6X_COMPACT_SIZE, pins, &prev);
-		if (!pn || prev.addr >= probe) {
-			break;
-		}
-		size_t bi;
-		ut8 bs;
-		if (c6x_packet_branch(pins, pn, &bi, &bs) && bs > back) {
-			return rz_il_op_new_nop(); // covered by that branch's window
-		}
-		probe = prev.addr;
-	}
-	size_t bidx;
-	ut8 bslots;
-	if (!c6x_packet_branch(slots, n, &bidx, &bslots)) {
-		RzILOpEffect *lat = c6x_lift_latency_window(analysis, c6x, slots, n, &pkt);
-		if (lat) {
-			return lat;
-		}
-		if (n > 1) {
-			RzILOpEffect *pe = c6x_lift_packet(slots, n, addr, 0);
-			if (pe) {
-				return pe;
-			}
-			// a slot the packet pass cannot stage, e.g. a destination shape it
-			// does not model; per-instruction IL is better than none
-		}
-		return c6x_lift(insn, addr);
-	}
-	// The branch's own packet, with the transfer held back. Slots whose result
-	// lands beyond the last delay-slot packet are held back too and emitted
-	// after the transfer: a load issued in slot k writes four packets later, so
-	// with k + 4 > bslots the write happens once control has already moved. jmp
-	// only sets the program counter, so an effect sequenced after it still runs.
-	// The transfer happens after instructions that may overwrite the register
-	// the branch tests, so sample the predicate now and carry the answer.
-	RzILOpEffect *sample = c6x_sample_predicate(&slots[bidx]);
-	// Hold back the branch itself, and any slot of its own packet whose result
-	// lands after the transfer: a load beside the branch writes four packets on,
-	// so with fewer delay slots than that the write belongs after the jump. Real
-	// code relies on it -- "[!a0] ldw *b5,b4 || bnop" beside "[!a0] b .s2 b4"
-	// wants the branch to read the b4 the load is replacing.
-	ut32 hold = 1u << bidx;
+	ut32 extra = 0;
 	for (size_t i = 0; i < n; i++) {
-		if (i != bidx && c6x_result_latency(&slots[i]) > bslots) {
-			hold |= 1u << i;
-		}
+		extra = RZ_MAX(extra, c6x_nop_cycles(&ins[i]));
 	}
-	RzILOpEffect *eff = c6x_lift_packet(slots, n, addr, hold);
-	if (sample) {
-		eff = eff ? rz_il_op_new_seq(sample, eff) : sample;
-	}
-	RzILOpEffect *late = NULL;
-	ut64 next = C6X_PACKET_END(pkt);
-	for (ut8 k = 1; k <= bslots; k++) {
-		C6xPacketRef dp;
-		C6xInsn dins[C6X_FP_SLOTS];
-		size_t dn = c6x_decode_packet(analysis, c6x, next, dins, &dp);
-		if (!dn) {
+	return 1 + extra;
+}
+
+// Whether the code at \p target writes B3 with an ADDKPC in its first \p cycles
+// cycles; \p ret receives the address the last of them writes.
+static bool c6x_target_links(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 target, ut32 cycles, RZ_OUT ut64 *ret) {
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	bool links = false;
+	ut64 pc = target;
+	ut32 cycle = 0;
+	for (int k = 0; k < 8 && cycle < cycles; k++) {
+		size_t n = c6x_decode_packet(analysis, c6x, pc, ins, &p);
+		if (!n) {
 			break;
 		}
-		// does anything in this packet write after the branch resolves?
-		bool crosses = false;
-		for (size_t i = 0; i < dn; i++) {
-			crosses |= k + c6x_result_latency(&dins[i]) > bslots;
-		}
-		RzILOpEffect *de = c6x_lift_packet(dins, dn, dp.addr, 0);
-		if (de) {
-			if (crosses) {
-				late = late ? rz_il_op_new_seq(late, de) : de;
-			} else {
-				eff = eff ? rz_il_op_new_seq(eff, de) : de;
+		for (size_t i = 0; i < n; i++) {
+			if (p.slots[i].addr >= pc && c6x_sets_b3(&ins[i])) {
+				*ret = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+				links = true;
 			}
 		}
-		next = C6X_PACKET_END(dp);
+		cycle += c6x_packet_cycles(ins, &p, n);
+		pc = p.next;
 	}
-	// "next" now sits just past the last delay-slot packet
-	RzILOpEffect *xfer = c6x_deferred_transfer(&slots[bidx], pkt.slots[bidx].addr, sample != NULL, next);
-	if (xfer) {
-		eff = eff ? rz_il_op_new_seq(eff, xfer) : xfer;
+	return links;
+}
+
+// TI's compiler shares the code setting up a call between call sites: it
+// branches there, and to the callee up to five cycles later, so that code runs
+// in the last delay slots of the second branch, for as many cycles as lie
+// between the two. Looks for such branches before the branch \p insn at \p addr,
+// with its predicate, and for an ADDKPC writing B3 in what runs at their
+// targets; \p ret receives the address it writes. Returns the cycles the code
+// after \p insn still runs for, the branch's own included: the first of the
+// earlier branches takes over after them.
+static ut32 c6x_shared_link(RzAnalysis *analysis, const C6xArchDesc *c6x, const C6xInsn *insn, ut64 addr, RZ_OUT bool *links, RZ_OUT ut64 *ret) {
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	*links = false;
+	if (!c6x_decode_packet(analysis, c6x, addr, ins, &p)) {
+		return 6;
 	}
-	for (size_t i = 0; i < n; i++) {
-		if (i == bidx || !(hold & (1u << i))) {
-			continue;
+	// cycles back to the nearest branch found and to the packet looked at
+	ut32 near = 0;
+	ut32 back = 0;
+	while (p.addr) {
+		size_t n = c6x_decode_packet(analysis, c6x, p.addr - 1, ins, &p);
+		if (!n) {
+			break;
 		}
-		RzILOpEffect *held = c6x_lift(&slots[i], pkt.slots[i].addr);
-		if (held) {
-			late = late ? rz_il_op_new_seq(late, held) : held;
+		back += c6x_packet_cycles(ins, &p, n);
+		if (back > 5) {
+			break; // a branch from there has landed
+		}
+		for (size_t i = 0; i < n; i++) {
+			if (!c6x_disp_branch(&ins[i]) || ins[i].creg != insn->creg || ins[i].z != insn->z) {
+				continue;
+			}
+			// its target runs until the next branch takes over, so what a
+			// nearer branch leads to writes B3 later
+			ut64 target = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+			ut64 to = 0;
+			if (c6x_target_links(analysis, c6x, target, back - near, &to) && !*links) {
+				*links = true;
+				*ret = to;
+			}
+			near = back;
+			break;
 		}
 	}
-	if (late) {
-		eff = eff ? rz_il_op_new_seq(eff, late) : late;
+	return 6 - near;
+}
+
+// Describe a branch's delay slots to function analysis: as many instructions
+// as it walks before the transfer, the fallthrough past them, and the call a
+// branch with ADDKPC setting B3 in its delay slots is.
+static void c6x_analyze_delay(RzAnalysis *analysis, const C6xArchDesc *c6x, const C6xInsn *insn, ut64 addr, RzAnalysisOp *op) {
+	C6xDelayWalk dw;
+	if (!op->delay || !c6x_walk_delay(analysis, c6x, addr, &dw)) {
+		return;
 	}
-	return eff ? eff : c6x_lift(insn, addr);
+	op->delay = dw.slots;
+	if (op->fail != UT64_MAX) {
+		op->fail = dw.end;
+	}
+	if (insn->id != C6X_INS_B && insn->id != C6X_INS_BNOP) {
+		return;
+	}
+	// What an earlier branch leads to runs after the code behind this one,
+	// which that branch cuts short.
+	bool shared = false;
+	ut64 ret = 0;
+	ut32 fall = c6x_shared_link(analysis, c6x, insn, addr, &shared, &ret);
+	if (shared) {
+		dw.ret = ret;
+	} else if (!dw.links || dw.link_cycle >= fall) {
+		return;
+	}
+	switch (op->type) {
+	case RZ_ANALYSIS_OP_TYPE_JMP: op->type = RZ_ANALYSIS_OP_TYPE_CALL; break;
+	case RZ_ANALYSIS_OP_TYPE_CJMP: op->type = RZ_ANALYSIS_OP_TYPE_CCALL; break;
+	case RZ_ANALYSIS_OP_TYPE_RJMP: op->type = RZ_ANALYSIS_OP_TYPE_RCALL; break;
+	case RZ_ANALYSIS_OP_TYPE_RCJMP: op->type = RZ_ANALYSIS_OP_TYPE_UCCALL; break;
+	default: return;
+	}
+	op->fail = dw.ret;
 }
 
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -298,23 +298,42 @@ int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const 
 	const C6xArchDesc *c6x = c6x_desc_from_cpu(cpu);
 	if (c6x) {
 		C6xInsn insn;
-		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, &insn)) {
+		C6xIOView view = c6x_io_view(analysis, addr);
+		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, c6x_read_io, &view, &insn)) {
 			return -1;
 		}
 		c6x_fill_analysis(c6x, &insn, addr, op);
-		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par);
+		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par, &context->c6x_prev_masks);
 		// The look-back only knows about the previous call, so seeking into the
-		// middle of an execute packet loses the "||". Rebuilding the packet from
-		// the image settles it for any address.
+		// middle of an execute packet loses the "||" and the "^". Rebuilding the
+		// packet from the image settles them for any address.
 		bool cont = false;
-		if (c6x_continues_packet(c6x_read_io, analysis, addr, analysis->big_endian, &cont)) {
+		if (c6x_continues_packet(c6x_read_io, &view, addr, analysis->big_endian, &cont)) {
 			insn.cont = cont;
+			ut8 units = 0;
+			ut8 bit = c6x_unit_bit(&insn);
+			if (cont && bit < 8 && c6x_packet_masks(c6x, c6x_read_io, &view, addr, analysis->big_endian, &units)) {
+				insn.masked = units & (1u << bit);
+			}
 		}
+		c6x_analyze_delay(analysis, c6x, &insn, addr, op);
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			op->opex = c6x_opex(&insn);
 		}
-		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-			op->il_op = c6x_lift_il(analysis, c6x, &insn, addr);
+		if (mask & (RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_INSN_PKT)) {
+			bool sized = mask & RZ_ANALYSIS_OP_MASK_INSN_PKT;
+			ut64 end = 0;
+			RzILOpEffect *il = c6x_lift_il(analysis, c6x, &insn, addr, sized, &end);
+			if (sized && end > addr) {
+				// the op is the code its IL covers, delay slots included
+				op->size = (int)(end - addr);
+				op->delay = 0;
+			}
+			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+				op->il_op = il;
+			} else {
+				rz_il_op_effect_free(il);
+			}
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = c6x_format(c6x, &insn, addr);
@@ -971,6 +990,14 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 				"ctr tsch    .32 352 0  # Time-stamp counter (high 32) register\n"
 				"ctr tscl    .32 356 0  # Time-stamp counter (low 32) register\n"
 				"ctr tsr     .32 360 0  # Task state register\n");
+		}
+		const C6xArchDesc *desc = c6x_desc_from_cpu(cpu0);
+		if (desc && (desc->features & C6X_FEAT_FP)) {
+			// floating-point configuration registers, on the C67x and later
+			rz_strbuf_append(&sb,
+				"ctr fadcr   .32 364 0  # Floating-point adder configuration register\n"
+				"ctr faucr   .32 368 0  # Floating-point auxiliary configuration register\n"
+				"ctr fmcr    .32 372 0  # Floating-point multiplier configuration register\n");
 		}
 		rz_strbuf_append(&sb,
 			"gpr	a0:a1  	.64	0	0\n"

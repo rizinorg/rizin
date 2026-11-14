@@ -51,6 +51,8 @@ typedef enum {
 	C6X_INS_ADDK,
 	C6X_INS_ADDKPC,
 	C6X_INS_ADDSP,
+	C6X_INS_ADDSUB,
+	C6X_INS_ADDSUB2,
 	C6X_INS_ADDU,
 	C6X_INS_AND,
 	C6X_INS_ANDN,
@@ -63,6 +65,9 @@ typedef enum {
 	C6X_INS_BNOP,
 	C6X_INS_BPOS,
 	C6X_INS_CALLP,
+	C6X_INS_CCMATMPY,
+	C6X_INS_CCMATMPYR1,
+	C6X_INS_CCMPY32R1,
 	C6X_INS_CLR,
 	C6X_INS_CMATMPY,
 	C6X_INS_CMATMPYR1,
@@ -82,16 +87,54 @@ typedef enum {
 	C6X_INS_CMPLTSP,
 	C6X_INS_CMPLTU,
 	C6X_INS_CMPY,
+	C6X_INS_CMPY32R1,
 	C6X_INS_CMPYR,
 	C6X_INS_CMPYR1,
+	C6X_INS_CMPYSP,
+	C6X_INS_CROT270,
+	C6X_INS_CROT90,
 	C6X_INS_DADD,
+	C6X_INS_DADD2,
+	C6X_INS_DADDSP,
+	C6X_INS_DAPYS2,
+	C6X_INS_DAVG2,
+	C6X_INS_DAVGNR2,
+	C6X_INS_DAVGNRU4,
+	C6X_INS_DAVGU4,
+	C6X_INS_DCCMPY,
 	C6X_INS_DCCMPYR1,
+	C6X_INS_DCMPEQ2,
+	C6X_INS_DCMPEQ4,
+	C6X_INS_DCMPGT2,
+	C6X_INS_DCMPGTU4,
+	C6X_INS_DCMPY,
 	C6X_INS_DCMPYR1,
+	C6X_INS_DCROT270,
+	C6X_INS_DCROT90,
+	C6X_INS_DDOTP4,
+	C6X_INS_DDOTP4H,
 	C6X_INS_DDOTPH2,
+	C6X_INS_DDOTPH2R,
 	C6X_INS_DDOTPL2,
+	C6X_INS_DDOTPL2R,
+	C6X_INS_DDOTPSU4H,
 	C6X_INS_DEAL,
 	C6X_INS_DINT,
+	C6X_INS_DINTHSP,
+	C6X_INS_DINTHSPU,
+	C6X_INS_DINTSP,
+	C6X_INS_DINTSPU,
+	C6X_INS_DMAX2,
+	C6X_INS_DMAXU4,
+	C6X_INS_DMIN2,
+	C6X_INS_DMINU4,
+	C6X_INS_DMPY2,
 	C6X_INS_DMPYSP,
+	C6X_INS_DMPYSU4,
+	C6X_INS_DMPYU2,
+	C6X_INS_DMPYU4,
+	C6X_INS_DMV,
+	C6X_INS_DMVD,
 	C6X_INS_DOTP2,
 	C6X_INS_DOTP4H,
 	C6X_INS_DOTPN2,
@@ -100,12 +143,44 @@ typedef enum {
 	C6X_INS_DOTPSU4,
 	C6X_INS_DOTPSU4H,
 	C6X_INS_DOTPU4,
+	C6X_INS_DPACK2,
+	C6X_INS_DPACKH2,
+	C6X_INS_DPACKH4,
+	C6X_INS_DPACKHL2,
+	C6X_INS_DPACKL2,
+	C6X_INS_DPACKL4,
+	C6X_INS_DPACKLH2,
+	C6X_INS_DPACKLH4,
+	C6X_INS_DPACKX2,
 	C6X_INS_DPINT,
 	C6X_INS_DPSP,
 	C6X_INS_DPTRUNC,
+	C6X_INS_DSADD,
+	C6X_INS_DSADD2,
+	C6X_INS_DSHL,
+	C6X_INS_DSHL2,
+	C6X_INS_DSHR,
+	C6X_INS_DSHR2,
+	C6X_INS_DSHRU,
+	C6X_INS_DSHRU2,
+	C6X_INS_DSMPY2,
+	C6X_INS_DSPACKU4,
+	C6X_INS_DSPINT,
+	C6X_INS_DSPINTH,
+	C6X_INS_DSSUB,
+	C6X_INS_DSSUB2,
 	C6X_INS_DSUB,
+	C6X_INS_DSUB2,
+	C6X_INS_DSUBSP,
+	C6X_INS_DXPND2,
+	C6X_INS_DXPND4,
 	C6X_INS_EXT,
 	C6X_INS_EXTU,
+	C6X_INS_FADDDP,
+	C6X_INS_FADDSP,
+	C6X_INS_FMPYDP,
+	C6X_INS_FSUBDP,
+	C6X_INS_FSUBSP,
 	C6X_INS_GMPY,
 	C6X_INS_GMPY4,
 	C6X_INS_IDLE,
@@ -113,6 +188,8 @@ typedef enum {
 	C6X_INS_INTDPU,
 	C6X_INS_INTSP,
 	C6X_INS_INTSPU,
+	C6X_INS_LAND,
+	C6X_INS_LANDN,
 	C6X_INS_LDB,
 	C6X_INS_LDBU,
 	C6X_INS_LDDW,
@@ -122,12 +199,15 @@ typedef enum {
 	C6X_INS_LDNW,
 	C6X_INS_LDW,
 	C6X_INS_LMBD,
+	C6X_INS_LOR,
 	C6X_INS_MAX2,
 	C6X_INS_MAXU4,
+	C6X_INS_MFENCE,
 	C6X_INS_MIN2,
 	C6X_INS_MINU4,
 	C6X_INS_MPY,
 	C6X_INS_MPY2,
+	C6X_INS_MPY2IR,
 	C6X_INS_MPY32,
 	C6X_INS_MPY32SU,
 	C6X_INS_MPY32U,
@@ -157,6 +237,7 @@ typedef enum {
 	C6X_INS_MPYSU,
 	C6X_INS_MPYSU4,
 	C6X_INS_MPYU,
+	C6X_INS_MPYU2,
 	C6X_INS_MPYU4,
 	C6X_INS_MPYUS,
 	C6X_INS_MV,
@@ -178,18 +259,25 @@ typedef enum {
 	C6X_INS_QMPY32,
 	C6X_INS_QMPYSP,
 	C6X_INS_QSMPY32R1,
+	C6X_INS_RCPDP,
+	C6X_INS_RCPSP,
 	C6X_INS_RINT,
 	C6X_INS_ROTL,
 	C6X_INS_RPACK2,
 	C6X_INS_RSQRDP,
+	C6X_INS_RSQRSP,
 	C6X_INS_SADD,
 	C6X_INS_SADD2,
+	C6X_INS_SADDSUB,
+	C6X_INS_SADDSUB2,
 	C6X_INS_SADDU4,
 	C6X_INS_SADDUS2,
 	C6X_INS_SAT,
 	C6X_INS_SET,
 	C6X_INS_SHFL,
+	C6X_INS_SHFL3,
 	C6X_INS_SHL,
+	C6X_INS_SHL2,
 	C6X_INS_SHLMB,
 	C6X_INS_SHR,
 	C6X_INS_SHR2,
@@ -198,6 +286,7 @@ typedef enum {
 	C6X_INS_SHRU2,
 	C6X_INS_SMPY,
 	C6X_INS_SMPY2,
+	C6X_INS_SMPY32,
 	C6X_INS_SMPYH,
 	C6X_INS_SMPYHL,
 	C6X_INS_SMPYLH,
@@ -228,6 +317,7 @@ typedef enum {
 	C6X_INS_SUB2,
 	C6X_INS_SUB4,
 	C6X_INS_SUBAB,
+	C6X_INS_SUBABS4,
 	C6X_INS_SUBAH,
 	C6X_INS_SUBAW,
 	C6X_INS_SUBC,
@@ -235,6 +325,11 @@ typedef enum {
 	C6X_INS_SUBSP,
 	C6X_INS_SUBU,
 	C6X_INS_SWAP4,
+	C6X_INS_SWE,
+	C6X_INS_SWENR,
+	C6X_INS_UNPKBU4,
+	C6X_INS_UNPKH2,
+	C6X_INS_UNPKHU2,
 	C6X_INS_UNPKHU4,
 	C6X_INS_UNPKLU4,
 	C6X_INS_XOR,
@@ -303,6 +398,7 @@ typedef enum {
 typedef struct {
 	C6xSide side; ///< register file the operand reads or writes
 	ut8 num; ///< register number
+	bool odd; ///< the field named a register a pair cannot start at
 } C6xRegOperand;
 
 /** Immediate operand: a constant, a displacement, or a resolved branch target. */
@@ -363,6 +459,7 @@ typedef struct {
 	bool cross; ///< src2 uses the register-file cross path (x bit)
 	bool parallel; ///< p-bit: the *following* instruction runs in parallel
 	bool cont; ///< this instruction continues the previous execute packet (renders "||")
+	bool masked; ///< an SPMASK or SPMASKR before it in its execute packet masks its unit (renders "^")
 	bool is_fp; ///< the operation is floating-point (selects the FPU family)
 	ut8 creg; ///< predicate register code (bits 31:29); 0 = unconditional
 	bool z; ///< predicate sense (bit 28): 0 = nonzero, 1 = zero
@@ -371,6 +468,7 @@ typedef struct {
 	ut8 nops; ///< number of valid operands
 	bool is_header; ///< compact fetch-packet header word (renders as .fphead)
 	bool compact_packet; ///< this slot sits in a packet that has a compact header
+	bool protected_load; ///< a load in a fetch packet whose header protects loads: four NOP cycles follow it
 } C6xInsn;
 
 /** Per-variant feature gate and register-set descriptor. */
@@ -394,11 +492,17 @@ static inline ut64 c6x_packet_base(ut64 pc) {
 	return pc & ~(ut64)(C6X_FETCH_PACKET_SIZE - 1);
 }
 
+/**
+ * Reader for image bytes. Returns false unless the whole request was satisfied,
+ * so a caller can tell a short read from a mapped region of zeroes.
+ */
+typedef bool (*C6xReadFn)(void *user, ut64 addr, ut8 *buf, size_t len);
+
 RZ_IPI const C6xArchDesc *c6x_desc_from_cpu(const char *cpu);
 
-RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_OUT C6xInsn *insn);
+RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_NULLABLE C6xReadFn read, RZ_NULLABLE void *user, RZ_OUT C6xInsn *insn);
 
-RZ_IPI void c6x_mark_parallel(RZ_INOUT C6xInsn *insn, ut64 addr, RZ_INOUT ut64 *prev_end, RZ_INOUT bool *prev_par);
+RZ_IPI void c6x_mark_parallel(RZ_INOUT C6xInsn *insn, ut64 addr, RZ_INOUT ut64 *prev_end, RZ_INOUT bool *prev_par, RZ_INOUT ut8 *masks);
 
 RZ_IPI RZ_OWN char *c6x_format(const C6xArchDesc *desc, const C6xInsn *insn, ut64 pc);
 
@@ -410,12 +514,6 @@ RZ_IPI const char *c6x_pred_reg_name(ut8 creg);
 
 /** Most slots a fetch packet can hold: seven words of two compact opcodes, plus the header. */
 #define C6X_FP_SLOTS 15
-
-/** First address after execute packet \p p, i.e. where the next one starts. */
-#define C6X_PACKET_END(p) ((p).slots[(p).n - 1].addr + (p).slots[(p).n - 1].size)
-
-/** Registers one execute packet can stage; every slot writes at most a pair. */
-#define C6X_PK_REGS 16
 
 /** One instruction slot of a fetch packet, before decoding. */
 typedef struct {
@@ -429,15 +527,10 @@ typedef struct {
 /** One execute packet: the instructions that issue in the same cycle. */
 typedef struct {
 	ut64 addr; ///< address of the first slot
+	ut64 next; ///< address of the execute packet after it
 	C6xSlotRef slots[C6X_FP_SLOTS];
 	size_t n;
 } C6xPacketRef;
-
-/**
- * Reader for image bytes. Returns false unless the whole request was satisfied,
- * so a caller can tell a short read from a mapped region of zeroes.
- */
-typedef bool (*C6xReadFn)(void *user, ut64 addr, ut8 *buf, size_t len);
 
 RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian, RZ_OUT C6xSlotRef *out);
 
@@ -445,32 +538,44 @@ RZ_IPI bool c6x_packet_at(C6xReadFn read, void *user, ut64 pc, bool big_endian, 
 
 RZ_IPI bool c6x_continues_packet(C6xReadFn read, void *user, ut64 pc, bool big_endian, RZ_OUT bool *cont);
 
+RZ_IPI bool c6x_packet_masks(const C6xArchDesc *desc, C6xReadFn read, void *user, ut64 pc, bool big_endian, RZ_OUT ut8 *units);
+
 RZ_IPI const char *c6x_ins_name(C6xInsnId id);
 
 RZ_IPI RZ_OWN char *c6x_reg_operand_str(const C6xOperand *o);
 
 RZ_IPI const char *c6x_unit_name(ut8 bit);
 
+RZ_IPI ut8 c6x_unit_bit(const C6xInsn *insn);
+
 RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis);
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret);
 
-/** Local carrying a deferred branch's predicate from issue to transfer. */
-#define C6X_PRED_TAKEN "_br_taken"
+RZ_IPI bool c6x_load_into_base(const C6xInsn *insn);
 
-RZ_IPI bool c6x_same_reg(const C6xOperand *o, const C6xOperand *other);
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_load_part(const C6xInsn *insn, ut64 pc, bool update);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_jump_to(ut64 addr);
+RZ_IPI const char *c6x_il_reg(ut8 side, ut8 num);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_sample_predicate(const C6xInsn *insn);
+/**
+ * Decodes every slot of the execute packet holding \p addr into \p insns, in
+ * address order, and returns how many; 0 when it cannot be read or decoded.
+ */
+typedef size_t (*C6xPacketFn)(void *user, ut64 addr, RZ_OUT C6xInsn *insns, RZ_OUT C6xPacketRef *pkt);
 
-RZ_IPI RZ_OWN RzILOpEffect *c6x_deferred_transfer(const C6xInsn *insn, ut64 pc, bool sampled, ut64 fallthrough);
+/** The caller of c6x_lift_window() continues where the effect's code ends. */
+#define C6X_FALL_TO_END UT64_MAX
 
-RZ_IPI ut8 c6x_result_latency(const C6xInsn *insn);
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_window(C6xPacketFn packet, void *user, ut64 addr, ut64 fall, RZ_OUT ut64 *end);
 
-RZ_IPI ut8 c6x_branch_slots(const C6xInsn *insn);
+RZ_IPI ut8 c6x_delay_slots(const C6xInsn *insn, bool high);
+
+RZ_IPI ut8 c6x_nop_cycles(const C6xInsn *insn);
+
+RZ_IPI ut32 c6x_spkernel_delay(const C6xInsn *insn, ut8 ii);
 
 RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void);
 

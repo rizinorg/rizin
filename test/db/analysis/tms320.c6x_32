@@ -88,7 +88,7 @@ type: cret
             0x00000010      ldbu  .d1 *+a3[0x1],a3
             0x00000014      nop   4
             0x00000018      and   .l1 0x8,a3,a0
-            0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0001000b
+            0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0b0001000
 size: 2
 type: add
 size: 2
@@ -148,7 +148,7 @@ EOF
 EXPECT=<<EOF
 type: cjmp
 jump: 0x0000000c
-fail: 0x00000020
+fail: 0x00000038
 type: add
 stackptr: -136
 EOF
@@ -169,8 +169,8 @@ wx 4616c636f90400030818a701e2bbe8a5f8cba0c0f8ab8cd020a13690000020e1
 pd 10
 EOF
 EXPECT=<<EOF
-0x00000000      mv    .l1x b4,a0
-0x00000002      mv    .l1x b5,a1
+0x00000000      mv    .l1x b4,a8
+0x00000002      mv    .l1x b5,a9
 0x00000004      zero  .l1 a7:a6
 0x00000008      ||    extu .s1 a9,24,24,a3
 0x0000000c      extu  .s1 a7,0x18,0x18,a5
@@ -178,7 +178,7 @@ EXPECT=<<EOF
 0x00000010      [a0]  cmpltu .l1 a6,a8,a1
 0x00000014      [!a0] cmpltu .l1 a5,a3,a1
 0x00000018      [!a1] bnop .s1 0x6c,0x5
-0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0001001b
+0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0b0001001
 EOF
 
 RUN
@@ -254,7 +254,7 @@ EOF
 EXPECT=<<EOF
 mv .l1x b3,a2
 cmpeq .l1 0x2,a4,a0
-.fphead n, l, w, bu, nobr, nosat, 1000010b
+.fphead n, l, w, bu, nobr, nosat, 0b1000010
 [a0] bnop .s1 sym._C_L11,0x5
 mvk .s2 0x17,b4
 || mvk .s1 -0x722f,a4
@@ -277,7 +277,7 @@ wx e2030402
 ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
 wx 10040000
 ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
-wx e6a8041e
+wx e6a8040e
 ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
 wx e4433c06
 ao~opex:,operands:,type:,value:,base:,index:,disp:,scaled:,mode:
@@ -504,7 +504,7 @@ s 0x8148
 ao~rzil
 EOF
 EXPECT=<<EOF
-rzil: (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0)))
+rzil: (seq (set a4 (| (& (var a4) (bv 32 0xffff)) (bv 32 0x0))) (set b3 (bv 32 0x8150)) (jmp (bv 32 0x8000)))
 EOF
 RUN
 
@@ -559,7 +559,7 @@ s 0
 pd 10
 EOF
 EXPECT=<<EOF
-0x0000001c      .fphead n, l, w, bu, br, nosat, 0000001b
+0x0000001c      .fphead n, l, w, bu, br, nosat, 0b0000001
 0x00000000      mv    .l1 a4,a0
 0x00000002      [!a0] bnop .s1 0x154,0x5
 0x00000000      cmplt .l2 0x0,b4,b0
@@ -570,11 +570,11 @@ EXPECT=<<EOF
 0x0000000e      ldw   .d1 *a4++[0x1],a3
 0x00000010      nop   3
 0x00000012      nop   1
-0x00000014      spkernel 40
+0x00000014      spkernel 5,0
 0x00000016      ||    add .l1 a3,a5,a5
 0x00000018      bnop  .s2 b3,0x4
 0x0000001a      mv    .l1 a5,a4
-0x0000001c      .fphead n, l, w, bu, nobr, nosat, 1111001b
+0x0000001c      .fphead n, l, w, bu, nobr, nosat, 0b1111001
 0x00000000      add   .l1x 0x8,b15,a4
 0x00000004      mvk   .s1 0x20,a6
 0x00000006      nop   2
@@ -593,4 +593,640 @@ EXPECT=<<EOF
 0x00000016      stw   .d2 b4,*+b15[0x2]
 EOF
 
+RUN
+
+# A SPKERNEL's stage/cycle field splits by the ii of the SPLOOP that opens its
+# loop (SPRUFE8B Table 3-29), read from the image before it, where dis6x takes
+# the SPLOOP it listed last. TI-assembled loops of ii 9 and 14, compact and
+# 32-bit, the first across a fetch-packet boundary.
+NAME=c6x a SPKERNEL splits its stage and cycle by the ii of its SPLOOP
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e scr.color=0
+e asm.bytes=false
+wx 6e0c6e0ce71e6e0c6e0c6e0c664ca0006e0c6e0c6e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0ce69f6e0c6e0c6e0c664ca0006e0c6e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0c6e0c67dc6e0c6e0c6e0ce64ea0006e0c6e0c6e0c6e0c0000e0ef6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0ce75e6e0c6e0c6e0c0000e0efe64ea0006e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c0000e0ef00000000000000000040830c0000000000000000000000000000000000000000 @ 0x100
+pd 1 @ 0x10c
+pd 1 @ 0x126
+pd 1 @ 0x150
+pd 1 @ 0x174
+pd 1 @ 0x180
+pd 1 @ 0x1a8
+EOF
+EXPECT=<<EOF
+            0x0000010c      sploop 9
+            0x00000126      spkernel 2,7
+            0x00000150      sploop 14
+            0x00000174      spkernel 1,13
+            0x00000180      sploop 14
+            0x000001a8      spkernel 3,2
+EOF
+RUN
+
+# A SPKERNEL closes the loop of the last SPLOOP before it, so one that follows
+# another without a SPLOOP between them keeps its field whole, as in dis6x.
+NAME=c6x a SPKERNEL without a SPLOOP of its own keeps its stage and cycle field whole
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e scr.color=0
+e asm.bytes=false
+wx 008003040000000000000000000000000040c30f0000000000000000000000000040c30f00000000000000000000000000000000000000000000000000000000
+pd 1 @ 0
+pd 1 @ 0x10
+pd 1 @ 0x20
+EOF
+EXPECT=<<EOF
+            0x00000000      sploop 9
+            0x00000010      spkernel 3,15
+            0x00000020      spkernel 0x3f
+EOF
+RUN
+
+# A compact slot is laid out by the header that ends its fetch packet, up to 28
+# bytes on. pD, pd with a count, ao and pdb decode from the range, the block or
+# the basic block, which can stop short of it: the decoder then read the word
+# as a 32-bit opcode, or found a half word undecodable, and a 32-bit branch
+# lost the half-word scaling of its packet (#6751).
+NAME=c6x compact slots decode the same from a short buffer
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=false
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx 4602baea2874ca01e805e001740280012ae05002ea05600276220002008020e0
+pD 8
+b 4
+ao 1 @ 0~^size:
+ao 1 @ 0~^type:
+b 2
+pd 1 @ 2
+wx 62a38c00f694bc01f4623c0546464e0220a14cd0106f960362818801400000e1 @ 0x20
+pD 4 @ 0x30
+af+ fcn
+afb+ 0 0 4 0x154 4
+pdb @ 0
+EOF
+EXPECT=<<EOF
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000004      mvk   .s1 -0x6b18,a3
+size: 2
+type: mov
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000030      [!a0] bnop .s1 0xb8,0x5
+fcn();
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+EOF
+RUN
+
+# The packet above as big-endian memory holds it: each word keeps its value,
+# so the less significant half, now at the higher address, is still the first
+# slot (TI cl6x and dis6x), and the second slot of a word is read from before it.
+# The packet at 0x20 runs a compact pair in parallel, as its header says. pad
+# decodes the packet it is given at 0x20, whose second slots take their halves
+# from that hex rather than from the packet already there.
+NAME=c6x big-endian compact slots keep the order of their word
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=true
+e asm.cpu=c674x
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+wx eaba024601ca742801e005e8018002740250e02a026005ea02002276e0208000
+pD 8
+b 2
+pd 1 @ 2
+ao 1 @ 2~^size:
+ao 1 @ 2~^type:
+pD 2 @ 0
+b 32
+wx 008ca36201bc94f6053c62f4024e4646d04ca12003966f1001888162e1000040 @ 0x20
+pd 2 @ 0x2c
+s 0x20
+pad 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000~:0..4
+EOF
+EXPECT=<<EOF
+0x00000000      mv    .l1 a4,a0
+0x00000002      [!a0] bnop .s1 0x154,0x5
+0x00000004      mvk   .s1 -0x6b18,a3
+0x00000002      [!a0] bnop .s1 0x154,0x5
+size: 2
+type: cjmp
+0x00000000      mv    .l1 a4,a0
+0x0000002c      mv    .l1 a4,a10
+0x0000002e      ||    mv .s1 a4,a0
+mv .l1 a4,a0
+add .l1 0x1,a0,a0
+mv .l2 b4,b0
+add .l2 0x2,b0,b0
+EOF
+RUN
+
+# main() calls c_strlen, decrypt and uart_write_text through compact CALLPs,
+# whose displacement counts words: counted in half words, they land inside
+# functions.
+NAME=c6x compact CALLP reaches its callee in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e scr.color=0
+e asm.lines=false
+e asm.bytes=false
+e asm.comments=false
+e asm.flags=false
+pd 1 @ 0x8158
+pd 1 @ 0x8178
+pd 1 @ 0x819a
+ao 1 @ 0x819a~^jump
+EOF
+EXPECT=<<EOF
+0x00008158      callp .s2 sym.c_strlen,b3
+0x00008178      callp .s2 sym.decrypt,b3
+0x0000819a      callp .s2 sym.uart_write_text,b3
+jump: 0x00008000
+EOF
+RUN
+
+# The compact callp issues with the mv that sets up the argument of c_strlen.
+NAME=c6x a call runs the rest of its execute packet in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x8158
+aezi
+ar a3=0x1234
+ar a4=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00001234
+b3 = 0x00008160
+ PC: 0x00008088
+EOF
+RUN
+
+# A call through b5: the addkpc in the delay slot of the branch sets the return
+# address, though the packet pass does not model its operands.
+NAME=c6x the addkpc beside a register call sets its return address in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x84b8
+aezi
+ar b5=0x8000
+ar b3=0
+aezs 1
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+b3 = 0x000084c4
+ PC: 0x00008000
+EOF
+RUN
+
+# TI's memset stores 16 bytes in each iteration of its SPLOOP, and the bytes
+# around them before and after the loop: here 37 from an odd address.
+NAME=c6x memset stores the blocks of its SPLOOP in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e io.cache=true
+e asm.cpu=c674x
+o malloc://0x1000 0x20000 rw
+wx eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee @ 0x20000
+pd 1 @ 0x86a0
+s sym.memset
+aezi
+ar a4=0x20013
+ar b4=0xab
+ar a6=37
+ar b3=0x20800
+aezsu 0x20800
+p8 0x40 @ 0x20000
+ar a4
+EOF
+EXPECT=<<EOF
+            ;-- $C$L1:
+            0x000086a0      sploop 1
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeabababababababababababababababababababababababababababababababababababababeeeeeeeeeeeeeeee
+a4 = 0x00020013
+EOF
+RUN
+
+# TI's memcpy issues its SPLOOP in the delay slots of a return taken for
+# copies under 24 bytes: once that return is taken the loop buffer goes idle,
+# so the loop runs only for the longer copy, here from an odd source.
+NAME=c6x memcpy returns in place of the SPLOOP it began in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e io.cache=true
+e asm.cpu=c674x
+o malloc://0x1000 0x20000 rw
+wx eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee @ 0x20000
+wx 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40 @ 0x20101
+pd 2 @ 0x8804
+pd 1 @ 0x8838
+s sym.memcpy
+aezi
+ar a4=0x20010
+ar b4=0x20101
+ar a6=7
+ar b3=0x20800
+aezsu 0x20800
+p8 0x20 @ 0x20000
+ar a4
+s sym.memcpy
+aezi
+ar a4=0x20010
+ar b4=0x20101
+ar a6=33
+ar b3=0x20800
+aezsu 0x20800
+p8 0x40 @ 0x20000
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00008804      [b2]  b .s2 b3
+            0x00008808      ||    [b0] ldndw .d2 *b4++[0x1],b17:b16
+            0x00008838      sploop 2
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee01020304050607eeeeeeeeeeeeeeeeee
+a4 = 0x00020010
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021eeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+a4 = 0x00020010
+EOF
+RUN
+
+# $C$L3 is a jump target four packets after "b .s1 memset", which issues in
+# the delay slots of a bnop and so gets no window of its own: the call at
+# $C$L3 is in no window and runs when jumped to.
+NAME=c6x a jump target after a branch inside a window runs in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x83f0
+aezi
+aezs 1
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00008620
+EOF
+RUN
+
+# .text starts at 0x20, after bytes that are no code and partly unmapped: the
+# packet at its start is the section's first, whatever their last bit says.
+NAME=c6x the first packet of a section starts with it in a TI-built COFF
+FILE=bins/tms320/emulateme_nostd.ccsv5.c64xp.ticoff2.dbg.coff
+CMDS=<<EOF
+e asm.cpu=c64x+
+ao 1 @ 0x20~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a8 (var b4))
+EOF
+RUN
+
+# Bytes mapped right before code at a fetch-packet boundary are no part of its
+# packets: here NOPs with their p-bit set end the map before the one of the add.
+NAME=c6x an execute packet does not run across the start of an IO map
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+o malloc://64 0x20
+wx 0100000001000000010000000100000001000000010000000100000001000000 @ 0
+wx 5820840000000000 @ 0x20
+ao 1 @ 0x20~rzil
+EOF
+EXPECT=<<EOF
+rzil: (set a1 (+ (bv 32 0x1) (var a1)))
+EOF
+RUN
+
+# The packet of the compact callp runs past the header of its fetch packet to
+# the mv that sets up the argument of uart_write_text.
+NAME=c6x a call's execute packet runs past the fetch-packet header in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x819a
+aezi
+ar b5=0x4321
+ar a4=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00004321
+b3 = 0x000081a4
+ PC: 0x00008000
+EOF
+RUN
+
+# The compact callp past the header continues the packet of the mvkh before
+# it, and its displacement counts from its own fetch packet, not from that of
+# the packet's first slot.
+NAME=c6x a call continuing a packet past the fetch-packet header in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv5.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x8138
+aezi
+ar a4=0x12345678
+ar b3=0
+aezs 1
+ar a4
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+a4 = 0x00005678
+b3 = 0x00008142
+ PC: 0x00008000
+EOF
+RUN
+
+# Past the header the addkpc counts from its own fetch packet, to the return
+# label at 0x84e8, not from the one where its packet starts.
+NAME=c6x an addkpc past the fetch-packet header counts from its own fetch packet in a TI-built ELF
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+e asm.cpu=c674x
+s 0x84da
+aezi
+ar b3=0
+ar b6=0x77
+ar b4=0
+aezs 1
+ar b3
+ar b4
+EOF
+EXPECT=<<EOF
+b3 = 0x000084e8
+b4 = 0x00000077
+EOF
+RUN
+
+# dis6x writes the layout field of a fetch-packet header with a trailing "b",
+# which RzNum warns about when asm.sub.names evaluates the numbers of a line.
+# The second header has a doubleword primary size, named as dis6x names it.
+NAME=c6x fetch-packet header layout prints without a deprecated base suffix
+FILE=malloc://64
+CMDS=<<EOF
+e asm.arch=tms320
+e asm.cpu=c674x
+e scr.color=0
+e asm.sub.names=true
+wx d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e1
+wx 263da105763da1056e0c7c2074206c207c4074406c407ce074e06ce0000084ef @ 0x20
+pd 1 @ 0x1c
+pd 1 @ 0x3c
+EOF
+EXPECT=<<EOF
+            0x0000001c      .fphead n, l, w, bu, br, nosat, 0b0001000
+            0x0000003c      .fphead n, l, dw/ndw, w, nobr, nosat, 0b1111100
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# A window covers its delay slots and the cycles to its results' landing, so
+# its IL can nest deeper than one level per packet. The sequences are balanced
+# so that the JSON stays within the 128 levels pj allows.
+NAME=c6x aoj on a long branch window
+FILE=malloc://0x200
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx d91f1402f1083004201001c000000000000000002900a000a341940245569408000000007b922002b3071c02f140c309a1ec4509a3ec21044540140800000000a10d8e01a30d9203f941c608fb011d0401ed4008033d9d0345201409c6569804 @ 0x1c
+aoj 1 @ 0x1c~{[0].addr}
+aoj 1 @ 0x1c~{[0].rzil.opcode}
+EOF
+EXPECT=<<EOF
+28
+seq
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+# B with ADDKPC setting B3 in its delay slots is the C64x+ call idiom; ADDKPC
+# writes the return address. As a jump, af followed it into the callee and
+# grew the function to 584 bytes; as a call it is 48, and the callee is a
+# function of its own.
+NAME=c6x b with addkpc b3 in its delay slots is a call
+FILE=malloc://0x1000
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx 62030c00 @ 0x7a4
+wx 90bcff0f @ 0x9d4
+wx 62018301 @ 0x9e8
+wx 62030c00 @ 0x9ec
+ao @ 0x9d4~^type
+ao @ 0x9d4~^fail
+af @ 0x9d4
+afl
+EOF
+EXPECT=<<EOF
+type: call
+fail: 0x000009ec
+0x000007a4    1 24           fcn.000007a4
+0x000009d4    1 48           fcn.000009d4
+EOF
+RUN
+
+# TI's compiler shares the packet that sets up a call between call sites: a
+# branch to it, then a branch to the callee one cycle later. The ADDKPC writing
+# B3 is at the first branch's target, so the second branch is the call. It is
+# typed ccall with its return address (the ADDKPC's) as the fallthrough, while
+# the first branch stays a cjmp into the shared packet, and the function ends
+# before the callee at 0x3c.
+NAME=c6x a call made through two consecutive branches
+FILE=malloc://0x100
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+e scr.color=0
+wx d90a1000da0f0c05900400c0900700c0a800800228010003002000001006000000800000d90f140262018301788018026203280000800000000000005820100262030c0000800000
+pd 7
+pd 5 @ 0x24
+ao @ 0xc~^type
+ao @ 0xc~^jump
+ao @ 0xc~^fail
+ao @ 0x8~^type
+ao @ 0x8~^jump
+af @ 0
+afl
+EOF
+EXPECT=<<EOF
+            0x00000000      cmplt .l1 0x0,a4,a0
+            0x00000004      ||    mv .l2 b3,b10
+        ,=< 0x00000008      [a0]  b .s1 0x24
+        |   0x0000000c      [a0]  b .s1 0x3c
+        |   0x00000010      mvk   .s1 0x1,a5
+        |   0x00000014      mvk   .s1 0x2,a6
+        |   0x00000018      nop   2
+            0x00000024      mv    .l1 a5,a4
+            0x00000028      ||    addkpc .s2 0x2c,b3,0
+            0x0000002c      add   .l1 a4,a6,a4
+            0x00000030      b     .s2 b10
+            0x00000034      nop   5
+type: ccall
+jump: 0x0000003c
+fail: 0x0000002c
+type: cjmp
+jump: 0x00000024
+0x00000000    4 56           fcn.00000000
+EOF
+RUN
+
+# Function analysis walks delay slots as instructions. NOP 5 is one of them and
+# fills all five cycles, so the return's delay slots end after it, and so does
+# the function; a conditional branch falls through to the same place.
+NAME=c6x delay slots counted in cycles for function analysis
+FILE=malloc://0x100
+CMDS=<<EOF
+e analysis.arch=tms320
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e cfg.bigendian=false
+wx 62030c000080000058208400582084005820840058208400
+ao @ 0~^delay
+af @ 0
+afi @ 0~size
+wx 100800c00080000058208400 @ 0x40
+ao @ 0x40~^type
+ao @ 0x40~^fail
+ao @ 0x40~^delay
+EOF
+EXPECT=<<EOF
+delay: 1
+size: 8
+type: cjmp
+fail: 0x00000048
+delay: 1
+EOF
+RUN
+
+NAME=c6x a conditional branch through a register that links is a call
+FILE=malloc://0x40
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c64x+
+e analysis.cpu=c64x+
+e cfg.bigendian=false
+wx 6203108062818201
+pi 2
+ao 1~^type:
+ao 1~^fail:
+EOF
+EXPECT=<<EOF
+[a1] b .s2 b4
+addkpc .s2 0x8,b3,4
+type: uccall
+fail: 0x00000008
+EOF
+RUN
+
+# Disassembly that starts inside an execute packet has no instruction before
+# it to tell the packet from: the image does, so the first line keeps its "||"
+# and, on a unit an SPMASK before it names, its "^".
+NAME=c6x disassembly from inside an execute packet keeps its marks
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.rel.elf
+CMDS=<<EOF
+e asm.lines=false
+e asm.bytes=false
+pd 2 @ 0x84e2
+pi 1 @ 0x84f0
+pd 1 @ 0x8098
+pi 1 @ 0x84e0
+EOF
+EXPECT=<<EOF
+0x000084e2      ||    mv .l2 b4,b5
+0x000084e4      ||    mvk .s1 -0x6e2f,a4
+|| [a0] b .s1 sym._C_L18
+0x00008098      ||^   mv .l2x a4,b5
+cmpeq .l1 0x2,a4,a0
+EOF
+RUN
+
+# TI's compiler shares the code that sets up a call between call sites: a site
+# branches to it and, up to five cycles later, to the callee. That code then
+# runs in the last delay slots of the second branch, for as many cycles as lie
+# between the two branches: four after a BNOP with three NOP cycles (0x0),
+# two after one with one (0xc). An ADDKPC that code reaches later is not run
+# (0x16), nor is one behind the second branch once the first has taken over
+# (0x20). 0x2e falls into the set-up at 0x32. The VM agrees on B3 at the callee.
+NAME=c6x a call made through two branches with NOP cycles between them
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.arch=tms320
+e asm.cpu=c674x
+e analysis.cpu=c674x
+e cfg.bigendian=false
+e io.cache=true
+wx 7a663a0d787fb0010080000020212020100d00206e8cca680a0d6e8c008020ecca660a096e0c6e0c624183016e8c0a096e0c86856241860147b66e8c008060eb622181016e8c6e0c6e0c6e0c00000000628185016e8c6e0c6e0c6e0c0000c0ec000000000080000062030c000080000000000000000000000000000000000000
+pi 2 @ 0x0
+pi 2 @ 0x32
+ao 1 @ 0x2~^type:
+ao 1 @ 0x2~^fail:
+ao 1 @ 0x10~^type:
+ao 1 @ 0x10~^fail:
+ao 1 @ 0x18~^type:
+ao 1 @ 0x22~^type:
+ao 1 @ 0x2e~^type:
+ao 1 @ 0x2e~^fail:
+aezi; ar a0=0; ar b3=0xbad; ar PC=0x0; aezsu 0x68; ar b3
+aezi; ar b0=1; ar b3=0xbad; ar PC=0xc; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x16; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x20; aezsu 0x68; ar b3
+aezi; ar b3=0xbad; ar PC=0x2e; aezsu 0x68; ar b3
+EOF
+EXPECT=<<EOF
+[!a0] bnop .s1 0x32,0x3
+[!a0] bnop .s1 0x68,0x0
+mv .l1 a11,a4
+addkpc .s2 0x38,b3,2
+type: ccall
+fail: 0x00000038
+type: ccall
+fail: 0x00000044
+type: jmp
+type: jmp
+type: call
+fail: 0x00000038
+b3 = 0x00000038
+b3 = 0x00000044
+b3 = 0x00000bad
+b3 = 0x00000bad
+b3 = 0x00000038
+EOF
 RUN

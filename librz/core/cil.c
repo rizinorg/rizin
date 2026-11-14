@@ -190,24 +190,26 @@ static bool step_assert_vm(RzCore *core) {
 }
 
 static bool step_handle_result(RzCore *core, RzAnalysisILStepResult r) {
-	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	switch (r) {
-	case RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS:
+	if (r == RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS) {
 		rz_core_reg_update_flags(core);
 		return true;
-	case RZ_ANALYSIS_IL_STEP_UNIMPLEMENTED_IL: {
-		ut64 reg_pc = rz_reg_get_value_by_role(rreg, RZ_REG_NAME_PC);
-		RZ_LOG_ERROR("RzIL: lifting not implemented at address 0x%08" PFMT64x "\n", reg_pc);
-	} break;
-	case RZ_ANALYSIS_IL_STEP_INVALID_OP: {
-		ut64 reg_pc = rz_reg_get_value_by_role(rreg, RZ_REG_NAME_PC);
-		RZ_LOG_ERROR("RzIL: invalid instruction at address 0x%08" PFMT64x "\n", reg_pc);
-	} break;
-	default: {
-		RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
-		ut64 vm_pc = rz_bv_to_ut64(il_vm->vm->pc);
-		RZ_LOG_ERROR("RzIL: stepping failed with PC at 0x%" PFMT64x ".\n", vm_pc);
-	} break;
+	}
+	// The VM's own PC is where it stopped. The register profile's need not be:
+	// syncing back writes the PC first and every bound variable after it, so an
+	// architecture binding its PC register as a variable gets the old value back.
+	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
+	ut64 pc = il_vm ? rz_bv_to_ut64(il_vm->vm->pc)
+			: rz_reg_get_value_by_role(rz_analysis_get_reg(core->analysis), RZ_REG_NAME_PC);
+	switch (r) {
+	case RZ_ANALYSIS_IL_STEP_UNIMPLEMENTED_IL:
+		RZ_LOG_ERROR("RzIL: lifting not implemented at address 0x%08" PFMT64x "\n", pc);
+		break;
+	case RZ_ANALYSIS_IL_STEP_INVALID_OP:
+		RZ_LOG_ERROR("RzIL: invalid instruction at address 0x%08" PFMT64x "\n", pc);
+		break;
+	default:
+		RZ_LOG_ERROR("RzIL: stepping failed with PC at 0x%" PFMT64x ".\n", pc);
+		break;
 	}
 	return false;
 }
