@@ -836,9 +836,7 @@ jobs:
           repository: rizinorg/rizin-testbins
           path: rz-bindgen/test/bins
       - name: Run rz-test
-        run: |
-          rz-test -L
-          rz-test -L @extras
+        run: rz-test -L db @extras
         working-directory: rz-bindgen/test
 
   test-macos-pkg:
