@@ -263,7 +263,7 @@ ret_verdict:
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		rz_iterator_reset(&it);
 		printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
-		       s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
+			s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
 	}
 	printf("\n");
 	// END
@@ -503,22 +503,32 @@ static bool edge_selector(const RzGraphEdge *e, RzGraphVisitor *vis) {
 
 typedef struct {
 	RzICFG *icfg;
-	ut64 membership;
+	ut64 new_m;
+	const RzSetU *rm_memberships;
 } VisitorBundle;
 
 static void change_membership(RzGraphNode *n, RzGraphVisitor *vis) {
 	VisitorBundle *bundle = vis->visitor_data;
 	RzICFGNode *block = rz_graph_node_get_data_mut(n);
-	if (node_needs_judgement(bundle->icfg, block)) {
-		// TODO: In this subgraph, replace the previously common memberships from A,B with
-		// the new procedure C. But keep other memberships like D, E.
+	if (block->memberships_n == 1) {
+		// Blocks with a single membership never change.
+		// They are already solved.
 		return;
 	}
-
-	rz_set_u_free(block->proc_memberships.set);
-	block->proc_memberships.set = NULL;
-	block->memberships_n = 1;
-	block->proc_memberships.m = bundle->membership;
+	size_t new_m_size = rz_set_u_difference(block->proc_memberships.set, block->proc_memberships.set, bundle->rm_memberships, NULL);
+	if (new_m_size == SZT_MAX) {
+		rz_warn_if_reached();
+		return;
+	}
+	if (new_m_size == 0) {
+		rz_set_u_free(block->proc_memberships.set);
+		block->proc_memberships.set = NULL;
+		block->memberships_n = 1;
+		block->proc_memberships.m = bundle->new_m;
+	} else {
+		rz_set_u_add(block->proc_memberships.set, bundle->new_m);
+		block->memberships_n = rz_set_u_size(block->proc_memberships.set);
+	}
 }
 
 static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_node) {
@@ -528,6 +538,15 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 		rz_warn_if_reached();
 		return false;
 	}
+
+	// Update membership of all its successors
+	VisitorBundle bundle = { .icfg = icfg, .new_m = cf_node->addr, .rm_memberships = cf_node->proc_memberships.set };
+	RzGraphVisitor visitor = { 0 };
+	visitor.edge_selector = edge_selector;
+	visitor.finish_node = change_membership;
+	visitor.visitor_data = &bundle;
+	rz_graph_dfs_from_node(icfg->graph, n, &visitor);
+
 	RzIterator iter = { 0 };
 	if (!rz_graph_in_edges(icfg->graph, n, &iter)) {
 		rz_warn_if_reached();
@@ -539,14 +558,6 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 		rz_graph_edge_set_data(e, RZ_GRAPH_INT_AS_DATA(RZ_ICFG_EDGE_TYPE_CALL));
 	}
 	rz_iterator_fini(&iter);
-
-	// Update membership of all its successors
-	VisitorBundle bundle = { .icfg = icfg, .membership = cf_node->addr };
-	RzGraphVisitor visitor = { 0 };
-	visitor.edge_selector = edge_selector;
-	visitor.discover_node = change_membership;
-	visitor.visitor_data = &bundle;
-	rz_graph_dfs_from_node(icfg->graph, n, &visitor);
 	return true;
 }
 
