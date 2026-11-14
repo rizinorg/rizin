@@ -14,6 +14,7 @@
  *   /analysis => see analysis.c
  *   /file => see below
  *   /seek => see serialize_core_seek.c
+ *   /macros => see below
  *   offset=<offset>
  *   blocksize=<blocksize>
  */
@@ -68,6 +69,102 @@ static const char *config_exclude_load[] = {
 	NULL
 };
 
+/*
+ * Macros
+ *
+ * /macros
+ *   <name>={"args":["arg1","arg2"],"code":"..."}
+ */
+
+static bool macro_save_cb(RzCmd *cmd, const RzCmdMacro *macro, void *user) {
+	(void)cmd;
+	Sdb *db = user;
+	PJ *j = pj_new();
+	if (!j) {
+		return false;
+	}
+	pj_o(j);
+	pj_ka(j, "args");
+	for (size_t i = 0; i < macro->nargs; i++) {
+		pj_s(j, macro->args[i]);
+	}
+	pj_end(j);
+	pj_ks(j, "code", macro->code);
+	pj_end(j);
+	sdb_set(db, macro->name, pj_string(j));
+	pj_free(j);
+	return true;
+}
+
+static void macros_save(Sdb *db, RzCore *core) {
+	rz_cmd_macro_foreach(core->rcmd, macro_save_cb, db);
+}
+
+static bool macro_load_cb(void *user, const SdbKv *kv) {
+	RzCore *core = user;
+	char *json_str = sdbkv_dup_value(kv);
+	if (!json_str) {
+		return true;
+	}
+	RzJson *json = rz_json_parse(json_str);
+	if (!json || json->type != RZ_JSON_OBJECT) {
+		free(json_str);
+		return false;
+	}
+
+	bool ok = false;
+	const RzJson *code = rz_json_get(json, "code");
+	const RzJson *args = rz_json_get(json, "args");
+	if (!code || code->type != RZ_JSON_STRING) {
+		goto beach;
+	}
+
+	size_t nargs = 0;
+	if (args && args->type != RZ_JSON_ARRAY) {
+		goto beach;
+	}
+	if (args) {
+		nargs = args->children.count;
+	}
+	const char **argv = RZ_NEWS0(const char *, nargs + 1);
+	if (!argv) {
+		goto beach;
+	}
+	size_t i = 0;
+	if (args && args->type == RZ_JSON_ARRAY) {
+		for (const RzJson *child = args->children.first; child; child = child->next) {
+			if (child->type != RZ_JSON_STRING) {
+				free(argv);
+				goto beach;
+			}
+			argv[i++] = child->str_value;
+		}
+	}
+
+	const char *name = sdbkv_key(kv);
+	if (rz_cmd_macro_get(core->rcmd, name)) {
+		ok = rz_cmd_macro_update(core->rcmd, name, argv, code->str_value);
+	} else {
+		ok = rz_cmd_macro_add(core->rcmd, name, argv, code->str_value);
+	}
+	free(argv);
+
+beach:
+	rz_json_free(json);
+	free(json_str);
+	return ok;
+}
+
+static bool macros_load(Sdb *db, RzCore *core, RzSerializeResultInfo *res) {
+	// Merge the project's macros into the current command state instead of
+	// clearing it, so macros defined at startup (e.g. in ~/.rizinrc) survive.
+	if (!sdb_foreach(db, macro_load_cb, core)) {
+		RZ_SERIALIZE_ERR(res, "failed to parse a macro json");
+		return false;
+	}
+	return true;
+}
+
 RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file) {
 	file_save(sdb_ns(db, "file", true), core, prj_file);
 	rz_serialize_config_save(sdb_ns(db, "config", true), core->config, config_exclude_save);
@@ -76,6 +173,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	rz_serialize_analysis_save(sdb_ns(db, "analysis", true), core->analysis);
 	rz_serialize_debug_save(sdb_ns(db, "debug", true), core->dbg);
 	rz_serialize_core_seek_save(sdb_ns(db, "seek", true), core);
+	macros_save(sdb_ns(db, "macros", true), core);
 
 	char buf[0x20];
 	if (snprintf(buf, sizeof(buf), "0x%" PFMT64x, core->offset) < 0) {
@@ -104,6 +202,11 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	SUB("analysis", rz_serialize_analysis_load(subdb, core->analysis, res));
 	SUB("debug", rz_serialize_debug_load(subdb, core->dbg, res));
 	SUB("seek", rz_serialize_core_seek_load(subdb, core, res));
+
+	Sdb *macros_db = sdb_ns(db, "macros", false);
+	if (macros_db && !macros_load(macros_db, core, res)) {
+		return false;
+	}
 
 	const char *str = sdb_const_get(db, "offset");
 	if (!str || !*str) {
