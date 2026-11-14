@@ -61,6 +61,32 @@ static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 	return pkt->n;
 }
 
+/**
+ * \brief Number of execute cycles a packet occupies.
+ *
+ * `NOP n` covers n cycles — `NOP 5` alone fills all five delay slots of a
+ * branch. Everything else occupies one execute packet.
+ */
+static ut8 c6x_packet_cycles(const C6xInsn *insns, size_t n) {
+	ut8 cycles = 1;
+	for (size_t i = 0; i < n; i++) {
+		if (insns[i].id != C6X_INS_NOP) {
+			continue;
+		}
+		ut8 cnt = 1;
+		if (insns[i].nops > 0 && insns[i].ops[0].kind == C6X_OP_IMM) {
+			cnt = (ut8)insns[i].ops[0].v.imm.value;
+			if (!cnt) {
+				cnt = 1;
+			}
+		}
+		if (cnt > cycles) {
+			cycles = cnt;
+		}
+	}
+	return cycles;
+}
+
 // The branch in a packet, if it opens delay slots.
 static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx, RZ_OUT ut8 *slots) {
 	for (size_t i = 0; i < n; i++) {
@@ -78,7 +104,8 @@ static bool c6x_packet_branch(const C6xInsn *insns, size_t n, RZ_OUT size_t *idx
 static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 from,
 	ut8 depth, const C6xOperand *reg, RZ_OUT ut64 *end) {
 	ut64 at = from;
-	for (ut8 k = 0; k < depth; k++) {
+	ut8 cycles = 0;
+	while (cycles < depth) {
 		C6xPacketRef p;
 		C6xInsn ins[C6X_FP_SLOTS];
 		size_t n = c6x_decode_packet(analysis, c6x, at, ins, &p);
@@ -100,6 +127,7 @@ static bool c6x_reads_reg_ahead(RzAnalysis *analysis, const C6xArchDesc *c6x, ut
 			}
 		}
 		at = C6X_PACKET_END(p);
+		cycles += c6x_packet_cycles(ins, n);
 	}
 	return false;
 }
@@ -190,7 +218,8 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 	}
 	// inside an earlier branch's window?
 	ut64 probe = pkt.addr;
-	for (ut8 back = 0; back < 5 && probe; back++) {
+	ut8 back = 0;
+	while (back < 5 && probe) {
 		C6xPacketRef prev;
 		C6xInsn pins[C6X_FP_SLOTS];
 		if (probe < C6X_COMPACT_SIZE) {
@@ -205,6 +234,7 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 		if (c6x_packet_branch(pins, pn, &bi, &bs) && bs > back) {
 			return rz_il_op_new_nop(); // covered by that branch's window
 		}
+		back += c6x_packet_cycles(pins, pn);
 		probe = prev.addr;
 	}
 	size_t bidx;
@@ -249,17 +279,19 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 	}
 	RzILOpEffect *late = NULL;
 	ut64 next = C6X_PACKET_END(pkt);
-	for (ut8 k = 1; k <= bslots; k++) {
+	ut8 used = 0;
+	while (used < bslots) {
 		C6xPacketRef dp;
 		C6xInsn dins[C6X_FP_SLOTS];
 		size_t dn = c6x_decode_packet(analysis, c6x, next, dins, &dp);
 		if (!dn) {
 			break;
 		}
+		ut8 pcnt = c6x_packet_cycles(dins, dn);
 		// does anything in this packet write after the branch resolves?
 		bool crosses = false;
 		for (size_t i = 0; i < dn; i++) {
-			crosses |= k + c6x_result_latency(&dins[i]) > bslots;
+			crosses |= used + pcnt + c6x_result_latency(&dins[i]) > bslots;
 		}
 		RzILOpEffect *de = c6x_lift_packet(dins, dn, dp.addr, 0);
 		if (de) {
@@ -270,6 +302,7 @@ static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
 			}
 		}
 		next = C6X_PACKET_END(dp);
+		used += pcnt;
 	}
 	// "next" now sits just past the last delay-slot packet
 	RzILOpEffect *xfer = c6x_deferred_transfer(&slots[bidx], pkt.slots[bidx].addr, sample != NULL, next);
