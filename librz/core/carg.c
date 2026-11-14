@@ -54,7 +54,7 @@ RZ_DEPRECATE RZ_API ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) 
  */
 RZ_DEPRECATE RZ_API bool rz_core_arg_set(RzCore *core, const char *cc, int num, ut64 val) {
 	rz_return_val_if_fail(core, false);
-	if (!RZ_STR_ISEMPTY(cc)) {
+	if (RZ_STR_ISEMPTY(cc)) {
 		cc = rz_analysis_syscc_default(core->analysis);
 	}
 	const char *rn = rz_analysis_cc_arg(core->analysis, cc, num);
