@@ -4258,3 +4258,68 @@ EXPECT=<<EOF
 1951
 EOF
 RUN
+NAME=gadget search help examples
+FILE=hex://5fc3
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e search.show_progress=false
+/R?~Examples
+/R
+/Rq "pop rdi"
+/R/q "pop r(di|si)"
+/Rj "pop rdi"
+/R-
+o--
+on hex://5fffd0
+/C?~Examples
+/C
+/Cq "pop rdi"
+/C/q "pop r(di|si)"
+/Cj "pop rdi"
+/C-
+o--
+on hex://5fffe0
+/J?~Examples
+/J
+/Jq "pop rdi"
+/J/q "pop r(di|si)"
+/Jj "pop rdi"
+/J-
+EOF
+EXPECT=<<EOF
+Examples:
+  0x00000000                 5f  pop rdi
+  0x00000001                 c3  ret
+Gadget size: 2
+
+  0x00000001                 c3  ret
+Gadget size: 1
+
+0x00000000: pop rdi; ret;
+0x00000000: pop rdi; ret;
+[{"opcodes":[{"offset":0,"size":1,"opcode":"pop rdi","type":"pop"},{"offset":1,"size":1,"opcode":"ret","type":"ret"}],"retaddr":1,"size":2}]
+Examples:
+  0x00000000                 5f  pop rdi
+  0x00000001               ffd0  call rax
+Gadget size: 3
+
+  0x00000001               ffd0  call rax
+Gadget size: 2
+
+0x00000000: pop rdi; call rax;
+0x00000000: pop rdi; call rax;
+[{"opcodes":[{"offset":0,"size":1,"opcode":"pop rdi","type":"pop"},{"offset":1,"size":2,"opcode":"call rax","type":"rcall"}],"retaddr":1,"size":3}]
+Examples:
+  0x00000000                 5f  pop rdi
+  0x00000001               ffe0  jmp rax
+Gadget size: 3
+
+  0x00000001               ffe0  jmp rax
+Gadget size: 2
+
+0x00000000: pop rdi; jmp rax;
+0x00000000: pop rdi; jmp rax;
+[{"opcodes":[{"offset":0,"size":1,"opcode":"pop rdi","type":"pop"},{"offset":1,"size":2,"opcode":"jmp rax","type":"rjmp"}],"retaddr":1,"size":3}]
+EOF
+RUN

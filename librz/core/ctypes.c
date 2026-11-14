@@ -13,6 +13,27 @@
 
 #include "core_private.h"
 
+/**
+ * \brief Print C syntax using the active palette, preserving plain output verbatim.
+ *
+ * Keep highlighting at the display boundary so generated declarations remain
+ * suitable for editors and other callers that need uncolored source.
+ */
+RZ_IPI void rz_core_types_print_c(RZ_NONNULL RzCons *cons, RZ_NONNULL const char *source) {
+	rz_return_if_fail(cons && source);
+	if (!cons->context->color_mode) {
+		rz_cons_print(cons, source);
+		return;
+	}
+	RzAnnotatedCode *code = rz_type_c_highlight(source);
+	if (code && !rz_vector_empty(&code->annotations)) {
+		rz_core_annotated_code_print(code, NULL, cons);
+	} else {
+		rz_cons_print(cons, source);
+	}
+	rz_annotated_code_free(code);
+}
+
 // Calling conventions
 
 // TODO: Technically it doesn't belong in types and `t` commands
@@ -39,7 +60,10 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 	case RZ_OUTPUT_MODE_LONG: {
 		rz_list_foreach (list, iter, cc) {
 			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			rz_cons_printf(core->cons, "%s\n", ccexpr);
+			if (ccexpr) {
+				rz_core_types_print_c(core->cons, ccexpr);
+				rz_cons_newline(core->cons);
+			}
 			free(ccexpr);
 		}
 	} break;
@@ -174,7 +198,11 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 			rz_vector_foreach (&btype->union_data.members, memb) {
 				char *mtype = rz_type_as_string(typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
-				rz_cons_printf(core->cons, "\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
+				rz_cons_printf(core->cons, "\t%s: ", memb->name);
+				if (mtype) {
+					rz_core_types_print_c(core->cons, mtype);
+				}
+				rz_cons_printf(core->cons, " (size = %" PFMT64d ")\n", size);
 				free(mtype);
 			}
 		}
@@ -269,8 +297,11 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 			rz_vector_foreach (&btype->struct_data.members, memb) {
 				char *mtype = rz_type_as_string(typedb, memb->type);
 				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
-				rz_cons_printf(core->cons, "\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
-					memb->name, mtype, size, offset);
+				rz_cons_printf(core->cons, "\t%s: ", memb->name);
+				if (mtype) {
+					rz_core_types_print_c(core->cons, mtype);
+				}
+				rz_cons_printf(core->cons, " (size = %" PFMT64d ", offset = %" PFMT64d ")\n", size, offset);
 				offset += size;
 				free(mtype);
 			}
@@ -349,7 +380,11 @@ RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, R
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf(core->cons, "%s = %s\n", btype->name, typestr);
+		rz_cons_printf(core->cons, "%s = ", btype->name);
+		if (typestr) {
+			rz_core_types_print_c(core->cons, typestr);
+		}
+		rz_cons_newline(core->cons);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
@@ -502,7 +537,10 @@ RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTy
 	} break;
 	default: {
 		char *str = rz_type_callable_as_string(typedb, callable);
-		rz_cons_printf(cons, "%s;\n", str);
+		if (str) {
+			rz_core_types_print_c(cons, str);
+			rz_cons_print(cons, ";\n");
+		}
 		free(str);
 	} break;
 	}

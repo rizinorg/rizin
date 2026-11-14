@@ -110,6 +110,7 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_print_c(RZ_NONNULL RzCons *cons, RZ_NONNULL const char *source);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
