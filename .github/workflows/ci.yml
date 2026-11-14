@@ -46,6 +46,7 @@ jobs:
               - '**/meson.build'
               - 'subprojects/**'
               - '.github/workflows/ci.yml'
+              - '.github/actions/cache-subprojects/**'
               - 'test/**'
 
   build-and-test:
@@ -196,6 +197,12 @@ jobs:
         if: matrix.enabled
         with:
           fetch-depth: 2
+      - name: Cache and pre-download subprojects
+        if: matrix.build_system == 'meson' && matrix.enabled
+        uses: ./.github/actions/cache-subprojects
+        with:
+          skip-wraps: ${{ matrix.name == 'capstone-v6' && 'doxygen-awesome-css.wrap' || 'capstone-v6.wrap,doxygen-awesome-css.wrap' }}
+          cache-suffix: ${{ matrix.name == 'capstone-v6' && 'cs6' || 'default' }}
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
@@ -556,6 +563,11 @@ jobs:
       - name: Install meson and ninja
         run: pip3 install --user meson ninja PyYAML
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
+        with:
+          skip-wraps: ""
+          cache-suffix: all
       - name: Extract rizin version
         run: echo "version=$(python sys/version.py)" >> $GITHUB_OUTPUT
         id: extract_version
@@ -619,6 +631,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install meson and ninja
         run: pip3 install meson ninja PyYAML
         env:
@@ -662,6 +676,8 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup
       - uses: actions/setup-python@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -693,6 +709,8 @@ jobs:
         name: [ x86_64, arm, aarch64 ]
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
       - name: Compile with meson
@@ -718,6 +736,8 @@ jobs:
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -744,6 +764,8 @@ jobs:
     needs: [ build-and-test ]
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip
       - name: Install meson and ninja
@@ -927,6 +949,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -958,6 +982,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
       - name: Install dependencies
         run: |
           sudo apt-get update -q
@@ -1068,6 +1094,11 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.head_ref, 'container'))
     steps:
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        uses: ./.github/actions/cache-subprojects
+        with:
+          skip-wraps: ""
+          cache-suffix: all
       - name: Install dependencies
         run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip && pip3 install --user meson
       - name: Download subprojects

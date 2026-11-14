@@ -1,0 +1,89 @@
+name: Cache and pre-download subproject archives
+description: Cache subprojects/packagecache and pre-populate wrap-file tarballs with curl retries and SHA-256 verification.
+inputs:
+  skip-wraps:
+    description: Comma-separated wrap filenames to skip
+    required: false
+    default: "capstone-v6.wrap,doxygen-awesome-css.wrap"
+  cache-suffix:
+    description: Cache key suffix distinguishing wrap subsets (default, doc, cs6, all)
+    required: false
+    default: "default"
+  working-directory:
+    description: Path to Rizin repository root relative to workspace
+    required: false
+    default: "."
+runs:
+  using: composite
+  steps:
+    - name: Cache subproject packagecache
+      uses: actions/cache@v6
+      with:
+        path: ${{ inputs.working-directory == '.' && 'subprojects/packagecache' || format('{0}/subprojects/packagecache', inputs.working-directory) }}
+        key: subprojects-packagecache-${{ runner.os }}-${{ inputs.working-directory == '.' && hashFiles('subprojects/*.wrap') || hashFiles(format('{0}/subprojects/*.wrap', inputs.working-directory)) }}-${{ inputs.cache-suffix }}
+        restore-keys: |
+          subprojects-packagecache-${{ runner.os }}-${{ inputs.working-directory == '.' && hashFiles('subprojects/*.wrap') || hashFiles(format('{0}/subprojects/*.wrap', inputs.working-directory)) }}-
+    - name: Pre-download subproject archives
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SKIP_WRAPS: ${{ inputs.skip-wraps }}
+      run: |
+        PY=""
+        for cand in python3 python; do
+          if command -v "$cand" >/dev/null 2>&1 && "$cand" -c "import sys" >/dev/null 2>&1; then
+            PY="$cand"
+            break
+          fi
+        done
+        if [ -z "$PY" ]; then
+          echo "Python interpreter not found" >&2
+          exit 1
+        fi
+        "$PY" - <<'EOF'
+        import configparser, glob, hashlib, os, pathlib, subprocess, sys
+
+        cache = pathlib.Path("subprojects/packagecache")
+        cache.mkdir(parents=True, exist_ok=True)
+        skip_wraps = {w.strip() for w in os.environ.get("SKIP_WRAPS", "").split(",") if w.strip()}
+
+        def sha256_file(p):
+            h = hashlib.sha256()
+            with p.open("rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    h.update(chunk)
+            return h.hexdigest()
+
+        for wf in sorted(glob.glob("subprojects/*.wrap")):
+            if pathlib.Path(wf).name in skip_wraps:
+                continue
+            cp = configparser.ConfigParser(interpolation=None)
+            cp.read(wf, encoding="utf-8")
+            if "wrap-file" not in cp:
+                continue
+            sec = cp["wrap-file"]
+            fname = sec.get("source_filename")
+            expected = sec.get("source_hash")
+            if not fname or not expected:
+                continue
+            dest = cache / fname
+            if dest.is_file() and sha256_file(dest) == expected:
+                continue
+            urls = [u for u in (sec.get("source_url"), sec.get("source_fallback_url")) if u]
+            tmp = dest.with_name(dest.name + ".part")
+            ok = False
+            for url in urls:
+                print(f"Fetching {fname} from {url}", flush=True)
+                r = subprocess.run([
+                    "curl", "--retry", "5", "--retry-all-errors", "--retry-delay", "3",
+                    "--connect-timeout", "15", "--max-time", "120",
+                    "-fLsS", "-o", str(tmp), url,
+                ])
+                if r.returncode == 0 and tmp.is_file() and sha256_file(tmp) == expected:
+                    tmp.replace(dest)
+                    ok = True
+                    break
+                tmp.unlink(missing_ok=True)
+            if not ok:
+                sys.exit(f"Failed to download and verify {fname} from {urls}")
+        EOF
