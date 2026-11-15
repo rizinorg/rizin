@@ -63,6 +63,7 @@ if get_option('enable_tests')
     'debruijn',
     'debug',
     'debug_session',
+    'debug_xnu',
     'diff',
     'ebcdic',
     'endian',

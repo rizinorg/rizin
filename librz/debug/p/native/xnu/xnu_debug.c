@@ -43,6 +43,11 @@ RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user) {
 }
 
 RZ_IPI void rz_xnu_debug_fini(RzDebug *dbg, void *user) {
+	RzXnuDebug *ctx = user;
+	// Failed attaches can cache a task port without reaching xnu_detach.
+	if (ctx && MACH_PORT_VALID(ctx->task_dbg)) {
+		mach_port_deallocate(mach_task_self(), ctx->task_dbg);
+	}
 	free(user);
 }
 
@@ -144,10 +149,16 @@ bool xnu_step(RzDebug *dbg) {
 		return false;
 	}
 	th->stepping = true;
-	task_resume(task);
+	if (task_resume(task) != KERN_SUCCESS) {
+		return false;
+	}
+	ctx->task_suspended = false;
 	return ret;
 }
 
+/**
+ * \brief Attach only after consuming the SIGSTOP sent by PT_ATTACHEXC.
+ */
 int xnu_attach(RzDebug *dbg, int pid) {
 	rz_return_val_if_fail(dbg && dbg->plugin_data, -1);
 	RzXnuDebug *ctx = dbg->plugin_data;
@@ -161,6 +172,7 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	ctx->cpu = xnu_get_cpu_type(pid);
 	if (!ctx->cpu) {
 		RZ_LOG_ERROR("xnu_attach failed to determine cpu type of pid %d\n", pid);
+		return -1;
 	}
 
 	// First start listening to exceptions, which will also deliver signals to us
@@ -174,15 +186,17 @@ int xnu_attach(RzDebug *dbg, int pid) {
 	if (r < 0) {
 		perror("ptrace(PT_ATTACHEXC)");
 		RZ_LOG_ERROR("Failed to attach to process\n");
+		xnu_restore_exception_ports(ctx, pid);
 		return -1;
 	}
 
-	// PT_ATTACHEXC will cause a SIGSTOP in the debuggee, so wait for it
-	// Our signal handler will also suspend the task, so no need to call xnu_stop if successful
-	RzDebugReasonType reas = xnu_wait_for_exception(dbg, pid, 1000, true);
-	if (reas != RZ_DEBUG_REASON_SIGNAL || dbg->reason.signum != SIGSTOP) {
+	rz_interrupt_break_push(dbg->intr, NULL, NULL);
+	bool stopped = xnu_wait_for_attach(dbg, pid, SIGSTOP, 1000);
+	rz_interrupt_break_pop(dbg->intr);
+	if (!stopped) {
 		RZ_LOG_ERROR("SIGSTOP from PT_ATTACHEXC not observed\n");
-		xnu_stop(dbg, pid);
+		xnu_detach(dbg, pid);
+		return -1;
 	}
 
 	ctx->last_attached_pid = pid;
@@ -195,22 +209,35 @@ int xnu_detach(RzDebug *dbg, int pid) {
 	// Not calling PT_DETACH results in a zombie
 	int r = rz_debug_ptrace(dbg, PT_DETACH, pid, 0, 0);
 	if (r < 0) {
+		int saved_errno = errno;
 		perror("ptrace(PT_DETACH)");
+		if (saved_errno != ESRCH) {
+			return false;
+		}
 	}
 
-	// do the cleanup necessary
-	// XXX check for errors and ref counts
-	(void)xnu_restore_exception_ports(ctx, pid);
+	bool ret = xnu_restore_exception_ports(ctx, pid);
+	if (ctx->task_suspended) {
+		// PT_DETACH does not release the Mach suspension taken by our exception handler.
+		if (task_resume(ctx->task_dbg) != KERN_SUCCESS && r >= 0) {
+			RZ_LOG_ERROR("Failed to resume task on detach\n");
+			ret = false;
+		}
+		ctx->task_suspended = false;
+	}
 	kern_return_t kr = mach_port_deallocate(mach_task_self(), ctx->task_dbg);
 	if (kr != KERN_SUCCESS) {
 		eprintf("xnu_detach: failed to deallocate port\n");
-		return false;
+		ret = false;
 	}
 	// we mark the task as not longer available since we deallocated the ref
 	ctx->task_dbg = 0;
+	ctx->old_pid = -1;
+	ctx->last_attached_pid = -1;
+	ctx->cpu = 0;
 	rz_list_free(dbg->threads);
 	dbg->threads = NULL;
-	return true;
+	return ret;
 }
 
 static int task_suspend_count(task_t task) {
@@ -251,6 +278,7 @@ int xnu_stop(RzDebug *dbg, int pid) {
 		eprintf("failed to suspend task\n");
 		return false;
 	}
+	ctx->task_suspended = true;
 
 	suspend_count = task_suspend_count(task);
 	if (suspend_count != 1) {
@@ -283,7 +311,9 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	kern_return_t kr = task_resume(task);
 	if (kr != KERN_SUCCESS) {
 		eprintf("xnu_continue: Warning: Failed to resume task\n");
+		return false;
 	}
+	ctx->task_suspended = false;
 	return true;
 }
 
