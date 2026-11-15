@@ -198,6 +198,9 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	sdb_set(db, "raw", filename);
 	char baddr_str[32];
 	sdb_set(db, "baddr", rz_strf(baddr_str, "0x%" PFMT64x, rz_bin_get_baddr(core->bin)));
+	// the address the file is mapped at (rizin -m), needed to map it at the same place on load
+	char laddr_str[32];
+	sdb_set(db, "laddr", rz_strf(laddr_str, "0x%" PFMT64x, core->file->loadaddr));
 	char *abs = rz_file_abspath(filename);
 	if (!abs) {
 		return;
@@ -226,12 +229,12 @@ typedef enum {
 	FILE_LOAD_FAIL
 } FileRet;
 
-static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, ut64 baddr, RZ_NULLABLE RzSerializeResultInfo *res) {
+static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, ut64 baddr, ut64 laddr, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!rz_file_is_regular(file)) {
 		return FILE_DOES_NOT_EXIST;
 	}
 
-	RzCoreFile *fh = rz_core_file_open(core, file, RZ_PERM_RX, 0);
+	RzCoreFile *fh = rz_core_file_open(core, file, RZ_PERM_RX, laddr);
 	if (!fh) {
 		RZ_SERIALIZE_ERR(res, "failed re-open file \"%s\" referenced by project", file);
 		return FILE_LOAD_FAIL;
@@ -250,13 +253,15 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	FileRet r = FILE_DOES_NOT_EXIST;
 	const char *baddr_str = sdb_const_get(db, "baddr");
 	ut64 baddr = baddr_str ? strtoull(baddr_str, NULL, 0) : UT64_MAX;
+	const char *laddr_str = sdb_const_get(db, "laddr");
+	ut64 laddr = laddr_str ? strtoull(laddr_str, NULL, 0) : 0;
 	const char *rel = sdb_const_get(db, "relative");
 	if (rel && prj_file) {
 		char *prj_dir = prj_dir_abs(prj_file);
 		if (prj_dir) {
 			char *file = prj_relative_restore(prj_dir, rel);
 			if (file) {
-				r = try_load_file(core, file, baddr, res);
+				r = try_load_file(core, file, baddr, laddr, res);
 				free(file);
 			}
 			free(prj_dir);
@@ -268,7 +273,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 
 	const char *file = sdb_const_get(db, "absolute");
 	if (file) {
-		r = try_load_file(core, file, baddr, res);
+		r = try_load_file(core, file, baddr, laddr, res);
 	}
 	if (r != FILE_DOES_NOT_EXIST) {
 		return r == FILE_SUCCESS;
@@ -276,7 +281,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 
 	file = sdb_const_get(db, "raw");
 	if (file) {
-		r = try_load_file(core, file, baddr, res);
+		r = try_load_file(core, file, baddr, laddr, res);
 	}
 	if (r != FILE_DOES_NOT_EXIST) {
 		return r == FILE_SUCCESS;
