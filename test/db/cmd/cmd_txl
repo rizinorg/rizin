@@ -13,6 +13,97 @@ void
 EOF
 RUN
 
+NAME=type cross-reference JSON and text output
+FILE=malloc://4096
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+# An empty analysis and an unmatched type both produce empty arrays.
+txj
+txlj
+txj int
+af+ first @ 0
+afb+ 0 0 16
+afvs 8 number int
+afvs 16 duplicate int
+afvs 24 text "const char *"
+afvs 32 buffer "char [4]"
+af+ second @ 0x100
+afb+ 0x100 0x100 16
+afvs 8 number int @ 0x100
+af+ empty @ 0x200
+afb+ 0x200 0x200 16
+# Deduplicate within a function while keeping its full type expressions.
+txj
+txj int
+txj "const char *"
+txj "char [4]"
+txj float
+txfj 0
+txfj 0x100
+txfj @ 0x200
+# The global listing uses sorted identifiers, including underlying pointer/array types.
+txlj
+tx
+tx int
+txf 0
+txl
+# Preserve escaped names and addresses beyond the exact integer range of a double.
+af-*
+af+ 'quoted"function\path' @ 0x20000000000010
+afb+ 0x20000000000010 0x20000000000010 16
+afvs 8 number int @ 0x20000000000010
+txj
+txj int
+txfj 0x20000000000010
+txlj
+EOF
+EXPECT=<<EOF
+[]
+[]
+[]
+[{"name":"first","addr":0,"types":["int","const char *","char [4]"]},{"name":"second","addr":256,"types":["int"]}]
+[{"name":"first","addr":0},{"name":"second","addr":256}]
+[{"name":"first","addr":0}]
+[{"name":"first","addr":0}]
+[]
+["int","const char *","char [4]"]
+["int"]
+[]
+["char","int"]
+first: int,const char *,char [4]
+second: int
+first
+second
+int
+const char *
+char [4]
+char
+int
+[{"name":"quoted\"function\\path","addr":9007199254741008,"types":["int"]}]
+[{"name":"quoted\"function\\path","addr":9007199254741008}]
+["int"]
+["int"]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=type cross-reference errors propagate without partial JSON
+FILE==
+ARGS=-e cfg.json.status=true -e cfg.exit.errorcode=true
+CMDS=<<EOF
+txj "!!!"
+txfj 0x1234
+tx "!!!"
+_s
+EOF
+EXPECT=<<EOF
+{"error":{"code":"ERROR","message":"Command execution failed","command":"txj","args":["!!!"]}}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"txfj","args":["0x1234"]}}
+ERROR
+EOF
+EXIT_STATUS=1
+RUN
+
 NAME=txl2
 FILE=bins/elf/ls
 TIMEOUT=60

@@ -13,6 +13,9 @@
 
 // Calling conventions
 
+/**
+ * \brief Use the same JSON record for a named convention as for the full listing.
+ */
 static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 	rz_return_if_fail(cc);
 	if (strchr(cc, '(')) {
@@ -25,9 +28,11 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 		if (result) {
 			if (mode == RZ_OUTPUT_MODE_JSON) {
 				PJ *pj = pj_new();
-				pj_a(pj);
-				pj_ks(pj, "cc", result);
-				pj_end(pj);
+				if (!pj) {
+					free(result);
+					return;
+				}
+				rz_core_analysis_cc_print(core, ccname, pj);
 				rz_cons_println(core->cons, pj_string(pj));
 				pj_free(pj);
 			} else {
@@ -40,7 +45,10 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 
 // Enums
 
-static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value) {
+/**
+ * \brief Keep the enum JSON shape when selecting a single member by value.
+ */
+static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, const char *enum_value, RzOutputMode mode) {
 	rz_return_val_if_fail(enum_name || enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
@@ -49,7 +57,22 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_println(core->cons, enum_member);
+	if (mode == RZ_OUTPUT_MODE_JSON) {
+		PJ *pj = pj_new();
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		pj_o(pj);
+		pj_ks(pj, "name", enum_name);
+		pj_ko(pj, "values");
+		pj_kn(pj, enum_member, value);
+		pj_end(pj);
+		pj_end(pj);
+		rz_cons_println(core->cons, pj_string(pj));
+		pj_free(pj);
+	} else {
+		rz_cons_println(core->cons, enum_member);
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -158,57 +181,108 @@ static RzCmdStatus type_format_print_hexstring(RzCore *core, const char *type, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static void types_xrefs(RzCore *core, const char *typestr) {
+/**
+ * \brief Include function addresses so JSON consumers need not resolve names.
+ */
+static RzCmdStatus types_xrefs(RzCore *core, const char *typestr, RzCmdStateOutput *state) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *error_msg = NULL;
 	RzType *type = rz_type_parse_string_single(typedb->parser, typestr, &error_msg);
 	if (!type || error_msg) {
-		if (error_msg) {
+		if (RZ_STR_ISNOTEMPTY(error_msg)) {
 			RZ_LOG_ERROR("%s", error_msg);
-			free(error_msg);
+		} else {
+			RZ_LOG_ERROR("Cannot parse type \"%s\"\n", typestr);
 		}
-		return;
+		free(error_msg);
+		rz_type_free(type);
+		return RZ_CMD_STATUS_ERROR;
 	}
 	RzType *type2;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
+		if (!uniq) {
+			rz_type_free(type);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_list_foreach (uniq, iter2, type2) {
 			if (rz_types_equal(type2, type)) {
-				rz_cons_printf(core->cons, "%s\n", fcn->name);
+				if (state->mode == RZ_OUTPUT_MODE_JSON) {
+					pj_o(state->d.pj);
+					pj_ks(state->d.pj, "name", fcn->name);
+					pj_kn(state->d.pj, "addr", fcn->addr);
+					pj_end(state->d.pj);
+				} else {
+					rz_cons_printf(core->cons, "%s\n", fcn->name);
+				}
 				break;
 			}
 		}
 		rz_list_free(uniq);
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_type_free(type);
+	return RZ_CMD_STATUS_OK;
 }
 
-static void types_xrefs_summary(RzCore *core) {
+/**
+ * \brief Keep each function's types together, omitting functions without variables.
+ */
+static RzCmdStatus types_xrefs_summary(RzCore *core, RzCmdStateOutput *state) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (fcns, iter, fcn) {
 		RzList *uniq = rz_analysis_types_from_fcn(core->analysis, fcn);
-		if (rz_list_length(uniq)) {
+		if (!uniq) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (rz_list_empty(uniq)) {
+			rz_list_free(uniq);
+			continue;
+		}
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "name", fcn->name);
+			pj_kn(state->d.pj, "addr", fcn->addr);
+			pj_ka(state->d.pj, "types");
+		} else {
 			rz_cons_printf(core->cons, "%s: ", fcn->name);
 		}
 		rz_list_foreach (uniq, iter2, type) {
 			char *str = rz_type_as_string(typedb, type);
-			if (str) {
+			if (!str) {
+				rz_list_free(uniq);
+				return RZ_CMD_STATUS_ERROR;
+			}
+			if (state->mode == RZ_OUTPUT_MODE_JSON) {
+				pj_s(state->d.pj, str);
+			} else {
 				rz_cons_printf(core->cons, "%s%s", str, rz_list_has_next(iter2) ? "," : "\n");
 			}
 			free(str);
 		}
 		rz_list_free(uniq);
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_end(state->d.pj);
+			pj_end(state->d.pj);
+		}
 	}
+	rz_cmd_state_output_array_end(state);
+	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
+/**
+ * \brief Preserve full type expressions, including pointer and array qualifiers.
+ */
+static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr, RzCmdStateOutput *state) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzType *type;
 	RzListIter *iter;
@@ -219,11 +293,24 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
+	if (!uniq) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (uniq, iter, type) {
 		char *str = rz_type_as_string(typedb, type);
-		rz_cons_println(core->cons, str);
+		if (!str) {
+			rz_list_free(uniq);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, str);
+		} else {
+			rz_cons_println(core->cons, str);
+		}
 		free(str);
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(uniq);
 	return RZ_CMD_STATUS_OK;
 }
@@ -250,30 +337,56 @@ static void types_xrefs_graph(RzCore *core) {
 	}
 }
 
-static void types_xrefs_all(RzCore *core) {
+static int types_xrefs_name_cmp(const void *a, const void *b, void *user) {
+	return strcmp(a, b);
+}
+
+/**
+ * \brief List sorted type identifiers, as in the text output, without duplicates.
+ */
+static RzCmdStatus types_xrefs_all(RzCore *core, RzCmdStateOutput *state) {
 	RzType *type;
 	RzListIter *iter, *iter2;
 	RzAnalysisFunction *fcn;
 	RzList *types_list = rz_list_newf(free);
+	if (!types_list) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzList *fcns = rz_analysis_function_list(core->analysis);
 	rz_list_foreach (fcns, iter, fcn) {
 		RzList *types = rz_analysis_types_from_fcn(core->analysis, fcn);
+		if (!types) {
+			rz_list_free(types_list);
+			return RZ_CMD_STATUS_ERROR;
+		}
 		rz_list_foreach (types, iter2, type) {
 			const char *ident = rz_type_identifier(type);
 			if (ident) {
-				rz_list_push(types_list, rz_str_dup(ident));
+				char *name = rz_str_dup(ident);
+				if (!name || !rz_list_push(types_list, name)) {
+					free(name);
+					rz_list_free(types);
+					rz_list_free(types_list);
+					return RZ_CMD_STATUS_ERROR;
+				}
 			}
 		}
 		rz_list_free(types);
 	}
-	RzList *uniq_types = rz_list_uniq(types_list, (RzListComparator)strcmp, NULL);
-	rz_list_sort(uniq_types, (RzListComparator)strcmp, NULL);
+	rz_list_sort(types_list, types_xrefs_name_cmp, NULL);
+	rz_list_sorted_uniq(types_list, types_xrefs_name_cmp, NULL);
 	char *typestr;
-	rz_list_foreach (uniq_types, iter, typestr) {
-		rz_cons_printf(core->cons, "%s\n", typestr);
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (types_list, iter, typestr) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, typestr);
+		} else {
+			rz_cons_printf(core->cons, "%s\n", typestr);
+		}
 	}
-	rz_list_free(uniq_types);
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(types_list);
+	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_type_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
@@ -419,7 +532,7 @@ RZ_IPI RzCmdStatus rz_type_list_enum_handler(RzCore *core, int argc, const char 
 	if (argc > 1) {
 		if (argc > 2) {
 			// TODO: Reconsider the `te <enum_name> <member_value>` syntax change
-			return types_enum_member_find(core, argv[1], argv[2]);
+			return types_enum_member_find(core, argv[1], argv[2], mode);
 		} else {
 			PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 			RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
@@ -843,19 +956,17 @@ RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_xrefs_list_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_xrefs_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *typename = argc > 1 ? argv[1] : NULL;
 	if (typename) {
-		types_xrefs(core, typename);
-	} else {
-		types_xrefs_summary(core);
+		return types_xrefs(core, typename, state);
 	}
-	return RZ_CMD_STATUS_OK;
+	return types_xrefs_summary(core, state);
 }
 
-RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_xrefs_function_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 addr = argc > 1 ? rz_num_math(core->num, argv[1]) : core->offset;
-	return types_xrefs_function(core, addr);
+	return types_xrefs_function(core, addr, state);
 }
 
 RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const char **argv) {
@@ -863,9 +974,8 @@ RZ_IPI RzCmdStatus rz_type_xrefs_graph_handler(RzCore *core, int argc, const cha
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv) {
-	types_xrefs_all(core);
-	return RZ_CMD_STATUS_OK;
+RZ_IPI RzCmdStatus rz_type_xrefs_list_all_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	return types_xrefs_all(core, state);
 }
 
 RZ_IPI RzCmdStatus rz_type_typeclass_handler(RzCore *core, int argc, const char **argv) {

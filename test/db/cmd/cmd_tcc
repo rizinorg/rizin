@@ -16,6 +16,26 @@ swift
 EOF
 RUN
 
+NAME=tccj named conventions use the listing record
+FILE==
+CMDS=<<EOF
+tcc-*
+tcc "eax sample(ebx, ecx)"
+tccj sample
+tccj
+tcc sample
+tcc "rax empty()"
+tccj empty
+EOF
+EXPECT=<<EOF
+{"name":"sample","ret":"eax","args":["ebx","ecx"]}
+[{"name":"sample","ret":"eax","args":["ebx","ecx"]}]
+eax sample (ebx, ecx);
+{"name":"empty","ret":"rax","args":[]}
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=tcc
 FILE=bins/elf/ls
 CMDS=tcc
