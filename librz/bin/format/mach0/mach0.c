@@ -613,6 +613,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * bin, ut64 off) {
 #endif
 		}
 	}
+	RZ_FREE(bin->indirectsyms);
 	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
 	if (bin->nindirectsyms > 0) {
 		if (!(bin->indirectsyms = calloc(bin->nindirectsyms, sizeof(ut32)))) {
@@ -641,6 +642,8 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * bin, ut64 off) {
 			}
 			bin->indirectsyms[i] = rz_read_ble32(&idsyms[0], bin->big_endian);
 		}
+	} else {
+		bin->nindirectsyms = 0;
 	}
 	/* TODO extrefsyms, extrel, locrel */
 	return true;
