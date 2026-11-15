@@ -5265,6 +5265,53 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 }
 
 /**
+ * \brief Determine the calling convention of the function at \p addr
+ *
+ * This does not require a function to exist at \p addr. The following sources are tried in order:
+ * 1. The calling convention of the RzAnalysisFunction starting at \p addr.
+ * 2. The calling convention the type database knows for a function named like any of the flags at \p addr,
+ *    e.g. for imports. Only calling conventions that exist for the current arch are considered.
+ * 3. If \p use_default is set, the default calling convention.
+ *
+ * \param use_default Whether to return the default calling convention if nothing specific is known about \p addr
+ * \return The name of the calling convention or NULL if it is unknown.
+ *         It is only valid until functions, types or calling conventions are edited.
+ */
+RZ_API RZ_BORROW RZ_NULLABLE const char *rz_core_analysis_cc_at(RZ_NONNULL RzCore *core, ut64 addr, bool use_default) {
+	rz_return_val_if_fail(core && core->analysis, NULL);
+	RzAnalysis *analysis = core->analysis;
+
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, addr);
+	if (fcn && fcn->cc) {
+		return fcn->cc;
+	}
+
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	const RzList *flags = rz_flag_get_list(core->flags, addr);
+	RzListIter *it;
+	RzFlagItem *flag;
+	rz_list_foreach (flags, it, flag) {
+		const char *names[] = { flag->name, flag->realname };
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(names); i++) {
+			if (RZ_STR_ISEMPTY(names[i])) {
+				continue;
+			}
+			char *fcn_name = rz_analysis_function_name_resolve(analysis, names[i]);
+			if (!fcn_name) {
+				continue;
+			}
+			const char *cc = rz_type_func_cc(typedb, fcn_name);
+			free(fcn_name);
+			if (cc && rz_analysis_cc_exist(analysis, cc)) {
+				return cc;
+			}
+		}
+	}
+
+	return use_default ? rz_analysis_cc_default(analysis) : NULL;
+}
+
+/**
  * \brief Print Calling Convention info
  *
  * \param core The RzCore instance
@@ -6595,6 +6642,36 @@ static char *choose_function_name_cb(ut64 addr, void *user) {
 	return cinquiry_choose_function_name(user, addr);
 }
 
+static char *get_callee_cc_cb(ut64 addr, void *user) {
+	return rz_str_dup(rz_core_analysis_cc_at(user, addr, true));
+}
+
+static bool get_cc_preserved_cb(const char *cc, RzSetS *preserved, void *user) {
+	RzCore *core = user;
+	char *key = rz_str_newf("cc.%s.preserved", cc);
+	if (!key) {
+		return false;
+	}
+	const char *regs = sdb_const_get(rz_analysis_get_sdb_cc(core->analysis), key);
+	free(key);
+	if (!regs) {
+		return false;
+	}
+	RzList *names = rz_str_split_duplist(regs, ",", true);
+	if (!names) {
+		return false;
+	}
+	RzListIter *it;
+	const char *name;
+	rz_list_foreach (names, it, name) {
+		if (RZ_STR_ISNOTEMPTY(name)) {
+			rz_set_s_add(preserved, name);
+		}
+	}
+	rz_list_free(names);
+	return true;
+}
+
 static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	RzAbsIntDriverConfig config = {
 		.intr = core->intr,
@@ -6609,6 +6686,15 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	};
 	if (rz_config_get_bool(core->config, "inquiry.comment")) {
 		config.dimens |= RZ_ABSINT_RESULT_DIMEN_COMMENTS;
+	}
+	if (!strcmp(rz_config_get_string(core->config, "inquiry.clobber"), "cc")) {
+		config.clobber_policy = RZ_ABSINT_CLOBBER_BY_CC;
+		if (!strcmp(rz_config_get_string(core->config, "inquiry.clobber.fallback"), "callercc")) {
+			config.clobber_fallback_policy = RZ_ABSINT_FALLBACK_CLOBBER_BY_CALLER_CC;
+		}
+		config.get_callee_cc = get_callee_cc_cb;
+		config.get_cc_preserved = get_cc_preserved_cb;
+		config.call_info_priv_data = core;
 	}
 	bool success = rz_absint_driver_run(&config);
 	if (!success) {

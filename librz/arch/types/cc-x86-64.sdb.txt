@@ -8,6 +8,7 @@ cc.ms.arg3=r9
 cc.ms.argn=stack
 cc.ms.maxargs=4
 cc.ms.ret=rax
+cc.ms.preserved=rbx,rbp,rsi,rdi,r12,r13,r14,r15,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15,df,cwd,fs,gs
 
 amd64=cc
 cc.amd64.arg0=rdi
@@ -23,6 +24,7 @@ cc.amd64.arg9=xmm3
 cc.amd64.arg10=xmm4
 cc.amd64.maxargs=11
 cc.amd64.ret=rax
+cc.amd64.preserved=rbx,rbp,r12,r13,r14,r15,df,cwd,fs,gs
 
 swift=cc
 cc.swift.arg0=rdi
@@ -40,6 +42,7 @@ cc.swift.maxargs=11
 cc.swift.self=r13
 cc.swift.error=r12
 cc.swift.ret=rax
+cc.swift.preserved=rbx,rbp,r15,df,cwd,fs,gs
 
 amd64syscall=cc
 cc.amd64syscall.arg0=rdi
@@ -50,6 +53,7 @@ cc.amd64syscall.arg4=r8
 cc.amd64syscall.arg5=r9
 cc.amd64syscall.maxargs=6
 cc.amd64syscall.ret=rax
+cc.amd64syscall.preserved=rbx,rdx,rsi,rdi,rbp,r8,r9,r10,r12,r13,r14,r15
 
 golang=cc
 cc.golang.arg0=rax

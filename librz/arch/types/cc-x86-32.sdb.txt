@@ -4,12 +4,14 @@ cdecl=cc
 cc.cdecl.argn=stack
 cc.cdecl.maxargs=0
 cc.cdecl.ret=eax
+cc.cdecl.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 cdecl-thiscall-ms=cc
 cc.cdecl-thiscall-ms.arg0=ecx
 cc.cdecl-fastcall-ms.argn=stack
 cc.cdecl-fastcall-ms.maxargs=1
 cc.cdecl-fastcall-ms.ret=eax
+cc.cdecl-thiscall-ms.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 optlink=cc
 cc.optlink.arg0=eax
@@ -18,11 +20,13 @@ cc.optlink.arg2=ecx
 cc.optlink.argn=stack
 cc.optlink.maxargs=3
 cc.optlink.ret=eax
+cc.optlink.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 stdcall=cc
 cc.stdcall.argn=stack
 cc.stdcall.maxargs=0
 cc.stdcall.ret=eax
+cc.stdcall.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 fastcall=cc
 cc.fastcall.arg0=ecx
@@ -30,6 +34,7 @@ cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
 cc.fastcall.maxargs=2
 cc.fastcall.ret=eax
+cc.fastcall.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 borland=cc
 cc.borland.arg0=eax
@@ -37,6 +42,7 @@ cc.borland.arg1=edx
 cc.borland.arg2=ecx
 cc.borland.maxargs=3
 cc.borland.argn=stack_rev
+cc.borland.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 watcom=cc
 cc.watcom.arg0=eax
@@ -45,10 +51,12 @@ cc.watcom.arg2=ebx
 cc.watcom.arg3=ecx
 cc.watcom.argn=stack
 cc.watcom.maxargs=4
+cc.watcom.preserved=edi,ebp,df
 
 pascal=cc
 cc.pascal.argn=stack_rev
 cc.pascal.maxargs=0
+cc.pascal.preserved=ebx,esi,edi,ebp,df,fs,gs
 
 golang=cc
 cc.golang.argn=stack
