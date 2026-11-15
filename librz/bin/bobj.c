@@ -23,7 +23,9 @@ RZ_IPI void rz_bin_string_decode_base64(RZ_NONNULL RzBinString *bstr) {
 			free(tmp);
 			break;
 		}
-		free(decoded);
+		if (decoded != bstr->string) {
+			free(decoded);
+		}
 		decoded = tmp;
 	} while (1);
 
