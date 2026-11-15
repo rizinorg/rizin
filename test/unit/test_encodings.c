@@ -580,10 +580,10 @@ bool test_rz_unicode_uppercase_mapping(void) {
 	mu_assert_true(mv.val[0] == 933 && mv.val[1] == 776 && mv.val[2] == 769, "Incorrect uppercase value");
 
 	// last element
-	RzUnicodeCaseMapping l = rz_unicode_code_point_find_upper(125248);
+	RzUnicodeCaseMapping l = rz_unicode_code_point_find_upper(125251);
 	mu_assert_false(rz_unicode_case_mapping_is_empty(&l), "Should not be empty");
-	mu_assert_eq(l.key, 125248, "Mismatched key");
-	mu_assert_eq(l.val[0], 125214, "Incorrect uppercase value");
+	mu_assert_eq(l.key, 125251, "Mismatched key");
+	mu_assert_eq(l.val[0], 125217, "Incorrect uppercase value");
 
 	// not found
 	RzUnicodeCaseMapping nf = rz_unicode_code_point_find_upper(-1);
