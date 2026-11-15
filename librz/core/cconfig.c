@@ -821,10 +821,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 		if (RZ_STR_EQ(dbgbackend, "bf")) {
 			rz_config_set(core->config, "asm.arch", "bf");
 		}
-		if (core->file) {
-			rz_debug_select(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd),
-				rz_io_fd_get_tid(core->io, core->file->fd));
-		}
+		// Selecting a process reads registers; setup must attach the backend first.
 	} else {
 		rz_debug_use(core->dbg, NULL);
 		core->bin->is_debugger = false;

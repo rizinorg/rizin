@@ -1467,8 +1467,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
-		if (debug) {
-			rz_core_setup_debugger(r, debugbackend, baddr == UT64_MAX);
+		if (debug && !rz_core_setup_debugger(r, debugbackend, baddr == UT64_MAX)) {
+			RZ_FREE(debugbackend);
+			ret = 1;
+			goto beach;
 		}
 		RZ_FREE(debugbackend);
 		RzBinObject *o = rz_bin_cur_object(r->bin);

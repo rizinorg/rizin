@@ -55,6 +55,7 @@ if get_option('enable_tests')
     'core_analysis_stats',
     'core_bin',
     'core_cmd',
+    'core_debug',
     'core_plugin',
     'core_seek',
     'core_task',
