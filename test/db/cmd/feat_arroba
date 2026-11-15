@@ -13,7 +13,7 @@ NAME=@e:
 FILE==
 CMDS=<<EOF
 e scr.color=false
-e scr.color @e:scr.color=true
+e scr.color @e:scr.color=1
 EOF
 EXPECT=<<EOF
 1
@@ -36,8 +36,8 @@ FILE==
 CMDS=<<EOF
 e scr.color=false
 s 0
-e scr.color @e:scr.color=true @ 0x1337
-s @e:scr.color=true @ 0x1337
+e scr.color @e:scr.color=1 @ 0x1337
+s @e:scr.color=1 @ 0x1337
 EOF
 EXPECT=<<EOF
 1
@@ -49,9 +49,9 @@ NAME=@ addr @e
 FILE==
 CMDS=<<EOF
 e scr.color @ 0x42 @e:scr.color=false 
-e scr.color @ 0x1337 @e:scr.color=true
+e scr.color @ 0x1337 @e:scr.color=1
 s @ 0x42 @e:scr.color=false 
-s @ 0x1337 @e:scr.color=true 
+s @ 0x1337 @e:scr.color=1 
 EOF
 EXPECT=<<EOF
 0
@@ -65,11 +65,11 @@ NAME=@a: @ addr @e:
 FILE==
 CMDS=<<EOF
 e asm.arch @a:x86 @ 0x42 @e:scr.color=false
-e asm.arch @a:arm @ 0x1337 @e:scr.color=true
+e asm.arch @a:arm @ 0x1337 @e:scr.color=1
 s @a:x86 @ 0x42 @e:scr.color=false
-s @a:arm @ 0x1337 @e:scr.color=true
+s @a:arm @ 0x1337 @e:scr.color=1
 e scr.color @a:x86 @ 0x42 @e:scr.color=false
-e scr.color @a:arm @ 0x1337 @e:scr.color=true
+e scr.color @a:arm @ 0x1337 @e:scr.color=1
 EOF
 EXPECT=<<EOF
 x86

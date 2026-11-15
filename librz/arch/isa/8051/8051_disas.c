@@ -51,16 +51,18 @@ static char *_replace_register(char *disasm, ut8 arg, ut8 val) {
 	char subst[10];
 	if (arg == A_DIRECT) {
 		if (_8051_regs[val]) {
-			sprintf(key, " 0x%02x", val);
-			sprintf(subst, " %s", _8051_regs[val]);
-			disasm = rz_str_replace(disasm, key, subst, 0);
+			disasm = rz_str_replace(disasm,
+				rz_strf(key, " 0x%02x", val),
+				rz_strf(subst, " %s", _8051_regs[val]),
+				0);
 		}
 	} else if (arg == A_BIT) {
 		val = arg_bit(val);
 		if (_8051_regs[val]) {
-			sprintf(key, "0x%02x.", val);
-			sprintf(subst, "%s.", _8051_regs[val]);
-			disasm = rz_str_replace(disasm, key, subst, 0);
+			disasm = rz_str_replace(disasm,
+				rz_strf(key, "0x%02x.", val),
+				rz_strf(subst, "%s.", _8051_regs[val]),
+				0);
 		}
 	}
 	return disasm;

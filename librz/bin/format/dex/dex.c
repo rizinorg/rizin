@@ -1308,26 +1308,25 @@ RZ_API RZ_OWN RzPVector /*<RzBinSymbol *>*/ *rz_bin_dex_symbols(RZ_NONNULL RzBin
 
 	rz_pvector_foreach (dex->class_defs, vit) {
 		class_def = (DexClassDef *)*vit;
-		RzListIter *iter;
 		RzBinSymbol *sym;
 
 		class_symbols = dex_resolve_fields_in_class_as_symbols(dex, class_def, inserted_fields);
 		if (class_symbols) {
-			rz_list_foreach (class_symbols, iter, sym) {
-				rz_pvector_push(symbols, sym);
+			while ((sym = rz_list_pop_head(class_symbols))) {
+				if (!rz_pvector_push(symbols, sym)) {
+					rz_bin_symbol_free(sym);
+				}
 			}
-			class_symbols->length = 0;
-			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 
 		class_symbols = dex_resolve_methods_in_class(dex, class_def, inserted_methods);
 		if (class_symbols) {
-			rz_list_foreach (class_symbols, iter, sym) {
-				rz_pvector_push(symbols, sym);
+			while ((sym = rz_list_pop_head(class_symbols))) {
+				if (!rz_pvector_push(symbols, sym)) {
+					rz_bin_symbol_free(sym);
+				}
 			}
-			class_symbols->length = 0;
-			class_symbols->head = class_symbols->tail = NULL;
 			rz_list_free(class_symbols);
 		}
 	}

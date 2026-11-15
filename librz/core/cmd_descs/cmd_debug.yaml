@@ -578,6 +578,7 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_QUIET
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
       - name: dtl=
         summary: List all traces in ascii art
         cname: cmd_debug_traces_ascii
@@ -784,8 +785,11 @@ commands:
         args: []
       - name: dm.
         cname: cmd_debug_map_current
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         summary: Show map name of current address
         args: []
+        modes: 
+          - RZ_OUTPUT_MODE_STANDARD
       - name: dmm
         summary: Module memory map commands
         subcommands:
@@ -799,8 +803,10 @@ commands:
             args: []
           - name: dmm.
             cname: cmd_debug_current_modules
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
             modes:
               - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             summary: List memory map of current module
             args: []
       - name: dm-
@@ -826,8 +832,8 @@ commands:
             summary: Dump writable debug maps
             args: []
       - name: dmh
-        summary: Glibc heap commands
-        subcommands: cmd_heap_glibc
+        summary: Heap commands
+        subcommands: cmd_heap
       - name: dmi
         summary: List/Load symbols
         subcommands:
@@ -897,8 +903,10 @@ commands:
       - name: dmS
         summary: List sections of target lib
         cname: cmd_debug_dmS
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: addr|libname
             type: RZ_CMD_ARG_TYPE_STRING
@@ -906,72 +914,6 @@ commands:
           - name: sectname
             type: RZ_CMD_ARG_TYPE_STRING
             optional: true
-      - name: dmw
-        summary: Windows heap commands
-        subcommands:
-          - name: dmw
-            summary: List process heaps
-            cname: cmd_debug_process_heaps
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_JSON
-            args: []
-          - name: dmwb
-            summary: List allocated heap blocks
-            cname: cmd_debug_process_heap_block
-            modes:
-              - RZ_OUTPUT_MODE_STANDARD
-              - RZ_OUTPUT_MODE_JSON
-            args:
-              - name: addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmwbf
-            summary: Create flags for each allocated heap block
-            cname: cmd_debug_heap_block_flag
-            args: []
-      - name: dmx
-        summary: Jemalloc heap commands
-        subcommands:
-          - name: dmxa
-            summary: Show all arenas created, or print arena_type structure for given arena.
-            cname: cmd_debug_heap_jemalloc_a
-            args:
-              - name: arena_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmxb
-            summary: Show bin info for allocations. 
-            cname: cmd_debug_heap_jemalloc_b
-            args:
-              - name: arena_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-              - name: bin_info_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmxc
-            summary: >-
-              Show all chunks created in all arenas, or show all chunks created for a given
-              arena_t instance (jemalloc 4.5.0 only).
-            cname: cmd_debug_heap_jemalloc_c
-            args:
-              - name: arena_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmxe
-            summary: List all extents, or find extent for a specific malloc'd address (jemalloc 5.3.0 only)
-            cname: cmd_debug_heap_jemalloc_e
-            args:
-              - name: malloc_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
-                optional: true
-          - name: dmxei
-            summary: Display extent (edata_t) structure info for a given extent address (jemalloc 5.3.0 only)
-            cname: cmd_debug_heap_jemalloc_ei
-            args:
-              - name: extent_addr
-                type: RZ_CMD_ARG_TYPE_RZNUM
   - name: dp
     summary: List or attach to process or thread
     subcommands:
@@ -1198,6 +1140,10 @@ commands:
           - name: dra
             summary: Show all currently allocated register arenas
             cname: debug_reg_arenas
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: dra+
             summary: Push a new set of arenas to the stack
@@ -1251,8 +1197,15 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
           - name: drpc
-            summary: Show register profile comments
+            summary: Show the full-line comments of the register profile
+            description: >
+              A comment after a register definition describes that register, and `drpj` shows it
+              as the `comment` of the register.
             cname: debug_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: drpo
             summary: Load a new register profile from file
@@ -1319,11 +1272,19 @@ commands:
       - name: drT
         summary: List all register types
         cname: debug_reg_types
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
       - name: drR
         summary: List all register roles
         cname: debug_reg_roles
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
   # ... to here

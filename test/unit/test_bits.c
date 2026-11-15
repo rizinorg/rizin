@@ -68,11 +68,26 @@ bool test_rz_bits_copy(void) {
 	mu_end;
 }
 
+bool test_rz_bits_ut64_width(void) {
+	mu_assert_eq(rz_bits_ut64_width(0), 0, "Width of 0");
+	mu_assert_eq(rz_bits_ut64_width(1), 1, "Width of 1");
+	mu_assert_eq(rz_bits_ut64_width(2), 2, "Width of 2");
+	mu_assert_eq(rz_bits_ut64_width(3), 2, "Width of 3");
+	mu_assert_eq(rz_bits_ut64_width(0xff), 8, "Width of 0xff");
+	mu_assert_eq(rz_bits_ut64_width(0x100), 9, "Width of 0x100");
+	mu_assert_eq(rz_bits_ut64_width(UT32_MAX), 32, "Width of UT32_MAX");
+	mu_assert_eq(rz_bits_ut64_width(1ULL << 63), 64, "Width of the top bit");
+	mu_assert_eq(rz_bits_ut64_width(UT64_MAX), 64, "Width of UT64_MAX");
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bits_count);
 	mu_run_test(test_rz_bits_spread);
 	mu_run_test(test_rz_bits_trailing_zero);
 	mu_run_test(test_rz_bits_copy);
+	mu_run_test(test_rz_bits_ut64_width);
 
 	return tests_passed != tests_run;
 }

@@ -4,9 +4,8 @@
 #ifndef _8051_IL_H_
 #define _8051_IL_H_
 
-#include <rz_types.h>
+#include "analysis_private.h"
 #include <rz_il.h>
-#include <rz_analysis.h>
 
 typedef enum {
 	I_UNDEFINED = 0,
@@ -195,6 +194,7 @@ typedef struct i8051_op_t {
 } I8051Op;
 
 RZ_IPI I8051Op *rz_8051_op_parse(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc);
+RZ_IPI void rz_8051_op_free(I8051Op *op);
 RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const ut8 *buf, int len, ut64 pc);
 RZ_IPI RzAnalysisILConfig *rz_8051_il_config(RZ_NONNULL RzAnalysis *analysis);
 

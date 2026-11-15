@@ -26,6 +26,7 @@ DEFINE_DEMANGLER_PLUGIN(java, "java", "LGPL3", "deroad", libdemangle_handler_jav
 DEFINE_DEMANGLER_PLUGIN(msvc, "msvc", "LGPL3", "inisider", libdemangle_handler_msvc);
 DEFINE_DEMANGLER_PLUGIN(objc, "objc", "LGPL3", "pancake", libdemangle_handler_objc);
 DEFINE_DEMANGLER_PLUGIN(pascal, "pascal", "LGPL3", "deroad", libdemangle_handler_pascal);
+DEFINE_DEMANGLER_PLUGIN(dlang, "dlang", "LGPL3", "historicattle", libdemangle_handler_d);
 
 static RzDemanglerPlugin *demangler_static_plugins[] = { RZ_DEMANGLER_STATIC_PLUGINS };
 
@@ -71,6 +72,13 @@ RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemangler
  */
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
 	return libdemangle_handler_msvc(symbol, (RzDemangleOpts)flags);
+}
+
+/**
+ * \brief Demangles DLang symbols
+ */
+RZ_API RZ_OWN char *rz_demangler_dlang(RZ_NONNULL const char *symbol, RzDemanglerFlag flags) {
+	return libdemangle_handler_d(symbol, (RzDemangleOpts)flags);
 }
 
 /**

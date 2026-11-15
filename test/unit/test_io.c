@@ -694,6 +694,56 @@ bool test_rz_io_map_del_on_close_all(void) {
 	mu_end;
 }
 
+bool test_rz_io_boundaries(void) {
+	RzIO *io = rz_io_new();
+	RzIODesc *io_desc = rz_io_open(io, "malloc://256", RZ_PERM_RWX, 0);
+	mu_assert_notnull(io_desc, "NULL");
+	RzInterval itv = { .addr = 0, .size = 256 };
+	RzList *bounds = rz_io_get_boundaries_raw(io, itv);
+	mu_assert_notnull(bounds, "NULL check");
+	mu_assert_eq(rz_list_length(bounds), 1, "len");
+	RzIOMap *map = rz_list_head(bounds)->val;
+	mu_assert_eq(map->itv.addr, 0, "addr");
+	mu_assert_eq(map->itv.size, 256, "size");
+	mu_assert_eq(map->perm, RZ_PERM_RWX, "perm");
+	rz_list_free(bounds);
+
+	io_desc = rz_io_open_at(io, "malloc://128", RZ_PERM_RW, 0, 512, NULL);
+	mu_assert_notnull(io_desc, "NULL");
+	itv.size = 1024;
+	bounds = rz_io_get_boundaries_io_maps(io, itv, RZ_PERM_RW, RZ_PERM_RW);
+	mu_assert_notnull(bounds, "NULL check");
+	mu_assert_eq(rz_list_length(bounds), 2, "len");
+	map = rz_list_head(bounds)->val;
+	mu_assert_eq(map->itv.addr, 0, "addr");
+	mu_assert_eq(map->itv.size, 256, "size");
+	mu_assert_eq(map->perm, RZ_PERM_RWX, "perm");
+	map = rz_list_tail(bounds)->val;
+	mu_assert_eq(map->itv.addr, 512, "addr");
+	mu_assert_eq(map->itv.size, 128, "size");
+	mu_assert_eq(map->perm, RZ_PERM_RW, "perm");
+	rz_list_free(bounds);
+
+	itv.size = 1024;
+	bounds = rz_io_get_boundaries_io_skyline(io, itv, RZ_PERM_RW, RZ_PERM_RW);
+	mu_assert_notnull(bounds, "NULL check");
+	mu_assert_eq(rz_list_length(bounds), 2, "len");
+	map = rz_list_head(bounds)->val;
+	mu_assert_eq(map->itv.addr, 0, "addr");
+	mu_assert_eq(map->itv.size, 256, "size");
+	mu_assert_eq(map->perm, RZ_PERM_RWX, "perm");
+	map = rz_list_tail(bounds)->val;
+	mu_assert_eq(map->itv.addr, 512, "addr");
+	mu_assert_eq(map->itv.size, 128, "size");
+	mu_assert_eq(map->perm, RZ_PERM_RW, "perm");
+	rz_list_free(bounds);
+
+	rz_io_close_all(io);
+	rz_io_free(io);
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_rz_io_read_at_mapped);
 	mu_run_test(test_rz_io_nread_at);
@@ -713,6 +763,7 @@ bool all_tests(void) {
 	mu_run_test(test_rz_io_map_del_for_fd);
 	mu_run_test(test_rz_io_map_del_on_close);
 	mu_run_test(test_rz_io_map_del_on_close_all);
+	mu_run_test(test_rz_io_boundaries);
 	return tests_passed != tests_run;
 }
 

@@ -7,6 +7,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_print.h>
+#include <rz_util/rz_annotated_code.h>
 #include <rz_bind.h>
 #include <rz_io.h>
 #include <rz_list.h>
@@ -44,6 +45,7 @@ typedef struct rz_type_db_t {
 	RzNum *num;
 	RzIOBind iob; // for RzIO in formats
 	RZ_DEPRECATE RzFormatDataInternal *format_internal_data; // for rz_type_format_data_internal state
+	RzVector /*<RzTypeDBPendingLoad>*/ *pending_loads; ///< rz_type_db_init() calls not applied yet, see rz_type_db_load_pending()
 } RzTypeDB;
 
 // All types in RzTypeDB module are either concrete,
@@ -93,14 +95,14 @@ typedef struct rz_type_struct_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; ///< bitfield width in bits, or 0 if the member is not a bitfield
 } RzTypeStructMember;
 
 typedef struct rz_type_union_member_t {
 	char *name;
 	RzType *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; ///< bitfield width in bits, or 0 if the member is not a bitfield
 } RzTypeUnionMember;
 
 typedef struct rz_base_type_struct_t {
@@ -158,6 +160,11 @@ typedef struct rz_callable_at {
 	bool noret : 1; // Does not return
 	bool has_unspecified_parameters : 1;
 } RzCallable;
+
+/**
+ * \brief Appends to \p sb what to print after \p arg in the C representation of a callable
+ */
+typedef void (*RzCallableArgSuffixCb)(RZ_NONNULL RzStrBuf *sb, RZ_NONNULL const RzCallableArg *arg, RZ_NULLABLE void *user);
 
 struct rz_type_t {
 	RzTypeKind kind;
@@ -266,6 +273,7 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name);
 
 RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *dir_prefix, const char *arch, int bits, const char *os);
 RZ_API void rz_type_db_reload(RzTypeDB *typedb, const char *dir_prefix);
+RZ_API void rz_type_db_load_pending(RZ_NONNULL const RzTypeDB *typedb);
 RZ_API void rz_type_db_purge(RzTypeDB *typedb);
 
 // Base types
@@ -286,18 +294,24 @@ RZ_API RZ_BORROW RzBaseType *rz_type_db_get_compound_type(const RzTypeDB *typedb
 RZ_API bool rz_type_db_save_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_update_base_type(const RzTypeDB *typedb, RzBaseType *type);
 RZ_API bool rz_type_db_delete_base_type(RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
+RZ_API bool rz_type_db_rename_base_type(RzTypeDB *typedb, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
+RZ_API void rz_type_rename_references(RZ_NULLABLE RzType *type, RZ_NONNULL const char *from, RZ_NONNULL const char *to);
 
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types_of_kind(const RzTypeDB *typedb, RzBaseTypeKind kind);
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_db_get_base_types(const RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_type_db_base_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 RZ_API RZ_OWN char *rz_type_db_base_type_as_pretty_string(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype, unsigned int opts, int unfold_level);
+
+RZ_API bool rz_type_struct_member_is_bitfield(RZ_NONNULL const RzTypeStructMember *member);
+RZ_API bool rz_type_union_member_is_bitfield(RZ_NONNULL const RzTypeUnionMember *member);
 RZ_API bool rz_type_db_edit_base_type(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_NONNULL const char *typestr);
 RZ_API RZ_BORROW RzType *rz_type_db_base_type_unwrap_typedef(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *btype);
 
 // Compound types
 
 RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type);
+RZ_API RZ_OWN RzType *rz_type_clone_shallow(RZ_BORROW RZ_NONNULL const RzType *type);
 RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type);
 RZ_API bool rz_types_equal(RZ_NONNULL const RzType *type1, RZ_NONNULL const RzType *type2);
 RZ_API RZ_OWN char *rz_type_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
@@ -312,6 +326,7 @@ RZ_API int rz_type_kind(RzTypeDB *typedb, RZ_NONNULL const char *name);
 RZ_API RZ_BORROW const char *rz_type_typeclass_as_string(RzTypeTypeclass typeclass);
 RZ_API RzTypeTypeclass rz_type_typeclass_from_string(RZ_NONNULL const char *typeclass);
 RZ_API RzTypeTypeclass rz_base_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
+RZ_API bool rz_base_type_set_typeclass(RZ_NONNULL RzBaseType *type, RzTypeTypeclass typeclass);
 RZ_API RzTypeTypeclass rz_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
 RZ_API bool rz_base_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzBaseType *type);
 RZ_API bool rz_type_is_num(const RzTypeDB *typedb, RZ_NONNULL const RzType *type);
@@ -340,6 +355,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
+RZ_API RZ_OWN RzAnnotatedCode *rz_type_c_highlight(RZ_NONNULL RZ_BORROW const char *source);
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables);
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);
@@ -409,9 +425,8 @@ RZ_API void rz_type_db_format_purge(RzTypeDB *typedb);
 
 RZ_API RZ_OWN char *rz_base_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *type);
 RZ_API RZ_OWN char *rz_type_format(RZ_NONNULL const RzTypeDB *typedb, RZ_NONNULL const char *type);
+RZ_API RZ_OWN char *rz_type_format_to_c_declaration(RZ_NONNULL const char *name, RZ_NONNULL const char *fmt_str, RZ_NULLABLE char **error);
 RZ_API int rz_type_format_struct_size(const RzTypeDB *typedb, const char *f, int mode, int n);
-RZ_API RZ_OWN char *rz_type_format_data(RZ_BORROW RzTypeDB *t, RzPrint *p, ut64 seek, const ut8 *b, const int len,
-	const char *formatname, int mode, const char *setval, char *ofield);
 RZ_API RZ_OWN char *rz_type_as_format(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL RzType *type);
 
@@ -448,6 +463,7 @@ RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
+RZ_API RZ_OWN char *rz_type_callable_as_string_with_suffix(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NULLABLE RzCallableArgSuffixCb arg_suffix, RZ_NULLABLE void *user);
 RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, bool zero_vla);
 
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
@@ -472,6 +488,9 @@ RZ_API bool rz_serialize_callables_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzTypeDB 
 
 // Constrained Type
 RZ_API RZ_BORROW const char *rz_type_cond_tostring(RzTypeCond cc);
+RZ_API RzTypeCond rz_type_cond_fromstring(RZ_NONNULL const char *s);
+RZ_API RZ_OWN char *rz_type_interval_constraints_as_string(RZ_NONNULL const RzVector /*<RzTypeConstraint>*/ *constraints);
+RZ_API bool rz_type_interval_constraints_from_string(RZ_NONNULL const char *str, RZ_NONNULL RzVector /*<RzTypeConstraint>*/ *constraints);
 RZ_API RzTypeCond rz_type_cond_invert(RzTypeCond cond);
 RZ_API bool rz_type_cond_eval(RzTypeCond cond, st64 arg0, st64 arg1);
 RZ_API bool rz_type_cond_eval_single(RzTypeCond cond, st64 arg0);

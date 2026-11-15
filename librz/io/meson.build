@@ -45,6 +45,7 @@ io_plugins = {
 
 rz_io_sources = [
   'io.c',
+  'io_bounds.c',
   'io_fd.c',
   'io_map.c',
   'io_memory.c',

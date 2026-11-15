@@ -10,6 +10,8 @@
 #define Color_BGINSERT "\x1b[48;5;22m"
 #define Color_BGDELETE "\x1b[48;5;52m"
 
+#define RZ_DIFF_DEFAULT_N_GROUPS_BYTES 8
+
 #define FAST_MOD2(x, y)      ((x) & (y - 1))
 #define FAST_MOD64(x)        FAST_MOD2(x, 64)
 #define DIFF_COLOR(prefix)   (prefix == '+' ? Color_INSERT : (prefix == '-' ? Color_DELETE : ""))
@@ -107,19 +109,13 @@ static inline void diff_unified_append_data(RzDiff *diff, const void *array, st3
 	rz_strbuf_appendf(sb, "%s\n", ecol);
 }
 
-// Assumes that color is true, diffing lines, op->type is RZ_DIFF_OP_REPLACE
-// and that the number of inserted lines is equal to the number of deleted
-// lines.
-static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *sb, char del_prefix, char ins_prefix) {
+static inline void fill_char_bounds(RzDiff *diff, RzDiffOp *op, st32 *char_bounds, int num_bounds) {
 	RzDiffMethodElemAt elem_at = diff->methods.elem_at;
 	RzDiffMethodStringify stringify = diff->methods.stringify;
 	int len = 0;
 	const char *p;
 	const void *elem;
 	RzStrBuf tmp, tmp2;
-	const char *ecol = Color_RESET;
-	const char *ebgcol = Color_RESET_BG;
-
 	const void *a_array = diff->a;
 	st32 a_beg = op->a_beg;
 	if (a_beg < 0) {
@@ -133,11 +129,6 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 		b_beg = 0;
 	}
 	st32 b_end = op->b_end;
-
-	ut32 num_nl = count_newlines(diff, a_array, a_beg, a_end);
-	// + 1 just in case there's no nl at end
-	ut32 num_bounds = num_nl + 1;
-	st32 *char_bounds = malloc(sizeof(st32) * 2 * num_bounds);
 	if (!char_bounds) {
 		return;
 	}
@@ -200,6 +191,46 @@ static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *s
 		}
 		rz_strbuf_fini(&tmp);
 	}
+}
+
+// Assumes that color is true, diffing lines, op->type is RZ_DIFF_OP_REPLACE
+// and that the number of inserted lines is equal to the number of deleted
+// lines.
+static inline void diff_unified_lines_hl(RzDiff *diff, RzDiffOp *op, RzStrBuf *sb, char del_prefix, char ins_prefix) {
+	RzDiffMethodElemAt elem_at = diff->methods.elem_at;
+	RzDiffMethodStringify stringify = diff->methods.stringify;
+	int len = 0;
+	const char *p;
+	const void *elem;
+	RzStrBuf tmp /*, tmp2*/;
+	const char *ecol = Color_RESET;
+	const char *ebgcol = Color_RESET_BG;
+
+	const void *a_array = diff->a;
+	st32 a_beg = op->a_beg;
+	if (a_beg < 0) {
+		a_beg = 0;
+	}
+	st32 a_end = op->a_end;
+
+	const void *b_array = diff->b;
+	st32 b_beg = op->b_beg;
+	if (b_beg < 0) {
+		b_beg = 0;
+	}
+	st32 b_end = op->b_end;
+
+	ut32 num_nl = count_newlines(diff, a_array, a_beg, a_end);
+	// + 1 just in case there's no nl at end
+	ut32 num_bounds = num_nl + 1;
+	st32 *char_bounds = malloc(sizeof(st32) * 2 * num_bounds);
+	if (!char_bounds) {
+		return;
+	}
+	fill_char_bounds(diff, op, char_bounds, num_bounds);
+
+	ut32 bounds_idx = 0;
+	bool newline = false;
 
 	// Show deleted lines
 	char prefix = del_prefix;
@@ -359,7 +390,10 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 		rz_strbuf_appendf(sb, "--- %s\n+++ %s\n", from, to);
 	}
 
-	groups = rz_diff_opcodes_grouped_new(diff, RZ_DIFF_DEFAULT_N_GROUPS);
+	bool is_lines = DIFF_IS_LINES_METHOD(diff->methods);
+	bool is_bytes = DIFF_IS_BYTES_METHOD(diff->methods);
+
+	groups = rz_diff_opcodes_grouped_new(diff, is_bytes ? RZ_DIFF_DEFAULT_N_GROUPS_BYTES : RZ_DIFF_DEFAULT_N_GROUPS);
 	if (!groups) {
 		goto rz_diff_unified_text_fail;
 	}
@@ -370,16 +404,18 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 		}
 		diff_unified_append_ranges(opcodes, sb, color);
 		rz_list_foreach (opcodes, ito, op) {
-			if (op->type == RZ_DIFF_OP_EQUAL) {
-				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, ' ', color);
-				continue;
-			}
-			if (op->type == RZ_DIFF_OP_DELETE) {
+			switch (op->type) {
+			case RZ_DIFF_OP_DELETE:
 				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, '-', color);
-			} else if (op->type == RZ_DIFF_OP_INSERT) {
+				break;
+			case RZ_DIFF_OP_EQUAL:
+				diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, ' ', color);
+				break;
+			case RZ_DIFF_OP_INSERT:
 				diff_unified_append_data(diff, diff->b, op->b_beg, op->b_end, sb, '+', color);
-			} else if (op->type == RZ_DIFF_OP_REPLACE) {
-				if (!color || !DIFF_IS_LINES_METHOD(diff->methods) ||
+				break;
+			default: // RZ_DIFF_OP_REPLACE
+				if (!color || !is_lines ||
 					count_newlines(diff, diff->a, op->a_beg, op->a_end) !=
 						count_newlines(diff, diff->b, op->b_beg, op->b_end)) {
 					diff_unified_append_data(diff, diff->a, op->a_beg, op->a_end, sb, '-', color);
@@ -387,6 +423,7 @@ RZ_API RZ_OWN char *rz_diff_unified_text(RZ_NONNULL RzDiff *diff, RZ_NULLABLE co
 				} else {
 					diff_unified_lines_hl(diff, op, sb, '-', '+');
 				}
+				break;
 			}
 		}
 	}
@@ -398,6 +435,64 @@ rz_diff_unified_text_fail:
 	rz_strbuf_free(sb);
 	rz_list_free(groups);
 	return NULL;
+}
+
+/**
+ * \brief stringifies the DiffOpLines
+ */
+RZ_API RZ_OWN char *rz_diff_op_stringify(RZ_NONNULL RzDiff *diff, RZ_NONNULL RzDiffOp *op, bool is_a) {
+	rz_return_val_if_fail(diff && op, rz_str_dup(""));
+	RzDiffMethodElemAt elem_at = diff->methods.elem_at;
+	RzDiffMethodStringify stringify = diff->methods.stringify;
+	int len = 0;
+	ut32 count = 0;
+	const char *p;
+	const void *elem;
+	RzStrBuf sb, tmp;
+	bool newline = false;
+	bool is_bytes = DIFF_IS_BYTES_METHOD(diff->methods);
+	const void *array = is_a ? diff->a : diff->b;
+	st32 beg = is_a ? op->a_beg : op->b_beg;
+	st32 end = is_a ? op->a_end : op->b_end;
+
+	if (beg < 0) {
+		beg = 0;
+	}
+
+	rz_strbuf_init(&sb);
+	for (st32 i = beg; i < end; ++i) {
+		if (newline || (is_bytes && count > 0 && !FAST_MOD64(count))) {
+			rz_strbuf_append(&sb, "\n");
+			newline = false;
+		}
+		rz_strbuf_init(&tmp);
+		elem = elem_at(array, i);
+		stringify(elem, &tmp);
+		len = rz_strbuf_length(&tmp);
+		p = rz_strbuf_get(&tmp);
+		count += len;
+		if (len > 0 && p[len - 1] == '\n') {
+			len--;
+			newline = true;
+		}
+		rz_strbuf_append_n(&sb, p, len);
+		rz_strbuf_fini(&tmp);
+	}
+	rz_strbuf_appendf(&sb, "\n");
+	char *res = rz_strbuf_drain_nofree(&sb);
+	rz_strbuf_fini(&sb);
+	return res;
+}
+
+/**
+ * \brief Produces a list of grouped RzDiffOp based on the diff->method
+ */
+RZ_API RZ_OWN RzList /*<RzList<RzDiffOp *> *>*/ *rz_diff_unified_text_grouped(RZ_NONNULL RzDiff *diff) {
+	rz_return_val_if_fail(diff && diff->methods.elem_at && diff->methods.stringify, NULL);
+
+	bool is_bytes = DIFF_IS_BYTES_METHOD(diff->methods);
+
+	return rz_diff_opcodes_grouped_new(diff, is_bytes ? RZ_DIFF_DEFAULT_N_GROUPS_BYTES : RZ_DIFF_DEFAULT_N_GROUPS);
 }
 
 /**

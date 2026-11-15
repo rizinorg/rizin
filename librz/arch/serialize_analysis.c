@@ -1,11 +1,7 @@
 // SPDX-FileCopyrightText: 2020-2021 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_util/rz_serialize.h>
-#include <rz_util/rz_num.h>
-#include <rz_vector.h>
-#include <rz_type.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 
 #include <errno.h>
@@ -24,7 +20,7 @@
  *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
  *               bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>], labels?: {<str>:<ut64>}}
  *   /xrefs
- *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"s"}]
+ *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"w"|"s"}]
  *
  *   /meta
  *     0x<addr>=[{size?:<ut64, interpreted as 1 if not present>, type:<str>, subtype?:<int>, str?:<str>, space?:<str>}]
@@ -963,6 +959,7 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	RzJson *json = rz_json_parse(json_str);
 	if (!json || json->type != RZ_JSON_OBJECT) {
 		free(json_str);
+		rz_json_free(json);
 		return false;
 	}
 
@@ -974,6 +971,7 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
 	RzAnalysisVarGlobal *glob = NULL;
+	bool ret = false;
 
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case GLOBAL_VAR_FIELD_NAME:
@@ -1037,7 +1035,8 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	addr = rz_num_math(core->num, addr_s);
 	if (rz_analysis_var_global_get_byaddr_in(ctx->analysis, addr) ||
 		rz_analysis_var_global_get_byname(ctx->analysis, name)) {
-		return true;
+		ret = true;
+		goto beach;
 	}
 
 	glob = rz_analysis_var_global_new(name, addr);
@@ -1050,11 +1049,13 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_global_add_constraint(glob, constr);
 	}
-	return rz_analysis_var_global_add(ctx->analysis, glob);
+	ret = rz_analysis_var_global_add(ctx->analysis, glob);
 
 beach:
+	free(json_str);
+	rz_json_free(json);
 	rz_vector_fini(&constraints);
-	return false;
+	return ret;
 }
 
 RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {
@@ -1485,6 +1486,8 @@ static bool xrefs_load_cb(void *user, const SdbKv *kv) {
 			case RZ_ANALYSIS_XREF_TYPE_CODE:
 			case RZ_ANALYSIS_XREF_TYPE_CALL:
 			case RZ_ANALYSIS_XREF_TYPE_DATA:
+			// identical to DATA: case RZ_ANALYSIS_XREF_TYPE_MEM_READ:
+			case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
 			case RZ_ANALYSIS_XREF_TYPE_STRING:
 				type = baby->str_value[0];
 				break;
@@ -1848,6 +1851,11 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				pj_kn(j, "val", record->val);
 				break;
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ENUM:
+				if (!RZ_STR_ISEMPTY(record->enum_name)) {
+					pj_ks(j, "enum", record->enum_name);
+				}
+				break;
 			}
 		}
 	}
@@ -1884,7 +1892,8 @@ enum {
 	HINTS_FIELD_TYPE_OFFSET,
 	HINTS_FIELD_ESIL,
 	HINTS_FIELD_HIGH,
-	HINTS_FIELD_VAL
+	HINTS_FIELD_VAL,
+	HINTS_FIELD_ENUM
 };
 
 typedef struct {
@@ -2015,6 +2024,12 @@ static bool hints_load_cb(void *user, const SdbKv *kv) {
 			}
 			rz_analysis_hint_set_val(analysis, addr, child->num.u_value);
 			break;
+		case HINTS_FIELD_ENUM:
+			if (child->type != RZ_JSON_STRING) {
+				break;
+			}
+			rz_analysis_hint_set_enum(analysis, addr, child->str_value);
+			break;
 		default:
 			break;
 	})
@@ -2054,6 +2069,7 @@ RZ_API bool rz_serialize_analysis_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAn
 	rz_key_parser_add(ctx.parser, "esil", HINTS_FIELD_ESIL);
 	rz_key_parser_add(ctx.parser, "high", HINTS_FIELD_HIGH);
 	rz_key_parser_add(ctx.parser, "val", HINTS_FIELD_VAL);
+	rz_key_parser_add(ctx.parser, "enum", HINTS_FIELD_ENUM);
 	ret = sdb_foreach(db, hints_load_cb, &ctx);
 	if (!ret) {
 		RZ_SERIALIZE_ERR(res, "hints parsing failed");

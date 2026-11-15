@@ -258,6 +258,8 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(RzBinPEObj *bin) {
 					if (rz_buf_read_at(bin->b, name_paddr, (ut8 *)function_name, PE_NAME_LENGTH) < 1) {
 						RZ_LOG_INFO("read (function name)\n");
 						exports[i].last = 1;
+						free(ordinals);
+						free(func_rvas);
 						return exports;
 					}
 				} else { // No name export, get the ordinal
@@ -272,6 +274,8 @@ struct rz_bin_pe_export_t *PE_(rz_bin_pe_get_exports)(RzBinPEObj *bin) {
 				// if forwarder, the VA point to Forwarded name
 				if (rz_buf_read_at(bin->b, PE_(bin_pe_rva_to_paddr)(bin, function_rva), (ut8 *)forwarder_name, PE_NAME_LENGTH) < 1) {
 					exports[i].last = 1;
+					free(ordinals);
+					free(func_rvas);
 					return exports;
 				}
 			} else { // no forwarder export

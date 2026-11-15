@@ -176,6 +176,9 @@
 #elif defined(__NetBSD__)
 #   define ZYAN_NETBSD
 #   define ZYAN_POSIX
+#elif defined(__OpenBSD__)
+#   define ZYAN_OPENBSD
+#   define ZYAN_POSIX
 #elif defined(sun) || defined(__sun)
 #   define ZYAN_SOLARIS
 #   define ZYAN_POSIX
@@ -217,9 +220,9 @@
 #   define ZYAN_WASM
 #elif defined(__loongarch__)
 #   define ZYAN_LOONGARCH
-#elif defined(__powerpc64__)
+#elif defined(__powerpc64__) || defined(__ppc64__)
 #   define ZYAN_PPC64
-#elif defined(__powerpc__)
+#elif defined(__powerpc__) || defined(__ppc__)
 #   define ZYAN_PPC
 #elif defined(__riscv) || defined(__riscv__)
 #   if __riscv_xlen == 64
@@ -232,7 +235,11 @@
 #elif defined(__s390x__) || defined(__s390__)
 #   define ZYAN_S390
 #elif defined(__sparc__)
-#   define ZYAN_SPARC
+#    if defined(__sparc64__)
+#        define ZYAN_SPARC64
+#    else
+#        define ZYAN_SPARC32
+#    endif
 #elif defined(__mips__)
 #   define ZYAN_MIPS
 #else
@@ -263,7 +270,7 @@
 #   else
 #       error "Unsupported endianness"
 #   endif
-#elif defined(ZYAN_S390) || defined(ZYAN_SPARC) || defined(ZYAN_MIPS)
+#elif defined(ZYAN_S390) || defined(ZYAN_SPARC) || defined(ZYAN_SPARC64) || defined(ZYAN_MIPS)
 #   define ZYAN_ENDIAN ZYAN_BIG_ENDIAN
 #else
 #   define ZYAN_ENDIAN ZYAN_LITTLE_ENDIAN
@@ -1947,7 +1954,7 @@ extern "C" {
 /* Enums and types                                                                                */
 /* ============================================================================================== */
 
-#if !defined(ZYAN_APPLE)
+#if !defined(ZYAN_APPLE) && !(defined(ZYAN_OPENBSD) && defined(__sparc__))
 #   pragma pack(push, 1)
 #endif
 
@@ -1971,7 +1978,7 @@ typedef struct ZydisShortString_
     ZyanU8 size;
 } ZydisShortString;
 
-#if !defined(ZYAN_APPLE)
+#if !defined(ZYAN_APPLE) && !(defined(ZYAN_OPENBSD) && defined(__sparc__))
 #   pragma pack(pop)
 #endif
 

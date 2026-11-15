@@ -2,6 +2,7 @@ NAME=overlapped-segment
 FILE=bins/elf/overlapped-segment
 CMDS=<<EOF
 iSS
+echo ---
 pd 3 @ 0
 EOF
 EXPECT=<<EOF
@@ -21,6 +22,7 @@ EXPECT=<<EOF
 0x00000000   0x0 0x00000000   0x0   0x10 -rw- GNU_STACK
 0x00002df0 0x210 0x00003df0 0x210    0x1 -r-- GNU_RELRO
 0x00000000  0x40 0x00000000  0x40    0x0 -rw- ehdr
+---
             ;-- segment.LOAD0:
             ;-- segment.LOAD1:
             ;-- segment.GNU_STACK:

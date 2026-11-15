@@ -90,7 +90,7 @@ typedef struct rz_bp_trace_t {
 } RzBreakpointTrace;
 
 #ifdef RZ_API
-RZ_API RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
+RZ_API RZ_OWN RzBreakpoint *rz_bp_new(RZ_BORROW RZ_NONNULL RzBreakpointContext *ctx);
 RZ_API void rz_bp_free(RzBreakpoint *bp);
 
 RZ_API bool rz_bp_set_opcode(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
@@ -104,17 +104,17 @@ RZ_API size_t rz_bp_size_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 RZ_API size_t rz_bp_get_bytes(RZ_NONNULL RzBreakpoint *bp, ut64 addr, RZ_NONNULL ut8 *buf, int len);
 RZ_API int rz_bp_set_trace(RzBreakpoint *bp, ut64 addr, int set);
 RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set);
-RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_enable(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int set, int count);
 RZ_API bool rz_bp_enable_all(RzBreakpoint *bp, int set);
 
 /* index api */
 RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx);
-RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_index(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, int idx);
 RZ_API int rz_bp_get_index_at(RzBreakpoint *bp, ut64 addr);
 
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_ending_at(RZ_NONNULL RzBreakpoint *bp, ut64 addr);
-RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_get_in(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int perm);
 
 RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b);
 RZ_API bool rz_bp_item_set_cond(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *cond);
@@ -123,7 +123,7 @@ RZ_API bool rz_bp_item_set_expr(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE c
 RZ_API bool rz_bp_item_set_name(RZ_NONNULL RzBreakpointItem *item, RZ_NULLABLE const char *name);
 
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_sw(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm);
-RZ_API RzBreakpointItem *rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int perm);
+RZ_API RZ_BORROW RzBreakpointItem *rz_bp_add_hw(RZ_BORROW RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int perm);
 RZ_API void rz_bp_restore_one(RzBreakpoint *bp, RzBreakpointItem *b, bool set);
 RZ_API int rz_bp_restore(RzBreakpoint *bp, bool set);
 RZ_API bool rz_bp_restore_except(RzBreakpoint *bp, bool set, ut64 addr);
@@ -137,7 +137,7 @@ RZ_API int rz_bp_traptrace_add(RzBreakpoint *bp, ut64 from, ut64 to);
 RZ_API int rz_bp_traptrace_free_at(RzBreakpoint *bp, ut64 from);
 RZ_API void rz_bp_traptrace_list(RzBreakpoint *bp);
 RZ_API int rz_bp_traptrace_at(RzBreakpoint *bp, ut64 from, int len);
-RZ_API RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void);
+RZ_API RZ_OWN RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void);
 
 /* watchpoint */
 RZ_API RZ_BORROW RzBreakpointItem *rz_bp_watch_add(RZ_NONNULL RzBreakpoint *bp, ut64 addr, int size, int hw, int perm);
@@ -145,7 +145,7 @@ RZ_API RZ_BORROW RzBreakpointItem *rz_bp_watch_add(RZ_NONNULL RzBreakpoint *bp, 
 /* serialize */
 typedef void *RzSerializeBpParser;
 RZ_API void rz_serialize_bp_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp);
-RZ_API RzSerializeBpParser rz_serialize_bp_parser_new(void);
+RZ_API RZ_OWN RzSerializeBpParser rz_serialize_bp_parser_new(void);
 RZ_API bool rz_serialize_bp_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzBreakpoint *bp, RZ_NULLABLE RzSerializeResultInfo *res);
 
 #endif

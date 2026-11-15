@@ -44,7 +44,8 @@ bool test_rz_interval_tree_insert_at() {
 	rz_interval_tree_insert(&tree, 5, 123, NULL);
 	rz_interval_tree_insert(&tree, 6, 54, NULL);
 	rz_interval_tree_insert(&tree, 4, 5, NULL);
-	rz_interval_tree_insert(&tree, 3, 9, (void *)0x1337);
+	RzIntervalNode *node3 = rz_interval_tree_insert(&tree, 3, 9, (void *)0x1337);
+	mu_assert_notnull(node3, "inserted node");
 	rz_interval_tree_insert(&tree, 4, 11, NULL);
 	rz_interval_tree_insert(&tree, 1, 42, NULL);
 
@@ -53,7 +54,7 @@ bool test_rz_interval_tree_insert_at() {
 	}
 
 	RzIntervalNode *node = rz_interval_tree_node_at(&tree, 3);
-	mu_assert_notnull(node, "at not null");
+	mu_assert_ptreq(node, node3, "node at return");
 	mu_assert_ptreq(node->data, (void *)0x1337, "at node data");
 	mu_assert_eq_fmt(node->start, (ut64)3, "at node start", "0x%" PFMT64x);
 	mu_assert_eq_fmt(node->end, (ut64)9, "at node end", "0x%" PFMT64x);

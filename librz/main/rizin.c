@@ -10,6 +10,10 @@
 #include <rz_socket.h>
 #include <locale.h>
 
+enum {
+	RZ_MAIN_LONG_CMD_CATALOG = RZ_GETOPT_LONG_BASE,
+};
+
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
 	return d && strncmp(d->name, "gdb://", 6);
@@ -18,6 +22,24 @@ static bool is_valid_gdb_file(RzCoreFile *fh) {
 static bool is_valid_dmp_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get(fh->core->io, fh->fd) : NULL;
 	return d && strncmp(d->name, "dmp://", 6);
+}
+
+static char *download_gdb_remote_file(RzIODesc *iod, const char *remote_path) {
+	if (!iod || RZ_STR_ISEMPTY(remote_path)) {
+		return NULL;
+	}
+	char *local_path = NULL;
+	int fd = rz_file_mkstemp("gdbexe", &local_path);
+	if (fd == -1 || !local_path) {
+		free(local_path);
+		return NULL;
+	}
+	close(fd);
+	if (!rz_io_desc_download_file(iod, remote_path, local_path)) {
+		rz_file_rm(local_path);
+		RZ_FREE(local_path);
+	}
+	return local_path;
 }
 
 static char *get_file_in_cur_dir(const char *filepath) {
@@ -108,6 +130,7 @@ static int main_help(RZ_BORROW RZ_NONNULL RzCore *core, int line) {
 			"-B",          "baddr",     "Set base address for PIE binaries",
 			"-c",          "'cmd..'",   "Execute rizin command",
 			"-C",          "",          "File is host:port (alias for -cR+http://%%s/cmd/)",
+			"--cmd-catalog", "[json]",  "Print command tree catalog and exit",
 			"-d",          "",          "Debug the executable 'file' or running process 'pid'",
 			"-D",          "backend",   "Enable debug mode (e cfg.debug=true)",
 			"-e",          "k=v",       "Evaluate config var",
@@ -311,7 +334,23 @@ static int main_print_var(RZ_BORROW RZ_NONNULL RzCore *core, const char *var_nam
 	return 0;
 }
 
-static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis) {
+// `q` returns RZ_CMD_STATUS_EXIT, which is not a failure
+static inline bool cmd_status_is_error(RzCmdStatus status) {
+	return status != RZ_CMD_STATUS_OK && status != RZ_CMD_STATUS_EXIT;
+}
+
+/**
+ * \brief Run the scripts and then the commands given on the command line.
+ *
+ * \param core RzCore instance
+ * \param cmds Commands given with -c, can be NULL
+ * \param files Scripts given with -i or -I, can be NULL
+ * \param quiet Whether the batch mode (-q) is enabled
+ * \param do_analysis Whether an analysis was requested with -A
+ * \param had_error Set to true when a script or a command fails
+ * \return true if Rizin should quit right after running the commands, false otherwise.
+ */
+static bool run_commands(RzCore *core, RzList /*<char *>*/ *cmds, RzList /*<char *>*/ *files, bool quiet, int do_analysis, RZ_NONNULL RZ_OUT bool *had_error) {
 	RzListIter *iter;
 	const char *cmdn;
 	const char *file;
@@ -320,22 +359,30 @@ static bool run_commands(RzCore *r, RzList /*<char *>*/ *cmds, RzList /*<char *>
 	rz_list_foreach (files, iter, file) {
 		if (!rz_file_exists(file)) {
 			RZ_LOG_ERROR("Script '%s' not found.\n", file);
+			*had_error = true;
 			goto beach;
 		}
-		ret = rz_core_run_script(r, file);
+		ret = rz_core_run_script(core, file);
 		if (ret == -2) {
 			RZ_LOG_ERROR("[c] Cannot open '%s'\n", file);
 		}
+		if (ret <= 0) {
+			*had_error = true;
+		}
 		if (ret < 0 || (ret == 0 && quiet)) {
-			rz_cons_flush();
-			return false;
+			rz_cons_flush(core->cons);
+			// -q quits after the scripts, a failed one must not make it read stdin
+			return true;
 		}
 	}
 	/* -c */
 	rz_list_foreach (cmds, iter, cmdn) {
-		// rz_core_cmd0 (r, cmdn);
-		rz_core_cmd_lines(r, cmdn);
-		rz_cons_flush();
+		RzCmdStatus status = rz_core_cmd_lines_rzshell(core, cmdn);
+		// A line ending with `q` returns RZ_CMD_STATUS_EXIT even if a command failed before
+		if (cmd_status_is_error(status == RZ_CMD_STATUS_EXIT ? core->last_cmd_status : status)) {
+			*had_error = true;
+		}
+		rz_cons_flush(core->cons);
 	}
 beach:
 	if (quiet) {
@@ -352,11 +399,12 @@ beach:
 	return false;
 }
 
-static bool mustSaveHistory(RzConfig *c) {
+static bool mustSaveHistory(RzCore *r) {
+	RzConfig *c = r->config;
 	if (!rz_config_get_i(c, "scr.histsave")) {
 		return false;
 	}
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(r->cons)) {
 		return false;
 	}
 	return true;
@@ -405,6 +453,7 @@ static bool has_file_arg(int argc, const char **argv, RzGetopt *opt) {
 RZ_API int rz_main_rizin(int argc, const char **argv) {
 	RzCore *r;
 	bool forcequit = false;
+	bool cmd_had_error = false;
 	bool haveRarunProfile = false;
 	RzListIter *iter;
 	int do_analysis = 0;
@@ -426,8 +475,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
+	bool do_print_cmd_tree_json = false;
 	char *file = NULL;
 	char *pfile = NULL;
+	char *gdb_downloaded_exe = NULL;
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
@@ -450,9 +501,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #define LISTS_FREE() \
 	{ \
 		rz_list_free(cmds); \
+		cmds = NULL; \
 		rz_list_free(evals); \
+		evals = NULL; \
 		rz_list_free(files); \
+		files = NULL; \
 		rz_list_free(prefiles); \
+		prefiles = NULL; \
 	}
 
 	bool stderr2stdout = false;
@@ -499,6 +554,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (argc == 2 && !strcmp(argv[1], "-H")) {
 		main_print_var(r, NULL);
 		LISTS_FREE();
+		rz_core_task_sync_end(&r->tasks);
+		rz_core_free(r);
 		return 0;
 	}
 
@@ -506,14 +563,34 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool load_l = true;
 	char *debugbackend = rz_str_dup("native");
 
+	RzPVector cmd_catalog_values;
+	rz_pvector_init(&cmd_catalog_values, NULL);
+	rz_pvector_push(&cmd_catalog_values, "json");
+	RzGetoptLong cmd_catalog = {
+		"cmd-catalog", RZ_MAIN_LONG_CMD_CATALOG, &cmd_catalog_values, "json"
+	};
+	RzVector rizin_longopts;
+	rz_vector_init(&rizin_longopts, sizeof(RzGetoptLong), NULL, NULL);
+	rz_vector_push(&rizin_longopts, &cmd_catalog);
+
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
+	rz_getopt_init_long(&opt, argc, argv, "=012AMCwxfF:H:hm:E:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt", &rizin_longopts);
 	while (argc >= 2 && (c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case '-':
 			RZ_LOG_ERROR("%c: invalid combinations of argument flags - %s\n", opt.opt, opt.argv[2]);
 			ret = 1;
 			goto beach;
+			break;
+		case RZ_MAIN_LONG_CMD_CATALOG:
+			do_print_cmd_tree_json = true;
+			break;
+		case '?':
+			if (opt.opt == '-') {
+				ret = 1;
+				goto beach;
+			}
+			help++;
 			break;
 		case '=':
 			RZ_FREE(r->cmdremote);
@@ -565,7 +642,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #else
 		case 'd':
 			RZ_LOG_ERROR("Sorry. No debugger backend available.\n");
-			return 1;
+			ret = 1;
+			goto beach;
 #endif
 		case 'D': {
 			debug = 2;
@@ -575,11 +653,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_QUIET, r);
 			if (!strcmp(opt.arg, "?")) {
 				rz_core_debug_plugins_print(r, &state);
-				rz_cmd_state_output_print(&state);
+				rz_cmd_state_output_print(&state, r->cons);
 				rz_cmd_state_output_fini(&state);
-				rz_cons_flush();
-				LISTS_FREE();
-				return 0;
+				rz_cons_flush(r->cons);
+				ret = 0;
+				goto beach;
 			}
 			break;
 		}
@@ -629,8 +707,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'H':
 			main_print_var(r, opt.arg);
-			LISTS_FREE();
-			return 0;
+			ret = 0;
+			goto beach;
 		case 'i':
 			if (RZ_STR_ISEMPTY(opt.arg)) {
 				RZ_LOG_ERROR("Cannot open empty script path\n");
@@ -663,7 +741,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'M':
 			rz_config_set(r->config, "bin.demangle", "false");
-			rz_config_set(r->config, "asm.demangle", "false");
 			break;
 		case 'n':
 			if (load_bin == LOAD_BIN_ALL) { // "-n"
@@ -716,16 +793,19 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return 0;
+				ret = 0;
+				goto beach;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
 				free(customRarunProfile);
-				return rz_main_version_print(r->sys_path, "rizin");
+				ret = rz_main_version_print(r->sys_path, "rizin");
+				goto beach;
 			}
 		case 'V':
-			return rz_main_version_verify(1);
+			ret = rz_main_version_verify(1);
+			goto beach;
 		case 'w':
 			perms |= RZ_PERM_W;
 			break;
@@ -741,14 +821,16 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		RZ_LOG_ERROR("stderr2stdout: Failed to dup2 stderr\n");
 		LISTS_FREE();
 		RZ_FREE(debugbackend);
-		return 1;
+		ret = 1;
+		goto beach;
 	}
 	if (noStderr) {
 		if (-1 == close(2)) {
 			RZ_LOG_ERROR("Failed to close stderr\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open(nul, O_RDWR);
@@ -756,20 +838,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Failed to open %s\n", nul);
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2(new_stderr, 2)) {
 				RZ_LOG_ERROR("Failed to dup2 stderr\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (-1 == close(new_stderr)) {
 				RZ_LOG_ERROR("Failed to close %s\n", nul);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 		}
 	}
@@ -811,24 +896,26 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (rz_config_get_i(r->config, "cfg.plugins")) {
 			rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 		}
-		run_commands(r, NULL, prefiles, false, do_analysis);
-		run_commands(r, cmds, files, quiet, do_analysis);
+		run_commands(r, NULL, prefiles, false, do_analysis, &cmd_had_error);
+		run_commands(r, cmds, files, quiet, do_analysis, &cmd_had_error);
 		rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STANDARD, r);
-		rz_core_io_plugins_print(r->io, &state);
-		rz_cmd_state_output_print(&state);
+		rz_core_io_plugins_print(r->io, &state, r->cons);
+		rz_cmd_state_output_print(&state, r->cons);
 		rz_cmd_state_output_fini(&state);
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return 0;
+		ret = 0;
+		goto beach;
 	}
 
 	if (help > 0) {
 		LISTS_FREE();
-		free(pfile);
+		RZ_FREE(pfile);
 		RZ_FREE(debugbackend);
-		return main_help(r, help > 1 ? 2 : 0);
+		ret = main_help(r, help > 1 ? 2 : 0);
+		goto beach;
 	}
 	if (customRarunProfile) {
 		char *tfn = rz_file_temp(".rz-run");
@@ -845,7 +932,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing argument for -d\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		const char *src = haveRarunProfile ? pfile : argv[opt.ind];
 		if (src && *src) {
@@ -869,14 +957,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	tmp = NULL;
-	if (!load_l || (tmp = rz_sys_getenv("RZ_NOPLUGINS"))) {
+	if (!load_l || rz_sys_getenv_as_bool("RZ_NOPLUGINS", false)) {
 		rz_config_set_i(r->config, "cfg.plugins", 0);
 		free(tmp);
 	}
 	if (rz_config_get_i(r->config, "cfg.plugins")) {
 		rz_core_loadlibs(r, RZ_CORE_LOADLIBS_ALL);
 	}
-	run_commands(r, NULL, prefiles, false, do_analysis);
+	run_commands(r, NULL, prefiles, false, do_analysis, &cmd_had_error);
 	rz_list_free(prefiles);
 	prefiles = NULL;
 
@@ -892,7 +980,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			RZ_LOG_ERROR("Missing URI for -C\n");
 			LISTS_FREE();
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (strstr(uri, "://")) {
 			rz_core_rtr_add(r, uri);
@@ -922,20 +1011,43 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_config_set(r->config, "scr.utf8", "false");
 	}
 
+	if (do_print_cmd_tree_json) {
+		PJ *pj = pj_new();
+		if (!pj || !rz_cmd_get_tree_json(r->rcmd, pj)) {
+			pj_free(pj);
+			RZ_LOG_ERROR("Cannot build command tree JSON\n");
+			LISTS_FREE();
+			RZ_FREE(pfile);
+			RZ_FREE(debugbackend);
+			ret = 1;
+			goto beach;
+		}
+		rz_cons_printf(r->cons, "%s\n", pj_string(pj));
+		pj_free(pj);
+		rz_cons_flush(r->cons);
+		LISTS_FREE();
+		RZ_FREE(pfile);
+		RZ_FREE(debugbackend);
+		ret = 0;
+		goto beach;
+	}
+
 	if (pfile && rz_file_is_directory(pfile)) {
 		if (debug) {
 			RZ_LOG_ERROR("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (rz_sys_chdir(argv[opt.ind])) {
 			RZ_LOG_ERROR("[d] Cannot open directory\n");
 			LISTS_FREE();
-			free(pfile);
+			RZ_FREE(pfile);
 			RZ_FREE(debugbackend);
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (argv[opt.ind] && !strcmp(argv[opt.ind], "-")) {
 		int sz;
@@ -943,7 +1055,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		int result = _setmode(_fileno(stdin), _O_BINARY);
 		if (result == -1) {
 			RZ_LOG_ERROR("Cannot set stdin to binary mode\n");
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 #endif
 		/* stdin/batch mode */
@@ -956,22 +1069,31 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 #endif
 		ut64 scr_color = rz_config_get_i(r->config, "scr.color");
 		const char *scr_interactive = rz_config_get(r->config, "scr.interactive");
-		while (rz_cons_free())
-			;
+		rz_cons_free(r->cons);
 		rz_xfreopen(con_dev, "r", stdin);
-		rz_cons_new();
+		r->cons = rz_cons_new();
+
+		/* TODO:
+		 * There should be a more streamlined way of doing this
+		 * (PremadeS)
+		 */
+		if (r->print) {
+			r->print->cons = r->cons;
+		}
+
 		rz_config_set_i(r->config, "scr.color", scr_color);
 		rz_config_set(r->config, "scr.interactive", scr_interactive);
 		if (buf && sz > 0) {
 			char *path = rz_str_newf("malloc://%d", sz);
 			fh = rz_core_file_open(r, path, perms, mapaddr);
 			if (!fh) {
-				rz_cons_flush();
+				rz_cons_flush(r->cons);
 				free(buf);
 				RZ_LOG_ERROR("[=] Cannot open '%s'\n", path);
 				LISTS_FREE();
 				free(path);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			rz_io_map_new(r->io, fh->fd, 7, 0LL, mapaddr,
 				rz_io_fd_size(r->io, fh->fd));
@@ -995,22 +1117,23 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		} else {
 			RZ_LOG_ERROR("Cannot slurp from stdin\n");
 			free(buf);
-			LISTS_FREE();
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 	} else if (has_file_arg(argc, argv, &opt)) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set(r->config, "asm.bits", asmbits);
 			}
-			rz_config_set(r->config, "search.in", "dbg.map"); // implicit?
 			rz_config_set(r->config, "cfg.debug", "true");
+			rz_config_set(r->config, "search.in", "dbg.map");
 			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
 				RZ_LOG_ERROR("No program given to -d\n");
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				return 1;
+				ret = 1;
+				goto beach;
 			}
 			if (debug == 2) {
 				// autodetect backend with -D
@@ -1050,12 +1173,33 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							}
 						} else if (is_valid_gdb_file(fh) || is_valid_dmp_file(fh)) {
 							filepath = iod->name;
-							if (RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath)) {
+							bool is_gdb_remote = rz_str_startswith(pfile, "gdb://");
+							bool is_localhost_gdb_remote = rz_str_startswith(pfile, "gdb://localhost:");
+							bool local_file_exists = RZ_STR_ISNOTEMPTY(filepath) && rz_file_exists(filepath) && !rz_file_is_directory(filepath);
+							bool should_download = is_gdb_remote && RZ_STR_ISNOTEMPTY(filepath) && (!is_localhost_gdb_remote || !local_file_exists);
+							if (should_download) {
+								char *downloaded = NULL;
+								if (addr == UINT64_MAX) {
+									addr = rz_debug_get_baddr(r->dbg, filepath);
+								}
+								if (rz_cons_yesno(r->cons, 'n', "Download remote executable '%s' to a temporary file? (y/N) ", filepath)) {
+									downloaded = download_gdb_remote_file(iod, filepath);
+									if (!downloaded) {
+										RZ_LOG_ERROR("Failed to download remote executable '%s'.\n", filepath);
+									}
+								}
+								if (downloaded) {
+									gdb_downloaded_exe = downloaded;
+									free(iod->name);
+									iod->name = rz_str_dup(downloaded);
+									rz_core_bin_load(r, NULL, addr);
+								}
+							} else if (local_file_exists) {
 								if (addr == UINT64_MAX) {
 									addr = rz_debug_get_baddr(r->dbg, filepath);
 								}
 								rz_core_bin_load(r, filepath, addr);
-							} else if ((filepath = get_file_in_cur_dir(filepath))) {
+							} else if (!is_gdb_remote && (filepath = get_file_in_cur_dir(filepath))) {
 								// Present in local directory
 								if (iod) {
 									free(iod->name);
@@ -1071,39 +1215,58 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile) ? pfile : argv[opt.ind];
+				char *f_copy = rz_str_dup(f);
+
+				if (f_copy && *f_copy) {
+					char *uri = rz_str_dup(f_copy);
+					if (uri) {
+						char *p = strstr(uri, "://");
+						if (p) {
+							*p = 0;
+							if (!strcmp(uri, "winedbg")) {
+								debugbackend = rz_str_dup("io");
+							} else {
+								debugbackend = uri;
+								uri = NULL;
+							}
+							debug = 2;
+						}
+						free(uri);
+					}
+				}
 				is_gdb = (!memcmp(f, "gdb://", RZ_MIN(f ? strlen(f) : 0, 6)));
 				if (!is_gdb) {
+					RZ_FREE(pfile);
 					pfile = rz_str_dup("dbg://");
 				}
 #if __UNIX__
 				/* implicit ./ to make unix behave like windows */
-				if (f) {
+				if (f_copy) {
 					char *path, *escaped_path;
-					if (strchr(f, '/')) {
-						// f is a path
-						path = rz_str_dup(f);
+					if (strchr(f_copy, '/')) {
+						path = rz_str_dup(f_copy);
 					} else {
-						// f is a filename
-						if (rz_file_exists(f)) {
-							path = rz_str_prepend(rz_str_dup(f), "./");
+						if (rz_file_exists(f_copy)) {
+							path = rz_str_prepend(rz_str_dup(f_copy), "./");
 						} else {
-							path = rz_file_path(f);
+							path = rz_file_path(f_copy);
 						}
 					}
 					escaped_path = rz_str_arg_escape(path);
 					pfile = rz_str_append(pfile, escaped_path);
-					file = pfile; // probably leaks
+					file = pfile;
 					RZ_FREE(escaped_path);
 					RZ_FREE(path);
 				}
 #else
-				if (f) {
-					char *escaped_path = rz_str_arg_escape(f);
+				if (f_copy) {
+					char *escaped_path = rz_str_arg_escape(f_copy);
 					pfile = rz_str_append(pfile, escaped_path);
 					free(escaped_path);
 					file = pfile; // rz_str_append (file, escaped_path);
 				}
 #endif
+				RZ_FREE(f_copy);
 				opt.ind++;
 				while (opt.ind < argc) {
 					char *escaped_arg = rz_str_arg_escape(argv[opt.ind]);
@@ -1142,8 +1305,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			}
 			if (opt.ind < argc) {
-				RZ_FREE(pfile);
 				while (opt.ind < argc) {
+					RZ_FREE(pfile);
 					pfile = rz_str_dup(argv[opt.ind++]);
 					fh = rz_core_file_open(r, pfile, perms, mapaddr);
 					if (!fh && perms & RZ_PERM_W) {
@@ -1252,14 +1415,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (thumb_reg && rz_reg_get_value(r->dbg->reg, thumb_reg)) {
 				rz_config_set_i(r->config, "asm.bits", 16);
 			}
-			rz_cons_reset();
+			rz_cons_reset(r->cons);
 		}
 		if (!pfile) {
 			pfile = file;
 		}
 		if (!fh && !prj) {
 			if (pfile && *pfile) {
-				rz_cons_flush();
+				rz_cons_flush(r->cons);
 				if (perms & RZ_PERM_W) {
 					RZ_LOG_ERROR("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
@@ -1278,7 +1441,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		// initalize io subsystem
 		char *res = rz_io_system(r->io, NULL);
 		if (res) {
-			rz_cons_println(res);
+			rz_cons_println(r->cons, res);
 			free(res);
 		}
 
@@ -1300,7 +1463,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin &&
 			(iod->plugin->isdbg || (debug == 2 && !strcmp(iod->plugin->name, "dmp")));
@@ -1353,7 +1516,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 
 		// no flagspace selected by default the beginning
@@ -1361,12 +1524,13 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		/* load <file>.rz */
 		{
 			char *f = rz_str_newf("%s.rz", pfile);
-			const char *uri_splitter = strstr(f, "://");
-			const char *path = uri_splitter ? uri_splitter + 3 : f;
+			char *uri_splitter = strstr(f, "://");
+			char *path = uri_splitter ? uri_splitter + 3 : f;
+			(void)rz_str_path_unescape(path);
 			if (rz_file_exists(path)) {
 				// TODO: should 'q' unset the interactive bit?
-				bool isInteractive = rz_cons_is_interactive();
-				if (isInteractive && rz_cons_yesno('n', "Do you want to run the '%s' script? (y/N) ", path)) {
+				bool isInteractive = rz_cons_is_interactive(r->cons);
+				if (isInteractive && rz_cons_yesno(r->cons, 'n', "Do you want to run the '%s' script? (y/N) ", path)) {
 					rz_core_cmd_file(r, path);
 				}
 			}
@@ -1389,7 +1553,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		}
 		rz_list_foreach (evals, iter, cmdn) {
 			rz_config_eval(r->config, cmdn);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 	}
 	{
@@ -1407,7 +1571,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 3: rz_core_perform_auto_analysis(r, RZ_CORE_ANALYSIS_EXPERIMENTAL); break;
 		default: break;
 		}
-		rz_cons_flush();
+		rz_cons_flush(r->cons);
 	}
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
@@ -1427,7 +1591,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			map->perm |= RZ_PERM_W;
 		}
 	}
-	ret = run_commands(r, cmds, files, quiet, do_analysis);
+	ret = run_commands(r, cmds, files, quiet, do_analysis, &cmd_had_error);
 	rz_list_free(cmds);
 	rz_list_free(evals);
 	rz_list_free(files);
@@ -1436,13 +1600,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		ret = 1;
 	}
 	if (ret) {
-		ret = 0;
+		// Opt-in, since batch mode always exited with 0
+		ret = cmd_had_error && rz_config_get_b(r->config, "cfg.exit.errorcode") ? 1 : 0;
 		goto beach;
 	}
 	if (rz_config_get_i(r->config, "scr.prompt")) {
 		if (run_rc && rz_config_get_i(r->config, "cfg.fortunes")) {
 			rz_core_fortune_print_random(r);
-			rz_cons_flush();
+			rz_cons_flush(r->cons);
 		}
 	}
 	if (quiet) {
@@ -1452,7 +1617,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 	r->num->value = 0;
 	if (zerosep) {
-		rz_cons_zero();
+		rz_cons_zero(r->cons);
 	}
 	if (seek != UT64_MAX) {
 		rz_core_seek(r, seek, true);
@@ -1464,7 +1629,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_prompt_loop(r);
 		ret = r->num->value;
 		debug = rz_config_get_i(r->config, "cfg.debug");
-		if (ret != -1 && rz_cons_is_interactive()) {
+		if (ret != -1 && rz_cons_is_interactive(r->cons)) {
 			char *question;
 			bool no_question_debug = ret & 1;
 			bool no_question_save = (ret & 2) >> 1;
@@ -1472,7 +1637,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			bool y_save_project = (ret & 8) >> 3;
 
 			if (rz_core_task_running_tasks_count(&r->tasks) > 0) {
-				if (rz_cons_yesno('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+				if (rz_cons_yesno(r->cons, 'y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
 					rz_core_task_break_all(&r->tasks);
 					rz_core_task_join(&r->tasks, r->tasks.main_task, -1);
 				} else {
@@ -1489,7 +1654,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				question = rz_str_newf("Do you want to save the '%s' project? (Y/n)", prj);
-				if (prj && *prj && rz_cons_yesno('y', "%s", question)) {
+				if (prj && *prj && rz_cons_yesno(r->cons, 'y', "%s", question)) {
 					prj_err = rz_project_save_file(r, prj, compress);
 				}
 				free(question);
@@ -1500,7 +1665,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 
 			if (rz_config_get_i(r->config, "scr.confirmquit")) {
-				if (!rz_cons_yesno('n', "Do you want to quit? (Y/n)")) {
+				if (!rz_cons_yesno(r->cons, 'n', "Do you want to quit? (Y/n)")) {
 					continue;
 				}
 			}
@@ -1512,7 +1677,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				} else if (rz_config_get_i(r->config, "dbg.exitkills") &&
 					rz_debug_can_kill(r->dbg) &&
-					rz_cons_yesno('y', "Do you want to kill the process? (Y/n)")) {
+					rz_cons_yesno(r->cons, 'y', "Do you want to kill the process? (Y/n)")) {
 					rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 				}
 			}
@@ -1525,7 +1690,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		break;
 	}
 
-	if (mustSaveHistory(r->config)) {
+	if (mustSaveHistory(r)) {
 		char *history = rz_path_home_history();
 		rz_line_hist_save(r->cons->line, history);
 		free(history);
@@ -1535,7 +1700,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	ret = r->num->value;
 beach:
 	if (!rz_debug_is_dead(r->dbg)) {
-		if (!rz_cons_is_interactive() && rz_config_get_i(r->config, "dbg.exitkills") &&
+		if (!rz_cons_is_interactive(r->cons) && rz_config_get_i(r->config, "dbg.exitkills") &&
 			rz_debug_can_kill(r->dbg)) {
 			rz_debug_kill(r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 		}
@@ -1550,11 +1715,16 @@ beach:
 	// and this fh may be come stale during the command
 	// execution.
 	// rz_core_file_close (r, fh);
+	if (gdb_downloaded_exe) {
+		rz_file_rm(gdb_downloaded_exe);
+		free(gdb_downloaded_exe);
+	}
+	rz_cons_set_raw(r->cons, 0);
 	rz_core_free(r);
-	rz_cons_set_raw(0);
-	rz_cons_free();
 	LISTS_FREE();
 	free(debugbackend);
+	rz_vector_fini(&rizin_longopts);
+	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
 	return ret;
 }

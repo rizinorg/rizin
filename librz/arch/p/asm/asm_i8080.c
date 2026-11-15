@@ -5,10 +5,11 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <i8080/i8080dis.h>
 
-static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	int dlen = i8080_disasm(buf, rz_strbuf_get(&op->buf_asm), len);
+static int do_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	int dlen = i8080_disasm(buf, len, &op->buf_asm);
 	return op->size = RZ_MAX(0, dlen);
 }
 

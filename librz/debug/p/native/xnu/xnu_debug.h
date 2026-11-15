@@ -186,7 +186,7 @@ typedef struct {
 
 #if defined(__ppc__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ PPC_THREAD_STATE, PPC_THREAD_STATE_COUNT },
 		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
@@ -198,7 +198,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__ppc64__)
 
-coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
 		{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
@@ -210,7 +210,7 @@ coredump_thread_state_flavor_t
 
 #elif defined(__i386__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
 		{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
@@ -221,7 +221,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__x86_64__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
 		{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
@@ -232,7 +232,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__aarch64__) || defined(__arm64__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT }
 	};
@@ -241,7 +241,7 @@ static coredump_thread_state_flavor_t
 
 #elif defined(__arm__)
 
-static coredump_thread_state_flavor_t
+static const coredump_thread_state_flavor_t
 	thread_flavor_array[] = {
 		{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
 	};
@@ -275,11 +275,18 @@ typedef struct _exception_info {
 	mach_port_t exception_port;
 } xnu_exception_info;
 
+/**
+ * \brief XNU-specific debugger context.
+ *
+ * Holds XNU-specific state for a debug session and is used by the native XNU
+ * debugger implementation to track the debuggee's info
+ */
 typedef struct rz_xnu_debug_t {
-	cpu_type_t cpu; ///< CPU/Architecture of the debuggee, determined and set once after attach
-	task_t task_dbg;
-	int old_pid;
-	xnu_exception_info ex;
+	cpu_type_t cpu; ///< CPU/Architecture of the debuggee.
+	task_t task_dbg; ///< Mach task port for the process with pid `old_pid`. Cache for `pid_to_task`.
+	int old_pid; ///< Previously observed PID, related to `task_dbg`. Cache for `pid_to_task`.
+	int last_attached_pid; ///< Last PID the plugin attached to.
+	xnu_exception_info ex; ///< Exception handling state (ports, masks, flavors).
 } RzXnuDebug;
 
 RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user);

@@ -5,11 +5,12 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <snes/snes_op_table.h>
 #include <snes/snes.h>
 
-static int dis(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int dis(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct snes_asm_flags *snesflags = (struct snes_asm_flags *)a->plugin_data;
 	int dlen = snesDisass(snesflags->M, snesflags->X, a->pc, op, buf, len);
 	if (dlen < 0) {

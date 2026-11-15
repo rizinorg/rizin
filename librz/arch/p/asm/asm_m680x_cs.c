@@ -2,46 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include "cs_helper.h"
 
 CAPSTONE_DEFINE_PLUGIN_FUNCTIONS(m680x_asm);
 
-static cs_mode m680x_mode(const char *str) {
-	if (!str) {
-		return CS_MODE_M680X_6800;
-	}
-	// replace this with the asm.features?
-	if (strstr(str, "6800") || strstr(str, "6802") || strstr(str, "6808")) {
-		return CS_MODE_M680X_6800;
-	}
-	if (strstr(str, "6801") || strstr(str, "6803")) {
-		return CS_MODE_M680X_6801;
-	} else if (strstr(str, "6805")) {
-		return CS_MODE_M680X_6805;
-	} else if (strstr(str, "68HC08")) {
-		return CS_MODE_M680X_6808;
-	} else if (strstr(str, "6808")) {
-		return CS_MODE_M680X_6800;
-	} else if (strstr(str, "6809")) {
-		return CS_MODE_M680X_6809;
-	} else if (strstr(str, "6811")) {
-		return CS_MODE_M680X_6811;
-	} else if (strstr(str, "cpu12")) {
-		return CS_MODE_M680X_CPU12;
-	} else if (strstr(str, "6301")) {
-		return CS_MODE_M680X_6301;
-	}
-	if (strstr(str, "6309")) {
-		return CS_MODE_M680X_6309;
-	}
-	if (strstr(str, "hcs08")) {
-		return CS_MODE_M680X_HCS08;
-	}
-	return CS_MODE_M680X_6800;
-}
-
-static int m680x_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int m680x_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	CapstoneContext *ctx = (CapstoneContext *)a->plugin_data;
 
 	int n, ret;
@@ -96,6 +63,8 @@ static char **m680x_cpu_descriptions() {
 		"6301", "Hitachi 6301: 8-bit microcontroller, CMOS version of 6800",
 		"6309", "Hitachi 6309: CMOS version of 6809",
 		"hcs08", "Freescale HCS08: 8-bit microcontroller family",
+		"RS08", "Freescale RS08: Reduced-resource version of HCS08",
+		"HCS12X", "Freescale HCS12X: 16-bit microcontroller (upwards compatible with cpu12)",
 		NULL
 	};
 	return cpu_desc;
@@ -103,7 +72,7 @@ static char **m680x_cpu_descriptions() {
 
 RzAsmPlugin rz_asm_plugin_m680x_cs = {
 	.name = "m680x",
-	.cpus = "6800,6801,6802,6803,6805,6808,68HC08,6809,6811,cpu12,6301,6309,hcs08",
+	.cpus = "6800,6801,6802,6803,6805,6808,68HC08,6809,6811,cpu12,6301,6309,hcs08,rs08,hcs12x",
 	.desc = "Motorola 680X Capstone-based disassembler",
 	.license = "BSD",
 	.arch = "m680x",

@@ -1,0 +1,81 @@
+NAME=emulateme nostdlib rv32imc
+FILE=bins/elf/emulateme.nostd.rv32imc
+TIMEOUT=30
+CMDS=<<EOF
+s sym.decrypt
+af
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+w AnyColourYouLike @ 0x50000
+aezi
+ar sp=0x41000
+ar a0=0x50000
+aezsu `pdf~ret[1]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
+
+NAME=emulateme nostdlib rv64imc
+FILE=bins/elf/emulateme.nostd.rv64imc
+TIMEOUT=30
+CMDS=<<EOF
+s sym.decrypt
+af
+o malloc://0x1000 0x40000
+o malloc://0x10 0x50000
+oC 0x10 @ obj.seckrit
+omb. obj.seckrit @ 0x0
+w AnyColourYouLike @ 0x50000
+aezi
+ar sp=0x41000
+ar a0=0x50000
+aezsu `pdf~ret[1]`
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN
+
+NAME=emulateme control flow rv32imc
+FILE=bins/elf/riscv/emulateme_cf.rv32imc
+TIMEOUT=60
+CMDS=<<EOF
+e io.cache=1
+o malloc://0x10000 0x7f0000
+s entry0
+aezi
+ar sp=0x7ff000
+aezsu loc.emulateme_done
+ps @ obj.report
+ar a0
+EOF
+EXPECT=<<EOF
+ABCDEFGHIJKLMNOPQRSTUV
+a0 = 0x00000000
+EOF
+RUN
+
+NAME=emulateme control flow rv64imc
+FILE=bins/elf/riscv/emulateme_cf.rv64imc
+TIMEOUT=60
+CMDS=<<EOF
+e io.cache=1
+o malloc://0x10000 0x7f0000
+s entry0
+aezi
+ar sp=0x7ff000
+aezsu loc.emulateme_done
+ps @ obj.report
+ar a0
+EOF
+EXPECT=<<EOF
+ABCDEFGHIJKLMNOPQRSTUV
+a0 = 0x0000000000000000
+EOF
+RUN

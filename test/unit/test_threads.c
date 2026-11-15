@@ -7,6 +7,7 @@
 #include <rz_util/rz_sys.h>
 #include <rz_userconf.h>
 #include "minunit.h"
+#include "rz_types.h"
 
 bool test_thread_limit(void) {
 	const RzThreadNCores n_thread_limit = N_THREAD_LIMIT;
@@ -123,6 +124,69 @@ bool test_thread_queue(void) {
 	rz_th_free(th);
 	rz_th_queue_free(queue);
 
+	mu_end;
+}
+
+void *thread_queue_consumer(RzThreadQueue *queue) {
+	ut64 *data;
+	while (rz_th_queue_pop(queue, true, (void **)&data)) {
+		*data = *data * 2;
+	}
+	return NULL;
+}
+
+void *thread_queue_waiter(RzThreadQueue *queue) {
+	rz_th_queue_close_when_empty(queue);
+	return NULL;
+}
+
+bool test_thread_queue_multi_wait(void) {
+	// Test for correct behavior with multiple consumers and empty-waiters,
+	// specifically to discover bugs in condition variable handling.
+	RzThreadQueue *queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	ut64 items[1000];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(items); i++) {
+		items[i] = (ut64)i;
+		rz_th_queue_push(queue, &items[i], true);
+	}
+	RzThread *consumer[10];
+	RzThread *waiter[RZ_ARRAY_SIZE(consumer)];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(consumer); i++) {
+		consumer[i] = rz_th_new((RzThreadFunction)thread_queue_consumer, queue);
+		waiter[i] = rz_th_new((RzThreadFunction)thread_queue_waiter, queue);
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(consumer); i++) {
+		rz_th_wait(consumer[i]);
+		rz_th_free(consumer[i]);
+		rz_th_wait(waiter[i]);
+		rz_th_free(waiter[i]);
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(items); i++) {
+		mu_assert_eq(items[i], (ut64)i * 2, "computed result");
+	}
+	rz_th_queue_free(queue);
+	mu_end;
+}
+
+void *thread_queue_closer(RzThreadQueue *queue) {
+	// raise probability that we close while rz_th_queue_close_when_empty() is already waiting on the queue's empty_cond
+	rz_sys_usleep(1000);
+
+	rz_th_queue_close(queue);
+	return NULL;
+}
+
+bool test_thread_queue_nonempty_close(void) {
+	// Test for correct behavior when a queue is closed before being fully empty.
+	RzThreadQueue *queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	rz_th_queue_push(queue, (void *)(size_t)42, true);
+	RzThread *closer = rz_th_new((RzThreadFunction)thread_queue_closer, queue);
+	rz_th_queue_close_when_empty(queue);
+	rz_th_wait(closer);
+	rz_th_free(closer);
+	mu_assert_eq(rz_th_queue_size(queue), 1, "queue size");
+	mu_assert_true(rz_th_queue_is_closed(queue), "queue closed");
+	rz_th_queue_free(queue);
 	mu_end;
 }
 
@@ -269,13 +333,417 @@ bool test_thread_iterator_pvec(void) {
 	mu_end;
 }
 
+bool test_thread_ring_buf_seq(bool size_one) {
+	// Full buffer + read 1 -> Signaling waiting
+	// Full buffer + clear -> Signaling waiting
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	ut64 in_3 = 3;
+	ut64 out = 0;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(size_one ? 1 : 3, sizeof(ut64));
+	mu_assert_true(rz_th_ring_buf_is_open(rbuf), "is open");
+	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_OK, "empty");
+	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_FAIL, "full");
+
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+		mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_FAIL, "empty");
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	}
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+
+	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_OK, "full check");
+	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_FAIL, "empty");
+
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_1, "Take mismatch");
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_2, "Take mismatch");
+	}
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	mu_assert_eq(out, in_3, "Take mismatch");
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_FAIL, "take on empty");
+
+	rz_th_ring_buf_free(rbuf);
+
+	mu_end;
+}
+
+utptr thread_queue_put_99(RzThreadRingBuf *rbuf) {
+	ut64 in_99 = 99;
+	return (utptr)rz_th_ring_buf_put(rbuf, &in_99);
+}
+
+utptr thread_queue_put_98(RzThreadRingBuf *rbuf) {
+	ut64 in_98 = 98;
+	return (utptr)rz_th_ring_buf_put(rbuf, &in_98);
+}
+
+utptr thread_queue_put_97(RzThreadRingBuf *rbuf) {
+	ut64 in_97 = 97;
+	return (utptr)rz_th_ring_buf_put(rbuf, &in_97);
+}
+
+utptr thread_queue_put_100(RzThreadRingBuf *rbuf) {
+	ut64 in_100 = 100;
+	return (utptr)rz_th_ring_buf_put(rbuf, &in_100);
+}
+
+bool test_thread_ring_buf_writer_cond(bool size_one) {
+	// Full buffer + clear -> Signaling waiting
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	ut64 in_3 = 3;
+	ut64 out = 0;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(size_one ? 1 : 3, sizeof(ut64));
+
+	// Test wake up of writers.
+	// Fill buffer.
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+	}
+
+	// Start writers waiting on condition.
+	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
+	mu_assert_notnull(th_97, "rz_th_new 97 null check");
+	RzThread *th_98 = rz_th_new((RzThreadFunction)thread_queue_put_98, rbuf);
+	mu_assert_notnull(th_98, "rz_th_new 98 null check");
+
+	// Take elements out of the buffer ensure they
+	// the write threads terminate in the right order.
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	mu_assert_eq(out, in_1, "Take mismatch");
+	rz_sys_sleep(1);
+
+	int termed = 0;
+	if (rz_th_terminated(th_97)) {
+		printf("Thread 97 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	if (rz_th_terminated(th_98)) {
+		printf("Thread 98 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	mu_assert_eq(termed, 1, "Incorrect number of threads terminated");
+
+	if (!size_one) {
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_2, "Take mismatch");
+		rz_sys_sleep(1);
+
+		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, in_3, "Take mismatch");
+	}
+
+	// Check writers values
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	if (out == 97) {
+		mu_assert_eq(rz_th_ring_buf_take_blocking(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, 98, "Should be 98, 97 was already taken");
+	} else {
+		eprintf("got: %d\n", (int)out);
+		mu_assert_eq(rz_th_ring_buf_take_blocking(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		mu_assert_eq(out, 97, "Should be 97, 98 was already taken");
+	}
+
+	if (size_one) {
+		rz_sys_sleep(1);
+		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+	}
+
+	rz_th_free(th_97);
+	rz_th_free(th_98);
+	rz_th_ring_buf_free(rbuf);
+
+	mu_end;
+}
+
+bool test_thread_ring_buf_writer_clear(void) {
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	ut64 in_3 = 3;
+	ut64 out = 0;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+
+	// Test wake up of writers.
+	// Fill buffer.
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+
+	// Start writers waiting on condition.
+	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
+	mu_assert_notnull(th_97, "rz_th_new 97 null check");
+	RzThread *th_98 = rz_th_new((RzThreadFunction)thread_queue_put_98, rbuf);
+	mu_assert_notnull(th_98, "rz_th_new 98 null check");
+	RzThread *th_99 = rz_th_new((RzThreadFunction)thread_queue_put_99, rbuf);
+	mu_assert_notnull(th_99, "rz_th_new 99 null check");
+	RzThread *th_100 = rz_th_new((RzThreadFunction)thread_queue_put_100, rbuf);
+	mu_assert_notnull(th_100, "rz_th_new 100 null check");
+
+	// Clear buffer signaling n writers.
+	mu_assert_eq(rz_th_ring_buf_clear(rbuf), RZ_THREAD_RING_BUF_OK, "clear");
+	rz_sys_sleep(1);
+	// Check return value of the thread which terminated
+	// (Order is not guaranteed so check any of them).
+	int termed = 0;
+	if (rz_th_terminated(th_97)) {
+		printf("Thread 97 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	if (rz_th_terminated(th_98)) {
+		printf("Thread 98 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	if (rz_th_terminated(th_99)) {
+		printf("Thread 99 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_99), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	if (rz_th_terminated(th_100)) {
+		printf("Thread 100 terminated\n");
+		mu_assert_eq(rz_th_get_retv(th_100), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		termed++;
+	}
+	mu_assert_eq(termed, 3, "Exactly 3 threads should have been woken up and terminated.");
+
+	ut64 cand[] = { 97, 98, 99, 100 };
+	int written = 0;
+	for (int k = 0; k < 3; ++k) {
+		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+		printf("took: %" PFMT64d "\n", out);
+		for (int i = 0; i < RZ_ARRAY_SIZE(cand); ++i) {
+			if (out == cand[i]) {
+				printf("mark: %" PFMT64d "\n", out);
+				cand[i] = 0;
+				written++;
+			}
+		}
+	}
+
+	mu_assert_eq(written, 3, "invalid number of values written.");
+
+	rz_sys_sleep(1);
+
+	// Now the last one should be done
+	mu_assert_true(rz_th_terminated(th_97) &&
+			rz_th_terminated(th_98) &&
+			rz_th_terminated(th_99) &&
+			rz_th_terminated(th_100),
+		"All terminated");
+
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	written = 0;
+	for (int i = 0; i < RZ_ARRAY_SIZE(cand); ++i) {
+		if (cand[i] == 0) {
+			continue;
+		} else if (cand[i] == out) {
+			printf("taken: %" PFMT64d "\n", out);
+			written++;
+		}
+	}
+	mu_assert_eq(written, 1, "Last thread didn't write.");
+
+	rz_th_free(th_97);
+	rz_th_free(th_98);
+	rz_th_free(th_99);
+	rz_th_free(th_100);
+	rz_th_ring_buf_free(rbuf);
+
+	mu_end;
+}
+
+bool test_thread_ring_buf_writer_close(void) {
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	ut64 in_3 = 3;
+	ut64 out;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+	mu_assert_true(rz_th_ring_buf_is_open(rbuf), "is open");
+	mu_assert_eq(rz_th_ring_buf_open(rbuf), RZ_THREAD_RING_BUF_FAIL, "already open");
+
+	// Test wake up of writers.
+	// Fill buffer.
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
+
+	// Start writers waiting on condition.
+	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
+	mu_assert_notnull(th_97, "rz_th_new 97 null check");
+	RzThread *th_98 = rz_th_new((RzThreadFunction)thread_queue_put_98, rbuf);
+	mu_assert_notnull(th_98, "rz_th_new 98 null check");
+	RzThread *th_99 = rz_th_new((RzThreadFunction)thread_queue_put_99, rbuf);
+	mu_assert_notnull(th_99, "rz_th_new 99 null check");
+	RzThread *th_100 = rz_th_new((RzThreadFunction)thread_queue_put_100, rbuf);
+	mu_assert_notnull(th_100, "rz_th_new 100 null check");
+
+	// Close buffers
+	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_OK, "close");
+	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_CLOSED, "close");
+
+	rz_sys_sleep(1);
+
+	mu_assert_true(rz_th_terminated(th_97), "Write thread 97 terminated");
+	mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value");
+	mu_assert_true(rz_th_terminated(th_98), "Write thread 98 terminated");
+	mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value");
+	mu_assert_true(rz_th_terminated(th_99), "Write thread 99 terminated");
+	mu_assert_eq(rz_th_get_retv(th_99), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value");
+	mu_assert_true(rz_th_terminated(th_100), "Write thread 100 still waiting");
+	mu_assert_eq(rz_th_get_retv(th_100), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value");
+
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_CLOSED, "take failed");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &out), RZ_THREAD_RING_BUF_CLOSED, "put");
+	mu_assert_eq(rz_th_ring_buf_is_full(rbuf), RZ_THREAD_RING_BUF_CLOSED, "full check");
+	mu_assert_eq(rz_th_ring_buf_is_empty(rbuf), RZ_THREAD_RING_BUF_CLOSED, "empty");
+	mu_assert_false(rz_th_ring_buf_is_open(rbuf), "is open");
+
+	mu_assert_eq(rz_th_ring_buf_open(rbuf), RZ_THREAD_RING_BUF_OK, "opens");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
+	mu_assert_eq(out, in_1, "Wrong element taken");
+	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_OK, "close");
+
+	rz_th_free(th_97);
+	rz_th_free(th_98);
+	rz_th_free(th_99);
+	rz_th_free(th_100);
+	rz_th_ring_buf_free(rbuf);
+
+	mu_end;
+}
+
+utptr thread_rbuf_take_blocking_1(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	assert(out == 1 && "wrong val taken");
+	return (utptr)r;
+}
+
+utptr thread_rbuf_take_blocking_2(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	assert(out == 2 && "wrong val taken");
+	return (utptr)r;
+}
+
+utptr thread_rbuf_take_blocking(RzThreadRingBuf *rbuf) {
+	ut64 out;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
+	return (utptr)r;
+}
+
+bool test_thread_ring_buf_reader_cond(void) {
+	ut64 in_1 = 1;
+	ut64 in_2 = 2;
+	RzThreadRingBuf *rbuf = rz_th_ring_buf_new(3, sizeof(ut64));
+
+	RzThread *rblock_1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_1, rbuf);
+	mu_assert_notnull(rblock_1, "rz_th_new 1 null check");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	rz_sys_sleep(1);
+	mu_assert_true(rz_th_terminated(rblock_1), "Didn't terminated");
+	mu_assert_eq(rz_th_get_retv(rblock_1), RZ_THREAD_RING_BUF_OK, "Wrong return code");
+
+	RzThread *rblock_2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_2, rbuf);
+	mu_assert_notnull(rblock_2, "rz_th_new 2 null check");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
+	rz_sys_sleep(1);
+	mu_assert_true(rz_th_terminated(rblock_2), "Didn't terminated");
+	mu_assert_eq(rz_th_get_retv(rblock_2), RZ_THREAD_RING_BUF_OK, "Wrong return code");
+
+	// Spawn many
+	RzThread *rblock_n1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n3 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *rblock_n4 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
+	RzThread *ths[] = { rblock_n1, rblock_n2, rblock_n3, rblock_n4 };
+
+	// Write two
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
+
+	rz_sys_sleep(1);
+
+	size_t n_term = 0;
+	if (rz_th_terminated(rblock_n1)) {
+		printf("rblock_n1 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n1), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[0] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n2)) {
+		printf("rblock_n2 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n2), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[1] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n3)) {
+		printf("rblock_n3 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n3), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[2] = NULL;
+		n_term++;
+	}
+	if (rz_th_terminated(rblock_n4)) {
+		printf("rblock_n4 terminated\n");
+		mu_assert_eq(rz_th_get_retv(rblock_n4), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		ths[3] = NULL;
+		n_term++;
+	}
+	mu_assert_eq(n_term, 2, "two should have terminated, two still waiting.");
+
+	rz_th_ring_buf_close(rbuf);
+	rz_sys_sleep(1);
+
+	for (size_t i = 0; i < 4; ++i) {
+		if (!ths[i]) {
+			continue;
+		}
+		mu_assert_true(rz_th_terminated(ths[i]), "Should have terminated after close.");
+		mu_assert_eq(rz_th_get_retv(ths[i]), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value.");
+	}
+
+	rz_th_ring_buf_free(rbuf);
+	rz_th_free(rblock_1);
+	rz_th_free(rblock_2);
+	rz_th_free(rblock_n1);
+	rz_th_free(rblock_n2);
+	rz_th_free(rblock_n3);
+	rz_th_free(rblock_n4);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_thread_limit);
 	mu_run_test(test_thread_pool_cores);
 	mu_run_test(test_thread_queue);
+	mu_run_test(test_thread_queue_multi_wait);
+	mu_run_test(test_thread_queue_nonempty_close);
 	mu_run_test(test_thread_ht);
 	mu_run_test(test_thread_iterator_list);
 	mu_run_test(test_thread_iterator_pvec);
+	mu_run_test(test_thread_ring_buf_seq, false);
+	mu_run_test(test_thread_ring_buf_seq, true);
+	mu_run_test(test_thread_ring_buf_writer_cond, false);
+	mu_run_test(test_thread_ring_buf_writer_cond, true);
+	mu_run_test(test_thread_ring_buf_writer_clear);
+	mu_run_test(test_thread_ring_buf_writer_close);
+	mu_run_test(test_thread_ring_buf_reader_cond);
 	return tests_passed != tests_run;
 }
 

@@ -248,10 +248,11 @@ static RzStructuredData *mcs96_opex(const ut8 *buf, const int size, ut32 isa_bit
 static int mcs96_analyze_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	// Determine CPU variant from analysis->cpu
 	ut32 isa_bit = MCS96_8096; // default
-	if (analysis->cpu && *analysis->cpu) {
-		if (strstr(analysis->cpu, "80296")) {
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (RZ_STR_ISNOTEMPTY(cpu)) {
+		if (strstr(cpu, "80296")) {
 			isa_bit = MCS96_80296;
-		} else if (strstr(analysis->cpu, "80196")) {
+		} else if (strstr(cpu, "80196")) {
 			isa_bit = MCS96_80196;
 		}
 	}

@@ -1,0 +1,40 @@
+# SuperH-3 (asm.cpu=sh3)
+# SuperH-4 only instructions must be rejected when targeting SuperH-3
+dE "invalid" 01c3 # movca.l r0, @r1 (SH-4)
+dE "invalid" 0293 # ocbi @r2 (SH-4)
+dE "invalid" 03a3 # ocbp @r3 (SH-4)
+dE "invalid" 04b3 # ocbwb @r4 (SH-4)
+dE "invalid" 053a # stc sgr, r5 (SH-4)
+dE "invalid" 06fa # stc dbr, r6 (SH-4)
+dE "invalid" 47fa # ldc r7, dbr (SH-4)
+dE "invalid" 4832 # stc.l sgr, @-r8 (SH-4)
+dE "invalid" 49f2 # stc.l dbr, @-r9 (SH-4)
+dE "invalid" 4af6 # ldc.l @r10+, dbr (SH-4)
+
+# SuperH-3 specific instructions (shared with SuperH-4)
+adE "shad r1, r2" 421c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set shift_ (cast 5 false (ite (var _priv) (var r1b) (var r1)))) (branch (|| (! (sle (ite (var _priv) (var r1b) (var r1)) (bv 32 0x0))) (== (ite (var _priv) (var r1b) (var r1)) (bv 32 0x0))) (seq (set _regv (<< (ite (var _priv) (var r2b) (var r2)) (var shift_) false)) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv)))) (seq (set _regv (>> (ite (var _priv) (var r2b) (var r2)) (~- (var shift_)) (msb (ite (var _priv) (var r2b) (var r2))))) (branch (var _priv) (set r2b (var _regv)) (set r2 (var _regv))))))
+adE "shld r3, r4" 443d 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set shift_ (cast 5 false (ite (var _priv) (var r3b) (var r3)))) (branch (|| (! (sle (ite (var _priv) (var r3b) (var r3)) (bv 32 0x0))) (== (ite (var _priv) (var r3b) (var r3)) (bv 32 0x0))) (seq (set _regv (<< (ite (var _priv) (var r4b) (var r4)) (var shift_) false)) (branch (var _priv) (set r4b (var _regv)) (set r4 (var _regv)))) (seq (set _regv (>> (ite (var _priv) (var r4b) (var r4)) (~- (var shift_)) false)) (branch (var _priv) (set r4b (var _regv)) (set r4 (var _regv))))))
+adE "clrs" 0048 0x0 (set sr_s false)
+adE "sets" 0058 0x0 (set sr_s true)
+adE "ldc r6, ssr" 463e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set ssr (var r6)) empty))
+adE "stc ssr, r7" 0732 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r7 (var ssr)) empty))
+adE "ldc r8, spc" 484e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set spc (var r8)) empty))
+adE "stc spc, r9" 0942 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r9 (var spc)) empty))
+adE "ldc r10, r0b" 4a8e 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (set r0b (var r10)) empty))
+adE "ldc.l @r10+, r0b" 4a87 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (branch (var _priv) (seq (set r0b (loadw 0 32 (var r10))) (set r10 (+ (var r10) (bv 32 0x4)))) empty))
+adE "pref @r5" 0583 0x0
+adE "ldtlb" 0038 0x0
+
+# A sample of common instructions must keep working under SuperH-3
+adE "nop" 0009 0x0 nop
+adE "mov 0x27, r7" e727 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (bv 32 0x27)) (branch (var _priv) (set r7b (var _regv)) (set r7 (var _regv))))
+adE "add 0x01, r3" 7301 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (+ (bv 32 0x1) (ite (var _priv) (var r3b) (var r3)))) (branch (var _priv) (set r3b (var _regv)) (set r3 (var _regv))))
+adE "add r0, r0" 300c 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (+ (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r0b) (var r0)))) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "tst r0, r0" 2008 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set sr_t (is_zero (& (ite (var _priv) (var r0b) (var r0)) (ite (var _priv) (var r0b) (var r0))))))
+adE "bf 0x00000024" 8b10 0x0 (branch (var sr_t) nop (jmp (+ (+ (bv 32 0x0) (bv 32 0x4)) (<< (bv 32 0x10) (bv 32 0x1) false))))
+adE "rts" 000b 0x0 (jmp (var pr))
+adE "jmp @r0" 402b 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (jmp (ite (var _priv) (var r0b) (var r0))))
+
+# 8 bit immediates of mov/add/cmp-eq are sign-extended in the IL
+adE "mov 0xff, r0" e0ff 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (bv 32 0xffffffff)) (branch (var _priv) (set r0b (var _regv)) (set r0 (var _regv))))
+adE "add 0xc0, r5" 75c0 0x0 (seq (set _priv (&& (var sr_d) (var sr_r))) (set _regv (+ (bv 32 0xffffffc0) (ite (var _priv) (var r5b) (var r5)))) (branch (var _priv) (set r5b (var _regv)) (set r5 (var _regv))))

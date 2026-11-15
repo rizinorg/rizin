@@ -32,16 +32,29 @@ ut8 reverse_lt_8bits(ut8 x, ut8 w) {
 /**
  * \brief Resize or allocate bv->large_a to \p new_size bytes.
  */
-static void resize_large_a(RzBitVector *bv, size_t n_bytes) {
+static bool resize_large_a(RzBitVector *bv, size_t n_bytes) {
 	if (bv->stack_alloc) {
-		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		ut8 *tmp = RZ_NEWS0(ut8, n_bytes);
+		// dont drop stack backed contents unless heap alloc succeeded.
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 		bv->stack_alloc = false;
 	} else if (!bv->bits.large_a) {
 		bv->bits.large_a = RZ_NEWS0(ut8, n_bytes);
+		if (!bv->bits.large_a) {
+			return false;
+		}
 	} else {
-		bv->bits.large_a = realloc(bv->bits.large_a, n_bytes);
+		ut8 *tmp = realloc(bv->bits.large_a, n_bytes);
+		if (!tmp) {
+			return false;
+		}
+		bv->bits.large_a = tmp;
 	}
 	bv->_elem_len = n_bytes;
+	return true;
 }
 
 /**
@@ -173,6 +186,47 @@ RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool p
 	str[j] = '\0';
 
 	return str;
+}
+
+/**
+ * Render a width as a run of Unicode subscript digits.
+ *
+ * This is the bit-width annotation used when rendering a bit-vector
+ * in Unicode form (e.g. the subscript 8 in 0x2c with a trailing 8).
+ * Shared so the RzIL Unicode export and the RzNum value printer
+ * cannot drift apart.
+ *
+ * \param width The width to render.
+ * \return A freshly-allocated, caller-owned string, or NULL on
+ *         allocation failure.
+ */
+RZ_API RZ_OWN char *rz_bv_width_subscript(ut32 width) {
+	return rz_str_num_subscript(width);
+}
+
+/**
+ * Render a pre-formatted bit-vector \p value followed by the
+ * bit-vector's width as a Unicode subscript.
+ *
+ * \p value is the already-stringified value (for instance the output
+ * of rz_bv_as_hex_string() or rz_bv_as_string()); only the width
+ * subscript is appended here, so the caller controls the value's
+ * base and padding. The result is a freshly-allocated, caller-owned
+ * string, e.g. "0x2c" followed by a subscript 8.
+ *
+ * \param bv    The bit-vector whose width is annotated. Must be non-NULL.
+ * \param value The pre-formatted value string. Must be non-NULL.
+ * \return The combined string, or NULL on allocation failure.
+ */
+RZ_API RZ_OWN char *rz_bv_as_unicode_string(RZ_NONNULL const RzBitVector *bv, RZ_NONNULL const char *value) {
+	rz_return_val_if_fail(bv && value, NULL);
+	char *sub = rz_bv_width_subscript(rz_bv_len(bv));
+	if (!sub) {
+		return NULL;
+	}
+	char *out = rz_str_newf("%s%s", value, sub);
+	free(sub);
+	return out;
 }
 
 /**
@@ -547,17 +601,29 @@ RZ_API RZ_OWN RzBitVector *rz_bv_cut_tail(RZ_NONNULL RzBitVector *bv, ut32 delta
 }
 
 /**
- * Append bv2 to bv1 to get new bitvector
- * \param high bitvector to occupy the most significant part of the result
+ * Append high to low to get new bitvector
  * \param low bitvector to occupy the least significant part of the result
+ * \param high bitvector to occupy the most significant part of the result
  * \return ret RzBitVector, the new bitvector
  */
-RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *high, RZ_NONNULL RzBitVector *low) {
-	rz_return_val_if_fail(high && low, NULL);
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL const RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_val_if_fail(low && high, NULL);
 	RzBitVector *ret = rz_bv_new(high->len + low->len);
 	rz_bv_copy_nbits(ret, 0, low, 0, low->len);
 	rz_bv_copy_nbits(ret, low->len, high, 0, high->len);
 	return ret;
+}
+
+/**
+ * Append high to low to get new bitvector
+ * \param low bitvector to occupy the least significant part of the result, and pointer to write the result to
+ * \param high bitvector to occupy the most significant part of the result
+ */
+RZ_API void rz_bv_append_inplace(RZ_INOUT RZ_NONNULL RzBitVector *low, RZ_NONNULL const RzBitVector *high) {
+	rz_return_if_fail(low && low);
+	ut32 low_len = low->len;
+	rz_bv_cast_inplace(low, low->len + high->len, false);
+	rz_bv_copy_nbits(low, low_len, high, 0, high->len);
 }
 
 /**
@@ -1745,9 +1811,9 @@ RZ_API bool rz_bv_set_from_ut64(RZ_NONNULL RzBitVector *bv, ut64 value) {
 		return true;
 	}
 
-	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bv_set(bv, i, value & 1);
-		value >>= 1;
+	memset(bv->bits.large_a, 0, bv->_elem_len);
+	for (size_t i = 0; i < 8 && value; ++i, value >>= 8) {
+		bv->bits.large_a[i] = value & 0xff;
 	}
 	return true;
 }
@@ -1764,11 +1830,26 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 		bv->bits.small_u &= (UT64_MAX >> (64 - bv->len));
 		return true;
 	}
-
-	for (ut32 i = 0; i < bv->len; ++i) {
-		rz_bv_set(bv, i, value & 1);
-		value >>= 1;
+	if (value == 0) {
+		memset(bv->bits.large_a, 0, bv->_elem_len);
+		return true;
 	}
+
+	ut64 uval = (ut64)value;
+	for (size_t i = 0; i < 8; ++i, uval >>= 8) {
+		bv->bits.large_a[i] = uval & 0xff;
+	}
+	if (value >= 0) {
+		memset(bv->bits.large_a + 8, 0x00, bv->_elem_len - 8);
+		return true;
+	}
+
+	memset(bv->bits.large_a + 8, 0xff, bv->_elem_len - 8 - 1);
+
+	// set high bits
+	size_t min_bytes_needed = ((bv->len + 7) / 8);
+	size_t unset_bits = (min_bytes_needed * 8) - bv->len;
+	bv->bits.large_a[min_bytes_needed - 1] = 0xff >> unset_bits;
 	return true;
 }
 
@@ -2250,13 +2331,22 @@ RZ_API bool rz_bv_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size
 		return true;
 	}
 	if (bv->len <= 64 && to_size <= 64) {
-		rz_bv_set_range(bv, to_size, bv->len - 1, fill_bit);
+		ut32 old_size = bv->len;
 		bv->len = to_size;
+		if (to_size > old_size) {
+			rz_bv_set_range(bv, old_size, to_size - 1, fill_bit);
+		} else {
+			bv->bits.small_u &= (1ULL << to_size) - 1;
+		}
 		return true;
 	}
 	if (NELEM(to_size, BV_ELEM_SIZE) > bv->_elem_len) {
 		// The bit vector needs a larger buffer.
-		resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE));
+		// warn and abort the cast if the backing storage cant be extended.
+		if (!resize_large_a(bv, NELEM(to_size, BV_ELEM_SIZE))) {
+			rz_warn_if_reached();
+			return false;
+		}
 	}
 	size_t old_size = bv->len;
 	if (bv->len <= 64) {
@@ -2301,12 +2391,32 @@ RZ_API RzBitVector *rz_bv_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size, bool fi
 
 /**
  * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_signed_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * signed cast of bv, (signed_cast x n) = (cast x n (msb x))
  * \param bv
  * \param to_size cast bitvector length
  * \return new bv with length (to_size)
  */
 RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size) {
 	return rz_bv_cast(bv, to_size, rz_bv_msb(bv));
+}
+
+/**
+ * unsigned cast of bv, (signed_cast x n) = (cast x n 0)
+ * \param bv The vector which is cast in place. Its length changes.
+ * \param to_size cast bitvector length
+ * \return True if casting succeeded, false in case of failure.
+ */
+RZ_API bool rz_bv_unsigned_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size) {
+	return rz_bv_cast_inplace(bv, to_size, false);
 }
 
 /**

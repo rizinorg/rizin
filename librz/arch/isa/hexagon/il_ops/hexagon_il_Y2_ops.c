@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
-// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
-// Date of code generation: 2025-02-22 07:05:24-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -91,7 +91,7 @@ RzILOpEffect *hex_il_op_y2_dctagw(HexInsnPktBundle *bundle) {
 
 // dczeroa(Rs)
 RzILOpEffect *hex_il_op_y2_dczeroa(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 // Rd = getimask(Rs)
@@ -206,12 +206,34 @@ RzILOpEffect *hex_il_op_y2_syncht(HexInsnPktBundle *bundle) {
 
 // Rd = Ss
 RzILOpEffect *hex_il_op_y2_tfrscrr(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Ss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Ss_op, false);
+
+	// Rd = Ss;
+	RzILOpEffect *op_ASSIGN_2 = WRITE_REG(bundle, Rd_op, Rs);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_2;
+	return instruction_sequence;
 }
 
 // Sd = Rs
 RzILOpEffect *hex_il_op_y2_tfrsrcr(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Sd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+
+	// Sd = Rs;
+	RzILOpEffect *op_ASSIGN_2 = WRITE_REG(bundle, Sd_op, Rs);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_2;
+	return instruction_sequence;
 }
 
 // tlblock
@@ -221,6 +243,11 @@ RzILOpEffect *hex_il_op_y2_tlblock(HexInsnPktBundle *bundle) {
 
 // Rd = tlbp(Rs)
 RzILOpEffect *hex_il_op_y2_tlbp(HexInsnPktBundle *bundle) {
+	NOT_IMPLEMENTED;
+}
+
+// Rd = tlbp(Rss)
+RzILOpEffect *hex_il_op_y2_tlbpp(HexInsnPktBundle *bundle) {
 	NOT_IMPLEMENTED;
 }
 

@@ -9,6 +9,7 @@
 #include <tree_sitter/api.h>
 
 #include <types_parser.h>
+#include "../type_internal.h"
 
 #define TS_START_END(node, start, end) \
 	do { \
@@ -85,7 +86,22 @@ void c_parser_state_reset_keep_ht(CParserState *state) {
 
 struct rz_type_parser_t {
 	CParserState *state;
+	RzTypeDB *typedb; ///< Owner of the hashtables in state, its pending loads are applied before parsing
 };
+
+/**
+ * \brief Sets the RzTypeDB whose hashtables the parser uses
+ */
+RZ_IPI void rz_type_parser_set_typedb(RZ_NONNULL RzTypeParser *parser, RZ_NULLABLE RzTypeDB *typedb) {
+	rz_return_if_fail(parser);
+	parser->typedb = typedb;
+}
+
+static void parser_load_pending(RzTypeParser *parser) {
+	if (parser->typedb) {
+		rz_type_db_load_pending(parser->typedb);
+	}
+}
 
 /**
  * \brief Creates a new instance of the C type parser
@@ -225,6 +241,7 @@ static int type_parse_string(CParserState *state, const char *code, char **error
  * \param error_msg A pointer where all error messages will be stored
  */
 RZ_API int rz_type_parse_string_stateless(RzTypeParser *parser, const char *code, char **error_msg) {
+	parser_load_pending(parser);
 	return type_parse_string(parser->state, code, error_msg);
 }
 
@@ -278,6 +295,7 @@ RZ_API int rz_type_parse_file(RzTypeDB *typedb, const char *path, const char *di
  * \param error_msg A pointer where all error messages will be stored
  */
 RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error_msg) {
+	rz_type_db_load_pending(typedb);
 	bool verbose = true;
 	// Create new C parser state
 	CParserState *state = c_parser_state_new(typedb->types, typedb->callables);
@@ -311,6 +329,7 @@ RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
  */
 RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const char *code, char **error_msg) {
 	rz_return_val_if_fail(parser && code, NULL);
+	parser_load_pending(parser);
 	if (error_msg) {
 		*error_msg = NULL;
 	}
@@ -411,6 +430,7 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_single(RzTypeParser *parser, const ch
  * \param error_msg A pointer where all error messages will be stored
  */
 RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *parser, const char *code, char **error_msg) {
+	parser_load_pending(parser);
 	if (error_msg) {
 		*error_msg = NULL;
 	}

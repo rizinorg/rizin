@@ -8,6 +8,24 @@
 #include <rz_type.h>
 #include <string.h>
 #include <sdb.h>
+#include "type_internal.h"
+
+/**
+ * An rz_type_db_init() call whose type libraries are not loaded yet.
+ */
+typedef struct rz_type_db_pending_load_t {
+	char *types_dir;
+	char *arch;
+	int bits;
+	char *os;
+} RzTypeDBPendingLoad;
+
+static void pending_load_fini(void *e, void *user) {
+	RzTypeDBPendingLoad *load = e;
+	free(load->types_dir);
+	free(load->arch);
+	free(load->os);
+}
 
 /**
  * \brief Creates a new instance of the RzTypeDB
@@ -43,6 +61,7 @@ RZ_API RzTypeDB *rz_type_db_new() {
 	if (!typedb->parser) {
 		goto rz_type_db_new_fail;
 	}
+	rz_type_parser_set_typedb(typedb->parser, typedb);
 	typedb->format_internal_data = RZ_NEW0(RzFormatDataInternal);
 	if (!typedb->format_internal_data) {
 		goto rz_type_db_new_fail;
@@ -68,6 +87,7 @@ rz_type_db_new_fail:
  * Destroys hashtables for RzBaseType, RzCallable, type formats.
  */
 RZ_API void rz_type_db_free(RzTypeDB *typedb) {
+	rz_vector_free(typedb->pending_loads);
 	rz_type_parser_free(typedb->parser);
 	ht_sp_free(typedb->callables);
 	ht_sp_free(typedb->types);
@@ -86,18 +106,22 @@ RZ_API void rz_type_db_free(RzTypeDB *typedb) {
  * Destroys all loaded base types and callable types.
  */
 RZ_API void rz_type_db_purge(RzTypeDB *typedb) {
+	// Pending loads also set type formats, which survive the purge
+	rz_type_db_load_pending(typedb);
 	ht_sp_free(typedb->callables);
 	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 	ht_sp_free(typedb->types);
 	typedb->types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
 	rz_type_parser_free(typedb->parser);
 	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
+	rz_type_parser_set_typedb(typedb->parser, typedb);
 }
 
 /**
  * \brief Purges formats in the instance of the RzTypeDB
  */
 RZ_API void rz_type_db_format_purge(RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	ht_ss_free(typedb->formats);
 	typedb->formats = ht_ss_new(HT_STR_DUP, HT_STR_OWN);
 }
@@ -227,24 +251,7 @@ RZ_API bool rz_type_db_del(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	return true;
 }
 
-/**
- * \brief Initializes the types database for specified arch, bits, OS
- *
- * Loads pre-shipped type libraries for base types and function types.
- * Different architectures, operating systems, bitness affects
- * on what exact types are loaded, also some atomic types sizes are different.
- * In some cases the same type, for example, structure type could have
- * a different layout, depending on the operating system or bitness.
- *
- * \param typedb Types Database instance
- * \param types_dir Directory where all type libraries are installed
- * \param arch Architecture of the analysis session
- * \param bits Bitness of the analysis session
- * \param os Operating system of the analysis session
- */
-RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
-	rz_return_if_fail(typedb && typedb->types && typedb->formats);
-
+static void type_db_load(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
 	// A workaround to fix loading incorrectly detected MacOS binaries
 	if (RZ_STR_ISNOTEMPTY(os) && !strcmp(os, "darwin")) {
 		os = "macos";
@@ -335,6 +342,73 @@ RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char 
 		}
 		free(dbpath);
 	}
+}
+
+/**
+ * \brief Initializes the types database for specified arch, bits, OS
+ *
+ * Loads pre-shipped type libraries for base types and function types.
+ * Different architectures, operating systems, bitness affects
+ * on what exact types are loaded, also some atomic types sizes are different.
+ * In some cases the same type, for example, structure type could have
+ * a different layout, depending on the operating system or bitness.
+ *
+ * Loading is deferred until the types are first used (see rz_type_db_load_pending()),
+ * because setting the arch, bits and OS of an analysis session reloads the database
+ * for every intermediate combination, and many sessions never look up a type.
+ * The deferred loads are applied in the same order as the calls.
+ *
+ * \param typedb Types Database instance
+ * \param types_dir Directory where all type libraries are installed
+ * \param arch Architecture of the analysis session
+ * \param bits Bitness of the analysis session
+ * \param os Operating system of the analysis session
+ */
+RZ_API void rz_type_db_init(RzTypeDB *typedb, const char *types_dir, const char *arch, int bits, const char *os) {
+	rz_return_if_fail(typedb && typedb->types && typedb->formats);
+	if (!typedb->pending_loads) {
+		typedb->pending_loads = rz_vector_new(sizeof(RzTypeDBPendingLoad), pending_load_fini, NULL);
+		if (!typedb->pending_loads) {
+			type_db_load(typedb, types_dir, arch, bits, os);
+			return;
+		}
+	}
+	RzTypeDBPendingLoad load = {
+		.types_dir = rz_str_dup(types_dir),
+		.arch = rz_str_dup(arch),
+		.bits = bits,
+		.os = rz_str_dup(os),
+	};
+	if (!rz_vector_push(typedb->pending_loads, &load)) {
+		pending_load_fini(&load, NULL);
+		type_db_load(typedb, types_dir, arch, bits, os);
+	}
+}
+
+/**
+ * \brief Applies the rz_type_db_init() calls whose loading was deferred
+ *
+ * Every RzTypeDB API that reads or changes the types, callables, formats or
+ * uses the parser calls it first. Code that accesses these fields of RzTypeDB
+ * directly must call it before.
+ *
+ * \param typedb Types Database instance
+ */
+RZ_API void rz_type_db_load_pending(RZ_NONNULL const RzTypeDB *typedb) {
+	rz_return_if_fail(typedb);
+	if (!typedb->pending_loads) {
+		return;
+	}
+	// Loading is logically const: it materializes the state the earlier calls asked for.
+	RzTypeDB *db = (RzTypeDB *)typedb;
+	// Detached first, because loading uses APIs that call this function
+	RzVector *pending = db->pending_loads;
+	db->pending_loads = NULL;
+	RzTypeDBPendingLoad *load;
+	rz_vector_foreach (pending, load) {
+		type_db_load(db, load->types_dir, load->arch, load->bits, load->os);
+	}
+	rz_vector_free(pending);
 }
 
 /**
@@ -566,47 +640,57 @@ RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_db_find_enums_by_val(const RzTypeDB *
 }
 
 /**
- * \brief Returns all matching bitfields as an OR mask given the resulting value
+ * \brief Renders a value as the OR of the flag-enum members that compose it
+ *
+ * Each set bit of \p val is looked up among the members of the bitfield (flag)
+ * enum \p name; the matching member names, each qualified with the enum name,
+ * are joined by " | " into a newly-allocated string, for example
+ * "access_def.W_OK | access_def.R_OK". \p val is decomposed bit by bit, so a
+ * member whose value is not a single bit is never matched against the whole
+ * value -- use rz_type_db_enum_member_by_val() for that exact-match case (the
+ * disassembly filter tries it first).
  *
  * \param typedb Types Database instance
- * \param name The name of the bitfield enum
- * \param val The value to search for
+ * \param name The name of the bitfield (flag) enum
+ * \param val The value to decompose
+ * \return The qualified OR mask, or NULL if \p name is not an enum, \p val is 0,
+ *         or any set bit of \p val has no matching member (so \p val is not
+ *         cleanly a combination of the enum's flag members).
  */
 RZ_API RZ_OWN char *rz_type_db_enum_get_bitfield(const RzTypeDB *typedb, RZ_NONNULL const char *name, ut64 val) {
 	rz_return_val_if_fail(typedb && name, NULL);
-	char *res = NULL;
-	int i;
-	bool isFirst = true;
 
 	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
-	if (!btype) {
+	if (!btype || btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
 		return NULL;
 	}
-	if (btype->kind != RZ_BASE_TYPE_KIND_ENUM) {
+	if (!val) {
 		return NULL;
 	}
-	char *ret = rz_str_newf("0x%08" PFMT64x " : ", val);
-	for (i = 0; i < 32; i++) {
-		ut32 n = 1ULL << i;
+	char *ret = NULL;
+	for (int i = 0; i < 64; i++) {
+		ut64 n = 1ULL << i;
 		if (!(val & n)) {
 			continue;
 		}
+		const char *member = NULL;
 		RzTypeEnumCase *cas;
 		rz_vector_foreach (&btype->enum_data.cases, cas) {
 			if (cas->val == n) {
-				res = cas->name;
+				member = cas->name;
 				break;
 			}
 		}
-		if (isFirst) {
-			isFirst = false;
-		} else {
-			ret = rz_str_append(ret, " | ");
+		if (!member) {
+			// a set bit with no matching member: not a clean flag combination
+			RZ_LOG_ERROR("Can't find matching enum \"%s\" member for %d bit\n", name, i);
+			free(ret);
+			return NULL;
 		}
-		if (res) {
-			ret = rz_str_append(ret, res);
+		if (ret) {
+			ret = rz_str_appendf(ret, " | %s.%s", name, member);
 		} else {
-			ret = rz_str_appendf(ret, "0x%x", n);
+			ret = rz_str_newf("%s.%s", name, member);
 		}
 	}
 	return ret;
@@ -675,7 +759,11 @@ static ut64 atomic_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype)
 
 static ut64 enum_bitsize(const RzTypeDB *typedb, RZ_NONNULL RzBaseType *btype) {
 	rz_return_val_if_fail(typedb && btype && btype->kind == RZ_BASE_TYPE_KIND_ENUM, 0);
-	// FIXME: Need a proper way to determine size of enum
+	// A C23 enum can fix its underlying type ("enum E : long long { ... }");
+	// otherwise it defaults to the implementation's int width.
+	if (btype->type) {
+		return rz_type_db_get_bitsize(typedb, btype->type);
+	}
 	return 32;
 }
 
@@ -1012,7 +1100,18 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				}
 				rz_vector_foreach (&btype->struct_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
-					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					if (rz_type_struct_member_is_bitfield(memb)) {
+						// bitfield member: render the width as " : N" before the trailing ';'
+						char *semicolon = strrchr(unfold, ';');
+						if (semicolon) {
+							*semicolon = '\0';
+							rz_strbuf_appendf(buf, "%s : %u;%s%s", unfold, (unsigned)memb->size, semicolon + 1, separator);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						}
+					} else {
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					}
 					free(unfold);
 				}
 				for (int i = 0; i < indent; i++) {
@@ -1031,7 +1130,18 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 				}
 				rz_vector_foreach (&btype->union_data.members, memb) {
 					char *unfold = type_as_pretty_string(typedb, memb->type, memb->name, used_types, opts, unfold_level - 1, indent_level + 1);
-					rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					if (rz_type_union_member_is_bitfield(memb)) {
+						// bitfield member: render the width as " : N" before the trailing ';'
+						char *semicolon = strrchr(unfold, ';');
+						if (semicolon) {
+							*semicolon = '\0';
+							rz_strbuf_appendf(buf, "%s : %u;%s%s", unfold, (unsigned)memb->size, semicolon + 1, separator);
+						} else {
+							rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+						}
+					} else {
+						rz_strbuf_appendf(buf, "%s%s", unfold, separator);
+					}
 					free(unfold);
 				}
 				for (int i = 0; i < indent; i++) {
@@ -1043,6 +1153,13 @@ static char *type_as_pretty_string(const RzTypeDB *typedb, const RzType *type, c
 		case RZ_BASE_TYPE_KIND_ENUM:
 			if (unfold_all || (is_anon && unfold_anon)) {
 				RzTypeEnumCase *cas;
+				if (btype->type) { // C23 fixed underlying type
+					char *underlying = rz_type_as_string(typedb, btype->type);
+					if (underlying) {
+						rz_strbuf_appendf(buf, " : %s", underlying);
+						free(underlying);
+					}
+				}
 				rz_strbuf_append(buf, " {");
 				if (multiline) {
 					indent++; // no recursive call, so manually need to update indent
@@ -1161,12 +1278,7 @@ RZ_API RZ_BORROW const char *rz_type_identifier(RZ_NONNULL const RzType *type) {
 	return NULL;
 }
 
-/**
- * \brief Creates an exact clone of the RzType
- *
- * \param type RzType pointer
- */
-RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
+static RZ_OWN RzType *type_clone(RZ_BORROW RZ_NONNULL const RzType *type, const bool clone_callable) {
 	rz_return_val_if_fail(type, NULL);
 	RzType *newtype = RZ_NEW0(RzType);
 	if (!newtype) {
@@ -1182,19 +1294,39 @@ RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
 	case RZ_TYPE_KIND_ARRAY:
 		newtype->kind = RZ_TYPE_KIND_ARRAY;
 		newtype->array.count = type->array.count;
-		newtype->array.type = rz_type_clone(type->array.type);
+		newtype->array.type = type_clone(type->array.type, clone_callable);
 		break;
 	case RZ_TYPE_KIND_POINTER:
 		newtype->kind = RZ_TYPE_KIND_POINTER;
 		newtype->pointer.is_const = type->pointer.is_const;
-		newtype->pointer.type = rz_type_clone(type->pointer.type);
+		newtype->pointer.type = type_clone(type->pointer.type, clone_callable);
 		break;
 	case RZ_TYPE_KIND_CALLABLE:
 		newtype->kind = RZ_TYPE_KIND_CALLABLE;
-		newtype->callable = rz_type_callable_clone(type->callable);
+		newtype->callable = clone_callable ? rz_type_callable_clone(type->callable) : type->callable;
 		break;
 	}
 	return newtype;
+}
+
+/**
+ * \brief Creates a shallow clone of the RzType, i.e. the callables are shared between the original and the cloned type
+ * \param type RzType pointer
+ * \return clone of the RzType
+ */
+RZ_API RZ_OWN RzType *rz_type_clone_shallow(RZ_BORROW RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	return type_clone(type, false);
+}
+
+/**
+ * \brief Creates an exact clone of the RzType
+ *
+ * \param type RzType pointer
+ */
+RZ_API RZ_OWN RzType *rz_type_clone(RZ_BORROW RZ_NONNULL const RzType *type) {
+	rz_return_val_if_fail(type, NULL);
+	return type_clone(type, true);
 }
 
 /**

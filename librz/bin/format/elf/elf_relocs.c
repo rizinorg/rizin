@@ -100,6 +100,18 @@ static void fix_elf_rel_mipsel64(ELFOBJ *bin, Elf_(Rela) * tmp) {
 	tmp->r_info = info;
 }
 
+static bool get_arm_thumb_mode_bit(ELFOBJ *bin, ut64 sym) {
+	if (bin->ehdr.e_machine != EM_ARM) {
+		return 0;
+	}
+	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, sym);
+	if (symbol && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
+		// Check for LSB to know if symbol addresses thumb instruction
+		return (symbol->vaddr & 1) ? 1 : 0;
+	}
+	return false;
+}
+
 static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64 mode) {
 	Elf_(Rela) tmp;
 	if (!read_reloc_entry(bin, &tmp, offset, mode)) {
@@ -109,12 +121,15 @@ static bool get_reloc_entry(ELFOBJ *bin, RzBinElfReloc *reloc, ut64 offset, ut64
 	fix_elf_rel_mipsel64(bin, &tmp);
 
 	reloc->mode = mode;
-	reloc->offset = tmp.r_offset;
+	// widen before scaling: r_offset is 32-bit on ELF32 and the product is
+	// kept in a ut64, so multiplying first would wrap and then widen
+	reloc->offset = (ut64)tmp.r_offset * Elf_(rz_bin_elf_addr_scale)(bin);
 	reloc->sym = ELF_R_SYM(tmp.r_info);
 	reloc->type = ELF_R_TYPE(tmp.r_info);
 	reloc->addend = tmp.r_addend;
 	reloc->info = tmp.r_info;
 	reloc->sparc_secondary_addend = ELF64_SPARC_R_TYPE_DATA(tmp.r_info);
+	reloc->thumb = get_arm_thumb_mode_bit(bin, reloc->sym);
 
 	return true;
 }

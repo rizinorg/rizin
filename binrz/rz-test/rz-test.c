@@ -91,7 +91,7 @@ static int help(bool verbose) {
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
-		printf("Supported test types: @json @unit @fuzz @cmds\n"
+		printf("Supported test types: @json @unit @fuzz @dasm @cmds\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
@@ -173,7 +173,7 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 			free(exec);
 			return false;
 		} else if (!rz_test_check_tool_available(exec)) {
-			eprintf("%s is not a valid executable\n", exec);
+			eprintf("On trying to run '%s -v' a non zero code was returned. rz-test assumes it is broken.\n", exec);
 			free(exec);
 			return false;
 		}
@@ -208,12 +208,6 @@ int rz_test_main(int argc, const char **argv) {
 
 	eprintf("Running rz-test on %s\n", RZ_TEST_ARCH_OS);
 
-	if (!except_dir) {
-		RZ_LOG_ERROR("Fail to create RzPVector\n");
-		ret = -1;
-		goto beach;
-	}
-
 #if __WINDOWS__
 	UINT old_cp = GetConsoleOutputCP();
 	{
@@ -227,6 +221,12 @@ int rz_test_main(int argc, const char **argv) {
 		}
 	}
 #endif
+
+	if (!except_dir) {
+		RZ_LOG_ERROR("Fail to create RzPVector\n");
+		ret = -1;
+		goto beach;
+	}
 
 	RzGetopt opt;
 	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
@@ -425,7 +425,7 @@ int rz_test_main(int argc, const char **argv) {
 				} else if (!strcmp(arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = alloc_arg = rz_str_newf("db/%s", arg + 1);
+					arg = alloc_arg = rz_str_newf("db/%s", arg);
 				}
 			}
 			char *tf = rz_file_abspath_rel(cwd, arg);

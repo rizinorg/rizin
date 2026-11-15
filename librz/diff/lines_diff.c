@@ -68,10 +68,11 @@ static void line_free(RzList /*<char *>*/ *array) {
 }
 
 static const MethodsInternal methods_lines = {
-	.elem_at /*  */ = (RzDiffMethodElemAt)line_elem_at,
-	.elem_hash /**/ = (RzDiffMethodElemHash)line_hash,
-	.compare /*  */ = (RzDiffMethodCompare)line_compare,
-	.stringify /**/ = (RzDiffMethodStringify)line_stringify,
-	.ignore /*   */ = fake_ignore,
-	.free /*     */ = (RzDiffMethodFree)line_free,
+	.elem_at /*      */ = (RzDiffMethodElemAt)line_elem_at,
+	.elem_hash /*    */ = (RzDiffMethodElemHash)line_hash,
+	.compare /*      */ = (RzDiffMethodCompare)line_compare,
+	.stringify /*    */ = (RzDiffMethodStringify)line_stringify,
+	.ignore /*       */ = fake_ignore,
+	.free /*         */ = (RzDiffMethodFree)line_free,
+	.find_longest_match = generic_find_longest_match,
 };

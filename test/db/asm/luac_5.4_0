@@ -1,0 +1,58 @@
+ad "settabup 0 0 1k" 0f800001
+ad "lti r0 50 0" 3e00b100
+ad "jmp 5" 38020080
+ad "addi r0 r0 1" 15000080
+ad "mmbini r0 1 6" 2f008006
+ad "loadk r1 10" 83000500
+ad "jmp 4" b8010080
+ad "call r0 2 1" 44000201
+ad "test r0 k" 42800000
+ad "gti r0 40 0" 4000a700
+ad "add r4 r4 r3" 22020403
+ad "eqi r0 0 0" 3d007f00
+ad "forprep 0 4" 4a000200
+ad "closure r0 1" 4f800000
+ad "newtable r2 2 0" 13010200
+ad "setfield r2 44 21k" 12812c15
+
+# official luac -l
+ad "varargprep 0" 51000000
+ad "newtable r0 0 0" 13000000
+ad "extraarg 0" 52000000
+ad "settabup 0 0 r0" 0f000000
+ad "gettabup r0 0 0" 0b000000
+ad "gettabup r1 0 0" 8b000000
+ad "setfield r0 1 r1" 12000101
+ad "closure r1 0" cf000000
+ad "setfield r0 2 r1" 12000201
+ad "gettabup r0 0 3" 0b000003
+ad "closure r1 1" cf800000
+ad "setfield r0 4 r1" 12000401
+ad "self r0 r0 2k" 14800002
+ad "loadi r2 1000" 0181f381
+ad "call r0 3 2" 44000302
+ad "settabup 0 5 r0" 0f000500
+ad "gettabup r0 0 5" 0b000005
+ad "self r0 r0 4k" 14800004
+ad "loadi r2 100" 01813180
+ad "call r0 3 1" 44000301
+ad "return r0 1 1" 46000101
+ad "newtable r2 0 0" 13010000
+ad "gettabup r3 0 0" 8b010000
+ad "move r4 r2" 00020200
+ad "move r4 r2" 00020200
+ad "gettabup r5 0 1" 8b020001
+ad "call r3 3 1" c4010301
+ad "setfield r2 2 r1" 12010201
+
+d "return1 r2" 48010200 # wrong assembling
+#ad "return1 1" 48010200 # ??
+d "return1 r0" 48000200 # wrong assembling
+
+#ad "return0" c7010100 # ?? Not wrong in official
+d "return0" 47010100 # ?? Not wrong in official, but wrong assembling
+ad "getfield r2 r0 0" 0e010000
+ad "sub r2 r2 r1" 23010201
+ad "mmbin r2 r1 7" 2e010107
+ad "setfield r0 0 r2" 12000002
+ad "mmbin r3 r2 8" ae010208 # call metamethod __mul(r3, r2)

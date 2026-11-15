@@ -27,7 +27,7 @@ static const char *meta_get_flag(RzCore *core, ut64 addr) {
 	return fi ? fi->name : NULL;
 }
 
-static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdStateOutput *state) {
+static void meta_variable_comment_print(RzCore *core, RzAnalysisVar *var, RzCmdStateOutput *state) {
 	PJ *pj = state->d.pj;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
@@ -37,7 +37,7 @@ static void meta_variable_comment_print(RzCore *Core, RzAnalysisVar *var, RzCmdS
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%s : %s\n", var->name, var->comment);
+		rz_cons_printf(core->cons, "%s : %s\n", var->name, var->comment);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -101,7 +101,7 @@ static RzCmdStatus meta_variable_comment_append(RzCore *core, const char *name, 
 			free(var->comment);
 			var->comment = text;
 		} else {
-			rz_cons_println(var->comment);
+			rz_cons_println(core->cons, var->comment);
 		}
 	} else {
 		var->comment = rz_str_dup(comment);
@@ -199,7 +199,7 @@ RZ_IPI RzCmdStatus rz_comment_list_handler(RzCore *core, int argc, const char **
 RZ_IPI RzCmdStatus rz_comment_at_handler(RzCore *core, int argc, const char **argv) {
 	const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_COMMENT, core->offset);
 	if (comment) {
-		rz_cons_println(comment);
+		rz_cons_println(core->cons, comment);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -238,7 +238,7 @@ RZ_IPI RzCmdStatus rz_comment_filelink_handler(RzCore *core, int argc, const cha
 			char *cmtfile = rz_str_between(comment, ",(", ")");
 			if (cmtfile && *cmtfile) {
 				char *cwd = getcommapath(core);
-				rz_cons_printf("%s" RZ_SYS_DIR "%s\n", cwd, cmtfile);
+				rz_cons_printf(core->cons, "%s" RZ_SYS_DIR "%s\n", cwd, cmtfile);
 				free(cwd);
 			}
 			free(cmtfile);
@@ -282,7 +282,8 @@ RZ_IPI RzCmdStatus rz_comment_function_remove_handler(RzCore *core, int argc, co
 RZ_IPI RzCmdStatus rz_comment_function_remove_all_handler(RzCore *core, int argc, const char **argv) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
 		meta_function_comment_remove(core->analysis, fcn);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -306,31 +307,31 @@ RZ_IPI RzCmdStatus rz_comment_unique_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_add(ms, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_core_spaces_print(core, ms, state);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_rename_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_rename(ms, argv[1], argv[2]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_remove_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_unset(ms, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_meta_space_remove_all_handler(RzCore *core, int argc, const char **argv) {
-	RzSpaces *ms = &core->analysis->meta_spaces;
+	RzSpaces *ms = rz_analysis_get_meta_spaces(core->analysis);
 	rz_spaces_unset(ms, NULL);
 	return RZ_CMD_STATUS_OK;
 }
@@ -362,7 +363,7 @@ RZ_IPI RzCmdStatus rz_meta_var_stack_comment_list_handler(RzCore *core, int argc
 RZ_IPI RzCmdStatus rz_meta_type_current_handler(RzCore *core, int argc, const char **argv) {
 	const char *comment = rz_meta_get_string(core->analysis, RZ_META_TYPE_VARTYPE, core->offset);
 	if (comment) {
-		rz_cons_println(comment);
+		rz_cons_println(core->cons, comment);
 	}
 	return RZ_CMD_STATUS_OK;
 }
@@ -390,7 +391,7 @@ RZ_IPI RzCmdStatus rz_meta_data_at_handler(RzCore *core, int argc, const char **
 	ut64 size = 0;
 	RzAnalysisMetaItem *mi = rz_meta_get_at(core->analysis, core->offset, RZ_META_TYPE_DATA, &size);
 	if (mi) {
-		rz_cons_printf("%" PFMT64u "\n", size);
+		rz_cons_printf(core->cons, "%" PFMT64u "\n", size);
 	}
 	return RZ_CMD_STATUS_OK;
 }

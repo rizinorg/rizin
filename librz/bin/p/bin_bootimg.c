@@ -515,10 +515,9 @@ static RzBinInfo *bootimg_info(RzBinFile *bf) {
 	ret->machine = rz_str_dup("arm");
 	ret->arch = rz_str_dup("arm");
 	ret->has_va = 1;
-	ret->has_pi = 0;
 	ret->bits = 32;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
+	ret->big_endian = false;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	ret->rclass = rz_str_dup("bootimg");
 	return ret;
 }

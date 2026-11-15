@@ -14,7 +14,7 @@ static void printPadded(RzCore *core, int pad) {
 	}
 	char *fmt = rz_str_newf("0x%%0%d" PFMT64x, pad);
 	char *off = rz_str_newf(fmt, core->offset);
-	rz_cons_printf("%s\n", off);
+	rz_cons_printf(core->cons, "%s\n", off);
 	free(off);
 	free(fmt);
 }
@@ -138,7 +138,7 @@ RZ_IPI int rz_seek_search(void *data, const char *input) {
 		break;
 	case '?':
 		RZ_LOG_ERROR("core: Usage: s/.. arg.\n");
-		rz_cons_printf("/?\n");
+		rz_cons_printf(core->cons, "/?\n");
 		break;
 	default:
 		RZ_LOG_ERROR("core: unknown search method\n");
@@ -153,17 +153,16 @@ static RzCmdStatus bool2cmdstatus(bool res) {
 
 RZ_IPI RzCmdStatus rz_seek_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_cons_printf("0x%" PFMT64x "\n", core->offset);
+		rz_cons_printf(core->cons, "0x%" PFMT64x "\n", core->offset);
 		return RZ_CMD_STATUS_OK;
 	}
 
 	rz_core_seek_mark(core);
 
 	// NOTE: hack to make it work with local function labels
-	char *ptr;
+	const char *ptr;
 	if ((ptr = strstr(argv[1], "+.")) != NULL) {
-		char *dup = rz_str_dup(argv[1]);
-		dup[ptr - argv[1]] = '\x00';
+		char *dup = rz_str_ndup(argv[1], ptr - argv[1]);
 		core->offset = rz_num_math(core->num, dup);
 		free(dup);
 	}
@@ -252,7 +251,7 @@ RZ_IPI RzCmdStatus rz_seek_history_list_handler(RzCore *core, int argc, const ch
 			} else if (current_met) {
 				comment = " # redo";
 			}
-			rz_cons_printf("0x%" PFMT64x " %s%s\n", undo->offset, name ? name : "", comment);
+			rz_cons_printf(core->cons, "0x%" PFMT64x " %s%s\n", undo->offset, name ? name : "", comment);
 			break;
 		}
 		default:

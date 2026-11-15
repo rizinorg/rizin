@@ -43,6 +43,34 @@ bool test_rz_str_replace(void) {
 	mu_end;
 }
 
+bool test_rz_str_replace_regex(void) {
+	char *str;
+
+	str = rz_str_replace_regex("attiny88.elf", "(attiny|atmega|atxmega)[[:alnum:]]*", "avrdev", false, false);
+	mu_assert_streq(str, "avrdev.elf", "error, regex replace once failed");
+	free(str);
+
+	str = rz_str_replace_regex("atmega32 atxmega16 attiny88", "(attiny|atmega|atxmega)[[:alnum:]]*", "avr", true, false);
+	mu_assert_streq(str, "avr avr avr", "error, regex replace global failed");
+	free(str);
+
+	str = rz_str_replace_regex("AtMeGa88", "atmega[[:alnum:]]*", "avr", false, true);
+	mu_assert_streq(str, "avr", "error, regex replace icase failed");
+	free(str);
+
+	str = rz_str_replace_regex("nomatch", "atmega[[:alnum:]]*", "avr", true, false);
+	mu_assert_streq(str, "nomatch", "error, regex replace should keep string when no match");
+	free(str);
+
+	RzLogLevel old_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_FATAL);
+	str = rz_str_replace_regex("nomatch", "(", "avr", true, false);
+	rz_log_set_level(old_level);
+	mu_assert_null(str, "error, regex replace should return NULL on invalid regex pattern");
+
+	mu_end;
+}
+
 bool test_rz_str_ncpy(void) {
 	char *str = strdup("hello world");
 	char buf[10];
@@ -1006,13 +1034,27 @@ bool test_rz_str_utf32_to_utf8(void) {
 	mu_end;
 }
 
+bool test_rz_str_casecmp_null(void) {
+	// NULL is a defined input: two NULLs are equal and a NULL sorts before any
+	// non-NULL pointer, which is what lets callers pass an optional string
+	// without guarding it
+	mu_assert_eq(rz_str_casecmp(NULL, NULL), 0, "NULL equals NULL");
+	mu_assert_true(rz_str_casecmp(NULL, "x") < 0, "NULL sorts before a string");
+	mu_assert_true(rz_str_casecmp("x", NULL) > 0, "a string sorts after NULL");
+	mu_assert_eq(rz_str_casecmp("AbC", "aBc"), 0, "case is ignored");
+	mu_assert_true(rz_str_casecmp("a", "b") < 0, "ordering is preserved");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_str_newf);
+	mu_run_test(test_rz_str_casecmp_null);
 	mu_run_test(test_rz_str_replace_char_once);
 	mu_run_test(test_rz_str_ncpy);
 	mu_run_test(test_rz_str_ncat);
 	mu_run_test(test_rz_str_replace_char);
 	mu_run_test(test_rz_str_replace);
+	mu_run_test(test_rz_str_replace_regex);
 	mu_run_test(test_rz_str_bits64);
 	mu_run_test(test_rz_str_rwx);
 	mu_run_test(test_rz_str_rwx_i);

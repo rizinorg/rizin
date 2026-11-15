@@ -104,6 +104,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 
 static const char *rz_test_tools[] = {
 	"rizin",
+	"rz-ar",
 	"rz-asm",
 	"rz-ax",
 	"rz-bin",
@@ -682,7 +683,9 @@ static inline bool skip_archos(const char *subname) {
 }
 
 static bool database_load(RzTestDatabase *db, const char *path, int depth) {
-	if (depth <= 0) {
+	if (!path) {
+		return false;
+	} else if (depth <= 0) {
 		eprintf("Directories for loading tests too deep: %s\n", path);
 		return false;
 	}

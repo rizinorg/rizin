@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2017 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
 #include "arch_53.h"
-#define lua_strcase(case_str) if ( \
-	((limit) <= sizeof(case_str) - 1) && \
-	rz_str_ncasecmp((name), (case_str), sizeof(case_str) - 1) == 0)
 
 LuaOpNameList get_lua53_opnames(void) {
-	LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES + 1);
+	const LuaOpNameList list = RZ_NEWS(char *, LUA_NUM_OPCODES53 + 1);
 	if (list == NULL) {
 		RZ_LOG_ERROR("Cannot allocate lua53 opcode list.\n");
 		return NULL;

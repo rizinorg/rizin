@@ -2,14 +2,13 @@
 // SPDX-FileCopyrightText: 2025 Billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <h8300/h8300_disas.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	H8300Instruction cmd = { 0 };
 	op->size = -1;
 	int ret = h8300_decode_command(buf, len, &cmd, a->pc, a->cpu);

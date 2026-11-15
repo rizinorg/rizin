@@ -1180,8 +1180,8 @@ static parse_mnem_args mnemonic(char const *user_asm, int *nargs) {
  * ## Section 7: rizin glue and mnemonic tokenization
 		 --------------------------------------*/
 
-int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm) {
-	if (!a || !op || !user_asm) {
+RZ_IPI int assemble_8051(RzAsmOp *op, ut64 pc, char const *user_asm) {
+	if (!op || !user_asm) {
 		return 0;
 	}
 	rz_strbuf_set(&op->buf_asm, user_asm);
@@ -1216,7 +1216,7 @@ int assemble_8051(RzAsm *a, RzAsmOp *op, char const *user_asm) {
 	}
 	ut8 instr[4] = { 0 };
 	ut8 *binp = instr;
-	if (!mnem(carg, a->pc, &binp)) {
+	if (!mnem(carg, pc, &binp)) {
 		free(arg[0]);
 		arg[0] = 0;
 		carg[2] = 0;

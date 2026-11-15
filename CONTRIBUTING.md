@@ -58,6 +58,13 @@ and mark it "Ready for review" once it meets the requirement.
 > If this requirement is not met, we won't review the PR and will close it
 > if there are no visible attempts to meet it.
 
+## Merge queue
+
+For branches that require a merge queue, maintainers add approved pull requests
+to the queue. Before merging, GitHub runs the required checks on a temporary
+merge-group commit containing the latest target branch and earlier queued pull
+requests.
+
 ## Rebasing onto updated dev
 
 Every so often, your PR will lag behind `dev` and get conflicts.

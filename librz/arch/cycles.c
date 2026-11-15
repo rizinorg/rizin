@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2014-2020 condret <condr3t@protonmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_list.h>
-#include <rz_types.h>
+#include "analysis_private.h"
 
 RZ_API RzAnalysisCycleFrame *rz_analysis_cycle_frame_new(void) {
 	RzAnalysisCycleFrame *cf = RZ_NEW0(RzAnalysisCycleFrame);

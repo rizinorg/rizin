@@ -65,7 +65,7 @@ RZ_IPI RzCmdStatus rz_remote_gdb_debug_handler(RzCore *core, int argc, const cha
 RZ_IPI RzCmdStatus rz_remote_io_system_run_cmd_handler(RzCore *core, int argc, const char **argv) {
 	char *res = rz_io_system(core->io, argv[1]);
 	if (res) {
-		rz_cons_printf("%s\n", res);
+		rz_cons_printf(core->cons, "%s\n", res);
 		free(res);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -123,17 +123,18 @@ RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **ar
 		rz_core_rtr_cmds(core, argv[1]);
 		return RZ_CMD_STATUS_OK;
 	} else if (argc == 3) {
-		char *host, *port = strchr(argv[1], ':');
-		if (port) {
-			host = rz_str_ndup(argv[1], port - argv[1]);
-			port = rz_str_dup(port + 1);
+		const char *col = strchr(argv[1], ':');
+		char *host = NULL, *port = NULL;
+		if (col) {
+			host = rz_str_ndup(argv[1], col - argv[1]);
+			port = rz_str_dup(col + 1);
 		} else {
 			host = rz_str_dup("localhost");
 			port = rz_str_dup(argv[1]);
 		}
 		char *rbuf = rz_core_rtr_cmds_query(core, host, port, argv[2]);
 		if (rbuf) {
-			rz_cons_print(rbuf);
+			rz_cons_print(core->cons, rbuf);
 			free(rbuf);
 		}
 		free(host);

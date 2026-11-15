@@ -31,7 +31,7 @@ tester_source = custom_target('main.c',
 
 int main(void) {
     RzCore *core = rz_core_new();
-    rz_cons_printf("hello world\n");
+    rz_cons_printf(core->cons, "hello world\n");
     rz_core_free(core);
     return 0;
 }

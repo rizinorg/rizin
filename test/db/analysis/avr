@@ -12,6 +12,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=avr or c166 check - DISasm: [fac08400 => jump in c166]
+FILE=bins/c166/measure_raw.bin
+CMDS=<<EOF
+e asm.arch=avr
+e cfg.bigendian=false
+ao 1~^jump[1]
+iA
+EOF
+REGEXP_FILTER_OUT=(0x00000000\s+7958\s+c166)
+EXPECT=<<EOF
+0x00000000 7958 c166
+EOF
+RUN
+
 NAME=avr DISasm: [0e940b10 => call] - jump check
 FILE=malloc://4096
 CMDS=<<EOF
@@ -108,7 +122,6 @@ baddr    ----------
 binsz    0x00003722
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -127,17 +140,15 @@ pcalign  2
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
             0x00000282      in    r24, 0x12                            ; IO Output pins/pullups address for port D
             0x00000284      subi  r24, 0x80
             0x00000286      out   0x12, r24                            ; IO Output pins/pullups address for port D
@@ -610,6 +621,13 @@ CMDS=<<EOF
 /R in r24
 EOF
 EXPECT=<<EOF
+  0x0000027e           0e947304  call 0x8e6
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 12
+
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
   0x00000284               8058  subi r24, 0x80
@@ -622,6 +640,13 @@ Gadget size: 10
   0x00000286               82bb  out 0x12, r24
   0x00000288               0895  ret
 Gadget size: 8
+
+  0x00000292           0e947304  call 0x8e6
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 12
 
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
@@ -636,10 +661,12 @@ Gadget size: 10
   0x0000029c               0895  ret
 Gadget size: 8
 
-  0x000005c6               8fb5  in r24, 0x2f
-  0x000005c8               8f77  andi r24, 0x7f
   0x000005ca               02c0  rjmp 0x5d0
-Gadget size: 6
+  0x000005cc               8fb5  in r24, 0x2f
+  0x000005ce               8f7d  andi r24, 0xdf
+  0x000005d0               8fbd  out 0x2f, r24
+  0x000005d2               0895  ret
+Gadget size: 10
 
   0x000005cc               8fb5  in r24, 0x2f
   0x000005ce               8f7d  andi r24, 0xdf
@@ -664,6 +691,13 @@ e search.align=2
 /R in r24
 EOF
 EXPECT=<<EOF
+  0x0000027e           0e947304  call 0x8e6
+  0x00000282               82b3  in r24, 0x12
+  0x00000284               8058  subi r24, 0x80
+  0x00000286               82bb  out 0x12, r24
+  0x00000288               0895  ret
+Gadget size: 12
+
   0x00000280               7304  cpc r7, r3
   0x00000282               82b3  in r24, 0x12
   0x00000284               8058  subi r24, 0x80
@@ -676,6 +710,13 @@ Gadget size: 10
   0x00000286               82bb  out 0x12, r24
   0x00000288               0895  ret
 Gadget size: 8
+
+  0x00000292           0e947304  call 0x8e6
+  0x00000296               88b3  in r24, 0x18
+  0x00000298               8058  subi r24, 0x80
+  0x0000029a               88bb  out 0x18, r24
+  0x0000029c               0895  ret
+Gadget size: 12
 
   0x00000294               7304  cpc r7, r3
   0x00000296               88b3  in r24, 0x18
@@ -690,10 +731,12 @@ Gadget size: 10
   0x0000029c               0895  ret
 Gadget size: 8
 
-  0x000005c6               8fb5  in r24, 0x2f
-  0x000005c8               8f77  andi r24, 0x7f
   0x000005ca               02c0  rjmp 0x5d0
-Gadget size: 6
+  0x000005cc               8fb5  in r24, 0x2f
+  0x000005ce               8f7d  andi r24, 0xdf
+  0x000005d0               8fbd  out 0x2f, r24
+  0x000005d2               0895  ret
+Gadget size: 10
 
   0x000005cc               8fb5  in r24, 0x2f
   0x000005ce               8f7d  andi r24, 0xdf

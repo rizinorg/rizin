@@ -18,6 +18,7 @@ RZ_API void rz_sign_sigdb_signature_free(RZ_NULLABLE RzSigDBEntry *entry) {
 	free(entry->bin_name);
 	free(entry->arch_name);
 	free(entry->file_path);
+	free(entry->details);
 	free(entry);
 }
 

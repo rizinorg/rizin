@@ -81,14 +81,14 @@ RZ_API bool rz_core_debug_step_one(RzCore *core, int times) {
 
 RZ_IPI void rz_core_debug_continue(RzCore *core) {
 	if (rz_core_is_debug(core)) {
-		rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+		rz_interrupt_break_push(core->intr, rz_core_static_debug_stop, core->dbg);
 		rz_reg_arena_swap(core->dbg->reg, true);
 #if __linux__
 		core->dbg->continue_all_threads = true;
 #endif
 		rz_debug_continue(core->dbg);
 		rz_core_reg_update_flags(core);
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 		rz_core_dbg_follow_seek_register(core);
 	} else {
 		rz_core_esil_step(core, UT64_MAX, "0", NULL, false);
@@ -113,24 +113,22 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 #endif
 	ut64 pc;
 	if (!strcmp(core->dbg->btalgo, "trace") && core->dbg->arch && !strcmp(core->dbg->arch, "x86") && core->dbg->bits == 4) {
-		const char *pc_name = core->dbg->reg->name[RZ_REG_NAME_PC];
 		bool prev_call = false;
 		bool prev_ret = false;
-		const char *sp_name = core->dbg->reg->name[RZ_REG_NAME_SP];
 		ut64 old_sp, cur_sp;
-		rz_cons_break_push(NULL, NULL);
+		rz_interrupt_break_push(core->intr, NULL, NULL);
 		rz_list_free(core->dbg->call_frames);
 		core->dbg->call_frames = rz_list_new();
 		core->dbg->call_frames->free = free;
 		rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-		old_sp = rz_debug_reg_get(core->dbg, sp_name);
+		old_sp = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_SP);
 		while (true) {
 			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			pc = rz_debug_reg_get(core->dbg, pc_name);
+			pc = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_PC);
 			if (prev_call) {
 				ut32 ret_addr;
 				RzDebugFrame *frame = RZ_NEW0(RzDebugFrame);
-				cur_sp = rz_debug_reg_get(core->dbg, sp_name);
+				cur_sp = rz_debug_reg_get_by_role(core->dbg, RZ_REG_NAME_SP);
 				(void)core->dbg->iob.read_at(core->dbg->iob.io, cur_sp, (ut8 *)&ret_addr,
 					sizeof(ret_addr));
 				frame->addr = ret_addr;
@@ -159,7 +157,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 				RZ_LOG_DEBUG("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
 			}
 #endif
-			if (rz_cons_is_breaked() || rz_debug_is_dead(core->dbg) || pc == addr) {
+			if (rz_interrupt_is_breaked(core->intr) || rz_debug_is_dead(core->dbg) || pc == addr) {
 				break;
 			}
 			if (is_x86_call(core->dbg, pc)) {
@@ -179,7 +177,7 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 #endif
 		}
 		rz_core_reg_update_flags(core);
-		rz_cons_break_pop();
+		rz_interrupt_break_pop(core->intr);
 		return true;
 	}
 	RZ_LOG_DEBUG("Continue until 0x%08" PFMT64x "\n", addr);
@@ -199,6 +197,35 @@ RZ_API bool rz_core_debug_continue_until(RzCore *core, ut64 addr) {
 	return true;
 }
 
+static ut64 get_vm_pc(RzAnalysis *analysis) {
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm) {
+		RZ_LOG_ERROR("No IL VM initialzied.\n");
+		return UT64_MAX;
+	}
+	return rz_bv_to_ut64(vm->vm->pc);
+}
+
+static ut64 get_fallthrough(RzAnalysis *analysis) {
+	RzAnalysisILVM *vm = rz_analysis_get_il_vm(analysis);
+	if (!vm) {
+		RZ_LOG_ERROR("No IL VM initialzied.\n");
+		return UT64_MAX;
+	}
+	ut64 addr = rz_bv_to_ut64(vm->vm->pc);
+	ut8 code[64] = { 0 };
+	RzAnalysisOp op = { 0 };
+	rz_analysis_get_callbacks(analysis)->read_at(analysis, addr, code, sizeof(code));
+	int r = rz_analysis_op(analysis, &op, addr, code, sizeof(code), RZ_ANALYSIS_OP_MASK_INSN_PKT);
+	if (!r) {
+		RZ_LOG_ERROR("Failed to decode instruction packet.\n");
+		return UT64_MAX;
+	}
+	ut64 ft = addr + op.size;
+	rz_analysis_op_fini(&op);
+	return ft;
+}
+
 RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 	if (rz_core_is_debug(core)) {
 		if (core->print->cur_enabled) {
@@ -208,21 +235,35 @@ RZ_IPI void rz_core_debug_single_step_in(RzCore *core) {
 			rz_core_debug_step_one(core, 1);
 		}
 	} else {
-		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
+		RzAnalysisILVM *vm = rz_analysis_get_il_vm(core->analysis);
+		if (!vm) {
+			RZ_LOG_ERROR("No RzIL VM initialized! Run aezi\n");
+			return;
+		}
+		ut64 fallthrough = get_fallthrough(core->analysis);
+		if (fallthrough == UT64_MAX) {
+			RZ_LOG_ERROR("Failed to get fall through address.\n");
+			return;
+		}
+		rz_core_il_step(core, 1);
 		rz_core_reg_update_flags(core);
+		ut64 pc = get_vm_pc(core->analysis);
+		if (fallthrough != pc) {
+			rz_core_seek_and_save(core, pc, false);
+		}
 	}
 }
 
 RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 	bool io_cache = rz_config_get_b(core->config, "io.cache");
-	rz_config_set_b(core->config, "io.cache", false);
 	if (rz_core_is_debug(core)) {
+		rz_config_set_b(core->config, "io.cache", false);
 		if (core->print->cur_enabled) {
-			rz_cons_break_push(rz_core_static_debug_stop, core->dbg);
+			rz_interrupt_break_push(core->intr, rz_core_static_debug_stop, core->dbg);
 			rz_reg_arena_swap(core->dbg->reg, true);
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
 			rz_core_reg_update_flags(core);
-			rz_cons_break_pop();
+			rz_interrupt_break_pop(core->intr);
 			rz_core_dbg_follow_seek_register(core);
 			core->print->cur_enabled = 0;
 		} else {
@@ -230,10 +271,20 @@ RZ_IPI void rz_core_debug_single_step_over(RzCore *core) {
 			rz_core_dbg_follow_seek_register(core);
 			rz_core_reg_update_flags(core);
 		}
+		rz_config_set_b(core->config, "io.cache", io_cache);
 	} else {
-		rz_core_analysis_esil_step_over(core);
+		ut64 fallthrough = get_fallthrough(core->analysis);
+		if (fallthrough == UT64_MAX) {
+			RZ_LOG_ERROR("Failed to get fall through address.\n");
+			return;
+		}
+		rz_core_il_step_until(core, fallthrough);
+		rz_core_reg_update_flags(core);
+		ut64 pc = get_vm_pc(core->analysis);
+		if (fallthrough != pc) {
+			rz_core_seek_and_save(core, pc, false);
+		}
 	}
-	rz_config_set_b(core->config, "io.cache", io_cache);
 }
 
 /**
@@ -293,18 +344,42 @@ RZ_API void rz_core_debug_bp_add_noreturn_func(RzCore *core) {
 }
 
 RZ_IPI void rz_core_debug_attach(RzCore *core, int pid) {
-	char buf[20];
-
-	if (pid > 0) {
-		rz_debug_attach(core->dbg, pid);
-	} else {
-		if (core->file && core->io) {
-			rz_debug_attach(core->dbg, rz_io_fd_get_pid(core->io, core->file->fd));
+	RzIODesc *fd = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
+	char uri[64];
+	int fd_pid = -1;
+	if (pid == 0) {
+		// When pid is not provided, get it from the file descriptor.
+		if (!fd) {
+			RZ_LOG_ERROR("core: no pid provided and not attached to any file descriptor\n");
+			return;
+		}
+		fd_pid = rz_io_desc_get_pid(fd);
+		if (fd_pid == pid) {
+			RZ_LOG_ERROR("core: already attached to pid %d\n", pid);
+			return;
 		}
 	}
-	rz_debug_select(core->dbg, core->dbg->pid, core->dbg->tid);
-	rz_config_set_i(core->config, "dbg.swstep", (core->dbg->cur && !core->dbg->cur->canstep));
-	rz_io_system(core->io, rz_strf(buf, "pid %d", core->dbg->pid));
+
+	rz_core_debug_process_detach(core);
+	rz_debug_use(core->dbg, NULL);
+
+	pid = pid > 0 ? pid : fd_pid;
+	if (pid > 0) {
+		rz_strf(uri, "dbg://%d", pid);
+		RzCoreFile *cfile = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+		if (!cfile) {
+			RZ_LOG_ERROR("core: Failed to open file for pid %d\n", pid);
+			return;
+		}
+		// Create an IO map covering the full address space so memory
+		// reads/writes are routed through this debug descriptor.
+		RzIODesc *iod = core->io ? rz_io_desc_get(core->io, cfile->fd) : NULL;
+		rz_io_map_new(core->io, iod->fd, iod->perm, 0LL, 0LL, rz_io_desc_size(iod));
+	} else {
+		RZ_LOG_WARN("core: No pid provided and not attached to any file descriptor, IO mapping will not be set up\n");
+	}
+	const char *debugbackend = rz_config_get(core->config, "dbg.backend");
+	rz_core_setup_debugger(core, debugbackend, true);
 }
 
 static void bits_to_string(ut32 bits, char output[32]) {
@@ -338,7 +413,7 @@ static RzCmdStatus core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, 
 		rz_table_add_rowf(state->d.t, "nsssss", count, selected ? "yes" : "", name, license, bits, arch);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_printf("%s\n", name);
+		rz_cons_printf(dbg->cons, "%s\n", name);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(pj);
@@ -353,7 +428,7 @@ static RzCmdStatus core_debug_plugin_print(RzDebug *dbg, RzDebugPlugin *plugin, 
 		pj_end(pj);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("%" PFMT64u "  %s  %s %s%s\n", count, selected ? "dbg" : "---", name, spaces, license);
+		rz_cons_printf(dbg->cons, "%" PFMT64u "  %s  %s %s%s\n", count, selected ? "dbg" : "---", name, spaces, license);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -375,10 +450,16 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 	}
 	rz_cmd_state_output_array_start(state);
 	rz_cmd_state_output_set_columnsf(state, "nsssss", "idx", "selected", "name", "license", "bits", "arch");
-	RzIterator *iter = ht_sp_as_iter(dbg->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(dbg->plugins, &iter)) {
+		rz_iterator_fini(&iter);
+		rz_cmd_state_output_array_end(state);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
+		rz_cmd_state_output_array_end(state);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_debug_plugin_cmp, NULL);
@@ -389,15 +470,16 @@ RZ_API RzCmdStatus rz_core_debug_plugins_print(RZ_NONNULL RZ_BORROW RzCore *core
 		spaces[sp] = 0;
 		status = core_debug_plugin_print(dbg, plugin, state, count, spaces);
 		if (status != RZ_CMD_STATUS_OK) {
-			rz_iterator_free(iter);
+			rz_iterator_fini(&iter);
 			rz_list_free(plugin_list);
+			rz_cmd_state_output_array_end(state);
 			return status;
 		}
 		spaces[sp] = ' ';
 		count++;
 	}
-	rz_iterator_free(iter);
 	rz_list_free(plugin_list);
+	rz_iterator_fini(&iter);
 	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
@@ -406,14 +488,14 @@ RZ_IPI void rz_core_debug_print_status(RzCore *core) {
 	RzReg *reg = rz_core_reg_default(core);
 	RzList *ritems = rz_reg_filter_items_covered(reg->allregs);
 	if (ritems) {
-		rz_core_reg_print_diff(reg, ritems);
+		rz_core_reg_print_diff(reg, ritems, core->cons);
 		rz_list_free(ritems);
 	}
 	ut64 old_address = core->offset;
 	rz_core_seek(core, rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), true);
 	rz_core_print_disasm_instructions(core, 0, 1);
 	rz_core_seek(core, old_address, true);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 }
 
 /* Print out the JSON body for memory maps in the passed map region */
@@ -441,7 +523,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzCmd
 			: rz_str_newf("%08" PFMT64x ".%s", map->addr, rz_str_rwx_i(map->perm));
 		rz_name_filter(name, 0, true);
 		rz_num_units(humansz, sizeof(humansz), map->addr_end - map->addr);
-		rz_cons_printf("0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
+		rz_cons_printf(dbg->cons, "0x%016" PFMT64x " - 0x%016" PFMT64x " %6s %5s %s\n",
 			map->addr,
 			map->addr_end,
 			humansz,
@@ -479,7 +561,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, RzCmd
 			free(filtered_name);
 		}
 		rz_num_units(humansz, sizeof(humansz), map->size);
-		rz_cons_printf(fmtstr,
+		rz_cons_printf(dbg->cons, fmtstr,
 			map->addr,
 			map->addr_end,
 			(addr >= map->addr && addr < map->addr_end) ? '*' : '-',
@@ -507,7 +589,7 @@ static void apply_maps_as_flags(RzCore *core, RzList /*<RzDebugMap *>*/ *maps, b
 		rz_name_filter(name, 0, true);
 		ut64 size = map->addr_end - map->addr;
 		if (print_only) {
-			rz_cons_printf("f+ map.%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n",
+			rz_cons_printf(core->cons, "f+ map.%s 0x%08" PFMT64x " @ 0x%08" PFMT64x "\n",
 				name, size, map->addr);
 		} else {
 			rz_flag_set_next(core->flags, name, map->addr, size);
@@ -617,13 +699,14 @@ static int findMinMax(RzList /*<RzDebugMap *>*/ *maps, ut64 *min, ut64 *max, int
 }
 
 static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *maps, ut64 addr, int colors) {
+	RzCore *core = (RzCore *)dbg->corebind.core;
 	ut64 mul; // The amount of address space a single console column will represent in bar graph
 	ut64 min = -1, max = 0;
-	int width = rz_cons_get_size(NULL) - 90;
+	int width = rz_cons_get_size(dbg->cons, NULL) - 90;
 	RzListIter *iter;
 	RzDebugMap *map;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
-	bool use_utf8 = rz_cons_singleton()->use_utf8;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
+	bool use_utf8 = core->cons->use_utf8;
 	const char *block = use_utf8 ? UTF_BLOCK : "#";
 	const char *h_line = use_utf8 ? RUNE_LINE_HORIZ : "-";
 	if (width < 1) {
@@ -670,7 +753,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 // Prefix formatting string (before bar)
 				? "map %5s %c %s0x%016" PFMT64x "%s %s|%s"
 				: "map %5s %c %s0x%08" PFMT64x "%s %s|%s";
-			rz_cons_printf(fmtstr, humansz,
+			rz_cons_printf(dbg->cons, fmtstr, humansz,
 				(addr >= map->addr &&
 					addr < map->addr_end)
 					? '*'
@@ -684,22 +767,22 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList /*<RzDebugMap *>*/ *
 				ut64 npos = min + ((col + 1) * mul); // Next address space to check
 				if (map->addr < npos && map->addr_end > pos) {
 					if (colors && bar_color[0]) {
-						rz_cons_printf("%s%s%s", bar_color, block, Color_RESET);
+						rz_cons_printf(dbg->cons, "%s%s%s", bar_color, block, Color_RESET);
 					} else {
-						rz_cons_printf("%s", block);
+						rz_cons_printf(dbg->cons, "%s", block);
 					}
 				} else {
 					if (colors && bar_color[0]) {
-						rz_cons_printf("%s%s%s", bar_color, h_line, Color_RESET);
+						rz_cons_printf(dbg->cons, "%s%s%s", bar_color, h_line, Color_RESET);
 					} else {
-						rz_cons_printf("%s", h_line);
+						rz_cons_printf(dbg->cons, "%s", h_line);
 					}
 				}
 			}
 			fmtstr = dbg->bits & RZ_SYS_BITS_64 ? // Suffix formatting string (after bar)
 				"%s|%s %s0x%016" PFMT64x "%s %s%s%s %s\n"
 							    : "%s|%s %s0x%08" PFMT64x "%s %s%s%s %s\n";
-			rz_cons_printf(fmtstr,
+			rz_cons_printf(dbg->cons, fmtstr,
 				colors && bar_color[0] ? bar_color : "",
 				colors && bar_color[0] ? Color_RESET : "",
 				color_prefix, map->addr_end, color_suffix,
@@ -729,7 +812,7 @@ RZ_API void rz_debug_map_list_visual(RzDebug *dbg, ut64 addr, const char *input,
 /**
  * Print all traces
  * \param dbg core->dbg
- * \param mode output mode, default RZ_OUTPUT_MODE_STANDARD
+ * \param state output state: RZ_OUTPUT_MODE_QUIET, RZ_OUTPUT_MODE_JSON or RZ_OUTPUT_MODE_STANDARD
  * \param offset offset of address
  */
 RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 offset) {
@@ -737,21 +820,32 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
 	int tag = dbg->trace->tag;
 	RzListIter *iter;
 	RzDebugTracepoint *trace;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (dbg->trace->traces, iter, trace) {
 		if (trace->tag && !(tag & trace->tag)) {
 			continue;
 		}
 		switch (state->mode) {
 		case RZ_OUTPUT_MODE_QUIET:
-			rz_cons_printf("0x%" PFMT64x "\n", trace->addr);
+			rz_cons_printf(dbg->cons, "0x%" PFMT64x "\n", trace->addr);
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			pj_o(state->d.pj);
+			pj_kn(state->d.pj, "addr", trace->addr);
+			pj_ki(state->d.pj, "size", trace->size);
+			pj_ki(state->d.pj, "count", trace->count);
+			pj_ki(state->d.pj, "times", trace->times);
+			pj_ki(state->d.pj, "tag", trace->tag);
+			pj_end(state->d.pj);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 		default:
-			rz_cons_printf("0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
+			rz_cons_printf(dbg->cons, "0x%08" PFMT64x " size=%d count=%d times=%d tag=%d\n",
 				trace->addr, trace->size, trace->count, trace->times, trace->tag);
 			break;
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 }
 
 /**
@@ -761,10 +855,11 @@ RZ_API void rz_debug_trace_print(RzDebug *dbg, RzCmdStateOutput *state, ut64 off
  */
 RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	rz_return_if_fail(dbg);
+	RzCore *core = (RzCore *)dbg->corebind.core;
 	RzList *info_list = rz_debug_traces_info(dbg, offset);
 	RzTable *table = rz_table_new();
 
-	RzCons *cons = rz_cons_singleton();
+	RzCons *cons = core->cons;
 	if (cons) {
 		if (cons->use_utf8_curvy) {
 			rz_table_set_char_mode(table, RZ_TABLE_CHAR_MODE_UTF8_CURVY);
@@ -774,9 +869,9 @@ RZ_API void rz_debug_traces_ascii(RzDebug *dbg, ut64 offset) {
 	}
 
 	rz_core_debug_listinfo_to_table(table, info_list, offset, 1,
-		rz_cons_get_size(NULL), dbg->iob.io->va);
+		rz_cons_get_size(dbg->cons, NULL), dbg->iob.io->va);
 	char *s = rz_table_tostring(table);
-	rz_cons_printf("\n%s\n", s);
+	rz_cons_printf(dbg->cons, "\n%s\n", s);
 	free(s);
 	rz_table_free(table);
 	rz_list_free(info_list);
@@ -812,11 +907,44 @@ RZ_API bool rz_core_debug_process_close(RzCore *core) {
 			rz_debug_kill(dbg, dbg->pid, dbg->pid, SIGKILL);
 			rz_debug_detach(dbg, dbg->pid);
 		}
+		rz_list_free(list);
 	}
 	// Remove the target's registers from the flag list
 	rz_core_debug_clear_register_flags(core);
 	// Reopen and rebase the original file
 	rz_core_io_file_open(core, core->io->desc->fd);
+	return true;
+}
+
+/**
+ * \brief Detach debug process (Detach debugee and all child processes)
+ * \param core The RzCore instance
+ * \return success
+ */
+RZ_API bool rz_core_debug_process_detach(RzCore *core) {
+	rz_return_val_if_fail(core && core->dbg, false);
+	RzDebug *dbg = core->dbg;
+	// Stop trace session
+	if (dbg->session) {
+		rz_debug_session_free(dbg->session);
+		dbg->session = NULL;
+	}
+	// Detach debugee and all child processes
+	if (dbg->cur && dbg->cur->pids && dbg->pid != -1) {
+		RzList *list = dbg->cur->pids(dbg, dbg->pid);
+		RzListIter *iter;
+		RzDebugPid *p;
+		if (list) {
+			rz_list_foreach (list, iter, p) {
+				rz_debug_detach(dbg, p->pid);
+			}
+		} else {
+			rz_debug_detach(dbg, dbg->pid);
+		}
+		rz_list_free(list);
+	}
+	// Remove the target's registers from the flag list
+	rz_core_debug_clear_register_flags(core);
 	return true;
 }
 
@@ -829,9 +957,9 @@ RZ_API bool rz_core_debug_step_until_frame(RzCore *core) {
 	rz_return_val_if_fail(core && core->dbg, false);
 	int maxLoops = 200000;
 	ut64 off, now = rz_debug_reg_get(core->dbg, "SP");
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 		if (rz_debug_is_dead(core->dbg)) {
@@ -847,7 +975,7 @@ RZ_API bool rz_core_debug_step_until_frame(RzCore *core) {
 		}
 	} while (off <= now);
 	rz_core_reg_update_flags(core);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	return true;
 }
 
@@ -927,7 +1055,8 @@ RZ_API bool rz_core_debug_step_skip(RzCore *core, int times) {
 		rz_analysis_op_fini(&aop);
 	}
 	rz_debug_reg_set(core->dbg, "PC", addr);
-	rz_reg_setv(core->analysis->reg, "PC", addr);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	rz_reg_setv(rreg, "PC", addr);
 	rz_core_reg_update_flags(core);
 	if (bpi) {
 		(void)rz_debug_bp_add(core->dbg, addr, 0, hwbp, false, 0, NULL, 0);
@@ -1112,7 +1241,7 @@ RZ_IPI bool rz_core_debug_pid_print(RzDebug *dbg, int pid, RzCmdStateOutput *sta
 				p->pid, p->uid, status, p->path);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf(" %c %d ppid:%d uid:%d %s %s\n",
+			rz_cons_printf(dbg->cons, " %c %d ppid:%d uid:%d %s %s\n",
 				dbg->pid == p->pid ? '*' : '-',
 				p->pid, p->ppid, p->uid, status, p->path);
 			break;
@@ -1177,7 +1306,7 @@ RZ_IPI bool rz_core_debug_thread_print(RzDebug *dbg, int pid, RzCmdStateOutput *
 				status, rz_strbuf_get(path));
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf(" %c %d %s %s\n",
+			rz_cons_printf(dbg->cons, " %c %d %s %s\n",
 				dbg->tid == p->pid ? '*' : '-',
 				p->pid, status, rz_strbuf_get(path));
 			break;
@@ -1223,7 +1352,7 @@ RZ_IPI bool rz_core_debug_desc_print(RzDebug *dbg, RzCmdStateOutput *state) {
 				rz_str_rwx_i(p->perm), desctype, p->path);
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
-			rz_cons_printf("%i 0x%" PFMT64x " %s %s %s\n", p->fd, p->off,
+			rz_cons_printf(dbg->cons, "%i 0x%" PFMT64x " %s %s %s\n", p->fd, p->off,
 				rz_str_rwx_i(p->perm),
 				desctype, p->path);
 			break;
@@ -1260,14 +1389,14 @@ static bool siglistcb(void *p, const SdbKv *kv) {
 		strncpy(key + 4, sdbkv_key(kv), 20);
 		opt = sdb_num_get(ds->dbg->sgnls, key);
 		if (opt && ds->state->mode == RZ_OUTPUT_MODE_STANDARD) {
-			rz_cons_printf("%s %s", sdbkv_key(kv), sdbkv_value(kv));
+			rz_cons_printf(ds->dbg->cons, "%s %s", sdbkv_key(kv), sdbkv_value(kv));
 			const char *optstr = signal_option(opt);
 			if (optstr) {
-				rz_cons_printf(" %s", optstr);
+				rz_cons_printf(ds->dbg->cons, " %s", optstr);
 			}
-			rz_cons_newline();
+			rz_cons_newline(ds->dbg->cons);
 		} else {
-			rz_cons_printf("%s %s\n", sdbkv_key(kv), sdbkv_value(kv));
+			rz_cons_printf(ds->dbg->cons, "%s %s\n", sdbkv_key(kv), sdbkv_value(kv));
 		}
 	}
 	return true;

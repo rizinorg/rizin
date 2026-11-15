@@ -1252,6 +1252,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=cwlj
+FILE=bins/elf/ls
+CMDS=<<EOF
+cwlj
+e io.cache=true
+cw 8 'pd 2' @ 0x5ae0
+cw 4 'px 4' @ 0x5b00
+wx 90 @ 0x5ae0
+cwu @ 0x5ae0
+cwlj
+EOF
+EXPECT=<<EOF
+[]
+[{"addr":23264,"size":8,"cmd":"pd 2","modified":true},{"addr":23296,"size":4,"cmd":"px 4","modified":false}]
+EOF
+RUN
+
 NAME=add memory watcher at the same address multiple times and do not crash
 FILE=bins/elf/ls
 CMDS=<<EOF

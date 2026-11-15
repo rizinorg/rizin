@@ -28,21 +28,22 @@ static bool test_analysis_il_vm_step() {
 	rz_analysis_il_vm_sync_to_reg(vm, reg); // initial sync to get any plugin-specified initialization
 
 	// a9 75    lda #0x75
-	RzAnalysisILStepResult sr = rz_analysis_il_vm_step(core->analysis, vm, reg);
+	RzReg *analysis_reg = rz_analysis_get_reg(core->analysis);
+	RzAnalysisILStepResult sr = rz_analysis_il_vm_step(core->analysis, vm, reg, core->cons);
 	mu_assert_eq(sr, RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS, "il step");
 	mu_assert_eq(rz_reg_getv(reg, "a"), 0x75, "result in local reg");
 	mu_assert_eq(rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), 2, "pc in local reg");
-	mu_assert_eq(rz_reg_getv(core->analysis->reg, "a"), 0x0, "global reg untouched");
-	mu_assert_eq(rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC), 0, "global reg untouched");
+	mu_assert_eq(rz_reg_getv(analysis_reg, "a"), 0x0, "global reg untouched");
+	mu_assert_eq(rz_reg_get_value_by_role(analysis_reg, RZ_REG_NAME_PC), 0, "global reg untouched");
 
 	// 49 37    eor #0x37
 	//     ==> 0x75 ^ 0x37 = 0x42
-	sr = rz_analysis_il_vm_step(core->analysis, vm, reg);
+	sr = rz_analysis_il_vm_step(core->analysis, vm, reg, core->cons);
 	mu_assert_eq(sr, RZ_ANALYSIS_IL_STEP_RESULT_SUCCESS, "il step");
 	mu_assert_eq(rz_reg_getv(reg, "a"), 0x42, "result in local reg");
 	mu_assert_eq(rz_reg_get_value_by_role(reg, RZ_REG_NAME_PC), 4, "pc in local reg");
-	mu_assert_eq(rz_reg_getv(core->analysis->reg, "a"), 0x0, "global reg untouched");
-	mu_assert_eq(rz_reg_get_value_by_role(core->analysis->reg, RZ_REG_NAME_PC), 0, "global reg untouched");
+	mu_assert_eq(rz_reg_getv(analysis_reg, "a"), 0x0, "global reg untouched");
+	mu_assert_eq(rz_reg_get_value_by_role(analysis_reg, RZ_REG_NAME_PC), 0, "global reg untouched");
 
 	rz_reg_free(reg);
 	rz_analysis_il_vm_free(vm);
@@ -73,7 +74,8 @@ static bool test_analysis_il() {
 					    "(set sp (- (var sp) (bv 64 0x20))))",
 		"stringify il op");
 	mu_assert("eval rzil", rz_core_il_step(core, 1));
-	RzILVal *v = rz_il_vm_get_var_value(core->analysis->il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, "sp");
+	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
+	RzILVal *v = rz_il_vm_get_var_value(il_vm->vm, RZ_IL_VAR_KIND_GLOBAL, "sp");
 	mu_assert_notnull(v, "RzIL vm var value");
 	mu_assert_eq(v->type, RZ_IL_TYPE_PURE_BITVECTOR, "var type");
 	mu_assert_eq(rz_bv_to_ut64(v->data.bv), -0x20, "var value");
@@ -93,8 +95,9 @@ static bool test_analysis_il() {
 	RzIOMap *map = rz_io_map_get(core->io, 0);
 	rz_io_map_remap(core->io, map->id, obj_seckrit);
 
-	rz_core_reg_assign_sync(core, core->analysis->reg, NULL, "sp", 0x41000);
-	rz_core_reg_assign_sync(core, core->analysis->reg, NULL, "x0", 0x50000);
+	RzReg *analysis_reg = rz_analysis_get_reg(core->analysis);
+	rz_core_reg_assign_sync(core, analysis_reg, NULL, "sp", 0x41000);
+	rz_core_reg_assign_sync(core, analysis_reg, NULL, "x0", 0x50000);
 	rz_core_write_string_at(core, 0x50000, "AnyColourYouLike");
 
 	rz_core_analysis_il_reinit(core);
@@ -104,11 +107,11 @@ static bool test_analysis_il() {
 	rz_io_read_at_mapped(core->io, obj_seckrit, (ut8 *)buf, RZ_ARRAY_SIZE(buf));
 	mu_assert_streq(buf, "Hello from RzIL!", "eval rzil in function");
 
-	RzIterator *iter = rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL);
-	mu_assert_notnull(iter, "function rzil");
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(rz_core_analysis_op_function_iter(core, f, RZ_ANALYSIS_OP_MASK_IL, &iter), "function rzil");
 	ut64 count = 0;
 	RzAnalysisOp *pop = NULL;
-	rz_iterator_foreach(iter, pop) {
+	rz_iterator_foreach(&iter, pop) {
 		if (op.addr == 0x804) {
 			rz_strbuf_fini(&sb);
 			rz_il_op_effect_stringify(pop->il_op, &sb, false);
@@ -123,13 +126,13 @@ static bool test_analysis_il() {
 		++count;
 	}
 	mu_assert_eq(count, 69, "il op count of function");
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 
 	// extract and evaluate a chunk of instructions
 	count = 0;
-	iter = rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL);
-	mu_assert_notnull(iter, "chunk rzil");
-	rz_iterator_foreach(iter, pop) {
+	iter = (RzIterator){ 0 };
+	mu_assert_true(rz_core_analysis_op_chunk_iter(core, 0x918, 0, 30, RZ_ANALYSIS_OP_MASK_IL, &iter), "chunk rzil");
+	rz_iterator_foreach(&iter, pop) {
 		if (op.addr == 0x918) {
 			rz_strbuf_fini(&sb);
 			rz_il_op_effect_stringify(pop->il_op, &sb, false);
@@ -144,8 +147,10 @@ static bool test_analysis_il() {
 		++count;
 	}
 	mu_assert_eq(count, 30, "il op count of function");
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 
+	rz_strbuf_fini(&sb);
+	rz_analysis_op_fini(&op);
 	rz_core_seek(core, 0x918, true);
 	rz_core_analysis_il_reinit(core);
 	mu_assert("eval rzil", rz_core_il_step(core, 3));

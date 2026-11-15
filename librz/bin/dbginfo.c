@@ -102,7 +102,7 @@ RZ_API RzBinSourceLineInfo *rz_bin_source_line_info_builder_build_and_fini(RzBin
 
 		RzPVector sorter;
 		rz_pvector_init(&sorter, NULL);
-		RzBinSourceLineSample *initial_samples = rz_vector_flush(&builder->samples);
+		RzBinSourceLineSample *initial_samples = rz_vector_take_array(&builder->samples);
 		rz_pvector_reserve(&sorter, initial_samples_count);
 		for (size_t i = 0; i < initial_samples_count; i++) {
 			rz_pvector_push(&sorter, &initial_samples[i]);

@@ -20,7 +20,6 @@ ignore:
   - "examples"
   - "man"
   - "mk"
-  - "subprojects/mpc"
   - "subprojects/nettle"
   - "subprojects/packagefiles"
   - "subprojects/xxhash"

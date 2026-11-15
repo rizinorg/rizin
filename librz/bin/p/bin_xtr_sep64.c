@@ -371,6 +371,11 @@ beach:
 	rz_buf_free(slice_buf);
 	free(name);
 	free(slice);
+	if (meta) {
+		free(meta->arch);
+		free(meta->machine);
+		free(meta->type);
+	}
 	free(meta);
 	mach0_info_free(info);
 	return NULL;

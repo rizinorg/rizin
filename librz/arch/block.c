@@ -2,9 +2,8 @@
 // SPDX-FileCopyrightText: 2019-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_hash.h>
-#include <rz_util/ht_uu.h>
 
 #define unwrap(rbnode) ((rbnode) ? container_of(rbnode, RzAnalysisBlock, _rb) : NULL)
 
@@ -772,7 +771,12 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 
 RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, ut64 addr) {
 	rz_return_val_if_fail(block, NULL);
-	if (!rz_analysis_block_contains(block, addr) || addr == block->addr) {
+	// `addr` is the address right after the noreturn call (where execution would
+	// fall through if the callee returned). It must lie inside the block, or be
+	// exactly the end of the block when the noreturn call is the block's last
+	// instruction. In the latter case nothing needs to be resized, but the
+	// block's outgoing edges (the bogus fall-through) still have to be removed.
+	if (addr <= block->addr || addr > block->addr + block->size) {
 		return block;
 	}
 	rz_analysis_block_ref(block);
@@ -1052,6 +1056,7 @@ RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut
 			if (!tmp_op_pos) {
 				return false;
 			}
+			memset(tmp_op_pos + block->op_pos_size, 0, (new_pos_size - block->op_pos_size) * sizeof(ut16));
 			block->op_pos_size = new_pos_size;
 			block->op_pos = tmp_op_pos;
 		}

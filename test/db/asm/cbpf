@@ -1,0 +1,50 @@
+d "ld 0x450e0208" 000098ab08020e45
+d "ldx 0x93d3fe1f" 010044491ffed393
+d "ja +0xd52cc837" 0500d4bd37c82cd5
+d "tax" 0700e8e848e2842a
+d "add 0x4251c571" 0400da2371c55142
+d "add x" 0c00558c32d821e8
+d "ret 0x1c284025" 0600a7842540281c
+d "ret x" 0e00d42496f7a149
+d "ret a" 160057d2c4d48a51
+d "sub x" 1c00d151908a8dea
+d "sub 0x692d5014" 14006ac814502d69
+d "jeq 0x18374f6e, +0xc3, +0x39" 1500c3396e4f3718
+d "jeq x, +0x2e, +0xa8" 1d002ea8bca7d53a
+d "ld [0xf7ec2793]" 20009a439327ecf7
+d "jgt 0x613803c1, +0x8c, +0x80" 25008c80c1033861
+d "ldh [0xbd390173]" 2800c305730139bd
+d "mul 0x4ad2e5be" 24000f46bee5d24a
+d "mul x" 2c007a3dad19e7cc
+d "jgt x, +0xd9, +0xc6" 2d00d9c6f7729a9d
+d "ldb [0x87b55b29]" 30002229295bb587
+d "jge 0x58a84158, +0x24, +0xdb" 350024db5841a858
+d "jge x, +0xe4, +0xbc" 3d00e4bc40b34d84
+d "div 0xa8a2926a" 3400a8fa6a92a2a8
+d "div x" 3c0041a6d5668add
+d "ld [x+0x257289d9]" 4000f1a0d9897225
+d "jset -0x12cb5e83, +0x43, +0xfc" 450043fc7da134ed
+d "jset x, +0xd, +0xaa" 4d000daac350ea40
+d "ldh [x+0x1bfbca0b]" 48006b890bcafb1b
+d "or 0x8210db49" 44008df849db1082
+d "or x" 4c00c9ff36e92ae7
+d "ldb [x+0xb1d9a7da]" 5000d9f3daa7d9b1
+d "and 0x66c8229" 5400148229826c06
+d "and x" 5c0080375f52c084
+d "ld m[0xd8dc3fb5]" 6000ba4eb53fdcd8
+d "ldx m[0x945884cd]" 610006d9cd845894
+d "st m[0x1b4871df]" 62002c44df71481b
+d "stx m[0x2d89807f]" 6300c9537f80892d
+d "lsh 0xfdca0cf0" 64008ae5f00ccafd
+d "lsh x" 6c00d385c196b148
+d "rsh 0x7edebee9" 7400fa6fe9bede7e
+d "rsh x" 7c000d89ed177dcd
+d "ld #len" 800070620e611b94
+d "ldx #len" 8100a003a25c1f2a
+d "neg" 84004f0fc94a72ff
+d "txa" 8700172a9ad6b68f
+d "mod 0x83beb229" 9400850c29b2be83
+d "mod x" 9c00303f9d338950
+d "ldx 4*([0xe3d4dfdd]&0xf)" a1005303dddfd4e3
+d "xor 0x4de2de3c" a400668f3cdee24d
+d "xor x" ac00022f1ee32e84

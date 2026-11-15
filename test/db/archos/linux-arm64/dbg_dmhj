@@ -1,0 +1,188 @@
+NAME=dmhja/dmhjb/dmhje with 64-bit jemalloc 5.3.0 runtime (aarch64-linux-)
+FILE=bins/heap/simpleheap-jemalloc-5.3.0-static-aarch64
+ARGS=-d
+CMDS=<<EOF
+dcu sym.imp.getchar
+dmhja~?narenas
+echo ----
+dmhjb~reg_size : 0x800
+echo ----
+dmhje~Total extents found:
+EOF
+EXPECT=<<EOF
+1
+----
+      reg_size : 0x800
+----
+Total extents found: 16
+EOF
+RUN
+
+NAME=dmhja/dmhjb with jemalloc 4.5.0 memory dump (linux-amd64-4k_page)
+FILE=bins/heap/linux_jemalloc-4.5.0_x64.bin
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+e dbg.jemalloc.version=4.5.0
+e dbg.jemalloc.page_size=4k
+
+om 3 0x7f2601a03c00 0x8 0x0 rw- je_arenas
+om 3 0x7f2601f5b2d0 0x4 0x8 rw- narenas_total
+om 3 0x7f2601f5b380 0x900 0xc rw- je_arena_bin_info
+om 3 0x7f2601a00140 0x2758 0x90c rw- arena
+om 3 0x7f2601800000 0x200000 0x3064 rw- [heap]
+
+dmhja 0x7f2601a00140~ind
+dmhja 0x7f2601a00140~nthreads: application
+dmhja 0x7f2601a00140~extent_sn_next
+dmhja 0x7f2601a00140~spare
+dmhja 0x7f2601a00140~purging
+dmhja 0x7f2601a00140~nactive
+dmhja 0x7f2601a00140~bins
+echo ----
+dmhjb 0x7f2601a00140 0x7f2601f5b380~?regsize
+dmhjb 0x7f2601a00140 0x7f2601f5b380~regsize : 0x800
+dmhjb 0x7f2601a00140 0x7f2601f5b380~regsize : 0x3800
+dmhjb 0x7f2601a00140 0x7f2601f5b380~nregs : 0x200
+EOF
+EXPECT=<<EOF
+  ind = 0x0
+  nthreads: application allocation = 0x1
+  extent_sn_next = 0x1
+  spare = 0x0
+  purging = false
+  nactive = 0xc
+  bins = 36 0x7f2601a00ac0
+----
+36
+       regsize : 0x800
+       regsize : 0x3800
+       nregs : 0x200
+EOF
+RUN
+
+
+NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-amd64-4k_page)
+FILE=bins/heap/linux_jemalloc-5.3.0_x64.bin
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+e dbg.jemalloc.version=5.3.0
+e dbg.jemalloc.page_size=4k
+
+om 3 0x561974e68b00 1440 0x0 rw- bin_info
+om 3 0x7faa2cc010c0 0x20000 1440 rw- arena
+om 3 0x7faa2cc16500 128 0x205a0 rw- extent
+
+dmhja 0x7faa2cc010c0~ind
+dmhja 0x7faa2cc010c0~nthreads: application
+dmhja 0x7faa2cc010c0~stats
+dmhja 0x7faa2cc010c0~dss_prec
+dmhja 0x7faa2cc010c0~create_time.ns
+echo ----
+dmhjb 0x7faa2cc010c0 0x561974e68b00~?reg_size
+dmhjb 0x7faa2cc010c0 0x561974e68b00~reg_size : 0x800
+dmhjb 0x7faa2cc010c0 0x561974e68b00~reg_size : 0x3800
+dmhjb 0x7faa2cc010c0 0x561974e68b00~nregs : 0x200
+echo ----
+dmhjei 0x7faa2cc16500~Extent
+dmhjei 0x7faa2cc16500~Allocated Address
+EOF
+EXPECT=<<EOF
+  ind = 0x0
+  nthreads: application allocation = 0x1
+  stats = 0x7faa2cc010d8
+  dss_prec = 0x2
+  create_time.ns = 0x1a488a2868dea
+----
+36
+      reg_size : 0x800
+      reg_size : 0x3800
+      nregs : 0x200
+----
+Extent @ 0x7faa2cc16500
+  Allocated Address: 0x7faa2ca00000
+EOF
+RUN
+
+NAME=dmhja/dmhjb/dmhjei with jemalloc 5.3.0 memory dump (linux-riscv64-4k_page)
+FILE=bins/heap/linux_jemalloc-5.3.0_riscv64.bin
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+e asm.os=linux
+e dbg.jemalloc.version=5.3.0
+e dbg.jemalloc.page_size=4k
+
+om 3 0x55555d5b4830 1440 0x0 rw- bin_info
+om 3 0x7fff960010c0 0x20000 1440 rw- arena
+om 3 0x7fff96016500 128 0x205a0 rw- extent
+
+dmhja 0x7fff960010c0~ind
+dmhja 0x7fff960010c0~nthreads: application
+dmhja 0x7fff960010c0~stats
+dmhja 0x7fff960010c0~dss_prec
+dmhja 0x7fff960010c0~create_time.ns
+echo ----
+dmhjb 0x7fff960010c0 0x55555d5b4830~?reg_size
+dmhjb 0x7fff960010c0 0x55555d5b4830~reg_size : 0x800
+dmhjb 0x7fff960010c0 0x55555d5b4830~reg_size : 0x3800
+dmhjb 0x7fff960010c0 0x55555d5b4830~nregs : 0x200
+echo ----
+dmhjei 0x7fff96016500~Extent
+dmhjei 0x7fff96016500~Allocated Address
+EOF
+EXPECT=<<EOF
+  ind = 0x0
+  nthreads: application allocation = 0x1
+  stats = 0x7fff960010d8
+  dss_prec = 0x2
+  create_time.ns = 0x35366573ac
+----
+36
+      reg_size : 0x800
+      reg_size : 0x3800
+      nregs : 0x200
+----
+Extent @ 0x7fff96016500
+  Allocated Address: 0x7fff95e00000
+EOF
+RUN
+
+NAME=dmhja/dmhjb/dmhje/dmhjei with jemalloc 5.3.0 core dump (linux-amd64-4k_page)
+FILE=bins/heap/segfault-jemalloc5.3.0-amd64-core
+CMDS=<<EOF
+dmhja~narena
+dmhja~0x55ae211c05c0
+dmhjb~0x7f4550214528 
+dmhje~0x7f4550216500
+dmhjei 0x7f4550216980~Size
+EOF
+EXPECT=<<EOF
+narenas : 129
+arenas[129] @ 0x55ae211c05c0 {
+    bin[0] @ 0x7f4550214528 {
+Extent @ 0x7f4550216500
+  Size: 0x1000
+EOF
+RUN
+
+
+NAME=dmhja/dmhjb/dmhjc with jemalloc 4.5.0 core dump (linux-aarch64-4k_page)
+FILE=bins/heap/segfault-jemalloc4.5.0-aarch64-core
+CMDS=<<EOF
+dmhja~narena
+dmhjb~0xffffa6e00140
+dmhjc~Chunk
+EOF
+EXPECT=<<EOF
+narenas : 32
+  arenas[0]: @ 0xffffa6e00140 {
+   Chunk - start: 0xffffa6c00000, end: 0xffffa6e00000, size: 0x00200000
+EOF
+RUN

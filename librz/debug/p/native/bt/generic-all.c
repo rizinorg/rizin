@@ -4,11 +4,12 @@
 #include <rz_debug.h>
 
 static ut64 read_ptr(RzDebug *dbg, ut64 at) {
-	ut8 buf[8];
+	ut8 buf[8] = { 0 };
 	if (!dbg->iob.read_at(dbg->iob.io, at, buf, dbg->bits)) {
 		return UT64_MAX;
 	}
-	return rz_read_ble(buf, dbg->analysis->big_endian, dbg->bits * 8);
+	bool big_endian = rz_analysis_is_big_endian_set(dbg->analysis);
+	return rz_read_ble(buf, big_endian, dbg->bits * 8);
 }
 
 static RzList /*<RzDebugFrame *>*/ *backtrace_generic(RZ_BORROW RZ_NONNULL RzDebug *dbg) {

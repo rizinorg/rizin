@@ -15,6 +15,9 @@
 
 #define RZ_GDB_MAGIC rz_str_djb2_hash("gdb")
 
+#define MIN_DOWNLOAD_CHUNK 64
+#define MAX_DOWNLOAD_CHUNK 65536
+
 static int __close(RzIODesc *fd);
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
@@ -50,6 +53,7 @@ static int debug_gdb_write_at(RzIODesc *fd, const ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
+#include <rz_core.h>
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	RzIODesc *riogdb = NULL;
 	libgdbr_t *desc = NULL;
@@ -101,6 +105,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 	desc = RZ_NEW(libgdbr_t);
 	gdbr_init(desc, false);
+	gdbr_set_interrupt(desc, io->intr);
 
 	if (gdbr_connect(desc, host, i_port) == 0) {
 		__close(NULL);
@@ -109,6 +114,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			desc->pid = i_pid;
 			if (gdbr_attach(desc, i_pid) < 0) {
 				eprintf("gdbr: Failed to attach to PID %i\n", i_pid);
+				RZ_FREE(desc);
 				return NULL;
 			}
 		} else if ((i_pid = desc->pid) < 0) {
@@ -207,6 +213,56 @@ static int __gettid(RzIODesc *fd) {
 extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
+static bool gdbr_download_file(libgdbr_t *g, const char *remote, const char *local) {
+	rz_return_val_if_fail(g && remote && local, false);
+	// empty the destination file by writing nothing in non-append mode
+	if (!rz_file_dump(local, NULL, 0, false)) {
+		return false;
+	}
+	// open the remote file on the stub side
+	if (gdbr_open_file(g, remote, O_RDONLY, 0) < 0) {
+		return false;
+	}
+
+	uint32_t off = 0;
+	bool ok = true;
+	// clamp the download size between a reasonable MIN floor and MAX ceiling
+	ut32 chunk = RZ_MAX(MIN_DOWNLOAD_CHUNK, g->stub_features.pkt_sz / 2);
+	chunk = RZ_MIN(chunk, MAX_DOWNLOAD_CHUNK);
+	ut8 *buf = malloc(chunk);
+	if (!buf) {
+		gdbr_close_file(g);
+		return false;
+	}
+
+	int ret;
+	do {
+		ret = gdbr_pread_file(g, buf, chunk, off);
+		if (ret < 0) {
+			ok = false;
+			break;
+		}
+		if (ret == 0) {
+			break;
+		}
+		if (!rz_file_dump(local, buf, ret, true)) {
+			ok = false;
+			break;
+		}
+		off += ret;
+	} while ((ut32)ret == chunk);
+	free(buf);
+	gdbr_close_file(g);
+	return ok;
+}
+
+static bool io_gdb_download_file(RzIO *io, RzIODesc *fd, const char *remote, const char *local) {
+	if (!fd || !fd->data) {
+		return false;
+	}
+	return gdbr_download_file(fd->data, remote, local);
+}
+
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (!fd || !fd->data) {
 		return NULL;
@@ -215,27 +271,39 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp(cmd, "help")) {
-		eprintf("Usage: R!<cmd> [args]\n"
-			" R!pid             - show targeted pid\n"
-			" R!pkt s           - send packet 's'\n"
-			" R!rd              - show reverse debugging availability\n"
-			" R!dsb             - step backwards\n"
-			" R!dcb             - continue backwards\n"
-			" R!monitor cmd     - hex-encode monitor command and pass"
+		eprintf("Usage: R! <cmd> [args]\n"
+			" R! pid             - show targeted pid\n"
+			" R! pkt s           - send packet 's'\n"
+			" R! rd              - show reverse debugging availability\n"
+			" R! dsb             - step backwards\n"
+			" R! dcb             - continue backwards\n"
+			" R! monitor cmd     - hex-encode monitor command and pass"
 			" to target interpreter\n"
-			" R!detach [pid]    - detach from remote/detach specific pid\n"
-			" R!inv.reg         - invalidate reg cache\n"
-			" R!pktsz           - get max packet size used\n"
-			" R!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			" R!exec_file [pid] - get file which was executed for"
-			" current/specified pid\n");
+			" R! detach [pid]    - detach from remote/detach specific pid\n"
+			" R! inv.reg         - invalidate reg cache\n"
+			" R! pktsz           - get max packet size used\n"
+			" R! pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			" R! exec_file [pid] - get file which was executed for"
+			" current/specified pid\n"
+			" R! download_file remote local - download remote file to local path\n");
 		return NULL;
 	}
 	libgdbr_t *desc = fd->data;
+	if (rz_str_startswith(cmd, "download_file")) {
+		int argc = 0;
+		char **argv = rz_str_argv(cmd, &argc);
+		if (!argv || argc != 3) {
+			rz_str_argv_free(argv);
+			return rz_str_dup("0");
+		}
+		bool ok = gdbr_download_file(desc, argv[1], argv[2]);
+		rz_str_argv_free(argv);
+		return rz_str_dup(ok ? "1" : "0");
+	}
 	if (rz_str_startswith(cmd, "pktsz")) {
 		const char *ptr = rz_str_trim_head_ro(cmd + 5);
 		if (!isdigit((ut8)*ptr)) {
-			io->cb_printf("packet size: %u bytes\n",
+			io->cb_printf(io->cb_printf_user, "packet size: %u bytes\n",
 				desc->stub_features.pkt_sz);
 			return NULL;
 		}
@@ -270,7 +338,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (send_msg(desc, cmd + 4) >= 0) {
 			(void)read_packet(desc, false);
 			desc->data[desc->data_len] = '\0';
-			io->cb_printf("reply:\n%s\n", desc->data);
+			io->cb_printf(io->cb_printf_user, "reply:\n%s\n", desc->data);
 			if (!desc->no_ack) {
 				eprintf("[waiting for ack]\n");
 			}
@@ -283,7 +351,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		pj_kb(pj, "reverse-continue", desc->stub_features.ReverseStep);
 		pj_kb(pj, "reverse-step", desc->stub_features.ReverseContinue);
 		pj_end(pj);
-		io->cb_printf("%s\n", pj_string(pj));
+		io->cb_printf(io->cb_printf_user, "%s\n", pj_string(pj));
 		pj_free(pj);
 		return NULL;
 	}
@@ -338,7 +406,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	if (rz_str_startswith(cmd, "pid")) {
 		int pid = desc ? desc->pid : -1;
 		if (!cmd[3]) {
-			io->cb_printf("%d\n", pid);
+			io->cb_printf(io->cb_printf_user, "%d\n", pid);
 		}
 		return rz_str_newf("%d", pid);
 	}
@@ -347,7 +415,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (!isspace((ut8)cmd[7])) {
 			qrcmd = "help";
 		}
-		if (gdbr_send_qRcmd(desc, qrcmd, io->cb_printf) < 0) {
+		if (gdbr_send_qRcmd(desc, qrcmd, io->cb_printf, io->cb_printf_user) < 0) {
 			eprintf("remote error\n");
 			return NULL;
 		}
@@ -376,7 +444,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (!file) {
 			return NULL;
 		}
-		io->cb_printf("%s\n", file);
+		io->cb_printf(io->cb_printf_user, "%s\n", file);
 		return file;
 	}
 	// These are internal, not available to user directly
@@ -388,7 +456,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf("num_retries: %d byte(s)\n", desc->page_size);
+		io->cb_printf(io->cb_printf_user, "num_retries: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	if (rz_str_startswith(cmd, "page_size")) {
@@ -399,7 +467,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			}
 			return NULL;
 		}
-		io->cb_printf("page size: %d byte(s)\n", desc->page_size);
+		io->cb_printf(io->cb_printf_user, "page size: %d byte(s)\n", desc->page_size);
 		return NULL;
 	}
 	// Sets a flag that next call to get memmap will be for getting baddr
@@ -407,7 +475,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		desc->get_baddr = true;
 		return NULL;
 	}
-	eprintf("Try: 'R!?'\n");
+	eprintf("Try: 'R! ?'\n");
 	return NULL;
 
 gdb_lock_leave:
@@ -430,6 +498,7 @@ RzIOPlugin rz_io_plugin_gdb = {
 	.system = __system,
 	.getpid = __getpid,
 	.gettid = __gettid,
+	.download_file = io_gdb_download_file,
 	.isdbg = true
 };
 

@@ -10,7 +10,7 @@ static void rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws)
 	bool useColor = rz_config_get_i(core->config, "scr.color") != 0;
 	bool big_endian = rz_config_get_b(core->config, "cfg.bigendian");
 	ut64 v[2];
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	for (i = 0; i < len; i += ws) {
 		for (size_t j = 0; j < 2; j++) {
 			ut8 tmp[8] = { 0 };
@@ -22,25 +22,25 @@ static void rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws)
 		const char *colorEnd = useColor ? Color_RESET : "";
 
 		if (useColor) {
-			rz_cons_printf("%s0x%08" PFMT64x "  " Color_RESET, pal->offset, of + i);
+			rz_cons_printf(core->cons, "%s0x%08" PFMT64x "  " Color_RESET, pal->offset, of + i);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x "  ", of + i);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x "  ", of + i);
 		}
 		switch (ws) {
 		case 1:
-			rz_cons_printf("%s0x%02x %c 0x%02x%s\n", color,
+			rz_cons_printf(core->cons, "%s0x%02x %c 0x%02x%s\n", color,
 				(ut32)(v[0] & 0xff), ch, (ut32)(v[1] & 0xff), colorEnd);
 			break;
 		case 2:
-			rz_cons_printf("%s0x%04hx %c 0x%04hx%s\n", color,
+			rz_cons_printf(core->cons, "%s0x%04hx %c 0x%04hx%s\n", color,
 				(ut16)v[0], ch, (ut16)v[1], colorEnd);
 			break;
 		case 4:
-			rz_cons_printf("%s0x%08" PFMT32x " %c 0x%08" PFMT32x "%s\n", color,
+			rz_cons_printf(core->cons, "%s0x%08" PFMT32x " %c 0x%08" PFMT32x "%s\n", color,
 				(ut32)v[0], ch, (ut32)v[1], colorEnd);
 			break;
 		case 8:
-			rz_cons_printf("%s0x%016" PFMT64x " %c 0x%016" PFMT64x "%s\n",
+			rz_cons_printf(core->cons, "%s0x%016" PFMT64x " %c 0x%016" PFMT64x "%s\n",
 				color, v[0], ch, v[1], colorEnd);
 			break;
 		}
@@ -56,12 +56,12 @@ static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
 	for (i = 0; i < cmp->len; i += inc) {
 		min = RZ_MIN(16, (cmp->len - i));
 		if (!memcmp(cmp->data1 + i, cmp->data2 + i, min)) {
-			rz_cons_printf("  ");
+			rz_cons_printf(core->cons, "  ");
 			rz_core_print_hexdiff(core, cmp->addr1 + i, cmp->data1 + i, cmp->addr1 + i, cmp->data1 + i, min, 0);
 		} else {
-			rz_cons_printf("- ");
+			rz_cons_printf(core->cons, "- ");
 			rz_core_print_hexdiff(core, cmp->addr1 + i, cmp->data1 + i, cmp->addr2 + i, cmp->data2 + i, min, 0);
-			rz_cons_printf("+ ");
+			rz_cons_printf(core->cons, "+ ");
 			rz_core_print_hexdiff(core, cmp->addr2 + i, cmp->data2 + i, cmp->addr1 + i, cmp->data1 + i, min, 0);
 		}
 	}
@@ -74,20 +74,20 @@ static bool rizin_compare_unified(RzCore *core, RzCompareData *cmp) {
 static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 	const bool scr_color = rz_config_get_i(core->config, "scr.color");
 	int i;
-	RzConsPrintablePalette *pal = &rz_cons_singleton()->context->pal;
+	RzConsPrintablePalette *pal = &core->cons->context->pal;
 	const char *color = scr_color ? pal->offset : "";
 	const char *color_end = scr_color ? Color_RESET : "";
 	if (rz_config_get_i(core->config, "hex.header")) {
 		char *n = rz_str_newf("0x%08" PFMT64x, cmp->addr1);
 		char *extra = rz_str_pad(' ', strlen(n) - 10);
 		free(n);
-		rz_cons_printf("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
+		rz_cons_printf(core->cons, "%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
 		free(extra);
 	}
 	color = scr_color ? pal->graph_false : "";
 	color_end = scr_color ? Color_RESET : "";
 
-	rz_cons_printf("%s0x%08" PFMT64x "%s  ", color, cmp->addr1, color_end);
+	rz_cons_printf(core->cons, "%s0x%08" PFMT64x "%s  ", color, cmp->addr1, color_end);
 	for (i = 7; i >= 0; i--) {
 		bool b0 = (cmp->data1[0] & 1 << i) ? 1 : 0;
 		bool b1 = (cmp->data2[0] & 1 << i) ? 1 : 0;
@@ -95,11 +95,11 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 							 : pal->graph_false
 				  : "";
 		color_end = scr_color ? Color_RESET : "";
-		rz_cons_printf("%s%d%s ", color, b0, color_end);
+		rz_cons_printf(core->cons, "%s%d%s ", color, b0, color_end);
 	}
 	color = scr_color ? pal->graph_true : "";
 	color_end = scr_color ? Color_RESET : "";
-	rz_cons_printf("\n%s0x%08" PFMT64x "%s  ", color, cmp->addr2, color_end);
+	rz_cons_printf(core->cons, "\n%s0x%08" PFMT64x "%s  ", color, cmp->addr2, color_end);
 	for (i = 7; i >= 0; i--) {
 		bool b0 = (cmp->data1[0] & 1 << i) ? 1 : 0;
 		bool b1 = (cmp->data2[0] & 1 << i) ? 1 : 0;
@@ -107,9 +107,9 @@ static bool core_cmp_bits(RzCore *core, RzCompareData *cmp) {
 							 : pal->graph_false
 				  : "";
 		color_end = scr_color ? Color_RESET : "";
-		rz_cons_printf("%s%d%s ", color, b1, color_end);
+		rz_cons_printf(core->cons, "%s%d%s ", color, b1, color_end);
 	}
-	rz_cons_newline();
+	rz_cons_newline(core->cons);
 
 	return true;
 }

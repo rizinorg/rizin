@@ -5,14 +5,15 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 
 #include "rl78/rl78.h"
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	return 0x69;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RL78Instr instr = { 0 };
 	size_t bytes_read = 0;
 	if (!rl78_dis(&instr, &bytes_read, buf, len)) {

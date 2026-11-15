@@ -15,7 +15,7 @@
  * to do with it.
  */
 RZ_API RzReg *rz_core_reg_default(RzCore *core) {
-	return rz_core_is_debug(core) ? core->dbg->reg : core->analysis->reg;
+	return rz_core_is_debug(core) ? core->dbg->reg : rz_analysis_get_reg(core->analysis);
 }
 
 /**
@@ -27,7 +27,8 @@ RZ_API ut64 rz_core_reg_getv_by_role_or_name(RzCore *core, const char *name) {
 		// call this instead of rz_reg_getv_... directly because it also syncs
 		return rz_debug_reg_get(core->dbg, name);
 	}
-	return rz_reg_getv_by_role_or_name(core->analysis->reg, name);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	return rz_reg_getv_by_role_or_name(rreg, name);
 }
 
 /**
@@ -43,11 +44,12 @@ RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64
 		// call this instead of rz_reg_set... directly because it also syncs
 		ret = rz_debug_reg_set(core->dbg, name, num);
 	} else {
-		RzRegItem *ri = rz_reg_get_by_role_or_name(core->analysis->reg, name);
+		RzReg *rreg = rz_analysis_get_reg(core->analysis);
+		RzRegItem *ri = rz_reg_get_by_role_or_name(rreg, name);
 		if (!ri) {
 			return false;
 		}
-		ret = rz_reg_set_value(core->analysis->reg, ri, num);
+		ret = rz_reg_set_value(rreg, ri, num);
 	}
 	if (ret && rz_spaces_get(&core->flags->spaces, RZ_FLAGS_FS_REGISTERS)) {
 		rz_core_reg_update_flags(core);
@@ -57,11 +59,9 @@ RZ_API bool rz_core_reg_set_by_role_or_name(RzCore *core, const char *name, ut64
 
 /// Construct the list of registers that should be applied as flags by default
 /// (e.g. because their size matches the pointer size)
+/// \return The candidates, empty without general-purpose registers, NULL on allocation failure
 RZ_IPI RzList /*<RzRegItem *>*/ *rz_core_reg_flags_candidates(RzCore *core, RzReg *reg) {
 	const RzList *l = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
-	if (!l) {
-		return NULL;
-	}
 	int size = rz_analysis_get_address_bits(core->analysis);
 	RzList *ret = rz_list_new();
 	if (!ret) {
@@ -113,7 +113,7 @@ RZ_API void rz_core_reg_update_flags(RzCore *core) {
 /**
  * \brief Print registers that have changed since the last step (drd/ard)
  */
-RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items) {
+RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items, RZ_NONNULL RZ_BORROW RzCons *cons) {
 	RzListIter *iter;
 	RzRegItem *item;
 	rz_list_foreach (items, iter, item) {
@@ -123,7 +123,7 @@ RZ_IPI void rz_core_reg_print_diff(RzReg *reg, RzList /*<RzRegItem *>*/ *items) 
 		rz_reg_arena_swap(reg, false);
 		ut64 delta = newval - oldval;
 		if (delta) {
-			rz_cons_printf(
+			rz_cons_printf(cons,
 				"%s = 0x%" PFMT64x " was 0x%" PFMT64x " delta 0x%" PFMT64x "\n",
 				item->name, newval, oldval, delta);
 		}

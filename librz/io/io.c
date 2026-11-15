@@ -113,7 +113,6 @@ RZ_API RzIO *rz_io_new(void) {
 
 RZ_API RzIO *rz_io_init(RzIO *io) {
 	rz_return_val_if_fail(io, NULL);
-	io->addrbytes = 1;
 	rz_io_desc_init(io);
 	rz_skyline_init(&io->map_skyline);
 	rz_io_map_init(io);
@@ -608,6 +607,7 @@ RZ_API void rz_io_bind(RzIO *io, RzIOBind *bnd) {
 	bnd->open_at = rz_io_open_at;
 	bnd->close = rz_io_fd_close;
 	bnd->read_at = rz_io_read_at_mapped;
+	bnd->nread_at = rz_io_nread_at;
 	bnd->write_at = rz_io_write_at;
 	bnd->system = rz_io_system;
 	bnd->fd_open = rz_io_fd_open;

@@ -69,5 +69,5 @@ enum {
 };
 
 int gbDisass(RzAsmOp *op, const ut8 *buf, int len);
-int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf);
+int gbAsm(const RzAsm *a, RzAsmOp *op, const char *buf);
 #endif

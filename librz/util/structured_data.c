@@ -21,8 +21,10 @@ typedef enum {
 	STRUCTURED_DATA_TYPE_HEXADECIMAL,
 	STRUCTURED_DATA_TYPE_SIGNED,
 	STRUCTURED_DATA_TYPE_DOUBLE,
+	STRUCTURED_DATA_TYPE_FLOAT,
 	STRUCTURED_DATA_TYPE_BOOL,
 	STRUCTURED_DATA_TYPE_STRING,
+	STRUCTURED_DATA_TYPE_NULL,
 } StructuredDataType;
 
 struct rz_structured_data_t {
@@ -31,6 +33,7 @@ struct rz_structured_data_t {
 		ut64 v_unsigned;
 		st64 v_signed;
 		double v_double;
+		float v_float;
 		bool v_bool;
 		char *v_string;
 		HtSP /*<RzStructuredData *>*/ *v_map;
@@ -123,6 +126,16 @@ static RzStructuredData *structured_data_new_double(double v_double) {
 	return sd;
 }
 
+static RzStructuredData *structured_data_new_float(float v_float) {
+	RzStructuredData *sd = RZ_NEW0(RzStructuredData);
+	if (!sd) {
+		return NULL;
+	}
+	sd->type = STRUCTURED_DATA_TYPE_FLOAT;
+	sd->v_float = v_float;
+	return sd;
+}
+
 static RzStructuredData *structured_data_new_bool(bool v_bool) {
 	RzStructuredData *sd = RZ_NEW0(RzStructuredData);
 	if (!sd) {
@@ -133,9 +146,10 @@ static RzStructuredData *structured_data_new_bool(bool v_bool) {
 	return sd;
 }
 
-static RzStructuredData *structured_data_new_string(char *v_string) {
+static RzStructuredData *structured_data_new_string(RZ_OWN char *v_string) {
 	RzStructuredData *sd = RZ_NEW0(RzStructuredData);
 	if (!sd) {
+		free(v_string);
 		return NULL;
 	}
 	sd->type = STRUCTURED_DATA_TYPE_STRING;
@@ -364,6 +378,24 @@ RZ_API bool rz_structured_data_map_add_double(RZ_NONNULL RzStructuredData *paren
 }
 
 /**
+ * \brief      Add a float to a map without widening its serialization precision.
+ *
+ * JSON and YAML retain float precision, so 0.1f is serialized as 0.1.
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param[in]  key     The key to assign the child RzStructuredData
+ * \param      f       The value to assign to the child
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_map_add_float(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key, float f) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
+
+	RzStructuredData *child = structured_data_new_float(f);
+	return structured_data_map_add(parent, key, child);
+}
+
+/**
  * \brief      Adds boolean type child to a parent and assigns it a map key
  *
  * \param      parent  Where to add the child RzStructuredData
@@ -442,6 +474,24 @@ RZ_API bool rz_structured_data_map_add_bytes(RZ_NONNULL RzStructuredData *parent
 	}
 
 	RzStructuredData *child = structured_data_new_string(copy);
+	return structured_data_map_add(parent, key, child);
+}
+
+/**
+ * \brief      Adds NULL type child to a parent and assigns it a map key
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param[in]  key     The key to assign the child RzStructuredData
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_map_add_null(RZ_NONNULL RzStructuredData *parent, RZ_NONNULL const char *key) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_MAP && key, false);
+	RzStructuredData *child = RZ_NEW0(RzStructuredData);
+	if (!child) {
+		return false;
+	}
+	child->type = STRUCTURED_DATA_TYPE_NULL;
+
 	return structured_data_map_add(parent, key, child);
 }
 
@@ -530,7 +580,7 @@ RZ_API bool rz_structured_data_array_add_signed(RZ_NONNULL RzStructuredData *par
  * \brief      Adds double type child to an array type parent
  *
  * \param      parent  Where to add the child RzStructuredData
- * \param      n       The value to assign to the child
+ * \param      d       The value to assign to the child
  *
  * \return     On success returns true, otherwise false.
  */
@@ -542,10 +592,27 @@ RZ_API bool rz_structured_data_array_add_double(RZ_NONNULL RzStructuredData *par
 }
 
 /**
- * \brief      Adds signed type child to an array type parent
+ * \brief      Add a float to an array without widening its serialization precision.
+ *
+ * JSON and YAML retain float precision, so 0.1f is serialized as 0.1.
  *
  * \param      parent  Where to add the child RzStructuredData
- * \param      n       The value to assign to the child
+ * \param      f       The value to assign to the child
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_array_add_float(RZ_NONNULL RzStructuredData *parent, float f) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
+
+	RzStructuredData *child = structured_data_new_float(f);
+	return structured_data_array_add(parent, child);
+}
+
+/**
+ * \brief      Adds boolean type child to an array type parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ * \param      b       The value to assign to the child
  *
  * \return     On success returns true, otherwise false.
  */
@@ -619,6 +686,25 @@ RZ_API bool rz_structured_data_array_add_bytes(RZ_NONNULL RzStructuredData *pare
 	return structured_data_array_add(parent, child);
 }
 
+/**
+ * \brief      Adds NULL type child to an array type parent
+ *
+ * \param      parent  Where to add the child RzStructuredData
+ *
+ * \return     On success returns true, otherwise false.
+ */
+RZ_API bool rz_structured_data_array_add_null(RZ_NONNULL RzStructuredData *parent) {
+	rz_return_val_if_fail(parent && parent->type == STRUCTURED_DATA_TYPE_ARRAY, false);
+
+	RzStructuredData *child = RZ_NEW0(RzStructuredData);
+	if (!child) {
+		return false;
+	}
+	child->type = STRUCTURED_DATA_TYPE_NULL;
+
+	return structured_data_array_add(parent, child);
+}
+
 static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzStructuredData *sd);
 
 static void structured_data_iterate_over_map(StructuredDataIterOver *sdio, const RzStructuredData *sd) {
@@ -669,11 +755,21 @@ static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzS
 	case STRUCTURED_DATA_TYPE_DOUBLE:
 		sdio->fit->val_double(sdio->user, sd->v_double);
 		return;
+	case STRUCTURED_DATA_TYPE_FLOAT:
+		if (sdio->fit->val_float) {
+			sdio->fit->val_float(sdio->user, sd->v_float);
+		} else {
+			sdio->fit->val_double(sdio->user, sd->v_float);
+		}
+		return;
 	case STRUCTURED_DATA_TYPE_BOOL:
 		sdio->fit->val_bool(sdio->user, sd->v_bool);
 		return;
 	case STRUCTURED_DATA_TYPE_STRING:
 		sdio->fit->val_string(sdio->user, sd->v_string);
+		return;
+	case STRUCTURED_DATA_TYPE_NULL:
+		sdio->fit->val_null(sdio->user);
 		return;
 	default:
 		rz_warn_if_reached();
@@ -682,11 +778,14 @@ static void structured_data_iterate_over(StructuredDataIterOver *sdio, const RzS
 }
 
 /**
- * \brief      Iterates over a given RzStructuredData using the provided iterator
+ * \brief      Visit structured data using the supplied callbacks.
+ *
+ * Zero-initialize the iterator before assigning callbacks so optional callbacks
+ * default to NULL. Float entries fall back to val_double if val_float is NULL.
  *
  * \param[in]  sd        The RzStructuredData to iterate over
  * \param[in]  iterator  The iterator to use
- * \param      user      The user ponter (can be null)
+ * \param      user      Callback context (may be NULL)
  */
 RZ_API void rz_structured_data_iterate(RZ_NONNULL const RzStructuredData *sd, RZ_NONNULL const RzStructuredDataIterator *iterator, RZ_NULLABLE void *user) {
 	rz_return_if_fail(sd && iterator && iterator);

@@ -28,6 +28,7 @@ typedef struct sh_op_raw_t {
 	ut16 mask; ///< mask for opcode to mask out param bits
 	SHScaling scaling; ///< scaling for the opcode
 	SHParamBuilder param_builder[2]; ///< param builders for the params
+	SHArch arch; ///< set of SuperH CPU models on which this instruction is available
 } SHOpRaw;
 
 // xxxx used to denote param fields in the opcode

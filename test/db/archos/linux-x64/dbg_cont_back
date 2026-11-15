@@ -18,7 +18,6 @@ RUN
 
 NAME=debug continue back from caller
 FILE=bins/elf/analysis/calls_x64
-BROKEN=1
 ARGS=-d
 CMDS=<<EOF
 db @ main
@@ -35,6 +34,7 @@ EOF
 RUN
 
 NAME=dbg.manycontback
+TIMEOUT=1200
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF

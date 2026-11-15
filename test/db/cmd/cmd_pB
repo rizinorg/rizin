@@ -9,18 +9,77 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pb 0x12
+NAME=pb
 FILE==
 CMDS=<<EOF
 wx 0x12
 pb 8
 pb 4 2
 pb 4 3
+echo ---
+wx 01010f00
+echo 0...4...8...c...
+echo pb 16 0
+pb 16 0
+echo pb 16
+pb 16
+echo pb 16 1
+pb 16 1
+echo pb 16 2
+pb 16 2
+echo pb 16 3
+pb 16 3
+echo pb 16 4
+pb 16 4
+echo pb 16 5
+pb 16 5
+echo pb 16 6
+pb 16 6
+echo pb 16 7
+pb 16 7
+echo pb 16 8
+pb 16 8
+echo pb 16 9
+pb 16 9
+echo pb 16 10
+pb 16 10
+echo 0...4...8...c...
+echo pb 3 9
+pb 3 19
 EOF
 EXPECT=<<EOF
 00010010
 0100
 1001
+---
+0...4...8...c...
+pb 16 0
+0000000100000001
+pb 16
+0000000100000001
+pb 16 1
+0000001000000010
+pb 16 2
+0000010000000100
+pb 16 3
+0000100000001000
+pb 16 4
+0001000000010000
+pb 16 5
+0010000000100001
+pb 16 6
+0100000001000011
+pb 16 7
+1000000010000111
+pb 16 8
+0000000100001111
+pb 16 9
+0000001000011110
+pb 16 10
+0000010000111100
+0...4...8...c...
+pb 3 9
+011
 EOF
 RUN
 

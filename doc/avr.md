@@ -18,5 +18,5 @@ In another terminal now run:
 
 	rizin -a avr -d gdb://localhost:4242
 
-NOTE: Right now the avr debugger is pretty broken, the memory and register reads result in in correct data.
+NOTE: Right now the avr debugger is pretty broken, the memory and register reads result in correct data.
 

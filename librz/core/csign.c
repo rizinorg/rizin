@@ -284,83 +284,83 @@ RZ_API ut16 rz_core_flirt_app_from_option_list(RZ_NONNULL const char *app_list) 
 	return flags;
 }
 
-static void flirt_print_module(const RzFlirtModule *module) {
+static void flirt_print_module(RzCons *cons, const RzFlirtModule *module) {
 	RzListIter *pub_func_it, *ref_func_it, *tail_bytes_it;
 	RzFlirtFunction *func, *ref_func;
 	RzFlirtTailByte *tail_byte;
 
-	rz_cons_printf("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
+	rz_cons_printf(cons, "%02X %04X %04X ", module->crc_length, module->crc16, module->length);
 	rz_list_foreach (module->public_functions, pub_func_it, func) {
 		if (func->is_local || func->is_collision) {
-			rz_cons_printf("(");
+			rz_cons_printf(cons, "(");
 			if (func->is_local) {
-				rz_cons_printf("l");
+				rz_cons_printf(cons, "l");
 			}
 			if (func->is_collision) {
-				rz_cons_printf("!");
+				rz_cons_printf(cons, "!");
 			}
-			rz_cons_printf(")");
+			rz_cons_printf(cons, ")");
 		}
-		rz_cons_printf("%04X:%s", func->offset, func->name);
+		rz_cons_printf(cons, "%04X:%s", func->offset, func->name);
 		if (rz_list_has_next(pub_func_it)) {
-			rz_cons_printf(" ");
+			rz_cons_printf(cons, " ");
 		}
 	}
 	if (module->tail_bytes) {
 		rz_list_foreach (module->tail_bytes, tail_bytes_it, tail_byte) {
-			rz_cons_printf(" (%04X: %02X)", tail_byte->offset, tail_byte->value);
+			rz_cons_printf(cons, " (%04X: %02X)", tail_byte->offset, tail_byte->value);
 		}
 	}
 	if (module->referenced_functions) {
-		rz_cons_printf(" (REF ");
+		rz_cons_printf(cons, " (REF ");
 		rz_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
-			rz_cons_printf("%04X: %s", ref_func->offset, ref_func->name);
+			rz_cons_printf(cons, "%04X: %s", ref_func->offset, ref_func->name);
 			if (rz_list_has_next(ref_func_it)) {
-				rz_cons_printf(" ");
+				rz_cons_printf(cons, " ");
 			}
 		}
-		rz_cons_printf(")");
+		rz_cons_printf(cons, ")");
 	}
-	rz_cons_printf("\n");
+	rz_cons_printf(cons, "\n");
 }
 
-static void flirt_print_node_pattern(const RzFlirtNode *node) {
+static void flirt_print_node_pattern(RzCons *cons, const RzFlirtNode *node) {
 	for (ut32 i = 0; i < node->length; i++) {
 		if (node->pattern_mask[i]) {
-			rz_cons_printf("%02X", node->pattern_bytes[i]);
+			rz_cons_printf(cons, "%02X", node->pattern_bytes[i]);
 		} else {
-			rz_cons_printf("..");
+			rz_cons_printf(cons, "..");
 		}
 	}
-	rz_cons_printf(":\n");
+	rz_cons_printf(cons, ":\n");
 }
 
-static void flirt_print_indentation(int indent) {
+static void flirt_print_indentation(RzCons *cons, int indent) {
 	char *pad = rz_str_pad(' ', indent);
-	rz_cons_printf("%s", pad);
+	rz_cons_printf(cons, "%s", pad);
 	free(pad);
 }
 
-static void flirt_print_node(const RzFlirtNode *node, int indent) {
+static void flirt_print_node(RzCons *cons, const RzFlirtNode *node, int indent) {
 	/* Prints a signature node. The output is similar to dumpsig */
 	RzListIter *child_it, *module_it;
 	RzFlirtNode *child;
 	RzFlirtModule *module;
 
 	if (node->pattern_bytes) { // avoid printing the root node
-		flirt_print_indentation(indent);
-		flirt_print_node_pattern(node);
+		flirt_print_indentation(cons, indent);
+		flirt_print_node_pattern(cons, node);
 	}
 	if (node->child_list) {
 		rz_list_foreach (node->child_list, child_it, child) {
-			flirt_print_node(child, indent + 1);
+			flirt_print_node(cons, child, indent + 1);
 		}
 	} else if (node->module_list) {
 		ut32 i = 0;
 		rz_list_foreach (node->module_list, module_it, module) {
-			flirt_print_indentation(indent + 1);
-			rz_cons_printf("%d. ", i);
-			flirt_print_module(module);
+			flirt_print_indentation(cons, indent + 1);
+			rz_cons_printf(cons, "%d. ", i);
+			flirt_print_module(cons, module);
 			i++;
 		}
 	}
@@ -371,7 +371,7 @@ static void flirt_print_node(const RzFlirtNode *node, int indent) {
  *
  * \param flirt_file FLIRT file name to dump
  */
-RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
+RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL RzCore *core, RZ_NONNULL const char *flirt_file) {
 	rz_return_val_if_fail(RZ_STR_ISNOTEMPTY(flirt_file), false);
 
 	const char *extension = rz_str_lchr(flirt_file, '.');
@@ -401,21 +401,21 @@ RZ_API bool rz_core_flirt_dump_file(RZ_NONNULL const char *flirt_file) {
 
 	switch (info.type) {
 	case RZ_FLIRT_FILE_TYPE_SIG:
-		rz_cons_printf("SIG format\n");
-		rz_cons_printf("Signature:    %s, %u modules\n", info.u.sig.name ? info.u.sig.name : "", info.u.sig.n_modules);
-		rz_cons_printf("Version:      %u\n", info.u.sig.version);
-		rz_cons_printf("Architecture: %u (%s)\n", info.u.sig.architecture, rz_core_flirt_arch_from_id(info.u.sig.architecture));
+		rz_cons_printf(core->cons, "SIG format\n");
+		rz_cons_printf(core->cons, "Signature:    %s, %u modules\n", info.u.sig.name ? info.u.sig.name : "", info.u.sig.n_modules);
+		rz_cons_printf(core->cons, "Version:      %u\n", info.u.sig.version);
+		rz_cons_printf(core->cons, "Architecture: %u (%s)\n", info.u.sig.architecture, rz_core_flirt_arch_from_id(info.u.sig.architecture));
 		break;
 	case RZ_FLIRT_FILE_TYPE_PAT:
-		rz_cons_printf("PAT format\n");
-		rz_cons_printf("Signature:    %u modules\n", info.u.pat.n_modules);
+		rz_cons_printf(core->cons, "PAT format\n");
+		rz_cons_printf(core->cons, "Signature:    %u modules\n", info.u.pat.n_modules);
 		break;
 	default:
 		rz_warn_if_reached();
 		break;
 	}
 
-	flirt_print_node(node, -1);
+	flirt_print_node(core->cons, node, -1);
 	rz_sign_flirt_node_free(node);
 	rz_sign_flirt_info_fini(&info);
 	return true;

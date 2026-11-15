@@ -146,7 +146,7 @@ ut8 pic_highend_status(const char *name);
 ut8 pic_highend_rcon(const char *name);
 ut8 pic_highend_intcon(const char *name);
 bool pic_highend_disasm_op(PicHighendOp *op, ut64 addr, const ut8 *buff, ut64 len);
-int pic_highend_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int l);
+int pic_highend_disassemble(RzAsmOp *asm_op, ut64 addr, const ut8 *b, int l);
 
 int pic_highend_op(RzAnalysis *analysis, RzAnalysisOp *aop, ut64 addr,
 	const ut8 *buf, int len, RzAnalysisOpMask mask);

@@ -1,0 +1,586 @@
+NAME=cbpf analysis
+FILE=bins/bpf/cbpf1_le.bin
+ARGS=-a cbpf -E little
+CMDS=<<EOF
+af
+pdf
+ao @ 0x8
+aoj @ 0x8
+agf
+ar
+EOF
+EXPECT=<<EOF
+/ fcn.00000000();
+|           0x00000000      ldh   [0xc]
+|      ,,=< 0x00000008      jeq   0x800, +0x0, +0x4
+|      `--> 0x00000010      ld    [0x1a]
+|      ,==< 0x00000018      jeq   -0x3f57feff, +0x8, +0x0
+|      ||   0x00000020      ld    [0x1e]
+|    ,,===< 0x00000028      jeq   -0x3f57feff, +0x6, +0x7
+|   ,===`-> 0x00000030      jeq   0x806, +0x1, +0x0
+|  ,====,=< 0x00000038      jeq   0x8035, +0x0, +0x5
+|  ``-----> 0x00000040      ld    [0x1c]
+|   ,=====< 0x00000048      jeq   -0x3f57feff, +0x2, +0x0
+|   |||||   0x00000050      ld    [0x26]
+| ,,======< 0x00000058      jeq   -0x3f57feff, +0x0, +0x1
+| `-``-`--> 0x00000060      ret   0x40000
+\  `--`-`-> 0x00000068      ret   0x0
+address: 0x8
+opcode: jeq 0x800, +0x0, +0x4
+disasm: jeq 0x800, +0x0, +0x4
+mnemonic: jeq
+mask: ff00000000000000
+prefix: 0
+id: 70
+bytes: 1500000400080000
+refptr: 0
+size: 8
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x800
+    - type: "off"
+      value: 0x0
+    - type: "off"
+      value: 0x4
+jump: 0x00000010
+fail: 0x00000030
+cond: al
+family: cpu
+[{"opcode":"jeq 0x800, +0x0, +0x4","disasm":"jeq 0x800, +0x0, +0x4","mnemonic":"jeq","mask":"ff00000000000000","jump":16,"fail":48,"sign":false,"prefix":0,"id":70,"opex":{"operands":[{"type":"imm","value":2048},{"type":"off","value":0},{"type":"off","value":4}]},"addr":8,"bytes":"1500000400080000","size":8,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
+                                       .-----------------------.
+                                       |  0x0                  |
+                                       | fcn.00000000();       |
+                                       | ldh [0xc]             |
+                                       | jeq 0x800, +0x0, +0x4 |
+                                       `-----------------------'
+                                             t f
+                                             | |
+                      .----------------------' |
+                      |                        '--------------.
+                      |                                       |
+                  .-----------------------------.         .-----------------------.
+                  |  0x10                       |         |  0x30                 |
+                  | ld [0x1a]                   |         | jeq 0x806, +0x1, +0x0 |
+                  | jeq -0x3f57feff, +0x8, +0x0 |         `-----------------------'
+                  `-----------------------------'                 f t
+                          f t                                     | |
+                          | |                                     | |
+                          | '----------------.                    | |
+          .---------------'                  |                    | |
+          |                                  |                    | '----------.
+          |                                  |       .------------'            |
+          |                                  |       |                         |
+      .-----------------------------.        |   .------------------------.    |
+      |  0x20                       |        |   |  0x38                  |    |
+      | ld [0x1e]                   |        |   | jeq 0x8035, +0x0, +0x5 |    |
+      | jeq -0x3f57feff, +0x6, +0x7 |        |   `------------------------'    |
+      `-----------------------------'        |         t f                     |
+              f t                            |         | |                     |
+              | |                            |         | |                     |
+              | '------------------------.   |         | |                     |
+.-------------'                          |   |         | |                     |
+|   .----------------------------------------|---------' |                     |
+|   |                                    |   |           '---.                 |
+|   |                                    |   |               | .---------------'
+|   |                                    |   |               | |
+|   |                                    |   |         .-----------------------------.
+|   |                                    |   |         |  0x40                       |
+|   |                                    |   |         | ld [0x1c]                   |
+|   |                                    |   |         | jeq -0x3f57feff, +0x2, +0x0 |
+|   |                                    |   |         `-----------------------------'
+|   |                                    |   |               t f
+|   |                                    |   |               | |
+|   |                                    |   |   .-----------' |
+|   |      .-----------------------------|---|-----------------'
+|   |      |                             |   |   |
+|   |  .-----------------------------.   |   |   |
+|   |  |  0x50                       |   |   |   |
+|   |  | ld [0x26]                   |   |   |   |
+|   |  | jeq -0x3f57feff, +0x0, +0x1 |   |   |   |
+|   |  `-----------------------------'   |   |   |
+|   |          f t                       |   |   |
+|   |          | |                       |   |   |
+|   |          | '-------------------.   |   |   |
+|   |   .------'                     |   |   |   |
+|   |   |                            | .-|---'   |
+|   |   |                            | | |       |
+'---|-----.                          | | |       |
+    |   | |                          | | | .-----'
+    '-------.                        | | | |
+        | | |                        | | | |
+  .-------------.              .---------------.
+  |  0x68       |              |  0x60         |
+  | ret 0x0     |              | ret 0x40000   |
+  `-------------'              `---------------'
+A = 0x00000000
+X = 0x00000000
+pc = 0x00000000
+sp = 0x00000000
+M0 = 0x00000000
+M1 = 0x00000000
+M2 = 0x00000000
+M3 = 0x00000000
+M4 = 0x00000000
+M5 = 0x00000000
+M6 = 0x00000000
+M7 = 0x00000000
+M8 = 0x00000000
+M9 = 0x00000000
+M10 = 0x00000000
+M11 = 0x00000000
+M12 = 0x00000000
+M13 = 0x00000000
+M14 = 0x00000000
+M15 = 0x00000000
+EOF
+RUN
+
+NAME=cbpf all types of instructions
+FILE=
+CMDS=<<EOF
+e asm.arch=cbpf
+e cfg.bigendian=false
+wx 480000000e000000
+ao 
+echo '---------------'
+wx 6200000000000000
+ao
+echo '---------------'
+wx  a1005303dddfd4e3
+ao
+echo '----------------'
+wx 6c00d385c196b148
+ao
+echo '---------------'
+wx 6300c9537f80892d
+ao
+echo '---------------'
+wx 610006d9cd845894
+ao 
+echo '---------------'
+wx 5400148229826c06
+ao
+echo '---------------'
+wx 4c00c9ff36e92ae7
+ao
+echo '---------------'
+wx a400668f3cdee24d
+ao
+echo '---------------'
+wx 9c00303f9d338950
+ao
+echo '---------------'
+wx 3400a8fa6a92a2a8
+ao
+echo '---------------'
+wx 24000f46bee5d24a
+ao
+echo '---------------'
+wx 1c00d151908a8dea
+ao
+echo '---------------'
+wx 0400da2371c55142
+ao
+echo '---------------'
+wx 64008ae5f00ccafd
+ao
+echo '--------------'
+wx 7400fa6fe9bede7e
+ao
+echo '---------------'
+wx 84004f0fc94a72ff
+ao
+echo '---------------'
+wx 0500d4bd37c82cd5
+ao
+echo '---------------'
+wx 0700e8e848e2842a
+ao
+echo '----------------'
+wx 8700172a9ad6b68f
+ao
+echo '----------------'
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: ldh [x+0xe]
+disasm: ldh [x+0xe]
+mnemonic: ldh
+mask: ffffffffffffffff
+prefix: 0
+id: 46
+bytes: 480000000e000000
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mem"
+      base: "x"
+      disp: 0xe
+family: cpu
+---------------
+address: 0x0
+opcode: st m[0x0]
+disasm: st m[0x0]
+mnemonic: st
+mask: ffffffffffffffff
+prefix: 0
+id: 59
+bytes: 6200000000000000
+refptr: 0
+size: 8
+sign: false
+type: store
+cycles: 0
+opex:
+  operands:
+    - type: "mmem"
+      value: 0x0
+family: cpu
+---------------
+address: 0x0
+opcode: ldx 4*([0xe3d4dfdd]&0xf)
+disasm: ldx 4*([0xe3d4dfdd]&0xf)
+mnemonic: ldx
+mask: ffffffffffffffff
+prefix: 0
+id: 49
+bytes: a1005303dddfd4e3
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "msh"
+      value: 0xe3d4dfdd
+family: cpu
+----------------
+address: 0x0
+opcode: lsh x
+disasm: lsh x
+mnemonic: lsh
+mask: ffffffffffffffff
+prefix: 0
+id: 8
+bytes: 6c00d385c196b148
+refptr: 0
+size: 8
+sign: false
+type: shl
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x"
+family: cpu
+---------------
+address: 0x0
+opcode: stx m[0x2d89807f]
+disasm: stx m[0x2d89807f]
+mnemonic: stx
+mask: ffffffffffffffff
+prefix: 0
+id: 63
+bytes: 6300c9537f80892d
+refptr: 0
+size: 8
+sign: false
+type: store
+cycles: 0
+opex:
+  operands:
+    - type: "mmem"
+      value: 0x2d89807f
+family: cpu
+---------------
+address: 0x0
+opcode: ldx m[0x945884cd]
+disasm: ldx m[0x945884cd]
+mnemonic: ldx
+mask: ffffffffffffffff
+prefix: 0
+id: 49
+bytes: 610006d9cd845894
+refptr: 0
+size: 8
+sign: false
+type: load
+cycles: 0
+opex:
+  operands:
+    - type: "mmem"
+      value: 0x945884cd
+family: cpu
+---------------
+address: 0x0
+opcode: and 0x66c8229
+disasm: and 0x66c8229
+mnemonic: and
+mask: ffffffffffffffff
+prefix: 0
+id: 7
+bytes: 5400148229826c06
+refptr: 0
+size: 8
+sign: false
+type: and
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x66c8229
+family: cpu
+---------------
+address: 0x0
+opcode: or x
+disasm: or x
+mnemonic: or
+mask: ffffffffffffffff
+prefix: 0
+id: 6
+bytes: 4c00c9ff36e92ae7
+refptr: 0
+size: 8
+sign: false
+type: or
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x"
+family: cpu
+---------------
+address: 0x0
+opcode: xor 0x4de2de3c
+disasm: xor 0x4de2de3c
+mnemonic: xor
+mask: ffffffffffffffff
+prefix: 0
+id: 13
+bytes: a400668f3cdee24d
+refptr: 0
+size: 8
+sign: false
+type: xor
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x4de2de3c
+family: cpu
+---------------
+address: 0x0
+opcode: mod x
+disasm: mod x
+mnemonic: mod
+mask: ffffffffffffffff
+prefix: 0
+id: 11
+bytes: 9c00303f9d338950
+refptr: 0
+size: 8
+sign: false
+type: mod
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x"
+family: cpu
+---------------
+address: 0x0
+opcode: div 0xa8a2926a
+disasm: div 0xa8a2926a
+mnemonic: div
+mask: ffffffffffffffff
+prefix: 0
+id: 4
+bytes: 3400a8fa6a92a2a8
+refptr: 0
+size: 8
+sign: false
+type: div
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0xa8a2926a
+family: cpu
+---------------
+address: 0x0
+opcode: mul 0x4ad2e5be
+disasm: mul 0x4ad2e5be
+mnemonic: mul
+mask: ffffffffffffffff
+prefix: 0
+id: 3
+bytes: 24000f46bee5d24a
+refptr: 0
+size: 8
+sign: false
+type: mul
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x4ad2e5be
+family: cpu
+---------------
+address: 0x0
+opcode: sub x
+disasm: sub x
+mnemonic: sub
+mask: ffffffffffffffff
+prefix: 0
+id: 2
+bytes: 1c00d151908a8dea
+refptr: 0
+size: 8
+sign: false
+type: sub
+cycles: 0
+opex:
+  operands:
+    - type: "reg"
+      value: "x"
+family: cpu
+---------------
+address: 0x0
+opcode: add 0x4251c571
+disasm: add 0x4251c571
+mnemonic: add
+mask: ffffffffffffffff
+prefix: 0
+id: 1
+bytes: 0400da2371c55142
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x4251c571
+family: cpu
+---------------
+address: 0x0
+opcode: lsh 0xfdca0cf0
+disasm: lsh 0xfdca0cf0
+mnemonic: lsh
+mask: ffffffffffffffff
+prefix: 0
+id: 8
+bytes: 64008ae5f00ccafd
+refptr: 0
+size: 8
+sign: false
+type: shl
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0xfdca0cf0
+family: cpu
+--------------
+address: 0x0
+opcode: rsh 0x7edebee9
+disasm: rsh 0x7edebee9
+mnemonic: rsh
+mask: ffffffffffffffff
+prefix: 0
+id: 9
+bytes: 7400fa6fe9bede7e
+refptr: 0
+size: 8
+sign: false
+type: shr
+cycles: 0
+opex:
+  operands:
+    - type: "imm"
+      value: 0x7edebee9
+family: cpu
+---------------
+address: 0x0
+opcode: neg
+disasm: neg
+mnemonic: neg
+mask: ffffffffffffffff
+prefix: 0
+id: 10
+bytes: 84004f0fc94a72ff
+refptr: 0
+size: 8
+sign: false
+type: unk
+cycles: 0
+opex:
+  operands: []
+family: cpu
+---------------
+address: 0x0
+opcode: ja +0xd52cc837
+disasm: ja +0xd52cc837
+mnemonic: ja
+mask: ff00000000000000
+prefix: 0
+id: 69
+bytes: 0500d4bd37c82cd5
+refptr: 0
+size: 8
+sign: false
+type: jmp
+cycles: 0
+opex:
+  operands:
+    - type: "off"
+      value: 0xd52cc837
+jump: 0xa96641c0
+family: cpu
+---------------
+address: 0x0
+opcode: tax
+disasm: tax
+mnemonic: tax
+mask: ffffffffffffffff
+prefix: 0
+id: 115
+bytes: 0700e8e848e2842a
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands: []
+family: cpu
+----------------
+address: 0x0
+opcode: txa
+disasm: txa
+mnemonic: txa
+mask: ffffffffffffffff
+prefix: 0
+id: 116
+bytes: 8700172a9ad6b68f
+refptr: 0
+size: 8
+sign: false
+type: mov
+cycles: 0
+opex:
+  operands: []
+family: cpu
+----------------
+EOF
+RUN

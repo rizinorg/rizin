@@ -1,5 +1,6 @@
-.Dd Jan 24, 2024
+.Dd January 24, 2024
 .Dt RZ_RUN 1
+.Os
 .Sh NAME
 .Nm rz-run
 .Nd rizin utility to run programs in custom environments
@@ -10,25 +11,29 @@
 .Sh DESCRIPTION
 This command is part of the Rizin project.
 .Pp
-This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default file descriptors.
-.Pp
+This program is used as a launcher for running programs
+with different environment, arguments, permissions, directories
+and overridden default file descriptors.
 .Bl -tag -width Fl
 .It Fl l
 List all the supported profile directives.
-.Pp
 .It Fl t
-Output a base template profile. Try rz-run -d > profile.rz
-.Pp
+Output a base template profile.
+Try rz-run -d > profile.rz
 .It Fl w
-Show the terminal name and wait for a connection from another process. Try rz-run stdio=<ttypath> program=/bin/sh
+Show the terminal name and wait for a connection from another process.
+Try rz-run stdio=<ttypath> program=/bin/sh
 .El
 .Pp
-The program accepts a single argument which is the filename of the configuration file to run the program.
+The program accepts a single argument
+which is the filename of the configuration file to run the program.
 .Pp
-It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
+It is useful when you have to run a program
+using long arguments or pass long data to stdin
+or things like that usually required for exploiting crackmes :)
 .Sh DIRECTIVES
-.Pp
-The rrz (rz-run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
+The rrz (rz-run) configuration file accepts the following directives,
+described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
 .It Ar arg[0-511]
 Set value for argument N passed to the program
@@ -49,7 +54,9 @@ Use a pty for connection over socket (with connect/listen)
 .It Ar envfile
 Set a file with lines like `var=value` to be used as env
 .It Ar fork
-Used with the listen option, allow to spawn a different process for each connection. Ignored when debugging.
+Used with the listen option,
+allow to spawn a different process for each connection.
+Ignored when debugging.
 .It Ar input
 Set string to be passed to the program via stdin
 .It Ar libpath
@@ -67,7 +74,8 @@ Set the niceness level of the process
 .It Ar preload
 Preload a library (not supported on Windows, only linux,osx,bsd)
 .It Ar daemon
-Set to false by default, otherwise it will run the program in background, detached from the terminal.
+Set to false by default,
+otherwise it will run the program in background, detached from the terminal.
 .It Ar program
 Path to program to be executed
 .It Ar pid
@@ -79,7 +87,8 @@ Path to the library to be executed
 .It Ar runlib.fcn
 Function name to call from runlib library
 .It Ar rzpreload
-Preload with librz, kill -USR1 to get an rizin shell or -USRZ to spawn a webserver in a thread
+Preload with librz,
+kill -USR1 to get an rizin shell or -USRZ to spawn a webserver in a thread
 .It Ar setenv
 Set value for given environment variable
 .It Ar setegid
@@ -113,7 +122,6 @@ Unset one environment variable
 .El
 .Sh VALUE PREFIXES
 Every value in this configuration file can contain a special
-.Pp
 .Bl -tag -width Fl
 .It Ar @filename
 Slurp contents of file and put them inside the key
@@ -166,24 +174,26 @@ Debugging a program redirecting io to another terminal
   ## Or you can use -R to set a key=value
   rizin \-R stdio=/dev/ttys010 -d ls
 .Pp
-You can also use the -- flag to specify program and arguments in a more natural way:
+You can also use the
+.Ic --
+flag to specify program and arguments in a more natural way:
 .Pp
-.Nm rz-run Cm timeout=2 Ar -- sleep 4
+.Nm rz-run Cm timeout=2 Ar
+.Ic --
+sleep 4
 .Pp
 Run a library function
 .Pp
 .Nm rz-run Cm runlib=/lib/libc-2.25.so Cm runlib.fcn=system Cm arg1="ls /"
 .Sh SEE ALSO
-.Pp
-.Xr rizin(1) ,
-.Xr rz-hash(1) ,
-.Xr rz-find(1) ,
-.Xr rz-bin(1) ,
-.Xr rz-diff(1) ,
-.Xr rz-gg(1) ,
-.Xr rz-asm(1) ,
+.Xr rizin 1 ,
+.Xr rz-asm 1 ,
+.Xr rz-bin 1 ,
+.Xr rz-diff 1 ,
+.Xr rz-find 1 ,
+.Xr rz-gg 1 ，
+.Xr rz-hash 1
 .Sh AUTHORS
-.Pp
-pancake <pancake@nopcode.org>
+.An pancake <pancake@nopcode.org>
 .Pp
 byteninjaa0

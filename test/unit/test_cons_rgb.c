@@ -23,15 +23,15 @@ bool test_rgb_str(void) {
 	color.a = 255;
 
 	RzCons *c = rz_cons_new();
-	rz_cons_rgb_str(buf, sizeof(buf), &color);
+	rz_cons_rgb_str(c, buf, sizeof(buf), &color);
 
 	mu_assert_streq(buf, "", "Disabled color mode");
 
 	c->context->color_mode = COLOR_MODE_16M;
-	rz_cons_rgb_str(buf, sizeof(buf), &color);
+	rz_cons_rgb_str(c, buf, sizeof(buf), &color);
 	mu_assert_streq(buf, "\x1b[38;2;255;255;255m", "16M color mode");
 
-	rz_cons_free();
+	rz_cons_free(c);
 	mu_end;
 }
 

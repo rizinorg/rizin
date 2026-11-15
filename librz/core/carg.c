@@ -21,7 +21,7 @@ RZ_DEPRECATE RZ_API ut64 rz_core_arg_get(RzCore *core, const char *cc, int num) 
 	if (!RZ_STR_ISEMPTY(cc)) {
 		if (!strcmp(cc, "stdcall") || !strcmp(cc, "pascal")) {
 			ut64 sp = rz_reg_get_value_by_role(rz_core_reg_default(core), RZ_REG_NAME_SP);
-			int bits = rz_core_is_debug(core) ? core->dbg->bits : core->analysis->bits;
+			int bits = rz_core_is_debug(core) ? core->dbg->bits : rz_analysis_get_bits(core->analysis);
 			if (bits) {
 				ut64 n64;
 				sp += 8; // skip return address, assume we are inside the call
@@ -71,44 +71,29 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, cons
 	if (!fcn_name || !arg || !analysis) {
 		return;
 	}
-	arg->name = rz_type_func_args_name(analysis->typedb, fcn_name, arg_num);
-	arg->orig_c_type = rz_type_func_args_type(analysis->typedb, fcn_name, arg_num);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	arg->name = rz_type_func_args_name(typedb, fcn_name, arg_num);
+	arg->orig_c_type = rz_type_func_args_type(typedb, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
 		RZ_LOG_ERROR("core: missing type for function argument (%s)\n", fcn_name);
 		return;
 	}
 	arg->c_type = arg->orig_c_type;
-	arg->fmt = rz_type_as_format(analysis->typedb, arg->c_type);
-	arg->size = rz_type_db_get_bitsize(analysis->typedb, arg->c_type) / 8;
+	arg->fmt = rz_type_as_format(typedb, arg->c_type);
+	arg->size = rz_type_db_get_bitsize(typedb, arg->c_type) / 8;
 	arg->cc_source = rz_analysis_cc_arg(analysis, cc, arg_num);
-}
-
-RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
-	const char *str = func_name;
-	const char *name = func_name;
-	if (rz_type_func_exist(analysis->typedb, func_name)) {
-		return rz_str_dup(func_name);
-	}
-	while ((str = strchr(str, '.'))) {
-		name = str + 1;
-		str++;
-	}
-	if (rz_type_func_exist(analysis->typedb, name)) {
-		return rz_str_dup(name);
-	}
-	return rz_analysis_function_name_guess(analysis->typedb, (char *)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
 	return (width == 8) ? rz_read_ble64(buf, endian) : (ut64)rz_read_ble32(buf, endian);
 }
 
-static void print_arg_str(int argcnt, const char *name, bool color) {
+static void print_arg_str(RzCons *cons, int argcnt, const char *name, bool color) {
 	if (color) {
-		rz_cons_printf(Color_BYELLOW " arg [%d]" Color_RESET " -" Color_BCYAN " %s" Color_RESET " : ",
+		rz_cons_printf(cons, Color_BYELLOW " arg [%d]" Color_RESET " -" Color_BCYAN " %s" Color_RESET " : ",
 			argcnt, name);
 	} else {
-		rz_cons_printf(" arg [%d] -  %s : ", argcnt, name);
+		rz_cons_printf(cons, " arg [%d] -  %s : ", argcnt, name);
 	}
 }
 
@@ -117,7 +102,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 	ut64 bval = src;
 	int i;
 	int endian = core->print->big_endian;
-	int width = (core->analysis->bits == 64) ? 8 : 4;
+	int width = (rz_analysis_get_bits(core->analysis) == 64) ? 8 : 4;
 	int bsize = RZ_MIN(64, core->blocksize);
 
 	ut8 *buf = malloc(bsize);
@@ -133,9 +118,9 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 	}
 	if (onstack || ((opt != 'd' && opt != 'x') && !onstack)) {
 		if (color) {
-			rz_cons_printf(Color_BGREEN "0x%08" PFMT64x Color_RESET " --> ", bval);
+			rz_cons_printf(core->cons, Color_BGREEN "0x%08" PFMT64x Color_RESET " --> ", bval);
 		} else {
-			rz_cons_printf("0x%08" PFMT64x " --> ", bval);
+			rz_cons_printf(core->cons, "0x%08" PFMT64x " --> ", bval);
 		}
 		rz_io_read_at_mapped(core->io, bval, buf, bsize);
 	}
@@ -145,56 +130,56 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 			rz_io_read_at_mapped(core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
-	rz_cons_print(color ? Color_BGREEN : "");
+	rz_cons_print(core->cons, color ? Color_BGREEN : "");
 	switch (opt) {
 	case 'z': // Null terminated string
-		rz_cons_print(color ? Color_RESET Color_BWHITE : "");
-		rz_cons_print("\"");
+		rz_cons_print(core->cons, color ? Color_RESET Color_BWHITE : "");
+		rz_cons_print(core->cons, "\"");
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
 				break;
 			}
 			ut8 b = buf[i];
 			if (IS_PRINTABLE(b)) {
-				rz_cons_printf("%c", b);
+				rz_cons_printf(core->cons, "%c", b);
 			} else {
-				rz_cons_printf("\\x%02x", b);
+				rz_cons_printf(core->cons, "\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-				rz_cons_print("..."); // To show string is truncated
+				rz_cons_print(core->cons, "..."); // To show string is truncated
 			}
 		}
-		rz_cons_print("\"");
-		rz_cons_newline();
+		rz_cons_print(core->cons, "\"");
+		rz_cons_newline(core->cons);
 		break;
 	case 'd': // integer
 	case 'x':
-		rz_cons_printf("0x%08" PFMT64x, bval);
-		rz_cons_newline();
+		rz_cons_printf(core->cons, "0x%08" PFMT64x, bval);
+		rz_cons_newline(core->cons);
 		break;
 	case 'c': // char
-		rz_cons_print("\'");
+		rz_cons_print(core->cons, "\'");
 		ut8 ch = buf[0];
 		if (IS_PRINTABLE(ch)) {
-			rz_cons_printf("%c", ch);
+			rz_cons_printf(core->cons, "%c", ch);
 		} else {
-			rz_cons_printf("\\x%02x", ch);
+			rz_cons_printf(core->cons, "\\x%02x", ch);
 		}
-		rz_cons_print("\'");
-		rz_cons_newline();
+		rz_cons_print(core->cons, "\'");
+		rz_cons_newline(core->cons);
 		break;
 	case 'p': // pointer
 	{
 		// Try to deref the pointer once again
-		rz_cons_printf("0x%08" PFMT64x, get_buf_val(buf, endian, width));
-		rz_cons_newline();
+		rz_cons_printf(core->cons, "0x%08" PFMT64x, get_buf_val(buf, endian, width));
+		rz_cons_newline(core->cons);
 		break;
 	}
 	default:
 		// TODO: support types like structs and unions
-		rz_cons_println("unk_format");
+		rz_cons_println(core->cons, "unk_format");
 	}
-	rz_cons_print(Color_RESET);
+	rz_cons_print(core->cons, Color_RESET);
 	free(buf);
 }
 
@@ -206,11 +191,12 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 	if (!core->analysis) {
 		return;
 	}
-	if (!core->analysis->reg) {
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	if (!rreg) {
 		return;
 	}
-	const char *pc = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	ut64 cur_addr = rz_reg_getv(core->analysis->reg, pc);
+	const char *pc = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
+	ut64 cur_addr = rz_reg_getv(rreg, pc);
 	RzAnalysisOp *op = rz_core_analysis_op(core, cur_addr, RZ_ANALYSIS_OP_MASK_BASIC);
 	if (!op) {
 		return;
@@ -242,7 +228,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 				if (arg->cc_source && !strncmp(arg->cc_source, "stack", 5)) {
 					onstack = true;
 				}
-				print_arg_str(argcnt, arg->name, color);
+				print_arg_str(core->cons, argcnt, arg->name, color);
 				print_format_values(core, arg->fmt, onstack, arg->src, color);
 				argcnt++;
 			}
@@ -253,9 +239,9 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			const char *cc = rz_analysis_cc_default(core->analysis); // or use "reg" ?
 			for (i = 0; i < nargs; i++) {
 				ut64 v = rz_core_arg_get(core, cc, i);
-				print_arg_str(i, "", color);
-				rz_cons_printf("0x%08" PFMT64x, v);
-				rz_cons_newline();
+				print_arg_str(core->cons, i, "", color);
+				rz_cons_printf(core->cons, "0x%08" PFMT64x, v);
+				rz_cons_newline(core->cons);
 			}
 			//} else {
 			//	print_arg_str (0, "void", color);
@@ -278,13 +264,15 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}
-	char *key = resolve_fcn_name(core->analysis, fcn_name);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	char *key = rz_analysis_function_name_resolve(core->analysis, fcn_name);
 	if (!key) {
 		return NULL;
 	}
 	RzList *list = rz_list_newf((RzListFree)rz_analysis_fcn_arg_free);
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	int nargs = rz_type_func_args_count(core->analysis->typedb, key);
+	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+	int nargs = rz_type_func_args_count(typedb, key);
 	if (!rz_analysis_cc_func(core->analysis, key)) {
 		rz_list_free(list);
 		return NULL;
@@ -298,8 +286,8 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 		return NULL;
 	}
 	int i;
-	ut64 spv = rz_reg_getv(core->analysis->reg, sp);
-	ut64 s_width = (core->analysis->bits == 64) ? 8 : 4;
+	ut64 spv = rz_reg_getv(rreg, sp);
+	ut64 s_width = (rz_analysis_get_bits(core->analysis) == 64) ? 8 : 4;
 	if (src && !strcmp(src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RzAnalysisFuncArg *arg = RZ_NEW0(RzAnalysisFuncArg);
@@ -329,7 +317,7 @@ RZ_API RZ_OWN RzList /*<RzAnalysisFuncArg *>*/ *rz_core_get_func_args(RzCore *co
 					cs = rz_analysis_cc_default(core->analysis);
 				}
 				if (cs) {
-					arg->src = rz_reg_getv(core->analysis->reg, cs);
+					arg->src = rz_reg_getv(rreg, cs);
 				}
 			}
 			rz_list_append(list, arg);

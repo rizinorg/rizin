@@ -312,7 +312,8 @@ static char *subvar_stack(RzParse *p, RzAnalysisOp *op, RZ_NULLABLE RzAnalysisFu
 	} else {
 		// match e.g. rbp - 0x42
 		// capturing "rbp", "-", "0x42"
-		re_str = "([re][0-9a-z][0-9a-z])\\s*(\\+|-)\\s*((0x)?[0-9a-f]+h?)";
+		// A register such as edx must not be mistaken for the hex number ed.
+		re_str = "([re][0-9a-z][0-9a-z])\\s*(\\+|-)\\s*((0x)?[0-9a-f]+h?)(?![0-9a-z_])";
 		group_idx_reg = 1;
 		group_idx_sign = 2;
 		group_idx_addend = 3;

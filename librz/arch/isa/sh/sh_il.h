@@ -4,7 +4,7 @@
 #ifndef SH_RZIL_H
 #define SH_RZIL_H
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include "disassembler.h"
 
 /**

@@ -163,7 +163,7 @@ RzList /*<char *>*/ *sh_tokenize(const char *assembly, size_t length) {
 	RzListIter *it;
 	rz_list_foreach (tokens, it, buf) {
 		char *repl = rz_str_replace(buf, ",", " + ", 1);
-		rz_list_iter_set_data(it, repl);
+		rz_list_set_val(it, repl);
 	}
 
 	return tokens;

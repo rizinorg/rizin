@@ -7,41 +7,37 @@
 /**
  * \brief Initialize a new RzIterator
  *
- * This function creates a new `RzIterator` object and assigns function pointers for
- * iteration control and cleanup. The created iterator is returned to the caller.
- * If `next` or `u` are NULL, the function logs a warning and return NULL.
+ * This function fills \p iterator with a new iterator and assigns function
+ * pointers for iteration control and cleanup.
+ * If \p next or \p u are NULL, the function logs a warning and returns false.
  *
  * \param next A pointer to the function that defines the 'next' behavior of the iterator.
  * \param free A pointer to the function that is used to free the inner object.
  * \param free_u A pointer to the function that is used to free the user object `u`.
  * \param u A generic pointer to user data.
+ * \param iterator Output parameter, filled with the constructed iterator on success.
  *
- * \return RzIterator* A pointer to the newly created `RzIterator` or NULL if the operation failed.
+ * \return True on success, false on failure.
  */
-RZ_API RZ_OWN RzIterator *rz_iterator_new(
+RZ_API bool rz_iterator_init(
 	RZ_NONNULL rz_iterator_next_cb next,
 	RZ_NULLABLE rz_iterator_free_cb free,
 	RZ_NULLABLE rz_iterator_free_cb free_u,
-	RZ_NONNULL RZ_OWN void *u) {
+	RZ_NONNULL RZ_OWN void *u,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
 	if (!(next && u)) {
 		rz_warn_if_reached();
-		goto cleanup;
-	}
-	RzIterator *it = RZ_NEW0(RzIterator);
-	if (!it) {
-		goto cleanup;
+		if (free_u) {
+			free_u(u);
+		}
+		return false;
 	}
 
-	it->next = next;
-	it->u = u;
-	it->free = free;
-	it->free_u = free_u;
-	return it;
-cleanup:
-	if (free_u) {
-		free_u(u);
-	}
-	return NULL;
+	iterator->next = next;
+	iterator->u = u;
+	iterator->free = free;
+	iterator->free_u = free_u;
+	return true;
 }
 
 /**
@@ -64,7 +60,7 @@ RZ_API RZ_BORROW void *rz_iterator_next(RZ_NONNULL RZ_BORROW RzIterator *it) {
 	return it->cur;
 }
 
-RZ_API void rz_iterator_free(RzIterator *it) {
+RZ_API void rz_iterator_fini(RzIterator *it) {
 	if (!it) {
 		return;
 	}
@@ -74,5 +70,4 @@ RZ_API void rz_iterator_free(RzIterator *it) {
 	if (it->free_u) {
 		it->free_u(it->u);
 	}
-	free(it);
 }

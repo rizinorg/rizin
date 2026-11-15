@@ -301,7 +301,7 @@ static int amd29k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 	op->eob = false;
 
 	ut32 cpu_id = AMD29K_29000;
-	if (RZ_STR_EQ(a->cpu, "29050")) {
+	if (rz_analysis_is_cpu(a, "29050")) {
 		cpu_id = AMD29K_29050;
 	}
 

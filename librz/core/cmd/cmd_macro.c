@@ -9,11 +9,13 @@ static bool macro_print_cb(RzCmd *cmd, const RzCmdMacro *macro, void *user) {
 	RzCmdStateOutput *state = (RzCmdStateOutput *)user;
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("(%s", macro->name);
-		for (int i = 0; i < macro->nargs; i++) {
-			rz_cons_printf(" %s", macro->args[i]);
+		if (cmd->has_cons) {
+			rz_cons_printf(cmd->core->cons, "(%s", macro->name);
+			for (int i = 0; i < macro->nargs; i++) {
+				rz_cons_printf(cmd->core->cons, " %s", macro->args[i]);
+			}
+			rz_cons_printf(cmd->core->cons, "%s)\n", macro->code);
 		}
-		rz_cons_printf("%s)\n", macro->code);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pj_o(state->d.pj);

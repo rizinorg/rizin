@@ -267,6 +267,9 @@ static RzSubprocessOutput *run_rz_test(const RunRzTest *rrt, const char *default
 	RzSubprocessOutput *out = rrt->runner(executable, args.v.a, rz_pvector_len(&args), envvars, envvals, env_size, rrt->timeout_ms, rrt->user);
 	rz_pvector_clear(&args);
 
+	free(envvals);
+	free(envvars);
+
 	free(executable);
 #if __WINDOWS__
 	free(wcmds);
@@ -399,6 +402,16 @@ RZ_API bool rz_test_check_jq_available(void) {
 	return invalid_detected && valid_detected;
 }
 
+/**
+ * \brief Checks if the tool \p exec is available by running it with -v.
+ *
+ * NOTE: If the tool is built with LSAN enabled and LSAN returns a
+ * code !=0 on `exec -v` due to a leak, this function will report the tool as broken!
+ *
+ * \param exec The tool to check.
+ *
+ * \return True if the tool existed with return code 0, false otherwise.
+ */
 RZ_API bool rz_test_check_tool_available(RZ_NULLABLE const char *exec) {
 	if (RZ_STR_ISEMPTY(exec)) {
 		return false;

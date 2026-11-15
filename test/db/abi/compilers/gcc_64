@@ -2,31 +2,15 @@ NAME=ELF_ABI : gcc O0 load
 FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
 CMDS=<<EOF
 s
+iI~arch,binsz,bits
+id~?
 EOF
 EXPECT=<<EOF
 0x401330
-EOF
-RUN
-
-NAME=ELF_ABI : gcc O0 arch/bits/size ground truth
-FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
-CMDS=<<EOF
-iI~arch,binsz,bits
-EOF
-EXPECT=<<EOF
 arch     x86
 binsz    0x0001e2bf
 bits     64
 machine  AMD x86-64 architecture
-EOF
-RUN
-
-NAME=ELF_ABI : gcc O0 dwarf info
-FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_O0
-CMDS=<<EOF
-id~?
-EOF
-EXPECT=<<EOF
 26000
 EOF
 RUN
@@ -91,18 +75,10 @@ FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Os
 ARGS=-A
 CMDS=<<EOF
 fsl~functions
-EOF
-EXPECT=<<EOF
-   85 * functions
-EOF
-RUN
-
-NAME=ELF_ABI : gcc Os size
-FILE=bins/abi_bins/elf/compilers/gcc/echo_gcc_Os
-CMDS=<<EOF
 iI~binsz
 EOF
 EXPECT=<<EOF
+   85 * functions
 binsz    0x00028ded
 EOF
 RUN

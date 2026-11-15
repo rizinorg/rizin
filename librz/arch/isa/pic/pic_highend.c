@@ -7,12 +7,13 @@
 #include "pic_highend.h"
 
 /**
- * \file High-end (e.g. PIC18CXXX) instruction set
+ * \file
+ * High-end (e.g. PIC18CXXX) instruction set
  */
 
 // instruction classification according to the argument types
 
-static char *fsr[] = { "fsr0", "fsr1", "fsr2" };
+static const char *const fsr[] = { "fsr0", "fsr1", "fsr2" };
 
 typedef struct {
 	PicHighendOpcode code;
@@ -590,10 +591,10 @@ bool pic_highend_disasm_op(PicHighendOp *op, ut64 addr, const ut8 *buff, ut64 le
 	return true;
 }
 
-int pic_highend_disassemble(RzAsm *a, RzAsmOp *asm_op, const ut8 *b, int blen) {
+int pic_highend_disassemble(RzAsmOp *asm_op, ut64 addr, const ut8 *b, int blen) {
 	asm_op->size = 2;
 	PicHighendOp op = { 0 };
-	if (!pic_highend_disasm_op(&op, a->pc, b, blen) ||
+	if (!pic_highend_disasm_op(&op, addr, b, blen) ||
 		op.code == PIC_HIGHEND_OPCODE_INVALID) {
 		rz_asm_op_set_asm(asm_op, "invalid");
 		return -1;

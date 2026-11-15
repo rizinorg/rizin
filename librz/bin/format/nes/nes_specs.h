@@ -10,7 +10,13 @@
 
 #define PRG_PAGE_SIZE 0x4000
 #define CHR_PAGE_SIZE 0x2000
-#define INES_HDR_SIZE sizeof(ines_hdr)
+#define INES_HDR_SIZE 16
+
+#define INES_MAPPER(cb0, cb1)   (((cb1) & 0xF0) | ((cb0) >> 4))
+#define INES_MIRROR(cb0)        ((cb0) & 1)
+#define INES_BATTERY(cb0)       ((cb0) & 2)
+#define INES_TRAINER(cb0)       ((cb0) & 4)
+#define INES_ALT_NAMETABLE(cb0) ((cb0) & 8)
 
 #define RAM_START_ADDRESS 0x0000
 #define RAM_SIZE          0x0800
@@ -65,16 +71,14 @@
 #define JOYPAD_PORT1 0x4016
 #define JOYPAD_PORT2 0x4017
 
-RZ_PACKED(
-	typedef struct {
-		char id[0x4]; // NES\x1A
-		ut8 prg_page_count_16k; // number of PRG-ROM pages
-		ut8 chr_page_count_8k; // number of CHR-ROM pages
-		ut8 rom_control_byte_0; // flags describing ROM image
-		ut8 rom_control_byte_1; // flags describing ROM image
-		ut8 ram_bank_count_8k; // size of PRG RAM
-		ut8 reserved[7]; // zero filled
-	})
-ines_hdr;
+typedef struct {
+	char id[0x4]; // NES\x1A
+	ut8 prg_page_count_16k; // number of PRG-ROM pages
+	ut8 chr_page_count_8k; // number of CHR-ROM pages
+	ut8 rom_control_byte_0; // flags describing ROM image
+	ut8 rom_control_byte_1; // flags describing ROM image
+	ut8 ram_bank_count_8k; // size of PRG RAM
+	ut8 reserved[7]; // zero filled
+} ines_hdr;
 
 #endif // _NES_H

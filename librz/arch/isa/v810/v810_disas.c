@@ -266,6 +266,9 @@ static int decode_bit_op(const ut16 instr, struct v810_cmd *cmd) {
 	ut8 subop;
 
 	subop = REG1(instr);
+	if (subop >= RZ_ARRAY_SIZE(bit_instrs)) {
+		return 0;
+	}
 	snprintf(cmd->instr, V810_INSTR_MAXLEN - 1, "%s", bit_instrs[subop]);
 
 	return 2;

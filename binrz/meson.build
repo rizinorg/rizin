@@ -1,6 +1,7 @@
 if get_option('blob')
   subdir('blob')
 else
+  subdir('rz-ar')
   subdir('rz-hash')
   subdir('rz-run')
   subdir('rz-asm')
@@ -17,6 +18,7 @@ if get_option('enable_rz_test')
 endif
 
 install_man(
+  'man/rz-ar.1',
   'man/rz-bin.1',
   'man/rizin.1',
   'man/rz-diff.1',

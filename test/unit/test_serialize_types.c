@@ -67,17 +67,19 @@ bool test_types_save() {
 	RzType *mtype = rz_type_parse_string_single(typedb->parser, "char *", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
-	member.size = rz_type_db_get_bitsize(typedb, mtype);
-	mu_assert_eq(member.size, 64, "member type size");
+	ut64 gillian_bitsize = rz_type_db_get_bitsize(typedb, mtype);
+	mu_assert_eq(gillian_bitsize, 64, "member type size");
+	member.size = 0;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	// struct.junker.seed
 	member.name = strdup("seed");
-	member.offset = member.size / 8; // size of the previous member
+	member.offset = gillian_bitsize / 8;
 	mtype = rz_type_parse_string_single(typedb->parser, "uint64_t", &error_msg);
 	mu_assert_notnull(mtype, "member type parsing");
 	member.type = mtype;
-	mu_assert_eq(member.size, 64, "member type size");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, mtype), 64, "member type size");
+	member.size = 0;
 	rz_vector_push(&type->struct_data.members, &member);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -93,7 +95,7 @@ bool test_types_save() {
 	mtype = rz_type_parse_string_single(typedb->parser, "int", &error_msg);
 	mu_assert_notnull(mtype, "\"random\" member type parsing");
 	mumber.type = mtype;
-	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
+	mumber.size = 0;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	// union.snatcher.hajile
@@ -102,7 +104,7 @@ bool test_types_save() {
 	mtype = rz_type_parse_string_single(typedb->parser, "uint32_t", &error_msg);
 	mu_assert_notnull(mtype, "\"hajile\" member type parsing");
 	mumber.type = mtype;
-	mumber.size = rz_type_db_get_bitsize(typedb, mtype);
+	mumber.size = 0;
 	rz_vector_push(&type->union_data.members, &mumber);
 
 	rz_type_db_save_base_type(typedb, type);
@@ -266,9 +268,70 @@ bool test_types_load() {
 	mu_end;
 }
 
+bool test_types_load_enum_underlying_forward() {
+	// Regression test for the PR #6433 review concern: an enum may fix its
+	// underlying type ("enum E : T"), serialized as "enum.<name>.@type". Base
+	// types are read from the sdb in an arbitrary (hash) order, so T may not have
+	// been loaded yet when the enum is deserialized. The underlying type must be
+	// kept as a lazily-resolved identifier (not dropped) and must resolve once the
+	// referenced type is available.
+	RzTypeDB *typedb = rz_type_db_new();
+	rz_type_db_set_cpu(typedb, "x86");
+	rz_type_db_set_bits(typedb, 64);
+	rz_type_db_set_os(typedb, "linux");
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	Sdb *db = sdb_new0();
+	// An enum whose underlying type is a user typedef defined in the same sdb.
+	// Whichever of the two records is deserialized first, the underlying type must
+	// end up resolved to the typedef's width.
+	sdb_set(db, "narciso", "enum");
+	sdb_set(db, "enum.narciso", "GILLIAN,JAMIE");
+	sdb_set(db, "enum.narciso.GILLIAN", "0x1");
+	sdb_set(db, "enum.narciso.JAMIE", "0x2");
+	sdb_set(db, "enum.narciso.0x1", "GILLIAN");
+	sdb_set(db, "enum.narciso.0x2", "JAMIE");
+	sdb_set(db, "enum.narciso.@type", "metal_gear_t");
+	sdb_set(db, "metal_gear_t", "typedef");
+	sdb_set(db, "typedef.metal_gear_t", "int64_t");
+	// An enum whose underlying type is absent from the sdb entirely: the strongest
+	// form of "not loaded yet". The underlying must still be kept as an identifier.
+	sdb_set(db, "raiden", "enum");
+	sdb_set(db, "enum.raiden", "SNAKE");
+	sdb_set(db, "enum.raiden.SNAKE", "0x0");
+	sdb_set(db, "enum.raiden.0x0", "SNAKE");
+	sdb_set(db, "enum.raiden.@type", "ghost_t");
+
+	mu_assert_true(rz_serialize_types_load(db, typedb, NULL), "types load");
+
+	// enum referencing a typedef present in the same sdb: underlying kept and
+	// resolved, independent of the deserialization order of the two records.
+	RzBaseType *narciso = rz_type_db_get_base_type(typedb, "narciso");
+	mu_assert_notnull(narciso, "narciso loaded");
+	mu_assert_eq(narciso->kind, RZ_BASE_TYPE_KIND_ENUM, "narciso is an enum");
+	mu_assert_notnull(narciso->type, "narciso keeps its underlying type");
+	mu_assert_eq(rz_type_db_get_bitsize(typedb, narciso->type), 64, "underlying resolves to 64-bit");
+	mu_assert_eq(rz_type_db_base_get_bitsize(typedb, narciso), 64, "enum sized from its underlying type");
+
+	// enum referencing a type that is not in the sdb at all: the underlying type is
+	// still kept as an (as-yet-unresolved) identifier, not dropped.
+	RzBaseType *raiden = rz_type_db_get_base_type(typedb, "raiden");
+	mu_assert_notnull(raiden, "raiden loaded");
+	mu_assert_eq(raiden->kind, RZ_BASE_TYPE_KIND_ENUM, "raiden is an enum");
+	mu_assert_notnull(raiden->type, "raiden keeps its underlying type even when unresolved");
+	mu_assert_eq(raiden->type->kind, RZ_TYPE_KIND_IDENTIFIER, "underlying kept as identifier");
+	mu_assert_streq(raiden->type->identifier.name, "ghost_t", "underlying identifier name kept");
+
+	sdb_free(db);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_types_save);
 	mu_run_test(test_types_load);
+	mu_run_test(test_types_load_enum_underlying_forward);
 	return tests_passed != tests_run;
 }
 

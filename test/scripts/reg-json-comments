@@ -1,0 +1,5 @@
+# profile "quoted" C:\regs
+=PC pc
+	# indented # comment
+gpr pc .32 0 0 # inline comment
+# final comment

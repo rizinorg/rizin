@@ -159,7 +159,7 @@ bool test_rz_buf_mmap(void) {
 	rz_xwrite(fd, content, length);
 	close(fd);
 
-	b = rz_buf_new_mmap(filename, O_RDWR, 0);
+	b = rz_buf_new_mmap(filename, O_RDWR, 0, NULL);
 	mu_assert_notnull(b, "rz_buf_new_mmap failed");
 
 	if (test_buf(b) != MU_PASSED) {
@@ -175,7 +175,7 @@ bool test_rz_buf_mmap(void) {
 	free(filename);
 
 	filename = rz_file_temp(NULL);
-	b = rz_buf_new_mmap(filename, O_RDWR | O_CREAT, 0644);
+	b = rz_buf_new_mmap(filename, O_RDWR | O_CREAT, 0644, NULL);
 	mu_assert_notnull(b, "buffer mmaped should be created");
 
 	st64 r = rz_buf_write(b, (const ut8 *)content, length);
@@ -202,6 +202,7 @@ bool test_rz_buf_io_fd(void) {
 	const int length = 23;
 
 	RzIO *io = rz_io_new();
+	io->ff = true;
 	char *tmpfile = rz_file_temp(NULL);
 	char *filename = rz_str_newf("file://%s", tmpfile);
 	free(tmpfile);
@@ -1184,22 +1185,26 @@ bool test_rz_buf_get_nstring(void) {
 
 	RzBuffer *b = rz_buf_new_with_bytes(ch, 128);
 
-	char *s = rz_buf_get_nstring(b, 100, 10);
-	mu_assert_null(s, "there is no string with size < 10 (no null terminator)");
+	char *s = rz_buf_get_nstring(b, 0, 10, true);
+	mu_assert_null(s, "there is no string with size < 10 (require null terminator)");
 
-	s = rz_buf_get_nstring(b, 117, 11);
+	s = rz_buf_get_nstring(b, 0, 10, false);
+	mu_assert_notnull(s, "there is no string with size < 10 (ignore null terminator)");
+	mu_assert_streq_free(s, (char *)ch + 117, "the string is the same");
+
+	s = rz_buf_get_nstring(b, 117, 11, true);
 	mu_assert_true(strlen(s) < 11, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 117, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 0, 128);
+	s = rz_buf_get_nstring(b, 0, 128, true);
 	mu_assert_true(strlen(s) < 128, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 96, 50);
+	s = rz_buf_get_nstring(b, 96, 50, true);
 	mu_assert_true(strlen(s) < 50, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
 
-	s = rz_buf_get_nstring(b, 96, 32);
+	s = rz_buf_get_nstring(b, 96, 32, true);
 	mu_assert_true(strlen(s) < 32, "the string length is lower than the max length");
 	mu_assert_streq_free(s, (char *)ch + 96, "the string is the same");
 
@@ -1442,7 +1447,7 @@ bool test_rz_buf_negative(bool use_slice) {
 
 int all_tests() {
 	time_t seed = time(0);
-	printf("Jamie Seed: %llu\n", (unsigned long long)seed);
+	printf("Jamie Seed: %" PFMT64u "\n", (ut64)seed);
 	srand(seed);
 	mu_run_test(test_rz_buf_file);
 	mu_run_test(test_rz_buf_bytes);

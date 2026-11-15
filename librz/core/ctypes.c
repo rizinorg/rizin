@@ -13,6 +13,27 @@
 
 #include "core_private.h"
 
+/**
+ * \brief Print C syntax using the active palette, preserving plain output verbatim.
+ *
+ * Keep highlighting at the display boundary so generated declarations remain
+ * suitable for editors and other callers that need uncolored source.
+ */
+RZ_IPI void rz_core_types_print_c(RZ_NONNULL RzCons *cons, RZ_NONNULL const char *source) {
+	rz_return_if_fail(cons && source);
+	if (!cons->context->color_mode) {
+		rz_cons_print(cons, source);
+		return;
+	}
+	RzAnnotatedCode *code = rz_type_c_highlight(source);
+	if (code && !rz_vector_empty(&code->annotations)) {
+		rz_core_annotated_code_print(code, NULL, cons);
+	} else {
+		rz_cons_print(cons, source);
+	}
+	rz_annotated_code_free(code);
+}
+
 // Calling conventions
 
 // TODO: Technically it doesn't belong in types and `t` commands
@@ -23,7 +44,7 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD: {
 		rz_list_foreach (list, iter, cc) {
-			rz_cons_println(cc);
+			rz_cons_println(core->cons, cc);
 		}
 	} break;
 	case RZ_OUTPUT_MODE_JSON: {
@@ -33,13 +54,16 @@ RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode m
 			rz_core_analysis_cc_print(core, cc, pj);
 		}
 		pj_end(pj);
-		rz_cons_printf("%s\n", pj_string(pj));
+		rz_cons_printf(core->cons, "%s\n", pj_string(pj));
 		pj_free(pj);
 	} break;
 	case RZ_OUTPUT_MODE_LONG: {
 		rz_list_foreach (list, iter, cc) {
 			char *ccexpr = rz_analysis_cc_get(core->analysis, cc);
-			rz_cons_printf("%s\n", ccexpr);
+			if (ccexpr) {
+				rz_core_types_print_c(core->cons, ccexpr);
+				rz_cons_newline(core->cons);
+			}
 			free(ccexpr);
 		}
 	} break;
@@ -80,13 +104,13 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 		if (btype && !rz_vector_empty(&btype->enum_data.cases)) {
 			RzTypeEnumCase *cas;
 			rz_vector_foreach (&btype->enum_data.cases, cas) {
-				rz_cons_printf("%s = 0x%" PFMT64x "\n", cas->name, cas->val);
+				rz_cons_printf(core->cons, "%s = 0x%" PFMT64x "\n", cas->name, cas->val);
 			}
 		}
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -95,7 +119,8 @@ RZ_IPI void rz_core_types_enum_print(RzCore *core, const RzBaseType *btype, RzOu
 }
 
 RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *enumlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_ENUM);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *enumlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_ENUM);
 	RzListIter *it;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -108,7 +133,7 @@ RZ_IPI void rz_core_types_enum_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(enumlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -145,6 +170,7 @@ RZ_IPI RZ_OWN char *rz_core_types_enum_as_c_all(RzTypeDB *typedb, bool multiline
 RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_UNION);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
@@ -156,7 +182,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 			pj_o(pj);
 			RzTypeUnionMember *memb;
 			rz_vector_foreach (&btype->union_data.members, memb) {
-				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+				char *mtype = rz_type_as_string(typedb, memb->type);
 				pj_ks(pj, memb->name, mtype);
 				free(mtype);
 			}
@@ -166,13 +192,17 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 		break;
 	}
 	case RZ_OUTPUT_MODE_LONG: {
-		rz_cons_printf("union %s:\n", btype->name);
+		rz_cons_printf(core->cons, "union %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeUnionMember *memb;
 			rz_vector_foreach (&btype->union_data.members, memb) {
-				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
-				rz_cons_printf("\t%s: %s (size = %" PFMT64d ")\n", memb->name, mtype, size);
+				char *mtype = rz_type_as_string(typedb, memb->type);
+				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
+				rz_cons_printf(core->cons, "\t%s: ", memb->name);
+				if (mtype) {
+					rz_core_types_print_c(core->cons, mtype);
+				}
+				rz_cons_printf(core->cons, " (size = %" PFMT64d ")\n", size);
 				free(mtype);
 			}
 		}
@@ -180,7 +210,7 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -189,7 +219,8 @@ RZ_IPI void rz_core_types_union_print(RzCore *core, const RzBaseType *btype, RzO
 }
 
 RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *unionlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_UNION);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzListIter *it;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -202,7 +233,7 @@ RZ_IPI void rz_core_types_union_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(unionlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -239,6 +270,7 @@ RZ_IPI RZ_OWN char *rz_core_types_union_as_c_all(RzTypeDB *typedb, bool multilin
 RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, RzOutputMode mode, PJ *pj) {
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_STRUCT);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
@@ -249,7 +281,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		pj_o(pj);
 		RzTypeStructMember *memb;
 		rz_vector_foreach (&btype->struct_data.members, memb) {
-			char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
+			char *mtype = rz_type_as_string(typedb, memb->type);
 			pj_ks(pj, memb->name, mtype);
 			free(mtype);
 		}
@@ -258,15 +290,18 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 		break;
 	}
 	case RZ_OUTPUT_MODE_LONG: {
-		rz_cons_printf("struct %s:\n", btype->name);
+		rz_cons_printf(core->cons, "struct %s:\n", btype->name);
 		if (btype && !rz_vector_empty(&btype->union_data.members)) {
 			RzTypeStructMember *memb;
 			ut64 offset = 0;
 			rz_vector_foreach (&btype->struct_data.members, memb) {
-				char *mtype = rz_type_as_string(core->analysis->typedb, memb->type);
-				ut64 size = rz_type_db_get_bitsize(core->analysis->typedb, memb->type) / 8;
-				rz_cons_printf("\t%s: %s (size = %" PFMT64d ", offset = %" PFMT64d ")\n",
-					memb->name, mtype, size, offset);
+				char *mtype = rz_type_as_string(typedb, memb->type);
+				ut64 size = rz_type_db_get_bitsize(typedb, memb->type) / 8;
+				rz_cons_printf(core->cons, "\t%s: ", memb->name);
+				if (mtype) {
+					rz_core_types_print_c(core->cons, mtype);
+				}
+				rz_cons_printf(core->cons, " (size = %" PFMT64d ", offset = %" PFMT64d ")\n", size, offset);
 				offset += size;
 				free(mtype);
 			}
@@ -275,7 +310,7 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -284,7 +319,8 @@ RZ_IPI void rz_core_types_struct_print(RzCore *core, const RzBaseType *btype, Rz
 }
 
 RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *structlist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_STRUCT);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzListIter *it;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -297,7 +333,7 @@ RZ_IPI void rz_core_types_struct_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(structlist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -332,7 +368,8 @@ RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, R
 	rz_return_if_fail(core && btype);
 	rz_return_if_fail(btype->kind == RZ_BASE_TYPE_KIND_TYPEDEF);
 
-	char *typestr = rz_type_as_string(core->analysis->typedb, btype->type);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *typestr = rz_type_as_string(typedb, btype->type);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
 		rz_return_if_fail(pj);
@@ -343,11 +380,15 @@ RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, R
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_printf("%s = %s\n", btype->name, typestr);
+		rz_cons_printf(core->cons, "%s = ", btype->name);
+		if (typestr) {
+			rz_core_types_print_c(core->cons, typestr);
+		}
+		rz_cons_newline(core->cons);
 		break;
 	}
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(btype->name);
+		rz_cons_println(core->cons, btype->name);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -357,7 +398,8 @@ RZ_IPI void rz_core_types_typedef_print(RzCore *core, const RzBaseType *btype, R
 }
 
 RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
-	RzList *typedeflist = rz_type_db_get_base_types_of_kind(core->analysis->typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *typedeflist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_TYPEDEF);
 	RzListIter *it;
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
@@ -370,7 +412,7 @@ RZ_IPI void rz_core_types_typedef_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(typedeflist);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -405,7 +447,8 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 	if (multiline) {
 		multiline_opt = RZ_TYPE_PRINT_MULTILINE;
 	}
-	return rz_type_db_base_type_as_pretty_string(core->analysis->typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	return rz_type_db_base_type_as_pretty_string(typedb, type, multiline_opt | RZ_TYPE_PRINT_END_NEWLINE | RZ_TYPE_PRINT_ANONYMOUS, 1);
 }
 
 /**
@@ -417,7 +460,8 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
-	RzBaseType *btype = rz_type_db_get_base_type(core->analysis->typedb, name);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzBaseType *btype = rz_type_db_get_base_type(typedb, name);
 	if (!btype) {
 		return NULL;
 	}
@@ -432,27 +476,28 @@ RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const
 RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multiline) {
 	rz_return_val_if_fail(core && core->analysis, NULL);
 
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzStrBuf *buf = rz_strbuf_new("");
 	// List all unions in the C format with newlines
-	char *str = rz_core_types_union_as_c_all(core->analysis->typedb, multiline);
+	char *str = rz_core_types_union_as_c_all(typedb, multiline);
 	if (str) {
 		rz_strbuf_append(buf, str);
 		free(str);
 	}
 	// List all structures in the C format with newlines
-	str = rz_core_types_struct_as_c_all(core->analysis->typedb, multiline);
+	str = rz_core_types_struct_as_c_all(typedb, multiline);
 	if (str) {
 		rz_strbuf_append(buf, str);
 		free(str);
 	}
 	// List all typedefs in the C format with newlines
-	str = rz_core_types_typedef_as_c_all(core->analysis->typedb);
+	str = rz_core_types_typedef_as_c_all(typedb);
 	if (str) {
 		rz_strbuf_append(buf, str);
 		free(str);
 	}
 	// List all enums in the C format with newlines
-	str = rz_core_types_enum_as_c_all(core->analysis->typedb, multiline);
+	str = rz_core_types_enum_as_c_all(typedb, multiline);
 	if (str) {
 		rz_strbuf_append(buf, str);
 		free(str);
@@ -462,8 +507,8 @@ RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multili
 
 // Function types
 
-RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
-	rz_return_if_fail(function);
+RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj) {
+	rz_return_if_fail(function && cons);
 	RzCallable *callable = rz_type_func_get(typedb, function);
 	if (!callable) {
 		return;
@@ -492,7 +537,10 @@ RZ_IPI void rz_core_types_function_print(RzTypeDB *typedb, const char *function,
 	} break;
 	default: {
 		char *str = rz_type_callable_as_string(typedb, callable);
-		rz_cons_printf("%s;\n", str);
+		if (str) {
+			rz_core_types_print_c(cons, str);
+			rz_cons_print(cons, ";\n");
+		}
 		free(str);
 	} break;
 	}
@@ -504,21 +552,22 @@ static int compare_function_names(const char *a, const char *b, RZ_UNUSED void *
 }
 
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode) {
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	PJ *pj = (mode == RZ_OUTPUT_MODE_JSON) ? pj_new() : NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_a(pj);
 	}
-	RzList *l = rz_type_function_names(core->analysis->typedb);
+	RzList *l = rz_type_function_names(typedb);
 	rz_list_sort(l, (RzListComparator)compare_function_names, NULL);
 	RzListIter *iter;
 	char *name;
 	rz_list_foreach (l, iter, name) {
-		rz_core_types_function_print(core->analysis->typedb, name, mode, pj);
+		rz_core_types_function_print(core->cons, typedb, name, mode, pj);
 	}
 	rz_list_free(l);
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 }
@@ -529,7 +578,7 @@ static bool nonreturn_print(RzCore *core, RzList /*<char *>*/ *noretl) {
 	RzListIter *it;
 	char *s;
 	rz_list_foreach (noretl, it, s) {
-		rz_cons_println(s);
+		rz_cons_println(core->cons, s);
 	}
 	return true;
 }
@@ -543,13 +592,14 @@ static bool nonreturn_print_json(RzCore *core, RzList /*<char *>*/ *noretl) {
 		pj_s(pj, s);
 	}
 	pj_end(pj);
-	rz_cons_println(pj_string(pj));
+	rz_cons_println(core->cons, pj_string(pj));
 	pj_free(pj);
 	return true;
 }
 
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode) {
-	RzList *noretl = rz_type_noreturn_function_names(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *noretl = rz_type_noreturn_function_names(typedb);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON:
 		nonreturn_print_json(core, noretl);
@@ -564,7 +614,7 @@ RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mod
 // Type formatting
 
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode) {
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	char *fmt = rz_type_format(typedb, name);
 	if (!fmt) {
 		RZ_LOG_ERROR("core: cannot find '%s' type's format\n", name);
@@ -597,16 +647,16 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 		pj_ks(pj, "format", fmt);
 		pj_ki(pj, "size", type_size);
 		pj_end(pj);
-		rz_cons_printf("%s", pj_string(pj));
+		rz_cons_printf(core->cons, "%s", pj_string(pj));
 		pj_free(pj);
 	} break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_cons_printf("%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
+		rz_cons_printf(core->cons, "%s %s (0x%" PFMT64x ") \"%s\"\n", kind, name, type_size, fmt);
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		// FIXME: Not really a standard format
 		// We should think about better representation by default here
-		rz_cons_printf("pf \"%s\"\n", fmt);
+		rz_cons_printf(core->cons, "pf \"%s\"\n", fmt);
 		break;
 	default:
 		break;
@@ -615,7 +665,7 @@ RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMo
 }
 
 RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzList *structlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_STRUCT);
 	RzListIter *it;
 	RzBaseType *btype;
@@ -626,7 +676,7 @@ RZ_IPI void rz_core_types_struct_print_format_all(RzCore *core) {
 }
 
 RZ_IPI void rz_core_types_union_print_format_all(RzCore *core) {
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzList *unionlist = rz_type_db_get_base_types_of_kind(typedb, RZ_BASE_TYPE_KIND_UNION);
 	RzListIter *it;
 	RzBaseType *btype;
@@ -652,9 +702,10 @@ static void set_retval(RzCore *core, ut64 at) {
 	const char *cc = rz_analysis_cc_func(core->analysis, fcn->name);
 	const char *regname = rz_analysis_cc_ret(analysis, cc);
 	if (regname) {
-		RzRegItem *reg = rz_reg_get(analysis->reg, regname, -1);
+		RzReg *rreg = rz_analysis_get_reg(analysis);
+		RzRegItem *reg = rz_reg_get(rreg, regname, -1);
 		if (reg) {
-			rz_reg_set_value(analysis->reg, reg, hint->ret);
+			rz_reg_set_value(rreg, reg, hint->ret);
 		}
 	}
 beach:
@@ -667,7 +718,8 @@ static void set_offset_hint(RzCore *core, RzAnalysisOp *op, RZ_BORROW RzTypePath
 	if (tpath->root->kind != RZ_TYPE_KIND_IDENTIFIER) {
 		return;
 	}
-	char *cmt = (offimm == 0) ? rz_str_dup(tpath->path->path) : rz_type_as_string(core->analysis->typedb, tpath->root);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	char *cmt = (offimm == 0) ? rz_str_dup(tpath->path->path) : rz_type_as_string(typedb, tpath->root);
 	if (offimm > 0) {
 		// Set only the type path as the analysis hint
 		// only and only if the types are the exact match between
@@ -737,18 +789,17 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	bool stack_set = false;
 	bool resolved = false;
 	int dbg_follow = rz_config_get_i(core->config, "dbg.follow");
+	const RzEsilConfig *esil_config = rz_analysis_get_esil_config(core->analysis);
 	RzAnalysisEsil *esil;
-	int iotrap = rz_config_get_i(core->config, "esil.iotrap");
-	int stacksize = rz_config_get_i(core->config, "esil.stack.depth");
-	unsigned int addrsize = rz_config_get_i(core->config, "esil.addr.size");
-	const char *pc_name = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_PC);
-	const char *sp_name = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	RzRegItem *pc = rz_reg_get(core->analysis->reg, pc_name, -1);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	const char *pc_name = rz_reg_get_name(rreg, RZ_REG_NAME_PC);
+	const char *sp_name = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+	RzRegItem *pc = rz_reg_get(rreg, pc_name, -1);
 
-	if (!(esil = rz_analysis_esil_new(stacksize, iotrap, addrsize))) {
+	if (!(esil = rz_analysis_esil_new(esil_config))) {
 		return;
 	}
-	rz_analysis_esil_setup(esil, core->analysis, 0, 0, 0);
+	rz_analysis_esil_setup(esil, core->analysis, core);
 	int i, ret, bsize = RZ_MAX(64, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int maxinstrsz = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
@@ -759,17 +810,17 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 		rz_analysis_esil_free(esil);
 		return;
 	}
-	rz_reg_arena_push(core->analysis->reg);
+	rz_reg_arena_push(rreg);
 	rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_ANY, true);
-	ut64 spval = rz_reg_getv(esil->analysis->reg, sp_name);
+	ut64 spval = rz_reg_getv(rreg, sp_name);
 	if (spval) {
 		// reset stack pointer to initial value
-		RzRegItem *sp = rz_reg_get(esil->analysis->reg, sp_name, -1);
-		ut64 curpc = rz_reg_getv(esil->analysis->reg, pc_name);
+		RzRegItem *sp = rz_reg_get(rreg, sp_name, -1);
+		ut64 curpc = rz_reg_getv(rreg, pc_name);
 		int stacksz = rz_core_get_stacksz(core, fcn->addr, curpc);
 		if (stacksz > 0) {
-			rz_reg_arena_zero(esil->analysis->reg, RZ_REG_TYPE_ANY); // clear prev reg values
-			rz_reg_set_value(esil->analysis->reg, sp, spval + stacksz);
+			rz_reg_arena_zero(rreg, RZ_REG_TYPE_ANY); // clear prev reg values
+			rz_reg_set_value(rreg, sp, spval + stacksz);
 		}
 	} else {
 		// initialize stack
@@ -779,7 +830,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 	rz_config_set_i(core->config, "io.cache", 1);
 	rz_config_set_i(core->config, "dbg.follow", 0);
 	ut64 oldoff = core->offset;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 
 	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
@@ -787,9 +838,9 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 		bb = (RzAnalysisBlock *)*it;
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
-		rz_reg_set_value(esil->analysis->reg, pc, at);
+		rz_reg_set_value(rreg, pc, at);
 		for (i = 0; at < to; i++) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				goto beach;
 			}
 			if (at < bb->addr) {
@@ -818,14 +869,14 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 				if (aop.src[j]) {
 					if (aop.src[j]->type == RZ_ANALYSIS_VAL_REG) {
 						if (aop.src[j]->reg && aop.src[j]->reg->name) {
-							src_addr = rz_reg_getv(esil->analysis->reg, aop.src[j]->reg->name);
+							src_addr = rz_reg_getv(rreg, aop.src[j]->reg->name);
 						}
 						src_imm = 0;
 					} else if (aop.src[j]->type == RZ_ANALYSIS_VAL_MEM) {
 						if (aop.src[j]->reg && aop.src[j]->reg->name) {
-							src_addr = rz_reg_getv(esil->analysis->reg, aop.src[j]->reg->name);
+							src_addr = rz_reg_getv(rreg, aop.src[j]->reg->name);
 							if (aop.src[j]->regdelta && aop.src[j]->regdelta->name) {
-								src_addr += rz_reg_getv(esil->analysis->reg, aop.src[j]->regdelta->name) * aop.src[j]->mul;
+								src_addr += rz_reg_getv(rreg, aop.src[j]->regdelta->name) * aop.src[j]->mul;
 							}
 						}
 						src_imm = aop.src[j]->base + aop.src[j]->delta;
@@ -838,14 +889,14 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 			if (aop.dst) {
 				if (aop.dst->type == RZ_ANALYSIS_VAL_REG) {
 					if (aop.dst->reg && aop.dst->reg->name) {
-						dst_addr = rz_reg_getv(esil->analysis->reg, aop.dst->reg->name);
+						dst_addr = rz_reg_getv(rreg, aop.dst->reg->name);
 					}
 					dst_imm = 0;
 				} else if (aop.dst->type == RZ_ANALYSIS_VAL_MEM) {
 					if (aop.dst->reg && aop.dst->reg->name) {
-						dst_addr = rz_reg_getv(esil->analysis->reg, aop.dst->reg->name);
+						dst_addr = rz_reg_getv(rreg, aop.dst->reg->name);
 						if (aop.dst->regdelta && aop.dst->regdelta->name) {
-							dst_addr += rz_reg_getv(esil->analysis->reg, aop.dst->regdelta->name) * aop.dst->mul;
+							dst_addr += rz_reg_getv(rreg, aop.dst->regdelta->name) * aop.dst->mul;
 						}
 					}
 					dst_imm = aop.dst->base + aop.dst->delta;
@@ -870,7 +921,7 @@ RZ_API void rz_core_global_vars_propagate_types(RzCore *core, RzAnalysisFunction
 			};
 			resolve_global_var_types(core, at, &ctx, ret, &resolved);
 			if (rz_analysis_op_nonlinear(aop.type)) {
-				rz_reg_set_value(esil->analysis->reg, pc, at);
+				rz_reg_set_value(rreg, pc, at);
 				set_retval(core, at - ret);
 			} else {
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
@@ -887,9 +938,9 @@ beach:
 	}
 	rz_core_seek(core, oldoff, true);
 	rz_analysis_esil_free(esil);
-	rz_reg_arena_pop(core->analysis->reg);
+	rz_reg_arena_pop(rreg);
 	rz_core_reg_update_flags(core);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	free(buf);
 }
 
@@ -902,7 +953,8 @@ static int compare_base_types(const RzBaseType *a, const RzBaseType *b, RZ_UNUSE
 RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	RzListIter *it;
 	RzBaseType *btype;
-	RzList *types = rz_type_db_get_base_types(core->analysis->typedb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzList *types = rz_type_db_get_base_types(typedb);
 	rz_list_sort(types, (RzListComparator)compare_base_types, NULL);
 	switch (mode) {
 	case RZ_OUTPUT_MODE_JSON: {
@@ -912,7 +964,7 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 		}
 		pj_a(pj);
 		rz_list_foreach (types, it, btype) {
-			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
 			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
 			pj_o(pj);
 			// rz_str_trim(format_s);
@@ -923,20 +975,20 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 			pj_end(pj);
 		}
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_list_foreach (types, it, btype) {
-			rz_cons_println(btype->name);
+			rz_cons_println(core->cons, btype->name);
 		}
 		break;
 	case RZ_OUTPUT_MODE_LONG:
 		rz_list_foreach (types, it, btype) {
-			ut64 type_size = rz_type_db_base_get_bitsize(core->analysis->typedb, btype);
+			ut64 type_size = rz_type_db_base_get_bitsize(typedb, btype);
 			const char *kind = rz_type_base_type_kind_as_string(btype->kind);
-			rz_cons_printf("%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
+			rz_cons_printf(core->cons, "%s %s (0x%" PFMT64x ")\n", kind, btype->name, type_size);
 		}
 		break;
 	default:
@@ -955,18 +1007,19 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 		return;
 	}
 	char *error_msg = NULL;
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	int result = rz_type_parse_string_stateless(typedb->parser, tmp, &error_msg);
 	if (result && error_msg) {
 		rz_str_trim_tail(error_msg);
 		RZ_LOG_ERROR("core: %s\n", error_msg);
 		free(error_msg);
 	}
+	free(tmp);
 }
 
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 	const char *dir = rz_config_get(core->config, "dir.types");
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (!strcmp(path, "-")) {
 		char *tmp = rz_core_editor(core, "*.h", "");
 		if (tmp) {
@@ -996,7 +1049,7 @@ RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
 
 RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(name, false);
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzBaseType *t = rz_type_db_get_compound_type(typedb, name);
 	if (!t) {
 		return false;
@@ -1014,4 +1067,124 @@ RZ_IPI bool rz_types_open_editor(RzCore *core, RZ_NONNULL const char *name) {
 	}
 	free(str);
 	return result;
+}
+
+/**
+ * \brief Renames the base type \p from into \p to and updates every usage of it
+ *
+ * On top of renaming the base type in the Types DB (which also keeps other
+ * types, function types and `pf` formats consistent, see
+ * rz_type_db_rename_base_type), this updates the type usages that live in the
+ * analysis state: the types of global variables, the function signatures
+ * (return type and arguments) and the function local variables.
+ *
+ * \param core RzCore instance
+ * \param from Current name of the base type to rename
+ * \param to New name for the base type
+ * \return true on success, false if \p from does not exist or \p to is already in use
+ */
+RZ_API bool rz_core_types_rename(RZ_NONNULL RzCore *core, RZ_NONNULL const char *from, RZ_NONNULL const char *to) {
+	rz_return_val_if_fail(core && core->analysis && from && to, false);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	if (!rz_type_db_rename_base_type(typedb, from, to)) {
+		return false;
+	}
+	// Global variables (as reported by `avg`).
+	RzList *globals = rz_analysis_var_global_get_all(core->analysis);
+	if (globals) {
+		RzListIter *it;
+		RzAnalysisVarGlobal *glob;
+		rz_list_foreach (globals, it, glob) {
+			rz_type_rename_references(glob->type, from, to);
+		}
+		rz_list_free(globals);
+	}
+	// Function signatures (return type and arguments) and local variables.
+	RzListIter *fit;
+	RzAnalysisFunction *fcn;
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, fit, fcn) {
+		rz_type_rename_references(fcn->ret_type, from, to);
+		void **vit;
+		rz_pvector_foreach (&fcn->vars, vit) {
+			RzAnalysisVar *var = *vit;
+			if (var) {
+				rz_type_rename_references(var->type, from, to);
+			}
+		}
+	}
+	return true;
+}
+
+/**
+ * \brief Prints all typeclasses, or the types belonging to each typeclass
+ *
+ * \param core RzCore instance
+ * \param mode Output mode: STANDARD lists the typeclass names, LONG/TABLE/JSON
+ *             additionally list the atomic types belonging to each typeclass
+ */
+RZ_IPI void rz_core_types_typeclass_print_all(RzCore *core, RzOutputMode mode) {
+	rz_return_if_fail(core && core->analysis);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzTypeTypeclass tc;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			rz_cons_println(core->cons, rz_type_typeclass_as_string(tc));
+		}
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			rz_cons_printf(core->cons, "%s:\n", rz_type_typeclass_as_string(tc));
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				rz_cons_printf(core->cons, "  %s\n", btype->name);
+			}
+			rz_list_free(types);
+		}
+		break;
+	case RZ_OUTPUT_MODE_TABLE: {
+		RzTable *table = rz_table_new();
+		rz_table_set_columnsf(table, "ss", "typeclass", "type");
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			const char *tcname = rz_type_typeclass_as_string(tc);
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				rz_table_add_rowf(table, "ss", tcname, btype->name);
+			}
+			rz_list_free(types);
+		}
+		char *s = rz_table_tostring(table);
+		rz_cons_print(core->cons, s);
+		free(s);
+		rz_table_free(table);
+		break;
+	}
+	case RZ_OUTPUT_MODE_JSON: {
+		PJ *pj = pj_new();
+		pj_o(pj);
+		for (tc = RZ_TYPE_TYPECLASS_NUM; tc < RZ_TYPE_TYPECLASS_INVALID; tc++) {
+			pj_ka(pj, rz_type_typeclass_as_string(tc));
+			RzList *types = rz_type_typeclass_get_all(typedb, tc);
+			RzListIter *it;
+			RzBaseType *btype;
+			rz_list_foreach (types, it, btype) {
+				pj_s(pj, btype->name);
+			}
+			rz_list_free(types);
+			pj_end(pj);
+		}
+		pj_end(pj);
+		rz_cons_println(core->cons, pj_string(pj));
+		pj_free(pj);
+		break;
+	}
+	default:
+		rz_warn_if_reached();
+		break;
+	}
 }

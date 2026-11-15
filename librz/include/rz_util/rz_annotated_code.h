@@ -78,7 +78,7 @@ typedef struct rz_code_annotation_t {
  */
 typedef struct rz_annotated_code_t {
 	char *code; /**< Decompiled code. RzAnnotatedCode owns this string and it must free it. */
-	RzVector /*<RzCodeAnnotation>*/ annotations; /**< @ref RzVector <RzCodeAnnotation> contains the list of annotations for the decompiled code. */
+	RzVector /*<RzCodeAnnotation>*/ annotations; /**< Contains the list of annotations for the decompiled code. */
 } RzAnnotatedCode;
 
 /**

@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <capstone/capstone.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (!buf || !op || !a->plugin_data) {
 		return -1;
 	}
@@ -101,6 +102,11 @@ static bool fini(void *u) {
 	return true;
 }
 
+static bool alpha_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
+	rz_asm_op_set_buf(breakpoint, (const ut8 *)"\x80\x00\x00\x00", 4);
+	return true;
+}
+
 RzAsmPlugin rz_asm_plugin_alpha_cs = {
 	.name = "alpha",
 	.desc = "DEC Alpha Capstone-based disassembler",
@@ -111,6 +117,7 @@ RzAsmPlugin rz_asm_plugin_alpha_cs = {
 	.disassemble = &disassemble,
 	.init = &init,
 	.fini = &fini,
+	.sw_breakpoint = &alpha_sw_breakpoint,
 };
 
 #ifndef RZ_PLUGIN_INCORE

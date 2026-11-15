@@ -18450,11 +18450,11 @@ static ZyanStatus ZydisEmitUInt(ZyanU64 data, ZyanU8 size, ZydisEncoderBuffer *b
     // The size variable is not passed on purpose to allow the compiler
     // to generate better code with a known size at compile time.
 
+#if ZYAN_ENDIAN == ZYAN_LITTLE_ENDIAN
     if (size == 1)
     {
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 1);
     }
-#if ZYAN_ENDIAN == ZYAN_LITTLE_ENDIAN
     else if (size == 2)
     {
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 2);
@@ -18468,6 +18468,11 @@ static ZyanStatus ZydisEmitUInt(ZyanU64 data, ZyanU8 size, ZydisEncoderBuffer *b
         ZYAN_MEMCPY(buffer->buffer + buffer->offset, &data, 8);
     }
 #else
+    if (size == 1)
+    {
+        ZyanU8 value = data;
+        ZYAN_MEMCPY(buffer->buffer + buffer->offset, &value, 1);
+    }
     else if (size == 2)
     {
         ZyanU16 value = ZYAN_BYTESWAP16((ZyanU16)data);
@@ -54437,7 +54442,7 @@ static const char* const DECIMAL_LOOKUP =
 /* Decimal                                                                                        */
 /* ---------------------------------------------------------------------------------------------- */
 
-#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC) || defined(ZYAN_S390)
+#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC) || defined(ZYAN_S390) || defined(ZYAN_RISCV32)
 static ZyanStatus ZydisStringAppendDecU32(ZyanString* string, ZyanU32 value, ZyanU8 padding_length)
 {
     ZYAN_ASSERT(string);
@@ -54529,7 +54534,7 @@ static ZyanStatus ZydisStringAppendDecU64(ZyanString* string, ZyanU64 value, Zya
 /* Hexadecimal                                                                                    */
 /* ---------------------------------------------------------------------------------------------- */
 
-#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC)
+#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC) || defined(ZYAN_RISCV32)
 static ZyanStatus ZydisStringAppendHexU32(ZyanString* string, ZyanU32 value, ZyanU8 padding_length,
     ZyanBool force_leading_number, ZyanBool uppercase)
 {
@@ -54694,7 +54699,7 @@ ZyanStatus ZydisStringAppendDecU(ZyanString* string, ZyanU64 value, ZyanU8 paddi
         ZYAN_CHECK(ZydisStringAppend(string, prefix));
     }
 
-#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64) || defined(ZYAN_LOONGARCH) || defined(ZYAN_S390)
+#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64) || defined(ZYAN_LOONGARCH) || defined(ZYAN_S390) || defined(ZYAN_SPARC64)
     ZYAN_CHECK(ZydisStringAppendDecU64(string, value, padding_length));
 #else
     if (value & 0xFFFFFFFF00000000)
@@ -54720,7 +54725,7 @@ ZyanStatus ZydisStringAppendHexU(ZyanString* string, ZyanU64 value, ZyanU8 paddi
         ZYAN_CHECK(ZydisStringAppend(string, prefix));
     }
 
-#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64) || defined(ZYAN_LOONGARCH) || defined(ZYAN_S390)
+#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64) || defined(ZYAN_LOONGARCH) || defined(ZYAN_S390) || defined(ZYAN_SPARC64)
     ZYAN_CHECK(ZydisStringAppendHexU64(string, value, padding_length, force_leading_number,
         uppercase));
 #else

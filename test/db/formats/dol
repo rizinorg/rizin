@@ -17,7 +17,6 @@ baddr    0x80004000
 binsz    0x000fcc80
 bintype  N/A
 bits     32
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -32,20 +31,19 @@ maxopsz  4
 minopsz  4
 os       wii-ios
 cc       N/A
+pcalign  4
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 dol:
   text_paddr:

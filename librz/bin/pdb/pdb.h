@@ -56,11 +56,9 @@ static inline bool buf_read_u8_pascal_string(RzBuffer *b, char **result) {
 	if (!rz_buf_read8(b, &length)) {
 		return false;
 	}
-	*result = RZ_NEWS0(char, length);
-	if (!*result) {
-		return false;
-	}
-	return rz_buf_read(b, (ut8 *)*result, length);
+	const size_t size = 1 + (size_t)length;
+	*result = rz_buf_get_nstring(b, rz_buf_tell(b), size, false);
+	return *result != NULL;
 }
 
 static inline bool buf_align(RzBuffer *b, ut64 alignment) {

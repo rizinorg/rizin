@@ -134,6 +134,21 @@ idx=1 addr=0x00000002 size=3 030000 -> 555555 (written)
 EOF
 RUN
 
+NAME=wcj
+FILE==
+CMDS=<<EOF
+e io.cache=true
+wcj
+wx 010203
+wx 555555 @ 2
+wcj
+EOF
+EXPECT=<<EOF
+[]
+[{"idx":0,"addr":0,"size":3,"before":"000000","after":"010203","written":false},{"idx":1,"addr":2,"size":3,"before":"030000","after":"555555","written":false}]
+EOF
+RUN
+
 NAME=w
 FILE==
 CMDS=<<EOF

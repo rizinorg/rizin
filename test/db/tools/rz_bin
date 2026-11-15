@@ -231,7 +231,7 @@ EXPECT=<<EOF
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- prixfixe..rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- prixfixe..rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x prixfixe..init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x prixfixe..plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x prixfixe..text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x prixfixe..fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- prixfixe..rodata            PROGBITS   alloc
@@ -373,8 +373,14 @@ TOOL=rz-bin
 ARGS=-z
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 EOF
@@ -491,6 +497,11 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 TOOL=rz-bin
 ARGS=-qqz
 EXPECT=<<EOF
+__gmon_start__
+libc.so.6
+puts
+__libc_start_main
+GLIBC_2.2.5
 Hello World
 EOF
 RUN
@@ -647,17 +658,15 @@ relro    no
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      false
-RELROCS  true
-NX       true
+pie      false
+relrocs  true
+nx       true
 
 [Imports]
 nth      vaddr bind   type   lib name              
@@ -762,7 +771,7 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000270   0x8 0x08048270   0x8   0x0 -r-- .rel.dyn           REL        alloc
 0x00000278  0x18 0x08048278  0x18   0x0 -r-- .rel.plt           REL        alloc
 0x00000290  0x23 0x08048290  0x23   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000002c0  0x40 0x080482c0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000300 0x194 0x08048300 0x194   0x0 -r-x .text              PROGBITS   alloc,execute
 0x00000494  0x14 0x08048494  0x14   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000004a8  0x15 0x080484a8  0x15   0x0 -r-- .rodata            PROGBITS   alloc
@@ -795,8 +804,14 @@ nth      paddr      vaddr bind   type   size lib name
 0x00000000  0x34 0x08048000  0x34    0x0 -rw- ehdr
 
 [Strings]
-     paddr      vaddr len size section type  string       
-----------------------------------------------------------
+     paddr      vaddr len size section type  string            
+---------------------------------------------------------------
+0x000001fd 0x080481fd   9   10 .dynstr ascii libc.so.6
+0x00000207 0x08048207  14   15 .dynstr ascii _IO_stdin_used
+0x00000216 0x08048216   4    5 .dynstr ascii puts
+0x0000021b 0x0804821b  17   18 .dynstr ascii __libc_start_main
+0x0000022d 0x0804822d  14   15 .dynstr ascii __gmon_start__
+0x0000023c 0x0804823c   9   10 .dynstr ascii GLIBC_2.0
 0x000004b0 0x080484b0  12   13 .rodata ascii Hello world!
 
 [Main]
@@ -874,17 +889,15 @@ ehdr
 EOF
 RUN
 
-NAME=rz-bin -x pemixed.exe
-BROKEN=1
-FILE=bins/pe/pemixed.exe
+NAME=rz-bin -x a.out
+FILE=bins/mach0/a.out
 CMDS=<<EOF
-!rz-bin -x bins/pe/pemixed.exe
-!rm -r pemixed.exe.fat
+!rz-bin -x bins/mach0/a.out
+!rm -r a.out.fat
 EOF
 EXPECT=<<EOF
-pemixed.exe.fat/pemixed.exe.unknown_0.0 created (248)
-pemixed.exe.fat/pemixed.exe.unknown_0.1 created (35328)
-pemixed.exe.fat/pemixed.exe.unknown_0.2 created (35328)
+a.out.fat/a.out.arm_32.0 created (49424)
+a.out.fat/a.out.arm_64.1 created (49420)
 EOF
 RUN
 
@@ -920,17 +933,15 @@ relro    full
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  true
 lsyms    true
 canary   false
-PIE      true
-RELROCS  true
-NX       true
+pie      true
+relrocs  true
+nx       true
 
 EOF
 RUN
@@ -941,43 +952,43 @@ TOOL=rz-bin
 ARGS=-I
 EXPECT=<<EOF
 [Info]
-arch     x86
-cpu      N/A
-features N/A
-baddr    0x00400000
-binsz    0x001876b7
-bintype  elf
-bits     64
-class    ELF64
-compiler GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
-dbg_file N/A
-endian   LE
-hdr.csum N/A
-guid     N/A
-intrp    /lib64/ld-linux-x86-64.so.2
-laddr    0x00000000
-lang     c++
-machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
-os       linux
-cc       N/A
-pcalign  1
-relro    partial
-rpath    NONE
-subsys   linux
-stripped false
-crypto   false
-havecode true
-va       true
-sanitiz  true
-static   false
-linenum  true
-lsyms    true
-canary   false
-PIE      false
-RELROCS  true
-NX       true
+arch           x86
+cpu            N/A
+features       N/A
+baddr          0x00400000
+binsz          0x001876b7
+bintype        elf
+bits           64
+class          ELF64
+compiler       GCC: (Debian 8.2.0-5) 8.2.0 clang version 6.0.1-6 (tags/RELEASE_601/final)
+dbg_file       N/A
+endian         LE
+hdr.csum       N/A
+guid           N/A
+intrp          /lib64/ld-linux-x86-64.so.2
+laddr          0x00000000
+lang           c++
+machine        AMD x86-64 architecture
+maxopsz        16
+minopsz        1
+os             linux
+cc             N/A
+pcalign        1
+relro          partial
+rpath          NONE
+subsys         linux
+stripped       false
+havecode       true
+va             true
+static         false
+linenum        true
+lsyms          true
+canary         false
+pie            false
+relrocs        true
+nx             true
+fortify_source true
+sanitizers     ubsan,asan
 
 EOF
 RUN
@@ -1013,17 +1024,15 @@ pcalign  1
 rpath    N/A
 subsys   macOS
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
 lsyms    false
 canary   false
-PIE      true
-RELROCS  false
-NX       false
+pie      true
+relrocs  false
+nx       false
 
 EOF
 RUN
@@ -1129,6 +1138,7 @@ objc   LGPL3        pancake
 pascal LGPL3        deroad
 c++    LGPL3        billow
 rust   LGPL3        Dhruv Maroo/RizinOrg
+dlang  LGPL3        historicattle
 EOF
 RUN
 
@@ -1297,7 +1307,7 @@ FILE=bins/pdb/minimal.pdb
 TOOL=rz-bin
 ARGS=-Pj
 EXPECT=<<EOF
-{"pdb":[{"modules":[{"module_name":"* Linker Generated Manifest RES *","object_file_name":""},{"module_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj","object_file_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"},{"module_name":"* Linker *","object_file_name":""}]},{"types":[{"type":"structure","name":"struct_typedef","size":7,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":1},{"member_type":"int32_t","member_name":"c","offset":3}]},{"type":"union","name":"type_0x1004","size":4,"members":[{"member_type":"char [4]","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":0}]},{"type":"structure","name":"unnamed_member_types_typedef","size":8,"members":[{"member_type":"union type_0x1004","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":4}]},{"type":"structure","name":"bitfield_typedef","size":1,"members":[]},{"type":"union","name":"union_typedef","size":4,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":0},{"member_type":"int32_t","member_name":"c","offset":0}]}]},{"gvars":[{"address":12292,"symtype":4366,"section_name":".data","gdata_name":"_uninitialized_global"},{"address":12288,"symtype":4366,"section_name":".data","gdata_name":"_initialized_global"},{"address":4096,"symtype":4366,"section_name":".text","gdata_name":"_function"},{"address":4182,"symtype":4366,"section_name":".text","gdata_name":"_mainCRTStartup"},{"address":4120,"symtype":4366,"section_name":".text","gdata_name":"_main"}]}]}
+{"pdb":[{"modules":[{"module_name":"* Linker Generated Manifest RES *","object_file_name":""},{"module_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj","object_file_name":"C:\\Users\\emuresan\\source\\repos\\minimal\\Release\\main.obj"},{"module_name":"* Linker *","object_file_name":""}]},{"types":[{"type":"structure","name":"struct_typedef","size":7,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":1},{"member_type":"int32_t","member_name":"c","offset":3}]},{"type":"union","name":"type_0x1004","size":4,"members":[{"member_type":"char [4]","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":0}]},{"type":"structure","name":"unnamed_member_types_typedef","size":8,"members":[{"member_type":"union type_0x1004","member_name":"a","offset":0},{"member_type":"int32_t","member_name":"b","offset":4}]},{"type":"structure","name":"bitfield_typedef","size":1,"members":[{"member_type":"unsigned char","member_name":"a","offset":0},{"member_type":"unsigned char","member_name":"b","offset":0},{"member_type":"unsigned char","member_name":"c","offset":0}]},{"type":"union","name":"union_typedef","size":4,"members":[{"member_type":"char","member_name":"a","offset":0},{"member_type":"int16_t","member_name":"b","offset":0},{"member_type":"int32_t","member_name":"c","offset":0}]}]},{"gvars":[{"address":12292,"symtype":4366,"section_name":".data","gdata_name":"_uninitialized_global"},{"address":12288,"symtype":4366,"section_name":".data","gdata_name":"_initialized_global"},{"address":4096,"symtype":4366,"section_name":".text","gdata_name":"_function"},{"address":4182,"symtype":4366,"section_name":".text","gdata_name":"_mainCRTStartup"},{"address":4120,"symtype":4366,"section_name":".text","gdata_name":"_main"}]}]}
 EOF
 RUN
 
@@ -1307,8 +1317,16 @@ TOOL=rz-bin
 ARGS=-z -N2
 EXPECT=<<EOF
 [Strings]
-     paddr      vaddr len size section type  string 
-----------------------------------------------------
+     paddr      vaddr len size section type  string                      
+-------------------------------------------------------------------------
+0x00000471 0x00000471  17   18 .dynstr ascii __libc_start_main
+0x00000483 0x00000483  14   15 .dynstr ascii __cxa_finalize
+0x00000492 0x00000492   9   10 .dynstr ascii libc.so.6
+0x0000049c 0x0000049c  11   12 .dynstr ascii GLIBC_2.2.5
+0x000004a8 0x000004a8  10   11 .dynstr ascii GLIBC_2.34
+0x000004b3 0x000004b3  27   28 .dynstr ascii _ITM_deregisterTMCloneTable
+0x000004cf 0x000004cf  14   15 .dynstr ascii __gmon_start__
+0x000004de 0x000004de  25   26 .dynstr ascii _ITM_registerTMCloneTable
 0x00002006 0x00002006   2    3 .rodata ascii 22
 0x00002009 0x00002009   3    4 .rodata ascii 333
 0x0000200d 0x0000200d   4    5 .rodata ascii 4444
@@ -1322,11 +1340,15 @@ TOOL=rz-bin
 ARGS=-z -N ":<dH"
 EXPECT=<<EOF
 [Strings]
-paddr vaddr len size section type string 
------------------------------------------
+     paddr      vaddr len size section type  string                                                                                                                                                                                                                                                                                                                                                                                  
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+0x00000000 0x00000000 375  375         ascii Lorem ipsum dolor sit amet, at eligendi adipisci ius, ex natum appetere officiis has, nibh quas torquatos pro te. Quo at deleniti repudiandae, et oratio pertinacia ullamcorper quo. Per ut stet assum augue, brute pertinacia pri id. Sed omnium oblique placerat ut, eu etiam vitae nam. Per invenire expetenda dissentiet id, ea alia nostrud detraxit est, est eros intellegebat et
 
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+ERROR: search.str.max_length cannot be greater or equal to 2048.
+ERROR: search.str.max_length cannot be less than 4.
+EOF
 RUN
 
 NAME=fat binary - endianness
@@ -1360,24 +1382,46 @@ intrp    N/A
 laddr    0x00000000
 lang     c
 machine  mc68030
-minopsz  1
+maxopsz  22
+minopsz  2
 os       darwin
 cc       N/A
+pcalign  2
 rpath    N/A
 subsys   unknown
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=rz-bin winedbg:// missing file
+TOOL=rz-bin
+ARGS=-I winedbg://.tmp/winedbg_rzbin_missing
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '.tmp/winedbg_rzbin_missing'
+rz_core: Cannot open file 'winedbg://.tmp/winedbg_rzbin_missing'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-bin winedbg:// issue #6952 payload
+TOOL=rz-bin
+ARGS=-I winedbg://';id;'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: winedbg: cannot find file '';id;''
+rz_core: Cannot open file 'winedbg://';id;''
+EOF
+EXIT_STATUS=1
 RUN

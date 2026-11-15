@@ -19,7 +19,6 @@ baddr    0x00000000
 binsz    0x00000400
 bintype  zimg
 bits     32
-retguard false
 class    Linux zImage Kernel (3.16-4.14)
 compiler N/A
 dbg_file N/A
@@ -37,18 +36,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "ARM32 LE"
@@ -104,7 +101,6 @@ baddr    0x00000000
 binsz    0x00000200
 bintype  zimg
 bits     32
-retguard false
 class    Linux zImage Kernel (2.6-3.16)
 compiler N/A
 dbg_file N/A
@@ -122,18 +118,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "ARM32 LE"
@@ -176,7 +170,8 @@ iH
 echo ---
 oml
 echo ---
-pd 32
+pd 4 @ 0
+pd 3 @ 0x40
 echo ---
 pxq 64 @ 0x8
 EOF
@@ -188,7 +183,6 @@ baddr    0x00200000
 binsz    0x00000200
 bintype  zimg
 bits     64
-retguard false
 class    Linux zImage Kernel (5.2+)
 compiler N/A
 dbg_file N/A
@@ -206,18 +200,16 @@ cc       N/A
 pcalign  2
 rpath    N/A
 subsys   linux
-stripped false
-crypto   false
+stripped true
 havecode true
 va       false
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 zImage:
   machine: "RISC-V"
@@ -234,40 +226,19 @@ zImage:
   riscv_magic2: "52 53 43 05                                     |RSC.            |"
 
 ---
- 1 fd: 3 +0x00000000 0x00000000 * 0x000001ff r-x 
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00000007 r-x fmap.riscv.boot
+ 2 fd: 3 +0x00000008 0x00000008 - 0x0000003f r-- fmap.riscv.header
+ 3 fd: 3 +0x00000040 0x00000040 - 0x000001ff r-x fmap.kernel
+ 4 fd: 3 +0x00000000 0x00000000 * 0x000001ff r-x 
 ---
             ;-- entry0:
-        ,=< 0x00000000      j     0x40
-        |   0x00000002      illegal
-        |   0x00000004      illegal
+            ;-- section.riscv.boot:
+        ,=< 0x00000000      j     section.kernel                       ; [00] -r-x section size 8 named riscv.boot
+        |   0x00000002      unimp
+        |   0x00000004      unimp
         |   0x00000006      nop
-        |   0x00000008      illegal
-        |   0x0000000a      addi  s0, sp, 8
-        |   0x0000000c      illegal
-        |   0x0000000e      illegal
-        |   0x00000010      lw    a1, 68(a0)
-        |   0x00000012      slli  ra, ra, 0x4
-        |   0x00000014      illegal
-        |   0x00000016      illegal
-        |   0x00000018      illegal
-        |   0x0000001a      illegal
-        |   0x0000001c      illegal
-        |   0x0000001e      illegal
-        |   0x00000020      invalid
-        |   0x00000022      illegal
-        |   0x00000024      illegal
-        |   0x00000026      illegal
-        |   0x00000028      illegal
-        |   0x0000002a      illegal
-        |   0x0000002c      illegal
-        |   0x0000002e      illegal
-        |   ;-- str.RISCV:
-        |   0x00000030     .string "RISCV" ; len=6
-        |   0x00000036      illegal
-        |   0x00000038      lw    t1, 52(sp)
-        |   0x0000003a      fmadd.s fa0, ft0, ft0, ft0, rne
-        |   0x0000003e      illegal
-        `-> 0x00000040      csrw  sie, zero
+            ;-- section.kernel:
+            0x00000040      csrw  sie, zero                            ; [02] -r-x section size 448 named kernel
             0x00000044      csrw  sip, zero
             0x00000048      auipc gp, 0x8e2
 ---
@@ -276,5 +247,4 @@ zImage:
 0x00000028  0x0000000000000000  0x0000005643534952   ........RISCV...
 0x00000038  0x0000000005435352  0x1440107310401073   RSC.....s.@.s.@.
 EOF
-BROKEN=1
 RUN

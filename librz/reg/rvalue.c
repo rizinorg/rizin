@@ -19,6 +19,17 @@ RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzReg
 		return rz_bv_new_zero(item->size);
 	}
 	RzRegSet *regset = &reg->regset[item->arena];
+	if (item->size == 1 && (item->offset % 8)) {
+		// a single-bit, non-byte-aligned register (e.g. a status-word flag) is
+		// stored at a fixed physical bit position, independent of endianness.
+		RzBitVector *bv = rz_bv_new(1);
+		if (!bv) {
+			return NULL;
+		}
+		bool bit = (regset->arena->bytes[item->offset / 8] >> (item->offset % 8)) & 1;
+		rz_bv_set(bv, 0, bit);
+		return bv;
+	}
 	if (reg->big_endian) {
 		return rz_bv_new_from_bytes_be(regset->arena->bytes, item->offset, item->size);
 	} else {
@@ -57,8 +68,12 @@ RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) 
  * \return     Value stored in the register
  */
 RZ_API ut64 rz_reg_get_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role) {
-	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	return rz_reg_get_value(reg, rz_reg_get(reg, rz_reg_get_name(reg, role), -1));
+	rz_return_val_if_fail(reg, 0);
+	RzRegItem *ri = rz_reg_get_by_role(reg, role);
+	if (!ri) {
+		return 0;
+	}
+	return rz_reg_get_value(reg, ri);
 }
 
 static bool reg_set_value(RzReg *reg, RzRegItem *item, ut64 value) {
@@ -179,11 +194,10 @@ RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, 
  * \return     On success returns true, otherwise false
  */
 RZ_API bool rz_reg_set_value_by_role(RZ_NONNULL RzReg *reg, RzRegisterId role, ut64 value) {
-	// TODO use mapping from RzRegisterId to RzRegItem (via RzRegSet)
-	const char *name = rz_reg_get_name(reg, role);
-	if (!name) {
+	rz_return_val_if_fail(reg, false);
+	RzRegItem *ri = rz_reg_get_by_role(reg, role);
+	if (!ri) {
 		return false;
 	}
-	RzRegItem *r = rz_reg_get(reg, name, -1);
-	return r ? rz_reg_set_value(reg, r, value) : false;
+	return ri ? rz_reg_set_value(reg, ri, value) : false;
 }

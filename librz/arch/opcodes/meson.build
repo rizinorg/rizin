@@ -4,6 +4,7 @@ sdb_opcodes_files = [
   'arc',
   'arm',
   'avr',
+  'c166',
   'dalvik',
   'i4004',
   'i8080',

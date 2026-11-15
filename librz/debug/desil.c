@@ -5,7 +5,7 @@
 
 /*
 	debugesil performs step into + esil conditionals
-	ESIL conditionals can be used to detect when a specific address is
+	esil conditionals can be used to detect when a specific address is
 	accessed, or a register. Those esil conditionals must be evaluated
 	every iteration to ensure the register values are updated. Think
 	in DebugESIL as software-watchpoints.
@@ -22,11 +22,9 @@
 // TODO: Kill those globals
 RzDebug *dbg = NULL;
 static int has_match = 0;
-static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
-RzList *esil_watchpoints = NULL;
+static RzList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
-#define ESIL dbg->analysis->esil
 
 static int exprmatch(RzDebug *dbg, ut64 addr, const char *expr) {
 	char *e = rz_str_dup(expr);
@@ -65,7 +63,7 @@ static int esilbreak_check_pc(RzDebug *dbg, ut64 pc) {
 	RzDebugEsilWatchpoint *ew;
 	RzListIter *iter;
 	if (!pc) {
-		pc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+		pc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	}
 	rz_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & RZ_PERM_X) {
@@ -204,36 +202,34 @@ static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *
 	return 1; // fallback
 }
 
-RZ_API void rz_debug_esil_prestep(RzDebug *d, int p) {
-	prestep = p;
-}
-
 RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 	RzAnalysisOp op = { 0 };
+	RzAnalysisEsil *esil = rz_analysis_get_esil(d->analysis);
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;
-	if (!ESIL) {
-		ESIL = rz_analysis_esil_new(32, true, 64);
+	if (!esil) {
+		const RzEsilConfig *config = rz_analysis_get_esil_config(d->analysis);
+		esil = rz_analysis_esil_new(config);
 		// TODO setup something?
-		if (!ESIL) {
+		if (!esil) {
 			return 0;
 		}
 	}
 
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-	opc = rz_debug_reg_get(dbg, dbg->reg->name[RZ_REG_NAME_PC]);
+	opc = rz_debug_reg_get_by_role(dbg, RZ_REG_NAME_PC);
 	dbg->iob.read_at(dbg->iob.io, opc, obuf, sizeof(obuf));
 
 	// dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
 	// dbg->analysis->reg = dbg->reg; // hack
-	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
-	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
-	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
-	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
+	esil->cb.hook_mem_read = &esilbreak_mem_read;
+	esil->cb.hook_mem_write = &esilbreak_mem_write;
+	esil->cb.hook_reg_read = &esilbreak_reg_read;
+	esil->cb.hook_reg_write = &esilbreak_reg_write;
 
-	if (prestep) {
+	if (esil->config->prestep) {
 		// required when a exxpression is like <= == ..
 		// otherwise it will stop at the next instruction
 		if (rz_debug_step(dbg, 1) < 1) {
@@ -249,16 +245,16 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 			eprintf("STOP AT 0x%08" PFMT64x "\n", opc);
 			ret = 0;
 		} else {
-			rz_analysis_esil_set_pc(ESIL, opc);
+			rz_analysis_esil_set_pc(esil, opc);
 			eprintf("0x%08" PFMT64x "  %s\n", opc, RZ_STRBUF_SAFEGET(&op.esil));
-			(void)rz_analysis_esil_parse(ESIL, RZ_STRBUF_SAFEGET(&op.esil));
-			// rz_analysis_esil_dumpstack (ESIL);
-			rz_analysis_esil_stack_free(ESIL);
+			(void)rz_analysis_esil_parse(esil, RZ_STRBUF_SAFEGET(&op.esil));
+			// rz_analysis_esil_dumpstack (esil);
+			rz_analysis_esil_stack_free(esil);
 			ret = 1;
 		}
 	}
 	rz_analysis_op_fini(&op);
-	if (!prestep) {
+	if (!esil->config->prestep) {
 		if (ret && !has_match) {
 			if (rz_debug_step(dbg, 1) < 1) {
 				eprintf("Step failed\n");
@@ -274,9 +270,9 @@ RZ_API int rz_debug_esil_stepi(RzDebug *d) {
 RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 	count++;
 	has_match = 0;
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(dbg->intr, NULL, NULL);
 	do {
-		if (rz_cons_is_breaked()) {
+		if (rz_interrupt_is_breaked(dbg->intr)) {
 			break;
 		}
 		if (has_match) {
@@ -291,7 +287,7 @@ RZ_API ut64 rz_debug_esil_step(RzDebug *dbg, ut32 count) {
 			}
 		}
 	} while (rz_debug_esil_stepi(dbg));
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	return opc;
 }
 

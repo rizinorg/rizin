@@ -3,12 +3,12 @@
 // SPDX-FileCopyrightText: 2009-2019 maijin <maijin21@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-
-#include <rz_util/rz_str.h>
-#include <rz_util/rz_regex.h>
-#include <rz_types.h>
+#include <rz_type.h>
+#include <rz_util.h>
 #include <rz_arch.h>
+#include <rz_parse.h>
+#include "analysis_private.h"
+#include "rz_analysis.h"
 
 #define isx86separator(x) ( \
 	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
@@ -40,6 +40,49 @@ static void insert(char *dst, const char *src) {
 	strcpy(dst, src);
 	strcpy(dst + strlen(src), endNum);
 	free(endNum);
+}
+
+static void replace_number_token(char *out, size_t out_len, char *data, char *num_start, char *num_end, const char *value) {
+	*num_start = 0;
+	snprintf(out, out_len, "%s%s%s", data, value, (num_start != num_end) ? num_end : "");
+}
+
+static bool replace_enum_hint(RzParse *p, RzAnalysisHint *hint, ut64 off, char *data, char *out, size_t out_len, char *num_start, char *num_end) {
+	if (RZ_STR_ISEMPTY(hint->enum_name) || !p->analb.analysis || !p->analb.analysis->typedb) {
+		return false;
+	}
+
+	const char *member = rz_type_db_enum_member_by_val(
+		p->analb.analysis->typedb, hint->enum_name, off);
+	if (!member) {
+		// Not an exact member: the value may be the bitwise OR of several flag
+		// members (e.g. the access(2) mode R_OK|W_OK == 6). Render it as the OR
+		// of the matching members when it decomposes cleanly.
+		char *bitfield = rz_type_db_enum_get_bitfield(
+			p->analb.analysis->typedb, hint->enum_name, off);
+		if (!bitfield) {
+			return false;
+		}
+		replace_number_token(out, out_len, data, num_start, num_end, bitfield);
+		free(bitfield);
+		return true;
+	}
+
+	char ename[512] = "";
+	size_t ename_len = strlen(hint->enum_name) + strlen(member) + 2;
+	if (ename_len <= sizeof(ename)) {
+		rz_strf(ename, "%s.%s", hint->enum_name, member);
+		replace_number_token(out, out_len, data, num_start, num_end, ename);
+		return true;
+	}
+
+	char *ename_dyn = rz_str_newf("%s.%s", hint->enum_name, member);
+	if (!ename_dyn) {
+		return false;
+	}
+	replace_number_token(out, out_len, data, num_start, num_end, ename_dyn);
+	free(ename_dyn);
+	return true;
 }
 
 static int parse_number(const char *str) {
@@ -95,7 +138,18 @@ static char *find_next_number(char *str) {
 	if (rz_regex_contains("\x1b\\[[0-9;]*m", str, RZ_REGEX_ZERO_TERMINATED, RZ_REGEX_EXTENDED, 0)) {
 		ansi = true;
 	}
-	const char *search = (ansi ? "(\x1b\\[[0-9;]*m)(?<number>(0x[a-fA-F0-9]+)|\\d+)" :
+	// In both modes the number must not directly follow a visible '\w', '.' or
+	// '*' character, so that number fragments inside identifiers are never
+	// picked up. This matters for flag names inserted earlier (case labels
+	// like case.<switch-address>.<case-number>, see issue #4238) and for the
+	// default stack variable/argument names (var_78h, arg_10h), whose
+	// hex-offset tail is NOT a numeric literal. Without this rule in the
+	// ansi mode, the colored opstr tokenizes e.g. "var_78h" into separately
+	// colored "var", "_" and "78h" segments, the "78h" tail is picked up as
+	// a number token and evaluated, which both breaks the identifier and
+	// makes RzNum warn about the deprecated trailing-'h' base suffix on
+	// every colored disassembly line.
+	const char *search = (ansi ? "((?:[^\\w.*\x1b]|^)(?:\x1b\\[[0-9;]*m)+(?<number>(0x[a-fA-F0-9]+)|\\d+))" :
 				   // The exclusion pattern [^\w.*] excludes all numbers with a '\w', '.' and '*' prefix.
 				   // This is only done because the previous parsing did it like this.
 				   // And not doing it, breaks substitutions from before.
@@ -168,6 +222,12 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	ut64 off;
 	bool x86 = false;
 	bool arm = false;
+	bool c16x = false;
+	if (p && p->analb.analysis) {
+		if (strstr(p->analb.analysis->cur->arch, "c166")) {
+			c16x = true;
+		}
+	}
 	if (p && p->cur && p->cur->name) {
 		if (strstr(p->cur->name, "x86")) {
 			x86 = true;
@@ -220,7 +280,15 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				;
 			}
 		}
+		// Evaluate only the number token, not the trailing operand
+		// syntax (']', separators, comments) that follows it. ptr2 is
+		// the token boundary computed just above; terminate the string
+		// there so the evaluator receives a clean expression, then put
+		// the byte back so the surrounding code can keep using it.
+		char saved_sep = *ptr2;
+		*ptr2 = '\0';
 		off = rz_num_math(NULL, ptr);
+		*ptr2 = saved_sep;
 		if (off >= p->minval) {
 			fcn = p->analb.get_fcn_in(p->analb.analysis, off, 0);
 			if (fcn && fcn->addr == off) {
@@ -404,7 +472,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				}
 			}
 		}
-		if (hint) {
+		if (hint && !c16x) {
+			char *num_start = ptr;
+			char *num_end = ptr2;
 			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
@@ -414,11 +484,13 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 			char num[256] = { 0 }, *pnum, *tmp;
 			int tmp_count;
 			if (hint->offset) {
-				*ptr = 0;
-				snprintf(str, len, "%s%s%s", data, hint->offset, (ptr != ptr2) ? ptr2 : "");
+				replace_number_token(str, len, data, num_start, num_end, hint->offset);
 				return true;
 			}
-			strncpy(num, ptr, sizeof(num) - 2);
+			if (replace_enum_hint(p, hint, off, data, str, len, num_start, num_end)) {
+				return true;
+			}
+			strncpy(num, num_start, sizeof(num) - 2);
 			pnum = num + parse_number(num);
 			*pnum = 0;
 			switch (immbase) {
@@ -427,9 +499,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 1: // hack for ascii
 				tmp_count = 0;
-				for (tmp = data; tmp < ptr; tmp++) {
+				for (tmp = data; tmp < num_start; tmp++) {
 					if (*tmp == 0x1b) {
-						while (tmp < ptr - 1 && *tmp != 'm') {
+						while (tmp < num_start - 1 && *tmp != 'm') {
 							tmp++;
 						}
 						continue;
@@ -545,14 +617,23 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				snprintf(num, sizeof(num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			*ptr = 0;
-			snprintf(str, len, "%s%s%s", data, num, (ptr != ptr2) ? ptr2 : "");
+			replace_number_token(str, len, data, num_start, num_end, num);
 			return true;
 		}
 		ptr = ptr2;
 	}
 	if (data != str) {
-		strncpy(str, data, len);
+		// `data` is a colorized operand that may be longer than the
+		// destination buffer. rz_str_ncpy() truncates and always
+		// NUL-terminates (plain strncpy did neither, letting the operand run
+		// into the adjacent strsub[] buffer). A byte-bounded cut can still
+		// split a trailing ANSI escape, so when truncation happens re-trim to
+		// the visible length: rz_str_ansi_trim() consumes escapes atomically
+		// and stops at the last visible glyph, dropping the partial escape so
+		// we never emit a garbled "\x1b[..." sequence. See issue #3831.
+		if (rz_str_ncpy(str, data, len) >= (size_t)len) {
+			rz_str_ansi_trim(str, -1, rz_str_ansi_len(str));
+		}
 	} else {
 		eprintf("Invalid str/data inputs\n");
 	}

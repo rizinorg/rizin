@@ -4,7 +4,7 @@
 // SPDX-FileCopyrightText: 2009-2019 ret2libc <sirmy15@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_cons.h>
 
 /*
@@ -214,6 +214,8 @@ RZ_API const char *rz_analysis_xrefs_type_tostring(RzAnalysisXRefType type) {
 		return "DATA";
 	case RZ_ANALYSIS_XREF_TYPE_STRING:
 		return "STRING";
+	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
+		return "MEM_WRITE";
 	case RZ_ANALYSIS_XREF_TYPE_NULL:
 	default:
 		return "UNKNOWN";
@@ -306,6 +308,8 @@ RZ_API const char *rz_analysis_ref_type_tostring(RzAnalysisXRefType t) {
 		return "data";
 	case RZ_ANALYSIS_XREF_TYPE_STRING:
 		return "string";
+	case RZ_ANALYSIS_XREF_TYPE_MEM_WRITE:
+		return "write";
 	}
 	return "unknown";
 }

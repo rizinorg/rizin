@@ -207,11 +207,13 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->mem);
 	rz_pvector_free(o->sections);
 	rz_pvector_free(o->symbols);
+	rz_pvector_free(o->trycatch);
 	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
 		free(o->binsym[i]);
 	}
+	sdb_free(o->kv);
 	free(o);
 }
 
@@ -542,7 +544,6 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, RzBinO
 		sdb_ns_set(bf->rbin->sdb, fdns, bf->sdb);
 		free(fdns);
 	}
-	bf->sdb->refs++;
 
 	return o;
 }

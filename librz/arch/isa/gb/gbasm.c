@@ -203,7 +203,7 @@ static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 	return true;
 }
 
-int gbAsm(RzAsm *a, RzAsmOp *op, const char *buf) {
+RZ_IPI int gbAsm(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	int mn_len, j, len = 1;
 	ut32 mn = 0;
 	ut64 num;

@@ -73,6 +73,7 @@ typedef struct {
 
 typedef struct {
 	xbe_header header;
+	char *dbg_name;
 	int kt_key;
 	int ep_key;
 	RzVector /*<xbe_section>*/ sections;

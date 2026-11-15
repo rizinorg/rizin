@@ -1539,7 +1539,7 @@ RZ_API void rz_bin_dwarf_line_free(RZ_OWN RZ_NULLABLE RzBinDwarfLine *li);
 RZ_API void rz_bin_dwarf_line_units_dump(
 	RZ_NONNULL RZ_BORROW RzBinDwarfLine *line,
 	RZ_NONNULL RZ_BORROW RzStrBuf *sb);
-RZ_API char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
+RZ_API RZ_OWN char *rz_bin_dwarf_file_path(RZ_NONNULL RZ_BORROW RzBinDWARF *dw,
 	RZ_NONNULL RZ_BORROW RzBinDwarfLineUnit *lu, ut64 index);
 
 /// dwarf

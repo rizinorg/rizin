@@ -14,7 +14,7 @@ RZ_IPI RzCmdStatus rz_plugins_unload_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_plugins_lang_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_lang_plugins_print(core->lang, state);
+	return rz_core_lang_plugins_print(core->lang, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_asm_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -33,7 +33,7 @@ RZ_IPI RzCmdStatus rz_plugins_core_print_handler(RzCore *core, int argc, const c
 }
 
 RZ_IPI RzCmdStatus rz_plugins_crypto_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_crypto_plugins_print(core->crypto, state);
+	return rz_core_crypto_plugins_print(core->crypto, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_debug_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -44,11 +44,11 @@ RZ_IPI RzCmdStatus rz_plugins_debug_print_handler(RzCore *core, int argc, const 
 }
 
 RZ_IPI RzCmdStatus rz_plugins_hash_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_hash_plugins_print(core->hash, state);
+	return rz_core_hash_plugins_print(core->hash, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_bin_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_bin_plugins_print(core->bin, state);
+	return rz_core_bin_plugins_print(core->bin, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
@@ -59,11 +59,11 @@ RZ_IPI RzCmdStatus rz_plugins_io_print_handler(RzCore *core, int argc, const cha
 		}
 		return RZ_CMD_STATUS_OK;
 	}
-	return rz_core_io_plugins_print(core->io, state);
+	return rz_core_io_plugins_print(core->io, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_parser_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	return rz_core_parser_plugins_print(core->parser, state);
+	return rz_core_parser_plugins_print(core->parser, state, core->cons);
 }
 
 RZ_IPI RzCmdStatus rz_plugins_demanglers_print_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {

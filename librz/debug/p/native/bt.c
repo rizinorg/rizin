@@ -12,6 +12,24 @@
 
 typedef RzList *(*RzDebugFrameCallback)(RzDebug *dbg, ut64 at);
 
+static void prepend_link_register(RzDebug *dbg, RzList /*<RzDebugFrame *>*/ *list) {
+	bool is_riscv = dbg->arch && !strcmp(dbg->arch, "riscv");
+	if (!is_riscv)
+		return;
+	RzDebugFrame *frame;
+	const char *pcname;
+	if (list) {
+		pcname = rz_reg_get_name(dbg->reg, RZ_REG_NAME_LR);
+		if (pcname) {
+			ut64 addr = rz_reg_getv(dbg->reg, pcname);
+			frame = RZ_NEW0(RzDebugFrame);
+			frame->addr = addr;
+			frame->size = 0;
+			rz_list_prepend(list, frame);
+		}
+	}
+}
+
 static void prepend_current_pc(RzDebug *dbg, RzList /*<RzDebugFrame *>*/ *list) {
 	RzDebugFrame *frame;
 	const char *pcname;
@@ -84,7 +102,7 @@ static RzList /*<RzDebugFrame *>*/ *rz_debug_native_frames(RzDebug *dbg, ut64 at
 		list = cb(dbg, at);
 #endif
 	}
-
+	prepend_link_register(dbg, list);
 	prepend_current_pc(dbg, list);
 	return list;
 }

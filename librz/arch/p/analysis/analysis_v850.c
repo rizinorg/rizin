@@ -266,7 +266,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=SP	sp\n"
 		"=ZF	z\n"
 		"=A0	r1\n"
-		"=A1	r5\n"
+		"=A1	tp\n"
 		"=A2	r6\n"
 		"=A3	r7\n"
 		"=A4	r8\n"

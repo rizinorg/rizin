@@ -675,7 +675,7 @@ A5   r9  0x0       0
 A6   r10 0x0       0
 A7   r11 0x0       0
 [{"role":"A0","reg":"rdi","value":"0x804866b","refstr":"134514283 .rodata str.Password_OK,rdi R X 'push rax' Password OK!"},{"role":"A1","reg":"rsi","value":"0x0","refstr":"0"},{"role":"A2","reg":"rdx","value":"0x8048679","refstr":"134514297 .rodata str.Password_Incorrect,rdx R X 'push rax' Password Incorrect!"},{"role":"A3","reg":"rcx","value":"0x0","refstr":"0"},{"role":"A4","reg":"r8","value":"0x0","refstr":"0"},{"role":"A5","reg":"r9","value":"0x0","refstr":"0"},{"role":"A6","reg":"r10","value":"0x0","refstr":"0"},{"role":"A7","reg":"r11","value":"0x0","refstr":"0"}]
-rdi reg(rdi, rsi, rdx, rcx)
+rdi reg(rdi, rsi, rdx, rcx, r8, r9, r10, r11)
 EOF
 RUN
 

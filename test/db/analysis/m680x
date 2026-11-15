@@ -12,7 +12,7 @@ addr size jump fail
  0x0   36 0x27   -1
 0x24    3 0x27   -1
 0x27    5 0x24 0x2c
-0x2c   10   -1   -1
+0x2c   11   -1   -1
 EOF
 RUN
 
@@ -27,5 +27,51 @@ pc = 0x0000
 sp = 0x0000
 a0 = 0x0000
 a1 = 0x0000
+EOF
+RUN
+
+NAME=rs08 and hcs12x
+FILE=malloc://1024
+CMDS=<<EOF
+echo rs08
+e asm.arch=m680x
+e asm.cpu=rs08
+wx 2F5A663E1480738B98DDF6C945424E2080BFAEED
+pi 16
+echo ---
+echo hcs12x
+e asm.cpu=hcs12x
+wx 1892DD18B612341839183512184218A718C0111118C21111188A1111
+pi 9
+EOF
+EXPECT=<<EOF
+rs08
+inc $0f
+dec $0a
+add $06
+mov #20, $80
+sub $03
+clr $0b
+clr $18
+lda $1d
+sta $16
+lda $09
+sha
+sla
+mov $20, $80
+bgnd
+stop
+sta $0d
+---
+hcs12x
+sbex $dd
+gldaa $1234
+pshcw
+btas $12
+incx
+sys
+suby #4369
+sbey $1111
+orx #17
 EOF
 RUN

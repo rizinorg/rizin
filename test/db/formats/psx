@@ -1,25 +1,42 @@
-NAME=psx: sqrxz4 - iI
+NAME=psx: sqrxz4 analysis
 FILE=bins/psx/HITPSX.EXE
-CMDS=iI~?psx
+CMDS=<<EOF
+iI~?psx
+echo ---
+iS
+echo ---
+oml
+echo ---
+iH
+EOF
 EXPECT=<<EOF
 1
-EOF
-RUN
-
-NAME=psx: sqrxz4 - sections
-FILE=bins/psx/HITPSX.EXE
-CMDS=iS
-EXPECT=<<EOF
+---
      paddr     size      vaddr    vsize align perm name type flags 
 -------------------------------------------------------------------
 0x00000800 0x180000 0x80010000 0x180000   0x0 -r-x TEXT      
-EOF
-RUN
-
-NAME=psx: sqrxz4 - maps
-FILE=bins/psx/HITPSX.EXE
-CMDS=oml
-EXPECT=<<EOF
+---
  1 fd: 3 +0x00000800 0x80010000 * 0x8018ffff r-x fmap.TEXT
+---
+psxexe:
+  id: "PS-X EXE"
+  text: 0x0
+  data: 0x0
+  pc0: 0x8012f484
+  gp0: 0x0
+  t_addr: 0x80010000
+  t_size: 0x180000
+  d_addr: 0x0
+  d_size: 0x0
+  b_addr: 0x0
+  b_size: 0x0
+  s_addr: 0x801ffff0
+  s_size: 0x0
+  saved_sp: 0x0
+  saved_fp: 0x0
+  saved_gp: 0x0
+  saved_ra: 0x0
+  saved_s0: 0x0
+
 EOF
 RUN

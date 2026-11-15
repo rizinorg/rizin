@@ -1,6 +1,6 @@
 type.DWORD_PTE.size=64
 type.HACCEL.size=64
-type.HALF_PTR=i
+type.HALF_PTR=d4
 type.HALF_PTR.size=32
 type.HANDLE.size=64
 type.HBITMAP.size=64

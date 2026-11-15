@@ -118,8 +118,14 @@ RZ_API void rz_interval_tree_fini(RzIntervalTree *tree) {
 	rz_rbtree_free(&tree->root->node, interval_node_free, tree->free);
 }
 
-RZ_API bool rz_interval_tree_insert(RzIntervalTree *tree, ut64 start, ut64 end, void *data) {
-	rz_return_val_if_fail(end >= start, false);
+/**
+ * \brief Insert an element into the interval tree
+ * \param start Lowest value covered by the element
+ * \param end May be the inclusive or exclusive end of the interval. This is determined only by how it is queried later.
+ * \return The newly created node or NULL if the insertion failed.
+ */
+RZ_API RZ_NULLABLE RzIntervalNode *rz_interval_tree_insert(RzIntervalTree *tree, ut64 start, ut64 end, void *data) {
+	rz_return_val_if_fail(tree && end >= start, false);
 	RzIntervalNode *node = RZ_NEW0(RzIntervalNode);
 	if (!node) {
 		return false;
@@ -132,8 +138,9 @@ RZ_API bool rz_interval_tree_insert(RzIntervalTree *tree, ut64 start, ut64 end, 
 	tree->root = unwrap(root);
 	if (!r) {
 		free(node);
+		return NULL;
 	}
-	return r;
+	return node;
 }
 
 RZ_API bool rz_interval_tree_delete(RzIntervalTree *tree, RzIntervalNode *node, bool free) {
@@ -152,7 +159,7 @@ RZ_API bool rz_interval_tree_resize(RzIntervalTree *tree, RzIntervalNode *node, 
 		if (!rz_interval_tree_delete(tree, node, false)) {
 			return false;
 		}
-		return rz_interval_tree_insert(tree, new_start, new_end, data);
+		return rz_interval_tree_insert(tree, new_start, new_end, data) != NULL;
 	}
 	if (node->end != new_end) {
 		// Only end change just needs the updated augmented max value to be propagated upwards

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_lib.h>
 #include <rz_util/ht_uu.h>
 
@@ -31,7 +32,7 @@ typedef struct asm_arm_cs_context_t {
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
 
-static bool check_features(RzAsm *a, cs_insn *insn) {
+static bool check_features(const RzAsm *a, cs_insn *insn) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 	int i;
 	if (!insn || !insn->detail) {
@@ -66,7 +67,7 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	return true;
 }
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 
 	bool disp_hash = a->immdisp;
@@ -177,7 +178,7 @@ beach:
 	return ret;
 }
 
-static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
+static int assemble(const RzAsm *a, RzAsmOp *op, const char *buf) {
 	const bool is_thumb = (a->bits == 16);
 	int opsize;
 	ut32 opcode;
@@ -248,7 +249,7 @@ static bool arm_fini(void *user) {
 	return true;
 }
 
-static char *mnemonics(RzAsm *a, int id, bool json) {
+static char *mnemonics(const RzAsm *a, int id, bool json) {
 	AsmArmCSContext *ctx = (AsmArmCSContext *)a->plugin_data;
 	int i;
 	a->cur->disassemble(a, NULL, NULL, -1);
@@ -297,13 +298,13 @@ static char **arm_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool arm_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
+static bool arm_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	if (a->bits == 64) {
 		// arm64/aarch64
 		// { 64, 4, 0, "\x00\x00\x20\xd4" }, // le - arm64 brk0
 		// { 64, 4, 1, "\xd4\x20\x00\x00" }, // be - arm64
 		// { 64, 1, 0, "\xfe\xde\xff\xe7" }, // le - arm64 - hacky fix
-		rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xd4\x20\x00\x00" : (const ut8 *)"\x00\x00\x20\xd4", 4);
+		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\xd4\x20\x00\x00" : (const ut8 *)"\x00\x00\x20\xd4", 4);
 		return true;
 	} else if (a->bits == 32) {
 		// arm32
@@ -312,7 +313,7 @@ static bool arm_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
 		// { 4, 0, "\xf0\x01\xf0\xe7" }, // eabi-le - undefined instruction - for all kernels
 		// { 4, 1, "\xe7\xf0\x01\xf0" }, // eabi-be
 		// eabi - undefined instruction - for all kernels
-		rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xe7\xf0\x01\xf0" : (const ut8 *)"\xf0\x01\xf0\xe7", 4);
+		rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\xe7\xf0\x01\xf0" : (const ut8 *)"\xf0\x01\xf0\xe7", 4);
 		return true;
 	}
 
@@ -323,7 +324,7 @@ static bool arm_sw_breakpoint(RzAsm *a, RzAsmOp *op) {
 	// { 16, 2, 1, "\xdf\xfe" }, // arm-thumb-be
 	// { 16, 4, 0, "\xff\xff\xff\xff" }, // arm-thumb-le
 	// { 16, 4, 1, "\xff\xff\xff\xff" }, // arm-thumb-be
-	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\xbe\x01" : (const ut8 *)"\x01\xbe", 2);
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\xbe\x01" : (const ut8 *)"\x01\xbe", 2);
 	return true;
 }
 

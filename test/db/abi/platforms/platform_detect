@@ -128,9 +128,9 @@ EXPECT=<<EOF
       vaddr      paddr     hvaddr      haddr type    
 -----------------------------------------------------
 0x100000e50 0x00000e50 ---------- 0x000004b8 program
-arch     x86
-bits     64
-machine  x86 64 all
+arch           x86
+bits           64
+machine        x86 64 all
 EOF
 RUN
 

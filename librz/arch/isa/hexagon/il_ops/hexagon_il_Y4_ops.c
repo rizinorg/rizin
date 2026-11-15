@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2021 Rot127 <rot127@posteo.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// LLVM commit: c2b89fc9e45d325282b8eb6536f6145282dc3fdf
-// LLVM commit date: 2024-12-23 13:36:28 -0600 (ISO 8601 format)
-// Date of code generation: 2025-02-22 07:05:24-05:00
+// LLVM commit: bc5ac5f3ebb0bc4fc65cef7160c817ca3174a68e
+// LLVM commit date: 2026-03-15 10:22:07 -0700 (ISO 8601 format)
+// Date of code generation: 2026-03-23 17:45:56+01:00
 //========================================
 // The following code is generated.
 // Do not edit. Repository of code generator:
@@ -51,12 +51,34 @@ RzILOpEffect *hex_il_op_y4_siad(HexInsnPktBundle *bundle) {
 
 // Rdd = Sss
 RzILOpEffect *hex_il_op_y4_tfrscpp(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Sss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Sss = READ_REG(pkt, Sss_op, false);
+
+	// Rdd = Sss;
+	RzILOpEffect *op_ASSIGN_1 = WRITE_REG(bundle, Rdd_op, Sss);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_1;
+	return instruction_sequence;
 }
 
 // Sdd = Rss
 RzILOpEffect *hex_il_op_y4_tfrspcp(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Sdd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rss = READ_REG(pkt, Rss_op, false);
+
+	// Sdd = Rss;
+	RzILOpEffect *op_ASSIGN_1 = WRITE_REG(bundle, Sdd_op, Rss);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_1;
+	return instruction_sequence;
 }
 
 // trace(Rs)

@@ -3,6 +3,7 @@ FILE=bins/prg/t01.prg
 ARGS=-F prg
 CMDS=<<EOF
 iI
+echo ---
 p8 0x30 @ 0x0801
 EOF
 EXPECT=<<EOF
@@ -13,7 +14,6 @@ baddr    0x00000801
 binsz    0x00000026
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -24,23 +24,24 @@ intrp    N/A
 laddr    0x00000000
 lang     N/A
 machine  Commodore 64
+maxopsz  4
 minopsz  1
 os       c64
 cc       N/A
+pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
+---
 0c08e2079e2032303632000000a941a2ff9dff03cad0faad2408a2ff9dffd7cad0fa6005ffffffffffffffffffffffff
 EOF
 RUN

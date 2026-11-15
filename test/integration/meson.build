@@ -23,10 +23,12 @@ if get_option('enable_tests') and cli_enabled
     'dwarf_info',
     'dwarf_integration',
     'glibc_version',
+    'interrupt_signal',
     'open_analyse_save_load_project',
     'pdb',
     'project_migrate',
     'rzpipe',
+    'stabs',
     'str_search',
   ]
 
@@ -60,6 +62,7 @@ if get_option('enable_tests') and cli_enabled
         rz_hash_dep,
         rz_crypto_dep,
         rz_magic_dep,
+        rzheap_dep,
         lrt,
       ],
       install: false,

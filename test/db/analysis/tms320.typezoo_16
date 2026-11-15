@@ -1,0 +1,154 @@
+# Function recovery on typezoo.bin, compiled from c2x_legacy/src/typezoo.c: 18
+# functions with distinct signatures, plus the entry stub. Program addresses
+# count 16-bit words, so a function sits at twice its symbol value (square =
+# word 0x1a = byte 0x34).
+
+NAME=c2x analysis: typezoo function boundaries
+FILE=bins/tms320/c2x_legacy/typezoo_c2x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+aaa
+afl~?
+afl~[0,2]
+EOF
+EXPECT=<<EOF
+19
+0x00000000 42
+0x0000002a 6
+0x00000030 4
+0x00000034 24
+0x0000004c 22
+0x00000062 24
+0x0000007a 26
+0x00000094 44
+0x000000c0 24
+0x000000d8 4
+0x000000dc 24
+0x000000f4 60
+0x00000130 82
+0x00000182 64
+0x000001c2 60
+0x000001fe 28
+0x0000021a 26
+0x00000234 20
+0x00000248 256
+EOF
+RUN
+
+# The sizes above tile the image with no gaps, matching the compiler layout.
+
+NAME=c2x analysis: typezoo callers of square, add2 and sum_array
+FILE=bins/tms320/c2x_legacy/typezoo_c2x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+aaa
+axt @ 0x34~CALL
+axt @ 0x4c~CALL
+axt @ 0xf4~CALL
+EOF
+EXPECT=<<EOF
+fcn.000001fe 0x206 [CALL] call 0x1a
+fcn.0000021a 0x21e [CALL] call 0x1a
+fcn.0000021a 0x228 [CALL] call 0x1a
+fcn.0000021a 0x22e [CALL] call 0x26
+fcn.00000234 0x242 [CALL] call 0x7a
+EOF
+RUN
+
+NAME=c2x analysis: typezoo main call graph
+FILE=bins/tms320/c2x_legacy/typezoo_c2x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+aaa
+afi @ 0x248~call-refs
+EOF
+EXPECT=<<EOF
+call-refs: 0x0000002a C 0x00000182 C 0x0000028c J 0x00000234 C 0x00000130 C 0x0000021a C 0x000001fe C 0x00000062 C 0x0000007a C 0x00000094 C 0x000000d8 C 0x000000c0 C 0x000001c2 C 0x000000d8 C 0x00000030 C
+EOF
+RUN
+
+NAME=c2x analysis: typezoo calling convention
+FILE=bins/tms320/c2x_legacy/typezoo_c2x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c2x -e analysis.cpu=c2x
+CMDS=<<EOF
+aaa
+afi @ 0x7a~call-convention
+afi @ 0x34~call-convention
+EOF
+EXPECT=<<EOF
+call-convention: c2x
+call-convention: c2x
+EOF
+RUN
+
+# The C5x build of the same source recovers the same layout on its own ISA.
+
+NAME=c5x analysis: typezoo function boundaries
+FILE=bins/tms320/c5x_legacy/typezoo_c5x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c5x -e analysis.cpu=c5x
+CMDS=<<EOF
+aaa
+afl~?
+afl~[0,2]
+EOF
+EXPECT=<<EOF
+19
+0x00000000 42
+0x0000002a 6
+0x00000030 4
+0x00000034 24
+0x0000004c 22
+0x00000062 24
+0x0000007a 26
+0x00000094 44
+0x000000c0 22
+0x000000d6 4
+0x000000da 24
+0x000000f2 60
+0x0000012e 82
+0x00000180 64
+0x000001c0 60
+0x000001fc 28
+0x00000218 26
+0x00000232 20
+0x00000246 256
+EOF
+RUN
+
+NAME=c5x analysis: typezoo callers of square and add2
+FILE=bins/tms320/c5x_legacy/typezoo_c5x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c5x -e analysis.cpu=c5x
+CMDS=<<EOF
+aaa
+axt @ 0x34~CALL
+axt @ 0x4c~CALL
+EOF
+EXPECT=<<EOF
+fcn.000001fc 0x204 [CALL] call 0x1a, *
+fcn.00000218 0x21c [CALL] call 0x1a, *
+fcn.00000218 0x226 [CALL] call 0x1a, *
+fcn.00000218 0x22c [CALL] call 0x26, *
+EOF
+RUN
+
+# cc-tms320-16.sdb is keyed by arch and bits, not by CPU, so both cores share
+# its default.cc; the c5x convention is still selectable.
+
+NAME=c5x analysis: typezoo calling convention
+FILE=bins/tms320/c5x_legacy/typezoo_c5x.bin
+ARGS=-a tms320 -b 16 -e asm.cpu=c5x -e analysis.cpu=c5x
+CMDS=<<EOF
+aaa
+afcl
+afi @ 0x7a~call-convention
+afc c5x @ 0x96
+afi @ 0x7a~call-convention
+EOF
+EXPECT=<<EOF
+c2x
+c5x
+reg
+call-convention: c2x
+call-convention: c2x
+EOF
+RUN

@@ -1,23 +1,21 @@
-NAME=VSF: Rocky Horror Picture Show- open
+NAME=VSF: Rocky Horror Picture Show norom
+FILE=bins/vsf/c128-rhps-norom.vsf
+CMDS=<<EOF
+iI~os
+echo ---
+oml
+EOF
+EXPECT=<<EOF
+os       C128
+---
+ 1 fd: 3 +0x0000008c 0x00000000 - 0x0000ffff r-x fmap.RAM BANK 0
+ 2 fd: 3 +0x0001008c 0x00000000 * 0x0000ffff r-x fmap.RAM BANK 1
+EOF
+RUN
+
+NAME=VSF: Rocky Horror Picture Show norom- open
 FILE=bins/vsf/c128-rhps-norom.vsf
 ARGS=-A
 CMDS=q!
 EXPECT=
-RUN
-
-NAME=VSF: Rocky Horror Picture Show- detection
-FILE=bins/vsf/c128-rhps-norom.vsf
-CMDS=iI~os
-EXPECT=<<EOF
-os       C128
-EOF
-RUN
-
-NAME=VSF: Rocky Horror Picture Show- ROMs
-FILE=bins/vsf/c128-rhps-norom.vsf
-CMDS=oml
-EXPECT=<<EOF
- 1 fd: 3 +0x0000008c 0x00000000 - 0x0000ffff r-x fmap.RAM BANK 0
- 2 fd: 3 +0x0001008c 0x00000000 * 0x0000ffff r-x fmap.RAM BANK 1
-EOF
 RUN

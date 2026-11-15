@@ -93,7 +93,7 @@ Now with more better English!
 All your base are belong to rizin
 Ask not what rizin can do for you - ask what you can do for rizin
 Try with ASAN, and be amazed
-bash: rizin2: command not found
+bash: rizin: command not found
 rizin loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!
@@ -161,7 +161,7 @@ Ceci n'est pas une rzpipe
 ((fn [f s n] (str (f f s n) "zin")) (fn [f s n] (pr s) (if (> n 0) (f f (str s "ri") (dec n)) s)) "" (/ 1.0 0))
 There's no way you could crash rizin. No. Way.
 When in doubt, try 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; pd;'
-.-. .- -.. .- .-. . ..---
+.-. .. --.. .. -.
 You crackme up!
 Search returned no hits. Did you mean 'Misassemble'?
 We fix bugs while you sleep.

@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 Anton Kochkov <anton.kochkov@gmail.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+ec b0x00 rgb:2b4356
+ec b0x7f rgb:4f93c4
+ec b0xff rgb:7fe0cd
+
+ec bin rgb:9fd4ec
+ec btext rgb:c3e9f4
+
+ec call rgb:5fe0c8
+ec ucall rgb:35c4ad
+ec jmp rgb:4f9ed4
+ec cjmp rgb:6fc0e6
+ec ujmp rgb:3f87bf
+
+ec cmp rgb:74c79a
+ec comment rgb:6e96aa
+ec usrcmt rgb:83b09a
+ec ret rgb:58cfe0
+ec fline rgb:2f6d92
+ec flow rgb:3f87bf
+ec flow2 rgb:24576f
+ec fname rgb:7fe0cd
+ec floc rgb:5c8aa4
+ec label rgb:9ad6b0
+ec math rgb:46c9bd
+ec mov rgb:b9e3f0
+ec nop rgb:36505f
+ec num rgb:8ce8d4
+ec offset rgb:5c7686
+ec other rgb:6aa9cf
+ec pop rgb:a3e7cf
+ec push rgb:8ad6a8
+ec prompt rgb:46c9bd
+ec reg rgb:7cc3e6
+ec creg rgb:a6e2f3
+ec args rgb:8fbfd6
+ec help rgb:9ad6b0
+ec input rgb:8ed2ea
+ec invalid rgb:62d9e8
+ec trap rgb:3ed2c8
+ec swi rgb:4dd9cf
+ec flag rgb:6dbf8a
+ec meta rgb:5c8aa4
+ec linehl rgb:0a2230
+
+ec graph.box rgb:3f87bf
+ec graph.box2 rgb:5fe0c8
+ec graph.box3 rgb:14283c
+ec graph.box4 rgb:0e1f2e
+ec graph.true rgb:74c79a
+ec graph.false rgb:7d97ac
+ec graph.ujump rgb:6fc0e6
+ec graph.current rgb:8ce8d4
+ec graph.traced rgb:46c9bd
+
+ec func_var rgb:7cc3e6
+ec func_var_type rgb:46c9bd
+ec func_var_addr rgb:9fd4ec
+
+ec ai.read rgb:5fa9d0
+ec ai.write rgb:46c9bd
+ec ai.exec rgb:7fe0cd
+ec ai.seq rgb:9ad6b0
+ec ai.ascii rgb:b9e3f0
+
+ec widget_bg rgb:7fe0cd rgb:0e2433
+ec widget_sel black rgb:7fe0cd

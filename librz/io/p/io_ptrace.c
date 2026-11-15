@@ -305,11 +305,11 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strcmp(cmd, "help")) {
-		eprintf("Usage: R!<cmd> [args]\n"
-			" R!ptrace   - use ptrace io\n"
-			" R!mem      - use /proc/pid/mem io if possible\n"
-			" R!pid      - show targeted pid\n"
-			" R!pid <#>  - select new pid\n");
+		eprintf("Usage: R! <cmd> [args]\n"
+			" R! ptrace   - use ptrace io\n"
+			" R! mem      - use /proc/pid/mem io if possible\n"
+			" R! pid      - show targeted pid\n"
+			" R! pid <#>  - select new pid\n");
 	} else if (!strcmp(cmd, "ptrace")) {
 		close_pidmem(iop);
 	} else if (!strcmp(cmd, "mem")) {
@@ -324,12 +324,12 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 					iop->pid = iop->tid = pid;
 				}
 			} else {
-				io->cb_printf("%d\n", iop->pid);
+				io->cb_printf(io->cb_printf_user, "%d\n", iop->pid);
 			}
 			return rz_str_newf("%d", iop->pid);
 		}
 	} else {
-		eprintf("Try: 'R!pid'\n");
+		eprintf("Try: 'R! pid'\n");
 	}
 	return NULL;
 }

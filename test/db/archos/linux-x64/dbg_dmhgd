@@ -1,0 +1,39 @@
+NAME=dmhgd with no allocated bins
+FILE=bins/elf/simple_malloc_x86_64
+ARGS=-d
+CMDS=<<EOF
+dcu main
+dmhgd~?0 chunks
+dmhgd small~?0 chunks
+dmhgd large~?0 chunks
+dmhgd unsorted~?0 chunks
+EOF
+EXPECT=<<EOF
+3
+1
+1
+1
+EOF
+RUN
+
+
+NAME=check dmhgd fast / tcache with chunks
+FILE=bins/elf/glibc-heap-2.31
+ARGS=-Rsetenv=LD_PRELOAD=bins/elf/libc-2.31.so -d
+CMDS=<<EOF
+db @ 0x004011fa
+dc
+dmhgd~?Chunk
+dmhgd fast~?size=0x20
+dc
+dmhgd tcache~?Items: 6
+dc 
+dmhgd tcache~?Items: 5
+EOF
+EXPECT=<<EOF
+15
+8
+1
+1
+EOF
+RUN

@@ -39,7 +39,7 @@ nodup
 false
 true
 false
-true
+1
 false
 EOF
 RUN

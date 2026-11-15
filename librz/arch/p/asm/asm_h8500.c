@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2025 billow <billow.fun@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <stdio.h>
-#include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <h8500/h8500.h>
 
-static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	H8500Instruction ins = { 0 };
 	if (!h8500_instruction_parse(buf, len, &ins)) {
 		return -1;

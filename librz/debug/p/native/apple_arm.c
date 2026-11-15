@@ -68,11 +68,11 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		RZ_LOG_ERROR("rz_debug_native_wait called with pid -1\n");
 		return RZ_DEBUG_REASON_ERROR;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(dbg->intr, NULL, NULL);
 	do {
 		reason = xnu_wait(dbg, pid);
 		if (reason == RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(dbg->intr)) {
 				// Perhaps check the inferior is still alive,
 				// otherwise xnu_stop will fail.
 				reason = xnu_stop(dbg, pid)
@@ -85,7 +85,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		}
 		break;
 	} while (true);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(dbg->intr);
 	dbg->reason.tid = pid;
 	dbg->reason.type = reason;
 	return reason;

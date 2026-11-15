@@ -5,7 +5,7 @@
 #include <rz_pdb.h>
 #include "../bin/pdb/pdb.h"
 
-static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types) {
+static void pdb_types_print_standard(RzCons *cons, const RzTypeDB *db, const RzPdb *pdb, const RzList /*<RzBaseType *>*/ *types) {
 	rz_return_if_fail(pdb && db && types);
 	if (!types) {
 		RZ_LOG_ERROR("core: there is nothing to print!\n");
@@ -14,9 +14,11 @@ static void pdb_types_print_standard(const RzTypeDB *db, const RzPdb *pdb, const
 	RzBaseType *type;
 	RzStrBuf *buf = rz_strbuf_new(NULL);
 	rz_list_foreach (types, it, type) {
-		rz_strbuf_append(buf, rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1));
+		char *pretty = rz_type_db_base_type_as_pretty_string(db, type, RZ_TYPE_PRINT_MULTILINE | RZ_TYPE_PRINT_END_NEWLINE, 1);
+		rz_strbuf_append(buf, pretty);
+		free(pretty);
 	}
-	rz_cons_print(rz_strbuf_get(buf));
+	rz_cons_print(cons, rz_strbuf_get(buf));
 	rz_strbuf_free(buf);
 }
 
@@ -95,7 +97,7 @@ static void pdb_types_print_json(const RzTypeDB *db, const RzPdb *pdb, const RzL
 	pj_end(pj);
 }
 
-static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, const RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_types_print(RzCons *cons, const RzTypeDB *db, const RzPdb *pdb, const RzCmdStateOutput *state) {
 	rz_return_if_fail(db && pdb && state);
 	RzPdbTpiStream *stream = pdb->s_tpi;
 	if (!stream) {
@@ -104,7 +106,7 @@ static void rz_core_bin_pdb_types_print(const RzTypeDB *db, const RzPdb *pdb, co
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		pdb_types_print_standard(db, pdb, stream->print_type);
+		pdb_types_print_standard(cons, db, pdb, stream->print_type);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
 		pdb_types_print_json(db, pdb, stream->print_type, state->d.pj);
@@ -201,18 +203,18 @@ RZ_API char *rz_core_bin_pdb_gvars_as_string(
 	return rz_strbuf_drain(buf);
 }
 
-static void rz_core_bin_pdb_gvars_print(RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
+static void rz_core_bin_pdb_gvars_print(RzCons *cons, RzPdb *pdb, const ut64 baddr, RzCmdStateOutput *state) {
 	rz_return_if_fail(pdb && state);
 	char *str = rz_core_bin_pdb_gvars_as_string(pdb, baddr, state);
 	// We don't need to print the output of JSON because the RzCmdStateOutput will handle it.
 	if (state->mode == RZ_OUTPUT_MODE_STANDARD) {
-		rz_cons_print(str);
+		rz_cons_print(cons, str);
 	}
 	free(str);
 }
 
 typedef struct {
-	const RzCore *core;
+	RzCore *core;
 	const ut64 baddr;
 	const char *file;
 } PDBLoadContext;
@@ -236,6 +238,9 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 
 		ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
 		if (addr == UT64_MAX) {
+			free(filtered_name);
+			free(fname);
+			free(name);
 			return true;
 		}
 		if (ctx->baddr != UT64_MAX) {
@@ -244,7 +249,7 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 
 		RzFlagItem *item = rz_flag_set(ctx->core->flags, fname, addr, 0);
 		if (item) {
-			rz_flag_item_set_realname(item, name);
+			rz_flag_item_set_realname(ctx->core->flags, item, name);
 		}
 		free(filtered_name);
 		free(fname);
@@ -275,7 +280,8 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 		if (!t) {
 			return true;
 		}
-		RzType *rt = rz_type_db_pdb_parse(ctx->core->analysis->typedb, pdb->s_tpi, t);
+		RzTypeDB *typedb = rz_analysis_get_type_db(ctx->core->analysis);
+		RzType *rt = rz_type_db_pdb_parse(typedb, pdb->s_tpi, t);
 		if (!rt) {
 			return true;
 		}
@@ -284,8 +290,53 @@ static bool symbol_load(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
 	return true;
 }
 
+/**
+ * \brief Second-pass callback that turns PDB public function symbols into
+ * analyzed functions.
+ *
+ * The PDB explicitly marks public symbols that are functions (cvpsfFunction).
+ * Some of these (e.g. virtual methods only reached through a vtable) are never
+ * discovered by call-following code analysis, so without this they would be
+ * present only as a flag and never show up as a function. This mirrors how
+ * \ref rz_core_analysis_all turns FUNC bin symbols into functions: it triggers
+ * analysis at the address and lets the already-set PDB flag name the function.
+ *
+ * This must run after all symbol flags have been set (see \ref pdb_symbols_load)
+ * so that functions reached by direct calls from here are also named correctly.
+ */
+static bool symbol_make_function(RzPdb *pdb, const PDBSymbol *symbol, void *u) {
+	if (!symbol || symbol->kind != PDB_Public) {
+		return true;
+	}
+	const PDBSPublic *public = symbol->data;
+	if (!public || !public->function || RZ_STR_ISEMPTY(public->name)) {
+		return true;
+	}
+	PDBLoadContext *ctx = u;
+	RzCore *core = ctx->core;
+	ut64 addr = rz_bin_pdb_to_rva(pdb, &public->offset);
+	if (addr == UT64_MAX) {
+		return true;
+	}
+	if (ctx->baddr != UT64_MAX) {
+		addr += ctx->baddr;
+	}
+	// Only create functions where executable code is actually mapped. This also
+	// keeps the symbol info (flags, types, globals) usable when no backing
+	// binary is loaded, since in that case no function will be created.
+	if (!rz_io_is_valid_offset(core->io, addr, RZ_PERM_X)) {
+		return true;
+	}
+	if (rz_analysis_get_function_at(core->analysis, addr)) {
+		return true;
+	}
+	int depth = rz_config_get_i(core->config, "analysis.depth");
+	rz_core_analysis_fcn(core, addr, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, depth);
+	return true;
+}
+
 static void pdb_symbols_load(
-	const RzCore *core, RzPdb *pdb, const char *pdbfile) {
+	RzCore *core, RzPdb *pdb, const char *pdbfile) {
 	rz_return_if_fail(core && pdb);
 	if (!(pdb->s_pe && pdb->s_gdata)) {
 		return;
@@ -306,6 +357,12 @@ static void pdb_symbols_load(
 	rz_pdb_all_symbols_foreach(pdb, symbol_load, &ctx);
 
 	rz_flag_space_pop(core->flags);
+
+	// Create functions for public function symbols in a separate pass, after
+	// every symbol flag has been set, so each function (and any function it
+	// directly calls) is named from its PDB flag.
+	rz_pdb_all_symbols_foreach(pdb, symbol_make_function, &ctx);
+
 	free(file);
 }
 
@@ -324,12 +381,13 @@ RZ_API RzPdb *rz_core_pdb_load_info(RZ_NONNULL RzCore *core, RZ_NONNULL const ch
 	}
 
 	// Save compound types into types database
-	rz_type_db_pdb_load(core->analysis->typedb, pdb);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_pdb_load(typedb, pdb);
 	pdb_symbols_load(core, pdb, rz_file_basename(file));
 	return pdb;
 }
 
-static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
+static void pdb_modules_print(RzCons *cons, RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput *state) {
 	if (!(pdb->s_dbi && pdb->s_dbi->modules)) {
 		return;
 	}
@@ -340,7 +398,7 @@ static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput
 		pj_ka(j, "modules");
 		break;
 	case RZ_OUTPUT_MODE_STANDARD: {
-		rz_cons_println("modules:");
+		rz_cons_println(cons, "modules:");
 		break;
 	}
 	default: rz_warn_if_reached();
@@ -357,7 +415,7 @@ static void pdb_modules_print(RZ_NONNULL RzPdb *pdb, RZ_NONNULL RzCmdStateOutput
 			break;
 		}
 		case RZ_OUTPUT_MODE_STANDARD: {
-			rz_cons_println(module->module_name);
+			rz_cons_println(cons, module->module_name);
 			break;
 		}
 		default: rz_warn_if_reached();
@@ -388,8 +446,9 @@ RZ_API void rz_core_pdb_info_print(RZ_NONNULL RzCore *core, RZ_NONNULL RzTypeDB 
 	}
 
 	rz_cmd_state_output_array_start(state);
-	pdb_modules_print(pdb, state);
-	rz_core_bin_pdb_types_print(core->analysis->typedb, pdb, state);
-	rz_core_bin_pdb_gvars_print(pdb, baddr, state);
+	pdb_modules_print(core->cons, pdb, state);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_core_bin_pdb_types_print(core->cons, typedb, pdb, state);
+	rz_core_bin_pdb_gvars_print(core->cons, pdb, baddr, state);
 	rz_cmd_state_output_array_end(state);
 }

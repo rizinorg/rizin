@@ -9,7 +9,7 @@ pa call test
 EOF
 EXPECT=<<EOF
 ffd0
-e81c000000
+e8fbffffff
 EOF
 RUN
 

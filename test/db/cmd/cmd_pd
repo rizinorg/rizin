@@ -1738,20 +1738,16 @@ pd 1 @a:x86:64
 ahl
 EOF
 EXPECT=<<EOF
-0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
+0x00005c20      31ed4989       ldc   p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
+ 0x00005c20 => arch='arm' bits=16
 0000:5c20     31ed           xor   bp, bp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+ 0x00005c20 => arch='arm' bits=16
 0x00005c20      31ed           xor   ebp, ebp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+ 0x00005c20 => arch='arm' bits=16
 EOF
-BROKEN=1
 RUN
 
 NAME=pd bin.str.filter
@@ -1915,6 +1911,32 @@ EXPECT=<<EOF
         @-> 0x00000008      feffffea       b     8
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
             0x00000010      00c09fe5       ldr   ip, [pc]              ; [0x18:4]=13 ; 24
+EOF
+RUN
+
+NAME=pd small loaded value named by a flag
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 0c009fe50c109fe50c209fe50c309fe51eff2fe18001000040000000c001000000010000
+f obj.named @ 0x180
+f obj.low @ 0x40
+f obj.min @ 0x100
+pd 4 @ 0
+e asm.sub.varmin=0x181
+pd 1 @ 0
+e asm.sub.varmin=0x80000000
+pd 1 @ 0
+EOF
+EXPECT=<<EOF
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=0x180 obj.named
+            0x00000004      ldr   r1, [0x00000018]                     ; [0x18:4]=64
+            0x00000008      ldr   r2, [0x0000001c]                     ; [0x1c:4]=448
+            0x0000000c      ldr   r3, [0x00000020]                     ; [0x20:4]=0x100 obj.min
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=384
+            0x00000000      ldr   r0, [0x00000014]                     ; [0x14:4]=384
 EOF
 RUN
 
@@ -2197,8 +2219,7 @@ aa
 pdf
 EOF
 EXPECT=<<EOF
-/ entry0(int64_t arg3);
-|           ; arg int64_t arg3 @ rdx
+/ entry0(int64_t arg3 @ rdx);
 |           0x00005ae0      f30f1efa       endbr64
 |           0x00005ae4      31ed           xor   ebp, ebp
 |           0x00005ae6      4989d1         mov   r9, rdx               ; arg3
@@ -2210,7 +2231,7 @@ EXPECT=<<EOF
 |           0x00005af3      4c8d05660c01.  lea   r8, qword [0x00016760]
 |           0x00005afa      488d0def0b01.  lea   rcx, qword [0x000166f0]
 |           0x00005b01      488d3d68e5ff.  lea   rdi, qword [main]     ; 0x4070 ; "AWAVAUATU\x89\xfdSH\x89\xf3H\x83\xecXH\x8b>dH\x8b\U00000004%("
-\           0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [reloc.__libc_start_main:8]=0x23708 reloc.target.__libc_start_main
+\           0x00005b08      ff150ac30100   call  qword [reloc.__libc_start_main] ; [0x21e18:8]=0x23708 reloc.target.__libc_start_main
 EOF
 RUN
 
@@ -2271,10 +2292,10 @@ pd 1 @ 0x8048566
 EOF
 EXPECT=<<EOF
             0x08048566      e829feffff     call  sym.imp.printf
-            0x08048566      e829feffff     call  printf                ; sym.imp.printf
+            0x08048566      e829feffff     call  printf
 0x08048394    1 6            sym.imp.printf
 |           0x08048566      e829feffff     call  sym.imp.printf        ; int printf(const char *format)
-|           0x08048566      e829feffff     call  printf                ; sym.imp.printf ; int printf(const char *format)
+|           0x08048566      e829feffff     call  printf                ; int printf(const char *format)
 EOF
 RUN
 
@@ -2287,9 +2308,9 @@ e asm.bits=64
 wx 90905152539090 ; pd 7 ~&5,push
 EOF
 EXPECT=<<EOF
-            0x00000002      51             push  rcx
-            0x00000003      52             push  rdx
-            0x00000004      53             push  rbx
+  0x00000002      51             push  rcx
+  0x00000003      52             push  rdx
+  0x00000004      53             push  rbx
 EOF
 RUN
 
@@ -2312,7 +2333,7 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-sym.parell(const char *s);
+sym.parell(const char *s @ stack + 0x4);
 EOF
 RUN
 
@@ -2326,7 +2347,121 @@ aaa
 pdf @ 0x08048484~:1
 EOF
 EXPECT=<<EOF
-parell(const char *s);
+parell(const char *s @ stack + 0x4);
+EOF
+RUN
+
+NAME=pd: argument location in the signature
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+pd 1
+echo --
+e asm.fcn.signature.location=false
+pd 1
+echo --
+e asm.fcn.signature.location=true
+e asm.fcn.signature=false
+pd 1
+echo --
+e asm.fcn.signature=true
+e asm.var.summary=1
+pd 1
+EOF
+EXPECT=<<EOF
+/ fcn.00000000(int64_t arg1 @ rcx, int64_t arg2 @ rdx, int64_t arg3 @ r8);
+|           0x00000000      push  rbx
+--
+/ fcn.00000000(int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           0x00000000      push  rbx
+--
+/ fcn.00000000
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           0x00000000      push  rbx
+--
+/ fcn.00000000(int64_t arg1, int64_t arg2, int64_t arg3);
+| stack: 0 (vars 0, args 0)
+| rg: 3 (vars 0, args 3)
+|           0x00000000      push  rbx
+EOF
+RUN
+
+NAME=pd: arguments keep a line for their comment
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+Cv arg2 second argument
+pd 1
+EOF
+EXPECT=<<EOF
+/ fcn.00000000(int64_t arg1 @ rcx, int64_t arg2 @ rdx, int64_t arg3 @ r8);
+|           ; arg int64_t arg2 @ rdx    ; second argument
+|           0x00000000      push  rbx
+EOF
+RUN
+
+NAME=pd: argument location in a signature from the types
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+s 0x18
+afn strlen
+pd 1
+echo --
+afvn s arg1
+pd 1
+echo --
+afvt s "const char *"
+pd 1
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from fcn.00000000 @ 0x9
+/ size_t strlen(const char *s);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           0x00000018      sub   ecx, edx                             ; arg2
+--
+            ; CALL XREF from fcn.00000000 @ 0x9
+/ size_t strlen(const char *s);
+|           ; arg int64_t s @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           0x00000018      sub   ecx, edx                             ; arg2
+--
+            ; CALL XREF from fcn.00000000 @ 0x9
+/ size_t strlen(const char *s @ rcx);
+|           ; arg int64_t arg2 @ rdx
+|           0x00000018      sub   ecx, edx                             ; arg2
+EOF
+RUN
+
+NAME=pd: a function pointer argument keeps its line
+FILE=bins/elf/analysis/guess-number-riscv64
+CMDS=<<EOF
+aaa
+pd 1 @ dbg.atexit
+EOF
+EXPECT=<<EOF
+            ; CALL XREF from entry0 @ 0x1002c
+/ int atexit(void (*anonymous_fcn_0x83)())
+|           ; arg void (*anonymous_fcn_0x83)() fn @ x10
+|           0x000101f0      mv    a1, a0                               ; atexit.c:64 ; fn
 EOF
 RUN
 
@@ -2753,7 +2888,7 @@ EXPECT=<<EOF
 | 0x08048572      call  sym.imp.printf                                 ; int printf(const char *format)
 | 0x08048577      lea   eax, dword [var_7ch]
 | 0x0804857a      mov   dword [var_88h], eax
-| 0x0804857e      mov   dword [esp], data.080486b2                     ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
+| 0x0804857e      mov   dword [esp], str.s                             ; [0x80486b2:4]=0x7325 ; "%s" ; const char *format
 | 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
 | 0x0804858a      lea   eax, dword [var_7ch]
 | 0x0804858d      mov   dword [esp], eax                               ; int32_t arg_4h
@@ -3079,7 +3214,7 @@ EXPECT=<<EOF
     "fcn_last": 134514069,
     "size": 7,
     "opcode": "mov dword [esp], 0x80486b2",
-    "disasm": "mov dword [esp], data.080486b2",
+    "disasm": "mov dword [esp], str.s",
     "bytes": "c70424b2860408",
     "family": "cpu",
     "type": "mov",

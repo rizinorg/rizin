@@ -13,6 +13,10 @@
 // Capstone does not extract the BO or BI fields of instructions. So we do it manually.
 #define PPC_READ_BO_FIELD (((rz_read_ble32(insn->bytes, PPC_IN_BE_MODE)) & 0x03e00000) >> 21)
 #define PPC_READ_BI_FIELD (((rz_read_ble32(insn->bytes, PPC_IN_BE_MODE)) & 0x001f0000) >> 16)
+// Option bits of the BO field of a branch instruction. See PowerISA v3.1B,
+// Book I, Section 2.4.1 "Branch Conditional" for the meaning of each bit.
+#define PPC_BO_IGNORE_CR  0x10 // BO[0]: 1 = do not test the CR bit selected by BI
+#define PPC_BO_IGNORE_CTR 0x04 // BO[2]: 1 = do not decrement and test CTR
 #define IN_BE_MODE        (mode & CS_MODE_BIG_ENDIAN)
 #define IN_64BIT_MODE     (mode & CS_MODE_64)
 #define PPC_ARCH_BITS     (IN_64BIT_MODE ? 64 : 32)

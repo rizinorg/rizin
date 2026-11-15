@@ -105,9 +105,9 @@ EXPECT=<<EOF
 10
 0x08048000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.r_x
 0x08049000 4096 ..._rizin_test_bins_elf_analysis_x86_helloworld_gcc.rw
-0x________ 8192 vvar_.r
+0x________ ____ vvar_.r
 0x________ 8192 vvar_vclock_.r
-0x________ 8192 vdso_.r_x
+0x________ ____ vdso_.r_x
 0x________ 4096 usr_lib32_ld_linux.so.2.r
 0x________ 143360 usr_lib32_ld_linux.so.2.r_x
 0x________ 57344 usr_lib32_ld_linux.so.2.r.________
@@ -125,5 +125,24 @@ REGEXP_FILTER_ERR=(Process\swith\sPID)|(helloworld-gcc\sreopened\sin\sread-write
 EXPECT_ERR=<<EOF
 Process with PID
 helloworld-gcc reopened in read-write mode
+EOF
+RUN
+
+NAME=ood/doc with spaced path
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+cp `ol.t:uri:quiet` "space helloworld"
+!chmod +x "space helloworld" #as cp drops it
+o--
+o "space helloworld"
+ood > $_
+doc > $_
+ood > $_
+dc
+o--
+rm "space helloworld"
+EOF
+EXPECT=<<EOF
+Hello world!
 EOF
 RUN

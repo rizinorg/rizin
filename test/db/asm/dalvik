@@ -73,7 +73,7 @@ d "div-long/2addr v0, v2" BE20
 d "double-to-float v0, v4" 8C40
 d "double-to-int v0, v4" 8A40
 d "double-to-long v0, v4" 8B40
-d "fill-array-data v6, 0x00000052" 260625000000
+d "fill-array-data v6, 0x0000004a" 260625000000
 d "filled-new-array {v0, v0}, class+1" 242001000000
 d "filled-new-array/range {v19..v21}, class+6" 250306001300
 d "float-to-double v0, v3" 8930
@@ -173,7 +173,10 @@ d "or-int/lit16 v1, v0, 0x4d2" D601D204
 d "or-int/lit8 v0, v2, 0x3" DE000203
 d "or-long v6, v0, v2" A1060002
 d "or-long/2addr v0, v2" C120
-d "packed-switch v2, 0x00000020" 2B020C000000
+d "packed-switch v2, 0x00000018" 2B020C000000
+d "packed-switch v2, 0x100000000" 2b02f0ffffff 0x100000020
+d "packed-switch v2, 0x100000000" 2b0200000080 0x200000000
+d "packed-switch v2, 0x100000000" 2b02ffffff7f 2
 d "rem-double v6, v0, v2" AF060002
 d "rem-double/2addr v0, v2" CF20
 d "rem-float v3, v0, v1" AA030001
@@ -207,7 +210,10 @@ d "shr-int/2addr v0, v1" B910
 d "shr-int/lit8 v1, v0, 0x1" E1010001
 d "shr-long v2, v0, v4" A4020004
 d "shr-long/2addr v0, v2" C420
-d "sparse-switch v2, 0x00000020" 2C020c000000
+d "sparse-switch v2, 0x00000018" 2C020c000000
+d "sparse-switch v2, 0x100000000" 2c02f0ffffff 0x100000020
+d "sparse-switch v2, 0x100000000" 2c0200000080 0x200000000
+d "sparse-switch v2, 0x100000000" 2c02ffffff7f 2
 d "sput v0, field+1" 67000100
 d "sput-boolean v0, field+3" 6A000300
 d "sput-byte v0, field+2" 6B000200

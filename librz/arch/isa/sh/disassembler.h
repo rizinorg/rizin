@@ -14,6 +14,33 @@
 #define SH_BANKED_REG_COUNT 8
 #define SH_REG_COUNT        61
 
+/**
+ * \brief SuperH CPU model
+ *
+ * Selected through the "asm.cpu" option. SuperH-4 is the default since it is a
+ * superset (at the instruction set level) of all the currently supported
+ * instructions, so it keeps backward compatibility with the previous behavior.
+ */
+typedef enum sh_cpu_t {
+	SH_CPU_SH4 = 0, ///< SuperH-4 (default)
+	SH_CPU_SH3, ///< SuperH-3
+} SHCpu;
+
+/**
+ * \brief Set of SuperH CPU models on which an instruction is available
+ *
+ * Used to tag each entry of the opcode lookup table so that the disassembler
+ * can reject instructions which do not belong to the selected \ref SHCpu. The
+ * SuperH instruction set is upward compatible (SH-1 through SH-4 at the
+ * instruction set level), so the only currently tracked distinction is whether
+ * an instruction was introduced with SuperH-4 or is shared with SuperH-3.
+ */
+typedef enum sh_arch_t {
+	SH_ARCH_SH3 = 1 << 0, ///< available on SuperH-3
+	SH_ARCH_SH4 = 1 << 1, ///< available on SuperH-4
+	SH_ARCH_COMMON = SH_ARCH_SH3 | SH_ARCH_SH4, ///< available on both SuperH-3 and SuperH-4
+} SHArch;
+
 typedef enum sh_addr_mode_t {
 	SH_ADDR_INVALID = 0,
 	SH_REG_DIRECT,
@@ -245,9 +272,12 @@ typedef struct sh_opcode_t {
 	SHOpMnem mnemonic;
 	SHParam param[2];
 	SHScaling scaling;
+	SHArch arch; ///< set of SuperH CPU models on which this instruction is available
 } SHOp;
 
-RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode);
+RZ_IPI RZ_OWN SHOp *sh_disassembler(ut16 opcode, SHCpu cpu);
+
+RZ_IPI SHCpu sh_cpu_by_name(RZ_NULLABLE const char *name);
 
 RZ_IPI RZ_OWN char *sh_op_param_to_str(SHParam param, SHScaling scaling, ut64 pc);
 RZ_IPI RZ_OWN char *sh_op_to_str(RZ_NONNULL const SHOp *op, ut64 pc);

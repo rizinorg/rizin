@@ -6,7 +6,7 @@
 #define RZIL_ANALYSIS_X86_IL_H
 
 #include <rz_lib.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 
 #if USE_SYS_ZYDIS
 #include <Zydis/Zydis.h>

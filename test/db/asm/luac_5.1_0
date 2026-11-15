@@ -1,0 +1,31 @@
+ad "newtable r0 0 0" 0a000000
+ad "setglobal r0 -1" 07000000
+ad "getglobal r0 -1" 05000000
+ad "getglobal r1 -1" 45000000
+ad "settable r0 -2 r1" 09408080
+ad "closure r1 0" 64000000
+ad "settable r0 -3 r1" 09400081
+ad "closure r1 1" 64400000
+ad "settable r0 -4 r1" 09408081
+ad "self r0 r0 -3" 0b804000
+ad "loadk r2 -6" 81400100
+ad "call r0 3 2" 1c808001
+ad "setglobal r0 -5" 07000100
+ad "getglobal r0 -5" 05000100
+ad "self r0 r0 -4" 0bc04000
+ad "loadk r2 -7" 81800100
+ad "call r0 3 1" 1c408001
+ad "return r0 1" 1e008000
+
+ad "newtable r2 0 0" 8a000000
+ad "getglobal r3 -1" c5000000
+ad "move r4 r2" 00010001
+ad "getglobal r5 -2" 45410000
+ad "call r3 3 1" dc408001
+ad "settable r2 -3 r1" 89400081
+ad "return r2 2" 9e000001
+
+#ad "gettable 2 0 -1" 0b000000 # ?? Not wrong in official
+#ad "sub 2 2 1" 0d000000 # ?? Not wrong in official
+#ad "settable r0 -1 r2" 0b000000 # ?? Not wrong in official
+#ad "return 0 1" 10000000 # ?? Not wrong in official

@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_asm.h>
+#include "asm_private.h"
 #include <rz_core.h>
 
 #include "java/jvm.h"
@@ -28,7 +29,7 @@ static void java_asm_update_context(JavaAsmContext *ctx) {
 	}
 }
 
-static ut64 java_asm_find_method(RzAsm *a) {
+static ut64 java_asm_find_method(const RzAsm *a) {
 	ut64 addr = a->pc;
 	if (!a->binb.bin) {
 		return addr;
@@ -52,7 +53,7 @@ static ut64 java_asm_find_method(RzAsm *a) {
 	return addr;
 }
 
-static int java_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+static int java_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	JavaAsmContext *ctx = (JavaAsmContext *)a->plugin_data;
 	rz_strbuf_set(&op->buf_asm, "invalid");
 
@@ -139,7 +140,7 @@ static bool java_asm_fini(void *user) {
 	return true;
 }
 
-static int java_assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
+static int java_assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	ut8 buffer[128];
 	st32 written = 0;
 	st32 slen = strlen(str);

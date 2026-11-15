@@ -146,6 +146,14 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 	return 0;
 }
 
+int gdbr_set_interrupt(libgdbr_t *g, RzInterrupt *intr) {
+	if (!g) {
+		return -1;
+	}
+	g->intr = intr;
+	return 0;
+}
+
 int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;

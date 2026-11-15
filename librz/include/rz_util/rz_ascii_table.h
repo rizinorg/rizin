@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-RZ_API const char *ret_ascii_table(void);
+RZ_API const char *rz_get_ascii_table(void);
 
 #ifdef __cplusplus
 }

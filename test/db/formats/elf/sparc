@@ -2,10 +2,12 @@ NAME=Sparc64 - v9
 FILE=bins/elf/sparc/sparc64_insn_jmp.bin
 CMDS=<<EOF
 e asm.cpu
+echo ---
 e asm.bits
 EOF
 EXPECT=<<EOF
 v9
+---
 64
 EOF
 RUN
@@ -14,10 +16,12 @@ NAME=Sparc32 v8
 FILE=bins/elf/sparc/sparc32_insn_all.bin
 CMDS=<<EOF
 e asm.cpu
+echo ---
 e asm.bits
 EOF
 EXPECT=<<EOF
 v8
+---
 32
 EOF
 RUN

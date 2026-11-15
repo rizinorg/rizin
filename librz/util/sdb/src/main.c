@@ -184,11 +184,24 @@ static int insertkeys(Sdb *s, const char **args, int nargs) {
 	return must_save;
 }
 
-static int createdb(RZ_NONNULL RZ_BORROW Sdb **s, RZ_NONNULL RZ_BORROW SlurpData *slurp_data, const char *f, const char **args, int nargs) {
+static int createdb(RZ_NONNULL RZ_BORROW Sdb **s, RZ_NONNULL RZ_BORROW SlurpData *slurp_data, const char *filename, const char **args, int nargs) {
 	rz_return_val_if_fail(s, 0);
 	rz_return_val_if_fail(slurp_data, 0);
 
-	*s = sdb_new(NULL, f, 0);
+	/*
+	 * The database is created from scratch: a file that already exists
+	 * under the same path is removed first. Otherwise sdb_new() loads
+	 * the old content and sdb_sync() merges it back, so keys that were
+	 * dropped from the text sources would survive forever in the
+	 * generated database. This is especially harmful for build systems
+	 * that reuse the output artifact of the generation command across
+	 * incremental builds (meson custom_target), where a stale artifact
+	 * silently diverges from the checked-in sources.
+	 */
+	if (filename && *filename) {
+		remove(filename);
+	}
+	*s = sdb_new(NULL, filename, 0);
 	if (!(*s)) {
 		eprintf("Cannot create database\n");
 		return 1;

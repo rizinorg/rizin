@@ -175,7 +175,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 	nto_send(g, sizeof(g->tran.pkt.connect), 0);
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
-		eprintf("%s: connection failed: %lld\n", __func__,
+		eprintf("%s: connection failed: %" PFMT64d "\n", __func__,
 			EXTRACT_SIGNED_INTEGER(&g->recv.pkt.err.err, 4));
 		return -1;
 	}
@@ -195,7 +195,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 		g->target_proto_major = (g->target_proto_major >> 8) & DSMSG_PROTOVER_MAJOR;
 		g->target_proto_minor = g->target_proto_minor & DSMSG_PROTOVER_MINOR;
 	} else {
-		eprintf("Connection failed (Protocol Version Query): %lld\n",
+		eprintf("Connection failed (Protocol Version Query): %" PFMT64d "\n",
 			EXTRACT_SIGNED_INTEGER(&g->recv.pkt.err.err, 4));
 		return -1;
 	}
@@ -246,9 +246,6 @@ ptid_t qnxr_attach(libqnxr_t *g, pid_t pid) {
 }
 
 ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
-	ut32 argc = 0;
-	ut32 envc = 0;
-
 	char **argv, *p;
 	int errors = 0;
 
@@ -258,8 +255,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 	nto_send_init(g, DStMsg_env, DSMSG_ENV_CLEARENV, SET_CHANNEL_DEBUG);
 	nto_send(g, sizeof(DStMsg_env_t), 1);
 
-	for (envc = 0; *env; env++, envc++)
+	for (; *env; env++) {
 		errors += !nto_send_env(g, *env);
+	}
 
 	if (errors) {
 		eprintf("%s: error(s) occurred while sending environment\n", __func__);
@@ -270,8 +268,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 
 	if (file != NULL) {
 		errors = !nto_send_arg(g, file);
-		if (!errors)
+		if (!errors) {
 			errors = !nto_send_arg(g, file);
+		}
 
 		if (errors) {
 			eprintf("%s: failed to send executable file name\n", __func__);
@@ -279,8 +278,9 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 		}
 
 		errors = 0;
-		for (argv = args; *argv && **argv; argv++, argc++)
+		for (argv = args; *argv && **argv; argv++) {
 			errors |= !nto_send_arg(g, *argv);
+		}
 
 		if (errors) {
 			eprintf("%s: error(s) occurred while sending args\n", __func__);
@@ -344,12 +344,10 @@ int qnxr_read_registers(libqnxr_t *g) {
 
 		if (rlen > 0) {
 			if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
-				memcpy(buf + g->registers[i].offset,
-					g->recv.pkt.okdata.data, len);
+				memcpy(buf + g->registers[i].offset, g->recv.pkt.okdata.data, len);
 				n += len;
 			} else {
-				memset(buf + g->registers[i].offset,
-					0, len);
+				memset(buf + g->registers[i].offset, 0, len);
 			}
 		} else {
 			eprintf("%s: couldn't read register %d\n", __func__, i);
@@ -358,16 +356,19 @@ int qnxr_read_registers(libqnxr_t *g) {
 		i++;
 	}
 
+	n = RZ_MIN(n, DS_DATA_MAX_SIZE);
 	memcpy(g->recv.data, buf, n);
 	return n;
 }
 
 int qnxr_read_memory(libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
-	int rcv_len, tot_len, ask_len;
-	ut64 addr;
+	int rcv_len = 0;
+	ssize_t tot_len = 0, ask_len = 0;
+	ut64 addr = 0;
 
-	if (!g || !data)
+	if (!g || !data) {
 		return -1;
+	}
 
 	tot_len = ask_len = 0;
 
@@ -378,15 +379,21 @@ int qnxr_read_memory(libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 		ask_len = ((len - tot_len) > DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (len - tot_len);
 
 		g->tran.pkt.memrd.size = EXTRACT_SIGNED_INTEGER(&ask_len, 2);
-		rcv_len = nto_send(g, sizeof(g->tran.pkt.memrd), 0) -
-			sizeof(g->recv.pkt.hdr);
-		if (rcv_len <= 0)
+		rcv_len = nto_send(g, sizeof(g->tran.pkt.memrd), 0) - sizeof(g->recv.pkt.hdr);
+		if (rcv_len < 1 || rcv_len > DS_DATA_MAX_SIZE) {
 			break;
+		}
+
+		if ((tot_len + rcv_len) >= len) {
+			rcv_len = len - tot_len;
+		}
+
 		if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
 			memcpy(data + tot_len, g->recv.pkt.okdata.data, rcv_len);
 			tot_len += rcv_len;
-		} else
+		} else {
 			break;
+		}
 	} while (tot_len != len);
 
 	return tot_len;
@@ -395,8 +402,9 @@ int qnxr_read_memory(libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 int qnxr_write_memory(libqnxr_t *g, ut64 address, const ut8 *data, ut64 len) {
 	ut64 addr;
 
-	if (!g || !data)
+	if (!g || !data || len > DS_DATA_MAX_SIZE) {
 		return -1;
+	}
 
 	nto_send_init(g, DStMsg_memwr, 0, SET_CHANNEL_DEBUG);
 	addr = address;
@@ -432,12 +440,14 @@ void qnxr_pidlist(libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
 		g->tran.pkt.pidlist.tid = EXTRACT_SIGNED_INTEGER(&start_tid, 4);
 		nto_send(g, sizeof(g->tran.pkt.pidlist), 0);
 
-		if (g->recv.pkt.hdr.cmd == DSrMsg_err || g->recv.pkt.hdr.cmd != DSrMsg_okdata)
+		if (g->recv.pkt.hdr.cmd == DSrMsg_err || g->recv.pkt.hdr.cmd != DSrMsg_okdata) {
 			return;
+		}
 
 		pid = EXTRACT_SIGNED_INTEGER(&pidlist->pid, 4);
-		if (cb != NULL)
+		if (cb != NULL) {
 			cb(ctx, pid, pidlist->name);
+		}
 		subcmd = DSMSG_PIDLIST_NEXT;
 	}
 }
@@ -480,7 +490,7 @@ int qnxr_write_register(libqnxr_t *g, int index, char *value, int len) {
 
 	regset = i386nto_regset_id(index);
 	tdep_len = i386nto_register_area(index, regset, &off);
-	if (len < 0 || tdep_len != len) {
+	if (len < 0 || tdep_len != len || len > DS_DATA_MAX_SIZE) {
 		eprintf("%s: invalid length\n", __func__);
 		return -1;
 	}
@@ -708,10 +718,8 @@ int nto_send_env(libqnxr_t *g, const char *env) {
 		while (len > DS_DATA_MAX_SIZE) {
 			nto_send_init(g, DStMsg_env, DSMSG_ENV_SETENV_MORE,
 				SET_CHANNEL_DEBUG);
-			memcpy(g->tran.pkt.env.data, env + totlen,
-				DS_DATA_MAX_SIZE);
-			if (!nto_send(g, offsetof(DStMsg_env_t, data) + DS_DATA_MAX_SIZE,
-				    1)) {
+			memcpy(g->tran.pkt.env.data, env + totlen, DS_DATA_MAX_SIZE);
+			if (!nto_send(g, offsetof(DStMsg_env_t, data) + DS_DATA_MAX_SIZE, 1)) {
 				/* An error occurred.  */
 				return 0;
 			}

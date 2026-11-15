@@ -27,12 +27,23 @@ typedef enum {
 	RZ_THREAD_QUEUE_UNLIMITED = 0,
 } RzThreadQueueSize;
 
+typedef enum {
+	/**
+	 * \brief The operation on the ring buffer is invalid because it is closed.
+	 * Subsequent operations MUST NOT be performed on the ring buffer.
+	 */
+	RZ_THREAD_RING_BUF_CLOSED = 0,
+	RZ_THREAD_RING_BUF_OK, ///< The operation on the ring buffer succeeded.
+	RZ_THREAD_RING_BUF_FAIL, ///< The operation on the ring buffer failed.
+} RzThreadRingBufResult;
+
 typedef struct rz_th_sem_t RzThreadSemaphore;
 typedef struct rz_th_lock_t RzThreadLock;
 typedef struct rz_th_cond_t RzThreadCond;
 typedef struct rz_th_t RzThread;
 typedef struct rz_th_pool_t RzThreadPool;
 typedef struct rz_th_queue_t RzThreadQueue;
+typedef struct rz_th_ring_buf_t RzThreadRingBuf;
 typedef void *(*RzThreadFunction)(void *user);
 
 /**
@@ -69,7 +80,6 @@ RZ_API RZ_OWN RzThreadCond *rz_th_cond_new(void);
 RZ_API void rz_th_cond_signal(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_signal_all(RZ_NONNULL RzThreadCond *cond);
 RZ_API void rz_th_cond_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock);
-RZ_API void rz_th_cond_timed_wait(RZ_NONNULL RzThreadCond *cond, RZ_NONNULL RzThreadLock *lock, size_t timeout_ms);
 RZ_API void rz_th_cond_free(RZ_NULLABLE RzThreadCond *cond);
 
 RZ_API RzThreadNCores rz_th_physical_core_number();
@@ -103,6 +113,19 @@ RZ_API void rz_atomic_bool_set(RZ_NONNULL RzAtomicBool *tbool, bool value);
 
 RZ_API bool rz_th_iterate_list(RZ_NONNULL const RzList /*<void *>*/ *list, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user);
 RZ_API bool rz_th_iterate_pvector(RZ_NONNULL const RzPVector /*<void *>*/ *pvec, RZ_NONNULL RzThreadIterator iterator, RzThreadNCores max_threads, RZ_NULLABLE void *user);
+
+RZ_API RZ_OWN RzThreadRingBuf *rz_th_ring_buf_new(size_t n, size_t elem_size);
+RZ_API void rz_th_ring_buf_free(RZ_OWN RZ_NULLABLE RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_clear(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_close(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_put(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, void *elem);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_take(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_take_blocking(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf, RZ_NONNULL RZ_OUT void *elem);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_empty(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API RzThreadRingBufResult rz_th_ring_buf_is_full(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API bool rz_th_ring_buf_is_open(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
+RZ_API bool rz_th_ring_buf_is_empty_unsafe(RZ_BORROW RZ_NONNULL RzThreadRingBuf *rbuf);
 
 #endif /* RZ_API */
 

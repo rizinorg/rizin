@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_util.h>
 #include "minunit.h"
-#include "rz_util/rz_str.h"
 #include "test_config.h"
+#include "analysis_private.h"
 
 #include "test_analysis_block_invars.inl"
 
@@ -550,6 +551,123 @@ bool test_rz_analysis_function_set_cc() {
 	mu_end;
 }
 
+bool test_rz_analysis_function_get_ret_var() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 32);
+
+	// x86 standard cases
+	rz_analysis_cc_set(analysis, "eax test_reg()");
+	rz_analysis_cc_set(analysis, "stack+8 test_stack()");
+	rz_analysis_cc_set(analysis, "eax,edx,stack+8 test_comp()");
+
+	// ARM64
+	rz_analysis_cc_set(analysis, "x0 test_arm64()");
+
+	// fcn Return multiple locations
+	rz_analysis_cc_set(analysis, "eax,ebx test_mul_reg()");
+	rz_analysis_cc_set(analysis, "stack+8,stack+16 test_mul_stack()");
+
+	// Register pairs
+	rz_analysis_cc_set(analysis, "d2,d3 test_tricore()");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "testfunc", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function should be created");
+
+	bool cc_set1 = rz_analysis_function_set_cc(analysis, fcn, "test_reg");
+	mu_assert_true(cc_set1, "failed to set test_reg cc");
+	RzAnalysisVar *var_reg_ret = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_reg_ret, "should get ret var for reg cc");
+	mu_assert_eq(var_reg_ret->storage.type, RZ_ANALYSIS_VAR_STORAGE_REG, "storage type should be REG");
+	mu_assert_streq(var_reg_ret->storage.reg, "eax", "reg should be eax");
+	rz_analysis_var_free(var_reg_ret);
+
+	bool cc_set2 = rz_analysis_function_set_cc(analysis, fcn, "test_stack");
+	mu_assert_true(cc_set2, "failed to set test_stack cc");
+	RzAnalysisVar *var_stack = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_stack, "should get ret var for stack cc");
+	mu_assert_eq(var_stack->storage.type, RZ_ANALYSIS_VAR_STORAGE_STACK, "storage type should be STACK");
+	mu_assert_eq(var_stack->storage.stack_off, 8, "stack offset should be 8");
+	rz_analysis_var_free(var_stack);
+
+	bool cc_set3 = rz_analysis_function_set_cc(analysis, fcn, "test_comp");
+	mu_assert_true(cc_set3, "failed to set test_comp cc");
+	RzAnalysisVar *var_comp = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_comp, "should get ret var for composite cc");
+	mu_assert_eq(var_comp->storage.type, RZ_ANALYSIS_VAR_STORAGE_COMPOSITE, "storage type should be COMPOSITE");
+	mu_assert_eq((int)rz_vector_len(var_comp->storage.composite), 3, "composite should have 3 pieces");
+
+	RzAnalysisVarStoragePiece *p0 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_comp->storage.composite, 0);
+	mu_assert_eq(p0->storage->type, RZ_ANALYSIS_VAR_STORAGE_REG, "piece 0 storage should be REG");
+	mu_assert_streq(p0->storage->reg, "eax", "piece 0 reg should be eax");
+
+	RzAnalysisVarStoragePiece *p1 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_comp->storage.composite, 1);
+	mu_assert_eq(p1->storage->type, RZ_ANALYSIS_VAR_STORAGE_REG, "piece 1 storage should be REG");
+	mu_assert_streq(p1->storage->reg, "edx", "piece 1 reg should be edx");
+
+	RzAnalysisVarStoragePiece *p2 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_comp->storage.composite, 2);
+	mu_assert_eq(p2->storage->type, RZ_ANALYSIS_VAR_STORAGE_STACK, "piece 2 storage should be STACK");
+	mu_assert_eq(p2->storage->stack_off, 8, "piece 2 stack offset should be 8");
+	rz_analysis_var_free(var_comp);
+
+	bool cc_set4 = rz_analysis_function_set_cc(analysis, fcn, "test_arm64");
+	mu_assert_true(cc_set4, "failed to set test_arm64 cc");
+	RzAnalysisVar *var_arm64 = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_arm64, "should get ret var for arm64 cc");
+	mu_assert_streq(var_arm64->storage.reg, "x0", "reg should be x0");
+	rz_analysis_var_free(var_arm64);
+
+	bool cc_set5 = rz_analysis_function_set_cc(analysis, fcn, "test_mul_reg");
+	mu_assert_true(cc_set5, "failed to set test_mul_reg cc");
+	RzAnalysisVar *var_mul_reg = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_mul_reg, "should get ret var for mul reg cc");
+	mu_assert_eq(var_mul_reg->storage.type, RZ_ANALYSIS_VAR_STORAGE_COMPOSITE, "storage type should be COMPOSITE");
+	mu_assert_eq((int)rz_vector_len(var_mul_reg->storage.composite), 2, "reg should have 2 pieces");
+
+	RzAnalysisVarStoragePiece *p_r0 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_mul_reg->storage.composite, 0);
+	mu_assert_streq(p_r0->storage->reg, "eax", "piece 0 should be eax");
+	mu_assert_eq(p_r0->offset_in_bits, 0, "piece 0 offset should be 0");
+
+	RzAnalysisVarStoragePiece *p_r1 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_mul_reg->storage.composite, 1);
+	mu_assert_streq(p_r1->storage->reg, "ebx", "piece 1 should be ebx");
+	mu_assert_eq(p_r1->offset_in_bits, 32, "piece 1 offset should be 32"); // Assuming 32-bit fallback
+	rz_analysis_var_free(var_mul_reg);
+
+	bool cc_set6 = rz_analysis_function_set_cc(analysis, fcn, "test_mul_stack");
+	mu_assert_true(cc_set6, "failed to set test_mul_stack cc");
+	RzAnalysisVar *var_mul_stack = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_mul_stack, "should get ret var for stack cc");
+	mu_assert_eq((int)rz_vector_len(var_mul_stack->storage.composite), 2, "stack should have 2 pieces");
+
+	RzAnalysisVarStoragePiece *p_mul_s0 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_mul_stack->storage.composite, 0);
+	mu_assert_eq(p_mul_s0->storage->stack_off, 8, "stack piece 0 offset 8");
+
+	RzAnalysisVarStoragePiece *p_mul_s1 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_mul_stack->storage.composite, 1);
+	mu_assert_eq(p_mul_s1->storage->stack_off, 16, "stack piece 1 offset 16");
+	rz_analysis_var_free(var_mul_stack);
+
+	bool cc_set7 = rz_analysis_function_set_cc(analysis, fcn, "test_tricore");
+	mu_assert_true(cc_set7, "failed to set test_tricore cc");
+	RzAnalysisVar *var_tricore = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_notnull(var_tricore, "should get ret var for tricore cc");
+	mu_assert_eq(var_tricore->storage.type, RZ_ANALYSIS_VAR_STORAGE_COMPOSITE, "storage type should be COMPOSITE");
+
+	RzAnalysisVarStoragePiece *p_tri0 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_tricore->storage.composite, 0);
+	mu_assert_streq(p_tri0->storage->reg, "d2", "tricore piece 0 should be d2");
+
+	RzAnalysisVarStoragePiece *p_tri1 = (RzAnalysisVarStoragePiece *)rz_vector_index_ptr(var_tricore->storage.composite, 1);
+	mu_assert_streq(p_tri1->storage->reg, "d3", "tricore piece 1 should be d3");
+	rz_analysis_var_free(var_tricore);
+
+	rz_analysis_function_set_cc(analysis, fcn, NULL);
+	RzAnalysisVar *var_null = rz_analysis_function_get_ret_var(fcn);
+	mu_assert_null(var_null, "should safely return NULL when CC is not set");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -563,6 +681,7 @@ int all_tests() {
 	mu_run_test(test_noreturn_functions_list);
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
+	mu_run_test(test_rz_analysis_function_get_ret_var);
 	return tests_passed != tests_run;
 }
 

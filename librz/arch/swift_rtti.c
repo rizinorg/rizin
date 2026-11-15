@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2025 tushar3q34 <tushar3q34@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_analysis.h"
-#include "rz_core.h"
-#include "rz_io.h"
+#include "analysis_private.h"
 
 static void add_metaclass_info(HtUP *swift_metaclass_info, RzList /*<RzBinClassField *>*/ *fields, char *class_name) {
 	RzListIter *iter;

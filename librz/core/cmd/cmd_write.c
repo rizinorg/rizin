@@ -524,7 +524,9 @@ RZ_IPI RzCmdStatus rz_write_block_handler(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	return bool2status(rz_core_write_block(core, core->offset, hex, len));
+	RzCmdStatus status = bool2status(rz_core_write_block(core, core->offset, hex, len));
+	free(hex);
+	return status;
 }
 
 RZ_IPI RzCmdStatus rz_write_mask_set_handler(RzCore *core, int argc, const char **argv) {
@@ -791,6 +793,6 @@ RZ_IPI RzCmdStatus rz_write_debruijn_find_handler(RzCore *core, int argc, const 
 		RZ_LOG_ERROR("Could not find value %" PFMT64x " in Debruijn sequence.\n", value);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_printf("%d\n", offset);
+	rz_cons_printf(core->cons, "%d\n", offset);
 	return RZ_CMD_STATUS_OK;
 }

@@ -1,0 +1,977 @@
+NAME=C55x/C55x+ RzIL VM: register, immediate, memory and multiply execute
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c55x+
+wx ac0000427bb1017b3009743332758300 77a422 @ 0
+aezi
+aezv t0 0
+aezv t2 0x10
+aezv t3 0x20
+aezv ac3 0xf0
+aezv xar2 0x55
+aezs 6
+ar ac0
+ar t1
+ar t0
+ar t3
+ar ac3
+ar xar4
+wx 5802807400015105a0581301580583 @ 0
+wx 3412 @ 0x20
+wx 7856 @ 0x24
+aezi
+aezv ac1 0x1000
+aezv xar2 0x10
+aezv xar3 0x12
+aezv xar5 0x18
+aezs 5
+ar ac0
+ar ac1
+ar ac3
+ar xar3
+wx 5b8580 @ 0
+wx cdab @ 0x30
+aezi
+aezv xar5 0x10
+aezs 1
+ar ac0
+wx 72a4277220a1722023760382770162c5626000ff @ 0
+aezi
+aezv xar0 0x100
+aezv xar1 0x10
+aezv xar3 0x5
+aezv xar7 0x123
+aezv ac0 0xabcdef
+aezv ac2 0x12345
+aezs 6
+ar xar4
+ar xar0
+ar ac3
+ar ac1
+ar ac2
+e analysis.cpu=c55x
+wx 229840107b006400 @ 0
+aezi
+aezv ar1 0x55
+aezv ac0 0
+aezs 3
+ar ar0
+ar ac0
+wx ac00 @ 0
+wx efbe @ 0x40
+aezi
+aezv sp 0x20
+aezs 1
+ar ar4
+wx 3c01121804 @ 0
+aezi
+aezv ac0 0
+aezs 2
+ar st0_55
+aezi
+aezv ac0 5
+aezs 2
+ar st0_55
+wx 5824 @ 0
+aezi
+aezv t1 0x4
+aezv ac2 0x60000
+aezs 1
+ar ac0
+wx d10100 @ 0
+wx 0300 @ 0x20
+wx 0500 @ 0x30
+aezi
+aezv xar0 0x10
+aezv xcdp 0x18
+aezs 1
+ar ac0
+wx d10104 @ 0
+wx 0300 @ 0x20
+wx 0500 @ 0x30
+aezi
+aezv ac0 0x10
+aezv xar0 0x10
+aezv xcdp 0x18
+aezs 1
+ar ac0
+wx d20101 @ 0
+wx 0300 @ 0x20
+aezi
+aezv ac0 0x10
+aezv ac1 0x50000
+aezv xar0 0x10
+aezs 1
+ar ac0
+wx d40101 @ 0
+wx 0300 @ 0x20
+aezi
+aezv ac1 0x100
+aezv t0 0x5
+aezv xar0 0x10
+aezs 1
+ar ac0
+wx d30104 @ 0
+wx 0700 @ 0x20
+aezi
+aezv ac0 0xff
+aezv t0 0x6
+aezv xar0 0x10
+aezs 1
+ar ac0
+wx d00104 @ 0
+wx 0200 @ 0x20
+wx ffff @ 0x30
+aezi
+aezv xar0 0x10
+aezv xcdp 0x18
+aezs 1
+ar ac0
+wx d40180 @ 0
+wx 0300 @ 0x20
+aezi
+aezv ac0 0
+aezv xar0 0x10
+aezv t0 0x2
+aezs 1
+ar t3
+ar ac0
+wx d30108 @ 0
+wx fdff @ 0x20
+aezi
+aezv xar0 0x10
+aezs 1
+ar ac0
+wx d20108 @ 0
+wx 0300 @ 0x20
+aezi
+aezv xar0 0x10
+aezv ac0 0x10
+aezs 1
+ar ac0
+EOF
+EXPECT=<<EOF
+t0 = 0x0
+t2 = 0x10
+t3 = 0x20
+ac3 = 0xf0
+xar2 = 0x55
+ac0 = 0x0000000042
+t1 = 0x0001
+t0 = 0x0009
+t3 = 0x0030
+ac3 = 0x00000000b2
+xar4 = 0x000055
+ac1 = 0x1000
+xar2 = 0x10
+xar3 = 0x12
+xar5 = 0x18
+ac0 = 0x0000002234
+ac1 = 0x0000005678
+ac3 = 0x0000002234
+xar3 = 0x000013
+xar5 = 0x10
+ac0 = 0x000000abcd
+xar0 = 0x100
+xar1 = 0x10
+xar3 = 0x5
+xar7 = 0x123
+ac0 = 0xabcdef
+ac2 = 0x12345
+xar4 = 0x000123
+xar0 = 0x00010b
+ac3 = 0xfffffedcbb
+ac1 = 0x0000002345
+ac2 = 0x00000100ef
+ar1 = 0x55
+ac0 = 0x0
+ar0 = 0x0055
+ac0 = 0x0000000065
+sp = 0x20
+ar4 = 0xbeef
+ac0 = 0x0
+st0_55 = 0x2000
+ac0 = 0x5
+st0_55 = 0x0000
+t1 = 0x4
+ac2 = 0x60000
+ac0 = 0x0000000018
+xar0 = 0x10
+xcdp = 0x18
+ac0 = 0x000000000f
+ac0 = 0x10
+xar0 = 0x10
+xcdp = 0x18
+ac0 = 0x000000001f
+ac0 = 0x10
+ac1 = 0x50000
+xar0 = 0x10
+ac0 = 0x000000001f
+ac1 = 0x100
+t0 = 0x5
+xar0 = 0x10
+ac0 = 0x000000010f
+ac0 = 0xff
+t0 = 0x6
+xar0 = 0x10
+ac0 = 0x000000002a
+xar0 = 0x10
+xcdp = 0x18
+ac0 = 0x000001fffe
+ac0 = 0x0
+xar0 = 0x10
+t0 = 0x2
+t3 = 0x0003
+ac0 = 0x0000000006
+xar0 = 0x10
+ac0 = 0x0000000009
+xar0 = 0x10
+ac0 = 0x10
+ac0 = 0x0000000019
+EOF
+RUN
+
+NAME=C55x RzIL VM: emulateme _decrypt decrypts seckrit to "Hello from RzIL!"
+FILE=bins/tms320/emulateme_nostd.ccsv5.c55x.ticoff2.dbg.coff
+CMDS=<<EOF
+e io.cache=true
+e analysis.cpu=c55x
+e asm.cpu=c55x
+e cfg.bigendian=false
+wx 510053004d0077005800140051005f0045006c0017007f006e0078007f001c000000 @ 0x10008
+wx 41006e00790043006f006c006f007500720059006f0075004c0069006b006500 @ 0x500
+s 0x1a4
+aezi
+aezv xar0 0x280
+aezsu 0x233
+p8 32 @ 0x10008
+ar t0
+ar ar1
+EOF
+EXPECT=<<EOF
+xar0 = 0x280
+480065006c006c006f002000660072006f006d00200052007a0049004c002100
+t0 = 0x0001
+ar1 = 0x0058
+EOF
+RUN
+
+NAME=C55x+ RzIL VM: emulateme _decrypt decrypts seckrit to "Hello from RzIL!"
+FILE=bins/tms320/coff2/19_emulateme_nostd.obj
+CMDS=<<EOF
+e io.cache=true
+e analysis.cpu=c55x+
+e asm.cpu=c55x+
+e cfg.bigendian=false
+wx 510053004d0077005800140051005f0045006c0017007f006e0078007f001c00 @ 0x4
+wx 41006e00790043006f006c006f007500720059006f0075004c0069006b006500 @ 0xf0
+s 0x68
+aezi
+aezv xar0 0x78
+aezsu 0xb1
+p8 32 @ 0x4
+ar t0
+EOF
+EXPECT=<<EOF
+xar0 = 0x78
+480065006c006c006f002000660072006f006d00200052007a0049004c002100
+t0 = 0x0001
+EOF
+RUN
+
+NAME=C54x RzIL VM: register, immediate, memory execute
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c54x
+e asm.cpu=c54x
+e cfg.bigendian=false
+wx 30f00f0000f61188 @ 0
+aezi
+aezv a 0x5a
+aezv b 0x10
+aezs 3
+ar a
+ar ar1
+wx 1248 @ 0
+aezi
+aezv ar2 0xbeef
+aezs 1
+ar a
+wx 12778004 @ 0
+aezi
+aezs 1
+ar ar2
+wx 40f0f000 @ 0
+aezi
+aezv a 0x0f
+aezs 1
+ar a
+wx 50f0ff00 @ 0
+aezi
+aezv a 0x0f
+aezs 1
+ar a
+wx 10f00500 @ 0
+aezi
+aezv a 0x20
+aezs 1
+ar a
+wx 12e5 @ 0
+wx 3412 @ 0x40
+aezi
+aezv ar3 0x20
+aezv ar4 0x30
+aezs 1
+p8 2 @ 0x60
+EOF
+EXPECT=<<EOF
+a = 0x5a
+b = 0x10
+a = 0x000000001a
+ar1 = 0x001a
+ar2 = 0xbeef
+a = 0x000000beef
+ar2 = 0x0480
+a = 0xf
+a = 0x00000000ff
+a = 0xf
+a = 0x00000000f0
+a = 0x20
+a = 0x000000001b
+ar3 = 0x20
+ar4 = 0x30
+3412
+EOF
+RUN
+
+# Key at word 0x280 (byte 0x500) in A, encrypted seckrit at _seckrit; the stack
+# is kept clear of .text, which the linker places at byte 0x100.
+NAME=C54x RzIL VM: emulateme _decrypt decrypts seckrit to "Hello from RzIL!"
+FILE=bins/tms320/emulateme_nostd.ccsv5.c54x.ticoff2.dbg.coff
+CMDS=<<EOF
+e io.cache=true
+wx 510053004d0077005800140051005f0045006c0017007f006e0078007f001c000000 @ 0x9ac
+wx 41006e00790043006f006c006f007500720059006f0075004c0069006b006500 @ 0x500
+s 0x1d8
+aezi
+aezv sp 0x800
+aezv a 0x280
+aezsu 0x270
+p8 32 @ 0x9ac
+ar a
+EOF
+EXPECT=<<EOF
+sp = 0x800
+a = 0x280
+480065006c006c006f002000660072006f006d00200052007a0049004c002100
+a = 0x0000000001
+EOF
+RUN
+
+NAME=C2x RzIL VM: immediate, store/load, multiply, shift, indirect, logical, flags
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c2x
+e asm.bits=16
+wx c802ca05cc0360103c10a007ce14ce185589d1000040ca2a60a0ca116080d1000040ca0000a00080d00400ff1010
+aezi
+aezs 20
+ar acc
+ar t
+ar p
+ar ar1
+ar arp
+ar dp
+ar c
+ar ov
+EOF
+EXPECT=<<EOF
+acc = 0x00000033
+t = 0x0008
+p = 0x00000038
+ar1 = 0x0041
+arp = 0x0001
+dp = 0x0002
+c = 0x1
+ov = 0x0
+EOF
+RUN
+
+NAME=C5x RzIL VM: real C5x encoding execute (immediate + ACCB buffer ops)
+FILE=malloc://0x4000
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c5x
+e asm.bits=16
+wx b905be1eb930be1dbc02bf01
+aezi
+aezs 6
+ar acc
+ar accb
+ar dp
+ar pm
+EOF
+EXPECT=<<EOF
+acc = 0x00000005
+accb = 0x00000030
+dp = 0x0002
+pm = 0x1
+EOF
+RUN
+
+NAME=C674x RzIL VM: register, address arithmetic, saturation, rotate, pack and memory execute
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e cfg.bigendian=false
+wx 2880000028028000403c0001c03c80017802040270278002180d040358238003
+aezi
+aezs 8
+ar a0
+ar a1
+ar a2
+ar a3
+ar a4
+ar a5
+ar a6
+ar a7
+wx 28200000a81080003402800014028002280008017422000164220003
+aezi
+aezs 7
+ar a5
+ar a6
+p8 1 @ 0x40
+p8 4 @ 0x44
+EOF
+EXPECT=<<EOF
+a0 = 0x00000100
+a1 = 0x00000004
+a2 = 0x00000110
+a3 = 0x000000f0
+a4 = 0x00000104
+a5 = 0x00001000
+a6 = 0x00000004
+a7 = 0x00000001
+a5 = 0x00000021
+a6 = 0x00001000
+21
+00100000
+EOF
+RUN
+
+NAME=C674x RzIL VM: dot-product and complex-multiply saturation execute
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e cfg.bigendian=false
+wx b0020411
+aezi
+aezv a0 0x00030002
+aezv a1 0x00050004
+aezs 1
+ar a2
+ar a3
+wx b0020411
+aezi
+aezv a0 0x80008000
+aezv a1 0x80008000
+aezs 1
+ar a2
+ar a3
+wx b0020411
+aezi
+aezv a0 0xffff0002
+aezv a1 0x00030004
+aezs 1
+ar a2
+ar a3
+wx f0020411
+aezi
+aezv a0 0x40002000
+aezv a1 0x40001000
+aezs 1
+ar a2
+wx f0020411
+aezi
+aezv a0 0x80008000
+aezv a1 0x80008000
+aezs 1
+ar a2
+wx 30030411
+aezi
+aezv a0 0x40002000
+aezv a1 0x40001000
+aezs 1
+ar a2
+wx 30030411
+aezi
+aezv a0 0x80008000
+aezv a1 0x80008000
+aezs 1
+ar a2
+wx 70030401
+aezi
+aezv a0 0x40004000
+aezv a1 0x00040004
+aezs 1
+ar a2
+wx 70030401
+aezi
+aezv a0 0x80000000
+aezv a1 0x00080000
+aezs 1
+ar a2
+wx f0010401
+aezi
+aezv a0 0x40000000
+aezv a1 0x00040004
+aezs 1
+ar a2
+EOF
+EXPECT=<<EOF
+a0 = 0x30002
+a1 = 0x50004
+a2 = 0x00000016
+a3 = 0x00000007
+a0 = 0x80008000
+a1 = 0x80008000
+a2 = 0x7fffffff
+a3 = 0x00000000
+a0 = 0xffff0002
+a1 = 0x30004
+a2 = 0x00000002
+a3 = 0xfffffff5
+a0 = 0x40002000
+a1 = 0x40001000
+a2 = 0x0e000c00
+a0 = 0x80008000
+a1 = 0x80008000
+a2 = 0x00007fff
+a0 = 0x40002000
+a1 = 0x40001000
+a2 = 0x1c001800
+a0 = 0x80008000
+a1 = 0x80008000
+a2 = 0x00007fff
+a0 = 0x40004000
+a1 = 0x40004
+a2 = 0x00000002
+a0 = 0x80000000
+a1 = 0x80000
+a2 = 0xfffffffc
+a0 = 0x40000000
+a1 = 0x40004
+a2 = 0x00000001
+EOF
+RUN
+
+NAME=C674x RzIL VM: double dot-product sliding windows execute
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=tms320
+e analysis.cpu=c674x
+e cfg.bigendian=false
+wx b0050812
+aezi
+aezv a0 0x00030002
+aezv a1 0x00050004
+aezv a2 0x00070006
+aezs 1
+ar a4
+ar a5
+wx b0050812
+aezi
+aezv a0 0xffff0002
+aezv a1 0x00050004
+aezv a2 0x00030004
+aezs 1
+ar a4
+ar a5
+wx b0050812
+aezi
+aezv a0 0x80008000
+aezv a1 0x80008000
+aezv a2 0x80008000
+aezs 1
+ar a4
+ar a5
+wx f0851814
+aezi
+aezv a4 0x00030002
+aezv a5 0x00050004
+aezv a6 0x00070006
+aezs 1
+ar a8
+ar a9
+EOF
+EXPECT=<<EOF
+a0 = 0x30002
+a1 = 0x50004
+a2 = 0x70006
+a4 = 0x00000021
+a5 = 0x0000002e
+a0 = 0xffff0002
+a1 = 0x50004
+a2 = 0x30004
+a4 = 0x00000005
+a5 = 0x00000008
+a0 = 0x80008000
+a1 = 0x80008000
+a2 = 0x80008000
+a4 = 0x7fffffff
+a5 = 0x7fffffff
+a4 = 0x30002
+a5 = 0x50004
+a6 = 0x70006
+a8 = 0x0000002e
+a9 = 0x0000003b
+EOF
+RUN
+
+NAME=c6x NORM counts redundant sign bits (clz loop)
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e scr.color=0
+wx 780c0401
+aezi
+ar a1=0x00000001
+aezs
+ar a2
+aezi
+ar a1=0x40000000
+aezs
+ar a2
+aezi
+ar a1=0x00000000
+aezs
+ar a2
+aezi
+ar a1=0xffffffff
+aezs
+ar a2
+EOF
+EXPECT=<<EOF
+a2 = 0x0000001e
+a2 = 0x00000000
+a2 = 0x0000001f
+a2 = 0x0000001f
+EOF
+RUN
+
+NAME=c6x LMBD counts leading bits before the first match (clz loop)
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e scr.color=0
+wx 780d0401
+aezi
+ar a0=0x00000001
+ar a1=0x0fffffff
+aezs
+ar a2
+aezi
+ar a0=0x00000000
+ar a1=0xf0000000
+aezs
+ar a2
+aezi
+ar a0=0x00000001
+ar a1=0x00008000
+aezs
+ar a2
+aezi
+ar a0=0x00000001
+ar a1=0x00000000
+aezs
+ar a2
+EOF
+EXPECT=<<EOF
+a2 = 0x00000004
+a2 = 0x00000004
+a2 = 0x00000010
+a2 = 0x00000020
+EOF
+RUN
+
+NAME=c6x an execute packet swaps two registers without a temporary
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d90f8000a0060400
+s 0
+pd 2
+aezi
+ar a0=0x11111111
+ar a1=0x22222222
+aezs 2
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a0,a1
+            0x00000004      ||    mv .s1 a1,a0
+a0 = 0x22222222
+a1 = 0x11111111
+EOF
+RUN
+
+NAME=c6x a parallel load and store to one address load the old value
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 75029000e6029000
+s 0
+pd 2
+wv4 0xdeadbeef @ 0x100
+aezi
+ar a4=0x100
+ar b4=0x100
+ar a1=0xcafebabe
+aezs 2
+ar b1
+pxw 4 @ 0x100
+EOF
+EXPECT=<<EOF
+            0x00000000      stw   .d1 a1,*a4
+            0x00000004      ||    ldw .d2 *b4,b1
+b1 = 0xdeadbeef
+0x00000100  0xcafebabe                                   ....
+EOF
+RUN
+
+NAME=c6x a predicate reads the register file as the packet found it
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 59a30000a80880c2
+s 0
+pd 2
+aezi
+ar a0=1
+ar a5=0
+aezs 2
+ar a5
+ar a0
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .l1 0,a0
+            0x00000004      ||    [a0] mvk .s1 0x11,a5
+a5 = 0x00000011
+a0 = 0x00000000
+EOF
+RUN
+
+NAME=c6x a branch transfers after its delay slots have run
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 10080000582084005820840058208400582084005820840000000000
+s 0
+pd 7
+aezi
+ar a1=0
+aezs
+ar a1
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      add   .l1 0x1,a1,a1
+        |   0x00000008      add   .l1 0x1,a1,a1
+        |   0x0000000c      add   .l1 0x1,a1,a1
+        |   0x00000010      add   .l1 0x1,a1,a1
+        |   0x00000014      add   .l1 0x1,a1,a1
+        |   0x00000018      nop
+a1 = 0x00000005
+EOF
+RUN
+
+NAME=c6x a load in a delay slot writes after the branch resolves
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800000000000000000000000000006402900100000000
+s 0
+pd 6
+wv4 0xfeedface @ 0x100
+aezi
+ar a4=0x100
+ar a3=0
+aezs
+ar a3
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      b     .s1 0x40
+        |   0x00000004      nop
+        |   0x00000008      nop
+        |   0x0000000c      nop
+        |   0x00000010      ldw   .d1 *a4,a3
+        |   0x00000014      nop
+a3 = 0xfeedface
+EOF
+RUN
+
+NAME=c6x a predicated branch tests the register as it was when it issued
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800c058a300000000000000000000000000000000000000000000
+s 0
+pd 2
+aezi
+ar a0=1
+aezs
+ar a0
+aezv PC
+EOF
+EXPECT=<<EOF
+        ,=< 0x00000000      [a0]  b .s1 0x40
+        |   0x00000004      mvk   .l1 0,a0
+a0 = 0x00000000
+ PC: 0x00000040
+EOF
+RUN
+
+NAME=c6x an untaken branch leaves the pc past its delay slots
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 100800c058a300000000000000000000000000000000000000000000
+s 0
+aezi
+ar a0=0
+aezs
+aezv PC
+EOF
+EXPECT=<<EOF
+ PC: 0x00000018
+EOF
+RUN
+
+# A compact branch window taken from a real C674x image: a 16-bit bnop with a
+# parallel load whose result the following branch must not see. Decoding a
+# compact slot as if it were 32 bits yields an unrelated instruction, so this
+# covers the path the hand-written 32-bit cases cannot reach.
+NAME=c6x a compact branch window from real firmware
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e16281810164022c00879606c66e2c3a6564e280c164222cc262130cc0808080e1
+wv4 0xfeedface @ 0x70
+s 0xe
+aezi
+ar a0=0
+ar b5=0x70
+ar b4=0x11223344
+aezs
+ar b4
+aezv PC
+EOF
+EXPECT=<<EOF
+b4 = 0xfeedface
+ PC: 0x00000018
+EOF
+RUN
+
+# A load takes four cycles to land, so an instruction reading its destination
+# sooner gets the old value. The packets in between have to run before the
+# write becomes visible.
+NAME=c6x a load result is not visible to the next packet
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6402900278a01803000000000000000000000000
+wv4 0xfeedface @ 0x80
+s 0
+pd 2
+aezi
+ar a4=0x80
+ar a5=0x11
+ar a6=0
+aezs
+ar a6
+ar a5
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      add   .l1 a5,a6,a6
+a6 = 0x00000011
+a5 = 0xfeedface
+EOF
+RUN
+
+# A 16-bit multiply has one delay slot, so the next packet still reads the old
+# destination.
+NAME=c6x a multiply result is not visible to the next packet
+FILE=malloc://256
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 802c880178609002000000000000000000000000
+s 0
+pd 2
+aezi
+ar a1=3
+ar a2=5
+ar a3=0x10
+ar a4=1
+aezs
+ar a5
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      mpy   .m1 a1,a2,a3
+            0x00000004      add   .l1 a3,a4,a5
+a5 = 0x00000011
+a3 = 0x0000000f
+EOF
+RUN

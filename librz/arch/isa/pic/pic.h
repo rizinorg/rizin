@@ -5,6 +5,7 @@
 #define RIZIN_PIC_H
 
 #include <rz_io.h>
+#include "analysis_private.h"
 
 typedef struct {
 	RzIODesc *mem_sram;

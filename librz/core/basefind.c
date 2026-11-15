@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * \file Calculates a list of possible base addresses candidates using the strings position
+ * \file
+ * Calculates a list of possible base addresses candidates using the strings position
  * Original code from 2013 Michael Coppola
  * https://github.com/mncoppola/ws30/blob/master/basefind.py
  */

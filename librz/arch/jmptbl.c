@@ -3,10 +3,8 @@
 // SPDX-FileCopyrightText: 2010-2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_parse.h>
-#include <rz_util.h>
-#include <rz_list.h>
 #include <rz_types_overflow.h>
 
 static void apply_case(RzAnalysis *analysis, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
@@ -137,10 +135,9 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
 				break;
 			}
 		}
-		if (analysis->limit) {
-			if (jmpptr < analysis->limit->from || jmpptr > analysis->limit->to) {
-				break;
-			}
+
+		if (rz_analysis_is_beyond_limits(analysis, jmpptr)) {
+			break;
 		}
 
 		const ut64 jmpptr_idx_off = params->casetbl_loc + case_idx;
@@ -168,6 +165,9 @@ RZ_API bool rz_analysis_walkthrough_casetbl(RZ_NONNULL RzAnalysis *analysis, RZ_
  *
  * Goes through each case on the jump table, adds necessary flags/metadata and
  * a new RzAnalysisTaskItem to `params->tasks` to be analyzed later.
+ *
+ * Set `params->relative` for PC-relative entries that could also be valid mapped
+ * addresses, such as small offsets in a low-address mapping.
  *
  * \param analysis Pointer to RzAnalysis instance
  * \param fcn Pointer to RzAnalysisFunction to add the new cases
@@ -227,18 +227,19 @@ RZ_API bool rz_analysis_walkthrough_jmptbl(RZ_NONNULL RzAnalysis *analysis, RZ_N
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
 		} else if (params->entry_size == 1 && is_arm) {
 			jmpptr = params->jmp_address + 4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
-		} else if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
+		} else if (params->relative || !analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
 			jmpptr = params->jmptbl_off + jmpdelta;
+			if (params->relative && analysis->bits == 32) {
+				jmpptr = (ut32)jmpptr;
+			}
 			if (!analysis->iob.is_valid_offset(analysis->iob.io, jmpptr, 0)) {
 				break;
 			}
 		}
-		if (analysis->limit) {
-			if (jmpptr < analysis->limit->from || jmpptr > analysis->limit->to) {
-				break;
-			}
+		if (rz_analysis_is_beyond_limits(analysis, jmpptr)) {
+			break;
 		}
 		apply_case(analysis, block, params->jmp_address, params->entry_size, jmpptr, (offs / params->entry_size) + params->case_shift, params->jmptbl_loc + offs);
 		rz_analysis_task_item_new(analysis, params->tasks, fcn, NULL, jmpptr, params->sp);
@@ -263,10 +264,18 @@ static bool detect_casenum_shift(RzAnalysisOp *op, RzRegItem **cmp_reg, st64 *st
 		if (op->type == RZ_ANALYSIS_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {
+			// The index arithmetic wraps at the destination register's width.
+			ut64 value = op->val;
+			int bits = op->dst->reg->size;
+			if (bits > 0 && bits < 64) {
+				ut64 sign = (ut64)1 << (bits - 1);
+				value &= (sign << 1) - 1;
+				value = (value ^ sign) - sign;
+			}
 			if (op->type == RZ_ANALYSIS_OP_TYPE_ADD) {
-				*start_casenum_shift = -(st64)op->val;
+				*start_casenum_shift = (st64)(0 - value);
 			} else if (op->type == RZ_ANALYSIS_OP_TYPE_SUB) {
-				*start_casenum_shift = op->val;
+				*start_casenum_shift = (st64)value;
 			}
 		} else if (op->type == RZ_ANALYSIS_OP_TYPE_MOV) {
 			*cmp_reg = op->src[0]->reg;
@@ -449,7 +458,7 @@ RZ_API bool rz_analysis_walkthrough_arm_jmptbl_style(RZ_NONNULL RzAnalysis *anal
  * \param params Pointer to RzAnalysisJmpTableParams necessary to analyze the jump table
  */
 RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzAnalysisBlock *block, RZ_NONNULL RzAnalysisJmpTableParams *params) {
-	rz_return_val_if_fail(analysis && analysis->read_at && fcn && block && params, false);
+	rz_return_val_if_fail(analysis && analysis->cb.read_at && fcn && block && params, false);
 	ut8 table_size = 0;
 
 	if (!params->table_count) {
@@ -459,7 +468,7 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 	for (table_size = 0; table_size < params->table_count; table_size++) {
 		ut8 offs = 0;
 
-		if (!analysis->read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
+		if (!analysis->cb.read_at(analysis, params->jmptbl_loc + table_size, &offs, 1)) {
 			return false;
 		}
 

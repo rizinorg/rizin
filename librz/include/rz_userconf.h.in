@@ -37,6 +37,7 @@
 #define USE_LIB_XXHASH              @USE_LIB_XXHASH@
 #define USE_SYS_ZYDIS               @USE_SYS_ZYDIS@
 #define HAVE_LIB_SSL                @HAVE_OPENSSL@
+#define HAVE_LIB_SSL_SM3            @HAVE_OPENSSL_SM3@
 #define HAVE_PTRACE                 @HAVE_PTRACE@
 #define USE_PTRACE_WRAP             @USE_PTRACE_WRAP@
 #define HAVE_FORK                   @HAVE_FORK@
@@ -56,6 +57,7 @@
 #define HAVE___BUILTIN_BSWAP64      @HAVE___BUILTIN_BSWAP64@
 #define HAVE___BUILTIN_CLZLL        @HAVE___BUILTIN_CLZLL@
 #define HAVE___BUILTIN_CTZLL        @HAVE___BUILTIN_CTZLL@
+#define HAVE___BUILTIN_EXPECT       @HAVE___BUILTIN_EXPECT@
 #define HAVE_POSIX_MEMALIGN         @HAVE_POSIX_MEMALIGN@
 #define HAVE__ALIGNED_MALLOC        @HAVE__ALIGNED_MALLOC@
 #define HAVE_SSE2                   @HAVE_SSE2@

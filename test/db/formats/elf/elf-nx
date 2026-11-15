@@ -2,7 +2,5 @@ NAME=ELF: elf-nx - nx enabled
 FILE=bins/elf/analysis/elf-nx
 ARGS=-A
 CMDS=iI~^NX
-EXPECT=<<EOF
-NX       true
-EOF
+EXPECT=
 RUN

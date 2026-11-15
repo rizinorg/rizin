@@ -40,7 +40,7 @@ RZ_API RzLang *rz_lang_new(void) {
 		return NULL;
 	}
 	lang->defs->free = (RzListFree)rz_lang_def_free;
-	lang->cb_printf = (PrintfCallback)printf;
+	lang->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	for (int i = 0; i < RZ_ARRAY_SIZE(lang_static_plugins); i++) {
 		rz_lang_plugin_add(lang, lang_static_plugins[i]);
 	}
@@ -220,86 +220,4 @@ RZ_API int rz_lang_run_file(RzLang *lang, const char *file) {
 		}
 	}
 	return ret;
-}
-
-/* TODO: deprecate or make it more modular .. reading from stdin in a lib! */
-RZ_API int rz_lang_prompt(RzLang *lang) {
-	char buf[1024];
-	const char *p;
-
-	if (!lang || !lang->cur) {
-		return false;
-	}
-
-	if (lang->cur->prompt && lang->cur->prompt(lang)) {
-		return true;
-	}
-	/* init line */
-	RzLine *line = rz_cons_singleton()->line;
-	RzLineHistory hist = line->history;
-	RzLineHistory histnull = { 0 };
-	RzLineCompletion oc = line->completion;
-	RzLineCompletion ocnull = { 0 };
-	char *prompt = rz_str_dup(line->prompt);
-	line->completion = ocnull;
-	line->history = histnull;
-
-	/* foo */
-	for (;;) {
-		rz_cons_flush();
-		snprintf(buf, sizeof(buf) - 1, "%s> ", lang->cur->name);
-		rz_line_set_prompt(line, buf);
-		p = rz_line_readline(line);
-		if (!p) {
-			break;
-		}
-		rz_line_hist_add(line, p);
-		strncpy(buf, p, sizeof(buf) - 1);
-		if (*buf == '!') {
-			if (buf[1]) {
-				rz_sys_xsystem(buf + 1);
-			}
-			continue;
-		}
-		if (!memcmp(buf, ". ", 2)) {
-			char *file = rz_file_abspath(buf + 2);
-			if (file) {
-				rz_lang_run_file(lang, file);
-				free(file);
-			}
-			continue;
-		}
-		if (!strcmp(buf, "q")) {
-			free(prompt);
-			return true;
-		}
-		if (!strcmp(buf, "?")) {
-			RzLangDef *def;
-			RzListIter *iter;
-			eprintf("  ?        - show this help message\n"
-				"  !command - run system command\n"
-				"  . file   - interpret file\n"
-				"  q        - quit prompt\n");
-			eprintf("%s example:\n", lang->cur->name);
-			if (lang->cur->help) {
-				eprintf("%s", *lang->cur->help);
-			}
-			if (!rz_list_empty(lang->defs)) {
-				eprintf("variables:\n");
-			}
-			rz_list_foreach (lang->defs, iter, def) {
-				eprintf("  %s %s\n", def->type, def->name);
-			}
-		} else {
-			rz_lang_run(lang, buf, strlen(buf));
-		}
-	}
-	// XXX: leaking history
-	rz_line_set_prompt(line, prompt);
-	line->completion = oc;
-	line->history = hist;
-	clearerr(stdin);
-	printf("\n");
-	free(prompt);
-	return true;
 }

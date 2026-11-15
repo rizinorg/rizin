@@ -1,34 +1,20 @@
-NAME=loading a BIOS file [64k]
-FILE=bins/firmware/bios_64k.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [64k]
-FILE=bins/firmware/bios_64k.bin
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_64k.bin
-CMDS=pi 1
-EXPECT=<<EOF
-jmp far 0xf000:0xffaa
-EOF
-RUN
-
-NAME=ljmp follow
+NAME=BIOS file [64k] analysis
 FILE=bins/firmware/bios_64k.bin
 CMDS=<<EOF
+ie
+echo ---
+pi 1
+echo ---
 s $j
 % $$
 EOF
 EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
+---
+jmp far 0xf000:0xffaa
+---
 int32   1048490
 uint32  1048490
 hex     0xfffaa
@@ -44,177 +30,61 @@ trits   0t1222021020222
 EOF
 RUN
 
-NAME=loading a BIOS file [128k]
+NAME=BIOS file [128k] analysis
 FILE=bins/firmware/bios_128k.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [128k]
-FILE=bins/firmware/bios_128k.bin
-CMDS=ie
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
 EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_128k.bin
-CMDS=pi 1
-EXPECT=<<EOF
+---
 jmp far 0xf000:0xffaa
 EOF
 RUN
 
-NAME=loading a BIOS file [256k]
+NAME=BIOS file [256k] analysis
 FILE=bins/firmware/bios_256k.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [256k]
-FILE=bins/firmware/bios_256k.bin
-CMDS=ie
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
 EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_256k.bin
-CMDS=pi 1
-EXPECT=<<EOF
+---
 jmp far 0xf000:0xffaa
 EOF
 RUN
 
-NAME=loading a BIOS file [512k]
+NAME=BIOS file [512k] analysis
 FILE=bins/firmware/bios_512k.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [512k]
-FILE=bins/firmware/bios_512k.bin
-CMDS=ie
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
 EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_512k.bin
-CMDS=pi 1
-EXPECT=<<EOF
+---
 jmp far 0xf000:0xffaa
 EOF
 RUN
 
-NAME=loading a BIOS file [1M]
-FILE=bins/firmware/bios_1M.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [1M]
-FILE=bins/firmware/bios_1M.bin
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_1M.bin
-CMDS=pi 1
-EXPECT=<<EOF
-jmp far 0xf000:0xffaa
-EOF
-RUN
-
-NAME=loading a BIOS file [2M]
-FILE=bins/firmware/bios_2M.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [2M]
-FILE=bins/firmware/bios_2M.bin
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_2M.bin
-CMDS=pi 1
-EXPECT=<<EOF
-jmp far 0xf000:0xffaa
-EOF
-RUN
-
-NAME=loading a BIOS file [4M]
-FILE=bins/firmware/bios_4M.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [4M]
-FILE=bins/firmware/bios_4M.bin
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_4M.bin
-CMDS=pi 1
-EXPECT=<<EOF
-jmp far 0xf000:0xffaa
-EOF
-RUN
-
-NAME=loading a BIOS file [8M]
-FILE=bins/firmware/bios_8M.bin
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=entrypoint decoding [8M]
-FILE=bins/firmware/bios_8M.bin
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x000ffff0 0x00000000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/firmware/bios_8M.bin
-CMDS=pi 1
-EXPECT=<<EOF
-jmp far 0xf000:0xffaa
-EOF
-RUN
-
-NAME=test x86 IO ports
+NAME=BIOS file [1M] analysis
 FILE=bins/firmware/bios_1M.bin
 CMDS=<<EOF
+ie
+echo ---
+pi 1
+echo ---
 e asm.cpu=generic
 e asm.platform=generic
 aa
@@ -222,6 +92,12 @@ fl @F:platform.ports
 CCl~reg
 EOF
 EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
+---
+jmp far 0xf000:0xffaa
+---
 0x00000018 1 PS_2_register
 0x0000001a 1 PS_2_execute
 0x0000001f 1 DMA_1
@@ -260,6 +136,53 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=BIOS file [2M] analysis
+FILE=bins/firmware/bios_2M.bin
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
+---
+jmp far 0xf000:0xffaa
+EOF
+RUN
+
+NAME=BIOS file [4M] analysis
+FILE=bins/firmware/bios_4M.bin
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
+---
+jmp far 0xf000:0xffaa
+EOF
+RUN
+
+NAME=BIOS file [8M] analysis
+FILE=bins/firmware/bios_8M.bin
+CMDS=<<EOF
+ie
+echo ---
+pi 1
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000ffff0 0x00000000 ---------- ---------- program
+---
+jmp far 0xf000:0xffaa
+EOF
+RUN
 
 NAME=GNS1: comprehensive validation
 FILE=bins/firmware/gns1_test.bin

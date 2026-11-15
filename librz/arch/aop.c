@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2018-2020 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_asm.h>
+#include "asm_private.h"
 
 RZ_API RZ_OWN RzAsmOp *rz_asm_op_new(void) {
 	return RZ_NEW0(RzAsmOp);

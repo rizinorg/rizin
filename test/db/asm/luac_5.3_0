@@ -1,0 +1,58 @@
+ad "settabup 0 -1 -2" 08404080
+####ad "tailcall 0 -1 3" 1ec00080
+####ad "tailcall 0 -1 3" 1e008001
+####ad "tailcall 0 -1 3" 25008001
+# ad "self r2 r2 348" 8c005701
+ad "lt 0 r0 -10" 20404200
+ad "jmp 0 4" 1ec00080
+ad "gettabup r0 0 -1" 06004000
+ad "setlist r0 2 1" 2b400001
+ad "call r0 2 1" 24400001 # ?
+ad "loadk r1 -14" 41400300 # !
+ad "gettable r0 r0 -16" 07c04300
+ad "concat r2 r2 r3" 9dc00001
+ad "move r3 r0" c0000000
+ad "test r0 1" 22400000
+ad "forprep r0 3" 28800080
+ad "closure r3 9" ec400200
+ad "settable r2 -92 r3" 8ac080ad
+ad "tforcall 2 2" a9800000
+ad "forloop r2 -5" a780fe7f
+ad "return r0 1" 26008000
+ad "loadk r0 -1" 01000000
+ad "loadk r1 -1" 41000000
+ad "loadk r1 -6" 41400100
+ad "loadk r2 -6" 81400100
+ad "loadk r3 -1" c1000000
+ad "loadkx r0" 02000000
+
+# official luac -l
+ad "newtable r0 0 0" 0b000000
+ad "settabup 0 -1 r0" 08000080
+ad "gettabup r1 0 -1" 46004000
+ad "settable r0 -2 r1" 0a408080
+ad "closure r1 0" 6c000000
+ad "settable r0 -3 r1" 0a400081
+ad "closure r1 1" 6c400000
+ad "settable r0 -5 r1" 0a400082
+ad "gettabup r0 0 -4" 06c04000
+ad "self r0 r0 -3" 0c804000
+ad "loadk r2 -7" 81800100
+ad "call r0 3 2" 24808001
+ad "settabup 0 -6 r0" 08008082
+ad "gettabup r0 0 -6" 06404100
+ad "self r0 r0 -5" 0c004100
+ad "loadk r2 -8" 81c00100
+ad "call r0 3 1" 24408001
+
+ad "newtable r2 0 0" 8b000000
+ad "gettabup r3 0 -1" c6004000
+ad "move r4 r2" 00010001
+ad "gettabup r5 0 -2" 46414000
+ad "call r3 3 1" e4408001
+ad "settable r2 -3 r1" 8a400081
+ad "return r2 2" a6000001
+
+ad "gettable r2 r0 -1" 87004000
+ad "sub r2 r2 r1" 8e400001
+ad "settable r0 -1 r2" 0a800080

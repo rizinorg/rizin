@@ -301,7 +301,7 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	sdb_num_set(bin->kv, "mz.initial.sp", mz->sp);
 	sdb_num_set(bin->kv, "mz.overlay_number", mz->overlay_number);
 	sdb_num_set(bin->kv, "mz.dos_header.offset", 0);
-	sdb_set(bin->kv, "mz.dos_header.format", "[2]zwwwwwwwwwwwww"
+	sdb_set(bin->kv, "mz.dos_header.format", "[2]zx2x2x2x2x2x2x2x2x2x2x2x2x2"
 						 " signature bytes_in_last_block blocks_in_file num_relocs "
 						 " header_paragraphs min_extra_paragraphs max_extra_paragraphs "
 						 " ss sp checksum ip cs reloc_table_offset overlay_number ");

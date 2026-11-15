@@ -39,4 +39,5 @@ commands:
     default_mode: RZ_OUTPUT_MODE_TABLE
     modes:
       - RZ_OUTPUT_MODE_TABLE
+      - RZ_OUTPUT_MODE_JSON
     args: []

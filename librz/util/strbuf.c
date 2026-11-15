@@ -239,6 +239,10 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 			}
 			newlen *= 2;
 			p = realloc(sb->ptr, newlen);
+			// preserve the existing buffer on OOM
+			if (!p) {
+				return false;
+			}
 			memset((char *)p + sb->ptrlen, 0, newlen - sb->ptrlen);
 		} else {
 			allocated = false;
@@ -257,6 +261,24 @@ RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 	}
 	sb->len += l;
 	return true;
+}
+
+/**
+ * \brief Appends a signed number in hex, with the sign in front of the base
+ * prefix so it reads as a number rather than as a two's-complement pattern.
+ *
+ * \param sb The RzStrBuf to append to.
+ * \param n The value to append, e.g. -32 becomes "-0x20".
+ *
+ * \return true if the value was appended.
+ */
+RZ_API bool rz_strbuf_append_signed_hex(RzStrBuf *sb, st64 n) {
+	rz_return_val_if_fail(sb, false);
+	if (n < 0) {
+		// negate as ut64 so ST64_MIN does not overflow
+		return rz_strbuf_appendf(sb, "-0x%" PFMT64x, -(ut64)n);
+	}
+	return rz_strbuf_appendf(sb, "0x%" PFMT64x, (ut64)n);
 }
 
 RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) {
@@ -352,4 +374,10 @@ RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
 		sb->len = 0;
 		sb->buf[0] = '\0';
 	}
+}
+
+RZ_API void rz_strbuf_set_progress_cb(RzStrBuf *sb, RzProgressCallback cb, void *user) {
+	rz_return_if_fail(sb);
+	sb->progress_cb = cb;
+	sb->progress_user = user;
 }

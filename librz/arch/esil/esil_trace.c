@@ -2,12 +2,12 @@
 // SPDX-FileCopyrightText: 2015-2020 rkx1209 <rkx1209dev@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
+#include <rz_esil/rz_esil.h>
+#include "analysis_private.h"
+#include "esil_internal.h"
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)(y))->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)(y))->idx)
-
-#define ESILISTATE esil->analysis->esilinterstate
 
 // IL trace wrapper of esil
 static inline bool esil_add_mem_trace(RzAnalysisEsilTrace *etrace, RzILTraceMemOp *mem) {
@@ -21,7 +21,8 @@ static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegO
 }
 
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil && esil->stack_addr && esil->stack_size, NULL);
+	rz_return_val_if_fail(esil && esil->config && esil->config->stack_addr > 0 && esil->config->stack_size > 0, NULL);
+	RzAnalysis *analysis = esil->panalysis;
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
@@ -43,18 +44,17 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 		goto error;
 	}
 	// Save initial ESIL stack memory
-	trace->stack_addr = esil->stack_addr;
-	trace->stack_size = esil->stack_size;
-	trace->stack_data = malloc(esil->stack_size);
+	trace->stack_addr = esil->config->stack_addr;
+	trace->stack_size = esil->config->stack_size;
+	trace->stack_data = malloc(trace->stack_size);
 	if (!trace->stack_data) {
 		RZ_LOG_ERROR("esil: Cannot allocate stack for trace\n");
 		goto error;
 	}
-	esil->analysis->iob.read_at(esil->analysis->iob.io, trace->stack_addr,
-		trace->stack_data, trace->stack_size);
+	analysis->iob.read_at(analysis->iob.io, trace->stack_addr, trace->stack_data, trace->stack_size);
 	// Save initial registers arenas
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzRegArena *a = esil->analysis->reg->regset[i].arena;
+		RzRegArena *a = analysis->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new(a->size);
 		if (!b) {
 			RZ_LOG_ERROR("esil: Cannot allocate register arena for trace\n");
@@ -122,23 +122,24 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 		// RZ_LOG_WARN("Register not found in profile\n");
 		return 0;
 	}
-	if (ESILISTATE->callbacks.hook_reg_read) {
+	if (esil->esilinterstate->callbacks.hook_reg_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ESILISTATE->callbacks;
-		ret = ESILISTATE->callbacks.hook_reg_read(esil, name, res, size);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_reg_read(esil, name, res, size);
 		esil->cb = cbs;
 	}
 	if (!ret && esil->cb.reg_read) {
 		ret = esil->cb.reg_read(esil, name, res, size);
 	}
 	if (ret) {
+		RzAnalysis *analysis = esil->panalysis;
 		// Trace reg read behavior
 		RzILTraceRegOp *reg_read = RZ_NEW0(RzILTraceRegOp);
 		if (!reg_read) {
 			RZ_LOG_ERROR("failed to init reg read trace\n");
 			return 0;
 		}
-		reg_read->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
+		reg_read->reg_name = rz_str_constpool_get(&analysis->constpool, name);
 		reg_read->behavior = RZ_IL_TRACE_OP_READ;
 		reg_read->value = *res;
 		if (!esil_add_reg_trace(esil->trace, reg_read)) {
@@ -150,6 +151,7 @@ static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res
 
 static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
+	RzAnalysis *analysis = esil->panalysis;
 
 	// add reg write to trace
 	RzILTraceRegOp *reg_write = RZ_NEW0(RzILTraceRegOp);
@@ -157,19 +159,19 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 		RZ_LOG_ERROR("failed to init reg write\n");
 		return ret;
 	}
-	reg_write->reg_name = rz_str_constpool_get(&esil->analysis->constpool, name);
+	reg_write->reg_name = rz_str_constpool_get(&analysis->constpool, name);
 	reg_write->behavior = RZ_IL_TRACE_OP_WRITE;
 	reg_write->value = *val;
 	if (!esil_add_reg_trace(esil->trace, reg_write)) {
 		RZ_FREE(reg_write);
 	}
 
-	RzRegItem *ri = rz_reg_get(esil->analysis->reg, name, -1);
+	RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
-	if (ESILISTATE->callbacks.hook_reg_write) {
+	if (esil->esilinterstate->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ESILISTATE->callbacks;
-		ret = ESILISTATE->callbacks.hook_reg_write(esil, name, val);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_reg_write(esil, name, val);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -202,10 +204,10 @@ static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int le
 		RZ_FREE(mem_read);
 	}
 
-	if (ESILISTATE->callbacks.hook_mem_read) {
+	if (esil->esilinterstate->callbacks.hook_mem_read) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ESILISTATE->callbacks;
-		ret = ESILISTATE->callbacks.hook_mem_read(esil, addr, buf, len);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_mem_read(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -240,10 +242,10 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
 	}
 
-	if (ESILISTATE->callbacks.hook_mem_write) {
+	if (esil->esilinterstate->callbacks.hook_mem_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
-		esil->cb = ESILISTATE->callbacks;
-		ret = ESILISTATE->callbacks.hook_mem_write(esil, addr, buf, len);
+		esil->cb = esil->esilinterstate->callbacks;
+		ret = esil->esilinterstate->callbacks.hook_mem_write(esil, addr, buf, len);
 		esil->cb = cbs;
 	}
 	return ret;
@@ -255,7 +257,7 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
  * \param idx int, index of instruction
  * \return RzILTraceInstruction *, instruction trace at index
  */
-RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx) {
+RZ_API RZ_BORROW void /*RzILTraceInstruction*/ *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx) {
 	rz_return_val_if_fail(etrace, NULL);
 	if (idx < 0 || idx >= rz_pvector_len(etrace->instructions)) {
 		return NULL;
@@ -263,10 +265,9 @@ RZ_API RZ_BORROW RzILTraceInstruction *rz_analysis_esil_get_instruction_trace(RZ
 	return rz_pvector_at(etrace->instructions, idx);
 }
 
-RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysisOp *op) {
-	rz_return_if_fail(esil && op);
-	const char *expr = rz_strbuf_get(&op->esil);
-	if (RZ_STR_ISEMPTY(expr)) {
+RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE const char *esil_expr) {
+	rz_return_if_fail(esil);
+	if (RZ_STR_ISEMPTY(esil_expr)) {
 		// do nothing
 		return;
 	}
@@ -282,32 +283,34 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RZ_NONNULL RzAnalysi
 		return;
 	}
 	/* save old callbacks */
-	int esil_verbose = esil->verbose;
-	if (ESILISTATE->callbacks_set) {
+	RzEsilConfig *config = (RzEsilConfig *)esil->config;
+	if (esil->esilinterstate->callbacks_set) {
 		RZ_LOG_ERROR("esil: Cannot call recursively\n");
 	}
-	ESILISTATE->callbacks = esil->cb;
-	ESILISTATE->callbacks_set = true;
+	esil->esilinterstate->callbacks = esil->cb;
+	esil->esilinterstate->callbacks_set = true;
 
-	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(op->addr);
+	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(pc);
 	rz_pvector_push(esil->trace->instructions, instruction);
 
-	RzRegItem *pc_ri = rz_reg_get(esil->analysis->reg, "PC", -1);
-	add_reg_change(esil->trace, esil->trace->idx, pc_ri, op->addr);
+	RzAnalysis *analysis = esil->panalysis;
+	RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
+	add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
 	/* set hooks */
-	esil->verbose = 0;
+	const ut64 verbose_save = config->verbose;
+	config->verbose = 0;
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 
 	/* evaluate esil expression */
-	rz_analysis_esil_parse(esil, expr);
+	rz_analysis_esil_parse(esil, esil_expr);
 	rz_analysis_esil_stack_free(esil);
 	/* restore hooks */
-	esil->cb = ESILISTATE->callbacks;
-	ESILISTATE->callbacks_set = false;
-	esil->verbose = esil_verbose;
+	esil->cb = esil->esilinterstate->callbacks;
+	esil->esilinterstate->callbacks_set = false;
+	config->verbose = verbose_save;
 	/* increment idx */
 	esil->trace->idx++;
 	esil->trace->end_idx++;
@@ -320,8 +323,9 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 
 	rz_vector_upper_bound(vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
 	if (index > 0 && index <= vmem->len) {
+		RzAnalysis *analysis = esil->panalysis;
 		RzAnalysisEsilMemChange *c = rz_vector_index_ptr(vmem, index - 1);
-		esil->analysis->iob.write_at(esil->analysis->iob.io, key, &c->data, 1);
+		analysis->iob.write_at(analysis->iob.io, key, &c->data, 1);
 	}
 	return true;
 }
@@ -332,8 +336,9 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 	if (vreg) {
 		rz_vector_upper_bound(vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
+			RzAnalysis *analysis = esil->panalysis;
 			RzAnalysisEsilRegChange *c = rz_vector_index_ptr(vreg, index - 1);
-			rz_reg_set_value(esil->analysis->reg, ri, c->data);
+			rz_reg_set_value(analysis->reg, ri, c->data);
 		}
 	}
 	return true;
@@ -342,32 +347,33 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	rz_return_if_fail(esil);
 	size_t i;
+	RzAnalysis *analysis = esil->panalysis;
 	RzAnalysisEsilTrace *trace = esil->trace;
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			RzRegArena *a = esil->analysis->reg->regset[i].arena;
+			RzRegArena *a = analysis->reg->regset[i].arena;
 			RzRegArena *b = trace->arena[i];
 			if (a && b) {
 				memcpy(a->bytes, b->bytes, a->size);
 			}
 		}
 		// Restore initial stack memory
-		esil->analysis->iob.write_at(esil->analysis->iob.io, trace->stack_addr,
+		analysis->iob.write_at(analysis->iob.io, trace->stack_addr,
 			trace->stack_data, trace->stack_size);
 	}
 	// Apply latest changes to registers and memory
 	esil->trace->idx = idx;
 	RzListIter *iter;
 	RzRegItem *ri;
-	rz_list_foreach (esil->analysis->reg->allregs, iter, ri) {
+	rz_list_foreach (analysis->reg->allregs, iter, ri) {
 		restore_register(esil, ri, idx);
 	}
 	ht_up_foreach(trace->memory, restore_memory_cb, esil);
 }
 
-static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, RzILTraceInsOp focus) {
+static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, RzILTraceInsOp focus, RzCons *cons) {
 	bool reg = focus == RZ_IL_TRACE_INS_HAS_REG_R || focus == RZ_IL_TRACE_INS_HAS_REG_W;
 	bool read = focus == RZ_IL_TRACE_INS_HAS_REG_R || focus == RZ_IL_TRACE_INS_HAS_MEM_R;
 	const char *direction = read ? "read" : "write";
@@ -377,57 +383,58 @@ static void print_instruction_ops(RzILTraceInstruction *instruction, int idx, Rz
 	if (reg) {
 		RzPVector *ops = read ? instruction->read_reg_ops : instruction->write_reg_ops;
 		if (!rz_pvector_empty(ops)) {
-			rz_cons_printf("%d.reg.%s=", idx, direction);
+			rz_cons_printf(cons, "%d.reg.%s=", idx, direction);
 			rz_pvector_foreach (ops, it) {
 				RzILTraceRegOp *op = (RzILTraceRegOp *)*it;
-				first ? (first = false) : rz_cons_print(",");
-				rz_cons_printf("%s", op->reg_name);
+				first ? (first = false) : rz_cons_print(cons, ",");
+				rz_cons_printf(cons, "%s", op->reg_name);
 			}
-			rz_cons_newline();
+			rz_cons_newline(cons);
 		}
 		rz_pvector_foreach (ops, it) {
 			RzILTraceRegOp *op = (RzILTraceRegOp *)*it;
-			rz_cons_printf("%d.reg.%s.%s=%s%" PFMT64x "\n", idx, direction,
+			rz_cons_printf(cons, "%d.reg.%s.%s=%s%" PFMT64x "\n", idx, direction,
 				op->reg_name, op->value < 10 ? "" : "0x", op->value);
 		}
 	} else {
 		RzPVector *ops = read ? instruction->read_mem_ops : instruction->write_mem_ops;
 		if (!rz_pvector_empty(ops)) {
-			rz_cons_printf("%d.mem.%s=", idx, direction);
+			rz_cons_printf(cons, "%d.mem.%s=", idx, direction);
 			rz_pvector_foreach (ops, it) {
 				RzILTraceMemOp *op = (RzILTraceMemOp *)*it;
-				first ? (first = false) : rz_cons_print(",");
-				rz_cons_printf("0x%" PFMT64x, op->addr);
+				first ? (first = false) : rz_cons_print(cons, ",");
+				rz_cons_printf(cons, "0x%" PFMT64x, op->addr);
 			}
-			rz_cons_newline();
+			rz_cons_newline(cons);
 		}
 		rz_pvector_foreach (ops, it) {
 			RzILTraceMemOp *op = (RzILTraceMemOp *)*it;
 			char hexstr[sizeof(op->data_buf) * 2 + 1];
 			rz_hex_bin2str(op->data_buf, RZ_MIN(sizeof(op->data_buf), op->data_len), hexstr);
-			rz_cons_printf("%d.mem.%s.data.0x%" PFMT64x "=%s\n", idx, direction, op->addr, hexstr);
+			rz_cons_printf(cons, "%d.mem.%s.data.0x%" PFMT64x "=%s\n", idx, direction, op->addr, hexstr);
 		}
 	}
 }
 
-static void print_instruction_trace(RzILTraceInstruction *instruction, int idx) {
-	rz_cons_printf("%d.addr=0x%" PFMT64x "\n", idx, instruction->addr);
+static void print_instruction_trace(RzILTraceInstruction *instruction, int idx, RzCons *cons) {
+	rz_cons_printf(cons, "%d.addr=0x%" PFMT64x "\n", idx, instruction->addr);
 
 	// IL ops within an instruction are printed in the order reg read, mem
 	// read, reg write, mem write that is partially based on x86 PUSH. This
 	// print order MAY NOT be the same as the actual ops order.
-	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_R);
-	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_R);
-	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_W);
-	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_W);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_R, cons);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_R, cons);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_REG_W, cons);
+	print_instruction_ops(instruction, idx, RZ_IL_TRACE_INS_HAS_MEM_W, cons);
 }
 
 /**
  * List all traces
  * \param esil RzAnalysisEsil *, ESIL instance
+ * \param cons RzCons *, cons instance
  */
-RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
-	rz_return_if_fail(esil);
+RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil, RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_return_if_fail(esil && cons);
 	if (!esil->trace) {
 		return;
 	}
@@ -437,19 +444,20 @@ RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil) {
 	void **iter;
 	rz_pvector_foreach (esil->trace->instructions, iter) {
 		instruction_trace = *iter;
-		print_instruction_trace(instruction_trace, idx);
+		print_instruction_trace(instruction_trace, idx, cons);
 		idx++;
 	}
-	rz_cons_printf("idx=%d\n", idx - 1);
+	rz_cons_printf(cons, "idx=%d\n", idx - 1);
 }
 
 /**
  * Display an ESIL trace at index `idx`
  * \param esil RzAnalysisEsil *, ESIL instance
  * \param idx int, index of trace
+ * \param cons RzCons *, cons instance
  */
-RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
-	rz_return_if_fail(esil);
+RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx, RZ_NONNULL RZ_BORROW RzCons *cons) {
+	rz_return_if_fail(esil && cons);
 	if (!esil->trace) {
 		return;
 	}
@@ -460,5 +468,5 @@ RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 		return;
 	}
 
-	print_instruction_trace(instruction, idx);
+	print_instruction_trace(instruction, idx, cons);
 }

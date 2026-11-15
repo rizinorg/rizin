@@ -106,17 +106,15 @@ pcalign  4
 rpath    NONE
 subsys   linux
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  true
 lsyms    true
-canary   false
-PIE      false
-RELROCS  true
-NX       true
+canary   true
+pie      false
+relrocs  true
+nx       true
      paddr    size      vaddr   vsize align perm name              type              flags            
 ------------------------------------------------------------------------------------------------------
 0x00000000     0x0 ----------     0x0   0x0 ----                   NULL              

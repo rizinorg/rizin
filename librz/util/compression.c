@@ -480,3 +480,91 @@ RZ_API bool rz_lzma_dec_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 RZ_API bool rz_lzma_enc_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed) {
 	return lzma_action_buf(src, dst, block_size, src_consumed, true);
 }
+
+#if HAVE_LZMA
+static bool lzma_alone_action_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size) {
+	bool res = true;
+	lzma_stream strm = LZMA_STREAM_INIT;
+	const ut64 memusage_limit = 0x8000000; // 128 MB
+	lzma_ret ret = lzma_alone_decoder(&strm, memusage_limit);
+	if (ret != LZMA_OK) {
+		return false;
+	}
+
+	lzma_action action = LZMA_RUN;
+
+	ut8 *inbuf = RZ_NEWS(ut8, block_size);
+	ut8 *outbuf = RZ_NEWS(ut8, block_size);
+	if (!inbuf || !outbuf) {
+		free(inbuf);
+		free(outbuf);
+		lzma_end(&strm);
+		return false;
+	}
+	ut64 src_cursor = 0;
+
+	strm.next_in = NULL;
+	strm.avail_in = 0;
+	strm.next_out = outbuf;
+	strm.avail_out = block_size;
+
+	while (true) {
+		if (strm.avail_in == 0) {
+			strm.next_in = inbuf;
+			st64 src_readlen = rz_buf_read_at(src, src_cursor, inbuf, block_size);
+			if (src_readlen < 0) {
+				res = false;
+				goto exit;
+			}
+			if (src_readlen == 0) {
+				action = LZMA_FINISH;
+			}
+			strm.avail_in = src_readlen;
+			src_cursor += src_readlen;
+		}
+		ret = lzma_code(&strm, action);
+		if (strm.avail_out == 0 || ret == LZMA_STREAM_END) {
+			size_t write_size = block_size - strm.avail_out;
+			if (rz_buf_write(dst, outbuf, write_size) != write_size) {
+				res = false;
+				goto exit;
+			}
+			strm.next_out = outbuf;
+			strm.avail_out = block_size;
+		}
+		if (ret == LZMA_STREAM_END) {
+			break;
+		}
+		if (ret != LZMA_OK) {
+			res = false;
+			goto exit;
+		}
+	}
+
+exit:
+	free(inbuf);
+	free(outbuf);
+	lzma_end(&strm);
+	return res;
+}
+#else
+static bool lzma_alone_action_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size) {
+	return false;
+}
+#endif
+
+/**
+ * \brief Decompress the \p src buffer with LZMA alone (raw LZMA1) algorithm and put the decompressed data in \p dst
+ *
+ * Unlike rz_lzma_dec_buf() which handles .xz streams, this function handles
+ * the legacy LZMA alone format (also known as LZMA1 or .lzma), identifiable
+ * by the 0x5d first byte followed by a 13-byte header.
+ *
+ * \param src Where to read the compressed data from
+ * \param dst Where to write the decompressed data to
+ * \param block_size Decompression block size for I/O operations
+ * \return true if decompression was successful, false otherwise
+ */
+RZ_API bool rz_lzma_alone_dec_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size) {
+	return lzma_alone_action_buf(src, dst, block_size);
+}

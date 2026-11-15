@@ -123,6 +123,8 @@ int test_rz_str_search_single_simple(void) {
 
 	rz_search_collection_free(collection);
 	rz_list_free(hits);
+	rz_search_opt_free(search_opts);
+	rz_buf_free(file_buffer);
 	mu_end;
 }
 
@@ -282,6 +284,8 @@ int test_rz_str_search_multiple_enc(void) {
 
 	rz_list_free(hits);
 	rz_search_collection_free(collection);
+	rz_search_opt_free(search_opts);
+	rz_buf_free(file_buffer);
 	mu_end;
 }
 

@@ -103,7 +103,7 @@ static inline st64 rz_seek_offset(ut64 cur, ut64 length, st64 addr, int whence) 
 /* constructors */
 RZ_API RZ_OWN RzBuffer *rz_buf_new_empty(ut64 len);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_file(const char *file, int perm, int mode);
-RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
+RZ_API RZ_OWN RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode, RZ_NULLABLE void /* RzIO */ *io);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RZ_OWN RzBuffer *rz_buf_new_sparse(ut8 Oxff);
@@ -119,8 +119,8 @@ RZ_API RZ_OWN RzBuffer *rz_buf_new_with_string(RZ_NONNULL const char *msg);
 
 /* methods */
 
-RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size);
-RZ_API RZ_OWN char *rz_buf_get_string(RZ_NONNULL RzBuffer *b, ut64 addr);
+#define rz_buf_get_string(b, addr) rz_buf_get_nstring(b, addr, rz_buf_size(b), true)
+RZ_API RZ_OWN char *rz_buf_get_nstring(RZ_NONNULL RzBuffer *b, ut64 addr, size_t size, bool must_find_null);
 RZ_API ut64 rz_buf_read_string(RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE char **s);
 RZ_API RZ_OWN char *rz_buf_to_string(RZ_NONNULL RzBuffer *b);
 RZ_API RzBuffer *rz_buf_ref(RzBuffer *b);
@@ -402,6 +402,7 @@ RZ_API bool rz_inflatew_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, 
 RZ_API bool rz_inflate_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
 RZ_API bool rz_lzma_dec_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
 RZ_API bool rz_lzma_enc_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size, ut8 *src_consumed);
+RZ_API bool rz_lzma_alone_dec_buf(RZ_NONNULL RzBuffer *src, RZ_NONNULL RzBuffer *dst, ut64 block_size);
 
 #ifdef __cplusplus
 }

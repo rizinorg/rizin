@@ -13,15 +13,13 @@ static RzBinInfo *mdt_info(RzBinFile *bf) {
 	ret->lang = "";
 	ret->file = rz_str_dup(bf->file);
 	ret->type = rz_str_dup("mdt");
-	ret->has_pi = 0;
-	ret->has_canary = 0;
-	ret->has_retguard = -1;
+	ret->has_retguard = false;
 	ret->big_endian = Elf_(rz_bin_elf_is_big_endian)(mdt->header);
 	ret->has_va = Elf_(rz_bin_elf_has_va)(mdt->header);
 	ret->has_nx = Elf_(rz_bin_elf_has_nx)(mdt->header);
 	ret->intrp = Elf_(rz_bin_elf_get_intrp)(mdt->header);
 	ret->compiler = Elf_(rz_bin_elf_get_compiler)(mdt->header);
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	ret->bits = 32;
 	ret->arch = Elf32_rz_bin_elf_get_arch(mdt->header);
 	ret->cpu = Elf32_rz_bin_elf_get_cpu(mdt->header);
