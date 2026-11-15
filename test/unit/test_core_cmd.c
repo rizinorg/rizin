@@ -449,7 +449,35 @@ static bool test_type_command_colors(void) {
 	mu_end;
 }
 
+static bool test_analysis_rejected_function(void) {
+	for (size_t i = 0; i < 2; i++) {
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RWX, true), "file");
+		rz_config_set(core->config, "asm.arch", "x86");
+		rz_config_set_i(core->config, "asm.bits", 64);
+		rz_config_set_b(core->config, "analysis.hasnext", false);
+		if (i) {
+			rz_config_set_i(core->config, "analysis.fcn_max_size", 3);
+		}
+		rz_core_cmd0(core, "wx 554889e5488b45f8c9c3 @ 0x10");
+		RzAnalysisFunction *existing = rz_analysis_create_function(core->analysis, "sym.same", 0, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(existing, "existing function");
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_SYMBOLS);
+		rz_flag_set(core->flags, "sym.same", 0x10, 10);
+		rz_flag_space_pop(core->flags);
+		mu_assert_false(rz_core_analysis_fcn(core, 0x10, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1), "reject duplicate name");
+		mu_assert_eq(rz_analysis_function_list_size(core->analysis), 1, "only the original function remains");
+		mu_assert_ptreq(rz_analysis_get_function_at(core->analysis, 0), existing, "preserve original function");
+		mu_assert_null(rz_analysis_get_function_at(core->analysis, 0x10), "rejected function is not registered");
+		mu_assert_null(rz_analysis_get_block_at(core->analysis, 0x10), "rejected function releases its blocks");
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_analysis_rejected_function);
 	mu_run_test(test_type_command_colors);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);

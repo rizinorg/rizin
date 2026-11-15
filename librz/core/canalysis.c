@@ -919,8 +919,9 @@ static int core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int 
 			if (from != UT64_MAX) {
 				rz_analysis_xrefs_set(core->analysis, from, fcn->addr, reftype);
 			}
-			// XXX: this is wrong. See CID 1134565
-			rz_analysis_add_function(core->analysis, fcn);
+			if (!rz_analysis_add_function(core->analysis, fcn)) {
+				goto free_function;
+			}
 			if (has_next) {
 				ut64 addr = rz_analysis_function_max_addr(fcn);
 				RzIOMap *map = rz_io_map_get(core->io, addr);
@@ -965,8 +966,7 @@ error:
 	// ugly hack to free fcn
 	if (fcn) {
 		if (!rz_analysis_function_realsize(fcn) || fcn->addr == UT64_MAX) {
-			rz_analysis_function_free(fcn);
-			fcn = NULL;
+			goto free_function;
 		} else {
 			// TODO: mark this function as not properly analyzed
 			if (!fcn->name) {
@@ -980,7 +980,11 @@ error:
 				rz_flag_set(core->flags, fcn->name, at, rz_analysis_function_linear_size(fcn));
 				rz_flag_space_pop(core->flags);
 			}
-			rz_analysis_add_function(core->analysis, fcn);
+			// Reference analysis can fail after this function has already been registered.
+			if (rz_analysis_get_function_at(core->analysis, fcn->addr) != fcn &&
+				!rz_analysis_add_function(core->analysis, fcn)) {
+				goto free_function;
+			}
 			if (has_next) {
 				ut64 newaddr = rz_analysis_function_max_addr(fcn);
 				RzIOMap *map = rz_io_map_get(core->io, newaddr);
@@ -994,6 +998,15 @@ error:
 			}
 		}
 	}
+	rz_analysis_hint_free(hint);
+	return false;
+
+free_function:
+	// A failed insertion can still have appended the function before a hash allocation failed.
+	if (!rz_analysis_function_delete(fcn)) {
+		rz_analysis_function_free(fcn);
+	}
+	rz_analysis_le_addr_pair_reset(core->analysis);
 	rz_analysis_hint_free(hint);
 	return false;
 }
