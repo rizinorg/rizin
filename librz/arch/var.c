@@ -335,6 +335,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 /**
  * Add or update a variable at the given storage location \p stor.
  * Both the variable's type and name are set according to the parameters given.
+ * Callable signatures referenced by \p type are borrowed and must outlive the variable.
  *
  * \param fcn the function which the variable will belong to
  * \param stor storage for the new variable to create, or for identifying an existing one if it exists
@@ -376,7 +377,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	if (type) {
 		if (var->type != type) {
 			rz_type_free(var->type);
-			var->type = rz_type_clone(type);
+			var->type = rz_type_clone_shallow(type);
 		}
 	} else {
 		if (!var->type) {
@@ -532,7 +533,7 @@ RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
  * Delete all variables from \p fcn function - both arguments and local variables
  */
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
-	rz_pvector_fini(&fcn->vars);
+	rz_pvector_clear(&fcn->vars);
 	fcn->argnum = 0;
 }
 
