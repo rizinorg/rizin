@@ -117,11 +117,32 @@ RZ_API RZ_OWN char *rz_graph_as_dot_str(const RzGraph *g,
 // DFS and visitor mode
 typedef struct rz_graph_visitor_t_new RzGraphVisitor;
 struct rz_graph_visitor_t_new {
+	/**
+	 * \brief This callback is invoked on newly discovered nodes.
+	 */
 	void (*discover_node)(RzGraphNode *n, RzGraphVisitor *vis);
+	/**
+	 * \brief This callback is invoked after all neighbors of the node
+	 * were walked.
+	 */
 	void (*finish_node)(RzGraphNode *n, RzGraphVisitor *vis);
+	/**
+	 * \brief This callback is invoked for every tree/forward edge.
+	 */
 	void (*tree_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
+	/**
+	 * \brief This callback is invoked for every back edge.
+	 */
 	void (*back_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
+	/**
+	 * \brief This callback is invoked for every cross edge.
+	 */
 	void (*fcross_edge)(const RzGraphEdge *e, RzGraphVisitor *vis);
+	/**
+	 * \brief Returns false if edge should not be walked.
+	 * The handlers above won't be called for this edge.
+	 */
+	bool (*edge_selector)(const RzGraphEdge *e, RzGraphVisitor *vis);
 	void *visitor_data; ///< caller-owned context passed to node/edge callbacks
 };
 
