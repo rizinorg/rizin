@@ -29,6 +29,7 @@ aaa
 afl
 pd 120
 EOF
+REGEXP_FILTER_OUT=(?m)^.*\S
 EXPECT=<<EOF
 0x00000000    1 1            entry0
 0x00000001   16 207          fcn.00000001
@@ -122,15 +123,15 @@ EXPECT=<<EOF
 \           0x000000cf      rts
             0x000000d0      mov:i #0x9:16, r4
             ;-- scb_loop_f:
-      ,===< 0x000000d3      scb/f r4, +253
+      ,===< 0x000000d3      scb/f r4, -3
       |     0x000000d6      mov:i #0x9:16, r4
       |     ;-- scb_loop_ne:
       |     0x000000d9      cmp:g.b #0x41, @r6+
-      |,==< 0x000000dc      scb/ne r4, +250
+      |,==< 0x000000dc      scb/ne r4, -6
       ||    0x000000df      mov:i #0x9:16, r4
       ||    ;-- scb_loop_eq:
       ||    0x000000e2      cmp:g.b #0x41, @r6+
-      ||,=< 0x000000e5      scb/eq r4, +250
+      ||,=< 0x000000e5      scb/eq r4, -6
       |||   0x000000e8      bsr   +7                                   ; sym.func_demo
       ||,=< 0x000000ea      bra   +7
      ||||   ; CALL XREF from fcn.00000001 @ 0xcb
@@ -140,6 +141,7 @@ EXPECT=<<EOF
      ||||   ; CALL XREF from sym.scb_loop_eq @ +0x6
 / sym.func_demo();
 \    ||||   0x000000f1      rtd   #0x2:8
+     ||||   ; CODE XREF from sym.scb_loop_eq @ +0x8
      ||||   ;-- do_traps:
       ||`-> 0x000000f3      trapa #0x3
       |||   0x000000f5      mov:i #0x8000:16, r0
@@ -154,7 +156,7 @@ EXPECT=<<EOF
       |||   0x00000108      prtd  #0x4:8
       |||   0x0000010b      unlk  fp
       |||   ;-- halt:
-      |||   0x0000010c      bra   +254
+      |||   0x0000010c      bra   -2
       |||   ;-- far_entry:
       |||   0x0000010e      rts
       |||   ;-- trap_vs_handler:
@@ -165,7 +167,7 @@ EXPECT=<<EOF
       |||   0x00000112      btst.w #0xf, @(-1:16, r7)
       |||   0x00000116      btst.w #0xf, @(-1:16, r7)
       |||   0x0000011a      btst.w #0xf, @(-1:16, r7)
-      |||   0x0000011e      
+      |||   0x0000011e
       |||   0x0000011f  ~   sub.w @(18:16, r7), r4
       |||   ;-- section..data:
       |||   0x00000120      nop                                        ; [01] -rw- section size 4 named .data
@@ -198,6 +200,8 @@ EXPECT=<<EOF
 0x00000018    6 123          sym.varfunc
 0x00000093    1 31           sym.main
                                   entry0 0x0 ->      CALL -> 0x93 sym.main
+                          sym.varfunc+34 0x3a ->      CODE -> 0x66 sym..L3
+                              sym..L1+20 0x50 ->      CODE -> 0x66 sym..L3
                               sym..L3+30 0x84 ->      CALL -> 0x4 sym.leaffunc
                               sym.main+7 0x9a ->      CALL -> 0x18 sym.varfunc
                              sym.main+19 0xa6 ->      CALL -> 0x0 entry0
@@ -208,18 +212,18 @@ is-pure: true
 realsz: 123
 stackframe: 250
 cyclomatic-cost: 0
-cyclomatic-complexity: 5
+cyclomatic-complexity: 3
 loops: 0
 bits: 16
 type: sym
 num-bbs: 6
-edges: 9
+edges: 7
 end-bbs: 1
-call-refs: 0x00000004 C
+call-refs: 0x00000066 J 0x00000066 J 0x00000004 C
 data-refs:
-code-xrefs: 0x0000009a C
+code-xrefs: 0x0000003a J 0x00000050 J 0x0000009a C
 noreturn: false
-in-degree: 1
+in-degree: 3
 out-degree: 1
 data-xrefs:
 locals: 0
@@ -251,6 +255,7 @@ arg int16_t arg_feh @ stack + 0xfe
 |     | |   0x00000057      mov:g.w #0x8, @(-4:8, r6)
 |     | |   0x0000005c      mov:g.w #0x7, @(-6:8, r6)
 |     | |   0x00000061      mov:g.w #0x6, @(-8:8, r6)
+|     | |   ; CODE XREFS from sym.varfunc @ 0x3a, 0x50
 |     | |   ;-- .L3:
 |     `-`-> 0x00000066      mov:g.w r6, r1
 |           0x00000068      add:q.b #0xfff8:16, r1
@@ -316,4 +321,36 @@ R 0xa  mov:f.w @(8:8, r6), r2
 * arg_ah
 R 0xc  mov:f.w @(10:8, r6), r3
 EOF
+RUN
+
+NAME=h8500 decodes an op with 256 bytes left in the buffer
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=h8500
+wx ffffffff
+b 0x80
+pd 1
+b 0x100
+pd 1
+b 0x101
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+EOF
+RUN
+
+NAME=H8/500 BRA, BRN and BNE use their distinct control flow
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=h8500
+wx 20fe21fc26fa
+pdj 3~{.[]\|{offset,type,jump,fail}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"type":"jmp","jump":0},{"offset":2,"type":"nop"},{"offset":4,"type":"cjmp","jump":0,"fail":6}]
+EOF
+EXPECT_ERR=
 RUN
