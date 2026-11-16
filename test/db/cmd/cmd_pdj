@@ -46,3 +46,57 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdJ N prints N instructions whatever the block size (#2741)
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.comments=false
+b 16
+pdJ 10 @ 0x401000~{.[]\|{offset,text}}
+b 0x100
+pdJ 10 @ 0x401000~{.[]\|{offset,text}}
+EOF
+EXPECT=<<EOF
+[{"offset":4198400,"text":"  ;-- section..text:"},{"offset":4198400,"text":"  ;-- __gnu_exception_handler@4:"},{"offset":4198400,"text":"  0x00401000      push  ebp"},{"offset":4198401,"text":"  0x00401001      mov   ebp, esp"},{"offset":4198403,"text":"  0x00401003      sub   esp, 0x18"},{"offset":4198406,"text":"  0x00401006      mov   dword [ebp-0x08], ebx"},{"offset":4198409,"text":"  0x00401009      mov   eax, dword [ebp+0x08]"},{"offset":4198412,"text":"  0x0040100c      xor   ebx, ebx"},{"offset":4198414,"text":"  0x0040100e      mov   dword [ebp-0x04], esi"},{"offset":4198417,"text":"  0x00401011      mov   eax, dword [eax]"},{"offset":4198419,"text":"  0x00401013      xor   esi, esi"},{"offset":4198421,"text":"  0x00401015      mov   eax, dword [eax]"}]
+[{"offset":4198400,"text":"  ;-- section..text:"},{"offset":4198400,"text":"  ;-- __gnu_exception_handler@4:"},{"offset":4198400,"text":"  0x00401000      push  ebp"},{"offset":4198401,"text":"  0x00401001      mov   ebp, esp"},{"offset":4198403,"text":"  0x00401003      sub   esp, 0x18"},{"offset":4198406,"text":"  0x00401006      mov   dword [ebp-0x08], ebx"},{"offset":4198409,"text":"  0x00401009      mov   eax, dword [ebp+0x08]"},{"offset":4198412,"text":"  0x0040100c      xor   ebx, ebx"},{"offset":4198414,"text":"  0x0040100e      mov   dword [ebp-0x04], esi"},{"offset":4198417,"text":"  0x00401011      mov   eax, dword [eax]"},{"offset":4198419,"text":"  0x00401013      xor   esi, esi"},{"offset":4198421,"text":"  0x00401015      mov   eax, dword [eax]"}]
+EOF
+RUN
+
+NAME=pdJ N prints the lines pd N prints
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+pdJ 100 @ main~{[100].text}
+pd 100 @ main~0x000042d2
+b 0x10
+pdJ 100 @ main~{[100].text}
+EOF
+EXPECT=<<EOF
+  0x000042d2      add   esi, 0x01
+  0x000042d2      add   esi, 0x01
+  0x000042d2      add   esi, 0x01
+EOF
+RUN
+
+NAME=pdJ -N reads the ops before the seek whatever the block size
+FILE=bins/elf/arch-x86_64-ls
+ARGS=-m 0x7f0000000
+CMDS=<<EOF
+e asm.comments=false
+b 0x10
+pdJ -5 @ 0x7f0004200~{.[]\|{text}}
+EOF
+EXPECT=<<EOF
+[{"text":"  0x7f00041e9      mov   rsi, rbx"},{"text":"  0x7f00041ec      mov   dword [rsp+0x40], 0xffffffff"},{"text":"  0x7f00041f4      mov   edi, r14d"},{"text":"  0x7f00041f7      call  qword [reloc.getopt_long.7f0023d90]"},{"text":"  0x7f00041fd      cmp   eax, 0xffffffff"}]
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=pdJ N gives the arrows of the ops past the block
+FILE=bins/elf/arch-x86_64-ls
+CMDS=<<EOF
+b 4
+pdJ 6 @ 0x41f4~{[3]}
+EOF
+EXPECT=<<EOF
+{"offset":16896,"arrow":16968,"text":"  0x00004200      jz    0x4248"}
+EOF
+RUN
