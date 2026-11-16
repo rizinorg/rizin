@@ -253,13 +253,15 @@ RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
 			return SZT_MAX;
 		}
 	}
-
+	size_t lsize = 0;
 	bool failed = false;
 	for (;;) {
 		const RzSetU *cur = va_arg(ap, const RzSetU *);
 		if (!cur) {
+			failed = lsize == 0;
 			break;
 		}
+		lsize++;
 		if (cur == s) {
 			// Its elements are already part of the union and inserting
 			// them would modify the set we are iterating over.
@@ -512,6 +514,7 @@ RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...) {
 	va_list ap;
 	va_start(ap, inter_set);
 
+	size_t lsize = 0;
 	// Find the smallest set as candidate source and check whether inter_set
 	// is one of the given sets.
 	bool inter_in_list = false;
@@ -525,8 +528,12 @@ RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...) {
 		if (!smallest || rz_set_u_size(cur) < rz_set_u_size(smallest)) {
 			smallest = cur;
 		}
+		lsize++;
 	}
 	va_end(ap2);
+	if (!lsize) {
+		return SZT_MAX;
+	}
 
 	if (!inter_in_list) {
 		// inter_set is not one of the given sets, thus the elements of the

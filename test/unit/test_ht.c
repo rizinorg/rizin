@@ -981,7 +981,7 @@ bool test_set_u_union(void) {
 	size_t union_size = rz_set_u_union(NULL, a, b, c, NULL);
 	mu_assert_eq(union_size, 5, "Wrong union size");
 	union_size = rz_set_u_union(NULL, NULL);
-	mu_assert_eq(union_size, 0, "Wrong union size for empty list");
+	mu_assert_eq(union_size, SZT_MAX, "NULL check failed.");
 
 	// Compute union into a caller-provided set
 	RzSetU *u = rz_set_u_new();
@@ -1035,7 +1035,7 @@ bool test_set_u_intersection(void) {
 	inter_size = rz_set_u_intersection(NULL, a, b, c, NULL);
 	mu_assert_eq(inter_size, 1, "Wrong intersection size");
 	inter_size = rz_set_u_intersection(NULL, NULL);
-	mu_assert_eq(inter_size, 0, "Wrong intersection size for empty list");
+	mu_assert_eq(inter_size, SZT_MAX, "NULL check failed.");
 
 	// Passing the same set multiple times must not change the result
 	inter_size = rz_set_u_intersection(NULL, a, a, a, NULL);
@@ -1162,7 +1162,7 @@ bool test_set_u_difference(void) {
 	diff_size = rz_set_u_difference(NULL, a, b, c, NULL);
 	mu_assert_eq(diff_size, 1, "Wrong difference size");
 	diff_size = rz_set_u_difference(NULL, NULL);
-	mu_assert_eq(diff_size, 0, "Wrong difference size for empty list");
+	mu_assert_eq(diff_size, SZT_MAX, "NULL check failed.");
 
 	// Passing the same set multiple times must not change the result
 	diff_size = rz_set_u_difference(NULL, a, a, a, NULL);
