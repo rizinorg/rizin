@@ -273,7 +273,11 @@ RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
 		}
 		const ut64 *u;
 		rz_iterator_foreach(&it, u) {
-			rz_set_u_add(s, *u);
+			if (!rz_set_u_add(s, *u)) {
+				failed = true;
+				rz_warn_if_reached();
+				break;
+			}
 		}
 		rz_iterator_fini(&it);
 		if (failed) {
@@ -316,7 +320,11 @@ static size_t add_to_difference(const RzSetU *first, RzSetU *diff_set, va_list a
 		if (!in_any) {
 			count++;
 			if (diff_set) {
-				rz_set_u_add(diff_set, *u);
+				if (!rz_set_u_add(diff_set, *u)) {
+					rz_iterator_fini(&it);
+					rz_warn_if_reached();
+					return SZT_MAX;
+				}
 			}
 		}
 	}
@@ -420,7 +428,11 @@ RZ_API size_t rz_set_u_difference(RZ_OUT RZ_NULLABLE RzSetU *diff_set, ...) {
 			if (rz_set_u_as_iter(tmp, &it)) {
 				const ut64 *u;
 				rz_iterator_foreach(&it, u) {
-					rz_set_u_add(diff_set, *u);
+					if (!rz_set_u_add(diff_set, *u)) {
+						failed = true;
+						rz_warn_if_reached();
+						break;
+					}
 				}
 				rz_iterator_fini(&it);
 			} else {
@@ -471,7 +483,11 @@ static size_t add_to_intersection(const RzSetU *smallest, RzSetU *inter_set, va_
 		}
 		count++;
 		if (inter_set) {
-			rz_set_u_add(inter_set, *u);
+			if (!rz_set_u_add(inter_set, *u)) {
+				failed = true;
+				rz_warn_if_reached();
+				break;
+			}
 		}
 	}
 	rz_iterator_fini(&it);
