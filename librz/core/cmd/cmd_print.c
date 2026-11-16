@@ -2749,7 +2749,13 @@ static void disassembly_as_table(RzTable *t, RzCore *core, ut64 addr, int n_inst
 }
 
 static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdStateOutput *state, bool cbytes) {
+	bool backward = n_instrs < 0 || n_bytes < 0;
 	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
+	if (backward && !n_instrs && (offset == core->offset || !n_bytes)) {
+		rz_cmd_state_output_array_start(state);
+		rz_cmd_state_output_array_end(state);
+		return true;
+	}
 
 	if (state->mode == RZ_OUTPUT_MODE_JSON && n_instrs > 0) {
 		// read from io as the ops need it, so neither the block size nor a
@@ -2778,15 +2784,17 @@ static bool core_disassembly(RzCore *core, int n_bytes, int n_instrs, RzCmdState
 		.cbytes = cbytes,
 	};
 
-	ut8 *buf = RZ_NEWS0(ut8, n_bytes + 1);
+	size_t size = (size_t)n_bytes + 1;
+	ut8 *buf = malloc(size);
 	if (!buf) {
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return false;
 	}
-	if (!rz_io_read_at_mapped(core->io, offset, buf, n_bytes + 1)) {
+	memset(buf, cbytes ? 0 : core->io->Oxff, size);
+	if (!rz_io_read_at_mapped(core->io, offset, buf, size)) {
 		// Even with an error, keep on disassembling as at least some data may be read successfully
 		// Do not fail the command: the output would be discarded in JSON mode.
-		RZ_LOG_WARN("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " from io.\n", (ut64)(n_bytes + 1), offset);
+		RZ_LOG_WARN("Failed to read chunk of size 0x%" PFMT64x " at 0x%" PFMT64x " from io.\n", (ut64)size, offset);
 	}
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -3146,8 +3154,6 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut32 old_blocksize = core->blocksize;
-	ut64 old_offset = core->offset;
 	core->num->value = 0;
 
 	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
@@ -3156,19 +3162,21 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int n_instrs = parsed;
-	if (n_instrs < 0) {
-		ut64 new_offset = old_offset;
-		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
-			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
-		}
-		ut32 new_blocksize = new_offset - old_blocksize;
-		if (new_blocksize > old_blocksize) {
-			rz_core_block_size(core, new_blocksize);
-		}
-		rz_core_seek(core, new_offset, true);
-	} else {
-		rz_core_block_read(core);
+	int n_bytes = 0;
+	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
+	if (parsed < 0 && !n_instrs) {
+		core->num->value = 0;
+		rz_cons_println(core->cons, "[]");
+		return RZ_CMD_STATUS_OK;
 	}
+	int size = parsed < 0 ? (int)RZ_MIN(core->offset - offset, ST32_MAX) : (int)core->blocksize;
+	ut8 *buf = malloc(size);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
+	memset(buf, core->io->Oxff, size);
+	rz_io_read_at_mapped(core->io, offset, buf, size);
 
 	state->mode = RZ_OUTPUT_MODE_JSON;
 
@@ -3176,15 +3184,12 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		core->cons->is_html = false;
 		core->cons->was_html = true;
 	}
+	// A backward listing ends at the original seek.
 	RzCoreDisasmOptions disasm_options = {
-		.cbytes = 1,
+		.cbytes = parsed <= 0,
 	};
-	core->num->value = rz_core_print_disasm(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state, &disasm_options);
-
-	if (n_instrs < 0) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_seek(core, old_offset, true);
-	}
+	core->num->value = rz_core_print_disasm(core, offset, buf, size, n_instrs, state, &disasm_options);
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 

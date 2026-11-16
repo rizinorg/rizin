@@ -10,63 +10,50 @@
 #define mid_refline(a, r)      (mid_down_refline(a, r) || mid_up_refline(a, r))
 #define in_refline(a, r)       (mid_refline(a, r) || (a) == (r)->from || (a) == (r)->to)
 
-typedef struct refline_end {
-	int val;
-	bool is_from;
-	RzAnalysisRefline *r;
+typedef struct {
+	ut64 addr;
+	RzAnalysisRefline *ref;
 } ReflineEnd;
 
-static int cmp_asc(const struct refline_end *a, const struct refline_end *b, void *user) {
-	return (a->val > b->val) - (a->val < b->val);
+static int cmp_refline_end(const void *lhs, const void *rhs) {
+	const ReflineEnd *a = lhs;
+	const ReflineEnd *b = rhs;
+	if (a->addr != b->addr) {
+		return a->addr < b->addr ? -1 : 1;
+	}
+	// At a shared endpoint, the newer line has always taken the inner column.
+	return (b->ref->index > a->ref->index) - (b->ref->index < a->ref->index);
 }
 
 static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b, void *user) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *ref) {
-	ReflineEnd *re = RZ_NEW0(struct refline_end);
-	if (!re) {
-		return NULL;
+typedef struct {
+	RzPVector /*<RzAnalysisRefline *>*/ *refs;
+	ut64 start;
+	ut64 size;
+	size_t max;
+	bool linesout;
+} ReflineRange;
+
+static bool add_refline(ReflineRange *range, ut64 from, ut64 to) {
+	if (rz_pvector_len(range->refs) >= range->max ||
+		(!range->linesout && (to < range->start || to - range->start >= range->size))) {
+		return true;
 	}
-	re->val = val;
-	re->is_from = is_from;
-	re->r = ref;
-	return re;
-}
-
-static bool refline_target_visible(ut64 target, ut64 start, ut64 len, bool linesout) {
-	return target != UT64_MAX && (linesout || (target >= start && target - start < len));
-}
-
-static bool add_refline(RzPVector /*<RzAnalysisRefline *>*/ *vector, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
-	ReflineEnd *re1, *re2;
-	RzAnalysisRefline *item = RZ_NEW0(RzAnalysisRefline);
-	if (!item) {
+	RzAnalysisRefline *ref = RZ_NEW0(RzAnalysisRefline);
+	if (!ref) {
 		return false;
 	}
-	item->from = addr;
-	item->to = to;
-	item->index = *idx;
-	item->level = -1;
-	item->direction = (to > addr) ? 1 : -1;
-	*idx += 1;
-	rz_pvector_push(vector, item);
-
-	re1 = refline_end_new(item->from, true, item);
-	if (!re1) {
-		free(item);
+	ref->from = from;
+	ref->to = to;
+	ref->level = -1;
+	ref->direction = to > from ? 1 : -1;
+	if (!rz_pvector_push(range->refs, ref)) {
+		free(ref);
 		return false;
 	}
-	rz_list_add_sorted(sten, re1, (RzListComparator)cmp_asc, NULL);
-
-	re2 = refline_end_new(item->to, false, item);
-	if (!re2) {
-		free(re1);
-		free(item);
-		return false;
-	}
-	rz_list_add_sorted(sten, re2, (RzListComparator)cmp_asc, NULL);
 	return true;
 }
 
@@ -74,205 +61,211 @@ RZ_API void rz_analysis_reflines_free(RzAnalysisRefline *rl) {
 	free(rl);
 }
 
+static ut64 refline_meta_size(RzAnalysis *analysis, ut64 addr) {
+	RzPVector *metas = rz_meta_get_all_at(analysis, addr);
+	ut64 size = 0;
+	if (metas) {
+		void **it;
+		rz_pvector_foreach (metas, it) {
+			RzIntervalNode *node = *it;
+			RzAnalysisMetaItem *meta = node->data;
+			if (meta->type == RZ_META_TYPE_DATA || meta->type == RZ_META_TYPE_STRING ||
+				meta->type == RZ_META_TYPE_HIDE || meta->type == RZ_META_TYPE_FORMAT ||
+				meta->type == RZ_META_TYPE_MAGIC) {
+				size = rz_meta_node_size(node);
+				break;
+			}
+		}
+		rz_pvector_free(metas);
+	}
+	return size;
+}
+
+static bool refline_add_op(ReflineRange *range, const RzAnalysisOp *op, bool linescall) {
+	switch (op->type) {
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+		if (!linescall) {
+			break;
+		}
+		// fallthrough
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+		if (op->jump != UT64_MAX && !add_refline(range, op->addr, op->jump)) {
+			return false;
+		}
+		if (!op->delay && op->fail != UT64_MAX && op->fail != op->addr + op->size) {
+			return add_refline(range, op->addr, op->fail);
+		}
+		break;
+	case RZ_ANALYSIS_OP_TYPE_SWITCH:
+		if (op->switch_op) {
+			RzListIter *it;
+			RzAnalysisCaseOp *c;
+			rz_list_foreach (op->switch_op->cases, it, c) {
+				if (rz_pvector_len(range->refs) >= range->max) {
+					break;
+				}
+				if (!add_refline(range, op->switch_op->addr, c->jump)) {
+					return false;
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+static bool refline_levels(RzPVector /*<RzAnalysisRefline *>*/ *refs, ut64 start, ut64 size, bool linesout) {
+	// The range of a counted listing is known only after its last row.
+	size_t count = 0;
+	void **entries = rz_pvector_data(refs);
+	for (size_t i = 0; i < rz_pvector_len(refs); i++) {
+		RzAnalysisRefline *ref = entries[i];
+		if (!linesout && (ref->to < start || ref->to - start >= size)) {
+			free(ref);
+			continue;
+		}
+		ref->index = count;
+		entries[count++] = ref;
+	}
+	while (rz_pvector_len(refs) > count) {
+		rz_pvector_pop(refs);
+	}
+	if (!count) {
+		return true;
+	}
+	ReflineEnd *ends = calloc(count, 2 * sizeof(*ends));
+	ut8 *levels = RZ_NEWS0(ut8, count + 1);
+	if (!ends || !levels) {
+		free(ends);
+		free(levels);
+		return false;
+	}
+	for (size_t i = 0; i < count; i++) {
+		RzAnalysisRefline *ref = entries[i];
+		ends[2 * i] = (ReflineEnd){ ref->from, ref };
+		ends[2 * i + 1] = (ReflineEnd){ ref->to, ref };
+	}
+	qsort(ends, 2 * count, sizeof(*ends), cmp_refline_end);
+	size_t min = 0;
+	for (size_t i = 0; i < 2 * count; i++) {
+		RzAnalysisRefline *ref = ends[i].ref;
+		if (ref->level == -1) {
+			ref->level = min + 1;
+			levels[min] = 1;
+			while (levels[++min]) {
+			}
+		} else {
+			size_t level = ref->level - 1;
+			levels[level] = 0;
+			min = RZ_MIN(min, level);
+		}
+	}
+	free(levels);
+	free(ends);
+	return true;
+}
+
+static bool scan_refline_rows(RzAnalysis *analysis, ReflineRange *range, ut64 limit, int nlines, bool linescall, RzAnalysisReflineDecode decode, void *user, bool counted, ut64 *scanned) {
+	ut64 off = 0;
+	while (off < limit && nlines && !rz_interrupt_is_breaked(analysis->intr)) {
+		if (nlines > 0) {
+			nlines--;
+		}
+		ut64 addr = range->start + off;
+		ut64 step = refline_meta_size(analysis, addr);
+		if (!step) {
+			bool executable = range->refs && analysis->iob.is_valid_offset(analysis->iob.io, addr, RZ_PERM_X);
+			if (counted || executable) {
+				RzAnalysisOp op = { 0 };
+				int decoded = decode(user, addr, &op);
+				bool ok = decoded <= 0 || !executable || refline_add_op(range, &op, linescall);
+				rz_analysis_op_fini(&op);
+				if (!ok) {
+					return false;
+				}
+				if (decoded <= 0) {
+					break;
+				}
+				step = decoded;
+			} else {
+				step = 4;
+			}
+		}
+		off += RZ_MIN(step, limit - off);
+		if (off > UT64_MAX - range->start || (range->refs && rz_pvector_len(range->refs) >= range->max)) {
+			break;
+		}
+	}
+	*scanned = off;
+	return true;
+}
+
+static RzPVector /*<RzAnalysisRefline *>*/ *collect_reflines(RzAnalysis *analysis, ut64 start, ut64 limit, int nlines, bool linesout, bool linescall, RzAnalysisReflineDecode decode, void *user, bool counted) {
+	RzPVector *refs = rz_pvector_new(free);
+	if (!refs) {
+		return NULL;
+	}
+	ReflineRange range = {
+		.start = start,
+		.size = limit,
+		.max = analysis->maxreflines > 0 ? (size_t)analysis->maxreflines : SIZE_MAX,
+		.linesout = linesout,
+	};
+	ut64 scanned = 0;
+	bool ok = true;
+	rz_interrupt_break_push(analysis->intr, NULL, NULL);
+	if (counted && !linesout && analysis->maxreflines > 0) {
+		// Resolve forward targets before spending the limited number of visible lines.
+		ok = scan_refline_rows(analysis, &range, limit, nlines, linescall, decode, user, true, &range.size);
+		limit = range.size;
+	}
+	range.refs = refs;
+	ok = ok && scan_refline_rows(analysis, &range, limit, nlines, linescall, decode, user, counted, &scanned);
+	rz_interrupt_break_pop(analysis->intr);
+	ut64 size = counted && analysis->maxreflines <= 0 ? scanned : range.size;
+	if (!ok || !refline_levels(refs, start, size, linesout)) {
+		rz_pvector_free(refs);
+		return NULL;
+	}
+	return refs;
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	ut64 start;
+	const ut8 *buf;
+	ut64 len;
+} ReflineBuffer;
+
+static int refline_buffer_op(void *user, ut64 addr, RzAnalysisOp *op) {
+	ReflineBuffer *input = user;
+	ut64 off = addr - input->start;
+	rz_analysis_op(input->analysis, op, addr, input->buf + off,
+		RZ_MIN(input->len - off, ST32_MAX), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+	return RZ_MAX(op->size, 1);
+}
+
 /**
- * Returns a vector of RzAnalysisRefline for the code present in the buffer \p buf, of
- * length \p len. A RzAnalysisRefline exists from address A to address B if a jmp,
- * conditional jmp or call instruction exists at address A and it targets
- * address B.
- *
- * \param analysis RzAnalysis instance
- * \param addr address associated with the first opcode of \p buf
- * \param buf opcode buffer to search in
- * \param len opcode buffer size
- * \param nlines max number of lines of code to consider
- * \param linesout true if you want to display lines that go outside of the scope [addr;addr+len)
- * \param linescall true if you want to display call lines
- * \return vector of RzAnalysisRefline
+ * \brief Collect jump, conditional branch and optional call lines in the supplied byte range.
+ * \param nlines Maximum number of rows to scan, or -1 for the whole buffer.
  */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	rz_return_val_if_fail(analysis && buf, NULL);
+	ReflineBuffer input = { analysis, addr, buf, len };
+	return collect_reflines(analysis, addr, len, nlines, linesout, linescall, refline_buffer_op, &input, false);
+}
 
-	RzPVector *result;
-	RzList *sten;
-	RzListIter *iter;
-	RzAnalysisOp op = { 0 };
-	struct refline_end *el;
-	const ut8 *ptr = buf;
-	const ut8 *end = buf + len;
-	ut8 *free_levels;
-	int sz = 0, count = 0;
-	ut64 opc = addr;
-
-	memset(&op, 0, sizeof(op));
-	/*
-	 * 1) find all reflines
-	 * 2) sort "from"s and "to"s in a list
-	 * 3) traverse the list to find the minimum available level for each refline
-	 *      * create a sorted list with available levels.
-	 *      * when we encounter a previously unseen "from" or "to" of a
-	 *        refline, we occupy the lowest level available for it.
-	 *      * when we encounter the "from" or "to" of an already seen
-	 *        refline, we free that level.
-	 */
-
-	result = rz_pvector_new((RzPVectorFree)free);
-	if (!result) {
-		return NULL;
-	}
-	sten = rz_list_newf((RzListFree)free);
-	if (!sten) {
-		goto list_err;
-	}
-	rz_interrupt_break_push(analysis->intr, NULL, NULL);
-	/* analyze code block */
-	while (ptr < end && !rz_interrupt_is_breaked(analysis->intr)) {
-		if (nlines != -1) {
-			if (!nlines) {
-				break;
-			}
-			nlines--;
-		}
-		if (analysis->maxreflines && count > analysis->maxreflines) {
-			break;
-		}
-		addr += sz;
-		{
-			RzPVector *metas = rz_meta_get_all_at(analysis, addr);
-			if (metas) {
-				void **it;
-				ut64 skip = 0;
-				rz_pvector_foreach (metas, it) {
-					RzIntervalNode *node = *it;
-					RzAnalysisMetaItem *meta = node->data;
-					switch (meta->type) {
-					case RZ_META_TYPE_DATA:
-					case RZ_META_TYPE_STRING:
-					case RZ_META_TYPE_HIDE:
-					case RZ_META_TYPE_FORMAT:
-					case RZ_META_TYPE_MAGIC:
-						skip = rz_meta_node_size(node);
-						goto do_skip;
-					default:
-						break;
-					}
-				}
-			do_skip:
-				rz_pvector_free(metas);
-				if (skip) {
-					ptr += skip;
-					addr += skip;
-					goto __next;
-				}
-			}
-		}
-		if (!analysis->iob.is_valid_offset(analysis->iob.io, addr, RZ_PERM_X)) {
-			const int size = 4;
-			ptr += size;
-			addr += size;
-			goto __next;
-		}
-
-		// This can segfault if opcode length and buffer check fails
-		rz_analysis_op_fini(&op);
-		rz_analysis_op_init(&op);
-		rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
-		sz = op.size;
-		if (sz <= 0) {
-			sz = 1;
-			goto __next;
-		}
-
-		/* store data */
-		switch (op.type) {
-		case RZ_ANALYSIS_OP_TYPE_CALL:
-			if (!linescall) {
-				break;
-			}
-			// fallthrough
-		case RZ_ANALYSIS_OP_TYPE_CJMP:
-		case RZ_ANALYSIS_OP_TYPE_JMP:
-			if (refline_target_visible(op.jump, opc, len, linesout) && !add_refline(result, sten, addr, op.jump, &count)) {
-				rz_analysis_op_fini(&op);
-				goto sten_err;
-			}
-			// A hardware loop can have a known second destination even when the first is unknown.
-			if (!op.delay && op.fail != addr + op.size && refline_target_visible(op.fail, opc, len, linesout)) {
-				if (!add_refline(result, sten, addr, op.fail, &count)) {
-					rz_analysis_op_fini(&op);
-					goto sten_err;
-				}
-			}
-			break;
-		case RZ_ANALYSIS_OP_TYPE_SWITCH: {
-			RzAnalysisCaseOp *caseop;
-			RzListIter *iter;
-
-			// add caseops
-			if (!op.switch_op) {
-				break;
-			}
-			rz_list_foreach (op.switch_op->cases, iter, caseop) {
-				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
-					goto __next;
-				}
-				if (!add_refline(result, sten, op.switch_op->addr, caseop->jump, &count)) {
-					rz_analysis_op_fini(&op);
-					goto sten_err;
-				}
-			}
-			break;
-		}
-		}
-	__next:
-		ptr += sz;
-	}
-	rz_analysis_op_fini(&op);
-	rz_interrupt_break_pop(analysis->intr);
-
-	free_levels = RZ_NEWS0(ut8, rz_pvector_len(result) + 1);
-	if (!free_levels) {
-		goto sten_err;
-	}
-	int min = 0;
-
-	rz_list_foreach (sten, iter, el) {
-		if ((el->is_from && el->r->level == -1) || (!el->is_from && el->r->level == -1)) {
-			el->r->level = min + 1;
-			free_levels[min] = 1;
-			if (min < 0) {
-				min = 0;
-			}
-			while (free_levels[++min] == 1) {
-				;
-			}
-		} else {
-			free_levels[el->r->level - 1] = 0;
-			if (min > el->r->level - 1) {
-				min = el->r->level - 1;
-			}
-		}
-	}
-
-	/* XXX: the algorithm can be improved. We can calculate the set of
-	 * reflines used in each interval of addresses and store them.
-	 * Considering rz_analysis_reflines_str is always called with increasing
-	 * addresses, we can just traverse linearly the list of intervals to
-	 * know which reflines need to be drawn for each address. In this way,
-	 * we don't need to traverse again and again the reflines for each call
-	 * to rz_analysis_reflines_str, but we can reuse the data already
-	 * calculated. Those data will be quickly available because the
-	 * intervals will be sorted and the addresses to consider are always
-	 * increasing. */
-	free(free_levels);
-	rz_list_free(sten);
-	return result;
-
-sten_err:
-list_err:
-	rz_interrupt_break_pop(analysis->intr);
-	rz_list_free(sten);
-	rz_pvector_free(result);
-	return NULL;
+/**
+ * \brief Collect reference lines across \p nlines display rows, including metadata.
+ * \param decode Supplies an instruction and its display size at each code address.
+ * \param user Context passed to \p decode.
+ */
+RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get_count(RZ_NONNULL RzAnalysis *analysis, ut64 addr, int nlines, bool linesout, bool linescall, RZ_NONNULL RzAnalysisReflineDecode decode, RZ_NULLABLE void *user) {
+	rz_return_val_if_fail(analysis && decode && nlines >= 0, NULL);
+	return collect_reflines(analysis, addr, UT64_MAX, nlines, linesout, linescall, decode, user, true);
 }
 
 /**
