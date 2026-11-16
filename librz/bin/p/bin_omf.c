@@ -6,6 +6,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
+#include "omf/omf51.h"
 #include "omf/omf166.h"
 #include "omf/omf_common.h"
 
@@ -45,6 +46,25 @@ static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *b, 
 		base_obj->baddr = omf166_baddr;
 		break;
 	case OMF_FILE_TARGET_51: {
+		base_obj->target_obj = (rz_bin_omf51_obj *)RZ_NEW0(rz_bin_omf51_obj);
+		if (!base_obj->target_obj) {
+			RZ_FREE(base_obj);
+			return false;
+		}
+		base_obj->init_internal_storage = rz_bin_format_omf51_init_internal_storage;
+		base_obj->get_bits = rz_bin_omf51_get_bits;
+		base_obj->load_omf_content = rz_bin_format_omf51_load_content;
+		base_obj->is_valid_omf_type = is_valid_omf51_type;
+		base_obj->omf_structure = NULL;
+		base_obj->free_all_omf_obj = rz_bin_free_all_omf51_obj;
+		base_obj->post_init = rz_bin_format_omf51_post_init;
+		base_obj->sections = omf51_sections;
+		base_obj->maps = omf51_maps;
+		base_obj->symbols = omf51_symbols;
+		base_obj->get_entry = rz_bin_omf51_get_entry;
+		base_obj->max_record_size = omf51_max_record_size;
+		base_obj->info = omf51_info;
+		base_obj->baddr = omf51_baddr;
 		break;
 	}
 	case OMF_FILE_TARGET_96:

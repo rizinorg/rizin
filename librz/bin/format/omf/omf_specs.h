@@ -10,6 +10,7 @@
 
 #define RECORD_MAX_SIZE        1 << 10 // max size 1Kb
 #define OMF166_RECORD_MAX_SIZE UT16_MAX // max size 1Kb
+#define OMF51_RECORD_MAX_SIZE  UT16_MAX // max size 1Kb
 // record type
 #define OMF_THEADR    0x80 // Translator Header Record
 #define OMF_LHEADR    0x82 // Library Module Header Record
@@ -119,6 +120,9 @@
 #define OMF166_UNKNOWN3 0x63
 #define OMF166_UNKNOWN4 0x64
 #define OMF166_UNKNOWN5 0x65
+
+#define OMF51_PEDATA     0x94
+#define OMF51_ENTRYPOINT 0xCA // Base address (entry point)
 
 typedef struct {
 	ut8 type;
