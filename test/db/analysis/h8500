@@ -317,3 +317,22 @@ R 0xa  mov:f.w @(8:8, r6), r2
 R 0xc  mov:f.w @(10:8, r6), r3
 EOF
 RUN
+
+NAME=h8500 decodes an op with 256 bytes left in the buffer
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=h8500
+wx ffffffff
+b 0x80
+pd 1
+b 0x100
+pd 1
+b 0x101
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+            0x00000000      btst.w #0xf, @(-1:16, r7)
+EOF
+RUN
