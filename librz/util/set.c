@@ -350,6 +350,9 @@ RZ_API size_t rz_set_u_difference(RZ_OUT RZ_NULLABLE RzSetU *diff_set, ...) {
 	va_start(ap, diff_set);
 
 	const RzSetU *first = va_arg(ap, const RzSetU *);
+	if (!first) {
+		return SZT_MAX;
+	}
 
 	if (diff_set && first == diff_set) {
 		// diff_set is the set to subtract from, thus all elements of the
