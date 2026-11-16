@@ -6,6 +6,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 #include <rz_bin.h>
+#include "omf/omf96.h"
 #include "omf/omf51.h"
 #include "omf/omf166.h"
 #include "omf/omf_common.h"
@@ -68,6 +69,25 @@ static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *b, 
 		break;
 	}
 	case OMF_FILE_TARGET_96:
+		base_obj->target_obj = (rz_bin_omf96_obj *)RZ_NEW0(rz_bin_omf96_obj);
+		if (!base_obj->target_obj) {
+			RZ_FREE(base_obj);
+			return false;
+		}
+		base_obj->init_internal_storage = rz_bin_format_omf96_init_internal_storage;
+		base_obj->get_bits = rz_bin_omf96_get_bits;
+		base_obj->load_omf_content = rz_bin_format_omf96_load_omf_content;
+		base_obj->is_valid_omf_type = omf_is_valid_omf96_type;
+		base_obj->omf_structure = omf96_structure;
+		base_obj->free_all_omf_obj = rz_bin_free_all_omf96_obj;
+		base_obj->post_init = rz_bin_format_omf96_post_init;
+		base_obj->sections = omf96_sections;
+		base_obj->maps = omf96_maps;
+		base_obj->symbols = omf96_symbols;
+		base_obj->get_entry = rz_bin_omf96_get_entry;
+		base_obj->max_record_size = omf96_max_record_size;
+		base_obj->info = omf96_info;
+		base_obj->baddr = omf96_baddr;
 		break;
 	default:
 		rz_warn_if_reached();

@@ -280,6 +280,11 @@ typedef struct {
 
 	ut64 (*baddr)(RZ_NONNULL const void *target_obj);
 } rz_bin_omf_base_obj;
+
+RzBinInfo *omf96_info(RZ_NONNULL const void *target_obj);
+ut64 omf96_baddr(RZ_NONNULL const void *target_obj);
+ut16 omf96_max_record_size(void);
+RzBinAddr *rz_bin_omf96_get_entry(RZ_NONNULL const void *target_obj);
 bool rz_bin_checksum_omf_ok(RZ_NONNULL const ut8 *buf, const ut64 buf_size);
 
 ut32 get_perm_by_type(ut8 data_type);

@@ -238,6 +238,7 @@ RZ_DEPRECATE static void core_update_syscall_db(RzCore *core) {
 }
 
 RZ_DEPRECATE static inline void core_update_asm_segoff(RzCore *core, const char *arch, ut32 bits) {
+	// TODO: move to omf_process or x86 handler
 	bool autoseg = bits == 16 && RZ_STR_EQ(arch, "x86");
 	rz_config_set_b(core->config, "asm.segoff", autoseg);
 }

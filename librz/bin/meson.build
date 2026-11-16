@@ -261,6 +261,7 @@ rz_bin_sources = [
   'format/omf/omf_common.c',
   'format/omf/omf166.c',
   'format/omf/omf51.c',
+  'format/omf/omf96.c',
   'format/p9/p9bin.c',
   'format/pe/dotnet.c',
   'format/pe/pe.c',
