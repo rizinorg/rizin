@@ -334,15 +334,15 @@ static size_t add_to_difference(const RzSetU *first, RzSetU *diff_set, va_list a
  *
  * Examples:
  * ```
- * A = {1, 2, 3} B = {2, 3, 4} X = {} Y = {5} Z = {1, 6}
- * rz_set_u_difference(X, A, B);
+ * A = {1, 2, 3} B = {2, 3, 4} C = {5, 6} X = {} Y = {5} Z = {1, 6}
+ * rz_set_u_difference(X, A, B, NULL);
  * // X = {1}
- * rz_set_u_difference(Y, A, B);
+ * rz_set_u_difference(Y, A, B, NULL);
  * // Y = {5, 1}
- * rz_set_u_difference(A, A, B);
+ * rz_set_u_difference(A, A, B, NULL);
  * // A = {1}
- * rz_set_u_difference(Z, A, Z);
- * // Z = {}
+ * rz_set_u_difference(Z, C, Z, NULL);
+ * // Z = {5}
  * ```
  */
 RZ_API size_t rz_set_u_difference(RZ_OUT RZ_NULLABLE RzSetU *diff_set, ...) {
