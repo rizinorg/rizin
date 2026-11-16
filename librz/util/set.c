@@ -48,10 +48,15 @@ RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNUL
 
 /**
  * \brief Add element \p str to hash set \p set.
+ *
+ * \param set The set to add the str to.
+ * \param str The str to add.
+ *
+ * \return True if \p str was added, false in case of error.
  */
-RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
-	rz_return_if_fail(set);
-	ht_sp_insert(set, str, (void *)1);
+RZ_API bool rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
+	rz_return_val_if_fail(set, false);
+	return ht_sp_insert_ex(set, str, (void *)1, NULL) != HT_RC_ERROR;
 }
 
 /**
@@ -138,10 +143,15 @@ RZ_API RZ_OWN RzSetU *rz_set_u_new(void) {
 
 /**
  * \brief Add element \p u to hash set \p set.
+ *
+ * \param set The set to add the value to.
+ * \param u The value to add.
+ *
+ * \return True if \p u was added, false in case of error.
  */
-RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
-	rz_return_if_fail(set);
-	ht_up_insert(set, u, (void *)1);
+RZ_API bool rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
+	rz_return_val_if_fail(set, false);
+	return ht_up_insert_ex(set, u, (void *)1, NULL) != HT_RC_ERROR;
 }
 
 static bool take_first(void *user, const ut64 k, const void *v) {
