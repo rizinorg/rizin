@@ -30,7 +30,7 @@ DEFINE_ALIAS_LIFTER(c_addi16sp, addi)
 DEFINE_ALIAS_LIFTER(c_addi4spn, addi)
 DEFINE_ALIAS_LIFTER(c_add, add)
 
-RzILOpEffect *rz_riscv_lift_c_slli(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
+RZ_IPI RzILOpEffect *rz_riscv_lift_c_slli(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) {
 	if (riscv_operand_count(insn) == 2 &&
 		riscv_operand_is(insn, 0, RISCV_OP_REG) &&
 		riscv_reg_id(insn, 0) == RISCV_REG_X0 &&
