@@ -79,3 +79,41 @@ ABCDEFGHIJKLMNOPQRSTUV
 a0 = 0x0000000000000000
 EOF
 RUN
+
+NAME=emulateme atomic rv32imac
+FILE=bins/elf/riscv/emulateme_atomic.rv32imac
+TIMEOUT=60
+CMDS=<<EOF
+e io.cache=1
+o malloc://0x10000 0x7f0000
+s entry0
+aezi
+ar sp=0x7ff000
+aezsu loc.emulateme_done
+ps @ obj.report
+ar a0
+EOF
+EXPECT=<<EOF
+ABCDEFGH
+a0 = 0x00000000
+EOF
+RUN
+
+NAME=emulateme atomic rv64imac
+FILE=bins/elf/riscv/emulateme_atomic.rv64imac
+TIMEOUT=60
+CMDS=<<EOF
+e io.cache=1
+o malloc://0x10000 0x7f0000
+s entry0
+aezi
+ar sp=0x7ff000
+aezsu loc.emulateme_done
+ps @ obj.report
+ar a0
+EOF
+EXPECT=<<EOF
+ABCDEFGH
+a0 = 0x0000000000000000
+EOF
+RUN

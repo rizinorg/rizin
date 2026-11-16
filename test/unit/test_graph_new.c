@@ -489,6 +489,108 @@ static bool test_graph_dfs(void) {
 	mu_end;
 }
 
+// Context collecting the DFS visitor callbacks for the edge selector test.
+typedef struct {
+	ut64 discovered; ///< bit set for every node data value seen by discover_node
+	ut64 consulted; ///< bit set for every edge data value seen by edge_selector
+	ut64 rejected; ///< bit set for every edge data value rejected by edge_selector
+	ut32 n_tree; ///< number of tree_edge callbacks
+	ut32 n_back; ///< number of back_edge callbacks
+	ut32 n_fcross; ///< number of fcross_edge callbacks
+} DfsEdgeSelCtx;
+
+static void dfs_sel_on_discover(RzGraphNode *n, RzGraphVisitor *vis) {
+	DfsEdgeSelCtx *ctx = vis->visitor_data;
+	ctx->discovered |= 1ULL << (utptr)rz_graph_node_get_data(n);
+}
+
+static void dfs_sel_on_tree_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	((DfsEdgeSelCtx *)vis->visitor_data)->n_tree++;
+}
+
+static void dfs_sel_on_back_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	((DfsEdgeSelCtx *)vis->visitor_data)->n_back++;
+}
+
+static void dfs_sel_on_fcross_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	((DfsEdgeSelCtx *)vis->visitor_data)->n_fcross++;
+}
+
+// Rejects the edges n1 -> n3 (data 13) and n5 -> n1 (data 51).
+static bool dfs_sel_reject_edges(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	DfsEdgeSelCtx *ctx = vis->visitor_data;
+	ut64 data = (ut64)(utptr)rz_graph_edge_get_data(e);
+	ctx->consulted |= 1ULL << data;
+	if (data == 13 || data == 51) {
+		ctx->rejected |= 1ULL << data;
+		return false;
+	}
+	return true;
+}
+
+// Test DFS with an edge selector
+static bool test_graph_dfs_edge_selector(void) {
+	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
+
+	RzGraphNode *n1 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(1), &n1), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n2 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(2), &n2), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n3 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(3), &n3), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n4 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(4), &n4), RZ_GRAPH_STATUS_OK, "Failed to add");
+	RzGraphNode *n5 = NULL;
+	mu_assert_eq(rz_graph_add_node(g, RZ_GRAPH_INT_AS_DATA(5), &n5), RZ_GRAPH_STATUS_OK, "Failed to add");
+
+	// cyclic graph, edge data encodes from*10 + to
+	// n1 --> n2 --> n4 --> n5
+	//  \--> n3 --->/   \--> n1 (back edge)
+	rz_graph_add_edge(g, n1, n2, RZ_GRAPH_INT_AS_DATA(12));
+	rz_graph_add_edge(g, n1, n3, RZ_GRAPH_INT_AS_DATA(13));
+	rz_graph_add_edge(g, n2, n4, RZ_GRAPH_INT_AS_DATA(24));
+	rz_graph_add_edge(g, n3, n4, RZ_GRAPH_INT_AS_DATA(34));
+	rz_graph_add_edge(g, n4, n5, RZ_GRAPH_INT_AS_DATA(45));
+	rz_graph_add_edge(g, n5, n1, RZ_GRAPH_INT_AS_DATA(51));
+
+	// reference traversal without edge selector
+	DfsEdgeSelCtx ref = { 0 };
+	RzGraphVisitor vis = { 0 };
+	vis.visitor_data = &ref;
+	vis.discover_node = dfs_sel_on_discover;
+	vis.tree_edge = dfs_sel_on_tree_edge;
+	vis.back_edge = dfs_sel_on_back_edge;
+	vis.fcross_edge = dfs_sel_on_fcross_edge;
+
+	rz_graph_dfs_from_node(g, n1, &vis);
+
+	mu_assert_eq(ref.discovered, (1ULL << 1) | (1ULL << 2) | (1ULL << 3) | (1ULL << 4) | (1ULL << 5), "dfs.no_sel.discovered_all");
+	mu_assert_eq(ref.n_tree, 4, "dfs.no_sel.tree_edges");
+	mu_assert_eq(ref.n_back, 1, "dfs.no_sel.back_edges");
+	mu_assert_eq(ref.n_fcross, 1, "dfs.no_sel.fcross_edges");
+	mu_assert_eq(ref.consulted, 0, "dfs.no_sel.not_consulted");
+	mu_assert_eq(ref.rejected, 0, "dfs.no_sel.nothing_rejected");
+
+	// same traversal, but n1 -> n3 and n5 -> n1 are filtered out
+	DfsEdgeSelCtx sel = { 0 };
+	vis.visitor_data = &sel;
+	vis.edge_selector = dfs_sel_reject_edges;
+
+	rz_graph_dfs_from_node(g, n1, &vis);
+
+	mu_assert_eq(sel.rejected, (1ULL << 13) | (1ULL << 51), "dfs.sel.rejected_edges");
+	mu_assert_eq(sel.consulted, (1ULL << 12) | (1ULL << 13) | (1ULL << 24) | (1ULL << 45) | (1ULL << 51), "dfs.sel.consulted_edges");
+	// n3 is only reachable through the rejected edge n1 -> n3
+	mu_assert_eq(sel.discovered, (1ULL << 1) | (1ULL << 2) | (1ULL << 4) | (1ULL << 5), "dfs.sel.n3_not_reachable");
+	// no tree/back/fcross handler may be called for the rejected edges
+	mu_assert_eq(sel.n_tree, 3, "dfs.sel.tree_edges");
+	mu_assert_eq(sel.n_back, 0, "dfs.sel.no_back_edges");
+	mu_assert_eq(sel.n_fcross, 0, "dfs.sel.no_fcross_edges");
+
+	rz_graph_free(g);
+	mu_end;
+}
+
 // all nodes
 static bool test_graph_get_nodes(void) {
 	RzGraph *g = rz_graph_new(RZ_GRAPH_IMPL_LIST, simple_hash_base, NULL, NULL);
@@ -1391,6 +1493,7 @@ static int all_tests(void) {
 	mu_run_test(test_graph_reset);
 	mu_run_test(test_graph_nth_neighbor);
 	mu_run_test(test_graph_dfs);
+	mu_run_test(test_graph_dfs_edge_selector);
 	mu_run_test(test_graph_get_nodes);
 	mu_run_test(test_graph_find_edge);
 	mu_run_test(test_graph_complex);
