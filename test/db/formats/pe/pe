@@ -1710,3 +1710,15 @@ EXPECT=<<EOF
 machine  AMD 64
 EOF
 RUN
+
+NAME=pe64 oleaut32 imports by ordinal
+FILE=bins/pe/oleaut32_ordinals.exe
+CMDS=ii~oleaut32
+EXPECT=<<EOF
+  9 0x140002040 NONE FUNC OLEAUT32.dll                      VariantClear
+  2 0x140002048 NONE FUNC OLEAUT32.dll                      SysAllocString
+  7 0x140002050 NONE FUNC OLEAUT32.dll                      SysStringLen
+  6 0x140002058 NONE FUNC OLEAUT32.dll                      SysFreeString
+  8 0x140002060 NONE FUNC OLEAUT32.dll                      VariantInit
+EOF
+RUN
