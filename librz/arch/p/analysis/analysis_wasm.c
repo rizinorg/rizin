@@ -94,7 +94,7 @@ static int wasm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 	if (!wop.txt || !strncmp(wop.txt, "invalid", 7)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		free(wop.txt);
-		return -1;
+		return wop.needed && (mask & RZ_ANALYSIS_OP_MASK_INPUT_SIZE) ? -wop.needed : -1;
 	}
 
 	if (ctx->addr_old == addr && (wop.type != WASM_TYPE_OP_CORE || wop.op.core != WASM_OP_END)) {
@@ -428,9 +428,9 @@ analysis_end:
 
 static int archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	switch (query) {
-	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
-		/* fall-thru */
 	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+		return -1; // A branch table has a variable number of labels.
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		/* fall-thru */
 	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
 		/* fall-thru */

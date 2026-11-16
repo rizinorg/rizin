@@ -279,6 +279,25 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+static bool test_wasm_op_input_size(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_true(rz_core_arch_configure(core, "wasm", 32, NULL, NULL, NULL), "wasm");
+	const ut8 table[] = { 0x0e, 2, 0, 0x80, 1, 0 };
+	RzAnalysisOp op;
+	int size = rz_analysis_op(core->analysis, &op, 0, table, 2, RZ_ANALYSIS_OP_MASK_BASIC);
+	rz_analysis_op_fini(&op);
+	mu_assert_eq(size, -1, "legacy result for incomplete input");
+	size = rz_analysis_op(core->analysis, &op, 0, table, 2, RZ_ANALYSIS_OP_MASK_INPUT_SIZE);
+	rz_analysis_op_fini(&op);
+	mu_assert_eq(size, -5, "two labels and a default require at least three more bytes");
+	size = rz_analysis_op(core->analysis, &op, 0, table, sizeof(table), RZ_ANALYSIS_OP_MASK_INPUT_SIZE);
+	rz_analysis_op_fini(&op);
+	mu_assert_eq(size, sizeof(table), "complete table ends at the last input byte");
+	rz_core_free(core);
+	mu_end;
+}
+
 bool test_rz_core_print_disasm_resolve_aav_symbols() {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "rz_core_new failed");
@@ -653,6 +672,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_analysis_bytes_short_tail);
 	mu_run_test(test_rz_core_analysis_bytes_from_io);
 	mu_run_test(test_rz_core_print_disasm);
+	mu_run_test(test_wasm_op_input_size);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
 	return tests_passed != tests_run;
