@@ -6277,10 +6277,13 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 	int maxop = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 
 	if (minop == maxop) {
-		if (minop == -1) {
-			return addr - 4;
-		}
-		return addr - minop;
+		int size = minop > 0 ? minop : 4;
+		return addr >= (ut64)size ? addr - size : addr;
+	}
+
+	minop = RZ_MAX(minop, 1);
+	if (addr < (ut64)minop) {
+		return addr;
 	}
 
 	// let's see if we can use analysis info to get the previous instruction
@@ -6298,6 +6301,7 @@ RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr) {
 	int midflags = rz_config_get_i(core->config, "asm.flags.middle");
 	target = addr;
 	base = target > OPDELTA ? target - OPDELTA : 0;
+	memset(buf, core->io->Oxff, sizeof(buf));
 	rz_io_read_at_mapped(core->io, base, buf, sizeof(buf));
 	for (i = 0; i < sizeof(buf); i++) {
 		rz_analysis_op_init(&op);

@@ -7,7 +7,7 @@ Cd 4096
 pd 2~?
 EOF
 EXPECT=<<EOF
-18
+258
 EOF
 RUN
 

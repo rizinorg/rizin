@@ -1884,6 +1884,9 @@ RZ_API bool rz_analysis_walkthrough_arm_thumb1_case_uqi_table(RZ_NONNULL RzAnaly
 
 /* reflines.c */
 RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_NONNULL RzAnalysis *analysis, ut64 addr, RZ_NONNULL const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
+/** Decodes one instruction for refline collection. Return its display size, or zero to stop. */
+typedef int (*RzAnalysisReflineDecode)(void *user, ut64 addr, RzAnalysisOp *op);
+RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get_count(RZ_NONNULL RzAnalysis *analysis, ut64 addr, int nlines, bool linesout, bool linescall, RZ_NONNULL RzAnalysisReflineDecode decode, RZ_NULLABLE void *user);
 RZ_API bool rz_analysis_reflines_middle(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const RzPVector /*<RzAnalysisRefline *>*/ *reflines, ut64 addr, int len);
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *core, ut64 addr, int opts);
 RZ_API void rz_analysis_reflines_str_free(RzAnalysisRefStr *refstr);

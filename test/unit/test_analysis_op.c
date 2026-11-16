@@ -279,6 +279,97 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+static int decode_refline_op(void *user, ut64 addr, RzAnalysisOp *op) {
+	RzCore *core = user;
+	ut8 buf[4];
+	if (!rz_io_read_at_mapped(core->io, addr, buf, sizeof(buf))) {
+		return 0;
+	}
+	return rz_analysis_op(core->analysis, op, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
+}
+
+static bool test_counted_refline_range(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	ut64 base = 0x100000000ULL;
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://256", RZ_PERM_RWX, 0644, base, NULL), "map");
+	mu_assert_true(rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL), "x86");
+	const ut8 code[] = { 0xeb, 1, 0x90, 0xeb, 0xfb };
+	mu_assert_true(rz_io_write_at(core->io, base + 128, code, sizeof(code)), "two short jumps");
+	mu_assert_true(rz_meta_set(core->analysis, RZ_META_TYPE_HIDE, base, 128, NULL), "hidden first row");
+	RzPVector *refs = rz_analysis_reflines_get_count(core->analysis, base, 3, false, false, decode_refline_op, core);
+	mu_assert_notnull(refs, "three-row listing");
+	mu_assert_eq(rz_pvector_len(refs), 0, "the jump destination is the first byte after the listing");
+	rz_pvector_free(refs);
+	refs = rz_analysis_reflines_get_count(core->analysis, base, 4, false, false, decode_refline_op, core);
+	mu_assert_notnull(refs, "four-row listing");
+	mu_assert_eq(rz_pvector_len(refs), 2, "both jump destinations are now visible");
+	RzAnalysisRefline *jump = rz_pvector_at(refs, 0);
+	mu_assert_eq(jump->from, base + 128, "first jump");
+	mu_assert_eq(jump->to, base + 131, "forward destination");
+	jump = rz_pvector_at(refs, 1);
+	mu_assert_eq(jump->to, base + 128, "backward destination");
+	rz_pvector_free(refs);
+
+	rz_analysis_set_max_reflines(core->analysis, 1);
+	const ut8 capped[] = { 0xeb, 0x7e, 0xeb, 0x7c, 0x90, 0xeb, 0xfb, 0x90 };
+	ut64 addr = base + 200;
+	mu_assert_true(rz_io_write_at(core->io, addr, capped, sizeof(capped)), "two external jumps before an internal jump");
+	refs = rz_analysis_reflines_get_count(core->analysis, addr, 5, false, false, decode_refline_op, core);
+	mu_assert_notnull(refs, "counted listing with a one-line budget");
+	mu_assert_eq(rz_pvector_len(refs), 1, "only visible targets consume the budget");
+	jump = rz_pvector_at(refs, 0);
+	mu_assert_eq(jump->from, addr + 5, "source after both external jumps");
+	mu_assert_eq(jump->to, addr + 2, "visible backward target");
+	rz_pvector_free(refs);
+	refs = rz_analysis_reflines_get(core->analysis, addr, capped, sizeof(capped), -1, false, false);
+	mu_assert_notnull(refs, "byte-bounded listing");
+	mu_assert_eq(rz_pvector_len(refs), 1, "same budget for a byte range");
+	jump = rz_pvector_at(refs, 0);
+	mu_assert_eq(jump->to, addr + 2, "same backward target");
+	rz_pvector_free(refs);
+	refs = rz_analysis_reflines_get_count(core->analysis, addr, 5, true, false, decode_refline_op, core);
+	mu_assert_notnull(refs, "external lines enabled");
+	mu_assert_eq(rz_pvector_len(refs), 1, "strict cap includes external lines");
+	jump = rz_pvector_at(refs, 0);
+	mu_assert_eq(jump->to, addr + 128, "first external target");
+	rz_pvector_free(refs);
+	refs = rz_analysis_reflines_get_count(core->analysis, base, 4, false, false, decode_refline_op, core);
+	mu_assert_notnull(refs, "forward jump after a metadata row");
+	mu_assert_eq(rz_pvector_len(refs), 1, "later visible edges respect the budget");
+	jump = rz_pvector_at(refs, 0);
+	mu_assert_eq(jump->to, base + 131, "first target lies on the last row");
+	rz_pvector_free(refs);
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_disasm_borrowed_prefix(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_notnull(rz_io_open_at(core->io, "malloc://256", RZ_PERM_RWX, 0644, 0, NULL), "map");
+	mu_assert_true(rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL), "x86");
+	ut8 prefix[] = { 0x90, 0x48 };
+	const ut8 mapped[] = { 0xcc, 0xcc, 0x89, 0xe5, 0xc3 };
+	mu_assert_true(rz_io_write_at(core->io, 0, mapped, sizeof(mapped)), "mapped tail");
+	RzPVector *rows = rz_pvector_new((RzPVectorFree)rz_analysis_disasm_text_free);
+	mu_assert_notnull(rows, "output");
+	RzCoreDisasmOptions options = { .vec = rows };
+	int consumed = rz_core_print_disasm(core, 0, prefix, sizeof(prefix), 3, NULL, &options);
+	mu_assert_eq(consumed, 5, "nop, mov and ret across the supplied prefix");
+	mu_assert_eq(rz_pvector_len(rows), 3, "instruction count");
+	RzAnalysisDisasmText *row = rz_pvector_at(rows, 2);
+	mu_assert_eq(row->offset, 4, "ret address");
+	rz_pvector_clear(rows);
+	options.cbytes = true;
+	consumed = rz_core_print_disasm(core, 0, prefix, 1, 3, NULL, &options);
+	mu_assert_eq(consumed, 1, "explicit byte limit");
+	mu_assert_eq(rz_pvector_len(rows), 1, "bounded row count");
+	rz_pvector_free(rows);
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_avr_op_input_size(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core");
@@ -699,6 +790,8 @@ int all_tests() {
 	mu_run_test(test_rz_core_analysis_bytes_short_tail);
 	mu_run_test(test_rz_core_analysis_bytes_from_io);
 	mu_run_test(test_rz_core_print_disasm);
+	mu_run_test(test_disasm_borrowed_prefix);
+	mu_run_test(test_counted_refline_range);
 	mu_run_test(test_wasm_op_input_size);
 	mu_run_test(test_avr_op_input_size);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);

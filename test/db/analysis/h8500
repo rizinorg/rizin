@@ -155,8 +155,8 @@ EXPECT=<<EOF
             0x00000105      mov:i #0x4:16, r0
             0x00000108      prtd  #0x4:8
             0x0000010b      unlk  fp
-            ;-- halt:
-            0x0000010c      bra   -2
+        @   ;-- halt:
+        @-> 0x0000010c      bra   -2
             ;-- far_entry:
             0x0000010e      rts
             ;-- trap_vs_handler:

@@ -207,13 +207,10 @@ EXPECT=<<EOF
 --- From 0x0 ---
 
 -- 1 --
-            0x00000000      ff             invalid
 0x0
             0x00000000      ff             invalid
 
 -- 2 --
-            0x00000000      ff             invalid
-            0x00000001      ff             invalid
 0x0
             0x00000000      ff             invalid
             0x00000001      ff             invalid
