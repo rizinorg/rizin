@@ -16,6 +16,7 @@ d "addx.b #0x1111:16, r1" 0c1111a1
 d "and.b @(4369:16, r0), r1" f0111151
 d "andc.b #0x11:8, ccr" 041159
 d "andc.b #0x1111:16, ccr" 0c111159
+d "bra -2" 20fe
 d "bra +17" 2011
 d "brn +17" 2111
 d "bhi +17" 2211

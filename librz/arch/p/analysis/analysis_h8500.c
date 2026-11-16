@@ -116,9 +116,16 @@ static void h8500_analyze(AContext *ctx) {
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case Bcc:
-		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		if (ctx->ins->condition_code == 0) { // BRA always takes the branch.
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		} else if (ctx->ins->condition_code == 1) { // BRN always falls through.
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_NOP;
+			break;
+		} else {
+			ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			ctx->aop->fail = NEXT_PC;
+		}
 		ctx->aop->jump = pc_relative(ctx);
-		ctx->aop->fail = NEXT_PC;
 		break;
 	case BSR:
 		ctx->aop->type = RZ_ANALYSIS_OP_TYPE_CALL;
