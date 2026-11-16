@@ -83,7 +83,7 @@ EXPECT=<<EOF
 |       ,=< 0x000011a1      jz    0x11b2
 |       |   0x000011a7      cmp   qword [out], 0x00
 |      ,==< 0x000011ac      jnz   0x11bb
-|      |`-> 0x000011b2      mov   byte [a + 0x7], 0x00                 ; float_ex1.c:17
+|      |`-> 0x000011b2      mov   byte [rbp-0x01], 0x00                ; float_ex1.c:17
 |      |,=< 0x000011b6      jmp   0x121c
 |      `--> 0x000011bb      mov   edi, 0x18                            ; float_ex1.c:19 ; size_t size
 |       |   0x000011c0      call  sym.imp.malloc                       ; void *malloc(size_t size)
@@ -109,9 +109,9 @@ EXPECT=<<EOF
 |       |   0x0000120d      mov   rax, qword [out]
 |       |   0x00001211      mov   rax, qword [rax]
 |       |   0x00001214      mov   qword [rax+0x10], rcx
-|       |   0x00001218      mov   byte [a + 0x7], 0x01                 ; float_ex1.c:24
+|       |   0x00001218      mov   byte [rbp-0x01], 0x01                ; float_ex1.c:24
 |       |   ; CODE XREF from dbg.fn1 @ 0x11b6
-|       `-> 0x0000121c      mov   al, byte [a + 0x7]                   ; float_ex1.c:25
+|       `-> 0x0000121c      mov   al, byte [rbp-0x01]                  ; float_ex1.c:25
 |           0x0000121f      and   al, 0x01
 |           0x00001221      movzx eax, al
 |           0x00001224      add   rsp, 0x30

@@ -110,6 +110,7 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_print_c(RZ_NONNULL RzCons *cons, RZ_NONNULL const char *source);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
@@ -376,12 +377,14 @@ typedef struct rz_core_visual_view_t {
 	int level;
 	st64 delta;
 	ut64 column_nlines;
-	// output is used to store the result of printCmds
-	// and avoid duplicated analysis while j and k is pressed
+	// Cache generated text so scrolling does not rerun the preview command.
 	char *output;
-	// output_mode labels which printCmds' result is stored in output
 	int output_mode;
-	int output_addr;
+	ut64 output_addr;
+	int output_cols;
+	int output_rows;
+	int output_x;
+	int output_y;
 	int option;
 	int variable_option;
 	int printMode;

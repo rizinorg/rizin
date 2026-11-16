@@ -110,7 +110,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40048d
 / int main(int argc, char **argv, char **envp);
-|           ; var int64_t var_ch @ stack - 0xc
+|           ; var int32_t var_ch @ stack - 0xc
 |           0x00400566      55             push  rbp
 |           0x00400567      4889e5         mov   rbp, rsp
 |           0x0040056a      4883ec10       sub   rsp, 0x10

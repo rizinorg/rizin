@@ -19,7 +19,7 @@ EXPECT=<<EOF
 |           0x004008a0      mov   rbx, rax
 |           0x004008a3      mov   esi, 0x05                            ; int64_t arg2
 |           0x004008a8      mov   rdi, rbx                             ; int64_t arg1
-|           0x004008ab      call  method.C.C_int                       ;  method.C.C_int(int64_t arg1, int64_t arg2)
+|           0x004008ab      call  method.C.C_int                       ;  method.C.C_int(int64_t arg1, int32_t arg2)
 |           0x004008b0      mov   qword [var_20h], rbx
 |           0x004008b4      mov   rax, qword [var_20h]
 |           0x004008b8      mov   rax, qword [rax]
@@ -563,7 +563,7 @@ EXPECT=<<EOF
             ;-- pc:
 / entry0(int64_t arg1 @ x0);
 |           ; var int64_t var_30h @ stack - 0x30
-|           ; var int64_t var_24h @ stack - 0x24
+|           ; var int32_t var_24h @ stack - 0x24
 |           ; var struct C *var_20h @ stack - 0x20
 |           ; var int64_t var_14h @ stack - 0x14
 |           ; var int64_t var_10h @ stack - 0x10
@@ -734,7 +734,7 @@ EXPECT=<<EOF
             ;-- section.0.__TEXT.__text:
             ;-- _main:
             ;-- func.1000018c0:
-/ entry0(int64_t arg1 @ rdi, int64_t arg2 @ rsi);
+/ entry0(int32_t arg1 @ rdi, int64_t arg2 @ rsi);
 |           ; var int var_a8h @ stack - 0xa8
 |           ; var int var_a4h @ stack - 0xa4
 |           ; var int var_a0h @ stack - 0xa0
@@ -751,13 +751,13 @@ EXPECT=<<EOF
 |           ; var void *var_50h @ stack - 0x50
 |           ; var int64_t var_48h @ stack - 0x48
 |           ; var const char *var_40h @ stack - 0x40
-|           ; var int64_t var_34h @ stack - 0x34
+|           ; var int32_t var_34h @ stack - 0x34
 |           ; var int64_t var_30h @ stack - 0x30
 |           ; var void *var_28h @ stack - 0x28
 |           ; var const char **format @ stack - 0x20
 |           ; var int64_t var_18h @ stack - 0x18
-|           ; var int64_t var_10h @ stack - 0x10
-|           ; var int64_t var_ch @ stack - 0xc
+|           ; var int32_t var_10h @ stack - 0x10
+|           ; var int32_t var_ch @ stack - 0xc
 |           0x1000018c0      push  rbp                                 ; [00] -r-x section size 1126 named 0.__TEXT.__text
 |           0x1000018c1      mov   rbp, rsp
 |           0x1000018c4      sub   rsp, 0xb0
@@ -1415,18 +1415,18 @@ EXPECT=<<EOF
 |           0x14000cb58      mov   qword [var_18h], rbx
 |           0x14000cb5c      mov   qword [var_10h], rsi
 |           0x14000cb60      mov   qword [var_8h], rcx                 ; arg1
-|           0x14000cb64      mov   qword [var_8h + 0x8], rdx           ; arg2
-|           0x14000cb68      mov   qword [var_8h + 0x10], r8           ; arg3
+|           0x14000cb64      mov   qword [rbp+0x18], rdx               ; arg2
+|           0x14000cb68      mov   qword [rbp+0x20], r8                ; arg3
 |           0x14000cb6c      mov   qword [var_20h], r9                 ; arg4
 |           0x14000cb70      mov   rcx, qword [var_20h]
 |           0x14000cb74      mov   rax, qword [rcx]
 |           0x14000cb77      call  qword [rax+0x08]                    ; 8 ; Virtual call: interface_0x10_0x8 / interface_0x28_0x8
 |           0x14000cb7b      mov   rsi, rax
-|           0x14000cb7e      mov   rcx, qword [var_8h + 0x10]
+|           0x14000cb7e      mov   rcx, qword [rbp+0x20]
 |           0x14000cb82      mov   rdx, qword [rcx]
 |           0x14000cb85      call  qword [rdx+0x08]                    ; 8 ; Virtual call: interface_0x18_0x8
 |           0x14000cb89      add   rsi, rax
-|           0x14000cb8c      mov   rcx, qword [var_8h + 0x8]
+|           0x14000cb8c      mov   rcx, qword [rbp+0x18]
 |           0x14000cb90      mov   rbx, qword [rcx]
 |           0x14000cb93      call  qword [rbx+0x18]                    ; 24 ; Virtual call: interface_0x10_0x18
 |           0x14000cb97      add   rsi, rax
@@ -1665,16 +1665,16 @@ EXPECT=<<EOF
 |           ; var int64_t arg4 @ rcx
 |           ; var int64_t arg3 @ rdx
 |           ; var int64_t arg2 @ rsi
-|           ; var int64_t var_99h @ stack - 0x99
+|           ; var int8_t var_99h @ stack - 0x99
 |           ; var int64_t var_98h @ stack - 0x98
 |           ; var int64_t var_88h @ stack - 0x88
 |           ; var int64_t var_78h @ stack - 0x78
 |           ; var int64_t var_68h @ stack - 0x68
 |           ; var int64_t var_58h @ stack - 0x58
 |           ; var int64_t var_50h @ stack - 0x50
-|           ; var int64_t var_48h @ stack - 0x48
-|           ; var int64_t var_44h @ stack - 0x44
-|           ; var int64_t var_40h @ stack - 0x40
+|           ; var int32_t var_48h @ stack - 0x48
+|           ; var int32_t var_44h @ stack - 0x44
+|           ; var int8_t var_40h @ stack - 0x40
 |           ; arg struct DebugStruct *self @ rbx
 |           ; arg struct &str name @ ...
 |           ; arg struct &Debug value @ ...

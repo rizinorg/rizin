@@ -318,6 +318,10 @@ static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP /*
 	return ptr;
 }
 
+static void mach0_import_fini_kv(HtPPKv *kv, RZ_UNUSED void *user) {
+	rz_bin_import_free(kv->value);
+}
+
 typedef struct {
 	RzBin *bin;
 	struct MACH0_(obj_t) * obj;
@@ -378,6 +382,16 @@ static RzPVector /*<RzBinReloc *>*/ *mach0_relocs(RzBinFile *bf) {
 	}
 	if (!obj || !obj->bin_obj || !(ret = rz_pvector_new(free))) {
 		return NULL;
+	}
+	if (!bin->imports_by_name) {
+		HtPPOptions options = {
+			.finiKV = mach0_import_fini_kv,
+		};
+		bin->imports_by_name = ht_pp_new_opt(&options);
+		if (!bin->imports_by_name) {
+			rz_pvector_free(ret);
+			return NULL;
+		}
 	}
 
 	RzSkipList *relocs = MACH0_(get_relocs)(bf->o->bin_obj);

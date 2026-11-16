@@ -664,13 +664,16 @@ static void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
  * the final destination and not only the intermediate pointer, which is what
  * other tools (e.g. IDA) show for such instructions.
  *
+ * For memory MOVs, record the reference from the pointer slot instead of the
+ * instruction, so references to global pointers also lead to their pointees.
+ *
  * The direct xref to the pointer location itself is kept, the pointer is only
  * followed when its value is a valid (readable and mapped) address, and no
  * recursion is performed. Like the ESIL analysis, values below 0x100 and
  * all-ones values are not taken as pointers, since NULL or unrelocated slots
  * hold them.
  */
-static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op) {
+static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op, ut64 from) {
 	RzIOBind *iob = &analysis->iob;
 	if (!iob->read_at) {
 		return;
@@ -685,13 +688,39 @@ static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnaly
 	}
 	// rz_analysis_xrefs_set() itself discards targets that are not valid
 	// (readable and mapped) addresses.
-	rz_analysis_xrefs_set(analysis, op->addr, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+	rz_analysis_xrefs_set(analysis, from, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+}
+
+/**
+ * \brief Exclude register moves, stores and partial reads when following pointers.
+ */
+static inline bool op_is_pointer_sized_mov_load(const RzAnalysisOp *op, int bits) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_MOV &&
+		(op->direction & RZ_ANALYSIS_OP_DIR_READ) &&
+		(op->refptr == 4 || op->refptr == 8) && op->refptr == bits / 8;
+}
+
+/**
+ * \brief Exclude conditional moves and stores when tracking a known register value.
+ */
+static inline bool op_is_reg_mov_imm(const RzAnalysisOp *op) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_MOV && op->dst && !op->dst->memref &&
+		op->dst->reg && op->dst->reg->name && op->val > 0 && op->val != UT64_MAX;
+}
+
+/**
+ * \brief Only the immediately preceding register assignment can establish this target.
+ */
+static inline bool op_is_known_reg_jump(const RzAnalysisOp *op, bool last_is_reg_mov_lea,
+	const char *last_reg_mov_lea_name) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea &&
+		op->reg && last_reg_mov_lea_name && RZ_STR_EQ(op->reg, last_reg_mov_lea_name);
 }
 
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
-	if (has_dst_reg && has_src_reg) {
+	if (bp_reg && sp_reg && has_dst_reg && has_src_reg && !op->dst->memref) {
 		return !strcmp(bp_reg, op->dst->reg->name) && !strcmp(sp_reg, op->src[0]->reg->name);
 	}
 	return false;
@@ -1164,10 +1193,18 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (ptr_ref && (op.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_LOAD &&
 				(op.refptr == 4 || op.refptr == 8) &&
 				(!op.ptrsize || op.ptrsize == op.refptr)) {
-				analysis_fcn_follow_pointer_load(analysis, &op);
+				analysis_fcn_follow_pointer_load(analysis, &op, op.addr);
+			} else if (ptr_ref && op_is_pointer_sized_mov_load(&op, analysis->bits)) {
+				// Preserve the pointer's location as the source of the data-to-data xref.
+				analysis_fcn_follow_pointer_load(analysis, &op, op.ptr);
 			}
 		}
 		analyze_retpoline(analysis, &op);
+
+		if (op_is_known_reg_jump(&op, last_is_reg_mov_lea, last_reg_mov_lea_name)) {
+			op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op.jump = last_reg_mov_lea_val;
+		}
 
 		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
@@ -1182,8 +1219,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
 				fcn->bp_off = -sp;
 			}
-			// Is this a mov of immediate value into a register?
-			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
+			if (op_is_reg_mov_imm(&op)) {
 				free(last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.val;
@@ -2557,6 +2593,9 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+	if (!bp_name) {
+		return false;
+	}
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp(opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp(opsreg, bp_name);
 	if (op->type == RZ_ANALYSIS_OP_TYPE_XCHG) {
@@ -2596,7 +2635,9 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_LEA: {
 				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 				const char *srcreg = op.src[0] && op.src[0]->reg ? op.src[0]->reg->name : NULL;
-				if (can_affect_bp(analysis, &op) && srcreg && sp && strcmp(srcreg, sp)) {
+				bool from_sp = srcreg && sp && !strcmp(srcreg, sp) &&
+					(op.type == RZ_ANALYSIS_OP_TYPE_LEA || !op.src[0]->memref);
+				if (can_affect_bp(analysis, &op) && !from_sp) {
 					fcn->bp_frame = false;
 					rz_analysis_op_fini(&op);
 					free(buf);
@@ -2605,6 +2646,16 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 				break;
 			}
 			case RZ_ANALYSIS_OP_TYPE_ADD:
+			case RZ_ANALYSIS_OP_TYPE_SUB:
+				// Three-operand instructions can establish a frame at sp +/- immediate.
+				if (does_arch_destroys_dst(analysis->cur->arch) &&
+					op_is_set_bp(&op, rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP),
+						rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP)) &&
+					op.src[1] && !op.src[1]->reg) {
+					break;
+				}
+				// fall through
+			case RZ_ANALYSIS_OP_TYPE_LOAD:
 			case RZ_ANALYSIS_OP_TYPE_AND:
 			case RZ_ANALYSIS_OP_TYPE_CMOV:
 			case RZ_ANALYSIS_OP_TYPE_NOT:
@@ -2614,7 +2665,6 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_SAL:
 			case RZ_ANALYSIS_OP_TYPE_SAR:
 			case RZ_ANALYSIS_OP_TYPE_SHR:
-			case RZ_ANALYSIS_OP_TYPE_SUB:
 			case RZ_ANALYSIS_OP_TYPE_XOR:
 			case RZ_ANALYSIS_OP_TYPE_SHL:
 			case RZ_ANALYSIS_OP_TYPE_XCHG:
@@ -2639,11 +2689,36 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 /**
  *  \brief This function checks whether any operation in a given function may change BP
  *
- *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
+ * Excludes frame setup and restoration. A repurposed frame pointer must not
+ * turn ordinary memory accesses into stack variables.
  */
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
+	if (fcn->bp_frame) {
+		return;
+	}
+	const char *bp = rz_reg_get_name(fcn->analysis->reg, RZ_REG_NAME_BP);
+	if (!bp) {
+		return;
+	}
+	for (size_t i = rz_pvector_len(&fcn->vars); i > 0; i--) {
+		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i - 1);
+		if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
+			continue;
+		}
+		bool removed = false;
+		for (size_t j = rz_vector_len(&var->accesses); j > 0; j--) {
+			RzAnalysisVarAccess *access = rz_vector_index_ptr(&var->accesses, j - 1);
+			if (RZ_STR_EQ(access->reg, bp)) {
+				rz_analysis_var_remove_access_at(var, fcn->addr + access->offset);
+				removed = true;
+			}
+		}
+		if (removed && rz_vector_empty(&var->accesses)) {
+			rz_analysis_function_delete_var(fcn, var);
+		}
+	}
 }
 
 typedef struct {

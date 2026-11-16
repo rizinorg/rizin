@@ -3412,10 +3412,9 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 		RzReg *rreg = rz_analysis_get_reg(core->analysis);
 		bool asm_lines = rz_config_get_i(core->config, "asm.lines.bb");
 		bool emu = rz_config_get_i(core->config, "asm.emu");
-		ut64 saved_gp = 0;
+		ut64 saved_gp = rz_analysis_get_gp(core->analysis);
 		ut8 *saved_arena = NULL;
 		if (emu) {
-			saved_gp = rz_analysis_get_gp(core->analysis);
 			saved_arena = rz_reg_arena_peek(rreg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
@@ -3423,8 +3422,8 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			b = (RzAnalysisBlock *)*iter;
 			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
+		rz_analysis_set_gp(core->analysis, saved_gp);
 		if (emu) {
-			rz_analysis_set_gp(core->analysis, saved_gp);
 			if (saved_arena) {
 				rz_reg_arena_poke(rreg, saved_arena);
 				RZ_FREE(saved_arena);

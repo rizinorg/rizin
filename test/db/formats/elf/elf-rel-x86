@@ -22,7 +22,7 @@ EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08000053  6700                                     g.
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x08000057  67                                       g
+0x08000057  69                                       i
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0800005a  6700 0008                                g...
             ;-- section..text:
@@ -38,10 +38,98 @@ EXPECT=<<EOF
             0x08000051      mov   ax, 0x67                             ; 'g' ; 103; RELOC 16 .data @ 0x08000067
             0x08000055      ret
             ;-- test_8bit:
-            0x08000056      mov   al, 0x67                             ; 'g' ; 103; RELOC 8 .data @ 0x08000067
+            0x08000056      mov   al, 0x69                             ; 'i' ; 105; RELOC 8 .data @ 0x08000067
             0x08000058      ret
             ;-- test_32:
             0x08000059      mov   eax, loc.internal_word               ; 0x8000067 ; "4\U00000012B\xff\xff\U00000004"; RELOC 32 .data @ 0x08000067
 EOF
-# loc.internal_word not used for R_386_16 and R_386_8 because the value was truncated during assembling to generate these relocations.
+# The byte relocation includes the implicit addend 2 for internal_byte.
+RUN
+
+NAME=ELF: x86-32 common relocations and TLS fields (#5259)
+FILE=bins/elf/x86-common-relocs32.so
+CMDS=<<EOF
+ir~[3]
+# Each slot includes guard bytes beyond the relocation field.
+p8 8 @ 0x10208
+p8 8 @ 0x10228
+p8 8 @ 0x10300
+p8 8 @ 0x10308
+p8 8 @ 0x10310
+p8 8 @ 0x10318
+p8 8 @ 0x10320
+p8 8 @ 0x10328
+p8 8 @ 0x10330
+p8 8 @ 0x10338
+p8 8 @ 0x10340
+p8 8 @ 0x10348
+p8 8 @ 0x10350
+p8 8 @ 0x10358
+p8 8 @ 0x10360
+p8 8 @ 0x10368
+p8 8 @ 0x10370
+p8 8 @ 0x10378
+p8 8 @ 0x10380
+p8 8 @ 0x10388
+p8 8 @ 0x10390
+p8 8 @ 0x10398
+p8 8 @ 0x103a0
+p8 8 @ 0x103a8
+p8 8 @ 0x103b0
+EOF
+EXPECT=<<EOF
+type
+R_386_GLOB_DAT
+R_386_GLOB_DAT
+R_386_JMP_SLOT
+R_386_GOT32
+R_386_GOT32X
+R_386_PLT32
+R_386_GOTPC
+R_386_GOTOFF
+R_386_RELATIVE
+R_386_GLOB_DAT
+R_386_JMP_SLOT
+R_386_TLS_TPOFF
+R_386_TLS_DTPMOD32
+R_386_TLS_DTPOFF32
+R_386_TLS_DTPOFF32
+R_386_IRELATIVE
+R_386_32
+R_386_PC32
+R_386_16
+R_386_PC16
+R_386_8
+R_386_PC8
+R_386_COPY
+R_386_GOT32
+R_386_GOT32X
+R_386_GOT32X
+f0030100aaaaaaaa
+f8030100aaaaaaaa
+0b000000aaaaaaaa
+0b000000aaaaaaaa
+eb000000aaaaaaaa
+ebfeffffaaaaaaaa
+f3010000aaaaaaaa
+03000100aaaaaaaa
+f0030100aaaaaaaa
+f8030100aaaaaaaa
+03000000aaaaaaaa
+03000000aaaaaaaa
+08000000aaaaaaaa
+03000000aaaaaaaa
+03000000aaaaaaaa
+f3030100aaaaaaaa
+83000000aaaaaaaa
+f3030000aaaaaaaa
+73000000aaaaaaaa
+f3000000aaaaaaaa
+63000000aaaaaaaa
+03000000aaaaaaaa
+2b000000aaaaaaaa
+2b000000aaaaaaaa
+03000000aaaaaaaa
+EOF
+EXPECT_ERR=
 RUN

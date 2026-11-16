@@ -31,7 +31,8 @@ static void types_cc_print(RzCore *core, const char *cc, RzOutputMode mode) {
 				rz_cons_println(core->cons, pj_string(pj));
 				pj_free(pj);
 			} else {
-				rz_cons_printf(core->cons, "%s\n", result);
+				rz_core_types_print_c(core->cons, result);
+				rz_cons_newline(core->cons);
 			}
 			free(result);
 		}
@@ -74,7 +75,7 @@ static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_val
 static void type_list_c_all(RzCore *core) {
 	char *str = rz_core_types_as_c_all(core, true);
 	if (str) {
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 }
@@ -82,7 +83,7 @@ static void type_list_c_all(RzCore *core) {
 static void type_list_c_all_nl(RzCore *core) {
 	char *str = rz_core_types_as_c_all(core, false);
 	if (str) {
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 }
@@ -200,7 +201,8 @@ static void types_xrefs_summary(RzCore *core) {
 		rz_list_foreach (uniq, iter2, type) {
 			char *str = rz_type_as_string(typedb, type);
 			if (str) {
-				rz_cons_printf(core->cons, "%s%s", str, rz_list_has_next(iter2) ? "," : "\n");
+				rz_core_types_print_c(core->cons, str);
+				rz_cons_print(core->cons, rz_list_has_next(iter2) ? "," : "\n");
 			}
 			free(str);
 		}
@@ -221,7 +223,10 @@ static RzCmdStatus types_xrefs_function(RzCore *core, ut64 addr) {
 	RzList *uniq = rz_analysis_types_from_fcn(analysis, fcn);
 	rz_list_foreach (uniq, iter, type) {
 		char *str = rz_type_as_string(typedb, type);
-		rz_cons_println(core->cons, str);
+		if (str) {
+			rz_core_types_print_c(core->cons, str);
+			rz_cons_newline(core->cons);
+		}
 		free(str);
 	}
 	rz_list_free(uniq);
@@ -335,7 +340,7 @@ RZ_IPI RzCmdStatus rz_type_list_c_handler(RzCore *core, int argc, const char **a
 			RZ_LOG_ERROR("Type \"%s\" not found\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		type_list_c_all(core);
@@ -350,7 +355,7 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 			RZ_LOG_ERROR("Type \"%s\" not found\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		type_list_c_all_nl(core);
@@ -471,14 +476,14 @@ RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **a
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_enum_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -497,14 +502,14 @@ RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char 
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" enum type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_enum_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -680,14 +685,14 @@ RZ_IPI RzCmdStatus rz_type_structure_c_handler(RzCore *core, int argc, const cha
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_struct_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -706,14 +711,14 @@ RZ_IPI RzCmdStatus rz_type_structure_c_nl_handler(RzCore *core, int argc, const 
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" struct type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_struct_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -753,14 +758,14 @@ RZ_IPI RzCmdStatus rz_type_typedef_c_handler(RzCore *core, int argc, const char 
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" typedef type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_typedef_as_c_all(typedb);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -804,14 +809,14 @@ RZ_IPI RzCmdStatus rz_type_union_c_handler(RzCore *core, int argc, const char **
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_union_as_c_all(typedb, true);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;
@@ -830,14 +835,14 @@ RZ_IPI RzCmdStatus rz_type_union_c_nl_handler(RzCore *core, int argc, const char
 			RZ_LOG_ERROR("Cannot get C representation of \"%s\" union type\n", argv[1]);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	} else {
 		char *str = rz_core_types_union_as_c_all(typedb, false);
 		if (!str) {
 			return RZ_CMD_STATUS_ERROR;
 		}
-		rz_cons_print(core->cons, str);
+		rz_core_types_print_c(core->cons, str);
 		free(str);
 	}
 	return RZ_CMD_STATUS_OK;

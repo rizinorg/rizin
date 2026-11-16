@@ -8,6 +8,7 @@ EOF
 EXPECT=<<EOF
 char
 int
+int32_t
 int64_t
 void
 EOF
@@ -23,10 +24,15 @@ EOF
 EXPECT=<<EOF
 char
 int
+int16_t
+int32_t
 int64_t
+int8_t
 size_t
 time_t
 tm
+uint8_t
+uint_least32_t
 unsigned long
 void
 wchar_t

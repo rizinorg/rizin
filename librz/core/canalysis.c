@@ -954,7 +954,8 @@ static int core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int 
 	if (has_next && next != UT64_MAX && !rz_analysis_get_fcn_in(core->analysis, next, 0)) {
 		rz_core_analysis_fcn(core, next, from, 0, depth - 1);
 	}
-	if (rz_analysis_plugin_is_arch(core->analysis, "x86")) {
+	if (rz_analysis_plugin_is_arch(core->analysis, "x86") ||
+		(rz_analysis_plugin_is_arch(core->analysis, "arm") && fcn->bits <= 32)) {
 		rz_analysis_function_check_bp_use(fcn);
 	}
 	rz_analysis_hint_free(hint);
@@ -989,7 +990,8 @@ error:
 					rz_core_analysis_fcn(core, next, next, 0, depth - 1);
 				}
 			}
-			if (rz_analysis_plugin_is_arch(core->analysis, "x86")) {
+			if (rz_analysis_plugin_is_arch(core->analysis, "x86") ||
+				(rz_analysis_plugin_is_arch(core->analysis, "arm") && fcn->bits <= 32)) {
 				rz_analysis_function_check_bp_use(fcn);
 			}
 		}
@@ -1569,7 +1571,7 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 	memcpy(reg_set, parent_reg_set, REG_SET_SIZE * sizeof(int));
 	rz_pvector_push(&ctx->reg_set, reg_set);
 	RzAnalysisFunction *fcn = ctx->fcn;
-	fcn->stack = bb->sp_entry;
+	RzStackAddr sp = bb->sp_entry;
 	ut64 pos = bb->addr;
 	while (pos < bb->addr + bb->size) {
 		if (rz_interrupt_is_breaked(core->intr)) {
@@ -1581,12 +1583,10 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		rz_analysis_extract_rarg(core->analysis, op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
-			if (op->stackop == RZ_ANALYSIS_STACK_INC) {
-				fcn->stack += op->stackptr;
-			} else if (op->stackop == RZ_ANALYSIS_STACK_RESET) {
-				fcn->stack = 0;
+			rz_analysis_extract_vars(core->analysis, fcn, op, sp);
+			if (sp != RZ_STACK_ADDR_INVALID) {
+				sp = rz_analysis_op_apply_sp_effect(op, sp);
 			}
-			rz_analysis_extract_vars(core->analysis, fcn, op, -fcn->stack);
 		}
 		int opsize = op->size;
 		int optype = op->type;
@@ -1617,13 +1617,11 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 	rz_pvector_init(&ctx.reg_set, free);
 	int *reg_set = RZ_NEWS0(int, REG_SET_SIZE);
 	rz_pvector_push(&ctx.reg_set, reg_set);
-	int saved_stack = fcn->stack;
 	RzAnalysisBlock *first_bb = rz_analysis_get_block_at(fcn->analysis, fcn->addr);
 	if (first_bb) {
 		rz_analysis_block_recurse_depth_first(first_bb, (RzAnalysisBlockCb)analysis_block_cb, (RzAnalysisBlockCb)analysis_block_on_exit, &ctx);
 	}
 	rz_pvector_fini(&ctx.reg_set);
-	fcn->stack = saved_stack;
 }
 
 static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList /*<RzAnalysisBlock *>*/ *bbs, int depth, HtUP *state, HtUP *avoid) {
