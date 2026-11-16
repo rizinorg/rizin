@@ -481,6 +481,7 @@ err:
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	RzStrBuf *sb = rz_strbuf_new("");
 	int id = buf[0];
+	op->needed = 0;
 	if (id < 0xc0) {
 		op->type = WASM_TYPE_OP_CORE;
 		op->op.core = id;
@@ -664,42 +665,39 @@ RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			op->len += n;
 		} break;
 		case WASM_OP_BRTABLE: {
-			ut32 count = 0, *table = NULL, def = 0;
+			ut32 count;
 			size_t n = read_u32_leb128(buf + 1, buf + buf_len, &count);
-			if (!(n > 0 && n < buf_len && count < 0xffff)) {
-				goto err;
-			}
-			if (!(table = calloc(count, sizeof(ut32)))) {
-				goto err;
-			}
-			int i = 0;
-			op->len += n;
-			for (i = 0; i < count; i++) {
-				n = read_u32_leb128(buf + op->len, buf + buf_len, &table[i]);
-				if (!(op->len + n <= buf_len)) {
-					goto beach;
+			if (!n) {
+				if (buf_len < 6) {
+					op->needed = buf_len + 1;
 				}
-				if (n < 1) {
-					break;
+				goto err;
+			}
+			if (count >= 0xffff) {
+				goto err;
+			}
+			op->len += n;
+			rz_strbuf_setf(sb, "%s %u", opdef->txt, count);
+			// Each target and the default label require at least one more byte.
+			for (ut32 i = 0; i <= count; i++) {
+				ut32 label;
+				int remaining = buf_len - op->len;
+				if (remaining < (int)(count - i + 1)) {
+					op->needed = op->len + (int)(count - i + 1);
+					goto err;
+				}
+				n = read_u32_leb128(buf + op->len, buf + buf_len, &label);
+				if (!n) {
+					if (remaining < 5) {
+						op->needed = buf_len + 1 + (int)(count - i);
+					}
+					goto err;
 				}
 				op->len += n;
+				rz_strbuf_appendf(sb, " %u", label);
 			}
-			n = read_u32_leb128(buf + op->len, buf + buf_len, &def);
-			if (!(n > 0 && n + op->len < buf_len)) {
-				goto beach;
-			}
-			op->len += n;
-			rz_strbuf_setf(sb, "%s %d ", opdef->txt, count);
-			for (i = 0; i < count; i++) {
-				rz_strbuf_appendf(sb, "%d ", table[i]);
-			}
-			rz_strbuf_appendf(sb, "%d", def);
-			free(table);
 			break;
-		beach:
-			free(table);
-			goto err;
-		} break;
+		}
 		case WASM_OP_CALLINDIRECT: {
 			ut32 val = 0, reserved = 0;
 			size_t n = read_u32_leb128(buf + 1, buf + buf_len, &val);

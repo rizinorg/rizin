@@ -492,6 +492,7 @@ typedef struct {
 	} op;
 	WasmTypeOp type;
 	int len;
+	int needed; ///< Minimum input length for an incomplete branch table.
 	char *txt;
 } WasmOp;
 

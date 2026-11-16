@@ -103,9 +103,11 @@ static int defaultCycles(RzAnalysisOp *op) {
  * \param addr The address the data is located.
  * \param data The buffer with the bytes to disassemble.
  * \param len Length of the \p data in bytes.
- * \param mask The which analysis details should be disassembled.
+ * \param mask Analysis details requested by the caller.
  *
- * \return The number of bytes which were disassembled. -1 in case of failure.
+ * \return The number of bytes disassembled, or -1 for an invalid instruction.
+ * With \c RZ_ANALYSIS_OP_MASK_INPUT_SIZE, a return value below -1 gives the
+ * negated minimum input length needed to finish decoding.
  */
 RZ_API int rz_analysis_op(RZ_NONNULL RzAnalysis *analysis, RZ_OUT RzAnalysisOp *op, ut64 addr, const ut8 *data, ut64 len, RzAnalysisOpMask mask) {
 	rz_return_val_if_fail(analysis && op && len > 0, -1);
