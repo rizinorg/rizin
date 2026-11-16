@@ -654,7 +654,7 @@ EXPECT=<<EOF
 |           0x00c002f8      2d0c           jmpr  cc_Z/EQ, 0xc00312
 |           0x00c002fa      ea00b205       jmpa+ cc_UC, ?C_FPNANRSL    ; sym.a166_NEAR._C_FPNANRSL
 |                                                                      ; 0xc005b2
-|           0x00c002fe      46f9           .word 0x46f9 .word 0x0000
+|           0x00c002fe      46f9ff00       cmp   r9, #0x00ff
 |           0x00c00302      2d04           jmpr  cc_Z/EQ, 0xc0030c
 |           0x00c00304      4890           cmp   r9, #0
 |           0x00c00306      3d07           jmpr  cc_NZ/NE, 0xc00316

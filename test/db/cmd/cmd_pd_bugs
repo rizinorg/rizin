@@ -480,3 +480,67 @@ EXPECT=<<EOF
 [{"offset":6,"opcode":"add byte [rax], al","bytes":"0000"},{"offset":8,"opcode":"invalid","bytes":"ff"},{"offset":9,"opcode":"invalid","bytes":"ff"}]
 EOF
 RUN
+
+NAME=pd N decodes the op that crosses the end of the block
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.comments=false
+e asm.lines.bb=false
+b 16
+pd 10 @ 0x401000
+EOF
+EXPECT=<<EOF
+  ;-- section..text:
+  ;-- __gnu_exception_handler@4:
+  0x00401000      push  ebp
+  0x00401001      mov   ebp, esp
+  0x00401003      sub   esp, 0x18
+  0x00401006      mov   dword [ebp-0x08], ebx
+  0x00401009      mov   eax, dword [ebp+0x08]
+  0x0040100c      xor   ebx, ebx
+  0x0040100e      mov   dword [ebp-0x04], esi
+  0x00401011      mov   eax, dword [eax]
+  0x00401013      xor   esi, esi
+  0x00401015      mov   eax, dword [eax]
+EOF
+RUN
+
+NAME=pd N decodes ops longer than the max op size the arch reports past the block
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=wasm
+e asm.bits=32
+wx 42204220
+b 3
+pd 2
+EOF
+EXPECT=<<EOF
+            0x00000000      i64.const 32
+            0x00000002      i64.const 32
+EOF
+RUN
+
+NAME=pd N prints the data item that crosses the end of the block
+FILE=malloc://0x1000
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.lines.bb=false
+wx 909090909090112233445566778899aabbccddeeff00
+Cd 16 @ 6
+b 8
+pd 8
+EOF
+EXPECT=<<EOF
+  0x00000000      nop
+  0x00000001      nop
+  0x00000002      nop
+  0x00000003      nop
+  0x00000004      nop
+  0x00000005      nop
+  0x00000006 hex length=16 delta=0
+0x00000006  1122 3344 5566 7788 99aa bbcc ddee ff00  ."3DUfw.........
+
+  0x00000016      add   byte [rax], al
+EOF
+RUN

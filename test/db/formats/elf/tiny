@@ -91,6 +91,7 @@ WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
 -- 4.5 --
 ERROR: Incomplete buffer read: expected 0x101 bytes, got 13 bytes.
 WARNING: Failed to read chunk of size 0x101 at 0x10020 from io.
+ERROR: Incomplete buffer read: expected 0x102 bytes, got 0 bytes.
 / entry0();
 |           0x00010020      b32a           mov   bl, 0x2a              ; '*'
 |           0x00010022      31c0           xor   eax, eax
