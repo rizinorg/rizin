@@ -194,7 +194,8 @@ RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABL
 #define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
 RZ_LIB_VERSION(rz_cmd);
 
-static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size,
+	bool separate_unnamed);
 
 static int cd_sort(const void *a, const void *b, void *user) {
 	RzCmdDesc *ca = (RzCmdDesc *)a;
@@ -1281,6 +1282,113 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 		true, max_len, use_color, gutter_size);
 }
 
+/**
+ * \brief Resolve the available choice strings for a command argument.
+ *
+ * Static choice lists are borrowed from \p arg; dynamic `choices_cb` lists
+ * require `cmd->core` and must be released by the caller via free_arg_choices().
+ *
+ * \param cmd Active RzCmd instance (checked for `core` before calling `choices_cb`)
+ * \param arg Command argument descriptor of type `RZ_CMD_ARG_TYPE_CHOICES`
+ * \param need_free Set to true if the returned array is heap-allocated
+ * \return NULL-terminated array of choice strings, or NULL if unavailable
+ */
+static char **get_arg_choices(const RzCmd *cmd, const RzCmdDescArg *arg, bool *need_free) {
+	*need_free = false;
+	if (arg->choices.choices_cb) {
+		*need_free = true;
+		return cmd->core ? arg->choices.choices_cb(cmd->core) : NULL;
+	}
+	return (char **)arg->choices.choices;
+}
+
+/**
+ * \brief Free a choice list previously returned by get_arg_choices().
+ *
+ * \param choices NULL-terminated array of choice strings (may be NULL)
+ * \param need_free True when \p choices and its strings are heap-allocated
+ */
+static void free_arg_choices(char **choices, bool need_free) {
+	if (!need_free || !choices) {
+		return;
+	}
+	for (char **choice = choices; *choice; choice++) {
+		free(*choice);
+	}
+	free(choices);
+}
+
+/**
+ * \brief Check whether \p cd exposes any resolvable `RZ_CMD_ARG_TYPE_CHOICES` values.
+ *
+ * Evaluates both static choice arrays and dynamic `choices_cb` callbacks
+ * against \p cmd so groups do not advertise `??` when no choices exist.
+ *
+ * \param cmd Active RzCmd instance
+ * \param cd Command descriptor whose arguments should be inspected
+ * \return True if at least one argument resolves non-empty choices
+ */
+static bool has_arg_choices(const RzCmd *cmd, const RzCmdDesc *cd) {
+	if (!cd || !cd->help || !cd->help->args) {
+		return false;
+	}
+	bool has_array = false;
+	for (const RzCmdDescArg *arg = cd->help->args; arg && arg->name; arg++) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
+		if (has_array) {
+			rz_warn_if_reached();
+			break;
+		}
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
+			has_array = true;
+		}
+		if (arg->type != RZ_CMD_ARG_TYPE_CHOICES) {
+			continue;
+		}
+		bool need_free = false;
+		char **choices = get_arg_choices(cmd, arg, &need_free);
+		bool non_empty = choices && *choices;
+		free_arg_choices(choices, need_free);
+		if (non_empty) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Append a hint pointing to `<cmd>??` for commands with extended help.
+ *
+ * \param cmd Active RzCmd instance
+ * \param sb Output string buffer
+ * \param cd Executable command descriptor to reference
+ * \param use_color True to emit palette color escapes
+ */
+static void fill_detailed_help_hint(const RzCmd *cmd, RzStrBuf *sb, const RzCmdDesc *cd,
+	bool use_color) {
+	const char *pal_args_color = "",
+		   *pal_input_color = "",
+		   *pal_reset = "";
+
+	if (cmd->has_cons && use_color) {
+		RzCons *cons = cmd->core->cons;
+		pal_args_color = cons->context->pal.args;
+		pal_input_color = cons->context->pal.input;
+		pal_reset = cons->context->pal.reset;
+	}
+
+	rz_strbuf_appendf(sb, "\nDetailed help for %s%s%s", pal_input_color, cd->name,
+		pal_args_color);
+	if (cd->help->args_str) {
+		rz_strbuf_appendf(sb, "%s", cd->help->args_str);
+	} else {
+		fill_args(sb, cd);
+	}
+	rz_strbuf_appendf(sb, "%s is provided by %s??.\n", pal_reset, cd->name);
+}
+
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutter_size) {
 	bool scr_utf8 = core_config_get_b(cmd->core, "scr.utf8");
 	bool scr_curvy = scr_utf8 && core_config_get_b(cmd->core, "scr.utf8.curvy");
@@ -1309,31 +1417,12 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutte
 		print_child_help(cmd, sb, child, max_len, vertical_line, use_color, gutter_size);
 	}
 
-	bool details_filled = fill_details(cmd, cd, sb, use_color, gutter_size);
-	if (!details_filled &&
-		cd->type == RZ_CMD_DESC_TYPE_GROUP &&
+	bool details_filled = fill_details(cmd, cd, sb, use_color, gutter_size, false);
+	if (cd->type == RZ_CMD_DESC_TYPE_GROUP &&
 		cd->d.group_data.exec_cd &&
-		cd->d.group_data.exec_cd->help->details) {
-
-		cd = cd->d.group_data.exec_cd;
-		const char *pal_args_color = "",
-			   *pal_input_color = "",
-			   *pal_reset = "";
-
-		if (cmd->has_cons && use_color) {
-			RzCons *cons = cmd->core->cons;
-			pal_args_color = cons->context->pal.args;
-			pal_input_color = cons->context->pal.input;
-			pal_reset = cons->context->pal.reset;
-		}
-
-		rz_strbuf_appendf(sb, "\nDetailed help for %s%s%s", pal_input_color, cd->name, pal_args_color);
-		if (cd->help->args_str) {
-			rz_strbuf_appendf(sb, "%s", cd->help->args_str);
-		} else {
-			fill_args(sb, cd);
-		}
-		rz_strbuf_appendf(sb, "%s is provided by %s??.\n", pal_reset, cd->name);
+		((!details_filled && cd->d.group_data.exec_cd->help->details) ||
+			has_arg_choices(cmd, cd->d.group_data.exec_cd))) {
+		fill_detailed_help_hint(cmd, sb, cd->d.group_data.exec_cd, use_color);
 	}
 	return rz_strbuf_drain(sb);
 }
@@ -1441,28 +1530,153 @@ static void fill_details_do(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrB
 	}
 }
 
-static bool fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
-	const RzCmdDescDetail *detail_it = get_cd_details(cd);
+/**
+ * \brief Append detail sections, inserting a blank line before a leading unnamed section.
+ *
+ * Scans \p detail_it for the first section that emits output (either a named
+ * section or an unnamed section with at least one entry). When
+ * \p separate_unnamed is true and that first emitted section is unnamed, emits
+ * a separating newline so its entries do not merge into a preceding section
+ * such as `Choices:`.
+ *
+ * \param cmd Active RzCmd instance
+ * \param detail_it NULL-terminated array of detail sections (may be NULL)
+ * \param sb Output string buffer
+ * \param use_color True to emit palette color escapes
+ * \param gutter_size Extra indentation passed through to fill_details_do()
+ * \param separate_unnamed True to prepend a blank line before leading unnamed entries
+ * \return True if at least one detail section produced output
+ */
+static bool fill_details_do_with_sep(RzCmd *cmd, const RzCmdDescDetail *detail_it, RzStrBuf *sb,
+	bool use_color, int gutter_size, bool separate_unnamed) {
 	if (!detail_it) {
 		return false;
 	}
-	fill_details_do(cmd, detail_it, sb, use_color, gutter_size);
+	const RzCmdDescDetail *first = detail_it;
+	while (first->name && RZ_STR_ISEMPTY(first->name) &&
+		(!first->entries || !first->entries->text)) {
+		first++;
+	}
+	if (!first->name) {
+		return false;
+	}
+	if (separate_unnamed && RZ_STR_ISEMPTY(first->name)) {
+		rz_strbuf_append(sb, "\n");
+	}
+	fill_details_do(cmd, first, sb, use_color, gutter_size);
 	return true;
 }
 
-static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
+static bool fill_details_static(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color,
+	int gutter_size, bool separate_unnamed) {
+	return fill_details_do_with_sep(cmd, get_cd_details(cd), sb, use_color, gutter_size,
+		separate_unnamed);
+}
+
+static bool fill_details_cb(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color,
+	int gutter_size, bool separate_unnamed) {
 	RzCmdDescDetail *detail_it = get_cd_details_cb(cmd, cd);
 	if (!detail_it) {
 		return false;
 	}
-	fill_details_do(cmd, detail_it, sb, use_color, gutter_size);
+	bool filled = fill_details_do_with_sep(cmd, detail_it, sb, use_color, gutter_size,
+		separate_unnamed);
 	rz_cmd_desc_details_free(detail_it);
-	return true;
+	return filled;
 }
 
-static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size) {
-	return (int)fill_details_static(cmd, cd, sb, use_color, gutter_size) |
-		(int)fill_details_cb(cmd, cd, sb, use_color, gutter_size);
+static bool fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color, int gutter_size,
+	bool separate_unnamed) {
+	bool static_filled = fill_details_static(cmd, cd, sb, use_color, gutter_size,
+		separate_unnamed);
+	bool cb_filled = fill_details_cb(cmd, cd, sb, use_color, gutter_size,
+		separate_unnamed && !static_filled);
+	return static_filled || cb_filled;
+}
+
+/**
+ * \brief Append a `Choices:` extended-help section for `RZ_CMD_ARG_TYPE_CHOICES` arguments.
+ *
+ * \param cmd Active RzCmd instance
+ * \param cd Command descriptor whose arguments should be formatted
+ * \param sb Output string buffer
+ * \param use_color True to emit palette color escapes
+ * \param gutter_size Extra indentation passed through to fill_details_do()
+ * \return True if at least one argument emitted a `Choices:` row
+ */
+static bool fill_arg_choices(RzCmd *cmd, const RzCmdDesc *cd, RzStrBuf *sb, bool use_color,
+	int gutter_size) {
+	if (!cd->help || !cd->help->args) {
+		return false;
+	}
+
+	RzVector entries;
+	RzPVector comments;
+	rz_vector_init(&entries, sizeof(RzCmdDescDetailEntry), NULL, NULL);
+	rz_pvector_init(&comments, free);
+	bool has_array = false;
+
+	for (const RzCmdDescArg *arg = cd->help->args; arg && arg->name; arg++) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
+		if (has_array) {
+			rz_warn_if_reached();
+			break;
+		}
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
+			has_array = true;
+		}
+		if (arg->type != RZ_CMD_ARG_TYPE_CHOICES) {
+			continue;
+		}
+
+		bool need_free = false;
+		char **ochoice = get_arg_choices(cmd, arg, &need_free);
+		if (!ochoice || !*ochoice) {
+			free_arg_choices(ochoice, need_free);
+			continue;
+		}
+
+		RzStrBuf choices_sb;
+		rz_strbuf_init(&choices_sb);
+		for (char **choice = ochoice; *choice; choice++) {
+			rz_strbuf_appendf(&choices_sb, "%s%s",
+				choice == ochoice ? "" : ", ", *choice);
+		}
+		free_arg_choices(ochoice, need_free);
+
+		char *comment = rz_strbuf_drain_nofree(&choices_sb);
+		if (!comment || !rz_pvector_push(&comments, comment)) {
+			free(comment);
+			continue;
+		}
+		RzCmdDescDetailEntry entry = {
+			.text = "",
+			.arg_str = arg->name,
+			.comment = comment,
+		};
+		if (!rz_vector_push(&entries, &entry)) {
+			break;
+		}
+	}
+
+	bool filled = false;
+	if (!rz_vector_empty(&entries)) {
+		RzCmdDescDetailEntry null_entry = { 0 };
+		if (rz_vector_push(&entries, &null_entry)) {
+			RzCmdDescDetail details[2] = {
+				{ .name = "Choices", .entries = (RzCmdDescDetailEntry *)entries.a },
+				{ 0 },
+			};
+			fill_details_do(cmd, details, sb, use_color, gutter_size);
+			filled = true;
+		}
+	}
+
+	rz_pvector_fini(&comments);
+	rz_vector_fini(&entries);
+	return filled;
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color, int gutter_size) {
@@ -1487,7 +1701,14 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_co
 			fill_colored_args(cmd, sb, cd->help->description, use_color, pal_reset);
 			rz_strbuf_append(sb, "\n");
 		}
-		fill_details(cmd, cd, sb, use_color, gutter_size);
+		{
+			bool choices_filled = detail == 2 &&
+				fill_arg_choices(cmd, cd, sb, use_color, gutter_size);
+			fill_details(cmd, cd, sb, use_color, gutter_size, choices_filled);
+			if (detail == 1 && has_arg_choices(cmd, cd)) {
+				fill_detailed_help_hint(cmd, sb, cd, use_color);
+			}
+		}
 		break;
 	default:
 		rz_strbuf_free(sb);
@@ -1612,17 +1833,15 @@ static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {
 		}
 		if (arg->type == RZ_CMD_ARG_TYPE_CHOICES) {
 			pj_ka(j, "choices");
-			char **ochoice = arg->choices.choices_cb ? arg->choices.choices_cb(cmd->core) : (char **)arg->choices.choices;
-			for (char **choice = ochoice; *choice; choice++) {
-				pj_s(j, *choice);
+			bool need_free = false;
+			char **ochoice = get_arg_choices(cmd, arg, &need_free);
+			if (ochoice) {
+				for (char **choice = ochoice; *choice; choice++) {
+					pj_s(j, *choice);
+				}
 			}
 			pj_end(j);
-			if (arg->choices.choices_cb) {
-				for (char **choice = ochoice; *choice; choice++) {
-					free(*choice);
-				}
-				free(ochoice);
-			}
+			free_arg_choices(ochoice, need_free);
 		}
 		pj_end(j);
 	}
