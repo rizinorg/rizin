@@ -7,8 +7,8 @@
 #include <rz_analysis.h>
 #include <analysis_private.h>
 #include <string.h>
-#include "omf/omf.h"
 #include "omf/omf166.h"
+#include "omf/omf_common.h"
 
 bool set_reg_val2(RzReg *areg, const char *name, const ut16 value) {
 	RzRegItem *r = rz_reg_get(areg, name, RZ_REG_TYPE_GPR);
@@ -230,17 +230,17 @@ RZ_API bool rz_core_bin_apply_omf_debug(const RzCore *core, const RzBinFile *bin
 
 	SET_SP(core->analysis, SP_RESET_VALUE);
 
-	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)binfile->o->bin_obj;
-
+	rz_bin_omf_base_obj *base_obj = (rz_bin_omf_base_obj *)binfile->o->bin_obj;
+	rz_bin_omf166_obj *omf_obj = (rz_bin_omf166_obj *)base_obj->target_obj;
 #ifdef RZ_BUILD_DEBUG
-	const char *mm_string = get_memory_model(omf_obj->modinfo);
+	const char *mm_string = c166_get_memory_model(omf_obj->modinfo);
 	RZ_LOG_DEBUG("OMF166 Memory Model: %s\n", mm_string);
 	RZ_LOG_DEBUG("Segmentation Disable/Enable Control: %s\n", (omf_obj->modinfo & 0x01) ? "Segmentation enabled" : "Segmentation disabled");
 	RZ_FREE(mm_string);
 #endif
 
-	const ut8 mm = memory_model_type(omf_obj->modinfo);
-	if (mm == OMF_MEMORY_MODEL_TINY && !(omf_obj->modinfo & 0x01)) {
+	const ut8 mm = c166_memory_model_type(omf_obj->modinfo);
+	if (mm == OMF166_MEMORY_MODEL_TINY && !(omf_obj->modinfo & 0x01)) {
 		RZ_LOG_WARN("Wrong memory model type, segmentation cannot be enabled, if mm is TINY\n");
 		return false;
 	}

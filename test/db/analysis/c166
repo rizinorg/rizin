@@ -79,18 +79,10 @@ NAME=c166: checking analysis information for coverage
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=c166
-wx E04AAB0AFB88 @ 0
-s 0x000000
+wx AB01 @ 0
 ao ~mnemonic,opcode,type,fail,size,reg,description
 echo
-s 0x000002
-ao ~mnemonic,opcode,type,fail,size,reg,description
-echo
-s 0x000004
-ao ~mnemonic,opcode,type,fail,size,reg,description
-echo
-s 0x000000
-wx EB20 0000 0000 @ 0
+wx EB20 @ 0
 ao ~mnemonic,opcode,type,fail,size,description,stackop,stackptr,refptr
 echo
 wx 5911 @ 0
@@ -128,24 +120,13 @@ ao ~mnemonic,opcode,type,fail,size,description,stackop,stackptr,refptr
 echo
 EOF
 EXPECT=<<EOF
-opcode: mov r10, #0x04
-mnemonic: mov
-size: 2
-type: mov
-
-opcode: calli cc_UC, [r10]
+opcode: calli cc_UC, [r1]
 mnemonic: calli
 description: Call indirect subroutine if condition is met
 size: 2
 type: ircall
-reg: r10
-fail: 0x00000004
-
-opcode: reti
-mnemonic: reti
-description: Return from interrupt service subroutine
-size: 2
-type: ret
+reg: r1
+fail: 0x00000002
 
 opcode: retp 0xfe40
 mnemonic: retp
@@ -261,7 +242,7 @@ echo
 iS
 echo
 aaa
-pd 350
+pd 350 @ 0x00c00000
 echo
 pd 21 @ 0x00c001e6
 echo
@@ -270,6 +251,8 @@ echo
 pdf @ 0x00c013b0
 echo
 pdf @ 0x00c0168a
+echo
+pd 19 @ 0x00c01a26
 EOF
 EXPECT=<<EOF
     offset   size arch bits machine                                      big_endian 
@@ -306,8 +289,7 @@ EXPECT=<<EOF
 0x00000000    0x2 0x00c00004    0x2   0x0 -r-- C_INITSEC_UNKNOWN         
 0x00000000   0x18 0x00c0002c   0x18   0x0 -r-- C_CLRMEMSEC_UNKNOWN       
 
-            ;-- isr.RESET:
-/ entry0();
+/ sym.isr.RESET();
 \       ,=< 0x00c00000      fac08400       jmps  ?C_RESET              ; sym.a166_FAR._C_STARTUP
 \       |                                                              ; 0xc00084
         |   ;-- section.C_INITSEC_UNKNOWN:
@@ -364,43 +346,53 @@ EXPECT=<<EOF
         |   0x00c0007e      ffff           bset  r15.15
 / sym.isr.T0INT();
 \       |   0x00c00080      fac08012       jmps  timer0                ; 0xc01280
-        |   ; CODE XREF from entry0 @ 0xc00000
+        |   ; CODE XREF from sym.isr.RESET @ 0xc00000
         |   ;-- C_RESET:
         |   ;-- section.C_STARTUP_CODE_ICODE:
         |   ;-- a166_FAR.?C_STARTUP:
 / ?C_RESET();
 |       `-> 0x00c00084      a55aa5a5       diswdt                      ; START_V2.A66:1453 ; [15] -r-x section size 350 named C_STARTUP_CODE_ICODE
 |           0x00c00088      d180           extr  #1                    ; START_V2.A66:1492
-|           0x00c0008a      e6ea0000       mov   SYSCON3, #0x0000      ; START_V2.A66:1493
-|           0x00c0008e      e6f08400       mov   r0, #0x0084           ; START_V2.A66:1500
+|           0x00c0008a      e6ea0000       mov   SYSCON3, #0x0000      ; START_V2.A66:1493 ; P8
+|                                                                      ; 0xffd4
+|           0x00c0008e      e6f08400       mov   r0, #0x0084           ; START_V2.A66:1500 ; DPP0
+|                                                                      ; 0xfe00
 |           0x00c00092      f6f000ee       mov   DPP3:0x2e00, r0       ; START_V2.A66:1501
 |           0x00c00096      e000           mov   r0, #0x00             ; START_V2.A66:1506
 |           0x00c00098      f6f002ee       mov   DPP3:0x2e02, r0       ; START_V2.A66:1507
-|           0x00c0009c      e6f06450       mov   r0, #0x5064           ; START_V2.A66:1514
+|           0x00c0009c      e6f06450       mov   r0, #0x5064           ; START_V2.A66:1514 ; DPP0
+|                                                                      ; 0xfe00
 |           0x00c000a0      f6f010ee       mov   DPP3:0x2e10, r0       ; START_V2.A66:1515
-|           0x00c000a4      e6f02100       mov   r0, #0x0021           ; START_V2.A66:1518
+|           0x00c000a4      e6f02100       mov   r0, #0x0021           ; START_V2.A66:1518 ; DPP0
+|                                                                      ; 0xfe00
 |           0x00c000a8      f6f012ee       mov   DPP3:0x2e12, r0       ; START_V2.A66:1519
 |           0x00c000ac      d180           extr  #1                    ; START_V2.A66:1651
-|           0x00c000ae      e6e88978       mov   PLLCON, #0x7889       ; START_V2.A66:1652
-|           0x00c000b2      e6d50000       mov   FOCON, #0x0000        ; START_V2.A66:1657
-|           0x00c000b6      e60b00f8       mov   STKUN, #0xf800        ; START_V2.A66:1660
-|           0x00c000ba      e60a0cf6       mov   STKOV, #0xf60c        ; START_V2.A66:1661
-|           0x00c000be      e60900f8       mov   SP, #0xf800           ; START_V2.A66:1662
-|           0x00c000c2      e6860000       mov   BUSCON0, #0x0000      ; START_V2.A66:1663
-|           0x00c000c6      e6000400       mov   DPP0, #0x0004         ; START_V2.A66:1672
-|           0x00c000ca      e6010500       mov   DPP1, #0x0005         ; START_V2.A66:1674
-|           0x00c000ce      e6020003       mov   DPP2, #0x0300         ; START_V2.A66:1675
-|           0x00c000d2      e60820fc       mov   CP, #0xfc20           ; START_V2.A66:1679
+|           0x00c000ae      e6e88978       mov   PLLCON, #0x7889       ; START_V2.A66:1652 ; P7
+|                                                                      ; 0xffd0
+|           0x00c000b2      e6d50000       mov   FOCON, #0x0000        ; START_V2.A66:1657 ; 0xffaa
+|           0x00c000b6      e60b00f8       mov   STKUN, #0xf800        ; START_V2.A66:1660 ; 0xfe16
+|           0x00c000ba      e60a0cf6       mov   STKOV, #0xf60c        ; START_V2.A66:1661 ; 0xfe14
+|           0x00c000be      e60900f8       mov   SP, #0xf800           ; START_V2.A66:1662 ; 0xfe12
+|           0x00c000c2      e6860000       mov   BUSCON0, #0x0000      ; START_V2.A66:1663 ; 0xff0c
+|           0x00c000c6      e6000400       mov   DPP0, #0x0004         ; START_V2.A66:1672 ; 0xfe00
+|           0x00c000ca      e6010500       mov   DPP1, #0x0005         ; START_V2.A66:1674 ; 0xfe02
+|           0x00c000ce      e6020003       mov   DPP2, #0x0300         ; START_V2.A66:1675 ; 0xfe04
+|           0x00c000d2      e60820fc       mov   CP, #0xfc20           ; START_V2.A66:1679 ; 0xfe10
 |           0x00c000d6      b54ab5b5       einit                       ; START_V2.A66:1686
-|           0x00c000da      1a880203       bfldh PSW, #0x03, #0x02     ; START_V2.A66:1690
-|           0x00c000de      e6f02002       mov   r0, #0x0220           ; START_V2.A66:1691
-|           0x00c000e2      1a880303       bfldh PSW, #0x03, #0x03     ; START_V2.A66:1695
-|           0x00c000e6      e6f04002       mov   r0, #0x0240           ; START_V2.A66:1696
-|           0x00c000ea      1a880003       bfldh PSW, #0x03, #0x00     ; START_V2.A66:1700
-\           0x00c000ee      e6f00002       mov   r0, #0x0200           ; START_V2.A66:1703
+|           0x00c000da      1a880203       bfldh PSW, #0x03, #0x02     ; START_V2.A66:1690 ; 0xff10
+|           0x00c000de      e6f02002       mov   r0, #0x0220           ; START_V2.A66:1691 ; DPP0
+|                                                                      ; 0xfe00
+|           0x00c000e2      1a880303       bfldh PSW, #0x03, #0x03     ; START_V2.A66:1695 ; 0xff10
+|           0x00c000e6      e6f04002       mov   r0, #0x0240           ; START_V2.A66:1696 ; DPP0
+|                                                                      ; 0xfe00
+|           0x00c000ea      1a880003       bfldh PSW, #0x03, #0x00     ; START_V2.A66:1700 ; 0xff10
+\           0x00c000ee      e6f00002       mov   r0, #0x0200           ; START_V2.A66:1703 ; DPP0
+\                                                                      ; 0xfe00
 / sym.a166_NEAR.Clr_Memory();
-|           0x00c000f2      e6f9c000       mov   r9, #0x00c0           ; START_V2.A66:1755
-|           0x00c000f6      e6f82c00       mov   r8, #0x002c           ; START_V2.A66:1756
+|           0x00c000f2      e6f9c000       mov   r9, #0x00c0           ; START_V2.A66:1755 ; SP
+|                                                                      ; 0xfe12
+|           0x00c000f6      e6f82c00       mov   r8, #0x002c           ; START_V2.A66:1756 ; CP
+|                                                                      ; 0xfe10
 |           0x00c000fa      f018           mov   r1, r8                ; START_V2.A66:1757
 |           0x00c000fc      7019           or    r1, r9                ; START_V2.A66:1758
 \       ,=< 0x00c000fe      2d29           jmpr  cc_Z/EQ, sym.a166_NEAR.EndClear ; START_V2.A66:1759
@@ -450,11 +442,13 @@ EXPECT=<<EOF
 \       |   0x00c00150      0dd7           jmpr  cc_UC, sym.a166_NEAR.RepeatClear ; START_V2.A66:1812
         |   ;-- a166_NEAR.Init_Vars:
 / sym.a166_NEAR.EndClear();
-|       `-> 0x00c00152      e6f9c000       mov   r9, #0x00c0           ; START_V2.A66:1873
-\           0x00c00156      e6f80400       mov   r8, #0x0004           ; START_V2.A66:1874
+|       `-> 0x00c00152      e6f9c000       mov   r9, #0x00c0           ; START_V2.A66:1873 ; SP
+|                                                                      ; 0xfe12
+\           0x00c00156      e6f80400       mov   r8, #0x0004           ; START_V2.A66:1874 ; CP
+\                                                                      ; 0xfe10
             ; DATA XREF from sym.a166_NEAR.NoDPP3Adj @ 0xc001b6
 / sym.a166_NEAR.RepeatInit();
-|           0x00c0015a      e6030300       mov   DPP3, #0x0003         ; START_V2.A66:1880
+|           0x00c0015a      e6030300       mov   DPP3, #0x0003         ; START_V2.A66:1880 ; 0xfe06
 |           0x00c0015e      dc09           exts  r9, #1                ; START_V2.A66:1881
 |           0x00c00160      a828           mov   r2, [r8]              ; START_V2.A66:1882
 |           0x00c00162      2d3d           jmpr  cc_Z/EQ, sym.a166_NEAR.EndInit ; START_V2.A66:1883
@@ -831,13 +825,18 @@ EXPECT=<<EOF
 |      ||   0x00c013ce      46f4e703       cmp   r4, #0x03e7
 |     ,===< 0x00c013d2      9d0f           jmpr  cc_NC/UGE, data.00c013f2
 |    ,====< 0x00c013d4      9a000d20       jnb   section.BI0_MEASURE_BIT0, data.00c013f2 ; 0xc013f2
-|    ||||   0x00c013d8      e6fa821a       mov   r10, #0x1a82          ; Measure.c:137
-|    ||||   0x00c013dc      e6fbc000       mov   r11, #0x00c0
-|    ||||   0x00c013e0      e6f8261a       mov   r8, #0x1a26
-|    ||||   0x00c013e4      e6f9c000       mov   r9, #0x00c0
+|    ||||   0x00c013d8      e6fa821a       mov   r10, #0x1a82          ; Measure.c:137 ; STKOV
+|    ||||                                                              ; 0xfe14
+|    ||||   0x00c013dc      e6fbc000       mov   r11, #0x00c0          ; STKUN
+|    ||||                                                              ; 0xfe16
+|    ||||   0x00c013e0      e6f8261a       mov   r8, #0x1a26           ; CP
+|    ||||                                                              ; 0xfe10
+|    ||||   0x00c013e4      e6f9c000       mov   r9, #0x00c0           ; SP
+|    ||||                                                              ; 0xfe12
 |    ||||   0x00c013e8      dac04a05       calls printf                ; sym.a166_FAR.printf
 |    ||||                                                              ; 0xc0054a ; int printf(const char *format)
-|    ||||   0x00c013ec      e6f4ffff       mov   r4, #0xffff           ; Measure.c:138
+|    ||||   0x00c013ec      e6f4ffff       mov   r4, #0xffff           ; Measure.c:138 ; CSP
+|    ||||                                                              ; 0xfe08
 |   ,=====< 0x00c013f0      0d28           jmpr  cc_UC, 0xc01442
 |   |||||   ; DATA XREF from read_index @ 0xc013d4
 |   |||||   ;-- data.00c013f2:
@@ -847,8 +846,10 @@ EXPECT=<<EOF
 |   |       0x00c013fa      16f50100       addc  r5, #0x0001
 |   |       0x00c013fe      8850           mov   [-r0], r5
 |   |       0x00c01400      f0c4           mov   r12, r4
-|   |       0x00c01402      e6fa491e       mov   r10, #0x1e49
-|   |       0x00c01406      e6fbc000       mov   r11, #0x00c0
+|   |       0x00c01402      e6fa491e       mov   r10, #0x1e49          ; STKOV
+|   |                                                                  ; 0xfe14
+|   |       0x00c01406      e6fbc000       mov   r11, #0x00c0          ; STKUN
+|   |                                                                  ; 0xfe16
 |   |       0x00c0140a      f09f           mov   r9, r15
 |   |       0x00c0140c      f08e           mov   r8, r14
 |   |       0x00c0140e      dac0fc0d       calls sscanf                ; sym.a166_FAR.sscanf
@@ -861,7 +862,8 @@ EXPECT=<<EOF
 |   |  ,==< 0x00c0141c      2d03           jmpr  cc_Z/EQ, 0xc01424
 |   |  ||   0x00c0141e      46f5ffff       cmp   r5, #0xffff
 |   | ,===< 0x00c01422      3d03           jmpr  cc_NZ/NE, 0xc0142a
-|   | |``-> 0x00c01424      e6f4ff01       mov   r4, #0x01ff
+|   | |``-> 0x00c01424      e6f4ff01       mov   r4, #0x01ff           ; CSP
+|   | |                                                                ; 0xfe08
 |   | |     0x00c01428      b840           mov   [r0], r4
 |   | `---> 0x00c0142a      a850           mov   r5, [r0]              ; Measure.c:142
 |   |       0x00c0142c      f2f44a02       mov   r4, DPP0:0x024a
@@ -892,8 +894,10 @@ EXPECT=<<EOF
 |           0x00c016a2      c08b           movbz r11, rl4
 |           0x00c016a4      f4800400       movb  rl4, [r0+#0x0004]
 |           0x00c016a8      c08a           movbz r10, rl4
-|           0x00c016aa      e6f8981e       mov   r8, #0x1e98
-|           0x00c016ae      e6f9c000       mov   r9, #0x00c0
+|           0x00c016aa      e6f8981e       mov   r8, #0x1e98           ; CP
+|                                                                      ; 0xfe10
+|           0x00c016ae      e6f9c000       mov   r9, #0x00c0           ; SP
+|                                                                      ; 0xfe12
 |           0x00c016b2      dac04a05       calls printf                ; sym.a166_FAR.printf
 |                                                                      ; 0xc0054a ; int printf(const char *format)
 |           0x00c016b6      0804           add   r0, #4
@@ -911,19 +915,23 @@ EXPECT=<<EOF
 |      :|   0x00c016ce      dac08204       calls ?C_FCAST              ; sym.a166_FAR._C_FCAST
 |      :|                                                              ; 0xc00482
 |      :|   0x00c016d2      e006           mov   r6, #0x00
-|      :|   0x00c016d4      e6f7a040       mov   r7, #0x40a0
+|      :|   0x00c016d4      e6f7a040       mov   r7, #0x40a0           ; MDL
+|      :|                                                              ; 0xfe0e
 |      :|   0x00c016d8      dac0ca02       calls ?C_FPMUL              ; sym.a166_FAR._C_FPMUL
 |      :|                                                              ; 0xc002ca
 |      :|   0x00c016dc      e006           mov   r6, #0x00
-|      :|   0x00c016de      e6f78044       mov   r7, #0x4480
+|      :|   0x00c016de      e6f78044       mov   r7, #0x4480           ; MDL
+|      :|                                                              ; 0xfe0e
 |      :|   0x00c016e2      dac05e03       calls ?C_FPDIV              ; sym.a166_FAR._C_FPDIV
 |      :|                                                              ; 0xc0035e
 |      :|   0x00c016e6      f0b4           mov   r11, r4
 |      :|   0x00c016e8      f0c5           mov   r12, r5
 |      :|   0x00c016ea      f04d           mov   r4, r13
 |      :|   0x00c016ec      c08a           movbz r10, rl4
-|      :|   0x00c016ee      e6f88b1e       mov   r8, #0x1e8b
-|      :|   0x00c016f2      e6f9c000       mov   r9, #0x00c0
+|      :|   0x00c016ee      e6f88b1e       mov   r8, #0x1e8b           ; CP
+|      :|                                                              ; 0xfe10
+|      :|   0x00c016f2      e6f9c000       mov   r9, #0x00c0           ; SP
+|      :|                                                              ; 0xfe12
 |      :|   0x00c016f6      dac04a05       calls printf                ; sym.a166_FAR.printf
 |      :|                                                              ; 0xc0054a ; int printf(const char *format)
 |      :|   0x00c016fa      08d1           add   r13, #1               ; Mcommand.c:28
@@ -932,6 +940,59 @@ EXPECT=<<EOF
 |      `==< 0x00c01700      3ddd           jmpr  cc_NZ/NE, 0xc016bc
 |           0x00c01702      fcfd           pop   r13                   ; Mcommand.c:29
 \           0x00c01704      db00           rets
+
+            ;-- section.HC_MEASURE_HCONST:
+            0x00c01a26 hex length=256 delta=0
+0x00c01a26  0a2a 2a2a 2045 5252 4f52 3a20 2573 0a00  .*** ERROR: %s..
+0x00c01a36  554e 4b4e 4f57 4e20 434f 4d4d 414e 4400  UNKNOWN COMMAND.
+0x00c01a46  0a43 6c65 6172 204d 6561 7375 7265 6d65  .Clear Measureme
+0x00c01a56  6e74 2052 6563 6f72 6473 0a00 0a53 7461  nt Records...Sta
+0x00c01a66  7274 204d 6561 7375 7265 6d65 6e74 2052  rt Measurement R
+0x00c01a76  6563 6f72 6469 6e67 0a00 0a00 5155 4954  ecording....QUIT
+0x00c01a86  204d 4541 5355 5245 4d45 4e54 5320 4245   MEASUREMENTS BE
+0x00c01a96  464f 5245 2052 4541 4400 0a2b 2a2a 2a2a  FORE READ..+****
+0x00c01aa6  2a2a 2a2a 2a2a 2a20 5245 4d4f 5445 204d  ******* REMOTE M
+0x00c01ab6  4541 5355 5245 4d45 4e54 2052 4543 4f52  EASUREMENT RECOR
+0x00c01ac6  4445 5220 7573 696e 6720 4331 3636 202a  DER using C166 *
+0x00c01ad6  2a2a 2a2a 2a2a 2a2a 2a2a 2b0a 7c20 5468  **********+.| Th
+0x00c01ae6  6973 2070 726f 6772 616d 2069 7320 6120  is program is a 
+0x00c01af6  7369 6d70 6c65 204d 6561 7375 7265 6d65  simple Measureme
+0x00c01b06  6e74 2052 6563 6f72 6465 722e 2049 7420  nt Recorder. It 
+0x00c01b16  6973 2062 6173 6564 2020 207c 0a7c 206f  is based   |.| o
+ ; [03] -r-- section size 1062 named HC_MEASURE_HCONST
+            ;-- str.INVALID_INTERVAL_FORMAT:
+            ;-- section.HC_MCOMMAND_HCONST:
+            0x00c01e4c     .string "INVALID INTERVAL FORMAT" ; len=24  ; [01] -r-- section size 111 named HC_MCOMMAND_HCONST
+            ;-- str.INVALID_TIME_FORMAT:
+            0x00c01e64     .string "INVALID TIME FORMAT" ; len=20
+            ;-- str.bd:_bd:_bd:
+            0x00c01e78     .string "%bd:%bd:%bd" ; len=12
+            ;-- str.bd:_f:
+            0x00c01e84     .string "%bd:%f" ; len=7
+            ;-- str.AN_d:_4.2fV:
+            0x00c01e8b     .string " AN%d:%4.2fV" ; len=13
+            ;-- str.Time:__2d:_02d:_02d._03d__P2:_04X:
+            0x00c01e98     .string "\rTime: %2d:%02d:%02d.%03d  P2:%04X" ; len=35
+            0x00c01ebb  ~   ff2d           bset  0xfd5a.15
+            ;-- section.HC__PRNFMT_HCONST:
+            0x00c01ebc hex length=90 delta=0
+0x00c01ebc  2d04 2b20 2080 4c01 4202 4800 2310 2e40  -.+  .L.B.H.#..@
+0x00c01ecc  0000 d007 5300 2c08 5800 3208 4f00 3a08  ....S.,.X.2.O.:.
+0x00c01edc  4400 3a08 4900 c007 4300 5a08 5500 2a08  D.:.I...C.Z.U.*.
+0x00c01eec  5000 9409 2a00 ba09 4e00 d40a 4600 460a  P...*...N...F.F.
+0x00c01efc  4500 080a 4700 0000 2830 2900 4e61 4e00  E...G...(0).NaN.
+0x00c01f0c  2b49 4e46 002d 494e 4600                 +INF.-INF.
+ ; [18] -r-- section size 90 named HC__PRNFMT_HCONST
+            0x00c01f16      ffff           bset  r15.15
+            0x00c01f18      ffff           bset  r15.15
+            0x00c01f1a      ffff           bset  r15.15
+            0x00c01f1c      ffff           bset  r15.15
+            0x00c01f1e      ffff           bset  r15.15
+            0x00c01f20      ffff           bset  r15.15
+            0x00c01f22      ffff           bset  r15.15
+            0x00c01f24      ffff           bset  r15.15
+            0x00c01f26      ffff           bset  r15.15
+            0x00c01f28      ffff           bset  r15.15
 EOF
 RUN
 
@@ -979,7 +1040,7 @@ EXPECT=<<EOF
      ||||   0x00c00024      7eb7           bclr  S0RIC.7
      ||||   0x00c00026      db00           rets
     ,=====< 0x00c00028      fac07a00       jmps  0xc0007a
-    |||||   0x00c0002c      1a800400       bfldh P0L, #0x00, #0x04
+    |||||   0x00c0002c      1a800400       bfldh P0L, #0x00, #0x04     ; 0xff00
     |||||   0x00c00030      40c2           cmp   r12, r2
     |||||   0x00c00032      0fa0           bset  T2CON.0
     |||||   0x00c00034      04005cc2       add   DPP3:0x025c, DPP0
@@ -993,30 +1054,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-#NAME=C166 Hello world binary file
-#FILE=bins/c166/hello_world_hex167.bin
-#CMDS=<<EOF
-#e asm.arch=c166
-#pD 4
-#ia
-#flt
-#pd 1221 @ 0
-#EOF
-#EXPECT=<<EOF
-#        ,=< 0x00000000      jmps  0x00, 0x0004
-#EOF
-#RUN
-
-
 NAME=Try testing real dump 1
 FILE=bins/omf/omf166/measure
 TIMEOUT=30
 CMDS=<<EOF
 e asm.cpu=c166-generic
-pd 25
+pd 25 @ 0x00c00000
 EOF
 EXPECT=<<EOF
-            ;-- entry0:
             ;-- isr.RESET:
         ,=< 0x00c00000      jmps  ?C_RESET                             ; sym.a166_FAR._C_STARTUP
         |                                                              ; 0xc00084
@@ -1104,7 +1149,7 @@ EXPECT=<<EOF
      ||||   0x00c00024      bclr  S0RIC.7
      ||||   0x00c00026      rets
     ,=====< 0x00c00028      jmps  0xc0007a
-    |||||   0x00c0002c      bfldh P0L, #0x00, #0x04
+    |||||   0x00c0002c      bfldh P0L, #0x00, #0x04                    ; 0xff00
     |||||   0x00c00030      cmp   r12, r2
     |||||   0x00c00032      bset  T2CON.0
     |||||   0x00c00034      add   DPP3:0x025c, DPP0
