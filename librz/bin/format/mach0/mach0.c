@@ -2549,9 +2549,10 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) * bin) {
 	int bits = MACH0_(get_bits_from_hdr)(&bin->hdr);
 	if (bin->symtab && bin->symstr) {
 		/* parse dynamic symbol table */
-		symbols_count = (bin->dysymtab.nextdefsym +
-			bin->dysymtab.nlocalsym +
-			bin->dysymtab.nundefsym);
+		ut32 nsymtab = bin->nsymtab;
+		symbols_count = (RZ_MIN(bin->dysymtab.nextdefsym, nsymtab) +
+			RZ_MIN(bin->dysymtab.nlocalsym, nsymtab) +
+			RZ_MIN(bin->dysymtab.nundefsym, nsymtab));
 		symbols_count += (bin->nsymtab + 1);
 		if (SZT_MUL_OVFCHK(symbols_count, 2)) {
 			RZ_LOG_ERROR("mach0: detected symbols count overflow\n");
