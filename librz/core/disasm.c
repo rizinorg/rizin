@@ -825,12 +825,16 @@ static void ds_reflines_fini(RzDisasmState *ds) {
 	RZ_FREE(ds->prev_line_col);
 }
 
+static bool ds_reflines_needed(RzDisasmState *ds) {
+	// refline info is needed when it is shown as ascii,
+	// or returned as part of a json or C struct representation.
+	return ds->show_lines_bb || ds->vec || ds->pj;
+}
+
 static void ds_reflines_init(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
 	ds_reflines_reset(ds);
-	// refline info is needed when it is shown as ascii,
-	// or returned as part of a json or C struct representation.
-	if (ds->show_lines_bb || ds->vec || ds->pj) {
+	if (ds_reflines_needed(ds)) {
 		ds_reflines_fini(ds);
 		RzPVector *reflines = rz_analysis_reflines_get(analysis,
 			ds->addr, ds->buf, ds->len, ds->nlines,
@@ -5520,6 +5524,14 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 		rz_reg_arena_push(rreg);
 	}
 
+	if (!ds->cbytes && nlines > 0 && ds_reflines_needed(ds)) {
+		// the reflines are computed once, from the buffer
+		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		st64 size = (st64)nlines * RZ_MAX(max_op_size, 1);
+		ds_buf_grow(ds, &buf, &nbuf, &len, (int)RZ_MIN(size, RZ_CORE_MAX_DISASM));
+		ds->buf = buf;
+		ds->len = len;
+	}
 	ds_reflines_init(ds);
 	/* reset jmp table if not asked to keep it */
 	if (!core->keep_asmqjmps) { // hack

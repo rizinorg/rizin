@@ -429,11 +429,11 @@ EOF
 EXPECT=<<EOF
 |           ;-- .LBB2_1:
 |           ;-- test_backward_max:
-|           0x0800203c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800203c
+|       .-> 0x0800203c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800203c
 ...dup (2047)
-            ;-- reloc..LBB2_1:
+        |   ;-- reloc..LBB2_1:
 / loc..LBB2_1();
-|           0x0800303c      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x0800203c
+|       `=< 0x0800303c      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x0800203c
 |           0x08003040      li    a0, 3
 |           0x08003042      ret
 nth      paddr      vaddr bind   type   size lib name               
@@ -472,11 +472,11 @@ EOF
 EXPECT=<<EOF
 |           ;-- .LBB2_1:
 |           ;-- test_backward_max:
-|           0x08002048      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08002048
+|       .-> 0x08002048      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08002048
 ...dup (2047)
-            ;-- reloc..LBB2_1:
+        |   ;-- reloc..LBB2_1:
 / loc..LBB2_1();
-|           0x08003048      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x08002048
+|       `=< 0x08003048      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x08002048
 |           0x0800304c      li    a0, 3
 |           0x0800304e      ret
 nth      paddr      vaddr bind   type   size lib name               
@@ -812,11 +812,11 @@ EOF
 EXPECT=<<EOF
 |           ;-- .LBB2_1:
 |           ;-- test_backward_max:
-|           0x0800023c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800023c
+|       .-> 0x0800023c      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x0800023c
 ...dup (127)
-            ;-- reloc..LBB2_1:
+        |   ;-- reloc..LBB2_1:
 / loc..LBB2_1();
-|           0x0800033c      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x0800023c
+|       `=< 0x0800033c      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x0800023c
 |           0x0800033e      li    a0, 3
 |           0x08000340      ret
 nth      paddr      vaddr bind   type   size lib name                          
@@ -899,11 +899,11 @@ EOF
 EXPECT=<<EOF
 |           ;-- .LBB2_1:
 |           ;-- test_backward_max:
-|           0x08000248      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08000248
+|       .-> 0x08000248      nop                                        ; RELOC TARGET 0 .LBB2_1 @ 0x08000248
 ...dup (127)
-            ;-- reloc..LBB2_1:
+        |   ;-- reloc..LBB2_1:
 / loc..LBB2_1();
-|           0x08000348      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x08000248
+|       `=< 0x08000348      bnez  a0, sym.test_backward_max            ; RELOC 0 .LBB2_1 @ 0x08000248
 |           0x0800034a      li    a0, 3
 |           0x0800034c      ret
 nth      paddr      vaddr bind   type   size lib name                          
