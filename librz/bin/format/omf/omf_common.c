@@ -258,8 +258,9 @@ RZ_IPI OMF_FILE_TARGET_TYPE check_omf_type(RZ_NONNULL RzBuffer *b) {
 		return ret_type;
 	}
 	if (!rz_bin_checksum_omf_ok(buf, length)) {
-		return OMF_FILE_TARGET_NOT_OMF;
+		ret_type = OMF_FILE_TARGET_NOT_OMF;
 	}
+	RZ_FREE(buf);
 	return ret_type;
 }
 
