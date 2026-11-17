@@ -2033,12 +2033,9 @@ static void set_new_xref(RzCore *core, ut64 xref_from, ut64 xref_to, RzAnalysisX
 	RzStrEnc encoding = 0;
 	if (type == RZ_ANALYSIS_XREF_TYPE_DATA && rz_core_get_string_at(core, xref_to, &string, &length, &encoding, can_search)) {
 		rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, xref_to, length, string);
-		rz_name_filter(string, -1, true);
-		char *flagname = rz_str_newf("str.%s", string);
-		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-		(void)rz_flag_set(core->flags, flagname, xref_to, length);
-		rz_flag_space_pop(core->flags);
-		free(flagname);
+		if (string) {
+			(void)rz_core_bin_set_string_flag(core, string, xref_to, (ut32)length);
+		}
 		free(string);
 	}
 	// Add to SDB
@@ -2891,14 +2888,11 @@ RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 	RzStrEnc encoding = 0;
 	if (rz_core_get_string_at(core, xref_to, &string, &length, &encoding, true)) {
 		rz_analysis_xrefs_set(core->analysis, xref_from, xref_to, RZ_ANALYSIS_XREF_TYPE_DATA);
-		rz_name_filter(string, -1, true);
-		char *flagname = rz_str_newf("str.%s", string);
-		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
-		rz_flag_set(core->flags, flagname, xref_to, length);
-		rz_flag_space_pop(core->flags);
 		rz_meta_set_with_subtype(core->analysis, RZ_META_TYPE_STRING, encoding, xref_to, length, string);
+		if (string) {
+			(void)rz_core_bin_set_string_flag(core, string, xref_to, (ut32)length);
+		}
 		free(string);
-		free(flagname);
 	}
 }
 
