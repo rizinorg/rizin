@@ -20,6 +20,7 @@ if get_option('enable_benchmarks')
   # List of benchmarks to build
   benchmarks = [
     'bitvector',
+    'cmd',
     'diff',
     'graph',
     'il',
