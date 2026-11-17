@@ -568,6 +568,93 @@ static bool test_visual_graph_previews(void) {
 	mu_end;
 }
 
+static size_t nested_reentrant_calls;
+static bool nested_reentrant_ok;
+
+static RzCmdStatus nested_reentrant_handler(RzCore *core, int argc, const char **argv) {
+	nested_reentrant_calls++;
+	if (core->rcmd->ts_parser) {
+		nested_reentrant_ok = false;
+		return RZ_CMD_STATUS_ERROR;
+	}
+	if (argc > 1 && atoi(argv[1]) > 0) {
+		char *sub = rz_str_newf("%s %d", argv[0], atoi(argv[1]) - 1);
+		if (!sub) {
+			nested_reentrant_ok = false;
+			return RZ_CMD_STATUS_ERROR;
+		}
+		char *out = rz_core_cmd_str(core, sub);
+		free(sub);
+		if (!out || strcmp(out, "0x3\n") != 0) {
+			free(out);
+			nested_reentrant_ok = false;
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_print(core->cons, out);
+		free(out);
+		return RZ_CMD_STATUS_OK;
+	}
+	char *val = rz_core_cmd_str(core, "%v 1+2");
+	if (!val) {
+		nested_reentrant_ok = false;
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print(core->cons, val);
+	free(val);
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_tsparser_reuse_and_nested_reentrancy(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+
+	RzCmdDesc *root = rz_cmd_get_root(core->rcmd);
+	RzCmdDesc *cd = rz_cmd_desc_argv_new(core->rcmd, root, "rz_test_nested", nested_reentrant_handler, &string_help);
+	mu_assert_notnull(cd, "register nested test cmd");
+
+	// Repeated top-level commands reuse core->rcmd->ts_parser cleanly
+	for (int i = 0; i < 16; i++) {
+		char *out = rz_core_cmd_str(core, "%v 40+2");
+		mu_assert_streq_free(out, "0x2a\n", "repeated top-level command");
+		mu_assert_notnull(core->rcmd->ts_parser, "ts_parser cached on RzCmd after command");
+	}
+
+	// Exercise the RZ_LOGLVL_DEBUG s-expr logging path in core_cmd_tsrzcmd()
+	RzLogLevel old_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_DEBUG);
+	char *dbg_out = rz_core_cmd_str(core, "%v 1+1");
+	rz_log_set_level(old_level);
+	mu_assert_streq_free(dbg_out, "0x2\n", "command succeeds with RZ_LOGLVL_DEBUG");
+
+	// Nested rz_core_cmd_str re-entrancy (4 levels deep)
+	nested_reentrant_calls = 0;
+	nested_reentrant_ok = true;
+	char *nested_out = rz_core_cmd_str(core, "rz_test_nested 3");
+	mu_assert_streq_free(nested_out, "0x3\n", "nested reentrant cmd output");
+	mu_assert_true(nested_reentrant_ok, "nested reentrant handler invariants held");
+	mu_assert_eq(nested_reentrant_calls, 4, "4 nested handler invocations ran");
+	mu_assert_notnull(core->rcmd->ts_parser, "ts_parser cached after nested recursion");
+
+	// Nested macros + `.()` invocation + trailing command
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "(inner a; %v ${a}+5); (outer x; .(inner ${x}); %v ${x}+10)"),
+		RZ_CMD_STATUS_OK, "define nested macros");
+	char *macro_out = rz_core_cmd_str(core, ".(outer 7); %v 1+1");
+	mu_assert_streq_free(macro_out, "0xc\n0x11\n0x2\n", "nested macro and command interpretation output");
+	mu_assert_notnull(core->rcmd->ts_parser, "ts_parser cached after macros");
+
+	// `oc =` destroys and recreates core->rcmd mid-script; verify frame parser stays independent
+	rz_core_task_sync_begin(&core->tasks);
+	RzCmdStatus oc_status = rz_core_cmd0_rzshell(core, "oc =; %v 6*7");
+	rz_core_task_sync_end(&core->tasks);
+	mu_assert_eq(oc_status, RZ_CMD_STATUS_OK, "trailing command survives oc recreating core->rcmd");
+	mu_assert_eq(core->num->value, 42, "trailing expression evaluated after oc");
+	mu_assert_null(rz_cmd_get_desc(core->rcmd, "rz_test_nested"), "oc recreated core->rcmd");
+	mu_assert_notnull(core->rcmd->ts_parser, "new RzCmd caches its own ts_parser");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_visual_preview_cache);
@@ -583,6 +670,7 @@ int all_tests() {
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
+	mu_run_test(test_tsparser_reuse_and_nested_reentrancy);
 	return tests_passed != tests_run;
 }
 

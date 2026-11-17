@@ -9,6 +9,7 @@
 #include <rz_cons.h>
 #include <rz_cmd.h>
 #include <rz_core.h>
+#include <tree_sitter/api.h>
 #include "../core_private.h"
 
 #define CMD_EXPORT_VERSION 1
@@ -333,6 +334,9 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	int i;
 	if (!cmd) {
 		return NULL;
+	}
+	if (cmd->ts_parser) {
+		ts_parser_delete((TSParser *)cmd->ts_parser);
 	}
 	ht_up_free(cmd->ts_symbols_ht);
 	rz_cmd_alias_free(cmd);
