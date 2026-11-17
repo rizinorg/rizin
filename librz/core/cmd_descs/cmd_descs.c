@@ -7764,6 +7764,7 @@ static const RzCmdDescArg analysis_class_graph_args[] = {
 		.name = "class_name",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },

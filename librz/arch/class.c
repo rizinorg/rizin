@@ -1329,6 +1329,79 @@ failure:
 	return NULL;
 }
 
+static void mark_graph_node_cb(RzGraphNode *node, RzGraphVisitor *vis) {
+	HtUP *keep = vis->visitor_data;
+	ht_up_update(keep, rz_graph_node_get_id(node), (void *)1);
+}
+
+static RzGraphNode *find_class_node(
+	const RzGraph /*<RzGraphNodeInfo *, None *>*/ *graph, const char *name) {
+	RzIterator iter = { 0 };
+	RzGraphNode *found = NULL;
+	if (rz_graph_get_nodes(graph, &iter)) {
+		RzGraphNode *node;
+		rz_iterator_foreach(&iter, node) {
+			const RzGraphNodeInfo *info = rz_graph_node_get_data(node);
+			if (!strcmp(info->def.title, name)) {
+				found = node;
+				break;
+			}
+		}
+		rz_iterator_fini(&iter);
+	}
+	return found;
+}
+
+/**
+ * \brief Creates RzGraph containing \p class_name, its transitive ancestors, and its transitive
+ *        derived subclasses, where each node has RzGraphNodeInfo as generic data
+ *
+ * \param analysis Analysis instance containing class database
+ * \param class_name Target class name to center the inheritance subgraph around
+ * \return RzGraph* Filtered inheritance graph, or NULL if \p class_name does not exist or on error
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *
+rz_analysis_class_get_inheritance_graph_by_name(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *class_name) {
+	rz_return_val_if_fail(analysis && class_name, NULL);
+	char *target = rz_str_sanitize_sdb_key(class_name);
+	if (!target) {
+		return NULL;
+	}
+	RzGraph *graph = rz_analysis_class_get_inheritance_graph(analysis);
+	RzGraphNode *target_node = graph ? find_class_node(graph, target) : NULL;
+	free(target);
+	HtUP *keep = target_node ? ht_up_new(NULL, NULL) : NULL;
+	RzPVector *drop = keep ? rz_pvector_new(NULL) : NULL;
+	if (!drop) {
+		ht_up_free(keep);
+		rz_graph_free(graph);
+		return NULL;
+	}
+	RzGraphVisitor vis = {
+		.discover_node = mark_graph_node_cb,
+		.visitor_data = keep,
+	};
+	rz_graph_dfs_from_node(graph, target_node, &vis);
+	rz_graph_dfs_reverse_from_node(graph, target_node, &vis);
+	RzIterator iter = { 0 };
+	if (rz_graph_get_nodes(graph, &iter)) {
+		RzGraphNode *node;
+		rz_iterator_foreach(&iter, node) {
+			if (!ht_up_find(keep, rz_graph_node_get_id(node), NULL)) {
+				rz_pvector_push(drop, node);
+			}
+		}
+		rz_iterator_fini(&iter);
+	}
+	for (size_t i = 0; i < rz_pvector_len(drop); i++) {
+		rz_graph_del_node(graph, rz_pvector_at(drop, i));
+	}
+	rz_pvector_free(drop);
+	ht_up_free(keep);
+	return graph;
+}
+
 RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis) {
 	rz_analysis_class_recover_from_rzbin(analysis);
 	rz_analysis_rtti_recover_all(analysis);
