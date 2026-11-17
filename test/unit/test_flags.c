@@ -169,6 +169,39 @@ bool test_rz_flag_set_next() {
 	mu_end;
 }
 
+bool test_rz_flag_set_next_unfiltered(void) {
+	RzFlag *flag = rz_flag_new();
+	mu_assert_notnull(flag, "rz_flag_new() failed");
+
+	RzFlagItem *fi1 = rz_flag_set_next(flag, "my-mod.str.hello", 0x100, 6);
+	mu_assert_notnull(fi1, "first unfiltered flag");
+	mu_assert_streq(fi1->name, "my_mod.str.hello", "first unfiltered flag name");
+	mu_assert_eq(fi1->offset, 0x100, "first unfiltered flag offset");
+
+	RzFlagItem *fi2 = rz_flag_set_next(flag, "my-mod.str.hello", 0x200, 6);
+	mu_assert_notnull(fi2, "second unfiltered flag");
+	mu_assert_streq(fi2->name, "my_mod.str.hello.200", "second unfiltered flag name");
+	mu_assert_eq(fi2->offset, 0x200, "second unfiltered flag offset");
+	mu_assert_eq(fi1->offset, 0x100, "first unfiltered flag preserved");
+
+	RzFlagItem *fi_same = rz_flag_set_next(flag, "my-mod.str.hello", 0x200, 6);
+	mu_assert_ptreq(fi_same, fi2, "idempotent unfiltered flag lookup");
+
+	RzFlagItem *fi3 = rz_flag_set_next(flag, "foo-", 0x300, 4);
+	mu_assert_notnull(fi3, "trailing filtered char flag 1");
+	mu_assert_streq(fi3->name, "foo", "trailing filtered char trimmed");
+
+	RzFlagItem *fi4 = rz_flag_set_next(flag, "foo-", 0x400, 4);
+	mu_assert_notnull(fi4, "trailing filtered char flag 2");
+	mu_assert_streq(fi4->name, "foo.400", "clean suffix without trailing underscore");
+
+	mu_assert_null(rz_flag_set_next(flag, "   ", 0x500, 4), "whitespace-only rejected");
+	mu_assert_null(rz_flag_set_next(flag, "", 0x500, 4), "empty rejected");
+
+	rz_flag_free(flag);
+	mu_end;
+}
+
 bool test_rz_flag_get_preferred_item() {
 	RzFlag *flags = rz_flag_new();
 	mu_assert_notnull(flags, "rz_flag_new() failed");
@@ -250,6 +283,7 @@ int all_tests(void) {
 	mu_run_test(test_rz_flag_by_spaces);
 	mu_run_test(test_rz_flag_get_at);
 	mu_run_test(test_rz_flag_set_next);
+	mu_run_test(test_rz_flag_set_next_unfiltered);
 	mu_run_test(test_rz_flag_get_preferred_item);
 	mu_run_test(test_rz_flag_get_preferred_item_fallback_non_aav);
 	mu_run_test(test_rz_flag_get_preferred_item_keep_aav_when_only_aav);
