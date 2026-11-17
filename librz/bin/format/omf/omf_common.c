@@ -246,21 +246,11 @@ RZ_IPI OMF_FILE_TARGET_TYPE check_omf_type(RZ_NONNULL RzBuffer *b) {
 		}
 	}
 
-	ut64 size;
-	const ut8 *buf = rz_buf_data(b, &size);
-	if (!buf) {
-		// hackaround until we make this plugin not use RBuf.data
-		ut8 tmp_buf[1024] = RZ_EMPTY;
-		rz_buf_read_at(b, 0, tmp_buf, sizeof(tmp_buf));
-		if (!rz_bin_checksum_omf_ok(tmp_buf, sizeof(tmp_buf))) {
-			return OMF_FILE_TARGET_NOT_OMF;
-		}
-		return ret_type;
+	ut8 tmp_buf[1024] = RZ_EMPTY;
+	rz_buf_read_at(b, 0, tmp_buf, sizeof(tmp_buf));
+	if (!rz_bin_checksum_omf_ok(tmp_buf, sizeof(tmp_buf))) {
+		return OMF_FILE_TARGET_NOT_OMF;
 	}
-	if (!rz_bin_checksum_omf_ok(buf, length)) {
-		ret_type = OMF_FILE_TARGET_NOT_OMF;
-	}
-	RZ_FREE(buf);
 	return ret_type;
 }
 
