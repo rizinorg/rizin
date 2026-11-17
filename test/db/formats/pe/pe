@@ -1713,12 +1713,71 @@ RUN
 
 NAME=pe64 oleaut32 imports by ordinal
 FILE=bins/pe/oleaut32_ordinals.exe
-CMDS=ii~oleaut32
+CMDS=<<EOF
+ii~oleaut32
+s main
+af
+pdf
+EOF
 EXPECT=<<EOF
   9 0x140002040 NONE FUNC OLEAUT32.dll                      VariantClear
   2 0x140002048 NONE FUNC OLEAUT32.dll                      SysAllocString
   7 0x140002050 NONE FUNC OLEAUT32.dll                      SysStringLen
   6 0x140002058 NONE FUNC OLEAUT32.dll                      SysFreeString
   8 0x140002060 NONE FUNC OLEAUT32.dll                      VariantInit
+/ int main(int argc, char **argv, char **envp);
+|           ; var int64_t var_28h @ stack - 0x28
+|           ; var int64_t var_20h @ stack - 0x20
+|           ; var int64_t var_10h @ stack - 0x10
+|           0x140001070      push  rbx
+|           0x140001072      sub   rsp, 0x40
+|           0x140001076      mov   rax, qword [section..data]          ; [0x140003000:8]=0x2b992ddfa232 ; "2\xa2\xdf-\x99+"
+|           0x14000107d      xor   rax, rsp
+|           0x140001080      mov   qword [var_10h], rax
+|           0x140001085      lea   rcx, qword str.OLEAUT32_Analysis_Test ; 0x140002230 ; u"OLEAUT32 Analysis Test"
+|           0x14000108c      call  qword [sym.imp.OLEAUT32.dll_SysAllocString] ; [0x140002048:8]=0x8000000000000002 ; BSTR SysAllocString(OLECHAR *psz)
+|           0x140001092      mov   rbx, rax
+|           0x140001095      test  rax, rax
+|       ,=< 0x140001098      jnz   0x1400010be
+|       |   0x14000109a      lea   rcx, qword str.Memory_allocation_failed ; 0x140002260 ; "Memory allocation failed!\n"
+|       |   0x1400010a1      call  fcn.140001010
+|       |   0x1400010a6      mov   eax, 0x01
+|       |   0x1400010ab      mov   rcx, qword [var_10h]
+|       |   0x1400010b0      xor   rcx, rsp
+|       |   0x1400010b3      call  fcn.140001160
+|       |   0x1400010b8      add   rsp, 0x40
+|       |   0x1400010bc      pop   rbx
+|       |   0x1400010bd      ret
+|       `-> 0x1400010be      mov   rdx, rbx
+|           0x1400010c1      lea   rcx, qword str.BSTR_Content:__S     ; 0x140002280 ; "BSTR Content: %S\n"
+|           0x1400010c8      call  fcn.140001010
+|           0x1400010cd      mov   rcx, rbx
+|           0x1400010d0      call  qword [sym.imp.OLEAUT32.dll_SysStringLen] ; [0x140002050:8]=0x8000000000000007 ; UINT SysStringLen(BSTR pbstr)
+|           0x1400010d6      mov   edx, eax
+|           0x1400010d8      lea   rcx, qword str.BSTR_Length:__u_characters ; 0x140002298 ; "BSTR Length: %u characters\n"
+|           0x1400010df      call  fcn.140001010
+|           0x1400010e4      lea   rcx, qword [var_28h]
+|           0x1400010e9      call  qword [sym.imp.OLEAUT32.dll_VariantInit] ; [0x140002060:8]=0x8000000000000008 ; void VariantInit(unknown_t *pvarg)
+|           0x1400010ef      mov   eax, 0x08
+|           0x1400010f4      lea   rcx, qword str.Embedded_String      ; 0x1400022b8 ; u"Embedded String"
+|           0x1400010fb      mov   word [var_28h], ax
+|           0x140001100      call  qword [sym.imp.OLEAUT32.dll_SysAllocString] ; [0x140002048:8]=0x8000000000000002 ; BSTR SysAllocString(OLECHAR *psz)
+|           0x140001106      mov   rdx, rax
+|           0x140001109      mov   qword [var_20h], rax
+|           0x14000110e      lea   rcx, qword str.BSTR_inside_Variant:__S ; 0x1400022d8 ; "BSTR inside Variant: %S\n"
+|           0x140001115      call  fcn.140001010
+|           0x14000111a      lea   rcx, qword [var_28h]
+|           0x14000111f      call  qword [sym.imp.OLEAUT32.dll_VariantClear] ; [0x140002040:8]=0x8000000000000009 ; "\t" ; HRESULT VariantClear(unknown_t *pvarg)
+|           0x140001125      mov   rcx, rbx
+|           0x140001128      call  qword [sym.imp.OLEAUT32.dll_SysFreeString] ; [0x140002058:8]=0x8000000000000006 ; void SysFreeString(BSTR bstrString)
+|           0x14000112e      lea   rcx, qword str.Process_completed_successfully._Memory_has_been_released. ; 0x1400022f8 ; "\nProcess completed successfully. Memory has been released.\n"
+|           0x140001135      call  fcn.140001010
+|           0x14000113a      xor   eax, eax
+|           0x14000113c      mov   rcx, qword [var_10h]
+|           0x140001141      xor   rcx, rsp
+|           0x140001144      call  fcn.140001160
+|           0x140001149      add   rsp, 0x40
+|           0x14000114d      pop   rbx
+\           0x14000114e      ret
 EOF
 RUN
