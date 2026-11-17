@@ -303,10 +303,9 @@ IL_LIFTER(fbstp) {
 
 	ILPureEffectPair pop = x86_il_st_pop_with_val();
 
-	ILPureEffectPair val = x86_il_int_from_floating(pop.val, 64);
+	ILPureEffectPair val = x86_il_int_and_sign_from_floating(pop.val, 64, "sgn");
 	RzILOpEffect *val_init = SEQ2(val.eff, SETL("val", val.val));
-	RzILOpEffect *sgn_init = SETL("sgn", MSB(VARL("val")));
-	RzILOpEffect *val_abs = SETL("val", ITE(VARL("sgn"), NEG(VARL("val")), VARL("val")));
+	RzILOpEffect *val_abs = SETL("val", ITE(MSB(VARL("val")), NEG(VARL("val")), VARL("val")));
 
 	RzILOpEffect *mem_init = SETL("mem", x86_il_get_memaddr(ins->operands[0].mem));
 	RzILOpEffect *i_init = SETL("i", UN(mem_size, 0));
@@ -325,21 +324,26 @@ IL_LIFTER(fbstp) {
 			));
 
 	RzILOpEffect *update_mem = SETL("mem", DUP(byte_mem));
-	RzILOpEffect *store_sign = BRANCH(VARL("sgn"), STOREW(VARL("mem"), UN(8, 0xff)), STOREW(VARL("mem"), UN(8, 0)));
+	RzILOpEffect *store_sign = BRANCH(
+		VARL("sgn"), STOREW(VARL("mem"), UN(8, 0x80)), STOREW(VARL("mem"), UN(8, 0)));
 
-	RzILOpEffect *noexcept_case = SEQ5(
-		mem_init, i_init, // init loop vars
+	RzILOpEffect *noexcept_case = SEQ4(
+		i_init, // init loop vars
 		bcd_encode_loop, // convert val to bcd
 		update_mem, store_sign // update mem pointer and store the saved sign in the bcd
 	);
+	// Packed BCD indefinite: 00 00 00 00 00 00 00 c0 ff ff (little-endian).
+	RzILOpEffect *indefinite_case = SEQ2(
+		STOREW(VARL("mem"), UN(64, 0xc000000000000000ULL)),
+		STOREW(ADD(VARL("mem"), UN(mem_size, 8)), UN(16, 0xffff)));
 	RzILOpEffect *maybe_except = BRANCH(
-		SGE(VARL("val"), UN(64, 1e18)), // |val| >= 1e18
-		GOTO("int"), // throw exception if val can't fit in 18-digit BCD
+		UGE(VARL("val"), UN(64, 1000000000000000000ULL)), // |val| >= 1e18
+		indefinite_case,
 		noexcept_case);
 
 	return SEQ5(
 		val_init, pop.eff, // get val from ST(0) and pop
-		sgn_init, val_abs, // val = |val| and store sign
+		val_abs, mem_init, // val = |val| and resolve destination address
 		maybe_except);
 }
 
@@ -668,11 +672,9 @@ IL_LIFTER(ftst) {
  * Round ST(0) to an integer
  */
 IL_LIFTER(frndint) {
-	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), 64);
-	ILPureEffectPair float_from_int = x86_il_floating_from_int(int_from_float.val, RZ_FLOAT_IEEE754_BIN_80);
-
-	/* Not very sure about whether the rounded integer should be limited to 64 bits or not. */
-	return SEQ3(int_from_float.eff, float_from_int.eff, x86_il_set_st_reg(X86_REG_ST0, float_from_int.val, RZ_FLOAT_IEEE754_BIN_80));
+	ILPureEffectPair rounded = x86_il_round_floating(x86_il_get_st_reg(X86_REG_ST0));
+	return SEQ2(rounded.eff,
+		x86_il_set_st_reg(X86_REG_ST0, rounded.val, RZ_FLOAT_IEEE754_BIN_80));
 }
 
 /**
@@ -697,8 +699,11 @@ IL_LIFTER(fnop) {
  * Round ST(0) to an integer (using RZ_FLOAT_RMODE_RTZ), store the integer in the memory operand and pop the stack
  */
 IL_LIFTER(fisttp) {
-	ILPureEffectPair int_from_float = x86_il_int_from_floating(x86_il_get_st_reg(X86_REG_ST0), ins->operands[0].size * BITS_PER_BYTE);
-	return SEQ3(int_from_float.eff, x86_il_set_op(0, int_from_float.val), x86_il_st_pop());
+	ILPureEffectPair pop = x86_il_st_pop_with_val();
+	ILPureEffectPair int_from_float = x86_il_int_from_floating_rmode(
+		RZ_FLOAT_IEEE754_BIN_80, ins->operands[0].size * BITS_PER_BYTE,
+		RZ_FLOAT_RMODE_RTZ, pop.val);
+	return SEQ3(int_from_float.eff, x86_il_set_op(0, int_from_float.val), pop.eff);
 }
 
 #include <rz_il/rz_il_opbuilder_end.h>
