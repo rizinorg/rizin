@@ -31,7 +31,6 @@ if get_option('enable_tests')
     'big',
     'bin_lines',
     'bin_mach0',
-    'bin_pe',
     'bitvector',
     'bits',
     'marks',
