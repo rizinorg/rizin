@@ -332,7 +332,8 @@ bool test_rz_regex_match_all_native_utf16(void) {
 
 	rz_pvector_free(matches);
 
-	rz_regex_free(re);
+	rz_regex_free_16(re);
+	free(utf16_he);
 	mu_end;
 }
 
@@ -395,7 +396,592 @@ bool test_rz_regex_match_all_native_utf32(void) {
 
 	rz_pvector_free(matches);
 
+	rz_regex_free_32(re);
+	free(utf32_he);
+	mu_end;
+}
+
+bool test_rz_regex_match_iter_utf8_groups(void) {
+	const char *text = "TextTextText";
+	RzRegex *re = rz_regex_new("(Te(x)t)", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re, "regex new");
+
+	static const struct {
+		RzRegexSize match_idx;
+		RzRegexSize group_idx;
+		RzRegexSize start;
+		RzRegexSize len;
+	} expected[9] = {
+		{ 0, 0, 0, 4 },
+		{ 0, 1, 0, 4 },
+		{ 0, 2, 2, 1 },
+		{ 1, 0, 4, 4 },
+		{ 1, 1, 4, 4 },
+		{ 1, 2, 6, 1 },
+		{ 2, 0, 8, 4 },
+		{ 2, 1, 8, 4 },
+		{ 2, 2, 10, 1 },
+	};
+
+	RzIterator it;
+	mu_assert_true(rz_regex_match_iter(re, text, RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter init");
+
+	size_t idx = 0;
+	RzRegexMatch *m;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_true(idx < RZ_ARRAY_SIZE(expected), "too many iter matches");
+		mu_assert_eq(m->match_idx, expected[idx].match_idx, "iter match_idx");
+		mu_assert_eq(m->group_idx, expected[idx].group_idx, "iter group_idx");
+		mu_assert_eq(m->start, expected[idx].start, "iter start");
+		mu_assert_eq(m->len, expected[idx].len, "iter len");
+		idx++;
+	}
+	mu_assert_eq(idx, RZ_ARRAY_SIZE(expected), "iter count");
+	rz_iterator_fini(&it);
+
+	RzPVector *all = rz_regex_match_all(re, text, RZ_REGEX_ZERO_TERMINATED, 0,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(all, "match_all");
+	mu_assert_eq(rz_pvector_len(all), 3, "match_all outer len");
+	idx = 0;
+	void **outer_it;
+	rz_pvector_foreach (all, outer_it) {
+		RzPVector *groups = *outer_it;
+		mu_assert_eq(rz_pvector_len(groups), 3, "match_all group len");
+		void **inner_it;
+		rz_pvector_foreach (groups, inner_it) {
+			RzRegexMatch *gm = *inner_it;
+			mu_assert_eq(gm->match_idx, expected[idx].match_idx, "match_all match_idx");
+			mu_assert_eq(gm->group_idx, expected[idx].group_idx, "match_all group_idx");
+			mu_assert_eq(gm->start, expected[idx].start, "match_all start");
+			mu_assert_eq(gm->len, expected[idx].len, "match_all len");
+			idx++;
+		}
+	}
+	rz_pvector_free(all);
+
+	RzPVector *first = rz_regex_match_first(re, text, RZ_REGEX_ZERO_TERMINATED, 0,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(first, "match_first");
+	mu_assert_eq(((RzRegexMatch *)rz_pvector_at(first, 0))->match_idx, 0, "first match_idx");
+	RzRegexMatch *g2 = rz_pvector_at(first, 2);
+	mu_assert_eq(g2->match_idx, 0, "first group match_idx");
+	rz_pvector_free(first);
+
 	rz_regex_free(re);
+	mu_end;
+}
+
+bool test_rz_regex_match_iter_overlap_utf8(void) {
+	RzRegex *re_aa = rz_regex_new("aa", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_aa, "regex aa");
+
+	RzIterator it;
+	mu_assert_true(rz_regex_match_iter_overlap(re_aa, "aaaa", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter overlap aa");
+	size_t count = 0;
+	RzRegexMatch *m;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "overlap match_idx");
+		mu_assert_eq(m->group_idx, 0, "overlap group_idx");
+		mu_assert_eq(m->start, count, "overlap start");
+		mu_assert_eq(m->len, 2, "overlap len");
+		count++;
+	}
+	mu_assert_eq(count, 3, "overlap aa count");
+	rz_iterator_fini(&it);
+	rz_regex_free(re_aa);
+
+	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
+	RzRegex *re_u8 = rz_regex_new("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_u8, "regex utf8");
+	mu_assert_true(rz_regex_match_iter_overlap(re_u8, utf8, RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter overlap utf8");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "utf8 overlap match_idx");
+		count++;
+	}
+	mu_assert_eq(count, 4, "utf8 overlap count");
+	rz_iterator_fini(&it);
+	rz_regex_free(re_u8);
+	mu_end;
+}
+
+bool test_rz_regex_match_iter_utf16_and_utf32(void) {
+	const char *utf8 = "A salat with 🍇🍉🍍 Extra 🍍🍍🍍现代汉语常用字表 please.";
+	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_notnull(utf16_he, "utf16 conv");
+	size_t u16_units = 0;
+	while (utf16_he[u16_units]) {
+		u16_units++;
+	}
+
+	RzRegex16 *re16 = rz_regex_new_16("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re16, "regex16");
+	RzIterator it;
+	mu_assert_true(rz_regex_match_iter_16(re16, utf16_he, u16_units, 0, RZ_REGEX_DEFAULT, &it),
+		"iter16 init");
+	RzRegexMatch *m;
+	size_t count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "iter16 match_idx");
+		mu_assert_eq(m->group_idx, 0, "iter16 group_idx");
+		if (count == 0) {
+			mu_assert_eq(m->start, 17, "iter16 match 0 start");
+			mu_assert_eq(m->len, 4, "iter16 match 0 len");
+		} else if (count == 1) {
+			mu_assert_eq(m->start, 26, "iter16 match 1 start");
+			mu_assert_eq(m->len, 6, "iter16 match 1 len");
+		}
+		count++;
+	}
+	mu_assert_eq(count, 2, "iter16 count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_overlap_16(re16, utf16_he, RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter16 overlap init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "iter16 overlap match_idx");
+		count++;
+	}
+	mu_assert_eq(count, 4, "iter16 overlap count");
+	rz_iterator_fini(&it);
+	rz_regex_free_16(re16);
+	free(utf16_he);
+
+	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_notnull(utf32_he, "utf32 conv");
+	size_t u32_units = 0;
+	while (utf32_he[u32_units]) {
+		u32_units++;
+	}
+
+	RzRegex32 *re32 = rz_regex_new_32("🍍..", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re32, "regex32");
+	mu_assert_true(rz_regex_match_iter_32(re32, utf32_he, u32_units, 0, RZ_REGEX_DEFAULT, &it),
+		"iter32 init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "iter32 match_idx");
+		if (count == 0) {
+			mu_assert_eq(m->start, 15, "iter32 match 0 start");
+			mu_assert_eq(m->len, 3, "iter32 match 0 len");
+		} else if (count == 1) {
+			mu_assert_eq(m->start, 23, "iter32 match 1 start");
+			mu_assert_eq(m->len, 3, "iter32 match 1 len");
+		}
+		count++;
+	}
+	mu_assert_eq(count, 2, "iter32 count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_overlap_32(re32, utf32_he, RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter32 overlap init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "iter32 overlap match_idx");
+		count++;
+	}
+	mu_assert_eq(count, 4, "iter32 overlap count");
+	rz_iterator_fini(&it);
+	rz_regex_free_32(re32);
+	free(utf32_he);
+	mu_end;
+}
+
+bool test_rz_regex_match_iter_multi(void) {
+	const char *utf8 = "🍍🍍🍍ab";
+	size_t u8_bytes = strlen(utf8);
+	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_notnull(utf16_he, "utf16 multi");
+	mu_assert_notnull(utf32_he, "utf32 multi");
+
+	size_t u16_units = 0;
+	while (utf16_he[u16_units]) {
+		u16_units++;
+	}
+	size_t u32_units = 0;
+	while (utf32_he[u32_units]) {
+		u32_units++;
+	}
+
+	RzRegexMulti *re8 = rz_regex_new_multi("🍍..", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF8);
+	RzRegexMulti *re16 = rz_regex_new_multi("🍍..", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF16);
+	RzRegexMulti *re32 = rz_regex_new_multi("🍍..", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF32);
+	mu_assert_notnull(re8, "re8 multi");
+	mu_assert_notnull(re16, "re16 multi");
+	mu_assert_notnull(re32, "re32 multi");
+
+	RzIterator it;
+	RzRegexMatch *m;
+	size_t count = 0;
+
+	mu_assert_true(rz_regex_match_iter_multi(re8, (const ut8 *)utf8, u8_bytes, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"multi utf8");
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf8 match_idx");
+		mu_assert_eq(m->start, 0, "multi utf8 start");
+		mu_assert_eq(m->len, 12, "multi utf8 len");
+		count++;
+	}
+	mu_assert_eq(count, 1, "multi utf8 non-overlap count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_overlap_multi(re8, (const ut8 *)utf8,
+			       RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT, &it),
+		"multi utf8 overlap");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf8 overlap idx");
+		count++;
+	}
+	mu_assert_eq(count, 3, "multi utf8 overlap count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_overlap_multi(re16, (const ut8 *)utf16_he,
+			       u16_units * RZ_UTF16_CODE_POINT_WIDTH, 0, RZ_REGEX_DEFAULT, &it),
+		"multi utf16 overlap");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf16 overlap idx");
+		count++;
+	}
+	mu_assert_eq(count, 3, "multi utf16 overlap count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_multi(re16, (const ut8 *)utf16_he,
+			       RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT, &it),
+		"multi utf16 zero-terminated");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf16 zt idx");
+		mu_assert_eq(m->start, 0, "multi utf16 zt start");
+		mu_assert_eq(m->len, 6, "multi utf16 zt len");
+		count++;
+	}
+	mu_assert_eq(count, 1, "multi utf16 zt count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_multi(re32, (const ut8 *)utf32_he,
+			       u32_units * RZ_UTF32_CODE_POINT_WIDTH,
+			       RZ_UTF32_CODE_POINT_WIDTH, RZ_REGEX_DEFAULT, &it),
+		"multi utf32 with offset");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf32 idx");
+		mu_assert_eq(m->start, 1, "multi utf32 offset start");
+		mu_assert_eq(m->len, 3, "multi utf32 len");
+		count++;
+	}
+	mu_assert_eq(count, 1, "multi utf32 count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter_overlap_multi(re32, (const ut8 *)utf32_he,
+			       RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT, &it),
+		"multi utf32 zero-terminated overlap");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, count, "multi utf32 zt overlap idx");
+		mu_assert_eq(m->start, count, "multi utf32 zt overlap start");
+		mu_assert_eq(m->len, 3, "multi utf32 zt overlap len");
+		count++;
+	}
+	mu_assert_eq(count, 3, "multi utf32 zt overlap count");
+	rz_iterator_fini(&it);
+
+	rz_regex_free_multi(re8);
+	rz_regex_free_multi(re16);
+	rz_regex_free_multi(re32);
+	free(utf16_he);
+	free(utf32_he);
+	mu_end;
+}
+
+bool test_rz_regex_match_all_multi(void) {
+	const char *utf8 = "🍍🍍🍍ab";
+	size_t u8_bytes = strlen(utf8);
+	ut16 *utf16_he = rz_str_utf8_to_utf16(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	ut32 *utf32_he = rz_str_utf8_to_utf32(utf8, RZ_HOST_IS_BIG_ENDIAN);
+	mu_assert_notnull(utf16_he, "utf16 all_multi");
+	mu_assert_notnull(utf32_he, "utf32 all_multi");
+
+	size_t u16_units = 0;
+	while (utf16_he[u16_units]) {
+		u16_units++;
+	}
+	size_t u32_units = 0;
+	while (utf32_he[u32_units]) {
+		u32_units++;
+	}
+
+	RzRegexMulti *re8 = rz_regex_new_multi("🍍(..)", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF8);
+	RzRegexMulti *re16 = rz_regex_new_multi("🍍(..)", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF16);
+	RzRegexMulti *re32 = rz_regex_new_multi("🍍(..)", RZ_REGEX_EXTENDED, RZ_REGEX_DEFAULT,
+		RZ_REGEX_UTF32);
+	mu_assert_notnull(re8, "re8 all_multi");
+	mu_assert_notnull(re16, "re16 all_multi");
+	mu_assert_notnull(re32, "re32 all_multi");
+
+	// Non-overlapping UTF-8 (explicit byte size)
+	RzPVector *matches = rz_regex_match_all_multi(re8, (const ut8 *)utf8, u8_bytes, 0,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_multi utf8");
+	mu_assert_eq(rz_pvector_len(matches), 1, "all_multi utf8 count");
+	RzPVector *groups = rz_pvector_at(matches, 0);
+	mu_assert_eq(rz_pvector_len(groups), 2, "all_multi utf8 groups");
+	RzRegexMatch *m = rz_pvector_at(groups, 0);
+	mu_assert_eq(m->match_idx, 0, "all_multi utf8 m0 match_idx");
+	mu_assert_eq(m->group_idx, 0, "all_multi utf8 m0 group_idx");
+	mu_assert_eq(m->start, 0, "all_multi utf8 m0 start");
+	mu_assert_eq(m->len, 12, "all_multi utf8 m0 len");
+	m = rz_pvector_at(groups, 1);
+	mu_assert_eq(m->group_idx, 1, "all_multi utf8 g1 group_idx");
+	mu_assert_eq(m->start, 4, "all_multi utf8 g1 start");
+	mu_assert_eq(m->len, 8, "all_multi utf8 g1 len");
+	rz_pvector_free(matches);
+
+	// Overlapping UTF-8 (RZ_REGEX_ZERO_TERMINATED)
+	matches = rz_regex_match_all_overlap_multi(re8, (const ut8 *)utf8,
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_overlap_multi utf8");
+	mu_assert_eq(rz_pvector_len(matches), 3, "all_overlap_multi utf8 count");
+	m = rz_pvector_at(rz_pvector_at(matches, 2), 0);
+	mu_assert_eq(m->match_idx, 2, "all_overlap_multi utf8 m2 idx");
+	mu_assert_eq(m->start, 8, "all_overlap_multi utf8 m2 start");
+	mu_assert_eq(m->len, 6, "all_overlap_multi utf8 m2 len");
+	rz_pvector_free(matches);
+
+	// Non-overlapping UTF-16 (explicit byte size + byte offset) and RZ_REGEX_ZERO_TERMINATED
+	matches = rz_regex_match_all_multi(re16, (const ut8 *)utf16_he,
+		u16_units * RZ_UTF16_CODE_POINT_WIDTH, 2 * RZ_UTF16_CODE_POINT_WIDTH,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_multi utf16 offset");
+	mu_assert_eq(rz_pvector_len(matches), 1, "all_multi utf16 offset count");
+	m = rz_pvector_at(rz_pvector_at(matches, 0), 0);
+	mu_assert_eq(m->start, 2, "all_multi utf16 offset start");
+	mu_assert_eq(m->len, 5, "all_multi utf16 offset len");
+	rz_pvector_free(matches);
+
+	matches = rz_regex_match_all_multi(re16, (const ut8 *)utf16_he,
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_multi utf16 zt");
+	mu_assert_eq(rz_pvector_len(matches), 1, "all_multi utf16 zt count");
+	m = rz_pvector_at(rz_pvector_at(matches, 0), 0);
+	mu_assert_eq(m->start, 0, "all_multi utf16 zt start");
+	mu_assert_eq(m->len, 6, "all_multi utf16 zt len");
+	rz_pvector_free(matches);
+
+	// Overlapping UTF-16 (RZ_REGEX_ZERO_TERMINATED)
+	matches = rz_regex_match_all_overlap_multi(re16, (const ut8 *)utf16_he,
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_overlap_multi utf16 zt");
+	mu_assert_eq(rz_pvector_len(matches), 3, "all_overlap_multi utf16 zt count");
+	m = rz_pvector_at(rz_pvector_at(matches, 1), 0);
+	mu_assert_eq(m->match_idx, 1, "all_overlap_multi utf16 m1 idx");
+	mu_assert_eq(m->start, 2, "all_overlap_multi utf16 m1 start");
+	mu_assert_eq(m->len, 5, "all_overlap_multi utf16 m1 len");
+	rz_pvector_free(matches);
+
+	// Non-overlapping UTF-32 (explicit byte size + byte offset) and RZ_REGEX_ZERO_TERMINATED
+	matches = rz_regex_match_all_multi(re32, (const ut8 *)utf32_he,
+		u32_units * RZ_UTF32_CODE_POINT_WIDTH, RZ_UTF32_CODE_POINT_WIDTH,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_multi utf32 offset");
+	mu_assert_eq(rz_pvector_len(matches), 1, "all_multi utf32 offset count");
+	m = rz_pvector_at(rz_pvector_at(matches, 0), 0);
+	mu_assert_eq(m->start, 1, "all_multi utf32 offset start");
+	mu_assert_eq(m->len, 3, "all_multi utf32 offset len");
+	rz_pvector_free(matches);
+
+	matches = rz_regex_match_all_multi(re32, (const ut8 *)utf32_he,
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_multi utf32 zt");
+	mu_assert_eq(rz_pvector_len(matches), 1, "all_multi utf32 zt count");
+	m = rz_pvector_at(rz_pvector_at(matches, 0), 0);
+	mu_assert_eq(m->start, 0, "all_multi utf32 zt start");
+	mu_assert_eq(m->len, 3, "all_multi utf32 zt len");
+	rz_pvector_free(matches);
+
+	// Overlapping UTF-32 (RZ_REGEX_ZERO_TERMINATED)
+	matches = rz_regex_match_all_overlap_multi(re32, (const ut8 *)utf32_he,
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(matches, "all_overlap_multi utf32 zt");
+	mu_assert_eq(rz_pvector_len(matches), 3, "all_overlap_multi utf32 zt count");
+	m = rz_pvector_at(rz_pvector_at(matches, 2), 0);
+	mu_assert_eq(m->match_idx, 2, "all_overlap_multi utf32 m2 idx");
+	mu_assert_eq(m->start, 2, "all_overlap_multi utf32 m2 start");
+	mu_assert_eq(m->len, 3, "all_overlap_multi utf32 m2 len");
+	rz_pvector_free(matches);
+
+	rz_regex_free_multi(re8);
+	rz_regex_free_multi(re16);
+	rz_regex_free_multi(re32);
+	free(utf16_he);
+	free(utf32_he);
+	mu_end;
+}
+
+bool test_rz_regex_match_iter_zero_len_and_edge_cases(void) {
+	// Zero-length pattern "a*" must terminate cleanly on "ab", "", and "b".
+	RzRegex *re_astar = rz_regex_new("a*", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_astar, "regex a*");
+
+	RzIterator it;
+	mu_assert_true(rz_regex_match_iter(re_astar, "ab", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter a* ab");
+	RzRegexMatch *m;
+	size_t count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->start, 0, "a* start");
+		mu_assert_eq(m->len, 1, "a* len");
+		count++;
+	}
+	mu_assert_eq(count, 1, "a* on ab count");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter(re_astar, "", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter a* empty");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		count++;
+	}
+	mu_assert_eq(count, 0, "a* on empty count");
+	rz_iterator_fini(&it);
+
+	RzPVector *all_empty = rz_regex_match_all_not_grouped(re_astar, "ab",
+		RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(all_empty, "not_grouped a*");
+	mu_assert_eq(rz_pvector_len(all_empty), 1, "not_grouped a* on ab count");
+	rz_pvector_free(all_empty);
+	rz_regex_free(re_astar);
+
+	// Zero-length recheck hitting a non-empty alternative ("a*|b" on "ab").
+	RzRegex *re_alt = rz_regex_new("a*|b", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_alt, "regex a*|b");
+	RzPVector *all_alt = rz_regex_match_all(re_alt, "ab", RZ_REGEX_ZERO_TERMINATED, 0,
+		RZ_REGEX_DEFAULT);
+	mu_assert_notnull(all_alt, "match_all a*|b");
+	mu_assert_eq(rz_pvector_len(all_alt), 2, "match_all a*|b count");
+	RzRegexMatch *m0 = rz_pvector_at(rz_pvector_at(all_alt, 0), 0);
+	RzRegexMatch *m1 = rz_pvector_at(rz_pvector_at(all_alt, 1), 0);
+	mu_assert_eq(m0->start, 0, "a*|b m0 start");
+	mu_assert_eq(m0->len, 1, "a*|b m0 len");
+	mu_assert_eq(m1->match_idx, 1, "a*|b m1 match_idx");
+	mu_assert_eq(m1->start, 1, "a*|b m1 start");
+	mu_assert_eq(m1->len, 1, "a*|b m1 len");
+	rz_pvector_free(all_alt);
+	rz_regex_free(re_alt);
+
+	// UTF-16 & UTF-32 zero-len recheck regression test (was double-free/leak).
+	ut16 u16_ab[] = { 'a', 'b', 0 };
+	RzRegex16 *re16_alt = rz_regex_new_16("a*|b", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re16_alt, "regex16 a*|b");
+	RzPVector *all16 = rz_regex_match_all_16(re16_alt, u16_ab, 2, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(all16, "all16 a*|b");
+	mu_assert_eq(rz_pvector_len(all16), 2, "all16 a*|b count");
+	rz_pvector_free(all16);
+	rz_regex_free_16(re16_alt);
+
+	ut32 u32_ab[] = { 'a', 'b', 0 };
+	RzRegex32 *re32_alt = rz_regex_new_32("a*|b", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re32_alt, "regex32 a*|b");
+	RzPVector *all32 = rz_regex_match_all_32(re32_alt, u32_ab, 2, 0, RZ_REGEX_DEFAULT);
+	mu_assert_notnull(all32, "all32 a*|b");
+	mu_assert_eq(rz_pvector_len(all32), 2, "all32 a*|b count");
+	rz_pvector_free(all32);
+	rz_regex_free_32(re32_alt);
+
+	// \K producing a zero-length match during recheck must not be yielded inconsistently.
+	RzRegex *re_bsk = rz_regex_new("a\\K", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_bsk, "regex a\\K");
+	mu_assert_true(rz_regex_match_iter(re_bsk, "aaa", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter a\\K init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		count++;
+	}
+	mu_assert_eq(count, 0, "a\\K on aaa yields no zero-len matches");
+	rz_iterator_fini(&it);
+	rz_regex_free(re_bsk);
+
+	RzRegex *re_bsk_alt = rz_regex_new("aa\\K|ab", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_bsk_alt, "regex aa\\K|ab");
+	mu_assert_true(rz_regex_match_iter(re_bsk_alt, "aaaab", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter aa\\K|ab init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->start, 3, "aa\\K|ab start");
+		mu_assert_eq(m->len, 2, "aa\\K|ab len");
+		count++;
+	}
+	mu_assert_eq(count, 1, "aa\\K|ab count");
+	rz_iterator_fini(&it);
+	rz_regex_free(re_bsk_alt);
+
+	// Optional unmatched capturing group: "(a)(b)?(c)" on "ac".
+	RzRegex *re_opt = rz_regex_new("(a)(b)?(c)", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_notnull(re_opt, "regex optional group");
+	mu_assert_true(rz_regex_match_iter(re_opt, "ac", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"iter opt init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		mu_assert_eq(m->match_idx, 0, "opt match_idx");
+		mu_assert_eq(m->group_idx, count, "opt group_idx");
+		if (count == 2) {
+			mu_assert_eq(m->start, RZ_REGEX_UNSET, "unmatched group unset");
+			mu_assert_eq(m->len, 0, "unmatched group len 0");
+		}
+		count++;
+	}
+	mu_assert_eq(count, 4, "opt group count");
+	rz_iterator_fini(&it);
+	rz_regex_free(re_opt);
+
+	// Early loop break + no-match + past-end offset.
+	RzRegex *re_txt = rz_regex_new("(Te(x)t)", RZ_REGEX_EXTENDED, 0, NULL);
+	mu_assert_true(rz_regex_match_iter(re_txt, "TextTextText", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"early break init");
+	count = 0;
+	rz_iterator_foreach(&it, m) {
+		count++;
+		break;
+	}
+	mu_assert_eq(count, 1, "early break yielded 1");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter(re_txt, "nomatch", RZ_REGEX_ZERO_TERMINATED, 0,
+			       RZ_REGEX_DEFAULT, &it),
+		"no match init");
+	mu_assert_null(rz_iterator_next(&it), "no match yields NULL");
+	rz_iterator_fini(&it);
+
+	mu_assert_true(rz_regex_match_iter(re_txt, "Text", 4, 10, RZ_REGEX_DEFAULT, &it),
+		"offset past end init");
+	mu_assert_null(rz_iterator_next(&it), "offset past end yields NULL");
+	rz_iterator_fini(&it);
+
+	rz_regex_free(re_txt);
 	mu_end;
 }
 
@@ -411,4 +997,11 @@ int main() {
 	mu_run_test(test_rz_regex_match_all_native_utf8);
 	mu_run_test(test_rz_regex_match_all_native_utf16);
 	mu_run_test(test_rz_regex_match_all_native_utf32);
+	mu_run_test(test_rz_regex_match_iter_utf8_groups);
+	mu_run_test(test_rz_regex_match_iter_overlap_utf8);
+	mu_run_test(test_rz_regex_match_iter_utf16_and_utf32);
+	mu_run_test(test_rz_regex_match_iter_multi);
+	mu_run_test(test_rz_regex_match_all_multi);
+	mu_run_test(test_rz_regex_match_iter_zero_len_and_edge_cases);
+	return tests_passed != tests_run;
 }

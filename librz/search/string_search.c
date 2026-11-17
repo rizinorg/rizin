@@ -82,24 +82,23 @@ static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut
 
 	ut64 size;
 	const ut8 *raw_buf = rz_buf_get_whole_hot_paths((RzBuffer *)buffer, &size);
-	RzPVector *matches = NULL;
+	RzIterator match_it;
+	bool ok = false;
 
 	if (fopt->match_overlap) {
-		matches = rz_regex_match_all_overlap_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+		ok = rz_regex_match_iter_overlap_multi(find->regex, raw_buf, size, 0,
+			RZ_REGEX_DEFAULT, &match_it);
 	} else {
-		matches = rz_regex_match_all_multi(find->regex, raw_buf, size, 0, RZ_REGEX_DEFAULT);
+		ok = rz_regex_match_iter_multi(find->regex, raw_buf, size, 0,
+			RZ_REGEX_DEFAULT, &match_it);
 	}
-	if (!matches) {
+	if (!ok) {
 		return false;
 	}
-	void **it;
-	rz_pvector_foreach (matches, it) {
-		RzPVector *match = *it;
-		RzRegexMatch *group0 = rz_pvector_at(match, 0);
-		if (!group0) {
-			RZ_LOG_ERROR("search: Failed to get group of match.\n");
-			rz_pvector_free(matches);
-			return false;
+	RzRegexMatch *group0;
+	rz_iterator_foreach(&match_it, group0) {
+		if (group0->group_idx != 0) {
+			continue;
 		}
 		ut64 str_mem_len = group0->len * rz_string_enc_code_point_width(find->encoding);
 		ut64 str_mem_offset = group0->start * rz_string_enc_code_point_width(find->encoding);
@@ -113,12 +112,12 @@ static bool native_string_find(RzSearchFindOpt *fopt, RzDetectedString *find, ut
 		RzSearchHit *hit = rz_search_hit_new(hit_type, str_mem_offset + offset, str_mem_len, char_len);
 		if (!hit || !rz_th_queue_push(hits, hit, true)) {
 			rz_search_hit_free(hit);
-			rz_pvector_free(matches);
+			rz_iterator_fini(&match_it);
 			return false;
 		}
 		(*n_hits)++;
 	}
-	rz_pvector_free(matches);
+	rz_iterator_fini(&match_it);
 	return true;
 }
 
@@ -280,21 +279,23 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 
 		*n_hits = 0;
 		rz_list_foreach (found, it_s, detected) {
-			RzPVector *matches = NULL;
+			RzIterator match_it;
+			bool ok = false;
 			if (fopt->match_overlap) {
-				matches = rz_regex_match_all_overlap(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+				ok = rz_regex_match_iter_overlap(find->regex->re8, detected->string,
+					RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT, &match_it);
 			} else {
-				matches = rz_regex_match_all(find->regex->re8, detected->string, RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT);
+				ok = rz_regex_match_iter(find->regex->re8, detected->string,
+					RZ_REGEX_ZERO_TERMINATED, 0, RZ_REGEX_DEFAULT, &match_it);
 			}
-			void **it;
-			rz_pvector_foreach (matches, it) {
-				RzPVector *match = *it;
-				RzRegexMatch *group0 = rz_pvector_at(match, 0);
-				if (!group0) {
-					RZ_LOG_ERROR("search: Failed to get group of match.\n");
-					rz_list_free(found);
-					rz_pvector_free(matches);
-					goto release_thread_id_ret_false;
+			if (!ok) {
+				rz_list_free(found);
+				goto release_thread_id_ret_false;
+			}
+			RzRegexMatch *group0;
+			rz_iterator_foreach(&match_it, group0) {
+				if (group0->group_idx != 0) {
+					continue;
 				}
 				ut64 str_mem_len;
 				ut64 str_mem_offset;
@@ -314,12 +315,12 @@ static bool string_find(RzSearchFindOpt *fopt, void *user, ut64 offset, const Rz
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
 					rz_list_free(found);
-					rz_pvector_free(matches);
+					rz_iterator_fini(&match_it);
 					goto release_thread_id_ret_false;
 				}
 				(*n_hits)++;
 			}
-			rz_pvector_free(matches);
+			rz_iterator_fini(&match_it);
 		}
 		rz_list_free(found);
 	}

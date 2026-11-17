@@ -740,11 +740,14 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_8(
 			// This happens for \K lookaround. We fail if used.
 			// See pcre2demo.c for details.
 			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			rz_pvector_free(matches);
+			matches = NULL;
 			goto fini;
 		}
 
 		// Offset and length of match
 		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->match_idx = 0;
 		match->start = ovector[2 * i];
 		match->len = ovector[2 * i + 1] - match->start;
 		match->group_idx = i;
@@ -820,11 +823,14 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_16(
 			// This happens for \K lookaround. We fail if used.
 			// See pcre2demo.c for details.
 			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			rz_pvector_free(matches);
+			matches = NULL;
 			goto fini;
 		}
 
 		// Offset and length of match
 		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->match_idx = 0;
 		match->start = ovector[2 * i];
 		match->len = ovector[2 * i + 1] - match->start;
 		match->group_idx = i;
@@ -900,11 +906,14 @@ static RZ_OWN RzPVector /*<RzRegexMatch *>*/ *match_first_32(
 			// This happens for \K lookaround. We fail if used.
 			// See pcre2demo.c for details.
 			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, is not implemented.\n");
+			rz_pvector_free(matches);
+			matches = NULL;
 			goto fini;
 		}
 
 		// Offset and length of match
 		RzRegexMatch *match = RZ_NEW0(RzRegexMatch);
+		match->match_idx = 0;
 		match->start = ovector[2 * i];
 		match->len = ovector[2 * i + 1] - match->start;
 		match->group_idx = i;
@@ -1006,6 +1015,391 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_first_32(
 		mflags, NULL);
 }
 
+typedef struct {
+	RzRegexType type;
+	const void *regex;
+	const void *text;
+	RzRegexSize text_len;
+	RzRegexSize text_offset;
+	RzRegexFlags mflags;
+	bool allow_overlap;
+	bool exhausted;
+	bool has_matched;
+	void *mdata;
+	void *mcontext;
+	PCRE2_SIZE *ovector;
+	RzRegexSize group_count;
+	RzRegexSize next_group;
+	RzRegexSize match_idx;
+	RzRegexMatch cur_match;
+} RzRegexMatchIterCtx;
+
+/**
+ * \brief Compute the length of \p text in native regex code units.
+ * \param type Native code-unit width (`RZ_REGEX_UTF8`, `RZ_REGEX_UTF16`, or `RZ_REGEX_UTF32`).
+ * \param text Pointer to the code-unit buffer.
+ * \param text_size Explicit code-unit count, or `RZ_REGEX_ZERO_TERMINATED`.
+ * \return Length of \p text in code units.
+ */
+static RzRegexSize regex_code_units_len(RzRegexType type, const void *text, RzRegexSize text_size) {
+	if (text_size != RZ_REGEX_ZERO_TERMINATED) {
+		return text_size;
+	}
+	switch (type) {
+	case RZ_REGEX_UTF8:
+		return (RzRegexSize)strlen((const char *)text);
+	case RZ_REGEX_UTF16: {
+		const ut16 *p = (const ut16 *)text;
+		RzRegexSize len = 0;
+		while (p[len]) {
+			len++;
+		}
+		return len;
+	}
+	case RZ_REGEX_UTF32: {
+		const ut32 *p = (const ut32 *)text;
+		RzRegexSize len = 0;
+		while (p[len]) {
+			len++;
+		}
+		return len;
+	}
+	}
+	rz_warn_if_reached();
+	return 0;
+}
+
+/**
+ * \brief Invoke width-appropriate `pcre2_match_*()` on the iterator context.
+ * \param ctx Active regex iterator state holding compiled pattern, text, and match buffers.
+ * \param offset Starting offset into \c ctx->text in code units.
+ * \param flags PCRE2 match option flags for this step.
+ * \return Positive ovector pair count on match, `PCRE2_ERROR_NOMATCH`, or another negative error.
+ */
+static RzRegexStatus regex_pcre2_match(RzRegexMatchIterCtx *ctx, RzRegexSize offset,
+	RzRegexFlags flags) {
+	switch (ctx->type) {
+	case RZ_REGEX_UTF8:
+		return pcre2_match_8(ctx->regex, (PCRE2_SPTR8)ctx->text, ctx->text_len, offset,
+			flags | PCRE2_NO_UTF_CHECK, ctx->mdata, ctx->mcontext);
+	case RZ_REGEX_UTF16:
+		return pcre2_match_16(ctx->regex, (PCRE2_SPTR16)ctx->text, ctx->text_len, offset,
+			flags | PCRE2_NO_UTF_CHECK, ctx->mdata, ctx->mcontext);
+	case RZ_REGEX_UTF32:
+		return pcre2_match_32(ctx->regex, (PCRE2_SPTR32)ctx->text, ctx->text_len, offset,
+			flags | PCRE2_NO_UTF_CHECK, ctx->mdata, ctx->mcontext);
+	}
+	rz_warn_if_reached();
+	return PCRE2_ERROR_NOMATCH;
+}
+
+static PCRE2_SIZE *regex_pcre2_ovector(const RzRegexMatchIterCtx *ctx) {
+	switch (ctx->type) {
+	case RZ_REGEX_UTF8:
+		return pcre2_get_ovector_pointer_8(ctx->mdata);
+	case RZ_REGEX_UTF16:
+		return pcre2_get_ovector_pointer_16(ctx->mdata);
+	case RZ_REGEX_UTF32:
+		return pcre2_get_ovector_pointer_32(ctx->mdata);
+	}
+	rz_warn_if_reached();
+	return NULL;
+}
+
+/**
+ * \brief Release PCRE2 match buffers and heap state owned by a regex iterator.
+ * \param ctx Iterator context allocated by `regex_match_iter_init()`, or NULL.
+ */
+static void regex_match_iter_free(RzRegexMatchIterCtx *ctx) {
+	if (!ctx) {
+		return;
+	}
+	switch (ctx->type) {
+	case RZ_REGEX_UTF8:
+		pcre2_match_data_free_8(ctx->mdata);
+		pcre2_match_context_free_8(ctx->mcontext);
+		break;
+	case RZ_REGEX_UTF16:
+		pcre2_match_data_free_16(ctx->mdata);
+		pcre2_match_context_free_16(ctx->mcontext);
+		break;
+	case RZ_REGEX_UTF32:
+		pcre2_match_data_free_32(ctx->mdata);
+		pcre2_match_context_free_32(ctx->mcontext);
+		break;
+	}
+	free(ctx);
+}
+
+/**
+ * \brief Advance the iterator to the next PCRE2 match and populate its capture-group slice.
+ * \param ctx Active regex iterator state.
+ * \return true if another match was found, false when exhausted or on fatal error.
+ */
+static bool regex_match_iter_advance(RzRegexMatchIterCtx *ctx) {
+	while (ctx->text_offset <= ctx->text_len) {
+		RzRegexStatus rc = regex_pcre2_match(ctx, ctx->text_offset, ctx->mflags);
+		if (rc == PCRE2_ERROR_NOMATCH) {
+			return false;
+		}
+		if (rc < 0) {
+			PCRE2_UCHAR8 buffer[256];
+			pcre2_get_error_message_8(rc, buffer, sizeof(buffer));
+			RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
+			return false;
+		}
+		if (rc == 0) {
+			return false;
+		}
+
+		PCRE2_SIZE *ovector = regex_pcre2_ovector(ctx);
+		PCRE2_SIZE mstart = ovector[0];
+		PCRE2_SIZE mend = ovector[1];
+		if (mstart > mend) {
+			RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the "
+				     "end, is not implemented.\n");
+			return false;
+		}
+		if (mend == mstart) {
+			PCRE2_SIZE prev_mstart = mstart;
+			RzRegexStatus recheck_rc = regex_pcre2_match(ctx, prev_mstart,
+				ctx->mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED);
+			if (recheck_rc == PCRE2_ERROR_NOMATCH) {
+				ctx->text_offset = prev_mstart + 1;
+				continue;
+			}
+			if (recheck_rc < 0) {
+				PCRE2_UCHAR8 buffer[256];
+				pcre2_get_error_message_8(recheck_rc, buffer, sizeof(buffer));
+				RZ_LOG_WARN("Regex matching failed: %s\n", buffer);
+				return false;
+			}
+			if (recheck_rc == 0) {
+				return false;
+			}
+			rc = recheck_rc;
+			mstart = ovector[0];
+			mend = ovector[1];
+			if (mstart > mend) {
+				RZ_LOG_ERROR("Usage of \\K to set start of the pattern later "
+					     "than the end, is not implemented.\n");
+				return false;
+			}
+			if (mend == mstart) {
+				ctx->text_offset = prev_mstart + 1;
+				continue;
+			}
+		}
+
+		ctx->match_idx = ctx->has_matched ? ctx->match_idx + 1 : 0;
+		ctx->has_matched = true;
+		ctx->ovector = ovector;
+		ctx->group_count = (RzRegexSize)rc;
+		ctx->next_group = 0;
+		ctx->text_offset = ctx->allow_overlap ? (mstart + 1) : mend;
+		return true;
+	}
+	return false;
+}
+
+/**
+ * \brief Iterator `next` callback yielding the next match or capture group as a borrowed entry.
+ * \param it Iterator initialized by `regex_match_iter_init()`.
+ * \return Borrowed pointer to `ctx->cur_match` valid until the next step, or NULL at end.
+ */
+static RZ_BORROW RzRegexMatch *regex_match_iter_next(RZ_NONNULL RzIterator *it) {
+	RzRegexMatchIterCtx *ctx = it->u;
+	if (!ctx) {
+		return NULL;
+	}
+	if (ctx->next_group >= ctx->group_count) {
+		if (ctx->exhausted || !regex_match_iter_advance(ctx)) {
+			ctx->exhausted = true;
+			return NULL;
+		}
+	}
+
+	size_t i = ctx->next_group++;
+	PCRE2_SIZE start = ctx->ovector[2 * i];
+	PCRE2_SIZE end = ctx->ovector[2 * i + 1];
+	if (start != PCRE2_UNSET && start > end) {
+		RZ_LOG_ERROR("Usage of \\K to set start of the pattern later than the end, "
+			     "is not implemented.\n");
+		ctx->next_group = ctx->group_count;
+		ctx->exhausted = true;
+		return NULL;
+	}
+
+	ctx->cur_match.match_idx = ctx->match_idx;
+	ctx->cur_match.group_idx = i;
+	ctx->cur_match.start = start;
+	ctx->cur_match.len = (start == PCRE2_UNSET) ? 0 : (end - start);
+	return &ctx->cur_match;
+}
+
+/**
+ * \brief Initialize a regex match iterator reusing a single `pcre2_match_data` allocation.
+ * \param type Native encoding width of \p regex and \p text.
+ * \param regex Compiled `RzRegex*` pattern matching \p type.
+ * \param text Input text buffer in native code units.
+ * \param text_size Buffer length in code units, or `RZ_REGEX_ZERO_TERMINATED`.
+ * \param text_offset Starting search offset in code units.
+ * \param mflags Match option flags.
+ * \param allow_overlap If true, advance by 1 code unit after each match start instead of end.
+ * \param jit_stack Optional PCRE2 JIT stack for `RzRegexMulti`, or NULL.
+ * \param iterator Output iterator initialized on success (zeroed on failure).
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+static bool regex_match_iter_init(
+	RzRegexType type,
+	RZ_NONNULL const void *regex,
+	RZ_NONNULL const void *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	bool allow_overlap,
+	RZ_NULLABLE void *jit_stack,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(regex && text && iterator, false);
+	*iterator = (RzIterator){ 0 };
+
+	RzRegexMatchIterCtx *ctx = RZ_NEW0(RzRegexMatchIterCtx);
+	if (!ctx) {
+		return false;
+	}
+	ctx->type = type;
+	ctx->regex = regex;
+	ctx->text = text;
+	ctx->text_len = regex_code_units_len(type, text, text_size);
+	ctx->text_offset = text_offset;
+	ctx->mflags = mflags;
+	ctx->allow_overlap = allow_overlap;
+
+	switch (type) {
+	case RZ_REGEX_UTF8:
+		ctx->mdata = pcre2_match_data_create_from_pattern_8(regex, NULL);
+		break;
+	case RZ_REGEX_UTF16:
+		ctx->mdata = pcre2_match_data_create_from_pattern_16(regex, NULL);
+		break;
+	case RZ_REGEX_UTF32:
+		ctx->mdata = pcre2_match_data_create_from_pattern_32(regex, NULL);
+		break;
+	}
+	if (!ctx->mdata) {
+		free(ctx);
+		return false;
+	}
+
+#ifdef SUPPORTS_PCRE2_JIT
+	if (jit_stack) {
+		switch (type) {
+		case RZ_REGEX_UTF8:
+			ctx->mcontext = pcre2_match_context_create_8(NULL);
+			if (ctx->mcontext) {
+				pcre2_jit_stack_assign_8(ctx->mcontext, NULL, jit_stack);
+			}
+			break;
+		case RZ_REGEX_UTF16:
+			ctx->mcontext = pcre2_match_context_create_16(NULL);
+			if (ctx->mcontext) {
+				pcre2_jit_stack_assign_16(ctx->mcontext, NULL, jit_stack);
+			}
+			break;
+		case RZ_REGEX_UTF32:
+			ctx->mcontext = pcre2_match_context_create_32(NULL);
+			if (ctx->mcontext) {
+				pcre2_jit_stack_assign_32(ctx->mcontext, NULL, jit_stack);
+			}
+			break;
+		}
+		if (!ctx->mcontext) {
+			regex_match_iter_free(ctx);
+			return false;
+		}
+	}
+#else
+	(void)jit_stack;
+#endif
+
+	return rz_iterator_init((rz_iterator_next_cb)regex_match_iter_next, NULL,
+		(rz_iterator_free_cb)regex_match_iter_free, ctx, iterator);
+}
+
+static RzRegexSize multi_byte_size_to_units(RzRegexSize size_bytes, size_t unit_width) {
+	if (size_bytes == RZ_REGEX_ZERO_TERMINATED) {
+		return RZ_REGEX_ZERO_TERMINATED;
+	}
+	return size_bytes / unit_width;
+}
+
+/**
+ * \brief Collect all matches and capture groups from a regex iterator into nested pvectors.
+ * \param type Native encoding width of \p regex and \p text.
+ * \param regex Compiled `RzRegex*` pattern matching \p type.
+ * \param text Input text buffer in native code units.
+ * \param text_size Buffer length in code units, or `RZ_REGEX_ZERO_TERMINATED`.
+ * \param text_offset Starting search offset in code units.
+ * \param mflags Match option flags.
+ * \param allow_overlap If true, collect overlapping matches.
+ * \param jit_stack Optional PCRE2 JIT stack for `RzRegexMulti`, or NULL.
+ * \return Owned vector of per-match group vectors (`RzRegexMatch *`), or NULL on error.
+ */
+static RZ_OWN RzPVector /*<RzPVector<RzRegexMatch *> *>*/ *match_all_from_iter(
+	RzRegexType type,
+	RZ_NONNULL const void *regex,
+	RZ_NONNULL const void *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	bool allow_overlap,
+	RZ_NULLABLE void *jit_stack) {
+	RzIterator it;
+	if (!regex_match_iter_init(type, regex, text, text_size, text_offset, mflags,
+		    allow_overlap, jit_stack, &it)) {
+		return NULL;
+	}
+
+	RzPVector /*<RzPVector<RzRegexMatch *> *>*/ *all_matches =
+		rz_pvector_new((RzPVectorFree)rz_pvector_free);
+	if (!all_matches) {
+		rz_iterator_fini(&it);
+		return NULL;
+	}
+
+	RzPVector /*<RzRegexMatch *>*/ *cur_vec = NULL;
+	RzRegexSize cur_match_idx = 0;
+	RzRegexMatch *m;
+	rz_iterator_foreach(&it, m) {
+		if (!cur_vec || m->match_idx != cur_match_idx) {
+			cur_vec = rz_pvector_new(free);
+			if (!cur_vec || !rz_pvector_push(all_matches, cur_vec)) {
+				rz_pvector_free(cur_vec);
+				rz_pvector_free(all_matches);
+				rz_iterator_fini(&it);
+				return NULL;
+			}
+			cur_match_idx = m->match_idx;
+		}
+		RzRegexMatch *copy = RZ_NEW0(RzRegexMatch);
+		if (!copy) {
+			rz_pvector_free(all_matches);
+			rz_iterator_fini(&it);
+			return NULL;
+		}
+		*copy = *m;
+		if (!rz_pvector_push(cur_vec, copy)) {
+			free(copy);
+			rz_pvector_free(all_matches);
+			rz_iterator_fini(&it);
+			return NULL;
+		}
+	}
+
+	rz_iterator_fini(&it);
+	return all_matches;
+}
+
 /**
  * \brief Finds all matches in a text and returns them as vector.
  * The result is a flat vector of matches. A single match with multiple
@@ -1027,150 +1421,42 @@ RZ_API RZ_OWN RzPVector /*<RzRegexMatch *>*/ *rz_regex_match_all_not_grouped(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	rz_return_val_if_fail(regex && text, NULL);
-
-	RzPVector *all_matches = rz_pvector_new(free);
-	RzPVector *matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
-	while (matches && rz_pvector_len(matches) > 0) {
-		RzRegexMatch *whole_match = rz_pvector_head(matches);
-		text_offset = whole_match->start + whole_match->len;
-
-		size_t mlen = rz_pvector_len(matches);
-		for (size_t i = 0; i < mlen; ++i) {
-			RzRegexMatch *m = rz_pvector_pop_front(matches);
-			rz_pvector_push(all_matches, m);
-		}
-		rz_pvector_free(matches);
-		// Search again after the whole first match.
-		matches = rz_regex_match_first(regex, text, text_size, text_offset, mflags);
+	RzIterator it;
+	if (!rz_regex_match_iter(regex, text, text_size, text_offset, mflags, &it)) {
+		return NULL;
 	}
 
-	// Free last vector without matches.
-	rz_pvector_free(matches);
+	RzPVector /*<RzRegexMatch *>*/ *all_matches = rz_pvector_new(free);
+	if (!all_matches) {
+		rz_iterator_fini(&it);
+		return NULL;
+	}
+
+	RzRegexMatch *m;
+	rz_iterator_foreach(&it, m) {
+		RzRegexMatch *copy = RZ_NEW0(RzRegexMatch);
+		if (!copy || !rz_pvector_push(all_matches, copy)) {
+			free(copy);
+			rz_pvector_free(all_matches);
+			rz_iterator_fini(&it);
+			return NULL;
+		}
+		*copy = *m;
+	}
+
+	rz_iterator_fini(&it);
 	return all_matches;
 }
 
-static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_8(
-	RZ_NONNULL const RzRegex *regex,
-	RZ_NONNULL const ut8 *text,
-	RzRegexSize text_size,
-	RzRegexSize text_offset,
-	RzRegexFlags mflags,
-	bool allow_overlap,
-	RZ_NULLABLE void *jit_stack) {
-	rz_return_val_if_fail(regex && text, NULL);
-
-	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
-	RzPVector *matches = NULL;
-	matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
-	while (matches && rz_pvector_len(matches) > 0) {
-		RzRegexMatch *m = rz_pvector_head(matches);
-		if (m->len == 0) {
-			RzPVector *rechecked_matches = match_first_8(regex, text, text_size, text_offset, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
-			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
-				matches = rechecked_matches;
-				RzRegexMatch *m = rz_pvector_head(matches);
-				rz_pvector_push(all_matches, matches);
-				text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-			} else {
-				text_offset = m->start + 1;
-				matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
-			}
-			continue;
-		}
-		rz_pvector_push(all_matches, matches);
-		text_offset = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_8(regex, text, text_size, text_offset, mflags, jit_stack);
-	}
-
-	// Free last vector without matches.
-	rz_pvector_free(matches);
-	return all_matches;
-}
-
-static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_16(
-	RZ_NONNULL const RzRegex *regex,
-	RZ_NONNULL const ut16 *text,
-	RzRegexSize text_size_code_units,
-	RzRegexSize text_offset_code_units,
-	RzRegexFlags mflags,
-	bool allow_overlap,
-	RZ_NULLABLE void *jit_stack) {
-	rz_return_val_if_fail(regex && text, NULL);
-
-	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
-	RzPVector *matches = NULL;
-	matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-	while (matches && rz_pvector_len(matches) > 0) {
-		RzRegexMatch *m = rz_pvector_head(matches);
-		if (m->len == 0) {
-			RzPVector *rechecked_matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
-			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
-				matches = rechecked_matches;
-				m = rz_pvector_head(matches);
-				rz_pvector_push(all_matches, matches);
-				text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-			} else {
-				text_offset_code_units = m->start + 1;
-				matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-			}
-			continue;
-		}
-		rz_pvector_push(all_matches, matches);
-		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_16(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-	}
-
-	rz_pvector_free(matches);
-	return all_matches;
-}
-
-static RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *match_all_internal_32(
-	RZ_NONNULL const RzRegex *regex,
-	RZ_NONNULL const ut32 *text,
-	RzRegexSize text_size_code_units,
-	RzRegexSize text_offset_code_units,
-	RzRegexFlags mflags,
-	bool allow_overlap,
-	RZ_NULLABLE void *jit_stack) {
-	rz_return_val_if_fail(regex && text, NULL);
-
-	RzPVector *all_matches = rz_pvector_new((RzPVectorFree)rz_pvector_free);
-	RzPVector *matches = NULL;
-	matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-	while (matches && rz_pvector_len(matches) > 0) {
-		RzRegexMatch *m = rz_pvector_head(matches);
-		if (m->len == 0) {
-			RzPVector *rechecked_matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags | PCRE2_NOTEMPTY_ATSTART | PCRE2_ANCHORED, jit_stack);
-			if (rechecked_matches && rz_pvector_len(rechecked_matches) > 0) {
-				matches = rechecked_matches;
-				m = rz_pvector_head(matches);
-				rz_pvector_push(all_matches, matches);
-				text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-			} else {
-				text_offset_code_units = m->start + 1;
-				matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-			}
-			continue;
-		}
-		rz_pvector_push(all_matches, matches);
-		text_offset_code_units = allow_overlap ? m->start + 1 : m->start + m->len;
-		matches = match_first_32(regex, text, text_size_code_units, text_offset_code_units, mflags, jit_stack);
-	}
-
-	rz_pvector_free(matches);
-	return all_matches;
-}
 /**
  * \brief Finds all matches in a text and returns them as vector of vector matches.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
  * \param text_offset The offset into \p text from where the search starts.
  * \param mflags Match flags.
- * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
  *         One match with all its groups is again assembled in a pvector.
@@ -1181,13 +1467,14 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, true, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF8, regex, text, text_size, text_offset,
+		mflags, true, NULL);
 }
 
 /**
  * \brief Finds all matches in a text and returns them as vector of vector matches.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in.
  * \param text_size The length of the buffer pointed to by \p text.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
@@ -1203,7 +1490,8 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_8(regex, (ut8 *)text, text_size, text_offset, mflags, false, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF8, regex, text, text_size, text_offset,
+		mflags, false, NULL);
 }
 
 /**
@@ -1211,13 +1499,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all(
  *
  * NOTE: This matches against UTF-16 host's endianness strings.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-16 host-endianness encoded.
- * \param text_size The length of the buffer pointed to by \p text in code units..
+ * \param text_size The length of the buffer pointed to by \p text in code units.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
- * \param text_offset The offset into \p text from where the search starts in code units..
+ * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
- * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
  *         One match with all its groups is again assembled in a pvector.
@@ -1228,7 +1515,8 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_16(regex, text, text_size, text_offset, mflags, true, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF16, regex, text, text_size, text_offset,
+		mflags, true, NULL);
 }
 
 /**
@@ -1236,11 +1524,11 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
  *
  * NOTE: This matches against UTF-16 host's endianness strings.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-16 host-endianness encoded.
- * \param text_size The length of the buffer pointed to by \p text in code units..
+ * \param text_size The length of the buffer pointed to by \p text in code units.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
- * \param text_offset The offset into \p text from where the search starts in code units..
+ * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
@@ -1252,7 +1540,8 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_16(regex, text, text_size, text_offset, mflags, false, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF16, regex, text, text_size, text_offset,
+		mflags, false, NULL);
 }
 
 /**
@@ -1260,13 +1549,12 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_16(
  *
  * NOTE: This matches against UTF-32 host's endianness strings.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-32 host-endianness encoded.
- * \param text_size The length of the buffer pointed to by \p text in code units..
+ * \param text_size The length of the buffer pointed to by \p text in code units.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
- * \param text_offset The offset into \p text from where the search starts in code units..
+ * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
- * \param allow_overlap If true it will match also overlapping patterns.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
  *         One match with all its groups is again assembled in a pvector.
@@ -1277,11 +1565,23 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_32(regex, text, text_size, text_offset, mflags, true, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF32, regex, text, text_size, text_offset,
+		mflags, true, NULL);
 }
 
 /**
- * \brief TODO: Note that size and offset are in bytes. Not code points.
+ * \brief Find all overlapping matches for a multi-encoding regex.
+ *
+ * NOTE: \p text_size and \p text_offset are in bytes; returned match offsets and lengths are in
+ * code units.
+ *
+ * \param regex The compiled multi-encoding regex.
+ * \param text The buffer to search in.
+ * \param text_size Length of \p text in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Start offset into \p text in bytes.
+ * \param mflags Match flags.
+ *
+ * \return PVector of match group pvectors, or NULL on failure.
  */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_overlap_multi(
 	RZ_NONNULL const RzRegexMulti *regex,
@@ -1289,31 +1589,57 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
 	switch (regex->re_type) {
 	case RZ_REGEX_UTF8:
-		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, true, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF8, regex->re8, text, text_size, text_offset,
+			mflags, true, regex->jit_stack);
 	case RZ_REGEX_UTF16:
-		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF16, regex->re16, text,
+			multi_byte_size_to_units(text_size, RZ_UTF16_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
 	case RZ_REGEX_UTF32:
-		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF32, regex->re32, text,
+			multi_byte_size_to_units(text_size, RZ_UTF32_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, true, regex->jit_stack);
 	}
 	rz_warn_if_reached();
 	return NULL;
 }
 
+/**
+ * \brief Find all non-overlapping matches for a multi-encoding regex.
+ *
+ * NOTE: \p text_size and \p text_offset are in bytes; returned match offsets and lengths are in
+ * code units.
+ *
+ * \param regex The compiled multi-encoding regex.
+ * \param text The buffer to search in.
+ * \param text_size Length of \p text in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Start offset into \p text in bytes.
+ * \param mflags Match flags.
+ *
+ * \return PVector of match group pvectors, or NULL on failure.
+ */
 RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_multi(
 	RZ_NONNULL const RzRegexMulti *regex,
 	RZ_NONNULL const ut8 *text,
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
+	rz_return_val_if_fail(regex && text, NULL);
 	switch (regex->re_type) {
 	case RZ_REGEX_UTF8:
-		return match_all_internal_8(regex->re8, (ut8 *)text, text_size, text_offset, mflags, false, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF8, regex->re8, text, text_size, text_offset,
+			mflags, false, regex->jit_stack);
 	case RZ_REGEX_UTF16:
-		return match_all_internal_16(regex->re16, (ut16 *)text, text_size / RZ_UTF16_CODE_POINT_WIDTH, text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF16, regex->re16, text,
+			multi_byte_size_to_units(text_size, RZ_UTF16_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
 	case RZ_REGEX_UTF32:
-		return match_all_internal_32(regex->re32, (ut32 *)text, text_size / RZ_UTF32_CODE_POINT_WIDTH, text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
+		return match_all_from_iter(RZ_REGEX_UTF32, regex->re32, text,
+			multi_byte_size_to_units(text_size, RZ_UTF32_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, false, regex->jit_stack);
 	}
 	rz_warn_if_reached();
 	return NULL;
@@ -1324,11 +1650,11 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_mul
  *
  * NOTE: This matches against UTF-32 host's endianness strings.
  *
- * \param pattern The regex pattern to match.
+ * \param regex The regex pattern to match.
  * \param text The text to search in. It should be UTF-32 host-endianness encoded.
- * \param text_size The length of the buffer pointed to by \p text in code units..
+ * \param text_size The length of the buffer pointed to by \p text in code units.
  *        Can be set to RZ_REGEX_ZERO_TERMINATED if the buffer is a zero terminated string.
- * \param text_offset The offset into \p text from where the search starts in code units..
+ * \param text_offset The offset into \p text from where the search starts in code units.
  * \param mflags Match flags.
  *
  * \return PVector of every match in the given string or NULL in case of failure.
@@ -1340,7 +1666,269 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_32(
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags) {
-	return match_all_internal_32(regex, text, text_size, text_offset, mflags, false, NULL);
+	return match_all_from_iter(RZ_REGEX_UTF32, regex, text, text_size, text_offset,
+		mflags, false, NULL);
+}
+
+/**
+ * \brief Initializes an iterator over all non-overlapping UTF-8 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`.
+ * Callers must always call `rz_iterator_fini()` after a successful call, whether iterating to
+ * completion or breaking out early.
+ *
+ * \param regex The compiled UTF-8 regex.
+ * \param text The text to search in.
+ * \param text_size Buffer length in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in bytes.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter(
+	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF8, regex, text, text_size, text_offset,
+		mflags, false, NULL, iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all overlapping UTF-8 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`.
+ * Callers must always call `rz_iterator_fini()` after a successful call, whether iterating to
+ * completion or breaking out early.
+ *
+ * \param regex The compiled UTF-8 regex.
+ * \param text The text to search in.
+ * \param text_size Buffer length in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in bytes.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_overlap(
+	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF8, regex, text, text_size, text_offset,
+		mflags, true, NULL, iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all non-overlapping UTF-16 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`,
+ * with offsets and lengths in 16-bit code units. Callers must always call `rz_iterator_fini()`
+ * after a successful call, whether iterating to completion or breaking out early.
+ *
+ * \param regex The compiled UTF-16 regex.
+ * \param text Host-endian UTF-16 text to search in.
+ * \param text_size Text length in 16-bit code units, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in 16-bit code units.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut16 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF16, regex, text, text_size, text_offset,
+		mflags, false, NULL, iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all overlapping UTF-16 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`,
+ * with offsets and lengths in 16-bit code units. Callers must always call `rz_iterator_fini()`
+ * after a successful call, whether iterating to completion or breaking out early.
+ *
+ * \param regex The compiled UTF-16 regex.
+ * \param text Host-endian UTF-16 text to search in.
+ * \param text_size Text length in 16-bit code units, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in 16-bit code units.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_overlap_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut16 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF16, regex, text, text_size, text_offset,
+		mflags, true, NULL, iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all non-overlapping UTF-32 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`,
+ * with offsets and lengths in 32-bit code units. Callers must always call `rz_iterator_fini()`
+ * after a successful call, whether iterating to completion or breaking out early.
+ *
+ * \param regex The compiled UTF-32 regex.
+ * \param text Host-endian UTF-32 text to search in.
+ * \param text_size Text length in 32-bit code units, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in 32-bit code units.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut32 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF32, regex, text, text_size, text_offset,
+		mflags, false, NULL, iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all overlapping UTF-32 regex matches and groups.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`,
+ * with offsets and lengths in 32-bit code units. Callers must always call `rz_iterator_fini()`
+ * after a successful call, whether iterating to completion or breaking out early.
+ *
+ * \param regex The compiled UTF-32 regex.
+ * \param text Host-endian UTF-32 text to search in.
+ * \param text_size Text length in 32-bit code units, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in 32-bit code units.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_overlap_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut32 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return regex_match_iter_init(RZ_REGEX_UTF32, regex, text, text_size, text_offset,
+		mflags, true, NULL, iterator);
+}
+
+/**
+ * \brief Initialize a match iterator for a multi-encoding `RzRegexMulti` pattern.
+ * \param regex Compiled multi-encoding regex.
+ * \param text Byte buffer containing encoded text.
+ * \param text_size Length of \p text in bytes, or `RZ_REGEX_ZERO_TERMINATED`.
+ * \param text_offset Starting offset into \p text in bytes.
+ * \param mflags Match option flags.
+ * \param allow_overlap If true, collect overlapping matches.
+ * \param iterator Output iterator initialized on success (zeroed on failure).
+ * \return true on success, false on invalid arguments, unknown encoding, or allocation failure.
+ */
+static bool match_iter_multi_common(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	bool allow_overlap,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	rz_return_val_if_fail(regex && text && iterator, false);
+	*iterator = (RzIterator){ 0 };
+	switch (regex->re_type) {
+	case RZ_REGEX_UTF8:
+		return regex_match_iter_init(RZ_REGEX_UTF8, regex->re8, text, text_size,
+			text_offset, mflags, allow_overlap, regex->jit_stack, iterator);
+	case RZ_REGEX_UTF16:
+		return regex_match_iter_init(RZ_REGEX_UTF16, regex->re16, text,
+			multi_byte_size_to_units(text_size, RZ_UTF16_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF16_CODE_POINT_WIDTH, mflags, allow_overlap,
+			regex->jit_stack, iterator);
+	case RZ_REGEX_UTF32:
+		return regex_match_iter_init(RZ_REGEX_UTF32, regex->re32, text,
+			multi_byte_size_to_units(text_size, RZ_UTF32_CODE_POINT_WIDTH),
+			text_offset / RZ_UTF32_CODE_POINT_WIDTH, mflags, allow_overlap,
+			regex->jit_stack, iterator);
+	}
+	rz_warn_if_reached();
+	return false;
+}
+
+/**
+ * \brief Initializes an iterator over all non-overlapping multi-encoding regex matches.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`.
+ * Callers must always call `rz_iterator_fini()` after a successful call, whether iterating to
+ * completion or breaking out early.
+ *
+ * NOTE: \p text_size and \p text_offset are in bytes; yielded match offsets and lengths are in
+ * code units.
+ *
+ * \param regex The compiled multi-encoding regex.
+ * \param text The buffer to search in.
+ * \param text_size Buffer length in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in bytes.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return match_iter_multi_common(regex, text, text_size, text_offset, mflags, false,
+		iterator);
+}
+
+/**
+ * \brief Initializes an iterator over all overlapping multi-encoding regex matches.
+ *
+ * The iterator yields borrowed `RzRegexMatch *` entries ordered by `match_idx` and `group_idx`.
+ * Callers must always call `rz_iterator_fini()` after a successful call, whether iterating to
+ * completion or breaking out early.
+ *
+ * NOTE: \p text_size and \p text_offset are in bytes; yielded match offsets and lengths are in
+ * code units.
+ *
+ * \param regex The compiled multi-encoding regex.
+ * \param text The buffer to search in.
+ * \param text_size Buffer length in bytes, or RZ_REGEX_ZERO_TERMINATED.
+ * \param text_offset Starting offset in bytes.
+ * \param mflags Match flags.
+ * \param iterator Output iterator to initialize.
+ *
+ * \return true on success, false on invalid arguments or allocation failure.
+ */
+RZ_API bool rz_regex_match_iter_overlap_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator) {
+	return match_iter_multi_common(regex, text, text_size, text_offset, mflags, true, iterator);
 }
 
 /**
