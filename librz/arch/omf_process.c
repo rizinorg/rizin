@@ -326,7 +326,7 @@ static bool rz_x86_process(RzAnalysis *analysis, const RzBinFile *binfile) {
 		if (!c_lname) {
 			rz_warn_if_reached();
 		}
-		if (RZ_STR_EQ(c_lname->name, "DWARF")) {
+		if (c_lname && RZ_STR_EQ(c_lname->name, "DWARF")) {
 			rz_meta_set(analysis, RZ_META_TYPE_DATA, section->vaddr, section->seg_length, "DATA");
 		}
 	}

@@ -663,7 +663,7 @@ static int load_comment_data(const rz_bin_omf96_obj *obj, const ut8 *buf, const 
 			char buffer[80];
 			const time_t raw_time = (time_t)tm;
 			struct tm time_info;
-			localtime_r(&raw_time, &time_info);
+			rz_localtime_r(&raw_time, &time_info);
 			strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &time_info);
 
 			char name[MAX_NAME_LEN] = { 0 };
@@ -687,7 +687,7 @@ static int load_comment_data(const rz_bin_omf96_obj *obj, const ut8 *buf, const 
 		char buffer[80];
 		const time_t raw_time = (time_t)tm;
 		struct tm time_info;
-		localtime_r(&raw_time, &time_info);
+		rz_localtime_r(&raw_time, &time_info);
 		strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &time_info);
 
 		RZ_UNUSED char name[MAX_NAME_LEN] = { 0 };
@@ -1546,8 +1546,8 @@ RzPVector /*<RzBinSection *>*/ *omf96_sections(RZ_NONNULL const void *target_obj
 		if (!c_lname) {
 			rz_warn_if_reached();
 		}
-		const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
-		const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
+		const char *name = lname && RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
+		const char *class_name = c_lname && RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
 		const char *class_and_name = rz_str_newf("%s_%s", name, class_name);
 		RZ_LOG_DEBUG("{%2d} seg_b: %s, seg_p: %s, seg_length: %3d, [%d] c_lname->name: `%s`, [%d] lname->name: `%s` [0x%06x], seg_alignment: %d\n",
 			section->index,
@@ -1568,14 +1568,15 @@ RzPVector /*<RzBinSection *>*/ *omf96_sections(RZ_NONNULL const void *target_obj
 		new->vaddr = section->vaddr;
 		new->is_segment = 1;
 		new->align = section->seg_alignment;
+		new->perm = RZ_PERM_R;
 
-		if (RZ_STR_EQ(c_lname->name, "CODE")) {
+		if (c_lname && RZ_STR_EQ(c_lname->name, "CODE")) {
 			new->perm = RZ_PERM_RX;
 		}
-		if (RZ_STR_EQ(c_lname->name, "DATA")) {
+		if (c_lname && RZ_STR_EQ(c_lname->name, "DATA")) {
 			new->perm = RZ_PERM_RW;
 		}
-		if (RZ_STR_EQ(c_lname->name, "DWARF")) {
+		if (c_lname && RZ_STR_EQ(c_lname->name, "DWARF")) {
 			new->perm = RZ_PERM_R;
 		}
 		if (RZ_STR_EQ(class_name, "UNKNOWN")) {
@@ -1654,7 +1655,7 @@ bool rz_bin_format_omf96_post_init(RZ_NONNULL const void *target_obj) {
 		} else {
 			section->vaddr = align_to_paragraph(prev_section->vaddr + (ut64)prev_section->seg_length);
 		}
-
+#ifdef RZ_BUILD_DEBUG
 		const OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->seg_name_idx);
 		if (!lname) {
 			printf("unknown section segment id: 0x%02x\n", section->seg_name_idx);
@@ -1665,8 +1666,8 @@ bool rz_bin_format_omf96_post_init(RZ_NONNULL const void *target_obj) {
 			printf("unknown section class id: 0x%02x\n", section->class_name_idx);
 			rz_warn_if_reached();
 		}
-		RZ_UNUSED const char *name = RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
-		RZ_UNUSED const char *class_name = RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
+		RZ_UNUSED const char *name = lname && RZ_STR_ISNOTEMPTY(lname->name) ? lname->name : "UNKNOWN";
+		RZ_UNUSED const char *class_name = c_lname && RZ_STR_ISNOTEMPTY(c_lname->name) ? c_lname->name : "UNKNOWN";
 		RZ_LOG_DEBUG("segment alignment: `%s`\nseg_combination_desc: `%s`\nseg_length: %u\nseg_name_idx: %u (%s)\n"
 			     "class_name_idx: %u [%s]\noverlay_name_idx: %u\nseg_b: %s\naddressing mode: %d (seg_p)\n"
 			     "section->vaddr: 0x%lx\n"
@@ -1681,6 +1682,7 @@ bool rz_bin_format_omf96_post_init(RZ_NONNULL const void *target_obj) {
 			section->seg_p ? 32 : 16,
 			section->vaddr,
 			section->vaddr + section->seg_length);
+#endif
 		index++;
 	}
 

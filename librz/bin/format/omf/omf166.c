@@ -449,7 +449,8 @@ static int load_comment_data(const rz_bin_omf166_obj *obj, const ut8 *buf, const
 	const ut8 ComTyp_b1 = rz_read_le8_offset(buf, &ct);
 	comment->nopurge = (ComTyp_b1 & 0x80) >> 7;
 	comment->is_filename = (ComTyp_b2 == 0x4b);
-	comment->n = record->size + 3 - ct;
+	const size_t n = record->size + 3 - ct;
+	comment->n = n <= MAX_NAME_LEN ? (ut8)n : MAX_NAME_LEN;
 	rz_mem_copy(comment->text, MAX_NAME_LEN, buf + ct, comment->n);
 	rz_pvector_push(obj->coments_vec, comment);
 	return true;
