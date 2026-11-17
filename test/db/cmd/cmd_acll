@@ -499,7 +499,7 @@ BROKEN=1
 CMDS=<<EOF
 aaa
 acll
-acg main_Dog
+acg
 EOF
 EXPECT=<<EOF
 [Swift_Array]
@@ -596,5 +596,105 @@ nth        addr  vt_offset type    name
 -----------------------------------------
   1 0x100003e48 ---------- DEFAULT speak
 
+EOF
+RUN
+
+NAME=Filter class inheritance graph with acg
+FILE=malloc://0x10
+CMDS=<<EOF
+ac A
+ac B
+ac C
+ac D
+ac E
+ac X
+acb B A
+acb C A
+acb D B
+acb E D
+acg
+echo "---"
+acg B
+echo "---"
+acg E
+echo "---"
+acg X
+acg nonexistent
+EOF
+EXPECT=<<EOF
+        .-----------.   .----------.
+        |  A        |   |  X       |
+        `-----------'   `----------'
+              t f
+              | |
+    .---------' |
+    |           '---.
+    |               |
+.----------.    .----------.
+|  B       |    |  C       |
+`----------'    `----------'
+    v
+    |
+    |
+.----------.
+|  D       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  E       |
+`----------'
+---
+.----------.
+|  A       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  B       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  D       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  E       |
+`----------'
+---
+.----------.
+|  A       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  B       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  D       |
+`----------'
+    v
+    |
+    |
+.----------.
+|  E       |
+`----------'
+---
+.----------.
+|  X       |
+`----------'
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Class does not exist.
 EOF
 RUN

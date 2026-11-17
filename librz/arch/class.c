@@ -1265,6 +1265,201 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
 }
 
 /**
+ * \brief Builds an RzGraph of class inheritance restricted to \p keep when non-NULL
+ *
+ * \param analysis Analysis instance containing class database
+ * \param classes All classes retrieved from \p analysis
+ * \param keep Optional set of class names to retain (NULL includes all classes)
+ * \return RzGraph* Inheritance graph, or NULL on allocation failure
+ */
+static RzGraph /*<RzGraphNodeInfo *, None *>*/ *class_get_inheritance_graph_with_filter(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzPVector /*<SdbKv *>*/ *classes,
+	RZ_NULLABLE HtSP *keep) {
+	RzGraph *class_graph = rz_graph_new(
+		RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
+	if (!class_graph) {
+		return NULL;
+	}
+	HtSP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	if (!hashmap) {
+		rz_graph_free(class_graph);
+		return NULL;
+	}
+	void **iter;
+	// Traverse each class and create a node and edges
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
+		const char *name = sdbkv_key(kv);
+		if (keep && !ht_sp_find(keep, name, NULL)) {
+			continue;
+		}
+		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
+		if (!curr_node) {
+			curr_node = rz_graph_add_node_info(class_graph, name, NULL, 0);
+			if (!curr_node || !ht_sp_insert(hashmap, name, curr_node)) {
+				goto failure;
+			}
+		}
+		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
+		if (!bases) {
+			goto failure;
+		}
+		RzAnalysisBaseClass *base;
+		rz_vector_foreach (bases, base) {
+			if (!base->class_name ||
+				(keep && !ht_sp_find(keep, base->class_name, NULL))) {
+				continue;
+			}
+			bool base_found = false;
+			RzGraphNode *base_node = ht_sp_find(hashmap, base->class_name, &base_found);
+			if (!base_found) {
+				base_node = rz_graph_add_node_info(
+					class_graph, base->class_name, NULL, 0);
+				if (!base_node ||
+					!ht_sp_insert(hashmap, base->class_name, base_node)) {
+					rz_vector_free(bases);
+					goto failure;
+				}
+			}
+			rz_graph_add_edge(class_graph, base_node, curr_node, NULL);
+		}
+		rz_vector_free(bases);
+	}
+	ht_sp_free(hashmap);
+	return class_graph;
+
+failure:
+	ht_sp_free(hashmap);
+	rz_graph_free(class_graph);
+	return NULL;
+}
+
+/**
+ * \brief Collects \p target and all transitive ancestor classes into \p keep
+ *
+ * \param analysis Analysis instance containing class database
+ * \param target Sanitized starting class name
+ * \param keep Output set of retained class names (used as visited set; must be empty on entry)
+ * \return bool True on success, false on allocation failure
+ */
+static bool class_collect_ancestors(
+	RzAnalysis *analysis, const char *target, HtSP *keep) {
+	bool ok = false;
+	RzPVector *queue = rz_pvector_new(free);
+	if (!queue) {
+		goto cleanup;
+	}
+	char *seed = rz_str_dup(target);
+	if (!seed || !ht_sp_insert(keep, seed, (void *)1) || !rz_pvector_push(queue, seed)) {
+		free(seed);
+		goto cleanup;
+	}
+	for (size_t i = 0; i < rz_pvector_len(queue); i++) {
+		const char *cur = rz_pvector_at(queue, i);
+		RzVector *bases = rz_analysis_class_base_get_all(analysis, cur);
+		if (!bases) {
+			goto cleanup;
+		}
+		RzAnalysisBaseClass *base;
+		rz_vector_foreach (bases, base) {
+			if (!base->class_name || ht_sp_find(keep, base->class_name, NULL)) {
+				continue;
+			}
+			char *dup = rz_str_dup(base->class_name);
+			if (!dup || !ht_sp_insert(keep, dup, (void *)1) ||
+				!rz_pvector_push(queue, dup)) {
+				free(dup);
+				rz_vector_free(bases);
+				goto cleanup;
+			}
+		}
+		rz_vector_free(bases);
+	}
+	ok = true;
+
+cleanup:
+	rz_pvector_free(queue);
+	return ok;
+}
+
+/**
+ * \brief Collects all transitive derived subclasses of \p target into \p keep
+ *
+ * \param analysis Analysis instance containing class database
+ * \param classes All classes retrieved from \p analysis
+ * \param target Sanitized starting class name
+ * \param keep Output set of retained class names
+ * \return bool True on success, false on allocation failure
+ */
+static bool class_collect_descendants(
+	RzAnalysis *analysis, RzPVector /*<SdbKv *>*/ *classes, const char *target, HtSP *keep) {
+	bool ok = false;
+	HtSP *children = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_pvector_free);
+	HtSP *visited = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	RzPVector *queue = rz_pvector_new(NULL);
+	if (!children || !visited || !queue) {
+		goto cleanup;
+	}
+	void **iter;
+	rz_pvector_foreach (classes, iter) {
+		SdbKv *kv = *iter;
+		const char *name = sdbkv_key(kv);
+		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
+		if (!bases) {
+			goto cleanup;
+		}
+		RzAnalysisBaseClass *base;
+		rz_vector_foreach (bases, base) {
+			if (!base->class_name) {
+				continue;
+			}
+			RzPVector *list = ht_sp_find(children, base->class_name, NULL);
+			if (!list) {
+				list = rz_pvector_new(NULL);
+				if (!list || !ht_sp_insert(children, base->class_name, list)) {
+					rz_pvector_free(list);
+					rz_vector_free(bases);
+					goto cleanup;
+				}
+			}
+			if (!rz_pvector_push(list, (void *)name)) {
+				rz_vector_free(bases);
+				goto cleanup;
+			}
+		}
+		rz_vector_free(bases);
+	}
+	if (!ht_sp_insert(visited, target, (void *)1) || !rz_pvector_push(queue, (void *)target)) {
+		goto cleanup;
+	}
+	for (size_t i = 0; i < rz_pvector_len(queue); i++) {
+		const char *cur = rz_pvector_at(queue, i);
+		RzPVector *list = ht_sp_find(children, cur, NULL);
+		if (!list) {
+			continue;
+		}
+		void **child_it;
+		rz_pvector_foreach (list, child_it) {
+			const char *child = *child_it;
+			if (!ht_sp_find(visited, child, NULL)) {
+				if (!ht_sp_update(keep, child, (void *)1) ||
+					!ht_sp_insert(visited, child, (void *)1) ||
+					!rz_pvector_push(queue, (void *)child)) {
+					goto cleanup;
+				}
+			}
+		}
+	}
+	ok = true;
+
+cleanup:
+	ht_sp_free(children);
+	ht_sp_free(visited);
+	rz_pvector_free(queue);
+	return ok;
+}
+
+/**
  * \brief Creates RzGraph from class inheritance information where
  *        each node has RzGraphNodeInfo as generic data
  *
@@ -1273,60 +1468,46 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, 
  */
 RZ_API RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
-	RzGraph *class_graph = rz_graph_new(RZ_GRAPH_IMPL_LIST, NULL, rz_graph_free_node_info, NULL);
-	if (!class_graph) {
+	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
+	if (!classes) {
+		return NULL;
+	}
+	RzGraph *class_graph = class_get_inheritance_graph_with_filter(analysis, classes, NULL);
+	rz_pvector_free(classes);
+	return class_graph;
+}
+
+/**
+ * \brief Creates RzGraph containing \p class_name, its transitive ancestors, and its transitive
+ *        derived subclasses, where each node has RzGraphNodeInfo as generic data
+ *
+ * \param analysis Analysis instance containing class database
+ * \param class_name Target class name to center the inheritance subgraph around
+ * \return RzGraph* Filtered inheritance graph, or NULL if \p class_name does not exist or on error
+ */
+RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *
+rz_analysis_class_get_inheritance_graph_by_name(
+	RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL const char *class_name) {
+	rz_return_val_if_fail(analysis && class_name, NULL);
+	if (!rz_analysis_class_exists(analysis, class_name)) {
+		return NULL;
+	}
+	char *target = rz_str_sanitize_sdb_key(class_name);
+	if (!target) {
 		return NULL;
 	}
 	RzPVector *classes = rz_analysis_class_get_all(analysis, true);
-	if (!classes) {
-		rz_graph_free(class_graph);
-		return NULL;
+	HtSP *keep = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	RzGraph *class_graph = NULL;
+	if (classes && keep &&
+		class_collect_ancestors(analysis, target, keep) &&
+		class_collect_descendants(analysis, classes, target, keep)) {
+		class_graph = class_get_inheritance_graph_with_filter(analysis, classes, keep);
 	}
-	HtSP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	if (!hashmap) {
-		goto failure;
-	}
-	void **iter;
-	// Traverse each class and create a node and edges
-	rz_pvector_foreach (classes, iter) {
-		SdbKv *kv = *iter;
-		const char *name = sdbkv_key(kv);
-		// create nodes
-		RzGraphNode *curr_node = ht_sp_find(hashmap, name, NULL);
-		if (!curr_node) {
-			curr_node = rz_graph_add_node_info(class_graph, name, NULL, 0);
-			if (!curr_node) {
-				goto failure;
-			}
-			ht_sp_insert(hashmap, name, curr_node);
-		}
-		// create edges between node and it's parents
-		RzVector *bases = rz_analysis_class_base_get_all(analysis, name);
-		RzAnalysisBaseClass *base;
-		rz_vector_foreach (bases, base) {
-			bool base_found = false;
-			RzGraphNode *base_node = ht_sp_find(hashmap, base->class_name, &base_found);
-			// If base isn't processed, do it now
-			if (!base_found) {
-				base_node = rz_graph_add_node_info(class_graph, base->class_name, NULL, 0);
-				if (!base_node) {
-					goto failure;
-				}
-				ht_sp_insert(hashmap, base->class_name, base_node);
-			}
-			rz_graph_add_edge(class_graph, base_node, curr_node, NULL);
-		}
-		rz_vector_free(bases);
-	}
+	ht_sp_free(keep);
 	rz_pvector_free(classes);
-	ht_sp_free(hashmap);
+	free(target);
 	return class_graph;
-
-failure:
-	rz_pvector_free(classes);
-	ht_sp_free(hashmap);
-	rz_graph_free(class_graph);
-	return NULL;
 }
 
 RZ_API void rz_analysis_class_recover_all(RzAnalysis *analysis) {
