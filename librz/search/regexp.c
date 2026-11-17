@@ -12,7 +12,6 @@
 RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	RzSearchKeyword *kw;
 	RzListIter *iter;
-	RzPVector *matches = NULL;
 	RzRegex *compiled = NULL;
 	const int old_nhits = s->nhits;
 	int ret = 0;
@@ -33,24 +32,33 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 			goto beach;
 		}
 
-		matches = rz_regex_match_all_not_grouped(compiled, (const char *)buf, len, 0, RZ_REGEX_DEFAULT);
-		void **it;
-		rz_pvector_foreach (matches, it) {
-			RzRegexMatch *m = *it;
+		RzIterator match_it;
+		if (!rz_regex_match_iter(compiled, (const char *)buf, len, 0, RZ_REGEX_DEFAULT,
+			    &match_it)) {
+			ret = -1;
+			goto beach;
+		}
+		RzRegexMatch *m;
+		rz_iterator_foreach(&match_it, m) {
+			if (m->group_idx != 0) {
+				continue;
+			}
 			kw->keyword_length = m->len; // For a regex search, the keyword can be of variable length
 			int t = rz_search_legacy_hit_new(s, kw, from + m->start);
 			if (t == 0) {
 				ret = -1;
-				rz_pvector_free(matches);
+				rz_iterator_fini(&match_it);
 				goto beach;
 			}
 			// Max hits reached
 			if (t > 1) {
-				rz_pvector_free(matches);
+				rz_iterator_fini(&match_it);
 				goto beach;
 			}
 		}
-		rz_pvector_free(matches);
+		rz_iterator_fini(&match_it);
+		rz_regex_free(compiled);
+		compiled = NULL;
 	}
 
 beach:

@@ -24,6 +24,7 @@ if get_option('enable_benchmarks')
     'graph',
     'il',
     'ht',
+    'regex',
     'util',
     'vector',
     'list',
