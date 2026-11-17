@@ -570,12 +570,16 @@ static RzPVector /*<RzBinReloc *>*/ *pe_relocs(RzBinFile *bf) {
 
 		// Allocating symbol just so we can have a name for the reloc
 		general_reloc->symbol = RZ_NEW0(RzBinSymbol);
+		if (!general_reloc->symbol) {
+			rz_bin_reloc_free(general_reloc);
+			return ret;
+		}
 		general_reloc->symbol->name = rz_str_newf("pe_%08" PFMT64x, general_reloc->vaddr);
-
-		rz_pvector_push(ret, general_reloc);
+		if (!general_reloc->symbol->name || !rz_pvector_push(ret, general_reloc)) {
+			rz_bin_reloc_free(general_reloc);
+			return ret;
+		}
 	}
-
-	rz_vector_free(bin->relocs);
 
 	return ret;
 }
