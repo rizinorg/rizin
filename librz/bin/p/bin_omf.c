@@ -91,10 +91,12 @@ static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *b, 
 		break;
 	default:
 		rz_warn_if_reached();
+		RZ_FREE(base_obj);
 		return false;
 	}
 
 	if (!base_obj->target_obj) {
+		RZ_FREE(base_obj);
 		return false;
 	}
 
