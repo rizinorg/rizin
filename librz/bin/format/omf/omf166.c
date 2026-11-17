@@ -1219,16 +1219,17 @@ RzBinAddr *rz_bin_omf166_get_entry(RZ_NONNULL const void *target_obj) {
 	const RzPVector *v = obj->symbols_vec;
 	void **it;
 	rz_pvector_foreach (v, it) {
-		const char *start_symbol_name = "RESET";
+		const char *start_symbol_name = "RESET"; ///< May be "?C_STARTUP" or "main"
 		const OMF_symbol *symbol = (OMF_symbol *)*it;
-		if (!strcmp(symbol->name2, start_symbol_name)) {
-			RzBinAddr *addr = RZ_NEW0(RzBinAddr);
-			if (!addr) {
-				return NULL;
-			}
-			addr->vaddr = symbol->base + symbol->offset;
-			return addr;
+		if (RZ_STR_NE(symbol->name2, start_symbol_name)) {
+			continue;
 		}
+		RzBinAddr *addr = RZ_NEW0(RzBinAddr);
+		if (!addr) {
+			return NULL;
+		}
+		addr->vaddr = symbol->base + symbol->offset;
+		return addr;
 	}
 	return NULL;
 }
@@ -1338,7 +1339,6 @@ RzPVector /*<RzBinSection *>*/ *omf166_symbols(RZ_NONNULL const void *target_obj
 		return NULL;
 	}
 
-	// int ct_sym = 0;
 	rz_pvector_sort(obj->symbols_vec, offset_cmp, NULL);
 	void **it;
 	rz_pvector_foreach (obj->symbols_vec, it) {

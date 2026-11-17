@@ -105,6 +105,7 @@ static bool load_buffer(RZ_UNUSED RzBinFile *bf, RzBinObject *obj, RzBuffer *b, 
 		if (base_obj->free_all_omf_obj) {
 			base_obj->free_all_omf_obj(base_obj->target_obj);
 		}
+		RZ_FREE(base_obj);
 		return NULL;
 	}
 

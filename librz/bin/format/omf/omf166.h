@@ -294,7 +294,7 @@ typedef struct {
 } OMF_components;
 
 typedef struct {
-	ut8 index;
+	ut16 index;
 	ut8 descr_type;
 	bool is_data; ///< used to build functions
 	union {

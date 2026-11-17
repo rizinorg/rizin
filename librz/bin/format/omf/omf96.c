@@ -1640,7 +1640,6 @@ bool rz_bin_format_omf96_post_init(RZ_NONNULL const void *target_obj) {
 
 	void **it;
 	ut16 index = 0;
-	RZ_UNUSED ut32 ct_offset = 0;
 	rz_pvector_sort(obj->pe_vec, (RzPVectorComparator)omf_cmp_pes, NULL);
 	rz_pvector_foreach (obj->sections_vec, it) {
 		OMF1_1_sections *section = (OMF1_1_sections *)*it;
@@ -1655,7 +1654,6 @@ bool rz_bin_format_omf96_post_init(RZ_NONNULL const void *target_obj) {
 		} else {
 			section->vaddr = align_to_paragraph(prev_section->vaddr + (ut64)prev_section->seg_length);
 		}
-		ct_offset += prev_section->seg_length;
 
 		const OMF_lnames *lname = (OMF_lnames *)rz_pvector_at(obj->lnames_vec, section->seg_name_idx);
 		if (!lname) {

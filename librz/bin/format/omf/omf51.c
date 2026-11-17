@@ -1313,14 +1313,15 @@ RzBinAddr *rz_bin_omf51_get_entry(RZ_NONNULL const void *target_obj) {
 	rz_pvector_foreach (v, it) {
 		const char *start_symbol_name = "main";
 		const OMF_symbol *symbol = (OMF_symbol *)*it;
-		if (!strcmp(symbol->name2, start_symbol_name)) {
-			RzBinAddr *addr = RZ_NEW0(RzBinAddr);
-			if (!addr) {
-				return NULL;
-			}
-			addr->vaddr = symbol->base + symbol->offset;
-			return addr;
+		if (RZ_STR_NE(symbol->name2, start_symbol_name)) {
+			continue;
 		}
+		RzBinAddr *addr = RZ_NEW0(RzBinAddr);
+		if (!addr) {
+			return NULL;
+		}
+		addr->vaddr = symbol->base + symbol->offset;
+		return addr;
 	}
 	return NULL;
 }
