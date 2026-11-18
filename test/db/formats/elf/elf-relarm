@@ -247,12 +247,12 @@ pd 1 @ 0x08000038
 EOF
 EXPECT=<<EOF
 1
-0x08000038 = 0x0090 [LE]
+0x08000038 = 0x0120 [LE]
             ;-- section..data:
             ;-- reloc.foo:
             ;-- .data:
             ;-- reloc_slot:
-            0x08000038      .dword 0x00000090                          ; RELOC 32 foo ; [02] -rw- section size 4 named .data
+            0x08000038      .dword 0x00000120                          ; RELOC 32 foo ; [02] -rw- section size 4 named .data
 EOF
 RUN
 
@@ -268,13 +268,13 @@ EXPECT=<<EOF
 0x08000038 0x00000038 0x08000034 R_ARM_CALL   foo - 0x08000040
 0x0800003c 0x0000003c 0x08000034 R_ARM_JUMP24 foo - 0x08000044
 0x08000040 0x00000040 0x08000034 R_ARM_CALL   foo - 0x08000048
-            ;-- reloc.foo:
-            ;-- arm:
-            0x08000038      bl    foo                                  ; RELOC 24 foo @ 0x08000034 - 0x8000040
-            ;-- reloc.foo.800003c:
-            0x0800003c      bl    foo                                  ; RELOC 24 foo @ 0x08000034 - 0x8000044
+        :   ;-- reloc.foo:
+        :   ;-- arm:
+        :   0x08000038      bl    sym.foo                              ; RELOC 24 foo @ 0x08000034 - 0x8000040
+        |   ;-- reloc.foo.800003c:
+        `=< 0x0800003c      b     sym.foo                              ; RELOC 24 foo @ 0x08000034 - 0x8000044
             ;-- reloc.foo.8000040:
-            0x08000040      blx   foo                                  ; RELOC 24 foo @ 0x08000034 - 0x8000048
+            0x08000040      bl    sym.foo                              ; RELOC 24 foo @ 0x08000034 - 0x8000048
 EOF
 RUN
 
@@ -465,15 +465,15 @@ EXPECT=<<EOF
             0x08001210      movw  r4, 0x1000                           ; RELOC 32 label3 @ 0x0801fffc - 0x7ffeffc
             ;-- section..R_ARM_MOVT_PREL:
             ;-- reloc.label.8001300:
-            0x08001300      movt  r0, 0x801                            ; RELOC 32 label @ 0x08010000 - 0x8001300 ; [09] -r-x section size 20 named .R_ARM_MOVT_PREL
+            0x08001300      movt  r0, 0                                ; RELOC 32 label @ 0x08010000 - 0x8001300 ; [09] -r-x section size 20 named .R_ARM_MOVT_PREL
             ;-- reloc.label1.8001304:
-            0x08001304      movt  r1, 0x801                            ; RELOC 32 label1 @ 0x08010004 - 0x8001304
+            0x08001304      movt  r1, 0                                ; RELOC 32 label1 @ 0x08010004 - 0x8001304
             ;-- reloc.label2.8001308:
-            0x08001308      movt  r2, 0x801                            ; RELOC 32 label2 @ 0x08010008 - 0x8001304
+            0x08001308      movt  r2, 0                                ; RELOC 32 label2 @ 0x08010008 - 0x8001304
             ;-- reloc.label3.800130c:
-            0x0800130c      movt  r3, 0x801                            ; RELOC 32 label3 @ 0x0801fffc - 0x800130c
+            0x0800130c      movt  r3, 1                                ; RELOC 32 label3 @ 0x0801fffc - 0x800130c
             ;-- reloc.label3.8001310:
-            0x08001310      movt  r4, 0x802                            ; RELOC 32 label3 @ 0x0801fffc - 0x7ffeffc
+            0x08001310      movt  r4, 2                                ; RELOC 32 label3 @ 0x0801fffc - 0x7ffeffc
             ;-- section..R_ARM_MOVW_BREL_NC:
             ;-- reloc.label.8001400:
             0x08001400      movw  r0, 0                                ; RELOC 16 label @ 0x08010000 - 0x8000000 ; [11] -r-x section size 20 named .R_ARM_MOVW_BREL_NC
@@ -687,40 +687,40 @@ EXPECT=<<EOF
 0x08000036 0x00000036 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym1
 0x08000038 0x00000038 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym1 + 0x00000001
 0x0800003a 0x0000003a 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym1 + 0x000000ff
-0x0800003c 0x0000003c 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym2
-0x0800003e 0x0000003e 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym2 + 0x00000001
-0x08000040 0x00000040 0x0800007c R_ARM_THM_ALU_ABS_G0_NC sym2 + 0x000000ff
+0x0800003c 0x0000003c 0x0800007d R_ARM_THM_ALU_ABS_G0_NC sym2
+0x0800003e 0x0000003e 0x0800007d R_ARM_THM_ALU_ABS_G0_NC sym2 + 0x00000001
+0x08000040 0x00000040 0x0800007d R_ARM_THM_ALU_ABS_G0_NC sym2 + 0x000000ff
 0x08000042 0x00000042 0x0800007e R_ARM_THM_ALU_ABS_G0_NC fn + 0x00000001
 0x08000044 0x00000044 0x0800007e R_ARM_THM_ALU_ABS_G0_NC fn + 0x00000003
 0x08000046 0x00000046 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym1
 0x08000048 0x00000048 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym1
 0x0800004a 0x0000004a 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym1 + 0x00000001
 0x0800004c 0x0000004c 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym1 + 0x000000ff
-0x0800004e 0x0000004e 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym2
-0x08000050 0x00000050 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym2 + 0x00000001
-0x08000052 0x00000052 0x0800007c R_ARM_THM_ALU_ABS_G1_NC sym2 + 0x000000ff
+0x0800004e 0x0000004e 0x0800007d R_ARM_THM_ALU_ABS_G1_NC sym2
+0x08000050 0x00000050 0x0800007d R_ARM_THM_ALU_ABS_G1_NC sym2 + 0x00000001
+0x08000052 0x00000052 0x0800007d R_ARM_THM_ALU_ABS_G1_NC sym2 + 0x000000ff
 0x08000054 0x00000054 0x0800007e R_ARM_THM_ALU_ABS_G1_NC fn + 0x00000001
 0x08000056 0x00000056 0x0800007e R_ARM_THM_ALU_ABS_G1_NC fn + 0x00000003
 0x08000058 0x00000058 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym1
 0x0800005a 0x0000005a 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym1
 0x0800005c 0x0000005c 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym1 + 0x00000001
 0x0800005e 0x0000005e 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym1 + 0x000000ff
-0x08000060 0x00000060 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym2
-0x08000062 0x00000062 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym2 + 0x00000001
-0x08000064 0x00000064 0x0800007c R_ARM_THM_ALU_ABS_G2_NC sym2 + 0x000000ff
+0x08000060 0x00000060 0x0800007d R_ARM_THM_ALU_ABS_G2_NC sym2
+0x08000062 0x00000062 0x0800007d R_ARM_THM_ALU_ABS_G2_NC sym2 + 0x00000001
+0x08000064 0x00000064 0x0800007d R_ARM_THM_ALU_ABS_G2_NC sym2 + 0x000000ff
 0x08000066 0x00000066 0x0800007e R_ARM_THM_ALU_ABS_G2_NC fn + 0x00000001
 0x08000068 0x00000068 0x0800007e R_ARM_THM_ALU_ABS_G2_NC fn + 0x00000003
 0x0800006a 0x0000006a 0x0800007c R_ARM_THM_ALU_ABS_G3    sym1
 0x0800006c 0x0000006c 0x0800007c R_ARM_THM_ALU_ABS_G3    sym1
 0x0800006e 0x0000006e 0x0800007c R_ARM_THM_ALU_ABS_G3    sym1 + 0x00000001
 0x08000070 0x00000070 0x0800007c R_ARM_THM_ALU_ABS_G3    sym1 + 0x000000ff
-0x08000072 0x00000072 0x0800007c R_ARM_THM_ALU_ABS_G3    sym2
-0x08000074 0x00000074 0x0800007c R_ARM_THM_ALU_ABS_G3    sym2 + 0x00000001
-0x08000076 0x00000076 0x0800007c R_ARM_THM_ALU_ABS_G3    sym2 + 0x000000ff
+0x08000072 0x00000072 0x0800007d R_ARM_THM_ALU_ABS_G3    sym2
+0x08000074 0x00000074 0x0800007d R_ARM_THM_ALU_ABS_G3    sym2 + 0x00000001
+0x08000076 0x00000076 0x0800007d R_ARM_THM_ALU_ABS_G3    sym2 + 0x000000ff
 0x08000078 0x00000078 0x0800007e R_ARM_THM_ALU_ABS_G3    fn + 0x00000001
 0x0800007a 0x0000007a 0x0800007e R_ARM_THM_ALU_ABS_G3    fn + 0x00000003
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x08000034  7c30 7c20 7d20 7b20 7d20 7d20 7b20 7f20  |0| } { } } { . 
+0x08000034  7c30 7c20 7d20 7b20 7d20 7e20 7c20 7f20  |0| } { } ~ | . 
 0x08000044  8120                                     . 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x08000046  0030 0020 0020 0120 0020 0020 0120 0020  .0. . . . . . . 

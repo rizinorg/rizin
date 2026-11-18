@@ -694,7 +694,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
 					sym_addr = symbol->vaddr;
-					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
+					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 						reloc->thumb = 1;
 					}
