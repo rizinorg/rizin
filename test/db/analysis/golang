@@ -506,7 +506,7 @@ TAIL
 0x1000872ad 6 6 []byte
 0x10008ca10 36 36 syntax error scanning complex number
 0x10008b454 29 29 syntax error scanning boolean
-1708
+1707
 0x10008bada 31 31 slice bounds out of range [:%x]
 0x10008babb 31 31 slice bounds out of range [%x:]
 0x10008be19 32 32 slice bounds out of range [::%x]

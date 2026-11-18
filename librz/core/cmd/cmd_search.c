@@ -257,9 +257,38 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	rz_interrupt_break_pop(core->intr);
 }
 
+/**
+ * \brief Check if \p addr is in the delay slots of a preceding instruction
+ * of a fixed-size instruction set, where no function can start.
+ */
+static bool in_delay_slot(RzCore *core, ut64 addr) {
+	int size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	if (size < 1 || size > 8 || size != rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE)) {
+		return false;
+	}
+	ut8 buf[8];
+	for (int slot = 1; slot <= 8 && addr >= (ut64)size * slot; slot++) {
+		ut64 at = addr - (ut64)size * slot;
+		if (!rz_io_read_at_mapped(core->io, at, buf, size)) {
+			return false;
+		}
+		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
+		bool hit = rz_analysis_op(core->analysis, &op, at, buf, size, RZ_ANALYSIS_OP_MASK_BASIC) == size && op.delay >= slot;
+		rz_analysis_op_fini(&op);
+		if (hit) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *)user;
 	rz_return_val_if_fail(core->search, 0);
+	if (in_delay_slot(core, addr)) {
+		return 1;
+	}
 	int depth = rz_config_get_i(core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
 	rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, depth);

@@ -321,6 +321,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=hppa: no function starts in a delay slot
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 874020106bc23fd937de008037de3f81e840c000080002406bc23fd9e840c00008000240
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010018    1 12           fcn.00010018
+EOF
+RUN
+
 NAME=hppa: function preludes with instructions scheduled before
 FILE=malloc://0x60
 ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
