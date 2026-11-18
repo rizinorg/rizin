@@ -3999,7 +3999,7 @@ EXPECT=<<EOF
 fpcr = 0x0
 fpsr = 0x0
 fp0 = 0x4000c90fdaa22168c235
-fpsr = 0x00000000
+fpsr = 0x00000208
 fpcr = 0x40
 fpsr = 0x0
 fp0 = 0x4000c90fdb0000000000
@@ -4018,10 +4018,10 @@ fp0 = 0x3fff8000000000000000
 fpsr = 0x00000000
 fpcr = 0x0
 fpsr = 0x2080
-fpsr = 0x00000080
+fpsr = 0x00000288
 fpcr = 0x0
 fpsr = 0x200
-fpsr = 0x00000000
+fpsr = 0x00000208
 EOF
 RUN
 NAME=m68k aez FMOVE control registers mask unimplemented bits
@@ -4764,10 +4764,10 @@ fpsr = 0x0
 fp0 = 0x3fff8000000000000000
 fpsr = 0x00000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0xab0000
 fpsr = 0x04ab0000
@@ -4827,7 +4827,7 @@ fpsr = 0x0
 fp0 = 0x40008000000000000000
 fpsr = 0x00000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
 fp0 = 0x80000000000000000000
@@ -4983,10 +4983,10 @@ fpsr = 0x0
 fp0 = 0xffff8000000000000000
 fpsr = 0x0a000410
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0xab0000
 fpsr = 0x00ab0000
@@ -5148,7 +5148,7 @@ fpsr = 0x0
 fp0 = 0x7fff8000000000000000
 fpsr = 0x02000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0xab0000
 fpsr = 0x00ab0000
@@ -5331,7 +5331,7 @@ fpsr = 0x0
 fp0 = 0x3fff8000000000000000
 fpsr = 0x00000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
 fp0 = 0x7fff8000000000000000
@@ -5585,7 +5585,7 @@ fpsr = 0x0
 fp0 = 0x40018000000000000000
 fpsr = 0x00000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
 fp0 = 0x7fff8000000000000000
@@ -5648,10 +5648,10 @@ fpsr = 0x0
 fp0 = 0x00000000000000000000
 fpsr = 0x04020000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0x0
 fp0 = 0x3fff8000000000000000
@@ -6013,10 +6013,10 @@ ar fpsr
 EOF
 EXPECT=<<EOF
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffc000010000000000
 fpsr = 0x01004080
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffc000000000000000
 fpsr = 0x01000000
 EOF
 RUN
@@ -6144,7 +6144,7 @@ fpsr = 0x0
 fp0 = 0x40018000000000000000
 fpsr = 0x00000000
 fpsr = 0x0
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 fpsr = 0xab0000
 fpsr = 0x00ab0208
@@ -6490,7 +6490,7 @@ aezv fpsr 0
 aezs
 ar fpsr
 ar pc
-wx f0820000 @ 0
+wx f2820000 @ 0
 s 0
 aezi
 aezv fpsr 0x01000000
@@ -7132,9 +7132,9 @@ ar fp0
 ar fpsr
 EOF
 EXPECT=<<EOF
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
-fp0 = 0x7fffc000000000000001
+fp0 = 0x7fffffffffffffffffff
 fpsr = 0x01002080
 EOF
 RUN
@@ -7200,7 +7200,7 @@ ar fpsr
 EOF
 EXPECT=<<EOF
 fpsr = 0x0
-fp0 = 0xffffc000000000000001
+fp0 = 0xffffc000000000000000
 fpsr = 0x09000000
 EOF
 RUN
@@ -7223,7 +7223,7 @@ ar fpsr
 EOF
 EXPECT=<<EOF
 fpsr = 0x0
-fp0 = 0xffffc000000000000001
+fp0 = 0xffffc000000000000000
 fpsr = 0x09004080
 EOF
 RUN
@@ -7397,5 +7397,145 @@ fpcr = 0x10
 fpsr = 0x0
 fp0 = 0x7ffeffffffffffffffff
 fpsr = 0x00001048
+EOF
+RUN
+NAME=m68k aez FMOVE.L saturates large signed magnitudes
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c540043f0000000000000f2006000
+aezi
+aezs 2
+ar d0
+ar fpsr
+wx f23c5400c7f0000000000000f2006000
+s 0
+aezi
+aezs 2
+ar d0
+ar fpsr
+EOF
+EXPECT=<<EOF
+d0 = 0x7fffffff
+fpsr = 0x00002080
+d0 = 0x80000000
+fpsr = 0x08002080
+EOF
+RUN
+NAME=m68k aez FSCALE retains the sign of large scale factors
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44003f800000f23c44264f800000
+aezi
+aezs 2
+ar fp0
+ar fpsr
+wx f23c44003f800000f23c4426cf800000
+s 0
+aezi
+aezv fpsr 0
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001048
+fpsr = 0x0
+fp0 = 0x00000000000000000000
+fpsr = 0x04000800
+EOF
+RUN
+NAME=m68k aez FMOVE.S preserves an immediate signaling NaN payload on load and store
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4400ff800123f2006400
+aezi
+aezs
+ar fp0
+ar fpsr
+aezs
+ar d0
+EOF
+EXPECT=<<EOF
+fp0 = 0xffffc001230000000000
+fpsr = 0x09004080
+d0 = 0xffc00123
+EOF
+RUN
+NAME=m68k aez FADD sets OVFL on a carry at the single precision midpoint
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c44007f7ffffff23c442273000000
+aezi
+aezv fpcr 0x40
+aezs 2
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp0 = 0x7fff8000000000000000
+fpsr = 0x02001248
+EOF
+RUN
+NAME=m68k aez FSQRT rounds once above a single precision midpoint
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23848040040
+wx 3fff00008000010000008001 @ 0x40
+aezi
+aezv fpcr 0x40
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fp0 = 0x3fff8000010000000000
+fpsr = 0x00000208
+EOF
+RUN
+NAME=m68k aez FMOVECR rounds pi down in extended precision
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f2005c00
+aezi
+aezv fpcr 0x10
+aezs
+ar fp0
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x10
+fp0 = 0x4000c90fdaa22168c234
+fpsr = 0x00000208
+EOF
+RUN
+NAME=m68k legacy Capstone PMMU branch and packed arithmetic operands
+FILE=malloc://32
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f0810004f0c500000004f2184c22
+ao~^rzil
+ao @ 4~^rzil
+ao @ 10~^rzil
+EOF
+EXPECT=<<EOF
+rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
+rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xa)) empty) (set fpu_addr (cast 32 false (var a0))) (set a0 (cast 32 false (+ (var a0) (bv 32 0xc)))) (goto m68k_fpu))
 EOF
 RUN

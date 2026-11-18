@@ -182,6 +182,7 @@ typedef struct {
 	ut8 selector;
 	ut16 sign_exp;
 	ut64 mantissa;
+	st8 tail; // Sign of the exact constant minus its nearest FP80 value.
 } M68KFMovecrConst;
 
 RZ_IPI RzILOpPure *m68k_reg_value(M68KILCtx *ctx, m68k_reg reg);

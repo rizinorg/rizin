@@ -663,13 +663,3 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(RZ_NONNULL const cs_m68k *m68k, RZ_N
 	}
 	return op->type != M68K_OP_REG && !rz_m68k_op_is_mem_addr(op);
 }
-
-RZ_IPI bool rz_m68k_fpu_insn_data_alias_has_dst(RZ_NONNULL const cs_insn *insn) {
-	rz_return_val_if_fail(insn && insn->detail, false);
-	if (insn->detail->m68k.op_count < 1) {
-		return false;
-	}
-	cs_m68k_op hidden_dst;
-	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(insn, &hidden_dst);
-	return dst && rz_m68k_op_is_fpu_reg(dst);
-}
