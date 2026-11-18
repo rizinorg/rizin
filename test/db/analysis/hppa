@@ -680,3 +680,29 @@ arg char **argv @ r25
 arg int argc @ r26
 EOF
 RUN
+
+NAME=hppa: no code from data in the executable segment
+FILE=bins/hppa/hppa-rodata
+CMDS=<<EOF
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0x00010054    1 24           entry0
+EOF
+RUN
+
+NAME=hppa: functions past calls to noreturn functions
+FILE=bins/hppa/hppa-noret
+CMDS=<<EOF
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0x00010214    1 20           sym.imp.exit
+0x00010228    1 12           entry0
+0x00010238    1 16           fcn.00010238
+0x00010248    1 16           fcn.00010248
+0x00012008    1 12           fcn.00012008
+EOF
+RUN
