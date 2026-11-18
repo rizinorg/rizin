@@ -5839,7 +5839,6 @@ static RzILOpBool *fpu_fsub_operr(void) {
 			INV(XOR(IS_FNEG(VARL("src_fp")), IS_FNEG(VARL("dst_fp"))))));
 }
 
-
 static RzILOpBool *fpu_fsub_inex2(void) {
 	/* +0 vs -0 is an exact cancellation whose sign follows the rounding
 	 * mode (UM 4-110 note 1). That is not INEX2. */
@@ -7503,9 +7502,7 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 	if (ctx.m68k->op_count > RZ_ARRAY_SIZE(ctx.m68k->operands)) {
 		return NULL;
 	}
-	/* Older Capstone releases reuse FBcc IDs for MC68851 PBcc. */
-	if (insn->size >= 2 && insn->bytes[0] == 0xf0 && (insn->bytes[1] & 0xb0) == 0x80 &&
-		insn->id >= M68K_INS_FBF && insn->id <= M68K_INS_FBST) {
+	if (rz_m68k_insn_is_pmmu_branch(insn)) {
 		return m68k_guard_supervisor(m68k_label("m68k_mmu"));
 	}
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32

@@ -7523,19 +7523,21 @@ fp0 = 0x4000c90fdaa22168c234
 fpsr = 0x00000208
 EOF
 RUN
-NAME=m68k legacy Capstone PMMU branch and packed arithmetic operands
+NAME=m68k PMMU branch and unmodeled FPU operations
 FILE=malloc://32
 ARGS=-a m68k -b 32 -E big
 CMDS=<<EOF
 e asm.cpu=68020
-wx f0810004f0c500000004f2184c22
+wx f0810004f0c500000004f2184c22f2185437
 ao~^rzil
 ao @ 4~^rzil
 ao @ 10~^rzil
+ao @ 14~^rzil
 EOF
 EXPECT=<<EOF
 rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xa)) empty) (set fpu_addr (cast 32 false (var a0))) (set a0 (cast 32 false (+ (var a0) (bv 32 0xc)))) (goto m68k_fpu))
+rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xe)) empty) (set fpu_addr (cast 32 false (var a0))) (set a0 (cast 32 false (+ (var a0) (bv 32 0x8)))) (goto m68k_fpu))
 EOF
 RUN

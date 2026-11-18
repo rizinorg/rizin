@@ -1039,6 +1039,12 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, mode, insn, addr);
 	}
+	if (rz_m68k_insn_is_pmmu_branch(insn)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
+		m68k_set_opdir(op);
+		goto beach;
+	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
