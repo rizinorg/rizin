@@ -631,6 +631,42 @@ bool test_bin_set_export_info(void) {
 	mu_end;
 }
 
+static const ut8 k_min_elf32[] = { 0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+static RzCore *malloc_core_with(const ut8 *bytes, ut32 len) {
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://128", RZ_PERM_RW, 0);
+	if (!f || !rz_core_bin_load(core, NULL, UT64_MAX)) {
+		rz_core_free(core);
+		return NULL;
+	}
+	rz_core_write_at(core, 0, bytes, len);
+	return core;
+}
+
+bool test_malloc_uri_obr_reloads_elf_keeps_buffer(void) {
+	RzCore *core = malloc_core_with(k_min_elf32, sizeof(k_min_elf32));
+	mu_assert_notnull(core, "setup");
+	RzCoreFile *f = rz_core_file_cur(core);
+	mu_assert_eq(rz_core_cmd0(core, "obR"), 0, "obR");
+
+	RzBinFile *bf = rz_bin_file_find_by_fd(core->bin, f->fd);
+	mu_assert_notnull(bf, "binfile after obR");
+	mu_assert_streq(rz_bin_file_cur_plugin(bf)->name, "elf", "obR reloads elf from the live buffer");
+	mu_assert_eq(rz_pvector_len(&f->binfiles), 1, "core file owns the reloaded binfile");
+	mu_assert_ptreq(rz_pvector_at(&f->binfiles, 0), bf, "reloaded binfile is registered on the core file");
+
+	ut8 got[4];
+	RzIODesc *desc = rz_io_desc_get(core->io, f->fd);
+	mu_assert_notnull(desc, "io desc after obR");
+	int n = rz_io_desc_read_at(desc, 0, got, sizeof(got));
+	mu_assert_eq(n, 4, "read desc after obR");
+	mu_assert_memeq(got, k_min_elf32, 4, "obR does not discard the io buffer");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -641,6 +677,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
+	mu_run_test(test_malloc_uri_obr_reloads_elf_keeps_buffer);
 	return tests_passed != tests_run;
 }
 
