@@ -284,7 +284,339 @@ static RzStructuredData *hppa_opex(csh handle, cs_insn *insn) {
 	return root;
 }
 
-static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op) {
+#define HPPA_INSN_SIZE 4
+
+/// Major opcode of BL, GATE, BLR, BV, BVE and the PA 2.0 B forms
+#define HPPA_OPCODE_BRANCH 0x3a
+
+typedef enum {
+	HPPA_BRANCH_COND, ///< taken depending on the condition
+	HPPA_BRANCH_ALWAYS,
+	HPPA_BRANCH_NEVER,
+} HPPABranchCond;
+
+/**
+ * \brief Check if the mnemonic carries the completer, e.g. "n" in "cmpb,<>,n".
+ */
+static bool hppa_has_completer(const cs_insn *insn, const char *completer) {
+	size_t len = strlen(completer);
+	for (const char *p = strchr(insn->mnemonic, ','); p; p = strchr(p, ',')) {
+		p++;
+		if (!strncmp(p, completer, len) && (!p[len] || p[len] == ',')) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Classify the condition of a compare, add or move and branch.
+ *
+ * The condition is the first completer. PA 2.0 spells "always" as "tr" and
+ * "never" as no condition. PA 1.1 names have no condition in the
+ * always taken false forms (COMBF, ...) and the never taken true forms.
+ */
+static HPPABranchCond hppa_branch_cond(const cs_insn *insn) {
+	const char *cond = strchr(insn->mnemonic, ',');
+	cond = cond ? cond + 1 : "";
+	if (*cond == '*') {
+		// doubleword condition
+		cond++;
+	}
+	size_t len = strcspn(cond, ",");
+	if (len == 2 && !strncmp(cond, "tr", 2)) {
+		return HPPA_BRANCH_ALWAYS;
+	}
+	if (len && !(len == 1 && *cond == 'n')) {
+		return HPPA_BRANCH_COND;
+	}
+	switch (insn->id) {
+	case HPPA_INS_COMBF:
+	case HPPA_INS_COMIBF:
+	case HPPA_INS_ADDBF:
+	case HPPA_INS_ADDIBF:
+		return HPPA_BRANCH_ALWAYS;
+	case HPPA_INS_BB:
+	case HPPA_INS_BVB:
+		return HPPA_BRANCH_COND;
+	default:
+		return HPPA_BRANCH_NEVER;
+	}
+}
+
+/**
+ * \brief Set the target and delay slot of a branch.
+ *
+ * The ",n" completer nullifies the delay slot of an unconditional branch,
+ * and of a conditional one when taken forward or not taken backward. A slot
+ * running only on the fall-through path starts that path instead.
+ */
+static void hppa_set_branch(RzAnalysisOp *op, const cs_insn *insn, ut64 jump, bool conditional) {
+	bool nullify = hppa_has_completer(insn, "n");
+	op->jump = jump;
+	if (!conditional) {
+		op->delay = nullify ? 0 : 1;
+	} else if (nullify && jump >= insn->address + 2 * HPPA_INSN_SIZE) {
+		op->fail = insn->address + HPPA_INSN_SIZE;
+	} else {
+		op->delay = 1;
+		op->fail = insn->address + 2 * HPPA_INSN_SIZE;
+	}
+}
+
+/**
+ * \brief Link register of BL, GATE and the PA 2.0 B branches.
+ *
+ * Read from the word as Capstone reports the t field for the 22-bit forms
+ * too, where it holds displacement bits: B,L and B,L,PUSH link to rp there.
+ */
+static ut32 hppa_branch_link(ut32 word) {
+	ut32 ext = (word >> 13) & 7;
+	return ext == 4 || ext == 5 ? 2 : (word >> 21) & 0x1f;
+}
+
+static const cs_hppa_op *hppa_find_op(const cs_insn *insn, hppa_op_type type) {
+	const cs_hppa *hc = &insn->detail->hppa;
+	for (ut8 i = 0; i < hc->op_count; i++) {
+		if (hc->operands[i].type == type) {
+			return &hc->operands[i];
+		}
+	}
+	return NULL;
+}
+
+static void hppa_op_set_branch_link(RzAnalysisOp *op, const cs_insn *insn, ut32 link) {
+	const cs_hppa_op *target = hppa_find_op(insn, HPPA_OP_TARGET);
+	if (!target) {
+		return;
+	}
+	ut64 jump = insn->address + target->imm;
+	if (!link) {
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+	} else if (jump == insn->address + 2 * HPPA_INSN_SIZE) {
+		// "b,l .+8,rN" falls through, only reading the PC
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = jump;
+		return;
+	} else {
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+		op->fail = insn->address + 2 * HPPA_INSN_SIZE;
+	}
+	hppa_set_branch(op, insn, jump, false);
+}
+
+static void hppa_op_set_cond_branch(RzAnalysisOp *op, const cs_insn *insn) {
+	const cs_hppa_op *target = hppa_find_op(insn, HPPA_OP_TARGET);
+	if (!target) {
+		return;
+	}
+	switch (hppa_branch_cond(insn)) {
+	case HPPA_BRANCH_ALWAYS:
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		hppa_set_branch(op, insn, insn->address + target->imm, false);
+		break;
+	case HPPA_BRANCH_NEVER:
+		switch (insn->id) {
+		case HPPA_INS_ADDB:
+		case HPPA_INS_ADDIB:
+		case HPPA_INS_ADDBT:
+		case HPPA_INS_ADDIBT:
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+			break;
+		case HPPA_INS_MOVB:
+		case HPPA_INS_MOVIB:
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			break;
+		default:
+			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+			break;
+		}
+		break;
+	case HPPA_BRANCH_COND:
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		hppa_set_branch(op, insn, insn->address + target->imm, true);
+		break;
+	}
+}
+
+static const char *hppa_gr_name(hppa_reg reg) {
+	static const char *const names[] = {
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+		"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
+		"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
+	};
+	return reg >= HPPA_REG_GR0 && reg <= HPPA_REG_GR31 ? names[reg - HPPA_REG_GR0] : NULL;
+}
+
+/**
+ * \brief Type BV, BVE, BE and BLE: returns through rp, computed jumps and
+ * calls, and Linux syscalls through the gateway page at 0(sr2,r0).
+ */
+static void hppa_op_set_ext_branch(RzAnalysisOp *op, const cs_insn *insn) {
+	const cs_hppa_op *mem = hppa_find_op(insn, HPPA_OP_MEM);
+	if (!mem) {
+		return;
+	}
+	const cs_hppa_op *idx = hppa_find_op(insn, HPPA_OP_IDX_REG);
+	const cs_hppa_op *disp = hppa_find_op(insn, HPPA_OP_DISP);
+	bool indexed = idx && idx->reg != HPPA_REG_GR0;
+	bool link = insn->id == HPPA_INS_BLE || hppa_has_completer(insn, "l");
+	if (!link && !indexed && !disp && mem->mem.base == HPPA_REG_GR2) {
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+	} else if (mem->mem.base == HPPA_REG_GR0 && disp) {
+		if (!link) {
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op->jump = disp->imm;
+		} else if (mem->mem.space == HPPA_REG_SR2) {
+			op->type = RZ_ANALYSIS_OP_TYPE_SWI;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
+			op->jump = disp->imm;
+		}
+	} else {
+		op->type = link ? RZ_ANALYSIS_OP_TYPE_RCALL : RZ_ANALYSIS_OP_TYPE_RJMP;
+		op->reg = hppa_gr_name(mem->mem.base);
+		if (indexed) {
+			op->ireg = hppa_gr_name(idx->reg);
+			op->scale = 8;
+		}
+		if (disp) {
+			op->disp = disp->imm;
+		}
+	}
+	if (link) {
+		op->fail = insn->address + 2 * HPPA_INSN_SIZE;
+	}
+	hppa_set_branch(op, insn, op->jump, false);
+}
+
+static bool hppa_is_cond_completer(const char *c, size_t len) {
+	static const char *const names[] = {
+		"sv", "nsv", "od", "ev", "tr", "nuv", "uv", "znv", "vnz",
+		"swz", "sbz", "shz", "sdc", "swc", "sbc", "shc",
+		"nwz", "nbz", "nhz", "ndc", "nwc", "nbc", "nhc"
+	};
+	if (len && *c == '*') {
+		// doubleword condition
+		c++;
+		len--;
+	}
+	if (len && (*c == '<' || *c == '>' || *c == '=')) {
+		return true;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(names); i++) {
+		if (strlen(names[i]) == len && !strncmp(c, names[i], len)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Model the nullification of the next instruction by a computational
+ * instruction as a branch over it.
+ *
+ * The next instruction is nullified when the condition completer holds,
+ * always for "tr". Trapping forms trap on the condition instead.
+ */
+static bool hppa_op_set_skip(RzAnalysisOp *op, const cs_insn *insn) {
+	switch (insn->id) {
+	case HPPA_INS_ADD:
+	case HPPA_INS_ADDC:
+	case HPPA_INS_ADDCO:
+	case HPPA_INS_ADDI:
+	case HPPA_INS_ADDIO:
+	case HPPA_INS_ADDL:
+	case HPPA_INS_ADDO:
+	case HPPA_INS_AND:
+	case HPPA_INS_ANDCM:
+	case HPPA_INS_CMPCLR:
+	case HPPA_INS_CMPICLR:
+	case HPPA_INS_COMCLR:
+	case HPPA_INS_COMICLR:
+	case HPPA_INS_DCOR:
+	case HPPA_INS_DEP:
+	case HPPA_INS_DEPD:
+	case HPPA_INS_DEPDI:
+	case HPPA_INS_DEPI:
+	case HPPA_INS_DEPW:
+	case HPPA_INS_DEPWI:
+	case HPPA_INS_DS:
+	case HPPA_INS_EXTRD:
+	case HPPA_INS_EXTRS:
+	case HPPA_INS_EXTRU:
+	case HPPA_INS_EXTRW:
+	case HPPA_INS_IDCOR:
+	case HPPA_INS_OR:
+	case HPPA_INS_SH1ADD:
+	case HPPA_INS_SH1ADDL:
+	case HPPA_INS_SH1ADDO:
+	case HPPA_INS_SH2ADD:
+	case HPPA_INS_SH2ADDL:
+	case HPPA_INS_SH2ADDO:
+	case HPPA_INS_SH3ADD:
+	case HPPA_INS_SH3ADDL:
+	case HPPA_INS_SH3ADDO:
+	case HPPA_INS_SHD:
+	case HPPA_INS_SHLADD:
+	case HPPA_INS_SHRPD:
+	case HPPA_INS_SHRPW:
+	case HPPA_INS_SUB:
+	case HPPA_INS_SUBB:
+	case HPPA_INS_SUBBO:
+	case HPPA_INS_SUBI:
+	case HPPA_INS_SUBIO:
+	case HPPA_INS_SUBO:
+	case HPPA_INS_UADDCM:
+	case HPPA_INS_UXOR:
+	case HPPA_INS_VDEP:
+	case HPPA_INS_VDEPI:
+	case HPPA_INS_VEXTRS:
+	case HPPA_INS_VEXTRU:
+	case HPPA_INS_VSHD:
+	case HPPA_INS_XOR:
+	case HPPA_INS_ZDEP:
+	case HPPA_INS_ZDEPI:
+	case HPPA_INS_ZVDEP:
+	case HPPA_INS_ZVDEPI:
+		break;
+	case HPPA_INS_FTEST:
+		// nullifies after a true FCMP
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+		op->jump = insn->address + 2 * HPPA_INSN_SIZE;
+		op->fail = insn->address + HPPA_INSN_SIZE;
+		return true;
+	default:
+		return false;
+	}
+	if (hppa_has_completer(insn, "tc")) {
+		return false;
+	}
+	for (const char *p = strchr(insn->mnemonic, ','); p; p = strchr(p, ',')) {
+		p++;
+		size_t len = strcspn(p, ",");
+		if (!hppa_is_cond_completer(p, len)) {
+			continue;
+		}
+		if (len == 2 && !strncmp(p, "tr", 2)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		} else if (len == 3 && !strncmp(p, "*tr", 3)) {
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+			op->fail = insn->address + HPPA_INSN_SIZE;
+		}
+		op->jump = insn->address + 2 * HPPA_INSN_SIZE;
+		return true;
+	}
+	return false;
+}
+
+static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op, ut32 word) {
+	if (hppa_op_set_skip(op, ctx->insn)) {
+		return;
+	}
 	switch (ctx->insn->id) {
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
@@ -306,54 +638,48 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op) {
 		break;
 	case HPPA_INS_ADDB:
 	case HPPA_INS_ADDIB:
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 2);
-		break;
 	case HPPA_INS_ADDBT:
 	case HPPA_INS_ADDBF:
 	case HPPA_INS_ADDIBT:
 	case HPPA_INS_ADDIBF:
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 2);
-		op->fail = ctx->insn->address + ctx->insn->size;
+	case HPPA_INS_BB:
+	case HPPA_INS_BVB:
+	case HPPA_INS_CMPB:
+	case HPPA_INS_CMPIB:
+	case HPPA_INS_COMBT:
+	case HPPA_INS_COMBF:
+	case HPPA_INS_COMIBT:
+	case HPPA_INS_COMIBF:
+	case HPPA_INS_MOVB:
+	case HPPA_INS_MOVIB:
+		hppa_op_set_cond_branch(op, ctx->insn);
 		break;
 	case HPPA_INS_AND:
 	case HPPA_INS_ANDCM:
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
-	case HPPA_INS_BB:
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 2);
-		op->fail = ctx->insn->address + ctx->insn->size;
+	case HPPA_INS_B:
+	case HPPA_INS_BL:
+	case HPPA_INS_GATE:
+		if (word >> 26 == HPPA_OPCODE_BRANCH) {
+			hppa_op_set_branch_link(op, ctx->insn, hppa_branch_link(word));
+		}
 		break;
 	case HPPA_INS_BE:
-		op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
-		op->reg = hppa_op_as_mem(ctx, 1);
-		break;
-	case HPPA_INS_BL:
-		op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 0);
-		break;
 	case HPPA_INS_BLE:
-		op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
-		op->reg = hppa_op_as_mem(ctx, 1);
+	case HPPA_INS_BV:
+	case HPPA_INS_BVE:
+		hppa_op_set_ext_branch(op, ctx->insn);
 		break;
 	case HPPA_INS_BLR:
-		op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
-		op->reg = hppa_op_as_reg(ctx, 0);
-		break;
-	case HPPA_INS_BV:
-		op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
-		// FIXME: Should be result of the *two* registers actually
-		op->reg = hppa_op_as_mem(ctx, 1);
-		break;
-	case HPPA_INS_BVB:
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 1);
-		break;
-	case HPPA_INS_GATE:
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = hppa_op_as_target(ctx, 0);
+		// indexes a table of branches following the delay slot
+		if (hppa_op_count(ctx->insn) == 2 && hppa_op_get(ctx->insn, 1)->reg != HPPA_REG_GR0) {
+			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
+			op->fail = ctx->insn->address + 2 * HPPA_INSN_SIZE;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
+		}
+		hppa_set_branch(op, ctx->insn, UT64_MAX, false);
 		break;
 	case HPPA_INS_LDB:
 	case HPPA_INS_LDBS:
@@ -395,28 +721,8 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op) {
 	case HPPA_INS_LDO:
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
-	case HPPA_INS_MOVB:
-	case HPPA_INS_MOVIB:
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 2);
-		op->fail = ctx->insn->address + ctx->insn->size;
-		break;
 	case HPPA_INS_OR:
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
-		break;
-	case HPPA_INS_CALL:
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = hppa_op_as_target(ctx, 0);
-		break;
-	case HPPA_INS_COMIB:
-	case HPPA_INS_COMIBT:
-	case HPPA_INS_COMIBF:
-	case HPPA_INS_COMB:
-	case HPPA_INS_COMBT:
-	case HPPA_INS_COMBF:
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = ctx->insn->address + hppa_op_as_target(ctx, 2);
-		op->fail = ctx->insn->address + ctx->insn->size;
 		break;
 	case HPPA_INS_STB:
 	case HPPA_INS_STBS:
@@ -458,6 +764,383 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op) {
 	}
 }
 
+/// Instructions searched before a switch dispatch for the compare of its index
+#define HPPA_SWITCH_WINDOW 8
+
+#define HPPA_OPCODE_ARITH   0x02
+#define HPPA_OPCODE_LDIL    0x08
+#define HPPA_OPCODE_LDO     0x0d
+#define HPPA_OPCODE_COMBT   0x20
+#define HPPA_OPCODE_COMIBF  0x23
+#define HPPA_OPCODE_COMICLR 0x24
+#define HPPA_EXT6_COMCLR    0x22
+
+/// \p len bits of \p w from bit \p lsb
+#define HPPA_FIELD(w, lsb, len) (((w) >> (lsb)) & ((1u << (len)) - 1))
+
+/// Immediate of \p len bits whose sign is the lowest one
+static st32 hppa_low_sign_ext(ut32 x, int len) {
+	st32 v = (st32)(x >> 1);
+	return x & 1 ? v - (1 << (len - 1)) : v;
+}
+
+typedef enum {
+	HPPA_CMP_NONE,
+	HPPA_CMP_LTU,
+	HPPA_CMP_LEU,
+	HPPA_CMP_GTU,
+	HPPA_CMP_GEU,
+} HppaCmp;
+
+/// The unsigned condition \p c of a compare, negated with \p neg
+static HppaCmp hppa_cmp_cond(ut32 c, bool neg) {
+	switch (c) {
+	case 4:
+		return neg ? HPPA_CMP_GEU : HPPA_CMP_LTU;
+	case 5:
+		return neg ? HPPA_CMP_GTU : HPPA_CMP_LEU;
+	default:
+		return HPPA_CMP_NONE;
+	}
+}
+
+/**
+ * \brief Count the cases a dispatch running while "lhs cmp rhs" reaches.
+ *
+ * \param index_lhs Whether the index is lhs, the other side being \p bound
+ */
+static ut64 hppa_cmp_count(HppaCmp cmp, bool index_lhs, ut32 bound) {
+	if (!index_lhs) {
+		// the bound above the index
+		switch (cmp) {
+		case HPPA_CMP_GTU:
+			cmp = HPPA_CMP_LTU;
+			break;
+		case HPPA_CMP_GEU:
+			cmp = HPPA_CMP_LEU;
+			break;
+		default:
+			return 0;
+		}
+	}
+	switch (cmp) {
+	case HPPA_CMP_LTU:
+		return bound;
+	case HPPA_CMP_LEU:
+		return (ut64)bound + 1;
+	default:
+		return 0;
+	}
+}
+
+typedef struct {
+	const RzAsmHPPAContext *ctx;
+	RzAnalysis *a;
+	cs_insn *insn; ///< scratch, to leave the instruction analyzed alone
+} HppaScan;
+
+/**
+ * \brief Decode the instruction at \p addr and tell whether it may change
+ * the control flow.
+ */
+static bool hppa_scan_decode(HppaScan *s, ut64 addr, ut32 *word, bool *flow, ut64 *jump) {
+	ut8 buf[HPPA_INSN_SIZE];
+	if (!s->a->iob.read_at(s->a->iob.io, addr, buf, sizeof(buf))) {
+		return false;
+	}
+	const ut8 *code = buf;
+	size_t size = sizeof(buf);
+	uint64_t at = addr;
+	if (!cs_disasm_iter(s->ctx->h, &code, &size, &at, s->insn)) {
+		return false;
+	}
+	*word = rz_read_ble32(buf, s->a->big_endian);
+	RzAsmHPPAContext tmp = *s->ctx;
+	tmp.insn = s->insn;
+	RzAnalysisOp op;
+	rz_analysis_op_init(&op);
+	op.addr = addr;
+	op.size = HPPA_INSN_SIZE;
+	hppa_op_set_type(&tmp, &op, *word);
+	switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_ILL:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
+	case RZ_ANALYSIS_OP_TYPE_SWI:
+	case RZ_ANALYSIS_OP_TYPE_SWITCH:
+		*flow = true;
+		break;
+	default:
+		// skips are conditional jumps
+		*flow = (op.type & RZ_ANALYSIS_OP_TYPE_COND) != 0;
+		break;
+	}
+	*jump = op.jump;
+	rz_analysis_op_fini(&op);
+	return true;
+}
+
+/// Whether the decoded instruction may write \p reg
+static bool hppa_scan_writes(const HppaScan *s, ut32 reg) {
+	const cs_hppa *hc = &s->insn->detail->hppa;
+	bool modify = s->insn->id == HPPA_INS_LDWM || s->insn->id == HPPA_INS_STWM ||
+		hppa_has_completer(s->insn, "ma") || hppa_has_completer(s->insn, "mb") ||
+		hppa_has_completer(s->insn, "m");
+	for (ut8 i = 0; i < hc->op_count; i++) {
+		const cs_hppa_op *op = &hc->operands[i];
+		if (op->type == HPPA_OP_REG && op->reg == HPPA_REG_GR0 + reg && (op->access & CS_AC_WRITE)) {
+			return true;
+		}
+		// Capstone leaves the base register of these read only
+		if (op->type == HPPA_OP_MEM && op->mem.base == HPPA_REG_GR0 + reg && modify) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/// Find the ldi setting \p reg before \p at on the path to it
+static bool hppa_scan_ldi(HppaScan *s, ut64 at, ut32 reg, ut32 *value) {
+	for (int k = 0; k < HPPA_SWITCH_WINDOW; k++) {
+		at -= HPPA_INSN_SIZE;
+		ut32 w;
+		bool flow;
+		ut64 jump;
+		if (!hppa_scan_decode(s, at, &w, &flow, &jump) || flow) {
+			return false;
+		}
+		if (HPPA_FIELD(w, 26, 6) == HPPA_OPCODE_LDO && !HPPA_FIELD(w, 21, 5) && HPPA_FIELD(w, 16, 5) == reg) {
+			*value = (ut32)hppa_low_sign_ext(HPPA_FIELD(w, 0, 14), 14);
+			return true;
+		}
+		if (hppa_scan_writes(s, reg)) {
+			return false;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Count the cases of the switch on \p index from the compare
+ * bounding it on the path falling through to \p at.
+ *
+ * The compare branches to the default, or skips the branch to it.
+ *
+ * \return The count, or 0 if unknown
+ */
+static ut64 hppa_switch_bound(HppaScan *s, ut64 at, ut32 index, ut64 *def) {
+	for (int k = 0; k < HPPA_SWITCH_WINDOW; k++) {
+		at -= HPPA_INSN_SIZE;
+		ut32 w;
+		bool flow;
+		ut64 jump;
+		if (!hppa_scan_decode(s, at, &w, &flow, &jump)) {
+			return 0;
+		}
+		ut32 opc = HPPA_FIELD(w, 26, 6);
+		HppaCmp cmp;
+		ut32 rhs = HPPA_FIELD(w, 21, 5);
+		ut32 lhs = HPPA_FIELD(w, 16, 5);
+		bool lhs_imm = false;
+		if (opc >= HPPA_OPCODE_COMBT && opc <= HPPA_OPCODE_COMIBF) {
+			// cmpb and cmpib branch when the condition holds, or fails for the F forms
+			cmp = hppa_cmp_cond(HPPA_FIELD(w, 13, 3), !(opc & 2));
+			lhs_imm = opc & 1;
+			if (lhs_imm) {
+				lhs = (ut32)hppa_low_sign_ext(lhs, 5);
+			}
+		} else if (flow) {
+			// only cmpclr and cmpiclr skipping the branch to the default lead here
+			ut64 branch = jump;
+			at -= HPPA_INSN_SIZE;
+			// b,l default,r0
+			if ((w & ~(0x3ffu << 16 | 0xfffu << 1 | 1u)) != 0xe8000000 || HPPA_FIELD(w, 21, 5) ||
+				!hppa_scan_decode(s, at, &w, &flow, &jump)) {
+				return 0;
+			}
+			opc = HPPA_FIELD(w, 26, 6);
+			rhs = HPPA_FIELD(w, 21, 5);
+			if (opc == HPPA_OPCODE_COMICLR) {
+				lhs = (ut32)hppa_low_sign_ext(HPPA_FIELD(w, 0, 11), 11);
+				lhs_imm = true;
+				if (HPPA_FIELD(w, 16, 5) == index) {
+					return 0;
+				}
+			} else if (opc == HPPA_OPCODE_ARITH && HPPA_FIELD(w, 6, 6) == HPPA_EXT6_COMCLR) {
+				lhs = HPPA_FIELD(w, 16, 5);
+				if (HPPA_FIELD(w, 0, 5) == index) {
+					return 0;
+				}
+			} else {
+				return 0;
+			}
+			cmp = hppa_cmp_cond(HPPA_FIELD(w, 13, 3), HPPA_FIELD(w, 12, 1));
+			jump = branch;
+		} else {
+			if (!hppa_scan_writes(s, index)) {
+				continue;
+			}
+			if ((w & 0xffe0ffe0) == 0x08000240 && (w & 0x1f) == index) {
+				// copy
+				index = HPPA_FIELD(w, 16, 5);
+				continue;
+			}
+			return 0;
+		}
+		ut32 bound;
+		bool index_lhs;
+		if (lhs_imm) {
+			if (rhs != index) {
+				return 0;
+			}
+			bound = lhs;
+			index_lhs = false;
+		} else {
+			if (lhs == index) {
+				index_lhs = true;
+			} else if (rhs == index) {
+				index_lhs = false;
+			} else {
+				return 0;
+			}
+			if (!hppa_scan_ldi(s, at, index_lhs ? rhs : lhs, &bound)) {
+				return 0;
+			}
+		}
+		*def = jump;
+		return hppa_cmp_count(cmp, index_lhs, bound);
+	}
+	return 0;
+}
+
+static bool hppa_switch_target_valid(RzAnalysis *a, ut64 target) {
+	if (target & (HPPA_INSN_SIZE - 1)) {
+		return false;
+	}
+	RzIOMap *map = a->iob.map_get(a->iob.io, target);
+	return map && (map->perm & RZ_PERM_X);
+}
+
+/**
+ * \brief Recover the cases of a switch dispatched by bv through a table.
+ *
+ * GCC loads the target from an absolute table placed with ldil and ldo, or
+ * in PIC adds the entry to the table address taken from b,l .+8, the table
+ * then following the bv. The compare of the index bounds the table, else
+ * in PIC the first case after the table ends it.
+ */
+static void hppa_op_set_switch(const RzAsmHPPAContext *ctx, RzAnalysis *a, RzAnalysisOp *op) {
+	const cs_hppa_op *mem = hppa_find_op(ctx->insn, HPPA_OP_MEM);
+	const cs_hppa_op *idx = hppa_find_op(ctx->insn, HPPA_OP_IDX_REG);
+	if (a->bits != 32 || !a->opt.jmptbl || ctx->insn->id != HPPA_INS_BV || !mem ||
+		(idx && idx->reg != HPPA_REG_GR0) || op->addr < 5 * HPPA_INSN_SIZE) {
+		return;
+	}
+	ut32 target = mem->mem.base - HPPA_REG_GR0;
+	ut8 buf[5 * HPPA_INSN_SIZE];
+	if (!a->iob.read_at(a->iob.io, op->addr - sizeof(buf), buf, sizeof(buf))) {
+		return;
+	}
+	// w[i] is the word i + 1 instructions before the bv
+	ut32 w[5];
+	for (int i = 0; i < 5; i++) {
+		w[i] = rz_read_ble32(buf + sizeof(buf) - (i + 1) * HPPA_INSN_SIZE, a->big_endian);
+	}
+	bool pic = false;
+	ut32 base = 0, index = 0;
+	st32 disp = 0;
+	ut64 table = UT64_MAX, start = UT64_MAX, count = 0, def = UT64_MAX;
+	if ((w[0] & 0xfc00ffe0) == 0x08000a00 && (w[0] & 0x1f) == target) {
+		// add,l of the table address and the entry
+		base = HPPA_FIELD(w[0], 21, 5) == target ? HPPA_FIELD(w[0], 16, 5) : HPPA_FIELD(w[0], 21, 5);
+		pic = true;
+	}
+	// ldw,s index(base),t
+	ut32 load = w[pic];
+	if ((load & 0xfc00ffe0) == 0x0c002080 && (load & 0x1f) == target &&
+		(!pic || HPPA_FIELD(load, 21, 5) == base)) {
+		base = HPPA_FIELD(load, 21, 5);
+		index = HPPA_FIELD(load, 16, 5);
+		ut32 ldo = w[pic + 1];
+		bool base_ldo = HPPA_FIELD(ldo, 26, 6) == HPPA_OPCODE_LDO &&
+			HPPA_FIELD(ldo, 21, 5) == base && HPPA_FIELD(ldo, 16, 5) == base;
+		disp = hppa_low_sign_ext(HPPA_FIELD(ldo, 0, 14), 14);
+		if (!base || !index || index == base || !base_ldo) {
+			// no table
+		} else if (pic && (w[3] & ~(0x1fu << 21)) == 0xd4001c1e && (w[4] & ~(0x1fu << 21)) == 0xe8000000 &&
+			HPPA_FIELD(w[3], 21, 5) == base && HPPA_FIELD(w[4], 21, 5) == base) {
+			// b,l .+8,base and depwi 0,31,2,base clearing the privilege level
+			start = op->addr - 5 * HPPA_INSN_SIZE;
+		} else if (!pic && HPPA_FIELD(w[2], 26, 6) == HPPA_OPCODE_LDIL && HPPA_FIELD(w[2], 21, 5) == base) {
+			start = op->addr - 3 * HPPA_INSN_SIZE;
+		}
+	}
+	if (start == UT64_MAX) {
+		return;
+	}
+	HppaScan s = { ctx, a, cs_malloc(ctx->h) };
+	if (!s.insn) {
+		return;
+	}
+	ut32 word;
+	bool flow;
+	ut64 jump;
+	const cs_hppa_op *imm;
+	if (pic) {
+		table = start + 2 * HPPA_INSN_SIZE + disp;
+	} else if (hppa_scan_decode(&s, start, &word, &flow, &jump) && (imm = hppa_find_op(s.insn, HPPA_OP_IMM))) {
+		// the value of ldil
+		table = (ut32)(imm->imm + disp);
+	}
+	if (table != UT64_MAX) {
+		count = hppa_switch_bound(&s, start, index, &def);
+	}
+	cs_free(s.insn, 1);
+	ut64 max = a->opt.jmptbl_maxcount > 0 ? a->opt.jmptbl_maxcount : 512;
+	if (table == UT64_MAX || count > max || (!pic && count < 2)) {
+		return;
+	}
+	RzVector targets;
+	rz_vector_init(&targets, sizeof(ut64), NULL, NULL);
+	// the code after an inline table starts with its first case
+	ut64 end = pic ? table + (count ? count : max) * HPPA_INSN_SIZE : UT64_MAX;
+	for (ut64 at = table; pic ? at < end : rz_vector_len(&targets) < count; at += HPPA_INSN_SIZE) {
+		ut8 entry[HPPA_INSN_SIZE];
+		if (!a->iob.read_at(a->iob.io, at, entry, sizeof(entry))) {
+			break;
+		}
+		ut32 value = rz_read_ble32(entry, a->big_endian);
+		ut64 dst = pic ? table + (st32)value : value;
+		if (!hppa_switch_target_valid(a, dst)) {
+			break;
+		}
+		if (pic && dst >= table && dst < end) {
+			if (count && dst < table + count * HPPA_INSN_SIZE) {
+				// a case inside the table: not one
+				break;
+			}
+			end = count ? end : dst;
+		}
+		rz_vector_push(&targets, &dst);
+	}
+	ut64 n = rz_vector_len(&targets);
+	if (n >= 2 && (!count || n == count)) {
+		RzAnalysisSwitchOp *sw = rz_analysis_switch_op_new(op->addr, 0, n - 1, def);
+		if (sw) {
+			for (ut64 i = 0; i < n; i++) {
+				rz_analysis_switch_op_add_case(sw, table + i * HPPA_INSN_SIZE, i, *(ut64 *)rz_vector_index_ptr(&targets, i));
+			}
+			op->type = RZ_ANALYSIS_OP_TYPE_SWITCH;
+			op->switch_op = sw;
+		}
+	}
+	rz_vector_fini(&targets);
+}
+
 static int
 hppa_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (!(a && op && data && len > 0)) {
@@ -488,7 +1171,10 @@ hppa_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, Rz
 	op->size = ctx->insn->size;
 	op->id = (int)ctx->insn->id;
 	op->addr = ctx->insn->address;
-	hppa_op_set_type(ctx, op);
+	hppa_op_set_type(ctx, op, rz_read_ble32(data, a->big_endian));
+	if (op->type == RZ_ANALYSIS_OP_TYPE_RJMP) {
+		hppa_op_set_switch(ctx, a, op);
+	}
 	if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		op->opex = hppa_opex(ctx->h, ctx->insn);
 	}
