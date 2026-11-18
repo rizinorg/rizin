@@ -2741,7 +2741,7 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
- * \param rel The relocation, including its addend encoding.
+ * \param rel The relocation.
  * \param fs Formular values to calculate the new relocation value.
  */
 static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr,
@@ -2765,14 +2765,9 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		width = 2;
 		break;
 	}
+	// REL addends were already read from the field into the relocation.
 	ut64 addend = fs->A;
 	ut8 buf[4];
-	if (rel->mode == DT_REL) {
-		if (rz_buf_read_at(buf_patched, patch_addr, buf, width) != width) {
-			return;
-		}
-		addend = rz_read_ble(buf, false, width * 8);
-	}
 	switch (type) {
 	case R_386_32:
 	case R_386_16:

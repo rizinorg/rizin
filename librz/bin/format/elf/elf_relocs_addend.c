@@ -249,6 +249,66 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 	return true;
 }
 
+/**
+ * \brief Reads the implicit addend of an i386 relocation from its field.
+ *
+ * R_386_JMP_SLOT holds the lazy binding address and R_386_TLS_DESC_CALL marks
+ * an instruction, so neither has an addend.
+ */
+static bool get_reloc_addend_x86_32(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch_addr) {
+	ut32 width;
+	switch (reloc->type) {
+	case R_386_NONE:
+	case R_386_COPY:
+	case R_386_GLOB_DAT:
+	case R_386_JMP_SLOT:
+	case R_386_TLS_DTPMOD32:
+	case R_386_TLS_DESC_CALL:
+		reloc->addend = 0;
+		return true;
+	case R_386_8:
+	case R_386_PC8:
+		width = 1;
+		break;
+	case R_386_16:
+	case R_386_PC16:
+		width = 2;
+		break;
+	case R_386_32:
+	case R_386_PC32:
+	case R_386_GOT32:
+	case R_386_PLT32:
+	case R_386_RELATIVE:
+	case R_386_GOTOFF:
+	case R_386_GOTPC:
+	case R_386_TLS_TPOFF:
+	case R_386_TLS_IE:
+	case R_386_TLS_GOTIE:
+	case R_386_TLS_LE:
+	case R_386_TLS_GD:
+	case R_386_TLS_LDM:
+	case R_386_TLS_LDO_32:
+	case R_386_TLS_IE_32:
+	case R_386_TLS_LE_32:
+	case R_386_TLS_DTPOFF32:
+	case R_386_TLS_TPOFF32:
+	case R_386_SIZE32:
+	case R_386_TLS_GOTDESC:
+	case R_386_IRELATIVE:
+	case R_386_GOT32X:
+		width = 4;
+		break;
+	default:
+		return false;
+	}
+	ut8 b[4];
+	if (rz_buf_read_at(buf, patch_addr, b, width) != width) {
+		return false;
+	}
+	reloc->addend = rz_bits_sign_ext64(rz_read_ble(b, false, width * 8), width * 8);
+	return true;
+}
+
 static bool get_reloc_addend(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	ut64 patch_addr = reloc->paddr != UT64_MAX ? reloc->paddr : Elf_(rz_bin_elf_v2p)(bin, reloc->vaddr);
 	bool big_endian = bin->big_endian;
@@ -256,6 +316,8 @@ static bool get_reloc_addend(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
 		return get_reloc_addend_arm(bin->b, reloc, patch_addr, big_endian);
+	case EM_386:
+		return get_reloc_addend_x86_32(bin->b, reloc, patch_addr);
 	default:
 		return false;
 	}
