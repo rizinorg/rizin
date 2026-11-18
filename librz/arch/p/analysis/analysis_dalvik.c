@@ -458,7 +458,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x37: // if-le
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len > 3) {
-			int rel = (int)(data[3] << 8 | data[2]);
+			st32 rel = (st16)rz_read_at_le16(data, 2);
 			op->jump = addr + (rel * 2);
 			op->fail = addr + sz;
 		}
@@ -471,7 +471,7 @@ static int dalvik_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	case 0x3d: // if-lez
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		if (len > 3) {
-			int rel = (int)(data[3] << 8 | data[2]);
+			st32 rel = (st16)rz_read_at_le16(data, 2);
 			op->jump = addr + (rel * 2);
 			op->fail = addr + sz;
 		}
