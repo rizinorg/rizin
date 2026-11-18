@@ -286,6 +286,9 @@ static RzStructuredData *hppa_opex(csh handle, cs_insn *insn) {
 
 #define HPPA_INSN_SIZE 4
 
+/// stw rp,-0x14(sp): stores the return pointer into the frame marker
+#define HPPA_STW_RP 0x6bc23fd9
+
 /// Major opcode of BL, GATE, BLR, BV, BVE and the PA 2.0 B forms
 #define HPPA_OPCODE_BRANCH 0x3a
 
@@ -1201,6 +1204,78 @@ static int hppa_archinfo(RzAnalysis *a, RzAnalysisInfoType query) {
 	}
 }
 
+/// Word and mask matching an instruction
+typedef struct {
+	ut32 word;
+	ut32 mask;
+} HppaPattern;
+
+#define P_NONE      { 0, 0 }
+#define P_ADDIL_DP  { 0x2b600000, 0xffe00000 } // addil L%x,dp,r1
+#define P_ADDIL_R19 { 0x2a600000, 0xffe00000 } // addil L%x,r19,r1
+#define P_LDIL      { 0x20000000, 0xfc000000 } // ldil L%x,rT
+#define P_LDI       { 0x34000000, 0xffe00000 } // ldi i,rT
+#define P_LDO       { 0x34000000, 0xfc000000 } // ldo d(rB),rT
+#define P_LDW       { 0x48000000, 0xfc000000 } // ldw d(rB),rT
+// copy rS,rT by one set bit of rS, as nop is copy r0,r0
+#define P_COPY(bit) { 0x08000240 | (bit) << 16, 0xffe0ffe0 | (bit) << 16 }
+
+/// Instructions GCC schedules before the store of rp, the longest first
+static const HppaPattern hppa_scheduled[][2] = {
+	{ P_LDIL, P_LDO },
+	{ P_LDIL, P_LDW },
+	{ P_LDI, P_LDI },
+	{ P_ADDIL_DP, P_LDW },
+	{ P_ADDIL_R19, P_LDW },
+	{ P_ADDIL_DP, P_LDI },
+	{ P_ADDIL_R19, P_LDI },
+	{ P_NONE, P_ADDIL_DP },
+	{ P_NONE, P_ADDIL_R19 },
+	{ P_NONE, P_LDIL },
+	{ P_NONE, P_LDI },
+	{ P_NONE, P_COPY(1) },
+	{ P_NONE, P_COPY(2) },
+	{ P_NONE, P_COPY(4) },
+	{ P_NONE, P_COPY(8) },
+	{ P_NONE, P_COPY(16) },
+	{ P_NONE, P_NONE },
+};
+
+#undef P_NONE
+#undef P_ADDIL_DP
+#undef P_ADDIL_R19
+#undef P_LDIL
+#undef P_LDI
+#undef P_LDO
+#undef P_LDW
+#undef P_COPY
+
+static RzList /*<RzSearchKeyword *>*/ *hppa_preludes(RzAnalysis *analysis) {
+	if (analysis->bits != 32 || !analysis->big_endian) {
+		return NULL;
+	}
+	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!l) {
+		return NULL;
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(hppa_scheduled); i++) {
+		ut8 kw[4 * (RZ_ARRAY_SIZE(hppa_scheduled[i]) + 1)], mask[sizeof(kw)];
+		size_t len = 0;
+		for (size_t j = 0; j < RZ_ARRAY_SIZE(hppa_scheduled[i]); j++) {
+			if (hppa_scheduled[i][j].mask) {
+				rz_write_be32(kw + len, hppa_scheduled[i][j].word);
+				rz_write_be32(mask + len, hppa_scheduled[i][j].mask);
+				len += 4;
+			}
+		}
+		rz_write_be32(kw + len, HPPA_STW_RP);
+		rz_write_be32(mask + len, UT32_MAX);
+		len += 4;
+		rz_list_append(l, rz_search_keyword_new(kw, len, mask, len, NULL));
+	}
+	return l;
+}
+
 static bool hppa_init(void **u) {
 	if (!u) {
 		return false;
@@ -1232,6 +1307,7 @@ RzAnalysisPlugin rz_analysis_plugin_hppa_cs = {
 	.bits = 32 | 64,
 	.get_reg_profile = hppa_reg_profile,
 	.archinfo = hppa_archinfo,
+	.preludes = hppa_preludes,
 	.op = hppa_op,
 	.init = hppa_init,
 	.fini = hppa_fini,
