@@ -47,3 +47,18 @@ EXPECT=<<EOF
 0x100001407 0x10000140c 00:0000 5
 EOF
 RUN
+
+NAME=noreturn by name of functions made after their callers
+FILE=bins/hppa/hppa-noret
+CMDS=<<EOF
+aaa
+afi @ sym.imp.exit~noreturn
+afi @ 0x10248~noreturn
+afl~entry0
+EOF
+EXPECT=<<EOF
+noreturn: true
+noreturn: true
+0x00010228    1 12           entry0
+EOF
+RUN

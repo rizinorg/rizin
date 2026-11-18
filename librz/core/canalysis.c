@@ -3213,6 +3213,17 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 		case RZ_ANALYSIS_OP_TYPE_RET:
 			rz_analysis_op_free(op);
 			return false;
+		case RZ_ANALYSIS_OP_TYPE_UJMP:
+		case RZ_ANALYSIS_OP_TYPE_RJMP:
+		case RZ_ANALYSIS_OP_TYPE_IJMP:
+		case RZ_ANALYSIS_OP_TYPE_IRJMP:
+		case RZ_ANALYSIS_OP_TYPE_MJMP:
+			if (!bb->switch_op) {
+				// the unknown targets may return
+				rz_analysis_op_free(op);
+				return false;
+			}
+			break;
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if (!rz_analysis_function_contains(f, op->jump)) {
 				rz_analysis_op_free(op);
@@ -3675,6 +3686,10 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisFunction *f;
 	rz_list_foreach (fcns, iter, f) {
+		// made after their callers, these lack the mark their name gives
+		if (!f->is_noreturn && rz_analysis_noreturn_at(core->analysis, f->addr)) {
+			f->is_noreturn = true;
+		}
 		if (f->is_noreturn) {
 			ut64 *n = ut64_new(f->addr);
 			rz_list_append(todo, n);
@@ -3697,6 +3712,16 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 			}
 			ut64 call_addr = xref->from;
 			ut64 chop_addr = call_addr + xrefop->size;
+			// the delay slots of the call still run
+			for (int i = 0; i < xrefop->delay; i++) {
+				RzAnalysisOp *slot = rz_core_op_analysis(core, chop_addr, RZ_ANALYSIS_OP_MASK_BASIC);
+				if (!slot || slot->size < 1) {
+					rz_analysis_op_free(slot);
+					break;
+				}
+				chop_addr += slot->size;
+				rz_analysis_op_free(slot);
+			}
 			rz_analysis_op_free(xrefop);
 			if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
 				continue;
