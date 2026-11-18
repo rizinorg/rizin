@@ -22,6 +22,7 @@ rz_util_common_sources = [
   'graph_drawable.c',
   'graph_impl.c',
   'graph_algorithm.c',
+  'heatmap.c',
   'hex.c',
   'idpool.c',
   'interrupt.c',
