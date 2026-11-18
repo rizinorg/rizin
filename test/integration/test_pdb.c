@@ -399,18 +399,13 @@ bool test_pdb_type_save(void) {
 	mu_assert_true(has_union_member_type(typedb, m64_union, "m64_u32", "uint32_t [8]"), "m64_u32 type");
 
 	mu_assert_false(has_union_member(m64_union, "noSuchMember"), "no such union member");
-	// We dont handle class integration for now, so disable the following unit test.
 	// Check the structure presence and validity
-	// RzBaseType *test_class = rz_type_db_get_base_type(typedb, "TEST_CLASS");
-	// mu_assert_eq(test_class->kind, RZ_BASE_TYPE_KIND_STRUCT, "TEST_CLASS is struct");
-	// mu_assert_true(has_struct_member(test_class, "class_var1"), "class_var1");
-	// mu_assert_true(has_struct_member(test_class, "calss_var2"), "calss_var2");
-	// TODO: test member types also
-	// check_kv("struct.TEST_CLASS.class_var1", "int32_t,0,0");
-	// check_kv("struct.TEST_CLASS.calss_var2", "uint16_t,4,0");
-
-	// mu_assert_false(has_struct_member(test_class, "noSuchMember"), "no such struct member");
-	// Check the structure presence and validity
+	RzBaseType *test_class = rz_type_db_get_base_type(typedb, "TEST_CLASS");
+	mu_assert_notnull(test_class, "NULL type TEST_CLASS");
+	mu_assert_eq(test_class->kind, RZ_BASE_TYPE_KIND_STRUCT, "TEST_CLASS is struct");
+	mu_assert_true(has_struct_member(test_class, "class_var1"), "class_var1");
+	mu_assert_true(has_struct_member(test_class, "calss_var2"), "calss_var2");
+	mu_assert_false(has_struct_member(test_class, "noSuchMember"), "no such struct member");
 
 	// Forward defined structure
 	RzBaseType *localeinfo = rz_type_db_get_base_type(typedb, "localeinfo_struct");
