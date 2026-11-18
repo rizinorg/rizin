@@ -148,8 +148,8 @@ EXPECT=<<EOF
     reloc.target.indirect_call_single+12 0x80000c0 ->      DATA -> 0x80001f4 reloc.function_1.80001f4
     reloc.target.indirect_call_single+20 0x80000c8 ->      CALL -> 0x8000074 reloc.target.function_1
     reloc.target.indirect_call_single+32 0x80000d4 ->      DATA -> 0x8000104 reloc..data.8000104
-    reloc.target.indirect_call_single+36 0x80000d8 ->      DATA -> 0x80001e4 reloc.function_0
-    reloc.target.indirect_call_single+44 0x80000e0 ->      CALL -> 0x8000054 reloc.target.function_0
+    reloc.target.indirect_call_single+36 0x80000d8 ->      DATA -> 0x80001e8 reloc.function_1
+    reloc.target.indirect_call_single+44 0x80000e0 ->      CALL -> 0x8000074 reloc.target.function_1
      addr size traced ninstr jump fail fcns        calls xrefs 
 ---------------------------------------------------------------
 0x80000b4   76      0     19            0x080000b4       

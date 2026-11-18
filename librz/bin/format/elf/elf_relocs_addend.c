@@ -9,241 +9,215 @@ static ut32 arm_rotr32(ut32 val, ut32 n) {
 	return n ? (val >> n) | (val << (32 - n)) : val;
 }
 
+/**
+ * \brief Reads a 32-bit Thumb instruction, its first halfword in the high bits as AAELF32 numbers them.
+ */
+static ut32 arm_read_thumb32(const ut8 *b, bool big_endian) {
+	return ((ut32)rz_read_ble16(b, big_endian) << 16) | rz_read_ble16(b + 2, big_endian);
+}
+
+static st64 arm_apply_sign(ut32 imm, bool positive) {
+	return positive ? (st64)imm : -(st64)imm;
+}
+
+/**
+ * \brief Reads the implicit addend of an Arm relocation, as AAELF32 forms it.
+ *
+ * MOVW and MOVT both hold a signed 16-bit addend, not the half they compute.
+ */
 static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch_addr, bool big_endian) {
-	ut8 b[4] = { 0 };
-	ut32 opcode;
-	ut32 unsigned_imm = 0;
-	ut32 rot = 0;
-	ut32 decoded = 0;
-	st32 signed_imm = 0;
-	ut16 w1 = 0;
-	ut16 w2 = 0;
-	ut32 i, imm3, imm4, imm6, imm8, imm10, imm11, imm12;
-	ut32 s, j1, j2, i1, i2;
-
+	ut32 size = 4;
 	switch (reloc->type) {
-	case R_ARM_ALU_PC_G0:
-	/* fall-thru */
-	case R_ARM_ALU_PC_G0_NC:
-		/* fall-thru */
-	case R_ARM_ALU_PC_G1:
-		/* fall-thru */
-	case R_ARM_ALU_PC_G1_NC:
-		/* fall-thru */
-	case R_ARM_ALU_PC_G2:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-		unsigned_imm = opcode & 0xFFF;
-		rot = (unsigned_imm >> 8) & 0xF;
-		unsigned_imm = unsigned_imm & 0xFF;
-		decoded = arm_rotr32(unsigned_imm, rot * 2);
-		bool is_sub = (((opcode >> 21) & 0xF) == 0x2);
-		reloc->addend = is_sub ? -(st64)decoded : (st64)decoded;
+	case R_ARM_NONE:
+	case R_ARM_V4BX:
+	case R_ARM_COPY:
+	case R_ARM_GLOB_DAT:
+	case R_ARM_JUMP_SLOT:
+	case R_ARM_TLS_DTPMOD32:
+		reloc->addend = 0;
+		return true;
+	case R_ARM_ABS8:
+		size = 1;
 		break;
-
-	case R_ARM_LDR_PC_G0:
-		/* fall-thru */
-	case R_ARM_LDR_PC_G1:
-		/* fall-thru */
-	case R_ARM_LDR_PC_G2:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-		unsigned_imm = opcode & 0xFFF;
-		bool u_bit = (opcode >> 23) & 1;
-		reloc->addend = u_bit ? (st64)unsigned_imm : -(st64)unsigned_imm;
-		break;
-
-	case R_ARM_LDRS_PC_G0:
-		/* fall-thru */
-	case R_ARM_LDRS_PC_G1:
-		/* fall-thru */
-	case R_ARM_LDRS_PC_G2:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-		unsigned_imm = ((opcode & 0xF00) >> 4) | (opcode & 0xF);
-		u_bit = (opcode >> 23) & 1;
-		reloc->addend = u_bit ? (st64)unsigned_imm : -(st64)unsigned_imm;
-		break;
-
-	case R_ARM_LDC_PC_G0:
-		/* fall-thru */
-	case R_ARM_LDC_PC_G1:
-		/* fall-thru */
-	case R_ARM_LDC_PC_G2:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-		unsigned_imm = (opcode & 0xFF) << 2;
-		u_bit = (opcode >> 23) & 1;
-		reloc->addend = u_bit ? (st64)unsigned_imm : -(st64)unsigned_imm;
-		break;
-
-	case R_ARM_PC24:
-		/* fall-thru */
-	case R_ARM_CALL:
-		/* fall-thru */
-	case R_ARM_JUMP24:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-		unsigned_imm = opcode & 0X00FFFFFF;
-		signed_imm = (st32)(unsigned_imm << 8) >> 8;
-		reloc->addend = (st32)((ut32)signed_imm << 2);
-		break;
-
-	case R_ARM_MOVW_ABS_NC:
-		/* fall-thru */
-	case R_ARM_MOVW_PREL_NC:
-		/* fall-thru */
-	case R_ARM_MOVW_BREL_NC:
-		/* fall-thru */
-	case R_ARM_MOVT_ABS:
-		/* fall-thru */
-	case R_ARM_MOVT_PREL:
-		/* fall-thru */
-	case R_ARM_MOVT_BREL:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		opcode = rz_read_ble32(b, big_endian);
-
-		imm4 = (opcode >> 16) & 0xF;
-		imm12 = opcode & 0xFFF;
-		unsigned_imm = (imm4 << 12) | imm12;
-
-		if (reloc->type == R_ARM_MOVW_ABS_NC ||
-			reloc->type == R_ARM_MOVW_PREL_NC ||
-			reloc->type == R_ARM_MOVW_BREL_NC) {
-			reloc->addend = (st32)(st16)unsigned_imm;
-		} else {
-			reloc->addend = (st32)unsigned_imm;
-		}
-		break;
-
-	case R_ARM_THM_MOVW_ABS_NC:
-		/* fall-thru */
-	case R_ARM_THM_MOVW_PREL_NC:
-		/* fall-thru */
-	case R_ARM_THM_MOVW_BREL_NC:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-
-		i = (w1 >> 10) & 0x1;
-		imm3 = (w1 & 0xF);
-		imm4 = (w2 >> 12) & 0xF;
-		imm8 = (w2 & 0xFF);
-
-		unsigned_imm = (i << 12) | (imm4 << 11) | (imm3 << 8) | imm8;
-
-		reloc->addend = (st64)unsigned_imm;
-		break;
-
-	case R_ARM_THM_MOVT_ABS:
-		/* fall-thru */
-	case R_ARM_THM_MOVT_PREL:
-		/* fall-thru */
-	case R_ARM_THM_MOVT_BREL:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-
-		imm4 = (w1 & 0x000F);
-		i = (w1 >> 10) & 0x1;
-		imm3 = (w2 >> 12) & 0x7;
-		imm8 = (w2 & 0x00FF);
-
-		unsigned_imm = (imm4 << 12) | (i << 11) | (imm3 << 8) | imm8;
-
-		reloc->addend = (st64)(st32)(unsigned_imm << 16);
-		break;
-
-	case R_ARM_THM_JUMP19:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-
-		s = (w1 >> 10) & 1;
-		j2 = (w2 >> 11) & 1;
-		j1 = (w2 >> 13) & 1;
-		imm6 = (w1 & 0x3F);
-		imm11 = (w2 & 0x7FF);
-
-		unsigned_imm = (s << 19) | (j1 << 18) | (j2 << 17) | (imm6 << 11) | (imm11 << 0);
-		unsigned_imm <<= 1;
-
-		if (unsigned_imm & 0x100000) {
-			reloc->addend = (st32)(unsigned_imm | 0xFFE00000);
-		} else {
-			reloc->addend = (st32)unsigned_imm;
-		}
-		break;
-
-	case R_ARM_THM_ALU_PREL_11_0:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-		// Although the instruction manual gives different encoding for ADR instruction, it is essentially a pseudo instruction
-		//  Check out: https://stackoverflow.com/questions/3583606/understanding-the-adr-instruction-in-arm-and-adding-an-offset-to-that
-		unsigned_imm = (w2 & 0xFF);
-
-		ut32 op2 = (w1 >> 5) & 0x1F;
-
-		if (op2 == 0x15) { // Subtract
-			reloc->addend = -(st32)unsigned_imm;
-		} else { // Add
-			reloc->addend = (st32)unsigned_imm;
-		}
-		break;
-
-	case R_ARM_THM_JUMP24:
-		/* fall-thru */
-	case R_ARM_THM_CALL:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-
-		s = (w1 >> 10) & 1;
-		imm10 = (w1 & 0x03FF);
-		j1 = (w2 >> 13) & 1;
-		j2 = (w2 >> 11) & 1;
-		imm11 = (w2 & 0x07FF);
-
-		i1 = (j1 == s);
-		i2 = (j2 == s);
-
-		unsigned_imm = (s << 24) | (i1 << 23) | (i2 << 22) | (imm10 << 12) | (imm11 << 1);
-		signed_imm = (st32)(unsigned_imm << 7) >> 7;
-		reloc->addend = (st64)signed_imm;
-		break;
-
-	case R_ARM_THM_PC12:
-		rz_buf_read_at(buf, patch_addr, b, 4);
-
-		w1 = rz_read_ble16(b, big_endian);
-		w2 = rz_read_ble16(b + 2, big_endian);
-
-		imm12 = w2 & 0x0FFF;
-
-		u_bit = (w1 >> 7) & 1;
-
-		signed_imm = (st32)imm12;
-		if (u_bit == 0) {
-			signed_imm = -signed_imm;
-		}
-
-		reloc->addend = signed_imm;
-		break;
-
+	case R_ARM_ABS16:
+	case R_ARM_THM_ABS5:
+	case R_ARM_THM_PC8:
+	case R_ARM_THM_JUMP6:
+	case R_ARM_THM_JUMP8:
+	case R_ARM_THM_JUMP11:
 	case R_ARM_THM_ALU_ABS_G0_NC:
-		/* fall-thru */
 	case R_ARM_THM_ALU_ABS_G1_NC:
-		/* fall-thru */
 	case R_ARM_THM_ALU_ABS_G2_NC:
-		/* fall-thru */
 	case R_ARM_THM_ALU_ABS_G3:
-		rz_buf_read_at(buf, patch_addr, b, 2);
-		opcode = rz_read_ble16(b, big_endian);
-
-		reloc->addend = (ut64)(opcode & 0xFF);
+		size = 2;
 		break;
-
+	default:
+		break;
+	}
+	ut8 b[4];
+	if (rz_buf_read_at(buf, patch_addr, b, size) != size) {
+		return false;
+	}
+	ut32 insn = rz_read_ble(b, big_endian, size * 8);
+	ut32 thumb = size == 4 ? arm_read_thumb32(b, big_endian) : 0;
+	ut32 s, i1, i2, imm;
+	switch (reloc->type) {
+	case R_ARM_ABS8:
+	case R_ARM_ABS16:
+	case R_ARM_ABS32:
+	case R_ARM_REL32:
+	case R_ARM_SBREL32:
+	case R_ARM_TLS_DTPOFF32:
+	case R_ARM_TLS_TPOFF32:
+	case R_ARM_RELATIVE:
+	case R_ARM_GOTOFF32:
+	case R_ARM_BASE_PREL:
+	case R_ARM_GOT_BREL:
+	case R_ARM_BASE_ABS:
+	case R_ARM_TARGET1:
+	case R_ARM_TARGET2:
+	case R_ARM_ABS32_NOI:
+	case R_ARM_REL32_NOI:
+	case R_ARM_TLS_GOTDESC:
+	case R_ARM_PLT32_ABS:
+	case R_ARM_GOT_ABS:
+	case R_ARM_GOT_PREL:
+	case R_ARM_TLS_GD32:
+	case R_ARM_TLS_LDM32:
+	case R_ARM_TLS_LDO32:
+	case R_ARM_TLS_IE32:
+	case R_ARM_TLS_LE32:
+		reloc->addend = rz_bits_sign_ext64(insn, size * 8);
+		break;
+	case R_ARM_PREL31:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(insn, 0, 31), 31);
+		break;
+	case R_ARM_PC24:
+	case R_ARM_PLT32:
+	case R_ARM_CALL:
+	case R_ARM_JUMP24:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(insn, 0, 24) << 2, 26);
+		break;
+	case R_ARM_MOVW_ABS_NC:
+	case R_ARM_MOVT_ABS:
+	case R_ARM_MOVW_PREL_NC:
+	case R_ARM_MOVT_PREL:
+	case R_ARM_MOVW_BREL_NC:
+	case R_ARM_MOVT_BREL:
+	case R_ARM_MOVW_BREL:
+		// imm4:imm12
+		imm = rz_bits_extract(insn, 16, 4) << 12 | rz_bits_extract(insn, 0, 12);
+		reloc->addend = rz_bits_sign_ext64(imm, 16);
+		break;
+	case R_ARM_THM_MOVW_ABS_NC:
+	case R_ARM_THM_MOVT_ABS:
+	case R_ARM_THM_MOVW_PREL_NC:
+	case R_ARM_THM_MOVT_PREL:
+	case R_ARM_THM_MOVW_BREL_NC:
+	case R_ARM_THM_MOVT_BREL:
+	case R_ARM_THM_MOVW_BREL:
+		// imm4:i:imm3:imm8
+		imm = rz_bits_extract(thumb, 16, 4) << 12 | rz_bits_extract(thumb, 26, 1) << 11 |
+			rz_bits_extract(thumb, 12, 3) << 8 | rz_bits_extract(thumb, 0, 8);
+		reloc->addend = rz_bits_sign_ext64(imm, 16);
+		break;
+	case R_ARM_ALU_PC_G0_NC:
+	case R_ARM_ALU_PC_G0:
+	case R_ARM_ALU_PC_G1_NC:
+	case R_ARM_ALU_PC_G1:
+	case R_ARM_ALU_PC_G2:
+	case R_ARM_ALU_SB_G0_NC:
+	case R_ARM_ALU_SB_G0:
+	case R_ARM_ALU_SB_G1_NC:
+	case R_ARM_ALU_SB_G1:
+	case R_ARM_ALU_SB_G2:
+		// imm8 rotated right by twice rot, subtracted by a SUB
+		imm = arm_rotr32(rz_bits_extract(insn, 0, 8), rz_bits_extract(insn, 8, 4) * 2);
+		reloc->addend = arm_apply_sign(imm, rz_bits_extract(insn, 21, 4) != 0x2);
+		break;
+	case R_ARM_LDR_PC_G0:
+	case R_ARM_LDR_PC_G1:
+	case R_ARM_LDR_PC_G2:
+	case R_ARM_LDR_SB_G0:
+	case R_ARM_LDR_SB_G1:
+	case R_ARM_LDR_SB_G2:
+	case R_ARM_ABS12:
+	case R_ARM_LDR_SBREL_11_0_NC:
+	case R_ARM_GOT_BREL12:
+	case R_ARM_GOTOFF12:
+	case R_ARM_TLS_LDO12:
+	case R_ARM_TLS_LE12:
+	case R_ARM_TLS_IE12GP:
+		reloc->addend = arm_apply_sign(rz_bits_extract(insn, 0, 12), rz_bits_extract(insn, 23, 1));
+		break;
+	case R_ARM_LDRS_PC_G0:
+	case R_ARM_LDRS_PC_G1:
+	case R_ARM_LDRS_PC_G2:
+	case R_ARM_LDRS_SB_G0:
+	case R_ARM_LDRS_SB_G1:
+	case R_ARM_LDRS_SB_G2:
+		// imm4H:imm4L
+		imm = rz_bits_extract(insn, 8, 4) << 4 | rz_bits_extract(insn, 0, 4);
+		reloc->addend = arm_apply_sign(imm, rz_bits_extract(insn, 23, 1));
+		break;
+	case R_ARM_LDC_PC_G0:
+	case R_ARM_LDC_PC_G1:
+	case R_ARM_LDC_PC_G2:
+	case R_ARM_LDC_SB_G0:
+	case R_ARM_LDC_SB_G1:
+	case R_ARM_LDC_SB_G2:
+		reloc->addend = arm_apply_sign(rz_bits_extract(insn, 0, 8) << 2, rz_bits_extract(insn, 23, 1));
+		break;
+	case R_ARM_THM_CALL:
+	case R_ARM_THM_JUMP24:
+		// S:I1:I2:imm10:imm11:'0', where In = NOT(Jn XOR S)
+		s = rz_bits_extract(thumb, 26, 1);
+		i1 = !(rz_bits_extract(thumb, 13, 1) ^ s);
+		i2 = !(rz_bits_extract(thumb, 11, 1) ^ s);
+		imm = s << 24 | i1 << 23 | i2 << 22 | rz_bits_extract(thumb, 16, 10) << 12 | rz_bits_extract(thumb, 0, 11) << 1;
+		reloc->addend = rz_bits_sign_ext64(imm, 25);
+		break;
+	case R_ARM_THM_JUMP19:
+		// S:J2:J1:imm6:imm11:'0'
+		imm = rz_bits_extract(thumb, 26, 1) << 20 | rz_bits_extract(thumb, 11, 1) << 19 | rz_bits_extract(thumb, 13, 1) << 18 |
+			rz_bits_extract(thumb, 16, 6) << 12 | rz_bits_extract(thumb, 0, 11) << 1;
+		reloc->addend = rz_bits_sign_ext64(imm, 21);
+		break;
+	case R_ARM_THM_ALU_PREL_11_0:
+		// i:imm3:imm8, of a SUBW from the PC when bit 23 is set and of an ADDW otherwise
+		imm = rz_bits_extract(thumb, 26, 1) << 11 | rz_bits_extract(thumb, 12, 3) << 8 | rz_bits_extract(thumb, 0, 8);
+		reloc->addend = arm_apply_sign(imm, !rz_bits_extract(thumb, 23, 1));
+		break;
+	case R_ARM_THM_PC12:
+		reloc->addend = arm_apply_sign(rz_bits_extract(thumb, 0, 12), rz_bits_extract(thumb, 23, 1));
+		break;
+	case R_ARM_THM_GOT_BREL12:
+		reloc->addend = rz_bits_extract(thumb, 0, 12);
+		break;
+	case R_ARM_THM_ALU_ABS_G0_NC:
+	case R_ARM_THM_ALU_ABS_G1_NC:
+	case R_ARM_THM_ALU_ABS_G2_NC:
+	case R_ARM_THM_ALU_ABS_G3:
+		reloc->addend = rz_bits_extract(insn, 0, 8);
+		break;
+	case R_ARM_THM_ABS5:
+		reloc->addend = rz_bits_extract(insn, 6, 5) << 2;
+		break;
+	case R_ARM_THM_PC8:
+		// The field is unsigned, so it holds the usual -4 modulo 1024.
+		reloc->addend = (st64)(((rz_bits_extract(insn, 0, 8) << 2) + 4) & 0x3ff) - 4;
+		break;
+	case R_ARM_THM_JUMP6:
+		// i:imm5:'0', unsigned like the field of R_ARM_THM_PC8
+		imm = rz_bits_extract(insn, 9, 1) << 6 | rz_bits_extract(insn, 3, 5) << 1;
+		reloc->addend = (st64)((imm + 4) & 0x7f) - 4;
+		break;
+	case R_ARM_THM_JUMP8:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(insn, 0, 8) << 1, 9);
+		break;
+	case R_ARM_THM_JUMP11:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(insn, 0, 11) << 1, 12);
+		break;
 	default:
 		return false;
 	}
