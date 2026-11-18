@@ -276,8 +276,8 @@ RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNU
 	RzIntervalTreeIter it;
 	rz_interval_tree_foreach (&res->blocks, it, block) {
 		ut64 start = rz_absint_block_get_start(block);
-		ut64 end = rz_absint_block_get_end(block);
-		if (!rz_icfg_add_node(icfg, start, end - start, &block->insn_offsets, res->entry)) {
+		ut64 end_excl = rz_absint_block_get_end(block) + 1;
+		if (!rz_icfg_add_node(icfg, start, end_excl - start, &block->insn_offsets, res->entry)) {
 			RZ_LOG_WARN("Failed to add block 0x%" PFMT64x " to iCFG.\n", start);
 			success = false;
 			continue;
@@ -290,7 +290,7 @@ RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNU
 			rz_icfg_prepare_edge(icfg, start, *to, RZ_ICFG_EDGE_TYPE_CALL);
 		}
 		if (block->is_fallthrough) {
-			rz_icfg_prepare_edge(icfg, start, end + 1, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
+			rz_icfg_prepare_edge(icfg, start, end_excl, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
 		}
 	}
 	return success;

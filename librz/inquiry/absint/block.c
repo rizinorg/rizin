@@ -194,8 +194,8 @@ static void interp_block_resize(RzAbsIntRunContext *ctx, RzAbsIntBlock *block, u
  *
  * Case B:
  *
- * Existing Block I at 0x0
- * 0x00         <--- interp_block starts here.
+ * Existing Block I at 0x8
+ * 0x00         <--- interp_block starts here. Ends exactly before Block I (at 0x7)
  * 0x04
  * 0x08 +- Block I
  * 0x0c |

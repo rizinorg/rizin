@@ -14,6 +14,13 @@ struct rz_icfg_t {
 	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
 	RzSetU /* const RzICFGNode * */ *node_conflicts; ///< Blocks which could be shared by procedures.
 	RzGraph /*<RzCFGNode *, RzCFGEdgeType>*/ *graph;
+	/**
+	 * \brief An interval tree with all nodes of the graph.
+	 * The interval tree node data is the pointer of the corresponding RzGraphNode.
+	 * Interval ends are inclusive. So the end is the last byte of the last instruction in a block.
+	 * end + 1 is the first byte of the next block.
+	 */
+	RzIntervalTree /* RzGraphNode */ itv_tree;
 };
 
 typedef struct {
