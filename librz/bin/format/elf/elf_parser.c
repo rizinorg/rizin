@@ -54,6 +54,7 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 	ut64 got_addr = get_got_addr(obj);
 	ut64 baddr = baseaddr;
 	ut64 mips_AHL = 0;
+	Elf_(rz_bin_elf_relocs_read_addends)(obj);
 
 	rz_bin_elf_foreach_relocs(obj, reloc) {
 		ut64 sym_addr = 0;
