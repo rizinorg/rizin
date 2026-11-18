@@ -2892,11 +2892,8 @@ EXPECT=<<EOF
 | 0x08048585      call  sym.imp.scanf                                  ; int scanf(const char *format)
 | 0x0804858a      lea   eax, dword [var_7ch]
 | 0x0804858d      mov   dword [esp], eax                               ; int32_t arg_4h
-| 0x08048590      call  sym.check
-| 0x08048595      mov   eax, 0x00
-| 0x0804859a      leave
-\ 0x0804859b      ret
+\ 0x08048590      call  sym.check
 
-[{"offset":134513984,"disasm":"push ebp"},{"offset":134513985,"disasm":"mov ebp, esp"},{"offset":134513987,"disasm":"sub esp, 0x88"},{"offset":134513993,"disasm":"and esp, 0xfffffff0"},{"offset":134513996,"disasm":"mov eax, 0x00"},{"offset":134514001,"disasm":"add eax, 0x0f"},{"offset":134514004,"disasm":"add eax, 0x0f"},{"offset":134514007,"disasm":"shr eax, 0x04"},{"offset":134514010,"disasm":"shl eax, 0x04"},{"offset":134514013,"disasm":"sub esp, eax"},{"offset":134514015,"disasm":"mov dword [esp], str.IOLI_Crackme_Level_0x05"},{"offset":134514022,"disasm":"call sym.imp.printf"},{"offset":134514027,"disasm":"mov dword [esp], str.Password:"},{"offset":134514034,"disasm":"call sym.imp.printf"},{"offset":134514039,"disasm":"lea eax, dword [var_7ch]"},{"offset":134514042,"disasm":"mov dword [var_88h], eax"},{"offset":134514046,"disasm":"mov dword [esp], str.s"},{"offset":134514053,"disasm":"call sym.imp.scanf"},{"offset":134514058,"disasm":"lea eax, dword [var_7ch]"},{"offset":134514061,"disasm":"mov dword [esp], eax"},{"offset":134514064,"disasm":"call sym.check"},{"offset":134514069,"disasm":"mov eax, 0x00"},{"offset":134514074,"disasm":"leave"},{"offset":134514075,"disasm":"ret"}]
+[{"offset":134513984,"disasm":"push ebp"},{"offset":134513985,"disasm":"mov ebp, esp"},{"offset":134513987,"disasm":"sub esp, 0x88"},{"offset":134513993,"disasm":"and esp, 0xfffffff0"},{"offset":134513996,"disasm":"mov eax, 0x00"},{"offset":134514001,"disasm":"add eax, 0x0f"},{"offset":134514004,"disasm":"add eax, 0x0f"},{"offset":134514007,"disasm":"shr eax, 0x04"},{"offset":134514010,"disasm":"shl eax, 0x04"},{"offset":134514013,"disasm":"sub esp, eax"},{"offset":134514015,"disasm":"mov dword [esp], str.IOLI_Crackme_Level_0x05"},{"offset":134514022,"disasm":"call sym.imp.printf"},{"offset":134514027,"disasm":"mov dword [esp], str.Password:"},{"offset":134514034,"disasm":"call sym.imp.printf"},{"offset":134514039,"disasm":"lea eax, dword [var_7ch]"},{"offset":134514042,"disasm":"mov dword [var_88h], eax"},{"offset":134514046,"disasm":"mov dword [esp], str.s"},{"offset":134514053,"disasm":"call sym.imp.scanf"},{"offset":134514058,"disasm":"lea eax, dword [var_7ch]"},{"offset":134514061,"disasm":"mov dword [esp], eax"},{"offset":134514064,"disasm":"call sym.check"}]
 EOF
 RUN

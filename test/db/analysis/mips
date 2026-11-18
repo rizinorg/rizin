@@ -140,7 +140,7 @@ features o32 n32
             ;-- _start:
             ;-- pc:
 / entry0(int32_t arg4 @ a3);
-\           0x004003d4      move  fp, zero                             ; [08] -r-x section size 474 named .text
+|           0x004003d4      move  fp, zero                             ; [08] -r-x section size 474 named .text
 |           0x004003d6      lapc.h t0, sym._start_c
 |           0x004003da      lapc.h a1, obj._DYNAMIC
 |           0x004003de      lapc.h gp, loc._gp

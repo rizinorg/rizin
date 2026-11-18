@@ -333,18 +333,51 @@ RZ_IPI void rz_core_analysis_bbs_asciiart(RzCore *core, RzAnalysisFunction *fcn)
 	rz_list_free(flist);
 }
 
+/** A delayed transfer controls the exit even though its slots follow it in memory. */
+static RzAnalysisOp *block_exit_op(RzCore *core, RzAnalysisBlock *bb) {
+	int last = bb->ninstr - 1;
+	ut64 addr = rz_analysis_block_get_op_addr(bb, last);
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
+	RzAnalysisOp *op = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
+	if (!op || !rz_analysis_get_options(core->analysis)->delay || rz_analysis_op_is_eob(op) || rz_analysis_op_is_call(op) ||
+		(bb->fail == UT64_MAX && bb->jump == bb->addr + bb->size)) {
+		return op;
+	}
+	for (int i = last - 1; i >= 0; i--) {
+		addr = rz_analysis_block_get_op_addr(bb, i);
+		if (addr == UT64_MAX) {
+			break;
+		}
+		RzAnalysisOp *prev = rz_core_op_analysis(core, addr, RZ_ANALYSIS_OP_MASK_HINT);
+		if (!prev) {
+			break;
+		}
+		if (prev->delay == last - i) {
+			rz_analysis_op_free(op);
+			return prev;
+		}
+		bool transfer = rz_analysis_op_is_eob(prev) || rz_analysis_op_is_call(prev);
+		rz_analysis_op_free(prev);
+		if (transfer) {
+			break;
+		}
+	}
+	return op;
+}
+
 RZ_IPI void rz_core_analysis_fcn_returns(RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *b;
 	void **iter;
 	rz_pvector_foreach (fcn->bbs, iter) {
 		b = (RzAnalysisBlock *)*iter;
 		if (b->jump == UT64_MAX) {
-			ut64 retaddr = rz_analysis_block_get_op_addr(b, b->ninstr - 1);
-			if (retaddr == UT64_MAX) {
-				break;
+			RzAnalysisOp *op = block_exit_op(core, b);
+			if (op) {
+				rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", op->addr);
+				rz_analysis_op_free(op);
 			}
-
-			rz_cons_printf(core->cons, "0x%08" PFMT64x "\n", retaddr);
 		}
 	}
 }
@@ -3202,15 +3235,8 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 
 	rz_pvector_foreach (f->bbs, iter) {
 		bb = (RzAnalysisBlock *)*iter;
-		ut64 opaddr = rz_analysis_block_get_op_addr(bb, bb->ninstr - 1);
-		if (opaddr == UT64_MAX) {
-			return false;
-		}
-
-		// get last opcode
-		RzAnalysisOp *op = rz_core_op_analysis(core, opaddr, RZ_ANALYSIS_OP_MASK_HINT);
+		RzAnalysisOp *op = block_exit_op(core, bb);
 		if (!op) {
-			RZ_LOG_ERROR("core: cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
 			return false;
 		}
 
@@ -3219,6 +3245,17 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 		case RZ_ANALYSIS_OP_TYPE_RET:
 			rz_analysis_op_free(op);
 			return false;
+		case RZ_ANALYSIS_OP_TYPE_UJMP:
+		case RZ_ANALYSIS_OP_TYPE_RJMP:
+		case RZ_ANALYSIS_OP_TYPE_IJMP:
+		case RZ_ANALYSIS_OP_TYPE_IRJMP:
+		case RZ_ANALYSIS_OP_TYPE_MJMP:
+			if (!bb->switch_op) {
+				// the unknown targets may return
+				rz_analysis_op_free(op);
+				return false;
+			}
+			break;
 		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if (!rz_analysis_function_contains(f, op->jump)) {
 				rz_analysis_op_free(op);
@@ -3541,37 +3578,49 @@ static RzAnalysisBlock *find_block_at_xref_addr(RzCore *core, ut64 addr) {
 	return block;
 }
 
-static void relocation_function_process_noreturn(RzCore *core, RzAnalysisBlock *b, RzSetU *todo, ut64 opsize, ut64 reladdr, ut64 addr) {
-	rz_analysis_noreturn_add(core->analysis, NULL, reladdr);
-
-	// Add all functions that might have become noreturn by this to the todo list to reanalyze them later.
-	// This must be done before chopping because b might get freed.
-	RzListIter *it;
-	RzAnalysisFunction *fcn;
-	rz_list_foreach (b->fcns, it, fcn) {
-		rz_set_u_add(todo, (ut64)(size_t)fcn);
+/** A call to a noreturn function can still execute its delay slots. */
+static ut64 noreturn_call_end(RzCore *core, const RzAnalysisOp *op) {
+	ut64 end = op->addr + op->size;
+	for (int i = 0; i < op->delay; i++) {
+		RzAnalysisOp *slot = rz_core_op_analysis(core, end, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (!slot || slot->size < 1) {
+			rz_analysis_op_free(slot);
+			break;
+		}
+		end += slot->size;
+		rz_analysis_op_free(slot);
 	}
-
-	// Chop the block
-	rz_analysis_block_chop_noreturn(b, addr + opsize);
+	return end;
 }
 
-static void relocation_noreturn_process(RzCore *core, RzList /*<char *>*/ *noretl, RzSetU *todo, RzAnalysisBlock *b, RzBinReloc *rel, ut64 opsize, ut64 addr) {
-	RzListIter *iter3;
-	char *noret;
+static RzAnalysisBlock *relocation_noreturn_process(RzCore *core, RzList /*<char *>*/ *noretl, RzSetU *todo, RzAnalysisBlock *block, RzBinReloc *rel, const RzAnalysisOp *op) {
+	const char *name;
+	ut64 addr;
 	if (rel->import) {
-		rz_list_foreach (noretl, iter3, noret) {
-			if (!strcmp(rel->import->name, noret)) {
-				relocation_function_process_noreturn(core, b, todo, opsize, rel->vaddr, addr);
-			}
-		}
+		name = rel->import->name;
+		addr = rel->vaddr;
 	} else if (rel->symbol) {
-		rz_list_foreach (noretl, iter3, noret) {
-			if (!strcmp(rel->symbol->name, noret)) {
-				relocation_function_process_noreturn(core, b, todo, opsize, rel->symbol->vaddr, addr);
-			}
-		}
+		name = rel->symbol->name;
+		addr = rel->symbol->vaddr;
+	} else {
+		return block;
 	}
+	RzListIter *it;
+	const char *noret;
+	rz_list_foreach (noretl, it, noret) {
+		if (!name || strcmp(name, noret)) {
+			continue;
+		}
+		rz_analysis_noreturn_add(core->analysis, NULL, addr);
+		// Chopping can merge the block into a predecessor and invalidate its function list.
+		RzListIter *fit;
+		RzAnalysisFunction *fcn;
+		rz_list_foreach (block->fcns, fit, fcn) {
+			rz_set_u_add(todo, (ut64)(size_t)fcn);
+		}
+		return rz_analysis_block_chop_noreturn(block, noreturn_call_end(core, op));
+	}
+	return block;
 }
 
 #define CALL_BUF_SIZE 32
@@ -3610,7 +3659,8 @@ static bool process_reference_noreturn_cb(void *u, const ut64 addr, const void *
 				rz_analysis_op_fini(&op);
 				return true;
 			}
-			relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
+			block = relocation_noreturn_process(core, noretl, todo, block, rel, &op);
+			rz_analysis_block_unref(block);
 		}
 	}
 	rz_analysis_op_fini(&op);
@@ -3684,6 +3734,10 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisFunction *f;
 	rz_list_foreach (fcns, iter, f) {
+		// made after their callers, these lack the mark their name gives
+		if (!f->is_noreturn && rz_analysis_noreturn_at(core->analysis, f->addr)) {
+			f->is_noreturn = true;
+		}
 		if (f->is_noreturn) {
 			ut64 *n = ut64_new(f->addr);
 			rz_list_append(todo, n);
@@ -3699,17 +3753,17 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr) {
 		RzList *xrefs = rz_analysis_xrefs_get_to(core->analysis, noret_addr);
 		RzAnalysisXRef *xref;
 		rz_list_foreach (xrefs, iter, xref) {
-			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->from, RZ_ANALYSIS_OP_MASK_ALL);
+			if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
+				continue;
+			}
+			RzAnalysisOp *xrefop = rz_core_op_analysis(core, xref->from, RZ_ANALYSIS_OP_MASK_HINT);
 			if (!xrefop) {
 				RZ_LOG_ERROR("core: cannot analyze opcode at 0x%08" PFMT64x "\n", xref->from);
 				continue;
 			}
 			ut64 call_addr = xref->from;
-			ut64 chop_addr = call_addr + xrefop->size;
+			ut64 chop_addr = noreturn_call_end(core, xrefop);
 			rz_analysis_op_free(xrefop);
-			if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
-				continue;
-			}
 
 			// Find the block that has an instruction at exactly the xref addr
 			RzAnalysisBlock *block = find_block_at_xref_addr(core, call_addr);
