@@ -68,7 +68,7 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 			RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(obj, reloc->sym);
 			if (symbol) {
 				sym_addr = symbol->vaddr;
-				if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
+				if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj) && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 					Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 				}
 			} else {

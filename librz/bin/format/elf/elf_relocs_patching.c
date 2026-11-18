@@ -944,7 +944,7 @@ static ut32 convert_alu_group_mask(ut32 X, int n) {
 			if (shift < 0)
 				shift = 0;
 			if (shift % 2 != 0)
-				shift--;
+				shift++; // the rotation is even, so round up to keep the msb
 
 			ut32 g_n = residual & (0xFF << shift);
 
@@ -981,7 +981,7 @@ static ut32 convert_ldr_group_mask(ut32 X, int n) {
 		if (shift < 0)
 			shift = 0;
 		if (shift % 2 != 0)
-			shift--;
+			shift++; // the rotation is even, so round up to keep the msb
 
 		ut32 g_n = residual & (0xFF << shift);
 		residual &= ~g_n;
@@ -1247,6 +1247,19 @@ static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
 }
 
 /**
+ * \brief Whether \p rel is against a defined Arm function.
+ *
+ * Only then is the state of the target known, as an import may be either.
+ */
+static bool arm_reloc_targets_arm_func(ELFOBJ *bin, const RzBinElfReloc *rel) {
+	if (rel->thumb || Elf_(rz_bin_elf_get_import)(bin, rel->sym)) {
+		return false;
+	}
+	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, rel->sym);
+	return symbol && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR);
+}
+
+/**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
  * NOTE: Some relocation symbols are not yet implemented
@@ -1255,9 +1268,10 @@ static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
  * \param patch_addr The address of the opcode being patched.
  * \param rel The relocation elf structure.
  * \param big_endian The endianness - true if BE, false if LE
+ * \param arm_func Whether the target is a defined Arm function, see arm_reloc_targets_arm_func()
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, bool arm_func, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
 	ut16 keephw1 = 0, keephw2 = 0;
 	ut32 keep = 0;
@@ -1276,12 +1290,19 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		/* fall-thru */
 	case R_ARM_THM_CALL:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-
-		// val = S + A - P
-		val = ((fs->S + fs->A) | T) - fs->P;
-
 		keephw1 = rz_read_ble16(&buf[0], big_endian);
 		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		if (rel->type == R_ARM_THM_CALL && T) {
+			keephw2 |= 0x1000; // BL, as a BLX would switch to Arm
+		} else if (rel->type == R_ARM_THM_CALL && arm_func) {
+			keephw2 &= ~0x1000; // BLX, as a BL would stay in Thumb
+		}
+		if (keephw2 & 0x1000) {
+			val = ((fs->S + fs->A) | T) - fs->P;
+		} else {
+			// BLX branches from the word-aligned PC.
+			val = fs->S + fs->A - (fs->P & ~3ULL);
+		}
 
 		ut32 s = (val >> 24) & 1;
 		ut32 i1 = (val >> 23) & 1;
@@ -1315,6 +1336,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	case R_ARM_REL32:
 		val = ((fs->S + fs->A) | T) - fs->P;
+		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1326,7 +1348,18 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	/* fall through */
 	case R_ARM_JUMP24:
 		val = ((fs->S + fs->A) | T) - fs->P;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x03FFFFFE, (val >> 2));
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian);
+		if (rel->type == R_ARM_CALL && arm_func) {
+			keep = 0xEB000000; // BL, as a BLX would switch to Thumb
+		} else if ((keep >> 28) == 0xF || (rel->type == R_ARM_CALL && T)) {
+			// BLX, which switches to Thumb, takes bit 1 of the offset as H.
+			keep = 0xFA000000 | rz_bits_extract(val, 1, 1) << 24;
+		} else {
+			keep &= 0xFF000000;
+		}
+		rz_write_ble32(buf, keep | rz_bits_extract(val, 2, 24), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
 	case R_ARM_MOVW_PREL_NC:
@@ -1439,7 +1472,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_SBREL32:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = ((fs->S + fs->A) | T) - fs->B;
-		rz_write_ble32(buf, (val & 0xFFFFFFF), big_endian);
+		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 
@@ -1482,7 +1515,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_PREL31:
-		val = (fs->S + fs->A - fs->P) >> 1;
+		val = ((fs->S + fs->A) | T) - fs->P;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x7FFFFFFF, val);
 		break;
 
@@ -1493,10 +1526,14 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_MOVT_ABS:
-		/* fall through */
-	case R_ARM_MOVT_PREL:
 		// val = imm4:imm12
 		val = (fs->S + fs->A) >> 16;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_MOVT_PREL:
+		// val = imm4:imm12
+		val = (fs->S + fs->A - fs->P) >> 16;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
 		break;
 
@@ -1548,7 +1585,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_THM_JUMP6:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		// val = i:imm5
-		val = ((fs->S + fs->A) & 0x7E) >> 1;
+		val = ((fs->S + fs->A - fs->P) & 0x7E) >> 1;
 		keephw1 = rz_read_ble16(buf, big_endian);
 		keephw1 = (keephw1 & 0xFD07) |
 			((val << 4) & 0x0200) | // i
@@ -1968,7 +2005,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 0);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1983,7 +2020,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 0);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1998,7 +2035,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 1);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -2013,7 +2050,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 1);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -2028,7 +2065,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 2);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -2043,7 +2080,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 2);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -3886,7 +3923,7 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		patch_reloc_hexagon(bin->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_ARM:
-		patch_reloc_arm(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
+		patch_reloc_arm(bin->buf_patched, patch_addr, rel, big_endian, arm_reloc_targets_arm_func(bin, rel), &formular_sym);
 		break;
 	case EM_AARCH64:
 		patch_reloc_arm64(bin->buf_patched, patch_addr, rel, &formular_sym);
