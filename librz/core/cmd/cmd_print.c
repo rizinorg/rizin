@@ -1250,18 +1250,27 @@ static void _pointer_table(RzCore *core, ut64 origin, ut64 offset, const ut8 *bu
 	}
 }
 
-static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
+/**
+ * \brief Address of the first block printed by `pdr.` and `pir.`: the block holding the seek
+ *
+ * The blocks of \p f must be sorted by address, so that the lowest block holding the seek wins.
+ */
+static ut64 recursive_print_start(RzCore *core, RzAnalysisFunction *f) {
+	void **it;
+	rz_pvector_foreach (f->bbs, it) {
+		RzAnalysisBlock *b = *it;
+		if (rz_analysis_block_contains(b, core->offset)) {
+			return b->addr;
+		}
+	}
+	return core->offset;
+}
+
+static void pr_bb(RzCore *core, RzAnalysisFunction *fcn, RzAnalysisBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type) {
 	bool show_flags = rz_config_get_i(core->config, "asm.flags");
 	const bool orig_bb_middle = rz_config_get_b(core->config, "asm.bb.middle");
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	rz_analysis_set_gp(core->analysis, saved_gp);
-	if (fromHere) {
-		if (b->addr < core->offset) {
-			core->cons->null = true;
-		} else {
-			core->cons->null = false;
-		}
-	}
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
@@ -1453,6 +1462,7 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 	rz_config_set_b(core->config, "asm.bb.middle", false);
 
 	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
+	const ut64 start = fromHere ? recursive_print_start(core, f) : 0;
 
 	RzAnalysisBlock *b;
 	void **iter;
@@ -1462,12 +1472,8 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 
 		rz_pvector_foreach (f->bbs, iter) {
 			b = (RzAnalysisBlock *)*iter;
-			if (fromHere) {
-				if (b->addr < core->offset) {
-					core->cons->null = true;
-				} else {
-					core->cons->null = false;
-				}
+			if (b->addr < start) {
+				continue;
 			}
 			ut8 *buf = malloc(b->size);
 			if (!buf) {
@@ -1491,10 +1497,14 @@ static void func_walk_blocks(RzCore *core, RzAnalysisFunction *f, bool fromHere,
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
 
+		const int orig_null = core->cons->null;
 		rz_pvector_foreach (f->bbs, iter) {
 			b = (RzAnalysisBlock *)*iter;
-			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I', fromHere);
+			// the earlier blocks still run muted to hand their emulation state on
+			core->cons->null = orig_null || b->addr < start;
+			pr_bb(core, f, b, emu, saved_gp, saved_arena, 'I');
 		}
+		core->cons->null = orig_null;
 		if (emu) {
 			rz_analysis_set_gp(core->analysis, saved_gp);
 			if (saved_arena) {
@@ -3348,9 +3358,13 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 	}
 
 	rz_pvector_sort(f->bbs, (RzPVectorComparator)bbcmp, NULL);
+	const ut64 start = fromHere ? recursive_print_start(core, f) : 0;
 	if (state->mode == RZ_OUTPUT_MODE_JSON) {
 		rz_pvector_foreach (f->bbs, iter) {
 			b = (RzAnalysisBlock *)*iter;
+			if (b->addr < start) {
+				continue;
+			}
 			ut8 *buf = malloc(b->size);
 			if (!buf) {
 				RZ_LOG_ERROR("cannot allocate %" PFMT64u " byte(s)\n", b->size);
@@ -3370,10 +3384,14 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 			saved_arena = rz_reg_arena_peek(rreg);
 		}
 		rz_config_set_i(core->config, "asm.lines.bb", 0);
+		const int orig_null = core->cons->null;
 		rz_pvector_foreach (f->bbs, iter) {
 			b = (RzAnalysisBlock *)*iter;
-			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
+			// the earlier blocks still run muted to hand their emulation state on
+			core->cons->null = orig_null || b->addr < start;
+			pr_bb(core, f, b, emu, saved_gp, saved_arena, type_print);
 		}
+		core->cons->null = orig_null;
 		rz_analysis_set_gp(core->analysis, saved_gp);
 		if (emu) {
 			if (saved_arena) {
