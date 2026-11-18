@@ -1321,7 +1321,7 @@ static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
 	for (offset = 0; (len - offset) >= sizeof(ut64); offset += sizeof(ut64)) {
 		ut64 bval = rz_read_at_be64(data, offset);
 		ut64 eval = rz_read_at_be64(kw->bin_keyword, offset);
-		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut64)) {
+		if (kw->bin_binmask && kw->binmask_length >= offset + sizeof(ut64)) {
 			ut64 mask = rz_read_at_be64(kw->bin_binmask, offset);
 			bval &= mask;
 		}
@@ -1332,7 +1332,7 @@ static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
 	for (; (len - offset) >= sizeof(ut32); offset += sizeof(ut32)) {
 		ut32 bval = rz_read_at_be32(data, offset);
 		ut32 eval = rz_read_at_be32(kw->bin_keyword, offset);
-		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut32)) {
+		if (kw->bin_binmask && kw->binmask_length >= offset + sizeof(ut32)) {
 			ut32 mask = rz_read_at_be32(kw->bin_binmask, offset);
 			bval &= mask;
 		}
@@ -1343,7 +1343,7 @@ static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
 	if ((len - offset) >= sizeof(ut16)) {
 		ut16 bval = rz_read_at_be16(data, offset);
 		ut16 eval = rz_read_at_be16(kw->bin_keyword, offset);
-		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut16)) {
+		if (kw->bin_binmask && kw->binmask_length >= offset + sizeof(ut16)) {
 			ut16 mask = rz_read_at_be16(kw->bin_binmask, offset);
 			bval &= mask;
 		}
@@ -1355,8 +1355,8 @@ static bool is_prelude(RzSearchKeyword *kw, const ut8 *data, size_t len) {
 	if ((len - offset) >= sizeof(ut8)) {
 		ut8 bval = rz_read_at_be8(data, offset);
 		ut8 eval = rz_read_at_be8(kw->bin_keyword, offset);
-		if (kw->bin_binmask && kw->binmask_length - offset > sizeof(ut8)) {
-			ut8 mask = rz_read_at_be16(kw->bin_binmask, offset);
+		if (kw->bin_binmask && kw->binmask_length >= offset + sizeof(ut8)) {
+			ut8 mask = rz_read_at_be8(kw->bin_binmask, offset);
 			bval &= mask;
 		}
 		if (bval != eval) {
