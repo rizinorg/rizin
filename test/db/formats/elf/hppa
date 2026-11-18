@@ -1,0 +1,140 @@
+NAME=hppa: import stubs of an executable
+FILE=bins/hppa/hppa-exe
+CMDS=ii
+EXPECT=<<EOF
+nth      vaddr bind   type   lib name                        
+-------------------------------------------------------------
+  1 0x00010460 GLOBAL FUNC       strcmp
+  2 0x0001049c GLOBAL FUNC       __libc_start_main
+  3 ---------- WEAK   NOTYPE     _ITM_deregisterTMCloneTable
+  4 0x000104b0 GLOBAL FUNC       puts
+  5 ---------- WEAK   FUNC       __gmon_start__
+  6 0x000104c4 GLOBAL FUNC       __printf_chk
+  7 0x00010488 GLOBAL FUNC       qsort
+  8 ---------- WEAK   NOTYPE     _ITM_registerTMCloneTable
+  9 0x00010474 GLOBAL FUNC       abort
+EOF
+RUN
+
+NAME=hppa: import stubs of a shared object
+FILE=bins/hppa/hppa-lib.so
+CMDS=ii
+EXPECT=<<EOF
+nth      vaddr bind   type   lib name                        
+-------------------------------------------------------------
+  2 0x00000590 WEAK   FUNC       __cxa_finalize
+  3 0x000005a4 GLOBAL FUNC       strcmp
+  4 ---------- WEAK   NOTYPE     _ITM_deregisterTMCloneTable
+  5 ---------- GLOBAL FUNC       free
+  6 0x000005b8 GLOBAL FUNC       puts
+  7 ---------- WEAK   FUNC       __gmon_start__
+  8 0x0000057c GLOBAL FUNC       strlen
+  9 ---------- WEAK   NOTYPE     _ITM_registerTMCloneTable
+EOF
+RUN
+
+NAME=hppa: import stubs loading the slot address with ldw
+FILE=bins/hppa/elf-Linux-hppa-bash
+CMDS=ii~:2..6
+EXPECT=<<EOF
+  1 0x000766b4 GLOBAL FUNC       mbstowcs
+  2 0x00027788 GLOBAL FUNC       getpwuid
+  3 0x00076f5c GLOBAL FUNC       asprintf
+  4 0x00027a38 GLOBAL FUNC       alarm
+EOF
+RUN
+
+NAME=hppa: relocations
+FILE=bins/hppa/hppa-lib.so
+CMDS=<<EOF
+ir
+pxw 12 @ 0x2000
+pxw 4 @ 0x200c
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type              name                            
+-----------------------------------------------------------------------------------
+0x00001eec 0x00001eec 0x00000000 R_PARISC_PLABEL32  0x00002012
+0x00001ef0 0x00001ef0 0x00000000 R_PARISC_PLABEL32  0x00002022
+0x00001ef4 0x00001ef4 0x00000000 R_PARISC_PLABEL32  0x00002032
+0x00001ef8 0x00001ef8 0x00000000 R_PARISC_PLABEL32  0x0000201a
+0x00001efc 0x00001efc 0x00000000 R_PARISC_PLABEL32  0x0000202a
+0x00001f00 0x00001f00 0x000020f0 R_PARISC_PLABEL32 __gmon_start__
+0x00001f04 0x00001f04 0x000020e4 R_PARISC_PLABEL32 _ITM_deregisterTMCloneTable
+0x00001f08 0x00001f08 0x000020f8 R_PARISC_PLABEL32 _ITM_registerTMCloneTable
+0x00001f0c 0x00001f0c 0x000020dc R_PARISC_PLABEL32 __cxa_finalize
+0x00002000 0x00002000 0x00000560 R_PARISC_DIR32    .init + 0x00001aa0
+0x00002004 0x00002004 0x00000560 R_PARISC_DIR32    .init + 0x000003f0
+0x00002008 0x00002008 0x00000560 R_PARISC_DIR32    .init + 0x000003f8
+0x0000200c 0x0000200c 0x000020e8 R_PARISC_PLABEL32 free
+0x00002010 0x00002010 0x00000000 R_PARISC_IPLT     BASE 0x000005cc
+0x00002018 0x00002018 0x00000000 R_PARISC_IPLT     BASE 0x000006c8
+0x00002020 0x00002020 0x00000000 R_PARISC_IPLT     BASE 0x00000730
+0x00002028 0x00002028 0x00000000 R_PARISC_IPLT     BASE 0x00000744
+0x00002030 0x00002030 0x00000000 R_PARISC_IPLT     BASE 0x00000768
+0x00002038 0x00002038 0x000020dc R_PARISC_IPLT     __cxa_finalize@plt
+0x00002040 0x00002040 0x000020e0 R_PARISC_IPLT     strcmp@plt
+0x00002048 0x00002048 0x000020e4 R_PARISC_IPLT     _ITM_deregisterTMCloneTable@plt
+0x00002050 0x00002050 0x000020e8 R_PARISC_IPLT     free@plt
+0x00002058 0x00002058 0x000020ec R_PARISC_IPLT     puts@plt
+0x00002060 0x00002060 0x000020f0 R_PARISC_IPLT     __gmon_start__@plt
+0x00002068 0x00002068 0x000020f4 R_PARISC_IPLT     strlen@plt
+0x00002070 0x00002070 0x000020f8 R_PARISC_IPLT     _ITM_registerTMCloneTable@plt
+0x0000209c 0x0000209c 0x00000000 R_PARISC_DIR32     0x00001f00
+0x000020a0 0x000020a0 0x00000000 R_PARISC_DIR32     0x00002010
+0x000020a4 0x000020a4 0x00000000 R_PARISC_DIR32     0x000020c8
+0x000020a8 0x000020a8 0x00000000 R_PARISC_DIR32     0x00001f04
+0x000020ac 0x000020ac 0x00000000 R_PARISC_DIR32     0x00001f08
+0x000020b0 0x000020b0 0x00000000 R_PARISC_DIR32     0x00001f0c
+0x000020b4 0x000020b4 ---------- R_PARISC_TPREL32  
+0x000020b8 0x000020b8 0x00000000 R_PARISC_DIR32     0x000020cc
+0x000020bc 0x000020bc 0x00000000 R_PARISC_DIR32     0x00002000
+0x000020c0 0x000020c0 0x00000000 R_PARISC_DIR32     0x00002010
+0x000020c4 0x000020c4 0x00002094 R_PARISC_DIR32    _GLOBAL_OFFSET_TABLE_
+0x00002000  0x00002000 0x00000950 0x00000958             .. ....P...X
+0x0000200c  0x000020e8                                   .. .
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot determine entrypoint, using 0x0000057c.
+EOF
+RUN
+
+NAME=hppa: wide mode of 64-bit code
+FILE=bins/hppa/hppa64-wide
+CMDS=<<EOF
+e asm.cpu
+pi 2 @ entry0
+EOF
+EXPECT=<<EOF
+hppa2.0w
+std rp, -0x10(sp)
+ldo 0x7000(r1), rp
+EOF
+RUN
+
+NAME=hppa: BSD ABI note in an ELF with the HP-UX ABI byte
+FILE=bins/hppa/hppa-bsd-init.so
+CMDS=i~^os[1]
+EXPECT=<<EOF
+openbsd
+EOF
+RUN
+
+NAME=hppa: wide import stub and procedure descriptor relocations
+FILE=bins/hppa/hppa64-hpux.so
+CMDS=<<EOF
+i~^os[1]
+ii~imported[1]
+ir~R_PARISC_FPTR64[0,3]
+p8 8 @ 0x4000000000001388
+p8 32 @ 0x40000000000013a8
+EOF
+EXPECT=<<EOF
+hpux
+0x4000000000000378
+0x4000000000001388 R_PARISC_FPTR64
+0x40000000000013a0 R_PARISC_FPTR64
+40000000000013a8
+00000000000000000000000000000000400000000000036040000000000013c8
+EOF
+RUN

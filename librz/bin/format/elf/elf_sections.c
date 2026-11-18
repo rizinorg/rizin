@@ -438,3 +438,21 @@ bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin) {
 
 	return bin->sections;
 }
+
+/**
+ * \brief File offset of the code-address word in a PA64 procedure descriptor.
+ *
+ * The ABI reserves the first two doublewords. The last two hold the entry
+ * point and global pointer, even when adjacent descriptors overlap.
+ */
+ut64 Elf_(rz_bin_elf_parisc64_entry_word)(RZ_NONNULL ELFOBJ *bin, ut64 descriptor) {
+	const RzBinElfSection *opd = bin->elfctx ? bin->elfctx->parisc_opd : NULL;
+	if (!opd || !opd->is_valid || opd->type != SHT_PROGBITS || descriptor < opd->rva) {
+		return UT64_MAX;
+	}
+	ut64 delta = descriptor - opd->rva;
+	if ((delta & 7) || delta > opd->size || opd->size - delta < 32) {
+		return UT64_MAX;
+	}
+	return opd->offset + delta + 16;
+}
