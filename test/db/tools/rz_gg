@@ -136,6 +136,26 @@ ERROR: rz-gg: cannot open empty contents path
 EOF
 RUN
 
+NAME=rz-gg sflib.h missing for the target
+FILE=bins/other/rz-gg/hi.c
+CMDS=!rz-gg -k ios -a arm -b 32 bins/other/rz-gg/hi.c
+REGEXP_FILTER_ERR=<<EOF
+WARNING: egg: sflib.+
+EOF
+EXPECT_ERR=<<EOF
+WARNING: egg: sflib.h is not available for 'ios-arm-32', compiling without it
+EOF
+RUN
+
+NAME=rz-gg sflib.h found for the target
+FILE=bins/other/rz-gg/hi.c
+CMDS=!rz-gg -k linux -a x86 -b 64 bins/other/rz-gg/hi.c
+REGEXP_FILTER_ERR=<<EOF
+WARNING: egg: sflib.+
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=rz-gg debruijn sequence 1
 TOOL=rz-gg
 ARGS=-r -P 2
