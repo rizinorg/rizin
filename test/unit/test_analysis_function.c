@@ -434,6 +434,120 @@ bool test_rz_analysis_function_set_type() {
 	mu_end;
 }
 
+static bool test_rz_analysis_function_set_type_str(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "analysis should be created");
+	mu_assert_true(rz_analysis_use(analysis, "x86"), "use x86");
+	mu_assert_true(rz_analysis_set_bits(analysis, 32), "set 32 bits");
+	rz_analysis_cc_set(analysis, "eax sectarian(ecx, edx, stack)");
+	rz_type_db_purge(analysis->typedb);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, "x86", 32, "linux");
+
+	RzAnalysisFunction *f = rz_analysis_create_function(analysis, "str_fn", 0x200, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(f, "function should be created");
+
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, f, "uint32_t str_fn(uint8_t a, uint32_t b);"),
+		"valid signature sets callable type");
+	mu_assert_notnull(f->ret_type, "ret type set");
+	mu_assert_eq(rz_pvector_len(&f->vars), 2, "two typed arguments");
+
+	mu_assert_false(rz_analysis_function_set_type_str(analysis, f, "int not_a_callable;"),
+		"non-callable declaration rejected cleanly");
+	mu_assert_false(rz_analysis_function_set_type_str(analysis, f, "int broken_fn(struct );"),
+		"malformed signature rejected cleanly");
+
+	RzAnalysisFunction *dot_fn = rz_analysis_create_function(analysis, "foo.bar", 0x300, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(dot_fn, "dotted function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, dot_fn, "void foo.bar();"),
+		"dotted empty-param signature accepted");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, dot_fn, "char foo.bar(int a, ...);"),
+		"dotted signature can be updated");
+	mu_assert_false(rz_type_func_exist(analysis->typedb, "bar"),
+		"dotted function name does not leak truncated callable");
+
+	// Dotted function whose trailing suffix collides with an existing callable in typedb
+	rz_type_func_delete(analysis->typedb, "strlen");
+	RzCallable *orig_strlen = rz_type_func_new(analysis->typedb, "strlen",
+		rz_type_identifier_of_base_type_str(analysis->typedb, "uint32_t"));
+	mu_assert_notnull(orig_strlen, "orig strlen callable created");
+	mu_assert_true(rz_type_callable_arg_add(orig_strlen,
+			       rz_type_callable_arg_new(analysis->typedb, "s",
+				       rz_type_identifier_of_base_type_str(analysis->typedb, "uint32_t"))),
+		"orig strlen arg added");
+	mu_assert_true(rz_type_func_save(analysis->typedb, orig_strlen), "orig strlen saved in typedb");
+
+	RzAnalysisFunction *sym_strlen = rz_analysis_create_function(analysis, "sym.strlen", 0x400, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(sym_strlen, "sym.strlen function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, sym_strlen, "int sym.strlen(int custom_arg);"),
+		"dotted function colliding with existing callable succeeds");
+	mu_assert_notnull(sym_strlen->ret_type, "sym.strlen ret type set");
+	mu_assert_eq(sym_strlen->ret_type->kind, RZ_TYPE_KIND_IDENTIFIER, "sym.strlen ret type is identifier");
+	mu_assert_streq(sym_strlen->ret_type->identifier.name, "int", "sym.strlen ret type is int");
+	mu_assert_eq(rz_pvector_len(&sym_strlen->vars), 1, "sym.strlen has one typed argument");
+	RzAnalysisVar *custom_var = rz_pvector_at(&sym_strlen->vars, 0);
+	mu_assert_notnull(custom_var, "sym.strlen custom_arg var exists");
+	mu_assert_streq(custom_var->name, "custom_arg", "sym.strlen arg name applied");
+	RzCallable *after_strlen = rz_type_func_get(analysis->typedb, "strlen");
+	mu_assert_ptreq(after_strlen, orig_strlen, "existing strlen callable preserved intact");
+	mu_assert_eq(rz_pvector_len(after_strlen->args), 1, "existing strlen arg count preserved");
+	RzCallableArg *orig_arg = rz_pvector_at(after_strlen->args, 0);
+	mu_assert_streq(orig_arg->name, "s", "existing strlen arg name preserved");
+
+	// Failing and non-callable parses on colliding dotted names also preserve the original callable
+	mu_assert_false(rz_analysis_function_set_type_str(analysis, sym_strlen, "int sym.strlen(struct );"),
+		"malformed colliding dotted signature fails cleanly");
+	mu_assert_ptreq(rz_type_func_get(analysis->typedb, "strlen"), orig_strlen,
+		"existing strlen callable preserved after parse error");
+	mu_assert_false(rz_analysis_function_set_type_str(analysis, sym_strlen, "int (*sym.strlen)(int a);"),
+		"non-callable colliding dotted signature fails cleanly");
+	mu_assert_ptreq(rz_type_func_get(analysis->typedb, "strlen"), orig_strlen,
+		"existing strlen callable preserved after non-callable declaration");
+
+	// Multi-dot name (e.g. sym.imp.printf) colliding with pre-existing callable
+	rz_type_func_delete(analysis->typedb, "printf");
+	RzCallable *orig_printf = rz_type_func_new(analysis->typedb, "printf",
+		rz_type_identifier_of_base_type_str(analysis->typedb, "int32_t"));
+	mu_assert_notnull(orig_printf, "orig printf callable created");
+	mu_assert_true(rz_type_func_save(analysis->typedb, orig_printf), "orig printf saved in typedb");
+	RzAnalysisFunction *imp_printf = rz_analysis_create_function(analysis, "sym.imp.printf", 0x500, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(imp_printf, "sym.imp.printf function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, imp_printf, "int sym.imp.printf(int fmt, int val);"),
+		"multi-dot colliding function signature succeeds");
+	mu_assert_eq(rz_pvector_len(&imp_printf->vars), 2, "sym.imp.printf has two typed arguments");
+	mu_assert_ptreq(rz_type_func_get(analysis->typedb, "printf"), orig_printf,
+		"existing printf callable preserved intact");
+
+	// Function with NULL name must not crash
+	RzAnalysisFunction *unnamed = rz_analysis_function_new(analysis);
+	mu_assert_notnull(unnamed, "unnamed function created");
+	mu_assert_null(unnamed->name, "unnamed function has NULL name");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, unnamed, "int anon_sig(int x);"),
+		"NULL function name signature succeeds");
+	mu_assert_notnull(unnamed->ret_type, "unnamed ret type set");
+	mu_assert_eq(rz_pvector_len(&unnamed->vars), 1, "unnamed has one typed argument");
+	unnamed->name = rz_str_dup("unnamed_tmp");
+	rz_analysis_function_free(unnamed);
+
+	// Duplicate callable key created during signature parse must not leak saved_callable
+	rz_type_func_delete(analysis->typedb, "dup_cb");
+	RzCallable *orig_dup_cb = rz_type_func_new(analysis->typedb, "dup_cb",
+		rz_type_identifier_of_base_type_str(analysis->typedb, "uint32_t"));
+	mu_assert_notnull(orig_dup_cb, "orig dup_cb callable created");
+	mu_assert_true(rz_type_func_save(analysis->typedb, orig_dup_cb), "orig dup_cb saved in typedb");
+	RzAnalysisFunction *sym_dup = rz_analysis_create_function(analysis, "sym.dup_cb", 0x600, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(sym_dup, "sym.dup_cb function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, sym_dup, "int other_fn(int (*dup_cb)(int a));"),
+		"duplicate callable key during signature parse succeeds without leak");
+	RzCallable *after_dup_cb = rz_type_func_get(analysis->typedb, "dup_cb");
+	mu_assert_notnull(after_dup_cb, "dup_cb callable exists after parse");
+	mu_assert_notnull(after_dup_cb->ret, "dup_cb ret type set");
+	mu_assert_streq(after_dup_cb->ret->identifier.name, "int",
+		"dup_cb entry came from parsed parameter declarator");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 bool test_noreturn_functions_list() {
 	RzAnalysis *analysis = rz_analysis_new(NULL);
 
@@ -677,6 +791,7 @@ int all_tests() {
 	mu_run_test(test_autonames);
 	mu_run_test(test_initial_underscore);
 	mu_run_test(test_rz_analysis_function_set_type);
+	mu_run_test(test_rz_analysis_function_set_type_str);
 	mu_run_test(test_rz_analysis_function_set_cc);
 	mu_run_test(test_noreturn_functions_list);
 	mu_run_test(test_analysis_function_rename);
