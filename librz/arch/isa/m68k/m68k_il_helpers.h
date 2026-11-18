@@ -90,6 +90,7 @@ typedef struct {
 	const cs_m68k *m68k; ///< Capstone M68K detail for \p insn
 	ut64 addr; ///< instruction address
 	ut64 next_addr; ///< fallthrough address
+	bool fpu_lift_rejected; ///< FPU lifter emitted an illegal or unimplemented label
 } M68KILCtx;
 
 /** Effective-address value and optional access side effects. */

@@ -102,8 +102,7 @@ RZ_IPI RzILOpBool *m68k_fpsr_bit(ut32 bit) {
 }
 
 RZ_IPI RzILOpEffect *m68k_set_fpsr_cc(RzILOpBool *n, RzILOpBool *z, RzILOpBool *i, RzILOpBool *nan) {
-	RzILOpPure *cc = U32(0);
-	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(n, 32), U8(M68K_FPSR_CC_N)));
+	RzILOpPure *cc = SHIFTL0(BOOL_TO_BV(n, 32), U8(M68K_FPSR_CC_N));
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(z, 32), U8(M68K_FPSR_CC_Z)));
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(i, 32), U8(M68K_FPSR_CC_I)));
 	cc = LOGOR(cc, SHIFTL0(BOOL_TO_BV(nan, 32), U8(M68K_FPSR_CC_NAN)));
