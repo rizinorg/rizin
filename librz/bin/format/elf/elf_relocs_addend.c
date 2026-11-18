@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "elf.h"
+#include <rz_util/ht_uu.h>
 
 static ut32 arm_rotr32(ut32 val, ut32 n) {
 	n &= 31; // n mod 32
@@ -309,6 +310,159 @@ static bool get_reloc_addend_x86_32(RzBuffer *buf, RzBinElfReloc *reloc, ut64 pa
 	return true;
 }
 
+static bool mips_is_local(ELFOBJ *bin, ut64 sym) {
+	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, sym);
+	return symbol && RZ_STR_EQ(symbol->bind, RZ_BIN_BIND_LOCAL_STR);
+}
+
+/**
+ * \brief Whether \p reloc holds the high half of a MIPS AHL addend.
+ *
+ * A GOT16 against a local symbol loads the GOT page and leaves the offset
+ * within it to a LO16.
+ */
+static bool mips_is_hi16(ELFOBJ *bin, const RzBinElfReloc *reloc) {
+	return reloc->type == R_MIPS_HI16 || (reloc->type == R_MIPS_GOT16 && mips_is_local(bin, reloc->sym));
+}
+
+/**
+ * \brief Reads the implicit addend of a MIPS relocation.
+ *
+ * A jump against a local symbol is not sign-extended, as it is an offset
+ * within the 256MB region of the jump. Each half of an AHL addend only gets
+ * its own part here, see mips_pair_ahl().
+ */
+static bool get_reloc_addend_mips(ELFOBJ *bin, RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch_addr) {
+	bool big_endian = bin->big_endian;
+	ut8 b[4];
+	switch (reloc->type) {
+	case R_MIPS_NONE:
+	case R_MIPS_JALR:
+	case R_MIPS_COPY:
+	case R_MIPS_JUMP_SLOT:
+	case R_MIPS_TLS_DTPMOD32:
+		reloc->addend = 0;
+		return true;
+	case R_MIPS_16:
+		// The psABI field is a halfword at the place, not the low half of a word.
+		if (rz_buf_read_at(buf, patch_addr, b, 2) != 2) {
+			return false;
+		}
+		reloc->addend = rz_bits_sign_ext64(rz_read_ble16(b, big_endian), 16);
+		return true;
+	default:
+		break;
+	}
+	if (rz_buf_read_at(buf, patch_addr, b, 4) != 4) {
+		return false;
+	}
+	ut32 word = rz_read_ble32(b, big_endian);
+	if (mips_is_hi16(bin, reloc)) {
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(word, 0, 16) << 16, 32);
+		return true;
+	}
+	switch (reloc->type) {
+	case R_MIPS_32:
+	case R_MIPS_REL32:
+	case R_MIPS_GPREL32:
+	case R_MIPS_PC32:
+	case R_MIPS_TLS_DTPREL32:
+	case R_MIPS_TLS_TPREL32:
+		reloc->addend = rz_bits_sign_ext64(word, 32);
+		break;
+	case R_MIPS_26: {
+		ut64 addend = rz_bits_extract(word, 0, 26) << 2;
+		reloc->addend = mips_is_local(bin, reloc->sym) ? (st64)addend : rz_bits_sign_ext64(addend, 28);
+		break;
+	}
+	case R_MIPS_PC16:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(word, 0, 16) << 2, 18);
+		break;
+	case R_MIPS_LO16:
+	case R_MIPS_GPREL16:
+	case R_MIPS_LITERAL:
+	case R_MIPS_GOT16:
+	case R_MIPS_CALL16:
+	case R_MIPS_GOT_DISP:
+	case R_MIPS_TLS_GD:
+	case R_MIPS_TLS_LDM:
+	case R_MIPS_TLS_DTPREL_HI16:
+	case R_MIPS_TLS_DTPREL_LO16:
+	case R_MIPS_TLS_GOTTPREL:
+	case R_MIPS_TLS_TPREL_HI16:
+	case R_MIPS_TLS_TPREL_LO16:
+		reloc->addend = rz_bits_sign_ext64(rz_bits_extract(word, 0, 16), 16);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static ut64 mips_ahl_key(const RzBinElfReloc *reloc) {
+	return ((ut64)reloc->section << 32) | (ut32)reloc->sym;
+}
+
+/**
+ * \brief Joins the part of an AHL addend held by a high half with the low 16 bits of \p low.
+ */
+static st64 mips_ahl(st64 high, st64 low) {
+	// AHL is a 32-bit sum, so a carry out of the high half wraps.
+	return rz_bits_sign_ext64((ut32)(high + rz_bits_sign_ext64(rz_bits_extract(low, 0, 16), 16)), 32);
+}
+
+/**
+ * \brief Joins the halves of MIPS AHL addends, as R_MIPS_HI16 with R_MIPS_LO16.
+ *
+ * A high half takes the next LO16 against the same symbol in the same
+ * section, and a LO16 the previous high half, as either may be shared. A half
+ * without a pair keeps its own part.
+ */
+static void mips_pair_ahl(ELFOBJ *bin) {
+	HtUU *high = ht_uu_new();
+	HtUU *low = ht_uu_new();
+	if (!high || !low) {
+		goto beach;
+	}
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (reloc->mode != DT_REL) {
+			continue;
+		}
+		ut64 key = mips_ahl_key(reloc);
+		bool found = false;
+		if (mips_is_hi16(bin, reloc)) {
+			ht_uu_update(high, key, reloc->addend);
+		} else if (reloc->type == R_MIPS_LO16) {
+			ut64 part = ht_uu_find(high, key, &found);
+			if (found) {
+				reloc->addend = mips_ahl(part, reloc->addend);
+			}
+		}
+	}
+	// Backwards, as a high half takes the LO16 after it. The low 16 bits of a
+	// LO16 addend are its own part, joined or not.
+	for (size_t i = rz_vector_len(bin->relocs); i-- > 0;) {
+		reloc = rz_vector_index_ptr(bin->relocs, i);
+		if (reloc->mode != DT_REL) {
+			continue;
+		}
+		ut64 key = mips_ahl_key(reloc);
+		bool found = false;
+		if (reloc->type == R_MIPS_LO16) {
+			ht_uu_update(low, key, reloc->addend);
+		} else if (mips_is_hi16(bin, reloc)) {
+			ut64 part = ht_uu_find(low, key, &found);
+			if (found) {
+				reloc->addend = mips_ahl(reloc->addend, part);
+			}
+		}
+	}
+beach:
+	ht_uu_free(high);
+	ht_uu_free(low);
+}
+
 static bool get_reloc_addend(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	ut64 patch_addr = reloc->paddr != UT64_MAX ? reloc->paddr : Elf_(rz_bin_elf_v2p)(bin, reloc->vaddr);
 	bool big_endian = bin->big_endian;
@@ -318,6 +472,10 @@ static bool get_reloc_addend(ELFOBJ *bin, RzBinElfReloc *reloc) {
 		return get_reloc_addend_arm(bin->b, reloc, patch_addr, big_endian);
 	case EM_386:
 		return get_reloc_addend_x86_32(bin->b, reloc, patch_addr);
+	case EM_MIPS_X:
+	case EM_MIPS_RS3_LE:
+	case EM_MIPS:
+		return get_reloc_addend_mips(bin, bin->b, reloc, patch_addr);
 	default:
 		return false;
 	}
@@ -336,5 +494,14 @@ void Elf_(rz_bin_elf_relocs_read_addends)(RZ_NONNULL ELFOBJ *bin) {
 		if (reloc->mode == DT_REL && !get_reloc_addend(bin, reloc)) {
 			RZ_LOG_INFO("Immediate value extraction not implemented for %x\n", reloc->type);
 		}
+	}
+	switch (bin->ehdr.e_machine) {
+	case EM_MIPS_X:
+	case EM_MIPS_RS3_LE:
+	case EM_MIPS:
+		mips_pair_ahl(bin);
+		break;
+	default:
+		break;
 	}
 }

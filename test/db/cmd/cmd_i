@@ -4877,6 +4877,7 @@ EXPECT=<<EOF
 0x4e2c 26 25 %s: can't map cache '%s'\n
 0x4dd4 85 84 /home/liujiale/project/816_telnet/MTK7620A_DLINK_TELNET/source/romfs/etc/ld.so.cache
 0x4d94 63 62 %s: cannot apply additional memory protection after relocation
+0x4d8c 7 6 (null)
 0x4d80 10 9 overflow\n
 0x4d70 15 14 ld-uClibc.so.0
 EOF
