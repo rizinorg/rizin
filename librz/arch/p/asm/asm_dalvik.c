@@ -175,7 +175,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int)buf[1];
-			vB = (int)(buf[3] << 8 | buf[2]);
+			vB = (st16)rz_read_at_le16(buf, 2);
 			// snprintf (str, sizeof (str), " v%i, %i", vA, vB);
 			rz_strf(str, " v%i, 0x%08" PFMT64x, vA, a->pc + (vB * 2));
 			strasm = rz_str_append(strasm, str);
@@ -189,7 +189,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 		case fmtopvAvBpCCCC: // if-*
 			vA = buf[1] & 0x0f;
 			vB = (buf[1] & 0xf0) >> 4;
-			vC = (int)(buf[3] << 8 | buf[2]);
+			vC = (st16)rz_read_at_le16(buf, 2);
 			// snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
 			rz_strf(str, " v%i, v%i, 0x%08" PFMT64x, vA, vB, a->pc + (vC * 2));
 			strasm = rz_str_append(strasm, str);
