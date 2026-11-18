@@ -59,7 +59,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
 
 	// whole words only, as some mnemonics contain register names like "pc" in "cmpclr"
-	TOKEN(REGISTER, "\\b([cfst]?r[[:digit:]]{1,2}[LR]?|fpe[[:digit:]]|fpsr|sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr[1-4]|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)\\b");
+	TOKEN(REGISTER, "\\b([cdfst]?r[[:digit:]]{1,2}[LR]?|fpe[[:digit:]]|fpsr|sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr[1-4]|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)\\b");
 
 	// the name and its completers, which include conditions like "!?<=" or "*>>="
 	TOKEN(MNEMONIC, "^[[:alpha:]][[:alnum:]]*(,[^[:blank:],]+)*");
