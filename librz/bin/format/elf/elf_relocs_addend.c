@@ -249,15 +249,30 @@ static bool get_reloc_addend_arm(RzBuffer *buf, RzBinElfReloc *reloc, ut64 patch
 	return true;
 }
 
-RZ_BORROW bool Elf_(rz_bin_elf_reloc_get_addend)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *reloc) {
-	ut64 e_machine = bin->ehdr.e_machine;
+static bool get_reloc_addend(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	ut64 patch_addr = reloc->paddr != UT64_MAX ? reloc->paddr : Elf_(rz_bin_elf_v2p)(bin, reloc->vaddr);
 	bool big_endian = bin->big_endian;
 
-	switch (e_machine) {
+	switch (bin->ehdr.e_machine) {
 	case EM_ARM:
-		return get_reloc_addend_arm(bin->buf_patched, reloc, patch_addr, big_endian);
+		return get_reloc_addend_arm(bin->b, reloc, patch_addr, big_endian);
 	default:
 		return false;
+	}
+}
+
+/**
+ * \brief Sets the addends of the REL relocations of \p bin from the fields they relocate.
+ *
+ * The fields are read from the unrelocated image, so that the addends do not
+ * depend on the relocations patched so far.
+ */
+void Elf_(rz_bin_elf_relocs_read_addends)(RZ_NONNULL ELFOBJ *bin) {
+	rz_return_if_fail(bin);
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (reloc->mode == DT_REL && !get_reloc_addend(bin, reloc)) {
+			RZ_LOG_INFO("Immediate value extraction not implemented for %x\n", reloc->type);
+		}
 	}
 }
