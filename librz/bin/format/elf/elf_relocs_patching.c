@@ -694,6 +694,33 @@ static void patch_reloc_sparc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 }
 
 /**
+ * \brief Patches \p val over \p mask of a microMIPS or MIPS16 instruction, whose halfwords are in order.
+ */
+static void patch_mips_halfwords(RZ_INOUT RzBuffer *buf_patched, bool big_endian, ut64 addr, ut32 mask, ut32 val) {
+	ut8 buf[4] = { 0 };
+	rz_buf_read_at(buf_patched, addr, buf, 4);
+	ut32 insn = ((ut32)rz_read_ble16(buf, big_endian) << 16) | rz_read_ble16(buf + 2, big_endian);
+	insn = (insn & ~mask) | (val & mask);
+	rz_write_ble16(buf, insn >> 16, big_endian);
+	rz_write_ble16(buf + 2, insn & 0xffff, big_endian);
+	rz_buf_write_at(buf_patched, addr, buf, 4);
+}
+
+/**
+ * \brief Places a 16-bit immediate where an extended MIPS16 instruction holds it.
+ */
+static ut32 mips16_extended_imm_bits(ut32 imm) {
+	return rz_bits_extract(imm, 11, 5) << 16 | rz_bits_extract(imm, 5, 6) << 21 | rz_bits_extract(imm, 0, 5);
+}
+
+/**
+ * \brief Places a 26-bit target where a MIPS16 JAL holds it.
+ */
+static ut32 mips16_jal_target_bits(ut32 target) {
+	return rz_bits_extract(target, 21, 5) << 16 | rz_bits_extract(target, 16, 5) << 21 | rz_bits_extract(target, 0, 16);
+}
+
+/**
  * \brief Patches the field of a MIPS relocation.
  *
  * GP-relative, GOT and TLS fields are left alone, as an object has no layout
@@ -752,6 +779,79 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MIPS_PC32:
 		val = fs->S + fs->A - fs->P;
 		break;
+	case R_MIPS_PC21_S2:
+		mask = 0x1fffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC26_S2:
+		mask = 0x3ffffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC18_S3:
+		// LDPC loads from the doubleword-aligned PC.
+		mask = 0x3ffff;
+		val = (fs->S + fs->A - (fs->P & ~7ULL)) >> 3;
+		break;
+	case R_MIPS_PC19_S2:
+		mask = 0x7ffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PCHI16:
+		mask = 0xffff;
+		val = (fs->S + fs->A - fs->P + 0x8000) >> 16;
+		break;
+	case R_MIPS_PCLO16:
+		mask = 0xffff;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case R_MIPS_REL32 | (R_MIPS_64 << 8): {
+		// Composed with R_MIPS_64, R_MIPS_REL32 relocates a doubleword.
+		ut8 buf[8];
+		rz_write_ble64(buf, (rel->sym ? fs->S : fs->B) + fs->A, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
+		return;
+	}
+	case R_MICROMIPS_JALR:
+		return;
+	case R_MICROMIPS_26_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x3ffffff, (fs->S + fs->A) >> 1);
+		return;
+	case R_MICROMIPS_HI16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, (fs->S + fs->A + 0x8000) >> 16);
+		return;
+	case R_MICROMIPS_LO16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, fs->S + fs->A);
+		return;
+	case R_MICROMIPS_PC16_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, (fs->S + fs->A - fs->P) >> 1);
+		return;
+	case R_MICROMIPS_PC23_S2:
+		// ADDIUPC adds to the word-aligned PC.
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7fffff, (fs->S + fs->A - (fs->P & ~3ULL)) >> 2);
+		return;
+	case R_MICROMIPS_PC7_S1:
+	case R_MICROMIPS_PC10_S1: {
+		ut16 field = rel->type == R_MICROMIPS_PC7_S1 ? 0x7f : 0x3ff;
+		ut8 buf[2] = { 0 };
+		rz_buf_read_at(buf_patched, patch_addr, buf, sizeof(buf));
+		ut16 insn = rz_read_ble16(buf, big_endian);
+		insn = (insn & ~field) | (((fs->S + fs->A - fs->P) >> 1) & field);
+		rz_write_ble16(buf, insn, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
+		return;
+	}
+	case R_MIPS16_26:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x3ffffff, mips16_jal_target_bits((fs->S + fs->A) >> 2));
+		return;
+	case R_MIPS16_HI16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits((fs->S + fs->A + 0x8000) >> 16));
+		return;
+	case R_MIPS16_LO16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits(fs->S + fs->A));
+		return;
+	case R_MIPS16_PC16_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits((fs->S + fs->A - fs->P) >> 1));
+		return;
 	case R_MIPS_GPREL16: UNHANDL("R_MIPS_GPREL16");
 	case R_MIPS_LITERAL: UNHANDL("R_MIPS_LITERAL");
 	case R_MIPS_GOT16: UNHANDL("R_MIPS_GOT16");
@@ -794,15 +894,9 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MIPS_GLOB_DAT: UNHANDL("R_MIPS_GLOB_DAT");
 	case R_MIPS_COPY: UNHANDL("R_MIPS_COPY");
 	case R_MIPS_JUMP_SLOT: UNHANDL("R_MIPS_JUMP_SLOT");
-	case R_MICROMIPS_26_S1: UNHANDL("R_MICROMIPS_26_S1");
-	case R_MICROMIPS_HI16: UNHANDL("R_MICROMIPS_HI16");
-	case R_MICROMIPS_LO16: UNHANDL("R_MICROMIPS_LO16");
 	case R_MICROMIPS_GPREL16: UNHANDL("R_MICROMIPS_GPREL16");
 	case R_MICROMIPS_LITERAL: UNHANDL("R_MICROMIPS_LITERAL");
 	case R_MICROMIPS_GOT16: UNHANDL("R_MICROMIPS_GOT16");
-	case R_MICROMIPS_PC7_S1: UNHANDL("R_MICROMIPS_PC7_S1");
-	case R_MICROMIPS_PC10_S1: UNHANDL("R_MICROMIPS_PC10_S1");
-	case R_MICROMIPS_PC16_S1: UNHANDL("R_MICROMIPS_PC16_S1");
 	case R_MICROMIPS_CALL16: UNHANDL("R_MICROMIPS_CALL16");
 	case R_MICROMIPS_GOT_DISP: UNHANDL("R_MICROMIPS_GOT_DISP");
 	case R_MICROMIPS_GOT_PAGE: UNHANDL("R_MICROMIPS_GOT_PAGE");
@@ -815,7 +909,6 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MICROMIPS_CALL_HI16: UNHANDL("R_MICROMIPS_CALL_HI16");
 	case R_MICROMIPS_CALL_LO16: UNHANDL("R_MICROMIPS_CALL_LO16");
 	case R_MICROMIPS_SCN_DISP: UNHANDL("R_MICROMIPS_SCN_DISP");
-	case R_MICROMIPS_JALR: UNHANDL("R_MICROMIPS_JALR");
 	case R_MICROMIPS_HI0_LO16: UNHANDL("R_MICROMIPS_HI0_LO16");
 	case R_MICROMIPS_TLS_GD: UNHANDL("R_MICROMIPS_TLS_GD");
 	case R_MICROMIPS_TLS_LDM: UNHANDL("R_MICROMIPS_TLS_LDM");
@@ -825,7 +918,6 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MICROMIPS_TLS_TPREL_HI16: UNHANDL("R_MICROMIPS_TLS_TPREL_HI16");
 	case R_MICROMIPS_TLS_TPREL_LO16: UNHANDL("R_MICROMIPS_TLS_TPREL_LO16");
 	case R_MICROMIPS_GPREL7_S2: UNHANDL("R_MICROMIPS_GPREL7_S2");
-	case R_MICROMIPS_PC23_S2: UNHANDL("R_MICROMIPS_PC23_S2");
 	case R_MIPS_EH: UNHANDL("R_MIPS_EH");
 	case R_MIPS_GNU_REL16_S2: UNHANDL("R_MIPS_GNU_REL16_S2");
 	case R_MIPS_GNU_VTINHERIT: UNHANDL("R_MIPS_GNU_VTINHERIT");

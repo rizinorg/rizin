@@ -2019,6 +2019,26 @@ typedef struct
 #define R_MIPS_TLS_TPREL_HI16       49 /* TP-relative offset, high 16 bits */
 #define R_MIPS_TLS_TPREL_LO16       50 /* TP-relative offset, low 16 bits */
 #define R_MIPS_GLOB_DAT             51
+#define R_MIPS_PC21_S2              60
+#define R_MIPS_PC26_S2              61
+#define R_MIPS_PC18_S3              62
+#define R_MIPS_PC19_S2              63
+#define R_MIPS_PCHI16               64
+#define R_MIPS_PCLO16               65
+#define R_MIPS16_26                 100
+#define R_MIPS16_GPREL              101
+#define R_MIPS16_GOT16              102
+#define R_MIPS16_CALL16             103
+#define R_MIPS16_HI16               104
+#define R_MIPS16_LO16               105
+#define R_MIPS16_TLS_GD             106
+#define R_MIPS16_TLS_LDM            107
+#define R_MIPS16_TLS_DTPREL_HI16    108
+#define R_MIPS16_TLS_DTPREL_LO16    109
+#define R_MIPS16_TLS_GOTTPREL       110
+#define R_MIPS16_TLS_TPREL_HI16     111
+#define R_MIPS16_TLS_TPREL_LO16     112
+#define R_MIPS16_PC16_S1            113
 #define R_MIPS_COPY                 126
 #define R_MIPS_JUMP_SLOT            127
 #define R_MIPS_RELATIVE             128
