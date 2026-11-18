@@ -227,6 +227,12 @@ has_capstone_hppa = cc.has_header_symbol('capstone/capstone.h', 'CS_ARCH_HPPA',
   dependencies: capstone_headers,
   include_directories: capstone_check_includes,
 )
+if has_capstone_hppa and cc.has_header_symbol('capstone/capstone.h', 'HPPA_INS_MFDIAG',
+  dependencies: capstone_headers,
+  include_directories: capstone_check_includes,
+)
+  add_project_arguments(['-DRZ_CAPSTONE_HAS_HPPA_DIAG'], language: 'c')
+endif
 
 has_capstone_m68k_cpu32 = cc.compiles('''
 #include <capstone/capstone.h>

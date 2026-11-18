@@ -502,6 +502,51 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=hppa: diagnose instructions
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx 141c1a00141c0240144008bc145c1840144036001440162014402600144006201400010114400ba015c00aa0
+ao 11~^opcode,type,family
+EOF
+EXPECT=<<EOF
+opcode: mfdiag dr0, ret0
+type: mov
+family: priv
+opcode: mtdiag ret0, dr0
+type: mov
+family: priv
+opcode: mfdiag dr2, ret0
+type: mov
+family: priv
+opcode: mtdiag ret0, dr2
+type: mov
+family: priv
+opcode: tocen
+type: unk
+family: priv
+opcode: tocdis
+type: unk
+family: priv
+opcode: shdwgr
+type: mov
+family: priv
+opcode: grshdw
+type: mov
+family: priv
+opcode: diag 0x101
+type: unk
+family: priv
+opcode: sfdiag 2
+type: unk
+family: priv
+opcode: stdiag 0xe
+type: unk
+family: priv
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=hppa: nullified branches and calls to exit in the angr instruction fixture
 FILE=bins/hppa/test-instr_hppa
 CMDS=<<EOF

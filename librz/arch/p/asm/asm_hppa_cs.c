@@ -59,7 +59,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
 
 	// Word boundaries keep register names such as "pc" from splitting "cmpclr".
-	TOKEN(REGISTER, "\\b(fr[[:digit:]]{1,2}[LR]?|[cst]?r[[:digit:]]{1,2}|fpe[[:digit:]]|fpsr|"
+	TOKEN(REGISTER, "\\b(fr[[:digit:]]{1,2}[LR]?|[cdst]?r[[:digit:]]{1,2}|fpe[[:digit:]]|fpsr|"
 			"sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr[1-4]|ccr|sar|iva|eiem|itmr|pcsq|pcoq|"
 			"iir|isr|ior|ipsw|eirr|flags)\\b");
 

@@ -1108,6 +1108,26 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op, ut32
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
+	case HPPA_INS_GRSHDW:
+	case HPPA_INS_SHDWGR:
+#ifdef RZ_CAPSTONE_HAS_HPPA_DIAG
+	case HPPA_INS_MFDIAG:
+	case HPPA_INS_MTDIAG:
+#endif
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		break;
+	case HPPA_INS_DIAG:
+	case HPPA_INS_TOCDIS:
+	case HPPA_INS_TOCEN:
+#ifdef RZ_CAPSTONE_HAS_HPPA_DIAG
+	case HPPA_INS_SFDIAG:
+	case HPPA_INS_STDIAG:
+#endif
+		// implementation-dependent, effects not modeled
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		break;
 	case HPPA_INS_SYNC:
 	case HPPA_INS_SYNCDMA:
 		op->type = RZ_ANALYSIS_OP_TYPE_SYNC;
