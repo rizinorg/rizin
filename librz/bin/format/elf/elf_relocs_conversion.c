@@ -1206,16 +1206,24 @@ static RzBinReloc *reloc_convert_alpha(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT
 }
 
 static RzBinReloc *reloc_convert_parisc(ELFOBJ *bin, RzBinElfReloc *rel, ut64 GOT) {
-	ut64 P = rel->vaddr;
-
 	switch (rel->type) {
 	case R_PARISC_NONE:
 		return reloc_convert_set(bin, rel, 0, "R_PARISC_NONE");
 	case R_PARISC_DIR32: ADD(32, 0, "R_PARISC_DIR32", RZ_RELOC_BASE_UNKNOWN);
 	case R_PARISC_DIR64: ADD(64, 0, "R_PARISC_DIR64", RZ_RELOC_BASE_UNKNOWN);
 	case R_PARISC_COPY: ADD(64, 0, "R_PARISC_COPY", RZ_RELOC_BASE_UNKNOWN); // copy symbol at runtime
-	case R_PARISC_IPLT: ADD(64, -P, "R_PARISC_IPLT", RZ_RELOC_BASE_PLT_SYMBOL);
-	case R_PARISC_EPLT: ADD(64, -P, "R_PARISC_EPLT", RZ_RELOC_BASE_PLT_SYMBOL);
+	// the PLT slot pair of function address and gp, of a local function
+	// without a symbol
+	case R_PARISC_IPLT:
+		if (!rel->sym) {
+			ADD(64, 0, "R_PARISC_IPLT", RZ_RELOC_BASE_BASE);
+		}
+		ADD(64, 0, "R_PARISC_IPLT", RZ_RELOC_BASE_PLT_SYMBOL);
+	case R_PARISC_EPLT: ADD(64, 0, "R_PARISC_EPLT", RZ_RELOC_BASE_PLT_SYMBOL);
+	case R_PARISC_PLABEL32: ADD(32, 0, "R_PARISC_PLABEL32", RZ_RELOC_BASE_SYMBOL);
+	case R_PARISC_TPREL32: return reloc_convert_tls(bin, rel, RZ_BIN_RELOC_32, "R_PARISC_TPREL32");
+	case R_PARISC_TLS_DTPMOD32: return reloc_convert_tls(bin, rel, RZ_BIN_RELOC_32, "R_PARISC_TLS_DTPMOD32");
+	case R_PARISC_TLS_DTPOFF32: return reloc_convert_tls(bin, rel, RZ_BIN_RELOC_32, "R_PARISC_TLS_DTPOFF32");
 
 	// FIXME: Quite a few relocatons missing here.
 	default: UNSUPP("PARISC");

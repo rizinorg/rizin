@@ -1499,6 +1499,11 @@ static char *get_abi_mips(ELFOBJ *bin) {
 }
 
 static char *get_cpu_hppa(ELFOBJ *bin) {
+	if (bin->ehdr.e_flags & EF_PARISC_WIDE) {
+		// 64-bit code takes wider displacements from the same fields
+		return strdup("hppa2.0w");
+	}
+
 	Elf_(Word) hppa_arch = bin->ehdr.e_flags & EF_PARISC_ARCH;
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpu_hppa_translation_table); i++) {

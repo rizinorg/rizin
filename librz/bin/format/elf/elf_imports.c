@@ -15,7 +15,6 @@
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
 #define X86_OFFSET_PLT_ENTRY_FROM_GOT_ADDR   -0x6
 #define X86_PLT_ENTRY_SIZE                   0x10
-#define PARISC_PLT_ENTRY_SIZE                0x10
 
 #define UNHANDL_IMPORT(NAME, NUM) \
 	RZ_LOG_WARN(NAME ": Unhandled ELF relocation for import %d\n", NUM); \
@@ -67,33 +66,116 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RzBinElfReloc *rel) {
 	return plt_addr;
 }
 
-static ut64 get_import_addr_parisc(ELFOBJ *bin, RzBinElfReloc *rel) {
-	// Get PLT section
-	RzBinElfSection *plt_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".plt");
-	if (!plt_sec) {
+#define PARISC_ADDIL      0x0a // addil L%x,b,r1
+#define PARISC_LDO_R1_R22 0x34360000 // ldo x(r1),r22
+#define PARISC_LDW_R1_R21 0x48350000 // ldw x(r1),r21
+#define PARISC_LDW_R1_R19 0x48330000 // ldw x(r1),r19
+#define PARISC_LDW_R22    0x0ec01095 // ldw 0(r22),r21
+#define PARISC_LDW_R22_GP 0x0ec81093 // ldw 4(r22),r19
+#define PARISC_BV_R21     0xeaa0c000 // bv r0(r21)
+#define PARISC_IM14_MASK  0xffffc000
+
+/// Value of the 21-bit immediate of ADDIL, already shifted into place
+static ut32 parisc_im21(ut32 w) {
+	ut32 v = w & 1;
+	v = (v << 11) | ((w >> 1) & 0x7ff);
+	v = (v << 2) | ((w >> 14) & 3);
+	v = (v << 5) | ((w >> 16) & 0x1f);
+	v = (v << 2) | ((w >> 12) & 3);
+	return v << 11;
+}
+
+/// Value of the 14-bit displacement, its sign being the lowest bit
+static st32 parisc_im14(ut32 w) {
+	st32 v = (w & 0x3fff) >> 1;
+	return w & 1 ? v - 0x2000 : v;
+}
+
+/**
+ * \brief Get the PLT slot loaded by a PA-RISC import stub starting at \p w.
+ *
+ * Stubs load the function address and gp from the slot after addil of its
+ * offset to gp, held by dp or r19, through ldo into r22 or directly.
+ *
+ * \return The slot offset from gp, or UT64_MAX if \p w is no stub.
+ */
+static ut64 parisc_stub_slot(const ut32 *w, size_t n) {
+	if (n < 4 || w[0] >> 26 != PARISC_ADDIL) {
 		return UT64_MAX;
 	}
-	ut64 plt_addr = plt_sec->rva;
-	ut64 got_addr = 0;
-
-	// Get GOT section
-	RzBinElfSection *got_sec = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
-	if (got_sec) {
-		got_addr = got_sec->rva;
+	ut32 base = (w[0] >> 21) & 0x1f;
+	if (base != 27 && base != 19) {
+		return UT64_MAX;
 	}
+	ut32 off = parisc_im21(w[0]) + (ut32)parisc_im14(w[1]);
+	if ((w[1] & PARISC_IM14_MASK) == PARISC_LDO_R1_R22) {
+		return n >= 5 && w[2] == PARISC_LDW_R22 && w[3] == PARISC_BV_R21 && w[4] == PARISC_LDW_R22_GP
+			? off
+			: UT64_MAX;
+	}
+	if ((w[1] & PARISC_IM14_MASK) == PARISC_LDW_R1_R21 && w[2] == PARISC_BV_R21 &&
+		(w[3] & PARISC_IM14_MASK) == PARISC_LDW_R1_R19 && parisc_im14(w[3]) == parisc_im14(w[1]) + 4) {
+		return off;
+	}
+	return UT64_MAX;
+}
 
-	switch (rel->type) {
-	case R_PARISC_IPLT:
-		// IPLT uses direct PLT entries
-		return plt_addr + (rel->sym + 1) * PARISC_PLT_ENTRY_SIZE;
-	default:
-		// For other relocation types, try GOT first, then PLT
-		if (got_sec) {
-			const ut64 got_entry_size = 8; // 64-bit pointers
-			return got_addr + rel->sym * got_entry_size;
+static bool parisc_add_segment_stubs(ELFOBJ *bin, HtUU *stubs, ut64 offset, ut64 vaddr, ut64 size) {
+	size_t n = size / 4;
+	ut32 *words = n ? RZ_NEWS(ut32, n) : NULL;
+	if (!words) {
+		return !n;
+	}
+	for (size_t i = 0; i < n; i++) {
+		if (!rz_buf_read_ble32_at(bin->b, offset + i * 4, &words[i], bin->big_endian)) {
+			n = i;
+			break;
 		}
-		return plt_addr + (rel->sym + 1) * PARISC_PLT_ENTRY_SIZE;
 	}
+	for (size_t i = 0; i < n; i++) {
+		ut64 slot = parisc_stub_slot(words + i, n - i);
+		if (slot != UT64_MAX) {
+			// stubs may repeat in distant parts of the text, keep the first
+			ht_uu_insert(stubs, (ut32)(bin->elfctx->got_addr + slot), vaddr + i * 4);
+		}
+	}
+	free(words);
+	return true;
+}
+
+/// Map the PLT slot of every import to the stub its callers branch to.
+static HtUU *parisc_import_stubs_new(ELFOBJ *bin) {
+	HtUU *stubs = ht_uu_new();
+	if (!stubs) {
+		return NULL;
+	}
+	RzBinElfSegment *segment;
+	rz_bin_elf_foreach_segments(bin, segment) {
+		if (!segment->is_valid || segment->data.p_type != PT_LOAD || !(segment->data.p_flags & PF_X)) {
+			continue;
+		}
+		ut64 size = RZ_MIN(segment->data.p_filesz, bin->size);
+		if (!parisc_add_segment_stubs(bin, stubs, segment->data.p_offset, segment->data.p_vaddr, size)) {
+			ht_uu_free(stubs);
+			return NULL;
+		}
+	}
+	return stubs;
+}
+
+static ut64 get_import_addr_parisc(ELFOBJ *bin, RzBinElfReloc *rel) {
+	if (rel->type != R_PARISC_IPLT || !bin->elfctx || bin->elfctx->got_addr == ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
+	if (!bin->elfctx->parisc_import_stubs) {
+		bin->elfctx->parisc_import_stubs = parisc_import_stubs_new(bin);
+		if (!bin->elfctx->parisc_import_stubs) {
+			return UT64_MAX;
+		}
+	}
+	bool found = false;
+	ut64 stub = ht_uu_find(bin->elfctx->parisc_import_stubs, rel->vaddr, &found);
+	return found ? stub : UT64_MAX;
 }
 
 /**
