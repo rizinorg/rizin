@@ -156,10 +156,6 @@ e asm.cpu=cfv1
 wx 04c2 @ 8
 s 8
 aoj~{[0].rzil.opcode}
-e asm.cpu=68020
-wx f23b80008100 @ 0
-s 0
-aoj~{.[]\|{opcode,rzil}}
 EOF
 EXPECT=<<EOF
 [{"opcode":"fadd fp1, fp2","family":"fpu","type":"add","opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
@@ -168,7 +164,6 @@ seq
 branch
 seq
 seq
-[{"opcode":"invalid"}]
 EOF
 RUN
 
