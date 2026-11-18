@@ -382,6 +382,9 @@ endif
 # handle openssl library
 sys_openssl = dependency('openssl', required: get_option('use_sys_openssl'), static: is_static_build)
 
+# handle gmp library
+sys_gmp = dependency('gmp', required: get_option('use_sys_gmp'), static: is_static_build)
+
 # handle tree-sitter
 r = run_command(py3_exe, check_meson_subproject_py, 'tree-sitter', check: false)
 if r.returncode() == 1 and get_option('subprojects_check')
@@ -465,6 +468,7 @@ foreach it : ccs
   it_userconf.set10('USE_LIB_PCRE2', pcre2_dep.found())
   it_userconf.set10('HAVE_LIB_XXHASH', xxhash_dep.found())
   it_userconf.set10('USE_LIB_XXHASH', xxhash_dep.found())
+  it_userconf.set10('HAVE_GMP', sys_gmp.found())
   it_userconf.set10('DEBUGGER', has_debugger)
   if extra_prefix != ''
     it_userconf.set_quoted('EXTRA_PREFIX', extra_prefix)

@@ -45,18 +45,31 @@ RZ_API st64 rz_big_to_int(RzNumBig *b) {
 }
 
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str) {
+	rz_return_if_fail(b && str);
+
+	bool negative = false;
+	if (*str == '-') {
+		negative = true;
+		str++;
+	}
 	if (rz_str_startswith(str, "0x")) {
 		str += 2;
-		BN_hex2bn(&b, str);
-	} else if (rz_str_startswith(str, "-0x")) {
-		str += 3;
-		BN_hex2bn(&b, str);
-		BN_set_negative(b, -1);
 	}
+
+	BN_zero(b);
+	if (*str) {
+		BN_hex2bn(&b, str);
+	}
+	BN_set_negative(b, negative);
 }
 
-RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
 	char *tmp = BN_bn2hex(b);
+	if (!tmp) {
+		return NULL;
+	}
 	char *res;
 	if (tmp[0] == '-') {
 		res = rz_str_newf("-0x%s", &tmp[1]);
@@ -64,9 +77,24 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 		res = rz_str_newf("0x%s", tmp);
 	}
 	OPENSSL_free(tmp);
+	if (!res) {
+		return NULL;
+	}
 	for (size_t i = 0; res[i]; i++) {
 		res[i] = tolower(res[i]);
 	}
+	return res;
+}
+
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
+	char *tmp = BN_bn2dec(b);
+	if (!tmp) {
+		return NULL;
+	}
+	char *res = rz_str_dup(tmp);
+	OPENSSL_free(tmp);
 	return res;
 }
 
@@ -226,6 +254,18 @@ RZ_API void rz_big_dec(RzNumBig *a) {
 RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m) {
 	BN_CTX *bn_ctx = BN_CTX_new();
 	BN_mod_exp(c, a, b, m, bn_ctx);
+	BN_CTX_free(bn_ctx);
+}
+
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
+	rz_return_if_fail(a && b && c);
+
+	if (BN_is_negative(b)) {
+		BN_zero(c);
+		return;
+	}
+	BN_CTX *bn_ctx = BN_CTX_new();
+	BN_exp(c, a, b, bn_ctx);
 	BN_CTX_free(bn_ctx);
 }
 

@@ -3,6 +3,12 @@
 
 #include "../rz_types.h"
 
+#if HAVE_LIB_GMP
+#include <gmp.h>
+#elif HAVE_LIB_SSL
+#include <openssl/bn.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
