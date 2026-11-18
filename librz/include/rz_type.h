@@ -433,7 +433,7 @@ RZ_API RZ_OWN char *rz_type_as_format_pair(const RzTypeDB *typedb, RZ_NONNULL Rz
 // Function prototypes api
 RZ_API RZ_OWN RzCallable *rz_type_callable_new(RZ_NULLABLE const char *name);
 RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCallable *callable);
-RZ_API void rz_type_callable_free(RZ_NONNULL RzCallable *callable);
+RZ_API void rz_type_callable_free(RZ_NULLABLE RzCallable *callable);
 
 RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_new(RzTypeDB *typedb, RZ_NONNULL const char *name, RZ_OWN RZ_NONNULL RzType *type);
 RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_clone(RZ_BORROW RZ_NONNULL const RzCallableArg *arg);

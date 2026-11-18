@@ -52,7 +52,10 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCa
  *
  * \param callable RzCallable type
  */
-RZ_API void rz_type_callable_free(RZ_NONNULL RzCallable *callable) {
+RZ_API void rz_type_callable_free(RZ_NULLABLE RzCallable *callable) {
+	if (!callable) {
+		return;
+	}
 	rz_type_free(callable->ret);
 	rz_pvector_free(callable->args);
 	free(callable->name);

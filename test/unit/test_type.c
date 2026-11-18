@@ -2214,8 +2214,135 @@ static bool test_c_highlight(void) {
 	mu_end;
 }
 
+static bool test_type_parser_leaks_and_errors(void) {
+	// 1. Standalone parser should release its private hash tables on free
+	RzTypeParser *standalone = rz_type_parser_new();
+	mu_assert_notnull(standalone, "standalone parser created");
+	char *errmsg = NULL;
+	RzType *standalone_type = rz_type_parse_string_single(standalone, "int *", &errmsg);
+	mu_assert_notnull(standalone_type, "standalone parser parses pointer type");
+	free(errmsg);
+	rz_type_free(standalone_type);
+	rz_type_parser_free(standalone);
+
+	RzTypeDB *typedb = rz_type_db_new();
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+
+	// 2. rz_type_parse_reset should keep typedb tables bound instead of allocating orphaned ones
+	rz_type_parse_reset(typedb);
+	errmsg = NULL;
+	mu_assert_eq(rz_type_parse_string(typedb, "struct ResetS { int x; };", &errmsg), 0, "parse after reset");
+	free(errmsg);
+	mu_assert_notnull(rz_type_db_get_struct(typedb, "ResetS"), "parsed struct registered in typedb");
+
+	// 3. Function pointers inside structs, unions, and typedefs must not clone orphaned callables
+	errmsg = NULL;
+	const char *fp_defs =
+		"struct FpStruct { int (*cb)(int a, const char *b); };\n"
+		"union FpUnion { void (*ucb)(int x); };\n"
+		"typedef int (*FpTypedef)(int a, const char *b);\n"
+		"typedef struct MultiTdS { char *a; void *b; } MultiTd, *PMultiTd;\n";
+	mu_assert_eq(rz_type_parse_string(typedb, fp_defs, &errmsg), 0, "parse function pointer definitions");
+	free(errmsg);
+	RzBaseType *fp_struct = rz_type_db_get_struct(typedb, "FpStruct");
+	mu_assert_notnull(fp_struct, "FpStruct registered");
+	mu_assert_notnull(rz_type_db_get_union(typedb, "FpUnion"), "FpUnion registered");
+	mu_assert_notnull(rz_type_db_get_typedef(typedb, "FpTypedef"), "FpTypedef registered");
+	mu_assert_notnull(rz_type_db_get_typedef(typedb, "MultiTd"), "MultiTd registered");
+	mu_assert_notnull(rz_type_db_get_typedef(typedb, "PMultiTd"), "PMultiTd registered");
+
+	RzTypeStructMember *memb = rz_vector_index_ptr(&fp_struct->struct_data.members, 0);
+	char *pretty = rz_type_as_pretty_string(typedb, memb->type, memb->name, RZ_TYPE_PRINT_NO_OPTS, 0);
+	mu_assert_streq_free(pretty, "int (*cb)(int a, const char *b);", "struct function pointer member pretty print");
+
+	// 4. Multi-declarator typedef resolves each declarator and invalid abstract declarators fail cleanly
+	RzBaseType *pmulti = rz_type_db_get_typedef(typedb, "PMultiTd");
+	mu_assert_notnull(pmulti, "PMultiTd typedef exists");
+	mu_assert_eq(RZ_BASE_TYPE_KIND_TYPEDEF, pmulti->kind, "PMultiTd is typedef");
+	mu_assert_streq_free(rz_type_as_string(typedb, pmulti->type), "struct MultiTdS *", "PMultiTd points to MultiTdS");
+
+	// 5. Declaration single parser frees temporary pair/identifiers on both valid and failing paths
+	errmsg = NULL;
+	RzType *decl_ok = rz_type_parse_string_declaration_single(typedb->parser, "int decl_fn(int a, const char *b);", &errmsg);
+	mu_assert_notnull(decl_ok, "valid declaration parsed");
+	mu_assert_eq(decl_ok->kind, RZ_TYPE_KIND_CALLABLE, "declaration parsed as callable");
+	free(errmsg);
+	rz_type_free(decl_ok);
+
+	errmsg = NULL;
+	RzType *decl_dup = rz_type_parse_string_declaration_single(typedb->parser, "int decl_fn(int a);", &errmsg);
+	mu_assert_null(decl_dup, "duplicate callable declaration fails cleanly");
+	free(errmsg);
+
+	errmsg = NULL;
+	RzType *decl_bad = rz_type_parse_string_declaration_single(typedb->parser, "int (*decl_bad)(struct );", &errmsg);
+	mu_assert_null(decl_bad, "malformed function declarator fails cleanly");
+	free(errmsg);
+
+	// 6. Malformed definitions clean up partial parser pairs, identifiers, and base types
+	static const char *const bad_inputs[] = {
+		"struct BadS { int (*f)(struct ); };",
+		"struct BadBit { int (*f)(struct ) : 4; };",
+		"union BadU { int (*f)(struct ); };",
+		"union BadBit { int (*f)(struct ) : 4; };",
+		"union DupU { int a; }; union DupU { int b; };",
+		"enum BadE { OK_CASE = 1, 123 };",
+		"typedef struct { struct S a : 4; } BadTd;",
+		"typedef struct { int a; };",
+		"typedef int (*BadTypedef)(struct );",
+		"typedef int dup_td; typedef char dup_td;",
+		"int bad_decl(struct );",
+		"void fn_bad_param(int (*p)(struct ));",
+		"int (fn_err(struct ))(int);",
+		"int (*(*bad_ptr)(struct ))(int);",
+		"int (*bad_arr[2])(struct );",
+		"void (*my_signal(int sig))(int);",
+		"int (*(*fp)(int a))(int b);",
+		"int (*foo(int a))(struct );",
+		"void (*(*deep_fn(int a))(int b))(int c);",
+		"int fn_unclosed(;",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(bad_inputs); i++) {
+		errmsg = NULL;
+		mu_assert_neq(rz_type_parse_string(typedb, bad_inputs[i], &errmsg), 0, "malformed definition fails");
+		free(errmsg);
+	}
+	mu_assert_false(rz_type_func_exist(typedb, "my_signal"), "failed nested callable does not leak my_signal");
+	mu_assert_false(rz_type_func_exist(typedb, "fp"), "failed nested callable does not leak fp");
+	mu_assert_false(rz_type_func_exist(typedb, "foo"), "failed nested callable does not leak foo");
+	mu_assert_false(rz_type_func_exist(typedb, "deep_fn"), "failed nested callable does not leak deep_fn");
+
+	// Failing nested function declarator must not remove a pre-existing callable with the same name
+	errmsg = NULL;
+	mu_assert_eq(rz_type_parse_string(typedb, "int keep_sig(int x);", &errmsg), 0, "register keep_sig");
+	free(errmsg);
+	RzCallable *keep_sig = rz_type_func_get(typedb, "keep_sig");
+	mu_assert_notnull(keep_sig, "keep_sig exists before nested failure");
+	errmsg = NULL;
+	mu_assert_neq(rz_type_parse_string(typedb, "void (*keep_sig(int sig))(int);", &errmsg), 0,
+		"nested declarator colliding with existing callable fails");
+	free(errmsg);
+	mu_assert_ptreq(rz_type_func_get(typedb, "keep_sig"), keep_sig,
+		"pre-existing callable preserved after nested declarator failure");
+
+	errmsg = NULL;
+	RzType *partial_anon = rz_type_parse_string_single(typedb->parser, "int (*)(struct )", &errmsg);
+	rz_type_free(partial_anon);
+	free(errmsg);
+
+	errmsg = NULL;
+	RzType *bad_single = rz_type_parse_string_single(typedb->parser, "struct )", &errmsg);
+	mu_assert_null(bad_single, "malformed single type fails cleanly");
+	mu_assert_notnull(errmsg, "malformed single type sets error message");
+	free(errmsg);
+
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_c_highlight);
+	mu_run_test(test_type_parser_leaks_and_errors);
 	mu_run_test(test_type_format_to_c_declaration_struct);
 	mu_run_test(test_type_format_to_c_declaration_union);
 	mu_run_test(test_type_format_to_c_declaration_pointers_and_strings);
