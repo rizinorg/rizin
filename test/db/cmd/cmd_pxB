@@ -1,0 +1,365 @@
+NAME=pxB zero shift
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 4 0
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+EOF
+RUN
+
+NAME=pxB shifts 1, 3, 7 cross-byte extraction
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 4 1 ; pxB 4 3 ; pxB 4 7
+EXPECT=<<EOF
+0x00000000+1 1001.0101 1110.0000 1010.1011 0101.0100  95 e0 ab 54  ...T
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+EOF
+RUN
+
+NAME=pxB scroll across byte boundaries
+FILE=malloc://16
+CMDS=wx caf055aa11223344 ; e hex.cols=4 ; pxB 4 8 ; pxB 4 9 ; pxB 4 15 ; pxB 4 16
+EXPECT=<<EOF
+0x00000001   1111.0000 0101.0101 1010.1010 0001.0001  f0 55 aa 11  .U..
+0x00000001+1 1110.0000 1010.1011 0101.0100 0010.0010  e0 ab 54 22  ..T"
+0x00000001+7 0010.1010 1101.0101 0000.1000 1001.0001  2a d5 08 91  *...
+0x00000002   0101.0101 1010.1010 0001.0001 0010.0010  55 aa 11 22  U.."
+EOF
+RUN
+
+NAME=pxB beginning and end of buffer behavior
+FILE=malloc://16
+CMDS=wx caf055 ; e hex.cols=4 ; pxB 3 0 ; pxB 3 3 ; pxB 3 -1
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+0x00000000+3 0101.0111 1000.0010 1010.1000            57 82 a8     W..
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+EOF
+RUN
+
+NAME=pxB output at different column counts (4, 8, 16)
+FILE=malloc://32
+CMDS=wx caf055aa11223344caf055aa11223344 ; e hex.cols=4 ; pxB 4 ; e hex.cols=8 ; pxB 8 ; e hex.cols=16 ; pxB 16
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44  ..U.."3D
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100 1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44 ca f0 55 aa 11 22 33 44  ..U.."3D..U.."3D
+EOF
+RUN
+
+NAME=pxB config hex.bitshift
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; e hex.bitshift=3 ; pxB 4
+EXPECT=<<EOF
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+EOF
+RUN
+
+NAME=pxB metadata display
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; f entry0 @ 0 ; pxB 4
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.  ; entry0
+EOF
+RUN
+
+NAME=pxb regression test
+FILE=malloc://16
+CMDS=wx caf055aa ; pxb 4
+EXPECT=<<EOF
+0x00000000 1100.1010  1111.0000  0101.0101  1010.1010  0xcaf055aa  ..U.
+EOF
+RUN
+
+NAME=visual bitstream 1-bit shift right }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+1
+EOF
+RUN
+
+NAME=visual bitstream cross byte boundary forward }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}}}}}}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x1
+0
+EOF
+RUN
+
+NAME=visual bitstream cross byte boundary backward {
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+s 1
+V ooooo{q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+7
+EOF
+RUN
+
+NAME=visual bitstream clamp at start of buffer {
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo{{{{{{{{q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+0
+EOF
+RUN
+
+NAME=visual bitstream preserve shift vertical down j
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}jq
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x4
+3
+EOF
+RUN
+
+NAME=visual bitstream preserve shift vertical up and down j k
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V ooooo}}}jkq
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+3
+EOF
+RUN
+
+NAME=visual non-bitstream mode ignores { }
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+V }}}}q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+0
+EOF
+RUN
+
+NAME=pxB short read and final byte zero-padding at buffer boundary
+FILE=malloc://3
+CMDS=wx caf055 ; e hex.cols=4 ; pxB 3 0 ; pxB 3 1 ; pxB 3 3 ; pxB 3 7
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101            ca f0 55     ..U
+0x00000000+1 1001.0101 1110.0000 1010.1010            95 e0 aa     ...
+0x00000000+3 0101.0111 1000.0010 1010.1000            57 82 a8     W..
+0x00000000+7 0111.1000 0010.1010 1000.0000            78 2a 80     x*.
+EOF
+RUN
+
+NAME=pxB requests more bytes than malloc allocation contains
+FILE=malloc://4
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 16 ; pxB 16 3
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000+3 0101.0111 1000.0010 1010.1101 0101.0000  57 82 ad 50  W..P
+EOF
+RUN
+
+NAME=pxB len 0 and 1
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 0 ; pxB 1 0 ; pxB 1 1 ; pxB 1 7
+EXPECT=<<EOF
+0x00000000   1100.1010                                ca           .
+0x00000000+1 1001.0101                                95           .
+0x00000000+7 0111.1000                                78           x
+EOF
+RUN
+
+NAME=pxB negative shifts at non-zero offset
+FILE=malloc://32
+CMDS=wx caf055aa11223344caf055aa11223344 ; s 0x4 ; e hex.cols=4 ; pxB 4 -1 ; pxB 4 -7 ; pxB 4 -8 ; pxB 4 -9 ; pxB 4 -15 ; pxB 4 -16
+EXPECT=<<EOF
+0x00000003+7 0000.1000 1001.0001 0001.1001 1010.0010  08 91 19 a2  ....
+0x00000003+1 0101.0100 0010.0010 0100.0100 0110.0110  54 22 44 66  T"Df
+0x00000003   1010.1010 0001.0001 0010.0010 0011.0011  aa 11 22 33  .."3
+0x00000002+7 1101.0101 0000.1000 1001.0001 0001.1001  d5 08 91 19  ....
+0x00000002+1 1010.1011 0101.0100 0010.0010 0100.0100  ab 54 22 44  .T"D
+0x00000002   0101.0101 1010.1010 0001.0001 0010.0010  55 aa 11 22  U.."
+EOF
+RUN
+
+NAME=pxB shift past the end of buffer
+FILE=malloc://4
+CMDS=wx caf055aa ; e hex.cols=4 ; pxB 4 32 ; pxB 4 40
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=pxB very large shift and clamping at both ends
+FILE=malloc://32
+CMDS=wx caf055aa ; s 0x10 ; e hex.cols=4 ; pxB 4 -0x8000000000000000 ; pxB 4 0x7fffffffffffffff ; s 0 ; pxB 4 -1 ; pxB 4 -16 ; s 0xfffffffffffffff0 ; pxB 4 0x100
+EXPECT=<<EOF
+0x0000000f+1 0000.0000 0000.0000 0000.0000 0000.0000  00 00 00 00  ....
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0xffffffffffffffff   1111.1111 1100.1010 1111.0000 0101.0101  ff ca f0 55  ...U
+EOF
+RUN
+
+NAME=pxB invalid or missing arguments
+FILE=malloc://16
+CMDS=wx caf055aa ; e hex.cols=4 ; b 4 ; pxB ; pxB 0x10000001 ; pxB invalid
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+EOF
+RUN
+
+NAME=pxB help output and cmd_descs
+FILE==
+CMDS=pxB? ; px?~pxB
+EXPECT=<<EOF
+Usage: pxB [<len> [<shift>]]   # dump bitstream in hexdump form with optional bit shift
+| pxB [<len> [<shift>]]   # dump bitstream in hexdump form with optional bit shift
+EOF
+RUN
+
+NAME=visual bitstream count prefix with } and {
+FILE=malloc://16
+CMDS=<<EOF
+e scr.interactive=true
+e hex.cols=4
+s 0
+V ooooo5}q
+s
+e hex.bitshift
+V 3{q
+s
+e hex.bitshift
+EOF
+EXPECT=<<EOF
+0x0
+5
+0x0
+2
+EOF
+RUN
+
+NAME=pxB config hex.bitshift normalization
+FILE=malloc://16
+CMDS=<<EOF
+wx caf055aa
+e hex.cols=4
+e hex.bitshift=1 ; pxB 4
+e hex.bitshift=7 ; pxB 4
+e hex.bitshift=8 ; pxB 4
+e hex.bitshift=9 ; pxB 4
+e hex.bitshift=15 ; pxB 4
+e hex.bitshift=16 ; pxB 4
+e hex.bitshift=-1 ; pxB 4
+e hex.bitshift=-7 ; pxB 4
+e hex.bitshift=-8 ; pxB 4
+e hex.bitshift=-9 ; pxB 4
+e hex.bitshift=-16 ; pxB 4
+EOF
+EXPECT=<<EOF
+0x00000000+1 1001.0101 1110.0000 1010.1011 0101.0100  95 e0 ab 54  ...T
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+0x00000001   1111.0000 0101.0101 1010.1010 0000.0000  f0 55 aa 00  .U..
+0x00000000+1 1001.0101 1110.0000 1010.1011 0101.0100  95 e0 ab 54  ...T
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+0x00000002   0101.0101 1010.1010 0000.0000 0000.0000  55 aa 00 00  U...
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+0x00000000+1 1001.0101 1110.0000 1010.1011 0101.0100  95 e0 ab 54  ...T
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000+7 0111.1000 0010.1010 1101.0101 0000.0000  78 2a d5 00  x*..
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+EOF
+RUN
+
+NAME=pxB display options and comment metadata
+FILE=malloc://16
+CMDS=<<EOF
+wx caf055aa
+e hex.cols=0 ; pxB 4
+e hex.cols=300 ; pxB 4
+e hex.cols=4
+e hex.bytes=false ; pxB 4
+e hex.bytes=true ; e hex.ascii=false ; pxB 4
+e hex.ascii=true ; e hex.section=true ; pxB 4
+e hex.section=false ; CC my_comment @ 0 ; pxB 4
+e io.va=false ; e io.pava=true ; pxB 4
+EOF
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010                                                                                                                          ca f0 55 aa                                      ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ca f0 55 aa                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa 
+                     0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.  ; my_comment
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.  ; my_comment
+EOF
+RUN
+
+NAME=pxB responsive terminal widths
+FILE=malloc://16
+CMDS=<<EOF
+wx caf055aa11223344caf055aa11223344
+e scr.responsive=true
+e scr.columns=130 ; e hex.cols=16 ; pxB 16
+e scr.columns=75 ; e hex.cols=8 ; pxB 4
+e scr.columns=65 ; e hex.cols=8 ; pxB 4
+e scr.columns=50 ; e hex.cols=8 ; pxB 4
+e scr.columns=65 ; e hex.cols=4 ; pxB 4
+e scr.columns=50 ; e hex.cols=4 ; pxB 4
+EOF
+EXPECT=<<EOF
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44  ..U.."3D
+0x00000008   1100.1010 1111.0000 0101.0101 1010.1010 0001.0001 0010.0010 0011.0011 0100.0100  ca f0 55 aa 11 22 33 44  ..U.."3D
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa  ..U.
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa 
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010  ca f0 55 aa 
+0x00000000   1100.1010 1111.0000 0101.0101 1010.1010 
+EOF
+RUN
+
+NAME=pxB row address overflow near UT64_MAX
+FILE=malloc://16
+CMDS=s 0xfffffffffffffff8 ; e hex.cols=16 ; pxB 32
+EXPECT=<<EOF
+0xfffffffffffffff8   1111.1111 1111.1111 1111.1111 1111.1111 1111.1111 1111.1111 1111.1111 1111.1111 0000.0000 0000.0000 0000.0000 0000.0000 0000.0000 0000.0000 0000.0000 0000.0000  ff ff ff ff ff ff ff ff 00 00 00 00 00 00 00 00  ................
+EOF
+RUN
+
