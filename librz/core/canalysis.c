@@ -2126,7 +2126,7 @@ RZ_API int rz_core_analysis_search_xrefs(RZ_NONNULL RzCore *core, ut64 from, ut6
 			continue;
 		}
 		size_t i = 0;
-		while (i < bytes_read && !rz_interrupt_is_breaked(core->intr)) {
+		while (i < bytes_read && at + i < to && !rz_interrupt_is_breaked(core->intr)) {
 			int count_before = count;
 			rz_analysis_op_init(&op);
 			ret = rz_analysis_op(core->analysis, &op, at + i, buf + i, bytes_read - i, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
@@ -4285,6 +4285,39 @@ static void analysis_mark_xrefs_as_data(RzCore *core) {
 }
 
 /**
+ * \brief Restrict the scan of \p key to executable sections, as data
+ * sections inside executable segments decode as bogus calls and preludes.
+ *
+ * Only for fixed-size instructions, which a scan decodes the same from
+ * where any section starts.
+ *
+ * \return The setting to restore with code_ranges_end(), or NULL if kept.
+ */
+static char *code_ranges_begin(RzCore *core, const char *key, const char *dflt) {
+	int size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	if (size < 1 || size != rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE) ||
+		!RZ_STR_EQ(rz_config_get(core->config, key), dflt)) {
+		return NULL;
+	}
+	RzList *code = rz_core_get_boundaries_code_only(core, (RzInterval){ 0, UT64_MAX });
+	bool has_code = rz_list_length(code) > 0;
+	rz_list_free(code);
+	if (!has_code) {
+		return NULL;
+	}
+	char *old = rz_str_dup(dflt);
+	rz_config_set(core->config, key, "code");
+	return old;
+}
+
+static void code_ranges_end(RzCore *core, const char *key, char *old) {
+	if (old) {
+		rz_config_set(core->config, key, old);
+		free(old);
+	}
+}
+
+/**
  * Runs all the steps of the deep analysis.
  *
  * Returns true if all steps were finished and false if it was interrupted.
@@ -4341,7 +4374,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 
 	notify = "Analyze function calls";
 	rz_core_notify_begin(core, "%s", notify);
+	char *old_in = code_ranges_begin(core, "analysis.in", "io.maps.x");
 	(void)rz_core_analysis_calls(core, false); // "aac"
+	code_ranges_end(core, "analysis.in", old_in);
 	rz_core_seek(core, curseek, true);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
@@ -4352,7 +4387,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	if (!rz_str_startswith(rz_config_get(core->config, "asm.arch"), "x86")) {
 		notify = "find and analyze function preludes";
 		rz_core_notify_begin(core, "%s", notify);
+		char *old_search_in = code_ranges_begin(core, "search.in", "io.maps");
 		(void)rz_core_search_preludes(core, false); // "aap"
+		code_ranges_end(core, "search.in", old_search_in);
 		didAap = true;
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
@@ -4363,7 +4400,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 
 	notify = "Analyze len bytes of instructions for references";
 	rz_core_notify_begin(core, "%s", notify);
+	old_in = code_ranges_begin(core, "analysis.in", "io.maps.x");
 	(void)rz_core_analysis_refs(core, 0); // "aar"
+	code_ranges_end(core, "analysis.in", old_in);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
 	if (rz_interrupt_is_breaked(core->intr)) {
@@ -4441,6 +4480,17 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
+
+	if (didAap) {
+		// functions which ran past noreturn calls before covered these
+		notify = "Find function preludes after noreturn calls";
+		rz_core_notify_begin(core, "%s", notify);
+		char *old_search_in = code_ranges_begin(core, "search.in", "io.maps");
+		(void)rz_core_search_preludes(core, false); // "aap"
+		code_ranges_end(core, "search.in", old_search_in);
+		rz_core_notify_done(core, "%s", notify);
+		rz_core_task_yield(&core->tasks);
+	}
 
 	notify = "Check for classes";
 	rz_core_notify_begin(core, "%s", notify);

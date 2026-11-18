@@ -23,3 +23,20 @@ This xref lies within a vmap.
 EOF
 RUN
 
+
+NAME=aar: only instructions starting in the range
+FILE=malloc://0x10
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 90e800000000c3
+aar 1
+axl
+echo --
+aar 2
+axl
+EOF
+EXPECT=<<EOF
+--
+                                       ? 0x1 ->      CALL -> 0x6
+EOF
+RUN
