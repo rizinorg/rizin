@@ -12,6 +12,7 @@ cc.arm64.arg7=x7
 cc.arm64.argn=stack
 cc.arm64.maxargs=8
 cc.arm64.ret=x0
+cc.arm64.preserved=x19,x20,x21,x22,x23,x24,x25,x26,x27,x28,x29
 
 swift=cc
 cc.swift.arg0=x0
@@ -27,6 +28,7 @@ cc.swift.maxargs=8
 cc.swift.self=x20
 cc.swift.error=x21
 cc.swift.ret=x0
+cc.swift.preserved=x19,x23,x24,x25,x26,x27,x28,x29
 
 golang=cc
 cc.golang.arg0=x0

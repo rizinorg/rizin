@@ -3763,6 +3763,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	rz_config_add_set(cfg, "inquiry.trace", "Print information during analysis for debugging (options: ilblock, evalblock, bounds. Set log.level=2)", NULL);
 	rz_config_add_integer(cfg, "inquiry.threads", "Number of threads to use for abstract interpreter", 1);
 	rz_config_set_validator(cfg, "inquiry.threads", var_validator_int_positive, NULL);
+	rz_config_add_options(cfg, "inquiry.clobber", "Registers considered clobbered by a call during abstract interpretation (all: every register, cc: only those not preserved by the callee's calling convention)", "all", "cc", NULL);
+	rz_config_add_options(cfg, "inquiry.clobber.fallback", "Same as inquiry.clobber, for callees of unknown calling convention when inquiry.clobber=cc (all: every register, callercc: assume the calling convention of the caller)", "all", "callercc", NULL);
 
 	return true;
 }

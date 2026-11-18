@@ -1,0 +1,15 @@
+default.cc=rvg
+
+rvg=cc
+cc.rvg.arg0=a0
+cc.rvg.arg1=a1
+cc.rvg.arg2=a2
+cc.rvg.arg3=a3
+cc.rvg.arg4=a4
+cc.rvg.arg5=a5
+cc.rvg.arg6=a6
+cc.rvg.arg7=a7
+cc.rvg.argn=stack
+cc.rvg.maxargs=8
+cc.rvg.ret=a0
+cc.rvg.preserved=s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,fs0,fs1,fs2,fs3,fs4,fs5,fs6,fs7,fs8,fs9,fs10,fs11,gp,tp

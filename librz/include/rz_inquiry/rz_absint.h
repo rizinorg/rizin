@@ -24,6 +24,22 @@ typedef enum rz_absint_trace_options_t {
 	RZ_ABSINT_TRACE_BOUNDS = (1 << 2) ///< e inquiry.trace=bounds; log resolving absint block bounds based on instruction offsets and in-edges
 } RzAbsIntTraceOptions;
 
+/**
+ * \brief Which registers are assumed to be clobbered by a call
+ */
+typedef enum rz_absint_clobber_policy_t {
+	RZ_ABSINT_CLOBBER_ALL, ///< every register is clobbered by a call
+	RZ_ABSINT_CLOBBER_BY_CC ///< registers preserved by the callee's calling convention survive a call
+} RzAbsIntClobberPolicy;
+
+/**
+ * \brief Which registers are assumed to be clobbered by a call to a callee of unknown calling convention
+ */
+typedef enum rz_absint_clobber_fallback_policy_t {
+	RZ_ABSINT_FALLBACK_CLOBBER_ALL, ///< every register is clobbered by a call
+	RZ_ABSINT_FALLBACK_CLOBBER_BY_CALLER_CC ///< assume the callee has the same calling convention as the caller
+} RzAbsIntClobberFallbackPolicy;
+
 typedef struct rz_absint_run_context_t RzAbsIntRunContext;
 typedef struct rz_absint_result_t RzAbsIntResult;
 
@@ -177,13 +193,39 @@ typedef enum rz_absint_lift_block_result_t {
 	RZ_ABSINT_LIFT_BLOCK_RESULT_BREAK ///< interpreter is signaled to stop
 } RzAbsIntLiftBlockResult;
 
+typedef enum rz_absint_call_info_result_t {
+	RZ_ABSINT_CALL_INFO_RESULT_OK, ///< info_out is filled
+	RZ_ABSINT_CALL_INFO_RESULT_FAILED, ///< no information is available, everything must be considered clobbered
+	RZ_ABSINT_CALL_INFO_RESULT_BREAK ///< interpreter is signaled to stop
+} RzAbsIntCallInfoResult;
+
+/**
+ * \brief Information about the effects of a call, as answered for a call info request
+ */
+typedef struct rz_absint_callee_info_t {
+	/**
+	 * Names of all registers that are preserved according to the calling convention
+	 * of the callee address provided in the request, or the calling convention
+	 * that is assumed for it as a fallback.
+	 */
+	const RzSetS *preserved;
+} RzAbsIntCalleeInfo;
+
 typedef struct rz_absint_config_t {
 	const RzAbsIntValueDomain *val_domain;
 	RzAbsIntTraceOptions trace_opts;
+	RzAbsIntClobberPolicy clobber_policy;
 
 	void *cb_user;
 	RzAbsIntIOReadResult (*io_read)(RZ_NONNULL RZ_BORROW RzAbsIntIOReadRequest *req, void *user);
 	RzAbsIntLiftBlockResult (*lift_block)(ut64 addr, RZ_OUT const RzILCacheBlock **block_out, void *user);
+	/**
+	 * Request the info to apply for a call to \p addr, which is UT64_MAX if the callee is not known.
+	 * Only used with RZ_ABSINT_CLOBBER_BY_CC.
+	 * Any fallback for unknown callees is up to the implementation, so the info returned may for example
+	 * be the one of the caller instead.
+	 */
+	RzAbsIntCallInfoResult (*call_info)(ut64 addr, RZ_OUT const RzAbsIntCalleeInfo **info_out, void *user);
 } RzAbsIntConfig;
 
 /**
@@ -267,9 +309,22 @@ typedef struct rz_absint_driver_config_t {
 	RZ_NONNULL RzSetU *fcn_entry_points; ///< Addresses considered function entry points.
 	RzAbsIntResultDimen dimens; ///< The results the interpreter can detect.
 	RzAbsIntTraceOptions trace_opts; ///< Trace options, to choose which logs to print.
+	RzAbsIntClobberPolicy clobber_policy; ///< Which registers are assumed to be clobbered by a call.
+	RzAbsIntClobberFallbackPolicy clobber_fallback_policy; ///< Same, for callees of unknown calling convention.
 	size_t n_threads; ///< Number of interpreter threads spawned.
 	char *(*choose_fcn_name)(ut64 addr, void *priv_data); ///< Callback to generate a function name for the given address.
 	void *choose_fcn_name_priv_data; ///< Private data for the function name chooser.
+	/**
+	 * Callback to determine the name of the calling convention of the callee at \p addr.
+	 * \return the name of the calling convention, or NULL if it is unknown
+	 */
+	RZ_OWN char *(*get_callee_cc)(ut64 addr, void *priv_data);
+	/**
+	 * Callback to add the names of all registers preserved by the calling convention \p cc to \p preserved.
+	 * \return false if the preserved registers of \p cc are unknown
+	 */
+	bool (*get_cc_preserved)(RZ_NONNULL const char *cc, RZ_NONNULL RZ_OUT RzSetS *preserved, void *priv_data);
+	void *call_info_priv_data; ///< Private data for get_callee_cc and get_cc_preserved.
 } RzAbsIntDriverConfig;
 
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config);

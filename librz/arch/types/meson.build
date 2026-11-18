@@ -9,6 +9,7 @@ sdb_types_files = [
   'cc-mips-64',
   'cc-ppc-32',
   'cc-ppc-64',
+  'cc-riscv-32',
   'cc-riscv-64',
   'cc-sparc-32',
   'cc-spc700-16',

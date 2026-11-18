@@ -35,6 +35,7 @@ typedef struct interp_driver_message_t {
 	enum {
 		DRIVER_MESSAGE_IO_READ, ///< The interpreter requests an IO read.
 		DRIVER_MESSAGE_LIFT_BLOCK, ///< The interpreter requests lifting a block.
+		DRIVER_MESSAGE_CALL_INFO, ///< The interpreter requests information about a callee
 		DRIVER_MESSAGE_INTERP_RESULT ///< The interpreter delivers its results.
 	} type;
 	InterpThread *sender;
@@ -45,6 +46,10 @@ typedef struct interp_driver_message_t {
 		struct {
 			ut64 addr;
 		} lift_block;
+		struct {
+			ut64 addr; ///< Address of the callee, or UT64_MAX if it is not known.
+			ut64 caller_addr; ///< Entry point of the function the call is in.
+		} callee;
 		struct {
 			ut64 entry;
 			RzAbsIntResult *res;
@@ -75,6 +80,7 @@ typedef struct interp_driver_t {
 	 * \brief Flags for what is logged.
 	 */
 	RzAbsIntTraceOptions trace_opts;
+	RzAbsIntClobberPolicy clobber_policy;
 } InterpDriver;
 
 /**
@@ -84,11 +90,13 @@ typedef struct interp_driver_t {
 typedef struct interp_thread_message_t {
 	enum {
 		INTERP_ANSWER_IO_READ,
-		INTERP_ANSWER_LIFT_BLOCK
+		INTERP_ANSWER_LIFT_BLOCK,
+		INTERP_ANSWER_CALL_INFO
 	} type;
 	union {
 		RzAbsIntIOReadResult io_read_result; ///< Flags of the IO read result (ok, top, error/stop).
 		const RzILCacheBlock *lift_block_result; ///< The requested IL block. NULL in case of failure.
+		const RzAbsIntCalleeInfo *callee_info; ///< The preserved set of this callee according to its calling convention
 	} payload;
 } InterpDriverAnswer;
 
@@ -96,6 +104,12 @@ struct interp_thread {
 	InterpDriver *driver;
 	RzThread *th;
 	RzAbsIntInstance *inst;
+
+	/**
+	 * \brief Entry point this thread is currently interpreting.
+	 * Private to the interpreter thread, main must not access this. It is sent by value in requests where needed.
+	 */
+	ut64 cur_entry;
 
 	/**
 	 * \brief Channel to this thread.
@@ -115,6 +129,7 @@ static void *interp_th(void *user) {
 		}
 		ut64 entry_point_val = *entry_point;
 		free(entry_point);
+		ctx->cur_entry = entry_point_val;
 		RzAbsIntResult *res = NULL;
 		RzAbsIntResultCode code = rz_absint_run(inst, entry_point_val, ctx->driver->dimens, &res);
 		if (code == RZ_ABSINT_RESULT_BREAK) {
@@ -177,6 +192,31 @@ static RzAbsIntLiftBlockResult send_lift_il_block(ut64 addr, const RzILCacheBloc
 	return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
 }
 
+static RzAbsIntCallInfoResult send_call_info(ut64 addr, const RzAbsIntCalleeInfo **info_out, void *user) {
+	InterpThread *th = user;
+	InterpDriverMessage msg = {
+		.type = DRIVER_MESSAGE_CALL_INFO,
+		.sender = th,
+		.payload = {
+			.callee = {
+				.addr = addr,
+				.caller_addr = th->cur_entry } }
+	};
+	if (rz_th_ring_buf_put(th->driver->main_ch, &msg) != RZ_THREAD_RING_BUF_OK) {
+		return RZ_ABSINT_CALL_INFO_RESULT_BREAK;
+	}
+	InterpDriverAnswer ret;
+	if (rz_th_ring_buf_take_blocking(th->ch, &ret) != RZ_THREAD_RING_BUF_OK) {
+		return RZ_ABSINT_CALL_INFO_RESULT_BREAK;
+	}
+	rz_return_val_if_fail(ret.type == INTERP_ANSWER_CALL_INFO, RZ_ABSINT_CALL_INFO_RESULT_BREAK);
+	if (ret.payload.callee_info) {
+		*info_out = ret.payload.callee_info;
+		return RZ_ABSINT_CALL_INFO_RESULT_OK;
+	}
+	return RZ_ABSINT_CALL_INFO_RESULT_FAILED;
+}
+
 static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *driver) {
 	InterpThread *ctx = RZ_NEW(InterpThread);
 	if (!ctx) {
@@ -190,9 +230,11 @@ static InterpThread *interp_thread_new(RzAnalysis *analysis, InterpDriver *drive
 	RzAbsIntConfig interp_config = {
 		.val_domain = rz_absint_builtin_value_domain(RZ_ABSINT_VALUE_DOMAIN_CONST),
 		.trace_opts = driver->trace_opts,
+		.clobber_policy = driver->clobber_policy,
 		.cb_user = ctx,
 		.io_read = send_io_read,
-		.lift_block = send_lift_il_block
+		.lift_block = send_lift_il_block,
+		.call_info = send_call_info
 	};
 	ctx->inst = rz_absint_instance_new(analysis, &interp_config);
 	if (!ctx->inst) {
@@ -252,6 +294,94 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 }
 
 /**
+ * \brief Callee info of a single calling convention, owned by the driver main loop
+ */
+typedef struct driver_callee_info_t {
+	RzAbsIntCalleeInfo info; ///< What is handed out to interpreters, info.preserved points to preserved.
+	RzSetS *preserved; ///< Filled exactly once when the calling convention is first needed, immutable afterwards.
+	bool known; ///< Whether the preserved registers of this calling convention could be determined.
+} DriverCalleeInfo;
+
+static void driver_callee_info_free(void *p) {
+	DriverCalleeInfo *dinfo = p;
+	if (!dinfo) {
+		return;
+	}
+	rz_set_s_free(dinfo->preserved);
+	free(dinfo);
+}
+
+/**
+ * \brief Determine the info of the function at \p addr according to its calling convention
+ *
+ * \param callee_ccs Cache of callee address -> calling convention name, created on demand.
+ * \param cc_infos Calling convention name -> DriverCalleeInfo, created on demand.
+ *        Every calling convention is read exactly once, the first time it is needed, and never modified
+ *        afterwards since interpreters may hold on to the infos handed out.
+ * \return the info, or NULL if it is unknown
+ */
+static const RzAbsIntCalleeInfo *resolve_callee_info(const RzAbsIntDriverConfig *config, HtUP /*<ut64, char *>*/ **callee_ccs, HtSP /*<DriverCalleeInfo *>*/ **cc_infos, ut64 addr) {
+	if (addr == UT64_MAX || !config->get_callee_cc || !config->get_cc_preserved) {
+		return NULL;
+	}
+	if (!*callee_ccs && !(*callee_ccs = ht_up_new(NULL, free))) {
+		return NULL;
+	}
+	if (!*cc_infos && !(*cc_infos = ht_sp_new(HT_STR_DUP, NULL, driver_callee_info_free))) {
+		return NULL;
+	}
+
+	const char *cc = ht_up_find(*callee_ccs, addr, NULL);
+	if (!cc) {
+		char *new_cc = config->get_callee_cc(addr, config->call_info_priv_data);
+		if (!new_cc) {
+			return NULL;
+		}
+		if (!ht_up_insert(*callee_ccs, addr, new_cc)) {
+			free(new_cc);
+			return NULL;
+		}
+		cc = new_cc;
+	}
+
+	DriverCalleeInfo *dinfo = ht_sp_find(*cc_infos, cc, NULL);
+	if (!dinfo) {
+		dinfo = RZ_NEW0(DriverCalleeInfo);
+		if (!dinfo) {
+			return NULL;
+		}
+		dinfo->preserved = rz_set_s_new(HT_STR_DUP);
+		if (!dinfo->preserved) {
+			driver_callee_info_free(dinfo);
+			return NULL;
+		}
+		dinfo->info.preserved = dinfo->preserved;
+		dinfo->known = config->get_cc_preserved(cc, dinfo->preserved, config->call_info_priv_data);
+		if (!ht_sp_insert(*cc_infos, cc, dinfo)) {
+			driver_callee_info_free(dinfo);
+			return NULL;
+		}
+	}
+	return dinfo->known ? &dinfo->info : NULL;
+}
+
+/**
+ * \brief Determine the info to apply for a call from the function at \p caller_addr to \p callee_addr
+ *
+ * If nothing is known about the callee, this applies config->clobber_fallback_policy.
+ *
+ * \param callee_addr Address of the callee, or UT64_MAX if it is not known
+ * \return the info, or NULL if everything must be considered clobbered
+ */
+static const RzAbsIntCalleeInfo *handle_call_info_request(const RzAbsIntDriverConfig *config, HtUP /*<ut64, char *>*/ **callee_ccs, HtSP /*<DriverCalleeInfo *>*/ **cc_infos, ut64 callee_addr, ut64 caller_addr) {
+	const RzAbsIntCalleeInfo *info = resolve_callee_info(config, callee_ccs, cc_infos, callee_addr);
+	if (!info && config->clobber_fallback_policy == RZ_ABSINT_FALLBACK_CLOBBER_BY_CALLER_CC) {
+		info = resolve_callee_info(config, callee_ccs, cc_infos, caller_addr);
+	}
+	return info;
+}
+
+/**
  * \brief The main loop of multi-threaded abstract interpretation.
  * It initialises: The IL cache, communication channels with the interpreter threads and collects the entry points to analyze.
  * It then spawns n interpreter threads, serving them IO requests, IL block lifting requests, collecting their results.
@@ -272,7 +402,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 
 	InterpDriver driver = {
 		.dimens = config->dimens,
-		.trace_opts = config->trace_opts
+		.trace_opts = config->trace_opts,
+		.clobber_policy = config->clobber_policy
 	};
 	driver.entry_points_ch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	if (!driver.entry_points_ch) {
@@ -304,6 +435,10 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		entries_pushed++;
 	}
 	rz_iterator_fini(&it);
+
+	// Only ever accessed by the main loop below.
+	HtUP /*<ut64, char *>*/ *callee_ccs = NULL;
+	HtSP /*<DriverCalleeInfo *>*/ *cc_infos = NULL;
 
 	InterpThread **threads = RZ_NEWS0(InterpThread *, config->n_threads);
 	if (!threads) {
@@ -363,6 +498,19 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 			}
 			break;
 		}
+		case DRIVER_MESSAGE_CALL_INFO: {
+			const RzAbsIntCalleeInfo *info = handle_call_info_request(config, &callee_ccs, &cc_infos, msg.payload.callee.addr, msg.payload.callee.caller_addr);
+			InterpDriverAnswer res_msg = {
+				.type = INTERP_ANSWER_CALL_INFO,
+				.payload = {
+					.callee_info = info }
+			};
+			if (rz_th_ring_buf_put(msg.sender->ch, &res_msg) != RZ_THREAD_RING_BUF_OK) {
+				// should not be closed
+				rz_warn_if_reached();
+			}
+			break;
+		}
 		case DRIVER_MESSAGE_INTERP_RESULT: {
 			RzAbsIntResult *res = msg.payload.interp_result.res;
 			if (res) {
@@ -396,6 +544,9 @@ err_threads:
 		interp_thread_free(threads[i]);
 	}
 	free(threads);
+	// The interpreters are gone, so nothing refers to the callee infos anymore.
+	ht_sp_free(cc_infos);
+	ht_up_free(callee_ccs);
 err_main_ch:
 	rz_th_ring_buf_free(driver.main_ch);
 err_entry_points_ch:

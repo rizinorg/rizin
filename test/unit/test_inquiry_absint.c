@@ -3,13 +3,18 @@
 
 #include "../../librz/inquiry/absint/absint_priv.h"
 
+#include <rz_core.h>
+
 #include "minunit.h"
 
 typedef struct test_absint_t {
+	RzCore *core; ///< Owns analysis and io. Some plugins (e.g. hexagon) need RzAnalysis to be backed by a core with RzAsm.
 	RzAnalysis *analysis;
 	RzIO *io;
 	RzILCache *il_cache;
 	RzAbsIntInstance *inst;
+	RzSetS *preserved; ///< If non-null, the preserved registers answered for every call info request.
+	RzAbsIntCalleeInfo callee_info;
 } TestInterp;
 
 static RzAbsIntIOReadResult io_read(RzAbsIntIOReadRequest *req, void *user) {
@@ -26,14 +31,29 @@ static RzAbsIntLiftBlockResult lift_block(ut64 addr, const RzILCacheBlock **bloc
 	return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
 }
 
-static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+static RzAbsIntCallInfoResult call_info(ut64 addr, const RzAbsIntCalleeInfo **info_out, void *user) {
+	TestInterp *interp = user;
+	*info_out = &interp->callee_info;
+	return RZ_ABSINT_CALL_INFO_RESULT_OK;
+}
+
+/**
+ * \param cc_preserved If non-null, calls clobber by calling convention and this is the comma-separated list
+ *        of registers preserved by every callee. Otherwise, calls clobber everything.
+ */
+static TestInterp *interp_new_cc(const char *arch, int bits, ut64 baddr, const char *url, const char *cc_preserved) {
 	// for debugging, uncomment:
 	// eprintf("rz -a %s -b %d -m 0x%" PFMT64x " %s\n", arch, bits, baddr, url);
 	TestInterp *interp = RZ_NEW(TestInterp);
-	interp->analysis = rz_analysis_new(NULL);
-	rz_analysis_use(interp->analysis, arch);
-	rz_analysis_set_bits(interp->analysis, bits);
-	interp->io = rz_io_new();
+	interp->core = rz_core_new();
+	if (!interp->core) {
+		free(interp);
+		return NULL;
+	}
+	rz_config_set(interp->core->config, "asm.arch", arch);
+	rz_config_set_i(interp->core->config, "asm.bits", bits);
+	interp->analysis = interp->core->analysis;
+	interp->io = interp->core->io;
 	interp->io->va = 1;
 	interp->il_cache = rz_il_cache_new(interp->analysis, interp->io, RZ_IL_CACHE_CONFIG_NOP_UNLIFTED);
 	RzAbsIntConfig config = {
@@ -42,6 +62,13 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 		.io_read = io_read,
 		.lift_block = lift_block
 	};
+	interp->preserved = NULL;
+	if (cc_preserved) {
+		interp->preserved = rz_str_split_dupset(cc_preserved, ",", true);
+		interp->callee_info.preserved = interp->preserved;
+		config.clobber_policy = RZ_ABSINT_CLOBBER_BY_CC;
+		config.call_info = call_info;
+	}
 	interp->inst = rz_absint_instance_new(interp->analysis, &config);
 	RzIODesc *desc = rz_io_open_at(interp->io, url, RZ_PERM_RX, 0644, baddr, NULL);
 	if (!desc) {
@@ -51,11 +78,15 @@ static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char
 	return interp;
 }
 
+static TestInterp *interp_new(const char *arch, int bits, ut64 baddr, const char *url) {
+	return interp_new_cc(arch, bits, baddr, url, NULL);
+}
+
 static void interp_free(TestInterp *interp) {
 	rz_absint_instance_free(interp->inst);
+	rz_set_s_free(interp->preserved);
 	rz_il_cache_free(interp->il_cache);
-	rz_io_free(interp->io);
-	rz_analysis_free(interp->analysis);
+	rz_core_free(interp->core);
 	free(interp);
 }
 
@@ -823,6 +854,82 @@ bool test_absint_comments(void) {
 	mu_end;
 }
 
+/**
+ * Run \p code, which sets one preserved and one non-preserved register to a constant and then performs a call,
+ * and check through the comment at \p after_call_addr which of them survived the call.
+ *
+ * \param cc_preserved Value of cc.<name>.preserved of the calling convention to test, see librz/arch/types/cc-*.sdb.txt
+ * \param expect_preserved How the surviving register is expected to be printed
+ * \param expect_clobbered Prefix of how the clobbered register would be printed if it had survived
+ */
+bool test_absint_call_clobber_by_cc(const char *arch, int bits, const char *code, ut64 after_call_addr,
+	const char *cc_preserved, const char *expect_preserved, const char *expect_clobbered) {
+	TestInterp *interp = interp_new_cc(arch, bits, 0x10000, code, cc_preserved);
+	mu_assert_notnull(interp, "init");
+	mu_assert_notnull(interp->inst, "instance");
+	RzAbsIntResult *res;
+	RzAbsIntResultCode code_res = rz_absint_run(interp->inst, 0x10000, RZ_ABSINT_RESULT_DIMEN_COMMENTS, &res);
+	mu_assert_eq(code_res, RZ_ABSINT_RESULT_OK, "result code");
+	mu_assert_notnull(res, "result");
+
+	const char *cmt = ht_up_find(res->comments, after_call_addr, NULL);
+	mu_assert_notnull(cmt, "comment after call");
+	mu_assert_true(strstr(cmt, expect_preserved) != NULL, "preserved register survives the call");
+	mu_assert_true(strstr(cmt, expect_clobbered) == NULL, "non-preserved register is clobbered by the call");
+
+	rz_absint_result_free(interp->inst, res);
+	interp_free(interp);
+	mu_end;
+}
+
+bool test_absint_call_clobber_by_cc_arm64(void) {
+	return test_absint_call_clobber_by_cc("arm", 64, "hex://" // clang-format off
+		"530880d2"  // 0x00  mov   x19, 0x42
+		"600880d2"  // 0x04  mov   x0, 0x43
+		"fe030094"  // 0x08  bl    0x11000
+		"c0035fd6", // 0x0c  ret
+		// clang-format on
+		0x1000c,
+		"x19,x20,x21,x22,x23,x24,x25,x26,x27,x28,x29", // cc.arm64.preserved
+		"x19 = 0x42", "x0 = ");
+}
+
+bool test_absint_call_clobber_by_cc_x86_64(void) {
+	return test_absint_call_clobber_by_cc("x86", 64, "hex://" // clang-format off
+		"48c7c342000000"  // 0x00  mov   rbx, 0x42
+		"48c7c043000000"  // 0x07  mov   rax, 0x43
+		"e8ed0f0000"      // 0x0e  call  0x11000
+		"c3",             // 0x13  ret
+		// clang-format on
+		0x10013,
+		"rbx,rbp,r12,r13,r14,r15,df,cwd,fs,gs", // cc.amd64.preserved
+		"rbx = 0x42", "rax = ");
+}
+
+bool test_absint_call_clobber_by_cc_riscv64(void) {
+	return test_absint_call_clobber_by_cc("riscv", 64, "hex://" // clang-format off
+		"93042004"  // 0x00  li    s1, 0x42
+		"13053004"  // 0x04  li    a0, 0x43
+		"ef00907f"  // 0x08  jal   0x11000
+		"67800000", // 0x0c  ret
+		// clang-format on
+		0x1000c,
+		"s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,fs0,fs1,fs2,fs3,fs4,fs5,fs6,fs7,fs8,fs9,fs10,fs11,gp,tp", // cc.rvg.preserved
+		"s1 = 0x42", "a0 = ");
+}
+
+bool test_absint_call_clobber_by_cc_hexagon(void) {
+	return test_absint_call_clobber_by_cc("hexagon", 32, "hex://" // clang-format off
+		"50c80078"  // 0x00  R16 = #0x42
+		"60c80078"  // 0x04  R0 = #0x43
+		"fcc7005a"  // 0x08  call  0x11000
+		"00c09f52", // 0x0c  jumpr LR
+		// clang-format on
+		0x1000c,
+		"R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R30", // cc.hexagon.preserved
+		"R16 = 0x42", "R0 = ");
+}
+
 bool test_absint_driver(size_t n_threads) {
 	RzCons *cons = rz_cons_new(); // TODOe: we need this?
 	RzAnalysis *analysis = rz_analysis_new(NULL);
@@ -898,6 +1005,10 @@ bool all_tests() {
 	mu_run_test(test_absint_cfg_merge_multiple_consecutive);
 	mu_run_test(test_absint_xrefs);
 	mu_run_test(test_absint_comments);
+	mu_run_test(test_absint_call_clobber_by_cc_arm64);
+	mu_run_test(test_absint_call_clobber_by_cc_x86_64);
+	mu_run_test(test_absint_call_clobber_by_cc_riscv64);
+	mu_run_test(test_absint_call_clobber_by_cc_hexagon);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);
 	return tests_passed != tests_run;

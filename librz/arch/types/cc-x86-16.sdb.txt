@@ -8,6 +8,7 @@ cc.fastcall.arg3=cx
 cc.fastcall.argn=stack
 cc.fastcall.maxargs=4
 cc.fastcall.ret=ax
+cc.fastcall.preserved=si,di,bp,df
 
 watcom=cc
 cc.watcom.arg0=ax
@@ -17,6 +18,7 @@ cc.watcom.arg3=cx
 cc.watcom.argn=stack
 cc.watcom.maxargs=4
 cc.watcom.ret=si
+cc.watcom.preserved=di,bp,df
 
 turboc=cc
 cc.turboc.arg0=ax
@@ -25,6 +27,7 @@ cc.turboc.arg2=bx
 cc.turboc.argn=stack
 cc.turboc.maxargs=3
 cc.turboc.ret=ax
+cc.turboc.preserved=si,di,bp,df
 
 ms=cc
 cc.ms.arg0=ax
@@ -32,6 +35,7 @@ cc.ms.arg1=dx
 cc.ms.argn=stack
 cc.ms.maxargs=2
 cc.ms.ret=ax
+cc.ms.preserved=si,di,bp,df
 
 msm=cc
 cc.msm.arg0=ax

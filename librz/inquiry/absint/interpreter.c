@@ -50,6 +50,8 @@ static void interp_add_comment(RzAbsIntRunContext *ctx, ut64 addr, const char *c
 
 RZ_API RZ_OWN RzAbsIntInstance *rz_absint_instance_new(RzAnalysis *analysis, RZ_NONNULL RZ_BORROW const RzAbsIntConfig *config) {
 	rz_return_val_if_fail(analysis && config && config->val_domain && config->io_read && config->lift_block, NULL);
+	// call_info is only ever used with RZ_ABSINT_CLOBBER_BY_CC
+	rz_return_val_if_fail(config->clobber_policy != RZ_ABSINT_CLOBBER_BY_CC || config->call_info, NULL);
 
 	RzAbsIntInstance *inst = RZ_NEW0(RzAbsIntInstance);
 	if (!inst) {
@@ -612,19 +614,55 @@ map_to_top:
 #undef EVAL_SUB_OR_RETURN
 }
 
-static void eval_call(RzAbsIntRunContext *ctx) {
+/**
+ * \param callee_addr address of the callee, or UT64_MAX if it is not known
+ */
+static EvalResult eval_call(RzAbsIntRunContext *ctx, ut64 callee_addr) {
 	// For calls, assume control flow will continue like fallthrough.
 	// But any data that may be modified by the callee must be set to top.
-	// TODO: this should depend on the ABI, some data may be preserved.
-	RzIterator it = (RzIterator){ 0 };
-	if (!ht_up_as_iter(ctx->astate->globals, &it)) {
-		return;
+	const RzAbsIntConfig *config = &ctx->inst->config;
+	const RzAbsIntCalleeInfo *callee_info = NULL;
+	RzAbsIntCallInfoResult callee_info_res = RZ_ABSINT_CALL_INFO_RESULT_FAILED;
+	bool clobber_all = config->clobber_policy == RZ_ABSINT_CLOBBER_ALL;
+	if (config->clobber_policy == RZ_ABSINT_CLOBBER_BY_CC) {
+		// The request is made even if the callee is unknown, since whoever answers it
+		// may still fall back to other info, e.g. the caller's calling convention.
+		callee_info_res = config->call_info(callee_addr, &callee_info, config->cb_user);
+		if (callee_info_res == RZ_ABSINT_CALL_INFO_RESULT_BREAK) {
+			return EVAL_RESULT_BREAK;
+		}
+		clobber_all = callee_info_res != RZ_ABSINT_CALL_INFO_RESULT_OK;
 	}
-	RzAbsIntVal **av;
-	rz_iterator_foreach(&it, av) {
-		val_domain(ctx->inst)->set_top(*av);
+	if (clobber_all) {
+		RzIterator it = (RzIterator){ 0 };
+		if (!ht_up_as_iter(ctx->astate->globals, &it)) {
+			return EVAL_RESULT_OK;
+		}
+		RzAbsIntVal **av;
+		rz_iterator_foreach(&it, av) {
+			val_domain(ctx->inst)->set_top(*av);
+		}
+		rz_iterator_fini(&it);
+	} else {
+		// Only registers that are not in the preserved set are clobbered.
+		RzIterator it = (RzIterator){ 0 };
+		if (!ht_up_as_iter_keys(ctx->astate->globals, &it)) {
+			return EVAL_RESULT_OK;
+		}
+		ut64 *var_hash;
+		rz_iterator_foreach(&it, var_hash) {
+			const char *reg_name = ht_up_find(ctx->inst->var_name_hashes, *var_hash, NULL);
+			if (reg_name && rz_set_s_contains(callee_info->preserved, reg_name)) {
+				continue;
+			}
+			RzAbsIntVal *av = ht_up_find(ctx->astate->globals, *var_hash, NULL);
+			if (av) {
+				val_domain(ctx->inst)->set_top(av);
+			}
+		}
+		rz_iterator_fini(&it);
 	}
-	rz_iterator_fini(&it);
+	return EVAL_RESULT_OK;
 }
 
 static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effect, size_t insn_pkt_size) {
@@ -729,7 +767,7 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 			if (ctx->inst->config.trace_opts & RZ_ABSINT_TRACE_EVAL_BLOCK) {
 				RZ_LOG_INFO("  call detected\n");
 			}
-			eval_call(ctx);
+			res = eval_call(ctx, is_const ? rz_bv_to_ut64(&eval_out_bv) : UT64_MAX);
 		} else {
 			set_abstr_pc(ctx->inst, ctx->astate, eval_out);
 		}

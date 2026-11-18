@@ -565,6 +565,7 @@ RZ_API bool rz_core_analysis_objc_refs(RzCore *core, bool auto_analysis);
 RZ_API void rz_core_analysis_objc_stubs(RzCore *core);
 RZ_API void rz_core_analysis_cc_init_by_path(RzCore *core, RZ_NULLABLE const char *path, RZ_NULLABLE const char *homepath);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
+RZ_API RZ_BORROW RZ_NULLABLE const char *rz_core_analysis_cc_at(RZ_NONNULL RzCore *core, ut64 addr, bool use_default);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API RZ_OWN char *rz_core_types_as_c(RZ_NONNULL RzCore *core, RZ_NONNULL const char *name, bool multiline);
 RZ_API RZ_OWN char *rz_core_types_as_c_all(RZ_NONNULL RzCore *core, bool multiline);

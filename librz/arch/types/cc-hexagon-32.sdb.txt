@@ -10,6 +10,7 @@ cc.hexagon.arg4=R4
 cc.hexagon.arg5=R5
 cc.hexagon.argn=stack_rev
 cc.hexagon.ret=R0
+cc.hexagon.preserved=R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R30
 
 hvx=cc
 cc.hvx.name=hvx
@@ -31,3 +32,4 @@ cc.hvx.arg13=V13
 cc.hvx.arg14=V14
 cc.hvx.arg15=V15
 cc.hvx.ret=V0
+cc.hvx.preserved=R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R30

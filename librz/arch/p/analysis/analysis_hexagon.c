@@ -46,6 +46,10 @@ static RzAnalysisILConfig *hexagon_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(a, NULL);
 	// Hacky getter for the plugin data until RzArch is implemented
 	RzAsm *rasm = rz_analysis_to_rz_asm(a);
+	if (!rasm) {
+		RZ_LOG_ERROR("Hexagon: RzAnalysis must be backed by an RzCore with RzAsm to lift to RzIL.\n");
+		return NULL;
+	}
 
 	HexState *state = rasm->plugin_data;
 	rz_return_val_if_fail(state, NULL);

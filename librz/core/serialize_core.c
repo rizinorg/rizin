@@ -35,6 +35,8 @@ static const char *config_exclude_save[] = {
 	"inquiry.comment", // experimental
 	"inquiry.trace", // experimental
 	"inquiry.threads", // experimental
+	"inquiry.clobber", // experimental
+	"inquiry.clobber.fallback", // experimental
 	NULL
 };
 
@@ -65,6 +67,8 @@ static const char *config_exclude_load[] = {
 	"inquiry.comment", // experimental
 	"inquiry.trace", // experimental
 	"inquiry.threads", // experimental
+	"inquiry.clobber", // experimental
+	"inquiry.clobber.fallback", // experimental
 	NULL
 };
 
