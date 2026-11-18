@@ -681,7 +681,6 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	}
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
-	ut64 mips_AHL = 0;
 	Elf_(rz_bin_elf_relocs_read_addends)(bin);
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
@@ -705,7 +704,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 				}
 			}
 		}
-		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
+		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);

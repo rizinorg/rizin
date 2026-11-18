@@ -24,7 +24,6 @@ typedef struct reloc_formular_symbols_t {
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
 	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
 	ut64 GP; // Value of GP register (Hexagon specific).
-	ut64 AHL; // Special value used by MIPS to handle R_MIPS_HI16 & R_MIPS_LO16 relocs
 	/**
 	 * \brief Sparc64: Secondary addend, extracted from the r_info field by
 	 * applying the ELF_SPARC64_R_TYPE_DATA macro (alias for ELF64_R_TYPE_DATA).
@@ -695,73 +694,67 @@ static void patch_reloc_sparc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 }
 
 /**
- * \brief Patches the opcode at a given address depending on the relocation type.
+ * \brief Patches the field of a MIPS relocation.
  *
- * NOTE: Some relocation symbols are not yet implemented
+ * GP-relative, GOT and TLS fields are left alone, as an object has no layout
+ * for them yet.
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
- * \param rel_type The relocation type.
+ * \param rel The relocation.
  * \param big_endian The endianness - true if BE, false if LE
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, RelocFormularSymbols *fs) {
-	rz_return_if_fail(buf_patched && fs);
-	ut8 buf[4] = { 0 };
-	ut64 val = 0;
+static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	ut32 mask = UT32_MAX;
+	ut64 val;
 
-	switch (rel_type) {
+	switch (rel->type) {
 	default:
-		UNHANDL_DEF("MIPS", rel_type);
+		UNHANDL_DEF("MIPS", rel->type);
 		return;
 	case R_MIPS_NONE:
+	case R_MIPS_JALR:
+		// R_MIPS_JALR only allows turning the call into a direct branch.
 		return;
-	case R_MIPS_16: // S + sign–extend(A)
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		val = rz_read_ble16(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble16(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+	case R_MIPS_16: {
+		ut8 buf[2];
+		rz_write_ble16(buf, fs->S + fs->A, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
 		return;
-	case R_MIPS_32: // S + A
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
-	case R_MIPS_REL32: // A – EA + S
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += fs->S + fs->A - fs->P;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
-	case R_MIPS_26: // (((A << 2) | (P & 0xf0000000) + S) >> 2
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += ((fs->A << 2) | (fs->P & 0xf0000000));
-		val += fs->S;
-		val >>= 2;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
+	}
+	case R_MIPS_32:
+		val = fs->S + fs->A;
+		break;
+	case R_MIPS_REL32:
+		// Without a symbol, the word is rebased with the image.
+		val = (rel->sym ? fs->S : fs->B) + fs->A;
+		break;
+	case R_MIPS_26:
+		// The upper bits of the target come from the address of the delay slot.
+		mask = 0x3ffffff;
+		val = (fs->S + fs->A) >> 2;
+		break;
 	case R_MIPS_HI16:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		fs->AHL = rz_read_ble16(buf, big_endian) << 16;
-		return;
+		// Rounded, as the LO16 half is added as a signed immediate.
+		mask = 0xffff;
+		val = (fs->S + fs->A + 0x8000) >> 16;
+		break;
 	case R_MIPS_LO16:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		val = rz_read_ble16(buf, big_endian);
-		val += fs->AHL;
-		val += fs->S;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
+		mask = 0xffff;
+		val = fs->S + fs->A;
+		break;
+	case R_MIPS_PC16:
+		mask = 0xffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC32:
+		val = fs->S + fs->A - fs->P;
+		break;
 	case R_MIPS_GPREL16: UNHANDL("R_MIPS_GPREL16");
 	case R_MIPS_LITERAL: UNHANDL("R_MIPS_LITERAL");
 	case R_MIPS_GOT16: UNHANDL("R_MIPS_GOT16");
-	case R_MIPS_PC16: UNHANDL("R_MIPS_PC16");
 	case R_MIPS_CALL16: UNHANDL("R_MIPS_CALL16");
 	case R_MIPS_GPREL32: UNHANDL("R_MIPS_GPREL32");
 	case R_MIPS_SHIFT5: UNHANDL("R_MIPS_SHIFT5");
@@ -785,7 +778,6 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MIPS_ADD_IMMEDIATE: UNHANDL("R_MIPS_ADD_IMMEDIATE");
 	case R_MIPS_PJUMP: UNHANDL("R_MIPS_PJUMP");
 	case R_MIPS_RELGOT: UNHANDL("R_MIPS_RELGOT");
-	case R_MIPS_JALR: UNHANDL("R_MIPS_JALR");
 	case R_MIPS_TLS_DTPMOD32: UNHANDL("R_MIPS_TLS_DTPMOD32");
 	case R_MIPS_TLS_DTPREL32: UNHANDL("R_MIPS_TLS_DTPREL32");
 	case R_MIPS_TLS_DTPMOD64: UNHANDL("R_MIPS_TLS_DTPMOD64");
@@ -834,12 +826,12 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MICROMIPS_TLS_TPREL_LO16: UNHANDL("R_MICROMIPS_TLS_TPREL_LO16");
 	case R_MICROMIPS_GPREL7_S2: UNHANDL("R_MICROMIPS_GPREL7_S2");
 	case R_MICROMIPS_PC23_S2: UNHANDL("R_MICROMIPS_PC23_S2");
-	case R_MIPS_PC32: UNHANDL("R_MIPS_PC32");
 	case R_MIPS_EH: UNHANDL("R_MIPS_EH");
 	case R_MIPS_GNU_REL16_S2: UNHANDL("R_MIPS_GNU_REL16_S2");
 	case R_MIPS_GNU_VTINHERIT: UNHANDL("R_MIPS_GNU_VTINHERIT");
 	case R_MIPS_GNU_VTENTRY: UNHANDL("R_MIPS_GNU_VTENTRY");
 	}
+	patch_val_over_mask_32(buf_patched, big_endian, patch_addr, mask, val);
 }
 
 // For arm group relocations related to ALU instructions
@@ -3774,8 +3766,8 @@ static bool patch_x86_tls_reloc(ELFOBJ *bin, const RzBinElfReloc *rel, ut64 patc
 	return true;
 }
 
-void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL) {
-	rz_return_if_fail(bin && rel && AHL);
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT) {
+	rz_return_if_fail(bin && rel);
 	ut16 e_machine = bin->ehdr.e_machine;
 	RelocFormularSymbols formular_sym = {
 		.A = rel->addend,
@@ -3790,7 +3782,6 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		.GP = 0,
 		.T = 0,
 		.TLS = 0,
-		.AHL = *AHL,
 		.O = rel->sparc_secondary_addend,
 	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(bin, rel->vaddr);
@@ -3816,11 +3807,7 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_MIPS_RS3_LE:
 		/* fall-thru */
 	case EM_MIPS:
-		patch_reloc_mips(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
-		// This is a special value used only in mips
-		// An R_MIPS_HI16 must be followed immediately by an R_MIPS_LO16 relocation record in a SHT_REL section.
-		// The contents of the two fields to be relocated are combined to form a full 32-bit addend AHL.
-		*AHL = formular_sym.AHL;
+		patch_reloc_mips(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
 		break;
 	case EM_386:
 		patch_reloc_x86_32(bin->buf_patched, patch_addr, rel, &formular_sym);
