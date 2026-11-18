@@ -470,6 +470,19 @@ int main(int argc @ r26, char **argv @ r25, char **envp);
 EOF
 RUN
 
+NAME=hppa: undecodable words
+FILE=malloc://0x20
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx ffffffff
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=hppa: switch tables
 FILE=malloc://0x100
 ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
@@ -520,16 +533,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=HPPA tokenize left and right halves of floating-point registers
-FILE=malloc://4
+NAME=HPPA tokenize instruction completers and floating-point register halves
+FILE=malloc://0x14
 ARGS=-a hppa -b 32 -E big
 CMDS=<<EOF
 e asm.cpu=hppa2.0
-wx 1a8541e6
-pi 1
+wx 1a8541e608840886d0a52b6630840c1a3ad64796
+pi 5
 EOF
 EXPECT=<<EOF
 fmpyadd,sgl fr20R, fr21L, fr22L, fr23L, fr24L
+cmpclr r4, r4, r6
+shrpw,= r5, r5, 4, r6
+fcmp,dbl,!= fr4, fr4
+xmpyu fr22R, fr22, fr22
 EOF
 EXPECT_ERR=
 RUN
