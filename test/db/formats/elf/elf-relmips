@@ -1447,3 +1447,201 @@ EXPECT=<<EOF
 0x10010a4c  0x10010a4c                                   L...
 EOF
 RUN
+
+NAME=ELF: MIPS R6 PC-relative REL relocations (#6330)
+FILE=bins/elf/mips-r6-rel-addends.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+ir
+pi 17 @ section..text
+pxw 12 @ section..data
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type           name                  
+----------------------------------------------------------------------
+0x08000040 0x00000040 0x08000300 R_MIPS_PC26_S2 ext_func - 0x08000044
+0x08000044 0x00000044 0x08000300 R_MIPS_PC26_S2 ext_func - 0x08000008
+0x08000048 0x00000048 0x08000300 R_MIPS_PC26_S2 ext_func - 0x0800006c
+0x0800004c 0x0000004c 0x08000300 R_MIPS_PC21_S2 ext_func - 0x08000040
+0x08000050 0x00000050 0x08000300 R_MIPS_PC21_S2 ext_func - 0x0800005c
+0x08000054 0x00000054 0x08000300 R_MIPS_PC16    ext_func - 0x08000050
+0x08000058 0x00000058 0x08000308 R_MIPS_PC19_S2 ext_data - 0x08000048
+0x0800005c 0x0000005c 0x08000308 R_MIPS_PC19_S2 ext_data - 0x0800007c
+0x08000060 0x00000060 0x08000308 R_MIPS_PCHI16  ext_data - 0x07fedd17
+0x08000064 0x00000064 0x08000308 R_MIPS_PCLO16  ext_data - 0x07fedd1b
+0x08000068 0x00000068 0x08000308 R_MIPS_PCHI16  ext_data - 0x08018064
+0x0800006c 0x0000006c 0x08000308 R_MIPS_PCLO16  ext_data - 0x08018068
+0x08000070 0x00000070 0x08000308 R_MIPS_PCHI16  ext_data - 0x08008070
+0x08000074 0x00000074 0x08000308 R_MIPS_PCLO16  ext_data - 0x08008074
+0x08000078 0x00000078 0x080000f0 R_MIPS_PC18_S3 dw_data - 0x08000068
+0x0800007c 0x0000007c 0x080000f0 R_MIPS_PC18_S3 dw_data - 0x08000094
+0x08000094 0x00000094 0x08000308 R_MIPS_PC32    ext_data - 0x08000084
+0x08000098 0x00000098 0x08000300 R_MIPS_PC32    ext_func - 0x08000098
+balc 0x8000300
+balc 0x8000340
+bc 0x80002e0
+beqzc a0, 0x8000310
+bnezc a1, 0x80002f8
+beqc a0, a1, 0x8000308
+lwpc a2, 0x2c0
+lapc a3, 0x28c
+auipc t0, 1
+addiu t0, t0, 0x25ed
+auipc t1, -1
+addiu t1, t1, -0x7d60
+auipc t2, 0
+lw t2, -0x7d6c(t2)
+ldpc t3, 0x88
+ldpc t4, 0x60
+jrc ra
+0x08000090  0x00000000 0x00000284 0x00000268             ...........h
+EOF
+RUN
+
+# Capstone prints microMIPS JAL targets without the region bits of the PC,
+# and B16 and BEQZ16 targets 2 bytes short. GNU objdump reads the patched ones
+# as jal 0x80002ed, jal 0x800032d, b 0x80000a3 and beqz a0,0x800008b.
+NAME=ELF: microMIPS REL relocations big endian (#6330)
+FILE=bins/elf/mips-micromips-rel-addends.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+ir
+pi 21 @ section..text
+pxw 4 @ section..data
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type                name                   
+----------------------------------------------------------------------------
+0x08000040 0x00000040 0x080002ec R_MICROMIPS_26_S1   ext_func
+0x08000048 0x00000048 0x080002ec R_MICROMIPS_26_S1   ext_func + 0x00000040
+0x08000050 0x00000050 0x080002f0 R_MICROMIPS_HI16    ext_data + 0x00012345
+0x08000054 0x00000054 0x080002f0 R_MICROMIPS_LO16    ext_data + 0x00012345
+0x08000058 0x00000058 0x080002f0 R_MICROMIPS_HI16    ext_data - 0x00008000
+0x0800005c 0x0000005c 0x080002f0 R_MICROMIPS_LO16    ext_data - 0x00008000
+0x08000060 0x00000060 0x080002ec R_MICROMIPS_PC16_S1 ext_func - 0x08000054
+0x08000066 0x00000066 0x080002ec R_MICROMIPS_PC16_S1 ext_func - 0x0800007a
+0x0800006c 0x0000006c 0x08000082 R_MICROMIPS_PC10_S1 near_func - 0x0800004e
+0x08000070 0x00000070 0x08000082 R_MICROMIPS_PC7_S1  near_func - 0x0800006a
+0x08000074 0x00000074 0x080002f0 R_MICROMIPS_PC23_S2 ext_data - 0x08000064
+0x0800007a 0x0000007a 0x080002f0 R_MICROMIPS_PC23_S2 ext_data - 0x0800009a
+0x08000090 0x00000090 0x080002f0 R_MIPS_32           ext_data + 0x00000020
+0x080000d0 0x000000d0 0x08000040 R_MIPS_32           _start
+0x080000f0 0x000000f0 0x08000082 R_MIPS_32           near_func
+jal 0x2ec
+nop
+jal 0x32c
+nop
+lui a0, 0x801
+addiu a0, a0, 0x2635
+lui a1, 0x800
+lw a1, -0x7d10(a1)
+b 0x80002fc
+nop
+beqz a0, 0x80002dc
+nop
+b16 0x80000a0
+nop
+beqz16 a0, 0x8000088
+nop
+addiupc v0, 0x28c
+nop
+addiupc v1, 0x258
+jr16 ra
+nop
+0x08000090  0x08000310                                   ....
+EOF
+RUN
+
+NAME=ELF: microMIPS REL relocations little endian (#6330)
+FILE=bins/elf/mipsel-micromips-rel-addends.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+ir~?
+pi 21 @ section..text
+pxw 4 @ section..data
+EOF
+EXPECT=<<EOF
+17
+jal 0x2ec
+nop
+jal 0x32c
+nop
+lui a0, 0x801
+addiu a0, a0, 0x2635
+lui a1, 0x800
+lw a1, -0x7d10(a1)
+b 0x80002fc
+nop
+beqz a0, 0x80002dc
+nop
+b16 0x80000a0
+nop
+beqz16 a0, 0x8000088
+nop
+addiupc v0, 0x28c
+nop
+addiupc v1, 0x258
+jr16 ra
+nop
+0x08000090  0x08000310                                   ....
+EOF
+RUN
+
+NAME=ELF: MIPS16 REL relocations big endian (#6330)
+FILE=bins/elf/mips-mips16-rel-addends.o
+CMDS=<<EOF
+ir
+pxh 48 @ section..text
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type             name                  
+------------------------------------------------------------------------
+0x08000040 0x00000040 0x0800026c R_MIPS16_26      ext_func
+0x08000046 0x00000046 0x0800026c R_MIPS16_26      ext_func + 0x00000040
+0x0800004c 0x0000004c 0x08000270 R_MIPS16_HI16    ext_data + 0x00012345
+0x08000054 0x00000054 0x08000270 R_MIPS16_LO16    ext_data + 0x00012345
+0x08000058 0x00000058 0x08000270 R_MIPS16_HI16    ext_data - 0x00008000
+0x08000060 0x00000060 0x08000270 R_MIPS16_LO16    ext_data - 0x00008000
+0x08000064 0x00000064 0x0800026c R_MIPS16_PC16_S1 ext_func - 0x08000058
+0x08000068 0x00000068 0x0800026c R_MIPS16_PC16_S1 ext_func - 0x0800007c
+0x08000070 0x00000070 0x08000270 R_MIPS_32        ext_data + 0x00000020
+0x080000b0 0x000000b0 0x08000040 R_MIPS_32        _start
+0x08000040  0x1810 0x009b 0x6500 0x1810 0x00ab 0x6500 0xf001 0x6c01  ....e.....e...l.
+0x08000050  0xf400 0x3480 0xf5a4 0x4c15 0xf001 0x6d00 0xf400 0x35a0  ..4...L...m...5.
+0x08000060  0xf270 0x9db0 0xf100 0x100a 0xf0e0 0x2418 0xe820 0x6500  .p........$.. e.
+EOF
+RUN
+
+NAME=ELF: MIPS16 REL relocations little endian (#6330)
+FILE=bins/elf/mipsel-mips16-rel-addends.o
+CMDS=<<EOF
+ir~?
+pxh 48 @ section..text
+EOF
+EXPECT=<<EOF
+12
+0x08000040  0x1810 0x009b 0x6500 0x1810 0x00ab 0x6500 0xf001 0x6c01  .....e.....e...l
+0x08000050  0xf400 0x3480 0xf5a4 0x4c15 0xf001 0x6d00 0xf400 0x35a0  ...4...L...m...5
+0x08000060  0xf270 0x9db0 0xf100 0x100a 0xf0e0 0x2418 0xe820 0x6500  p..........$ ..e
+EOF
+RUN
+
+NAME=ELF: MIPS64 R_MIPS_REL32 composed with R_MIPS_64 (#6330)
+FILE=bins/elf/mips64el-rel32.so
+CMDS=<<EOF
+ir
+pxq 48 @ 0x10560
+EOF
+EXPECT=<<EOF
+     vaddr      paddr     target type         name                   
+---------------------------------------------------------------------
+0x00000000 0x00000000 0x00000000 R_MIPS_NONE  
+0x00010570 0x00000570 0x000105f8 R_MIPS_REL32 ext_fn
+0x00010578 0x00000578 0x00010560 R_MIPS_REL32 local_var + 0x00000004
+0x00010580 0x00000580 0x00010600 R_MIPS_REL32 ext_var + 0x0000000c
+0x00010588 0x00000588 0x00000000 R_MIPS_REL32 BASE 0x000105d8
+0x00010560  0x0000000000000005  0x0000000000000000   ................
+0x00010570  0x00000000000105f8  0x0000000000010564   ........d.......
+0x00010580  0x000000000001060c  0x00000000000105d8   ................
+EOF
+RUN
