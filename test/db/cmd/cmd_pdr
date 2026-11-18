@@ -445,3 +445,80 @@ EXPECT=<<EOF
 | ----------- true: 0x00005b40
 EOF
 RUN
+
+NAME=pdr., pdr.j, pir. and pir.j start at the block holding the seek
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.bytes=true
+e asm.comments=false
+wx 4889c84883c00175fa4883e90175fa31c0c3
+af
+pdr. @ 0xd
+pdr.j @ 0xd~{.[]\|{offset}}
+pir. @ 0xd
+pir.j @ 0xd~{.[]\|{offset}}
+EOF
+EXPECT=<<EOF
+| 0x00000009      4883e901       sub   rcx, 0x01
+| 0x0000000d      75fa           jnz   0x9
+| ----------- true: 0x00000009  false: 0x0000000f
+| 0x0000000f      31c0           xor   eax, eax
+\ 0x00000011      c3             ret
+
+[{"offset":9},{"offset":13},{"offset":15},{"offset":17}]
+sub rcx, 0x01
+jnz 0x9
+xor eax, eax
+ret
+[{"offset":9},{"offset":13},{"offset":15},{"offset":17}]
+EOF
+RUN
+
+NAME=pdr. and pir. leave the console as they found it
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.bytes=true
+e asm.comments=false
+wx 4889c84883c00175fa4883e90175fa31c0c3
+af
+pdr. @ 0x11
+pir. @ 0x11
+echo end
+e scr.null=true
+pdr. @ 0xd
+pir. @ 0xd
+e scr.null=false
+echo muted
+EOF
+EXPECT=<<EOF
+| 0x0000000f      31c0           xor   eax, eax
+\ 0x00000011      c3             ret
+
+xor eax, eax
+ret
+end
+muted
+EOF
+RUN
+
+NAME=pdr. emulates the blocks before the seek
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.bytes=true
+e asm.lines.fcn=false
+e asm.tabs=0
+wx 48c7c01000000075084805b8000000eb064805e60000004889c7c3
+af
+e asm.emu=true
+pdr. @ 0x11~add rax[6]
+EOF
+EXPECT=<<EOF
+0xf6
+EOF
+RUN
