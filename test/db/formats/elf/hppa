@@ -44,6 +44,80 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=hppa: plabels of init and fini arrays
+FILE=bins/hppa/hppa-exe
+CMDS=ie
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x000104d8 0x000004d8 0x00010018 0x00000018 program
+0x00010520 0x00000520 0x00012f10 0x00002f10 init
+0x00010640 0x00000640 0x00012f14 0x00002f14 init
+0x00010674 0x00000674 0x00012f18 0x00002f18 init
+0x0001060c 0x0000060c 0x00012f1c 0x00002f1c fini
+0x00010694 0x00000694 0x00012f20 0x00002f20 fini
+EOF
+RUN
+
+NAME=hppa: plabels of init and fini arrays filled by IPLT relocs
+FILE=bins/hppa/hppa-lib.so
+CMDS=ie
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x0000057c 0x0000057c 0x00000018 0x00000018 program
+0x000005cc 0x000005cc 0x00001eec 0x00001eec init
+0x00000730 0x00000730 0x00001ef0 0x00001ef0 init
+0x00000768 0x00000768 0x00001ef4 0x00001ef4 init
+0x000006c8 0x000006c8 0x00001ef8 0x00001ef8 fini
+EOF
+RUN
+
+NAME=hppa: functions reached through plabels of a stripped executable
+FILE=bins/hppa/hppa-exe-stripped
+CMDS=is~func.
+EXPECT=<<EOF
+ 10 0x00000520 0x00010520 LOCAL  FUNC      0     func.00010520
+ 11 0x0000060c 0x0001060c LOCAL  FUNC      0     func.0001060c
+ 12 0x00000640 0x00010640 LOCAL  FUNC      0     func.00010640
+ 13 0x00000654 0x00010654 LOCAL  FUNC      0     func.00010654
+ 14 0x00000674 0x00010674 LOCAL  FUNC      0     func.00010674
+ 15 0x00000694 0x00010694 LOCAL  FUNC      0     func.00010694
+ 16 0x000006e0 0x000106e0 LOCAL  FUNC      0     func.000106e0
+EOF
+RUN
+
+NAME=hppa: functions reached through plabels of a stripped shared object
+FILE=bins/hppa/hppa-lib-stripped.so
+CMDS=is~func.
+EXPECT=<<EOF
+ 14 0x000005cc 0x000005cc LOCAL  FUNC      0     func.000005cc
+ 15 0x000006c8 0x000006c8 LOCAL  FUNC      0     func.000006c8
+ 16 0x00000730 0x00000730 LOCAL  FUNC      0     func.00000730
+ 17 0x00000768 0x00000768 LOCAL  FUNC      0     func.00000768
+ 18 0x00000744 0x00000744 LOCAL  FUNC      0     func.00000744
+EOF
+RUN
+
+NAME=hppa: no plabel symbols for functions with symbols
+FILE=bins/hppa/hppa-exe
+CMDS=is~func.
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=hppa: millicode symbols are functions
+FILE=bins/hppa/hppa-exe
+CMDS=is~divU_1
+EXPECT=<<EOF
+ 72 0x00000bdc 0x00010bdc LOCAL  FUNC      0     $$divU_17
+ 73 0x00000b70 0x00010b70 LOCAL  FUNC      0     $$divU_12
+ 74 0x00000ab0 0x00010ab0 LOCAL  FUNC      0     $$divU_10
+ 75 0x00000d04 0x00010d04 LOCAL  FUNC      0     $$divU_14
+ 89 0x00000b9c 0x00010b9c LOCAL  FUNC      0     $$divU_15
+EOF
+RUN
+
 NAME=hppa: relocations
 FILE=bins/hppa/hppa-lib.so
 CMDS=<<EOF
@@ -112,11 +186,16 @@ ldo 0x7000(r1), rp
 EOF
 RUN
 
-NAME=hppa: BSD ABI note in an ELF with the HP-UX ABI byte
+NAME=hppa: BSD ABI note and named IPLT initializer
 FILE=bins/hppa/hppa-bsd-init.so
-CMDS=i~^os[1]
+CMDS=<<EOF
+i~^os[1]
+ieq
+EOF
 EXPECT=<<EOF
 openbsd
+0x00000154
+0x00000154
 EOF
 RUN
 
@@ -128,6 +207,8 @@ ii~imported[1]
 ir~R_PARISC_FPTR64[0,3]
 p8 8 @ 0x4000000000001388
 p8 32 @ 0x40000000000013a8
+ieq
+is~ FUNC ~hook[2]
 EOF
 EXPECT=<<EOF
 hpux
@@ -136,5 +217,9 @@ hpux
 0x40000000000013a0 R_PARISC_FPTR64
 40000000000013a8
 00000000000000000000000000000000400000000000036040000000000013c8
+0x4000000000000360
+0x4000000000000360
+0x4000000000000360
+0x4000000000000360
 EOF
 RUN
