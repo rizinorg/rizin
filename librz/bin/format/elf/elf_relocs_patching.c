@@ -1285,6 +1285,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	switch (rel->type) {
 	case R_ARM_NONE:
+	case R_ARM_V4BX:
 		return;
 	case R_ARM_THM_JUMP24:
 		/* fall-thru */
@@ -1328,6 +1329,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_ABS32:
+	case R_ARM_TARGET1:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = (fs->S + fs->A) | T;
 		rz_write_ble32(buf, val, big_endian);
@@ -2181,9 +2183,6 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	default:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->S + fs->A;
-		if (!rel->sym && rel->mode == DT_REL) {
-			val += rz_read_ble32(buf, big_endian);
-		}
 		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
