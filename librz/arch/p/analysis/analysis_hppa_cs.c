@@ -8,17 +8,49 @@
 
 #include <hppa/hppa.inc>
 
+/**
+ * \brief Append fr0 to fr31 and their 32-bit halves, laid out as the
+ * struct user_fp_struct of Linux.
+ */
+static char *hppa_fp_reg_profile(const char *gpr) {
+	RzStrBuf *sb = rz_strbuf_new(gpr);
+	if (!sb) {
+		return NULL;
+	}
+	// the halves of fr0 to fr3 are the status and exception registers
+	static const char *const status[] = { "fpsr", "fpe1", "fpe2", "fpe3", "fpe4", "fpe5", "fpe6", "fpe7" };
+	for (int i = 0; i < 32; i++) {
+		rz_strbuf_appendf(sb, "fpu\tfr%d\t.64\t%d\t0\n", i, 8 * i);
+	}
+	for (int i = 0; i < 32; i++) {
+		if (i < 4) {
+			rz_strbuf_appendf(sb, "fpu\t%s\t.32\t%d\t0\n", status[2 * i], 8 * i);
+			rz_strbuf_appendf(sb, "fpu\t%s\t.32\t%d\t0\n", status[2 * i + 1], 8 * i + 4);
+		} else {
+			rz_strbuf_appendf(sb, "fpu\tfr%dL\t.32\t%d\t0\n", i, 8 * i);
+			rz_strbuf_appendf(sb, "fpu\tfr%dR\t.32\t%d\t0\n", i, 8 * i + 4);
+		}
+	}
+	return rz_strbuf_drain(sb);
+}
+
 static char *hppa_reg_profile(RzAnalysis *analysis) {
 	if (analysis->bits == 64) {
 		// linux/arch/parisc/include/uapi/asm/ptrace.h: struct user_regs_struct (64-bit)
 		const char *p =
 			"=PC	iaoq0\n"
 			"=SP	r30\n"
+			"=LR	r2\n"
 			"=A0	r26\n"
 			"=A1	r25\n"
 			"=A2	r24\n"
 			"=A3	r23\n"
+			"=A4	r22\n"
+			"=A5	r21\n"
+			"=A6	r20\n"
+			"=A7	r19\n"
 			"=R0	r28\n"
+			"=SN	r20\n"
 			"gpr	r0	.64	0	0\n"
 			"gpr	r1	.64	8	0\n"
 			"gpr	r2	.64	16	0\n"
@@ -83,15 +115,19 @@ static char *hppa_reg_profile(RzAnalysis *analysis) {
 			"gpr	cr13	.64	488	0\n"
 			"gpr	cr10	.64	496	0\n"
 			"gpr	cr15	.64	504	0\n";
-		return strdup(p);
+		return hppa_fp_reg_profile(p);
 	} else {
 		const char *p =
 			"=PC	iaoq0\n"
 			"=SP	r30\n"
+			"=LR	r2\n"
 			"=A0	r26\n"
 			"=A1	r25\n"
 			"=A2	r24\n"
 			"=A3	r23\n"
+			"=R0	r28\n"
+			"=R1	r29\n"
+			"=SN	r20\n"
 			"gpr	r0	.32	0	0\n"
 			"gpr	r1	.32	4	0\n"
 			"gpr	r2	.32	8	0\n"
@@ -156,50 +192,255 @@ static char *hppa_reg_profile(RzAnalysis *analysis) {
 			"gpr	cr13	.32	244	0\n"
 			"gpr	cr10	.32	248	0\n"
 			"gpr	cr15	.32	252	0\n";
-		return strdup(p);
+		return hppa_fp_reg_profile(p);
 	}
 }
 
-static inline void hppa_fillval(const RzReg *rz_reg, csh handle, RzAnalysisValue *av, cs_hppa_op *hop) {
+#define HPPA_INSN_SIZE 4
+
+/// stw rp,-0x14(sp): stores the return pointer into the frame marker
+#define HPPA_STW_RP 0x6bc23fd9
+
+/// Major opcode of BL, GATE, BLR, BV, BVE and the PA 2.0 B forms
+#define HPPA_OPCODE_BRANCH 0x3a
+
+typedef enum {
+	HPPA_BRANCH_COND, ///< taken depending on the condition
+	HPPA_BRANCH_ALWAYS,
+	HPPA_BRANCH_NEVER,
+} HPPABranchCond;
+
+/**
+ * \brief Check if the mnemonic carries the completer, e.g. "n" in "cmpb,<>,n".
+ */
+static bool hppa_has_completer(const cs_insn *insn, const char *completer) {
+	size_t len = strlen(completer);
+	for (const char *p = strchr(insn->mnemonic, ','); p; p = strchr(p, ',')) {
+		p++;
+		if (!strncmp(p, completer, len) && (!p[len] || p[len] == ',')) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Name of a register in the register profile, which numbers the
+ * general registers and some of the control registers unlike Capstone.
+ */
+static const char *hppa_reg_name(hppa_reg reg) {
+	static const char *const gr[] = {
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+		"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
+		"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
+	};
+	static const char *const sr[] = {
+		"sr0", "sr1", "sr2", "sr3", "sr4", "sr5", "sr6", "sr7"
+	};
+	static const char *const cr[] = {
+		"cr0", NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+		"cr8", "cr9", "cr10", "sar", "cr12", "cr13", NULL, "cr15",
+		NULL, NULL, NULL, "iir", "isr", "ior", "ipsw", NULL,
+		"cr24", "cr25", "cr26", "cr27", "cr28", "cr29", "cr30", "cr31"
+	};
+	if (reg >= HPPA_REG_GR0 && reg <= HPPA_REG_GR31) {
+		return gr[reg - HPPA_REG_GR0];
+	}
+	if (reg >= HPPA_REG_SR0 && reg <= HPPA_REG_SR7) {
+		return sr[reg - HPPA_REG_SR0];
+	}
+	if (reg >= HPPA_REG_CR0 && reg <= HPPA_REG_CR31) {
+		return cr[reg - HPPA_REG_CR0];
+	}
+	// whole registers, as the operands of single precision use the left halves too
+	static const char *const fr[] = {
+		"fr0", "fr1", "fr2", "fr3", "fr4", "fr5", "fr6", "fr7",
+		"fr8", "fr9", "fr10", "fr11", "fr12", "fr13", "fr14", "fr15",
+		"fr16", "fr17", "fr18", "fr19", "fr20", "fr21", "fr22", "fr23",
+		"fr24", "fr25", "fr26", "fr27", "fr28", "fr29", "fr30", "fr31"
+	};
+	static const char *const right[] = {
+		"fpe1", "fpe3", "fpe5", "fpe7", "fr4R", "fr5R", "fr6R", "fr7R",
+		"fr8R", "fr9R", "fr10R", "fr11R", "fr12R", "fr13R", "fr14R", "fr15R",
+		"fr16R", "fr17R", "fr18R", "fr19R", "fr20R", "fr21R", "fr22R", "fr23R",
+		"fr24R", "fr25R", "fr26R", "fr27R", "fr28R", "fr29R", "fr30R", "fr31R"
+	};
+	static const char *const sp[] = {
+		"fr16L", "fr17L", "fr18L", "fr19L", "fr20L", "fr21L", "fr22L", "fr23L",
+		"fr24L", "fr25L", "fr26L", "fr27L", "fr28L", "fr29L", "fr30L", "fr31L",
+		"fr16R", "fr17R", "fr18R", "fr19R", "fr20R", "fr21R", "fr22R", "fr23R",
+		"fr24R", "fr25R", "fr26R", "fr27R", "fr28R", "fr29R", "fr30R", "fr31R"
+	};
+	if (reg >= HPPA_REG_FPR0 && reg <= HPPA_REG_FPR31) {
+		return fr[reg - HPPA_REG_FPR0];
+	}
+	if (reg >= HPPA_REG_FPE0 && reg <= HPPA_REG_FPE31) {
+		return right[reg - HPPA_REG_FPE0];
+	}
+	if (reg >= HPPA_REG_SP_FPR0 && reg <= HPPA_REG_SP_FPR31) {
+		return sp[reg - HPPA_REG_SP_FPR0];
+	}
+	return NULL;
+}
+
+static RzRegItem *hppa_reg_get(const RzReg *rz_reg, hppa_reg reg) {
+	const char *name = hppa_reg_name(reg);
+	return name ? rz_reg_get(rz_reg, name, RZ_REG_TYPE_ANY) : NULL;
+}
+
+/// Older Capstone versions zero-extend some signed displacements to 64 bits.
+static st64 hppa_disp(const cs_hppa_op *op) {
+	return (st32)op->imm;
+}
+
+/// Width of the memory access of a load or store
+static int hppa_mem_width(ut32 id) {
+	switch (id) {
+	case HPPA_INS_LDB:
+	case HPPA_INS_LDBS:
+	case HPPA_INS_LDBX:
+	case HPPA_INS_STB:
+	case HPPA_INS_STBS:
+		return 1;
+	case HPPA_INS_LDH:
+	case HPPA_INS_LDHS:
+	case HPPA_INS_LDHX:
+	case HPPA_INS_STH:
+	case HPPA_INS_STHS:
+		return 2;
+	case HPPA_INS_LDW:
+	case HPPA_INS_LDWS:
+	case HPPA_INS_LDWX:
+	case HPPA_INS_LDWA:
+	case HPPA_INS_LDWAS:
+	case HPPA_INS_LDWAX:
+	case HPPA_INS_LDWM:
+	case HPPA_INS_LDCW:
+	case HPPA_INS_LDCWS:
+	case HPPA_INS_LDCWX:
+	case HPPA_INS_STW:
+	case HPPA_INS_STWS:
+	case HPPA_INS_STWA:
+	case HPPA_INS_STWAS:
+	case HPPA_INS_STWM:
+	case HPPA_INS_FLDW:
+	case HPPA_INS_FLDWS:
+	case HPPA_INS_FLDWX:
+	case HPPA_INS_FSTW:
+	case HPPA_INS_FSTWS:
+	case HPPA_INS_FSTWX:
+		return 4;
+	case HPPA_INS_LDD:
+	case HPPA_INS_LDDA:
+	case HPPA_INS_LDCD:
+	case HPPA_INS_STD:
+	case HPPA_INS_STDA:
+	case HPPA_INS_FLDD:
+	case HPPA_INS_FLDDS:
+	case HPPA_INS_FLDDX:
+	case HPPA_INS_FSTD:
+	case HPPA_INS_FSTDS:
+	case HPPA_INS_FSTDX:
+		return 8;
+	default:
+		return 0;
+	}
+}
+
+/**
+ * \brief Check if a load or store accesses memory at its base register before
+ * adding the offset to it.
+ *
+ * PA 1.1 LDWM and STWM do so for positive displacements.
+ */
+static bool hppa_modifies_after(const cs_insn *insn, const cs_hppa_op *offset) {
+	if (insn->id == HPPA_INS_LDWM || insn->id == HPPA_INS_STWM) {
+		return offset->type == HPPA_OP_DISP && hppa_disp(offset) >= 0;
+	}
+	return hppa_has_completer(insn, "ma") || hppa_has_completer(insn, "m") || hppa_has_completer(insn, "sm");
+}
+
+/**
+ * \brief Fill a value from an operand, with the displacement or index
+ * register Capstone reports as the separate \p offset operand of a memory one.
+ */
+static void hppa_fillval(const RzReg *rz_reg, const cs_insn *insn, RzAnalysisValue *av, const cs_hppa_op *hop, const cs_hppa_op *offset) {
 	switch (hop->type) {
 	case HPPA_OP_INVALID:
 	default:
 		av->type = RZ_ANALYSIS_VAL_UNK;
 		break;
 	case HPPA_OP_IMM:
-	case HPPA_OP_DISP:
-	case HPPA_OP_TARGET:
 		av->type = RZ_ANALYSIS_VAL_IMM;
 		av->imm = hop->imm;
+		break;
+	case HPPA_OP_DISP:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = hppa_disp(hop);
+		break;
+	case HPPA_OP_TARGET:
+		av->type = RZ_ANALYSIS_VAL_IMM;
+		av->imm = insn->address + hop->imm;
 		break;
 	case HPPA_OP_REG:
 	case HPPA_OP_IDX_REG:
 		av->type = RZ_ANALYSIS_VAL_REG;
-		av->reg = rz_reg_get(rz_reg, cs_reg_name(handle, hop->reg), RZ_REG_TYPE_ANY);
+		av->reg = hppa_reg_get(rz_reg, hop->reg);
 		break;
 	case HPPA_OP_MEM:
+		if (insn->id == HPPA_INS_LDO) {
+			av->type = RZ_ANALYSIS_VAL_REG;
+			av->reg = hppa_reg_get(rz_reg, hop->mem.base);
+			break;
+		}
 		av->type = RZ_ANALYSIS_VAL_MEM;
-		// FIXME: Handle also the space
-		av->reg = rz_reg_get(rz_reg, cs_reg_name(handle, hop->mem.base), RZ_REG_TYPE_ANY);
-		av->delta = 0;
+		av->reg = hppa_reg_get(rz_reg, hop->mem.base);
+		if (hop->mem.space != HPPA_REG_INVALID) {
+			av->seg = hppa_reg_get(rz_reg, hop->mem.space);
+		}
+		av->memref = hppa_mem_width(insn->id);
+		if (!offset || hppa_modifies_after(insn, offset)) {
+			// the base is updated after accessing memory at it
+		} else if (offset->type == HPPA_OP_DISP) {
+			av->delta = hppa_disp(offset);
+		} else {
+			av->regdelta = hppa_reg_get(rz_reg, offset->reg);
+			av->mul = hppa_has_completer(insn, "s") ? av->memref : 1;
+		}
 		break;
 	}
 }
 
 static void hppa_fillvals(const RzAsmHPPAContext *ctx, RzAnalysis *a, RzAnalysisOp *op) {
 	uint8_t srci = 0;
-	cs_hppa *hc = &ctx->insn->detail->hppa;
+	const cs_hppa *hc = &ctx->insn->detail->hppa;
+	bool store = (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_STORE;
 	for (uint8_t i = 0; i < hc->op_count; ++i) {
-		cs_hppa_op *hop = &hc->operands[i];
+		const cs_hppa_op *hop = &hc->operands[i];
+		const cs_hppa_op *offset = NULL;
+		// LDO adds without accessing memory
+		if ((hop->type == HPPA_OP_DISP || hop->type == HPPA_OP_IDX_REG) && ctx->insn->id != HPPA_INS_LDO &&
+			i + 1 < hc->op_count && hc->operands[i + 1].type == HPPA_OP_MEM) {
+			offset = hop;
+			hop = &hc->operands[++i];
+		}
 		RzAnalysisValue *av = rz_analysis_value_new();
-		hppa_fillval(a->reg, ctx->h, av, hop);
+		if (!av) {
+			return;
+		}
+		hppa_fillval(a->reg, ctx->insn, av, hop, offset);
+		// the access of a memory operand is the one of its base register,
+		// immediates may lack one
+		bool read = hop->type == HPPA_OP_MEM ? !store : (hop->access & CS_AC_READ) || hop->type == HPPA_OP_IMM || hop->type == HPPA_OP_DISP;
+		bool write = hop->type == HPPA_OP_MEM ? store : hop->access & CS_AC_WRITE;
 		bool owned = false;
-		if ((hop->access & CS_AC_READ) && srci < RZ_ARRAY_SIZE(op->src)) {
+		if (read && srci < RZ_ARRAY_SIZE(op->src)) {
 			av->access |= RZ_ANALYSIS_ACC_R;
 			op->src[srci++] = av;
 			owned = true;
 		}
-		if (hop->access & CS_AC_WRITE) {
+		if (write) {
 			av->access |= RZ_ANALYSIS_ACC_W;
 			if (srci > 0 && av == op->src[srci - 1]) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
@@ -255,7 +496,7 @@ static RzStructuredData *hppa_opex(csh handle, cs_insn *insn) {
 		}
 		case HPPA_OP_DISP: {
 			rz_structured_data_map_add_string(operand, "type", "disp");
-			rz_structured_data_map_add_signed(operand, "value", op->imm);
+			rz_structured_data_map_add_signed(operand, "value", hppa_disp(op));
 			break;
 		}
 		case HPPA_OP_TARGET: {
@@ -282,34 +523,6 @@ static RzStructuredData *hppa_opex(csh handle, cs_insn *insn) {
 	}
 
 	return root;
-}
-
-#define HPPA_INSN_SIZE 4
-
-/// stw rp,-0x14(sp): stores the return pointer into the frame marker
-#define HPPA_STW_RP 0x6bc23fd9
-
-/// Major opcode of BL, GATE, BLR, BV, BVE and the PA 2.0 B forms
-#define HPPA_OPCODE_BRANCH 0x3a
-
-typedef enum {
-	HPPA_BRANCH_COND, ///< taken depending on the condition
-	HPPA_BRANCH_ALWAYS,
-	HPPA_BRANCH_NEVER,
-} HPPABranchCond;
-
-/**
- * \brief Check if the mnemonic carries the completer, e.g. "n" in "cmpb,<>,n".
- */
-static bool hppa_has_completer(const cs_insn *insn, const char *completer) {
-	size_t len = strlen(completer);
-	for (const char *p = strchr(insn->mnemonic, ','); p; p = strchr(p, ',')) {
-		p++;
-		if (!strncmp(p, completer, len) && (!p[len] || p[len] == ',')) {
-			return true;
-		}
-	}
-	return false;
 }
 
 /**
@@ -442,16 +655,6 @@ static void hppa_op_set_cond_branch(RzAnalysisOp *op, const cs_insn *insn) {
 	}
 }
 
-static const char *hppa_gr_name(hppa_reg reg) {
-	static const char *const names[] = {
-		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
-		"r16", "r17", "r18", "r19", "r20", "r21", "r22", "r23",
-		"r24", "r25", "r26", "r27", "r28", "r29", "r30", "r31"
-	};
-	return reg >= HPPA_REG_GR0 && reg <= HPPA_REG_GR31 ? names[reg - HPPA_REG_GR0] : NULL;
-}
-
 /**
  * \brief Type BV, BVE, BE and BLE: returns through rp, computed jumps and
  * calls, and Linux syscalls through the gateway page at 0(sr2,r0).
@@ -470,22 +673,22 @@ static void hppa_op_set_ext_branch(RzAnalysisOp *op, const cs_insn *insn) {
 	} else if (mem->mem.base == HPPA_REG_GR0 && disp) {
 		if (!link) {
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-			op->jump = disp->imm;
+			op->jump = hppa_disp(disp);
 		} else if (mem->mem.space == HPPA_REG_SR2) {
 			op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-			op->jump = disp->imm;
+			op->jump = hppa_disp(disp);
 		}
 	} else {
 		op->type = link ? RZ_ANALYSIS_OP_TYPE_RCALL : RZ_ANALYSIS_OP_TYPE_RJMP;
-		op->reg = hppa_gr_name(mem->mem.base);
+		op->reg = hppa_reg_name(mem->mem.base);
 		if (indexed) {
-			op->ireg = hppa_gr_name(idx->reg);
+			op->ireg = hppa_reg_name(idx->reg);
 			op->scale = 8;
 		}
 		if (disp) {
-			op->disp = disp->imm;
+			op->disp = hppa_disp(disp);
 		}
 	}
 	if (link) {
@@ -616,6 +819,25 @@ static bool hppa_op_set_skip(RzAnalysisOp *op, const cs_insn *insn) {
 	return false;
 }
 
+/**
+ * \brief Describe the memory operand of a load or store: absolute addresses
+ * based on r0, and stack slots based on sp.
+ */
+static void hppa_op_set_mem(RzAnalysisOp *op, const cs_insn *insn, RzAnalysisStackOp stackop) {
+	const cs_hppa_op *mem = hppa_find_op(insn, HPPA_OP_MEM);
+	const cs_hppa_op *disp = hppa_find_op(insn, HPPA_OP_DISP);
+	if (!mem || !disp) {
+		return;
+	}
+	if (mem->mem.base == HPPA_REG_GR0) {
+		op->ptr = (ut64)hppa_disp(disp);
+		op->refptr = hppa_mem_width(insn->id);
+	} else if (mem->mem.base == HPPA_REG_GR30) {
+		op->stackop = stackop;
+		op->stackptr = hppa_modifies_after(insn, disp) ? 0 : hppa_disp(disp);
+	}
+}
+
 static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op, ut32 word) {
 	if (hppa_op_set_skip(op, ctx->insn)) {
 		return;
@@ -686,46 +908,76 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op, ut32
 		break;
 	case HPPA_INS_LDB:
 	case HPPA_INS_LDBS:
+	case HPPA_INS_LDBX:
 	case HPPA_INS_LDCD:
 	case HPPA_INS_LDCW:
 	case HPPA_INS_LDCWS:
+	case HPPA_INS_LDCWX:
 	case HPPA_INS_LDD:
 	case HPPA_INS_LDDA:
 	case HPPA_INS_LDH:
 	case HPPA_INS_LDHS:
-	case HPPA_INS_LDI:
+	case HPPA_INS_LDHX:
 	case HPPA_INS_LDW:
 	case HPPA_INS_LDWA:
 	case HPPA_INS_LDWAS:
+	case HPPA_INS_LDWAX:
 	case HPPA_INS_LDWM:
 	case HPPA_INS_LDWS:
-		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		const cs_hppa_op *op1 = hppa_op_get(ctx->insn, 1);
-		if (op1->type == HPPA_OP_REG && op1->reg == HPPA_REG_GR30 /* SP */) {
-			op->stackop = RZ_ANALYSIS_STACK_GET;
-			op->stackptr = 0;
-		}
-		if (op1->type == HPPA_OP_IMM) {
-			op->ptr = (st64)hppa_op_as_disp(ctx, 0);
-		}
-		break;
-	case HPPA_INS_LDSID:
-	case HPPA_INS_LDHX:
-	case HPPA_INS_LDBX:
-	case HPPA_INS_LDCWX:
-	case HPPA_INS_LDWAX:
 	case HPPA_INS_LDWX:
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		hppa_op_set_mem(op, ctx->insn, RZ_ANALYSIS_STACK_GET);
 		break;
-	case HPPA_INS_LDIL:
+	case HPPA_INS_FLDD:
+	case HPPA_INS_FLDDS:
+	case HPPA_INS_FLDDX:
+	case HPPA_INS_FLDW:
+	case HPPA_INS_FLDWS:
+	case HPPA_INS_FLDWX:
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		hppa_op_set_mem(op, ctx->insn, RZ_ANALYSIS_STACK_GET);
+		break;
+	case HPPA_INS_LDSID:
+	case HPPA_INS_MFCTL:
+	case HPPA_INS_MFIA:
+	case HPPA_INS_MFSP:
+	case HPPA_INS_MTCTL:
+	case HPPA_INS_MTSAR:
+	case HPPA_INS_MTSARCM:
+	case HPPA_INS_MTSP:
+	case HPPA_INS_COPY:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
+	case HPPA_INS_LDI:
+	case HPPA_INS_LDIL:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->val = hppa_op_as_imm(ctx, 0);
+		break;
+	case HPPA_INS_LDO: {
+		const cs_hppa_op *mem = hppa_find_op(ctx->insn, HPPA_OP_MEM);
+		const cs_hppa_op *disp = hppa_find_op(ctx->insn, HPPA_OP_DISP);
+		if (mem && disp && mem->mem.base == HPPA_REG_GR0) {
+			// "ldi"
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			op->val = disp->imm;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_LEA;
+		}
+		break;
+	}
 	case HPPA_INS_LCI:
-	case HPPA_INS_LDO:
 		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		break;
 	case HPPA_INS_OR:
-		op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		if (hppa_op_count(ctx->insn) == 3 && hppa_op_get(ctx->insn, 1)->reg == HPPA_REG_GR0) {
+			// "copy" and "nop"
+			op->type = hppa_op_get(ctx->insn, 2)->reg == HPPA_REG_GR0
+				? RZ_ANALYSIS_OP_TYPE_NOP
+				: RZ_ANALYSIS_OP_TYPE_MOV;
+		} else {
+			op->type = RZ_ANALYSIS_OP_TYPE_OR;
+		}
 		break;
 	case HPPA_INS_STB:
 	case HPPA_INS_STBS:
@@ -742,14 +994,123 @@ static void hppa_op_set_type(const RzAsmHPPAContext *ctx, RzAnalysisOp *op, ut32
 	case HPPA_INS_STWS:
 	case HPPA_INS_STWM:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		const cs_hppa_op *op2 = hppa_op_get(ctx->insn, 2);
-		if (op2->type == HPPA_OP_REG && op2->reg == HPPA_REG_GR30 /* SP */) {
-			op->stackop = RZ_ANALYSIS_STACK_SET;
-			op->stackptr = 0;
-		}
-		if (op2->type == HPPA_OP_IMM) {
-			op->ptr = (st64)hppa_op_as_disp(ctx, 1);
-		}
+		hppa_op_set_mem(op, ctx->insn, RZ_ANALYSIS_STACK_SET);
+		break;
+	case HPPA_INS_FSTD:
+	case HPPA_INS_FSTDS:
+	case HPPA_INS_FSTDX:
+	case HPPA_INS_FSTQS:
+	case HPPA_INS_FSTQX:
+	case HPPA_INS_FSTW:
+	case HPPA_INS_FSTWS:
+	case HPPA_INS_FSTWX:
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		hppa_op_set_mem(op, ctx->insn, RZ_ANALYSIS_STACK_SET);
+		break;
+	case HPPA_INS_SH1ADD:
+	case HPPA_INS_SH1ADDL:
+	case HPPA_INS_SH1ADDO:
+	case HPPA_INS_SH2ADD:
+	case HPPA_INS_SH2ADDL:
+	case HPPA_INS_SH2ADDO:
+	case HPPA_INS_SH3ADD:
+	case HPPA_INS_SH3ADDL:
+	case HPPA_INS_SH3ADDO:
+	case HPPA_INS_SHLADD:
+	case HPPA_INS_UADDCM:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		break;
+	case HPPA_INS_EXTRD:
+	case HPPA_INS_EXTRW:
+		op->type = hppa_has_completer(ctx->insn, "s") ? RZ_ANALYSIS_OP_TYPE_SAR : RZ_ANALYSIS_OP_TYPE_SHR;
+		break;
+	case HPPA_INS_EXTRS:
+	case HPPA_INS_VEXTRS:
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
+		break;
+	case HPPA_INS_EXTRU:
+	case HPPA_INS_SHD:
+	case HPPA_INS_SHRPD:
+	case HPPA_INS_SHRPW:
+	case HPPA_INS_VEXTRU:
+	case HPPA_INS_VSHD:
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
+		break;
+	case HPPA_INS_DEP:
+	case HPPA_INS_DEPD:
+	case HPPA_INS_DEPDI:
+	case HPPA_INS_DEPI:
+	case HPPA_INS_DEPW:
+	case HPPA_INS_DEPWI:
+	case HPPA_INS_VDEP:
+	case HPPA_INS_VDEPI:
+	case HPPA_INS_ZDEP:
+	case HPPA_INS_ZDEPI:
+	case HPPA_INS_ZVDEP:
+	case HPPA_INS_ZVDEPI:
+		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
+		break;
+	case HPPA_INS_CMPCLR:
+	case HPPA_INS_CMPICLR:
+	case HPPA_INS_COMCLR:
+	case HPPA_INS_COMICLR:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		break;
+	case HPPA_INS_XMPYU:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_DS:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		break;
+	case HPPA_INS_FADD:
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FSUB:
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FMPY:
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FDIV:
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FABS:
+		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FCPY:
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FCMP:
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_FCNV:
+	case HPPA_INS_FCNVFF:
+	case HPPA_INS_FCNVFX:
+	case HPPA_INS_FCNVFXT:
+	case HPPA_INS_FCNVXF:
+		op->type = RZ_ANALYSIS_OP_TYPE_CAST;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		break;
+	case HPPA_INS_BREAK:
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
+		break;
+	case HPPA_INS_RFI:
+	case HPPA_INS_RFIR:
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		break;
+	case HPPA_INS_SYNC:
+	case HPPA_INS_SYNCDMA:
+		op->type = RZ_ANALYSIS_OP_TYPE_SYNC;
 		break;
 	case HPPA_INS_SUB:
 	case HPPA_INS_SUBB:
