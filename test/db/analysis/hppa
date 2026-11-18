@@ -297,6 +297,39 @@ type: ret
 EOF
 RUN
 
+NAME=hppa: function preludes
+FILE=malloc://0x60
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 6bc23fd937de00804bc23f59e840c00037de3f8108000240080002400800024008000240341c0001e840c002
+wx 6bc23fd9e840c00208000240 @ 0x10040
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010000    1 20           fcn.00010000
+0x00010040    1 8            fcn.00010040
+EOF
+RUN
+
+NAME=hppa: function preludes with instructions scheduled before
+FILE=malloc://0x60
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 2b6010006bc23fd9e840c0000800024022690000367300006bc23fd9e840c000341f00006bc23fd9081a0243e840c00008000240
+wx 081a02436bc23fd9e840c002080002406bc23fd9e840c00008000240 @ 0x10034
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010000    1 16           fcn.00010000
+0x00010010    1 20           fcn.00010010
+0x00010024    1 16           fcn.00010024
+0x00010034    1 12           fcn.00010034
+0x00010044    1 12           fcn.00010044
+EOF
+RUN
+
 NAME=hppa: switch tables
 FILE=malloc://0x100
 ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
