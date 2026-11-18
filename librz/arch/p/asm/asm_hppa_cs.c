@@ -21,7 +21,7 @@ static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	ctx->insn = NULL;
 	ctx->count = cs_disasm(ctx->h, buf, len, a->pc, 1, &ctx->insn);
 	if (ctx->count <= 0) {
-		RZ_LOG_ERROR("HPPA: disasm error @ 0x%08" PFMT64x ", len = %d\n", a->pc, len);
+		// data words between functions are no error
 		rz_asm_op_set_asm(op, "invalid");
 		goto beach;
 	}
@@ -58,9 +58,11 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
 
-	TOKEN(REGISTER, "([cfstr]{1,2}[[:digit:]]{1,2})|(sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr1|pidr2|pidr3|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)");
+	// whole words only, as some mnemonics contain register names like "pc" in "cmpclr"
+	TOKEN(REGISTER, "\\b([cfst]?r[[:digit:]]{1,2}[LR]?|fpe[[:digit:]]|fpsr|sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr[1-4]|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)\\b");
 
-	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\,]*([[:alpha:]]+|(<|>|=|\\*| )+))");
+	// the name and its completers, which include conditions like "!?<=" or "*>>="
+	TOKEN(MNEMONIC, "^[[:alpha:]][[:alnum:]]*(,[^[:blank:],]+)*");
 
 	TOKEN(SEPARATOR, "([[:blank:]]+)|([,;\\(\\)\\{\\}:])");
 

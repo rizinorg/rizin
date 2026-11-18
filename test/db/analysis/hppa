@@ -463,6 +463,35 @@ int main(int argc @ r26, char **argv @ r25, char **envp);
 EOF
 RUN
 
+NAME=hppa: undecodable words
+FILE=malloc://0x20
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx ffffffff
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=hppa: tokens of completers and half registers
+FILE=malloc://0x20
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx 08840886d0a52b6630840c1a3ad64796
+pi 4
+EOF
+EXPECT=<<EOF
+cmpclr r4, r4, r6
+shrpw,= r5, r5, 4, r6
+fcmp,dbl,!= fr4, fr4
+xmpyu fr22R, fr22, fr22
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=hppa: switch tables
 FILE=malloc://0x100
 ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
