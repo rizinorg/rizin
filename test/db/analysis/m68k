@@ -168,7 +168,7 @@ seq
 branch
 seq
 seq
-[{"opcode":"fmove.l 0x4(pc, a0.w), invalid"}]
+[{"opcode":"invalid"}]
 EOF
 RUN
 
