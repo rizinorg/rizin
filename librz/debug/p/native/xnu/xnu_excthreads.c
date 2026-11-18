@@ -225,24 +225,32 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 
 RZ_IPI bool xnu_restore_exception_ports(RzXnuDebug *ctx, int pid) {
 	kern_return_t kr;
-	int i;
+	bool ret = true;
 	task_t task = pid_to_task(ctx, pid);
-	if (!task)
-		return false;
-	for (i = 0; i < ctx->ex.count; i++) {
-		kr = task_set_exception_ports(task, ctx->ex.masks[i], ctx->ex.ports[i],
-			ctx->ex.behaviors[i], ctx->ex.flavors[i]);
+	for (mach_msg_type_number_t i = 0; i < ctx->ex.count; i++) {
+		kr = task ? task_set_exception_ports(task, ctx->ex.masks[i], ctx->ex.ports[i],
+				    ctx->ex.behaviors[i], ctx->ex.flavors[i])
+			  : KERN_INVALID_ARGUMENT;
 		if (kr != KERN_SUCCESS) {
 			eprintf("fail to restore exception ports\n");
-			return false;
+			ret = false;
+		}
+		if (MACH_PORT_VALID(ctx->ex.ports[i])) {
+			mach_port_deallocate(mach_task_self(), ctx->ex.ports[i]);
 		}
 	}
-	kr = mach_port_deallocate(mach_task_self(), ctx->ex.exception_port);
-	if (kr != KERN_SUCCESS) {
-		eprintf("failed to deallocate exception port\n");
-		return false;
+	if (MACH_PORT_VALID(ctx->ex.exception_port)) {
+		// We own both rights; dropping only the send right leaves the receive right alive.
+		mach_port_deallocate(mach_task_self(), ctx->ex.exception_port);
+		kr = mach_port_mod_refs(mach_task_self(), ctx->ex.exception_port,
+			MACH_PORT_RIGHT_RECEIVE, -1);
+		if (kr != KERN_SUCCESS) {
+			eprintf("failed to destroy exception port\n");
+			ret = false;
+		}
 	}
-	return true;
+	memset(&ctx->ex, 0, sizeof(ctx->ex));
+	return ret;
 }
 
 // TODO review more closely we are failing here
@@ -319,6 +327,23 @@ static bool handle_dead_notify(RzDebug *dbg, exc_msg *msg) {
 	return false;
 }
 
+/**
+ * \brief Keep one owned task suspension until continue, step or detach releases it.
+ */
+static bool suspend_exception_task(RzDebug *dbg, task_t task) {
+	RzXnuDebug *ctx = dbg->plugin_data;
+	if (ctx->task_suspended) {
+		return true;
+	}
+	kern_return_t kr = task_suspend(task);
+	if (kr != KERN_SUCCESS) {
+		LOG_MACH_ERROR("task_suspend", kr);
+		return false;
+	}
+	ctx->task_suspended = true;
+	return true;
+}
+
 static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, bool quiet_signal) {
 	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
@@ -329,18 +354,16 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, b
 	case EXC_BAD_ACCESS:
 		ret = RZ_DEBUG_REASON_SEGFAULT;
 		*ret_code = KERN_FAILURE;
-		kr = task_suspend(msg->task.name);
-		if (kr != KERN_SUCCESS) {
-			eprintf("failed to suspend task bad access\n");
+		if (!suspend_exception_task(dbg, msg->task.name)) {
+			ret = RZ_DEBUG_REASON_ERROR;
 		}
 		eprintf("EXC_BAD_ACCESS\n");
 		break;
 	case EXC_BAD_INSTRUCTION:
 		ret = RZ_DEBUG_REASON_ILLEGAL;
 		*ret_code = KERN_FAILURE;
-		kr = task_suspend(msg->task.name);
-		if (kr != KERN_SUCCESS) {
-			eprintf("failed to suspend task bad instruction\n");
+		if (!suspend_exception_task(dbg, msg->task.name)) {
+			ret = RZ_DEBUG_REASON_ERROR;
 		}
 		eprintf("EXC_BAD_INSTRUCTION\n");
 		break;
@@ -373,17 +396,14 @@ static int handle_exception_message(RzDebug *dbg, exc_msg *msg, int *ret_code, b
 			eprintf("code = 0x%" PFMT64u ", subcode = 0x%" PFMT64u "\n", code, subcode);
 		}
 		// We want to stop and examine when getting signals
-		kr = task_suspend(msg->task.name);
-		if (kr != KERN_SUCCESS) {
-			RZ_LOG_ERROR("Failed to suspend after EXC_SOFTWARE\n");
+		if (!suspend_exception_task(dbg, msg->task.name)) {
+			ret = RZ_DEBUG_REASON_ERROR;
 		}
 		break;
 	case EXC_BREAKPOINT:
-		kr = task_suspend(msg->task.name);
-		if (kr != KERN_SUCCESS) {
-			eprintf("failed to suspend task breakpoint\n");
-		}
-		ret = RZ_DEBUG_REASON_BREAKPOINT;
+		ret = suspend_exception_task(dbg, msg->task.name)
+			? RZ_DEBUG_REASON_BREAKPOINT
+			: RZ_DEBUG_REASON_ERROR;
 		break;
 	default:
 		eprintf("UNKNOWN\n");
@@ -420,12 +440,21 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 	}
 	msg.hdr.msgh_local_port = ctx->ex.exception_port;
 	msg.hdr.msgh_size = sizeof(exc_msg);
+	ut64 deadline = timeout_ms ? rz_time_now_mono() + (ut64)timeout_ms * 1000 : 0;
 	for (;;) {
+		mach_msg_timeout_t remaining = MACH_MSG_TIMEOUT_NONE;
+		if (timeout_ms) {
+			ut64 now = rz_time_now_mono();
+			if (now >= deadline) {
+				break;
+			}
+			remaining = (deadline - now + 999) / 1000;
+		}
 		kr = mach_msg(
 			&msg.hdr,
 			MACH_RCV_MSG | MACH_RCV_INTERRUPT | (timeout_ms ? MACH_RCV_TIMEOUT : 0), 0,
 			sizeof(exc_msg), ctx->ex.exception_port,
-			timeout_ms ? timeout_ms : MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
+			remaining, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED) {
 			reason = RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
@@ -466,6 +495,10 @@ RZ_IPI RzDebugReasonType xnu_wait_for_exception(RzDebug *dbg, int pid, ut32 time
 			reply.Head.msgh_size, 0,
 			MACH_PORT_NULL, 0,
 			MACH_PORT_NULL);
+		if (kr != MACH_MSG_SUCCESS) {
+			LOG_MACH_ERROR("reply to exception", kr);
+			reason = RZ_DEBUG_REASON_ERROR;
+		}
 		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 			kr = mach_port_deallocate(mach_task_self(), reply.Head.msgh_remote_port);
 			if (kr != KERN_SUCCESS)
@@ -506,21 +539,36 @@ RZ_IPI bool xnu_create_exception_thread(RzDebug *dbg) {
 	// Add the ability to send messages on the new exception port
 	kr = mach_port_insert_right(task_self, exception_port, exception_port,
 		MACH_MSG_TYPE_MAKE_SEND);
-	RETURN_ON_MACH_ERROR("error to allocate insert right\n", false);
+	if (kr != KERN_SUCCESS) {
+		LOG_MACH_ERROR("mach_port_insert_right", kr);
+		goto fail_receive;
+	}
 	// Atomically swap out (and save) the child process's exception ports
 	// for the one we just created. We'll want to receive all exceptions.
 	ctx->ex.count = (sizeof(ctx->ex.ports) / sizeof(*ctx->ex.ports));
 	kr = task_swap_exception_ports(task, EXC_MASK_ALL, exception_port,
 		EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE,
 		ctx->ex.masks, &ctx->ex.count, ctx->ex.ports, ctx->ex.behaviors, ctx->ex.flavors);
-	RETURN_ON_MACH_ERROR("failed to swap exception ports\n", false);
+	if (kr != KERN_SUCCESS) {
+		LOG_MACH_ERROR("task_swap_exception_ports", kr);
+		ctx->ex.count = 0;
+		goto fail_send;
+	}
 	// get notification when process die
 	kr = mach_port_request_notification(task_self, task, MACH_NOTIFY_DEAD_NAME,
 		0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {
 		eprintf("Termination notification request failed\n");
+	} else if (MACH_PORT_VALID(req_port)) {
+		mach_port_deallocate(task_self, req_port);
 	}
 	ctx->ex.exception_port = exception_port;
 	return true;
+
+fail_send:
+	mach_port_deallocate(task_self, exception_port);
+fail_receive:
+	mach_port_mod_refs(task_self, exception_port, MACH_PORT_RIGHT_RECEIVE, -1);
+	return false;
 #endif
 }

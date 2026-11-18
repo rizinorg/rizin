@@ -452,7 +452,7 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 	// rz_str_trim (path);
 	file = rz_core_file_open(core, path, perm, laddr);
 
-	if (isdebug) {
+	if (isdebug && file) {
 		int newtid = newpid;
 		// XXX - select the right backend
 		if (core->file) {
@@ -471,7 +471,13 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		core->dbg->recoil_mode = RZ_DBG_RECOIL_NONE;
 		memset(&core->dbg->reason, 0, sizeof(core->dbg->reason));
 		// Reopen and attach
-		rz_core_setup_debugger(core, "native", true);
+		if (!rz_core_setup_debugger(core, "native", true)) {
+			rz_core_file_close(file);
+			rz_core_file_set_by_file(core, ofile);
+			free(obinfilepath);
+			free(path);
+			return false;
+		}
 		rz_debug_select(core->dbg, newpid, newtid);
 	}
 
