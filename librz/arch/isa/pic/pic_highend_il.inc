@@ -255,7 +255,7 @@ static RzILOpEffect *set_dest(PicHighendILContext *ctx, RzILOpPure *x) {
  * with either the high or low order bit of the source register.
  */
 
-static RzILOpEffect *status_add(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_add(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res) {
 	return SEQ5(
 		SETG("c", CHECK_CARRY(a, b, res)),
 		SETG("dc", CHECK_DIGIT_CARRY(DUP(a), DUP(b), DUP(res))),
@@ -264,7 +264,7 @@ static RzILOpEffect *status_add(PicHighendILContext *ctx, RzILOpPure *a, RzILOpP
 		SETG("n", MSB(DUP(res))));
 }
 
-static RzILOpEffect *status_sub(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res, RzILOpPure *curry) {
+static RzILOpEffect *status_sub(PicHighendILContext *ctx, RzILOpPure *a, RzILOpPure *b, RzILOpPure *res) {
 	return SEQ5(
 		SETG("c", CHECK_BORROW(a, b, res)),
 		SETG("dc", CHECK_DIGIT_BORROW(DUP(a), DUP(b), DUP(res))),
@@ -314,7 +314,7 @@ static RzILOpEffect *op_add(PicHighendILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	return SEQ3(
 		SETL("__res", ADD(a, curry ? ADD(b, curry) : b)),
-		status_add(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+		status_add(ctx, DUP(a), DUP(b), VARL("__res")),
 		SET_DST_RES);
 }
 
@@ -322,7 +322,7 @@ static RzILOpEffect *op_sub(PicHighendILContext *ctx, const char *dst,
 	RzILOpPure *a, RzILOpPure *b, RzILOpPure *curry) {
 	return SEQ3(
 		SETL("__res", SUB(a, curry ? ADD(b, curry) : b)),
-		status_sub(ctx, DUP(a), DUP(b), VARL("__res"), curry ? DUP(curry) : NULL),
+		status_sub(ctx, DUP(a), DUP(b), VARL("__res")),
 		SET_DST_RES);
 }
 
@@ -450,7 +450,7 @@ static RzILOpEffect *pic_highend_il_op(PicHighendILContext *ctx) {
 	case PIC_HIGHEND_OPCODE_DECF:
 		return SEQ3(
 			SETL("__res", SUB(VRF, U8(1))),
-			status_sub(ctx, VRF, U8(1), VARL("__res"), NULL),
+			status_sub(ctx, VRF, U8(1), VARL("__res")),
 			set_dest(ctx, VARL("__res")));
 	case PIC_HIGHEND_OPCODE_DECFSZ:
 		return SEQ3(
@@ -466,7 +466,7 @@ static RzILOpEffect *pic_highend_il_op(PicHighendILContext *ctx) {
 	case PIC_HIGHEND_OPCODE_INCF:
 		return SEQ3(
 			SETL("__res", ADD(VRF, U8(1))),
-			status_add(ctx, VRF, U8(1), VARL("__res"), NULL),
+			status_add(ctx, VRF, U8(1), VARL("__res")),
 			set_dest(ctx, VARL("__res")));
 	case PIC_HIGHEND_OPCODE_INCFSZ:
 		return SEQ3(
