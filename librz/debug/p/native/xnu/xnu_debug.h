@@ -287,6 +287,7 @@ typedef struct rz_xnu_debug_t {
 	int old_pid; ///< Previously observed PID, related to `task_dbg`. Cache for `pid_to_task`.
 	int last_attached_pid; ///< Last PID the plugin attached to.
 	xnu_exception_info ex; ///< Exception handling state (ports, masks, flavors).
+	RzList /*<xnu_thread_t *>*/ *threads;
 } RzXnuDebug;
 
 RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user);
@@ -308,7 +309,7 @@ RzDebugMap *xnu_map_alloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc(RzDebug *dbg, ut64 addr, int size);
 int xnu_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
 int xnu_wait(RzDebug *dbg, int pid);
-RzDebugPid *xnu_get_pid(int pid);
+RzDebugProcess *xnu_get_pid(int pid);
 RzList *xnu_dbg_maps(RzDebug *dbg, int only_modules);
 RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list);
 RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg);

@@ -100,35 +100,39 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+static RzList /*<RzDebugProcess *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_process_free);
 	if (!list) {
 		return NULL;
 	}
 	if (pid) {
-		RzDebugPid *p = xnu_get_pid(pid);
-		if (p) {
-			rz_list_append(list, p);
+		RzDebugProcess *p = xnu_get_pid(pid);
+		if (p && !rz_list_append(list, p)) {
+			rz_debug_process_free(p);
 		}
 	} else {
 		int i;
 		for (i = 1; i < MAXPID; i++) {
-			RzDebugPid *p = xnu_get_pid(i);
-			if (p) {
-				rz_list_append(list, p);
+			RzDebugProcess *p = xnu_get_pid(i);
+			if (p && !rz_list_append(list, p)) {
+				rz_debug_process_free(p);
 			}
 		}
 	}
 	return list;
 }
 
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_thread_free);
 	if (!list) {
 		RZ_LOG_ERROR("Cannot create list\n");
 		return NULL;
 	}
-	return xnu_thread_list(dbg, pid, list);
+	if (!xnu_thread_list(dbg, pid, list)) {
+		rz_list_free(list);
+		return NULL;
+	}
+	return list;
 }
 
 RZ_API ut64 rz_debug_get_tls(RZ_NONNULL RzDebug *dbg, int tid) {
@@ -215,21 +219,19 @@ static RzList /*<RzDebugMap *>*/ *rz_debug_native_modules_get(RzDebug *dbg) {
 }
 
 static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	bool ret = false;
 	if (pid == 0) {
 		pid = dbg->pid;
 	}
-	if (sig == SIGKILL && dbg->threads) {
-		rz_list_free(dbg->threads);
-		dbg->threads = NULL;
+	if (rz_sys_kill(pid, sig) == -1) {
+		if (errno == EPERM) {
+			RZ_LOG_ERROR("kill: no permission to signal pid %d\n", pid);
+		}
+		return false;
 	}
-	if ((rz_sys_kill(pid, sig) != -1)) {
-		ret = true;
+	if (sig == SIGKILL) {
+		rz_debug_process_remove(dbg, pid);
 	}
-	if (errno == 1) {
-		ret = -true; // EPERM
-	}
-	return ret;
+	return true;
 }
 
 static void sync_drx_regs(RzDebug *dbg, drxt *regs, size_t num_regs) {

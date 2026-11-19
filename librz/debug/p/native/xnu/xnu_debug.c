@@ -43,7 +43,11 @@ RZ_IPI bool rz_xnu_debug_init(RzDebug *dbg, void **user) {
 }
 
 RZ_IPI void rz_xnu_debug_fini(RzDebug *dbg, void *user) {
-	free(user);
+	RzXnuDebug *ctx = user;
+	if (ctx) {
+		rz_list_free(ctx->threads);
+	}
+	free(ctx);
 }
 
 typedef struct {
@@ -185,6 +189,12 @@ int xnu_attach(RzDebug *dbg, int pid) {
 		xnu_stop(dbg, pid);
 	}
 
+	if (!rz_debug_process_find(dbg, pid)) {
+		RzDebugProcess *proc = xnu_get_pid(pid);
+		if (proc && !rz_list_append(dbg->processes, proc)) {
+			rz_debug_process_free(proc);
+		}
+	}
 	ctx->last_attached_pid = pid;
 	return pid;
 }
@@ -208,8 +218,9 @@ int xnu_detach(RzDebug *dbg, int pid) {
 	}
 	// we mark the task as not longer available since we deallocated the ref
 	ctx->task_dbg = 0;
-	rz_list_free(dbg->threads);
-	dbg->threads = NULL;
+	rz_list_free(ctx->threads);
+	ctx->threads = NULL;
+	rz_debug_process_remove(dbg, pid);
 	return true;
 }
 
@@ -458,33 +469,58 @@ RzDebugInfo *xnu_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
-	rz_return_val_if_fail(dbg && dbg->plugin_data, NULL);
-	RzXnuDebug *ctx = dbg->plugin_data;
+static ut64 xnu_thread_pc(RzDebug *dbg, const RZ_REG_T *state) {
 #if __arm__ || __arm64__ || __aarch64__
-#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.arm64.__pc : state.arm32.__pc
+	return dbg->bits == RZ_SYS_BITS_64 ? state->arm64.__pc : state->arm32.__pc;
 #elif __POWERPC__
 #if __DARWIN_UNIX03
-#define CPU_PC state.__srr0
+	return state->__srr0;
 #else
-#define CPU_PC state.srr0
+	return state->srr0;
 #endif
 #elif __x86_64__ || __i386__
-#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? state.uts.ts64.__rip : state.uts.ts32.__eip
+	return dbg->bits == RZ_SYS_BITS_64 ? state->uts.ts64.__rip : state->uts.ts32.__eip;
+#else
+#error "xnu: unsupported architecture"
 #endif
+}
+
+static RzDebugThreadState xnu_thread_state(const thread_basic_info_data_t *info) {
+	switch (info->run_state) {
+	case TH_STATE_RUNNING:
+		return RZ_DBG_THREAD_RUN;
+	case TH_STATE_STOPPED:
+		return RZ_DBG_THREAD_STOP;
+	case TH_STATE_WAITING:
+		return RZ_DBG_THREAD_SLEEP;
+	case TH_STATE_UNINTERRUPTIBLE:
+		return RZ_DBG_THREAD_WAIT;
+	case TH_STATE_HALTED:
+		return RZ_DBG_THREAD_DEAD;
+	default:
+		return RZ_DBG_THREAD_UNKNOWN;
+	}
+}
+
+RzList *xnu_thread_list(RzDebug *dbg, int pid, RzList *list) {
+	rz_return_val_if_fail(dbg && dbg->plugin_data && list, NULL);
+	RzXnuDebug *ctx = dbg->plugin_data;
 	RzListIter *iter;
 	xnu_thread_t *thread;
-	RZ_REG_T state;
+
 	rz_xnu_update_thread_list(dbg);
-	list->free = (RzListFree)&rz_debug_pid_free;
-	rz_list_foreach (dbg->threads, iter, thread) {
+	list->free = (RzListFree)rz_debug_thread_free;
+	rz_list_foreach (ctx->threads, iter, thread) {
 		if (!rz_xnu_thread_get_gpr(ctx, thread)) {
 			eprintf("Failed to get gpr registers xnu_thread_list\n");
 			continue;
 		}
 		thread->state_size = sizeof(thread->gpr);
-		memcpy(&state, &thread->gpr, sizeof(RZ_REG_T));
-		rz_list_append(list, rz_debug_pid_new(thread->name, thread->port, getuid(), 's', CPU_PC));
+		RzDebugThread *th = rz_debug_thread_new(thread->port, pid,
+			xnu_thread_state(&thread->basic_info), xnu_thread_pc(dbg, &thread->gpr));
+		if (th && !rz_list_append(list, th)) {
+			rz_debug_thread_free(th);
+		}
 	}
 	return list;
 }
@@ -875,8 +911,9 @@ bool xnu_generate_corefile(RzDebug *dbg, RzBuffer *dest) {
 
 	get_mach_header_sizes(&mach_header_sz, &segment_command_sz);
 	(void)task_suspend(task);
-	threads_list = xnu_thread_list(dbg, dbg->pid, rz_list_new());
-	xnu_dealloc_threads(ctx, threads_list);
+	rz_xnu_update_thread_list(dbg);
+	threads_list = ctx->threads;
+	threads_list;
 
 	segment_count = xnu_get_vmmap_entries_for_pid(ctx, dbg->pid);
 
@@ -930,16 +967,34 @@ cleanup:
 	return !error;
 }
 
-RzDebugPid *xnu_get_pid(int pid) {
+static RzDebugProcessState xnu_process_state(char stat) {
+	switch (stat) {
+	case SIDL:
+	case SRUN:
+		return RZ_DBG_PROC_RUN;
+	case SSLEEP:
+		return RZ_DBG_PROC_SLEEP;
+	case SSTOP:
+		return RZ_DBG_PROC_STOP;
+	case SZOMB:
+		return RZ_DBG_PROC_ZOMBIE;
+	default:
+		return RZ_DBG_PROC_UNKNOWN;
+	}
+}
+
+RzDebugProcess *xnu_get_pid(int pid) {
 	char *iter_args, *start_args, *procargs = NULL;
 	size_t size, argmax = xnu_get_argmax_cached() + 1;
-	RzDebugPid *rpid = NULL;
-	int mib[3], uid;
+	RzDebugProcess *rpid = NULL;
+	struct kinfo_proc kp;
+	int mib[3];
 	const char *end_args;
 	ut32 nargs;
 
-	uid = uidFromPid(pid);
-
+	if (xnu_get_kinfo_proc(pid, &kp)) {
+		return NULL;
+	}
 	// Allocate space for the arguments.
 	procargs = RZ_NEWS0(char, argmax);
 	if (!procargs) {
@@ -1002,7 +1057,10 @@ RzDebugPid *xnu_get_pid(int pid) {
 		goto err;
 	}
 
-	rpid = rz_debug_pid_new(start_args, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	rpid = rz_debug_process_new(start_args, pid, kp.kp_eproc.e_ucred.cr_uid, xnu_process_state(kp.kp_proc.p_stat));
+	if (rpid) {
+		rpid->ppid = kp.kp_eproc.e_ppid;
+	}
 err:
 	RZ_FREE(procargs);
 	return rpid;

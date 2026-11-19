@@ -295,9 +295,9 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 	task_t task;
 	int i;
 
-	if (!dbg->threads) {
-		dbg->threads = rz_list_newf((RzListFree)&xnu_thread_free);
-		if (!dbg->threads) {
+	if (!ctx->threads) {
+		ctx->threads = rz_list_newf((RzListFree)&xnu_thread_free);
+		if (!ctx->threads) {
 			return false;
 		}
 	}
@@ -314,7 +314,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 		eprintf("Failed to get list of task's threads\n");
 		return false;
 	}
-	if (rz_list_empty(dbg->threads)) {
+	if (rz_list_empty(ctx->threads)) {
 		// it's the first time write all threads inside the list
 		for (i = 0; i < thread_count; i++) {
 			thread = xnu_get_thread_with_info(dbg, thread_list[i]);
@@ -322,7 +322,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 				eprintf("Failed to fill_thread\n");
 				continue;
 			}
-			if (!rz_list_append(dbg->threads, thread)) {
+			if (!rz_list_append(ctx->threads, thread)) {
 				eprintf("Failed to add thread to list\n");
 				xnu_thread_free(thread);
 			}
@@ -331,7 +331,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 		RzListIter *iter, *iter2;
 		// first pass to get rid of those threads that are not longer
 		// alive
-		rz_list_foreach_safe (dbg->threads, iter, iter2, thread) {
+		rz_list_foreach_safe (ctx->threads, iter, iter2, thread) {
 			bool flag = true; // this flag will denote when delete
 					  // a thread
 			for (i = 0; i < thread_count; i++) {
@@ -343,7 +343,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 			if (flag) {
 				// it is not longer alive so remove from the
 				// list
-				rz_list_delete(dbg->threads, iter);
+				rz_list_delete(ctx->threads, iter);
 			} else {
 				// otherwise update the info
 				xnu_update_thread_info(dbg, thread);
@@ -352,7 +352,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 		// ok now we have to insert those threads that we don't have
 		for (i = 0; i < thread_count; i++) {
 			xnu_thread_t *t;
-			iter = rz_list_find(dbg->threads, &thread_list[i],
+			iter = rz_list_find(ctx->threads, &thread_list[i],
 				(RzListComparator)&thread_find, NULL);
 			// it means is already in our list
 			if (iter) {
@@ -366,7 +366,7 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 			}
 			// otherwise insert it
 			t = xnu_get_thread_with_info(dbg, thread_list[i]);
-			rz_list_append(dbg->threads, t);
+			rz_list_append(ctx->threads, t);
 		}
 	}
 	// once that is over we need to free the buffer
@@ -376,19 +376,21 @@ RZ_IPI int rz_xnu_update_thread_list(RzDebug *dbg) {
 }
 
 RZ_IPI xnu_thread_t *rz_xnu_get_thread(RzDebug *dbg, int tid) {
-	if (!dbg || tid < 0) {
+	if (!dbg || !dbg->plugin_data || tid < 0) {
 		return NULL;
 	}
+	RzXnuDebug *ctx = dbg->plugin_data;
+
 	if (!rz_xnu_update_thread_list(dbg)) {
 		eprintf("Failed to update thread_list xnu_udpate_thread_list\n");
 		return NULL;
 	}
 	// TODO get the current thread
-	RzListIter *it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+	RzListIter *it = rz_list_find(ctx->threads, (const void *)(size_t)&tid,
 		(RzListComparator)&thread_find, NULL);
 	if (!it) {
 		tid = rz_xnu_get_cur_thread(dbg);
-		it = rz_list_find(dbg->threads, (const void *)(size_t)&tid,
+		it = rz_list_find(ctx->threads, (const void *)(size_t)&tid,
 			(RzListComparator)&thread_find, NULL);
 		if (!it) {
 			eprintf("Thread not found get_xnu_thread\n");
