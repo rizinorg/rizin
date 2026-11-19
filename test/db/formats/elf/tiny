@@ -154,8 +154,8 @@ pdf
 EOF
 EXPECT=<<EOF
 WARNING: entry0 (0x00010020) is not mapped or not executable.
-[2K# Trying again
-[2K/ entry0();
+# Trying again
+/ entry0();
 |           0x00010020      mov   bl, 0x2a                             ; '*' ; 42
 |           0x00010022      xor   eax, eax
 |           0x00010024      inc   eax
