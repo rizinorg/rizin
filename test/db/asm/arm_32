@@ -10,7 +10,7 @@ a "andne ip, ip, r7" 07c00c10
 aB "asreq r0, ip, 31" cc0fa001
 aB "asrne r0, r4, 31" c40fa011
 a "beq 8" 0000000a
-aB "biceq r3, r3, 7" 0730c303
+a "biceq r3, r3, 7" 0730c303
 a "blne 0x1900" 3e06001b
 a "blx 0x1" fefffffa
 a "blx 0x2" fefffffb
@@ -102,6 +102,23 @@ a "mrc p4, 4, r5, c2, c2" 125492ee
 a "mrc p3, 0, r5, c3, c5, 6" d55313ee
 a "bic r1, r2, r3" 0310c2e1
 a "bic r3, r2" 0230c3e1
+a "adcs r0, r1, r2" 0200b1e0
+a "rsbs r0, r1, r2" 020071e0
+a "rscs r0, r1, r2" 0200f1e0
+a "bics r0, r1, r2" 0200d1e1
+a "biceq r4, r5, r6" 0640c501
+a "bicne r4, r5, 4" 0440c513
+a "mvn r0, r1" 0100e0e1
+a "mvns r0, r1" 0100f0e1
+a "cmp r0, 0x3fc" ff0f50e3
+a "cmn r0, 1" 010070e3
+a "cmn r0, 0x3fc" ff0f70e3
+a "tst r0, 1" 010010e3
+a "tst r0, 0x3fc" ff0f10e3
+a "teq r0, 1" 010030e3
+a "teq r0, 0x3fc" ff0f30e3
+a "movhs r0, r1" 0100a021
+a "movlo r0, r1" 0100a031
 ad "strb r2, [r3, r4]" 0420c3e7 0x0 (store 0 (+ (var r3) (var r4)) (cast 8 false (var r2)))
 ad "strb r2, [r3, 6]" 0620c3e5 0x0 (store 0 (+ (var r3) (bv 32 0x6)) (cast 8 false (var r2)))
 a "strbt r3, [r7]" 0030e7e4
@@ -252,7 +269,7 @@ a "andne r3, r3, r2" 02300310
 a "andne ip, ip, r7" 07c00c10
 aB "asreq r0, ip, 0x1f" cc0fa001
 aB "asrne r0, r4, 0x1f" c40fa011
-aB "biceq r3, r3, 7" 0730c303
+a "biceq r3, r3, 7" 0730c303
 a "blne 0x1900" 3E06001B
 a "bl 0x1900" 3e0600eb
 a "b 0x1900" 3e0600ea
