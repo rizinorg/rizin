@@ -220,10 +220,12 @@ static RzGraphNode *handle_overlapping_icfg_blocks(
 	RZ_NONNULL const RzVector /*<ut16>*/ *insn_offsets,
 	struct covering_node overlap,
 	RzVector *fixed_insn_offsets,
-	ut64 proc_membership) {
+	ut64 proc_membership,
+	RZ_OUT RzICFGNode **use_memberships) {
 	if (overlap.itv_node->start == addr && overlap.itv_node->end == addr + *size) {
 		// Case 0:
 		// The node already exists in the graph, covering the same dimensions.
+		*use_memberships = NULL;
 		return overlap.itv_node->data;
 	}
 
@@ -250,12 +252,13 @@ static RzGraphNode *handle_overlapping_icfg_blocks(
 		} while (insn_off > insn_off_to_remove);
 		// Debug check
 		rz_warn_if_fail(insn_off == insn_off_to_remove);
-		// TODO merge the memberships of the existing block, into the new block.
-		// XXX This also effects all successors of the new block!
+		*use_memberships = ov_icfg_node;
 	} else {
 		// Case II:
 		// Reduce size of new block.
-		icfg_proc_memberships_add(ov_icfg_node, proc_membership);
+		if (icfg_proc_memberships_add(ov_icfg_node, proc_membership)) {
+			rz_set_u_add(icfg->node_conflicts, (utptr)ov_icfg_node);
+		}
 		*size = overlap.itv_node->start - addr;
 		split_block_edge.from = addr;
 		split_block_edge.to = addr + *size;
@@ -269,6 +272,7 @@ static RzGraphNode *handle_overlapping_icfg_blocks(
 		}
 		// Debug check
 		rz_warn_if_fail(rz_vector_len(insn_offsets) > rz_vector_len(fixed_insn_offsets));
+		*use_memberships = NULL;
 	}
 	rz_icfg_prepare_edge(icfg, split_block_edge.from, split_block_edge.to, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
 	return NULL;
@@ -278,6 +282,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	rz_return_val_if_fail(icfg && insn_offsets, false);
 
 	RzICFGNode *icfg_node = NULL;
+	RzICFGNode *overlapping_icfg_node = NULL;
 	RzGraphNode *graph_node = NULL;
 
 	RzVector fixed_insn_offsets = { 0 };
@@ -292,7 +297,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 		// Node is totally new.
 		break;
 	case 1:
-		graph_node = handle_overlapping_icfg_blocks(icfg, addr, &size, insn_offsets, overlap, &fixed_insn_offsets, proc_membership);
+		graph_node = handle_overlapping_icfg_blocks(icfg, addr, &size, insn_offsets, overlap, &fixed_insn_offsets, proc_membership, &overlapping_icfg_node);
 		if (graph_node) {
 			icfg_node = rz_graph_node_get_data_mut(graph_node);
 		}
@@ -303,7 +308,6 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	}
 
 	if (!graph_node) {
-		// No intersection found.
 		// Create a new graph node.
 		icfg_node = icfg_node_new(addr, size, rz_vector_len(&fixed_insn_offsets) ? &fixed_insn_offsets : insn_offsets);
 		if (!icfg_node) {
@@ -315,7 +319,13 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 		rz_interval_tree_insert(&icfg->itv_tree, addr, addr + size, graph_node);
 	}
 
-	if (icfg_proc_memberships_add(icfg_node, proc_membership) && icfg_node->memberships_n > 1) {
+	if (!icfg_proc_memberships_add(icfg_node, proc_membership)) {
+		rz_warn_if_reached();
+	}
+	if (overlapping_icfg_node) {
+		icfg_proc_memberships_update(icfg_node, overlapping_icfg_node);
+	}
+	if (icfg_node->memberships_n > 1) {
 		rz_set_u_add(icfg->node_conflicts, (utptr)icfg_node);
 	}
 
