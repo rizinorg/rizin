@@ -10,6 +10,7 @@
 
 const DWORD wait_time = 1000;
 static RzList *lib_list = NULL;
+static RzList /*<THREAD_ITEM *>*/ *thread_list = NULL;
 
 #define SystemHandleInformation 16
 
@@ -97,17 +98,17 @@ static int w32_findthread_cmp(int *tid, PTHREAD_ITEM th, void *user) {
 }
 
 static inline PTHREAD_ITEM find_thread(RzDebug *dbg, int tid) {
-	if (!dbg->threads) {
+	if (!thread_list) {
 		return NULL;
 	}
-	RzListIter *it = rz_list_find(dbg->threads, &tid, (RzListComparator)w32_findthread_cmp, NULL);
+	RzListIter *it = rz_list_find(thread_list, &tid, (RzListComparator)w32_findthread_cmp, NULL);
 	return it ? rz_list_val(it) : NULL;
 }
 
 static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThread, LPVOID lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
 	rz_return_val_if_fail(dbg, NULL);
-	if (!dbg->threads) {
-		dbg->threads = rz_list_newf(free);
+	if (!thread_list) {
+		thread_list = rz_list_newf(free);
 	}
 	if (!lpStartAddress) {
 		w32_NtQueryInformationThread(hThread, 9, &lpStartAddress, sizeof(LPVOID), NULL);
@@ -132,7 +133,7 @@ static PTHREAD_ITEM add_thread(RzDebug *dbg, DWORD pid, DWORD tid, HANDLE hThrea
 		return NULL;
 	}
 	*pthread = th;
-	rz_list_append(dbg->threads, pthread);
+	rz_list_append(thread_list, pthread);
 	return pthread;
 }
 
@@ -627,12 +628,12 @@ int w32_detach(RzDebug *dbg, int pid) {
 	// Resume suspended threads
 	RzListIter *it;
 	PTHREAD_ITEM th;
-	rz_list_foreach (dbg->threads, it, th) {
+	rz_list_foreach (thread_list, it, th) {
 		if (th->bSuspended && !th->bFinished) {
 			resume_thread(th->hThread);
 		}
 	}
-	rz_list_purge(dbg->threads);
+	rz_list_purge(thread_list);
 	if (lib_list) {
 		rz_list_purge(lib_list);
 	}
@@ -642,6 +643,9 @@ int w32_detach(RzDebug *dbg, int pid) {
 	wrap->params.type = W32_DETACH;
 	w32dbg_wrap_wait_ret(wrap);
 	ret = wrap->params.ret;
+	if (ret) {
+		rz_debug_process_remove(dbg, pid);
+	}
 	memset(&wrap->pi, 0, sizeof(wrap->pi));
 	return ret;
 }
@@ -847,12 +851,12 @@ int w32_select(RzDebug *dbg, int pid, int tid) {
 		return tid;
 	}
 
-	if (!dbg->threads) {
-		dbg->threads = rz_list_newf(free);
+	if (!thread_list) {
+		thread_list = rz_list_newf(free);
 		return tid;
 	}
 
-	if (rz_list_empty(dbg->threads)) {
+	if (rz_list_empty(thread_list)) {
 		return tid;
 	}
 
@@ -864,7 +868,7 @@ int w32_select(RzDebug *dbg, int pid, int tid) {
 		selected = tid;
 	} else if (tid) {
 		// If thread is dead, search for another one
-		rz_list_foreach (dbg->threads, it, th) {
+		rz_list_foreach (thread_list, it, th) {
 			if (!is_thread_alive(dbg, th->tid)) {
 				continue;
 			}
@@ -876,7 +880,7 @@ int w32_select(RzDebug *dbg, int pid, int tid) {
 
 	if (dbg->corebind.cfggeti(dbg->corebind.core, "dbg.threads")) {
 		// Suspend all other threads
-		rz_list_foreach (dbg->threads, it, th) {
+		rz_list_foreach (thread_list, it, th) {
 			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
 				suspend_thread(th->hThread);
 				th->bSuspended = true;
@@ -891,7 +895,7 @@ int w32_kill(RzDebug *dbg, int pid, int tid, int sig) {
 	W32DbgWInst *wrap = dbg->plugin_data;
 
 	if (sig == 0) {
-		if (rz_list_empty(dbg->threads)) {
+		if (rz_list_empty(thread_list)) {
 			if (lib_list) {
 				rz_list_purge(lib_list);
 			}
@@ -922,6 +926,55 @@ void w32_break_process(void *user) {
 	}
 
 	breaked = true;
+}
+
+static char *get_process_path(HANDLE ph, int pid) {
+	bool close_handle = false;
+	char *path = NULL;
+	if (!ph) {
+		ph = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+		if (!ph) {
+			ph = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+			if (!ph) {
+				ph = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+				if (!ph) {
+					return NULL;
+				}
+			}
+		}
+		close_handle = true;
+	}
+	if (w32_QueryFullProcessImageNameW) {
+		WCHAR tmp[MAX_PATH + 1];
+		DWORD sz = MAX_PATH;
+		if (w32_QueryFullProcessImageNameW(ph, 0, tmp, &sz)) {
+			path = rz_utf16_to_utf8(tmp);
+		}
+	} else {
+		path = resolve_path(ph, NULL);
+	}
+	if (close_handle) {
+		CloseHandle(ph);
+	}
+	return path;
+}
+
+static RzDebugProcess *build_debug_pid(int pid, int ppid, HANDLE ph, const WCHAR *name) {
+	char *path = get_process_path(ph, pid);
+	int uid = -1;
+	DWORD sid;
+	if (w32_ProcessIdToSessionId && w32_ProcessIdToSessionId(pid, &sid)) {
+		uid = sid;
+	}
+	if (!path) {
+		path = rz_utf16_to_utf8(name);
+	}
+	RzDebugProcess *ret = rz_debug_process_new(path, pid, uid, RZ_DBG_PROC_STOP);
+	if (ret) {
+		ret->ppid = ppid;
+	}
+	free(path);
+	return ret;
 }
 
 int w32_dbg_wait(RzDebug *dbg, int pid) {
@@ -980,6 +1033,12 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 		case CREATE_PROCESS_DEBUG_EVENT:
 			CloseHandle(de.u.CreateProcessInfo.hFile);
 			add_thread(dbg, pid, tid, de.u.CreateProcessInfo.hThread, de.u.CreateProcessInfo.lpThreadLocalBase, de.u.CreateProcessInfo.lpStartAddress, FALSE);
+			if (!rz_debug_process_find(dbg, pid)) {
+				RzDebugProcess *proc = build_debug_pid(pid, 0, de.u.CreateProcessInfo.hProcess, L"???");
+				if (proc && !rz_list_append(dbg->processes, proc)) {
+					rz_debug_process_free(proc);
+				}
+			}
 			wrap->pi.hProcess = de.u.CreateProcessInfo.hProcess;
 			wrap->pi.hThread = de.u.CreateProcessInfo.hThread;
 			wrap->winbase = (ULONG_PTR)de.u.CreateProcessInfo.lpBaseOfImage;
@@ -1008,6 +1067,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				exited_already = pid;
 				w32_continue(dbg, pid, tid, DBG_CONTINUE);
 				ret = pid == dbg->main_pid ? RZ_DEBUG_REASON_DEAD : RZ_DEBUG_REASON_EXIT_PID;
+				rz_debug_process_remove(dbg, pid);
 			} else {
 				ret = RZ_DEBUG_REASON_EXIT_TID;
 			}
@@ -1135,7 +1195,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 end:
 	if (ret == RZ_DEBUG_REASON_DEAD) {
 		w32_detach(dbg, dbg->pid);
-		rz_list_purge(dbg->threads);
+		rz_list_purge(thread_list);
 		rz_list_purge(lib_list);
 	}
 	rz_interrupt_break_pop(dbg->intr);
@@ -1178,7 +1238,7 @@ int w32_continue(RzDebug *dbg, int pid, int tid, int sig) {
 	}
 
 	if (th && th->bFinished) {
-		rz_list_delete_val(dbg->threads, th);
+		rz_list_delete_val(thread_list, th);
 	}
 
 	return tid;
@@ -1247,39 +1307,7 @@ static inline ut64 pc_from_context(CONTEXT *ctx) {
 #endif
 }
 
-static char *get_process_path(HANDLE ph, int pid) {
-	bool close_handle = false;
-	char *path = NULL;
-	if (!ph) {
-		ph = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-		if (!ph) {
-			ph = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
-			if (!ph) {
-				ph = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-				if (!ph) {
-					return NULL;
-				}
-			}
-		}
-		close_handle = true;
-	}
-	if (w32_QueryFullProcessImageNameW) {
-		WCHAR tmp[MAX_PATH + 1];
-		DWORD sz = MAX_PATH;
-		if (w32_QueryFullProcessImageNameW(ph, 0, tmp, &sz)) {
-			path = rz_utf16_to_utf8(tmp);
-		}
-	} else {
-		path = resolve_path(ph, NULL);
-	}
-	if (close_handle) {
-		CloseHandle(ph);
-	}
-	return path;
-}
-
 RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
-	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (th == INVALID_HANDLE_VALUE) {
 		rz_sys_perror("CreateToolhelp32Snapshot");
@@ -1287,52 +1315,46 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 	}
 	THREADENTRY32 te;
 	te.dwSize = sizeof(te);
-	HANDLE ph = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (Thread32First(th, &te)) {
-		// TODO: export this code to its own function?
-		char *path = NULL;
-		int uid = -1;
-		if (!te.th32ThreadID) {
-			path = get_process_path(ph, pid);
-			DWORD sid;
-			if (w32_ProcessIdToSessionId && w32_ProcessIdToSessionId(pid, &sid)) {
-				uid = sid;
-			}
-		}
-		if (!path) {
-			// TODO: enum processes to get binary's name
-			path = rz_str_dup("???");
-		}
-		int saved_tid = dbg->tid;
-		do {
-			char status = RZ_DBG_PROC_SLEEP;
-			if (te.th32OwnerProcessID == pid) {
-				ut64 pc = 0;
-				if (dbg->pid == pid) {
-					CONTEXT ctx = { 0 };
-					dbg->tid = te.th32ThreadID;
-					w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx));
-					// TODO: is needed check context for x32 and x64??
-					pc = pc_from_context(&ctx);
-					PTHREAD_ITEM pthread = find_thread(dbg, te.th32ThreadID);
-					if (pthread) {
-						if (pthread->bFinished) {
-							status = RZ_DBG_PROC_DEAD;
-						} else if (pthread->bSuspended) {
-							status = RZ_DBG_PROC_SLEEP;
-						} else {
-							status = RZ_DBG_PROC_RUN; // TODO: Get more precise thread status
-						}
-					}
-				}
-				rz_list_append(list, rz_debug_pid_new(path, te.th32ThreadID, uid, status, pc));
-			}
-		} while (Thread32Next(th, &te));
-		dbg->tid = saved_tid;
-		free(path);
-	} else {
+	if (!Thread32First(th, &te)) {
 		rz_sys_perror("Thread32First");
+		CloseHandle(th);
+		return list;
 	}
+	int saved_tid = dbg->tid;
+	do {
+		if (te.th32OwnerProcessID != pid) {
+			continue;
+		}
+		RzDebugThreadState state = RZ_DBG_THREAD_UNKNOWN;
+		ut64 pc = 0;
+		ut64 tls_base = 0;
+		if (dbg->pid == pid) {
+			CONTEXT ctx = { 0 };
+			dbg->tid = te.th32ThreadID;
+			w32_reg_read(dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof(ctx));
+			pc = pc_from_context(&ctx);
+			PTHREAD_ITEM pthread = find_thread(dbg, te.th32ThreadID);
+			if (pthread) {
+				if (pthread->bFinished) {
+					state = RZ_DBG_THREAD_DEAD;
+				} else if (pthread->bSuspended) {
+					state = RZ_DBG_THREAD_STOP;
+				} else {
+					state = RZ_DBG_THREAD_RUN;
+				}
+				tls_base = (ut64)(size_t)pthread->lpThreadLocalBase;
+			}
+		}
+		RzDebugThread *t = rz_debug_thread_new(te.th32ThreadID, pid, state, pc);
+		if (!t) {
+			continue;
+		}
+		t->tls_base = tls_base;
+		if (!rz_list_append(list, t)) {
+			rz_debug_thread_free(t);
+		}
+	} while (Thread32Next(th, &te));
+	dbg->tid = saved_tid;
 	CloseHandle(th);
 	return list;
 }
@@ -1423,24 +1445,6 @@ RzDebugInfo *w32_info(RzDebug *dbg, const char *arg) {
 	return rdi;
 }
 
-static RzDebugPid *build_debug_pid(int pid, int ppid, HANDLE ph, const WCHAR *name) {
-	char *path = get_process_path(ph, pid);
-	int uid = -1;
-
-	DWORD sid;
-	if (w32_ProcessIdToSessionId && w32_ProcessIdToSessionId(pid, &sid)) {
-		uid = sid;
-	}
-	if (!path) {
-		path = rz_utf16_to_utf8(name);
-	}
-	// it is possible to get pc for a non debugged process but the operation is expensive and might be risky
-	RzDebugPid *ret = rz_debug_pid_new(path, pid, uid, 's', 0);
-	ret->ppid = ppid;
-	free(path);
-	return ret;
-}
-
 RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 	W32DbgWInst *wrap = dbg->plugin_data;
 	HANDLE sh = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, pid);
@@ -1455,10 +1459,10 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list) {
 		do {
 			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
 				// Returns NULL if process is inaccessible unless if its a child process of debugged process
-				RzDebugPid *dbg_pid = build_debug_pid(pe.th32ProcessID, pe.th32ParentProcessID,
+				RzDebugProcess *dbg_pid = build_debug_pid(pe.th32ProcessID, pe.th32ParentProcessID,
 					dbg->pid == pe.th32ProcessID ? wrap->pi.hProcess : NULL, pe.szExeFile);
-				if (dbg_pid) {
-					rz_list_append(list, dbg_pid);
+				if (dbg_pid && !rz_list_append(list, dbg_pid)) {
+					rz_debug_process_free(dbg, pid);
 				}
 			}
 		} while (Process32NextW(sh, &pe));

@@ -84,7 +84,7 @@ RZ_API RzList *rz_w32_dbg_modules(RzDebug *dbg) {
 
 	if (h_mod_snap == INVALID_HANDLE_VALUE) {
 		// Suppress if process is still initializing
-		if (GetLastError() != ERROR_PARTIAL_COPY || rz_list_length(dbg->threads) > 1) {
+		if (GetLastError() != ERROR_PARTIAL_COPY || w32_thread_count() > 1) {
 			rz_sys_perror("rz_w32_dbg_modules/CreateToolhelp32Snapshot");
 		}
 		goto err_w32_dbg_modules;

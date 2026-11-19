@@ -160,6 +160,15 @@ RzList *w32_pid_list(RzDebug *dbg, int pid, RzList *list);
 
 RzList *w32_desc_list(int pid);
 
+int w32_thread_count(void) {
+	return rz_list_length(thread_list);
+}
+
+void w32_threads_free(void) {
+	rz_list_free(thread_list);
+	thread_list = NULL;
+}
+
 #if __arm64__
 int w32_hwbp_arm_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b);
 int w32_hwbp_arm_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b);

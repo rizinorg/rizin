@@ -219,16 +219,16 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+static RzList /*<RzDebugProcess *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_process_free);
 	if (!list) {
 		return NULL;
 	}
 	return w32_pid_list(dbg, pid, list);
 }
 
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+RZ_API RZ_OWN RzList /*<RzDebugThread *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_thread_free);
 	if (!list) {
 		RZ_LOG_ERROR("Cannot create list\n");
 		return NULL;
@@ -457,6 +457,7 @@ static bool rz_debug_native_init(RzDebug *dbg, void **user) {
 }
 
 static void rz_debug_native_fini(RzDebug *dbg, void *user) {
+	w32_threads_free();
 	return;
 }
 
