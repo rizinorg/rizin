@@ -239,9 +239,9 @@ static RzGraphNode *handle_overlapping_icfg_blocks(
 		// Resize existing block and update start address of new block.
 		ut64 resize_start = overlap.itv_node->start;
 		ut64 resize_end = resize_start + addr - overlap.itv_node->start;
-		size_t insn_off_to_remove = addr - overlap.itv_node->start + 1;
+		size_t insn_off_to_remove = addr - overlap.itv_node->start;
 		split_block_edge.from = resize_start;
-		split_block_edge.to = resize_end + 1;
+		split_block_edge.to = resize_end;
 		rz_interval_tree_resize(&icfg->itv_tree, overlap.itv_node, resize_start, resize_end);
 		overlap.itv_node = NULL; // Pointer is invalid after resizing.
 
@@ -376,6 +376,8 @@ RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg) {
 			existed++;
 			break;
 		case RZ_GRAPH_STATUS_MISSING_NODE:
+			RZ_LOG_DEBUG("missing node in edge: 0x%" PFMT64x " -> 0x%" PFMT64x " t: %" PFMT32d "n",
+				edge->from, edge->to, edge->type);
 			missing_node++;
 			break;
 		case RZ_GRAPH_STATUS_ERR:
