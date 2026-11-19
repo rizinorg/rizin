@@ -81,4 +81,6 @@ typedef enum {
 	RZ_ABSINT_CONFLICT_BLOCK_KNOWN,
 } RzICFGConflictAddResult;
 
+RZ_IPI char *rz_icfg_node_str(const RzICFGNode *node);
+
 #endif

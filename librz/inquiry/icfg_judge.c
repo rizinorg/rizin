@@ -564,29 +564,7 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 // TODO Remove after debug.
 RZ_OWN char *node_fmt(const RzGraphNode *n) {
 	const RzICFGNode *node = rz_graph_node_get_data(n);
-	RzStrBuf sb = { 0 };
-	rz_strbuf_init(&sb);
-	rz_strbuf_appendf(&sb, "0x%08" PFMT64x " m: (", node->addr);
-	if (node->memberships_n == 1) {
-		rz_strbuf_appendf(&sb, "0x%08" PFMT64x, node->proc_memberships.m);
-	} else {
-		RzIterator it;
-		rz_set_u_as_iter(node->proc_memberships.set, &it);
-		size_t i = 0;
-		ut64 *m;
-		rz_iterator_foreach(&it, m) {
-			if (i > 0) {
-				rz_strbuf_append(&sb, ",");
-			}
-			rz_strbuf_appendf(&sb, "0x%08" PFMT64x, *m);
-			i++;
-		}
-		rz_iterator_fini(&it);
-	}
-	rz_strbuf_append(&sb, ")");
-	char *s = rz_strbuf_drain_nofree(&sb);
-	rz_strbuf_fini(&sb);
-	return s;
+	return rz_icfg_node_str(node);
 }
 
 RZ_OWN char *edge_fmt(const RzGraphEdge *e) {
