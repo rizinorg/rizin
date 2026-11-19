@@ -454,16 +454,26 @@ verdict: {
 // parent1(A, B)-+
 //
 static bool node_needs_judgement(RzICFG *icfg, const RzICFGNode *cf_node) {
+	if (cf_node->memberships_n == 1) {
+		// This node is a child of a conflict node. The parent conflict node
+		// was resolved to a function entry, and the child got its memberships
+		// updated. So now we no longer have to solve it.
+		return false;
+	}
+
 	RzSetU *inter_set = rz_set_u_new();
 	if (!inter_set) {
 		rz_warn_if_reached();
 		return false;
 	}
+	// Copy set.
+	rz_set_u_union(inter_set, cf_node->proc_memberships.set, NULL);
+
 	RzIterator iter = { 0 };
 
-	if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter) || cf_node->memberships_n == 1) {
-		// This node shouldn't be a conflict node to begin with.
-		// Conflict nodes require at least two incoming edges.
+	if (!rz_graph_in_edges_by_id(icfg->graph, cf_node->addr, &iter)) {
+		rz_iterator_fini(&iter);
+		rz_set_u_free(inter_set);
 		rz_warn_if_reached();
 		return false;
 	}
