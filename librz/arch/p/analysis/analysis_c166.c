@@ -764,6 +764,7 @@ static void c166_op_mov_reg_data(const RzAnalysis *analysis, RzAnalysisOp *op, c
 	op->src[0] = c166_new_imm_value(data, true);
 	op->mmios[op->mmios_count] = op->dst->base;
 	op->mmios_count++;
+	op->ptr = op->dst->base;
 	const ut16 base_addr = instr->ext.esfr ? BASE_ESFR_ADDR : BASE_SFR_ADDR;
 	const ut16 addr = base_addr + (2 * reg);
 	op->mmios[op->mmios_count] = addr;
@@ -778,7 +779,7 @@ static void c166_op_dst_reg_src_mem(const RzAnalysis *analysis, RzAnalysisOp *op
 	op->mmios[op->mmios_count] = op->dst->base;
 	op->mmios_count++;
 	op->src[0] = c166_new_mem_value(analysis, instr, mem);
-	op->mmios[op->mmios_count] = addr; // op->src[0]->base;
+	op->mmios[op->mmios_count] = addr;
 	op->mmios_count++;
 }
 
@@ -821,6 +822,7 @@ static void c166_op_src_reg_src_mem(const RzAnalysis *analysis, RzAnalysisOp *op
 static void c166_op_bfld(const RzAnalysis *analysis, RzAnalysisOp *op, const C166_Inst *instr, const ut8 *buf) {
 	op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 	op->dst = c166_new_bitaddr_value(analysis, instr, buf[1]);
+	op->ptr = op->dst->base;
 	op->mmios[op->mmios_count] = op->dst->base;
 	op->mmios_count++;
 }
