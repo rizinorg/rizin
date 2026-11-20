@@ -1046,3 +1046,306 @@ or r14d, 0xffffffff
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=x86 SSE and x87 float-to-integer indefinite and rounding edge cases
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e analysis.arch=x86
+e analysis.bits=64
+# cvtss2si eax, xmm0: +Inf, -Inf, QNaN, SNaN, +0.0, -0.0, max_in_range, min_overflow, INT32_MIN, neg_overflow
+wx f30f2dc0 @ 0
+s 0; aezi; aezv xmm0 0x7f800000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xff800000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x7fc00000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x7fa00000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x00000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x80000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x4effffff; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x4f000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xcf000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xcf000001; aezs; aezv rax
+# cvtss2si rax, xmm0: max_in_range, +2^63, -Inf, QNaN
+wx f3480f2dc0 @ 0
+s 0; aezi; aezv xmm0 0x5effffff; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x5f000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xff800000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x7fc00000; aezs; aezv rax
+# cvttss2si rax, xmm0: -3.9f, +Inf
+wx f3480f2cc0 @ 0
+s 0; aezi; aezv xmm0 0xc079999a; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x7f800000; aezs; aezv rax
+# cvtsd2si eax vs cvttsd2si eax on +2147483647.5, -2147483648.5, -2147483649.0
+wx f20f2dc0 @ 0
+s 0; aezi; aezv xmm0 0x41dfffffffe00000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xc1e0000000100000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xc1e0000000200000; aezs; aezv rax
+wx f20f2cc0 @ 0
+s 0; aezi; aezv xmm0 0x41dfffffffe00000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xc1e0000000100000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xc1e0000000200000; aezs; aezv rax
+# cvtsd2si rax, xmm0: +Inf, -Inf, QNaN, 2^63-1024, 2^63, -2^63
+wx f2480f2dc0 @ 0
+s 0; aezi; aezv xmm0 0x7ff0000000000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xfff0000000000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x7ff8000000000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x43dfffffffffffff; aezs; aezv rax
+s 0; aezi; aezv xmm0 0x43e0000000000000; aezs; aezv rax
+s 0; aezi; aezv xmm0 0xc3e0000000000000; aezs; aezv rax
+# fld tbyte [rsi]; fist word [rax] (db2e df10)
+wx db2edf10 @ 0
+wx 000000000000feff0d40 @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+wx 00000000000000800e40 @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+wx 00000000000000800ec0 @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+wx 00000000000001800ec0 @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+wx 0000000000000080ff7f @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+wx 00000000000000c0ff7f @ 0x80
+wx ffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 2 @ 0x40
+# fld tbyte [rsi]; fistp qword [rax] (db2e df38)
+wx db2edf38 @ 0
+wx feffffffffffffff3d40 @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40; aezv swd
+wx 00000000000000803e40 @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40
+wx 00000000000000803ec0 @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40
+wx 02000000000000803ec0 @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40
+wx 0000000000000080ff7f @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40
+wx 0000000000000090ff7f @ 0x80
+wx ffffffffffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 8 @ 0x40
+# fld tbyte [rsi]; fisttp dword [rax] (db2e db08): RTZ regardless of cwd, indefinite on Inf/NaN/overflow
+wx db2edb08 @ 0
+wx 00000000000000f000c0 @ 0x80
+wx ffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 4 @ 0x40
+wx 000000000000009000c0 @ 0x80
+wx ffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x077f; aezs 2; p8 4 @ 0x40
+wx 0000000000000080ff7f @ 0x80
+wx ffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 4 @ 0x40
+wx 00000000000000c0ff7f @ 0x80
+wx ffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 4 @ 0x40
+wx 00000000000000803e40 @ 0x80
+wx ffffffff @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 4 @ 0x40
+# fld tbyte [rsi]; frndint (db2e d9fc): -0.0, -0.25 (RNE), -2.25 (RTN), +Inf, -Inf, SNaN->QNaN, 2^70
+wx db2ed9fc @ 0
+wx 00000000000000000080 @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+wx 0000000000000080fdbf @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+wx 000000000000009000c0 @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x077f; aezs 2; aezv st0
+wx 0000000000000080ff7f @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+wx 0000000000000080ffff @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+wx 0000000000000090ff7f @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+wx 00000000000000804540 @ 0x80; s 0; aezi; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; aezv st0
+# fld tbyte [rsi]; fbstp tbyte [rax] (db2e df30): in-range (-0.0/-0.4/+0.0/-(1e18-1)) and BCD indefinite
+wx db2edf30 @ 0
+wx 00000000000000ac04c0 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx f0ff3f763a6b0bde3a40 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx f0ff3f763a6b0bde3ac0 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx 00000000000000000080 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx cdccccccccccccccfdbf @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx 00000000000000000000 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx 000040763a6b0bde3a40 @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx 0000000000000080ff7f @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+wx 00000000000000c0ff7f @ 0x80
+wx aaaaaaaaaaaaaaaaaaaa @ 0x40; s 0; aezi; aezv rax 0x40; aezv rsi 0x80; aezv cwd 0x037f; aezs 2; p8 10 @ 0x40
+EOF
+EXPECT=<<EOF
+xmm0 = 0x7f800000
+ rax: 0x0000000080000000
+xmm0 = 0xff800000
+ rax: 0x0000000080000000
+xmm0 = 0x7fc00000
+ rax: 0x0000000080000000
+xmm0 = 0x7fa00000
+ rax: 0x0000000080000000
+xmm0 = 0x0
+ rax: 0x0000000000000000
+xmm0 = 0x80000000
+ rax: 0x0000000000000000
+xmm0 = 0x4effffff
+ rax: 0x000000007fffff80
+xmm0 = 0x4f000000
+ rax: 0x0000000080000000
+xmm0 = 0xcf000000
+ rax: 0x0000000080000000
+xmm0 = 0xcf000001
+ rax: 0x0000000080000000
+xmm0 = 0x5effffff
+ rax: 0x7fffff8000000000
+xmm0 = 0x5f000000
+ rax: 0x8000000000000000
+xmm0 = 0xff800000
+ rax: 0x8000000000000000
+xmm0 = 0x7fc00000
+ rax: 0x8000000000000000
+xmm0 = 0xc079999a
+ rax: 0xfffffffffffffffd
+xmm0 = 0x7f800000
+ rax: 0x8000000000000000
+xmm0 = 0x41dfffffffe00000
+ rax: 0x0000000080000000
+xmm0 = 0xc1e0000000100000
+ rax: 0x0000000080000000
+xmm0 = 0xc1e0000000200000
+ rax: 0x0000000080000000
+xmm0 = 0x41dfffffffe00000
+ rax: 0x000000007fffffff
+xmm0 = 0xc1e0000000100000
+ rax: 0x0000000080000000
+xmm0 = 0xc1e0000000200000
+ rax: 0x0000000080000000
+xmm0 = 0x7ff0000000000000
+ rax: 0x8000000000000000
+xmm0 = 0xfff0000000000000
+ rax: 0x8000000000000000
+xmm0 = 0x7ff8000000000000
+ rax: 0x8000000000000000
+xmm0 = 0x43dfffffffffffff
+ rax: 0x7ffffffffffffc00
+xmm0 = 0x43e0000000000000
+ rax: 0x8000000000000000
+xmm0 = 0xc3e0000000000000
+ rax: 0x8000000000000000
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+ff7f
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+ffffffffffffff7f
+ swd: 0x1000
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+0000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+fdffffff
+rax = 0x40
+rsi = 0x80
+cwd = 0x77f
+feffffff
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000080
+rsi = 0x80
+cwd = 0x37f
+ st0: 0x80000000000000000000
+rsi = 0x80
+cwd = 0x37f
+ st0: 0x80000000000000000000
+rsi = 0x80
+cwd = 0x77f
+ st0: 0xc000c000000000000000
+rsi = 0x80
+cwd = 0x37f
+ st0: 0x7fff8000000000000000
+rsi = 0x80
+cwd = 0x37f
+ st0: 0xffff8000000000000000
+rsi = 0x80
+cwd = 0x37f
+ st0: 0x7fffd000000000000000
+rsi = 0x80
+cwd = 0x37f
+ st0: 0x40458000000000000000
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+43000000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+99999999999999999900
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+99999999999999999980
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000000080
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000000000
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000c0ffff
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000c0ffff
+rax = 0x40
+rsi = 0x80
+cwd = 0x37f
+00000000000000c0ffff
+EOF
+EXPECT_ERR=
+RUN
