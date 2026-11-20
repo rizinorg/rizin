@@ -19,6 +19,8 @@
 // Bytes read at a pointer operand to describe what it points to, the same in
 // every view; string comments show at most 128 characters anyway
 #define DS_PTR_DATA_SIZE 512
+// Lookahead read past the buffer; only longer ops can still be cut
+#define DS_LOOKAHEAD 256
 
 #define COLOR(ds, field)       ((ds)->show_color ? (ds)->core->cons->context->pal.field : "")
 #define COLOR_ARG(ds, field)   ((ds)->show_color && (ds)->show_color_args ? (ds)->core->cons->context->pal.field : "")
@@ -823,12 +825,16 @@ static void ds_reflines_fini(RzDisasmState *ds) {
 	RZ_FREE(ds->prev_line_col);
 }
 
+static bool ds_reflines_needed(RzDisasmState *ds) {
+	// refline info is needed when it is shown as ascii,
+	// or returned as part of a json or C struct representation.
+	return ds->show_lines_bb || ds->vec || ds->pj;
+}
+
 static void ds_reflines_init(RzDisasmState *ds) {
 	RzAnalysis *analysis = ds->core->analysis;
 	ds_reflines_reset(ds);
-	// refline info is needed when it is shown as ascii,
-	// or returned as part of a json or C struct representation.
-	if (ds->show_lines_bb || ds->vec || ds->pj) {
+	if (ds_reflines_needed(ds)) {
 		ds_reflines_fini(ds);
 		RzPVector *reflines = rz_analysis_reflines_get(analysis,
 			ds->addr, ds->buf, ds->len, ds->nlines,
@@ -5420,9 +5426,37 @@ RZ_API void rz_analysis_disasm_text_free(RzAnalysisDisasmText *t) {
 }
 
 /**
+ * \brief Grows \p *buf to \p size bytes with the io bytes that follow it.
+ *
+ * \param own The buffer of the disassembly, NULL while \p *buf is the caller's
+ */
+static void ds_buf_grow(RzDisasmState *ds, ut8 **buf, ut8 **own, int *len, int size) {
+	if (size <= *len) {
+		return;
+	}
+	bool owned = *buf == *own;
+	ut8 *grown = owned ? realloc(*own, size) : malloc(size);
+	if (!grown) {
+		return;
+	}
+	if (!owned) {
+		memcpy(grown, *buf, *len);
+	}
+	RzIO *io = ds->core->io;
+	// unreadable bytes decode as the fill byte whatever io.ff is
+	memset(grown + *len, io->Oxff, size - *len);
+	rz_io_read_at_mapped(io, ds->addr + *len, grown + *len, size - *len);
+	*buf = *own = grown;
+	*len = size;
+}
+
+/**
  * \brief Disassemble \p len bytes or \p nlines opcodes
  * 	  restricted by \p len and \p nlines at the same time
  *        \p len and \p nlines cannot be zero at the same time
+ *
+ * Without \p options->cbytes, the bytes past \p len are read from io.
+ *
  * \param core RzCore reference
  * \param addr Address
  * \param buf Buffer
@@ -5490,6 +5524,14 @@ RZ_API int rz_core_print_disasm(RZ_NONNULL RzCore *core, ut64 addr, RZ_NONNULL u
 		rz_reg_arena_push(rreg);
 	}
 
+	if (!ds->cbytes && nlines > 0 && ds_reflines_needed(ds)) {
+		// the reflines are computed once, from the buffer
+		int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+		st64 size = (st64)nlines * RZ_MAX(max_op_size, 1);
+		ds_buf_grow(ds, &buf, &nbuf, &len, (int)RZ_MIN(size, RZ_CORE_MAX_DISASM));
+		ds->buf = buf;
+		ds->len = len;
+	}
 	ds_reflines_init(ds);
 	/* reset jmp table if not asked to keep it */
 	if (!core->keep_asmqjmps) { // hack
@@ -5551,6 +5593,10 @@ toro:
 			rz_config_hold_free(rch);
 			ds_free(ds);
 			return 0; // break;
+		}
+		if (!ds->cbytes && len - idx < DS_LOOKAHEAD && len <= ST32_MAX / 2) {
+			// an op crossing the end of the buffer would be decoded cut
+			ds_buf_grow(ds, &buf, &nbuf, &len, RZ_MAX(2 * len, idx + 2 * DS_LOOKAHEAD));
 		}
 		if (core->print->flags & RZ_PRINT_FLAGS_UNALLOC) {
 			if (!rz_io_is_valid_offset(core->io, ds->at, 0)) {

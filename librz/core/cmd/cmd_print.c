@@ -3146,8 +3146,6 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_summary_handler(RzCore *core, int
 }
 
 RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
-	ut32 old_blocksize = core->blocksize;
-	ut64 old_offset = core->offset;
 	core->num->value = 0;
 
 	st64 parsed = argc > 1 ? (st64)rz_num_math(core->num, argv[1]) : 0;
@@ -3156,19 +3154,14 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int n_instrs = parsed;
-	if (n_instrs < 0) {
-		ut64 new_offset = old_offset;
-		if (!rz_core_prevop_addr(core, old_offset, -n_instrs, &new_offset)) {
-			new_offset = rz_core_prevop_addr_force(core, old_offset, -n_instrs);
-		}
-		ut32 new_blocksize = new_offset - old_blocksize;
-		if (new_blocksize > old_blocksize) {
-			rz_core_block_size(core, new_blocksize);
-		}
-		rz_core_seek(core, new_offset, true);
-	} else {
-		rz_core_block_read(core);
+	int n_bytes = 0;
+	ut64 offset = rz_core_backward_offset(core, core->offset, &n_instrs, &n_bytes);
+	ut8 *buf = RZ_NEWS0(ut8, core->blocksize);
+	if (!buf) {
+		RZ_LOG_ERROR("Cannot allocate buffer\n");
+		return RZ_CMD_STATUS_ERROR;
 	}
+	rz_io_read_at_mapped(core->io, offset, buf, core->blocksize);
 
 	state->mode = RZ_OUTPUT_MODE_JSON;
 
@@ -3176,15 +3169,12 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_n_instrs_as_text_json_handler(RzCore *core
 		core->cons->is_html = false;
 		core->cons->was_html = true;
 	}
+	// as in pd, a count reads past the block
 	RzCoreDisasmOptions disasm_options = {
-		.cbytes = 1,
+		.cbytes = !n_instrs,
 	};
-	core->num->value = rz_core_print_disasm(core, core->offset, core->block, core->blocksize, RZ_ABS(n_instrs), state, &disasm_options);
-
-	if (n_instrs < 0) {
-		rz_core_block_size(core, old_blocksize);
-		rz_core_seek(core, old_offset, true);
-	}
+	core->num->value = rz_core_print_disasm(core, offset, buf, core->blocksize, n_instrs, state, &disasm_options);
+	free(buf);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -263,7 +263,7 @@ static bool pat_const_check(ut64 pat, ut32 b) {
 	return (pat & mask) == (b & mask);
 }
 
-static bool EA_parse(const ut8 *buf, size_t pat_index, ut8 len,
+static bool EA_parse(const ut8 *buf, size_t pat_index, int len,
 	const H8500EADescribe *ea_describe, H8500Instruction *ins) {
 	if (len < 1) {
 		return false;
