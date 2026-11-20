@@ -4,9 +4,8 @@
 #include <rz_inquiry/rz_icfg.h>
 #include "icfg_priv.h"
 #include "rz_util/rz_assert.h"
-#include "rz_util/rz_iterator.h"
-#include "rz_util/rz_set.h"
-#include "rz_util/rz_strbuf.h"
+#include "rz_util/rz_graph.h"
+#include "rz_vector.h"
 
 RZ_IPI char *rz_icfg_node_str(const RzICFGNode *node) {
 	RzStrBuf sb = { 0 };
@@ -74,7 +73,8 @@ static bool icfg_proc_memberships_add(RZ_NONNULL RzICFGNode *node, ut64 proc_mem
 	return true;
 }
 
-static bool icfg_proc_memberships_update(RZ_NONNULL RzICFGNode *dst, RZ_NONNULL RzICFGNode *src) {
+static bool icfg_proc_memberships_update(RZ_NONNULL RzICFGNode *dst, const RZ_NONNULL RzICFGNode *src) {
+	rz_return_val_if_fail(src->memberships_n > 0, false);
 	if (src->memberships_n == 1) {
 		return icfg_proc_memberships_add(dst, src->proc_memberships.m);
 	}
@@ -86,8 +86,9 @@ static bool icfg_proc_memberships_update(RZ_NONNULL RzICFGNode *dst, RZ_NONNULL 
 	bool added = false;
 	ut64 *val;
 	rz_iterator_foreach(&iter, val) {
-		added |= icfg_proc_memberships_add(dst, src->proc_memberships.m);
+		added |= icfg_proc_memberships_add(dst, *val);
 	}
+	rz_iterator_fini(&iter);
 	return added;
 }
 
@@ -160,121 +161,108 @@ static RZ_OWN RzICFGNode *icfg_node_new(ut64 addr, size_t size, RZ_NONNULL const
 }
 
 static int uint_cmp(ut64 *a, ut64 *b, void *user) {
-	if (*a > *b) {
-		return 1;
-	} else if (*a < *b) {
-		return -1;
-	}
-	return 0;
+	return (*a > *b) - (*a < *b);
 }
 
-struct covering_node {
-	RzIntervalNode *itv_node;
-	size_t count;
-};
+typedef struct {
+	RzPVector /*<RzIntervalNode *>*/ *itv_node;
+} CoveringNodes;
+
+static int itv_node_cmp_asc(const RzIntervalNode *a, const RzIntervalNode *b, void *user) {
+	return (a->start < b->start) - (a->start > b->start);
+}
 
 static bool itv_intersect_cb(RzIntervalNode *node, void *user) {
-	struct covering_node *pair = user;
-	if (pair->count >= 1) {
-		pair->count++;
-		return false;
-	}
-	pair->itv_node = node;
-	pair->count++;
+	RzPVector /*<RzIntervalNode *>*/ *overlaps = user;
+	rz_pvector_insert_sorted(overlaps, node, (RzPVectorComparator)itv_node_cmp_asc, NULL);
 	return true;
 }
 
-// Changes the size of an overlapping block with the new block.
-// If the new block is exactly the same as the existing block,
-// it returns the RzGraphNode of the existing block.
-// Otherwise NULL.
+// Changes the size of an overlapping blocks.
+// All overlapping blocks are guaranteed to share the same end address.
 //
-// Case 0 - Block X exists, Block Y is a duplicate -> return Block X.
+// Case 0 - Block X and Block Y are duplicates -> warn and fail.
+// Duplicates must be handled before.
+//
 // +-  +-
 // | X | Y
 // +- +-
 //
-// Case I - Block X exists, Block Y is added -> Shorten existing Block X.
-//     +-
-//     |
-// +-  | X
-// |   |
-// | Y +-
-// |
-// +-
+// Case 1 - Block X has a lower start address than Block Y -> Shorten Block Y.
+//     +-             +-
+//     |              | Y
+// +-  | Y  ===>  +-  +-
+// | X |          | X
+// +- +-          +-
 //
-// Case II - Block X exists, Block Y is added -> Shorten new Block Y.
-//     +-
-//     |
-// +-  | Y
-// | X |
-// +- +-
-//
+// Or
+//     +-             +-
+//     |              | Y
+// +-  | Y  ===>  +-  +-
+// | X +-         | X
+// +-             +-
 //
 // NOTE: If you change this part, remember that the start address of every
 // block must stay the same! Otherwise edges get invalidated.
-static RzGraphNode *handle_overlapping_icfg_blocks(
-	RzICFG *icfg,
-	ut64 addr,
-	size_t *size,
-	RZ_NONNULL const RzVector /*<ut16>*/ *insn_offsets,
-	struct covering_node overlap,
-	RzVector *fixed_insn_offsets,
-	ut64 proc_membership,
-	RZ_OUT RzICFGNode **use_memberships) {
-	if (overlap.itv_node->start == addr && overlap.itv_node->end == addr + *size) {
-		// Case 0:
-		// The node already exists in the graph, covering the same dimensions.
-		*use_memberships = NULL;
-		return overlap.itv_node->data;
+static bool solve_intersection(RzICFG *icfg, RzIntervalNode *x_smaller, RzIntervalNode *y_bigger) {
+	rz_return_val_if_fail(x_smaller->start > y_bigger->start, false);
+	rz_return_val_if_fail(x_smaller->start <= y_bigger->end, false);
+
+	RzGraphNode *graph_node_y = y_bigger->data;
+	RzICFGNode *icfg_node_y = rz_graph_node_get_data_mut(graph_node_y);
+	RzGraphNode *graph_node_x = x_smaller->data;
+	RzICFGNode *icfg_node_x = rz_graph_node_get_data_mut(graph_node_x);
+
+	// Resize in itv tree
+	rz_interval_tree_resize(&icfg->itv_tree, y_bigger, y_bigger->start, x_smaller->start - 1);
+
+	// resize icfg size
+	icfg_node_y->size = x_smaller->start - y_bigger->start;
+
+	// update insn_offsets
+	ut16 last_off = icfg_node_y->size;
+	ut16 insn_off;
+	do {
+		rz_vector_pop(&icfg_node_y->insn_offsets, &insn_off);
+	} while (insn_off > last_off);
+	rz_warn_if_fail(insn_off == last_off); // Debug check
+
+	// update memberships (important if just added node is itv_x)
+	icfg_proc_memberships_update(icfg_node_x, icfg_node_y);
+
+	// add fallthru edge
+	rz_icfg_prepare_edge(icfg, y_bigger->start, x_smaller->start, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
+	return true;
+}
+
+static bool solve_overlaps(RzICFG *icfg, RzPVector /*<RzIntervalNode *>*/ *overlaps) {
+	RzIntervalNode *itv_bigger; // The bigger block (starts at lower address).
+	RzIntervalNode *itv_smaller; // The smaller block (starts at higher address).
+
+	bool success = true;
+	itv_bigger = rz_pvector_pop(overlaps);
+	while (rz_pvector_len(overlaps)) {
+		itv_smaller = rz_pvector_pop(overlaps);
+		// Duplicates should have been removed before.
+		rz_warn_if_fail(itv_smaller->start != itv_bigger->start);
+
+		success &= solve_intersection(icfg, itv_smaller, itv_bigger);
+		itv_bigger = itv_smaller;
 	}
+	return success;
+}
 
-	ICFGEdge split_block_edge = { .from = 0, .to = 0, .type = RZ_ICFG_EDGE_TYPE_FALLTHROUGH };
-
-	RzGraphNode *ov_graph_node = overlap.itv_node->data;
-	RzICFGNode *ov_icfg_node = rz_graph_node_get_data_mut(ov_graph_node);
-
-	if (overlap.itv_node->start < addr) {
-		// Case I:
-		// Resize existing block and update start address of new block.
-		ut64 resize_start = overlap.itv_node->start;
-		ut64 resize_end = resize_start + addr - overlap.itv_node->start;
-		size_t insn_off_to_remove = addr - overlap.itv_node->start;
-		split_block_edge.from = resize_start;
-		split_block_edge.to = resize_end;
-		rz_interval_tree_resize(&icfg->itv_tree, overlap.itv_node, resize_start, resize_end);
-		overlap.itv_node = NULL; // Pointer is invalid after resizing.
-
-		// Update the insn_offset list of the existing graph node.
-		ut16 insn_off;
-		do {
-			rz_vector_pop(&ov_icfg_node->insn_offsets, &insn_off);
-		} while (insn_off > insn_off_to_remove);
-		// Debug check
-		rz_warn_if_fail(insn_off == insn_off_to_remove);
-		*use_memberships = ov_icfg_node;
-	} else {
-		// Case II:
-		// Reduce size of new block.
-		if (icfg_proc_memberships_add(ov_icfg_node, proc_membership)) {
-			rz_set_u_add(icfg->node_conflicts, (utptr)ov_icfg_node);
-		}
-		*size = overlap.itv_node->start - addr;
-		split_block_edge.from = addr;
-		split_block_edge.to = addr + *size;
-		// Update the instruction offsets.
-		ut16 *off;
-		rz_vector_foreach (insn_offsets, off) {
-			if (*off == *size) {
-				break;
-			}
-			rz_vector_push(fixed_insn_offsets, off);
-		}
-		// Debug check
-		rz_warn_if_fail(rz_vector_len(insn_offsets) > rz_vector_len(fixed_insn_offsets));
-		*use_memberships = NULL;
+static RzGraphNode *get_already_solved(RzPVector /*<RzIntervalNode *>*/ *overlaps, ut64 addr, ut64 size) {
+	if (rz_pvector_len(overlaps) == 0) {
+		return NULL;
 	}
-	rz_icfg_prepare_edge(icfg, split_block_edge.from, split_block_edge.to, RZ_ICFG_EDGE_TYPE_FALLTHROUGH);
+	void **it;
+	rz_pvector_foreach (overlaps, it) {
+		RzIntervalNode *in = *it;
+		if (in->start == addr) {
+			return in->data;
+		}
+	}
 	return NULL;
 }
 
@@ -282,48 +270,41 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	rz_return_val_if_fail(icfg && insn_offsets, false);
 
 	RzICFGNode *icfg_node = NULL;
-	RzICFGNode *overlapping_icfg_node = NULL;
 	RzGraphNode *graph_node = NULL;
-
-	RzVector fixed_insn_offsets = { 0 };
-	rz_vector_init(&fixed_insn_offsets, sizeof(ut16), NULL, NULL);
 
 	printf("Add node: 0x%lx\n", addr);
 	// Search for any graph node intersection with the new one.
-	struct covering_node overlap = { 0 };
-	rz_interval_tree_all_intersect(&icfg->itv_tree, addr, addr + size, false, itv_intersect_cb, &overlap);
-	switch (overlap.count) {
-	case 0:
-		// Node is totally new.
-		break;
-	case 1:
-		graph_node = handle_overlapping_icfg_blocks(icfg, addr, &size, insn_offsets, overlap, &fixed_insn_offsets, proc_membership, &overlapping_icfg_node);
-		if (graph_node) {
-			icfg_node = rz_graph_node_get_data_mut(graph_node);
-		}
-		break;
-	default:
-		// This should never happen, because we resolve intersections for every node we add.
-		goto error;
-	}
+	RzPVector /*<RzIntervalNode *>*/ overlaps = { 0 };
+	rz_pvector_init(&overlaps, NULL);
 
+	rz_interval_tree_all_intersect(&icfg->itv_tree, addr, addr + size, false, itv_intersect_cb, &overlaps);
+	bool new_node_overlaps = !rz_pvector_empty(&overlaps);
+
+	graph_node = get_already_solved(&overlaps, addr, size);
+	bool was_solved_before = graph_node != NULL;
 	if (!graph_node) {
 		// Create a new graph node.
-		icfg_node = icfg_node_new(addr, size, rz_vector_len(&fixed_insn_offsets) ? &fixed_insn_offsets : insn_offsets);
+		icfg_node = icfg_node_new(addr, size, insn_offsets);
 		if (!icfg_node) {
+			rz_warn_if_reached();
 			goto error;
 		}
 		if (rz_graph_add_node(icfg->graph, icfg_node, &graph_node) != RZ_GRAPH_STATUS_OK) {
+			rz_warn_if_reached();
 			goto error;
 		}
-		rz_interval_tree_insert(&icfg->itv_tree, addr, addr + size, graph_node);
+		// Add the new node to the overlaps vector.
+		RzIntervalNode *itv_node = rz_interval_tree_insert(&icfg->itv_tree, addr, addr + size - 1, graph_node);
+		rz_pvector_insert_sorted(&overlaps, itv_node, (RzPVectorComparator)itv_node_cmp_asc, NULL);
+	} else {
+		icfg_node = rz_graph_node_get_data_mut(graph_node);
 	}
-
 	if (!icfg_proc_memberships_add(icfg_node, proc_membership)) {
 		rz_warn_if_reached();
 	}
-	if (overlapping_icfg_node) {
-		icfg_proc_memberships_update(icfg_node, overlapping_icfg_node);
+
+	if (new_node_overlaps && !was_solved_before && !solve_overlaps(icfg, &overlaps)) {
+		rz_warn_if_reached();
 	}
 	if (icfg_node->memberships_n > 1) {
 		rz_set_u_add(icfg->node_conflicts, (utptr)icfg_node);
@@ -332,12 +313,11 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	if (rz_vector_find_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
 		rz_vector_insert_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL);
 	}
-	rz_vector_fini(&fixed_insn_offsets);
+	rz_pvector_fini(&overlaps);
 	return true;
 
 error:
-	rz_warn_if_reached();
-	rz_vector_fini(&fixed_insn_offsets);
+	rz_pvector_fini(&overlaps);
 	return false;
 }
 
