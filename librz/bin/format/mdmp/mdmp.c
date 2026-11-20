@@ -124,6 +124,7 @@ void rz_bin_mdmp_free(MiniDmpObj *obj) {
 
 	rz_buf_free(obj->b);
 	free(obj->hdr);
+	sdb_free(obj->kv);
 	obj->b = NULL;
 	free(obj);
 
@@ -1154,19 +1155,29 @@ static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 			continue;
 		}
 		int r = rz_buf_read_at(obj->b, paddr, b, module->size_of_image);
-		buf = rz_buf_new_with_bytes(b, r);
+		if (r <= 0) {
+			free(b);
+			continue;
+		}
+		buf = rz_buf_new_with_pointers(b, r, true);
+		if (!buf) {
+			free(b);
+			continue;
+		}
 		dup = false;
 		if (check_pe32_buf(buf, module->size_of_image)) {
 			rz_list_foreach (obj->pe32_bins, it_dup, pe32_dup) {
 				if (pe32_dup->vaddr == module->base_of_image) {
 					dup = true;
-					continue;
+					break;
 				}
 			}
 			if (dup) {
+				rz_buf_free(buf);
 				continue;
 			}
 			if (!(pe32_bin = RZ_NEW0(struct Pe32_rz_bin_mdmp_pe_bin))) {
+				rz_buf_free(buf);
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers(buf);
@@ -1179,13 +1190,15 @@ static bool rz_bin_mdmp_init_pe_bins(MiniDmpObj *obj) {
 			rz_list_foreach (obj->pe64_bins, it_dup, pe64_dup) {
 				if (pe64_dup->vaddr == module->base_of_image) {
 					dup = true;
-					continue;
+					break;
 				}
 			}
 			if (dup) {
+				rz_buf_free(buf);
 				continue;
 			}
 			if (!(pe64_bin = RZ_NEW0(struct Pe64_rz_bin_mdmp_pe_bin))) {
+				rz_buf_free(buf);
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers(buf);
@@ -1229,15 +1242,15 @@ MiniDmpObj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
 	obj->kv = sdb_new0();
 	obj->size = (ut32)rz_buf_size(buf);
 	if (!obj->kv ||
-		!(obj->streams.ex_threads = rz_list_new()) ||
+		!(obj->streams.ex_threads = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.memories = rz_list_newf((RzListFree)free)) ||
-		!(obj->streams.memories64.memories = rz_list_new()) ||
+		!(obj->streams.memories64.memories = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.memory_infos = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.modules = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.operations = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.thread_infos = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.token_infos = rz_list_newf((RzListFree)free)) ||
-		!(obj->streams.threads = rz_list_new()) ||
+		!(obj->streams.threads = rz_list_newf((RzListFree)free)) ||
 		!(obj->streams.unloaded_modules = rz_list_newf((RzListFree)free)) ||
 		!(obj->pe32_bins = rz_list_newf((RzListFree)rz_bin_mdmp_free_pe32_bin)) ||
 		!(obj->pe64_bins = rz_list_newf((RzListFree)rz_bin_mdmp_free_pe64_bin))) {

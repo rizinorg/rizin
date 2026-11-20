@@ -82,6 +82,7 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 			int read = rz_buf_fread_at(bf->buf, offset, (ut8 *)&module, "16ccci", 1);
 			if (read != sizeof(module)) {
 				eprintf("Truncated Header\n");
+				free(res->maincpu);
 				free(res);
 				return false;
 			}
@@ -95,8 +96,11 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *b, Sdb *sdb) 
 			} else if (!CMP_MODULE(VICE_C128ROM) && !module.major) {
 				res->rom = offset + read;
 			} else if (!CMP_MODULE(VICE_MAINCPU) && module.major == 1) {
+				free(res->maincpu);
 				res->maincpu = RZ_NEW(struct vsf_maincpu);
-				rz_buf_read_at(bf->buf, offset + read, (ut8 *)res->maincpu, sizeof(*res->maincpu));
+				if (res->maincpu) {
+					rz_buf_read_at(bf->buf, offset + read, (ut8 *)res->maincpu, sizeof(*res->maincpu));
+				}
 			}
 #undef CMP_MODULE
 			offset += module.length;
@@ -145,7 +149,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	RzPVector *ret = NULL;
 	RzBinSection *ptr = NULL;
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
@@ -496,6 +500,10 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *bf) {
 
 static void destroy(RzBinFile *bf) {
 	struct rz_bin_vsf_obj *obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
+	if (!obj) {
+		return;
+	}
+	sdb_free(obj->kv);
 	free(obj->maincpu);
 	free(obj);
 }
@@ -509,7 +517,7 @@ static RzPVector /*<RzBinAddr *>*/ *entries(RzBinFile *bf) {
 
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	int offset = _machines[m_idx].offset_mem;

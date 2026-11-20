@@ -136,10 +136,10 @@ RZ_API bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r) {
 RZ_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
 	RzListIter *it;
-	ut32 hash = sdb_hash(name);
-	if (!s || !r || !name) {
+	if (!s || !r || !name || s == r) {
 		return 0;
 	}
+	ut32 hash = sdb_hash(name);
 	rz_list_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			if (ns->sdb == r) {

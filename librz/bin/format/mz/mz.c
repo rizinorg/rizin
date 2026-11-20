@@ -239,6 +239,7 @@ void *rz_bin_mz_free(struct rz_bin_mz_obj_t *bin) {
 	free((void *)bin->relocation_entries);
 	rz_buf_free(bin->b);
 	bin->b = NULL;
+	sdb_free(bin->kv);
 	free(bin);
 	return NULL;
 }
@@ -269,10 +270,12 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	}
 	if (!read_mz_header(mz, bin->b)) {
 		RZ_LOG_ERROR("Cannot read MZ_image_dos_header\n");
+		free(mz);
 		return false;
 	}
 	// dos_header is not endian safe here in this point
 	if (mz->blocks_in_file < 1) {
+		free(mz);
 		return false;
 	}
 	if (mz->bytes_in_last_block == 0) {

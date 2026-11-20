@@ -86,6 +86,10 @@ static bool load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb
 
 static void destroy(RzBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
+	if (!obj) {
+		return;
+	}
+	sdb_free(obj->kv);
 	rz_buf_free(obj->buf);
 	free(obj);
 }
