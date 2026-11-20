@@ -16,6 +16,7 @@
 typedef struct tms_cs_context_t {
 	ut64 c6x_prev_end; ///< address just past the last c6x instruction disassembled
 	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	ut8 c6x_prev_masks; ///< units the SPMASKs of its execute packet name (for the "^" mark)
 	ut64 c6x_prev_addr; ///< address of that instruction
 	ut8 c6x_prev_bytes[C6X_WORD_SIZE]; ///< the bytes handed for it, up to a word
 	ut8 c6x_prev_len; ///< how many of them there are
@@ -59,7 +60,21 @@ static int tms320_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 		ctx->c6x_prev_len = len > 0 ? RZ_MIN(len, C6X_WORD_SIZE) : 0;
 		memcpy(ctx->c6x_prev_bytes, buf, ctx->c6x_prev_len);
 		if (ok) {
-			c6x_mark_parallel(&insn, a->pc, &ctx->c6x_prev_end, &ctx->c6x_prev_par);
+			if (a->pc != ctx->c6x_prev_end && !insn.is_header) {
+				// Not right after the instruction disassembled before, so the
+				// look-back has nothing on its execute packet. Where there is
+				// an image, that tells whether the instruction continues one
+				// and which units the SPMASKs before it there name.
+				bool cont = false;
+				ut8 units = 0;
+				if (c6x_continues_packet(c6x_read_image, &img, a->pc, a->big_endian, &cont) && cont &&
+					c6x_packet_masks(c6x, c6x_read_image, &img, a->pc, a->big_endian, &units)) {
+					ctx->c6x_prev_end = a->pc;
+					ctx->c6x_prev_par = true;
+					ctx->c6x_prev_masks = units;
+				}
+			}
+			c6x_mark_parallel(&insn, a->pc, &ctx->c6x_prev_end, &ctx->c6x_prev_par, &ctx->c6x_prev_masks);
 			char *s = c6x_format(c6x, &insn, a->pc);
 			if (s) {
 				rz_asm_op_set_asm(op, s);

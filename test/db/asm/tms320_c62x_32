@@ -26,9 +26,9 @@ d "clr .s1 a1,8,16,a2" c8100501 0x0 (set a2 (& (var a1) (bv 32 0xfffe00ff)))
 d "lmbd .l1 a0,a1,a2" 780d0401 0x0 (seq (set _clzv (let _lm (var a1) (ite (is_zero (& (var a0) (bv 32 0x1))) (~ (var _lm)) (var _lm)))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (var _n)))
 d "norm .l1 a1,a2" 780c0401 0x0 (seq (set _clzv (let _nm (var a1) (^ (var _nm) (>> (var _nm) (bv 32 0x1f) (msb (var _nm)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x20)) (! (== (var _n) (bv 32 0x20)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 32 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x1))))
 # subtract-conditional divide step (RzIL)
-d "subc .l1 a0,a1,a2" 78090401 0x0 (set a2 (let _s1 (var a0) (let _df (- (var _s1) (var a1)) (ite (|| (! (sle (var _df) (bv 32 0x0))) (== (var _df) (bv 32 0x0))) (| (<< (var _df) (bv 32 0x1) false) (bv 32 0x1)) (<< (var _s1) (bv 32 0x1) false)))))
+d "subc .l1 a0,a1,a2" 78090401 0x0 (set a2 (let _s1 (var a0) (let _s2 (var a1) (ite (|| (! (ule (var _s1) (var _s2))) (== (var _s1) (var _s2))) (| (<< (- (var _s1) (var _s2)) (bv 32 0x1) false) (bv 32 0x1)) (<< (var _s1) (bv 32 0x1) false)))))
 # NORM long (register-pair) form
-d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv)))) (seq (set _clzv (<< (var _clzv) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))
+d "norm .l1 a1:a0,a2" 180c0001 0x0 (seq (set _clzv64 (let _nl (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (^ (var _nl) (>> (var _nl) (bv 32 0x3f) (msb (var _nl)))))) (set _n (bv 32 0x0)) (repeat (&& (&& (ule (var _n) (bv 32 0x40)) (! (== (var _n) (bv 32 0x40)))) (! (msb (var _clzv64)))) (seq (set _clzv64 (<< (var _clzv64) (bv 64 0x1) false)) (set _n (+ (var _n) (bv 32 0x1))))) (set a2 (- (var _n) (bv 32 0x19))))
 # 40-bit long ABS and SAT (decode)
 d "abs .l1 a1:a0,a3:a2" 18070001 0x0 (seq (set _d (let _a (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (ite (|| (! (sle (var _a) (bv 64 0x0))) (== (var _a) (bv 64 0x0))) (var _a) (ite (== (var _a) (bv 64 0xffffff8000000000)) (bv 64 0x7fffffffff) (~- (var _a)))))) (set a2 (cast 32 false (var _d))) (set a3 (cast 32 false (>> (var _d) (bv 32 0x20) false))))
 d "sat .l1 a1:a0,a2" 18080001 0x0 (set a2 (let _s (>> (<< (append (var a1) (var a0)) (bv 32 0x18) false) (bv 32 0x18) (msb (<< (append (var a1) (var a0)) (bv 32 0x18) false))) (ite (! (sle (var _s) (bv 64 0x7fffffff))) (bv 32 0x7fffffff) (ite (&& (sle (var _s) (bv 64 0xffffffff80000000)) (! (== (var _s) (bv 64 0xffffffff80000000)))) (bv 32 0x80000000) (cast 32 false (var _s))))))
@@ -40,3 +40,28 @@ d "invalid" 00600010 0x0
 d "invalid" 00000300 0x0
 d "invalid" 00800300 0x0
 d "idle" 00e00100 0x0 nop
+
+# C62x has sixteen registers a side and no A0 predicate: a register above B15,
+# a predicate on A0 and an offset register above B15 are invalid
+d "ldw .d2 *-b1[b5],b12" e6a80406 0x0
+d "invalid" e6a804c6 0x0
+d "invalid" e6a8040e 0x0
+d "invalid" e6a84406 0x0
+
+# C62x and C67x compare unsigned against a ucst4: with the field's MSB set the result is invalid
+# (SPRU732J CMPGTU, CMPLTU); dis6x prints the low four bits, or all five for a long src2
+d "cmpgtu .l2 0xc,b11,b13" da89ad06 0x0 (set b13 (ite (! (ule (bv 32 0xc) (var b11))) (bv 32 0x1) (bv 32 0x0)))
+d "cmpltu .l2 0xf,b7:b6,b13" 9aeb9906 0x0 (set b13 (ite (&& (ule (cast 64 false (bv 32 0xf)) (& (append (var b7) (var b6)) (bv 64 0xffffffffff))) (! (== (cast 64 false (bv 32 0xf)) (& (append (var b7) (var b6)) (bv 64 0xffffffffff))))) (bv 32 0x1) (bv 32 0x0)))
+# dis6x: [ A1] CMPLTU.L2 0xc,B11,B13
+d "invalid" da8baf86 0x0
+# dis6x: [!A1] CMPGTU.L2 0x17,B13:B12,B13
+d "invalid" 9ae9b296 0x0
+# No MVC on .S1, and the B14/B15 + ucst15 ADDAB, ADDAH and ADDAW are C64x+
+# dis6x: [!B1] MVC.S1 NRP,A7
+d "invalid" e0739d53 0x0
+# dis6x: [ B1] MVC.S1 A7,CSR
+d "invalid" a0a39c40 0x0
+# dis6x: ADDAW.D2 B15,29702,B7
+d "invalid" fe06f413 0x0
+# dis6x: ADDAB.D1X B14,20623,A10
+d "invalid" 3c8f5015 0x0

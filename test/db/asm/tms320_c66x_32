@@ -20,3 +20,169 @@ d "rsqrdp .s1 a1:a0,a3:a2" a00b0401 0x0
 d "dcmpyr1 .m1 a1:a0,a3:a2,a5:a4" 70030812 0x0
 d "dccmpyr1 .m1 a1:a0,a3:a2,a5:a4" b0030812 0x0
 d "qsmpy32r1 .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" b0061014 0x0
+
+# The double-word forms: DADD and DSUB on .L and .S, a constant applying to both
+# halves, and the pair forms of AND, ANDN, OR and XOR
+d "dadd .l1 0x2,a5:a4,a7:a6" 58441003 0x0
+d "dadd .l1x 0x2,b5:b4,a7:a6" 58541003 0x0
+d "dadd .s1 a3:a2,a5:a4,a7:a6" e0411013 0x0
+d "dadd .s2x b3:b2,a5:a4,b7:b6" e2511013 0x0
+d "dsub .l1 a3:a2,a5:a4,a7:a6" f8401013 0x0
+d "xor .l1 a3:a2,a5:a4,a7:a6" f84d1013 0x0
+d "xor .l2x 0x2,a5:a4,b7:b6" da5d1013 0x0
+d "xor .l1 0x2,a5:a4,a7:a6" d84d1013 0x0
+d "xor .s1 -0x3,a5:a4,a7:a6" a0a21313 0x0
+d "and .l1 a3:a2,a5:a4,a7:a6" 784f1013 0x0
+d "andn .l1 a3:a2,a5:a4,a7:a6" 984f1013 0x0
+d "or .l1x a3:a2,b5:b4,a7:a6" f85f1013 0x0
+d "or .s1 a3:a2,a5:a4,a7:a6" e0461013 0x0
+d "and .s1 a3:a2,a5:a4,a7:a6" e0471013 0x0
+d "andn .s1 a3:a2,a5:a4,a7:a6" b04d1013 0x0
+# DMV has a .L form too
+d "dmv .l1x a4,b4,a5:a4" 989d1002 0x0
+
+# C66x two- and four-way forms of .L and .S on register pairs, all nonconditional
+d "dadd2 .l1 a1:a0,a3:a2,a5:a4" b8000812 0x0
+d "dadd2 .s1 a1:a0,a3:a2,a5:a4" 60000812 0x0
+d "dsub2 .l1 a1:a0,a3:a2,a5:a4" 98000812 0x0
+d "dsub2 .s1 a1:a0,a3:a2,a5:a4" 60040812 0x0
+d "dsadd .l1 a1:a0,a3:a2,a5:a4" 78020812 0x0
+d "dsadd .s1 a1:a0,a3:a2,a5:a4" 20080812 0x0
+d "dsadd2 .l1 a1:a0,a3:a2,a5:a4" 98020812 0x0
+d "dsadd2 .s1 a1:a0,a3:a2,a5:a4" 300c0812 0x0
+d "dssub .l1 a1:a0,a3:a2,a5:a4" f80c0812 0x0
+d "dssub2 .l1 a1:a0,a3:a2,a5:a4" 980c0812 0x0
+d "dapys2 .l1 a1:a0,a3:a2,a5:a4" 18070812 0x0
+d "dmax2 .l1 a1:a0,a3:a2,a5:a4" 58080812 0x0
+d "dmaxu4 .l1 a1:a0,a3:a2,a5:a4" 78080812 0x0
+d "dmin2 .l1 a1:a0,a3:a2,a5:a4" 38080812 0x0
+d "dminu4 .l1 a1:a0,a3:a2,a5:a4" 18090812 0x0
+d "dpackh2 .l1 a1:a0,a3:a2,a5:a4" d8030812 0x0
+d "dpackh2 .s1 a1:a0,a3:a2,a5:a4" 60020812 0x0
+d "dpackh4 .l1 a1:a0,a3:a2,a5:a4" 380d0812 0x0
+d "dpackhl2 .l1 a1:a0,a3:a2,a5:a4" 98030812 0x0
+d "dpackhl2 .s1 a1:a0,a3:a2,a5:a4" 20020812 0x0
+d "dpackl2 .l1 a1:a0,a3:a2,a5:a4" 18000812 0x0
+d "dpackl2 .s1 a1:a0,a3:a2,a5:a4" f00f0812 0x0
+d "dpackl4 .l1 a1:a0,a3:a2,a5:a4" 180d0812 0x0
+d "dpacklh2 .l1 a1:a0,a3:a2,a5:a4" 78030812 0x0
+d "dpacklh2 .s1 a1:a0,a3:a2,a5:a4" 20040812 0x0
+d "dpacklh4 .l1 a1,a2,a5:a4" 582d0812 0x0
+d "dspacku4 .s1 a1:a0,a3:a2,a5:a4" 300d0812 0x0
+d "dmvd .l1 a1,a2,a5:a4" 982d0812 0x0
+d "dmvd .s1 a1,a2,a5:a4" f02c0812 0x0
+d "daddsp .l1 a1:a0,a3:a2,a5:a4" 98070812 0x0
+d "daddsp .s1 a1:a0,a3:a2,a5:a4" 200b0812 0x0
+d "dsubsp .l1 a1:a0,a3:a2,a5:a4" b8070812 0x0
+d "dsubsp .s1 a1:a0,a3:a2,a5:a4" 600b0812 0x0
+
+# Their compares and shifts on .S, and SHL2
+d "dcmpeq2 .s1 a1:a0,a3:a2,a4" 60070812 0x0
+d "dcmpeq4 .s1 a1:a0,a3:a2,a4" 20070812 0x0
+d "dcmpgt2 .s1 a1:a0,a3:a2,a4" 20050812 0x0
+d "dcmpgtu4 .s1 a1:a0,a3:a2,a4" 60050812 0x0
+d "dshl .s1 a1:a0,a2,a5:a4" e04c0012 0x0
+d "dshl .s1 a1:a0,0x7,a5:a4" a0ec0012 0x0
+d "dshl2 .s1 a1:a0,a2,a5:a4" a0440012 0x0
+d "dshl2 .s1 a1:a0,0x7,a5:a4" a0e10012 0x0
+d "dshr .s1 a1:a0,a2,a5:a4" e04d0012 0x0
+d "dshr .s1 a1:a0,0x7,a5:a4" a0ed0012 0x0
+d "dshr2 .s1 a1:a0,a2,a5:a4" f04d0012 0x0
+d "dshr2 .s1 a1:a0,0x7,a5:a4" 20e60012 0x0
+d "dshru .s1 a1:a0,a2,a5:a4" e0490012 0x0
+d "dshru .s1 a1:a0,0x7,a5:a4" a0e90012 0x0
+d "dshru2 .s1 a1:a0,a2,a5:a4" 304e0012 0x0
+d "dshru2 .s1 a1:a0,0x7,a5:a4" 60e60012 0x0
+d "shl2 .s1 a1,a2,a3" e0448411 0x0
+d "shl2 .s1 a1,0x7,a3" e0e08411 0x0
+
+# Unary forms the src1 field selects on .L and .S: rotations, conversions and unpacks
+d "crot90 .l1 a1,a2" 58230501 0x0
+d "crot270 .l1 a1,a2" 58430501 0x0
+d "dcrot90 .l1 a1:a0,a3:a2" 58230301 0x0
+d "dcrot270 .l1 a1:a0,a3:a2" 58430301 0x0
+d "dinthsp .l1 a1,a3:a2" 58430601 0x0
+d "dinthsp .s1 a1,a3:a2" 204f0601 0x0
+d "dinthspu .l1 a1,a3:a2" 58630601 0x0
+d "dinthspu .s1 a1,a3:a2" 206f0601 0x0
+d "dintsp .l1 a1:a0,a3:a2" 58e30201 0x0
+d "dintsp .s1 a1:a0,a3:a2" 20af0201 0x0
+d "dintspu .l1 a1:a0,a3:a2" 58c30201 0x0
+d "dintspu .s1 a1:a0,a3:a2" 202f0201 0x0
+d "dspint .l1 a1:a0,a3:a2" 58830201 0x0
+d "dspint .s1 a1:a0,a3:a2" 208f0201 0x0
+d "dspinth .l1 a1:a0,a3" 58038201 0x0
+d "dspinth .s1 a1:a0,a3" 200f8201 0x0
+d "unpkbu4 .l1 a1,a3:a2" 58030501 0x0
+d "unpkbu4 .s1 a1,a3:a2" 200f0501 0x0
+d "unpkh2 .l1 a1,a3:a2" 58e30401 0x0
+d "unpkh2 .s1 a1,a3:a2" 20ef0401 0x0
+d "unpkhu2 .l1 a1,a3:a2" 58c30401 0x0
+d "unpkhu2 .s1 a1,a3:a2" 20cf0401 0x0
+
+# Three-cycle floating-point add and subtract, and logical ops on truth values
+d "faddsp .l1 a1,a2,a3" 98278801 0x0
+d "faddsp .s1 a1,a2,a3" 982e8801 0x0
+d "fsubsp .l1 a1,a2,a3" b8278801 0x0
+d "fsubsp .s1 a1,a2,a3" d82e8801 0x0
+d "fadddp .l1 a1:a0,a3:a2,a5:a4" 180b0802 0x0
+d "fadddp .s1 a1:a0,a3:a2,a5:a4" 20030802 0x0
+d "fsubdp .l1 a1:a0,a3:a2,a5:a4" 380b0802 0x0
+d "fsubdp .s1 a1:a0,a3:a2,a5:a4" b00f0802 0x0
+d "land .l1 a1,a2,a3" 182f8801 0x0
+d "landn .l1 a1,a2,a3" 382f8801 0x0
+d "lor .l1 a1,a2,a3" b82f8801 0x0
+
+# .M: two- and four-way multiplies into quads, complex and matrix forms, averages,
+# and MFENCE
+d "dmpy2 .m1 a1:a0,a3:a2,a7:a6:a5:a4" 30000812 0x0
+d "dsmpy2 .m1 a1:a0,a3:a2,a7:a6:a5:a4" 70000812 0x0
+d "dmpyu2 .m1 a1:a0,a3:a2,a7:a6:a5:a4" 80000812 0x0
+d "dmpyu4 .m1 a1:a0,a3:a2,a7:a6:a5:a4" 30010812 0x0
+d "dmpysu4 .m1 a1:a0,a3:a2,a7:a6:a5:a4" 000c0812 0x0
+d "dcmpy .m1 a1:a0,a3:a2,a7:a6:a5:a4" 00010812 0x0
+d "dccmpy .m1 a1:a0,a3:a2,a7:a6:a5:a4" 80010812 0x0
+d "cmpysp .m1 a1:a0,a3:a2,a7:a6:a5:a4" 000f0812 0x0
+d "cmpy32r1 .m1 a1:a0,a3:a2,a5:a4" 30020812 0x0
+d "ccmpy32r1 .m1 a1:a0,a3:a2,a5:a4" 70020812 0x0
+d "ccmatmpy .m1 a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" 80820014 0x0
+d "ccmatmpyr1 .m1 a1:a0,a7:a6:a5:a4,a9:a8" 80830014 0x0
+d "ddotp4h .m1 a3:a2:a1:a0,a7:a6:a5:a4,a9:a8" 00041014 0x0
+d "ddotpsu4h .m1 a3:a2:a1:a0,a7:a6:a5:a4,a9:a8" 80041014 0x0
+d "davg2 .m1 a1:a0,a3:a2,a5:a4" f0040812 0x0
+d "davgnr2 .m1 a1:a0,a3:a2,a5:a4" 70040812 0x0
+d "davgnru4 .m1 a1:a0,a3:a2,a5:a4" 30040812 0x0
+d "davgu4 .m1 a1:a0,a3:a2,a5:a4" b0040812 0x0
+d "mpyu2 .m1 a1,a2,a5:a4" 30220802 0x0
+d "fmpydp .m1 a1:a0,a3:a2,a5:a4" f0030802 0x0
+d "dxpnd2 .m1 a1,a3:a2" f0200601 0x0
+d "dxpnd4 .m1 a1,a3:a2" f0000601 0x0
+d "mfence" 00800010 0x0
+
+# The other side and the cross path
+d "dadd2 .l2x b1:b0,a3:a2,b5:b4" ba100812 0x0
+d "dshl .s2 b1:b0,b2,b5:b4" e24c0012 0x0
+d "dinthsp .s1x b1,a3:a2" 205f0601 0x0
+d "cmpysp .m2x b1:b0,a3:a2,b7:b6:b5:b4" 021f0812 0x0
+d "faddsp .l2x b1,a2,b3" 9a378801 0x0
+d "land .l1x a1,b2,a3" 183f8801 0x0
+d "dspinth .l2 b1:b0,b3" 5a038201 0x0
+d "dcmpgtu4 .s1x a1:a0,b3:b2,a4" 60150812 0x0
+
+# C66x forms of older instructions: ADD and ADDU of a long on .S, whose src1 field
+# names the pair by its odd register (an even one is RCPDP or RSQRDP), the .S
+# SPINT, INTSP and INTSPU, and DOTP4H and DOTPSU4H into a pair
+d "add .s1 a3:a2,a12,a5:a4" 606b3002 0x0
+d "addu .s1 a3:a2,a12,a5:a4" a06b3002 0x0
+d "add .s1x a3:a2,b12,a5:a4" 607b3002 0x0
+d "spint .s1 a1,a2" 208f0401 0x0
+d "intsp .s1 a1,a2" 20af0401 0x0
+d "intspu .s1 a1,a2" 202f0401 0x0
+d "dotp4h .m1 a3:a2,a5:a4,a9:a8" f0411014 0x0
+d "dotpsu4h .m1 a3:a2,a5:a4,a9:a8" b0401014 0x0
+
+# dis6x masks a quad field to four registers whatever its low bits, and shows
+# no cross path for DDOTP4H and DDOTPSU4H
+d "qmpy32 .m1 a3:a2:a1:a0,a7:a6:a5:a4,a11:a10:a9:a8" 00689414 0x0
+d "cmatmpy .m1 a5:a4,a3:a2:a1:a0,a11:a10:a9:a8" 00429014 0x0
+d "ddotp4h .m1 a3:a2:a1:a0,a7:a6:a5:a4,a9:a8" 00541014 0x0
