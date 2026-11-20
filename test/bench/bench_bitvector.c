@@ -163,6 +163,38 @@ static void bench_bv_sub(RzTable *t_out) {
 	rz_bv_free(b);
 }
 
+static void bench_bv_to_ut(RzTable *t_out) {
+	static const ut8 pattern[20] = {
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
+		0x5a, 0xa5, 0xc3, 0x3c
+	};
+	RzBitVector *bvs[4];
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(bvs); k++) {
+		bvs[k] = rz_bv_new(128);
+		rz_bv_set_from_bytes_le(bvs[k], pattern, (ut32)k, 128);
+	}
+
+	volatile ut64 sink = 0;
+#define BENCH_BV_TO_UT(fn) \
+	RZ_BENCH_RUN(#fn " (128 bit, 1000 calls/iter)", t_out, 10000, { \
+		for (ut32 j = 0; j < 1000; j++) { \
+			sink += fn(bvs[j & 3]); \
+		} \
+	})
+
+	BENCH_BV_TO_UT(rz_bv_to_ut8);
+	BENCH_BV_TO_UT(rz_bv_to_ut16);
+	BENCH_BV_TO_UT(rz_bv_to_ut32);
+	BENCH_BV_TO_UT(rz_bv_to_ut64);
+
+#undef BENCH_BV_TO_UT
+	(void)sink;
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(bvs); k++) {
+		rz_bv_free(bvs[k]);
+	}
+}
+
 int main() {
 	RzTable *t = rz_table_new();
 	RZ_BENCH_TABLE_INIT(t);
@@ -180,6 +212,7 @@ int main() {
 	bench_bv_add_inplace_256(t);
 	bench_bv_sub(t);
 	bench_bv_sub_inplace(t);
+	bench_bv_to_ut(t);
 
 	// Print results
 	RZ_BENCH_TABLE_PRINT_AND_FREE(t);
