@@ -9708,3 +9708,14 @@ arg parse_buffer *input_buffer @ r8
 var size_t off @ r9
 EOF
 RUN
+
+NAME=Split DWARF fallback when dwo has no DWARF sections
+FILE=bins/elf/dwarf3_c.elf
+ARGS=-e bin.dbginfo.dwo_path=bins/elf/dwarf/arm-thumb-stripped.elf
+CMDS=<<EOF
+i~format
+EOF
+EXPECT=<<EOF
+format   elf64
+EOF
+RUN

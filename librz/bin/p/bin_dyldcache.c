@@ -501,6 +501,7 @@ static RzPVector /*<RzBinClass *>*/ *dyldcache_classes(RzBinFile *bf) {
 		(mach0);
 	}
 
+	rz_buf_free(owned_buf);
 	return ret;
 
 beach:

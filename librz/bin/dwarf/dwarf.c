@@ -44,6 +44,7 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 		dw->line = rz_bin_dwarf_line_from_file(dw, bf);
 	}
 	if (!(dw->addr || dw->line_str || dw->aranges || dw->str || dw->str_offsets || dw->loclists || dw->rnglists || dw->abbrev)) {
+		dw->parent = NULL;
 		rz_bin_dwarf_free(dw);
 		return NULL;
 	}
@@ -51,15 +52,13 @@ static inline RZ_OWN RzBinDWARF *dwarf_from_file(
 }
 
 static inline char *read_debuglink(RzBinFile *binfile) {
-	RzBinSection *sect = NULL;
+	RzBinSection *sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink");
+	RET_NULL_IF_FAIL(sect);
+	RzBinEndianReader *R = rz_bin_dwarf_section_reader(binfile, sect);
+	RET_NULL_IF_FAIL(R);
 	const char *name = NULL;
-	RzBinEndianReader *R = NULL;
-	RET_NULL_IF_FAIL(
-		(sect = rz_bin_dwarf_section_by_name(binfile, ".gnu_debuglink")) &&
-		(R = rz_bin_dwarf_section_reader(binfile, sect)) &&
-		R_read_cstring(R, &name));
+	char *debuglink = R_read_cstring(R, &name) ? rz_str_dup(name) : NULL;
 	// TODO: Verification the CRC
-	char *debuglink = rz_str_dup(name);
 	R_free(R);
 	return debuglink;
 }

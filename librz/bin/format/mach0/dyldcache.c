@@ -228,7 +228,7 @@ RZ_API RZ_NONNULL const char *rz_dyldcache_get_type_str(RzDyldCache *cache) {
 
 static void populate_cache_headers(RzDyldCache *cache) {
 	cache->n_hdr = 0;
-	RzList *hdrs = rz_list_newf(NULL);
+	RzList *hdrs = rz_list_newf(free);
 	if (!hdrs) {
 		return;
 	}
@@ -1004,18 +1004,18 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 
 		if (slide_info.page_starts_offset == 0 ||
 			slide_info.page_starts_offset > slideInfoSize ||
-			slide_info.page_starts_offset + slide_info.page_starts_count * 2 > slideInfoSize) {
+			(ut64)slide_info.page_starts_offset + (ut64)slide_info.page_starts_count * 2 > slideInfoSize) {
 			return NULL;
 		}
 
 		if (slide_info.page_extras_offset == 0 ||
 			slide_info.page_extras_offset > slideInfoSize ||
-			slide_info.page_extras_offset + slide_info.page_extras_count * 2 > slideInfoSize) {
+			(ut64)slide_info.page_extras_offset + (ut64)slide_info.page_extras_count * 2 > slideInfoSize) {
 			return NULL;
 		}
 
 		if (slide_info.page_starts_count > 0) {
-			ut64 size = slide_info.page_starts_count * 2;
+			ut64 size = (ut64)slide_info.page_starts_count * 2;
 			ut64 at = slideInfoOffset + slide_info.page_starts_offset;
 			tmp_buf_1 = malloc(size);
 			if (!tmp_buf_1) {
@@ -1027,7 +1027,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		}
 
 		if (slide_info.page_extras_count > 0) {
-			ut64 size = slide_info.page_extras_count * 2;
+			ut64 size = (ut64)slide_info.page_extras_count * 2;
 			ut64 at = slideInfoOffset + slide_info.page_extras_offset;
 			tmp_buf_2 = malloc(size);
 			if (!tmp_buf_2) {
@@ -1081,18 +1081,18 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 
 		if (slide_info.toc_offset == 0 ||
 			slide_info.toc_offset > slideInfoSize ||
-			slide_info.toc_offset + slide_info.toc_count * 2 > slideInfoSize) {
+			(ut64)slide_info.toc_offset + (ut64)slide_info.toc_count * 2 > slideInfoSize) {
 			return NULL;
 		}
 
 		if (slide_info.entries_offset == 0 ||
 			slide_info.entries_offset > slideInfoSize ||
-			slide_info.entries_offset + slide_info.entries_count * slide_info.entries_size > slideInfoSize) {
+			(ut64)slide_info.entries_offset + (ut64)slide_info.entries_count * (ut64)slide_info.entries_size > slideInfoSize) {
 			return NULL;
 		}
 
 		if (slide_info.toc_count > 0) {
-			ut64 size = slide_info.toc_count * 2;
+			ut64 size = (ut64)slide_info.toc_count * 2;
 			ut64 at = slideInfoOffset + slide_info.toc_offset;
 			tmp_buf_1 = malloc(size);
 			if (!tmp_buf_1) {
@@ -1132,6 +1132,7 @@ static RzDyldRebaseInfo *get_rebase_info(RzDyldCache *cache, ut64 slideInfoOffse
 		rebase_info->toc = (ut16 *)tmp_buf_1;
 		rebase_info->toc_count = slide_info.toc_count;
 		rebase_info->entries = tmp_buf_2;
+		rebase_info->entries_count = slide_info.entries_count;
 		rebase_info->entries_size = slide_info.entries_size;
 		if (slide == UT64_MAX) {
 			rebase_info->slide = estimate_slide(cache, UT64_MAX, 0);
