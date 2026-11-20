@@ -68,6 +68,10 @@ RZ_IPI void rz_bin_demangle_symbols_with_flags(RzBinObject *o, const RzDemangler
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_symbol(RzBinObject *o);
 RZ_IPI RzBinProcessLanguage rz_bin_process_language_import(RzBinObject *o);
 
+static inline int rz_bin_symbol_vaddr_cmp(const RzBinSymbol *a, const RzBinSymbol *b, void *user) {
+	return (a->vaddr > b->vaddr) - (a->vaddr < b->vaddr);
+}
+
 struct rz_bin_string_database_t {
 	RzPVector /*<RzBinString *>*/ *pvec; ///< Contains all the strings in list form
 	HtUP /*<ut64, RzBinString*>*/ *phys; ///< Contains all the strings but mapped by physical address
