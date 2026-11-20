@@ -870,6 +870,82 @@ bool test_ht_ss_iter(void) {
 	mu_end;
 }
 
+bool test_ht_uu_iter_clone(void) {
+	HtUU *ht = ht_uu_new();
+	ht_uu_insert(ht, 0x11, 0x1111);
+	ht_uu_insert(ht, 0x22, 0x2222);
+	ht_uu_insert(ht, 0x33, 0x3333);
+	ht_uu_insert(ht, 0x44, 0x4444);
+	ht_uu_insert(ht, 0x55, 0x5555);
+
+	// take two steps, then clone
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_keys(ht, &it), "ht_uu_as_iter_keys failed");
+	const ut64 *k;
+	mu_assert_notnull(rz_iterator_next(&it), "first element");
+	mu_assert_notnull(rz_iterator_next(&it), "second element");
+	RzIterator it_clone = (RzIterator){ 0 };
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, false), "rz_iterator_clone failed");
+
+	// both continue over the remaining elements, independently
+	// (icnt counts the elements consumed by the clone: 2 before cloning, 1 shared step)
+	ut32 icnt = 3;
+	const ut64 *k_clone;
+	mu_assert_notnull(k = rz_iterator_next(&it), "next original");
+	mu_assert_notnull(k_clone = rz_iterator_next(&it_clone), "next clone");
+	mu_assert_eq(*k, *k_clone, "original and clone diverged");
+	rz_iterator_fini(&it);
+
+	// Iterate clone without the original
+	while ((k = rz_iterator_next(&it_clone))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(icnt, 5, "Wrong number of clone iterations");
+
+	// cloning an uninitialized iterator fails
+	RzIterator uninit = (RzIterator){ 0 };
+	RzIterator uninit_clone = (RzIterator){ 0 };
+	mu_assert_false(rz_iterator_clone(&uninit, &uninit_clone, false), "clone of uninit succeeded");
+	mu_assert_true(rz_iterator_is_uninit(&uninit_clone), "failed clone left initialized iterator");
+
+	// a reset clone starts over from the first element,
+	// while the original keeps its position
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_keys(ht, &it), "ht_uu_as_iter_keys failed");
+	mu_assert_notnull(rz_iterator_next(&it), "first element");
+	mu_assert_notnull(rz_iterator_next(&it), "second element");
+	mu_assert_true(rz_iterator_clone(&it, &it_clone, true), "rz_iterator_clone failed");
+	// the clone yields all 5 elements again
+	icnt = 0;
+	while ((k = rz_iterator_next(&it_clone))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it_clone);
+	mu_assert_eq(icnt, 5, "Wrong number of reset clone iterations");
+	// the original was untouched by the reset and continues at the third element
+	icnt = 2;
+	while ((k = rz_iterator_next(&it))) {
+		icnt++;
+	}
+	mu_assert_eq(icnt, 5, "Wrong number of original iterations");
+
+	// rz_iterator_reset() rewinds the iterator itself
+	mu_assert_true(rz_iterator_reset(&it), "rz_iterator_reset failed");
+	icnt = 0;
+	while ((k = rz_iterator_next(&it))) {
+		icnt++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(icnt, 5, "Wrong number of iterations after reset");
+
+	// resetting an uninitialized iterator fails
+	mu_assert_false(rz_iterator_reset(&uninit), "reset of uninit succeeded");
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
 bool test_set_u(void) {
 	RzSetU *set_u = rz_set_u_new();
 	rz_set_u_add(set_u, 0x5050505);
@@ -1144,6 +1220,73 @@ bool test_set_u_intersection_reduce(void) {
 	mu_end;
 }
 
+bool test_set_u_difference(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	rz_set_u_add(a, 1);
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+	rz_set_u_add(b, 2);
+	rz_set_u_add(b, 3);
+	rz_set_u_add(b, 4);
+	rz_set_u_add(c, 5);
+
+	// Count only, without a destination set
+	size_t diff_size = rz_set_u_difference(NULL, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, NULL);
+	mu_assert_eq(diff_size, 0, "Wrong difference size for empty list");
+
+	// Passing the same set multiple times must not change the result
+	diff_size = rz_set_u_difference(NULL, a, a, a, NULL);
+	mu_assert_eq(diff_size, 0, "Wrong difference size when passing a set multiple times");
+	diff_size = rz_set_u_difference(NULL, a, b, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size when passing sets multiple times");
+
+	// Compute difference into a caller-provided set
+	RzSetU *d = rz_set_u_new();
+	rz_set_u_add(d, 100);
+	diff_size = rz_set_u_difference(d, a, b, NULL);
+	mu_assert_eq(diff_size, 2, "Wrong difference size");
+	mu_assert_true(rz_set_u_contains(d, 100), "Difference did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(d, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(d, 2), "Element not part of the difference was added");
+	mu_assert_false(rz_set_u_contains(d, 3), "Element not part of the difference was added");
+
+	// If diff_set is the set to subtract from, it is reduced to the difference
+	diff_size = rz_set_u_difference(a, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(a), 1, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(a, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(a, 2), "Element not part of the difference was not deleted");
+	mu_assert_false(rz_set_u_contains(a, 3), "Element not part of the difference was not deleted");
+
+	// Rebuild a = { 1, 2, 3 }
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+
+	// If diff_set is one of the sets to subtract, its content is replaced
+	rz_set_u_add(b, 10);
+	diff_size = rz_set_u_difference(b, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(b), 1, "Wrong size after replacement");
+	mu_assert_true(rz_set_u_contains(b, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(b, 10), "Previous content was not replaced");
+
+	// The source sets must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(b);
+	rz_set_u_free(d);
+	rz_set_u_free(c);
+	rz_set_u_free(a);
+	mu_end;
+}
+
 bool test_set_s(void) {
 	RzSetS *set_s = rz_set_s_new(HT_STR_CONST);
 	rz_set_s_add(set_s, "0x5050505");
@@ -1231,10 +1374,12 @@ int all_tests() {
 	mu_run_test(test_ht_uu_iter);
 	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
+	mu_run_test(test_ht_uu_iter_clone);
 	mu_run_test(test_set_u);
 	mu_run_test(test_set_u_union);
 	mu_run_test(test_set_u_intersection);
 	mu_run_test(test_set_u_intersection_reduce);
+	mu_run_test(test_set_u_difference);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }

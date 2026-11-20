@@ -128,3 +128,68 @@ RZ_API double rz_math_welford_gstddev(const RzMathWelfordSums *wf) {
 	rz_return_val_if_fail(wf, 0.0);
 	return (wf->n > 1) ? exp(sqrt(wf->gsums / (wf->n - 1))) : 0.0;
 }
+
+/**
+ * \brief Calculates softmax probability for \p zi in respect to the elements in \p zjs.
+ *
+ * \param zi An element from the the input tuple \p zjs to determine the softmax probability for.
+ * \param zjs All elements of the input tuple.
+ *
+ * \return The softmax for \p zi, or a negative number in case of failure.
+ */
+RZ_API double rz_math_softmax_p_zi_st64(st64 zi, RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs) {
+	rz_return_val_if_fail(zjs, -1.0);
+
+	double numerator = exp(zi);
+	double den = 0.0;
+	st64 *zj;
+	rz_iterator_foreach(zjs, zj) {
+		den += exp(*zj);
+	}
+	return numerator / den;
+}
+
+/**
+ * \brief Calculates softmax over the iterator \p zjs.
+ * In case of an error, a warning is printed and it returns ST64_MIN.
+ * Since ST64_MIN is theoretically a valid return value, the user
+ * should ensure to pass valid iterators here.
+ *
+ * \param zjs Iterator over all elements of the input tuple.
+ * \param zp The probabilities for each element in \p zjs. Pushed into it in order of the iterator.
+ *
+ * \return The softmax for \p zi.
+ */
+RZ_API st64 rz_math_softmax_st64(RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs, RZ_NULLABLE RZ_OUT RzVector /*double*/ *zp) {
+	rz_return_val_if_fail(zjs, ST64_MIN);
+
+	st64 *z;
+	double den = 0.0;
+	size_t c = 0;
+	rz_iterator_foreach(zjs, z) {
+		c++;
+		den += exp(*z);
+	}
+	if (!c) {
+		rz_warn_if_reached();
+		return ST64_MIN;
+	}
+
+	if (!rz_iterator_reset(zjs)) {
+		rz_warn_if_reached();
+		return ST64_MIN;
+	}
+	double max_p = 0.0;
+	st64 max_z = 0;
+	rz_iterator_foreach(zjs, z) {
+		double p = exp(*z) / den;
+		if (zp) {
+			rz_vector_push(zp, &p);
+		}
+		if (p > max_p) {
+			max_p = p;
+			max_z = *z;
+		}
+	}
+	return max_z;
+}

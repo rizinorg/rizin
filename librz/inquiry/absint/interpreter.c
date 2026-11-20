@@ -145,6 +145,8 @@ RZ_API void rz_absint_run_push(RZ_BORROW RZ_NONNULL RzAbsIntRunContext *ctx, RZ_
 	}
 	if (!is_fallthrough) {
 		block->non_fallthrough_in = true;
+	} else {
+		block->fallthrough_in = true;
 	}
 }
 
@@ -181,18 +183,6 @@ static void report_yield_xref(
 	if (!val_domain(ctx->inst)->to_concrete_const(to, &to_bv) || rz_bv_len(&to_bv) > 64) {
 		// Isn't reported
 		// TODO: we might also want to report multiple values here depending on the value domain
-		goto cleanup;
-	}
-	if (type == RZ_ANALYSIS_XREF_TYPE_CODE &&
-		RZ_STR_EQ(ctx->inst->arch_name, "hexagon") &&
-		from + insn_pkt_size == rz_bv_to_ut64(&to_bv)) {
-		// Ugly work around.
-		// Because we don't have RzArch yet the Hexagon plugin adds a JUMP at the
-		// end of each and every instruction packet.
-		// This is necessary because the RzIL VM would otherwise just add 4 to the PC,
-		// which is too little for a packet with 2+ instructions.
-		// We don't want to report the code references to the next instruction
-		// packet. So skip them here.
 		goto cleanup;
 	}
 
@@ -717,12 +707,12 @@ static EvalResult eval_effect(RzAbsIntRunContext *ctx, const RzILOpEffect *effec
 		bool is_call = ctx->block_stores_ret_addr;
 
 		if (is_const) {
-			RZ_LOG_DEBUG("prototype: JMP - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", ctx->astate->pc, rz_bv_to_ut64(&eval_out_bv));
-			RzAnalysisXRefType xref_type = RZ_ANALYSIS_XREF_TYPE_CODE;
+			ut64 dst = rz_bv_to_ut64(&eval_out_bv);
+			RZ_LOG_DEBUG("prototype: %s - Set PC: 0x%" PFMT64x " -> 0x%" PFMT64x "\n", is_call ? "CALL (skipped)" : "JMP", ctx->astate->pc, dst);
 			if (is_call) {
-				xref_type = RZ_ANALYSIS_XREF_TYPE_CALL;
+				rz_vector_push(&ctx->block->call_targets, &dst);
 			}
-			report_yield_xref(ctx, insn_pkt_size, ctx->insn_addr, eval_out, xref_type);
+			// The jump targets are added after the block is finished.
 		}
 
 		if (is_call) {
@@ -878,7 +868,7 @@ static EvalResult eval_block(RZ_NONNULL RzAbsIntRunContext *ctx, RZ_NONNULL RzAb
 		}
 		if (interp_is_collecting_states(ctx) && astate->pc != next_pc) {
 			// Constant jump other than fallthrough, meaning interpretation will continue in another block
-			interp_block_add_non_fallthrough_target(ctx->block, astate->pc);
+			interp_block_add_jump_target(ctx->block, astate->pc);
 			break;
 		}
 	}
@@ -1071,133 +1061,6 @@ RZ_API void rz_absint_result_free(RZ_NULLABLE RzAbsIntInstance *inst, RZ_OWN RZ_
 		interp_blocks_fini(inst, &res->blocks);
 	}
 	free(res);
-}
-
-static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
-	if (abb->jump == UT64_MAX && abb->fail != target) {
-		abb->jump = target;
-	} else if (abb->fail == UT64_MAX && abb->jump != target) {
-		abb->fail = target;
-	} else if (abb->fail != target && abb->jump != target) {
-		RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
-			    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x "\n",
-			abb->addr, abb->jump, abb->fail,
-			target);
-	}
-}
-
-/**
- * \brief Applies the results of the abstract interpreter to RzAnalysis.
- *
- * It converts the \p res->blocks to a function with name \p fcn_name (or a generated name if NULL).
- * Directly applicable results like xrefs and comments are simply added to RzAnalysis.
- *
- * \param res The results.
- * \param analysis The RzAnalysis instance to add the results to.
- * \param fcn_name Optionally given function name for the function it creates for the \p res->blocks.
- *
- * \return True for success, false in case of failure.
- */
-RZ_API bool rz_absint_result_apply_to_analysis(RZ_NONNULL RzAbsIntResult *res, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE const char *fcn_name) {
-	rz_return_val_if_fail(res && analysis, false);
-	char name_alt[32] = { 0 };
-	RzAnalysisFunction *func = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, res->entry), res->entry, RZ_ANALYSIS_FCN_TYPE_FCN);
-	if (!func) {
-		// TODO: handle better than skipping everything
-		// rz_analysis_create_function() already prints the more detailed reason if there is any
-		RZ_LOG_ERROR("Could not apply analysis result as function @ 0x%" PFMT64x ": func == NULL\n", res->entry);
-		return false;
-	}
-	RzIntervalTreeIter it;
-	RzAbsIntBlock *block;
-	rz_interval_tree_foreach (&res->blocks, it, block) {
-		if (block->added_to_analysis) {
-			// has been merged into the previous already
-			continue;
-		}
-		ut64 start = rz_absint_block_get_start(block);
-		ut64 end_excl = rz_absint_block_get_end(block) + 1;
-
-		// Merge consecutive blocks if there is no in-edge between them.
-		// Splits like this happen in the first place because interp blocks only reach until the
-		// first jump. This may be a call however, which just falls through.
-		RzIntervalTreeIter next_it = it;
-		while (block->is_fallthrough && rz_vector_empty(&block->jump_targets)) {
-			rz_rbtree_iter_next(&next_it);
-			RzIntervalNode *next_node = NULL;
-			while (rz_rbtree_iter_has(&next_it)) {
-				RzIntervalNode *n = rz_interval_tree_iter_get(&next_it);
-				if (n->start >= end_excl) {
-					if (n->start == end_excl) {
-						next_node = n;
-					}
-					break;
-				}
-				rz_rbtree_iter_next(&next_it);
-			}
-			RzAbsIntBlock *next_block;
-			if (!next_node || (next_block = next_node->data)->non_fallthrough_in) {
-				// no consecutive block or there is a consecutive block, but is has an in-edge from somewhere else
-				break;
-			}
-			next_block->added_to_analysis = true;
-			end_excl = next_node->end + 1;
-			block = next_block;
-		}
-
-		RzAnalysisBlock *abb = rz_analysis_create_block(analysis, start, end_excl - start);
-		if (!abb) {
-			// TODO: Handle the case of existing blocks better, e.g. just use the existing block
-			// and optionally update its contents with some new information we have gained.
-			RZ_LOG_ERROR("Failed to create block @ 0x%" PFMT64x "%s\n", start,
-				rz_analysis_get_block_at(analysis, start) ? " because there is already a block and handling this is not yet implemented" : "");
-			continue;
-		}
-
-		// TODO: analyze_ops should eventually not be used here since it does its own analysis.
-		// Instead, we should manually apply our analysis info to it.
-		// Keep in mind we might have to add info from multiple merged blocks here (see merging above)
-		// and that our interp block works on instruction packets, not instructions
-		rz_analysis_block_analyze_ops(abb);
-
-		rz_analysis_function_add_block(func, abb);
-		abb->jump = UT64_MAX;
-		abb->fail = UT64_MAX;
-		ut64 *target;
-		rz_vector_foreach (&block->jump_targets, target) {
-			bb_add_target(abb, *target);
-		}
-		if (block->is_fallthrough) {
-			bb_add_target(abb, end_excl);
-		}
-	}
-
-	// Hint: Some of the xrefs, specifically code and call ones, could be determined from
-	// the information in blocks as well. So an optimization could be to make the interpreter
-	// only emit explicit xref info for all remaining events, e.g. mem read/write.
-	RzAnalysisXRef *xref;
-	rz_vector_foreach (&res->xrefs, xref) {
-		if (!rz_analysis_xrefs_set(analysis, xref->from, xref->to, xref->type)) {
-			RZ_LOG_ERROR("failed to set xref\n");
-		}
-	}
-
-	if (res->comments) {
-		RzIterator it = (RzIterator){ 0 };
-		if (!ht_up_as_iter_keys(res->comments, &it)) {
-			return false;
-		}
-		ut64 *k;
-		rz_iterator_foreach(&it, k) {
-			const char *cmt = ht_up_find(res->comments, *k, NULL);
-			if (cmt) {
-				rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, *k, cmt);
-			}
-		}
-		rz_iterator_fini(&it);
-	}
-
-	return true;
 }
 
 extern RZ_IPI RzAbsIntValueDomain rz_absint_value_domain_const;
