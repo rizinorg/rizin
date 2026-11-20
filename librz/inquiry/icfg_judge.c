@@ -602,7 +602,7 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	RzICFGConflictSolutionCfg cfg) {
 	rz_return_val_if_fail(bin && io, false);
 	char *icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
-	printf("%s\n", icfg_dot);
+	printf("Before:\n%s\n", icfg_dot);
 	free(icfg_dot);
 	if (rz_set_u_size(icfg->node_conflicts) == 0) {
 		return true;
@@ -640,6 +640,9 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 			return false;
 		}
 	}
+	icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
+	printf("After:\n%s\n", icfg_dot);
+	free(icfg_dot);
 
 	return true;
 }
