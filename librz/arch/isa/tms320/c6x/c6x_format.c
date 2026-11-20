@@ -200,7 +200,7 @@ RZ_IPI RZ_OWN char *c6x_format(const C6xArchDesc *desc, const C6xInsn *insn, ut6
 		return rz_strbuf_drain(sb);
 	}
 	if (insn->cont) {
-		rz_strbuf_append(sb, "|| ");
+		rz_strbuf_append(sb, insn->masked ? "||^ " : "|| ");
 	}
 	const char *pr = c6x_pred_reg_name(insn->creg);
 	if (pr) {
