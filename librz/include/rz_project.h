@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define RZ_PROJECT_VERSION 28
+#define RZ_PROJECT_VERSION 29
 
 typedef Sdb RzProject;
 
@@ -73,6 +73,7 @@ RZ_API bool rz_project_migrate_v24_v25(RzProject *prj, RzSerializeResultInfo *re
 RZ_API bool rz_project_migrate_v25_v26(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate_v26_v27(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate_v27_v28(RzProject *prj, RzSerializeResultInfo *res);
+RZ_API bool rz_project_migrate_v28_v29(RzProject *prj, RzSerializeResultInfo *res);
 RZ_API bool rz_project_migrate(RzProject *prj, unsigned long version, RzSerializeResultInfo *res);
 
 #ifdef __cplusplus

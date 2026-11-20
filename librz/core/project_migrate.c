@@ -838,6 +838,17 @@ RZ_API bool rz_project_migrate_v27_v28(RzProject *prj, RzSerializeResultInfo *re
 	return true;
 }
 
+// --
+// Migration 28 -> 29
+//
+// Changes from <commit not yet known>:
+//      Added "laddr" to "/core/file".
+
+RZ_API bool rz_project_migrate_v28_v29(RzProject *prj, RzSerializeResultInfo *res) {
+	// there is nothing to be done since the change was only additive
+	return true;
+}
+
 static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = {
 	rz_project_migrate_v1_v2,
 	rz_project_migrate_v2_v3,
@@ -866,6 +877,7 @@ static bool (*const migrations[])(RzProject *prj, RzSerializeResultInfo *res) = 
 	rz_project_migrate_v25_v26,
 	rz_project_migrate_v26_v27,
 	rz_project_migrate_v27_v28,
+	rz_project_migrate_v28_v29,
 };
 
 /// Migrate the given project to the current version in-place

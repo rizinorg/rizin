@@ -36,6 +36,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=load with raw file and map address set with -m
+FILE=bins/firmware/jumpy.bin
+ARGS=-m 0x1000
+CMDS=<<EOF
+Ps .tmp_load_laddr.rzdb
+e bin.laddr=0
+o--
+Po .tmp_load_laddr.rzdb
+rm .tmp_load_laddr.rzdb
+oml~[4]
+EOF
+EXPECT=<<EOF
+0x00001000
+EOF
+RUN
+
 NAME=load with file using saved absolute file path after project file was moved
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
@@ -407,6 +423,7 @@ Detailed project load info:
   project migrated from version 25 to 26.
   project migrated from version 26 to 27.
   project migrated from version 27 to 28.
+  project migrated from version 28 to 29.
 EOF
 RUN
 
