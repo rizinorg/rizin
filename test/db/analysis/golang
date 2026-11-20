@@ -591,7 +591,7 @@ TAIL
 0x4d247e 36 36 syntax error scanning complex number
 0x4d0da9 29 29 syntax error scanning boolean
 0x4cdc0f 18 18 hello, hacktivity\n
-9570
+9571
 compiler go1.15 Linker 03.00
 errors
 fmt

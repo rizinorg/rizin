@@ -255,3 +255,14 @@ hello
 {}
 EOF
 RUN
+
+NAME=Unicode 18.0.0 Bengali Supplement
+FILE==
+CMDS=<<EOF
+wx f091b7b0
+ps
+EOF
+EXPECT=<<EOF
+𑷰
+EOF
+RUN
