@@ -718,6 +718,64 @@ RZ_API void rz_vector_sort(RzVector *vec, RzVectorComparator cmp, bool reverse, 
 	vector_quick_sort(vec->a, vec->elem_size, vec->len, cmp, reverse, user);
 }
 
+typedef struct vector_iter_state_t {
+	const RzVector *vec;
+	size_t i;
+} VectorIterState;
+
+static void *vector_iter_next(RzIterator *it) {
+	rz_return_val_if_fail(it && it->u, NULL);
+	VectorIterState *state = it->u;
+	if (state->i >= state->vec->len) {
+		return NULL;
+	}
+	void *elem = rz_vector_index_ptr(state->vec, state->i++);
+	return elem;
+}
+
+static void vector_free_iter_state(void *state) {
+	free(state);
+}
+
+static void *vector_clone_iter_state(const void *state) {
+	VectorIterState *clone = RZ_NEW(VectorIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(VectorIterState));
+	}
+	return clone;
+}
+
+static bool vector_reset_iter_state(void *state) {
+	VectorIterState *vec_state = state;
+	vec_state->i = 0;
+	return true;
+}
+
+/**
+ * \brief Returns an iterator over \p vec, yielding pointers to the
+ * elements in the vector.
+ *
+ * \param vec The vector to create the iterator for.
+ * \param iter Filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
+ */
+RZ_API bool rz_vector_as_iter(const RZ_NONNULL RzVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(vec && iter, false);
+	VectorIterState *state = RZ_NEW0(VectorIterState);
+	if (!state) {
+		rz_warn_if_reached();
+		*iter = (RzIterator){ 0 };
+		return false;
+	}
+	state->vec = vec;
+	if (!rz_iterator_init((rz_iterator_next_cb)vector_iter_next, NULL, vector_free_iter_state, vector_clone_iter_state, vector_reset_iter_state, state, iter)) {
+		vector_free_iter_state(state);
+		return false;
+	}
+	return true;
+}
+
 // pvector
 
 static void pvector_free_elem(void *e, void *user) {
@@ -1052,6 +1110,68 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 		return;
 	}
 	pvector_quick_sort(vec->v.a, vec->v.len, cmp, user);
+}
+
+typedef struct pvector_iter_state_t {
+	RZ_BORROW const RzPVector *vec;
+	size_t i;
+} PVectorIterState;
+
+// NULL entries cannot be yielded through an iterator, so they are skipped
+static void *pvector_iter_next(RzIterator *it) {
+	rz_return_val_if_fail(it && it->u, NULL);
+	PVectorIterState *state = it->u;
+	while (state->i < rz_pvector_len(state->vec)) {
+		void *elem = rz_pvector_at(state->vec, state->i++);
+		if (elem) {
+			return elem;
+		}
+	}
+	return NULL;
+}
+
+static void pvector_free_iter_state(void *state) {
+	free(state);
+}
+
+static void *pvector_clone_iter_state(const void *state) {
+	PVectorIterState *clone = RZ_NEW(PVectorIterState);
+	if (clone) {
+		memcpy(clone, state, sizeof(PVectorIterState));
+	}
+	return clone;
+}
+
+static bool pvector_reset_iter_state(void *state) {
+	PVectorIterState *vec_state = state;
+	vec_state->i = 0;
+	return true;
+}
+
+/**
+ * \brief Returns an iterator over \p vec, yielding the pointers in the vector.
+ *
+ * NULL elements in the pvector are not yielded, but skipped!
+ *
+ * \param vec The pvector to create the iterator for.
+ * \param iter Filled with the constructed iterator on success.
+ *
+ * \return True on success, false on failure.
+ */
+RZ_API bool rz_pvector_as_iter(const RZ_NONNULL RzPVector *vec, RZ_OUT RZ_NONNULL RzIterator *iter) {
+	rz_return_val_if_fail(vec && iter, false);
+	PVectorIterState *state = RZ_NEW0(PVectorIterState);
+	if (!state) {
+		rz_warn_if_reached();
+		*iter = (RzIterator){ 0 };
+		return false;
+	}
+	state->vec = vec;
+	if (!rz_iterator_init((rz_iterator_next_cb)pvector_iter_next, NULL, pvector_free_iter_state, pvector_clone_iter_state, pvector_reset_iter_state, state, iter)) {
+		pvector_free_iter_state(state);
+		return false;
+	}
+	return true;
 }
 
 /**
