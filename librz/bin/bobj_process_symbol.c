@@ -110,7 +110,11 @@ RZ_IPI void rz_bin_set_symbols_from_plugin(RzBinFile *bf, RzBinObject *o) {
 	rz_pvector_free(o->symbols);
 	if (!plugin->symbols || !(o->symbols = plugin->symbols(bf))) {
 		o->symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
+		return;
 	}
+	// sort the symbols by virtual address, so they can be binary-searched.
+	// Do not change this without checking where the symbols depend on the sorting!
+	rz_pvector_sort(o->symbols, (RzPVectorComparator)rz_bin_symbol_vaddr_cmp, NULL);
 }
 
 RZ_IPI void rz_bin_demangle_symbols_with_flags(RzBinObject *o, const RzDemanglerPlugin *demangler, RzDemanglerFlag flags) {

@@ -748,6 +748,30 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
 	return NULL;
 }
 
+static int bin_symbol_vaddr_cmp(const void *value, const void *vec_data, void *user) {
+	ut64 vaddr = *(const ut64 *)value;
+	const RzBinSymbol *sym = vec_data;
+	return (vaddr > sym->vaddr) - (vaddr < sym->vaddr);
+}
+
+static RzBinSymbol *bin_object_get_symbol_vaddr(RZ_NONNULL RzBinObject *o, ut64 vaddr) {
+	RzBinSymbol *sym = NULL;
+	rz_pvector_bin_search(o->symbols, &vaddr, bin_symbol_vaddr_cmp, NULL, (void **)&sym);
+	return sym;
+}
+
+static RzBinSymbol *bin_object_get_symbol_paddr(RZ_NONNULL RzBinObject *o, ut64 paddr) {
+	RzBinSymbol *sym;
+	void **iter;
+	rz_pvector_foreach (o->symbols, iter) {
+		sym = *iter;
+		if (paddr == sym->paddr) {
+			return sym;
+		}
+	}
+	return NULL;
+}
+
 /**
  * \brief Find the binary symbol at offset \p off.
  *
@@ -758,26 +782,7 @@ RZ_API RZ_BORROW RzBinMap *rz_bin_object_get_map_at(RZ_NONNULL RzBinObject *o, u
  */
 RZ_API RZ_BORROW RzBinSymbol *rz_bin_object_get_symbol_at(RZ_NONNULL RzBinObject *o, ut64 off, bool va) {
 	rz_return_val_if_fail(o, NULL);
-
-	RzBinSymbol *sym;
-	void **iter;
-
-	if (va) {
-		rz_pvector_foreach (o->symbols, iter) {
-			sym = *iter;
-			if (off == sym->vaddr) {
-				return sym;
-			}
-		}
-	} else {
-		rz_pvector_foreach (o->symbols, iter) {
-			sym = *iter;
-			if (off == sym->paddr) {
-				return sym;
-			}
-		}
-	}
-	return NULL;
+	return va ? bin_object_get_symbol_vaddr(o, off) : bin_object_get_symbol_paddr(o, off);
 }
 
 /**
