@@ -137,7 +137,7 @@ RZ_API double rz_math_welford_gstddev(const RzMathWelfordSums *wf) {
  *
  * \return The softmax for \p zi, or a negative number in case of failure.
  */
-RZ_API double rz_math_softmax_p_zi_st64(st64 zi, RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs) {
+RZ_API double rz_math_softmax_p_zi_st64(st64 zi, RZ_BORROW RZ_NONNULL RzIterator /* st64* */ *zjs) {
 	rz_return_val_if_fail(zjs, -1.0);
 
 	double numerator = exp(zi);
@@ -160,7 +160,7 @@ RZ_API double rz_math_softmax_p_zi_st64(st64 zi, RZ_BORROW RZ_NONNULL RzIterator
  *
  * \return The softmax for \p zi.
  */
-RZ_API st64 rz_math_softmax_st64(RZ_BORROW RZ_NONNULL RzIterator /*<st64 *>*/ *zjs, RZ_NULLABLE RZ_OUT RzVector /*double*/ *zp) {
+RZ_API st64 rz_math_softmax_st64(RZ_BORROW RZ_NONNULL RzIterator /* st64* */ *zjs, RZ_NULLABLE RZ_OUT RzVector /*<double>*/ *zp) {
 	rz_return_val_if_fail(zjs, ST64_MIN);
 
 	st64 *z;
