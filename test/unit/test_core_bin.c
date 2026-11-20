@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_bin_dwarf.h>
 #include "minunit.h"
 
 // --------------------------
@@ -740,6 +741,83 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+bool test_dwarf_rnglists_startx(void) {
+	ut8 *addr_data = malloc(16);
+	mu_assert_notnull(addr_data, "alloc addr_data");
+	rz_write_le64(addr_data + 0, 0x1000);
+	rz_write_le64(addr_data + 8, 0x1080);
+	RzBinEndianReader *addr_r = RZ_NEW0(RzBinEndianReader);
+	mu_assert_notnull(addr_r, "alloc addr_r");
+	addr_r->data = addr_data;
+	addr_r->owned = true;
+	addr_r->length = 16;
+
+	// Offset 0: valid DW_RLE_startx_endx(0,1) + DW_RLE_startx_length(0,0x40) + end
+	// Offset 7: DW_RLE_startx_endx(0,9 OOB) + end
+	// Offset 11: DW_RLE_startx_length(9 OOB,0x10) + end
+	static const ut8 raw_rng[] = {
+		DW_RLE_startx_endx,
+		0,
+		1,
+		DW_RLE_startx_length,
+		0,
+		0x40,
+		DW_RLE_end_of_list,
+		DW_RLE_startx_endx,
+		0,
+		9,
+		DW_RLE_end_of_list,
+		DW_RLE_startx_length,
+		9,
+		0x10,
+		DW_RLE_end_of_list,
+	};
+	ut8 *rng_data = malloc(sizeof(raw_rng));
+	mu_assert_notnull(rng_data, "alloc rng_data");
+	memcpy(rng_data, raw_rng, sizeof(raw_rng));
+	RzBinEndianReader *rng_r = RZ_NEW0(RzBinEndianReader);
+	mu_assert_notnull(rng_r, "alloc rng_r");
+	rng_r->data = rng_data;
+	rng_r->owned = true;
+	rng_r->length = sizeof(raw_rng);
+
+	RzBinDWARF *dw = RZ_NEW0(RzBinDWARF);
+	mu_assert_notnull(dw, "alloc dw");
+	dw->addr = rz_bin_dwarf_addr_new(addr_r);
+	dw->rnglists = rz_bin_dwarf_rnglists_new(rng_r, NULL);
+	mu_assert_notnull(dw->addr, "dwarf addr new");
+	mu_assert_notnull(dw->rnglists, "dwarf rnglists new");
+
+	RzBinDwarfCompUnit cu = { 0 };
+	cu.hdr.encoding.version = 5;
+	cu.hdr.encoding.address_size = 8;
+	cu.addr_base = 0;
+
+	RzBinDwarfRngList *valid = rz_bin_dwarf_rnglists_get(dw->rnglists, dw->addr, &cu, 0);
+	mu_assert_notnull(valid, "valid startx rnglist parsed");
+	mu_assert_eq(rz_pvector_len(&valid->entries), 2, "startx_endx and startx_length parsed cleanly");
+	RzBinDwarfRange *r0 = rz_pvector_at(&valid->entries, 0);
+	mu_assert_notnull(r0, "startx_endx range");
+	mu_assert_eq(r0->begin, 0x1000, "startx_endx begin");
+	mu_assert_eq(r0->end, 0x1080, "startx_endx end");
+	RzBinDwarfRange *r1 = rz_pvector_at(&valid->entries, 1);
+	mu_assert_notnull(r1, "startx_length range");
+	mu_assert_eq(r1->begin, 0x1000, "startx_length begin");
+	mu_assert_eq(r1->end, 0x1040, "startx_length end");
+
+	// Out-of-bounds address index must fail convert_raw without leaking RzBinDwarfRange
+	RzBinDwarfRngList *oob1 = rz_bin_dwarf_rnglists_get(dw->rnglists, dw->addr, &cu, 7);
+	mu_assert_notnull(oob1, "oob startx_endx returns empty list without leak");
+	mu_assert_eq(rz_pvector_len(&oob1->entries), 0, "oob startx_endx has no valid range");
+
+	RzBinDwarfRngList *oob2 = rz_bin_dwarf_rnglists_get(dw->rnglists, dw->addr, &cu, 11);
+	mu_assert_notnull(oob2, "oob startx_length returns empty list without leak");
+	mu_assert_eq(rz_pvector_len(&oob2->entries), 0, "oob startx_length has no valid range");
+
+	rz_bin_dwarf_free(dw);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +829,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_dwarf_rnglists_startx);
 	return tests_passed != tests_run;
 }
 

@@ -643,6 +643,7 @@ static inline RzBinDWARF *load_dwarf(RzCore *core, RzBinFile *binfile) {
 			debuginfod_urls = rz_sys_getenv("DEBUGINFOD_URLS");
 		}
 		RzList *urls = RZ_STR_ISNOTEMPTY(debuginfod_urls) ? rz_str_split_duplist(debuginfod_urls, " ", true) : NULL;
+		free(debuginfod_urls);
 		if (urls) {
 			RzBinDWARF *sep_dw = rz_bin_dwarf_from_debuginfod(binfile, urls);
 			rz_list_free(urls);

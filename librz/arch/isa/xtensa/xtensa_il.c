@@ -1063,8 +1063,8 @@ static RzAnalysisLiftedILOp op_mul_aa(XtensaContext *ctx) {
 static RzAnalysisLiftedILOp f_mula__(XtensaContext *ctx, RzILOpPure *r0, RzILOpPure *r1) {
 	ut8 half = RRR_half(ctx);
 	return SEQ4(
-		SETG("m1", half & 0x1 ? HI16(r0) : LO16(DUP(r0))),
-		SETG("m2", half & 0x2 ? HI16(r1) : LO16(DUP(r1))),
+		SETG("m1", half & 0x1 ? HI16(r0) : LO16(r0)),
+		SETG("m2", half & 0x2 ? HI16(r1) : LO16(r1)),
 		SETL("acc", ACC_val()),
 		ACC_set(LET("sm1", SEXTRACT64(VARG("m1"), U32(0), U32(16)),
 			LET("sm2", SEXTRACT64(VARG("m2"), U32(0), U32(16)),
@@ -1119,8 +1119,8 @@ static RzAnalysisLiftedILOp op_mull(XtensaContext *ctx) {
 static RzAnalysisLiftedILOp f_muls__(XtensaContext *ctx, RzILOpPure *r0, RzILOpPure *r1) {
 	ut8 half = RRR_half(ctx);
 	return SEQ4(
-		SETG("m1", half & 0x1 ? HI16(r0) : LO16(DUP(r0))),
-		SETG("m2", half & 0x2 ? HI16(r1) : LO16(DUP(r1))),
+		SETG("m1", half & 0x1 ? HI16(r0) : LO16(r0)),
+		SETG("m2", half & 0x2 ? HI16(r1) : LO16(r1)),
 		SETL("acc", ACC_val()),
 		ACC_set(LET("sm1", SEXTRACT64(VARG("m1"), U32(0), U32(16)),
 			LET("sm2", SEXTRACT64(VARG("m2"), U32(0), U32(16)),
@@ -1361,9 +1361,13 @@ static RzAnalysisLiftedILOp op_rfe(XtensaContext *ctx) {
 }
 
 static RzAnalysisLiftedILOp op_rfi(XtensaContext *ctx) {
+	ut64 level = IMM(0);
+	if (level == 0 || level >= RZ_ARRAY_SIZE(epc_tbl)) {
+		return NULL;
+	}
 	return SEQ2(
-		SETG("ps", IEPS(IMM(0))),
-		JMP(IEPC(IMM(0))));
+		SETG("ps", IEPS(level)),
+		JMP(IEPC(level)));
 }
 
 static RzAnalysisLiftedILOp op_rfr(XtensaContext *ctx) {
