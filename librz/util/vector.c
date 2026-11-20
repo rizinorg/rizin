@@ -868,6 +868,102 @@ RZ_API bool rz_pvector_bin_search(RZ_NONNULL RzPVector *pvec, RZ_NONNULL void *e
 }
 
 /**
+ * \brief Binary search for the position of \p x in the (sorted) \p vec.
+ *
+ * \param vec The sorted vector to search in.
+ * \param x The value that elements in the vector compare against by \p cmp.
+ * \param cmp The comparator function.
+ * \param user The user data passed to \p cmp.
+ * \param i Set to the index of the matching element, or - if there is none -
+ *          the index where \p x would be inserted to keep the vector sorted.
+ *
+ * \return true if a matching element was found, false otherwise.
+ */
+static bool pvector_bin_search_range(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *x, RZ_NONNULL RzPVectorComparator cmp, void *user, RZ_OUT size_t *i) {
+	size_t vlen = rz_pvector_len(vec);
+	if (vlen == 0) {
+		*i = 0;
+		return false;
+	}
+
+	void **arr = (void **)vec->v.a;
+	size_t left = 0;
+	size_t right = vlen;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		int cmp_res = cmp(x, arr[mid], user);
+
+		if (cmp_res == 0) {
+			*i = mid;
+			return true;
+		}
+
+		if (vec->v.reverse_sorted) {
+			if (cmp_res > 0) {
+				right = mid;
+			} else {
+				left = mid + 1;
+			}
+		} else {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+	}
+
+	*i = left;
+	return false;
+}
+
+/**
+ * \brief Inserts the pointer \p x into a sorted vector keeping the order.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the final position of the element is undefined.
+ *
+ * \param vec A sorted vector to insert \p x into.
+ * \param x The pointer to insert into the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Pointer to the position in the vector where \p x was placed.
+ * Or NULL in case of failure.
+ */
+RZ_API void **rz_pvector_insert_sorted(RZ_NONNULL RzPVector *vec, RZ_NONNULL void *x, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && x && cmp, NULL);
+
+	size_t insert_index = 0;
+	pvector_bin_search_range(vec, x, cmp, user, &insert_index);
+
+	return rz_pvector_insert(vec, insert_index, x);
+}
+
+/**
+ * \brief Finds the pointer-value \p x in the sorted vector via binary search.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the result is undefined!
+ *
+ * \param vec A sorted vector to find \p x in.
+ * \param x The pointer-value to find in the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Index into the vector where the matching element is located.
+ * Or SZT_MAX in case of failure or if no element was found.
+ */
+RZ_API size_t rz_pvector_find_sorted(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *x, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && x && cmp, SZT_MAX);
+
+	size_t i;
+	if (!pvector_bin_search_range(vec, x, cmp, user, &i)) {
+		return SZT_MAX;
+	}
+	return i;
+}
+
+/**
  * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
  *
  **/
