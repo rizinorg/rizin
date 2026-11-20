@@ -135,6 +135,7 @@ if get_option('enable_tests')
     'str',
     'c6x_decode',
     'c6x_packet',
+    'c6x_il',
     'strbuf',
     'structured_data',
     'str_search',

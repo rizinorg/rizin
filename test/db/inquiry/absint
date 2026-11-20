@@ -225,3 +225,103 @@ EXPECT=<<EOF
 0x80002a0   32      0      8                        0x080001e4       
 EOF
 RUN
+
+# eepmov.b lifts to a repeat moving r5 on while r4l counts down. With r4l
+# unknown, so is how often the repeat runs, and r5 is top after it: the load
+# through it has no address. The bytes the repeat moves are stored to memory,
+# which is warned about for as long as RzInquiry does not model memory.
+NAME=Repeat of an unknown count sets what it writes to top h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 790510007b5c598f69505470
+pd 4
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x1000,r5
+            0x00000004      eepmov.b
+            0x00000008      mov.w @r5,r0
+            0x0000000a      rts
+0x00000000    1 12           inq.0x0
+EOF
+EXPECT_ERR=<<EOF
+WARNING: The repeat at 0x4 stores to memory, which is not set to top: memory is not modelled yet.
+EOF
+RUN
+
+# With r4 known the repeat runs its four times, each reading a byte where r5
+# points, and r5 is 0x1004 after it.
+NAME=Repeat of a known count runs h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 79040004790510007b5c598f69505470
+pd 5
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x4,r4
+            0x00000004      mov.w #0x1000,r5
+            0x00000008      eepmov.b
+            0x0000000c      mov.w @r5,r0
+            0x0000000e      rts
+0x00000000    1 16           inq.0x0
+                               inq.0x0+8 0x8 ->      DATA -> 0x1000 inq.0x0+4096
+                               inq.0x0+8 0x8 ->      DATA -> 0x1001 inq.0x0+4097
+                               inq.0x0+8 0x8 ->      DATA -> 0x1002 inq.0x0+4098
+                               inq.0x0+8 0x8 ->      DATA -> 0x1003 inq.0x0+4099
+                              inq.0x0+12 0xc ->      DATA -> 0x1004 inq.0x0+4100
+EOF
+RUN
+
+# Each IL op covers an execute packet and the cycles its effects take to land,
+# so a call -- a branch with ADDKPC setting B3 in its delay slots -- writes the
+# address where its op ends (#6707).
+NAME=Calls tms320 c674x
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x00008138    8 148          main
+                                  main+8 0x8140 ->      CODE -> 0x8156 sym._C_L11
+                                 main+16 0x8148 ->      CALL -> 0x8000 section..text
+                              sym._C_RL0 0x8150 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L11+2 0x8158 ->      CALL -> 0x8088 sym.c_strlen
+                            sym._C_RL2+4 0x8164 ->      CODE -> 0x8178 sym._C_L12
+                           sym._C_RL2+12 0x816c ->      CALL -> 0x8000 section..text
+                              sym._C_RL4 0x8174 ->      CODE -> 0x81c8 sym._C_L14
+                              sym._C_L12 0x8178 ->      CALL -> 0x80a4 sym.decrypt
+                            sym._C_RL6+2 0x8182 ->      CODE -> 0x81b4 sym._C_L13
+                            sym._C_RL6+8 0x8188 ->      CALL -> 0x8000 section..text
+                           sym._C_RL8+10 0x819a ->      CALL -> 0x8000 section..text
+                           sym._C_RL10+4 0x81a8 ->      CALL -> 0x8000 section..text
+                             sym._C_RL12 0x81b0 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L13+4 0x81b8 ->      CALL -> 0x8000 section..text
+  addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+----------------------------------------------------------------------------------------------------------
+0x8138   10      0      4 0x00008156 0x00008142  0x00008138             
+0x8142   20      0      6 0x000081c8             0x00008138  0x00008000 
+0x8156   18      0      7 0x00008178 0x00008168  0x00008138  0x00008088  0x00008140
+0x8168   16      0      6 0x000081c8             0x00008138  0x00008000 
+0x8178   12      0      5 0x000081b4 0x00008184  0x00008138  0x000080a4  0x00008164
+0x8184   48      0     16 0x000081c8             0x00008138  0x00008000 
+0x81b4   20      0      6 0x000081c8             0x00008138  0x00008000  0x00008182
+0x81c8    4      0      1                        0x00008138              0x00008150 0x00008174 0x000081b0
+EOF
+RUN
