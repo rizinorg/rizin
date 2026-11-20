@@ -10,7 +10,7 @@
 RZ_IPI RZ_OWN RzBinEndianReader *rz_bin_dwarf_section_reader(
 	RZ_BORROW RZ_NONNULL RzBinFile *binfile,
 	RZ_BORROW RZ_NONNULL RzBinSection *section);
-RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value);
+RZ_IPI ut64 R_relocate(RzBinEndianReader *R, ut64 offset, ut64 value, bool is_address);
 
 static inline RzBinEndianReader *RzBinEndianReader_new(
 	ut8 *data, ut64 len, bool big_endian, bool owned, HtUP *relocations) {
@@ -175,6 +175,7 @@ static inline bool R_split(RzBinEndianReader *R, ut64 length, RzBinEndianReader 
 	}
 	memcpy(o, R, sizeof(RzBinEndianReader));
 	o->data = R_data(R);
+	o->relocations_base = R->relocations_base + R->offset;
 	o->offset = 0;
 	o->length = length;
 	o->owned = false;
@@ -188,6 +189,8 @@ static inline bool R_read_block(RzBinEndianReader *R, RzBinEndianReader *x) {
 		return false;
 	}
 	x->data = R_data(R);
+	x->relocations = R->relocations;
+	x->relocations_base = R->relocations_base + R->offset;
 	x->offset = 0;
 	x->owned = false;
 	R->offset += x->length;
@@ -236,7 +239,7 @@ static inline bool R_read_offset(RzBinEndianReader *R, ut64 *out, bool is_64bit)
 	} else {
 		U_OR_RET_FALSE(32, *out);
 	}
-	*out = R_relocate(R, offset, *out);
+	*out = R_relocate(R, offset, *out, false);
 	return true;
 }
 
@@ -250,7 +253,7 @@ static inline bool R_read_address(RzBinEndianReader *R, ut64 *out, ut8 address_s
 	case 8: READ_UT_OR(64, *out, goto err); break;
 	default: RZ_LOG_ERROR("DWARF: unexpected address size: %u\n", (unsigned)address_size); goto err;
 	}
-	*out = R_relocate(R, offset, *out);
+	*out = R_relocate(R, offset, *out, true);
 	return true;
 err:
 	return false;
