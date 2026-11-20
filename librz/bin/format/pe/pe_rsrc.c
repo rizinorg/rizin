@@ -711,6 +711,14 @@ static Sdb *Pe_r_bin_store_var(Var *var) {
 	return sdb;
 }
 
+static void pe_sdb_ns_set(Sdb *parent, const char *key, RZ_OWN Sdb *child) {
+	if (!child) {
+		return;
+	}
+	sdb_ns_set(parent, key, child);
+	sdb_free(child);
+}
+
 static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
 	char key[20];
 	unsigned int i = 0;
@@ -723,7 +731,7 @@ static Sdb *Pe_r_bin_store_var_file_info(VarFileInfo *varFileInfo) {
 	}
 	for (; i < varFileInfo->numOfChildren; i++) {
 		snprintf(key, 20, "var%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
+		pe_sdb_ns_set(sdb, key, Pe_r_bin_store_var(varFileInfo->Children[i]));
 	}
 	return sdb;
 }
@@ -777,7 +785,7 @@ static Sdb *Pe_r_bin_store_string_table(StringTable *stringTable) {
 	free(encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf(key, 20, "string%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
+		pe_sdb_ns_set(sdb, key, Pe_r_bin_store_string(stringTable->Children[i]));
 	}
 	return sdb;
 }
@@ -795,7 +803,7 @@ static Sdb *Pe_r_bin_store_string_file_info(StringFileInfo *stringFileInfo) {
 	}
 	for (; i < stringFileInfo->numOfChildren; i++) {
 		snprintf(key, 30, "stringtable%d", i);
-		sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]));
+		pe_sdb_ns_set(sdb, key, Pe_r_bin_store_string_table(stringFileInfo->Children[i]));
 	}
 	return sdb;
 }
@@ -835,13 +843,13 @@ static Sdb *Pe_r_bin_store_resource_version_info(PE_VS_VERSIONINFO *vs_VersionIn
 		return NULL;
 	}
 	if (vs_VersionInfo->Value) {
-		sdb_ns_set(sdb, "fixed_file_info", Pe_r_bin_store_fixed_file_info(vs_VersionInfo->Value));
+		pe_sdb_ns_set(sdb, "fixed_file_info", Pe_r_bin_store_fixed_file_info(vs_VersionInfo->Value));
 	}
 	if (vs_VersionInfo->varFileInfo) {
-		sdb_ns_set(sdb, "var_file_info", Pe_r_bin_store_var_file_info(vs_VersionInfo->varFileInfo));
+		pe_sdb_ns_set(sdb, "var_file_info", Pe_r_bin_store_var_file_info(vs_VersionInfo->varFileInfo));
 	}
 	if (vs_VersionInfo->stringFileInfo) {
-		sdb_ns_set(sdb, "string_file_info", Pe_r_bin_store_string_file_info(vs_VersionInfo->stringFileInfo));
+		pe_sdb_ns_set(sdb, "string_file_info", Pe_r_bin_store_string_file_info(vs_VersionInfo->stringFileInfo));
 	}
 	return sdb;
 }
@@ -1433,7 +1441,6 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 			Sdb *sdb = sdb_new0();
 			if (!sdb) {
 				free(data);
-				sdb_free(sdb);
 				continue;
 			}
 			PE_DWord data_paddr = PE_(bin_pe_rva_to_paddr)(bin, data->OffsetToData);
@@ -1454,19 +1461,20 @@ static void _parse_resource_directory(RzBinPEObj *bin, Pe_image_resource_directo
 				PE_VS_VERSIONINFO *vs_VersionInfo = Pe_r_bin_pe_parse_version_info(bin, cur_paddr);
 				if (vs_VersionInfo) {
 					snprintf(key, 30, "VS_VERSIONINFO%d", counter++);
-					sdb_ns_set(sdb, key, Pe_r_bin_store_resource_version_info(vs_VersionInfo));
+					pe_sdb_ns_set(sdb, key, Pe_r_bin_store_resource_version_info(vs_VersionInfo));
 				} else {
 					break;
 				}
 				if (vs_VersionInfo->wLength < 1) {
 					// Invalid version length
+					free_VS_VERSIONINFO(vs_VersionInfo);
 					break;
 				}
 				cur_paddr += vs_VersionInfo->wLength;
 				free_VS_VERSIONINFO(vs_VersionInfo);
 				align32(cur_paddr);
 			}
-			sdb_ns_set(bin->kv, "vs_version_info", sdb);
+			pe_sdb_ns_set(bin->kv, "vs_version_info", sdb);
 		}
 		rz_pe_resource *rs = RZ_NEW0(rz_pe_resource);
 		if (!rs) {
