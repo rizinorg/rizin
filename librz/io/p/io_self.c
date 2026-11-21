@@ -65,27 +65,45 @@ typedef struct {
 // computed.
 #define PROC_REGION_LEFT_SZ 98
 #define PROC_PERM_SZ        5
-#define SELF_SECTION_NUM    1024
 
 struct io_self_t {
-	RzIOSelfSection *self_sections;
-	int self_sections_count;
+	RzVector /*<RzIOSelfSection>*/ self_sections;
 	bool mameio;
 };
+
+static void self_section_fini(void *e, void *user) {
+	(void)user;
+	RzIOSelfSection *sec = e;
+	free(sec->name);
+}
+
+static RZ_UNUSED bool self_section_add(RzIOSelf *io_self, ut64 from, ut64 to, RZ_OWN RZ_NULLABLE char *name, int perm) {
+	RzIOSelfSection sec = {
+		.name = name,
+		.from = from,
+		.to = to,
+		.perm = perm,
+	};
+	if (!rz_vector_push(&io_self->self_sections, &sec)) {
+		free(name);
+		return false;
+	}
+	return true;
+}
 
 static int self_in_section(RzIO *io, RzIODesc *desc, ut64 addr, int *left, int *perm) {
 	if (!desc->data) {
 		return false;
 	}
 	RzIOSelf *io_self = desc->data;
-	int i;
-	for (i = 0; i < io_self->self_sections_count; i++) {
-		if (addr >= io_self->self_sections[i].from && addr < io_self->self_sections[i].to) {
+	RzIOSelfSection *sec;
+	rz_vector_foreach (&io_self->self_sections, sec) {
+		if (addr >= sec->from && addr < sec->to) {
 			if (left) {
-				*left = io_self->self_sections[i].to - addr;
+				*left = sec->to - addr;
 			}
 			if (perm) {
-				*perm = io_self->self_sections[i].perm;
+				*perm = sec->perm;
 			}
 			return true;
 		}
@@ -98,7 +116,7 @@ static int update_self_regions(RzIO *io, RzIODesc *desc, int pid) {
 		return false;
 	}
 	RzIOSelf *io_self = desc->data;
-	io_self->self_sections_count = 0;
+	rz_vector_clear(&io_self->self_sections);
 #if __APPLE__
 	mach_port_t task;
 	kern_return_t rc;
@@ -150,12 +168,7 @@ static int update_self_regions(RzIO *io, RzIODesc *desc, int pid) {
 			case 'x': perm |= RZ_PERM_X; break;
 			}
 		}
-		io_self->self_sections[io_self->self_sections_count].from = rz_num_get(NULL, region);
-		io_self->self_sections[io_self->self_sections_count].to = rz_num_get(NULL, region2);
-		io_self->self_sections[io_self->self_sections_count].name = rz_str_dup(name);
-		io_self->self_sections[io_self->self_sections_count].perm = perm;
-		io_self->self_sections_count++;
-		rz_num_get(NULL, region2);
+		self_section_add(io_self, rz_num_get(NULL, region), rz_num_get(NULL, region2), rz_str_dup(name), perm);
 	}
 	fclose(fd);
 
@@ -167,11 +180,7 @@ static int update_self_regions(RzIO *io, RzIODesc *desc, int pid) {
 	int32_t cookie = 0;
 
 	while (get_next_image_info(0, &cookie, &ii) == B_OK) {
-		io_self->self_sections[io_self->self_sections_count].from = (ut64)ii.text;
-		io_self->self_sections[io_self->self_sections_count].to = (ut64)((char *)ii.text + ii.text_size);
-		io_self->self_sections[io_self->self_sections_count].name = rz_str_dup(ii.name);
-		io_self->self_sections[io_self->self_sections_count].perm = 0;
-		io_self->self_sections_count++;
+		self_section_add(io_self, (ut64)ii.text, (ut64)((char *)ii.text + ii.text_size), rz_str_dup(ii.name), 0);
 	}
 	return true;
 #elif __sun && defined _LP64
@@ -231,11 +240,7 @@ static int update_self_regions(RzIO *io, RzIODesc *desc, int pid) {
 			perm |= RZ_PERM_X;
 		}
 
-		io_self->self_sections[io_self->self_sections_count].from = (ut64)c->pr_vaddr;
-		io_self->self_sections[io_self->self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
-		io_self->self_sections[io_self->self_sections_count].name = rz_str_dup(name);
-		io_self->self_sections[io_self->self_sections_count].perm = perm;
-		io_self->self_sections_count++;
+		self_section_add(io_self, (ut64)c->pr_vaddr, (ut64)(c->pr_vaddr + c->pr_size), rz_str_dup(name), perm);
 	}
 
 	free(map);
@@ -266,11 +271,7 @@ static int update_self_regions(RzIO *io, RzIODesc *desc, int pid) {
 		if (perm && !GetMappedFileNameW(h, (LPVOID)mbi.BaseAddress, name, name_size)) {
 			name[0] = L'\0';
 		}
-		io_self->self_sections[io_self->self_sections_count].from = (ut64)mbi.BaseAddress;
-		io_self->self_sections[io_self->self_sections_count].to = (ut64)to;
-		io_self->self_sections[io_self->self_sections_count].name = rz_utf16_to_utf8(name);
-		io_self->self_sections[io_self->self_sections_count].perm = perm;
-		io_self->self_sections_count++;
+		self_section_add(io_self, (ut64)mbi.BaseAddress, (ut64)to, rz_utf16_to_utf8(name), perm);
 		name[0] = L'\0';
 	}
 	free(name);
@@ -292,15 +293,22 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	if (!io_self) {
 		return NULL;
 	}
-	io_self->self_sections = (RzIOSelfSection *)calloc(SELF_SECTION_NUM, sizeof(RzIOSelfSection));
+	rz_vector_init(&io_self->self_sections, sizeof(RzIOSelfSection), self_section_fini, NULL);
 	RzIODesc *desc = rz_io_desc_new(io, &rz_io_plugin_self, file, rw, io_self);
+	if (!desc) {
+		rz_vector_fini(&io_self->self_sections);
+		free(io_self);
+		return NULL;
+	}
 	int ret, pid = getpid();
 	io->va = true; // nop
 	ret = update_self_regions(io, desc, pid);
 	if (ret) {
 		return desc;
 	}
-	RZ_FREE(desc);
+	rz_io_desc_free(desc);
+	rz_vector_fini(&io_self->self_sections);
+	free(io_self);
 	return NULL;
 }
 
@@ -342,6 +350,13 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RzIODesc *fd) {
+	if (!fd || !fd->data) {
+		return 0;
+	}
+	RzIOSelf *io_self = fd->data;
+	rz_vector_fini(&io_self->self_sections);
+	free(io_self);
+	fd->data = NULL;
 	return 0;
 }
 
@@ -490,12 +505,12 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		}
 		rz_sys_dlclose(lib);
 	} else if (!strcmp(cmd, "maps")) {
-		int i;
-		for (i = 0; i < io_self->self_sections_count; i++) {
+		RzIOSelfSection *sec;
+		rz_vector_foreach (&io_self->self_sections, sec) {
 			eprintf("0x%08" PFMT64x " - 0x%08" PFMT64x " %s %s\n",
-				io_self->self_sections[i].from, io_self->self_sections[i].to,
-				rz_str_rwx_i(io_self->self_sections[i].perm),
-				io_self->self_sections[i].name);
+				sec->from, sec->to,
+				rz_str_rwx_i(sec->perm),
+				rz_str_get(sec->name));
 		}
 	} else {
 		eprintf("Usage: R! <cmd> [args]\n");
@@ -623,10 +638,7 @@ void macosx_debug_regions(RzIO *io, RzIOSelf *io_self, task_t task, mach_vm_addr
 				perm |= RZ_PERM_X;
 			}
 
-			io_self->self_sections[io_self->self_sections_count].from = address;
-			io_self->self_sections[io_self->self_sections_count].to = address + size;
-			io_self->self_sections[io_self->self_sections_count].perm = perm;
-			io_self->self_sections_count++;
+			self_section_add(io_self, address, address + size, NULL, perm);
 			if (nsubregions > 1) {
 				io->cb_printf(io->cb_printf_user, " (%d sub-regions)", nsubregions);
 			}
@@ -696,11 +708,7 @@ bool bsd_proc_vmmaps(RzIO *io, RzIOSelf *io_self, int pid) {
 					entry->kve_path);
 			}
 
-			io_self->self_sections[io_self->self_sections_count].from = entry->kve_start;
-			io_self->self_sections[io_self->self_sections_count].to = entry->kve_end;
-			io_self->self_sections[io_self->self_sections_count].name = rz_str_dup(entry->kve_path);
-			io_self->self_sections[io_self->self_sections_count].perm = perm;
-			io_self->self_sections_count++;
+			self_section_add(io_self, entry->kve_start, entry->kve_end, rz_str_dup(entry->kve_path), perm);
 			p_start += sz;
 		}
 
@@ -748,10 +756,7 @@ exit:
 			rz_str_rwx_i(perm),
 			entry.kve_offset);
 
-		io_self->self_sections[io_self->self_sections_count].from = entry.kve_start;
-		io_self->self_sections[io_self->self_sections_count].to = entry.kve_end;
-		io_self->self_sections[io_self->self_sections_count].perm = perm;
-		io_self->self_sections_count++;
+		self_section_add(io_self, entry.kve_start, entry.kve_end, NULL, perm);
 		entry.kve_start = entry.kve_start + 1;
 	}
 
@@ -805,11 +810,7 @@ exit:
 					entry->kve_path);
 			}
 
-			io_self->self_sections[io_self->self_sections_count].from = entry->kve_start;
-			io_self->self_sections[io_self->self_sections_count].to = entry->kve_end;
-			io_self->self_sections[io_self->self_sections_count].name = rz_str_dup(entry->kve_path);
-			io_self->self_sections[io_self->self_sections_count].perm = perm;
-			io_self->self_sections_count++;
+			self_section_add(io_self, entry->kve_start, entry->kve_end, rz_str_dup(entry->kve_path), perm);
 			p_start += sz;
 		}
 
@@ -863,10 +864,7 @@ exit:
 			rz_str_rwx_i(perm),
 			entry.ba.offset);
 
-		io_self->self_sections[io_self->self_sections_count].from = entry.ba.start;
-		io_self->self_sections[io_self->self_sections_count].to = entry.ba.end;
-		io_self->self_sections[io_self->self_sections_count].perm = perm;
-		io_self->self_sections_count++;
+		self_section_add(io_self, entry.ba.start, entry.ba.end, NULL, perm);
 		ep = kvm_vm_map_entry_next(k, ep, &entry);
 	}
 

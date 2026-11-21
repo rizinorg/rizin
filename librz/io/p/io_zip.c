@@ -204,20 +204,29 @@ int rz_io_zip_flush_file(RzIOZipFileObj *zfo) {
 	ut64 tmpsz;
 	const ut8 *tmp = rz_buf_data(zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer(zipArch, tmp, tmpsz, 0);
+	bool source_consumed = false;
+	zip_int64_t new_entry = -1;
 	if (s && zfo->entry != -1) {
 		if (zip_file_replace(zipArch, zfo->entry, s, 0) == 0) {
 			res = true;
+			source_consumed = true;
 		}
 	} else if (s && zfo->name) {
-		if (zip_file_add(zipArch, zfo->name, s, 0) == 0) {
-			zfo->entry = zip_name_locate(zipArch, zfo->name, 0);
+		new_entry = zip_file_add(zipArch, zfo->name, s, 0);
+		if (new_entry >= 0) {
 			res = true;
+			source_consumed = true;
 		}
 	}
-	// s (zip_source) is freed when the archive is closed, i think - dso
-	zip_close(zipArch);
-	if (s) {
+	if (s && !source_consumed) {
 		zip_source_free(s);
+	}
+	// s (zip_source) is freed when the archive is closed if consumed by libzip
+	if (zip_close(zipArch) < 0) {
+		zip_discard(zipArch);
+		res = false;
+	} else if (new_entry >= 0) {
+		zfo->entry = (ut64)new_entry;
 	}
 	return res;
 }
@@ -229,6 +238,7 @@ static void rz_io_zip_free_zipfileobj(RzIOZipFileObj *zfo) {
 	if (zfo->modified) {
 		rz_io_zip_flush_file(zfo);
 	}
+	free(zfo->archivename);
 	free(zfo->name);
 	free(zfo->password);
 	rz_buf_free(zfo->b);
@@ -506,7 +516,8 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 			filename_in_zipfile = rz_str_newf("%s", zip_filename);
 			RZ_FREE(tmp);
 			zip_filename = rz_str_dup(uri_path + 3);
-			if (!strcmp(zip_filename, filename_in_zipfile)) {
+			tmp = zip_filename;
+			if (zip_filename && filename_in_zipfile && !strcmp(zip_filename, filename_in_zipfile)) {
 				// RZ_FREE (zip_filename);
 				RZ_FREE(filename_in_zipfile);
 			}
@@ -531,7 +542,9 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 		if (files) {
 			ut32 i = 0;
 			rz_list_foreach (files, iter, name) {
-				io->cb_printf(io->cb_printf_user, "%d %s\n", i, name);
+				if (io->cb_printf) {
+					io->cb_printf(io->cb_printf_user, "%d %s\n", i, name);
+				}
 				i++;
 			}
 			rz_list_free(files);
@@ -556,8 +569,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!res) {
 		eprintf("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
-		// free (zfo); zfo is already freed by rz_io_desc_new
-		rz_io_desc_free(res);
+		rz_io_zip_free_zipfileobj(zfo);
 		res = NULL;
 	}
 done:
@@ -643,7 +655,7 @@ static int rz_io_zip_write(RzIO *io, RzIODesc *fd, const ut8 *buf, size_t count)
 		return -1;
 	}
 	zfo = fd->data;
-	if (!(zfo->perm & RZ_PERM_W)) {
+	if (!(zfo->rw & RZ_PERM_W)) {
 		return -1;
 	}
 	if (rz_buf_tell(zfo->b) + count >= rz_buf_size(zfo->b)) {

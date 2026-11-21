@@ -4,6 +4,10 @@
 
 #include <rz_io.h>
 #include "minunit.h"
+#if __linux__
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
 
 bool test_rz_io_read_at_mapped(void) {
 	RzIO *io = rz_io_new();
@@ -744,6 +748,117 @@ bool test_rz_io_boundaries(void) {
 	mu_end;
 }
 
+bool test_rz_io_zip_write_resize(void) {
+	static const ut8 minimal_zip[] = {
+		0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa1, 0x40,
+		0x74, 0x5d, 0x86, 0xa6, 0x10, 0x36, 0x05, 0x00, 0x00, 0x00, 0x05, 0x00,
+		0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x66, 0x6f, 0x6f, 0x2e, 0x74, 0x78,
+		0x74, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x50, 0x4b, 0x01, 0x02, 0x14, 0x03,
+		0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa1, 0x40, 0x74, 0x5d, 0x86, 0xa6,
+		0x10, 0x36, 0x05, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x07, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x01,
+		0x00, 0x00, 0x00, 0x00, 0x66, 0x6f, 0x6f, 0x2e, 0x74, 0x78, 0x74, 0x50,
+		0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x35,
+		0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	char *zip_path = rz_file_temp("rz_io_zip");
+	mu_assert_notnull(zip_path, "temp zip path");
+	while (strstr(zip_path, "//")) {
+		zip_path = rz_str_replace(zip_path, "//", "/", 1);
+		mu_assert_notnull(zip_path, "normalize temp zip path");
+	}
+	mu_assert_true(rz_file_dump(zip_path, minimal_zip, sizeof(minimal_zip), false), "dump zip");
+
+	RzIO *io = rz_io_new();
+	char *uri = rz_str_newf("zip://%s//foo.txt", zip_path);
+	RzIODesc *desc = rz_io_open_nomap(io, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(desc, "open zip entry");
+
+	const ut8 patch[5] = { 'H', 'E', 'L', 'L', 'O' };
+	mu_assert_eq(rz_io_desc_write_at(desc, 0, patch, sizeof(patch)), (int)sizeof(patch), "write zip entry");
+	mu_assert_true(rz_io_desc_resize(desc, 8), "resize zip entry");
+	mu_assert_true(rz_io_desc_close(desc), "close zip entry");
+
+	ut8 readback[8] = { 0 };
+	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "reopen zip entry");
+	mu_assert_eq(rz_io_desc_read_at(desc, 0, readback, 5), 5, "read back zip entry");
+	mu_assert_memeq(readback, (const ut8 *)"HELLO", 5, "zip write persisted");
+	mu_assert_eq(rz_io_desc_write_at(desc, 0, patch, sizeof(patch)), 0, "read-only zip write rejected by io_desc");
+	mu_assert_eq(desc->plugin->write(io, desc, patch, sizeof(patch)), -1, "read-only zip write rejected by io_zip");
+	mu_assert_true(rz_io_desc_close(desc), "close reopened zip entry");
+
+	char *new_uri = rz_str_newf("zip://%s//new.txt", zip_path);
+	desc = rz_io_open_nomap(io, new_uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(desc, "open new zip entry");
+	const ut8 new_data[5] = { 'W', 'O', 'R', 'L', 'D' };
+	mu_assert_eq(rz_io_desc_write_at(desc, 0, new_data, sizeof(new_data)), (int)sizeof(new_data), "write new zip entry");
+	mu_assert_true(rz_io_desc_close(desc), "close new zip entry");
+
+	desc = rz_io_open_nomap(io, new_uri, RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "reopen new zip entry");
+	memset(readback, 0, sizeof(readback));
+	mu_assert_eq(rz_io_desc_read_at(desc, 0, readback, 5), 5, "read back new zip entry");
+	mu_assert_memeq(readback, (const ut8 *)"WORLD", 5, "new zip entry persisted");
+	mu_assert_true(rz_io_desc_close(desc), "close reopened new zip entry");
+	free(new_uri);
+
+	char *list_uri = rz_str_newf("zip://%s", zip_path);
+	mu_assert_null(rz_io_open_nomap(io, list_uri, RZ_PERM_R, 0), "listing uri returns NULL without leak");
+	io->cb_printf = NULL;
+	mu_assert_null(rz_io_open_nomap(io, list_uri, RZ_PERM_R, 0), "listing uri with NULL cb_printf succeeds cleanly");
+	RzIODesc *bad_desc = rz_io_open_nomap(io, "zip:///nonexistent_rz_zip_dir/missing.zip//foo.txt", RZ_PERM_RW, 0);
+	if (bad_desc) {
+		ut8 one = 'X';
+		(void)rz_io_desc_write_at(bad_desc, 0, &one, 1);
+		mu_assert_true(rz_io_desc_close(bad_desc), "close zip entry in nonexistent dir without leak");
+	}
+
+	free(list_uri);
+	free(uri);
+	rz_io_free(io);
+	rz_file_rm(zip_path);
+	free(zip_path);
+	mu_end;
+}
+
+#if __linux__
+bool test_rz_io_self_and_procpid(void) {
+	void *maps[1100];
+	size_t page = (size_t)sysconf(_SC_PAGESIZE);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(maps); i++) {
+		int prot = (i & 1) ? PROT_READ : PROT_NONE;
+		maps[i] = mmap(NULL, page, prot, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	}
+
+	RzIO *io = rz_io_new();
+	RzIODesc *desc = rz_io_open_nomap(io, "self://", RZ_PERM_R, 0);
+	if (desc) {
+		ut8 code_bytes[4] = { 0 };
+		(void)rz_io_desc_read_at(desc, (ut64)(size_t)&test_rz_io_self_and_procpid, code_bytes, sizeof(code_bytes));
+		if (desc->plugin && desc->plugin->system) {
+			free(desc->plugin->system(io, desc, "maps"));
+		}
+		mu_assert_true(rz_io_desc_close(desc), "close self://");
+	}
+
+	char uri[64];
+	snprintf(uri, sizeof(uri), "procpid://%d", getpid());
+	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
+	if (desc) {
+		mu_assert_true(rz_io_desc_close(desc), "close procpid://");
+	}
+	rz_io_free(io);
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(maps); i++) {
+		if (maps[i] != MAP_FAILED) {
+			munmap(maps[i], page);
+		}
+	}
+	mu_end;
+}
+#endif
+
 bool all_tests(void) {
 	mu_run_test(test_rz_io_read_at_mapped);
 	mu_run_test(test_rz_io_nread_at);
@@ -764,6 +879,10 @@ bool all_tests(void) {
 	mu_run_test(test_rz_io_map_del_on_close);
 	mu_run_test(test_rz_io_map_del_on_close_all);
 	mu_run_test(test_rz_io_boundaries);
+	mu_run_test(test_rz_io_zip_write_resize);
+#if __linux__
+	mu_run_test(test_rz_io_self_and_procpid);
+#endif
 	return tests_passed != tests_run;
 }
 
