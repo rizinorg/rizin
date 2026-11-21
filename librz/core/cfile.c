@@ -114,7 +114,7 @@ static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) 
 	const RzPVector *sections = obj ? rz_bin_object_get_sections_all(obj) : NULL;
 	void **it;
 	RzBinSection *sec;
-	RzPVector *old_sections = rz_pvector_new(NULL);
+	RzPVector *old_sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 
 	// Return an empty list
 	if (!sections) {
@@ -122,7 +122,6 @@ static RZ_OWN RzPVector /*<RzBinSection *>*/ *__save_old_sections(RzCore *core) 
 		return old_sections;
 	}
 
-	old_sections->v.free_user = sections->v.free_user;
 	rz_pvector_foreach (sections, it) {
 		sec = *it;
 		RzBinSection *old_sec = RZ_NEW0(RzBinSection);
@@ -368,8 +367,9 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 	char *escaped_path = rz_str_arg_escape(bin_abspath);
 	char *newfile = RZ_STR_ISEMPTY(args) ? rz_str_newf("dbg://%s", escaped_path)
 					     : rz_str_newf("dbg://%s %s", escaped_path, args);
+	free(desc->uri);
 	desc->uri = newfile;
-	desc->referer = NULL;
+	RZ_FREE(desc->referer);
 	rz_config_set_i(core->config, "asm.bits", bits);
 	rz_config_set_b(core->config, "cfg.debug", true);
 	rz_core_file_reopen(core, newfile, 0, 2);

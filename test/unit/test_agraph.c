@@ -472,6 +472,29 @@ static bool test_function_switch_edges(void) {
 	mu_end;
 }
 
+static bool test_agraph_il_and_empty_nodes_free(void) {
+	RzCons *cons = rz_cons_new();
+	mu_assert_notnull(cons, "rz_cons_new");
+	RzConsCanvas *can = rz_cons_canvas_new(80, 24, cons);
+	mu_assert_notnull(can, "rz_cons_canvas_new");
+	RzAGraph *ag = rz_agraph_new(can, cons);
+	mu_assert_notnull(ag, "rz_agraph_new");
+
+	ag->is_il = true;
+	RzANode *n1 = rz_agraph_add_node(ag, "bv", "0x1");
+	RzANode *n2 = rz_agraph_add_node(ag, "bv", "0x2");
+	RzANode *n3 = rz_agraph_add_node(ag, "", "empty");
+	mu_assert_notnull(n1, "first duplicate-title IL node");
+	mu_assert_notnull(n2, "second duplicate-title IL node");
+	mu_assert_notnull(n3, "empty-title node");
+	mu_assert_true(n1 != n2, "IL nodes with identical titles remain distinct");
+	rz_agraph_add_edge(ag, n1, n2);
+
+	rz_agraph_free(ag);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_graph_to_agraph);
 	mu_run_test(test_layout_back_edge_simple);
@@ -479,6 +502,7 @@ int all_tests() {
 	mu_run_test(test_layout_topo_sort_diamond);
 	mu_run_test(test_layout_topo_sort_chain);
 	mu_run_test(test_function_switch_edges);
+	mu_run_test(test_agraph_il_and_empty_nodes_free);
 	return tests_passed != tests_run;
 }
 

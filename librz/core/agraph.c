@@ -1302,7 +1302,6 @@ static void create_dummy_nodes(RzAGraph *g) {
 				(void)agraph_add_graph_edge(g, prev->gnode, dummy->gnode,
 					nth, get_edge_kind(e));
 			}
-			rz_list_append(g->dummy_nodes, dummy);
 
 			prev = dummy;
 			nth = -1;
@@ -4746,6 +4745,8 @@ RZ_API RzANode *rz_agraph_add_node(const RzAGraph *g, const char *title, const c
 		char buf[384] = { 0 };
 		rz_strf(buf, "agraph.nodes.%s.body", res->title);
 		sdb_set_owned(g->db, buf, s);
+	} else {
+		rz_list_append(g->dummy_nodes, res);
 	}
 	return res;
 }
