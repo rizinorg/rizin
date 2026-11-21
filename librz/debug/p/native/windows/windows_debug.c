@@ -36,6 +36,9 @@ bool setup_debug_privileges(bool b) {
 
 int w32_init(RzDebug *dbg) {
 	if (!dbg->plugin_data) {
+		if (!dbg->iob.get_w32dbg_wrap || !dbg->iob.io) {
+			return 0;
+		}
 		dbg->plugin_data = dbg->iob.get_w32dbg_wrap(dbg->iob.io);
 		if (!dbg->plugin_data) {
 			return 0;
