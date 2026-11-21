@@ -24,6 +24,23 @@ static char *ts_node_sub_string(TSNode node, const char *cstr) {
 	return rz_str_newf("%.*s", end - start, cstr + start);
 }
 
+/**
+ * \brief Frees a temporary parser type pair and optionally its base type.
+ *
+ * \param tpair ParserTypePair to free (may be NULL)
+ * \param free_btype If true, also free \p tpair->btype (use false when owned by parser state)
+ */
+static void parser_type_pair_free(ParserTypePair *tpair, bool free_btype) {
+	if (!tpair) {
+		return;
+	}
+	rz_type_free(tpair->type);
+	if (free_btype) {
+		rz_type_base_type_free(tpair->btype);
+	}
+	free(tpair);
+}
+
 void node_malformed_error(CParserState *state, TSNode node, const char *text, const char *nodetype) {
 	rz_return_if_fail(nodetype);
 	char *string = ts_node_is_null(node) ? NULL : ts_node_string(node);
@@ -411,6 +428,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 
 	char *real_type = NULL;
 	char *real_identifier = NULL;
+	ParserTypePair *membtpair = NULL;
 	int i;
 	for (i = 0; i < body_child_count; i++) {
 		parser_debug(state, "struct: processing %d field...\n", i);
@@ -487,7 +505,6 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 			goto srnexit;
 		}
 
-		ParserTypePair *membtpair = NULL;
 		// At first, we parse the type field
 		if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 			parser_error(state, "ERROR: parsing struct member type\n");
@@ -551,6 +568,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
 				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					free(membname);
 					parser_error(state, "ERROR: parsing bitfield struct member declarator\n");
 					node_malformed_error(state, child, text, "struct field");
 					result = -1;
@@ -560,7 +578,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				RzVector *members = &struct_pair->btype->struct_data.members;
 				RzTypeStructMember memb = {
 					.name = membname,
-					.type = rz_type_clone(membtpair->type),
+					.type = rz_type_clone_shallow(membtpair->type),
 					.offset = 0, // FIXME
 					.size = bits,
 				};
@@ -578,6 +596,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				// Augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
 				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					free(membname);
 					parser_error(state, "ERROR: parsing struct member declarator\n");
 					node_malformed_error(state, child, text, "struct field");
 					result = -1;
@@ -587,7 +606,7 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 				RzVector *members = &struct_pair->btype->struct_data.members;
 				RzTypeStructMember memb = {
 					.name = membname,
-					.type = rz_type_clone(membtpair->type),
+					.type = rz_type_clone_shallow(membtpair->type),
 					.offset = 0, // FIXME
 					.size = 0, // FIXME
 				};
@@ -608,8 +627,8 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 		// The member type is cloned into each declarator above, so the
 		// type pair built for this field is no longer needed. Its btype
 		// is borrowed from the type database, only the type is owned.
-		rz_type_free(membtpair->type);
-		free(membtpair);
+		parser_type_pair_free(membtpair, false);
+		membtpair = NULL;
 	}
 	// If parsing successfull completed - we store the state
 	if (struct_pair) {
@@ -622,6 +641,11 @@ int parse_struct_node(CParserState *state, TSNode node, const char *text, Parser
 	*tpair = struct_pair;
 
 srnexit:
+	parser_type_pair_free(membtpair, false);
+	if (result) {
+		parser_type_pair_free(struct_pair, true);
+		*tpair = NULL;
+	}
 	free(real_type);
 	free(real_identifier);
 snexit:
@@ -704,11 +728,13 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 	ParserTypePair *union_pair = c_parser_new_union_type(state, name, body_child_count);
 	if (!union_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of union\n");
-		return -1;
+		result = -1;
+		goto unexit;
 	}
 
 	char *real_type = NULL;
 	char *real_identifier = NULL;
+	ParserTypePair *membtpair = NULL;
 	int i;
 	for (i = 0; i < body_child_count; i++) {
 		parser_debug(state, "union: processing %d field...\n", i);
@@ -784,7 +810,6 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 			goto urnexit;
 		}
 
-		ParserTypePair *membtpair = NULL;
 		// At first, we parse the type field
 		if (parse_type_node_single(state, field_type, text, &membtpair, is_const)) {
 			parser_error(state, "ERROR: parsing union member type\n");
@@ -847,6 +872,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
 				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					free(membname);
 					parser_error(state, "ERROR: parsing union member declarator\n");
 					node_malformed_error(state, child, text, "union field");
 					result = -1;
@@ -856,7 +882,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				RzVector *members = &union_pair->btype->union_data.members;
 				RzTypeUnionMember memb = {
 					.name = membname,
-					.type = rz_type_clone(membtpair->type),
+					.type = rz_type_clone_shallow(membtpair->type),
 					.offset = 0, // Always 0 for unions
 					.size = bits,
 				};
@@ -873,6 +899,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				// Then we augment resulting type field with the data from parsed declarator
 				char *membname = NULL;
 				if (parse_type_declarator_node(state, field_declarator, text, &membtpair, &membname)) {
+					free(membname);
 					parser_error(state, "ERROR: parsing union member declarator\n");
 					node_malformed_error(state, child, text, "union field");
 					result = -1;
@@ -882,7 +909,7 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 				RzVector *members = &union_pair->btype->union_data.members;
 				RzTypeUnionMember memb = {
 					.name = membname,
-					.type = rz_type_clone(membtpair->type),
+					.type = rz_type_clone_shallow(membtpair->type),
 					.offset = 0, // Always 0 for unions
 					.size = 0, // FIXME
 				};
@@ -899,8 +926,8 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 		// The member type is cloned into each declarator above, so the
 		// type pair built for this field is no longer needed. Its btype
 		// is borrowed from the type database, only the type is owned.
-		rz_type_free(membtpair->type);
-		free(membtpair);
+		parser_type_pair_free(membtpair, false);
+		membtpair = NULL;
 	}
 	// If parsing successfull completed - we store the state
 	if (union_pair) {
@@ -912,6 +939,11 @@ int parse_union_node(CParserState *state, TSNode node, const char *text, ParserT
 	}
 	*tpair = union_pair;
 urnexit:
+	parser_type_pair_free(membtpair, false);
+	if (result) {
+		parser_type_pair_free(union_pair, true);
+		*tpair = NULL;
+	}
 	free(real_type);
 	free(real_identifier);
 unexit:
@@ -934,6 +966,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		return -1;
 	}
 	int result = 0;
+	ParserTypePair *enum_pair = NULL;
 	// Name is optional, in abstract definitions or as the member of nested types
 	char *name = NULL;
 	TSNode enum_name = ts_node_child_by_field_name(node, "name", 4);
@@ -986,7 +1019,7 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 
 	int body_child_count = ts_node_named_child_count(enum_body);
 	// Now we form both RzType and RzBaseType to store in the Types database
-	ParserTypePair *enum_pair = c_parser_new_enum_type(state, name, body_child_count);
+	enum_pair = c_parser_new_enum_type(state, name, body_child_count);
 	if (!enum_pair) {
 		parser_error(state, "Error forming RzType and RzBaseType pair out of enum: \"%s\"\n", name);
 		result = -1;
@@ -1008,7 +1041,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (strcmp(node_type, "enumerator")) {
 			parser_error(state, "ERROR: Enum member AST should contain (enumerator) node!\n");
 			node_malformed_error(state, child, text, "enum field");
-			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -1017,7 +1049,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 		if (member_child_count < 1 || member_child_count > 2) {
 			parser_error(state, "ERROR: enum member AST cannot contain less than 1 or more than 2 items");
 			node_malformed_error(state, child, text, "enum field");
-			free(enum_pair);
 			result = -1;
 			goto rexit;
 		}
@@ -1041,7 +1072,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier)) {
 				parser_error(state, "ERROR: Enum case identifier should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
-				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -1063,7 +1093,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
 				free(cas.name);
-				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -1074,7 +1103,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (ts_node_is_null(member_identifier) || ts_node_is_null(member_value)) {
 				parser_error(state, "ERROR: Enum case identifier and value should not be NULL!\n");
 				node_malformed_error(state, child, text, "enum case");
-				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -1093,7 +1121,6 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 			if (!element) {
 				parser_error(state, "Error appending enum case to the base type\n");
 				free(cas.name);
-				free(enum_pair);
 				result = -1;
 				goto rexit;
 			}
@@ -1121,6 +1148,10 @@ int parse_enum_node(CParserState *state, TSNode node, const char *text, ParserTy
 	}
 	*tpair = enum_pair;
 rexit:
+	if (result) {
+		parser_type_pair_free(enum_pair, true);
+		*tpair = NULL;
+	}
 	free(name);
 	return result;
 }
@@ -1178,26 +1209,31 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		free(nodeast);
 	}
 	ParserTypePair *type_pair = NULL;
+	char *typedef_name = NULL;
+	int result = 0;
+	*tpair = NULL;
 	if (parse_type_node_single(state, typedef_type, text, &type_pair, is_const)) {
 		parser_error(state, "ERROR: parsing typedef type identifier\n");
 		node_malformed_error(state, typedef_type, text, "typedef type");
-		return -1;
+		result = -1;
+		goto tdexit;
 	}
 	// Every typedef node could have multiple declarators
 	TSNode typedef_declarator = ts_node_child_by_field_name(node, "declarator", 10);
-	if (ts_node_is_null(typedef_declarator)) {
+	if (ts_node_is_null(typedef_declarator) || ts_node_is_missing(typedef_declarator)) {
 		parser_error(state, "ERROR: Typedef should have at least one declarator node!\n");
 		node_malformed_error(state, node, text, "typedef");
-		return -1;
+		result = -1;
+		goto tdexit;
 	}
 
 	do {
 		// Then we augment resulting type field with the data from parsed declarator
-		char *typedef_name = NULL;
 		if (parse_type_declarator_node(state, typedef_declarator, text, &type_pair, &typedef_name)) {
 			parser_error(state, "ERROR: parsing typedef declarator\n");
 			node_malformed_error(state, typedef_declarator, text, "typedef declarator");
-			return -1;
+			result = -1;
+			goto tdexit;
 		}
 
 		// Now we form both RzType and RzBaseType to store in the Types database
@@ -1208,14 +1244,15 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 		ParserTypePair *typedef_pair = c_parser_new_typedef(state, typedef_name, base_type_name);
 		if (!typedef_pair) {
 			parser_error(state, "Error forming RzType and RzBaseType pair out of typedef: \"%s\"\n", typedef_name);
-			return -1;
+			result = -1;
+			goto tdexit;
 		}
 		// If parsing successfull completed - we store the state
 		if (typedef_pair) {
 			// c_parser_new_typedef() may seed btype->type with a placeholder
 			// identifier; release it before overwriting with the resolved type.
 			rz_type_free(typedef_pair->btype->type);
-			typedef_pair->btype->type = rz_type_clone(type_pair->type);
+			typedef_pair->btype->type = rz_type_clone_shallow(type_pair->type);
 			parser_debug(state, "storing typedef \"%s\" -> \"%s\"\n", typedef_name, base_type_name);
 			c_parser_base_type_store(state, typedef_name, typedef_pair);
 			// If it was a forward definition previously - remove it
@@ -1224,18 +1261,24 @@ int parse_typedef_node(CParserState *state, TSNode node, const char *text, Parse
 			}
 		}
 		// FIXME: We should return multiple types at once
+		parser_type_pair_free(*tpair, false);
 		*tpair = typedef_pair;
 		// c_parser_new_typedef()/c_parser_base_type_store() copy the name, so the
 		// declarator string extracted above can be released each iteration.
-		free(typedef_name);
+		RZ_FREE(typedef_name);
 		typedef_declarator = ts_node_next_named_sibling(typedef_declarator);
 	} while (!ts_node_is_null(typedef_declarator) && is_type_declarator(ts_node_type(typedef_declarator)));
 
+tdexit:
 	// The underlying type pair was only needed to derive the typedef target; its
 	// RzBaseType is owned by the parser state, so drop the wrapper and its RzType.
-	rz_type_free(type_pair->type);
-	free(type_pair);
-	return 0;
+	free(typedef_name);
+	parser_type_pair_free(type_pair, false);
+	if (result) {
+		parser_type_pair_free(*tpair, false);
+		*tpair = NULL;
+	}
+	return result;
 }
 
 // Parses the node that represents just one type
@@ -1318,9 +1361,12 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		return -1;
 	}
 	int paramlist_child_count = ts_node_named_child_count(paramlist);
-	if (paramlist_child_count < 1) {
-		node_malformed_error(state, paramlist, text, "parameter_list");
-		return -1;
+	if (!paramlist_child_count) {
+		if (ts_node_has_error(paramlist)) {
+			node_malformed_error(state, paramlist, text, "parameter_list");
+			return -1;
+		}
+		return 0;
 	}
 	int i;
 	for (i = 0; i < paramlist_child_count; i++) {
@@ -1342,6 +1388,8 @@ int parse_parameter_list(CParserState *state, TSNode paramlist, const char *text
 		// Create new TypePair here
 		ParserTypePair *argtpair = NULL;
 		if (parse_parameter_declaration_node(state, child, text, &argtpair, &identifier)) {
+			free(identifier);
+			parser_type_pair_free(argtpair, false);
 			parser_error(state, "ERROR: Parsing parameter declarator!\n");
 			return -1;
 		}
@@ -1429,16 +1477,16 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 			if (ts_node_is_null(pointer_declarator) && !has_qualifiers) {
 				parser_error(state, "ERROR: Abstract pointer declarator AST should contain at least one node!\n");
 				node_malformed_error(state, node, text, "pointer declarator");
+				(*tpair)->type = type->pointer.type;
 				free(type);
-				(*tpair)->type = NULL;
 				return -1;
 			}
 			if (!ts_node_is_null(pointer_declarator)) {
 				const char *declarator_type = ts_node_type(pointer_declarator);
 				if (!declarator_type) {
 					node_malformed_error(state, pointer_declarator, text, "pointer declarator");
+					(*tpair)->type = type->pointer.type;
 					free(type);
-					(*tpair)->type = NULL;
 					return -1;
 				}
 				if (is_abstract_declarator(declarator_type)) {
@@ -1561,6 +1609,59 @@ int parse_type_abstract_declarator_node(CParserState *state, TSNode node, const 
 
 static bool is_identifier(const char *type) {
 	return (!strcmp(type, "identifier") || !strcmp(type, "field_identifier") || !strcmp(type, "type_identifier"));
+}
+
+/**
+ * \brief Unwinds a partially constructed function declarator back to \p orig_type.
+ *
+ * Frees pointer/array wrappers added around \p naked_callable, releases
+ * \p naked_callable without freeing \p orig_type, and removes any nested inner
+ * callable already stored in \p state->callables whose return chain owns
+ * \p naked_callable.
+ *
+ * \param state C parser state
+ * \param tpair Active ParserTypePair whose type is restored to \p orig_type
+ * \param naked_callable Callable wrapper created by the failing function_declarator
+ * \param orig_type Return type owned by \p tpair prior to entering function_declarator
+ * \param identifier Optional identifier pointer to free and reset to NULL
+ */
+static void parser_unwind_failed_callable(CParserState *state, ParserTypePair *tpair,
+	RzType *naked_callable, RzType *orig_type, char **identifier) {
+	RzType *cur = tpair->type;
+	while (cur && cur != naked_callable) {
+		if (cur->kind == RZ_TYPE_KIND_POINTER) {
+			RzType *next = cur->pointer.type;
+			free(cur);
+			cur = next;
+		} else if (cur->kind == RZ_TYPE_KIND_ARRAY) {
+			RzType *next = cur->array.type;
+			free(cur);
+			cur = next;
+		} else {
+			break;
+		}
+	}
+	// orig_type stays owned by tpair, so detach it before freeing naked_callable
+	naked_callable->callable->ret = NULL;
+	rz_type_callable_free(naked_callable->callable);
+	naked_callable->callable = NULL;
+	if (cur == naked_callable) {
+		free(naked_callable);
+	} else if (cur && cur->kind == RZ_TYPE_KIND_CALLABLE && cur->callable &&
+		cur->callable->name &&
+		c_parser_callable_type_find(state, cur->callable->name) == cur->callable) {
+		// An inner function_declarator already stored cur->callable in
+		// state->callables with cur->callable->ret owning the wrapper chain
+		// down to naked_callable; deleting it frees that chain and naked_callable.
+		ht_sp_delete(state->callables, cur->callable->name);
+		free(cur);
+	} else {
+		free(naked_callable);
+	}
+	tpair->type = orig_type;
+	if (identifier) {
+		RZ_FREE(*identifier);
+	}
 }
 
 // Parses the concrete type declarator - i.e. type with the identifier
@@ -1717,7 +1818,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			node_malformed_error(state, declarator, text, "function declarator or identifier");
 			return -1;
 		}
-		RzType *parent_type = (*tpair)->type;
+		RzType *orig_type = (*tpair)->type;
 		// At first we create "freestanding" unnamed callable
 		RzType *naked_callable = c_parser_new_naked_callable(state);
 		if (!naked_callable) {
@@ -1725,7 +1826,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			return -1;
 		}
 		// The previously fetched type in this case is the callable return type
-		naked_callable->callable->ret = parent_type;
+		naked_callable->callable->ret = orig_type;
 		(*tpair)->type = naked_callable;
 
 		// Declarator can be either "identifier" directly or have children
@@ -1734,14 +1835,14 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 			if (parse_type_declarator_node(state, declarator, text, tpair, identifier)) {
 				parser_error(state, "ERROR: parsing function declarator\n");
 				node_malformed_error(state, declarator, text, "function identifier");
-				return -1;
+				goto fn_fail;
 			}
 		} else {
 			TSNode function_declarator = ts_node_named_child(declarator, 0);
 			const char *function_declarator_type = ts_node_type(function_declarator);
 			if (!function_declarator_type) {
 				node_malformed_error(state, function_declarator, text, "function declarator");
-				return -1;
+				goto fn_fail;
 			}
 
 			// Declarator can contain either "identifier" directly
@@ -1750,12 +1851,12 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 				if (parse_type_declarator_node(state, function_declarator, text, tpair, identifier)) {
 					parser_error(state, "ERROR: parsing function declarator\n");
 					node_malformed_error(state, function_declarator, text, "function declarator");
-					return -1;
+					goto fn_fail;
 				}
 			} else {
 				parser_error(state, "ERROR: missing function declarator\n");
 				node_malformed_error(state, function_declarator, text, "function declarator");
-				return -1;
+				goto fn_fail;
 			}
 		}
 
@@ -1763,27 +1864,30 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		TSNode parameter_list = ts_node_child_by_field_name(node, "parameters", 10);
 		if (ts_node_is_null(parameter_list) || !ts_node_is_named(parameter_list)) {
 			node_malformed_error(state, parameter_list, text, "parameter_list");
-			return -1;
+			goto fn_fail;
 		}
 		const char *param_list_type = ts_node_type(parameter_list);
 		if (strcmp(param_list_type, "parameter_list")) {
 			node_malformed_error(state, parameter_list, text, "parameter_list");
-			return -1;
+			goto fn_fail;
 		}
 		naked_callable->callable->name = rz_str_dup(*identifier);
 		// Preserve the parent callable type
-		parent_type = (*tpair)->type;
+		RzType *parent_type = (*tpair)->type;
 		// Then override with the naked callable type to proceed with parameter parsing
 		(*tpair)->type = naked_callable;
 		result = parse_parameter_list(state, parameter_list, text, tpair);
 		if (result) {
 			parser_error(state, "ERROR: parsing parameters for callable type: \"%s\"\n", *identifier);
-			return -1;
+			(*tpair)->type = parent_type;
+			goto fn_fail;
 		}
 		// Restore the true parent type
 		(*tpair)->type = parent_type;
 		if (!c_parser_callable_type_store(state, *identifier, naked_callable)) {
 			parser_error(state, "ERROR: storing the new callable type: \"%s\"\n", *identifier);
+		fn_fail:
+			parser_unwind_failed_callable(state, *tpair, naked_callable, orig_type, identifier);
 			return -1;
 		}
 	} else if (!strcmp(node_type, "parenthesized_declarator")) {
@@ -1799,6 +1903,7 @@ int parse_type_declarator_node(CParserState *state, TSNode node, const char *tex
 		}
 
 		result = parse_type_declarator_node(state, declarator, text, tpair, identifier);
+		free(real_ident);
 	}
 	return result;
 }
@@ -1937,7 +2042,13 @@ int parse_declaration_node(CParserState *state, TSNode node, const char *text, P
 	TSNode type_declarator = ts_node_child_by_field_name(node, "declarator", 10);
 	if (!ts_node_is_null(type_declarator)) {
 		char *identifier = NULL;
-		return parse_type_declarator_node(state, type_declarator, text, tpair, &identifier);
+		result = parse_type_declarator_node(state, type_declarator, text, tpair, &identifier);
+		free(identifier);
+		if (result) {
+			parser_type_pair_free(*tpair, false);
+			*tpair = NULL;
+		}
+		return result;
 	} else {
 		result = 0;
 	}
@@ -1966,21 +2077,25 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 	if (!strcmp(node_type, "struct_specifier")) {
 		result = parse_struct_node(state, node, text, &tpair, false);
 		if (result || !tpair) {
+			parser_type_pair_free(tpair, false);
 			return -1;
 		}
 	} else if (!strcmp(node_type, "union_specifier")) {
 		result = parse_union_node(state, node, text, &tpair, false);
 		if (result || !tpair) {
+			parser_type_pair_free(tpair, false);
 			return -1;
 		}
 	} else if (!strcmp(node_type, "enum_specifier")) {
 		result = parse_enum_node(state, node, text, &tpair, false);
 		if (result || !tpair) {
+			parser_type_pair_free(tpair, false);
 			return -1;
 		}
 	} else if (!strcmp(node_type, "type_definition")) {
 		result = parse_typedef_node(state, node, text, &tpair);
 		if (result || !tpair) {
+			parser_type_pair_free(tpair, false);
 			return -1;
 		}
 	}
@@ -1992,14 +2107,12 @@ int parse_type_nodes_save(CParserState *state, TSNode node, const char *text) {
 	if (!strcmp(node_type, "declaration")) {
 		result = parse_declaration_node(state, node, text, &tpair);
 		if (result || !tpair) {
+			parser_type_pair_free(tpair, false);
 			return -1;
 		}
 	}
 
-	if (tpair) {
-		rz_type_free(tpair->type);
-		free(tpair);
-	}
+	parser_type_pair_free(tpair, false);
 
 	if (result) {
 		char *typetext = ts_node_sub_string(node, text);

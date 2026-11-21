@@ -2402,6 +2402,20 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 	if (rz_type_func_exist(a->typedb, f->name)) {
 		rz_type_func_delete(a->typedb, f->name);
 	}
+	// Tree-sitter C splits dotted function names (e.g. "sym.strlen") and stores
+	// only the trailing identifier in typedb->callables. Detach any pre-existing
+	// callable under that suffix before parsing so it neither collides nor gets overwritten.
+	const char *dot = strrchr(f->name, '.');
+	const char *dot_suffix = (dot && dot[1]) ? dot + 1 : NULL;
+	RzCallable *saved_callable = NULL;
+	if (dot_suffix) {
+		HtSPKv *kv = ht_sp_find_kv(a->typedb->callables, dot_suffix, NULL);
+		if (kv && kv->value) {
+			saved_callable = kv->value;
+			kv->value = NULL;
+			ht_sp_delete(a->typedb->callables, dot_suffix);
+		}
+	}
 	// Then we create a new one by parsing the string
 	RzType *result = rz_type_parse_string_declaration_single(a->typedb->parser, sig, &error_msg);
 	if (!result) {
@@ -2410,19 +2424,38 @@ RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalys
 			free(error_msg);
 		}
 		RZ_LOG_ERROR("Cannot parse callable type\n");
-		return false;
+		goto err;
 	}
+	free(error_msg);
 	// Parsed result should be RzCallable
 	if (result->kind != RZ_TYPE_KIND_CALLABLE) {
 		RZ_LOG_ERROR("Parsed function signature should be RzCallable\n");
-		return false;
+		goto err;
 	}
 	if (!result->callable) {
 		RZ_LOG_ERROR("Parsed function signature should not be NULL\n");
-		return false;
+		goto err;
 	}
 	rz_analysis_function_set_type(a, f, result->callable);
+	if (dot_suffix && result->callable->name && !strcmp(dot_suffix, result->callable->name)) {
+		// Drop the truncated callable artifact created for the dotted name.
+		rz_type_func_delete(a->typedb, dot_suffix);
+	}
+	if (saved_callable) {
+		ht_sp_insert(a->typedb->callables, dot_suffix, saved_callable);
+	}
+	rz_type_free(result);
 	return true;
+
+err:
+	if (dot_suffix) {
+		rz_type_func_delete(a->typedb, dot_suffix);
+	}
+	if (saved_callable) {
+		ht_sp_insert(a->typedb->callables, dot_suffix, saved_callable);
+	}
+	rz_type_free(result);
+	return false;
 }
 
 /**
