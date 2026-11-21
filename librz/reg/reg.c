@@ -30,25 +30,62 @@ RZ_API bool rz_reg_is_role(const RzReg *reg, const char *name, const RzRegisterI
 	return RZ_STR_EQ(sp, name);
 }
 
-// Take the 32bits name of a register, and return the 64 bit name of it.
-// If there is no equivalent 64 bit register return NULL.
-// SLOW
-RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32) {
+/**
+ * \brief Look up an equivalent register name resized from \p from_size to \p to_size bits.
+ *
+ * \param reg Register state.
+ * \param name Source register name.
+ * \param from_size Expected bit size of \p name.
+ * \param to_size Desired bit size of the returned register name.
+ * \return Equivalent register name, or NULL if none exists.
+ */
+static const char *reg_resize_name(RzReg *reg, const char *name, int from_size, int to_size) {
+	if (!reg || !name) {
+		return NULL;
+	}
 	int i, j = -1;
+	int found_type = -1;
 	RzListIter *iter;
 	RzRegItem *item;
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		rz_list_foreach (reg->regset[i].regs, iter, item) {
-			if (item->size == 32 && !rz_str_casecmp(rreg32, item->name)) {
-				j = item->offset;
+		HtSP *ht = reg->regset[i].ht_regs;
+		if (!ht) {
+			continue;
+		}
+		bool found = false;
+		item = ht_sp_find(ht, name, &found);
+		if (found && item && item->size == from_size) {
+			j = item->offset;
+			found_type = i;
+			break;
+		}
+	}
+	if (j == -1) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
+			rz_list_foreach (reg->regset[i].regs, iter, item) {
+				if (item->size == from_size && !rz_str_casecmp(name, item->name)) {
+					j = item->offset;
+					found_type = i;
+					break;
+				}
+			}
+			if (j != -1) {
 				break;
 			}
 		}
 	}
 	if (j != -1) {
+		rz_list_foreach (reg->regset[found_type].regs, iter, item) {
+			if (item->offset == j && item->size == to_size) {
+				return item->name;
+			}
+		}
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
+			if (i == found_type) {
+				continue;
+			}
 			rz_list_foreach (reg->regset[i].regs, iter, item) {
-				if (item->offset == j && item->size == 64) {
+				if (item->offset == j && item->size == to_size) {
 					return item->name;
 				}
 			}
@@ -57,31 +94,26 @@ RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32) {
 	return NULL;
 }
 
-// Take the 64 bits name of a register, and return the 32 bit name of it.
-// If there is no equivalent 32 bit register return NULL.
-// SLOW
+/**
+ * \brief Take the 32-bit name of a register and return its 64-bit equivalent.
+ *
+ * \param reg Register state.
+ * \param rreg32 32-bit register name.
+ * \return Equivalent 64-bit register name, or NULL if none exists.
+ */
+RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32) {
+	return reg_resize_name(reg, rreg32, 32, 64);
+}
+
+/**
+ * \brief Take the 64-bit name of a register and return its 32-bit equivalent.
+ *
+ * \param reg Register state.
+ * \param rreg64 64-bit register name.
+ * \return Equivalent 32-bit register name, or NULL if none exists.
+ */
 RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64) {
-	int i, j = -1;
-	RzListIter *iter;
-	RzRegItem *item;
-	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		rz_list_foreach (reg->regset[i].regs, iter, item) {
-			if (item->size == 64 && !rz_str_casecmp(rreg64, item->name)) {
-				j = item->offset;
-				break;
-			}
-		}
-	}
-	if (j != -1) {
-		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			rz_list_foreach (reg->regset[i].regs, iter, item) {
-				if (item->offset == j && item->size == 32) {
-					return item->name;
-				}
-			}
-		}
-	}
-	return NULL;
+	return reg_resize_name(reg, rreg64, 64, 32);
 }
 
 RZ_API const char *rz_reg_get_type(int idx) {
