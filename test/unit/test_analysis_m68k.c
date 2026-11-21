@@ -280,6 +280,28 @@ static bool test_m68k_dbcc_conditions(void) {
 	mu_end;
 }
 
+static bool test_m68k_pmmu_branch_cpu(void) {
+	const char *cpus[] = { "68030", "68040", "68060" };
+	const ut8 pbcc[] = { 0xf0, 0x81, 0xff, 0xfc };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cpus); i++) {
+		RzCore *core = m68k_core_new(cpus[i]);
+		mu_assert_notnull(core, "M68K core");
+		RzAnalysisOp op;
+		mu_assert_eq(rz_analysis_op(core->analysis, &op, 0, pbcc, sizeof(pbcc), RZ_ANALYSIS_OP_MASK_ALL), 2, "only the illegal opcode is consumed");
+		mu_assert_eq(op.type, RZ_ANALYSIS_OP_TYPE_ILL, "PBcc requires the external MC68851");
+		mu_assert_eq(op.jump, UT64_MAX, "illegal instruction has no branch target");
+		mu_assert_eq(op.fail, UT64_MAX, "illegal instruction has no fallthrough edge");
+		rz_analysis_op_fini(&op);
+
+		RzAsmOp asmop;
+		mu_assert_eq(rz_asm_disassemble(core->rasm, &asmop, pbcc, sizeof(pbcc)), 2, "disassembly consumes the same opcode");
+		mu_assert_streq(rz_asm_op_get_asm(&asmop), "invalid", "PBcc is invalid on this CPU");
+		rz_asm_op_fini(&asmop);
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
 static bool test_m68k_branch_widths_and_calls(void) {
 	const struct {
 		const char *cpu;
@@ -667,6 +689,7 @@ int all_tests(void) {
 	mu_run_test(test_m68k_bcc_conditions);
 	mu_run_test(test_m68k_scc_conditions);
 	mu_run_test(test_m68k_dbcc_conditions);
+	mu_run_test(test_m68k_pmmu_branch_cpu);
 	mu_run_test(test_m68k_branch_widths_and_calls);
 	mu_run_test(test_m68k_integer_results_and_flags);
 	mu_run_test(test_m68k_data_transfers);

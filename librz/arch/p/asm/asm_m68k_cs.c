@@ -50,7 +50,7 @@ static int m68k_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len
 	}
 
 	count = cs_disasm(ctx->handle, buf, len, a->pc, 1, &insn);
-	if (count < 1 || !insn) {
+	if (count < 1 || !insn || (mode != CS_MODE_M68K_020 && rz_m68k_insn_is_pmmu_branch(insn))) {
 		op_size = m68k_set_invalid(op, M68K_MIN_OP_SIZE);
 		goto beach;
 	}

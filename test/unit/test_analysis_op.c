@@ -599,12 +599,50 @@ static bool test_dalvik_switch_blocks() {
 	mu_end;
 }
 
+static bool test_alpha_branch_values(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "analysis");
+	if (!rz_analysis_use(analysis, "alpha")) {
+		rz_analysis_free(analysis);
+		mu_ignore;
+	}
+	rz_analysis_set_bits(analysis, 64);
+
+	const struct {
+		ut8 bytes[4];
+		const char *link;
+	} cases[] = {
+		{ { 0xfe, 0xff, 0x5f, 0xd3 }, "r26" }, // bsr $26
+		{ { 0xfe, 0xff, 0x3f, 0xc0 }, "r1" }, // br $1
+		{ { 0xfe, 0xff, 0xff, 0xc3 }, NULL }, // br $31
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		RzAnalysisOp op;
+		mu_assert_eq(rz_analysis_op(analysis, &op, 0x100000000, cases[i].bytes, sizeof(cases[i].bytes), RZ_ANALYSIS_OP_MASK_VAL), sizeof(cases[i].bytes), "branch size");
+		mu_assert_notnull(op.src[0], "branch target");
+		mu_assert_eq(op.src[0]->type, RZ_ANALYSIS_VAL_IMM, "immediate target");
+		mu_assert_eq(op.src[0]->imm, 0xfffffffc, "branch target address");
+		if (cases[i].link) {
+			mu_assert_notnull(op.dst, "link destination");
+			mu_assert_notnull(op.dst->reg, "link register");
+			mu_assert_streq(op.dst->reg->name, cases[i].link, "encoded link register");
+			mu_assert_eq(op.dst->access, RZ_ANALYSIS_ACC_W, "link register access");
+		} else {
+			mu_assert_null(op.dst, "r31 discards the link");
+		}
+		rz_analysis_op_fini(&op);
+	}
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
 	mu_run_test(test_dalvik_switch_payload_bounds);
 	mu_run_test(test_dalvik_switch_blocks);
 	mu_run_test(test_rz_analysis_op_val);
+	mu_run_test(test_alpha_branch_values);
 	mu_run_test(test_rz_core_analysis_bytes);
 	mu_run_test(test_rz_core_analysis_bytes_respect_buffer_len);
 	mu_run_test(test_rz_core_analysis_bytes_short_tail);

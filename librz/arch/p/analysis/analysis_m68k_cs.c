@@ -1024,7 +1024,8 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 		cs_option(ctx->handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm(ctx->handle, (ut8 *)buf, len, addr, 1, &insn);
-	if (n < 1 || !insn || insn->size < 1) {
+	bool pmmu_branch = insn && rz_m68k_insn_is_pmmu_branch(insn);
+	if (n < 1 || !insn || insn->size < 1 || (pmmu_branch && mode != CS_MODE_M68K_020)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		opsize = op->size = M68K_MIN_OP_SIZE;
 		goto beach;
@@ -1039,7 +1040,7 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, mode, insn, addr);
 	}
-	if (rz_m68k_insn_is_pmmu_branch(insn)) {
+	if (pmmu_branch && insn->size >= 4 && m68k->op_count == 1 && m68k->operands[0].type == M68K_OP_BR_DISP) {
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
 		m68k_set_opdir(op);
