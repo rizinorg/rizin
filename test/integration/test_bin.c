@@ -351,11 +351,118 @@ bool test_rz_bin_p2v2p(void) {
 	mu_end;
 }
 
+typedef struct {
+	RzBinFile *expected_bf;
+	RzBinObject *expected_obj;
+	int event_count;
+	int destroy_count;
+	bool destroy_after_event;
+	bool failed_unexpected;
+} ObjDelTracker;
+
+static void event_obj_del_cb(RzEvent *ev, int type, void *user, void *data) {
+	ObjDelTracker *tracker = user;
+	if (type != RZ_EVENT_BIN_OBJECT_DEL) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	RzEventBinFileDel *bev = data;
+	if (!bev || bev->bf != tracker->expected_bf || bev->bf->o != tracker->expected_obj) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	tracker->event_count++;
+}
+
+static void mock_bin_plugin_destroy(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return;
+	}
+	ObjDelTracker *tracker = bf->o->bin_obj;
+	if (bf != tracker->expected_bf || bf->o != tracker->expected_obj) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	tracker->destroy_after_event = (tracker->event_count == 2);
+	tracker->destroy_count++;
+	bf->o->bin_obj = NULL;
+}
+
+static RzBinPlugin mock_obj_del_plugin = {
+	.name = "mock_obj_del",
+	.desc = "Mock plugin for rz_bin_file_set_obj event test",
+	.destroy = &mock_bin_plugin_destroy,
+};
+
+bool test_rz_bin_file_set_obj_event(void) {
+	RzIO *io = rz_io_new();
+	RzBin *bin = rz_bin_new();
+	rz_io_bind(io, &bin->iob);
+
+	ObjDelTracker tracker = { 0 };
+	rz_event_hook(bin->event, RZ_EVENT_BIN_OBJECT_DEL, event_obj_del_cb, &tracker);
+
+	RzBinOptions opt = { 0 };
+	RzBinFile *bf = rz_bin_open(bin, "hex://42424242424242", &opt);
+	mu_assert_notnull(bf, "open file");
+	mu_assert_notnull(bf->o, "initial bin object");
+	mu_assert_eq(tracker.event_count, 0, "no object del event on initial open");
+	mu_assert_false(tracker.failed_unexpected, "no unexpected event on open");
+
+	// Re-applying the same object or updating with NULL must not emit RZ_EVENT_BIN_OBJECT_DEL
+	mu_assert_true(rz_bin_file_set_obj(bf, bf->o), "setting same obj succeeds");
+	mu_assert_true(rz_bin_file_set_obj(bf, NULL), "updating current obj succeeds");
+	mu_assert_eq(tracker.event_count, 0, "no event when object is unchanged");
+
+	// Replace initial object with obj1 (backed by mock plugin with destroy hook)
+	RzBinObject *obj1 = RZ_NEW0(RzBinObject);
+	if (!obj1 || !(obj1->info = RZ_NEW0(RzBinInfo))) {
+		free(obj1);
+		rz_bin_free(bin);
+		rz_io_free(io);
+		mu_fail("alloc obj1");
+		return false;
+	}
+	obj1->plugin = &mock_obj_del_plugin;
+	obj1->bin_obj = &tracker;
+
+	tracker.expected_bf = bf;
+	tracker.expected_obj = bf->o;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj1), "replace initial object with obj1");
+	mu_assert_ptreq(bf->o, obj1, "bf->o updated to obj1");
+	mu_assert_eq(tracker.event_count, 1, "RZ_EVENT_BIN_OBJECT_DEL emitted once");
+	mu_assert_eq(tracker.destroy_count, 0, "original any plugin has no mock destroy");
+	mu_assert_false(tracker.failed_unexpected, "event matched expected bf and old obj");
+
+	// Replace obj1 with obj2 and verify event precedes plugin->destroy(bf)
+	RzBinObject *obj2 = RZ_NEW0(RzBinObject);
+	if (!obj2 || !(obj2->info = RZ_NEW0(RzBinInfo))) {
+		free(obj2);
+		rz_bin_free(bin);
+		rz_io_free(io);
+		mu_fail("alloc obj2");
+		return false;
+	}
+
+	tracker.expected_obj = obj1;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj2), "replace obj1 with obj2");
+	mu_assert_ptreq(bf->o, obj2, "bf->o updated to obj2");
+	mu_assert_eq(tracker.event_count, 2, "RZ_EVENT_BIN_OBJECT_DEL emitted twice");
+	mu_assert_eq(tracker.destroy_count, 1, "superseded plugin->destroy invoked once");
+	mu_assert_true(tracker.destroy_after_event, "RZ_EVENT_BIN_OBJECT_DEL sent before destroy");
+	mu_assert_false(tracker.failed_unexpected, "no unexpected callbacks");
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
+	mu_run_test(test_rz_bin_file_set_obj_event);
 	mu_run_test(test_rz_bin_sections_mapping);
 	mu_run_test(test_rz_bin_p2v2p);
 	return tests_passed != tests_run;

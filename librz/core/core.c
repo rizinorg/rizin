@@ -1649,6 +1649,11 @@ static void ev_binfiledel_cb(RzEvent *ev, int type, void *user, void *data) {
 	rz_core_vfile_bin_file_deleted(user, bev->bf);
 }
 
+static void ev_binobjdel_cb(RzEvent *ev, int type, void *user, void *data) {
+	RzEventBinFileDel *bev = data;
+	rz_core_vfile_bin_file_deleted(user, bev->bf);
+}
+
 RZ_API char *color_cb(void *user, int idx, int last, bool bg) {
 	RzCore *core = (RzCore *)user;
 	return rz_cons_rainbow_get(core->cons, idx, last, bg);
@@ -1796,6 +1801,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_parse_set_user_ptr(core->parser, core);
 	core->bin = rz_bin_new();
 	rz_event_hook(core->bin->event, RZ_EVENT_BIN_FILE_DEL, ev_binfiledel_cb, core);
+	rz_event_hook(core->bin->event, RZ_EVENT_BIN_OBJECT_DEL, ev_binobjdel_cb, core);
 	rz_cons_bind(&core->bin->consb);
 	// XXX we shuold use RzConsBind instead of this hardcoded pointer
 	core->bin->cb_printf = (PrintfCallback)rz_cons_printf;
