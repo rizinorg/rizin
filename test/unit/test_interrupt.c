@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_interrupt.h>
+#include <rz_util/rz_sys.h>
+#include <rz_util/rz_time.h>
 #include "minunit.h"
 
 static void dummy_callback(void *user) {
@@ -112,10 +114,36 @@ bool test_rz_interrupt_timeout(void) {
 	mu_assert_notnull(intr, "rz_interrupt_new failed");
 
 	rz_interrupt_timeout(intr, 0);
+	mu_assert_eq(intr->timeout, 0, "timeout 0 should keep deadline cleared");
 	mu_assert_false(rz_interrupt_is_breaked(intr), "timeout 0 should not break immediately");
 
 	rz_interrupt_break_timeout(intr, 0);
+	mu_assert_eq(intr->timeout, 0, "break_timeout 0 should clear deadline");
 	mu_assert_false(rz_interrupt_is_breaked(intr), "break_timeout 0 should not break");
+
+	rz_interrupt_break_timeout(intr, 200);
+	ut64 first_deadline = intr->timeout;
+	mu_assert_neq(first_deadline, 0, "positive timeout should arm deadline");
+
+	rz_interrupt_break_timeout(intr, 500);
+	mu_assert_true(intr->timeout > first_deadline, "re-arming timeout should update deadline instead of clearing it");
+
+	rz_interrupt_break_timeout(intr, 0);
+	mu_assert_eq(intr->timeout, 0, "timeout 0 should disarm an armed deadline");
+	mu_assert_false(rz_interrupt_is_breaked(intr), "disarmed timeout should not break");
+
+	rz_interrupt_break_timeout(intr, 200);
+	mu_assert_neq(intr->timeout, 0, "positive timeout should arm deadline before negative disarm");
+	rz_interrupt_break_timeout(intr, -1);
+	mu_assert_eq(intr->timeout, 0, "negative timeout should disarm an armed deadline");
+	mu_assert_false(rz_interrupt_is_breaked(intr), "negative timeout should not break");
+
+	rz_interrupt_timeout(intr, 5000);
+	mu_assert_false(rz_interrupt_is_breaked(intr), "5000ms timeout should not break immediately");
+	rz_interrupt_timeout(intr, 50);
+	rz_sys_usleep(80000);
+	mu_assert_true(rz_interrupt_is_breaked(intr), "50ms timeout should break after 80ms");
+	mu_assert_eq(intr->timeout, 0, "expired timeout clears deadline");
 
 	rz_interrupt_free(intr);
 	mu_end;

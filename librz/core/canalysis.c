@@ -4388,6 +4388,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_analysis_autoname_all_fcns(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	if (aopts->vars) {
@@ -4396,6 +4399,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		core_analysis_analyze_local_var_and_arg(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	if (plugin_supports_esil) {
@@ -4404,6 +4410,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_analysis_types_propagation(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	if (rz_config_get_b(core->config, "analysis.apply.signature")) {
@@ -4412,6 +4421,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_analysis_sigdb_apply(core, &n_applied, NULL);
 		rz_core_notify_done(core, "Applied %d FLIRT signatures via sigdb", n_applied);
 		rz_core_task_yield(&core->tasks);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	notify = "Propagate noreturn information";
@@ -4419,12 +4431,18 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 	rz_core_analysis_propagate_noreturn(core, UT64_MAX);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
+	if (rz_interrupt_is_breaked(core->intr)) {
+		return false;
+	}
 
 	notify = "Check for classes";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_analysis_class_recover_all(core->analysis);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
+	if (rz_interrupt_is_breaked(core->intr)) {
+		return false;
+	}
 
 	// Apply DWARF function information
 	if (rz_analysis_get_debug_info(core->analysis)) {
@@ -4432,6 +4450,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_notify_begin(core, "%s", notify);
 		rz_analysis_dwarf_integrate_functions(core->analysis, core->flags);
 		rz_core_notify_done(core, "%s", notify);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	notify = "Recover global variables from symbols";
@@ -4449,6 +4470,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 		rz_core_analysis_resolve_pointers_to_data(core);
 		rz_core_notify_done(core, "%s", notify);
 		rz_core_task_yield(&core->tasks);
+		if (rz_interrupt_is_breaked(core->intr)) {
+			return false;
+		}
 	}
 
 	notify = "Mark data-referenced bytes outside functions";
@@ -4467,6 +4491,9 @@ RZ_API bool rz_core_analysis_everything(RzCore *core, bool experimental, char *d
 			(void)rz_core_search_preludes(core, false); // "aap"
 			rz_core_notify_done(core, "%s", notify);
 			rz_core_task_yield(&core->tasks);
+			if (rz_interrupt_is_breaked(core->intr)) {
+				return false;
+			}
 		}
 		notify = "Enable constraint types analysis for variables";
 		rz_core_notify_begin(core, "%s", notify);
@@ -6398,8 +6425,12 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	const char *notify = "Analyze all flags starting with sym. and entry0 (aa)";
 	rz_core_notify_begin(core, "%s", notify);
 	rz_interrupt_break_push(core->intr, NULL, NULL);
-	ut64 timeout = rz_config_get_i(core->config, "analysis.timeout");
-	rz_interrupt_break_timeout(core->intr, timeout);
+	st64 timeout = (st64)rz_config_get_i(core->config, "analysis.timeout");
+	int timeout_ms = 0;
+	if (timeout > 0) {
+		timeout_ms = timeout > ST32_MAX / 1000 ? ST32_MAX : (int)(timeout * 1000);
+	}
+	rz_interrupt_break_timeout(core->intr, timeout_ms);
 	rz_core_analysis_all(core);
 	rz_core_notify_done(core, "%s", notify);
 	rz_core_task_yield(&core->tasks);
@@ -6422,6 +6453,7 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	// Usefull when running commands with ";" or via rizin -c,-i
 	rz_core_analysis_everything(core, type == RZ_CORE_ANALYSIS_EXPERIMENTAL, debugger);
 finish:
+	rz_interrupt_break_timeout(core->intr, 0);
 	rz_core_seek(core, old_offset, true);
 	// XXX this shouldnt be called. flags muts be created wheen the function is registered
 	rz_core_analysis_flag_every_function(core);
