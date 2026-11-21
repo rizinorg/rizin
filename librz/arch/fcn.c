@@ -318,7 +318,9 @@ static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 add
 		if (aop->type == RZ_ANALYSIS_OP_TYPE_UJMP || aop->type == RZ_ANALYSIS_OP_TYPE_RJMP) {
 			isValid = true;
 			break;
-		} else if (aop->type == RZ_ANALYSIS_OP_TYPE_JMP || aop->type == RZ_ANALYSIS_OP_TYPE_CJMP) {
+		} else if (aop->type == RZ_ANALYSIS_OP_TYPE_JMP || aop->type == RZ_ANALYSIS_OP_TYPE_CJMP ||
+			aop->type == RZ_ANALYSIS_OP_TYPE_RET || aop->type == RZ_ANALYSIS_OP_TYPE_CRET ||
+			aop->type == RZ_ANALYSIS_OP_TYPE_TRAP || aop->type == RZ_ANALYSIS_OP_TYPE_ILL) {
 			break;
 		}
 		if (aop->type == RZ_ANALYSIS_OP_TYPE_MOV) {
@@ -2954,46 +2956,39 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnaly
 	if (!a || !fcn) {
 		return NULL;
 	}
-	RzPVector *tmp = rz_pvector_new(NULL);
-	if (!tmp) {
-		return NULL;
-	}
-	RzAnalysisVar *var;
-	void **it;
-	int rarg_idx = 0;
-	// Resort the pvector to order "reg_arg - stack_arg"
-	rz_pvector_foreach (&fcn->vars, it) {
-		var = *it;
-		if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
-			rz_pvector_insert(tmp, rarg_idx++, var);
-		} else {
-			rz_pvector_push(tmp, var);
-		}
-	}
-
 	RzPVector *args = rz_pvector_new(NULL);
 	if (!args) {
-		rz_pvector_free(tmp);
 		return NULL;
 	}
-	rz_pvector_foreach (tmp, it) {
-		var = *it;
-		if (rz_analysis_var_is_arg(var)) {
+	fcn->argnum = 0;
+	RzAnalysisVar *var;
+	void **it;
+	// Order register arguments before stack arguments without an intermediate vector
+	for (int pass = 0; pass < 2; pass++) {
+		bool want_reg = (pass == 0);
+		rz_pvector_foreach (&fcn->vars, it) {
+			var = *it;
+			if ((var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) != want_reg) {
+				continue;
+			}
+			if (!rz_analysis_var_is_arg(var)) {
+				continue;
+			}
 			int argnum;
-			if (var->storage.type == RZ_ANALYSIS_VAR_STORAGE_REG) {
+			if (want_reg) {
 				argnum = rz_analysis_var_get_argnum(var);
 				if (argnum < 0) {
 					RZ_LOG_INFO("%s : arg \"%s\" has wrong position: %d\n", fcn->name, var->name, argnum);
 					continue;
 				}
 			} else {
-				argnum = fcn->argnum;
+				argnum = rz_pvector_len(args);
 			}
 			// pvector api is a bit ugly here, essentially we make a (possibly sparse) array
 			// where each var is assigned at its argnum
 			if (argnum >= rz_pvector_len(args)) {
 				if (!rz_pvector_reserve(args, argnum + 1)) {
-					goto cleanup;
+					return args;
 				}
 				while (argnum >= rz_pvector_len(args)) {
 					rz_pvector_push(args, NULL);
@@ -3003,8 +2998,6 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisVar *>*/ *rz_analysis_function_args(RzAnaly
 			fcn->argnum++;
 		}
 	}
-cleanup:
-	rz_pvector_free(tmp);
 	return args;
 }
 
