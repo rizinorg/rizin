@@ -365,7 +365,7 @@ static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 add
 	/* check if jump table contains valid deltas */
 	read_ahead(ra, analysis, *jmptbl_addr, (ut8 *)&jmptbl, 64);
 	for (i = 0; i < 3; i++) {
-		dst = lea_ptr + (st32)rz_read_le32(jmptbl);
+		dst = lea_ptr + (st32)rz_read_le32(jmptbl + i);
 		if (!analysis->iob.is_valid_offset(analysis->iob.io, dst, 0)) {
 			RZ_LOG_VERBOSE("Jump table target is not valid: 0x%" PFMT64x "\n", dst);
 			return false;
