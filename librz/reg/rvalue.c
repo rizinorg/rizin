@@ -47,8 +47,59 @@ RZ_API RZ_OWN RzBitVector *rz_reg_get_bv(RZ_NONNULL RzReg *reg, RZ_NONNULL RzReg
  */
 RZ_API ut64 rz_reg_get_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item) {
 	rz_return_val_if_fail(reg && item, 0);
-	if (item->offset < 0) {
+	if (item->offset < 0 || item->size <= 0) {
 		return 0ll;
+	}
+	RzRegArena *arena = reg->regset[item->arena].arena;
+	if (arena && arena->bytes) {
+		ut32 byte_off = (ut32)item->offset >> 3;
+		ut32 bit_off = (ut32)item->offset & 7;
+		ut32 nbytes = ((ut32)item->size + bit_off + 7) >> 3;
+		if (byte_off + nbytes <= (ut32)arena->size) {
+			if (item->size == 1 && bit_off) {
+				return (arena->bytes[byte_off] >> bit_off) & 1;
+			}
+			if (!bit_off && item->size <= 64) {
+				const ut8 *buf = arena->bytes + byte_off;
+				if (!reg->big_endian) {
+					switch (item->size) {
+					case 8:
+						return buf[0];
+					case 16:
+						return rz_read_le16(buf);
+					case 32:
+						return rz_read_le32(buf);
+					case 64:
+						return rz_read_le64(buf);
+					default: {
+						ut64 val = 0;
+						for (ut32 i = 0; i < nbytes; i++) {
+							val |= (ut64)buf[i] << (i * 8);
+						}
+						return val & (UT64_MAX >> (64 - item->size));
+					}
+					}
+				} else if (!(item->size & 7)) {
+					switch (item->size) {
+					case 8:
+						return buf[0];
+					case 16:
+						return rz_read_be16(buf);
+					case 32:
+						return rz_read_be32(buf);
+					case 64:
+						return rz_read_be64(buf);
+					default: {
+						ut64 val = 0;
+						for (ut32 i = 0; i < nbytes; i++) {
+							val = (val << 8) | buf[i];
+						}
+						return val;
+					}
+					}
+				}
+			}
+		}
 	}
 	RzBitVector *bv = rz_reg_get_bv(reg, item);
 	if (!bv) {
@@ -171,6 +222,75 @@ RZ_API bool rz_reg_set_value(RZ_NONNULL RzReg *reg, RZ_NONNULL RzRegItem *item, 
 	rz_return_val_if_fail(reg && item, false);
 	if (rz_reg_is_readonly(reg, item) || item->offset < 0) {
 		return true;
+	}
+	if (item->size <= 0) {
+		RZ_LOG_ERROR("reg: failed to allocate RzBitVector for register write\n");
+		return false;
+	}
+	if (item->offset & 7) {
+		if (item->size == 1) {
+			return reg_set_value(reg, item, value & 1);
+		}
+		RZ_LOG_ERROR("reg: failed to set bitvector for non-byte-aligned regs (not yet supported).\n");
+		return false;
+	}
+	if (item->size <= 64) {
+		RzRegArena *arena = reg->regset[item->arena].arena;
+		ut32 byte_off = (ut32)item->offset >> 3;
+		ut32 nbytes = ((ut32)item->size + 7) >> 3;
+		if (arena && arena->bytes && byte_off + nbytes <= (ut32)arena->size) {
+			ut8 *buf = arena->bytes + byte_off;
+			ut64 masked = item->size == 64 ? value : (value & (UT64_MAX >> (64 - item->size)));
+			if (!reg->big_endian) {
+				switch (item->size) {
+				case 8:
+					buf[0] = (ut8)masked;
+					return true;
+				case 16:
+					rz_write_le16(buf, (ut16)masked);
+					return true;
+				case 32:
+					rz_write_le32(buf, (ut32)masked);
+					return true;
+				case 64:
+					rz_write_le64(buf, masked);
+					return true;
+				default:
+					for (ut32 i = 0; i < nbytes; i++) {
+						if (i + 1 == nbytes && (item->size & 7)) {
+							buf[i] &= (ut8)((0xff << (item->size & 7)) & 0xff);
+							buf[i] |= (ut8)(masked & 0xff);
+						} else {
+							buf[i] = (ut8)(masked & 0xff);
+						}
+						masked >>= 8;
+					}
+					return true;
+				}
+			} else if (!(item->size & 7)) {
+				switch (item->size) {
+				case 8:
+					buf[0] = (ut8)masked;
+					return true;
+				case 16:
+					rz_write_be16(buf, (ut16)masked);
+					return true;
+				case 32:
+					rz_write_be32(buf, (ut32)masked);
+					return true;
+				case 64:
+					rz_write_be64(buf, masked);
+					return true;
+				default:
+					for (ut32 i = nbytes - 1; i > 0; i--) {
+						buf[i] = (ut8)(masked & 0xff);
+						masked >>= 8;
+					}
+					buf[0] = (ut8)(masked & 0xff);
+					return true;
+				}
+			}
+		}
 	}
 
 	RzBitVector *bv = rz_bv_new_from_ut64(item->size, value);

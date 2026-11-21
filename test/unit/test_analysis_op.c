@@ -599,6 +599,64 @@ static bool test_dalvik_switch_blocks() {
 	mu_end;
 }
 
+static bool test_rz_reg_value_fastpaths(void) {
+	const char *profile =
+		"gpr r8  .8  0 0\n"
+		"gpr r16 .16 1 0\n"
+		"gpr r32 .32 4 0\n"
+		"gpr r64 .64 8 0\n"
+		"gpr r12 .12 16 0\n"
+		"gpr r24 .24 20 0\n"
+		"flg cf  .1  .185 0\n";
+	for (int be = 0; be < 2; be++) {
+		RzReg *reg = rz_reg_new();
+		mu_assert_notnull(reg, "rz_reg_new");
+		reg->big_endian = (bool)be;
+		mu_assert_true(rz_reg_set_profile_string(reg, profile), "set profile");
+
+		RzRegItem *i8 = rz_reg_get(reg, "r8", -1);
+		RzRegItem *i16 = rz_reg_get(reg, "r16", -1);
+		RzRegItem *i32 = rz_reg_get(reg, "r32", -1);
+		RzRegItem *i64 = rz_reg_get(reg, "r64", -1);
+		RzRegItem *i12 = rz_reg_get(reg, "r12", -1);
+		RzRegItem *i24 = rz_reg_get(reg, "r24", -1);
+		RzRegItem *icf = rz_reg_get(reg, "cf", -1);
+
+		mu_assert_true(rz_reg_set_value(reg, i8, 0xab), "set r8");
+		mu_assert_true(rz_reg_set_value(reg, i16, 0x1234), "set r16");
+		mu_assert_true(rz_reg_set_value(reg, i32, 0x89abcdef), "set r32");
+		mu_assert_true(rz_reg_set_value(reg, i64, 0x0123456789abcdefULL), "set r64");
+		mu_assert_true(rz_reg_set_value(reg, i12, 0xfff5), "set r12");
+		mu_assert_true(rz_reg_set_value(reg, i24, 0xabcdef), "set r24");
+		mu_assert_true(rz_reg_set_value(reg, icf, 1), "set cf=1");
+
+		mu_assert_eq(rz_reg_get_value(reg, i8), 0xab, "get r8");
+		mu_assert_eq(rz_reg_get_value(reg, i16), 0x1234, "get r16");
+		mu_assert_eq(rz_reg_get_value(reg, i32), 0x89abcdef, "get r32");
+		mu_assert_eq(rz_reg_get_value(reg, i64), 0x0123456789abcdefULL, "get r64");
+		mu_assert_eq(rz_reg_get_value(reg, i24), 0xabcdef, "get r24");
+		if (!be) {
+			mu_assert_eq(rz_reg_get_value(reg, i12), 0xff5, "get r12 masked LE");
+		}
+		mu_assert_eq(rz_reg_get_value(reg, icf), 1, "get cf=1");
+
+		// Value 2 truncated to 1 bit must clear the flag (matching rz_bv_new_from_ut64)
+		mu_assert_true(rz_reg_set_value(reg, icf, 2), "set cf=2");
+		mu_assert_eq(rz_reg_get_value(reg, icf), 0, "get cf=0 after 1-bit truncation");
+
+		// Compare against rz_reg_get_bv() for parity
+		RzBitVector *bv64 = rz_reg_get_bv(reg, i64);
+		mu_assert_eq(rz_bv_to_ut64(bv64), 0x0123456789abcdefULL, "bv parity r64");
+		rz_bv_free(bv64);
+		RzBitVector *bv12 = rz_reg_get_bv(reg, i12);
+		mu_assert_eq(rz_reg_get_value(reg, i12), rz_bv_to_ut64(bv12), "bv parity r12");
+		rz_bv_free(bv12);
+
+		rz_reg_free(reg);
+	}
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -612,6 +670,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_reg_value_fastpaths);
 	return tests_passed != tests_run;
 }
 
