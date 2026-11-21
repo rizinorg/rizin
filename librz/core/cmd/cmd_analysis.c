@@ -2032,7 +2032,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_signature_handler(RzCore *core, int argc
 
 	if (argc > 1) {
 		// set signature
-		rz_core_analysis_function_set_signature(core, f, argv[1]);
+		return rz_core_analysis_function_set_signature(core, f, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 	} else {
 		// get signature
 		char *str = NULL;

@@ -568,6 +568,33 @@ static bool test_visual_graph_previews(void) {
 	mu_end;
 }
 
+static bool test_type_and_signature_cmd_status(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e asm.arch=x86; e asm.bits=64; o malloc://64"),
+		RZ_CMD_STATUS_OK, "setup");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "tos /nonexistent_rz_dir_xyz/missing.sdb"),
+		RZ_CMD_STATUS_ERROR, "tos returns ERROR on missing sdb");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "td \"\""),
+		RZ_CMD_STATUS_ERROR, "td returns ERROR on empty input");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "td \"struct broken {{{ \""),
+		RZ_CMD_STATUS_ERROR, "td returns ERROR on invalid C syntax");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "td \"struct rz_test_ok { int a; }\""),
+		RZ_CMD_STATUS_OK, "td returns OK on valid C struct");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "af+ test_fn; afb+ 0 0 1"),
+		RZ_CMD_STATUS_OK, "create function");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "afs \"not a valid signature (((\" @ 0"),
+		RZ_CMD_STATUS_ERROR, "afs returns ERROR on invalid signature");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "afs \"int test_fn(int x)\" @ 0"),
+		RZ_CMD_STATUS_OK, "afs returns OK on valid signature");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_visual_preview_cache);
@@ -583,6 +610,7 @@ int all_tests() {
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
+	mu_run_test(test_type_and_signature_cmd_status);
 	return tests_passed != tests_run;
 }
 
