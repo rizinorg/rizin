@@ -23,6 +23,7 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin);
 RZ_IPI RZ_OWN char *rz_bin_file_golang_compiler(RZ_NONNULL RzBinFile *binfile);
 
 RZ_IPI void rz_bin_object_free(RzBinObject *o);
+RZ_IPI void rz_bin_trycatch_index_free(RZ_NULLABLE RzBinTrycatchIndex *idx);
 RZ_IPI ut64 rz_bin_object_get_baddr(RzBinObject *o);
 RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *binfile, RzBinPlugin *plugin, RzBinObjectLoadOptions *opts, ut64 offset, ut64 sz);
 RZ_IPI RzBinObject *rz_bin_object_get_cur(RzBin *bin);

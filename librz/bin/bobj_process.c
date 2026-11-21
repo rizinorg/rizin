@@ -296,6 +296,7 @@ RZ_IPI bool rz_bin_object_process_plugin_data(RZ_NONNULL RzBinFile *bf, RZ_NONNU
 	rz_bin_process_symbols(bf, o, demangler, flags);
 	rz_bin_process_imports(bf, o, demangler, flags);
 	rz_bin_set_and_process_relocs(bf, o, demangler, flags);
+	(void)rz_bin_object_get_classes(o);
 	rz_bin_info_auto_resolve_fields(o);
 
 	return true;
@@ -341,5 +342,6 @@ RZ_API void rz_bin_demangle_with_flags(RZ_NONNULL RzBin *bin, RzDemanglerFlag fl
 		rz_bin_demangle_relocs_with_flags(o, demangler, flags);
 		rz_bin_demangle_imports_with_flags(o, demangler, flags);
 		rz_bin_demangle_symbols_with_flags(o, demangler, flags);
+		(void)rz_bin_object_get_classes(o);
 	}
 }

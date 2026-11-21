@@ -1099,42 +1099,54 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 }
 
 static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	RzPVector *symbols_vec = symbols(bf);
-	void **iter;
-	RzBinSymbol *symbol;
-	if (!symbols_vec) {
+	ELFOBJ *bin = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	if (!bin) {
 		return;
 	}
 
-	rz_pvector_foreach (symbols_vec, iter) {
-		symbol = *iter;
+	RzBinElfSymbol *symbol;
+	rz_bin_elf_foreach_symbols(bin, symbol) {
+		if (RZ_STR_ISEMPTY(symbol->name)) {
+			continue;
+		}
 		if (!strcmp(symbol->name, "_NSConcreteGlobalBlock")) {
 			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
 		} else if (!strcmp(symbol->name, "__rust_oom")) {
 			ret->lang = "rust";
-			break;
+			return;
 		}
 	}
-	rz_pvector_free(symbols_vec);
+
+	RzBinElfSymbol *import;
+	rz_bin_elf_foreach_imports(bin, import) {
+		if (RZ_STR_ISEMPTY(import->name)) {
+			continue;
+		}
+		if (!strcmp(import->name, "_NSConcreteGlobalBlock")) {
+			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
+		} else if (!strcmp(import->name, "__rust_oom")) {
+			ret->lang = "rust";
+			return;
+		}
+	}
 }
 
 static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 	if (ret->has_retguard) {
 		return;
 	}
-	RzPVector *sections_vec = sections(bf);
-	void **iter;
-	RzBinSection *section;
-	rz_pvector_foreach (sections_vec, iter) {
-		section = *iter;
-#define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
-		if (!strcmp(section->name, ".openbsd.randomdata")) {
-			// The retguard cookie adds 8 per return function inst.
-			ret->has_retguard = (section->size >= RZ_BIN_RANDOMDATA_RETGUARD_SZ);
-			break;
-		}
+	ELFOBJ *bin = (bf && bf->o) ? bf->o->bin_obj : NULL;
+	if (!bin) {
+		return;
 	}
-	rz_pvector_free(sections_vec);
+	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".openbsd.randomdata");
+	if (!section) {
+		return;
+	}
+#define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
+	ut64 size = section->type != SHT_NOBITS ? section->size : 0;
+	// The retguard cookie adds 8 per return function inst.
+	ret->has_retguard = (size >= RZ_BIN_RANDOMDATA_RETGUARD_SZ);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
