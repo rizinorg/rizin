@@ -136,7 +136,38 @@ static inline void fill_from_alpha_op(RzReg *rz_reg, csh handle, RzAnalysisValue
 	}
 }
 
+static ut32 alpha_insn_word(const RzAsmAlphaContext *ctx) {
+	return rz_read_ble32(ctx->insn->bytes, ctx->mode == CS_MODE_BIG_ENDIAN);
+}
+
+static void alpha_fill_branch_values(RzAnalysis *a, RzAnalysisOp *op, ut32 word) {
+	// Capstone versions disagree on whether BR and BSR expose their link register.
+	RzAnalysisValue *target = rz_analysis_value_new();
+	if (target) {
+		target->type = RZ_ANALYSIS_VAL_IMM;
+		target->imm = op->jump;
+		target->access = RZ_ANALYSIS_ACC_R;
+		op->src[0] = target;
+	}
+	ut32 ra = rz_bits_extract(word, 21, 5);
+	if (ra == 31) {
+		return; // The zero register discards the link.
+	}
+	RzAnalysisValue *link = rz_analysis_value_new();
+	if (link) {
+		char name[8];
+		link->type = RZ_ANALYSIS_VAL_REG;
+		link->reg = rz_reg_get(a->reg, rz_strf(name, "r%u", ra), RZ_REG_TYPE_GPR);
+		link->access = RZ_ANALYSIS_ACC_W;
+		op->dst = link;
+	}
+}
+
 static void alpha_fillval(RzAsmAlphaContext *ctx, RzAnalysis *a, RzAnalysisOp *op) {
+	if (ctx->insn->id == RZ_ALPHA_INS(BR) || ctx->insn->id == RZ_ALPHA_INS(BSR)) {
+		alpha_fill_branch_values(a, op, alpha_insn_word(ctx));
+		return;
+	}
 	if (!ctx->insn->detail) {
 		return;
 	}
@@ -206,9 +237,7 @@ static RzStructuredData *alpha_opex(RzAsmAlphaContext *ctx) {
 }
 
 static ut64 alpha_branch_target(const RzAsmAlphaContext *ctx) {
-	// Capstone versions disagree on the operands of BR and BSR.
-	ut32 word = rz_read_ble32(ctx->insn->bytes, ctx->mode == CS_MODE_BIG_ENDIAN);
-	st32 displacement = rz_bits_sign_ext32(word, 21);
+	st32 displacement = rz_bits_sign_ext32(alpha_insn_word(ctx), 21);
 	return ctx->insn->address + ctx->insn->size + displacement * 4;
 }
 

@@ -156,3 +156,17 @@ EXPECT=<<EOF
       `---------------------------'
 EOF
 RUN
+
+NAME=HPPA tokenize left and right halves of floating-point registers
+FILE=malloc://4
+ARGS=-a hppa -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=hppa2.0
+wx 1a8541e6
+pi 1
+EOF
+EXPECT=<<EOF
+fmpyadd,sgl fr20R, fr21L, fr22L, fr23L, fr24L
+EOF
+EXPECT_ERR=
+RUN
