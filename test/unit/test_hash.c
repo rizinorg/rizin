@@ -36,6 +36,7 @@ static hmac_data_t hmacs_to_test[] = {
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-256", .expected = "5f606149b835b63bd33aba780307a8e1e50e7639632889b53af007eee5da2e4e" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-384", .expected = "bd32febc09355ac121869071c0c7430f8439d6f1b8ceb61e7f63e9b44416d0cced61dc48859da85cb1f33de8c69464c7" },
 	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "keccak-512", .expected = "405a62c2b44156181c8a786a8b7758039f962adb70df5b88061c429856c210373ec9adfae0b7968b4c2d0c87ca6dfe1cd972eae45f765507752e09855b934bb6" },
+	{ INDATA(input, "HelloWorld"), INDATA(key, "SuperSecretKeyWithSoManyWordsThatCouldBeBad"), .algo = "ripemd160", .expected = "6dcf8edc56615edd91c79bd135f7e680375add16" },
 #undef INDATA
 };
 
@@ -142,7 +143,13 @@ static hash_data_t hashes_to_test[] = {
 	{ INDATA("password"), .algo = "minentropy", .expected = "2.00000000" },
 	{ INDATA("admin"), .algo = "minentropy", .expected = "2.32192809" },
 	{ INDATA("password"), .algo = "serialcorr", .expected = "-0.16463233" },
-	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" }
+	{ INDATA("admin"), .algo = "serialcorr", .expected = "-0.18296530" },
+	{ INDATA("password"), .algo = "ripemd160", .expected = "2c08e8f5884750a7b99f6f2f342fc638db25ff31" },
+
+	// Edge case tests for ripemd160 (idk if i shouldve put it here)
+	{ INDATA(""), .algo = "ripemd160", .expected = "9c1185a5c5e9fc54612808977ee8f548b2258d31" },
+	{ INDATA("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), .algo = "ripemd160", .expected = "eed82d19d597ab275b550ff3d6e0bc2a75350388" } // long input
+
 #undef INDATA
 };
 
