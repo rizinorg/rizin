@@ -493,6 +493,7 @@ typedef struct {
 	WasmTypeOp type;
 	int len;
 	char *txt;
+	bool failed; ///< true when decoding this opcode failed
 } WasmOp;
 
 typedef struct {
@@ -500,14 +501,39 @@ typedef struct {
 	size_t min, max;
 } WasmOpDef;
 
+typedef struct wasm_scope_index_t WasmScopeIndex;
+
+typedef struct wasm_func_scope_t {
+	ut64 addr;
+	ut64 len; ///< body bytes. oversized tracked, never indexed
+	WasmScopeIndex *idx;
+	bool unindexable;
+	bool patched; ///< bytes changed after caching, ignore stored hints here
+} WasmFuncScope;
+
 typedef struct wasm_context_t {
 	ut64 scope_hint;
 	ut64 addr_old;
+	RzPVector /*<WasmFuncScope *>*/ *funcs;
+	RzVector /*<ut64>*/ calls; // function index -> address
+	bool indexed;
+	bool used_va;
+	const void *bin_obj; ///< RzBinObject
+	ut32 bin_id;
+	ut64 bin_size;
+	ut32 nsyms;
+	const void *iob_io; ///< IO identity at build time, never dereferenced
 } WasmContext;
 
 RZ_IPI bool wasm_init(void **user); ///< initialize a context of type WasmContext
 RZ_IPI bool wasm_fini(void *user); ///< free WasmContext*
 RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len);
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len);
+
+RZ_IPI WasmScopeIndex *wasm_scope_index_new(const ut8 *buf, int len);
+RZ_IPI void wasm_scope_index_free(WasmScopeIndex *idx);
+RZ_IPI bool wasm_scope_index_query(const WasmScopeIndex *idx, ut32 from, ut32 depth, bool use_else, ut32 *jump_off);
+RZ_IPI ut32 wasm_scope_index_root_end(const WasmScopeIndex *idx); ///< Function-body end offset, UT32_MAX if none.
+RZ_IPI void wasm_context_clear_cache(WasmContext *ctx);
 
 #endif

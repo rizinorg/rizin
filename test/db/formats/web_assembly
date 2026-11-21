@@ -136,3 +136,38 @@ EXPECT=<<EOF
 bool std::__2::__cxx_atomic_compare_exchange_strong<icu::numparse::impl::NumberParserImpl*>(std::__2::__cxx_atomic_base_impl<icu::numparse::impl::NumberParserImpl*>*, icu::numparse::impl::NumberParserImpl**, icu::numparse::impl::NumberParserImpl*, std::__2::memory_order, std::__2::memory_order)
 EOF
 RUN
+
+NAME=WASM: br_if in loop targets the loop start
+FILE=bins/wasm/brif-loop.wasm
+CMDS=<<EOF
+aaa
+afl
+aoj 1 @ 0x42
+EOF
+EXPECT=<<EOF
+0x00000034    1 2            entry0
+0x00000036    2 19           fcn.00000036
+0x0000004b    1 5            sym.fcn.1
+0x00000052    1 5            sym.fcn.2
+[{"opcode":"br_if 0","disasm":"br_if 0","mnemonic":"br_if","mask":"ffff","jump":52,"fail":68,"sign":true,"prefix":0,"id":13,"addr":66,"bytes":"0d00","size":2,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
+EOF
+RUN
+
+NAME=WASM: fallback br_if in loop targets the loop start
+FILE=hex://0061736d010000000104016000000302010007060102676f00000a0b01090003400d00000bff0b
+CMDS=<<EOF
+aaa
+aaa
+afl
+aoj 1 @ 0x21
+s 0x1f
+wx 02
+aoj 1 @ 0x21
+EOF
+EXPECT=<<EOF
+0x0000001f    1 2            entry0
+0x00000021    2 3            fcn.00000021
+[{"opcode":"br_if 0","disasm":"br_if 0","mnemonic":"br_if","mask":"ffff","jump":31,"fail":35,"sign":true,"prefix":0,"id":13,"addr":33,"bytes":"0d00","size":2,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
+[{"opcode":"br_if 0","disasm":"br_if 0","mnemonic":"br_if","mask":"ffff","jump":36,"fail":35,"sign":true,"prefix":0,"id":13,"addr":33,"bytes":"0d00","size":2,"type":"cjmp","scale":0,"refptr":0,"cycles":0,"failcycles":0,"delay":0,"stackptr":0,"cond":"al","family":"cpu"}]
+EOF
+RUN
