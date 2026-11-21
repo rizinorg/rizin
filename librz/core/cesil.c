@@ -257,7 +257,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	if (!esil || !esil->trace) {
 		return -1;
 	}
-	if (esil->trace->idx > 0) {
+	if (esil->trace->idx > 0 && esil->trace->registers) {
 		rz_analysis_esil_trace_restore(esil, esil->trace->idx - 1);
 		rz_core_reg_update_flags(core);
 		return 1;
@@ -267,7 +267,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 
 RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (!esil || !esil->trace) {
+	if (!esil || !esil->trace || !esil->trace->registers) {
 		return false;
 	}
 
