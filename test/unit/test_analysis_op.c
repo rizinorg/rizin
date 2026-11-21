@@ -599,6 +599,53 @@ static bool test_dalvik_switch_blocks() {
 	mu_end;
 }
 
+static bool test_rz_analysis_esil_trace_no_snapshot(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+	rz_core_cmd0(core, "aei; aeim");
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	mu_assert_notnull(esil, "esil initialized");
+
+	RzAnalysisEsilTrace *trace = rz_analysis_esil_trace_new_no_snapshot(esil);
+	mu_assert_notnull(trace, "no-snapshot trace created");
+	mu_assert_notnull(trace->instructions, "instructions vector present");
+	mu_assert_null(trace->registers, "registers map skipped");
+	mu_assert_null(trace->memory, "memory map skipped");
+	mu_assert_null(trace->stack_data, "stack snapshot skipped");
+
+	esil->trace = trace;
+	rz_analysis_esil_trace_op(esil, 0x1000, "0x42,rax,=");
+	mu_assert_eq(rz_pvector_len(trace->instructions), 1, "instruction traced");
+	mu_assert_eq(trace->idx, 1, "idx advanced after first op");
+	mu_assert_eq(trace->end_idx, 1, "end_idx advanced after first op");
+	RzILTraceInstruction *ins = rz_analysis_esil_get_instruction_trace(trace, 0);
+	mu_assert_notnull(ins, "instruction trace entry");
+	mu_assert_true(rz_analysis_il_reg_trace_contains(ins, "rax", true), "rax write recorded");
+
+	// Restoring or continuing back on a no-snapshot trace must be a safe no-op
+	// without modifying trace->idx so subsequent trace_op() calls still execute.
+	rz_analysis_esil_trace_restore(esil, 0);
+	mu_assert_eq(trace->idx, 1, "restore leaves idx unchanged on no-snapshot trace");
+	mu_assert_eq(trace->end_idx, 1, "restore leaves end_idx unchanged on no-snapshot trace");
+	mu_assert_false(rz_core_esil_continue_back(core), "continue_back returns false on no-snapshot trace");
+	mu_assert_eq(trace->idx, 1, "continue_back leaves idx unchanged on no-snapshot trace");
+
+	rz_analysis_esil_trace_op(esil, 0x1004, "0x99,rbx,=");
+	mu_assert_eq(rz_pvector_len(trace->instructions), 2, "second instruction traced after restore no-op");
+	mu_assert_eq(trace->idx, 2, "idx advanced after second op");
+	mu_assert_eq(trace->end_idx, 2, "end_idx advanced after second op");
+	ins = rz_analysis_esil_get_instruction_trace(trace, 1);
+	mu_assert_notnull(ins, "second instruction trace entry");
+	mu_assert_true(rz_analysis_il_reg_trace_contains(ins, "rbx", true), "rbx write recorded");
+
+	rz_analysis_esil_trace_free(trace);
+	esil->trace = NULL;
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -612,6 +659,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_analysis_esil_trace_no_snapshot);
 	return tests_passed != tests_run;
 }
 

@@ -267,7 +267,7 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 
 RZ_API bool rz_core_esil_continue_back(RZ_NONNULL RzCore *core) {
 	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
-	if (!esil || !esil->trace) {
+	if (!esil || !esil->trace || !esil->trace->registers) {
 		return false;
 	}
 
