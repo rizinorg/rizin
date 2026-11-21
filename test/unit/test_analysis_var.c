@@ -642,10 +642,122 @@ static bool test_x86_stack_var_recovery(void) {
 	mu_end;
 }
 
+static bool test_extract_rarg_synthetic_reg_item(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(
+		core->analysis, "fcn", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function");
+	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, "amd64");
+
+	RzRegItem synth_edi = { .name = "edi", .size = 0 };
+	RzRegItem synth_eax = { .name = "eax", .size = 0 };
+	RzAnalysisValue src_val = { .type = RZ_ANALYSIS_VAL_REG, .reg = &synth_edi };
+	RzAnalysisValue dst_val = { .type = RZ_ANALYSIS_VAL_REG, .reg = &synth_eax };
+	RzAnalysisOp op = { 0 };
+	op.addr = 0x1000;
+	op.type = RZ_ANALYSIS_OP_TYPE_MOV;
+	op.src[0] = &src_val;
+	op.dst = &dst_val;
+
+	int reg_set[16] = { 0 };
+	int count = 0;
+	rz_analysis_extract_rarg(core->analysis, &op, fcn, reg_set, &count);
+	mu_assert_eq(count, 1, "synthetic size-0 edi promoted to rdi arg");
+	mu_assert_notnull(rz_analysis_function_get_reg_var_at(fcn, "rdi"), "rdi reg arg recovered");
+
+	RzRegItem known_esi = { .name = "esi", .size = 32 };
+	src_val.reg = &known_esi;
+	op.addr = 0x1002;
+	rz_analysis_extract_rarg(core->analysis, &op, fcn, reg_set, &count);
+	mu_assert_eq(count, 2, "known size-32 esi promoted to rsi arg");
+	mu_assert_notnull(rz_analysis_function_get_reg_var_at(fcn, "rsi"), "rsi reg arg recovered");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_recover_vars_block_edge_cases(void) {
+	// Contiguous >= 32-byte block and partially mapped block with io.ff=false.
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	rz_config_set_b(core->config, "io.ff", false);
+	mu_assert_true(rz_core_file_open_load(core, "malloc://40", 0x1000, RZ_PERM_RWX, false),
+		"open partial map");
+
+	ut8 code[40];
+	memset(code, 0x90, sizeof(code));
+	code[0] = 0x89; // mov eax, edi
+	code[1] = 0xf8;
+	mu_assert_true(rz_io_write_at(core->io, 0x1000, code, sizeof(code)), "write code");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(
+		core->analysis, "fcn", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function");
+	fcn->cc = rz_str_constpool_get(&core->analysis->constpool, "amd64");
+	RzAnalysisBlock *bb = rz_analysis_create_block(core->analysis, 0x1000, 40);
+	mu_assert_notnull(bb, "block");
+	rz_analysis_function_add_block(fcn, bb);
+	rz_analysis_block_unref(bb);
+
+	rz_core_recover_vars(core, fcn, false);
+	mu_assert_notnull(rz_analysis_function_get_reg_var_at(fcn, "rdi"),
+		"buffered fast path recovers rdi");
+
+	// Extend block past the 40-byte map into an unmapped tail with io.ff=false.
+	rz_analysis_function_delete_all_vars(fcn);
+	rz_analysis_block_set_size(bb, 64);
+	rz_core_recover_vars(core, fcn, false);
+	mu_assert_notnull(rz_analysis_function_get_reg_var_at(fcn, "rdi"),
+		"partial map fallback recovers rdi");
+	rz_core_free(core);
+
+	// Block ending at UT64_MAX whose final instruction straddles UT64_MAX.
+	RzCore *core_hi = rz_core_new();
+	mu_assert_notnull(core_hi, "core_hi");
+	rz_config_set(core_hi->config, "asm.arch", "x86");
+	rz_config_set_i(core_hi->config, "asm.bits", 64);
+	const ut64 hi_addr = UT64_MAX - 64;
+	mu_assert_true(rz_core_file_open_load(core_hi, "malloc://64", hi_addr, RZ_PERM_RWX, false),
+		"open hi map");
+
+	ut8 hi_code[64];
+	memset(hi_code, 0x90, sizeof(hi_code));
+	hi_code[0] = 0x89; // mov eax, edi
+	hi_code[1] = 0xf8;
+	hi_code[62] = 0x48; // movabs rax, imm64 (10-byte op straddling UT64_MAX)
+	hi_code[63] = 0xb8;
+	mu_assert_true(rz_io_write_at(core_hi->io, hi_addr, hi_code, sizeof(hi_code)),
+		"write hi_code");
+
+	RzAnalysisFunction *hi_fcn = rz_analysis_create_function(
+		core_hi->analysis, "hi_fcn", hi_addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(hi_fcn, "hi_fcn");
+	hi_fcn->cc = rz_str_constpool_get(&core_hi->analysis->constpool, "amd64");
+	RzAnalysisBlock *hi_bb = rz_analysis_create_block(core_hi->analysis, hi_addr, 64);
+	mu_assert_notnull(hi_bb, "hi_bb");
+	rz_analysis_function_add_block(hi_fcn, hi_bb);
+	rz_analysis_block_unref(hi_bb);
+
+	rz_core_recover_vars(core_hi, hi_fcn, false);
+	mu_assert_notnull(rz_analysis_function_get_reg_var_at(hi_fcn, "rdi"),
+		"UT64_MAX block recovers rdi without OOB");
+	rz_core_free(core_hi);
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_extract_vars_stack_pointer);
 	mu_run_test(test_arm_frame_pointer_vars);
 	mu_run_test(test_x86_stack_var_recovery);
+	mu_run_test(test_extract_rarg_synthetic_reg_item);
+	mu_run_test(test_recover_vars_block_edge_cases);
 #if !ASAN
 	mu_run_test(test_rz_analysis_var);
 #endif
