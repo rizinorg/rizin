@@ -158,7 +158,7 @@ static void alpha_fillval(RzAsmAlphaContext *ctx, RzAnalysis *a, RzAnalysisOp *o
 			if (op->dst) {
 				rz_warn_if_reached();
 			}
-			if (av == op->src[srci - 1]) {
+			if (alphaop->access & CS_AC_READ) {
 				av = rz_mem_dup(av, sizeof(RzAnalysisValue));
 			}
 			op->dst = av;
@@ -205,17 +205,11 @@ static RzStructuredData *alpha_opex(RzAsmAlphaContext *ctx) {
 	return root;
 }
 
-static ut64 alpha_calc_64bit_jump(ut64 base, RzAsmAlphaContext *ctx, int idx) {
-	ut64 hi32 = base & UT64_32U;
-	ut64 jump = alpha_op_as_imm(ctx, idx);
-	if (!hi32) {
-		// does not need any fix since upper 32 bits are zero
-		return jump;
-	}
-
-	// keep only the lower 32 bits.
-	jump &= UT32_MAX;
-	return hi32 | jump;
+static ut64 alpha_branch_target(const RzAsmAlphaContext *ctx) {
+	// Capstone versions disagree on the operands of BR and BSR.
+	ut32 word = rz_read_ble32(ctx->insn->bytes, ctx->mode == CS_MODE_BIG_ENDIAN);
+	st32 displacement = rz_bits_sign_ext32(word, 21);
+	return ctx->insn->address + ctx->insn->size + displacement * 4;
 }
 
 static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
@@ -233,16 +227,16 @@ static void alpha_op_set_type(RzAsmAlphaContext *ctx, RzAnalysisOp *op) {
 	case RZ_ALPHA_INS(BLT):
 	case RZ_ALPHA_INS(BNE):
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 1);
+		op->jump = alpha_branch_target(ctx);
 		op->fail = op->addr + op->size;
 		break;
 	case RZ_ALPHA_INS(BR):
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
+		op->jump = alpha_branch_target(ctx);
 		break;
 	case RZ_ALPHA_INS(BSR):
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = alpha_calc_64bit_jump(op->addr, ctx, 0);
+		op->jump = alpha_branch_target(ctx);
 		op->fail = op->addr + op->size;
 		break;
 	case RZ_ALPHA_INS(RET):
