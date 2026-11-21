@@ -472,16 +472,20 @@ void handle_node(RzGraphNode *n, RzGraphVisitor *vis) {
 	rz_analysis_function_add_block(bundle->fcn, ablock);
 }
 
-RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzICFGFcnNameChooser chooser, void *chooser_priv) {
+RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzAnalysisFcnNameChooser chooser, void *chooser_priv) {
 	rz_return_val_if_fail(icfg && analysis, false);
 	size_t n_errors = 0;
 
 	ut64 *addr_it;
 	rz_vector_foreach (&icfg->proc_entries, addr_it) {
 		ut64 addr = *addr_it;
-		char *fcn_name = chooser ? chooser(addr, chooser_priv) : NULL;
 		char name_alt[32] = { 0 };
-		RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, addr), addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		char *fcn_name = chooser ? chooser(addr, chooser_priv) : rz_strf(name_alt, "inquiry.0x%" PFMT64x, addr);
+		RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, fcn_name, addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		if (chooser) {
+			free(fcn_name);
+		}
+
 		if (!fcn) {
 			// TODO: handle better than skipping everything
 			// rz_analysis_create_function() already prints the more detailed reason if there is any

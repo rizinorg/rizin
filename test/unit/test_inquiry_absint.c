@@ -334,7 +334,7 @@ bool test_absint_cfg_single_block(void) {
 	ASSERT_BLOCK(0, 0x10000, 0x10008, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -366,7 +366,7 @@ bool test_absint_cfg_direct_jmp(void) {
 	ASSERT_BLOCK(1, 0x10010, 0x10018, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -400,7 +400,7 @@ bool test_absint_cfg_branch(void) {
 	ASSERT_BLOCK(2, 0x10010, 0x10018, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -439,7 +439,7 @@ bool test_absint_cfg_branch_join(void) {
 	ASSERT_BLOCK(3, 0x10014, 0x10018, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -490,7 +490,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp(bool swap) {
 	ASSERT_BLOCK(3, 0x10014, 0x1001c, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -524,7 +524,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_before() {
 	ASSERT_BLOCK(2, 0x1000c, 0x10010, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10008);
 	mu_assert_notnull(fcn, "analysis function");
@@ -557,7 +557,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_self() {
 	ASSERT_BLOCK(2, 0x1000c, 0x10010, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -593,7 +593,7 @@ bool test_absint_cfg_multi_entry_fallthrough_jmp_inside_other() {
 	ASSERT_BLOCK(3, 0x10014, 0x10018, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -625,7 +625,7 @@ bool test_absint_cfg_call_link_register(void) {
 	ASSERT_BLOCK(1, 0x10008, 0x1000c, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -656,7 +656,7 @@ bool test_absint_cfg_call_multi_insn(void) {
 	ASSERT_BLOCK(1, 0x1000c, 0x10010, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -685,7 +685,7 @@ bool test_absint_cfg_call_ret_in_memory(void) {
 	ASSERT_BLOCK(1, 0x10009, 0x1000a, false, UT64_MAX);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -736,7 +736,7 @@ bool test_absint_cfg_merge_multiple_consecutive(void) {
 	b->uninterpreted = false;
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(interp->analysis, 0x10000);
 	mu_assert_notnull(fcn, "analysis function");
@@ -790,7 +790,7 @@ bool test_absint_xrefs(void) {
 	ASSERT_XREF(3, 0x10014, 0x11000, RZ_ANALYSIS_XREF_TYPE_CALL);
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 	RzList *l = rz_analysis_xrefs_get_from(interp->analysis, 0x1000c);
 	mu_assert_eq(rz_list_length(l), 1, "analysis xref");
@@ -843,7 +843,7 @@ bool test_absint_comments(void) {
 	mu_assert_streq(ht_up_find(res->comments, 0x1001c, NULL), "x0 = 0x42; ->", "comment");
 
 	rz_absint_add_result_to_icfg(icfg, res);
-	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL);
+	rz_absint_apply_icfg_to_analysis(interp->analysis, interp->bin, interp->io, icfg, NULL, NULL);
 	rz_absint_result_free(interp->inst, res);
 
 	const char *acmt = rz_meta_get_string(interp->analysis, RZ_META_TYPE_COMMENT, 0x10008);

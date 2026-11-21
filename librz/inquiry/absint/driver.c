@@ -288,7 +288,8 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
 	RZ_NONNULL RzBin *bin,
 	RZ_NONNULL RzIO *io,
 	RZ_NONNULL RzICFG *icfg,
-	RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name) {
+	RZ_NULLABLE RzAnalysisFcnNameChooser fcn_name_chooser,
+	RZ_NULLABLE void *fcn_name_chooser_priv) {
 	rz_return_val_if_fail(analysis && icfg, false);
 	size_t missing_nodes = rz_icfg_apply(icfg);
 	if (missing_nodes > 0) {
@@ -297,7 +298,8 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
 	if (!rz_icfg_solve_conflicts(icfg, bin, io, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
 		RZ_LOG_WARN("Some errors occurred during iCFG conflict solving.\n");
 	}
-	if (!rz_icfg_copy_to_analysis(icfg, analysis, NULL, NULL)) {
+
+	if (!rz_icfg_copy_to_analysis(icfg, analysis, fcn_name_chooser, fcn_name_chooser_priv)) {
 		RZ_LOG_WARN("Some errors occurred during the RzInquiry -> RzAnalysis conversion.\n");
 	}
 	return true;
@@ -434,7 +436,7 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		}
 	}
 
-	if (!rz_absint_apply_icfg_to_analysis(config->analysis, config->bin, config->io, icfg, &config->choose_fcn_name)) {
+	if (!rz_absint_apply_icfg_to_analysis(config->analysis, config->bin, config->io, icfg, config->choose_fcn_name, config->choose_fcn_name_priv_data)) {
 		RZ_LOG_WARN("Failed to convert resolved icfg to analysis.\n");
 		return_code = false;
 	}

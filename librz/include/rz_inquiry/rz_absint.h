@@ -266,7 +266,8 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
 	RZ_NONNULL RzBin *bin,
 	RZ_NONNULL RzIO *io,
 	RZ_NONNULL RzICFG *icfg,
-	RZ_NULLABLE RzAnalysisFcnNameChooser *fcn_name);
+	RZ_NULLABLE RzAnalysisFcnNameChooser fcn_name_chooser,
+	RZ_NULLABLE void *fcn_name_chooser_priv);
 
 typedef enum rz_absint_builtin_value_domain_t {
 	RZ_ABSINT_VALUE_DOMAIN_CONST
