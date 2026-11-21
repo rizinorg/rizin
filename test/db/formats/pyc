@@ -90,12 +90,6 @@ as documentation.
             0x00002cfc      LOAD_CONST            None
             0x00002cfe      RETURN_VALUE
 EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
 RUN
 
 NAME=pyc 3.13
@@ -178,12 +172,6 @@ as documentation.
             0x00002c18      END_FOR
             0x00002c1a      POP_TOP
             0x00002c1c      RETURN_CONST
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
@@ -268,12 +256,6 @@ machine  Python v3.12.0 VM (rev 0fb6e700c2f94ae0717ee1be7d4e50b2dd480d14)
        ``=< 0x00002b67      JUMP_BACKWARD         31
             0x00002b69      END_FOR
             0x00002b6b      RETURN_CONST
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
@@ -361,12 +343,6 @@ machine  Python v3.11.0 VM (rev 968953dcd8930880a3e9c5302b6892a5a0836c14)
        `--> 0x0000334f      LOAD_CONST            None
             0x00003351      RETURN_VALUE
 EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
 RUN
 
 NAME=pyc 3.10
@@ -420,12 +396,6 @@ machine  Python v3.10.0 VM (rev bfb376ffcc4260feb9bf1b9a110559b1ff31da80)
        |`=< 0x00001ecd      JUMP_ABSOLUTE         3
        `--> 0x00001ecf      LOAD_CONST            None
             0x00001ed1      RETURN_VALUE
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
@@ -481,12 +451,6 @@ machine  Python v3.9.0 VM (rev 3a819e5c9d3feae85762ae87cebf55f9c8d2b526)
        `--> 0x00001e95      LOAD_CONST            None
             0x00001e97      RETURN_VALUE
 EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
 RUN
 
 NAME=pyc load version38
@@ -496,12 +460,6 @@ iI~machine
 EOF
 EXPECT=<<EOF
 machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
@@ -543,12 +501,6 @@ machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
         |   0x0000003a      LOAD_CONST            True
         `-> 0x0000003c      POP_TOP
 EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
-EOF
 RUN
 
 NAME=pyc load version36
@@ -558,12 +510,6 @@ iI~machine
 EOF
 EXPECT=<<EOF
 machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
@@ -607,12 +553,6 @@ machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
 |           0x00000032      POP_TOP
 |           0x00000033      LOAD_CONST            None
 \           0x00000036      RETURN_VALUE
-EOF
-REGEXP_FILTER_ERR=<<EOF
-free_object\s\(0\)
-EOF
-EXPECT_ERR=<<EOF
-free_object (0)
 EOF
 RUN
 
