@@ -18,6 +18,9 @@ jobs:
         run: echo "repo=${GITHUB_REPOSITORY}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v7
+      - name: Cache and pre-download subprojects
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
+        uses: ./.github/actions/cache-subprojects
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizinorg%2Frizin" -O cov-analysis-linux64.tar.gz

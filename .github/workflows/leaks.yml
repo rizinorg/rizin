@@ -46,6 +46,10 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Cache and pre-download subprojects
+        if: matrix.build_system == 'meson'
+        uses: ./.github/actions/cache-subprojects
+
       - name: Download git diff of PR
         uses: actions/download-artifact@v8
         with:
