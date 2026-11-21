@@ -631,6 +631,333 @@ bool test_bin_set_export_info(void) {
 	mu_end;
 }
 
+static RzPVector *vtable_mock_sections(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+
+	RzBinSection *text = RZ_NEW0(RzBinSection);
+	text->name = rz_str_dup(".text");
+	text->paddr = 0;
+	text->vaddr = 0x1000;
+	text->size = 0x100;
+	text->vsize = 0x100;
+	text->perm = RZ_PERM_RX;
+	rz_pvector_push(ret, text);
+
+	// Small .rodata (< word_size = 8) previously underflowed ut64 and broke out of the section loop.
+	RzBinSection *small_rodata = RZ_NEW0(RzBinSection);
+	small_rodata->name = rz_str_dup(".rodata");
+	small_rodata->paddr = 0;
+	small_rodata->vaddr = 0x2000;
+	small_rodata->size = 4;
+	small_rodata->vsize = 4;
+	small_rodata->perm = RZ_PERM_R;
+	rz_pvector_push(ret, small_rodata);
+
+	RzBinSection *relro = RZ_NEW0(RzBinSection);
+	relro->name = rz_str_dup(".data.rel.ro");
+	relro->paddr = 0;
+	relro->vaddr = 0x3000;
+	relro->size = 0x40;
+	relro->vsize = 0x40;
+	relro->perm = RZ_PERM_R;
+	rz_pvector_push(ret, relro);
+
+	return ret;
+}
+
+static RzPVector *vtable_mock_maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
+
+	RzBinMap *m = RZ_NEW0(RzBinMap);
+	m->name = rz_str_dup("relro");
+	m->paddr = 0;
+	m->vaddr = 0x3000;
+	m->psize = 0x40;
+	m->vsize = 0x40;
+	m->perm = RZ_PERM_R;
+	rz_pvector_push(ret, m);
+
+	return ret;
+}
+
+static RzBinPlugin vtable_mock_plugin = {
+	.name = "vtable_mock",
+	.desc = "Testing VTable Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.sections = vtable_mock_sections,
+	.maps = vtable_mock_maps,
+	.info = info,
+};
+
+static RzPVector *vtable_high_addr_sections(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+
+	RzBinSection *text = RZ_NEW0(RzBinSection);
+	text->name = rz_str_dup(".text");
+	text->paddr = 0;
+	text->vaddr = 0x1000;
+	text->size = 0x100;
+	text->vsize = 0x100;
+	text->perm = RZ_PERM_RX;
+	rz_pvector_push(ret, text);
+
+	// Section at UT64_MAX - 15 (0xfffffffffffffff0) of size 8 (triggers chunk_base + 2*ws wrap if unguarded).
+	RzBinSection *hi_relro = RZ_NEW0(RzBinSection);
+	hi_relro->name = rz_str_dup(".data.rel.ro");
+	hi_relro->paddr = 0x10;
+	hi_relro->vaddr = UT64_MAX - 15;
+	hi_relro->size = 8;
+	hi_relro->vsize = 8;
+	hi_relro->perm = RZ_PERM_R;
+	rz_pvector_push(ret, hi_relro);
+
+	// Section reaching UT64_MAX inclusive (vaddr = 0xfffffffffffffff0, vsize = 0x10).
+	RzBinSection *hi_rodata = RZ_NEW0(RzBinSection);
+	hi_rodata->name = rz_str_dup(".rodata");
+	hi_rodata->paddr = 0x10;
+	hi_rodata->vaddr = UT64_MAX - 15;
+	hi_rodata->size = 0x10;
+	hi_rodata->vsize = 0x10;
+	hi_rodata->perm = RZ_PERM_R;
+	rz_pvector_push(ret, hi_rodata);
+
+	return ret;
+}
+
+static RzPVector *vtable_high_addr_maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
+
+	// Map [0xffffffffffffffe0, 0xfffffffffffffff8) (size 0x18) so offset_to_top/rtti/method0 are readable.
+	RzBinMap *m = RZ_NEW0(RzBinMap);
+	m->name = rz_str_dup("hi_relro");
+	m->paddr = 0;
+	m->vaddr = UT64_MAX - 31;
+	m->psize = 0x18;
+	m->vsize = 0x18;
+	m->perm = RZ_PERM_R;
+	rz_pvector_push(ret, m);
+
+	return ret;
+}
+
+static RzBinPlugin vtable_high_addr_plugin = {
+	.name = "vtable_high_addr_mock",
+	.desc = "Testing High Address VTable Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.sections = vtable_high_addr_sections,
+	.maps = vtable_high_addr_maps,
+	.info = info,
+};
+
+static RzPVector *vtable_pa_sections(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+
+	RzBinSection *text = RZ_NEW0(RzBinSection);
+	text->name = rz_str_dup(".text");
+	text->paddr = 0;
+	text->vaddr = 0x1000;
+	text->size = 0x100;
+	text->vsize = 0x100;
+	text->perm = RZ_PERM_RX;
+	rz_pvector_push(ret, text);
+
+	RzBinSection *relro = RZ_NEW0(RzBinSection);
+	relro->name = rz_str_dup(".data.rel.ro");
+	relro->paddr = 0;
+	relro->vaddr = 0;
+	relro->size = 0x40;
+	relro->vsize = 0x40;
+	relro->perm = RZ_PERM_R;
+	rz_pvector_push(ret, relro);
+
+	return ret;
+}
+
+static RzPVector *vtable_pa_maps(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_map_free);
+
+	RzBinMap *m = RZ_NEW0(RzBinMap);
+	m->name = rz_str_dup("relro_pa");
+	m->paddr = 0;
+	m->vaddr = 0;
+	m->psize = 0x20;
+	m->vsize = 0x40;
+	m->perm = RZ_PERM_R;
+	rz_pvector_push(ret, m);
+
+	return ret;
+}
+
+static RzBinPlugin vtable_pa_plugin = {
+	.name = "vtable_pa_mock",
+	.desc = "Testing PA VTable Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.sections = vtable_pa_sections,
+	.maps = vtable_pa_maps,
+	.info = info,
+};
+
+bool test_vtable_search_small_rodata_underflow(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &vtable_mock_plugin);
+	rz_analysis_use(core->analysis, "x86");
+	rz_analysis_set_bits(core->analysis, 64);
+	rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_ITANIUM);
+
+	// 0x3000: offset_to_top = 0
+	// 0x3008: rtti = 0x3030 (inside .data.rel.ro)
+	// 0x3010: method 0 = 0x1010 (inside .text)
+	// 0x3018: method 1 = 0x1020 (inside .text)
+	// 0x3020..0x303f: zeroes
+	const char *uri =
+		"hex://"
+		"0000000000000000"
+		"3030000000000000"
+		"1010000000000000"
+		"2010000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000";
+	RzCoreFile *f = rz_core_file_open(core, uri, RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open vtable mock file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load vtable mock bin");
+
+	RVTableContext ctx;
+	mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "vtable begin");
+	RzList *vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_notnull(vtables, "vtable found after small .rodata section");
+	mu_assert_eq(rz_list_length(vtables), 1, "one vtable found");
+
+	RVTableInfo *vt = rz_list_first_val(vtables);
+	mu_assert_eq(vt->saddr, 0x3010, "vtable saddr");
+	mu_assert_eq(rz_vector_len(&vt->methods), 2, "two methods");
+	RVTableMethodInfo *m0 = rz_vector_index_ptr(&vt->methods, 0);
+	RVTableMethodInfo *m1 = rz_vector_index_ptr(&vt->methods, 1);
+	mu_assert_eq(m0->addr, 0x1010, "method 0");
+	mu_assert_eq(m1->addr, 0x1020, "method 1");
+
+	rz_list_free(vtables);
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_vtable_search_boundaries(void) {
+	// 1. High address near UT64_MAX (must not wrap or underflow chunk buffer).
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &vtable_high_addr_plugin);
+	rz_analysis_use(core->analysis, "x86");
+	rz_analysis_set_bits(core->analysis, 64);
+	rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_ITANIUM);
+
+	// paddr 0x00 (0xffffffffffffffe0): offset_to_top = 0
+	// paddr 0x08 (0xffffffffffffffe8): rtti = 0
+	// paddr 0x10 (0xfffffffffffffff0): method 0 = 0x1010 (.text)
+	// paddr 0x18 (0xfffffffffffffff8): zeroes
+	const char *hi_uri =
+		"hex://"
+		"0000000000000000"
+		"0000000000000000"
+		"1010000000000000"
+		"0000000000000000";
+	RzCoreFile *f = rz_core_file_open(core, hi_uri, RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open high-addr vtable file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load high-addr vtable bin");
+
+	RVTableContext ctx;
+	mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "high-addr vtable begin");
+	RzList *vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_notnull(vtables, "high-addr vtable found without overflow");
+	mu_assert_eq(rz_list_length(vtables), 2, "both high-addr sections scanned cleanly");
+	RVTableInfo *vt = rz_list_first_val(vtables);
+	mu_assert_eq(vt->saddr, UT64_MAX - 15, "high-addr vtable saddr");
+	mu_assert_eq(rz_vector_len(&vt->methods), 1, "high-addr vtable has 1 method");
+	rz_list_free(vtables);
+	rz_core_free(core);
+
+	// 2. Overlaid non-readable map inside a readable section must stop scanning (parity with is_valid_offset).
+	core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &vtable_mock_plugin);
+	rz_analysis_use(core->analysis, "x86");
+	rz_analysis_set_bits(core->analysis, 64);
+	rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_ITANIUM);
+
+	// 0x3000..0x3017: zeroes
+	// 0x3018: offset_to_top = 0, 0x3020: rtti = 0, 0x3028: method 0 = 0x1010
+	const char *overlay_uri =
+		"hex://"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"1010000000000000"
+		"0000000000000000"
+		"0000000000000000";
+	f = rz_core_file_open(core, overlay_uri, RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open overlay vtable file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load overlay vtable bin");
+
+	mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "overlay vtable begin");
+	vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_notnull(vtables, "vtable found before non-readable overlay");
+	mu_assert_eq(((RVTableInfo *)rz_list_first_val(vtables))->saddr, 0x3028, "overlay baseline saddr");
+	rz_list_free(vtables);
+
+	// Overlay [0x3010, 0x3018) with a higher-priority non-readable map.
+	RzIOMap *nr_map = rz_io_map_add(core->io, f->fd, 0, 0, 0x3010, 8);
+	mu_assert_notnull(nr_map, "add non-readable overlay map");
+	vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_null(vtables, "scan stops at non-readable overlay instead of crossing to 0x3028");
+	rz_core_free(core);
+
+	// 3. io.va = false must stop past desc EOF even when an IO map extends past EOF and cache has data.
+	core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &vtable_pa_plugin);
+	rz_analysis_use(core->analysis, "x86");
+	rz_analysis_set_bits(core->analysis, 64);
+	rz_analysis_set_cpp_abi(core->analysis, RZ_ANALYSIS_CPP_ABI_ITANIUM);
+
+	// 0x20-byte file of zeroes; map extends to 0x40.
+	const char *pa_uri =
+		"hex://"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000"
+		"0000000000000000";
+	f = rz_core_file_open(core, pa_uri, RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open pa vtable file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load pa vtable bin");
+
+	core->io->va = false;
+	core->io->cached = RZ_PERM_RW;
+	ut8 past_eof_vtable[24] = { 0 };
+	rz_write_le64(past_eof_vtable + 16, 0x1010);
+	mu_assert_true(rz_io_cache_write(core->io, 0x18, past_eof_vtable, sizeof(past_eof_vtable)), "write cached vtable past EOF");
+
+	mu_assert_true(rz_analysis_vtable_begin(core->analysis, &ctx), "pa vtable begin");
+	vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_null(vtables, "io.va=false stops past EOF instead of scanning cached vtable at 0x28");
+
+	// Also verify io.va = false finds a vtable strictly within [0, desc_size).
+	ut8 in_bounds_vtable[24] = { 0 };
+	rz_write_le64(in_bounds_vtable + 16, 0x1010);
+	mu_assert_true(rz_io_cache_write(core->io, 0x0, in_bounds_vtable, sizeof(in_bounds_vtable)), "write cached vtable in bounds");
+	vtables = rz_analysis_vtable_search(&ctx);
+	mu_assert_notnull(vtables, "io.va=false finds in-bounds vtable at 0x10");
+	mu_assert_eq(((RVTableInfo *)rz_list_first_val(vtables))->saddr, 0x10, "io.va=false vtable saddr");
+	rz_list_free(vtables);
+	rz_core_free(core);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -641,6 +968,8 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
+	mu_run_test(test_vtable_search_small_rodata_underflow);
+	mu_run_test(test_vtable_search_boundaries);
 	return tests_passed != tests_run;
 }
 
