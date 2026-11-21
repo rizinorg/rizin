@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2020 Khairulmizam Samsudin <xource@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
 #include <rz_debug.h>
+#include <dmp_specs.h>
+#include <pe_specs.h>
 #include "minunit.h"
 #if __linux__
 #include <sys/user.h>
@@ -781,6 +784,69 @@ static bool test_debug_reg_sync_flg(void) {
 	mu_end;
 }
 
+static bool test_io_dmp_open_close(void) {
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new()");
+
+	mu_assert_null(rz_io_open_nomap(io, "dmp:///nonexistent_rz_dmp_dir/missing.dmp", RZ_PERM_R, 0),
+		"dmp:// open fails cleanly when backend fails");
+
+	RzIODesc *desc = rz_io_open_nomap(io, "dmp://malloc://64", RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "dmp://malloc://64 opens");
+	mu_assert_true(rz_io_desc_close(desc), "dmp:// close returns success and frees backend");
+
+	rz_io_free(io);
+	mu_end;
+}
+
+static bool test_debug_dmp_reinit(void) {
+	ut8 *raw = calloc(1, sizeof(dmp64_header));
+	if (!raw) {
+		return false;
+	}
+	memcpy(raw, DMP64_MAGIC, 8);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MajorVersion), 15);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MinorVersion), 19041);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MachineImageType), PE_IMAGE_FILE_MACHINE_AMD64);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, NumberProcessors), 0);
+	memcpy(raw + rz_offsetof(dmp64_header, PhysicalMemoryBlockBuffer), DMP_UNUSED_MAGIC, 4);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, DumpType), DMP_DUMPTYPE_HEADER);
+
+	char *uri = rz_str_newf("dmp://malloc://%" PFMT64u, (ut64)sizeof(dmp64_header));
+	if (!uri) {
+		free(raw);
+		return false;
+	}
+
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new for dmp reinit");
+	RzCoreFile *cf = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open synthetic dmp://malloc://");
+	mu_assert_eq(rz_io_desc_write_at(core->io->desc, 0, raw, sizeof(dmp64_header)),
+		(int)sizeof(dmp64_header), "write dmp64 header");
+	mu_assert_true(rz_core_bin_load(core, uri, UT64_MAX), "load synthetic dmp64 bin");
+
+	mu_assert_true(rz_debug_use(core->dbg, "dmp"), "first debug_dmp init");
+	mu_assert_true(rz_debug_use(core->dbg, "dmp"), "second debug_dmp re-init without leaks");
+	rz_core_free(core);
+
+	// Unknown Windows build with no built-in profile must fail cleanly without leaks
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MinorVersion), 99999);
+	RzCore *core2 = rz_core_new();
+	mu_assert_notnull(core2, "rz_core_new for unknown dmp build");
+	cf = rz_core_file_open(core2, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open synthetic dmp://malloc:// 2");
+	mu_assert_eq(rz_io_desc_write_at(core2->io->desc, 0, raw, sizeof(dmp64_header)),
+		(int)sizeof(dmp64_header), "write dmp64 header 2");
+	mu_assert_true(rz_core_bin_load(core2, uri, UT64_MAX), "load synthetic dmp64 bin 2");
+	mu_assert_false(rz_debug_use(core2->dbg, "dmp"), "unknown build fails dmp init cleanly");
+	rz_core_free(core2);
+
+	free(uri);
+	free(raw);
+	mu_end;
+}
+
 int all_tests() {
 	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
@@ -790,6 +856,8 @@ int all_tests() {
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
 	mu_run_test(test_debug_reg_sync_flg);
+	mu_run_test(test_io_dmp_open_close);
+	mu_run_test(test_debug_dmp_reinit);
 	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }

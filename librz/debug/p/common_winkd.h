@@ -4,5 +4,5 @@
 #include <rz_analysis.h>
 #include <winkd.h>
 
-void winkd_build_profile(WindCtx *ctx, RzTypeDB *db);
+RZ_OWN Profile *winkd_build_profile(RzTypeDB *db);
 bool winkd_download_module_and_pdb(WindModule *module, const char *symserver, const char *symstore, char **exepath, char **pdbpath);

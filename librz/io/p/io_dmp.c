@@ -54,6 +54,21 @@ static int read_at_kernel_virtual(void *user, ut64 address, ut8 *buf, int len) {
 	return ret;
 }
 
+/**
+ * \brief Close and free an unattached backend `RzIODesc` owned by `io_dmp`.
+ *
+ * \param backend Backend IO descriptor to tear down, or `NULL`.
+ */
+static void dmp_backend_close(RzIODesc *backend) {
+	if (!backend) {
+		return;
+	}
+	if (backend->plugin && backend->plugin->close) {
+		backend->plugin->close(backend);
+	}
+	rz_io_desc_free(backend);
+}
+
 static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!dmp_plugin_open(io, file, 0)) {
 		return NULL;
@@ -69,6 +84,7 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	rz_vector_init(&ctx->KiProcessorBlock, sizeof(ut64), NULL, NULL);
 	ctx->backend = p->open(io, file + 6, rw, mode);
 	if (!ctx->backend) {
+		rz_vector_fini(&ctx->KiProcessorBlock);
 		free(ctx);
 		return NULL;
 	}
@@ -78,6 +94,8 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	ctx->windctx.read_at_kernel_virtual = read_at_kernel_virtual;
 	ReadAtCtx *c = RZ_NEW0(ReadAtCtx);
 	if (!c) {
+		dmp_backend_close(ctx->backend);
+		rz_vector_fini(&ctx->KiProcessorBlock);
 		free(ctx);
 		return NULL;
 	}
@@ -85,6 +103,8 @@ static RzIODesc *dmp_open(RzIO *io, const char *file, int rw, int mode) {
 	c->fd = rz_io_desc_new(io, &rz_io_plugin_dmp, file, rw, ctx);
 	if (!c->fd) {
 		free(c);
+		dmp_backend_close(ctx->backend);
+		rz_vector_fini(&ctx->KiProcessorBlock);
 		free(ctx);
 		return NULL;
 	}
@@ -152,13 +172,16 @@ static int dmp_read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 }
 
 static int dmp_close(RzIODesc *fd) {
+	if (!fd || !fd->data) {
+		return 0;
+	}
 	DmpCtx *ctx = fd->data;
-	rz_io_desc_close(ctx->backend);
+	dmp_backend_close(ctx->backend);
 	winkd_ctx_fini(&ctx->windctx);
 	rz_vector_fini(&ctx->KiProcessorBlock);
 	free(ctx->context);
 	RZ_FREE(fd->data);
-	return true;
+	return 0;
 }
 
 RzIOPlugin rz_io_plugin_dmp = {
