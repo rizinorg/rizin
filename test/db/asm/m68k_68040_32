@@ -1,5 +1,3 @@
-d "add fp0" f200007f
-d "add fp0, fp1" f20000ff
 d "fsmove fp1, fp2" f2000540
 d "fssqrt fp1, fp2" f2000541
 d "fdmove fp1, fp2" f2000544

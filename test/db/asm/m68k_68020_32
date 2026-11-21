@@ -327,22 +327,22 @@ d "bfins d0, (a0, d0.w){3:d7}" eff000ff0100 0x0 (seq (set offset (bv 32 0x3)) (s
 d "bfins d0, ([0x18001ff, a0], 0x8000fff){4:32}" eff00100017f018001ff08000fff 0x0 (seq (set offset (bv 32 0x4)) (set width (bv 32 0x20)) (set base (cast 32 false (+ (+ (loadw 0 32 (+ (var a0) (bv 32 0x18001ff))) (bv 32 0x0)) (bv 32 0x8000fff)))) (set byte_offset (div (var offset) (bv 32 0x8))) (set bit_offset (mod (var offset) (bv 32 0x8))) (set bf_addr (+ (var base) (var byte_offset))) (set byte_count (div (+ (+ (var bit_offset) (var width)) (bv 32 0x7)) (bv 32 0x8))) (set container (bv 64 0x0)) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (var bf_addr))) (bv 8 0x38) false))) (branch (! (ule (var byte_count) (bv 32 0x1))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x1)))) (bv 8 0x30) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x2)))) (bv 8 0x28) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x3)))) (bv 8 0x20) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x4)))) (bv 8 0x18) false))) empty) (set field (& (cast 32 false (>> (var container) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false)) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set src (& (var d0) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set updated_container (| (& (var container) (~ (<< (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (<< (& (cast 64 false (var src)) (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (storew 0 (var bf_addr) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x38) false)))) (branch (! (ule (var byte_count) (bv 32 0x1))) (storew 0 (+ (var bf_addr) (bv 32 0x1)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x30) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (storew 0 (+ (var bf_addr) (bv 32 0x2)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x28) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (storew 0 (+ (var bf_addr) (bv 32 0x3)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x20) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (storew 0 (+ (var bf_addr) (bv 32 0x4)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x18) false)))) empty) (set sr (| (& (var sr) (bv 16 0xff00)) (cast 16 false (cast 8 false (| (| (& (| (& (| (& (| (& (& (cast 8 false (var sr)) (bv 8 0xe0)) (bv 8 0xf7)) (<< (ite (! (is_zero (& (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)))) (<< (bv 32 0x1) (cast 8 false (- (var width) (bv 32 0x1))) false)))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x3) false)) (bv 8 0xfb)) (<< (ite (is_zero (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x2) false)) (bv 8 0xfd)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x1) false)) (bv 8 0xfe)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x0) false)) (& (cast 8 false (var sr)) (bv 8 0x10))))))))
 d "bfins d0, 0x1.w{0:32}" eff800000001 0x0 (seq (set offset (bv 32 0x0)) (set width (bv 32 0x20)) (set base (cast 32 false (bv 32 0x1))) (set byte_offset (div (var offset) (bv 32 0x8))) (set bit_offset (mod (var offset) (bv 32 0x8))) (set bf_addr (+ (var base) (var byte_offset))) (set byte_count (div (+ (+ (var bit_offset) (var width)) (bv 32 0x7)) (bv 32 0x8))) (set container (bv 64 0x0)) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (var bf_addr))) (bv 8 0x38) false))) (branch (! (ule (var byte_count) (bv 32 0x1))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x1)))) (bv 8 0x30) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x2)))) (bv 8 0x28) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x3)))) (bv 8 0x20) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x4)))) (bv 8 0x18) false))) empty) (set field (& (cast 32 false (>> (var container) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false)) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set src (& (var d0) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set updated_container (| (& (var container) (~ (<< (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (<< (& (cast 64 false (var src)) (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (storew 0 (var bf_addr) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x38) false)))) (branch (! (ule (var byte_count) (bv 32 0x1))) (storew 0 (+ (var bf_addr) (bv 32 0x1)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x30) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (storew 0 (+ (var bf_addr) (bv 32 0x2)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x28) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (storew 0 (+ (var bf_addr) (bv 32 0x3)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x20) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (storew 0 (+ (var bf_addr) (bv 32 0x4)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x18) false)))) empty) (set sr (| (& (var sr) (bv 16 0xff00)) (cast 16 false (cast 8 false (| (| (& (| (& (| (& (| (& (& (cast 8 false (var sr)) (bv 8 0xe0)) (bv 8 0xf7)) (<< (ite (! (is_zero (& (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)))) (<< (bv 32 0x1) (cast 8 false (- (var width) (bv 32 0x1))) false)))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x3) false)) (bv 8 0xfb)) (<< (ite (is_zero (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x2) false)) (bv 8 0xfd)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x1) false)) (bv 8 0xfe)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x0) false)) (& (cast 8 false (var sr)) (bv 8 0x10))))))))
 d "bfins d0, 0x10010.l{0:32}" eff9000000010010 0x0 (seq (set offset (bv 32 0x0)) (set width (bv 32 0x20)) (set base (cast 32 false (bv 32 0x10010))) (set byte_offset (div (var offset) (bv 32 0x8))) (set bit_offset (mod (var offset) (bv 32 0x8))) (set bf_addr (+ (var base) (var byte_offset))) (set byte_count (div (+ (+ (var bit_offset) (var width)) (bv 32 0x7)) (bv 32 0x8))) (set container (bv 64 0x0)) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (var bf_addr))) (bv 8 0x38) false))) (branch (! (ule (var byte_count) (bv 32 0x1))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x1)))) (bv 8 0x30) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x2)))) (bv 8 0x28) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x3)))) (bv 8 0x20) false))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (set container (| (var container) (<< (cast 64 false (loadw 0 8 (+ (var bf_addr) (bv 32 0x4)))) (bv 8 0x18) false))) empty) (set field (& (cast 32 false (>> (var container) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false)) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set src (& (var d0) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (set updated_container (| (& (var container) (~ (<< (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (<< (& (cast 64 false (var src)) (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))) (- (bv 8 0x40) (cast 8 false (+ (var bit_offset) (var width)))) false))) (storew 0 (var bf_addr) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x38) false)))) (branch (! (ule (var byte_count) (bv 32 0x1))) (storew 0 (+ (var bf_addr) (bv 32 0x1)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x30) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x2))) (storew 0 (+ (var bf_addr) (bv 32 0x2)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x28) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x3))) (storew 0 (+ (var bf_addr) (bv 32 0x3)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x20) false)))) empty) (branch (! (ule (var byte_count) (bv 32 0x4))) (storew 0 (+ (var bf_addr) (bv 32 0x4)) (cast 8 false (cast 8 false (>> (var updated_container) (bv 8 0x18) false)))) empty) (set sr (| (& (var sr) (bv 16 0xff00)) (cast 16 false (cast 8 false (| (| (& (| (& (| (& (| (& (& (cast 8 false (var sr)) (bv 8 0xe0)) (bv 8 0xf7)) (<< (ite (! (is_zero (& (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1)))) (<< (bv 32 0x1) (cast 8 false (- (var width) (bv 32 0x1))) false)))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x3) false)) (bv 8 0xfb)) (<< (ite (is_zero (& (var src) (cast 32 false (- (<< (bv 64 0x1) (cast 8 false (var width)) false) (bv 64 0x1))))) (bv 8 0x1) (bv 8 0x0)) (bv 8 0x2) false)) (bv 8 0xfd)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x1) false)) (bv 8 0xfe)) (<< (ite false (bv 8 0x1) (bv 8 0x0)) (bv 8 0x0) false)) (& (cast 8 false (var sr)) (bv 8 0x10))))))))
-d "fbf.w 0x2" f0800000
-d "fbeq.w 0x2" f0810000
-d "fbogt.w 0x2" f0820000
-d "fboge.w 0x2" f0830000
-d "fbolt.w 0x2" f0840000
-d "fbole.w 0x2" f0850000
-d "fbogl.w 0x2" f0860000
-d "fbor.w 0x2" f0870000
-d "fbun.w 0x2" f0880000
-d "fbueq.w 0x2" f0890000
-d "fbugt.w 0x2" f08a0000
-d "fbuge.w 0x2" f08b0000
-d "fbult.w 0x2" f08c0000
-d "fbule.w 0x2" f08d0000
-d "fbne.w 0x2" f08e0000
-d "fbt.w 0x2" f08f0000
+d "fbf.w 0x4" f2800002
+d "fbeq.w 0x2" f2810000
+d "fbogt.w 0x2" f2820000
+d "fboge.w 0x2" f2830000
+d "fbolt.w 0x2" f2840000
+d "fbole.w 0x2" f2850000
+d "fbogl.w 0x2" f2860000
+d "fbor.w 0x2" f2870000
+d "fbun.w 0x2" f2880000
+d "fbueq.w 0x2" f2890000
+d "fbugt.w 0x2" f28a0000
+d "fbuge.w 0x2" f28b0000
+d "fbult.w 0x2" f28c0000
+d "fbule.w 0x2" f28d0000
+d "fbne.w 0x2" f28e0000
+d "fbt.w 0x2" f28f0000
 d "fbsf.w 0x2" f2900000
 d "fbseq.w 0x2" f2910000
 d "fbgt.w 0x2" f2920000
@@ -359,22 +359,22 @@ d "fbnge.w 0x2" f29c0000
 d "fbngt.w 0x2" f29d0000
 d "fbsne.w 0x2" f29e0000
 d "fbst.w 0x2" f29f0000
-d "fbf.l 0x3" f0c000000001
-d "fbeq.l 0x3" f0c100000001
-d "fbogt.l 0x3" f0c200000001
-d "fboge.l 0x3" f0c300000001
-d "fbolt.l 0x3" f0c400000001
-d "fbole.l 0x3" f0c500000001
-d "fbogl.l 0x3" f0c600000001
-d "fbor.l 0x3" f0c700000001
-d "fbun.l 0x3" f0c800000001
-d "fbueq.l 0x3" f0c900000001
-d "fbugt.l 0x3" f0ca00000001
-d "fbuge.l 0x3" f0cb00000001
-d "fbult.l 0x3" f0cc00000001
-d "fbule.l 0x3" f0cd00000001
-d "fbne.l 0x3" f0ce00000001
-d "fbt.l 0x3" f0cf00000001
+d "fbf.l 0x3" f2c000000001
+d "fbeq.l 0x3" f2c100000001
+d "fbogt.l 0x3" f2c200000001
+d "fboge.l 0x3" f2c300000001
+d "fbolt.l 0x3" f2c400000001
+d "fbole.l 0x3" f2c500000001
+d "fbogl.l 0x3" f2c600000001
+d "fbor.l 0x3" f2c700000001
+d "fbun.l 0x3" f2c800000001
+d "fbueq.l 0x3" f2c900000001
+d "fbugt.l 0x3" f2ca00000001
+d "fbuge.l 0x3" f2cb00000001
+d "fbult.l 0x3" f2cc00000001
+d "fbule.l 0x3" f2cd00000001
+d "fbne.l 0x3" f2ce00000001
+d "fbt.l 0x3" f2cf00000001
 d "fmove fp0, fp0" f2000000
 d "fint fp0" f2000001
 d "fint fp1, fp2" f2000501
@@ -413,10 +413,8 @@ d "fsgldiv fp1, fp2" f2000524
 d "fsglmul fp1, fp2" f2000527
 d "fsub fp2, fp4" f2000a28
 d "fmove.l d0, fp0" f2004000
-d "add.x d0, fp7" f2004fff
 d "fmove.w d0, fp0" f2005000
-d "fcos.d d0, fp4" f2005678
-d "fmovecr 0x3f, fp7" f2005fff
+d "fmovecr 0x7f, fp7" f2005fff
 d "fmovecr 0xf, fp6" f2005f0f
 d "fcmp fp1, fp2" f2000538
 d "ftst fp1, fp2" f200053a
@@ -435,85 +433,59 @@ d "fmove.l fp0, d0" f2006000
 d "fmove.w fp0, d0" f2007000
 d "fmove.p fp7, d0{d7}" f2007fff
 d "fmove.l a0, fp0" f2084000
-d "add.x a0, fp7" f2084fff
 d "fmove.w a0, fp0" f2085000
-d "fcos.d a0, fp4" f2085678
 d "fmove.l fp0, a0" f2086000
 d "fmove.w fp0, a0" f2087000
 d "fmove.l (a0), fp0" f2104000
 d "fmove.x (a0), fp0" f2104800
-d "fadd.x (a0), fp0" f2104c22
-d "add.x (a0), fp7" f2104fff
+d "fadd.p (a0), fp0" f2104c22
 d "fmove.w (a0), fp0" f2105000
-d "fcos.d (a0), fp4" f2105678
 d "fmove.l fp0, (a0)" f2106000
 d "fmove.x fp0, (a0)" f2106800
 d "fmove.w fp0, (a0)" f2107000
 d "fmove.l (a0)+, fp0" f2184000
 d "fmove.x (a0)+, fp0" f2184800
-d "add.x (a0)+, fp7" f2184fff
 d "fmove.w (a0)+, fp0" f2185000
-d "fcos.d (a0)+, fp4" f2185678
 d "fmove.l fp0, (a0)+" f2186000
 d "fmove.x fp0, (a0)+" f2186800
 d "fmove.w fp0, (a0)+" f2187000
 d "fmove.l -(a0), fp0" f2204000
 d "fmove.x -(a0), fp0" f2204800
-d "add.x -(a0), fp7" f2204fff
 d "fmove.w -(a0), fp0" f2205000
-d "fcos.d -(a0), fp4" f2205678
 d "fmove.l fp0, -(a0)" f2206000
 d "fmove.x fp0, -(a0)" f2206800
 d "fmove.w fp0, -(a0)" f2207000
 d "fmove.l 0x4fff(a0), fp0" f22840004fff
-d "add.x 0x5000(a0), fp7" f2284fff5000
 d "fmove.w 0x5fff(a0), fp0" f22850005fff
-d "fcos.d -0x6544(a0), fp4" f22856789abc
 d "fmove.l fp0, 0x6fff(a0)" f22860006fff
 d "fmove.w fp0, 0x7fff(a0)" f22870007fff
 d "fmove.l ([0x50005fff], 0x60006fff), fp0" f23040004fff50005fff60006fff
-d "add.x 0x0(a0, d5.w), fp7" f2304fff5000
 d "fmove.w ([0x60006fff], 0x70007fff), fp0" f23050005fff60006fff70007fff
-d "fcos.d -0x44(a0, a1.l * 2), fp4" f23056789abc
 d "fmove.l fp0, ([0x70007fff], -0x7fff7f00)" f23060006fff70007fff80008100
 d "fmove.w fp0, ([-0x7fff7f00], -0x7e8f6e01)" f23070007fff80008100817091ff
-d "fmove.l (a0, a0.w), invalid" f23080008100
 d "fmove.l 0x0(a0, d0.w), fpcr" f2309abc0000
 d "fmove.l fpcr, (a0, a4.w)" f230b1ffc100
 d "fmove.l 0x4fff.w, fp0" f23840004fff
-d "add.x 0x5000.w, fp7" f2384fff5000
 d "fmove.w 0x5fff.w, fp0" f23850005fff
-d "fcos.d 0x9abc.w, fp4" f23856789abc
 d "fmove.l fp0, 0x6fff.w" f23860006fff
 d "fmove.w fp0, 0x7fff.w" f23870007fff
 d "fmove.l 0x4fff5000.l, fp0" f23940004fff5000
-d "add.x 0x50005fff.l, fp7" f2394fff50005fff
 d "fmove.w 0x5fff6000.l, fp0" f23950005fff6000
-d "fcos.d 0x9abc0000.l, fp4" f23956789abc0000
 d "fmove.l fp0, 0x6fff7000.l" f23960006fff7000
 d "fmove.w fp0, 0x7fff8000.l" f23970007fff8000
 d "fmove.l 0x5003(pc), fp0" f23a40004fff
-d "add.x 0x5004(pc), fp7" f23a4fff5000
 d "fmove.w 0x6003(pc), fp0" f23a50005fff
-d "fcos.d 0xffff9ac0(pc), fp4" f23a56789abc
 d "fmove.l fp0, 0x7003(pc)" f23a60006fff
 d "fmove.w fp0, 0xffff8003(pc)" f23a70007fff
 d "fmove.l ([0x50006003], 0x60006fff), fp0" f23b40004fff50005fff60006fff
-d "add.x 0x4(pc, d5.w), fp7" f23b4fff5000
 d "fmove.w ([0x60007003], 0x70007fff), fp0" f23b50005fff60006fff70007fff
-d "fcos.d 0xffffffc0(pc, a1.l * 2), fp4" f23b56789abc
 d "fmove.l fp0, ([0x70008003], -0x7fff7f00)" f23b60006fff70007fff80008100
 d "fmove.w fp0, ([0x80008104], -0x7e8f6e01)" f23b70007fff80008100817091ff
-d "fmove.l 0x4(pc, a0.w), invalid" f23b80008100
 d "fmove.l 0x4(pc, d0.w), fpcr" f23b9abc0000
 d "fmove.l fpcr, 0x4(pc, a4.w)" f23bb1ffc100
 d "fmovem 0x4(pc, a6.w), fp0-fp7" f23bd0ffe100
 d "fmove.l 0x4fff5000, fp0" f23c40004fff5000
-d "add.x <unsupported>, fp7" f23c4fff50005fff60006fff
 d "fmove.w 0x5fff, fp0" f23c50005fff
-d "fcos.d -0.000000, fp4" f23c56789abc000000010010
-d "fmove.l fp0, 0x6fff7000" f23c60006fff7000
-d "fmove.w fp0, 0x7fff" f23c70007fff
 d "fsf.b d0" f2400000
 d "fseq.b d0" f2400001
 d "fsst.b d0" f240007f
