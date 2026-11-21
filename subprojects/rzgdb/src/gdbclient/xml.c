@@ -339,6 +339,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		free(profile);
 	}
 	g->target.valid = true;
+	free(g->registers);
 	g->registers = arch_regs;
 	return 0;
 
@@ -411,14 +412,17 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		}
 
 		column += sizeof("<column name=\"command\">") - 1;
-		column_data_len = column_end - column;
-		memcpy(cmdline, column, RZ_MIN(column_data_len, sizeof(cmdline)));
-		cmdline[column_data_len] = '\0';
+		size_t copy_len = column_end > column ? RZ_MIN((size_t)(column_end - column), sizeof(cmdline) - 1) : 0;
+		memcpy(cmdline, column, copy_len);
+		cmdline[copy_len] = '\0';
 
 		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
 		// correct pid and cmdline from the xml with everything else set to default
+		pid_info = NULL;
 		proc_filename = rz_str_newf("/proc/%d/status", ipid);
-		if (gdbr_open_file(g, proc_filename, O_RDONLY, 0) == 0) {
+		int open_res = proc_filename ? gdbr_open_file(g, proc_filename, O_RDONLY, 0) : -1;
+		free(proc_filename);
+		if (open_res == 0) {
 			if (gdbr_read_file(g, (unsigned char *)status, sizeof(status)) != -1) {
 				pid_info = _extract_pid_info(status, cmdline, ipid);
 			} else {
@@ -439,14 +443,17 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			pid_info->runnable = true;
 			pid_info->status = RZ_DBG_PROC_STOP;
 		}
+		if (!pid_info) {
+			continue;
+		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
 			rz_list_append(list, pid_info);
+			pid_info = NULL;
 		} else {
-			if (pid_info) {
-				free(pid_info);
-				pid_info = NULL;
-			}
+			free(pid_info->path);
+			free(pid_info);
+			pid_info = NULL;
 		}
 	}
 
@@ -454,6 +461,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 end:
 	if (ret != 0) {
 		if (pid_info) {
+			free(pid_info->path);
 			free(pid_info);
 		}
 	}

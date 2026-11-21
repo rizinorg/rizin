@@ -1,8 +1,17 @@
 // SPDX-FileCopyrightText: 2020 Khairulmizam Samsudin <xource@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_socket.h>
 #include <rz_debug.h>
+#include <libgdbr.h>
+#include <gdbclient/commands.h>
+#include <gdbclient/xml.h>
 #include "minunit.h"
+#if __UNIX__
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
+#endif
 #if __linux__
 #include <sys/user.h>
 
@@ -781,6 +790,503 @@ static bool test_debug_reg_sync_flg(void) {
 	mu_end;
 }
 
+static bool test_debug_gdb_disconnected(void) {
+	RzBreakpointContext local_bp_ctx = { 0 };
+	RzDebug *dbg = rz_debug_new(&local_bp_ctx);
+	mu_assert_notnull(dbg, "rz_debug_new()");
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new()");
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	dbg->analysis = analysis;
+	mu_assert_true(rz_debug_use(dbg, "gdb"), "use gdb debug plugin");
+
+	// Attach with unbound IO and breakpoint with NULL bp->user must fail safely
+	mu_assert_false(rz_debug_attach(dbg, 1), "attach fails when iob.io is NULL");
+	RzBreakpoint null_bp = { 0 };
+	RzBreakpointItem bp_item = { .addr = 0x1000, .size = 4, .perm = RZ_PERM_X };
+	mu_assert_false(dbg->cur->breakpoint(&null_bp, &bp_item, true), "gdb bp fails on NULL dbg");
+
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new()");
+	rz_io_bind(io, &dbg->iob);
+	rz_io_bind(io, &dbg->bp->iob);
+
+	// Failed gdb:// open must clean up libgdbr resources cleanly
+	mu_assert_null(rz_io_open_nomap(io, "gdb:///nonexistent_rz_gdb_serial_dev", RZ_PERM_RWX, 0),
+		"gdb:// open fails cleanly when connect fails");
+
+	// Non-gdb IO descriptor must be rejected cleanly by attach
+	RzIODesc *mem_desc = rz_io_open_at(io, "malloc://0x10000", RZ_PERM_RWX, 0644, 0x1000, NULL);
+	mu_assert_notnull(mem_desc, "open malloc:// for gdb/fuzzy test");
+	mu_assert_false(rz_debug_attach(dbg, 1), "attach fails on non-gdb IO desc");
+
+	// Disconnected gdb plugin guards must fail cleanly without UAF/crash
+	dbg->pid = 1;
+	mu_assert_null(dbg->cur->threads(dbg, 1), "gdb threads NULL when disconnected");
+	mu_assert_null(dbg->cur->pids(dbg, 1), "gdb pids NULL when disconnected");
+	mu_assert_eq(rz_debug_detach(dbg, 1), -1, "gdb detach fails when disconnected");
+	mu_assert_false(rz_debug_kill(dbg, 1, 1, 9), "gdb kill fails when disconnected");
+	mu_assert_false(rz_debug_select(dbg, 1, 1), "gdb select fails when disconnected");
+	mu_assert_null(rz_debug_info(dbg, NULL), "gdb info NULL when disconnected");
+	mu_assert_false(dbg->cur->set_reg_profile(dbg, "gpr eax .32 0 0\n"),
+		"gdb set_reg_profile fails when disconnected");
+	mu_assert_false(dbg->cur->breakpoint(dbg->bp, &bp_item, true),
+		"gdb bp fails when disconnected");
+	(void)rz_debug_reg_profile_sync(dbg);
+	(void)rz_debug_step(dbg, 1);
+	(void)rz_debug_wait(dbg, NULL);
+
+	rz_debug_free(dbg);
+	rz_analysis_free(analysis);
+	rz_io_free(io);
+	mu_end;
+}
+
+static bool test_rzgdb_profile_and_cleanup(void) {
+	libgdbr_t g;
+	mu_assert_eq(gdbr_init(&g, false), 0, "gdbr_init");
+	mu_assert_eq(gdbr_init(NULL, false), -1, "gdbr_init NULL");
+	mu_assert_eq(gdbr_disconnect(NULL), -1, "gdbr_disconnect NULL");
+	mu_assert_eq(gdbr_set_reg_profile(NULL, "gpr eax .32 0 0\n"), -1, "set_reg_profile NULL g");
+	mu_assert_eq(gdbr_set_reg_profile(&g, NULL), -1, "set_reg_profile NULL str");
+
+	mu_assert_true(gdbr_set_architecture(&g, RZ_SYS_ARCH_X86, 64), "set_architecture x86 64");
+	mu_assert_true(g.target.valid, "target.valid set on success");
+	mu_assert_notnull(g.target.regprofile, "target.regprofile set");
+	mu_assert_notnull(g.registers, "registers parsed");
+	mu_assert_true(gdbr_set_architecture(&g, RZ_SYS_ARCH_X86, 64), "set_architecture cached");
+
+	char *prev_profile = g.target.regprofile;
+	gdb_reg_t *prev_regs = g.registers;
+	mu_assert_eq(gdbr_set_reg_profile(&g, "gpr eax .0 0\n"), -1,
+		"invalid reg profile rejected");
+	mu_assert_ptreq(g.target.regprofile, prev_profile, "old regprofile preserved on failure");
+	mu_assert_ptreq(g.registers, prev_regs, "old registers preserved on failure");
+
+	mu_assert_eq(gdbr_set_reg_profile(&g, "gpr eax .32 0 0\n"), 0, "replace reg profile 1");
+	mu_assert_eq(gdbr_set_reg_profile(&g, "gpr rax .64 0 0\n"), 0, "replace reg profile 2");
+	// Teardown disconnect must not dereference a freed intr (rz_core_fini order)
+	// and must still release target state when isbreaked is set.
+	RzInterrupt *intr = rz_interrupt_new();
+	mu_assert_notnull(intr, "rz_interrupt_new");
+	gdbr_set_interrupt(&g, intr);
+	rz_interrupt_free(intr);
+	g.isbreaked = true;
+	mu_assert_eq(gdbr_disconnect(&g), 0, "gdbr_disconnect clears target state");
+	mu_assert_null(g.target.regprofile, "regprofile cleared by disconnect");
+	mu_assert_null(g.registers, "registers cleared by disconnect");
+	mu_assert_false(g.target.valid, "target.valid cleared by disconnect");
+	gdbr_set_interrupt(&g, NULL);
+	g.isbreaked = false;
+
+	// Repopulate and verify gdbr_cleanup frees target.regprofile and registers directly
+	mu_assert_false(gdbr_set_architecture(&g, RZ_SYS_ARCH_X86, 128), "unsupported bits fails");
+	mu_assert_eq(gdbr_set_reg_profile(&g, "gpr eax .32 0 0\n"), 0, "repopulate reg profile");
+	mu_assert_eq(gdbr_cleanup(&g), 0, "gdbr_cleanup frees buffers and reg profile");
+	mu_assert_null(g.target.regprofile, "regprofile cleared by cleanup");
+	mu_assert_null(g.registers, "registers cleared by cleanup");
+	mu_end;
+}
+
+#if __UNIX__
+typedef struct {
+	int fd;
+	const char *const *replies;
+	size_t count;
+} MockGdbServer;
+
+static bool mock_gdb_send_all(int fd, const void *buf, size_t len) {
+	const ut8 *p = buf;
+	size_t sent = 0;
+	while (sent < len) {
+		ssize_t n = send(fd, p + sent, len - sent, 0);
+		if (n <= 0) {
+			return false;
+		}
+		sent += (size_t)n;
+	}
+	return true;
+}
+
+static bool mock_gdb_read_packet(int fd, char *out, size_t out_sz) {
+	char ch = 0;
+	bool in_pkt = false;
+	size_t pos = 0;
+	while (true) {
+		ssize_t n = recv(fd, &ch, 1, 0);
+		if (n <= 0) {
+			return false;
+		}
+		if (!in_pkt) {
+			if (ch == '$') {
+				in_pkt = true;
+				pos = 0;
+			}
+			continue;
+		}
+		if (ch == '#') {
+			char csum[2];
+			size_t got = 0;
+			while (got < 2) {
+				n = recv(fd, csum + got, 2 - got, 0);
+				if (n <= 0) {
+					return false;
+				}
+				got += (size_t)n;
+			}
+			if (out && out_sz > 0) {
+				out[pos] = '\0';
+			}
+			return true;
+		}
+		if (out && pos + 1 < out_sz) {
+			out[pos++] = ch;
+		}
+	}
+}
+
+static bool mock_gdb_send_packet(int fd, const char *payload) {
+	size_t len = strlen(payload);
+	ut8 sum = 0;
+	for (size_t j = 0; j < len; j++) {
+		sum += (ut8)payload[j];
+	}
+	size_t pkt_len = 1 + len + 3;
+	char *pkt = malloc(pkt_len + 1);
+	if (!pkt) {
+		return false;
+	}
+	pkt[0] = '$';
+	if (len > 0) {
+		memcpy(pkt + 1, payload, len);
+	}
+	snprintf(pkt + 1 + len, 4, "#%02x", sum);
+	bool ok = mock_gdb_send_all(fd, pkt, pkt_len);
+	free(pkt);
+	return ok;
+}
+
+static void *mock_gdb_server_th(void *user) {
+	MockGdbServer *srv = user;
+	for (size_t i = 0; i < srv->count; i++) {
+		if (!mock_gdb_read_packet(srv->fd, NULL, 0)) {
+			break;
+		}
+		if (!mock_gdb_send_packet(srv->fd, srv->replies[i])) {
+			break;
+		}
+	}
+	return NULL;
+}
+
+static void *mock_gdb_dispatch_th(void *user) {
+	int fd = *(int *)user;
+	char req[256];
+	while (mock_gdb_read_packet(fd, req, sizeof(req))) {
+		const char *reply = "OK";
+		if (!strcmp(req, "g")) {
+			reply = "0000000000000000";
+		} else if (rz_str_startswith(req, "qXfer:exec-file:read:")) {
+			reply = "l/bin/test";
+		} else if (!strcmp(req, "qfThreadInfo")) {
+			reply = "mp2a.2a";
+		} else if (!strcmp(req, "qsThreadInfo")) {
+			reply = "l";
+		} else if (!strcmp(req, "?")) {
+			reply = "T05thread:p2a.2a;";
+		}
+		if (!mock_gdb_send_packet(fd, reply)) {
+			break;
+		}
+	}
+	return NULL;
+}
+
+static bool mock_gdb_socketpair(int fds[2]) {
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) != 0) {
+		return false;
+	}
+	struct timeval tv = { .tv_sec = 2, .tv_usec = 0 };
+	(void)setsockopt(fds[1], SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	(void)setsockopt(fds[1], SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+	return true;
+}
+
+static bool test_rzgdb_and_debug_gdb_mock_rsp(void) {
+	// 1. Direct rzgdb protocol tests: >4095B cmdline clamping, xml cleanup, target.xml,
+	//    qfThreadInfo/qsThreadInfo pids & threads success + error paths
+	int fds[2] = { -1, -1 };
+	mu_assert_true(mock_gdb_socketpair(fds), "socketpair 1");
+
+	// Build two osdata chunks totaling >4095B command to test stack-buffer clamping
+	const char *xml_prefix = "m<osdata type=\"processes\">"
+				 "<item><column name=\"pid\">42</column><column name=\"command\">";
+	const char *xml_suffix = "</column></item>"
+				 "<item><column name=\"pid\">99</column><column name=\"command\">other</column></item>"
+				 "</osdata>";
+	size_t prefix_len = strlen(xml_prefix);
+	size_t suffix_len = strlen(xml_suffix);
+	char *chunk1 = malloc(prefix_len + 2500 + 1);
+	char *chunk2 = malloc(1 + 1700 + suffix_len + 1);
+	if (!chunk1 || !chunk2) {
+		free(chunk1);
+		free(chunk2);
+		close(fds[0]);
+		close(fds[1]);
+		return false;
+	}
+	memcpy(chunk1, xml_prefix, prefix_len);
+	memset(chunk1 + prefix_len, 'A', 2500);
+	chunk1[prefix_len + 2500] = '\0';
+	chunk2[0] = 'l';
+	memset(chunk2 + 1, 'A', 1700);
+	memcpy(chunk2 + 1 + 1700, xml_suffix, suffix_len + 1);
+
+	const char *target_xml =
+		"l<target><architecture>i386:x86-64</architecture>"
+		"<feature name=\"org.gnu.gdb.i386.core\">"
+		"<reg name=\"rax\" bitsize=\"64\"/><reg name=\"rip\" bitsize=\"64\"/>"
+		"</feature></target>";
+	const char *bad_proc_xml = "l<osdata type=\"processes\"><item><column name=\"pid\">42</column>";
+
+	const char *replies1[] = {
+		// gdbr_pids_list (processes XML: 4200B cmdline + filtered pid 99)
+		chunk1,
+		chunk2,
+		"F-1,2", // vFile:open /proc/42/status -> fallback pid_info with clamped cmdline
+		"F5", // vFile:open /proc/99/status -> fd 5
+		"F1f;State:\tS\nPPid:\t1\nUid:\t0\nGid:\t0\n", // vFile:pread
+		"F0;", // vFile:pread EOF
+		"F0", // vFile:close
+		// gdbr_read_processes_xml malformed XML cleanup
+		bad_proc_xml,
+		// gdbr_read_target_xml replacing existing g->registers
+		target_xml,
+		// gdbr_pids_list fallback (qfThreadInfo/qsThreadInfo) success with dup pid
+		"l/bin/test", // qXfer:exec-file:read
+		"mp2a.2a,p2a.2b,p2c.2c", // qfThreadInfo
+		"l", // qsThreadInfo
+		// gdbr_pids_list fallback error cleanup (empty qsThreadInfo)
+		"l/bin/test",
+		"mp2a.2a",
+		"",
+		// gdbr_threads_list success (alive + dead thread)
+		"l/bin/test",
+		"mp2a.2a,p2a.2b",
+		"l",
+		"OK", // Tp2a.2a alive
+		"E01", // Tp2a.2b dead
+		// gdbr_threads_list error cleanup (empty qsThreadInfo)
+		"l/bin/test",
+		"mp2a.2a",
+		"",
+	};
+	MockGdbServer srv1 = { .fd = fds[1], .replies = replies1, .count = RZ_ARRAY_SIZE(replies1) };
+	RzThread *th1 = rz_th_new(mock_gdb_server_th, &srv1);
+	mu_assert_notnull(th1, "start mock gdb server 1");
+
+	libgdbr_t g;
+	mu_assert_eq(gdbr_init(&g, false), 0, "gdbr_init mock 1");
+	rz_socket_free(g.sock);
+	g.sock = rz_socket_new_from_fd(fds[0]);
+	g.no_ack = true;
+	g.connected = 1;
+	g.num_retries = 16;
+	g.pid = 0x2a;
+	g.tid = 0x2a;
+	g.stub_features.pkt_sz = 3000;
+	g.stub_features.multiprocess = true;
+	g.stub_features.qXfer_features_read = true;
+	g.stub_features.qXfer_threads_read = true;
+	g.stub_features.qXfer_exec_file_read = true;
+	mu_assert_true(gdbr_set_architecture(&g, RZ_SYS_ARCH_X86, 64), "set arch before target xml");
+
+	RzList *pids = gdbr_pids_list(&g, 42);
+	mu_assert_notnull(pids, "gdbr_pids_list via processes xml");
+	pids->free = (RzListFree)rz_debug_pid_free;
+	mu_assert_eq(rz_list_length(pids), 1, "only matching pid 42 kept");
+	RzDebugPid *p0 = rz_list_first_val(pids);
+	mu_assert_notnull(p0, "pid 42 entry");
+	mu_assert_eq(p0->pid, 42, "pid 42 value");
+	mu_assert_eq(strlen(p0->path), 4095, "4200B cmdline clamped to 4095B");
+	rz_list_free(pids);
+
+	RzList *bad_list = rz_list_newf((RzListFree)rz_debug_pid_free);
+	mu_assert_eq(gdbr_read_processes_xml(&g, 42, bad_list), -1, "malformed processes xml fails");
+	rz_list_free(bad_list);
+
+	mu_assert_eq(gdbr_read_target_xml(&g), 0, "gdbr_read_target_xml replaces registers cleanly");
+
+	g.stub_features.qXfer_threads_read = false;
+	pids = gdbr_pids_list(&g, 0x2a);
+	mu_assert_notnull(pids, "gdbr_pids_list qfThreadInfo fallback");
+	pids->free = (RzListFree)rz_debug_pid_free;
+	mu_assert_eq(rz_list_length(pids), 2, "deduplicated pids 0x2a and child 0x2c");
+	rz_list_free(pids);
+
+	mu_assert_null(gdbr_pids_list(&g, 0x2a), "gdbr_pids_list error path frees partial list");
+
+	RzList *threads = gdbr_threads_list(&g, 0x2a);
+	mu_assert_notnull(threads, "gdbr_threads_list success");
+	threads->free = (RzListFree)rz_debug_pid_free;
+	mu_assert_eq(rz_list_length(threads), 2, "two threads parsed");
+	RzDebugPid *t1 = rz_list_get_n(threads, 1);
+	mu_assert_notnull(t1, "second thread");
+	mu_assert_eq(t1->status, RZ_DBG_PROC_DEAD, "second thread marked dead");
+	rz_list_free(threads);
+
+	mu_assert_null(gdbr_threads_list(&g, 0x2a), "gdbr_threads_list error path frees partial list");
+
+	mu_assert_eq(gdbr_disconnect(&g), 0, "gdbr_disconnect on connected socketpair");
+	gdbr_cleanup(&g);
+	rz_th_wait(th1);
+	rz_th_free(th1);
+	close(fds[1]);
+	free(chunk1);
+	free(chunk2);
+
+	// 2. Live debug_gdb + io_gdb::__close + debug_gdb_get_desc() stale-fd & reused-fd tests
+	int fds2[2] = { -1, -1 };
+	mu_assert_true(mock_gdb_socketpair(fds2), "socketpair 2");
+	RzThread *th2 = rz_th_new(mock_gdb_dispatch_th, &fds2[1]);
+	mu_assert_notnull(th2, "start mock gdb server 2");
+
+	RzBreakpointContext bp_ctx = { 0 };
+	RzDebug *dbg = rz_debug_new(&bp_ctx);
+	mu_assert_notnull(dbg, "rz_debug_new mock");
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new mock");
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	dbg->analysis = analysis;
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new mock");
+	rz_io_bind(io, &dbg->iob);
+	rz_io_bind(io, &dbg->bp->iob);
+	mu_assert_true(rz_debug_use(dbg, "gdb"), "use gdb plugin mock");
+
+	RzIOPlugin *gdb_plugin = rz_io_plugin_resolve(io, "gdb://127.0.0.1:1234", false);
+	mu_assert_notnull(gdb_plugin, "resolve io_gdb plugin");
+	libgdbr_t *gd = RZ_NEW0(libgdbr_t);
+	if (!gd) {
+		rz_debug_free(dbg);
+		rz_analysis_free(analysis);
+		rz_io_free(io);
+		close(fds2[0]);
+		rz_th_wait(th2);
+		rz_th_free(th2);
+		close(fds2[1]);
+		return false;
+	}
+	mu_assert_eq(gdbr_init(gd, false), 0, "gdbr_init io_gdb desc");
+	rz_socket_free(gd->sock);
+	gd->sock = rz_socket_new_from_fd(fds2[0]);
+	gd->no_ack = true;
+	gd->connected = 1;
+	gd->num_retries = 16;
+	gd->pid = 0x2a;
+	gd->tid = 0x2a;
+	gd->stub_features.multiprocess = true;
+	gd->stub_features.qXfer_exec_file_read = true;
+
+	RzIODesc *gdb_desc = rz_io_desc_new(io, gdb_plugin, "gdb://127.0.0.1:1234", RZ_PERM_RWX, gd);
+	mu_assert_notnull(gdb_desc, "rz_io_desc_new gdb");
+	mu_assert_true(rz_io_desc_add(io, gdb_desc), "rz_io_desc_add gdb");
+	io->desc = gdb_desc;
+
+	mu_assert_true(rz_debug_attach(dbg, 0x2a), "rz_debug_attach succeeds on gdb desc");
+	dbg->pid = 0x2a;
+	dbg->tid = 0x2a;
+	mu_assert_true(rz_debug_reg_profile_sync(dbg), "sync gdb reg profile");
+	mu_assert_true(rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false), "live gdb reg read");
+
+	RzDebugInfo *info = rz_debug_info(dbg, NULL);
+	mu_assert_notnull(info, "live rz_debug_info");
+	mu_assert_eq(info->pid, 0x2a, "info pid");
+	mu_assert_streq(info->exe, "/bin/test", "info exe");
+	rz_debug_info_free(info);
+
+	mu_assert_true(rz_debug_select(dbg, 0x2a, 0x2a), "live gdb select");
+	mu_assert_eq(dbg->cur->set_reg_profile(dbg, "gpr eax .32 0 0\n"), 0, "live set_reg_profile");
+	RzBreakpointItem bp_item = { .addr = 0x1000, .size = 4, .perm = RZ_PERM_X };
+	mu_assert_true(dbg->cur->breakpoint(dbg->bp, &bp_item, true), "live gdb bp");
+	mu_assert_true(rz_debug_kill(dbg, 0x2a, 0x2a, 9), "live gdb kill");
+	mu_assert_eq(rz_debug_detach(dbg, 0x2b), 0, "live gdb detach other pid");
+
+	// Close underlying gdb IO desc while debug_gdb holds ctx->desc/ctx->io_fd -> must invalidate
+	mu_assert_true(rz_io_desc_close(gdb_desc), "io_gdb __close returns success");
+	rz_th_wait(th2);
+	rz_th_free(th2);
+	close(fds2[1]);
+
+	mu_assert_null(rz_debug_info(dbg, NULL), "stale gdb desc invalidated on rz_debug_info");
+	mu_assert_null(dbg->cur->threads(dbg, 0x2a), "threads NULL after stale desc invalidation");
+
+	// Reused fd invalidation: close gdb desc, open malloc:// reusing the fd, then query debug_gdb
+	libgdbr_t *gd2 = RZ_NEW0(libgdbr_t);
+	if (!gd2) {
+		rz_debug_free(dbg);
+		rz_analysis_free(analysis);
+		rz_io_free(io);
+		return false;
+	}
+	mu_assert_eq(gdbr_init(gd2, false), 0, "gdbr_init desc 2");
+	gd2->num_retries = 1;
+	RzIODesc *gdb_desc2 = rz_io_desc_new(io, gdb_plugin, "gdb://127.0.0.1:1234", RZ_PERM_RWX, gd2);
+	mu_assert_notnull(gdb_desc2, "rz_io_desc_new gdb 2");
+	mu_assert_true(rz_io_desc_add(io, gdb_desc2), "rz_io_desc_add gdb 2");
+	io->desc = gdb_desc2;
+	mu_assert_true(rz_debug_attach(dbg, 0x2a), "re-attach gdb desc 2");
+	mu_assert_true(rz_io_desc_close(gdb_desc2), "close gdb desc 2");
+	RzIODesc *reused = rz_io_open_nomap(io, "malloc://32", RZ_PERM_RW, 0);
+	mu_assert_notnull(reused, "open malloc:// reusing closed fd");
+	mu_assert_null(dbg->cur->pids(dbg, 0x2a), "reused non-gdb fd invalidated safely");
+
+	// Detach matching dbg->pid clears ctx->desc and ctx->io_fd
+	int fds3[2] = { -1, -1 };
+	mu_assert_true(mock_gdb_socketpair(fds3), "socketpair 3");
+	RzThread *th3 = rz_th_new(mock_gdb_dispatch_th, &fds3[1]);
+	mu_assert_notnull(th3, "start mock gdb server 3");
+
+	libgdbr_t *gd3 = RZ_NEW0(libgdbr_t);
+	if (!gd3) {
+		rz_debug_free(dbg);
+		rz_analysis_free(analysis);
+		rz_io_free(io);
+		close(fds3[0]);
+		rz_th_wait(th3);
+		rz_th_free(th3);
+		close(fds3[1]);
+		return false;
+	}
+	mu_assert_eq(gdbr_init(gd3, false), 0, "gdbr_init desc 3");
+	rz_socket_free(gd3->sock);
+	gd3->sock = rz_socket_new_from_fd(fds3[0]);
+	gd3->no_ack = true;
+	gd3->connected = 1;
+	gd3->num_retries = 16;
+	gd3->pid = 0x2a;
+	gd3->stub_features.multiprocess = true;
+	RzIODesc *gdb_desc3 = rz_io_desc_new(io, gdb_plugin, "gdb://127.0.0.1:1234", RZ_PERM_RWX, gd3);
+	mu_assert_notnull(gdb_desc3, "rz_io_desc_new gdb 3");
+	mu_assert_true(rz_io_desc_add(io, gdb_desc3), "rz_io_desc_add gdb 3");
+	io->desc = gdb_desc3;
+	mu_assert_true(rz_debug_attach(dbg, 0x2a), "attach gdb desc 3");
+	mu_assert_eq(rz_debug_detach(dbg, 0x2a), 0, "detach matching pid clears ctx->desc/io_fd");
+	mu_assert_null(dbg->cur->threads(dbg, 0x2a), "disconnected after matching detach");
+	mu_assert_true(rz_io_desc_close(gdb_desc3), "close gdb desc 3");
+	rz_th_wait(th3);
+	rz_th_free(th3);
+	close(fds3[1]);
+
+	rz_debug_free(dbg);
+	rz_analysis_free(analysis);
+	rz_io_free(io);
+	mu_end;
+}
+#endif // __UNIX__
+
 int all_tests() {
 	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
@@ -790,6 +1296,11 @@ int all_tests() {
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
 	mu_run_test(test_debug_reg_sync_flg);
+	mu_run_test(test_debug_gdb_disconnected);
+	mu_run_test(test_rzgdb_profile_and_cleanup);
+#if __UNIX__
+	mu_run_test(test_rzgdb_and_debug_gdb_mock_rsp);
+#endif
 	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }
