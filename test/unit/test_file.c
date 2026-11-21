@@ -97,14 +97,112 @@ bool test_rz_file_mmap(void) {
 	mu_assert_notnull(m, "mmaped file should not be freed after resize");
 	mu_assert_eq(m->len, 0x10, "mmaped file should be empty");
 	mu_assert_eq(m->base, 0xdead0000, "base address is right");
-	strcpy((char *)m->buf, "1234567890ABCDEF");
+	memcpy(m->buf, "1234567890ABCDEF", 0x10);
+	rz_file_mmap_resize(m, 0);
+	mu_assert_eq(m->len, 0, "mmaped file should resize to 0");
+	mu_assert_null(m->buf, "mmaped buf should be NULL after resize to 0");
+	rz_file_mmap_free(m);
+
+	m = rz_file_mmap(filename, O_RDWR, 0644, 0xdead0000);
+	mu_assert_notnull(m, "reopen after zero resize");
+	mu_assert_notnull(rz_file_mmap_resize(m, 0x10), "resize back from 0");
+	memcpy(m->buf, "1234567890ABCDEF", 0x10);
 	rz_file_mmap_free(m);
 
 	m = rz_file_mmap(filename, O_RDONLY, 0644, 0xdead0000);
 	mu_assert_eq(m->len, 0x10, "mmaped file should be empty");
 	mu_assert_eq(m->base, 0xdead0000, "base address is right");
-	mu_assert_streq((char *)m->buf, "1234567890ABCDEF", "previous data has been written to file");
+	mu_assert_memeq(m->buf, (const ut8 *)"1234567890ABCDEF", 0x10, "previous data has been written to file");
 	rz_file_mmap_free(m);
+
+	mu_assert_null(rz_file_mmap_resize(NULL, 0x10), "resize NULL mmap returns NULL");
+	mu_assert_null(rz_file_mmap("/nonexistent_rz_mmap_dir/file", O_RDONLY, 0, 0), "mmap nonexistent fails");
+#if __UNIX__
+	mu_assert_null(rz_file_mmap("/", O_RDONLY, 0, 0), "mmap directory fails cleanly");
+	m = rz_file_mmap(filename, O_RDWR, 0644, 0xdead0000);
+	mu_assert_notnull(m, "open for open-failure resize test");
+	m->perm = O_RDWR | O_CREAT | O_EXCL;
+	mu_assert_null(rz_file_mmap_resize(m, 0x10), "resize fails cleanly when reopen fails");
+	rz_file_mmap_free(m);
+
+	RzBuffer *mb = rz_buf_new_mmap(filename, O_RDWR, 0644, NULL);
+	mu_assert_notnull(mb, "buf_new_mmap");
+	mu_assert_true(rz_buf_resize(mb, 0x20), "buf_mmap resize up");
+	mu_assert_true(rz_buf_resize(mb, 0), "buf_mmap resize to 0");
+	mu_assert_eq(rz_buf_write(mb, (const ut8 *)"x", 0), 0, "buf_mmap 0-byte write on 0-length buffer");
+	mu_assert_eq(rz_buf_size(mb), 0, "buf_mmap size remains 0 after 0-byte write");
+	mu_assert_true(rz_buf_resize(mb, 0x10), "buf_mmap resize from 0");
+	mu_assert_true(rz_file_rm(filename), "remove temp file before failed resize");
+	mu_assert_false(rz_buf_resize(mb, 0x20), "buf_mmap resize fails after file removal");
+	mu_assert_false(rz_buf_resize(mb, 0), "buf_mmap resize to 0 fails after file removal");
+	rz_buf_free(mb);
+#else
+	rz_file_rm(filename);
+#endif
+
+	free(filename);
+	mu_end;
+}
+
+bool test_rz_file_slurp_hexpairs(void) {
+	char *filename = rz_file_temp(NULL);
+	mu_assert_notnull(filename, "temp file");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"1", 1, false), "dump single digit");
+	int sz = 0;
+	ut8 *buf = rz_file_slurp_hexpairs(filename, &sz);
+	mu_assert_notnull(buf, "single digit hexpair");
+	mu_assert_eq(sz, 1, "single digit size");
+	mu_assert_eq(buf[0], 0x01, "single digit value");
+	free(buf);
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"# comment\n1 2 3 4 5\n", 20, false), "dump odd hexpairs");
+	buf = rz_file_slurp_hexpairs(filename, &sz);
+	mu_assert_notnull(buf, "multi single-digit hexpairs");
+	mu_assert_eq(sz, 5, "five bytes");
+	mu_assert_memeq(buf, (const ut8 *)"\x01\x02\x03\x04\x05", 5, "values match");
+	free(buf);
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"zz", 2, false), "dump invalid hex");
+	mu_assert_null(rz_file_slurp_hexpairs(filename, &sz), "invalid hex returns NULL");
+	mu_assert_null(rz_file_slurp_hexpairs("/nonexistent_rz_hexpairs_test", &sz), "missing file returns NULL");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"4142", 4, false), "dump valid hex for NULL usz");
+	buf = rz_file_slurp_hexpairs(filename, NULL);
+	mu_assert_notnull(buf, "slurp hexpairs with NULL usz");
+	mu_assert_memeq(buf, (const ut8 *)"AB", 2, "values match with NULL usz");
+	free(buf);
+
+	rz_file_rm(filename);
+	free(filename);
+	mu_end;
+}
+
+bool test_rz_file_slurp_lines_from_bottom(void) {
+	char *filename = rz_file_temp(NULL);
+	mu_assert_notnull(filename, "temp file");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"", 0, false), "dump empty");
+	char *s = rz_file_slurp_lines_from_bottom(filename, 0);
+	mu_assert_streq_free(s, "", "empty file 0 lines");
+	s = rz_file_slurp_lines_from_bottom(filename, 1);
+	mu_assert_streq_free(s, "", "empty file 1 line");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"\n", 1, false), "dump newline");
+	s = rz_file_slurp_lines_from_bottom(filename, 1);
+	mu_assert_streq_free(s, "\n", "single newline 1 line");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"\na\n", 3, false), "dump leading newline");
+	s = rz_file_slurp_lines_from_bottom(filename, 2);
+	mu_assert_streq_free(s, "\na\n", "leading newline 2 lines");
+
+	mu_assert_true(rz_file_dump(filename, (const ut8 *)"a\nb\nc\n", 6, false), "dump 3 lines");
+	s = rz_file_slurp_lines_from_bottom(filename, 1);
+	mu_assert_streq_free(s, "c\n", "last line");
+	s = rz_file_slurp_lines_from_bottom(filename, 0);
+	mu_assert_streq_free(s, "", "0 lines");
+	s = rz_file_slurp_lines_from_bottom(filename, -1);
+	mu_assert_streq_free(s, "", "negative lines");
 
 	rz_file_rm(filename);
 	free(filename);
@@ -120,6 +218,8 @@ int all_tests() {
 	mu_run_test(test_rz_file_basename);
 	mu_run_test(test_rz_file_dos_basename);
 	mu_run_test(test_rz_file_mmap);
+	mu_run_test(test_rz_file_slurp_hexpairs);
+	mu_run_test(test_rz_file_slurp_lines_from_bottom);
 	return tests_passed != tests_run;
 }
 
