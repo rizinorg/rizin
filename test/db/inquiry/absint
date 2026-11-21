@@ -105,9 +105,9 @@ EXPECT=<<EOF
                 reloc..rodata.80000b4+12 0x80000c0 ->      CALL -> 0x8000074 sym.function_1
                    reloc..data.80000d0+4 0x80000d4 ->      DATA -> 0x80001f8 reloc..text.80001f8
                   reloc..data.80000d0+12 0x80000dc ->      CALL -> 0x8000074 sym.function_1
-     addr size traced ninstr jump fail fcns        calls xrefs 
----------------------------------------------------------------
-0x80000ac   80      0     20            0x080000ac       
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x80000ac   80      0     20            0x080000ac  0x08000074 
 EOF
 RUN
 
@@ -150,9 +150,9 @@ EXPECT=<<EOF
     reloc.target.indirect_call_single+32 0x80000d4 ->      DATA -> 0x8000104 reloc..data.8000104
     reloc.target.indirect_call_single+36 0x80000d8 ->      DATA -> 0x80001e8 reloc.function_1
     reloc.target.indirect_call_single+44 0x80000e0 ->      CALL -> 0x8000074 reloc.target.function_1
-     addr size traced ninstr jump fail fcns        calls xrefs 
----------------------------------------------------------------
-0x80000b4   76      0     19            0x080000b4       
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x80000b4   76      0     19            0x080000b4  0x08000074 
 EOF
 RUN
 
