@@ -186,6 +186,10 @@ exit_status:
 
 // "?**"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_cons_is_interactive(core->cons)) {
+		RZ_LOG_ERROR("HUD mode requires interactive console (scr.interactive=true).\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzList *brief_lines = rz_list_newf(free);
 	if (!brief_lines) {
 		return RZ_CMD_STATUS_ERROR;
@@ -201,6 +205,10 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_handler(RzCore *core, int argc
 
 // "?**e"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_cons_is_interactive(core->cons)) {
+		RZ_LOG_ERROR("HUD mode requires interactive console (scr.interactive=true).\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzCmdStateOutput state = { 0 };
 	rz_cmd_state_output_init(&state, RZ_OUTPUT_MODE_STR_BUF, core);
 	rz_core_config_print_all(core->config, "", &state, core->cons);
@@ -222,6 +230,10 @@ RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_settings_handler(RzCore *core,
 
 // "?***"
 RZ_IPI RzCmdStatus rz_cmd_help_search_interactive_everything_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_cons_is_interactive(core->cons)) {
+		RZ_LOG_ERROR("HUD mode requires interactive console (scr.interactive=true).\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	RzHelpSearch hs = {
 		.color = core->print->flags & RZ_PRINT_FLAGS_COLOR,
 		.pj = NULL,
