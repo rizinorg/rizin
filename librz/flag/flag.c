@@ -642,6 +642,7 @@ RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool
 	RzListIter *iter;
 	const RzFlagsAtOffset *flags_at = rz_flag_get_nearest_list(f, off, -1);
 	if (!flags_at) {
+		rz_list_free(spaces);
 		return NULL;
 	}
 	if (flags_at->off == off) {
@@ -659,6 +660,7 @@ RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool
 			}
 		}
 		if (nice) {
+			rz_list_free(spaces);
 			return evalFlag(f, nice);
 		}
 	}
@@ -674,6 +676,7 @@ RZ_API RZ_BORROW RzFlagItem *rz_flag_get_at_by_spaces(RZ_NONNULL RzFlag *f, bool
 				continue;
 			}
 			if (item->offset == off) {
+				rz_list_free(spaces);
 				return evalFlag(f, item);
 			}
 			nice = item;
