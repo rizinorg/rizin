@@ -245,6 +245,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	RzVector /*<RzBinElfSymbol>*/ *symbols; // RzVector<RzBinElfSymbol>
 	RzVector /*<RzBinElfSymbol>*/ *imports; // RzVector<RzBinElfSymbol>
+	HtUU *symbol_ordinal_idx; ///< symbol ordinal to first index in symbols
+	HtUU *import_ordinal_idx; ///< import ordinal to first index in imports
 
 	HtUU *got_sym_id_off; ///< symbol id to GOT offset map.
 };

@@ -431,6 +431,8 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	rz_vector_free(bin->symbols);
 	rz_vector_free(bin->imports);
+	ht_uu_free(bin->symbol_ordinal_idx);
+	ht_uu_free(bin->import_ordinal_idx);
 
 	ht_uu_free(bin->got_sym_id_off);
 
