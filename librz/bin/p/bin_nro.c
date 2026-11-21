@@ -233,7 +233,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 
 	ut32 mod0;
 	if (!rz_buf_read_le32_at(bf->buf, NRO_OFFSET_MODMEMOFF, &mod0)) {
-		free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 
@@ -243,7 +243,8 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		}
 		ut32 mod0sz;
 		if (!rz_buf_read_le32_at(bf->buf, mod0 + 4, &mod0sz)) {
-			free(ret);
+			free(ptr);
+			rz_pvector_free(ret);
 			return NULL;
 		}
 		ptr->name = rz_str_dup("mod0");
@@ -331,12 +332,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
+static void destroy(RzBinFile *bf) {
+	if (!bf || !bf->o) {
+		return;
+	}
+	RZ_FREE(bf->o->bin_obj);
+}
+
 RzBinPlugin rz_bin_plugin_nro = {
 	.name = "nro",
 	.desc = "Nintendo Switch NRO",
 	.license = "MIT",
 	.author = "pancake",
 	.load_buffer = &load_buffer,
+	.destroy = &destroy,
 	.check_buffer = &check_buffer,
 	.baddr = &baddr,
 	.binsym = &binsym,

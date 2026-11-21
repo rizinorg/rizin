@@ -100,7 +100,7 @@ static RzPVector /*<RzBinSection *>*/ *nes_sections(RzBinFile *bf) {
 	if (!hdr) {
 		return NULL;
 	}
-	RzPVector *ret = rz_pvector_new(NULL);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -213,7 +213,7 @@ static RzPVector /*<RzBinMem *>*/ *nes_mem(RzBinFile *bf) {
 static RzPVector /*<RzBinAddr *>*/ *nes_entries(RzBinFile *bf) {
 	RzPVector *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_pvector_new(NULL))) {
+	if (!(ret = rz_pvector_new(free))) {
 		return NULL;
 	}
 	if (!(ptr = RZ_NEW0(RzBinAddr))) {

@@ -77,11 +77,11 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	struct rz_bin_te_section_t *sections = NULL;
 	int i;
 
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!(sections = rz_bin_te_get_sections(bf->o->bin_obj))) {
-		free(ret);
+		rz_pvector_free(ret);
 		return NULL;
 	}
 	for (i = 0; !sections[i].last; i++) {

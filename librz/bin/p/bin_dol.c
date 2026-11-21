@@ -126,7 +126,7 @@ static RzPVector /*<RzBinSection *>*/ *dol_sections(RzBinFile *bf) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 
 	DolHeader *dol = bf->o->bin_obj;
-	RzPVector *ret = rz_pvector_new(free);
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -282,6 +282,13 @@ static ut64 dol_baddr(RzBinFile *bf) {
 	return 0x80004000;
 }
 
+static void dol_destroy(RzBinFile *bf) {
+	if (!bf || !bf->o) {
+		return;
+	}
+	RZ_FREE(bf->o->bin_obj);
+}
+
 RzBinPlugin rz_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary",
@@ -289,6 +296,7 @@ RzBinPlugin rz_bin_plugin_dol = {
 	.author = "pancake",
 	.check_buffer = &dol_check_buffer,
 	.load_buffer = &dol_load_buffer,
+	.destroy = &dol_destroy,
 	.entries = &dol_entries,
 	.sections = &dol_sections,
 	.maps = &rz_bin_maps_of_file_sections,
