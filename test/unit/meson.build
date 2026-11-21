@@ -76,6 +76,7 @@ if get_option('enable_tests')
     'graph_new',
     'graph_new_cfg',
     'hash',
+    'heatmap',
     'hex',
     'ht',
     'id_storage',
