@@ -740,6 +740,53 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+bool test_bin_pebble_and_nro_destroy(void) {
+	// Synthetic Pebble binary ("PBLAPP\0\0" + 128-byte header) exercises
+	// pebble_sections and pebble_destroy
+	ut8 pebble[128] = { 0 };
+	memcpy(pebble, "PBLAPP\0\0", 8);
+	rz_write_le16(pebble + 14, sizeof(pebble));
+	memcpy(pebble + 24, "testapp", 7);
+
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "rz_bin_new pebble");
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new pebble");
+	rz_io_bind(io, &bin->iob);
+
+	RzBuffer *pbuf = rz_buf_new_with_bytes(pebble, sizeof(pebble));
+	mu_assert_notnull(pbuf, "pebble buffer");
+	RzBinOptions bopt;
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.pbw";
+	RzBinFile *pbf = rz_bin_open_buf(bin, pbuf, &bopt);
+	mu_assert_notnull(pbf, "open synthetic pebble");
+	mu_assert_notnull(pbf->o, "pebble object");
+	mu_assert_streq(pbf->o->plugin->name, "pebble", "pebble plugin selected");
+	rz_bin_file_delete(bin, pbf);
+	rz_buf_free(pbuf);
+
+	// Synthetic NRO binary ("NRO0" at offset 0x10) exercises nro sections and destroy
+	ut8 nro[0x80] = { 0 };
+	memcpy(nro + 0x10, "NRO0", 4);
+	rz_write_le32(nro + 0x18, sizeof(nro));
+
+	RzBuffer *nbuf = rz_buf_new_with_bytes(nro, sizeof(nro));
+	mu_assert_notnull(nbuf, "nro buffer");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.nro";
+	RzBinFile *nbf = rz_bin_open_buf(bin, nbuf, &bopt);
+	mu_assert_notnull(nbf, "open synthetic nro");
+	mu_assert_notnull(nbf->o, "nro object");
+	mu_assert_streq(nbf->o->plugin->name, "nro", "nro plugin selected");
+	rz_bin_file_delete(bin, nbf);
+	rz_buf_free(nbuf);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +798,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_pebble_and_nro_destroy);
 	return tests_passed != tests_run;
 }
 

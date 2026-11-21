@@ -207,7 +207,7 @@ static RzPVector /*<RzBinAddr *>*/ *xbe_sections(RzBinFile *bf) {
 	if (h->sections < 1) {
 		return NULL;
 	}
-	ret = rz_pvector_new(free);
+	ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
 	}
@@ -459,7 +459,9 @@ static RzStructuredData *xbe_sections_structure(RzBinFile *bf) {
 			return NULL;
 		}
 		rz_structured_data_map_add_unsigned(flags_map, "value", sec->flags, false);
-		rz_structured_data_map_add_string(flags_map, "readable", xbe_section_flags_to_string(sec->flags));
+		char *flags_str = xbe_section_flags_to_string(sec->flags);
+		rz_structured_data_map_add_string(flags_map, "readable", flags_str);
+		free(flags_str);
 		rz_structured_data_map_add_unsigned(m, "vaddr", sec->vaddr, true);
 		rz_structured_data_map_add_unsigned(m, "vsize", sec->vsize, false);
 		rz_structured_data_map_add_unsigned(m, "offset", sec->offset, false);

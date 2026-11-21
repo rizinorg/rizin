@@ -399,8 +399,7 @@ static RzPVector /*<RzBinSymbol *>*/ *pe_symbols(RzBinFile *bf) {
 		rz_list_foreach (clr_symbols, iter, sym) {
 			rz_pvector_push(ret, sym);
 		}
-		clr_symbols->length = 0;
-		clr_symbols->head = clr_symbols->tail = NULL;
+		clr_symbols->free = NULL;
 		rz_list_free(clr_symbols);
 	}
 

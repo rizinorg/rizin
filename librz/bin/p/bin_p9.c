@@ -50,7 +50,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (rz_buf_size(bf->buf) < 28) {

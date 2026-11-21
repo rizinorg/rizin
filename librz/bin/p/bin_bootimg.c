@@ -784,7 +784,7 @@ static RzPVector /*<RzBinSection *>*/ *bootimg_sections(RzBinFile *bf) {
 	ut64 page_size = bootimg_page_size(img);
 	ut64 kernel_vaddr = bootimg_kernel_vaddr(img);
 
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 

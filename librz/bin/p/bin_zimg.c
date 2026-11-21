@@ -630,7 +630,9 @@ static RzStructuredData *zimage_structure(RzBinFile *bf) {
 		return NULL;
 	}
 
-	rz_structured_data_map_add_string(root, "machine", zimage_machine(image));
+	char *machine = zimage_machine(image);
+	rz_structured_data_map_add_string(root, "machine", machine);
+	free(machine);
 	if (RZ_STR_ISNOTEMPTY(image->kernel)) {
 		rz_structured_data_map_add_string(root, "kernel", image->kernel);
 	}
@@ -652,12 +654,17 @@ static RzStructuredData *zimage_structure(RzBinFile *bf) {
 	return info;
 }
 
+static void zimage_destroy(RzBinFile *bf) {
+	RZ_FREE(bf->o->bin_obj);
+}
+
 RzBinPlugin rz_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "zImage format binary",
 	.license = "LGPL3",
 	.author = "deroad",
 	.load_buffer = &zimage_load_buffer,
+	.destroy = &zimage_destroy,
 	.check_buffer = &zimage_check_buffer,
 	.baddr = &zimage_baddr,
 	.info = &zimage_info,
