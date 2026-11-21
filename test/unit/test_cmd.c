@@ -521,7 +521,7 @@ bool test_remove_cmd(void) {
 }
 
 bool test_cmd_args(void) {
-	const char *x_c_choices[] = { "A", "B", "C" };
+	const char *x_c_choices[] = { "A", "B", "C", NULL };
 	RzCmdDescArg x_args[] = {
 		{ .name = "c", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices.choices = x_c_choices },
 		{ .name = "from", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM },
@@ -539,9 +539,24 @@ bool test_cmd_args(void) {
 
 	mu_assert_ptreq(rz_cmd_get_desc(cmd, "x"), x_cd, "x is found");
 
-	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("x??");
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("x?");
 	char *h = rz_cmd_get_help(cmd, pa, false, 0);
-	mu_assert_streq(h, "Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n", "arguments are considered");
+	mu_assert_streq(h,
+		"Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n"
+		"\n"
+		"Detailed help for x <c> [<from> <to> [<n>=5]] is provided by x??.\n",
+		"x? omits choices and advertises x??");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("x??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n"
+		"\n"
+		"Choices:\n"
+		"| c # A, B, C\n",
+		"x?? lists choices");
 	rz_cmd_parsed_args_free(pa);
 	free(h);
 
@@ -1514,6 +1529,356 @@ bool test_cmd_status_tostring(void) {
 	mu_end;
 }
 
+static int mock_choices_cb_calls = 0;
+
+static char **mock_choices_cb(RzCore *core) {
+	(void)core;
+	mock_choices_cb_calls++;
+	char **res = RZ_NEWS0(char *, 3);
+	res[0] = rz_str_dup("opt1");
+	res[1] = rz_str_dup("opt2");
+	return res;
+}
+
+static char **mock_empty_choices_cb(RzCore *core) {
+	(void)core;
+	mock_choices_cb_calls++;
+	return RZ_NEWS0(char *, 1);
+}
+
+bool test_cmd_arg_choices_multiple_and_empty(void) {
+	const char *fmt_choices[] = { "hex", "dec", NULL };
+	const char *longer_choices[] = { "fast", "slow", NULL };
+	const char *empty_choices[] = { NULL };
+
+	RzCmdDescDetailEntry ex_entries[] = {
+		{ .text = "m", .comment = "example" },
+		{ 0 },
+	};
+	RzCmdDescDetail m_details[] = {
+		{ .name = "Examples", .entries = ex_entries },
+		{ 0 },
+	};
+	RzCmdDescArg m_args[] = {
+		{ .name = "fmt",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = fmt_choices },
+		{ .name = "longer",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = longer_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp m_help = {
+		.summary = "m summary",
+		.args = m_args,
+		.details = m_details,
+	};
+
+	RzCmdDescArg e_args[] = {
+		{ .name = "empty",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = empty_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp e_help = {
+		.summary = "e summary",
+		.args = e_args,
+	};
+	RzCmdDescHelp e_group_help = {
+		.summary = "e group",
+	};
+
+	RzCmdDescDetailEntry unnamed_entries[] = {
+		{ .text = "u", .arg_str = " 1", .comment = "first" },
+		{ 0 },
+	};
+	RzCmdDescDetail unnamed_details[] = {
+		{ .name = "", .entries = unnamed_entries },
+		{ 0 },
+	};
+	RzCmdDescDetail skip_empty_unnamed_details[] = {
+		{ .name = "", .entries = NULL },
+		{ .name = "", .entries = unnamed_entries },
+		{ 0 },
+	};
+	RzCmdDescDetail only_empty_unnamed_details[] = {
+		{ .name = "", .entries = NULL },
+		{ 0 },
+	};
+	RzCmdDescArg u_args[] = {
+		{ .name = "kind",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = fmt_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp u_help = {
+		.summary = "u summary",
+		.args = u_args,
+		.details = unnamed_details,
+	};
+	RzCmdDescHelp u2_help = {
+		.summary = "u2 summary",
+		.args = u_args,
+		.details = skip_empty_unnamed_details,
+	};
+	RzCmdDescHelp u3_help = {
+		.summary = "u3 summary",
+		.args = u_args,
+		.details = only_empty_unnamed_details,
+	};
+	RzCmdDescArg nu_args[] = {
+		{ .name = "x", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ 0 },
+	};
+	RzCmdDescHelp nu_help = {
+		.summary = "nu summary",
+		.args = nu_args,
+		.details = unnamed_details,
+	};
+
+	RzCmd *cmd = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	rz_cmd_desc_argv_new(cmd, root, "m", NULL, &m_help);
+	rz_cmd_desc_argv_new(cmd, root, "u", NULL, &u_help);
+	rz_cmd_desc_argv_new(cmd, root, "u2", NULL, &u2_help);
+	rz_cmd_desc_argv_new(cmd, root, "u3", NULL, &u3_help);
+	rz_cmd_desc_argv_new(cmd, root, "nu", NULL, &nu_help);
+	RzCmdDesc *ge_cd = rz_cmd_desc_group_new(cmd, root, "ge",
+		p_handler_argv, &e_help, &e_group_help);
+	rz_cmd_desc_argv_new(cmd, ge_cd, "ge1", NULL, &fake_help);
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("m?");
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "m? help should not be null");
+	mu_assert_null(strstr(h, "Choices:"), "m? should not list choices");
+	mu_assert_notnull(strstr(h, "Examples:"), "m? should still include details");
+	mu_assert_notnull(strstr(h, "\nDetailed help for m <fmt> <longer> is provided by m??.\n"),
+		"m? advertises m?? for argument choices");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("m??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: m <fmt> <longer>   # m summary\n"
+		"\n"
+		"Choices:\n"
+		"| fmt    # hex, dec\n"
+		"| longer # fast, slow\n"
+		"\n"
+		"Examples:\n"
+		"| m # example\n",
+		"m?? aligns multiple choice args before details");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("u??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: u <kind>   # u summary\n"
+		"\n"
+		"Choices:\n"
+		"| kind # hex, dec\n"
+		"\n"
+		"| u 1 # first\n",
+		"u?? separates unnamed details section from Choices:");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("u2??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: u2 <kind>   # u2 summary\n"
+		"\n"
+		"Choices:\n"
+		"| kind # hex, dec\n"
+		"\n"
+		"| u 1 # first\n",
+		"u2?? separates non-empty unnamed section after empty unnamed section");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("u3??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: u3 <kind>   # u3 summary\n"
+		"\n"
+		"Choices:\n"
+		"| kind # hex, dec\n",
+		"u3?? omits blank separator when unnamed details have no entries");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("nu??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: nu <x>   # nu summary\n"
+		"| u 1 # first\n",
+		"nu?? keeps unnamed details contiguous without Choices:");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("ge?");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "ge? help should not be null");
+	mu_assert_null(strstr(h, "Detailed help for"),
+		"empty choices should not trigger detailed help hint");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("ge??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h, "Usage: ge <empty>   # e summary\n",
+		"empty choices should not print Choices:");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	rz_cmd_free(cmd);
+	mu_end;
+}
+
+bool test_cmd_arg_choices_cb_and_group_hint(void) {
+	RzCmdDescArg dyn_args[] = {
+		{ .name = "dyn",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices_cb = mock_choices_cb },
+		{ 0 },
+	};
+	RzCmdDescHelp dyn_help = {
+		.summary = "g exec",
+		.args = dyn_args,
+	};
+	RzCmdDescHelp g_group_help = {
+		.summary = "g group",
+	};
+	RzCmdDescArg empty_dyn_args[] = {
+		{ .name = "edyn",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices_cb = mock_empty_choices_cb },
+		{ 0 },
+	};
+	RzCmdDescHelp empty_dyn_help = {
+		.summary = "empty dyn",
+		.args = empty_dyn_args,
+	};
+
+	mock_choices_cb_calls = 0;
+	RzCmd *cmd_no_core = rz_cmd_new(NULL, false);
+	RzCmdDesc *root = rz_cmd_get_root(cmd_no_core);
+	RzCmdDesc *g_cd = rz_cmd_desc_group_new(cmd_no_core, root, "g",
+		p_handler_argv, &dyn_help, &g_group_help);
+	rz_cmd_desc_argv_new(cmd_no_core, g_cd, "g1", NULL, &fake_help);
+	RzCmdDesc *gdyn_exec = rz_cmd_desc_get_exec(g_cd);
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("g?");
+	char *h = rz_cmd_get_help(cmd_no_core, pa, false, 0);
+	mu_assert_notnull(h, "g? help should not be null");
+	mu_assert_null(strstr(h, "Detailed help for"),
+		"group? omits detailed help hint when choices_cb cannot run without core");
+	mu_assert_eq(mock_choices_cb_calls, 0,
+		"g? must not invoke choices_cb when core is NULL");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("g??");
+	h = rz_cmd_get_help(cmd_no_core, pa, false, 0);
+	mu_assert_streq(h, "Usage: g <dyn>   # g exec\n",
+		"g?? skips choices_cb safely when core is NULL");
+	mu_assert_eq(mock_choices_cb_calls, 0,
+		"choices_cb must not be called when core is NULL");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	PJ *pj = pj_new();
+	mu_assert("get_help_json succeeds with NULL core",
+		rz_cmd_get_help_json(cmd_no_core, gdyn_exec, pj));
+	mu_assert_notnull(strstr(pj_string(pj), "\"choices\":[]"),
+		"json choices empty when core is NULL");
+	mu_assert_eq(mock_choices_cb_calls, 0,
+		"json help must not invoke choices_cb when core is NULL");
+	pj_free(pj);
+	rz_cmd_free(cmd_no_core);
+
+	RzCore *dummy_core = RZ_NEW0(RzCore);
+	RzCmd *cmd_with_core = rz_cmd_new(dummy_core, false);
+	root = rz_cmd_get_root(cmd_with_core);
+	RzCmdDesc *d_cd = rz_cmd_desc_argv_new(cmd_with_core, root, "d", NULL, &dyn_help);
+	rz_cmd_desc_argv_new(cmd_with_core, root, "ed", NULL, &empty_dyn_help);
+	RzCmdDesc *gd_cd = rz_cmd_desc_group_new(cmd_with_core, root, "gd",
+		p_handler_argv, &dyn_help, &g_group_help);
+	rz_cmd_desc_argv_new(cmd_with_core, gd_cd, "gd1", NULL, &fake_help);
+	RzCmdDesc *edg_cd = rz_cmd_desc_group_new(cmd_with_core, root, "edg",
+		p_handler_argv, &empty_dyn_help, &g_group_help);
+	rz_cmd_desc_argv_new(cmd_with_core, edg_cd, "edg1", NULL, &fake_help);
+
+	mock_choices_cb_calls = 0;
+	pa = rz_cmd_parsed_args_newcmd("gd?");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_notnull(h, "gd? help should not be null");
+	mu_assert_notnull(strstr(h, "\nDetailed help for gd <dyn> is provided by gd??.\n"),
+		"gd? advertises gd?? when choices_cb returns non-empty choices");
+	mu_assert_eq(mock_choices_cb_calls, 1, "gd? checks choices_cb once");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("edg?");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_notnull(h, "edg? help should not be null");
+	mu_assert_null(strstr(h, "Detailed help for"),
+		"edg? omits detailed help hint when choices_cb returns empty choices");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	mock_choices_cb_calls = 0;
+	pa = rz_cmd_parsed_args_newcmd("d?");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_notnull(h, "d? help should not be null");
+	mu_assert_notnull(strstr(h, "\nDetailed help for d <dyn> is provided by d??.\n"),
+		"d? advertises d?? when choices_cb returns non-empty choices");
+	mu_assert_eq(mock_choices_cb_calls, 1, "d? checks choices_cb once");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("ed?");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_notnull(h, "ed? help should not be null");
+	mu_assert_null(strstr(h, "Detailed help for"),
+		"ed? omits detailed help hint when choices_cb returns empty choices");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	mock_choices_cb_calls = 0;
+	pa = rz_cmd_parsed_args_newcmd("d??");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: d <dyn>   # g exec\n"
+		"\n"
+		"Choices:\n"
+		"| dyn # opt1, opt2\n",
+		"d?? renders choices returned by choices_cb");
+	mu_assert_eq(mock_choices_cb_calls, 1, "choices_cb called once for d??");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pj = pj_new();
+	mu_assert("get_help_json succeeds with core",
+		rz_cmd_get_help_json(cmd_with_core, d_cd, pj));
+	mu_assert_notnull(strstr(pj_string(pj), "\"choices\":[\"opt1\",\"opt2\"]"),
+		"json includes choices from choices_cb");
+	pj_free(pj);
+
+	pa = rz_cmd_parsed_args_newcmd("ed??");
+	h = rz_cmd_get_help(cmd_with_core, pa, false, 0);
+	mu_assert_streq(h, "Usage: ed <edyn>   # empty dyn\n",
+		"empty choices_cb result omits Choices:");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	rz_cmd_free(cmd_with_core);
+	free(dummy_core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_cmd_status_tostring);
 	mu_run_test(test_parsed_args_noargs);
@@ -1560,6 +1925,8 @@ int all_tests() {
 	mu_run_test(test_call_macros);
 	mu_run_test(test_call_multiple_macros);
 	mu_run_test(test_cmd_descriptor_folder_arg);
+	mu_run_test(test_cmd_arg_choices_multiple_and_empty);
+	mu_run_test(test_cmd_arg_choices_cb_and_group_hint);
 	return tests_passed != tests_run;
 }
 
