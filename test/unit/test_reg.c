@@ -581,6 +581,40 @@ static bool test_rz_reg_profile_cleanup(void) {
 	mu_end;
 }
 
+static bool test_rz_reg_profile_gen(void) {
+	RzReg *reg1 = rz_reg_new();
+	RzReg *reg2 = rz_reg_new();
+	mu_assert_notnull(reg1, "reg1");
+	mu_assert_notnull(reg2, "reg2");
+	mu_assert_neq(reg1->profile_gen, 0, "reg1 profile_gen is non-zero");
+	mu_assert_neq(reg2->profile_gen, 0, "reg2 profile_gen is non-zero");
+	mu_assert_neq(reg1->profile_gen, reg2->profile_gen, "distinct RzReg instances get distinct profile_gen");
+
+	ut64 gen1 = reg1->profile_gen;
+	mu_assert_true(rz_reg_set_profile_string(reg1, "gpr r0 .32 0 0\n"), "load profile");
+	mu_assert_neq(reg1->profile_gen, gen1, "rz_reg_set_profile_string advances profile_gen");
+	ut64 gen_loaded = reg1->profile_gen;
+	rz_reg_free(reg1);
+
+	// Reallocating an RzReg (even if heap reuses the pointer) gets a fresh generation token.
+	RzReg *reg3 = rz_reg_new();
+	mu_assert_notnull(reg3, "reg3");
+	mu_assert_neq(reg3->profile_gen, 0, "reg3 profile_gen is non-zero");
+	mu_assert_neq(reg3->profile_gen, gen1, "reg3 does not reuse initial gen");
+	mu_assert_neq(reg3->profile_gen, gen_loaded, "reg3 does not reuse loaded gen");
+
+	// Direct rz_reg_set_reg_profile() without rz_reg_free_internal() also advances profile_gen.
+	reg3->reg_profile.alias = rz_list_new();
+	reg3->reg_profile.defs = rz_list_new();
+	ut64 gen3 = reg3->profile_gen;
+	mu_assert_true(rz_reg_set_reg_profile(reg3), "direct rz_reg_set_reg_profile");
+	mu_assert_neq(reg3->profile_gen, gen3, "rz_reg_set_reg_profile advances profile_gen");
+
+	rz_reg_free(reg2);
+	rz_reg_free(reg3);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_reg_set_profile_string);
 	mu_run_test(test_rz_reg_set_profile_string_fields);
@@ -594,6 +628,7 @@ int all_tests() {
 	mu_run_test(test_rz_reg_set_bv);
 	mu_run_test(test_rz_reg_profile_to_cc);
 	mu_run_test(test_rz_reg_profile_cleanup);
+	mu_run_test(test_rz_reg_profile_gen);
 	return tests_passed != tests_run;
 }
 

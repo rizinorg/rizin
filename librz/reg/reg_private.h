@@ -6,6 +6,7 @@
 
 #include <rz_reg.h>
 
+RZ_IPI ut64 rz_reg_next_profile_gen(void);
 RZ_IPI void rz_reg_free_internal(RZ_NULLABLE RzReg *reg, bool keep_arenas);
 
 #endif

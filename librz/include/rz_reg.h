@@ -155,6 +155,7 @@ typedef struct rz_reg_t {
 	int arch;
 	int bits;
 	int size;
+	ut64 profile_gen; ///< Monotonic generation token updated on creation, clearing, and profile load
 	bool is_thumb;
 	bool big_endian;
 } RzReg;

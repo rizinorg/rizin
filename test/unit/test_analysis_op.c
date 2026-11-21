@@ -641,6 +641,51 @@ static bool test_alpha_branch_values(void) {
 	mu_end;
 }
 
+static bool test_x86_zydis_reg_cache_and_lazy_fields(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	SWITCH_TO_ARCH_BITS("x86", 64);
+
+	// Without MASK_DISASM, mnemonic must stay NULL and unused src slots stay NULL
+	RzAnalysisOp op;
+	rz_analysis_op_init(&op);
+	int len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x48\x8b\x44\x0b\x04", 5, RZ_ANALYSIS_OP_MASK_VAL);
+	mu_assert_eq(len, 5, "x64 mov len");
+	mu_assert_null(op.mnemonic, "mnemonic skipped without MASK_DISASM");
+	mu_assert_notnull(op.dst, "dst populated");
+	mu_assert_notnull(op.src[0], "src[0] populated");
+	mu_assert_null(op.src[1], "unused src[1] stays NULL");
+	mu_assert_null(op.src[2], "unused src[2] stays NULL");
+	mu_assert_streq(op.dst->reg->name, "rax", "x64 dst reg");
+	rz_analysis_op_fini(&op);
+
+	// With MASK_DISASM, mnemonic is formatted
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x48\x89\xd8", 3, RZ_ANALYSIS_OP_MASK_DISASM);
+	mu_assert_eq(len, 3, "x64 mov reg len");
+	mu_assert_notnull(op.mnemonic, "mnemonic formatted with MASK_DISASM");
+	rz_analysis_op_fini(&op);
+
+	// Switching reg profile 64 -> 32 -> 64 must invalidate cached RzRegItem pointers
+	SWITCH_TO_ARCH_BITS("x86", 32);
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x8b\x44\x0b\x04", 4, RZ_ANALYSIS_OP_MASK_VAL);
+	mu_assert_eq(len, 4, "x86-32 mov len");
+	mu_assert_streq(op.dst->reg->name, "eax", "x86-32 dst reg after profile switch");
+	mu_assert_streq(op.src[0]->reg->name, "ebx", "x86-32 base reg after profile switch");
+	rz_analysis_op_fini(&op);
+
+	SWITCH_TO_ARCH_BITS("x86", 64);
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0, (const ut8 *)"\x48\x8b\x44\x0b\x04", 5, RZ_ANALYSIS_OP_MASK_VAL);
+	mu_assert_eq(len, 5, "x64 mov len after switch back");
+	mu_assert_streq(op.dst->reg->name, "rax", "x64 dst reg after switch back");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -655,6 +700,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_x86_zydis_reg_cache_and_lazy_fields);
 	return tests_passed != tests_run;
 }
 

@@ -7,6 +7,13 @@
 #include <rz_util.h>
 #include "reg_private.h"
 
+#if defined(__GCC_ATOMIC_LLONG_LOCK_FREE) && __GCC_ATOMIC_LLONG_LOCK_FREE == 2
+#elif defined(_MSC_VER) || (defined(__WINDOWS__) && __WINDOWS__)
+#include <windows.h>
+#elif HAVE_PTHREAD
+#include <pthread.h>
+#endif
+
 RZ_LIB_VERSION(rz_reg);
 
 static const char *types[RZ_REG_TYPE_LAST + 1] = {
@@ -196,6 +203,48 @@ RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
 }
 
 /**
+ * \brief Return the next non-zero monotonic generation token for RzReg profiles.
+ *
+ * Shared across all RzReg instances so freed-and-reallocated RzReg pointers
+ * cannot reuse a previously cached generation token.
+ *
+ * \return Next non-zero profile generation token.
+ */
+RZ_IPI ut64 rz_reg_next_profile_gen(void) {
+#if defined(__GCC_ATOMIC_LLONG_LOCK_FREE) && __GCC_ATOMIC_LLONG_LOCK_FREE == 2
+	static ut64 next_gen = 0;
+	ut64 gen = __atomic_add_fetch(&next_gen, 1, __ATOMIC_RELAXED);
+	if (!gen) {
+		gen = __atomic_add_fetch(&next_gen, 1, __ATOMIC_RELAXED);
+	}
+	return gen;
+#elif defined(_MSC_VER) || (defined(__WINDOWS__) && __WINDOWS__)
+	static volatile LONG64 next_gen = 0;
+	ut64 gen = (ut64)InterlockedIncrement64(&next_gen);
+	if (!gen) {
+		gen = (ut64)InterlockedIncrement64(&next_gen);
+	}
+	return gen;
+#elif HAVE_PTHREAD
+	static pthread_mutex_t next_gen_lock = PTHREAD_MUTEX_INITIALIZER;
+	static ut64 next_gen = 0;
+	pthread_mutex_lock(&next_gen_lock);
+	if (!++next_gen) {
+		next_gen = 1;
+	}
+	ut64 gen = next_gen;
+	pthread_mutex_unlock(&next_gen_lock);
+	return gen;
+#else
+	static ut64 next_gen = 0;
+	if (!++next_gen) {
+		next_gen = 1;
+	}
+	return next_gen;
+#endif
+}
+
+/**
  * \brief Clear register metadata, optionally preserving the arena pools.
  *
  * Free register lists even if a failed profile parse has removed their arena
@@ -209,6 +258,7 @@ RZ_IPI void rz_reg_free_internal(RZ_NULLABLE RzReg *reg, bool keep_arenas) {
 		return;
 	}
 
+	reg->profile_gen = rz_reg_next_profile_gen();
 	rz_list_free(reg->roregs);
 	reg->roregs = NULL;
 	RZ_FREE(reg->reg_profile_str);
@@ -298,6 +348,7 @@ RZ_API RzReg *rz_reg_new(void) {
 	if (!reg) {
 		return NULL;
 	}
+	reg->profile_gen = rz_reg_next_profile_gen();
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		arena = rz_reg_arena_new(0);
 		if (!arena) {
