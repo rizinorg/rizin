@@ -571,16 +571,19 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 		*usz = 0;
 	}
 	ut8 *ret;
-	long sz;
-	int c, bytes = 0;
+	long sz = -1;
+	unsigned int c;
+	size_t bytes = 0;
 	FILE *fd = rz_sys_fopen(str, "rb");
 	if (!fd) {
 		return NULL;
 	}
-	(void)fseek(fd, 0, SEEK_END);
-	sz = ftell(fd);
-	(void)fseek(fd, 0, SEEK_SET);
-	ret = (ut8 *)malloc((sz >> 1) + 1);
+	if (fseek(fd, 0, SEEK_END) == 0) {
+		sz = ftell(fd);
+		(void)fseek(fd, 0, SEEK_SET);
+	}
+	size_t cap = sz > 0 ? ((size_t)sz >> 1) + 2 : 16;
+	ret = (ut8 *)malloc(cap);
 	if (!ret) {
 		fclose(fd);
 		return NULL;
@@ -590,7 +593,23 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 			continue;
 		}
 		if (fscanf(fd, "%02x", &c) == 1) {
-			ret[bytes++] = c;
+			if (bytes + 1 >= cap) {
+				if (cap > SIZE_MAX / 2) {
+					free(ret);
+					fclose(fd);
+					return NULL;
+				}
+				size_t new_cap = cap * 2;
+				ut8 *tmp = realloc(ret, new_cap);
+				if (!tmp) {
+					free(ret);
+					fclose(fd);
+					return NULL;
+				}
+				ret = tmp;
+				cap = new_cap;
+			}
+			ret[bytes++] = (ut8)c;
 			continue;
 		}
 		if (feof(fd)) {
@@ -603,7 +622,7 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 	ret[bytes] = '\0';
 	fclose(fd);
 	if (usz) {
-		*usz = bytes;
+		*usz = (int)bytes;
 	}
 	return ret;
 }
@@ -740,21 +759,25 @@ RZ_API RZ_OWN char *rz_file_slurp_lines_from_bottom(const char *file, int line) 
 	char *ptr = NULL, *str = rz_file_slurp(file, &sz);
 	// TODO: Implement context
 	if (str) {
+		if (line <= 0) {
+			free(str);
+			return rz_str_dup("");
+		}
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
 				lines++;
 			}
 		}
-		if (line > lines) {
+		if (i == 0 || line > lines) {
 			return str; // number of lines requested in more than present, return all
 		}
 		i--;
-		for (; str[i] && line; i--) {
+		for (; i >= 0 && str[i] && line; i--) {
 			if (str[i] == '\n') {
 				line--;
 			}
 		}
-		ptr = str + i;
+		ptr = str + (i < 0 ? 0 : i);
 		ptr = rz_str_dup(ptr);
 		free(str);
 	}
@@ -942,8 +965,11 @@ static RzMmap *file_mmap(RzMmap *m) {
 	m->len = (DWORD)GetFileSize(fh, (LPDWORD)((char *)&m->len + sizeof(DWORD)));
 	if (m->len == INVALID_FILE_SIZE) {
 		rz_sys_perror("GetFileSize");
+		m->len = 0;
 		goto err;
 	}
+	m->buf = NULL;
+	m->fm = NULL;
 	if (m->len != 0) {
 		m->fm = CreateFileMappingW(fh,
 			NULL,
@@ -963,12 +989,24 @@ static RzMmap *file_mmap(RzMmap *m) {
 	}
 	return m;
 err:
-	rz_file_mmap_free(m);
+	if (m->fm) {
+		CloseHandle(m->fm);
+		m->fm = NULL;
+	}
+	m->buf = NULL;
+	m->len = 0;
 	return NULL;
 }
 #elif __UNIX__
 static RzMmap *file_mmap(RzMmap *m) {
-	m->len = lseek(m->fd, (off_t)0, SEEK_END);
+	off_t len = lseek(m->fd, (off_t)0, SEEK_END);
+	if (len < 0) {
+		m->len = 0;
+		m->buf = NULL;
+		return NULL;
+	}
+	m->len = (ut64)len;
+	m->buf = NULL;
 	if (m->len > 0) {
 		bool is_write = (m->perm & O_WRONLY) || (m->perm & O_RDWR);
 		m->buf = mmap((void *)(size_t)m->base,
@@ -977,7 +1015,8 @@ static RzMmap *file_mmap(RzMmap *m) {
 			MAP_SHARED, m->fd, 0);
 		if (m->buf == MAP_FAILED) {
 			rz_sys_perror("mmap");
-			rz_file_mmap_free(m);
+			m->buf = NULL;
+			m->len = 0;
 			return NULL;
 		}
 	}
@@ -985,14 +1024,23 @@ static RzMmap *file_mmap(RzMmap *m) {
 }
 #else
 static RzMmap *file_mmap(RzMmap *m) {
-	m->len = lseek(m->fd, (off_t)0, SEEK_END);
-	m->buf = malloc(m->len);
-	if (!m->buf) {
-		rz_file_mmap_free(m);
+	off_t len = lseek(m->fd, (off_t)0, SEEK_END);
+	if (len < 0) {
+		m->len = 0;
+		m->buf = NULL;
 		return NULL;
 	}
-	lseek(m->fd, (off_t)0, SEEK_SET);
-	rz_xread(m->fd, m->buf, m->len);
+	m->len = (ut64)len;
+	m->buf = NULL;
+	if (m->len > 0) {
+		m->buf = malloc(m->len);
+		if (!m->buf) {
+			m->len = 0;
+			return NULL;
+		}
+		lseek(m->fd, (off_t)0, SEEK_SET);
+		rz_xread(m->fd, m->buf, m->len);
+	}
 	return m;
 }
 #endif
@@ -1006,6 +1054,7 @@ RZ_API RzMmap *rz_file_mmap(const char *file, int perm, int mode, ut64 base) {
 	m->base = base;
 	m->perm = perm;
 	m->len = 0;
+	m->fd = -1;
 	m->filename = rz_str_dup(file);
 	m->mode = mode;
 	if (!m->filename) {
@@ -1017,7 +1066,11 @@ RZ_API RzMmap *rz_file_mmap(const char *file, int perm, int mode, ut64 base) {
 		rz_file_mmap_free(m);
 		return NULL;
 	}
-	return file_mmap(m);
+	if (!file_mmap(m)) {
+		rz_file_mmap_free(m);
+		return NULL;
+	}
+	return m;
 }
 
 RZ_API void rz_file_mmap_free(RzMmap *m) {
@@ -1035,7 +1088,14 @@ RZ_API void rz_file_mmap_free(RzMmap *m) {
 		_close(m->fd);
 	}
 #elif __UNIX__
-	munmap(m->buf, m->len);
+	if (m->buf && m->len != 0) {
+		munmap(m->buf, m->len);
+	}
+	if (m->fd != -1) {
+		close(m->fd);
+	}
+#else
+	free(m->buf);
 	if (m->fd != -1) {
 		close(m->fd);
 	}
@@ -1044,20 +1104,54 @@ RZ_API void rz_file_mmap_free(RzMmap *m) {
 	free(m);
 }
 
+/**
+ * \brief Resize the backing file of \p m to \p newsize bytes and remap it.
+ *
+ * \p m is not freed by this function, including on error; callers must still
+ * call rz_file_mmap_free(). Returns \c NULL both on error (with \c m->fd set
+ * to \c -1, or \c m->len non-zero if \c munmap() failed) and on a successful
+ * resize to \p newsize == 0 (with \c m->fd valid and \c m->len == 0).
+ *
+ * \param m The mmap handle to resize.
+ * \param newsize The new file size in bytes.
+ * \return Pointer to the remapped buffer, or \c NULL on error or when \p newsize is 0.
+ */
 RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
+	if (!m) {
+		return NULL;
+	}
 #if __WINDOWS__
 	if (m->buf) {
 		UnmapViewOfFile(m->buf);
+		m->buf = NULL;
 	}
 	if (m->fm) {
 		CloseHandle(m->fm);
+		m->fm = NULL;
 	}
 	if (m->fd != -1) {
 		_close(m->fd);
+		m->fd = -1;
 	}
+	m->len = 0;
 #elif __UNIX__
-	if (m->buf && m->len != 0 && munmap(m->buf, m->len) != 0) {
-		return NULL;
+	if (m->buf && m->len != 0) {
+		if (munmap(m->buf, m->len) != 0) {
+			return NULL;
+		}
+		m->buf = NULL;
+	}
+	m->len = 0;
+	if (m->fd != -1) {
+		close(m->fd);
+		m->fd = -1;
+	}
+#else
+	RZ_FREE(m->buf);
+	m->len = 0;
+	if (m->fd != -1) {
+		close(m->fd);
+		m->fd = -1;
 	}
 #endif
 	if (!rz_sys_truncate(m->filename, newsize)) {
@@ -1065,11 +1159,15 @@ RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize) {
 	}
 	m->fd = rz_sys_open(m->filename, m->perm, m->mode);
 	if (m->fd == -1) {
-		rz_file_mmap_free(m);
 		return NULL;
 	}
-	// In case of mmap failure it frees the RzMmap and return NULL
 	if (!file_mmap(m)) {
+#if __WINDOWS__
+		_close(m->fd);
+#else
+		close(m->fd);
+#endif
+		m->fd = -1;
 		return NULL;
 	}
 	return m->buf;
