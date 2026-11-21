@@ -61,32 +61,48 @@ static bool sdb_load_platform_profile(RZ_NONNULL RzPlatformTargetIndex *t, RZ_NO
 
 	void **iter;
 	RzPVector *items = sdb_get_items(sdb, false);
+	if (!items) {
+		return false;
+	}
 	rz_pvector_foreach (items, iter) {
 		SdbKv *kv = *iter;
 		if (!strcmp(sdbkv_value(kv), "name")) {
 			const char *name = sdbkv_key(kv);
 
 			RzPlatformItem *item = rz_platform_item_new(name);
+			if (!item) {
+				rz_pvector_free(items);
+				return false;
+			}
 
 			char *argument_key = rz_str_newf("%s.address", item->name);
 			if (!argument_key) {
 				rz_platform_item_free(item);
+				rz_pvector_free(items);
 				return false;
 			}
 			ut64 address = sdb_num_get(sdb, argument_key);
+			free(argument_key);
 			if (!address) {
 				rz_platform_item_free(item);
+				rz_pvector_free(items);
 				return false;
 			}
 
 			argument_key = rz_str_newf("%s.comment", item->name);
-			char *comment = sdb_get(sdb, argument_key);
-			if (comment) {
-				item->comment = comment;
+			if (argument_key) {
+				char *comment = sdb_get(sdb, argument_key);
+				free(argument_key);
+				if (comment) {
+					item->comment = comment;
+				}
 			}
-			ht_up_insert(t->platforms, address, item);
+			if (!ht_up_insert(t->platforms, address, item)) {
+				rz_platform_item_free(item);
+			}
 		}
 	}
+	rz_pvector_free(items);
 	return true;
 }
 

@@ -642,6 +642,30 @@ static bool test_x86_stack_var_recovery(void) {
 	mu_end;
 }
 
+static bool test_rz_analysis_function_get_arg_idx(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	RzAnalysis *analysis = core->analysis;
+	rz_config_set(core->config, "analysis.arch", "x86");
+	rz_analysis_set_bits(analysis, 64);
+	rz_core_analysis_cc_init_by_path(core, TEST_BUILD_TYPES_DIR, NULL);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+
+	RzAnalysisVarStorage stor = { 0 };
+	rz_analysis_var_storage_init_reg(&stor, "rdi");
+	RzAnalysisVar *arg0 = set_var_str(fcn, &stor, "int64_t", 8, "arg0");
+	mu_assert_notnull(arg0, "create arg0");
+
+	mu_assert_ptreq(rz_analysis_function_get_arg_idx(analysis, fcn, 0), arg0, "get valid arg index 0");
+	mu_assert_null(rz_analysis_function_get_arg_idx(analysis, fcn, 1), "out-of-bounds index equal to arg count returns NULL");
+	mu_assert_null(rz_analysis_function_get_arg_idx(analysis, fcn, 5), "out-of-bounds index greater than arg count returns NULL");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_extract_vars_stack_pointer);
 	mu_run_test(test_arm_frame_pointer_vars);
@@ -654,6 +678,7 @@ int all_tests() {
 	mu_run_test(test_stack_access_width_and_sp);
 	mu_run_test(test_stack_access_unknown_or_indexed);
 	mu_run_test(test_rz_analysis_var_is_arg);
+	mu_run_test(test_rz_analysis_function_get_arg_idx);
 	return tests_passed != tests_run;
 }
 

@@ -346,6 +346,7 @@ RZ_API void rz_asm_free(RzAsm *a) {
 	}
 	rz_syscall_free(a->syscall);
 	free(a->cpu);
+	free(a->platforms);
 	free(a->features);
 	sdb_free(a->pair);
 	ht_ss_free(a->flags);
@@ -506,7 +507,7 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 	if (!name) {
 		return false;
 	}
-	if (a->cur && !strcmp(a->cur->arch, name)) {
+	if (a->cur && !strcmp(a->cur->name, name)) {
 		return true;
 	}
 	RzIterator iter = { 0 };
@@ -517,10 +518,11 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 	rz_iterator_foreach(&iter, val) {
 		RzAsmPlugin *h = *val;
 		if (h->arch && h->name && !strcmp(h->name, name)) {
-			if (!a->cur || (a->cur && strcmp(a->cur->arch, h->arch))) {
-				plugin_fini(a);
+			plugin_fini(a);
+			if (!a->cur || strcmp(a->cur->arch, h->arch)) {
 				char *opcodes_dir = rz_path_system(a->sdb_opcodes_path, RZ_SDB_OPCODES);
 				if (!opcodes_dir) {
+					a->cur = NULL;
 					rz_iterator_fini(&iter);
 					return false;
 				}
@@ -537,6 +539,7 @@ RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name) {
 			rz_asm_set_cpu(a, NULL);
 			if (h->init && !h->init(&a->plugin_data)) {
 				RZ_LOG_ERROR("asm plugin '%s' failed to initialize.\n", h->name);
+				a->cur = NULL;
 				rz_iterator_fini(&iter);
 				return false;
 			}
