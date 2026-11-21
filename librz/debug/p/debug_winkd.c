@@ -191,18 +191,22 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	if (!mod->name) {
 		mod->name = rz_str_dup("\\ntoskrnl.exe");
 	}
-	char *exepath, *pdbpath;
+	char *exepath = NULL, *pdbpath = NULL;
 	if (!winkd_download_module_and_pdb(mod,
 		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.server"),
 		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.symstore"),
 		    &exepath, &pdbpath)) {
 		RZ_LOG_ERROR("Failed to download module and pdb\n");
+		free(exepath);
+		free(pdbpath);
 		rz_list_free(modules);
 		return false;
 	}
 	dbg->corebind.cfgSetI(dbg->corebind.core, "bin.baddr", mod->addr);
 	// TODO: Convert to API call
 	dbg->corebind.cmdf(dbg->corebind.core, "idp \"%s\"", pdbpath);
+	free(exepath);
+	free(pdbpath);
 	rz_list_free(modules);
 
 	if (!kdctx->windctx.profile) {
