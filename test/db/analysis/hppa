@@ -170,3 +170,22 @@ fmpyadd,sgl fr20R, fr21L, fr22L, fr23L, fr24L
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=HPPA floating-point word loads and stores select the right register half
+FILE=malloc://8
+ARGS=-a hppa -b 32 -E big
+CMDS=<<EOF
+wx 2441005627c11256
+e asm.cpu=hppa1.1
+pi 2
+e asm.cpu=hppa2.0
+pi 2
+EOF
+EXPECT=<<EOF
+fldwx r1(rp), fr22R
+fstws fr22R, -0x10(sp)
+fldw r1(rp), fr22R
+fstw fr22R, -0x10(sp)
+EOF
+EXPECT_ERR=
+RUN

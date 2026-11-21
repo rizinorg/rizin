@@ -1,5 +1,6 @@
 if get_option('enable_tests')
   test_conf_data = configuration_data()
+  test_conf_data.set10('TEST_HAVE_RISCV_CS', 'riscv_cs' in arch_plugins.get('list'))
   test_conf_data.set_quoted('TEST_BUILD_TYPES_DIR', fs.as_posix(types_build_dir))
   test_config_h = configure_file(
     input: 'test_config.h.in',

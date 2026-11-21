@@ -4,10 +4,13 @@
 #include <rz_analysis.h>
 #include <rz_core.h>
 #include "minunit.h"
+#include "test_config.h"
 
 #define SWITCH_TO_ARCH_BITS(arch, bits) \
-	rz_analysis_use(analysis, arch); \
-	rz_analysis_set_bits(analysis, bits);
+	do { \
+		mu_assert_true(rz_analysis_use(analysis, arch), "select " arch); \
+		mu_assert_true(rz_analysis_set_bits(analysis, bits), "set " arch " bits"); \
+	} while (0)
 
 bool test_rz_analysis_op_val() {
 	RzAnalysis *analysis = rz_analysis_new(NULL);
@@ -78,6 +81,7 @@ bool test_rz_analysis_op_val() {
 	mu_assert_streq(op.src[0]->regdelta->name, "r3", "Source reg base should be r3");
 	rz_analysis_op_fini(&op);
 
+#if TEST_HAVE_RISCV_CS
 	SWITCH_TO_ARCH_BITS("riscv", 32);
 	rz_analysis_set_cpu(analysis, "rv32i2p0_c2p0");
 	// lw s10, 64(sp)
@@ -100,6 +104,7 @@ bool test_rz_analysis_op_val() {
 	mu_assert_eq(op.src[0]->type, RZ_ANALYSIS_VAL_REG, "Source should be reg");
 	mu_assert_streq(op.src[0]->reg->name, "s0", "Source reg base should be s0");
 	rz_analysis_op_fini(&op);
+#endif
 
 	rz_analysis_free(analysis);
 	mu_end;
