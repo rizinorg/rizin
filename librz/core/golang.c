@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include "core_private.h"
 
 #define GO_MAX_STRING_SIZE 0x4000
 #define GO_MAX_TABLE_SIZE  0x10000
@@ -163,6 +164,45 @@ static bool is_pclntab_valid(GoPcLnTab *pclntab) {
 }
 #undef is_addr_outside
 
+/**
+ * \brief Checks whether a Go runtime or stdlib symbol is known to never return.
+ *
+ * \param name Unfiltered Go symbol name from pclntab
+ * \return true if the symbol terminates execution without returning to its caller
+ */
+static bool rz_golang_is_noreturn_symbol(const char *name) {
+	if (name[0] != 'r' && name[0] != 'o' && name[0] != 's') {
+		return false;
+	}
+	if (strstr(name, ".func") || strstr(name, ".deferwrap")) {
+		return false;
+	}
+	if (!strncmp(name, "runtime.panic", 13)) {
+		return strncmp(name + 13, "Check", 5) != 0;
+	}
+	if (!strncmp(name, "runtime.goPanic", 15)) {
+		return true;
+	}
+	const char *noreturn_syms[] = {
+		"runtime.gopanic",
+		"runtime.throw",
+		"runtime.fatalthrow",
+		"runtime.fatal",
+		"runtime.fatalpanic",
+		"runtime.exit",
+		"os.Exit",
+		"syscall.Exit",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(noreturn_syms); i++) {
+		size_t len = strlen(noreturn_syms[i]);
+		if (!strncmp(name, noreturn_syms[i], len) &&
+			(name[len] == '\0' || !strcmp(name + len, ".abi0") || !strcmp(name + len, ".abiinternal"))) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (!bf || !bf->o || !bf->o->symbols) {
@@ -184,6 +224,9 @@ static void add_new_func_symbol(RzCore *core, const char *name, ut64 vaddr) {
 
 	if (!strcmp(name, "main.main")) {
 		rz_flag_set(core->flags, "main", vaddr, 1);
+	}
+	if (rz_golang_is_noreturn_symbol(name)) {
+		rz_analysis_noreturn_add(core->analysis, NULL, vaddr);
 	}
 }
 
@@ -656,13 +699,24 @@ static void analyse_golang_symbols(RzCore *core) {
 	if (detected_cc && !rz_analysis_cc_exist(core->analysis, detected_cc)) {
 		detected_cc = NULL;
 	}
+	if (detected_cc) {
+		rz_config_set(core->config, "analysis.cc", detected_cc);
+	}
+	if (!rz_config_get_b(core->config, "analysis.golang.fcns")) {
+		return;
+	}
+	rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 	RzStrConstPool *cpool = rz_analysis_get_const_pool(core->analysis);
 	GolangAnalyseCtx actx = {
 		.core = core,
 		.cc = (detected_cc && cpool) ? rz_str_constpool_get(cpool, detected_cc) : NULL
 	};
 
+	bool prev_hasnext = rz_config_get_b(core->config, "analysis.hasnext");
+	rz_config_set_b(core->config, "analysis.hasnext", false);
 	rz_flag_foreach_space_glob(core->flags, "sym.go.*", symbols, analyse_golang_symgo_function, &actx);
+	rz_config_set_b(core->config, "analysis.hasnext", prev_hasnext);
+	rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 }
 
 /**
@@ -791,9 +845,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		ut32 num_libs = sort_recovered_library(core);
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
-		rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		analyse_golang_symbols(core);
-		rz_core_notify_done(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 		rz_golang_load_types(core);
 		return true;
 	}
@@ -1988,24 +2040,78 @@ end:
 }
 
 /**
- * \brief      Attempts to recover all golang string
+ * \brief Scans basic blocks of a single function to recover Golang string references.
  *
- * \param      core  The RzCore struct to use
+ * \param ctx         String recovery context
+ * \param func        Function to scan
+ * \param recover_cb  Architecture-specific instruction matcher callback
+ * \param min_op_size Minimum instruction size fallback
+ * \param bb_buf      Reusable basic block byte buffer
+ * \param bb_buf_cap  Capacity of \p bb_buf
+ * \return false on allocation failure, true otherwise
  */
-RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
-	rz_return_if_fail(core && core->analysis && core->io);
+static bool resolve_golang_strings_in_fcn(GoStrRecover *ctx, RzAnalysisFunction *func, GoStrRecoverCb recover_cb,
+	ut32 min_op_size, ut8 **bb_buf, ut32 *bb_buf_cap) {
+	RzCore *core = ctx->core;
+	void **vit;
+	rz_pvector_foreach (func->bbs, vit) {
+		RzAnalysisBlock *block = (RzAnalysisBlock *)*vit;
+		if (block->size == 0) {
+			continue;
+		}
+		if (block->size > *bb_buf_cap) {
+			ut8 *new_buf = realloc(*bb_buf, block->size);
+			if (!new_buf) {
+				RZ_LOG_ERROR("Failed to allocate basic block bytes buffer\n");
+				return false;
+			}
+			*bb_buf = new_buf;
+			*bb_buf_cap = block->size;
+		}
+		int nread = rz_io_nread_at(core->io, block->addr, *bb_buf, block->size);
+		if (nread < 0) {
+			RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
+			continue;
+		}
+		if (!core->io->ff && (ut64)nread != block->size) {
+			continue;
+		}
 
-	RzList *fcns = rz_analysis_function_list(core->analysis);
-	if (!fcns) {
+		if (block->ninstr > 0) {
+			ctx->op_size = 1;
+			for (int idx = 0; idx < block->ninstr; idx++) {
+				ut16 i = rz_analysis_block_get_op_offset(block, idx);
+				if (i >= block->size) {
+					break;
+				}
+				ctx->pc = block->addr + i;
+				ctx->bytes = *bb_buf + i;
+				ctx->size = block->size - i;
+				recover_cb(ctx);
+			}
+		} else {
+			ctx->op_size = 0;
+			for (ut32 i = 0; i < block->size;) {
+				ctx->pc = block->addr + i;
+				ctx->bytes = *bb_buf + i;
+				ctx->size = block->size - i;
+
+				ut32 nlen = recover_cb(ctx);
+				i += RZ_MAX(nlen, min_op_size);
+			}
+		}
+	}
+	return true;
+}
+
+static void resolve_golang_strings(RzCore *core, RzAnalysisFunction *single_fcn) {
+	RzList /*<RzAnalysisFunction *>*/ *fcns = single_fcn ? NULL : rz_analysis_function_list(core->analysis);
+	if (!single_fcn && !fcns) {
 		return;
 	}
 
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
-	RzListIter *lit;
-	void **vit;
-	RzAnalysisFunction *func;
-	RzAnalysisBlock *block;
 	GoStrRecoverCb recover_cb = NULL;
 	ut8 *bb_buf = NULL;
 	ut32 bb_buf_cap = 0;
@@ -2013,134 +2119,163 @@ RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
 	GoStrRecover ctx = { 0 };
 	ctx.core = core;
 
-	core_recover_golang_strings_from_data_pointers(core, &ctx);
-
-	rz_core_notify_begin(core, "Analyze all instructions to recover all strings used in sym.go.*");
-	if (!strcmp(asm_arch, "x86")) {
-		switch (asm_bits) {
-		case 32:
-			recover_cb = &golang_recover_string_x86;
-			break;
-		case 64:
-			recover_cb = &golang_recover_string_x64;
-			break;
-		default:
-			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
-			break;
+	if (!single_fcn) {
+		core_recover_golang_strings_from_data_pointers(core, &ctx);
+		rz_core_notify_begin(core, "Analyze all instructions to recover all strings used in sym.go.*");
+	}
+	if (RZ_STR_ISNOTEMPTY(asm_arch)) {
+		if (!strcmp(asm_arch, "x86")) {
+			switch (asm_bits) {
+			case 32:
+				recover_cb = &golang_recover_string_x86;
+				break;
+			case 64:
+				recover_cb = &golang_recover_string_x64;
+				break;
+			default:
+				if (!single_fcn) {
+					RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
+				}
+				break;
+			}
+		} else if (!strcmp(asm_arch, "arm")) {
+			switch (asm_bits) {
+			case 32:
+				recover_cb = &golang_recover_string_arm32;
+				break;
+			case 64:
+				recover_cb = &golang_recover_string_arm64;
+				break;
+			default:
+				if (!single_fcn) {
+					RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
+				}
+				break;
+			}
+		} else if (!strcmp(asm_arch, "mips")) {
+			switch (asm_bits) {
+			case 32:
+				recover_cb = &golang_recover_string_mips32;
+				break;
+			case 64:
+				recover_cb = &golang_recover_string_mips64;
+				break;
+			default:
+				if (!single_fcn) {
+					RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
+				}
+				break;
+			}
+		} else if (!strcmp(asm_arch, "riscv")) {
+			switch (asm_bits) {
+			case 64:
+				recover_cb = &golang_recover_string_riscv64;
+				break;
+			default:
+				if (!single_fcn) {
+					RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
+				}
+				break;
+			}
+		} else if (!strcmp(asm_arch, "ppc")) {
+			switch (asm_bits) {
+			case 64:
+				recover_cb = &golang_recover_string_ppc64;
+				break;
+			default:
+				if (!single_fcn) {
+					RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
+				}
+				break;
+			}
+		} else if (!strcmp(asm_arch, "sysz")) {
+			// sysz uses strings that are all null terminated
+			// also they are already handled by rizin.
+			// example: 'larl  %r0, str.XXXX' with the correct length.
+			if (!single_fcn) {
+				rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
+			}
+			goto end;
 		}
-	} else if (!strcmp(asm_arch, "arm")) {
-		switch (asm_bits) {
-		case 32:
-			recover_cb = &golang_recover_string_arm32;
-			break;
-		case 64:
-			recover_cb = &golang_recover_string_arm64;
-			break;
-		default:
-			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
-			break;
-		}
-	} else if (!strcmp(asm_arch, "mips")) {
-		switch (asm_bits) {
-		case 32:
-			recover_cb = &golang_recover_string_mips32;
-			break;
-		case 64:
-			recover_cb = &golang_recover_string_mips64;
-			break;
-		default:
-			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
-			break;
-		}
-	} else if (!strcmp(asm_arch, "riscv")) {
-		switch (asm_bits) {
-		case 64:
-			recover_cb = &golang_recover_string_riscv64;
-			break;
-		default:
-			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
-			break;
-		}
-	} else if (!strcmp(asm_arch, "ppc")) {
-		switch (asm_bits) {
-		case 64:
-			recover_cb = &golang_recover_string_ppc64;
-			break;
-		default:
-			RZ_LOG_WARN("golang: string recovery for %s bits %d is not implemented.\n", asm_arch, asm_bits);
-			break;
-		}
-	} else if (!strcmp(asm_arch, "sysz")) {
-		// sysz uses strings that are all null terminated
-		// also they are already handled by rizin.
-		// example: 'larl  %r0, str.XXXX' with the correct length.
-		rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
-		goto end;
 	}
 
 	if (!recover_cb) {
-		rz_core_notify_error(core, "Cannot resolve go strings because arch '%s:%u' is not supported.", asm_arch, asm_bits);
+		if (!single_fcn) {
+			rz_core_notify_error(core, "Cannot resolve go strings because arch '%s:%u' is not supported.",
+				asm_arch ? asm_arch : "", asm_bits);
+		}
 		goto end;
 	}
 
-	rz_list_foreach (fcns, lit, func) {
-		if (rz_interrupt_is_breaked(core->intr)) {
-			break;
-		}
-		rz_pvector_foreach (func->bbs, vit) {
-			block = (RzAnalysisBlock *)*vit;
-			if (block->size == 0) {
-				continue;
+	if (single_fcn) {
+		resolve_golang_strings_in_fcn(&ctx, single_fcn, recover_cb, min_op_size, &bb_buf, &bb_buf_cap);
+	} else {
+		RzListIter *lit;
+		RzAnalysisFunction *func;
+		rz_list_foreach (fcns, lit, func) {
+			if (rz_interrupt_is_breaked(core->intr)) {
+				break;
 			}
-			if (block->size > bb_buf_cap) {
-				ut8 *new_buf = realloc(bb_buf, block->size);
-				if (!new_buf) {
-					RZ_LOG_ERROR("Failed to allocate basic block bytes buffer\n");
-					goto end;
-				}
-				bb_buf = new_buf;
-				bb_buf_cap = block->size;
-			}
-			int nread = rz_io_nread_at(core->io, block->addr, bb_buf, block->size);
-			if (nread < 0) {
-				RZ_LOG_ERROR("Failed to read function basic block at address %" PFMT64x "\n", block->addr);
-				continue;
-			}
-			if (!core->io->ff && (ut64)nread != block->size) {
-				continue;
-			}
-
-			if (block->ninstr > 0) {
-				ctx.op_size = 1;
-				for (int idx = 0; idx < block->ninstr; idx++) {
-					ut16 i = rz_analysis_block_get_op_offset(block, idx);
-					if (i >= block->size) {
-						break;
-					}
-					ctx.pc = block->addr + i;
-					ctx.bytes = bb_buf + i;
-					ctx.size = block->size - i;
-					recover_cb(&ctx);
-				}
-			} else {
-				ctx.op_size = 0;
-				for (ut32 i = 0; i < block->size;) {
-					ctx.pc = block->addr + i;
-					ctx.bytes = bb_buf + i;
-					ctx.size = block->size - i;
-
-					ut32 nlen = recover_cb(&ctx);
-					i += RZ_MAX(nlen, min_op_size);
-				}
+			if (!resolve_golang_strings_in_fcn(&ctx, func, recover_cb, min_op_size, &bb_buf, &bb_buf_cap)) {
+				goto end;
 			}
 		}
+		rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
+		rz_core_notify_done(core, "Recovered %d strings from the sym.go.* functions.", ctx.n_recovered);
 	}
-
-	rz_core_notify_done(core, "Analyze all instructions to recover all strings used in sym.go.*");
-	rz_core_notify_done(core, "Recovered %d strings from the sym.go.* functions.", ctx.n_recovered);
 
 end:
 	free(bb_buf);
 	free(ctx.raw_buf);
 	free(ctx.flag_buf);
+}
+
+/**
+ * \brief Checks whether a function corresponds to a recovered Golang function.
+ *
+ * \param core RzCore pointer
+ * \param fcn  Function to inspect
+ * \return true if \p fcn has a `sym.go.*` name, a `golang*` calling convention,
+ *         or a `sym.go.*` flag at its entry address
+ */
+RZ_IPI bool rz_core_analysis_is_golang_fcn(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn) {
+	rz_return_val_if_fail(core && fcn, false);
+	if (fcn->name && !strncmp(fcn->name, "sym.go.", 7)) {
+		return true;
+	}
+	if (fcn->cc && !strncmp(fcn->cc, "golang", 6)) {
+		return true;
+	}
+	if (core->flags) {
+		const RzList /*<RzFlagItem *>*/ *flags = rz_flag_get_list(core->flags, fcn->addr);
+		RzListIter *it;
+		RzFlagItem *item;
+		rz_list_foreach (flags, it, item) {
+			if (item->name && !strncmp(item->name, "sym.go.", 7)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief      Attempts to recover golang strings referenced in a single function
+ *
+ * \param      core  The RzCore struct to use
+ * \param      fcn   The function to scan for golang string references
+ */
+RZ_API void rz_core_analysis_resolve_golang_fcn_strings(RzCore *core, RzAnalysisFunction *fcn) {
+	rz_return_if_fail(core && core->analysis && core->io && fcn);
+	resolve_golang_strings(core, fcn);
+}
+
+/**
+ * \brief      Attempts to recover all golang string
+ *
+ * \param      core  The RzCore struct to use
+ */
+RZ_API void rz_core_analysis_resolve_golang_strings(RzCore *core) {
+	rz_return_if_fail(core && core->analysis && core->io);
+	resolve_golang_strings(core, NULL);
 }
