@@ -7,6 +7,7 @@
 #undef PE_Word
 #undef PE_DWord
 #undef PE_VWord
+#undef RZ_BUF_READ_PE_DWORD
 #undef RZ_BUF_READ_PE_DWORD_AT
 #undef PE_DWORD_MAX
 
@@ -17,6 +18,7 @@
 #define PE_Word                 ut16
 #define PE_DWord                ut64
 #define PE_VWord                ut32
+#define RZ_BUF_READ_PE_DWORD    rz_buf_read_le64
 #define RZ_BUF_READ_PE_DWORD_AT rz_buf_read_le64_at
 #define PE_DWORD_MAX            UT64_MAX
 #else
@@ -26,6 +28,7 @@
 #define PE_Word                 ut16
 #define PE_DWord                ut32
 #define PE_VWord                ut32
+#define RZ_BUF_READ_PE_DWORD    rz_buf_read_le32
 #define RZ_BUF_READ_PE_DWORD_AT rz_buf_read_le32_at
 #define PE_DWORD_MAX            UT32_MAX
 #endif
@@ -415,7 +418,16 @@ typedef struct {
 	ut32 AddressOfCallBacks;
 	ut32 SizeOfZeroFill;
 	ut32 Characteristics;
-} Pe32_image_tls_directory, Pe64_image_tls_directory;
+} Pe32_image_tls_directory;
+
+typedef struct {
+	ut64 StartAddressOfRawData;
+	ut64 EndAddressOfRawData;
+	ut64 AddressOfIndex;
+	ut64 AddressOfCallBacks;
+	ut32 SizeOfZeroFill;
+	ut32 Characteristics;
+} Pe64_image_tls_directory;
 
 typedef struct {
 	ut16 Flags;

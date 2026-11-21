@@ -58,3 +58,37 @@ EXPECT=<<EOF
 0x00401011 0x00000211 ---------- 0x00000340 tls
 EOF
 RUN
+
+NAME=PE: tls64
+FILE=bins/pe/tls64.exe
+ARGS=-A
+CMDS=ie;iee
+EXPECT=<<EOF
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00401015 0x00000215 ---------- 0x00000068 program
+0x00401000 0x00000200 ---------- 0x00000378 tls
+     vaddr      paddr     hvaddr      haddr type 
+-------------------------------------------------
+0x00401000 0x00000200 ---------- 0x00000378 tls
+EOF
+RUN
+
+NAME=PE: tls64 high imagebase
+FILE=bins/pe/rust_any.exe
+ARGS=-e bin.dbginfo=false
+CMDS=ie;iee
+EXPECT=<<EOF
+      vaddr      paddr     hvaddr      haddr type    
+-----------------------------------------------------
+0x140001400 0x00000a00 ---------- 0x000000a8 program
+0x140043de0 0x000433e0 ---------- 0x000baa28 tls
+0x140099ef0 0x000994f0 ---------- 0x000baa30 tls
+0x140099ed0 0x000994d0 ---------- 0x000baa38 tls
+      vaddr      paddr     hvaddr      haddr type 
+--------------------------------------------------
+0x140043de0 0x000433e0 ---------- 0x000baa28 tls
+0x140099ef0 0x000994f0 ---------- 0x000baa30 tls
+0x140099ed0 0x000994d0 ---------- 0x000baa38 tls
+EOF
+RUN
