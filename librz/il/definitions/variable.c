@@ -68,9 +68,26 @@ RZ_API void rz_il_var_set_fini(RzILVarSet *vs) {
 	ht_sp_free(vs->contents);
 }
 
+#define RZ_IL_VAR_SET_RESET_SHRINK_CAP 64
+
 RZ_API void rz_il_var_set_reset(RzILVarSet *vs) {
-	rz_il_var_set_fini(vs);
-	rz_il_var_set_init(vs);
+	rz_return_if_fail(vs);
+	if (vs->vars && vs->vars->capacity <= RZ_IL_VAR_SET_RESET_SHRINK_CAP) {
+		if (ht_sp_size(vs->vars) > 0) {
+			ht_sp_clear(vs->vars);
+		}
+	} else {
+		ht_sp_free(vs->vars);
+		vs->vars = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_il_variable_free);
+	}
+	if (vs->contents && vs->contents->capacity <= RZ_IL_VAR_SET_RESET_SHRINK_CAP) {
+		if (ht_sp_size(vs->contents) > 0) {
+			ht_sp_clear(vs->contents);
+		}
+	} else {
+		ht_sp_free(vs->contents);
+		vs->contents = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_il_value_free);
+	}
 }
 
 /**
