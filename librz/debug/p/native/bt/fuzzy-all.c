@@ -73,14 +73,16 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 	ut64 sp;
 	RzIOBind *bio = &dbg->iob;
 	int i, stacksize;
-	ut64 *p64, addr = 0LL;
-	ut32 *p32;
-	ut16 *p16;
+	ut64 addr = 0LL;
 	ut64 cursp, oldsp;
 	RzList *list;
+	bool big_endian = dbg->analysis && rz_analysis_is_big_endian_set(dbg->analysis);
 
 	stacksize = 1024 * 512; // 512KB .. should get the size from the regions if possible
 	stack = malloc(stacksize);
+	if (!stack) {
+		return NULL;
+	}
 	if (at == UT64_MAX) {
 		RzRegItem *ri;
 		RzReg *reg = dbg->reg;
@@ -96,25 +98,31 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 	}
 
 	list = rz_list_new();
+	if (!list) {
+		free(stack);
+		return NULL;
+	}
 	list->free = free;
+	if (wordsize != 8 && wordsize != 4 && wordsize != 2) {
+		eprintf("Invalid word size with asm.bits\n");
+		rz_list_free(list);
+		free(stack);
+		return NULL;
+	}
 	cursp = oldsp = sp;
 	(void)bio->read_at(bio->io, sp, stack, stacksize);
 	ptr = stack;
-	for (i = 0; i < dbg->btdepth; i++) {
-		p64 = (ut64 *)ptr;
-		p32 = (ut32 *)ptr;
-		p16 = (ut16 *)ptr;
+	for (i = 0; i < dbg->btdepth && (size_t)(ptr - stack) + (size_t)wordsize <= (size_t)stacksize; i++) {
 		switch (wordsize) {
-		case 8: addr = *p64; break;
-		case 4: addr = *p32; break;
-		case 2: addr = *p16; break;
-		default:
-			eprintf("Invalid word size with asm.bits\n");
-			rz_list_free(list);
-			return NULL;
+		case 8: addr = rz_read_ble64(ptr, big_endian); break;
+		case 4: addr = rz_read_ble32(ptr, big_endian); break;
+		case 2: addr = rz_read_ble16(ptr, big_endian); break;
 		}
 		if (iscallret(dbg, addr)) {
 			RzDebugFrame *frame = RZ_NEW0(RzDebugFrame);
+			if (!frame) {
+				break;
+			}
 			frame->addr = addr;
 			frame->size = cursp - oldsp;
 			frame->sp = cursp;
@@ -126,5 +134,6 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 		ptr += wordsize;
 		cursp += wordsize;
 	}
+	free(stack);
 	return list;
 }
