@@ -595,6 +595,59 @@ static bool test_type_and_signature_cmd_status(void) {
 	mu_end;
 }
 
+static bool test_headless_hud_and_il_status(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core,
+			     "e scr.interactive=false; e asm.arch=x86; e asm.bits=64; o malloc://64"),
+		RZ_CMD_STATUS_OK, "setup");
+
+	// Non-interactive HUD guard
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "?**"), RZ_CMD_STATUS_ERROR, "?** fails when non-interactive");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "?**e"), RZ_CMD_STATUS_ERROR, "?**e fails when non-interactive");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "?***"), RZ_CMD_STATUS_ERROR, "?*** fails when non-interactive");
+	RzList *hud_items = rz_list_newf(free);
+	rz_list_append(hud_items, rz_str_dup("item1"));
+	mu_assert_null(rz_cons_hud(core->cons, hud_items, NULL), "rz_cons_hud returns NULL when non-interactive");
+	rz_list_free(hud_items);
+
+	// Failure status propagation for Ps
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "Ps /nonexistent_rz_dir_xyz/bad/project.rzdb"),
+		RZ_CMD_STATUS_ERROR, "Ps returns ERROR on failed save");
+
+	// RzIL error status before VM init
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezs"), RZ_CMD_STATUS_ERROR, "aezs fails without VM");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezse"), RZ_CMD_STATUS_ERROR, "aezse fails without VM");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezsu 0x10"), RZ_CMD_STATUS_ERROR, "aezsu fails without VM");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezsue 0x10"), RZ_CMD_STATUS_ERROR, "aezsue fails without VM");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezv rax 1"), RZ_CMD_STATUS_ERROR, "aezv set fails without VM");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezv"), RZ_CMD_STATUS_ERROR, "aezv status fails without VM");
+
+	// RzIL invalid reg and bounded loop via rzil.step.max
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e io.cache=true; wx ebfe @ 0x10; s 0x10; aezi"),
+		RZ_CMD_STATUS_OK, "aezi init on eb fe loop");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezv no_such_register 0x42"),
+		RZ_CMD_STATUS_ERROR, "aezv fails on unknown register");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezv rax 0x42"),
+		RZ_CMD_STATUS_OK, "aezv succeeds on rax");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezs 0"),
+		RZ_CMD_STATUS_OK, "aezs 0 is a no-op");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e rzil.step.max=3; aezsu 0x100"),
+		RZ_CMD_STATUS_ERROR, "aezsu stops and fails when exceeding rzil.step.max");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e rzil.step.max=2; aezsue 0x100"),
+		RZ_CMD_STATUS_ERROR, "aezsue stops and fails when exceeding rzil.step.max");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "wx 909090 @ 0x20; s 0x20; aezi; e rzil.step.max=5"),
+		RZ_CMD_STATUS_OK, "aezi init on nops");
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "aezsue 0x22"),
+		RZ_CMD_STATUS_OK, "aezsue succeeds when reaching target PC within rzil.step.max");
+	mu_assert_eq(rz_reg_getv(rz_analysis_get_reg(core->analysis), "rip"), 0x22,
+		"aezsue stops at target PC");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_visual_function_preview);
 	mu_run_test(test_visual_preview_cache);
@@ -611,6 +664,7 @@ int all_tests() {
 	mu_run_test(test_hist_push_seq);
 	mu_run_test(test_hist_push_load);
 	mu_run_test(test_type_and_signature_cmd_status);
+	mu_run_test(test_headless_hud_and_il_status);
 	return tests_passed != tests_run;
 }
 

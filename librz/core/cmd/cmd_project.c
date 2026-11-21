@@ -19,6 +19,7 @@ RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **
 	RzProjectErr err = rz_project_save_file(core, file, compress);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		RZ_LOG_ERROR("core: Failed to save project to file %s: %s\n", file, rz_project_err_message(err));
+		return RZ_CMD_STATUS_ERROR;
 	}
 	return RZ_CMD_STATUS_OK;
 }

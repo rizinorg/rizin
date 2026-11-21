@@ -4495,12 +4495,15 @@ RZ_IPI RzCmdStatus rz_il_vm_initialize_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_il_vm_step_handler(RzCore *core, int argc, const char **argv) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
-	rz_core_il_step(core, repeat_times);
-	return RZ_CMD_STATUS_OK;
+	if (!repeat_times) {
+		return RZ_CMD_STATUS_OK;
+	}
+	return bool2status(rz_core_il_step(core, repeat_times));
 }
 
 RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	ut64 repeat_times = argc == 1 ? 1 : rz_num_math(NULL, argv[1]);
+	bool ok = true;
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
@@ -4512,6 +4515,7 @@ RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, con
 	}
 	for (ut64 i = 0; i < repeat_times; ++i) {
 		if (!rz_core_analysis_il_step_with_events(core, pj)) {
+			ok = false;
 			break;
 		}
 	}
@@ -4520,32 +4524,35 @@ RZ_IPI RzCmdStatus rz_il_vm_step_with_events_handler(RzCore *core, int argc, con
 		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
-	return RZ_CMD_STATUS_OK;
+	return bool2status(ok);
 }
 
 RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_handler(RzCore *core, int argc, const char **argv) {
 	ut64 address = rz_num_math(core->num, argv[1]);
-	rz_core_il_step_until(core, address);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_il_step_until(core, address));
 }
 
 RZ_IPI RzCmdStatus rz_il_vm_step_until_addr_with_events_handler(RzCore *core, int argc, const char **argv) {
 	ut64 address = rz_num_math(core->num, argv[1]);
-	rz_core_il_step_until_with_events(core, address);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_core_il_step_until_with_events(core, address));
 }
 
 RZ_IPI RzCmdStatus rz_il_vm_status_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 3) {
 		ut64 value = rz_num_math(core->num, argv[2]);
-		if (rz_analysis_il_vm_set_unsigned(core->analysis, argv[1], value)) {
-			rz_cons_printf(core->cons, "%s = 0x%" PFMT64x "\n", argv[1], value);
+		if (!rz_analysis_il_vm_set_unsigned(core->analysis, argv[1], value)) {
+			if (!rz_analysis_get_il_vm(core->analysis)) {
+				RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
+			} else {
+				RZ_LOG_ERROR("RzIL: failed to set variable '%s'\n", argv[1]);
+			}
+			return RZ_CMD_STATUS_ERROR;
 		}
-	} else {
-		// print variable or all variables
-		rz_core_analysis_il_vm_status(core, argc == 2 ? argv[1] : NULL, mode);
+		rz_cons_printf(core->cons, "%s = 0x%" PFMT64x "\n", argv[1], value);
+		return RZ_CMD_STATUS_OK;
 	}
-	return RZ_CMD_STATUS_OK;
+	// print variable or all variables
+	return bool2status(rz_core_analysis_il_vm_status(core, argc == 2 ? argv[1] : NULL, mode));
 }
 
 RZ_IPI char **rz_analysis_graph_format_choices(RzCore *core) {

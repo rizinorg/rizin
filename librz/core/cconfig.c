@@ -3738,6 +3738,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB("rzil.step.events.halt_on_exc", "div0,fp_invalid_op", &rzil_halt_on_exec);
 	SETDESC(n, "Enables/disable exceptions the VM should halt if reached.");
 	SETOPTIONS(n, "div0", "fp_div0", "fp_inexact", "fp_underflow", "fp_overflow", "fp_invalid_op", "none", "all", NULL);
+	SETI("rzil.step.max", 0, "Maximum number of steps for aezsu/aezsue (0 = unlimited)");
 
 	/* FLIRT config */
 	SETBPREF("flirt.sig.library", RZ_FLIRT_LIBRARY_NAME_DFL, "FLIRT library name for sig format");
