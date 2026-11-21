@@ -88,6 +88,9 @@ static st64 buf_bytes_read(RZ_BORROW RzBuffer *b, RZ_OUT ut8 *buf, ut64 len) {
 
 static st64 buf_bytes_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_bytes_priv *priv = get_priv_bytes(b);
+	if (!len) {
+		return 0;
+	}
 	if (priv->offset > priv->length || priv->offset + len >= priv->length) {
 		bool r = rz_buf_resize(b, priv->offset + len);
 		if (!r) {
