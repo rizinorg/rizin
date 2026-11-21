@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_endian.h>
 #include "minunit.h"
 
 // --------------------------
@@ -740,6 +741,360 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static void build_synthetic_pe64_headers(ut8 *buf, size_t size,
+	const char *sec1_name, ut32 sec1_size) {
+	memset(buf, 0, size);
+	const ut64 image_base = 0x140000000ULL;
+	ut32 sec1_vsize = RZ_ROUND(sec1_size, 0x1000);
+
+	// DOS header: "MZ" + e_lfanew = 0x40
+	rz_write_at_le16(buf, 0x5a4d, 0x00);
+	rz_write_at_le32(buf, 0x40, 0x3c);
+
+	// NT header + COFF header (AMD64, 2 sections, PE32+ optional header 0xf0)
+	rz_write_at_le32(buf, 0x00004550, 0x40);
+	rz_write_at_le16(buf, 0x8664, 0x44);
+	rz_write_at_le16(buf, 2, 0x46);
+	rz_write_at_le16(buf, 0x00f0, 0x54);
+	rz_write_at_le16(buf, 0x0022, 0x56);
+
+	// Optional header (PE32+)
+	rz_write_at_le16(buf, 0x020b, 0x58);
+	rz_write_at_le32(buf, 0x200, 0x5c);
+	rz_write_at_le32(buf, sec1_size, 0x60);
+	rz_write_at_le32(buf, 0x1000, 0x68);
+	rz_write_at_le32(buf, 0x1000, 0x6c);
+	rz_write_at_le64(buf, image_base, 0x70);
+	rz_write_at_le32(buf, 0x1000, 0x78);
+	rz_write_at_le32(buf, 0x200, 0x7c);
+	rz_write_at_le16(buf, 6, 0x88);
+	rz_write_at_le32(buf, 0x2000 + sec1_vsize, 0x90);
+	rz_write_at_le32(buf, 0x200, 0x94);
+	rz_write_at_le16(buf, 3, 0x9c);
+	rz_write_at_le32(buf, 16, 0xc4);
+
+	// Section 0: .text (RVA 0x1000, raw 0x200, RX)
+	memcpy(buf + 0x148, ".text", 5);
+	rz_write_at_le32(buf, 0x100, 0x150);
+	rz_write_at_le32(buf, 0x1000, 0x154);
+	rz_write_at_le32(buf, 0x200, 0x158);
+	rz_write_at_le32(buf, 0x200, 0x15c);
+	rz_write_at_le32(buf, 0x60000020, 0x16c);
+
+	// Section 1: sec1_name (RVA 0x2000, raw 0x400, R)
+	size_t nlen = RZ_MIN(strlen(sec1_name), (size_t)8);
+	memcpy(buf + 0x170, sec1_name, nlen);
+	rz_write_at_le32(buf, sec1_size, 0x178);
+	rz_write_at_le32(buf, 0x2000, 0x17c);
+	rz_write_at_le32(buf, sec1_size, 0x180);
+	rz_write_at_le32(buf, 0x400, 0x184);
+	rz_write_at_le32(buf, 0x40000040, 0x194);
+
+	// .text stubs at RVA 0x1000..0x1060
+	for (size_t off = 0; off <= 0x60; off += 0x10) {
+		buf[0x200 + off] = 0xc3;
+	}
+}
+
+static RzCore *open_synthetic_pe64(const ut8 *buf, size_t size, ut64 image_base) {
+	RzCore *core = rz_core_new();
+	if (!core) {
+		return NULL;
+	}
+	char *uri = rz_str_newf("malloc://0x%" PFMT64x, (ut64)size);
+	RzCoreFile *f = uri ? rz_core_file_open(core, uri, RZ_PERM_RW, 0) : NULL;
+	free(uri);
+	if (!f || rz_io_fd_write_at(core->io, f->fd, 0, buf, size) != (int)size ||
+		!rz_core_bin_load(core, NULL, image_base)) {
+		rz_core_free(core);
+		return NULL;
+	}
+	return core;
+}
+
+bool test_stripped_rust_detection_and_vtables(void) {
+	const ut64 image_base = 0x140000000ULL;
+	ut8 image[0x600];
+
+	// Case 1: stripped PE64 with Rust panic marker and adjacent anonymous vtables
+	build_synthetic_pe64_headers(image, sizeof(image), ".rdata", 0x200);
+	// VTable A at RVA 0x2000: drop, size=0x10, align=8, method0, supertrait->B, method1
+	rz_write_at_le64(image, image_base + 0x1000, 0x400);
+	rz_write_at_le64(image, 0x10, 0x408);
+	rz_write_at_le64(image, 8, 0x410);
+	rz_write_at_le64(image, image_base + 0x1010, 0x418);
+	rz_write_at_le64(image, image_base + 0x2030, 0x420);
+	rz_write_at_le64(image, image_base + 0x1020, 0x428);
+	// VTable B at RVA 0x2030: drop=0, size=0x10, align=8, method0, method1
+	rz_write_at_le64(image, 0, 0x430);
+	rz_write_at_le64(image, 0x10, 0x438);
+	rz_write_at_le64(image, 8, 0x440);
+	rz_write_at_le64(image, image_base + 0x1030, 0x448);
+	rz_write_at_le64(image, image_base + 0x1040, 0x450);
+	// VTable C at RVA 0x2058: drop, size=0x10, align=8, method0, then 3 NULLs + ptr
+	rz_write_at_le64(image, image_base + 0x1000, 0x458);
+	rz_write_at_le64(image, 0x10, 0x460);
+	rz_write_at_le64(image, 8, 0x468);
+	rz_write_at_le64(image, image_base + 0x1050, 0x470);
+	rz_write_at_le64(image, image_base + 0x1060, 0x490);
+	// Invalid size (12 % 8 != 0) at RVA 0x20a0: must be rejected
+	rz_write_at_le64(image, 0, 0x4a0);
+	rz_write_at_le64(image, 12, 0x4a8);
+	rz_write_at_le64(image, 8, 0x4b0);
+	rz_write_at_le64(image, image_base + 0x1010, 0x4b8);
+	// ZST 1-method header (drop=0, size=0, align=1) at RVA 0x20c0: requires >= 2 methods
+	rz_write_at_le64(image, 0, 0x4c0);
+	rz_write_at_le64(image, 0, 0x4c8);
+	rz_write_at_le64(image, 1, 0x4d0);
+	rz_write_at_le64(image, image_base + 0x1010, 0x4d8);
+	// Non-ZST 1-method header (drop=0, size=8, align=8) at RVA 0x20e0: requires >= 2 methods
+	rz_write_at_le64(image, 0, 0x4e0);
+	rz_write_at_le64(image, 8, 0x4e8);
+	rz_write_at_le64(image, 8, 0x4f0);
+	rz_write_at_le64(image, image_base + 0x1010, 0x4f8);
+	const char *marker = "called `foo` then called `Option::unwrap()` on a `None` value";
+	memcpy(image + 0x500, marker, strlen(marker) + 1);
+	// Invalid anonymous headers to exercise boundary rejections:
+	// bad drop pointer (outside .text), non-power-of-two align, oversized size
+	rz_write_at_le64(image, image_base + 0x2000, 0x560);
+	rz_write_at_le64(image, 8, 0x568);
+	rz_write_at_le64(image, 8, 0x570);
+	rz_write_at_le64(image, image_base + 0x1010, 0x578);
+	rz_write_at_le64(image, image_base + 0x1000, 0x580);
+	rz_write_at_le64(image, 0x200000, 0x588);
+	rz_write_at_le64(image, 8, 0x590);
+	rz_write_at_le64(image, image_base + 0x1010, 0x598);
+	rz_write_at_le64(image, image_base + 0x1000, 0x5a0);
+	rz_write_at_le64(image, 0x10, 0x5a8);
+	rz_write_at_le64(image, 3, 0x5b0);
+	rz_write_at_le64(image, image_base + 0x1010, 0x5b8);
+
+	RzCore *core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open stripped Rust PE64");
+	RzBinObject *obj = rz_bin_cur_object(core->bin);
+	mu_assert_notnull(obj, "bin object");
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_RUST,
+		"stripped Rust binary detected via .rdata marker");
+	mu_assert_streq(obj->info->lang, "rust", "info->lang is rust");
+
+	rz_analysis_rtti_rust(core->analysis);
+	const char *cls_a = "impl anon_0x140002000 as trait_0x140002000";
+	const char *cls_b = "impl anon_0x140002030 as trait_0x140002030";
+	const char *cls_c = "impl anon_0x140002058 as trait_0x140002058";
+	mu_assert_true(rz_analysis_class_exists(core->analysis, cls_a), "vtable A recovered");
+	mu_assert_true(rz_analysis_class_exists(core->analysis, cls_b), "vtable B recovered");
+	mu_assert_true(rz_analysis_class_exists(core->analysis, cls_c), "vtable C recovered");
+	mu_assert_false(
+		rz_analysis_class_exists(core->analysis,
+			"impl anon_0x1400020a0 as trait_0x1400020a0"),
+		"invalid size vtable rejected");
+	mu_assert_false(
+		rz_analysis_class_exists(core->analysis,
+			"impl anon_0x1400020c0 as trait_0x1400020c0"),
+		"1-method ZST vtable rejected");
+	mu_assert_false(
+		rz_analysis_class_exists(core->analysis,
+			"impl anon_0x1400020e0 as trait_0x1400020e0"),
+		"1-method drop==0 vtable rejected");
+
+	RzAnalysisMethod meth = { 0 };
+	mu_assert_eq(rz_analysis_class_method_get(core->analysis, cls_a, "method_0x28", &meth),
+		RZ_ANALYSIS_CLASS_ERR_SUCCESS, "vtable A final method not truncated");
+	mu_assert_eq(meth.addr, image_base + 0x1020, "vtable A method_0x28 addr");
+	rz_analysis_class_method_fini(&meth);
+
+	mu_assert_eq(rz_analysis_class_method_get(core->analysis, cls_b, "method_0x20", &meth),
+		RZ_ANALYSIS_CLASS_ERR_SUCCESS, "vtable B final method not truncated");
+	mu_assert_eq(meth.addr, image_base + 0x1040, "vtable B method_0x20 addr");
+	rz_analysis_class_method_fini(&meth);
+
+	mu_assert_eq(rz_analysis_class_method_get(core->analysis, cls_c, "method_0x18", &meth),
+		RZ_ANALYSIS_CLASS_ERR_SUCCESS, "vtable C method_0x18 recovered");
+	mu_assert_eq(meth.addr, image_base + 0x1050, "vtable C method_0x18 addr");
+	rz_analysis_class_method_fini(&meth);
+	mu_assert_neq(rz_analysis_class_method_get(core->analysis, cls_c, "method_0x38", &meth),
+		RZ_ANALYSIS_CLASS_ERR_SUCCESS, "vacant-slot cap stops vtable C");
+	rz_core_free(core);
+
+	// Case 2: .rustc section fast path without .rdata marker
+	build_synthetic_pe64_headers(image, sizeof(image), ".rustc", 0x200);
+	core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open .rustc PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_RUST,
+		".rustc section detects Rust");
+	rz_core_free(core);
+
+	// Case 3: marker straddling 64 KiB read chunk boundary in .rdata
+	const size_t large_sz = 0x10800;
+	ut8 *large = calloc(1, large_sz);
+	mu_assert_notnull(large, "alloc large PE64");
+	if (!large) {
+		return false;
+	}
+	build_synthetic_pe64_headers(large, large_sz, ".rdata", 0x10400);
+	const char *chunk_marker = "/library/core/src/";
+	memcpy(large + 0x400 + 65536 - 8, chunk_marker, strlen(chunk_marker));
+	core = open_synthetic_pe64(large, large_sz, image_base);
+	free(large);
+	mu_assert_notnull(core, "open chunk-boundary PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_RUST,
+		"marker straddling 64 KiB chunk detected");
+	rz_core_free(core);
+
+	// Case 4: stripped non-Rust PE64 (including ambiguous "/rustc/" string) remains C
+	build_synthetic_pe64_headers(image, sizeof(image), ".rdata", 0x200);
+	memcpy(image + 0x480, "plain c binary /rustc/ path", 28);
+	core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open non-rust PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_C,
+		"non-Rust binary remains C");
+	rz_core_free(core);
+
+	// Case 5: rebased/PIE Rust PE64 (baddr_shift != 0) recovers vtables & supertrait refs
+	const ut64 rebased_base = 0x180000000ULL;
+	build_synthetic_pe64_headers(image, sizeof(image), ".rdata", 0x200);
+	rz_write_at_le64(image, rebased_base + 0x1000, 0x400);
+	rz_write_at_le64(image, 0x10, 0x408);
+	rz_write_at_le64(image, 8, 0x410);
+	rz_write_at_le64(image, rebased_base + 0x1010, 0x418);
+	rz_write_at_le64(image, rebased_base + 0x2030, 0x420);
+	rz_write_at_le64(image, rebased_base + 0x1020, 0x428);
+	rz_write_at_le64(image, 0, 0x430);
+	rz_write_at_le64(image, 0x10, 0x438);
+	rz_write_at_le64(image, 8, 0x440);
+	rz_write_at_le64(image, rebased_base + 0x1030, 0x448);
+	rz_write_at_le64(image, rebased_base + 0x1040, 0x450);
+	memcpy(image + 0x500, marker, strlen(marker) + 1);
+	core = open_synthetic_pe64(image, sizeof(image), rebased_base);
+	mu_assert_notnull(core, "open rebased Rust PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_notnull(obj, "rebased bin object");
+	mu_assert_eq(obj->baddr_shift, rebased_base - image_base, "baddr_shift is non-zero");
+	rz_analysis_rtti_rust(core->analysis);
+	const char *rcls_a = "impl anon_0x180002000 as trait_0x180002000";
+	const char *rcls_b = "impl anon_0x180002030 as trait_0x180002030";
+	mu_assert_true(rz_analysis_class_exists(core->analysis, rcls_a),
+		"rebased vtable A recovered");
+	mu_assert_true(rz_analysis_class_exists(core->analysis, rcls_b),
+		"rebased vtable B recovered");
+	mu_assert_eq(rz_analysis_class_method_get(core->analysis, rcls_a, "method_0x28", &meth),
+		RZ_ANALYSIS_CLASS_ERR_SUCCESS, "rebased vtable A method after supertrait recovered");
+	mu_assert_eq(meth.addr, rebased_base + 0x1020, "rebased vtable A method_0x28 addr");
+	rz_analysis_class_method_fini(&meth);
+	rz_core_free(core);
+
+	// Case 6: C++ binary linking libstdc++ with Rust-like string in .rdata stays CXX
+	build_synthetic_pe64_headers(image, sizeof(image), ".rdata", 0x200);
+	// DataDirectory[1] (IMPORT): RVA 0x2100 (raw 0x500), size 40
+	rz_write_at_le32(image, 0x2100, 0xd0);
+	rz_write_at_le32(image, 40, 0xd4);
+	// IMAGE_IMPORT_DESCRIPTOR[0].Name = RVA 0x2130 (raw 0x530)
+	rz_write_at_le32(image, 0x2130, 0x50c);
+	memcpy(image + 0x530, "libstdc++-6.dll", 16);
+	memcpy(image + 0x480, marker, strlen(marker) + 1);
+	core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open C++ PE64 linking libstdc++");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_notnull(obj, "C++ bin object");
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_CXX,
+		"C++ binary linking libstdc++ stays CXX despite Rust marker string");
+	mu_assert_streq(obj->info->lang, "c++", "info->lang is c++");
+	rz_core_free(core);
+
+	// Case 7: section-renamed Rust PE64 (.57743) with remapped-path marker & vtables
+	build_synthetic_pe64_headers(image, sizeof(image), ".57743", 0x200);
+	rz_write_at_le64(image, image_base + 0x1000, 0x400);
+	rz_write_at_le64(image, 0x10, 0x408);
+	rz_write_at_le64(image, 8, 0x410);
+	rz_write_at_le64(image, image_base + 0x1010, 0x418);
+	// Trailing non-vtable data pointer exercises supertrait rejection in fallback section
+	rz_write_at_le64(image, image_base + 0x2080, 0x420);
+	const char *remap_marker = "core\\src\\panicking.rs";
+	memcpy(image + 0x480, remap_marker, strlen(remap_marker) + 1);
+	core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open section-renamed Rust PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_notnull(obj, "renamed bin object");
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_RUST,
+		"section-renamed Rust PE64 detected via fallback scan");
+	rz_analysis_rtti_rust(core->analysis);
+	mu_assert_true(rz_analysis_class_exists(core->analysis, cls_a),
+		"vtable recovered from renamed data section");
+	rz_core_free(core);
+
+	// Case 8: PE64 with .reloc recovers relocated 1-method drop==0 vtable and rejects unrelocated
+	build_synthetic_pe64_headers(image, sizeof(image), ".rdata", 0x200);
+	// VTable at RVA 0x2000: drop=0, size=8, align=8, method0 (relocated) -> RECOVERED
+	rz_write_at_le64(image, 0, 0x400);
+	rz_write_at_le64(image, 8, 0x408);
+	rz_write_at_le64(image, 8, 0x410);
+	rz_write_at_le64(image, image_base + 0x1010, 0x418);
+	// VTable at RVA 0x2020: drop=0, size=8, align=8, method0 (NO reloc) -> REJECTED
+	rz_write_at_le64(image, 0, 0x420);
+	rz_write_at_le64(image, 8, 0x428);
+	rz_write_at_le64(image, 8, 0x430);
+	rz_write_at_le64(image, image_base + 0x1020, 0x438);
+	// VTable at RVA 0x2040: drop=0, size=8 (bogus reloc), align=8, method0 (reloc) -> REJECTED
+	rz_write_at_le64(image, 0, 0x440);
+	rz_write_at_le64(image, 8, 0x448);
+	rz_write_at_le64(image, 8, 0x450);
+	rz_write_at_le64(image, image_base + 0x1030, 0x458);
+	// VTable at RVA 0x2060: drop=0, size=0, align=1 (ZST), method0 (reloc) -> REJECTED
+	rz_write_at_le64(image, 0, 0x460);
+	rz_write_at_le64(image, 0, 0x468);
+	rz_write_at_le64(image, 1, 0x470);
+	rz_write_at_le64(image, image_base + 0x1040, 0x478);
+	// VTable at RVA 0x2080: drop=0, size=8, align=8, vacant NULL slot, method0 (reloc at +0x20) -> RECOVERED
+	rz_write_at_le64(image, 0, 0x480);
+	rz_write_at_le64(image, 8, 0x488);
+	rz_write_at_le64(image, 8, 0x490);
+	rz_write_at_le64(image, 0, 0x498);
+	rz_write_at_le64(image, image_base + 0x1050, 0x4a0);
+	const char *cargo_marker = ".cargo\\registry\\src\\";
+	memcpy(image + 0x4c0, cargo_marker, strlen(cargo_marker) + 1);
+	// DataDirectory[5] (BASERELOC) at 0xf0: RVA 0x2100 (raw 0x500), size 24
+	rz_write_at_le32(image, 0x2100, 0xf0);
+	rz_write_at_le32(image, 24, 0xf4);
+	// Base relocation block for page RVA 0x2000 (8-byte header + 8 x 2-byte entries = 24)
+	rz_write_at_le32(image, 0x2000, 0x500);
+	rz_write_at_le32(image, 24, 0x504);
+	rz_write_at_le16(image, (0 << 12) | 0x018, 0x508);
+	rz_write_at_le16(image, (10 << 12) | 0x018, 0x50a);
+	rz_write_at_le16(image, (10 << 12) | 0x048, 0x50c);
+	rz_write_at_le16(image, (10 << 12) | 0x058, 0x50e);
+	rz_write_at_le16(image, (10 << 12) | 0x078, 0x510);
+	rz_write_at_le16(image, (10 << 12) | 0x0a0, 0x512);
+	rz_write_at_le16(image, 0, 0x514);
+	rz_write_at_le16(image, 0, 0x516);
+	core = open_synthetic_pe64(image, sizeof(image), image_base);
+	mu_assert_notnull(core, "open relocated Rust PE64");
+	obj = rz_bin_cur_object(core->bin);
+	mu_assert_notnull(obj, "relocated bin object");
+	mu_assert_eq(RZ_BIN_LANGUAGE_MASK(obj->lang), RZ_BIN_LANGUAGE_RUST,
+		"relocated PE64 detected via .cargo registry marker");
+	rz_analysis_rtti_rust(core->analysis);
+	mu_assert_true(rz_analysis_class_exists(core->analysis,
+			       "impl anon_0x140002000 as trait_0x140002000"),
+		"relocated 1-method drop==0 non-ZST vtable recovered");
+	mu_assert_true(rz_analysis_class_exists(core->analysis,
+			       "impl anon_0x140002080 as trait_0x140002080"),
+		"relocated 1-method drop==0 vtable after vacant slot recovered");
+	mu_assert_false(rz_analysis_class_exists(core->analysis,
+				"impl anon_0x140002020 as trait_0x140002020"),
+		"unrelocated 1-method drop==0 vtable rejected");
+	mu_assert_false(rz_analysis_class_exists(core->analysis,
+				"impl anon_0x140002040 as trait_0x140002040"),
+		"1-method drop==0 vtable with relocated size rejected");
+	mu_assert_false(rz_analysis_class_exists(core->analysis,
+				"impl anon_0x140002060 as trait_0x140002060"),
+		"relocated 1-method ZST vtable rejected");
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +1106,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_stripped_rust_detection_and_vtables);
 	return tests_passed != tests_run;
 }
 
