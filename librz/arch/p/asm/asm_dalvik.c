@@ -277,6 +277,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 					rz_strf(str, " v%i, class+%i", vA, vB);
 				} else {
 					rz_strf(str, " v%i, %s", vA, flag_str);
+					free(flag_str);
 				}
 			} else {
 				flag_str = RZ_ASM_GET_NAME(a, 'f', vB);
@@ -284,6 +285,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 					rz_strf(str, " v%i, field+%i", vA, vB);
 				} else {
 					rz_strf(str, " v%i, %s", vA, flag_str);
+					free(flag_str);
 				}
 			}
 			strasm = rz_str_append(strasm, str);
@@ -330,6 +332,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 					rz_strf(str, " v%i, v%i, field+%i", vA, vB, vC);
 				}
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvAAtBBBBBBBB: {
@@ -370,6 +373,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 					rz_strf(str, " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 				}
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtopvXtBBBB:
@@ -461,6 +465,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			} else {
 				strasm = rz_str_appendf(strasm, ", method+%i", vB);
 			}
+			free(flag_str);
 
 			flag_str = RZ_ASM_GET_NAME(a, 'p', vH);
 			if (RZ_STR_ISNOTEMPTY(flag_str)) {
@@ -468,6 +473,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			} else {
 				strasm = rz_str_appendf(strasm, ", proto+%i", vH);
 			}
+			free(flag_str);
 			break;
 		case fmtop4RCC:
 			vA = (int)buf[1];
@@ -480,6 +486,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			} else {
 				rz_strf(str, " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 
 			flag_str = RZ_ASM_GET_NAME(a, 'p', vH);
@@ -488,6 +495,7 @@ static int dalvik_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int l
 			} else {
 				rz_strf(str, ", proto+%i", vH);
 			}
+			free(flag_str);
 			strasm = rz_str_append(strasm, str);
 			break;
 		case fmtoptinvokeI: // Any opcode has this formats

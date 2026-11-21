@@ -45,7 +45,7 @@ static bool shared_context_init(SharedContext *context, RzAnalysis *analysis_a, 
 	RzThreadLock *lock_a = rz_th_lock_new(true);
 	RzThreadLock *lock_b = analysis_a == analysis_b ? lock_a : rz_th_lock_new(true);
 	RzThreadQueue *queue = rz_th_queue_from_list(list_a, NULL);
-	RzThreadQueue *matches = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
+	RzThreadQueue *matches = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, free);
 	RzThreadQueue *unmatch = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
 	RzAtomicBool *loop = rz_atomic_bool_new(true);
 	if (!lock_a || !lock_b || !queue || !matches || !unmatch || !loop) {
@@ -79,6 +79,7 @@ static void shared_context_fini(SharedContext *context) {
 	if (context->lock_a != context->lock_b) {
 		rz_th_lock_free(context->lock_b);
 	}
+	rz_atomic_bool_free(context->loop);
 }
 
 static bool shared_context_alloc_a(SharedContext *context, void *ptr, ut8 **buffer, ut32 *buf_sz) {
@@ -273,14 +274,13 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 	RzListIter *iter;
 	RzAnalysisMatchPair *pair = NULL;
 	RzAnalysisMatchResult *result = NULL;
-	RzList *unmatch_a = rz_list_newf((RzListFree)free);
 	RzList *unmatch_b = rz_list_clone(list_b);
 	RzThreadPool *pool = rz_th_pool_new(RZ_THREAD_N_CORES_ALL_AVAILABLE);
 	RzThread *user_thread = NULL;
 	SharedContext shared = { 0 };
 	MatchUIInfo ui_info = { 0 };
 
-	if (!unmatch_a || !unmatch_b || !pool || !shared_context_init(&shared, opt->analysis_a, opt->analysis_b, list_a, list_b, alloc_cb)) {
+	if (!unmatch_b || !pool || !shared_context_init(&shared, opt->analysis_a, opt->analysis_b, list_a, list_b, alloc_cb)) {
 		RZ_LOG_ERROR("analysis_match: cannot initialize search context\n");
 		goto fail;
 	}
@@ -341,7 +341,6 @@ static RZ_OWN RzAnalysisMatchResult *analysis_match_result_new(RZ_NONNULL RzAnal
 fail:
 	rz_th_pool_free(pool);
 	shared_context_fini(&shared);
-	rz_list_free(unmatch_a);
 	rz_list_free(unmatch_b);
 	rz_th_free(user_thread);
 	return NULL;

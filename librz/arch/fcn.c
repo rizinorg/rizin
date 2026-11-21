@@ -3052,12 +3052,15 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_get_arg_idx(RZ_NONNULL RzAn
 		RZ_LOG_VERBOSE("Function %s has no arguments\n", f->name);
 		return NULL;
 	}
-	if (rz_pvector_len(args) < index) {
+	if (rz_pvector_len(args) <= index) {
 		RZ_LOG_VERBOSE("Function %s has less arguments (%zu) than requested (%zu)\n",
 			f->name, rz_pvector_len(args), index);
+		rz_pvector_free(args);
 		return NULL;
 	}
-	return rz_pvector_at(args, index);
+	RzAnalysisVar *arg = rz_pvector_at(args, index);
+	rz_pvector_free(args);
+	return arg;
 }
 
 static int typecmp(const void *a, const void *b, void *user) {
@@ -3169,10 +3172,18 @@ RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFun
 			// TODO: maybe create a stub void arg here?
 			continue;
 		}
+		if (!analysis->typedb || !var->name) {
+			rz_pvector_free(args);
+			rz_type_callable_free(*callable);
+			*callable = NULL;
+			RZ_LOG_ERROR("Cannot create callable argument\n");
+			return false;
+		}
 		RzType *cloned_type = rz_type_clone(var->type);
 		if (!cloned_type) {
 			rz_pvector_free(args);
 			rz_type_callable_free(*callable);
+			*callable = NULL;
 			RZ_LOG_ERROR("Cannot parse function's argument type\n");
 			return false;
 		}
@@ -3180,6 +3191,7 @@ RZ_API bool rz_analysis_function_derive_args(RzAnalysis *analysis, RzAnalysisFun
 		if (!arg) {
 			rz_pvector_free(args);
 			rz_type_callable_free(*callable);
+			*callable = NULL;
 			RZ_LOG_ERROR("Cannot create callable argument\n");
 			return false;
 		}
