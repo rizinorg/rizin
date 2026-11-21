@@ -387,3 +387,116 @@ RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg) {
 	}
 	rz_iterator_fini(cfg->cfg_nodes);
 }
+
+static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
+	if (abb->jump == UT64_MAX && abb->fail != target) {
+		abb->jump = target;
+	} else if (abb->fail == UT64_MAX && abb->jump != target) {
+		abb->fail = target;
+	} else if (abb->fail != target && abb->jump != target) {
+		RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
+			    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x "\n",
+			abb->addr, abb->jump, abb->fail,
+			target);
+	}
+}
+
+typedef struct {
+	size_t n_errors;
+	RzAnalysis *analysis;
+	RzAnalysisFunction *fcn;
+} ConvertBundle;
+
+bool handle_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	ConvertBundle *bundle = vis->visitor_data;
+	RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
+	const RzGraphNode *from = rz_graph_edge_get_from(e);
+	const RzGraphNode *to = rz_graph_edge_get_to(e);
+	ut64 from_addr = rz_graph_node_get_id(from);
+	ut64 to_addr = rz_graph_node_get_id(to);
+
+	switch (type) {
+	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
+		return true;
+	case RZ_ICFG_EDGE_TYPE_JUMP:
+		if (!rz_analysis_xrefs_set(bundle->analysis, from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CODE)) {
+			bundle->n_errors++;
+			rz_warn_if_reached();
+		}
+		// The block is created when the node is discovered.
+		// Because we do DFS the "from" block should have been added already,
+		// when this outgoing edge is walked.
+		RzAnalysisBlock *ablock = rz_analysis_get_block_at(bundle->analysis, from_addr);
+		if (ablock) {
+			bb_add_target(ablock, to_addr);
+		} else {
+			bundle->n_errors++;
+			rz_warn_if_reached();
+		}
+		return true;
+	case RZ_ICFG_EDGE_TYPE_CALL:
+		// Don't follow call edges, just add them as xrefs.
+		if (!rz_analysis_xrefs_set(bundle->analysis, from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
+			bundle->n_errors++;
+			rz_warn_if_reached();
+		}
+		return false;
+	case RZ_ICFG_EDGE_TYPE_RETURN:
+		return false;
+	}
+	rz_warn_if_reached();
+	return false;
+}
+
+void handle_node(RzGraphNode *n, RzGraphVisitor *vis) {
+	ConvertBundle *bundle = vis->visitor_data;
+	const RzICFGNode *cfg_node = rz_graph_node_get_data(n);
+	RzAnalysisBlock *ablock = rz_analysis_get_block_at(bundle->analysis, cfg_node->addr);
+	if (ablock) {
+		// Already created.
+		rz_analysis_function_add_block(bundle->fcn, ablock);
+		return;
+	}
+	ablock = rz_analysis_create_block(bundle->analysis, cfg_node->addr, cfg_node->size);
+	if (!ablock) {
+		RZ_LOG_ERROR("Failed to create analysis block at 0x%" PFMT64x "\n", cfg_node->addr);
+		bundle->n_errors++;
+		return;
+	}
+	// TODO: analyze_ops should eventually not be used here since
+	// it does its own analysis on stack variables.
+	//
+	// After we have https://github.com/rizinorg/rizin/issues/6386
+	// we should manually apply our analysis info to it.
+	rz_analysis_block_analyze_ops(ablock);
+	rz_analysis_function_add_block(bundle->fcn, ablock);
+}
+
+RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzICFGFcnNameChooser chooser, void *chooser_priv) {
+	rz_return_val_if_fail(icfg && analysis, false);
+	size_t n_errors = 0;
+
+	ut64 *addr_it;
+	rz_vector_foreach (&icfg->proc_entries, addr_it) {
+		ut64 addr = *addr_it;
+		char *fcn_name = chooser ? chooser(addr, chooser_priv) : NULL;
+		char name_alt[32] = { 0 };
+		RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, fcn_name ? fcn_name : rz_strf(name_alt, "inquiry.0x%" PFMT64x, addr), addr, RZ_ANALYSIS_FCN_TYPE_FCN);
+		if (!fcn) {
+			// TODO: handle better than skipping everything
+			// rz_analysis_create_function() already prints the more detailed reason if there is any
+			RZ_LOG_ERROR("Could not apply analysis result as function @ 0x%" PFMT64x ": func == NULL\n", addr);
+			continue;
+		}
+		RzGraphNode *fcn_entry = rz_graph_find_node(icfg->graph, addr);
+		ConvertBundle bundle = { .analysis = analysis, .fcn = fcn };
+		RzGraphVisitor visitor = { 0 };
+		visitor.edge_selector = handle_edge;
+		visitor.discover_node = handle_node;
+		visitor.visitor_data = &bundle;
+		// Walk subgraph of procedure, skipping any call edge.
+		rz_graph_dfs_from_node(icfg->graph, fcn_entry, &visitor);
+		n_errors += bundle.n_errors;
+	}
+	return n_errors == 0;
+}

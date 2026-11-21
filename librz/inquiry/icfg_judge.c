@@ -243,7 +243,10 @@ static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
 		return CFG_CONFLICT_VERDICT_N;
 	}
 	// TODO: This softmax does here effectively the same as max().
-	// That needs to be replaced, checking the probabilities of the verdicts against each other.
+	// Ideally we should use a normalization, which gives less steep probability deltas
+	// between a single point score difference.
+	// So if the scores are "drop = -5 shared = 4 fcn_entry = 5" we could still say that
+	// they are below the certainty lever we like to have.
 	st64 softmax_score = rz_math_softmax_st64(&it, NULL);
 	size_t v = 0;
 	for (; v < CFG_CONFLICT_VERDICT_N; ++v) {

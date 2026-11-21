@@ -79,4 +79,7 @@ RZ_API bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out);
 RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg);
 
+typedef char *(*RzICFGFcnNameChooser)(ut64 addr, void *priv_data);
+RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzICFGFcnNameChooser chooser, void *chooser_priv);
+
 #endif // RZ_CFG

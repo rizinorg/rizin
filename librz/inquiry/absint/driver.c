@@ -256,19 +256,6 @@ static RzAbsIntIOReadResult handle_io_request(const RzAnalysisILContext *il_ctx,
 	return ok ? RZ_ABSINT_IO_READ_RESULT_OK : RZ_ABSINT_IO_READ_RESULT_TOP;
 }
 
-static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
-	if (abb->jump == UT64_MAX && abb->fail != target) {
-		abb->jump = target;
-	} else if (abb->fail == UT64_MAX && abb->jump != target) {
-		abb->fail = target;
-	} else if (abb->fail != target && abb->jump != target) {
-		RZ_LOG_WARN("The basic block at 0x%" PFMT64x " has more than two outgoing edges.\n"
-			    "\t\tHas jump = 0x%" PFMT64x " fail = 0x%" PFMT64x ". Will miss = 0x%" PFMT64x "\n",
-			abb->addr, abb->jump, abb->fail,
-			target);
-	}
-}
-
 RZ_API bool rz_absint_add_result_to_icfg(RZ_NONNULL RzICFG *icfg, const RZ_NONNULL RzAbsIntResult *res) {
 	rz_return_val_if_fail(icfg && res, false);
 	bool success = true;
@@ -307,9 +294,13 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
 	if (missing_nodes > 0) {
 		RZ_LOG_WARN("The analysis didn't find nodes for all edges.\n");
 	}
-	rz_icfg_solve_conflicts(icfg, bin, io, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR);
-	// TODO Copy to analysis.
-	return false;
+	if (!rz_icfg_solve_conflicts(icfg, bin, io, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
+		RZ_LOG_WARN("Some errors occurred during iCFG conflict solving.\n");
+	}
+	if (!rz_icfg_copy_to_analysis(icfg, analysis, NULL, NULL)) {
+		RZ_LOG_WARN("Some errors occurred during the RzInquiry -> RzAnalysis conversion.\n");
+	}
+	return true;
 }
 
 /**
@@ -319,7 +310,7 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
  */
 RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *config, RZ_NONNULL RZ_BORROW RzICFG *icfg) {
 	rz_return_val_if_fail(config && config->analysis && config->io && config->bin && config->fcn_entry_points && config->n_threads > 0 && icfg, false);
-	bool return_code = false;
+	bool return_code = true;
 	bool breaked = false;
 
 	RzILCacheConfig il_cache_config = RZ_IL_CACHE_CONFIG_NOP_UNLIFTED;
@@ -447,8 +438,8 @@ RZ_API bool rz_absint_driver_run(RZ_NONNULL RZ_BORROW RzAbsIntDriverConfig *conf
 		RZ_LOG_WARN("Failed to convert resolved icfg to analysis.\n");
 		return_code = false;
 	}
-
-	return_code = true;
+	// TODO: Add comments
+	// TODO: data xrefs
 
 	rz_interrupt_break_pop(config->intr);
 
