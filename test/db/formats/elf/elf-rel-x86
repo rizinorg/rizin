@@ -11,12 +11,12 @@ EOF
 EXPECT=<<EOF
      vaddr      paddr     target type       name                    
 --------------------------------------------------------------------
-0x08000035 0x00000035 0x08000051 R_386_PC32 test_16bit - 0x08000035
-0x0800003a 0x0000003a 0x08000056 R_386_PC32 test_8bit - 0x0800003a
-0x0800003f 0x0000003f 0x08000059 R_386_PC32 test_32 - 0x0800003f
-0x08000044 0x00000044 0x0800005f R_386_PC32 test_pc32 - 0x08000044
+0x08000035 0x00000035 0x08000051 R_386_PC32 test_16bit - 0x08000039
+0x0800003a 0x0000003a 0x08000056 R_386_PC32 test_8bit - 0x0800003e
+0x0800003f 0x0000003f 0x08000059 R_386_PC32 test_32 - 0x08000043
+0x08000044 0x00000044 0x0800005f R_386_PC32 test_pc32 - 0x08000048
 0x08000053 0x00000053 0x08000067 R_386_16   .data
-0x08000057 0x00000057 0x08000067 R_386_8    .data
+0x08000057 0x00000057 0x08000067 R_386_8    .data + 0x00000002
 0x0800005a 0x0000005a 0x08000067 R_386_32   .data
 ---
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -27,10 +27,10 @@ EXPECT=<<EOF
 0x0800005a  6700 0008                                g...
             ;-- section..text:
             ;-- _start:
-            0x08000034      call  loc.test_16bit                       ; RELOC 32 test_16bit @ 0x08000051 - 0x8000035 ; [01] -r-x section size 51 named .text
-            0x08000039      call  loc.test_8bit                        ; RELOC 32 test_8bit @ 0x08000056 - 0x800003a
-            0x0800003e      call  loc.test_32                          ; RELOC 32 test_32 @ 0x08000059 - 0x800003f
-            0x08000043      call  loc.test_pc32                        ; RELOC 32 test_pc32 @ 0x0800005f - 0x8000044
+            0x08000034      call  loc.test_16bit                       ; RELOC 32 test_16bit @ 0x08000051 - 0x8000039 ; [01] -r-x section size 51 named .text
+            0x08000039      call  loc.test_8bit                        ; RELOC 32 test_8bit @ 0x08000056 - 0x800003e
+            0x0800003e      call  loc.test_32                          ; RELOC 32 test_32 @ 0x08000059 - 0x8000043
+            0x08000043      call  loc.test_pc32                        ; RELOC 32 test_pc32 @ 0x0800005f - 0x8000048
             0x08000048      mov   eax, 0x01
             0x0800004d      xor   ebx, ebx
             0x0800004f      int   0x80
@@ -38,7 +38,7 @@ EXPECT=<<EOF
             0x08000051      mov   ax, 0x67                             ; 'g' ; 103; RELOC 16 .data @ 0x08000067
             0x08000055      ret
             ;-- test_8bit:
-            0x08000056      mov   al, 0x69                             ; 'i' ; 105; RELOC 8 .data @ 0x08000067
+            0x08000056      mov   al, 0x69                             ; 'i' ; 105; RELOC 8 .data @ 0x08000067 + 0x2
             0x08000058      ret
             ;-- test_32:
             0x08000059      mov   eax, loc.internal_word               ; 0x8000067 ; "4\U00000012B\xff\xff\U00000004"; RELOC 32 .data @ 0x08000067
@@ -132,4 +132,78 @@ f3000000aaaaaaaa
 03000000aaaaaaaa
 EOF
 EXPECT_ERR=
+RUN
+
+NAME=ELF: x86-32 implicit addends of REL relocations (#6330)
+FILE=bins/elf/x86-rel-addends.o
+CMDS=ir
+EXPECT=<<EOF
+     vaddr      paddr     target type                name                      
+-------------------------------------------------------------------------------
+0x08000035 0x00000035 0x080002b0 R_386_PC32          ext_func - 0x08000039
+0x0800003a 0x0000003a 0x080002b0 R_386_PLT32         ext_func@plt - 0x0800003e
+0x0800003f 0x0000003f 0x080002b0 R_386_PC32          ext_func - 0x08000033
+0x08000044 0x00000044 0x080002b4 R_386_32            ext_data + 0x00001234
+0x08000049 0x00000049 0x080000a2 R_386_32            .data + 0x00000008
+0x0800004f 0x0000004f 0x080002b4 R_386_GOT32X        ext_data@got - 0x080002b0
+0x08000055 0x00000055 0x080002b4 R_386_GOT32X        ext_data@got - 0x080002ac
+0x0800005b 0x0000005b 0x080000a2 R_386_GOTOFF        .data - 0x080002ac
+0x08000061 0x00000061 0x080002b8 R_386_GOTPC         GOT - 0x0800005f
+0x08000067 0x00000067 0x080002b4 R_386_16            ext_data + 0x00000002
+0x0800006a 0x0000006a 0x080002b4 R_386_8             ext_data + 0x00000001
+0x0800006d 0x0000006d 0x080002bc R_386_TLS_LE        tls_var + 0x00000004
+0x08000074 0x00000074 0x080002bc R_386_TLS_GD        tls_var
+0x0800007a 0x0000007a 0x080002bc R_386_TLS_LDM       tls_var
+0x08000080 0x00000080 0x080002bc R_386_TLS_LDO_32    tls_var + 0x00000008
+0x08000086 0x00000086 0x080002bc R_386_TLS_GOTIE     tls_var
+0x0800008b 0x0000008b 0x080002bc R_386_TLS_IE        tls_var
+0x08000091 0x00000091 0x080002bc R_386_TLS_IE_32     tls_var
+0x08000096 0x00000096 0x080002bc R_386_TLS_LE_32     tls_var + 0x0000000c
+0x0800009c 0x0000009c 0x080002bc R_386_TLS_GOTDESC   tls_var
+0x080000a0 0x000000a0 0x080002bc R_386_TLS_DESC_CALL tls_var
+0x080000a6 0x000000a6 0x080002b4 R_386_32            ext_data - 0x00000008
+0x080000aa 0x000000aa 0x080002b4 R_386_16            ext_data + 0x00007ffe
+0x080000ac 0x000000ac 0x080002b4 R_386_8             ext_data + 0x0000007f
+0x080000ad 0x000000ad 0x080002b0 R_386_PC32          ext_func - 0x080000ad
+0x080000b1 0x000000b1 0x080002b0 R_386_PC32          ext_func - 0x07ffffb1
+0x080000b5 0x000000b5 0x080002b0 R_386_PC16          ext_func - 0x080000b5
+0x080000b7 0x000000b7 0x080002b0 R_386_PC8           ext_func - 0x080000b7
+0x080000b8 0x000000b8 0x080000a2 R_386_GOTOFF        local_data - 0x08000290
+0x080000bc 0x000000bc 0x080002b4 R_386_SIZE32        ext_data + 0x00000004
+EOF
+RUN
+
+NAME=ELF: x86-32 implicit addends of dynamic REL relocations (#6330)
+FILE=bins/elf/x86-common-relocs32.so
+CMDS=ir
+EXPECT=<<EOF
+     vaddr      paddr     target type               name                       
+-------------------------------------------------------------------------------
+0x00010208 0x00000208 0x000103f0 R_386_GLOB_DAT     value
+0x00010210 0x00000210 0x00011008 R_386_GLOB_DAT     
+0x00010228 0x00000228 0x000103f8 R_386_JMP_SLOT     function
+0x00010300 0x00000300 0x000103f0 R_386_GOT32        value@got - 0x000101fd
+0x00010308 0x00000308 0x000103f0 R_386_GOT32X       value@got - 0x000101fd
+0x00010310 0x00000310 0x000103f8 R_386_PLT32        function@plt - 0x0001030d
+0x00010318 0x00000318 0x00000000 R_386_GOTPC        GOT - 0x00010315
+0x00010320 0x00000320 0x000103f0 R_386_GOTOFF       value - 0x000101fd
+0x00010328 0x00000328 0x00000000 R_386_RELATIVE     BASE 0x00000003
+0x00010330 0x00000330 0x000103f0 R_386_GLOB_DAT     value
+0x00010338 0x00000338 0x000103f8 R_386_JMP_SLOT     function
+0x00010340 0x00000340 ---------- R_386_TLS_TPOFF    tls_local + 0x00000003
+0x00010348 0x00000348 ---------- R_386_TLS_DTPMOD32 tls_local
+0x00010350 0x00000350 ---------- R_386_TLS_DTPOFF32 tls_local + 0x00000003
+0x00010358 0x00000358 ---------- R_386_TLS_DTPOFF32  0x00000003
+0x00010360 0x00000360 0x00000000 R_386_IRELATIVE    ifunc_3 0x00000003 (ifunc)
+0x00010368 0x00000368 0x000103f0 R_386_32           value + 0x00000003
+0x00010370 0x00000370 0x000103f0 R_386_PC32         value - 0x0001036d
+0x00010378 0x00000378 0x000103f0 R_386_16           value + 0x00000003
+0x00010380 0x00000380 0x000103f0 R_386_PC16         value - 0x0001037d
+0x00010388 0x00000388 0x000103f0 R_386_8            value + 0x00000003
+0x00010390 0x00000390 0x000103f0 R_386_PC8          value - 0x0001038d
+0x00010398 0x00000398 0x000103f0 R_386_COPY         value
+0x000103a0 0x000003a0 0x000103f8 R_386_GOT32        function@got - 0x000101fd
+0x000103a8 0x000003a8 0x000103f8 R_386_GOT32X       function@got - 0x000101fd
+0x000103b0 0x000003b0 0x00011008 R_386_GOT32X       @got - 0x000101fd
+EOF
 RUN

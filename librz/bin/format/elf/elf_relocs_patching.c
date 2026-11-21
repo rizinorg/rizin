@@ -24,7 +24,6 @@ typedef struct reloc_formular_symbols_t {
 	ut64 T; // Base address of the static thread-local tmeplate that contains a thread-local symbol.
 	ut64 MB; // Base address of all strings consumed by compiler message base optimization (Hexagon specific).
 	ut64 GP; // Value of GP register (Hexagon specific).
-	ut64 AHL; // Special value used by MIPS to handle R_MIPS_HI16 & R_MIPS_LO16 relocs
 	/**
 	 * \brief Sparc64: Secondary addend, extracted from the r_info field by
 	 * applying the ELF_SPARC64_R_TYPE_DATA macro (alias for ELF64_R_TYPE_DATA).
@@ -695,73 +694,167 @@ static void patch_reloc_sparc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 }
 
 /**
- * \brief Patches the opcode at a given address depending on the relocation type.
+ * \brief Patches \p val over \p mask of a microMIPS or MIPS16 instruction, whose halfwords are in order.
+ */
+static void patch_mips_halfwords(RZ_INOUT RzBuffer *buf_patched, bool big_endian, ut64 addr, ut32 mask, ut32 val) {
+	ut8 buf[4] = { 0 };
+	rz_buf_read_at(buf_patched, addr, buf, 4);
+	ut32 insn = ((ut32)rz_read_ble16(buf, big_endian) << 16) | rz_read_ble16(buf + 2, big_endian);
+	insn = (insn & ~mask) | (val & mask);
+	rz_write_ble16(buf, insn >> 16, big_endian);
+	rz_write_ble16(buf + 2, insn & 0xffff, big_endian);
+	rz_buf_write_at(buf_patched, addr, buf, 4);
+}
+
+/**
+ * \brief Places a 16-bit immediate where an extended MIPS16 instruction holds it.
+ */
+static ut32 mips16_extended_imm_bits(ut32 imm) {
+	return rz_bits_extract(imm, 11, 5) << 16 | rz_bits_extract(imm, 5, 6) << 21 | rz_bits_extract(imm, 0, 5);
+}
+
+/**
+ * \brief Places a 26-bit target where a MIPS16 JAL holds it.
+ */
+static ut32 mips16_jal_target_bits(ut32 target) {
+	return rz_bits_extract(target, 21, 5) << 16 | rz_bits_extract(target, 16, 5) << 21 | rz_bits_extract(target, 0, 16);
+}
+
+/**
+ * \brief Patches the field of a MIPS relocation.
  *
- * NOTE: Some relocation symbols are not yet implemented
+ * GP-relative, GOT and TLS fields are left alone, as an object has no layout
+ * for them yet.
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
- * \param rel_type The relocation type.
+ * \param rel The relocation.
  * \param big_endian The endianness - true if BE, false if LE
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, RelocFormularSymbols *fs) {
-	rz_return_if_fail(buf_patched && fs);
-	ut8 buf[4] = { 0 };
-	ut64 val = 0;
+static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+	rz_return_if_fail(buf_patched && rel && fs);
+	ut32 mask = UT32_MAX;
+	ut64 val;
 
-	switch (rel_type) {
+	switch (rel->type) {
 	default:
-		UNHANDL_DEF("MIPS", rel_type);
+		UNHANDL_DEF("MIPS", rel->type);
 		return;
 	case R_MIPS_NONE:
+	case R_MIPS_JALR:
+		// R_MIPS_JALR only allows turning the call into a direct branch.
 		return;
-	case R_MIPS_16: // S + sign–extend(A)
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		val = rz_read_ble16(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble16(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 2);
+	case R_MIPS_16: {
+		ut8 buf[2];
+		rz_write_ble16(buf, fs->S + fs->A, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
 		return;
-	case R_MIPS_32: // S + A
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
-	case R_MIPS_REL32: // A – EA + S
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += fs->S + fs->A - fs->P;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
-	case R_MIPS_26: // (((A << 2) | (P & 0xf0000000) + S) >> 2
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += ((fs->A << 2) | (fs->P & 0xf0000000));
-		val += fs->S;
-		val >>= 2;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
-		return;
+	}
+	case R_MIPS_32:
+		val = fs->S + fs->A;
+		break;
+	case R_MIPS_REL32:
+		// Without a symbol, the word is rebased with the image.
+		val = (rel->sym ? fs->S : fs->B) + fs->A;
+		break;
+	case R_MIPS_26:
+		// The upper bits of the target come from the address of the delay slot.
+		mask = 0x3ffffff;
+		val = (fs->S + fs->A) >> 2;
+		break;
 	case R_MIPS_HI16:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		fs->AHL = rz_read_ble16(buf, big_endian) << 16;
-		return;
+		// Rounded, as the LO16 half is added as a signed immediate.
+		mask = 0xffff;
+		val = (fs->S + fs->A + 0x8000) >> 16;
+		break;
 	case R_MIPS_LO16:
-		rz_buf_read_at(buf_patched, patch_addr, buf, 2);
-		val = rz_read_ble16(buf, big_endian);
-		val += fs->AHL;
-		val += fs->S;
-		rz_write_ble32(buf, val, big_endian);
-		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		mask = 0xffff;
+		val = fs->S + fs->A;
+		break;
+	case R_MIPS_PC16:
+		mask = 0xffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC32:
+		val = fs->S + fs->A - fs->P;
+		break;
+	case R_MIPS_PC21_S2:
+		mask = 0x1fffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC26_S2:
+		mask = 0x3ffffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PC18_S3:
+		// LDPC loads from the doubleword-aligned PC.
+		mask = 0x3ffff;
+		val = (fs->S + fs->A - (fs->P & ~7ULL)) >> 3;
+		break;
+	case R_MIPS_PC19_S2:
+		mask = 0x7ffff;
+		val = (fs->S + fs->A - fs->P) >> 2;
+		break;
+	case R_MIPS_PCHI16:
+		mask = 0xffff;
+		val = (fs->S + fs->A - fs->P + 0x8000) >> 16;
+		break;
+	case R_MIPS_PCLO16:
+		mask = 0xffff;
+		val = fs->S + fs->A - fs->P;
+		break;
+	case R_MIPS_REL32 | (R_MIPS_64 << 8): {
+		// Composed with R_MIPS_64, R_MIPS_REL32 relocates a doubleword.
+		ut8 buf[8];
+		rz_write_ble64(buf, (rel->sym ? fs->S : fs->B) + fs->A, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
+		return;
+	}
+	case R_MICROMIPS_JALR:
+		return;
+	case R_MICROMIPS_26_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x3ffffff, (fs->S + fs->A) >> 1);
+		return;
+	case R_MICROMIPS_HI16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, (fs->S + fs->A + 0x8000) >> 16);
+		return;
+	case R_MICROMIPS_LO16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, fs->S + fs->A);
+		return;
+	case R_MICROMIPS_PC16_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0xffff, (fs->S + fs->A - fs->P) >> 1);
+		return;
+	case R_MICROMIPS_PC23_S2:
+		// ADDIUPC adds to the word-aligned PC.
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7fffff, (fs->S + fs->A - (fs->P & ~3ULL)) >> 2);
+		return;
+	case R_MICROMIPS_PC7_S1:
+	case R_MICROMIPS_PC10_S1: {
+		ut16 field = rel->type == R_MICROMIPS_PC7_S1 ? 0x7f : 0x3ff;
+		ut8 buf[2] = { 0 };
+		rz_buf_read_at(buf_patched, patch_addr, buf, sizeof(buf));
+		ut16 insn = rz_read_ble16(buf, big_endian);
+		insn = (insn & ~field) | (((fs->S + fs->A - fs->P) >> 1) & field);
+		rz_write_ble16(buf, insn, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, sizeof(buf));
+		return;
+	}
+	case R_MIPS16_26:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x3ffffff, mips16_jal_target_bits((fs->S + fs->A) >> 2));
+		return;
+	case R_MIPS16_HI16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits((fs->S + fs->A + 0x8000) >> 16));
+		return;
+	case R_MIPS16_LO16:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits(fs->S + fs->A));
+		return;
+	case R_MIPS16_PC16_S1:
+		patch_mips_halfwords(buf_patched, big_endian, patch_addr, 0x7ff001f, mips16_extended_imm_bits((fs->S + fs->A - fs->P) >> 1));
 		return;
 	case R_MIPS_GPREL16: UNHANDL("R_MIPS_GPREL16");
 	case R_MIPS_LITERAL: UNHANDL("R_MIPS_LITERAL");
 	case R_MIPS_GOT16: UNHANDL("R_MIPS_GOT16");
-	case R_MIPS_PC16: UNHANDL("R_MIPS_PC16");
 	case R_MIPS_CALL16: UNHANDL("R_MIPS_CALL16");
 	case R_MIPS_GPREL32: UNHANDL("R_MIPS_GPREL32");
 	case R_MIPS_SHIFT5: UNHANDL("R_MIPS_SHIFT5");
@@ -785,7 +878,6 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MIPS_ADD_IMMEDIATE: UNHANDL("R_MIPS_ADD_IMMEDIATE");
 	case R_MIPS_PJUMP: UNHANDL("R_MIPS_PJUMP");
 	case R_MIPS_RELGOT: UNHANDL("R_MIPS_RELGOT");
-	case R_MIPS_JALR: UNHANDL("R_MIPS_JALR");
 	case R_MIPS_TLS_DTPMOD32: UNHANDL("R_MIPS_TLS_DTPMOD32");
 	case R_MIPS_TLS_DTPREL32: UNHANDL("R_MIPS_TLS_DTPREL32");
 	case R_MIPS_TLS_DTPMOD64: UNHANDL("R_MIPS_TLS_DTPMOD64");
@@ -802,15 +894,9 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MIPS_GLOB_DAT: UNHANDL("R_MIPS_GLOB_DAT");
 	case R_MIPS_COPY: UNHANDL("R_MIPS_COPY");
 	case R_MIPS_JUMP_SLOT: UNHANDL("R_MIPS_JUMP_SLOT");
-	case R_MICROMIPS_26_S1: UNHANDL("R_MICROMIPS_26_S1");
-	case R_MICROMIPS_HI16: UNHANDL("R_MICROMIPS_HI16");
-	case R_MICROMIPS_LO16: UNHANDL("R_MICROMIPS_LO16");
 	case R_MICROMIPS_GPREL16: UNHANDL("R_MICROMIPS_GPREL16");
 	case R_MICROMIPS_LITERAL: UNHANDL("R_MICROMIPS_LITERAL");
 	case R_MICROMIPS_GOT16: UNHANDL("R_MICROMIPS_GOT16");
-	case R_MICROMIPS_PC7_S1: UNHANDL("R_MICROMIPS_PC7_S1");
-	case R_MICROMIPS_PC10_S1: UNHANDL("R_MICROMIPS_PC10_S1");
-	case R_MICROMIPS_PC16_S1: UNHANDL("R_MICROMIPS_PC16_S1");
 	case R_MICROMIPS_CALL16: UNHANDL("R_MICROMIPS_CALL16");
 	case R_MICROMIPS_GOT_DISP: UNHANDL("R_MICROMIPS_GOT_DISP");
 	case R_MICROMIPS_GOT_PAGE: UNHANDL("R_MICROMIPS_GOT_PAGE");
@@ -823,7 +909,6 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MICROMIPS_CALL_HI16: UNHANDL("R_MICROMIPS_CALL_HI16");
 	case R_MICROMIPS_CALL_LO16: UNHANDL("R_MICROMIPS_CALL_LO16");
 	case R_MICROMIPS_SCN_DISP: UNHANDL("R_MICROMIPS_SCN_DISP");
-	case R_MICROMIPS_JALR: UNHANDL("R_MICROMIPS_JALR");
 	case R_MICROMIPS_HI0_LO16: UNHANDL("R_MICROMIPS_HI0_LO16");
 	case R_MICROMIPS_TLS_GD: UNHANDL("R_MICROMIPS_TLS_GD");
 	case R_MICROMIPS_TLS_LDM: UNHANDL("R_MICROMIPS_TLS_LDM");
@@ -833,13 +918,12 @@ static void patch_reloc_mips(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_ad
 	case R_MICROMIPS_TLS_TPREL_HI16: UNHANDL("R_MICROMIPS_TLS_TPREL_HI16");
 	case R_MICROMIPS_TLS_TPREL_LO16: UNHANDL("R_MICROMIPS_TLS_TPREL_LO16");
 	case R_MICROMIPS_GPREL7_S2: UNHANDL("R_MICROMIPS_GPREL7_S2");
-	case R_MICROMIPS_PC23_S2: UNHANDL("R_MICROMIPS_PC23_S2");
-	case R_MIPS_PC32: UNHANDL("R_MIPS_PC32");
 	case R_MIPS_EH: UNHANDL("R_MIPS_EH");
 	case R_MIPS_GNU_REL16_S2: UNHANDL("R_MIPS_GNU_REL16_S2");
 	case R_MIPS_GNU_VTINHERIT: UNHANDL("R_MIPS_GNU_VTINHERIT");
 	case R_MIPS_GNU_VTENTRY: UNHANDL("R_MIPS_GNU_VTENTRY");
 	}
+	patch_val_over_mask_32(buf_patched, big_endian, patch_addr, mask, val);
 }
 
 // For arm group relocations related to ALU instructions
@@ -860,7 +944,7 @@ static ut32 convert_alu_group_mask(ut32 X, int n) {
 			if (shift < 0)
 				shift = 0;
 			if (shift % 2 != 0)
-				shift--;
+				shift++; // the rotation is even, so round up to keep the msb
 
 			ut32 g_n = residual & (0xFF << shift);
 
@@ -897,7 +981,7 @@ static ut32 convert_ldr_group_mask(ut32 X, int n) {
 		if (shift < 0)
 			shift = 0;
 		if (shift % 2 != 0)
-			shift--;
+			shift++; // the rotation is even, so round up to keep the msb
 
 		ut32 g_n = residual & (0xFF << shift);
 		residual &= ~g_n;
@@ -1163,6 +1247,19 @@ static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
 }
 
 /**
+ * \brief Whether \p rel is against a defined Arm function.
+ *
+ * Only then is the state of the target known, as an import may be either.
+ */
+static bool arm_reloc_targets_arm_func(ELFOBJ *bin, const RzBinElfReloc *rel) {
+	if (rel->thumb || Elf_(rz_bin_elf_get_import)(bin, rel->sym)) {
+		return false;
+	}
+	RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, rel->sym);
+	return symbol && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR);
+}
+
+/**
  * \brief Patches the opcode at a given address depending on the relocation type.
  *
  * NOTE: Some relocation symbols are not yet implemented
@@ -1171,9 +1268,10 @@ static void patch_reloc_c28x(RZ_INOUT RzBuffer *buf_patched, ut64 patch_addr,
  * \param patch_addr The address of the opcode being patched.
  * \param rel The relocation elf structure.
  * \param big_endian The endianness - true if BE, false if LE
+ * \param arm_func Whether the target is a defined Arm function, see arm_reloc_targets_arm_func()
  * \param fs Formular values to calculate the new relocation value.
  */
-static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, const RelocFormularSymbols *fs) {
+static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const RzBinElfReloc *rel, bool big_endian, bool arm_func, const RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && rel && fs);
 	ut16 keephw1 = 0, keephw2 = 0;
 	ut32 keep = 0;
@@ -1187,17 +1285,25 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	switch (rel->type) {
 	case R_ARM_NONE:
+	case R_ARM_V4BX:
 		return;
 	case R_ARM_THM_JUMP24:
 		/* fall-thru */
 	case R_ARM_THM_CALL:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-
-		// val = S + A - P
-		val = ((fs->S + fs->A) | T) - fs->P;
-
 		keephw1 = rz_read_ble16(&buf[0], big_endian);
 		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		if (rel->type == R_ARM_THM_CALL && T) {
+			keephw2 |= 0x1000; // BL, as a BLX would switch to Arm
+		} else if (rel->type == R_ARM_THM_CALL && arm_func) {
+			keephw2 &= ~0x1000; // BLX, as a BL would stay in Thumb
+		}
+		if (keephw2 & 0x1000) {
+			val = ((fs->S + fs->A) | T) - fs->P;
+		} else {
+			// BLX branches from the word-aligned PC.
+			val = fs->S + fs->A - (fs->P & ~3ULL);
+		}
 
 		ut32 s = (val >> 24) & 1;
 		ut32 i1 = (val >> 23) & 1;
@@ -1223,6 +1329,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_ABS32:
+	case R_ARM_TARGET1:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = (fs->S + fs->A) | T;
 		rz_write_ble32(buf, val, big_endian);
@@ -1231,6 +1338,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	case R_ARM_REL32:
 		val = ((fs->S + fs->A) | T) - fs->P;
+		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1242,7 +1350,18 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	/* fall through */
 	case R_ARM_JUMP24:
 		val = ((fs->S + fs->A) | T) - fs->P;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x03FFFFFE, (val >> 2));
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian);
+		if (rel->type == R_ARM_CALL && arm_func) {
+			keep = 0xEB000000; // BL, as a BLX would switch to Thumb
+		} else if ((keep >> 28) == 0xF || (rel->type == R_ARM_CALL && T)) {
+			// BLX, which switches to Thumb, takes bit 1 of the offset as H.
+			keep = 0xFA000000 | rz_bits_extract(val, 1, 1) << 24;
+		} else {
+			keep &= 0xFF000000;
+		}
+		rz_write_ble32(buf, keep | rz_bits_extract(val, 2, 24), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
 	case R_ARM_MOVW_PREL_NC:
@@ -1355,7 +1474,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_SBREL32:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = ((fs->S + fs->A) | T) - fs->B;
-		rz_write_ble32(buf, (val & 0xFFFFFFF), big_endian);
+		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 
@@ -1398,7 +1517,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_PREL31:
-		val = (fs->S + fs->A - fs->P) >> 1;
+		val = ((fs->S + fs->A) | T) - fs->P;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x7FFFFFFF, val);
 		break;
 
@@ -1409,10 +1528,14 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_MOVT_ABS:
-		/* fall through */
-	case R_ARM_MOVT_PREL:
 		// val = imm4:imm12
 		val = (fs->S + fs->A) >> 16;
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
+		break;
+
+	case R_ARM_MOVT_PREL:
+		// val = imm4:imm12
+		val = (fs->S + fs->A - fs->P) >> 16;
 		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0x000F0FFF, val);
 		break;
 
@@ -1464,7 +1587,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_THM_JUMP6:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		// val = i:imm5
-		val = ((fs->S + fs->A) & 0x7E) >> 1;
+		val = ((fs->S + fs->A - fs->P) & 0x7E) >> 1;
 		keephw1 = rz_read_ble16(buf, big_endian);
 		keephw1 = (keephw1 & 0xFD07) |
 			((val << 4) & 0x0200) | // i
@@ -1884,7 +2007,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 0);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1899,7 +2022,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 0);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1914,7 +2037,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 1);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1929,7 +2052,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 1);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1944,7 +2067,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 2);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -1959,7 +2082,7 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		offset = convert_ldr_group_mask(abs_val, 2);
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		keep = rz_read_ble32(buf, big_endian);
-		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | offset), big_endian);
+		rz_write_ble32(buf, ((keep & 0xFF7FFF00) | u_bit | (offset >> 2)), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
@@ -2060,9 +2183,6 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	default:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->S + fs->A;
-		if (!rel->sym && rel->mode == DT_REL) {
-			val += rz_read_ble32(buf, big_endian);
-		}
 		rz_write_ble32(buf, val, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
@@ -2741,7 +2861,7 @@ static void patch_reloc_ppc64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
  *
  * \param buf_patched Buffer from which the opcode is read and the patched opcode is written to.
  * \param patch_addr The address of the opcode being patched.
- * \param rel The relocation, including its addend encoding.
+ * \param rel The relocation.
  * \param fs Formular values to calculate the new relocation value.
  */
 static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr,
@@ -2765,14 +2885,9 @@ static void patch_reloc_x86_32(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		width = 2;
 		break;
 	}
+	// REL addends were already read from the field into the relocation.
 	ut64 addend = fs->A;
 	ut8 buf[4];
-	if (rel->mode == DT_REL) {
-		if (rz_buf_read_at(buf_patched, patch_addr, buf, width) != width) {
-			return;
-		}
-		addend = rz_read_ble(buf, false, width * 8);
-	}
 	switch (type) {
 	case R_386_32:
 	case R_386_16:
@@ -3779,8 +3894,8 @@ static bool patch_x86_tls_reloc(ELFOBJ *bin, const RzBinElfReloc *rel, ut64 patc
 	return true;
 }
 
-void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL) {
-	rz_return_if_fail(bin && rel && AHL);
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT) {
+	rz_return_if_fail(bin && rel);
 	ut16 e_machine = bin->ehdr.e_machine;
 	RelocFormularSymbols formular_sym = {
 		.A = rel->addend,
@@ -3795,7 +3910,6 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		.GP = 0,
 		.T = 0,
 		.TLS = 0,
-		.AHL = *AHL,
 		.O = rel->sparc_secondary_addend,
 	};
 	ut64 patch_addr = rel->paddr != UT64_MAX ? rel->paddr : Elf_(rz_bin_elf_v2p)(bin, rel->vaddr);
@@ -3808,7 +3922,7 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 		patch_reloc_hexagon(bin->buf_patched, patch_addr, rel->type, &formular_sym);
 		break;
 	case EM_ARM:
-		patch_reloc_arm(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
+		patch_reloc_arm(bin->buf_patched, patch_addr, rel, big_endian, arm_reloc_targets_arm_func(bin, rel), &formular_sym);
 		break;
 	case EM_AARCH64:
 		patch_reloc_arm64(bin->buf_patched, patch_addr, rel, &formular_sym);
@@ -3821,11 +3935,7 @@ void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinE
 	case EM_MIPS_RS3_LE:
 		/* fall-thru */
 	case EM_MIPS:
-		patch_reloc_mips(bin->buf_patched, patch_addr, rel->type, big_endian, &formular_sym);
-		// This is a special value used only in mips
-		// An R_MIPS_HI16 must be followed immediately by an R_MIPS_LO16 relocation record in a SHT_REL section.
-		// The contents of the two fields to be relocated are combined to form a full 32-bit addend AHL.
-		*AHL = formular_sym.AHL;
+		patch_reloc_mips(bin->buf_patched, patch_addr, rel, big_endian, &formular_sym);
 		break;
 	case EM_386:
 		patch_reloc_x86_32(bin->buf_patched, patch_addr, rel, &formular_sym);

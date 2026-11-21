@@ -29,8 +29,8 @@ d "b .s1 0x20" 10040000 0x0 (jmp (bv 32 0x20))
 d "b .s2 b3" 62030c00 0x0 (jmp (var b3))
 d "bpos .s1 0x8,a5" 20408002 0x0 (branch (|| (! (sle (var a5) (bv 32 0x0))) (== (var a5) (bv 32 0x0))) (jmp (bv 32 0x8)) nop)
 d "bdec .s1 0x4,a5" 20308002 0x0 (branch (|| (! (sle (var a5) (bv 32 0x0))) (== (var a5) (bv 32 0x0))) (seq (set a5 (- (var a5) (bv 32 0x1))) (jmp (bv 32 0x4))) nop)
-d ".fphead n, l, w, bu, nobr, nosat, 0001000b" 000000e1 0x1c
-d ".fphead n, l, w, b, nobr, nosat, 1111010b" 082841ef 0x5c
+d ".fphead n, l, w, bu, nobr, nosat, 0b0001000" 000000e1 0x1c
+d ".fphead n, l, w, b, nobr, nosat, 0b1111010" 082841ef 0x5c
 d "[b0] bnop .s1 0x40,0x4" 21810820 0x38 (branch (! (is_zero (var b0))) (jmp (bv 32 0x40)) nop)
 d "dint" 00400010 0x0
 d "rint" 00600010 0x0
@@ -94,6 +94,13 @@ d "stb .d1 a3,*a4" 34029001 0x0 (storew 0 (+ (var a4) (bv 32 0x0)) (cast 8 false
 d "sth .d1 a3,*a4" 54029001 0x0 (storew 0 (+ (var a4) (bv 32 0x0)) (cast 16 false (var a3)))
 # Non-aligned doubleword store (STNDW): same 64-bit data path as STDW.
 d "stndw .d1 a3:a2,*a4" 74039001 0x0 (seq (set ea (+ (var a4) (bv 32 0x0))) (storew 0 (var ea) (var a2)) (storew 0 (+ (var ea) (bv 32 0x4)) (var a3)))
+# A clear sc bit (23) leaves the offset of LDNDW and STNDW in bytes, which TI
+# writes in parentheses; a set one scales it by eight (TI cl6x and dis6x).
+d "ldndw .d1 *+a8(0x1),a11:a10" 24232005 0x0 (seq (set ea (+ (var a8) (bv 32 0x1))) (set a10 (loadw 0 32 (var ea))) (set a11 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "ldndw .d1 *+a8[0x1],a11:a10" 2423a005 0x0 (seq (set ea (+ (var a8) (bv 32 0x8))) (set a10 (loadw 0 32 (var ea))) (set a11 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "stndw .d1 a11:a10,*+a8(0x7)" 74e32005 0x0 (seq (set ea (+ (var a8) (bv 32 0x7))) (storew 0 (var ea) (var a10)) (storew 0 (+ (var ea) (bv 32 0x4)) (var a11)))
+d "ldndw .d1 *-a4(a1),a7:a6" 24291003 0x0 (seq (set ea (- (var a4) (var a1))) (set a6 (loadw 0 32 (var ea))) (set a7 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
+d "ldndw .d1 *+a4[a1],a7:a6" 242b9003 0x0 (seq (set ea (+ (var a4) (* (var a1) (bv 32 0x8)))) (set a6 (loadw 0 32 (var ea))) (set a7 (loadw 0 32 (+ (var ea) (bv 32 0x4)))))
 # MVC reads of further control registers: irp (common to all C6000) and ssr
 # (C64x+ extension), confirming the control-register bindings resolve.
 d "mvc .s2 irp,b4" e2031802 0x0 (set b4 (var irp))
@@ -233,8 +240,12 @@ d "sploop 1" 00800300 0x0
 d "sploopd 1" 00a00300 0x0
 d "sploopw 1" 00e00300 0x0
 d "[a0] sploopw 6" 00e083c2 0x0
-d "spkernel 0" 01400300 0x0
-d "spkernel 40" 0140030a 0x0
+# rz-asm has no image to find the SPLOOP a SPKERNEL closes, and so the ii its
+# stage/cycle field splits by: the field stays whole, in hex, as dis6x prints
+# it without the loop. SPKERNELR has no operand.
+d "spkernel 0x0" 01400300 0x0
+d "spkernel 0x28" 0140030a 0x0
+d "spkernelr" 00600300 0x0
 d "spmask s1" 01001300 0x0
 d "spmask l1,s2" 00002700 0x0
 d "spmask m2" 00000302 0x0
@@ -257,3 +268,8 @@ d "subu .l2x a3,b6,b7:b6" fb771803 0x0
 # ordinary instruction; emitting a .fphead here put packet metadata in the
 # middle of code (#6751).
 d "ldh .d1 *+a14[0x10],b21" 4602baea 0x0
+
+# A 32-bit opcode is word aligned, so a half word can only be a compact slot,
+# which cannot be decoded without the header rz-asm is not given here. It was
+# read as a 32-bit word straddling the next slot, losing the word alignment.
+d "invalid;mvk .s1 -0x6b18,a3" 46022874ca01 0x2

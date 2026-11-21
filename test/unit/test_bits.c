@@ -68,6 +68,19 @@ bool test_rz_bits_copy(void) {
 	mu_end;
 }
 
+bool test_rz_bits_extract(void) {
+	mu_assert_eq(rz_bits_extract(0x1122334455667788, 0, 8), 0x88, "Low byte");
+	mu_assert_eq(rz_bits_extract(0x1122334455667788, 56, 8), 0x11, "High byte");
+	mu_assert_eq(rz_bits_extract(0x1122334455667788, 4, 12), 0x778, "Unaligned field");
+	mu_assert_eq(rz_bits_extract(0x1122334455667788, 60, 8), 0x1, "Field past the top bit");
+	mu_assert_eq(rz_bits_extract(0x8000000000000000, 63, 1), 1, "Top bit");
+	mu_assert_eq(rz_bits_extract(UT64_MAX, 0, 64), UT64_MAX, "Whole value");
+	mu_assert_eq(rz_bits_extract(UT64_MAX, 0, 0), 0, "Empty field");
+	mu_assert_eq(rz_bits_extract(UT64_MAX, 64, 8), 0, "Start past the top bit");
+
+	mu_end;
+}
+
 bool test_rz_bits_ut64_width(void) {
 	mu_assert_eq(rz_bits_ut64_width(0), 0, "Width of 0");
 	mu_assert_eq(rz_bits_ut64_width(1), 1, "Width of 1");
@@ -87,6 +100,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bits_spread);
 	mu_run_test(test_rz_bits_trailing_zero);
 	mu_run_test(test_rz_bits_copy);
+	mu_run_test(test_rz_bits_extract);
 	mu_run_test(test_rz_bits_ut64_width);
 
 	return tests_passed != tests_run;

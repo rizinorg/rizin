@@ -37,8 +37,8 @@ extern "C" {
  * Call rz_(p)vector_shrink explicitly if desired.
  */
 
-// RzPVectorComparator should return negative, 0, positive to indicate "value < vec_data", "value == vec_data", "value > vec_data".
-typedef int (*RzPVectorComparator)(const void *value, const void *vec_data, void *user);
+// RzPVectorComparator should return negative, 0, positive to indicate "a < b", "a == b", "a > b".
+typedef int (*RzPVectorComparator)(const void *a, const void *b, void *user);
 typedef int (*RzVectorComparator)(const void *a, const void *b, void *user);
 typedef void (*RzVectorFree)(void *e, void *user);
 typedef void (*RzPVectorFree)(void *e);
@@ -331,6 +331,9 @@ RZ_API RZ_BORROW void **rz_pvector_find(RZ_NONNULL const RzPVector *vec, RZ_NONN
 RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *element, RZ_NONNULL RzPVectorComparator cmp, void *user);
 
 RZ_API bool rz_pvector_bin_search(RZ_NONNULL RzPVector *pvec, RZ_NONNULL void *elem, RZ_NONNULL RzPVectorComparator cmp, RZ_NULLABLE void *user, RZ_NULLABLE void **out);
+
+RZ_API void **rz_pvector_insert_sorted(RZ_NONNULL RzPVector *vec, RZ_NONNULL void *x, RZ_NONNULL RzPVectorComparator cmp, void *user);
+RZ_API size_t rz_pvector_find_sorted(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *x, RZ_NONNULL RzPVectorComparator cmp, void *user);
 
 // join two pvector into one, pvec1 should free the joined element in pvec2
 RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *pvec2);

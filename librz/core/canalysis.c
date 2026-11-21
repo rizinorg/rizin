@@ -6401,7 +6401,9 @@ RZ_API void rz_core_perform_auto_analysis(RZ_NONNULL RzCore *core, RzCoreAnalysi
 	if (rz_core_is_debugging(core)) {
 		debugger = core->dbg->cur ? rz_str_dup(core->dbg->cur->name) : rz_str_dup("esil");
 	}
-	rz_cons_clear_line(core->cons, stderr);
+	if (rz_cons_is_interactive(core->cons)) {
+		rz_cons_clear_line(core->cons, stderr);
+	}
 
 	// if type was simple only then don't proceed further
 	if (type == RZ_CORE_ANALYSIS_SIMPLE || rz_interrupt_is_breaked(core->intr)) {
