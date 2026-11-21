@@ -7,152 +7,691 @@ pdf
 agf
 EOF
 EXPECT=<<EOF
-/ sym.array_keys_to_word_list();
+            ; CALL XREF from sym.array_keys @ 0x61258
+/ sym.array_keys_to_word_list(int32_t arg1 @ r26);
 |           0x000607ec      stw   rp, -0x14(sp)
 |           0x000607f0      stw,ma r5, 0x80(sp)
 |           0x000607f4      ldo   -0x70(sp), r1
 |           0x000607f8      stw   r4, -0x7c(sp)
 |           0x000607fc      stw   r3, -0x78(sp)
-|       ,=< 0x00060800      movb,<> r26, r5, 0x6082c
+|       ,=< 0x00060800      movb,<> r26, r5, 0x6082c                   ; arg1
 |       |   0x00060804      fstd,ma fr12, 8(r1)
 |       |   0x00060808      ldo   0(r0), r4
-|       |   0x0006080c      or    r4, r0, ret0
-|       |   0x00060810      ldo   -0x70(sp), r1
-|       |   0x00060814      ldw   -0x94(sp), rp
-|       |   0x00060818      ldw   -0x7c(sp), r4
-|       |   0x0006081c      ldw   -0x78(sp), r3
-|       |   0x00060820      fldd,ma 8(r1), fr12
-|       |   0x00060824      bve   (rp)
-|       |   0x00060828      ldw,mb -0x80(sp), r5
-|       `-> 0x0006082c      ldw   0x10(r5), ret0
-|           0x00060830      ldw   0x14(r5), r19
-|           0x00060834      or,*  ret0, r19, ret0
-|           0x00060838      cmpib,= 0, ret0, 0x6080c
-|           0x0006083c      ldo   0(r0), r4
-|           0x00060840      ldw   0x18(r5), ret0
-|           0x00060844      ldw   0xc(ret0), r3
-|           0x00060848      cmpb,= r3, ret0, 0x60810
-|           0x0006084c      or    r4, r0, ret0
-|           0x00060850      ldw   0(r3), r25
-|           0x00060854      ldw   4(r3), r26
-|           0x00060858      b,l   sym.itos, r0
-|           0x0006085c      or    r0, r0, r0
-|           0x00060860      stw   ret0, -0x10(sp)
-|           0x00060864      fldw  -0x10(sp), fr12
-|           0x00060868      b,l   sym.make_bare_word, r31
-|           0x0006086c      or    ret0, r0, r26
-|           0x00060870      or    r4, r0, r25
-|           0x00060874      b,l   sym.make_word_list, r31
-|           0x00060878      or    ret0, r0, r26
-|           0x0006087c      fstw  fr12, -0x10(sp)
-|           0x00060880      ldw   -0x10(sp), r26
-|           0x00060884      b,l   0x76aec, r0
-|           0x00060888      or    ret0, r0, r4
-|           0x0006088c      ldw   0xc(r3), r3
-|           0x00060890      ldw   0x18(r5), ret0
-|           0x00060894      cmpb,<> r3, ret0, 0x60850
-|           0x00060898      or    r0, r0, r0
-|           0x0006089c      cmpib,= 0, r4, 0x60810
-|           0x000608a0      or    r4, r0, ret0
-|           0x000608a4      ldw   0(r4), ret0
-|           0x000608a8      cmpib,= 0, ret0, 0x6080c
+|     ..--> 0x0006080c      or    r4, r0, ret0
+|   ..----> 0x00060810      ldo   -0x70(sp), r1
+|   ::::|   0x00060814      ldw   -0x94(sp), rp
+|   ::::|   0x00060818      ldw   -0x7c(sp), r4
+|   ::::|   0x0006081c      ldw   -0x78(sp), r3
+|   ::::|   0x00060820      fldd,ma 8(r1), fr12
+|   ::::|   0x00060824      bve   (rp)
+|   ::::|   0x00060828      ldw,mb -0x80(sp), r5
+|   ::::`-> 0x0006082c      ldw   0x10(r5), ret0
+|   ::::    0x00060830      ldw   0x14(r5), r19
+|   ::::    0x00060834      or,*  ret0, r19, ret0
+|   ::`===< 0x00060838      cmpib,= 0, ret0, 0x6080c
+|   :: :    0x0006083c      ldo   0(r0), r4
+|   :: :    0x00060840      ldw   0x18(r5), ret0
+|   :: :    0x00060844      ldw   0xc(ret0), r3
+|   `=====< 0x00060848      cmpb,= r3, ret0, 0x60810
+|    : :    0x0006084c      or    r4, r0, ret0
+|    : :.-> 0x00060850      ldw   0(r3), r25
+|    : ::   0x00060854      ldw   4(r3), r26
+|    : ::   0x00060858      b,l   sym.itos, r0
+|    : ::   0x0006085c      or    r0, r0, r0
+|    : ::   0x00060860      stw   ret0, -0x10(sp)
+|    : ::   0x00060864      fldw  -0x10(sp), fr12
+|    : ::   0x00060868      b,l   sym.make_bare_word, r31
+|    : ::   0x0006086c      or    ret0, r0, r26
+|    : ::   0x00060870      or    r4, r0, r25
+|    : ::   0x00060874      b,l   sym.make_word_list, r31
+|    : ::   0x00060878      or    ret0, r0, r26
+|    : ::   0x0006087c      fstw  fr12, -0x10(sp)
+|    : ::   0x00060880      ldw   -0x10(sp), r26
+|    : ::   0x00060884      b,l   fcn.00076aec, r0
+|    : ::   0x00060888      or    ret0, r0, r4
+|    : ::   0x0006088c      ldw   0xc(r3), r3
+|    : ::   0x00060890      ldw   0x18(r5), ret0
+|    : :`=< 0x00060894      cmpb,<> r3, ret0, 0x60850
+|    : :    0x00060898      or    r0, r0, r0
+|    `====< 0x0006089c      cmpib,= 0, r4, 0x60810
+|      :    0x000608a0      or    r4, r0, ret0
+|      :    0x000608a4      ldw   0(r4), ret0
+|      `==< 0x000608a8      cmpib,= 0, ret0, 0x6080c
 |           0x000608ac      or    r4, r0, r26
 |           0x000608b0      ldo   -0x70(sp), r1
 |           0x000608b4      ldw   -0x94(sp), rp
 |           0x000608b8      ldw   -0x7c(sp), r4
 |           0x000608bc      ldw   -0x78(sp), r3
 |           0x000608c0      fldd,ma 8(r1), fr12
-|           0x000608c4      b,l   sym.list_reverse, r0
-|           0x000608c8      ldw,mb -0x80(sp), r5
-\           0x000608cc      or    r0, r0, r0
-   .--------------------------------.
-   |  0x607ec                       |
-   | sym.array_keys_to_word_list(); |
-   | stw rp, -0x14(sp)              |
-   | stw,ma r5, 0x80(sp)            |
-   | ldo -0x70(sp), r1              |
-   | stw r4, -0x7c(sp)              |
-   | stw r3, -0x78(sp)              |
-   | movb,<> r26, r5, 0x6082c       |
-   `--------------------------------'
-           f t
-           | |
-           | '--------------.
-    .------'                |
-    |                       |
-.----------------------.    |
-|  0x60804             |    |
-| fstd,ma fr12, 8(r1)  |    |
-| ldo 0(r0), r4        |    |
-| or r4, r0, ret0      |    |
-| ldo -0x70(sp), r1    |    |
-| ldw -0x94(sp), rp    |    |
-| ldw -0x7c(sp), r4    |    |
-| ldw -0x78(sp), r3    |    |
-| fldd,ma 8(r1), fr12  |    |
-| bve (rp)             |    |
-| ldw,mb -0x80(sp), r5 |    |
-`----------------------'    |
-    v                       |
-    |                       |
-    '------.                |
-           | .--------------'
-           | |
-     .-----------------------------.
-     |  0x6082c                    |
-     | ldw 0x10(r5), ret0          |
-     | ldw 0x14(r5), r19           |
-     | or,* ret0, r19, ret0        |
-     | cmpib,= 0, ret0, 0x6080c    |
-     | ldo 0(r0), r4               |
-     | ldw 0x18(r5), ret0          |
-     | ldw 0xc(ret0), r3           |
-     | cmpb,= r3, ret0, 0x60810    |
-     | or r4, r0, ret0             |
-     | ldw 0(r3), r25              |
-     | ldw 4(r3), r26              |
-     | b,l sym.itos, r0            |
-     | or r0, r0, r0               |
-     | stw ret0, -0x10(sp)         |
-     | fldw -0x10(sp), fr12        |
-     | b,l sym.make_bare_word, r31 |
-     | or ret0, r0, r26            |
-     | or r4, r0, r25              |
-     | b,l sym.make_word_list, r31 |
-     | or ret0, r0, r26            |
-     | fstw fr12, -0x10(sp)        |
-     | ldw -0x10(sp), r26          |
-     | b,l 0x76aec, r0             |
-     | or ret0, r0, r4             |
-     | ldw 0xc(r3), r3             |
-     | ldw 0x18(r5), ret0          |
-     | cmpb,<> r3, ret0, 0x60850   |
-     | or r0, r0, r0               |
-     | cmpib,= 0, r4, 0x60810      |
-     | or r4, r0, ret0             |
-     | ldw 0(r4), ret0             |
-     | cmpib,= 0, ret0, 0x6080c    |
-     | or r4, r0, r26              |
-     | ldo -0x70(sp), r1           |
-     | ldw -0x94(sp), rp           |
-     | ldw -0x7c(sp), r4           |
-     | ldw -0x78(sp), r3           |
-     | fldd,ma 8(r1), fr12         |
-     | b,l sym.list_reverse, r0    |
-     | ldw,mb -0x80(sp), r5        |
-     | or r0, r0, r0               |
-     `-----------------------------'
-         v
-         |
-         '.
-          |
-      .---------------------------.
-      |  0x608d0                  |
-      | sym.array_to_word_list(); |
-      | stw rp, -0x14(sp)         |
-      | stw,ma r5, 0x40(sp)       |
-      | stw r4, -0x3c(sp)         |
-      | movb,<> r26, r5, 0x60900  |
-      `---------------------------'
+|       ,=< 0x000608c4      b,l   sym.list_reverse, r0
+\       |   0x000608c8      ldw,mb -0x80(sp), r5
+                      .--------------------------------------------------.
+                      |  0x607ec                                         |
+                      |   ; CALL XREF from sym.array_keys @ 0x61258      |
+                      | sym.array_keys_to_word_list(int32_t arg1 @ r26); |
+                      | stw rp, -0x14(sp)                                |
+                      | stw,ma r5, 0x80(sp)                              |
+                      | ldo -0x70(sp), r1                                |
+                      | stw r4, -0x7c(sp)                                |
+                      | stw r3, -0x78(sp)                                |
+                      | ; arg1                                           |
+                      | movb,<> r26, r5, 0x6082c                         |
+                      | fstd,ma fr12, 8(r1)                              |
+                      `--------------------------------------------------'
+                            t f
+                            | |
+                         .--' |
+                         |    '--------------------------.
+                         |                               |
+                     .--------------------------.    .---------------.
+                     |  0x6082c                 |    |  0x60808      |
+                     | ldw 0x10(r5), ret0       |    | ldo 0(r0), r4 |
+                     | ldw 0x14(r5), r19        |    `---------------'
+                     | or,* ret0, r19, ret0     |        v
+                     | cmpib,= 0, ret0, 0x6080c |        |
+                     | ldo 0(r0), r4            |        |
+                     `--------------------------'        |
+                             f t                         |
+                             | |                         |
+                             | '-------------------.     |
+                     .-------'                     |     |
+                     |                             |   .-'
+                     |                             |   |
+                 .--------------------------.      |   |
+                 |  0x60840                 |      |   |
+                 | ldw 0x18(r5), ret0       |      |   |
+                 | ldw 0xc(ret0), r3        |      |   |
+                 | cmpb,= r3, ret0, 0x60810 |      |   |
+                 | or r4, r0, ret0          |      |   |
+                 `--------------------------'      |   |
+                         f t                       |   |
+                         | |                       |   |
+                         | '-------------------.   |   |
+                   .-----'                     |   |   |
+            .--------.                         |   |   |
+            |      | |                         |   |   |
+            |.-----------------------------.   |   |   |
+            ||  0x60850                    |   |   |   |
+            || ldw 0(r3), r25              |   |   |   |
+            || ldw 4(r3), r26              |   |   |   |
+            || b,l sym.itos, r0            |   |   |   |
+            || or r0, r0, r0               |   |   |   |
+            || stw ret0, -0x10(sp)         |   |   |   |
+            || fldw -0x10(sp), fr12        |   |   |   |
+            || b,l sym.make_bare_word, r31 |   |   |   |
+            || or ret0, r0, r26            |   |   |   |
+            || or r4, r0, r25              |   |   |   |
+            || b,l sym.make_word_list, r31 |   |   |   |
+            || or ret0, r0, r26            |   |   |   |
+            || fstw fr12, -0x10(sp)        |   |   |   |
+            || ldw -0x10(sp), r26          |   |   |   |
+            || b,l fcn.00076aec, r0        |   |   |   |
+            || or ret0, r0, r4             |   |   |   |
+            || ldw 0xc(r3), r3             |   |   |   |
+            || ldw 0x18(r5), ret0          |   |   |   |
+            || cmpb,<> r3, ret0, 0x60850   |   |   |   |
+            || or r0, r0, r0               |   |   |   |
+            |`-----------------------------'   |   |   |
+            |        f t                       |   |   |
+            |        | |                       |   |   |
+            `----------'                       |   |   |
+                   .-'                         |   |   |
+                   |                           |   |   |
+               .------------------------.      |   |   |
+               |  0x6089c               |      |   |   |
+               | cmpib,= 0, r4, 0x60810 |      |   |   |
+               | or r4, r0, ret0        |      |   |   |
+               `------------------------'      |   |   |
+                       f t                     |   |   |
+                       | |                     |   |   |
+                       | '-----------------.   |   |   |
+               .-------'                   |   |   |   |
+               |                           |   |   |   |
+           .--------------------------.    |   |   |   |
+           |  0x608a4                 |    |   |   |   |
+           | ldw 0(r4), ret0          |    |   |   |   |
+           | cmpib,= 0, ret0, 0x6080c |    |   |   |   |
+           | or r4, r0, r26           |    |   |   |   |
+           `--------------------------'    |   |   |   |
+                   f t                     |   |   |   |
+                   | |                     |   |   |   |
+                   | '---------------------|---|---|---|-.
+          .--------'                       |   |   |   | |
+          |                                |   |   '---|---.
+          |                                |   |       '-----.
+          |                                |   |         | | |
+      .--------------------------.         |   |   .-----------------.
+      |  0x608b0                 |         |   |   |  0x6080c        |
+      | ldo -0x70(sp), r1        |         |   |   | or r4, r0, ret0 |
+      | ldw -0x94(sp), rp        |         |   |   `-----------------'
+      | ldw -0x7c(sp), r4        |         |   |       v
+      | ldw -0x78(sp), r3        |         |   |       |
+      | fldd,ma 8(r1), fr12      |         |   |       |
+      | b,l sym.list_reverse, r0 |         |   |       |
+      | ldw,mb -0x80(sp), r5     |         |   |       |
+      `--------------------------'         |   |       |
+          v                                |   |       |
+          |                                |   |       |
+          |                                |   |  .----'
+    .-----'                                |   |  |
+    |                                      |   '----.
+    |                                      '----------.
+    |                                             | | |
+.---------------------------------------.   .----------------------.
+|  0x69178                              |   |  0x60810             |
+| ; arg1                                |   | ldo -0x70(sp), r1    |
+|   ; XREFS(27)                         |   | ldw -0x94(sp), rp    |
+| sym.list_reverse(int32_t arg1 @ r26); |   | ldw -0x7c(sp), r4    |
+| movb,= r26, r26, 0x691a0              |   | ldw -0x78(sp), r3    |
+| ldo 0(r0), ret0                       |   | fldd,ma 8(r1), fr12  |
+`---------------------------------------'   | bve (rp)             |
+                                            | ldw,mb -0x80(sp), r5 |
+                                            `----------------------'
+EOF
+RUN
+
+NAME=hppa: branch types, targets and delay slots
+FILE=malloc://0x100
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx e800a0d808000240e800a0caebe000c008000240e80000b008000240e820000008000240e840c00008000240e840d002eaa0c002eac0f00008000240e400820034140002e020263288412048080002408841203a0800024084603f4708000240ac62001808000240c8410008e80340000800024092c03000d0229bff3000242008410883e840c002
+ao 34~^opcode,type,jump,fail,delay
+EOF
+EXPECT=<<EOF
+opcode: b,l 0x10074, r0
+type: call
+jump: 0x00010074
+fail: 0x00010008
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: b,l,n 0x10074, r0
+type: call
+jump: 0x00010074
+fail: 0x00010010
+opcode: b,l 0x10074, r31
+type: call
+jump: 0x00010074
+fail: 0x00010014
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: b,l 0x10074, r0
+type: jmp
+jump: 0x00010074
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: b,l 0x10024, r1
+type: mov
+opcode: or r0, r0, r0
+type: nop
+opcode: bv r0(rp)
+type: ret
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: bve,n (rp)
+type: ret
+opcode: bv,n r0(r21)
+type: rjmp
+opcode: bve,l (r22), rp
+type: rcall
+fail: 0x0001003c
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: be,l 0x100(sr2,r0), sr0, r31
+type: swi
+fail: 0x00010044
+delay: 1
+opcode: ldo 1(r0), r20
+type: mov
+opcode: be,n 0x318(sr4,r1)
+type: rjmp
+opcode: cmpb,<> r1, rp, 0x10074
+type: cjmp
+jump: 0x00010074
+fail: 0x00010050
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: cmpb,<>,n r1, rp, 0x10074
+type: cjmp
+jump: 0x00010074
+fail: 0x00010054
+opcode: or r0, r0, r0
+type: nop
+opcode: cmpib,=,n 0, r3, 0x10000
+type: cjmp
+jump: 0x00010000
+fail: 0x00010060
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: addib,tr 1, r3, 0x10074
+type: jmp
+jump: 0x00010074
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: movb r1, rp, 0x10074
+type: mov
+opcode: blr r3, r0
+type: rjmp
+delay: 1
+opcode: or r0, r0, r0
+type: nop
+opcode: cmpiclr,<> 0, r22, r0
+type: cjmp
+jump: 0x0001007c
+fail: 0x00010078
+opcode: extrw,u,tr r1, 0x1f, 1, rp
+type: jmp
+jump: 0x00010080
+opcode: ftest
+type: cjmp
+jump: 0x00010084
+fail: 0x00010080
+opcode: cmpclr r1, rp, r3
+type: cmp
+opcode: bv,n r0(rp)
+type: ret
+EOF
+RUN
+
+NAME=hppa: function preludes
+FILE=malloc://0x60
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 6bc23fd937de00804bc23f59e840c00037de3f8108000240080002400800024008000240341c0001e840c002
+wx 6bc23fd9e840c00208000240 @ 0x10040
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010000    1 20           fcn.00010000
+0x00010040    1 8            fcn.00010040
+EOF
+RUN
+
+NAME=hppa: no function starts in a delay slot
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 874020106bc23fd937de008037de3f81e840c000080002406bc23fd9e840c00008000240
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010018    1 12           fcn.00010018
+EOF
+RUN
+
+NAME=hppa: function preludes with instructions scheduled before
+FILE=malloc://0x60
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 2b6010006bc23fd9e840c0000800024022690000367300006bc23fd9e840c000341f00006bc23fd9081a0243e840c00008000240
+wx 081a02436bc23fd9e840c002080002406bc23fd9e840c00008000240 @ 0x10034
+aap
+afl
+EOF
+EXPECT=<<EOF
+0x00010000    1 16           fcn.00010000
+0x00010010    1 20           fcn.00010010
+0x00010024    1 16           fcn.00010024
+0x00010034    1 12           fcn.00010034
+0x00010044    1 12           fcn.00010044
+EOF
+RUN
+
+NAME=hppa: register roles
+FILE=malloc://0x10
+ARGS=-a hppa -b 32 -E big
+CMDS=<<EOF
+arp~^=
+e asm.bits=64
+arp~^=
+EOF
+EXPECT=<<EOF
+=PC	iaoq0
+=SP	r30
+=LR	r2
+=A0	r26
+=A1	r25
+=A2	r24
+=A3	r23
+=R0	r28
+=R1	r29
+=SN	r20
+=PC	iaoq0
+=SP	r30
+=LR	r2
+=A0	r26
+=A1	r25
+=A2	r24
+=A3	r23
+=A4	r22
+=A5	r21
+=A6	r20
+=A7	r19
+=R0	r28
+=SN	r20
+EOF
+RUN
+
+NAME=hppa: floating point registers
+FILE=malloc://0x10
+ARGS=-a hppa -b 32 -E big
+CMDS=<<EOF
+arp~fpu~?
+ar fr4=0x1122334455667788
+ar fr4L
+ar fr4R
+ar fr0=0xaabbccdd00112233
+ar fpsr
+ar fpe1
+e asm.bits=64
+arp~fpu~?
+ar fr31=0x0123456789abcdef
+ar fr31L
+ar fr31R
+EOF
+EXPECT=<<EOF
+96
+fr4L = 0x11223344
+fr4R = 0x55667788
+fpsr = 0xaabbccdd
+fpe1 = 0x00112233
+96
+fr31L = 0x01234567
+fr31R = 0x89abcdef
+EOF
+RUN
+
+NAME=hppa: memory operands and moves
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx 6bc23fd90fc01299481302000eb320544fc53f016fc30100341c00fe202262460803025a2fc11004
+ao 10~^opcode,type,stack,ptr,val:,family
+EOF
+EXPECT=<<EOF
+opcode: stw rp, -0x14(sp)
+type: store
+family: cpu
+stackop: set
+stackptr: -20
+opcode: stw r0, -4(sp)
+type: store
+family: cpu
+stackop: set
+stackptr: -4
+opcode: ldw 0x100(r0), r19
+ptr: 0x00000100
+type: load
+family: cpu
+opcode: ldh,s r19(r21), r20
+type: load
+family: cpu
+opcode: ldw,mb -0x80(sp), r5
+type: load
+family: cpu
+stackop: get
+stackptr: -128
+opcode: stw,ma r3, 0x80(sp)
+type: store
+family: cpu
+stackop: set
+opcode: ldo 0x7f(r0), ret0
+val: 0x0000007f
+type: mov
+family: cpu
+opcode: ldil 0x12345000, r1
+val: 0x12345000
+type: mov
+family: cpu
+opcode: or r3, r0, r26
+type: mov
+family: cpu
+opcode: fldd -0x10(sp), fr4
+type: load
+family: fpu
+stackop: get
+stackptr: -16
+EOF
+RUN
+
+NAME=hppa: calling convention
+FILE=bins/hppa/hppa-exe
+CMDS=<<EOF
+aaa
+afs @ sym.divide
+afs @ main
+EOF
+EXPECT=<<EOF
+void sym.divide(int32_t arg1 @ r26, int32_t arg2 @ r25);
+int main(int argc @ r26, char **argv @ r25, char **envp);
+EOF
+RUN
+
+NAME=hppa: undecodable words
+FILE=malloc://0x20
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx ffffffff
+pi 1
+EOF
+EXPECT=<<EOF
+invalid
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=hppa: tokens of completers and half registers
+FILE=malloc://0x20
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx 08840886d0a52b6630840c1a3ad64796
+pi 4
+EOF
+EXPECT=<<EOF
+cmpclr r4, r4, r6
+shrpw,= r5, r5, 4, r6
+fcmp,dbl,!= fr4, fr4
+xmpyu fr22R, fr22, fr22
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=hppa: diagnose instructions
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0
+CMDS=<<EOF
+wx 141c1a00141c0240144008bc145c1840144036001440162014402600144006201400010114400ba015c00aa0
+ao 11~^opcode,type,family
+EOF
+EXPECT=<<EOF
+opcode: mfdiag dr0, ret0
+type: mov
+family: priv
+opcode: mtdiag ret0, dr0
+type: mov
+family: priv
+opcode: mfdiag dr2, ret0
+type: mov
+family: priv
+opcode: mtdiag ret0, dr2
+type: mov
+family: priv
+opcode: tocen
+type: unk
+family: priv
+opcode: tocdis
+type: unk
+family: priv
+opcode: shdwgr
+type: mov
+family: priv
+opcode: grshdw
+type: mov
+family: priv
+opcode: diag 0x101
+type: unk
+family: priv
+opcode: sfdiag 2
+type: unk
+family: priv
+opcode: stdiag 0xe
+type: unk
+family: priv
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=hppa: delay slots of returns and noreturn calls
+FILE=bins/hppa/hppa-exe
+CMDS=<<EOF
+aaa
+afb @ main
+afi @ main~noreturn
+afi @ sym.die~noreturn
+EOF
+EXPECT=<<EOF
+0x000106e0 0x00010754 00:0000 116 j 0x00010758 f 0x00010754
+0x00010754 0x00010758 00:0000 4 j 0x00010770
+0x00010758 0x00010760 00:0000 8 j 0x00010778 f 0x00010760
+0x00010760 0x00010770 00:0000 16
+0x00010770 0x00010778 00:0000 8
+0x00010778 0x00010784 00:0000 12
+noreturn: false
+noreturn: true
+EOF
+RUN
+
+NAME=hppa: switch tables
+FILE=malloc://0x100
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 93409004e800004a22680000367300700e7a2093ea60c002e840c000341c0000e840c000341c0002e840c000341c0004e840c000341c3fff000100180001002000010028
+wx 8744807808000240eb000000d7001c1e371800200f1a20990b380a19eb20c0020000000c000000140000001ce840c000341c0000e840c000341c0002e840c000341c0004e840c000341c3fff @ 0x10044
+af @ 0x10000
+afb @ 0x10000
+af @ 0x10044
+afb @ 0x10044
+EOF
+EXPECT=<<EOF
+0x00010000 0x00010004 00:0000 4 j 0x00010008 f 0x00010004
+0x00010004 0x00010008 00:0000 4 j 0x00010030
+0x00010008 0x00010018 00:0000 16 s 0x00010038 s 0x0001003c s 0x00010040
+0x00010018 0x00010020 00:0000 8
+0x00010020 0x00010028 00:0000 8
+0x00010028 0x00010030 00:0000 8
+0x00010030 0x00010038 00:0000 8
+0x00010044 0x0001004c 00:0000 8 j 0x00010088 f 0x0001004c
+0x0001004c 0x00010064 00:0000 24 s 0x00010064 s 0x00010068 s 0x0001006c
+0x00010070 0x00010078 00:0000 8
+0x00010078 0x00010080 00:0000 8
+0x00010080 0x00010088 00:0000 8
+0x00010088 0x00010090 00:0000 8
+EOF
+RUN
+
+NAME=hppa: switch tables without a compare of the index
+FILE=malloc://0x100
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 93409004e800004a22680000367300700e7a2093ea60c002e840c000341c0000e840c000341c0002e840c000341c0004e840c000341c3fff000100180001002000010028
+wx 8744807808000240eb000000d7001c1e371800200f1a20990b380a19eb20c0020000000c000000140000001ce840c000341c0000e840c000341c0002e840c000341c0004e840c000341c3fff @ 0x10044
+wx 0800024008000240 @ 0x10000
+wx 08000240 @ 0x10044
+af @ 0x10008
+afb @ 0x10008
+af @ 0x1004c
+afb @ 0x1004c
+EOF
+EXPECT=<<EOF
+0x00010008 0x00010018 00:0000 16
+0x0001004c 0x00010064 00:0000 24 s 0x00010064 s 0x00010068 s 0x0001006c
+0x00010070 0x00010078 00:0000 8
+0x00010078 0x00010080 00:0000 8
+0x00010080 0x00010088 00:0000 8
+EOF
+RUN
+
+NAME=hppa: noreturn inference past unresolved indirect jumps
+FILE=malloc://0x40
+ARGS=-a hppa -b 32 -E big -e asm.cpu=hppa2.0 -m 0x10000
+CMDS=<<EOF
+wx 8740201008000240e800a02008000240eaa0c00208000240
+wx e81f1ff508000240 @ 0x10020
+af @ 0x10020
+afn noret @ 0x10020
+tn noret
+af @ 0x10000
+aanr
+afi @ 0x10000~noreturn
+EOF
+EXPECT=<<EOF
+noreturn: false
+EOF
+RUN
+
+NAME=hppa: DWARF register variables
+FILE=bins/hppa/hppa-dwarf
+CMDS=<<EOF
+aaa
+afvll @ sym.scale
+afvl @ main
+EOF
+EXPECT=<<EOF
+arg int n origin=DWARF @ r26
+var double s origin=DWARF @ loclist: [(0x104f0, 12):  0x0000000000000000,	(0x104fc, 12): composite: [(.0, 32): fr4L,	(.0, 32): fr4R],	(0x1050c, 12): composite: [(.0, 32): fr4L,	(.0, 32): fr4R]]
+arg double x origin=DWARF @ composite: [(.0, 32): fr7L,	(.0, 32): fr7R]
+arg char **argv @ r25
+arg int argc @ r26
+EOF
+RUN
+
+NAME=hppa: DWARF register variables of 64-bit code
+FILE=bins/hppa/hppa64-dwarf
+CMDS=<<EOF
+aaa
+afvll @ sym.scale
+afvl @ main
+EOF
+EXPECT=<<EOF
+var double s origin=DWARF @ loclist: [(0x102e8, 28):  0x0000000000000000,	(0x10304, 36): fr4,	(0x10328, 16):  0x0000000000000000]
+arg double x origin=DWARF @ fr5
+arg int n origin=DWARF @ r26
+arg char **argv @ r25
+arg int argc @ r26
+EOF
+RUN
+
+NAME=hppa: no code from data in the executable segment
+FILE=bins/hppa/hppa-rodata
+CMDS=<<EOF
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0x00010054    1 24           entry0
+EOF
+RUN
+
+NAME=hppa: functions past calls to noreturn functions
+FILE=bins/hppa/hppa-noret
+CMDS=<<EOF
+aaa
+afl
+EOF
+EXPECT=<<EOF
+0x00010214    1 20           sym.imp.exit
+0x00010228    1 12           entry0
+0x00010238    1 16           fcn.00010238
+0x00010248    1 16           fcn.00010248
+0x00012008    1 12           fcn.00012008
 EOF
 RUN

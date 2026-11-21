@@ -232,7 +232,8 @@ EXPECT=<<EOF
       "stdcall=cc",
       "watcom=cc",
       "classes",
-      "noreturn"
+      "noreturn",
+      "addr.8048360.noreturn=true"
     ]
   }
 }

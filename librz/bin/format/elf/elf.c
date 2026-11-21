@@ -434,6 +434,9 @@ void Elf_(rz_bin_elf_free)(RZ_NULLABLE ELFOBJ *bin) {
 
 	ht_uu_free(bin->got_sym_id_off);
 
+	if (bin->elfctx) {
+		ht_uu_free(bin->elfctx->parisc_import_stubs);
+	}
 	free(bin->elfctx);
 	free(bin);
 }

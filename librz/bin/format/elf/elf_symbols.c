@@ -129,6 +129,11 @@ static const char *symbol_type_to_str(ELFOBJ *bin, RzBinElfSymbol *ret, Elf_(Sym
 		return RZ_BIN_TYPE_SPECIAL_SYM_STR;
 	}
 
+	if (bin && bin->ehdr.e_machine == EM_PARISC && ELF_ST_TYPE(sym->st_info) == STT_PARISC_MILLICODE) {
+		// millicode routines are functions linking through r31
+		return RZ_BIN_TYPE_FUNC_STR;
+	}
+
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(symbol_type_translation_table); i++) {
 		if (ELF_ST_TYPE(sym->st_info) == symbol_type_translation_table[i].type) {
 			return symbol_type_translation_table[i].name;

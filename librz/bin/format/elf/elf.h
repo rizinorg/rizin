@@ -209,6 +209,7 @@ typedef struct Elf_(rz_bin_elf_context_t) {
 
 	RzBinElfSection *plt_got; // .plt.got section
 	RzBinElfSection *plt_sec; // .plt.sec section
+	HtUU *parisc_import_stubs; ///< PA-RISC PLT slot to import stub address
 } RzElfCtx;
 
 struct Elf_(rz_bin_elf_obj_t) {

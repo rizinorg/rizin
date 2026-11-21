@@ -3200,28 +3200,33 @@ static void patch_reloc_alpha(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 static void patch_reloc_parisc(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_addr, const int rel_type, bool big_endian, RelocFormularSymbols *fs) {
 	rz_return_if_fail(buf_patched && fs);
 	ut8 buf[8] = { 0 };
-	ut64 val = 0;
 
 	switch (rel_type) {
 	default:
 		UNHANDL_DEF("PARISC", rel_type);
 		return;
 	case R_PARISC_COPY:
-		/* fall-thru */
 	case R_PARISC_NONE:
+	// these depend on the TLS layout at runtime
+	case R_PARISC_TPREL32:
+	case R_PARISC_TLS_DTPMOD32:
+	case R_PARISC_TLS_DTPOFF32:
 		return;
 	case R_PARISC_DIR32: // S + A
-		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = rz_read_ble32(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble32(buf, val, big_endian);
+	case R_PARISC_PLABEL32: // the function itself rather than a descriptor of it
+		rz_write_ble32(buf, fs->S + fs->A, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		return;
+	case R_PARISC_IPLT: // function address word of the PLT slot, its gp stays unknown
+	case R_PARISC_EPLT:
+		if (sizeof(Elf_(Addr)) == 4) {
+			rz_write_ble32(buf, fs->S + fs->A, big_endian);
+			rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+			return;
+		}
+		// fallthrough
 	case R_PARISC_DIR64: // S + A
-		rz_buf_read_at(buf_patched, patch_addr, buf, 8);
-		val = rz_read_ble64(buf, big_endian);
-		val += fs->S + fs->A;
-		rz_write_ble64(buf, val, big_endian);
+		rz_write_ble64(buf, fs->S + fs->A, big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, 8);
 		return;
 	}

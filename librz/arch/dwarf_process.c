@@ -480,6 +480,7 @@ static const char *map_dwarf_reg_to_riscv_reg(ut32 reg_num) {
 #include <xtensa/xtensa_dwarf_regnum_table.h>
 #include <alpha/alpha_dwarf_regnum_table.h>
 #include <h8300/h8300_dwarf_regnum_table.h>
+#include <hppa/hppa_dwarf_regnum_table.h>
 #include <tms320/tms320_dwarf_regnum_table.h>
 #include <tms320/c6x/c6x.h>
 
@@ -561,6 +562,9 @@ static DWARF_RegisterMapping dwarf_register_mapping_query(RZ_NONNULL const char 
 	}
 	if (RZ_STR_EQ(arch, "h8300h")) {
 		return h8300h_register_name;
+	}
+	if (RZ_STR_EQ(arch, "hppa")) {
+		return bits == 64 ? map_dwarf_reg_to_hppa64_reg : map_dwarf_reg_to_hppa_reg;
 	}
 
 	if (RZ_STR_EQ(arch, "tms320")) {
