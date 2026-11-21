@@ -103,7 +103,10 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		i_port = atoi(port);
 	}
 
-	desc = RZ_NEW(libgdbr_t);
+	desc = RZ_NEW0(libgdbr_t);
+	if (!desc) {
+		return NULL;
+	}
 	gdbr_init(desc, false);
 	gdbr_set_interrupt(desc, io->intr);
 
@@ -114,6 +117,8 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			desc->pid = i_pid;
 			if (gdbr_attach(desc, i_pid) < 0) {
 				eprintf("gdbr: Failed to attach to PID %i\n", i_pid);
+				gdbr_disconnect(desc);
+				gdbr_cleanup(desc);
 				RZ_FREE(desc);
 				return NULL;
 			}
@@ -174,15 +179,15 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, size_t count) {
 }
 
 static int __close(RzIODesc *fd) {
-	if (!fd) {
+	if (!fd || !fd->data) {
 		return 0;
 	}
 	libgdbr_t *desc = fd->data;
 	gdbr_disconnect(desc);
 	gdbr_cleanup(desc);
-	RZ_FREE(desc);
+	RZ_FREE(fd->data);
 	RZ_FREE(fd->name);
-	return -1;
+	return 0;
 }
 
 static int __getpid(RzIODesc *fd) {

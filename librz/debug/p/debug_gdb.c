@@ -23,7 +23,7 @@ typedef struct {
 #define PROC_PERM_SZ        5
 
 typedef struct rz_debug_gdb_ctx_t {
-	RzIOGdb **origrziogdb;
+	int io_fd;
 	libgdbr_t *desc;
 	ut8 *reg_buf;
 	int buf_size;
@@ -36,6 +36,7 @@ static bool rz_debug_gdb_init(RzDebug *dbg, void **user) {
 	if (!ctx) {
 		return false;
 	}
+	ctx->io_fd = -1;
 	ctx->support_sw_bp = UNKNOWN;
 	ctx->support_hw_bp = UNKNOWN;
 	*user = ctx;
@@ -44,13 +45,42 @@ static bool rz_debug_gdb_init(RzDebug *dbg, void **user) {
 
 static void rz_debug_gdb_fini(RzDebug *dbg, void *user) {
 	RzDebugGdbCtx *ctx = user;
+	if (!ctx) {
+		return;
+	}
+	free(ctx->reg_buf);
 	free(ctx);
+}
+
+/**
+ * \brief Validate and return the active libgdbr context for \p dbg.
+ *
+ * Checks that the underlying `gdb` IO descriptor is still open and still owns
+ * `ctx->desc`; clears `ctx->desc` and `ctx->io_fd` if it has been closed or replaced.
+ *
+ * \param dbg Active debug instance.
+ * \return Borrowed `libgdbr_t *` if valid, or `NULL` otherwise.
+ */
+static libgdbr_t *debug_gdb_get_desc(RzDebug *dbg) {
+	if (!dbg) {
+		return NULL;
+	}
+	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc || !dbg->iob.io || ctx->io_fd < 0) {
+		return NULL;
+	}
+	RzIODesc *d = dbg->iob.desc_get ? dbg->iob.desc_get(dbg->iob.io, ctx->io_fd) : NULL;
+	if (!d || !d->plugin || !d->plugin->name || strcmp(d->plugin->name, "gdb") != 0 || d->data != ctx->desc) {
+		ctx->desc = NULL;
+		ctx->io_fd = -1;
+		return NULL;
+	}
+	return ctx->desc;
 }
 
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid);
 static void check_connection(RzDebug *dbg) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
-	if (!ctx->desc) {
+	if (!debug_gdb_get_desc(dbg)) {
 		rz_debug_gdb_attach(dbg, -1);
 	}
 }
@@ -66,18 +96,24 @@ static bool rz_debug_gdb_step(RzDebug *dbg) {
 }
 
 static RzList /*<RzDebugPid *>*/ *rz_debug_gdb_threads(RzDebug *dbg, int pid) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
+		return NULL;
+	}
 	RzList *list;
-	if ((list = gdbr_threads_list(ctx->desc, pid))) {
+	if ((list = gdbr_threads_list(desc, pid))) {
 		list->free = (RzListFree)&rz_debug_pid_free;
 	}
 	return list;
 }
 
 static RzList /*<RzDebugPid *>*/ *rz_debug_gdb_pids(RzDebug *dbg, int pid) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
+		return NULL;
+	}
 	RzList *list;
-	if ((list = gdbr_pids_list(ctx->desc, pid))) {
+	if ((list = gdbr_pids_list(desc, pid))) {
 		list->free = (RzListFree)&rz_debug_pid_free;
 	}
 	return list;
@@ -391,6 +427,9 @@ static RzDebugReasonType rz_debug_gdb_wait(RzDebug *dbg, int pid) {
 }
 
 static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
+	if (!dbg || !dbg->iob.io) {
+		return false;
+	}
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
 	RzIODesc *d = dbg->iob.io->desc;
 	dbg->swstep = false;
@@ -403,7 +442,7 @@ static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 	}
 
 	RzIOGdb *g = d->data;
-	ctx->origrziogdb = (RzIOGdb **)&d->data; // TODO bit of a hack, please improve
+	ctx->io_fd = d->fd;
 	ctx->support_sw_bp = UNKNOWN;
 	ctx->support_hw_bp = UNKNOWN;
 	ctx->desc = &g->desc;
@@ -415,15 +454,20 @@ static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 
 static int rz_debug_gdb_detach(RzDebug *dbg, int pid) {
 	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
+		return -1;
+	}
 	int ret = 0;
 
-	if (pid <= 0 || !ctx->desc->stub_features.multiprocess) {
-		gdbr_detach(ctx->desc);
+	if (pid <= 0 || !desc->stub_features.multiprocess) {
+		gdbr_detach(desc);
 	}
-	ret = gdbr_detach_pid(ctx->desc, pid);
+	ret = gdbr_detach_pid(desc, pid);
 
 	if (dbg->pid == pid) {
 		ctx->desc = NULL;
+		ctx->io_fd = -1;
 	}
 	return ret;
 }
@@ -447,18 +491,18 @@ static const char *rz_debug_gdb_reg_profile(RzDebug *dbg) {
 }
 
 static int rz_debug_gdb_set_reg_profile(RzDebug *dbg, const char *str) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
-	if (ctx->desc && str) {
-		return gdbr_set_reg_profile(ctx->desc, str);
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (desc && str) {
+		return gdbr_set_reg_profile(desc, str);
 	}
 	return false;
 }
 
 static int rz_debug_gdb_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	RzDebug *dbg = bp->user;
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
 	int ret = 0, bpsize;
-	if (!b) {
+	if (!b || !desc) {
 		return false;
 	}
 	bpsize = b->size;
@@ -466,34 +510,34 @@ static int rz_debug_gdb_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool s
 	switch (b->perm) {
 	case RZ_PERM_X: {
 		if (set) {
-			ret = b->hw ? gdbr_set_hwbp(ctx->desc, b->addr, "", bpsize) : gdbr_set_bp(ctx->desc, b->addr, "", bpsize);
+			ret = b->hw ? gdbr_set_hwbp(desc, b->addr, "", bpsize) : gdbr_set_bp(desc, b->addr, "", bpsize);
 		} else {
-			ret = b->hw ? gdbr_remove_hwbp(ctx->desc, b->addr, bpsize) : gdbr_remove_bp(ctx->desc, b->addr, bpsize);
+			ret = b->hw ? gdbr_remove_hwbp(desc, b->addr, bpsize) : gdbr_remove_bp(desc, b->addr, bpsize);
 		}
 		break;
 	}
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
 	case RZ_PERM_W: {
 		if (set) {
-			gdbr_set_hww(ctx->desc, b->addr, "", 1);
+			gdbr_set_hww(desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hww(ctx->desc, b->addr, 1);
+			gdbr_remove_hww(desc, b->addr, 1);
 		}
 		break;
 	}
 	case RZ_PERM_R: {
 		if (set) {
-			gdbr_set_hwr(ctx->desc, b->addr, "", 1);
+			gdbr_set_hwr(desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hwr(ctx->desc, b->addr, 1);
+			gdbr_remove_hwr(desc, b->addr, 1);
 		}
 		break;
 	}
 	case RZ_PERM_ACCESS: {
 		if (set) {
-			gdbr_set_hwa(ctx->desc, b->addr, "", 1);
+			gdbr_set_hwa(desc, b->addr, "", 1);
 		} else {
-			gdbr_remove_hwa(ctx->desc, b->addr, 1);
+			gdbr_remove_hwa(desc, b->addr, 1);
 		}
 		break;
 	}
@@ -502,10 +546,13 @@ static int rz_debug_gdb_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool s
 }
 
 static bool rz_debug_gdb_kill(RzDebug *dbg, int pid, int tid, int sig) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
+		return false;
+	}
 	// TODO kill based on pid and signal
 	if (sig != 0) {
-		if (gdbr_kill(ctx->desc) < 0) {
+		if (gdbr_kill(desc) < 0) {
 			return false;
 		}
 	}
@@ -513,17 +560,19 @@ static bool rz_debug_gdb_kill(RzDebug *dbg, int pid, int tid, int sig) {
 }
 
 static int rz_debug_gdb_select(RzDebug *dbg, int pid, int tid) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
-	if (!ctx->desc || !*ctx->origrziogdb) {
-		ctx->desc = NULL; // TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
 		return false;
 	}
 
-	return gdbr_select(ctx->desc, pid, tid) >= 0;
+	return gdbr_select(desc, pid, tid) >= 0;
 }
 
 static RzDebugInfo *rz_debug_gdb_info(RzDebug *dbg, const char *arg) {
-	RzDebugGdbCtx *ctx = dbg->plugin_data;
+	libgdbr_t *desc = debug_gdb_get_desc(dbg);
+	if (!desc) {
+		return NULL;
+	}
 	RzDebugInfo *rdi;
 	if (!(rdi = RZ_NEW0(RzDebugInfo))) {
 		return NULL;
@@ -547,13 +596,13 @@ static RzDebugInfo *rz_debug_gdb_info(RzDebug *dbg, const char *arg) {
 	}
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
-	rdi->exe = gdbr_exec_file_read(ctx->desc, dbg->pid);
+	rdi->exe = gdbr_exec_file_read(desc, dbg->pid);
 	rdi->status = found ? th->status : RZ_DBG_PROC_STOP;
 	rdi->uid = found ? th->uid : -1;
 	rdi->gid = found ? th->gid : -1;
-	if (gdbr_stop_reason(ctx->desc) >= 0) {
-		eprintf("signal: %d\n", ctx->desc->stop_reason.signum);
-		rdi->signum = ctx->desc->stop_reason.signum;
+	if (gdbr_stop_reason(desc) >= 0) {
+		eprintf("signal: %d\n", desc->stop_reason.signum);
+		rdi->signum = desc->stop_reason.signum;
 	}
 	if (list_alloc) {
 		rz_list_free(th_list);

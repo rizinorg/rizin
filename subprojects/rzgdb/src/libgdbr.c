@@ -62,10 +62,11 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 		eprintf("cannot find gdb reg_profile\n");
 		return false;
 	}
-	if (!gdbr_set_reg_profile(g, regprofile)) {
+	if (gdbr_set_reg_profile(g, regprofile) < 0) {
 		free(regprofile);
 		return false;
 	}
+	free(regprofile);
 	g->target.arch = arch;
 	g->target.bits = bits;
 	g->target.valid = true;
@@ -134,14 +135,15 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 		eprintf("cannot parse reg profile\n");
 		return -1;
 	}
-	if (g->target.regprofile) {
-		free(g->target.regprofile);
+	char *regprofile = strdup(str);
+	if (!regprofile) {
+		free(registers);
+		return -1;
 	}
-	g->target.regprofile = strdup(str);
-	if (g->registers) {
-		free(g->registers);
-	}
-	g->registers = arch_parse_reg_profile(str);
+	free(g->target.regprofile);
+	g->target.regprofile = regprofile;
+	free(g->registers);
+	g->registers = registers;
 
 	return 0;
 }
@@ -162,6 +164,9 @@ int gdbr_cleanup(libgdbr_t *g) {
 	g->send_len = 0;
 	RZ_FREE(g->send_buff);
 	RZ_FREE(g->read_buff);
+	RZ_FREE(g->target.regprofile);
+	RZ_FREE(g->registers);
+	g->target.valid = false;
 	rz_socket_free(g->sock);
 	rz_th_lock_free(g->gdbr_lock);
 	return 0;
