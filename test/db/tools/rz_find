@@ -552,3 +552,53 @@ Cannot open file 'winedbg://';id;''
 EOF
 EXIT_STATUS=1
 RUN
+
+NAME=rz-find invalid align with -X
+TOOL=rz-find
+ARGS=-X -a 3 bins/arm/README
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Alignment must only have one bit set.
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-find missing -F file with -X
+TOOL=rz-find
+ARGS=-X -F nonexistent_rz_find_pattern_file bins/arm/README
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot slurp 'nonexistent_rz_find_pattern_file'
+EOF
+EXIT_STATUS=1
+RUN
+
+NAME=rz-find duplicate -X with missing filename
+TOOL=rz-find
+ARGS=-X -X -s x
+REGEXP_FILTER_OUT=Usage:
+EXPECT=<<EOF
+Usage:
+EOF
+EXIT_STATUS=0
+RUN
+
+NAME=rz-find -X -h
+TOOL=rz-find
+ARGS=-X -h
+REGEXP_FILTER_OUT=Usage:
+EXPECT=<<EOF
+Usage:
+EOF
+EXIT_STATUS=0
+RUN
+
+NAME=rz-find invalid option with -X
+TOOL=rz-find
+ARGS=-X -9
+REGEXP_FILTER_OUT=Usage:
+EXPECT=<<EOF
+Usage:
+EOF
+EXIT_STATUS=0
+RUN

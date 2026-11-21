@@ -508,3 +508,20 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=px hex.style and offname with flags
+FILE=malloc://32
+CMDS=<<EOF
+wx 01020304000000000000000005060708 @ 0
+f test_flag 4 @ 0
+f test_zero 4 @ 4
+e hex.style=true
+px 16
+pxr 16
+EOF
+REGEXP_FILTER_OUT=test_flag
+EXPECT=<<EOF
+test_flag
+EOF
+EXPECT_ERR=
+RUN

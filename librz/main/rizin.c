@@ -792,14 +792,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				printf("%s\n", RZ_VERSION);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				free(customRarunProfile);
+				RZ_FREE(customRarunProfile);
 				ret = 0;
 				goto beach;
 			} else {
 				rz_main_version_verify(0);
 				LISTS_FREE();
 				RZ_FREE(debugbackend);
-				free(customRarunProfile);
+				RZ_FREE(customRarunProfile);
 				ret = rz_main_version_print(r->sys_path, "rizin");
 				goto beach;
 			}
@@ -943,6 +943,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				if (p) {
 					*p = 0;
 					// TODO: this must be specified by the io plugin, not hardcoded here
+					free(debugbackend);
 					if (!strcmp(uri, "winedbg")) {
 						debugbackend = rz_str_dup("io");
 					} else {
@@ -1142,6 +1143,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 				if (strcmp(debugbackend, "native")) {
 					if (!haveRarunProfile) {
+						free(pfile);
 						pfile = rz_str_dup(argv[opt.ind++]);
 					}
 					// If plugin is winkd we should keep RWX permission to be able to write to the fd
@@ -1223,6 +1225,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 						char *p = strstr(uri, "://");
 						if (p) {
 							*p = 0;
+							free(debugbackend);
 							if (!strcmp(uri, "winedbg")) {
 								debugbackend = rz_str_dup("io");
 							} else {
@@ -1723,6 +1726,7 @@ beach:
 	rz_core_free(r);
 	LISTS_FREE();
 	free(debugbackend);
+	free(customRarunProfile);
 	rz_vector_fini(&rizin_longopts);
 	rz_pvector_fini(&cmd_catalog_values);
 	RZ_FREE(pfile);
