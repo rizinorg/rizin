@@ -4,12 +4,18 @@
 #include "common_winkd.h"
 #include <bin/pdb/pdb_downloader.h>
 
-void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
-	ctx->profile = RZ_NEW0(Profile);
-	if (!ctx->profile) {
-		return;
+/**
+ * \brief Build a Windows kernel `Profile` from struct member offsets in \p db.
+ *
+ * \param db Type database containing Windows kernel structure definitions.
+ * \return Newly allocated `Profile` on success, or `NULL` on allocation failure.
+ */
+RZ_OWN Profile *winkd_build_profile(RzTypeDB *db) {
+	Profile *profile = RZ_NEW0(Profile);
+	if (!profile) {
+		return NULL;
 	}
-#define O_(n) ctx->profile->f[n]
+#define O_(n) profile->f[n]
 	O_(E_ActiveProcessLinks) = rz_type_db_struct_member_offset(db, "_EPROCESS", "ActiveProcessLinks");
 	O_(E_UniqueProcessId) = rz_type_db_struct_member_offset(db, "_EPROCESS", "UniqueProcessId");
 	O_(E_Peb) = rz_type_db_struct_member_offset(db, "_EPROCESS", "Peb");
@@ -39,6 +45,7 @@ void winkd_build_profile(WindCtx *ctx, RzTypeDB *db) {
 	RZ_LOG_VERBOSE("_ETHREAD.Cid: 0x%" PFMT32x "\n", O_(ET_Cid));
 	RZ_LOG_VERBOSE("_CLIENT_ID.UniqueThread: 0x%" PFMT32x "\n", O_(C_UniqueThread));
 #undef O_
+	return profile;
 }
 
 static char *download_pdb(const char *path, const char *symserver, const char *symstore) {
