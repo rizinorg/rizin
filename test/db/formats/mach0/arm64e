@@ -316,3 +316,14 @@ EXPECT=<<EOF
 0x1000080f0     1 Test        Test::(ivar)someField i
 EOF
 RUN
+
+NAME=arm64e kext ptr_auth from cpusubtype
+FILE=bins/mach0/IOKitTest-arm64e.kext/Contents/MacOS/IOKitTest
+CMDS=<<EOF
+iI~machine,ptr_auth
+EOF
+EXPECT=<<EOF
+machine  arm64e
+ptr_auth true
+EOF
+RUN

@@ -2936,7 +2936,7 @@ bool MACH0_(has_ptr_auth)(struct MACH0_(obj_t) * bin) {
 	}
 
 	// if we have arm64e then probably we have ARM PAC support
-	const ut32 subtype = (bin->hdr.cpusubtype & CPU_SUBTYPE_MASK);
+	const ut32 subtype = (bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK);
 	return bin->hdr.cputype == CPU_TYPE_ARM64 && subtype == CPU_SUBTYPE_ARM64E;
 }
 
