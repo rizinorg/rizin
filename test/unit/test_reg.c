@@ -581,6 +581,50 @@ static bool test_rz_reg_profile_cleanup(void) {
 	mu_end;
 }
 
+static bool test_rz_reg_resize_lookup(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "create register state");
+	mu_assert_true(rz_reg_set_profile_string(reg,
+			       "=PC rip\n"
+			       "gpr rax .64 0 0\n"
+			       "gpr eax .32 0 0\n"
+			       "gpr rip .64 8 0\n"
+			       "gpr eip .32 8 0\n"
+			       "gpr r9d .32 16 0\n"
+			       "gpr r8 .64 24 0\n"
+			       "gpr dup .32 32 0\n"
+			       "gpr dup64 .64 32 0\n"
+			       "gpr x0 .64 48 0\n"
+			       "gpr R0 .32 48 0\n"
+			       "fpu f0d .64 0 0\n"
+			       "fpu f0s .32 0 0\n"
+			       "fpu f1s .32 24 0\n"
+			       "fpu DUP .32 40 0\n"
+			       "fpu fdup64 .64 40 0\n"),
+		"load 32/64 profile");
+
+	mu_assert_null(rz_reg_32_to_64(NULL, "eax"), "NULL reg returns NULL");
+	mu_assert_null(rz_reg_32_to_64(reg, NULL), "NULL name returns NULL");
+	mu_assert_null(rz_reg_64_to_32(NULL, "rax"), "NULL reg (64->32) returns NULL");
+	mu_assert_null(rz_reg_64_to_32(reg, NULL), "NULL name (64->32) returns NULL");
+	mu_assert_streq(rz_reg_32_to_64(reg, "eax"), "rax", "eax -> rax (hash fast path)");
+	mu_assert_streq(rz_reg_32_to_64(reg, "EAX"), "rax", "EAX -> rax (case-insensitive fallback)");
+	mu_assert_streq(rz_reg_64_to_32(reg, "rax"), "eax", "rax -> eax (hash fast path)");
+	mu_assert_streq(rz_reg_64_to_32(reg, "RAX"), "eax", "RAX -> eax (case-insensitive fallback)");
+	mu_assert_streq(rz_reg_32_to_64(reg, "R0"), "x0", "literal register matching role name uses hash fast path");
+	mu_assert_streq(rz_reg_32_to_64(reg, "f0s"), "f0d", "same-regset priority over gpr at offset 0");
+	mu_assert_streq(rz_reg_32_to_64(reg, "F0S"), "f0d", "same-regset priority via case-insensitive fallback");
+	mu_assert_streq(rz_reg_64_to_32(reg, "f0d"), "f0s", "same-regset priority (64->32) over gpr at offset 0");
+	mu_assert_streq(rz_reg_32_to_64(reg, "f1s"), "r8", "cross-regset fallback when same regset has no match");
+	mu_assert_streq(rz_reg_32_to_64(reg, "Dup"), "dup64", "case-insensitive fallback stops at first matching regset");
+	mu_assert_null(rz_reg_32_to_64(reg, "r9d"), "no 64-bit pair returns NULL");
+	mu_assert_null(rz_reg_32_to_64(reg, "PC"), "role alias PC without 32-bit PC register returns NULL");
+	mu_assert_null(rz_reg_32_to_64(reg, "nonexistent"), "missing register returns NULL");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_reg_set_profile_string);
 	mu_run_test(test_rz_reg_set_profile_string_fields);
@@ -594,6 +638,7 @@ int all_tests() {
 	mu_run_test(test_rz_reg_set_bv);
 	mu_run_test(test_rz_reg_profile_to_cc);
 	mu_run_test(test_rz_reg_profile_cleanup);
+	mu_run_test(test_rz_reg_resize_lookup);
 	return tests_passed != tests_run;
 }
 
