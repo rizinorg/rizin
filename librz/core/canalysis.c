@@ -3605,6 +3605,7 @@ static bool process_reference_noreturn_cb(void *u, const ut64 addr, const void *
 				return true;
 			}
 			relocation_noreturn_process(core, noretl, todo, block, rel, op.size, addr);
+			rz_analysis_block_unref(block);
 		}
 	}
 	rz_analysis_op_fini(&op);
