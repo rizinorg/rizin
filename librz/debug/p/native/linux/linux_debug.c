@@ -832,9 +832,14 @@ RzList /*<RzDebugPid *>*/ *linux_pid_list(int pid, RzList /*<RzDebugPid *>*/ *li
 		} else {
 			pid_info = rz_debug_pid_new(path, i, 0, RZ_DBG_PROC_STOP, 0);
 		}
+		if (!pid_info) {
+			continue;
+		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || i == pid || pid_info->ppid == pid) {
 			rz_list_append(list, pid_info);
+		} else {
+			rz_debug_pid_free(pid_info);
 		}
 	}
 	closedir(dh);
