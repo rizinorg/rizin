@@ -778,6 +778,204 @@ static bool test_alpha_branch_values(void) {
 	mu_end;
 }
 
+static int mock_asm_fini_calls = 0;
+
+static bool mock_asm_init_ok(void **user) {
+	*user = malloc(16);
+	return *user != NULL;
+}
+
+static bool mock_asm_fini_ok(void *user) {
+	mock_asm_fini_calls++;
+	free(user);
+	return true;
+}
+
+static bool mock_asm_init_fail(void **user) {
+	(void)user;
+	return false;
+}
+
+static RzAsmPlugin mock_asm_plugin_a = {
+	.name = "mock_asm_a",
+	.arch = "mock_arch",
+	.desc = "Mock asm plugin A",
+	.license = "LGPL3",
+	.bits = 32,
+	.init = mock_asm_init_ok,
+	.fini = mock_asm_fini_ok,
+};
+
+static RzAsmPlugin mock_asm_plugin_b = {
+	.name = "mock_asm_b",
+	.arch = "mock_arch",
+	.desc = "Mock asm plugin B",
+	.license = "LGPL3",
+	.bits = 32,
+	.init = mock_asm_init_ok,
+	.fini = mock_asm_fini_ok,
+};
+
+static RzAsmPlugin mock_asm_plugin_fail = {
+	.name = "mock_asm_fail",
+	.arch = "mock_arch_other",
+	.desc = "Mock asm plugin init failure",
+	.license = "LGPL3",
+	.bits = 32,
+	.init = mock_asm_init_fail,
+};
+
+static bool test_rz_asm_use_and_platforms(void) {
+	mock_asm_fini_calls = 0;
+	RzAsm *a = rz_asm_new();
+	mu_assert_notnull(a, "rz_asm_new");
+	mu_assert_true(rz_asm_plugin_add(a, &mock_asm_plugin_a), "add mock_asm_a");
+	mu_assert_true(rz_asm_plugin_add(a, &mock_asm_plugin_b), "add mock_asm_b");
+	mu_assert_true(rz_asm_plugin_add(a, &mock_asm_plugin_fail), "add mock_asm_fail");
+
+	mu_assert_true(rz_asm_use(a, "mock_asm_a"), "use mock_asm_a");
+	mu_assert_true(rz_asm_use(a, "mock_asm_a"), "re-use mock_asm_a fast path");
+	mu_assert_eq(mock_asm_fini_calls, 0, "no fini on same-plugin re-use");
+
+	// Switching to another plugin sharing the same arch must finalize the previous plugin.
+	mu_assert_true(rz_asm_use(a, "mock_asm_b"), "switch to same-arch mock_asm_b");
+	mu_assert_eq(mock_asm_fini_calls, 1, "mock_asm_a finalized on switch");
+
+	// Failed init must finalize previous plugin and clear a->cur.
+	mu_assert_false(rz_asm_use(a, "mock_asm_fail"), "failed plugin init returns false");
+	mu_assert_eq(mock_asm_fini_calls, 2, "mock_asm_b finalized before failed init");
+	mu_assert_null(rz_asm_plugin_current(a), "a->cur cleared after failed init");
+
+	rz_asm_set_platforms(a, "test_platform");
+	mu_assert_streq(rz_asm_get_platforms(a), "test_platform", "platforms getter");
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_z80_asm_edge_cases(void) {
+	RzAsm *a = rz_asm_new();
+	mu_assert_notnull(a, "rz_asm_new");
+	mu_assert_true(rz_asm_use(a, "z80"), "use z80");
+	mu_assert_true(rz_asm_set_bits(a, 8), "set 8 bits");
+
+	RzAsmOp op = { 0 };
+	rz_asm_op_init(&op);
+	mu_assert_eq(rz_asm_assemble(a, &op, "nop"), 1, "assemble nop");
+	mu_assert_eq((ut8)rz_strbuf_get(&op.buf)[0], 0x00, "nop opcode");
+	rz_asm_op_fini(&op);
+
+	rz_asm_op_init(&op);
+	mu_assert_eq(rz_asm_assemble(a, &op, "   "), 0, "whitespace-only input");
+	rz_asm_op_fini(&op);
+
+	rz_asm_op_init(&op);
+	mu_assert_eq(rz_asm_assemble(a, &op, "; comment"), 0, "comment-only input");
+	rz_asm_op_fini(&op);
+
+	rz_asm_op_init(&op);
+	mu_assert_eq(rz_asm_assemble(a, &op, "lbl:"), 0, "label-only input");
+	rz_asm_op_fini(&op);
+
+	rz_asm_op_init(&op);
+	mu_assert_eq(rz_asm_assemble(a, &op, "notanop"), 0, "unknown mnemonic");
+	rz_asm_op_fini(&op);
+
+	rz_asm_free(a);
+	mu_end;
+}
+
+static char *mock_dalvik_get_name(RzBin *bin, int type, int idx) {
+	(void)bin;
+	return rz_str_newf("mock_%c_%d", (char)type, idx);
+}
+
+static bool test_dalvik_disasm_resolved_names(void) {
+	RzAsm *a = rz_asm_new();
+	mu_assert_notnull(a, "rz_asm_new");
+	mu_assert_true(rz_asm_use(a, "dalvik"), "use dalvik");
+	mu_assert_true(rz_asm_set_bits(a, 32), "set 32 bits");
+
+	int dummy_bin = 0;
+	RzBinBind *binb = (RzBinBind *)rz_asm_get_bin_bind(a);
+	binb->bin = (RzBin *)&dummy_bin;
+	binb->get_name = mock_dalvik_get_name;
+
+	const struct {
+		const char *hex;
+		const char *expected;
+	} cases[] = {
+		{ "1c000100", "const-class v0, mock_c_1" },
+		{ "60000700", "sget v0, mock_f_7" },
+		{ "20400100", "instance-of v0, v4, mock_c_1" },
+		{ "52100300", "iget v0, v1, mock_f_3" },
+		{ "740306001300", "invoke-virtual/range {v19..v21}, mock_m_6" },
+		{ "fa300c0010020600", "invoke-polymorphic {v0, v1, v2}, mock_m_12, mock_p_6" },
+		{ "fb062e0010000f00", "invoke-polymorphic/range {v16..v21}, mock_m_46, mock_p_15" },
+	};
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		ut8 buf[16] = { 0 };
+		int len = rz_hex_str2bin(cases[i].hex, buf);
+		mu_assert_true(len > 0, "hex decode");
+		RzAsmOp op = { 0 };
+		rz_asm_op_init(&op);
+		int ret = rz_asm_disassemble(a, &op, buf, len);
+		mu_assert_eq(ret, len, "dalvik disasm size");
+		mu_assert_streq(rz_asm_op_get_asm(&op), cases[i].expected, "dalvik resolved name");
+		rz_asm_op_fini(&op);
+	}
+
+	binb->bin = NULL;
+	binb->get_name = NULL;
+	rz_asm_free(a);
+	mu_end;
+}
+
+static bool test_arm_thumb_it_mnemonic(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	SWITCH_TO_ARCH_BITS("arm", 16);
+
+	const ut8 it_eq[] = { 0x08, 0xbf }; // it eq
+	const ut8 movs_r0_1[] = { 0x01, 0x20 }; // movs r0, #1
+	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
+	int len = rz_analysis_op(analysis, &op, 0x1000, it_eq, sizeof(it_eq),
+		RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
+	mu_assert_eq(len, 2, "it eq size");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_op_init(&op);
+	len = rz_analysis_op(analysis, &op, 0x1002, movs_r0_1, sizeof(movs_r0_1),
+		RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
+	mu_assert_eq(len, 2, "conditionalized thumb op size");
+	mu_assert_eq(op.cond, RZ_TYPE_COND_EQ, "IT condition applied");
+	mu_assert_notnull(op.mnemonic, "IT mnemonic allocated");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+static bool test_ppc32_mullw_il(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	SWITCH_TO_ARCH_BITS("ppc", 32);
+	rz_analysis_set_big_endian(analysis, true);
+
+	const ut8 mullw_dot[] = { 0x7c, 0x86, 0x39, 0xd7 }; // mullw. r4, r6, r7
+	RzAnalysisOp op = { 0 };
+	rz_analysis_op_init(&op);
+	int len = rz_analysis_op(analysis, &op, 0, mullw_dot, sizeof(mullw_dot),
+		RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_IL);
+	mu_assert_eq(len, 4, "ppc32 mullw. size");
+	mu_assert_notnull(op.il_op, "ppc32 mullw. IL lifted");
+	rz_analysis_op_fini(&op);
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -796,6 +994,11 @@ int all_tests() {
 	mu_run_test(test_avr_op_input_size);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_asm_use_and_platforms);
+	mu_run_test(test_z80_asm_edge_cases);
+	mu_run_test(test_dalvik_disasm_resolved_names);
+	mu_run_test(test_arm_thumb_it_mnemonic);
+	mu_run_test(test_ppc32_mullw_il);
 	return tests_passed != tests_run;
 }
 

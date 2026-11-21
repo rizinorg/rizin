@@ -125,9 +125,78 @@ bool test_platform_profiles() {
 	mu_end;
 }
 
+static bool test_platform_profile_edge_cases(void) {
+	RzPlatformTargetIndex *target = rz_platform_target_index_new();
+	mu_assert_notnull(target, "new platform target index");
+
+	// First SDB: one entry with comment and one without comment.
+	char *path1 = rz_file_temp(".sdb");
+	mu_assert_notnull(path1, "temp sdb 1");
+	Sdb *db1 = sdb_new(NULL, path1, 0);
+	mu_assert_notnull(db1, "sdb_new 1");
+	sdb_set(db1, "REG_A", "name");
+	sdb_num_set(db1, "REG_A.address", 0x1000);
+	sdb_set(db1, "REG_A.comment", "First reg");
+	sdb_set(db1, "REG_B", "name");
+	sdb_num_set(db1, "REG_B.address", 0x2000);
+	mu_assert_true(sdb_sync(db1), "sync db1");
+	sdb_close(db1);
+	sdb_free(db1);
+
+	mu_assert_true(rz_platform_target_index_load_sdb(target, path1), "load db1");
+	RzPlatformItem *item_a = ht_up_find(target->platforms, 0x1000, NULL);
+	mu_assert_notnull(item_a, "REG_A loaded");
+	mu_assert_streq(item_a->name, "REG_A", "REG_A name");
+	mu_assert_streq(item_a->comment, "First reg", "REG_A comment");
+	RzPlatformItem *item_b = ht_up_find(target->platforms, 0x2000, NULL);
+	mu_assert_notnull(item_b, "REG_B loaded");
+	mu_assert_streq(item_b->name, "REG_B", "REG_B name");
+	mu_assert_null(item_b->comment, "REG_B has no comment");
+
+	// Second SDB: duplicate address must be ignored without leaking the new item.
+	char *path2 = rz_file_temp(".sdb");
+	mu_assert_notnull(path2, "temp sdb 2");
+	Sdb *db2 = sdb_new(NULL, path2, 0);
+	mu_assert_notnull(db2, "sdb_new 2");
+	sdb_set(db2, "REG_DUP", "name");
+	sdb_num_set(db2, "REG_DUP.address", 0x1000);
+	sdb_set(db2, "REG_DUP.comment", "Duplicate reg");
+	mu_assert_true(sdb_sync(db2), "sync db2");
+	sdb_close(db2);
+	sdb_free(db2);
+
+	mu_assert_true(rz_platform_target_index_load_sdb(target, path2), "load db2 with dup addr");
+	item_a = ht_up_find(target->platforms, 0x1000, NULL);
+	mu_assert_notnull(item_a, "existing entry retained");
+	mu_assert_streq(item_a->name, "REG_A", "duplicate did not overwrite REG_A");
+
+	// Third SDB: missing address must fail cleanly without leaking items vector.
+	char *path3 = rz_file_temp(".sdb");
+	mu_assert_notnull(path3, "temp sdb 3");
+	Sdb *db3 = sdb_new(NULL, path3, 0);
+	mu_assert_notnull(db3, "sdb_new 3");
+	sdb_set(db3, "REG_NOADDR", "name");
+	mu_assert_true(sdb_sync(db3), "sync db3");
+	sdb_close(db3);
+	sdb_free(db3);
+
+	bool loaded = rz_platform_target_index_load_sdb(target, path3);
+	mu_assert_false(loaded, "missing address returns false");
+
+	rz_file_rm(path1);
+	rz_file_rm(path2);
+	rz_file_rm(path3);
+	free(path1);
+	free(path2);
+	free(path3);
+	rz_platform_target_index_free(target);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_cpu_profiles);
 	mu_run_test(test_platform_profiles);
+	mu_run_test(test_platform_profile_edge_cases);
 	return tests_passed != tests_run;
 }
 

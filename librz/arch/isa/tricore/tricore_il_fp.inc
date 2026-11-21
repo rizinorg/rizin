@@ -108,7 +108,9 @@ static RzILOpPure *minmax_q31(const char *k, RzILOpPure *x) {
 			x));
 }
 
-#define not_in(x, min, max) OR(FGT(x, max), FLT(DUP(x), min))
+static inline RzILOpBool *not_in(RzILOpPure *x, RzILOpPure *min, RzILOpPure *max) {
+	return OR(FGT(x, max), FLT(DUP(x), min));
+}
 
 #define not_in_q31(x) not_in(x, Q31_MIN, Q31_MAX)
 #define not_in_u32(x) not_in(x, F64(0.f), F64(UT32_MAX))

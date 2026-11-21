@@ -254,6 +254,8 @@ RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const c
 			if (key && new_key) {
 				rename_key(analysis->sdb_classes_attrs, key, new_key);
 			}
+			free(key);
+			free(new_key);
 			sdb_aforeach_next(attr_type_cur);
 		}
 		free(attr_types);

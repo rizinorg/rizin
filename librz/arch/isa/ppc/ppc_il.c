@@ -674,10 +674,6 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 #if CS_NEXT_VERSION >= 6
 	ut8 bi = PPC_DETAIL(insn).bc.bi;
 	ut8 bo = PPC_DETAIL(insn).bc.bo;
-	RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
-	RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
-	RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
-	RzILOpBool *check_cr_bit_is_one = cs_ppc_bc_cr_bit_is_one(bo) ? IL_TRUE : IL_FALSE;
 #else
 	ut8 bo = PPC_READ_BO_FIELD;
 	ut8 bi = PPC_READ_BI_FIELD;
@@ -738,9 +734,15 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BCLR:
 	case PPC_INS_BCLRL:
 #if CS_NEXT_VERSION >= 6
+	{
+		RzILOpBool *decr_ctr = cs_ppc_bc_decr_ctr(bo) ? IL_TRUE : IL_FALSE;
+		RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
+		RzILOpBool *check_ctr_is_zero = cs_ppc_bc_tests_ctr_is_zero(bo) ? IL_TRUE : IL_FALSE;
+		RzILOpBool *check_cr_bit_is_one = cs_ppc_bc_cr_bit_is_one(bo) ? IL_TRUE : IL_FALSE;
 		ctr_cond_fullfilled = ITE(decr_ctr, XOR(NON_ZERO(VARG("ctr")), check_ctr_is_zero), IL_TRUE);
 		cr_cond_fullfilled = ITE(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)), IL_TRUE);
 		return AND(ctr_cond_fullfilled, cr_cond_fullfilled);
+	}
 #else
 		// BO_2 == 0: Decrement CTR
 		// BO_2 == 1: Don't use CTR
@@ -794,8 +796,12 @@ RZ_IPI RZ_OWN RzILOpPure *ppc_get_branch_cond(const csh handle, RZ_BORROW cs_ins
 	case PPC_INS_BGECTRL:
 #endif
 #if CS_NEXT_VERSION >= 6
+	{
+		RzILOpBool *test_cr_bit = cs_ppc_bc_cr_is_tested(bo) ? IL_TRUE : IL_FALSE;
+		RzILOpBool *check_cr_bit_is_one = cs_ppc_bc_cr_bit_is_one(bo) ? IL_TRUE : IL_FALSE;
 		cr_cond_fullfilled = AND(test_cr_bit, XOR(get_cr_bit(bi + 32), INV(check_cr_bit_is_one)));
 		return cr_cond_fullfilled;
+	}
 #else
 		bo_0 = NON_ZERO(LOGAND(UN(5, 0b10000), VARLP("bo")));
 		bo_1 = NON_ZERO(LOGAND(UN(5, 0b01000), VARLP("bo")));

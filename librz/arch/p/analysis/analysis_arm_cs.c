@@ -1908,6 +1908,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	}
 	if (thumb && rz_arm_it_apply_cond(&ctx->it, insn)) {
+		free(op->mnemonic);
 		op->mnemonic = rz_str_newf("%s%s%s%s",
 			rz_analysis_optype_to_string(op->type),
 			ARMCondCodeToString(insn->detail->arm.cc),
