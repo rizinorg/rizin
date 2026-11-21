@@ -351,6 +351,7 @@ typedef enum {
 #define C6X_WORD_SIZE         4 ///< a full instruction word
 #define C6X_COMPACT_SIZE      2 ///< a slot of a compact fetch packet
 #define C6X_FETCH_PACKET_SIZE 32 ///< eight words fetched and branched to as a unit
+#define C6X_FP_HEADER_OFFSET  (C6X_FETCH_PACKET_SIZE - C6X_WORD_SIZE) ///< a compact header is a fetch packet's last word
 
 /** A fully decoded C6000 instruction. */
 typedef struct {
@@ -394,9 +395,20 @@ static inline ut64 c6x_packet_base(ut64 pc) {
 	return pc & ~(ut64)(C6X_FETCH_PACKET_SIZE - 1);
 }
 
+/** Offset of \p pc in its fetch packet. */
+static inline ut32 c6x_packet_offset(ut64 pc) {
+	return (ut32)(pc & (C6X_FETCH_PACKET_SIZE - 1));
+}
+
+/**
+ * Reader for image bytes. Returns false unless the whole request was satisfied,
+ * so a caller can tell a short read from a mapped region of zeroes.
+ */
+typedef bool (*C6xReadFn)(void *user, ut64 addr, ut8 *buf, size_t len);
+
 RZ_IPI const C6xArchDesc *c6x_desc_from_cpu(const char *cpu);
 
-RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_OUT C6xInsn *insn);
+RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_NULLABLE C6xReadFn read, RZ_NULLABLE void *user, RZ_OUT C6xInsn *insn);
 
 RZ_IPI void c6x_mark_parallel(RZ_INOUT C6xInsn *insn, ut64 addr, RZ_INOUT ut64 *prev_end, RZ_INOUT bool *prev_par);
 
@@ -429,15 +441,10 @@ typedef struct {
 /** One execute packet: the instructions that issue in the same cycle. */
 typedef struct {
 	ut64 addr; ///< address of the first slot
+	ut64 next; ///< address of the execute packet after it
 	C6xSlotRef slots[C6X_FP_SLOTS];
 	size_t n;
 } C6xPacketRef;
-
-/**
- * Reader for image bytes. Returns false unless the whole request was satisfied,
- * so a caller can tell a short read from a mapped region of zeroes.
- */
-typedef bool (*C6xReadFn)(void *user, ut64 addr, ut8 *buf, size_t len);
 
 RZ_IPI size_t c6x_fetch_packet_slots(const ut8 *fp, ut64 base, bool big_endian, RZ_OUT C6xSlotRef *out);
 
@@ -456,6 +463,8 @@ RZ_IPI RzAnalysisILConfig *tms320_c6x_il_config(RZ_NONNULL RzAnalysis *analysis)
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift(const C6xInsn *insn, ut64 pc);
 
 RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_packet(const C6xInsn *insns, size_t n, ut64 pc, ut32 skip);
+
+RZ_IPI RZ_OWN RzILOpEffect *c6x_lift_call(const C6xInsn *insn, ut64 pc, ut64 ret);
 
 /** Local carrying a deferred branch's predicate from issue to transfer. */
 #define C6X_PRED_TAKEN "_br_taken"

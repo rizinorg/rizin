@@ -1488,6 +1488,9 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 	rz_return_val_if_fail(t, false);
 	if (q) {
 		q = rz_str_trim_head_ro(q);
+		if (*q == ':') {
+			q = rz_str_trim_head_ro(q + 1);
+		}
 	}
 	// TODO support parenthesis and (or)||
 	// split by "&&" (or comma) -> run .filter on each
@@ -1497,9 +1500,9 @@ RZ_API bool rz_table_query(RZ_NONNULL RzTable *t, RZ_NULLABLE const char *q) {
 		return true;
 	}
 	if (*q == '?') {
-		eprintf("RzTableQuery> comma separated. 'c' stands for column name.\n");
-		eprintf(" c/sort/rev        sort rows by given colname\n");
-		eprintf(" c/sortlen/rev     sort rows by strlen()\n");
+		eprintf("RzTableQuery> colon-separated (e.g. <cmd>t:c/gt/0x800:c/sort/rev:*/head/10). 'c' stands for column name.\n");
+		eprintf(" c/sort[/rev]      sort rows by given colname (append /rev for descending)\n");
+		eprintf(" c/sortlen[/rev]   sort rows by strlen() (append /rev for descending)\n");
 		eprintf(" c/cols/c1/c2      only show selected columns\n");
 		eprintf(" c                 only show column c\n");
 		eprintf(" c/gt/0x800        grep rows matching col0 > 0x800\n");

@@ -260,11 +260,29 @@ static void arm32mathaddsub(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		(!strcmp(opchar, "+") ? "30,$c,31,$c,^,31,$c" : "30,$c,31,$c,^,32,$b"));
 }
 
+/**
+ * \brief Get the cpsr bits that an MSR writes.
+ *
+ * \return Mask of the written cpsr bits, 0 if there are none
+ */
+static ut32 msr_cpsr_mask(cs_insn *insn) {
+	bool spsr;
+	ut32 fields = rz_arm_cs_msr_psr_fields(insn, &spsr);
+	if (spsr) {
+		return 0;
+	}
+	// MSR never writes the execution state bits (IT, J, T). Without a tracked
+	// processor mode, the privileged bits (A, I, F, M) are always written.
+	return (fields & RZ_ARM_PSR_FIELD_F ? 0xf8000000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_S ? 0x000f0000 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_X ? 0x00000300 : 0) |
+		(fields & RZ_ARM_PSR_FIELD_C ? 0x000000df : 0);
+}
+
 RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
 	char str[32][32];
-	int msr_flags;
 	int pcdelta = (thumb ? 4 : 8);
 	ut32 mask = UT32_MAX;
 	int str_ldr_bytes = 4;
@@ -861,31 +879,26 @@ RZ_IPI int rz_arm_cs_analysis_op_32_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 	case ARM_INS_MRS:
 		// TODO: esil for MRS
 		break;
-	case ARM_INS_MSR:
-		if (insn->detail->arm.operands[0].type != ARM_OP_REG) {
-			// New sysop operands added in Capstone v6 are not supported in ESIL.
+	case ARM_INS_MSR: {
+		ut32 psr_mask = msr_cpsr_mask(insn);
+		if (!psr_mask) {
 			break;
 		}
-#if CS_NEXT_VERSION >= 6
-		msr_flags = insn->detail->arm.operands[0].sysop.msr_mask;
-#else
-		msr_flags = insn->detail->arm.operands[0].reg >> 4;
-#endif
-		rz_strbuf_appendf(&op->esil, "0,");
-		if (msr_flags & 1) {
-			rz_strbuf_appendf(&op->esil, "0xFF,|,");
+		if (ISREG(1)) {
+			rz_strbuf_appendf(&op->esil, "%s,0x%" PFMT32x ",&,cpsr,0x%" PFMT32x ",&,|,cpsr,=",
+				REG(1), psr_mask, ~psr_mask);
+		} else if (ISIMM(1)) {
+			ut32 imm = IMM(1);
+			if (OPCOUNT() > 2 && ISIMM(2)) {
+				// A non-canonical modified immediate comes as its bits and rotation
+				ut32 rot = IMM(2) & 31;
+				imm = rot ? (imm >> rot) | (imm << (32 - rot)) : imm;
+			}
+			rz_strbuf_appendf(&op->esil, "0x%" PFMT32x ",cpsr,0x%" PFMT32x ",&,|,cpsr,=",
+				imm & psr_mask, ~psr_mask);
 		}
-		if (msr_flags & 2) {
-			rz_strbuf_appendf(&op->esil, "0xFF00,|,");
-		}
-		if (msr_flags & 4) {
-			rz_strbuf_appendf(&op->esil, "0xFF0000,|,");
-		}
-		if (msr_flags & 8) {
-			rz_strbuf_appendf(&op->esil, "0xFF000000,|,");
-		}
-		rz_strbuf_appendf(&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
+	}
 	case ARM_INS_UBFX:
 		if (IMM(3) > 0 && IMM(3) <= 32 - IMM(2)) {
 			rz_strbuf_appendf(&op->esil, "%d,%s,%d,%" PFMT64u ",<<,&,>>,%s,=",

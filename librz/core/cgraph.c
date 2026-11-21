@@ -244,9 +244,9 @@ RZ_API RZ_OWN RzGraph /*<RzGraphNodeInfo *, None *>*/ *rz_core_graph_callgraph(R
 typedef char *(*GraphBodyFn)(RzCore *core, ut64 addr, RzAnalysisBlock *bb);
 
 static inline char *block_disasm(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
-	RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in(core->analysis, addr);
+	RzAnalysisBlock *b = bb ? bb : rz_analysis_find_most_relevant_block_in(core->analysis, addr);
 	if (!b) {
-		RZ_LOG_ERROR("Cannot find function at 0x%08" PFMT64x "\n", addr);
+		// Unanalyzed branch targets are still useful as nodes without a body.
 		return NULL;
 	}
 	ut8 *block = malloc(b->size + 1);
@@ -431,7 +431,13 @@ static char *block_line(RzCore *core, ut64 addr, RzAnalysisBlock *bb) {
 			file_str = rz_file_slurp_line(file, line, 0);
 			if (file_str) {
 				ut32 len = strlen(file_str);
-				cmd_str = realloc(cmd_str, idx + len + 8);
+				char *tmp = realloc(cmd_str, idx + len + 8);
+				if (!tmp) {
+					free(file_str);
+					free(cmd_str);
+					return NULL;
+				}
+				cmd_str = tmp;
 				memcpy(cmd_str + idx, file_str, len);
 				idx += len;
 				if (is_html) {

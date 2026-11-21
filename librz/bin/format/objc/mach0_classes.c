@@ -643,16 +643,16 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 				}
 				rtype[left] = 0;
 			}
-			method->rtype = rz_str_dup(rtype);
+			method->rtype = rz_str_constpool_get(&bf->rbin->constpool, rtype);
+			if (!method->rtype) {
+				goto error;
+			}
 		}
 
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
-			RZ_FREE(name);
-			RZ_FREE(rtype);
 			if (method) {
 				RZ_FREE(method->name);
-				RZ_FREE(method->rtype);
 				RZ_FREE(method->classname);
 			}
 			RZ_FREE(method);
@@ -672,6 +672,8 @@ static void get_method_list_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, char *cl
 	next:
 		p += read_size;
 		offset += read_size;
+		RZ_FREE(name);
+		RZ_FREE(rtype);
 	}
 	return;
 error:
@@ -679,7 +681,6 @@ error:
 	RZ_FREE(rtype);
 	if (method) {
 		RZ_FREE(method->name);
-		RZ_FREE(method->rtype);
 		RZ_FREE(method->classname);
 	}
 	RZ_FREE(method);
@@ -1049,6 +1050,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 			return;
 		}
 		if (bin->is_encrypted) {
+			RZ_FREE(klass->name);
 			klass->name = rz_str_dup("some_encrypted_data");
 			left = strlen(klass->name) + 1;
 		} else {
@@ -1060,6 +1062,7 @@ static void get_class_ro_t(mach0_ut p, RzBinFile *bf, RzBuffer *buf, ut32 *is_me
 					rc = 0;
 				}
 				name[rc] = 0;
+				RZ_FREE(klass->name);
 				klass->name = demangle_classname(name);
 				free(name);
 			}

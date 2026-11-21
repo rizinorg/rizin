@@ -136,6 +136,42 @@ static void bench_rz_pvector_sort(RzTable *t_out) {
 }
 
 /**
+ * \brief Compare binary search with linear search on a sorted pvector.
+ *
+ * The elements are the even values in [2, 2 * SORT_N] and the search keys are
+ * random values in [1, 2 * SORT_N], so half of the lookups hit. (The keys are
+ * never 0, because NULL is not a valid search element.) The search keys are
+ * precomputed, so only the search itself is measured. Both searches use the
+ * same keys.
+ */
+static void bench_rz_pvector_search(RzTable *t_out) {
+	RzPVector *v = rz_pvector_new(NULL);
+	rz_pvector_reserve(v, SORT_N);
+	for (size_t i = 0; i < SORT_N; i++) {
+		rz_pvector_push(v, (void *)(size_t)(i * 2 + 2));
+	}
+
+	void **keys = malloc(sizeof(void *) * ITERATION_COUNT);
+	for (size_t i = 0; i < ITERATION_COUNT; i++) {
+		keys[i] = (void *)(size_t)(rz_num_rand32(2 * SORT_N) + 1);
+	}
+
+	{
+		RZ_BENCH_RUN_I("[RzPVector] rz_pvector_bin_search 4k", i, t_out, ITERATION_COUNT, {
+			RZ_DONT_OPTIMIZE(bool, rz_pvector_bin_search(v, keys[i], bench_cmp_pvoid, NULL, NULL));
+		});
+	}
+	{
+		RZ_BENCH_RUN_I("[RzPVector] rz_pvector_find 4k (linear)", i, t_out, ITERATION_COUNT, {
+			RZ_DONT_OPTIMIZE(void *, rz_pvector_find(v, keys[i], bench_cmp_pvoid, NULL));
+		});
+	}
+
+	free(keys);
+	rz_pvector_free(v);
+}
+
+/**
  * \brief Measure push and purge throughput while retaining vector capacity.
  */
 static void bench_rz_pvector_push(RzTable *t_out) {
@@ -169,6 +205,7 @@ int main() {
 	bench_rz_vector_swap(t);
 	bench_rz_vector_sort(t);
 	bench_rz_pvector_sort(t);
+	bench_rz_pvector_search(t);
 	bench_rz_pvector_push(t);
 	bench_rz_vector_push(t);
 

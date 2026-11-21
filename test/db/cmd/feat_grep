@@ -1,3 +1,41 @@
+NAME=_ replays filtered output
+FILE==
+CMDS=<<EOF
+echo "one keep\nzero drop\ntwo keep"~keep
+echo `_~[0]`
+_
+echo "one keep\nzero drop\ntwo keep"; _~keep; _~two; _
+_~one
+_
+echo "one\ntwo\nthree"~:1
+_
+echo '{"value":42}'~{.value}
+_
+echo "keep\ndrop\nkeep"~?keep
+_
+EOF
+EXPECT=<<EOF
+one keep
+two keep
+one two
+one two
+one keep
+zero drop
+two keep
+one keep
+two keep
+two keep
+two keep
+two
+two
+42
+42
+2
+2
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=echo ~
 FILE=malloc://1024
 CMDS=echo jeje~jojo

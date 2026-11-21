@@ -70,9 +70,7 @@ nth      paddr      vaddr bind   type size lib name
             ; CALL XREF from entry0 @ 0x54
             ; CALL XREF from proto1 @ 0x1014
             ;-- section.fcn.00001000.code:
-/ proto1(int self, int balance);
-|           ; arg int self @ r2
-|           ; arg int balance @ r3
+/ proto1(int self @ r2, int balance @ r3);
 |           ; var int acnt @ r4
 |           0x00001000      13010000       newtable r2 0 0             ; r2 = {}; array: 0, hash: 0
 |           0x00001004      52000000       extraarg 0                  ; extension for previous opcode
@@ -86,9 +84,7 @@ nth      paddr      vaddr bind   type size lib name
 |           0x00001020      c7010100       return0                     ; empty return
             ; CALL XREF from entry0 @ 0x40
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto2(int self @ r2, int amount @ r3);
 |           0x00002000      0e010000       getfield r2 r0 0            ; r2 = r0['balance']
 |           0x00002004      23010201       sub   r2 r2 r1              ; r2 = r2 - r1
 |           0x00002008      2e010107       mmbin r2 r1 7               ; sub
@@ -158,9 +154,7 @@ EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x98
             ; CALL XREF from proto1 @ 0x1020
             ;-- section.fcn.00001000.code:
-/ proto1(int self, int balance);
-|           ; arg int self @ r2
-|           ; arg int balance @ r3
+/ proto1(int self @ r2, int balance @ r3);
 |           ; var int acnt @ r4
 |           0x00001000      0a000002       newtable r2 0 0             ; [03] -r-x section size 64 named fcn.00001000.code
 |           0x00001004      00000000       move  r0 r0                 ; r0 = r0
@@ -181,9 +175,7 @@ EXPECT=<<EOF
             0x0000103c      00000000       move  r0 r0                 ; r0 = r0
             ; CALL XREF from entry0 @ 0x70
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto2(int self @ r2, int amount @ r3);
 |           0x00002000      863e0002       gettable r2 r0 r250         ; r2 = r0[r250]
 |           0x00002004      00000000       move  r0 r0                 ; r0 = r0
 |           0x00002008      4d000102       sub   2 2 1                 ; r2 = r2 - r1
@@ -238,8 +230,7 @@ EXPECT=<<EOF
        `--> 0x0000004c      1e008000       return r0 1                 ; return r0(args: 0)
             ; CALL XREFS from entry0 @ 0x20, 0x48
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int balance @ r2
 |           ; var int Account @ r3
 |           ; var int self @ r4
@@ -264,10 +255,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0xc, 0x2c
             ; CALL XREF from proto1 @ 0x1028
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for index) @ r7
 |           ; var int (for limit) @ r8
@@ -284,9 +272,7 @@ EXPECT=<<EOF
 \           0x00002020      de000001       return r3 2                 ; return r3(args: 1)
             0x00002024      1e008000       return r0 1                 ; return r0(args: 0)
             ;-- section.fcn.00003000.code:
-/ proto3(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto3(int self @ r2, int amount @ r3);
 |       ,=< 0x00003000      18400080       lt    0 -1 r1               ; [07] -r-x section size 56 named fcn.00003000.code
 |      ,==< 0x00003004      16000280       jmp   0 9                   ; jump to 0x302c
 |      |`-> 0x00003008      86404000       gettable r2 r0 -2           ; r2 = r0[balance]
@@ -303,8 +289,7 @@ EXPECT=<<EOF
      `--`-> 0x00003034      1e008000       return r0 1                 ; return r0(args: 0)
             ; CALL XREF from proto4 @ 0x4014
             ;-- section.fcn.00004000.code:
-/ proto4(int self);
-|           ; arg int self @ r2
+/ proto4(int self @ r2);
 |           ; var int arg @ r3
 |           ; var int args @ r4
 |           ; var int (for generator) @ r5
@@ -372,8 +357,7 @@ EXPECT=<<EOF
        `--> 0x0000004c      1f008000       return 0 1                  ; return r0(args: 0)
             ; CALL XREFS from entry0 @ 0x20, 0x48
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int balance @ r2
 |           ; var int Account @ r3
 |           ; var int self @ r4
@@ -398,10 +382,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0xc, 0x2c
             ; CALL XREF from proto1 @ 0x1028
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for index) @ r7
 |           ; var int (for limit) @ r8
@@ -418,9 +399,7 @@ EXPECT=<<EOF
 \           0x00002020      df000001       return 3 2                  ; return r3(args: 1)
             0x00002024      1f008000       return 0 1                  ; return r0(args: 0)
             ;-- section.fcn.00003000.code:
-/ proto3(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto3(int self @ r2, int amount @ r3);
 |       ,=< 0x00003000      19400080       lt    0 -1 1                ; [08] -r-x section size 56 named fcn.00003000.code
 |      ,==< 0x00003004      17000280       jmp   0 9                   ; jump to 0x302c
 |      |`-> 0x00003008      87404000       gettable 2 0 -2             ; r2 = r0[balance]
@@ -437,8 +416,7 @@ EXPECT=<<EOF
      `--`-> 0x00003034      1f008000       return 0 1                  ; return r0(args: 0)
             ; CALL XREF from proto4 @ 0x4014
             ;-- section.fcn.00004000.code:
-/ proto4(int self);
-|           ; arg int self @ r2
+/ proto4(int self @ r2);
 |           ; var int args @ r3
 |           ; var int (for generator) @ r4
 |           ; var int (for state) @ r5
@@ -505,8 +483,7 @@ EXPECT=<<EOF
        `--> 0x0000004c      26008000       return r0 1                 ; return r0(args: 0)
             ; CALL XREFS from entry0 @ 0x20, 0x48
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int balance @ r2
 |           ; var int Account @ r3
 |           ; var int self @ r4
@@ -531,10 +508,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0xc, 0x2c
             ; CALL XREF from proto1 @ 0x1028
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for index) @ r7
 |           ; var int (for limit) @ r8
@@ -551,9 +525,7 @@ EXPECT=<<EOF
 \           0x00002020      e6000001       return r3 2                 ; return r3(args: 1)
             0x00002024      26008000       return r0 1                 ; return r0(args: 0)
             ;-- section.fcn.00003000.code:
-/ proto3(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto3(int self @ r2, int amount @ r3);
 |       ,=< 0x00003000      20400080       lt    0 -1 r1               ; [10] -r-x section size 56 named fcn.00003000.code
 |      ,==< 0x00003004      1e000280       jmp   0 9                   ; jump to 0x302c
 |      |`-> 0x00003008      87404000       gettable r2 r0 -2           ; r2 = r0[balance]
@@ -570,8 +542,7 @@ EXPECT=<<EOF
      `--`-> 0x00003034      26008000       return r0 1                 ; return r0(args: 0)
             ; CALL XREF from proto4 @ 0x4014
             ;-- section.fcn.00004000.code:
-/ proto4(int self);
-|           ; arg int self @ r2
+/ proto4(int self @ r2);
 |           ; var int args @ r3
 |           ; var int (for generator) @ r4
 |           ; var int (for state) @ r5
@@ -640,8 +611,7 @@ EXPECT=<<EOF
 |      `--> 0x00000050      46010101       return r2 1 1               ; @sample0.lua:50 ; 0 out
             ; CALL XREFS from entry0 @ 0x24, 0x4c
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int balance @ r2
 |           ; var int Account @ r3
 |           ; var int self @ r4
@@ -671,10 +641,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0x10, 0x30
             ; CALL XREF from proto1 @ 0x1030
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for state) @ r7
 |           ; var int i @ r10
@@ -693,9 +660,7 @@ EXPECT=<<EOF
 |       `-> 0x00002028      c8010200       return1 r3                  ; return r3
 |           0x0000202c      47020100       return0                     ; empty return
             ;-- section.fcn.00003000.code:
-/ proto3(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto3(int self @ r2, int amount @ r3);
 |       ,=< 0x00003000      c0007f00       gti   r1 0 0                ; [10] -r-x section size 60 named fcn.00003000.code
 |      ,==< 0x00003004      b8040080       jmp   10                    ; jump to 0x3030
 |      |`-> 0x00003008      0e010000       getfield r2 r0 0            ; r2 = r0['balance']
@@ -713,8 +678,7 @@ EXPECT=<<EOF
 |       |   0x00003034      48010200       return1 r2                  ; return r2
 |       `-> 0x00003038      47010100       return0                     ; empty return
        ::   ;-- section.fcn.00004000.code:
-/ proto4(int self);
-|      ::   ; arg int self @ r2
+/ proto4(int self @ r2);
 |      ::   ; var int args @ r3
 |      ::   ; var int (for state) @ r4
 |      ::   ; var int _ @ r8
@@ -813,9 +777,7 @@ EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x54
             ; CALL XREF from proto1 @ 0x1014
             ;-- section.fcn.00001000.code:
-/ proto1(int self, int balance);
-|           ; arg int self @ r2
-|           ; arg int balance @ r3
+/ proto1(int self @ r2, int balance @ r3);
 |           ; var int acnt @ r4
 |           0x00001000      r2 := {} (size = 0,0)                      ; r2 = {}; array: 0, hash: 0
 |           0x00001004      extra (larger) argument for previous opcode (0) ; extension for previous opcode
@@ -829,9 +791,7 @@ EXPECT=<<EOF
 |           0x00001020      return;                                    ; empty return
             ; CALL XREF from entry0 @ 0x40
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto2(int self @ r2, int amount @ r3);
 |           0x00002000      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
 |           0x00002004      r2 := r2 - r1                              ; r2 = r2 - r1
 |           0x00002008      call 7 metamethod over r2 and r1           ; sub
@@ -884,9 +844,7 @@ EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x54
             ; CALL XREF from proto1 @ 0x1014
             ;-- section.fcn.00001000.code:
-/ proto1(int self, int unknown);
-|           ; arg int self @ r2
-|           ; arg int unknown @ r3
+/ proto1(int self @ r2, int unknown @ r3);
 |           ; var int acnt @ r4
 |           0x00001000      r2 := {} (size = 0,0)                      ; @class.lua:5 ; r2 = {}; array: 0, hash: 0
 |           0x00001004      extra (larger) argument for previous opcode (0)
@@ -900,9 +858,7 @@ EXPECT=<<EOF
 |           0x00001020      return;                                    ; @class.lua:9 ; empty return
             ; CALL XREF from entry0 @ 0x40
             ;-- section.fcn.00002000.code:
-/ proto2(int unknown, int amount);
-|           ; arg int unknown @ r2
-|           ; arg int amount @ r3
+/ proto2(int unknown @ r2, int amount @ r3);
 |           0x00002000      r2 := r0[K[0]:shortstring]                 ; r2 = r0['Account']
 |           0x00002004      r2 := r2 - r1                              ; r2 = r2 - r1
 |           0x00002008      call 7 metamethod over r2 and r1           ; sub
@@ -957,8 +913,7 @@ EXPECT=<<EOF
 |      `--> 0x00000050      return r2, ... ,r[1]                       ; @sample0.lua:50 ; 0 out
             ; CALL XREFS from entry0 @ 0x24, 0x4c
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int balance @ r2
 |           ; var int Account @ r3
 |           ; var int self @ r4
@@ -988,10 +943,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0x10, 0x30
             ; CALL XREF from proto1 @ 0x1030
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for state) @ r7
 |           ; var int i @ r10
@@ -1010,9 +962,7 @@ EXPECT=<<EOF
 |       `-> 0x00002028      return1 r3                                 ; return r3
 |           0x0000202c      return;                                    ; empty return
             ;-- section.fcn.00003000.code:
-/ proto3(int self, int amount);
-|           ; arg int self @ r2
-|           ; arg int amount @ r3
+/ proto3(int self @ r2, int amount @ r3);
 |       ,=< 0x00003000      if ((r1 > 0) ~= k) then pc++               ; [10] -r-x section size 60 named fcn.00003000.code
 |      ,==< 0x00003004      goto pc + 10                               ; jump to 0x3030
 |      |`-> 0x00003008      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
@@ -1030,8 +980,7 @@ EXPECT=<<EOF
 |       |   0x00003034      return1 r2                                 ; return r2
 |       `-> 0x00003038      return;                                    ; empty return
        ::   ;-- section.fcn.00004000.code:
-/ proto4(int self);
-|      ::   ; arg int self @ r2
+/ proto4(int self @ r2);
 |      ::   ; var int args @ r3
 |      ::   ; var int (for state) @ r4
 |      ::   ; var int _ @ r8
@@ -1102,8 +1051,7 @@ EXPECT=<<EOF
 |      `--> 0x00000050      return r2, ... ,r[1]                       ; 0 out
             ; CALL XREFS from entry0 @ 0x24, 0x4c
             ;-- section.fcn.00001000.code:
-/ proto1(int initial_balance);
-|           ; arg int initial_balance @ r1
+/ proto1(int initial_balance @ r1);
 |           ; var int unknown @ r2
 |           ; var int Account @ r3
 |           0x00001000      r1 := r0                                   ; r1 = r0
@@ -1132,10 +1080,7 @@ EXPECT=<<EOF
             ; CALL XREFS from entry0 @ 0x10, 0x30
             ; CALL XREF from proto1 @ 0x1030
             ;-- section.fcn.00002000.code:
-/ proto2(int self, int years, int rate);
-|           ; arg int self @ r3
-|           ; arg int years @ r4
-|           ; arg int rate @ r5
+/ proto2(int self @ r3, int years @ r4, int rate @ r5);
 |           ; var int total @ r6
 |           ; var int (for state) @ r7
 |           ; var int unknown @ r8
@@ -1155,9 +1100,7 @@ EXPECT=<<EOF
 |       `-> 0x00002028      return1 r3                                 ; @sample0.lua:14 ; return r3
 |           0x0000202c      return;                                    ; @sample0.lua:15 ; empty return
             ;-- section.fcn.00003000.code:
-/ proto3(int unknown, int amount);
-|           ; arg int unknown @ r2
-|           ; arg int amount @ r3
+/ proto3(int unknown @ r2, int amount @ r3);
 |       ,=< 0x00003000      if ((r1 > 0) ~= k) then pc++               ; [10] -r-x section size 60 named fcn.00003000.code
 |      ,==< 0x00003004      goto pc + 10                               ; jump to 0x3030
 |      |`-> 0x00003008      r2 := r0[K[0]:shortstring]                 ; r2 = r0['balance']
@@ -1175,8 +1118,7 @@ EXPECT=<<EOF
 |       |   0x00003034      return1 r2                                 ; return r2
 |       `-> 0x00003038      return;                                    ; empty return
        ::   ;-- section.fcn.00004000.code:
-/ proto4(int unknown);
-|      ::   ; arg int unknown @ r2
+/ proto4(int unknown @ r2);
 |      ::   ; var int (vararg table) @ r3
 |      ::   ; var int args @ r4
 |      ::   ; var int _ @ r8

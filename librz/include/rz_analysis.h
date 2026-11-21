@@ -869,12 +869,42 @@ typedef struct rz_analysis_op_t {
 	ut64 jump; /* true jmp */
 	ut64 fail; /* false jmp */
 	RzAnalysisOpDirection direction;
-	st64 ptr; /* reference to memory */ /* XXX signed? */
+	/**
+	 * \brief Address of the memory the instruction refers to, if the instruction gives it.
+	 *
+	 * The address of an absolute or PC-relative memory operand, or of one
+	 * relative to a register the plugin knows the value of (gp on MIPS): e.g.
+	 * the literal pool slot that `ldr r0, [pc, 8]` loads, the slot that
+	 * `call [rip + 0x100]` calls through, or the address `lea` and `adr`
+	 * compute. x86 also gives an immediate that can be an address, as in
+	 * `mov eax, 0x401000`, and for a `call` or `jmp` through a register, the
+	 * displacement: 8 for `call [rbx + 8]`. UT64_MAX if there is none, as
+	 * rz_analysis_op_init() sets it; where it is taken as an address, 0 and
+	 * UT32_MAX count as none too.
+	 *
+	 * With `stackop` set, it is instead the offset of a frame-pointer-relative
+	 * access, which can be negative and whose sign differs between plugins:
+	 * ARM gives -8 for `str r2, [fp, 8]`, AArch64 16 for `ldr x0, [x29, 0x10]`.
+	 * Addresses use all 64 bits, with bit 63 set e.g. in x86-64 kernel code,
+	 * so compare one as unsigned.
+	 */
+	st64 ptr;
 	ut64 val; /* reference to value */ /* XXX signed? */
 	RzAnalysisValue analysis_vals[6]; /* Analyzable values */
 	int ptrsize; /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr; /* stack pointer */
-	int refptr; /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	/**
+	 * \brief Size in bytes of the memory access at `ptr`, 0 if there is none.
+	 *
+	 * The size of what a load reads or a store writes there, or of the pointer
+	 * an indirect call or jump goes through, so that reading `refptr` bytes at
+	 * `ptr` gives that value. Plugins differ, e.g. x86 gives the size of a
+	 * memory operand also without `ptr` and for `lea`, which accesses no
+	 * memory, but for a `call` or `jmp` only when RIP-relative; 32-bit ARM
+	 * gives 4 for any PC-relative load, with the size of `ldrb` and `ldrh` in
+	 * `ptrsize`, and 1 for `adr`. So check `ptr`, the type and `ptrsize` too.
+	 */
+	int refptr;
 	ut8 mmios_count; ///< used MMIO count
 	ut64 mmios[4]; ///< MMIO addresses
 	RzAnalysisValue *src[8];
@@ -1592,8 +1622,10 @@ RZ_API ut32 rz_analysis_function_loops(RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_trim_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API void rz_analysis_del_jmprefs(RzAnalysis *analysis, RzAnalysisFunction *fcn);
 RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function);
+RZ_API RZ_OWN char *rz_analysis_function_get_json_with_location(RZ_NONNULL RzAnalysisFunction *function);
 RZ_API RzAnalysisFunction *rz_analysis_fcn_next(RzAnalysis *analysis, ut64 addr);
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function);
+RZ_API RZ_OWN char *rz_analysis_function_get_signature_with_location(RZ_NONNULL RzAnalysisFunction *function);
 RZ_API void rz_analysis_function_set_type(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL RzCallable *callable);
 RZ_API bool rz_analysis_function_set_type_str(RzAnalysis *a, RZ_NONNULL RzAnalysisFunction *f, RZ_NONNULL const char *sig);
 RZ_API bool rz_analysis_function_set_cc(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *cc);
@@ -1720,7 +1752,8 @@ RZ_API RZ_OWN RzAnalysisFcnVarsCache *rz_analysis_fcn_vars_cache_from_fcn(
 RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache);
 
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
-	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post);
+	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post,
+	RZ_NULLABLE RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown_args);
 
 RZ_API void rz_analysis_fcn_vars_add_types(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn);
 
@@ -1838,6 +1871,7 @@ typedef struct rz_jmptable_params_t {
 	ut64 default_case; ///< Code address of the default case of the switch
 	RzStackAddr sp; ///< Value of the stack pointer after the jump instruction is executed
 	RzVector /*<RzAnalysisTaskItem>*/ *tasks; /// RzVector of RzAnalysisTaskItem to add new tasks to
+	bool relative; ///< Entries are signed 32-bit offsets from jmptbl_off, even if mapped as addresses.
 } RzAnalysisJmpTableParams;
 
 RZ_API bool rz_analysis_get_delta_jmptbl_info(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, ut64 jmp_address, ut64 lea_address, RZ_NONNULL RzAnalysisJmpTableParams *params);

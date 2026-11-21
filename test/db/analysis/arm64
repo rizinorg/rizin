@@ -328,10 +328,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00401ae0(int64_t arg1, int64_t arg2, int64_t arg3);
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
-|           ; arg int64_t arg3 @ rdx
+/ fcn.00401ae0(int64_t arg1 @ rdi, int64_t arg2 @ rsi, int64_t arg3 @ rdx);
 |           0x00401ae0      mov   r9d, edx                             ; arg3
 |           0x00401ae3      xor   r8d, r8d
 |           0x00401ae6      xor   ecx, ecx
@@ -381,5 +378,80 @@ EXPECT=<<EOF
             0x00000810      ret
             0x00000814      ldr   x8, [x0]
             0x00000818      add   x9, x8, 1
+EOF
+RUN
+
+NAME=aarch64 ptr and refptr of loads
+FILE=malloc://1024
+ARGS=-a arm -b 64 -m 0xffffffc000081000
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 081140f94000001840000058400000984000001c4000005c4000009c
+ao 7~ptr,disasm
+EOF
+EXPECT=<<EOF
+disasm: ldr x8, [x8, 0x20]
+refptr: 0
+disasm: ldr w0, 0xffffffc00008100c
+ptr: 0xffffffc00008100c
+refptr: 4
+disasm: ldr x0, 0xffffffc000081010
+ptr: 0xffffffc000081010
+refptr: 8
+disasm: ldrsw x0, 0xffffffc000081014
+ptr: 0xffffffc000081014
+refptr: 4
+disasm: ldr s0, 0xffffffc000081018
+ptr: 0xffffffc000081018
+refptr: 4
+disasm: ldr d0, 0xffffffc00008101c
+ptr: 0xffffffc00008101c
+refptr: 8
+disasm: ldr q0, 0xffffffc000081020
+ptr: 0xffffffc000081020
+refptr: 16
+EOF
+RUN
+
+NAME=aarch64 data xrefs only from literal loads
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 081140f961000058c0035fd6000000000002000000000000
+af
+axl
+EOF
+EXPECT=<<EOF
+                          fcn.00000000+4 0x4 ->      DATA -> 0x10 fcn.00000000+16
+                          fcn.00000000+4 0x4 ->      DATA -> 0x200 fcn.00000000+512
+EOF
+RUN
+
+NAME=aarch64 stack access widths are independent of destination register width
+FILE=malloc://1024
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e cfg.bigendian=false
+# Byte and halfword loads extend into x registers; the stack slots stay narrow.
+wx ff8301d1e01f00b9e0430039e0270079e11f40b9e2438039e3278079ff830191c0035fd6 @ 0x100
+af @ 0x100
+afvl @ 0x100
+pi 9 @ 0x100
+EOF
+EXPECT=<<EOF
+var int8_t var_50h @ stack - 0x50
+var int16_t var_4eh @ stack - 0x4e
+var int32_t var_44h @ stack - 0x44
+arg int64_t arg1 @ x0
+sub sp, sp, 0x60
+str w0, [var_44h]
+strb w0, [var_50h]
+strh w0, [var_4eh]
+ldr w1, [var_44h]
+ldrsb x2, [var_50h]
+ldrsh x3, [var_4eh]
+add sp, sp, 0x60
+ret
 EOF
 RUN

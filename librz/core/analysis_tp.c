@@ -24,11 +24,9 @@ static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt
 	core->dbg->trace = rz_debug_trace_new();
 	esil->trace = rz_analysis_esil_trace_new(esil);
 
-	rz_config_hold_var(hc, "esil.romem", "dbg.trace",
-		"esil.nonull", "dbg.follow", NULL);
+	rz_config_hold_var(hc, "esil.romem", "dbg.trace", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
 	rz_config_set(core->config, "dbg.trace", "true");
-	rz_config_set(core->config, "esil.nonull", "true");
 	rz_config_set_i(core->config, "dbg.follow", false);
 	const char *bp = rz_reg_get_name(rreg, RZ_REG_NAME_BP);
 	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
@@ -104,7 +102,18 @@ static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sig
 	}
 }
 
-static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType *b) {
+static bool var_type_can_refine(const RzTypeDB *typedb, RzType *a, RzType *b) {
+	// Access widths also produce defaults narrower than the target word.
+	// Signatures and format strings may refine these without widening the slot.
+	if (a->kind == RZ_TYPE_KIND_IDENTIFIER && a->identifier.name && !a->identifier.is_const &&
+		(!strcmp(a->identifier.name, "int8_t") || !strcmp(a->identifier.name, "int16_t") ||
+			!strcmp(a->identifier.name, "int32_t") || !strcmp(a->identifier.name, "int64_t")) &&
+		rz_type_is_integral(typedb, b)) {
+		ut64 size = rz_type_db_get_bitsize(typedb, a);
+		if (size && size == rz_type_db_get_bitsize(typedb, b)) {
+			return true;
+		}
+	}
 	// `*int*` types to anything else of the typeclass
 	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr_nested(a) && !rz_type_is_integral(typedb, b)) {
 		return true;
@@ -125,7 +134,7 @@ static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzT
 		// default or void (not void* !) type
 		return;
 	}
-	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_simple_to_complex(typedb, var->type, type)) {
+	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_can_refine(typedb, var->type, type)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
 		// except for simple types to the more complex types

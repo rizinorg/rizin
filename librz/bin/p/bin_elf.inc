@@ -625,12 +625,12 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got");
 	if (section) {
-		return section->offset;
+		return section->rva;
 	}
 
 	section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt");
 	if (section) {
-		return section->offset;
+		return section->rva;
 	}
 
 	return 0;
@@ -681,7 +681,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	}
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
-	ut64 mips_AHL = 0;
+	Elf_(rz_bin_elf_relocs_read_addends)(bin);
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
@@ -694,7 +694,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
 				if (symbol) {
 					sym_addr = symbol->vaddr;
-					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
+					if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(bin) && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 						Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 						reloc->thumb = 1;
 					}
@@ -704,12 +704,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 				}
 			}
 		}
-		if (reloc->mode == DT_REL) {
-			if (!Elf_(rz_bin_elf_reloc_get_addend)(bin, reloc)) {
-				RZ_LOG_INFO("Immediate value extraction not implemented for %x\n", reloc->type);
-			}
-		}
-		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
+		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);
@@ -723,15 +718,17 @@ static void fill_got_sym_id_off_map(ELFOBJ *obj) {
 		// Already loaded by another ELF plugin callback.
 		return;
 	}
+	// Both GOT sections use the same base in relocation formulas.
+	ut64 got_addr = get_got_addr(obj);
 	// Fill symbol id -> GOT offset map.
 	RzBinElfSection *got = Elf_(rz_bin_elf_get_section_with_name)(obj, ".got");
 	if (got) {
 		rz_bin_elf_foreach_relocs(obj, reloc) {
-			if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+			if (reloc->vaddr < got->rva || reloc->vaddr - got->rva >= got->size) {
 				// Not a GOT entry.
 				continue;
 			}
-			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+			ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->vaddr - got_addr);
 		}
 	}
 
@@ -740,11 +737,11 @@ static void fill_got_sym_id_off_map(ELFOBJ *obj) {
 		return;
 	}
 	rz_bin_elf_foreach_relocs(obj, reloc) {
-		if (!RZ_BETWEEN(got->rva, reloc->vaddr, got->rva + got->size)) {
+		if (reloc->vaddr < got->rva || reloc->vaddr - got->rva >= got->size) {
 			// Not a GOT entry.
 			continue;
 		}
-		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->offset);
+		ht_uu_insert(obj->got_sym_id_off, reloc->sym, reloc->vaddr - got_addr);
 	}
 }
 

@@ -2046,6 +2046,38 @@ bool test_callable_unspecified_parameters(void) {
 	mu_end;
 }
 
+static void arg_suffix_cb(RzStrBuf *sb, const RzCallableArg *arg, void *user) {
+	int *calls = user;
+	(*calls)++;
+	rz_strbuf_appendf(sb, " @ %s", arg->name ? arg->name : "?");
+}
+
+bool test_callable_as_string_with_suffix(void) {
+	RzTypeDB *typedb = rz_type_db_new();
+	const char *types_dir = TEST_BUILD_TYPES_DIR;
+	rz_type_db_init(typedb, types_dir, "x86", 64, "linux");
+
+	RzCallable *callable = rz_type_func_new(typedb, "f", rz_type_identifier_of_base_type_str(typedb, "int"));
+	RzType *type = rz_type_array_of_base_type_str(typedb, "char", 4);
+	rz_type_callable_arg_add(callable, rz_type_callable_arg_new(typedb, "a", type));
+	type = rz_type_identifier_of_base_type_str(typedb, "void *");
+	rz_type_callable_arg_add(callable, rz_type_callable_arg_new(typedb, "p", type));
+	callable->has_unspecified_parameters = true;
+
+	int calls = 0;
+	mu_assert_streq_free(rz_type_callable_as_string_with_suffix(typedb, callable, arg_suffix_cb, &calls),
+		"int f(char a[4] @ a, void * p @ p, ...)", "suffix after each argument, before the varargs");
+	mu_assert_eq(calls, 2, "called once per argument");
+	mu_assert_streq_free(rz_type_callable_as_string_with_suffix(typedb, callable, NULL, NULL),
+		"int f(char a[4], void * p, ...)", "no suffix");
+	mu_assert_streq_free(rz_type_callable_as_string(typedb, callable),
+		"int f(char a[4], void * p, ...)", "same as without a callback");
+
+	rz_type_callable_free(callable);
+	rz_type_db_free(typedb);
+	mu_end;
+}
+
 static bool test_type_format_to_c_declaration_struct(void) {
 	char *s = rz_type_format_to_c_declaration("rgba", "x1x1x1x1 r g b a", NULL);
 	mu_assert_streq_free(s,
@@ -2119,7 +2151,71 @@ static bool test_type_format_to_c_declaration_registers_base_type(void) {
 	mu_end;
 }
 
+static bool test_c_highlight(void) {
+	const char *source = "/* caf\xc3\xa9 */\n"
+			     "typedef unsigned long size_t;\n"
+			     "struct Point { const char *name; size_t count; int (*callback)(int); };\n"
+			     "enum Mode { READ = 1, WRITE = 0x20 };\n"
+			     "int process(const struct Point *p);\n";
+	RzAnnotatedCode *code = rz_type_c_highlight(source);
+	mu_assert_notnull(code, "C annotations");
+	mu_assert_streq(code->code, source, "source is preserved");
+	const struct {
+		const char *text;
+		RSyntaxHighlightType type;
+	} expected[] = {
+		{ "/* caf\xc3\xa9 */", RZ_SYNTAX_HIGHLIGHT_TYPE_COMMENT },
+		{ "typedef", RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD },
+		{ "unsigned long", RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE },
+		{ "struct", RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD },
+		{ "const", RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD },
+		{ "char", RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE },
+		{ "callback", RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME },
+		{ "enum", RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD },
+		{ "READ", RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE },
+		{ "0x20", RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE },
+		{ "process", RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(expected); i++) {
+		size_t start = strstr(source, expected[i].text) - source;
+		size_t end = start + strlen(expected[i].text);
+		bool found = false;
+		RzCodeAnnotation *annotation;
+		rz_vector_foreach (&code->annotations, annotation) {
+			if (annotation->start == start && annotation->end == end &&
+				annotation->syntax_highlight.type == expected[i].type) {
+				found = true;
+				break;
+			}
+		}
+		mu_assert_true(found, expected[i].text);
+	}
+	size_t previous_end = 0;
+	RzCodeAnnotation *annotation;
+	rz_vector_foreach (&code->annotations, annotation) {
+		mu_assert_eq(annotation->type, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, "syntax annotation");
+		mu_assert_true(annotation->start >= previous_end, "sorted, non-overlapping spans");
+		mu_assert_true(annotation->end > annotation->start, "non-empty span");
+		mu_assert_true(annotation->end <= strlen(source), "span within source");
+		previous_end = annotation->end;
+	}
+	rz_annotated_code_free(code);
+
+	const char *fragments[] = { "", " \n", "int *", "struct Broken { int member;", "/* unfinished" };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(fragments); i++) {
+		code = rz_type_c_highlight(fragments[i]);
+		mu_assert_notnull(code, "partial C annotations");
+		mu_assert_streq(code->code, fragments[i], "partial source is preserved");
+		if (i < 2) {
+			mu_assert_true(rz_vector_empty(&code->annotations), "empty source has no highlights");
+		}
+		rz_annotated_code_free(code);
+	}
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_c_highlight);
 	mu_run_test(test_type_format_to_c_declaration_struct);
 	mu_run_test(test_type_format_to_c_declaration_union);
 	mu_run_test(test_type_format_to_c_declaration_pointers_and_strings);
@@ -2160,6 +2256,7 @@ int all_tests() {
 	mu_run_test(test_offset_by_path_struct);
 	mu_run_test(test_offset_by_path_array);
 	mu_run_test(test_callable_unspecified_parameters);
+	mu_run_test(test_callable_as_string_with_suffix);
 	return tests_passed != tests_run;
 }
 

@@ -754,7 +754,6 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					}
 				}
 			}
-			op->refptr = 4;
 		} else {
 			if (ISREG64(1)) {
 				if (OPCOUNT64() == 2) {
@@ -850,7 +849,6 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					}
 				}
 			}
-			op->refptr = 4;
 		} else {
 			if (ISREG64(1)) {
 				if (OPCOUNT64() == 2) {
@@ -1055,7 +1053,6 @@ RZ_IPI int rz_arm_cs_analysis_op_64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 a
 					}
 				}
 			}
-			op->refptr = 4;
 		} else {
 			if (ISREG64(1)) {
 				if (OPCOUNT64() == 2) {

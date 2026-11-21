@@ -22,7 +22,7 @@ enum {
 	INTCON,
 } GPRs;
 
-static ut16 OPTION_REG = 1;
+static const ut16 OPTION_REG = 1;
 
 enum {
 	RBIF,

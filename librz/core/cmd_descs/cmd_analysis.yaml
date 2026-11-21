@@ -360,6 +360,19 @@ commands:
           - name: afs
             cname: analysis_function_signature
             summary: Get/Set function signature at current address
+            description: >
+              Without an argument, prints the signature of the function. An argument is
+              followed by its location when an argument variable has the same name and type.
+              With an argument, sets the signature from a C prototype, like the one `afT` prints.
+            details:
+              - name: Examples
+                entries:
+                  - text: afs
+                    arg_str: ""
+                    comment: "Print the signature, e.g. int main(int argc @ rdi, char **argv @ rsi, char **envp);"
+                  - text: afs
+                    arg_str: " int main(int argc, char **argv)"
+                    comment: Set the signature from a C prototype
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -385,6 +398,13 @@ commands:
             args:
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+      - name: afT
+        cname: analysis_function_type
+        summary: Show the type of the function at current address
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: afo
         cname: analysis_function_address
         summary: Show address of current function
@@ -1389,6 +1409,10 @@ commands:
           - name: ara
             summary: Show all currently allocated register arenas
             cname: analysis_reg_arenas
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: ara+
             summary: Push a new set of arenas to the stack
@@ -1442,8 +1466,15 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
           - name: arpc
-            summary: Show register profile comments
+            summary: Show the full-line comments of the register profile
+            description: >
+              A comment after a register definition describes that register, and `arpj` shows it
+              as the `comment` of the register.
             cname: analysis_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: arpo
             summary: Load a new register profile from file
@@ -1510,11 +1541,19 @@ commands:
       - name: arT
         summary: List all register types
         cname: analysis_reg_types
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
       - name: arR
         summary: List all register roles
         cname: analysis_reg_roles
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
   # ... to here

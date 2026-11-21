@@ -228,6 +228,7 @@ static TypeFormatPair *get_union_type(RzTypeDB *typedb, Sdb *sdb, const char *sn
 			char *error_msg = NULL;
 			RzType *ttype = rz_type_parse_string_single(typedb->parser, value, &error_msg);
 			if (!ttype || error_msg) {
+				RZ_FREE(error_msg);
 				free(values);
 				goto error;
 			}
@@ -285,6 +286,7 @@ static TypeFormatPair *get_typedef_type(RzTypeDB *typedb, Sdb *sdb, const char *
 	char *error_msg = NULL;
 	RzType *ttype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
 	if (!ttype || error_msg) {
+		RZ_FREE(error_msg);
 		goto error;
 	}
 	free(type);

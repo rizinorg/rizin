@@ -206,6 +206,7 @@ typedef struct {
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
+	bool show_fcnsig_location;
 	bool show_fcnsize;
 	bool hinted_line;
 	int show_varsum;
@@ -613,6 +614,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
+	ds->show_fcnsig_location = rz_config_get_bool(core->config, "asm.fcn.signature.location");
 	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
 	ds->show_vars = rz_config_get_b(core->config, "asm.var");
 	ds->show_varsum = rz_config_get_i(core->config, "asm.var.summary");
@@ -1985,13 +1987,37 @@ static void ds_show_fn_var_line(
 	ds_newline(ds);
 }
 
+/**
+ * \brief Whether the line of \p var shows more than a signature, which has only its type, name and location
+ */
+static bool var_line_adds_info(RzAnalysisVar *var) {
+	if (var->comment) {
+		return true;
+	}
+	char *constr = rz_analysis_var_get_constraints_readable(var);
+	bool has_constr = constr;
+	free(constr);
+	return has_constr;
+}
+
 static void ds_show_fn_vars_lines(
 	RzDisasmState *ds,
 	RzAnalysisFunction *f,
-	RzAnalysisFcnVarsCache *vars_cache) {
+	RzAnalysisFcnVarsCache *vars_cache,
+	RzPVector /*<RzAnalysisVar *>*/ *sig_vars) {
 	RzAnalysisVar *var;
 	RzListIter *iter;
-	rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+	RzList *vars = vars_cache->sorted_vars;
+	RzList *line_vars = rz_pvector_empty(sig_vars) ? NULL : rz_list_new();
+	if (line_vars) {
+		rz_list_foreach (vars_cache->sorted_vars, iter, var) {
+			if (!rz_pvector_contains(sig_vars, var) || var_line_adds_info(var)) {
+				rz_list_append(line_vars, var);
+			}
+		}
+		vars = line_vars;
+	}
+	rz_list_foreach (vars, iter, var) {
 		// fold same-typed variables
 		ut32 iter_mov = fold_variables(ds->core, ds, iter);
 		if (iter_mov > 0) {
@@ -2004,6 +2030,7 @@ static void ds_show_fn_vars_lines(
 		}
 		ds_show_fn_var_line(ds, f, var);
 	}
+	rz_list_free(line_vars);
 }
 
 static void ds_show_functions(RzDisasmState *ds) {
@@ -2089,8 +2116,14 @@ static void ds_show_functions(RzDisasmState *ds) {
 		}
 	}
 
-	char *sig = rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache, COLOR(ds, fname), COLOR_RESET(ds));
-	if (sig && fcnsig) {
+	// The locations go in the signature only when they replace the lines of the arguments
+	bool sig_location = ds->show_fcnsig_location && ds->show_vars && !ds->show_varsum;
+	RzPVector sig_vars;
+	rz_pvector_init(&sig_vars, NULL);
+	char *sig = fcnsig ? rz_analysis_fcn_format_sig(core->analysis, f, fcn_name, &vars_cache,
+				     COLOR(ds, fname), COLOR_RESET(ds), sig_location ? &sig_vars : NULL)
+			   : NULL;
+	if (sig) {
 		rz_cons_print(ds->core->cons, sig);
 		RZ_FREE(sig);
 	} else {
@@ -2106,9 +2139,10 @@ static void ds_show_functions(RzDisasmState *ds) {
 		if (ds->show_varsum && ds->show_varsum != -1) { // show_varsum = 1 and 2
 			printVarSummary(ds, vars_cache.sorted_vars);
 		} else {
-			ds_show_fn_vars_lines(ds, f, &vars_cache);
+			ds_show_fn_vars_lines(ds, f, &vars_cache, &sig_vars);
 		}
 	}
+	rz_pvector_fini(&sig_vars);
 	ds->show_varsum = o_varsum;
 	rz_analysis_fcn_vars_cache_fini(&vars_cache);
 	if (fcn_name_alloc) {
@@ -4088,6 +4122,37 @@ static inline bool is_filtered_flag(RzDisasmState *ds, const char *name) {
 	return false;
 }
 
+/**
+ * \brief Tells whether a string is known at the target of \p xref, flagged with \p f.
+ */
+static bool xref_to_string(RzCore *core, const RzAnalysisXRef *xref, const RzFlagItem *f) {
+	return xref->type == RZ_ANALYSIS_XREF_TYPE_STRING ||
+		(f->space && RZ_STR_EQ(f->space->name, RZ_FLAGS_FS_STRINGS)) ||
+		rz_meta_get_string(core->analysis, RZ_META_TYPE_STRING, xref->to);
+}
+
+/**
+ * \brief Reads the pointer an instruction loads from \p ptr, or UT64_MAX.
+ */
+static ut64 loaded_pointer(RzCore *core, ut64 ptr, int size) {
+	ut8 buf[8];
+	if (ptr == UT64_MAX || (size != 4 && size != 8) || !rz_io_read_at_mapped(core->io, ptr, buf, size)) {
+		return UT64_MAX;
+	}
+	return rz_read_ble(buf, core->print->big_endian, size * 8);
+}
+
+/**
+ * \brief Tells whether a flag names the small value \p val that an instruction loads.
+ *
+ * Larger values are shown with their flag already, and a flag at a small one
+ * usually means a pointer too, e.g. the aav flag of a literal pool entry's target.
+ * Values below asm.sub.varmin stay numbers, being rather constants or NULL.
+ */
+static bool is_named_value(RzDisasmState *ds, st64 val) {
+	return val >= 0 && (ut64)val >= ds->min_ref_addr && rz_flag_get_i(ds->core->flags, val);
+}
+
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzCore *core = ds->core;
@@ -4145,9 +4210,15 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 	RzListIter *iter;
 	RzAnalysisXRef *xref;
 	RzList *list = rz_analysis_xrefs_get_from(core->analysis, ds->at);
+	ut64 loaded = list ? loaded_pointer(core, p, refptr) : UT64_MAX;
 	rz_list_foreach (list, iter, xref) {
 		if (xref->type == RZ_ANALYSIS_XREF_TYPE_STRING || xref->type == RZ_ANALYSIS_XREF_TYPE_DATA) {
 			if ((f = rz_flag_get_i(core->flags, xref->to))) {
+				// a loaded pointer only says more than the operand when it leads to a string
+				if (xref->to == loaded && !xref_to_string(core, xref, f)) {
+					f = NULL;
+					continue;
+				}
 				refaddr = xref->to;
 				break;
 			}
@@ -4210,7 +4281,7 @@ static void ds_print_ptr(RzDisasmState *ds, int len, int idx) {
 					ds_begin_nl_comment(ds);
 					ds_comment(ds, true, "; [0x%" PFMT64x ":%d]=-1",
 						refaddr, refptr);
-				} else if (n == n32 && (n32 > -512 && n32 < 512)) {
+				} else if (n == n32 && (n32 > -512 && n32 < 512) && !is_named_value(ds, n)) {
 					ds_begin_nl_comment(ds);
 					ds_comment(ds, true, "; [0x%" PFMT64x ":%d]=%" PFMT64d, refaddr, refptr, n);
 				} else {
@@ -5838,6 +5909,26 @@ RZ_IPI bool rz_disasm_check_end(st64 nb_opcodes, st64 i_opcodes, st64 nb_bytes, 
 }
 
 /**
+ * \brief Bytes to read at once for \p nb_opcodes instructions.
+ *
+ * An instruction can need bytes past itself, as a packet header, so take the
+ * architecture's largest decode. The bytes are read as a block is, so they are
+ * held to the maximum block size.
+ *
+ * \return The byte count, or 0 with an error logged when it exceeds the limit.
+ */
+static st32 disasm_bytes_for_opcodes(RzCore *core, st64 nb_opcodes) {
+	int max_op_size = rz_analysis_archinfo(core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
+	ut64 bytes = (ut64)RZ_MAX(max_op_size, MAX_OPSIZE) * RZ_ABS(nb_opcodes) + 1;
+	ut64 limit = RZ_MIN((ut64)(core->blocksize_max ? core->blocksize_max : ST32_MAX), (ut64)ST32_MAX - 1);
+	if (bytes > limit) {
+		RZ_LOG_ERROR("Disassembly range is too large: 0x%" PFMT64x " bytes, the limit is 0x%" PFMT64x " (see `bm`).\n", bytes, limit);
+		return 0;
+	}
+	return (st32)bytes;
+}
+
+/**
  * \brief Disassemble \p nb_bytes bytes or \p nb_opcodes instructions, the length is
  *      constrained by both of them. Set one of them to 0 will disable its constraint.
  *      Both of them cannot be 0 at the same time.
@@ -5862,7 +5953,10 @@ RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address
 
 	// set the parameter equaling 0 to a value that won't affect another parameter
 	if (nb_bytes == 0 && nb_opcodes != 0) {
-		nb_bytes = MAX_OPSIZE * RZ_ABS(nb_opcodes) + 1;
+		nb_bytes = disasm_bytes_for_opcodes(core, nb_opcodes);
+		if (!nb_bytes) {
+			return 0;
+		}
 	}
 	if (nb_bytes != 0 && nb_opcodes == 0) {
 		nb_opcodes = nb_bytes / MIN_OPSIZE + 1;

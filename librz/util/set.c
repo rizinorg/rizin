@@ -218,3 +218,178 @@ RZ_API bool rz_set_u_as_iter(const RZ_NONNULL RzSetU *set, RZ_OUT RZ_NONNULL RzI
 	rz_return_val_if_fail(set, false);
 	return ht_up_as_iter_keys((const HtUP *)set, iterator);
 }
+
+/**
+ * \brief Determines the union set of all given sets.
+ *
+ * \param union_set Optional pointer to the set where the union is written to.
+ *                  Already existing elements in the set are kept.
+ * \param ... The sets to build the union from. They are of type (const RzSetU *).
+ *            The list must be terminated by NULL.
+ *
+ * \return The size of the union set or SZT_MAX in case of error.
+ */
+RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
+	va_list ap;
+	va_start(ap, union_set);
+
+	RzSetU *s = union_set;
+	bool created = !s;
+	if (!s) {
+		s = rz_set_u_new();
+		if (!s) {
+			va_end(ap);
+			rz_warn_if_reached();
+			return SZT_MAX;
+		}
+	}
+
+	bool failed = false;
+	for (;;) {
+		const RzSetU *cur = va_arg(ap, const RzSetU *);
+		if (!cur) {
+			break;
+		}
+		if (cur == s) {
+			// Its elements are already part of the union and inserting
+			// them would modify the set we are iterating over.
+			continue;
+		}
+		RzIterator it = (RzIterator){ 0 };
+		if (!rz_set_u_as_iter(cur, &it)) {
+			failed = true;
+			rz_warn_if_reached();
+			break;
+		}
+		const ut64 *u;
+		rz_iterator_foreach(&it, u) {
+			rz_set_u_add(s, *u);
+		}
+		rz_iterator_fini(&it);
+		if (failed) {
+			break;
+		}
+	}
+	va_end(ap);
+
+	size_t size = rz_set_u_size(s);
+	if (created) {
+		rz_set_u_free(s);
+	}
+	return failed ? SZT_MAX : size;
+}
+
+static size_t add_to_intersection(const RzSetU *smallest, RzSetU *inter_set, va_list ap) {
+	bool failed = false;
+	size_t count = 0;
+	if (!smallest) {
+		// The list is empty, thus the intersection is empty.
+		return inter_set ? rz_set_u_size(inter_set) : 0;
+	}
+
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_set_u_as_iter(smallest, &it)) {
+		rz_warn_if_reached();
+		return SZT_MAX;
+	}
+	const ut64 *u;
+	rz_iterator_foreach(&it, u) {
+		bool in_all = true;
+		va_list ap3;
+		va_copy(ap3, ap);
+		for (const RzSetU *cur = va_arg(ap3, const RzSetU *); cur; cur = va_arg(ap3, const RzSetU *)) {
+			if (cur == smallest) {
+				continue;
+			}
+			if (!rz_set_u_contains(cur, *u)) {
+				in_all = false;
+				break;
+			}
+		}
+		va_end(ap3);
+		if (!in_all) {
+			continue;
+		}
+		count++;
+		if (inter_set) {
+			rz_set_u_add(inter_set, *u);
+		}
+	}
+	rz_iterator_fini(&it);
+
+	size_t size = inter_set ? rz_set_u_size(inter_set) : count;
+	return failed ? SZT_MAX : size;
+}
+
+/**
+ * \brief Determines the intersection set of all given sets.
+ *
+ * \param inter_set Optional pointer to the set where the intersection is added to.
+ *                  If it is one of the given sets, it is reduced to the
+ *                  intersection instead, otherwise the elements of the
+ *                  intersection are added to it.
+ * \param ... The sets to build the intersection from. They are of type (const RzSetU *).
+ *            The list must be terminated by NULL.
+ *
+ * \return The size of the intersection set or SZT_MAX in case of error.
+ */
+RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...) {
+	va_list ap;
+	va_start(ap, inter_set);
+
+	// Find the smallest set as candidate source and check whether inter_set
+	// is one of the given sets.
+	bool inter_in_list = false;
+	const RzSetU *smallest = NULL;
+	va_list ap2;
+	va_copy(ap2, ap);
+	for (const RzSetU *cur = va_arg(ap2, const RzSetU *); cur; cur = va_arg(ap2, const RzSetU *)) {
+		if (cur == inter_set) {
+			inter_in_list = true;
+		}
+		if (!smallest || rz_set_u_size(cur) < rz_set_u_size(smallest)) {
+			smallest = cur;
+		}
+	}
+	va_end(ap2);
+
+	if (!inter_in_list) {
+		// inter_set is not one of the given sets, thus the elements of the
+		// intersection are added to it.
+		size_t s = add_to_intersection(smallest, inter_set, ap);
+		va_end(ap);
+		return s;
+	}
+
+	// inter_set is one of the given sets, thus all elements of the
+	// intersection are already contained in it. Reduce it by deleting
+	// every element that is not part of the intersection.
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_set_u_as_iter(inter_set, &it)) {
+		va_end(ap);
+		rz_warn_if_reached();
+		return SZT_MAX;
+	}
+	const ut64 *u;
+	rz_iterator_foreach(&it, u) {
+		bool in_all = true;
+		va_list ap3;
+		va_copy(ap3, ap);
+		for (const RzSetU *cur = va_arg(ap3, const RzSetU *); cur; cur = va_arg(ap3, const RzSetU *)) {
+			if (cur == inter_set) {
+				continue;
+			}
+			if (!rz_set_u_contains(cur, *u)) {
+				in_all = false;
+				break;
+			}
+		}
+		va_end(ap3);
+		if (!in_all) {
+			rz_set_u_delete(inter_set, *u);
+		}
+	}
+	rz_iterator_fini(&it);
+	va_end(ap);
+	return rz_set_u_size(inter_set);
+}

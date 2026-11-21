@@ -886,10 +886,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# A compact branch window taken from a real C674x image: a 16-bit bnop with a
-# parallel load whose result the following branch must not see. Decoding a
-# compact slot as if it were 32 bits yields an unrelated instruction, so this
-# covers the path the hand-written 32-bit cases cannot reach.
+# A compact branch window taken from a real C674x image: a 16-bit bnop issuing
+# with a 32-bit load and move. Decoding a compact slot as if it were 32 bits
+# yields an unrelated instruction, so this covers the path the hand-written
+# 32-bit cases cannot reach. The bnop is taken, which leaves the load and the
+# branch in its delay slot predicated off: untaken, that branch would issue
+# inside the window, which a window does not model.
 NAME=c6x a compact branch window from real firmware
 FILE=malloc://256
 CMDS=<<EOF
@@ -902,16 +904,18 @@ wx d9081020419e8c056bc6e0026ee82a8ce70214d258a37c05620310d0808000e16281810164022
 wv4 0xfeedface @ 0x70
 s 0xe
 aezi
-ar a0=0
+ar a0=1
 ar b5=0x70
 ar b4=0x11223344
 aezs
 ar b4
+ar a10
 aezv PC
 EOF
 EXPECT=<<EOF
-b4 = 0xfeedface
- PC: 0x00000018
+b4 = 0x11223344
+a10 = 0xffffffff
+ PC: 0x00000060
 EOF
 RUN
 
@@ -973,5 +977,386 @@ EXPECT=<<EOF
             0x00000004      add   .l1 a3,a4,a5
 a5 = 0x00000011
 a3 = 0x0000000f
+EOF
+RUN
+
+# A compact move reaches a register beyond the low eight through bits 11:10:
+# these write a12 from b6 and b2 from b29, where the 3-bit fields alone name a4
+# and b5.
+NAME=c6x compact moves reach registers above the low eight
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 4e97974e000000000000000000000000000000000000000000000000000020e0
+s 0
+pd 2
+aezi
+ar b6=0x11111111
+ar b29=0x22222222
+aezs 2
+ar a12
+ar b2
+ar a4
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .s1x b6,a12
+            0x00000002      mv    .d2 b29,b2
+a12 = 0x11111111
+b2 = 0x22222222
+a4 = 0x00000000
+EOF
+RUN
+
+# Compact SET and CLR change the bit of their src2 in place, and leave the A0/B0
+# predicate registers that compact EXTU writes alone.
+NAME=c6x compact set and clr change their source register
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 438aa2f98312c2030000000000000000000000000000000000000000000060e0
+s 0
+pd 2
+aezi
+ar b4=0xffffffff
+ar a3=0x00000001
+ar b0=0x55555555
+ar a0=0x66666666
+aezs 2
+ar b4
+ar a3
+ar b0
+ar a0
+EOF
+EXPECT=<<EOF
+            0x00000000      clr   .s2 b4,0xc,0xc,b4
+            0x00000002      set   .s1 a3,0x1f,0x1f,a3
+b4 = 0xffffefff
+a3 = 0x80000001
+b0 = 0x55555555
+a0 = 0x66666666
+EOF
+RUN
+
+# A compact shift by a constant encodes a count of 8 as 7.
+NAME=c6x compact shift by eight
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx bae66b0daad40a2c0000000000000000000000000000000000000000000060e0
+s 0
+pd 1
+aezi
+ar a5=0x1
+aezs 1
+ar a3
+EOF
+EXPECT=<<EOF
+            0x00000000      shl   .s1 a5,0x8,a3
+a3 = 0x00000100
+EOF
+RUN
+
+# cl6x 7.4.4 output: a compact LDNDW adds its offset in bytes where it leaves
+# the pointer as it is, whether a constant or a register.
+NAME=c6x compact ldndw offsets its pointer by bytes
+FILE=malloc://0x200
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 263da105763da1056e0c7c2074206c207c4074406c407ce074e06ce0000084ef
+wx 74f5910364f511037c247424242b9003742b90032429100374291003000084e0 @ 0x20
+wx 00112233445566778899aabbccddeeff00112233 @ 0x100
+pd 1 @ 0xa
+pd 1 @ 0x28
+s 0xa
+aezi
+ar a4=0x100
+aezs 1
+ar a6
+ar a7
+s 0x28
+aezi
+ar a4=0x100
+ar a1=3
+aezs 1
+ar a6
+ar a7
+EOF
+EXPECT=<<EOF
+            0x0000000a      ldndw .d1 *+a4(0x1),a7:a6
+            0x00000028      ldndw .d1 *+a4(a1),a7:a6
+a6 = 0x44332211
+a7 = 0x88776655
+a6 = 0x66554433
+a7 = 0xaa998877
+EOF
+RUN
+
+NAME=c6x big-endian compact pair runs its less significant half first
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=true
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 24000246440102470c6e0c6e0c6e0c6e000000000000000000000000e1e00000
+s 0
+pd 4
+aezi
+ar a4=0x10
+ar a0=0x100
+ar b4=0x20
+ar b0=0x200
+aezs 4
+ar a0
+ar b0
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a4,a0
+            0x00000002      add   .l1 0x1,a0,a0
+            0x00000004      mv    .l2 b4,b0
+            0x00000006      add   .l2 0x2,b0,b0
+a0 = 0x00000011
+b0 = 0x00000022
+EOF
+RUN
+
+# cl6x 7.4.4 output: callp issues with the mv after it, so it returns past both
+# rather than to the word after itself.
+NAME=c6x CALLP returns to the execute packet after its own
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 2808000213040010d80f900200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+s 0
+pd 3
+aezi
+ar a5=0
+aezs 2
+ar a5
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      mvk   .s1 0x10,a4
+            0x00000004      callp .s2 0x20,b3
+            0x00000008      ||    mv .l1 a4,a5
+a5 = 0x00000010
+b3 = 0x0000000c
+ PC: 0x00000020
+EOF
+RUN
+
+# cl6x 7.4.4 output: the next execute packet after a callp that ends a compact
+# fetch packet starts past the header.
+NAME=c6x CALLP returns past the fetch-packet header
+FILE=malloc://4096
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 462246424662468246a246c246e246064622464246624682925e01100000e0e746026e0c6e0c6e0c6e0c6e0c6e0c6e0c6e0c46a246c246a246c246a20000e0ef
+s 0x18
+pd 1
+pd 1 @ 0x20
+aezi
+aezs 1
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000018      callp .s2 0xaf4,b3
+            0x00000020      mv    .l1 a4,a0
+b3 = 0x00000020
+ PC: 0x00000af4
+EOF
+RUN
+
+# cl6x 7.4.4 output: the mv after the call reads the loaded register, but only
+# once the call returns, so the load lands before the callee rather than
+# holding the call back in a window.
+NAME=c6x a load's latency window stops at a call
+FILE=malloc://128
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 6402900292020010c6c26e0c6e0c6e0c6e0c6e0c0000000000000000000080e3
+wv4 0xfeedface @ 0x40
+s 0
+pd 3
+aezi
+ar a4=0x40
+ar a5=0
+ar a6=0
+aezs 2
+ar a5
+ar a6
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      ldw   .d1 *a4,a5
+            0x00000004      callp .s2 0x14,b3
+            0x00000008      mv    .l1 a5,a6
+a5 = 0xfeedface
+a6 = 0x00000000
+b3 = 0x00000008
+ PC: 0x00000014
+EOF
+RUN
+
+# cl6x 7.4.4 output: the header of a compact fetch packet leaves the p-bit of a
+# 32-bit word clear, so the mvkh joins the mv by its own one.
+NAME=c6x a 32-bit opcode in a compact fetch packet keeps its own parallel bit
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d80f1000691a090246a247026e0c6e0c6e0c6e0c0000000000000000000080e3
+s 0
+pd 3
+aezi
+ar a4=0x5678
+ar a5=0
+aezs 2
+ar a4
+ar a5
+EOF
+EXPECT=<<EOF
+            0x00000000      mv    .l1 a4,a0
+            0x00000004      mvkh  .s1 0x1234,a4
+            0x00000008      ||    mv .l1 a4,a5
+a4 = 0x12345678
+a5 = 0x00005678
+EOF
+RUN
+
+# cl6x 7.4.4 output: a 32-bit callp in a compact fetch packet issues with the
+# compact mv after it by its own p-bit, and returns past both.
+NAME=c6x a 32-bit CALLP in a compact fetch packet returns past its packet
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx d80f10001302001046a247026e0c6e0c46206e0c0000000000000000000080e3
+s 4
+pd 2
+aezi
+ar a4=0x5678
+ar a5=0
+aezs 1
+ar a5
+ar b3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000004      callp .s2 0x10,b3
+            0x00000008      ||    mv .l1 a4,a5
+a5 = 0x00005678
+b3 = 0x0000000a
+ PC: 0x00000010
+EOF
+RUN
+
+# cl6x 7.4.4 output: stores write no register, so the packet pass has nothing to
+# stage; both stores of the packet and the store in the delay slot still run.
+NAME=c6x every store of a packet and of a delay slot runs
+FILE=malloc://512
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 75029000f60290009003000074021401006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+s 0
+pd 4
+aezi
+ar a1=0x11111111
+ar b1=0x22222222
+ar a2=0x33333333
+ar a4=0x100
+ar b4=0x104
+ar a5=0x108
+aezs 3
+pv4 @ 0x100
+pv4 @ 0x104
+pv4 @ 0x108
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000000      stw   .d1 a1,*a4
+            0x00000004      ||    stw .d2 b1,*b4
+        ,=< 0x00000008      b     .s1 0x1c
+        |   0x0000000c      stw   .d1 a2,*a5
+0x11111111
+0x22222222
+0x33333333
+ PC: 0x0000001c
+EOF
+RUN
+
+# cl6x 7.4.4 output: an execute packet running on into the next fetch packet
+# issues once, however the steps land on it.
+NAME=c6x an execute packet across a fetch-packet boundary runs once
+FILE=malloc://64
+CMDS=<<EOF
+e analysis.arch=tms320
+e cfg.bigendian=false
+e analysis.cpu=c674x
+e asm.cpu=c674x
+e scr.color=0
+wx 00000000000000000000000000000000000000000000000059208400a121080140298c0100000000000000000000000000000000000000000000000000000000
+s 0x18
+pd 3
+aezi
+ar a1=0
+ar a2=0
+ar a3=0
+aezs 3
+ar a1
+ar a2
+ar a3
+aezv PC
+EOF
+EXPECT=<<EOF
+            0x00000018      add   .l1 0x1,a1,a1
+            0x0000001c      ||    add .s1 0x1,a2,a2
+            0x00000020      ||    add .d1 a3,0x1,a3
+a1 = 0x00000001
+a2 = 0x00000001
+a3 = 0x00000001
+ PC: 0x00000024
 EOF
 RUN

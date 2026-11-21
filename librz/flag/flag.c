@@ -912,29 +912,29 @@ RZ_API bool rz_flag_unset_off(RzFlag *f, ut64 off) {
 	return false;
 }
 
-struct unset_off_foreach_t {
-	RzFlag *f;
-	ut64 offset;
-};
-
-static bool unset_off_foreach(void *user, const char *k, const void *v) {
-	struct unset_off_foreach_t *u = (struct unset_off_foreach_t *)user;
-	RzFlagItem *fi = (RzFlagItem *)v;
-	if (u->offset == fi->offset) {
-		rz_flag_unset(u->f, fi);
-	}
-	return true;
-}
-
-/* \brief unset the all flag items found at offset \p off.
- *
- * return true if at least one flag is found and unset, false otherwise.
+/**
+ * \brief Unset all flag items found at offset \p off.
+ * \param f RzFlag instance
+ * \param off Target address offset
+ * \return true if at least one flag is found and unset, false otherwise
  */
 RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
 	rz_return_val_if_fail(f, false);
-	struct unset_off_foreach_t u = { f, off };
-	ht_sp_foreach(f->ht_name, unset_off_foreach, &u);
-	return true;
+	RzFlagsAtOffset *flags = rz_flag_get_nearest_list(f, off, 0);
+	if (!flags) {
+		return false;
+	}
+	bool unset = false;
+	while (!rz_list_empty(flags->flags)) {
+		RzFlagItem *item = rz_list_pop_head(flags->flags);
+		if (item->realname && strcmp(item->name, item->realname)) {
+			ht_sp_delete(f->ht_name, item->realname);
+		}
+		ht_sp_delete(f->ht_name, item->name);
+		unset = true;
+	}
+	rz_skiplist_delete(f->by_off, flags);
+	return unset;
 }
 
 struct unset_foreach_t {

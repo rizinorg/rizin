@@ -110,6 +110,7 @@ RZ_IPI RZ_OWN char *rz_core_base_type_as_c(RzCore *core, RZ_NONNULL RzBaseType *
 
 RZ_IPI void rz_core_types_calling_conventions_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_print(RZ_NONNULL RZ_BORROW RzCons *cons, RzTypeDB *typedb, const char *function, RzOutputMode mode, PJ *pj);
+RZ_IPI void rz_core_types_print_c(RZ_NONNULL RzCons *cons, RZ_NONNULL const char *source);
 RZ_IPI void rz_core_types_function_print_all(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_function_noreturn_print(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_types_show_format(RzCore *core, const char *name, RzOutputMode mode);
@@ -224,7 +225,7 @@ RZ_IPI RzCmdStatus rz_regs_columns_handler(RzCore *core, RzReg *reg, RzCmdRegSyn
 RZ_IPI RzCmdStatus rz_regs_references_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI void rz_regs_show_valgroup(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, const RzList /*<RzRegItem *>*/ *list);
 RZ_IPI RzCmdStatus rz_regs_valgroup_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_arenas_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_reg_arenas_push_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_arenas_pop_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_arenas_swap_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
@@ -233,11 +234,11 @@ RZ_IPI RzCmdStatus rz_reg_arenas_hexdump_handler(RzCore *core, RzReg *reg, RzCmd
 RZ_IPI RzCmdStatus rz_reg_arenas_stack_size_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_arenas_write_hex_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_regs_args_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, RzOutputMode mode);
-RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_types_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
+RZ_IPI RzCmdStatus rz_reg_roles_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_reg_flags_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv, bool unset);
 RZ_IPI RzCmdStatus rz_reg_profile_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
-RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_reg_profile_comments_handler(RzCore *core, RzReg *reg, int argc, const char **argv, RzCmdStateOutput *state);
 RZ_IPI RzCmdStatus rz_reg_profile_open_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_profile_gdb_handler(RzCore *core, RzReg *reg, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_reg_cond_handler(RzCore *core, RzReg *reg, RzCmdRegSync sync_cb, int argc, const char **argv);
@@ -376,12 +377,14 @@ typedef struct rz_core_visual_view_t {
 	int level;
 	st64 delta;
 	ut64 column_nlines;
-	// output is used to store the result of printCmds
-	// and avoid duplicated analysis while j and k is pressed
+	// Cache generated text so scrolling does not rerun the preview command.
 	char *output;
-	// output_mode labels which printCmds' result is stored in output
 	int output_mode;
-	int output_addr;
+	ut64 output_addr;
+	int output_cols;
+	int output_rows;
+	int output_x;
+	int output_y;
 	int option;
 	int variable_option;
 	int printMode;

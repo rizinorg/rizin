@@ -65,17 +65,12 @@ EXPECT=<<EOF
 0x00001260    6 335          dbg.main
 0x000013b0    1 9            sym._fini
             ; CALL XREF from dbg.main @ 0x132a
-/ _Bool fn1(int a, char *g, double q, struct Some *gg, some_t **out)
+/ _Bool fn1(int a @ stack - 0x10, char *g @ stack - 0x18, double q @ stack - 0x20, struct Some *gg @ stack - 0x28, some_t **out @ stack - 0x30)
 |           ; var char **arg1 @ rdi
 |           ; var const char *arg2 @ rsi
 |           ; var int64_t arg7 @ xmm0
 |           ; var unsigned long arg3 @ rdx
 |           ; var some_t *arg4 @ rcx
-|           ; arg int a @ stack - 0x10
-|           ; arg char *g @ stack - 0x18
-|           ; arg double q @ stack - 0x20
-|           ; arg struct Some *gg @ stack - 0x28
-|           ; arg some_t **out @ stack - 0x30
 |           0x00001180      push  rbp                                  ; float_ex1.c:15
 |           0x00001181      mov   rbp, rsp
 |           0x00001184      sub   rsp, 0x30
@@ -88,7 +83,7 @@ EXPECT=<<EOF
 |       ,=< 0x000011a1      jz    0x11b2
 |       |   0x000011a7      cmp   qword [out], 0x00
 |      ,==< 0x000011ac      jnz   0x11bb
-|      |`-> 0x000011b2      mov   byte [a + 0x7], 0x00                 ; float_ex1.c:17
+|      |`-> 0x000011b2      mov   byte [rbp-0x01], 0x00                ; float_ex1.c:17
 |      |,=< 0x000011b6      jmp   0x121c
 |      `--> 0x000011bb      mov   edi, 0x18                            ; float_ex1.c:19 ; size_t size
 |       |   0x000011c0      call  sym.imp.malloc                       ; void *malloc(size_t size)
@@ -114,9 +109,9 @@ EXPECT=<<EOF
 |       |   0x0000120d      mov   rax, qword [out]
 |       |   0x00001211      mov   rax, qword [rax]
 |       |   0x00001214      mov   qword [rax+0x10], rcx
-|       |   0x00001218      mov   byte [a + 0x7], 0x01                 ; float_ex1.c:24
+|       |   0x00001218      mov   byte [rbp-0x01], 0x01                ; float_ex1.c:24
 |       |   ; CODE XREF from dbg.fn1 @ 0x11b6
-|       `-> 0x0000121c      mov   al, byte [a + 0x7]                   ; float_ex1.c:25
+|       `-> 0x0000121c      mov   al, byte [rbp-0x01]                  ; float_ex1.c:25
 |           0x0000121f      and   al, 0x01
 |           0x00001221      movzx eax, al
 |           0x00001224      add   rsp, 0x30

@@ -851,10 +851,9 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
 		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
-			bool res = rz_table_query(state.d.t, args->extra);
-			if (!res) {
+			if (!rz_table_query(state.d.t, args->extra)) {
 				rz_cmd_state_output_fini(&state);
-				return RZ_CMD_STATUS_INVALID;
+				return res;
 			}
 		}
 		if (res == RZ_CMD_STATUS_OK && cmd->has_cons) {
@@ -1504,7 +1503,7 @@ static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color, int gutter
 
 static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedArgs *args, bool use_color,
 	size_t detail, int gutter_size) {
-
+	char *res = NULL;
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (cd->d.group_data.exec_cd && (detail > 1 || (detail == 1 && strcmp(cmdid, cd->name)))) {
@@ -1515,21 +1514,40 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid, RzCmdParsedA
 			// show the group help only when doing <cmd>?
 			return group_get_help(cmd, cd, use_color, gutter_size);
 		}
-		return argv_get_help(cmd, cd, detail, use_color, gutter_size);
+		res = argv_get_help(cmd, cd, detail, use_color, gutter_size);
+		break;
 	case RZ_CMD_DESC_TYPE_ARGV:
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 	case RZ_CMD_DESC_TYPE_ARGV_STATE:
-		return argv_get_help(cmd, cd, detail, use_color, gutter_size);
+		res = argv_get_help(cmd, cd, detail, use_color, gutter_size);
+		break;
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
 			return NULL;
 		}
-		return fake_get_help(cmd, cd, use_color, gutter_size);
+		res = fake_get_help(cmd, cd, use_color, gutter_size);
+		break;
 	case RZ_CMD_DESC_TYPE_INNER:
 		rz_warn_if_reached();
 		return NULL;
+	default:
+		return NULL;
 	}
-	return NULL;
+
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(cd);
+	if (res && exec_cd && exec_cd->type == RZ_CMD_DESC_TYPE_ARGV_STATE &&
+		cd_suffix2mode(exec_cd, cmdid) == RZ_OUTPUT_MODE_TABLE) {
+		const char *pal_input_color = "",
+			   *pal_reset = "";
+		if (cmd->has_cons && use_color) {
+			RzCons *cons = cmd->core->cons;
+			pal_input_color = cons->context->pal.input;
+			pal_reset = cons->context->pal.reset;
+		}
+		res = rz_str_appendf(res, "\nTable queries are colon-attached (e.g. %s%s%s:<query>). Run '%s%s:?%s' for query help.\n",
+			pal_input_color, cmdid, pal_reset, pal_input_color, cmdid, pal_reset);
+	}
+	return res;
 }
 
 static void fill_args_json(const RzCmd *cmd, const RzCmdDesc *cd, PJ *j) {

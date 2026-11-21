@@ -12,11 +12,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=z80 regs
-FILE=
+NAME=z80 regs and pseudo: conditional call keeps both operands alive
+FILE=malloc://8
 CMDS=<<EOF
 e asm.arch=z80
 ar
+e asm.bits=8
+wx c43412c9
+e asm.pseudo=true
+e asm.offset=false
+e asm.bytes=false
+pd 2
 EOF
 EXPECT=<<EOF
 mpc = 0x00000000
@@ -28,5 +34,7 @@ hl = 0x0000
 mbcrom = 0x0000
 mbcram = 0x0000
 ime = 0x0
+                 call 0x1234
+                 return
 EOF
 RUN

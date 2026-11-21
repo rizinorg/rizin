@@ -1839,6 +1839,7 @@ RZ_API bool rz_core_bin_apply_resources(RzCore *core, RzBinFile *binfile) {
 		ut64 vaddr = sdb_num_get(sdb, rz_strf(key, "resource.%d.vaddr", index));
 		int size = (int)sdb_num_get(sdb, rz_strf(key, "resource.%d.size", index));
 		rz_flag_set(core->flags, rz_strf(key, "resource.%d", index), vaddr, size);
+		free(timestr);
 		index++;
 	}
 	rz_flag_space_pop(core->flags);

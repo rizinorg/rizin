@@ -672,6 +672,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dmS on x86-64 core dump
+FILE=bins/elf/core/core-linux-x86_64
+CMDS=<<EOF
+dmS crash .rodata
+dmS 0x56149dfaf000 .text~crash
+dmS crash .missing~crash
+echo ----
+dmSj crash .rodata
+dmSj~{[0].file}
+dmSj~{[0].sections[1].name}
+EOF
+EXPECT=<<EOF
+[Sections]
+     paddr size          vaddr vsize align perm name                       type     flags 
+------------------------------------------------------------------------------------------
+0x00002000  0x8 0x56149dfb1000   0x8   0x0 -r-- crash-linux-x86_64..rodata PROGBITS alloc
+
+0x00001040 0x1a5 0x56149dfb0040 0x1a5   0x0 -r-x crash-linux-x86_64..text PROGBITS alloc,execute
+----
+[{"file":"bins/elf/core/crash-linux-x86_64","addr":94646549803008,"sections":[{"name":".rodata","size":8,"vsize":8,"perm":"-r--","type":"PROGBITS","flags":["alloc"],"paddr":8192,"vaddr":94646549811200}]}]
+bins/elf/core/crash-linux-x86_64
+.interp
+EOF
+RUN
+
 NAME=dm commands on arm64 core dump
 FILE=bins/elf/core/core-linux-arm64
 CMDS=<<EOF

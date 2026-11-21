@@ -29,6 +29,8 @@ commands:
     args: []
   - name: tc
     summary: List loaded types in C format
+    description: >-
+      C declarations use scr.color and the active console palette for syntax highlighting.
     subcommands:
       - name: tc
         cname: type_list_c

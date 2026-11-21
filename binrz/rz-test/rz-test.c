@@ -91,7 +91,7 @@ static int help(bool verbose) {
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
-		printf("Supported test types: @json @unit @fuzz @cmds\n"
+		printf("Supported test types: @json @unit @fuzz @dasm @cmds\n"
 		       "OS/Arch for archos tests: " RZ_TEST_ARCH_OS "\n");
 	}
 	return 1;
@@ -425,12 +425,12 @@ int rz_test_main(int argc, const char **argv) {
 				} else if (!strcmp(arg, "cmds")) {
 					arg = "db";
 				} else {
-					arg = alloc_arg = rz_str_newf("db/%s", arg + 1);
+					arg = alloc_arg = rz_str_newf("db/%s", arg);
 				}
 			}
-			char *tf = rz_file_abspath_rel(cwd, arg);
-			if (!tf || !rz_test_test_database_load(state.db, tf)) {
-				eprintf("Failed to load tests from \"%s\"\n", tf);
+			if (!rz_test_test_database_load(state.db, arg)) {
+				char *tf = rz_file_abspath_rel(cwd, arg);
+				eprintf("Failed to load tests from \"%s\"\n", tf ? tf : arg);
 				rz_test_test_database_free(state.db);
 				free(tf);
 				free(alloc_arg);
@@ -438,7 +438,6 @@ int rz_test_main(int argc, const char **argv) {
 				goto beach;
 			}
 			RZ_FREE(alloc_arg);
-			free(tf);
 		}
 	} else {
 		// Default db path

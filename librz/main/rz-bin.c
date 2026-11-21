@@ -997,6 +997,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_cons_println(core.cons, pj_string(pj));
 			rz_cons_flush(core.cons);
 		}
+		pj_free(pj);
 		rz_core_fini(&core);
 		return 0;
 	}

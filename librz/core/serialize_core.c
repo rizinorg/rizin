@@ -196,6 +196,8 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return;
 	}
 	sdb_set(db, "raw", filename);
+	char baddr_str[32];
+	sdb_set(db, "baddr", rz_strf(baddr_str, "0x%" PFMT64x, rz_bin_get_baddr(core->bin)));
 	char *abs = rz_file_abspath(filename);
 	if (!abs) {
 		return;
@@ -224,7 +226,7 @@ typedef enum {
 	FILE_LOAD_FAIL
 } FileRet;
 
-static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, RZ_NULLABLE RzSerializeResultInfo *res) {
+static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, ut64 baddr, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!rz_file_is_regular(file)) {
 		return FILE_DOES_NOT_EXIST;
 	}
@@ -234,7 +236,7 @@ static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, RZ_NULLA
 		RZ_SERIALIZE_ERR(res, "failed re-open file \"%s\" referenced by project", file);
 		return FILE_LOAD_FAIL;
 	}
-	rz_core_bin_load(core, file, UT64_MAX);
+	rz_core_bin_load(core, file, baddr);
 
 	return FILE_SUCCESS;
 }
@@ -246,13 +248,15 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 	rz_bin_file_delete_all(core->bin);
 
 	FileRet r = FILE_DOES_NOT_EXIST;
+	const char *baddr_str = sdb_const_get(db, "baddr");
+	ut64 baddr = baddr_str ? strtoull(baddr_str, NULL, 0) : UT64_MAX;
 	const char *rel = sdb_const_get(db, "relative");
 	if (rel && prj_file) {
 		char *prj_dir = prj_dir_abs(prj_file);
 		if (prj_dir) {
 			char *file = prj_relative_restore(prj_dir, rel);
 			if (file) {
-				r = try_load_file(core, file, res);
+				r = try_load_file(core, file, baddr, res);
 				free(file);
 			}
 			free(prj_dir);
@@ -264,7 +268,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 
 	const char *file = sdb_const_get(db, "absolute");
 	if (file) {
-		r = try_load_file(core, file, res);
+		r = try_load_file(core, file, baddr, res);
 	}
 	if (r != FILE_DOES_NOT_EXIST) {
 		return r == FILE_SUCCESS;
@@ -272,7 +276,7 @@ static bool file_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 
 	file = sdb_const_get(db, "raw");
 	if (file) {
-		r = try_load_file(core, file, res);
+		r = try_load_file(core, file, baddr, res);
 	}
 	if (r != FILE_DOES_NOT_EXIST) {
 		return r == FILE_SUCCESS;

@@ -971,6 +971,7 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	rz_vector_init(&constraints, sizeof(RzTypeConstraint), NULL, NULL);
 
 	RzAnalysisVarGlobal *glob = NULL;
+	bool ret = false;
 
 	RZ_KEY_PARSER_JSON(ctx->parser, json, child, {
 		case GLOBAL_VAR_FIELD_NAME:
@@ -1034,7 +1035,8 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	addr = rz_num_math(core->num, addr_s);
 	if (rz_analysis_var_global_get_byaddr_in(ctx->analysis, addr) ||
 		rz_analysis_var_global_get_byname(ctx->analysis, name)) {
-		return true;
+		ret = true;
+		goto beach;
 	}
 
 	glob = rz_analysis_var_global_new(name, addr);
@@ -1047,11 +1049,13 @@ static bool global_var_load_cb(void *user, const SdbKv *kv) {
 	rz_vector_foreach (&constraints, constr) {
 		rz_analysis_var_global_add_constraint(glob, constr);
 	}
-	return rz_analysis_var_global_add(ctx->analysis, glob);
+	ret = rz_analysis_var_global_add(ctx->analysis, glob);
 
 beach:
+	free(json_str);
+	rz_json_free(json);
 	rz_vector_fini(&constraints);
-	return false;
+	return ret;
 }
 
 RZ_API bool rz_serialize_analysis_global_var_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *analysis, RZ_NULLABLE RzSerializeResultInfo *res) {

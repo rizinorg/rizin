@@ -98,7 +98,7 @@ static char *reg_names[] = {
 	"r31",
 };
 
-static char *op_names[] = { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
+static const char *const op_names[] = { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
 
 /* Nonzero if INSN is the opcode for a delayed branch.  */
 static int is_delayed_branch(unsigned long insn, struct lanai_opcode *opcodes);

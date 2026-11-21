@@ -868,12 +868,168 @@ int test_tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *us
 	return 0;
 }
 
+// Binary reproducer for the NULL deref on a malformed TPI type record.
+//
+// A record whose leaf is a known aggregate but whose body is too short makes
+// the per leaf parser fail and return NULL. Such a record used to be stored
+// with its known kind and no data, and the public accessors then dereferenced
+// that data by kind and crashed. The file below is the smallest input that
+// reaches it: it is built field by field instead of being shipped as a blob,
+// both so the layout stays readable and so it needs no entry in the test bins.
+//
+// MSF layout (block size 512, 8 blocks):
+//   0  MSF superblock
+//   1  free block map 1
+//   2  free block map 2
+//   3  block map: the blocks holding the stream directory
+//   4  stream 1, PDB information stream
+//   5  stream 2, TPI stream, holds the truncated LF_STRUCTURE record
+//   6  stream 3, DBI stream
+//   7  stream directory
+#define PDB_BLOCK_SIZE 512
+#define PDB_NUM_BLOCKS 8
+#define PDB_FILE_SIZE  (PDB_BLOCK_SIZE * PDB_NUM_BLOCKS)
+
+#define BLOCK_BLOCK_MAP  3
+#define BLOCK_STREAM_PDB 4
+#define BLOCK_STREAM_TPI 5
+#define BLOCK_STREAM_DBI 6
+#define BLOCK_DIRECTORY  7
+
+#define STREAM_PDB_SIZE     28
+#define TPI_HEADER_SIZE     ((ut32)sizeof(RzPdbTpiStreamHeader)) // the parser requires this exact value
+#define TPI_RECORD_SIZE     6 // ut16 length + the 4 record bytes
+#define STREAM_TPI_SIZE     (TPI_HEADER_SIZE + TPI_RECORD_SIZE)
+#define DBI_HEADER_SIZE     64
+#define DBI_DBG_HEADER_SIZE 22 // 11 stream indices
+#define STREAM_DBI_SIZE     (DBI_HEADER_SIZE + DBI_DBG_HEADER_SIZE)
+
+// NumStreams + one size per stream + one block index per stream block
+#define DIRECTORY_SIZE (4 + 4 * 4 + 4 * 3)
+
+#define TPI_TYPE_INDEX 0x1000
+
+static ut8 *malformed_pdb_bytes(void) {
+	ut8 *f = RZ_NEWS0(ut8, PDB_FILE_SIZE);
+	if (!f) {
+		return NULL;
+	}
+	ut8 *p;
+
+	// MSF superblock
+	memcpy(f, PDB_SIGNATURE, PDB_SIGNATURE_LEN);
+	p = f + PDB_SIGNATURE_LEN;
+	rz_write_le32(p + 0, PDB_BLOCK_SIZE);
+	rz_write_le32(p + 4, 1); // free_block_map_block
+	rz_write_le32(p + 8, PDB_NUM_BLOCKS);
+	rz_write_le32(p + 12, DIRECTORY_SIZE); // num_directory_bytes
+	rz_write_le32(p + 16, 0); // unknown
+	rz_write_le32(p + 20, BLOCK_BLOCK_MAP);
+
+	// Both free block maps mark every block as used.
+	memset(f + PDB_BLOCK_SIZE, 0xff, 2 * PDB_BLOCK_SIZE);
+
+	// Block map: the single block the stream directory lives in.
+	rz_write_le32(f + BLOCK_BLOCK_MAP * PDB_BLOCK_SIZE, BLOCK_DIRECTORY);
+
+	// Stream directory: stream count, then sizes, then the block of each stream.
+	// Stream 0 (the old directory) is empty and therefore owns no block.
+	p = f + BLOCK_DIRECTORY * PDB_BLOCK_SIZE;
+	rz_write_le32(p + 0, 4);
+	rz_write_le32(p + 4, 0);
+	rz_write_le32(p + 8, STREAM_PDB_SIZE);
+	rz_write_le32(p + 12, STREAM_TPI_SIZE);
+	rz_write_le32(p + 16, STREAM_DBI_SIZE);
+	rz_write_le32(p + 20, BLOCK_STREAM_PDB);
+	rz_write_le32(p + 24, BLOCK_STREAM_TPI);
+	rz_write_le32(p + 28, BLOCK_STREAM_DBI);
+
+	// PDB information stream, the unique id stays zeroed.
+	p = f + BLOCK_STREAM_PDB * PDB_BLOCK_SIZE;
+	rz_write_le32(p + 0, VC70); // version
+	rz_write_le32(p + 4, 0); // signature
+	rz_write_le32(p + 8, 1); // age
+
+	// TPI stream header, one type record in [TypeIndexBegin, TypeIndexEnd).
+	p = f + BLOCK_STREAM_TPI * PDB_BLOCK_SIZE;
+	rz_write_le32(p + 0, V70); // Version
+	rz_write_le32(p + 4, TPI_HEADER_SIZE);
+	rz_write_le32(p + 8, TPI_TYPE_INDEX); // TypeIndexBegin
+	rz_write_le32(p + 12, TPI_TYPE_INDEX + 1); // TypeIndexEnd
+	rz_write_le32(p + 16, TPI_RECORD_SIZE); // TypeRecordBytes
+	rz_write_le16(p + 20, 0xffff); // HashStreamIndex, absent
+	rz_write_le16(p + 22, 0xffff); // HashAuxStreamIndex, absent
+	rz_write_le32(p + 24, 4); // HashKeySize
+	rz_write_le32(p + 28, 0x3ffff); // NumHashBuckets
+	// The hash, index offset and hash adjuster buffers are all empty.
+
+	// The malformed record. The leaf says LF_STRUCTURE, but the body stops
+	// right after `count`: property, field list, derived, vshape and size are
+	// all missing, so class_parse() fails and yields no data.
+	p += TPI_HEADER_SIZE;
+	rz_write_le16(p + 0, TPI_RECORD_SIZE - 2); // record length
+	rz_write_le16(p + 2, LF_STRUCTURE);
+	rz_write_le16(p + 4, 1); // count
+
+	// DBI stream: a header with no substreams, plus the optional debug header.
+	p = f + BLOCK_STREAM_DBI * PDB_BLOCK_SIZE;
+	rz_write_le32(p + 0, UT32_MAX); // version_signature
+	rz_write_le32(p + 4, DSV_V70); // version_header
+	rz_write_le32(p + 8, 1); // age
+	rz_write_le16(p + 12, 0xffff); // global_stream_index, absent
+	rz_write_le16(p + 16, 0xffff); // public_stream_index, absent
+	rz_write_le16(p + 20, 0xffff); // sym_record_stream, absent
+	rz_write_le32(p + 48, DBI_DBG_HEADER_SIZE); // optional_dbg_header_size
+	rz_write_le16(p + 58, 0x8664); // machine, IMAGE_FILE_MACHINE_AMD64
+	// Optional debug header: every one of the 11 streams is absent.
+	memset(p + DBI_HEADER_SIZE, 0xff, DBI_DBG_HEADER_SIZE);
+
+	return f;
+}
+
+// Before the fix this segfaulted inside rz_bin_pdb_type_is_fwdref(), the same
+// way `rz-bin -P <file>` and `idp <file>` did on the crafted file.
+bool test_pdb_parse_malformed_tpi_record(void) {
+	ut8 *bytes = malformed_pdb_bytes();
+	mu_assert_notnull(bytes, "build the pdb bytes");
+	char *path = rz_file_temp("tpi-null-data.pdb");
+	mu_assert_notnull(path, "temp file path");
+	bool dumped = rz_file_dump(path, bytes, PDB_FILE_SIZE, false);
+	free(bytes);
+	mu_assert_true(dumped, "write the pdb file");
+
+	RzPdb *pdb = rz_bin_pdb_parse_from_file(path);
+	mu_assert_notnull(pdb, "the container is well formed, only the type record is not");
+	mu_assert_notnull(pdb->s_tpi, "TPI stream is parsed");
+	STREAMS_CHECK(4);
+
+	RzPdbTpiType *t = rz_bin_pdb_get_type_by_index(pdb->s_tpi, TPI_TYPE_INDEX);
+	mu_assert_notnull(t, "the record is kept so the type indices stay contiguous");
+	mu_assert_null(t->data, "class_parse failed, so the record carries no data");
+
+	// Every one of these used to read t->data by kind. They come before the
+	// kind check on purpose: against an unfixed library this segfaults here,
+	// which is the behaviour worth catching. Asserting the kind first would
+	// stop the test early and hide it.
+	mu_assert_false(rz_bin_pdb_type_is_fwdref(t), "no data means no fwdref");
+	mu_assert_null(rz_bin_pdb_get_type_members(pdb->s_tpi, t), "no data means no members");
+	mu_assert_null(rz_bin_pdb_get_type_name(t), "no data means no name");
+	mu_assert_eq(rz_bin_pdb_get_type_val(t), 0, "no data means the neutral value");
+	mu_assert_eq(t->kind, TpiKind_INVALID, "a record without data must not keep a known kind");
+
+	rz_bin_pdb_free(pdb);
+	rz_file_rm(path);
+	free(path);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_pdb_tpi_cpp);
 	mu_run_test(test_pdb_tpi_rust);
 	mu_run_test(test_pdb_type_save);
 	mu_run_test(test_pdb_tpi_cpp_vs2019);
 	mu_run_test(test_pdb_tpi_arm);
+	mu_run_test(test_pdb_parse_malformed_tpi_record);
 	return tests_passed != tests_run;
 }
 

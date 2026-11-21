@@ -312,8 +312,7 @@ EOF
 EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
-/ sym.owGetPageLength.constprop.0(int64_t arg1);
-|           ; arg int64_t arg1 @ rdi
+/ sym.owGetPageLength.constprop.0(int64_t arg1 @ rdi);
 |           0x08000040      movzx eax, byte [rdi]                      ; RELOC TARGET 32 .text @ 0x08000040 - 0x8004d08 ; arg1 ; [01] -r-x section size 6641 named .text
 |           0x08000043      and   eax, 0x7f                            ; 127
 |           0x08000046      sub   eax, 0x04
@@ -518,5 +517,17 @@ EXPECT=<<EOF
 0x080000a0 4 reloc.printk.80000a0
 0x080000b4 4 reloc.printk.80000b4
 0x08000b20 4 printk
+EOF
+RUN
+
+NAME=x86 32bit kernel module DWARF strings through REL addends (#6330)
+FILE=bins/elf/linux-example-x86-32.ko
+CMDS=id~.debug_str+~:1..6
+EXPECT=<<EOF
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x36a5): /km/km_example.c
+	DW_AT_comp_dir [DW_FORM_strp]	: (.debug_str+0x6666): /usr/src/linux-headers-4.19.0-18-686
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x149): long unsigned int
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x6b16): unsigned int
+	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x5ff9): char
 EOF
 RUN

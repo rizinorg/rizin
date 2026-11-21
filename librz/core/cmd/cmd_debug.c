@@ -1214,36 +1214,35 @@ RZ_IPI RzCmdStatus rz_debug_memory_permission_handler(RzCore *core, int argc, co
 	return RZ_CMD_STATUS_OK;
 }
 
-static void rz_cmd_debug_dmS_handler_printer(RzCons *cons, ut64 baddr, const char *file, const char *sectname, RzOutputMode mode) {
-	char *res;
-	char *name = rz_str_escape((char *)rz_file_basename(file));
-	char *filesc = rz_str_escape(file);
-	char *old_prefix = rz_sys_getenv("RZ_BIN_PREFIX");
-	rz_sys_setenv("RZ_BIN_PREFIX", name);
-
-	const char *json_flag = (mode == RZ_OUTPUT_MODE_JSON) ? " -j" : "";
-
-	if (sectname && mode != RZ_OUTPUT_MODE_JSON) {
-		char *sect = rz_str_escape(sectname);
-		res = rz_sys_cmd_strf("rz-bin%s -B 0x%08" PFMT64x " -S \"%s\" | grep \"%s\"", json_flag, baddr, filesc, sect);
-		free(sect);
-	} else {
-		res = rz_sys_cmd_strf("rz-bin%s -B 0x%08" PFMT64x " -S \"%s\"", json_flag, baddr, filesc);
+/**
+ * \brief Prints the sections of the module \p file, loaded at \p baddr, as `iS` does for the binary.
+ */
+static void print_module_sections(RzCore *core, const char *file, ut64 baddr, RzCoreBinFilter *filter, RzCmdStateOutput *state) {
+	RzCmdStateOutput module_state;
+	if (!rz_cmd_state_output_init(&module_state, state->mode, core)) {
+		return;
 	}
-	if (res) {
-		rz_str_remove_char(res, '\r');
+	PJ *pj = module_state.mode == RZ_OUTPUT_MODE_JSON ? module_state.d.pj : NULL;
+	if (pj) {
+		pj_o(pj);
+		pj_ks(pj, "file", file);
+		pj_kn(pj, "addr", baddr);
 	}
-	rz_sys_setenv("RZ_BIN_PREFIX", old_prefix);
-	free(old_prefix);
-	free(filesc);
-	if (res) {
-		rz_cons_println(cons, res);
-	}
+	// Without the module name, the sections of different modules look the same
+	char *prefix = core->bin->prefix;
+	char *name = rz_str_dup(rz_file_basename(file));
+	core->bin->prefix = name;
+	bool ok = get_bin_info(core, file, baddr, &module_state, RZ_CORE_BIN_ACC_SECTIONS, filter);
+	core->bin->prefix = prefix;
 	free(name);
-	free(res);
+	if (ok && pj) {
+		pj_end(pj);
+		pj_j(state->d.pj, pj_string(pj));
+	}
+	rz_cmd_state_output_fini(&module_state);
 }
 
-RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzOutputMode m) {
+RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 addr;
 	const char *libname = NULL, *sectname = NULL;
 	ut64 baddr = 0LL;
@@ -1263,9 +1262,11 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 		}
 	}
 
+	RzCoreBinFilter filter = { .offset = UT64_MAX, .name = sectname };
 	if (rz_core_is_core_dump(core)) {
 		RzPVector *maps = io_map_list(core);
 		void **it;
+		rz_cmd_state_output_array_start(state);
 		rz_pvector_foreach (maps, it) {
 			RzIOMap *map = *it;
 			ut64 map_addr = map->itv.addr;
@@ -1278,12 +1279,13 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 				if (!file) {
 					file = map->name;
 				}
-				rz_cmd_debug_dmS_handler_printer(core->cons, baddr, file, sectname, m);
+				print_module_sections(core, file, baddr, &filter, state);
 				if (libname || addr != UT64_MAX) { // only single match requested
 					break;
 				}
 			}
 		}
+		rz_cmd_state_output_array_end(state);
 		rz_pvector_free(maps);
 		return RZ_CMD_STATUS_OK;
 	}
@@ -1293,18 +1295,21 @@ RZ_IPI RzCmdStatus rz_cmd_debug_dmS_handler(RzCore *core, int argc, const char *
 	RzListIter *iter;
 	rz_debug_map_sync(core->dbg); // update process memory maps
 	RzList *list = rz_debug_modules_list(core->dbg);
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (list, iter, map) {
 		if ((!libname ||
 			    (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
 			    (libname != NULL && (strstr(map->name, libname))))) {
 			baddr = map->addr;
 			const char *file = map->file ? map->file : map->name;
-			rz_cmd_debug_dmS_handler_printer(core->cons, baddr, file, sectname, m);
+			print_module_sections(core, file, baddr, &filter, state);
 			if (libname || addr != UT64_MAX) { // only single match requested
 				break;
 			}
 		}
 	}
+	rz_cmd_state_output_array_end(state);
+	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
 

@@ -152,6 +152,147 @@ static bool isSymbolNextInstruction(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return (fi && fi->name && (strstr(fi->name, "imp.") || strstr(fi->name, "sym.") || strstr(fi->name, "entry") || strstr(fi->name, "main")));
 }
 
+/**
+ * \brief Check a bounds comparison without relying on basic-block discovery order.
+ */
+static bool x86_call_pop_jmptbl_bound_at(RzAnalysis *analysis, ut64 addr, ut64 dispatch,
+	RzRegItem *index, ut64 shift, RzAnalysisJmpTableParams *params) {
+	ut8 buf[32];
+	if (!analysis->iob.read_at(analysis->iob.io, addr, buf, sizeof(buf))) {
+		return false;
+	}
+	RzAnalysisOp cmp = { 0 }, branch = { 0 };
+	int size = rz_analysis_op(analysis, &cmp, addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_VAL);
+	bool valid = size > 0 && size < sizeof(buf) && cmp.type == RZ_ANALYSIS_OP_TYPE_CMP &&
+		cmp.dst && !cmp.dst->memref && cmp.dst->reg == index &&
+		cmp.val < analysis->opt.jmptbl_maxcount;
+	if (valid) {
+		valid = rz_analysis_op(analysis, &branch, addr + size, buf + size,
+				sizeof(buf) - size, RZ_ANALYSIS_OP_MASK_BASIC) > 0 &&
+			branch.type == RZ_ANALYSIS_OP_TYPE_CJMP &&
+			(branch.jump == dispatch || branch.fail == dispatch);
+	}
+	bool taken = branch.jump == dispatch;
+	bool exclusive = taken ? branch.cond == RZ_TYPE_COND_LT : branch.cond == RZ_TYPE_COND_GE;
+	bool inclusive = taken ? branch.cond == RZ_TYPE_COND_LE : branch.cond == RZ_TYPE_COND_GT;
+	ut64 count = cmp.val + (inclusive ? 1 : 0);
+	valid = valid && (exclusive || inclusive) && count > shift;
+	if (valid) {
+		params->table_count = count - shift;
+		params->case_shift = shift;
+		params->default_case = taken ? branch.fail : branch.jump;
+	}
+	rz_analysis_op_fini(&cmp);
+	rz_analysis_op_fini(&branch);
+	return valid;
+}
+
+/**
+ * \brief Find a bounds check on a known control-flow path to the dispatch.
+ *
+ * The default path may reach the indirect jump before the bounds-check block
+ * has been analyzed, so pending tasks must also be considered.
+ */
+static bool x86_call_pop_jmptbl_bounds(RzAnalysis *analysis, RzAnalysisFunction *fcn,
+	ut64 dispatch, RzRegItem *index, ut64 shift, RzAnalysisJmpTableParams *params) {
+	void **it;
+	rz_pvector_foreach (fcn->bbs, it) {
+		RzAnalysisBlock *pred = *it;
+		if (pred->ninstr < 2 || (pred->jump != dispatch && pred->fail != dispatch)) {
+			continue;
+		}
+		ut64 addr = rz_analysis_block_get_op_addr(pred, pred->ninstr - 2);
+		if (x86_call_pop_jmptbl_bound_at(analysis, addr, dispatch, index, shift, params)) {
+			return true;
+		}
+	}
+	RzAnalysisTaskItem *task;
+	rz_vector_foreach (params->tasks, task) {
+		if (task->fcn == fcn && x86_call_pop_jmptbl_bound_at(analysis, task->start_address, dispatch, index, shift, params)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Recognize x86-32 tables whose signed entries are added to a saved PC.
+ *
+ * A call to the next instruction followed by pop supplies the table base.
+ * Keep this recognition within one basic block and require a bounds check;
+ * otherwise a register jump is not enough evidence for a switch.
+ */
+static bool x86_call_pop_jmptbl(RzAnalysis *analysis, RzAnalysisFunction *fcn,
+	RzAnalysisBlock *block, const RzAnalysisOp *jump, RzAnalysisJmpTableParams *params) {
+	if (jump->type != RZ_ANALYSIS_OP_TYPE_RJMP || !jump->reg ||
+		block->ninstr < 4) {
+		return false;
+	}
+	ut8 buf[64];
+	int first = block->ninstr - 4;
+	ut64 start = rz_analysis_block_get_op_addr(block, first);
+	ut64 size = jump->addr - start;
+	if (!size || size > sizeof(buf) ||
+		!analysis->iob.read_at(analysis->iob.io, start, buf, size)) {
+		return false;
+	}
+	RzAnalysisOp ops[4] = { 0 };
+	bool valid = false;
+	ut64 offset = 0;
+	for (int i = 0; i < 3; i++) {
+		if (offset >= size) {
+			goto out;
+		}
+		int len = rz_analysis_op(analysis, &ops[i], start + offset,
+			buf + offset, size - offset, RZ_ANALYSIS_OP_MASK_VAL);
+		if (len < 1) {
+			goto out;
+		}
+		offset += len;
+	}
+	RzAnalysisOp *call = &ops[0];
+	RzAnalysisOp *pop = &ops[1];
+	RzAnalysisOp *add = &ops[2];
+	if (offset != size || call->type != RZ_ANALYSIS_OP_TYPE_CALL ||
+		call->size != 5 || call->jump != pop->addr || pop->type != RZ_ANALYSIS_OP_TYPE_POP ||
+		!pop->dst || !pop->dst->reg || pop->dst->reg->size != 32 ||
+		add->type != RZ_ANALYSIS_OP_TYPE_ADD ||
+		!add->dst || add->dst->memref || add->dst->reg != pop->dst->reg ||
+		!RZ_STR_EQ(jump->reg, pop->dst->reg->name) ||
+		!add->src[0] || add->src[0]->type != RZ_ANALYSIS_VAL_MEM ||
+		add->src[0]->reg || !add->src[0]->regdelta || add->src[0]->mul != 4) {
+		goto out;
+	}
+	RzRegItem *index = add->src[0]->regdelta;
+	ut64 shift = 0;
+	ut64 dispatch = start;
+	if (first > 0) {
+		ut64 addr = rz_analysis_block_get_op_addr(block, first - 1);
+		ut64 len = start - addr;
+		RzAnalysisOp *adjust = &ops[3];
+		if (len && len <= sizeof(buf) && analysis->iob.read_at(analysis->iob.io, addr, buf, len) &&
+			rz_analysis_op(analysis, adjust, addr, buf, len, RZ_ANALYSIS_OP_MASK_VAL) == len &&
+			adjust->type == RZ_ANALYSIS_OP_TYPE_SUB && adjust->dst && !adjust->dst->memref &&
+			adjust->dst->reg == index && adjust->val != UT64_MAX) {
+			shift = adjust->val;
+			dispatch = addr;
+		}
+	}
+	if (!x86_call_pop_jmptbl_bounds(analysis, fcn, dispatch, index, shift, params)) {
+		goto out;
+	}
+	params->jmptbl_loc = (ut32)add->src[0]->delta;
+	params->jmptbl_off = pop->addr;
+	params->entry_size = 4;
+	params->relative = true;
+	valid = true;
+out:
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ops); i++) {
+		rz_analysis_op_fini(&ops[i]);
+	}
+	return valid;
+}
+
 static bool is_delta_pointer_table(ReadAhead *ra, RzAnalysis *analysis, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RzAnalysisOp *jmp_aop) {
 	int i;
 	ut64 dst;
@@ -513,10 +654,73 @@ static void analyze_retpoline(RzAnalysis *analysis, RzAnalysisOp *op) {
 	}
 }
 
+/**
+ * \brief Record an additional data xref to the pointer loaded by a pointer-sized load.
+ *
+ * Loads of pointer-sized values from a computable address, such as ARM
+ * PC-relative literal pools (`ldr r4, [pc, #imm]`) or MIPS GOT slots, usually
+ * load a pointer to the data that the function actually accesses. Resolving
+ * this single level of indirection makes the datarefs of a function contain
+ * the final destination and not only the intermediate pointer, which is what
+ * other tools (e.g. IDA) show for such instructions.
+ *
+ * For memory MOVs, record the reference from the pointer slot instead of the
+ * instruction, so references to global pointers also lead to their pointees.
+ *
+ * The direct xref to the pointer location itself is kept, the pointer is only
+ * followed when its value is a valid (readable and mapped) address, and no
+ * recursion is performed. Like the ESIL analysis, values below 0x100 and
+ * all-ones values are not taken as pointers, since NULL or unrelocated slots
+ * hold them.
+ */
+static void analysis_fcn_follow_pointer_load(RzAnalysis *analysis, const RzAnalysisOp *op, ut64 from) {
+	RzIOBind *iob = &analysis->iob;
+	if (!iob->read_at) {
+		return;
+	}
+	ut8 buf[8] = { 0 };
+	if (!iob->read_at(iob->io, op->ptr, buf, op->refptr)) {
+		return;
+	}
+	ut64 ref = rz_read_ble(buf, analysis->big_endian, op->refptr * 8);
+	if (ref < 0x100 || ref == UT32_MAX || ref == UT64_MAX || ref == op->ptr) {
+		return;
+	}
+	// rz_analysis_xrefs_set() itself discards targets that are not valid
+	// (readable and mapped) addresses.
+	rz_analysis_xrefs_set(analysis, from, ref, RZ_ANALYSIS_XREF_TYPE_DATA);
+}
+
+/**
+ * \brief Exclude register moves, stores and partial reads when following pointers.
+ */
+static inline bool op_is_pointer_sized_mov_load(const RzAnalysisOp *op, int bits) {
+	return (op->type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_MOV &&
+		(op->direction & RZ_ANALYSIS_OP_DIR_READ) &&
+		(op->refptr == 4 || op->refptr == 8) && op->refptr == bits / 8;
+}
+
+/**
+ * \brief Exclude conditional moves and stores when tracking a known register value.
+ */
+static inline bool op_is_reg_mov_imm(const RzAnalysisOp *op) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_MOV && op->dst && !op->dst->memref &&
+		op->dst->reg && op->dst->reg->name && op->val > 0 && op->val != UT64_MAX;
+}
+
+/**
+ * \brief Only the immediately preceding register assignment can establish this target.
+ */
+static inline bool op_is_known_reg_jump(const RzAnalysisOp *op, bool last_is_reg_mov_lea,
+	const char *last_reg_mov_lea_name) {
+	return op->type == RZ_ANALYSIS_OP_TYPE_RJMP && last_is_reg_mov_lea &&
+		op->reg && last_reg_mov_lea_name && RZ_STR_EQ(op->reg, last_reg_mov_lea_name);
+}
+
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
-	if (has_dst_reg && has_src_reg) {
+	if (bp_reg && sp_reg && has_dst_reg && has_src_reg && !op->dst->memref) {
 		return !strcmp(bp_reg, op->dst->reg->name) && !strcmp(sp_reg, op->src[0]->reg->name);
 	}
 	return false;
@@ -792,6 +996,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	repeat:
 		at_delta = idx;
 		at = addr + at_delta;
+		// x86 jump-table entries are data, unlike executable branch tables on ARM.
+		if (is_x86 && rz_meta_get_in(analysis, at, RZ_META_TYPE_DATA)) {
+			gotoBeach(RZ_ANALYSIS_RET_END);
+		}
 		if (rz_interrupt_is_breaked(analysis->intr)) {
 			rz_analysis_task_item_new(analysis, tasks, fcn, bb, at, sp);
 			break;
@@ -967,6 +1175,11 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				}
 			}
 		}
+		if (is_x86 && analysis->bits != 16 && op.type == RZ_ANALYSIS_OP_TYPE_CALL &&
+			op.size == 5 && op.jump == op.addr + op.size) {
+			// A call to the next instruction saves the PC without a return.
+			sp -= analysis->bits / 8;
+		}
 		sp = rz_analysis_op_apply_sp_effect(&op, sp);
 		fcn->stack = -sp;
 		if (-sp > fcn->maxstack) {
@@ -977,9 +1190,25 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters
-			rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+			bool ptr_ref = rz_analysis_xrefs_set(analysis, op.addr, op.ptr, RZ_ANALYSIS_XREF_TYPE_DATA);
+			// Follow one level of pointer indirection for pointer-sized
+			// loads (e.g. ARM PC-relative literal pools or MIPS GOT slots),
+			// so datarefs also contain the pointed-to data.
+			if (ptr_ref && (op.type & RZ_ANALYSIS_OP_TYPE_MASK) == RZ_ANALYSIS_OP_TYPE_LOAD &&
+				(op.refptr == 4 || op.refptr == 8) &&
+				(!op.ptrsize || op.ptrsize == op.refptr)) {
+				analysis_fcn_follow_pointer_load(analysis, &op, op.addr);
+			} else if (ptr_ref && op_is_pointer_sized_mov_load(&op, analysis->bits)) {
+				// Preserve the pointer's location as the source of the data-to-data xref.
+				analysis_fcn_follow_pointer_load(analysis, &op, op.ptr);
+			}
 		}
 		analyze_retpoline(analysis, &op);
+
+		if (op_is_known_reg_jump(&op, last_is_reg_mov_lea, last_reg_mov_lea_name)) {
+			op.type = RZ_ANALYSIS_OP_TYPE_JMP;
+			op.jump = last_reg_mov_lea_val;
+		}
 
 		switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
 		case RZ_ANALYSIS_OP_TYPE_CMOV:
@@ -994,8 +1223,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			if (has_stack_regs && op_is_set_bp(&op, bp_reg, sp_reg)) {
 				fcn->bp_off = -sp;
 			}
-			// Is this a mov of immediate value into a register?
-			if (op.dst && op.dst->reg && op.dst->reg->name && op.val > 0 && op.val != UT64_MAX) {
+			if (op_is_reg_mov_imm(&op)) {
 				free(last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = rz_str_dup(op.dst->reg->name))) {
 					last_reg_mov_lea_val = op.val;
@@ -1426,7 +1654,9 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 				};
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
-				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
+				if (is_x86 && analysis->bits == 32 && x86_call_pop_jmptbl(analysis, fcn, bb, &op, &params)) {
+					ret = rz_analysis_walkthrough_jmptbl(analysis, fcn, bb, &params);
+				} else if (op.ptr != UT64_MAX && op.ireg) { // direct jump
 					if (rz_analysis_get_jmptbl_info(analysis, fcn, bb, op.addr, &params)) {
 						bool case_table = false;
 						RzAnalysisOp prev_op;
@@ -1992,8 +2222,7 @@ RZ_API int rz_analysis_function_get_arg_count(RzAnalysis *analysis, RzAnalysisFu
 	return argc;
 }
 
-// tfj and afsj call this function
-RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+static char *function_json(RzAnalysisFunction *function, bool location) {
 	char *tmp = NULL;
 	RzAnalysis *a = function->analysis;
 	PJ *pj = pj_new();
@@ -2028,12 +2257,59 @@ RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) 
 		if (cc_arg) {
 			pj_ks(pj, "cc", cc_arg);
 		}
+		RzAnalysisVar *var = location ? rz_analysis_fcn_sig_arg_var(function, arg_name, arg_type) : NULL;
+		if (var) {
+			rz_analysis_var_storage_dump_pj(pj, var, &var->storage);
+		}
 		pj_end(pj);
 	}
 	pj_end(pj);
 	pj_end(pj);
 	free(ret_type_str);
 	return pj_drain(pj);
+}
+
+/**
+ * \brief Returns the type of the function as JSON
+ *
+ * Used by `tfj` and `afTj`.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) {
+	return function_json(function, false);
+}
+
+/**
+ * \brief Returns the type of the function as JSON, with the location of its arguments
+ *
+ * Like rz_analysis_function_get_json(), with the "storage" object of `afvlj` in every
+ * argument that an argument variable of \p function (same name and type) describes.
+ * Used by `afsj`.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_json_with_location(RZ_NONNULL RzAnalysisFunction *function) {
+	rz_return_val_if_fail(function, NULL);
+	return function_json(function, true);
+}
+
+static char *function_signature(RzAnalysisFunction *function, bool location) {
+	RzAnalysis *a = function->analysis;
+
+	RzCallable *callable = rz_analysis_function_derive_type(a, function);
+	if (!callable) {
+		return NULL;
+	}
+	char *signature;
+	if (location) {
+		RzPVector shown;
+		rz_pvector_init(&shown, NULL);
+		signature = rz_analysis_fcn_callable_with_location(a, function, callable, &shown);
+		rz_pvector_fini(&shown);
+	} else {
+		signature = rz_type_callable_as_string(a->typedb, callable);
+	}
+	rz_type_callable_free(callable);
+	char *result = rz_str_newf("%s;", signature);
+	free(signature);
+	return result;
 }
 
 /**
@@ -2044,17 +2320,20 @@ RZ_API RZ_OWN char *rz_analysis_function_get_json(RzAnalysisFunction *function) 
  */
 RZ_API RZ_OWN char *rz_analysis_function_get_signature(RZ_NONNULL RzAnalysisFunction *function) {
 	rz_return_val_if_fail(function, NULL);
-	RzAnalysis *a = function->analysis;
+	return function_signature(function, false);
+}
 
-	RzCallable *callable = rz_analysis_function_derive_type(a, function);
-	if (!callable) {
-		return NULL;
-	}
-	char *signature = rz_type_callable_as_string(a->typedb, callable);
-	rz_type_callable_free(callable);
-	char *result = rz_str_newf("%s;", signature);
-	free(signature);
-	return result;
+/**
+ * \brief Returns type signature (prototype) of the function, with the location of its arguments
+ *
+ * Like rz_analysis_function_get_signature(), with each argument that an argument variable of
+ * \p function (same name and type) describes followed by its location, as in
+ * `int main(int argc @ rdi, char **argv @ rsi);`. The result is no C prototype anymore,
+ * use rz_analysis_function_get_signature() for one.
+ */
+RZ_API RZ_OWN char *rz_analysis_function_get_signature_with_location(RZ_NONNULL RzAnalysisFunction *function) {
+	rz_return_val_if_fail(function, NULL);
+	return function_signature(function, true);
 }
 
 /**
@@ -2318,6 +2597,9 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp *op) {
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+	if (!bp_name) {
+		return false;
+	}
 	bool is_bp_dst = opdreg && !dst->memref && !strcmp(opdreg, bp_name);
 	bool is_bp_src = opsreg && !src->memref && !strcmp(opsreg, bp_name);
 	if (op->type == RZ_ANALYSIS_OP_TYPE_XCHG) {
@@ -2357,7 +2639,9 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_LEA: {
 				const char *sp = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
 				const char *srcreg = op.src[0] && op.src[0]->reg ? op.src[0]->reg->name : NULL;
-				if (can_affect_bp(analysis, &op) && srcreg && sp && strcmp(srcreg, sp)) {
+				bool from_sp = srcreg && sp && !strcmp(srcreg, sp) &&
+					(op.type == RZ_ANALYSIS_OP_TYPE_LEA || !op.src[0]->memref);
+				if (can_affect_bp(analysis, &op) && !from_sp) {
 					fcn->bp_frame = false;
 					rz_analysis_op_fini(&op);
 					free(buf);
@@ -2366,6 +2650,16 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 				break;
 			}
 			case RZ_ANALYSIS_OP_TYPE_ADD:
+			case RZ_ANALYSIS_OP_TYPE_SUB:
+				// Three-operand instructions can establish a frame at sp +/- immediate.
+				if (does_arch_destroys_dst(analysis->cur->arch) &&
+					op_is_set_bp(&op, rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP),
+						rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP)) &&
+					op.src[1] && !op.src[1]->reg) {
+					break;
+				}
+				// fall through
+			case RZ_ANALYSIS_OP_TYPE_LOAD:
 			case RZ_ANALYSIS_OP_TYPE_AND:
 			case RZ_ANALYSIS_OP_TYPE_CMOV:
 			case RZ_ANALYSIS_OP_TYPE_NOT:
@@ -2375,7 +2669,6 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 			case RZ_ANALYSIS_OP_TYPE_SAL:
 			case RZ_ANALYSIS_OP_TYPE_SAR:
 			case RZ_ANALYSIS_OP_TYPE_SHR:
-			case RZ_ANALYSIS_OP_TYPE_SUB:
 			case RZ_ANALYSIS_OP_TYPE_XOR:
 			case RZ_ANALYSIS_OP_TYPE_SHL:
 			case RZ_ANALYSIS_OP_TYPE_XCHG:
@@ -2400,11 +2693,36 @@ static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction
 /**
  *  \brief This function checks whether any operation in a given function may change BP
  *
- *  Excludes pattern like "mov bp, sp" and "pop sp, bp" for saving stack pointer value
+ * Excludes frame setup and restoration. A repurposed frame pointer must not
+ * turn ordinary memory accesses into stack variables.
  */
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail(fcn);
 	__analysis_fcn_check_bp_use(fcn->analysis, fcn);
+	if (fcn->bp_frame) {
+		return;
+	}
+	const char *bp = rz_reg_get_name(fcn->analysis->reg, RZ_REG_NAME_BP);
+	if (!bp) {
+		return;
+	}
+	for (size_t i = rz_pvector_len(&fcn->vars); i > 0; i--) {
+		RzAnalysisVar *var = rz_pvector_at(&fcn->vars, i - 1);
+		if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
+			continue;
+		}
+		bool removed = false;
+		for (size_t j = rz_vector_len(&var->accesses); j > 0; j--) {
+			RzAnalysisVarAccess *access = rz_vector_index_ptr(&var->accesses, j - 1);
+			if (RZ_STR_EQ(access->reg, bp)) {
+				rz_analysis_var_remove_access_at(var, fcn->addr + access->offset);
+				removed = true;
+			}
+		}
+		if (removed && rz_vector_empty(&var->accesses)) {
+			rz_analysis_function_delete_var(fcn, var);
+		}
+	}
 }
 
 typedef struct {

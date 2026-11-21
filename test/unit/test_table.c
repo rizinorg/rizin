@@ -478,6 +478,8 @@ bool test_rz_table_query_regressions(void) {
 		"[{\"address\":\"zeta\",\"paddr\":2,\"name\":\"early\"},{\"address\":\"alpha\",\"paddr\":16,\"name\":\"late\"}]\n",
 		"addr alias should skip string address headers and use numeric address columns");
 	free(s);
+	mu_assert_false(rz_table_query(t, "?"), "query '?' prints help and returns false");
+	mu_assert_false(rz_table_query(t, ":?"), "query ':?' prints help and returns false");
 	rz_table_free(t);
 	mu_end;
 }

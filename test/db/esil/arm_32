@@ -3132,7 +3132,117 @@ pie 1
 EOF
 EXPECT=<<EOF
 msrlt cpsr_c, 0x3ec0
-0x00000000 nf,vf,^,?{,,}
+0x00000000 nf,vf,^,?{,0xc0,cpsr,0xffffff20,&,|,cpsr,=,}
+EOF
+RUN
+
+NAME=msr cpsr and apsr fields
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 00f021e1 @ 0x00 # msr cpsr_c, r0
+wx 00f022e1 @ 0x04 # msr cpsr_x, r0
+wx 00f024e1 @ 0x08 # msr apsr_g, r0
+wx 00f028e1 @ 0x0c # msr apsr_nzcvq, r0
+wx 00f02ce1 @ 0x10 # msr apsr_nzcvqg, r0
+wx 00f029e1 @ 0x14 # msr cpsr_fc, r0
+wx 00f02fe1 @ 0x18 # msr cpsr_fsxc, r0
+pie 7
+EOF
+EXPECT=<<EOF
+0x00000000 r0,0xdf,&,cpsr,0xffffff20,&,|,cpsr,=
+0x00000004 r0,0x300,&,cpsr,0xfffffcff,&,|,cpsr,=
+0x00000008 r0,0xf0000,&,cpsr,0xfff0ffff,&,|,cpsr,=
+0x0000000c r0,0xf8000000,&,cpsr,0x7ffffff,&,|,cpsr,=
+0x00000010 r0,0xf80f0000,&,cpsr,0x7f0ffff,&,|,cpsr,=
+0x00000014 r0,0xf80000df,&,cpsr,0x7ffff20,&,|,cpsr,=
+0x00000018 r0,0xf80f03df,&,cpsr,0x7f0fc20,&,|,cpsr,=
+EOF
+RUN
+
+NAME=msr writes only the bits of its fields
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 00f02fe1 # msr cpsr_fsxc, r0
+ar r0=0xffffffff
+ar cpsr=0
+aes
+ar cpsr
+ar pc=0
+ar r0=0
+ar cpsr=0xffffffff
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+cpsr = 0xf80f03df
+cpsr = 0x07f0fc20
+EOF
+RUN
+
+NAME=msr immediate
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx d3f021e3 @ 0x0 # msr cpsr_c, #0xd3
+wx 0ff428e3 @ 0x4 # msr apsr_nzcvq, #0xf000000
+wx f0f428e3 @ 0x8 # msr apsr_nzcvq, #240, #8
+pie 3
+ar cpsr=0x30
+aes
+ar cpsr
+aes
+ar cpsr
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000 0xd3,cpsr,0xffffff20,&,|,cpsr,=
+0x00000004 0x8000000,cpsr,0x7ffffff,&,|,cpsr,=
+0x00000008 0xf0000000,cpsr,0x7ffffff,&,|,cpsr,=
+cpsr = 0x000000f3
+cpsr = 0x080000f3
+cpsr = 0xf00000f3
+EOF
+RUN
+
+NAME=msr to spsr and banked registers
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 00f06fe1 @ 0x0 # msr spsr_fsxc, r0
+wx d3f061e3 @ 0x4 # msr spsr_c, #0xd3
+wx 00f26ee1 @ 0x8 # msr spsr_fiq, r0
+wx 00f220e1 @ 0xc # msr r8_usr, r0
+wx 00f060e1 @ 0x10 # msr spsr, r0 (no fields)
+pie 5
+ar r0=0xffffffff
+ar cpsr=0x10
+aes
+aes
+aes
+aes
+aes
+ar cpsr
+ar pc
+EOF
+EXPECT=<<EOF
+0x00000000 
+0x00000004 
+0x00000008 
+0x0000000c 
+0x00000010 
+cpsr = 0x00000010
+pc = 0x00000014
 EOF
 RUN
 

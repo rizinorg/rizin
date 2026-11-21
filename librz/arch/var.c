@@ -104,6 +104,12 @@ static void strbuf_append_sign_hex(RzStrBuf *sb, st64 x) {
 	rz_strbuf_appendf(sb, " %c 0x%" PFMT64x, sign, RZ_ABS(x));
 }
 
+static bool storage_is_loclist(RZ_NULLABLE const RzAnalysisVar *var) {
+	return var && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF &&
+		var->origin.dw_var && var->origin.dw_var->location &&
+		var->origin.dw_var->location->kind == RzBinDwarfLocationKind_LOCLIST;
+}
+
 RZ_API void rz_analysis_var_storage_dump(
 	RZ_NONNULL RZ_BORROW RzAnalysis *a,
 	RZ_NONNULL RZ_BORROW RZ_OUT RzStrBuf *sb,
@@ -126,9 +132,7 @@ RZ_API void rz_analysis_var_storage_dump(
 	}
 	case RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING:
 		/// Omit storage information
-		if (var && var->origin.kind == RZ_ANALYSIS_VAR_ORIGIN_DWARF &&
-			var->origin.dw_var && var->origin.dw_var->location &&
-			var->origin.dw_var->location->kind == RzBinDwarfLocationKind_LOCLIST) {
+		if (storage_is_loclist(var)) {
 			rz_strbuf_append(sb, "LOCLIST");
 		} else {
 			rz_strbuf_append(sb, "...");
@@ -299,12 +303,9 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 	if (rz_analysis_var_is_arg(var) || var->storage.type != RZ_ANALYSIS_VAR_STORAGE_STACK) {
 		return;
 	}
-	// We ignore overlaps between atomic types because current
-	// detection of the variable default type is suboptimal.
-	// The default type is `intXX_t` where XX is the bitness of the platform
-	// But some binaries can use variables of the smaller size by default
-	// and Rizin doesn't detect bitwidth perfectly. Thus, we skip ATOMIC
-	// types in the overlap detection.
+	// Access widths do not establish source variable boundaries: a wide
+	// initializer may cover several scalars. Keep overlapping atomic
+	// candidates until stronger type information is available.
 	if (rz_type_is_strictly_atomic(var->fcn->analysis->typedb, var->type)) {
 		return;
 	}
@@ -334,6 +335,7 @@ RZ_API void rz_analysis_var_resolve_overlaps(RzAnalysisVar *var) {
 /**
  * Add or update a variable at the given storage location \p stor.
  * Both the variable's type and name are set according to the parameters given.
+ * Callable signatures referenced by \p type are borrowed and must outlive the variable.
  *
  * \param fcn the function which the variable will belong to
  * \param stor storage for the new variable to create, or for identifying an existing one if it exists
@@ -375,7 +377,7 @@ RZ_API RZ_BORROW RzAnalysisVar *rz_analysis_function_set_var(
 	if (type) {
 		if (var->type != type) {
 			rz_type_free(var->type);
-			var->type = rz_type_clone(type);
+			var->type = rz_type_clone_shallow(type);
 		}
 	} else {
 		if (!var->type) {
@@ -531,7 +533,7 @@ RZ_API void rz_analysis_function_delete_arg_vars(RzAnalysisFunction *fcn) {
  * Delete all variables from \p fcn function - both arguments and local variables
  */
 RZ_API void rz_analysis_function_delete_all_vars(RzAnalysisFunction *fcn) {
-	rz_pvector_fini(&fcn->vars);
+	rz_pvector_clear(&fcn->vars);
 	fcn->argnum = 0;
 }
 
@@ -785,7 +787,7 @@ static RzAnalysisVar *var_use_from_stack(RzAnalysisFunction *fcn, ut64 addr, con
 			return NULL;
 		}
 		stack_addr += reg_addend;
-	} else if (bp_name && !rz_str_casecmp(bp_name, reg)) {
+	} else if (fcn->bp_frame && bp_name && !rz_str_casecmp(bp_name, reg)) {
 		// bp-based access
 		stack_addr = reg_addend - fcn->bp_off;
 	} else {
@@ -797,7 +799,14 @@ static RzAnalysisVar *var_use_from_stack(RzAnalysisFunction *fcn, ut64 addr, con
 		return NULL;
 	}
 	rz_return_val_if_fail(ret->storage.type == RZ_ANALYSIS_VAR_STORAGE_STACK, NULL);
-	*offset_out = stack_addr - ret->storage.stack_off;
+	ut64 offset = (ut64)stack_addr - (ut64)ret->storage.stack_off;
+	// The nearest variable may end before this address. In particular, a saved
+	// register above a local buffer is not a field of that buffer.
+	ut64 size = rz_analysis_var_size(analysis, ret);
+	if (offset && offset >= size / 8 + (size % 8 != 0)) {
+		return NULL;
+	}
+	*offset_out = offset;
 	return ret;
 }
 
@@ -1173,24 +1182,37 @@ static inline bool is_not_read_nor_write(const RzAnalysisOpDirection direction) 
 }
 
 /**
- * \brief Try to extract any args from a single op
+ * \brief Recover a stack slot from a memory operand, falling back to ESIL.
  *
  * \param reg name of the register to look at for accesses
- * \param from_sp whether \p reg is the sp or bp
+ * \param is_sp whether \p reg is the sp or bp
+ * \param sp stack pointer at this instruction, independent of block traversal order
  */
 static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisOp *op, const char *reg, const char *sign, bool is_sp, RzStackAddr sp, RzStackAddr shadow_store) {
 	rz_return_if_fail(analysis && fcn && op && reg);
 	st64 addend = 0;
 	bool found_addend = false;
+	int size = rz_analysis_guessed_mem_access_width(analysis);
 	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE(op->src); i++) {
-		if (!op->src[i] || !op->src[i]->reg || !op->src[i]->reg->name) {
+	for (i = 0; i <= RZ_ARRAY_SIZE(op->src); i++) {
+		RzAnalysisValue *value = i < RZ_ARRAY_SIZE(op->src) ? op->src[i] : op->dst;
+		if (!value || value->type != RZ_ANALYSIS_VAL_MEM || !value->reg || !value->reg->name) {
 			continue;
 		}
-		if (strcmp(reg, op->src[i]->reg->name)) {
+		if (strcmp(reg, value->reg->name)) {
 			continue;
 		}
-		st64 delta = op->src[i]->delta;
+		// An indexed operand does not identify a fixed slot on the stack.
+		if (value->regdelta) {
+			return;
+		}
+		if (value->memref == 1 || value->memref == 2 || value->memref == 4 || value->memref == 8) {
+			size = value->memref;
+		}
+		if (value == op->dst) {
+			continue;
+		}
+		st64 delta = value->delta;
 		if ((delta < 0 && *sign == '+') || (delta >= 0 && *sign == '-')) {
 			continue;
 		}
@@ -1276,9 +1298,18 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 
 	RzStackAddr stack_off;
 	if (is_sp) {
-		stack_off = addend - fcn->stack;
+		if (sp == RZ_STACK_ADDR_INVALID ||
+			(sp > 0 && addend > ST64_MAX - sp) ||
+			(sp < 0 && addend < ST64_MIN - sp)) {
+			goto beach;
+		}
+		// Other paths may have changed fcn->stack since this block was analyzed.
+		stack_off = addend + sp;
 	} else {
 		stack_off = addend - fcn->bp_off;
+	}
+	if (stack_off == ST64_MIN || stack_off == RZ_STACK_ADDR_INVALID) {
+		goto beach;
 	}
 	if (!stack_off) {
 		// Do not create a var/arg for the return address
@@ -1339,7 +1370,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (varname) {
 			RzAnalysisVarStorage stor;
 			rz_analysis_var_storage_init_stack(&stor, stack_off);
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, rz_analysis_guessed_mem_access_width(analysis), varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, vartype, size, varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}
@@ -1355,7 +1386,7 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		}
 		char *varname = rz_str_newf("%s_%" PFMT64x "h", VARPREFIX, RZ_ABS(stor.stack_off));
 		if (varname) {
-			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, rz_analysis_guessed_mem_access_width(analysis), varname);
+			RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &stor, NULL, size, varname);
 			if (var) {
 				rz_analysis_var_set_access(var, reg, op->addr, rw, addend);
 			}
@@ -1659,7 +1690,7 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	RzStackAddr shadow_store = fcn->cc ? rz_analysis_cc_shadow_store(analysis, fcn->cc) : 0;
 	const char *BP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
 	const char *SP = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
-	if (BP) {
+	if (BP && fcn->bp_frame) {
 		extract_stack_var(analysis, fcn, op, BP, "+", false, sp, shadow_store);
 		extract_stack_var(analysis, fcn, op, BP, "-", false, sp, shadow_store);
 	}
@@ -1766,13 +1797,68 @@ RZ_API void rz_analysis_fcn_vars_cache_fini(RzAnalysisFcnVarsCache *cache) {
 	rz_list_free(cache->arg_vars);
 }
 
-static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, char *fcn_name, const char *fcn_name_pre, const char *fcn_name_post) {
+/**
+ * \brief Returns the argument of \p fcn that a signature shows as \p type \p name, if any
+ */
+RZ_IPI RZ_BORROW RzAnalysisVar *rz_analysis_fcn_sig_arg_var(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE const char *name, RZ_NULLABLE const RzType *type) {
+	rz_return_val_if_fail(fcn, NULL);
+	if (!name || !type) {
+		return NULL;
+	}
+	RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
+	// A variable of another type is not the argument the signature describes
+	return var && var->type && rz_analysis_var_is_arg(var) && rz_types_equal(var->type, type) ? var : NULL;
+}
+
+typedef struct {
+	RzAnalysis *analysis;
+	RzAnalysisFunction *fcn;
+	RzPVector /*<RzAnalysisVar *>*/ *shown;
+} SigLocationCtx;
+
+static void sig_append_location(SigLocationCtx *ctx, RzStrBuf *sb, const char *name, const RzType *type) {
+	RzAnalysisVar *var = rz_analysis_fcn_sig_arg_var(ctx->fcn, name, type);
+	if (!var || rz_pvector_contains(ctx->shown, var)) {
+		return;
+	}
+	// "..." reads as variadic arguments in a signature, and says nothing anyway
+	if (var->storage.type != RZ_ANALYSIS_VAR_STORAGE_EVAL_PENDING || storage_is_loclist(var)) {
+		rz_strbuf_append(sb, " @ ");
+		rz_analysis_var_storage_dump(ctx->analysis, sb, var, &var->storage);
+	}
+	rz_pvector_push(ctx->shown, var);
+}
+
+static void sig_callable_arg_location(RzStrBuf *sb, const RzCallableArg *arg, void *user) {
+	// A function pointer is printed with the name of its callable, so the argument would lose its name
+	if (arg->type && rz_type_is_callable_ptr_nested(arg->type)) {
+		return;
+	}
+	sig_append_location(user, sb, arg->name, arg->type);
+}
+
+/**
+ * \brief Returns \p callable as C, with the location of the arguments of \p fcn after the ones it describes
+ *
+ * \param shown Gets the arguments of \p fcn whose location was printed
+ */
+RZ_IPI RZ_OWN char *rz_analysis_fcn_callable_with_location(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn,
+	RZ_NONNULL const RzCallable *callable, RZ_NONNULL RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown) {
+	rz_return_val_if_fail(analysis && fcn && callable && shown, NULL);
+	SigLocationCtx ctx = { analysis, fcn, shown };
+	return rz_type_callable_as_string_with_suffix(analysis->typedb, callable, sig_callable_arg_location, &ctx);
+}
+
+static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, char *fcn_name, SigLocationCtx *ctx) {
 	if (!fcn->has_debuginfo || !rz_str_startswith(fcn_name, "dbg."))
 		return NULL;
 
 	RzCallable *callable = rz_type_func_get(analysis->typedb, fcn_name + 4);
 	if (!callable) {
 		return NULL;
+	}
+	if (ctx->shown) {
+		return rz_analysis_fcn_callable_with_location(analysis, fcn, callable, ctx->shown);
 	}
 	return rz_type_callable_as_string(analysis->typedb, callable);
 }
@@ -1786,16 +1872,21 @@ static char *sig_from_debuginfo(RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunct
  * \param reuse_cache The function variable cache to speed up the process
  * \param fcn_name_pre The prefix to use to highlight the function name
  * \param fcn_name_post The suffix to use to highlight the function name
+ * \param shown_args If not NULL, every argument of the signature that describes an argument
+ * variable of \p fcn (same name and type) is followed by its location, as in `int argc @ rdi`,
+ * and that variable is appended to \p shown_args
  * \return {return}
  */
 RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnalysisFunction *fcn, RZ_NULLABLE char *fcn_name,
-	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post) {
+	RZ_NULLABLE RzAnalysisFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post,
+	RZ_NULLABLE RZ_OUT RzPVector /*<RzAnalysisVar *>*/ *shown_args) {
 	fcn_name = !fcn_name ? fcn->name : fcn_name;
 	if (!fcn_name) {
 		return NULL;
 	}
 
-	char *sig = sig_from_debuginfo(analysis, fcn, fcn_name, fcn_name_pre, fcn_name_post);
+	SigLocationCtx ctx = { analysis, fcn, shown_args };
+	char *sig = sig_from_debuginfo(analysis, fcn, fcn_name, &ctx);
 	if (RZ_STR_ISNOTEMPTY(sig)) {
 		return sig;
 	}
@@ -1852,7 +1943,11 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 				comma = false;
 			}
 			const char *sp = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
-			rz_strbuf_appendf(buf, "%s%s%s%s", type_str, sp, name, comma ? ", " : "");
+			rz_strbuf_appendf(buf, "%s%s%s", type_str, sp, name);
+			if (shown_args) {
+				sig_append_location(&ctx, buf, name, type);
+			}
+			rz_strbuf_append(buf, comma ? ", " : "");
 			free(type_str);
 		}
 		goto beach;
@@ -1864,9 +1959,13 @@ RZ_API char *rz_analysis_fcn_format_sig(RZ_NONNULL RzAnalysis *analysis, RZ_NONN
 	rz_list_foreach (cache->arg_vars, iter, var) {
 		char *vartype = rz_type_as_string(analysis->typedb, var->type);
 		size_t tmp_len = strlen(vartype);
-		rz_strbuf_appendf(buf, "%s%s%s%s", vartype,
+		rz_strbuf_appendf(buf, "%s%s%s", vartype,
 			tmp_len && vartype[tmp_len - 1] == '*' ? "" : " ",
-			var->name, rz_list_has_next(iter) ? ", " : "");
+			var->name);
+		if (shown_args) {
+			sig_append_location(&ctx, buf, var->name, var->type);
+		}
+		rz_strbuf_append(buf, rz_list_has_next(iter) ? ", " : "");
 		free(vartype);
 	}
 

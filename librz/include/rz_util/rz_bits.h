@@ -144,6 +144,22 @@ static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, u
 }
 
 /**
+ * \brief Extracts a bit field from a value.
+ *
+ * \param value the value holding the field
+ * \param start the position of the lowest bit of the field
+ * \param width the number of bits of the field
+ * \return the field in the low bits, 0 if \p start is past bit 63
+ */
+static inline ut64 rz_bits_extract(ut64 value, ut32 start, ut32 width) {
+	if (start >= 64) {
+		return 0;
+	}
+	value >>= start;
+	return width < 64 ? value & ((1ULL << width) - 1) : value;
+}
+
+/**
  * \brief Sign-extends a value from a specified bit-width to full width of type.
  *
  * This macro defines an inline function that performs sign extension on an

@@ -619,8 +619,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x100062
             ;-- _main:
-/ int main(int argc, char **argv, char **envp);
-|           ; arg char **envp @ stack + 0x8
+/ int main(int argc, char **argv, char **envp @ stack + 0x8);
 |           ; arg int32_t arg_ch @ stack + 0xc
 |           ; arg int32_t arg_18h @ stack + 0x18
 |           ; arg int32_t arg_1ch @ stack + 0x1c

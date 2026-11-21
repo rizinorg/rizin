@@ -35,8 +35,8 @@ EXPECT=<<EOF
 -0x00000010  var_10h:   int64_t
 -0x00000018  var_18h:   int64_t
 -0x00000020  var_20h:   int64_t
--0x00000024  var_24h:   int64_t
--0x00000028  var_28h:   int64_t
+-0x00000024  var_24h:   int32_t
+-0x00000028  var_28h:   int32_t
 EOF
 RUN
 
@@ -51,9 +51,9 @@ afv- *
 pdf~:1..4
 EOF
 EXPECT=<<EOF
-/ sym.varfunc(int64_t arg1);
-| ; arg int64_t arg1 @ rdi
-| ; var int64_t var_2ch @ stack - 0x2c
+/ sym.varfunc(int64_t arg1 @ rdi);
+| ; var int32_t var_2ch @ stack - 0x2c
+| ; var int32_t var_20h @ stack - 0x20
 
 / sym.varfunc();
 | 0x0000115c      push  rbp

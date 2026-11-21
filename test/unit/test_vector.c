@@ -1244,6 +1244,167 @@ static bool test_pvector_find_index(void) {
 	mu_end;
 }
 
+static bool test_pvector_bin_search(void) {
+	RzPVector v;
+	int num = 77;
+	ut32 e_val0 = 0;
+	ut32 e_val2 = 2;
+	ut32 e_val4 = 4;
+	ut32 e_val6 = 6;
+	void *out = NULL;
+
+	// empty vector
+	init_test_pvector(&v, 0, 0);
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out), "empty vector not found");
+	mu_assert_null(out, "out is NULL on empty vector");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, NULL), "empty vector, out is NULL");
+	rz_pvector_clear(&v);
+
+	// single element vector
+	init_test_pvector(&v, 1, 0);
+	mu_assert("single element found", rz_pvector_bin_search(&v, &e_val0, compare_int, &num, &out));
+	mu_assert_notnull(out, "single element out is not NULL");
+	mu_assert_eq(*(ut32 *)out, e_val0, "single element value");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out), "single element not found");
+	mu_assert_null(out, "out is NULL when not found");
+	rz_pvector_clear(&v);
+
+	// regular cases
+	init_test_pvector(&v, 5, 0);
+	bool found = rz_pvector_bin_search(&v, &e_val2, compare_int, &num, &out);
+	mu_assert("found", found);
+	mu_assert_eq(*(ut32 *)out, e_val2, "bin search value");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	found = rz_pvector_bin_search(&v, &e_val0, compare_int, &num, &out);
+	mu_assert("found first", found);
+	mu_assert_eq(*(ut32 *)out, e_val0, "bin search first value");
+	found = rz_pvector_bin_search(&v, &e_val4, compare_int, &num, &out);
+	mu_assert("found last", found);
+	mu_assert_eq(*(ut32 *)out, e_val4, "bin search last value");
+	found = rz_pvector_bin_search(&v, &e_val6, compare_int, &num, &out);
+	mu_assert_false(found, "not found");
+	mu_assert_null(out, "out is NULL when not found");
+	// optional out
+	mu_assert_true(rz_pvector_bin_search(&v, &e_val2, compare_int, &num, NULL), "found, out is NULL");
+	mu_assert_false(rz_pvector_bin_search(&v, &e_val6, compare_int, &num, NULL), "not found, out is NULL");
+	rz_pvector_clear(&v);
+	mu_end;
+}
+
+// The comparator is passed the stored pointers themselves, so the vector
+// stays sorted by the pointed-to values.
+static bool test_pvector_insert_sorted(void) {
+	int num = 77;
+
+	// insert into an empty vector
+	RzPVector v;
+	rz_pvector_init(&v, free);
+	ut32 *e = malloc(sizeof(ut32));
+	*e = 42;
+	void **p = rz_pvector_insert_sorted(&v, e, compare_int, &num);
+	mu_assert_ptreq(*p, e, "insert_sorted stores the pointer");
+	mu_assert_eq(rz_pvector_len(&v), 1UL, "insert_sorted len");
+
+	// insert before the first and after the last element
+	ut32 vals[] = { 0, 1337 };
+	for (size_t i = 0; i < 2; i++) {
+		e = malloc(sizeof(ut32));
+		*e = vals[i];
+		p = rz_pvector_insert_sorted(&v, e, compare_int, &num);
+		mu_assert_ptreq(*p, e, "insert_sorted stores the pointer");
+	}
+	mu_assert_eq(num, 44, "ensure user is passed");
+
+	const ut32 expected[] = { 0, 42, 1337 };
+	for (size_t i = 0; i < 3; i++) {
+		mu_assert_eq(*((ut32 *)rz_pvector_at(&v, i)), expected[i], "insert_sorted keeps order");
+	}
+
+	// duplicates are inserted at the position of their equal element
+	e = malloc(sizeof(ut32));
+	*e = 42;
+	p = rz_pvector_insert_sorted(&v, e, compare_int, &num);
+	mu_assert_ptreq(*p, e, "insert_sorted duplicate stores the pointer");
+	mu_assert_eq(*((ut32 *)rz_pvector_at(&v, 1)), 42, "insert_sorted duplicate position");
+	mu_assert_eq(*((ut32 *)rz_pvector_at(&v, 2)), 42, "insert_sorted duplicate position");
+	mu_assert_eq(rz_pvector_len(&v), 4UL, "insert_sorted len");
+	rz_pvector_clear(&v);
+
+	// insert into a reverse sorted vector
+	rz_pvector_init(&v, free);
+	v.v.reverse_sorted = true;
+	const ut32 init[] = { 4, 2, 0 };
+	for (size_t i = 0; i < 3; i++) {
+		ut32 *d = malloc(sizeof(ut32));
+		*d = init[i];
+		rz_pvector_push(&v, d);
+	}
+	const ut32 ins[] = { 3, 5, 1 };
+	const size_t at[] = { 1, 0, 4 };
+	for (size_t i = 0; i < 3; i++) {
+		e = malloc(sizeof(ut32));
+		*e = ins[i];
+		p = rz_pvector_insert_sorted(&v, e, compare_int, &num);
+		mu_assert_eq((size_t)(p - (void **)v.v.a), at[i], "insert_sorted reverse position");
+	}
+	const ut32 expected_rev[] = { 5, 4, 3, 2, 1, 0 };
+	for (size_t i = 0; i < 6; i++) {
+		mu_assert_eq(*((ut32 *)rz_pvector_at(&v, i)), expected_rev[i], "insert_sorted reverse order");
+	}
+	rz_pvector_clear(&v);
+
+	mu_end;
+}
+
+static bool test_pvector_find_sorted(void) {
+	int num = 77;
+	ut32 e_val;
+
+	// empty vector
+	RzPVector v;
+	init_test_pvector(&v, 0, 0);
+	e_val = 1;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), SZT_MAX, "empty vector");
+	rz_pvector_clear(&v);
+
+	// ascending vector with values 0..4
+	init_test_pvector(&v, 5, 0);
+	e_val = 2;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 2, "found");
+	e_val = 0;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 0, "found first");
+	e_val = 4;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 4, "found last");
+	e_val = 5;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), SZT_MAX, "greater than all elements");
+	e_val = 1337;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), SZT_MAX, "not found");
+	mu_assert_eq(num, 44, "ensure user is passed");
+	rz_pvector_clear(&v);
+
+	// reverse sorted vector with values 4..0
+	rz_pvector_init(&v, free);
+	v.v.reverse_sorted = true;
+	for (ut32 i = 5; i > 0; i--) {
+		ut32 *d = malloc(sizeof(ut32));
+		*d = i - 1;
+		rz_pvector_push(&v, d);
+	}
+	e_val = 2;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 2, "reverse found");
+	e_val = 4;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 0, "reverse found first");
+	e_val = 0;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), 4, "reverse found last");
+	e_val = 5;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), SZT_MAX, "reverse greater than all elements");
+	e_val = 1337;
+	mu_assert_eq(rz_pvector_find_sorted(&v, &e_val, compare_int, &num), SZT_MAX, "reverse not found");
+	rz_pvector_clear(&v);
+
+	mu_end;
+}
+
 static bool test_pvector_join(void) {
 	RzPVector m, n;
 	init_test_pvector(&m, 5, 0);
@@ -1938,6 +2099,9 @@ static int all_tests(void) {
 	mu_run_test(test_pvector_set);
 	mu_run_test(test_pvector_find);
 	mu_run_test(test_pvector_find_index);
+	mu_run_test(test_pvector_bin_search);
+	mu_run_test(test_pvector_insert_sorted);
+	mu_run_test(test_pvector_find_sorted);
 	mu_run_test(test_pvector_join);
 	mu_run_test(test_pvector_contains);
 	mu_run_test(test_pvector_remove_at);

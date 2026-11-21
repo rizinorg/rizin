@@ -26,7 +26,7 @@ RZ_IPI RZ_OWN RzCoreVisual *rz_core_visual_new() {
 	visual->view = RZ_NEW0(RzCoreVisualView);
 	visual->view->output = NULL;
 	visual->view->output_mode = -1;
-	visual->view->output_addr = -1;
+	visual->view->output_addr = UT64_MAX;
 	visual->view->selectPanel = false;
 	visual->view->curtheme = NULL;
 	memset(&visual->util, 0, sizeof(RzVisualUtil));

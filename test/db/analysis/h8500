@@ -37,11 +37,9 @@ EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
             ;-- _start:
-/ entry0(int16_t arg_4h);
-|           ; arg int16_t arg_4h @ stack + 0x4
+/ entry0(int16_t arg_4h @ stack + 0x4);
 \           0x00000000      nop                                        ; [00] -r-x section size 274 named .text
-/ fcn.00000001(int16_t arg_4h);
-|           ; arg int16_t arg_4h @ stack + 0x4
+/ fcn.00000001(int16_t arg_4h @ stack + 0x4);
 |           0x00000001      mov:i #0x9d:16, r7
 |           0x00000004      link  fp, #0x10:8
 |           0x00000006      stm.b (r0-r3), @-SP
@@ -230,10 +228,7 @@ arg int16_t arg_4h @ stack + 0x4
 arg int16_t arg_f8h @ stack + 0xf8
 arg int16_t arg_feh @ stack + 0xfe
             ; CALL XREF from sym.main @ 0x9a
-/ sym.varfunc(int16_t arg_4h, int16_t arg_f8h, int16_t arg_feh);
-|           ; arg int16_t arg_4h @ stack + 0x4
-|           ; arg int16_t arg_f8h @ stack + 0xf8
-|           ; arg int16_t arg_feh @ stack + 0xfe
+/ sym.varfunc(int16_t arg_4h @ stack + 0x4, int16_t arg_f8h @ stack + 0xf8, int16_t arg_feh @ stack + 0xfe);
 |           0x00000018      link  fp, #0xf8:8
 |           0x0000001a      mov:f.w @(4:8, r6), r0
 |           0x0000001c      cmp.w #0x1:16, r0

@@ -348,7 +348,231 @@ static bool test_disasm_until_ret_json(void) {
 	mu_end;
 }
 
+static bool test_type_command_colors(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"td \"struct Point { int x; const char *name; };\"; "
+		"td \"union Value { int i; char c; };\"; "
+		"td \"enum Mode { READ = 1, WRITE = 2 };\"; "
+		"td \"typedef struct Point PointAlias;\"; "
+		"td \"int process(const struct Point *p);\"";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "define test types");
+	mu_assert_true(rz_analysis_cc_set(core->analysis, "rax example_cc(rdi, rsi)"), "calling convention");
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "example", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function for type references");
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzType *type = rz_type_parse_string_single(typedb->parser, "struct Point", NULL);
+	mu_assert_notnull(type, "variable type");
+	RzAnalysisVarStorage storage;
+	rz_analysis_var_storage_init_stack(&storage, -0x10);
+	RzAnalysisVar *var = rz_analysis_function_set_var(fcn, &storage, type, 0, "point");
+	rz_type_free(type);
+	mu_assert_notnull(var, "variable for type references");
+	const struct {
+		const char *cmd;
+		bool colored;
+	} cases[] = {
+		{ "tc", true },
+		{ "tc Point", true },
+		{ "tcd", true },
+		{ "tcd Point", true },
+		{ "tsc", true },
+		{ "tsc Point", true },
+		{ "tsd", true },
+		{ "tsd Point", true },
+		{ "tuc", true },
+		{ "tuc Value", true },
+		{ "tud", true },
+		{ "tud Value", true },
+		{ "tec", true },
+		{ "tec Mode", true },
+		{ "ted", true },
+		{ "ted Mode", true },
+		{ "ttc", true },
+		{ "ttc PointAlias", true },
+		{ "tt PointAlias", true },
+		{ "tf", true },
+		{ "tf process", true },
+		{ "tsl", true },
+		{ "tul", true },
+		{ "tcc example_cc", true },
+		{ "tccl", true },
+		{ "tx", true },
+		{ "txf 0x100", true },
+		{ "txl", false },
+		{ "txg", false },
+		{ "t", false },
+		{ "ts", false },
+		{ "tu", false },
+		{ "te", false },
+		{ "tt", true },
+		{ "tcc", false },
+		{ "tccj", false },
+		{ "tj", false },
+		{ "tsj", false },
+		{ "tuj", false },
+		{ "tej", false },
+		{ "ttj", false },
+		{ "tfj", false },
+		{ "t Point", false },
+		{ "ts Point", false },
+		{ "tu Value", false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		rz_config_set_i(core->config, "scr.color", COLOR_MODE_DISABLED);
+		char *plain = rz_core_cmd_str(core, cases[i].cmd);
+		mu_assert_notnull(plain, cases[i].cmd);
+		mu_assert_null(strchr(plain, '\x1b'), "plain output has no escapes");
+		rz_config_set_i(core->config, "scr.color", COLOR_MODE_16);
+		char *colored = rz_core_cmd_str(core, cases[i].cmd);
+		mu_assert_notnull(colored, cases[i].cmd);
+		mu_assert_eq(strchr(colored, '\x1b') != NULL, cases[i].colored, cases[i].cmd);
+		rz_str_ansi_filter(colored, NULL, NULL, -1);
+		mu_assert_streq(colored, plain, cases[i].cmd);
+		free(plain);
+		free(colored);
+	}
+	rz_core_cmd0(core, "ec func_var_type red");
+	char *custom = rz_core_cmd_str(core, "tc Point");
+	mu_assert_notnull(custom, "custom palette output");
+	mu_assert_notnull(strstr(custom, Color_RED "char" Color_RESET), "active type color");
+	free(custom);
+	char *source = rz_core_types_as_c(core, "Point", true);
+	mu_assert_notnull(source, "C source for editor/API callers");
+	mu_assert_null(strchr(source, '\x1b'), "source APIs stay uncolored");
+	free(source);
+	rz_core_cmd0(core, "t-*");
+	char *empty = rz_core_cmd_str(core, "tc");
+	mu_assert_streq_free(empty, "", "empty type listing adds no newline");
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool visual_hexdump_shown;
+
+static RzCmdStatus visual_hexdump_handler(RzCore *core, int argc, const char **argv) {
+	visual_hexdump_shown = true;
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_function_preview(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://0x2001; wx c3; wx 90 @ 0x2000; "
+		"af+ sparse; afb+ 0 0 1; afb+ 0 0x2000 1";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "sparse function");
+	rz_analysis_set_gp(core->analysis, 0x12345678);
+	RzCmdDesc *hexdump = rz_cmd_get_desc(core->rcmd, "pxa");
+	mu_assert_notnull(hexdump, "hexdump command");
+	hexdump->d.argv_data.cb = visual_hexdump_handler;
+	visual_hexdump_shown = false;
+	mu_assert_true(rz_cons_readpush(core->cons, "Ppqq", 4), "preview keys");
+	int length;
+	ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+	mu_assert_notnull(output, "visual output");
+	mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)"0x00002000", 10), "preview includes the distant block");
+	mu_assert_true(visual_hexdump_shown, "P wraps to the last representation");
+	mu_assert_eq(rz_analysis_get_gp(core->analysis), 0x12345678, "preview preserves the global pointer");
+	free(output);
+	rz_core_free(core);
+	mu_end;
+}
+
+static size_t visual_render_count;
+static bool visual_resize_preview;
+
+static RzCmdStatus visual_preview_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
+	visual_render_count++;
+	if (visual_resize_preview) {
+		rz_config_set_i(core->config, "scr.rows", 20);
+		visual_resize_preview = false;
+	}
+	rz_cons_printf(core->cons, "preview at 0x%" PFMT64x "\n", core->offset);
+	return RZ_CMD_STATUS_OK;
+}
+
+static bool test_visual_preview_cache(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	const char *setup =
+		"e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+		"e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+		"on malloc://16 0x100000000; s 0x100000000; af+ first; "
+		"on malloc://16 0x200000000; s 0x200000000; af+ second; s 0x100000000";
+	mu_assert_eq(rz_core_cmd0_rzshell(core, setup), RZ_CMD_STATUS_OK, "64-bit functions");
+	RzCmdDesc *preview = rz_cmd_desc_get_exec(rz_cmd_get_desc(core->rcmd, "pdr"));
+	mu_assert_notnull(preview, "function preview command");
+	preview->d.argv_state_data.cb = visual_preview_handler;
+	visual_render_count = 0;
+	const struct {
+		const char *keys;
+		size_t renders;
+		bool resize;
+	} cases[] = {
+		{ "\tjjkk\tqq", 1, false },
+		{ "qq", 2, false },
+		{ "jkqq", 5, false },
+		{ "\tk\tqq", 7, true },
+		{ ":e asm.bytes=true\n\nqq", 9, false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		visual_resize_preview = cases[i].resize;
+		mu_assert_true(rz_cons_readpush(core->cons, cases[i].keys, strlen(cases[i].keys)), "preview keys");
+		char *output = rz_core_cmd_str(core, "Vv");
+		mu_assert_notnull(output, "visual output");
+		free(output);
+		mu_assert_eq(visual_render_count, cases[i].renders, "reuse only the current function preview");
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_visual_graph_previews(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_eq(rz_core_cmd0_rzshell(core,
+			     "e scr.interactive=true; e scr.color=0; e scr.utf8=false; "
+			     "e scr.columns=120; e scr.rows=16; e asm.arch=x86; e asm.bits=64; "
+			     "on malloc://512 0x1000; s 0x1000; af+ wide"),
+		RZ_CMD_STATUS_OK, "graph setup");
+	// A branching graph puts its entry beyond the leftmost preview viewport.
+	for (int i = 0; i < 31; i++) {
+		ut64 addr = 0x1000 + i * 16;
+		ut64 jump = i < 15 ? 0x1000 + (2 * i + 1) * 16 : UT64_MAX;
+		ut64 fail = i < 15 ? 0x1000 + (2 * i + 2) * 16 : UT64_MAX;
+		rz_core_cmdf(core, "wx c3 @ 0x%" PFMT64x, addr);
+		rz_core_cmdf(core, "afb+ 0x1000 0x%" PFMT64x " 1 0x%" PFMT64x " 0x%" PFMT64x,
+			addr, jump, fail);
+	}
+	for (int mode = 0; mode < 6; mode++) {
+		if (mode) {
+			mu_assert_true(rz_cons_readpush(core->cons, "pqq", 3), "next mode");
+			free(rz_core_cmd_str(core, "Vv"));
+		}
+		mu_assert_true(rz_cons_readpush(core->cons, "qq", 2), "reenter mode");
+		int length;
+		ut8 *output = rz_core_cmd_raw(core, "Vv", &length);
+		mu_assert_notnull(output, "preview output");
+		if (mode == 2 || mode == 3) {
+			const char *title = "|  0x1000";
+			mu_assert_notnull(rz_mem_mem(output, length, (const ut8 *)title, strlen(title)),
+				"graph entry is visible in the preview");
+		}
+		free(output);
+	}
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_visual_function_preview);
+	mu_run_test(test_visual_preview_cache);
+	mu_run_test(test_visual_graph_previews);
+	mu_run_test(test_type_command_colors);
 	mu_run_test(test_arg_cmd);
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);

@@ -7,6 +7,7 @@
 #include <rz_types.h>
 #include <rz_util/rz_num.h>
 #include <rz_util/rz_print.h>
+#include <rz_util/rz_annotated_code.h>
 #include <rz_bind.h>
 #include <rz_io.h>
 #include <rz_list.h>
@@ -159,6 +160,11 @@ typedef struct rz_callable_at {
 	bool noret : 1; // Does not return
 	bool has_unspecified_parameters : 1;
 } RzCallable;
+
+/**
+ * \brief Appends to \p sb what to print after \p arg in the C representation of a callable
+ */
+typedef void (*RzCallableArgSuffixCb)(RZ_NONNULL RzStrBuf *sb, RZ_NONNULL const RzCallableArg *arg, RZ_NULLABLE void *user);
 
 struct rz_type_t {
 	RzTypeKind kind;
@@ -349,6 +355,7 @@ RZ_API ut64 rz_type_db_struct_member_offset(RZ_NONNULL const RzTypeDB *typedb, R
 // Type parser low-level API
 
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_new(void);
+RZ_API RZ_OWN RzAnnotatedCode *rz_type_c_highlight(RZ_NONNULL RZ_BORROW const char *source);
 RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables);
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser);
 RZ_API void rz_type_parser_free_purge(RZ_NONNULL RzTypeParser *parser);
@@ -456,6 +463,7 @@ RZ_API bool rz_type_is_callable(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr(RZ_NONNULL const RzType *type);
 RZ_API bool rz_type_is_callable_ptr_nested(RZ_NONNULL const RzType *type);
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable);
+RZ_API RZ_OWN char *rz_type_callable_as_string_with_suffix(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NULLABLE RzCallableArgSuffixCb arg_suffix, RZ_NULLABLE void *user);
 RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzType *type, bool zero_vla);
 
 RZ_API bool rz_type_func_is_noreturn(RzTypeDB *typedb, RZ_NONNULL const char *name);
