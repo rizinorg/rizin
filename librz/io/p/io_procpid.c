@@ -88,6 +88,11 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			riop->pid = pid;
 			riop->fd = fd;
 			RzIODesc *d = rz_io_desc_new(io, &rz_io_plugin_procpid, file, true, riop);
+			if (!d) {
+				close(fd);
+				free(riop);
+				return NULL;
+			}
 			d->name = rz_sys_pid_to_path(riop->pid);
 			return d;
 		}
@@ -103,9 +108,16 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RzIODesc *fd) {
-	int ret = ptrace(PTRACE_DETACH, RzIOPROCPID_PID(fd), 0, 0);
+	if (!fd || !fd->data) {
+		return 0;
+	}
+	RzIOProcpid *riop = fd->data;
+	(void)ptrace(PTRACE_DETACH, riop->pid, 0, 0);
+	if (riop->fd != -1) {
+		close(riop->fd);
+	}
 	RZ_FREE(fd->data);
-	return ret;
+	return 0;
 }
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
