@@ -4974,8 +4974,9 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunc
 		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
 		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
 	}
-	rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
-	res = true;
+	if (fcn) {
+		res = rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
+	}
 err:
 	free(fcnname);
 	free(fcnstr_copy);

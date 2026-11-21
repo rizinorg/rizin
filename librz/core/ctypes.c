@@ -998,13 +998,17 @@ RZ_IPI void rz_core_types_print_all(RzCore *core, RzOutputMode mode) {
 	rz_list_free(types);
 }
 
-RZ_IPI void rz_types_define(RzCore *core, const char *type) {
+RZ_IPI bool rz_types_define(RzCore *core, const char *type) {
+	if (RZ_STR_ISEMPTY(type)) {
+		RZ_LOG_ERROR("core: cannot define empty type\n");
+		return false;
+	}
 	// Add trailing semicolon to force the valid C syntax
 	// It allows us to skip the trailing semicolon in the input
 	// to reduce the unnecessary typing
 	char *tmp = rz_str_newf("%s;", type);
 	if (!tmp) {
-		return;
+		return false;
 	}
 	char *error_msg = NULL;
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
@@ -1015,6 +1019,7 @@ RZ_IPI void rz_types_define(RzCore *core, const char *type) {
 		free(error_msg);
 	}
 	free(tmp);
+	return result == 0;
 }
 
 RZ_IPI bool rz_types_open_file(RzCore *core, const char *path) {
