@@ -3,6 +3,7 @@
 
 #include <rz_io.h>
 #include <rz_lib.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -159,6 +160,39 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "gzip://", 7));
 }
 
+static bool inflate_members(RzIOGzip *mal, const ut8 *data, size_t len) {
+	if (!data || !len || len > INT_MAX) {
+		return false;
+	}
+	RzBuffer *output = rz_buf_new_empty(0);
+	if (!output) {
+		return false;
+	}
+	size_t offset = 0;
+	while (offset < len) {
+		int consumed = 0, size = 0;
+		ut8 *member = rz_inflate(data + offset, (int)(len - offset), &consumed, &size);
+		bool valid = member && consumed > 0 && size >= 0 &&
+			rz_buf_size(output) + size <= INT_MAX;
+		if (valid) {
+			valid = rz_buf_append_bytes(output, member, size);
+		}
+		free(member);
+		if (!valid) {
+			rz_buf_free(output);
+			return false;
+		}
+		offset += consumed;
+	}
+	mal->size = rz_buf_size(output);
+	mal->buf = malloc(RZ_MAX(mal->size, 1));
+	if (mal->buf && mal->size && rz_buf_read_at(output, 0, mal->buf, mal->size) != mal->size) {
+		RZ_FREE(mal->buf);
+	}
+	rz_buf_free(output);
+	return mal->buf != NULL;
+}
+
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open(io, pathname, 0)) {
 		RzIOGzip *mal = RZ_NEW0(RzIOGzip);
@@ -167,9 +201,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		}
 		size_t len;
 		ut8 *data = (ut8 *)rz_file_slurp(pathname + 7, &len);
-		int *size = (int *)&mal->size;
-		mal->buf = rz_inflate(data, (int)len, NULL, size);
-		if (mal->buf) {
+		if (inflate_members(mal, data, len)) {
 			free(data);
 			return rz_io_desc_new(io, &rz_io_plugin_gzip, pathname, rw, mal);
 		}
