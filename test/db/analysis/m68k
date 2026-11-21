@@ -1,3 +1,26 @@
+NAME=m68k PBcc word and long branch edges
+FILE=malloc://32
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f081fffcf0c500010000
+ao @ 0~type,jump,fail,family
+ao @ 4~type,jump,fail,family
+EOF
+EXPECT=<<EOF
+type: cjmp
+    - type: "br_disp"
+jump: 0xfffffffe
+fail: 0x00000004
+family: priv
+type: cjmp
+    - type: "br_disp"
+jump: 0x00010006
+fail: 0x0000000a
+family: priv
+EOF
+RUN
+
 NAME=M68k analysis
 FILE=bins/smd/LiquidSpaceDodgerV3.bin
 CMDS=<<EOF
@@ -115,7 +138,7 @@ goto 0x312
 EOF
 RUN
 
-NAME=M68K FPU analysis has no RzIL
+NAME=M68K FPU analysis has RzIL alongside integer instructions
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=m68k
@@ -123,10 +146,10 @@ e asm.bits=32
 e asm.cpu=68020
 wx f2000522f3107001
 aoj~{.[]\|{opcode,family,type,opex}}
-aoj~{.[]\|{rzil}}
+aoj~{[0].rzil.opcode}
 s 4
 aoj~{.[]\|{opcode,family,type,opex}}
-aoj~{.[]\|{rzil}}
+aoj~{[0].rzil.opcode}
 s 6
 aoj~{[0].rzil.opcode}
 e asm.cpu=cfv1
@@ -136,9 +159,9 @@ aoj~{[0].rzil.opcode}
 EOF
 EXPECT=<<EOF
 [{"opcode":"fadd fp1, fp2","family":"fpu","type":"add","opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
-[{}]
+seq
 [{"opcode":"fsave (a0)","family":"fpu","type":"store","opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}}]
-[{}]
+branch
 seq
 seq
 EOF
@@ -216,6 +239,7 @@ macsr = 0x00000000
 mask = 0x00000000
 usp = 0x00000000
 cp_external_data = 0x00000000
+fpu_state = 0x00000000
 EOF
 RUN
 

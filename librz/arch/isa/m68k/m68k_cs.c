@@ -226,11 +226,25 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
 				return true;
 			}
 			break;
+		case M68K_OP_REG_PAIR:
+			if (rz_m68k_reg_is_fpu(op->reg_pair.reg_0) && rz_m68k_reg_is_fpu(op->reg_pair.reg_1)) {
+				return true;
+			}
+			break;
 		default:
 			break;
 		}
 	}
 	return false;
+}
+
+RZ_IPI bool rz_m68k_insn_is_pmmu_branch(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	const cs_m68k *m68k = &insn->detail->m68k;
+	/* Match CpID 0 and the 16 MC68851 conditions. Older Capstone versions
+	 * report FBcc IDs for these encodings. */
+	return insn->size >= 4 && insn->bytes[0] == 0xf0 && (insn->bytes[1] & 0xb0) == 0x80 &&
+		m68k->op_count == 1 && m68k->operands[0].type == M68K_OP_BR_DISP;
 }
 
 RZ_IPI ut32 rz_m68k_detail_op_bits(RZ_NONNULL const cs_m68k *m68k, ut32 fallback_bits) {
@@ -617,9 +631,9 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NO
 	if (rz_m68k_op_detail_is_invalid(op)) {
 		return true;
 	}
-	// A GPR cannot supply an FPU-sized operand (e.g. fmove.x d0, fp0 is illegal).
+	// Only single-precision real operands fit in a data register.
 	if (m68k->op_size.type == M68K_SIZE_TYPE_FPU && rz_m68k_op_is_gpr(op)) {
-		return true;
+		return !rz_m68k_reg_is_dreg(op->reg) || m68k->op_size.fpu_size != M68K_FPU_SIZE_SINGLE;
 	}
 	// FP immediates use dedicated M68K_OP_FP_* types; an integer immediate
 	// cannot encode an FPU-sized value.
@@ -662,14 +676,4 @@ RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(RZ_NONNULL const cs_m68k *m68k, RZ_N
 		return !rz_m68k_op_is_mem_addr(op);
 	}
 	return op->type != M68K_OP_REG && !rz_m68k_op_is_mem_addr(op);
-}
-
-RZ_IPI bool rz_m68k_fpu_insn_data_alias_has_dst(RZ_NONNULL const cs_insn *insn) {
-	rz_return_val_if_fail(insn && insn->detail, false);
-	if (insn->detail->m68k.op_count < 1) {
-		return false;
-	}
-	cs_m68k_op hidden_dst;
-	const cs_m68k_op *dst = rz_m68k_fpu_insn_second_op_or_hidden_dst(insn, &hidden_dst);
-	return dst && rz_m68k_op_is_fpu_reg(dst);
 }

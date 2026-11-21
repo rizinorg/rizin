@@ -1039,6 +1039,12 @@ static int m68k_analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8
 	if (mask & RZ_ANALYSIS_OP_MASK_IL) {
 		op->il_op = rz_m68k_cs_get_il_op(ctx->handle, mode, insn, addr);
 	}
+	if (rz_m68k_insn_is_pmmu_branch(insn)) {
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
+		handle_branch_instruction(op, addr, m68k, RZ_ANALYSIS_OP_TYPE_CJMP, 0);
+		m68k_set_opdir(op);
+		goto beach;
+	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
@@ -1691,7 +1697,8 @@ static char *m68k_get_reg_profile(RzAnalysis *analysis) {
 		"fpu	fp5		.80	294	0\n" // FPU data register 5, 80-bit extended precision
 		"fpu	fp6		.80	304	0\n" // FPU data register 6, 80-bit extended precision
 		"fpu	fp7		.80	314	0\n" // FPU data register 7, 80-bit extended precision
-		"gpr	cp_external_data	.32	324	0\n";
+		"gpr	cp_external_data	.32	324	0\n"
+		"gpr	fpu_state	.32	328	0\n";
 	return rz_str_dup(p);
 }
 
