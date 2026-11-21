@@ -845,7 +845,14 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 					}
 					continue;
 				}
-				const char *hl = (hex_style && p->offname(p->user, addr + j)) ? Color_INVERT : NULL;
+				const char *hl = NULL;
+				if (hex_style && p->offname) {
+					char *offname = p->offname(p->user, addr + j);
+					if (offname && *offname) {
+						hl = Color_INVERT;
+					}
+					free(offname);
+				}
 				if (hl) {
 					rz_strbuf_append(sb, hl);
 				}
@@ -905,10 +912,11 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 						}
 					} else {
 						if (hasNull) {
-							const char *n = p->offname(p->user, addr + j);
+							char *n = p->offname ? p->offname(p->user, addr + j) : NULL;
 							print_section(sb, p, at);
 							print_addr(sb, p, addr + j * zoomsz);
 							rz_strbuf_appendf(sb, "..[ null bytes ]..   00000000 %s\n", n ? n : "");
+							free(n);
 						}
 					}
 					print_cursor_r(sb, p, j, sz_n);
@@ -1057,12 +1065,13 @@ RZ_API RZ_OWN char *rz_print_hexdump_str(RZ_NONNULL RzPrint *p, ut64 addr, RZ_NO
 						break;
 					}
 					if (p->offname) {
-						a = p->offname(p->user, addr + j);
-						if (p->colorfor && a && *a) {
+						char *offname = p->offname(p->user, addr + j);
+						if (p->colorfor && offname && *offname) {
 							const char *color = p->colorfor(p->user, addr + j, true);
-							rz_strbuf_appendf(sb, "%s  ; %s%s", color ? color : "", a,
+							rz_strbuf_appendf(sb, "%s  ; %s%s", color ? color : "", offname,
 								color ? Color_RESET : "");
 						}
+						free(offname);
 					}
 					char *comment = p->get_comments(p->user, addr + j);
 					if (comment) {

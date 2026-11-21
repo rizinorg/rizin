@@ -1034,9 +1034,12 @@ static void append_marks(RzStrBuf *sb, RzList /*<RzMarkItem *>*/ *list, ut64 add
 	}
 }
 
-static const char *rz_core_print_offname(void *p, ut64 addr) {
+static RZ_OWN char *rz_core_print_offname(void *p, ut64 addr) {
 	RzCore *c = (RzCore *)p;
 	RzStrBuf *sb = rz_strbuf_new("");
+	if (!sb) {
+		return NULL;
+	}
 	RzList *all = rz_mark_get_all_off(c->marks, addr);
 
 	append_marks(sb, all, addr, true);
@@ -1044,10 +1047,16 @@ static const char *rz_core_print_offname(void *p, ut64 addr) {
 
 	rz_list_free(all);
 
-	if (rz_strbuf_length(sb) == 0) {
+	if (rz_strbuf_is_empty(sb)) {
 		RzFlagItem *item = rz_flag_get_i(c->flags, addr);
-		if (item)
+		if (item) {
 			rz_strbuf_set(sb, item->name);
+		}
+	}
+
+	if (rz_strbuf_is_empty(sb)) {
+		rz_strbuf_free(sb);
+		return NULL;
 	}
 
 	return rz_strbuf_drain(sb);
