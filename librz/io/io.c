@@ -383,7 +383,7 @@ RZ_API RZ_OWN RzBuffer *rz_io_nread_at_new_buf(RZ_NONNULL RzIO *io, ut64 addr, s
 		free(raw_buf);
 		return NULL;
 	}
-	RzBuffer *buf = rz_buf_new_from_bytes(raw_buf, len);
+	RzBuffer *buf = rz_buf_new_from_bytes(raw_buf, (ut64)ret);
 	if (!buf) {
 		RZ_LOG_ERROR("Failed to initialize RzBuffer.\n");
 		free(raw_buf);
