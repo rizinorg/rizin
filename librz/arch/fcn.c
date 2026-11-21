@@ -717,6 +717,372 @@ static inline bool op_is_known_reg_jump(const RzAnalysisOp *op, bool last_is_reg
 		op->reg && last_reg_mov_lea_name && RZ_STR_EQ(op->reg, last_reg_mov_lea_name);
 }
 
+#define INTRA_BB_MAX_REGS  16
+#define INTRA_BB_MAX_INSTR 128
+#define INTRA_BB_MAX_VALS  2
+
+typedef struct {
+	int reg_offset; ///< Canonical GPR bit offset in RzReg
+	int reg_size; ///< Tracked GPR bit width
+	ut8 count; ///< 0 = unknown, 1..INTRA_BB_MAX_VALS = concrete values
+	ut64 vals[INTRA_BB_MAX_VALS];
+} IntraBbRegVal;
+
+static inline int intra_bb_reg_key(const RzRegItem *reg) {
+	if (!reg || reg->type != RZ_REG_TYPE_GPR || reg->size < 32) {
+		return -1;
+	}
+	return reg->offset;
+}
+
+static IntraBbRegVal *intra_bb_find(IntraBbRegVal *regs, size_t nregs, int offset) {
+	for (size_t i = 0; i < nregs; i++) {
+		if (regs[i].reg_offset == offset) {
+			return &regs[i];
+		}
+	}
+	return NULL;
+}
+
+static void intra_bb_clear(IntraBbRegVal *regs, size_t nregs, const RzRegItem *reg) {
+	if (!reg || reg->type != RZ_REG_TYPE_GPR) {
+		return;
+	}
+	int start = reg->offset;
+	int end = start + reg->size;
+	for (size_t i = 0; i < nregs; i++) {
+		int s_start = regs[i].reg_offset;
+		int s_end = s_start + regs[i].reg_size;
+		if (start < s_end && s_start < end) {
+			regs[i].count = 0;
+		}
+	}
+}
+
+static bool intra_bb_push_val(ut64 *vals, ut8 *count, ut64 v) {
+	for (ut8 i = 0; i < *count; i++) {
+		if (vals[i] == v) {
+			return true;
+		}
+	}
+	if (*count >= INTRA_BB_MAX_VALS) {
+		return false;
+	}
+	vals[(*count)++] = v;
+	return true;
+}
+
+static void intra_bb_set(IntraBbRegVal *regs, size_t *nregs, const RzRegItem *reg,
+	const ut64 *vals, ut8 count) {
+	int key = intra_bb_reg_key(reg);
+	if (key < 0 || count == 0 || count > INTRA_BB_MAX_VALS) {
+		intra_bb_clear(regs, *nregs, reg);
+		return;
+	}
+	intra_bb_clear(regs, *nregs, reg);
+	IntraBbRegVal *slot = intra_bb_find(regs, *nregs, key);
+	if (!slot) {
+		if (*nregs >= INTRA_BB_MAX_REGS) {
+			return;
+		}
+		slot = &regs[(*nregs)++];
+		slot->reg_offset = key;
+	}
+	slot->reg_size = 64;
+	slot->count = 0;
+	for (ut8 i = 0; i < count; i++) {
+		ut64 v = reg->size == 32 ? (vals[i] & UT32_MAX) : vals[i];
+		intra_bb_push_val(slot->vals, &slot->count, v);
+	}
+}
+
+static bool intra_bb_read_mem_val(RzAnalysis *analysis, ut64 addr, int width,
+	bool sign_ext, ut64 *out) {
+	if ((width != 4 && width != 8) || UT64_ADD_OVFCHK(addr, (ut64)(width - 1))) {
+		return false;
+	}
+	if (!analysis->iob.is_valid_offset(analysis->iob.io, addr, 0) ||
+		!analysis->iob.is_valid_offset(analysis->iob.io, addr + width - 1, 0)) {
+		return false;
+	}
+	ut8 mbuf[8] = { 0 };
+	if (!analysis->iob.read_at(analysis->iob.io, addr, mbuf, width)) {
+		return false;
+	}
+	if (width == 8) {
+		*out = rz_read_ble64(mbuf, analysis->big_endian);
+	} else {
+		ut32 v32 = rz_read_ble32(mbuf, analysis->big_endian);
+		*out = sign_ext ? (ut64)(st64)(st32)v32 : (ut64)v32;
+	}
+	return true;
+}
+
+static inline bool jumps_to_prelude(RzAnalysis *analysis, ut64 jmp_addr);
+
+static bool intra_bb_valid_target(RzAnalysis *analysis, RzAnalysisFunction *fcn,
+	ut64 jmp_addr, ut64 target) {
+	if (!target || target == UT64_MAX || target == jmp_addr) {
+		return false;
+	}
+	int perm = analysis->opt.noncode ? 0 : RZ_PERM_X;
+	if (!analysis->iob.is_valid_offset(analysis->iob.io, target, perm)) {
+		return false;
+	}
+	ut64 maxoff = analysis->opt.jmptbl_maxoffset;
+	if (!UT64_ADD_OVFCHK(jmp_addr, maxoff) && target > jmp_addr + maxoff) {
+		return false;
+	}
+	if (analysis->opt.jmpabove) {
+		if (!UT64_SUB_OVFCHK(jmp_addr, maxoff) && target < jmp_addr - maxoff) {
+			return false;
+		}
+	} else if (target < fcn->addr) {
+		return false;
+	}
+	if ((rz_analysis_get_function_at(analysis, target) && target != fcn->addr) ||
+		jumps_to_prelude(analysis, target) ||
+		rz_analysis_noreturn_at(analysis, target)) {
+		return false;
+	}
+	return true;
+}
+
+static bool intra_bb_mnem_is_noop(const char *mnem) {
+	return !strcmp(mnem, "nop") || !strcmp(mnem, "endbr64") ||
+		!strcmp(mnem, "cmp") || !strcmp(mnem, "test");
+}
+
+static bool intra_bb_is_default_seg(const RzRegItem *seg) {
+	return !seg || !seg->name || !strcmp(seg->name, "ds") || !strcmp(seg->name, "ss");
+}
+
+static bool intra_bb_mnem_clobbers_only_dst(const char *mnem) {
+	return !strcmp(mnem, "xor") || !strcmp(mnem, "and") || !strcmp(mnem, "or") ||
+		!strcmp(mnem, "shl") || !strcmp(mnem, "shr") || !strcmp(mnem, "sar") ||
+		!strcmp(mnem, "not") || !strcmp(mnem, "neg") || !strcmp(mnem, "movzx") ||
+		!strcmp(mnem, "movsx") || rz_str_startswith(mnem, "set");
+}
+
+/**
+ * \brief Resolve x86-64 intra-block register-indirect jumps (1-way or 2-way CMOV/delta).
+ *
+ * Performs a bounded, stack-only forward value propagation over the current basic block
+ * when standard jump-table heuristics did not handle an x86-64 register-direct `RJMP`.
+ * Tracks up to 2 concrete values per GPR across `lea`, `mov`, `movsxd`, `cmov*`,
+ * `add`, and `sub`; unrecognized instructions conservatively reset tracked state.
+ */
+static bool try_resolve_indirect_reg_jump(ReadAhead *ra, RzAnalysis *analysis,
+	RzAnalysisFunction *fcn, RzAnalysisBlock *bb, const RzAnalysisOp *jmp_op,
+	RzVector /*<RzAnalysisTaskItem>*/ *tasks, RzStackAddr sp) {
+	if (!jmp_op->reg || jmp_op->ireg || jmp_op->ptr != UT64_MAX ||
+		bb->ninstr < 2 || bb->ninstr > INTRA_BB_MAX_INSTR ||
+		!analysis->reg || !analysis->iob.io ||
+		!analysis->iob.is_valid_offset || !analysis->iob.read_at) {
+		return false;
+	}
+	RzRegItem *target_reg = rz_reg_get(analysis->reg, jmp_op->reg, RZ_REG_TYPE_GPR);
+	int target_key = intra_bb_reg_key(target_reg);
+	if (target_key < 0) {
+		return false;
+	}
+
+	const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
+	const char *bp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_BP);
+	IntraBbRegVal regs[INTRA_BB_MAX_REGS];
+	size_t nregs = 0;
+	ut8 ibuf[32];
+
+	for (int idx = 0; idx + 1 < bb->ninstr; idx++) {
+		ut64 insn_addr = rz_analysis_block_get_op_addr(bb, idx);
+		if (insn_addr == UT64_MAX || insn_addr >= jmp_op->addr) {
+			break;
+		}
+		if (read_ahead(ra, analysis, insn_addr, ibuf, sizeof(ibuf)) < 1) {
+			return false;
+		}
+		RzAnalysisOp iop = { 0 };
+		rz_analysis_op_init(&iop);
+		int ilen = rz_analysis_op(analysis, &iop, insn_addr, ibuf, sizeof(ibuf),
+			RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL |
+				RZ_ANALYSIS_OP_MASK_DISASM);
+		if (ilen < 1 || !iop.mnemonic) {
+			rz_analysis_op_fini(&iop);
+			return false;
+		}
+
+		char mnem[16];
+		size_t mlen = strcspn(iop.mnemonic, " \t");
+		mlen = RZ_MIN(mlen, sizeof(mnem) - 1);
+		memcpy(mnem, iop.mnemonic, mlen);
+		mnem[mlen] = '\0';
+
+		if (iop.family != RZ_ANALYSIS_OP_FAMILY_CPU) {
+			nregs = 0;
+			rz_analysis_op_fini(&iop);
+			continue;
+		}
+		if (intra_bb_mnem_is_noop(mnem)) {
+			rz_analysis_op_fini(&iop);
+			continue;
+		}
+		if (!strcmp(mnem, "mov") && iop.dst && iop.dst->type == RZ_ANALYSIS_VAL_MEM &&
+			iop.dst->reg && iop.dst->reg->name && !iop.dst->regdelta) {
+			bool is_sp = sp_name && !strcmp(iop.dst->reg->name, sp_name);
+			bool is_untracked_bp = bp_name && !strcmp(iop.dst->reg->name, bp_name);
+			if (is_untracked_bp) {
+				IntraBbRegVal *bp_slot = intra_bb_find(
+					regs, nregs, intra_bb_reg_key(iop.dst->reg));
+				is_untracked_bp = !bp_slot || bp_slot->count == 0;
+			}
+			if (is_sp || is_untracked_bp) {
+				rz_analysis_op_fini(&iop);
+				continue;
+			}
+		}
+		if (!iop.dst || iop.dst->type != RZ_ANALYSIS_VAL_REG || !iop.dst->reg) {
+			nregs = 0;
+			rz_analysis_op_fini(&iop);
+			continue;
+		}
+
+		const RzRegItem *dreg = iop.dst->reg;
+		const RzAnalysisValue *s0 = iop.src[0];
+		bool has_s1 = iop.src[1] && iop.src[1]->type != RZ_ANALYSIS_VAL_UNK;
+		ut64 out_vals[INTRA_BB_MAX_VALS];
+		ut8 out_cnt = 0;
+		bool ok = false;
+		bool handled = true;
+
+		if (sp_name && dreg->name && !strcmp(dreg->name, sp_name)) {
+			handled = false;
+		} else if (!strcmp(mnem, "lea") && !has_s1) {
+			if (iop.ptr && iop.ptr != UT64_MAX) {
+				out_vals[0] = iop.ptr;
+				out_cnt = 1;
+				ok = true;
+			}
+		} else if ((!strcmp(mnem, "mov") || !strcmp(mnem, "movsxd")) && !has_s1 && s0) {
+			bool is_sxd = !strcmp(mnem, "movsxd");
+			if (!is_sxd && s0->type == RZ_ANALYSIS_VAL_IMM) {
+				out_vals[0] = s0->imm;
+				out_cnt = 1;
+				ok = true;
+			} else if (s0->type == RZ_ANALYSIS_VAL_REG && s0->reg) {
+				IntraBbRegVal *src =
+					intra_bb_find(regs, nregs, intra_bb_reg_key(s0->reg));
+				if (src && src->count > 0 &&
+					(is_sxd || dreg->size == s0->reg->size)) {
+					ok = true;
+					for (ut8 k = 0; k < src->count; k++) {
+						ut64 v = src->vals[k];
+						if (is_sxd) {
+							v = (ut64)(st64)(st32)(ut32)v;
+						}
+						if (!intra_bb_push_val(out_vals, &out_cnt, v)) {
+							ok = false;
+							break;
+						}
+					}
+				}
+			} else if (s0->type == RZ_ANALYSIS_VAL_MEM &&
+				intra_bb_is_default_seg(s0->seg) &&
+				!s0->regdelta && s0->mul <= 1 && !s0->base && s0->reg &&
+				(s0->reg->size == 64 || s0->reg->size == 32)) {
+				int width = iop.refptr ? (int)iop.refptr : (int)s0->memref;
+				IntraBbRegVal *base =
+					intra_bb_find(regs, nregs, intra_bb_reg_key(s0->reg));
+				if (base && base->count > 0) {
+					ok = true;
+					for (ut8 k = 0; k < base->count; k++) {
+						ut64 addr = base->vals[k] + (ut64)s0->delta;
+						if (s0->reg->size == 32) {
+							addr = (ut32)addr;
+						}
+						ut64 loaded = 0;
+						if (!intra_bb_read_mem_val(analysis, addr, width,
+							    is_sxd, &loaded) ||
+							!intra_bb_push_val(
+								out_vals, &out_cnt, loaded)) {
+							ok = false;
+							break;
+						}
+					}
+				}
+			}
+		} else if (rz_str_startswith(mnem, "cmov") && !has_s1 && s0 &&
+			s0->type == RZ_ANALYSIS_VAL_REG && s0->reg &&
+			dreg->size == s0->reg->size) {
+			IntraBbRegVal *dst_cur =
+				intra_bb_find(regs, nregs, intra_bb_reg_key(dreg));
+			IntraBbRegVal *src =
+				intra_bb_find(regs, nregs, intra_bb_reg_key(s0->reg));
+			if (dst_cur && dst_cur->count > 0 && src && src->count > 0) {
+				ok = true;
+				for (ut8 k = 0; k < dst_cur->count && ok; k++) {
+					ok = intra_bb_push_val(
+						out_vals, &out_cnt, dst_cur->vals[k]);
+				}
+				for (ut8 k = 0; k < src->count && ok; k++) {
+					ok = intra_bb_push_val(
+						out_vals, &out_cnt, src->vals[k]);
+				}
+			}
+		} else if ((!strcmp(mnem, "add") || !strcmp(mnem, "sub")) && !has_s1 &&
+			s0 && s0->type == RZ_ANALYSIS_VAL_REG && s0->reg &&
+			dreg->size == s0->reg->size) {
+			bool is_add = !strcmp(mnem, "add");
+			IntraBbRegVal *dst_cur =
+				intra_bb_find(regs, nregs, intra_bb_reg_key(dreg));
+			IntraBbRegVal *src =
+				intra_bb_find(regs, nregs, intra_bb_reg_key(s0->reg));
+			if (dst_cur && dst_cur->count > 0 && src && src->count > 0) {
+				ok = true;
+				for (ut8 a = 0; a < dst_cur->count && ok; a++) {
+					for (ut8 b = 0; b < src->count && ok; b++) {
+						ut64 res = is_add
+							? dst_cur->vals[a] + src->vals[b]
+							: dst_cur->vals[a] - src->vals[b];
+						ok = intra_bb_push_val(out_vals, &out_cnt, res);
+					}
+				}
+			}
+		} else if (intra_bb_mnem_clobbers_only_dst(mnem)) {
+			ok = false;
+		} else {
+			handled = false;
+		}
+
+		if (!handled) {
+			nregs = 0;
+		} else if (ok && out_cnt > 0) {
+			intra_bb_set(regs, &nregs, dreg, out_vals, out_cnt);
+		} else {
+			intra_bb_clear(regs, nregs, dreg);
+		}
+		rz_analysis_op_fini(&iop);
+	}
+
+	IntraBbRegVal *res = intra_bb_find(regs, nregs, target_key);
+	if (!res || res->count == 0) {
+		return false;
+	}
+	for (ut8 i = 0; i < res->count; i++) {
+		if (!intra_bb_valid_target(analysis, fcn, jmp_op->addr, res->vals[i])) {
+			return false;
+		}
+	}
+
+	bb->jump = res->vals[0];
+	bb->fail = res->count == 2 ? res->vals[1] : UT64_MAX;
+	for (ut8 i = 0; i < res->count; i++) {
+		rz_analysis_xrefs_set(
+			analysis, jmp_op->addr, res->vals[i], RZ_ANALYSIS_XREF_TYPE_CODE);
+		rz_analysis_task_item_new(analysis, tasks, fcn, NULL, res->vals[i], sp);
+	}
+	return true;
+}
+
 static inline bool op_is_set_bp(RzAnalysisOp *op, const char *bp_reg, const char *sp_reg) {
 	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
 	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
@@ -1743,6 +2109,12 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			}
 			if (analysis->lea_jmptbl_ip == op.addr) {
 				analysis->lea_jmptbl_ip = UT64_MAX;
+			} else if (is_x86 && analysis->bits == 64 && !overlapped &&
+				analysis->opt.jmptbl && !bb->switch_op &&
+				op.type == RZ_ANALYSIS_OP_TYPE_RJMP &&
+				try_resolve_indirect_reg_jump(&read_ahead_cache, analysis,
+					fcn, bb, &op, tasks, sp)) {
+				gotoBeach(RZ_ANALYSIS_RET_BRANCH);
 			}
 			if (analysis->opt.ijmp) {
 				if (continue_after_jump) {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_core.h>
 #include <rz_util.h>
 #include "minunit.h"
 #include "test_config.h"
@@ -668,6 +669,325 @@ bool test_rz_analysis_function_get_ret_var() {
 	mu_end;
 }
 
+static bool run_indirect_branch_test(const ut8 *img, size_t img_size,
+	ut64 exp_jump, ut64 exp_fail, size_t exp_bbs) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+	mu_assert_notnull(cf, "open malloc://0x200");
+	rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	core->analysis->opt.jmptbl = true;
+	mu_assert_true(rz_io_write_at(core->io, 0x1000, img, img_size), "write code");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(
+		core->analysis, "fcn_ind", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+	rz_analysis_fcn(core->analysis, fcn, 0x1000, img_size, RZ_ANALYSIS_XREF_TYPE_NULL);
+
+	RzAnalysisBlock *entry = rz_analysis_get_block_at(core->analysis, 0x1000);
+	mu_assert_notnull(entry, "entry block exists");
+	mu_assert_eq(entry->jump, exp_jump, "expected jump target");
+	mu_assert_eq(entry->fail, exp_fail, "expected fail target");
+	mu_assert_eq(rz_pvector_len(fcn->bbs), exp_bbs, "expected basic block count");
+
+	rz_core_free(core);
+	return true;
+}
+
+bool test_indirect_reg_branch_resolution(void) {
+	ut8 img[0x200];
+
+	// Case 1: 2-way CMOV + signed 32-bit delta table load + add + jmp reg
+	memset(img, 0x90, sizeof(img));
+	const ut8 cmov_delta[] = {
+		0x48, 0x8d, 0x05, 0x39, 0x00, 0x00, 0x00, // lea rax, [rip + 0x39] -> 0x1040
+		0x85, 0xff, // test edi, edi
+		0x48, 0x63, 0x48, 0x00, // movsxd rcx, dword [rax + 0]
+		0x48, 0x63, 0x50, 0x04, // movsxd rdx, dword [rax + 4]
+		0x48, 0x0f, 0x44, 0xca, // cmove rcx, rdx
+		0x48, 0x01, 0xc8, // add rax, rcx
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, cmov_delta, sizeof(cmov_delta));
+	rz_write_at_le32(img, 0x40, 0x40); // 0x1040 + 0x40 = 0x1080
+	rz_write_at_le32(img, 0x50, 0x44); // 0x1040 + 0x50 = 0x1090
+	img[0x80] = 0xc3;
+	img[0x90] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, 0x1090, 3),
+		"2-way cmov delta branch");
+
+	// Case 2: 2-way 64-bit pointer table load + mov reg, reg + sub + cmov
+	memset(img, 0x90, sizeof(img));
+	const ut8 ptr64_sub[] = {
+		0x48, 0x8d, 0x05, 0x39, 0x00, 0x00, 0x00, // lea rax, [rip + 0x39] -> 0x1040
+		0x48, 0x8b, 0x48, 0x00, // mov rcx, qword [rax + 0]
+		0x48, 0x8b, 0x50, 0x08, // mov rdx, qword [rax + 8]
+		0x48, 0x89, 0xce, // mov rsi, rcx
+		0x48, 0x0f, 0x44, 0xf2, // cmove rsi, rdx
+		0x48, 0xc7, 0xc7, 0x10, 0x00, 0x00, 0x00, // mov rdi, 0x10
+		0x48, 0x29, 0xfe, // sub rsi, rdi
+		0xff, 0xe6 // jmp rsi
+	};
+	memcpy(img, ptr64_sub, sizeof(ptr64_sub));
+	rz_write_at_le64(img, 0x1090, 0x40); // 0x1090 - 0x10 = 0x1080
+	rz_write_at_le64(img, 0x10a0, 0x48); // 0x10a0 - 0x10 = 0x1090
+	img[0x80] = 0xc3;
+	img[0x90] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, 0x1090, 3),
+		"2-way 64-bit pointer table + sub");
+
+	// Case 3: 1-way 32-bit zero-ext load + movsxd reg, reg + add + stack store
+	memset(img, 0x90, sizeof(img));
+	const ut8 zext_sxd[] = {
+		0x48, 0x8d, 0x05, 0x39, 0x00, 0x00, 0x00, // lea rax, [rip + 0x39] -> 0x1040
+		0x8b, 0x48, 0x00, // mov ecx, dword [rax + 0]
+		0x48, 0x63, 0xd1, // movsxd rdx, ecx
+		0x48, 0x89, 0x54, 0x24, 0x08, // mov qword [rsp + 8], rdx
+		0x48, 0x01, 0xd0, // add rax, rdx
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, zext_sxd, sizeof(zext_sxd));
+	rz_write_at_le32(img, 0x40, 0x40); // 0x1040 + 0x40 = 0x1080
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, UT64_MAX, 2),
+		"1-way mov32 + movsxd reg + store");
+
+	// Case 4: 2-way direct LEA + CMOV + dedup CMOV + jmp reg
+	memset(img, 0x90, sizeof(img));
+	const ut8 cmov_lea[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [rip + 0x79] -> 0x1080
+		0x48, 0x8d, 0x0d, 0x82, 0x00, 0x00, 0x00, // lea rcx, [rip + 0x82] -> 0x1090
+		0x85, 0xff, // test edi, edi
+		0x48, 0x0f, 0x45, 0xc1, // cmovne rax, rcx
+		0x48, 0x0f, 0x44, 0xc1, // cmove rax, rcx (dedup)
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, cmov_lea, sizeof(cmov_lea));
+	img[0x80] = 0xc3;
+	img[0x90] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, 0x1090, 3),
+		"2-way cmov lea with dedup");
+
+	// Case 5: negative tests — out-of-range delta, >2-way CMOV overflow,
+	// clobbering ops (call, xor, imul, xchg, partial al write), gs: load, SIB UJMP
+	memset(img, 0x90, sizeof(img));
+	memcpy(img, cmov_delta, sizeof(cmov_delta));
+	rz_write_at_le32(img, 0x40, 0x40);
+	rz_write_at_le32(img, 0x70000000, 0x44);
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"out-of-range cmov delta rejected");
+
+	// 3-way CMOV exceeds max 2 values -> cleared
+	memset(img, 0x90, sizeof(img));
+	const ut8 cmov_three[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0x48, 0x8d, 0x0d, 0x82, 0x00, 0x00, 0x00, // lea rcx, [0x1090]
+		0x48, 0x8d, 0x15, 0x8b, 0x00, 0x00, 0x00, // lea rdx, [0x10a0]
+		0x48, 0x0f, 0x44, 0xc1, // cmove rax, rcx
+		0x48, 0x0f, 0x45, 0xc2, // cmovne rax, rdx (>2 -> clear)
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, cmov_three, sizeof(cmov_three));
+	img[0x80] = img[0x90] = img[0xa0] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"3-way cmov overflow rejected");
+
+	// Call clobber
+	memset(img, 0x90, sizeof(img));
+	const ut8 call_clobber[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0xe8, 0x84, 0x00, 0x00, 0x00, // call 0x1090
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, call_clobber, sizeof(call_clobber));
+	img[0x80] = img[0x90] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"call clobber invalidates tracked jump target");
+
+	// Partial register write (xor al, al) clears rax
+	memset(img, 0x90, sizeof(img));
+	const ut8 partial_clobber[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0x30, 0xc0, // xor al, al
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, partial_clobber, sizeof(partial_clobber));
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"partial register write invalidates rax");
+
+	// Unhandled op (imul) resets tracked state
+	memset(img, 0x90, sizeof(img));
+	const ut8 imul_clobber[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0x48, 0x0f, 0xaf, 0xc1, // imul rax, rcx
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, imul_clobber, sizeof(imul_clobber));
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"imul resets tracked state");
+
+	// Memory-indirect SIB jump (jmp qword [rax + rcx*8]) must not resolve to rax
+	memset(img, 0x90, sizeof(img));
+	const ut8 sib_ujmp[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0xff, 0x24, 0xc8 // jmp qword [rax + rcx*8]
+	};
+	memcpy(img, sib_ujmp, sizeof(sib_ujmp));
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"memory-indirect SIB ujmp not misresolved to base reg");
+
+	// Segment-prefixed load (mov rax, qword gs:[rax + 0]) rejected
+	memset(img, 0x90, sizeof(img));
+	const ut8 gs_load[] = {
+		0x48, 0x8d, 0x05, 0x39, 0x00, 0x00, 0x00, // lea rax, [0x1040]
+		0x65, 0x48, 0x8b, 0x40, 0x00, // mov rax, qword gs:[rax]
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, gs_load, sizeof(gs_load));
+	rz_write_at_le64(img, 0x1080, 0x40);
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"segment-prefixed memory load rejected");
+
+	// Tracked rbp store must reset state (not skipped as frame spill)
+	memset(img, 0x90, sizeof(img));
+	const ut8 tracked_bp_store[] = {
+		0x48, 0x8d, 0x2d, 0x39, 0x00, 0x00, 0x00, // lea rbp, [0x1040]
+		0x48, 0x89, 0x55, 0x00, // mov qword [rbp + 0], rdx
+		0x48, 0x8b, 0x45, 0x00, // mov rax, qword [rbp + 0]
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, tracked_bp_store, sizeof(tracked_bp_store));
+	rz_write_at_le64(img, 0x1080, 0x40);
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"tracked rbp store invalidates tracked state");
+
+	// Non-allowlisted reg-dst op (xchg) resets tracked state
+	memset(img, 0x90, sizeof(img));
+	const ut8 xchg_clobber[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [0x1080]
+		0x48, 0x91, // xchg rax, rcx
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, xchg_clobber, sizeof(xchg_clobber));
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"xchg resets tracked state");
+
+	// 32-bit truncation deduplicates colliding low-32-bit values
+	memset(img, 0x90, sizeof(img));
+	const ut8 trunc32_dedup[] = {
+		0x48, 0xb9, 0x80, 0x10, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, // mov rcx, 0x100001080
+		0x48, 0xba, 0x80, 0x10, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, // mov rdx, 0x200001080
+		0x0f, 0x44, 0xca, // cmove ecx, edx -> 0x1080 (dedup)
+		0xff, 0xe1 // jmp rcx
+	};
+	memcpy(img, trunc32_dedup, sizeof(trunc32_dedup));
+	img[0x80] = 0xc3;
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, UT64_MAX, 2),
+		"32-bit truncation deduplicates values");
+
+	// Indirect jump to function prelude (push rbp; mov rbp, rsp) rejected as tail call
+	memset(img, 0x90, sizeof(img));
+	const ut8 jmp_tail[] = {
+		0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [rip + 0x79] -> 0x1080
+		0x85, 0xff, // test edi, edi
+		0xff, 0xe0 // jmp rax
+	};
+	memcpy(img, jmp_tail, sizeof(jmp_tail));
+	img[0x80] = 0x55; // push rbp
+	img[0x81] = 0x48;
+	img[0x82] = 0x89;
+	img[0x83] = 0xe5; // mov rbp, rsp
+	img[0x84] = 0xc3; // ret
+	mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+		"indirect jump to function prelude rejected");
+
+	// Indirect jump to an existing external function is not absorbed into caller
+	{
+		memset(img, 0x90, sizeof(img));
+		memcpy(img, jmp_tail, sizeof(jmp_tail));
+		img[0x80] = 0xc3;
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+		mu_assert_notnull(cf, "open malloc://0x200");
+		rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+		rz_config_set(core->config, "asm.arch", "x86");
+		rz_config_set_i(core->config, "asm.bits", 64);
+		core->analysis->opt.jmptbl = true;
+		mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write code");
+
+		RzAnalysisFunction *callee = rz_analysis_create_function(
+			core->analysis, "fcn_callee", 0x1080, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(callee, "create callee");
+		RzAnalysisFunction *fcn = rz_analysis_create_function(
+			core->analysis, "fcn_caller", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(fcn, "create caller");
+		rz_analysis_fcn(core->analysis, fcn, 0x1000, sizeof(img), RZ_ANALYSIS_XREF_TYPE_NULL);
+
+		RzAnalysisBlock *entry = rz_analysis_get_block_at(core->analysis, 0x1000);
+		mu_assert_notnull(entry, "entry block exists");
+		mu_assert_eq(entry->jump, UT64_MAX, "external function target not resolved as intra-fcn jump");
+		mu_assert_eq(entry->fail, UT64_MAX, "external function target fail unset");
+		mu_assert_eq(rz_pvector_len(fcn->bbs), 1, "caller does not absorb external function");
+		rz_core_free(core);
+	}
+
+	// 32-bit address-size override (0x67) memory load masks upper 32 bits of base reg
+	{
+		memset(img, 0x90, sizeof(img));
+		const ut8 addr32_load[] = {
+			0x48, 0xb8, 0x40, 0x10, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, // mov rax, 0x100001040
+			0x67, 0x48, 0x8b, 0x00, // mov rax, qword [eax]
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, addr32_load, sizeof(addr32_load));
+		rz_write_at_le64(img, 0x1080, 0x40); // low 32-bit addr 0x1040 -> 0x1080
+		img[0x80] = 0xc3;
+		img[0x90] = 0xc3;
+
+		ut8 hi_img[0x200];
+		memset(hi_img, 0, sizeof(hi_img));
+		rz_write_at_le64(hi_img, 0x1090, 0x40); // unmasked 64-bit addr 0x100001040 -> 0x1090
+
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		RzCoreFile *cf_lo = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+		mu_assert_notnull(cf_lo, "open low map");
+		rz_io_map_add(core->io, cf_lo->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+		RzCoreFile *cf_hi = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RW, 0x100001000ULL);
+		mu_assert_notnull(cf_hi, "open high map");
+		rz_io_map_add(core->io, cf_hi->fd, RZ_PERM_RW, 0, 0x100001000ULL, 0x200);
+		rz_config_set(core->config, "asm.arch", "x86");
+		rz_config_set_i(core->config, "asm.bits", 64);
+		core->analysis->opt.jmptbl = true;
+		mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write low image");
+		mu_assert_true(rz_io_write_at(core->io, 0x100001000ULL, hi_img, sizeof(hi_img)), "write high image");
+
+		RzAnalysisFunction *fcn = rz_analysis_create_function(
+			core->analysis, "fcn_addr32", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(fcn, "create addr32 function");
+		rz_analysis_fcn(core->analysis, fcn, 0x1000, sizeof(img), RZ_ANALYSIS_XREF_TYPE_NULL);
+
+		RzAnalysisBlock *entry = rz_analysis_get_block_at(core->analysis, 0x1000);
+		mu_assert_notnull(entry, "entry block exists");
+		mu_assert_eq(entry->jump, 0x1080, "32-bit addr-size load reads masked 0x1040, not 0x100001040");
+		mu_assert_eq(entry->fail, UT64_MAX, "addr32 fail unset");
+		mu_assert_eq(rz_pvector_len(fcn->bbs), 2, "addr32 resolves only masked target");
+		rz_core_free(core);
+	}
+
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -682,6 +1002,7 @@ int all_tests() {
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
 	mu_run_test(test_rz_analysis_function_get_ret_var);
+	mu_run_test(test_indirect_reg_branch_resolution);
 	return tests_passed != tests_run;
 }
 
