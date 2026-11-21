@@ -560,6 +560,7 @@ static bool test_arm_frame_pointer_vars(void) {
 		mu_assert_notnull(core, "core");
 		rz_config_set(core->config, "asm.arch", "arm");
 		rz_config_set_i(core->config, "asm.bits", 32);
+		rz_config_set_b(core->config, "cfg.bigendian", false);
 		mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RWX, true), "file");
 		rz_core_cmdf(core, "wx %s", cases[i].bytes);
 		rz_core_cmd0(core, "af");
