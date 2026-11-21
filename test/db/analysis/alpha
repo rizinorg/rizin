@@ -8,7 +8,7 @@ EOF
 EXPECT=<<EOF
 / size_t sym.strlen(const char *s);
 |           0x12001b320      ldq_u $1,0($16)
-|           0x12001b324      lda   $2,0xffff($31)
+|           0x12001b324      lda   $2,-1($31)
 |           0x12001b328      insqh $2,$16,$2
 |           0x12001b32c      bic   $16,7,$0
 |           0x12001b330      bis   $2,$1,$1
@@ -56,5 +56,22 @@ jump: 0x12001b350
 fail: 0x12001b340
 cond: al
 family: cpu
+EOF
+RUN
+
+NAME=Alpha BR and BSR targets across the 32-bit address boundary
+FILE=malloc://16
+ARGS=-a alpha -b 64 -m 0xfffffffc
+CMDS=<<EOF
+s 0xfffffffc
+wx 0080e0c3feff5fd3
+ao~jump,fail
+s 0x100000000
+ao~jump,fail
+EOF
+EXPECT=<<EOF
+jump: 0x100020000
+jump: 0xfffffffc
+fail: 0x100000004
 EOF
 RUN

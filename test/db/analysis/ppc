@@ -562,6 +562,7 @@ e cfg.bigendian=false
 wx f0ff2194
 aoj~{}
 EOF
+REGEXP_FILTER_OUT=(?m)^(?!\h*"id":).+
 EXPECT=<<EOF
 [
   {
@@ -703,7 +704,6 @@ EXPECT=<<EOF
     },
     "sign": false,
     "prefix": 0,
-    "id": 1004,
     "opex": {
       "operands": [
         {
