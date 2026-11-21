@@ -196,6 +196,30 @@ RZ_API int rz_reg_role_by_name(RZ_NONNULL const char *str) {
 }
 
 /**
+ * \brief Return the next non-zero monotonic generation token for RzReg profiles.
+ *
+ * Shared across all RzReg instances so freed-and-reallocated RzReg pointers
+ * cannot reuse a previously cached generation token.
+ *
+ * \return Next non-zero profile generation token.
+ */
+RZ_IPI ut64 rz_reg_next_profile_gen(void) {
+	static ut64 next_gen = 0;
+#if defined(__GCC_ATOMIC_LLONG_LOCK_FREE) && __GCC_ATOMIC_LLONG_LOCK_FREE == 2
+	ut64 gen = __atomic_add_fetch(&next_gen, 1, __ATOMIC_RELAXED);
+	if (!gen) {
+		gen = __atomic_add_fetch(&next_gen, 1, __ATOMIC_RELAXED);
+	}
+	return gen;
+#else
+	if (!++next_gen) {
+		next_gen = 1;
+	}
+	return next_gen;
+#endif
+}
+
+/**
  * \brief Clear register metadata, optionally preserving the arena pools.
  *
  * Free register lists even if a failed profile parse has removed their arena
@@ -209,6 +233,7 @@ RZ_IPI void rz_reg_free_internal(RZ_NULLABLE RzReg *reg, bool keep_arenas) {
 		return;
 	}
 
+	reg->profile_gen = rz_reg_next_profile_gen();
 	rz_list_free(reg->roregs);
 	reg->roregs = NULL;
 	RZ_FREE(reg->reg_profile_str);
@@ -298,6 +323,7 @@ RZ_API RzReg *rz_reg_new(void) {
 	if (!reg) {
 		return NULL;
 	}
+	reg->profile_gen = rz_reg_next_profile_gen();
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		arena = rz_reg_arena_new(0);
 		if (!arena) {
