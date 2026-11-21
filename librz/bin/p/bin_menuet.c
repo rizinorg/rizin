@@ -241,7 +241,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = rz_pvector_new(free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	// add text segment

@@ -996,12 +996,20 @@ static RzStructuredData *snes_structure(RzBinFile *bf) {
 	return info;
 }
 
+static void snes_destroy(RzBinFile *bf) {
+	if (!bf || !bf->o) {
+		return;
+	}
+	RZ_FREE(bf->o->bin_obj);
+}
+
 RzBinPlugin rz_bin_plugin_sfc = {
 	.name = "sfc",
 	.desc = "Super NES / Super Famicom ROM",
 	.license = "LGPL3",
 	.author = "usrshare",
 	.load_buffer = &snes_load_buffer,
+	.destroy = &snes_destroy,
 	.check_buffer = &snes_check_buffer,
 	.bin_structure = &snes_structure,
 	.entries = &snes_entries,
