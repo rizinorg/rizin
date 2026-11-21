@@ -1232,19 +1232,36 @@ static void extract_stack_var(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzA
 		if (!op_esil) {
 			return;
 		}
-		esil_buf = rz_str_dup(op_esil);
+		char pat_buf[64];
+		char *tmp = NULL;
+		const char *pat = pat_buf;
+		size_t reg_len = strlen(reg);
+		size_t sign_len = strlen(sign);
+		if (reg_len + sign_len + 4 <= sizeof(pat_buf)) {
+			char *p = pat_buf;
+			*p++ = ',';
+			memcpy(p, reg, reg_len);
+			p += reg_len;
+			*p++ = ',';
+			memcpy(p, sign, sign_len);
+			p += sign_len;
+			*p++ = ',';
+			*p = '\0';
+		} else {
+			tmp = rz_str_newf(",%s,%s,", reg, sign);
+			pat = tmp;
+		}
+		const char *match = pat ? strstr(op_esil, pat) : NULL;
+		free(tmp);
+		if (!match) {
+			return;
+		}
+		size_t prefix_len = (size_t)(match - op_esil);
+		esil_buf = rz_str_ndup(op_esil, prefix_len);
 		if (!esil_buf) {
 			return;
 		}
-		char *tmp = rz_str_newf(",%s,%s,", reg, sign);
-		char *ptr_end = tmp ? strstr(esil_buf, tmp) : NULL;
-		free(tmp);
-		if (!ptr_end) {
-			free(esil_buf);
-			return;
-		}
-		*ptr_end = 0;
-		char *addr = ptr_end;
+		char *addr = esil_buf + prefix_len;
 		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 			addr--;
 		}
@@ -1504,19 +1521,18 @@ static inline bool is_op_call(const RzAnalysisOp *op) {
 RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzAnalysisFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	rz_return_if_fail(analysis && op && fcn);
-	const char *opsreg = op->src[0] ? get_regname(analysis, op->src[0]) : NULL;
-	const char *opdreg = op->dst ? get_regname(analysis, op->dst) : NULL;
-	const int size = (fcn->bits ? fcn->bits : analysis->bits) / 8;
 	if (!fcn->cc) {
 		RZ_LOG_DEBUG("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;
 	}
-	char *fname = rz_analysis_function_name_guess(analysis->typedb, fcn->name);
 	int max_count = rz_analysis_cc_max_arg(analysis, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
-		free(fname);
 		return;
 	}
+	const char *opsreg = op->src[0] ? get_regname(analysis, op->src[0]) : NULL;
+	const char *opdreg = op->dst ? get_regname(analysis, op->dst) : NULL;
+	const int size = (fcn->bits ? fcn->bits : analysis->bits) / 8;
+	char *fname = rz_analysis_function_name_guess(analysis->typedb, fcn->name);
 	if (fname) {
 		argc = rz_type_func_args_count(analysis->typedb, fname);
 	}

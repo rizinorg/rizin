@@ -599,6 +599,56 @@ static bool test_dalvik_switch_blocks() {
 	mu_end;
 }
 
+static bool test_rz_analysis_function_args_repeated(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	SWITCH_TO_ARCH_BITS("x86", 64);
+	mu_assert_true(rz_analysis_cc_set(analysis, "rax amd64(rdi, rsi, stack)"), "set amd64 cc");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "f", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+	fcn->cc = "amd64";
+
+	RzAnalysisVarStorage s0 = { 0 }, s1 = { 0 }, s2 = { 0 };
+	rz_analysis_var_storage_init_reg(&s0, "rdi");
+	rz_analysis_var_storage_init_reg(&s1, "rsi");
+	rz_analysis_var_storage_init_stack(&s2, 8);
+	mu_assert_notnull(rz_analysis_function_set_var(fcn, &s0, NULL, 8, "arg0"), "arg0");
+	mu_assert_notnull(rz_analysis_function_set_var(fcn, &s1, NULL, 8, "arg1"), "arg1");
+	mu_assert_notnull(rz_analysis_function_set_var(fcn, &s2, NULL, 8, "arg2"), "arg2");
+
+	for (int iter = 0; iter < 3; iter++) {
+		RzPVector *args = rz_analysis_function_args(analysis, fcn);
+		mu_assert_notnull(args, "args vector");
+		mu_assert_eq(rz_pvector_len(args), 3, "repeated calls keep arg count stable");
+		mu_assert_eq(fcn->argnum, 3, "fcn->argnum stays bounded across calls");
+		mu_assert_streq(((RzAnalysisVar *)rz_pvector_at(args, 0))->name, "arg0", "slot 0");
+		mu_assert_streq(((RzAnalysisVar *)rz_pvector_at(args, 1))->name, "arg1", "slot 1");
+		mu_assert_streq(((RzAnalysisVar *)rz_pvector_at(args, 2))->name, "arg2", "slot 2");
+		rz_pvector_free(args);
+	}
+
+	// Sparse register arg (rsi at slot 1 with slot 0 absent) + stack arg must not clobber slot 1.
+	RzAnalysisFunction *sparse = rz_analysis_create_function(analysis, "f_sparse", 0x2000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(sparse, "create sparse function");
+	sparse->cc = "amd64";
+	mu_assert_notnull(rz_analysis_function_set_var(sparse, &s1, NULL, 8, "arg2"), "sparse rsi arg");
+	mu_assert_notnull(rz_analysis_function_set_var(sparse, &s2, NULL, 8, "arg_8h"), "sparse stack arg");
+	for (int iter = 0; iter < 3; iter++) {
+		RzPVector *args = rz_analysis_function_args(analysis, sparse);
+		mu_assert_notnull(args, "sparse args vector");
+		mu_assert_eq(rz_pvector_len(args), 3, "sparse args length");
+		mu_assert_eq(sparse->argnum, 2, "sparse fcn->argnum");
+		mu_assert_null(rz_pvector_at(args, 0), "sparse slot 0 NULL");
+		mu_assert_streq(((RzAnalysisVar *)rz_pvector_at(args, 1))->name, "arg2", "sparse slot 1 preserved");
+		mu_assert_streq(((RzAnalysisVar *)rz_pvector_at(args, 2))->name, "arg_8h", "sparse stack arg at slot 2");
+		rz_pvector_free(args);
+	}
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -612,6 +662,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_analysis_function_args_repeated);
 	return tests_passed != tests_run;
 }
 
