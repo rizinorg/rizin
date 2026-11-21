@@ -86,6 +86,7 @@ RZ_IPI bool rz_m68k_op_is_status_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_acc_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_op_is_fpu_control_reg(RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k);
+RZ_IPI bool rz_m68k_insn_is_pmmu_branch(RZ_NONNULL const cs_insn *insn);
 
 RZ_IPI ut32 rz_m68k_detail_op_bits(RZ_NONNULL const cs_m68k *m68k, ut32 fallback_bits);
 RZ_IPI ut32 rz_m68k_bits_access_bytes(ut32 bits);

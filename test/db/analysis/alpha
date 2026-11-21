@@ -58,3 +58,20 @@ cond: al
 family: cpu
 EOF
 RUN
+
+NAME=Alpha BR and BSR targets across the 32-bit address boundary
+FILE=malloc://16
+ARGS=-a alpha -b 64 -m 0xfffffffc
+CMDS=<<EOF
+s 0xfffffffc
+wx 0080e0c3feff5fd3
+ao~jump,fail
+s 0x100000000
+ao~jump,fail
+EOF
+EXPECT=<<EOF
+jump: 0x100020000
+jump: 0xfffffffc
+fail: 0x100000004
+EOF
+RUN

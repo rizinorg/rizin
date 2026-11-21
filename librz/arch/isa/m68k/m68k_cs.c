@@ -233,6 +233,15 @@ RZ_IPI bool rz_m68k_insn_uses_fpu_operand(RZ_NONNULL const cs_m68k *m68k) {
 	return false;
 }
 
+RZ_IPI bool rz_m68k_insn_is_pmmu_branch(RZ_NONNULL const cs_insn *insn) {
+	rz_return_val_if_fail(insn && insn->detail, false);
+	const cs_m68k *m68k = &insn->detail->m68k;
+	/* Match CpID 0 and the 16 MC68851 conditions. Older Capstone versions
+	 * report FBcc IDs for these encodings. */
+	return insn->size >= 4 && insn->bytes[0] == 0xf0 && (insn->bytes[1] & 0xb0) == 0x80 &&
+		m68k->op_count == 1 && m68k->operands[0].type == M68K_OP_BR_DISP;
+}
+
 RZ_IPI ut32 rz_m68k_detail_op_bits(RZ_NONNULL const cs_m68k *m68k, ut32 fallback_bits) {
 	rz_return_val_if_fail(m68k, fallback_bits);
 	if (m68k->op_size.type == M68K_SIZE_TYPE_CPU) {
