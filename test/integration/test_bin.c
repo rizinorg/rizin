@@ -351,11 +351,82 @@ bool test_rz_bin_p2v2p(void) {
 	mu_end;
 }
 
+bool test_rz_bin_wasm_custom_names(void) {
+	// clang-format off
+	// Minimal WebAssembly binary with 1 empty function and a "name" custom section
+	// containing Module (0), Function (1), and Local (2) subsections.
+	static const ut8 wasm_valid[] = {
+		// Magic + version
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		// Type section: 1 func type () -> ()
+		0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
+		// Function section: 1 func referencing type 0
+		0x03, 0x02, 0x01, 0x00,
+		// Code section: 1 body (size=2, 0 locals, end=0x0b)
+		0x0a, 0x04, 0x01, 0x02, 0x00, 0x0b,
+		// Custom "name" section (section size = 30 = 5 + 6 + 8 + 11)
+		0x00, 0x1e,
+		0x04, 'n', 'a', 'm', 'e',
+		// Subsection 0 (Module): size=4, name="mod"
+		0x00, 0x04, 0x03, 'm', 'o', 'd',
+		// Subsection 1 (Function): size=6, count=1, idx=0, name="fn0"
+		0x01, 0x06, 0x01, 0x00, 0x03, 'f', 'n', '0',
+		// Subsection 2 (Local): size=9, count=1, func_idx=0, names_count=1, idx=0, name="loc0"
+		0x02, 0x09, 0x01, 0x00, 0x01, 0x00, 0x04, 'l', 'o', 'c', '0',
+	};
+	// Truncated "name" custom section: valid Module (0) followed by truncated Local (2)
+	// to exercise error-path cleanup in parse_custom_name_entry().
+	static const ut8 wasm_truncated[] = {
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		0x00, 0x11,
+		0x04, 'n', 'a', 'm', 'e',
+		0x00, 0x04, 0x03, 'm', 'o', 'd',
+		0x02, 0x04, 0x01, 0x00, 0x01, 0x00,
+	};
+	// clang-format on
+
+	RzIO *io = rz_io_new();
+	RzBin *bin = rz_bin_new();
+	rz_io_bind(io, &bin->iob);
+
+	RzBuffer *buf = rz_buf_new_with_bytes(wasm_valid, sizeof(wasm_valid));
+	mu_assert_notnull(buf, "wasm valid buffer");
+	RzBinOptions opt = { 0 };
+	rz_bin_options_init(&opt, 0, 0, 0, false);
+	opt.filename = "synthetic_names.wasm";
+
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
+	mu_assert_notnull(bf, "open synthetic wasm");
+	mu_assert_notnull(bf->o, "synthetic wasm object");
+
+	const RzPVector *syms = rz_bin_object_get_symbols(bf->o);
+	mu_assert_notnull(syms, "wasm symbols");
+	mu_assert_eq(rz_pvector_len(syms), 1, "one wasm function symbol");
+	RzBinSymbol *sym = rz_pvector_at(syms, 0);
+	mu_assert_streq(sym->name, "fn0", "function name resolved from custom name section");
+
+	rz_bin_file_delete(bin, bf);
+	rz_buf_free(buf);
+
+	RzBuffer *trunc_buf = rz_buf_new_with_bytes(wasm_truncated, sizeof(wasm_truncated));
+	mu_assert_notnull(trunc_buf, "wasm truncated buffer");
+	opt.filename = "synthetic_truncated.wasm";
+	RzBinFile *trunc_bf = rz_bin_open_buf(bin, trunc_buf, &opt);
+	mu_assert_notnull(trunc_bf, "open truncated wasm without crash or leak");
+	rz_bin_file_delete(bin, trunc_bf);
+	rz_buf_free(trunc_buf);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
+	mu_run_test(test_rz_bin_wasm_custom_names);
 	mu_run_test(test_rz_bin_sections_mapping);
 	mu_run_test(test_rz_bin_p2v2p);
 	return tests_passed != tests_run;

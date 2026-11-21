@@ -90,7 +90,7 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzBinSection *ptr = NULL;
 	RzBinWasmSection *sec;
 
-	if (!(ret = rz_pvector_new((RzPVectorFree)free))) {
+	if (!(ret = rz_pvector_new((RzPVectorFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	if (!(secs = rz_bin_wasm_get_sections(bin))) {
@@ -100,7 +100,6 @@ static RzPVector /*<RzBinSection *>*/ *sections(RzBinFile *bf) {
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
 		if (!(ptr = RZ_NEW0(RzBinSection))) {
-			rz_list_free(secs);
 			rz_pvector_free(ret);
 			return NULL;
 		}

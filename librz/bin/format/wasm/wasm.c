@@ -250,6 +250,67 @@ static void bin_wasm_import_free(RzBinWasmImportEntry *wi) {
 	free(wi);
 }
 
+static void bin_wasm_export_free(RzBinWasmExportEntry *we) {
+	if (!we) {
+		return;
+	}
+
+	free(we->field_str);
+	free(we);
+}
+
+static bool bin_wasm_name_storage_free_cb(void *user, void *data, ut32 id) {
+	(void)user;
+	(void)id;
+	bin_wasm_name_free(data);
+	return true;
+}
+
+static void bin_wasm_id_storage_free(RzIDStorage *s) {
+	if (!s) {
+		return;
+	}
+	rz_id_storage_foreach(s, bin_wasm_name_storage_free_cb, NULL);
+	rz_id_storage_free(s);
+}
+
+static void bin_wasm_custom_name_local_free(RzBinWasmCustomNameLocalName *local) {
+	if (!local) {
+		return;
+	}
+	bin_wasm_id_storage_free(local->names);
+	free(local);
+}
+
+/**
+ * \brief Frees a WebAssembly custom name subsection entry and its payload.
+ *
+ * \param nam The custom name entry to free, or NULL.
+ */
+static void bin_wasm_custom_name_free(RzBinWasmCustomNameEntry *nam) {
+	if (!nam) {
+		return;
+	}
+	switch (nam->type) {
+	case RZ_BIN_WASM_NAMETYPE_Module:
+		bin_wasm_name_free(nam->mod_name);
+		break;
+	case RZ_BIN_WASM_NAMETYPE_Function:
+		if (nam->func) {
+			bin_wasm_id_storage_free(nam->func->names);
+			free(nam->func);
+		}
+		break;
+	case RZ_BIN_WASM_NAMETYPE_Local:
+		if (nam->local) {
+			rz_list_free(nam->local->locals);
+			free(nam->local);
+		}
+		break;
+	}
+	free(nam);
+}
+
 // Parsing
 static RzBinWasmName *bin_wasm_name_new(RzBuffer *b, ut64 max) {
 	RzBinWasmName *wn = RZ_NEW0(RzBinWasmName);
@@ -544,45 +605,38 @@ static void *parse_custom_name_entry(RzBuffer *b, ut64 max) {
 			goto beach;
 		}
 		if (!(consume_u32_r(b, max, &ptr->local->count))) {
-			free(ptr->local);
 			goto beach;
 		}
 
-		ptr->local->locals = rz_list_new();
+		ptr->local->locals = rz_list_newf((RzListFree)bin_wasm_custom_name_local_free);
+		if (!ptr->local->locals) {
+			goto beach;
+		}
 
 		for (i = 0; i < ptr->local->count; i++) {
 			RzBinWasmCustomNameLocalName *local_name = RZ_NEW0(RzBinWasmCustomNameLocalName);
 			if (!local_name) {
-				free(ptr->local);
-				free(ptr);
-				return NULL;
+				goto beach;
 			}
 
 			if (!(consume_u32_r(b, max, &local_name->index))) {
-				rz_list_free(ptr->local->locals);
-				free(ptr->local);
-				free(local_name);
+				bin_wasm_custom_name_local_free(local_name);
 				goto beach;
 			}
 
 			local_name->names = rz_id_storage_new(0, UT32_MAX);
 			if (!local_name->names) {
-				rz_list_free(ptr->local->locals);
-				free(ptr->local);
-				free(local_name);
+				bin_wasm_custom_name_local_free(local_name);
 				goto beach;
 			}
 
 			if (!parse_namemap(b, max, local_name->names, &local_name->names_count)) {
-				rz_id_storage_free(local_name->names);
-				rz_list_free(ptr->local->locals);
-				free(ptr->local);
-				free(local_name);
+				bin_wasm_custom_name_local_free(local_name);
 				goto beach;
 			}
 
 			if (!rz_list_append(ptr->local->locals, local_name)) {
-				free(local_name);
+				bin_wasm_custom_name_local_free(local_name);
 				goto beach;
 			};
 		}
@@ -591,7 +645,7 @@ static void *parse_custom_name_entry(RzBuffer *b, ut64 max) {
 
 	return ptr;
 beach:
-	free(ptr);
+	bin_wasm_custom_name_free(ptr);
 	return NULL;
 }
 
@@ -686,7 +740,7 @@ static RzList /*<RzBinWasmImportEntry *>*/ *rz_bin_wasm_get_import_entries(RzBin
 }
 
 static RzList /*<RzBinWasmExportEntry *>*/ *rz_bin_wasm_get_export_entries(RzBinWasmObj *bin, RzBinWasmSection *sec) {
-	return get_entries_from_section(bin, sec, parse_export_entry, (RzListFree)free);
+	return get_entries_from_section(bin, sec, parse_export_entry, (RzListFree)bin_wasm_export_free);
 }
 
 static RzList /*<RzBinWasmCodeEntry *>*/ *rz_bin_wasm_get_code_entries(RzBinWasmObj *bin, RzBinWasmSection *sec) {
@@ -737,7 +791,10 @@ static RzList /*<RzBinWasmElementEntry *>*/ *rz_bin_wasm_get_element_entries(RzB
 }
 
 static RzList /*<RzBinWasmCustomNameEntry *>*/ *rz_bin_wasm_get_custom_name_entries(RzBinWasmObj *bin, RzBinWasmSection *sec) {
-	RzList *ret = rz_list_new();
+	RzList *ret = rz_list_newf((RzListFree)bin_wasm_custom_name_free);
+	if (!ret) {
+		return NULL;
+	}
 
 	RzBuffer *buf = bin->buf;
 
@@ -756,6 +813,7 @@ static RzList /*<RzBinWasmCustomNameEntry *>*/ *rz_bin_wasm_get_custom_name_entr
 		}
 
 		if (!rz_list_append(ret, nam)) {
+			bin_wasm_custom_name_free(nam);
 			goto beach;
 		}
 	}
@@ -815,36 +873,6 @@ void rz_bin_wasm_destroy(RzBinFile *bf) {
 	rz_list_free(bin->g_globals);
 	rz_list_free(bin->g_codes);
 	rz_list_free(bin->g_datas);
-
-	RzListIter *iter;
-	RzBinWasmCustomNameEntry *nam;
-	rz_list_foreach (bin->g_names, iter, nam) {
-		switch (nam->type) {
-		case RZ_BIN_WASM_NAMETYPE_Module:
-			if (nam->mod_name) {
-				free(nam->mod_name);
-			}
-			break;
-		case RZ_BIN_WASM_NAMETYPE_Function:
-			if (nam->func) {
-				rz_id_storage_free(nam->func->names);
-			}
-			break;
-		case RZ_BIN_WASM_NAMETYPE_Local:
-			if (nam->local && nam->local->locals) {
-				RzListIter *iter;
-				RzBinWasmCustomNameLocalName *local;
-				rz_list_foreach (nam->local->locals, iter, local) {
-					if (local->names) {
-						rz_id_storage_free(local->names);
-					}
-				}
-
-				rz_list_free(nam->local->locals);
-			}
-			break;
-		}
-	}
 	rz_list_free(bin->g_names);
 
 	free(bin->g_start);
