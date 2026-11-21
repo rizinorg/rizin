@@ -20,6 +20,32 @@ Hud mode requires scr.interactive=true.
 EOF
 RUN
 
+NAME=?** non-interactive HUD guard
+FILE==
+CMDS=<<EOF
+e scr.interactive=false
+?**
+_sj
+?**e
+_sj
+?***
+_sj
+EOF
+EXPECT=<<EOF
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: HUD mode requires interactive console (scr.interactive=true).
+ERROR: HUD mode requires interactive console (scr.interactive=true).
+ERROR: HUD mode requires interactive console (scr.interactive=true).
+EOF
+RUN
+
 NAME=?** search
 FILE==
 CMDS=<<EOF

@@ -190,10 +190,22 @@ static RzList /*<char *>*/ *hud_filter(RzCons *cons, RzList /*<char *>*/ *list, 
 	return res;
 }
 
-// Display a list of entries in the hud, filtered and emphasized based on the user input.
-
 #define HUD_CACHE 0
+
+/**
+ * \brief Display a list of entries in the HUD, filtered and emphasized based on user input.
+ *
+ * \param cons RzCons instance
+ * \param list List of candidate strings to display
+ * \param prompt Optional prompt string shown above the filter line
+ * \return Newly allocated copy of the selected entry, or NULL if cancelled or
+ *         \p cons is non-interactive
+ */
 RZ_API char *rz_cons_hud(RZ_NONNULL RZ_BORROW RzCons *cons, RzList /*<char *>*/ *list, const char *prompt) {
+	if (!rz_cons_is_interactive(cons)) {
+		RZ_LOG_ERROR("HUD mode requires interactive console (scr.interactive=true).\n");
+		return NULL;
+	}
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RzListIter *iter;
