@@ -1351,6 +1351,50 @@ bool test_rz_diff_op_stringify(void) {
 	mu_end;
 }
 
+bool test_rz_diff_lines_large_and_repeated(void) {
+	RzStrBuf sa, sb;
+	rz_strbuf_init(&sa);
+	rz_strbuf_init(&sb);
+
+	for (int i = 0; i < 600; i++) {
+		if (i % 10 == 0) {
+			rz_strbuf_append(&sa, "repeated_line\n");
+			rz_strbuf_append(&sb, "repeated_line\n");
+		} else if (i == 151) {
+			rz_strbuf_append(&sa, "old_line_151\n");
+			rz_strbuf_append(&sb, "new_line_151\n");
+		} else if (i == 301) {
+			rz_strbuf_append(&sa, "deleted_line_301\n");
+		} else if (i == 451) {
+			rz_strbuf_appendf(&sa, "line_%04d\n", i);
+			rz_strbuf_appendf(&sb, "line_%04d\n", i);
+			rz_strbuf_append(&sb, "inserted_line_451\n");
+		} else {
+			rz_strbuf_appendf(&sa, "line_%04d\n", i);
+			rz_strbuf_appendf(&sb, "line_%04d\n", i);
+		}
+	}
+
+	RzDiff *diff = rz_diff_lines_new(rz_strbuf_get(&sa), rz_strbuf_get(&sb), NULL);
+	mu_assert_notnull(diff, "large line diff created");
+
+	double ratio = 0.0;
+	mu_assert_true(rz_diff_ratio(diff, &ratio), "ratio computed");
+	mu_assert_true(ratio > 0.99 && ratio < 1.0, "expected high similarity ratio");
+
+	char *unified = rz_diff_unified_text(diff, "a", "b", false, false);
+	mu_assert_notnull(unified, "unified text created");
+	mu_assert_notnull(strstr(unified, "-old_line_151\n+new_line_151\n"), "replace hunk present");
+	mu_assert_notnull(strstr(unified, "-deleted_line_301\n"), "delete hunk present");
+	mu_assert_notnull(strstr(unified, "+inserted_line_451\n"), "insert hunk present");
+
+	free(unified);
+	rz_diff_free(diff);
+	rz_strbuf_fini(&sa);
+	rz_strbuf_fini(&sb);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_diff_distances);
 	mu_run_test(test_rz_diff_unified_lines);
@@ -1381,6 +1425,7 @@ int all_tests() {
 	mu_run_test(test_rz_diff_growing_buffer);
 	mu_run_test(test_rz_diff_long_common_prefix);
 	mu_run_test(test_rz_diff_op_stringify);
+	mu_run_test(test_rz_diff_lines_large_and_repeated);
 	return tests_passed != tests_run;
 }
 
