@@ -683,7 +683,7 @@ EXPECT=<<EOF
 |           ; var int64_t var_10h @ stack - 0x10
 |           ; var int64_t var_8h @ stack - 0x8
 |           0x100002c70      sub   sp, sp, 0x40                        ; [00] -r-x section size 4120 named 0.__TEXT.__text
-|           0x100002c74      stp   fp, lr, [sp, 0lr]
+|           0x100002c74      stp   fp, lr, [var_10h]
 |           0x100002c78      add   fp, sp, 0x30
 |           0x100002c7c      stur  wzr, [var_14h]                      ; arg1
 |           0x100002c80      mov   x0, 0x10
@@ -716,7 +716,7 @@ EXPECT=<<EOF
 |      ,==< 0x100002ce4      b     0x100002ce8
 |      ||   ; CODE XREF from entry0 @ 0x100002ce4
 |      ``-> 0x100002ce8      ldur  w0, [var_14h]
-|           0x100002cec      ldp   fp, lr, [sp, 0lr]
+|           0x100002cec      ldp   fp, lr, [var_10h]
 |           0x100002cf0      add   sp, sp, 0x40
 \           0x100002cf4      ret
 EOF
