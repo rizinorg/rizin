@@ -156,21 +156,28 @@ static bool convert_raw(
 				cu->hdr.encoding.address_size, cu->addr_base, raw->base_addressx.addr));
 			*out = NULL;
 			return true;
-		case DW_RLE_startx_endx:
-			range = RZ_NEW0(RzBinDwarfRange);
-			RET_FALSE_IF_FAIL(range);
-			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->begin,
+		case DW_RLE_startx_endx: {
+			ut64 begin = 0, end = 0;
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &begin,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_endx.begin));
-			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->end,
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &end,
 				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_endx.end));
-			break;
-		case DW_RLE_startx_length:
 			range = RZ_NEW0(RzBinDwarfRange);
 			RET_FALSE_IF_FAIL(range);
-			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &range->begin,
-				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_length.begin));
-			range->end = (raw->startx_length.length + raw->startx_length.begin) & mask;
+			range->begin = begin;
+			range->end = end;
 			break;
+		}
+		case DW_RLE_startx_length: {
+			ut64 begin = 0;
+			RET_FALSE_IF_FAIL(rz_bin_dwarf_addr_get(addr, &begin,
+				cu->hdr.encoding.address_size, cu->addr_base, raw->startx_length.begin));
+			range = RZ_NEW0(RzBinDwarfRange);
+			RET_FALSE_IF_FAIL(range);
+			range->begin = begin;
+			range->end = (begin + raw->startx_length.length) & mask;
+			break;
+		}
 		case DW_RLE_offset_pair:
 			if (self->base_address == tombstone) {
 				*out = NULL;

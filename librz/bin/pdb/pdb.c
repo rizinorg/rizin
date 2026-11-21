@@ -103,6 +103,9 @@ RZ_IPI PDBSymbolTable *pdb_global_symbols(const RzPdb *pdb) {
 }
 
 static void msf_stream_free(void *data) {
+	if (!data) {
+		return;
+	}
 	RzPdbMsfStream *msfstream = data;
 	rz_buf_free(msfstream->stream_data);
 	RZ_FREE(msfstream);
@@ -156,7 +159,7 @@ static RzPVector /*<RzPdbMsfStream *>*/ *pdb7_extract_streams(RzPdb *pdb, RzPdbM
 		}
 		for (size_t j = 0; j < stream->blocks_num; j++) {
 			ut32 block_idx;
-			if (!rz_buf_read_le32(msd->sd, &block_idx)) {
+			if (!rz_buf_read_le32(msd->sd, &block_idx) || block_idx >= pdb->super_block->num_blocks) {
 				RZ_FREE(stream);
 				RZ_FREE(stream_data);
 				rz_pvector_free(streams);
@@ -235,6 +238,13 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		RZ_FREE(msd);
 		goto error;
 	}
+	ut64 dir_header_bytes = sizeof(ut32) + (ut64)msd->NumStreams * sizeof(ut32);
+	if (dir_header_bytes > pdb->super_block->num_directory_bytes) {
+		RZ_LOG_ERROR("Error stream directory size.\n");
+		rz_buf_free(sd);
+		RZ_FREE(msd);
+		goto error;
+	}
 	msd->StreamSizes = (ut32 *)malloc(msd->NumStreams * sizeof(ut32));
 	msd->sd = sd;
 	if (!msd->StreamSizes) {
@@ -242,7 +252,8 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 		RZ_FREE(msd);
 		goto error_memory;
 	}
-	ut32 total_blocks = 0;
+	ut64 max_blocks = (pdb->super_block->num_directory_bytes - dir_header_bytes) / sizeof(ut32);
+	ut64 total_blocks = 0;
 	for (size_t i = 0; i < msd->NumStreams; i++) {
 		ut32 stream_size;
 		if (!rz_buf_read_le32(sd, &stream_size)) {
@@ -256,11 +267,18 @@ static RzPdbMsfStreamDirectory *pdb7_extract_msf_stream_directory(RzPdb *pdb) {
 			continue;
 		}
 		msd->StreamSizes[i] = stream_size;
-		ut32 blocks = count_blocks(stream_size, pdb->super_block->block_size);
+		ut64 blocks = count_blocks(stream_size, pdb->super_block->block_size);
+		if (blocks > max_blocks - total_blocks) {
+			RZ_LOG_ERROR("Error stream directory size.\n");
+			rz_buf_free(msd->sd);
+			RZ_FREE(msd->StreamSizes);
+			RZ_FREE(msd);
+			goto error;
+		}
 		total_blocks += blocks;
 	}
 	//				NumStreams 						StreamsSizes 				StreamsBlockMap
-	ut32 msd_size = sizeof(ut32) + msd->NumStreams * sizeof(ut32) + total_blocks * sizeof(ut32);
+	ut64 msd_size = dir_header_bytes + total_blocks * sizeof(ut32);
 	if (msd_size != pdb->super_block->num_directory_bytes) {
 		RZ_LOG_ERROR("Error stream directory size.\n");
 		rz_buf_free(msd->sd);

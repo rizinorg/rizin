@@ -5,6 +5,9 @@
 #include "dyldcache.h"
 
 static void rebase_bytes_v1(RzDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+	if (count < 8 || !rebase_info->toc || !rebase_info->entries) {
+		return;
+	}
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -24,10 +27,18 @@ static void rebase_bytes_v1(RzDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offse
 			break;
 		}
 
-		ut8 *entry = &rebase_info->entries[rebase_info->toc[page_index] * rebase_info->entries_size];
+		ut16 toc_entry = rebase_info->toc[page_index];
+		if (toc_entry >= rebase_info->entries_count) {
+			break;
+		}
+
+		ut8 *entry = &rebase_info->entries[(ut64)toc_entry * rebase_info->entries_size];
 		ut8 b = entry[entry_index];
 
 		if (b & (1 << offset_in_entry)) {
+			if (count - in_buf < 8) {
+				break;
+			}
 			ut64 value = rz_read_le64(buf + in_buf);
 			value += rebase_info->slide;
 			rz_write_le64(buf + in_buf, value);
@@ -41,6 +52,9 @@ static void rebase_bytes_v1(RzDyldRebaseInfo1 *rebase_info, ut8 *buf, ut64 offse
 }
 
 static void rebase_bytes_v2(RzDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+	if (count < 8) {
+		return;
+	}
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -63,12 +77,12 @@ static void rebase_bytes_v2(RzDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offse
 				ut32 delta = 1;
 				while (delta) {
 					ut64 position = in_buf + first_rebase_off - page_offset;
-					if (position >= count) {
+					if (position > (ut64)count - 8) {
 						break;
 					}
 					ut64 raw_value = rz_read_le64(buf + position);
 					delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift);
-					if (position >= start_of_write) {
+					if (position + 8 > start_of_write) {
 						ut64 new_value = raw_value & rebase_info->value_mask;
 						if (new_value != 0) {
 							new_value += rebase_info->value_add;
@@ -89,6 +103,9 @@ static void rebase_bytes_v2(RzDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offse
 #define RZ_IS_PTR_AUTHENTICATED(x) B_IS_SET(x, 63)
 
 static void rebase_bytes_v3(RzDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset, int count, ut64 start_of_write) {
+	if (count < 8) {
+		return;
+	}
 	int in_buf = 0;
 	while (in_buf < count) {
 		ut64 offset_in_data = offset - rebase_info->start_of_data;
@@ -109,12 +126,12 @@ static void rebase_bytes_v3(RzDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offse
 		if (first_rebase_off >= page_offset && first_rebase_off < page_offset + count) {
 			do {
 				ut64 position = in_buf + first_rebase_off - page_offset;
-				if (position >= count) {
+				if (position > (ut64)count - 8) {
 					break;
 				}
 				ut64 raw_value = rz_read_le64(buf + position);
 				delta = ((raw_value & rebase_info->delta_mask) >> rebase_info->delta_shift) * 8;
-				if (position >= start_of_write) {
+				if (position + 8 > start_of_write) {
 					ut64 new_value = 0;
 					if (RZ_IS_PTR_AUTHENTICATED(raw_value)) {
 						new_value = (raw_value & 0xFFFFFFFFULL) + rebase_info->auth_value_add;
@@ -219,9 +236,21 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	ut64 offset_in_data = ctx->off - rebase_info->start_of_data;
 	ut64 page_offset = offset_in_data % rebase_info->page_size;
 
-	ut64 internal_offset = ctx->off & ~(rebase_info->page_size - 1);
-	ut64 internal_end = ctx->off + len;
-	int rounded_count = internal_end - internal_offset;
+	ut64 internal_offset = ctx->off & ~((ut64)rebase_info->page_size - 1);
+	if (UT64_ADD_OVFCHK(ctx->off, len)) {
+		return -1;
+	}
+	ut64 buf_size = rz_buf_size(cache->buf);
+	ut64 internal_end = RZ_MIN(ctx->off + len, buf_size);
+	ut64 rem = internal_end % rebase_info->page_size;
+	if (rem) {
+		ut64 pad = rebase_info->page_size - rem;
+		internal_end += RZ_MIN(pad, buf_size - internal_end);
+	}
+	if (internal_end < internal_offset || internal_end - internal_offset > INT_MAX) {
+		return -1;
+	}
+	int rounded_count = (int)(internal_end - internal_offset);
 
 	ut8 *internal_buf = rebase_info->one_page_buf;
 	if (rounded_count > rebase_info->page_size) {
@@ -233,9 +262,9 @@ static st64 buf_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	}
 
 	st64 internal_result = rz_buf_read_at(cache->buf, internal_offset, internal_buf, rounded_count);
-	if (internal_result >= page_offset + len) {
+	if (internal_result > 0 && !UT64_ADD_OVFCHK(page_offset, len) && (ut64)internal_result >= page_offset + len) {
 		rebase_bytes(rebase_info, internal_buf, internal_offset, internal_result, page_offset);
-		result = RZ_MIN(len, internal_result);
+		result = RZ_MIN(len, (ut64)internal_result - page_offset);
 		memcpy(buf, internal_buf + page_offset, result);
 	} else {
 		RZ_LOG_ERROR("dyldcache: Cannot rebase address\n");

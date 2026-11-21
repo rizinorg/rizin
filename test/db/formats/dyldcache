@@ -748,3 +748,47 @@ dyldcache:
  2 fd: 3 +0x00014000 0x180014000 - 0x18001bfff r-- fmap.cache_map.1
 EOF
 RUN
+
+NAME=dyldcache v3 unaligned rebase read
+FILE=bins/dyldcache/dyld_shared_cache_arm64e-macOS-objc
+CMDS=<<EOF
+p8 8 @ 0x182068000
+p8 7 @ 0x182068000
+p8 4 @ 0x182068000
+p8 1 @ 0x182068006
+p8 8 @ 0x182068004
+p8 8 @ 0x18206cffe
+b 4100
+ph sha256 @ 0x18206c000
+EOF
+EXPECT=<<EOF
+2880078401000000
+28800784010000
+28800784
+00
+0100000000000000
+0000ac9305800100
+d37cd34b799c21d00429b333d7743fffec59ed2471760a566c75ac0b738c30a4
+EOF
+RUN
+
+NAME=dyldcache v2 unaligned and short rebase read
+FILE=bins/dyldcache/dyld_shared_cache_arm64-macOS-objc
+CMDS=<<EOF
+p8 8 @ 0x182064000
+p8 7 @ 0x182064000
+p8 4 @ 0x182064000
+p8 1 @ 0x182064005
+p8 8 @ 0x182064004
+b 4110
+ph sha256 @ 0x182064000
+EOF
+EXPECT=<<EOF
+b44f058001000000
+b44f0580010000
+b44f0580
+00
+0100000044fa0380
+50b046e84cf29673b886f9b3aa9c4cc11063b0c5096ca3a1b476bd07025af6b4
+EOF
+RUN

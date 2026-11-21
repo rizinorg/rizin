@@ -37,10 +37,12 @@ RZ_IPI bool pe_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		PeImageSectionHeader *hdr = RZ_NEW0(PeImageSectionHeader);
 		if (!hdr) {
 			rz_list_free(s->sections_hdrs);
+			s->sections_hdrs = NULL;
 			return false;
 		}
 		if (!parse_image_header(hdr, buf)) {
 			rz_list_free(s->sections_hdrs);
+			s->sections_hdrs = NULL;
 			free(hdr);
 			return false;
 		}
