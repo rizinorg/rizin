@@ -468,13 +468,94 @@ RZ_API bool rz_core_bin_print(RzCore *core, RZ_NONNULL RzBinFile *bf, ut32 mask,
 	return res;
 }
 
+/**
+ * \brief Check whether a sanitized flag suffix contains any meaningful character.
+ * \param s NUL-terminated string after `rz_name_filter()`.
+ * \return true if \p s contains at least one character other than `_`, `.`, or `:`, false otherwise.
+ */
+static bool has_meaningful_flag_chars(RZ_NONNULL const char *s) {
+	for (; *s; s++) {
+		if (*s != '_' && *s != '.' && *s != ':') {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * \brief Create or reuse a unique `str.*` flag for a string at \p addr.
+ *
+ * Filters \p string with `rz_name_filter()`, falling back to `str.%08<addr>` when
+ * the sanitized suffix has no meaningful characters (only `_`, `.`, `:`, or empty).
+ * Applies `core->bin->prefix` when set, filters the full flag name, and registers
+ * the flag via `rz_flag_set_next()` inside `RZ_FLAGS_FS_STRINGS`.
+ *
+ * \param core Core instance owning the flag database and optional binary prefix.
+ * \param string NUL-terminated string text used to derive the flag name.
+ * \param addr Address of the string.
+ * \param size Size in bytes of the string.
+ * \return Borrowed flag item on success, or NULL on allocation failure.
+ */
+RZ_IPI RZ_BORROW RzFlagItem *rz_core_bin_set_string_flag(RZ_NONNULL RzCore *core, RZ_NONNULL const char *string, ut64 addr, ut32 size) {
+	rz_return_val_if_fail(core && string, NULL);
+	char *f_name = rz_str_dup(string);
+	if (!f_name) {
+		return NULL;
+	}
+	rz_name_filter(f_name, size <= INT_MAX ? (int)size : 0, true);
+	bool has_prefix = core->bin && RZ_STR_ISNOTEMPTY(core->bin->prefix);
+	char *str;
+	if (has_meaningful_flag_chars(f_name)) {
+		str = has_prefix
+			? rz_str_newf("%s.str.%s", core->bin->prefix, f_name)
+			: rz_str_newf("str.%s", f_name);
+	} else {
+		str = has_prefix
+			? rz_str_newf("%s.str.%08" PFMT64x, core->bin->prefix, addr)
+			: rz_str_newf("str.%08" PFMT64x, addr);
+	}
+	free(f_name);
+	if (!str) {
+		return NULL;
+	}
+	rz_name_filter(str, 0, true);
+	const RzSpace *cur = rz_flag_space_cur(core->flags);
+	bool pushed = !cur || strcmp(cur->name, RZ_FLAGS_FS_STRINGS) != 0;
+	if (pushed) {
+		rz_flag_space_push(core->flags, RZ_FLAGS_FS_STRINGS);
+	}
+	RzFlagItem *fi = rz_flag_set_next(core->flags, str, addr, size);
+	if (pushed) {
+		rz_flag_space_pop(core->flags);
+	}
+	free(str);
+	return fi;
+}
+
+/**
+ * \brief Register string metadata and unique `str.*` flags for strings in \p binfile.
+ *
+ * Sectionless `RZ_BIN_TYPE_CORE` plugins without a dedicated `strings` callback skip
+ * automatic flagging when `str.search.mode` is `auto` (use `str.search.mode=raw` or `iz`).
+ *
+ * \param r Core instance owning the analysis database and flag space.
+ * \param binfile Loaded binary file whose filtered strings are applied.
+ * \return true on success (or break interruption), false if object or string list is missing.
+ */
 RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 	rz_return_val_if_fail(r && binfile, false);
 	RzBinObject *o = binfile->o;
 	if (!o) {
 		return false;
 	}
-	const RzPVector *l = core_bin_strings(r, binfile);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin(binfile);
+	if (r->bin->str_search_cfg.mode == RZ_BIN_STRING_SEARCH_MODE_AUTO &&
+		rz_pvector_empty(o->sections) &&
+		plugin && !plugin->strings &&
+		plugin->file_type && plugin->file_type(binfile) == RZ_BIN_TYPE_CORE) {
+		return true;
+	}
+	const RzPVector /*<RzBinString *>*/ *l = core_bin_strings(r, binfile);
 	if (!l) {
 		return false;
 	}
@@ -495,18 +576,9 @@ RZ_API bool rz_core_bin_apply_strings(RzCore *r, RzBinFile *binfile) {
 		if (rz_interrupt_is_breaked(r->intr)) {
 			break;
 		}
-		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type, vaddr, string->size, string->string);
-		char *f_name = rz_str_dup(string->string);
-		rz_name_filter(f_name, string->size, true);
-		char *str;
-		if (r->bin->prefix) {
-			str = rz_str_newf("%s.str.%s", r->bin->prefix, f_name);
-		} else {
-			str = rz_str_newf("str.%s", f_name);
-		}
-		(void)rz_flag_set(r->flags, str, vaddr, string->size);
-		free(str);
-		free(f_name);
+		rz_meta_set_with_subtype(r->analysis, RZ_META_TYPE_STRING, string->type,
+			vaddr, string->size, string->string);
+		(void)rz_core_bin_set_string_flag(r, string->string, vaddr, string->size);
 	}
 	rz_flag_space_pop(r->flags);
 	rz_interrupt_break_pop(r->intr);

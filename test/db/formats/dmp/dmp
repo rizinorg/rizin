@@ -179,7 +179,7 @@ mov qword [rsp+0x20], r9
 1  0xfffff8047be0f4e1 sp: 0xffff850429890ef0  56   [??]  pdb.ntkrnlmp.string_::3655334267::_Kernel_MUI_Lang_::1575215452+5649
 2  0xfffff8047bdcc052 sp: 0xffff850429890f30  104  [pdb.ntkrnlmp.__C_specific_handler]  pdb.ntkrnlmp.__C_specific_handler+162
 3  0xfffff8047bdfe942 sp: 0xffff850429890fa0  40   [pdb.ntkrnlmp.RtlpExecuteHandlerForException]  pdb.ntkrnlmp.RtlpExecuteHandlerForException+18
-4  0xfffff8047bd2bf97 sp: 0xffff850429890fd0  1816 [??]  pdb.ntkrnlmp.RtlDispatchException+663
+4  0xfffff8047bd2bf97 sp: 0xffff850429890fd0  1816 [pdb.ntkrnlmp.RtlDispatchException]  pdb.ntkrnlmp.RtlDispatchException+663
 5  0xfffff8047bd2ab86 sp: 0xffff8504298916f0  1720 [pdb.ntkrnlmp.KiDispatchException]  pdb.ntkrnlmp.KiDispatchException+390
 6  0xfffff8047be07bac sp: 0xffff850429891db0  472  [pdb.ntkrnlmp.KiExceptionDispatch]  pdb.ntkrnlmp.KiExceptionDispatch+300
 7  0xfffff8047be031f5 sp: 0xffff850429891f90  400  [pdb.ntkrnlmp.KiSegmentNotPresentFault]  pdb.ntkrnlmp.KiSegmentNotPresentFault+821

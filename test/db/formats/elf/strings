@@ -137,3 +137,36 @@ EXPECT=<<EOF
 0x00400620 32 str.S
 EOF
 RUN
+
+NAME=duplicate and punctuation string flags (bins/elf/ls)
+FILE=bins/elf/ls
+CMDS=<<EOF
+izq~?
+fl@F:strings~?
+fl@F:strings~1871e,187ff,188d7,18ae0,1b999
+fl@F:strings~str.$
+aaa
+fl@F:strings~1871e,187ff,1889a,1889f,188d7
+fl@F:strings~18ae0,18b19,18b66,1af4a,1b999
+fl@F:strings~str.$
+EOF
+EXPECT=<<EOF
+562
+562
+0x0001871e 55 str.https:__wiki.xiph.org_MIME_Types_and_File_Extensions
+0x000187ff 55 str.https:__wiki.xiph.org_MIME_Types_and_File_Extensions.187ff
+0x000188d7 5 str.000188d7
+0x00018ae0 6 str.00018ae0
+0x0001b999 16 str.0001b999
+0x0001871e 55 str.https:__wiki.xiph.org_MIME_Types_and_File_Extensions
+0x000187ff 55 str.https:__wiki.xiph.org_MIME_Types_and_File_Extensions.187ff
+0x0001889a 5 str.lu
+0x0001889f 6 str.lu.1889f
+0x000188d7 5 str.000188d7
+0x00018ae0 6 str.00018ae0
+0x00018b19 22 str.Valid_arguments_are:
+0x00018b66 10 str.Y__m__d
+0x0001af4a 8 str.s
+0x0001b999 16 str.0001b999
+EOF
+RUN
