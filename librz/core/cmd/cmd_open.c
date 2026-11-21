@@ -813,6 +813,7 @@ RZ_IPI RzCmdStatus rz_open_binary_select_handler(RzCore *core, int argc, const c
 					rz_list_free(selection);
 					return RZ_CMD_STATUS_ERROR;
 				}
+				rz_list_free(selection);
 				break;
 			}
 			rz_list_free(selection);

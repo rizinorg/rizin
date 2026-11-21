@@ -127,12 +127,16 @@ RZ_API bool rz_bin_file_set_xtr_data_as_current_obj(
 	ut64 sz = data->size;
 
 	RzBinPlugin *plugin = get_plugin_from_buffer(bin, NULL, data->buf);
+	RzBuffer *old_buf = bf->buf;
 	bf->buf = rz_buf_ref(data->buf);
 
 	RzBinObject *o = rz_bin_object_new(bf, plugin, opts, offset, sz);
 	if (!o) {
+		rz_buf_free(bf->buf);
+		bf->buf = old_buf;
 		return false;
 	}
+	rz_buf_free(old_buf);
 	// size is set here because the reported size of the object depends on
 	// if loaded from xtr plugin or partially read
 	if (!o->size) {
@@ -313,9 +317,13 @@ RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd) {
 }
 
 /**
- * \brief Sets the given \p obj as the object of binfile \p bf.
+ * \brief Sets the given \p obj as the object of binfile \p bf
  * and updates obj->info->lang.
- * If \p obj is NULL updates the existing object bf->obj if any.
+ *
+ * When replacing a distinct existing \c bf->o (\p obj is non-NULL and
+ * \c bf->o != \p obj), emits \c RZ_EVENT_BIN_OBJECT_DEL, invokes
+ * \c plugin->destroy(bf) if present, and frees the superseded \c RzBinObject.
+ * If \p obj is NULL, updates the existing object \c bf->o if any.
  *
  * \param bf The binfile to set the object.
  * \param obj The object to set in the binfile.
@@ -326,6 +334,17 @@ RZ_API bool rz_bin_file_set_cur_by_fd(RzBin *bin, ut32 bin_fd) {
 RZ_API bool rz_bin_file_set_obj(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_OWN RZ_NULLABLE RzBinObject *obj) {
 	rz_return_val_if_fail(bf, false);
 	if (obj) {
+		if (bf->o && bf->o != obj) {
+			if (bf->rbin && bf->rbin->event) {
+				RzEventBinFileDel ev = { bf };
+				rz_event_send(bf->rbin->event, RZ_EVENT_BIN_OBJECT_DEL, &ev);
+			}
+			RzBinPlugin *plugin = rz_bin_file_cur_plugin(bf);
+			if (plugin && plugin->destroy) {
+				plugin->destroy(bf);
+			}
+			rz_bin_object_free(bf->o);
+		}
 		bf->o = obj;
 	} else {
 		obj = bf->o;
