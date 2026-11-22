@@ -5751,27 +5751,25 @@ static RZ_OWN RzVector /*<ut64>*/ *get_calls(RzCore *core, RzAnalysisBlock *bloc
 		if (ret < 1) {
 			continue;
 		}
-		if (rz_analysis_op_is_call(&op)) {
-			if (op.jump != UT64_MAX) {
-				if (!rz_vector_contains(set, &op.jump)) {
-					rz_vector_push(set, &op.jump);
-				}
-			} else {
-				// No statically known call target.
-				// Check if a previous analysis found any xrefs from it.
-				RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
-				RzAnalysisXRef *xref;
-				RzListIter *iter;
-				rz_list_foreach (xrefs, iter, xref) {
-					if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
-						continue;
-					}
-					if (!rz_vector_contains(set, &xref->to)) {
-						rz_vector_push(set, &xref->to);
-					}
-				}
-				rz_list_free(xrefs);
+		if (op.jump != UT64_MAX && rz_analysis_op_is_call(&op)) {
+			if (!rz_vector_contains(set, &op.jump)) {
+				rz_vector_push(set, &op.jump);
 			}
+		} else {
+			// No statically known call target.
+			// Check if a previous analysis found any xrefs from it.
+			RzList *xrefs = rz_analysis_xrefs_get_from(block->analysis, op.addr);
+			RzAnalysisXRef *xref;
+			RzListIter *iter;
+			rz_list_foreach (xrefs, iter, xref) {
+				if (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL) {
+					continue;
+				}
+				if (!rz_vector_contains(set, &xref->to)) {
+					rz_vector_push(set, &xref->to);
+				}
+			}
+			rz_list_free(xrefs);
 		}
 		rz_analysis_op_fini(&op);
 		if (op.size > 0) {
@@ -5817,10 +5815,10 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			pj_kb(pj, "traced", block->traced);
 			pj_kn(pj, "ninstr", block->ninstr);
 			pj_kn(pj, "size", block->size);
-			if (block->jump != UT64_MAX) {
+			if (block->jump != UT64_MAX && !rz_vector_contains(sorted_calls, &block->jump)) {
 				pj_kn(pj, "jump", block->jump);
 			}
-			if (block->fail != UT64_MAX) {
+			if (block->fail != UT64_MAX && !rz_vector_contains(sorted_calls, &block->fail)) {
 				pj_kn(pj, "fail", block->fail);
 			}
 
@@ -5846,8 +5844,8 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			pj_end(pj);
 			break;
 		case RZ_OUTPUT_MODE_TABLE: {
-			char *jump = block->jump != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->jump) : rz_str_dup("");
-			char *fail = block->fail != UT64_MAX ? rz_str_newf("0x%08" PFMT64x, block->fail) : rz_str_dup("");
+			char *jump = block->jump != UT64_MAX && !rz_vector_contains(sorted_calls, &block->jump) ? rz_str_newf("0x%08" PFMT64x, block->jump) : rz_str_dup("");
+			char *fail = block->fail != UT64_MAX && !rz_vector_contains(sorted_calls, &block->fail) ? rz_str_newf("0x%08" PFMT64x, block->fail) : rz_str_dup("");
 			char *call = ut64join(sorted_calls);
 			char *xref = ut64join(sorted_xrefs);
 			char *fcns = fcnjoin(block->fcns);
@@ -5872,10 +5870,10 @@ RZ_IPI RzCmdStatus rz_analysis_basic_block_list_handler(RzCore *core, int argc, 
 			break;
 		case RZ_OUTPUT_MODE_STANDARD:
 			rz_cons_printf(core->cons, "0x%08" PFMT64x, block->addr);
-			if (block->jump != UT64_MAX) {
+			if (block->jump != UT64_MAX && !rz_vector_contains(sorted_calls, &block->jump)) {
 				rz_cons_printf(core->cons, " .j 0x%08" PFMT64x, block->jump);
 			}
-			if (block->fail != UT64_MAX) {
+			if (block->fail != UT64_MAX && !rz_vector_contains(sorted_calls, &block->fail)) {
 				rz_cons_printf(core->cons, " .f 0x%08" PFMT64x, block->fail);
 			}
 			rz_vector_foreach (sorted_xrefs, addr) {
