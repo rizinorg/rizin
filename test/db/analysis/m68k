@@ -138,7 +138,7 @@ goto 0x312
 EOF
 RUN
 
-NAME=M68K FPU analysis has no RzIL
+NAME=M68K FPU analysis has RzIL alongside integer instructions
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=m68k
@@ -146,10 +146,10 @@ e asm.bits=32
 e asm.cpu=68020
 wx f2000522f3107001
 aoj~{.[]\|{opcode,family,type,opex}}
-aoj~{.[]\|{rzil}}
+aoj~{[0].rzil.opcode}
 s 4
 aoj~{.[]\|{opcode,family,type,opex}}
-aoj~{.[]\|{rzil}}
+aoj~{[0].rzil.opcode}
 s 6
 aoj~{[0].rzil.opcode}
 e asm.cpu=cfv1
@@ -159,9 +159,9 @@ aoj~{[0].rzil.opcode}
 EOF
 EXPECT=<<EOF
 [{"opcode":"fadd fp1, fp2","family":"fpu","type":"add","opex":{"operands":[{"type":"reg","value":"fp1"},{"type":"reg","value":"fp2"}]}}]
-[{}]
+seq
 [{"opcode":"fsave (a0)","family":"fpu","type":"store","opex":{"operands":[{"type":"mem","address_mode":3,"base_reg":"a0","in_disp":0,"out_disp":0,"disp":0,"scale":0,"bitfield":0,"width":0,"offset":0,"index_size":0,"in_disp_size":0,"out_disp_size":0,"disp_size":0}]}}]
-[{}]
+branch
 seq
 seq
 EOF
@@ -239,6 +239,8 @@ macsr = 0x00000000
 mask = 0x00000000
 usp = 0x00000000
 cp_external_data = 0x00000000
+fpu_state = 0x00000000
+fpu_excp_frame = 0x000000000000000000000000
 EOF
 RUN
 
