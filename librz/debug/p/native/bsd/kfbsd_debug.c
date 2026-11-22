@@ -68,7 +68,13 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 static RzDebugSignalSource find_signal_source(int si_code) {
 	if (si_code == SI_USER ||
 		si_code == SI_QUEUE ||
-		si_code == SI_LWP) {
+		si_code == SI_TIMER ||
+		si_code == SI_MESGQ ||
+		si_code == SI_ASYNCIO
+#ifdef SI_LWP
+		|| si_code == SI_LWP
+#endif
+	) {
 		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
 	}
 	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
