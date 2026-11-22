@@ -39,6 +39,7 @@ static const char *config_exclude_save[] = {
 };
 
 static const char *config_exclude_load[] = {
+	"cfg.cmd.diagnostics", // session-level diagnostic capture for rzpipe/agents
 	"dir.home",
 	"dir.libs",
 	"dir.magic",

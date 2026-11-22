@@ -8,8 +8,14 @@
 #include <rz_th.h>
 #include <stdarg.h>
 
+typedef struct log_observer_entry_s {
+	RzLogObserver cb;
+	void *user;
+} log_observer_entry_t;
+
 typedef struct log_config_s {
 	RzList /*<RzLogCallback *>*/ *callbacks;
+	RzList /*<log_observer_entry_t *>*/ *observers;
 	RzLogLevel level;
 #if RZ_BUILD_DEBUG
 	RzLogLevel abortlevel;
@@ -46,6 +52,7 @@ static void log_init() {
 		return;
 	}
 	logcfg.callbacks = NULL;
+	logcfg.observers = NULL;
 	logcfg.level = RZ_DEFAULT_LOGLVL;
 #if RZ_BUILD_DEBUG
 	logcfg.abortlevel = RZ_DEFAULT_LOGLVL_ABORT;
@@ -194,6 +201,72 @@ RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc) {
 	rz_th_lock_leave(logcfg.lock);
 }
 
+/**
+ * \brief Add a non-consuming log observer without suppressing default stderr output.
+ *
+ * Observers are invoked while holding the internal log lock and must not
+ * re-enter rz_log* or rz_log_*_observer().
+ *
+ * \param observer Callback invoked with log level, unprefixed message, and \p user
+ * \param user Opaque user pointer passed to \p observer
+ */
+RZ_API void rz_log_add_observer(RZ_NULLABLE RzLogObserver observer, RZ_NULLABLE void *user) {
+	if (!observer) {
+		return;
+	}
+	log_init();
+	rz_th_lock_enter(logcfg.lock);
+	if (!logcfg.observers) {
+		logcfg.observers = rz_list_newf(free);
+	}
+	if (logcfg.observers) {
+		RzListIter *it;
+		log_observer_entry_t *entry;
+		bool exists = false;
+		rz_list_foreach (logcfg.observers, it, entry) {
+			if (entry->cb == observer && entry->user == user) {
+				exists = true;
+				break;
+			}
+		}
+		if (!exists) {
+			log_observer_entry_t *obs = RZ_NEW0(log_observer_entry_t);
+			if (obs) {
+				obs->cb = observer;
+				obs->user = user;
+				rz_list_append(logcfg.observers, obs);
+			}
+		}
+	}
+	rz_th_lock_leave(logcfg.lock);
+}
+
+/**
+ * \brief Remove a log observer previously registered with rz_log_add_observer().
+ *
+ * \param observer Callback to remove
+ * \param user Matching user pointer registered with \p observer
+ */
+RZ_API void rz_log_del_observer(RZ_NULLABLE RzLogObserver observer, RZ_NULLABLE void *user) {
+	if (!observer) {
+		return;
+	}
+	log_init();
+	rz_th_lock_enter(logcfg.lock);
+	RzListIter *it, *tmp;
+	log_observer_entry_t *entry;
+	rz_list_foreach_safe (logcfg.observers, it, tmp, entry) {
+		if (entry->cb == observer && entry->user == user) {
+			rz_list_delete(logcfg.observers, it);
+			break;
+		}
+	}
+	if (logcfg.observers && rz_list_empty(logcfg.observers)) {
+		RZ_FREE_CUSTOM(logcfg.observers, rz_list_free);
+	}
+	rz_th_lock_leave(logcfg.lock);
+}
+
 #if RZ_BUILD_DEBUG
 #define is_log_quiet(x) ((x) < logcfg.level && (x) < logcfg.abortlevel)
 #else
@@ -205,10 +278,19 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	const char *fmtstr, va_list args) {
 	log_init();
 
-	if (is_log_quiet(level)) {
+	bool quiet = is_log_quiet(level);
+	if (quiet && (out || level < RZ_LOGLVL_WARN || level == RZ_LOGLVL_NONE)) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
 		return;
+	}
+	if (quiet) {
+		rz_th_lock_enter(logcfg.lock);
+		bool has_observers = logcfg.observers != NULL;
+		rz_th_lock_leave(logcfg.lock);
+		if (!has_observers) {
+			return;
+		}
 	}
 
 	// copy args only if we print the log
@@ -229,29 +311,40 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	if (logcfg.show_sources) {
 		rz_strbuf_appendf(&sb, "%s in %s:%i: ", funcname, filename, lineno);
 	}
+	size_t msg_offset = rz_strbuf_length(&sb);
 	rz_strbuf_vappendf(&sb, fmtstr, args);
 
 	char *output_buf = rz_strbuf_drain_nofree(&sb);
 
 	// critical section
 	rz_th_lock_enter(logcfg.lock);
-	if (out) {
-		*out = strdup(output_buf);
-	} else if (rz_list_length(logcfg.callbacks) > 0) {
-		// Print the log using the callbacks
-		RzListIter *it;
-		RzLogCallback cb;
-		rz_list_foreach (logcfg.callbacks, it, cb) {
-			cb(output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+	if (!quiet) {
+		if (out) {
+			*out = strdup(output_buf);
+		} else if (rz_list_length(logcfg.callbacks) > 0) {
+			// Print the log using the callbacks
+			RzListIter *it;
+			RzLogCallback cb;
+			rz_list_foreach (logcfg.callbacks, it, cb) {
+				cb(output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+			}
+		} else {
+			// Print the log using stderr
+			fputs(output_buf, stderr);
 		}
-	} else {
-		// Print the log using stderr
-		fputs(output_buf, stderr);
 	}
 	va_end(args_copy);
 
+	if (!out) {
+		RzListIter *it;
+		log_observer_entry_t *obs;
+		rz_list_foreach (logcfg.observers, it, obs) {
+			obs->cb(level, output_buf + msg_offset, obs->user);
+		}
+	}
+
 	// Log to file if enabled
-	if (logcfg.file) {
+	if (!quiet && logcfg.file) {
 		fputs(output_buf, logcfg.file);
 		fflush(logcfg.file);
 	}

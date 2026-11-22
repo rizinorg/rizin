@@ -142,3 +142,53 @@ CMDS=s 0
 EXIT_STATUS=0
 EXPECT=
 RUN
+
+NAME=cfg.cmd.diagnostics: _sj diagnostics and suggestions
+FILE==
+ARGS=-e cfg.cmd.diagnostics=true -c agfj -c _sj -c _sj -c wx -c _sj
+CMDS=<<EOF
+s 0
+_sj
+s foo; _sj
+e cfg.cmd.diagnostics=false
+s foo; _sj
+EOF
+EXPECT=<<EOF
+{"error":{"code":"NONEXISTINGCMD","message":"Command does not exist","command":"agfj","args":[],"diagnostics":[{"level":"error","message":"Command 'agfj' does not exist."}],"suggestion":{"command":"agf","summary":"Basic blocks function graph","args_str":"<format>=ascii"}}}
+{"error":null}
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"wx","args":[],"diagnostics":[{"level":"error","message":"Wrong number of arguments passed to `wx`, see its help with `wx?`"}],"suggestion":{"command":"wx","summary":"Write hexadecimal data","args_str":"<hex>","subcommands":["wxf"]}}}
+{"error":null}
+{"error":{"code":"ERROR","message":"Command execution failed","command":"s","args":["foo"],"diagnostics":[{"level":"error","message":"Cannot seek to unknown address 'foo'"}]}}
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+EOF
+RUN
+
+NAME=cfg.cmd.diagnostics: parse error diagnostics
+FILE==
+ARGS=-e cfg.cmd.diagnostics=true -c echo"bad
+CMDS=_sj
+EXPECT=<<EOF
+{"error":{"code":"INVALID","message":"Invalid command or expression","diagnostics":[{"level":"error","message":"core: Error while parsing command: `echo\"bad`"}]}}
+EOF
+RUN
+
+NAME=cfg.cmd.diagnostics: enriches cfg.json.status
+FILE==
+ARGS=-e cfg.json.status=true -e cfg.cmd.diagnostics=true -c agfj -c flj
+CMDS=<<EOF
+tj int
+flj~?
+echo $(flj)
+aflj a b c
+EOF
+EXPECT=<<EOF
+{"error":{"code":"NONEXISTINGCMD","message":"Command does not exist","command":"agfj","args":[],"diagnostics":[{"level":"error","message":"Command 'agfj' does not exist."}],"suggestion":{"command":"agf","summary":"Basic blocks function graph","args_str":"<format>=ascii"}}}
+[]
+{"error":null}
+{"name":"int","kind":"atomic","format":"d4 int","size":32}
+{"error":null}
+1
+[]
+{"error":{"code":"WRONG_ARGS","message":"Wrong number or type of arguments","command":"aflj","args":["a","b","c"],"diagnostics":[{"level":"error","message":"Wrong number of arguments passed to `aflj`, see its help with `aflj?`"}],"suggestion":{"command":"afl","summary":"List functions","modes":["","j","q","l","t"],"subcommands":["afl.","aflc","afl+","aflm","afl="]}}}
+EOF
+RUN

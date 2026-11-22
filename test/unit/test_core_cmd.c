@@ -196,6 +196,614 @@ static bool test_cmd_str_status(void) {
 	mu_end;
 }
 
+static RzCmdStatus diag_levels_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_INFO("diag-ignored-info\n");
+	rz_log("test", "test", 1, RZ_LOGLVL_NONE, NULL, "diag-ignored-none\n");
+	RZ_LOG_WARN("\r\n");
+	RZ_LOG_WARN("diag-warn-msg\n");
+	RZ_LOG_FATAL("diag-fatal-msg\n");
+	for (int i = 0; i < 35; i++) {
+		RZ_LOG_WARN("diag-cap-%d\n", i);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus diag_empty_warn_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_WARN("\r\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus diag_invalid_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_INVALID;
+}
+
+static RzCmdStatus diag_disable_and_log_handler(RzCore *core, int argc, const char **argv) {
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", false);
+	RZ_LOG_ERROR("diag-ignored-after-disable\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus nested_merge_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd0_rzshell(core, "s foo");
+	RZ_LOG_ERROR("outer-merge-diag\n");
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus nested_empty_inner_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd0_rzshell(core, "s 0");
+	RZ_LOG_ERROR("outer-only-diag\n");
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus nested_exit_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd0_rzshell(core, "s 0");
+	return RZ_CMD_STATUS_EXIT;
+}
+
+static RzCmdStatus warn_ok_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_WARN("inner-ok-warn\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus nested_warn_fail_handler(RzCore *core, int argc, const char **argv) {
+	rz_core_cmd0_rzshell(core, "zdiag_warn_ok");
+	RZ_LOG_ERROR("outer-after-warn-err\n");
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus nested_prewarn_ok_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_WARN("pre-inner-warn\n");
+	rz_core_cmd0_rzshell(core, "s 0");
+	RZ_LOG_WARN("post-inner-warn\n");
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus diag_last_fail_handler(RzCore *core, int argc, const char **argv) {
+	RZ_LOG_ERROR("last-arg-failed\n");
+	return RZ_CMD_STATUS_ERROR;
+}
+
+static RzCmdStatus exit_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_EXIT;
+}
+
+static RzCmdStatus nonl_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_cons_print(core->cons, "{}");
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus invalid_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_INVALID;
+}
+
+static RzCmdStatus nested_merge_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return nested_merge_handler(core, argc, argv);
+}
+
+static RzCmdStatus disable_diag_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return diag_disable_and_log_handler(core, argc, argv);
+}
+
+static RzCmdStatus enable_diag_json_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", true);
+	return RZ_CMD_STATUS_OK;
+}
+
+static int test_prompt_eof_fgets(char *buf, int len, void *user) {
+	return -2;
+}
+
+static const RzCmdDescHelp diag_test_help = {
+	.summary = "diag test helper",
+	.args = (const RzCmdDescArg[]){ { 0 } },
+};
+
+static const RzCmdDescHelp diag_last_help = {
+	.summary = "diag last-arg helper",
+	.args = (const RzCmdDescArg[]){
+		{ .name = "s", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_LAST },
+		{ 0 },
+	},
+};
+
+static const RzCmdDescHelp diag_opt_str_help = {
+	.summary = "diag optional arg helper",
+	.args = (const RzCmdDescArg[]){
+		{ .name = "x", .type = RZ_CMD_ARG_TYPE_STRING, .optional = true },
+		{ 0 },
+	},
+};
+
+static const RzCmdDescHelp diag_args_str_help = {
+	.summary = "diag explicit args_str helper",
+	.args_str = "<custom>",
+	.args = (const RzCmdDescArg[]){
+		{ .name = "x", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ 0 },
+	},
+};
+
+static const RzCmdDescHelp diag_nosummary_help = {
+	.summary = NULL,
+	.args = (const RzCmdDescArg[]){
+		{ .name = "x", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ 0 },
+	},
+};
+
+static bool test_last_cmd_status_verbose_json(void) {
+	RzCore *core = rz_core_new();
+	RzCmdStatus status = RZ_CMD_STATUS_INVALID;
+	RzCmdDesc *root = rz_cmd_get_root(core->rcmd);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_levels", diag_levels_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_empty_warn", diag_empty_warn_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_invalid", diag_invalid_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_dislog", diag_disable_and_log_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_merge", nested_merge_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_outer", nested_empty_inner_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_nexit", nested_exit_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_warn_ok", warn_ok_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_warn_fail", nested_warn_fail_handler,
+		&diag_opt_str_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_prewarn_ok", nested_prewarn_ok_handler,
+		&diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_last", diag_last_fail_handler,
+		&diag_last_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_exit", RZ_OUTPUT_MODE_JSON,
+		exit_json_handler, &diag_opt_str_help);
+	rz_cmd_desc_group_new(core->rcmd, root, "zdiag_selfgrp", diag_levels_handler,
+		&diag_args_str_help, &diag_test_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_args", diag_levels_handler,
+		&diag_args_str_help);
+	rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_nosum", diag_levels_handler,
+		&diag_nosummary_help);
+	RzCmdDesc *vanish_cd = rz_cmd_desc_argv_new(core->rcmd, root, "zdiag_vanish",
+		diag_levels_handler, &diag_args_str_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_nonl", RZ_OUTPUT_MODE_JSON,
+		nonl_json_handler, &diag_test_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_inv", RZ_OUTPUT_MODE_JSON,
+		invalid_json_handler, &diag_test_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_mrg", RZ_OUTPUT_MODE_JSON,
+		nested_merge_json_handler, &diag_test_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_dis", RZ_OUTPUT_MODE_JSON,
+		disable_diag_json_handler, &diag_test_help);
+	rz_cmd_desc_argv_modes_new(core->rcmd, root, "zdiag_enb", RZ_OUTPUT_MODE_JSON,
+		enable_diag_json_handler, &diag_test_help);
+
+	// Disabled by default: _sj stays minimal and does not allocate last_cmd_info
+	mu_assert_false(core->cmd_diagnostics, "cfg.cmd.diagnostics should default to false");
+	rz_core_cmd0_rzshell(core, "agfj");
+	mu_assert_null(core->last_cmd_info, "disabled diagnostics must not allocate last_cmd_info");
+	char *out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "_sj should succeed");
+	mu_assert_streq_free(out,
+		"{\"error\":{\"code\":\"NONEXISTINGCMD\","
+		"\"message\":\"Command does not exist\"}}\n",
+		"_sj must remain unchanged when cfg.cmd.diagnostics is false");
+
+	// Enable cfg.cmd.diagnostics
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", true);
+	mu_assert_true(core->cmd_diagnostics, "cfg.cmd.diagnostics should be enabled");
+
+	// Success -> {"error":null}
+	rz_core_cmd0_rzshell(core, "s 0");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "_sj should succeed");
+	mu_assert_streq_free(out, "{\"error\":null}\n", "_sj on OK command");
+
+	// NONEXISTINGCMD -> command, diagnostics, and closest suggestion
+	rz_core_cmd0_rzshell(core, "agfj");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_eq(status, RZ_CMD_STATUS_OK, "_sj after NONEXISTINGCMD should succeed");
+	mu_assert_notnull(strstr(out, "\"code\":\"NONEXISTINGCMD\""),
+		"expected NONEXISTINGCMD code");
+	mu_assert_notnull(strstr(out, "\"command\":\"agfj\""), "expected failing command");
+	mu_assert_notnull(strstr(out, "\"diagnostics\":["), "expected diagnostics array");
+	mu_assert_notnull(strstr(out, "does not exist"), "expected missing command diagnostic");
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"agf\""),
+		"expected agf suggestion");
+	free(out);
+
+	// Subsequent _sj sees OK of prior _sj
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_streq_free(out, "{\"error\":null}\n", "second _sj should report OK");
+
+	// NONEXISTINGCMD ending with '?' + args skips suggestion lookup
+	rz_core_cmd0_rzshell(core, "s? foo");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"NONEXISTINGCMD\""), "expected NONEXISTINGCMD");
+	mu_assert_null(strstr(out, "\"suggestion\":"), "expected no suggestion for 's? foo'");
+	free(out);
+
+	// Large subcommand group caps suggestion.subcommands at 24
+	rz_core_cmd0_rzshell(core, "azzz");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"a\""),
+		"expected 'a' group suggestion");
+	mu_assert_notnull(strstr(out, "\"subcommands\":["), "expected capped subcommands");
+	free(out);
+
+	// WRONG_ARGS -> command, diagnostics, suggestion (ARGV_STATE modes + explicit args_str)
+	rz_core_cmd0_rzshell(core, "wx");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"WRONG_ARGS\""), "expected WRONG_ARGS code");
+	mu_assert_notnull(strstr(out, "\"command\":\"wx\""), "expected wx command");
+	mu_assert_notnull(strstr(out, "Wrong number of arguments"),
+		"expected wrong args diagnostic");
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"wx\""),
+		"expected wx suggestion");
+	free(out);
+
+	rz_core_cmd0_rzshell(core, "flj a b");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"fl\""),
+		"expected ARGV_STATE suggestion");
+	mu_assert_notnull(strstr(out, "\"modes\":["), "expected ARGV_STATE modes");
+	free(out);
+
+	rz_core_cmd0_rzshell(core, "zdiag_args");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"args_str\":\"<custom>\""),
+		"expected explicit args_str in suggestion");
+	free(out);
+
+	// Same-line statement handoff: s foo; _sj
+	out = rz_core_cmd_str_status(core, "s foo; _sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"ERROR\""), "expected ERROR code");
+	mu_assert_notnull(strstr(out, "\"command\":\"s\""), "expected s command");
+	mu_assert_notnull(strstr(out, "\"args\":[\"foo\"]"), "expected foo argument");
+	free(out);
+
+	// Parse error -> INVALID + parse diagnostic
+	rz_core_cmd0_rzshell(core, "s \"unterminated");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"INVALID\""), "expected INVALID code");
+	mu_assert_notnull(strstr(out, "Error while parsing command"), "expected parse diagnostic");
+	free(out);
+
+	// Warning, fatal, newline-only skip, and RZ_CORE_CMD_MAX_DIAGNOSTICS (32) cap
+	RzLogLevel prev_log_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_INFO);
+	rz_log_set_abortlevel(RZ_LOGLVL_NONE);
+	rz_core_cmd0_rzshell(core, "zdiag_levels");
+	rz_log_set_abortlevel(RZ_LOGLVL_FATAL);
+	rz_log_set_level(prev_log_level);
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"error\":null"), "expected error:null on OK command");
+	mu_assert_notnull(strstr(out, "\"level\":\"warning\",\"message\":\"diag-warn-msg\""),
+		"expected warning level diagnostic");
+	mu_assert_notnull(strstr(out, "\"level\":\"fatal\",\"message\":\"diag-fatal-msg\""),
+		"expected fatal level diagnostic");
+	mu_assert_null(strstr(out, "diag-ignored-info"), "info logs must be ignored");
+	mu_assert_null(strstr(out, "diag-ignored-none"), "NONE logs must be ignored");
+	mu_assert_null(strstr(out, "diag-cap-34"), "diagnostics must be capped at 32");
+	free(out);
+
+	// OK command logging only CR/LF yields allocated info with empty diagnostics
+	rz_core_cmd0_rzshell(core, "zdiag_empty_warn");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_streq_free(out, "{\"error\":null}\n",
+		"newline-only warning on OK command must not emit diagnostics array");
+
+	// WRONG_ARGS on ARGV_MODES, NULL summary, and removed command descriptors
+	rz_core_cmd0_rzshell(core, "zdiag_nonlj extra");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"modes\":[\"j\"]"),
+		"expected ARGV_MODES suggestion modes");
+	free(out);
+
+	rz_core_cmd0_rzshell(core, "zdiag_nosum");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"zdiag_nosum\""),
+		"expected suggestion for descriptor without summary");
+	mu_assert_null(strstr(out, "\"summary\":"),
+		"NULL summary must be omitted from suggestion");
+	free(out);
+
+	rz_core_cmd0_rzshell(core, "zdiag_vanish");
+	mu_assert_true(rz_cmd_desc_remove(core->rcmd, vanish_cd),
+		"removing temporary command descriptor should succeed");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"WRONG_ARGS\""),
+		"removed descriptor must still report WRONG_ARGS");
+	mu_assert_null(strstr(out, "\"suggestion\":"),
+		"removed descriptor must omit suggestion cleanly");
+	free(out);
+
+	// INVALID handler -> command and execution error diagnostic captured
+	rz_core_cmd0_rzshell(core, "zdiag_invalid");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"INVALID\""), "expected INVALID code");
+	mu_assert_notnull(strstr(out, "\"command\":\"zdiag_invalid\""),
+		"expected failing invalid command name");
+	mu_assert_notnull(strstr(out, "Error while executing command: zdiag_invalid"),
+		"INVALID command must capture execution error diagnostic");
+	free(out);
+
+	// Standalone q sets EXIT status with NULL last_cmd_info
+	rz_core_cmd0_rzshell(core, "q");
+	mu_assert_null(core->last_cmd_info, "standalone q must not allocate last_cmd_info");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_streq_free(out,
+		"{\"error\":{\"code\":\"EXIT\","
+		"\"message\":\"Command requested to exit the prompt\"}}\n",
+		"standalone q must emit minimal EXIT JSON");
+
+	// Nested failing command merges outer diagnostics into inner last_cmd_info
+	rz_core_cmd0_rzshell(core, "zdiag_merge");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address"),
+		"expected inner diagnostic preserved");
+	mu_assert_notnull(strstr(out, "outer-merge-diag"),
+		"expected outer diagnostic merged into inner info");
+	free(out);
+
+	// Nested OK inner + failing outer preserves outer diagnostics
+	rz_core_cmd0_rzshell(core, "zdiag_outer");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "outer-only-diag"),
+		"expected outer diagnostic when inner had no info");
+	free(out);
+
+	// Nested OK inner + EXIT outer with NULL cap->info
+	rz_core_cmd0_rzshell(core, "zdiag_nexit");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_streq_free(out,
+		"{\"error\":{\"code\":\"EXIT\","
+		"\"message\":\"Command requested to exit the prompt\"}}\n",
+		"nested exit without outer info must report EXIT");
+
+	// Empty command clears stale last_cmd_info when cmd.repeat is false
+	rz_config_set_b(core->config, "cmd.repeat", false);
+	rz_core_cmd0_rzshell(core, "s foo");
+	rz_core_cmd0_rzshell(core, "");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_streq_free(out, "{\"error\":null}\n",
+		"empty command must clear stale diagnostics from previous failure");
+
+	// cfg.json.status + cfg.cmd.diagnostics inserts newline after non-NL JSON output
+	rz_config_set_b(core->config, "cfg.json.status", true);
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_nonlj");
+	const char *nonl_out = rz_cons_get_buffer(core->cons);
+	mu_assert_streq(nonl_out, "{}\n{\"error\":null}\n",
+		"cfg.json.status with diagnostics must add newline before status line");
+	rz_config_set_b(core->config, "cfg.json.status", false);
+
+	// Diagnostics logged during an OK command are still reported by _sj
+	rz_core_cmd0_rzshell(core, "flt:nonexistent_column_xyz");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"error\":null"), "expected error:null for OK status");
+	mu_assert_notnull(strstr(out, "\"diagnostics\":["),
+		"expected diagnostics array on OK command with log");
+	mu_assert_notnull(strstr(out, "Invalid column"), "expected table column diagnostic");
+	free(out);
+
+	// Quitting after a failure must preserve error diagnostics
+	rz_core_cmd0_rzshell(core, "wx; q");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_WRONG_ARGS,
+		"q must not hide earlier failure");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"WRONG_ARGS\""),
+		"q must not hide earlier diagnostics");
+	free(out);
+
+	rz_core_cmd0_rzshell(core, "s foo; q");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR,
+		"q after ERROR statement must not hide earlier failure");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"ERROR\""),
+		"q after ERROR statement must preserve ERROR status");
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address"),
+		"q after ERROR statement must preserve earlier diagnostics");
+	free(out);
+
+	// Prompt hooks (cmd.prompt) must not clobber last_cmd_info
+	rz_core_cmd0_rzshell(core, "s foo");
+	rz_config_set(core->config, "cmd.prompt", "s bar");
+	int (*prev_fgets)(char *, int, void *) = core->cons->user_fgets;
+	core->cons->user_fgets = test_prompt_eof_fgets;
+	mu_assert_eq(rz_core_prompt(core, false), RZ_CORE_CMD_EXIT,
+		"prompt stub should return EOF exit");
+	core->cons->user_fgets = prev_fgets;
+	rz_config_set(core->config, "cmd.prompt", "");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address 'foo'"),
+		"set_prompt must preserve user last_cmd_info across cmd.prompt");
+	mu_assert_null(strstr(out, "'bar'"),
+		"cmd.prompt failure must not replace user last_cmd_info");
+	free(out);
+
+	// Disabling inside a handler ignores subsequent logs and detaches on exit
+	rz_core_cmd0_rzshell(core, "zdiag_dislog");
+	mu_assert_false(core->cmd_diagnostics, "handler should disable cfg.cmd.diagnostics");
+	mu_assert_null(core->last_cmd_info, "disabling inside handler must not store diagnostics");
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", true);
+
+	// Disabling mid-line detaches capture before subsequent statements
+	out = rz_core_cmd_str_status(core, "e cfg.cmd.diagnostics=false; s foo; _sj", &status);
+	mu_assert_streq_free(out,
+		"{\"error\":{\"code\":\"ERROR\",\"message\":\"Command execution failed\"}}\n",
+		"mid-line disable must detach capture and revert _sj");
+	mu_assert_null(core->last_cmd_info, "disabling must free cached last_cmd_info");
+
+	// Enabling mid-line works for subsequent statements on the same line
+	out = rz_core_cmd_str_status(core, "e cfg.cmd.diagnostics=true; s foo; _sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"ERROR\""),
+		"mid-line enable should capture ERROR status on subsequent statements");
+	mu_assert_notnull(strstr(out, "\"args\":[\"foo\"]"),
+		"mid-line enable should capture args on subsequent statements");
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address"),
+		"mid-line enable should capture diagnostics on subsequent statements");
+	free(out);
+
+	// Mid-line enable also captures NONEXISTINGCMD suggestions before line abort
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", false);
+	rz_core_cmd0_rzshell(core, "e cfg.cmd.diagnostics=true; agfj");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"agf\""),
+		"mid-line enable should capture NONEXISTINGCMD suggestion");
+	free(out);
+
+	// Nested inner OK+warning followed by outer failure preserves outer command/args and both diagnostics
+	rz_core_cmd0_rzshell(core, "zdiag_warn_fail myarg");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"command\":\"zdiag_warn_fail\""),
+		"outer command must be preserved after inner warning");
+	mu_assert_notnull(strstr(out, "\"args\":[\"myarg\"]"),
+		"outer args must be preserved after inner warning");
+	mu_assert_notnull(strstr(out, "inner-ok-warn"),
+		"inner warning diagnostic must be preserved");
+	mu_assert_notnull(strstr(out, "outer-after-warn-err"),
+		"outer error diagnostic must be preserved");
+	free(out);
+
+	// Outer OK warning logged before a clean inner OK command must not be lost
+	rz_core_cmd0_rzshell(core, "zdiag_prewarn_ok");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"error\":null"), "expected error:null on OK command");
+	mu_assert_notnull(strstr(out, "pre-inner-warn"),
+		"pre-inner warning must survive nested clean OK command");
+	mu_assert_notnull(strstr(out, "post-inner-warn"),
+		"post-inner warning must be preserved");
+	free(out);
+
+	// Pre-mutation typed args are preserved for RZ_CMD_ARG_FLAG_LAST commands
+	rz_core_cmd0_rzshell(core, "zdiag_last a b c");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"args\":[\"a\",\"b\",\"c\"]"),
+		"args must reflect typed tokens before args_preprocessing joins them");
+	free(out);
+
+	// cfg.json.status + cfg.cmd.diagnostics preserves command/args on EXIT JSON commands
+	rz_config_set_b(core->config, "cfg.json.status", true);
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_exitj x");
+	const char *exitj_out = rz_cons_get_buffer(core->cons);
+	mu_assert_notnull(strstr(exitj_out, "\"code\":\"EXIT\""),
+		"cfg.json.status must emit EXIT code");
+	mu_assert_notnull(strstr(exitj_out, "\"command\":\"zdiag_exitj\""),
+		"cfg.json.status must emit command on EXIT even without captured info");
+	mu_assert_notnull(strstr(exitj_out, "\"args\":[\"x\"]"),
+		"cfg.json.status must emit typed args on EXIT");
+	rz_config_set_b(core->config, "cfg.json.status", false);
+
+	// Self-only GROUP descriptor must omit empty subcommands array
+	rz_core_cmd0_rzshell(core, "zdiag_selfgrp");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"suggestion\":{\"command\":\"zdiag_selfgrp\""),
+		"expected self-only group suggestion");
+	mu_assert_null(strstr(out, "\"subcommands\":"),
+		"self-only group must not emit empty subcommands array");
+	free(out);
+
+	// Quiet log.level=NONE still captures WARN/ERROR diagnostics in _sj
+	prev_log_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_NONE);
+	rz_core_cmd0_rzshell(core, "s foo");
+	rz_log_set_level(prev_log_level);
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address 'foo'"),
+		"cfg.cmd.diagnostics must capture error diagnostics even when log.level=NONE");
+	free(out);
+
+	// Project config load must not overwrite cfg.cmd.diagnostics
+	Sdb *proj_db = sdb_new0();
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", false);
+	rz_serialize_core_save(proj_db, core, NULL);
+	rz_config_set_b(core->config, "cfg.cmd.diagnostics", true);
+	RzSerializeResultInfo *sres = rz_serialize_result_info_new();
+	mu_assert_true(rz_serialize_core_load(proj_db, core, false, NULL, sres),
+		"core project load should succeed");
+	rz_serialize_result_info_free(sres);
+	sdb_free(proj_db);
+	mu_assert_true(core->cmd_diagnostics,
+		"loading project must not disable cfg.cmd.diagnostics");
+
+	// Multi-statement ERROR; OK preserves failing statement's command, args, and diagnostics
+	rz_core_cmd0_rzshell(core, "s foo; s 0");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR,
+		"s foo; s 0 must preserve ERROR status");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "\"code\":\"ERROR\""),
+		"s foo; s 0 must report ERROR code");
+	mu_assert_notnull(strstr(out, "\"command\":\"s\""),
+		"s foo; s 0 must preserve failing command");
+	mu_assert_notnull(strstr(out, "\"args\":[\"foo\"]"),
+		"s foo; s 0 must preserve failing args");
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address 'foo'"),
+		"s foo; s 0 must preserve failing diagnostics");
+	free(out);
+
+	// Trailing OK warning must not replace an earlier failure's diagnostics
+	rz_core_cmd0_rzshell(core, "s foo; zdiag_warn_ok");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR,
+		"s foo; zdiag_warn_ok must preserve ERROR status");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address 'foo'"),
+		"trailing OK warning must not clobber earlier failure diagnostics");
+	mu_assert_null(strstr(out, "inner-ok-warn"),
+		"trailing OK warning must not leak into earlier failure diagnostics");
+	free(out);
+
+	// Trailing EXIT running a nested OK command must still preserve earlier failure diagnostics
+	rz_core_cmd0_rzshell(core, "s foo; zdiag_nexit");
+	mu_assert_eq(core->last_cmd_status, RZ_CMD_STATUS_ERROR,
+		"s foo; zdiag_nexit must preserve ERROR status");
+	out = rz_core_cmd_str_status(core, "_sj", &status);
+	mu_assert_notnull(strstr(out, "Cannot seek to unknown address 'foo'"),
+		"trailing EXIT with inner OK command must preserve earlier failure diagnostics");
+	free(out);
+
+	// cfg.json.status + cfg.cmd.diagnostics emits INVALID execution error in trailer
+	rz_config_set_b(core->config, "cfg.json.status", true);
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_invj");
+	const char *invj_out = rz_cons_get_buffer(core->cons);
+	mu_assert_notnull(strstr(invj_out, "\"code\":\"INVALID\""),
+		"cfg.json.status must emit INVALID code");
+	mu_assert_notnull(strstr(invj_out, "\"command\":\"zdiag_invj\""),
+		"cfg.json.status must emit INVALID command name");
+	mu_assert_notnull(strstr(invj_out, "Error while executing command: zdiag_invj"),
+		"cfg.json.status INVALID trailer must include execution error diagnostic");
+
+	// cfg.json.status + cfg.cmd.diagnostics emits merged nested diagnostics in trailer
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_mrgj");
+	const char *mrgj_out = rz_cons_get_buffer(core->cons);
+	mu_assert_notnull(strstr(mrgj_out, "\"code\":\"ERROR\""),
+		"cfg.json.status nested failure must emit ERROR code");
+	mu_assert_notnull(strstr(mrgj_out, "Cannot seek to unknown address 'foo'"),
+		"cfg.json.status nested trailer must include inner diagnostic");
+	mu_assert_notnull(strstr(mrgj_out, "outer-merge-diag"),
+		"cfg.json.status nested trailer must include outer diagnostic");
+
+	// Toggling cfg.cmd.diagnostics inside a JSON handler must neither drop nor double-print status
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_disj");
+	mu_assert_false(core->cmd_diagnostics, "zdiag_disj should disable diagnostics");
+	mu_assert_streq(rz_cons_get_buffer(core->cons), "{\"error\":null}\n",
+		"disabling cfg.cmd.diagnostics inside a JSON handler must still print status once");
+
+	rz_cons_reset(core->cons);
+	rz_core_cmd0_rzshell(core, "zdiag_enbj");
+	mu_assert_true(core->cmd_diagnostics, "zdiag_enbj should enable diagnostics");
+	mu_assert_streq(rz_cons_get_buffer(core->cons), "{\"error\":null}\n",
+		"enabling cfg.cmd.diagnostics inside a JSON handler must not double-print status");
+	rz_config_set_b(core->config, "cfg.json.status", false);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_hist_push(void) {
 	RzCore *core = rz_core_new();
 	RzLine *line = core->cons->line;
@@ -606,6 +1214,7 @@ int all_tests() {
 	mu_run_test(test_arg_cmd_last_opt);
 	mu_run_test(test_last_cmd_status);
 	mu_run_test(test_cmd_str_status);
+	mu_run_test(test_last_cmd_status_verbose_json);
 	mu_run_test(test_disasm_until_ret_json);
 	mu_run_test(test_hist_push);
 	mu_run_test(test_hist_push_seq);

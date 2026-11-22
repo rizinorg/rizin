@@ -1123,6 +1123,16 @@ static bool cb_cfg_fortunes_file(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cfg_cmd_diagnostics(void *user, void *data) {
+	RzCore *core = (RzCore *)user;
+	RzConfigNode *node = (RzConfigNode *)data;
+	core->cmd_diagnostics = node->i_value != 0;
+	if (!core->cmd_diagnostics) {
+		RZ_FREE_CUSTOM(core->last_cmd_info, rz_core_cmd_status_info_free);
+	}
+	return true;
+}
+
 static bool cb_cmdtimes(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
@@ -3248,6 +3258,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF("cfg.wseek", "false", "Seek after write");
 	SETBPREF("cfg.exit.errorcode", "false", "Exit with code 1 in batch mode (-q) if a -c command or an -i/-I script failed");
 	SETBPREF("cfg.json.status", "false", "Print a status line (see _sj) after the JSON output of each command, unless it is captured, redirected, piped or grepped");
+	SETCB("cfg.cmd.diagnostics", "false", &cb_cfg_cmd_diagnostics, "Capture command error/warning diagnostics and suggestions for _sj and cfg.json.status");
 	SETICB("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
 	SETCB("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB("cfg.bigendian", CFG_DEFAULT_ENDIANNESS, &cb_bigendian, "Use little (false) or big (true) endianness");

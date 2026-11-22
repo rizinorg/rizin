@@ -18,7 +18,28 @@ RZ_DEPRECATE RZ_IPI const char *rz_core_get_parser(RzCore *core);
 
 RZ_IPI void rz_core_kuery_print(RzCore *core, const char *k);
 RZ_IPI int rz_output_mode_to_char(RzOutputMode mode);
+#define RZ_CORE_CMD_MAX_DIAGNOSTICS 32
+
+typedef struct rz_core_cmd_diag_t {
+	RzLogLevel level;
+	char *message;
+} RzCoreCmdDiag;
+
+typedef struct rz_core_cmd_status_info_t {
+	char *command;
+	RzPVector /*<char *>*/ args;
+	char *suggestion_cmd;
+	RzPVector /*<RzCoreCmdDiag *>*/ diagnostics;
+} RzCoreCmdStatusInfo;
+
+RZ_IPI void rz_core_cmd_status_info_free(RZ_NULLABLE RzCoreCmdStatusInfo *info);
 RZ_IPI void rz_cmd_status_json(RZ_NONNULL PJ *pj, RzCmdStatus status, RZ_NULLABLE RzCmdParsedArgs *args);
+RZ_IPI void rz_cmd_status_verbose_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL PJ *pj,
+	RzCmdStatus status, RZ_NULLABLE const RzCoreCmdStatusInfo *info,
+	RZ_NULLABLE RzCmdParsedArgs *args);
+RZ_IPI void rz_cmd_print_json_status_diag(RZ_NONNULL RzCmd *cmd,
+	RZ_NONNULL RzCmdParsedArgs *args, RzCmdStatus status,
+	RZ_NULLABLE const RzCoreCmdStatusInfo *info, bool force_newline);
 RZ_IPI void rz_core_print_warnings_after(RZ_NONNULL RzCore *core);
 RZ_IPI bool rz_core_is_core_dump(RzCore *core);
 RZ_IPI const char *rz_core_io_map_strip_prefix(const RzIOMap *map);

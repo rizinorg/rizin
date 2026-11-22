@@ -404,10 +404,222 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 	return RZ_CMD_STATUS_OK;
 }
 
+struct rz_core_cmd_capture_t {
+	RzCore *core;
+	RzCoreCmdStatusInfo *info;
+	bool suppress;
+	ut64 commit_gen;
+};
+
+static void cmd_diag_free(void *ptr) {
+	RzCoreCmdDiag *diag = ptr;
+	free(diag->message);
+	free(diag);
+}
+
+RZ_IPI void rz_core_cmd_status_info_free(RZ_NULLABLE RzCoreCmdStatusInfo *info) {
+	if (!info) {
+		return;
+	}
+	free(info->command);
+	rz_pvector_fini(&info->args);
+	free(info->suggestion_cmd);
+	rz_pvector_fini(&info->diagnostics);
+	free(info);
+}
+
+static RzCoreCmdStatusInfo *cmd_status_info_ensure(struct rz_core_cmd_capture_t *cap) {
+	if (!cap->info) {
+		cap->info = RZ_NEW0(RzCoreCmdStatusInfo);
+		if (!cap->info) {
+			return NULL;
+		}
+		rz_pvector_init(&cap->info->args, free);
+		rz_pvector_init(&cap->info->diagnostics, cmd_diag_free);
+	}
+	return cap->info;
+}
+
+static void cmd_status_info_add_diag(RzCoreCmdStatusInfo *info, RzLogLevel level, const char *msg) {
+	if (!info || rz_pvector_len(&info->diagnostics) >= RZ_CORE_CMD_MAX_DIAGNOSTICS) {
+		return;
+	}
+	size_t len = strlen(msg);
+	while (len > 0 && (msg[len - 1] == '\n' || msg[len - 1] == '\r')) {
+		len--;
+	}
+	if (len == 0) {
+		return;
+	}
+	RzCoreCmdDiag *diag = RZ_NEW0(RzCoreCmdDiag);
+	if (!diag) {
+		return;
+	}
+	diag->level = level;
+	diag->message = rz_str_ndup(msg, len);
+	if (!diag->message) {
+		free(diag);
+		return;
+	}
+	rz_pvector_push(&info->diagnostics, diag);
+}
+
+static RzCoreCmdStatusInfo *cmd_status_info_dup(RZ_NULLABLE const RzCoreCmdStatusInfo *src) {
+	if (!src) {
+		return NULL;
+	}
+	RzCoreCmdStatusInfo *dst = RZ_NEW0(RzCoreCmdStatusInfo);
+	if (!dst) {
+		return NULL;
+	}
+	rz_pvector_init(&dst->args, free);
+	rz_pvector_init(&dst->diagnostics, cmd_diag_free);
+	dst->command = src->command ? rz_str_dup(src->command) : NULL;
+	dst->suggestion_cmd = src->suggestion_cmd ? rz_str_dup(src->suggestion_cmd) : NULL;
+	void **it;
+	rz_pvector_foreach (&src->args, it) {
+		char *dup = rz_str_dup(*it);
+		if (dup) {
+			rz_pvector_push(&dst->args, dup);
+		}
+	}
+	rz_pvector_foreach (&src->diagnostics, it) {
+		const RzCoreCmdDiag *d = *it;
+		cmd_status_info_add_diag(dst, d->level, d->message);
+	}
+	return dst;
+}
+
+static bool cmd_output_is_consumed(RzCore *core) {
+	RzStack *stack = core->cons->context->cons_stack;
+	return core->is_pipe || (stack && !rz_stack_is_empty(stack));
+}
+
+static void cmd_status_info_set_cmd(struct rz_core_cmd_capture_t *cap,
+	RzCmdParsedArgs *pr_args, const char *suggestion_cmd) {
+	if (!cap) {
+		return;
+	}
+	RzCoreCmdStatusInfo *info = cmd_status_info_ensure(cap);
+	if (!info) {
+		return;
+	}
+	free(info->command);
+	info->command = rz_str_dup(rz_cmd_parsed_args_cmd(pr_args));
+	rz_pvector_clear(&info->args);
+	int i;
+	const char *arg;
+	rz_cmd_parsed_args_foreach_arg(pr_args, i, arg) {
+		char *dup = rz_str_dup(arg);
+		if (dup) {
+			rz_pvector_push(&info->args, dup);
+		}
+	}
+	free(info->suggestion_cmd);
+	info->suggestion_cmd = suggestion_cmd ? rz_str_dup(suggestion_cmd) : NULL;
+}
+
+static void cmd_diag_log_observer(RzLogLevel level, const char *msg, void *user) {
+	struct rz_core_cmd_capture_t *cap = user;
+	if (!cap->core->cmd_diagnostics || cap->suppress ||
+		level < RZ_LOGLVL_WARN || level == RZ_LOGLVL_NONE) {
+		return;
+	}
+	RzCoreCmdStatusInfo *info = cmd_status_info_ensure(cap);
+	cmd_status_info_add_diag(info, level, msg);
+}
+
+static void cmd_capture_attach(RzCore *core, struct rz_core_cmd_capture_t *cap) {
+	cap->core = core;
+	core->cmd_capture = cap;
+	rz_log_add_observer(cmd_diag_log_observer, cap);
+}
+
+static void cmd_capture_detach(RzCore *core, struct rz_core_cmd_capture_t *cap) {
+	rz_log_del_observer(cmd_diag_log_observer, cap);
+	core->cmd_capture = NULL;
+	RZ_FREE_CUSTOM(cap->info, rz_core_cmd_status_info_free);
+}
+
+static ut64 cmd_capture_stmt_begin(RzCore *core, struct rz_core_cmd_capture_t *owned_cap,
+	RzCoreCmdStatusInfo **saved_info) {
+	if (owned_cap) {
+		if (core->cmd_diagnostics && !core->cmd_capture) {
+			cmd_capture_attach(core, owned_cap);
+		} else if (!core->cmd_diagnostics && core->cmd_capture == owned_cap) {
+			cmd_capture_detach(core, owned_cap);
+		}
+	}
+	if (core->cmd_capture) {
+		*saved_info = core->cmd_capture->info;
+		core->cmd_capture->info = NULL;
+		return core->cmd_capture->commit_gen;
+	}
+	*saved_info = NULL;
+	return 0;
+}
+
+static void cmd_capture_commit_stmt(RzCore *core, struct rz_core_cmd_capture_t *cap,
+	ut64 gen_before, RzCoreCmdStatusInfo *saved_info, RzCmdStatus cmd_res, RzCmdStatus line_failed) {
+	if (!cap || !core->cmd_diagnostics) {
+		if (cap) {
+			RZ_FREE_CUSTOM(cap->info, rz_core_cmd_status_info_free);
+		}
+	} else if (cmd_res == RZ_CMD_STATUS_EXIT && line_failed != RZ_CMD_STATUS_OK) {
+		RZ_FREE_CUSTOM(cap->info, rz_core_cmd_status_info_free);
+	} else if (cap->commit_gen != gen_before && cmd_res != RZ_CMD_STATUS_OK) {
+		if (cap->info) {
+			if (!core->last_cmd_info) {
+				core->last_cmd_info = cap->info;
+				cap->info = NULL;
+			} else {
+				if (!core->last_cmd_info->command && cap->info->command) {
+					core->last_cmd_info->command = cap->info->command;
+					cap->info->command = NULL;
+					rz_pvector_clear(&core->last_cmd_info->args);
+					void **ait;
+					rz_pvector_foreach (&cap->info->args, ait) {
+						char *dup = rz_str_dup(*ait);
+						if (dup) {
+							rz_pvector_push(&core->last_cmd_info->args, dup);
+						}
+					}
+					if (!core->last_cmd_info->suggestion_cmd && cap->info->suggestion_cmd) {
+						core->last_cmd_info->suggestion_cmd = cap->info->suggestion_cmd;
+						cap->info->suggestion_cmd = NULL;
+					}
+				}
+				void **it;
+				rz_pvector_foreach (&cap->info->diagnostics, it) {
+					const RzCoreCmdDiag *d = *it;
+					cmd_status_info_add_diag(
+						core->last_cmd_info, d->level, d->message);
+				}
+				RZ_FREE_CUSTOM(cap->info, rz_core_cmd_status_info_free);
+			}
+		}
+	} else {
+		rz_core_cmd_status_info_free(core->last_cmd_info);
+		core->last_cmd_info = cap->info;
+		cap->info = NULL;
+		cap->commit_gen++;
+	}
+	if (core->cmd_capture) {
+		core->cmd_capture->info = saved_info;
+	} else {
+		rz_core_cmd_status_info_free(saved_info);
+	}
+}
+
 RZ_IPI RzCmdStatus rz_last_cmd_status_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	switch (state->mode) {
 	case RZ_OUTPUT_MODE_JSON:
-		rz_cmd_status_json(state->d.pj, core->last_cmd_status, NULL);
+		if (core->cmd_diagnostics) {
+			rz_cmd_status_verbose_json(core->rcmd, state->d.pj,
+				core->last_cmd_status, core->last_cmd_info, NULL);
+		} else {
+			rz_cmd_status_json(state->d.pj, core->last_cmd_status, NULL);
+		}
 		break;
 	case RZ_OUTPUT_MODE_STANDARD:
 		rz_cons_println(core->cons, rz_cmd_status_tostring(core->last_cmd_status));
@@ -584,6 +796,11 @@ struct tsr2cmd_state {
 	bool split_lines;
 	TSNode substitute_cmd;
 	RzCmdStatus failed; ///< Last failure of the line, which a later `q` must not hide
+	RzCoreCmdStatusInfo *failed_info; ///< Diagnostics captured for the last failing statement
+	bool failed_after; ///< Whether a trailing OK/EXIT statement ran after `failed`
+	struct rz_core_cmd_capture_t *capture; ///< Diagnostic capture owned by top-level call
+	RzCmdParsedArgs *pending_json_args; ///< Deferred `cfg.json.status` args for the current statement
+	RzCmdStatus pending_json_status;
 };
 
 struct tsr2cmd_edit {
@@ -1167,6 +1384,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 	}
 
 	RzCmdParsedArgs *pr_args = NULL;
+	RzCmdParsedArgs *typed = NULL;
 	if (!ts_node_is_null(args)) {
 		RzCmdDesc *cd = rz_cmd_get_desc(state->core->rcmd, command_str);
 		pr_args = ts_node_handle_arg_prargs(state, node, args, 1, false, cd, false);
@@ -1183,31 +1401,80 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_stmt) {
 
 	pr_args->extra = command_extra_str;
 	pr_args->has_space_after_cmd = !ts_node_is_null(args) && ts_node_end_byte(command) < ts_node_start_byte(args);
+	if (state->pending_json_args) {
+		rz_cmd_print_json_status_diag(state->core->rcmd, state->pending_json_args,
+			state->pending_json_status,
+			state->core->cmd_diagnostics && state->core->cmd_capture
+				? state->core->cmd_capture->info
+				: NULL,
+			false);
+		RZ_FREE_CUSTOM(state->pending_json_args, rz_cmd_parsed_args_free);
+	}
+	bool diag_before = state->core->cmd_diagnostics;
+	if (diag_before) {
+		// Copy args as typed before args_preprocessing() rearranges or appends defaults
+		typed = rz_cmd_parsed_args_new(rz_cmd_parsed_args_cmd(pr_args),
+			pr_args->argc - 1, pr_args->argv + 1);
+	}
 	res = rz_cmd_call_parsed_args(state->core->rcmd, pr_args);
+	RzCmdParsedArgs *diag_args = typed ? typed : pr_args;
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
-		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
+		const char *cmdname = rz_cmd_parsed_args_cmd(diag_args);
 		RZ_LOG_ERROR("Wrong number of arguments passed to `%s`, see its help with `%s?`\n\n", cmdname, cmdname);
+		struct rz_core_cmd_capture_t *cap = state->core->cmd_capture;
+		bool prev_suppress = cap ? cap->suppress : false;
+		if (cap) {
+			cap->suppress = true;
+		}
 		get_help_wrong_cmd(state->core, cmdname);
+		if (cap) {
+			cap->suppress = prev_suppress;
+			cmd_status_info_set_cmd(cap, diag_args, cmdname);
+		}
 	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
-		const char *cmdname = rz_cmd_parsed_args_cmd(pr_args);
+		const char *cmdname = rz_cmd_parsed_args_cmd(diag_args);
+		const char *suggestion = NULL;
 		RZ_LOG_ERROR("Command '%s' does not exist.\n", cmdname);
-		if (rz_str_endswith(cmdname, "?") && pr_args->argc > 1) {
+		if (rz_str_endswith(cmdname, "?") && diag_args->argc > 1) {
 			RZ_LOG_ERROR("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
 		} else {
 			// Let's try to find the first command/group in the ancestor chain
 			// that could provide some help
 			RzCmdDesc *hcd = rz_cmd_get_desc_best(state->core->rcmd, cmdname);
 			if (hcd) {
+				suggestion = hcd->name;
+				struct rz_core_cmd_capture_t *cap = state->core->cmd_capture;
+				bool prev_suppress = cap ? cap->suppress : false;
+				if (cap) {
+					cap->suppress = true;
+				}
 				RZ_LOG_ERROR("Displaying the help of command '%s'.\n\n", hcd->name);
 				get_help_wrong_cmd(state->core, hcd->name);
+				if (cap) {
+					cap->suppress = prev_suppress;
+				}
 			}
 		}
-	} else if (res == RZ_CMD_STATUS_ERROR) {
-		RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n", rz_cmd_parsed_args_cmd(pr_args));
+		cmd_status_info_set_cmd(state->core->cmd_capture, diag_args, suggestion);
+	} else if (res == RZ_CMD_STATUS_ERROR || res == RZ_CMD_STATUS_INVALID) {
+		if (res == RZ_CMD_STATUS_ERROR) {
+			RZ_LOG_DEBUG("Something wrong during the execution of `%s` command.\n",
+				rz_cmd_parsed_args_cmd(diag_args));
+		}
+		cmd_status_info_set_cmd(state->core->cmd_capture, diag_args, NULL);
+	}
+	if (diag_before && !cmd_output_is_consumed(state->core)) {
+		state->pending_json_args = typed
+			? typed
+			: rz_cmd_parsed_args_new(rz_cmd_parsed_args_cmd(pr_args),
+				  pr_args->argc - 1, pr_args->argv + 1);
+		typed = NULL;
+		state->pending_json_status = res;
 	}
 
 err:
 	RZ_LOG_DEBUG("arged_stmt finished command: '%s'\n", command_str);
+	rz_cmd_parsed_args_free(typed);
 	rz_cmd_parsed_args_free(pr_args);
 	free(command_extra_str);
 	free(command_str);
@@ -2847,12 +3114,16 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			rz_interrupt_break_pop(core->intr);
 			return res;
 		}
+		RzCoreCmdStatusInfo *saved_info = NULL;
+		ut64 gen_before = cmd_capture_stmt_begin(core, state->capture, &saved_info);
 		TSNode command = ts_node_named_child(node, i);
 		RzCmdStatus cmd_res = handle_ts_stmt(state, command);
+		bool had_partial_line = false;
 		if (state->split_lines) {
+			int len = rz_cons_get_buffer_len(core->cons);
+			had_partial_line = len > 0 && rz_cons_get_buffer(core->cons)[len - 1] != '\n';
 			rz_cons_flush(core->cons);
 			rz_core_print_warnings_after(core);
-			rz_core_task_yield(&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
 		// Per statement, so that the next statement of the same line can read it
@@ -2864,6 +3135,33 @@ DEFINE_HANDLE_TS_FCN(statements) {
 			char *command_str = ts_node_sub_string(command, state->input);
 			RZ_LOG_ERROR("core: Error while executing command: %s\n", command_str);
 			free(command_str);
+		}
+		cmd_capture_commit_stmt(core, core->cmd_capture, gen_before,
+			saved_info, cmd_res, state->failed);
+		if (cmd_res != RZ_CMD_STATUS_OK && cmd_res != RZ_CMD_STATUS_EXIT) {
+			rz_core_cmd_status_info_free(state->failed_info);
+			state->failed_info = core->cmd_diagnostics ? cmd_status_info_dup(core->last_cmd_info) : NULL;
+			state->failed_after = false;
+		} else if (state->failed != RZ_CMD_STATUS_OK) {
+			state->failed_after = true;
+		}
+		if (state->pending_json_args) {
+			const RzCoreCmdStatusInfo *json_info =
+				(core->cmd_diagnostics &&
+					!(cmd_res == RZ_CMD_STATUS_EXIT && state->failed != RZ_CMD_STATUS_OK))
+				? core->last_cmd_info
+				: NULL;
+			rz_cmd_print_json_status_diag(core->rcmd, state->pending_json_args,
+				state->pending_json_status, json_info, had_partial_line);
+			RZ_FREE_CUSTOM(state->pending_json_args, rz_cmd_parsed_args_free);
+			if (state->split_lines) {
+				rz_cons_flush(core->cons);
+			}
+		}
+		if (state->split_lines) {
+			rz_core_task_yield(&core->tasks);
+		}
+		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			res = cmd_res;
 			goto err;
 		} else if (cmd_res == RZ_CMD_STATUS_ERROR) {
@@ -2957,8 +3255,19 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	state.log = log;
 	state.split_lines = split_lines;
 	state.failed = RZ_CMD_STATUS_OK;
+	state.failed_info = NULL;
+	state.failed_after = false;
+	state.pending_json_args = NULL;
+	state.pending_json_status = RZ_CMD_STATUS_OK;
 	rz_pvector_init(&state.saved_input, NULL);
 	rz_pvector_init(&state.saved_tree, NULL);
+
+	struct rz_core_cmd_capture_t local_capture = { 0 };
+	state.capture = !core->cmd_capture ? &local_capture : NULL;
+	if (state.capture && core->cmd_diagnostics) {
+		cmd_capture_attach(core, &local_capture);
+	}
+	ut64 gen_start = core->cmd_capture ? core->cmd_capture->commit_gen : 0;
 
 	if (state.log && !has_push(root, state.input)) {
 		rz_line_hist_add(line, state.input);
@@ -2981,8 +3290,28 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);
+	RZ_FREE_CUSTOM(state.pending_json_args, rz_cmd_parsed_args_free);
 	// Also covers the paths that run no statement, e.g. parse errors
 	core->last_cmd_status = res == RZ_CMD_STATUS_EXIT && state.failed != RZ_CMD_STATUS_OK ? state.failed : res;
+	if (core->cmd_diagnostics && state.failed != RZ_CMD_STATUS_OK &&
+		core->last_cmd_status == state.failed && state.failed_after) {
+		rz_core_cmd_status_info_free(core->last_cmd_info);
+		core->last_cmd_info = state.failed_info;
+		state.failed_info = NULL;
+	} else {
+		RZ_FREE_CUSTOM(state.failed_info, rz_core_cmd_status_info_free);
+	}
+	if (state.capture && core->cmd_capture == &local_capture) {
+		rz_log_del_observer(cmd_diag_log_observer, &local_capture);
+		core->cmd_capture = NULL;
+		if (core->cmd_diagnostics && local_capture.commit_gen == gen_start) {
+			rz_core_cmd_status_info_free(core->last_cmd_info);
+			core->last_cmd_info = local_capture.info;
+			local_capture.info = NULL;
+		} else {
+			rz_core_cmd_status_info_free(local_capture.info);
+		}
+	}
 	return res;
 }
 
