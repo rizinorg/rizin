@@ -231,8 +231,8 @@ typedef struct {
 	bool is_valid; ///< Is it a valid packet? Do we know which instruction is the first?
 	bool is_eob; ///< Is this packet the end of a code block? E.g. contains unconditional jmp.
 	HexLoopAttr hw_loop; ///< If the packet is the end of a hardware loop, it stores here from which one.s
-	ut32 hw_loop0_addr; ///< Start address of hardware loop 0
-	ut32 hw_loop1_addr; ///< Start address of hardware loop 1
+	ut64 hw_loop0_addr; ///< Start address of hardware loop 0, or UT64_MAX if unknown
+	ut64 hw_loop1_addr; ///< Start address of hardware loop 1, or UT64_MAX if unknown
 	ut32 pkt_addr; ///< Address of the packet. Equals the address of the first instruction.
 	ut64 last_access; ///< Last time accessed in milliseconds
 	RzList /*<HexInsnContainer *>*/ *bin; ///< Descending by address sorted list of instruction containers.

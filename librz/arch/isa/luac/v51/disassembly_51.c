@@ -82,8 +82,8 @@ bool get_asm_string51(LuaOpCode51 opcode1, const ut32 instruction, RzStrBuf *buf
 	case OP_FORPREP: /*   A sBx   R(A)-=R(A+2); pc+=sBx                           */
 		rz_strf(tmp_asm_string, "%s r%" PFMT32d " %" PFMT32d, opnames[opcode], a, sbx);
 		break;
-	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
-		rz_strf(tmp_asm_string, "%s %" PFMT32d " %" PFMT32d, opnames[opcode], a, sbx);
+	case OP_TFORLOOP:
+		rz_strf(tmp_asm_string, "%s r%" PFMT32d " %" PFMT32d, opnames[opcode], a, c);
 		break;
 	default:
 		free_lua_opnames(opnames);

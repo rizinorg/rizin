@@ -304,13 +304,13 @@ EXPECT=<<EOF
 |           0x00004010      00010001       move  r4 r2                 ; r4 = r2
 |           0x00004014      dc000101       call  r3 2 4                ; sym.proto4
 |                                                                      ; 0x4000 ; 1 in 3 out
-|      ,==< 0x00004018      16800080       jmp   0 3                   ; jump to 0x4028
-|     .---> 0x0000401c      06424000       gettable r8 r0 -2           ; r8 = r0[balance]
-|     :|    0x00004020      0cc20104       add   r8 r8 r7              ; r8 = r8 + r7
-|     :|    0x00004024      09008280       settable r0 -2 r8           ; r0[balance] = r8
-|     :`,=< 0x00004028      e1800000       tforloop 3 -131069          ; to 0xfffffffffff84038
-\     `===< 0x0000402c      1680fe7f       jmp   0 -5                  ; jump to 0x401c
-        |   0x00004030      1e008000       return r0 1                 ; return r0(args: 0)
+|       ,=< 0x00004018      16800080       jmp   0 3                   ; jump to 0x4028
+|      .--> 0x0000401c      06424000       gettable r8 r0 -2           ; r8 = r0[balance]
+|      :|   0x00004020      0cc20104       add   r8 r8 r7              ; r8 = r8 + r7
+|      :|   0x00004024      09008280       settable r0 -2 r8           ; r0[balance] = r8
+|     ,=`-> 0x00004028      e1800000       tforloop r3 2
+\     |`==< 0x0000402c      1680fe7f       jmp   0 -5                  ; jump to 0x401c
+      `---> 0x00004030      1e008000       return r0 1                 ; return r0(args: 0)
 EOF
 RUN
 

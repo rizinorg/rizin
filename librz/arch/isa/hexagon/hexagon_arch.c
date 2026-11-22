@@ -237,8 +237,8 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	p->is_valid = false;
 	p->is_eob = false;
 	p->hw_loop = HEX_NO_LOOP;
-	p->hw_loop0_addr = 0;
-	p->hw_loop1_addr = 0;
+	p->hw_loop0_addr = UT64_MAX;
+	p->hw_loop1_addr = UT64_MAX;
 	p->pkt_addr = 0;
 	p->last_instr_present = false;
 	p->is_valid = false;

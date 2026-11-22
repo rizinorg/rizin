@@ -100,84 +100,84 @@ EXPECT=<<EOF
 |           0x00000095      stc.b ccr, r0
 |           0x00000097      ldc.w #0x1234:16, sr
 |           0x0000009b      stc.w sr, r2
-|    ,====< 0x0000009d      bhi   +0
-|   ,`----> 0x000000a0      bls   +0
-|   `,====< 0x000000a3      bcc   +0
-|   ,`----> 0x000000a6      bcs   +0
-|   `,====< 0x000000a9      bne   +0
-|   ,`----> 0x000000ac      beq   +0
-|   `,====< 0x000000af      bvc   +0
-|   ,`----> 0x000000b2      bvs   +0
-|   `,====< 0x000000b5      bpl   +0
-|   ,`----> 0x000000b8      bmi   +0
-|   `,====< 0x000000bb      bge   +0
-|   ,`----> 0x000000be      blt   +0
-|   `,====< 0x000000c1      bgt   +0
-|   ,`----> 0x000000c4      ble   +0
-|   `-----> 0x000000c7      nop
-|    ,====< 0x000000c8      jmp   @0xcb:16
-|    |      ; CODE XREF from fcn.00000001 @ 0xc8
-|    |      ;-- next_same_page:
-|    `----> 0x000000cb      bsr   +31                                  ; sym.local_sub
+|       ,=< 0x0000009d      bhi   +0
+|      ,`-> 0x000000a0      bls   +0
+|      `,=< 0x000000a3      bcc   +0
+|      ,`-> 0x000000a6      bcs   +0
+|      `,=< 0x000000a9      bne   +0
+|      ,`-> 0x000000ac      beq   +0
+|      `,=< 0x000000af      bvc   +0
+|      ,`-> 0x000000b2      bvs   +0
+|      `,=< 0x000000b5      bpl   +0
+|      ,`-> 0x000000b8      bmi   +0
+|      `,=< 0x000000bb      bge   +0
+|      ,`-> 0x000000be      blt   +0
+|      `,=< 0x000000c1      bgt   +0
+|      ,`-> 0x000000c4      ble   +0
+|      `--> 0x000000c7      nop
+|       ,=< 0x000000c8      jmp   @0xcb:16
+|       |   ; CODE XREF from fcn.00000001 @ 0xc8
+|       |   ;-- next_same_page:
+|       `-> 0x000000cb      bsr   +31                                  ; sym.local_sub
 |           0x000000cd      jsr   @r5
 \           0x000000cf      rts
             0x000000d0      mov:i #0x9:16, r4
             ;-- scb_loop_f:
-      ,===< 0x000000d3      scb/f r4, -3
-      |     0x000000d6      mov:i #0x9:16, r4
-      |     ;-- scb_loop_ne:
-      |     0x000000d9      cmp:g.b #0x41, @r6+
-      |,==< 0x000000dc      scb/ne r4, -6
-      ||    0x000000df      mov:i #0x9:16, r4
-      ||    ;-- scb_loop_eq:
-      ||    0x000000e2      cmp:g.b #0x41, @r6+
-      ||,=< 0x000000e5      scb/eq r4, -6
-      |||   0x000000e8      bsr   +7                                   ; sym.func_demo
-      ||,=< 0x000000ea      bra   +7
-     ||||   ; CALL XREF from fcn.00000001 @ 0xcb
+            0x000000d3      scb/f r4, -3
+            0x000000d6      mov:i #0x9:16, r4
+            ;-- scb_loop_ne:
+            0x000000d9      cmp:g.b #0x41, @r6+
+            0x000000dc      scb/ne r4, -6
+            0x000000df      mov:i #0x9:16, r4
+            ;-- scb_loop_eq:
+            0x000000e2      cmp:g.b #0x41, @r6+
+            0x000000e5      scb/eq r4, -6
+            0x000000e8      bsr   +7                                   ; sym.func_demo
+        ,=< 0x000000ea      bra   +7
+        |   ; CALL XREF from fcn.00000001 @ 0xcb
 / sym.local_sub();
-|    ||||   0x000000ec      adds.b #0x2:16, r7
-\    ||||   0x000000f0      rts
-     ||||   ; CALL XREF from sym.scb_loop_eq @ +0x6
+|       |   0x000000ec      adds.b #0x2:16, r7
+\       |   0x000000f0      rts
+        |   ; CALL XREF from sym.scb_loop_eq @ +0x6
 / sym.func_demo();
-\    ||||   0x000000f1      rtd   #0x2:8
-     ||||   ; CODE XREF from sym.scb_loop_eq @ +0x8
-     ||||   ;-- do_traps:
-      ||`-> 0x000000f3      trapa #0x3
-      |||   0x000000f5      mov:i #0x8000:16, r0
-      |||   0x000000f8      add:q.b #0x8000:16, r0
-      |||   0x000000fc      trap/vs
-      |||   0x000000fd      sleep
-      |||   ;-- after_sleep:
-      |||   0x000000fe      mov:i #sym.far_entry:16, r2
-      |||   0x00000101      pjsr  @r2
-      |||   0x00000103      prts
-      |||   0x00000105      mov:i #0x4:16, r0
-      |||   0x00000108      prtd  #0x4:8
-      |||   0x0000010b      unlk  fp
-      |||   ;-- halt:
-      |||   0x0000010c      bra   -2
-      |||   ;-- far_entry:
-      |||   0x0000010e      rts
-      |||   ;-- trap_vs_handler:
-      |||   0x0000010f      rts
-      |||   ;-- trapa3:
-      |||   0x00000110      rts
-      |||   0x00000111      nop
-      |||   0x00000112      btst.w #0xf, @(-1:16, r7)
-      |||   0x00000116      btst.w #0xf, @(-1:16, r7)
-      |||   0x0000011a      btst.w #0xf, @(-1:16, r7)
-      |||   0x0000011e
-      |||   0x0000011f  ~   sub.w @(18:16, r7), r4
-      |||   ;-- section..data:
-      |||   0x00000120      nop                                        ; [01] -rw- section size 4 named .data
-      |||   0x00000121      stm.b (r2,r4-r5), @-SP
-      |||   0x00000123      nop
-      |||   0x00000124      btst.w #0xf, @(-1:16, r7)
-      |||   0x00000128      btst.w #0xf, @(-1:16, r7)
-      |||   0x0000012c      btst.w #0xf, @(-1:16, r7)
-      |||   ;-- section..bss:
-      |||   0x00000130      btst.w #0xf, @(-1:16, r7)                  ; [02] -rw- section size 0 named .bss
+\       |   0x000000f1      rtd   #0x2:8
+        |   ; CODE XREF from sym.scb_loop_eq @ +0x8
+        |   ;-- do_traps:
+        `-> 0x000000f3      trapa #0x3
+            0x000000f5      mov:i #0x8000:16, r0
+            0x000000f8      add:q.b #0x8000:16, r0
+            0x000000fc      trap/vs
+            0x000000fd      sleep
+            ;-- after_sleep:
+            0x000000fe      mov:i #sym.far_entry:16, r2
+            0x00000101      pjsr  @r2
+            0x00000103      prts
+            0x00000105      mov:i #0x4:16, r0
+            0x00000108      prtd  #0x4:8
+            0x0000010b      unlk  fp
+            ;-- halt:
+            0x0000010c      bra   -2
+            ;-- far_entry:
+            0x0000010e      rts
+            ;-- trap_vs_handler:
+            0x0000010f      rts
+            ;-- trapa3:
+            0x00000110      rts
+            0x00000111      nop
+            0x00000112      btst.w #0xf, @(-1:16, r7)
+            0x00000116      btst.w #0xf, @(-1:16, r7)
+            0x0000011a      btst.w #0xf, @(-1:16, r7)
+            0x0000011e
+            0x0000011f  ~   sub.w @(18:16, r7), r4
+            ;-- section..data:
+            0x00000120      nop                                        ; [01] -rw- section size 4 named .data
+            0x00000121      stm.b (r2,r4-r5), @-SP
+            0x00000123      nop
+            0x00000124      btst.w #0xf, @(-1:16, r7)
+            0x00000128      btst.w #0xf, @(-1:16, r7)
+            0x0000012c      btst.w #0xf, @(-1:16, r7)
+            ;-- section..bss:
+            0x00000130      btst.w #0xf, @(-1:16, r7)                  ; [02] -rw- section size 0 named .bss
 EOF
 RUN
 

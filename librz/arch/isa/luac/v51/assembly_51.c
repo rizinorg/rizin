@@ -42,10 +42,6 @@ static LuaInstruction encode_instruction(const ut8 opcode, const char *arg_start
 	case OP_TAILCALL:
 		args[2] = ISK(args[2]) ? (MYK(INDEXK(args[2]))) : args[2];
 		break;
-	case OP_TFORLOOP:
-		args[1] = ISK(args[1]) ? (MYK(INDEXK(args[1]))) : args[1];
-		args[2] = ISK(args[2]) ? (MYK(INDEXK(args[2]))) : args[2];
-		break;
 	case OP_CLOSE:
 		args[1] = ISK(args[1]) ? (MYK(INDEXK(args[1]))) : args[1];
 		break;
@@ -94,6 +90,7 @@ ut32 get_instruction51(const ut8 opcode, const char *arg_start, const int versio
 			PARAM_A | PARAM_B, 2);
 		break;
 	case OP_TEST:
+	case OP_TFORLOOP:
 		instruction = encode_instruction(opcode, arg_start,
 			PARAM_A | PARAM_C, 2);
 		break;
@@ -127,7 +124,6 @@ ut32 get_instruction51(const ut8 opcode, const char *arg_start, const int versio
 	case OP_JMP:
 	case OP_FORLOOP:
 	case OP_FORPREP:
-	case OP_TFORLOOP:
 		instruction = encode_instruction(opcode, arg_start,
 			PARAM_A | PARAM_sBx, 2);
 		break;

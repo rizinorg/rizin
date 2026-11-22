@@ -1708,3 +1708,34 @@ none
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Known and unknown Hexagon hardware loop targets
+ARGS=-a hexagon
+FILE==
+CMDS=<<EOF
+e asm.lines.out=true
+wx 80c000690180627000c0007f
+wx 0180627000c0007f @ 0x80
+aoj 3~{.[]\|{addr,type,jump}}
+pd 3 @ 0x0
+aoj 2 @ 0x80~{.[]\|{addr,type,jump}}
+pd 2 @ 0x80
+wx 80c00069018062700080007f00c0007f @ 0x100
+aoj 4 @ 0x100~{.[]\|{addr,type,jump,fail}}
+pd 4 @ 0x100
+EOF
+EXPECT=<<EOF
+[{"addr":0,"type":"jmp","jump":0},{"addr":4,"type":"null"},{"addr":8,"type":"cjmp","jump":0}]
+       @.-> 0x00000000      [   loop0(0x0,#0x10)
+        :   0x00000004      /       R1 = R2
+        `=< 0x00000008      \       nop     < endloop0
+[{"addr":128,"type":"null"},{"addr":132,"type":"cjmp"}]
+            0x00000080      /       R1 = R2
+            0x00000084      \       nop     < endloop0
+[{"addr":256,"type":"jmp","jump":256},{"addr":260,"type":"null"},{"addr":264,"type":"nop"},{"addr":268,"type":"cjmp","fail":256}]
+       @.-> 0x00000100      [   loop0(0x100,#0x10)
+        :   0x00000104      /       R1 = R2
+        :   0x00000108      |       nop
+        `=< 0x0000010c      \       nop     < endloop01
+EOF
+RUN
