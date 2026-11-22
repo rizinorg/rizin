@@ -150,7 +150,7 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *resolve_value(const char *src, size_t *result_len) {
+static char *resolve_value(char *src, size_t *result_len) {
 	size_t src_len = strlen(src);
 	size_t copy_len = 0;
 	if (src_len < 1) {

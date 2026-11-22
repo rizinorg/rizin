@@ -20,37 +20,37 @@ RZ_IPI bool rz_core_visual_hud(RzCore *core) {
 	char *homehud = rz_path_home_prefix(RZ_HUD);
 	char *res = NULL;
 	char *p = 0;
-	rz_cons_singleton()->context->color_mode = use_color;
+	core->cons->context->color_mode = use_color;
 
 	rz_core_visual_showcursor(core, true);
 	if (c && *c && rz_file_exists(c)) {
-		res = rz_cons_hud_file(c);
+		res = rz_cons_hud_file(core->cons, c);
 	}
 	if (!res && homehud) {
-		res = rz_cons_hud_file(homehud);
+		res = rz_cons_hud_file(core->cons, homehud);
 	}
 	if (!res && rz_file_exists(f)) {
-		res = rz_cons_hud_file(f);
+		res = rz_cons_hud_file(core->cons, f);
 	}
 	if (!res) {
-		rz_cons_message("Cannot find hud file");
+		rz_cons_message(core->cons, "Cannot find hud file");
 		free(homehud);
 		free(f);
 		return false;
 	}
 
-	rz_cons_clear();
+	rz_cons_clear(core->cons);
 	if (res) {
 		p = strchr(res, ';');
-		rz_cons_println(res);
-		rz_cons_flush();
+		rz_cons_println(core->cons, res);
+		rz_cons_flush(core->cons);
 		if (p) {
 			rz_core_cmd0(core, p + 1);
 		}
 		free(res);
 	}
 	rz_core_visual_showcursor(core, false);
-	rz_cons_flush();
+	rz_cons_flush(core->cons);
 	free(homehud);
 	free(f);
 	return true;
@@ -64,11 +64,10 @@ RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 	RzBinSymbol *m;
 	ut64 addr;
 	char *res;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
 	RzBinObject *bin_obj = rz_bin_cur_object(core->bin);
 	const RzPVector *classes = rz_bin_object_get_classes(bin_obj);
 	if (!classes) {
@@ -84,7 +83,7 @@ RZ_IPI bool rz_core_visual_hudclasses(RzCore *core) {
 			rz_list_append(list, rz_str_newf("0x%08" PFMT64x "  %s %s", m->vaddr, c->name, name));
 		}
 	}
-	res = rz_cons_hud(list, NULL);
+	res = rz_cons_hud(core->cons, list, NULL);
 	if (res) {
 		char *p = strchr(res, ' ');
 		if (p) {
@@ -110,15 +109,15 @@ static bool hudstuff_append(RzFlagItem *fi, void *user) {
 RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	ut64 addr;
 	char *res;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
 	rz_flag_foreach(core->flags, hudstuff_append, list);
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *mi;
-	rz_interval_tree_foreach (&core->analysis->meta, it, mi) {
+	RzIntervalTree *tmeta = rz_analysis_get_meta(core->analysis);
+	rz_interval_tree_foreach (tmeta, it, mi) {
 		if (mi->type == RZ_META_TYPE_COMMENT) {
 			char *s = rz_str_newf("0x%08" PFMT64x " %s", rz_interval_tree_iter_get(&it)->start, mi->str);
 			if (s) {
@@ -126,7 +125,7 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 			}
 		}
 	}
-	res = rz_cons_hud(list, NULL);
+	res = rz_cons_hud(core->cons, list, NULL);
 	if (res) {
 		char *p = strchr(res, ' ');
 		if (p) {
@@ -140,18 +139,27 @@ RZ_IPI bool rz_core_visual_hudstuff(RzCore *core) {
 	return res != NULL;
 }
 
+bool core_visual_config_hud_append(const RzConfigEntry *entry, void *user) {
+	RzList *list = (RzList *)user;
+	const char *name = rz_config_entry_get_name(entry);
+	char *value = rz_config_entry_get_as_string(entry);
+	char *str = rz_str_newf("%s %s", name, value);
+	if (!str || !rz_list_append(list, str)) {
+		free(str);
+	}
+	free(value);
+	return true;
+}
+
 RZ_IPI bool rz_core_visual_config_hud(RzCore *core) {
-	RzListIter *iter;
-	RzConfigNode *bt;
-	RzList *list = rz_list_new();
+	RzList *list = rz_list_newf(free);
 	if (!list) {
 		return false;
 	}
-	list->free = free;
-	rz_list_foreach (core->config->nodes, iter, bt) {
-		rz_list_append(list, rz_str_newf("%s %s", bt->name, bt->value));
-	}
-	char *res = rz_cons_hud(list, NULL);
+
+	rz_config_iterate_over(core->config, core_visual_config_hud_append, list);
+
+	char *res = rz_cons_hud(core->cons, list, NULL);
 	if (res) {
 		const char *oldvalue = NULL;
 		char cmd[512];
@@ -160,17 +168,17 @@ RZ_IPI bool rz_core_visual_config_hud(RzCore *core) {
 			*p = 0;
 		}
 		oldvalue = rz_config_get(core->config, res);
-		rz_cons_show_cursor(true);
-		rz_cons_set_raw(false);
+		rz_cons_show_cursor(core->cons, true);
+		rz_cons_set_raw(core->cons, false);
 		cmd[0] = '\0';
 		eprintf("Set new value for %s (old=%s)\n", res, oldvalue);
 		rz_line_set_prompt(core->cons->line, ":> ");
-		if (rz_cons_fgets(cmd, sizeof(cmd), 0, NULL) < 0) {
+		if (rz_cons_fgets(core->cons, cmd, sizeof(cmd), 0, NULL) < 0) {
 			cmd[0] = '\0';
 		}
 		rz_config_set(core->config, res, cmd);
-		rz_cons_set_raw(true);
-		rz_cons_show_cursor(false);
+		rz_cons_set_raw(core->cons, true);
+		rz_cons_show_cursor(core->cons, false);
 	}
 	rz_list_free(list);
 	return true;

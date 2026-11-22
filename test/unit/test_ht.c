@@ -721,11 +721,12 @@ bool test_ht_uu_iter(void) {
 	ut32 icnt = 0;
 	const ut64 *im_elem;
 
-	RzIterator *it = ht_uu_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
 	ht_uu_insert(ht, 0x1010101, 0x1010101);
 	ht_uu_insert(ht, 0x2020202, 0x2020202);
@@ -733,8 +734,9 @@ bool test_ht_uu_iter(void) {
 	ht_uu_insert(ht, 0x4040404, 0x4040404);
 	ht_uu_insert(ht, 0x5050505, 0x5050505);
 	icnt = 0;
-	it = ht_uu_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter(ht, &it), "ht_uu_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
 			*im_elem == 0x1010101 ||
@@ -744,19 +746,20 @@ bool test_ht_uu_iter(void) {
 				*im_elem == 0x5050505,
 			"Value mismtach");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
 	ut64 *m_elem;
-	it = ht_uu_as_iter_mut(ht);
-	rz_iterator_foreach(it, m_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_mut(ht, &it), "ht_uu_as_iter_mut failed");
+	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (*m_elem == 0x1010101) {
 			*m_elem = 0x0;
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	bool found = false;
 	ut64 v = ht_uu_find(ht, 0x1010101, &found);
@@ -766,16 +769,64 @@ bool test_ht_uu_iter(void) {
 	mu_end;
 }
 
+bool test_ht_uu_iter_kv(void) {
+	HtUU *ht = ht_uu_new();
+	ut32 icnt = 0;
+	const HtUUKv *kv;
+
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
+	rz_iterator_foreach(&it, kv) {
+		icnt++;
+	}
+	rz_iterator_fini(&it);
+	mu_assert_eq(icnt, 0, "Wrong number of iterations");
+
+	ht_uu_insert(ht, 0x11, 0x1111);
+	ht_uu_insert(ht, 0x22, 0x2222);
+	ht_uu_insert(ht, 0x33, 0x3333);
+
+	bool found_1 = false;
+	bool found_2 = false;
+	bool found_3 = false;
+
+	icnt = 0;
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_uu_as_iter_kv(ht, &it), "ht_uu_as_iter_kv failed");
+	rz_iterator_foreach(&it, kv) {
+		icnt++;
+		if (kv->key == 0x11 && kv->value == 0x1111) {
+			found_1 = true;
+		}
+		if (kv->key == 0x22 && kv->value == 0x2222) {
+			found_2 = true;
+		}
+		if (kv->key == 0x33 && kv->value == 0x3333) {
+			found_3 = true;
+		}
+	}
+	rz_iterator_fini(&it);
+
+	mu_assert_eq(icnt, 3, "Wrong number of iterations");
+	mu_assert_true(found_1, "key not found");
+	mu_assert_true(found_2, "key not found");
+	mu_assert_true(found_3, "key not found");
+
+	ht_uu_free(ht);
+	mu_end;
+}
+
 bool test_ht_ss_iter(void) {
 	HtSS *ht = ht_ss_new(HT_STR_CONST, HT_STR_CONST);
 	ut32 icnt = 0;
 	const char **im_elem;
 
-	RzIterator *it = ht_ss_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 0, "Wrong number of iterations");
 
 	ht_ss_insert(ht, "0x1010101", "0x1010101");
@@ -784,8 +835,9 @@ bool test_ht_ss_iter(void) {
 	ht_ss_insert(ht, "0x4040404", "0x4040404");
 	ht_ss_insert(ht, "0x5050505", "0x5050505");
 	icnt = 0;
-	it = ht_ss_as_iter(ht);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter(ht, &it), "ht_ss_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		icnt++;
 		mu_assert_true(
 			RZ_STR_EQ(*im_elem, "0x1010101") ||
@@ -795,19 +847,20 @@ bool test_ht_ss_iter(void) {
 				RZ_STR_EQ(*im_elem, "0x5050505"),
 			"Value mismtach");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	icnt = 0;
 	// Test write of value
 	char **m_elem;
-	it = ht_ss_as_iter_mut(ht);
-	rz_iterator_foreach(it, m_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(ht_ss_as_iter_mut(ht, &it), "ht_ss_as_iter_mut failed");
+	rz_iterator_foreach(&it, m_elem) {
 		icnt++;
 		if (RZ_STR_EQ(*m_elem, "0x1010101")) {
 			*m_elem = "0x0";
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(icnt, 5, "Wrong number of iterations");
 	bool found = false;
 	const char *v = ht_ss_find(ht, "0x1010101", &found);
@@ -839,13 +892,14 @@ bool test_set_u(void) {
 
 	size_t x = 0;
 	const ut64 *im_elem;
-	RzIterator *it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = *im_elem == 0x5050505 || *im_elem == 0x6060606;
 		mu_assert_true(matches, "Set contained ill-formed value.");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 
 	rz_set_u_delete(set_u, 0x6060606);
@@ -853,11 +907,12 @@ bool test_set_u(void) {
 	rz_set_u_delete(set_u, 0x5050505);
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Length wrong.");
 
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	rz_set_u_add(set_u, 0x53e0);
 	rz_set_u_add(set_u, 0x53bc);
 
@@ -869,11 +924,12 @@ bool test_set_u(void) {
 	rz_set_u_add(set_u, 0x53bc);
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 	rz_set_u_delete(set_u, 0x53e0);
 	rz_set_u_delete(set_u, 0x53bc);
@@ -890,14 +946,201 @@ bool test_set_u(void) {
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
 
 	x = 0;
-	it = rz_set_u_as_iter(set_u);
-	rz_iterator_foreach(it, im_elem) {
+	it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_u_as_iter(set_u, &it), "rz_set_u_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 5, "Foreach hasn't iterated the correct number of times.");
 
+	rz_set_u_clear(set_u);
+	mu_assert_eq(rz_set_u_take(set_u), UT64_MAX, "Invalid take should return UT64_MAX");
+	rz_set_u_add(set_u, 100000000);
+	mu_assert_eq(rz_set_u_size(set_u), 1, "Add failed");
+	mu_assert_eq(rz_set_u_take(set_u), 100000000, "Take failed");
+	mu_assert_eq(rz_set_u_size(set_u), 0, "Take did not remove element");
+
 	rz_set_u_free(set_u);
+	mu_end;
+}
+
+bool test_set_u_union(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	rz_set_u_add(a, 1);
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+	rz_set_u_add(b, 2);
+	rz_set_u_add(b, 3);
+	rz_set_u_add(b, 4);
+	rz_set_u_add(c, 5);
+
+	// Compute union into a freshly allocated set
+	size_t union_size = rz_set_u_union(NULL, a, b, c, NULL);
+	mu_assert_eq(union_size, 5, "Wrong union size");
+	union_size = rz_set_u_union(NULL, NULL);
+	mu_assert_eq(union_size, 0, "Wrong union size for empty list");
+
+	// Compute union into a caller-provided set
+	RzSetU *u = rz_set_u_new();
+	rz_set_u_add(u, 100);
+	union_size = rz_set_u_union(u, a, b, c, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size");
+	mu_assert_true(rz_set_u_contains(u, 100), "Union did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(u, 4), "Union does not contain all elements");
+	mu_assert_true(rz_set_u_contains(u, 5), "Union does not contain all elements");
+
+	// Passing the union set itself must not change the result
+	union_size = rz_set_u_union(u, a, u, b, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size when passing the union set itself");
+
+	// Passing the same set multiple times must not change the result
+	union_size = rz_set_u_union(NULL, a, a, a, b, NULL);
+	mu_assert_eq(union_size, 4, "Wrong union size when passing a set multiple times");
+	union_size = rz_set_u_union(NULL, a, a, a, NULL);
+	mu_assert_eq(union_size, 3, "Wrong union size when passing a set multiple times");
+	union_size = rz_set_u_union(u, a, a, b, b, NULL);
+	mu_assert_eq(union_size, 6, "Wrong union size when passing sets multiple times");
+	mu_assert_true(rz_set_u_contains(u, 100), "Union did not keep previous elements");
+
+	// A set in the list must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(b), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(u);
+	rz_set_u_free(c);
+	rz_set_u_free(b);
+	rz_set_u_free(a);
+	mu_end;
+}
+
+bool test_set_u_intersection(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	rz_set_u_add(a, 1);
+	rz_set_u_add(a, 2);
+	rz_set_u_add(a, 3);
+	rz_set_u_add(b, 2);
+	rz_set_u_add(b, 3);
+	rz_set_u_add(b, 4);
+	rz_set_u_add(c, 3);
+
+	// Count only, without a destination set
+	size_t inter_size = rz_set_u_intersection(NULL, a, b, NULL);
+	mu_assert_eq(inter_size, 2, "Wrong intersection size");
+	inter_size = rz_set_u_intersection(NULL, a, b, c, NULL);
+	mu_assert_eq(inter_size, 1, "Wrong intersection size");
+	inter_size = rz_set_u_intersection(NULL, NULL);
+	mu_assert_eq(inter_size, 0, "Wrong intersection size for empty list");
+
+	// Passing the same set multiple times must not change the result
+	inter_size = rz_set_u_intersection(NULL, a, a, a, NULL);
+	mu_assert_eq(inter_size, 3, "Wrong intersection size when passing a set multiple times");
+	inter_size = rz_set_u_intersection(NULL, a, a, b, b, NULL);
+	mu_assert_eq(inter_size, 2, "Wrong intersection size when passing sets multiple times");
+
+	// Compute intersection into a caller-provided set
+	RzSetU *i = rz_set_u_new();
+	rz_set_u_add(i, 100);
+	inter_size = rz_set_u_intersection(i, a, b, NULL);
+	mu_assert_eq(inter_size, 3, "Wrong intersection size");
+	mu_assert_true(rz_set_u_contains(i, 100), "Intersection did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(i, 2), "Intersection does not contain all elements");
+	mu_assert_true(rz_set_u_contains(i, 3), "Intersection does not contain all elements");
+	mu_assert_false(rz_set_u_contains(i, 4), "Element not part of the intersection was added");
+	mu_assert_false(rz_set_u_contains(i, 1), "Element not part of the intersection was added");
+
+	// If inter_set is one of the given sets, it is reduced to the intersection
+	inter_size = rz_set_u_intersection(i, i, b, NULL);
+	mu_assert_eq(inter_size, 2, "Wrong intersection size");
+	mu_assert_false(rz_set_u_contains(i, 100), "Element not part of the intersection was not deleted");
+	mu_assert_true(rz_set_u_contains(i, 2), "Intersection does not contain all elements");
+	mu_assert_true(rz_set_u_contains(i, 3), "Intersection does not contain all elements");
+
+	// A set in the list must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(b), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(i);
+	rz_set_u_free(c);
+	rz_set_u_free(b);
+	rz_set_u_free(a);
+	mu_end;
+}
+
+bool test_set_u_intersection_reduce(void) {
+	RzSetU *i = rz_set_u_new();
+	RzSetU *s3 = rz_set_u_new();
+	RzSetU *s2 = rz_set_u_new();
+	RzSetU *s1 = rz_set_u_new();
+	RzSetU *s0 = rz_set_u_new();
+
+	// i = { 0, 1, 2, 3, 4, 5 }
+	for (ut64 k = 0; k < 6; k++) {
+		rz_set_u_add(i, k);
+	}
+	// s3 = { 1, 2, 3 }
+	rz_set_u_add(s3, 1);
+	rz_set_u_add(s3, 2);
+	rz_set_u_add(s3, 3);
+	// s2 = { 2, 3 }
+	rz_set_u_add(s2, 2);
+	rz_set_u_add(s2, 3);
+	// s1 = { 3 }
+	rz_set_u_add(s1, 3);
+	// s0 = { }
+
+	// Gradually reduce i by intersecting it with gradually smaller sets
+	size_t inter_size = rz_set_u_intersection(i, i, s3, NULL);
+	mu_assert_eq(inter_size, 3, "Wrong intersection size");
+	mu_assert_eq(rz_set_u_size(i), 3, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(i, 1), "Intersection does not contain all elements");
+	mu_assert_true(rz_set_u_contains(i, 2), "Intersection does not contain all elements");
+	mu_assert_true(rz_set_u_contains(i, 3), "Intersection does not contain all elements");
+	mu_assert_false(rz_set_u_contains(i, 0), "Element not part of the intersection was not deleted");
+	mu_assert_false(rz_set_u_contains(i, 4), "Element not part of the intersection was not deleted");
+	mu_assert_false(rz_set_u_contains(i, 5), "Element not part of the intersection was not deleted");
+
+	inter_size = rz_set_u_intersection(i, i, s2, NULL);
+	mu_assert_eq(inter_size, 2, "Wrong intersection size");
+	mu_assert_eq(rz_set_u_size(i), 2, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(i, 2), "Intersection does not contain all elements");
+	mu_assert_true(rz_set_u_contains(i, 3), "Intersection does not contain all elements");
+	mu_assert_false(rz_set_u_contains(i, 1), "Element not part of the intersection was not deleted");
+
+	// Passing i multiple times changes nothing
+	inter_size = rz_set_u_intersection(i, i, i, NULL);
+	mu_assert_eq(inter_size, 2, "Wrong intersection size");
+	mu_assert_eq(rz_set_u_size(i), 2, "Wrong size after reduction");
+
+	inter_size = rz_set_u_intersection(i, i, s1, NULL);
+	mu_assert_eq(inter_size, 1, "Wrong intersection size");
+	mu_assert_eq(rz_set_u_size(i), 1, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(i, 3), "Intersection does not contain all elements");
+	mu_assert_false(rz_set_u_contains(i, 2), "Element not part of the intersection was not deleted");
+
+	// An empty set reduces i to the empty set
+	inter_size = rz_set_u_intersection(i, i, s0, NULL);
+	mu_assert_eq(inter_size, 0, "Wrong intersection size");
+	mu_assert_eq(rz_set_u_size(i), 0, "Wrong size after reduction");
+	mu_assert_false(rz_set_u_contains(i, 3), "Element not part of the intersection was not deleted");
+
+	// The source sets must not be modified
+	mu_assert_eq(rz_set_u_size(s3), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(s2), 2, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(s1), 1, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(s0), 0, "Source set was modified");
+
+	rz_set_u_free(s0);
+	rz_set_u_free(s1);
+	rz_set_u_free(s2);
+	rz_set_u_free(s3);
+	rz_set_u_free(i);
 	mu_end;
 }
 
@@ -924,13 +1167,14 @@ bool test_set_s(void) {
 	size_t x = 0;
 	const char **im_elem;
 
-	RzIterator *it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	RzIterator it = (RzIterator){ 0 };
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 		bool matches = RZ_STR_EQ(*im_elem, "0x5050505") || RZ_STR_EQ(*im_elem, "0x6060606");
 		mu_assert_true(matches, "Set contained ill-formed value.");
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 
 	rz_set_s_delete(set_s, "0x6060606");
@@ -938,19 +1182,19 @@ bool test_set_s(void) {
 	rz_set_s_delete(set_s, "0x5050505");
 	mu_assert_eq(rz_set_s_size(set_s), 0, "Length wrong.");
 
-	it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		mu_assert("Should not be reached.", false);
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	rz_set_s_add(set_s, "0x53e0");
 	rz_set_s_add(set_s, "0x53bc");
 	x = 0;
-	it = rz_set_s_as_iter(set_s);
-	rz_iterator_foreach(it, im_elem) {
+	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
+	rz_iterator_foreach(&it, im_elem) {
 		x++;
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	mu_assert_eq(x, 2, "Foreach hasn't iterated the correct number of times.");
 	rz_set_s_delete(set_s, "0x53e0");
 	rz_set_s_delete(set_s, "0x53bc");
@@ -985,8 +1229,12 @@ int all_tests() {
 	mu_run_test(test_insert_update_ex);
 	mu_run_test(test_ht_size);
 	mu_run_test(test_ht_uu_iter);
+	mu_run_test(test_ht_uu_iter_kv);
 	mu_run_test(test_ht_ss_iter);
 	mu_run_test(test_set_u);
+	mu_run_test(test_set_u_union);
+	mu_run_test(test_set_u_intersection);
+	mu_run_test(test_set_u_intersection_reduce);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }

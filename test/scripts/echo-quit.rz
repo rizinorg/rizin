@@ -1,0 +1,3 @@
+# `q` must not count as a failure, see test/db/cmd/cmd_error_reporting
+echo script
+q

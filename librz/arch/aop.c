@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "asm_private.h"
-#include <rz_asm.h>
 
 RZ_API RZ_OWN RzAsmOp *rz_asm_op_new(void) {
 	return RZ_NEW0(RzAsmOp);

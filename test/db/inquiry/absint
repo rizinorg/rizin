@@ -1,0 +1,327 @@
+# Note: the multiple call targets in the indirect_calls_in_loop functions are
+# not yet resolved, because a single instruction jumps to multiple addresses
+# there and we interpret only with single constant values or top. They may be
+# later discovered with different value domains.
+# https://github.com/rizinorg/rizin/issues/6748
+
+NAME=Indirect call x86_64
+FILE=bins/absint/x86_64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x0800006c    1 39           sym.indirect_call_single
+     reloc.target.indirect_call_single+9 0x8000075 ->      DATA -> 0x8000130 reloc..text.8000130
+                         reloc..rodata+4 0x800007c ->      CALL -> 0x8000056 sym.function_1
+                         reloc..rodata+8 0x8000080 ->      DATA -> 0x8000118 reloc..text.8000118
+                   reloc..data.8000083+4 0x8000087 ->      CALL -> 0x8000056 sym.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x800006c   39      0     14            0x0800006c  0x08000056 
+EOF
+RUN
+
+NAME=Indirect calls in loop x86_64
+FILE=bins/absint/x86_64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000093    4 75           sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+22 0x80000a9 ->      CODE -> 0x80000d3 reloc..rodata.80000c4+15
+                reloc..rodata.80000c4+19 0x80000d7 ->      CODE -> 0x80000ab reloc.target.indirect_calls_in_loop+24
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000093   24      0      6 0x080000d3             0x08000093       
+0x80000ab   40      0     11 0x080000d3             0x08000093        0x080000d7
+0x80000d3    6      0      2 0x080000ab 0x080000d9  0x08000093        0x080000a9
+0x80000d9    5      0      3                        0x08000093       
+EOF
+RUN
+
+NAME=Indirect call hexagon
+FILE=bins/absint/hexagon_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000040    1 64           sym.indirect_call_single
+            reloc..data.rel.ro.8000048+4 0x800004c ->      DATA -> 0x8000184 reloc..text.8000184
+            reloc..data.rel.ro.8000048+8 0x8000050 ->      CALL -> 0x8000160 sym.function_1
+                   reloc..data.8000060+4 0x8000064 ->      DATA -> 0x8000194 reloc..text.8000194
+                   reloc..data.8000060+8 0x8000068 ->      CALL -> 0x8000160 sym.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x8000040   64      0     16            0x08000040  0x08000160 
+EOF
+RUN
+
+NAME=Indirect calls in loop hexagon
+FILE=bins/absint/hexagon_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000080    4 140          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+32 0x80000a0 ->      CODE -> 0x8000104 reloc..data.rel.ro.80000d4+48
+           reloc..data.rel.ro.80000d4+44 0x8000100 ->      CODE -> 0x8000098 reloc.target.indirect_calls_in_loop+24
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000080   24      0      6 0x08000098             0x08000080       
+0x8000098   12      0      3 0x08000104 0x080000a4  0x08000080        0x08000100
+0x80000a4   96      0     24 0x08000098             0x08000080       
+0x8000104    8      0      2                        0x08000080        0x080000a0
+EOF
+RUN
+
+NAME=Indirect call sparc64
+FILE=bins/absint/sparc64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000ac    1 80           sym.indirect_call_single
+                 reloc..rodata.80000b4+4 0x80000b8 ->      DATA -> 0x8000210 reloc..text.8000210
+                reloc..rodata.80000b4+12 0x80000c0 ->      CALL -> 0x8000074 sym.function_1
+                   reloc..data.80000d0+4 0x80000d4 ->      DATA -> 0x80001f8 reloc..text.80001f8
+                  reloc..data.80000d0+12 0x80000dc ->      CALL -> 0x8000074 sym.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x80000ac   80      0     20            0x080000ac  0x08000074 
+EOF
+RUN
+
+NAME=Indirect calls in loop sparc64
+FILE=bins/absint/sparc64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000fc    4 180          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+16 0x800010c ->      CODE -> 0x800018c reloc..rodata.800014c+64
+                reloc..rodata.800014c+76 0x8000198 ->      CODE -> 0x8000110 reloc..data.8000110
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80000fc   20      0      5 0x0800018c             0x080000fc       
+0x8000110  124      0     31 0x0800018c             0x080000fc        0x08000198
+0x800018c   16      0      4 0x08000110 0x0800019c  0x080000fc        0x0800010c
+0x800019c   20      0      5                        0x080000fc       
+EOF
+RUN
+
+NAME=Indirect call arm
+FILE=bins/absint/arm_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_call_single
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080000b4    1 76           sym.indirect_call_single
+     reloc.target.indirect_call_single+8 0x80000bc ->      DATA -> 0x8000100 reloc..rodata
+    reloc.target.indirect_call_single+12 0x80000c0 ->      DATA -> 0x80001f4 reloc.function_1.80001f4
+    reloc.target.indirect_call_single+20 0x80000c8 ->      CALL -> 0x8000074 reloc.target.function_1
+    reloc.target.indirect_call_single+32 0x80000d4 ->      DATA -> 0x8000104 reloc..data.8000104
+    reloc.target.indirect_call_single+36 0x80000d8 ->      DATA -> 0x80001e8 reloc.function_1
+    reloc.target.indirect_call_single+44 0x80000e0 ->      CALL -> 0x8000074 reloc.target.function_1
+     addr size traced ninstr jump fail fcns        calls       xrefs 
+---------------------------------------------------------------------
+0x80000b4   76      0     19            0x080000b4  0x08000074 
+EOF
+RUN
+
+NAME=Indirect calls in loop arm
+FILE=bins/absint/arm_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x08000108    4 164          sym.indirect_calls_in_loop
+  reloc.target.indirect_calls_in_loop+28 0x8000124 ->      CODE -> 0x800018c reloc.target.indirect_calls_in_loop+132
+  reloc.target.indirect_calls_in_loop+32 0x8000128 ->      DATA -> 0x80001ac reloc..data.80001ac
+  reloc.target.indirect_calls_in_loop+76 0x8000154 ->      DATA -> 0x80001b0 reloc..rodata.80001b0
+ reloc.target.indirect_calls_in_loop+140 0x8000194 ->      CODE -> 0x8000128 reloc.target.indirect_calls_in_loop+32
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x8000108   32      0      8 0x0800018c             0x08000108       
+0x8000128  100      0     25 0x0800018c             0x08000108        0x08000194
+0x800018c   12      0      3 0x08000128 0x08000198  0x08000108        0x08000124
+0x8000198   20      0      5                        0x08000108       
+EOF
+RUN
+
+# Not working properly yet, likely because of missing relocs
+#
+# NAME=Indirect calls in loop mips64
+# FILE=bins/absint/mips64_indirect_call.o
+# CMDS=<<EOF
+# s sym.indirect_call_single
+# aIf
+# afl
+# axl
+# ablt
+# EOF
+# EXPECT=<<EOF
+# 0x080001e4    4 220          sym.indirect_calls_in_loop
+#  reloc.indirect_calls_in_loop.8000200+12 0x800020c ->      CODE -> 0x8000290 reloc..data.rel.ro.local.8000258+56
+#      reloc..data.rel.ro.local.8000258+64 0x8000298 ->      CODE -> 0x8000214 reloc..data.rel.local.8000214
+#      addr size traced ninstr jump       fail       fcns        calls xrefs       
+# ---------------------------------------------------------------------------------
+# 0x80001e4   48      0     12 0x08000290             0x080001e4       
+# 0x8000214  124      0     31 0x08000290             0x080001e4        0x08000298
+# 0x8000290   16      0      4 0x08000214 0x080002a0  0x080001e4        0x0800020c
+# 0x80002a0   32      0      8                        0x080001e4       
+# EOF
+# RUN
+
+NAME=Indirect calls in loop mips64
+FILE=bins/absint/mips64_indirect_call.o
+CMDS=<<EOF
+s sym.indirect_calls_in_loop
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x080001e4    4 220          sym.indirect_calls_in_loop
+ reloc.indirect_calls_in_loop.8000200+12 0x800020c ->      CODE -> 0x8000290 reloc..data.rel.ro.local.8000258+56
+     reloc..data.rel.ro.local.8000258+64 0x8000298 ->      CODE -> 0x8000214 reloc..data.rel.local.8000214
+     addr size traced ninstr jump       fail       fcns        calls xrefs       
+---------------------------------------------------------------------------------
+0x80001e4   48      0     12 0x08000290             0x080001e4       
+0x8000214  124      0     31 0x08000290             0x080001e4        0x08000298
+0x8000290   16      0      4 0x08000214 0x080002a0  0x080001e4        0x0800020c
+0x80002a0   32      0      8                        0x080001e4       
+EOF
+RUN
+
+# eepmov.b lifts to a repeat moving r5 on while r4l counts down. With r4l
+# unknown, so is how often the repeat runs, and r5 is top after it: the load
+# through it has no address. The bytes the repeat moves are stored to memory,
+# which is warned about for as long as RzInquiry does not model memory.
+NAME=Repeat of an unknown count sets what it writes to top h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 790510007b5c598f69505470
+pd 4
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x1000,r5
+            0x00000004      eepmov.b
+            0x00000008      mov.w @r5,r0
+            0x0000000a      rts
+0x00000000    1 12           inq.0x0
+EOF
+EXPECT_ERR=<<EOF
+WARNING: The repeat at 0x4 stores to memory, which is not set to top: memory is not modelled yet.
+EOF
+RUN
+
+# With r4 known the repeat runs its four times, each reading a byte where r5
+# points, and r5 is 0x1004 after it.
+NAME=Repeat of a known count runs h8300
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=h8300
+e analysis.arch=h8300
+e asm.bits=16
+e io.cache=true
+wx 79040004790510007b5c598f69505470
+pd 5
+aIf
+afl
+axl
+EOF
+EXPECT=<<EOF
+            0x00000000      mov.w #0x4,r4
+            0x00000004      mov.w #0x1000,r5
+            0x00000008      eepmov.b
+            0x0000000c      mov.w @r5,r0
+            0x0000000e      rts
+0x00000000    1 16           inq.0x0
+                               inq.0x0+8 0x8 ->      DATA -> 0x1000 inq.0x0+4096
+                               inq.0x0+8 0x8 ->      DATA -> 0x1001 inq.0x0+4097
+                               inq.0x0+8 0x8 ->      DATA -> 0x1002 inq.0x0+4098
+                               inq.0x0+8 0x8 ->      DATA -> 0x1003 inq.0x0+4099
+                              inq.0x0+12 0xc ->      DATA -> 0x1004 inq.0x0+4100
+EOF
+RUN
+
+# Each IL op covers an execute packet and the cycles its effects take to land,
+# so a call -- a branch with ADDKPC setting B3 in its delay slots -- writes the
+# address where its op ends (#6707).
+NAME=Calls tms320 c674x
+FILE=bins/tms320/emulateme_nostd.ccsv7.c674x.eabi.dbg.elf
+CMDS=<<EOF
+s sym.main
+aIf
+afl
+axl
+ablt
+EOF
+EXPECT=<<EOF
+0x00008138    8 148          main
+                                  main+8 0x8140 ->      CODE -> 0x8156 sym._C_L11
+                                 main+16 0x8148 ->      CALL -> 0x8000 section..text
+                              sym._C_RL0 0x8150 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L11+2 0x8158 ->      CALL -> 0x8088 sym.c_strlen
+                            sym._C_RL2+4 0x8164 ->      CODE -> 0x8178 sym._C_L12
+                           sym._C_RL2+12 0x816c ->      CALL -> 0x8000 section..text
+                              sym._C_RL4 0x8174 ->      CODE -> 0x81c8 sym._C_L14
+                              sym._C_L12 0x8178 ->      CALL -> 0x80a4 sym.decrypt
+                            sym._C_RL6+2 0x8182 ->      CODE -> 0x81b4 sym._C_L13
+                            sym._C_RL6+8 0x8188 ->      CALL -> 0x8000 section..text
+                           sym._C_RL8+10 0x819a ->      CALL -> 0x8000 section..text
+                           sym._C_RL10+4 0x81a8 ->      CALL -> 0x8000 section..text
+                             sym._C_RL12 0x81b0 ->      CODE -> 0x81c8 sym._C_L14
+                            sym._C_L13+4 0x81b8 ->      CALL -> 0x8000 section..text
+  addr size traced ninstr jump       fail       fcns        calls       xrefs                             
+----------------------------------------------------------------------------------------------------------
+0x8138   10      0      4 0x00008156 0x00008142  0x00008138             
+0x8142   20      0      6 0x000081c8             0x00008138  0x00008000 
+0x8156   18      0      7 0x00008178 0x00008168  0x00008138  0x00008088  0x00008140
+0x8168   16      0      6 0x000081c8             0x00008138  0x00008000 
+0x8178   12      0      5 0x000081b4 0x00008184  0x00008138  0x000080a4  0x00008164
+0x8184   48      0     16 0x000081c8             0x00008138  0x00008000 
+0x81b4   20      0      6 0x000081c8             0x00008138  0x00008000  0x00008182
+0x81c8    4      0      1                        0x00008138              0x00008150 0x00008174 0x000081b0
+EOF
+RUN

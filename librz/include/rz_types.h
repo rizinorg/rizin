@@ -25,6 +25,14 @@ extern "C" {
 #undef __UNIX__
 #undef __WINDOWS__
 
+#if HAVE___BUILTIN_EXPECT
+#define RZ_LIKELY(x)   __builtin_expect(x, 1)
+#define RZ_UNLIKELY(x) __builtin_expect(x, 0)
+#else
+#define RZ_LIKELY(x)   (x)
+#define RZ_UNLIKELY(x) (x)
+#endif
+
 #define RZ_IN    /* do not use, implicit */
 #define RZ_OUT   /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written / return value is copy of RZ_INOUT parameter */
@@ -195,8 +203,6 @@ extern "C" {
 	#endif
 #endif
 
-static const ut32 rz_endianness_one = 1;
-
 #define RZ_SYS_ENDIAN_NONE   0
 #define RZ_SYS_ENDIAN_LITTLE 1
 #define RZ_SYS_ENDIAN_BIG    2
@@ -222,7 +228,6 @@ static const ut32 rz_endianness_one = 1;
 	#else
 		#define RZ_SYS_BITS RZ_SYS_BITS_32
 	#endif
-
 	#if defined(__BYTE_ORDER__)
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
@@ -232,7 +237,7 @@ static const ut32 rz_endianness_one = 1;
 			#error "Unsupported endianness"
 		#endif
 	#else
-		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 	#endif
 #elif __arm__
 	#define RZ_SYS_ARCH   "arm"
@@ -252,7 +257,11 @@ static const ut32 rz_endianness_one = 1;
 	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 #elif __sparc__
 	#define RZ_SYS_ARCH   "sparc"
-	#define RZ_SYS_BITS   RZ_SYS_BITS_32
+	#ifdef __sparc64__
+		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+	#else
+		#define RZ_SYS_BITS RZ_SYS_BITS_32
+	#endif
 	#if defined(__BYTE_ORDER__)
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
@@ -262,7 +271,7 @@ static const ut32 rz_endianness_one = 1;
 			#error "Unsupported endianness"
 		#endif
 	#else
-		#define RZ_SYS_ENDIAN ((*((char *)&(rz_endianness_one)) == 1) ? RZ_SYS_ENDIAN_LITTLE : RZ_SYS_ENDIAN_BIG)
+		#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_BIG
 	#endif
 #elif __mips__
 	#define RZ_SYS_ARCH   "mips"
@@ -280,6 +289,10 @@ static const ut32 rz_endianness_one = 1;
 	#else
 		#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 	#endif
+#elif __alpha__
+	#define RZ_SYS_ARCH "alpha"
+	#define RZ_SYS_BITS RZ_SYS_BITS_64
+	#define RZ_SYS_ENDIAN RZ_SYS_ENDIAN_LITTLE
 #else
 	#ifdef _MSC_VER
 		#if defined(_M_X64) || defined(_M_AMD64)
@@ -353,7 +366,7 @@ extern "C" {
 #define __packed __attribute__((__packed__))
 #endif
 
-typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
+typedef int (*PrintfCallback)(void *user, const char *str, ...) RZ_PRINTF_CHECK(2, 3);
 
 /* compile-time introspection helpers */
 #define CTO(y, z)    ((size_t)&((y *)0)->z)
@@ -500,11 +513,27 @@ static inline void *rz_new_copy(int size, const void *data) {
 		x = NULL; \
 	}
 
+#if HAVE_HEADER_INTTYPES_H
+#define PFMT64x PRIx64
+#define PFMT64X PRIX64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
+#elif __WINDOWS__
+#define PFMT64x "I64x"
+#define PFMT64X "I64X"
+#define PFMT64d "I64d"
+#define PFMT64u "I64u"
+#define PFMT64o "I64o"
+#else
+#define PFMT64x "lx"
+#define PFMT64X "lX"
+#define PFMT64d "ld"
+#define PFMT64u "lu"
+#define PFMT64o "lo"
+#endif
+
 #if __WINDOWS__
-#define PFMT64x  "I64x"
-#define PFMT64d  "I64d"
-#define PFMT64u  "I64u"
-#define PFMT64o  "I64o"
 #define PFMTSZx  "Ix"
 #define PFMTSZd  "Id"
 #define PFMTSZu  "Iu"
@@ -513,10 +542,6 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define LDBLFMTf "f"
 #define HHXFMT   "x"
 #else
-#define PFMT64x  "llx"
-#define PFMT64d  "lld"
-#define PFMT64u  "llu"
-#define PFMT64o  "llo"
 #define PFMTSZx  "zx"
 #define PFMTSZd  "zd"
 #define PFMTSZu  "zu"
@@ -529,6 +554,7 @@ static inline void *rz_new_copy(int size, const void *data) {
 #define PFMTDPTR "td"
 
 #define PFMT32x "x"
+#define PFMT32X "X"
 #define PFMT32d "d"
 #define PFMT32u "u"
 #define PFMT32o "o"
@@ -729,7 +755,7 @@ struct dummy_rz_analysis_t {
  * \brief The hacky way to get the RzAsm pointer from RzAnalysis.
  * Will be removed with the RzArch refactor.
  */
-static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL void /*<RzAnalysis>*/ *rz_analysis) {
+static inline void /*<RzAsm>*/ *rz_analysis_to_rz_asm(RZ_NONNULL const void /*<RzAnalysis>*/ *rz_analysis) {
 	assert(rz_analysis && "This function can only be used if RzAnalysis and RzAsm were set up before.");
 	struct dummy_rz_analysis_t *analysis = (struct dummy_rz_analysis_t *)rz_analysis;
 	struct dummy_rz_core_t *core = (struct dummy_rz_core_t *)analysis->core;

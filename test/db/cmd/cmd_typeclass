@@ -1,0 +1,53 @@
+NAME=tk typeclass commands
+FILE==
+CMDS=<<EOF
+tkl
+td "typedef char zz_num;"
+td "typedef char zz_int;"
+td "typedef char zz_flt;"
+td "typedef char zz_addr;"
+tks zz_num Num
+tks zz_int Integral
+tks zz_flt Floating
+tks zz_addr Address
+tk zz_num
+tk zz_int
+tk zz_flt
+tk zz_addr
+tkll~zz_
+tklt~zz_[0,1]
+td "typedef char zz_x;"
+tks zz_x Floating
+tks zz_x None
+tk zz_x
+tk nonexistent
+tks nonexistent Num
+tks zz_x Bogus
+EOF
+EXPECT=<<EOF
+Num
+Integral
+Floating
+Address
+Signed Integral
+Unsigned Integral
+Num
+Integral
+Floating
+Address
+  zz_num
+  zz_int
+  zz_flt
+  zz_addr
+Num zz_num
+Integral zz_int
+Floating zz_flt
+Address zz_addr
+None
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Type "nonexistent" does not exist
+ERROR: Type "nonexistent" does not exist
+ERROR: Unknown typeclass "Bogus"
+EOF
+RUN

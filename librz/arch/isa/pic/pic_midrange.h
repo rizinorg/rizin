@@ -139,4 +139,8 @@ int pic_midrange_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op,
 char *pic_midrange_get_reg_profile(RzAnalysis *a);
 RzAnalysisILConfig *pic_midrange_il_config(RZ_NONNULL RzAnalysis *analysis);
 
+static inline RzILOpEffect *reset() {
+	return rz_il_op_new_nop();
+}
+
 #endif // PIC_MIDRANGE_H

@@ -1006,8 +1006,8 @@ RZ_IPI void Value_fini(RzBinDwarfValue *self) {
 	}
 	if (self->type == RzBinDwarfValueType_LOCATION) {
 		rz_bin_dwarf_location_free(self->location);
-		self->location = NULL;
 	}
+	memset(self, 0, sizeof(RzBinDwarfValue));
 }
 
 RZ_IPI void Value_free(RzBinDwarfValue *self) {

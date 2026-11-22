@@ -6,6 +6,12 @@
 #include <rz_util/rz_set.h>
 #include "pe.h"
 
+#ifdef RZ_BIN_PE64
+#define pe_buf_read_pointer_offset(b, o, p) rz_buf_read_le64_offset(b, o, p)
+#else
+#define pe_buf_read_pointer_offset(b, o, p) rz_buf_read_le32_offset(b, o, p)
+#endif
+
 static inline int is_thumb(RzBinPEObj *bin) {
 	return bin->nt_headers->optional_header.AddressOfEntryPoint & 1;
 }
@@ -21,8 +27,73 @@ static inline int is_arm(RzBinPEObj *bin) {
 	return 0;
 }
 
-bool PE_(rz_bin_pe_has_canary)(const RzBinPEObj *bin) {
-	return bin->has_canary;
+static bool read_image_load_config_code_integrity(RzBuffer *b, ut64 *offset, PE_(image_load_config_code_integrity) * code_integrity) {
+	return rz_buf_read_le16_offset(b, offset, &code_integrity->Flags) &&
+		rz_buf_read_le16_offset(b, offset, &code_integrity->Catalog) &&
+		rz_buf_read_le32_offset(b, offset, &code_integrity->CatalogOffset) &&
+		rz_buf_read_le32_offset(b, offset, &code_integrity->Reserved);
+}
+
+static bool read_image_load_config_directory(RzBuffer *b, ut64 offset, PE_(image_load_config_directory) * config_dir) {
+	return rz_buf_read_le32_offset(b, &offset, &config_dir->Size) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->TimeDateStamp) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->MajorVersion) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->MinorVersion) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->GlobalFlagsClear) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->GlobalFlagsSet) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->CriticalSectionDefaultTimeout) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->DeCommitFreeBlockThreshold) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->DeCommitTotalFreeThreshold) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->LockPrefixTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->MaximumAllocationSize) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->VirtualMemoryThreshold) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->ProcessAffinityMask) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->ProcessHeapFlags) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->CSDVersion) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->DependentLoadFlags) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->EditList) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->SecurityCookie) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->SEHandlerTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->SEHandlerCount) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardCFCheckFunction) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardCFCheckDispatch) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardCFFunctionTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardCFFunctionCount) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->GuardFlags) &&
+		read_image_load_config_code_integrity(b, &offset, &config_dir->CodeIntegrity) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardAddressTakenIatEntryTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardAddressTakenIatEntryCount) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardLongJumpTargetTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardLongJumpTargetCount) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->DynamicValueRelocTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->CHPEMetadataPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardRFFailureRoutine) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardRFFailureRoutineFunctionPointer) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->DynamicValueRelocTableOffset) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->DynamicValueRelocTableSection) &&
+		rz_buf_read_le16_offset(b, &offset, &config_dir->Reserved2) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardRFVerifyStackPointerFunctionPointer) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->HotPatchTableOffset) &&
+		rz_buf_read_le32_offset(b, &offset, &config_dir->Reserved3) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->EnclaveConfigurationPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->VolatileMetadataPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardEHContinuationTable) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardEHContinuationCount) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardXFGCheckFunctionPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardXFGDispatchFunctionPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->GuardXFGTableDispatchFunctionPointer) &&
+		pe_buf_read_pointer_offset(b, &offset, &config_dir->CastGuardOsDeterminedFailureMode);
+}
+
+bool PE_(rz_bin_pe_has_canary)(RzBinPEObj *bin) {
+	PE_(image_load_config_directory)
+	config_dir = { 0 };
+	ut64 load_cfg_va = bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].VirtualAddress;
+	ut64 load_cfg_pa = PE_(bin_pe_rva_to_paddr)(bin, load_cfg_va);
+	if (!read_image_load_config_directory(bin->b, load_cfg_pa, &config_dir)) {
+		return false;
+	}
+	return config_dir.SecurityCookie;
 }
 
 // TODO: make it const! like in elf

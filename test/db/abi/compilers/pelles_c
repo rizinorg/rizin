@@ -44,7 +44,7 @@ EXPECT=<<EOF
 arch     x86
 machine  AMD 64
     0 * classes
-   86 * functions
+   87 * functions
    38 * imports
     0 * platform.ports
    80 * pointers

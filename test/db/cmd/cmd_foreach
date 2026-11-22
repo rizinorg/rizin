@@ -257,6 +257,19 @@ CMDS=<<EOF
 ps @@iz
 EOF
 EXPECT=<<EOF
+libc.so.6
+strcpy
+puts
+strlen
+malloc
+strcat
+__cxa_finalize
+__libc_start_main
+free
+GLIBC_2.2.5
+_ITM_deregisterTMCloneTable
+__gmon_start__
+_ITM_registerTMCloneTable
 Hello
  r2-folks
 EOF

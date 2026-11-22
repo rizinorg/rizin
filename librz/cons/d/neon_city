@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: 2026 Rot127 <rot127@posteo.com>
+# SPDX-License-Identifier: LGPL-3.0-only
+
+$color_background=rgb:000315
+$color_dark_gray=rgb:2d3640
+$color_barium_green=rgb:3f8699
+$color_black=rgb:121212
+$color_cash_green=rgb:00ff80
+$color_celestial_blue=rgb:3e92cc
+$color_chili_powder_red=rgb:c32101
+$color_crystal_blue=rgb:17bebb
+$color_deepsky_blue=rgb:005faf
+$color_desert_maroon=rgb:80475e
+$color_dodger_blue=rgb:005fd7
+$color_ecru=rgb:d9b26f
+$color_egyptian_blue=rgb:38369a
+$color_element_green=rgb:779900
+$color_foreground=rgb:cccccc
+$color_gray=rgb:5c6773
+$color_hazmat_yellow=rgb:f7b90c
+$color_orange=rgb:ff8f40
+$color_paynes_grey=rgb:556f7a
+$color_phiox=rgb:d042ff
+$color_platinum=rgb:e5e7e6
+$color_rusty_red=rgb:d33f49
+$color_splatoon_green=rgb:1edc00
+$color_splatoon_pink=rgb:ff3278
+$color_sunglow=rgb:c9a43c
+$color_tango_blue=rgb:84a9c0
+$color_teddy_bear_pink=rgb:dd5173
+$color_vapor_yellow=rgb:cecd19
+
+ec comment $color_paynes_grey
+ec usrcmt $color_sunglow
+ec fname $color_hazmat_yellow
+ec flag $color_hazmat_yellow
+ec args $color_splatoon_pink
+ec floc $color_vapor_yellow
+ec fline $color_hazmat_yellow
+ec input $color_platinum
+ec label $color_vapor_yellow
+ec flow $color_element_green
+ec flow2 $color_deepsky_blue
+ec prompt $color_tango_blue
+ec offset $color_tango_blue
+ec math $color_splatoon_pink
+ec bin $color_barium_green
+ec other $color_tango_blue
+ec help $color_celestial_blue
+ec linehl $color_desert_maroon
+ec wordhl $color_desert_maroon
+ec meta $color_paynes_grey
+ec btext $color_ecru
+
+ec b0x00 $color_paynes_grey
+ec b0xlo $color_ecru
+ec b0x7f $color_orange
+ec b0xhi $color_teddy_bear_pink
+ec b0xff $color_deepsky_blue
+
+ec mov $color_deepsky_blue
+ec invalid $color_chili_powder_red
+ec crypto $color_orange
+ec push $color_celestial_blue
+ec pop $color_celestial_blue
+ec jmp $color_splatoon_pink
+ec cjmp $color_splatoon_pink
+ec ujmp $color_splatoon_pink
+ec call $color_phiox
+ec ucall $color_phiox
+ec trap $color_chili_powder_red
+ec swi $color_chili_powder_red
+ec ret $color_splatoon_green
+ec cmp $color_dodger_blue
+ec nop $color_paynes_grey
+
+ec reg $color_orange
+ec creg $color_rusty_red
+ec num $color_platinum
+
+ec graph.box $color_barium_green
+ec graph.box2 $color_sunglow
+ec graph.box3 $color_hazmat_yellow
+ec graph.box4 $color_splatoon_pink
+ec graph.true $color_splatoon_green
+ec graph.false $color_chili_powder_red
+ec graph.ujump $color_crystal_blue
+ec graph.current $color_hazmat_yellow
+ec graph.traced $color_sunglow
+
+ec gui.cflow $color_crystal_blue
+ec gui.dataoffset $color_tango_blue
+ec gui.background $color_background
+ec gui.alt_background $color_dark_gray
+ec gui.border $color_barium_green
+
+ec ai.read $color_crystal_blue
+ec ai.write $color_splatoon_pink
+ec ai.exec $color_chili_powder_red
+ec ai.seq $color_hazmat_yellow
+ec ai.ascii $color_barium_green
+
+ec func_var $color_celestial_blue
+ec func_var_type $color_cash_green
+ec func_var_addr $color_hazmat_yellow
+
+ec widget_bg $color_barium_green
+ec widget_sel $color_hazmat_yellow

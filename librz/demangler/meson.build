@@ -4,7 +4,8 @@ demangler_plugins_list = [
   'objc',
   'pascal',
   'cpp',
-  'rust'
+  'rust',
+  'dlang',
 ]
 
 demangler_plugins = {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include "analysis_private.h"
 #include <rz_core.h>
 #include "test_config.h"
 #include "minunit.h"
@@ -331,6 +332,10 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	mu_assert_streq_free(s, "var_18h.a", "expr from stack for bp in struct");
 	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", -0xc);
 	mu_assert_streq_free(s, "var_18h.b", "expr from stack for bp in struct");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", 0);
+	mu_assert_null(s, "do not substitute one past the end of a variable");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rbp", 0x420);
+	mu_assert_null(s, "do not substitute an unrelated address above the last variable");
 
 	// sp-based access, needing sp tracking info
 
@@ -361,6 +366,8 @@ bool test_rz_analysis_function_var_expr_for_reg_access_at() {
 	mu_assert_streq_free(s, "var_18h.b", "expr from stack for sp in struct");
 	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x10a, "rsp", 0);
 	mu_assert_null(s, "expr from stack for sp oob");
+	s = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x105, "rsp", 0x18);
+	mu_assert_null(s, "do not substitute a gap between variables");
 
 	// arbitrary reg accesses from explicit RzAnalysisVarAccesses
 
@@ -410,12 +417,243 @@ bool test_rz_analysis_var_is_arg() {
 	mu_end;
 }
 
+bool test_stack_access_width_and_sp() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "arm");
+	rz_analysis_set_bits(analysis, 64);
+	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 64, NULL);
+	const struct {
+		ut8 bytes[4];
+		int width;
+		bool store;
+	} cases[] = {
+		{ { 0xe0, 0x43, 0x00, 0x39 }, 1, true }, // strb w0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x00, 0x79 }, 2, true }, // strh w0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x00, 0xb9 }, 4, true }, // str w0, [sp, 0x10]
+		{ { 0xe0, 0x0b, 0x00, 0xf9 }, 8, true }, // str x0, [sp, 0x10]
+		{ { 0xe0, 0x43, 0x40, 0x39 }, 1, false }, // ldrb w0, [sp, 0x10]
+		{ { 0xe0, 0x43, 0x80, 0x39 }, 1, false }, // ldrsb x0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x40, 0x79 }, 2, false }, // ldrh w0, [sp, 0x10]
+		{ { 0xe0, 0x23, 0x80, 0x79 }, 2, false }, // ldrsh x0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x80, 0xb9 }, 4, false }, // ldrsw x0, [sp, 0x10]
+		{ { 0xe0, 0x13, 0x40, 0xb9 }, 4, false }, // ldr w0, [sp, 0x10]
+		{ { 0xe0, 0x0b, 0x40, 0xf9 }, 8, false }, // ldr x0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x01, 0x78 }, 2, true }, // sturh w0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x41, 0x78 }, 2, false }, // ldurh w0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x81, 0x38 }, 1, false }, // ldursb x0, [sp, 0x10]
+		{ { 0xe0, 0x03, 0x81, 0x78 }, 2, false }, // ldursh x0, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x02, 0x29 }, 4, true }, // stp w0, w1, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x01, 0xa9 }, 8, true }, // stp x0, x1, [sp, 0x10]
+		{ { 0xe0, 0x87, 0x00, 0xad }, 16, true }, // stp q0, q1, [sp, 0x10]
+		{ { 0xe0, 0x07, 0x80, 0x3d }, 16, true }, // str q0, [sp, 0x10]
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(fcn, "create function");
+		// The last visited block can have a different stack depth.
+		fcn->stack = 0x80;
+		RzAnalysisOp op;
+		rz_analysis_op_init(&op);
+		mu_assert_eq(rz_analysis_op(analysis, &op, 0x100, cases[i].bytes, 4,
+				     RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL),
+			4, "decode stack access");
+		RzAnalysisValue *mem = cases[i].store ? op.dst : op.src[0];
+		mu_assert_notnull(mem, "memory operand");
+		mu_assert_eq(mem->type, RZ_ANALYSIS_VAL_MEM, "memory operand type");
+		mu_assert_eq(mem->memref, cases[i].width, "memory element width");
+		if (cases[i].store) {
+			rz_analysis_op_fini(&op);
+			rz_analysis_function_delete(fcn);
+			continue;
+		}
+		rz_analysis_extract_vars(analysis, fcn, &op, -0x30);
+		mu_assert_eq(rz_pvector_len(&fcn->vars), 1, "one recovered stack slot");
+		RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, -0x20);
+		mu_assert_notnull(var, "use the instruction's stack pointer");
+		if (cases[i].width <= 8) {
+			mu_assert_eq(rz_analysis_var_size(analysis, var), cases[i].width * 8, "scalar access width");
+		}
+		RzAnalysisVarAccess *acc = rz_analysis_var_get_access_at(var, op.addr);
+		mu_assert_notnull(acc, "record stack access");
+		mu_assert_eq(acc->type, cases[i].store ? RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE : RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, "access direction");
+		rz_analysis_op_fini(&op);
+		rz_analysis_function_delete(fcn);
+	}
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+bool test_stack_access_unknown_or_indexed() {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	fcn->stack = 0x20;
+	// mov eax, [rsp + 0x10]
+	const ut8 load[] = { 0x8b, 0x44, 0x24, 0x10 };
+	RzAnalysisOp op;
+	rz_analysis_op_init(&op);
+	rz_analysis_op(analysis, &op, 0x100, load, sizeof(load), RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL);
+	rz_analysis_extract_vars(analysis, fcn, &op, RZ_STACK_ADDR_INVALID);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "unknown SP must not use a stale function stack");
+	rz_analysis_extract_vars(analysis, fcn, &op, ST64_MAX);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "overflow is not a stack address");
+	rz_analysis_op_fini(&op);
+	// sub dword [rbp + rbx], 0x7fbf50b8: the immediate is not a stack displacement.
+	const ut8 indexed[] = { 0x81, 0x6c, 0x1d, 0x00, 0xb8, 0x50, 0xbf, 0x7f };
+	rz_analysis_op_init(&op);
+	rz_analysis_op(analysis, &op, 0x104, indexed, sizeof(indexed), RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL);
+	rz_analysis_extract_vars(analysis, fcn, &op, -0x20);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 0, "indexed memory does not identify a fixed stack slot");
+	rz_analysis_op_fini(&op);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+static bool test_extract_vars_stack_pointer(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "analysis");
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "stack_vars", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "function");
+	fcn->stack = 0x100;
+	RzAnalysisOp op = { 0 };
+	// mov rax, [rsp + 8]
+	const ut8 bytes[] = { 0x48, 0x8b, 0x44, 0x24, 0x08 };
+	mu_assert_eq(rz_analysis_op(analysis, &op, 0x100, bytes, sizeof(bytes), RZ_ANALYSIS_OP_MASK_VAL), sizeof(bytes), "decode stack load");
+	rz_analysis_extract_vars(analysis, fcn, &op, -16);
+	RzAnalysisVar *var = rz_analysis_function_get_stack_var_at(fcn, -8);
+	mu_assert_notnull(var, "local uses the instruction's stack pointer");
+	mu_assert_false(rz_analysis_var_is_arg(var), "local is not an argument");
+	op.addr++;
+	rz_analysis_extract_vars(analysis, fcn, &op, 0);
+	var = rz_analysis_function_get_stack_var_at(fcn, 8);
+	mu_assert_notnull(var, "genuine stack argument");
+	mu_assert_true(rz_analysis_var_is_arg(var), "positive offset is an argument");
+	op.addr++;
+	rz_analysis_extract_vars(analysis, fcn, &op, RZ_STACK_ADDR_INVALID);
+	rz_analysis_extract_vars(analysis, fcn, &op, ST64_MAX - 4);
+	mu_assert_eq(rz_pvector_len(&fcn->vars), 2, "unknown and overflowing stack addresses create no variables");
+	fcn->bp_frame = false;
+	char *expr = rz_analysis_function_var_expr_for_reg_access_at(fcn, 0x110, "rbp", 8);
+	mu_assert_null(expr, "repurposed frame pointer does not name a stack argument");
+	rz_analysis_op_fini(&op);
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
+static bool test_arm_frame_pointer_vars(void) {
+	const struct {
+		const char *bytes;
+		bool frame;
+	} cases[] = {
+		// mov fp, sp; accesses a local at fp - 4 and an argument at fp + 12.
+		{ "00482de90db0a0e110d04de204000be50c009be510d08de20088bde8", true },
+		// add fp, sp, 4; the same local and argument have different displacements.
+		{ "00482de904b08de210d04de208000be508009be510d08de20088bde8", true },
+		// ldr fp, [pc, 16]; fp addresses global data, while sp still addresses a local.
+		{ "00482de910d04de20c008de510b09fe50c009be510d08de20088bde8", false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		rz_config_set(core->config, "asm.arch", "arm");
+		rz_config_set_i(core->config, "asm.bits", 32);
+		rz_config_set_b(core->config, "cfg.bigendian", false);
+		mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RWX, true), "file");
+		rz_core_cmdf(core, "wx %s", cases[i].bytes);
+		rz_core_cmd0(core, "af");
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0);
+		mu_assert_notnull(fcn, "analyzed function");
+		mu_assert_eq(fcn->bp_frame, cases[i].frame, "recognize frame setup and global-data loads");
+		for (int pass = 0; pass < 2; pass++) {
+			RzAnalysisVar *local = rz_analysis_function_get_stack_var_at(fcn, -12);
+			mu_assert_notnull(local, "preserve stack local");
+			mu_assert_false(rz_analysis_var_is_arg(local), "local classification");
+			RzList *vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_STORAGE_STACK);
+			mu_assert_eq(rz_list_length(vars), cases[i].frame ? 2 : 1, "only real stack variables");
+			rz_list_free(vars);
+			if (cases[i].frame) {
+				RzAnalysisVar *arg = rz_analysis_function_get_stack_var_at(fcn, 4);
+				mu_assert_notnull(arg, "preserve stack argument");
+				mu_assert_true(rz_analysis_var_is_arg(arg), "argument classification");
+			}
+			if (!pass) {
+				rz_core_cmd0(core, "afva");
+			}
+		}
+		if (!cases[i].frame) {
+			RzAnalysisVar *local = rz_analysis_function_get_stack_var_at(fcn, -12);
+			rz_analysis_var_set_access(local, "fp", 0x30, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, -12);
+			rz_analysis_function_check_bp_use(fcn);
+			mu_assert_null(rz_analysis_var_get_access_at(local, 0x30), "remove the invalid fp access");
+			mu_assert_notnull(rz_analysis_var_get_access_at(local, 8), "retain the valid sp access");
+			assert_sane(core->analysis);
+		}
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
+static bool test_x86_stack_var_recovery(void) {
+	const struct {
+		const char *bytes;
+		st64 locals[2];
+		bool frame;
+	} cases[] = {
+		// Saving esp to [ebp - 8] must not change the frame base.
+		{ "5589e583ec208965f88b45fc8b4508c9c3", { -12, -8 }, true },
+		// Each branch accesses [esp + 4] after a different stack allocation.
+		{ "83ec2085c074098b4c240483c420c39083ec108b54240483c430c3", { -44, -28 }, false },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		RzCore *core = rz_core_new();
+		mu_assert_notnull(core, "core");
+		rz_config_set(core->config, "asm.arch", "x86");
+		rz_config_set_i(core->config, "asm.bits", 32);
+		mu_assert_true(rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RWX, true), "file");
+		rz_core_cmdf(core, "wx %s", cases[i].bytes);
+		rz_core_cmd0(core, "af");
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0);
+		mu_assert_notnull(fcn, "analyzed function");
+		for (int pass = 0; pass < 2; pass++) {
+			for (size_t j = 0; j < RZ_ARRAY_SIZE(cases[i].locals); j++) {
+				RzAnalysisVar *local = rz_analysis_function_get_stack_var_at(fcn, cases[i].locals[j]);
+				mu_assert_notnull(local, "preserve stack local");
+				mu_assert_false(rz_analysis_var_is_arg(local), "local classification");
+			}
+			if (cases[i].frame) {
+				mu_assert_eq(fcn->bp_off, 4, "store through ebp preserves the frame base");
+				RzAnalysisVar *arg = rz_analysis_function_get_stack_var_at(fcn, 4);
+				mu_assert_notnull(arg, "preserve stack argument");
+				mu_assert_true(rz_analysis_var_is_arg(arg), "argument classification");
+			} else {
+				RzList *vars = rz_analysis_var_list(fcn, RZ_ANALYSIS_VAR_STORAGE_STACK);
+				mu_assert_eq(rz_list_length(vars), 2, "both branches contain locals only");
+				rz_list_free(vars);
+			}
+			assert_sane(core->analysis);
+			if (!pass) {
+				rz_core_cmd0(core, "afva");
+			}
+		}
+		rz_core_free(core);
+	}
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_extract_vars_stack_pointer);
+	mu_run_test(test_arm_frame_pointer_vars);
+	mu_run_test(test_x86_stack_var_recovery);
 #if !ASAN
 	mu_run_test(test_rz_analysis_var);
 #endif
 	mu_run_test(test_rz_analysis_function_get_stack_var_in);
 	mu_run_test(test_rz_analysis_function_var_expr_for_reg_access_at);
+	mu_run_test(test_stack_access_width_and_sp);
+	mu_run_test(test_stack_access_unknown_or_indexed);
 	mu_run_test(test_rz_analysis_var_is_arg);
 	return tests_passed != tests_run;
 }

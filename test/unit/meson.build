@@ -1,5 +1,6 @@
 if get_option('enable_tests')
   test_conf_data = configuration_data()
+  test_conf_data.set10('TEST_HAVE_RISCV_CS', 'riscv_cs' in arch_plugins.get('list'))
   test_conf_data.set_quoted('TEST_BUILD_TYPES_DIR', fs.as_posix(types_build_dir))
   test_config_h = configure_file(
     input: 'test_config.h.in',
@@ -17,6 +18,7 @@ if get_option('enable_tests')
     'analysis_class_graph',
     'analysis_coverage',
     'analysis_function',
+    'analysis_h8300',
     'analysis_hints',
     'analysis_meta',
     'analysis_var',
@@ -54,6 +56,7 @@ if get_option('enable_tests')
     'core_analysis_stats',
     'core_bin',
     'core_cmd',
+    'core_plugin',
     'core_seek',
     'core_task',
     'crypto',
@@ -71,6 +74,8 @@ if get_option('enable_tests')
     'float',
     'glob',
     'graph',
+    'graph_new',
+    'graph_new_cfg',
     'hash',
     'hex',
     'ht',
@@ -78,12 +83,14 @@ if get_option('enable_tests')
     'idpool',
     'idstorage',
     'inflate_deflate',
+    'interrupt',
     'il_definitions',
     'il_reg',
     'il_validate',
     'il_vm',
     'il_helpers',
     'intervaltree',
+    'inquiry_absint',
     'io',
     'io_ihex',
     'itv',
@@ -92,8 +99,13 @@ if get_option('enable_tests')
     'list',
     'log',
     'lzma',
+    'math',
+    'mutual_info',
     'mem',
     'ovf',
+    'parse',
+    'pdb',
+    'pf',
     'pj',
     'rbtree',
     'reg',
@@ -106,6 +118,7 @@ if get_option('enable_tests')
     'sdb_diff',
     'sdb_sdb',
     'sdb_util',
+    'search',
     'serialize_analysis',
     'serialize_mark',
     'serialize_config',
@@ -121,15 +134,21 @@ if get_option('enable_tests')
     'sparse',
     'stack',
     'str',
+    'c6x_decode',
+    'c6x_packet',
+    'c6x_il',
     'strbuf',
+    'structured_data',
     'str_search',
     'subprocess',
     'syscall',
     'table',
     'task',
     'threads',
+    'tms320_dwarf_regs',
     'tokens',
     'tree',
+    'trie',
     'type',
     'uleb128',
     'unum',
@@ -139,7 +158,7 @@ if get_option('enable_tests')
   ]
 
   if capstone_dep.type_name() == 'internal'
-    tests += 'analysis_op'
+    tests += ['analysis_op', 'analysis_m68k']
   endif
 
   unit_test_env = environment()
@@ -155,6 +174,7 @@ if get_option('enable_tests')
         rz_main_dep,
         rz_socket_dep,
         rz_core_dep,
+        rz_inquiry_dep,
         rz_io_dep,
         rz_bin_dep,
         rz_flag_dep,
@@ -174,7 +194,7 @@ if get_option('enable_tests')
         rz_mark_dep,
         rzheap_dep,
         lrt,
-      ],
+      ] + (test in ['unum', 'json'] ? [mth] : []),
       install: false,
       install_rpath: rpath_exe,
       implicit_include_directories: false,

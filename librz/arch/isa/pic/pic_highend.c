@@ -7,12 +7,13 @@
 #include "pic_highend.h"
 
 /**
- * \file High-end (e.g. PIC18CXXX) instruction set
+ * \file
+ * High-end (e.g. PIC18CXXX) instruction set
  */
 
 // instruction classification according to the argument types
 
-static char *fsr[] = { "fsr0", "fsr1", "fsr2" };
+static const char *const fsr[] = { "fsr0", "fsr1", "fsr2" };
 
 typedef struct {
 	PicHighendOpcode code;

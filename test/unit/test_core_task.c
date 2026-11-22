@@ -8,10 +8,10 @@ static void *my_function(RzCore *core, void *user) {
 	size_t val = (size_t)user;
 	int i;
 	for (i = 0; i < 5; i++) {
-		rz_cons_printf("%u, %d\n", (unsigned int)val, i);
+		rz_cons_printf(core->cons, "%u, %d\n", (unsigned int)val, i);
 		rz_core_task_yield(&core->tasks);
 	}
-	return rz_cons_get_buffer_dup();
+	return rz_cons_get_buffer_dup(core->cons);
 }
 
 static bool test_core_task(void) {
@@ -19,18 +19,20 @@ static bool test_core_task(void) {
 	rz_config_set_i(core->config, "scr.interactive", 0);
 	rz_core_task_sync_begin(&core->tasks);
 
+	rz_cons_push(core->cons);
+
 	RzCoreTask *a = rz_core_cmd_task_new(core, "echo hello; echo world; echo from; echo a; echo task", NULL, NULL);
 	rz_core_task_enqueue(&core->tasks, a);
 
 	RzCoreTask *b = rz_core_function_task_new(core, my_function, (void *)(size_t)1337);
 	rz_core_task_enqueue(&core->tasks, b);
 
-	rz_cons_printf("Hello\n");
-	rz_cons_printf("this\n");
-	rz_cons_printf("is\n");
-	rz_cons_printf("the\n");
-	rz_cons_printf("main\n");
-	rz_cons_printf("task!\n");
+	rz_cons_printf(core->cons, "Hello\n");
+	rz_cons_printf(core->cons, "this\n");
+	rz_cons_printf(core->cons, "is\n");
+	rz_cons_printf(core->cons, "the\n");
+	rz_cons_printf(core->cons, "main\n");
+	rz_cons_printf(core->cons, "task!\n");
 
 	rz_core_task_join(&core->tasks, rz_core_task_self(&core->tasks), a->id);
 	rz_core_task_join(&core->tasks, rz_core_task_self(&core->tasks), b->id);
@@ -49,7 +51,9 @@ static bool test_core_task(void) {
 	rz_core_task_del(&core->tasks, a->id);
 	rz_core_task_del(&core->tasks, b->id);
 
-	mu_assert_streq(rz_cons_get_buffer(), "Hello\nthis\nis\nthe\nmain\ntask!\n", "main buffer");
+	mu_assert_streq(rz_cons_get_buffer(core->cons), "Hello\nthis\nis\nthe\nmain\ntask!\n", "main buffer");
+
+	rz_cons_pop(core->cons);
 
 	rz_core_task_sync_end(&core->tasks);
 	rz_core_free(core);

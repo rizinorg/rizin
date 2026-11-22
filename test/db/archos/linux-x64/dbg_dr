@@ -389,3 +389,18 @@ r13 = 0x0000000000000016
 rip = 0x0000000000000008
 EOF
 RUN
+
+NAME=dr assign flag registers
+FILE=bins/elf/analysis/bigswitch_x86_64
+CMDS=<<EOF
+ood
+dr rflags=0x201
+dr rflags
+dr eflags=0x240
+dr eflags
+EOF
+EXPECT=<<EOF
+rflags = 0x0000000000000203
+eflags = 0x00000242
+EOF
+RUN

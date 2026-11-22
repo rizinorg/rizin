@@ -12,8 +12,8 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_asm.h>
-#include <rz_analysis.h>
+#include "asm_private.h"
+#include "analysis_private.h"
 #include <rz_util.h>
 #include <rz_vector.h>
 #include "asm_private.h"
@@ -27,7 +27,6 @@ RZ_IPI void hexagon_state_fini(RZ_NULLABLE HexState *state) {
 	if (!state) {
 		return;
 	}
-	rz_config_free(state->cfg);
 	rz_pvector_free(state->token_patterns);
 	rz_list_free(state->const_ext_l);
 	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
@@ -249,6 +248,13 @@ static void hex_clear_pkt(RZ_NONNULL HexPkt *p) {
 	hex_il_pkt_stats_reset(&p->il_op_stats);
 }
 
+RZ_IPI void hexagon_state_clear_cache(RZ_NONNULL HexState *state) {
+	rz_return_if_fail(state);
+	for (size_t i = 0; i < HEXAGON_STATE_PKTS; ++i) {
+		hex_clear_pkt(&state->pkts[i]);
+	}
+}
+
 /**
  * \brief Gives the least used packet.
  *
@@ -375,6 +381,7 @@ RZ_IPI RZ_OWN HexState *hexagon_state_new() {
 		state->pkts[i].il_ops = rz_pvector_new(NULL);
 		if (!state->pkts[i].bin) {
 			hexagon_state_fini(state);
+			free(state);
 			RZ_LOG_FATAL("Could not initialize instruction list!");
 			return NULL;
 		}
@@ -537,7 +544,7 @@ static void hex_set_pkt_info(RZ_INOUT HexInsnContainer *hic, const HexPkt *pkt, 
 	rz_return_if_fail(hic && pkt && state);
 	bool is_first = (k == 0);
 	HexPktInfo *hi_pi = &hic->pkt_info;
-	bool sdk_form = rz_config_get_b(state->cfg, "plugins.hexagon.sdk");
+	bool sdk_form = state->sdk;
 
 	strncpy(hi_pi->text_postfix, "", 16);
 	// Parse instr. position in pkt
@@ -664,7 +671,7 @@ static void make_packet_valid(RZ_BORROW HexState *state, RZ_BORROW HexPkt *pkt) 
  * \param pkt The packet which predecessor will be updated.
  */
 static void make_next_packet_valid(HexState *state, const HexPkt *pkt) {
-	HexInsnContainer *tmp = rz_list_get_n(pkt->bin, 0);
+	HexInsnContainer *tmp = rz_list_last_val(pkt->bin);
 	if (!tmp) {
 		return;
 	}
@@ -854,7 +861,7 @@ static void print_state_pkt(const HexState *state, st32 index, HexBufferAction a
 		} else if (i == newest) {
 			time_ind = "new";
 		}
-		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016llu │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
+		rz_strbuf_appendf(pkt_line, "│  %d  │ 0x%010x │ %s │ %016" PFMT64u " │ ", i, pkt->pkt_addr, time_ind, pkt->last_access);
 		HexInsnContainer *hic = NULL;
 		for (int j = 0; j < 4; ++j) {
 			hic = rz_list_get_n(pkt->bin, j);
@@ -1268,6 +1275,7 @@ RZ_API void hexagon_reverse_opcode(HexReversedOpcode *rz_reverse, const ut64 add
 	// For bytes buffers (e.g. given in case of `rz-asm`) the address is not a valid seek, but distinct.
 	if (buffer->type == RZ_BUFFER_IO && rz_buf_seek(buffer, addr, RZ_BUF_SET) != addr) {
 		RZ_LOG_DEBUG("Could not seek to address: 0x%" PFMT64x ". Attempting to read out of mapped memory region?\n", addr);
+		rz_buf_free(buffer);
 		return;
 	}
 	ut64 initial_buffer_offset = rz_buf_tell(buffer);

@@ -93,8 +93,9 @@ RZ_API bool sdb_array_get_num(RZ_NONNULL RZ_BORROW Sdb *s, RZ_NONNULL const char
 RZ_API char *sdb_array_get(Sdb *s, const char *key, int idx) {
 	const char *str = sdb_const_get(s, key);
 	const char *p = str;
-	char *o, *n;
-	int i, len;
+	const char *n = NULL;
+	char *o = NULL;
+	size_t len = 0;
 	if (!str || !*str) {
 		return NULL;
 	}
@@ -120,7 +121,7 @@ RZ_API char *sdb_array_get(Sdb *s, const char *key, int idx) {
 		o[len] = 0;
 		return o;
 	}
-	for (i = 0; i < idx; i++) {
+	for (size_t i = 0; i < idx; i++) {
 		n = strchr(p, SDB_RS);
 		if (!n)
 			return NULL;

@@ -59,7 +59,7 @@ int gdbr_check_vcont(libgdbr_t *g);
  * remote target's interpreter.
  * \returns 0 on success and -1 on failure
  */
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf);
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf, void *cb_printf_user);
 
 /*!
  * \brief attaches to a process
@@ -126,6 +126,7 @@ int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp);
  * File read from remote target (only one file open at a time for now)
  */
 int gdbr_open_file(libgdbr_t *g, const char *filename, int flags, int mode);
+int gdbr_pread_file(libgdbr_t *g, ut8 *buf, ut64 max_len, uint32_t start_offset);
 int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len);
 int gdbr_close_file(libgdbr_t *g);
 

@@ -22,7 +22,7 @@
 #     needs: real_pr_shas
 #     steps:
 #       - name: Checkout repository
-#         uses: actions/checkout@v6
+#         uses: actions/checkout@v7
 #         with:
 #           fetch-depth: 0  # Full history needed for commit scanning
 # ```
@@ -30,6 +30,7 @@
 # Use `${{ needs.real_pr_shas.outputs.BASE_SHA }}` to get the real base sha.
 # Use `${{ needs.real_pr_shas.outputs.HEAD_SHA }}` to get the PR head commit sha.
 # Use `${{ needs.real_pr_shas.outputs.COMMIT_MSGS }}` to get the commit messages of git log --pretty=%B BASE_SHA..HEAD_SHA
+# The commit messages of `git diff --unified=0 "$BASE_SHA".."$HEAD_SHA" | grep -E '^\+\+\+|^---|^@@.+@@'` are uploaded under the name 'pr_changes' as 'pr_changes.diff' (not archived).
 #
 # This workflow is copied from https://github.com/JensDll/should-run/blob/main/.github/workflows/main.yaml#L54
 #
@@ -61,7 +62,7 @@ jobs:
       output_msgs: ${{ steps.get_shas.outputs.COMMIT_MSGS }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: get_shas
         run: |
           git fetch --no-tags --prune --no-recurse-submodules --depth=$((${{ github.event.pull_request.commits }} + 1)) origin ${{ github.event.pull_request.head.sha }}
@@ -76,9 +77,15 @@ jobs:
           	exit 2
           fi
 
+          CHANGES=$(git diff --unified=0 "$BASE_SHA".."$HEAD_SHA")
+          if [[ $? -eq 128 ]]; then
+            echo "Failed to get diff"
+            exit 2
+          fi
+          echo "$CHANGES | grep -E '^\+\+\+|^@@.+@@'" > pr_changes.diff
+
           echo "BASE_SHA=$BASE_SHA"
           echo "HEAD_SHA=$HEAD_SHA"
-          echo -e "COMMIT_MSGS:\n$COMMIT_MSGS"
 
           echo "BASE_SHA=$BASE_SHA" >> $GITHUB_OUTPUT
           echo "HEAD_SHA=$HEAD_SHA" >> $GITHUB_OUTPUT
@@ -91,3 +98,9 @@ jobs:
           echo "COMMIT_MSGS<<$EOF" >> $GITHUB_OUTPUT
           echo "$COMMIT_MSGS" >> $GITHUB_OUTPUT
           echo "$EOF" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pr_changes.diff
+          archive: false
+          path: pr_changes.diff

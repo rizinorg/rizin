@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file The functions in this file are an API for binary modules which need
+ * \file
+ * The functions in this file are an API for binary modules which need
  * ELF parsing capabilities.
  * Most of the ELF plugin was not build as library and can't be used without
  * code duplication.

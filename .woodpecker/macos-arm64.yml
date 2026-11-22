@@ -26,6 +26,7 @@ steps:
   rz-test:
     image: /bin/bash
     commands:
+      - pip3 install --user psutil
       - export PATH="`pwd`/prefix/bin:$PATH"
       - cd test
       - rz-test -V -L

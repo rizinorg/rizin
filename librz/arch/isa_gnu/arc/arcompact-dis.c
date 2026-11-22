@@ -27,6 +27,7 @@
 
 #include <common_gnu/ansidecl.h>
 #include <common_gnu/disas-asm.h>
+#include <arc/arc_ctx.h>
 #include "arc.h"
 #include "arc-ext.h"
 #include "arc-dis.h"
@@ -279,9 +280,6 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 
 #define add_target(x) (state->targets[state->tcnt++] = (x))
 
-static short int enable_simd = 0;
-static short int enable_insn_stream = 0;
-
 static const char *
 core_reg_name(struct arcDisState *state, int val) {
 	if (state->coreRegName) {
@@ -323,7 +321,8 @@ mwerror(struct arcDisState *state, const char *msg) {
 
 static const char *
 post_address(struct arcDisState *state, int addr) {
-	static char id[3 * _NELEM(state->addresses)];
+	ArcContext *ctx = (ArcContext *)state->user_data;
+	char *id = ctx->post_address_buf;
 	unsigned int j, i = state->acnt;
 	if (i < _NELEM(state->addresses)) {
 		state->addresses[i] = addr;
@@ -487,18 +486,8 @@ my_sprintf(struct arcDisState *state, char *buf, const char *format, ...) {
 				inc_bp();
 			} break;
 			case '*': {
-#if 0
-	    va_arg(ap,char*);
-	    inc_bp();
-	    break;
-#elif 1 /* used for prefetch to skip an argument.  */
 				va_arg(ap, int);
 				break;
-#else
-				extern void abort(void);
-
-				abort();
-#endif
 			}
 
 				/* SIMD operands follow*/
@@ -1114,7 +1103,7 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 		/* Aurora SIMD instruction support*/
 	case op_SIMD:
 
-		if (enable_simd) {
+		if (((ArcContext *)state->user_data)->enable_simd) {
 			decodingClass = 42;
 			subopcode = BITS(state->words[0], 17, 23);
 
@@ -2399,7 +2388,7 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 	/* Maybe we should be checking for extension instructions over here
 	 * instead of all over this crazy switch case. */
 	if (state->flow == invalid_instr) {
-		if (!((state->_opcode == op_SIMD) && enable_simd)) {
+		if (!((state->_opcode == op_SIMD) && ((ArcContext *)state->user_data)->enable_simd)) {
 			instrName = instruction_name(state, state->_opcode,
 				state->words[0],
 				&flags);
@@ -2752,11 +2741,6 @@ dsmOneArcInst(bfd_vma addr, struct arcDisState *state, disassemble_info *info) {
 		     version of it
 		   - Scaled index is encoded as 'addrWriteBack', even though it isn't
 		     actually doing a write back;  it is legitimate with a LIMM.  */
-#if 0
-      /* Check if address writeback is allowed before decoding the
-	 address writeback field of a load instruction.*/
-      if (fieldBisReg && (fieldB != 62))
-#endif
 		addrWriteBack = BITS(state->words[0], 22, 23);
 		signExtend = BIT(state->words[0], 16);
 
@@ -3700,14 +3684,14 @@ _instName(
 }
 
 static void
-parse_disassembler_options(char *options) {
+parse_disassembler_options(char *options, ArcContext *ctx) {
 	const char *p;
 	for (p = options; p != NULL;) {
 		if (CONST_STRNEQ(p, "simd")) {
-			enable_simd = 1;
+			ctx->enable_simd = 1;
 		}
 		if (CONST_STRNEQ(p, "insn-stream")) {
-			enable_insn_stream = 1;
+			ctx->enable_insn_stream = 1;
 		}
 
 		p = strchr(p, ',');
@@ -3732,7 +3716,7 @@ int ARCompact_decodeInstr(bfd_vma address, /* Address of this instruction.  */
 	char buf[allOperandsSize + 1];
 
 	if (info->disassembler_options) {
-		parse_disassembler_options(info->disassembler_options);
+		parse_disassembler_options(info->disassembler_options, (ArcContext *)data);
 
 		/* To avoid repeated parsing of these options, we remove them here.  */
 		info->disassembler_options = NULL;
@@ -3784,6 +3768,7 @@ int ARCompact_decodeInstr(bfd_vma address, /* Address of this instruction.  */
 	}
 
 	s._this = &s;
+	s.user_data = data;
 	s.coreRegName = _coreRegName;
 	s.auxRegName = _auxRegName;
 	s.condCodeName = _condCodeName;
@@ -3798,7 +3783,7 @@ int ARCompact_decodeInstr(bfd_vma address, /* Address of this instruction.  */
 		char *operand = s.operandBuffer;
 		char *space = strchr(instr, ' ');
 
-		if (enable_insn_stream) {
+		if (((ArcContext *)s.user_data)->enable_insn_stream) {
 			/* Show instruction stream from MSB to LSB*/
 
 			if (s.instructionLen == 2) {

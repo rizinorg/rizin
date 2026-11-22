@@ -113,6 +113,15 @@ static inline int rz_bits_leading_zeros(ut64 x) {
  * \param size number of bits to copy (needs to be <= 64)
  * \return a new 64-bit unsigned integer with the specified bit range replaced
  */
+/**
+ * \brief Get the number of significant bits of a 64-bit integer.
+ * \param x the 64-bit integer
+ * \return the position of the highest set bit plus one, 0 if \p x is 0
+ */
+static inline ut32 rz_bits_ut64_width(ut64 x) {
+	return 64 - (ut32)rz_bits_leading_zeros(x);
+}
+
 static inline ut64 rz_bits_copy_ut64(ut64 src, ut8 src_pos, ut64 dst, ut8 dst_pos, ut8 size) {
 	if (size >= 64) {
 		return src;
@@ -132,6 +141,22 @@ static inline ut8 rz_bits_copy_ut8(ut8 src, ut8 src_pos, ut8 dst, ut8 dst_pos, u
 
 	ut8 mask = ((1u) << size) - 1;
 	return (dst & ~(mask << dst_pos)) | (src >> src_pos & mask) << dst_pos;
+}
+
+/**
+ * \brief Extracts a bit field from a value.
+ *
+ * \param value the value holding the field
+ * \param start the position of the lowest bit of the field
+ * \param width the number of bits of the field
+ * \return the field in the low bits, 0 if \p start is past bit 63
+ */
+static inline ut64 rz_bits_extract(ut64 value, ut32 start, ut32 width) {
+	if (start >= 64) {
+		return 0;
+	}
+	value >>= start;
+	return width < 64 ? value & ((1ULL << width) - 1) : value;
 }
 
 /**

@@ -1,0 +1,17 @@
+NAME=rz-asm -a ppc.as -b 64 "std 31, -8(1)"
+TOOL=rz-asm
+FILE=std r31, -8(r1)
+ARGS=-a ppc.as -b 64
+EXPECT=<<EOF
+f8ffe1fb
+EOF
+RUN
+
+NAME=rz-asm -a ppc.as -b 32 -e "mr r10, r4"
+TOOL=rz-asm
+FILE=mr r10, r4
+ARGS=-a ppc.as -b 32 -e
+EXPECT=<<EOF
+7c8a2378
+EOF
+RUN

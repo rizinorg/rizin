@@ -1,6 +1,12 @@
-NAME=SMS: Open/iI
+NAME=SMS analysis
 FILE=bins/sms/demo.sms
-CMDS=iH;iI
+CMDS=<<EOF
+iH
+echo ---
+iI
+echo ---
+oml
+EOF
 EXPECT=<<EOF
 sms_rom:
   offset: 0x7ff0
@@ -20,6 +26,7 @@ sms_rom:
     name: "64-Color Palette Test Program"
     description: "Author: Charles MacDonald"
 
+---
 arch     z80
 cpu      N/A
 features N/A
@@ -27,7 +34,6 @@ baddr    ----------
 binsz    0x00008000
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -46,24 +52,16 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
-EOF
-RUN
-
-NAME=SMS: maps
-FILE=bins/sms/demo.sms
-CMDS=oml
-EXPECT=<<EOF
+pie      false
+relrocs  false
+nx       false
+---
  1 fd: 3 +0x00000000 0x00000000 * 0x00007fff r-x 
 EOF
 RUN
@@ -90,7 +88,6 @@ baddr    ----------
 binsz    0x00008000
 bintype  N/A
 bits     8
-retguard false
 class    N/A
 compiler N/A
 dbg_file N/A
@@ -109,17 +106,15 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 EOF
 RUN
 

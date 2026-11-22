@@ -40,7 +40,8 @@ typedef struct bitvector_t {
 RZ_API bool rz_bv_init(RZ_NONNULL RzBitVector *bv, ut32 length);
 RZ_API RZ_OWN RzBitVector *rz_bv_new(ut32 length);
 RZ_API RZ_OWN RzBitVector *rz_bv_dup(const RZ_NONNULL RzBitVector *bv);
-RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL RzBitVector *bv1, RZ_NONNULL RzBitVector *bv2);
+RZ_API RZ_OWN RzBitVector *rz_bv_append(RZ_NONNULL const RzBitVector *low, RZ_NONNULL const RzBitVector *high);
+RZ_API void rz_bv_append_inplace(RZ_INOUT RZ_NONNULL RzBitVector *low, RZ_NONNULL const RzBitVector *high);
 RZ_API ut32 rz_bv_copy(RZ_NONNULL RzBitVector *dst, RZ_NONNULL const RzBitVector *src);
 RZ_API ut32 rz_bv_copy_nbits(
 	RZ_NONNULL RzBitVector *dst, ut32 dst_start_pos,
@@ -130,6 +131,8 @@ RZ_API void rz_bv_set_to_bytes_le(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NO
 RZ_API void rz_bv_set_to_bytes_be(RZ_NONNULL const RzBitVector *bv, RZ_OUT RZ_NONNULL ut8 *buf);
 RZ_API RZ_OWN char *rz_bv_as_string(RZ_NONNULL const RzBitVector *bv);
 RZ_API RZ_OWN char *rz_bv_as_hex_string(RZ_NONNULL const RzBitVector *bv, bool pad);
+RZ_API RZ_OWN char *rz_bv_width_subscript(ut32 width);
+RZ_API RZ_OWN char *rz_bv_as_unicode_string(RZ_NONNULL const RzBitVector *bv, RZ_NONNULL const char *value);
 
 RZ_API ut32 rz_bv_len(RZ_NONNULL const RzBitVector *bv);
 RZ_API ut32 rz_bv_len_bytes(RZ_NONNULL const RzBitVector *bv);
@@ -144,7 +147,9 @@ RZ_API ut32 rz_bv_hash(RZ_NULLABLE RzBitVector *x);
 RZ_API RZ_OWN RzBitVector *rz_bv_pred(RZ_NONNULL RzBitVector *bv);
 RZ_API RZ_OWN RzBitVector *rz_bv_succ(RZ_NONNULL RzBitVector *bv);
 RZ_API bool rz_bv_arshift(RZ_NONNULL RzBitVector *bv, ut32 dist);
+RZ_API bool rz_bv_signed_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size);
 RZ_API RZ_OWN RzBitVector *rz_bv_signed_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
+RZ_API bool rz_bv_unsigned_cast_inplace(RZ_INOUT RZ_NONNULL RzBitVector *bv, ut32 to_size);
 RZ_API RZ_OWN RzBitVector *rz_bv_unsigned_cast(RZ_NONNULL RzBitVector *bv, ut32 to_size);
 
 RZ_API bool rz_bv_slt(RZ_NONNULL RzBitVector *x, RZ_NONNULL RzBitVector *y);

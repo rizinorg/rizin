@@ -237,4 +237,5 @@ ad "sastore" 56
 ad "sipush 100" 110064
 ad "sipush 511" 1101ff
 ad "swap" 5f
-ad "wide" c4
+d "invalid" aa
+d "invalid" ab

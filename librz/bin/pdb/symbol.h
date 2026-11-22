@@ -9,7 +9,8 @@
 #include <rz_pdb.h>
 
 RZ_IPI bool PDBSectionOffset_parse(RzBuffer *b, PDBSectionOffset *section_offset);
-
+RZ_IPI bool PDBSPublic_parse(RzBuffer *b, PDBSymbolKind kind, PDBSPublic *s);
+RZ_IPI bool PDBSData_parse(RzBuffer *b, PDBSymbolKind kind, PDBSData *sdata);
 RZ_IPI bool PDBSymbol_parse(RzBuffer *b, PDBSymbol *symbol);
 
 typedef struct {

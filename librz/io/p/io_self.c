@@ -372,7 +372,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		char *argv = rz_str_dup(cmd + 5);
 		int argc = rz_str_word_set0(argv);
 		if (argc == 0) {
-			eprintf("Usage: R!call [fcnptr] [a0] [a1] ...\n");
+			eprintf("Usage: R! call [fcnptr] [a0] [a1] ...\n");
 			free(argv);
 			return NULL;
 		}
@@ -498,16 +498,16 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				io_self->self_sections[i].name);
 		}
 	} else {
-		eprintf("Usage: R!<cmd> [args]\n");
-		eprintf(" R!pid               show getpid()\n");
-		eprintf(" R!maps              show map regions\n");
-		eprintf(" R!kill              commit suicide\n");
+		eprintf("Usage: R! <cmd> [args]\n");
+		eprintf(" R! pid               show getpid()\n");
+		eprintf(" R! maps              show map regions\n");
+		eprintf(" R! kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf(" R!alarm [secs]      setup alarm signal to raise rizin prompt\n");
+		eprintf(" R! alarm [secs]      setup alarm signal to raise rizin prompt\n");
 #endif
-		eprintf(" R!dlsym [sym]       dlopen\n");
-		eprintf(" R!call [sym] [...]  nativelly call a function\n");
-		eprintf(" R!mameio            enter mame IO mode\n");
+		eprintf(" R! dlsym [sym]       dlopen\n");
+		eprintf(" R! call [sym] [...]  nativelly call a function\n");
+		eprintf(" R! mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }
@@ -582,7 +582,7 @@ void macosx_debug_regions(RzIO *io, RzIOSelf *io_self, task_t task, mach_vm_addr
 			char *print_size_unit;
 			int perm = 0;
 
-			io->cb_printf(num_printed ? "   ... " : "Region ");
+			io->cb_printf(io->cb_printf_user, num_printed ? "   ... " : "Region ");
 			// findListOfBinaries(task, prev_address, prev_size);
 			/* Quick hack to show size of segment, which GDB does not */
 			print_size = size;
@@ -599,7 +599,7 @@ void macosx_debug_regions(RzIO *io, RzIOSelf *io_self, task_t task, mach_vm_addr
 				print_size_unit = "G";
 			}
 			/* End Quick hack */
-			io->cb_printf(" %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
+			io->cb_printf(io->cb_printf_user, " %p - %p [%d%s](%x/%x; %d, %s, %u p. res, %u p. swp, %u p. drt, %u ref)",
 				(void *)(size_t)(address),
 				(void *)(size_t)(address + size),
 				print_size,
@@ -628,9 +628,9 @@ void macosx_debug_regions(RzIO *io, RzIOSelf *io_self, task_t task, mach_vm_addr
 			io_self->self_sections[io_self->self_sections_count].perm = perm;
 			io_self->self_sections_count++;
 			if (nsubregions > 1) {
-				io->cb_printf(" (%d sub-regions)", nsubregions);
+				io->cb_printf(io->cb_printf_user, " (%d sub-regions)", nsubregions);
 			}
-			io->cb_printf("\n");
+			io->cb_printf(io->cb_printf_user, "\n");
 
 			num_printed++;
 			address += size;
@@ -689,7 +689,7 @@ bool bsd_proc_vmmaps(RzIO *io, RzIOSelf *io_self, int pid) {
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf(" %p - %p %s (%s)\n",
+				io->cb_printf(io->cb_printf_user, " %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
 					rz_str_rwx_i(perm),
@@ -742,7 +742,7 @@ exit:
 			perm |= RZ_PERM_X;
 		}
 
-		io->cb_printf(" %p - %p %s [off. %zu]\n",
+		io->cb_printf(io->cb_printf_user, " %p - %p %s [off. %zu]\n",
 			(void *)entry.kve_start,
 			(void *)entry.kve_end,
 			rz_str_rwx_i(perm),
@@ -798,7 +798,7 @@ exit:
 			}
 
 			if (entry->kve_path[0] != '\0') {
-				io->cb_printf(" %p - %p %s (%s)\n",
+				io->cb_printf(io->cb_printf_user, " %p - %p %s (%s)\n",
 					(void *)entry->kve_start,
 					(void *)entry->kve_end,
 					rz_str_rwx_i(perm),
@@ -857,7 +857,7 @@ exit:
 			perm |= RZ_PERM_X;
 		}
 
-		io->cb_printf(" %p - %p %s [off. %zu]\n",
+		io->cb_printf(io->cb_printf_user, " %p - %p %s [off. %zu]\n",
 			(void *)entry.ba.start,
 			(void *)entry.ba.end,
 			rz_str_rwx_i(perm),

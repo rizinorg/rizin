@@ -1457,7 +1457,7 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf16le - Armenian - Fast on LE systems
+NAME=String Search - Encoding: utf16le - Armenian - Fast search, aligned to code point width
 FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
 CMDS=<<EOF
 # Align to UTF16 code point width
@@ -1493,23 +1493,6 @@ EOF
 EXPECT_ERR=
 RUN
 
-NAME=String Search - Encoding: utf16le - Armenian - Fast search, aligned to code point width
-FILE=bins/cmd/search/string_encodings/Armenian-Lipsum.utf16le
-CMDS=<<EOF
-e search.align=2
-/z "դեֆինիթիոնես ին վիս, ծասե պեռթինա" l utf16le
-# Requires increasing the block size because -.-
-b 0x1000
-# Check string is actually at offset of the hit.
-ps utf16le unprintable @ hit.string.utf16le.0
-EOF
-EXPECT=<<EOF
-0x0000020c 66 hit.string.utf16le.0 33
-դեֆինիթիոնես ին վիս, ծասե պեռթինածիա նե վիս. ին մելիուս ֆածիլիս եոս, եսթ եռոս պոպուլո թիմեամ թե. իուս նո ծոնսուլաթու.
-EOF
-EXPECT_ERR=
-RUN
-
 NAME=Check adjusting of offsets and lengths
 FILE=bins/cmd/search/string_encodings/regex_search.russian.utf8.utf32le.utf16be
 CMDS=<<EOF
@@ -1519,6 +1502,92 @@ EOF
 EXPECT=<<EOF
 0x00000050 7 hit.string.ibm037.0 11
 Æ}º}Æ}µ
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - str.unprintable - single code point
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e str.unprintable=0x20
+/z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+0x000000fa 31 hit.string.ascii.0 31
+placerat
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - str.unprintable - multiple code points
+FILE=bins/cmd/search/string_encodings/Latin-Lipsum.ascii
+CMDS=<<EOF
+e str.unprintable=0x20,0x2c
+/z "placerat ut, eu etiam vitae nam" l ascii
+ps ascii unprintable @ hit.string.ascii.0
+EOF
+EXPECT=<<EOF
+0x000000fa 31 hit.string.ascii.0 31
+placerat
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - str.unprintable - utf8 code point
+FILE=bins/cmd/search/string_encodings/Arabic-Lipsum.utf8
+CMDS=<<EOF
+e str.unprintable=0x629
+/z "ا الأوضاع, لم بوابة المب" l utf8
+b 0x1000
+ps utf8 unprintable @ hit.string.utf8.0
+EOF
+EXPECT=<<EOF
+0x00000116 43 hit.string.utf8.0 43
+ا الأوضاع, لم بواب
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=Strings with new lines and \0 terminators
+FILE==
+CMDS=<<EOF
+# Searching in empty buffer should not find any strings
+/z .+ ri ascii
+
+# Now write strings with new lines and NUL byte mixed
+wx 41414141414141004141414141410a0041414141414141004141414141410a00
+
+# NUL is a new line by default
+/z .+ r ascii
+
+# Overwrite default newline (NUL), \0 can be matched now with dot.
+/z "(*LF).+" r ascii
+EOF
+EXPECT=<<EOF
+0x00000000 7 hit.string.ascii.0 7
+0x00000008 7 hit.string.ascii.1 7
+0x00000010 7 hit.string.ascii.2 7
+0x00000018 7 hit.string.ascii.3 7
+0x00000000 14 hit.string.ascii.0 14
+0x0000000f 15 hit.string.ascii.1 15
+0x0000001f 481 hit.string.ascii.2 1e1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=String Search - regex flags dotall and match new line.
+FILE==
+CMDS=<<EOF
+e str.encoding=utf8
+wx 0afefefefe @ 0x10
+/z ".+" rm
+/z ".+" rd
+EOF
+EXPECT=<<EOF
+0x00000010 1 hit.string.utf8.0 1
+0x00000000 17 hit.string.utf8.0 17
+0x00000015 491 hit.string.utf8.1 1eb
 EOF
 EXPECT_ERR=
 RUN

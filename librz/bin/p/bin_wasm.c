@@ -293,9 +293,9 @@ static RzBinInfo *info(RzBinFile *bf) {
 	ret->subsystem = rz_str_dup("wasm");
 	ret->type = rz_str_dup("EXEC");
 	ret->bits = 32;
-	ret->has_va = 0;
+	ret->has_va = false;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

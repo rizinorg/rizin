@@ -491,8 +491,10 @@ static RzPVector /*<RzBinSection *>*/ *hunk_sections(RzBinFile *bf) {
 
 		char *section_name = rz_str_newf("hunk_%d_%s", i, hunk_get_name_from_type(hunk_data->type));
 		RzBinSection *section = rz_bin_section_new(section_name);
+		free(section_name);
 		if (!section) {
-			return false;
+			rz_pvector_free(ret);
+			return NULL;
 		}
 		rz_pvector_push(ret, section);
 
@@ -521,17 +523,16 @@ static bool hunk_handle_symbols_for_hunk_data(HunkData *hunk_data, RzPVector /*<
 		if (!hunk_symbol) {
 			continue;
 		}
-		char *symbol_name = rz_str_dup(hunk_symbol->name);
 		ut64 paddr = hunk_data->paddr + hunk_symbol->offset;
 		ut64 vaddr = hunk_data->vaddr + hunk_symbol->offset;
-		RzBinSymbol *symbol = rz_bin_symbol_new(symbol_name, paddr, vaddr);
+		RzBinSymbol *symbol = rz_bin_symbol_new(hunk_symbol->name, paddr, vaddr);
 		if (!symbol) {
 			return false;
 		}
 
 		rz_pvector_push(ret, symbol);
 		symbol->size = 0;
-		symbol->type = rz_str_dup(hunk_data->type == HUNK_CODE ? "FUNC" : "OBJ");
+		symbol->type = hunk_data->type == HUNK_CODE ? RZ_BIN_TYPE_FUNC_STR : RZ_BIN_TYPE_OBJECT_STR;
 	}
 	return true;
 }

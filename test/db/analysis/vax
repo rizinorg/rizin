@@ -1,0 +1,445 @@
+NAME=vax analysis ops
+FILE=malloc://4096
+CMDS=<<EOF
+e asm.arch=vax
+e asm.bits=32
+e analysis.arch=vax
+wx d05152
+ao
+echo ----
+wx c1515253
+ao
+echo ----
+wx d08f1234567850
+ao
+echo ----
+wx 11fe
+ao
+echo ----
+wx 13fc
+ao
+echo ----
+wx 1761
+ao
+echo ----
+wx 179f00100000
+ao
+echo ----
+wx fb049f00100000
+ao
+echo ----
+wx 04
+ao
+echo ----
+wx dd51
+ao
+echo ----
+wx 405152
+ao
+echo ----
+wx fd505152
+ao
+echo ----
+wx da5152
+ao
+echo ----
+wx bc02
+ao
+echo ----
+wx 8f510102060007000800
+ao
+echo ----
+wx f451fb
+ao
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: movl r1,r2
+disasm: movl r1,r2
+mnemonic: movl
+mask: ffffff
+prefix: 0
+id: 208
+bytes: d05152
+refptr: 0
+size: 3
+sign: false
+type: mov
+cycles: 0
+opex:
+  mnemonic: "movl"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+family: cpu
+----
+address: 0x0
+opcode: addl3 r1,r2,r3
+disasm: addl3 r1,r2,r3
+mnemonic: addl3
+mask: ffffffff
+prefix: 0
+id: 193
+bytes: c1515253
+refptr: 0
+size: 4
+sign: true
+type: add
+cycles: 0
+opex:
+  mnemonic: "addl3"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+    - type: "reg"
+      value: "r3"
+family: cpu
+----
+address: 0x0
+opcode: movl $0x78563412,r0
+disasm: movl $0x78563412,r0
+mnemonic: movl
+mask: ffffffffffffff
+prefix: 0
+id: 208
+bytes: d08f1234567850
+refptr: 0
+size: 7
+sign: false
+type: mov
+cycles: 0
+opex:
+  mnemonic: "movl"
+  operands:
+    - type: "imm"
+      value: 2018915346
+    - type: "reg"
+      value: "r0"
+family: cpu
+----
+address: 0x0
+opcode: brb 0x0
+disasm: brb 0x0
+mnemonic: brb
+mask: ff00
+prefix: 0
+id: 17
+bytes: 11fe
+refptr: 0
+size: 2
+sign: false
+type: jmp
+cycles: 0
+opex:
+  mnemonic: "brb"
+  operands:
+    - type: "imm"
+      value: 0x0
+jump: 0x00000000
+family: cpu
+----
+address: 0x0
+opcode: beql 0xfffffffffffffffe
+disasm: beql 0xfffffffffffffffe
+mnemonic: beql
+mask: ff00
+prefix: 0
+id: 19
+bytes: 13fc
+refptr: 0
+size: 2
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  mnemonic: "beql"
+  operands:
+    - type: "imm"
+      value: 0xfffffffffffffffe
+jump: 0xfffffffffffffffe
+fail: 0x00000002
+cond: eq
+family: cpu
+----
+address: 0x0
+opcode: jmp (r1)
+disasm: jmp (r1)
+mnemonic: jmp
+mask: ffff
+prefix: 0
+id: 23
+bytes: 1761
+refptr: 0
+size: 2
+sign: false
+type: ujmp
+cycles: 0
+opex:
+  mnemonic: "jmp"
+  operands:
+    - type: "mem"
+      base: "r1"
+family: cpu
+----
+address: 0x0
+opcode: jmp *0x1000
+disasm: jmp *0x1000
+mnemonic: jmp
+mask: ff0000000000
+prefix: 0
+id: 23
+bytes: 179f00100000
+refptr: 0
+size: 6
+sign: false
+type: jmp
+cycles: 0
+opex:
+  mnemonic: "jmp"
+  operands:
+    - type: "mem"
+      target: 0x1000
+jump: 0x00001000
+family: cpu
+----
+address: 0x0
+opcode: calls $0x4,*0x1000
+disasm: calls $0x4,*0x1000
+mnemonic: calls
+mask: ff000000000000
+prefix: 0
+id: 251
+bytes: fb049f00100000
+refptr: 0
+size: 7
+sign: false
+type: call
+cycles: 0
+opex:
+  mnemonic: "calls"
+  operands:
+    - type: "imm"
+      value: 4
+    - type: "mem"
+      target: 0x1000
+jump: 0x00001000
+fail: 0x00000007
+family: cpu
+stackop: inc
+stackptr: -4
+----
+address: 0x0
+opcode: ret
+disasm: ret
+mnemonic: ret
+mask: ff
+prefix: 0
+id: 4
+bytes: 04
+refptr: 0
+size: 1
+sign: false
+type: ret
+cycles: 0
+opex:
+  mnemonic: "ret"
+  operands: []
+family: cpu
+stackop: inc
+stackptr: 4
+----
+address: 0x0
+opcode: pushl r1
+disasm: pushl r1
+mnemonic: pushl
+mask: ffff
+prefix: 0
+id: 221
+bytes: dd51
+refptr: 0
+size: 2
+sign: false
+type: push
+cycles: 0
+opex:
+  mnemonic: "pushl"
+  operands:
+    - type: "reg"
+      value: "r1"
+family: cpu
+stackop: inc
+stackptr: -4
+----
+address: 0x0
+opcode: addf2 r1,r2
+disasm: addf2 r1,r2
+mnemonic: addf2
+mask: ffffff
+prefix: 0
+id: 64
+bytes: 405152
+refptr: 0
+size: 3
+sign: true
+type: add
+cycles: 0
+opex:
+  mnemonic: "addf2"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+family: fpu
+----
+address: 0x0
+opcode: movg r1,r2
+disasm: movg r1,r2
+mnemonic: movg
+mask: ffffffff
+prefix: 0
+id: 64848
+bytes: fd505152
+refptr: 0
+size: 4
+sign: false
+type: mov
+cycles: 0
+opex:
+  mnemonic: "movg"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+family: fpu
+----
+address: 0x0
+opcode: mtpr r1,r2
+disasm: mtpr r1,r2
+mnemonic: mtpr
+mask: ffffff
+prefix: 0
+id: 218
+bytes: da5152
+refptr: 0
+size: 3
+sign: false
+type: mov
+cycles: 0
+opex:
+  mnemonic: "mtpr"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "reg"
+      value: "r2"
+family: priv
+----
+address: 0x0
+opcode: chmk $0x2
+disasm: chmk $0x2
+mnemonic: chmk
+mask: ffff
+prefix: 0
+id: 188
+bytes: bc02
+refptr: 0
+size: 2
+sign: false
+type: swi
+cycles: 0
+opex:
+  mnemonic: "chmk"
+  operands:
+    - type: "imm"
+      value: 2
+family: cpu
+----
+address: 0x0
+opcode: caseb r1,$0x1,$0x2
+disasm: caseb r1,$0x1,$0x2
+mnemonic: caseb
+mask: ffffffffffffffffffff
+prefix: 0
+id: 143
+bytes: 8f510102060007000800
+refptr: 0
+size: 10
+sign: false
+type: ujmp
+cycles: 0
+opex:
+  mnemonic: "caseb"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "imm"
+      value: 1
+    - type: "imm"
+      value: 2
+family: cpu
+----
+address: 0x0
+opcode: sobgeq r1,0xfffffffffffffffe
+disasm: sobgeq r1,0xfffffffffffffffe
+mnemonic: sobgeq
+mask: ff0000
+prefix: 0
+id: 244
+bytes: f451fb
+refptr: 0
+size: 3
+sign: false
+type: cjmp
+cycles: 0
+opex:
+  mnemonic: "sobgeq"
+  operands:
+    - type: "reg"
+      value: "r1"
+    - type: "imm"
+      value: 0xfffffffffffffffe
+jump: 0xfffffffffffffffe
+fail: 0x00000003
+cond: al
+family: cpu
+EOF
+RUN
+
+NAME=vax elf32-vax binary disassembly and analysis
+FILE=bins/vax/b.out
+CMDS=<<EOF
+i~arch
+i~bits
+echo ---prologue---
+pi 8 @ section..text
+echo ---invalids---
+pD 0x1e7 @ section..text~?invalid
+echo ---function---
+af @ section..text
+afi @ section..text~name,size
+EOF
+EXPECT=<<EOF
+arch     vax
+bits     32
+---prologue---
+addl2 $0xf,*0xcac(r0)
+extzv $0x0,$0x0,$0x0,$0x0
+movl 0x8(ap),0x8000046
+movl 0x4(ap),0x800004e
+movl 0x10(ap),0x8000056
+bgeq 0x800005b
+brw loc.s2_big
+clrl r3
+---invalids---
+0
+---function---
+name: loc.___mpn_addmul_1
+size: 487
+EOF
+RUN

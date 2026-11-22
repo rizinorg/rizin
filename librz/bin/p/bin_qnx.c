@@ -241,7 +241,7 @@ static RzBinInfo *qnx_info(RzBinFile *bf) {
 	ret->subsystem = rz_str_dup("any");
 	ret->lang = "C/C++";
 	ret->bits = 32;
-	ret->signature = true;
+	ret->is_signed = true;
 	return ret;
 }
 

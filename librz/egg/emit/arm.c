@@ -27,15 +27,15 @@ static void emit_begin(RzEgg *egg) {
 	/* TODO */
 }
 
-static void emit_init(RzEgg *egg) {
-	egg->remit->emit_context = RZ_NEW0(EmitArmArg);
+static void emit_init(RzEgg *egg, void **context) {
+	*context = RZ_NEW0(EmitArmArg);
 }
 
-static void emit_fini(RzEggEmit *egg_emit) {
-	if (!egg_emit) {
+static void emit_fini(RzEgg *egg, void *context) {
+	if (!context) {
 		return;
 	}
-	EmitArmArg *emit_arm_data = egg_emit->emit_context;
+	EmitArmArg *emit_arm_data = context;
 	free(emit_arm_data);
 }
 
@@ -92,9 +92,8 @@ static void emit_equ(RzEgg *egg, const char *key, const char *value) {
 }
 
 static void emit_syscall_args(RzEgg *egg, int nargs) {
-	int j, k;
-	for (j = 0; j < nargs; j++) {
-		k = j * RZ_SZ;
+	for (int j = 0; j < nargs; j++) {
+		int k = j * RZ_SZ;
 		rz_egg_printf(egg, "  ldr %s, [sp, %d]\n",
 			regs[j + 1], k ? k + 4 : k + 8);
 	}
@@ -136,10 +135,9 @@ static void emit_jmp(RzEgg *egg, const char *str, int atr) {
 }
 
 static void emit_call(RzEgg *egg, const char *str, int atr) {
-	int i;
-	EmitArmArg *emit_arm_data = egg->remit->emit_context;
-	// rz_egg_printf (egg, " ARGS=%d CALL(%s,%d)\n", lastarg, str, atr);
-	for (i = 0; i < emit_arm_data->lastarg; i++) {
+	EmitArmArg *emit_arm_data = egg->emit_context;
+
+	for (int i = 0; i < emit_arm_data->lastarg; i++) {
 		rz_egg_printf(egg, "  ldr r%d, [%s]\n", emit_arm_data->lastarg - 1 - i, emit_arm_data->lastargs[i]);
 		emit_arm_data->lastargs[i][0] = 0;
 	}
@@ -153,7 +151,7 @@ static void emit_call(RzEgg *egg, const char *str, int atr) {
 }
 
 static void emit_arg(RzEgg *egg, int xs, int num, const char *str) {
-	EmitArmArg *emit_arm_data = egg->remit->emit_context;
+	EmitArmArg *emit_arm_data = egg->emit_context;
 	int d = atoi(str);
 	if (!attsyntax && (*str == '$')) {
 		str++;

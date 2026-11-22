@@ -1,0 +1,3622 @@
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#include <rz_util.h>
+#include "c6x.h"
+
+// The C6000 opcode is a fixed 32-bit word. Bit 0 is the parallel bit, bit 1 the
+// destination side, bits 31:28 the creg/z predicate; the remaining bits select a
+// functional unit and operation through the formats of SPRU733 Appendix C-G.
+// Each format is recognised from its fixed low-bit signature, its operand fields
+// are sliced out, and the op field is matched in that unit's table below.
+
+#define BITS(w, hi, lo) (((w) >> (lo)) & ((1u << ((hi) - (lo) + 1)) - 1))
+#define BIT(w, n)       (((w) >> (n)) & 1u)
+
+// src1 (bits 17:13) is either a register or a short constant, fixed per opcode.
+typedef enum {
+	SRC1_REG = 0, ///< src1 is a register
+	SRC1_SCST5, ///< src1 is a signed 5-bit constant
+	SRC1_UCST5, ///< src1 is an unsigned 5-bit constant
+	SRC1_NONE, ///< no src1 (unary)
+} C6xSrc1Kind;
+
+// A row only decodes on a variant that has the required instruction set.
+typedef enum {
+	FEAT_BASE = 0, ///< C62x base, present on every generation
+	FEAT_FP, ///< floating-point (C67x and up)
+	FEAT_SIMD, ///< SIMD/packed (C64x and up)
+	FEAT_C66X, ///< C66x-only additions (4-way dot products, double complex)
+	FEAT_FPS, ///< the .S floating-point add/subtract of C67x+ (C674x and C66x)
+	FEAT_C66X_FP, ///< C66x-only floating-point additions
+} C6xFeat;
+
+// Some floating-point ops mix single registers and 64-bit pairs in ways that
+// `pair` alone cannot express, so a row may override the src2/dst shape.
+typedef enum {
+	OSHAPE_UNIFORM = 0, ///< every register operand follows `pair`
+	OSHAPE_CMP_DP, ///< src1/src2 are pairs, dst is a single sint (DP compares)
+	OSHAPE_CMP_LONG, ///< src2 is a pair (40-bit long), dst and src1 are singles
+	OSHAPE_TO_DP, ///< src2 single widens into a pair dst; src1 (if any) single
+	OSHAPE_LONG_DST, ///< src1 single, src2 a pair, dst a pair (long ADD)
+	OSHAPE_LONG_SRC1, ///< src1 a pair named by its odd register, src2 single, dst a pair (C66x .S long ADD)
+} C6xOShape;
+
+// Printed form of every opcode, indexed by C6xInsnId, so an opcode is named
+// exactly once and the decode tables carry identity instead of text.
+static const char *const c6x_ins_names[C6X_INS_LAST] = {
+	[C6X_INS_FPHEAD] = ".fphead",
+	[C6X_INS_ABS] = "abs",
+	[C6X_INS_ABS2] = "abs2",
+	[C6X_INS_ABSDP] = "absdp",
+	[C6X_INS_ABSSP] = "abssp",
+	[C6X_INS_ADD] = "add",
+	[C6X_INS_ADD2] = "add2",
+	[C6X_INS_ADD4] = "add4",
+	[C6X_INS_ADDAB] = "addab",
+	[C6X_INS_ADDAD] = "addad",
+	[C6X_INS_ADDAH] = "addah",
+	[C6X_INS_ADDAW] = "addaw",
+	[C6X_INS_ADDDP] = "adddp",
+	[C6X_INS_ADDK] = "addk",
+	[C6X_INS_ADDKPC] = "addkpc",
+	[C6X_INS_ADDSP] = "addsp",
+	[C6X_INS_ADDSUB] = "addsub",
+	[C6X_INS_ADDSUB2] = "addsub2",
+	[C6X_INS_ADDU] = "addu",
+	[C6X_INS_AND] = "and",
+	[C6X_INS_ANDN] = "andn",
+	[C6X_INS_AVG2] = "avg2",
+	[C6X_INS_AVGU4] = "avgu4",
+	[C6X_INS_B] = "b",
+	[C6X_INS_BDEC] = "bdec",
+	[C6X_INS_BITC4] = "bitc4",
+	[C6X_INS_BITR] = "bitr",
+	[C6X_INS_BNOP] = "bnop",
+	[C6X_INS_BPOS] = "bpos",
+	[C6X_INS_CALLP] = "callp",
+	[C6X_INS_CCMATMPY] = "ccmatmpy",
+	[C6X_INS_CCMATMPYR1] = "ccmatmpyr1",
+	[C6X_INS_CCMPY32R1] = "ccmpy32r1",
+	[C6X_INS_CLR] = "clr",
+	[C6X_INS_CMATMPY] = "cmatmpy",
+	[C6X_INS_CMATMPYR1] = "cmatmpyr1",
+	[C6X_INS_CMPEQ] = "cmpeq",
+	[C6X_INS_CMPEQ2] = "cmpeq2",
+	[C6X_INS_CMPEQ4] = "cmpeq4",
+	[C6X_INS_CMPEQDP] = "cmpeqdp",
+	[C6X_INS_CMPEQSP] = "cmpeqsp",
+	[C6X_INS_CMPGT] = "cmpgt",
+	[C6X_INS_CMPGT2] = "cmpgt2",
+	[C6X_INS_CMPGTDP] = "cmpgtdp",
+	[C6X_INS_CMPGTSP] = "cmpgtsp",
+	[C6X_INS_CMPGTU] = "cmpgtu",
+	[C6X_INS_CMPGTU4] = "cmpgtu4",
+	[C6X_INS_CMPLT] = "cmplt",
+	[C6X_INS_CMPLTDP] = "cmpltdp",
+	[C6X_INS_CMPLTSP] = "cmpltsp",
+	[C6X_INS_CMPLTU] = "cmpltu",
+	[C6X_INS_CMPY] = "cmpy",
+	[C6X_INS_CMPY32R1] = "cmpy32r1",
+	[C6X_INS_CMPYR] = "cmpyr",
+	[C6X_INS_CMPYR1] = "cmpyr1",
+	[C6X_INS_CMPYSP] = "cmpysp",
+	[C6X_INS_CROT270] = "crot270",
+	[C6X_INS_CROT90] = "crot90",
+	[C6X_INS_DADD] = "dadd",
+	[C6X_INS_DADD2] = "dadd2",
+	[C6X_INS_DADDSP] = "daddsp",
+	[C6X_INS_DAPYS2] = "dapys2",
+	[C6X_INS_DAVG2] = "davg2",
+	[C6X_INS_DAVGNR2] = "davgnr2",
+	[C6X_INS_DAVGNRU4] = "davgnru4",
+	[C6X_INS_DAVGU4] = "davgu4",
+	[C6X_INS_DCCMPY] = "dccmpy",
+	[C6X_INS_DCCMPYR1] = "dccmpyr1",
+	[C6X_INS_DCMPEQ2] = "dcmpeq2",
+	[C6X_INS_DCMPEQ4] = "dcmpeq4",
+	[C6X_INS_DCMPGT2] = "dcmpgt2",
+	[C6X_INS_DCMPGTU4] = "dcmpgtu4",
+	[C6X_INS_DCMPY] = "dcmpy",
+	[C6X_INS_DCMPYR1] = "dcmpyr1",
+	[C6X_INS_DCROT270] = "dcrot270",
+	[C6X_INS_DCROT90] = "dcrot90",
+	[C6X_INS_DDOTP4] = "ddotp4",
+	[C6X_INS_DDOTP4H] = "ddotp4h",
+	[C6X_INS_DDOTPH2] = "ddotph2",
+	[C6X_INS_DDOTPH2R] = "ddotph2r",
+	[C6X_INS_DDOTPL2] = "ddotpl2",
+	[C6X_INS_DDOTPL2R] = "ddotpl2r",
+	[C6X_INS_DDOTPSU4H] = "ddotpsu4h",
+	[C6X_INS_DEAL] = "deal",
+	[C6X_INS_DINT] = "dint",
+	[C6X_INS_DINTHSP] = "dinthsp",
+	[C6X_INS_DINTHSPU] = "dinthspu",
+	[C6X_INS_DINTSP] = "dintsp",
+	[C6X_INS_DINTSPU] = "dintspu",
+	[C6X_INS_DMAX2] = "dmax2",
+	[C6X_INS_DMAXU4] = "dmaxu4",
+	[C6X_INS_DMIN2] = "dmin2",
+	[C6X_INS_DMINU4] = "dminu4",
+	[C6X_INS_DMPY2] = "dmpy2",
+	[C6X_INS_DMPYSP] = "dmpysp",
+	[C6X_INS_DMPYSU4] = "dmpysu4",
+	[C6X_INS_DMPYU2] = "dmpyu2",
+	[C6X_INS_DMPYU4] = "dmpyu4",
+	[C6X_INS_DMV] = "dmv",
+	[C6X_INS_DMVD] = "dmvd",
+	[C6X_INS_DOTP2] = "dotp2",
+	[C6X_INS_DOTP4H] = "dotp4h",
+	[C6X_INS_DOTPN2] = "dotpn2",
+	[C6X_INS_DOTPNRSU2] = "dotpnrsu2",
+	[C6X_INS_DOTPRSU2] = "dotprsu2",
+	[C6X_INS_DOTPSU4] = "dotpsu4",
+	[C6X_INS_DOTPSU4H] = "dotpsu4h",
+	[C6X_INS_DOTPU4] = "dotpu4",
+	[C6X_INS_DPACK2] = "dpack2",
+	[C6X_INS_DPACKH2] = "dpackh2",
+	[C6X_INS_DPACKH4] = "dpackh4",
+	[C6X_INS_DPACKHL2] = "dpackhl2",
+	[C6X_INS_DPACKL2] = "dpackl2",
+	[C6X_INS_DPACKL4] = "dpackl4",
+	[C6X_INS_DPACKLH2] = "dpacklh2",
+	[C6X_INS_DPACKLH4] = "dpacklh4",
+	[C6X_INS_DPACKX2] = "dpackx2",
+	[C6X_INS_DPINT] = "dpint",
+	[C6X_INS_DPSP] = "dpsp",
+	[C6X_INS_DPTRUNC] = "dptrunc",
+	[C6X_INS_DSADD] = "dsadd",
+	[C6X_INS_DSADD2] = "dsadd2",
+	[C6X_INS_DSHL] = "dshl",
+	[C6X_INS_DSHL2] = "dshl2",
+	[C6X_INS_DSHR] = "dshr",
+	[C6X_INS_DSHR2] = "dshr2",
+	[C6X_INS_DSHRU] = "dshru",
+	[C6X_INS_DSHRU2] = "dshru2",
+	[C6X_INS_DSMPY2] = "dsmpy2",
+	[C6X_INS_DSPACKU4] = "dspacku4",
+	[C6X_INS_DSPINT] = "dspint",
+	[C6X_INS_DSPINTH] = "dspinth",
+	[C6X_INS_DSSUB] = "dssub",
+	[C6X_INS_DSSUB2] = "dssub2",
+	[C6X_INS_DSUB] = "dsub",
+	[C6X_INS_DSUB2] = "dsub2",
+	[C6X_INS_DSUBSP] = "dsubsp",
+	[C6X_INS_DXPND2] = "dxpnd2",
+	[C6X_INS_DXPND4] = "dxpnd4",
+	[C6X_INS_EXT] = "ext",
+	[C6X_INS_EXTU] = "extu",
+	[C6X_INS_FADDDP] = "fadddp",
+	[C6X_INS_FADDSP] = "faddsp",
+	[C6X_INS_FMPYDP] = "fmpydp",
+	[C6X_INS_FSUBDP] = "fsubdp",
+	[C6X_INS_FSUBSP] = "fsubsp",
+	[C6X_INS_GMPY] = "gmpy",
+	[C6X_INS_GMPY4] = "gmpy4",
+	[C6X_INS_IDLE] = "idle",
+	[C6X_INS_INTDP] = "intdp",
+	[C6X_INS_INTDPU] = "intdpu",
+	[C6X_INS_INTSP] = "intsp",
+	[C6X_INS_INTSPU] = "intspu",
+	[C6X_INS_LAND] = "land",
+	[C6X_INS_LANDN] = "landn",
+	[C6X_INS_LDB] = "ldb",
+	[C6X_INS_LDBU] = "ldbu",
+	[C6X_INS_LDDW] = "lddw",
+	[C6X_INS_LDH] = "ldh",
+	[C6X_INS_LDHU] = "ldhu",
+	[C6X_INS_LDNDW] = "ldndw",
+	[C6X_INS_LDNW] = "ldnw",
+	[C6X_INS_LDW] = "ldw",
+	[C6X_INS_LMBD] = "lmbd",
+	[C6X_INS_LOR] = "lor",
+	[C6X_INS_MAX2] = "max2",
+	[C6X_INS_MAXU4] = "maxu4",
+	[C6X_INS_MFENCE] = "mfence",
+	[C6X_INS_MIN2] = "min2",
+	[C6X_INS_MINU4] = "minu4",
+	[C6X_INS_MPY] = "mpy",
+	[C6X_INS_MPY2] = "mpy2",
+	[C6X_INS_MPY2IR] = "mpy2ir",
+	[C6X_INS_MPY32] = "mpy32",
+	[C6X_INS_MPY32SU] = "mpy32su",
+	[C6X_INS_MPY32U] = "mpy32u",
+	[C6X_INS_MPY32US] = "mpy32us",
+	[C6X_INS_MPYDP] = "mpydp",
+	[C6X_INS_MPYH] = "mpyh",
+	[C6X_INS_MPYHI] = "mpyhi",
+	[C6X_INS_MPYHIR] = "mpyhir",
+	[C6X_INS_MPYHL] = "mpyhl",
+	[C6X_INS_MPYHLU] = "mpyhlu",
+	[C6X_INS_MPYHSLU] = "mpyhslu",
+	[C6X_INS_MPYHSU] = "mpyhsu",
+	[C6X_INS_MPYHU] = "mpyhu",
+	[C6X_INS_MPYHULS] = "mpyhuls",
+	[C6X_INS_MPYHUS] = "mpyhus",
+	[C6X_INS_MPYI] = "mpyi",
+	[C6X_INS_MPYID] = "mpyid",
+	[C6X_INS_MPYLH] = "mpylh",
+	[C6X_INS_MPYLHU] = "mpylhu",
+	[C6X_INS_MPYLI] = "mpyli",
+	[C6X_INS_MPYLIR] = "mpylir",
+	[C6X_INS_MPYLSHU] = "mpylshu",
+	[C6X_INS_MPYLUHS] = "mpyluhs",
+	[C6X_INS_MPYSP] = "mpysp",
+	[C6X_INS_MPYSP2DP] = "mpysp2dp",
+	[C6X_INS_MPYSPDP] = "mpyspdp",
+	[C6X_INS_MPYSU] = "mpysu",
+	[C6X_INS_MPYSU4] = "mpysu4",
+	[C6X_INS_MPYU] = "mpyu",
+	[C6X_INS_MPYU2] = "mpyu2",
+	[C6X_INS_MPYU4] = "mpyu4",
+	[C6X_INS_MPYUS] = "mpyus",
+	[C6X_INS_MV] = "mv",
+	[C6X_INS_MVC] = "mvc",
+	[C6X_INS_MVD] = "mvd",
+	[C6X_INS_MVK] = "mvk",
+	[C6X_INS_MVKH] = "mvkh",
+	[C6X_INS_NEG] = "neg",
+	[C6X_INS_NOP] = "nop",
+	[C6X_INS_NORM] = "norm",
+	[C6X_INS_NOT] = "not",
+	[C6X_INS_OR] = "or",
+	[C6X_INS_PACK2] = "pack2",
+	[C6X_INS_PACKH2] = "packh2",
+	[C6X_INS_PACKH4] = "packh4",
+	[C6X_INS_PACKHL2] = "packhl2",
+	[C6X_INS_PACKL4] = "packl4",
+	[C6X_INS_PACKLH2] = "packlh2",
+	[C6X_INS_QMPY32] = "qmpy32",
+	[C6X_INS_QMPYSP] = "qmpysp",
+	[C6X_INS_QSMPY32R1] = "qsmpy32r1",
+	[C6X_INS_RCPDP] = "rcpdp",
+	[C6X_INS_RCPSP] = "rcpsp",
+	[C6X_INS_RINT] = "rint",
+	[C6X_INS_ROTL] = "rotl",
+	[C6X_INS_RPACK2] = "rpack2",
+	[C6X_INS_RSQRDP] = "rsqrdp",
+	[C6X_INS_RSQRSP] = "rsqrsp",
+	[C6X_INS_SADD] = "sadd",
+	[C6X_INS_SADD2] = "sadd2",
+	[C6X_INS_SADDSUB] = "saddsub",
+	[C6X_INS_SADDSUB2] = "saddsub2",
+	[C6X_INS_SADDU4] = "saddu4",
+	[C6X_INS_SADDUS2] = "saddus2",
+	[C6X_INS_SAT] = "sat",
+	[C6X_INS_SET] = "set",
+	[C6X_INS_SHFL] = "shfl",
+	[C6X_INS_SHFL3] = "shfl3",
+	[C6X_INS_SHL] = "shl",
+	[C6X_INS_SHL2] = "shl2",
+	[C6X_INS_SHLMB] = "shlmb",
+	[C6X_INS_SHR] = "shr",
+	[C6X_INS_SHR2] = "shr2",
+	[C6X_INS_SHRMB] = "shrmb",
+	[C6X_INS_SHRU] = "shru",
+	[C6X_INS_SHRU2] = "shru2",
+	[C6X_INS_SMPY] = "smpy",
+	[C6X_INS_SMPY2] = "smpy2",
+	[C6X_INS_SMPY32] = "smpy32",
+	[C6X_INS_SMPYH] = "smpyh",
+	[C6X_INS_SMPYHL] = "smpyhl",
+	[C6X_INS_SMPYLH] = "smpylh",
+	[C6X_INS_SPACK2] = "spack2",
+	[C6X_INS_SPACKU4] = "spacku4",
+	[C6X_INS_SPDP] = "spdp",
+	[C6X_INS_SPINT] = "spint",
+	[C6X_INS_SPLOOP] = "sploop",
+	[C6X_INS_SPLOOPD] = "sploopd",
+	[C6X_INS_SPLOOPW] = "sploopw",
+	[C6X_INS_SPKERNEL] = "spkernel",
+	[C6X_INS_SPKERNELR] = "spkernelr",
+	[C6X_INS_SPMASK] = "spmask",
+	[C6X_INS_SPMASKR] = "spmaskr",
+	[C6X_INS_SPTRUNC] = "sptrunc",
+	[C6X_INS_SSHL] = "sshl",
+	[C6X_INS_SSHVL] = "sshvl",
+	[C6X_INS_SSHVR] = "sshvr",
+	[C6X_INS_SSUB] = "ssub",
+	[C6X_INS_SSUB2] = "ssub2",
+	[C6X_INS_STB] = "stb",
+	[C6X_INS_STDW] = "stdw",
+	[C6X_INS_STH] = "sth",
+	[C6X_INS_STNDW] = "stndw",
+	[C6X_INS_STNW] = "stnw",
+	[C6X_INS_STW] = "stw",
+	[C6X_INS_SUB] = "sub",
+	[C6X_INS_SUB2] = "sub2",
+	[C6X_INS_SUB4] = "sub4",
+	[C6X_INS_SUBAB] = "subab",
+	[C6X_INS_SUBABS4] = "subabs4",
+	[C6X_INS_SUBAH] = "subah",
+	[C6X_INS_SUBAW] = "subaw",
+	[C6X_INS_SUBC] = "subc",
+	[C6X_INS_SUBDP] = "subdp",
+	[C6X_INS_SUBSP] = "subsp",
+	[C6X_INS_SUBU] = "subu",
+	[C6X_INS_SWAP4] = "swap4",
+	[C6X_INS_SWE] = "swe",
+	[C6X_INS_SWENR] = "swenr",
+	[C6X_INS_UNPKBU4] = "unpkbu4",
+	[C6X_INS_UNPKH2] = "unpkh2",
+	[C6X_INS_UNPKHU2] = "unpkhu2",
+	[C6X_INS_UNPKHU4] = "unpkhu4",
+	[C6X_INS_UNPKLU4] = "unpklu4",
+	[C6X_INS_XOR] = "xor",
+	[C6X_INS_XORMPY] = "xormpy",
+	[C6X_INS_XPND2] = "xpnd2",
+	[C6X_INS_XPND4] = "xpnd4",
+	[C6X_INS_ZERO] = "zero",
+};
+
+/**
+ * Printed mnemonic of \p id, or NULL when the opcode is not recognised.
+ */
+RZ_IPI const char *c6x_ins_name(C6xInsnId id) {
+	return id > C6X_INS_INVALID && id < C6X_INS_LAST ? c6x_ins_names[id] : NULL;
+}
+
+// Record identity and printed form together so the two cannot drift apart.
+static void set_ins(C6xInsn *insn, C6xInsnId id) {
+	insn->id = id;
+	insn->mnemonic = c6x_ins_name(id);
+}
+
+typedef struct {
+	ut16 op; ///< opfield value within the format
+	C6xInsnId id; ///< opcode identity
+	ut8 src1; ///< C6xSrc1Kind
+	ut8 feat; ///< C6xFeat gate
+	_RzAnalysisOpType type; ///< analysis classification
+	bool pair; ///< operands are 64-bit register pairs (double precision)
+	ut8 oshape; ///< C6xOShape override for mixed single/pair operands
+	bool src1_cross; ///< the cross-path (x) bit selects src1's side, not src2's
+	bool no_operand_swap; ///< keep the src1, src2 print order for shift-typed ops
+			      ///< that are not reversed-syntax (SHLMB/SHRMB)
+	bool no_cross; ///< the source cannot cross, so the x bit is ignored (DP-pair sources)
+	bool swap; ///< printed src2, src1, dst although not shift-typed (SET/CLR register forms)
+} C6xRow;
+
+// .L unit, 7-bit opfield at bits 11:5 (SPRU733 Table 3-12 and per-instruction
+// opcodes). Fixed-point base plus the C67x floating-point set.
+static const C6xRow c6x_l_rows[] = {
+	{ 0x03, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x23, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_TO_DP },
+	{ 0x21, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
+	{ 0x02, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x20, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST },
+	{ 0x2b, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_TO_DP },
+	{ 0x29, C6X_INS_ADDU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
+	{ 0x07, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x17, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_UNIFORM, true },
+	{ 0x27, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP },
+	{ 0x37, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP, true },
+	{ 0x06, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x24, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_LONG_DST },
+	{ 0x4b, C6X_INS_SUBC, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x2f, C6X_INS_SUBU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP },
+	// unsigned subtract widening into a register pair: both sources stay single
+	{ 0x3f, C6X_INS_SUBU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_TO_DP, true },
+	{ 0x0f, C6X_INS_SSUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x1f, C6X_INS_SSUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_UNIFORM, true },
+	{ 0x0e, C6X_INS_SSUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x2c, C6X_INS_SSUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_LONG_DST },
+	{ 0x13, C6X_INS_SADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x31, C6X_INS_SADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST, true },
+	{ 0x12, C6X_INS_SADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x30, C6X_INS_SADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_DST },
+	{ 0x7f, C6X_INS_OR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x7e, C6X_INS_OR, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x7b, C6X_INS_AND, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x7a, C6X_INS_AND, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x6f, C6X_INS_XOR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x6e, C6X_INS_XOR, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x7c, C6X_INS_ANDN, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x53, C6X_INS_CMPEQ, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x52, C6X_INS_CMPEQ, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x51, C6X_INS_CMPEQ, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
+	{ 0x50, C6X_INS_CMPEQ, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x47, C6X_INS_CMPGT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x46, C6X_INS_CMPGT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x45, C6X_INS_CMPGT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
+	{ 0x44, C6X_INS_CMPGT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x4f, C6X_INS_CMPGTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x4e, C6X_INS_CMPGTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x4d, C6X_INS_CMPGTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
+	{ 0x4c, C6X_INS_CMPGTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x57, C6X_INS_CMPLT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x56, C6X_INS_CMPLT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x55, C6X_INS_CMPLT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
+	{ 0x54, C6X_INS_CMPLT, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x5f, C6X_INS_CMPLTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x5e, C6X_INS_CMPLTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x5d, C6X_INS_CMPLTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG, true },
+	{ 0x5c, C6X_INS_CMPLTU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_CMP, false, OSHAPE_CMP_LONG },
+	{ 0x6b, C6X_INS_LMBD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x6a, C6X_INS_LMBD, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x6c, C6X_INS_DMV, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_TO_DP },
+	{ 0x63, C6X_INS_NORM, SRC1_NONE, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x60, C6X_INS_NORM, SRC1_NONE, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_CMP_LONG },
+	{ 0x61, C6X_INS_SHLMB, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_UNIFORM, false, true },
+	{ 0x62, C6X_INS_SHRMB, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_UNIFORM, false, true },
+	{ 0x1a, C6X_INS_ABS, SRC1_NONE, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ABS },
+	{ 0x38, C6X_INS_ABS, SRC1_NONE, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ABS, true },
+	{ 0x40, C6X_INS_SAT, SRC1_NONE, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_CMP_LONG },
+	// C67x floating-point on .L. Single precision uses scalar registers;
+	// double precision uses 64-bit register pairs.
+	{ 0x10, C6X_INS_ADDSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x11, C6X_INS_SUBSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x18, C6X_INS_ADDDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_ADD, true },
+	{ 0x19, C6X_INS_SUBDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_SUB, true },
+	// src1-cross forms of the non-commutative FP subtracts (x selects src1).
+	{ 0x15, C6X_INS_SUBSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_UNIFORM, true },
+	{ 0x1d, C6X_INS_SUBDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_SUB, true, OSHAPE_UNIFORM, true },
+	// int/float conversions and truncation (unary src2 -> dst).
+	{ 0x4a, C6X_INS_INTSP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x49, C6X_INS_INTSPU, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x0a, C6X_INS_SPINT, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x0b, C6X_INS_SPTRUNC, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x39, C6X_INS_INTDP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_TO_DP },
+	{ 0x3b, C6X_INS_INTDPU, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_TO_DP },
+	// double-precision -> integer / single conversions (unary DP pair src2 ->
+	// single dst; op fields 0x08/0x09/0x01 per SPRUFE8, encoded but not
+	// disassembled by dis6x). CMP_LONG shapes the pair src2 and single dst.
+	{ 0x08, C6X_INS_DPINT, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_CMP_LONG, false, false, true },
+	{ 0x09, C6X_INS_DPSP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_CMP_LONG, false, false, true },
+	{ 0x01, C6X_INS_DPTRUNC, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_CMP_LONG, false, false, true },
+	// C64x+ SIMD pack/interleave: pack halfwords or bytes from two source
+	// registers into one; single registers, src1/src2/dst in the usual order.
+	{ 0x00, C6X_INS_PACK2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x1e, C6X_INS_PACKH2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x1b, C6X_INS_PACKLH2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x1c, C6X_INS_PACKHL2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x68, C6X_INS_PACKL4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x69, C6X_INS_PACKH4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	// C64x+ packed add/sub (halfword pairs, byte quads) and lane min/max. The
+	// saturating ssub2 and the *4 byte forms are single registers throughout.
+	{ 0x04, C6X_INS_SUB2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x05, C6X_INS_ADD2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x41, C6X_INS_MIN2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x42, C6X_INS_MAX2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x43, C6X_INS_MAXU4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x48, C6X_INS_MINU4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x64, C6X_INS_SSUB2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x65, C6X_INS_ADD4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x66, C6X_INS_SUB4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x5a, C6X_INS_SUBABS4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	// C66x SIMD double add: scst5 src1 with register-pair src2 and dst.
+	{ 0x22, C6X_INS_DADD, SRC1_SCST5, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, true },
+	// C66x three-cycle floating-point add/subtract and logical ops on truth values
+	{ 0x3c, C6X_INS_FADDSP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3d, C6X_INS_FSUBSP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x58, C6X_INS_FADDDP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD, true },
+	{ 0x59, C6X_INS_FSUBDP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_SUB, true },
+	{ 0x78, C6X_INS_LAND, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x79, C6X_INS_LANDN, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x7d, C6X_INS_LOR, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_OR },
+};
+
+// Floating-point add/sub also issue on the .S unit. They share the .L
+// 1-or-2-source format (bits 4:2 == 110, 7-bit opfield) but their opfields
+// (0x70..0x77) name the .S unit. SUBSP/SUBDP have a second opfield whose src1
+// may cross; unlike on .L it sits in the src2 field. The DP forms are pairs.
+static const C6xRow c6x_s_fp_rows[] = {
+	{ 0x70, C6X_INS_ADDSP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x71, C6X_INS_SUBSP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x75, C6X_INS_SUBSP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_SUB, false, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x72, C6X_INS_ADDDP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_ADD, true },
+	{ 0x73, C6X_INS_SUBDP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_SUB, true },
+	{ 0x77, C6X_INS_SUBDP, SRC1_REG, FEAT_FPS, RZ_ANALYSIS_OP_TYPE_SUB, true, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x74, C6X_INS_FADDSP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x76, C6X_INS_FSUBSP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_SUB },
+};
+
+// .D-unit extended logic/arith (C64x+): bits 5:2 == 1100, bits 11:10 == 10,
+// 4-bit opfield at bits 9:6. Operand layout matches the standard 3-op form
+// (src1, src2, dst; the x bit crosses src2). AND/OR/XOR each have a register
+// (uint) and a scst5 form; ADD carries a 5-bit signed constant. OR with a zero
+// constant is the MV idiom, but the underlying opcode is what we render.
+static const C6xRow c6x_d_ext_rows[] = {
+	{ 0x2, C6X_INS_OR, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x3, C6X_INS_OR, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x4, C6X_INS_ADD2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x5, C6X_INS_SUB2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x6, C6X_INS_AND, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x7, C6X_INS_AND, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0xb, C6X_INS_ADD, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0xc, C6X_INS_SUB, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0xe, C6X_INS_XOR, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0xf, C6X_INS_XOR, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_XOR },
+};
+
+// .S unit, 6-bit opfield at bits 11:6, signature bits 5:2 == 1000.
+static const C6xRow c6x_s_rows[] = {
+	{ 0x07, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x06, C6X_INS_ADD, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x17, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x16, C6X_INS_SUB, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x01, C6X_INS_ADD2, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x11, C6X_INS_SUB2, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	// Shifts (S3/S3i, SPRUFE8 SHL/SHR/SHRU/SSHL opcode maps). op bit 0 selects
+	// the register (1) vs ucst5 (0) src1 form; the long forms shift a 40-bit
+	// pair, or for SHL a 32-bit value into one, by a single-register count.
+	{ 0x33, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 0x32, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 0x31, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_LONG_DST },
+	{ 0x30, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_LONG_DST },
+	{ 0x13, C6X_INS_SHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_TO_DP },
+	{ 0x12, C6X_INS_SHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL, false, OSHAPE_TO_DP },
+	{ 0x37, C6X_INS_SHR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR },
+	{ 0x36, C6X_INS_SHR, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR },
+	{ 0x35, C6X_INS_SHR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR, false, OSHAPE_LONG_DST },
+	{ 0x34, C6X_INS_SHR, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SAR, false, OSHAPE_LONG_DST },
+	{ 0x27, C6X_INS_SHRU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 0x26, C6X_INS_SHRU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 0x25, C6X_INS_SHRU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_LONG_DST },
+	{ 0x24, C6X_INS_SHRU, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_LONG_DST },
+	// register forms of the field ops: src2, then src1 holding csta in bits 9:5
+	// and cstb in bits 4:0
+	{ 0x2b, C6X_INS_EXTU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x2f, C6X_INS_EXT, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHR, false, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x3b, C6X_INS_SET, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR, false, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x3f, C6X_INS_CLR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND, false, OSHAPE_UNIFORM, false, false, false, true },
+	{ 0x20, C6X_INS_SADD, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x23, C6X_INS_SSHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 0x22, C6X_INS_SSHL, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 0x1f, C6X_INS_AND, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x1e, C6X_INS_AND, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x0b, C6X_INS_XOR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x0a, C6X_INS_XOR, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_XOR },
+	{ 0x1b, C6X_INS_OR, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x1a, C6X_INS_OR, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x36, C6X_INS_ANDN, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	// single-precision float compares: src1, src2, dst all single
+	{ 0x38, C6X_INS_CMPEQSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x39, C6X_INS_CMPGTSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x3a, C6X_INS_CMPLTSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP },
+	// double-precision float compares: src1/src2 pairs, dst single sint
+	{ 0x28, C6X_INS_CMPEQDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP, true, OSHAPE_CMP_DP },
+	{ 0x29, C6X_INS_CMPGTDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP, true, OSHAPE_CMP_DP },
+	{ 0x2a, C6X_INS_CMPLTDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_CMP, true, OSHAPE_CMP_DP },
+	// unary, src2 -> dst: single for SP, a pair that does not cross for DP; the
+	// opfield 0x3c group is c6x_s_unary_rows
+	{ 0x2c, C6X_INS_ABSDP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_ABS, true, OSHAPE_UNIFORM, false, false, true },
+	{ 0x2d, C6X_INS_RCPDP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, true, OSHAPE_UNIFORM, false, false, true },
+	{ 0x2e, C6X_INS_RSQRDP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, true, OSHAPE_UNIFORM, false, false, true },
+	{ 0x3d, C6X_INS_RCPSP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x3e, C6X_INS_RSQRSP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV },
+	// SP -> DP widening convert (unary, single src2 -> pair dst)
+	{ 0x02, C6X_INS_SPDP, SRC1_NONE, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MOV, false, OSHAPE_TO_DP },
+	// C64x+ packed byte/halfword reshuffles and packed compares (normal .S
+	// format). The compares set one result bit per lane in the dst.
+	{ 0x08, C6X_INS_PACKHL2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x09, C6X_INS_PACKH2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 0x10, C6X_INS_PACKLH2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV },
+	// the ucst5 forms of the packed shifts; the register forms are extended .S
+	{ 0x18, C6X_INS_SHR2, SRC1_UCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 0x19, C6X_INS_SHRU2, SRC1_UCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 0x14, C6X_INS_CMPGT2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x15, C6X_INS_CMPGTU4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x1c, C6X_INS_CMPEQ4, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_CMP },
+	{ 0x1d, C6X_INS_CMPEQ2, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_CMP },
+	// C66x SIMD double add of a scst5 to a pair
+	{ 0x21, C6X_INS_DADD, SRC1_SCST5, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, true },
+	{ 0x0c, C6X_INS_FADDDP, SRC1_REG, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD, true },
+};
+
+// The C66x long ADD and ADDU on .S share the opfields of the unary RCPDP and
+// RSQRDP, which take an even src1 field; an odd one names the long src1 by its
+// odd register.
+static const C6xRow c6x_s_long_rows[] = {
+	{ 0x2d, C6X_INS_ADD, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_SRC1 },
+	{ 0x2e, C6X_INS_ADDU, SRC1_REG, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, false, OSHAPE_LONG_SRC1 },
+};
+
+// .M unit, 5-bit opfield at bits 11:7, signature bits 6:2 == 00000.
+static const C6xRow c6x_m_rows[] = {
+	{ 0x18, C6X_INS_MPY, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x19, C6X_INS_MPY, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1f, C6X_INS_MPYU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1d, C6X_INS_MPYUS, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1b, C6X_INS_MPYSU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1e, C6X_INS_MPYSU, SRC1_SCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x01, C6X_INS_MPYH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x07, C6X_INS_MPYHU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x05, C6X_INS_MPYHUS, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x03, C6X_INS_MPYHSU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x11, C6X_INS_MPYLH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x17, C6X_INS_MPYLHU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x15, C6X_INS_MPYLUHS, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x13, C6X_INS_MPYLSHU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x09, C6X_INS_MPYHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x0f, C6X_INS_MPYHLU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x0d, C6X_INS_MPYHULS, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x0b, C6X_INS_MPYHSLU, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1a, C6X_INS_SMPY, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x02, C6X_INS_SMPYH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x0a, C6X_INS_SMPYHL, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x12, C6X_INS_SMPYLH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x1c, C6X_INS_MPYSP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x0e, C6X_INS_MPYDP, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL, true },
+	{ 0x04, C6X_INS_MPYI, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x06, C6X_INS_MPYI, SRC1_SCST5, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL },
+	// MPYID writes the full 64-bit product of the same 32x32 into a pair.
+	{ 0x08, C6X_INS_MPYID, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL, false, OSHAPE_TO_DP },
+	{ 0x0c, C6X_INS_MPYID, SRC1_SCST5, FEAT_FP, RZ_ANALYSIS_OP_TYPE_MUL, false, OSHAPE_TO_DP },
+	// MPY32 (C64x+): 32x32 multiply. The op-0x10 slot keeps the low 32 bits in
+	// a single dst; op-0x14/0x16 write the full 64-bit product to a pair.
+	{ 0x10, C6X_INS_MPY32, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0x14, C6X_INS_MPY32, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MUL, false, OSHAPE_TO_DP },
+	{ 0x16, C6X_INS_MPY32SU, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MUL, false, OSHAPE_TO_DP },
+};
+
+// Extended .M (C64x+): bits 5:2 == 1100 with bits 11:10 in {0,1} select the .M
+// unit, and the (bits 11:10, bits 9:6) pair names the operation. The wide
+// multiplies write a register pair; MPYSPDP additionally reads a pair src2.
+typedef struct {
+	ut8 sub; ///< bits 11:10
+	ut8 op; ///< bits 9:6
+	C6xInsnId id;
+	ut8 feat;
+	bool dst_pair; ///< dst is a 64-bit register pair
+	bool src2_pair; ///< src2 is a 64-bit register pair
+	_RzAnalysisOpType type;
+	bool swap; ///< reversed syntax src2, src1, dst (sshvl/sshvr/rotl)
+	bool src1_cst; ///< src1 is a 5-bit constant rather than a register
+	bool src1_pair; ///< src1 is a 64-bit register pair (fmpydp)
+} C6xMExtRow;
+
+static const C6xMExtRow c6x_m_ext_rows[] = {
+	{ 0, 0, C6X_INS_MPY2, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 1, C6X_INS_SMPY2, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 2, C6X_INS_DOTPSU4, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 4, C6X_INS_MPYU4, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 5, C6X_INS_MPYSU4, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 6, C6X_INS_DOTPU4, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 7, C6X_INS_DOTPNRSU2, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 9, C6X_INS_DOTPN2, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 11, C6X_INS_DOTP2, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 12, C6X_INS_DOTP2, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 13, C6X_INS_DOTPRSU2, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 14, C6X_INS_MPYLIR, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 0, C6X_INS_MPYHIR, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 1, C6X_INS_GMPY4, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 4, C6X_INS_MPYHI, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 5, C6X_INS_MPYLI, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 6, C6X_INS_MPYSPDP, FEAT_FP, true, true, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 7, C6X_INS_MPYSP2DP, FEAT_FP, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 8, C6X_INS_MPY32U, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 9, C6X_INS_MPY32US, FEAT_SIMD, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 1, 2, C6X_INS_AVGU4, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 3, C6X_INS_AVG2, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 10, C6X_INS_SSHVR, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_SHR, true },
+	{ 1, 12, C6X_INS_SSHVL, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_SHL, true },
+	{ 1, 13, C6X_INS_ROTL, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_ROL, true },
+	{ 1, 14, C6X_INS_ROTL, FEAT_SIMD, false, false, RZ_ANALYSIS_OP_TYPE_ROL, true, true },
+	{ 0, 8, C6X_INS_MPYU2, FEAT_C66X, true, false, RZ_ANALYSIS_OP_TYPE_MUL },
+	{ 0, 15, C6X_INS_FMPYDP, FEAT_C66X_FP, true, true, RZ_ANALYSIS_OP_TYPE_MUL, false, false, true },
+};
+
+// The bits 11:10 == 0, bits 9:6 == 3 slot is a family of unary moves and
+// bit/byte shuffles (src2 -> dst) selected by the src1 field.
+typedef struct {
+	ut8 src1;
+	C6xInsnId id;
+	ut8 feat; ///< C6xFeat gate
+	ut8 k2; ///< src2's width (C6X_OP_REG / _REGPAIR); a single when zero
+	ut8 k3; ///< dst's width
+} C6xMUnaryRow;
+
+static const C6xMUnaryRow c6x_m_unary_rows[] = {
+	{ 16, C6X_INS_DXPND4, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 17, C6X_INS_DXPND2, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 24, C6X_INS_XPND4, FEAT_SIMD },
+	{ 25, C6X_INS_XPND2, FEAT_SIMD },
+	{ 26, C6X_INS_MVD, FEAT_SIMD },
+	{ 28, C6X_INS_SHFL, FEAT_SIMD },
+	{ 29, C6X_INS_DEAL, FEAT_SIMD },
+	{ 30, C6X_INS_BITC4, FEAT_SIMD },
+	{ 31, C6X_INS_BITR, FEAT_SIMD },
+};
+
+// C66x complex/matrix multiplies and 4-way dot products live in the extended
+// .M space too, but are always unconditional and mark it with z = 1, creg = 0
+// -- that pattern tells them apart from the C64x+ op in the same slot. The
+// complex multiplies and Galois ops are C64x+; the double/4H forms are C66x.
+typedef struct {
+	ut8 sub; ///< bits 11:10
+	ut8 op; ///< bits 9:6
+	C6xInsnId id;
+	ut8 feat;
+	ut8 k1; ///< src1 operand kind (C6X_OP_REG / _REGPAIR / _REGQUAD)
+	ut8 k2; ///< src2 operand kind
+	ut8 k3; ///< dst operand kind
+	_RzAnalysisOpType type; ///< analysis classification; a multiply when zero
+} C6xMCplxRow;
+
+static const C6xMCplxRow c6x_m_cplx_rows[] = {
+	{ 0, 0, C6X_INS_DMPY2, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD },
+	{ 0, 1, C6X_INS_DSMPY2, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD },
+	{ 0, 2, C6X_INS_DOTPSU4H, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 4, C6X_INS_DMPYU4, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD },
+	{ 0, 5, C6X_INS_DOTPSU4H, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0, 6, C6X_INS_DOTP4H, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0, 7, C6X_INS_DOTP4H, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 8, C6X_INS_CMPY32R1, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 9, C6X_INS_CCMPY32R1, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 10, C6X_INS_CMPY, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0, 11, C6X_INS_CMPYR, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG },
+	{ 0, 12, C6X_INS_CMPYR1, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG },
+	{ 0, 13, C6X_INS_DCMPYR1, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 14, C6X_INS_DCCMPYR1, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0, 15, C6X_INS_MPY2IR, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 1, 0, C6X_INS_DAVGNRU4, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 1, C6X_INS_DAVGNR2, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 2, C6X_INS_DAVGU4, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 3, C6X_INS_DAVG2, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, 4, C6X_INS_DDOTPL2R, FEAT_SIMD, C6X_OP_REGPAIR, C6X_OP_REG, C6X_OP_REG },
+	{ 1, 5, C6X_INS_DDOTPH2R, FEAT_SIMD, C6X_OP_REGPAIR, C6X_OP_REG, C6X_OP_REG },
+	{ 1, 6, C6X_INS_DDOTPL2, FEAT_SIMD, C6X_OP_REGPAIR, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 1, 7, C6X_INS_DDOTPH2, FEAT_SIMD, C6X_OP_REGPAIR, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 1, 8, C6X_INS_DDOTP4, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 1, 9, C6X_INS_SMPY32, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG },
+	{ 1, 10, C6X_INS_QSMPY32R1, FEAT_C66X, C6X_OP_REGQUAD, C6X_OP_REGQUAD, C6X_OP_REGQUAD },
+	{ 1, 11, C6X_INS_XORMPY, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG },
+	{ 1, 15, C6X_INS_GMPY, FEAT_SIMD, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG }
+};
+
+// C66x quad/matrix multiplies sit in the normal .M format but, like the complex
+// ops, mark themselves unconditional with z = 1, creg = 0. They take 128-bit
+// register quads; cmatmpy reads its pair src1 and quad src2 from swapped fields.
+typedef struct {
+	ut8 op; ///< opcode bits 11:7
+	C6xInsnId id;
+	ut8 k1; ///< src1 operand kind (C6X_OP_REG / _REGPAIR / _REGQUAD)
+	ut8 k2; ///< src2 operand kind
+	ut8 k3; ///< dst operand kind
+	bool swap; ///< src1 is in the src2 field and vice versa
+	bool no_x; ///< no cross path either, as dis6x shows it
+} C6xMWideRow;
+
+static const C6xMWideRow c6x_m_wide_rows[] = {
+	{ 0x01, C6X_INS_DMPYU2, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD, false },
+	{ 0x02, C6X_INS_DCMPY, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD, false },
+	{ 0x03, C6X_INS_DCCMPY, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD, false },
+	{ 0x04, C6X_INS_CMATMPY, C6X_OP_REGPAIR, C6X_OP_REGQUAD, C6X_OP_REGQUAD, true },
+	{ 0x05, C6X_INS_CCMATMPY, C6X_OP_REGPAIR, C6X_OP_REGQUAD, C6X_OP_REGQUAD, true },
+	{ 0x06, C6X_INS_CMATMPYR1, C6X_OP_REGPAIR, C6X_OP_REGQUAD, C6X_OP_REGPAIR, true },
+	{ 0x07, C6X_INS_CCMATMPYR1, C6X_OP_REGPAIR, C6X_OP_REGQUAD, C6X_OP_REGPAIR, true },
+	{ 0x08, C6X_INS_DDOTP4H, C6X_OP_REGQUAD, C6X_OP_REGQUAD, C6X_OP_REGPAIR, false, true },
+	{ 0x09, C6X_INS_DDOTPSU4H, C6X_OP_REGQUAD, C6X_OP_REGQUAD, C6X_OP_REGPAIR, false, true },
+	{ 0x10, C6X_INS_QMPY32, C6X_OP_REGQUAD, C6X_OP_REGQUAD, C6X_OP_REGQUAD, false },
+	{ 0x18, C6X_INS_DMPYSU4, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD, false },
+	{ 0x1c, C6X_INS_DMPYSP, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR, false },
+	{ 0x1d, C6X_INS_QMPYSP, C6X_OP_REGQUAD, C6X_OP_REGQUAD, C6X_OP_REGQUAD, false },
+	{ 0x1e, C6X_INS_CMPYSP, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGQUAD, false }
+};
+
+// Extended .S (C64x+): bits 5:2 == 1100, bits 11:10 == 11, op at bits 9:6.
+// Packed shifts, saturating add/pack and andn; register src1, src2, dst.
+typedef struct {
+	ut8 op; ///< bits 9:6
+	C6xInsnId id;
+	_RzAnalysisOpType type;
+	bool swap; ///< render src2 (value) before src1 (count), as shifts do
+	bool pair; ///< dst is a register pair, src1 to its odd register (DMV)
+	ut8 feat; ///< C6xFeat gate beyond the C64x+ set of this space
+	bool dw; ///< every operand is a register pair (FSUBDP)
+} C6xSExtRow;
+
+static const C6xSExtRow c6x_s_ext_rows[] = {
+	{ 0, C6X_INS_SADD2, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 1, C6X_INS_SADDUS2, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 3, C6X_INS_SADDU4, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 2, C6X_INS_SPACK2, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 4, C6X_INS_SPACKU4, RZ_ANALYSIS_OP_TYPE_MOV },
+	// SUB takes src1, the operand that may cross, from the src2 field
+	{ 5, C6X_INS_SUB, RZ_ANALYSIS_OP_TYPE_SUB, true },
+	{ 6, C6X_INS_ANDN, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 7, C6X_INS_SHR2, RZ_ANALYSIS_OP_TYPE_SHR, true },
+	{ 8, C6X_INS_SHRU2, RZ_ANALYSIS_OP_TYPE_SHR, true },
+	{ 9, C6X_INS_SHLMB, RZ_ANALYSIS_OP_TYPE_SHL },
+	{ 10, C6X_INS_SHRMB, RZ_ANALYSIS_OP_TYPE_SHR },
+	{ 11, C6X_INS_DMV, RZ_ANALYSIS_OP_TYPE_MOV, false, true },
+	{ 12, C6X_INS_MIN2, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 13, C6X_INS_MAX2, RZ_ANALYSIS_OP_TYPE_MOV },
+	{ 14, C6X_INS_FSUBDP, RZ_ANALYSIS_OP_TYPE_SUB, false, false, FEAT_C66X_FP, true },
+	{ 15, C6X_INS_PACK2, RZ_ANALYSIS_OP_TYPE_MOV }
+};
+
+// The .L opfield 0x1a (nominally ABS) is shared by unary byte/halfword
+// reshuffles on C64x+ and C66x conversions, selected by the src1 field (src2 -> dst).
+static const C6xMUnaryRow c6x_l_unary_rows[] = {
+	{ 1, C6X_INS_SWAP4, FEAT_SIMD },
+	{ 2, C6X_INS_UNPKLU4, FEAT_SIMD },
+	{ 3, C6X_INS_UNPKHU4, FEAT_SIMD },
+	{ 4, C6X_INS_ABS2, FEAT_SIMD },
+	{ 6, C6X_INS_UNPKHU2, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 7, C6X_INS_UNPKH2, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 8, C6X_INS_UNPKBU4, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 9, C6X_INS_CROT90, FEAT_C66X },
+	{ 10, C6X_INS_CROT270, FEAT_C66X },
+	{ 16, C6X_INS_DSPINTH, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 18, C6X_INS_DINTHSP, FEAT_C66X_FP, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 19, C6X_INS_DINTHSPU, FEAT_C66X_FP, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 20, C6X_INS_DSPINT, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 22, C6X_INS_DINTSPU, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 23, C6X_INS_DINTSP, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 25, C6X_INS_DCROT90, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 26, C6X_INS_DCROT270, FEAT_C66X, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+};
+
+// The .S opfield 0x3c group, selected by the src1 field (src2 -> dst): the
+// C66x conversions and unpacks besides those of .L
+static const C6xMUnaryRow c6x_s_unary_rows[] = {
+	{ 0, C6X_INS_ABSSP, FEAT_FP },
+	{ 1, C6X_INS_INTSPU, FEAT_C66X_FP },
+	{ 2, C6X_INS_UNPKLU4, FEAT_SIMD },
+	{ 3, C6X_INS_UNPKHU4, FEAT_SIMD },
+	{ 4, C6X_INS_SPINT, FEAT_C66X_FP },
+	{ 5, C6X_INS_INTSP, FEAT_C66X_FP },
+	{ 6, C6X_INS_UNPKHU2, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 7, C6X_INS_UNPKH2, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 8, C6X_INS_UNPKBU4, FEAT_C66X, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 16, C6X_INS_DSPINTH, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 17, C6X_INS_DINTSPU, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 18, C6X_INS_DINTHSP, FEAT_C66X_FP, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 19, C6X_INS_DINTHSPU, FEAT_C66X_FP, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 20, C6X_INS_DSPINT, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 21, C6X_INS_DINTSP, FEAT_C66X_FP, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+};
+
+// .D unit arithmetic and address ops, 6-bit opfield at bits 12:7, signature
+// bits 6:2 == 10000 (SPRU733 Figure C-1 body).
+static const C6xRow c6x_d_rows[] = {
+	{ 0x10, C6X_INS_ADD, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x12, C6X_INS_ADD, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x11, C6X_INS_SUB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x13, C6X_INS_SUB, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x30, C6X_INS_ADDAB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x32, C6X_INS_ADDAB, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x34, C6X_INS_ADDAH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x36, C6X_INS_ADDAH, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x38, C6X_INS_ADDAW, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3a, C6X_INS_ADDAW, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3c, C6X_INS_ADDAD, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3c, C6X_INS_ADDAD, SRC1_REG, FEAT_FP, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3d, C6X_INS_ADDAD, SRC1_UCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x3d, C6X_INS_ADDAD, SRC1_UCST5, FEAT_FP, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0x31, C6X_INS_SUBAB, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x33, C6X_INS_SUBAB, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x35, C6X_INS_SUBAH, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x37, C6X_INS_SUBAH, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x39, C6X_INS_SUBAW, SRC1_REG, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+	{ 0x3b, C6X_INS_SUBAW, SRC1_UCST5, FEAT_BASE, RZ_ANALYSIS_OP_TYPE_SUB },
+};
+
+// .D-unit extended logical/arith (C64x+): SPRUFE8 Dx2/Dx5 family, marked by
+// bits 5:2 == 1100 with bits 11:10 == 10 selecting the .D unit. The op is a
+// 4-bit field at bits 9:6; OR with a zero source constant becomes MV.
+static const C6xRow c6x_dext_rows[] = {
+	{ 0x0, C6X_INS_ANDN, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x2, C6X_INS_OR, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x3, C6X_INS_OR, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_OR },
+	{ 0x6, C6X_INS_AND, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0x7, C6X_INS_AND, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_AND },
+	{ 0xa, C6X_INS_ADD, SRC1_REG, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD },
+	{ 0xf, C6X_INS_XOR, SRC1_SCST5, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_XOR },
+};
+
+// .D unit loads/stores, 3-bit opfield at bits 6:4, signature bits 3:2 == 01
+// (SPRU733 Tables 3-17/3-19). The op encodes access width and direction.
+static const struct {
+	ut8 op;
+	C6xInsnId id;
+	bool store;
+} c6x_mem_rows[] = {
+	{ 0x0, C6X_INS_LDHU, false },
+	{ 0x1, C6X_INS_LDBU, false },
+	{ 0x2, C6X_INS_LDB, false },
+	{ 0x3, C6X_INS_STB, true },
+	{ 0x4, C6X_INS_LDH, false },
+	{ 0x5, C6X_INS_STH, true },
+	{ 0x6, C6X_INS_LDW, false },
+	{ 0x7, C6X_INS_STW, true },
+};
+
+static const C6xArchDesc c6x_desc_c62x = { C6X_GEN_C62X, 16, 0 };
+static const C6xArchDesc c6x_desc_c67x = { C6X_GEN_C67X, 16, C6X_FEAT_FP };
+static const C6xArchDesc c6x_desc_c64x = { C6X_GEN_C64X, 32, C6X_FEAT_SIMD };
+static const C6xArchDesc c6x_desc_c674x = { C6X_GEN_C674X, 32, C6X_FEAT_FP | C6X_FEAT_SIMD };
+static const C6xArchDesc c6x_desc_c66x = { C6X_GEN_C66X, 32, C6X_FEAT_FP | C6X_FEAT_SIMD };
+
+/** Resolve an asm.cpu string to a descriptor, or NULL if it is not a C6000 cpu. */
+RZ_IPI const C6xArchDesc *c6x_desc_from_cpu(const char *cpu) {
+	if (!cpu) {
+		return NULL;
+	}
+	if (!rz_str_casecmp(cpu, "c62x")) {
+		return &c6x_desc_c62x;
+	}
+	if (!rz_str_casecmp(cpu, "c67x")) {
+		return &c6x_desc_c67x;
+	}
+	if (!rz_str_casecmp(cpu, "c64x")) {
+		return &c6x_desc_c64x;
+	}
+	// C64x+ is a superset of C64x; the extra instructions this engine decodes
+	// are gated by the SIMD feature the C64x descriptor already carries.
+	if (!rz_str_casecmp(cpu, "c64x+") || !rz_str_casecmp(cpu, "c64xp") ||
+		!rz_str_casecmp(cpu, "c64x_plus")) {
+		return &c6x_desc_c64x;
+	}
+	if (!rz_str_casecmp(cpu, "c674x")) {
+		return &c6x_desc_c674x;
+	}
+	if (!rz_str_casecmp(cpu, "c66x")) {
+		return &c6x_desc_c66x;
+	}
+	return NULL;
+}
+
+/**
+ * \brief The bit of the unit of \p insn in an SPMASK unit bitmap.
+ *
+ * \return UT8_MAX for an instruction without a functional unit.
+ */
+RZ_IPI ut8 c6x_unit_bit(const C6xInsn *insn) {
+	ut8 base;
+	switch (insn->unit) {
+	case C6X_UNIT_L: base = 0; break;
+	case C6X_UNIT_S: base = 2; break;
+	case C6X_UNIT_D: base = 4; break;
+	case C6X_UNIT_M: base = 6; break;
+	default: return UT8_MAX;
+	}
+	return base + (insn->unit_side & 1);
+}
+
+/**
+ * \brief Flag whether \p insn continues the previous execute packet, and
+ * whether an SPMASK before it there masks its unit.
+ *
+ * TI marks an instruction with "||" when it runs in parallel with the one
+ * before it, i.e. when the *previous* word set its parallel bit, and with "^"
+ * when an SPMASK or SPMASKR earlier in its execute packet names its unit.
+ * Decoding is stateless, so \p prev_end (address just past the last
+ * instruction), \p prev_par (its parallel bit) and \p masks (the units the
+ * SPMASKs of its packet named) carry that look-back across calls; all are
+ * updated for the next call.
+ */
+RZ_IPI void c6x_mark_parallel(RZ_INOUT C6xInsn *insn, ut64 addr, RZ_INOUT ut64 *prev_end, RZ_INOUT bool *prev_par, RZ_INOUT ut8 *masks) {
+	if (insn->is_header) {
+		// a fetch-packet header occupies a word but is not part of any execute
+		// packet: keep it out of the "||" chain and pass the previous parallel
+		// state through unchanged so an execute packet can span the header
+		insn->cont = false;
+		insn->masked = false;
+		*prev_end = addr + insn->size;
+		return;
+	}
+	// only a word landing exactly after the previous one continues its packet;
+	// a gap (random-access disassembly, region restart) starts fresh
+	insn->cont = addr == *prev_end && *prev_par;
+	if (!insn->cont) {
+		*masks = 0;
+	}
+	ut8 bit = c6x_unit_bit(insn);
+	insn->masked = bit < 8 && (*masks & (1u << bit));
+	if (insn->id == C6X_INS_SPMASK || insn->id == C6X_INS_SPMASKR) {
+		*masks |= OP(0).v.units;
+	}
+	*prev_end = addr + insn->size;
+	*prev_par = insn->parallel;
+}
+
+/**
+ * \brief The units the SPMASK and SPMASKR instructions before \p pc in its
+ * execute packet name.
+ *
+ * dis6x marks an instruction of one of them with "^". As for "||", rebuilding
+ * the packet answers it for any address.
+ *
+ * \param desc The CPU, which decides how the slots decode.
+ * \param read Reader for image bytes.
+ * \param user Passed through to \p read.
+ * \param pc Address of the instruction.
+ * \param big_endian Byte order of the image.
+ * \param units Set to the SPMASK unit bitmap of those instructions.
+ *
+ * \return false if the image could not be read, leaving \p units untouched.
+ */
+RZ_IPI bool c6x_packet_masks(const C6xArchDesc *desc, C6xReadFn read, void *user, ut64 pc, bool big_endian,
+	RZ_OUT ut8 *units) {
+	rz_return_val_if_fail(desc && units, false);
+	C6xPacketRef p;
+	if (!c6x_packet_at(read, user, pc, big_endian, &p)) {
+		return false;
+	}
+	ut8 found = 0;
+	for (size_t i = 0; i < p.n && p.slots[i].addr < pc; i++) {
+		const C6xSlotRef *s = &p.slots[i];
+		ut8 buf[C6X_WORD_SIZE];
+		C6xInsn insn;
+		if (s->header) {
+			continue;
+		}
+		if (!read(user, s->addr, buf, s->size)) {
+			return false;
+		}
+		if (c6x_decode(desc, buf, s->size, s->addr, big_endian, read, user, &insn) &&
+			(insn.id == C6X_INS_SPMASK || insn.id == C6X_INS_SPMASKR)) {
+			found |= insn.ops[0].v.units;
+		}
+	}
+	*units = found;
+	return true;
+}
+
+static bool feat_ok(const C6xArchDesc *d, ut8 feat) {
+	switch (feat) {
+	case FEAT_FP:
+		return d->features & C6X_FEAT_FP;
+	case FEAT_SIMD:
+		return d->features & C6X_FEAT_SIMD;
+	case FEAT_C66X:
+	case FEAT_C66X_FP:
+		return d->gen == C6X_GEN_C66X;
+	case FEAT_FPS:
+		return (d->features & (C6X_FEAT_FP | C6X_FEAT_SIMD)) == (C6X_FEAT_FP | C6X_FEAT_SIMD);
+	default:
+		return true;
+	}
+}
+
+static const C6xRow *row_find(const C6xRow *rows, size_t n, ut16 op, const C6xArchDesc *d) {
+	for (size_t i = 0; i < n; i++) {
+		if (rows[i].op == op && feat_ok(d, rows[i].feat)) {
+			return &rows[i];
+		}
+	}
+	return NULL;
+}
+
+static void op_reg(C6xOperand *o, ut8 side, ut8 num) {
+	o->kind = C6X_OP_REG;
+	o->v.reg.side = side;
+	o->v.reg.num = num;
+	o->v.reg.odd = false;
+}
+
+static void op_regpair(C6xOperand *o, ut8 side, ut8 num) {
+	o->kind = C6X_OP_REGPAIR;
+	o->v.reg.side = side;
+	o->v.reg.num = num & ~1u;
+	o->v.reg.odd = num & 1u;
+}
+
+static void op_regquad(C6xOperand *o, ut8 side, ut8 num) {
+	o->kind = C6X_OP_REGQUAD;
+	o->v.reg.side = side;
+	// dis6x masks any quad field to four registers, unlike a pair field
+	o->v.reg.num = num & ~3u;
+	o->v.reg.odd = false;
+}
+
+// Fill a register operand of a caller-chosen width (single / pair / quad).
+static void op_by_kind(C6xOperand *o, ut8 kind, ut8 side, ut8 num) {
+	if (kind == C6X_OP_REGQUAD) {
+		op_regquad(o, side, num);
+	} else if (kind == C6X_OP_REGPAIR) {
+		op_regpair(o, side, num);
+	} else {
+		op_reg(o, side, num);
+	}
+}
+
+static void op_imm(C6xOperand *o, st64 v) {
+	o->kind = C6X_OP_IMM;
+	o->v.imm.value = v;
+}
+
+static void op_ctrlreg(C6xOperand *o, const char *name) {
+	o->kind = C6X_OP_CTRLREG;
+	o->v.ctrl = name;
+}
+
+// Field values that select a top-level format of a 32-bit instruction word.
+typedef enum {
+	C6X_DFMT_LDST = 0x1, ///< .D load/store, bits 3:2
+	C6X_DFMT_LDST_LONG = 0x3, ///< .D long-immediate load/store off B14/B15, bits 3:2
+	C6X_DFMT_MVK = 0x0, ///< MVK on the .D unit (C64x+), bits 12:7
+	C6X_LFMT_1OR2SRC = 0x6, ///< .L one- or two-source, bits 4:2
+	C6X_MOP_ABS = 0x05, ///< ABS, the unary form of the 5-bit constant move, bits 17:13
+	C6X_MOP_MVK5 = 0x1a, ///< the 5-bit signed constant move, bits 11:5
+	C6X_DFMT_ADDA = 0x1, ///< the ADDAB/ADDAH/ADDAW address forms, bits 31:28
+} C6xWordFormat;
+
+/** The no-unit NOP: thirteen fixed low bits, with (count - 1) in bits 15:13. */
+#define C6X_COMPACT_NOP 0x0c6e
+
+/** A two-bit field set to both ones, used to widen a compact form. */
+#define C6X_CFMT_BOTH_SET 0x3
+
+// Compact-instruction format signatures. Which format a 16-bit opcode uses is
+// spread over several fields rather than one, so each is picked out by the bits
+// TI's figure for it fixes; the names follow those figures.
+typedef enum {
+	C6X_CFMT_MPY = 0xf, ///< compact .M multiply, bits 4:1
+	C6X_CFMT_SX1_3REG = 0x5, ///< Sx1 three-register add/subtract, bits 3:1
+	C6X_CFMT_LSX1_1REG = 0x6, ///< Lx1/Sx1 one-register form, bits 6:4
+	C6X_CFMT_DX1_1REG = 0x7, ///< the .D-unit spelling of the same, bits 6:4
+	C6X_CFMT_SX2 = 0x17, ///< Sx2op and Sx5, the two-operand .S forms, bits 6:1
+	C6X_CFMT_DX2 = 0x1b, ///< Dx2op and Dx5, the two-operand .D forms, bits 6:1
+	C6X_CFMT_LOOP = 0x33, ///< loop-buffer group (SPLOOP/SPMASK), bits 6:1
+	C6X_CFMT_DX5P = 0x3b, ///< Dx5p, the stack-pointer adjust, bits 6:1
+} C6xCompactFormat;
+
+// The .S one-or-two-source sub-opcode, bits 11:6 of the instruction word.
+typedef enum {
+	C6X_SOP_BDEC = 0x00, ///< BDEC/BPOS, register-conditional loop branch (C64x+)
+	C6X_SOP_B_IRP = 0x03, ///< B IRP/NRP, return from a (non)maskable interrupt
+	C6X_SOP_BNOP_DISP = 0x04, ///< BNOP with a displacement (Figure F-10)
+	C6X_SOP_ADDKPC = 0x05, ///< ADDKPC, PC-relative address form (.S2, C64x+)
+	C6X_SOP_B_REG = 0x0d, ///< B src2, register branch (.S2 only)
+	C6X_SOP_MVC_LO = 0x0e, ///< MVC, control-register move
+	C6X_SOP_MVC_HI = 0x0f,
+	C6X_SOP_UNARY = 0x3c, ///< unary group selected by the src1 field (ABSSP, UNPKLU4, UNPKHU4)
+} C6xSUnitSubOp;
+
+// The unit-selecting signature of a 32-bit instruction word, bits 6:2: which
+// functional unit and top-level form the rest of the word encodes.
+typedef enum {
+	C6X_SIG_M = 0x00, ///< .M unit
+	C6X_SIG_S_BRANCH = 0x04, ///< .S branch with a displacement
+	C6X_SIG_D = 0x10, ///< .D arithmetic and address forms
+	C6X_SIG_S_ADDK = 0x14, ///< .S ADDK
+} C6xUnitSig;
+
+// The bits 5:2 opcode group of a 32-bit instruction word: which family of
+// forms the rest of the word is decoded as (SPRUFE8 Figures F-1 onwards).
+typedef enum {
+	C6X_OPGRP_FIELD = 0x2, ///< EXTU/EXT/SET/CLR, constant field form
+	C6X_OPGRP_1OR2SRC = 0x8, ///< .S one- or two-source, 6-bit op field
+	C6X_OPGRP_MVK = 0xa, ///< .S MVK/MVKH, bit 6 selects high
+	C6X_OPGRP_EXT = 0xc, ///< .D and .L extended forms added by C64x+
+} C6xOpGroup;
+
+// Control registers by crlo field (SPRUFE8 Table 3-27).
+static const char *const c6x_ctrlregs_by_crlo[32] = {
+	"amr", "csr", NULL, "icr", "ier", "istp", "irp", "nrp",
+	NULL, NULL, "tscl", "tsch", NULL, "ilc", "rilc", "rep",
+	"pce1", "dnum", "fadcr", "faucr", "fmcr", "ssr", "gplya", "gplyb",
+	"gfpgfr", "dier", "tsr", "itsr", "ntsr", NULL, NULL, "ierr"
+};
+
+// Whether the variant \p d has the control register at \p crlo: the C62x
+// set, the floating-point configuration registers of C67x and C674x, GFPGFR
+// from C64x on and the rest from C64x+ on, which C64x shares a descriptor with.
+static bool ctrlreg_ok(const C6xArchDesc *d, ut8 crlo) {
+	switch (crlo) {
+	case 0x12: // FADCR
+	case 0x13: // FAUCR
+	case 0x14: // FMCR
+		return d->features & C6X_FEAT_FP;
+	default:
+		return crlo < 8 || crlo == 0x10 || (d->features & C6X_FEAT_SIMD);
+	}
+}
+
+// crlo 2 and 29 name a different register per direction, disambiguated by \p read.
+static const char *ctrlreg_name(ut8 crlo, bool read) {
+	if (crlo == 2) {
+		return read ? "ifr" : "isr";
+	}
+	if (crlo == 29) {
+		return read ? "efr" : "ecr";
+	}
+	return c6x_ctrlregs_by_crlo[crlo];
+}
+
+// Sign-extend the low \p bits of \p v. The cast goes through st32 so the sign
+// bit propagates: without it the ut32 subtraction wraps and widens to a large
+// positive st64 (which broke backward branches and negative constants).
+static st64 sext(ut32 v, ut8 bits) {
+	ut32 m = 1u << (bits - 1);
+	return (st64)(st32)((v ^ m) - m);
+}
+
+// Fill src1 (bits 17:13) as register or short constant per the row's kind.
+static void fill_src1(C6xOperand *o, ut32 w, ut8 side, C6xSrc1Kind kind) {
+	ut8 f = BITS(w, 17, 13);
+	switch (kind) {
+	case SRC1_REG:
+		op_reg(o, side, f);
+		break;
+	case SRC1_SCST5:
+		op_imm(o, sext(f, 5));
+		break;
+	case SRC1_UCST5:
+		op_imm(o, f);
+		break;
+	default:
+		o->kind = C6X_OP_NONE;
+		break;
+	}
+}
+
+// .L/.S/.M 3-operand form: dst, src2 (cross-pathable), src1 (reg or const).
+// Double-precision rows read and write 64-bit register pairs instead of scalars.
+static void decode_3op(C6xInsn *insn, const C6xRow *row) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	ut8 x = BIT(w, 12);
+	set_ins(insn, row->id);
+	insn->op_type = row->type;
+	insn->is_fp = row->feat == FEAT_FP || row->feat == FEAT_C66X_FP;
+	insn->unit_side = s;
+	insn->cross = x != 0;
+	// The cross-path (x) bit moves one source operand to the opposite register
+	// side. It normally selects src2; src1-cross variants (non-commutative ops
+	// such as SUBSP/SUBDP) apply it to src1 instead.
+	if (row->no_cross) {
+		x = 0;
+		insn->cross = false;
+	}
+	ut8 src1_side = (row->src1_cross && x) ? !s : s;
+	ut8 src2_side = (!row->src1_cross && x) ? !s : s;
+	ut8 nops = 0;
+	if (row->src1 != SRC1_NONE) {
+		if (row->oshape == OSHAPE_LONG_SRC1) {
+			// named by its odd register, as the caller has checked
+			op_regpair(&OP(nops), src1_side, BITS(w, 17, 13));
+			OP(nops++).v.reg.odd = false;
+		} else if (row->pair && row->src1 == SRC1_REG) {
+			op_regpair(&OP(nops++), src1_side, BITS(w, 17, 13));
+		} else {
+			fill_src1(&OP(nops++), w, src1_side, row->src1);
+		}
+	}
+	bool src2_pair = row->pair;
+	bool dst_pair = row->pair;
+	if (row->oshape == OSHAPE_CMP_DP) {
+		dst_pair = false; // DP compare result is a single sint
+	} else if (row->oshape == OSHAPE_TO_DP) {
+		src2_pair = false; // a single src2 widened into a pair dst
+		dst_pair = true;
+	} else if (row->oshape == OSHAPE_CMP_LONG) {
+		src2_pair = true; // a 40-bit long src2 compared against a single/const
+		dst_pair = false;
+	} else if (row->oshape == OSHAPE_LONG_DST) {
+		src2_pair = true; // long ADD: single src1 + long src2 -> long dst
+		dst_pair = true;
+	} else if (row->oshape == OSHAPE_LONG_SRC1) {
+		src2_pair = false; // long src1 + single src2 -> long dst
+		dst_pair = true;
+	}
+	if (src2_pair) {
+		op_regpair(&OP(nops), src2_side, BITS(w, 22, 18)); // src2
+		// the DP sources read through both ports (SPRUFE8B DPINT, RCPDP)
+		// name either register of the pair: cl6x puts the odd one in src2
+		// and the even one in src1, where dis6x wants the even one in src2
+		if (row->no_cross) {
+			OP(nops).v.reg.odd = false;
+		}
+		nops++;
+	} else {
+		op_reg(&OP(nops++), src2_side, BITS(w, 22, 18)); // src2
+	}
+	// Shifts print value (src2) before count (src1); swap the two sources
+	// that were emitted in the fixed src1, src2 order above.
+	bool is_shift = row->type == RZ_ANALYSIS_OP_TYPE_SHL ||
+		row->type == RZ_ANALYSIS_OP_TYPE_SHR || row->type == RZ_ANALYSIS_OP_TYPE_SAR;
+	if (nops == 2 && ((is_shift && !row->no_operand_swap) || row->swap)) {
+		C6xOperand tmp = OP(0);
+		OP(0) = OP(1);
+		OP(1) = tmp;
+	}
+	if (dst_pair) {
+		op_regpair(&OP(nops++), s, BITS(w, 27, 23)); // dst
+	} else {
+		op_reg(&OP(nops++), s, BITS(w, 27, 23)); // dst
+	}
+	insn->nops = nops;
+	// Render the .S/.L assembler idioms the way the TI tools do so the output
+	// matches the reference disassembler:
+	//   MV   dst = 0 | src   or   0 + src        (OR/ADD against 0)
+	//   NEG  dst = 0 - src                        (SUB from 0)
+	//   ZERO dst = src - src                      (SUB of a register from itself)
+	//   SUB  src2, k, dst  for  ADD -k, src2, dst (negative-constant ADD)
+	bool is_add = row->id == C6X_INS_ADD;
+	bool is_sub = row->id == C6X_INS_SUB;
+	bool is_or = row->id == C6X_INS_OR;
+	bool is_xor = row->id == C6X_INS_XOR;
+	if (nops == 3 && OP(0).kind == C6X_OP_IMM && OP(0).v.imm.value == 0 &&
+		(is_or || is_add || is_sub)) {
+		set_ins(insn, is_sub ? C6X_INS_NEG : C6X_INS_MV);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+		OP(0) = OP(1);
+		OP(1) = OP(2);
+		insn->nops = 2;
+	} else if (nops == 3 && is_xor && OP(0).kind == C6X_OP_IMM &&
+		OP(0).v.imm.value == -1) {
+		set_ins(insn, C6X_INS_NOT); // XOR -1, src, dst  ==  NOT src, dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_NOT;
+		OP(0) = OP(1);
+		OP(1) = OP(2);
+		insn->nops = 2;
+	} else if (nops == 3 && is_add && OP(0).kind == C6X_OP_IMM &&
+		OP(0).v.imm.value < 0) {
+		set_ins(insn, C6X_INS_SUB); // ADD -k, src2, dst  ==  SUB src2, k, dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_SUB;
+		st64 k = -OP(0).v.imm.value;
+		OP(0) = OP(1);
+		op_imm(&OP(1), k);
+	} else if (nops == 3 && is_sub && OP(0).kind == C6X_OP_REG &&
+		OP(1).kind == C6X_OP_REG && OP(0).v.reg.num == OP(1).v.reg.num &&
+		OP(0).v.reg.side == OP(1).v.reg.side) {
+		set_ins(insn, C6X_INS_ZERO); // SUB src, src, dst  ==  ZERO dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+		OP(0) = OP(2);
+		insn->nops = 1;
+	}
+}
+
+// .D arithmetic/address form, all on side s with no cross path. The .D
+// encoding places the base/src2 register at bits 22:18 and src1 (register or
+// short constant) at bits 17:13, and the assembler prints them in that order
+// -- src2, src1, dst -- for both plain ADD/SUB and the ADDA*/SUBA* address
+// ops, unlike the .L/.S forms that print src1 first.
+static void decode_darith(C6xInsn *insn, const C6xRow *row) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	set_ins(insn, row->id);
+	insn->op_type = row->type;
+	insn->unit_side = s;
+	op_reg(&OP(0), s, BITS(w, 22, 18)); // src2 (base)
+	fill_src1(&OP(1), w, s, row->src1); // src1 (offset/operand)
+	op_reg(&OP(2), s, BITS(w, 27, 23)); // dst
+	insn->nops = 3;
+	// The .D unit shares the assembler idioms of .L/.S: MV (ADD of 0), NOT
+	// (XOR -1), ZERO (SUB of a register from itself), and the negative-constant
+	// SUB spelled as ADD. In the .D operand order src2 comes first, so the
+	// constant (when present) is src1 at ops[1], and a SUB of 0 is no NEG.
+	bool d_add = row->id == C6X_INS_ADD;
+	bool d_sub = row->id == C6X_INS_SUB;
+	bool d_xor = row->id == C6X_INS_XOR;
+	if (OP(1).kind == C6X_OP_IMM && OP(1).v.imm.value == 0 && d_add) {
+		set_ins(insn, C6X_INS_MV);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+		OP(1) = OP(2); // dst follows src
+		insn->nops = 2;
+	} else if (OP(1).kind == C6X_OP_IMM && OP(1).v.imm.value == -1 && d_xor) {
+		set_ins(insn, C6X_INS_NOT); // XOR src, -1, dst  ==  NOT src, dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_NOT;
+		OP(1) = OP(2);
+		insn->nops = 2;
+	} else if (d_add && OP(1).kind == C6X_OP_IMM && OP(1).v.imm.value < 0) {
+		set_ins(insn, C6X_INS_SUB); // ADD src2, -k, dst  ==  SUB src2, k, dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op_imm(&OP(1), -OP(1).v.imm.value);
+	} else if (d_sub && OP(0).kind == C6X_OP_REG && OP(1).kind == C6X_OP_REG &&
+		OP(0).v.reg.num == OP(1).v.reg.num && OP(0).v.reg.side == OP(1).v.reg.side) {
+		set_ins(insn, C6X_INS_ZERO); // SUB src, src, dst  ==  ZERO dst
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+		OP(0) = OP(2);
+		insn->nops = 1;
+	}
+}
+
+// .D long-immediate load/store: *+B14/B15[ucst15] (SPRU733 LDW 15-bit offset).
+// Base is B14 (y=0) or B15 (y=1); the 15-bit unsigned offset sits at bits 22:8.
+static void decode_ldst_long(C6xInsn *insn, C6xInsnId id, bool store) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	ut8 y = BIT(w, 7);
+	C6xOperand mem = { 0 };
+	C6xOperand reg = { 0 };
+	set_ins(insn, id);
+	insn->op_type = store ? RZ_ANALYSIS_OP_TYPE_STORE : RZ_ANALYSIS_OP_TYPE_LOAD;
+	insn->unit = C6X_UNIT_D;
+	insn->unit_side = C6X_SIDE_B; // B14/B15 are on the B side; .D2 only
+	mem.kind = C6X_OP_MEM;
+	mem.v.mem.mode = C6X_AM_POS_CST;
+	mem.v.mem.base = y ? 15 : 14;
+	mem.v.mem.base_side = 1;
+	mem.v.mem.off_cst = BITS(w, 22, 8);
+	mem.v.mem.scaled = true;
+	op_reg(&reg, s, BITS(w, 27, 23));
+	OP(0) = store ? reg : mem;
+	OP(1) = store ? mem : reg;
+	insn->nops = 2;
+}
+
+// .D address arithmetic with a 15-bit constant: B14/B15 + ucst15 -> dst. The
+// family reuses the 15-bit-offset store slots -- ADDAB the STB one, ADDAH the
+// STH one, ADDAW the STW one -- and is marked by the otherwise-reserved
+// creg=0/z=1 pattern (bits 31:28 == 0001), so a real (predicated or plain)
+// store there stays a store. The constant counts elements of the named width.
+static void decode_addaw_long(C6xInsn *insn, C6xInsnId id) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	ut8 y = BIT(w, 7);
+	set_ins(insn, id);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+	insn->unit = C6X_UNIT_D;
+	insn->unit_side = s;
+	// the base is always B14/B15, so an A-side destination reads across
+	insn->cross = s == 0;
+	op_reg(&OP(0), 1, y ? 15 : 14); // base B14/B15
+	op_imm(&OP(1), BITS(w, 22, 8)); // ucst15
+	OP(1).v.imm.decimal = true;
+	op_reg(&OP(2), s, BITS(w, 27, 23)); // dst
+	insn->nops = 3;
+}
+
+// .D load/store addressing mode (bits 12:9), Table 3-11.
+static const C6xAddrMode c6x_ldst_modes[16] = {
+	C6X_AM_NEG_CST, C6X_AM_POS_CST, C6X_AM_NEG_CST, C6X_AM_POS_CST,
+	C6X_AM_NEG_REG, C6X_AM_POS_REG, C6X_AM_NEG_REG, C6X_AM_POS_REG,
+	C6X_AM_PREDEC_CST, C6X_AM_PREINC_CST, C6X_AM_POSTDEC_CST, C6X_AM_POSTINC_CST,
+	C6X_AM_PREDEC_REG, C6X_AM_PREINC_REG, C6X_AM_POSTDEC_REG, C6X_AM_POSTINC_REG
+};
+
+static C6xAddrMode ldst_mode(ut8 field, bool *reg_offset) {
+	*reg_offset = (field & 0x4) != 0;
+	return c6x_ldst_modes[field & 0xf];
+}
+
+static void decode_ldst(C6xInsn *insn, C6xInsnId id, bool store, bool dword) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	ut8 y = BIT(w, 7);
+	bool reg_off = false;
+	C6xOperand mem = { 0 };
+	C6xOperand reg = { 0 };
+	set_ins(insn, id);
+	insn->op_type = store ? RZ_ANALYSIS_OP_TYPE_STORE : RZ_ANALYSIS_OP_TYPE_LOAD;
+	insn->unit_side = y;
+	mem.kind = C6X_OP_MEM;
+	mem.v.mem.mode = ldst_mode(BITS(w, 12, 9), &reg_off);
+	mem.v.mem.base = BITS(w, 22, 18);
+	mem.v.mem.base_side = y;
+	// [] scales the offset by the access size; LDNDW and STNDW take bit 23 as
+	// sc, which can leave it a byte offset, their pair living in bits 27:24
+	mem.v.mem.scaled = (id != C6X_INS_LDNDW && id != C6X_INS_STNDW) || BIT(w, 23);
+	if (reg_off) {
+		mem.v.mem.off_reg = BITS(w, 17, 13);
+	} else {
+		mem.v.mem.off_cst = BITS(w, 17, 13);
+	}
+	if (dword) {
+		reg.kind = C6X_OP_REGPAIR;
+		reg.v.reg.side = s;
+		reg.v.reg.num = BITS(w, 27, 23) & ~1u;
+	} else {
+		op_reg(&reg, s, BITS(w, 27, 23));
+	}
+	// TI syntax: loads read "*mem, dst"; stores read "src, *mem".
+	OP(0) = store ? reg : mem;
+	OP(1) = store ? mem : reg;
+	insn->nops = 2;
+}
+
+// .S branch to a register: B/BNOP (.S2) src2 (SPRU733 "Branch Using a
+// Register"). src2 holds the target; a return is BNOP .S2 B3, 5. The 3-bit
+// field at 15:13 is the NOP count -- when non-zero the assembler spells it
+// BNOP; the C64x+ compiler uses BNOP B3, 5 as the return idiom.
+static void decode_branch_reg(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 x = BIT(w, 12);
+	// a dst field of 1 with bits 17:16 clear marks BNOP (SPRUFE8B Figure
+	// F-11), whose src1 counts the NOPs; dis6x reads any other word as B
+	bool bnop = BITS(w, 27, 23) == 1 && !BITS(w, 17, 16);
+	ut8 n = bnop ? BITS(w, 15, 13) : 0;
+	set_ins(insn, bnop ? C6X_INS_BNOP : C6X_INS_B);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_RJMP;
+	insn->unit_side = C6X_SIDE_B; // .S2 only
+	insn->cross = x != 0;
+	// src2 is read from the B side, or the A side when the cross path is used
+	op_reg(&OP(0), x ? 0 : 1, BITS(w, 22, 18));
+	insn->nops = 1;
+	if (bnop) {
+		op_imm(&OP(insn->nops++), n);
+	}
+}
+
+// .S branch, 21-bit signed PC-relative displacement (scaled by 4), Figure F-5.
+static void decode_branch(C6xInsn *insn) {
+	ut32 w = insn->word;
+	st64 disp = sext(BITS(w, 27, 7), 21) * 4;
+	insn->unit_side = BIT(w, 1);
+	OP(0).kind = C6X_OP_PCREL;
+	OP(0).v.imm.value = disp; // absolute target resolved by the analysis filler
+	insn->nops = 1;
+	// CALLP is encoded as an otherwise-meaningless unconditional branch with the
+	// z bit set; the return address is placed in A3 (.S1) or B3 (.S2).
+	if (insn->creg == 0 && insn->z) {
+		set_ins(insn, C6X_INS_CALLP);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_CALL;
+		op_reg(&OP(1), insn->unit_side, 3); // A3 on .S1, B3 on .S2
+		insn->nops = 2;
+		return;
+	}
+	set_ins(insn, C6X_INS_B);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_JMP;
+}
+
+// .S BNOP with a displacement (SPRUFE8 Figure F-10): a 12-bit signed
+// displacement plus a NOP count. The displacement is word-scaled like the plain
+// B -- asm6x encodes BNOP .S1 $+8 as 0x00028120, a field of 2 -- and stays
+// packet-relative, so the analysis filler resolves it against PCE1. Only the
+// compact branches are half-word-scaled, so that they can reach compact code.
+static void decode_branch_nop(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 n = BITS(w, 15, 13);
+	set_ins(insn, C6X_INS_BNOP);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_JMP;
+	insn->unit_side = BIT(w, 1);
+	OP(0).kind = C6X_OP_PCREL;
+	// Half-word scaled inside a compact packet so that the branch can reach
+	// 16-bit code, word scaled elsewhere. This applies to BNOP's displacement
+	// and not to the plain B beside it, which stays word scaled in a compact
+	// packet -- dis6x disassembles both forms in one packet and scales only
+	// this one.
+	OP(0).v.imm.value = sext(BITS(w, 27, 16), 12) * (insn->compact_packet ? 2 : 4);
+	op_imm(&OP(1), n);
+	insn->nops = 2;
+}
+static void decode_mvk(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	ut8 h = BIT(w, 6);
+	set_ins(insn, h ? C6X_INS_MVKH : C6X_INS_MVK);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+	insn->unit_side = s;
+	op_imm(&OP(0), h ? (st64)BITS(w, 22, 7) : sext(BITS(w, 22, 7), 16));
+	op_reg(&OP(1), s, BITS(w, 27, 23));
+	insn->nops = 2;
+}
+
+// .S ADDK, 16-bit signed constant, Figure (ADDK opcode row bits 6:2 == 10100).
+static void decode_addk(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	set_ins(insn, C6X_INS_ADDK);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+	insn->unit_side = s;
+	op_imm(&OP(0), sext(BITS(w, 22, 7), 16));
+	op_reg(&OP(1), s, BITS(w, 27, 23));
+	insn->nops = 2;
+}
+
+// .S2 ADDKPC (C64x+): forms a PC-relative address, dst = PCE1 + scst7 * 4,
+// and skips a following count (bits 15:13) of parallel NOP cycles. The target
+// is rendered like a branch so it reads as an absolute address.
+static void decode_addkpc(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	set_ins(insn, C6X_INS_ADDKPC);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+	insn->unit_side = s;
+	OP(0).kind = C6X_OP_PCREL;
+	OP(0).v.imm.value = sext(BITS(w, 22, 16), 7) * 4;
+	op_reg(&OP(1), s, BITS(w, 27, 23)); // dst
+	op_imm(&OP(2), BITS(w, 15, 13)); // parallel NOP count
+	OP(2).v.imm.decimal = true;
+	insn->nops = 3;
+}
+
+// .S BDEC/BPOS (C64x+ loop control): branch to PCE1 + scst10 * 4 while the
+// named register is non-negative; BDEC also predecrements it. Bit 12 selects
+// the decrementing form (1) over the plain positive test (0).
+static void decode_bdec(C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	set_ins(insn, BIT(w, 12) ? C6X_INS_BDEC : C6X_INS_BPOS);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	insn->unit_side = s;
+	OP(0).kind = C6X_OP_PCREL;
+	OP(0).v.imm.value = sext(BITS(w, 22, 13), 10) * 4;
+	op_reg(&OP(1), s, BITS(w, 27, 23)); // counter register
+	insn->nops = 2;
+}
+
+// No-unit NOP (SPRU733 Appendix G): the word is all zero except the parallel bit
+// and a 1..8 cycle count in bits 16:13 (count = field + 1). IDLE is a dedicated
+// control opcode handled by the emulation format.
+// No-unit formats spend on opcode the bits every other format spends on the
+// predicate, so they carry neither a functional unit nor a creg/z guard. Each
+// one keys its own table on the selector field named here.
+#define C6X_NOUNIT_PARALLEL 1u ///< parallel bit, bit 0
+#define C6X_NOUNIT_CNT      (0xfu << 13) ///< NOP count / interrupt op, bits 16:13
+#define C6X_NOUNIT_SEL      (0x1fu << 13) ///< loop-buffer selector, bits 17:13
+#define C6X_NOUNIT_II       (0x1fu << 23) ///< loop iteration interval, bits 27:23
+#define C6X_NOUNIT_STGCYC   (0x3fu << 22) ///< SPKERNEL fstg/fcyc, bits 27:22
+#define C6X_NOUNIT_UNITS    (0xffu << 18) ///< SPMASK unit list, bits 25:18
+#define C6X_NOUNIT_PRED     0xf0000000u ///< creg/z, where the format is predicable
+#define C6X_NOUNIT_INT      0x10000000u ///< the 0001 prefix marking DINT/RINT
+#define C6X_NOP_IDLE_CNT    16 ///< the NOP count slot the IDLE opcode occupies
+
+// What the loop-buffer formats spend their upper bits on.
+typedef enum {
+	NOUNIT_NO_OPERAND = 0, ///< no operand
+	NOUNIT_II, ///< loop iteration interval, bits 27:23 plus one
+	NOUNIT_STGCYC, ///< SPKERNEL fstg/fcyc boundary, bits 27:22
+	NOUNIT_UNITS, ///< SPMASK functional-unit list, bits 25:18
+} C6xNoUnitOperand;
+
+typedef struct {
+	ut8 sel; ///< selector value within the format
+	C6xInsnId id; ///< opcode identity
+	_RzAnalysisOpType type; ///< analysis classification
+	ut8 operand; ///< C6xNoUnitOperand
+	bool pred; ///< creg/z are a predicate here, not opcode
+	ut8 feat; ///< C6xFeat gate
+} C6xNoUnitRow;
+
+// C64x+ software-pipelined loop buffer. SPLOOP and SPLOOPD carry the loop
+// iteration interval; SPMASK does not.
+static const C6xNoUnitRow c6x_sploop_rows[] = {
+	{ 24, C6X_INS_SPMASK, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_UNITS, false, FEAT_SIMD },
+	{ 25, C6X_INS_SPMASKR, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_UNITS, false, FEAT_SIMD },
+	{ 26, C6X_INS_SPKERNEL, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_STGCYC, false, FEAT_SIMD },
+	{ 27, C6X_INS_SPKERNELR, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
+	{ 28, C6X_INS_SPLOOP, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
+	{ 29, C6X_INS_SPLOOPD, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
+	{ 31, C6X_INS_SPLOOPW, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_II, true, FEAT_SIMD },
+};
+
+// Software exceptions and interrupt-enable control (SPRUFE8B Figure H-1).
+static const C6xNoUnitRow c6x_int_rows[] = {
+	{ 0, C6X_INS_SWE, RZ_ANALYSIS_OP_TYPE_SWI, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
+	{ 1, C6X_INS_SWENR, RZ_ANALYSIS_OP_TYPE_SWI, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
+	{ 2, C6X_INS_DINT, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
+	{ 3, C6X_INS_RINT, RZ_ANALYSIS_OP_TYPE_NULL, NOUNIT_NO_OPERAND, false, FEAT_SIMD },
+	{ 4, C6X_INS_MFENCE, RZ_ANALYSIS_OP_TYPE_SYNC, NOUNIT_NO_OPERAND, false, FEAT_C66X },
+};
+
+static const C6xNoUnitRow *nounit_find(const C6xNoUnitRow *rows, size_t n, ut8 sel, const C6xArchDesc *d) {
+	for (size_t i = 0; i < n; i++) {
+		if (rows[i].sel == sel && feat_ok(d, rows[i].feat)) {
+			return &rows[i];
+		}
+	}
+	return NULL;
+}
+
+// Apply a matched no-unit row. Each format spends its upper bits differently, so
+// the operand is taken from the field the row names.
+static bool nounit_apply(C6xInsn *insn, const C6xNoUnitRow *r, ut32 w) {
+	set_ins(insn, r->id);
+	insn->op_type = r->type;
+	insn->unit = C6X_UNIT_NONE;
+	if (!r->pred) {
+		// creg/z are opcode in these formats, not a guard
+		insn->creg = 0;
+		insn->z = 0;
+	}
+	switch (r->operand) {
+	case NOUNIT_II:
+		op_imm(&OP(0), BITS(w, 27, 23) + 1);
+		insn->nops = 1;
+		break;
+	case NOUNIT_STGCYC:
+		op_imm(&OP(0), BITS(w, 27, 22));
+		insn->nops = 1;
+		break;
+	case NOUNIT_UNITS:
+		OP(0).kind = C6X_OP_UNITMASK;
+		OP(0).v.units = BITS(w, 25, 18);
+		insn->nops = 1;
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+static bool decode_nounit(C6xInsn *insn, const C6xArchDesc *d) {
+	ut32 w = insn->word;
+	// only the count field (16:13) and the parallel bit (0) may be set
+	if ((w & ~(C6X_NOUNIT_CNT | C6X_NOUNIT_PARALLEL)) == 0) {
+		ut8 cnt = BITS(w, 16, 13) + 1;
+		// a 16-cycle delay is not a real NOP; that slot is the IDLE opcode
+		if (cnt == C6X_NOP_IDLE_CNT) {
+			set_ins(insn, C6X_INS_IDLE);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_NOP;
+			insn->unit = C6X_UNIT_NONE;
+			return true;
+		}
+		set_ins(insn, C6X_INS_NOP);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_NOP;
+		insn->unit = C6X_UNIT_NONE;
+		if (cnt > 1) {
+			op_imm(&OP(0), cnt);
+			insn->nops = 1;
+		}
+		return true;
+	}
+	// SPLOOP/SPLOOPD/SPMASK (C64x+ software-pipelined loop buffer): bit 17 marks
+	// this class, bits 17:13 pick the op, and SPLOOP(D) carry the loop iteration
+	// interval (ii = field + 1) in bits 27:23.
+	if (BIT(w, 17)) {
+		const C6xNoUnitRow *r = nounit_find(c6x_sploop_rows, RZ_ARRAY_SIZE(c6x_sploop_rows), BITS(w, 17, 13), d);
+		// Everything outside the selector, this row's operand field, the
+		// parallel bit and (where the row allows it) the predicate must be zero.
+		ut32 allowed = C6X_NOUNIT_SEL | C6X_NOUNIT_PARALLEL;
+		if (r) {
+			allowed |= r->operand == NOUNIT_II    ? C6X_NOUNIT_II
+				: r->operand == NOUNIT_STGCYC ? C6X_NOUNIT_STGCYC
+				: r->operand == NOUNIT_UNITS  ? C6X_NOUNIT_UNITS
+							      : 0;
+			if (r->pred) {
+				allowed |= C6X_NOUNIT_PRED;
+			}
+			// creg 0 with z set is no predicate but a reserved encoding
+			if ((w & ~allowed) == 0 && BITS(w, 31, 28) != 1) {
+				return nounit_apply(insn, r, w);
+			}
+		}
+	}
+	// SWE/SWENR/DINT/RINT: no-unit exception and interrupt control (SPRUFE8B
+	// Figure H-1). The 0001 prefix at bits 31:28 is opcode, not a predicate, so it must not be
+	// read as creg/z. op (bits 16:13) selects the mnemonic; only the op field
+	// and the parallel bit may otherwise be set.
+	if ((w & ~(C6X_NOUNIT_CNT | C6X_NOUNIT_PARALLEL)) == C6X_NOUNIT_INT) {
+		const C6xNoUnitRow *r = nounit_find(c6x_int_rows, RZ_ARRAY_SIZE(c6x_int_rows), BITS(w, 16, 13), d);
+		if (r) {
+			return nounit_apply(insn, r, w);
+		}
+	}
+	return false;
+}
+
+// MVC: move between a control register and a general register (.S2 only).
+// bit 6 selects direction; the control register is named by its crlo field
+// (crhi is 0 for register access, so it is not rendered).
+static bool decode_mvc(const C6xArchDesc *d, C6xInsn *insn) {
+	ut32 w = insn->word;
+	ut8 s = BIT(w, 1);
+	bool read = BIT(w, 6); // 1: control -> register; 0: register -> control
+	ut8 crlo = read ? BITS(w, 22, 18) : BITS(w, 27, 23);
+	ut8 reg = read ? BITS(w, 27, 23) : BITS(w, 22, 18);
+	// crhi is 00000, any 0xxxx for the registers at crlo 0-7 and 10000 for
+	// PCE1 (SPRUFE8B Table 3-27); the others reach emulation registers
+	ut8 crhi = BITS(w, 17, 13);
+	if ((crhi && !(crlo < 8 && crhi < 0x10) && !(crlo == 0x10 && crhi == 0x10)) || !ctrlreg_ok(d, crlo)) {
+		return false;
+	}
+	// the opcode fixes bit 1: no MVC on .S1 (SPRU732J, SPRUFE8B MVC)
+	if (!s) {
+		return false;
+	}
+	const char *cr = ctrlreg_name(crlo, read);
+	set_ins(insn, C6X_INS_MVC);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+	insn->unit = C6X_UNIT_S;
+	insn->unit_side = s;
+	if (read) {
+		op_ctrlreg(&OP(0), cr);
+		op_reg(&OP(1), s, reg);
+	} else {
+		// the source register may cross (SPRUFE8B MVC: src2 is xuint)
+		insn->cross = BIT(w, 12);
+		op_reg(&OP(0), insn->cross ? !s : s, reg);
+		op_ctrlreg(&OP(1), cr);
+	}
+	insn->nops = 2;
+	return cr != NULL;
+}
+
+// EXTU/EXT/SET/CLR, constant form (SPRUFE8 field-op format): csta and cstb
+// give the bit-field bounds as 5-bit constants; the op is bits 7:6.
+static bool decode_field(C6xInsn *insn) {
+	ut32 w = insn->word;
+	static const C6xInsnId names[4] = { C6X_INS_EXTU, C6X_INS_EXT, C6X_INS_SET, C6X_INS_CLR };
+	static const _RzAnalysisOpType types[4] = {
+		RZ_ANALYSIS_OP_TYPE_SHR, RZ_ANALYSIS_OP_TYPE_SHR,
+		RZ_ANALYSIS_OP_TYPE_OR, RZ_ANALYSIS_OP_TYPE_AND
+	};
+	ut8 op = BITS(w, 7, 6);
+	ut8 s = BIT(w, 1);
+	set_ins(insn, names[op]);
+	insn->op_type = types[op];
+	insn->unit = C6X_UNIT_S;
+	insn->unit_side = s;
+	op_reg(&OP(0), s, BITS(w, 22, 18)); // src2
+	op_imm(&OP(1), BITS(w, 17, 13)); // csta
+	op_imm(&OP(2), BITS(w, 12, 8)); // cstb
+	OP(1).v.imm.decimal = true;
+	OP(2).v.imm.decimal = true;
+	op_reg(&OP(3), s, BITS(w, 27, 23)); // dst
+	insn->nops = 4;
+	return true;
+}
+
+// creg = 0 with z = 1 marks a nonconditional form (SPRUFE8B Figure D-3); in a
+// format without such forms the predicate is reserved.
+static bool noncond(ut32 w) {
+	return BITS(w, 31, 28) == 1;
+}
+
+// A nonconditional form: the C64x+ ones writing a register pair from two
+// singles, and the C66x double-word forms.
+typedef struct {
+	ut8 op; ///< opfield: bits 11:5 on .L, bits 11:6 on .S, bits 9:6 on extended .S
+	C6xInsnId id;
+	ut8 feat;
+	_RzAnalysisOpType type;
+	ut8 src1; ///< C6xSrc1Kind: a register, or a scst5 or ucst5 constant
+	ut8 k1; ///< src1's width as a register (C6X_OP_REG / _REGPAIR)
+	ut8 k2; ///< src2's width
+	ut8 k3; ///< dst's width
+	bool swap; ///< printed src2, src1, dst, as shifts are
+} C6xNcRow;
+
+// .L, SPRUFE8B Figure D-3 and the double-word forms of SPRUGH7
+static const C6xNcRow c6x_l_nc_rows[] = {
+	{ 0x00, C6X_INS_DPACKL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x03, C6X_INS_DADD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x04, C6X_INS_DSUB2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x05, C6X_INS_DADD2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x07, C6X_INS_DSUB, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x0c, C6X_INS_ADDSUB, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x0d, C6X_INS_ADDSUB2, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x0e, C6X_INS_SADDSUB, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x0f, C6X_INS_SADDSUB2, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x13, C6X_INS_DSADD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x14, C6X_INS_DSADD2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x1b, C6X_INS_DPACKLH2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x1c, C6X_INS_DPACKHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x1e, C6X_INS_DPACKH2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x33, C6X_INS_DPACKX2, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x34, C6X_INS_DPACK2, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x36, C6X_INS_SHFL3, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x38, C6X_INS_DAPYS2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x3c, C6X_INS_DADDSP, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x3d, C6X_INS_DSUBSP, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x41, C6X_INS_DMIN2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x42, C6X_INS_DMAX2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x43, C6X_INS_DMAXU4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x48, C6X_INS_DMINU4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x64, C6X_INS_DSSUB2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x67, C6X_INS_DSSUB, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x68, C6X_INS_DPACKL4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x69, C6X_INS_DPACKH4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x6a, C6X_INS_DPACKLH4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x6c, C6X_INS_DMVD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x6e, C6X_INS_XOR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_XOR, SRC1_SCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x6f, C6X_INS_XOR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_XOR, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x7b, C6X_INS_AND, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x7c, C6X_INS_ANDN, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x7f, C6X_INS_OR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_OR, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+};
+
+// .S, the double-word forms of SPRUGH7
+static const C6xNcRow c6x_s_nc_rows[] = {
+	{ 0x01, C6X_INS_DADD2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x03, C6X_INS_SHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_UCST5, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG, true },
+	{ 0x06, C6X_INS_DSHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x07, C6X_INS_DADD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x08, C6X_INS_DPACKHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x09, C6X_INS_DPACKH2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x0a, C6X_INS_XOR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_XOR, SRC1_SCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x0b, C6X_INS_XOR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_XOR, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x10, C6X_INS_DPACKLH2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x11, C6X_INS_DSUB2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x12, C6X_INS_DSHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x13, C6X_INS_SHL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG, true },
+	{ 0x14, C6X_INS_DCMPGT2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_CMP, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0x15, C6X_INS_DCMPGTU4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_CMP, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0x17, C6X_INS_DSUB, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x18, C6X_INS_DSHR2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SAR, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x19, C6X_INS_DSHRU2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHR, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x1b, C6X_INS_OR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_OR, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x1c, C6X_INS_DCMPEQ4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_CMP, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0x1d, C6X_INS_DCMPEQ2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_CMP, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REG },
+	{ 0x1f, C6X_INS_AND, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x20, C6X_INS_DSADD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x26, C6X_INS_DSHRU, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHR, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x27, C6X_INS_DSHRU, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHR, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x2c, C6X_INS_DADDSP, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x2d, C6X_INS_DSUBSP, FEAT_C66X_FP, RZ_ANALYSIS_OP_TYPE_SUB, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x32, C6X_INS_DSHL, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x33, C6X_INS_DSHL, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHL, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x36, C6X_INS_DSHR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SAR, SRC1_UCST5, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x37, C6X_INS_DSHR, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SAR, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+};
+
+// extended .S, SPRUFE8B Figure F-14 and the double-word forms of SPRUGH7
+static const C6xNcRow c6x_sx_nc_rows[] = {
+	{ 0x0, C6X_INS_DSADD2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_ADD, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x3, C6X_INS_DMVD, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REGPAIR },
+	{ 0x4, C6X_INS_DSPACKU4, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x6, C6X_INS_ANDN, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_AND, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+	{ 0x7, C6X_INS_DSHR2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SAR, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0x8, C6X_INS_DSHRU2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_SHR, SRC1_REG, C6X_OP_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, true },
+	{ 0xb, C6X_INS_RPACK2, FEAT_SIMD, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REG, C6X_OP_REG, C6X_OP_REG },
+	{ 0xf, C6X_INS_DPACKL2, FEAT_C66X, RZ_ANALYSIS_OP_TYPE_MOV, SRC1_REG, C6X_OP_REGPAIR, C6X_OP_REGPAIR, C6X_OP_REGPAIR },
+};
+
+// Decode the nonconditional form \p op of \p rows, or fail on a reserved one.
+static bool decode_noncond(const C6xArchDesc *d, C6xInsn *insn, const C6xNcRow *rows, size_t n, ut8 op, C6xUnit unit) {
+	ut32 w = insn->word;
+	for (size_t i = 0; i < n; i++) {
+		const C6xNcRow *r = &rows[i];
+		if (r->op != op || !feat_ok(d, r->feat)) {
+			continue;
+		}
+		ut8 s = BIT(w, 1);
+		ut8 x = BIT(w, 12);
+		set_ins(insn, r->id);
+		insn->op_type = r->type;
+		insn->is_fp = r->feat == FEAT_C66X_FP;
+		insn->unit = unit;
+		insn->unit_side = s;
+		insn->cross = x;
+		if (r->src1 == SRC1_REG) {
+			op_by_kind(&OP(0), r->k1, s, BITS(w, 17, 13));
+		} else {
+			fill_src1(&OP(0), w, s, r->src1);
+		}
+		op_by_kind(&OP(1), r->k2, x ? !s : s, BITS(w, 22, 18));
+		if (r->swap) {
+			C6xOperand tmp = OP(0);
+			OP(0) = OP(1);
+			OP(1) = tmp;
+		}
+		op_by_kind(&OP(2), r->k3, s, BITS(w, 27, 23));
+		insn->nops = 3;
+		return true;
+	}
+	return false;
+}
+
+// Decode the unary form of \p rows the src1 field selects: src2 -> dst.
+static bool decode_unary(const C6xArchDesc *d, C6xInsn *insn, const C6xMUnaryRow *rows, size_t n, C6xUnit unit) {
+	ut32 w = insn->word;
+	for (size_t i = 0; i < n; i++) {
+		const C6xMUnaryRow *r = &rows[i];
+		if (r->src1 != BITS(w, 17, 13) || !feat_ok(d, r->feat)) {
+			continue;
+		}
+		ut8 s = BIT(w, 1);
+		ut8 x = BIT(w, 12);
+		set_ins(insn, r->id);
+		insn->op_type = r->id == C6X_INS_ABSSP ? RZ_ANALYSIS_OP_TYPE_ABS : RZ_ANALYSIS_OP_TYPE_MOV;
+		insn->is_fp = r->feat == FEAT_FP || r->feat == FEAT_C66X_FP;
+		insn->unit = unit;
+		insn->unit_side = s;
+		insn->cross = x;
+		op_by_kind(&OP(0), r->k2, x ? !s : s, BITS(w, 22, 18)); // src2
+		op_by_kind(&OP(1), r->k3, s, BITS(w, 27, 23)); // dst
+		insn->nops = 2;
+		return true;
+	}
+	return false;
+}
+
+// Whether a pair operand of \p insn was encoded at a register it cannot start
+// at, which makes the word invalid (dis6x lists it as data).
+static bool odd_pair(const C6xInsn *insn) {
+	for (ut8 i = 0; i < insn->nops; i++) {
+		if ((OP(i).kind == C6X_OP_REGPAIR || OP(i).kind == C6X_OP_REGQUAD) && OP(i).v.reg.odd) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// Whether \p insn names a register the variant \p d does not have: C62x and
+// C67x have sixteen per side.
+static bool past_file(const C6xArchDesc *d, const C6xInsn *insn) {
+	for (ut8 i = 0; i < insn->nops; i++) {
+		const C6xOperand *o = &OP(i);
+		switch (o->kind) {
+		case C6X_OP_REG:
+		case C6X_OP_REGPAIR:
+		case C6X_OP_REGQUAD:
+			if (o->v.reg.num >= d->num_regs) {
+				return true;
+			}
+			break;
+		case C6X_OP_MEM: {
+			C6xAddrMode m = o->v.mem.mode;
+			bool reg_off = m == C6X_AM_NEG_REG || m == C6X_AM_POS_REG || m == C6X_AM_PREDEC_REG ||
+				m == C6X_AM_PREINC_REG || m == C6X_AM_POSTDEC_REG || m == C6X_AM_POSTINC_REG;
+			if (o->v.mem.base >= d->num_regs || (reg_off && o->v.mem.off_reg >= d->num_regs)) {
+				return true;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	return false;
+}
+
+// Decode a functional-unit instruction from its low-bit signature.
+static bool decode_unit(const C6xArchDesc *d, C6xInsn *insn) {
+	ut32 w = insn->word;
+	// .D loads/stores: bits 3:2 == 01
+	if (BITS(w, 3, 2) == C6X_DFMT_LDST) {
+		// none is nonconditional, and address modes 0010, 0011, 0110 and 0111
+		// are reserved (SPRUFE8B Table 3-11)
+		if (noncond(w) || (BITS(w, 12, 9) & 0xa) == 0x2) {
+			return false;
+		}
+		// Doubleword variants (register pair) are marked by bit 8; the op
+		// field then selects among them. Available on C64x+ (SIMD) and C67x
+		// (FP), not plain C62x.
+		if (BIT(w, 8)) {
+			C6xInsnId mn = C6X_INS_INVALID;
+			bool store = false, dword = true;
+			switch (BITS(w, 6, 4)) {
+			case 0x2: mn = C6X_INS_LDNDW; break;
+			case 0x3:
+				mn = C6X_INS_LDNW, dword = false;
+				break; // non-aligned word load (C64x+)
+			case 0x4: mn = C6X_INS_STDW, store = true; break;
+			case 0x5:
+				mn = C6X_INS_STNW, store = true, dword = false;
+				break; // non-aligned word store (C64x+)
+			case 0x6: mn = C6X_INS_LDDW; break;
+			case 0x7: mn = C6X_INS_STNDW, store = true; break;
+			}
+			// ops 0 and 1 are reserved with bit 8 set, and LDDW and STDW name
+			// an aligned pair
+			if (!mn || ((mn == C6X_INS_LDDW || mn == C6X_INS_STDW) && BIT(w, 23))) {
+				return false;
+			}
+			if (mn) {
+				decode_ldst(insn, mn, store, dword);
+				insn->unit = C6X_UNIT_D;
+				// C67x has LDDW alone of them
+				return feat_ok(d, FEAT_SIMD) || (mn == C6X_INS_LDDW && feat_ok(d, FEAT_FP));
+			}
+		}
+		ut8 op = BITS(w, 6, 4);
+		decode_ldst(insn, c6x_mem_rows[op].id, c6x_mem_rows[op].store, false);
+		insn->unit = C6X_UNIT_D;
+		return true;
+	}
+	// .D long-immediate loads/stores (*+B14/B15[ucst15]): bits 3:2 == 11
+	if (BITS(w, 3, 2) == C6X_DFMT_LDST_LONG) {
+		ut8 op = BITS(w, 6, 4);
+		// The ADDAB/ADDAH/ADDAW address forms share the byte/halfword/word
+		// store slots; bits 31:28 == 0001 selects them.
+		if (BITS(w, 31, 28) == C6X_DFMT_ADDA) {
+			// the B14/B15 + ucst15 forms are C64x+ (SPRU732J ADDAB, ADDAH, ADDAW)
+			if (!feat_ok(d, FEAT_SIMD)) {
+				return false;
+			}
+			C6xInsnId addr_id = op == 0x3 ? C6X_INS_ADDAB
+				: op == 0x5           ? C6X_INS_ADDAH
+				: op == 0x7           ? C6X_INS_ADDAW
+						      : C6X_INS_INVALID;
+			if (addr_id != C6X_INS_INVALID) {
+				decode_addaw_long(insn, addr_id);
+				return true;
+			}
+			return false; // the loads and stores are not nonconditional
+		}
+		decode_ldst_long(insn, c6x_mem_rows[op].id, c6x_mem_rows[op].store);
+		return true;
+	}
+	// .L 1-or-2-source: bits 4:2 == 110
+	if (BITS(w, 4, 2) == C6X_LFMT_1OR2SRC) {
+		if (noncond(w)) {
+			return decode_noncond(d, insn, c6x_l_nc_rows, RZ_ARRAY_SIZE(c6x_l_nc_rows), BITS(w, 11, 5), C6X_UNIT_L);
+		}
+		// FP add/sub on .S issue in this same format; their opfields select
+		// the .S unit, so match them before the .L table.
+		const C6xRow *sf = row_find(c6x_s_fp_rows, RZ_ARRAY_SIZE(c6x_s_fp_rows), BITS(w, 11, 5), d);
+		if (sf) {
+			decode_3op(insn, sf);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		// MVK.L (LSDx1 overlay, C64x+): the ABS opfield 0x1a is reused for
+		// a 5-bit signed constant move; ABS's unary form fixes src1 = 0,
+		// so a src1 field of 0x05 means MVK instead.
+		if (feat_ok(d, FEAT_SIMD) && BITS(w, 11, 5) == C6X_MOP_MVK5 && BITS(w, 17, 13) == C6X_MOP_ABS) {
+			ut8 s = BIT(w, 1);
+			set_ins(insn, C6X_INS_MVK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = C6X_UNIT_L;
+			insn->unit_side = s;
+			op_imm(&OP(0), sext(BITS(w, 22, 18), 5));
+			OP(0).v.imm.decimal = true;
+			op_reg(&OP(1), s, BITS(w, 27, 23));
+			insn->nops = 2;
+			return true;
+		}
+		// The ABS opfield also carries unary reshuffles and conversions, chosen
+		// by src1; src1 == 0 is the ABS itself and falls through to the table,
+		// and the other src1 values are reserved.
+		if (BITS(w, 11, 5) == C6X_MOP_MVK5 && BITS(w, 17, 13)) {
+			return decode_unary(d, insn, c6x_l_unary_rows, RZ_ARRAY_SIZE(c6x_l_unary_rows), C6X_UNIT_L);
+		}
+		const C6xRow *r = row_find(c6x_l_rows, RZ_ARRAY_SIZE(c6x_l_rows), BITS(w, 11, 5), d);
+		if (!r) {
+			return false;
+		}
+		// C62x and C67x compare against a ucst4: with the field's MSB set the
+		// result is invalid (SPRU732J CMPGTU, CMPLTU)
+		if ((r->id == C6X_INS_CMPGTU || r->id == C6X_INS_CMPLTU) && r->src1 == SRC1_UCST5 &&
+			!feat_ok(d, FEAT_SIMD) && BIT(w, 17)) {
+			return false;
+		}
+		decode_3op(insn, r);
+		insn->unit = C6X_UNIT_L;
+		return true;
+	}
+	if (BITS(w, 5, 2) == C6X_OPGRP_FIELD) {
+		return !noncond(w) && decode_field(insn);
+	}
+	// .D-unit extended logic/arith, selected by bits 11:10 == 10.
+	if (BITS(w, 5, 2) == C6X_OPGRP_EXT && BITS(w, 11, 10) == 0x2) {
+		if (noncond(w)) {
+			return false;
+		}
+		const C6xRow *r = row_find(c6x_d_ext_rows, RZ_ARRAY_SIZE(c6x_d_ext_rows), BITS(w, 9, 6), d);
+		if (r) {
+			decode_3op(insn, r);
+			insn->unit = C6X_UNIT_D;
+			return true;
+		}
+	}
+	// Extended .M (C64x+): bits 5:2 == 1100 with bits 11:10 in {0,1}. The
+	// unary moves/shuffles share the bits 9:6 == 3 slot and are told apart by
+	// the src1 field; every other slot is a two-source (packed) multiply.
+	if (feat_ok(d, FEAT_SIMD) && BITS(w, 5, 2) == C6X_OPGRP_EXT && BITS(w, 11, 10) <= 1) {
+		ut8 s = BIT(w, 1);
+		ut8 x = BIT(w, 12);
+		// C66x complex/matrix ops occupy this space with z = 1, creg = 0 (they
+		// are always unconditional); that signature reserves the slot from the
+		// C64x+ op below, which is either unconditional (z = 0) or predicated
+		// (creg != 0).
+		if (BITS(w, 31, 29) == 0 && BIT(w, 28) == 1) {
+			for (size_t i = 0; i < RZ_ARRAY_SIZE(c6x_m_cplx_rows); i++) {
+				const C6xMCplxRow *r = &c6x_m_cplx_rows[i];
+				if (r->sub != BITS(w, 11, 10) || r->op != BITS(w, 9, 6) || !feat_ok(d, r->feat)) {
+					continue;
+				}
+				set_ins(insn, r->id);
+				insn->op_type = r->type ? r->type : RZ_ANALYSIS_OP_TYPE_MUL;
+				insn->unit = C6X_UNIT_M;
+				insn->unit_side = s;
+				insn->cross = x;
+				op_by_kind(&OP(0), r->k1, s, BITS(w, 17, 13)); // src1
+				// src2 crosses unless it is a quad
+				op_by_kind(&OP(1), r->k2, x && r->k2 != C6X_OP_REGQUAD ? !s : s, BITS(w, 22, 18));
+				op_by_kind(&OP(2), r->k3, s, BITS(w, 27, 23)); // dst
+				insn->nops = 3;
+				return true;
+			}
+			return false;
+		}
+		if (BITS(w, 11, 10) == 0 && BITS(w, 9, 6) == 3) {
+			return decode_unary(d, insn, c6x_m_unary_rows, RZ_ARRAY_SIZE(c6x_m_unary_rows), C6X_UNIT_M);
+		}
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(c6x_m_ext_rows); i++) {
+			const C6xMExtRow *r = &c6x_m_ext_rows[i];
+			if (r->sub != BITS(w, 11, 10) || r->op != BITS(w, 9, 6) || !feat_ok(d, r->feat)) {
+				continue;
+			}
+			set_ins(insn, r->id);
+			insn->op_type = r->type;
+			insn->is_fp = r->feat == FEAT_FP || r->feat == FEAT_C66X_FP;
+			insn->unit = C6X_UNIT_M;
+			insn->unit_side = s;
+			insn->cross = x;
+			// .M crosses only src2 (SPRUFE8B 2.4), MPYSPDP's DP pair too
+			ut8 src1_side = s;
+			ut8 src2_side = x ? !s : s;
+			if (r->swap) {
+				// reversed syntax (src2, src1, dst): the shift-count and
+				// rotate ops print the value (src2) before the amount (src1)
+				op_reg(&OP(0), src2_side, BITS(w, 22, 18)); // src2
+				if (r->src1_cst) {
+					op_imm(&OP(1), BITS(w, 17, 13));
+				} else {
+					op_reg(&OP(1), src1_side, BITS(w, 17, 13)); // src1
+				}
+			} else {
+				op_by_kind(&OP(0), r->src1_pair ? C6X_OP_REGPAIR : C6X_OP_REG, src1_side, BITS(w, 17, 13)); // src1
+				if (r->src2_pair) {
+					op_regpair(&OP(1), src2_side, BITS(w, 22, 18));
+				} else {
+					op_reg(&OP(1), src2_side, BITS(w, 22, 18));
+				}
+			}
+			if (r->dst_pair) {
+				op_regpair(&OP(2), s, BITS(w, 27, 23));
+			} else {
+				op_reg(&OP(2), s, BITS(w, 27, 23));
+			}
+			insn->nops = 3;
+			return true;
+		}
+		return false;
+	}
+	// Extended .S (C64x+): bits 5:2 == 1100, bits 11:10 == 11. Packed shifts,
+	// saturating add/pack and andn share this space, keyed by bits 9:6.
+	if (feat_ok(d, FEAT_SIMD) && BITS(w, 5, 2) == C6X_OPGRP_EXT && BITS(w, 11, 10) == 0x3) {
+		if (noncond(w)) {
+			return decode_noncond(d, insn, c6x_sx_nc_rows, RZ_ARRAY_SIZE(c6x_sx_nc_rows), BITS(w, 9, 6), C6X_UNIT_S);
+		}
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(c6x_s_ext_rows); i++) {
+			const C6xSExtRow *r = &c6x_s_ext_rows[i];
+			if (r->op != BITS(w, 9, 6) || !feat_ok(d, r->feat)) {
+				continue;
+			}
+			ut8 s = BIT(w, 1);
+			ut8 x = BIT(w, 12);
+			ut8 src2_side = x ? !s : s;
+			ut8 kind = r->dw ? C6X_OP_REGPAIR : C6X_OP_REG;
+			set_ins(insn, r->id);
+			insn->op_type = r->type;
+			insn->is_fp = r->feat == FEAT_C66X_FP;
+			insn->unit = C6X_UNIT_S;
+			insn->unit_side = s;
+			insn->cross = x;
+			if (r->swap) {
+				// packed shifts print value (src2) then count (src1)
+				op_reg(&OP(0), src2_side, BITS(w, 22, 18));
+				op_reg(&OP(1), s, BITS(w, 17, 13));
+			} else {
+				op_by_kind(&OP(0), kind, s, BITS(w, 17, 13)); // src1
+				op_by_kind(&OP(1), kind, src2_side, BITS(w, 22, 18)); // src2
+			}
+			op_by_kind(&OP(2), r->pair || r->dw ? C6X_OP_REGPAIR : C6X_OP_REG, s, BITS(w, 27, 23)); // dst
+			insn->nops = 3;
+			return true;
+		}
+		return false;
+	}
+	// .D extended logical/arith, selected by bits 11:10 == 10.
+	if (BITS(w, 5, 2) == C6X_OPGRP_EXT && BITS(w, 11, 10) == 0x2) {
+		if (noncond(w)) {
+			return false;
+		}
+		const C6xRow *r = row_find(c6x_dext_rows, RZ_ARRAY_SIZE(c6x_dext_rows), BITS(w, 9, 6), d);
+		if (r) {
+			decode_3op(insn, r);
+			insn->unit = C6X_UNIT_D;
+			return true;
+		}
+		return false;
+	}
+	// remaining formats have bits 4:2 == 000, 100 or 010; refine by higher bits
+	ut8 sig = BITS(w, 6, 2);
+	if (sig == C6X_SIG_M) {
+		// C66x quad/matrix multiplies share this format but are unconditional
+		// with z = 1, creg = 0 -- that reserves the slot from the z = 0 scalar
+		// multiply at the same opcode.
+		if (noncond(w)) {
+			if (!feat_ok(d, FEAT_C66X)) {
+				return false;
+			}
+			for (size_t i = 0; i < RZ_ARRAY_SIZE(c6x_m_wide_rows); i++) {
+				const C6xMWideRow *r = &c6x_m_wide_rows[i];
+				if (r->op != BITS(w, 11, 7)) {
+					continue;
+				}
+				ut8 s = BIT(w, 1);
+				ut8 x = BIT(w, 12);
+				set_ins(insn, r->id);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_MUL;
+				insn->unit = C6X_UNIT_M;
+				insn->unit_side = s;
+				insn->cross = x && !r->no_x;
+				// cmatmpy swaps the src1/src2 register fields; the operand in
+				// the src2 field crosses unless it is a quad
+				ut8 f1 = r->swap ? BITS(w, 22, 18) : BITS(w, 17, 13);
+				ut8 f2 = r->swap ? BITS(w, 17, 13) : BITS(w, 22, 18);
+				ut8 k2f = r->swap ? r->k1 : r->k2;
+				ut8 xs = x && k2f != C6X_OP_REGQUAD ? !s : s;
+				op_by_kind(&OP(0), r->k1, r->swap ? xs : s, f1);
+				op_by_kind(&OP(1), r->k2, r->swap ? s : xs, f2);
+				op_by_kind(&OP(2), r->k3, s, BITS(w, 27, 23));
+				insn->nops = 3;
+				return true;
+			}
+			return false;
+		}
+		const C6xRow *r = row_find(c6x_m_rows, RZ_ARRAY_SIZE(c6x_m_rows), BITS(w, 11, 7), d);
+		if (r) {
+			decode_3op(insn, r);
+			insn->unit = C6X_UNIT_M;
+			return true;
+		}
+		return false;
+	}
+	if (sig == C6X_SIG_D) {
+		if (noncond(w)) {
+			return false;
+		}
+		// MVK on the .D unit (C64x+) reuses the op-0 slot: a 5-bit signed
+		// constant move, dst on side s. cst5 sits at bits 17:13.
+		if (feat_ok(d, FEAT_SIMD) && BITS(w, 12, 7) == C6X_DFMT_MVK) {
+			ut8 s = BIT(w, 1);
+			set_ins(insn, C6X_INS_MVK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = C6X_UNIT_D;
+			insn->unit_side = s;
+			op_imm(&OP(0), sext(BITS(w, 17, 13), 5));
+			OP(0).v.imm.decimal = true;
+			op_reg(&OP(1), s, BITS(w, 27, 23));
+			insn->nops = 2;
+			return true;
+		}
+		const C6xRow *r = row_find(c6x_d_rows, RZ_ARRAY_SIZE(c6x_d_rows), BITS(w, 12, 7), d);
+		if (r) {
+			decode_darith(insn, r);
+			insn->unit = C6X_UNIT_D;
+			return true;
+		}
+		return false;
+	}
+	if (BITS(w, 5, 2) == C6X_OPGRP_1OR2SRC) {
+		ut16 sop = BITS(w, 11, 6);
+		if (noncond(w)) {
+			return decode_noncond(d, insn, c6x_s_nc_rows, RZ_ARRAY_SIZE(c6x_s_nc_rows), sop, C6X_UNIT_S);
+		}
+		if (sop == C6X_SOP_UNARY) {
+			return decode_unary(d, insn, c6x_s_unary_rows, RZ_ARRAY_SIZE(c6x_s_unary_rows), C6X_UNIT_S);
+		}
+		if ((sop == C6X_SOP_B_REG || sop == C6X_SOP_B_IRP) && !BIT(w, 1)) {
+			return false;
+		}
+		if ((sop == C6X_SOP_BNOP_DISP || sop == C6X_SOP_ADDKPC || sop == C6X_SOP_B_IRP) && BIT(w, 12)) {
+			return false;
+		}
+		if (sop == C6X_SOP_B_REG) {
+			decode_branch_reg(insn);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		if (sop == C6X_SOP_BNOP_DISP && feat_ok(d, FEAT_SIMD)) {
+			decode_branch_nop(insn);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		if (sop == C6X_SOP_MVC_LO || sop == C6X_SOP_MVC_HI) {
+			return decode_mvc(d, insn);
+		}
+		if (sop == C6X_SOP_ADDKPC && feat_ok(d, FEAT_SIMD)) {
+			decode_addkpc(insn);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		if (sop == C6X_SOP_BDEC && feat_ok(d, FEAT_SIMD)) {
+			decode_bdec(insn);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		if (sop == C6X_SOP_B_IRP) {
+			if (BITS(w, 22, 18) != 6 && BITS(w, 22, 18) != 7) {
+				return false; // only IRP and NRP
+			}
+			set_ins(insn, C6X_INS_B);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_RJMP;
+			insn->unit_side = C6X_SIDE_B;
+			op_ctrlreg(&OP(0), ctrlreg_name(BITS(w, 22, 18), true));
+			insn->nops = 1;
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		const C6xRow *lr = BIT(w, 13) ? row_find(c6x_s_long_rows, RZ_ARRAY_SIZE(c6x_s_long_rows), sop, d) : NULL;
+		if (lr) {
+			decode_3op(insn, lr);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		const C6xRow *r = row_find(c6x_s_rows, RZ_ARRAY_SIZE(c6x_s_rows), sop, d);
+		if (r) {
+			// RCPDP and RSQRDP are unary; dis6x reads another form, or none,
+			// into an odd src1 field
+			if ((r->id == C6X_INS_RCPDP || r->id == C6X_INS_RSQRDP) && BIT(w, 13)) {
+				return false;
+			}
+			decode_3op(insn, r);
+			insn->unit = C6X_UNIT_S;
+			return true;
+		}
+		return false;
+	}
+	if (sig == C6X_SIG_S_BRANCH) {
+		if (noncond(w) && !feat_ok(d, FEAT_SIMD)) {
+			return false; // CALLP is C64x+
+		}
+		decode_branch(insn);
+		insn->unit = C6X_UNIT_S;
+		return true;
+	}
+	if (sig == C6X_SIG_S_ADDK) {
+		if (noncond(w)) {
+			return false;
+		}
+		decode_addk(insn);
+		insn->unit = C6X_UNIT_S;
+		return true;
+	}
+	if (BITS(w, 5, 2) == C6X_OPGRP_MVK) { // bit 6 selects MVKH
+		if (noncond(w)) {
+			return false;
+		}
+		decode_mvk(insn);
+		insn->unit = C6X_UNIT_S;
+		return true;
+	}
+	return false;
+}
+
+// Map a 3-bit compact register field to a register operand. The header RS bit
+// selects the low (A0-A7 / B0-B7) or high (A16-A23 / B16-B23) register set.
+static void compact_reg(C6xOperand *o, ut8 field, ut8 side, bool rs) {
+	op_reg(o, side, (rs ? 16 : 0) + (field & 0x7));
+}
+
+// The .L L3i short constant (SPRUFE8 Figure D-5): sn:cst3 encode a 5-bit signed
+// value where cst3 == 0 means +-8 rather than 0.
+static st64 l3i_const(ut8 sn, ut8 cst3) {
+	ut8 raw = (sn << 3) | cst3;
+	return raw == 0 ? 8 : (raw < 8 ? (st64)raw : (st64)raw - 16);
+}
+
+// Compact loop-buffer group (Uspl, Uspldr, Uspk, Uspm): bits 6:1 == 110011
+// with bits 11:10 == 11. Bit 13 picks the SPMASK pair, bit 12 then SPKERNEL
+// over the SPLOOP forms (SPRUFE8B Figures H-5 to H-8). Their fields are
+// scattered over the same bits 0, 9:7 and 15:14.
+static bool decode_compact_loop(C6xInsn *insn, ut16 w) {
+	if (((w >> 1) & 0x3f) != C6X_CFMT_LOOP || ((w >> 10) & 0x3) != 0x3) {
+		return false;
+	}
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
+	insn->unit = C6X_UNIT_NONE;
+	insn->unit_side = 0;
+	insn->nops = 1;
+	if ((w >> 13) & 1) {
+		set_ins(insn, ((w >> 12) & 1) ? C6X_INS_SPMASKR : C6X_INS_SPMASK);
+		OP(0).kind = C6X_OP_UNITMASK;
+		OP(0).v.units = (ut8)((w & 1) | (((w >> 7) & 1) << 1) | (((w >> 8) & 1) << 2) |
+			(((w >> 9) & 1) << 3) | (((w >> 14) & 1) << 4) | (((w >> 15) & 1) << 5));
+		return true;
+	}
+	if ((w >> 12) & 1) {
+		// the stage/cycle field as the 32-bit form has it, bit 0 its top bit
+		set_ins(insn, C6X_INS_SPKERNEL);
+		op_imm(&OP(0), ((w >> 7) & 0x7) | (((w >> 14) & 0x3) << 3) | ((w & 1) << 5));
+		return true;
+	}
+	// Uspldr (bit 15 set) is a SPLOOPD predicated on A0, or on B0 when bit 0
+	// is set; in Uspl, bit 0 picks SPLOOPD over SPLOOP
+	if ((w >> 15) & 1) {
+		set_ins(insn, C6X_INS_SPLOOPD);
+		insn->creg = (w & 1) ? 1 : 6; // B0 : A0
+		insn->z = 0;
+	} else {
+		set_ins(insn, (w & 1) ? C6X_INS_SPLOOPD : C6X_INS_SPLOOP);
+	}
+	op_imm(&OP(0), 1 + (((w >> 7) & 0x7) | (((w >> 14) & 1) << 3)));
+	return true;
+}
+
+// Compact .M multiplies by the halves bits 6:5 pick, plain and with SAT set.
+static const C6xInsnId compact_mpy_halves[4] = { C6X_INS_MPY, C6X_INS_MPYH, C6X_INS_MPYLH, C6X_INS_MPYHL };
+static const C6xInsnId compact_smpy_halves[4] = { C6X_INS_SMPY, C6X_INS_SMPYH, C6X_INS_SMPYLH, C6X_INS_SMPYHL };
+
+// Decode a 16-bit compact instruction (SPRUFE8 3.10, Appendices D and G). \p rs
+// and \p sat come from the fetch-packet header expansion field. Only the common
+// subset is handled (NOP; MV; predicated MVK; and the .L ALU/compare/MVK forms);
+// unhandled encodings leave the mnemonic NULL but keep the 2-byte size so the
+// packet stays aligned. bit 0 is the side selector (s); the parallel bit comes
+// from the header p-bits and is set by the caller.
+static void decode_compact(C6xInsn *insn, ut16 w, bool rs, bool sat, ut8 dsz, bool br) {
+	insn->size = C6X_COMPACT_SIZE;
+	ut8 s = w & 1; // 0 = A side (.x1), 1 = B side (.x2)
+	insn->unit_side = s;
+
+	// no-unit NOP: 13 fixed low bits, (count - 1) in bits 15:13.
+	if ((w & 0x1fff) == C6X_COMPACT_NOP) {
+		set_ins(insn, C6X_INS_NOP);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_NOP;
+		insn->unit_side = 0;
+		op_imm(&OP(0), ((w >> 13) & 0x7) + 1);
+		insn->nops = 1;
+		return;
+	}
+
+	if ((w & 0x6) == C6X_CSPACE_SHARED) {
+		// Compact .M multiply: bits 4:1 == 1111. Bits 6:5 pick the halfword
+		// halves (11 high*low, 10 low*high, 01 high*high, 00 the plain
+		// multiply), bit 12 the cross path, and the destination field is two
+		// bits scaled by two, so only even-numbered registers are encodable.
+		if (((w >> 1) & 0xf) == C6X_CFMT_MPY) {
+			bool x = (w >> 12) & 1;
+			set_ins(insn, (sat ? compact_smpy_halves : compact_mpy_halves)[(w >> 5) & 0x3]);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MUL;
+			insn->unit = C6X_UNIT_M;
+			insn->cross = x;
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs);
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs);
+			compact_reg(&OP(2), (ut8)(((w >> 10) & 0x3) * 2), s, rs);
+			insn->nops = 3;
+			return;
+		}
+		// Lx1/Sx1 one-register format: a single register operand with an
+		// implied small constant, the operation chosen by bits 15:13 and the
+		// unit by bit 3. Selector 4 is reserved, and 6 (MVC to ILC) exists only
+		// on the .S unit.
+		if ((((w >> 4) & 0x7) == C6X_CFMT_LSX1_1REG || ((w >> 4) & 0x7) == C6X_CFMT_DX1_1REG) && ((w >> 10) & 0x7) == 0x6) {
+			ut8 sel = (w >> 13) & 0x7;
+			// bits 6:4 pick the unit: 111 is the .D form, 110 leaves bit 3 to
+			// choose between .S and .L.
+			bool dunit = ((w >> 4) & 0x7) == C6X_CFMT_DX1_1REG;
+			bool sunit = !dunit && ((w >> 3) & 1);
+			C6xOperand reg;
+			compact_reg(&reg, (w >> 7) & 0x7, s, rs);
+			insn->unit = dunit ? C6X_UNIT_D : sunit ? C6X_UNIT_S
+								: C6X_UNIT_L;
+			switch (sel) {
+			case 0:
+			case 1: // MVK of the selector's low bit
+				set_ins(insn, C6X_INS_MVK);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+				op_imm(&OP(0), sel);
+				OP(1) = reg;
+				insn->nops = 2;
+				return;
+			case 2: // NEG dst, dst -- not available on the .D unit
+				if (dunit) {
+					break;
+				}
+				set_ins(insn, C6X_INS_NEG);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_NOT;
+				OP(0) = reg;
+				OP(1) = reg;
+				insn->nops = 2;
+				return;
+			case 3:
+			case 5:
+			case 7: {
+				C6xInsnId id = sel == 3 ? C6X_INS_SUB : sel == 5 ? C6X_INS_ADD
+										 : C6X_INS_XOR;
+				set_ins(insn, id);
+				insn->op_type = sel == 3 ? RZ_ANALYSIS_OP_TYPE_SUB : sel == 5 ? RZ_ANALYSIS_OP_TYPE_ADD
+											      : RZ_ANALYSIS_OP_TYPE_XOR;
+				OP(0) = reg;
+				op_imm(&OP(1), 1);
+				OP(2) = reg;
+				insn->nops = 3;
+				return;
+			}
+			case 6:
+				if (!sunit || !s) {
+					break; // reserved on the .L unit, and the .S form has s = 1
+				}
+				set_ins(insn, C6X_INS_MVC);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+				OP(0) = reg;
+				OP(1).kind = C6X_OP_CTRLREG;
+				OP(1).v.ctrl = "ilc";
+				insn->nops = 2;
+				return;
+			default:
+				break; // selector 4 is reserved
+			}
+			insn->unit = C6X_UNIT_NONE;
+		}
+		if (decode_compact_loop(insn, w)) {
+			return;
+		}
+		// Shared .L/.S/.D forms (Appendix G): bits 2:1 == 11, unit at bits 4:3.
+		// Sx5 (Figure F-30): ADDK with a 5-bit unsigned constant, destination in
+		// bits 9:7 and the constant scattered across bits 15:11.
+		if (((w >> 1) & 0x3f) == C6X_CFMT_SX2 && ((w >> 10) & 1)) {
+			set_ins(insn, C6X_INS_ADDK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_S;
+			op_imm(&OP(0), (((w >> 13) & 1)) | (((w >> 14) & 1) << 1) | (((w >> 15) & 1) << 2) | (((w >> 11) & 1) << 3) | (((w >> 12) & 1) << 4));
+			compact_reg(&OP(1), (w >> 7) & 0x7, s, rs);
+			insn->nops = 2;
+			return;
+		}
+		// Sx2op (Figure F-29) shares these bits, with bit 10 clear: ADD or SUB
+		// with src1 the destination. Unlike S3, it ignores the header SAT bit.
+		if (((w >> 1) & 0x3f) == C6X_CFMT_SX2) {
+			bool sub = (w >> 11) & 1;
+			bool x = (w >> 12) & 1;
+			set_ins(insn, sub ? C6X_INS_SUB : C6X_INS_ADD);
+			insn->op_type = sub ? RZ_ANALYSIS_OP_TYPE_SUB : RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_S;
+			insn->cross = x;
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs); // src1
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			compact_reg(&OP(2), (w >> 13) & 0x7, s, rs); // dst
+			insn->nops = 3;
+			return;
+		}
+		// Dx5p (Figure C-19): the stack-adjust pair, where source and destination
+		// are both B15 and bit 7 picks subtract over add. Same scattered
+		// constant as Dx5 but shifted into bits 9:8; bit 12 is clear and s set.
+		if (((w >> 1) & 0x3f) == C6X_CFMT_DX5P && ((w >> 10) & 0x3) == 0x3 && !((w >> 12) & 1) && s) {
+			set_ins(insn, ((w >> 7) & 1) ? C6X_INS_SUBAW : C6X_INS_ADDAW);
+			insn->op_type = ((w >> 7) & 1) ? RZ_ANALYSIS_OP_TYPE_SUB : RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_D;
+			insn->unit_side = s;
+			op_reg(&OP(0), 1, 15); // B15
+			op_imm(&OP(1), (((w >> 13) & 1)) | (((w >> 14) & 1) << 1) | (((w >> 15) & 1) << 2) | (((w >> 8) & 1) << 3) | (((w >> 9) & 1) << 4));
+			op_reg(&OP(2), 1, 15); // B15
+			insn->nops = 3;
+			return;
+		}
+		// Dx2op (Figure C-17): ADD or SUB with src1 the destination
+		if (((w >> 1) & 0x3f) == C6X_CFMT_DX2 && !((w >> 10) & 1)) {
+			bool sub = (w >> 11) & 1;
+			bool x = (w >> 12) & 1;
+			set_ins(insn, sub ? C6X_INS_SUB : C6X_INS_ADD);
+			insn->op_type = sub ? RZ_ANALYSIS_OP_TYPE_SUB : RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_D;
+			insn->cross = x;
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs); // src1
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			compact_reg(&OP(2), (w >> 13) & 0x7, s, rs); // dst
+			insn->nops = 3;
+			return;
+		}
+		// Dx5 (Figure C-18) shares them, with bit 10 set: ADDAW from the stack
+		// pointer, dst = B15 + ucst5 words. The constant is split across bits
+		// 12:11 and 15:13, and bit 0 picks the destination side -- an A-side
+		// destination reads B15 across the datapath, which is why TI prints it
+		// as .D1X.
+		if (((w >> 1) & 0x3f) == C6X_CFMT_DX2) {
+			set_ins(insn, C6X_INS_ADDAW);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_D;
+			insn->cross = s == 0;
+			op_reg(&OP(0), 1, 15); // B15
+			op_imm(&OP(1), (((w >> 13) & 0x1) << 0) | (((w >> 14) & 0x1) << 1) | (((w >> 15) & 0x1) << 2) | (((w >> 11) & 0x1) << 3) | (((w >> 12) & 0x1) << 4));
+			compact_reg(&OP(2), (w >> 7) & 0x7, s, rs);
+			insn->nops = 3;
+			return;
+		}
+		ut8 unit_f = (w >> 3) & 0x3;
+		C6xUnit unit = unit_f == 0 ? C6X_UNIT_L : unit_f == 1 ? C6X_UNIT_S
+			: unit_f == 2                                 ? C6X_UNIT_D
+								      : C6X_UNIT_NONE;
+		ut8 b5 = (w >> 5) & 1, b6 = (w >> 6) & 1;
+		ut8 b10 = (w >> 10) & 1, b11 = (w >> 11) & 1, b12 = (w >> 12) & 1;
+		ut8 x = b12;
+		if (unit == C6X_UNIT_D && b5 == 1 && b6 == 1 && b11 == 0) {
+			// Dpp (Figure C-21): B15 stack load/store, word or doubleword.
+			// The pointer is always B15; stores post-decrement and loads
+			// pre-increment by ucst2. src/dst is a full 4-bit register on the
+			// side named by t (bit 12); the RS header bit does not apply here.
+			bool dw = (w >> 15) & 1;
+			bool ld = (w >> 14) & 1;
+			ut8 t = (w >> 12) & 1;
+			ut8 rnum = (w >> 7) & 0xf;
+			if (dw && (rnum & 1)) {
+				return; // a pair starts at an even register
+			}
+			set_ins(insn, dw ? (ld ? C6X_INS_LDDW : C6X_INS_STDW) : (ld ? C6X_INS_LDW : C6X_INS_STW));
+			insn->op_type = ld ? RZ_ANALYSIS_OP_TYPE_LOAD : RZ_ANALYSIS_OP_TYPE_STORE;
+			insn->unit = C6X_UNIT_D;
+			C6xOperand mem = { 0 };
+			mem.kind = C6X_OP_MEM;
+			mem.v.mem.base = 15;
+			mem.v.mem.base_side = 1; // B15
+			mem.v.mem.scaled = true;
+			mem.v.mem.mode = ld ? C6X_AM_PREINC_CST : C6X_AM_POSTDEC_CST;
+			mem.v.mem.off_cst = ((w >> 13) & 1) + 1; // ucst2 = ucst0 + 1
+			C6xOperand reg = { 0 };
+			if (dw) {
+				op_regpair(&reg, t, rnum);
+			} else {
+				op_reg(&reg, t, rnum);
+			}
+			OP(0) = ld ? mem : reg;
+			OP(1) = ld ? reg : mem;
+			insn->nops = 2;
+			return;
+		}
+		if (b5 == 0) { // G-1 / G-2: MV (mvto has bit6 = 0, mvfr has bit6 = 1)
+			// These moves link the eight registers the header RS bit selects
+			// to all 32: the source of mvto and the destination of mvfr have
+			// bits 11:10 (srcms/dstms) above their 3-bit field, and the five
+			// bits name the register outright, so RS does not apply to them.
+			ut8 ms = (w >> 10) & 0x3;
+			set_ins(insn, C6X_INS_MV);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = unit;
+			insn->cross = x;
+			if (b6) {
+				compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+				op_reg(&OP(1), s, (ms << 3) | ((w >> 13) & 0x7)); // dst
+			} else {
+				op_reg(&OP(0), x ? !s : s, (ms << 3) | ((w >> 7) & 0x7)); // src2
+				compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // dst
+			}
+			insn->nops = 2;
+			return;
+		}
+		if (b6 == 1 && b12 == 0 && b11 == 1 && b10 == 0) { // G-3: predicated MVK ucst1
+			ut8 cc = (w >> 14) & 0x3;
+			set_ins(insn, C6X_INS_MVK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = unit;
+			insn->creg = (cc & 2) ? 0x1 : 0x6; // 10x -> B0, 0x -> A0
+			insn->z = cc & 1; // odd CC is the negated ([!A0]/[!B0]) sense
+			op_imm(&OP(0), (w >> 13) & 0x1); // ucst1
+			compact_reg(&OP(1), (w >> 7) & 0x7, s, rs); // dst
+			insn->nops = 2;
+			return;
+		}
+		if (unit == C6X_UNIT_L && b6 == 0 && b5 == 1 && b10 == 1) { // Lx5: MVK scst5 (.L)
+			set_ins(insn, C6X_INS_MVK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = C6X_UNIT_L;
+			ut8 scst5 = (((w >> 11) & 0x3) << 3) | ((w >> 13) & 0x7);
+			op_imm(&OP(0), sext(scst5, 5));
+			compact_reg(&OP(1), (w >> 7) & 0x7, s, rs); // dst
+			insn->nops = 2;
+			return;
+		}
+		if (unit == C6X_UNIT_L && b6 == 0 && b5 == 1 && b10 == 0) {
+			// Lx3c/Lx1c: .L compare against a small constant. bit 12 == 0 is
+			// CMPEQ with a ucst3 (Lx3c); bit 12 == 1 selects CMPLT/CMPGT/
+			// CMPLTU/CMPGTU with a ucst1 (Lx1c). dst is A0/A1 or B0/B1.
+			ut8 dstlo = (w >> 11) & 1;
+			insn->unit = C6X_UNIT_L;
+			if (b12 == 0) {
+				set_ins(insn, C6X_INS_CMPEQ);
+				op_imm(&OP(0), (w >> 13) & 0x7); // ucst3
+			} else {
+				static const C6xInsnId mn[4] = { C6X_INS_CMPLT, C6X_INS_CMPGT, C6X_INS_CMPLTU, C6X_INS_CMPGTU };
+				set_ins(insn, mn[(w >> 14) & 0x3]);
+				op_imm(&OP(0), (w >> 13) & 0x1); // ucst1
+			}
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_CMP;
+			compact_reg(&OP(1), (w >> 7) & 0x7, s, rs); // src2
+			op_reg(&OP(2), s, dstlo); // dst A0/A1 or B0/B1
+			insn->nops = 3;
+			return;
+		}
+		if (b6 == 1 && b5 == 1 && b12 == 1 && b11 == 1 && b10 == 0) {
+			// G-4 LSDx1: op field selects MVK 0/1 or ADD/XOR src,1 (src == dst).
+			ut8 op = (w >> 13) & 0x7;
+			if (op < 2) { // MVK 0 or MVK 1
+				set_ins(insn, C6X_INS_MVK);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+				insn->unit = unit;
+				op_imm(&OP(0), op);
+				compact_reg(&OP(1), (w >> 7) & 0x7, s, rs);
+				insn->nops = 2;
+				return;
+			}
+			if (op == 5 || op == 7) { // ADD src,1,dst or XOR src,1,dst
+				set_ins(insn, op == 5 ? C6X_INS_ADD : C6X_INS_XOR);
+				insn->op_type = op == 5 ? RZ_ANALYSIS_OP_TYPE_ADD : RZ_ANALYSIS_OP_TYPE_XOR;
+				insn->unit = unit;
+				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src (== dst)
+				op_imm(&OP(1), 1);
+				compact_reg(&OP(2), (w >> 7) & 0x7, s, rs); // dst
+				insn->nops = 3;
+				return;
+			}
+			if (unit == C6X_UNIT_S && op == 6 && s) {
+				// Sx1: MVC src, ILC -- move a general register into the
+				// inner-loop-count control register (encoded with s = 1).
+				set_ins(insn, C6X_INS_MVC);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+				insn->unit = C6X_UNIT_S;
+				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src
+				op_ctrlreg(&OP(1), "ilc");
+				insn->nops = 2;
+				return;
+			}
+			return; // remaining op 2/3/4 per-unit Dx1/Lx1/Sx1 forms not decoded
+		}
+		if (unit == C6X_UNIT_S && b6 == 1 && b5 == 1 && b12 == 0 && b11 == 0) {
+			// Sx1b: BNOP src2, N3 -- a branch to a B-side register (B0-B15).
+			// This is the C64x+ compact form of the ABI return B .S2 B3; the
+			// encoding is always BNOP, even when the NOP count is zero.
+			ut8 n3 = (w >> 13) & 0x7;
+			set_ins(insn, C6X_INS_BNOP);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_RJMP;
+			insn->unit = C6X_UNIT_S;
+			op_reg(&OP(0), 1, (w >> 7) & 0xf); // src2 on the B side
+			op_imm(&OP(1), n3);
+			insn->nops = 2;
+			return;
+		}
+		return; // other shared forms not decoded yet
+	}
+
+	if ((w & 0x6) == C6X_CSPACE_L) {
+		// .L-only forms (Appendix D): bits 2:1 == 00, distinguished by bits 3,10.
+		ut8 b3 = (w >> 3) & 1, b10 = (w >> 10) & 1, x = (w >> 12) & 1;
+		insn->unit = C6X_UNIT_L;
+		insn->cross = x;
+		if (b3 == 0 && b10 == 0) { // L3: ADD/SUB (+ SADD/SSUB under header SAT)
+			ut8 op = (w >> 11) & 1;
+			set_ins(insn, op ? (sat ? C6X_INS_SSUB : C6X_INS_SUB) : (sat ? C6X_INS_SADD : C6X_INS_ADD));
+			insn->op_type = op ? RZ_ANALYSIS_OP_TYPE_SUB : RZ_ANALYSIS_OP_TYPE_ADD;
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs); // src1
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs); // dst
+			insn->nops = 3;
+			return;
+		}
+		if (b3 == 0 && b10 == 1) { // L3i: ADD scst5, src2, dst
+			set_ins(insn, C6X_INS_ADD);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ADD;
+			op_imm(&OP(0), l3i_const((w >> 11) & 1, (w >> 13) & 0x7));
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs); // dst
+			insn->nops = 3;
+			return;
+		}
+		if (b3 == 1 && b10 == 1) { // L2c: AND/OR/XOR/CMPEQ/CMPLT/CMPGT(U)
+			static const C6xInsnId ops[8] = { C6X_INS_AND, C6X_INS_OR, C6X_INS_XOR, C6X_INS_CMPEQ,
+				C6X_INS_CMPLT, C6X_INS_CMPGT, C6X_INS_CMPLTU, C6X_INS_CMPGTU };
+			static const _RzAnalysisOpType types[8] = { RZ_ANALYSIS_OP_TYPE_AND,
+				RZ_ANALYSIS_OP_TYPE_OR, RZ_ANALYSIS_OP_TYPE_XOR,
+				RZ_ANALYSIS_OP_TYPE_CMP, RZ_ANALYSIS_OP_TYPE_CMP,
+				RZ_ANALYSIS_OP_TYPE_CMP, RZ_ANALYSIS_OP_TYPE_CMP,
+				RZ_ANALYSIS_OP_TYPE_CMP };
+			ut8 op = ((w >> 11) & 1) << 2 | ((w >> 5) & 0x3); // op2 : op1-0
+			set_ins(insn, ops[op]);
+			insn->op_type = types[op];
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs); // src1
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			op_reg(&OP(2), s, (w >> 4) & 0x1); // dst: A0/A1 or B0/B1
+			insn->nops = 3;
+			return;
+		}
+		return; // Ltbd and other .L forms not decoded yet
+	}
+	if ((w & 0x6) == C6X_CSPACE_D) {
+		// .D-unit loads/stores (Appendix C): bits 2:1 == 10. Data size comes
+		// from the header DSZ combined with the opcode sz bit; the addressing
+		// form (offset const, offset reg, post-inc, pre-dec) from bits 11:10.
+		ut8 t = (w >> 12) & 1; // T datapath (data register) side
+		// Dstk spends bit 9 on the offset, so it carries no sz bit: the stack
+		// access is a word whatever the header DSZ says (checked against TI
+		// dis6x in doubleword-primary packets, where it stays LDW/STW).
+		bool dstk = ((w >> 10) & 0x3) == C6X_CFMT_BOTH_SET && (w & 0x8000);
+		ut8 sz = dstk ? 0 : (w >> 9) & 1;
+		bool ld = (w >> 3) & 1;
+		ut8 prim = (dsz >> 2) & 1, sec = dsz & 0x3;
+		C6xInsnId mn;
+		bool dwpair = false;
+		if (sz == 0 && prim == 1) {
+			// Doubleword-primary access (Doff4DW/DindDW/DincDW/DdecDW): the
+			// register is an even pair encoded at bits 6:5, and na (bit 4)
+			// selects aligned (DW) versus nonaligned (NDW).
+			ut8 na = (w >> 4) & 1;
+			mn = na ? (ld ? C6X_INS_LDNDW : C6X_INS_STNDW) : (ld ? C6X_INS_LDDW : C6X_INS_STDW);
+			dwpair = true;
+		} else if (sz == 0) {
+			mn = ld ? C6X_INS_LDW : C6X_INS_STW; // word-primary access
+		} else if (prim == 0) { // word-primary packet: secondary byte/half sizes
+			static const C6xInsnId l[4] = { C6X_INS_LDBU, C6X_INS_LDB, C6X_INS_LDHU, C6X_INS_LDH };
+			static const C6xInsnId st[4] = { C6X_INS_STB, C6X_INS_STB, C6X_INS_STH, C6X_INS_STH };
+			mn = ld ? l[sec] : st[sec];
+		} else { // doubleword-primary packet: secondary word/byte/half sizes
+			static const C6xInsnId l[4] = { C6X_INS_LDW, C6X_INS_LDB, C6X_INS_LDNW, C6X_INS_LDH };
+			static const C6xInsnId st[4] = { C6X_INS_STW, C6X_INS_STB, C6X_INS_STNW, C6X_INS_STH };
+			mn = ld ? l[sec] : st[sec];
+		}
+		if (dstk) {
+			mn = ld ? C6X_INS_LDW : C6X_INS_STW;
+			dwpair = false;
+		}
+		set_ins(insn, mn);
+		insn->op_type = ld ? RZ_ANALYSIS_OP_TYPE_LOAD : RZ_ANALYSIS_OP_TYPE_STORE;
+		insn->unit = C6X_UNIT_D;
+		C6xOperand mem = { 0 };
+		mem.kind = C6X_OP_MEM;
+		// the pointer is R4-R7 whatever RS says, which selects data registers only
+		mem.v.mem.base = 4 + ((w >> 7) & 0x3);
+		mem.v.mem.base_side = s;
+		mem.v.mem.scaled = true;
+		ut8 b11 = (w >> 11) & 1, b10 = (w >> 10) & 1;
+		if (b10 == 0) { // Doff4: *+ptr[ucst4]
+			mem.v.mem.mode = C6X_AM_POS_CST;
+			mem.v.mem.off_cst = (b11 << 3) | ((w >> 13) & 0x7);
+		} else if (b11 == 0) { // Dind: *+ptr[src1]
+			mem.v.mem.mode = C6X_AM_POS_REG;
+			mem.v.mem.off_reg = (rs ? 16 : 0) + ((w >> 13) & 0x7);
+		} else if (w & 0x8000) {
+			// Dstk (Figure C-16): the pointer is the stack pointer B15 rather
+			// than one of R4-R7, and the offset widens to a ucst5 split across
+			// bits 9:7 and 14:13. Bit 15 selects this form, so it has to be
+			// tested before Dinc/Ddec, which otherwise claim the same bits.
+			mem.v.mem.base = 15;
+			mem.v.mem.base_side = 1; // B15
+			mem.v.mem.mode = C6X_AM_POS_CST;
+			mem.v.mem.off_cst = (((w >> 7) & 0x7) << 2) | ((w >> 13) & 0x3);
+		} else if (((w >> 14) & 1) == 0) { // Dinc: *ptr++[ucst2]
+			mem.v.mem.mode = C6X_AM_POSTINC_CST;
+			mem.v.mem.off_cst = ((w >> 13) & 1) + 1;
+		} else { // Ddec: *--ptr[ucst2]
+			mem.v.mem.mode = C6X_AM_PREDEC_CST;
+			mem.v.mem.off_cst = ((w >> 13) & 1) + 1;
+		}
+		// LDNDW and STNDW offset by bytes in Doff4DW and DindDW; only the forms
+		// that modify the pointer scale (SPRUFE8B Figures C-9 to C-15)
+		if ((mn == C6X_INS_LDNDW || mn == C6X_INS_STNDW) && (mem.v.mem.mode == C6X_AM_POS_CST || mem.v.mem.mode == C6X_AM_POS_REG)) {
+			mem.v.mem.scaled = false;
+		}
+		C6xOperand reg = { 0 };
+		if (dwpair) {
+			// even register pair, address formed as op6:op5:0
+			op_regpair(&reg, t, (rs ? 16 : 0) + (((w >> 5) & 0x3) << 1));
+		} else {
+			op_reg(&reg, t, (rs ? 16 : 0) + ((w >> 4) & 0x7));
+		}
+		OP(0) = ld ? mem : reg; // loads: *mem, dst; stores: src, *mem
+		OP(1) = ld ? reg : mem;
+		insn->nops = 2;
+		return;
+	}
+	if ((w & 0x6) == C6X_CSPACE_S) {
+		// Sx1 three-register ADD/SUB: the same bits 3:1 == 101 group as the
+		// shift below, with bit 10 clear. Bit 11 picks subtract and bit 12 the
+		// cross path, which feeds src2 from the opposite register file.
+		if (!br && ((w >> 1) & 0x7) == C6X_CFMT_SX1_3REG && !((w >> 10) & 1)) {
+			bool x = (w >> 12) & 1;
+			bool sub = (w >> 11) & 1;
+			// a SAT packet makes the add saturate (SPRUFE8B 3.10.2.2); .S has no SSUB
+			set_ins(insn, sub ? C6X_INS_SUB : (sat ? C6X_INS_SADD : C6X_INS_ADD));
+			insn->op_type = sub ? RZ_ANALYSIS_OP_TYPE_SUB : RZ_ANALYSIS_OP_TYPE_ADD;
+			insn->unit = C6X_UNIT_S;
+			insn->cross = x;
+			compact_reg(&OP(0), (w >> 13) & 0x7, s, rs);
+			compact_reg(&OP(1), (w >> 7) & 0x7, x ? !s : s, rs);
+			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs);
+			insn->nops = 3;
+			return;
+		}
+		// Sx2 shift by constant (Figure F-23): bits 3:1 101 and bit 10 set,
+		// outside a branch packet. The 3-bit count stands for a ucst5: 0 is
+		// 16, 7 is 8.
+		if (!br && ((w >> 1) & 0x7) == C6X_CFMT_SX1_3REG && ((w >> 10) & 1)) {
+			ut8 cnt = (w >> 13) & 0x7;
+			bool x = (w >> 12) & 1;
+			set_ins(insn, ((w >> 11) & 1) ? C6X_INS_SHR : C6X_INS_SHL);
+			insn->op_type = ((w >> 11) & 1) ? RZ_ANALYSIS_OP_TYPE_SHR : RZ_ANALYSIS_OP_TYPE_SHL;
+			insn->unit = C6X_UNIT_S;
+			insn->cross = x;
+			ut8 count = cnt ? cnt : 16; // 0 means 16
+			if (cnt == 7) {
+				count = 8; // 7 means 8
+			}
+			compact_reg(&OP(0), (w >> 7) & 0x7, x ? !s : s, rs); // src2
+			op_imm(&OP(1), count);
+			compact_reg(&OP(2), (w >> 4) & 0x7, s, rs); // dst
+			insn->nops = 3;
+			return;
+		}
+		// .S-unit compact formats (Appendix F): bits 2:1 == 01. Under a header
+		// BR bit the bit-3 forms are branches; otherwise they are ALU/shift ops
+		// (still to do). The MVK form (Smvk8) is BR-independent.
+		if (((w >> 4) & 1) && !((w >> 3) & 1)) {
+			// Smvk8 MVK: ucst8 is scattered across the word.
+			ut16 imm = ((w >> 13) & 0x7) | (((w >> 11) & 0x3) << 3) |
+				(((w >> 5) & 0x3) << 5) | (((w >> 10) & 0x1) << 7);
+			set_ins(insn, C6X_INS_MVK);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_MOV;
+			insn->unit = C6X_UNIT_S;
+			op_imm(&OP(0), imm);
+			compact_reg(&OP(1), (w >> 7) & 0x7, s, rs); // dst
+			insn->nops = 2;
+			return;
+		}
+		if (!((w >> 3) & 1) && !((w >> 4) & 1)) {
+			// .S ALU: shifts (Ssh5/S2sh, bit 10 == 1) and field operations
+			// (Sc5/S2ext, bit 10 == 0). The op at bits 6:5 selects the form;
+			// op == 3 escapes to the register-count (S2sh) or fixed-width
+			// (S2ext) variant, which carries its own op at bits 12:11.
+			insn->unit = C6X_UNIT_S;
+			ut8 b10 = (w >> 10) & 1;
+			ut8 op = (w >> 5) & 0x3;
+			ut8 ucst5 = (((w >> 11) & 0x3) << 3) | ((w >> 13) & 0x7);
+			if (b10 && op != 3) { // Ssh5: SHL/SHR/SHRU (SSHL when header SAT)
+				static const C6xInsnId mn[3] = { C6X_INS_SHL, C6X_INS_SHR, C6X_INS_SHRU };
+				set_ins(insn, (op == 2 && sat) ? C6X_INS_SSHL : mn[op]);
+				insn->op_type = op ? RZ_ANALYSIS_OP_TYPE_SHR : RZ_ANALYSIS_OP_TYPE_SHL;
+				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2 (= dst)
+				op_imm(&OP(1), ucst5);
+				compact_reg(&OP(2), (w >> 7) & 0x7, s, rs); // dst
+				insn->nops = 3;
+				return;
+			}
+			if (b10) { // S2sh: register-count shift, src1 (count) at bits 15:13
+				static const C6xInsnId mn[4] = { C6X_INS_SHL, C6X_INS_SHR, C6X_INS_SHRU, C6X_INS_SSHL };
+				ut8 op2 = (w >> 11) & 0x3;
+				set_ins(insn, mn[op2]);
+				insn->op_type = op2 == 1 ? RZ_ANALYSIS_OP_TYPE_SHR : RZ_ANALYSIS_OP_TYPE_SHL;
+				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2 (= dst)
+				compact_reg(&OP(1), (w >> 13) & 0x7, s, rs); // src1 (count)
+				compact_reg(&OP(2), (w >> 7) & 0x7, s, rs); // dst
+				insn->nops = 3;
+				return;
+			}
+			if (op != 3) { // Sc5: EXTU/SET/CLR with a ucst5 field
+				static const C6xInsnId mn[3] = { C6X_INS_EXTU, C6X_INS_SET, C6X_INS_CLR };
+				static const _RzAnalysisOpType ty[3] = { RZ_ANALYSIS_OP_TYPE_SHR,
+					RZ_ANALYSIS_OP_TYPE_OR, RZ_ANALYSIS_OP_TYPE_AND };
+				set_ins(insn, mn[op]);
+				insn->op_type = ty[op];
+				compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2
+				op_imm(&OP(1), ucst5);
+				op_imm(&OP(2), op == 0 ? 31 : ucst5); // EXTU pairs with 31
+				// EXTU writes A0/B0, while SET and CLR change the bits of src2
+				// in place (Figure F-27).
+				if (op == 0) {
+					op_reg(&OP(3), s, 0);
+				} else {
+					OP(3) = OP(0);
+				}
+				insn->nops = 4;
+				return;
+			}
+			// S2ext: EXT/EXTU with a fixed 16- or 24-bit field width.
+			static const C6xInsnId mn[4] = { C6X_INS_EXT, C6X_INS_EXT, C6X_INS_EXTU, C6X_INS_EXTU };
+			ut8 op2 = (w >> 11) & 0x3;
+			ut8 width = (op2 & 1) ? 24 : 16;
+			set_ins(insn, mn[op2]);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_SHR;
+			compact_reg(&OP(0), (w >> 7) & 0x7, s, rs); // src2
+			op_imm(&OP(1), width);
+			op_imm(&OP(2), width);
+			compact_reg(&OP(3), (w >> 13) & 0x7, s, rs); // dst
+			insn->nops = 4;
+			return;
+		}
+		if (br && ((w >> 3) & 1)) {
+			// Branch forms (Sbs7/Sbu8/Scs10 and their conditional variants). The
+			// displacement is packet-relative, so the analysis filler resolves
+			// it against the fetch-packet base.
+			insn->unit = C6X_UNIT_S;
+			ut8 b4 = (w >> 4) & 1, b5 = (w >> 5) & 1;
+			if (b5 == 0 && b4 == 1) { // Scs10: CALLP scst10, 5
+				// Counted in words, unlike the half words of the BNOP forms;
+				// TI-built code reaches its callees only so.
+				set_ins(insn, C6X_INS_CALLP);
+				insn->op_type = RZ_ANALYSIS_OP_TYPE_CALL;
+				OP(0).kind = C6X_OP_PCREL;
+				OP(0).v.imm.value = sext((w >> 6) & 0x3ff, 10) * 4;
+				// the link register is implied, as in the 32-bit form
+				op_reg(&OP(1), insn->unit_side, 3); // A3 on .S1, B3 on .S2
+				insn->nops = 2;
+				return;
+			}
+			// Sbu8/Sbu8c carry an 8-bit unsigned constant instead of a signed 7-bit one
+			bool wide = ((w >> 14) & 0x3) == C6X_CFMT_BOTH_SET;
+			st64 disp = wide ? (st64)(((w >> 6) & 0xff) * 2) // ucst8 (unsigned)
+					 : sext((w >> 6) & 0x7f, 7) * 2; // scst7 (signed)
+			ut8 n3 = wide ? 5 : ((w >> 13) & 0x7); // NOP count (Sbu8 implies 5)
+			if (b5) { // conditional variants carry a predicate in s and bit 4
+				insn->creg = (w & 1) ? 0x1 : 0x6; // s selects B0 / A0
+				insn->z = b4; // bit 4 is the z (negate) sense
+			}
+			set_ins(insn, C6X_INS_BNOP);
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_JMP;
+			OP(0).kind = C6X_OP_PCREL;
+			OP(0).v.imm.value = disp;
+			op_imm(&OP(1), n3);
+			insn->nops = 2;
+			return;
+		}
+		return;
+	}
+}
+
+// The header ends the fetch packet, up to 28 bytes past the slot. Read it from
+// the image when the buffer stops short, so a slot decodes the same either way.
+static bool fp_header(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut32 *hdr) {
+	int off = C6X_FP_HEADER_OFFSET - (int)c6x_packet_offset(pc);
+	if (off + C6X_WORD_SIZE <= len) {
+		*hdr = rz_read_ble32(buf + off, big_endian);
+		return true;
+	}
+	ut8 word[C6X_WORD_SIZE];
+	if (!read || !read(user, c6x_packet_base(pc) + C6X_FP_HEADER_OFFSET, word, sizeof(word))) {
+		return false;
+	}
+	*hdr = rz_read_ble32(word, big_endian);
+	return true;
+}
+
+// A word holds the same value in either byte order, and its less significant
+// half is its first compact slot (SPRUFE8B Table 3-16 gives that half the
+// word's first p-bit). Big-endian memory puts that half at the higher address,
+// so there a slot's bytes are those of the other half word: past the slot for
+// the first one, before it for the second, where only the image reaches.
+static bool compact_half(const ut8 *buf, int len, ut64 pc, bool big_endian, C6xReadFn read, void *user, RZ_OUT ut16 *half) {
+	if (!big_endian) {
+		*half = rz_read_le16(buf);
+		return true;
+	}
+	if (!(pc & 2) && len >= 4) {
+		*half = rz_read_be16(buf + 2);
+		return true;
+	}
+	ut8 bytes[2];
+	if (!read || !read(user, pc ^ 2, bytes, sizeof(bytes))) {
+		return false;
+	}
+	*half = rz_read_be16(bytes);
+	return true;
+}
+
+// Fetch packets back from a SPKERNEL its SPLOOP can lie: the body runs at most
+// 48 cycles (SPRUFE8B 7.7), each one execute packet of up to eight words, and
+// those span 56 fetch packets, the SPLOOP's included, even with headers.
+#define C6X_SPLOOP_REACH 56
+
+// The ii of the SPLOOP(D/W) opening the loop a SPKERNEL at \p pc closes: the
+// nearest one before it, unless a SPKERNEL comes first and so closes another
+// loop. 0 when none can be read within reach.
+static ut8 sploop_ii(const C6xArchDesc *desc, ut64 pc, bool big_endian, C6xReadFn read, void *user) {
+	ut64 base = c6x_packet_base(pc);
+	for (ut32 k = 0; k < C6X_SPLOOP_REACH; k++) {
+		ut8 fp[C6X_FETCH_PACKET_SIZE];
+		C6xSlotRef slots[C6X_FP_SLOTS] = { 0 };
+		if (!read(user, base, fp, sizeof(fp))) {
+			return 0;
+		}
+		size_t n = c6x_fetch_packet_slots(fp, base, big_endian, slots);
+		for (size_t i = n; i-- > 0;) {
+			if (slots[i].header || slots[i].addr >= pc) {
+				continue;
+			}
+			C6xInsn s = { 0 };
+			s.word = slots[i].opcode;
+			bool loop = slots[i].size == C6X_COMPACT_SIZE ? decode_compact_loop(&s, (ut16)s.word) : decode_nounit(&s, desc);
+			if (!loop) {
+				continue;
+			}
+			switch (s.id) {
+			case C6X_INS_SPLOOP:
+			case C6X_INS_SPLOOPD:
+			case C6X_INS_SPLOOPW:
+				return (ut8)s.ops[0].v.imm.value;
+			case C6X_INS_SPKERNEL:
+			case C6X_INS_SPKERNELR:
+				return 0;
+			default:
+				break;
+			}
+		}
+		if (base < C6X_FETCH_PACKET_SIZE) {
+			return 0;
+		}
+		base -= C6X_FETCH_PACKET_SIZE;
+	}
+	return 0;
+}
+
+// SPKERNEL's field holds the stage from its top bit down, lowest stage bit
+// first, and the cycle in as many low bits as ii needs (SPRUFE8B Table 3-29).
+static void stage_cycle_split(ut8 field, ut8 ii, RZ_OUT ut8 *stage, RZ_OUT ut8 *cycle) {
+	ut8 cycle_bits = 0;
+	while ((1u << cycle_bits) < ii) {
+		cycle_bits++;
+	}
+	*stage = 0;
+	for (ut8 b = 0; b + cycle_bits < 6; b++) {
+		*stage |= ((field >> (5 - b)) & 1) << b;
+	}
+	*cycle = field & ((1u << cycle_bits) - 1);
+}
+
+// The field splits only once the loop's ii is known. Without it the field
+// stays whole, as dis6x prints it.
+static void spkernel_stage_cycle(const C6xArchDesc *desc, C6xInsn *insn, ut64 pc, bool big_endian, C6xReadFn read, void *user) {
+	ut8 ii = read ? sploop_ii(desc, pc, big_endian, read, user) : 0;
+	if (!ii) {
+		return;
+	}
+	ut8 stage, cycle;
+	stage_cycle_split((ut8)OP(0).v.imm.value, ii, &stage, &cycle);
+	op_imm(&OP(0), stage);
+	OP(0).v.imm.decimal = true;
+	op_imm(&OP(1), cycle);
+	OP(1).v.imm.decimal = true;
+	insn->nops = 2;
+}
+
+/**
+ * \brief The fetch delay of the SPKERNEL \p insn ending a loop of iteration
+ *        interval \p ii.
+ *
+ * \return The cycles of the epilog before the code after the loop issues,
+ *         fstg * ii + fcyc (SPRUFE8B 7.9.4), whether the decoder could split
+ *         the operand or not.
+ */
+RZ_IPI ut32 c6x_spkernel_delay(const C6xInsn *insn, ut8 ii) {
+	rz_return_val_if_fail(insn && insn->id == C6X_INS_SPKERNEL && ii, 0);
+	ut8 stage, cycle;
+	if (insn->nops >= 2) {
+		stage = (ut8)insn->ops[0].v.imm.value;
+		cycle = (ut8)insn->ops[1].v.imm.value;
+	} else {
+		stage_cycle_split((ut8)insn->ops[0].v.imm.value, ii, &stage, &cycle);
+	}
+	return (ut32)stage * ii + cycle;
+}
+
+/**
+ * Decode the C6000 instruction at \p pc.
+ * \param desc variant descriptor (feature gate)
+ * \param buf input bytes (>= 2)
+ * \param len available bytes
+ * \param pc address \p buf starts at, for PC-relative operands
+ * \param big_endian byte order of \p buf
+ * \param read reader for what \p buf lacks: the fetch-packet header past its
+ *        end, in big endian the half word before a second compact slot, and
+ *        the SPLOOP whose ii splits a SPKERNEL's operand; or NULL to decode
+ *        from \p buf alone
+ * \param user passed through to \p read
+ * \param insn output, filled on success
+ * \return true if an instruction slot was consumed, 4 bytes or the 2 of a
+ *         compact one (even when unrecognised, in which case
+ *         \ref C6xInsn::mnemonic is NULL)
+ */
+RZ_IPI bool c6x_decode(const C6xArchDesc *desc, const ut8 *buf, int len, ut64 pc, bool big_endian, RZ_NULLABLE C6xReadFn read, RZ_NULLABLE void *user, RZ_OUT C6xInsn *insn) {
+	rz_return_val_if_fail(desc && buf && insn, false);
+	if (len < 2) {
+		return false;
+	}
+	memset(insn, 0, sizeof(*insn));
+	// C64x+ compact fetch packets (SPRUFE8 3.10): the eighth word of a 32-byte
+	// fetch packet is a header (top nibble 1110) whose layout field marks which
+	// of the other seven words hold two 16-bit compact instructions. Look for
+	// that header ahead of the current word; if this slot is compact, decode a
+	// 16-bit instruction and take the parallel bit from the header p-bit field.
+	// Only families with the compact set are probed, so C62x/C67x are untouched.
+	// When neither the buffer nor the reader reaches the header, the packet's
+	// layout is unknown: a word then gets its 32-bit reading, as in a packet
+	// without a header, while a half word cannot be decoded at all.
+	// the header's PROT bit adds four NOP cycles to every load of the packet,
+	// a 32-bit one too (SPRUFE8B 3.10.2.2)
+	bool prot = false;
+	if (desc->features & C6X_FEAT_SIMD) {
+		ut32 fp_off = c6x_packet_offset(pc);
+		ut32 hdr;
+		if (fp_off < C6X_FP_HEADER_OFFSET && fp_header(buf, len, pc, big_endian, read, user, &hdr)) {
+			ut8 slot = fp_off >> 2;
+			// A branch anywhere in a compact packet is half-word scaled, so
+			// the packet's nature matters even for a slot the header does not
+			// split into two 16-bit instructions.
+			insn->compact_packet = (hdr >> 28) == C6X_FP_HEADER_TAG;
+			prot = insn->compact_packet && ((hdr >> 20) & 1);
+			if (insn->compact_packet && ((hdr >> (21 + slot)) & 1)) {
+				ut8 half = (fp_off >> 1) & 1;
+				insn->parallel = (hdr >> (slot * 2 + half)) & 1;
+				insn->size = C6X_COMPACT_SIZE;
+				ut16 w16;
+				if (!compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+					insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+					return true;
+				}
+				insn->word = w16;
+				decode_compact(insn, w16, (hdr >> 19) & 1, (hdr >> 14) & 1,
+					(hdr >> 16) & 0x7, (hdr >> 15) & 1);
+				insn->protected_load = prot && insn->op_type == RZ_ANALYSIS_OP_TYPE_LOAD;
+				if (insn->id == C6X_INS_SPKERNEL) {
+					spkernel_stage_cycle(desc, insn, pc, big_endian, read, user);
+				}
+				return true;
+			}
+		} else if (fp_off < C6X_FP_HEADER_OFFSET && (fp_off & 2)) {
+			// 32-bit opcodes are word aligned, so a half word can only be a
+			// compact slot, and one cannot be decoded without its header
+			ut16 w16;
+			if (compact_half(buf, len, pc, big_endian, read, user, &w16)) {
+				insn->word = w16;
+			}
+			insn->size = C6X_COMPACT_SIZE;
+			insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+			return true;
+		}
+	}
+	if (len < 4) {
+		return false;
+	}
+	insn->word = rz_read_ble32(buf, big_endian);
+	insn->size = C6X_WORD_SIZE;
+	ut32 w = insn->word;
+	// A C64x+ compact fetch packet replaces its eighth word with a header
+	// (SPRUFE8 3.10.2): top nibble 1110, i.e. creg=111/z=0, which is the
+	// reserved predicate no real instruction uses. The header repacks the
+	// other slots as 16-bit compact instructions; decoding those is future
+	// work, but the header itself is recognised so it is not mis-read as a
+	// 32-bit opcode and to flag the packet as compact.
+	// A header is word 7 of a fetch packet, so its position decides this as
+	// much as its tag: an ordinary instruction whose top nibble happens to be
+	// the tag is not a header, and treating it as one puts packet metadata in
+	// the middle of real code.
+	if ((w >> 28) == C6X_FP_HEADER_TAG && c6x_packet_offset(pc) == C6X_FP_HEADER_OFFSET) {
+		insn->is_header = true;
+		set_ins(insn, C6X_INS_FPHEAD);
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_NULL;
+		return true;
+	}
+	insn->parallel = BIT(w, 0) != 0;
+	insn->creg = BITS(w, 31, 29);
+	insn->z = BIT(w, 28);
+	insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+	if (insn->creg == 7 || (insn->creg == 6 && desc->num_regs == 16)) {
+		// creg 111 is reserved (SPRUFE8B Table 3-9) where it is no header, and
+		// A0 is a predicate from C64x on
+		set_ins(insn, C6X_INS_INVALID);
+		insn->creg = 0;
+		insn->z = 0;
+		return true;
+	}
+	if (decode_nounit(insn, desc)) {
+		if (insn->id == C6X_INS_SPKERNEL) {
+			spkernel_stage_cycle(desc, insn, pc, big_endian, read, user);
+		}
+		return true;
+	}
+	if (!decode_unit(desc, insn) || odd_pair(insn) || past_file(desc, insn)) {
+		set_ins(insn, C6X_INS_INVALID); // unrecognised, still 4 bytes
+		insn->op_type = RZ_ANALYSIS_OP_TYPE_ILL;
+		// nothing of a reserved word is an operand, its predicate included
+		insn->creg = 0;
+		insn->z = 0;
+		insn->nops = 0;
+	}
+	insn->protected_load = prot && insn->op_type == RZ_ANALYSIS_OP_TYPE_LOAD;
+	return true;
+}
+
+/** Every mnemonic the decoder can print, sorted and de-duplicated, for the
+ *  `rz-asm -e` listing. Elements are borrowed static strings; free the vector
+ *  only. */
+RZ_IPI RZ_OWN RzPVector /*<const char *>*/ *c6x_mnemonics(void) {
+	RzPVector *v = rz_pvector_new(NULL);
+	if (!v) {
+		return NULL;
+	}
+	// C6xInsnId enumerates every opcode the decoder can emit, whether it comes
+	// from a functional-unit table or is built inline, so walking the name table
+	// needs no second list to drift out of step. The strings are borrowed from
+	// static storage, so the pvector owns no elements.
+	for (C6xInsnId id = C6X_INS_INVALID + 1; id < C6X_INS_LAST; id++) {
+		const char *name = c6x_ins_name(id);
+		// .fphead names a fetch-packet header word, not an opcode, so it has an
+		// id to decode with but does not belong in the instruction listing
+		if (name && id != C6X_INS_FPHEAD) {
+			rz_pvector_push(v, (void *)name);
+		}
+	}
+	return v;
+}
+
+/** Delay slots of a result: of a single register, or of each half of a pair. */
+typedef struct {
+	ut8 lo; ///< the result, or the even register of a pair
+	ut8 hi; ///< the odd register of a pair
+} C6xDelaySlots;
+
+// Delay slots of every result that is not visible to the next execute packet,
+// from the "Delay Slots" of each instruction in SPRUFE8B and SPRUGH7, which
+// agree on the instructions both have. The pipeline tables of SPRUFE8B 4.2 say
+// when each half of a pair lands where the two differ.
+static const C6xDelaySlots c6x_delay_slots_tbl[C6X_INS_LAST] = {
+	// loads: the value lands in E5, an address update in E1
+	[C6X_INS_LDB] = { 4, 4 },
+	[C6X_INS_LDBU] = { 4, 4 },
+	[C6X_INS_LDH] = { 4, 4 },
+	[C6X_INS_LDHU] = { 4, 4 },
+	[C6X_INS_LDW] = { 4, 4 },
+	[C6X_INS_LDNW] = { 4, 4 },
+	[C6X_INS_LDDW] = { 4, 4 },
+	[C6X_INS_LDNDW] = { 4, 4 },
+	// 16x16 multiplies, two-cycle
+	[C6X_INS_MPY] = { 1, 1 },
+	[C6X_INS_MPYH] = { 1, 1 },
+	[C6X_INS_MPYHL] = { 1, 1 },
+	[C6X_INS_MPYHLU] = { 1, 1 },
+	[C6X_INS_MPYHSLU] = { 1, 1 },
+	[C6X_INS_MPYHSU] = { 1, 1 },
+	[C6X_INS_MPYHU] = { 1, 1 },
+	[C6X_INS_MPYHULS] = { 1, 1 },
+	[C6X_INS_MPYHUS] = { 1, 1 },
+	[C6X_INS_MPYLH] = { 1, 1 },
+	[C6X_INS_MPYLHU] = { 1, 1 },
+	[C6X_INS_MPYLSHU] = { 1, 1 },
+	[C6X_INS_MPYLUHS] = { 1, 1 },
+	[C6X_INS_MPYSU] = { 1, 1 },
+	[C6X_INS_MPYU] = { 1, 1 },
+	[C6X_INS_MPYUS] = { 1, 1 },
+	[C6X_INS_SMPY] = { 1, 1 },
+	[C6X_INS_SMPYH] = { 1, 1 },
+	[C6X_INS_SMPYHL] = { 1, 1 },
+	[C6X_INS_SMPYLH] = { 1, 1 },
+	// .M unit operations that are not multiplies, two-cycle
+	[C6X_INS_AVG2] = { 1, 1 },
+	[C6X_INS_AVGU4] = { 1, 1 },
+	[C6X_INS_BITC4] = { 1, 1 },
+	[C6X_INS_BITR] = { 1, 1 },
+	[C6X_INS_DEAL] = { 1, 1 },
+	[C6X_INS_ROTL] = { 1, 1 },
+	[C6X_INS_SHFL] = { 1, 1 },
+	[C6X_INS_SSHVL] = { 1, 1 },
+	[C6X_INS_SSHVR] = { 1, 1 },
+	[C6X_INS_XPND2] = { 1, 1 },
+	[C6X_INS_XPND4] = { 1, 1 },
+	[C6X_INS_DAVG2] = { 1, 1 },
+	[C6X_INS_DAVGNR2] = { 1, 1 },
+	[C6X_INS_DAVGNRU4] = { 1, 1 },
+	[C6X_INS_DAVGU4] = { 1, 1 },
+	[C6X_INS_DXPND2] = { 1, 1 },
+	[C6X_INS_DXPND4] = { 1, 1 },
+	[C6X_INS_MVD] = { 3, 3 },
+	[C6X_INS_DMVD] = { 3, 3 },
+	// extended multiplies, four-cycle
+	[C6X_INS_CMPY] = { 3, 3 },
+	[C6X_INS_CMPYR] = { 3, 3 },
+	[C6X_INS_CMPYR1] = { 3, 3 },
+	[C6X_INS_DDOTP4] = { 3, 3 },
+	[C6X_INS_DDOTPH2] = { 3, 3 },
+	[C6X_INS_DDOTPH2R] = { 3, 3 },
+	[C6X_INS_DDOTPL2] = { 3, 3 },
+	[C6X_INS_DDOTPL2R] = { 3, 3 },
+	[C6X_INS_DOTP2] = { 3, 3 },
+	[C6X_INS_DOTPN2] = { 3, 3 },
+	[C6X_INS_DOTPNRSU2] = { 3, 3 },
+	[C6X_INS_DOTPRSU2] = { 3, 3 },
+	[C6X_INS_DOTPSU4] = { 3, 3 },
+	[C6X_INS_DOTPU4] = { 3, 3 },
+	[C6X_INS_GMPY] = { 3, 3 },
+	[C6X_INS_GMPY4] = { 3, 3 },
+	[C6X_INS_MPY2] = { 3, 3 },
+	[C6X_INS_MPY2IR] = { 3, 3 },
+	[C6X_INS_MPY32] = { 3, 3 },
+	[C6X_INS_MPY32SU] = { 3, 3 },
+	[C6X_INS_MPY32U] = { 3, 3 },
+	[C6X_INS_MPY32US] = { 3, 3 },
+	[C6X_INS_MPYHI] = { 3, 3 },
+	[C6X_INS_MPYHIR] = { 3, 3 },
+	[C6X_INS_MPYLI] = { 3, 3 },
+	[C6X_INS_MPYLIR] = { 3, 3 },
+	[C6X_INS_MPYSU4] = { 3, 3 },
+	[C6X_INS_MPYU4] = { 3, 3 },
+	[C6X_INS_SMPY2] = { 3, 3 },
+	[C6X_INS_SMPY32] = { 3, 3 },
+	[C6X_INS_XORMPY] = { 3, 3 },
+	// C66x, a quad landing at once
+	[C6X_INS_CCMATMPY] = { 3, 3 },
+	[C6X_INS_CCMATMPYR1] = { 3, 3 },
+	[C6X_INS_CCMPY32R1] = { 3, 3 },
+	[C6X_INS_CMATMPY] = { 3, 3 },
+	[C6X_INS_CMATMPYR1] = { 3, 3 },
+	[C6X_INS_CMPY32R1] = { 3, 3 },
+	[C6X_INS_CMPYSP] = { 3, 3 },
+	[C6X_INS_DCCMPY] = { 3, 3 },
+	[C6X_INS_DCCMPYR1] = { 3, 3 },
+	[C6X_INS_DCMPY] = { 3, 3 },
+	[C6X_INS_DCMPYR1] = { 3, 3 },
+	[C6X_INS_DDOTP4H] = { 3, 3 },
+	[C6X_INS_DDOTPSU4H] = { 3, 3 },
+	[C6X_INS_DMPY2] = { 3, 3 },
+	[C6X_INS_DMPYSP] = { 3, 3 },
+	[C6X_INS_DMPYSU4] = { 3, 3 },
+	[C6X_INS_DMPYU2] = { 3, 3 },
+	[C6X_INS_DMPYU4] = { 3, 3 },
+	[C6X_INS_DOTP4H] = { 3, 3 },
+	[C6X_INS_DOTPSU4H] = { 3, 3 },
+	[C6X_INS_DSMPY2] = { 3, 3 },
+	[C6X_INS_FMPYDP] = { 3, 3 },
+	[C6X_INS_MPYU2] = { 3, 3 },
+	[C6X_INS_QMPY32] = { 3, 3 },
+	[C6X_INS_QMPYSP] = { 3, 3 },
+	[C6X_INS_QSMPY32R1] = { 3, 3 },
+	// C66x three-cycle floating point
+	[C6X_INS_DADDSP] = { 2, 2 },
+	[C6X_INS_DINTHSP] = { 2, 2 },
+	[C6X_INS_DINTHSPU] = { 2, 2 },
+	[C6X_INS_DINTSP] = { 2, 2 },
+	[C6X_INS_DINTSPU] = { 2, 2 },
+	[C6X_INS_DSPINT] = { 2, 2 },
+	[C6X_INS_DSPINTH] = { 2, 2 },
+	[C6X_INS_DSUBSP] = { 2, 2 },
+	[C6X_INS_FADDDP] = { 2, 2 },
+	[C6X_INS_FADDSP] = { 2, 2 },
+	[C6X_INS_FSUBDP] = { 2, 2 },
+	[C6X_INS_FSUBSP] = { 2, 2 },
+	// two-cycle DP: the even register in E1, the odd one in E2 (4.2.7)
+	[C6X_INS_ABSDP] = { 0, 1 },
+	[C6X_INS_RSQRDP] = { 0, 1 },
+	[C6X_INS_SPDP] = { 0, 1 },
+	// four-cycle (4.2.8)
+	[C6X_INS_ADDSP] = { 3, 3 },
+	[C6X_INS_DPINT] = { 3, 3 },
+	[C6X_INS_DPSP] = { 3, 3 },
+	[C6X_INS_DPTRUNC] = { 3, 3 },
+	[C6X_INS_INTSP] = { 3, 3 },
+	[C6X_INS_INTSPU] = { 3, 3 },
+	[C6X_INS_MPYSP] = { 3, 3 },
+	[C6X_INS_SPINT] = { 3, 3 },
+	[C6X_INS_SPTRUNC] = { 3, 3 },
+	[C6X_INS_SUBSP] = { 3, 3 },
+	// INTDP (4.2.9), DP compares (4.2.10), ADDDP/SUBDP (4.2.11), MPYI (4.2.12),
+	// MPYID (4.2.13), MPYDP (4.2.14), MPYSPDP (4.2.15), MPYSP2DP (4.2.16)
+	[C6X_INS_INTDP] = { 3, 4 },
+	[C6X_INS_INTDPU] = { 3, 4 },
+	[C6X_INS_CMPEQDP] = { 1, 1 },
+	[C6X_INS_CMPGTDP] = { 1, 1 },
+	[C6X_INS_CMPLTDP] = { 1, 1 },
+	[C6X_INS_ADDDP] = { 5, 6 },
+	[C6X_INS_SUBDP] = { 5, 6 },
+	[C6X_INS_MPYI] = { 8, 8 },
+	[C6X_INS_MPYID] = { 8, 9 },
+	[C6X_INS_MPYDP] = { 8, 9 },
+	[C6X_INS_MPYSPDP] = { 5, 6 },
+	[C6X_INS_MPYSP2DP] = { 3, 4 },
+};
+
+/**
+ * \brief Delay slots before a result \p insn writes is visible.
+ *
+ * An instruction issued \c n cycles after \p insn reads the old value of its
+ * destination for every \c n up to the delay slots, and the new one after.
+ * Only the destination is late: an address update or the link register of a
+ * call is visible to the next execute packet.
+ *
+ * \param insn The instruction.
+ * \param high Whether this is the odd register of a pair destination, which
+ *             some double-precision instructions write a cycle after the
+ *             even one.
+ *
+ * \return 0 when the result is visible to the next execute packet.
+ */
+RZ_IPI ut8 c6x_delay_slots(const C6xInsn *insn, bool high) {
+	rz_return_val_if_fail(insn, 0);
+	if (insn->id <= C6X_INS_INVALID || insn->id >= C6X_INS_LAST) {
+		return 0;
+	}
+	const C6xDelaySlots *d = &c6x_delay_slots_tbl[insn->id];
+	return high ? d->hi : d->lo;
+}
+
+/**
+ * \brief Cycles of NOP \p insn adds to its execute packet.
+ *
+ * NOP n takes n cycles, and BNOP, ADDKPC and CALLP issue NOPs after
+ * themselves, the last an implied NOP 5, as does a protected load, NOP 4.
+ * Only one instruction of an execute packet may do so (SPRUFE8B 3.8.10), and
+ * a branch completing during the NOPs cuts them short.
+ */
+RZ_IPI ut8 c6x_nop_cycles(const C6xInsn *insn) {
+	rz_return_val_if_fail(insn, 0);
+	if (insn->protected_load) {
+		return 4;
+	}
+	switch (insn->id) {
+	case C6X_INS_NOP:
+		return insn->nops && OP(0).kind == C6X_OP_IMM && OP(0).v.imm.value > 1 ? (ut8)(OP(0).v.imm.value - 1) : 0;
+	case C6X_INS_BNOP:
+		// the count is the last operand: BNOP src2, src1 is B src2 then NOP src1
+		return insn->nops >= 2 && OP(insn->nops - 1).kind == C6X_OP_IMM ? (ut8)OP(insn->nops - 1).v.imm.value : 0;
+	case C6X_INS_ADDKPC:
+		return insn->nops >= 3 && OP(2).kind == C6X_OP_IMM ? (ut8)OP(2).v.imm.value : 0;
+	case C6X_INS_CALLP:
+		return 5;
+	default:
+		return 0;
+	}
+}

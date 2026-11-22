@@ -9,7 +9,7 @@ EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'add esp, 8' at line 3
 ERROR: Failed to assemble 'add esp, 8'
-ERROR: Consider using "/ar" instead.
+ERROR: Consider using "/ad" instead.
 EOF
 RUN
 
@@ -34,6 +34,24 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.assembler=x86
 e asm.bits=32
+/a add esp, 8
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
+NAME=/a search - empty - no progress in a long search when not interactive
+FILE=malloc://0x2000000
+ARGS=-n
+CMDS=<<EOF
+e asm.arch=x86
+e asm.assembler=x86
+e asm.bits=32
+e search.show_progress=false
+/a add esp, 8
+e search.show_progress=num_hits
 /a add esp, 8
 EOF
 EXPECT=<<EOF

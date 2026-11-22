@@ -681,7 +681,7 @@ RZ_IPI RzILOpPure *x86_il_get_memaddr_segment_bits(X86Mem mem, X86Reg segment, i
 	}
 	if (!offset) {
 		offset = UN(bits, mem.disp.value);
-	} else {
+	} else if (mem.disp.value) {
 		offset = ADD(offset, UN(bits, mem.disp.value));
 	}
 

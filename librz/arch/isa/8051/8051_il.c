@@ -559,7 +559,7 @@ RZ_IPI RzILOpEffect *rz_8051_il_op(RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL c
 	}
 
 	RzILOpEffect *eff = i_op_dispatch(op);
-	free(op);
+	rz_8051_op_free(op);
 	return eff;
 }
 

@@ -1075,3 +1075,90 @@ EXPECT=<<EOF
             0x00000012      054b           ldr   r3, [0x00000028]      ; [0x28:4]=0x4b054b05
 EOF
 RUN
+
+NAME=thumb msr
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e cfg.bigendian=false
+wx 80f30089 @ 0x0 # msr cpsr_fc, r0
+wx 92f3008a @ 0x4 # msr spsr_fx, r2
+pie 2
+ar r0=0xffffffff
+ar r2=0xffffffff
+ar cpsr=0x20
+aes
+aes
+ar cpsr
+EOF
+EXPECT=<<EOF
+0x00000000 r0,0xf80000df,&,cpsr,0x7ffff20,&,|,cpsr,=
+0x00000004 
+cpsr = 0xf80000ff
+EOF
+RUN
+
+NAME=cortex-m msr
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 80f30088 @ 0x00 # msr apsr_nzcvq, r0
+wx 80f30084 @ 0x04 # msr apsr_g, r0
+wx 80f3008c @ 0x08 # msr apsr_nzcvqg, r0
+wx 80f30188 @ 0x0c # msr iapsr_nzcvq, r0
+wx 80f30384 @ 0x10 # msr xpsr_g, r0
+wx 80f30588 @ 0x14 # msr ipsr, r0
+wx 80f30888 @ 0x18 # msr msp, r0
+wx 80f31088 @ 0x1c # msr primask, r0
+wx 83f31188 @ 0x20 # msr basepri, r3
+wx 80f31488 @ 0x24 # msr control, r0
+pie 10
+EOF
+EXPECT=<<EOF
+0x00000000 r0,0xf8000000,&,cpsr,0x7ffffff,&,|,cpsr,=
+0x00000004 r0,0xf0000,&,cpsr,0xfff0ffff,&,|,cpsr,=
+0x00000008 r0,0xf80f0000,&,cpsr,0x7f0ffff,&,|,cpsr,=
+0x0000000c r0,0xf8000000,&,cpsr,0x7ffffff,&,|,cpsr,=
+0x00000010 r0,0xf0000,&,cpsr,0xfff0ffff,&,|,cpsr,=
+0x00000014 
+0x00000018 
+0x0000001c 
+0x00000020 
+0x00000024 
+EOF
+RUN
+
+NAME=cortex-m msr emulation
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 80f30088 @ 0x0 # msr apsr_nzcvq, r0
+wx 80f30084 @ 0x4 # msr apsr_g, r0
+wx 80f30888 @ 0x8 # msr msp, r0
+wx 80f31488 @ 0xc # msr control, r0
+ar r0=0xffffffff
+ar sp=0x1000
+ar cpsr=0x01000000
+aes
+ar cpsr
+aes
+ar cpsr
+aes
+aes
+ar cpsr
+ar sp
+EOF
+EXPECT=<<EOF
+cpsr = 0xf9000000
+cpsr = 0xf90f0000
+cpsr = 0xf90f0000
+sp = 0x00001000
+EOF
+RUN

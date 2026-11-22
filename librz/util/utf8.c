@@ -14,7 +14,7 @@
  *
  * Copied from: UCD/Blocks.txt
  *
- * Unicode version: 16.0.0.
+ * Unicode version: 17.0.0.
  */
 const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x0000, 0x007F, "Basic Latin" },
@@ -212,6 +212,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x108E0, 0x108FF, "Hatran" },
 	{ 0x10900, 0x1091F, "Phoenician" },
 	{ 0x10920, 0x1093F, "Lydian" },
+	{ 0x10940, 0x1095F, "Sidetic" },
 	{ 0x10980, 0x1099F, "Meroitic Hieroglyphs" },
 	{ 0x109A0, 0x109FF, "Meroitic Cursive" },
 	{ 0x10A00, 0x10A5F, "Kharoshthi" },
@@ -263,11 +264,13 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x11AB0, 0x11ABF, "Unified Canadian Aboriginal Syllabics Extended-A" },
 	{ 0x11AC0, 0x11AFF, "Pau Cin Hau" },
 	{ 0x11B00, 0x11B5F, "Devanagari Extended-A" },
+	{ 0x11B60, 0x11B7F, "Sharada Supplement" },
 	{ 0x11BC0, 0x11BFF, "Sunuwar" },
 	{ 0x11C00, 0x11C6F, "Bhaiksuki" },
 	{ 0x11C70, 0x11CBF, "Marchen" },
 	{ 0x11D00, 0x11D5F, "Masaram Gondi" },
 	{ 0x11D60, 0x11DAF, "Gunjala Gondi" },
+	{ 0x11DB0, 0x11DEF, "Tolong Siki" },
 	{ 0x11EE0, 0x11EFF, "Makasar" },
 	{ 0x11F00, 0x11F5F, "Kawi" },
 	{ 0x11FB0, 0x11FBF, "Lisu Supplement" },
@@ -288,12 +291,14 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x16B00, 0x16B8F, "Pahawh Hmong" },
 	{ 0x16D40, 0x16D7F, "Kirat Rai" },
 	{ 0x16E40, 0x16E9F, "Medefaidrin" },
+	{ 0x16EA0, 0x16EDF, "Beria Erfe" },
 	{ 0x16F00, 0x16F9F, "Miao" },
 	{ 0x16FE0, 0x16FFF, "Ideographic Symbols and Punctuation" },
 	{ 0x17000, 0x187FF, "Tangut" },
 	{ 0x18800, 0x18AFF, "Tangut Components" },
 	{ 0x18B00, 0x18CFF, "Khitan Small Script" },
 	{ 0x18D00, 0x18D7F, "Tangut Supplement" },
+	{ 0x18D80, 0x18DFF, "Tangut Components Supplement" },
 	{ 0x1AFF0, 0x1AFFF, "Kana Extended-B" },
 	{ 0x1B000, 0x1B0FF, "Kana Supplement" },
 	{ 0x1B100, 0x1B12F, "Kana Extended-A" },
@@ -302,6 +307,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x1BC00, 0x1BC9F, "Duployan" },
 	{ 0x1BCA0, 0x1BCAF, "Shorthand Format Controls" },
 	{ 0x1CC00, 0x1CEBF, "Symbols for Legacy Computing Supplement" },
+	{ 0x1CEC0, 0x1CEFF, "Miscellaneous Symbols Supplement" },
 	{ 0x1CF00, 0x1CFCF, "Znamenny Musical Notation" },
 	{ 0x1D000, 0x1D0FF, "Byzantine Musical Symbols" },
 	{ 0x1D100, 0x1D1FF, "Musical Symbols" },
@@ -320,6 +326,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x1E2C0, 0x1E2FF, "Wancho" },
 	{ 0x1E4D0, 0x1E4FF, "Nag Mundari" },
 	{ 0x1E5D0, 0x1E5FF, "Ol Onal" },
+	{ 0x1E6C0, 0x1E6FF, "Tai Yo" },
 	{ 0x1E7E0, 0x1E7FF, "Ethiopic Extended-B" },
 	{ 0x1E800, 0x1E8DF, "Mende Kikakui" },
 	{ 0x1E900, 0x1E95F, "Adlam" },
@@ -351,6 +358,7 @@ const RzUnicodeRangeNameTable unicode_blocks = {
 	{ 0x2F800, 0x2FA1F, "CJK Compatibility Ideographs Supplement" },
 	{ 0x30000, 0x3134F, "CJK Unified Ideographs Extension G" },
 	{ 0x31350, 0x323AF, "CJK Unified Ideographs Extension H" },
+	{ 0x323B0, 0x3347F, "CJK Unified Ideographs Extension J" },
 	{ 0xE0000, 0xE007F, "Tags" },
 	{ 0xE0100, 0xE01EF, "Variation Selectors Supplement" },
 	{ 0xF0000, 0xFFFFF, "Supplementary Private Use Area-A" },

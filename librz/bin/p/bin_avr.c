@@ -609,6 +609,10 @@ static bool avr_check_buffer(RzBuffer *buf) {
 	if (rz_buf_size(buf) < 32) {
 		return false;
 	}
+	ut8 c = 0;
+	if (!rz_buf_read8_at(buf, 0x0, &c) || c == 0xFA) {
+		return false; // This is a c166 jmp
+	}
 	return is_jmp(buf, 0) || is_rjmp(buf, 0);
 }
 

@@ -228,7 +228,7 @@ static bool objc_find_refs(RzCore *core) {
 	size_t total_xrefs = 0;
 	bool readSuccess = true;
 	for (ut64 off = 0; off < objc->_data->vsize && readSuccess; off += objc2ClassSize) {
-		if (!readSuccess || rz_cons_is_breaked()) {
+		if (!readSuccess || rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
 
@@ -255,7 +255,7 @@ static bool objc_find_refs(RzCore *core) {
 			continue;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				break;
 			}
 			bool found = false;
@@ -511,7 +511,7 @@ static void apply_selector_stub_at(RzCore *core, ut64 addr, ut32 size, char *sel
 	if (!fi) {
 		return;
 	}
-	rz_flag_item_set_realname(fi, rz_strf(name, "objc_msgSend$%s", selector));
+	rz_flag_item_set_realname(core->flags, fi, rz_strf(name, "objc_msgSend$%s", selector));
 	// If there is already a function (e.g. from aa), rename it too
 	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
 	if (fcn) {
@@ -541,8 +541,8 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
 	}
 	RzSpace *symbols_space = rz_spaces_get(&core->flags->spaces, RZ_FLAGS_FS_SYMBOLS);
 	rz_flag_space_push(core->flags, "objc-stubs");
-	rz_cons_break_push(NULL, NULL);
-	while (offset + min_pattern_sz <= size && !rz_cons_is_breaked()) {
+	rz_interrupt_break_push(core->intr, NULL, NULL);
+	while (offset + min_pattern_sz <= size && !rz_interrupt_is_breaked(core->intr)) {
 		ut64 addr = start + offset;
 		size_t read_sz = RZ_MIN(max_pattern_sz, size - offset);
 		if (!rz_io_read_at_mapped(core->io, addr, stub_contents, read_sz)) {
@@ -582,7 +582,7 @@ static void analyze_objc_stubs(RzCore *core, ut64 start, ut64 size) {
 		}
 		offset += stride;
 	}
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	rz_flag_space_pop(core->flags);
 	free(stub_contents);
 }

@@ -56,8 +56,17 @@ bool test_rz_bin(void) {
 	}
 
 	const RzPVector *strings = rz_bin_object_get_strings(obj);
-	mu_assert_eq(rz_pvector_len(strings), 5, "rz_bin_object_get_strings");
+	mu_assert_eq(rz_pvector_len(strings), 13, "rz_bin_object_get_strings");
 	const char *exp_strings[] = {
+		// .dynstr is mapped (SHF_ALLOC) so its strings are now reported
+		"__gmon_start__",
+		"libc.so.6",
+		"printf",
+		"strcmp",
+		"scanf",
+		"_IO_stdin_used",
+		"__libc_start_main",
+		"GLIBC_2.0",
 		"IOLI Crackme Level 0x00\n",
 		"Password: ",
 		// "%s", // This is not automatically recognized because too short
@@ -108,7 +117,7 @@ static RzBinReloc *add_reloc(RzPVector *l, ut64 paddr, ut64 vaddr, ut64 target_v
 }
 
 bool test_rz_bin_reloc_storage(void) {
-	RzPVector *l = rz_pvector_new(NULL);
+	RzPVector *l = rz_pvector_new(free);
 	RzBinReloc *r0 = add_reloc(l, 0x108, 0x1000, 0x2004);
 	mu_assert_notnull(r0, "reloc");
 	RzBinReloc *r1 = add_reloc(l, 0x2002, 0x1003, 0x2008);

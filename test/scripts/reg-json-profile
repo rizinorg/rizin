@@ -1,0 +1,8 @@
+=PC pc
+=SP sp
+=A0 r0
+=A1 missing
+gpr pc .64 0 0
+gpr sp .64 8 0
+gpr r0 .64 16 0
+drx d0 .32 0 0

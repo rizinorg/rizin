@@ -89,6 +89,19 @@ static inline bool is_c_escape_sequence(char ch) {
 	return strchr("\b\v\f\n\r\t\a\033\\", ch);
 }
 
+static inline bool is_user_defined_unprintable(const RzUtilStrScanOptions *opt, RzCodePoint cp) {
+	if (!opt || !opt->user_unprintable) {
+		return false;
+	}
+	RzCodePoint *it;
+	rz_vector_foreach (opt->user_unprintable, it) {
+		if (*it == cp) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static UTF8StringInfo calculate_utf8_string_info(ut8 *str, int size) {
 	UTF8StringInfo res = {
 		.num_ascii = 0,
@@ -351,10 +364,11 @@ static RzDetectedString *process_one_string(const ut8 *buf, const ut64 from, ut6
 			output_buf = heap_alloc;
 		}
 
-		if (rz_unicode_code_point_is_printable(ucp) && ucp != '\\') {
+		bool user_defined_unprintable = is_user_defined_unprintable(opt, ucp);
+		if (rz_unicode_code_point_is_printable(ucp) && !user_defined_unprintable && ucp != '\\') {
 			char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			char_count++;
-		} else if (ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
+		} else if (!user_defined_unprintable && ucp && ucp < 0x100 && is_c_escape_sequence((char)ucp)) {
 			if ((i + 32) < opt->max_str_length && ucp < 93) {
 				char_bytes = rz_utf8_encode(output_buf + i, ucp);
 			} else {
@@ -465,7 +479,10 @@ RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_
 	RzList *list = rz_list_newf((RzListFree)rz_detected_string_free);
 	if (!list) {
 		return false;
-	} else if (rz_scan_strings_raw(buf, list, opt, 0, size, type) > 0) {
+	}
+	RzUtilStrScanOptions first_opt = *opt;
+	first_opt.max_matches = 1;
+	if (rz_scan_strings_raw(buf, list, &first_opt, 0, size, type) > 0) {
 		*output = rz_list_pop_head(list);
 	}
 
@@ -474,23 +491,11 @@ RZ_API bool rz_scan_strings_single_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_
 }
 
 /**
- * \brief Look for strings in a byte array.
- *
- * \param buf   Pointer to a raw buffer to scan.
- * \param list  Pointer to a list that will be populated with the found strings.
- * \param opt   Pointer to an RzUtilStrScanOptions that specifies search parameters.
- * \param from  Minimum address to scan.
- * \param to    Maximum address to scan.
- * \param type  Type of strings to search.
- *
- * \return Number of strings found. Or -1 in case of failure.
- *
- * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
+ * \brief Scans like rz_scan_strings_raw(), but only for strings starting
+ * before \p start_before.
  */
-RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
-	const ut64 from, const ut64 to, RzStrEnc type) {
-	rz_return_val_if_fail(opt && list && buf, -1);
-
+static int scan_strings_raw(const ut8 *buf, RzList /*<RzDetectedString *>*/ *list, const RzUtilStrScanOptions *opt,
+	const ut64 from, const ut64 to, RzStrEnc type, const ut64 start_before) {
 	if (from == to) {
 		return 0;
 	} else if (from > to) {
@@ -507,7 +512,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 	const ut8 *ptr = NULL;
 	ut64 size = 0;
 	int skip_ibm037 = 0;
-	while (needle < to) {
+	while (needle < start_before && !(opt->max_matches && (size_t)count >= opt->max_matches)) {
 		ptr = buf + needle - from;
 		size = to - needle;
 		--skip_ibm037;
@@ -595,7 +600,7 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 				int i = 0;
 				for (; i < sz; i++) {
 					rz_str_ibm037_to_unicode(ptr[i], &code_points[i]);
-					if (!rz_unicode_code_point_is_printable(code_points[i])) {
+					if (!rz_unicode_code_point_is_printable(code_points[i]) || is_user_defined_unprintable(opt, code_points[i])) {
 						break;
 					}
 				}
@@ -631,6 +636,65 @@ RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<R
 		needle += ds->size;
 	}
 	return count;
+}
+
+/**
+ * \brief Look for strings in a byte array.
+ *
+ * \param buf   Pointer to a raw buffer to scan.
+ * \param list  Pointer to a list that will be populated with the found strings.
+ * \param opt   Pointer to an RzUtilStrScanOptions that specifies search parameters.
+ * \param from  Minimum address to scan.
+ * \param to    Maximum address to scan.
+ * \param type  Type of strings to search.
+ *
+ * \return Number of strings found. Or -1 in case of failure.
+ *
+ * Used to look for strings in a give RzBuffer. The function can also automatically detect string types.
+ */
+RZ_API int rz_scan_strings_raw(RZ_NONNULL const ut8 *buf, RZ_NONNULL RzList /*<RzDetectedString *>*/ *list, RZ_NONNULL const RzUtilStrScanOptions *opt,
+	const ut64 from, const ut64 to, RzStrEnc type) {
+	rz_return_val_if_fail(opt && list && buf, -1);
+	return scan_strings_raw(buf, list, opt, from, to, type, to);
+}
+
+/**
+ * \brief Detects a string starting at the beginning of a byte array.
+ *
+ * Unlike rz_scan_strings_single_raw(), which returns the first string found
+ * anywhere, it looks no further than the start, so its cost depends on the
+ * length of the string and not on \p size. A byte order mark at the start
+ * is part of the string.
+ *
+ * \param buf     Pointer to a raw buffer to scan
+ * \param size    Size of \p buf
+ * \param opt     Pointer to a RzUtilStrScanOptions that specifies search parameters
+ * \param type    Type of strings to search
+ * \param output  Pointer to a RzDetectedString where to store the result
+ *
+ * \return true if a string starts at the beginning of \p buf, otherwise false.
+ */
+RZ_API bool rz_scan_strings_single_at_start_raw(RZ_NONNULL const ut8 *buf, ut64 size, RZ_NONNULL const RzUtilStrScanOptions *opt, RzStrEnc type, RZ_NONNULL RzDetectedString **output) {
+	rz_return_val_if_fail(buf && opt && output, false);
+
+	*output = NULL;
+	RzList *list = rz_list_newf((RzListFree)rz_detected_string_free);
+	if (!list) {
+		return false;
+	}
+	RzUtilStrScanOptions first_opt = *opt;
+	first_opt.max_matches = 1;
+	// A string found further than a byte order mark cannot begin at the start
+	if (scan_strings_raw(buf, list, &first_opt, 0, size, type, RZ_MIN(size, RZ_UNICODE_MAX_BOM_SIZE + 1)) > 0) {
+		RzDetectedString *ds = rz_list_pop_head(list);
+		if (ds->addr) {
+			rz_detected_string_free(ds);
+		} else {
+			*output = ds;
+		}
+	}
+	rz_list_free(list);
+	return *output;
 }
 
 /**

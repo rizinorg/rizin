@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2015 ampotos <mercie_i@epitech.eu>
 // SPDX-FileCopyrightText: 2015-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef OMF_SPECS_H_
@@ -72,6 +73,50 @@
 #define OMF_COMENT_EXT_PMEM_LIB 0x04 // Protect loading for 32 bits library
 #define OMF_COMENT_EXT_LNKDIR   0x05 // Microsoft C++ linker directives record
 #define OMF_COMENT_EXT_BIG_E    0x06 // Target machine is big endian
+
+// OMF166 record type
+#define OMF166_RTXDEF   0x30 // extension to Siemens OMF
+#define OMF166_DEPLST   0x70 // extension to Siemens OMF
+#define OMF166_REGMSK   0x72 // extension to Siemens OMF
+#define OMF166_TYPNEW   0xF0 // extension to Siemens OMF
+#define OMF166_BLKEND   0x7C
+#define OMF166_THEADR   0x80 // Translator Header Record
+#define OMF166_LHEADR   0x82 // Library Module Header Record
+#define OMF166_COMMENT  0x88 // Comment Record (Including all comment class extensions)
+#define OMF166_MODEND   0x8A // Module End Record 16 bits
+#define OMF166_LINNUM   0x94 // Line Numbers Record 16 bits
+#define OMF166_LNAMES   0x96 // List of Names Record
+#define OMF166_LIBLOC   0xA8
+#define OMF166_LIBNAMES 0xA6
+#define OMF166_LIBDICT  0xAA
+#define OMF166_LIBHDR   0xBA
+#define OMF166_PHEADR   0xE0
+#define OMF166_PECDEF   0xE4
+#define OMF166_SSKDEF   0xE5
+#define OMF166_MODINF   0xE7
+#define OMF166_TSKDEF   0xE1
+#define OMF166_REGDEF   0xE3
+#define OMF166_SECDEF   0xB0
+#define OMF166_TYPDEF   0xB2
+#define OMF166_GRPDEF   0xB1 // Group Definition Record
+#define OMF166_PUBDEF   0xB3 // Public Names Definition Record 16 bits
+#define OMF166_GLBDEF   0xE6
+#define OMF166_EXTDEF   0x8C // External Names Definition Record
+#define OMF166_LOCSYM   0xB5
+#define OMF166_BLKDEF   0xB7
+#define OMF166_DEBSYM   0xB6
+#define OMF166_LEDATA   0xB8 // Logical Enumerated Data Record 16 bits
+#define OMF166_PEDATA   0xB9
+#define OMF166_VECTAB   0xE9
+#define OMF166_FIXUPP   0xB4 // Fixup Record 16 bits
+#define OMF166_TSKEND   0xE2
+#define OMF166_XSECDEF  0xC5
+#define OMF166_UNKNOWN0 0x60 // May be compound
+#define OMF166_INCLUDES 0x61
+#define OMF166_UNKNOWN2 0x62
+#define OMF166_UNKNOWN3 0x63
+#define OMF166_UNKNOWN4 0x64
+#define OMF166_UNKNOWN5 0x65
 
 typedef struct {
 	ut8 type;

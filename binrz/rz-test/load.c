@@ -683,7 +683,9 @@ static inline bool skip_archos(const char *subname) {
 }
 
 static bool database_load(RzTestDatabase *db, const char *path, int depth) {
-	if (depth <= 0) {
+	if (!path) {
+		return false;
+	} else if (depth <= 0) {
 		eprintf("Directories for loading tests too deep: %s\n", path);
 		return false;
 	}

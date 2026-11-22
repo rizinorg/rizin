@@ -5,7 +5,16 @@
 #define RZ_XTENSA_H
 
 #include <capstone/capstone.h>
-#include <rz_asm.h>
+#include "asm_private.h"
+#include "analysis_private.h"
+
+#if CS_API_MAJOR >= 6 && CS_VERSION_PRE_RELEASE < CS_VERSION_ALPHA11
+// After Alpha10 the CS_MODE_XTENSA_ESP32S3 mode was added and some
+// instructions no longer decode without it.
+// For <= Alpha10 the instructions also decode with CS_MODE_XTENSA_ESP32S2.
+// Hence this redefinition.
+#define CS_MODE_XTENSA_ESP32S3 CS_MODE_XTENSA_ESP32S2
+#endif
 
 typedef struct {
 	const char *cpu;
@@ -15,6 +24,7 @@ typedef struct {
 static const XtensaCPUMode xtensa_cpu_modes[] = {
 	{ .cpu = "esp32", .mode = CS_MODE_XTENSA_ESP32 },
 	{ .cpu = "esp32s2", .mode = CS_MODE_XTENSA_ESP32S2 },
+	{ .cpu = "esp32s3", .mode = CS_MODE_XTENSA_ESP32S3 },
 	{ .cpu = "esp8266", .mode = CS_MODE_XTENSA_ESP8266 },
 };
 

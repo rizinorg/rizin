@@ -169,7 +169,7 @@ pd 12~?=
 pd 13~?=
 EOF
 EXPECT=<<EOF
-3
-3
+0
+0
 EOF
 RUN

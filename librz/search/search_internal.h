@@ -120,10 +120,7 @@ struct rz_search_opt_t {
 	ut64 element_size;
 	RzThreadNCores max_threads;
 	RzSearchProgress show_progress;
-
-	// cancel callback
-	void *cancel_usr;
-	RzSearchCancelCallback cancel_cb;
+	RzInterrupt *intr; ///< Interrupt that cancels the search, can be NULL
 };
 
 struct rz_search_find_opt_t {

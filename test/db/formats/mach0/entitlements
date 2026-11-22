@@ -81,3 +81,87 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=entitlements with rz-bin
+FILE=bins/mach0/flow-mac-arm64e
+CMDS=iI;iC
+EXPECT=<<EOF
+arch                                                   arm
+cpu                                                    all
+features                                               N/A
+baddr                                                  0x100000000
+binsz                                                  0x0000d4e0
+bintype                                                mach0
+bits                                                   64
+class                                                  MACH064
+compiler                                               N/A
+dbg_file                                               N/A
+endian                                                 LE
+hdr.csum                                               N/A
+guid                                                   N/A
+intrp                                                  /usr/lib/dyld
+laddr                                                  0x00000000
+lang                                                   c++
+machine                                                all
+maxopsz                                                4
+minopsz                                                4
+os                                                     darwin
+cc                                                     N/A
+pcalign                                                4
+rpath                                                  N/A
+subsys                                                 macOS
+stripped                                               false
+havecode                                               true
+va                                                     true
+static                                                 false
+linenum                                                false
+lsyms                                                  false
+canary                                                 false
+pie                                                    true
+relrocs                                                false
+nx                                                     false
+com.apple.security.hardened-runtime                    true
+com.apple.security.cs.allow-dyld-environment-variables true
+com.apple.security.cs.allow-jit                        true
+com.apple.security.cs.allow-unsigned-executable-memory true
+com.apple.security.cs.disable-library-validation       true
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>com.apple.application-identifier</key>
+		<string>LP64XSF5PS.dev.iamevan.flow</string>
+		<key>com.apple.security.hardened-runtime</key>
+		<true/>
+		<key>com.apple.security.cs.allow-jit</key>
+		<true/>
+		<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+		<true/>
+		<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+		<true/>
+		<key>com.apple.security.cs.disable-library-validation</key>
+		<true/>
+		<key>com.apple.security.device.audio-input</key>
+		<true/>
+		<key>com.apple.security.device.bluetooth</key>
+		<true/>
+		<key>com.apple.security.device.camera</key>
+		<true/>
+		<key>com.apple.security.device.print</key>
+		<true/>
+		<key>com.apple.security.device.usb</key>
+		<true/>
+		<key>com.apple.security.personal-information.location</key>
+		<true/>
+		<key>com.apple.security.screen-recording</key>
+		<true/>
+		<key>com.apple.security.files.downloads.read-write</key>
+		<true/>
+		<key>com.apple.security.files.user-selected.read-write</key>
+		<true/>
+		<key>com.apple.developer.web-browser.public-key-credential</key>
+		<true/>
+	</dict>
+</plist>
+EOF
+RUN

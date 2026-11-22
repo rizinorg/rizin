@@ -568,6 +568,7 @@ RzILOpEffect *fcom_helper(const X86ILIns *ins, ut64 pc, RzAnalysis *analysis, Rz
 	} else if (ins->structure->operand_count_visible == 1) {
 		op1 = x86_il_get_floating_op(0);
 	} else {
+		rz_il_op_pure_free(st0);
 		st0 = x86_il_get_floating_op(0);
 		op1 = x86_il_get_floating_op(1);
 	}

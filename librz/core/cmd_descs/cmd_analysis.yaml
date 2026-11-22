@@ -360,6 +360,19 @@ commands:
           - name: afs
             cname: analysis_function_signature
             summary: Get/Set function signature at current address
+            description: >
+              Without an argument, prints the signature of the function. An argument is
+              followed by its location when an argument variable has the same name and type.
+              With an argument, sets the signature from a C prototype, like the one `afT` prints.
+            details:
+              - name: Examples
+                entries:
+                  - text: afs
+                    arg_str: ""
+                    comment: "Print the signature, e.g. int main(int argc @ rdi, char **argv @ rsi, char **envp);"
+                  - text: afs
+                    arg_str: " int main(int argc, char **argv)"
+                    comment: Set the signature from a C prototype
             modes:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
@@ -385,6 +398,13 @@ commands:
             args:
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+      - name: afT
+        cname: analysis_function_type
+        summary: Show the type of the function at current address
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
+        args: []
       - name: afo
         cname: analysis_function_address
         summary: Show address of current function
@@ -481,6 +501,34 @@ commands:
                 type: RZ_CMD_ARG_TYPE_FCN_VAR
               - name: type
                 type: RZ_CMD_ARG_TYPE_STRING
+          - name: afvc
+            summary: Read/change value constraints of arguments/locals
+            subcommands:
+              - name: afvc
+                cname: analysis_function_vars_constraints
+                summary: List value constraints of all variables / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                    optional: true
+              - name: afvcs
+                cname: analysis_function_vars_constraints_set
+                summary: 'Set value constraints of a variable (e.g. afvcs var0 ">0,<=9")'
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: afvc-
+                cname: analysis_function_vars_constraints_del
+                summary: Remove all value constraints of a variable
+                args:
+                  - name: varname
+                    type: RZ_CMD_ARG_TYPE_FCN_VAR
           - name: afvx
             summary: Show argument/variable xrefs in a function
             subcommands:
@@ -679,6 +727,7 @@ commands:
                 modes:
                   - RZ_OUTPUT_MODE_STANDARD
                   - RZ_OUTPUT_MODE_TABLE
+                  - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: mode
                     type: RZ_CMD_ARG_TYPE_CHOICES
@@ -688,8 +737,10 @@ commands:
                 summary: Enumerate unique opcodes/opcode families/opcode types in all functions
                 cname: analysis_function_all_opcode_stat
                 type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                default_mode: RZ_OUTPUT_MODE_TABLE
                 modes:
                   - RZ_OUTPUT_MODE_TABLE
+                  - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: mode
                     type: RZ_CMD_ARG_TYPE_CHOICES
@@ -1358,6 +1409,10 @@ commands:
           - name: ara
             summary: Show all currently allocated register arenas
             cname: analysis_reg_arenas
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: ara+
             summary: Push a new set of arenas to the stack
@@ -1411,8 +1466,15 @@ commands:
               - RZ_OUTPUT_MODE_STANDARD
               - RZ_OUTPUT_MODE_JSON
           - name: arpc
-            summary: Show register profile comments
+            summary: Show the full-line comments of the register profile
+            description: >
+              A comment after a register definition describes that register, and `arpj` shows it
+              as the `comment` of the register.
             cname: analysis_reg_profile_comments
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: arpo
             summary: Load a new register profile from file
@@ -1479,11 +1541,19 @@ commands:
       - name: arT
         summary: List all register types
         cname: analysis_reg_types
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
       - name: arR
         summary: List all register roles
         cname: analysis_reg_roles
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         details: [] # Explicitly empty to not show parent ones
         args: []
   # ... to here
@@ -1508,6 +1578,7 @@ commands:
             cname: global_imports
             modes:
               - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args:
               - name: namespace
                 type: RZ_CMD_ARG_TYPE_STRING
@@ -1610,6 +1681,34 @@ commands:
             args:
               - name: name
                 type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+          - name: avgc
+            summary: Read/change value constraints of global variables
+            subcommands:
+              - name: avgc
+                cname: analysis_global_variable_constraints
+                summary: List value constraints of all globals / of the given one
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                    optional: true
+              - name: avgcs
+                cname: analysis_global_variable_constraints_set
+                summary: 'Set value constraints of a global variable (e.g. avgcs g ">0,<=9")'
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
+                  - name: constraints
+                    type: RZ_CMD_ARG_TYPE_STRING
+              - name: avgc-
+                cname: analysis_global_variable_constraints_del
+                summary: Remove all value constraints of a global variable
+                args:
+                  - name: var_name
+                    type: RZ_CMD_ARG_TYPE_GLOBAL_VAR
       - name: avr
         summary: try to parse RTTI at vtable addr (see analysis.cpp.abi)
         type: RZ_CMD_DESC_TYPE_ARGV_MODES
@@ -1645,6 +1744,7 @@ commands:
         modes:
           - RZ_OUTPUT_MODE_STANDARD
           - RZ_OUTPUT_MODE_TABLE
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: virtual function name
             type: RZ_CMD_ARG_TYPE_STRING
@@ -2249,12 +2349,18 @@ commands:
     summary: Analyze N instructions
     subcommands:
       - name: ao
-        summary: Analyze next N instructions
+        summary: Analyze next N instructions and print all details Rizin knows about them.
         cname: analyze_n_ins
         args:
           - name: n_instructions
             type: RZ_CMD_ARG_TYPE_NUM
             optional: true
+        details:
+          - name: ""
+            entries:
+              - text: "Details include information like: jump targets, operand details,
+                  conditions, size, disassembly, bytes, RzIL, address"
+                comment: ""
         type: RZ_CMD_DESC_TYPE_ARGV_STATE
         modes:
           - RZ_OUTPUT_MODE_STANDARD
@@ -2563,3 +2669,29 @@ commands:
                     comment: "memwrites"
                   - text: "NOTE:"
                     comment: "mem{reads,writes} with PIC only fetch the offset"
+  - name: aI
+    summary: Experimental RzIL based analysis
+    details:
+      - name: "What is the difference to the old analysis?"
+        entries:
+          - text: "Analysis Results"
+            comment: "In the early stage the results will be less comprehensive than the old analysis.
+              This won't be the case for long. You can track the progress here:
+              https://github.com/orgs/rizinorg/projects/18"
+          - text: "Design"
+            comment: "The algorithms are designed with performance, extensibility, formal correctness,
+              and compatibility for VLIW architectures in mind."
+          - text: "Future's Base"
+            comment: "The commands' module will be the foundation for future analysis development."
+          - text: "RzIL"
+            comment: "The IL for the the analysis is exclusively RzIL with support for
+              many more architectures than ESIL had."
+    subcommands:
+      - name: aIf
+        summary: analyze function at current seek
+        cname: inquiry_analyze_function
+        args: []
+      - name: aIa
+        summary: analyze all functions
+        cname: inquiry_analyze_all
+        args: []

@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file The functions in this file are an API for binary modules which need
+ * \file
+ * The functions in this file are an API for binary modules which need
  * ELF parsing capabilities.
  * Most of the ELF plugin was not build as library and can't be used without
  * code duplication.
@@ -46,10 +47,13 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 		rz_bin_reloc_target_builder_free(targets);
 		return;
 	}
+
+	fill_got_sym_id_off_map(obj);
+
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(obj);
 	ut64 baddr = baseaddr;
-	ut64 mips_AHL = 0;
+	Elf_(rz_bin_elf_relocs_read_addends)(obj);
 
 	rz_bin_elf_foreach_relocs(obj, reloc) {
 		ut64 sym_addr = 0;
@@ -64,7 +68,7 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 			RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(obj, reloc->sym);
 			if (symbol) {
 				sym_addr = symbol->vaddr;
-				if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
+				if (Elf_(rz_bin_elf_is_arm_binary_supporting_thumb)(obj) && RZ_STR_EQ(symbol->type, RZ_BIN_TYPE_FUNC_STR) && Elf_(rz_bin_elf_is_thumb_addr)(sym_addr)) {
 					Elf_(rz_bin_elf_fix_arm_thumb_addr)(&sym_addr);
 				}
 			} else {
@@ -72,7 +76,7 @@ void elf_patch_relocs_elfobj_only(ELFOBJ *obj, RzBuffer *bin_buf, ut64 baseaddr)
 			}
 			sym_size = symbol->size;
 		}
-		Elf_(rz_bin_elf_patch_relocation)(obj, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr, &mips_AHL);
+		Elf_(rz_bin_elf_patch_relocation)(obj, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);

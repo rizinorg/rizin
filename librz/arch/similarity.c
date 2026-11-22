@@ -2,8 +2,7 @@
 // SPDX-FileCopyrightText: 2022-2025 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_analysis.h>
-#include <rz_util.h>
+#include "analysis_private.h"
 #include <rz_diff.h>
 
 /** \file similarity.c
@@ -25,9 +24,9 @@ typedef ut8 *(*AllocateBuffer)(RzAnalysis *analysis, void *data, ut8 **buffer, u
 
 typedef struct shared_context_t {
 	const RzList /*<void *>*/ *list_b;
-	RzThreadQueue *queue;
-	RzThreadQueue *matches;
-	RzThreadQueue *unmatch;
+	RzThreadQueue /*<void *>*/ *queue;
+	RzThreadQueue /*<RzAnalysisMatchPair *>*/ *matches;
+	RzThreadQueue /*<RzAnalysisBlock *>*/ *unmatch;
 	AllocateBuffer alloc;
 	RzThreadLock *lock_a;
 	RzThreadLock *lock_b;
@@ -351,7 +350,7 @@ fail:
 /**
  * \brief      Frees a valid pointer to a RzAnalysisMatchResult struct
  *
- * \param[in]  RzAnalysisMatchResult  The analysis match result to be freed
+ * \param[in]  result  The analysis match result to be freed
  */
 RZ_API void rz_analysis_match_result_free(RZ_NULLABLE RzAnalysisMatchResult *result) {
 	if (!result) {
@@ -502,7 +501,7 @@ static void *analysis_match_functions(SharedContext *shared) {
 				max_similarity = calc_similarity;
 				match = fcn_b;
 				break;
-			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD && calc_similarity <= max_similarity) {
+			} else if (calc_similarity < RZ_ANALYSIS_SIMILARITY_THRESHOLD || calc_similarity <= max_similarity) {
 				continue;
 			}
 			max_similarity = calc_similarity;

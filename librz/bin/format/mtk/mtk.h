@@ -1,0 +1,110 @@
+// SPDX-FileCopyrightText: 2025 mrsmith
+// SPDX-License-Identifier: LGPL-3.0-only
+
+#ifndef MTK_H
+#define MTK_H
+
+#include <rz_types.h>
+#include <rz_util.h>
+#include <rz_lib.h>
+#include <rz_bin.h>
+
+#define MTK_GFH_MAGIC_MASK 0x00FFFFFF
+/* "MMM" in lower 3 bytes */
+#define MTK_GFH_MAGIC               0x004D4D4D
+#define MTK_GFH_COMMON_HDR_SIZE     8
+#define MTK_GFH_FILE_INFO_BODY_SIZE 48
+#define MTK_GFH_MIN_FILE_SIZE       (MTK_GFH_COMMON_HDR_SIZE + MTK_GFH_FILE_INFO_BODY_SIZE)
+#define MTK_GFH_FILE_INFO_NAME_SIZE 12
+/* Runtime virtual base address for modem code */
+#define MTK_MODEM_BADDR 0x90000000ULL
+
+typedef enum {
+	MTK_GFH_TYPE_FILE_INFO = 0x0000,
+	MTK_GFH_TYPE_BL_INFO = 0x0001,
+	MTK_GFH_TYPE_ANTI_CLONE = 0x0002,
+	MTK_GFH_TYPE_BL_SEC_KEY = 0x0003,
+	MTK_GFH_TYPE_BROM_CFG = 0x0007,
+	MTK_GFH_TYPE_BROM_SEC_CFG = 0x0008,
+	MTK_GFH_TYPE_0x200 = 0x0200,
+	MTK_GFH_TYPE_RSA_MAYBE = 0x0202,
+} MtkGfhType;
+
+/**
+ * \brief GFH Common Header (8 bytes, present in every GFH block).
+ *
+ * MediaTek Generic File Header format. The magic_version field encodes
+ * "MMM" (0x4D4D4D) in the lower 3 bytes and a version number in the
+ * upper byte.
+ *
+ * Reference: https://github.com/u-boot/u-boot/blob/master/tools/mtk_image.h
+ */
+typedef struct mtk_gfh_common_hdr {
+	ut32 magic_version; ///< Lower 3 bytes = "MMM" (0x4D4D4D), upper byte = version
+	ut16 size; ///< Total size of this header block (common + body)
+	MtkGfhType type; ///< Header type; on-disk wire size is 2 bytes
+} MtkGfhCommonHdr;
+
+/**
+ * \brief GFH File Info body (48 bytes, follows common header when type=FILE_INFO).
+ *
+ * Contains the primary metadata for a MediaTek firmware image: load address,
+ * entry point offset, header area size, and signature information.
+ *
+ * Reference: https://github.com/nccgroup/mtk_bp/blob/main/mtk_structs/mtk_img.ksy
+ */
+typedef struct mtk_gfh_file_info {
+	char name[MTK_GFH_FILE_INFO_NAME_SIZE]; ///< Null-terminated identifier
+	ut32 unused;
+	ut16 file_type;
+	ut8 flash_type;
+	ut8 sig_type;
+	ut32 load_addr; ///< Base load address in memory
+	ut32 total_size; ///< Total image size
+	ut32 max_size;
+	ut32 hdr_size; ///< Total header area size; code starts at this file offset
+	ut32 sig_size; ///< Signature size in bytes
+	ut32 jump_offset; ///< File offset of entry point (from start of image)
+	ut32 processed;
+} MtkGfhFileInfo;
+
+/**
+ * \brief A parsed additional GFH header (stored generically).
+ */
+typedef struct mtk_gfh_header {
+	MtkGfhCommonHdr common; ///< Common header fields
+	ut64 file_offset; ///< File offset where this header starts
+} MtkGfhHeader;
+
+/* Maximum offset to scan for GFH magic when it's not at file start */
+#define MTK_GFH_SCAN_LIMIT 0x1000
+
+/**
+ * \brief Top-level parsed object stored as bin_obj.
+ */
+typedef struct mtk_obj {
+	MtkGfhCommonHdr first_common; ///< Common header of the first (file_info) block
+	MtkGfhFileInfo file_info; ///< Parsed file_info body
+	RzVector /*<MtkGfhHeader>*/ *extra_headers; ///< Additional GFH headers after file_info
+	ut64 gfh_offset; ///< File offset where GFH starts (0 if at beginning)
+	ut32 code_offset; ///< File offset where code starts (= gfh_offset + file_info.hdr_size)
+	ut32 code_size; ///< Size of code section
+	ut32 entry_vaddr; ///< = MTK_MODEM_BADDR + (jump_offset - code_offset_relative)
+} MtkObj;
+
+RZ_IPI RZ_OWN MtkObj *mtk_obj_new(RZ_BORROW RZ_NONNULL RzBuffer *b);
+RZ_IPI void mtk_obj_free(RZ_OWN RZ_NULLABLE MtkObj *mtk);
+RZ_IPI RZ_BORROW const char *mtk_gfh_type_str(MtkGfhType type);
+
+RZ_IPI bool mtk_check_buffer(RZ_BORROW RZ_NONNULL RzBuffer *b);
+RZ_IPI bool mtk_load_buffer(RZ_BORROW RZ_NONNULL RzBinFile *bf, RZ_BORROW RZ_NONNULL RzBinObject *obj, RZ_BORROW RZ_NONNULL RzBuffer *b, RZ_BORROW RZ_NULLABLE Sdb *sdb);
+RZ_IPI void mtk_destroy(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzBinInfo *mtk_info(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI ut64 mtk_baddr(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinAddr *>*/ *mtk_entries(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzPVector /*<RzBinSection *>*/ *mtk_sections(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI bool mtk_append_maps(RZ_BORROW RZ_NONNULL MtkObj *mtk, ut64 paddr, RZ_BORROW RZ_NULLABLE const char *name, RZ_BORROW RZ_NONNULL RzPVector /*<RzBinMap *>*/ *ret);
+RZ_IPI RZ_OWN RzPVector /*<RzBinMap *>*/ *mtk_maps(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+RZ_IPI RZ_OWN RzStructuredData *mtk_structure(RZ_BORROW RZ_NONNULL RzBinFile *bf);
+
+#endif

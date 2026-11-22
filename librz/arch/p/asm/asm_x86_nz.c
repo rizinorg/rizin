@@ -4862,7 +4862,7 @@ static Register parseReg(const RzAsm *a, const char *str, size_t *pos, ut32 *typ
 static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 	Operand *op, int reg_index) {
 	int nextpos = *pos;
-	char *c = strchr(str + nextpos, ':');
+	const char *c = strchr(str + nextpos, ':');
 	if (c) {
 		nextpos++; // Skip the ':'
 		c = strchr(str + nextpos, '[');
@@ -4874,7 +4874,7 @@ static void parse_segment_offset(const RzAsm *a, const char *str, size_t *pos,
 		op->regs[reg_index] = op->reg;
 		op->type |= OT_MEMORY;
 		op->offset_sign = 1;
-		char *p = strchr(str + nextpos, '-');
+		const char *p = strchr(str + nextpos, '-');
 		if (p) {
 			op->offset_sign = -1;
 			nextpos++;
@@ -5019,7 +5019,7 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 					op->type = 0; // Make the result invalid
 				}
 			} else {
-				char *p = strchr(str, '+');
+				const char *p = strchr(str, '+');
 				op->offset_sign = 1;
 				if (!p) {
 					p = strchr(str, '-');
@@ -5028,9 +5028,9 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 					}
 				}
 				// with SIB notation, we need to consider the right sign
-				char *plus = strchr(str, '+');
-				char *minus = strchr(str, '-');
-				char *closeB = strchr(str, ']');
+				const char *plus = strchr(str, '+');
+				const char *minus = strchr(str, '-');
+				const char *closeB = strchr(str, ']');
 				if (plus && minus && plus < closeB && minus < closeB) {
 					op->offset_sign = -1;
 				}
@@ -5077,7 +5077,7 @@ static int parseOperand(const RzAsm *a, const char *str, Operand *op, bool isrep
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_CONSTANT;
 		op->sign = 1;
-		char *p = strchr(str, '-');
+		const char *p = strchr(str, '-');
 		if (p) {
 			op->sign = -1;
 			str = ++p;
@@ -5095,7 +5095,7 @@ static int parseOpcode(const RzAsm *a, const char *op, Opcode *out) {
 		out->has_bnd = true;
 		op += 4;
 	}
-	char *args = strchr(op, ' ');
+	const char *args = strchr(op, ' ');
 	out->mnemonic = args ? rz_str_ndup(op, args - op) : rz_str_dup(op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;
@@ -5139,7 +5139,51 @@ static ut64 getnum(const RzAsm *a, const char *s) {
 	if (*s == '$') {
 		s++;
 	}
-	return rz_num_math(NULL, s);
+	// The assembler may hand getnum an operand fragment that still carries
+	// trailing operand syntax: ',' (the next operand), ']' (the close of a
+	// memory operand), or an unmatched ')' (the close of "st(2)" after the
+	// caller has consumed the matching '('). The strict evaluator rejects
+	// that trailing text, where the legacy reader stopped at it, so evaluate
+	// only the leading number/expression. A *matched* ')' is kept so that
+	// parenthesised immediates such as "(0x10 + 0x20)" still evaluate.
+	size_t n = 0;
+	int depth = 0;
+	for (; s[n]; n++) {
+		const char c = s[n];
+		if (c == '(') {
+			depth++;
+		} else if (c == ')') {
+			if (depth == 0) {
+				break;
+			}
+			depth--;
+		} else if (c == ',' || c == ']') {
+			break;
+		}
+	}
+	char *num = rz_str_ndup(s, n);
+	if (!num) {
+		return 0;
+	}
+	// An immediate wider than 64 bits saturates to UT64_MAX, matching the
+	// legacy assembler: "mov rax, 0x112233445566778899" encodes as
+	// "mov rax, -1" rather than silently wrapping to the low 64 bits. The
+	// evaluator promotes such a literal to RZ_NUM_KIND_BIG, so detect that
+	// here; everything else keeps the lenient ut64 reading (which also
+	// recovers seg:off and other forms the strict parse rejects).
+	RzNumValue val;
+	rz_num_value_init(&val);
+	char *err = NULL;
+	ut64 v;
+	if (rz_num_math_value(NULL, num, &val, &err)) {
+		v = (val.kind == RZ_NUM_KIND_BIG) ? UT64_MAX : rz_num_value_to_ut64(&val);
+	} else {
+		v = rz_num_math(NULL, num);
+	}
+	rz_num_value_fini(&val);
+	free(err);
+	free(num);
+	return v;
 }
 
 static int oprep(const RzAsm *a, ut8 *data, const Opcode *op) {

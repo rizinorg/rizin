@@ -15,5 +15,6 @@
 #define CV_SIGNATURE_RESERVED 5L // All signatures from 5 to 64K are reserved
 
 RZ_IPI bool PDBModuleInfo_parse(const RzPdb *pdb, const PDB_DBIModule *m, PDBModuleInfo *modi);
+RZ_IPI void PDBModuleInfo_free(void *x);
 
 #endif // MODI_H

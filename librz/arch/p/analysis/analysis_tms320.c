@@ -1,84 +1,429 @@
 // SPDX-FileCopyrightText: 2024 deroad <wargio@libero.it>
 // SPDX-FileCopyrightText: 2014 Ilya V. Matveychikov <i.matveychikov@milabs.ru>
+// SPDX-FileCopyrightText: 2026 RizinOrg <info@rizin.re>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
-#include <tms320/tms320_dasm.h>
+#include <rz_search.h>
 
+#include <tms320/c55x/c55x_analysis.h>
 #include <tms320/c55x_plus/c55plus_analysis.h>
-#include <tms320/c64x/c64x.h>
+#include <tms320/c54x/c54x.h>
+#include <tms320/c2x/c2x.h>
+#include <tms320/c5x/c5x.h>
+#include <tms320/c6x/c6x.h>
+#include <tms320/c28x/c28x.h>
 
 typedef struct tms320_ctx_t {
-	void *c64x;
-	tms320_dasm_t engine;
+	ut64 c6x_prev_end; ///< address just past the last c6x instruction analyzed
+	bool c6x_prev_par; ///< parallel bit of that instruction (for "||" continuation)
+	ut8 c6x_prev_masks; ///< units the SPMASKs of its execute packet name (for the "^" mark)
+	C28xIndex *c28x_index; ///< built on the first C28x instruction
 } Tms320Context;
 
-static bool match(const char *str, const char *token) {
-	return !strncasecmp(str, token, strlen(token));
+// Image bytes around an instruction: the IO map holding it. An execute packet
+// does not run across the start or end of a section, and the binding's reader
+// fills unmapped bytes and succeeds, so bytes beside the code -- other data or
+// that filler -- would otherwise make slots of its packets.
+typedef struct {
+	RzAnalysis *analysis;
+	ut64 lo; ///< first address of the map
+	ut64 hi; ///< address past its end
+} C6xIOView;
+
+static C6xIOView c6x_io_view(RzAnalysis *analysis, ut64 addr) {
+	C6xIOView view = { analysis, 0, UT64_MAX };
+	RzIO *io = analysis->iob.io;
+	if (io && io->va && analysis->iob.map_get) {
+		RzIOMap *map = analysis->iob.map_get(io, addr);
+		// nothing can be read where nothing is mapped
+		view.lo = map ? rz_itv_begin(map->itv) : 1;
+		view.hi = map ? rz_itv_end(map->itv) : 0;
+	}
+	return view;
 }
 
-static int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, tms320_dasm_t *engine) {
-	const char *str = engine->syntax;
-
-	op->delay = 0;
-	op->size = tms320_dasm(engine, buf, len);
-	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
-
-	str = strstr(str, "||") ? str + 3 : str;
-
-	if (match(str, "B ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		if (match(str, "B AC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		}
-	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-	} else if (match(str, "CALL ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		if (match(str, "CALL AC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-		}
-	} else if (match(str, "CALLCC ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
-	} else if (match(str, "RET")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-		if (match(str, "RETCC")) {
-			op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-		}
-	} else if (match(str, "MOV ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-	} else if (match(str, "PSHBOTH ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
-	} else if (match(str, "PSH ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
-	} else if (match(str, "POPBOTH ") || match(str, "POP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_POP;
-	} else if (match(str, "CMP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
-	} else if (match(str, "CMPAND ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
-	} else if (match(str, "NOP")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-	} else if (match(str, "INTR ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-	} else if (match(str, "TRAP ")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
-	} else if (match(str, "INVALID")) {
-		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+// Read image bytes for packet reconstruction; the buffer the analysis op is
+// handed starts at the instruction and is too short during IL VM stepping.
+static bool c6x_read_io(void *user, ut64 addr, ut8 *buf, size_t len) {
+	const C6xIOView *view = user;
+	RzAnalysis *analysis = view->analysis;
+	if (addr < view->lo || addr > view->hi || len > view->hi - addr || !analysis->iob.read_at) {
+		return false;
 	}
+	return analysis->iob.read_at(analysis->iob.io, addr, buf, len);
+}
 
-	return op->size;
+// Decode every slot of the execute packet at \p addr. Returns 0 unless all of
+// them decoded, so a caller can fall back rather than lift half a packet.
+static size_t c6x_decode_packet(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 addr,
+	RZ_OUT C6xInsn *out, RZ_OUT C6xPacketRef *pkt) {
+	C6xIOView view = c6x_io_view(analysis, addr);
+	if (!c6x_packet_at(c6x_read_io, &view, addr, analysis->big_endian, pkt)) {
+		return 0;
+	}
+	for (size_t i = 0; i < pkt->n; i++) {
+		// A compact slot is only decodable with its fetch-packet header, which
+		// ends the fetch packet, so hand the decoder the rest of the fetch packet
+		// rather than the slot's own bytes: four bytes of a 16-bit slot decode as
+		// an unrelated 32-bit instruction.
+		ut64 at = pkt->slots[i].addr;
+		ut8 raw[C6X_FETCH_PACKET_SIZE];
+		size_t want = c6x_packet_base(at) + C6X_FETCH_PACKET_SIZE - at;
+		if (!c6x_read_io(&view, at, raw, want) ||
+			!c6x_decode(c6x, raw, want, at, analysis->big_endian, c6x_read_io, &view, &out[i])) {
+			return 0;
+		}
+		if (out[i].size != pkt->slots[i].size) {
+			return 0; // decode disagrees with the packet; do not guess
+		}
+	}
+	return pkt->n;
+}
+
+// What c6x_lift_window() reads packets with.
+typedef struct {
+	RzAnalysis *analysis;
+	const C6xArchDesc *c6x;
+} C6xPacketReader;
+
+static size_t c6x_read_packet(void *user, ut64 addr, RZ_OUT C6xInsn *insns, RZ_OUT C6xPacketRef *pkt) {
+	const C6xPacketReader *rd = user;
+	return c6x_decode_packet(rd->analysis, rd->c6x, addr, insns, pkt);
+}
+
+/**
+ * Lift the IL for \p addr: what runs from there until the effects it starts
+ * have landed, as c6x_lift_window() describes. Without the image around it, as
+ * when lifting from a buffer alone, the instruction on its own.
+ *
+ * \param sized Whether the op is sized to the code the IL covers
+ *              (RZ_ANALYSIS_OP_MASK_INSN_PKT); otherwise the IL ends with a jump
+ *              past that code unless it is the next instruction.
+ * \param end Set past the code the IL covers, or to 0 without the image.
+ */
+static RzILOpEffect *c6x_lift_il(RzAnalysis *analysis, const C6xArchDesc *c6x,
+	const C6xInsn *insn, ut64 addr, bool sized, RZ_OUT ut64 *end) {
+	C6xPacketReader rd = { analysis, c6x };
+	ut64 fall = sized ? C6X_FALL_TO_END : addr + insn->size;
+	RzILOpEffect *eff = c6x_lift_window(c6x_read_packet, &rd, addr, fall, end);
+	if (!eff && !*end) {
+		return insn->is_header ? rz_il_op_new_nop() : c6x_lift(insn, addr);
+	}
+	return eff;
+}
+
+/** The delay slots of a branch, walked the way function analysis walks them. */
+typedef struct {
+	ut32 slots; ///< instructions, and fetch-packet headers, after the branch and before its target issues
+	ut64 end; ///< the address past them, where the branch falls through to
+	bool links; ///< an ADDKPC among them writes B3
+	ut64 ret; ///< the address it writes
+	ut32 link_cycle; ///< the cycle it issues in, counted from the branch's
+} C6xDelayWalk;
+
+// Whether \p insn is the ADDKPC of the call idiom, setting the return address.
+static bool c6x_sets_b3(const C6xInsn *insn) {
+	return insn->id == C6X_INS_ADDKPC && insn->nops >= 2 && insn->ops[0].kind == C6X_OP_PCREL &&
+		insn->ops[1].kind == C6X_OP_REG && insn->ops[1].v.reg.side == C6X_SIDE_B && insn->ops[1].v.reg.num == 3;
+}
+
+// Walk the delay slots of the branch at \p addr: its target issues six cycles
+// after it, a multi-cycle NOP counting all its cycles. Function analysis steps
+// over instructions rather than cycles, and over a header like any of them.
+static bool c6x_walk_delay(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 addr, RZ_OUT C6xDelayWalk *dw) {
+	memset(dw, 0, sizeof(*dw));
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	ut64 pc = addr;
+	ut32 cycle = 0;
+	for (int k = 0; k < 8 && cycle < 6; k++) {
+		size_t n = c6x_decode_packet(analysis, c6x, pc, ins, &p);
+		if (!n) {
+			return false;
+		}
+		ut8 extra = 0;
+		for (size_t i = 0; i < n; i++) {
+			if (p.slots[i].addr < pc || (k == 0 && p.slots[i].addr == addr)) {
+				continue; // before the branch, or the branch itself
+			}
+			dw->slots++;
+			if (c6x_sets_b3(&ins[i])) {
+				dw->links = true;
+				dw->ret = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+				dw->link_cycle = cycle;
+			}
+		}
+		for (size_t i = 0; i < n; i++) {
+			extra = RZ_MAX(extra, c6x_nop_cycles(&ins[i]));
+		}
+		if (p.next != p.slots[n - 1].addr + p.slots[n - 1].size) {
+			dw->slots++; // the header ending the fetch packet
+		}
+		cycle += 1 + extra;
+		pc = p.next;
+	}
+	dw->end = pc;
+	return true;
+}
+
+// Whether \p insn branches to a displacement, taking effect six cycles later.
+static bool c6x_disp_branch(const C6xInsn *insn) {
+	return (insn->id == C6X_INS_B || insn->id == C6X_INS_BNOP) && insn->nops >= 1 &&
+		insn->ops[0].kind == C6X_OP_PCREL;
+}
+
+// The cycles the packet of \p n instructions takes, none for a fetch-packet header.
+static ut32 c6x_packet_cycles(const C6xInsn *ins, const C6xPacketRef *pkt, size_t n) {
+	if (n == 1 && pkt->slots[0].header) {
+		return 0;
+	}
+	ut32 extra = 0;
+	for (size_t i = 0; i < n; i++) {
+		extra = RZ_MAX(extra, c6x_nop_cycles(&ins[i]));
+	}
+	return 1 + extra;
+}
+
+// Whether the code at \p target writes B3 with an ADDKPC in its first \p cycles
+// cycles; \p ret receives the address the last of them writes.
+static bool c6x_target_links(RzAnalysis *analysis, const C6xArchDesc *c6x, ut64 target, ut32 cycles, RZ_OUT ut64 *ret) {
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	bool links = false;
+	ut64 pc = target;
+	ut32 cycle = 0;
+	for (int k = 0; k < 8 && cycle < cycles; k++) {
+		size_t n = c6x_decode_packet(analysis, c6x, pc, ins, &p);
+		if (!n) {
+			break;
+		}
+		for (size_t i = 0; i < n; i++) {
+			if (p.slots[i].addr >= pc && c6x_sets_b3(&ins[i])) {
+				*ret = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+				links = true;
+			}
+		}
+		cycle += c6x_packet_cycles(ins, &p, n);
+		pc = p.next;
+	}
+	return links;
+}
+
+// The register predicate code \p creg tests (SPRUFE8B Table 3-11): B0-B2, A1, A2, A0.
+static bool c6x_creg_reg(ut8 creg, RZ_OUT C6xSide *side, RZ_OUT ut8 *num) {
+	if (creg >= 1 && creg <= 3) {
+		*side = C6X_SIDE_B; // B0, B1, B2
+		*num = creg - 1;
+		return true;
+	}
+	if (creg >= 4 && creg <= 6) {
+		*side = C6X_SIDE_A; // A1, A2, A0
+		*num = creg == 6 ? 0 : creg - 3;
+		return true;
+	}
+	return false;
+}
+
+static bool c6x_is_reg(const C6xOperand *op, C6xSide side, ut8 num) {
+	return op->kind == C6X_OP_REG && op->v.reg.side == side && op->v.reg.num == num;
+}
+
+// Whether an unconditional MV among the \p n instructions of a packet copies
+// the predicate register of \p from into that of \p to. A branch on \p from in
+// that packet then tests the value one on \p to in the next packet does.
+static bool c6x_copies_pred(const C6xInsn *ins, size_t n, ut8 from, ut8 to) {
+	C6xSide sf, st;
+	ut8 nf, nt;
+	if (from == to || !c6x_creg_reg(from, &sf, &nf) || !c6x_creg_reg(to, &st, &nt)) {
+		return false;
+	}
+	for (size_t i = 0; i < n; i++) {
+		const C6xInsn *mv = &ins[i];
+		if (mv->id == C6X_INS_MV && !mv->creg && mv->nops == 2 &&
+			c6x_is_reg(&mv->ops[0], sf, nf) && c6x_is_reg(&mv->ops[1], st, nt)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// TI's compiler shares the code setting up a call between call sites: it
+// branches there, and to the callee up to five cycles later, so that code runs
+// in the last delay slots of the second branch, for as many cycles as lie
+// between the two. Looks for such branches before the branch \p insn at \p addr,
+// with its predicate, and for an ADDKPC writing B3 in what runs at their
+// targets; \p ret receives the address it writes. Returns the cycles the code
+// after \p insn still runs for, the branch's own included: the first of the
+// earlier branches takes over after them.
+static ut32 c6x_shared_link(RzAnalysis *analysis, const C6xArchDesc *c6x, const C6xInsn *insn, ut64 addr, RZ_OUT bool *links, RZ_OUT ut64 *ret) {
+	C6xInsn ins[C6X_FP_SLOTS];
+	C6xPacketRef p;
+	*links = false;
+	if (!c6x_decode_packet(analysis, c6x, addr, ins, &p)) {
+		return 6;
+	}
+	// cycles back to the nearest branch found and to the packet looked at
+	ut32 near = 0;
+	ut32 back = 0;
+	ut32 step = 0; // execute packets back, a header being none
+	while (p.addr) {
+		size_t n = c6x_decode_packet(analysis, c6x, p.addr - 1, ins, &p);
+		if (!n) {
+			break;
+		}
+		if (n > 1 || !p.slots[0].header) {
+			step++;
+		}
+		back += c6x_packet_cycles(ins, &p, n);
+		if (back > 5) {
+			break; // a branch from there has landed
+		}
+		for (size_t i = 0; i < n; i++) {
+			if (!c6x_disp_branch(&ins[i]) || ins[i].z != insn->z) {
+				continue;
+			}
+			// A branch on another predicate goes with this one only right
+			// before it, its predicate copied into this one's ("mv a0,a2 ||
+			// [a0] b stub", then "[a2] b callee"). Others are if/else chains.
+			bool same = ins[i].creg == insn->creg;
+			if (!same && (step != 1 || !c6x_copies_pred(ins, n, ins[i].creg, insn->creg))) {
+				continue;
+			}
+			// its target runs until the next branch takes over, so what a
+			// nearer branch leads to writes B3 later
+			ut64 target = c6x_packet_base(p.slots[i].addr) + ins[i].ops[0].v.imm.value;
+			ut64 to = 0;
+			bool target_links = c6x_target_links(analysis, c6x, target, back - near, &to);
+			if (!same && !target_links) {
+				continue; // need not be taken with this one, so it cuts nothing
+			}
+			if (target_links && !*links) {
+				*links = true;
+				*ret = to;
+			}
+			near = back;
+			break;
+		}
+	}
+	return 6 - near;
+}
+
+// Describe a branch's delay slots to function analysis: as many instructions
+// as it walks before the transfer, the fallthrough past them, and the call a
+// branch with ADDKPC setting B3 in its delay slots is.
+static void c6x_analyze_delay(RzAnalysis *analysis, const C6xArchDesc *c6x, const C6xInsn *insn, ut64 addr, RzAnalysisOp *op) {
+	C6xDelayWalk dw;
+	if (!op->delay || !c6x_walk_delay(analysis, c6x, addr, &dw)) {
+		return;
+	}
+	op->delay = dw.slots;
+	if (op->fail != UT64_MAX) {
+		op->fail = dw.end;
+	}
+	if (insn->id != C6X_INS_B && insn->id != C6X_INS_BNOP) {
+		return;
+	}
+	// What an earlier branch leads to runs after the code behind this one,
+	// which that branch cuts short.
+	bool shared = false;
+	ut64 ret = 0;
+	ut32 fall = c6x_shared_link(analysis, c6x, insn, addr, &shared, &ret);
+	if (shared) {
+		dw.ret = ret;
+	} else if (!dw.links || dw.link_cycle >= fall) {
+		return;
+	}
+	switch (op->type) {
+	case RZ_ANALYSIS_OP_TYPE_JMP: op->type = RZ_ANALYSIS_OP_TYPE_CALL; break;
+	case RZ_ANALYSIS_OP_TYPE_CJMP: op->type = RZ_ANALYSIS_OP_TYPE_CCALL; break;
+	case RZ_ANALYSIS_OP_TYPE_RJMP: op->type = RZ_ANALYSIS_OP_TYPE_RCALL; break;
+	case RZ_ANALYSIS_OP_TYPE_RCJMP: op->type = RZ_ANALYSIS_OP_TYPE_UCCALL; break;
+	default: return;
+	}
+	op->fail = dw.ret;
 }
 
 int tms320_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	Tms320Context *context = (Tms320Context *)analysis->plugin_data;
 
-	if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c55x+") == 0) {
-		return tms320_c55x_plus_op(analysis, op, addr, buf, len);
-	} else if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c64x") == 0) {
-		return tms320_c64x_op(analysis, op, addr, buf, len, mask, context->c64x);
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	const C6xArchDesc *c6x = c6x_desc_from_cpu(cpu);
+	if (c6x) {
+		C6xInsn insn;
+		C6xIOView view = c6x_io_view(analysis, addr);
+		if (!c6x_decode(c6x, buf, len, addr, analysis->big_endian, c6x_read_io, &view, &insn)) {
+			return -1;
+		}
+		c6x_fill_analysis(c6x, &insn, addr, op);
+		c6x_mark_parallel(&insn, addr, &context->c6x_prev_end, &context->c6x_prev_par, &context->c6x_prev_masks);
+		// The look-back only knows about the previous call, so seeking into the
+		// middle of an execute packet loses the "||" and the "^". Rebuilding the
+		// packet from the image settles them for any address.
+		bool cont = false;
+		if (c6x_continues_packet(c6x_read_io, &view, addr, analysis->big_endian, &cont)) {
+			insn.cont = cont;
+			ut8 units = 0;
+			ut8 bit = c6x_unit_bit(&insn);
+			if (cont && bit < 8 && c6x_packet_masks(c6x, c6x_read_io, &view, addr, analysis->big_endian, &units)) {
+				insn.masked = units & (1u << bit);
+			}
+		}
+		c6x_analyze_delay(analysis, c6x, &insn, addr, op);
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c6x_opex(&insn);
+		}
+		if (mask & (RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_INSN_PKT)) {
+			bool sized = mask & RZ_ANALYSIS_OP_MASK_INSN_PKT;
+			ut64 end = 0;
+			RzILOpEffect *il = c6x_lift_il(analysis, c6x, &insn, addr, sized, &end);
+			if (sized && end > addr) {
+				// the op is the code its IL covers, delay slots included
+				op->size = (int)(end - addr);
+				op->delay = 0;
+			}
+			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+				op->il_op = il;
+			} else {
+				rz_il_op_effect_free(il);
+			}
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c6x_format(c6x, &insn, addr);
+		}
+		return op->size;
 	}
-	return tms320_c55x_op(analysis, op, addr, buf, len, &context->engine);
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		if (!context->c28x_index) {
+			context->c28x_index = c28x_index_new();
+		}
+		C28xInsn insn;
+		if (!context->c28x_index ||
+			!c28x_decode(context->c28x_index, buf, len, addr, &insn)) {
+			return -1;
+		}
+		c28x_fill_analysis(&insn, addr, op);
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
+			op->opex = c28x_opex(&insn);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+			op->il_op = c28x_lift(&insn, addr);
+		}
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
+			op->mnemonic = c28x_format(&insn, addr);
+		}
+		return op->size;
+	}
+	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
+		return tms320_c55x_plus_op(analysis, op, addr, buf, len, mask);
+	} else if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
+		return tms320_c54x_op(analysis, op, addr, buf, len, mask);
+	} else if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
+		return tms320_c2x_op(analysis, op, addr, buf, len, mask);
+	} else if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
+		return tms320_c5x_op(analysis, op, addr, buf, len, mask);
+	}
+	return tms320_c55x_op_byte(analysis, op, addr, buf, len, mask);
 }
 
 static bool tms320_analysis_init(void **user) {
@@ -87,8 +432,6 @@ static bool tms320_analysis_init(void **user) {
 		return false;
 	}
 
-	context->c64x = tms320_c64x_new();
-	tms320_dasm_init(&context->engine);
 	*user = context;
 	return true;
 }
@@ -97,8 +440,7 @@ static bool tms320_analysis_fini(void *user) {
 	rz_return_val_if_fail(user, false);
 	Tms320Context *context = (Tms320Context *)user;
 
-	tms320_c64x_free(context->c64x);
-	tms320_dasm_fini(&context->engine);
+	c28x_index_free(context->c28x_index);
 	free(context);
 	return true;
 }
@@ -112,7 +454,387 @@ static bool is_c5000(const char *cpu) {
 
 static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 	const char *p;
-	if (is_c5000(a->cpu)) {
+	const char *cpu0 = rz_analysis_get_cpu(a);
+	// The tms320 arch has one cc sdb per bit width. Only the 32-bit file is
+	// ours to steer: its default (c55x) is wrong for the C6000 family, so point
+	// it at the C6000 EABI convention when a c6x cpu is selected. This callback
+	// runs on every cpu change, so switching back to a C5000 cpu restores c55x.
+	// The 16-bit file carries its own default for c2x/c5x and is left alone.
+	if (a->bits == 32) {
+		const char *cc = "c55x";
+		if (c6x_desc_from_cpu(cpu0)) {
+			cc = "c6x";
+		} else if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+			cc = "c28x";
+		}
+		rz_analysis_set_cc_default(a, cc);
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c54x") == 0) {
+		// TMS320C54x: two 40-bit accumulators A/B (with the L/H 16-bit and G
+		// 8-bit guard slices overlapping their parent), eight 16-bit auxiliary
+		// registers AR0-AR7, the T/TRN temporaries, SP, the DP data page, the
+		// BK circular-buffer size, the ST0/ST1/PMST status words, the BRC/RSA/
+		// REA repeat registers, IMR/IFR and the 16-bit XPC program-page. PC is
+		// 24-bit. These names match c54x_reg_info()'s il_var bindings so the
+		// lifter's SET/VAR ops resolve in the IL VM.
+		return rz_str_dup(
+			"=PC	pc\n"
+			"=SP	sp\n"
+			"=BP	sp\n"
+			"=A0	ar0\n"
+			"=A1	ar1\n"
+			"=A2	ar2\n"
+			"=A3	ar3\n"
+			"=A4	ar4\n"
+			"=R0	a\n"
+			"ctr a    .40 0  0 # Accumulator A\n"
+			"gpr al   .16 0  0 # A low word\n"
+			"gpr ah   .16 2  0 # A high word\n"
+			"gpr ag   .8  4  0 # A guard bits\n"
+			"ctr b    .40 5  0 # Accumulator B\n"
+			"gpr bl   .16 5  0 # B low word\n"
+			"gpr bh   .16 7  0 # B high word\n"
+			"gpr bg   .8  9  0 # B guard bits\n"
+			"gpr ar0  .16 10 0 # Auxiliary register 0\n"
+			"gpr ar1  .16 12 0 # Auxiliary register 1\n"
+			"gpr ar2  .16 14 0 # Auxiliary register 2\n"
+			"gpr ar3  .16 16 0 # Auxiliary register 3\n"
+			"gpr ar4  .16 18 0 # Auxiliary register 4\n"
+			"gpr ar5  .16 20 0 # Auxiliary register 5\n"
+			"gpr ar6  .16 22 0 # Auxiliary register 6\n"
+			"gpr ar7  .16 24 0 # Auxiliary register 7\n"
+			"ctr t    .16 26 0 # Temporary register\n"
+			"ctr trn  .16 28 0 # Transition register\n"
+			"ctr sp   .16 30 0 # Stack pointer\n"
+			"ctr dp   .16 32 0 # Data page pointer\n"
+			"ctr bk   .16 34 0 # Circular buffer size\n"
+			"ctr st0  .16 36 0 # Status register 0\n"
+			"ctr st1  .16 38 0 # Status register 1\n"
+			"ctr pmst .16 40 0 # Processor mode status\n"
+			"ctr brc  .16 42 0 # Block-repeat counter\n"
+			"ctr rsa  .16 44 0 # Block-repeat start address\n"
+			"ctr rea  .16 46 0 # Block-repeat end address\n"
+			"ctr imr  .16 48 0 # Interrupt mask register\n"
+			"ctr ifr  .16 50 0 # Interrupt flag register\n"
+			"ctr xpc  .16 52 0 # Extended program counter\n"
+			"ctr pc   .24 54 0 # Program counter\n");
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c2x") == 0) {
+		// TMS320C2x: a single 32-bit accumulator ACC (with ACCL/ACCH 16-bit
+		// halves overlapping it), the 16-bit temporary T, the 32-bit product
+		// register P (PL/PH halves), eight 16-bit auxiliary registers AR0-AR7,
+		// the 3-bit ARP pointer (held in a 16-bit slot), the 9-bit DP data page,
+		// the ST0/ST1 status words and a 16-bit PC. SP is a synthetic stack
+		// pointer (the hardware stack is not memory-mapped). These names match
+		// c2x_reg_info()'s il_var bindings so the lifter resolves in the IL VM.
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			"=A0\tar0\n"
+			"=A1\tar1\n"
+			"=A2\tar2\n"
+			"=A3\tar3\n"
+			"=R0\tacc\n"
+			"ctr acc  .32 0  0\n" // Accumulator
+			"gpr accl .16 0  0\n" // Accumulator low word
+			"gpr acch .16 2  0\n" // Accumulator high word
+			"ctr t    .16 4  0\n" // Temporary register
+			"ctr p    .32 6  0\n" // Product register
+			"gpr pl   .16 6  0\n" // Product low word
+			"gpr ph   .16 8  0\n" // Product high word
+			"gpr ar0  .16 10 0\n" // Auxiliary register 0
+			"gpr ar1  .16 12 0\n" // Auxiliary register 1
+			"gpr ar2  .16 14 0\n" // Auxiliary register 2
+			"gpr ar3  .16 16 0\n" // Auxiliary register 3
+			"gpr ar4  .16 18 0\n" // Auxiliary register 4
+			"gpr ar5  .16 20 0\n" // Auxiliary register 5
+			"gpr ar6  .16 22 0\n" // Auxiliary register 6
+			"gpr ar7  .16 24 0\n" // Auxiliary register 7
+			"ctr arp  .16 26 0\n" // Auxiliary register pointer
+			"ctr dp   .16 28 0\n" // Data page pointer
+			"ctr st0  .16 30 0\n" // Status register 0
+			"ctr st1  .16 32 0\n" // Status register 1
+			"ctr sp   .16 34 0\n" // Stack pointer (synthetic)
+			"ctr pc   .16 36 0\n" // Program counter
+			// status/mode bits modelled individually for the IL lifter (they
+			// also live inside ST0/ST1 on real silicon; ST0/ST1 are composed
+			// from / decomposed to these by SST/SST1/LST/LST1)
+			"flg c    .1 38.0 0\n" // Carry
+			"flg ov   .1 39.0 0\n" // Overflow (sticky until tested)
+			"flg tc   .1 40.0 0\n" // Test/control bit
+			"gpr ovm  .1 41.0 0\n" // Overflow saturation mode
+			"gpr sxm  .1 42.0 0\n" // Sign-extension mode
+			"gpr pm   .2 43.0 0\n" // Product shift mode
+			"gpr arb  .16 44 0\n" // Auxiliary register pointer backup
+			"gpr rptc .16 46 0\n"); // Repeat counter
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c28x") == 0) {
+		// TMS320C28x: ACC (AH:AL), P (PH:PL), XT (T:TL), XAR0-XAR7 (low halves
+		// AR0-AR7), SP, DP, ST0/ST1, IER/IFR/DBGIER, RPC and a 22-bit PC. Data
+		// addresses are 32-bit, program addresses 22-bit.
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			// SPRU514AA Table 7-2 and section 7.3.1: remaining 16-bit arguments
+			// go in AL, AH, XAR4, XAR5, and pointer arguments in XAR4 and XAR5
+			"=A0\tal\n"
+			"=A1\tah\n"
+			"=A2\txar4\n"
+			"=A3\txar5\n"
+			"=R0\tacc\n"
+			"ctr acc    .32 0  0\n" // Accumulator
+			"gpr al     .16 0  0\n" // Accumulator low half
+			"gpr ah     .16 2  0\n" // Accumulator high half
+			"ctr p      .32 4  0\n" // Product register
+			"gpr pl     .16 4  0\n" // Product low half
+			"gpr ph     .16 6  0\n" // Product high half
+			"ctr xt     .32 8  0\n" // Multiplicand register
+			"gpr tl     .16 8  0\n" // XT low half
+			"gpr t      .16 10 0\n" // XT high half (shift count)
+			"gpr xar0   .32 12 0\n" // Auxiliary register 0
+			"gpr ar0    .16 12 0\n"
+			"gpr xar1   .32 16 0\n" // Auxiliary register 1
+			"gpr ar1    .16 16 0\n"
+			"gpr xar2   .32 20 0\n" // Auxiliary register 2
+			"gpr ar2    .16 20 0\n"
+			"gpr xar3   .32 24 0\n" // Auxiliary register 3
+			"gpr ar3    .16 24 0\n"
+			"gpr xar4   .32 28 0\n" // Auxiliary register 4
+			"gpr ar4    .16 28 0\n"
+			"gpr xar5   .32 32 0\n" // Auxiliary register 5
+			"gpr ar5    .16 32 0\n"
+			"gpr xar6   .32 36 0\n" // Auxiliary register 6
+			"gpr ar6    .16 36 0\n"
+			"gpr xar7   .32 40 0\n" // Auxiliary register 7
+			"gpr ar7    .16 40 0\n"
+			"ctr sp     .16 44 0\n" // Stack pointer
+			"ctr dp     .16 46 0\n" // Data page pointer
+			"ctr st0    .16 48 0\n" // Status register 0
+			"ctr st1    .16 50 0\n" // Status register 1
+			"ctr ier    .16 52 0\n" // Interrupt enable register
+			"ctr ifr    .16 54 0\n" // Interrupt flag register
+			"ctr dbgier .16 56 0\n" // Debug interrupt enable register
+			"ctr rpc    .32 58 0\n" // Return program counter
+			"ctr pc     .32 62 0\n" // Program counter (22-bit on silicon)
+			// ST0/ST1 bits modelled individually so the analysis layer and a
+			// future lifter can address them by name
+			"flg n      .1 66.0 0\n" // Negative
+			"flg z      .1 67.0 0\n" // Zero
+			"flg c      .1 68.0 0\n" // Carry
+			"flg v      .1 69.0 0\n" // Overflow
+			"flg tc     .1 70.0 0\n" // Test/control
+			"gpr ovm    .1 71.0 0\n" // Overflow mode
+			"gpr sxm    .1 72.0 0\n" // Sign-extension mode
+			"gpr intm   .1 73.0 0\n" // Interrupt mask
+			"gpr dbgm   .1 74.0 0\n" // Debug mask
+			"gpr page0  .1 75.0 0\n" // Direct/stack addressing select
+			"gpr vmap   .1 76.0 0\n" // Vector map
+			"gpr amode  .1 77.0 0\n" // Addressing mode select
+			"gpr objmode .1 78.0 0\n" // Object compatibility mode
+			"gpr m0m1map .1 79.0 0\n" // M0/M1 map
+			"gpr xf     .1 80.0 0\n" // XF external flag
+			"gpr spa    .1 81.0 0\n" // Stack-pointer alignment record
+			"gpr pm     .3 82.0 0\n" // Product shift mode
+			"gpr ovc    .6 83.0 0\n" // Overflow counter
+			"gpr vr0    .32 88 0\n" // VCU result register 0
+			"gpr vr1    .32 92 0\n" // VCU result register 1
+			"gpr vr2    .32 96 0\n" // VCU result register 2
+			"gpr vr3    .32 100 0\n" // VCU result register 3
+			"gpr vr4    .32 104 0\n" // VCU result register 4
+			"gpr vr5    .32 108 0\n" // VCU result register 5
+			"gpr vr6    .32 112 0\n" // VCU result register 6
+			"gpr vr7    .32 116 0\n" // VCU result register 7
+			"gpr vr8    .32 120 0\n" // VCU result register 8
+			"gpr vt0    .32 124 0\n" // VCU shift/status
+			"gpr vt1    .32 128 0\n"
+			"gpr vstatus .32 280 0\n" // VCU status and configuration
+			"gpr vcrc   .32 284 0\n" // CRC result
+			"gpr vcrcpoly .32 288 0\n" // CRC polynomial (VCU-II)
+			"gpr vcrcsize .32 292 0\n" // CRC polynomial and data sizes (VCU-II)
+			"gpr vsm0   .16 296 0\n" // Viterbi state metric (VCU-II)
+			"gpr vsm1   .16 298 0\n"
+			"gpr vsm2   .16 300 0\n"
+			"gpr vsm3   .16 302 0\n"
+			"gpr vsm4   .16 304 0\n"
+			"gpr vsm5   .16 306 0\n"
+			"gpr vsm6   .16 308 0\n"
+			"gpr vsm7   .16 310 0\n"
+			"gpr vsm8   .16 312 0\n"
+			"gpr vsm9   .16 314 0\n"
+			"gpr vsm10  .16 316 0\n"
+			"gpr vsm11  .16 318 0\n"
+			"gpr vsm12  .16 320 0\n"
+			"gpr vsm13  .16 322 0\n"
+			"gpr vsm14  .16 324 0\n"
+			"gpr vsm15  .16 326 0\n"
+			"gpr vsm16  .16 328 0\n"
+			"gpr vsm17  .16 330 0\n"
+			"gpr vsm18  .16 332 0\n"
+			"gpr vsm19  .16 334 0\n"
+			"gpr vsm20  .16 336 0\n"
+			"gpr vsm21  .16 338 0\n"
+			"gpr vsm22  .16 340 0\n"
+			"gpr vsm23  .16 342 0\n"
+			"gpr vsm24  .16 344 0\n"
+			"gpr vsm25  .16 346 0\n"
+			"gpr vsm26  .16 348 0\n"
+			"gpr vsm27  .16 350 0\n"
+			"gpr vsm28  .16 352 0\n"
+			"gpr vsm29  .16 354 0\n"
+			"gpr vsm30  .16 356 0\n"
+			"gpr vsm31  .16 358 0\n"
+			"gpr vsm32  .16 360 0\n"
+			"gpr vsm33  .16 362 0\n"
+			"gpr vsm34  .16 364 0\n"
+			"gpr vsm35  .16 366 0\n"
+			"gpr vsm36  .16 368 0\n"
+			"gpr vsm37  .16 370 0\n"
+			"gpr vsm38  .16 372 0\n"
+			"gpr vsm39  .16 374 0\n"
+			"gpr vsm40  .16 376 0\n"
+			"gpr vsm41  .16 378 0\n"
+			"gpr vsm42  .16 380 0\n"
+			"gpr vsm43  .16 382 0\n"
+			"gpr vsm44  .16 384 0\n"
+			"gpr vsm45  .16 386 0\n"
+			"gpr vsm46  .16 388 0\n"
+			"gpr vsm47  .16 390 0\n"
+			"gpr vsm48  .16 392 0\n"
+			"gpr vsm49  .16 394 0\n"
+			"gpr vsm50  .16 396 0\n"
+			"gpr vsm51  .16 398 0\n"
+			"gpr vsm52  .16 400 0\n"
+			"gpr vsm53  .16 402 0\n"
+			"gpr vsm54  .16 404 0\n"
+			"gpr vsm55  .16 406 0\n"
+			"gpr vsm56  .16 408 0\n"
+			"gpr vsm57  .16 410 0\n"
+			"gpr vsm58  .16 412 0\n"
+			"gpr vsm59  .16 414 0\n"
+			"gpr vsm60  .16 416 0\n"
+			"gpr vsm61  .16 418 0\n"
+			"gpr vsm62  .16 420 0\n"
+			"gpr vsm63  .16 422 0\n"
+			"gpr arp    .3 84.0 0\n" // Auxiliary register pointer
+			"gpr rptc   .8 85.0 0\n" // Repeat counter
+			"gpr eallow .1 86.0 0\n" // Protected-register write enable
+			"gpr loop   .1 87.0 0\n" // LOOPZ/LOOPNZ in progress
+			"ctr dbgstat .16 132 0\n" // Debug status, saved with IER on interrupts
+			"gpr idlestat .1 134.0 0\n" // IDLE in progress
+			"fpu r0  .64 136 0\n" // FPU register; RnH and RnL are its halves
+			"fpu r0h .32 140 0\n"
+			"fpu r0l .32 136 0\n"
+			"fpu r1  .64 144 0\n"
+			"fpu r1h .32 148 0\n"
+			"fpu r1l .32 144 0\n"
+			"fpu r2  .64 152 0\n"
+			"fpu r2h .32 156 0\n"
+			"fpu r2l .32 152 0\n"
+			"fpu r3  .64 160 0\n"
+			"fpu r3h .32 164 0\n"
+			"fpu r3l .32 160 0\n"
+			"fpu r4  .64 168 0\n"
+			"fpu r4h .32 172 0\n"
+			"fpu r4l .32 168 0\n"
+			"fpu r5  .64 176 0\n"
+			"fpu r5h .32 180 0\n"
+			"fpu r5l .32 176 0\n"
+			"fpu r6  .64 184 0\n"
+			"fpu r6h .32 188 0\n"
+			"fpu r6l .32 184 0\n"
+			"fpu r7  .64 192 0\n"
+			"fpu r7h .32 196 0\n"
+			"fpu r7l .32 192 0\n"
+			"gpr lvf   .1 200.0 0\n" // Latched overflow
+			"gpr luf   .1 200.1 0\n" // Latched underflow
+			"gpr nf    .1 200.2 0\n" // Negative float
+			"gpr zf    .1 200.3 0\n" // Zero float
+			"gpr ni    .1 200.4 0\n" // Negative integer
+			"gpr zi    .1 200.5 0\n" // Zero integer
+			"gpr tf    .1 200.6 0\n" // Test flag
+			"gpr rnd32 .1 201.0 0\n" // Round to nearest (else to zero), 32-bit
+			"gpr rnd64 .1 201.1 0\n" // The same for 64-bit
+			"gpr shdws .1 201.2 0\n" // Shadow registers hold SAVE state
+			"gpr rb    .32 204 0\n" // Repeat block
+			"fpu r0s  .64 208 0\n" // SAVE/RESTORE shadow of Rn
+			"fpu r1s  .64 216 0\n"
+			"fpu r2s  .64 224 0\n"
+			"fpu r3s  .64 232 0\n"
+			"fpu r4s  .64 240 0\n"
+			"fpu r5s  .64 248 0\n"
+			"fpu r6s  .64 256 0\n"
+			"fpu r7s  .64 264 0\n"
+			"ctr stfs  .32 272 0\n"); // SAVE/RESTORE shadow of STF
+	}
+	if (cpu0 && rz_str_casecmp(cpu0, "c5x") == 0) {
+		// TMS320C5x: the C2x register file plus the C5x additions — the 32-bit
+		// accumulator buffer ACCB, the TREG1/TREG2 multiplier/shift registers,
+		// the processor-mode status PMST, the index register INDX, the
+		// auxiliary-compare register ARCR, the circular-buffer start/end
+		// pointers CBSR1/CBER1/CBSR2/CBER2, the block-repeat registers
+		// BRCR/PASR/PAER, the block-move address BMAR, the dynamic bit-mask
+		// DBMR and the global-memory register GREG. The core names match the
+		// C2x lifter's il_var bindings (the C5x lifter reuses it).
+		return rz_str_dup(
+			"=PC\tpc\n"
+			"=SP\tsp\n"
+			"=BP\tsp\n"
+			"=A0\tar0\n"
+			"=A1\tar1\n"
+			"=A2\tar2\n"
+			"=A3\tar3\n"
+			"=R0\tacc\n"
+			"ctr acc   .32 0  0\n" // Accumulator
+			"gpr accl  .16 0  0\n" // Accumulator low word
+			"gpr acch  .16 2  0\n" // Accumulator high word
+			"ctr accb  .32 4  0\n" // Accumulator buffer
+			"ctr t     .16 8  0\n" // Temporary/multiplicand register (TREG0)
+			"ctr treg1 .16 10 0\n" // TREG1 (dynamic shift count)
+			"ctr treg2 .16 12 0\n" // TREG2 (dynamic bit position)
+			"ctr p     .32 14 0\n" // Product register
+			"gpr pl    .16 14 0\n" // Product low word
+			"gpr ph    .16 16 0\n" // Product high word
+			"gpr ar0   .16 18 0\n" // Auxiliary register 0
+			"gpr ar1   .16 20 0\n" // Auxiliary register 1
+			"gpr ar2   .16 22 0\n" // Auxiliary register 2
+			"gpr ar3   .16 24 0\n" // Auxiliary register 3
+			"gpr ar4   .16 26 0\n" // Auxiliary register 4
+			"gpr ar5   .16 28 0\n" // Auxiliary register 5
+			"gpr ar6   .16 30 0\n" // Auxiliary register 6
+			"gpr ar7   .16 32 0\n" // Auxiliary register 7
+			"ctr arp   .16 34 0\n" // Auxiliary register pointer
+			"ctr dp    .16 36 0\n" // Data page pointer
+			"ctr st0   .16 38 0\n" // Status register 0
+			"ctr st1   .16 40 0\n" // Status register 1
+			"ctr pmst  .16 42 0\n" // Processor mode status register
+			"ctr indx  .16 44 0\n" // Index register
+			"ctr arcr  .16 46 0\n" // Auxiliary register compare register
+			"ctr cbsr1 .16 48 0\n" // Circular buffer 1 start address
+			"ctr cber1 .16 50 0\n" // Circular buffer 1 end address
+			"ctr cbsr2 .16 52 0\n" // Circular buffer 2 start address
+			"ctr cber2 .16 54 0\n" // Circular buffer 2 end address
+			"ctr brcr  .16 56 0\n" // Block repeat counter register
+			"ctr pasr  .16 58 0\n" // Block repeat program address start
+			"ctr paer  .16 60 0\n" // Block repeat program address end
+			"ctr bmar  .16 62 0\n" // Block move address register
+			"ctr dbmr  .16 64 0\n" // Dynamic bit manipulation register
+			"ctr greg  .16 66 0\n" // Global memory allocation register
+			"ctr sp    .16 68 0\n" // Stack pointer (synthetic)
+			"ctr pc    .16 70 0\n" // Program counter
+			// status/mode bits modelled individually for the shared C2x-core
+			// lifter (they also live inside ST0/ST1 on silicon)
+			"flg c     .1 72.0 0\n" // Carry
+			"flg ov    .1 73.0 0\n" // Overflow (sticky until tested)
+			"flg tc    .1 74.0 0\n" // Test/control bit
+			"gpr ovm   .1 75.0 0\n" // Overflow saturation mode
+			"gpr sxm   .1 76.0 0\n" // Sign-extension mode
+			"gpr pm    .2 77.0 0\n" // Product shift mode
+			"gpr arb   .16 78 0\n" // Auxiliary register pointer backup
+			"gpr rptc  .16 80 0\n"); // Repeat counter
+	}
+	if (is_c5000(rz_analysis_get_cpu(a))) {
 		p =
 			"=PC	pc\n"
 			"=A0	ar0\n"
@@ -122,82 +844,96 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"=A4	ar4\n"
 			"=R0	ar0\n"
 			"ctr ac0    .40 496 0 # Accumulator 0\n"
-			"ctr ac1    .40 498 0 # Accumulator 1\n"
-			"ctr ac2    .40 500 0 # Accumulator 2\n"
-			"ctr ac3    .40 502 0 # Accumulator 3\n"
-			"gpr ar0    .16 504 0 # Auxiliary registers 0\n"
-			"gpr ar1    .16 505 0 # Auxiliary registers 1\n"
-			"gpr ar2    .16 506 0 # Auxiliary registers 2\n"
-			"gpr ar3    .16 507 0 # Auxiliary registers 3\n"
-			"gpr ar4    .16 508 0 # Auxiliary registers 4\n"
-			"gpr ar5    .16 509 0 # Auxiliary registers 5\n"
-			"gpr ar6    .16 510 0 # Auxiliary registers 6\n"
-			"gpr ar7    .16 511 0 # Auxiliary registers 7\n"
-			"gpr xar0   .23 512 0 # Extended auxiliary registers 0\n"
-			"gpr xar1   .23 513 0 # Extended auxiliary registers 1\n"
-			"gpr xar2   .23 514 0 # Extended auxiliary registers 2\n"
-			"gpr xar3   .23 515 0 # Extended auxiliary registers 3\n"
-			"gpr xar4   .23 516 0 # Extended auxiliary registers 4\n"
-			"gpr xar5   .23 517 0 # Extended auxiliary registers 5\n"
-			"gpr xar6   .23 518 0 # Extended auxiliary registers 6\n"
-			"gpr xar7   .23 519 0 # Extended auxiliary registers 7\n"
-			"ctr bk03   .16 520 0 # Circular buffer size registers\n"
-			"ctr bk47   .16 521 0 # Circular buffer size registers\n"
-			"ctr bkc    .16 522 0 # Circular buffer size registers\n"
-			"ctr brc0   .16 523 0 # Block-repeat counters 0\n"
-			"ctr brc1   .16 524 0 # Block-repeat counters 1\n"
-			"ctr brs1   .16 525 0 # BRC1 save register\n"
-			"ctr bsa01  .16 526 0 # Circular buffer start address registers\n"
-			"ctr bsa23  .16 527 0 # Circular buffer start address registers\n"
-			"ctr bsa45  .16 528 0 # Circular buffer start address registers\n"
-			"ctr bsa67  .16 529 0 # Circular buffer start address registers\n"
-			"ctr bsac   .16 530 0 # Circular buffer start address registers\n"
-			"ctr cdp    .16 531 0 # Coefficient data pointer (low part of XCDP)\n"
-			"ctr cdph   .7  532 0 # High part of XCDP\n"
-			"ctr cfct   .8  533 0 # Control-flow context register\n"
-			"ctr csr    .16 534 0 # Computed single-repeat register\n"
-			"ctr dbier0 .16 535 0 # Debug interrupt enable registers 0\n"
-			"ctr dbier1 .16 536 0 # Debug interrupt enable registers 1\n"
-			"ctr dp     .16 537 0 # Data page register (low part of XDP)\n"
-			"ctr dph    .7  538 0 # High part of XDP\n"
-			"ctr ier0   .16 539 0 # Interrupt enable registers 0\n"
-			"ctr ier1   .16 540 0 # Interrupt enable registers 1\n"
-			"ctr ifr0   .16 541 0 # Interrupt flag registers 0\n"
-			"ctr ifr1   .16 542 0 # Interrupt flag registers 1\n"
-			"ctr ivpd   .16 543 0 # Interrupt vector pointers\n"
-			"ctr ivph   .16 544 0 # Interrupt vector pointers\n"
-			"ctr pc     .24 545 0 # Program counter\n"
-			"ctr pdp    .9  546 0 # Peripheral data page register\n"
-			"ctr rea0   .24 547 0 # Block-repeat end address registers 0\n"
-			"ctr rea1   .24 548 0 # Block-repeat end address registers 1\n"
-			"ctr reta   .24 549 0 # Return address register\n"
-			"ctr rptc   .16 550 0 # Single-repeat counter\n"
-			"ctr rsa0   .24 551 0 # Block-repeat start address registers 0\n"
-			"ctr rsa1   .24 552 0 # Block-repeat start address registers 1\n"
-			"ctr sp     .16 553 0 # Data stack pointer (low part of XSP)\n"
-			"ctr sph    .7  554 0 # High part of XSP and XSSP\n"
-			"ctr ssp    .16 555 0 # System stack pointer (low part of XSSP)\n"
-			"ctr st0_55 .16 556 0 # Status registers 0\n"
-			"ctr st1_55 .16 557 0 # Status registers 1\n"
-			"ctr st2_55 .16 558 0 # Status registers 2\n"
-			"ctr st3_55 .16 559 0 # Status registers 3\n"
-			"ctr t0     .16 560 0 # Temporary register 0\n"
-			"ctr t1     .16 561 0 # Temporary register 1\n"
-			"ctr t2     .16 562 0 # Temporary register 2\n"
-			"ctr t3     .16 563 0 # Temporary register 3\n"
-			"ctr trn0   .16 564 0 # Transition registers 1\n"
-			"ctr trn1   .16 565 0 # Transition registers 1\n"
-			"ctr xcdp   .23 566 0 # Extended coefficient data pointer\n"
-			"ctr xdp    .23 567 0 # Extended data page register\n"
-			"ctr xsp    .23 568 0 # Extended data stack pointer\n"
-			"ctr xssp   .23 569 0 # Extended system stack pointer\n";
+			"ctr ac1    .40 501 0 # Accumulator 1\n"
+			"ctr ac2    .40 506 0 # Accumulator 2\n"
+			"ctr ac3    .40 511 0 # Accumulator 3\n"
+			"gpr ar0    .16 516 0 # Auxiliary registers 0\n"
+			"gpr ar1    .16 518 0 # Auxiliary registers 1\n"
+			"gpr ar2    .16 520 0 # Auxiliary registers 2\n"
+			"gpr ar3    .16 522 0 # Auxiliary registers 3\n"
+			"gpr ar4    .16 524 0 # Auxiliary registers 4\n"
+			"gpr ar5    .16 526 0 # Auxiliary registers 5\n"
+			"gpr ar6    .16 528 0 # Auxiliary registers 6\n"
+			"gpr ar7    .16 530 0 # Auxiliary registers 7\n"
+			"gpr xar0   .23 532 0 # Extended auxiliary registers 0\n"
+			"gpr xar1   .23 535 0 # Extended auxiliary registers 1\n"
+			"gpr xar2   .23 538 0 # Extended auxiliary registers 2\n"
+			"gpr xar3   .23 541 0 # Extended auxiliary registers 3\n"
+			"gpr xar4   .23 544 0 # Extended auxiliary registers 4\n"
+			"gpr xar5   .23 547 0 # Extended auxiliary registers 5\n"
+			"gpr xar6   .23 550 0 # Extended auxiliary registers 6\n"
+			"gpr xar7   .23 553 0 # Extended auxiliary registers 7\n"
+			"ctr bk03   .16 556 0 # Circular buffer size registers\n"
+			"ctr bk47   .16 558 0 # Circular buffer size registers\n"
+			"ctr bkc    .16 560 0 # Circular buffer size registers\n"
+			"ctr brc0   .16 562 0 # Block-repeat counters 0\n"
+			"ctr brc1   .16 564 0 # Block-repeat counters 1\n"
+			"ctr brs1   .16 566 0 # BRC1 save register\n"
+			"ctr bsa01  .16 568 0 # Circular buffer start address registers\n"
+			"ctr bsa23  .16 570 0 # Circular buffer start address registers\n"
+			"ctr bsa45  .16 572 0 # Circular buffer start address registers\n"
+			"ctr bsa67  .16 574 0 # Circular buffer start address registers\n"
+			"ctr bsac   .16 576 0 # Circular buffer start address registers\n"
+			"ctr cdp    .16 578 0 # Coefficient data pointer (low part of XCDP)\n"
+			"ctr cdph   .7  580 0 # High part of XCDP\n"
+			"ctr cfct   .8  581 0 # Control-flow context register\n"
+			"ctr csr    .16 582 0 # Computed single-repeat register\n"
+			"ctr dbier0 .16 584 0 # Debug interrupt enable registers 0\n"
+			"ctr dbier1 .16 586 0 # Debug interrupt enable registers 1\n"
+			"ctr dp     .16 588 0 # Data page register (low part of XDP)\n"
+			"ctr dph    .7  590 0 # High part of XDP\n"
+			"ctr ier0   .16 591 0 # Interrupt enable registers 0\n"
+			"ctr ier1   .16 593 0 # Interrupt enable registers 1\n"
+			"ctr ifr0   .16 595 0 # Interrupt flag registers 0\n"
+			"ctr ifr1   .16 597 0 # Interrupt flag registers 1\n"
+			"ctr ivpd   .16 599 0 # Interrupt vector pointers\n"
+			"ctr ivph   .16 601 0 # Interrupt vector pointers\n"
+			"ctr pc     .24 603 0 # Program counter\n"
+			"ctr pdp    .9  606 0 # Peripheral data page register\n"
+			"ctr rea0   .24 608 0 # Block-repeat end address registers 0\n"
+			"ctr rea1   .24 611 0 # Block-repeat end address registers 1\n"
+			"ctr reta   .24 614 0 # Return address register\n"
+			"ctr rptc   .16 617 0 # Single-repeat counter\n"
+			"ctr rsa0   .24 619 0 # Block-repeat start address registers 0\n"
+			"ctr rsa1   .24 622 0 # Block-repeat start address registers 1\n"
+			"ctr sp     .16 625 0 # Data stack pointer (low part of XSP)\n"
+			"ctr sph    .7  627 0 # High part of XSP and XSSP\n"
+			"ctr ssp    .16 628 0 # System stack pointer (low part of XSSP)\n"
+			"ctr st0_55 .16 630 0 # Status registers 0\n"
+			"ctr st1_55 .16 632 0 # Status registers 1\n"
+			"ctr st2_55 .16 634 0 # Status registers 2\n"
+			"ctr st3_55 .16 636 0 # Status registers 3\n"
+			"ctr t0     .16 638 0 # Temporary register 0\n"
+			"ctr t1     .16 640 0 # Temporary register 1\n"
+			"ctr t2     .16 642 0 # Temporary register 2\n"
+			"ctr t3     .16 644 0 # Temporary register 3\n"
+			"ctr trn0   .16 646 0 # Transition registers 1\n"
+			"ctr trn1   .16 648 0 # Transition registers 1\n"
+			"ctr xcdp   .23 650 0 # Extended coefficient data pointer\n"
+			"ctr xdp    .23 653 0 # Extended data page register\n"
+			"ctr xsp    .23 656 0 # Extended data stack pointer\n"
+			"ctr xssp   .23 659 0 # Extended system stack pointer\n"
+			"ctr ac4    .40 664 0 # Accumulator 4\n"
+			"ctr ac5    .40 669 0 # Accumulator 5\n"
+			"ctr ac6    .40 674 0 # Accumulator 6\n"
+			"ctr ac7    .40 679 0 # Accumulator 7\n";
 	} else {
-		p =
-			"=PC	pc\n"
+		// C6000: C62x/C67x expose 16 general registers per side (A0-A15,
+		// B0-B15); C64x and later widen this to 32 and add the C64x+ control-
+		// register file. Emit the extended half only for the variants that own
+		// it, so `arp` on a C62x/C67x reads back the true 16-register machine.
+		bool wide = !(cpu0 && (rz_str_casecmp(cpu0, "c62x") == 0 || rz_str_casecmp(cpu0, "c67x") == 0));
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		rz_strbuf_append(&sb,
+			"=PC	pce1\n"
+			"=SP	b15\n"
+			"=BP	a15\n"
+			"=SR	csr\n"
 			"=A0	a4\n"
 			"=A1	b4\n"
 			"=A2	a6\n"
-			"=A3	a6\n"
+			"=A3	b6\n"
 			"=A4	a8\n"
 			"=A5	b8\n"
 			"=A6	a10\n"
@@ -220,25 +956,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	a12	.32	48 		0\n"
 			"gpr	a13	.32	52 		0\n"
 			"gpr	a14	.32	56 		0\n"
-			"gpr	a15	.32	60 		0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16	.32	64 		0\n"
-			"gpr	a17	.32	68 		0\n"
-			"gpr	a18	.32	72 		0\n"
-			"gpr	a19	.32	76 		0\n"
-			"gpr	a20	.32	80 		0\n"
-			"gpr	a21	.32	84 		0\n"
-			"gpr	a22	.32	88 		0\n"
-			"gpr	a23	.32	92 		0\n"
-			"gpr	a24	.32	96 		0\n"
-			"gpr	a25	.32	100 	0\n"
-			"gpr	a26	.32	104 	0\n"
-			"gpr	a27	.32	108 	0\n"
-			"gpr	a28	.32	112 	0\n"
-			"gpr	a29	.32	116 	0\n"
-			"gpr	a30	.32	120 	0\n"
-			"gpr	a31	.32	124 	0\n"
-#endif
+			"gpr	a15	.32	60 		0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16	.32	64 		0\n"
+				"gpr	a17	.32	68 		0\n"
+				"gpr	a18	.32	72 		0\n"
+				"gpr	a19	.32	76 		0\n"
+				"gpr	a20	.32	80 		0\n"
+				"gpr	a21	.32	84 		0\n"
+				"gpr	a22	.32	88 		0\n"
+				"gpr	a23	.32	92 		0\n"
+				"gpr	a24	.32	96 		0\n"
+				"gpr	a25	.32	100 	0\n"
+				"gpr	a26	.32	104 	0\n"
+				"gpr	a27	.32	108 	0\n"
+				"gpr	a28	.32	112 	0\n"
+				"gpr	a29	.32	116 	0\n"
+				"gpr	a30	.32	120 	0\n"
+				"gpr	a31	.32	124 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"gpr	b0	.32	128 	0\n"
 			"gpr	b1	.32	132 	0\n"
 			"gpr	b2	.32	136 	0\n"
@@ -254,25 +992,27 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"gpr	b12	.32	176 	0\n"
 			"gpr	b13	.32	180 	0\n"
 			"gpr	b14	.32	184 	0\n"
-			"gpr	b15	.32	188 	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16	.32	192 	0\n"
-			"gpr	b17	.32	196 	0\n"
-			"gpr	b18	.32	200 	0\n"
-			"gpr	b19	.32	204 	0\n"
-			"gpr	b20	.32	208 	0\n"
-			"gpr	b21	.32	212 	0\n"
-			"gpr	b22	.32	216 	0\n"
-			"gpr	b23	.32	220 	0\n"
-			"gpr	b24	.32	224 	0\n"
-			"gpr	b25	.32	228 	0\n"
-			"gpr	b26	.32	232 	0\n"
-			"gpr	b27	.32	236 	0\n"
-			"gpr	b28	.32	240 	0\n"
-			"gpr	b29	.32	244 	0\n"
-			"gpr	b30	.32	248 	0\n"
-			"gpr	b31	.32	252 	0\n"
-#endif
+			"gpr	b15	.32	188 	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16	.32	192 	0\n"
+				"gpr	b17	.32	196 	0\n"
+				"gpr	b18	.32	200 	0\n"
+				"gpr	b19	.32	204 	0\n"
+				"gpr	b20	.32	208 	0\n"
+				"gpr	b21	.32	212 	0\n"
+				"gpr	b22	.32	216 	0\n"
+				"gpr	b23	.32	220 	0\n"
+				"gpr	b24	.32	224 	0\n"
+				"gpr	b25	.32	228 	0\n"
+				"gpr	b26	.32	232 	0\n"
+				"gpr	b27	.32	236 	0\n"
+				"gpr	b28	.32	240 	0\n"
+				"gpr	b29	.32	244 	0\n"
+				"gpr	b30	.32	248 	0\n"
+				"gpr	b31	.32	252 	0\n");
+		}
+		rz_strbuf_append(&sb,
 			"ctr amr     .32 256 0  # Addressing mode register\n"
 			"ctr csr     .32 260 0  # Control status register\n"
 			"ctr gfpgfr  .32 264 0  # Galois field multiply control register\n"
@@ -283,76 +1023,244 @@ static char *get_reg_profile(RZ_BORROW RzAnalysis *a) {
 			"ctr isr     .32 284 0  # Interrupt set register\n"
 			"ctr istp    .32 288 0  # Interrupt service table pointer register\n"
 			"ctr nrp     .32 292 0  # Nonmaskable interrupt return pointer register\n"
-			"ctr pce1    .32 296 0  # Program counter, E1 phase\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			// Control Register File Extensions (C64x+ DSP)
-			"ctr dier    .32 300 0  # (C64x+ only) Debug interrupt enable register\n"
-			"ctr dnum    .32 304 0  # (C64x+ only) DSP core number register\n"
-			"ctr ecr     .32 308 0  # (C64x+ only) Exception clear register\n"
-			"ctr efr     .32 312 0  # (C64x+ only) Exception flag register\n"
-			"ctr gplya   .32 316 0  # (C64x+ only) GMPY A-side polynomial register\n"
-			"ctr gplyb   .32 320 0  # (C64x+ only) GMPY B-side polynomial register\n"
-			"ctr ierr    .32 324 0  # (C64x+ only) Internal exception report register\n"
-			"ctr ilc     .32 328 0  # (C64x+ only) Inner loop count register\n"
-			"ctr itsr    .32 332 0  # (C64x+ only) Interrupt task state register\n"
-			"ctr ntsr    .32 336 0  # (C64x+ only) NMI/Exception task state register\n"
-			"ctr rep     .32 340 0  # (C64x+ only) Restricted entry point address register\n"
-			"ctr rilc    .32 344 0  # (C64x+ only) Reload inner loop count register\n"
-			"ctr ssr     .32 348 0  # (C64x+ only) Saturation status register\n"
-			"ctr tsch    .32 352 0  # (C64x+ only) Time-stamp counter (high 32) register\n"
-			"ctr tscl    .32 356 0  # (C64x+ only) Time-stamp counter (low 32) register\n"
-			"ctr tsr     .32 360 0  # (C64x+ only) Task state register\n"
-#endif
-			"gpr	a0:a1 	.64	364	0\n"
-			"gpr	a2:a3 	.64	368	0\n"
-			"gpr	a4:a5 	.64	372	0\n"
-			"gpr	a6:a7 	.64	376	0\n"
-			"gpr	a8:a9 	.64	380	0\n"
-			"gpr	a10:a11	.64	384	0\n"
-			"gpr	a12:a13	.64	388	0\n"
-			"gpr	a14:a15	.64	392	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	a16:a17	.64	396	0\n"
-			"gpr	a18:a19	.64	400	0\n"
-			"gpr	a20:a21	.64	404	0\n"
-			"gpr	a22:a23	.64	408	0\n"
-			"gpr	a24:a25	.64	412	0\n"
-			"gpr	a26:a27	.64	416	0\n"
-			"gpr	a28:a29	.64	420	0\n"
-			"gpr	a30:a31	.64	424	0\n"
-#endif
-			"gpr	b0:b1 	.64	428	0\n"
-			"gpr	b2:b3 	.64	432	0\n"
-			"gpr	b4:b5 	.64	436	0\n"
-			"gpr	b6:b7 	.64	440	0\n"
-			"gpr	b8:b9 	.64	444	0\n"
-			"gpr	b10:b11	.64	448	0\n"
-			"gpr	b12:b13	.64	452	0\n"
-			"gpr	b14:b15	.64	456	0\n"
-#ifdef CAPSTONE_TMS320C64X_H
-			"gpr	b16:b17	.64	460	0\n"
-			"gpr	b18:b19	.64	464	0\n"
-			"gpr	b20:b21	.64	468	0\n"
-			"gpr	b22:b23	.64	472	0\n"
-			"gpr	b24:b25	.64	476	0\n"
-			"gpr	b26:b27	.64	480	0\n"
-			"gpr	b28:b29	.64	484	0\n"
-			"gpr	b30:b31	.64	488	0\n"
-#endif
-			;
+			"ctr pce1    .32 296 0  # Program counter, E1 phase\n");
+		if (wide) {
+			// Control register file extensions; these exist only on C64x+ and later.
+			rz_strbuf_append(&sb,
+				"ctr dier    .32 300 0  # Debug interrupt enable register\n"
+				"ctr dnum    .32 304 0  # DSP core number register\n"
+				"ctr ecr     .32 308 0  # Exception clear register\n"
+				"ctr efr     .32 312 0  # Exception flag register\n"
+				"ctr gplya   .32 316 0  # GMPY A-side polynomial register\n"
+				"ctr gplyb   .32 320 0  # GMPY B-side polynomial register\n"
+				"ctr ierr    .32 324 0  # Internal exception report register\n"
+				"ctr ilc     .32 328 0  # Inner loop count register\n"
+				"ctr itsr    .32 332 0  # Interrupt task state register\n"
+				"ctr ntsr    .32 336 0  # NMI/Exception task state register\n"
+				"ctr rep     .32 340 0  # Restricted entry point address register\n"
+				"ctr rilc    .32 344 0  # Reload inner loop count register\n"
+				"ctr ssr     .32 348 0  # Saturation status register\n"
+				"ctr tsch    .32 352 0  # Time-stamp counter (high 32) register\n"
+				"ctr tscl    .32 356 0  # Time-stamp counter (low 32) register\n"
+				"ctr tsr     .32 360 0  # Task state register\n");
+		}
+		const C6xArchDesc *desc = c6x_desc_from_cpu(cpu0);
+		if (desc && (desc->features & C6X_FEAT_FP)) {
+			// floating-point configuration registers, on the C67x and later
+			rz_strbuf_append(&sb,
+				"ctr fadcr   .32 364 0  # Floating-point adder configuration register\n"
+				"ctr faucr   .32 368 0  # Floating-point auxiliary configuration register\n"
+				"ctr fmcr    .32 372 0  # Floating-point multiplier configuration register\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	a0:a1  	.64	0	0\n"
+			"gpr	a2:a3  	.64	8	0\n"
+			"gpr	a4:a5  	.64	16	0\n"
+			"gpr	a6:a7  	.64	24	0\n"
+			"gpr	a8:a9  	.64	32	0\n"
+			"gpr	a10:a11	.64	40	0\n"
+			"gpr	a12:a13	.64	48	0\n"
+			"gpr	a14:a15	.64	56	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	a16:a17	.64	64	0\n"
+				"gpr	a18:a19	.64	72	0\n"
+				"gpr	a20:a21	.64	80	0\n"
+				"gpr	a22:a23	.64	88	0\n"
+				"gpr	a24:a25	.64	96	0\n"
+				"gpr	a26:a27	.64	104	0\n"
+				"gpr	a28:a29	.64	112	0\n"
+				"gpr	a30:a31	.64	120	0\n");
+		}
+		rz_strbuf_append(&sb,
+			"gpr	b0:b1  	.64	128	0\n"
+			"gpr	b2:b3  	.64	136	0\n"
+			"gpr	b4:b5  	.64	144	0\n"
+			"gpr	b6:b7  	.64	152	0\n"
+			"gpr	b8:b9  	.64	160	0\n"
+			"gpr	b10:b11	.64	168	0\n"
+			"gpr	b12:b13	.64	176	0\n"
+			"gpr	b14:b15	.64	184	0\n");
+		if (wide) {
+			rz_strbuf_append(&sb,
+				"gpr	b16:b17	.64	192	0\n"
+				"gpr	b18:b19	.64	200	0\n"
+				"gpr	b20:b21	.64	208	0\n"
+				"gpr	b22:b23	.64	216	0\n"
+				"gpr	b24:b25	.64	224	0\n"
+				"gpr	b26:b27	.64	232	0\n"
+				"gpr	b28:b29	.64	240	0\n"
+				"gpr	b30:b31	.64	248	0\n");
+		}
+		return rz_strbuf_drain_nofree(&sb);
+	}
+
+	// C55x+ (Ryujin) has 32 accumulators and 16 (extended) auxiliary registers,
+	// vs the 8/8 of the base C55x profile above. Append the extra ac8-31,
+	// ar8-15 and xar8-15 so the shared lifter's IL variables for them resolve
+	// (the byte offsets continue past ac7 at 684; C55x never references these).
+	const char *cpu = rz_analysis_get_cpu(a);
+	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
+		static const char *ext =
+			"ctr ac8    .40 684 0 # Accumulator 8\n"
+			"ctr ac9    .40 689 0 # Accumulator 9\n"
+			"ctr ac10   .40 694 0 # Accumulator 10\n"
+			"ctr ac11   .40 699 0 # Accumulator 11\n"
+			"ctr ac12   .40 704 0 # Accumulator 12\n"
+			"ctr ac13   .40 709 0 # Accumulator 13\n"
+			"ctr ac14   .40 714 0 # Accumulator 14\n"
+			"ctr ac15   .40 719 0 # Accumulator 15\n"
+			"ctr ac16   .40 724 0 # Accumulator 16\n"
+			"ctr ac17   .40 729 0 # Accumulator 17\n"
+			"ctr ac18   .40 734 0 # Accumulator 18\n"
+			"ctr ac19   .40 739 0 # Accumulator 19\n"
+			"ctr ac20   .40 744 0 # Accumulator 20\n"
+			"ctr ac21   .40 749 0 # Accumulator 21\n"
+			"ctr ac22   .40 754 0 # Accumulator 22\n"
+			"ctr ac23   .40 759 0 # Accumulator 23\n"
+			"ctr ac24   .40 764 0 # Accumulator 24\n"
+			"ctr ac25   .40 769 0 # Accumulator 25\n"
+			"ctr ac26   .40 774 0 # Accumulator 26\n"
+			"ctr ac27   .40 779 0 # Accumulator 27\n"
+			"ctr ac28   .40 784 0 # Accumulator 28\n"
+			"ctr ac29   .40 789 0 # Accumulator 29\n"
+			"ctr ac30   .40 794 0 # Accumulator 30\n"
+			"ctr ac31   .40 799 0 # Accumulator 31\n"
+			"gpr ar8    .16 804 0 # Auxiliary register 8\n"
+			"gpr ar9    .16 806 0 # Auxiliary register 9\n"
+			"gpr ar10   .16 808 0 # Auxiliary register 10\n"
+			"gpr ar11   .16 810 0 # Auxiliary register 11\n"
+			"gpr ar12   .16 812 0 # Auxiliary register 12\n"
+			"gpr ar13   .16 814 0 # Auxiliary register 13\n"
+			"gpr ar14   .16 816 0 # Auxiliary register 14\n"
+			"gpr ar15   .16 818 0 # Auxiliary register 15\n"
+			"gpr xar8   .23 820 0 # Extended auxiliary register 8\n"
+			"gpr xar9   .23 823 0 # Extended auxiliary register 9\n"
+			"gpr xar10  .23 826 0 # Extended auxiliary register 10\n"
+			"gpr xar11  .23 829 0 # Extended auxiliary register 11\n"
+			"gpr xar12  .23 832 0 # Extended auxiliary register 12\n"
+			"gpr xar13  .23 835 0 # Extended auxiliary register 13\n"
+			"gpr xar14  .23 838 0 # Extended auxiliary register 14\n"
+			"gpr xar15  .23 841 0 # Extended auxiliary register 15\n";
+		char *prof = rz_str_newf("%s%s", p, ext);
+		// On C55x+ the extended auxiliary and stack/data pointer registers
+		// (XARn, XSP, XSSP, XDP, XCDP) are 24-bit rather than the 23-bit of
+		// classic C55x; widen them so a 24-bit address immediate (amov #k,xarN)
+		// and pointer values fit. Every .23 width field in this profile is one
+		// of those registers, so a single substitution covers them.
+		return prof ? rz_str_replace(prof, ".23", ".24", 1) : NULL;
 	}
 
 	return rz_str_dup(p);
 }
 
+/* Function-start preludes.
+ *
+ * TMS320 C55x / C55x+ functions do not have a single fixed-byte prologue the
+ * way x86 (55 89 e5) does: a prologue is a *run* of register pushes whose
+ * encodings vary with the register saved. The reliable signal is therefore
+ * "several consecutive PSH instructions". We key on the push opcodes:
+ *   - C55x+ : PSH is the 2-byte form `0e <reg>`, so a prologue looks like
+ *             `0e ?? 0e ?? (0e ??)`. Three consecutive pushes is very unlikely
+ *             to occur mid-stream by chance; two is a weaker seed.
+ *   - C55x  : PSH single is 0x38; PSH Smem / dbl(Smem) / dbl(Lmem) are
+ *             0xb5 / 0xb7 / 0xe4. Two consecutive single pushes (`38 38`) is a
+ *             conservative prologue signal.
+ * These seed `aap` so the analyzer can discover functions that the call-graph
+ * sweep alone misses (e.g. leaf or indirectly-reached routines). Prelude hits
+ * are still validated by the normal function analysis, which discards ones
+ * that do not decode into a sane body. */
+static RzList /*<RzSearchKeyword *>*/ *tms320_analysis_preludes(RzAnalysis *analysis) {
+	RzList *l = rz_list_newf((RzListFree)rz_search_keyword_free);
+	if (!l) {
+		return NULL;
+	}
+#define KW(d, ds, m, ms) rz_list_append(l, rz_search_keyword_new((const ut8 *)(d), (ds), (const ut8 *)(m), (ms), NULL))
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (cpu && rz_str_casecmp(cpu, "c55x+") == 0) {
+		/* three consecutive C55x+ pushes: 0e ?? 0e ?? 0e ?? */
+		KW("\x0e\x00\x0e\x00\x0e\x00", 6, "\xff\x00\xff\x00\xff\x00", 6);
+		/* two consecutive C55x+ pushes: 0e ?? 0e ?? */
+		KW("\x0e\x00\x0e\x00", 4, "\xff\x00\xff\x00", 4);
+	} else if (c6x_desc_from_cpu(cpu)) {
+		/* C6000 VLIW: no reliable fixed prologue; leave to the call graph. */
+	} else if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		/* ADDB SP,#7bit -- 1111 1110 0CCC CCCC -- is the C28x frame setup and
+		 * the only instruction in 0xfe00..0xfe7f. In a 128K PIP inverter image
+		 * it occurs 933 times, 871 of them directly after the previous
+		 * function's LRETR. A minority of functions push a register first, so
+		 * those start one instruction earlier than this matches. */
+		KW("\x00\xfe", 2, "\x80\xff", 2);
+	} else {
+		/* plain C55x: two consecutive single pushes (0x38 0x38) */
+		KW("\x38\x38", 2, "\xff\xff", 2);
+	}
+#undef KW
+	return l;
+}
+
+static RzAnalysisILConfig *tms320_il_config(RzAnalysis *analysis) {
+	// IL is provided for the C6000 (c6x) scalar core, the C55x/C55x+ integer
+	// core and the C54x core; other CPUs (plain byte-mode) have no IL yet, so
+	// return NULL to leave the VM unconfigured.
+	const char *cpu = rz_analysis_get_cpu(analysis);
+	if (c6x_desc_from_cpu(cpu)) {
+		return tms320_c6x_il_config(analysis);
+	}
+	if (cpu && (rz_str_casecmp(cpu, "c55x+") == 0 || rz_str_casecmp(cpu, "c55x") == 0)) {
+		return tms320_c55x_plus_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c54x") == 0) {
+		return tms320_c54x_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c2x") == 0) {
+		return tms320_c2x_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c5x") == 0) {
+		return tms320_c5x_il_config(analysis);
+	}
+	if (cpu && rz_str_casecmp(cpu, "c28x") == 0) {
+		return c28x_il_config();
+	}
+	return NULL;
+}
+
+/**
+ * \brief Sizes rizin uses when deciding how many bytes to read for one op.
+ *
+ * A slot cannot be decoded for the C6000 architecture series without its
+ * fetch-packet header, which sits at the end of the 32-byte packet, so a caller
+ * that sizes its buffer from the largest instruction reads four bytes and hands
+ * the decoder too little: a 16-bit compact slot then decodes as an unrelated
+ * 32-bit instruction. Reporting the packet size instead makes those callers read
+ * enough to see the header.
+ */
+static int tms320_archinfo(RzAnalysis *analysis, RzAnalysisInfoType query) {
+	// Only the C6000 is answered here
+	const C6xArchDesc *c6x = c6x_desc_from_cpu(analysis->cpu);
+	if (!c6x) {
+		return -1;
+	}
+	switch (query) {
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE: return C6X_COMPACT_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE: return C6X_FETCH_PACKET_SIZE;
+	case RZ_ANALYSIS_ARCHINFO_TEXT_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_DATA_ALIGN: return C6X_COMPACT_SIZE;
+	default: return -1;
+	}
+}
+
 RzAnalysisPlugin rz_analysis_plugin_tms320 = {
 	.name = "tms320",
+	.archinfo = tms320_archinfo,
 	.arch = "tms320",
-	.bits = 32,
+	.bits = 16 | 32,
 	.desc = "TMS320 DSP family code analysis plugin",
 	.init = tms320_analysis_init,
 	.fini = tms320_analysis_fini,
 	.license = "LGPLv3",
 	.op = &tms320_analysis_op,
+	.preludes = tms320_analysis_preludes,
+	.il_config = tms320_il_config,
 	.get_reg_profile = get_reg_profile,
 };

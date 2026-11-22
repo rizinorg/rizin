@@ -58,6 +58,7 @@ enum { allOperandsSize = 256 };
 struct arcDisState
 {
   void *_this;
+  void *user_data;
   int instructionLen;
   void (*err)(void*, const char*);
   const char *(*coreRegName)(void*, int);

@@ -6,5 +6,6 @@
 
 #include "analysis/analysis_luac.c"
 #include "asm/asm_luac.c"
+#include "parse/parse_luac_pseudo.c"
 
-RZ_ARCH_PLUGIN_DEFINE_DEPRECATED(luac);
+RZ_ARCH_WITH_PARSE_PLUGIN_DEFINE_DEPRECATED(luac);

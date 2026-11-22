@@ -107,7 +107,9 @@ RZ_IPI bool PDBSymbol_parse(RzBuffer *b, PDBSymbol *symbol) {
 	}
 
 	return true;
+
 err:
+	RZ_FREE(symbol->data);
 	return false;
 }
 
@@ -128,8 +130,10 @@ RZ_IPI PDBSymbol *PDBSymbolTable_symbol_by_index(PDBSymbolTable *symbol_table, P
 	map_err(symbol);
 	map_err(PDBSymbolIter_next(&iter, symbol));
 
+	rz_buf_free(iter.b);
 	return symbol;
 err:
+	rz_buf_free(iter.b);
 	free(symbol);
 	return NULL;
 }
@@ -224,6 +228,7 @@ RZ_IPI bool PDBSymbolIter_collect(PDBSymbolIter *iter, RzPVector /*<PDBSymbol *>
 			return false;
 		}
 		if (!PDBSymbolIter_next(iter, symbol)) {
+			free(symbol);
 			break;
 		}
 		rz_pvector_push(symbols, symbol);

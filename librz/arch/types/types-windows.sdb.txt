@@ -626,6 +626,7 @@ typedef.LPWSTR=WCHAR*
 
 LPWCH=typedef
 typedef.LPWCH=WCHAR*
+type.LPWCH=z
 
 LPCWCH=typedef
 typedef.LPCWCH=const WCHAR*
@@ -821,8 +822,25 @@ type.LOGICAL_PROCESSOR_RELATIONSHIP=p
 PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX=type
 type.PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX=p
 
-LPSYSTEM_INFO=type
-type.LPSYSTEM_INFO=p
+_SYSTEM_INFO=struct
+struct._SYSTEM_INFO=wProcessorArchitecture,wReserved,dwPageSize,lpMinimumApplicationAddress,lpMaximumApplicationAddress,dwActiveProcessorMask,dwNumberOfProcessors,dwProcessorType,dwAllocationGranularity,wProcessorLevel,wProcessorRevision
+struct._SYSTEM_INFO.wProcessorArchitecture=WORD,0,0
+struct._SYSTEM_INFO.wReserved=WORD,2,0
+struct._SYSTEM_INFO.dwPageSize=DWORD,4,0
+struct._SYSTEM_INFO.lpMinimumApplicationAddress=LPVOID,8,0
+struct._SYSTEM_INFO.lpMaximumApplicationAddress=LPVOID,12,0
+struct._SYSTEM_INFO.dwActiveProcessorMask=DWORD_PTR,16,0
+struct._SYSTEM_INFO.dwNumberOfProcessors=DWORD,20,0
+struct._SYSTEM_INFO.dwProcessorType=DWORD,24,0
+struct._SYSTEM_INFO.dwAllocationGranularity=DWORD,28,0
+struct._SYSTEM_INFO.wProcessorLevel=WORD,32,0
+struct._SYSTEM_INFO.wProcessorRevision=WORD,34,0
+
+SYSTEM_INFO=typedef
+typedef.SYSTEM_INFO=struct _SYSTEM_INFO
+
+LPSYSTEM_INFO=typedef
+typedef.LPSYSTEM_INFO=struct _SYSTEM_INFO *
 
 COMPUTER_NAME_FORMAT=typedef
 typedef.COMPUTER_NAME_FORMAT=int
@@ -852,8 +870,14 @@ type.PSLIST_HEADER=p
 PTP_SIMPLE_CALLBACK=type
 type.PTP_SIMPLE_CALLBACK=p
 
-PCONTEXT=type
-type.PCONTEXT=p
+_CONTEXT=struct
+struct._CONTEXT=
+
+CONTEXT=typedef
+typedef.CONTEXT=struct _CONTEXT
+
+PCONTEXT=typedef
+typedef.PCONTEXT=struct _CONTEXT *
 
 PUNWIND_HISTORY_TABLE=type
 type.PUNWIND_HISTORY_TABLE=p
@@ -861,8 +885,14 @@ type.PUNWIND_HISTORY_TABLE=p
 PSLIST_ENTRY=type
 type.PSLIST_ENTRY=p
 
-PKNONVOLATILE_CONTEXT_POINTERS=type
-type.PKNONVOLATILE_CONTEXT_POINTERS=p
+_KNONVOLATILE_CONTEXT_POINTERS=struct
+struct._KNONVOLATILE_CONTEXT_POINTERS=
+
+KNONVOLATILE_CONTEXT_POINTERS=typedef
+typedef.KNONVOLATILE_CONTEXT_POINTERS=struct _KNONVOLATILE_CONTEXT_POINTERS
+
+PKNONVOLATILE_CONTEXT_POINTERS=typedef
+typedef.PKNONVOLATILE_CONTEXT_POINTERS=struct _KNONVOLATILE_CONTEXT_POINTERS *
 
 PTP_CLEANUP_GROUP_CANCEL_CALLBACK=type
 type.PTP_CLEANUP_GROUP_CANCEL_CALLBACK=p
@@ -962,15 +992,30 @@ type.LPWIN32_FIND_DATAA=p
 LPOVERLAPPED_COMPLETION_ROUTINE=type
 type.LPOVERLAPPED_COMPLETION_ROUTINE=p
 
-LPWIN32_FIND_DATAW=type
-type.LPWIN32_FIND_DATAW=p
+_WIN32_FIND_DATAW=struct
+struct._WIN32_FIND_DATAW=dwFileAttributes,ftCreationTime,ftLastAccessTime,ftLastWriteTime,nFileSizeHigh,nFileSizeLow,dwReserved0,dwReserved1,cFileName,cAlternateFileName
+struct._WIN32_FIND_DATAW.dwFileAttributes=DWORD,0,0
+struct._WIN32_FIND_DATAW.ftCreationTime=FILETIME,4,0
+struct._WIN32_FIND_DATAW.ftLastAccessTime=FILETIME,12,0
+struct._WIN32_FIND_DATAW.ftLastWriteTime=FILETIME,20,0
+struct._WIN32_FIND_DATAW.nFileSizeHigh=DWORD,28,0
+struct._WIN32_FIND_DATAW.nFileSizeLow=DWORD,32,0
+struct._WIN32_FIND_DATAW.dwReserved0=DWORD,36,0
+struct._WIN32_FIND_DATAW.dwReserved1=DWORD,40,0
+struct._WIN32_FIND_DATAW.cFileName=WCHAR,44,260
+struct._WIN32_FIND_DATAW.cAlternateFileName=WCHAR,564,14
+
+WIN32_FIND_DATAW=typedef
+typedef.WIN32_FIND_DATAW=struct _WIN32_FIND_DATAW
+
+PWIN32_FIND_DATAW=typedef
+typedef.PWIN32_FIND_DATAW=struct _WIN32_FIND_DATAW *
+
+LPWIN32_FIND_DATAW=typedef
+typedef.LPWIN32_FIND_DATAW=struct _WIN32_FIND_DATAW *
 
 PWSTR=typedef
 typedef.PWSTR=LPWSTR
-
-LPWCH=typedef
-typedef.LPWCH=WCHAR*
-type.LPWCH=z
 
 FINDEX_SEARCH_OPS=typedef
 typedef.FINDEX_SEARCH_OPS=int
@@ -1009,11 +1054,26 @@ type.LPSYSTEM_POWER_STATUS=p
 LPHW_PROFILE_INFOA=type
 type.LPHW_PROFILE_INFOA=p
 
-PCACTCTXW=type
-type.PCACTCTXW=p
+tagACTCTXW=struct
+struct.tagACTCTXW=cbSize,dwFlags,lpSource,wProcessorArchitecture,wLangId,lpAssemblyDirectory,lpResourceName,lpApplicationName,hModule
+struct.tagACTCTXW.cbSize=ULONG,0,0
+struct.tagACTCTXW.dwFlags=DWORD,4,0
+struct.tagACTCTXW.lpSource=LPCWSTR,8,0
+struct.tagACTCTXW.wProcessorArchitecture=USHORT,12,0
+struct.tagACTCTXW.wLangId=LANGID,14,0
+struct.tagACTCTXW.lpAssemblyDirectory=LPCWSTR,16,0
+struct.tagACTCTXW.lpResourceName=LPCWSTR,20,0
+struct.tagACTCTXW.lpApplicationName=LPCWSTR,24,0
+struct.tagACTCTXW.hModule=HMODULE,28,0
 
-LPOSVERSIONINFOEXW=type
-type.LPOSVERSIONINFOEXW=p
+ACTCTXW=typedef
+typedef.ACTCTXW=struct tagACTCTXW
+
+PACTCTXW=typedef
+typedef.PACTCTXW=struct tagACTCTXW *
+
+PCACTCTXW=typedef
+typedef.PCACTCTXW=const struct tagACTCTXW *
 
 LPFIBER_START_ROUTINE=type
 type.LPFIBER_START_ROUTINE=p
@@ -1053,9 +1113,6 @@ type.LPOFSTRUCT=p
 
 LPFILE_ID_DESCRIPTOR=type
 type.LPFILE_ID_DESCRIPTOR=p
-
-PLUID=type
-type.PLUID=p
 
 LPCOMSTAT=type
 type.LPCOMSTAT=p
@@ -1139,7 +1196,7 @@ LPOSVERSIONINFOA=typedef
 typedef.LPOSVERSIONINFOA=struct _OSVERSIONINFOA*
 
 _OSVERSIONINFOEXA=struct
-struct._OSVERSIONINFOEXA=dwOSVersionInfoSize,dwMajorVersion,dwMinorVersion,dwBuildNumber,dwPlatformId,szCSDVersion
+struct._OSVERSIONINFOEXA=dwOSVersionInfoSize,dwMajorVersion,dwMinorVersion,dwBuildNumber,dwPlatformId,szCSDVersion,wServicePackMajor,wServicePackMinor,wSuiteMask,wProductType,wReserved
 struct._OSVERSIONINFOEXA.dwOSVersionInfoSize=DWORD,0,0
 struct._OSVERSIONINFOEXA.dwMajorVersion=DWORD,4,0
 struct._OSVERSIONINFOEXA.dwMinorVersion=DWORD,8,0
@@ -1167,8 +1224,8 @@ type.LPCOMMTIMEOUTS=p
 PACL=type
 type.PACL=p
 
-PSID=type
-type.PSID=p
+PSID=typedef
+typedef.PSID=PVOID
 
 PSID_NAME_USE=type
 type.PSID_NAME_USE=p
@@ -1241,9 +1298,6 @@ typedef.PINT=INT*
 
 PCHAR=typedef
 typedef.PCHAR=CHAR*
-
-PBERVAL=type
-type.PBERVAL=p
 
 PZPSTR=type
 type.PZPSTR=p
@@ -1320,9 +1374,6 @@ type.LPBLOB=p
 LPBLOCKINGCALLBACK=type
 type.LPBLOCKINGCALLBACK=p
 
-LPARAM=type
-type.LPARAM=p
-
 LPWSAUSERAPC=type
 type.LPWSAUSERAPC=p
 
@@ -1332,8 +1383,11 @@ typedef.socklen_t=int
 LPBSTR=type
 type.LPBSTR=p
 
-LPCOLESTR=type
-type.LPCOLESTR=p
+OLECHAR=typedef
+typedef.OLECHAR=WCHAR
+
+LPCOLESTR=typedef
+typedef.LPCOLESTR=const OLECHAR *
 
 LPVARIANT=typedef
 typedef.LPVARIANT=VARIANT*
@@ -1341,8 +1395,8 @@ typedef.LPVARIANT=VARIANT*
 LPCUSTDATA=type
 type.LPCUSTDATA=p
 
-LPOLESTR=type
-type.LPOLESTR=p
+LPOLESTR=typedef
+typedef.LPOLESTR=OLECHAR *
 
 PCONSOLE_HISTORY_INFO=type
 type.PCONSOLE_HISTORY_INFO=p
@@ -1516,9 +1570,6 @@ type.PDISPLAY_DEVICEW=p
 LPMOUSEMOVEPOINT=type
 type.LPMOUSEMOVEPOINT=p
 
-LPMSG=type
-type.LPMSG=p
-
 PICONINFOEXW=type
 type.PICONINFOEXW=p
 
@@ -1530,9 +1581,6 @@ type.PCRAWINPUTDEVICE=p
 
 PICONINFO=type
 type.PICONINFO=p
-
-LPPOINT=type
-type.LPPOINT=p
 
 PCHANGEFILTERSTRUCT=type
 type.PCHANGEFILTERSTRUCT=p
@@ -1548,9 +1596,6 @@ type.LPCMENUITEMINFOA=p
 
 LPWNDCLASSEXW=type
 type.LPWNDCLASSEXW=p
-
-LPRECT=type
-type.LPRECT=p
 
 PGUITHREADINFO=type
 type.PGUITHREADINFO=p
@@ -2110,8 +2155,8 @@ type.LPHEAPLIST32=p
 PEVENT_FILTER_DESCRIPTOR=type
 type.PEVENT_FILTER_DESCRIPTOR=p
 
-PTRACEHANDLE=type
-type.PTRACEHANDLE=p
+PTRACEHANDLE=typedef
+typedef.PTRACEHANDLE=TRACEHANDLE *
 
 PEVENT_INSTANCE_INFO=type
 type.PEVENT_INSTANCE_INFO=p
@@ -2178,7 +2223,7 @@ PENABLECALLBACK=type
 type.PENABLECALLBACK=p
 
 _EVENT_DATA_DESCRIPTOR=struct
-struct._EVENT_DATA_DESCRIPTOR=Ptr,Usize,Type
+struct._EVENT_DATA_DESCRIPTOR=Ptr,Size,Type
 struct._EVENT_DATA_DESCRIPTOR.Ptr=ULONGLONG,0,0
 struct._EVENT_DATA_DESCRIPTOR.Size=ULONG,8,0
 struct._EVENT_DATA_DESCRIPTOR.Type=UCHAR,12,0
@@ -2198,8 +2243,27 @@ typedef.REGHANDLE=UINT64
 PREGHANDLE=typedef
 typedef.PREGHANDLE=REGHANDLE *
 
-PLUID_AND_ATTRIBUTES=type
-type.PLUID_AND_ATTRIBUTES=p
+_LUID=struct
+struct._LUID=LowPart,HighPart
+struct._LUID.LowPart=DWORD,0,0
+struct._LUID.HighPart=LONG,4,0
+
+LUID=typedef
+typedef.LUID=struct _LUID
+
+PLUID=typedef
+typedef.PLUID=struct _LUID *
+
+_LUID_AND_ATTRIBUTES=struct
+struct._LUID_AND_ATTRIBUTES=Luid,Attributes
+struct._LUID_AND_ATTRIBUTES.Luid=LUID,0,0
+struct._LUID_AND_ATTRIBUTES.Attributes=DWORD,8,0
+
+LUID_AND_ATTRIBUTES=typedef
+typedef.LUID_AND_ATTRIBUTES=struct _LUID_AND_ATTRIBUTES
+
+PLUID_AND_ATTRIBUTES=typedef
+typedef.PLUID_AND_ATTRIBUTES=struct _LUID_AND_ATTRIBUTES *
 
 PTOKEN_PRIVILEGES=type
 type.PTOKEN_PRIVILEGES=p
@@ -2210,8 +2274,16 @@ type.PTOKEN_GROUPS=p
 PSID_IDENTIFIER_AUTHORITY=type
 type.PSID_IDENTIFIER_AUTHORITY=p
 
-PSID_AND_ATTRIBUTES=type
-type.PSID_AND_ATTRIBUTES=p
+_SID_AND_ATTRIBUTES=struct
+struct._SID_AND_ATTRIBUTES=Sid,Attributes
+struct._SID_AND_ATTRIBUTES.Sid=PSID,0,0
+struct._SID_AND_ATTRIBUTES.Attributes=DWORD,4,0
+
+SID_AND_ATTRIBUTES=typedef
+typedef.SID_AND_ATTRIBUTES=struct _SID_AND_ATTRIBUTES
+
+PSID_AND_ATTRIBUTES=typedef
+typedef.PSID_AND_ATTRIBUTES=struct _SID_AND_ATTRIBUTES *
 
 PCLAIM_SECURITY_ATTRIBUTES_INFORMATION=type
 type.PCLAIM_SECURITY_ATTRIBUTES_INFORMATION=p
@@ -2249,8 +2321,14 @@ type.LPDISPATCH=p
 LPPICTDESC=type
 type.LPPICTDESC=p
 
-LPCLSID=type
-type.LPCLSID=p
+CLSID=typedef
+typedef.CLSID=GUID
+
+LPCLSID=typedef
+typedef.LPCLSID=CLSID *
+
+REFCLSID=typedef
+typedef.REFCLSID=CLSID *
 
 VARTYPE=typedef
 typedef.VARTYPE=unsigned short
@@ -2392,3 +2470,105 @@ typedef.PFD_SET=struct _fd_set*
 
 LPFD_SET=typedef
 typedef.LPFD_SET=struct _fd_set*
+
+### Additional Windows types ###
+
+tagMSG=struct
+struct.tagMSG=hwnd,message,wParam,lParam,time,pt
+struct.tagMSG.hwnd=HWND,0,0
+struct.tagMSG.message=UINT,4,0
+struct.tagMSG.wParam=WPARAM,8,0
+struct.tagMSG.lParam=LPARAM,12,0
+struct.tagMSG.time=DWORD,16,0
+struct.tagMSG.pt=POINT,20,0
+
+MSG=typedef
+typedef.MSG=struct tagMSG
+
+PMSG=typedef
+typedef.PMSG=struct tagMSG *
+
+NPMSG=typedef
+typedef.NPMSG=struct tagMSG *
+
+LPMSG=typedef
+typedef.LPMSG=struct tagMSG *
+
+_OSVERSIONINFOW=struct
+struct._OSVERSIONINFOW=dwOSVersionInfoSize,dwMajorVersion,dwMinorVersion,dwBuildNumber,dwPlatformId,szCSDVersion
+struct._OSVERSIONINFOW.dwOSVersionInfoSize=DWORD,0,0
+struct._OSVERSIONINFOW.dwMajorVersion=DWORD,4,0
+struct._OSVERSIONINFOW.dwMinorVersion=DWORD,8,0
+struct._OSVERSIONINFOW.dwBuildNumber=DWORD,12,0
+struct._OSVERSIONINFOW.dwPlatformId=DWORD,16,0
+struct._OSVERSIONINFOW.szCSDVersion=WCHAR,20,128
+
+OSVERSIONINFOW=typedef
+typedef.OSVERSIONINFOW=struct _OSVERSIONINFOW
+
+POSVERSIONINFOW=typedef
+typedef.POSVERSIONINFOW=struct _OSVERSIONINFOW *
+
+LPOSVERSIONINFOW=typedef
+typedef.LPOSVERSIONINFOW=struct _OSVERSIONINFOW *
+
+RTL_OSVERSIONINFOW=typedef
+typedef.RTL_OSVERSIONINFOW=struct _OSVERSIONINFOW
+
+PRTL_OSVERSIONINFOW=typedef
+typedef.PRTL_OSVERSIONINFOW=struct _OSVERSIONINFOW *
+
+_OSVERSIONINFOEXW=struct
+struct._OSVERSIONINFOEXW=dwOSVersionInfoSize,dwMajorVersion,dwMinorVersion,dwBuildNumber,dwPlatformId,szCSDVersion,wServicePackMajor,wServicePackMinor,wSuiteMask,wProductType,wReserved
+struct._OSVERSIONINFOEXW.dwOSVersionInfoSize=DWORD,0,0
+struct._OSVERSIONINFOEXW.dwMajorVersion=DWORD,4,0
+struct._OSVERSIONINFOEXW.dwMinorVersion=DWORD,8,0
+struct._OSVERSIONINFOEXW.dwBuildNumber=DWORD,12,0
+struct._OSVERSIONINFOEXW.dwPlatformId=DWORD,16,0
+struct._OSVERSIONINFOEXW.szCSDVersion=WCHAR,20,128
+struct._OSVERSIONINFOEXW.wServicePackMajor=WORD,276,0
+struct._OSVERSIONINFOEXW.wServicePackMinor=WORD,278,0
+struct._OSVERSIONINFOEXW.wSuiteMask=WORD,280,0
+struct._OSVERSIONINFOEXW.wProductType=BYTE,282,0
+struct._OSVERSIONINFOEXW.wReserved=BYTE,283,0
+
+OSVERSIONINFOEXW=typedef
+typedef.OSVERSIONINFOEXW=struct _OSVERSIONINFOEXW
+
+POSVERSIONINFOEXW=typedef
+typedef.POSVERSIONINFOEXW=struct _OSVERSIONINFOEXW *
+
+LPOSVERSIONINFOEXW=typedef
+typedef.LPOSVERSIONINFOEXW=struct _OSVERSIONINFOEXW *
+
+_IBindCtx=struct
+struct._IBindCtx=
+
+LPBC=typedef
+typedef.LPBC=struct _IBindCtx *
+
+tagSAFEARRAYBOUND=struct
+struct.tagSAFEARRAYBOUND=cElements,lLbound
+struct.tagSAFEARRAYBOUND.cElements=ULONG,0,0
+struct.tagSAFEARRAYBOUND.lLbound=LONG,4,0
+
+SAFEARRAYBOUND=typedef
+typedef.SAFEARRAYBOUND=struct tagSAFEARRAYBOUND
+
+LPSAFEARRAYBOUND=typedef
+typedef.LPSAFEARRAYBOUND=struct tagSAFEARRAYBOUND *
+
+tagSAFEARRAY=struct
+struct.tagSAFEARRAY=cDims,fFeatures,cbElements,cLocks,pvData,rgsabound
+struct.tagSAFEARRAY.cDims=USHORT,0,0
+struct.tagSAFEARRAY.fFeatures=USHORT,2,0
+struct.tagSAFEARRAY.cbElements=ULONG,4,0
+struct.tagSAFEARRAY.cLocks=ULONG,8,0
+struct.tagSAFEARRAY.pvData=PVOID,12,0
+struct.tagSAFEARRAY.rgsabound=SAFEARRAYBOUND,16,1
+
+SAFEARRAY=typedef
+typedef.SAFEARRAY=struct tagSAFEARRAY
+
+LPSAFEARRAY=typedef
+typedef.LPSAFEARRAY=struct tagSAFEARRAY *

@@ -30,7 +30,8 @@
 # $ rizin -d /bin/true
 #
 
-FROM debian:11
+FROM debian:12
+ARG TARGETPLATFORM
 
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=master
@@ -41,8 +42,8 @@ ARG with_arm32_as
 ARG with_arm64_as
 ARG with_ppc_as
 
-ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
-ENV RZ_GHIDRA_VERSION ${RZ_GHIDRA_VERSION}
+ENV RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}
+ENV RZ_GHIDRA_VERSION=${RZ_GHIDRA_VERSION}
 
 RUN echo -e "Building versions:\n\
 	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}\
@@ -59,6 +60,7 @@ RUN apt-get install -y --no-install-recommends \
 	make \
 	pkg-config \
 	libc-dev-bin libc6-dev linux-libc-dev \
+	zlib1g-dev \
 	python3-pip \
 	python3-setuptools \
 	python3-wheel \
@@ -66,13 +68,13 @@ RUN apt-get install -y --no-install-recommends \
 	${with_arm32_as:+binutils-arm-linux-gnueabi} \
 	${with_ppc_as:+binutils-powerpc64le-linux-gnu}
 
-RUN pip3 install meson tomli
+RUN pip3 install --break-system-packages meson tomli
 
 # Build rizin in a volume to minimize space used by build
 COPY . /tmp/rizin/
 
 WORKDIR /tmp/rizin
-RUN meson setup --prefix=/usr -Dinstall_sigdb=true /tmp/build && \
+RUN meson setup --prefix=/usr -Dinstall_sigdb=true -Duse_sys_zlib=enabled /tmp/build && \
 	meson compile -C /tmp/build && \
 	meson install --destdir /tmp/rizin-install -C /tmp/build
 
@@ -83,9 +85,12 @@ RUN pip3 install --root=/tmp/rizin-install ./rz-pipe/python
 WORKDIR /tmp
 RUN git clone --recurse-submodules -b "$RZ_GHIDRA_VERSION" https://github.com/rizinorg/rz-ghidra
 WORKDIR /tmp/rz-ghidra
-RUN cmake -DCMAKE_PREFIX_PATH=/tmp/rizin-install/usr -DCMAKE_INSTALL_PREFIX=/usr -B build && cmake --build build && DESTDIR=/tmp/rizin-install cmake --build build --target install
+RUN case "$TARGETPLATFORM" in linux/amd64) __LIBDIR=lib64 ;; *) __LIBDIR=lib ;; esac; \
+	cmake -DRizin_DIR=/tmp/rizin-install/usr/${__LIBDIR}/cmake/Rizin -DCMAKE_INSTALL_PREFIX=/usr -B build && \
+	cmake --build build && \
+	DESTDIR=/tmp/rizin-install cmake --build build --target install
 
-FROM debian:11
+FROM debian:12
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
@@ -95,7 +100,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 USER rizin
 WORKDIR /home/rizin
-ENV HOME /home/rizin
+ENV HOME=/home/rizin
 
 COPY --from=0 /tmp/rizin-install/ /
 

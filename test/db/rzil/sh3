@@ -1,0 +1,16 @@
+NAME=Testing the decryption in emulateme (SuperH-3)
+FILE=bins/sh/emulateme.sh3
+TIMEOUT=30
+CMDS=<<EOF
+e asm.cpu=sh3
+aaa
+e io.cache=1
+s entry0
+aezi
+aezsu 0x00400032
+ps @ obj.seckrit
+EOF
+EXPECT=<<EOF
+Hello from RzIL!
+EOF
+RUN

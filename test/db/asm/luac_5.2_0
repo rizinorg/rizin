@@ -1,0 +1,62 @@
+ad "settabup 0 -1 -2" 08404080
+ad "forloop 0 -130806" 20404200
+ad "tailcall 0 -1 3" 1ec00080
+ad "setlist 0 2 1" 24400001
+ad "gettable 0 0 -16" 07c04300
+ad "call 2 2 3" 9dc00001
+ad "move r3 r0" c0000000
+ad "tforcall 0 1" 22400000
+d "invalid" 28800080
+d "invalid" ec400200
+ad "settable 2 -92 3" 8ac080ad
+ad "self 2 2 -93" 8c005701
+d "invalid" a9800000
+ad "vararg 0 1" 26008000
+ad "return 0 1" 1f008000
+ad "gettabup 0 0 0" 06000000
+ad "gettable 0 0 0" 07000000
+ad "settabup 1 0 0" 48000000
+ad "self 0 0 0" 0c000000
+ad "self 1 0 5" 4c400100
+ad "tailcall 0 0 0" 1e000000
+ad "tailcall 1 0 0" 5e000000
+ad "vararg 0 0" 26000000
+ad "vararg 2 0" a6000000
+ad "tforcall 0 0" 22000000
+ad "tforcall 0 4" 22000100
+ad "loadk 1 -14" 41400300
+ad "loadk 1 -1" 41000000
+ad "loadk 3 -1" c1000000
+ad "loadk 0 -1" 01000000
+ad "loadk 1 -6" 41400100
+
+# official luac -l
+ad "newtable 0 0 0" 0b000000
+ad "settabup 0 -1 0" 08000080
+ad "gettabup 0 0 -1" 06004000
+ad "gettabup 1 0 -1" 46004000
+ad "settable 0 -2 1" 0a408080
+ad "closure 1 0" 65000000
+ad "settable 0 -3 1" 0a400081
+ad "closure 1 1" 65400000
+ad "settable 0 -4 1" 0a408081
+ad "self 0 0 -3" 0c804000
+ad "loadk 2 -6" 81400100
+ad "call 0 3 2" 1d808001
+ad "settabup 0 -5 0" 08000082
+ad "gettabup 0 0 -5" 06004100
+ad "self 0 0 -4" 0cc04000
+ad "loadk 2 -7" 81800100
+ad "call 0 3 1" 1d408001
+
+ad "newtable 2 0 0" 8b000000
+ad "gettabup 3 0 -1" c6004000
+ad "move r4 r2" 00010001
+ad "gettabup 5 0 -2" 46414000
+ad "call 3 3 1" dd408001
+ad "settable 2 -3 1" 8a400081
+ad "return 2 2" 9f000001
+
+ad "gettable 2 0 -1" 87004000
+ad "sub 2 2 1" 8e400001
+ad "settable 0 -1 2" 0a800080

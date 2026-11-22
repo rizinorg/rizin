@@ -182,7 +182,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000 pf x # size=4
-0x00000000 = 0x44434241
+0x00000000 = 0x44434241 [LE]
 EOF
 RUN
 
@@ -574,7 +574,7 @@ CMDS=<<EOF
 s 0x100
 w abcd
 Csb 4
-Cf 8 xx
+Cf 8 x4x
 C
 echo ----
 Cs-
@@ -585,9 +585,9 @@ C
 EOF
 EXPECT=<<EOF
 0x00000100 ascii[4] "abcd"
-0x00000100 format 8 xx
+0x00000100 format 8 x4x
 ----
-0x00000100 format 8 xx
+0x00000100 format 8 x4x
 ----
 EOF
 RUN
@@ -598,7 +598,7 @@ CMDS=<<EOF
 s 0x100
 w abcd
 Csb 4
-Cf 8 xx
+Cf 8 x4x
 CCu a string
 C
 echo ----
@@ -607,7 +607,7 @@ C
 EOF
 EXPECT=<<EOF
 0x00000100 ascii[4] "abcd"
-0x00000100 format 8 xx
+0x00000100 format 8 x4x
 0x00000100 CCu "a string"
 ----
 EOF

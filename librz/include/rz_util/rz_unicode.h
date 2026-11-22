@@ -6,7 +6,7 @@
 
 #define RZ_UNICODE_NUL                    0
 #define RZ_UNICODE_MAX_BYTES_PER_CHAR     4
-#define RZ_UNICODE_VERSION_MAJOR          16
+#define RZ_UNICODE_VERSION_MAJOR          17
 #define RZ_UNICODE_VERSION_MINOR          0
 #define RZ_UNICODE_VERSION_PATCH          0
 #define RZ_UNICODE_LAST_ASCII             0x7F
@@ -19,6 +19,10 @@
  * \brief String width of "\U00hhhhhh"
  */
 #define RZ_UNICODE_ESCAPED_STR_WIDTH 10
+/**
+ * \brief Size of the longest byte order mark, the UTF-32 one
+ */
+#define RZ_UNICODE_MAX_BOM_SIZE 4
 
 struct rz_unicode_range_name_entry_t {
 	ut32 from;

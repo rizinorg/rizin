@@ -132,10 +132,10 @@ static int x86_disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len)
 	return op->size;
 }
 
-static bool x86_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+static bool x86_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// { 0, 1, 0, "\xcc" }, // valid for 16, 32, 64
 	// { 0, 2, 0, "\xcd\x03" },
-	rz_asm_op_set_buf(op, (const ut8 *)"\xcc", 1);
+	rz_asm_op_set_buf(breakpoint, (const ut8 *)"\xcc", 1);
 	return true;
 }
 

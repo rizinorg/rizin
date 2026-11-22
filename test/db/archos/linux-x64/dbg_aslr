@@ -81,13 +81,13 @@ doc
 afvl @ main
 EOF
 EXPECT=<<EOF
-var int64_t var_28h @ stack - 0x28
-var int64_t var_24h @ stack - 0x24
+var int32_t var_28h @ stack - 0x28
+var int32_t var_24h @ stack - 0x24
 var int64_t var_20h @ stack - 0x20
 var int64_t var_18h @ stack - 0x18
 var int64_t var_10h @ stack - 0x10
-var int64_t var_28h @ stack - 0x28
-var int64_t var_24h @ stack - 0x24
+var int32_t var_28h @ stack - 0x28
+var int32_t var_24h @ stack - 0x24
 var int64_t var_20h @ stack - 0x20
 var int64_t var_18h @ stack - 0x18
 var int64_t var_10h @ stack - 0x10

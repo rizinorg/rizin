@@ -1,18 +1,23 @@
+// SPDX-FileCopyrightText: 2024-2026 mostafa <ubermenchun@gmail.com>
 // SPDX-FileCopyrightText: 2019 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 return rz_str_dup(
 	"=PC	pc\n"
+	"=LR	x1\n"
 	"=SP	x2\n"
 	"=BP	x4\n"
-	"=R0	a10\n"
-	"=R1	a11\n"
-	"=A0	a10\n"
-	"=A1	a11\n"
-	"=A2	a12\n"
-	"=A3	a13\n"
-	"=A4	a14\n"
-	"gpr	x0	.64	?	0\n" // always zero
+	"=R0	x10\n"
+	"=R1	x11\n"
+	"=A0	x10\n"
+	"=A1	x11\n"
+	"=A2	x12\n"
+	"=A3	x13\n"
+	"=A4	x14\n"
+	"=A5	x15\n"
+	"=A6	x16\n"
+	"=A7	x17\n"
+	"gpr	pc	.64	0	0\n"
 	"gpr	x1	.64	8	0\n" // RA - return address
 	"gpr	x2	.64	16	0\n" // SP stack pointer
 	"gpr	x3	.64	24	0\n" // GP global pointer

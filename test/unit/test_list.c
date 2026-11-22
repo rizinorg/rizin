@@ -227,8 +227,9 @@ bool test_rz_list_from_iter(void) {
 	for (size_t i = 0; i < 26; i++) {
 		ht_up_insert(alpha_ht, i, (void *)unordered_alphabeth[i]);
 	}
-	RzIterator *iter = ht_up_as_iter(alpha_ht);
-	RzList *list = rz_list_new_from_iterator(iter);
+	RzIterator iter = (RzIterator){ 0 };
+	mu_assert_true(ht_up_as_iter(alpha_ht, &iter), "ht_up_as_iter failed");
+	RzList *list = rz_list_new_from_iterator(&iter);
 	mu_assert_notnull(list, "List init failed.");
 	rz_list_sort(list, (RzListComparator)strcmp, NULL);
 	mu_assert_eq(rz_list_length(list), 26, "Number of elements are off");
@@ -239,7 +240,7 @@ bool test_rz_list_from_iter(void) {
 		mu_assert_streq(elem, lower[i], "Value mismatched.");
 	}
 	ht_up_free(alpha_ht);
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 	rz_list_free(list);
 	mu_end;
 }
@@ -521,7 +522,41 @@ bool test_rz_list_sorted_uniq() {
 	mu_end;
 }
 
+static int compare_list_ints(const void *a, const void *b, void *user) {
+	const int *x = a, *y = b;
+	return (*x > *y) - (*x < *y);
+}
+
+/**
+ * \brief Check stable insertion sorting, node identity and both link directions.
+ */
+static bool test_rz_list_insertion_sort_links(void) {
+	int data[] = { 3, 1, 2, 1, 0 };
+	const size_t order[] = { 4, 1, 3, 2, 0 };
+	RzListIter *nodes[RZ_ARRAY_SIZE(data)];
+	RzList *list = rz_list_new();
+	mu_assert_notnull(list, "list allocation");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(data); i++) {
+		nodes[i] = rz_list_append(list, &data[i]);
+		mu_assert_notnull(nodes[i], "list node allocation");
+	}
+	rz_list_insertion_sort(list, compare_list_ints, NULL);
+	RzListIter *it = list->head;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(order); i++, it = it->next) {
+		mu_assert_ptreq(it, nodes[order[i]], "stable node order");
+		mu_assert_ptreq(it->val, &data[order[i]], "node retains its value");
+		mu_assert_ptreq(it->prev, i ? nodes[order[i - 1]] : NULL, "previous link");
+	}
+	mu_assert_null(it, "list terminates");
+	mu_assert_ptreq(list->tail, nodes[order[RZ_ARRAY_SIZE(order) - 1]], "tail updated");
+	mu_assert_eq(list->length, RZ_ARRAY_SIZE(data), "length preserved");
+	mu_assert_true(list->sorted, "sorted flag set");
+	rz_list_free(list);
+	mu_end;
+}
+
 int all_tests() {
+	mu_run_test(test_rz_list_insertion_sort_links);
 	mu_run_test(test_rz_list_size);
 	mu_run_test(test_rz_list_values);
 	mu_run_test(test_rz_list_join);

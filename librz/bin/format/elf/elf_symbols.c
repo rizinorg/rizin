@@ -98,22 +98,20 @@ static Elf_(Word) get_number_of_symbols_from_section(ELFOBJ *bin) {
 }
 
 static bool is_special_arm_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
-	if (!name) {
+	// ARM/AArch64 mapping symbols are named "$<char>" optionally followed by
+	// ".<suffix>" (e.g. "$t", "$d.realdata"). The ABI specifies STT_NOTYPE, but
+	// some toolchains emit them as STT_FUNC/STT_OBJECT (e.g. Motorola P2K
+	// firmware), so only the name shape and local binding are checked, like
+	// binutils' bfd_is_arm_special_symbol_name() with BFD_ARM_SPECIAL_SYM_TYPE_ANY.
+	if (!name || name[0] != '$' || !name[1]) {
 		return false;
 	}
 
-	if (name[0] != '$') {
+	if (name[2] != '\0' && name[2] != '.') {
 		return false;
 	}
 
-	if (name[1] == 'a' || name[1] == 't' || name[1] == 'd' || name[1] == 'x') {
-		return (name[2] == '\0' || name[2] == '.') &&
-			ELF_ST_TYPE(sym->st_info) == STT_NOTYPE &&
-			ELF_ST_BIND(sym->st_info) == STB_LOCAL &&
-			ELF_ST_VISIBILITY(sym->st_info) == STV_DEFAULT;
-	}
-
-	return false;
+	return ELF_ST_BIND(sym->st_info) == STB_LOCAL;
 }
 
 static bool is_special_symbol(ELFOBJ *bin, Elf_(Sym) * sym, const char *name) {
@@ -222,11 +220,12 @@ static bool convert_elf_symbol_entry(ELFOBJ *bin, struct symbols_segment *segmen
 	if (symbol->st_size == 0 && symbol->st_shndx == SHN_UNDEF && symbol->st_value == 0) {
 		elf_symbol->paddr = elf_symbol->vaddr = UT64_MAX;
 	} else {
+		const ut32 scale = Elf_(rz_bin_elf_addr_scale)(bin);
 		if (Elf_(rz_bin_elf_is_relocatable)(bin) && section) {
-			elf_symbol->paddr = section->offset + symbol->st_value;
+			elf_symbol->paddr = section->offset + (ut64)symbol->st_value * scale;
 			elf_symbol->vaddr = Elf_(rz_bin_elf_p2v)(bin, elf_symbol->paddr);
 		} else {
-			elf_symbol->vaddr = symbol->st_value;
+			elf_symbol->vaddr = (ut64)symbol->st_value * scale;
 			elf_symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, elf_symbol->vaddr);
 		}
 	}
@@ -417,10 +416,11 @@ static bool get_gnu_debugdata_elf_symbols(ELFOBJ *bin, RzVector /*<RzBinElfSymbo
 			continue;
 		}
 
-		rz_vector_push(result, sym);
+		RzBinElfSymbol sym_cpy = *sym;
+		sym_cpy.name = rz_str_dup(sym->name);
+		rz_vector_push(result, &sym_cpy);
 	}
-	// The ownership has been moved to `result`, no need to free the elements.
-	debug_symbols->len = 0;
+
 	res = true;
 
 	ht_sp_free(name_set);

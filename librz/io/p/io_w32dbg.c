@@ -170,7 +170,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	} else if (!strncmp(cmd, "pid", 3)) {
 		return rz_str_newf("%lu", wrap->pi.dwProcessId);
 	} else {
-		eprintf("Try: 'R!pid'\n");
+		eprintf("Try: 'R! pid'\n");
 	}
 	return NULL;
 }

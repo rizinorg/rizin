@@ -25,15 +25,15 @@ typedef struct Filetable {
 	ut64 offset;
 } filetable;
 
-static RzArFp *arfp_new(RzBuffer *b, bool shared_buf) {
+static RzArFp *arfp_new(RzBuffer *b) {
 	rz_return_val_if_fail(b, NULL);
 	RzArFp *f = RZ_NEW(RzArFp);
 	if (f) {
 		f->name = NULL;
-		f->shared_buf = shared_buf;
-		f->buf = b;
+		f->buf = rz_buf_ref(b);
 		f->start = 0;
 		f->end = 0;
+		f->st_mode = 0;
 	}
 	return f;
 }
@@ -323,46 +323,39 @@ RZ_API RzList /*<RzArFp *>*/ *ar_open_all(const char *arname, int perm) {
 
 	filetable tbl = { NULL, 0, 0 };
 	int res = -1;
-	bool shared = false;
 
 	do {
-		shared = !rz_list_empty(files);
-		RzArFp *arf = arfp_new(b, shared);
+		RzArFp *arf = arfp_new(b);
 		if (!arf) {
 			rz_list_free(files);
-			if (!shared) {
-				rz_buf_free(b);
-			}
-			return NULL;
+			files = NULL;
+			break;
 		}
 
 		if ((res = ar_parse_entry(arf, &tbl, arsize)) <= 0) {
 			// on error or when it has reached the EOF
-			free(tbl.data);
 			ar_close(arf);
-			return files;
+			break;
 		}
 		// on linux the fmode is always 0, but arf->mode is non-zero
 		if (!arf->st_mode ||
 			((fmode = (arf->st_mode & S_IFMT)) && fmode != S_IFREG) ||
 			arf->start >= arf->end) {
 			// open only regular files.
-			// we do not need to close the buffer
-			arf->shared_buf = true;
 			ar_close(arf);
 			continue;
 		}
 
 		if (!rz_list_append(files, arf)) {
-			free(tbl.data);
 			ar_close(arf);
 			rz_list_free(files);
-			return NULL;
+			files = NULL;
+			break;
 		}
 	} while (res > 0);
 
-	// this portion should never be reached
 	free(tbl.data);
+	rz_buf_free(b);
 	return files;
 }
 
@@ -393,7 +386,7 @@ RZ_API RzArFp *ar_open_file(const char *arname, int perm, const char *filename) 
 		return NULL;
 	}
 
-	RzArFp *arf = arfp_new(b, false);
+	RzArFp *arf = arfp_new(b);
 	if (!arf) {
 		rz_buf_free(b);
 		return NULL;
@@ -419,10 +412,11 @@ RZ_API RzArFp *ar_open_file(const char *arname, int perm, const char *filename) 
 		if (r == 0 && filename) {
 			RZ_LOG_ERROR("ar: Cound not find file '%s' in archive '%s'\n", filename, arname);
 		}
-		ar_close(arf); // results in buf being free'd
-		return NULL;
+		ar_close(arf);
+		arf = NULL;
 	}
 
+	rz_buf_free(b);
 	return arf;
 }
 
@@ -431,9 +425,7 @@ RZ_API void ar_close(RzArFp *f) {
 		return;
 	}
 	free(f->name);
-	if (!f->shared_buf) {
-		rz_buf_free(f->buf);
-	}
+	rz_buf_free(f->buf);
 	free(f);
 }
 
@@ -456,5 +448,5 @@ RZ_API int ar_write_at(RzArFp *f, ut64 off, void *buf, int count) {
 	if (count + off > f->end) {
 		count = f->end - off;
 	}
-	return rz_buf_write_at(f->buf, off + f->start, buf, count);
+	return rz_buf_write_at(f->buf, off, buf, count);
 }

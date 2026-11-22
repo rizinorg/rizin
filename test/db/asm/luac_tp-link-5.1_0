@@ -1,0 +1,10 @@
+ad "getglobal r0 -1" 01000000
+ad "getglobal r2 -3" 81800000
+ad "loadk r1 -2" 48400000
+ad "getglobal r0 -5" 01000100
+ad "getglobal r1 -5" 41000100
+ad "getglobal r2 -5" 81000100
+ad "loadk r2 -7" 88800100
+ad "loadk r4 -9" 08010200
+ad "call r0 3 1" 22408001
+ad "call r1 2 2" 62800001

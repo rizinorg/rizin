@@ -58,7 +58,7 @@ static RZ_OWN RzPVector /*<RzAsmTokenPattern *>*/ *get_token_patterns() {
 
 	TOKEN(NUMBER, "(0x[[:digit:]abcdef]+)");
 
-	TOKEN(REGISTER, "([cfstr]{1,2}[[:digit:]]{1,2})|(sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr1|pidr2|pidr3|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)");
+	TOKEN(REGISTER, "fr[[:digit:]]{1,2}[LR]|([cfstr]{1,2}[[:digit:]]{1,2})|(sp|psw|pc|rp|dp|ret0|ret1|rctr|pidr1|pidr2|pidr3|ccr|sar|iva|eiem|itmr|pcsq|pcoq|iir|isr|ior|ipsw|eirr|flags)");
 
 	TOKEN(MNEMONIC, "([[:alpha:]]+[[:alnum:]\\,]*([[:alpha:]]+|(<|>|=|\\*| )+))");
 

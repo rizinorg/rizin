@@ -1,0 +1,42 @@
+NAME=Types with nested callables containing mixed pointers and arrays
+FILE==
+CMDS=<<EOF
+wx 3948674596873958645860982304349896923857493465
+td "struct foo { uint8_t a_u; int8_t a_s; uint16_t b_u; int16_t b_s; uint32_t c_u; int32_t c_s; uint64_t d_u; int64_t d_s};"
+td "struct hexfoo { hex8_t a_u; hex16_t b_u; hex32_t c_u; hex64_t d_u;};"
+td "struct octfoo { oct8_t a_u; oct16_t b_u; oct32_t c_u; oct64_t d_u;};"
+td "struct binfoo { bin8_t a_u; bin16_t b_u; bin32_t c_u; bin64_t d_u;};"
+tp foo
+echo "-- hex --"
+tp hexfoo
+echo "-- oct --"
+tp octfoo
+echo "-- bin --"
+tp binfoo
+EOF
+EXPECT=<<EOF
+0x00000000 : a_u = 0x39 [LE]
+0x00000001 : a_s = 0x48 [LE]
+0x00000002 : b_u = 0x4567 [LE]
+0x00000004 : b_s = 0x8796 [LE]
+0x00000006 : c_u = 1482971193 [LE]
+0x0000000a : c_s = 69441632 [LE]
+0x0000000e : d_u = 0x3449573892969834 [LE]
+0x00000016 : d_s = 0x0000000000000065 [LE]
+-- hex --
+0x00000000 : a_u = 0x39 [LE]
+0x00000001 : b_u = 0x6748 [LE]
+0x00000003 : c_u = 0x39879645 [LE]
+0x00000007 : d_u = 0x3404239860586458 [LE]
+-- oct --
+0x00000000 : a_u = 0o071 [LE]
+0x00000001 : b_u = 0o063510 [LE]
+0x00000003 : c_u = 0o07141713105 [LE]
+0x00000007 : d_u = 0o0320041071414026062130 [LE]
+-- bin --
+0x00000000 : a_u = 0b0011_1001 [LE]
+0x00000001 : b_u = 0b110_0111_0100_1000 [LE]
+0x00000003 : c_u = 0b11_1001_1000_0111_1001_0110_0100_0101 [LE]
+0x00000007 : d_u = 0b11_0100_0000_0100_0010_0011_1001_1000_0110_0000_0101_1000_0110_0100_0101_1000 [LE]
+EOF
+RUN

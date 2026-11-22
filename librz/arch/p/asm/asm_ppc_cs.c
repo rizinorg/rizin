@@ -128,11 +128,11 @@ static char **ppc_cpu_descriptions() {
 	return cpu_desc;
 }
 
-static bool ppc_sw_breakpoint(const RzAsm *a, RzAsmOp *op) {
+static bool ppc_sw_breakpoint(const RzAsm *a, ut64 addr, const RzAsmOp *original, RzAsmOp *breakpoint) {
 	// ppc | tw 31, 0, 0 | trap
 	// { 0x7f, 0xe0, 0x00, 0x08 } | big endian
 	// { 0x08, 0x00, 0xe0, 0x7f } | little endian
-	rz_asm_op_set_buf(op, a->big_endian ? (const ut8 *)"\x7f\xe0\x00\x08" : (const ut8 *)"\x08\x00\xe0\x7f", 4);
+	rz_asm_op_set_buf(breakpoint, a->big_endian ? (const ut8 *)"\x7f\xe0\x00\x08" : (const ut8 *)"\x08\x00\xe0\x7f", 4);
 	return true;
 }
 

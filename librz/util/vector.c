@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2017-2020 thestr4ng3r <info@florianmaerkl.de>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include "rz_util/rz_assert.h"
 #include "rz_vector.h"
 
 // Optimize memory usage on glibc
@@ -22,9 +23,14 @@
 #define RESIZE_OR_RETURN_VAL(next_capacity, retval) \
 	do { \
 		size_t new_capacity = next_capacity; \
-		void **new_a = realloc(vec->a, vec->elem_size * new_capacity); \
-		if (!new_a && new_capacity) { \
-			return retval; \
+		void **new_a = NULL; \
+		if (new_capacity) { \
+			new_a = realloc(vec->a, vec->elem_size * new_capacity); \
+			if (!new_a) { \
+				return retval; \
+			} \
+		} else { \
+			free(vec->a); \
 		} \
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
@@ -32,6 +38,8 @@
 
 #define RESIZE_OR_RETURN_NULL(next_capacity)  RESIZE_OR_RETURN_VAL(next_capacity, NULL)
 #define RESIZE_OR_RETURN_FALSE(next_capacity) RESIZE_OR_RETURN_VAL(next_capacity, false)
+
+#define RZ_VECTOR_SWAP_TMP_SIZE 256
 
 RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, void *free_user) {
 	rz_return_if_fail(vec);
@@ -69,7 +77,13 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 	vec->free_user = NULL;
 }
 
-RZ_API void rz_vector_clear(RzVector *vec) {
+/**
+ * \brief Removes all elements, frees the internal buffer, and
+ * sets the vector's capacity to 0.
+ *
+ * Use rz_vector_purge() if the buffer's capacity should not change.
+ */
+RZ_API void rz_vector_clear(RZ_BORROW RzVector *vec) {
 	rz_return_if_fail(vec);
 	vector_free_elems(vec);
 	RZ_FREE(vec->a);
@@ -83,11 +97,41 @@ RZ_API void rz_vector_free(RzVector *vec) {
 	}
 }
 
+static void rz_vector_assign(RzVector *vec, void *p, const void *elem) {
+	rz_return_if_fail(vec && p && elem);
+	memcpy(p, elem, vec->elem_size);
+}
+
+/**
+ * \brief Set element at \p index.
+ * This is a simple memcpy. Vector length is not updated.
+ * Use rz_vector_assign_at() if this is needed.
+ *
+ * \param vec The vector to update.
+ * \param index Index where to write the element to.
+ * \param elem Pointer to the element to copy.
+ */
+RZ_API void rz_vector_set(RZ_BORROW RzVector *vec, size_t index, const RZ_NONNULL void *elem) {
+	rz_return_if_fail(vec && index < rz_vector_capacity(vec) && elem);
+	void *p = rz_vector_index_ptr(vec, index);
+	rz_return_if_fail(p);
+	rz_vector_assign(vec, p, elem);
+}
+
+/**
+ * \brief Set \p n elements, starting at element \p i to \p c.
+ */
+static void rz_vector_zeroize(RzVector *vec, size_t i, size_t n) {
+	rz_return_if_fail(vec);
+	memset((ut8 *)vec->a + (vec->elem_size * i), 0, vec->elem_size * n);
+}
+
 /**
  * \brief Clone the contents of \p src into \p dst.
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
- * \param item_cpy The function to copy every element of \p src into \p dst
+ * \param item_cpy The function to copy every element of \p src into \p dst.
+ *                 If NULL, the buffer is copied with memcpy.
  * \return true on success, false on failure.
  */
 RZ_API bool rz_vector_clone_intof(
@@ -95,12 +139,18 @@ RZ_API bool rz_vector_clone_intof(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src,
 	RZ_NULLABLE const RzVectorItemCpyFunc item_cpy) {
 	rz_return_val_if_fail(dst && src, false);
+	dst->reverse_sorted = src->reverse_sorted;
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
-	dst->free = NULL;
-	dst->free_user = NULL;
-	if (!dst->len) {
+	if (item_cpy) {
+		dst->free = src->free;
+		dst->free_user = src->free_user;
+	} else {
+		dst->free = NULL;
+		dst->free_user = NULL;
+	}
+	if (!dst->capacity) {
 		dst->a = NULL;
 	} else {
 		dst->a = malloc(src->elem_size * src->capacity);
@@ -114,7 +164,7 @@ RZ_API bool rz_vector_clone_intof(
 					(ut8 *)(src->a) + i * src->elem_size);
 			}
 		} else {
-			memcpy(dst->a, src->a, src->elem_size * len);
+			memcpy(dst->a, src->a, src->elem_size * dst->capacity);
 		}
 	}
 	return true;
@@ -142,13 +192,17 @@ RZ_API RZ_OWN RzVector *rz_vector_clonef(
 
 /**
  * \brief Clone the contents of \p src into \p dst.
+ * The vectors buffer is copied with memcpy.
+ *
  * \param dst The vector to clone into.
  * \param src The vector to clone from.
+ *
  * \return true on success, false on failure.
  */
 RZ_API bool rz_vector_clone_into(
 	RZ_NONNULL RZ_BORROW RZ_OUT RzVector *dst,
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *src) {
+	rz_return_val_if_fail(dst && src, false);
 	const bool ret = rz_vector_clone_intof(dst, src, NULL);
 	dst->free = NULL;
 	dst->free_user = NULL;
@@ -166,23 +220,66 @@ RZ_API bool rz_vector_clone_into(
  */
 RZ_API RZ_OWN RzVector *rz_vector_clone(
 	RZ_NONNULL RZ_BORROW RZ_IN const RzVector *vec) {
+	rz_return_val_if_fail(vec, false);
 	RzVector *dst = rz_vector_clonef(vec, NULL);
+	if (!dst) {
+		return NULL;
+	}
 	dst->free = NULL;
 	dst->free_user = NULL;
 	return dst;
 }
 
-RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem) {
-	rz_return_if_fail(vec && p && elem);
-	memcpy(p, elem, vec->elem_size);
-}
-
-RZ_API void *rz_vector_assign_at(RzVector *vec, size_t index, void *elem) {
+/**
+ * \brief Assign the element \p elem at \p index in the vector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_vector_set() if you need sideeffect-less manipulation of the vector slots.
+ *
+ * \param vec The vector to assign to.
+ * \param index The index to assign the element to.
+ * \param elem Pointer to the element to assign. If NULL, only the vector length is updated under the above condition.
+ *
+ * \return Pointer to the element at \p index. Or NULL in case of failure.
+ */
+RZ_API void *rz_vector_assign_at(RZ_BORROW RzVector *vec, size_t index, RZ_NULLABLE const void *elem) {
+	rz_return_val_if_fail(vec && index < vec->capacity, NULL);
 	void *p = rz_vector_index_ptr(vec, index);
 	if (elem) {
 		rz_vector_assign(vec, p, elem);
 	}
+	if (index >= rz_vector_len(vec)) {
+		size_t len = rz_vector_len(vec);
+		// Also zero the slot at index, if no element is assigned to it.
+		size_t n = index - len + (!elem ? 1 : 0);
+		rz_vector_zeroize(vec, len, n);
+		vec->len = index + 1;
+	}
 	return p;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_vector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ * \param into Optional pointer to copy the removed element into.
+ */
+RZ_API void rz_vector_remove_at_unsorted(RZ_BORROW RzVector *vec, size_t index, RZ_OUT RZ_NULLABLE void *into) {
+	rz_return_if_fail(vec);
+	if (rz_vector_empty(vec)) {
+		return;
+	}
+	size_t l = rz_vector_len(vec) - 1;
+	if (index < l) {
+		rz_vector_swap(vec, index, l);
+	}
+	rz_vector_pop(vec, into);
 }
 
 RZ_API void rz_vector_remove_at(RzVector *vec, size_t index, void *into) {
@@ -209,6 +306,16 @@ RZ_API void rz_vector_remove_range(RzVector *vec, size_t index, size_t count, vo
 	if (index < vec->len) {
 		memmove(p, (char *)p + vec->elem_size * count, vec->elem_size * (vec->len - index));
 	}
+}
+
+/**
+ * \brief Deletes all elements in the vector. The internal buffer is not freed
+ * so the vector's capacity stays the same.
+ *
+ * Use rz_vector_clear() if the buffer should be freed.
+ */
+RZ_API void rz_vector_purge(RZ_BORROW RzVector *vec) {
+	vector_free_elems(vec);
 }
 
 RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
@@ -256,6 +363,44 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
 	return p;
 }
 
+static bool bin_search_range(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user, RZ_OUT size_t *i) {
+	size_t vlen = rz_vector_len(vec);
+	if (vlen == 0) {
+		*i = 0;
+		return false;
+	}
+
+	size_t left = 0;
+	size_t right = vlen;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		int cmp_res = cmp(elem, rz_vector_index_ptr(vec, mid), user);
+
+		if (cmp_res == 0) {
+			*i = mid;
+			return true;
+		}
+
+		if (vec->reverse_sorted) {
+			if (cmp_res > 0) {
+				right = mid;
+			} else {
+				left = mid + 1;
+			}
+		} else {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+	}
+
+	*i = left;
+	return false;
+}
+
 /**
  * \brief Inserts an element into a sorted vector keeping the order.
  * NOTE: This function assumes the vector is already sorted!
@@ -271,24 +416,40 @@ RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, RZ_NULLABLE voi
  */
 RZ_API void *rz_vector_insert_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
 	rz_return_val_if_fail(vec && elem, NULL);
-	if (rz_vector_empty(vec)) {
+
+	size_t len = rz_vector_len(vec);
+	if (len < 1) {
 		return rz_vector_push(vec, elem);
 	}
-	size_t i = vec->reverse_sorted ? rz_vector_len(vec) - 1 : 0;
-	int inc = vec->reverse_sorted ? -1 : 1;
 
-	do {
-		void *velem = ((char *)vec->a) + (vec->elem_size * i);
-		if (cmp(velem, elem, user) >= 0) {
-			return rz_vector_insert(vec, vec->reverse_sorted ? i + 1 : i, elem);
-		}
-		if (i == 0 && inc == -1) {
-			// Overflow is undefined. So lets not depend on it.
-			break;
-		}
-		i += inc;
-	} while (i >= 0 && i < rz_vector_len(vec));
-	return vec->reverse_sorted ? rz_vector_push_front(vec, elem) : rz_vector_push(vec, elem);
+	size_t insert_index = 0;
+
+	bin_search_range(vec, elem, cmp, user, &insert_index);
+
+	return rz_vector_insert(vec, insert_index, elem);
+}
+
+/**
+ * \brief Finds an element in the sorted vector via binary search.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the result is undefined!
+ *
+ * \param vec A sorted vector to find the element in.
+ * \param elem Pointer to the element to find in the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Index into the vector where the element is located.
+ * Or SZT_MAX in case of failure or if no element was found.
+ */
+RZ_API size_t rz_vector_find_sorted(RZ_NONNULL RzVector *vec, RZ_NONNULL void *elem, RzVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && elem, SZT_MAX);
+
+	size_t i;
+	if (!bin_search_range(vec, elem, cmp, user, &i)) {
+		return SZT_MAX;
+	}
+	return i;
 }
 
 RZ_API void rz_vector_pop(RzVector *vec, void *into) {
@@ -345,18 +506,37 @@ RZ_API bool rz_vector_contains(const RZ_NONNULL RzVector *vec, const RZ_NONNULL 
 	return false;
 }
 
+/**
+ * \brief Swaps two elements in the vector.
+ *
+ * \param vec The vector to swap elements in.
+ * \param index_a The index of an element.
+ * \param index_b The index of another element.
+ *
+ * \return True if elements were swapped. False in case of error.
+ */
 RZ_API bool rz_vector_swap(RzVector *vec, size_t index_a, size_t index_b) {
 	rz_return_val_if_fail(vec && index_a < vec->len && index_b < vec->len, false);
-	ut8 *tmp = malloc(vec->elem_size);
-	if (!tmp) {
-		return false;
+	if (index_a == index_b) {
+		return true;
 	}
 	void *elem_a = rz_vector_index_ptr(vec, index_a);
 	void *elem_b = rz_vector_index_ptr(vec, index_b);
+
+	ut8 stack_tmp[RZ_VECTOR_SWAP_TMP_SIZE];
+	void *tmp = vec->elem_size <= sizeof(stack_tmp) ? stack_tmp : malloc(vec->elem_size);
+	if (RZ_UNLIKELY(!tmp)) {
+		rz_warn_if_reached();
+		return false;
+	}
+
 	memcpy(tmp, elem_a, vec->elem_size);
 	memcpy(elem_a, elem_b, vec->elem_size);
 	memcpy(elem_b, tmp, vec->elem_size);
-	free(tmp);
+
+	if (tmp != stack_tmp) {
+		free(tmp);
+	}
 	return true;
 }
 
@@ -376,7 +556,14 @@ RZ_API void *rz_vector_shrink(RzVector *vec) {
 	return vec->a;
 }
 
-RZ_API void *rz_vector_flush(RzVector *vec) {
+/**
+ * \brief Turn the vector into a fixed-size array.
+ * This will clear the vector and return an array of its original contents whose
+ * ownership is transferred to the caller.
+ * This is useful when RzVector is used for its dynamically growing functionality as an
+ * intermediate step to generate a fixed-size array in the end.
+ */
+RZ_API RZ_OWN void *rz_vector_take_array(RZ_BORROW RzVector *vec) {
 	rz_return_val_if_fail(vec, NULL);
 	rz_vector_shrink(vec);
 	void *r = vec->a;
@@ -385,42 +572,132 @@ RZ_API void *rz_vector_flush(RzVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
+// Quicksort with median-of-three pivot selection and an insertion sort
+// cutoff for small ranges.
 #define VEC_INDEX(a, i) (char *)a + elem_size *(i)
+
+/**
+ * Maximum range size which is sorted with insertion sort instead of quicksort.
+ * Insertion sort has lower constant costs, so it is faster for small ranges.
+ */
+#define RZ_VECTOR_SORT_CUTOFF 16
+
+static inline bool vector_elem_less(const void *x, const void *y, RzVectorComparator cmp, bool reverse, void *user) {
+	int c = cmp(x, y, user);
+	return (c < 0 && !reverse) || (c > 0 && reverse);
+}
+
+static inline void vector_swap_elems(void *x, void *y, size_t elem_size, void *t) {
+	if (x == y) {
+		return;
+	}
+	memcpy(t, x, elem_size);
+	memcpy(x, y, elem_size);
+	memcpy(y, t, elem_size);
+}
+
+static void vector_insertion_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t) {
+	for (size_t i = 1; i < len; i++) {
+		char *cur = VEC_INDEX(a, i);
+		size_t j = i;
+		while (j > 0 && vector_elem_less(cur, VEC_INDEX(a, j - 1), cmp, reverse, user)) {
+			j--;
+		}
+		if (j != i) {
+			memcpy(t, cur, elem_size);
+			memmove(VEC_INDEX(a, j + 1), VEC_INDEX(a, j), elem_size * (i - j));
+			memcpy(VEC_INDEX(a, j), t, elem_size);
+		}
+	}
+}
+
+// Recursive quicksort. \p t and \p pivot are caller-provided scratch buffers of
+// elem_size bytes each; they are reused across the whole recursion so the sort
+// performs no per-call allocation.
+static void vector_quick_sort_rec(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user, void *t, void *pivot) {
+	while (len > RZ_VECTOR_SORT_CUTOFF) {
+		// Median-of-three pivot selection: order a[0], a[len/2], a[len-1]
+		// so that the median of the three is at a[len/2]. This avoids the
+		// quadratic worst case for already sorted or reversed input without
+		// having to call rand() for every partition.
+		size_t mid = len / 2;
+		void *first = VEC_INDEX(a, 0);
+		void *mmid = VEC_INDEX(a, mid);
+		void *last = VEC_INDEX(a, len - 1);
+		if (vector_elem_less(mmid, first, cmp, reverse, user)) {
+			vector_swap_elems(mmid, first, elem_size, t);
+		}
+		if (vector_elem_less(last, mmid, cmp, reverse, user)) {
+			vector_swap_elems(last, mmid, elem_size, t);
+			if (vector_elem_less(mmid, first, cmp, reverse, user)) {
+				vector_swap_elems(mmid, first, elem_size, t);
+			}
+		}
+		memcpy(pivot, mmid, elem_size);
+		// The element at len-1 is >= the pivot. Put it out of the way by
+		// moving it to the (now unused) median slot.
+		memcpy(mmid, last, elem_size);
+
+		size_t j = 0;
+		for (size_t i = 0; i < len - 1; i++) {
+			if (vector_elem_less(VEC_INDEX(a, i), pivot, cmp, reverse, user)) {
+				vector_swap_elems(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size, t);
+				j++;
+			}
+		}
+		memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
+		memcpy(VEC_INDEX(a, j), pivot, elem_size);
+
+		// Recurse into the smaller partition and iterate over the bigger one
+		// to limit the stack depth to O(log(n)).
+		size_t left_len = j;
+		size_t right_len = len - j - 1;
+		if (left_len < right_len) {
+			vector_quick_sort_rec(a, elem_size, left_len, cmp, reverse, user, t, pivot);
+			a = VEC_INDEX(a, j + 1);
+			len = right_len;
+		} else {
+			vector_quick_sort_rec(VEC_INDEX(a, j + 1), elem_size, right_len, cmp, reverse, user, t, pivot);
+			len = left_len;
+		}
+	}
+	if (len > 1) {
+		vector_insertion_sort(a, elem_size, len, cmp, reverse, user, t);
+	}
+}
+
+#define RZ_VECTOR_SORT_TMP_SIZE 256
+
 static void vector_quick_sort(void *a, size_t elem_size, size_t len, RzVectorComparator cmp, bool reverse, void *user) {
 	rz_return_if_fail(a);
 	if (len <= 1) {
 		return;
 	}
-	size_t i = rand() % len, j = 0;
-	void *t, *pivot;
-
-	t = (void *)malloc(elem_size);
-	pivot = (void *)malloc(elem_size);
+	// Allocate the two scratch buffers once for the whole sort instead of on
+	// every recursive call. Small elements (the common case) use the stack.
+	ut8 t_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	ut8 pivot_buf[RZ_VECTOR_SORT_TMP_SIZE];
+	void *t = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)t_buf : malloc(elem_size);
+	void *pivot = elem_size <= RZ_VECTOR_SORT_TMP_SIZE ? (void *)pivot_buf : malloc(elem_size);
 	if (!t || !pivot) {
-		free(t);
-		free(pivot);
+		if (t != (void *)t_buf) {
+			free(t);
+		}
+		if (pivot != (void *)pivot_buf) {
+			free(pivot);
+		}
 		RZ_LOG_ERROR("Failed to allocate memory\n");
 		return;
 	}
 
-	memcpy(pivot, VEC_INDEX(a, i), elem_size);
-	memcpy(VEC_INDEX(a, i), VEC_INDEX(a, len - 1), elem_size);
-	for (i = 0; i < len - 1; i++) {
-		if ((cmp(VEC_INDEX(a, i), pivot, user) < 0 && !reverse) ||
-			(cmp(VEC_INDEX(a, i), pivot, user) > 0 && reverse)) {
-			memcpy(t, VEC_INDEX(a, i), elem_size);
-			memcpy(VEC_INDEX(a, i), VEC_INDEX(a, j), elem_size);
-			memcpy(VEC_INDEX(a, j), t, elem_size);
-			j++;
-		}
+	vector_quick_sort_rec(a, elem_size, len, cmp, reverse, user, t, pivot);
+
+	if (t != (void *)t_buf) {
+		free(t);
 	}
-	memcpy(VEC_INDEX(a, len - 1), VEC_INDEX(a, j), elem_size);
-	memcpy(VEC_INDEX(a, j), pivot, elem_size);
-	RZ_FREE(t);
-	RZ_FREE(pivot);
-	vector_quick_sort(a, elem_size, j, cmp, reverse, user);
-	vector_quick_sort(VEC_INDEX(a, j + 1), elem_size, len - j - 1, cmp, reverse, user);
+	if (pivot != (void *)pivot_buf) {
+		free(pivot);
+	}
 }
 #undef VEC_INDEX
 
@@ -472,12 +749,15 @@ RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length) {
 		rz_pvector_free(v);
 		return NULL;
 	}
-	memset(p, 0, v->v.elem_size * v->v.capacity);
+	rz_vector_zeroize(&v->v, 0, v->v.capacity);
 	v->v.len = length;
 	return v;
 }
 
-RZ_API void rz_pvector_clear(RzPVector *vec) {
+/**
+ * \brief Removes all elements and frees the internal buffer.
+ */
+RZ_API void rz_pvector_clear(RZ_BORROW RzPVector *vec) {
 	rz_return_if_fail(vec);
 	rz_vector_clear(&vec->v);
 }
@@ -554,6 +834,136 @@ RZ_API size_t rz_pvector_find_index(RZ_NONNULL const RzPVector *vec, RZ_NONNULL 
 }
 
 /**
+ * \brief Binary search for the \p elem in the \p pvec sorted by \p cmp.
+ * \param pvec the RzPVector to search in, must be sorted according to \p cmp
+ * \param elem the value that elements in pvector compare against by \p cmp
+ * \param cmp the comparator function
+ * \param user the user data passed to \p cmp
+ * \param out set to the matching element of the vector, or NULL if not found. May be NULL itself to only check for existence.
+ * \return true if the element was found, false otherwise
+ */
+RZ_API bool rz_pvector_bin_search(RZ_NONNULL RzPVector *pvec, RZ_NONNULL void *elem, RZ_NONNULL RzPVectorComparator cmp, RZ_NULLABLE void *user, RZ_NULLABLE void **out) {
+	rz_return_val_if_fail(pvec && elem && cmp, false);
+
+	void **arr = (void **)pvec->v.a;
+	size_t lo = 0, hi = pvec->v.len;
+	while (lo < hi) {
+		size_t mid = lo + ((hi - lo) >> 1);
+		if (cmp(elem, arr[mid], user) > 0) {
+			lo = mid + 1;
+		} else {
+			hi = mid;
+		}
+	}
+	if (lo < pvec->v.len && cmp(elem, arr[lo], user) == 0) {
+		if (out) {
+			*out = arr[lo];
+		}
+		return true;
+	}
+	if (out) {
+		*out = NULL;
+	}
+	return false;
+}
+
+/**
+ * \brief Binary search for the position of \p x in the (sorted) \p vec.
+ *
+ * \param vec The sorted vector to search in.
+ * \param x The value that elements in the vector compare against by \p cmp.
+ * \param cmp The comparator function.
+ * \param user The user data passed to \p cmp.
+ * \param i Set to the index of the matching element, or - if there is none -
+ *          the index where \p x would be inserted to keep the vector sorted.
+ *
+ * \return true if a matching element was found, false otherwise.
+ */
+static bool pvector_bin_search_range(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *x, RZ_NONNULL RzPVectorComparator cmp, void *user, RZ_OUT size_t *i) {
+	size_t vlen = rz_pvector_len(vec);
+	if (vlen == 0) {
+		*i = 0;
+		return false;
+	}
+
+	void **arr = (void **)vec->v.a;
+	size_t left = 0;
+	size_t right = vlen;
+
+	while (left < right) {
+		size_t mid = left + (right - left) / 2;
+		int cmp_res = cmp(x, arr[mid], user);
+
+		if (cmp_res == 0) {
+			*i = mid;
+			return true;
+		}
+
+		if (vec->v.reverse_sorted) {
+			if (cmp_res > 0) {
+				right = mid;
+			} else {
+				left = mid + 1;
+			}
+		} else {
+			if (cmp_res > 0) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
+		}
+	}
+
+	*i = left;
+	return false;
+}
+
+/**
+ * \brief Inserts the pointer \p x into a sorted vector keeping the order.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the final position of the element is undefined.
+ *
+ * \param vec A sorted vector to insert \p x into.
+ * \param x The pointer to insert into the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Pointer to the position in the vector where \p x was placed.
+ * Or NULL in case of failure.
+ */
+RZ_API void **rz_pvector_insert_sorted(RZ_NONNULL RzPVector *vec, RZ_NONNULL void *x, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && x && cmp, NULL);
+
+	size_t insert_index = 0;
+	pvector_bin_search_range(vec, x, cmp, user, &insert_index);
+
+	return rz_pvector_insert(vec, insert_index, x);
+}
+
+/**
+ * \brief Finds the pointer-value \p x in the sorted vector via binary search.
+ * NOTE: This function assumes the vector is already sorted!
+ * If it isn't the result is undefined!
+ *
+ * \param vec A sorted vector to find \p x in.
+ * \param x The pointer-value to find in the vector.
+ * \param cmp The comparator for the elements.
+ * \param user The user data passed to the comparator.
+ *
+ * \return Index into the vector where the matching element is located.
+ * Or SZT_MAX in case of failure or if no element was found.
+ */
+RZ_API size_t rz_pvector_find_sorted(RZ_NONNULL const RzPVector *vec, RZ_NONNULL const void *x, RZ_NONNULL RzPVectorComparator cmp, void *user) {
+	rz_return_val_if_fail(vec && x && cmp, SZT_MAX);
+
+	size_t i;
+	if (!pvector_bin_search_range(vec, x, cmp, user, &i)) {
+		return SZT_MAX;
+	}
+	return i;
+}
+
+/**
  * \brief Joins 2 pvector into one (pvec2 pointer needs to be freed by the user)
  *
  **/
@@ -578,27 +988,51 @@ RZ_API bool rz_pvector_join(RZ_NONNULL RzPVector *pvec1, RZ_NONNULL RzPVector *p
 }
 
 /**
- * \brief Assign the pointer \p ptr at \p index in the pvector.
+ * \brief Assign the pointer \p ptr at \p index into the pvector.
+ *
+ * NOTE: This function can update the length of the vector. If the index
+ * points after the last element, but not beyond the vector's capacity, it
+ * sets the vector length to \p index + 1. Elements at [len, index) are set to zero.
+ * Use rz_pvector_set() if you need sideeffect-less manipulation of the vector slots.
  *
  * \param vec The pvector to assign to.
  * \param index The index to assign the pointer to.
  * \param ptr The pointer to assign.
  *
- * \return The pointer stored at \p index before. Or NULL in case of failure.
+ * \return The pointer stored at \p index before. NULL if index >= vec->len or in case of failure.
  */
-RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NONNULL void *ptr) {
-	rz_return_val_if_fail(vec && ptr, NULL);
-	void **p = rz_vector_index_ptr(&vec->v, index);
-	if (!p) {
-		if (vec->v.free_user) {
+RZ_API void *rz_pvector_assign_at(RZ_BORROW RZ_NONNULL RzPVector *vec, size_t index, RZ_OWN RZ_NULLABLE void *ptr) {
+	rz_return_val_if_fail(vec, NULL);
+	if (index >= rz_pvector_capacity(vec)) {
+		if (vec->v.free_user && ptr) {
 			RzPVectorFree free_fn = (RzPVectorFree)vec->v.free_user;
 			free_fn(ptr);
 		}
 		return NULL;
 	}
-	void *prev = *p;
-	rz_vector_assign_at(&vec->v, index, ptr);
+	bool increased_len = index >= rz_pvector_len(vec);
+	void **p = rz_vector_index_ptr(&vec->v, index);
+	void *prev = !p || increased_len ? NULL : *p;
+	rz_vector_assign_at(&vec->v, index, &ptr);
 	return prev;
+}
+
+/**
+ * \brief Removes the element at the given index.
+ * This function will not keep the order of the elements.
+ * Due to this, it won't use memmove and has much better
+ * performance than rz_pvector_remove_at().
+ *
+ * \param vec The vector to remove the element from.
+ * \param index The index of the element to remove.
+ *
+ * \return The removed pointer. Or NULL in case of failure.
+ */
+RZ_API void *rz_pvector_remove_at_unsorted(RZ_BORROW RzPVector *vec, size_t index) {
+	rz_return_val_if_fail(vec, NULL);
+	void *r = rz_pvector_at(vec, index);
+	rz_vector_remove_at_unsorted(&vec->v, index, NULL);
+	return r;
 }
 
 RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
@@ -614,7 +1048,7 @@ RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x) {
 		return;
 	}
 
-	size_t index = (el - (void **)vec->v.a) * sizeof(void **) / vec->v.elem_size;
+	size_t index = el - (void **)vec->v.a;
 	rz_vector_remove_at(&vec->v, index, NULL);
 }
 
@@ -632,26 +1066,80 @@ RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 	return r;
 }
 
-// CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
-	if (n <= 1) {
-		return;
+// Quicksort with median-of-three pivot selection and an insertion sort
+// cutoff for small ranges.
+
+/**
+ * Maximum range size which is sorted with insertion sort instead of quicksort.
+ * Insertion sort has lower constant costs, so it is faster for small ranges.
+ */
+#define RZ_PVECTOR_SORT_CUTOFF 16
+
+static void pvector_insertion_sort(void **a, size_t len, RzPVectorComparator cmp, void *user) {
+	for (size_t i = 1; i < len; i++) {
+		void *v = a[i];
+		size_t j = i;
+		while (j > 0 && cmp(a[j - 1], v, user) > 0) {
+			a[j] = a[j - 1];
+			j--;
+		}
+		a[j] = v;
 	}
-	size_t i = rand() % n, j = 0;
-	void *t, *pivot = a[i];
-	a[i] = a[n - 1];
-	for (i = 0; i < n - 1; i++) {
-		if (cmp(a[i], pivot, user) < 0) {
-			t = a[i];
-			a[i] = a[j];
-			a[j] = t;
-			j++;
+}
+
+static void pvector_quick_sort(void **a, size_t n, RzPVectorComparator cmp, void *user) {
+	while (n > RZ_PVECTOR_SORT_CUTOFF) {
+		// Median-of-three pivot selection: order a[0], a[n/2], a[n-1] so that
+		// the median of the three is at a[n/2]. This avoids the quadratic worst
+		// case for already sorted or reversed input without having to call
+		// rand() for every partition.
+		size_t mid = n / 2;
+		if (cmp(a[mid], a[0], user) < 0) {
+			void *t = a[mid];
+			a[mid] = a[0];
+			a[0] = t;
+		}
+		if (cmp(a[n - 1], a[mid], user) < 0) {
+			void *t = a[n - 1];
+			a[n - 1] = a[mid];
+			a[mid] = t;
+			if (cmp(a[mid], a[0], user) < 0) {
+				t = a[mid];
+				a[mid] = a[0];
+				a[0] = t;
+			}
+		}
+		void *pivot = a[mid];
+		// The element at n-1 is >= the pivot. Put it out of the way by moving
+		// it to the (now unused) median slot.
+		a[mid] = a[n - 1];
+
+		size_t j = 0;
+		for (size_t i = 0; i < n - 1; i++) {
+			if (cmp(a[i], pivot, user) < 0) {
+				void *t = a[i];
+				a[i] = a[j];
+				a[j] = t;
+				j++;
+			}
+		}
+		a[n - 1] = a[j];
+		a[j] = pivot;
+
+		// Recurse into the smaller partition and iterate over the bigger one
+		// to limit the stack depth to O(log(n)).
+		if (j < n - j - 1) {
+			pvector_quick_sort(a, j, cmp, user);
+			a += j + 1;
+			n = n - j - 1;
+		} else {
+			pvector_quick_sort(a + j + 1, n - j - 1, cmp, user);
+			n = j;
 		}
 	}
-	a[n - 1] = a[j];
-	a[j] = pivot;
-	quick_sort(a, j, cmp, user);
-	quick_sort(a + j + 1, n - j - 1, cmp, user);
+	if (n > 1) {
+		pvector_insertion_sort(a, n, cmp, user);
+	}
 }
 
 RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user) {
@@ -659,7 +1147,7 @@ RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp, void *user)
 	if (rz_pvector_empty(vec)) {
 		return;
 	}
-	quick_sort(vec->v.a, vec->v.len, cmp, user);
+	pvector_quick_sort(vec->v.a, vec->v.len, cmp, user);
 }
 
 /**

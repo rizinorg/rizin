@@ -235,7 +235,7 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, RzCmdStateOutput *state) {
 
 	switch (mode) {
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_cons_println(str);
+		rz_cons_println(core->cons, str);
 		break;
 	case RZ_OUTPUT_MODE_JSON: {
 		pj_o(pj);
@@ -245,10 +245,10 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, RzCmdStateOutput *state) {
 		break;
 	}
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_cons_printf("0x%08" PFMT64x " %" PFMT64d " ",
+		rz_cons_printf(core->cons, "0x%08" PFMT64x " %" PFMT64d " ",
 			core->yank_addr + pos,
 			rz_buf_size(core->yank_buf) - pos);
-		rz_cons_println(str);
+		rz_cons_println(core->cons, str);
 		break;
 	default:
 		rz_warn_if_reached();
@@ -297,8 +297,8 @@ RZ_API bool rz_core_yank_print(RzCore *core, ut64 pos) {
 		return false;
 	}
 	rz_buf_read_at(core->yank_buf, pos, (ut8 *)buf, sz);
-	rz_cons_memcat(buf, sz);
-	rz_cons_newline();
+	rz_cons_memcat(core->cons, buf, sz);
+	rz_cons_newline(core->cons);
 	return true;
 }
 
@@ -321,8 +321,8 @@ RZ_API bool rz_core_yank_print_string(RzCore *core, ut64 pos) {
 	}
 	rz_buf_read_at(core->yank_buf, pos, (ut8 *)buf, sz);
 	int len = rz_str_nlen(buf, sz);
-	rz_cons_memcat(buf, len);
-	rz_cons_newline();
+	rz_cons_memcat(core->cons, buf, len);
+	rz_cons_newline(core->cons);
 	return true;
 }
 
@@ -330,7 +330,7 @@ RZ_API bool rz_core_yank_hud_file(RzCore *core, const char *input) {
 	if (RZ_STR_ISEMPTY(input)) {
 		return false;
 	}
-	char *buf = rz_cons_hud_file(input);
+	char *buf = rz_cons_hud_file(core->cons, input);
 	if (RZ_STR_ISEMPTY(buf)) {
 		return false;
 	}
@@ -343,7 +343,7 @@ RZ_API bool rz_core_yank_hud_path(RzCore *core, const char *input, int dir) {
 	if (RZ_STR_ISEMPTY(input)) {
 		return false;
 	}
-	char *buf = rz_cons_hud_path(input, dir);
+	char *buf = rz_cons_hud_path(core->cons, input, dir);
 	if (RZ_STR_ISEMPTY(buf)) {
 		free(buf);
 		return false;

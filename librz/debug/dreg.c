@@ -6,13 +6,51 @@
 #include <rz_cons.h>
 #include <rz_reg.h>
 
-RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
-	int i, n, size;
-	if (!dbg || !dbg->reg || !dbg->cur) {
+static bool rz_debug_reg_sync_from_regstate(RzDebug *dbg) {
+	if (!dbg || !dbg->corebind.core) {
 		return false;
 	}
+	RzCore *core = (RzCore *)dbg->corebind.core;
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf || !bf->o || !bf->o->regstate) {
+		return false;
+	}
+	RzReg *areg = core->analysis ? rz_analysis_get_reg(core->analysis) : NULL;
+	const char *profile = areg ? areg->reg_profile_str : NULL;
+	if (!RZ_STR_ISEMPTY(profile)) {
+		rz_reg_set_profile_string(dbg->reg, profile);
+	}
+	return rz_reg_arena_set_bytes(dbg->reg, bf->o->regstate) == 0;
+}
+
+/**
+ * \brief Synchronize the registers in \p dbg->reg with the debugged target.
+ *
+ * A type without registers in its own arena is synced through the arena that
+ * holds them, e.g. flg through gpr.
+ *
+ * \param dbg The debugger.
+ * \param type Register type to sync, or RZ_REG_TYPE_ANY for all types.
+ * \param write Write \p dbg->reg to the target if true, read it otherwise.
+ * \return false if syncing fails, true otherwise; types the target can not read are left unchanged.
+ */
+RZ_API bool rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
+	int i, n, size;
+	if (!dbg || !dbg->reg) {
+		return false;
+	}
+
+	if (!write && (!dbg->cur || (!dbg->cur->reg_read && !dbg->cur->sync_registers) || rz_debug_is_dead(dbg))) {
+		if (rz_debug_reg_sync_from_regstate(dbg)) {
+			return true;
+		}
+	}
+
 	// There's no point in syncing a dead target
 	if (rz_debug_is_dead(dbg)) {
+		return false;
+	}
+	if (!dbg->cur) {
 		return false;
 	}
 	// Check if the functions needed are available
@@ -36,7 +74,8 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	i = (type == RZ_REG_TYPE_ANY) ? RZ_REG_TYPE_GPR : type;
 	// Check to get the correct arena when using @ into reg profile (arena!=type)
 	// if request type is positive and the request regset don't have regs
-	if (i >= RZ_REG_TYPE_GPR && dbg->reg->regset[i].regs && !dbg->reg->regset[i].regs->length) {
+	// (a regset without registers has no list, e.g. flg, which lives in the gpr arena)
+	if (i >= RZ_REG_TYPE_GPR && rz_list_empty(dbg->reg->regset[i].regs)) {
 		// seek into the other arena for redirections.
 		for (n = RZ_REG_TYPE_GPR; n < RZ_REG_TYPE_LAST; n++) {
 			// get regset mask
@@ -96,7 +135,15 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	return true;
 }
 
-RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) {
+/**
+ * \brief Set value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Name or role of the register whose value needs to be set, eg: "PC" or "RZ_REG_NAME_PC"
+ * \param num The value to be set to the register
+ * \return true if correctly set otherwise false
+ */
+RZ_API bool rz_debug_reg_set(RZ_NONNULL RzDebug *dbg, const char *name, ut64 num) {
+	rz_return_val_if_fail(dbg, false);
 	RzRegItem *ri = rz_reg_get_by_role_or_name(dbg->reg, name);
 	if (!ri) {
 		return false;
@@ -106,9 +153,58 @@ RZ_API int rz_debug_reg_set(struct rz_debug_t *dbg, const char *name, ut64 num) 
 	return true;
 }
 
-RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name) {
+/**
+ * \brief Set value to a register of the debuggee by role
+ * \param dbg The debugger struct
+ * \param role Role of the register whose value needs to be set, eg: "RZ_REG_NAME_PC"
+ * \param num The value to be set to the register
+ * \return true if correctly set otherwise false
+ */
+RZ_API bool rz_debug_reg_set_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role, ut64 num) {
+	rz_return_val_if_fail(dbg, false);
+	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
+	if (!ri) {
+		if (role == RZ_REG_NAME_PC) {
+			// Debug generally requires the existence of a PC register,
+			// other registers may be optional.
+			RZ_LOG_ERROR("debug: no PC register known");
+		}
+		return false;
+	}
+	rz_reg_set_value(dbg->reg, ri, num);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, true);
+	return true;
+}
+
+/**
+ * \brief Get value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Name or role whose value needs to be retrieved, eg: "PC" or "RZ_REG_NAME_PC"
+ * \return The value of the register retrieved
+ */
+RZ_API ut64 rz_debug_reg_get(RZ_NONNULL RzDebug *dbg, const char *name) {
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
 	return rz_reg_getv_by_role_or_name(dbg->reg, name);
+}
+
+/**
+ * \brief Get value to a register of the debuggee either by name or role
+ * \param dbg The debugger struct
+ * \param name Role of the register whose value needs to be retrieved, eg: "RZ_REG_NAME_PC"
+ * \return The value of the register retrieved
+ */
+RZ_API ut64 rz_debug_reg_get_by_role(RZ_NONNULL RzDebug *dbg, RzRegisterId role) {
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_ANY, false);
+	RzRegItem *ri = rz_reg_get_by_role(dbg->reg, role);
+	if (!ri) {
+		if (role == RZ_REG_NAME_PC) {
+			// Debug generally requires the existence of a PC register,
+			// other registers may be optional.
+			RZ_LOG_ERROR("debug: no PC register known");
+		}
+		return 0;
+	}
+	return rz_reg_get_value(dbg->reg, ri);
 }
 
 RZ_API ut64 rz_debug_num_callback(RzNum *userptr, const char *str, int *ok) {

@@ -35,18 +35,49 @@ RUN
 NAME=loongarch64 ensure correct cpu is selected
 FILE=bins/elf/ncat.loongarch64
 CMDS=<<EOF
-iI~arch
-iI~bits
+iI
 aaa
 pdf
 pdf @ fcn.00010208
 ao @ 0x00007538
 EOF
 EXPECT=<<EOF
-arch     loongarch
-intrp    /lib64/ld-linux-loongarch-lp64d.so.1
-machine  LoongArch
-bits     64
+arch           loongarch
+cpu            N/A
+features       N/A
+baddr          0x00000000
+binsz          0x000308ed
+bintype        elf
+bits           64
+class          ELF64
+compiler       GCC: (GNU) 14.2.1 20240805
+dbg_file       N/A
+endian         LE
+hdr.csum       N/A
+guid           N/A
+intrp          /lib64/ld-linux-loongarch-lp64d.so.1
+laddr          0x00000000
+lang           c
+machine        LoongArch
+maxopsz        4
+minopsz        4
+os             linux
+cc             N/A
+pcalign        1
+relro          full
+rpath          NONE
+subsys         linux
+stripped       true
+havecode       true
+va             true
+static         false
+linenum        false
+lsyms          false
+canary         true
+pie            true
+relrocs        false
+nx             true
+fortify_source true
 / entry0();
 |           0x00007508      move  a5, a0
 |           0x0000750c      pcalau12i a0, -3

@@ -615,3 +615,35 @@ EXPECT_ERR=<<EOF
 free_object (0)
 EOF
 RUN
+
+NAME=pyc 3.13 COMPARE_OP
+FILE=bins/pyc/pyc313.pyc
+CMDS=<<EOF
+aaa
+pdf @ fcn.0000212e
+EOF
+EXPECT=<<EOF
+/ fcn.0000212e();
+|           0x0000212e      LOAD_FAST             x
+|           0x00002130      LOAD_CONST            2
+|           0x00002132      COMPARE_OP            >
+|           0x00002134      CACHE
+\           0x00002136      RETURN_VALUE
+EOF
+RUN
+
+NAME=pyc 3.14 COMPARE_OP
+FILE=bins/pyc/pyc314.pyc
+CMDS=<<EOF
+aaa
+pdf @ fcn.000021dc
+EOF
+EXPECT=<<EOF
+/ fcn.000021dc();
+|           0x000021dc      LOAD_FAST_BORROW      x
+|           0x000021de      LOAD_SMALL_INT
+|           0x000021e0      COMPARE_OP            >
+|           0x000021e2      CACHE
+\           0x000021e4      RETURN_VALUE
+EOF
+RUN

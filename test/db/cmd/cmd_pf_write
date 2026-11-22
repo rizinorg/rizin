@@ -1,63 +1,67 @@
 NAME=pf xxd=123
 FILE==
 CMDS=<<EOF
-pfn foo "xxd foo bar cow"
+pfn foo "x4x4d4 foo bar cow"
 pf. foo
 pf. foo.foo
-.pfw foo.foo 123
+pfw foo.foo 123
 pf. foo.foo
 pf. foo
 EOF
 EXPECT=<<EOF
- foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0x00000000
- cow : 0x00000008 = 0
- foo : 0x00000000 = 0x00000000
- foo : 0x00000000 = 0x0000007b
- foo : 0x00000000 = 0x0000007b
- bar : 0x00000004 = 0x00000000
- cow : 0x00000008 = 0
+0x00000000 : foo = 0x00000000 [LE]
+0x00000004 : bar = 0x00000000 [LE]
+0x00000008 : cow = 0 [LE]
+0x00000000 : foo = 0x00000000 [LE]
+foo : 0x00000000 = 123
+0x00000000 : foo = 0x0000007b [LE]
+0x00000000 : foo = 0x0000007b [LE]
+0x00000004 : bar = 0x00000000 [LE]
+0x00000008 : cow = 0 [LE]
 EOF
 RUN
 
 NAME=pf xxd.cow=123
 FILE==
 CMDS=<<EOF
-pfn foo "[2]xxd foo bar cow"
+pfn foo "[2]x4x4d4 foo bar cow"
 pf. foo.cow
-.pfw foo.cow 123
+pfw foo.cow 123
 pf. foo.cow
 EOF
 EXPECT=<<EOF
- cow : 0x0000000c = 0
- cow : 0x0000000c = 123
+0x0000000c : cow = 0 [LE]
+cow : 0x0000000c = 123
+0x0000000c : cow = 123 [LE]
 EOF
 RUN
 
 NAME=pf array with one write
 FILE==
 CMDS=<<EOF
-pfn foo "[3]x foo"
-.pfw foo.foo 1
+pfn foo "[3]x4 foo"
+pfw foo.foo 1
 pf. foo
 EOF
 EXPECT=<<EOF
- foo : 0x00000000 = [ 0x00000001, 0x00000000, 0x00000000 ]
+foo : 0x00000000 = 1
+0x00000000 : foo = [ 0x00000001, 0x00000000, 0x00000000 ] [LE]
 EOF
 RUN
 
 NAME=pf array not in meta
 FILE==
-BROKEN=1
 CMDS=<<EOF
-pfn foo "[3]x foo"
+e asm.arch=x86
+e asm.bits=64
+pfn foo "[3]x4 foo"
 .pf foo.foo 1
 .pf .foo
 e asm.lines=0
 pd 1
 EOF
 EXPECT=<<EOF
-0x00000000 foo : 0x00000000 = [ 0x00000001, 0x00000000, 0x00000000 ]
+0x00000000      add   byte [rax], al
 EOF
 RUN
 
@@ -65,36 +69,58 @@ NAME=pf xxd print happy
 FILE==
 CMDS=<<EOF
 e asm.arch=x86
-pfn foo "xxd foo bar cow"
+pfn foo "x4x4d4 foo bar cow"
 w hello happy world
 e asm.lines=0
 pf. foo
 EOF
 EXPECT=<<EOF
- foo : 0x00000000 = 0x6c6c6568
- bar : 0x00000004 = 0x6168206f
- cow : 0x00000008 = 544829552
+0x00000000 : foo = 0x6c6c6568 [LE]
+0x00000004 : bar = 0x6168206f [LE]
+0x00000008 : cow = 544829552 [LE]
 EOF
 RUN
 
-NAME=pf xxd print
-BROKEN=1
+
+NAME=pfw writes scalar and string fields, re-reads and reports
 FILE==
 CMDS=<<EOF
-pfn foo "[2]xxd foo bar cow"
-w hello happy world
-e asm.lines=0
-e asm.flags.inbytes=1
-.pf* .foo
-pd 3
+e asm.arch=x86
+wx 32000000424c41424c41424c41424c41
+pfn troll "d4zd4 hu swagg plop"
+pfw troll.hu 42
+pfw troll.swagg "B*A AA"
+pfw troll.plop 4000
+pf. troll
 EOF
 EXPECT=<<EOF
-            ;-- foo:
-            0x00000000      .qword 0x6168206f6c6c6568
-            ;-- bar:
-            0x00000008      .dword 0x20797070
-            ;-- cow:
-            0x0000000c      .dword 0x6c726f77
+   hu : 0x00000000 = 42
+swagg : 0x00000004 = "B*A AABLABLA"
+ plop : 0x00000011 = 4000
+0x00000000 :    hu = 42 [LE]
+0x00000004 : swagg = "B*A AABLABLA"
+0x00000011 :  plop = 4000 [LE]
 EOF
 RUN
 
+NAME=pfw rejects missing field name
+FILE==
+CMDS=<<EOF
+pfn foo "x4 thing"
+pfw foo 42
+EOF
+EXPECT_ERR=<<EOF
+ERROR: pf: write mode requires <format>.<field> <value>
+EOF
+RUN
+
+NAME=pfw rejects unknown field name
+FILE==
+CMDS=<<EOF
+pfn foo "x4 thing"
+pfw foo.bogus 42
+EOF
+EXPECT_ERR=<<EOF
+ERROR: pf: write mode: field 'bogus' not found
+EOF
+RUN

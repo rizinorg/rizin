@@ -115,9 +115,9 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		if (pid > 0) {
 			iop->pid = pid;
 		}
-		io->cb_printf("%d\n", iop->pid);
+		io->cb_printf(io->cb_printf_user, "%d\n", iop->pid);
 	} else {
-		eprintf("Try: 'R!pid'\n");
+		eprintf("Try: 'R! pid'\n");
 	}
 	return NULL;
 }

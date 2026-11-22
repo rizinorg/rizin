@@ -9,6 +9,7 @@
 /* implementation */
 #include <rz_debug.h>
 
+#ifndef __WINDOWS__
 static RzList /*<RzDebugFrame *>*/ *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 	RzRegItem *ri;
 	RzReg *reg = dbg->reg;
@@ -40,6 +41,7 @@ static RzList /*<RzDebugFrame *>*/ *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 	}
 	return list;
 }
+#endif
 
 /* TODO: Can I use this as in a coroutine? */
 static RzList /*<RzDebugFrame *>*/ *backtrace_x86_32_analysis(RzDebug *dbg, ut64 at) {

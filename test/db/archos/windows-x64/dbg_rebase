@@ -68,10 +68,10 @@ doc
 afvl @ entry0
 EOF
 EXPECT=<<EOF
-var int64_t var_18h @ stack - 0x18
+var int8_t var_18h @ stack - 0x18
 var int64_t var_8h @ stack + 0x8
 var int64_t var_10h @ stack + 0x10
-var int64_t var_18h @ stack - 0x18
+var int8_t var_18h @ stack - 0x18
 var int64_t var_8h @ stack + 0x8
 var int64_t var_10h @ stack + 0x10
 EOF

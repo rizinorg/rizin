@@ -33,28 +33,45 @@ static bool verify_phdr_entry(ELFOBJ *bin, RzBinObjectLoadOptions *options, Elf_
 		return true;
 	}
 
+	bool ret = true;
+
 	Elf_(Off) end_off;
 	if (!Elf_(rz_bin_elf_add_off)(&end_off, entry->p_offset, entry->p_filesz) || end_off > bin->size) {
-		RZ_LOG_WARN("phdr entry: p_offset is invalid for p_filesz.\n");
-		return false;
+		RZ_LOG_WARN("phdr entry: p_offset (0x%" PFMTnx ") + p_filesz (%" PFMTnd " bytes) "
+			    "> binary size (%" PFMT64d " bytes).\n",
+			entry->p_offset, entry->p_filesz, bin->size);
+		ret = false;
 	}
 
+	// p_vaddr is the width of the file's address type, so unlike the other
+	// scaled fields there is nowhere wider to put the product: a p_vaddr past
+	// half the address space would wrap silently. Refuse the entry instead.
+	const ut32 scale = Elf_(rz_bin_elf_addr_scale)(bin);
+	if (scale > 1 && entry->p_vaddr > (Elf_(Addr)) - 1 / scale) {
+		RZ_LOG_WARN("phdr entry: p_vaddr (0x%" PFMTnx ") does not fit once scaled.\n",
+			entry->p_vaddr);
+		ret = false;
+	} else {
+		entry->p_vaddr *= scale;
+	}
 	if (!Elf_(rz_bin_elf_add_addr)(NULL, entry->p_vaddr, entry->p_memsz)) {
 		RZ_LOG_WARN("phdr entry: p_vaddr is invalid for p_memsz.\n");
-		return false;
+		ret = false;
 	}
 
 	if (entry->p_flags == PT_LOAD && (!entry->p_memsz || entry->p_filesz > entry->p_memsz)) {
 		RZ_LOG_WARN("phdr entry: p_memsz and/or p_filesz are invalid for a PT_LOAD segment.\n");
-		return false;
+		ret = false;
 	}
 
 	if (entry->p_align && entry->p_offset % entry->p_align != entry->p_vaddr % entry->p_align) {
-		RZ_LOG_WARN("phdr entry: p_offset and p_vaddr are not congruent for p_align.\n");
-		return false;
+		RZ_LOG_WARN("phdr entry: p_offset (0x%" PFMTnx ") and p_vaddr (0x%" PFMTnx ") "
+			    "are not congruent for p_align (0x%" PFMTnx ").\n",
+			entry->p_offset, entry->p_vaddr, entry->p_align);
+		ret = false;
 	}
 
-	return true;
+	return ret;
 }
 
 static bool get_elf_segment(ELFOBJ *bin, RzBinObjectLoadOptions *options, RzBinElfSegment *segment, ut64 offset, size_t pos) {

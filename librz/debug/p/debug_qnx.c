@@ -30,20 +30,45 @@ typedef struct {
 	libqnxr_t desc;
 } RzIOQnx;
 
-static libqnxr_t *desc = NULL;
-static ut8 *reg_buf = NULL;
-static int buf_size = 0;
+typedef struct rz_debug_qnx_ctx_t {
+	libqnxr_t *desc;
+	ut8 *reg_buf;
+	int buf_size;
+} RzDebugQnxCtx;
+
+static bool debug_qnx_init(RzDebug *dbg, void **user) {
+	RzDebugQnxCtx *ctx = RZ_NEW0(RzDebugQnxCtx);
+	if (!ctx) {
+		return false;
+	}
+	*user = ctx;
+	return true;
+}
+
+static void debug_qnx_fini(RzDebug *dbg, void *user) {
+	RzDebugQnxCtx *ctx = user;
+	if (!ctx) {
+		return;
+	}
+	free(ctx->reg_buf);
+	free(ctx);
+}
 
 static void pidlist_cb(void *ctx, pid_t pid, char *name) {
 	RzList *list = ctx;
 	rz_list_append(list, __r_debug_pid_new(name, pid, 's', 0));
 }
 
-static int rz_debug_qnx_select(RzDebug *dbg, int pid, int tid) {
-	return qnxr_select(desc, pid, tid);
+static int debug_qnx_select(RzDebug *dbg, int pid, int tid) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
+		return -1;
+	}
+	return qnxr_select(ctx->desc, pid, tid);
 }
 
-static RzList /*<RzDebugPid *>*/ *rz_debug_qnx_pids(RzDebug *dbg, int pid) {
+static RzList /*<RzDebugPid *>*/ *debug_qnx_pids(RzDebug *dbg, int pid) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;
@@ -53,73 +78,76 @@ static RzList /*<RzDebugPid *>*/ *rz_debug_qnx_pids(RzDebug *dbg, int pid) {
 	/* TODO */
 	if (pid) {
 		rz_list_append(list, __r_debug_pid_new("(current)", pid, 's', 0));
-	} else {
-		qnxr_pidlist(desc, list, &pidlist_cb);
+	} else if (ctx && ctx->desc) {
+		qnxr_pidlist(ctx->desc, list, &pidlist_cb);
 	}
 
 	return list;
 }
 
-static int rz_debug_qnx_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+static int debug_qnx_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
 	int copy_size;
 	int buflen = 0;
-	if (!desc) {
+	if (!ctx || !ctx->desc) {
 		return -1;
 	}
-	int len = qnxr_read_registers(desc);
+	int len = qnxr_read_registers(ctx->desc);
 	if (len <= 0) {
 		return -1;
 	}
 	// read the len of the current area
 	free(rz_reg_get_bytes(dbg->reg, type, &buflen));
 	if (size < len) {
-		eprintf("rz_debug_qnx_reg_read: small buffer %d vs %d\n",
+		eprintf("debug_qnx_reg_read: small buffer %d vs %d\n",
 			(int)size, (int)len);
 	}
 	copy_size = RZ_MIN(len, size);
 	buflen = RZ_MAX(len, buflen);
-	if (reg_buf) {
-		if (buf_size < copy_size) {
-			ut8 *new_buf = realloc(reg_buf, copy_size);
+	if (ctx->reg_buf) {
+		if (ctx->buf_size < copy_size) {
+			ut8 *new_buf = realloc(ctx->reg_buf, copy_size);
 			if (!new_buf) {
 				return -1;
 			}
-			reg_buf = new_buf;
+			ctx->reg_buf = new_buf;
 			buflen = copy_size;
-			buf_size = len;
+			ctx->buf_size = len;
 		}
 	} else {
-		reg_buf = calloc(buflen, 1);
-		if (!reg_buf) {
+		ctx->reg_buf = calloc(buflen, 1);
+		if (!ctx->reg_buf) {
 			return -1;
 		}
-		buf_size = buflen;
+		ctx->buf_size = buflen;
 	}
 	memset((void *)(volatile void *)buf, 0, size);
-	memcpy((void *)(volatile void *)buf, desc->recv.data, copy_size);
-	memset((void *)(volatile void *)reg_buf, 0, buflen);
-	memcpy((void *)(volatile void *)reg_buf, desc->recv.data, copy_size);
+	memcpy((void *)(volatile void *)buf, ctx->desc->recv.data, copy_size);
+	memset((void *)(volatile void *)ctx->reg_buf, 0, buflen);
+	memcpy((void *)(volatile void *)ctx->reg_buf, ctx->desc->recv.data, copy_size);
 
 	return len;
 }
 
-static RzList /*<RzDebugMap *>*/ *rz_debug_qnx_map_get(RzDebug *dbg) {
+static RzList /*<RzDebugMap *>*/ *debug_qnx_map_get(RzDebug *dbg) {
 	return NULL;
 }
 
-static int rz_debug_qnx_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+static int debug_qnx_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
 	int buflen = 0;
-	int bits = dbg->analysis->bits;
-	const char *pcname = rz_reg_get_name(dbg->analysis->reg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get(dbg->analysis->reg, pcname, 0);
-	if (!reg_buf) {
+	if (!ctx || !ctx->desc) {
+		return -1;
+	}
+	RzReg *rreg = rz_analysis_get_reg(dbg->analysis);
+	int bits = rz_analysis_get_bits(dbg->analysis);
+	RzRegItem *reg = rz_reg_get_by_role(rreg, RZ_REG_NAME_PC);
+	if (!ctx->reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;
 	}
-	if (reg) {
-		if (dbg->analysis->bits != reg->size) {
-			bits = reg->size;
-		}
+	if (reg && bits != reg->size) {
+		bits = reg->size;
 	}
 	free(rz_reg_get_bytes(dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
@@ -128,83 +156,103 @@ static int rz_debug_qnx_reg_write(RzDebug *dbg, int type, const ut8 *buf, int si
 	// calling <g>
 	// so this workaround resizes the small register profile buffer
 	// to the whole set and fills the rest with 0
-	if (buf_size < buflen) {
-		ut8 *new_buf = realloc(reg_buf, buflen * sizeof(ut8));
+	if (ctx->buf_size < buflen) {
+		ut8 *new_buf = realloc(ctx->reg_buf, buflen * sizeof(ut8));
 		if (!new_buf) {
 			return -1;
 		}
-		reg_buf = new_buf;
-		memset(new_buf + buf_size, 0, buflen - buf_size);
+		ctx->reg_buf = new_buf;
+		memset(new_buf + ctx->buf_size, 0, buflen - ctx->buf_size);
 	}
 
 	RzRegItem *current = NULL;
 	for (;;) {
-		current = rz_reg_next_diff(dbg->reg, type, reg_buf, buflen, current, bits);
+		current = rz_reg_next_diff(dbg->reg, type, ctx->reg_buf, buflen, current, bits);
 		if (!current) {
 			break;
 		}
 		ut64 val = rz_reg_get_value(dbg->reg, current);
 		int bytes = bits / 8;
-		qnxr_write_reg(desc, current->name, (char *)&val, bytes);
+		qnxr_write_reg(ctx->desc, current->name, (char *)&val, bytes);
 	}
 	return true;
 }
 
-static int rz_debug_qnx_continue(RzDebug *dbg, int pid, int tid, int sig) {
-	qnxr_continue(desc, -1);
+static int debug_qnx_continue(RzDebug *dbg, int pid, int tid, int sig) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
+		return false;
+	}
+	qnxr_continue(ctx->desc, -1);
 	return true;
 }
 
-static bool rz_debug_qnx_step(RzDebug *dbg) {
-	qnxr_step(desc, -1);
+static bool debug_qnx_step(RzDebug *dbg) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
+		return false;
+	}
+	qnxr_step(ctx->desc, -1);
 	return true;
 }
 
-static RzDebugReasonType rz_debug_qnx_wait(RzDebug *dbg, int pid) {
-	ptid_t ptid = qnxr_wait(desc, pid);
+static RzDebugReasonType debug_qnx_wait(RzDebug *dbg, int pid) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
+		return RZ_DEBUG_REASON_NONE;
+	}
+	ptid_t ptid = qnxr_wait(ctx->desc, pid);
 	if (!ptid_equal(ptid, null_ptid)) {
-		dbg->reason.signum = desc->signal;
-		return desc->notify_type;
+		dbg->reason.signum = ctx->desc->signal;
+		return ctx->desc->notify_type;
 	}
 	return RZ_DEBUG_REASON_NONE;
 }
 
-static int rz_debug_qnx_stop(RzDebug *dbg) {
-	qnxr_stop(desc);
+static int debug_qnx_stop(RzDebug *dbg) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
+		return false;
+	}
+	qnxr_stop(ctx->desc);
 	return true;
 }
 
-static int rz_debug_qnx_attach(RzDebug *dbg, int pid) {
+static int debug_qnx_attach(RzDebug *dbg, int pid) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
 	RzIODesc *d = dbg->iob.io->desc;
 	dbg->swstep = false;
+
+	if (!ctx) {
+		return false;
+	}
 
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp("qnx", d->plugin->name)) {
 			RzIOQnx *g = d->data;
 			int arch = rz_sys_arch_id(dbg->arch);
-			int bits = dbg->analysis->bits;
-			if ((desc = &g->desc)) {
-				switch (arch) {
-				case RZ_SYS_ARCH_X86:
-					if (bits == 16 || bits == 32) {
-						qnxr_set_architecture(&g->desc, X86_32);
-					} else {
-						eprintf("Not supported register %s %d profile\n", dbg->arch, bits);
-						return false;
-					}
-					break;
-				case RZ_SYS_ARCH_ARM:
-					if (bits == 16 || bits == 32) {
-						qnxr_set_architecture(&g->desc, ARM_32);
-					} else {
-						eprintf("Not supported register %s %d profile\n", dbg->arch, bits);
-						return false;
-					}
-					break;
+			int bits = rz_analysis_get_bits(dbg->analysis);
+			ctx->desc = &g->desc;
+			switch (arch) {
+			case RZ_SYS_ARCH_X86:
+				if (bits == 16 || bits == 32) {
+					qnxr_set_architecture(&g->desc, X86_32);
+				} else {
+					eprintf("Not supported register %s %d profile\n", dbg->arch, bits);
+					return false;
 				}
+				break;
+			case RZ_SYS_ARCH_ARM:
+				if (bits == 16 || bits == 32) {
+					qnxr_set_architecture(&g->desc, ARM_32);
+				} else {
+					eprintf("Not supported register %s %d profile\n", dbg->arch, bits);
+					return false;
+				}
+				break;
 			}
 			if (pid) {
-				qnxr_attach(desc, pid);
+				qnxr_attach(ctx->desc, pid);
 			}
 		} else {
 			eprintf("%s: error: underlying IO descriptor isn't a QNX one\n", __func__);
@@ -216,15 +264,22 @@ static int rz_debug_qnx_attach(RzDebug *dbg, int pid) {
 	return true;
 }
 
-static int rz_debug_qnx_detach(RzDebug *dbg, int pid) {
-	qnxr_disconnect(desc);
-	free(reg_buf);
+static int debug_qnx_detach(RzDebug *dbg, int pid) {
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx) {
+		return false;
+	}
+	if (ctx->desc) {
+		qnxr_disconnect(ctx->desc);
+	}
+	RZ_FREE(ctx->reg_buf);
+	ctx->buf_size = 0;
 	return true;
 }
 
-static const char *rz_debug_qnx_reg_profile(RzDebug *dbg) {
+static const char *debug_qnx_reg_profile(RzDebug *dbg) {
 	int arch = rz_sys_arch_id(dbg->arch);
-	int bits = dbg->analysis->bits;
+	int bits = rz_analysis_get_bits(dbg->analysis);
 	switch (arch) {
 	case RZ_SYS_ARCH_X86:
 		return rz_str_dup(
@@ -322,17 +377,22 @@ static const char *rz_debug_qnx_reg_profile(RzDebug *dbg) {
 	return NULL;
 }
 
-static int rz_debug_qnx_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
-	if (!b) {
+static int debug_qnx_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
+	if (!b || !bp || !bp->user) {
+		return false;
+	}
+	RzDebug *dbg = bp->user;
+	RzDebugQnxCtx *ctx = dbg->plugin_data;
+	if (!ctx || !ctx->desc) {
 		return false;
 	}
 	int ret = set
 		? b->hw
-			? qnxr_set_hwbp(desc, b->addr, "")
-			: qnxr_set_bp(desc, b->addr, "")
+			? qnxr_set_hwbp(ctx->desc, b->addr, "")
+			: qnxr_set_bp(ctx->desc, b->addr, "")
 		: b->hw
-		? qnxr_remove_hwbp(desc, b->addr)
-		: qnxr_remove_bp(desc, b->addr);
+		? qnxr_remove_hwbp(ctx->desc, b->addr)
+		: qnxr_remove_bp(ctx->desc, b->addr);
 	return !ret;
 }
 
@@ -341,20 +401,22 @@ RzDebugPlugin rz_debug_plugin_qnx = {
 	.license = "LGPL3",
 	.arch = "x86,arm",
 	.bits = RZ_SYS_BITS_32,
-	.step = rz_debug_qnx_step,
-	.cont = rz_debug_qnx_continue,
-	.attach = &rz_debug_qnx_attach,
-	.detach = &rz_debug_qnx_detach,
-	.pids = &rz_debug_qnx_pids,
-	.select = &rz_debug_qnx_select,
-	.stop = &rz_debug_qnx_stop,
+	.init = debug_qnx_init,
+	.fini = debug_qnx_fini,
+	.step = debug_qnx_step,
+	.cont = debug_qnx_continue,
+	.attach = &debug_qnx_attach,
+	.detach = &debug_qnx_detach,
+	.pids = &debug_qnx_pids,
+	.select = &debug_qnx_select,
+	.stop = &debug_qnx_stop,
 	.canstep = 1,
-	.wait = &rz_debug_qnx_wait,
-	.map_get = rz_debug_qnx_map_get,
-	.breakpoint = rz_debug_qnx_breakpoint,
-	.reg_read = &rz_debug_qnx_reg_read,
-	.reg_write = &rz_debug_qnx_reg_write,
-	.reg_profile = (void *)rz_debug_qnx_reg_profile,
+	.wait = &debug_qnx_wait,
+	.map_get = debug_qnx_map_get,
+	.breakpoint = debug_qnx_breakpoint,
+	.reg_read = &debug_qnx_reg_read,
+	.reg_write = &debug_qnx_reg_write,
+	.reg_profile = (void *)debug_qnx_reg_profile,
 };
 
 #ifndef RZ_PLUGIN_INCORE

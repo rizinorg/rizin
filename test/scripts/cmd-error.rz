@@ -1,0 +1,4 @@
+# Fails on purpose, see test/db/cmd/cmd_error_reporting
+echo before
+zzz
+echo after

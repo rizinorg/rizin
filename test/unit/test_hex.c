@@ -304,7 +304,31 @@ bool test_rz_hex_nibble_pair_to_byte(void) {
 	mu_end;
 }
 
+/**
+ * \brief Check every input byte against printf and round-trip both encoders.
+ */
+static bool test_rz_hex_bin2str_all_bytes(void) {
+	ut8 input[256], decoded[256] = { 0 };
+	char expected[513], actual[513];
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(input); i++) {
+		input[i] = i;
+		snprintf(expected + 2 * i, 3, "%02x", (unsigned int)input[i]);
+	}
+	mu_assert_eq(rz_hex_bin2str(input, sizeof(input), actual), sizeof(input), "encoded size");
+	mu_assert_streq(actual, expected, "all bytes encoded as lowercase hex");
+	char *allocated = rz_hex_bin2strdup(input, sizeof(input));
+	mu_assert_notnull(allocated, "allocated hex string");
+	mu_assert_streq(allocated, expected, "allocated encoding");
+	free(allocated);
+	mu_assert_eq(rz_hex_str2bin(actual, decoded), sizeof(input), "decoded size");
+	mu_assert_memeq(decoded, input, sizeof(input), "hex round trip");
+	mu_assert_eq(rz_hex_str2bin_msb(actual, decoded), sizeof(input), "MSB decoded size");
+	mu_assert_memeq(decoded, input, sizeof(input), "MSB hex round trip");
+	mu_end;
+}
+
 bool all_tests() {
+	mu_run_test(test_rz_hex_bin2str_all_bytes);
 	mu_run_test(test_rz_hex_from_c);
 	mu_run_test(test_rz_hex_from_py);
 	mu_run_test(test_rz_hex_from_code);

@@ -34,12 +34,20 @@ static void builder_json_val_double(RZ_NULLABLE void *user, double d) {
 	pj_d((PJ *)user, d);
 }
 
+static void builder_json_val_float(RZ_NULLABLE void *user, float f) {
+	pj_f((PJ *)user, f);
+}
+
 static void builder_json_val_bool(RZ_NULLABLE void *user, bool b) {
 	pj_b((PJ *)user, b);
 }
 
 static void builder_json_val_string(RZ_NULLABLE void *user, RZ_NONNULL const char *v) {
 	pj_s((PJ *)user, v);
+}
+
+static void builder_json_val_null(RZ_NULLABLE void *user) {
+	pj_null((PJ *)user);
 }
 
 static const RzStructuredDataIterator builder_json_iterator = {
@@ -51,4 +59,6 @@ static const RzStructuredDataIterator builder_json_iterator = {
 	.val_double = builder_json_val_double,
 	.val_bool = builder_json_val_bool,
 	.val_string = builder_json_val_string,
+	.val_null = builder_json_val_null,
+	.val_float = builder_json_val_float,
 };

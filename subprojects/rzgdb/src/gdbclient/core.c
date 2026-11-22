@@ -10,7 +10,6 @@
 #include "gdbr_common.h"
 #include "packet.h"
 #include "rz_util/rz_strbuf.h"
-#include "rz_cons.h"
 #include "rz_debug.h"
 
 #if __UNIX__
@@ -98,16 +97,16 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 		return false;
 	}
 	g->gdbr_lock_depth++;
-	rz_cons_break_push(gdbr_break_process, g);
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
 	return true;
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
-	rz_cons_break_push(gdbr_break_process, g);
-	void *bed = rz_cons_sleep_begin();
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
+	void *bed = rz_interrupt_sleep_begin(g->intr);
 	rz_th_lock_enter(g->gdbr_lock);
 	g->gdbr_lock_depth++;
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	if (g->isbreaked) {
 		return false;
 	}
@@ -115,7 +114,7 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(g->intr);
 	assert(g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
 	g->gdbr_lock_depth--;
@@ -152,6 +151,27 @@ end:
 	return ret;
 }
 
+/**
+ * \brief Query the remote stub for its name and version via qGDBServerVersion
+ *
+ * qGDBServerVersion is an LLDB protocol extension. The reply is a list of
+ * `key:value;` pairs, e.g. `name:debugserver;version:902.0.0;`. Stubs that do
+ * not implement it (such as gdbserver) reply with an empty packet, in which
+ * case this does nothing beyond emitting a debug log line.
+ */
+static void gdbr_query_gdb_server_version(libgdbr_t *g) {
+	if (send_msg(g, "qGDBServerVersion") < 0 || read_packet(g, false) < 0) {
+		return;
+	}
+	send_ack(g);
+	if (g->data_len == 0 || !*g->data) {
+		RZ_LOG_DEBUG("gdb: remote does not implement qGDBServerVersion\n");
+		return;
+	}
+	g->data[g->data_len] = '\0';
+	RZ_LOG_DEBUG("gdb: remote server version: %s\n", g->data);
+}
+
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	const char *message = "qSupported:multiprocess+;qRelocInsn+;xmlRegisters=i386";
 	int i;
@@ -175,15 +195,15 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 	}
 	// Use the default break handler for rz_socket_connect to send a signal
-	rz_cons_break_pop();
-	bed = rz_cons_sleep_begin();
+	rz_interrupt_break_pop(g->intr);
+	bed = rz_interrupt_sleep_begin(g->intr);
 	if (*host == '/') {
 		ret = rz_socket_connect_serial(g->sock, host, port, 1);
 	} else {
 		ret = rz_socket_connect_tcp(g->sock, host, rz_strf(tmpbuf, "%d", port), 1);
 	}
-	rz_cons_sleep_end(bed);
-	rz_cons_break_push(gdbr_break_process, g);
+	rz_interrupt_sleep_end(g->intr, bed);
+	rz_interrupt_break_push(g->intr, gdbr_break_process, g);
 	if (!ret) {
 		ret = -1;
 		goto end;
@@ -193,7 +213,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet(g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
-	bed = rz_cons_sleep_begin();
+	bed = rz_interrupt_sleep_begin(g->intr);
 	// TODO add config possibility here
 	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !g->isbreaked; i++) {
 		ret = send_msg(g, message);
@@ -210,7 +230,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 		break;
 	}
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		ret = -1;
@@ -234,6 +254,8 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 			g->no_ack = true;
 		}
 	}
+	// Query and log the remote server name/version (qGDBServerVersion)
+	gdbr_query_gdb_server_version(g);
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
 		if ((ret = gdbr_connect_lldb(g)) < 0) {
 			goto end;
@@ -1280,7 +1302,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		goto end;
 	}
 
-	bed = rz_cons_sleep_begin();
+	bed = rz_interrupt_sleep_begin(g->intr);
 	while (read_packet(g, true) < 0 && !g->isbreaked && rz_socket_is_connected(g->sock))
 		;
 	if (g->isbreaked) {
@@ -1296,7 +1318,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 
 	ret = handle_cont(g);
 end:
-	rz_cons_sleep_end(bed);
+	rz_interrupt_sleep_end(g->intr, bed);
 	gdbr_lock_leave(g);
 	return ret;
 }
@@ -1484,7 +1506,7 @@ end:
 	return ret;
 }
 
-int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+int gdbr_pread_file(libgdbr_t *g, ut8 *buf, ut64 max_len, uint32_t start_offset) {
 	int ret, ret1;
 	char command[64];
 	ut64 data_sz;
@@ -1511,7 +1533,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 		if (snprintf(command, sizeof(command) - 1,
 			    "vFile:pread:%x,%" PFMT64x ",%" PFMT64x,
 			    (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
-			    (ut64)ret) < 0) {
+			    (ut64)start_offset + ret) < 0) {
 			ret = -1;
 			goto end;
 		}
@@ -1523,7 +1545,7 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 			ret = -1;
 			goto end;
 		}
-		if ((ret1 = handle_vFile_pread(g, buf + ret)) < 0) {
+		if ((ret1 = handle_vFile_pread(g, buf + ret, max_len - ret)) < 0) {
 			ret = ret1;
 			goto end;
 		}
@@ -1536,6 +1558,10 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 end:
 	gdbr_lock_leave(g);
 	return ret;
+}
+
+int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
+	return gdbr_pread_file(g, buf, max_len, 0);
 }
 
 int gdbr_close_file(libgdbr_t *g) {
@@ -1573,7 +1599,7 @@ void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf, void *cb_printf_user) {
 	int ret = -1;
 	char *buf;
 	size_t len;
@@ -1618,7 +1644,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 			// Console output from gdbserver
 			unpack_hex(g->data + 1, g->data_len - 1, g->data + 1);
 			g->data[g->data_len - 1] = '\0';
-			cb_printf("%s", g->data + 1);
+			cb_printf(cb_printf_user, "%s", g->data + 1);
 		}
 		if ((ret = read_packet(g, false)) < 0) {
 			goto end;
@@ -1783,7 +1809,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 			// Avoid adding the same pid twice(could show more than once if it has threads)
 			rz_list_foreach (list, iter, dpid) {
 				if (tpid == dpid->pid) {
-					continue;
+					goto next;
 				}
 			}
 			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
@@ -1808,6 +1834,9 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 		if (g->data[0] == 'l') {
 			break;
 		}
+
+	next:
+		continue;
 	}
 
 	ret = 0;

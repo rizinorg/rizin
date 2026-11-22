@@ -176,6 +176,54 @@ bool test_rz_bv_init_signed(void) {
 	mu_end;
 }
 
+bool test_rz_bv_set_from(void) {
+	char *s = NULL;
+
+	RzBitVector *bits_128 = rz_bv_new_from_ut64(128, 100);
+	RzBitVector *bits_128_cmp = rz_bv_new(128);
+	rz_bv_set(bits_128_cmp, 2, true);
+	rz_bv_set(bits_128_cmp, 5, true);
+	rz_bv_set(bits_128_cmp, 6, true);
+
+	rz_bv_set_from_ut64(bits_128, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits_128), 0, "Did not set to zero");
+
+	rz_bv_set(bits_128, 2, true);
+	rz_bv_set(bits_128, 5, true);
+	rz_bv_set(bits_128, 6, true);
+	mu_assert("new from 128", is_equal_bv(bits_128, bits_128_cmp));
+
+	rz_bv_set_from_st64(bits_128, 0);
+	mu_assert_eq(rz_bv_to_ut64(bits_128), 0, "Did not set to zero");
+
+	rz_bv_set(bits_128, 2, true);
+	rz_bv_set(bits_128, 67, true);
+	rz_bv_set_from_ut64(bits_128, 0x7766554433221100ull);
+	s = rz_bv_as_hex_string(bits_128, true);
+	mu_assert_streq_free(s, "0x00000000000000007766554433221100", "string hex value of bv");
+
+	rz_bv_set_from_st64(bits_128, (st64)0xffeeddccbbaa9988ull);
+	s = rz_bv_as_hex_string(bits_128, true);
+	mu_assert_streq_free(s, "0xffffffffffffffffffeeddccbbaa9988", "string hex value of bv");
+
+	rz_bv_free(bits_128);
+	rz_bv_free(bits_128_cmp);
+
+	RzBitVector *bits_67 = rz_bv_new_from_st64(67, -1);
+	s = rz_bv_as_hex_string(bits_67, true);
+	mu_assert_streq_free(s, "0x07ffffffffffffffff", "string hex value of bv");
+	rz_bv_cast_inplace(bits_67, 69, rz_bv_msb(bits_67));
+	s = rz_bv_as_hex_string(bits_67, true);
+	mu_assert_streq_free(s, "0x1fffffffffffffffff", "string hex value of bv");
+	rz_bv_set_from_st64(bits_67, 9);
+	s = rz_bv_as_hex_string(bits_67, false);
+	mu_assert_streq_free(s, "0x9", "string hex value of bv");
+
+	rz_bv_free(bits_67);
+
+	mu_end;
+}
+
 bool test_rz_bv_logic_large(void) {
 	RzBitVector *x, *y, *z;
 	RzBitVector *result;
@@ -713,12 +761,18 @@ bool test_rz_bv_operation(void) {
 	mu_assert_streq_free(s, "0x0", "string hex value of bv");
 	rz_bv_free(res);
 
-	res = rz_bv_append(x, y);
+	res = rz_bv_append(y, x);
 	mu_assert("append x and y", is_equal_bv(res, concat));
 	s = rz_bv_as_string(res);
 	mu_assert_streq_free(s, "000010001011", "string bit value of bv");
 	s = rz_bv_as_hex_string(res, true);
 	mu_assert_streq_free(s, "0x08b", "string hex value of bv");
+	rz_bv_free(res);
+
+	res = rz_bv_new_from_ut64(4, 0x5);
+	rz_bv_append_inplace(res, x);
+	s = rz_bv_as_hex_string(res, true);
+	mu_assert_streq_free(s, "0x085", "string hex value of bv");
 	rz_bv_free(res);
 
 	rz_bv_free(prep);
@@ -1515,6 +1569,26 @@ bool test_rz_bv_cast_inplace(void) {
 	RzBitVector *small = rz_bv_new_from_ut64(20, 0x01234);
 	RzBitVector *large = rz_bv_new_from_bytes_be(array_128, 0, 128);
 
+	mu_assert_true(rz_bv_cast_inplace(small, 5, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
+	mu_assert_eq(small->len, 5, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 64, true), "Cast failed");
+	mu_assert_eq(rz_bv_to_ut64(small), 0xfffffffffffffff4ULL, "Mismatch after cast");
+	mu_assert_eq(small->len, 64, "New size is off");
+	mu_assert_null(small->bits.large_a, "Should have been NULL");
+	mu_assert_eq(small->_elem_len, 0, "Should be 0");
+
+	mu_assert_true(rz_bv_cast_inplace(small, 65, true), "Cast failed");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x1fffffffffffffff4", "small to large cast failed");
+	mu_assert_eq(small->len, 65, "New size is off");
+	mu_assert_notnull(small->bits.large_a, "Buffer not set");
+	mu_assert_eq(small->_elem_len, 9, "Buffer length wrong");
+
+	rz_bv_free(small);
+	small = rz_bv_new_from_ut64(20, 0x01234);
 	mu_assert_true(rz_bv_cast_inplace(small, 5, false), "Cast failed");
 	mu_assert_eq(rz_bv_to_ut64(small), 0x14, "Mismatch after cast");
 	mu_assert_eq(small->len, 5, "New size is off");
@@ -1572,6 +1646,31 @@ bool test_rz_bv_cast_inplace(void) {
 
 	rz_bv_free(small);
 	rz_bv_free(large);
+
+	small = rz_bv_new_from_ut64(20, 0xe1234);
+	mu_assert_true(rz_bv_unsigned_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0xe1234", "unsigned cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0x31234);
+	mu_assert_true(rz_bv_unsigned_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x31234", "unsigned cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0xe1234);
+	mu_assert_true(rz_bv_signed_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0xfe1234", "signed cast inplace result");
+	rz_bv_free(small);
+
+	small = rz_bv_new_from_ut64(20, 0x31234);
+	mu_assert_true(rz_bv_signed_cast_inplace(small, 24), "Cast failed");
+	mu_assert_eq(small->len, 24, "new size");
+	mu_assert_streq_free(rz_bv_as_hex_string(small, false), "0x31234", "signed cast inplace result");
+	rz_bv_free(small);
+
 	mu_end;
 }
 
@@ -1924,6 +2023,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init128);
 	mu_run_test(test_rz_bv_init70);
 	mu_run_test(test_rz_bv_init_signed);
+	mu_run_test(test_rz_bv_set_from);
 	mu_run_test(test_rz_bv_cmp);
 	mu_run_test(test_rz_bv_eq);
 	mu_run_test(test_rz_bv_cast);

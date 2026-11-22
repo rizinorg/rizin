@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include <rz_types.h>
-#include <rz_core.h>
+#include <rz_util.h>
 
 #include "axml_resources.h"
 

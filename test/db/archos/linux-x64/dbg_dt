@@ -5,6 +5,7 @@ CMDS=<<EOF
 dt++ 0 1 2
 dtl
 dtlq
+dtlj
 EOF
 EXPECT=<<EOF
 0x00000000 size=1 count=1 times=1 tag=0
@@ -13,6 +14,7 @@ EXPECT=<<EOF
 0x0
 0x1
 0x2
+[{"addr":0,"size":1,"count":1,"times":1,"tag":0},{"addr":1,"size":1,"count":2,"times":1,"tag":0},{"addr":2,"size":1,"count":3,"times":1,"tag":0}]
 EOF
 RUN
 

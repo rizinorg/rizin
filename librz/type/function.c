@@ -36,7 +36,7 @@ RZ_API RZ_OWN RzCallable *rz_type_callable_clone(RZ_BORROW RZ_NONNULL const RzCa
 	if (!newcallable) {
 		return NULL;
 	}
-	newcallable->ret = callable->ret ? rz_type_clone(callable->ret) : NULL;
+	newcallable->ret = callable->ret ? rz_type_clone_shallow(callable->ret) : NULL;
 	newcallable->name = rz_str_dup(callable->name);
 	newcallable->args = rz_pvector_new((RzPVectorFree)rz_type_callable_arg_free);
 	void **it;
@@ -90,7 +90,7 @@ RZ_API RZ_OWN RzCallableArg *rz_type_callable_arg_clone(RZ_BORROW RZ_NONNULL con
 		return NULL;
 	}
 	newarg->name = rz_str_dup(arg->name);
-	newarg->type = rz_type_clone(arg->type);
+	newarg->type = rz_type_clone_shallow(arg->type);
 	return newarg;
 }
 
@@ -141,13 +141,19 @@ RZ_API RZ_OWN RzCallable *rz_type_func_new(RzTypeDB *typedb, RZ_NONNULL const ch
 }
 
 /**
- * \brief Stores RzCallable type in the types database
+ * \brief Stores the given RzCallable type in the types database
  *
- * \param typedb Type Database instance
- * \param callable RzCallable type to save
+ * \param typedb Types Database instance
+ * \param callable RzCallable to store; ownership is transferred only on success
+ * \return true if \p callable was stored, false if a callable with the same
+ *         name already exists or the arguments are invalid
+ *
+ * On failure the database does not take ownership of \p callable, so the
+ * caller remains responsible for freeing it with rz_type_callable_free().
  */
 RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
 	rz_return_val_if_fail(typedb && callable && callable->name, false);
+	rz_type_db_load_pending(typedb);
 	if (rz_type_func_exist(typedb, callable->name)) {
 		return false;
 	}
@@ -163,6 +169,7 @@ RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable)
  */
 RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable) {
 	rz_return_val_if_fail(typedb && callable && callable->name, false);
+	rz_type_db_load_pending(typedb);
 	if (!ht_sp_update(typedb->callables, callable->name, (void *)callable)) {
 		rz_type_callable_free(callable);
 		return false;
@@ -178,6 +185,7 @@ RZ_API bool rz_type_func_update(RzTypeDB *typedb, RZ_NONNULL RzCallable *callabl
  */
 RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, NULL);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	RzCallable *callable = ht_sp_find(typedb->callables, name, &found);
 	if (!found || !callable) {
@@ -195,6 +203,7 @@ RZ_API RZ_BORROW RzCallable *rz_type_func_get(RzTypeDB *typedb, RZ_NONNULL const
  */
 RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
+	rz_type_db_load_pending(typedb);
 	ht_sp_delete(typedb->callables, name);
 	return true;
 }
@@ -203,6 +212,7 @@ RZ_API bool rz_type_func_delete(RzTypeDB *typedb, RZ_NONNULL const char *name) {
  * \brief Removes all RzCallable types
  */
 RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
+	rz_type_db_load_pending(typedb);
 	ht_sp_free(typedb->callables);
 	typedb->callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
 }
@@ -215,6 +225,7 @@ RZ_API void rz_type_func_delete_all(RzTypeDB *typedb) {
  */
 RZ_API bool rz_type_func_exist(RzTypeDB *typedb, RZ_NONNULL const char *name) {
 	rz_return_val_if_fail(typedb && name, false);
+	rz_type_db_load_pending(typedb);
 	bool found = false;
 	return ht_sp_find(typedb->callables, name, &found) && found;
 }
@@ -366,7 +377,7 @@ RZ_API bool rz_type_func_ret_set(RzTypeDB *typedb, const char *name, RZ_BORROW R
 		return false;
 	}
 	rz_type_free(callable->ret);
-	callable->ret = rz_type_clone(type);
+	callable->ret = rz_type_clone_shallow(type);
 	return true;
 }
 
@@ -502,7 +513,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 				if (array_len == 0) {
 					array_str = rz_str_newf("[%s]", zero_vla ? "0" : "");
 				} else {
-					array_str = rz_str_newf("[%lld]", array_len);
+					array_str = rz_str_newf("[%" PFMT64d "]", array_len);
 				}
 
 				rz_return_val_if_fail(array_str, NULL);
@@ -521,7 +532,7 @@ static inline char *callable_name_or_ptr(RZ_NONNULL const RzCallable *callable, 
 	}
 }
 
-static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla) {
+static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NONNULL RzVector /*<st64>*/ *wrapper_type_infos, bool zero_vla, RzCallableArgSuffixCb arg_suffix, void *user) {
 	rz_return_val_if_fail(buf && typedb && callable && wrapper_type_infos, false);
 
 	if (callable->noret) {
@@ -540,6 +551,9 @@ static bool callable_as_string(RzStrBuf *buf, const RzTypeDB *typedb, RZ_NONNULL
 			char *argstr = rz_type_identifier_declaration_as_string(typedb, arg->type, rz_str_get(arg->name));
 			const char *comma = first ? "" : ", ";
 			rz_strbuf_appendf(buf, "%s%s", comma, argstr);
+			if (arg_suffix) {
+				arg_suffix(buf, arg, user);
+			}
 			first = false;
 			free(argstr);
 		}
@@ -572,7 +586,7 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
 		return NULL;
 	}
 	RzStrBuf *buf = rz_strbuf_new("");
-	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, zero_vla)) {
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, zero_vla, NULL, NULL)) {
 		rz_vector_free(wrapper_type_infos);
 		rz_strbuf_free(buf);
 
@@ -590,11 +604,23 @@ RZ_API RZ_OWN char *rz_type_callable_ptr_as_string(const RzTypeDB *typedb, RZ_NO
  * \param callable RzCallable instance
  */
 RZ_API RZ_OWN char *rz_type_callable_as_string(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable) {
+	return rz_type_callable_as_string_with_suffix(typedb, callable, NULL, NULL);
+}
+
+/**
+ * \brief Returns the callable C representation, with text added after its arguments
+ *
+ * \param typedb Types Database instance
+ * \param callable RzCallable instance
+ * \param arg_suffix Called after each argument is printed, to append text after it
+ * \param user Passed to \p arg_suffix
+ */
+RZ_API RZ_OWN char *rz_type_callable_as_string_with_suffix(const RzTypeDB *typedb, RZ_NONNULL const RzCallable *callable, RZ_NULLABLE RzCallableArgSuffixCb arg_suffix, RZ_NULLABLE void *user) {
 	rz_return_val_if_fail(typedb && callable, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 
 	RzVector *wrapper_type_infos = rz_vector_new(sizeof(st64), NULL, free);
-	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, false)) {
+	if (!callable_as_string(buf, typedb, callable, wrapper_type_infos, false, arg_suffix, user)) {
 		rz_strbuf_free(buf);
 		rz_vector_free(wrapper_type_infos);
 
@@ -677,6 +703,7 @@ static bool function_names_collect_cb(void *user, RZ_UNUSED const char *k, const
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *result = rz_list_newf(free);
 	ht_sp_foreach(typedb->callables, function_names_collect_cb, result);
 	return result;
@@ -698,6 +725,7 @@ static bool noreturn_function_names_collect_cb(void *user, RZ_UNUSED const char 
  */
 RZ_API RZ_OWN RzList /*<char *>*/ *rz_type_noreturn_function_names(RzTypeDB *typedb) {
 	rz_return_val_if_fail(typedb, NULL);
+	rz_type_db_load_pending(typedb);
 	RzList *noretl = rz_list_newf(free);
 	ht_sp_foreach(typedb->callables, noreturn_function_names_collect_cb, noretl);
 	return noretl;

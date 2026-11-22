@@ -4,27 +4,15 @@
 #include <rz_reg.h>
 #include "minunit.h"
 
-bool test_rz_reg_set_name(void) {
-	RzReg *reg;
-
-	reg = rz_reg_new();
-	mu_assert_notnull(reg, "rz_reg_new () failed");
-
-	rz_reg_set_name(reg, RZ_REG_NAME_PC, "eip");
-	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
-	mu_assert_streq(name, "eip", "PC register alias is eip");
-
-	rz_reg_free(reg);
-	mu_end;
-}
-
 bool test_rz_reg_set_profile_string(void) {
 	RzReg *reg;
 
 	reg = rz_reg_new();
 	mu_assert_notnull(reg, "rz_reg_new () failed");
 
-	rz_reg_set_profile_string(reg, "=PC eip");
+	rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"gpr eip .32 0 0");
 	const char *name = rz_reg_get_name(reg, RZ_REG_NAME_PC);
 	mu_assert_streq(name, "eip", "PC register alias is eip");
 
@@ -37,6 +25,106 @@ bool test_rz_reg_set_profile_string(void) {
 	ut64 value = rz_reg_getv(reg, "eax");
 	mu_assert_eq(value, 1234, "get eax register value");
 
+	rz_reg_free(reg);
+	mu_end;
+}
+
+bool test_rz_reg_set_profile_string_fields(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	mu_assert_true(rz_reg_set_profile_string(reg,
+			       "# profile comment line\n"
+			       "###\n"
+			       "#comment#another\n"
+			       " \t  \t \n"
+			       "\n"
+			       "=PC\tpc\n"
+			       "gpr\tpc\t.32\t0\t0\n"
+			       "gpr   r0    .32   4    0   # first   register  \n"
+			       "gpr\tr1\t.32\t8\t0\t#second register\n"
+			       "gpr\tr2\t.32\t20\t0#glued comment\n"
+			       "ctr \t csr\t .32 \t12\t0\t# Control status register\n"
+			       "flg\tzf\t.1\t16.0\t0\tz\n"
+			       "gpr\tr3\t.32\t24\t0\t###\n"
+			       "gpr\tr4\t.32\t28\t0\t#comment#another\n"),
+		"set profile with comments and flags");
+	mu_assert_streq(rz_reg_get_name(reg, RZ_REG_NAME_PC), "pc", "PC alias");
+
+	RzRegItem *item = rz_reg_get(reg, "r0", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r0 exists");
+	mu_assert_eq(item->offset, 4 * 8, "r0 offset");
+	mu_assert_eq(item->size, 32, "r0 size");
+	mu_assert_streq(item->comment, "first   register", "r0 comment is trimmed, inner spaces kept");
+	mu_assert_null(item->flags, "r0 has no flags");
+
+	item = rz_reg_get(reg, "r1", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r1 exists");
+	mu_assert_streq(item->comment, "second register", "comment without space after #");
+
+	item = rz_reg_get(reg, "r2", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r2 exists");
+	mu_assert_eq(item->packed_size, 0, "r2 packed size is not swallowed by a glued comment");
+	mu_assert_streq(item->comment, "glued comment", "# directly after a field starts the comment");
+
+	item = rz_reg_get(reg, "csr", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "csr exists with mixed spaces and tabs");
+	mu_assert_eq(item->offset, 12 * 8, "csr offset");
+	mu_assert_streq(item->comment, "Control status register", "csr comment");
+
+	item = rz_reg_get(reg, "zf", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "zf exists");
+	mu_assert_eq(item->offset, 16 * 8, "zf offset");
+	mu_assert_eq(item->size, 1, "zf size");
+	mu_assert_streq(item->flags, "z", "zf flags");
+	mu_assert_null(item->comment, "zf has no comment");
+
+	item = rz_reg_get(reg, "r3", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r3 exists");
+	mu_assert_eq(item->offset, 24 * 8, "r3 offset");
+	mu_assert_streq(item->comment, "##", "only the first # starts the comment");
+
+	item = rz_reg_get(reg, "r4", RZ_REG_TYPE_ANY);
+	mu_assert_notnull(item, "r4 exists");
+	mu_assert_eq(item->offset, 28 * 8, "r4 offset");
+	mu_assert_streq(item->comment, "comment#another", "a later # is part of the comment");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
+static bool test_rz_reg_profile_comments(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "create register profile");
+	const char *profile =
+		"# profile \"quoted\" C:\\regs\r\n"
+		"=PC pc\n"
+		" \t# indented # comment \t\r\n"
+		"gpr pc .32 0 0 # inline comment\n"
+		"# final comment";
+	const char *comments =
+		"# profile \"quoted\" C:\\regs\n"
+		"# indented # comment\n"
+		"# final comment\n";
+	mu_assert_true(rz_reg_set_profile_string(reg, profile), "parse commented profile");
+	mu_assert_streq(reg->reg_profile_cmt, comments, "retain full-line comments");
+	RzRegItem *pc = rz_reg_get(reg, "pc", RZ_REG_TYPE_GPR);
+	mu_assert_notnull(pc, "parse register after comments");
+	mu_assert_streq(pc->comment, "inline comment", "retain per-register comment separately");
+	mu_assert_true(rz_reg_set_profile_string(reg, profile), "reuse cached profile");
+	mu_assert_streq(reg->reg_profile_cmt, comments, "do not duplicate cached comments");
+	mu_assert_true(rz_reg_set_profile_string(reg, "gpr r0 .32 0 0\n"), "replace profile");
+	mu_assert_null(reg->reg_profile_cmt, "clear comments on profile replacement");
+	mu_assert_true(rz_reg_set_profile_string(reg, "# only a comment"), "comment-only profile");
+	mu_assert_streq(reg->reg_profile_cmt, "# only a comment\n", "unterminated comment");
+	mu_assert_true(rz_reg_set_profile_string(reg, ""), "empty profile");
+	mu_assert_null(reg->reg_profile_cmt, "clear comments on empty profile");
+	mu_assert_false(rz_reg_set_profile_string(reg, "# discarded\ninvalid pc .32 0 0\n"),
+		"reject invalid register type");
+	mu_assert_null(reg->reg_profile_cmt, "discard comments from a failed parse");
+	mu_assert_null(reg->reg_profile_str, "do not cache a failed profile");
+	mu_assert_true(rz_reg_set_profile_string(reg, profile), "load profile after parse failure");
+	mu_assert_streq(reg->reg_profile_cmt, comments, "retain comments after recovery");
 	rz_reg_free(reg);
 	mu_end;
 }
@@ -165,6 +253,36 @@ bool test_rz_reg_get(void) {
 	r = rz_reg_get(reg, "xmm0", -1);
 	mu_assert_streq(r->name, "xmm0", "found xmm0");
 	mu_assert_eq(r->type, RZ_REG_TYPE_XMM, "xmm0 type is RZ_REG_TYPE_XMM");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
+bool test_rz_reg_get_by_role(void) {
+	RzReg *reg;
+	RzRegItem *r;
+
+	reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	bool success = rz_reg_set_profile_string(reg,
+		"=PC eip\n"
+		"=SP esp\n"
+		"gpr	eip		.32	0	0\n"
+		"gpr	esp		.32	4	0\n"
+		"gpr	eax		.32	8	0");
+	mu_assert_eq(success, true, "load profile");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_PC);
+	mu_assert_notnull(r, "rz_reg_get_by_role pc");
+	mu_assert_streq(r->name, "eip", "rz_reg_get_by_role pc");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_SP);
+	mu_assert_notnull(r, "rz_reg_get_by_role sp");
+	mu_assert_streq(r->name, "esp", "rz_reg_get_by_role sp");
+
+	r = rz_reg_get_by_role(reg, RZ_REG_NAME_BP);
+	mu_assert_null(r, "rz_reg_get_by_role bp (nonexistent)");
 
 	rz_reg_free(reg);
 	mu_end;
@@ -368,15 +486,114 @@ bool test_rz_reg_set_bv(void) {
 	mu_end;
 }
 
+bool test_rz_reg_profile_to_cc(void) {
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "rz_reg_new () failed");
+
+	// More than four argument registers must all appear in the derived cc.
+	rz_reg_set_profile_string(reg,
+		"=R0 r0\n"
+		"=A0 r0\n"
+		"=A1 r1\n"
+		"=A2 r2\n"
+		"=A3 r3\n"
+		"=A4 r4\n"
+		"=A5 r5\n"
+		"gpr r0 .32 0 0\n"
+		"gpr r1 .32 4 0\n"
+		"gpr r2 .32 8 0\n"
+		"gpr r3 .32 12 0\n"
+		"gpr r4 .32 16 0\n"
+		"gpr r5 .32 20 0\n");
+	char *cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "r0 reg(r0, r1, r2, r3, r4, r5)", "six argument registers");
+
+	// Four argument registers, the classic case, is unchanged.
+	rz_reg_set_profile_string(reg,
+		"=R0 a\n"
+		"=A0 a\n"
+		"=A1 b\n"
+		"=A2 c\n"
+		"=A3 d\n"
+		"gpr a .32 0 0\n"
+		"gpr b .32 4 0\n"
+		"gpr c .32 8 0\n"
+		"gpr d .32 12 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a, b, c, d)", "four argument registers");
+
+	// The argument list stops at the first undefined role and the return
+	// register falls back to A0 when R0 is absent.
+	rz_reg_set_profile_string(reg,
+		"=A0 a\n"
+		"=A1 b\n"
+		"gpr a .32 0 0\n"
+		"gpr b .32 4 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a, b)", "two args, return falls back to A0");
+
+	// A0 alone is a valid single-argument convention.
+	rz_reg_set_profile_string(reg,
+		"=A0 a\n"
+		"gpr a .32 0 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_streq_free(cc, "a reg(a)", "single argument register");
+
+	// Without any argument register there is no convention to derive.
+	rz_reg_set_profile_string(reg,
+		"=PC pc\n"
+		"gpr pc .32 0 0\n");
+	cc = rz_reg_profile_to_cc(reg);
+	mu_assert_null(cc, "no argument register yields no cc");
+
+	rz_reg_free(reg);
+	mu_end;
+}
+
+static bool test_rz_reg_profile_cleanup(void) {
+	rz_reg_free(NULL);
+	RzReg *reg = rz_reg_new();
+	mu_assert_notnull(reg, "create register state");
+	mu_assert_true(rz_reg_set_profile_string(reg, ""), "load an empty profile");
+	for (size_t i = 0; i < RZ_REG_TYPE_LAST; i++) {
+		mu_assert_null(reg->regset[i].regs, "empty profiles need no register lists");
+		mu_assert_notnull(reg->regset[i].pool, "profile replacement preserves arena pools");
+	}
+	mu_assert_true(rz_reg_set_profile_string(reg, "gpr pc .32 0 0\n"), "load register definitions");
+	mu_assert_true(rz_reg_setv(reg, "pc", 42), "write a register after an empty profile");
+	mu_assert_eq(rz_reg_getv(reg, "pc"), 42, "read a register after an empty profile");
+	mu_assert_false(rz_reg_set_profile_string(reg, "invalid pc .32 0 0\n"),
+		"reject invalid register type");
+	mu_assert_true(rz_reg_set_profile_string(reg, "gpr pc .32 0 0 # inline comment\n"),
+		"load register definitions after parse failure");
+	mu_assert_notnull(rz_reg_get(reg, "pc", RZ_REG_TYPE_GPR), "register definition exists");
+	mu_assert_true(rz_reg_set_profile_string(reg, "gpr sp .32 0 0\n"), "replace register definitions");
+	const RzList *items = rz_reg_get_list(reg, RZ_REG_TYPE_GPR);
+	mu_assert_eq(rz_list_length(items), 1, "replacement removes the old register item");
+	RzRegItem *item = rz_list_first_val(items);
+	mu_assert_notnull(item, "replacement register exists");
+	mu_assert_streq(item->name, "sp", "only the replacement register remains");
+	mu_assert_false(rz_reg_set_profile_string(reg, "invalid pc .32 0 0\n"),
+		"reject another invalid profile");
+	mu_assert_null(reg->regset[RZ_REG_TYPE_GPR].regs, "final cleanup releases the register list");
+	mu_assert_null(reg->allregs, "cleanup drops the register index");
+	rz_reg_free(reg);
+	mu_end;
+}
+
 int all_tests() {
-	mu_run_test(test_rz_reg_set_name);
 	mu_run_test(test_rz_reg_set_profile_string);
+	mu_run_test(test_rz_reg_set_profile_string_fields);
+	mu_run_test(test_rz_reg_profile_comments);
 	mu_run_test(test_rz_reg_get_value_gpr);
 	mu_run_test(test_rz_reg_get_value_flag);
 	mu_run_test(test_rz_reg_get);
+	mu_run_test(test_rz_reg_get_by_role);
 	mu_run_test(test_rz_reg_get_list);
 	mu_run_test(test_rz_reg_get_bv);
 	mu_run_test(test_rz_reg_set_bv);
+	mu_run_test(test_rz_reg_profile_to_cc);
+	mu_run_test(test_rz_reg_profile_cleanup);
 	return tests_passed != tests_run;
 }
 

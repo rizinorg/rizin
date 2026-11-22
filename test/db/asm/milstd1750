@@ -1,0 +1,240 @@
+# disassembly tests for MIL-STD-1750A: all instruction formats
+# (special, register, short immediate, shift, ICR/branch, base relative,
+# BX, memory, IM, XIO, jump, float, extended float, bit ops, stack ops)
+
+d "NOP()" FF00
+d "BPT()" FFFF
+d "URS(r0)" 7F00
+d "URS(r5)" 7F50
+d "AR(r1, r2)" A112
+d "AR(r0, r0)" A100
+d "LR(r3, r5)" 8135
+d "LR(r0, r1)" 8101
+d "SR(r1, r2)" B112
+d "ABS(r4, r0)" A440
+d "NEG(r3, r0)" B430
+d "FNEG(r1, r0)" BC10
+d "FABS(r1, r0)" AC10
+d "FIX(r1, r2)" E812
+d "FLT(r1, r2)" E912
+d "MR(r5, r6)" C556
+d "DR(r2, r3)" D523
+d "DVR(r1, r2)" D112
+d "FAR(r1, r2)" A912
+d "FCR(r3, r4)" F934
+d "FMR(r5, r6)" C956
+d "FDR(r7, r8)" D978
+d "FSR(r2, r3)" B923
+d "ANDR(r1, r2)" E312
+d "ORR(r3, r4)" E134
+d "XORR(r5, r6)" E556
+d "NR(r1, r2)" E712
+d "DCR(r3, r4)" F734
+d "EFAR(r1, r2)" AB12
+d "EFCR(r3, r4)" FB34
+d "EFMR(r5, r6)" CB56
+d "EFDR(r7, r8)" DB78
+d "EFSR(r2, r3)" BB23
+d "EFLT(r1, r2)" EB12
+d "EFIX(r3, r4)" EA34
+d "UCR(r1, r2)" FC12
+d "UAR(r3, r4)" AD34
+d "USR(r5, r6)" BD56
+d "DAR(r1, r2)" A712
+d "DABS(r3, r0)" A530
+d "DNEG(r5, r0)" B550
+d "DLR(r2, r3)" 8723
+d "DSR(r4, r5)" B745
+d "DMR(r6, r7)" C767
+d "DDR(r1, r2)" D712
+d "MOV(r1, r2)" 9312
+d "SCR(r3, r0)" 6C30
+d "SAR(r4, r0)" 6B40
+d "SLR(r5, r0)" 6A50
+d "DSLR(r6, r0)" 6D60
+d "DSAR(r7, r0)" 6E70
+d "DSCR(r8, r0)" 6F80
+d "XBR(r1, r2)" EC12
+d "XWR(r3, r4)" ED34
+d "POPM(r3, r5)" 8F35
+d "PSHM(r3, r5)" 9F35
+d "SFBS(r1, r2)" 9512
+d "SVBR(r3, r4)" 5A34
+d "RVBR(r5, r6)" 5C56
+d "TVBR(r7, r8)" 5E78
+d "LISP(r2, 3)" 8222
+d "LISP(r0, 1)" 8200
+d "LISP(r0, 16)" 820F
+d "LISN(r4, 3)" 8342
+d "AISP(r0, 16)" A20F
+d "AISP(r3, 5)" A234
+d "SISP(r1, 1)" B210
+d "MISP(r2, 4)" C223
+d "MISN(r3, 5)" C334
+d "DISP(r4, 7)" D246
+d "DISN(r5, 2)" D351
+d "CISN(r6, 8)" F367
+d "SLL(r3, 5)" 6043
+d "SRL(r1, 3)" 6121
+d "SRA(r2, 4)" 6232
+d "SLC(r4, 2)" 6314
+d "DSLL(r2, 3)" 6522
+d "DSRL(r1, 1)" 6601
+d "DSRA(r3, 2)" 6713
+d "DSLC(r4, 4)" 6834
+d "SBR(1, r4)" 5114
+d "SBR(3, r4)" 5134
+d "RBR(5, r2)" 5452
+d "TBR(7, r3)" 5773
+d "BR(0x0010)" 7410
+d "BR(0x00ff)" 74FF
+d "BEZ(0x0001)" 7501
+d "BLT(0x0020)" 7620
+d "BEX(3)" 7703
+d "BLE(0x0040)" 7840
+d "BGT(0x0050)" 7950
+d "BNZ(0x0030)" 7A30
+d "BGE(0x0060)" 7B60
+d "BIF(0x42)" 4F42
+d "LB(r12, 5)" 0005
+d "LB(r13, 5)" 0105
+d "LB(r14, 10)" 020A
+d "LB(r15, 255)" 03FF
+d "STB(r12, 5)" 0805
+d "STB(r13, 20)" 0914
+d "AB(r12, 100)" 1064
+d "SBB(r12, 50)" 1432
+d "MB(r13, 30)" 191E
+d "DB(r14, 40)" 1E28
+d "FAB(r12, 10)" 200A
+d "FSB(r13, 20)" 2514
+d "FMB(r14, 30)" 2A1E
+d "FDB(r15, 40)" 2F28
+d "ORB(r12, 50)" 3032
+d "ANDB(r13, 60)" 353C
+d "CB(r14, 70)" 3A46
+d "FCB(r15, 80)" 3F50
+d "DLB(r12, 5)" 0405
+d "DSTB(r13, 10)" 0D0A
+d "LBX(r12, r5)" 4005
+d "LBX(r13, r5)" 4105
+d "STBX(r12, r5)" 4025
+d "DLBX(r14, r3)" 4213
+d "DSTX(r12, r5)" 4035
+d "ABX(r13, r6)" 4146
+d "SBBX(r12, r7)" 4057
+d "MBX(r14, r1)" 4261
+d "DBX(r15, r2)" 4372
+d "FABX(r12, r3)" 4083
+d "FSBX(r13, r4)" 4194
+d "FMBX(r14, r5)" 42A5
+d "FDBX(r15, r6)" 43B6
+d "CBX(r12, r7)" 40C7
+d "FCBX(r13, r8)" 41D8
+d "ANDX(r14, r9)" 42E9
+d "ORBX(r15, r0)" 43F0
+d "A(r3, 0x1234)" A0301234
+d "A(r3, 0x1234, r2)" A0321234
+d "L(r5, 0x1234)" 80501234
+d "ST(r3, 0x1234)" 90301234
+d "S(r2, 0x5678)" B0205678
+d "M(r1, 0xabcd)" C410ABCD
+d "D(r4, 0x0100)" D4400100
+d "DV(r3, 0x1234)" D0301234
+d "C(r5, 0x1234)" F0501234
+d "AND(r1, 0x1234)" E2101234
+d "OR(r3, 0x5678)" E0305678
+d "XOR(r2, 0xabcd)" E420ABCD
+d "N(r1, 0x1234)" E6101234
+d "FA(r3, 0x1234)" A8301234
+d "FS(r2, 0x5678)" B8205678
+d "FM(r1, 0xabcd)" C810ABCD
+d "FD(r4, 0x0100)" D8400100
+d "FC(r5, 0x1234)" F8501234
+d "MS(r1, 0x1234)" C0101234
+d "MSR(r2, r3)" C123
+d "DA(r1, 0x1234)" A6101234
+d "DS(r2, 0x5678)" B6205678
+d "DM(r3, 0xabcd)" C630ABCD
+d "DD(r4, 0x0100)" D6400100
+d "DC(r5, 0x1234)" F6501234
+d "EFA(r3, 0x1234)" AA301234
+d "EFS(r2, 0x5678)" BA205678
+d "EFM(r1, 0xabcd)" CA10ABCD
+d "EFD(r4, 0x0100)" DA400100
+d "EFC(r5, 0x1234)" FA501234
+d "EFST(r1, 0x1234)" 9A101234
+d "EFL(r3, 0x5678)" 8A305678
+d "UA(r1, 0x1234)" AE101234
+d "US(r2, 0x5678)" BE205678
+d "UC(r3, 0xabcd)" FD30ABCD
+d "CBL(r1, 0x1234)" F4101234
+d "LE(r2, 0x5678)" DE205678
+d "STE(r3, 0xabcd)" DC30ABCD
+d "DLE(r4, 0x0100)" DF400100
+d "DSTE(r5, 0x1234)" DD501234
+d "LI(r1, 0x1234)" 84101234
+d "LIM(r2, 0x5678)" 85205678
+d "DLI(r3, 0xabcd)" 8830ABCD
+d "STI(r4, 0x0100)" 94400100
+d "DSTI(r5, 0x1234)" 98501234
+d "LLB(r1, 0x1234)" 8C101234
+d "LLBI(r2, 0x5678)" 8E205678
+d "LUB(r3, 0xabcd)" 8B30ABCD
+d "LUBI(r4, 0x0100)" 8D400100
+d "STLB(r5, 0x1234)" 9C501234
+d "STUB(r1, 0x5678)" 9B105678
+d "SLBI(r2, 0x1234)" 9E201234
+d "SUBI(r3, 0x5678)" 9D305678
+d "SRM(r4, 0x1234)" 97401234
+d "DL(r1, 0x1234)" 86101234
+d "DST(r2, 0x5678)" 96205678
+d "SJS(r3, 0x1234)" 7E301234
+d "SOJ(r3, 0x1234)" 73301234
+d "JS(r2, 0x1234)" 72201234
+d "VIO(r1, 0x1234)" 49101234
+d "SB(3, 0x1234, r0)" 50301234
+d "SBI(5, 0x5678, r2)" 52525678
+d "RB(7, 0xabcd, r3)" 5373ABCD
+d "RBI(1, 0x0100, r4)" 55140100
+d "TB(3, 0x1234, r0)" 56301234
+d "TBI(5, 0x5678, r2)" 58525678
+d "TSB(7, 0xabcd, r3)" 5973ABCD
+d "INCM(3, 0x12ab, r0)" A33012AB
+d "DECM(5, 0x1234, r0)" B3501234
+d "LM(3, 0x1234, r0)" 89301234
+d "STM(5, 0x5678, r2)" 99525678
+d "LSTI(0x1234, r5)" 7C051234
+d "LST(0x5678, r3)" 7D035678
+d "JC(0x5, 0x1234, r15)" 705F1234
+d "JCI(0xf, 0x0000, r0)" 71F00000
+d "JCI(0x3, 0x5678, r2)" 71325678
+d "AIM(r5, 0xabcd)" 4A51ABCD
+d "AIM(r0, 0x0001)" 4A010001
+d "SIM(r3, 0x1234)" 4A321234
+d "MIM(r0, 0xabcd)" 4A03ABCD
+d "MSIM(r0, 0xabcd)" 4A04ABCD
+d "DIM(r0, 0xabcd)" 4A05ABCD
+d "DVIM(r0, 0xabcd)" 4A06ABCD
+d "ANDM(r0, 0xabcd)" 4A07ABCD
+d "ORIM(r0, 0xabcd)" 4A08ABCD
+d "XORM(r0, 0xabcd)" 4A09ABCD
+d "NIM(r0, 0xabcd)" 4A0BABCD
+d "UCIM(r0, 0xabcd)" F500ABCD
+d "XIO(r3, SMK)" 48302000
+d "XIO(r3, CLIR)" 48302001
+d "XIO(r3, ENBL)" 48302002
+d "XIO(r3, DSBL)" 48302003
+d "XIO(r3, RPI)" 48302004
+d "XIO(r3, SPI)" 48302005
+d "XIO(r3, WSW)" 4830200E
+d "XIO(r3, RMK)" 4830A000
+d "XIO(r3, RSW)" 4830A00E
+d "XIO(r3, RCFR)" 4830A00F
+d "XIO(r3, CO)" 48304000
+d "XIO(r3, CI)" 4830C000
+d "XIO(r3, r2, PO { 1, 2 })" 48320102
+d "XIO(r3, r2, PI { 1, 2 })" 48328102
+d "XIO(r3, LMP { 5 })" 48305005
+d "XIO(r3, RMP { 10 })" 4830D00A
+d "XIO(r0, PO { 0, 0 })" 48000000

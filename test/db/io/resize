@@ -31,6 +31,7 @@ e io.va=0
 i~^size[1]
 wx 010203
 i~^size[1]
+e io.0xff=0
 w hello world
 i~^size[1]
 ps

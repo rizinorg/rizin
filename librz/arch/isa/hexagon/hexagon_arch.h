@@ -86,4 +86,5 @@ RZ_API HexPkt *hex_get_pkt(RZ_BORROW HexState *state, const ut32 addr);
 RZ_API HexInsnContainer *hex_get_hic_at_addr(HexState *state, const ut32 addr);
 RZ_API const HexOp hex_nreg_to_op(const HexInsnPktBundle *bundle, const char isa_id);
 RZ_IPI void hexagon_pkt_mark_tail_calls(HexPkt *pkt);
+RZ_IPI void hexagon_state_clear_cache(RZ_NONNULL HexState *state);
 #endif

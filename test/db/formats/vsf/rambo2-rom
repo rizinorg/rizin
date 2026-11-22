@@ -1,24 +1,22 @@
-NAME=VSF: Rambo II- open
+NAME=VSF: Rambo II rom
 FILE=bins/vsf/c64-rambo2-rom.vsf
-ARGS=-A
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=VSF: Rambo II- detection
-FILE=bins/vsf/c64-rambo2-rom.vsf
-CMDS=iI~os
+CMDS=<<EOF
+iI~os
+echo ---
+oml
+EOF
 EXPECT=<<EOF
 os       C64
-EOF
-RUN
-
-NAME=VSF: Rambo II- ROMs
-FILE=bins/vsf/c64-rambo2-rom.vsf
-CMDS=oml
-EXPECT=<<EOF
+---
  1 fd: 3 +0x0001209d 0x0000a000 - 0x0000bfff r-x fmap.BASIC
  2 fd: 3 +0x0001009d 0x0000e000 - 0x0000ffff r-x fmap.KERNAL
  3 fd: 3 +0x00000084 0x00000000 * 0x0000ffff r-x fmap.RAM
 EOF
+RUN
+
+NAME=VSF: Rambo II rom- open
+FILE=bins/vsf/c64-rambo2-rom.vsf
+ARGS=-A
+CMDS=q!
+EXPECT=
 RUN

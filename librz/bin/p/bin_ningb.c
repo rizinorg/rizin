@@ -422,7 +422,7 @@ static ut32 gb_get_rom_banks(const gb_header_t *hdr) {
 	}
 }
 
-static bool gb_check_buffer(RzBuffer *b) {
+bool gb_check_buffer(RzBuffer *b) {
 	ut8 nin_logo[GB_ROM_NINTENDO_LOGO_SIZE];
 
 	st32 read = rz_buf_read_at(b, GB_ROM_NINTENDO_LOGO_OFFSET, nin_logo, sizeof(nin_logo));
@@ -692,7 +692,7 @@ static RzBinInfo *gb_info(RzBinFile *bf) {
 	ret->has_va = true;
 	ret->bits = 16;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
+	ret->dbg_info = RZ_BIN_DBG_STRIPPED;
 	return ret;
 }
 

@@ -58,6 +58,12 @@ you used to build Rizin).
 
 Running a specific set of benchmarks (e.g. `bitvector`) can be done with `ninja -C build test bitvector --benchmark`.
 
+To see the detailed benchmark results (iterations, average time per operation, and throughput), you must use the verbose flag:
+
+`meson test -C build <benchmark_name> --benchmark -v`
+
+**Note**: Without the -v flag, Meson will only report if the benchmark process finished successfully, but it will not display the timing data table.
+
 # Failure Levels
 
 A test can have one of the following results:
@@ -91,6 +97,20 @@ d "ret" c3
 a "nop" 90 # Assembly is correct
 dB "nopppp" 90 # Disassembly test is broken
 ```
+
+#### Select bits and cpu
+
+Some instructions are only valid for a certain ISA version.
+For that `rz-test` is setup with the correct architecture, bits, and cpu model from the file name.
+
+The possible formats are:
+
+1. `<arch>`
+	 Example: `arm`
+2. <arch>_<bits>
+	 Example: `arm_32`
+3. <arch>_<cpu>_<bits>
+	 Example: `arm_cortex_32`
 
 #### Multiple instructions in a single test
 

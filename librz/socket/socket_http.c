@@ -16,7 +16,7 @@ static size_t socket_slurp(RzSocket *s, RzBuffer *buf) {
 	if (rz_socket_ready(s, 1, 0) != 1) {
 		return 0;
 	}
-	rz_socket_block_time(s, true, 0, 1000);
+	rz_socket_block_time(s, true, 10, 0);
 	for (i = 0; i < SOCKET_HTTP_MAX_HEADER_LENGTH; i += 1) {
 		ut8 c;
 		int olen = rz_socket_read_block(s, &c, 1);
@@ -77,9 +77,9 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 			goto exit;
 		}
 		p += strlen("Location:");
-		char *end_url = strchr(p, '\n');
+		const char *end_url = strchr(p, '\n');
 		if (end_url) {
-			int url_len = end_url - p;
+			size_t url_len = end_url - p;
 			char *url = rz_str_ndup(p, url_len);
 			rz_str_trim(url);
 			res = socket_http_get_recursive(url, code, rlen, --redirections);
@@ -89,15 +89,17 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 		goto exit;
 	}
 
+	size_t len_after_header = olen - (dn - buf);
+
 	/* Parse Len */
 	p = rz_str_casestr(buf, "Content-Length: ");
 	if (p) {
 		len = atoi(p + 16);
 	} else {
-		len = olen - (dn - buf);
+		len = len_after_header;
 	}
 	if (len > 0) {
-		if (len > olen) {
+		if (len > len_after_header) {
 			res = malloc(len + 2);
 			if (!res) {
 				goto exit;
@@ -111,7 +113,10 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 				}
 				olen += ret;
 			} while (olen < len);
-			res[len] = 0;
+			res[olen] = 0;
+			if (olen < len) {
+				len = olen;
+			}
 		} else {
 			res = malloc(len + 1);
 			if (res) {

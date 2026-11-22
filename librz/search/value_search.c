@@ -59,7 +59,7 @@ failed_to_read:
 }
 
 static bool values_find(RzSearchFindOpt *fopts, void *user, ut64 address, const RzBuffer *buffer,
-	RZ_OUT RzThreadQueue *hits, RZ_OUT size_t *n_hits) {
+	RZ_OUT RzThreadQueue /*<RzSearchHit *>*/ *hits, RZ_OUT size_t *n_hits) {
 	if (!fopts) {
 		RZ_LOG_ERROR("bytes_find requires valid find options.\n");
 		return false;

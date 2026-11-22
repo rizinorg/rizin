@@ -75,9 +75,35 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		// first index is 0 that is why -1
 		sc_hdr = rz_vector_index_ptr(bin->scn_hdrs, s->n_scnum - 1);
-		ptr->paddr = sc_hdr->s_scnptr + s->n_value;
-		if (bin->scn_va) {
-			ptr->vaddr = bin->scn_va[s->n_scnum - 1] + s->n_value;
+		// In a fully linked executable (F_EXEC), a defined symbol's n_value is
+		// already the absolute virtual address, so it must not be re-based onto
+		// the section VA (that would double-count). The file offset is the
+		// section's file pointer plus the symbol's offset within the section.
+		if ((bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0) {
+			const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+			if (sc_hdr->s_flags & loadable) {
+				const ut32 scale = rz_coff_addr_scale(bin);
+				ptr->vaddr = (ut64)s->n_value * scale;
+				ptr->paddr = sc_hdr->s_scnptr + (ut64)(s->n_value - sc_hdr->s_vaddr) * scale;
+			} else {
+				// Symbol belongs to a non-loadable section (DWARF/debug, build
+				// attributes, .pinit). Its n_value is not an address in the
+				// loaded target space: TI in particular emits many .debug_line
+				// entries whose n_value is the *code* address of a source line.
+				// Placing those as flags drops a label in the middle of a real
+				// instruction, and "asm.flags.middle" then splits the
+				// instruction there and desyncs all following disassembly. Keep
+				// the symbol for reference but give it no loadable vaddr.
+				ptr->vaddr = UT64_MAX;
+				ptr->paddr = sc_hdr->s_scnptr + s->n_value;
+			}
+		} else {
+			const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+			const ut32 scale = (sc_hdr->s_flags & loadable) ? rz_coff_addr_scale(bin) : 1;
+			ptr->paddr = sc_hdr->s_scnptr + (ut64)s->n_value * scale;
+			if (bin->scn_va) {
+				ptr->vaddr = bin->scn_va[s->n_scnum - 1] + (ut64)s->n_value * scale;
+			}
 		}
 	}
 	if (ptr->is_imported) {
@@ -107,7 +133,19 @@ static bool coff_fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, size_
 		} else {
 			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
-		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) || !strcmp(coffname, "main"))
+		/* DTYPE_IS_FUNCTION checks the n_type ISFCN bit, which C and
+		 * C++ compilers set on function symbols. Assembler-emitted
+		 * globals (TI asm55/cl55, GAS COFF output) don't always set
+		 * that bit, but they're nonetheless functions when their
+		 * containing section has CNT_CODE. Promote them so analysis
+		 * (aa) sees real functions instead of unknown globals.
+		 *
+		 * The 'main' name override predates this and stays as the
+		 * last-resort fallback for files where neither the type bit
+		 * nor section flags are reliable. */
+		ptr->type = (DTYPE_IS_FUNCTION(s->n_type) ||
+				    (sc_hdr && (sc_hdr->s_flags & COFF_SCN_CNT_CODE)) ||
+				    !strcmp(coffname, "main"))
 			? RZ_BIN_TYPE_FUNC_STR
 			: RZ_BIN_TYPE_UNKNOWN_STR;
 		break;
@@ -248,14 +286,28 @@ static RzPVector /*<RzBinMap *>*/ *coff_maps(RzBinFile *bf) {
 
 	size_t i = 0;
 	CoffScnHdr *hdr;
+	// In a linked executable, non-loadable sections (DWARF/debug, build
+	// attributes, .pinit) carry s_vaddr == 0. Mapping them would place them at
+	// VA 0 and, given their size, shadow the real low-addressed loadable
+	// sections (e.g. .text at 0x100), so reads there return debug bytes. Only
+	// map sections that are actually loaded into the target address space:
+	// those carrying code or initialized/uninitialized data.
+	const bool is_exec = (obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) != 0;
+	const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
 	rz_vector_enumerate (obj->scn_hdrs, hdr, i) {
+		if (is_exec && !(hdr->s_flags & loadable)) {
+			continue;
+		}
 		RzBinMap *ptr = RZ_NEW0(RzBinMap);
 		if (!ptr) {
 			return ret;
 		}
 		ptr->name = rz_coff_symbol_name(obj, (const ut8 *)hdr->s_name);
-		ptr->psize = hdr->s_size;
-		ptr->vsize = hdr->s_size;
+		// Only loadable sections are counted in target address units; debug
+		// sections are byte streams even on a word-addressed target.
+		const ut32 scale = (hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		ptr->psize = (ut64)hdr->s_size * scale;
+		ptr->vsize = (ut64)hdr->s_size * scale;
 		ptr->paddr = hdr->s_scnptr;
 		if (obj->scn_va) {
 			ptr->vaddr = obj->scn_va[i];
@@ -309,8 +361,10 @@ static RzPVector /*<RzBinSection *>*/ *coff_sections(RzBinFile *bf) {
 		if (strstr(ptr->name, "data")) {
 			ptr->is_data = true;
 		}
-		ptr->size = scn_hdr->s_size;
-		ptr->vsize = scn_hdr->s_size;
+		const ut32 loadable = COFF_SCN_CNT_CODE | COFF_SCN_CNT_INIT_DATA | COFF_SCN_CNT_UNIN_DATA;
+		const ut32 scale = (scn_hdr->s_flags & loadable) ? rz_coff_addr_scale(obj) : 1;
+		ptr->size = (ut64)scn_hdr->s_size * scale;
+		ptr->vsize = (ut64)scn_hdr->s_size * scale;
 		ptr->paddr = scn_hdr->s_scnptr;
 		ptr->flags = scn_hdr->s_flags;
 		if (obj->scn_va) {
@@ -594,20 +648,48 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 		ret->cpu = rz_str_dup("r10000");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+		// Original TI COFF (version 0) carried the target id directly in the
+		// file header's f_magic, so a target-id constant is matched here on the
+		// same field that holds COFF_FILE_MACHINE_TI_1/_2 for newer files.
+		// COFF1/COFF2 moved the id into the separate target_id field, handled
+		// by the COFF_FILE_MACHINE_TI_1/_2 case below.
+		// The id is shared by the C1x/C2x/C5x assemblers, so default to the C2x
+		// disassembler (override with -c c5x for a C5x image).
+		ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+		ret->cpu = rz_str_dup("c2x");
+		ret->arch = rz_str_dup("tms320");
+		ret->bits = 16;
+		break;
 	case COFF_FILE_MACHINE_TI_1:
 		/* fall-thru */
 	case COFF_FILE_MACHINE_TI_2:
 		switch (obj->target_id) {
+		case COFF_FILE_TARGET_TI_TMS320C1x2x5x:
+			// First-generation TI fixed-point COFF id, shared by the TMS320C1x/
+			// C2x/C5x assemblers. Map it to the legacy single-accumulator C2x
+			// disassembler by default; override with -c for a C5x image. (The
+			// id is rarely present on raw firmware dumps; verify on real object
+			// files before relying on autodetection.)
+			ret->machine = rz_str_dup("TMS320C1x/C2x/C5x");
+			ret->cpu = rz_str_dup("c2x");
+			ret->arch = rz_str_dup("tms320");
+			ret->bits = 16;
+			break;
 		case COFF_FILE_TARGET_TI_TMS320C3x4x:
 			ret->machine = rz_str_dup("TMS320C3x/4x");
-			ret->cpu = rz_str_dup("c54x");
+			/* TMS320C3x/C4x is a floating-point DSP family that
+			 * rizin does not currently disassemble; pick the
+			 * closest-in-spirit 32-bit TI VLIW family. */
+			ret->cpu = rz_str_dup("c64x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_TMS470:
+			/* TMS470 is an ARM7TDMI core, not a TMS320 DSP. */
 			ret->machine = rz_str_dup("TMS470");
-			ret->cpu = rz_str_dup("c54x");
-			ret->arch = rz_str_dup("tms320");
+			ret->cpu = rz_str_dup("arm");
+			ret->arch = rz_str_dup("arm");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C5400:
@@ -618,7 +700,7 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C6000:
 			ret->machine = rz_str_dup("TMS320C6000");
-			ret->cpu = rz_str_dup("c55x");
+			ret->cpu = rz_str_dup("c64x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
@@ -630,15 +712,15 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C2800:
 			ret->machine = rz_str_dup("TMS320C2800");
-			ret->cpu = rz_str_dup("c54x");
+			ret->cpu = rz_str_dup("c28x");
 			ret->arch = rz_str_dup("tms320");
 			ret->bits = 32;
 			break;
 		case COFF_FILE_TARGET_TI_MSP430:
-			ret->machine = rz_str_dup("TMS320C2800");
-			ret->cpu = rz_str_dup("c54x");
-			ret->arch = rz_str_dup("tms320");
-			ret->bits = 32;
+			ret->machine = rz_str_dup("MSP430");
+			ret->cpu = rz_str_dup("msp430");
+			ret->arch = rz_str_dup("msp430");
+			ret->bits = 16;
 			break;
 		case COFF_FILE_TARGET_TI_TMS320C5500_PLUS:
 			ret->machine = rz_str_dup("TMS320C5500+");
@@ -650,6 +732,11 @@ static RzBinInfo *coff_info(RzBinFile *bf) {
 			ret->machine = rz_str_newf("unknown TI 0x%08x", obj->target_id);
 			break;
 		}
+		break;
+	case COFF_FILE_MACHINE_MIL1750:
+		ret->machine = rz_str_dup("MIL-STD-1750A");
+		ret->arch = rz_str_dup("milstd1750");
+		ret->bits = 8;
 		break;
 	default:
 		ret->machine = rz_str_newf("unknown 0x%08x", obj->hdr.f_magic);

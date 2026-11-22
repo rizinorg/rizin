@@ -91,7 +91,7 @@ RzILOpEffect *hex_il_op_y2_dctagw(HexInsnPktBundle *bundle) {
 
 // dczeroa(Rs)
 RzILOpEffect *hex_il_op_y2_dczeroa(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	return NOP();
 }
 
 // Rd = getimask(Rs)
@@ -206,12 +206,34 @@ RzILOpEffect *hex_il_op_y2_syncht(HexInsnPktBundle *bundle) {
 
 // Rd = Ss
 RzILOpEffect *hex_il_op_y2_tfrscrr(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Rd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Ss_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Ss_op, false);
+
+	// Rd = Ss;
+	RzILOpEffect *op_ASSIGN_2 = WRITE_REG(bundle, Rd_op, Rs);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_2;
+	return instruction_sequence;
 }
 
 // Sd = Rs
 RzILOpEffect *hex_il_op_y2_tfrsrcr(HexInsnPktBundle *bundle) {
-	NOT_IMPLEMENTED;
+	const HexInsn *hi = bundle->insn;
+	HexPkt *pkt = bundle->pkt;
+	// READ
+	const HexOp *Sd_op = ISA2REG(hi, 'd', false);
+	const HexOp *Rs_op = ISA2REG(hi, 's', false);
+	RzILOpPure *Rs = READ_REG(pkt, Rs_op, false);
+
+	// Sd = Rs;
+	RzILOpEffect *op_ASSIGN_2 = WRITE_REG(bundle, Sd_op, Rs);
+
+	RzILOpEffect *instruction_sequence = op_ASSIGN_2;
+	return instruction_sequence;
 }
 
 // tlblock

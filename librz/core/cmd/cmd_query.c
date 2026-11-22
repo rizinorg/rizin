@@ -12,7 +12,8 @@
 #include "../core_private.h"
 
 static bool callback_foreach_kv(void *user, const SdbKv *kv) {
-	rz_cons_printf("%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
+	RzCons *cons = (RzCons *)user;
+	rz_cons_printf(cons, "%s=%s\n", sdbkv_key(kv), sdbkv_value(kv));
 	return true;
 }
 
@@ -24,7 +25,7 @@ RZ_IPI RzCmdStatus rz_query_sdb_get_set_handler(RzCore *core, int argc, const ch
 	}
 
 	if (argc == 1) {
-		sdb_foreach(sdb, callback_foreach_kv, NULL);
+		sdb_foreach(sdb, callback_foreach_kv, core->cons);
 		return RZ_CMD_STATUS_OK;
 	}
 	rz_core_kuery_print(core, argv[1]);
@@ -41,7 +42,7 @@ RZ_IPI RzCmdStatus rz_query_shell_sdb_handler(RzCore *core, int argc, const char
 	if (core->http_up) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	if (!rz_cons_is_interactive()) {
+	if (!rz_cons_is_interactive(core->cons)) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	if (argc > 1) {
@@ -67,7 +68,7 @@ RZ_IPI RzCmdStatus rz_query_shell_sdb_handler(RzCore *core, int argc, const char
 	rz_line_set_hist_callback(line, &rz_line_hist_sdb_up, &rz_line_hist_sdb_down);
 	for (;;) {
 		rz_line_set_prompt(line, "[sdb]> ");
-		if (rz_cons_fgets(buf, sizeof(buf), 0, NULL) < 1) {
+		if (rz_cons_fgets(core->cons, buf, sizeof(buf), 0, NULL) < 1) {
 			break;
 		}
 		if (!*buf) {
@@ -81,8 +82,8 @@ RZ_IPI RzCmdStatus rz_query_shell_sdb_handler(RzCore *core, int argc, const char
 		}
 		out = sdb_querys(sdb, NULL, 0, buf);
 		if (out) {
-			rz_cons_println(out);
-			rz_cons_flush();
+			rz_cons_println(core->cons, out);
+			rz_cons_flush(core->cons);
 		}
 	}
 	rz_line_set_hist_callback(core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
@@ -131,7 +132,7 @@ RZ_IPI RzCmdStatus rz_query_dump_json_handler(RzCore *core, int argc, const char
 
 	tofree = out = sdb_querys(sdb, NULL, 0, "analysis/**");
 	if (!out) {
-		rz_cons_println("No Output from sdb");
+		rz_cons_println(core->cons, "No Output from sdb");
 		return RZ_CMD_STATUS_ERROR;
 	}
 	PJ *pj = pj_new();
@@ -177,7 +178,7 @@ RZ_IPI RzCmdStatus rz_query_dump_json_handler(RzCore *core, int argc, const char
 	pj_end(pj);
 	pj_end(pj);
 	pj_end(pj);
-	rz_cons_println(pj_string(pj));
+	rz_cons_println(core->cons, pj_string(pj));
 	pj_free(pj);
 	RZ_FREE(next_cmd);
 	free(next_cmd);

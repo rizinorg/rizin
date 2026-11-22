@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #include <rz_type.h>
 #include <rz_pdb.h>
-#include <rz_analysis.h>
+#include "analysis_private.h"
 #include "../bin/pdb/pdb.h"
 
 static RzType *pdb_type_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type, char *name);
@@ -17,8 +17,8 @@ static RzType *array_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdb
 static void arglist_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *arglist, RzPVector /*<RzCallableArg *>*/ *vec);
 static RzType *mfunction_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name);
 static RzType *onemethod_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
-static RzType *member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name);
-static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *t, char *name);
+static RzType *member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name, ut64 *bitfield_width);
+static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *t);
 static RzType *union_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
 static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info);
 static RzType *class_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type);
@@ -185,7 +185,21 @@ static RzType *procedure_parse(
 	if (arglist) {
 		arglist_parse(typedb, stream, arglist, typ->callable->args);
 	}
-	rz_type_func_save((RzTypeDB *)typedb, callable);
+	if (!rz_type_func_save((RzTypeDB *)typedb, callable)) {
+		// A callable with this name is already registered. PDB type graphs
+		// frequently reference the same procedure type more than once, and
+		// unnamed procedures get a deterministic name derived from their TPI
+		// offset, so duplicates are expected. rz_type_func_save() does not take
+		// ownership on failure, so reuse the already-stored callable and free
+		// this one; otherwise it (and its whole subtree) would be leaked.
+		RzCallable *existing = rz_type_func_get((RzTypeDB *)typedb, callable->name);
+		rz_type_callable_free(callable);
+		typ->callable = existing;
+		if (!existing) {
+			rz_type_free(typ);
+			return NULL;
+		}
+	}
 	return typ;
 }
 
@@ -221,7 +235,18 @@ static RzType *mfunction_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, R
 	if (arglist) {
 		arglist_parse(typedb, stream, arglist, type->callable->args);
 	}
-	rz_type_func_save((RzTypeDB *)typedb, callable);
+	if (!rz_type_func_save((RzTypeDB *)typedb, callable)) {
+		// See procedure_parse(): rz_type_func_save() does not take ownership when
+		// a callable of the same name already exists, so free this duplicate and
+		// reuse the stored one to avoid leaking it together with its subtree.
+		RzCallable *existing = rz_type_func_get((RzTypeDB *)typedb, callable->name);
+		rz_type_callable_free(callable);
+		type->callable = existing;
+		if (!existing) {
+			rz_type_free(type);
+			return NULL;
+		}
+	}
 	return type;
 }
 
@@ -240,13 +265,30 @@ static RzType *onemethod_parse(
 	return NULL;
 }
 
-static RzType *member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
+static RzType *member_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name, ut64 *bitfield_width) {
 	rz_return_val_if_fail(type_info && typedb, NULL);
 	Tpi_LF_Member *lf_member = type_info->data;
 
 	RzPdbTpiType *utype = rz_bin_pdb_get_type_by_index(stream, lf_member->field_type);
 	if (!utype) {
 		return NULL;
+	}
+	if (utype->kind == TpiKind_BITFIELD) {
+		// A bitfield member ("int a : 4;"): resolve the member to its underlying
+		// integer type and report the bit width via \p bitfield_width, so it is
+		// stored as a bitfield (see RzTypeStructMember.size / RzTypeUnionMember.size).
+		Tpi_LF_Bitfield *lf_bitfield = utype->data;
+		if (!lf_bitfield) {
+			return NULL;
+		}
+		if (bitfield_width) {
+			*bitfield_width = lf_bitfield->length;
+		}
+		RzPdbTpiType *base = rz_bin_pdb_get_type_by_index(stream, lf_bitfield->base_type);
+		if (!base) {
+			return NULL;
+		}
+		return pdb_type_parse(typedb, stream, base, name);
 	}
 	return pdb_type_parse(typedb, stream, utype, name);
 }
@@ -286,7 +328,7 @@ static RzTypeIdentifierKind iKind_from_bKind(RzBaseTypeKind k) {
 	return RZ_TYPE_IDENTIFIER_KIND_UNSPECIFIED;
 }
 
-static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info, char *name) {
+static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbTpiType *type_info) {
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	Tpi_LF_NestType *lf_nest = type_info->data;
 	RzPdbTpiType *utpi = rz_bin_pdb_get_type_by_index(stream, lf_nest->index);
@@ -300,12 +342,9 @@ static RzType *nest_parse(const RzTypeDB *typedb, RzPdbTpiStream *stream, RzPdbT
 			return type_new_identify(bt->name, iKind_from_bKind(bt->kind));
 		}
 	}
-
-	RzType *utype = pdb_type_parse(typedb, stream, utpi, NULL);
-	if (!utype) {
-		return NULL;
-	}
-	return rz_type_clone(utype);
+	// pdb_type_parse() already returns an owned type, so return it directly
+	// instead of cloning and leaking the original.
+	return pdb_type_parse(typedb, stream, utpi, NULL);
 }
 
 /**
@@ -321,6 +360,7 @@ static RzTypeStructMember *class_member_parse(
 	rz_return_val_if_fail(t, NULL);
 	char *name = NULL;
 	ut64 offset = 0;
+	ut64 bitfield_width = 0;
 	RzType *type = NULL;
 	switch (t->kind) {
 	case TpiKind_ONEMETHOD: {
@@ -331,7 +371,7 @@ static RzTypeStructMember *class_member_parse(
 	case TpiKind_MEMBER: {
 		offset = rz_bin_pdb_get_type_val(t);
 		name = rz_bin_pdb_get_type_name(t);
-		type = member_parse(typedb, stream, t, name);
+		type = member_parse(typedb, stream, t, name, &bitfield_width);
 		break;
 	}
 	case TpiKind_STMEMBER: {
@@ -341,7 +381,7 @@ static RzTypeStructMember *class_member_parse(
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(t);
-		type = nest_parse(typedb, stream, t, rz_str_dup(name));
+		type = nest_parse(typedb, stream, t);
 		break;
 	}
 	case TpiKind_VBCLASS:
@@ -371,6 +411,7 @@ static RzTypeStructMember *class_member_parse(
 	member->name = rz_str_dup(name);
 	member->type = type;
 	member->offset = offset;
+	member->size = bitfield_width; // bitfield width in bits, 0 if not a bitfield
 	return member;
 cleanup:
 	rz_type_free(type);
@@ -512,6 +553,7 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	rz_return_val_if_fail(type_info && stream && typedb, NULL);
 	char *name = NULL;
 	ut64 offset = 0;
+	ut64 bitfield_width = 0;
 	RzType *type = NULL;
 	switch (type_info->kind) {
 	case TpiKind_ONEMETHOD: {
@@ -522,12 +564,12 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	case TpiKind_MEMBER: {
 		offset = rz_bin_pdb_get_type_val(type_info);
 		name = rz_bin_pdb_get_type_name(type_info);
-		type = member_parse(typedb, stream, type_info, name);
+		type = member_parse(typedb, stream, type_info, name, &bitfield_width);
 		break;
 	}
 	case TpiKind_NESTTYPE: {
 		name = rz_bin_pdb_get_type_name(type_info);
-		type = nest_parse(typedb, stream, type_info, rz_str_dup(name));
+		type = nest_parse(typedb, stream, type_info);
 		break;
 	}
 	default:
@@ -547,6 +589,7 @@ static RzTypeUnionMember *union_member_parse(const RzTypeDB *typedb, RzPdbTpiStr
 	member->name = rz_str_dup(name);
 	member->type = type;
 	member->offset = offset;
+	member->size = bitfield_width; // bitfield width in bits, 0 if not a bitfield
 	return member;
 cleanup:
 	rz_type_free(type);
@@ -815,7 +858,11 @@ RZ_API void rz_type_db_pdb_load(const RzTypeDB *typedb, const RzPdb *pdb) {
 	RzPdbTpiType *type;
 	rz_rbtree_foreach (stream->types, it, type, RzPdbTpiType, rb) {
 		if (type && is_parsable_type(type)) {
-			rz_type_db_pdb_parse(typedb, stream, type);
+			// rz_type_db_pdb_parse() returns an owned clone of the parsed type.
+			// The base type itself is saved into the typedb during parsing, so
+			// this returned clone is not needed here and must be freed, otherwise
+			// one type tree leaks for every parsable type in the PDB.
+			rz_type_free(rz_type_db_pdb_parse(typedb, stream, type));
 		}
 	}
 }

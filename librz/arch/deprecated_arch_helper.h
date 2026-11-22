@@ -6,6 +6,7 @@
 #define DEPRECATED_ARCH_HELPER_H
 
 #include <rz_arch.h>
+#include "analysis_private.h"
 #include "asm_private.h"
 
 #define DEPRECATED_OLD_ARCH_PLUGIN(name) \

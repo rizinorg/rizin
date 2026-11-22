@@ -11,7 +11,9 @@ int PE_(read_image_import_directory)(RzBuffer *b, ut64 addr, PE_(image_import_di
 		return -1;
 	}
 	ut8 buf[sizeof(PE_(image_import_directory))];
-	rz_buf_read(b, buf, sizeof(buf));
+	if (rz_buf_read(b, buf, sizeof(buf)) != sizeof(buf)) {
+		return -1;
+	}
 	PE_READ_STRUCT_FIELD(import_dir, PE_(image_import_directory), Characteristics, 32);
 	PE_READ_STRUCT_FIELD(import_dir, PE_(image_import_directory), TimeDateStamp, 32);
 	PE_READ_STRUCT_FIELD(import_dir, PE_(image_import_directory), ForwarderChain, 32);
@@ -106,9 +108,6 @@ static int bin_pe_parse_imports(RZ_BORROW RZ_NONNULL RzPath *sys_path,
 
 				if (!sdb_module || strcmp(symdllname, sdb_module)) {
 					sdb_free(db);
-					if (db) {
-						sdb_free(db);
-					}
 					db = NULL;
 					free(sdb_module);
 					sdb_module = rz_str_dup(symdllname);
@@ -395,8 +394,7 @@ int PE_(bin_pe_init_imports)(RzBinPEObj *bin) {
 			curr_import_dir = import_dir + indx;
 			if (PE_(read_image_import_directory)(bin->b, import_dir_offset + indx * dir_size, curr_import_dir) <= 0) {
 				RZ_LOG_INFO("read (import directory)\n");
-				RZ_FREE(import_dir);
-				break; // return false;
+				goto fail;
 			}
 			if (((2 + indx) * dir_size) > import_dir_size) {
 				break; // goto fail;

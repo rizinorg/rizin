@@ -162,6 +162,10 @@ typedef struct rz_bin_elf_reloc_t {
 	 * \brief Sparc specific ELF relocation value.
 	 */
 	ut64 sparc_secondary_addend;
+	/**
+	 * \brief ARM Thumb Mode bit - Check out https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst#5612relocation-types
+	 */
+	bool thumb;
 } RzBinElfReloc;
 
 typedef struct rz_bin_elf_dt_dynamic_t RzBinElfDtDynamic; // elf_dynamic.h
@@ -241,6 +245,8 @@ struct Elf_(rz_bin_elf_obj_t) {
 
 	RzVector /*<RzBinElfSymbol>*/ *symbols; // RzVector<RzBinElfSymbol>
 	RzVector /*<RzBinElfSymbol>*/ *imports; // RzVector<RzBinElfSymbol>
+
+	HtUU *got_sym_id_off; ///< symbol id to GOT offset map.
 };
 
 // elf.c
@@ -320,6 +326,7 @@ bool Elf_(rz_bin_elf_has_va)(ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_big_endian)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_executable)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_relocatable)(RZ_NONNULL ELFOBJ *bin);
+RZ_IPI ut32 Elf_(rz_bin_elf_addr_scale)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_static)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_is_stripped)(RZ_NONNULL ELFOBJ *bin);
 int Elf_(rz_bin_elf_get_bits)(RZ_NONNULL ELFOBJ *bin);
@@ -369,7 +376,7 @@ size_t Elf_(rz_bin_elf_get_relocs_count)(RZ_NONNULL ELFOBJ *bin);
 ut64 Elf_(rz_bin_elf_get_num_relocs_dynamic_plt)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_relocs_patching.c
-void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT, RZ_NONNULL ut64 *AHL);
+void Elf_(rz_bin_elf_patch_relocation)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinElfReloc *rel, ut64 S, ut64 Z, ut64 B, ut64 L, ut64 GOT);
 RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut64 sym_id);
 
 // elf_relocs_conversion.c
@@ -389,6 +396,15 @@ RZ_OWN RzList /*<char *>*/ *Elf_(rz_bin_elf_section_flag_to_rzlist)(ut64 flag);
 RZ_OWN RzVector /*<RzBinElfSection>*/ *Elf_(rz_bin_elf_convert_sections)(RZ_NONNULL ELFOBJ *bin, RZ_NONNULL RzBinObjectLoadOptions *options, RzVector /*<Elf_(Shdr)>*/ *sections);
 RZ_OWN RzVector /*<Elf_(Shdr)>*/ *Elf_(rz_bin_elf_sections_new)(RZ_NONNULL ELFOBJ *bin);
 RZ_OWN char *Elf_(rz_bin_elf_section_type_to_string)(ut64 type);
+
+/**
+ * \brief Rizin-internal pseudo section type used to mark Procedure Linkage
+ * Table sections (e.g. .plt, .plt.got, .plt.sec, .iplt and the MIPS
+ * .MIPS.stubs) in the `iS` output. It is placed just past SHT_HIUSER so that
+ * it can never clash with a real on-disk section type.
+ */
+#define RZ_BIN_ELF_SECTION_TYPE_PLT (SHT_HIUSER + 1)
+
 bool Elf_(rz_bin_elf_has_sections)(RZ_NONNULL ELFOBJ *bin);
 
 // elf_strtab
@@ -406,5 +422,8 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut
 RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_compute_symbols)(ELFOBJ *bin, RzBinElfSymbolFilter filter);
 RZ_OWN RzVector /*<RzBinElfSymbol>*/ *Elf_(rz_bin_elf_symbols_new)(RZ_NONNULL ELFOBJ *bin);
 bool Elf_(rz_bin_elf_has_symbols)(RZ_NONNULL ELFOBJ *bin);
+
+// elf_relocs_addend.c
+void Elf_(rz_bin_elf_relocs_read_addends)(RZ_NONNULL ELFOBJ *bin);
 
 #endif

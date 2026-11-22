@@ -164,13 +164,68 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp(pathname, "winedbg://", 10));
 }
 
+/**
+ * \brief build the command to run winedbg on a file
+ * \param file Path of the file to open in winedbg
+ * \return the command on success
+ * \return NULL if the file name contains a disallowed character
+ *
+ * The file path is put in a single 'quote', with every ' in it written
+ * as '\'' so that winedbg gets only one argument, the file path.
+ * Characters $, " and ` are not allowed in the file name.
+ */
+static char *winedbg_cmd_new(const char *file) {
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_append(&sb, "winedbg '");
+	for (const char *p = file; *p; p++) {
+		if (*p == '"' || *p == '$' || *p == '`') {
+			goto fail;
+		}
+		bool ok = *p == '\''
+			? rz_strbuf_append(&sb, "'\\''")
+			: rz_strbuf_append_n(&sb, p, 1);
+		if (!ok) {
+			goto fail;
+		}
+	}
+	if (!rz_strbuf_append(&sb, "'")) {
+		goto fail;
+	}
+	return rz_strbuf_drain_nofree(&sb);
+fail:
+	rz_strbuf_fini(&sb);
+	return NULL;
+}
+
+/**
+ * \brief WineDbg IO plugin file open handler
+ * \param io RzIO instance
+ * \param pathname Name of executable file to open in winedbg.
+ *        Characters $, " and ` are not allowed in file name
+ * \param rw UNUSED
+ * \param mode UNUSED
+ * \return non NULL RzIODesc instance on success
+ * \return NULL otherwise
+ *
+ * Opens a communication socket with winedbg for debugging.
+ */
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open(io, pathname, 0)) {
 		if (gs) {
 			return NULL;
 		}
+		const char *file = pathname + 10;
+		if (!rz_file_exists(file)) {
+			RZ_LOG_ERROR("winedbg: cannot find file '%s'\n", file);
+			return NULL;
+		}
+		char *cmd = winedbg_cmd_new(file);
+		if (!cmd) {
+			RZ_LOG_ERROR("winedbg: refusing to run unsafe command for file '%s'\n", file);
+			return NULL;
+		}
 		gs = rz_socket_new(0);
-		char *cmd = rz_str_newf("winedbg '%s'", pathname + 10);
 		int res = rz_socket_spawn(gs, cmd, 1000);
 		free(cmd);
 		if (!res) {
@@ -190,7 +245,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 
 static void printcmd(RzIO *io, const char *cmd) {
 	char *res = runcmd(cmd);
-	io->cb_printf("%s\n", res);
+	io->cb_printf(io->cb_printf_user, "%s\n", res);
 	free(res);
 }
 
@@ -300,22 +355,22 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return rz_str_dup(msg);
 	} else if (!strncmp(cmd, "dr*", 3)) {
 		struct winedbg_x86_32 r = regState();
-		io->cb_printf("f eip @ 0x%08x\n", r.eip);
-		io->cb_printf("f esp @ 0x%08x\n", r.esp);
-		io->cb_printf("f ebp @ 0x%08x\n", r.ebp);
-		io->cb_printf("f eax @ 0x%08x\n", r.eax);
-		io->cb_printf("f ebx @ 0x%08x\n", r.ebx);
-		io->cb_printf("f ecx @ 0x%08x\n", r.ecx);
-		io->cb_printf("f edx @ 0x%08x\n", r.edx);
-		io->cb_printf("f esi @ 0x%08x\n", r.esi);
-		io->cb_printf("f edi @ 0x%08x\n", r.edi);
-		io->cb_printf("f eflags @ 0x%08x\n", r.eflags);
-		io->cb_printf("f cs @ 0x%08x\n", r.cs);
-		io->cb_printf("f ss @ 0x%08x\n", r.ss);
-		io->cb_printf("f ds @ 0x%08x\n", r.ds);
-		io->cb_printf("f es @ 0x%08x\n", r.es);
-		io->cb_printf("f fs @ 0x%08x\n", r.fs);
-		io->cb_printf("f gs @ 0x%08x\n", r.gs);
+		io->cb_printf(io->cb_printf_user, "f eip @ 0x%08x\n", r.eip);
+		io->cb_printf(io->cb_printf_user, "f esp @ 0x%08x\n", r.esp);
+		io->cb_printf(io->cb_printf_user, "f ebp @ 0x%08x\n", r.ebp);
+		io->cb_printf(io->cb_printf_user, "f eax @ 0x%08x\n", r.eax);
+		io->cb_printf(io->cb_printf_user, "f ebx @ 0x%08x\n", r.ebx);
+		io->cb_printf(io->cb_printf_user, "f ecx @ 0x%08x\n", r.ecx);
+		io->cb_printf(io->cb_printf_user, "f edx @ 0x%08x\n", r.edx);
+		io->cb_printf(io->cb_printf_user, "f esi @ 0x%08x\n", r.esi);
+		io->cb_printf(io->cb_printf_user, "f edi @ 0x%08x\n", r.edi);
+		io->cb_printf(io->cb_printf_user, "f eflags @ 0x%08x\n", r.eflags);
+		io->cb_printf(io->cb_printf_user, "f cs @ 0x%08x\n", r.cs);
+		io->cb_printf(io->cb_printf_user, "f ss @ 0x%08x\n", r.ss);
+		io->cb_printf(io->cb_printf_user, "f ds @ 0x%08x\n", r.ds);
+		io->cb_printf(io->cb_printf_user, "f es @ 0x%08x\n", r.es);
+		io->cb_printf(io->cb_printf_user, "f fs @ 0x%08x\n", r.fs);
+		io->cb_printf(io->cb_printf_user, "f gs @ 0x%08x\n", r.gs);
 	} else if (!strncmp(cmd, "dr", 2)) {
 		printcmd(io, "info reg");
 	} else if (!strncmp(cmd, "db ", 3)) {

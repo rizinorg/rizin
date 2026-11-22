@@ -1532,11 +1532,11 @@ static const char *h8300h_reg_bindings[] = {
 RzAnalysisILConfig *h8300_il_config(RzAnalysis *a) {
 	rz_return_val_if_fail(a, NULL);
 
-	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(24, a->big_endian, 24);
+	RzAnalysisILConfig *cfg = rz_analysis_il_config_new(24, rz_analysis_is_big_endian_set(a), 24);
 	if (!cfg) {
 		return NULL;
 	}
-	cfg->reg_bindings = h8300_cpu_type(a->cpu) == CPU_H8300H ? h8300h_reg_bindings : reg_bindings;
+	cfg->reg_bindings = h8300_cpu_type(rz_analysis_get_cpu(a)) == CPU_H8300H ? h8300h_reg_bindings : reg_bindings;
 	cfg->init_state = rz_analysis_il_init_state_new();
 	if (!cfg->init_state) {
 		rz_analysis_il_config_free(cfg);

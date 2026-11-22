@@ -6,6 +6,9 @@
 
 RZ_API void pj_raw(PJ *j, const char *msg) {
 	rz_return_if_fail(j && msg);
+	if (j->level < 0) {
+		return;
+	}
 	if (*msg) {
 		rz_strbuf_append(&j->sb, msg);
 	}
@@ -13,6 +16,9 @@ RZ_API void pj_raw(PJ *j, const char *msg) {
 
 static void pj_comma(PJ *j) {
 	rz_return_if_fail(j);
+	if (j->level < 0) {
+		return;
+	}
 	if (!j->is_key) {
 		if (!j->is_first) {
 			pj_raw(j, ",");
@@ -48,19 +54,28 @@ RZ_API void pj_reset(PJ *j) {
 }
 
 RZ_API char *pj_drain(PJ *pj) {
-	rz_return_val_if_fail(pj && pj->level == 0, NULL);
+	if (!pj) {
+		return NULL;
+	}
+	if (pj->level != 0) {
+		// error case, invalid json, return NULL
+		pj_free(pj);
+		return NULL;
+	}
 	char *res = rz_strbuf_drain_nofree(&pj->sb);
 	free(pj);
 	return res;
 }
 
 RZ_API const char *pj_string(PJ *j) {
-	return j ? rz_strbuf_get(&j->sb) : NULL;
+	return (j && j->level >= 0) ? rz_strbuf_get(&j->sb) : NULL;
 }
 
 static PJ *pj_begin(PJ *j, char type) {
 	if (j) {
-		if (!j || j->level >= RZ_PRINT_JSON_DEPTH_LIMIT) {
+		if (j->level < 0 || j->level >= RZ_PRINT_JSON_DEPTH_LIMIT) {
+			j->level = -1;
+			RZ_LOG_ERROR("pj: JSON maximum depth of %d exceeded\n", RZ_PRINT_JSON_DEPTH_LIMIT);
 			return NULL;
 		}
 		char msg[2] = { type, 0 };
@@ -168,9 +183,9 @@ RZ_API PJ *pj_ka(PJ *j, const char *k) {
 }
 
 RZ_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
-	rz_return_val_if_fail(j && k && v, j);
+	rz_return_val_if_fail(j && k, j);
 	pj_k(j, k);
-	pj_s(j, v);
+	pj_s(j, rz_str_get(v));
 	return j;
 }
 
@@ -183,6 +198,7 @@ RZ_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 
 RZ_API PJ *pj_null(PJ *j) {
 	rz_return_val_if_fail(j, j);
+	pj_comma(j);
 	pj_raw(j, "null");
 	return j;
 }
@@ -265,19 +281,49 @@ RZ_API PJ *pj_N(PJ *j, st64 n) {
 	return j;
 }
 
+/**
+ * \brief Preserve non-finite values as strings, since JSON has no numeric representation for them.
+ * \return false if \p d is finite and nothing was written
+ */
+static bool pj_non_finite(PJ *j, double d) {
+	if (isnan(d)) {
+		pj_raw(j, "\"NaN\"");
+	} else if (isinf(d)) {
+		pj_raw(j, d < 0 ? "\"-Infinity\"" : "\"Infinity\"");
+	} else {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Write a float using the round-trip precision of rz_num_float_to_str().
+ *
+ * Non-finite values use the same strings as pj_d().
+ */
 RZ_API PJ *pj_f(PJ *j, float f) {
 	rz_return_val_if_fail(j, NULL);
 	pj_comma(j);
-	char s[64] = { 0 };
-	pj_raw(j, rz_strf(s, "%f", f));
+	if (!pj_non_finite(j, f)) {
+		char s[RZ_NUM_FLOAT_STR_SIZE];
+		pj_raw(j, rz_num_float_to_str(s, sizeof(s), f));
+	}
 	return j;
 }
 
+/**
+ * \brief Write a double using the round-trip precision of rz_num_double_to_str().
+ *
+ * JSON has no numeric representation for NaN or infinity. Preserve these as
+ * the strings `"NaN"`, `"Infinity"` and `"-Infinity"`.
+ */
 RZ_API PJ *pj_d(PJ *j, double d) {
 	rz_return_val_if_fail(j, NULL);
 	pj_comma(j);
-	char s[64] = { 0 };
-	pj_raw(j, rz_strf(s, "%lf", d));
+	if (!pj_non_finite(j, d)) {
+		char s[RZ_NUM_FLOAT_STR_SIZE];
+		pj_raw(j, rz_num_double_to_str(s, sizeof(s), d));
+	}
 	return j;
 }
 

@@ -34,11 +34,11 @@ rz_core_sources = [
   'cflag.c',
   'cgraph.c',
   'chash.c',
-  'cheap.c',
   'cil.c',
   'cio.c',
   'clang.c',
   'cmark.c',
+  'cmath.c',
   'cmeta.c',
   'cmp.c',
   'core.c',
@@ -53,17 +53,20 @@ rz_core_sources = [
   'ctypes.c',
   'cvfile.c',
   'devirtualize_cxx.c',
+  'devirtualize_dlang.c',
   'devirtualize_objc.c',
+  'devirtualize_rust.c',
   'disasm.c',
   'fortune.c',
   'golang.c',
   'hack.c',
   'heap_glibc.c',
   'heap_jemalloc.c',
+  'heap_windows.c',
   'libs.c',
   'project.c',
   'project_migrate.c',
-  'rop.c',
+  'gadget.c',
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',
@@ -90,6 +93,7 @@ rz_core_sources = [
   'cmd/cmd_help.c',
   'cmd/cmd_history.c',
   'cmd/cmd_info.c',
+  'cmd/cmd_inquiry.c',
   'cmd/cmd_interactive.c',
   'cmd/cmd_interactive_panel.c',
   'cmd/cmd_interpret.c',
@@ -136,7 +140,7 @@ rz_core_sources = [
 
 rz_core_inc = ['.']
 if host_machine.system() == 'windows'
-  rz_core_sources += 'windows_heap.c'
+  rz_core_sources += 'windows_heap_live_debug.c'
 endif
 rz_core_inc = [platform_inc, 'cmd_descs']
 
@@ -166,6 +170,7 @@ rz_core_deps = [
   rz_config_dep,
   rz_bin_dep,
   rz_mark_dep,
+  rz_inquiry_dep,
   platform_deps,
   dependency('rzgdb'),
   rzheap_dep,
@@ -204,6 +209,7 @@ modules += { 'rz_core': {
       'rz_socket',
       'rz_type',
       'rz_io',
+      'rz_inquiry',
       'rz_lang',
       'rz_hash',
       'rz_flag',

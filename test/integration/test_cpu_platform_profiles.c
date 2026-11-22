@@ -20,10 +20,11 @@ bool test_cpu_profiles() {
 
 	const char *tempfile = rz_file_temp(".sdb");
 	rz_file_dump(tempfile, cpu_buffer, sizeof(cpu_buffer), false);
-	rz_platform_load_profile_sdb(core->analysis->arch_target, tempfile);
+	RzPlatformTarget *arch_target = rz_analysis_get_arch_target(core->analysis);
+	rz_platform_load_profile_sdb(arch_target, tempfile);
 
 	// 2. Analyse the file
-	rz_platform_profile_add_flag_every_io(core->analysis->arch_target->profile, core->flags);
+	rz_platform_profile_add_flag_every_io(arch_target->profile, core->flags);
 
 	RzFlagItem *item = rz_flag_get(core->flags, "DDRB");
 	mu_assert_eq(item->offset, 0x00000004, "Flag DDRB not found");
@@ -77,7 +78,9 @@ bool test_platform_profiles() {
 
 	const char *tempfile = rz_file_temp(".sdb");
 	rz_file_dump(tempfile, platform_buffer, sizeof(platform_buffer), false);
-	rz_platform_target_index_load_sdb(core->analysis->platform_target, tempfile);
+
+	RzPlatformTargetIndex *platform_target = rz_analysis_get_platform_target(core->analysis);
+	rz_platform_target_index_load_sdb(platform_target, tempfile);
 
 	// 2. Analyse the file
 	rz_platform_index_add_flags_comments(core);

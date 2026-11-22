@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_io.h>
 
 struct buf_mmap_user {
 	const char *filename;
 	int perm;
 	int mode;
+	RzIO *io;
 };
 
 // "subclass"" of buf_bytes_priv
@@ -14,6 +16,7 @@ struct buf_mmap_priv {
 	// NOTE: this needs to be first, so that bytes operations will work without changes
 	struct buf_bytes_priv bytes_priv;
 	RzMmap *mmap;
+	RzIO *io;
 };
 
 static inline struct buf_mmap_priv *get_priv_mmap(RzBuffer *b) {
@@ -37,6 +40,7 @@ static bool buf_mmap_init(RzBuffer *b, const void *user) {
 	priv->bytes_priv.buf = priv->mmap->buf;
 	priv->bytes_priv.length = priv->mmap->len;
 	priv->bytes_priv.offset = 0;
+	priv->io = u->io;
 	b->priv = priv;
 	b->fd = priv->mmap->fd;
 	return true;

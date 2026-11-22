@@ -1519,6 +1519,7 @@ static void _store_resource_sdb(RzBinPEObj *bin) {
 		index++;
 	}
 	sdb_ns_set(bin->kv, "pe_resource", sdb);
+	sdb_free(sdb);
 }
 
 RZ_API void PE_(bin_pe_parse_resource)(RzBinPEObj *bin) {

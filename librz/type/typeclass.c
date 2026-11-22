@@ -152,6 +152,26 @@ RZ_API RzTypeTypeclass rz_base_type_typeclass(const RzTypeDB *typedb, RZ_NONNULL
 }
 
 /**
+ * \brief Sets the typeclass of an atomic base type
+ *
+ * The typeclass is stored in the type attributes. Setting it on an atomic type
+ * also affects every typedef that resolves to it, since a typedef without its
+ * own typeclass inherits the one of the type it points to.
+ *
+ * \param type The base type to change
+ * \param typeclass The new typeclass to assign
+ * \return true on success, false if \p typeclass is not a valid typeclass
+ */
+RZ_API bool rz_base_type_set_typeclass(RZ_NONNULL RzBaseType *type, RzTypeTypeclass typeclass) {
+	rz_return_val_if_fail(type, false);
+	if (typeclass >= RZ_TYPE_TYPECLASS_INVALID) {
+		return false;
+	}
+	type->attrs = (type->attrs & ~((RzTypeAttribute)RZ_TYPE_ATTRIBUTE_TYPECLASS_MASK)) | typeclass;
+	return true;
+}
+
+/**
  * \brief Gets the type class
  *
  * \param typedb Type Database instance
@@ -337,6 +357,7 @@ static bool base_type_typeclass_sized_collect_cb(void *user, RZ_UNUSED const cha
  */
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeDB *typedb, RzTypeTypeclass typeclass) {
 	rz_return_val_if_fail(typedb && typeclass != RZ_TYPE_TYPECLASS_NONE, NULL);
+	rz_type_db_load_pending(typedb);
 	rz_return_val_if_fail(typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass lt = { typedb, types, typeclass };
@@ -353,6 +374,7 @@ RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all(const RzTypeD
  */
 RZ_API RZ_OWN RzList /*<RzBaseType *>*/ *rz_type_typeclass_get_all_sized(const RzTypeDB *typedb, RzTypeTypeclass typeclass, size_t size) {
 	rz_return_val_if_fail(typedb && typeclass != RZ_TYPE_TYPECLASS_NONE, NULL);
+	rz_type_db_load_pending(typedb);
 	rz_return_val_if_fail(size && typeclass < RZ_TYPE_TYPECLASS_INVALID, NULL);
 	RzList *types = rz_list_new();
 	struct list_typeclass_size lt = { typedb, types, typeclass, size };

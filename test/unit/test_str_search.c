@@ -203,6 +203,71 @@ bool test_rz_scan_strings_detect_utf16_le_special_chars(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_user_unprintable(void) {
+	// ASCII/UTF-8 string: "hello\tworld\ntest\0"
+	// With \t (0x09) and \n (0x0a) as user-defined non-printable,
+	// the scanner should produce: "hello", "world", "test"
+	static const unsigned char str[] = "hello\tworld\ntest";
+	static RzCodePoint code_points[] = { 0x09, 0x0a };
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
+	opt.user_unprintable = user_unprintable;
+	opt.min_str_length = 4;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_8BIT);
+	mu_assert_eq(n, 3, "rz_scan_strings user_unprintable, number of strings");
+
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	RzDetectedString *s2 = rz_list_get_n(str_list, 2);
+	mu_assert_streq(s0->string, "hello", "rz_scan_strings user_unprintable, first string");
+	mu_assert_streq(s1->string, "world", "rz_scan_strings user_unprintable, second string");
+	mu_assert_streq(s2->string, "test", "rz_scan_strings user_unprintable, third string");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
+
+	mu_end;
+}
+
+bool test_rz_scan_strings_user_unprintable_utf8(void) {
+	// UTF-8 bytes for U+00E9 (latin small letter e with acute) between "ab" and "cd".
+	static const unsigned char str[] = { 'a', 'b', 0xC3, 0xA9, 'c', 'd', 0x00 };
+	static RzCodePoint code_points[] = { 0x00e9 }; // U+00E9 (latin small letter e with acute)
+	RzBuffer *buf = rz_buf_new_with_bytes(str, sizeof(str));
+	RzUtilStrScanOptions opt = g_opt;
+	RzVector *user_unprintable = rz_vector_new(sizeof(RzCodePoint), NULL, NULL);
+	mu_assert_notnull(user_unprintable, "user_unprintable vector alloc");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(code_points); i++) {
+		mu_assert_true(rz_vector_push(user_unprintable, &code_points[i]), "push user_unprintable");
+	}
+	opt.user_unprintable = user_unprintable;
+	opt.min_str_length = 2;
+	opt.check_ascii_freq = false;
+
+	RzList *str_list = rz_list_newf((RzListFree)rz_detected_string_free);
+	int n = rz_scan_strings(buf, str_list, &opt, 0, buf->methods->get_size(buf) - 1, RZ_STRING_ENC_UTF8);
+	mu_assert_eq(n, 2, "rz_scan_strings user_unprintable utf8, number of strings");
+
+	RzDetectedString *s0 = rz_list_get_n(str_list, 0);
+	RzDetectedString *s1 = rz_list_get_n(str_list, 1);
+	mu_assert_streq(s0->string, "ab", "rz_scan_strings user_unprintable utf8, first string");
+	mu_assert_streq(s1->string, "cd", "rz_scan_strings user_unprintable utf8, second string");
+
+	rz_list_free(str_list);
+	rz_buf_free(buf);
+	rz_vector_free(user_unprintable);
+
+	mu_end;
+}
+
 bool test_rz_scan_strings_detect_utf16_be(void) {
 	static const unsigned char str[] =
 		"\xff\xff\xff\x00\x49\x00\x20\x00\x61\x00\x6d\x00\x20\x00\x61"
@@ -448,6 +513,217 @@ bool test_rz_scan_strings_scan_options_error(void) {
 	mu_end;
 }
 
+bool test_rz_scan_strings_max_matches(void) {
+	static const ut8 str[] = "\xff\xffI am the first string\xff\xffI am the second one\xff\xff"
+				 "And I am the third\xff";
+	RzUtilStrScanOptions opt = g_opt;
+	RzList *list = rz_list_newf((RzListFree)rz_detected_string_free);
+	mu_assert_eq(rz_scan_strings_raw(str, list, &opt, 0, sizeof(str), RZ_STRING_ENC_GUESS), 3, "no limit");
+	rz_list_purge(list);
+
+	opt.max_matches = 2;
+	mu_assert_eq(rz_scan_strings_raw(str, list, &opt, 0, sizeof(str), RZ_STRING_ENC_GUESS), 2, "two strings");
+	mu_assert_eq(rz_list_length(list), 2, "two strings");
+	RzDetectedString *s = rz_list_get_n(list, 1);
+	mu_assert_streq(s->string, "I am the second one", "two strings, last one");
+	rz_list_purge(list);
+
+	opt.max_matches = 1;
+	mu_assert_eq(rz_scan_strings_raw(str, list, &opt, 0, sizeof(str), RZ_STRING_ENC_GUESS), 1, "first string only");
+	mu_assert_eq(rz_list_length(list), 1, "first string only");
+	s = rz_list_first_val(list);
+	mu_assert_streq(s->string, "I am the first string", "first string only");
+	mu_assert_eq(s->addr, 2, "first string only, address");
+	rz_list_free(list);
+	mu_end;
+}
+
+bool test_rz_scan_strings_single_at_start(void) {
+	RzUtilStrScanOptions opt = g_opt;
+	RzDetectedString *s = NULL;
+
+	static const ut8 at_start[] = "I am an ASCII string\xff\xff";
+	mu_assert_true(rz_scan_strings_single_at_start_raw(at_start, sizeof(at_start), &opt, RZ_STRING_ENC_GUESS, &s), "string at start");
+	mu_assert_streq(s->string, "I am an ASCII string", "string at start");
+	mu_assert_eq(s->addr, 0, "string at start, address");
+	rz_detected_string_free(s);
+
+	// rz_scan_strings_single_raw() finds this one, at 3
+	static const ut8 later[] = "\xff\xff\xffI am an ASCII string";
+	mu_assert_false(rz_scan_strings_single_at_start_raw(later, sizeof(later), &opt, RZ_STRING_ENC_GUESS, &s), "string after the start");
+	mu_assert_null(s, "string after the start");
+
+	static const ut8 bom[] = "\xff\xfeH\x00"
+				 "e\x00l\x00l\x00o\x00\x00\x00";
+	mu_assert_true(rz_scan_strings_single_at_start_raw(bom, sizeof(bom), &opt, RZ_STRING_ENC_GUESS, &s), "string after a byte order mark");
+	mu_assert_streq(s->string, "Hello", "string after a byte order mark");
+	mu_assert_eq(s->addr, 0, "string after a byte order mark, address");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF16LE, "string after a byte order mark, encoding");
+	rz_detected_string_free(s);
+
+	// the longest byte order marks, the string itself starts right at the limit
+	static const ut8 bom32le[] = "\xff\xfe\x00\x00H\x00\x00\x00"
+				     "e\x00\x00\x00l\x00\x00\x00l\x00\x00\x00o\x00\x00\x00\x00\x00\x00";
+	mu_assert_true(rz_scan_strings_single_at_start_raw(bom32le, sizeof(bom32le), &opt, RZ_STRING_ENC_GUESS, &s), "string after a UTF-32LE byte order mark");
+	mu_assert_streq(s->string, "Hello", "string after a UTF-32LE byte order mark");
+	mu_assert_eq(s->addr, 0, "string after a UTF-32LE byte order mark, address");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF32LE, "string after a UTF-32LE byte order mark, encoding");
+	rz_detected_string_free(s);
+
+	static const ut8 bom32be[] = "\x00\x00\xfe\xff\x00\x00\x00H"
+				     "\x00\x00\x00"
+				     "e\x00\x00\x00l\x00\x00\x00l\x00\x00\x00o\x00\x00\x00\x00";
+	mu_assert_true(rz_scan_strings_single_at_start_raw(bom32be, sizeof(bom32be), &opt, RZ_STRING_ENC_UTF32BE, &s), "string after a UTF-32BE byte order mark");
+	mu_assert_streq(s->string, "Hello", "string after a UTF-32BE byte order mark");
+	mu_assert_eq(s->addr, 0, "string after a UTF-32BE byte order mark, address");
+	mu_assert_eq(s->encoding, RZ_STRING_ENC_UTF32BE, "string after a UTF-32BE byte order mark, encoding");
+	rz_detected_string_free(s);
+
+	mu_end;
+}
+
+static ut32 xorshift32(ut32 *state) {
+	ut32 x = *state;
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	return *state = x;
+}
+
+/**
+ * \brief Fills \p buf with the pieces strings are made of: text in several
+ * encodings, byte order marks, terminators and noise.
+ */
+static size_t random_string_soup(ut8 *buf, size_t size, ut32 *seed) {
+	static const ut8 boms[][4] = { { 0xff, 0xfe }, { 0xfe, 0xff }, { 0xff, 0xfe, 0, 0 }, { 0, 0, 0xfe, 0xff } };
+	static const ut8 bom_sizes[] = { 2, 2, 4, 4 };
+	static const char *utf8[] = { "\xc3\xa9", "\xe2\x82\xac", "\xf0\x9f\x98\x80" };
+	size_t n = 0;
+	while (n + 32 < size) {
+		ut32 r = xorshift32(seed);
+		ut32 count = 1 + (r >> 8) % 8;
+		switch (r % 9) {
+		case 0: // text in 1, 2 or 4 byte units, either endianness
+		case 1:
+		case 2: {
+			static const ut32 widths[] = { 1, 2, 4 };
+			ut32 width = widths[r % 3];
+			bool big_endian = (r >> 16) & 1;
+			for (ut32 i = 0; i < count; i++) {
+				ut8 ch = 'a' + xorshift32(seed) % 26;
+				for (ut32 j = 0; j < width; j++) {
+					buf[n++] = (big_endian ? j == width - 1 : !j) ? ch : 0;
+				}
+			}
+			break;
+		}
+		case 3: {
+			ut32 i = (r >> 16) % RZ_ARRAY_SIZE(boms);
+			memcpy(buf + n, boms[i], bom_sizes[i]);
+			n += bom_sizes[i];
+			break;
+		}
+		case 4:
+			memset(buf + n, 0, count % 4 + 1);
+			n += count % 4 + 1;
+			break;
+		case 5: {
+			const char *ch = utf8[(r >> 16) % RZ_ARRAY_SIZE(utf8)];
+			memcpy(buf + n, ch, strlen(ch));
+			n += strlen(ch);
+			break;
+		}
+		case 6: // IBM037 letters
+			for (ut32 i = 0; i < count; i++) {
+				buf[n++] = 0xc1 + xorshift32(seed) % 9;
+			}
+			break;
+		default:
+			for (ut32 i = 0; i < count % 4 + 1; i++) {
+				buf[n++] = xorshift32(seed);
+			}
+			break;
+		}
+	}
+	return n;
+}
+
+static bool same_string(const RzDetectedString *a, const RzDetectedString *b) {
+	if (!a || !b) {
+		return a == b;
+	}
+	return a->addr == b->addr && a->size == b->size && a->length == b->length &&
+		a->encoding == b->encoding && !strcmp(a->string, b->string);
+}
+
+/**
+ * \brief First string of a full scan, which neither stops at it nor skips
+ * anything, as reference for the scans that stop early.
+ */
+static RzDetectedString *full_scan_first(const ut8 *buf, size_t size, const RzUtilStrScanOptions *opt, RzStrEnc enc) {
+	RzList *list = rz_list_newf((RzListFree)rz_detected_string_free);
+	RzDetectedString *first = rz_scan_strings_raw(buf, list, opt, 0, size, enc) > 0 ? rz_list_pop_head(list) : NULL;
+	rz_list_free(list);
+	return first;
+}
+
+/**
+ * \brief rz_scan_strings_single_raw() returns the first string of a full
+ * scan, rz_scan_strings_single_at_start_raw() the same when it starts the
+ * buffer.
+ */
+bool test_rz_scan_strings_single_same_as_full_scan(void) {
+	static const RzStrEnc encodings[] = {
+		RZ_STRING_ENC_GUESS, RZ_STRING_ENC_8BIT, RZ_STRING_ENC_UTF8, RZ_STRING_ENC_MUTF8,
+		RZ_STRING_ENC_UTF16LE, RZ_STRING_ENC_UTF16BE, RZ_STRING_ENC_UTF32LE, RZ_STRING_ENC_UTF32BE,
+		RZ_STRING_ENC_IBM037, RZ_STRING_ENC_IBM290, RZ_STRING_ENC_EBCDIC_UK, RZ_STRING_ENC_EBCDIC_US,
+		RZ_STRING_ENC_EBCDIC_ES
+	};
+	ut8 buf[96];
+	ut32 seed = 0x5eed;
+	size_t at_start = 0;
+	size_t after_bom = 0;
+	for (size_t i = 0; i < 4000; i++) {
+		size_t size = random_string_soup(buf, sizeof(buf), &seed);
+		RzUtilStrScanOptions opt = {
+			.max_str_length = size,
+			.min_str_length = 4,
+			.prefer_big_endian = i & 1,
+			.check_ascii_freq = i & 2,
+		};
+		for (size_t e = 0; e < RZ_ARRAY_SIZE(encodings); e++) {
+			RzDetectedString *expected = full_scan_first(buf, size, &opt, encodings[e]);
+			RzDetectedString *single = NULL;
+			bool single_found = rz_scan_strings_single_raw(buf, size, &opt, encodings[e], &single);
+			bool same_single = single_found == !!single && same_string(expected, single);
+			rz_detected_string_free(single);
+			if (expected && expected->addr) {
+				rz_detected_string_free(expected);
+				expected = NULL;
+			}
+			RzDetectedString *actual = NULL;
+			bool found = rz_scan_strings_single_at_start_raw(buf, size, &opt, encodings[e], &actual);
+			bool same = found == !!actual && same_string(expected, actual);
+			if (actual) {
+				at_start++;
+				after_bom += (buf[0] == 0xff && buf[1] == 0xfe) || (buf[0] == 0xfe && buf[1] == 0xff) ||
+					!memcmp(buf, "\0\0\xfe\xff", 4);
+			}
+			rz_detected_string_free(expected);
+			rz_detected_string_free(actual);
+			char msg[128];
+			snprintf(msg, sizeof(msg), "buffer %" PFMTSZu ", encoding %s, single", i, rz_str_enc_as_string(encodings[e]));
+			mu_assert_true(same_single, msg);
+			snprintf(msg, sizeof(msg), "buffer %" PFMTSZu ", encoding %s, at start", i, rz_str_enc_as_string(encodings[e]));
+			mu_assert_true(same, msg);
+		}
+	}
+	// The soup must reach both the plain and the byte order mark cases
+	mu_assert_true(at_start > 1000, "strings at the start");
+	mu_assert_true(after_bom > 10, "strings after a byte order mark");
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_ascii);
 	mu_run_test(test_rz_scan_strings_detect_ibm037);
@@ -455,6 +731,8 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le);
 	mu_run_test(test_rz_scan_strings_detect_utf16_le_special_chars);
+	mu_run_test(test_rz_scan_strings_user_unprintable);
+	mu_run_test(test_rz_scan_strings_user_unprintable_utf8);
 	mu_run_test(test_rz_scan_strings_detect_utf16_be);
 	mu_run_test(test_rz_scan_strings_detect_utf32_le);
 	mu_run_test(test_rz_scan_strings_detect_utf32_be);
@@ -463,6 +741,9 @@ bool all_tests() {
 	mu_run_test(test_rz_scan_strings_detect_length_ascii);
 	mu_run_test(test_rz_scan_strings_detect_length_utf8);
 	mu_run_test(test_rz_scan_strings_scan_options_error);
+	mu_run_test(test_rz_scan_strings_max_matches);
+	mu_run_test(test_rz_scan_strings_single_at_start);
+	mu_run_test(test_rz_scan_strings_single_same_as_full_scan);
 
 	return tests_passed != tests_run;
 }

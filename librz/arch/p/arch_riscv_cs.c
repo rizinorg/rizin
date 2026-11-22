@@ -6,8 +6,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <capstone/riscv.h>
-#include "capstone.h"
-#include "rz_util/rz_log.h"
+#include <capstone.h>
+#include <rz_util/rz_log.h>
 #include "arch_riscv_extension_parser.inc"
 
 #define ARCH_RISCV_CPUS     "rv32,rv64,rocket-rv32,rocket-rv64,sifive-e20,sifive-e21,sifive-e24,sifive-e31,sifive-e34,sifive-e76,sifive-s21,sifive-s51,sifive-s54,sifive-s76,sifive-u54,sifive-u74,sifive-x280,sifive-p450,sifive-p670,syntacore-scr1-base,syntacore-scr1-max,veyron-v1,xiangshan-nanhu,spacemit-x60"

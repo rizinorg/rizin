@@ -89,7 +89,7 @@ static void set_cpu_model(RzAnalysis *analysis, bool force) {
 		return;
 	}
 
-	const char *cpu = analysis->cpu;
+	const char *cpu = rz_analysis_get_cpu(analysis);
 	if (!cpu || !cpu[0]) {
 		cpu = cpu_models[0].name;
 	}
@@ -912,80 +912,11 @@ static void analyze_op_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut
 		break;
 	}
 }
-
-#if 0
-// custom reg read/write temporarily disabled - see r2 issue #9242
-static int i8051_hook_reg_read(RzAnalysisEsil *, const char *, ut64 *, int *);
-
-static int i8051_reg_compare(const void *name, const void *reg) {
-	return strcmp ((const char*)name, ((RI8051Reg*)reg)->name);
-}
-
-static RI8051Reg *i8051_reg_find(const char *name) {
-	return (RI8051Reg *) bsearch (
-		name, registers,
-		sizeof (registers) / sizeof (registers[0]),
-		sizeof (registers[0]),
-		i8051_reg_compare);
-}
-
-static int i8051_reg_get_offset(RzAnalysisEsil *esil, RI8051Reg *ri) {
-	ut8 offset = ri->offset;
-	if (ri->banked) {
-		ut64 psw = 0LL;
-		i8051_hook_reg_read (esil, "psw", &psw, NULL);
-		offset += psw & 0x18;
-	}
-	return offset;
-}
-
-// dkreuter: It would be nice if we could attach hooks to RzRegItems directly.
-//           That way we could avoid doing a string lookup on register names
-//           as rz_reg_get already does this. Also, the analysis esil callbacks
-//           approach interferes with rz_reg_arena_swap.
-
-static int i8051_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
-	int ret = 0;
-	ut64 val = 0LL;
-	RI8051Reg *ri;
-	RzAnalysisEsilCallbacks cbs = esil->cb;
-
-	if ((ri = i8051_reg_find (name))) {
-		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = rz_analysis_esil_mem_read (esil, IRAM_BASE + offset, (ut8*)res, ri->num_bytes);
-	}
-	esil->cb = ocbs;
-	if (!ret && ocbs.hook_reg_read) {
-		ret = ocbs.hook_reg_read (esil, name, res, NULL);
-	}
-	if (!ret && ocbs.reg_read) {
-		ret = ocbs.reg_read (esil, name, &val, NULL);
-	}
-	esil->cb = cbs;
-
-	return ret;
-}
-
-static int i8051_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
-	int ret = 0;
-	RI8051Reg *ri;
-	RzAnalysisEsilCallbacks cbs = esil->cb;
-	if ((ri = i8051_reg_find (name))) {
-		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = rz_analysis_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
-	}
-	esil->cb = ocbs;
-	if (!ret && ocbs.hook_reg_write) {
-		ret = ocbs.hook_reg_write (esil, name, val);
-	}
-	esil->cb = cbs;
-	return ret;
-}
-#endif
-
-static int esil_i8051_init(RzAnalysisEsil *esil) {
+static bool esil_i8051_init(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
+	RzAnalysis *analysis = esil->panalysis;
 	// reset emulation control registers based on cpu
-	set_cpu_model(esil->analysis, true);
+	set_cpu_model(analysis, true);
 
 	if (esil->cb.user) {
 		return true;
@@ -1005,7 +936,8 @@ static int esil_i8051_init(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static int esil_i8051_fini(RzAnalysisEsil *esil) {
+static bool esil_i8051_fini(void *pesil) {
+	RzAnalysisEsil *esil = pesil;
 	RZ_FREE(esil->cb.user);
 	return true;
 }

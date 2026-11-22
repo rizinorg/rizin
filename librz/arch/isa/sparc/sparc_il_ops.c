@@ -1816,7 +1816,6 @@ static inline void set_delayed_slot(HtUP *dl_table,
 	ut64 address,
 	RzILOpEffect *set_ea,
 	RzILOpEffect *jmp,
-	RZ_NULLABLE RzILOpEffect *fail_jmp,
 	RZ_NULLABLE RzILOpPure *cond,
 	bool annulled_bit) {
 	bool found;
@@ -1829,14 +1828,12 @@ static inline void set_delayed_slot(HtUP *dl_table,
 	if (found) {
 		// Faulty disassembly or same address disassembled again.
 		rz_il_op_pure_free(eff->cond);
-		rz_il_op_effect_free(eff->perform_fail_jmp);
 		rz_il_op_effect_free(eff->perform_jmp);
 		rz_il_op_effect_free(eff->set_ea);
 		free(eff);
 	}
 	bop->cond = cond;
 	bop->annulled_bit = annulled_bit;
-	bop->perform_fail_jmp = fail_jmp;
 	bop->perform_jmp = jmp;
 	bop->set_ea = set_ea;
 	ht_up_update(dl_table, address, bop);
@@ -1852,12 +1849,12 @@ static RzILOpEffect *branch_op(const csh handle, const cs_insn *insn, const cs_m
 	case SPARC_INS_JMPL: {
 		const char *link_reg = cs_reg_name(handle, INSOP(1).reg);
 		RzILOpPure *ea = rz_sparc_cs_get_operand(handle, insn, mode, 0, 0);
-		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), NULL, NULL, false);
+		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), NULL, false);
 		return SSETG(link_reg, UA(insn->address));
 	}
 	case SPARC_INS_CALL: {
 		RzILOpPure *ea = rz_sparc_cs_get_operand(handle, insn, mode, 0, 0);
-		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), NULL, NULL, false);
+		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), NULL, false);
 		return SETG("o7", UA(insn->address));
 	}
 	case SPARC_INS_B:
@@ -1873,8 +1870,7 @@ static RzILOpEffect *branch_op(const csh handle, const cs_insn *insn, const cs_m
 			rz_il_op_pure_free(ea);
 			return NULL;
 		}
-		ut64 failed_addr = annul_delay_slot ? insn->address + (SPARC_INSN_SIZE * 2) : insn->address + SPARC_INSN_SIZE;
-		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), JMP(UA(failed_addr)), cond, annul_delay_slot);
+		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, SETL("EA", CAST_UA(ea)), JMP(VARL("EA")), cond, annul_delay_slot);
 		return NOP();
 	}
 	case SPARC_INS_RETT: {
@@ -1886,7 +1882,7 @@ static RzILOpEffect *branch_op(const csh handle, const cs_insn *insn, const cs_m
 		// The window_underflow/window_overflow cases are not handled here.
 		// Because Rizin doesn't model traps for now.
 		RzILOpPure *ea = rz_sparc_cs_get_operand(handle, insn, mode, 0, 0);
-		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, EMPTY(), JMP(VARG("tnpc")), NULL, NULL, false);
+		set_delayed_slot(state->delayed_branch, insn->address + SPARC_INSN_SIZE, EMPTY(), JMP(VARG("tnpc")), NULL, false);
 		RzILOpEffect *restore = restore_op(handle, insn, mode);
 		return SEQ2(SETG("tnpc", CAST_UA(ea)), restore);
 	}

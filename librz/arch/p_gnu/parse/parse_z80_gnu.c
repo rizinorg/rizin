@@ -132,17 +132,21 @@ RzList /*<char *>*/ *z80_tokenize(const char *assembly, size_t length) {
 	}
 
 	if (!strcmp((char *)rz_list_first_val(tokens), "call") && rz_list_length(tokens) == 3) {
-		void *arg1 = rz_list_get_n(tokens, 1);
-		void *arg2 = rz_list_get_n(tokens, 2);
-		rz_list_set_n(tokens, 1, arg2);
-		rz_list_set_n(tokens, 2, arg1);
+		// A conditional call lists the condition before the target; the grammar
+		// expects the target first. Swap the iterator values: the list owns the
+		// strings, so rz_list_set_n would free the token that is moved.
+		RzListIter *cond = rz_list_next(rz_list_head(tokens));
+		RzListIter *target = rz_list_next(cond);
+		void *tmp = rz_list_val(cond);
+		rz_list_set_val(cond, rz_list_val(target));
+		rz_list_set_val(target, tmp);
 	}
 
 	if (comma_replace) {
 		RzListIter *it;
 		rz_list_foreach (tokens, it, buf) {
 			char *repl = rz_str_replace(buf, ",", comma_replace, 1);
-			rz_list_iter_set_data(it, repl);
+			rz_list_set_val(it, repl);
 		}
 	}
 

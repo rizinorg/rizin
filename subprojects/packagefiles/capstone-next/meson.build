@@ -32,6 +32,10 @@ cs_files = [
   'arch/ARM/ARMInstPrinter.c',
   'arch/ARM/ARMMapping.c',
   'arch/ARM/ARMModule.c',
+  'arch/BPF/BPFDisassembler.c',
+  'arch/BPF/BPFInstPrinter.c',
+  'arch/BPF/BPFMapping.c',
+  'arch/BPF/BPFModule.c',
   'arch/HPPA/HPPADisassembler.c',
   'arch/HPPA/HPPAInstPrinter.c',
   'arch/HPPA/HPPAMapping.c',
@@ -95,10 +99,6 @@ cs_files = [
   'arch/Xtensa/XtensaInstPrinter.c',
   'arch/Xtensa/XtensaMapping.c',
   'arch/Xtensa/XtensaModule.c',
-  'arch/BPF/BPFDisassembler.c',
-  'arch/BPF/BPFInstPrinter.c',
-  'arch/BPF/BPFMapping.c',
-  'arch/BPF/BPFModule.c',
   'cs.c',
   'Mapping.c',
   'MCInst.c',
@@ -120,6 +120,7 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_ARC',
   '-DCAPSTONE_HAS_ALPHA',
   '-DCAPSTONE_HAS_ARM',
+  '-DCAPSTONE_HAS_BPF',
   '-DCAPSTONE_HAS_HPPA',
   '-DCAPSTONE_HAS_LOONGARCH',
   '-DCAPSTONE_HAS_M680X',
@@ -134,7 +135,6 @@ libcapstone_c_args = [
   '-DCAPSTONE_HAS_XCORE',
   '-DCAPSTONE_HAS_XTENSA',
   '-DCAPSTONE_HAS_RISCV',
-  '-DCAPSTONE_HAS_BPF',
 ]
 
 if meson.get_compiler('c').has_argument('-Wmaybe-uninitialized')

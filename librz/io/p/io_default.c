@@ -78,7 +78,7 @@ RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO *io, const char *filename, 
 	mmo->perm = rz_sys_open_perms(perm);
 	mmo->mode = mode;
 	if (!mmo->nocache) {
-		mmo->buf = rz_buf_new_mmap(mmo->filename, mmo->perm, mmo->mode);
+		mmo->buf = rz_buf_new_mmap(mmo->filename, mmo->perm, mmo->mode, io);
 	}
 	if (!mmo->buf) {
 		mmo->buf = rz_buf_new_file(mmo->filename, mmo->perm, mmo->mode);

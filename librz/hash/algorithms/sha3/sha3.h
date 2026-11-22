@@ -28,7 +28,6 @@
 
 /* -------------------------------------------------------------------------
  *
- * TODO: Implement sha3-224
  * This is  based (copied) of https://github.com/brainhub/SHA3IUF
  *
  * Works when compiled for either 32-bit or 64-bit targets, optimized for

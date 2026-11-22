@@ -290,6 +290,14 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 			plt_addr--;
 		}
 		return plt_addr;
+	case R_ARM_GLOB_DAT:
+		/* fall-thru */
+	case R_ARM_ABS32:
+		/* fall-thru */
+	case R_ARM_REL32:
+		/* fall-thru */
+	case R_ARM_COPY:
+		return rel->vaddr;
 	default: UNHANDL_IMPORT("ARM", rel->type);
 	}
 	return UT64_MAX;

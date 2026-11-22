@@ -103,6 +103,7 @@ typedef struct rz_egg_t {
 	RzList /*<struct egg_patch_t *>*/ *patches; // <RzBuffer>
 	RzPath *sys_path; ///< pointer to RzPath, contains path prefix of the system
 	struct rz_egg_emit_t *remit;
+	void *emit_context; ///< May holds the context data of the current emit type
 	int arch;
 	int endian;
 	int bits;
@@ -142,9 +143,9 @@ struct rz_egg_emit_t {
 	const char *retvar;
 	// const char *syscall_body;
 	const char *(*regs)(RzEgg *egg, int idx);
-	void (*init)(RzEgg *egg);
+	void (*init)(RzEgg *egg, void **context);
 	void (*begin)(RzEgg *egg);
-	void (*fini)(RzEggEmit *egg_emit);
+	void (*fini)(RzEgg *egg, void *context);
 	void (*call)(RzEgg *egg, const char *addr, int ptr);
 	void (*jmp)(RzEgg *egg, const char *addr, int ptr);
 	// void (*sc)(int num);
@@ -167,7 +168,6 @@ struct rz_egg_emit_t {
 	void (*branch)(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst);
 	void (*mathop)(RzEgg *egg, int ch, int sz, int type, const char *eq, const char *p);
 	void (*get_while_end)(RzEgg *egg, char *out, const char *ctxpush, const char *label);
-	void *emit_context; ///< May holds the context data of each emit type
 };
 
 /**

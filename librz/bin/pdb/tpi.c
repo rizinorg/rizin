@@ -34,27 +34,29 @@ int tpi_type_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
  *
  * \param idx
  */
-RZ_API RZ_OWN char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx) {
+RZ_API RZ_BORROW const char *rz_bin_pdb_calling_convention_as_string(RZ_NONNULL RzPdbTpiCallingConvention idx) {
+	// The returned string is a static literal and must not be freed by the
+	// caller. RzCallable.cc (where these are stored) is a borrowed pointer.
 	switch (idx) {
 	case NEAR_C:
 	case FAR_C:
-		return rz_str_dup("__cdecl");
+		return "__cdecl";
 	case NEAR_PASCAL:
 	case FAR_PASCAL:
-		return rz_str_dup("__pascal");
+		return "__pascal";
 	case NEAR_FAST:
 	case FAR_FAST:
-		return rz_str_dup("__fastcall");
+		return "__fastcall";
 	case NEAR_STD:
 	case FAR_STD:
-		return rz_str_dup("__stdcall");
+		return "__stdcall";
 	case NEAR_SYS:
 	case FAR_SYS:
-		return rz_str_dup("__syscall");
+		return "__syscall";
 	case THISCALL:
-		return rz_str_dup("__thiscall");
+		return "__thiscall";
 	case NEAR_VEC:
-		return rz_str_dup("__vectorcall");
+		return "__vectorcall";
 	default:
 		return NULL;
 	}
@@ -526,6 +528,9 @@ static bool TpiVariant_parse(RzBuffer *b, TpiVariant *x) {
  */
 RZ_API bool rz_bin_pdb_type_is_fwdref(RZ_NONNULL RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, false); // return val stands for we do nothing for it
+	if (!t->data) {
+		return false;
+	}
 	switch (t->kind) {
 	case TpiKind_UNION: {
 		Tpi_LF_Union *lf = t->data;
@@ -556,6 +561,9 @@ RZ_API RZ_BORROW RzPVector /*<RzPdbTpiType *>*/ *rz_bin_pdb_get_type_members(
 	RZ_NONNULL RzPdbTpiStream *stream, RzPdbTpiType *t) {
 	rz_return_val_if_fail(t, NULL);
 	const RzPdbTpiType *fieldlist = NULL;
+	if (!t->data) {
+		return NULL;
+	}
 	switch (t->kind) {
 	case TpiKind_FILEDLIST: {
 		fieldlist = t;
@@ -646,6 +654,9 @@ RZ_API RZ_BORROW char *rz_bin_pdb_get_type_name(RZ_NONNULL RzPdbTpiType *type) {
  */
 RZ_API ut64 rz_bin_pdb_get_type_val(RZ_NONNULL RzPdbTpiType *type) {
 	rz_return_val_if_fail(type, -1);
+	if (!type->data) {
+		return 0;
+	}
 	switch (type->kind) {
 	case TpiKind_ONEMETHOD: {
 		Tpi_LF_OneMethod *lf_onemethod = type->data;
@@ -1229,9 +1240,11 @@ static Tpi_LF_MethodList *methodlist_parse(RzBuffer *b) {
 			rz_pvector_push(&mlist->members, member));
 	}
 	return mlist;
+
 err:
 	rz_warn_if_reached();
-	tpi_data_free_with_kind(member, TpiKind_METHODLIST);
+	free(member);
+	tpi_data_free_with_kind(mlist, TpiKind_METHODLIST);
 	return NULL;
 }
 
@@ -1509,6 +1522,11 @@ static RzPdbTpiType *RzPdbTpiType_from_buf(RzBuffer *b, ut32 index, ut16 length)
 		rz_warn_if_reached();
 		return NULL;
 	}
+	if (!data) {
+		// Keep the record so type indices stay contiguous, but never expose a
+		// known kind without its parsed data: consumers dereference data by kind.
+		k = TpiKind_INVALID;
+	}
 
 	RzPdbTpiType *type = RZ_NEW0(RzPdbTpiType);
 	if (!type) {
@@ -1569,33 +1587,27 @@ RZ_IPI bool tpi_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		RZ_LOG_ERROR("Corrupted TPI stream.\n");
 		return false;
 	}
-	RzPdbTpiType *type = NULL;
-	RzBuffer *b = NULL;
 	for (ut32 index = s->header.TypeIndexBegin; index < s->header.TypeIndexEnd; index++) {
 		ut16 length = 0;
 		if (!rz_buf_read_le16(steam_buffer, &length)) {
-			goto err;
-		}
-		b = NULL;
-		b = buf_take(steam_buffer, length);
-		if (!b) {
-			goto err;
+			return false;
 		}
 
-		type = NULL;
-		type = RzPdbTpiType_from_buf(b, index, length);
+		RzBuffer *b = buf_take(steam_buffer, length);
+		if (!b) {
+			rz_buf_free(b);
+			return false;
+		}
+
+		RzPdbTpiType *type = RzPdbTpiType_from_buf(b, index, length);
 		if (!type) {
-			goto err;
+			rz_warn_if_reached();
+			rz_buf_free(b);
+			tpi_type_free(type);
+			return false;
 		}
 		rz_buf_free(b);
-		b = NULL;
 		rz_rbtree_insert(&s->types, &type->index, &type->rb, tpi_type_node_cmp, NULL);
-		continue;
-	err:
-		rz_warn_if_reached();
-		rz_buf_free(b);
-		tpi_type_free(type);
-		return false;
 	}
 	return true;
 }

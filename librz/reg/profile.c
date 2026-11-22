@@ -9,10 +9,17 @@
 #include <rz_util/rz_assert.h>
 #include <rz_lib.h>
 #include <string.h>
+#include "reg_private.h"
 
 #define GDB_NAME_SZ   16
 #define GDB_TYPE_SZ   16
 #define GDB_GROUPS_SZ 128
+
+/**
+ * The characters the regex "\s" matched when profile lines were split with
+ * PCRE2 (ASCII only, no Unicode properties).
+ */
+#define IS_PROFILE_WHITESPACE(x) ((x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\v' || (x) == '\f' || (x) == '\r')
 
 static void rz_reg_profile_def_free(RzRegProfileDef *def) {
 	if (!def) {
@@ -227,8 +234,12 @@ static bool parse_def(RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, RZ_BORROW
 			goto reg_parse_error;
 		}
 		if (comment_flag[0] == '#') {
-			// Remove # from the comment
-			def->comment = rz_str_dup(comment_flag + 1);
+			// Remove # and the whitespace after it from the comment
+			const char *comment = comment_flag + 1;
+			while (IS_PROFILE_WHITESPACE(*comment)) {
+				comment++;
+			}
+			def->comment = rz_str_dup(comment);
 		} else {
 			def->flags = rz_str_dup(comment_flag);
 		}
@@ -244,7 +255,44 @@ reg_parse_error:
 }
 
 /**
- * \brief Parses a register profile string. Each line is either a register alias or a register definiton.
+ * \brief Splits one register profile line into its fields.
+ *
+ * Fields are separated by IS_PROFILE_WHITESPACE characters. The first '#' ends
+ * the fields and the rest of the line, starting at that '#', becomes one last
+ * token. Later '#' characters are part of the comment. The line is expected to
+ * be trimmed already, so the comment token has no trailing whitespace.
+ */
+static RZ_OWN RzList /*<char *>*/ *split_profile_line(RZ_NONNULL const char *p) {
+	RzList *toks = rz_list_newf(free);
+	if (!toks) {
+		return NULL;
+	}
+	while (*p) {
+		// fast forward through whitespace characters and ignore them
+		while (IS_PROFILE_WHITESPACE(*p)) {
+			p++;
+		}
+
+		// comment start: the rest of the line is one token, '#' included
+		if (*p == '#') {
+			rz_list_append(toks, rz_str_dup(p));
+			break;
+		}
+
+		// non-whitespace non-comment character, consume until end of string, start of a comment, or whitespace
+		const char *start = p;
+		while (*p && *p != '#' && !IS_PROFILE_WHITESPACE(*p)) {
+			p++;
+		}
+		if (p > start) {
+			rz_list_append(toks, rz_str_ndup(start, p - start));
+		}
+	}
+	return toks;
+}
+
+/**
+ * \brief Parse register aliases, definitions, and full-line comments.
  *
  * A register alias string is of the following form:
  * "=<alias>  <name>\n"
@@ -266,13 +314,15 @@ reg_parse_error:
  * * comment: A comment about the register.
  * * Flags this register holds.
  *
- * \param reg Register struct which holds all register items.
- * \param profile Register profile string.
+ * \param alias_list Parsed role aliases.
+ * \param def_list Parsed register definitions.
+ * \param profile_str Register profile string.
+ * \param comments Receives full-line comments, with one newline per comment.
  * \return false On failure.
  * \return true On success.
  */
-static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, const char *profile_str) {
-	rz_return_val_if_fail(alias_list && def_list && profile_str, false);
+static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias_list, RZ_OUT RzList /*<RzRegProfileDef *>*/ *def_list, const char *profile_str, RZ_OUT RzStrBuf *comments) {
+	rz_return_val_if_fail(alias_list && def_list && profile_str && comments, false);
 
 	RzList *def_lines = rz_str_split_duplist_n(profile_str, "\n", 0, true);
 	rz_return_val_if_fail(def_lines, false);
@@ -287,23 +337,17 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		if (RZ_STR_ISEMPTY(line)) {
 			continue;
 		}
-		if (rz_str_strchr(line, "#")) {
-			RzList *line_and_cmt = rz_str_split_duplist_n_regex(line, "\\#", 0, true);
-			char *raw_comment = rz_str_dup(rz_list_last_val(line_and_cmt));
-			if (!raw_comment) {
-				RZ_LOG_WARN("Comment could not be split from register definition. Line: \"%s\"\n", line);
-				continue;
+		if (line[0] == '#') {
+			if (!rz_strbuf_append(comments, line) || !rz_strbuf_append(comments, "\n")) {
+				rz_list_free(def_lines);
+				return false;
 			}
-			char *comment = rz_str_prepend(raw_comment, "#");
-			if (!comment) {
-				RZ_LOG_WARN("Could not prepend # to comment. Line: \"%s\".\n", line);
-				continue;
-			}
-			toks = rz_str_split_duplist_n_regex(rz_list_first_val(line_and_cmt), "\\s+", 0, true);
-			rz_list_append(toks, comment);
-			rz_list_free(line_and_cmt);
-		} else {
-			toks = rz_str_split_duplist_n_regex(line, "\\s+", 0, true);
+			continue;
+		}
+		toks = split_profile_line(line);
+		if (!toks) {
+			RZ_LOG_WARN("Could not split register profile line \"%s\" at line %d.\n", line, l);
+			continue;
 		}
 		ut32 toks_len = rz_list_length(toks);
 		if (rz_list_empty(toks)) {
@@ -311,9 +355,7 @@ static bool parse_reg_profile_str(RZ_OUT RzList /*<RzRegProfileAlias *>*/ *alias
 		}
 
 		const char *first_tok = rz_list_get_n(toks, 0);
-		if (first_tok[0] == '#') { // Comment line
-			goto free_toks_continue;
-		} else if (first_tok[0] == '=') { // Alias
+		if (first_tok[0] == '=') { // Alias
 			if (toks_len != 2) {
 				RZ_LOG_WARN("Invalid number of %d columns in alias \"%s\" at line %d. 2 needed.\n", toks_len, line, l);
 				goto free_toks_continue;
@@ -382,13 +424,6 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
 	RzListIter *it;
-	RzRegProfileAlias *alias;
-	rz_list_foreach (reg->reg_profile.alias, it, alias) {
-		if (!rz_reg_set_name(reg, alias->role, alias->reg_name)) {
-			RZ_LOG_WARN("Invalid alias gviven.\n");
-			return false;
-		}
-	}
 	RzRegProfileDef *def;
 	rz_list_foreach (reg->reg_profile.defs, it, def) {
 		RzRegItem *item = RZ_NEW0(RzRegItem);
@@ -420,16 +455,27 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 
 		add_item_to_regset(reg, item);
 	}
+	RzRegProfileAlias *alias;
+	rz_list_foreach (reg->reg_profile.alias, it, alias) {
+		RzRegItem *item = rz_reg_get(reg, alias->reg_name, RZ_REG_TYPE_ANY);
+		if (!item) {
+			RZ_LOG_WARN("Invalid alias given in register profile: %s.\n", alias->reg_name);
+		}
+		reg->by_role[alias->role] = item;
+	}
 
 	return true;
 }
 
 /**
- * \brief Parses a register profile string and sets up all registers accordingly in \p reg.
+ * \brief Replace the registers in \p reg with those from a profile string.
  *
- * \param reg The RzReg struct which should hold the register data.
- * \param profile The register profile string.
- * \return false On failure;
+ * Keep full-line comments in reg_profile_cmt so callers can display profile
+ * notes separately from the comments attached to individual registers.
+ *
+ * \param reg Register state to replace.
+ * \param profile_str Register profile to load.
+ * \return false On failure.
  * \return true On success.
  */
 RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const char *profile_str) {
@@ -451,7 +497,15 @@ RZ_API bool rz_reg_set_profile_string(RZ_NONNULL RzReg *reg, RZ_NONNULL const ch
 	reg->reg_profile.alias = rz_list_newf((RzListFree)rz_reg_profile_alias_free);
 	rz_return_val_if_fail(reg->reg_profile.defs && reg->reg_profile.alias, true);
 
-	if (!parse_reg_profile_str(reg->reg_profile.alias, reg->reg_profile.defs, profile_str)) {
+	RzStrBuf comments;
+	rz_strbuf_init(&comments);
+	bool parsed = parse_reg_profile_str(reg->reg_profile.alias, reg->reg_profile.defs, profile_str, &comments);
+	if (parsed && !rz_strbuf_is_empty(&comments)) {
+		reg->reg_profile_cmt = rz_strbuf_drain_nofree(&comments);
+		parsed = reg->reg_profile_cmt != NULL;
+	}
+	rz_strbuf_fini(&comments);
+	if (!parsed) {
 		RZ_LOG_WARN("Could not parse register profile string.\n");
 		rz_reg_free_internal(reg, false);
 		return false;
@@ -514,6 +568,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	if (!sb) {
 		return NULL;
 	}
+	char *copy = rz_str_dup(gdb);
 	char *ptr1, *gptr, *gptr1;
 	char name[GDB_NAME_SZ + 1], groups[GDB_GROUPS_SZ + 1], type[GDB_TYPE_SZ + 1];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
@@ -521,12 +576,13 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
-	const char *ptr = rz_str_trim_head_ro(gdb);
+	char *ptr = (char *)rz_str_trim_head_ro(copy);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith(ptr, "Name")) {
 		if (!(ptr = strchr(ptr, '\n'))) {
 			rz_strbuf_free(sb);
+			free(copy);
 			return NULL;
 		}
 		ptr++;
@@ -544,6 +600,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 		} else {
 			eprintf("Could not parse line: %s (missing \\n)\n", ptr);
 			rz_strbuf_free(sb);
+			free(copy);
 			return false;
 		}
 		ret = sscanf(ptr, " %" RZ_STR_DEF(GDB_NAME_SZ) "s %d %d %d %d %" RZ_STR_DEF(GDB_TYPE_SZ) "s %" RZ_STR_DEF(GDB_GROUPS_SZ) "s",
@@ -553,6 +610,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			if (*ptr != '*') {
 				eprintf("Could not parse line: %s\n", ptr);
 				rz_strbuf_free(sb);
+				free(copy);
 				return NULL;
 			}
 			ptr = ptr1 + 1;
@@ -629,8 +687,8 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			break;
 		}
 		ptr = ptr1 + 1;
-		continue;
 	}
+	free(copy);
 	return rz_strbuf_drain(sb);
 }
 
@@ -658,9 +716,6 @@ RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
 RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	const char *r0 = rz_reg_get_name_by_type(reg, "R0");
 	const char *a0 = rz_reg_get_name_by_type(reg, "A0");
-	const char *a1 = rz_reg_get_name_by_type(reg, "A1");
-	const char *a2 = rz_reg_get_name_by_type(reg, "A2");
-	const char *a3 = rz_reg_get_name_by_type(reg, "A3");
 
 	if (!a0) {
 		RZ_LOG_WARN("It is mandatory to have at least one argument register defined in the register profile.\n");
@@ -669,14 +724,21 @@ RZ_API char *rz_reg_profile_to_cc(RzReg *reg) {
 	if (!r0) {
 		r0 = a0;
 	}
-	if (a3 && a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	// Gather every consecutive argument register the profile declares (A0..A9),
+	// stopping at the first undefined role, so an arch that passes more than four
+	// arguments in registers gets a complete convention rather than a truncated
+	// one.
+	static const char *arg_roles[] = { "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9" };
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	rz_strbuf_appendf(&sb, "%s reg(%s", r0, a0);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(arg_roles); i++) {
+		const char *an = rz_reg_get_name_by_type(reg, arg_roles[i]);
+		if (!an) {
+			break;
+		}
+		rz_strbuf_appendf(&sb, ", %s", an);
 	}
-	if (a2 && a1) {
-		return rz_str_newf("%s reg(%s, %s, %s)", r0, a0, a1, a2);
-	}
-	if (a1) {
-		return rz_str_newf("%s reg(%s, %s)", r0, a0, a1);
-	}
-	return rz_str_newf("%s reg(%s)", r0, a0);
+	rz_strbuf_append(&sb, ")");
+	return rz_strbuf_drain_nofree(&sb);
 }

@@ -58,10 +58,13 @@ static int usage(int v) {
 
 static void list(RzEgg *egg) {
 	printf("shellcodes:\n");
-	RzIterator *iter = ht_sp_as_iter(egg->plugins);
-	RzList *plugin_list = rz_list_new_from_iterator(iter);
+	RzIterator iter = (RzIterator){ 0 };
+	if (!ht_sp_as_iter(egg->plugins, &iter)) {
+		return;
+	}
+	RzList *plugin_list = rz_list_new_from_iterator(&iter);
 	if (!plugin_list) {
-		rz_iterator_free(iter);
+		rz_iterator_fini(&iter);
 		return;
 	}
 	rz_list_sort(plugin_list, (RzListComparator)rz_egg_plugin_cmp, NULL);
@@ -80,7 +83,7 @@ static void list(RzEgg *egg) {
 		}
 	}
 	rz_list_free(plugin_list);
-	rz_iterator_free(iter);
+	rz_iterator_fini(&iter);
 }
 
 static bool create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
@@ -226,7 +229,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 		} break;
 		case 'd':
 		case 'D': {
-			char *p = strchr(opt.arg, ':');
+			char *p = (char *)strchr(opt.arg, ':');
 			if (p) {
 				*p = '\0';
 				ut64 n, off = rz_num_math(NULL, opt.arg);
@@ -269,7 +272,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			pattern = opt.arg;
 			break;
 		case 'c': {
-			char *p = strchr(opt.arg, '=');
+			char *p = (char *)strchr(opt.arg, '=');
 			if (p) {
 				*p++ = 0;
 				rz_egg_option_set(egg, opt.arg, p);

@@ -1,6 +1,10 @@
 NAME=sections list
 FILE=bins/elf/analysis/main_wrong_sect
-CMDS=iS;iSS
+CMDS=<<EOF
+iS
+echo ---
+iSS
+EOF
 EXPECT=<<EOF
      paddr  size      vaddr vsize align perm name               type       flags         
 -----------------------------------------------------------------------------------------
@@ -16,7 +20,7 @@ EXPECT=<<EOF
 0x00000348  0x18 0x00400348  0x18   0x0 -r-- .rela.dyn          RELA       alloc
 0x00000360  0x48 0x00400360  0x48   0x0 -r-- .rela.plt          RELA       alloc
 0x000003a8  0x1a 0x004003a8  0x1a   0x0 -r-x .init              PROGBITS   alloc,execute
-0x000003d0  0x40 0x004003d0  0x40   0x0 -r-x .plt               PROGBITS   alloc,execute
+0x000003d0  0x40 0x004003d0  0x40   0x0 -r-x .plt               PLT        alloc,execute
 0x00000410 0x1a2 0x00410570 0x1a2   0x0 -r-x .text              PROGBITS   alloc,execute
 0x000005b4   0x9 0x004005b4   0x9   0x0 -r-x .fini              PROGBITS   alloc,execute
 0x000005c0  0x10 0x004005c0  0x10   0x0 -r-- .rodata            PROGBITS   alloc
@@ -40,6 +44,7 @@ EXPECT=<<EOF
 0x00000e70 0x156 ---------- 0x156   0x0 ---- .shstrtab          STRTAB     
 0x000018c8 0x6d8 ---------- 0x6d8   0x0 ---- .symtab            SYMTAB     
 0x00001fa0 0x23a ---------- 0x23a   0x0 ---- .strtab            STRTAB     
+---
      paddr  size      vaddr vsize    align perm name         
 -------------------------------------------------------------
 0x00000040 0x1c0 0x00400040 0x1c0      0x8 -r-x PHDR
@@ -159,7 +164,9 @@ WARNING: Failed to read ELF header (e_shentsize).
 WARNING: Failed to read ELF header (e_shnum).
 WARNING: Failed to read ELF header (e_shstrndx).
 WARNING: The binary seems to be a tiny elf (45 bytes). Reload e_phnum value.
-WARNING: Failed to initialize section header.
+WARNING: Number of sections is 0.
+WARNING: ELF header e_shstrndx value (0) >= number of sections (0).
+WARNING: Failed to initialize section string table.
 EOF
 RUN
 

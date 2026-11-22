@@ -1,79 +1,136 @@
+// SPDX-FileCopyrightText: 2026 deroad <deroad@kumo.xn--q9jyb4c>
 // SPDX-FileCopyrightText: 2019 GustavoLCR <gugulcr@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef NE_SPECS_H
 #define NE_SPECS_H
 
-#define NE_RELOC_SRC_MASK    0x0F
-#define NE_RELOC_TARGET_MASK 0x03
-
-enum {
-	LOBYTE = 0,
-	SEL_16 = 2,
-	POI_32 = 3,
-	OFF_16 = 5,
-	POI_48 = 11,
-	OFF_32 = 13
+enum FlagWord {
+	NOAUTODATA = 0x0000,
+	SINGLEDATA = 0x0001, // shared among instances of the same program
+	MULTIPLEDATA = 0x0002, // separate for each instance of the same program
+	// additional flags:
+	LINKERROR = 0x2000, // Linker error, module cannot load
+	LIBMODULE = 0x8000, // if this flag is set, this is a DLL
 };
 
-enum {
-	INTERNAL_REF = 0,
-	IMPORTED_ORD = 1,
-	IMPORTED_NAME = 2,
-	OSFIXUP = 3,
-	ADDITIVE = 4
-};
+#define ENTRY_SEGMENT_INDICATOR_UNUSED  0
+#define ENTRY_SEGMENT_INDICATOR_MOVABLE 0xFF
 
-typedef struct _RELOC {
-	ut8 type;
-	ut8 flags;
-	ut16 offset;
+#define ENTRY_FLAGS_EXPORTED   0x01
+#define ENTRY_FLAGS_GLOBALDATA 0x02
+
+#define RELOC_SOURCE_LOW_BYTE    0x00
+#define RELOC_SOURCE_SEGMENT     0x02
+#define RELOC_SOURCE_FAR_ADDR_32 0x03 /* (32-bit pointer) */
+#define RELOC_SOURCE_OFFSET_16   0x05 /* (16-bit offset) */
+#define RELOC_SOURCE_FAR_ADDR_48 0x0B /* (48-bit pointer) */
+#define RELOC_SOURCE_OFFSET_32   0x0D /* (32-bit offset) */
+
+#define RELOC_TARGET_INTERNAL_REF   0x00
+#define RELOC_TARGET_IMPORT_ORDINAL 0x01
+#define RELOC_TARGET_IMPORT_NAME    0x02
+#define RELOC_TARGET_OS_FIXUP       0x03
+#define RELOC_TARGET_MASK           0x03
+
+#define RELOC_FLAGS_ADDITIVE 0x04
+#define RELOC_FLAGS_MASK     0xFC
+
+#define OS_FIXUP_TYPE_FIARQQ_FJARQQ 0x0001
+#define OS_FIXUP_TYPE_FISRQQ_FJSRQQ 0x0002
+#define OS_FIXUP_TYPE_FICRQQ_FJCRQQ 0x0003
+#define OS_FIXUP_TYPE_FIERQQ        0x0004
+#define OS_FIXUP_TYPE_FIDRQQ        0x0005
+#define OS_FIXUP_TYPE_FIWRQQ        0x0006
+
+#define SEGFLAGS_TYPE_CODE 0
+#define SEGFLAGS_TYPE_DATA 1
+#define SEGFLAGS_TYPE_MASK 0x0007
+
+#define SEGFLAGS_MOVABLE    0x0010
+#define SEGFLAGS_PRELOAD    0x0040
+#define SEGFLAGS_HAS_RELOCS 0x0100
+#define SEGFLAGS_DISCARD    0xF000
+
+#define RESOURCE_FLAGS_MOVEABLE 0x0010
+#define RESOURCE_FLAGS_PURE     0x0020
+#define RESOURCE_FLAGS_PRELOAD  0x0040
+
+typedef struct ne_seg_relocation_entry_s {
+	ut8 source;
+	ut8 flags_and_target;
+	ut16 source_chain_offset;
 	union {
-		ut16 index;
-		struct { // internal_fixed
-			ut8 segnum;
-			ut8 zero;
-			ut16 segoff;
-		};
-		struct { // internal_moveable
-			ut16 ignore;
-			ut16 entry_ordinal;
-		};
-		struct { // import_ordinal
-			ut16 align1;
-			ut16 func_ord;
-		};
-		struct { // import_name
-			ut16 align2;
-			ut16 name_off;
-		};
+		struct {
+			ut8 segment_number; // 0xFF == movable segment, other value == fixed segment
+			ut8 zero; // always 0
+			ut16 segment_index; // if fixed segment: offset into segment; if movable segment: ordinal number index into Entry Table
+		} internal_ref;
+		struct {
+			ut16 mod_ref_table_index; // index into module reference table
+			ut16 proc_name_offset; // offset from start of imported-names table to procedure name string
+		} import_name;
+		struct {
+			ut16 mod_ref_table_index; // index into module reference table
+			ut16 ordinal_number; // ordinal number of the procedure (index of sdb entry)
+		} import_ordinal;
+		struct {
+			ut16 os_fixup_type; // see OS_FIXUP_TYPE_*
+			ut16 zero; // always 0
+		} os_fixup;
 	};
-} NE_image_reloc_item;
+} NE_seg_relocation_entry;
 
-enum {
-	IS_DATA = 1,
-	IS_MOVEABLE = 0x10,
-	IS_SHAREABLE = 0x20,
-	IS_PRELOAD = 0x40,
-	RELOCINFO = 0x100,
-	IS_RX = 0x1000
-};
+/*
+ * the actual structure looks like this.
+ * typedef struct {
+ *    ut8  name_length;
+ *    char name[name_length];
+ *    ut16 ordinal_number; ///< index into entry table
+ * } NE_resident_name_entry;
+ *
+ * but we simplify it for parsing as we don't cast it.
+ */
+typedef struct ne_resident_name_entry_s {
+	char *name;
+	ut16 ordinal_number;
+} NE_resident_name_entry;
 
-enum {
-	NOAUTODATA = 0,
-	SINGLEDATA = 1,
-	LINKERROR = 0x2000,
-	LIBRARY = 0x8000
-};
+typedef struct {
+	ut8 entry_flags; ///< see ENTRY_FLAGS_*
+	ut16 entry_point_offset; ///< entry point offset within segment
+} NE_fixed_segment_entry;
 
-typedef struct _SEGMENT {
-	ut16 offset; // Specifies the offset, in sectors, to the segment data (relative to the beginning of the file). A value of zero means no data exists.
-	ut16 length; // Length of the segment in bytes. A value of zero indicates that the segment length is 64K, unless the selector offset is also zero.
-	ut16 flags; // NE_SEGMENT_FLAGS
-	ut16 minAllocSz; // A value of zero indicates that the minimum allocation size is 64K
+typedef struct {
+	ut8 entry_flags; ///< see ENTRY_FLAGS_*
+	ut16 int3fh; ///< constant value (interrupt opcode)
+	ut8 segment_number; ///< number of the movable segment
+	ut16 entry_point_offset; ///< entry point offset within segment
+} NE_movable_segment_entry;
+
+typedef struct ne_segment_entry_s {
+	ut8 segment_indicator; ///< ENTRY_SEGMENT_INDICATOR_*
+	union {
+		NE_fixed_segment_entry fixed;
+		NE_movable_segment_entry movable;
+	};
+} NE_segment_entry;
+
+typedef struct ne_image_segment_entry_s {
+	ut16 sector_base; ///< offset in sectors from beginning of file; offset: sector_base * (1 << neHeader.FileAlnSzShftCnt)
+	ut16 seg_bytes; ///< length of segment in file, in bytes. A value of zero indicates that the segment length is 64K, unless the selector offset is also zero.
+	ut16 seg_flags; ///< see SEGFLAGS_*
+	ut16 min_alloc; ///< A value of zero indicates that the minimum allocation size is 64K
 } NE_image_segment_entry;
 
-typedef struct _NAMEINFO {
+/* this is a custom structure to link segment to the reloc data. */
+typedef struct ne_relocation_entry_s {
+	NE_seg_relocation_entry seg_reloc; ///< Actual relocation data
+	const NE_image_segment_entry *segment; ///< pointer to NE_image_segment_entry
+	char *procedure_name; ///< Resolved procedure name
+} NE_relocation_entry;
+
+typedef struct ne_image_nameinfo_entry_s {
 	ut16 rnOffset;
 	ut16 rnLength;
 	ut16 rnFlags;
@@ -82,7 +139,7 @@ typedef struct _NAMEINFO {
 	ut16 rnUsage;
 } NE_image_nameinfo_entry;
 
-typedef struct _TYPEINFO {
+typedef struct ne_image_typeinfo_entry_s {
 	ut16 rtTypeID;
 	ut16 rtResourceCount;
 	ut32 rtReserved;
@@ -90,38 +147,37 @@ typedef struct _TYPEINFO {
 } NE_image_typeinfo_entry;
 
 typedef struct {
-	char sig[2]; // "NE"
-	ut8 MajLinkerVersion; // The major linker version
-	ut8 MinLinkerVersion; // The minor linker version
-	ut16 EntryTableOffset; // Offset of entry table
-	ut16 EntryTableLength; // Length of entry table in bytes
-	ut32 FileLoadCRC; // 32-bit CRC of entire contents of file
-	ut8 ProgFlags; // Program flags, bitmapped
-	ut8 ApplFlags; // Application flags, bitmapped
-	ut16 AutoDataSegIndex; // The automatic data segment index
-	ut16 InitHeapSize; // The intial local heap size
-	ut16 InitStackSize; // The inital stack size
-	ut16 ipEntryPoint; // IP entry point offset
-	ut16 csEntryPoint; // CS entrypoint index into segment table (Start at 1)
-	ut32 InitStack; // SS:SP inital stack pointer, SS is index into segment table
-	ut16 SegCount; // Number of segments in segment table
-	ut16 ModRefs; // Number of module references (DLLs)
-	ut16 NoResNamesTabSiz; // Size of non-resident names table, in bytes
-	ut16 SegTableOffset; // Offset of Segment table
-	ut16 ResTableOffset; // Offset of resources table
-	ut16 ResidNamTable; // Offset of resident names table
-	ut16 ModRefTable; // Offset of module reference table
-	ut16 ImportNameTable; // Offset of imported names table (array of counted strings, terminated with string of length 00h)
-	ut32 OffStartNonResTab; // Offset from start of file to non-resident names table
-	ut16 MovEntryCount; // Count of moveable entry point listed in entry table
-	ut16 FileAlnSzShftCnt; // File alignment size shift count (0=9(default 512 byte pages))
-	ut16 nResTabEntries; // Number of resource table entries
-	ut8 targOS; // Target OS
-	ut8 OS2EXEFlags; // Other OS/2 flags
-	ut16 retThunkOffset; // Offset to return thunks or start of gangload area - what is gangload?
-	ut16 segrefthunksoff; // Offset to segment reference thunks or size of gangload area
-	ut16 mincodeswap; // Minimum code swap area size
-	ut8 expctwinver[2]; // Expected windows version (minor first)
+	char sig[2]; ///<  {'N', 'E'}
+	ut8 MajLinkerVersion; ///< The major linker version
+	ut8 MinLinkerVersion; ///< The minor linker version (also known as the linker revision)
+	ut16 EntryTableOffset; ///< Offset of entry table from start of NE_Header
+	ut16 EntryTableLength; ///< Length of entry table in bytes
+	ut32 FileLoadCRC; ///< 32-bit CRC of entire contents of file
+	ut16 FlagWord; ///<  Uses the FlagWord enum
+	ut16 AutoDataSegIndex; ///< The automatic data segment index
+	ut16 InitHeapSize; ///< The initial local heap size
+	ut16 InitStackSize; ///< The initial stack size
+	ut16 ipEntryPoint; ///< IP entry point, CS is index into segment table
+	ut16 csEntryPoint; ///< CS entry point, CS is index into segment table
+	ut32 InitStack; ///< SS:SP initial stack pointer, SS is index into segment table
+	ut16 SegCount; ///< Number of segments in segment table
+	ut16 ModRefs; ///< Number of module references (DLLs)
+	ut16 NoResNamesTabSiz; ///< Size of non-resident names table in bytes
+	ut16 SegTableOffset; ///< Offset of segment table from start of NE_Header
+	ut16 ResTableOffset; ///< Offset of resources table from start of NE_Header
+	ut16 ResidNamTable; ///< Offset of resident names table from start of NE_Header
+	ut16 ModRefTable; ///< Offset of module reference table from start of NE_Header
+	ut16 ImportNameTable; ///< Offset of imported names table from start of NE_Header
+	ut32 OffStartNonResTab; ///< Offset of non-resident names table from start of file (!)
+	ut16 MovEntryCount; ///< Count of moveable entry point listed in entry table
+	ut16 FileAlnSzShftCnt; ///< File alignment size shift count (0=9(default 512 byte pages))
+	ut16 nResTabEntries; ///< Number of resource table entries (often inaccurate!)
+	ut8 targOS; ///< Target OS
+	ut8 OS2EXEFlags; ///< Other OS/2 flags
+	ut16 retThunkOffset; ///< Offset to return thunks or start of gangload area - what is gangload?
+	ut16 segrefthunksoff; ///< Offset to segment reference thunks or size of gangload area
+	ut16 mincodeswap; ///< Minimum code swap area size
+	ut8 expctwinver[2]; ///< Expected windows version (minor first)
 } NE_image_header;
 
 #endif

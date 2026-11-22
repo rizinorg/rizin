@@ -1,0 +1,46 @@
+NAME=LUAC: info
+FILE=bins/luac/class52.luac
+CMDS=<<EOF
+i~guid,machine
+iS~none
+ie~program
+iS
+is~entry0
+is~setmetatable
+pd 10 >/dev/null
+iz~balance?
+EOF
+EXPECT=<<EOF
+guid     N/A
+machine  Lua 5.2 VM
+0x00000000 0x00000000 ---------- ---------- program
+     paddr size      vaddr vsize align perm name                  type flags 
+-----------------------------------------------------------------------------
+0x00000021 0x54 0x00000000  0x54   0x0 -r-x fcn.00000000.code          
+0x00000076 0x66 0x00000800  0x66   0x0 -r-- fcn.00000000.const         
+0x000000ef 0x20 0x00001000  0x20   0x0 -r-x fcn.00001000.code          
+0x00000110 0x3b 0x00001800  0x3b   0x0 -r-- fcn.00001000.const         
+0x0000014f  0x8 0x00001c00   0x8   0x0 -r-- fcn.00001000.upvalues      
+0x00000190 0x42 0x00001e00  0x42   0x0 -r-- fcn.00001000.lvars         
+0x000001f2 0x10 0x00002000  0x10   0x0 -r-x fcn.00002000.code          
+0x00000203 0x14 0x00002800  0x14   0x0 -r-- fcn.00002000.const         
+0x0000021b  0x6 0x00002c00   0x6   0x0 -r-- fcn.00002000.upvalues      
+0x0000024a 0x2c 0x00002e00  0x2c   0x0 -r-- fcn.00002000.lvars         
+0x0000027a  0x8 0x00000c00   0x8   0x0 -r-- fcn.00000000.upvalues      
+  0 0x00000021 0x00000000 GLOBAL FUNC   84     entry0
+  0 0x00000021 0x00000000 GLOBAL FUNC   84     entry0
+3
+EOF
+RUN
+
+NAME=LUAC: broken file
+FILE=bins/luac/random52.luac
+CMDS=<<EOF
+EOF
+EXPECT=
+REGEXP_FILTER_ERR=<<EOF
+ERROR: Truncated Code at [.+]
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN

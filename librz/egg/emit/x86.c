@@ -173,13 +173,15 @@ static void emit_string(RzEgg *egg, const char *dstvar, const char *str, int j) 
 #define M32(x) (unsigned int)((x) & 0xffffffff)
 	/* XXX: Assumes sizeof(ut32) == 4 */
 	for (i = 4; i <= oj; i += 4) {
-		/* XXX endian issues (non-portable asm) */
-		ut32 *n = (ut32 *)(s + i - 4);
+		/* x86 is always little-endian: read the chunk as LE so the emitted
+		 * immediate (and thus the assembled bytes) does not depend on the
+		 * host endianness. */
+		ut32 n = rz_read_le32(s + i - 4);
 		p = rz_egg_lang_mkvar(egg, str2, dstvar, i + BPOFF);
 		if (attsyntax) {
-			rz_egg_printf(egg, "  movl $0x%x, %s\n", M32(*n), p);
+			rz_egg_printf(egg, "  movl $0x%x, %s\n", M32(n), p);
 		} else {
-			rz_egg_printf(egg, "  mov dword %s, 0x%x\n", p, M32(*n));
+			rz_egg_printf(egg, "  mov dword %s, 0x%x\n", p, M32(n));
 		}
 		free(p);
 		j -= 4;
@@ -365,7 +367,7 @@ static void emit_trap(RzEgg *egg) {
 static void emit_load_ptr(RzEgg *egg, const char *dst) {
 	int d = atoi(dst);
 	if (d == 0) { // hack to handle stackvarptrz
-		char *p = strchr(dst, '+');
+		const char *p = strchr(dst, '+');
 		if (p) {
 			d = atoi(p + 1);
 		}

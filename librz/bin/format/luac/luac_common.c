@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 // SPDX-FileCopyrightText: 2021 Heersin <teablearcher@gmail.com>
+// SPDX-FileCopyrightText: 2025-2026 Sergey Sharshunov <s.sharshunov@gmail.com>
 
 // Implement Functions declared in luac_common.h
 
@@ -42,13 +43,13 @@ LuaProto *lua_new_proto_entry() {
 		return NULL;
 	}
 
-	proto->const_entries = rz_list_newf((RzListFree)lua_free_const_entry);
+	proto->const_entries = rz_pvector_new((RzPVectorFree)lua_free_const_entry);
 	if (!proto->const_entries) {
 		RZ_LOG_ERROR("Cannot allocate Const Entry List\n");
 		goto fail;
 	}
 
-	proto->upvalue_entries = rz_list_newf(free);
+	proto->upvalue_entries = rz_pvector_new((RzPVectorFree)lua_free_upvalue_entry);
 	if (!proto->upvalue_entries) {
 		RZ_LOG_ERROR("Cannot allocate Upvalue Entry List\n");
 		goto fail;
@@ -72,13 +73,13 @@ LuaProto *lua_new_proto_entry() {
 		goto fail;
 	}
 
-	proto->local_var_info_entries = rz_list_newf((RzListFree)lua_free_local_var_entry);
+	proto->local_var_info_entries = rz_pvector_new((RzPVectorFree)lua_free_local_var_entry);
 	if (!proto->local_var_info_entries) {
 		RZ_LOG_ERROR("Cannot allocate Local Var\n");
 		goto fail;
 	}
 
-	proto->dbg_upvalue_entries = rz_list_newf((RzListFree)lua_free_dbg_upvalue_entry);
+	proto->dbg_upvalue_entries = rz_pvector_new((RzPVectorFree)lua_free_dbg_upvalue_entry);
 	if (!proto->dbg_upvalue_entries) {
 		RZ_LOG_ERROR("Cannot allocate Debug Upvalues\n");
 		goto fail;
@@ -89,6 +90,15 @@ LuaProto *lua_new_proto_entry() {
 fail:
 	lua_free_proto_entry(proto);
 	return NULL;
+}
+
+void lua_free_upvalue_entry(LuaUpvalueEntry *entry) {
+	if (!entry) {
+		return;
+	}
+	free(entry->upvalue_name);
+	// leave entry to rz_list_free
+	free(entry);
 }
 
 void lua_free_dbg_upvalue_entry(LuaDbgUpvalueEntry *entry) {
@@ -122,16 +132,16 @@ void lua_free_proto_entry(LuaProto *proto) {
 	}
 
 	/* free constants entries */
-	rz_list_free(proto->const_entries);
+	rz_pvector_free(proto->const_entries);
 
 	/* free upvalue entries */
-	rz_list_free(proto->upvalue_entries);
+	rz_pvector_free(proto->upvalue_entries);
 
 	/* free debug */
 	rz_list_free(proto->line_info_entries);
 	rz_list_free(proto->abs_line_info_entries);
-	rz_list_free(proto->local_var_info_entries);
-	rz_list_free(proto->dbg_upvalue_entries);
+	rz_pvector_free(proto->local_var_info_entries);
+	rz_pvector_free(proto->dbg_upvalue_entries);
 
 	/* recursively free protos */
 	rz_list_free(proto->proto_entries);

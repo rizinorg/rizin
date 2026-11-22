@@ -82,12 +82,12 @@ static RzDebugReasonType rz_debug_winkd_wait(RZ_BORROW RZ_NONNULL RzDebug *dbg, 
 		return RZ_DEBUG_REASON_UNKNOWN;
 	}
 	for (;;) {
-		void *bed = rz_cons_sleep_begin();
+		void *bed = rz_interrupt_sleep_begin(dbg->intr);
 		int ret;
 		do {
 			ret = winkd_wait_packet(kdctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		} while (ret == KD_E_BREAK || ret == KD_E_MALFORMED);
-		rz_cons_sleep_end(bed);
+		rz_interrupt_sleep_end(dbg->intr, bed);
 		if (ret != KD_E_OK || !pkt) {
 			reason = RZ_DEBUG_REASON_ERROR;
 			break;
@@ -193,8 +193,8 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 	}
 	char *exepath, *pdbpath;
 	if (!winkd_download_module_and_pdb(mod,
-		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.server"),
-		    dbg->corebind.cfgGet(dbg->corebind.core, "pdb.symstore"),
+		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.server"),
+		    dbg->corebind.config_get_string(dbg->corebind.core, "pdb.symstore"),
 		    &exepath, &pdbpath)) {
 		RZ_LOG_ERROR("Failed to download module and pdb\n");
 		rz_list_free(modules);
@@ -207,7 +207,8 @@ static int rz_debug_winkd_attach(RZ_BORROW RZ_NONNULL RzDebug *dbg, int pid) {
 
 	if (!kdctx->windctx.profile) {
 		RZ_LOG_INFO("Trying to build profile dinamically by using the ntoskrnl.exe's PDB\n");
-		winkd_build_profile(&kdctx->windctx, dbg->analysis->typedb);
+		RzTypeDB *typedb = rz_analysis_get_type_db(dbg->analysis);
+		winkd_build_profile(&kdctx->windctx, typedb);
 	}
 	dbg->bits = winkd_get_bits(&kdctx->windctx);
 	// Make rz_debug_is_dead happy

@@ -20,3 +20,29 @@ const ut8 lic_gba[] = {
 	0xaf, 0xd6, 0x25, 0xe4, 0x8b, 0x38, 0x0a, 0xac, 0x72, 0x21, 0xd4,
 	0xf8, 0x07
 };
+
+#define GBA_ROM_CARTRIDGE_HEADER_SIZE 0xC0
+#define GBA_ROM_TITLE_SIZE            12
+#define GBA_ROM_NINTENDO_LOGO_SIZE    156
+#define GBA_ROM_GAMECODE_SIZE         4
+#define GBA_ROM_MAKERCODE_SIZE        2
+#define GBA_ROM_RESERVED_AREA1_SIZE   7
+#define GBA_ROM_RESERVED_AREA2_SIZE   2
+
+/**
+ * Reference: https://problemkaputt.de/gbatek-gba-cartridge-header.htm
+ */
+typedef struct gba_header_s {
+	ut32 entry_point; ///< 32-bit ARM branch instruction to the start of the program
+	ut8 nintendo_logo[GBA_ROM_NINTENDO_LOGO_SIZE];
+	char title[GBA_ROM_TITLE_SIZE];
+	char game_code[GBA_ROM_GAMECODE_SIZE]; ///< Uppercase ASCII, 4 characters (UTTD)
+	char maker_code[GBA_ROM_MAKERCODE_SIZE];
+	ut8 fixed_value; ///< Must be 0x96
+	ut8 main_unit_code;
+	ut8 device_type;
+	ut8 reserved_area_1[GBA_ROM_RESERVED_AREA1_SIZE];
+	ut8 software_version;
+	ut8 complement_check; ///< Header checksum over bytes 0xA0 to 0xBC
+	ut8 reserved_area_2[GBA_ROM_RESERVED_AREA2_SIZE];
+} gba_header_t;

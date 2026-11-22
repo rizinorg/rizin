@@ -290,16 +290,16 @@ RZ_API void rz_bin_dwarf_attr_dump(
 	case DW_FORM_data4:
 	case DW_FORM_data8:
 	case DW_FORM_data16:
-		rz_strbuf_appendf(sb, "%" PFMT64u "", rz_bin_dwarf_attr_udata(attr));
+		rz_strbuf_appendf(sb, "%" PFMT64u, rz_bin_dwarf_attr_udata(attr));
 		break;
 	case DW_FORM_flag:
 		rz_strbuf_appendf(sb, "%u", rz_bin_dwarf_attr_flag(attr));
 		break;
 	case DW_FORM_sdata:
-		rz_strbuf_appendf(sb, "%" PFMT64d "", rz_bin_dwarf_attr_sdata(attr));
+		rz_strbuf_appendf(sb, "%" PFMT64d, rz_bin_dwarf_attr_sdata(attr));
 		break;
 	case DW_FORM_udata:
-		rz_strbuf_appendf(sb, "%" PFMT64u "", rz_bin_dwarf_attr_udata(attr));
+		rz_strbuf_appendf(sb, "%" PFMT64u, rz_bin_dwarf_attr_udata(attr));
 		break;
 	case DW_FORM_ref_addr:
 	case DW_FORM_ref1:
@@ -351,10 +351,10 @@ RZ_API void rz_bin_dwarf_attr_dump(
 	case DW_FORM_addrx4:
 	case DW_FORM_loclistx:
 	case DW_FORM_rnglistx:
-		rz_strbuf_appendf(sb, "0x%" PFMT64x "", rz_bin_dwarf_attr_udata(attr));
+		rz_strbuf_appendf(sb, "0x%" PFMT64x, rz_bin_dwarf_attr_udata(attr));
 		break;
 	case DW_FORM_implicit_const:
-		rz_strbuf_appendf(sb, "0x%" PFMT64d "", rz_bin_dwarf_attr_udata(attr));
+		rz_strbuf_appendf(sb, "0x%" PFMT64d, rz_bin_dwarf_attr_udata(attr));
 		break;
 	default:
 		rz_strbuf_appendf(sb, "Unknown attr value form %s\n", rz_bin_dwarf_form(attr->form));

@@ -9,45 +9,50 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisRzilTrace **rt) {
-	if (!core->analysis->esil) {
+// from canalysis.c (core_private.h isn't included: it clashes with the local bb_cmpaddr)
+RZ_IPI void rz_core_add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to);
+
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et, RzAnalysisILTrace **rt) {
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (!esil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
-	*et = core->analysis->esil->trace;
+	*et = esil->trace;
 
 	core->dbg->trace = rz_debug_trace_new();
-	core->analysis->esil->trace = rz_analysis_esil_trace_new(core->analysis->esil);
+	esil->trace = rz_analysis_esil_trace_new(esil);
 
-	rz_config_hold_i(hc, "esil.romem", "dbg.trace",
-		"esil.nonull", "dbg.follow", NULL);
+	rz_config_hold_var(hc, "esil.romem", "dbg.trace", "dbg.follow", NULL);
 	rz_config_set(core->config, "esil.romem", "true");
 	rz_config_set(core->config, "dbg.trace", "true");
-	rz_config_set(core->config, "esil.nonull", "true");
 	rz_config_set_i(core->config, "dbg.follow", false);
-	const char *bp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_BP);
-	const char *sp = rz_reg_get_name(core->analysis->reg, RZ_REG_NAME_SP);
-	if ((bp && !rz_reg_getv(core->analysis->reg, bp)) && (sp && !rz_reg_getv(core->analysis->reg, sp))) {
+	const char *bp = rz_reg_get_name(rreg, RZ_REG_NAME_BP);
+	const char *sp = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+	if ((bp && !rz_reg_getv(rreg, bp)) && (sp && !rz_reg_getv(rreg, sp))) {
 		RZ_LOG_ERROR("core: stack isn't initialized.\n");
 		RZ_LOG_ERROR("core: try running aei and aeim commands before aft for default stack initialization\n");
 		return false;
 	}
-	return (core->dbg->trace && core->analysis->esil->trace);
+	return (core->dbg->trace && esil->trace);
 }
 
-static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisRzilTrace *rt) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et, RzAnalysisILTrace *rt) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	rz_config_hold_restore(hc);
 	rz_config_hold_free(hc);
 	rz_debug_trace_free(core->dbg->trace);
-	rz_analysis_esil_trace_free(core->analysis->esil->trace);
-	core->analysis->esil->trace = et;
+	rz_analysis_esil_trace_free(esil->trace);
+	esil->trace = et;
 	core->dbg->trace = dt;
 }
 
 static bool type_pos_hit(RzAnalysis *analysis, RzILTraceInstruction *instr_trace, bool in_stack, int size, const char *place) {
 	if (in_stack) {
-		const char *sp_name = rz_reg_get_name(analysis->reg, RZ_REG_NAME_SP);
-		ut64 sp = rz_reg_getv(analysis->reg, sp_name);
+		RzReg *rreg = rz_analysis_get_reg(analysis);
+		const char *sp_name = rz_reg_get_name(rreg, RZ_REG_NAME_SP);
+		ut64 sp = rz_reg_getv(rreg, sp_name);
 
 		ut64 write_addr = 0LL;
 		if (instr_trace && (instr_trace->stats & RZ_IL_TRACE_INS_HAS_MEM_W)) {
@@ -90,13 +95,25 @@ static void var_rename(RzAnalysis *analysis, RzAnalysisVar *v, const char *name,
 
 static void var_type_set_sign(RzAnalysis *analysis, RzAnalysisVar *var, bool sign) {
 	rz_return_if_fail(analysis && var);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
 	// Check if it's integral number first
-	if (rz_type_is_integral(analysis->typedb, var->type)) {
-		rz_type_integral_set_sign(analysis->typedb, &var->type, sign);
+	if (rz_type_is_integral(typedb, var->type)) {
+		rz_type_integral_set_sign(typedb, &var->type, sign);
 	}
 }
 
-static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType *b) {
+static bool var_type_can_refine(const RzTypeDB *typedb, RzType *a, RzType *b) {
+	// Access widths also produce defaults narrower than the target word.
+	// Signatures and format strings may refine these without widening the slot.
+	if (a->kind == RZ_TYPE_KIND_IDENTIFIER && a->identifier.name && !a->identifier.is_const &&
+		(!strcmp(a->identifier.name, "int8_t") || !strcmp(a->identifier.name, "int16_t") ||
+			!strcmp(a->identifier.name, "int32_t") || !strcmp(a->identifier.name, "int64_t")) &&
+		rz_type_is_integral(typedb, b)) {
+		ut64 size = rz_type_db_get_bitsize(typedb, a);
+		if (size && size == rz_type_db_get_bitsize(typedb, b)) {
+			return true;
+		}
+	}
 	// `*int*` types to anything else of the typeclass
 	if (rz_type_is_integral(typedb, a) && !rz_type_is_char_ptr_nested(a) && !rz_type_is_integral(typedb, b)) {
 		return true;
@@ -111,13 +128,13 @@ static bool var_type_simple_to_complex(const RzTypeDB *typedb, RzType *a, RzType
 // TODO: Handle also non-atomic types here
 static void var_type_set(RzAnalysis *analysis, RzAnalysisVar *var, RZ_BORROW RzType *type, bool ref, bool resolve_overlaps) {
 	rz_return_if_fail(analysis && var && type);
-	RzTypeDB *typedb = analysis->typedb;
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
 	// removing this return makes 64bit vars become 32bit
 	if (rz_type_is_default(typedb, type) || rz_type_atomic_is_void(typedb, type)) {
 		// default or void (not void* !) type
 		return;
 	}
-	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_simple_to_complex(typedb, var->type, type)) {
+	if (!rz_type_is_default(typedb, var->type) && !rz_type_is_void_ptr(var->type) && !var_type_can_refine(typedb, var->type, type)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
 		// except for simple types to the more complex types
@@ -158,7 +175,8 @@ static void vars_resolve_overlaps(RzPVector /*<RzAnalysisVar *>*/ *vars) {
 static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const char *type, bool ref) {
 	rz_return_if_fail(analysis && var && type);
 	char *error_msg = NULL;
-	RzType *realtype = rz_type_parse_string_single(analysis->typedb->parser, type, &error_msg);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	RzType *realtype = rz_type_parse_string_single(typedb->parser, type, &error_msg);
 	if (!realtype && error_msg) {
 		RZ_LOG_ERROR("core: fail to parse type \"%s\":\n%s\n", type, error_msg);
 		free(error_msg);
@@ -171,6 +189,8 @@ static void var_type_set_str(RzAnalysis *analysis, RzAnalysisVar *var, const cha
 
 static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 	RzAnalysis *analysis = core->analysis;
+	RzReg *rreg = rz_analysis_get_reg(analysis);
+	int bits = rz_analysis_get_bits(analysis);
 	RzAnalysisOp *op = rz_core_analysis_op(core, addr, RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_ESIL);
 	if (!op || rz_strbuf_is_empty(&op->esil)) {
 		rz_analysis_op_free(op);
@@ -182,10 +202,10 @@ static void get_src_regname(RzCore *core, ut64 addr, char *regname, int size) {
 		*tmp = '\0';
 	}
 	memset(regname, 0, size);
-	RzRegItem *ri = rz_reg_get(analysis->reg, op_esil, -1);
+	RzRegItem *ri = rz_reg_get(rreg, op_esil, -1);
 	if (ri) {
-		if ((analysis->bits == 64) && (ri->size == 32)) {
-			const char *reg = rz_reg_32_to_64(analysis->reg, op_esil);
+		if ((bits == 64) && (ri->size == 32)) {
+			const char *reg = rz_reg_32_to_64(rreg, op_esil);
 			if (reg) {
 				free(op_esil);
 				op_esil = rz_str_dup(reg);
@@ -201,8 +221,9 @@ static ut64 get_addr(RzAnalysis *analysis, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
+	RzAnalysisEsil *esil = rz_analysis_get_esil(analysis);
 
-	RzAnalysisEsilTrace *etrace = analysis->esil->trace;
+	RzAnalysisEsilTrace *etrace = esil->trace;
 	RzILTraceInstruction *instruction_trace = rz_analysis_esil_get_instruction_trace(etrace, idx);
 	RzILTraceRegOp *reg_op = rz_analysis_il_get_reg_op_trace(instruction_trace, regname, false);
 
@@ -221,7 +242,7 @@ static RzList /*<char *>*/ *parse_format(RzCore *core, char *fmt) {
 	if (!ret) {
 		return NULL;
 	}
-	Sdb *s = core->analysis->sdb_fmts;
+	Sdb *s = rz_analysis_get_sdb_formats(core->analysis);
 	const char *spec = rz_config_get(core->config, "analysis.types.spec");
 	char arr[10] = { 0 };
 	char tmpbuf[0x300]; // caller has the size limit of 0x200
@@ -292,7 +313,8 @@ RzCallable *function_type_derive(RzAnalysis *analysis, RZ_NONNULL const char *fc
 	// pointer to the RzCallable and in the case of `rz_analysis_function_derive_type()`
 	// we get the owned pointer, we should free the pointer in the one case but not another.
 	*owned = false;
-	RzCallable *callable = rz_type_func_get(analysis->typedb, fcn_name);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	RzCallable *callable = rz_type_func_get(typedb, fcn_name);
 	if (!callable) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_byname(analysis, fcn_name);
 		if (!fcn) {
@@ -341,8 +363,9 @@ bool function_argument_type_derive(RZ_NULLABLE const RzCallable *callable, int a
  */
 static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
 	int prev_idx, bool userfnc, ut64 caddr, HtUP *op_cache) {
-	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
-	RzTypeDB *typedb = core->analysis->typedb;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	RzAnalysisEsilTrace *etrace = esil->trace;
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
 	char tmpbuf[1024];
@@ -357,7 +380,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	}
 	int i, j, pos = 0, size = 0, max = rz_type_func_args_count(typedb, fcn_name);
 	const char *place = rz_analysis_cc_arg(analysis, cc, ST32_MAX);
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 
 	if (place && !strcmp(place, "stack_rev")) {
 		stack_rev = true;
@@ -440,13 +463,23 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 			// Match type from function param to instr
 			if (type_pos_hit(analysis, instr_trace, in_stack, size, place)) {
 				if (!cmt_set && type && name) {
-					char *typestr = rz_type_as_string(analysis->typedb, type);
+					char *typestr = rz_type_as_string(typedb, type);
 					const char *maybe_space = type->kind == RZ_TYPE_KIND_POINTER ? "" : " ";
 					rz_meta_set_string(analysis, RZ_META_TYPE_VARTYPE, instr_addr,
 						rz_strf(tmpbuf, "%s%s%s", typestr, maybe_space, name));
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp(name, "format")) {
 						RzFlagItem *f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
+						if (!f) {
+							// A format argument (e.g. scanf's "%s") is a string even when
+							// shorter than the detection threshold; create the reference so
+							// it is shown as a string and parsed for variadic typing below.
+							size_t saved_min = core->bin->str_search_cfg.min_length;
+							core->bin->str_search_cfg.min_length = 1;
+							rz_core_add_string_ref(core, op->addr, op->ptr);
+							core->bin->str_search_cfg.min_length = saved_min;
+							f = rz_flag_get_by_spaces(core->flags, op->ptr, RZ_FLAGS_FS_STRINGS, NULL);
+						}
 						if (f) {
 							char formatstr[0x200];
 							int read = rz_io_nread_at(core->io, f->offset, (ut8 *)formatstr, RZ_MIN(sizeof(formatstr) - 1, f->size));
@@ -514,7 +547,8 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 				}
 			}
 		}
-		size += analysis->bits / 8;
+		int bits = rz_analysis_get_bits(analysis);
+		size += bits / 8;
 		rz_type_free(type);
 		free(name);
 	}
@@ -522,7 +556,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 		rz_type_callable_free(callable);
 	}
 	rz_list_free(types);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 }
 
 static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
@@ -531,8 +565,9 @@ static int bb_cmpaddr(const void *_a, const void *_b, void *user) {
 }
 
 void handle_stack_canary(RzCore *core, RzAnalysisOp *aop, int cur_idx) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
 	RzILTraceInstruction *prev_trace = rz_analysis_esil_get_instruction_trace(
-		core->analysis->esil->trace,
+		esil->trace,
 		cur_idx - 1);
 
 	ut64 mov_addr;
@@ -631,6 +666,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	RzPVector *used_vars = rz_analysis_function_get_vars_used_at(fcn, aop->addr);
 	bool chk_constraint = rz_config_get_b(core->config, "analysis.types.constraint");
 	RzAnalysisOp *next_op = op_cache_get(op_cache, core, aop->addr + aop->size);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	void **uvit;
 	RzType *prev_type = NULL;
 	int prev_idx = 0;
@@ -641,7 +677,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 	ut32 type = aop->type & RZ_ANALYSIS_OP_TYPE_MASK;
 	RzAnalysis *analysis = core->analysis;
 
-	RzAnalysisEsilTrace *etrace = core->analysis->esil->trace;
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	RzAnalysisEsilTrace *etrace = esil->trace;
 	RzILTraceInstruction *cur_instr_trace = rz_analysis_esil_get_instruction_trace(etrace, ctx->cur_idx);
 
 	if (aop->type == RZ_ANALYSIS_OP_TYPE_CALL || aop->type & RZ_ANALYSIS_OP_TYPE_UCALL) {
@@ -656,17 +693,18 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 		} else if (aop->ptr != UT64_MAX) {
 			RzFlagItem *flag = rz_flag_get_by_spaces(core->flags, aop->ptr, RZ_FLAGS_FS_IMPORTS, NULL);
 			if (flag && flag->realname) {
-				full_name = flag->realname;
+				char *reloc_prefix = (char *)rz_str_rstr(flag->realname, "reloc.");
+				full_name = reloc_prefix ? reloc_prefix + 6 : flag->realname;
 				callee_addr = aop->ptr;
 			}
 		}
 		// TODO: Apart from checking the types database, we should also derive the information
 		// from the RzAnalysisFunction if nothing was found in the RzTypeDB
 		if (full_name) {
-			if (rz_type_func_exist(core->analysis->typedb, full_name)) {
+			if (rz_type_func_exist(typedb, full_name)) {
 				fcn_name = rz_str_dup(full_name);
 			} else {
-				fcn_name = rz_analysis_function_name_guess(core->analysis->typedb, full_name);
+				fcn_name = rz_analysis_function_name_guess(typedb, full_name);
 			}
 			if (!fcn_name) {
 				fcn_name = rz_str_dup(full_name);
@@ -677,7 +715,7 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 				char *cc = rz_str_dup(Cc);
 				type_match(core, fcn_name, aop->addr, bb->addr, cc, prev_idx, userfnc, callee_addr, op_cache);
 				prev_idx = ctx->cur_idx;
-				ctx->retctx->ret_type = rz_type_func_ret(core->analysis->typedb, fcn_name);
+				ctx->retctx->ret_type = rz_type_func_ret(typedb, fcn_name);
 				RZ_FREE(ctx->retctx->ret_reg);
 				const char *rr = rz_analysis_cc_ret(core->analysis, cc);
 				if (rr) {
@@ -756,7 +794,32 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 					.cond = jmp ? rz_type_cond_invert(next_op->cond) : next_op->cond,
 					.val = aop->val
 				};
-				rz_analysis_var_add_constraint(var, &constr);
+				// Only keep constraints that carry useful information: a known
+				// immediate value (UT64_MAX means the compared value was not a
+				// resolvable immediate) and a condition that the rest of the
+				// type engine knows how to represent. Besides the interval
+				// bounds (<, <=, >, >=) this includes the equality and
+				// inequality conditions produced by je/jne-style branches.
+				// This avoids recording degenerate constraints such as
+				// "> 0xffffffffffffffff".
+				bool useful_cond = constr.cond == RZ_TYPE_COND_LE || constr.cond == RZ_TYPE_COND_LT ||
+					constr.cond == RZ_TYPE_COND_GE || constr.cond == RZ_TYPE_COND_GT ||
+					constr.cond == RZ_TYPE_COND_EQ || constr.cond == RZ_TYPE_COND_NE;
+				if (constr.val != UT64_MAX && useful_cond) {
+					// Avoid recording the same constraint more than once (the
+					// emulation may revisit the same comparison).
+					bool dup = false;
+					RzTypeConstraint *existing;
+					rz_vector_foreach (&var->constraints, existing) {
+						if (existing->cond == constr.cond && existing->val == constr.val) {
+							dup = true;
+							break;
+						}
+					}
+					if (!dup) {
+						rz_analysis_var_add_constraint(var, &constr);
+					}
+				}
 			}
 		}
 		vars_resolve_overlaps(used_vars);
@@ -791,7 +854,8 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 			if (cur_instr_trace->stats & RZ_IL_TRACE_INS_HAS_REG_W) {
 				w_reg = rz_pvector_at(cur_instr_trace->write_reg_ops, 0);
 				if (w_reg) {
-					ctx->prev_dest = rz_str_constpool_get(&analysis->constpool, w_reg->reg_name);
+					RzStrConstPool *cpool = rz_analysis_get_const_pool(analysis);
+					ctx->prev_dest = rz_str_constpool_get(cpool, w_reg->reg_name);
 				}
 			}
 		}
@@ -815,13 +879,14 @@ void propagate_types_among_used_variables(RzCore *core, HtUP *op_cache, RzAnalys
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, HtUU *loop_table) {
 	rz_return_if_fail(core && core->analysis && fcn);
 
-	if (!core->analysis->esil) {
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	if (!esil) {
 		RZ_LOG_ERROR("core: please run aeim first.\n");
 		return;
 	}
 
 	RzAnalysis *analysis = core->analysis;
-	RzReg *reg = analysis->reg;
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
 	const int mininstrsz = rz_analysis_archinfo(analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX(1, mininstrsz);
 	RzConfigHold *hc = rz_config_hold_new(core->config);
@@ -830,7 +895,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	RzAnalysisRzilTrace *rt = NULL;
+	RzAnalysisILTrace *rt = NULL;
 	if (!analysis_emul_init(core, hc, &dt, &et, &rt) || !fcn) {
 		analysis_emul_restore(core, hc, dt, et, rt);
 		return;
@@ -864,7 +929,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 	if (!r) {
 		goto out_function;
 	}
-	rz_cons_break_push(NULL, NULL);
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 	rz_pvector_sort(fcn->bbs, bb_cmpaddr, NULL);
 
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
@@ -880,7 +945,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 			break;
 		}
 		while (1) {
-			if (rz_cons_is_breaked()) {
+			if (rz_interrupt_is_breaked(core->intr)) {
 				goto out_function;
 			}
 			ut64 pcval = rz_reg_getv(reg, pc);
@@ -914,7 +979,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 				rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 			}
 
-			RzPVector *ins_traces = analysis->esil->trace->instructions;
+			RzPVector *ins_traces = esil->trace->instructions;
 			ctx.cur_idx = rz_pvector_len(ins_traces) - 1;
 			RzList *fcns = rz_analysis_get_functions_in(analysis, aop->addr);
 			if (!fcns) {
@@ -958,6 +1023,6 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn, H
 out_function:
 	free(retctx.ret_reg);
 	ht_up_free(op_cache);
-	rz_cons_break_pop();
+	rz_interrupt_break_pop(core->intr);
 	analysis_emul_restore(core, hc, dt, et, rt);
 }

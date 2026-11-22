@@ -1,8 +1,10 @@
 NAME=PE: corkami exe2pe.exe - open and don't parse oob relocs
 FILE=bins/pe/exe2pe.exe
 CMDS=ir
-EXPECT=<<EOF
-vaddr paddr type name 
-----------------------
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: ne: failed to parse image_segment_entry[274]
+ERROR: ne: failed to parse bin
+ERROR: No binary object currently selected.
 EOF
 RUN

@@ -15,7 +15,6 @@ baddr    0x00000000
 binsz    0x000c0f26
 bintype  pef
 bits     32
-retguard false
 class    PEF
 compiler N/A
 dbg_file N/A
@@ -34,17 +33,15 @@ pcalign  4
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 ---
 pef:
   header:

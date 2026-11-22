@@ -95,10 +95,17 @@ static void loadGP(RzCore *core) {
 			rz_core_seek_opt(core, addr, true, false);
 			rz_core_debug_step_one(core, 10);
 			rz_config_set(core->config, "analysis.roregs", "zero,gp");
-			gp = rz_reg_getv(core->analysis->reg, "gp");
+			RzReg *rreg = rz_analysis_get_reg(core->analysis);
+			gp = rz_reg_getv(rreg, "gp");
 		}
 		// RZ_LOG_DEBUG("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		rz_config_set_i(core->config, "analysis.gp", gp);
+	}
+}
+
+static void sync_m68k_core_usp(RzCore *core, RzReg *reg) {
+	if (rz_asm_is_arch(core->rasm, "m68k")) {
+		rz_reg_setv(reg, "usp", rz_reg_getv(reg, "a7"));
 	}
 }
 
@@ -181,7 +188,8 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 		return;
 	}
 	// FUNCTIONS
-	rz_list_foreach (core->analysis->fcns, it, fcn) {
+	RzList *fcns = rz_analysis_function_list(core->analysis);
+	rz_list_foreach (fcns, it, fcn) {
 		void **iter;
 		rz_pvector_foreach (old_sections, iter) {
 			old_section = *iter;
@@ -224,10 +232,10 @@ static void __rebase_everything(RzCore *core, RzPVector /*<RzBinSection *>*/ *ol
 	rz_meta_rebase(core->analysis, diff);
 
 	// XREFS
-	HtUP *xrefs_from = core->analysis->ht_xrefs_from;
-	HtUP *xrefs_to = core->analysis->ht_xrefs_to;
-	core->analysis->ht_xrefs_from = NULL;
-	core->analysis->ht_xrefs_to = NULL;
+	HtUP *xrefs_from = rz_analysis_get_xrefs_from(core->analysis);
+	HtUP *xrefs_to = rz_analysis_get_xrefs_to(core->analysis);
+	rz_analysis_set_xrefs_from(core->analysis, NULL);
+	rz_analysis_set_xrefs_to(core->analysis, NULL);
 	rz_analysis_xrefs_init(core->analysis);
 	ht_up_foreach(xrefs_from, __rebase_xrefs, &reb);
 	ht_up_free(xrefs_from);
@@ -527,7 +535,8 @@ RZ_API bool rz_core_file_reopen(RzCore *core, const char *args, int perm, int lo
 		loadGP(core);
 	}
 	// update analysis io bind
-	rz_io_bind(core->io, &(core->analysis->iob));
+	RzIOBind *iob = rz_analysis_get_io_bind(core->analysis);
+	rz_io_bind(core->io, iob);
 	if (core->file && core->file->fd >= 0) {
 		rz_core_file_close_all_but(core);
 	}
@@ -596,7 +605,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	char tmpbuf[64];
 	// This will be deprecated when moving the . commands to newshell
 	RzIODesc *desc = core->file ? rz_io_desc_get(core->io, core->file->fd) : NULL;
-	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get(core->config, "pdb.server"));
+	rz_sys_setenv("RZ_BIN_PDBSERVER", rz_config_get_string(core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv("RZ_FILE", desc->name);
 		rz_sys_setenv("RZ_SIZE", rz_strf(tmpbuf, "%" PFMT64d, rz_io_desc_size(desc)));
@@ -606,7 +615,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	rz_sys_setenv("RZ_ENDIAN", rz_asm_is_big_endian_set(core->rasm) ? "big" : "little");
 	rz_sys_setenv("RZ_BSIZE", rz_strf(tmpbuf, "%d", core->blocksize));
 
-	// dump current config file so other r2 tools can use the same options
+	// dump current config file so other rizin tools can use the same options
 	char *config_sdb_path = NULL;
 	int config_sdb_fd = rz_file_mkstemp(NULL, &config_sdb_path);
 	if (config_sdb_fd >= 0) {
@@ -614,7 +623,7 @@ RZ_API void rz_core_sysenv_begin(RzCore *core) {
 	}
 
 	Sdb *config_sdb = sdb_new(NULL, config_sdb_path, 0);
-	rz_config_serialize(core->config, config_sdb);
+	rz_serialize_config_save(config_sdb, core->config, NULL);
 	sdb_sync(config_sdb);
 	sdb_free(config_sdb);
 	rz_sys_setenv("RZ_CONFIG", config_sdb_path);
@@ -723,9 +732,9 @@ static bool core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *fi
 
 	RzBinOptions opt;
 	rz_bin_options_init(&opt, fd, baseaddr, UT64_MAX, false);
-	opt.obj_opts.elf_load_sections = rz_config_get_b(r->config, "elf.load.sections");
-	opt.obj_opts.elf_checks_sections = rz_config_get_b(r->config, "elf.checks.sections");
-	opt.obj_opts.elf_checks_segments = rz_config_get_b(r->config, "elf.checks.segments");
+	opt.obj_opts.elf_load_sections = rz_config_get_bool(r->config, "elf.load.sections");
+	opt.obj_opts.elf_checks_sections = rz_config_get_bool(r->config, "elf.checks.sections");
+	opt.obj_opts.elf_checks_segments = rz_config_get_bool(r->config, "elf.checks.segments");
 	opt.obj_opts.big_endian = rz_config_get_b(r->config, "cfg.bigendian");
 	opt.xtr_idx = xtr_idx;
 	RzBinFile *binfile = rz_bin_open(r->bin, filenameuri, &opt);
@@ -1023,7 +1032,6 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	// rz_core_bin_apply_all_info (r, binfile);
 	plugin = rz_bin_file_cur_plugin(binfile);
 	if (plugin) {
 		if (plugin->strfilter) {
@@ -1071,7 +1079,7 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			}
 		}
 	} else {
-		if (desc) {
+		if (desc && (!binfile || !binfile->curxtr)) {
 			rz_io_map_new(r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size(desc));
 		}
 		if (binfile) {
@@ -1155,10 +1163,20 @@ RZ_API bool rz_core_bin_load(RZ_NONNULL RzCore *r, RZ_NULLABLE const char *filen
 			rz_bin_info_free(inf);
 		}
 		if (binfile->o->regstate) {
-			if (rz_reg_arena_set_bytes(r->analysis->reg, binfile->o->regstate)) {
+			RzReg *rreg = rz_analysis_get_reg(r->analysis);
+			if (rz_reg_arena_set_bytes(rreg, binfile->o->regstate)) {
 				RZ_LOG_WARN("Setting up coredump: Problem while setting the registers\n");
 			} else {
+				sync_m68k_core_usp(r, rreg);
 				RZ_LOG_INFO("Setting up coredump: Registers have been set\n");
+			}
+			if (!RZ_STR_ISEMPTY(rreg->reg_profile_str)) {
+				rz_reg_set_profile_string(r->dbg->reg, rreg->reg_profile_str);
+				if (binfile->o->regstate && rz_reg_arena_set_bytes(r->dbg->reg, binfile->o->regstate)) {
+					RZ_LOG_WARN("Setting up coredump: Problem while setting debug registers\n");
+				} else {
+					sync_m68k_core_usp(r, r->dbg->reg);
+				}
 			}
 		}
 	}
@@ -1234,7 +1252,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 	}
 	r->io->bits = rz_asm_get_bits(r->rasm); // TODO: we need an api for this
 	RzIODesc *fd = rz_io_open_nomap(r->io, file, flags, 0644);
-	if (rz_cons_is_breaked()) {
+	if (rz_interrupt_is_breaked(r->intr)) {
 		goto beach;
 	}
 	if (!fd && openmany) {
@@ -1286,7 +1304,7 @@ RZ_API RZ_BORROW RzCoreFile *rz_core_file_open(RZ_NONNULL RzCore *r, RZ_NONNULL 
 		if (r->dbg->cur && r->dbg->cur->canstep) {
 			swstep = false;
 		}
-		rz_config_set_i(r->config, "dbg.swstep", swstep);
+		rz_config_set_bool(r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
 			char *dh = rz_str_ndup(file, (strstr(file, "://") - file));
@@ -1440,7 +1458,7 @@ RZ_API bool rz_core_raw_file_print(RzCore *core) {
 			char *absfile = rz_file_abspath(desc->uri);
 			rz_list_foreach (maps, it3, current_map) {
 				if (current_map) {
-					rz_cons_printf("on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
+					rz_cons_printf(core->cons, "on %s 0x%" PFMT64x "\n", absfile, current_map->itv.addr);
 				}
 			}
 			rz_list_free(maps);
@@ -1491,7 +1509,7 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 			} else {
 				fmt = "%c %d %d %s @ 0x%" PFMT64x " ; %s size=%" PFMT64u "\n";
 			}
-			rz_cons_printf(fmt,
+			rz_cons_printf(core->cons, fmt,
 				core->io->desc->fd == f->fd ? '*' : '-',
 				count,
 				(int)f->fd, desc->uri, (ut64)from,
@@ -1503,7 +1521,7 @@ RZ_API bool rz_core_file_print(RzCore *core, RzOutputMode mode) {
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj_end(pj);
-		rz_cons_println(pj_string(pj));
+		rz_cons_println(core->cons, pj_string(pj));
 		pj_free(pj);
 	}
 	return true;
@@ -1542,7 +1560,7 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 		cf = rz_core_file_get_by_fd(core, fd);
 		desc = rz_io_desc_get(core->io, fd);
 		if (cf) {
-			rz_cons_printf("%c %d %s ; %s\n",
+			rz_cons_printf(core->cons, "%c %d %s ; %s\n",
 				core->io->desc == desc ? '*' : '-',
 				fd, desc->uri, desc->perm & RZ_PERM_W ? "rw" : "r");
 		}
@@ -1673,8 +1691,8 @@ RZ_API void rz_core_io_file_open(RZ_NONNULL RzCore *core, int fd) {
 		return;
 	}
 
-	// Escape spaces so that o's argv parse will detect the path properly
-	char *file = rz_str_path_escape(bf->file);
+	// keep path literal, dup as bf is freed
+	char *file = rz_str_dup(bf->file);
 	// Backup the baddr and sections that were already rebased to
 	// revert the rebase after the debug session is closed
 	ut64 orig_baddr = core->bin->cur->o->baddr_shift;

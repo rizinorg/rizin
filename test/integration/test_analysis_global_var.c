@@ -9,7 +9,8 @@
 bool test_rz_analysis_global_var() {
 	RzCore *core = rz_core_new();
 	RzAnalysis *analysis = core->analysis;
-	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
 
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("foo", 0x1337);
 	mu_assert_notnull(glob, "create a global variable");
@@ -55,7 +56,7 @@ bool test_rz_analysis_global_var() {
 	mu_assert_eq(glob->addr, 0x1337, "global var address");
 	mu_assert_streq(glob->type->identifier.name, "int", "global var type");
 
-	RzFlagItem *flag_exists = rz_flag_get(analysis->flb.f, glob->name);
+	RzFlagItem *flag_exists = rz_flag_get(core->flags, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	bool rename = rz_analysis_var_global_rename(analysis, "foo", "bar");
@@ -73,7 +74,7 @@ bool test_rz_analysis_global_var() {
 	glob = NULL;
 	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_null(glob, "get deleted global var");
-	RzFlagItem *flag_deleted = rz_flag_get_i(analysis->flb.f, 0x1337);
+	RzFlagItem *flag_deleted = rz_flag_get_i(core->flags, 0x1337);
 	mu_assert_null(flag_deleted, "get deleted flag");
 
 	// re add
@@ -95,7 +96,7 @@ bool test_rz_analysis_global_var() {
 	glob = rz_analysis_var_global_get_byaddr_at(analysis, 0x1337);
 	mu_assert_notnull(glob, "get readded global var");
 
-	flag_exists = rz_flag_get(analysis->flb.f, glob->name);
+	flag_exists = rz_flag_get(core->flags, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	deleted = rz_analysis_var_global_delete_byaddr_in(analysis, 0x133A); // test RBTree again
@@ -126,7 +127,7 @@ bool test_rz_analysis_global_var() {
 	glob = rz_analysis_var_global_get_byname(analysis, "bar");
 	mu_assert_notnull(glob, "get readded global var");
 
-	flag_exists = rz_flag_get(analysis->flb.f, glob->name);
+	flag_exists = rz_flag_get(core->flags, glob->name);
 	mu_assert_notnull(flag_exists, "flag not found");
 
 	deleted = rz_analysis_var_global_delete_byname(analysis, "bar");
@@ -210,7 +211,8 @@ bool test_flag_confusion_addr() {
 bool test_flag_confusion_delete() {
 	RzCore *core = rz_core_new();
 	RzAnalysis *analysis = core->analysis;
-	rz_type_db_init(analysis->typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
+	RzTypeDB *typedb = rz_analysis_get_type_db(analysis);
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, NULL, 0, NULL);
 
 	RzAnalysisVarGlobal *glob = rz_analysis_var_global_new("foo", 0x1337);
 	RzTypeParser *parser = rz_type_parser_new();

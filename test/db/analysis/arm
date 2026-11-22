@@ -28,6 +28,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=arm ldr pc-rel datarefs through literal pool
+FILE=malloc://0x400
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e cfg.bigendian=false
+wx 28409fe52c309fe524209fe51eff2fe100000000000000000000000000000000000000000000000000000000000000000003000000000000b6a85f2d00000000
+af @ 0
+axt @ 0x300
+axt @ 0x38
+axt @ 0x34
+axt @ 0
+axt @ 0x2d5fa8b6
+EOF
+EXPECT=<<EOF
+fcn.00000000 0x0 [DATA] ldr r4, [0x00000030]
+fcn.00000000 0x4 [DATA] ldr r3, [0x00000038]
+fcn.00000000 0x8 [DATA] ldr r2, [0x00000034]
+EOF
+RUN
+
 NAME=thumb ldr pc-rel emulation
 FILE=malloc://32
 CMDS=<<EOF
@@ -296,8 +317,7 @@ af
 pd 4
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg2);
-|           ; arg int32_t arg2 @ r1
+/ fcn.00000000(int32_t arg2 @ r1);
 |           0x00000000      021081e0       add   r1, r1, r2            ; arg2
 |           0x00000004      1eff2f01       bxeq  lr
 |           0x00000008      0020a0e3       mov   r2, 0
@@ -652,8 +672,7 @@ pdf@ sym.call
 EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468
-/ sym.call(int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+/ sym.call(int32_t arg1 @ r0);
 |           ; var int32_t var_ch @ stack - 0xc
 |           0x00010420      00482de9       push  {fp, lr}
 |           0x00010424      04b08de2       add   fp, sp, 4
@@ -679,9 +698,7 @@ afva@ main
 pdf@ main
 EOF
 EXPECT=<<EOF
-/ int main(int argc, char **argv, char **envp);
-|           ; arg int argc @ r0
-|           ; arg char **argv @ r1
+/ int main(int argc @ r0, char **argv @ r1, char **envp);
 |           ; var int32_t var_10h @ stack - 0x10
 |           ; var int32_t var_ch @ stack - 0xc
 |           0x00010450      00482de9       push  {fp, lr}
@@ -1221,8 +1238,7 @@ af
 pdf
 EOF
 EXPECT=<<EOF
-/ fcn.00000000(int32_t arg1);
-|           ; arg int32_t arg1 @ r0
+/ fcn.00000000(int32_t arg1 @ r0);
 |           0x00000000      push  {r4, lr}
 |           0x00000004      mov   r4, r0                               ; arg1
 |           0x00000008      add   lr, pc, 0
@@ -1360,7 +1376,7 @@ EXPECT=<<EOF
             ;-- r15:
 / fcn.00000100();
 |           0x00000100      isb   sy
-|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x10c:4]=0xbd80b672 ; "r\xb6\x80\xbd"
+|           0x00000104      ldr   r0, aav.0x0000010c                   ; [0x19c:4]=0x10c aav.0x0000010c ; 412
 \           0x00000106      mov   pc, r0
             0x00000108      pop   {r7, pc}
             0x0000010a      movs  r0, r0
@@ -2084,8 +2100,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: e10b40b9
-ptr: 0x00000008
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load
@@ -2166,8 +2181,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: 105be83c
-ptr: 0x00000000
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load
@@ -2227,8 +2241,7 @@ mask: ffffffff
 prefix: 0
 id: 634
 bytes: fdc743f8
-ptr: 0x0000003c
-refptr: 4
+refptr: 0
 size: 4
 sign: false
 type: load
@@ -2259,9 +2272,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from fcn.000080de @ 0x80ea
             ; CALL XREFS from sym.__gnu_unwind_execute @ 0x812a, 0x815c, 0x81d6, 0x8240
-/ sym._Unwind_VRS_Get(int16_t arg1, int16_t arg2);
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
+/ sym._Unwind_VRS_Get(int16_t arg1 @ r0, int16_t arg2 @ r1);
 |           0x000078ea      push  {r4, lr}
 |           0x000078ec      adds  r4, r0, 0                            ; arg1
 |           0x000078ee      cmp   r1, 4                                ; arg2
@@ -2295,4 +2306,57 @@ EXPECT=<<EOF
 |   ||||    ; CODE XREFS from sym._Unwind_VRS_Get @ 0x7900, 0x7918
 \   ````--> 0x0000791c      pop   {r4, pc}
 EOF
+RUN
+
+NAME=ARM Thumb literal pool after function marked as data
+FILE=bins/arm/elf/K64F-RIOT-SPI.elf
+CMDS=<<EOF
+aaa
+s 0x4e0
+pd 1
+s 0xd50
+pd 1
+s 0x11d0
+pd 3
+EOF
+EXPECT=<<EOF
+            ; DATA XREF from dbg.sched_run @ 0x490
+            ;-- data.000004e0:
+            0x000004e0      .dword 0x1fff0274 ; runqueue_bitcache ; section..bss ; sym..bss ; obj.runqueue_bitcache ; loc._sbss ; loc._szero ; loc._erelocate ; sched.c:135
+            ; DATA XREF from dbg.bit_clear8 @ 0xd34
+            ;-- data.00000d50:
+            0x00000d50      .dword 0x01ffffe0
+            ; DATA XREF from sym.poweroff @ 0x1192
+            ;-- data.000011d0:
+            0x000011d0      .dword 0x00002744 ; spi_config ; obj.spi_config
+            ; DATA XREF from sym.poweroff @ 0x11a0
+            ;-- data.000011d4:
+            0x000011d4      .dword 0x4002d000
+            ; DATA XREFS from sym.poweroff @ 0x11b6, 0x11c6
+            ;-- data.000011d8:
+            0x000011d8      .dword 0x40047000
+EOF
+RUN
+
+NAME=arm-ls main does not treat global fp accesses as stack arguments
+FILE=bins/elf/analysis/arm-ls
+ARGS=-A
+REGEXP_FILTER_ERR=(WARNING|ERROR):[^\r\n]*
+CMDS=<<EOF
+s main
+afij~{[0].nargs}
+afvr
+afva
+afij~{[0].nargs}
+afvr
+EOF
+EXPECT=<<EOF
+2
+arg int argc @ r0
+arg char **argv @ r1
+2
+arg int argc @ r0
+arg char **argv @ r1
+EOF
+EXPECT_ERR=
 RUN

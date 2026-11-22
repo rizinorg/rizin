@@ -25,7 +25,6 @@ baddr    0x180000000
 binsz    0x00034000
 bintype  N/A
 bits     64
-retguard false
 class    dyldcache
 compiler N/A
 dbg_file N/A
@@ -43,18 +42,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   xnu
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 nth      paddr       vaddr bind   type size lib name          
 --------------------------------------------------------------
   0 0x00004f60 0x180004f60 GLOBAL FUNC    0     _func_in_liba
@@ -181,7 +178,6 @@ baddr    0x180000000
 binsz    0x00034000
 bintype  N/A
 bits     64
-retguard false
 class    dyldcache
 compiler N/A
 dbg_file N/A
@@ -199,18 +195,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   xnu
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 nth      paddr       vaddr bind   type size lib name          
 --------------------------------------------------------------
   0 0x00004f60 0x180004f60 GLOBAL FUNC    0     _func_in_liba
@@ -335,7 +329,6 @@ baddr    0x180000000
 binsz    0x00098000
 bintype  N/A
 bits     64
-retguard false
 class    dyldcache
 compiler N/A
 dbg_file N/A
@@ -353,18 +346,17 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   xnu
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
+canary   true
+pie      false
+relrocs  false
+nx       false
+objc_arc true
 --
     address         min         max name                          super    
 ---------------------------------------------------------------------------
@@ -428,7 +420,6 @@ baddr    0x180000000
 binsz    0x000a8000
 bintype  N/A
 bits     64
-retguard false
 class    dyldcache
 compiler N/A
 dbg_file N/A
@@ -446,18 +437,17 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   xnu
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
-canary   false
-PIE      false
-RELROCS  false
-NX       false
+canary   true
+pie      false
+relrocs  false
+nx       false
+objc_arc true
 --
     address         min         max name                          super    
 ---------------------------------------------------------------------------
@@ -611,7 +601,6 @@ baddr    0x180000000
 binsz    0x00020000
 bintype  N/A
 bits     64
-retguard false
 class    dyldcache
 compiler N/A
 dbg_file N/A
@@ -629,18 +618,16 @@ cc       N/A
 pcalign  4
 rpath    N/A
 subsys   xnu
-stripped false
-crypto   false
+stripped true
 havecode true
 va       true
-sanitiz  false
 static   true
 linenum  false
 lsyms    false
 canary   false
-PIE      false
-RELROCS  false
-NX       false
+pie      false
+relrocs  false
+nx       false
 nth      paddr       vaddr bind   type size lib name                      
 --------------------------------------------------------------------------
   0 0x00007fb4 0x180007fb4 GLOBAL FUNC    0     _i_am_libSystem

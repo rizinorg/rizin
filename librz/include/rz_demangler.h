@@ -43,6 +43,7 @@ RZ_API RZ_OWN char *rz_demangler_objc(RZ_NONNULL const char *symbol, RzDemangler
 RZ_API RZ_OWN char *rz_demangler_pascal(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_rust(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 RZ_API RZ_OWN char *rz_demangler_msvc(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
+RZ_API RZ_OWN char *rz_demangler_dlang(RZ_NONNULL const char *symbol, RzDemanglerFlag flags);
 
 RZ_API RZ_OWN RzDemangler *rz_demangler_new(void);
 RZ_API void rz_demangler_free(RZ_NULLABLE RzDemangler *demangler);

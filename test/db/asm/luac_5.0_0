@@ -1,0 +1,35 @@
+ad "newtable r0 0 0" 0a000000
+ad "setglobal r0 0" 07000000
+ad "getglobal r0 0" 05000000
+ad "getglobal r1 0" 05000001
+ad "settable 0 251 1" 49807d00
+ad "getglobal r0 0" 05000000
+ad "closure r1 0" 22000001
+ad "settable 0 252 1" 49007e00
+ad "getglobal r0 0" 05000000
+ad "closure r1 1" 62000001
+ad "settable 0 253 1" 49807e00
+ad "getglobal r0 0" 05000000
+ad "self r0 r0 252" 0b3f0000
+ad "loadk r2 5" 41010002
+ad "call r0 3 2" 99800100
+ad "setglobal r0 4" 07010000
+ad "getglobal r0 4" 05010000
+ad "self r0 r0 253" 4b3f0000
+ad "loadk r2 6" 81010002
+ad "call r0 3 1" 59800100
+ad "return r0 1" 1b800000
+
+ad "newtable r2 0 0" 0a000002
+ad "getglobal r3 0" 05000003
+ad "move r4 r2" 00000104
+ad "getglobal r5 1" 45000005
+ad "call r3 3 1" 59800103
+ad "settable 2 252 1" 49007e02
+ad "return r2 2" 1b000102
+ad "return r0 1" 1b800000
+
+ad "gettable r2 r0 r250" 863e0002
+ad "sub 2 2 1" 4d000102
+ad "settable 0 250 2" 89007d00
+ad "return r0 1" 1b800000

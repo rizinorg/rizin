@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2010 pancake <pancake@nopcode.org>
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// TODO: use rz_range here??
 #include <rz_bp.h>
 #include <rz_list.h>
 
@@ -13,7 +12,12 @@ RZ_API void rz_bp_traptrace_free(void *ptr) {
 	free(trace);
 }
 
-RZ_API RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void) {
+/**
+ * \brief Create a list that owns its breakpoint traces.
+ * \return A new list to free with rz_list_free(), or NULL on allocation failure.
+ * Freeing the list also frees the traces it contains.
+ */
+RZ_API RZ_OWN RzList /*<RzBreakpointTrace *>*/ *rz_bp_traptrace_new(void) {
 	RzList *list = rz_list_new();
 	if (!list) {
 		return NULL;

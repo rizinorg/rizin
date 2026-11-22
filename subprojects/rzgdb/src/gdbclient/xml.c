@@ -391,6 +391,10 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		column += sizeof("<column name=\"pid\">") - 1;
 		column_data_len = column_end - column;
 
+		if (column_data_len > MAX_PID_CHARS) {
+			column_data_len = MAX_PID_CHARS;
+		}
+
 		memcpy(pidstr, column, column_data_len);
 		pidstr[column_data_len] = '\0';
 
@@ -885,7 +889,7 @@ static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 			for (i = regnum - rz_list_length(regs); i > 0; i--) {
 				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
 				rz_list_push(regs, tmpreg);
-				rz_list_iter_set_data(rz_list_tail(regs), NULL);
+				rz_list_set_val(rz_list_tail(regs), NULL);
 			}
 			rz_list_push(regs, tmpreg);
 		} else {

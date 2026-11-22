@@ -4,6 +4,8 @@ CMDS=<<EOF
 iH
 echo ---
 iI
+echo ---
+il
 EOF
 EXPECT=<<EOF
 xbe:
@@ -144,7 +146,6 @@ baddr    0x00010000
 binsz    0x0001a000
 bintype  N/A
 bits     32
-retguard false
 class    program
 compiler N/A
 dbg_file N/A
@@ -163,90 +164,335 @@ pcalign  1
 rpath    N/A
 subsys   
 stripped false
-crypto   false
 havecode true
 va       true
-sanitiz  false
 static   false
 linenum  false
-lsyms    false
+lsyms    true
 canary   false
-PIE      false
-RELROCS  false
-NX       false
-EOF
-RUN
-
-NAME=entrypoint decoding
-FILE=bins/xbe/default.xbe
-CMDS=ie
-EXPECT=<<EOF
-     vaddr      paddr     hvaddr      haddr type    
-----------------------------------------------------
-0x00011000 0x00001000 ---------- ---------- program
-EOF
-RUN
-
-NAME=corrupted section data
-FILE=bins/xbe/default.xbe
-CMDS=p8 16
-EXPECT=<<EOF
-81ec08040000535556576a01e88f0100
-EOF
-RUN
-
-NAME=decoding the thunk table
-FILE=bins/xbe/default.xbe
-CMDS=is
-EXPECT=<<EOF
-nth      paddr      vaddr bind type size lib name       
---------------------------------------------------------
-  0 0x000016c0 0x000116c0 NONE NONE    4     kt.sprintf
-EOF
-RUN
-
-NAME=section header decoding
-BROKEN=1
-FILE=bins/xbe/default.xbe
-CMDS=iS
-EXPECT=<<EOF
-[Sections]
-00 0x00001000  1728 0x00011000  1728 -r-x .0
-01 0x00002000    24 0x000116c0    24 -r-- .1
-02 0x00003000 28280 0x000116e0 1257188 -rw- .2
-03 0x0000a000    60 0x001445e0    64 -rwx .3
-04 0x0000b000   164 0x00144620  1188 -r-- .4
-EOF
-RUN
-
-NAME=section header in r2
-BROKEN=1
-FILE=bins/xbe/default.xbe
-CMDS=S
-EXPECT=<<EOF
-[00:00] * pa=0x00001000 r-x va=0x00011000 sz=0x06c0 vsz=0x06c0 .0
-[00:01] . pa=0x00002000 r-- va=0x000116c0 sz=0x0018 vsz=0x0018 .1
-[00:02] . pa=0x00003000 rw- va=0x000116e0 sz=0x6e78 vsz=0x132ee4 .2
-[00:03] . pa=0x0000a000 rwx va=0x001445e0 sz=0x003c vsz=0x0040 .3
-[00:04] . pa=0x0000b000 r-- va=0x00144620 sz=0x00a4 vsz=0x04a4 .4
-EOF
-RUN
-
-NAME=loading crashy xbe file
-FILE=bins/xbe/crash.xbe
-CMDS=q!
-EXPECT=
-RUN
-
-NAME=xbe library versions
-FILE=bins/xbe/nxdk-hello-dummy-libs.xbe
-CMDS=il
-EXPECT=<<EOF
+pie      false
+relrocs  false
+nx       false
+---
 library       
 --------------
 RIZIN0 42.5.0
 RIZIN1 42.6.1
 RIZIN2 42.7.2
 RIZIN3 42.8.3
+EOF
+RUN
+
+NAME=default.xbe
+FILE=bins/xbe/default.xbe
+CMDS=<<EOF
+ia
+echo ---
+p8 16
+echo ---
+iH
+EOF
+EXPECT=<<EOF
+[Info]
+arch     x86
+cpu      N/A
+features N/A
+baddr    0x00010000
+binsz    0x0000c000
+bintype  N/A
+bits     32
+class    program
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Microsoft Xbox
+maxopsz  16
+minopsz  1
+os       xbox
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    true
+canary   false
+pie      false
+relrocs  false
+nx       false
+
+[Imports]
+nth vaddr bind type lib name 
+-----------------------------
+
+[Entries]
+     vaddr      paddr     hvaddr      haddr type    
+----------------------------------------------------
+0x00011000 0x00001000 ---------- ---------- program
+
+[Exports]
+nth paddr vaddr bind type size lib name 
+----------------------------------------
+
+[Classes]
+address min max name super 
+---------------------------
+
+[Symbols]
+nth      paddr      vaddr bind type size lib name       
+--------------------------------------------------------
+  0 0x000016c0 0x000116c0 NONE NONE    4     kt.sprintf
+
+[Sections]
+     paddr   size      vaddr    vsize align perm name type flags 
+-----------------------------------------------------------------
+0x00001000  0x6c0 0x00011000    0x6c0   0x0 -r-x .0        
+0x00002000   0x18 0x000116c0     0x18   0x0 -r-- .1        
+0x00003000 0x6e78 0x000116e0 0x132ee4   0x0 -rw- .2        
+0x0000a000   0x3c 0x001445e0     0x40   0x0 -rwx .3        
+0x0000b000   0xa4 0x00144620    0x4a4   0x0 -r-- .4        
+
+[Memory]
+name size address flags mirror 
+-------------------------------
+
+[Strings]
+paddr vaddr len size section type string 
+-----------------------------------------
+
+---
+81ec08040000535556576a01e88f0100
+---
+xbe:
+  identity:
+    magic: "58 42 45 48                                     |XBEH            |"
+    signature: |
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+      00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+    timestamp: 1037572058
+  memory:
+    base: 0x10000
+    headers_size: 1858
+    image_size: 1264324
+    image_header_size: 376
+    entry_point: 0xa8fd47ab
+    tls_addr: 0x0
+  sections:
+    count: 5
+    header_addr: 0x10348
+  pe_data:
+    - 0x10000
+    - 0x100000
+    - 0x1000
+    - 0x10d60
+    - 0x133d80
+    - 0x0
+    - 0x3dd817da
+  debug:
+    path_addr: 0x1048b
+    name_addr: 0x1048b
+    uname_addr: 0x1048b
+  libraries:
+    count: 0
+    versions_addr: 0x0
+    kernel_addr: 0x0
+    xapi_addr: 0x0
+    kernel_thunk_addr: 0x5b6c5676
+    nonkernel_import_dir_addr: 0x0
+  misc:
+    init_flags: 0
+    padding:
+      - 0x10490
+      - 0x2b2
+  sections_detail:
+    - flags:
+        value: 6
+        readable: "PRELOAD | EXEC"
+      vaddr: 0x11000
+      vsize: 1728
+      offset: 4096
+      size: 1728
+      name_addr: 0x1046c
+      refcount: 0
+      padding:
+        - 0x10460
+        - 0x10462
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 2
+        readable: "PRELOAD"
+      vaddr: 0x116c0
+      vsize: 24
+      offset: 8192
+      size: 24
+      name_addr: 0x10472
+      refcount: 0
+      padding:
+        - 0x10462
+        - 0x10464
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 3
+        readable: "WRITE | PRELOAD"
+      vaddr: 0x116e0
+      vsize: 1257188
+      offset: 12288
+      size: 28280
+      name_addr: 0x10479
+      refcount: 0
+      padding:
+        - 0x10464
+        - 0x10466
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 7
+        readable: "WRITE | PRELOAD | EXEC"
+      vaddr: 0x1445e0
+      vsize: 64
+      offset: 40960
+      size: 60
+      name_addr: 0x1047f
+      refcount: 0
+      padding:
+        - 0x10466
+        - 0x10468
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+    - flags:
+        value: 2
+        readable: "PRELOAD"
+      vaddr: 0x144620
+      vsize: 1188
+      offset: 45056
+      size: 164
+      name_addr: 0x10484
+      refcount: 0
+      padding:
+        - 0x10468
+        - 0x1046a
+      digest: "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+  libraries_detail: []
+
+EOF
+RUN
+
+NAME=loading crashy xbe file
+FILE=bins/xbe/crash.xbe
+CMDS=iI;iH
+EXPECT=<<EOF
+arch     x86
+cpu      N/A
+features N/A
+baddr    0xfd6013d5
+binsz    0x0000b323
+bintype  N/A
+bits     32
+class    program
+compiler N/A
+dbg_file N/A
+endian   LE
+hdr.csum N/A
+guid     N/A
+intrp    N/A
+laddr    0x00000000
+lang     N/A
+machine  Microsoft Xbox
+maxopsz  16
+minopsz  1
+os       xbox
+cc       N/A
+pcalign  1
+rpath    N/A
+subsys   
+stripped false
+havecode true
+va       true
+static   true
+linenum  false
+lsyms    true
+canary   false
+pie      false
+relrocs  false
+nx       false
+signed   true
+xbe:
+  identity:
+    magic: "58 42 45 48                                     |XBEH            |"
+    signature: |
+      c1 fa 03 52 6a 64 57 e8 14 02 00 00 83 c4 0c e8 |...RjdW.........|
+      9c 05 00 00 e8 27 04 00 00 46 8b c6 c1 f8 03 83 |.....'...F......|
+      f8 04 75 1d 8b 4c 24 14 85 c9 75 15 83 c7 20 c7 |..u..L$...u... .|
+      44 24 14 01 00 00 00 81 ff 00 01 00 00 7c 02 33 |D$...........|.3|
+      ff 83 f8 01 75 19 8b 4c 24 10 85 c9 75 11 83 c7 |....u..L$...u...|
+      10 89 44 24 10 81 ff 00 01 00 00 7c 02 33 ff 83 |..D$.......|.3..|
+      f8 05 0f 85 f3 fe ff ff 83 c7 08 33 f6 81 ff 00 |...........3....|
+      01 00 00 89 74 24 14 89 74 24 10 0f 8c da fe ff |....t$..t$......|
+      ff 33 ff e9 d3 fe ff ff 90 90 90 90 90 90 90 90 |.3..............|
+      8b 0d 84 84 01 00 b8 40 02 04 f0 0f af 0d 80 84 |.......@........|
+      01 00 85 c9 ba 60 85 01 00 74 16 56 8b f1 8b 0a |.....`...t.V....|
+      83 c2 04 89 08 83 c0 04 89 08 83 c0 04 4e 75 ee |.............Nu.|
+      5e c3 90 90 90 90 90 90 90 90 90 90 90 90 90 90 |^...............|
+      51 b1 11 c7 05 80 84 01 00 40 01 00 00 c7 05 84 |Q........@......|
+      84 01 00 f0 00 00 00 88 0d d4 13 60 fd a0 d5 13 |...........`....|
+      60 fd 88 0d d4 13 60 fd 24 7f ba f8 84 01 00 a2 |`.....`.$.......|
+    timestamp: 3233746692
+  memory:
+    base: 0xfd6013d5
+    headers_size: 981689942
+    image_size: 2338682111
+    image_header_size: 608471298
+    entry_point: 0x7f000003
+    tls_addr: 0x244c8a10
+  sections:
+    count: 1027240960
+    header_addr: 0x3c1
+  pe_data:
+    - 0x10000d07
+    - 0xc283fd60
+    - 0xeb088804
+    - 0x4c8b66cc
+    - 0xf08b0624
+    - 0x1000ce81
+    - 0xd40fd60
+  debug:
+    path_addr: 0xfd601000
+    name_addr: 0x8804c283
+    uname_addr: 0xeb28880e
+  libraries:
+    count: 2199964035
+    versions_addr: 0xd8804c2
+    kernel_addr: 0xfd6013c0
+    xapi_addr: 0x13c02588
+    kernel_thunk_addr: 0x448b66b0
+    nonkernel_import_dir_addr: 0xc88a0624
+  misc:
+    init_flags: 3275560830
+    padding:
+      - 0x95ebfd60
+      - 0x90c3595e
+  sections_detail: []
+  libraries_detail: []
+
 EOF
 RUN

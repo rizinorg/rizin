@@ -29,7 +29,7 @@ RZ_LIB_VERSION(rz_bin);
 static RzBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS };
 static RzBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS };
 
-static ut64 __getoffset(RzBin *bin, int type, int idx) {
+static ut64 bin_bind_get_offset(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_offset) {
@@ -38,7 +38,7 @@ static ut64 __getoffset(RzBin *bin, int type, int idx) {
 	return UT64_MAX;
 }
 
-static char *__getname(RzBin *bin, int type, int idx) {
+static char *bin_bind_get_name(RzBin *bin, int type, int idx) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->get_name) {
@@ -71,6 +71,7 @@ RZ_API void rz_bin_xtrdata_free(RZ_NULLABLE void /*RzBinXtrData*/ *data_) {
 		free(data->metadata->libname);
 		free(data->metadata->arch);
 		free(data->metadata->machine);
+		free(data->metadata->type);
 		free(data->metadata);
 	}
 	free(data->file);
@@ -126,6 +127,7 @@ RZ_API void rz_bin_info_free(RZ_NULLABLE RzBinInfo *rb) {
 	free(rb->claimed_checksum);
 	free(rb->compiler);
 	free(rb->head_flag);
+	ht_ss_free(rb->extra_dict);
 	free(rb);
 }
 
@@ -258,7 +260,10 @@ RZ_API RzBinFile *rz_bin_reload(RzBin *bin, RzBinFile *bf, ut64 baseaddr) {
 RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 	rz_return_val_if_fail(bin && opt, NULL);
 
-	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(bin->binxtrs, &it)) {
+		return NULL;
+	}
 	RzBinXtrPlugin **val;
 
 	bin->file = opt->filename;
@@ -271,7 +276,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
-		rz_iterator_foreach(it, val) {
+		rz_iterator_foreach(&it, val) {
 			RzBinXtrPlugin *xtr = *val;
 			if (!xtr->check_buffer) {
 				RZ_LOG_ERROR("Missing check_buffer callback for '%s'\n", xtr->name);
@@ -287,7 +292,7 @@ RZ_API RzBinFile *rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) 
 			}
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	if (!bf) {
 		// Uncomment for this speedup: 20s vs 22s
 		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
@@ -395,14 +400,14 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	if (!compatible_plugins) {
 		return NULL;
 	}
-	RzIterator *it = ht_sp_as_iter_keys(bin->plugins);
-	if (!it) {
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter_keys(bin->plugins, &it)) {
 		rz_pvector_free(compatible_plugins);
 		return NULL;
 	}
 	// Iterate all plugins and save compatible plugins to `compatible_plugins`
 	char **key;
-	rz_iterator_foreach(it, key) {
+	rz_iterator_foreach(&it, key) {
 		bool found = false;
 		RzBinPlugin *plugin = (RzBinPlugin *)ht_sp_find(bin->plugins, *key, &found);
 		if (!found) {
@@ -413,7 +418,7 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 			rz_pvector_push(compatible_plugins, rz_str_dup(*key));
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 
 	if (rz_pvector_empty(compatible_plugins)) {
 		rz_pvector_free(compatible_plugins);
@@ -422,7 +427,8 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	const char *default_plugin = rz_pvector_at(compatible_plugins, 0);
 	if (rz_pvector_len(compatible_plugins) > 1) {
 		RzStrBuf *compatible_plugin_list = join_plugin_names(compatible_plugins);
-		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n",
+		RZ_LOG_WARN("The input file can be opened by multiple binary plugins (%s). The '%s' plugin will be used by default.\n"
+			    "You can also open the file with 'rizin -F <bin_plugin> <binary>' to force a specific one.\n\n",
 			compatible_plugin_list ? rz_strbuf_get(compatible_plugin_list) : "", default_plugin);
 		rz_strbuf_free(compatible_plugin_list);
 	}
@@ -432,23 +438,26 @@ RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 }
 
 RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_filename(RzBin *bin) {
-	RzIterator *it = ht_sp_as_iter(bin->plugins);
+	RzIterator it = { 0 };
+	if (!ht_sp_as_iter(bin->plugins, &it)) {
+		return NULL;
+	}
 	RzBinPlugin **val;
 
 	rz_return_val_if_fail(bin, NULL);
 
 	const char *filename = strrchr(bin->file, RZ_SYS_DIR[0]);
 	filename = filename ? filename + 1 : bin->file;
-	rz_iterator_foreach(it, val) {
+	rz_iterator_foreach(&it, val) {
 		RzBinPlugin *plugin = *val;
 		if (plugin->check_filename) {
 			if (plugin->check_filename(filename)) {
-				rz_iterator_free(it);
+				rz_iterator_fini(&it);
 				return plugin;
 			}
 		}
 	}
-	rz_iterator_free(it);
+	rz_iterator_fini(&it);
 	return NULL;
 }
 
@@ -525,16 +534,19 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 	bin->file = NULL;
 	free(bin->force);
 	free(bin->srcdir);
+	rz_vector_free(bin->str_search_cfg.user_unprintable);
 	// rz_bin_free_bin_files (bin);
 	rz_list_free(bin->binfiles);
 
-	RzIterator *it = ht_sp_as_iter(bin->binxtrs);
-	RzBinXtrPlugin **val;
-	rz_iterator_foreach(it, val) {
-		RzBinXtrPlugin *p = *val;
-		plugin_fini(bin, p);
+	RzIterator it = { 0 };
+	if (ht_sp_as_iter(bin->binxtrs, &it)) {
+		RzBinXtrPlugin **val;
+		rz_iterator_foreach(&it, val) {
+			RzBinXtrPlugin *p = *val;
+			plugin_fini(bin, p);
+		}
+		rz_iterator_fini(&it);
 	}
-	rz_iterator_free(it);
 	ht_sp_free(bin->binxtrs);
 	ht_sp_free(bin->plugins);
 	rz_list_free(bin->default_hashes);
@@ -549,7 +561,7 @@ RZ_API void rz_bin_free(RZ_NULLABLE RzBin *bin) {
 
 static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int json) {
 	if (json == 'q') {
-		bin->cb_printf("%s\n", bp->name);
+		bin->cb_printf(bin->cb_printf_user, "%s\n", bp->name);
 	} else if (json) {
 		pj_o(pj);
 		pj_ks(pj, "name", bp->name);
@@ -557,16 +569,16 @@ static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int
 		pj_ks(pj, "license", bp->license ? bp->license : "???");
 		pj_end(pj);
 	} else {
-		bin->cb_printf("Name: %s\n", bp->name);
-		bin->cb_printf("Description: %s\n", bp->desc);
+		bin->cb_printf(bin->cb_printf_user, "Name: %s\n", bp->name);
+		bin->cb_printf(bin->cb_printf_user, "Description: %s\n", bp->desc);
 		if (bp->license) {
-			bin->cb_printf("License: %s\n", bp->license);
+			bin->cb_printf(bin->cb_printf_user, "License: %s\n", bp->license);
 		}
 		if (bp->version) {
-			bin->cb_printf("Version: %s\n", bp->version);
+			bin->cb_printf(bin->cb_printf_user, "Version: %s\n", bp->version);
 		}
 		if (bp->author) {
-			bin->cb_printf("Author: %s\n", bp->author);
+			bin->cb_printf(bin->cb_printf_user, "Author: %s\n", bp->author);
 		}
 	}
 	return true;
@@ -574,7 +586,7 @@ static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int
 
 static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 	if (json == 'q') {
-		bin->cb_printf("%s\n", bx->name);
+		bin->cb_printf(bin->cb_printf_user, "%s\n", bx->name);
 	} else if (json) {
 		PJ *pj = pj_new();
 		if (!pj) {
@@ -585,13 +597,13 @@ static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 		pj_ks(pj, "description", bx->desc);
 		pj_ks(pj, "license", bx->license ? bx->license : "???");
 		pj_end(pj);
-		bin->cb_printf("%s\n", pj_string(pj));
+		bin->cb_printf(bin->cb_printf_user, "%s\n", pj_string(pj));
 		pj_free(pj);
 	} else {
-		bin->cb_printf("Name: %s\n", bx->name);
-		bin->cb_printf("Description: %s\n", bx->desc);
+		bin->cb_printf(bin->cb_printf_user, "Name: %s\n", bx->name);
+		bin->cb_printf(bin->cb_printf_user, "Description: %s\n", bx->desc);
 		if (bx->license) {
-			bin->cb_printf("License: %s\n", bx->license);
+			bin->cb_printf(bin->cb_printf_user, "License: %s\n", bx->license);
 		}
 	}
 }
@@ -828,7 +840,7 @@ RZ_API RzBin *rz_bin_new(void) {
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0();
-	bin->cb_printf = (PrintfCallback)printf;
+	bin->cb_printf = (PrintfCallback)rz_cb_default_printf;
 	bin->strpurge = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
@@ -952,7 +964,7 @@ RZ_API void rz_bin_set_user_ptr(RzBin *bin, void *user) {
 	bin->user = user;
 }
 
-static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
+static RzBinSection *bin_bind_get_vsection_at(RzBin *bin, ut64 vaddr) {
 	rz_return_val_if_fail(bin, NULL);
 	if (!bin->cur || !bin->cur->o) {
 		return NULL;
@@ -960,15 +972,31 @@ static RzBinSection *__get_vsection_at(RzBin *bin, ut64 vaddr) {
 	return rz_bin_get_section_at(bin->cur->o, vaddr, true);
 }
 
+static RzBinObject *bin_bind_get_bin_object(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? bf->o : NULL;
+}
+
+static RzPVector /*<RzBinTrycatch *>*/ *bin_bind_get_trycatch(RzBin *bin) {
+	rz_return_val_if_fail(bin, NULL);
+	RzBinFile *bf = rz_bin_cur(bin);
+	return bf ? rz_bin_file_get_trycatch(bf) : NULL;
+}
+
 RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
-	if (b) {
-		b->bin = bin;
-		b->get_offset = __getoffset;
-		b->get_name = __getname;
-		b->get_sections = rz_bin_object_get_sections_all;
-		b->get_vsect_at = __get_vsection_at;
-		b->demangle = rz_bin_demangle;
+	if (!b) {
+		return;
 	}
+
+	b->bin = bin;
+	b->get_offset = bin_bind_get_offset;
+	b->get_name = bin_bind_get_name;
+	b->get_sections = rz_bin_object_get_sections_all;
+	b->get_vsect_at = bin_bind_get_vsection_at;
+	b->demangle = rz_bin_demangle;
+	b->get_bin_object = bin_bind_get_bin_object;
+	b->get_trycatch = bin_bind_get_trycatch;
 }
 
 RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
@@ -1401,7 +1429,7 @@ RZ_API bool rz_bin_map_is_data(RZ_NONNULL const RzBinMap *map) {
  * \param bin RzBin instance
  * \param type A type field of the RzBinSection (differs between formats)
  * */
-RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, int type) {
+RZ_API RZ_OWN char *rz_bin_section_type_to_string(RzBin *bin, ut64 type) {
 	RzBinFile *a = rz_bin_cur(bin);
 	RzBinPlugin *plugin = rz_bin_file_cur_plugin(a);
 	if (plugin && plugin->section_type_to_string) {

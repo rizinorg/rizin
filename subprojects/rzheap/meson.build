@@ -6,6 +6,15 @@ install_headers(
   install_dir: join_paths(rzheap_incdir, 'rz_glibc'),
 )
 
+install_headers(
+  [
+    'rz_windows/windows_heap_versions.h',
+    'rz_windows/windows_heap_types.h',
+    'rz_windows/windows_heap_parser.h',
+  ],
+  install_dir: join_paths(rzheap_incdir, 'rz_windows'),
+)
+
 rzheap_dep = declare_dependency(
   include_directories: include_directories('.', 'rz_jemalloc', 'rz_glibc', 'rz_windows'),
 )

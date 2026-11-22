@@ -387,7 +387,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			perror("ptrace: Cannot attach");
 			eprintf("\n\nPlease ensure your rizin binary is signed and it has the right entitlements to make debugger work. ");
 			eprintf("Be aware that binaries signed by Apple cannot be debugged due to the Apple System Integrity Protection (SIP).\n");
-			eprintf("\nFor more info look at: https://book.rizin.re/debugger/apple.html#sign-rizin-binary\n\n");
+			eprintf("\nFor more info look at: https://book.rizin.re/src/debugger/apple.html#sign-rizin-binary\n\n");
 			eprintf("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
@@ -488,7 +488,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			int pagesize = tsk_pagesize(fd);
 			tsk_setperm(io, task, io->off, pagesize, perm);
 		} else {
-			eprintf("Usage: R!perm [rwx]\n");
+			eprintf("Usage: R! perm [rwx]\n");
 		}
 		return NULL;
 	}
@@ -523,7 +523,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		}
 		eprintf("io_mach_system: Invalid pid %d\n", pid);
 	} else {
-		eprintf("Try: 'R!pid' or 'R!perm'\n");
+		eprintf("Try: 'R! pid' or 'R! perm'\n");
 	}
 	return NULL;
 }
