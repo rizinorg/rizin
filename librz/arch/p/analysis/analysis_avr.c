@@ -4,6 +4,7 @@
 
 #include <rz_analysis.h>
 
+#include "avr/address.h"
 #include "avr/disassembler.h"
 #include "avr/avr_esil.h"
 #include "avr/avr_il.h"
@@ -22,15 +23,28 @@ static void set_invalid_op(RzAnalysisOp *op, ut64 addr, RzAnalysisOpMask mask) {
 	}
 }
 
-static void handle_skip_next_instruction(RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, bool big_endian, AVROp *aop) {
-	RzStrBuf sb = { 0 };
-	rz_strbuf_init(&sb);
-	if (len > 1 && avr_disassembler(buf, len, addr, big_endian, aop, &sb)) {
-		op->jump = op->addr + aop->size + 2;
-		op->fail = op->addr + 2;
-		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+static int avr_skip_next(RzAnalysis *analysis, RzAnalysisOp *op, const AVROp *aop, AVROp *next_op, const ut8 *buf, int len, RzAnalysisOpMask mask) {
+	op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
+	op->fail = aop->next_pc;
+	ut8 word[2];
+	if (op->fail != op->addr + aop->size) {
+		// The next instruction is at the start of this flash bank.
+		if (!analysis->iob.nread_at || analysis->iob.nread_at(analysis->iob.io, op->fail, word, sizeof(word)) != sizeof(word)) {
+			return op->size;
+		}
+		buf = word;
+	} else if (len - aop->size < 2) {
+		return mask & RZ_ANALYSIS_OP_MASK_INPUT_SIZE ? -(aop->size + 2) : op->size;
+	} else {
+		buf += aop->size;
 	}
-	rz_strbuf_fini(&sb);
+	// The first word identifies the width even when the skipped operand is outside the buffer.
+	next_op->size = avr_instruction_size(rz_read_ble16(buf, analysis->big_endian));
+	if (next_op->size) {
+		next_op->next_pc = avr_relative_target(op->fail, next_op->size, aop->cpu);
+		op->jump = next_op->next_pc;
+	}
+	return op->size;
 }
 
 static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -40,13 +54,19 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	set_invalid_op(op, addr, mask);
 
 	RzStrBuf *sb = rz_strbuf_new("invalid");
-	if (len < 2 || avr_disassembler(buf, len, addr, analysis->big_endian, &aop, sb) < 1) {
+	if (len < 2 || avr_disassembler(buf, len, addr, rz_analysis_get_cpu(analysis), analysis->big_endian, &aop, sb) < 1) {
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = rz_strbuf_drain(sb);
 		} else {
 			RZ_FREE_CUSTOM(sb, rz_strbuf_free);
 		}
 		op->eob = true;
+		if (mask & RZ_ANALYSIS_OP_MASK_INPUT_SIZE) {
+			int needed = len < 2 ? 2 : aop.size;
+			if (needed > len) {
+				return -needed;
+			}
+		}
 		return -1;
 	}
 
@@ -63,6 +83,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		RZ_FREE_CUSTOM(sb, rz_strbuf_free);
 	}
 	op->size = aop.size;
+	aop.next_pc = avr_relative_target(addr, aop.size, aop.cpu);
 
 	op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
@@ -113,15 +134,15 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		/* fall through */
 	case AVR_OP_BRVS:
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = aop.param[0]; // address
-		op->fail = addr + aop.size;
+		op->jump = aop.target;
+		op->fail = aop.next_pc;
 		break;
 	case AVR_OP_CALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = aop.param[0]; // address (hi 16 bits)
 		op->jump <<= 16;
 		op->jump |= aop.param[1]; // address (low 16 bits)
-		op->fail = addr + aop.size;
+		op->fail = aop.next_pc;
 		break;
 	case AVR_OP_CBI:
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
@@ -129,16 +150,13 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->type2 = 1;
 		op->val = aop.param[0]; // A
 		break;
-	case AVR_OP_CPSE:
-		// cpse skips the next instruction when Rr != Rd
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
-		break;
 	case AVR_OP_DES:
 		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
 		op->type = RZ_ANALYSIS_OP_TYPE_CRYPTO;
 		break;
 	case AVR_OP_EICALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+		op->fail = aop.next_pc;
 		break;
 	case AVR_OP_EIJMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
@@ -148,6 +166,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_ICALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_ICALL;
+		op->fail = aop.next_pc;
 		break;
 	case AVR_OP_IN:
 		op->type2 = 0;
@@ -186,8 +205,8 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_RCALL:
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = addr + (st16)aop.param[0]; // address
-		op->fail = addr + aop.size;
+		op->jump = aop.target;
+		op->fail = aop.next_pc;
 		break;
 	case AVR_OP_RET:
 		op->eob = true;
@@ -200,7 +219,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		break;
 	case AVR_OP_RJMP:
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = addr + (st16)aop.param[0]; // address
+		op->jump = aop.target;
 		break;
 	case AVR_OP_SBCI:
 		/* fall through*/
@@ -213,26 +232,26 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
 		break;
-	case AVR_OP_SBIC:
-		// skip next instruction if bit in i/o register is clear
-		/* fall through*/
-	case AVR_OP_SBIS:
-		// skip next instruction if bit in i/o register is set
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
-		op->type2 = 0;
-		op->val = aop.param[0]; // A
-		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
-		break;
 	case AVR_OP_SBIW:
 		op->val = aop.param[2]; // K
 		break;
+	case AVR_OP_SBIC:
+	case AVR_OP_SBIS:
+		op->val = aop.param[0]; // A
+		op->family = RZ_ANALYSIS_OP_FAMILY_IO;
+		// fallthrough
+	case AVR_OP_CPSE:
 	case AVR_OP_SBRC:
-		// skip next instruction if bit register is clear
-		/* fall through*/
-	case AVR_OP_SBRS:
-		// skip next instruction if bit register is set
-		handle_skip_next_instruction(op, addr, buf + aop.size, len - aop.size, analysis->big_endian, &next_op);
+	case AVR_OP_SBRS: {
+		int ret = avr_skip_next(analysis, op, &aop, &next_op, buf, len, mask);
+		if (!next_op.size) {
+			if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
+				rz_strbuf_set(&op->esil, "");
+			}
+			return ret;
+		}
 		break;
+	}
 	case AVR_OP_STS:
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		op->ptr = aop.param[0]; // K
@@ -248,7 +267,7 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 
 	// process opcode
 	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
-		rz_avr_esil_opcode(analysis, op, addr, buf, len);
+		rz_avr_esil_opcode(analysis, op, aop.next_pc, buf, len);
 	}
 
 	return op->size;
@@ -389,7 +408,7 @@ static ut8 *analysis_mask_avr(RzAnalysis *analysis, int size, const ut8 *data, u
 	AVROp aop = { 0 };
 	RzStrBuf sb = { 0 };
 	rz_strbuf_init(&sb);
-	int opsize = avr_disassembler(data, size, at, analysis->big_endian, &aop, &sb);
+	int opsize = avr_disassembler(data, size, at, rz_analysis_get_cpu(analysis), analysis->big_endian, &aop, &sb);
 	rz_strbuf_fini(&sb);
 
 	if (opsize < 2 || !(ret = malloc(opsize))) {

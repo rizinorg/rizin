@@ -279,6 +279,33 @@ bool test_rz_core_print_disasm() {
 	mu_end;
 }
 
+static bool test_avr_op_input_size(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	mu_assert_true(rz_core_arch_configure(core, "avr", 8, NULL, NULL, NULL), "avr");
+	const ut8 code[] = { 0x00, 0x10, 0x0c, 0x94, 0x05, 0x00 }; // cpse r0, r0; jmp 0xa
+	RzAnalysisOp op;
+	int size = rz_analysis_op(core->analysis, &op, 0, code, 2, RZ_ANALYSIS_OP_MASK_IL | RZ_ANALYSIS_OP_MASK_ESIL);
+	mu_assert_eq(size, 2, "a skip is a complete two-byte instruction");
+	mu_assert_eq(op.fail, 2, "fallthrough is known without lookahead");
+	mu_assert_eq(op.jump, UT64_MAX, "the skipped instruction is unavailable");
+	mu_assert_null(op.il_op, "unknown skip target");
+	mu_assert_streq(rz_strbuf_get(&op.esil), "", "no fabricated ESIL jump");
+	rz_analysis_op_fini(&op);
+	size = rz_analysis_op(core->analysis, &op, 0, code, 3, RZ_ANALYSIS_OP_MASK_INPUT_SIZE);
+	mu_assert_eq(size, -4, "the following opcode word is incomplete");
+	rz_analysis_op_fini(&op);
+	size = rz_analysis_op(core->analysis, &op, 0, code, 4, RZ_ANALYSIS_OP_MASK_INPUT_SIZE);
+	mu_assert_eq(size, 2, "the skipped operand is unnecessary");
+	mu_assert_eq(op.jump, 6, "skip a four-byte jump");
+	rz_analysis_op_fini(&op);
+	size = rz_analysis_op(core->analysis, &op, 2, code + 2, 2, RZ_ANALYSIS_OP_MASK_INPUT_SIZE);
+	mu_assert_eq(size, -4, "decoding the jump itself needs its operand");
+	rz_analysis_op_fini(&op);
+	rz_core_free(core);
+	mu_end;
+}
+
 static bool test_wasm_op_input_size(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core");
@@ -673,6 +700,7 @@ int all_tests() {
 	mu_run_test(test_rz_core_analysis_bytes_from_io);
 	mu_run_test(test_rz_core_print_disasm);
 	mu_run_test(test_wasm_op_input_size);
+	mu_run_test(test_avr_op_input_size);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
 	return tests_passed != tests_run;

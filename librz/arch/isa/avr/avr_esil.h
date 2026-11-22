@@ -7,6 +7,6 @@
 #include <rz_analysis.h>
 
 RZ_IPI bool rz_avr_esil_init(void *pesil);
-RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
+RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 next_pc, const ut8 *buf, int len);
 
 #endif /* RZ_AVR_ESIL_H */

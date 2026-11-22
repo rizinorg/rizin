@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "avr_esil.h"
+#include "address.h"
 #include <rz_crypto.h>
 
 /** \file avr_esil.c
@@ -47,7 +48,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
+static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 next_pc, const ut8 *buf, int len, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts) \
 	{ \
@@ -144,7 +145,7 @@ CPU_MODEL cpu_models[] = {
 	{ .model = "ATmega1281", .pc = 16, .inherit = "ATmega640" },
 	{ .model = "ATmega2560", .pc = 17, .inherit = "ATmega640" },
 	{ .model = "ATmega2561", .pc = 17, .inherit = "ATmega640" },
-	{ .model = "ATmega88", .pc = 8, .inherit = "ATmega8" },
+	{ .model = "ATmega88", .pc = 13, .inherit = "ATmega8" },
 	//	CPU_MODEL_DECL ("ATmega168",   13, 512, 512),
 	// last model is the default AVR - ATmega8 forever!
 	{ .model = "ATmega8", .pc = 13, .consts = { cpu_reg_common, cpu_memsize_common, cpu_pagesize_5_bits, NULL } },
@@ -420,12 +421,11 @@ INST_HANDLER(brbx) { // BRBC s, k
 		return;
 	}
 	int s = buf[0] & 0x7;
-	ut64 jump = op->addr + ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2)) | (buf[1] & 0x2 ? ~((int)0x7f) : 0)) + 2;
 	ESIL_A("%d,1,<<,sreg,&,", s); // SREG(s)
 	ESIL_A(buf[1] & 0x4
 			? "!," // BRBC => branch if cleared
 			: "!,!,"); // BRBS => branch if set
-	ESIL_A("?{,%" PFMT64d ",pc,=,},", jump); // ?true => jmp
+	ESIL_A("?{,%" PFMT64d ",pc,=,},", op->jump); // ?true => jmp
 }
 
 INST_HANDLER(break) { // BREAK
@@ -999,13 +999,11 @@ INST_HANDLER(rcall) { // RCALL k
 	if (len < 2) {
 		return;
 	}
-	// target address
-	ut64 jump = op->addr + ((((((buf[1] & 0xf) << 8) | buf[0]) << 1) | (((buf[1] & 0x8) ? ~((int)0x1fff) : 0))) + 2);
 	// esil
 	ESIL_A("pc,"); // esil already points to next
 		       // instruction (@ret)
 	__generic_push(op, CPU_PC_SIZE(cpu)); // push @ret addr
-	ESIL_A("%" PFMT64d ",pc,=,", jump); // jump!
+	ESIL_A("%" PFMT64d ",pc,=,", op->jump); // jump!
 }
 
 INST_HANDLER(ret) { // RET
@@ -1025,9 +1023,7 @@ INST_HANDLER(reti) { // RETI
 }
 
 INST_HANDLER(rjmp) { // RJMP k
-	st32 loc = (((((buf[1] & 0xf) << 9) | (buf[0] << 1))) | (buf[1] & 0x8 ? ~(0x1fff) : 0)) + 2;
-	ut64 jump = op->addr + loc;
-	ESIL_A("%" PFMT64d ",pc,=,", jump);
+	ESIL_A("%" PFMT64d ",pc,=,", op->jump);
 }
 
 INST_HANDLER(ror) { // ROR Rd
@@ -1135,7 +1131,7 @@ INST_HANDLER(sbix) { // SBIC A, b
 	// read port a and clear bit b
 	io_port = __generic_io_dest(a, 0, cpu);
 	ESIL_A("%d,1,<<,%s,&,", b, rz_strbuf_get(io_port)); // IO(A,b)
-	ESIL_A((buf[1] & 0xe) == 0xc
+	ESIL_A(!(buf[1] & 2)
 			? "!," // SBIC => branch if 0
 			: "!,!,"); // SBIS => branch if 1
 	ESIL_A("?{,%" PFMT64d ",pc,=,},", op->jump); // ?true => jmp
@@ -1363,7 +1359,7 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
+static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 next_pc, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
 		return NULL;
@@ -1377,8 +1373,11 @@ static OPCODE_DESC *avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 		if ((ins & opcode_desc->mask) == opcode_desc->selector) {
 			fail = 0;
 
-			// start void esil expression
+			// ESIL pre-advances the PC before evaluating the instruction.
 			rz_strbuf_set(&op->esil, "");
+			if (next_pc != op->addr + op->size && (op->fail == next_pc || !rz_analysis_op_nonlinear(op->type))) {
+				ESIL_A("%" PFMT64u ",pc,=,", next_pc);
+			}
 
 			// handle opcode
 			opcode_desc->handler(analysis, op, buf, len, &fail, cpu);
@@ -1598,27 +1597,17 @@ static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 }
 
 static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
-	CPU_MODEL *cpu;
-
-	if (!esil || !esil->panalysis) {
+	if (!esil || !esil->panalysis || !rz_str_startswith(name, "pc")) {
 		return 0;
 	}
-	RzAnalysis *analysis = esil->panalysis;
 
-	// select cpu info
-	cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
-
-	// crop registers and force certain values
+	ut64 mask = avr_pc_mask(rz_analysis_get_cpu(esil->panalysis));
 	if (!strcmp(name, "pc")) {
-		*val &= CPU_PC_MASK(cpu);
+		*val &= mask;
 	} else if (!strcmp(name, "pcl")) {
-		if (cpu->pc < 8) {
-			*val &= MASK(8);
-		}
+		*val &= mask & UT16_MAX;
 	} else if (!strcmp(name, "pch")) {
-		*val = cpu->pc > 8
-			? *val & MASK(cpu->pc - 8)
-			: 0;
+		*val &= (mask >> 16) & UT16_MAX;
 	}
 
 	return 0;
@@ -1638,8 +1627,8 @@ RZ_IPI bool rz_avr_esil_init(void *pesil) {
 	return true;
 }
 
-RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
+RZ_IPI void rz_avr_esil_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 next_pc, const ut8 *buf, int len) {
 	// select cpu info
 	CPU_MODEL *cpu = get_cpu_model(rz_analysis_get_cpu(analysis));
-	avr_op_analyze(analysis, op, addr, buf, len, cpu);
+	avr_op_analyze(analysis, op, next_pc, buf, len, cpu);
 }

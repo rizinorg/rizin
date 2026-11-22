@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "assembler.h"
+#include "address.h"
 #include "common.h"
+#include <errno.h>
 
 #define MAX_TOKENS                      6
 #define IS_INDIRECT_ADDRESS_REGISTER(x) ((x) == 'x' || (x) == 'y' || (x) == 'z')
@@ -117,30 +119,44 @@
 		} \
 	} while (0)
 
-#define parse_address_or_error(rn, rs, pc, llow, lhigh) \
-	do { \
-		cchar *tmp = (rs); \
-		if (RZ_STR_ISEMPTY(tmp)) { \
-			RZ_LOG_ERROR("[!] avr_assembler: invalid address '%s'.\n", (rs)); \
-			return AVR_INVALID_SIZE; \
-		} \
-		if (tmp[0] == '.') { \
-			(rn) = (st64)strtoull(tmp + 1, NULL, 0); \
-		} else { \
-			st64 abs = strtoull(tmp, NULL, 0); \
-			(rn) = abs - pc; \
-		} \
-		if ((rn) < 0) { \
-			(rn) = ~(-((rn) - 1)); \
-		} else { \
-			(rn) -= 2; \
-		} \
-		(rn) /= 2; \
-		if (((rn) < (llow) || (rn) > (lhigh))) { \
-			RZ_LOG_ERROR("[!] avr_assembler: invalid address -64 <= addr <= 63 (parsed %d).\n", (rn)); \
-			return AVR_INVALID_SIZE; \
-		} \
-	} while (0)
+typedef struct {
+	ut64 pc;
+	const char *cpu;
+} AVRAddress;
+
+// Accept an absolute target or the explicit ".offset" form used by rz-asm.
+static bool relative_operand(const AVRAddress *address, const char *operand, unsigned bits, ut16 *field) {
+	if (RZ_STR_ISEMPTY(operand)) {
+		return false;
+	}
+	bool relative = *operand == '.';
+	const char *number = relative ? operand + 1 : operand;
+	char *end;
+	errno = 0;
+	ut64 value = strtoull(number, &end, 0);
+	if (end == number || *end || errno == ERANGE) {
+		return false;
+	}
+	ut64 base = relative ? 0 : address->pc;
+	ut64 mask = UT64_MAX;
+	// Within half of the smallest flash bank, every model uses the same signed displacement.
+	if (!relative && (base ^ value) >= AVR_MIN_FLASH_SIZE / 2) {
+		mask = avr_pc_mask(address->cpu);
+	}
+	ut64 delta = (value - base - 2) & mask;
+	// Pick the shorter displacement when the program counter wraps before the field does.
+	if (delta > (mask >> 1)) {
+		delta |= ~mask;
+	}
+	ut16 encoded = (delta >> 1) & ((1U << bits) - 1);
+	ut64 target = base + avr_relative_offset(encoded, bits);
+	if (avr_wrap_target(base, target, mask) != value) {
+		RZ_LOG_ERROR("avr: relative branch target is out of range or unaligned.\n");
+		return false;
+	}
+	*field = encoded;
+	return true;
+}
 
 #define parse_signed_or_error(rn, rs, min, max) \
 	do { \
@@ -169,7 +185,7 @@
 		} \
 	} while (0)
 
-typedef ut32 (*Encode)(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be);
+typedef ut32 (*Encode)(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be);
 
 typedef struct avr_decoder_t {
 	cchar *opcode; /* instruction name */
@@ -179,12 +195,12 @@ typedef struct avr_decoder_t {
 	Encode encode;
 } AvrInstruction;
 
-static ut32 avr_unique(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_unique(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	auto_write16(data, cbins, be);
 	return 2;
 }
 
-static ut32 avr_rdddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_rdddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd,Rr | 0 <= d <= 31 | 0 <= r <= 31 */
 	ut16 Rd, Rr;
 	parse_register_or_error(Rd, tokens[1]);
@@ -198,7 +214,7 @@ static ut32 avr_rdddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, 
 	return 2;
 }
 
-static ut32 avr_KKddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_KKddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, K | d = {24,26,28,30}, 0 <= K <= 63 */
 	ut16 Rd, K;
 	parse_register_pair_or_error(Rd, tokens[1]);
@@ -219,7 +235,7 @@ static ut32 avr_KKddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut
 	return 2;
 }
 
-static ut32 avr_KKKKddddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_KKKKddddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, K | 16 <= d <= 31, 0 <= K <= 255 */
 	ut16 Rd, K;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
@@ -235,7 +251,7 @@ static ut32 avr_KKKKddddKKKK(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data
 	return 2;
 }
 
-static ut32 avr_cbr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_cbr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, K | 16 <= d <= 31, 0 <= K <= 255 */
 	ut16 Rd, K;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
@@ -252,7 +268,7 @@ static ut32 avr_cbr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 2;
 }
 
-static ut32 avr_dddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_dddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd | 0 <= d <= 31 */
 	ut16 Rd;
 	parse_register_or_error(Rd, tokens[1]);
@@ -262,7 +278,7 @@ static ut32 avr_dddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, u
 	return 2;
 }
 
-static ut32 avr_dddddcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_dddddcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, b | 0 <= d <= 31, 0 <= b <= 7 */
 
 	ut16 Rd, b;
@@ -276,16 +292,18 @@ static ut32 avr_dddddcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, u
 	return 2;
 }
 
-static ut32 avr_kkkkkkkccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_kkkkkkkccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> k | -64 <= k <= 63 */
-	st16 k;
-	parse_address_or_error(k, tokens[1], pc, -64, 63);
+	ut16 k;
+	if (!relative_operand(address, tokens[1], 7, &k)) {
+		return AVR_INVALID_SIZE;
+	}
 	cbins |= ((k << 3) & 0x03F8);
 	auto_write16(data, cbins, be);
 	return 2;
 }
 
-static ut32 avr_kkkkkccck(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_kkkkkccck(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	// <opcode> k | 0 <= k < 0x7ffffe
 	ut32 k;
 	parse_unsigned_or_error(k, tokens[1], 0x7ffffe);
@@ -303,7 +321,7 @@ static ut32 avr_kkkkkccck(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, u
 	return 4;
 }
 
-static ut32 avr_AAAAAbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_AAAAAbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	// CBI A,b | 0 <= A <= 31 | 0 <= b <= 7
 	ut16 A, b;
 	parse_unsigned_or_error(A, tokens[1], 31);
@@ -316,7 +334,7 @@ static ut32 avr_AAAAAbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut
 	return 2;
 }
 
-static ut32 avr_dddddddddd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_dddddddddd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd | 0 <= d <= 31 */
 	ut16 Rd;
 	parse_register_or_error(Rd, tokens[1]);
@@ -329,7 +347,7 @@ static ut32 avr_dddddddddd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, 
 	return 2;
 }
 
-static ut32 avr_KKKKcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_KKKKcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> K | 0 <= K <= 0xF */
 	ut16 K;
 	parse_unsigned_or_error(K, tokens[1], 0xF);
@@ -340,7 +358,7 @@ static ut32 avr_KKKKcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut
 	return 2;
 }
 
-static ut32 avr_elpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_elpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	if (ntokens == 1) {
 		/* elpm */
 		/* 1001010111011000 */
@@ -372,7 +390,7 @@ static ut32 avr_elpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 p
 	return 2;
 }
 
-static ut32 avr_dddcrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_dddcrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd,Rr | 16 <= d <= 23 | 16 <= r <= 23 */
 	ut16 Rd, Rr;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 23);
@@ -388,7 +406,7 @@ static ut32 avr_dddcrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut6
 	return 2;
 }
 
-static ut32 avr_AAdddddAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_AAdddddAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, A | 0 <= d <= 31, 0 <= A <= 63 */
 	ut16 Rd, A;
 	parse_register_or_error(Rd, tokens[1]);
@@ -402,7 +420,7 @@ static ut32 avr_AAdddddAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data,
 	return 2;
 }
 
-static ut32 avr_rrrrrcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_rrrrrcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd | 0 <= d <= 31 */
 	ut16 Rd;
 	expected_const_or_error(tokens[1], "z");
@@ -413,7 +431,7 @@ static ut32 avr_rrrrrcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, u
 	return 2;
 }
 
-static ut32 avr_ld(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ld(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* ld Rd, M | 0 <= d <= 31 | M = {X,Y,Z,X+,Y+,Z+,-X,-Y,-Z} */
 	ut16 Rd;
 	parse_register_or_error(Rd, tokens[1]);
@@ -471,7 +489,7 @@ static ut32 avr_ld(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc,
 	return 2;
 }
 
-static ut32 avr_ldd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ldd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* ldd Rd, M + q | 0 <= d <= 31 | M = {Y,Z} | 0 <= q <= 63*/
 	ut16 Rd, q;
 	parse_register_or_error(Rd, tokens[1]);
@@ -501,7 +519,7 @@ static ut32 avr_ldd(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 2;
 }
 
-static ut32 avr_lds(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_lds(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	ut16 Rd;
 	ut32 k;
 	parse_register_or_error(Rd, tokens[1]);
@@ -532,7 +550,7 @@ static ut32 avr_lds(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 4;
 }
 
-static ut32 avr_lpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_lpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	if (ntokens == 1) {
 		/* lpm */
 		/* 1001010111001000 */
@@ -564,17 +582,19 @@ static ut32 avr_lpm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 2;
 }
 
-static ut32 avr_kkkkkkkkkkkk(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
-	/* <opcode> k | -4096 <= k <= 4096 */
-	st16 k;
-	parse_address_or_error(k, tokens[1], pc, -4096, 4096);
+static ut32 avr_kkkkkkkkkkkk(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
+	/* <opcode> k | -2048 <= k <= 2047 */
+	ut16 k;
+	if (!relative_operand(address, tokens[1], 12, &k)) {
+		return AVR_INVALID_SIZE;
+	}
 	cbins |= (k & 0x0FFF);
 
 	auto_write16(data, cbins, be);
 	return 2;
 }
 
-static ut32 avr_ddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, Rr | d = {0,2,...,30} | r = {0,2,...,30} */
 	ut16 Rd, Rr;
 	parse_register_or_error(Rd, tokens[1]);
@@ -595,7 +615,7 @@ static ut32 avr_ddddrrrr(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut
 	return 2;
 }
 
-static ut32 avr_ddddrrrr_2x(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ddddrrrr_2x(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, Rr | 16 <= d <= 31 | 16 <= r <= 31 */
 	ut16 Rd, Rr;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
@@ -610,7 +630,7 @@ static ut32 avr_ddddrrrr_2x(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data,
 	return 2;
 }
 
-static ut32 avr_AArrrrrAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_AArrrrrAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd, A | 0 <= d <= 31, 0 <= A <= 63 */
 	ut16 Rd, A;
 	parse_unsigned_or_error(A, tokens[1], 63);
@@ -624,7 +644,7 @@ static ut32 avr_AArrrrrAAAA(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data,
 	return 2;
 }
 
-static ut32 avr_rrrrrcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_rrrrrcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rr, b | 0 <= d <= 31, 0 <= b <= 7 */
 	ut16 Rr, b;
 	parse_register_or_error(Rr, tokens[1]);
@@ -637,7 +657,7 @@ static ut32 avr_rrrrrcbbb(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, u
 	return 2;
 }
 
-static ut32 avr_ddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> Rd | 16 <= d <= 31 */
 	ut16 Rd;
 	parse_register_or_error_limit(Rd, tokens[1], 16, 31);
@@ -649,7 +669,7 @@ static ut32 avr_ddddcccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut
 	return 2;
 }
 
-static ut32 avr_spm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_spm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	if (ntokens == 1) {
 		/* spm */
 		/* 1001010111101000 */
@@ -669,7 +689,7 @@ static ut32 avr_spm(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 2;
 }
 
-static ut32 avr_st(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_st(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* st M, Rr | 0 <= r <= 31 | M = {X,Y,Z,-X,-Y,-Z} */
 	ut16 Rr;
 	parse_register_or_error(Rr, tokens[2]);
@@ -727,7 +747,7 @@ static ut32 avr_st(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc,
 	return 2;
 }
 
-static ut32 avr_std(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_std(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	if (ntokens == 4) {
 		/* std M, Rr     | 0 <= r <= 31 | M = {X+,Y+,Z+} */
 		ut16 Rr;
@@ -784,7 +804,7 @@ static ut32 avr_std(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	throw_error("expected std Rr, M + q | 0 <= d <= 31 | M = {Y,Z} | 0 <= q <= 63\n");
 }
 
-static ut32 avr_sts(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_sts(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* sts k, Rr | 0 <= r <= 31, 0 <= k <= 0xFFFF */
 	ut16 Rr;
 	ut32 k;
@@ -816,7 +836,7 @@ static ut32 avr_sts(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc
 	return 4;
 }
 
-static ut32 avr_ssscccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_ssscccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> b | 0 <= b <= 7 */
 	ut16 b;
 	parse_unsigned_or_error(b, tokens[1], 7);
@@ -826,12 +846,14 @@ static ut32 avr_ssscccc(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut6
 	return 2;
 }
 
-static ut32 avr_kkkkkkksss(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, ut64 pc, bool be) {
+static ut32 avr_kkkkkkksss(ut16 cbins, cchar **tokens, ut32 ntokens, ut8 *data, const AVRAddress *address, bool be) {
 	/* <opcode> b, k | -64 <= k <= 63 | 0 <= b <= 7 */
 	ut16 b;
-	st16 k;
+	ut16 k;
 	parse_unsigned_or_error(b, tokens[1], 7);
-	parse_address_or_error(k, tokens[2], pc, -64, 63);
+	if (!relative_operand(address, tokens[2], 7, &k)) {
+		return AVR_INVALID_SIZE;
+	}
 
 	cbins |= (b & 0x0007);
 	cbins |= ((k << 3) & 0x03F8);
@@ -1045,9 +1067,10 @@ static void tokens_free(char **tokens) {
 }
 
 // TODO handle endianness
-ut32 avr_assembler(const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, bool be) {
+ut32 avr_assembler(const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, const char *cpu, bool be) {
 	return_error_if_empty_input(input, input_size);
 
+	AVRAddress address = { pc, cpu };
 	ut32 written = AVR_INVALID_SIZE;
 	ut32 ntokens = 0;
 	char **tokens = tokens_new(input, input_size, &ntokens);
@@ -1064,7 +1087,7 @@ ut32 avr_assembler(const char *input, st32 input_size, ut8 *output, st32 output_
 				RZ_LOG_ERROR("[!] avr_assembler: '%s' requires %u <= ntokens <= %u, but %u tokens was provided.\n", tokens[0], mintoks, maxtoks, ntokens);
 				goto avr_assembler_end;
 			}
-			written = instructions[i].encode(instructions[i].cbits, (cchar **)tokens, ntokens, output, pc, be);
+			written = instructions[i].encode(instructions[i].cbits, (cchar **)tokens, ntokens, output, &address, be);
 			break;
 		}
 	}

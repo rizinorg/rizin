@@ -12,7 +12,7 @@
 
 static int disassemble(const RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	AVROp aop = { 0 };
-	op->size = avr_disassembler(buf, len, a->pc, a->big_endian, &aop, &op->buf_asm);
+	op->size = avr_disassembler(buf, len, a->pc, a->cpu, a->big_endian, &aop, &op->buf_asm);
 	if (!op->size) {
 		op->size = 2;
 		rz_strbuf_set(&op->buf_asm, "invalid");
@@ -24,7 +24,7 @@ static int assemble(const RzAsm *a, RzAsmOp *ao, const char *str) {
 	st32 slen = strlen(str);
 
 	ut8 buffer[16];
-	ut32 written = avr_assembler(str, slen, buffer, sizeof(buffer), a->pc, a->big_endian);
+	ut32 written = avr_assembler(str, slen, buffer, sizeof(buffer), a->pc, a->cpu, a->big_endian);
 
 	if (written < 1) {
 		return -1;

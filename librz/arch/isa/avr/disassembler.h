@@ -127,12 +127,16 @@ typedef enum {
 
 typedef struct avr_opcode_t {
 	AVROpMnem mnemonic;
+	const char *cpu;
+	ut64 target;
+	ut64 next_pc;
 	ut16 mask;
 	ut16 param[4];
 	ut16 cycles;
 	ut16 size;
 } AVROp;
 
-ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVROp *aop, RzStrBuf *sb);
+ut32 avr_instruction_size(ut16 word);
+ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, const char *cpu, bool be, AVROp *aop, RzStrBuf *sb);
 
 #endif /* RZ_ASM_AVR_DISASSEMBLER_H */

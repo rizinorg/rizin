@@ -157,12 +157,11 @@ static inline RzILOpEffect *avr_il_jump_relative(AVROp *aop, RzAnalysis *analysi
 	return JMP(_loc);
 }
 
-static inline RzILOpEffect *avr_il_branch_when(AVROp *aop, RzAnalysis *analysis, ut64 where, RzILOpBool *when, bool cond) {
-	RzILOpEffect *_jmp = avr_il_jump_relative(aop, analysis, where);
-	if (cond) {
-		return BRANCH(when, _jmp, NULL);
-	}
-	return BRANCH(when, NULL, _jmp);
+static inline RzILOpEffect *avr_il_branch_when(AVROp *aop, ut64 pc, ut64 target, RzILOpBool *when, bool cond) {
+	RzILOpEffect *taken = JMP(AVR_PC(target));
+	// The VM advances linearly unless the instruction supplies the wrapped successor.
+	RzILOpEffect *fallthrough = aop->next_pc != pc + aop->size ? JMP(AVR_PC(aop->next_pc)) : NULL;
+	return cond ? BRANCH(when, taken, fallthrough) : BRANCH(when, fallthrough, taken);
 }
 
 static inline RzILOpEffect *avr_il_assign_imm(const char *reg, ut16 imm) {
@@ -827,134 +826,106 @@ static RzILOpEffect *avr_il_bld(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 
 static RzILOpEffect *avr_il_brcc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_C);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brcs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if C = 1
-	ut16 k = aop->param[0];
 
 	RzILOpPure *when = VARG(AVR_SREG_C);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_breq(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 1
-	ut16 k = aop->param[0];
 
 	RzILOpPure *when = VARG(AVR_SREG_Z);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brge(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N ^ V = 0
-	ut16 k = aop->param[0];
 
 	RzILOpBool *N = VARG(AVR_SREG_N);
 	RzILOpBool *V = VARG(AVR_SREG_V);
 	RzILOpPure *when = XOR(N, V);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brhc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if H = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_H);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brhs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if H = 1
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_H);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brid(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if I = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_I);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brie(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if I = 1
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_I);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brlt(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N ^ V = 1
-	ut16 k = aop->param[0];
 
 	RzILOpBool *N = VARG(AVR_SREG_N);
 	RzILOpBool *V = VARG(AVR_SREG_V);
 	RzILOpPure *when = XOR(N, V);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brmi(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N = 1
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_N);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brne(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if Z = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_Z);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brpl(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if N = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_N);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brtc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if T = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_T);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brts(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if T = 1
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_T);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_brvc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if V = 0
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_V);
-	return avr_il_branch_when(aop, analysis, k, when, false);
+	return avr_il_branch_when(aop, pc, aop->target, when, false);
 }
 
 static RzILOpEffect *avr_il_brvs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
 	// branch if V = 1
-	ut16 k = aop->param[0];
-
 	RzILOpBool *when = VARG(AVR_SREG_V);
-	return avr_il_branch_when(aop, analysis, k, when, true);
+	return avr_il_branch_when(aop, pc, aop->target, when, true);
 }
 
 static RzILOpEffect *avr_il_bst(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -987,7 +958,7 @@ static RzILOpEffect *avr_il_call(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	val = AVR_ADDR(val);
 	num = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
 	val = SUB(val, num);
-	num = AVR_PC(pc + aop->size);
+	num = AVR_PC(aop->next_pc);
 	push = STOREW(val, num);
 
 	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -1269,7 +1240,7 @@ static RzILOpEffect *avr_il_cpse(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	ut16 Rr = aop->param[1];
 
 	RzILOpBool *when = EQ(AVR_REG(Rd), AVR_REG(Rr));
-	return avr_il_branch_when(aop, analysis, pc + next_op->size, when, true);
+	return avr_il_branch_when(aop, pc, next_op->next_pc, when, true);
 }
 
 static RzILOpEffect *avr_il_dec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -1325,7 +1296,7 @@ static RzILOpEffect *avr_il_eicall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalys
 	x = AVR_ADDR(x);
 	y = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
 	x = SUB(x, y);
-	y = AVR_PC(pc + aop->size);
+	y = AVR_PC(aop->next_pc);
 	push = STOREW(x, y);
 
 	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -1647,7 +1618,7 @@ static RzILOpEffect *avr_il_icall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysi
 	x = AVR_ADDR(x);
 	y = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
 	x = SUB(x, y);
-	y = AVR_PC(pc + aop->size);
+	y = AVR_PC(aop->next_pc);
 	push = STOREW(x, y);
 
 	x = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -2364,19 +2335,16 @@ static RzILOpEffect *avr_il_push(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 }
 
 static RzILOpEffect *avr_il_rcall(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// PC = PC + k + 1
-	st16 k = (st16)aop->param[0];
-
 	RzILOpPure *val, *num;
 	RzILOpEffect *jmp, *push, *sub;
 
-	jmp = avr_il_jump_relative(aop, analysis, pc + k);
+	jmp = avr_il_jump_relative(aop, analysis, aop->target);
 
 	val = VARG(AVR_SP);
 	val = AVR_ADDR(val);
 	num = AVR_PC((AVR_ADDR_SIZE / 8) - 1);
 	val = SUB(val, num);
-	num = AVR_PC(pc + aop->size);
+	num = AVR_PC(aop->next_pc);
 	push = STOREW(val, num);
 
 	num = AVR_IMM16(AVR_ADDR_SIZE / 8);
@@ -2411,10 +2379,7 @@ static RzILOpEffect *avr_il_ret(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 }
 
 static RzILOpEffect *avr_il_rjmp(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
-	// PC = PC + k + 1
-	st16 k = (st16)aop->param[0];
-
-	return avr_il_jump_relative(aop, analysis, pc + k);
+	return avr_il_jump_relative(aop, analysis, aop->target);
 }
 
 static RzILOpEffect *avr_il_rol(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2634,18 +2599,18 @@ static RzILOpEffect *avr_il_sbic(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	ut16 A = aop->param[0];
 	ut16 b = aop->param[1];
 
-	RzILOpPure *clearb, *target, *result;
+	RzILOpPure *mask, *target, *result;
 	const char *reg = resolve_mmio(analysis, A);
 	if (!reg && A < 32) {
 		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
 		reg = avr_registers[A];
 	}
 
-	clearb = AVR_IMM(~(1u << b));
+	mask = AVR_IMM(1u << b);
 	target = VARG(reg);
-	result = LOGAND(clearb, target);
+	result = LOGAND(mask, target);
 	result = IS_ZERO(result);
-	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, true);
+	return avr_il_branch_when(aop, pc, next_op->next_pc, result, true);
 }
 
 static RzILOpEffect *avr_il_sbis(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2653,18 +2618,18 @@ static RzILOpEffect *avr_il_sbis(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	ut16 A = aop->param[0];
 	ut16 b = aop->param[1];
 
-	RzILOpPure *clearb, *target, *result;
+	RzILOpPure *mask, *target, *result;
 	const char *reg = resolve_mmio(analysis, A);
 	if (!reg && A < 32) {
 		// profiles that does not map registers between 0 and 31 have MMIO regs at this range
 		reg = avr_registers[A];
 	}
 
-	clearb = AVR_IMM(~(1u << b));
+	mask = AVR_IMM(1u << b);
 	target = VARG(reg);
-	result = LOGAND(clearb, target);
+	result = LOGAND(mask, target);
 	result = IS_ZERO(result);
-	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, false);
+	return avr_il_branch_when(aop, pc, next_op->next_pc, result, false);
 }
 
 static RzILOpEffect *avr_il_sbiw(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2716,13 +2681,13 @@ static RzILOpEffect *avr_il_sbrc(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	ut16 b = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
 
-	RzILOpPure *clearb, *target, *result;
+	RzILOpPure *mask, *target, *result;
 
-	clearb = AVR_IMM(~(1u << b));
+	mask = AVR_IMM(1u << b);
 	target = AVR_REG(Rd);
-	result = LOGAND(clearb, target);
+	result = LOGAND(mask, target);
 	result = IS_ZERO(result);
-	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, true);
+	return avr_il_branch_when(aop, pc, next_op->next_pc, result, true);
 }
 
 static RzILOpEffect *avr_il_sbrs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -2731,13 +2696,13 @@ static RzILOpEffect *avr_il_sbrs(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis
 	ut16 b = aop->param[1];
 	avr_return_val_if_invalid_gpr(Rd, NULL);
 
-	RzILOpPure *clearb, *target, *result;
+	RzILOpPure *mask, *target, *result;
 
-	clearb = AVR_IMM(~(1u << b));
+	mask = AVR_IMM(1u << b);
 	target = AVR_REG(Rd);
-	result = LOGAND(clearb, target);
+	result = LOGAND(mask, target);
 	result = IS_ZERO(result);
-	return avr_il_branch_when(aop, analysis, pc + next_op->size, result, false);
+	return avr_il_branch_when(aop, pc, next_op->next_pc, result, false);
 }
 
 static RzILOpEffect *avr_il_sec(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis) {
@@ -3019,8 +2984,6 @@ static RzILOpEffect *avr_il_xch(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis 
 	return SEQ3(let, set, store);
 }
 
-#include <rz_il/rz_il_opbuilder_end.h>
-
 typedef RzILOpEffect *(*avr_il_op)(AVROp *aop, AVROp *next_op, ut64 pc, RzAnalysis *analysis);
 
 static avr_il_op avr_ops[AVR_OP_SIZE] = {
@@ -3149,9 +3112,14 @@ RZ_IPI bool rz_avr_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, ut64 pc, AV
 
 	avr_il_op create_op = avr_ops[aop->mnemonic];
 	op->il_op = create_op(aop, next_op, pc, analysis);
+	if (op->il_op && aop->next_pc != pc + aop->size && !rz_analysis_op_nonlinear(op->type)) {
+		op->il_op = SEQ2(op->il_op, JMP(AVR_PC(aop->next_pc)));
+	}
 
 	return true;
 }
+
+#include <rz_il/rz_il_opbuilder_end.h>
 
 RZ_IPI RzAnalysisILConfig *rz_avr_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
