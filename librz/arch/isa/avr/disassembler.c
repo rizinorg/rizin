@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include "disassembler.h"
+#include "address.h"
 #include "common.h"
 
 /** \file disassembler.c
@@ -123,20 +124,10 @@ static ut32 avr_dddddcbbb(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVRO
 }
 
 static ut32 avr_kkkkkkkccc(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
-	st16 k = (data[0] & 0x03F8) >> 3;
-	k *= 2;
-	if (k & 0x0080) {
-		// manually extend signed value
-		k |= 0xFF00;
-		k = -(~k) + 1;
-	} else {
-		k += 2;
-	}
-	pc += k;
-
+	st16 offset = avr_relative_offset((data[0] >> 3) & 0x7f, 7);
 	aop->mnemonic = id;
-	aop->param[0] = pc;
-	rz_strbuf_setf(sb, "%s 0x%" PFMT64x, name, pc);
+	aop->target = avr_relative_target(pc, offset, aop->cpu);
+	rz_strbuf_setf(sb, "%s 0x%" PFMT64x, name, aop->target);
 	return 2;
 }
 
@@ -389,21 +380,10 @@ static ut32 avr_AArrrrrAAAA(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AV
 }
 
 static ut32 avr_kkkkkkkkkkkk(cchar *name, AVROpMnem id, ut16 data[2], ut64 pc, AVROp *aop, RzStrBuf *sb) {
-	st16 k = data[0] & 0x0FFF;
-	k *= 2;
-	if (k & 0x1000) {
-		// manually extend signed value
-		k |= 0xF000;
-		k = -(~k) + 1;
-	} else {
-		k += 2;
-	}
-
-	pc += k;
-
+	st16 offset = avr_relative_offset(data[0] & 0xfff, 12);
 	aop->mnemonic = id;
-	aop->param[0] = k;
-	rz_strbuf_setf(sb, "%s 0x%" PFMT64x, name, pc);
+	aop->target = avr_relative_target(pc, offset, aop->cpu);
+	rz_strbuf_setf(sb, "%s 0x%" PFMT64x, name, aop->target);
 	return 2;
 }
 
@@ -728,33 +708,40 @@ static const AvrInstruction instructions[] = {
 };
 // clang-format on
 
-ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, bool be, AVROp *aop, RzStrBuf *sb) {
+static const AvrInstruction *find_instruction(ut16 word) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(instructions); i++) {
+		if ((word & instructions[i].mbits) == instructions[i].cbits) {
+			return &instructions[i];
+		}
+	}
+	return NULL;
+}
+
+ut32 avr_instruction_size(ut16 word) {
+	const AvrInstruction *ins = find_instruction(word);
+	return ins ? ins->opsize : AVR_INVALID_SIZE;
+}
+
+ut32 avr_disassembler(const ut8 *buffer, const ut32 size, ut64 pc, const char *cpu, bool be, AVROp *aop, RzStrBuf *sb) {
 	rz_return_val_if_fail(buffer && size && aop && sb, false);
 	if (size < 2) {
 		return AVR_INVALID_SIZE;
 	}
-
-	ut16 masked;
-	ut16 data[2] = { 0 };
-
-	data[0] = rz_read_ble16(buffer, be);
-
-	memset(aop, 0, sizeof(AVROp));
-	for (ut32 i = 0; i < RZ_ARRAY_SIZE(instructions); ++i) {
-		masked = data[0] & instructions[i].mbits;
-		if (masked == instructions[i].cbits) {
-			if (instructions[i].opsize > 2) {
-				if (size < instructions[i].opsize) {
-					return AVR_INVALID_SIZE;
-				}
-				data[1] = be ? rz_read_at_be16(buffer, 2) : rz_read_at_le16(buffer, 2);
-			}
-			const char *name = instructions[i].name;
-			AVROpMnem id = instructions[i].id;
-			aop->size = instructions[i].decode(name, id, data, pc, aop, sb);
-			aop->mask = instructions[i].mbits;
-			return aop->size;
-		}
+	ut16 data[2] = { rz_read_ble16(buffer, be), 0 };
+	const AvrInstruction *ins = find_instruction(data[0]);
+	if (!ins) {
+		return AVR_INVALID_SIZE;
 	}
-	return AVR_INVALID_SIZE;
+	if (size < ins->opsize) {
+		aop->size = ins->opsize;
+		return AVR_INVALID_SIZE;
+	}
+	if (ins->opsize > 2) {
+		data[1] = rz_read_ble16(buffer + 2, be);
+	}
+	memset(aop, 0, sizeof(*aop));
+	aop->cpu = cpu;
+	aop->size = ins->decode(ins->name, ins->id, data, pc, aop, sb);
+	aop->mask = ins->mbits;
+	return aop->size;
 }

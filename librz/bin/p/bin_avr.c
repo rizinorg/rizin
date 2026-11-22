@@ -3,6 +3,7 @@
 
 #include <rz_bin.h>
 #include <rz_lib.h>
+#include <arch/isa/avr/address.h>
 
 /** \file bin_avr.c
  * This plugin detects the usermode rom in AVR binaries.
@@ -67,7 +68,7 @@
  *
  * 2 bytes handler:
  * - ATmega8/L
- * - ATmega88/168
+ * - ATmega48/88
  * - ATmega48/V/88/V/168/V
  * - ATTiny48/88
  */
@@ -204,9 +205,9 @@ static const BinAvrIntTable ATmega16_table[] = {
 	{ (0x0028 << 1), "SPM_RDY" }, ///< Store Program Memory Ready Handler
 };
 
-// ATmega88/ATmega168 datasheet
+// ATmega48/ATmega88 datasheet
 // expect rjmp PCINT2
-static const BinAvrIntTable ATmega88_168_table[] = {
+static const BinAvrIntTable ATmega48_88_table[] = {
 	{ (0x000 << 1), "RESET" }, ///< Reset Handler
 	{ (0x001 << 1), "EXT_INT0" }, ///< IRQ0 Handler
 	{ (0x002 << 1), "EXT_INT1" }, ///< IRQ1 Handler
@@ -430,11 +431,11 @@ static const BinAvrBoard ATmega16 = {
 	4,
 };
 
-static const BinAvrBoard ATmega88_168 = {
-	"ATmega88/168",
-	"ATmega168", // best effort
-	ATmega88_168_table,
-	RZ_ARRAY_SIZE(ATmega88_168_table),
+static const BinAvrBoard ATmega48_88 = {
+	"ATmega48/88",
+	"ATmega88", // best effort
+	ATmega48_88_table,
+	RZ_ARRAY_SIZE(ATmega48_88_table),
 	2,
 };
 
@@ -483,7 +484,7 @@ static const BinAvrBoard *boards[] = {
 	/* 57 */ &ATmega640_1280_1281_2560_2561,
 	/* 43 */ &ATmega16U4_32U4,
 	/* 26 */ &ATxmega128_64_32_16A4U,
-	/* 26 */ &ATmega88_168,
+	/* 26 */ &ATmega48_88,
 	/* 26 */ &ATmega328p,
 	/* 21 */ &ATmega48_V_88_V_168_V,
 	/* 21 */ &ATmega16,
@@ -535,17 +536,7 @@ static bool parse_rjmp(RzBuffer *b, ut64 addr, ut64 *value) {
 		return true;
 	}
 
-	st16 k = opcode & 0x0FFF;
-	k *= 2;
-	if (k & 0x1000) {
-		// manually extend signed value
-		k |= 0xF000;
-		k = -(~k) + 1;
-	} else {
-		k += 2;
-	}
-
-	*value = addr + (st64)k;
+	*value = addr + avr_relative_offset(opcode & 0xfff, 12);
 	return true;
 }
 
@@ -565,17 +556,7 @@ static bool parse_rcall(RzBuffer *b, ut64 addr, ut64 *value) {
 		return true;
 	}
 
-	st16 k = opcode & 0x0FFF;
-	k *= 2;
-	if (k & 0x1000) {
-		// manually extend signed value
-		k |= 0xF000;
-		k = -(~k) + 1;
-	} else {
-		k += 2;
-	}
-
-	*value = addr + (st64)k;
+	*value = addr + avr_relative_offset(opcode & 0xfff, 12);
 	return true;
 }
 
@@ -643,7 +624,7 @@ static bool avr_parse_interrupt(size_t n_bytes, ut64 offset, RzBuffer *buf, ut64
 	return parse_rjmp(buf, offset, jump) || parse_rcall(buf, offset, jump);
 }
 
-static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *interrupt_handlers, size_t n_bytes, ut64 *bad_interrupt) {
+static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *interrupt_handlers, size_t n_bytes) {
 	rz_vector_clear(interrupt_handlers);
 
 	for (size_t offset = 0;; offset += n_bytes) {
@@ -652,17 +633,14 @@ static void avr_parse_interrupt_vectors(RzBuffer *buf, RzVector /*<ut64>*/ *inte
 			break;
 		}
 
-		if (offset > 0 && jump && jump != UT64_MAX && avr_check_if_bad_interrupt(n_bytes == 4, jump, buf)) {
-			// checks if the interrupt vector is jumping to an address which contains a jump
-			// to the reset vector; if it does, then it's an __bad_interrupt symbol
-			if (*bad_interrupt == UT64_MAX) {
-				*bad_interrupt = jump;
-			}
-		}
 		rz_vector_push(interrupt_handlers, &jump);
 	}
 
 	rz_vector_shrink(interrupt_handlers);
+}
+
+static const char *avr_board_cpu(const BinAvrBoard *board) {
+	return board ? board->cpu : "ATmega8";
 }
 
 static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
@@ -695,7 +673,7 @@ static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 		return false;
 	}
 
-	avr_parse_interrupt_vectors(buf, interrupt_handlers, n_bytes, &bad_interrupt);
+	avr_parse_interrupt_vectors(buf, interrupt_handlers, n_bytes);
 
 	for (size_t i = 0, expected = rz_vector_len(interrupt_handlers); i < RZ_ARRAY_SIZE(boards); ++i) {
 		const BinAvrBoard *board = boards[i];
@@ -706,8 +684,25 @@ static bool avr_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 		break;
 	}
 
+	ut64 mask = avr_pc_mask(avr_board_cpu(rom_board));
+	size_t index = 0;
+	ut64 *handler;
+	rz_vector_enumerate (interrupt_handlers, handler, index) {
+		if (*handler == UT64_MAX) {
+			continue;
+		}
+		ut64 offset = index * n_bytes;
+		if (n_bytes == 2 || !is_jmp(buf, offset)) {
+			*handler = avr_wrap_target(offset, *handler, mask);
+		}
+		if (index && *handler && bad_interrupt == UT64_MAX && avr_check_if_bad_interrupt(n_bytes == 4, *handler, buf)) {
+			bad_interrupt = *handler;
+		}
+	}
+
 	BinAvrRom *rom = RZ_NEW0(BinAvrRom);
 	if (!rom) {
+		rz_vector_free(interrupt_handlers);
 		return false;
 	}
 
@@ -738,21 +733,13 @@ static RzBinInfo *avr_info(RzBinFile *bf) {
 		return NULL;
 	}
 
-	const char *board = "ATmel (unknown)";
-	const char *cpu = "ATmega8";
-
-	if (rom->board) {
-		board = rom->board->name;
-		cpu = rom->board->cpu;
-	}
-
 	bi->file = rz_str_dup(bf->file);
 	bi->type = rz_str_dup("ROM");
-	bi->machine = rz_str_dup(board);
+	bi->machine = rz_str_dup(rom->board ? rom->board->name : "ATmel (unknown)");
 	bi->os = rz_str_dup("avr usermode");
 	bi->has_va = false;
 	bi->arch = rz_str_dup("avr");
-	bi->cpu = rz_str_dup(cpu);
+	bi->cpu = rz_str_dup(avr_board_cpu(rom->board));
 	bi->bits = 8;
 	return bi;
 }

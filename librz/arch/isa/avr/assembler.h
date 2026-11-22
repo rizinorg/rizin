@@ -6,6 +6,6 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-ut32 avr_assembler(const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, bool be);
+ut32 avr_assembler(const char *input, st32 input_size, ut8 *output, st32 output_size, ut64 pc, const char *cpu, bool be);
 
 #endif /* RZ_ASM_AVR_ASSEMBLER_H */
