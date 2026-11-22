@@ -3715,8 +3715,8 @@ ar a10
 ar b0
 EOF
 EXPECT=<<EOF
-            0x00000000      add   .l1 a5,a6,a6
-            0x00000004      ||    [b0] bdec .s2 0x0,b0
+        .-> 0x00000000      add   .l1 a5,a6,a6
+        `=< 0x00000004      ||    [b0] bdec .s2 0x0,b0
             0x00000008      nop   2
             0x0000000c      add   .l1 a9,a10,a10
             0x00000010      nop

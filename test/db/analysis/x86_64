@@ -3215,19 +3215,19 @@ args: 0
 `----------------------------------'
 
 / fcn.00000003();
-|           0x00000003      0010           add   byte [rax], dl
-|           0x00000005      ebf9           jmp   0x0
+|       :   0x00000003      0010           add   byte [rax], dl
+|       `=< 0x00000005      ebf9           jmp   0x0
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
 |           ;-- (0x00000003) fcn.00000003:
-|           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
-|           0x00000005      ebf9           jmp   0x0
+|       .-> 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+|       `=< 0x00000005      ebf9           jmp   0x0
 
 |           ; CODE XREF from fcn.00000003 @ 0x5
-|           0x00000000  ~   b821c10010     mov   eax, 0x1000c121
+|       .-> 0x00000000  ~   b821c10010     mov   eax, 0x1000c121
 / fcn.00000003();
-|           0x00000003      0010           add   byte [rax], dl
-|           0x00000005      ebf9           jmp   0x0
+|       :   0x00000003      0010           add   byte [rax], dl
+|       `=< 0x00000005      ebf9           jmp   0x0
 EOF
 RUN
 

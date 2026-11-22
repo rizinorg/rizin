@@ -29,3 +29,5 @@ ad "return r2 2" 9e000001
 #ad "sub 2 2 1" 0d000000 # ?? Not wrong in official
 #ad "settable r0 -1 r2" 0b000000 # ?? Not wrong in official
 #ad "return 0 1" 10000000 # ?? Not wrong in official
+
+ad "tforloop r3 2" e1800000

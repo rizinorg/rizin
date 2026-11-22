@@ -89,10 +89,8 @@ RzILOpEffect *bf_in() {
 	return rz_il_op_new_goto("read");
 }
 
-/**
- * Search matching [ or ] starting at addr in direction given by dir (-1 or 1)
- */
-static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
+// Both loop instructions resume just after the matching bracket.
+static ut64 find_loop_target(RzAnalysis *analysis, ut64 addr, int dir) {
 	if (!analysis->cb.read_at) {
 		return UT64_MAX;
 	}
@@ -106,7 +104,9 @@ static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
 			break;
 		}
 		ut8 c;
-		analysis->cb.read_at(analysis, addr, &c, 1);
+		if (!analysis->cb.read_at(analysis, addr, &c, 1)) {
+			break;
+		}
 		switch (c) {
 		case '[':
 			lev++;
@@ -122,7 +122,7 @@ static ut64 find_matching_bracket(RzAnalysis *analysis, ut64 addr, int dir) {
 			continue;
 		}
 		if (lev == 0) {
-			return addr;
+			return addr + 1;
 		}
 	}
 	return UT64_MAX;
@@ -179,11 +179,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 
 	switch (buf[0]) {
 	case '[':
-		// Find the jump target, +1 because we jump directly after the matching bracket.
-		// If not found this returns UT64_MAX, so this overflows to 0, which is considered the "invalid"
-		// value for RzAnalysisOp, so it's fine.
-		op->jump = find_matching_bracket(analysis, addr, 1) + 1;
-		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->jump = find_loop_target(analysis, addr, 1);
+		if ((mask & RZ_ANALYSIS_OP_MASK_IL) && op->jump != UT64_MAX) {
 			op->il_op = bf_llimit(analysis, addr, op->jump);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -193,9 +190,8 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		op->fail = addr + 1;
 		break;
 	case ']':
-		// same idea for target as above
-		op->jump = find_matching_bracket(analysis, addr, -1) + 1;
-		if (mask & RZ_ANALYSIS_OP_MASK_IL) {
+		op->jump = find_loop_target(analysis, addr, -1);
+		if ((mask & RZ_ANALYSIS_OP_MASK_IL) && op->jump != UT64_MAX) {
 			op->il_op = bf_rlimit(analysis, addr, op->jump);
 		}
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {

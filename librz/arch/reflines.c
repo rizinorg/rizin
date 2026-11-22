@@ -35,6 +35,10 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *re
 	return re;
 }
 
+static bool refline_target_visible(ut64 target, ut64 start, ut64 len, bool linesout) {
+	return target != UT64_MAX && (linesout || (target >= start && target - start < len));
+}
+
 static bool add_refline(RzPVector /*<RzAnalysisRefline *>*/ *vector, RzList /*<ReflineEnd *>*/ *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
 	RzAnalysisRefline *item = RZ_NEW0(RzAnalysisRefline);
@@ -187,15 +191,12 @@ RZ_API RZ_OWN RzPVector /*<RzAnalysisRefline *>*/ *rz_analysis_reflines_get(RZ_N
 			// fallthrough
 		case RZ_ANALYSIS_OP_TYPE_CJMP:
 		case RZ_ANALYSIS_OP_TYPE_JMP:
-			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
-				break;
-			}
-			if (!add_refline(result, sten, addr, op.jump, &count)) {
+			if (refline_target_visible(op.jump, opc, len, linesout) && !add_refline(result, sten, addr, op.jump, &count)) {
 				rz_analysis_op_fini(&op);
 				goto sten_err;
 			}
-			// add false branch in case its set and its not a call, useful for bf, maybe others
-			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
+			// A hardware loop can have a known second destination even when the first is unknown.
+			if (!op.delay && op.fail != addr + op.size && refline_target_visible(op.fail, opc, len, linesout)) {
 				if (!add_refline(result, sten, addr, op.fail, &count)) {
 					rz_analysis_op_fini(&op);
 					goto sten_err;

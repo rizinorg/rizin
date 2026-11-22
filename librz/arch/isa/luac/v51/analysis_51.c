@@ -78,6 +78,7 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 		OP_RET(RZ_ANALYSIS_OP_TYPE_RET, a, b);
 	case OP_TAILCALL: /*  A B C   return R(A)(R(A+1), ... ,R(A+B-1))              */
 		OP_RET(RZ_ANALYSIS_OP_TYPE_TAIL, a, b);
+	case OP_TFORLOOP: /* A nil iterator result skips the following jump. */
 	case OP_TEST: /*	A k	if (not R[A] == k) then pc++			*/
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		JUMP_FAIL_OFFSET(8, 4);
@@ -171,11 +172,6 @@ int lua51_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, AnalysisLuacContex
 		TYPE_DST_SRC0_REG(RZ_ANALYSIS_OP_TYPE_LOAD, a, b);
 	case OP_LEN: /*       A B     R(A) := length of R(B)                          */
 		TYPE_DST_SRC0_REG(RZ_ANALYSIS_OP_TYPE_LENGTH, a, b);
-	case OP_TFORLOOP: /*  A sBx   if R(A+1) ~= nil then { R(A)=R(A+1); pc += sBx }*/
-		TYPE_DST_REG(RZ_ANALYSIS_OP_TYPE_CJMP, a);
-		JUMP_FAIL_ABS(addr + 4 + (sbx * 4), addr + 4);
-		rz_strf(comment, "to 0x%" PFMT64x, op->jump);
-		break;
 	case OP_VARARG: /*    A B     R(A), R(A+1), ..., R(A+B-2) = vararg            */
 		break;
 	default:

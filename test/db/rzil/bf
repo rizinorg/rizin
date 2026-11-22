@@ -119,11 +119,13 @@ e analysis.arch=bf
 e scr.utf8=false
 s 0
 pd 3 @ 0xa
+aoj 1 @ 0xa~{.[]\|{addr,type,jump,fail}}
 EOF
 EXPECT=<<EOF
             0x0000000a      5b             while [ptr]
             0x0000000b      3e             inc   ptr
             0x0000000c      2b             inc   [ptr]
+[{"addr":10,"type":"cjmp","fail":11}]
 EOF
 RUN
 
@@ -1828,5 +1830,21 @@ pc = 0x00000000000002af
 ptr = 0x0000000000010000
 pc = 0x0000000000000000
 7
+EOF
+RUN
+
+NAME=Matched and unmatched Brainfuck brackets
+FILE=malloc://4
+CMDS=<<EOF
+e asm.arch=bf
+wx 5d5b5b5d
+aoj 4~{.[]\|{addr,type,jump,fail}}
+aoi 2 @ 0
+aoi 2 @ 2
+EOF
+EXPECT=<<EOF
+[{"addr":0,"type":"ujmp"},{"addr":1,"type":"cjmp","fail":2},{"addr":2,"type":"cjmp","jump":4,"fail":3},{"addr":3,"type":"ujmp","jump":3}]
+0x2 (branch (! (is_zero (load 0 (var ptr)))) nop (jmp (bv 64 0x4)))
+0x3 (branch (! (is_zero (load 0 (var ptr)))) (jmp (bv 64 0x3)) nop)
 EOF
 RUN
