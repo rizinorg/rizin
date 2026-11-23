@@ -1068,10 +1068,6 @@ static RzPVector /*<RzBinReloc *>*/ *relocs_obj(ELFOBJ *obj, ut64 baddr, RzBuffe
 
 	ut64 got_addr = get_got_addr(obj);
 
-	if (!got_addr) {
-		got_addr = obj->reloc_targets_map_base;
-	}
-
 	RzBinElfReloc *reloc;
 	rz_bin_elf_foreach_relocs(obj, reloc) {
 		if (!(ptr = Elf_(rz_bin_elf_convert_relocation)(obj, reloc, got_addr))) {
