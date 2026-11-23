@@ -1085,9 +1085,13 @@ static void c166_op_set_type(RZ_NONNULL const C166_Inst *instr, RzAnalysis *anal
 		break;
 	case C166_POP_reg:
 		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
+		op->stackptr = 4;
 		break;
 	case C166_PUSH_reg:
+		op->stackop = RZ_ANALYSIS_STACK_DEC;
 		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+		op->stackptr = 4;
 		break;
 	case C166_SHL_Rwn_Rwm:
 		c166_op_rn_rm(analysis, op, operand1, RZ_ANALYSIS_OP_TYPE_SHL, false);
