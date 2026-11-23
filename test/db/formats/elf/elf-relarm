@@ -787,8 +787,8 @@ EXPECT=<<EOF
 0x080000a0 0x000000a0 0x080000d8 R_ARM_ABS32             thumb_local + 0x00000005
 0x080000a4 0x000000a4 0x080000d8 R_ARM_TARGET1           thumb_local + 0x00000005
 0x080000a8 0x000000a8 0x08000b58 R_ARM_TARGET2           ext_got + 0x0000000c
-0x080000ac 0x000000ac 0x08000b58 R_ARM_GOT_BREL          ext_got@got + 0x00000004
-0x080000b0 0x000000b0 0x08000b58 R_ARM_GOTOFF32          ext_got + 0x00000008
+0x080000ac 0x000000ac 0x08000b58 R_ARM_GOT_BREL          ext_got@got - 0x08000c58
+0x080000b0 0x000000b0 0x08000b58 R_ARM_GOTOFF32          ext_got - 0x08000c54
 0x080000b4 0x000000b4 0x08000b58 R_ARM_GOT_PREL          ext_got@got - 0x080000a8
 0x080000b8 0x000000b8 0x08000b58 R_ARM_SBREL32           ext_got - 0x07fffff0
 0x080000bc 0x000000bc 0x08000b5c R_ARM_TLS_GD32          ext_tls@got - 0x080000b8
@@ -999,5 +999,121 @@ EXPECT=<<EOF
 	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x13): counter
 	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x38): origin_dist
 	DW_AT_name [DW_FORM_strp]	: (.debug_str+0x32): scale
+EOF
+RUN
+
+NAME=ELF: Arm GOT load in an object resolves to the global (#7134)
+FILE=bins/elf/arm-got-relocs.o
+CMDS=<<EOF
+# The offset from the next LDR to the GOT entry of shape_total, which holds its address.
+pd 1 @ sym.bump
+s sym.bump
+aezi
+aezs 2
+ar r1
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+            ;-- bump:
+            0x08000034      ldr   r1, [reloc.shape_total]              ; [0x800004c:4]=0x390 ; [01] -r-x section size 120 named .text
+r1 = 0x08000398
+EOF
+RUN
+
+NAME=ELF: Arm GOT relocations of an object get GOT entries (#7134)
+FILE=bins/elf/arm-got-relocs.o
+ARGS=-e asm.sub.names=false
+CMDS=<<EOF
+oml~got
+# The entries of shape_total, ext_data, ext_func, thumb_func (with bit 0 set) and local_data.
+pxw 0x14 @ 0x080003d0
+ir
+# GCC's code: R_ARM_BASE_PREL gives r3 the GOT, R_ARM_GOT_BREL r2 the offset of the entry of ext_data.
+pd 4 @ sym._start
+# R_ARM_GOT_BREL12 from the GOT in r9, the second assembled as a subtraction.
+pi 4 @ sym.brel12
+# R_ARM_THM_GOT_BREL12 of a Thumb LDR.W.
+pi 3 @ sym.thm_brel12
+# R_ARM_GOT_PREL, R_ARM_GOT_ABS, R_ARM_GOTOFF32, and R_ARM_REL32 against _GLOBAL_OFFSET_TABLE_.
+pxw 0x10 @ 0x080000b0
+# RzIL loads the addresses of ext_data, ext_func and thumb_func, in Arm and in Thumb.
+s sym._start
+aezi
+aezs 4
+ar r3
+s sym.brel12
+aezi
+aezs 4
+ar r9
+ar r0
+ar r1
+s sym.thumb_func
+aezi
+aezs 4
+ar r3
+s sym.thm_brel12
+aezi
+aezs 3
+ar r0
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x080003d0 - 0x080003e3 r-- vmap.got
+0x080003d0  0x08000398 0x0800039c 0x080003a0 0x08000089  ................
+0x080003e0  0x080000ac                                   ....
+     vaddr      paddr     target type                 name                               
+-----------------------------------------------------------------------------------------
+0x0800004c 0x0000004c 0x08000398 R_ARM_GOT_PREL       shape_total@got - 0x08000040
+0x08000068 0x00000068 0x080003d0 R_ARM_GOTPC          GOT - 0x08000060
+0x0800006c 0x0000006c 0x0800039c R_ARM_GOT_BREL       ext_data@got - 0x080003d0
+0x08000078 0x00000078 0x080003a0 R_ARM_GOT_BREL12     ext_func@got - 0x080003d0
+0x0800007c 0x0000007c 0x08000088 R_ARM_GOT_BREL12     thumb_func@got - 0x080003d0
+0x08000084 0x00000084 0x080003d0 R_ARM_GOTPC          GOT - 0x0800007c
+0x08000094 0x00000094 0x080003d0 R_ARM_GOTPC          GOT - 0x08000090
+0x08000098 0x00000098 0x0800039c R_ARM_GOT_BREL       ext_data@got - 0x080003d0
+0x080000a0 0x000000a0 0x0800039c R_ARM_THM_GOT_BREL12 ext_data@got - 0x080003d0
+0x080000a8 0x000000a8 0x080003d0 R_ARM_GOTPC          GOT - 0x080000a2
+0x080000b0 0x000000b0 0x08000088 R_ARM_GOT_PREL       thumb_func@got - 0x080000b0
+0x080000b4 0x000000b4 0x080000ac R_ARM_GOT_ABS        local_data@got
+0x080000b8 0x000000b8 0x080000ac R_ARM_GOTOFF32       local_data - 0x080003d0
+0x080000bc 0x000000bc 0x080003d0 R_ARM_REL32          _GLOBAL_OFFSET_TABLE_ - 0x080000bc
+            ;-- _start:
+            0x08000050      ldr   r3, [0x08000068]                     ; reloc._GLOBAL_OFFSET_TABLE
+                                                                       ; [0x8000068:4]=0x370 ; "p\U00000003"
+            0x08000054      ldr   r2, [0x0800006c]                     ; reloc.ext_data
+                                                                       ; [0x800006c:4]=4
+            0x08000058      add   r3, pc, r3
+            0x0800005c      ldr   r3, [r3, r2]
+ldr sb, [pc, 0xc]
+add sb, pc, sb
+ldr r0, [sb, 8]
+ldr r1, [sb, 0xc]
+ldr r3, [pc, 8]
+add r3, pc
+ldr.w r0, [r3, 4]
+0x080000b0  0x0000032c 0x080003e0 0xfffffcdc 0x00000314  ,...............
+r3 = 0x0800039c
+r9 = 0x080003d0
+r0 = 0x080003a0
+r1 = 0x08000089
+r3 = 0x0800039c
+r0 = 0x0800039c
+EOF
+RUN
+
+NAME=ELF: Arm GOT entries of a big-endian object (#7134)
+FILE=bins/elf/armeb-got-relocs.o
+CMDS=<<EOF
+oml~got
+p8 0x14 @ 0x080003d0
+s sym._start
+aezi
+aezs 4
+ar r3
+EOF
+EXPECT=<<EOF
+ 2 fd: 5 +0x00000000 0x080003d0 - 0x080003e3 r-- vmap.got
+080003980800039c080003a008000089080000ac
+r3 = 0x0800039c
 EOF
 RUN

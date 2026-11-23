@@ -1497,12 +1497,16 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 
 	case R_ARM_BASE_PREL:
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
-		val = fs->B + fs->A - fs->P;
+		// Linkers take the GOT for B(S), whatever S is.
+		val = fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 
 	case R_ARM_GOT_BREL:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->A;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
@@ -1686,12 +1690,18 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_GOT_PREL:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
 		rz_buf_write_at(buf_patched, patch_addr, buf, nbytes);
 		break;
 	case R_ARM_GOT_ABS:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);
@@ -1699,13 +1709,33 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 		break;
 
 	case R_ARM_THM_GOT_BREL12:
-		/* fall through */
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		// The imm12 of LDR.W, which only adds it, is in the second halfword.
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keephw2 = rz_read_ble16(&buf[2], big_endian);
+		keephw2 = (keephw2 & 0xF000) | ((fs->G + fs->A) & 0xFFF); // G(S) + A - GOT_ORG
+		rz_write_ble16(&buf[2], keephw2, big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
+		break;
+
 	case R_ARM_TLS_IE12GP:
 		/* fall through */
 	case R_ARM_GOT_BREL12:
-		// val = imm12
-		val = (fs->G + fs->A) & 0xFFF; // G(S) + A - GOT_ORG
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, 0xFFF, val);
+		if (fs->G == UT64_MAX) {
+			return;
+		}
+		val = fs->G + fs->A; // G(S) + A - GOT_ORG
+		u_bit = 0x00800000;
+		if (val >> 63) {
+			u_bit = 0;
+			val = ~val + 1;
+		}
+		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
+		keep = rz_read_ble32(buf, big_endian);
+		rz_write_ble32(buf, (keep & 0xFF7FF000) | u_bit | (val & 0xFFF), big_endian);
+		rz_buf_write_at(buf_patched, patch_addr, buf, 4);
 		break;
 
 	case R_ARM_GOTOFF12:
@@ -1739,6 +1769,9 @@ static void patch_reloc_arm(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_add
 	case R_ARM_TLS_LDM32:
 		/* fall through */
 	case R_ARM_TLS_IE32:
+		if (fs->G == UT64_MAX) {
+			return;
+		}
 		rz_buf_read_at(buf_patched, patch_addr, buf, 4);
 		val = fs->G + fs->GOT + fs->A - fs->P;
 		rz_write_ble32(buf, (val & 0xFFFFFFFF), big_endian);

@@ -619,6 +619,32 @@ static ut64 reloc_targets_vfile_size(RzBinFile *bf, ELFOBJ *obj) {
 	return Elf_(rz_bin_elf_get_relocs_count)(obj) * reloc_target_size(obj);
 }
 
+/**
+ * \brief Size of a GOT entry, 8 bytes for x32 too, whose indirect branches read 8.
+ */
+static ut64 got_entry_size(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_X86_64 ? 8 : sizeof(Elf_(Addr));
+}
+
+/**
+ * \brief Address of the GOT entries made up for a relocatable object, right after its reloc targets.
+ */
+static ut64 synthetic_got_addr(ELFOBJ *bin) {
+	ut64 addr = bin->reloc_targets_map_base + Elf_(rz_bin_elf_get_relocs_count)(bin) * reloc_target_size(bin);
+	return addr + rz_num_align_delta(addr, got_entry_size(bin));
+}
+
+/**
+ * \brief Whether the relocatable object \p bin, which has no GOT yet, takes one at the entries made up for it.
+ *
+ * The 12-bit GOT offsets of Arm LDRs reach the entries only from there. x86 takes
+ * a GOT at 0, where the offset of an entry is its address, so that R_386_GOT32X
+ * holds the same with and without a base register.
+ */
+static bool synthetic_got_is_origin(ELFOBJ *bin) {
+	return bin->ehdr.e_type == ET_REL && bin->ehdr.e_machine == EM_ARM;
+}
+
 static ut64 get_got_addr(ELFOBJ *bin) {
 	if (!Elf_(rz_bin_elf_has_sections)(bin)) {
 		return 0;
@@ -634,7 +660,7 @@ static ut64 get_got_addr(ELFOBJ *bin) {
 		return section->rva;
 	}
 
-	return 0;
+	return synthetic_got_is_origin(bin) ? synthetic_got_addr(bin) : 0;
 }
 
 /**
@@ -660,7 +686,7 @@ RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut6
 /**
  * \brief Whether \p rel reads the address of its symbol from a GOT entry.
  */
-static bool x86_reloc_uses_got_entry(ELFOBJ *bin, const RzBinElfReloc *rel) {
+static bool reloc_uses_got_entry(ELFOBJ *bin, const RzBinElfReloc *rel) {
 	switch (bin->ehdr.e_machine) {
 	case EM_386:
 		return rel->type == R_386_GOT32 || rel->type == R_386_GOT32X;
@@ -680,32 +706,25 @@ static bool x86_reloc_uses_got_entry(ELFOBJ *bin, const RzBinElfReloc *rel) {
 		default:
 			return false;
 		}
+	case EM_ARM:
+		switch (rel->type) {
+		case R_ARM_GOT_BREL:
+		case R_ARM_GOT_ABS:
+		case R_ARM_GOT_PREL:
+		case R_ARM_GOT_BREL12:
+		case R_ARM_THM_GOT_BREL12:
+			return true;
+		default:
+			return false;
+		}
 	default:
 		return false;
 	}
 }
 
 /**
- * \brief Size of an x86 GOT entry, 8 bytes for x32 too, whose indirect branches read 8.
- */
-static ut64 x86_got_entry_size(ELFOBJ *bin) {
-	return bin->ehdr.e_machine == EM_X86_64 ? 8 : 4;
-}
-
-/**
- * \brief Address of the GOT entries made up for a relocatable object, right after its reloc targets.
- */
-static ut64 synthetic_got_addr(ELFOBJ *bin) {
-	ut64 addr = bin->reloc_targets_map_base + Elf_(rz_bin_elf_get_relocs_count)(bin) * reloc_target_size(bin);
-	return addr + rz_num_align_delta(addr, x86_got_entry_size(bin));
-}
-
-/**
- * \brief Give each symbol that the GOT relocations of an x86 relocatable object
+ * \brief Give each symbol that the GOT relocations of a relocatable object
  * refer to an entry, as a linker would in the GOT it creates.
- *
- * An object has no GOT, so its GOT-relative fields are computed with a GOT
- * address of 0, and the offset of an entry into the GOT is its address.
  */
 static void synthetic_got_new(ELFOBJ *bin) {
 	if (bin->ehdr.e_type != ET_REL ||
@@ -714,15 +733,16 @@ static void synthetic_got_new(ELFOBJ *bin) {
 		return;
 	}
 	ut64 entry = synthetic_got_addr(bin);
-	ut64 size = x86_got_entry_size(bin);
+	ut64 got = get_got_addr(bin);
+	ut64 size = got_entry_size(bin);
 	ut64 count = 0;
 	RzBinElfReloc *reloc;
 	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (!reloc->sym || !x86_reloc_uses_got_entry(bin, reloc)) {
+		if (!reloc->sym || !reloc_uses_got_entry(bin, reloc)) {
 			continue;
 		}
 		// The relocations of a symbol share its entry.
-		if (ht_uu_insert(bin->got_sym_id_off, reloc->sym, entry + count * size)) {
+		if (ht_uu_insert(bin->got_sym_id_off, reloc->sym, entry + count * size - got)) {
 			count++;
 		}
 	}
@@ -735,17 +755,18 @@ static void synthetic_got_new(ELFOBJ *bin) {
  * \brief Store \p sym_addr into the made-up GOT entry that \p rel refers to, if any.
  */
 static void synthetic_got_set(ELFOBJ *bin, const RzBinElfReloc *rel, ut64 sym_addr) {
-	if (!bin->buf_got || !x86_reloc_uses_got_entry(bin, rel)) {
+	if (!bin->buf_got || !reloc_uses_got_entry(bin, rel)) {
 		return;
 	}
-	ut64 entry = Elf_(rz_bin_get_reloc_sym_offset_in_got)(bin, rel->sym);
-	if (entry == UT64_MAX) {
+	ut64 offset = Elf_(rz_bin_get_reloc_sym_offset_in_got)(bin, rel->sym);
+	if (offset == UT64_MAX) {
 		return;
 	}
 	ut8 buf[8];
-	ut64 size = x86_got_entry_size(bin);
-	rz_write_ble(buf, sym_addr, bin->big_endian, size * 8);
-	rz_buf_write_at(bin->buf_got, entry - synthetic_got_addr(bin), buf, size);
+	ut64 size = got_entry_size(bin);
+	// BX and BLX through the entry of a Thumb function need its bit 0 set.
+	rz_write_ble(buf, sym_addr | rel->thumb, bin->big_endian, size * 8);
+	rz_buf_write_at(bin->buf_got, offset + get_got_addr(bin) - synthetic_got_addr(bin), buf, size);
 }
 
 static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
@@ -781,7 +802,10 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 		ut64 sym_size = 0;
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
-			if (import) {
+			if (import && synthetic_got_is_origin(bin) && RZ_STR_EQ(import->name, "_GLOBAL_OFFSET_TABLE_")) {
+				// Linkers define it at the GOT, as R_ARM_REL32 against it expects.
+				sym_addr = got_addr;
+			} else if (import) {
 				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
 			} else {
 				RzBinElfSymbol *symbol = Elf_(rz_bin_elf_get_symbol)(bin, reloc->sym);
