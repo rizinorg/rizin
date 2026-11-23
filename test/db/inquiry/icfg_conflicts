@@ -1,0 +1,68 @@
+# This file holds all tests about finding function control flow graphs (CFGs) within
+# the inter-procedural CFG (iCFG).
+#
+# The conflict to solve is whether a basic blocks, reachable from more than one
+# entry point, is shared between these entrypoints (shared by multiple functions),
+# or is itself an entry point of a new function.
+# The latter case happens if a function entry point is tail called function.
+#
+# Especially for stripped or obfuscated binaries this distinction (shared vs. entry-point block)
+# is not clear. Because the binary might not give enough information for a
+# clear answer. Instead, we try to be "close-enough" to the truth.
+# For that reason you also find tests which are false-positives below.
+# Meaning: They give the wrong classification, if you know the source code
+# of the binary, but reasonable according to our algorithm.
+# Adversarial examples if you like so.
+
+# The function epilog is shared by both functions
+NAME=Shared epilog
+FILE=bins/inquiry/icfg_conflicts/shared_epilog_fallthru.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pdf @ fcn_1
+echo ""
+pdf @ fcn_2
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name           
+----------------------------------------------------------------
+  1 0x00000054 0x08000054 LOCAL  NOTYPE    0     epilogue_start
+  2 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_1
+  3 0x0000004b 0x0800004b GLOBAL FUNC      0     fcn_2
+
+            ;-- section..text:
+/ sym.fcn_1();
+|           0x08000040      push  rbp                                  ; [02] -r-x section size 22 named .text
+|           0x08000041      mov   rbp, rsp
+|           0x08000044      mov   eax, 0x01
+|       ,=< 0x08000049      jmp   loc.epilogue_start
+..
+|       |   ; CODE XREF from sym.fcn_1 @ 0x8000040
+|       |   ;-- epilogue_start:
+|       `-> 0x08000054      pop   rbp
+\           0x08000055      ret
+
+/ sym.fcn_2();
+|           0x0800004b      push  rbp
+|           0x0800004c      mov   rbp, rsp
+|           0x0800004f      mov   eax, 0x02
+|           ; CODE XREF from sym.fcn_1 @ 0x8000040
+|           ;-- epilogue_start:
+|           0x08000054      pop   rbp
+\           0x08000055      ret
+
+     addr size traced ninstr jump       fail fcns                   calls xrefs       
+--------------------------------------------------------------------------------------
+0x8000040   11      0      4 0x08000054       0x08000040                  
+0x800004b    9      0      3                  0x0800004b                  
+0x8000054    2      0      2                  0x08000040 0x0800004b        0x08000040
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
