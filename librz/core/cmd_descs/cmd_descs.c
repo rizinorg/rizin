@@ -3285,7 +3285,7 @@ static const RzCmdDescHelp cmd_math_help = {
 	.summary = "Math commands",
 };
 static const RzCmdDescDetailEntry calculate_expr_Expression_space_syntax_space_and_space_functions_detail_entries[] = {
-	{ .text = "%", .arg_str = " <addr>:[le|be]?[s|f]?(8|16|32|64|128)", .comment = "Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)" },
+	{ .text = "%", .arg_str = " <addr>:[le|be]?(s?(8|16|32|64|128)|f(16|32|64|128))", .comment = "Read typed value from memory at <addr> (e.g. 0x400000:le32, sym.main:be16, 0x1000:lef32)" },
 	{ .text = "%", .arg_str = " <num>u<width>", .comment = "Construct bit-vector literal of explicit bit-width (e.g. 0xffu8, 42u128)" },
 	{ .text = "%", .arg_str = " entropy(<addr>, <len>)", .comment = "Compute Shannon entropy (0.0 to 8.0) of <len> bytes at <addr>" },
 	{ .text = "%", .arg_str = " temperature(<addr>, <len>)", .comment = "Compute byte temperature of <len> bytes at <addr>" },
