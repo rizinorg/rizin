@@ -179,7 +179,6 @@ static bool itv_intersect_cb(RzIntervalNode *node, void *user) {
 }
 
 // Changes the size of an overlapping blocks.
-// All overlapping blocks are guaranteed to share the same end address.
 //
 // Case 0 - Block X and Block Y are duplicates -> warn and fail.
 // Duplicates must be handled before.
@@ -206,7 +205,10 @@ static bool itv_intersect_cb(RzIntervalNode *node, void *user) {
 // block must stay the same! Otherwise edges get invalidated.
 static bool solve_intersection(RzICFG *icfg, RzIntervalNode *x_smaller, RzIntervalNode *y_bigger) {
 	rz_return_val_if_fail(x_smaller->start > y_bigger->start, false);
-	rz_return_val_if_fail(x_smaller->start <= y_bigger->end, false);
+	if (x_smaller->start > y_bigger->end) {
+		// Block was already solved in a previous iteration.
+		return true;
+	}
 
 	RzGraphNode *graph_node_y = y_bigger->data;
 	RzICFGNode *icfg_node_y = rz_graph_node_get_data_mut(graph_node_y);
