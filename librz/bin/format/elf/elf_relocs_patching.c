@@ -3042,6 +3042,7 @@ static void patch_reloc_x86_64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_
 		val = fs->GOT + fs->A - fs->P;
 		break;
 	case R_X86_64_GOT64:
+	case R_X86_64_GOTPLT64:
 		if (fs->G == UT64_MAX) {
 			return;
 		}

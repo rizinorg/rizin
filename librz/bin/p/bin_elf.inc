@@ -23,6 +23,7 @@
 
 #define VFILE_NAME_RELOC_TARGETS "reloc-targets"
 #define VFILE_NAME_PATCHED       "patched"
+#define VFILE_NAME_GOT           "got"
 
 #ifdef RZ_BIN_ELF64
 #define rz_buf_append_word rz_buf_append_ut64
@@ -656,6 +657,97 @@ RZ_IPI ut64 Elf_(rz_bin_get_reloc_sym_offset_in_got)(RZ_NONNULL ELFOBJ *bin, ut6
 	return offset;
 }
 
+/**
+ * \brief Whether \p rel reads the address of its symbol from a GOT entry.
+ */
+static bool x86_reloc_uses_got_entry(ELFOBJ *bin, const RzBinElfReloc *rel) {
+	switch (bin->ehdr.e_machine) {
+	case EM_386:
+		return rel->type == R_386_GOT32 || rel->type == R_386_GOT32X;
+	case EM_X86_64:
+		switch (rel->type) {
+		case R_X86_64_GOT32:
+		case R_X86_64_GOTPCREL:
+		case R_X86_64_GOT64:
+		case R_X86_64_GOTPCREL64:
+		case R_X86_64_GOTPLT64:
+		case R_X86_64_GOTPCRELX:
+		case R_X86_64_REX_GOTPCRELX:
+		case R_X86_64_CODE_4_GOTPCRELX:
+		case R_X86_64_CODE_5_GOTPCRELX:
+		case R_X86_64_CODE_6_GOTPCRELX:
+			return true;
+		default:
+			return false;
+		}
+	default:
+		return false;
+	}
+}
+
+/**
+ * \brief Size of an x86 GOT entry, 8 bytes for x32 too, whose indirect branches read 8.
+ */
+static ut64 x86_got_entry_size(ELFOBJ *bin) {
+	return bin->ehdr.e_machine == EM_X86_64 ? 8 : 4;
+}
+
+/**
+ * \brief Address of the GOT entries made up for a relocatable object, right after its reloc targets.
+ */
+static ut64 synthetic_got_addr(ELFOBJ *bin) {
+	ut64 addr = bin->reloc_targets_map_base + Elf_(rz_bin_elf_get_relocs_count)(bin) * reloc_target_size(bin);
+	return addr + rz_num_align_delta(addr, x86_got_entry_size(bin));
+}
+
+/**
+ * \brief Give each symbol that the GOT relocations of an x86 relocatable object
+ * refer to an entry, as a linker would in the GOT it creates.
+ *
+ * An object has no GOT, so its GOT-relative fields are computed with a GOT
+ * address of 0, and the offset of an entry into the GOT is its address.
+ */
+static void synthetic_got_new(ELFOBJ *bin) {
+	if (bin->ehdr.e_type != ET_REL ||
+		Elf_(rz_bin_elf_get_section_with_name)(bin, ".got") ||
+		Elf_(rz_bin_elf_get_section_with_name)(bin, ".got.plt")) {
+		return;
+	}
+	ut64 entry = synthetic_got_addr(bin);
+	ut64 size = x86_got_entry_size(bin);
+	ut64 count = 0;
+	RzBinElfReloc *reloc;
+	rz_bin_elf_foreach_relocs(bin, reloc) {
+		if (!reloc->sym || !x86_reloc_uses_got_entry(bin, reloc)) {
+			continue;
+		}
+		// The relocations of a symbol share its entry.
+		if (ht_uu_insert(bin->got_sym_id_off, reloc->sym, entry + count * size)) {
+			count++;
+		}
+	}
+	if (count) {
+		bin->buf_got = rz_buf_new_empty(count * size);
+	}
+}
+
+/**
+ * \brief Store \p sym_addr into the made-up GOT entry that \p rel refers to, if any.
+ */
+static void synthetic_got_set(ELFOBJ *bin, const RzBinElfReloc *rel, ut64 sym_addr) {
+	if (!bin->buf_got || !x86_reloc_uses_got_entry(bin, rel)) {
+		return;
+	}
+	ut64 entry = Elf_(rz_bin_get_reloc_sym_offset_in_got)(bin, rel->sym);
+	if (entry == UT64_MAX) {
+		return;
+	}
+	ut8 buf[8];
+	ut64 size = x86_got_entry_size(bin);
+	rz_write_ble(buf, sym_addr, bin->big_endian, size * 8);
+	rz_buf_write_at(bin->buf_got, entry - synthetic_got_addr(bin), buf, size);
+}
+
 static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	rz_return_if_fail(bin && patch_buf);
 	if (bin->relocs_patched || !Elf_(rz_bin_elf_has_relocs)(bin)) {
@@ -682,6 +774,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 	RzBinElfReloc *reloc;
 	ut64 got_addr = get_got_addr(bin);
 	Elf_(rz_bin_elf_relocs_read_addends)(bin);
+	synthetic_got_new(bin);
 
 	rz_bin_elf_foreach_relocs(bin, reloc) {
 		ut64 sym_addr = 0;
@@ -705,11 +798,32 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 			}
 		}
 		Elf_(rz_bin_elf_patch_relocation)(bin, reloc, sym_addr, sym_size, baddr, sym_addr, got_addr);
+		synthetic_got_set(bin, reloc, sym_addr);
 		reloc->target_vaddr = sym_addr;
 	}
 	rz_bin_reloc_target_builder_free(targets);
 	// from now on, all writes should propagate through to the actual file
 	rz_buf_sparse_set_write_mode(bin->buf_patched, RZ_BUF_SPARSE_WRITE_MODE_THROUGH);
+}
+
+/**
+ * \brief Map of the GOT entries made up for a relocatable object, or NULL if it has none.
+ */
+static RzBinMap *synthetic_got_map(ELFOBJ *obj) {
+	if (!obj->buf_got) {
+		return NULL;
+	}
+	RzBinMap *map = RZ_NEW0(RzBinMap);
+	if (!map) {
+		return NULL;
+	}
+	map->name = rz_str_dup(VFILE_NAME_GOT);
+	map->psize = rz_buf_size(obj->buf_got);
+	map->vaddr = synthetic_got_addr(obj);
+	map->vsize = map->psize;
+	map->perm = RZ_PERM_R;
+	map->vfile_name = rz_str_dup(VFILE_NAME_GOT);
+	return map;
 }
 
 static void fill_got_sym_id_off_map(ELFOBJ *obj) {
@@ -793,6 +907,15 @@ static RzPVector /*<RzBinVirtualFile *>*/ *virtual_files(RzBinFile *bf) {
 		vf->name = rz_str_dup(VFILE_NAME_PATCHED);
 		rz_pvector_push(r, vf);
 	}
+	if (obj->buf_got) {
+		RzBinVirtualFile *vf = RZ_NEW0(RzBinVirtualFile);
+		if (!vf) {
+			return r;
+		}
+		vf->buf = obj->buf_got;
+		vf->name = rz_str_dup(VFILE_NAME_GOT);
+		rz_pvector_push(r, vf);
+	}
 	return r;
 }
 
@@ -808,6 +931,10 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 
 	// if relocs should be patched, use the patched vfile for everything from the file
 	patch_relocs(bf, obj);
+	RzBinMap *got = synthetic_got_map(obj);
+	if (got && !rz_pvector_push_front(ret, got)) {
+		rz_bin_map_free(got);
+	}
 	rz_bin_relocs_patch_maps(ret, obj->buf_patched, 0, obj->reloc_targets_map_base,
 		reloc_targets_vfile_size(bf, obj),
 		VFILE_NAME_PATCHED,
