@@ -379,3 +379,14 @@ RzTableQuery> colon-separated (e.g. <cmd>t:c/gt/0x800:c/sort/rev:*/head/10). 'c'
  :quiet            do not print column names header, implies :simple
 EOF
 RUN
+
+NAME=table query skipped when command fails
+FILE==
+CMDS=<<EOF
+afvlt:?
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: No function found in 0x00000000.
+EOF
+RUN
