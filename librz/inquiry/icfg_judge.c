@@ -11,6 +11,11 @@
  *    and was mistakenly added to the function, because the tail call was not identified as such.
  *    In this case the node and its successors are their own function.
  *    And all the predecessors only call it.
+ *
+ * The hint based system is inspired by https://dl.acm.org/doi/epdf/10.1145/3611643.3616366
+ * It's a good read. Can recommend to take a look.
+ * Archive URL:
+ * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
  */
 
 #include <rz_analysis.h>
@@ -54,10 +59,6 @@ const char *node_verdict_names[] = {
 /**
  * \brief Different hints that a node is a function entry point, shared by functions,
  * or should be dropped.
- *
- * Some of the hints are take from:
- * https://dl.acm.org/doi/10.1145/3611643.3616366
- * https://web.archive.org/web/20261018180522/https://raw.githubusercontent.com/B2R2-org/FunProbe/fefccf83ad1e5cfc077cdb7a7af0d12e9150ab42/esecfse2023-paper1571.pdf
  */
 typedef enum {
 	// Positive hints that the node is actually a function entry point:
