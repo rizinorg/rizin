@@ -5741,8 +5741,8 @@ toro:
 				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				RzAsmSyntax old_value = rz_asm_get_syntax(core->rasm);
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
-				rz_asm_op_fini(&ds->asmop);
 				rz_asm_disassemble(core->rasm, &ao, buf + idx, len - idx + 5);
+				rz_asm_op_fini(&ao);
 				rz_asm_set_syntax(core->rasm, old_value);
 			}
 			if (mi_type == RZ_META_TYPE_FORMAT) {
@@ -5781,8 +5781,8 @@ toro:
 				RzAsmOp ao = { 0 }; /* disassemble for the vm .. */
 				RzAsmSyntax old_value = rz_asm_get_syntax(core->rasm);
 				rz_asm_set_syntax(core->rasm, RZ_ASM_SYNTAX_INTEL);
-				rz_asm_op_fini(&ds->asmop);
 				rz_asm_disassemble(core->rasm, &ao, buf + idx, len - idx + 5);
+				rz_asm_op_fini(&ao);
 				rz_asm_set_syntax(core->rasm, old_value);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
