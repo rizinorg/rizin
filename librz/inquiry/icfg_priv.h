@@ -33,7 +33,12 @@ struct rz_icfg_node_t {
 	ut64 addr; ///< Address of the corresponding block.
 	size_t size; ///< Size the corresponding block covers in memorfromy (in bytes).
 	/**
-	 * TODO: Remove after testing
+	 * Do not remove!
+	 * RzAnalysisBlock stores the number of instructions it covers.
+	 * When we do https://github.com/rizinorg/rizin/issues/6386 `rz_analysis_block_analyze_ops`
+	 * will no longer be called on RzAnalysisBlock, and then it needs to get the number of instructions
+	 * from somewhere (these ones).
+	 *
 	 * \brief The offsets of the instructions (packets), from the block start address.
 	 * Starting at the second instruction in the block (since first is always 0), offsets from the start of the block
 	 */
