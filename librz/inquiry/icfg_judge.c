@@ -218,15 +218,15 @@ typedef struct {
 static void score_add(NodeObservations obs, NodeScore *score) {
 	rz_return_if_fail(obs < CFG_CONFLICT_OBSV_N);
 
-	printf("Score add %s: ", hint_scores[obs].name);
+	// REMOVE: printf("Score add %s: ", hint_scores[obs].name);
 	score->total_obsv++;
 	for (size_t i = 0; hint_scores[obs].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
 		ICFGNodeVerdict v = hint_scores[obs].verdict[i].id;
 		int s = hint_scores[obs].verdict[i].score;
-		printf("%s=%d ", node_verdict_names[v], s);
+		// REMOVE: printf("%s=%d ", node_verdict_names[v], s);
 		score->verdict_score[v] += s;
 	}
-	printf("\n");
+	// REMOVE: printf("\n");
 }
 
 static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
@@ -265,10 +265,10 @@ ret_verdict:
 	// TODO Remove after debug.
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		rz_iterator_reset(&it);
-		printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
-			s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
+		// REMOVE: printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
+		//	s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
 	}
-	printf("\n");
+	// REMOVE: printf("\n");
 	// END
 
 	rz_iterator_fini(&it);
@@ -426,7 +426,7 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 verdict: {
 	double p;
 	ICFGNodeVerdict verdict = pick_verdict(&score, &p);
-	printf("Node 0x%08lx: %s\n\n", node->addr, node_verdict_names[verdict]);
+	// REMOVE: printf("Node 0x%08lx: %s\n\n", node->addr, node_verdict_names[verdict]);
 	return verdict;
 }
 }
@@ -604,9 +604,10 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	RZ_NONNULL RzIO *io,
 	RzICFGConflictSolutionCfg cfg) {
 	rz_return_val_if_fail(bin && io, false);
-	char *icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
-	printf("Before:\n%s\n", icfg_dot);
-	free(icfg_dot);
+	// REMOVE:
+	// char *icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
+	// printf("Before:\n%s\n", icfg_dot);
+	// free(icfg_dot);
 	if (rz_set_u_size(icfg->node_conflicts) == 0) {
 		return true;
 	}
@@ -643,9 +644,10 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 			return false;
 		}
 	}
-	icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
-	printf("After:\n%s\n", icfg_dot);
-	free(icfg_dot);
+	// REMOVE:
+	// icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
+	// printf("After:\n%s\n", icfg_dot);
+	// free(icfg_dot);
 
 	return true;
 }
