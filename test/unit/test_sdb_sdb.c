@@ -5,6 +5,9 @@
 #include <sdb.h>
 #include <fcntl.h>
 #include <stdio.h>
+#if __UNIX__
+#include <sys/wait.h>
+#endif
 #include <rz_util.h>
 #include <rz_util/rz_file.h>
 
@@ -505,6 +508,62 @@ bool test_sdb_text_save_large_buffer() {
 	mu_end;
 }
 
+#if __UNIX__
+bool test_sdb_text_save_pipe_partial_write(void) {
+	Sdb *db = sdb_new0();
+	for (int i = 0; i < 1500; i++) {
+		char k[32], v[128];
+		snprintf(k, sizeof(k), "k_%04d", i);
+		memset(v, 'B', sizeof(v) - 1);
+		v[sizeof(v) - 1] = '\0';
+		sdb_set(db, k, v);
+	}
+
+	int fds[2];
+	mu_assert_eq(pipe(fds), 0, "pipe creation");
+	pid_t pid = fork();
+	mu_assert_neq(pid, -1, "fork succeeded");
+	if (pid == 0) {
+		close(fds[0]);
+		bool ok = sdb_text_save_fd(db, fds[1], false);
+		close(fds[1]);
+		_exit(ok ? 0 : 1);
+	}
+	close(fds[1]);
+
+	RzStrBuf *sb = rz_strbuf_new("");
+	char chunk[256];
+	ssize_t n;
+	while ((n = read(fds[0], chunk, sizeof(chunk))) > 0) {
+		rz_strbuf_append_n(sb, chunk, (size_t)n);
+	}
+	close(fds[0]);
+
+	int status = 0;
+	mu_assert_eq(waitpid(pid, &status, 0), pid, "waitpid child");
+	mu_assert_true(WIFEXITED(status) && WEXITSTATUS(status) == 0, "child sdb_text_save_fd succeeded on pipe");
+
+	size_t len = rz_strbuf_length(sb);
+	char *data = rz_strbuf_drain(sb);
+	Sdb *loaded = sdb_new0();
+	mu_assert_true(sdb_text_load_buf(loaded, data, len), "load piped sdb text");
+	free(data);
+
+	bool eq = sdb_diff(db, loaded, NULL, NULL);
+	sdb_free(loaded);
+	mu_assert_true(eq, "piped sdb text roundtrip matches");
+
+	int closed_fds[2];
+	mu_assert_eq(pipe(closed_fds), 0, "pipe for closed fd test");
+	close(closed_fds[0]);
+	close(closed_fds[1]);
+	mu_assert_false(sdb_text_save_fd(db, closed_fds[1], false), "write to closed fd fails");
+
+	sdb_free(db);
+	mu_end;
+}
+#endif
+
 static void diff_cb(const SdbDiff *diff, void *user) {
 	char buf[2048];
 	if (sdb_diff_format(buf, sizeof(buf), diff) < 0) {
@@ -674,6 +733,9 @@ int all_tests() {
 	mu_run_test(test_sdb_text_load_simple);
 	mu_run_test(test_sdb_text_save);
 	mu_run_test(test_sdb_text_save_large_buffer);
+#if __UNIX__
+	mu_run_test(test_sdb_text_save_pipe_partial_write);
+#endif
 	mu_run_test(test_sdb_text_load);
 	mu_run_test(test_sdb_text_load_bad_nl);
 	mu_run_test(test_sdb_text_load_broken);
