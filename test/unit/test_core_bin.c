@@ -631,6 +631,115 @@ bool test_bin_set_export_info(void) {
 	mu_end;
 }
 
+static void emit_x64_go_lea_mov(ut8 *code, ut64 pc, ut64 str_addr, ut32 str_len) {
+	st32 disp = (st32)((st64)str_addr - (st64)(pc + 7));
+	code[0] = 0x48;
+	code[1] = 0x8d;
+	code[2] = 0x05;
+	rz_write_le32(code + 3, (ut32)disp);
+	code[7] = 0xbb;
+	rz_write_le32(code + 8, str_len);
+}
+
+bool test_golang_oversized_bb_strings(void) {
+	const size_t total = 0x12000;
+	ut8 *mem = malloc(total);
+	if (!mem) {
+		mu_fail("alloc synthetic go buffer");
+		return false;
+	}
+	memset(mem, 0x90, total);
+	mem[0] = 0x31;
+	mem[1] = 0xc0;
+
+	const char *s1 = "BEFORE_64K_OK";
+	const char *s2 = "AFTER_64K_OK";
+	const ut64 s1_addr = 0x11800;
+	const ut64 s2_addr = 0x11840;
+	memcpy(mem + s1_addr, s1, strlen(s1));
+	memcpy(mem + s2_addr, s2, strlen(s2));
+	emit_x64_go_lea_mov(mem + 0x100, 0x100, s1_addr, (ut32)strlen(s1));
+	emit_x64_go_lea_mov(mem + 0x10200, 0x10200, s2_addr, (ut32)strlen(s2));
+	mem[0x10210] = 0xc3;
+
+	RzCore *core = rz_core_new();
+	if (!core) {
+		free(mem);
+		mu_fail("rz_core_new");
+		return false;
+	}
+	rz_config_set_b(core->config, "scr.interactive", false);
+	RzCoreFile *cf = rz_core_file_open(core, "malloc://0x12000", RZ_PERM_RWX, 0);
+	if (!cf) {
+		free(mem);
+		rz_core_free(core);
+		mu_fail("open malloc://0x12000");
+		return false;
+	}
+	rz_core_bin_load(core, "malloc://0x12000", 0);
+	rz_io_write_at(core->io, 0, mem, total);
+	free(mem);
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	if (!bf) {
+		RzBinOptions opt;
+		rz_bin_options_init(&opt, cf->fd, 0, 0, false);
+		opt.filename = "synthetic_go";
+		rz_bin_open_io(core->bin, &opt);
+		bf = rz_bin_cur(core->bin);
+	}
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	if (!bf || !bf->o) {
+		rz_core_free(core);
+		mu_fail("cur bin file/object");
+		return false;
+	}
+	if (!bf->o->sections) {
+		bf->o->sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
+	}
+	RzBinSection *sec = RZ_NEW0(RzBinSection);
+	if (!sec) {
+		rz_core_free(core);
+		mu_fail("alloc section");
+		return false;
+	}
+	sec->name = rz_str_dup(".rodata");
+	sec->vaddr = 0;
+	sec->paddr = 0;
+	sec->vsize = total;
+	sec->size = total;
+	sec->perm = RZ_PERM_RX;
+	rz_pvector_push(bf->o->sections, sec);
+	if (!bf->o->strings) {
+		bf->o->strings = rz_bin_string_database_new(NULL);
+	}
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "sym.go.main.big", 0, RZ_ANALYSIS_FCN_TYPE_FCN);
+	RzAnalysisBlock *bb = rz_analysis_create_block(core->analysis, 0, 0x10211);
+	if (!fcn || !bb) {
+		rz_analysis_block_unref(bb);
+		rz_core_free(core);
+		mu_fail("create function/block");
+		return false;
+	}
+	rz_analysis_block_analyze_ops(bb);
+	rz_analysis_function_add_block(fcn, bb);
+	rz_analysis_block_unref(bb);
+
+	rz_core_analysis_resolve_golang_strings(core);
+
+	RzFlagItem *f1 = rz_flag_get_i(core->flags, s1_addr);
+	RzFlagItem *f2 = rz_flag_get_i(core->flags, s2_addr);
+	mu_assert_notnull(f1, "string before 64KB recovered");
+	mu_assert_streq(f1->name, "str.BEFORE_64K_OK", "before 64KB string name");
+	mu_assert_notnull(f2, "string after 64KB recovered despite ut16 op_pos cap");
+	mu_assert_streq(f2->name, "str.AFTER_64K_OK", "after 64KB string name");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -641,6 +750,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_vfile_map);
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
+	mu_run_test(test_golang_oversized_bb_strings);
 	return tests_passed != tests_run;
 }
 
