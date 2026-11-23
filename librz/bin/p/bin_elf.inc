@@ -637,12 +637,12 @@ static ut64 synthetic_got_addr(ELFOBJ *bin) {
 /**
  * \brief Whether the relocatable object \p bin, which has no GOT yet, takes one at the entries made up for it.
  *
- * The 12-bit GOT offsets of Arm LDRs reach the entries only from there. x86 takes
- * a GOT at 0, where the offset of an entry is its address, so that R_386_GOT32X
- * holds the same with and without a base register.
+ * The 12-bit GOT offsets of Arm LDRs, and the 15-bit ones of AArch64, reach the
+ * entries only from there. x86 takes a GOT at 0, where the offset of an entry is
+ * its address, so that R_386_GOT32X holds the same with and without a base register.
  */
 static bool synthetic_got_is_origin(ELFOBJ *bin) {
-	return bin->ehdr.e_type == ET_REL && bin->ehdr.e_machine == EM_ARM;
+	return bin->ehdr.e_type == ET_REL && (bin->ehdr.e_machine == EM_ARM || bin->ehdr.e_machine == EM_AARCH64);
 }
 
 static ut64 get_got_addr(ELFOBJ *bin) {
@@ -713,6 +713,28 @@ static bool reloc_uses_got_entry(ELFOBJ *bin, const RzBinElfReloc *rel) {
 		case R_ARM_GOT_PREL:
 		case R_ARM_GOT_BREL12:
 		case R_ARM_THM_GOT_BREL12:
+			return true;
+		default:
+			return false;
+		}
+	case EM_AARCH64:
+		switch (rel->type) {
+		case R_AARCH64_MOVW_GOTOFF_G0:
+		case R_AARCH64_MOVW_GOTOFF_G0_NC:
+		case R_AARCH64_MOVW_GOTOFF_G1:
+		case R_AARCH64_MOVW_GOTOFF_G1_NC:
+		case R_AARCH64_MOVW_GOTOFF_G2:
+		case R_AARCH64_MOVW_GOTOFF_G2_NC:
+		case R_AARCH64_MOVW_GOTOFF_G3:
+		case R_AARCH64_GOT_LD_PREL19:
+		case R_AARCH64_LD64_GOTOFF_LO15:
+		case R_AARCH64_ADR_GOT_PAGE:
+		case R_AARCH64_LD64_GOT_LO12_NC:
+		case R_AARCH64_LD64_GOTPAGE_LO15:
+		case R_AARCH64_P32_GOT_LD_PREL19:
+		case R_AARCH64_P32_ADR_GOT_PAGE:
+		case R_AARCH64_P32_LD32_GOT_LO12_NC:
+		case R_AARCH64_P32_LD32_GOTPAGE_LO14:
 			return true;
 		default:
 			return false;
@@ -803,7 +825,7 @@ static void patch_relocs_obj(ELFOBJ *bin, ut64 baddr, RzBuffer *patch_buf) {
 		if (reloc->sym) {
 			RzBinElfSymbol *import = Elf_(rz_bin_elf_get_import)(bin, reloc->sym);
 			if (import && synthetic_got_is_origin(bin) && RZ_STR_EQ(import->name, "_GLOBAL_OFFSET_TABLE_")) {
-				// Linkers define it at the GOT, as R_ARM_REL32 against it expects.
+				// Linkers define it at the GOT, as R_ARM_REL32 and the AArch64 ADRP against it expect.
 				sym_addr = got_addr;
 			} else if (import) {
 				sym_addr = rz_bin_reloc_target_builder_get_target(targets, reloc->sym);
