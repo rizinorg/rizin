@@ -2448,21 +2448,21 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		// Set LD/ST immediate to bits [11:0] of (S + A)
 		// LD/ST: imm12 at bits [21:10]
 		val = PG_OFFSET(fs->S + fs->A);
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST16_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST16_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:1] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 1;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST32_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST32_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:2] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 2;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST64_ABS_LO12_NC:
@@ -2475,14 +2475,14 @@ static void patch_reloc_arm64(RZ_INOUT RzBuffer *buf_patched, const ut64 patch_a
 		} else {
 			val = PG_OFFSET(fs->S + fs->A) >> 3;
 		}
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_LDST128_ABS_LO12_NC:
 	case R_AARCH64_P32_LDST128_ABS_LO12_NC:
 		// Set LD/ST immediate to bits [11:4] of (S + A)
 		val = PG_OFFSET(fs->S + fs->A) >> 4;
-		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, (val & 0xFFF) << 10);
+		patch_val_over_mask_32(buf_patched, big_endian, patch_addr, LDST_IMM12_MASK, val & 0xFFF);
 		break;
 
 	case R_AARCH64_TSTBR14:
