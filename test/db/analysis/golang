@@ -463,6 +463,7 @@ NAME=Resolve all symbols on a stripped mach0 go1.18 binary (arm64)
 FILE=bins/golang/hello.mach0.stripped
 CMDS=<<EOF
 aalg
+afc @ main
 fl~sym.go.~?
 pdfs @ sym.go.runtime.panicwrap ~str.
 # Attempt to get some reference strings when the count changes with izq.
@@ -476,6 +477,7 @@ iI~compiler
 ilq
 EOF
 EXPECT=<<EOF
+golang
 1429
 0x100006dd8 str.value_method
 0x100006e48 str.called_using_nil
@@ -879,6 +881,8 @@ FILE=bins/golang/go-re-sample-linux-amd64-go121
 CMDS=<<EOF
 aalg
 afc @ sym.main.main
+afc @ sym.internal_cpu.cpuid.abi0
+afl~type:.eq.~?
 tc stringStruct
 fl~sym.go.~?
 pdfs @ main ~str.
@@ -891,6 +895,8 @@ izq~?
 EOF
 EXPECT=<<EOF
 golang
+golang_abi0
+105
 struct stringStruct {
 	char *str;
 	size_t len;
@@ -947,6 +953,8 @@ fl~sym.go.~?
 afl~?
 af @ sym.main.main
 afc @ sym.main.main
+af @ sym.internal_cpu.cpuid.abi0
+afc @ sym.internal_cpu.cpuid.abi0
 pdfs @ sym.main.main ~str.
 aF @ sym.os.Exit
 afi @ sym.os.Exit ~noreturn
@@ -955,6 +963,7 @@ EXPECT=<<EOF
 1587
 0
 golang
+golang_abi0
 0x004875b7 str.foo
 0x00487612 str.enable
 0x00487620 str.enable
@@ -1004,5 +1013,20 @@ EXPECT=<<EOF
 | 0x00099dd0      auipc t1, 0x3e ; 0xb7fbc ; "  name:  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=,"
 | 0x00099e64      auipc s0, 0x3e ; 0xb7fc3 ; "  tail: (scan  (scan) MB in  Value> allocs dying= locks= m->g0= nmsys= pad1=  pad2=  s=nil\n text=  zombie% CPU ((PANIC=, goid=,"
 | 0x00099edc      auipc t0, 0x3e ; 0xbd602 ; "expected 'foo' or 'bar' subcommandsfile type does not support deadlinefindrunnable: netpoll with spinninggreyobject: obj not poi"
+EOF
+RUN
+
+NAME=Load 32-bit Golang runtime types under ARM Thumb mode (-b 16)
+FILE=bins/golang/go-re-sample-windows-arm.exe
+ARGS=-b 16
+CMDS=<<EOF
+aalg
+tc stringStruct
+EOF
+EXPECT=<<EOF
+struct stringStruct {
+	char *str;
+	size_t len;
+};
 EOF
 RUN

@@ -49,3 +49,9 @@ cc.golang.argn=stack
 cc.golang.maxargs=16
 cc.golang.self=x28
 cc.golang.ret=x0
+
+golang_abi0=cc
+cc.golang_abi0.argn=stack
+cc.golang_abi0.maxargs=0
+cc.golang_abi0.self=x28
+cc.golang_abi0.ret=x0

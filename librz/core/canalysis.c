@@ -825,7 +825,13 @@ static int core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int 
 		RZ_LOG_ERROR("core: cannot allocate RzAnalysisFunction struct.\n");
 		return false;
 	}
-	fcn->cc = rz_str_constpool_get(cpool, rz_analysis_cc_default(core->analysis));
+	const char *default_cc = rz_analysis_cc_default(core->analysis);
+	if (default_cc && !strcmp(default_cc, "golang") &&
+		rz_core_analysis_is_golang_abi0_addr(core, at) &&
+		rz_analysis_cc_exist(core->analysis, "golang_abi0")) {
+		default_cc = "golang_abi0";
+	}
+	fcn->cc = rz_str_constpool_get(cpool, default_cc);
 	rz_warn_if_fail(!cc->path || fcn->cc);
 	hint = rz_analysis_hint_get(core->analysis, at);
 	if (hint && hint->bits == 16) {

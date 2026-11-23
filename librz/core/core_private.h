@@ -72,6 +72,7 @@ RZ_IPI void rz_core_analysis_value_pointers(RzCore *core, RzOutputMode mode);
 RZ_IPI void rz_core_analysis_cc_print(RzCore *core, RZ_NONNULL const char *cc, RZ_NULLABLE PJ *pj);
 RZ_IPI void rz_core_analysis_resolve_pointers_to_data(RzCore *core);
 RZ_IPI bool rz_core_analysis_is_golang_fcn(RZ_NONNULL RzCore *core, RZ_NONNULL RzAnalysisFunction *fcn);
+RZ_IPI bool rz_core_analysis_is_golang_abi0_addr(RZ_NONNULL RzCore *core, ut64 addr);
 RZ_IPI ut64 rz_core_prevop_addr_heuristic(RzCore *core, ut64 addr);
 
 /* cmeta.c */

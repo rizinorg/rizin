@@ -610,8 +610,37 @@ static void rz_golang_vote_abi_prologue(RzIO *io, ut64 func_addr, ut32 *reg_vote
 	}
 }
 
+/**
+ * \brief Sample an ARM64 function's prologue to vote on register ABI (x16 stack check) vs stack ABI (x1..x15 stack check).
+ */
+static void rz_golang_vote_abi_prologue_arm64(RzIO *io, ut64 func_addr, ut32 *reg_votes, ut32 *stack_votes) {
+	ut8 code[GO_ABI_PROLOGUE_WINDOW] = { 0 };
+	if (0 > rz_io_nread_at(io, func_addr, code, sizeof(code))) {
+		return;
+	}
+	for (ut32 k = 0; k + 4 <= sizeof(code); k += 4) {
+		// AArch64 instructions are always little-endian regardless of data endianness.
+		ut32 insn = rz_read_le32(code + k);
+		// LDR Xt, [X28, #0x10] (stackguard0 load from g):
+		// Go 1.18+ ABIInternal uses scratch X16 (0xf9400b90) to preserve arg regs X0..X15;
+		// Go <= 1.17 ABI0 uses X1..X15 (typically X1, 0xf9400b81).
+		if ((insn & 0xffffffe0U) == 0xf9400b80U) {
+			ut32 rt = insn & 0x1fU;
+			if (rt == 16) {
+				(*reg_votes)++;
+				return;
+			}
+			if (rt >= 1 && rt <= 15) {
+				(*stack_votes)++;
+				return;
+			}
+		}
+	}
+}
+
 typedef struct {
 	RzCore *core;
+	bool is_arm64;
 	ut32 samples_count;
 	ut32 reg_votes;
 	ut32 stack_votes;
@@ -626,29 +655,51 @@ static bool rz_golang_sample_flag_for_abi(RzFlagItem *fi, void *user) {
 		return false;
 	}
 	ctx->samples_count++;
-	rz_golang_vote_abi_prologue(ctx->core->io, fi->offset, &ctx->reg_votes, &ctx->stack_votes);
+	if (ctx->is_arm64) {
+		rz_golang_vote_abi_prologue_arm64(ctx->core->io, fi->offset, &ctx->reg_votes, &ctx->stack_votes);
+	} else {
+		rz_golang_vote_abi_prologue(ctx->core->io, fi->offset, &ctx->reg_votes, &ctx->stack_votes);
+	}
 	return true;
+}
+
+/**
+ * \brief Check if any flag at \p addr carries a Go `.abi0` suffix.
+ *
+ * pclntab flags (`sym.go.*`) omit the `.abi0` suffix present on sibling
+ * ELF/Mach-O symbol flags at the same address, so all flags at \p addr are checked.
+ */
+RZ_IPI bool rz_core_analysis_is_golang_abi0_addr(RZ_NONNULL RzCore *core, ut64 addr) {
+	const RzList /*<RzFlagItem *>*/ *list = rz_flag_get_list(core->flags, addr);
+	RzListIter *it;
+	RzFlagItem *item;
+	rz_list_foreach (list, it, item) {
+		if (rz_str_endswith(item->name, ".abi0")) {
+			return true;
+		}
+	}
+	return false;
 }
 
 typedef struct {
 	RzCore *core;
 	const char *cc;
+	const char *abi0_cc;
 } GolangAnalyseCtx;
 
 static bool analyse_golang_symgo_function(RzFlagItem *fi, void *user) {
 	GolangAnalyseCtx *ctx = (GolangAnalyseCtx *)user;
 	RzCore *core = ctx->core;
 
-	if (rz_golang_is_compiler_wrapper_symbol(fi->name)) {
-		return true;
-	}
-
 	rz_core_analysis_fcn(core, fi->offset, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
 
-	if (ctx->cc) {
+	const char *target_cc = (ctx->abi0_cc && rz_core_analysis_is_golang_abi0_addr(core, fi->offset))
+		? ctx->abi0_cc
+		: ctx->cc;
+	if (target_cc) {
 		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, fi->offset);
 		if (fcn) {
-			fcn->cc = ctx->cc;
+			fcn->cc = target_cc;
 		}
 	}
 	return true;
@@ -658,13 +709,18 @@ static const char *golang_detect_cc(RzCore *core, const RzSpace *symbols) {
 	const char *asm_arch = rz_config_get(core->config, "asm.arch");
 	ut32 asm_bits = rz_config_get_i(core->config, "asm.bits");
 
-	if (RZ_STR_ISEMPTY(asm_arch) || asm_bits == 32 || strcmp(asm_arch, "x86") != 0) {
+	if (RZ_STR_ISEMPTY(asm_arch) || asm_bits != 64) {
+		return "golang";
+	}
+	bool is_arm64 = !strcmp(asm_arch, "arm");
+	if (!is_arm64 && strcmp(asm_arch, "x86")) {
 		return "golang";
 	}
 
 	// Run statistical prologue vote across sampled functions to determine active ABI
 	GolangVoteCtx vote_ctx = {
 		.core = core,
+		.is_arm64 = is_arm64,
 		.samples_count = 0,
 		.reg_votes = 0,
 		.stack_votes = 0
@@ -707,9 +763,14 @@ static void analyse_golang_symbols(RzCore *core) {
 	}
 	rz_core_notify_begin(core, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 	RzStrConstPool *cpool = rz_analysis_get_const_pool(core->analysis);
+	const char *abi0_cc = (detected_cc && strcmp(detected_cc, "golang_abi0") &&
+				      rz_analysis_cc_exist(core->analysis, "golang_abi0"))
+		? rz_str_constpool_get(cpool, "golang_abi0")
+		: NULL;
 	GolangAnalyseCtx actx = {
 		.core = core,
-		.cc = (detected_cc && cpool) ? rz_str_constpool_get(cpool, detected_cc) : NULL
+		.cc = (detected_cc && cpool) ? rz_str_constpool_get(cpool, detected_cc) : NULL,
+		.abi0_cc = abi0_cc
 	};
 
 	bool prev_hasnext = rz_config_get_b(core->config, "analysis.hasnext");
@@ -723,8 +784,9 @@ static void analyse_golang_symbols(RzCore *core) {
  * \brief Loads Golang base runtime types (string, slice, eface, iface, hmap) into type database.
  *
  * \param core RzCore Pointer
+ * \param ptrsize Pointer width in bytes from pclntab (4 or 8)
  */
-static void rz_golang_load_types(RzCore *core) {
+static void rz_golang_load_types(RzCore *core, ut32 ptrsize) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	if (!typedb) {
 		return;
@@ -733,7 +795,7 @@ static void rz_golang_load_types(RzCore *core) {
 	if (!types_dir) {
 		return;
 	}
-	int bits = rz_analysis_get_bits(core->analysis);
+	int bits = ptrsize * 8;
 	char tmp[64];
 	char *dbpath = rz_file_path_join(types_dir, rz_strf(tmp, "types-golang-%d.sdb", bits));
 	if (rz_type_db_load_sdb(typedb, dbpath)) {
@@ -846,7 +908,7 @@ RZ_API bool rz_core_analysis_recover_golang_functions(RzCore *core) {
 		rz_core_notify_done(core, "Recovered %u symbols and saved them at sym.go.*", num_syms);
 		rz_core_notify_done(core, "Recovered %u go packages", num_libs);
 		analyse_golang_symbols(core);
-		rz_golang_load_types(core);
+		rz_golang_load_types(core, pclntab.ptrsize);
 		return true;
 	}
 

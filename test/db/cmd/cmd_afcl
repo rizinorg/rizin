@@ -76,6 +76,7 @@ EOF
 EXPECT=<<EOF
 arm64
 golang
+golang_abi0
 reg
 swift
 EOF
