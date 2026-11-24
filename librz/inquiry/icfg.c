@@ -279,7 +279,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	RzPVector /*<RzIntervalNode *>*/ overlaps = { 0 };
 	rz_pvector_init(&overlaps, NULL);
 
-	rz_interval_tree_all_intersect(&icfg->itv_tree, addr, addr + size, false, itv_intersect_cb, &overlaps);
+	rz_interval_tree_all_intersect(&icfg->itv_tree, addr, addr + size, true, itv_intersect_cb, &overlaps);
 	bool new_node_overlaps = !rz_pvector_empty(&overlaps);
 
 	graph_node = get_already_solved(&overlaps, addr, size);
