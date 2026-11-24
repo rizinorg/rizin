@@ -226,8 +226,8 @@ static bool solve_intersection(RzICFG *icfg, RzIntervalNode *x_smaller, RzInterv
 	ut16 insn_off;
 	do {
 		rz_vector_pop(&icfg_node_y->insn_offsets, &insn_off);
-	} while (insn_off > last_off);
-	rz_warn_if_fail(insn_off == last_off); // Debug check
+	} while (insn_off > last_off && rz_vector_len(&icfg_node_y->insn_offsets));
+	rz_warn_if_fail(insn_off == last_off);
 
 	// update memberships (important if just added node is itv_x)
 	icfg_proc_memberships_update(icfg_node_x, icfg_node_y);
