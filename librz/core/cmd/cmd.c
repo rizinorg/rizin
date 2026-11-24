@@ -57,6 +57,72 @@ static bool duplicate_flag(RzFlagItem *flag, void *u) {
 	return true;
 }
 
+#define TMP_SEEK_MAX_SUGGESTIONS 5
+
+struct tmp_seek_suggest_ctx {
+	const char *query;
+	const char *suffix;
+	const char *matches[TMP_SEEK_MAX_SUGGESTIONS];
+	size_t match_count;
+	bool match_more;
+	const char *fallback[TMP_SEEK_MAX_SUGGESTIONS];
+	size_t fallback_count;
+	bool fallback_more;
+};
+
+static bool tmp_seek_suggest_cb(RzFlagItem *fi, void *user) {
+	struct tmp_seek_suggest_ctx *ctx = user;
+	if (rz_str_casestr(fi->name, ctx->query)) {
+		if (ctx->match_count < TMP_SEEK_MAX_SUGGESTIONS) {
+			ctx->matches[ctx->match_count++] = fi->name;
+		} else {
+			ctx->match_more = true;
+			return false;
+		}
+		return true;
+	}
+	if (ctx->suffix && rz_str_casestr(fi->name, ctx->suffix)) {
+		if (ctx->fallback_count < TMP_SEEK_MAX_SUGGESTIONS) {
+			ctx->fallback[ctx->fallback_count++] = fi->name;
+		} else {
+			ctx->fallback_more = true;
+		}
+	}
+	return true;
+}
+
+/**
+ * \brief Log an invalid `@` seek target and suggest matching flags when available.
+ */
+static void log_invalid_tmp_seek(RzFlag *flags, const char *offset_string) {
+	struct tmp_seek_suggest_ctx ctx = { .query = offset_string };
+	if (strlen(offset_string) >= 2) {
+		const char *dot = strchr(offset_string, '.');
+		if (dot && strlen(dot + 1) >= 2) {
+			ctx.suffix = dot + 1;
+		}
+		rz_flag_foreach(flags, tmp_seek_suggest_cb, &ctx);
+	}
+	const char **list = ctx.match_count ? ctx.matches : ctx.fallback;
+	size_t count = ctx.match_count ? ctx.match_count : ctx.fallback_count;
+	bool more = ctx.match_count ? ctx.match_more : ctx.fallback_more;
+	if (!count) {
+		RZ_LOG_ERROR("core: Invalid address or unknown flag (%s)\n", offset_string);
+		return;
+	}
+	RzStrBuf sb;
+	rz_strbuf_init(&sb);
+	for (size_t i = 0; i < count; i++) {
+		rz_strbuf_appendf(&sb, "%s%s", i ? ", " : "", list[i]);
+	}
+	if (more) {
+		rz_strbuf_append(&sb, ", ...");
+	}
+	RZ_LOG_ERROR("core: Invalid address or unknown flag (%s); similar flags: %s\n",
+		offset_string, rz_strbuf_get(&sb));
+	rz_strbuf_fini(&sb);
+}
+
 RZ_IPI bool rz_core_cmd_lastcmd_repeat(RzCore *core, bool next) {
 	int res = -1;
 	// Fix for backtickbug px`~`
@@ -1561,7 +1627,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_op) {
 	ut64 orig_offset = state->core->offset;
 	if (!offset_val && isalpha((int)offset_string[0])) {
 		if (!rz_flag_get(state->core->flags, offset_string)) {
-			RZ_LOG_ERROR("core: Invalid address (%s)\n", offset_string);
+			log_invalid_tmp_seek(state->core->flags, offset_string);
 			free(offset_string);
 			return RZ_CMD_STATUS_INVALID;
 		}
