@@ -555,6 +555,33 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=vldn and vstn with a list past d31 have no il
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e cfg.bigendian=false
+wx 64f919f3 @ 0x0 # vld2.8 {d31, fpinst2, mvfr0, mvfr1}, [r4:0x40], sb
+wx 64f90fd2 @ 0x4 # vld1.8 {d29, d30, d31, fpinst2}, [r4]
+wx 44f90fd3 @ 0x8 # vst2.8 {d29, d30, d31, fpinst2}, [r4]
+wx 24f919f3 @ 0xc # vld2.8 {d15, d16, d17, d18}, [r4:0x40], sb
+aoi 1 @ 0x0
+aoi 1 @ 0x4
+aoi 1 @ 0x8
+aoi 1 @ 0xc~?
+e asm.bits=32
+wx 0fd264f4 @ 0x10 # vld1.8 {d29, d30, d31, fpinst2}, [r4]
+wx 0fd344f4 @ 0x14 # vst2.8 {d29, d30, d31, fpinst2}, [r4]
+aoi 1 @ 0x10
+aoi 1 @ 0x14
+EOF
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
+
 NAME=arm msr and mrs of the spsr and cpsr
 FILE==
 CMDS=<<EOF

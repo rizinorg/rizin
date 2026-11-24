@@ -3352,6 +3352,24 @@ static RzILOpEffect *vtst(cs_insn *insn, bool is_thumb) {
 	return eff;
 }
 
+/**
+ * \brief Whether the register list of a VLDn or VSTn, the operands before the memory one, holds only D registers
+ *
+ * A list running past d31 is unpredictable, and Capstone continues it with
+ * other registers. Writing a lane of those frees the loaded value, while the
+ * multiple element forms go on with its address. Capstone v4 and v5 give a
+ * post-index register after the memory operand.
+ */
+static bool neon_list_is_dregs(cs_insn *insn) {
+	ut32 i = 0;
+	for (; i < OPCOUNT() && !ISMEM(i); i++) {
+		if (!ISREG(i) || REGID(i) < ARM_REG_D0 || REGID(i) > ARM_REG_D31) {
+			return false;
+		}
+	}
+	return i > 0;
+}
+
 static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 mem_idx;
 	ut32 regs = 0;
@@ -3613,7 +3631,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() < 2 || !ISREG(0)) {
+	if (OPCOUNT() < 2 || !neon_list_is_dregs(insn)) {
 		return NULL;
 	}
 
@@ -3801,7 +3819,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() < 2 || !ISREG(0)) {
+	if (OPCOUNT() < 2 || !neon_list_is_dregs(insn)) {
 		return NULL;
 	}
 
