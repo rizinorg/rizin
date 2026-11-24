@@ -1112,3 +1112,45 @@ Index 1 data 0.0                                 0x100   33%[?25h[0m[2J[0;0
 Index 0 data 0.00                                  0x0    0%[?25h[0m[2J[0;0HEND
 EOF
 RUN
+
+NAME=p= histograms of a range smaller than a block
+FILE=malloc://0x80
+CMDS=<<EOF
+p=
+p==
+p==e
+e scr.interactive=true
+p==v
+p==Cv
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+EOF
+RUN
+
+NAME=p= histograms of a range of more blocks than an int holds
+FILE=null://0x8000000000
+ARGS=-n
+CMDS=<<EOF
+p==
+e scr.interactive=true
+p==v
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: the range of 549755813888 bytes holds more than 2147483647 blocks of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 549755813888 bytes holds more than 2147483647 blocks of 256 bytes
+ERROR: Cannot calculate blocks range
+EOF
+RUN

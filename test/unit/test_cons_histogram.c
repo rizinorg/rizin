@@ -1317,6 +1317,23 @@ bool test_histogram_interactive_horizontal_minimap_cursor(void) {
 	mu_end;
 }
 
+// With no value there is nothing to render: NULL rather than a division by
+// zero, which p==v on a file smaller than a block used to reach.
+bool test_histogram_interactive_horizontal_empty(void) {
+	RzCons *cons = rz_cons_new();
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	mu_assert_notnull(opts, "opts new");
+	opts->ruler = true;
+	opts->minimap = true;
+	const ut8 data[1] = { 0 };
+	RzHistogramInteractive *hist = make_visual_hist(0, 80, 20, opts, cons);
+	mu_assert_notnull(hist, "hist new");
+	mu_assert_null(rz_histogram_interactive_horizontal(hist, data), "No value, no chart");
+	free_visual_hist(hist);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 // Metric histograms pass their values in data_f and the same values scaled to
 // 0..255 in data: the status line shows the former, as the ruler labels do.
 bool test_histogram_interactive_horizontal_status_value(void) {
@@ -1533,6 +1550,7 @@ bool all_tests() {
 	mu_run_test(test_histogram_interactive_horizontal_minimap_toggle);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_window);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_cursor);
+	mu_run_test(test_histogram_interactive_horizontal_empty);
 	mu_run_test(test_histogram_interactive_horizontal_status_value);
 	mu_run_test(test_histogram_interactive_horizontal_hex_preview);
 	return tests_passed != tests_run;

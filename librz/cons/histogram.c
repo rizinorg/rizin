@@ -907,12 +907,12 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  * format of the labels; the bars still come from \p data.
  *
  * \param hist Information about the interactive histogram (canvas, cursor,
- *             zoom level, opts).
+ *             zoom level, opts), with at least one value.
  * \param data A buffer with the numerical data in the format of one byte per
  *             value (already quantised to [0..255] by the caller).
  */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, RZ_NONNULL const ut8 *data) {
-	rz_return_val_if_fail(hist && data, NULL);
+	rz_return_val_if_fail(hist && data && hist->size > 0, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
 		return NULL;

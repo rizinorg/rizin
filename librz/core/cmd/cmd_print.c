@@ -4973,7 +4973,21 @@ static CoreBlockRange *calculate_blocks_range(RzCore *core, ut64 from, ut64 to, 
 		rz_list_free(boundaries);
 	}
 	if (nblocks < 1) {
-		brange->nblocks = brange->totalsize / blocksize;
+		ut64 n = brange->totalsize / blocksize;
+		if (!n) {
+			RZ_LOG_ERROR("core: the range of %" PFMT64u " bytes is smaller than a block of %" PFMT64d " bytes\n",
+				brange->totalsize, blocksize);
+			free(brange);
+			return NULL;
+		}
+		// nblocks is an int, a larger count would wrap to 0 or below.
+		if (n > INT_MAX) {
+			RZ_LOG_ERROR("core: the range of %" PFMT64u " bytes holds more than %d blocks of %" PFMT64d " bytes\n",
+				brange->totalsize, INT_MAX, blocksize);
+			free(brange);
+			return NULL;
+		}
+		brange->nblocks = (int)n;
 	} else {
 		blocksize = brange->totalsize / nblocks;
 		brange->nblocks = nblocks;
@@ -5402,6 +5416,11 @@ static RzCmdStatus print_histogram_bytes(RzCore *core, int argc, const char **ar
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
+	if (!data) {
+		RZ_LOG_ERROR("core: failed to malloc memory\n");
+		free(brange);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	// Sample one byte at the start of each block (not nblocks contiguous bytes
 	// from core->offset, which for blocksize > 1 rendered only the file's first
 	// bytes; #4431). Byte-by-byte keeps huge/sparse files cheap.
