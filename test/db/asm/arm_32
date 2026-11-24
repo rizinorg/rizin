@@ -453,6 +453,7 @@ d "ldmib r0!, {r1, r3, r4}" 1a00b0e9 0x0 (seq (set base (var r0)) (set r1 (loadw
 d "bx lr" 1eff2fe1 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
 d "bxj r5" 25ff2fe1 0x0 (jmp (& (var r5) (bv 32 0xfffffffe)))
 d "blx r3" 33ff2fe1 0x100 (seq (set lr (bv 32 0x104)) (jmp (& (var r3) (bv 32 0xfffffffe))))
+d "blx lr" 3eff2fe1 0x100 (seq (set tgt (var lr)) (set lr (bv 32 0x104)) (jmp (& (var tgt) (bv 32 0xfffffffe))))
 d "mov pc, lr" 0ef0a0e1 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
 d "add pc, r0, r1" 01f080e0 0x0 (jmp (& (+ (var r0) (var r1)) (bv 32 0xfffffffe)))
 d "and pc, r0, r1" 01f000e0 0x0 (jmp (& (& (var r0) (var r1)) (bv 32 0xfffffffe)))

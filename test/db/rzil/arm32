@@ -517,6 +517,25 @@ pc = 0x00000124
 EOF
 RUN
 
+NAME=blx lr branches to lr from before the link
+FILE=malloc://0x1000
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx f047 @ 0x100 # blx lr
+aezi
+ar lr=0x221
+ar pc=0x100
+aezs 1
+ar pc
+ar lr
+EOF
+EXPECT=<<EOF
+pc = 0x00000220
+lr = 0x00000103
+EOF
+RUN
+
 NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
 TIMEOUT=60
