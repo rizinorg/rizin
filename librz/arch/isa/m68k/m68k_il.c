@@ -954,8 +954,9 @@ static RzILOpBool *frestore_legacy_is_null_frame(void) {
 }
 
 static RzILOpEffect *frestore_bind_frame_size(cs_mode mode) {
-	RzILOpPure *size = NULL;
-	if (mode == CS_MODE_M68K_060) {
+	RzILOpPure *size;
+	switch (mode) {
+	case CS_MODE_M68K_060:
 		/* MC68060 UM 6.7: frame format moved to bits 15-8. All
 		 * null, idle, and exception frames contain three longwords. */
 		size = ITE(NON_ZERO(VARL("fpu_null")), U32(M68K_FSAVE_SIZE_060),
@@ -965,19 +966,21 @@ static RzILOpEffect *frestore_bind_frame_size(cs_mode mode) {
 			SETL("fpu_fmt", LOGAND(SHIFTR0(VARL("fpu_state_format"), U8(8)), U32(0xff))),
 			SETL("fpu_null", BOOL_TO_BV(IS_ZERO(VARL("fpu_fmt")), 32)),
 			SETL("fpu_frame_size", size));
-	}
-	if (mode == CS_MODE_M68K_040) {
+	case CS_MODE_M68K_040:
 		size = ITE(OR(NON_ZERO(VARL("fpu_null")), EQ(VARL("fpu_fmt"), U32(0x4100))), U32(4),
 			ITE(EQ(VARL("fpu_fmt"), U32(M68K_FRESTORE_UNIMP_040)), U32(52),
 				ITE(EQ(VARL("fpu_fmt"), U32(M68K_FRESTORE_BUSY_040)), U32(100), U32(0))));
-	} else if (mode == CS_MODE_M68K_030) {
+		break;
+	case CS_MODE_M68K_030:
 		size = ITE(NON_ZERO(VARL("fpu_null")), U32(4),
 			ITE(EQ(VARL("fpu_fmt"), U32(0x1f38)), U32(M68K_FSAVE_SIZE_68882),
 				ITE(EQ(VARL("fpu_fmt"), U32(M68K_FRESTORE_BUSY_68882)), U32(216), U32(0))));
-	} else {
+		break;
+	default:
 		size = ITE(NON_ZERO(VARL("fpu_null")), U32(4),
 			ITE(EQ(VARL("fpu_fmt"), U32(0x1f18)), U32(M68K_FSAVE_SIZE_68881),
 				ITE(EQ(VARL("fpu_fmt"), U32(M68K_FRESTORE_BUSY_68881)), U32(184), U32(0))));
+		break;
 	}
 	return SEQ3(
 		SETL("fpu_fmt", SHIFTR0(VARL("fpu_state_format"), U8(16))),
@@ -5320,32 +5323,50 @@ static bool fpu_operand_to_float_local(M68KILCtx *ctx, const char *name, const c
 	RzILOpEffect *post = NULL;
 	RzILOpBitVector *raw80 = NULL;
 
-	if (op->type == M68K_OP_MEM && op->address_mode == M68K_AM_NONE) {
-		return false;
-	}
-	if (rz_m68k_op_is_fpu_reg(op)) {
-		raw80 = m68k_read_reg_sized(ctx, op->reg, 80);
-	} else if (op->type == M68K_OP_FP_SINGLE) {
+	switch (op->type) {
+	case M68K_OP_FP_SINGLE:
 		if (ctx->insn->size < 8) {
 			return false;
 		}
 		value = BV2F(RZ_FLOAT_IEEE754_BIN_32, U32(rz_read_be32(ctx->insn->bytes + 4)));
 		format = RZ_FLOAT_IEEE754_BIN_32;
-	} else if (op->type == M68K_OP_FP_DOUBLE) {
+		break;
+	case M68K_OP_FP_DOUBLE:
 		if (ctx->insn->size < 12) {
 			return false;
 		}
 		value = BV2F(RZ_FLOAT_IEEE754_BIN_64, U64(rz_read_be64(ctx->insn->bytes + 4)));
 		format = RZ_FLOAT_IEEE754_BIN_64;
+		break;
 #ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
-	} else if (op->type == M68K_OP_FP_EXTENDED) {
+	case M68K_OP_FP_EXTENDED:
 		raw80 = fpu_const80_bits(op->fp_extended.sign_exp, op->fp_extended.significand);
-	} else if (op->type == M68K_OP_FP_PACKED || rz_m68k_fpu_size_is_packed(ctx->m68k)) {
+		break;
+	case M68K_OP_FP_PACKED:
 		return false;
 #endif
-	} else if (ctx->m68k->op_size.type == M68K_SIZE_TYPE_FPU) {
-		bool single_dreg = bits == 32 && op->type == M68K_OP_REG && rz_m68k_reg_is_dreg(op->reg);
-		if (!single_dreg && !rz_m68k_op_is_mem_addr(op)) {
+	case M68K_OP_REG:
+		if (rz_m68k_reg_is_fpu(op->reg)) {
+			raw80 = m68k_read_reg_sized(ctx, op->reg, 80);
+			break;
+		}
+		// fall through
+	default: {
+		if (op->type == M68K_OP_MEM && op->address_mode == M68K_AM_NONE) {
+			return false;
+		}
+		bool is_real = ctx->m68k->op_size.type == M68K_SIZE_TYPE_FPU;
+		if (is_real) {
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+			if (rz_m68k_fpu_size_is_packed(ctx->m68k)) {
+				return false;
+			}
+#endif
+			bool single_dreg = bits == 32 && rz_m68k_op_is_data_reg(op);
+			if (!single_dreg && !rz_m68k_op_is_mem_addr(op)) {
+				return false;
+			}
+		} else if (bits != 8 && bits != 16 && bits != 32) {
 			return false;
 		}
 		ut32 access_bits = fpu_external_bits(ctx, bits);
@@ -5356,28 +5377,17 @@ static bool fpu_operand_to_float_local(M68KILCtx *ctx, const char *name, const c
 		if (pre) {
 			*seq = *seq ? SEQ2(*seq, pre) : pre;
 		}
-		if (rz_m68k_fpu_size_is_extended(ctx->m68k)) {
+		if (!is_real) {
+			value = SINT2F(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE, raw);
+		} else if (rz_m68k_fpu_size_is_extended(ctx->m68k)) {
 			*seq = *seq ? SEQ2(*seq, SETL("mem_ext", raw)) : SETL("mem_ext", raw);
 			raw80 = fpu_ext96_to_fp80(VARL("mem_ext"));
 		} else {
 			format = fpu_format_for_bits(bits);
 			value = BV2F(format, raw);
 		}
-	} else {
-		RzILOpPure *raw = m68k_read_operand(ctx, op, bits, &pre, &post);
-		if (!raw) {
-			return false;
-		}
-		if (pre) {
-			*seq = *seq ? SEQ2(*seq, pre) : pre;
-		}
-		if (bits == 8 || bits == 16 || bits == 32) {
-			value = SINT2F(RZ_FLOAT_IEEE754_BIN_80, RZ_FLOAT_RMODE_RNE, raw);
-		} else {
-			rz_il_op_pure_free(raw);
-			rz_il_op_effect_free(post);
-			return false;
-		}
+		break;
+	}
 	}
 
 	if (raw80) {
@@ -6652,20 +6662,6 @@ static RzILOpEffect *lift_fpu_move_data(M68KILCtx *ctx, ut32 insn_id) {
  * denormal is normalized when converted to extended, so it does not UNFL.
  * OPERR/OVFL/DZ/INEX2 cleared. Accrued UNFL needs UNFL and INEX2, so a
  * denormal abs/neg does not set AUNFL. Quotient unchanged. */
-static bool fpu_insn_is_fabs_or_fneg(ut32 insn_id) {
-	switch (insn_id) {
-	case M68K_INS_FABS:
-	case M68K_INS_FSABS:
-	case M68K_INS_FDABS:
-	case M68K_INS_FNEG:
-	case M68K_INS_FSNEG:
-	case M68K_INS_FDNEG:
-		return true;
-	default:
-		return false;
-	}
-}
-
 static RzILOpBool *fpu_fabs_unfl(void) {
 	return AND(INV(IS_FNAN(VARL("src_fp"))),
 		AND(INV(IS_FINF(VARL("src_fp"))),
@@ -6759,34 +6755,48 @@ static RzILOpEffect *lift_fpu_unary_data(M68KILCtx *ctx, ut32 insn_id) {
 		break;
 	}
 	seq = SEQ2(seq, SETL("res_fp", result));
-	if (insn_id == M68K_INS_FSQRT || insn_id == M68K_INS_FSSQRT || insn_id == M68K_INS_FDSQRT) {
+	switch (insn_id) {
+	case M68K_INS_FSQRT:
+	case M68K_INS_FSSQRT:
+	case M68K_INS_FDSQRT:
 		seq = SEQ2(seq, SETL("res_fp", ITE(IS_FZERO(VARL("src_fp")), BV2F(RZ_FLOAT_IEEE754_BIN_80, VARL("src_bits")), ITE(fpu_fsqrt_operr(), fpu_default_nan(), VARL("res_fp")))));
+		break;
+	default:
+		break;
 	}
 	seq = SEQ2(seq, SETL("res_fp", ITE(IS_FNAN(VARL("src_fp")), BV2F(RZ_FLOAT_IEEE754_BIN_80, fpu_quiet_fp80_nan_bits(VARL("src_bits"))), VARL("res_fp"))));
 	seq = SEQ3(
 		seq,
 		m68k_write_reg_sized(ctx, dst->reg, 80, F2BV(VARL("res_fp"))),
 		set_fpsr_cc_from_float_local("res_fp"));
-	if (insn_id == M68K_INS_FINT || insn_id == M68K_INS_FINTRZ) {
-		seq = SEQ5(
+	switch (insn_id) {
+	case M68K_INS_FINT:
+	case M68K_INS_FINTRZ:
+		return SEQ5(
 			seq,
 			SETL("src_bits", F2BV(fpu_to_format(VARL("src_fp"), RZ_FLOAT_IEEE754_BIN_80))),
 			SETL("src_exp", UNSIGNED(16, LOGAND(SHIFTR0(VARL("src_bits"), U8(64)), UN(80, 0x7fff)))),
 			SETL("src_man", UNSIGNED(64, VARL("src_bits"))),
 			set_fpsr_fint_exc());
-	}
-	if (insn_id == M68K_INS_FSQRT || insn_id == M68K_INS_FSSQRT || insn_id == M68K_INS_FDSQRT) {
-		seq = SEQ3(seq, SETL("res_bits", F2BV(VARL("res_fp"))),
+	case M68K_INS_FSQRT:
+	case M68K_INS_FSSQRT:
+	case M68K_INS_FDSQRT:
+		return SEQ3(seq, SETL("res_bits", F2BV(VARL("res_fp"))),
 			set_fpsr_fsqrt_exc());
-	}
-	if (fpu_insn_is_fabs_or_fneg(insn_id)) {
-		seq = SEQ4(
+	case M68K_INS_FABS:
+	case M68K_INS_FSABS:
+	case M68K_INS_FDABS:
+	case M68K_INS_FNEG:
+	case M68K_INS_FSNEG:
+	case M68K_INS_FDNEG:
+		return SEQ4(
 			seq,
 			SETL("src_bits", F2BV(fpu_to_format(VARL("src_fp"), RZ_FLOAT_IEEE754_BIN_80))),
 			SETL("src_exp", UNSIGNED(16, LOGAND(SHIFTR0(VARL("src_bits"), U8(64)), UN(80, 0x7fff)))),
 			set_fpsr_fabs_exc());
+	default:
+		return seq;
 	}
-	return seq;
 }
 
 static RzILOpEffect *lift_fpu_extract_data(M68KILCtx *ctx, ut32 insn_id) {
