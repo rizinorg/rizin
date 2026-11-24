@@ -336,3 +336,33 @@ EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000300 from io.
 EOF
 RUN
+
+# This test doesn't succeed yet. Because the block at 0x0
+# has only a single incoming edge from one function and is
+# not added to the conflict list.
+NAME=Test dropping of block at 0x0
+BROKEN=1
+FILE==
+ARGS=-a x86
+CMDS=<<EOF
+wx b801000000554889e5b802000000ebf0
+s 0x5
+aIf
+pd 5 @ 0
+ablt
+EOF
+EXPECT=<<EOF
+            ; CODE XREF from inq.0x2 @ 0x2
+            0x00000000      mov   eax, 0x1
+/ inq.0x5();
+|           0x00000007      push  rbp
+|           0x00000008      mov   rbp, rsp
+|           0x0000000b      mov   eax, 0x02
+|           0x0000000e      jmp   0x0
+addr size traced ninstr jump       fail fcns        calls xrefs       
+----------------------------------------------------------------------
+ 0x5   11      0      4 0x00000000       0x00000005       
+EOF
+EXPECT_ERR=<<EOF
+EOF
+RUN
