@@ -263,6 +263,9 @@ ad "cpsid af, 7" aff3a787
 ad "cpsid i, 0x18" aff35887
 d "cpsid ai, 0" aff3c087 # NB: ,0 instead of .w
 a "cpsid.w ai" aff3c087
+d "cpsie i" 62b6 0x0 nop
+d "cpsid i" 72b6 0x0 nop
+d "cpsid.w i" aff34086 0x0 nop
 ad "cps 0x1f" aff31f81
 ad "dbg 0xe" aff3fe80
 ad "dmb sy" bff35f8f

@@ -797,3 +797,155 @@ control = 0x07
 primask = 0x0
 EOF
 RUN
+
+NAME=cortex-m cps in thread mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 72b6 @ 0x0 # cpsid i
+wx 71b6 @ 0x2 # cpsid f
+wx 62b6 @ 0x4 # cpsie i
+wx 61b6 @ 0x6 # cpsie f
+wx 73b6 @ 0x8 # cpsid if
+wx 63b6 @ 0xa # cpsie if
+wx 73b6 @ 0xc # cpsid if
+wx 63b6 @ 0xe # cpsie if
+aezi
+aezs 1
+ar primask
+ar faultmask
+aezs 1
+ar primask
+ar faultmask
+aezs 1
+ar primask
+ar faultmask
+aezs 1
+ar primask
+ar faultmask
+aezs 1
+ar primask
+ar faultmask
+aezs 1
+ar primask
+ar faultmask
+ar control=1 # unprivileged
+aezs 1
+ar primask
+ar faultmask
+ar primask=1
+ar faultmask=1
+aezs 1
+ar pc
+ar primask
+ar faultmask
+EOF
+EXPECT=<<EOF
+primask = 0x1
+faultmask = 0x0
+primask = 0x1
+faultmask = 0x1
+primask = 0x0
+faultmask = 0x1
+primask = 0x0
+faultmask = 0x0
+primask = 0x1
+faultmask = 0x1
+primask = 0x0
+faultmask = 0x0
+primask = 0x0
+faultmask = 0x0
+pc = 0x00000010
+primask = 0x1
+faultmask = 0x1
+EOF
+RUN
+
+NAME=cortex-m cps in handler mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 73b6 @ 0x0 # cpsid if
+wx 61b6 @ 0x2 # cpsie f
+wx 71b6 @ 0x4 # cpsid f
+wx 71b6 @ 0x6 # cpsid f
+aezi
+ar control=1
+ar ipsr=3 # HardFault
+aezs 1
+ar primask
+ar faultmask
+ar faultmask=1
+aezs 1
+ar faultmask
+ar ipsr=2 # NMI
+aezs 1
+ar faultmask
+ar ipsr=0x10 # IRQ 0
+aezs 1
+ar faultmask
+EOF
+EXPECT=<<EOF
+primask = 0x1
+faultmask = 0x0
+faultmask = 0x0
+faultmask = 0x0
+faultmask = 0x1
+EOF
+RUN
+
+NAME=cortex-m cps lifts no unpredictable form
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx 64b6 @ 0x0 # cpsie a
+wx 60b6 @ 0x2 # cpsie none
+wx 66b6 @ 0x4 # cpsie ai
+wx 62b6 @ 0x6 # cpsie i
+aoi 1 @ 0x0
+aoi 1 @ 0x2
+aoi 1 @ 0x4
+aoi 1 @ 0x6
+EOF
+EXPECT=<<EOF
+0x6 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (set primask false) nop)
+EOF
+RUN
+
+NAME=arm cps without a mode change changes no il state
+FILE=malloc://0x100
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 72b6 @ 0x0 # cpsid i
+wx aff34084 @ 0x2 # cpsie.w i
+wx aff31381 @ 0x6 # cps 0x13
+wx aff3f385 @ 0xa # cpsie aif, 0x13
+wx 60b6 @ 0xe # cpsie none
+aoi 1 @ 0x0
+aoi 1 @ 0x2
+aoi 1 @ 0x6
+aoi 1 @ 0xa
+aoi 1 @ 0xe
+ao 1 @ 0x0~type:,family:
+aezi
+aezs 2
+ar pc
+EOF
+EXPECT=<<EOF
+0x0 nop
+0x2 nop
+type: mov
+family: priv
+pc = 0x00000006
+EOF
+RUN
