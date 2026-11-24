@@ -67,7 +67,7 @@ EOF
 RUN
 
 NAME=Simple jumps tail-call a function symbol
-FILE=bins/inquiry/icfg_conflicts/tailcall_with_cfg.s.obj
+FILE=bins/inquiry/icfg_conflicts/tailcalled_with_cfg.s.obj
 CMDS=<<EOF
 is
 echo ""
@@ -127,7 +127,7 @@ RUN
 # with a single membership.
 # Here the fcn_tc label should be an entry point (it is called by fcn_0),
 # but isn't because it has only the membership of fcn_1.
-NAME=Tail-called function shares block with other function.
+NAME=Tail-called function with shared block (incomplete).
 FILE=bins/inquiry/icfg_conflicts/tailcalled_contains_shared.s.obj
 CMDS=<<EOF
 is
