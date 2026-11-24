@@ -531,6 +531,17 @@ static void append_hex_preview_row(RzStrBuf *buf, const RzHistogramOptions *opts
 	rz_strbuf_append(buf, " ");
 }
 
+// First of `cols` columns showing index `idx` of `n`. Column c shows the
+// indices [c * n / cols, (c + 1) * n / cols), or index c * n / cols alone when
+// n < cols. Rounding idx * cols / n instead lands one column early whenever a
+// column boundary is not an integer.
+static ut64 histogram_index_column(ut64 idx, ut64 n, ut64 cols) {
+	if (n >= cols) {
+		return ((idx + 1) * cols - 1) / n;
+	}
+	return (idx * cols + n - 1) / n;
+}
+
 // Render the top minimap: a window indicator framing the visible slice, above
 // a density-gradient row (block elements encode each slice's average byte).
 // When hex_panel is set, a two-line px-style hex preview of hex_bytes is drawn
@@ -818,7 +829,7 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
 		if (rel < 0) {
 			rel = 0;
 		}
-		j_cursor = (int)((ut64)rel * (ut64)zoom * (ut64)width / (ut64)histogramwidth);
+		j_cursor = (int)histogram_index_column((ut64)rel, (ut64)histogramwidth, (ut64)zoom * width);
 	} else {
 		j_cursor = -1;
 	}

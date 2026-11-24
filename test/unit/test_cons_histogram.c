@@ -1001,6 +1001,108 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 	mu_end;
 }
 
+// Index range [*lo, *hi) shown by column c when n indices are spread over cols
+// columns, as the visual renderer slices them.
+static void column_slice(ut64 c, ut64 n, ut64 cols, ut64 *lo, ut64 *hi) {
+	*lo = c * n / cols;
+	*hi = (c + 1) * n / cols;
+	if (*hi <= *lo) {
+		*hi = *lo + 1;
+	}
+}
+
+// First column whose slice holds idx, found by scanning every slice.
+static int scan_column(ut64 idx, ut64 n, ut64 cols) {
+	for (ut64 c = 0; c < cols; c++) {
+		ut64 lo, hi;
+		column_slice(c, n, cols, &lo, &hi);
+		if (lo <= idx && idx < hi) {
+			return (int)c;
+		}
+	}
+	return -1;
+}
+
+// Origin of the zoomed-out view: centred on the cursor, clamped to the data.
+static int view_origin(int cursor, int n, int zoom) {
+	int span = n / zoom;
+	if (span <= 0) {
+		span = 1;
+	}
+	if (span >= n) {
+		return 0;
+	}
+	int adder = cursor - span / 2;
+	if (adder + span > n) {
+		adder = n - span;
+	}
+	return adder < 0 ? 0 : adder;
+}
+
+// Column of the first `marker` byte on the given line of res, or -1.
+static int marker_column(const char *res, int line, char marker) {
+	const char *p = res;
+	for (int l = 0; l < line && p; l++) {
+		p = strchr(p, '\n');
+		if (p) {
+			p++;
+		}
+	}
+	if (!p) {
+		return -1;
+	}
+	for (int c = 0; p[c] && p[c] != '\n'; c++) {
+		if (p[c] == marker) {
+			return c;
+		}
+	}
+	return -1;
+}
+
+// The cursor is drawn on the column holding its index: the first one when
+// several columns show it, the next one when it opens a column whose boundary
+// is not an integer (index 2 of 10 on 4 columns is in column 1, not 0).
+bool test_histogram_interactive_horizontal_cursor_column(void) {
+	static const struct {
+		int n, w, zoom;
+	} cases[] = {
+		{ 10, 4, 1 }, // 2.5 indices per column
+		{ 4, 10, 1 }, // 2.5 columns per index
+		{ 4096, 95, 1 }, // 1 MiB of 0x100 blocks on a 100-column terminal
+		{ 4096, 95, 3 }, // zoomed out, view moves with the cursor
+		{ 4096, 95, 44 }, // zoomed in to fewer indices than columns
+	};
+	RzCons *cons = rz_cons_new();
+	ut8 *data = calloc(4096, 1);
+	mu_assert_notnull(data, "data");
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(cases); k++) {
+		int n = cases[k].n, w = cases[k].w, zoom = cases[k].zoom;
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		RzHistogramInteractive *hist = make_visual_hist(n, w, 6, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = zoom;
+		for (int b = 0; b < n; b++) {
+			hist->barnumber = b;
+			char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+			mu_assert_notnull(res, "Render");
+			int got = marker_column(res, 0, 'v');
+			int adder = view_origin(b, n, zoom);
+			int expect = scan_column((ut64)(b - adder), (ut64)n, (ut64)zoom * w);
+			free(res);
+			if (got != expect) {
+				char msg[128];
+				rz_strf(msg, "n=%d w=%d zoom=%d cursor %d: column %d, expected %d", n, w, zoom, b, got, expect);
+				mu_fail(msg);
+			}
+		}
+		free_visual_hist(hist);
+	}
+	free(data);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 // The hex preview panel kicks in only when:
 //   - hist->cursor_bytes is non-NULL and non-empty,
 //   - the terminal is wide (hist->w > 200), AND
@@ -1177,6 +1279,7 @@ bool all_tests() {
 	mu_run_test(test_histogram_interactive_horizontal_cursor_markers);
 	mu_run_test(test_histogram_interactive_horizontal_cursor_full_line);
 	mu_run_test(test_histogram_interactive_horizontal_cursor_width);
+	mu_run_test(test_histogram_interactive_horizontal_cursor_column);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_toggle);
 	mu_run_test(test_histogram_interactive_horizontal_hex_preview);
 	return tests_passed != tests_run;
