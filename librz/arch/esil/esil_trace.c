@@ -167,6 +167,9 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	}
 
 	RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
+	if (!ri) {
+		return ret;
+	}
 	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
 	if (esil->esilinterstate->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
@@ -295,6 +298,9 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE
 
 	RzAnalysis *analysis = esil->panalysis;
 	RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
+	if (!pc_ri) {
+		return;
+	}
 	add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
 	/* set hooks */
 	const ut64 verbose_save = config->verbose;
