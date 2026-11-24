@@ -790,6 +790,213 @@ faultmask = 0x0
 EOF
 RUN
 
+NAME=cortex-m mrs in thread mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx eff30080 @ 0x0 # mrs r0, apsr
+wx eff30381 @ 0x4 # mrs r1, xpsr
+wx eff30882 @ 0x8 # mrs r2, msp
+wx eff30983 @ 0xc # mrs r3, psp
+wx eff31084 @ 0x10 # mrs r4, primask
+wx eff31185 @ 0x14 # mrs r5, basepri
+wx eff31386 @ 0x18 # mrs r6, faultmask
+wx eff31487 @ 0x1c # mrs r7, control
+wx eff30a88 @ 0x20 # mrs r8, msplim
+wx eff30689 @ 0x24 # mrs sb, epsr
+aezi
+ar nf=1
+ar cf=1
+ar qf=1
+ar gef=0x5
+ar sp=0x20001000
+ar msp=0x20003000
+ar psp=0x20000800
+ar msplim=0x20000400
+ar primask=1
+ar basepri=0x40
+ar faultmask=1
+ar control=0x4
+aezs 10
+ar r0
+ar r1
+ar r2
+ar r3
+ar r4
+ar r5
+ar r6
+ar r7
+ar r8
+ar r9
+ar control=0x5 # unprivileged
+ar pc=0
+aezs 10
+ar r0
+ar r2
+ar r3
+ar r4
+ar r5
+ar r6
+ar r7
+ar r8
+ar control=0x6 # process stack pointer in use
+ar pc=0x8
+aezs 2
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+r0 = 0xa8050000
+r1 = 0xa8050000
+r2 = 0x20001000
+r3 = 0x20000800
+r4 = 0x00000001
+r5 = 0x00000040
+r6 = 0x00000001
+r7 = 0x00000004
+r8 = 0x20000400
+r9 = 0x00000000
+r0 = 0xa8050000
+r2 = 0x00000000
+r3 = 0x00000000
+r4 = 0x00000000
+r5 = 0x00000000
+r6 = 0x00000000
+r7 = 0x00000005
+r8 = 0x00000000
+r2 = 0x20003000
+r3 = 0x20001000
+EOF
+RUN
+
+NAME=cortex-m mrs in handler mode
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx eff30581 @ 0x0 # mrs r1, ipsr
+wx eff30182 @ 0x4 # mrs r2, iapsr
+wx eff30783 @ 0x8 # mrs r3, iepsr
+wx eff30884 @ 0xc # mrs r4, msp
+wx eff30985 @ 0x10 # mrs r5, psp
+wx eff30386 @ 0x14 # mrs r6, xpsr
+wx eff31087 @ 0x18 # mrs r7, primask
+aezi
+ar zf=1
+ar ipsr=0x13 # IRQ 3
+ar control=0x3
+ar sp=0x20001000
+ar msp=0x20003000
+ar psp=0x20000800
+ar primask=1
+aezs 7
+ar r1
+ar r2
+ar r3
+ar r4
+ar r5
+ar r6
+ar r7
+EOF
+EXPECT=<<EOF
+r1 = 0x00000013
+r2 = 0x40000013
+r3 = 0x00000013
+r4 = 0x20001000
+r5 = 0x20000800
+r6 = 0x40000013
+r7 = 0x00000001
+EOF
+RUN
+
+NAME=cortex-m mrs lifts no other security state
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx eff38881 @ 0x0 # mrs r1, msp_ns
+wx eff39082 @ 0x4 # mrs r2, primask_ns
+wx eff39483 @ 0x8 # mrs r3, control_ns
+wx eff31480 @ 0xc # mrs r0, control
+aoi 1 @ 0x0
+aoi 1 @ 0x4
+aoi 1 @ 0x8
+aoi 1 @ 0xc
+EOF
+EXPECT=<<EOF
+0xc (set r0 (cast 32 false (& (var control) (bv 8 0x7))))
+EOF
+RUN
+
+NAME=cortex-m mrs and msr save and restore primask
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+wx eff31080 @ 0x0 # mrs r0, primask
+wx 81f31088 @ 0x4 # msr primask, r1
+wx 80f31088 @ 0x8 # msr primask, r0
+aezi
+ar r1=1
+aezs 2
+ar primask
+aezs 1
+ar primask
+ar primask=1
+ar pc=0
+aezs 2
+ar r0
+aezs 1
+ar primask
+EOF
+EXPECT=<<EOF
+primask = 0x1
+primask = 0x0
+r0 = 0x00000001
+primask = 0x1
+EOF
+RUN
+
+NAME=cortex-m mrs in big endian
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=true
+wx f3ef8010 @ 0x0 # mrs r0, primask
+wx f3ef8114 @ 0x4 # mrs r1, control
+wx f3ef8203 @ 0x8 # mrs r2, xpsr
+wx f3ef8311 @ 0xc # mrs r3, basepri
+aezi
+ar primask=1
+ar control=0x2
+ar ipsr=0xb # SVCall
+ar vf=1
+ar basepri=0x80
+aezs 4
+ar r0
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+r0 = 0x00000001
+r1 = 0x00000002
+r2 = 0x1000000b
+r3 = 0x00000080
+EOF
+RUN
+
 NAME=cortex-m msr in big endian
 FILE==
 CMDS=<<EOF
