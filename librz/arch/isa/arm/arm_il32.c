@@ -1658,36 +1658,6 @@ static RzILOpEffect *mla(cs_insn *insn, bool is_thumb) {
 }
 
 /**
- * Capstone: ARM_INS_MRS
- * ARM: mrs
- */
-static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
-#if CS_NEXT_VERSION >= 6
-	if (!ISREG(0) || !(ISREG(1) || ISPSRFLAGS(1))) {
-		return NULL;
-	}
-#else
-	if (!ISREG(0) || !(ISREG(1))) {
-		return NULL;
-	}
-#endif
-	if (REGID(1) == ARM_REG_SPSR) {
-		return write_reg(REGID(0), VARG("spsr"));
-	}
-	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_APSR) {
-		return NULL;
-	}
-	// There are more bits in ARM, but this is all we have:
-	return write_reg(REGID(0),
-		LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
-			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
-				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
-					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
-						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
-							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16))))))));
-}
-
-/**
  * M-profile special registers, apart from the APSR
  */
 typedef enum {
@@ -1845,6 +1815,147 @@ static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
 		return NULL;
 	}
 	return BRANCH(mprofile_privileged(), eff, NOP());
+}
+
+/**
+ * \brief Parts of the xPSR that an M-profile view of it holds
+ */
+typedef enum {
+	MPSR_NONE = 0, ///< Not a view of the xPSR
+	MPSR_APSR = 1 << 0, ///< The flags and GE
+	MPSR_IPSR = 1 << 1, ///< The exception number
+	MPSR_EPSR = 1 << 2, ///< The execution state, which reads as zero
+} MPsrPart;
+
+/**
+ * \brief Get the parts of the xPSR that \p op, the source of an M-profile MRS, views
+ *
+ * \return A combination of MPsrPart
+ */
+static ut32 mprofile_psr_parts(const cs_arm_op *op) {
+	if (op->type != ARM_OP_SYSREG) {
+		return MPSR_NONE;
+	}
+#if CS_NEXT_VERSION >= 6
+	switch (op->sysop.reg.mclasssysreg) {
+	case ARM_MCLASSSYSREG_APSR: return MPSR_APSR;
+	case ARM_MCLASSSYSREG_IAPSR: return MPSR_APSR | MPSR_IPSR;
+	case ARM_MCLASSSYSREG_EAPSR: return MPSR_APSR | MPSR_EPSR;
+	case ARM_MCLASSSYSREG_XPSR: return MPSR_APSR | MPSR_IPSR | MPSR_EPSR;
+	case ARM_MCLASSSYSREG_IPSR: return MPSR_IPSR;
+	case ARM_MCLASSSYSREG_EPSR: return MPSR_EPSR;
+	case ARM_MCLASSSYSREG_IEPSR: return MPSR_IPSR | MPSR_EPSR;
+	default: return MPSR_NONE;
+	}
+#else
+	switch (op->reg) {
+	case ARM_SYSREG_APSR: return MPSR_APSR;
+	case ARM_SYSREG_IAPSR: return MPSR_APSR | MPSR_IPSR;
+	case ARM_SYSREG_EAPSR: return MPSR_APSR | MPSR_EPSR;
+	case ARM_SYSREG_XPSR: return MPSR_APSR | MPSR_IPSR | MPSR_EPSR;
+	case ARM_SYSREG_IPSR: return MPSR_IPSR;
+	case ARM_SYSREG_EPSR: return MPSR_EPSR;
+	case ARM_SYSREG_IEPSR: return MPSR_IPSR | MPSR_EPSR;
+	default: return MPSR_NONE;
+	}
+#endif
+}
+
+/**
+ * \brief MRS of an M-profile special register, apart from the xPSR.
+ *
+ * As in Armv8-M without the Security and PACBTI Extensions: CONTROL reads in
+ * any mode, the others read as zero when unprivileged.
+ *
+ * \param reg The register, not MSYSREG_NONE
+ * \return The value read, NULL if the register is not in the IL
+ */
+static RzILOpBitVector *mrs_mprofile(MSysReg reg) {
+	RzILOpBitVector *val;
+	switch (reg) {
+	case MSYSREG_MSP:
+		// msp is only up to date while the process stack pointer is in use
+		val = ITE(mprofile_sp_is_psp(), VARG("msp"), VARG("sp"));
+		break;
+	case MSYSREG_PSP:
+		val = ITE(mprofile_sp_is_psp(), VARG("sp"), VARG("psp"));
+		break;
+	case MSYSREG_MSPLIM:
+		val = VARG("msplim");
+		break;
+	case MSYSREG_PSPLIM:
+		val = VARG("psplim");
+		break;
+	case MSYSREG_PRIMASK:
+		val = BOOL_TO_BV(VARG("primask"), 32);
+		break;
+	case MSYSREG_BASEPRI:
+	case MSYSREG_BASEPRI_MAX:
+		val = UNSIGNED(32, VARG("basepri"));
+		break;
+	case MSYSREG_FAULTMASK:
+		val = BOOL_TO_BV(VARG("faultmask"), 32);
+		break;
+	case MSYSREG_CONTROL:
+		// nPRIV, SPSEL and FPCA, the bits that MSR writes
+		return UNSIGNED(32, LOGAND(VARG("control"), UN(8, 0x7)));
+	default:
+		return NULL;
+	}
+	return ITE(mprofile_privileged(), val, U32(0));
+}
+
+/**
+ * \brief The APSR: the flags and GE
+ */
+static RzILOpBitVector *apsr_value(void) {
+	return LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+		LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+			LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+				LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+					LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
+						SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16)))))));
+}
+
+/**
+ * Capstone: ARM_INS_MRS
+ * ARM: mrs
+ */
+static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+	ut32 psr_parts = mprofile_psr_parts(&INSOP(1));
+	if (psr_parts != MPSR_NONE) {
+		RzILOpBitVector *val = psr_parts & MPSR_APSR ? apsr_value() : NULL;
+		if (psr_parts & MPSR_IPSR) {
+			RzILOpBitVector *ipsr = LOGAND(VARG("ipsr"), U32(0x1ff));
+			val = val ? LOGOR(val, ipsr) : ipsr;
+		}
+		return write_reg(REGID(0), val ? val : U32(0));
+	}
+	MSysReg mreg = msysreg(&INSOP(1));
+	if (mreg != MSYSREG_NONE) {
+		RzILOpBitVector *val = mrs_mprofile(mreg);
+		return val ? write_reg(REGID(0), val) : NULL;
+	}
+#if CS_NEXT_VERSION >= 6
+	if (!(ISREG(1) || ISPSRFLAGS(1))) {
+		return NULL;
+	}
+#else
+	if (!ISREG(1)) {
+		return NULL;
+	}
+#endif
+	if (REGID(1) == ARM_REG_SPSR) {
+		return write_reg(REGID(0), VARG("spsr"));
+	}
+	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_APSR) {
+		return NULL;
+	}
+	// There are more bits in ARM, but this is all we have:
+	return write_reg(REGID(0), apsr_value());
 }
 
 /**
