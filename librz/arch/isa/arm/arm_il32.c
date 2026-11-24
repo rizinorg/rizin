@@ -1767,6 +1767,16 @@ static RzILOpBool *mprofile_sp_is_psp(void) {
 }
 
 /**
+ * \brief Whether FAULTMASK can be set: the execution priority is above -1
+ *
+ * It is not in the NMI (2) or HardFault (3) handler. With FAULTMASK set, it is
+ * -1 as well, but setting it again changes nothing.
+ */
+static RzILOpBool *mprofile_faultmask_settable(void) {
+	return AND(INV(EQ(VARG("ipsr"), U32(2))), INV(EQ(VARG("ipsr"), U32(3))));
+}
+
+/**
  * \brief MSR to an M-profile special register, apart from the APSR.
  *
  * As in Armv8-M without the Security and PACBTI Extensions.
@@ -1810,12 +1820,7 @@ static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
 			NOP());
 		break;
 	case MSYSREG_FAULTMASK:
-		// Setting it needs an execution priority above -1: not in the NMI (2)
-		// or HardFault (3) handler
-		eff = SETG("faultmask",
-			AND(LSB(val),
-				OR(VARG("faultmask"),
-					AND(INV(EQ(VARG("ipsr"), U32(2))), INV(EQ(VARG("ipsr"), U32(3)))))));
+		eff = SETG("faultmask", AND(LSB(val), OR(VARG("faultmask"), mprofile_faultmask_settable())));
 		break;
 	case MSYSREG_CONTROL:
 		// Switching SPSEL in Thread mode switches the stack pointer in use.
@@ -1884,6 +1889,40 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	return update_flags_from_cpsr(val, update_f, update_s);
+}
+
+/**
+ * Capstone: ARM_INS_CPS
+ * ARM: cpsie, cpsid
+ *
+ * \param insn The CPS
+ * \param mclass Whether it is of the M-profile, where the masks are PRIMASK and FAULTMASK
+ */
+static RzILOpEffect *cps(cs_insn *insn, bool mclass) {
+	arm_cpsmode_type imod = insn->detail->arm.cps_mode;
+	arm_cpsflag_type iflags = insn->detail->arm.cps_flag;
+	if ((imod != ARM_CPSMODE_IE && imod != ARM_CPSMODE_ID) || iflags == ARM_CPSFLAG_INVALID ||
+		iflags == ARM_CPSFLAG_NONE || OPCOUNT()) {
+		// Without flags it is unpredictable, a new mode would need the banked registers
+		return NULL;
+	}
+	if (!mclass) {
+		// Of the CPSR it only writes the A, I and F bits, which the IL lacks
+		return NOP();
+	}
+	if (insn->size != 2 || iflags & ARM_CPSFLAG_A) {
+		// The M-profile has only the 16-bit encoding, with I and F
+		return NULL;
+	}
+	bool enable = imod == ARM_CPSMODE_IE;
+	RzILOpEffect *pri = iflags & ARM_CPSFLAG_I ? SETG("primask", enable ? IL_FALSE : IL_TRUE) : NULL;
+	RzILOpEffect *fault = NULL;
+	if (iflags & ARM_CPSFLAG_F) {
+		fault = enable
+			? SETG("faultmask", IL_FALSE)
+			: BRANCH(mprofile_faultmask_settable(), SETG("faultmask", IL_TRUE), NOP());
+	}
+	return BRANCH(mprofile_privileged(), pri && fault ? SEQ2(pri, fault) : (pri ? pri : fault), NOP());
 }
 
 /**
@@ -4412,7 +4451,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
  * Currently unimplemented:
  * - BKPT: causes a breakpoint instruction exception
  * - CLREX: clears the local monitor
- * - CPS, CPSID, CPSIE: changes interrupt mask bits and optionally PSTATE.M
+ * - CPS changing the mode: needs the banked registers
  * - CRC32, CRC32C: does crc32, new feature in armv8
  * - CSDB, DMB, DSB, ESB, ISB, PSSBB, SB, SSBB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3: for debuggers
@@ -4427,7 +4466,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
  * - UDF: permanently undefined
  * - WFE, WFI: wait
  */
-static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb) {
+static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb, bool mclass) {
 	switch (insn->id) {
 	// --
 	// Base Instruction Set
@@ -4588,6 +4627,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return mrs(insn, is_thumb);
 	case ARM_INS_MSR:
 		return msr(insn, is_thumb);
+	case ARM_INS_CPS:
+		return cps(insn, mclass);
 	case ARM_INS_PKHBT:
 	case ARM_INS_PKHTB:
 		return pkhbt(insn, is_thumb);
@@ -4806,14 +4847,22 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	}
 }
 
-RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
+/**
+ * \brief Lift a 32-bit ARM instruction to RzIL
+ *
+ * \param handle The Capstone handle that disassembled \p insn
+ * \param insn The instruction, with its details
+ * \param thumb Whether it is a Thumb instruction
+ * \param mclass Whether it is of the M-profile
+ */
+RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb, bool mclass) {
 	if (insn->id == ARM_INS_IT) {
 		// Note: IT is **not** a conditional branch!
 		// It's currently handled in analysis_arm_cs.c using ArmCSContext as a hack to turn the following instructions
 		// into conditional ones. So in the IL, we don't do anything for IT.
 		return NOP();
 	}
-	RzILOpEffect *eff = il_unconditional(handle, insn, thumb);
+	RzILOpEffect *eff = il_unconditional(handle, insn, thumb, mclass);
 	if (!eff) {
 		return NULL;
 	}

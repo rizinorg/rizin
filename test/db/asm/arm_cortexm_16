@@ -1,3 +1,9 @@
+d "cpsid f" 71b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (branch (&& (! (== (var ipsr) (bv 32 0x2))) (! (== (var ipsr) (bv 32 0x3)))) (set faultmask true) nop) nop)
+d "cpsid i" 72b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (set primask true) nop)
+d "cpsid if" 73b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (seq (set primask true) (branch (&& (! (== (var ipsr) (bv 32 0x2))) (! (== (var ipsr) (bv 32 0x3)))) (set faultmask true) nop)) nop)
+d "cpsie f" 61b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (set faultmask false) nop)
+d "cpsie i" 62b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (set primask false) nop)
+d "cpsie if" 63b6 0 (branch (|| (! (is_zero (var ipsr))) (! (lsb (var control)))) (seq (set primask false) (set faultmask false)) nop)
 d "mrs r0, primask" eff31080
 d "msr apsr_g, r0" 80f30084 0 (set gef (cast 4 false (>> (var r0) (bv 5 0x10) false)))
 d "msr apsr_nzcvq, r0" 80f30088 0 (seq (set nf (! (is_zero (& (var r0) (bv 32 0x80000000))))) (set zf (! (is_zero (& (var r0) (bv 32 0x40000000))))) (set cf (! (is_zero (& (var r0) (bv 32 0x20000000))))) (set vf (! (is_zero (& (var r0) (bv 32 0x10000000))))) (set qf (! (is_zero (& (var r0) (bv 32 0x8000000))))))
