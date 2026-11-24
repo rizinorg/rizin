@@ -248,3 +248,91 @@ EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
 EOF
 RUN
+
+# Blocks which were detected by different interpreters differ in size.
+# This test checks if they are all resolved to the same
+# size, independently in which order they are detected.
+NAME=Test splitting of overlapping blocks
+FILE=bins/inquiry/icfg_conflicts/overlapping_blocks.s.obj
+CMDS=<<EOF
+e asm.comments=false
+aIa
+pd 7 @ loc.pattern_a
+pd 7 @ loc.pattern_b
+pd 7 @ loc.pattern_c
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- fcn_a1:
+/ loc.pattern_a();
+|       ,=< 0x08000100      jmp   loc.fcn_a4.b
+/ sym.fcn_a2();
+|      ,==< 0x08000102      jmp   loc.fcn_a4.a
+/ sym.fcn_a3();
+\     ,===< 0x08000104      jmp   sym.fcn_a4
+      |||   ;-- fcn_a4:
+/ sym.fcn_a4();
+|     `---> 0x08000109      mov   eax, 0x01
+|      ||   ;-- fcn_a4.a:
+|      `--> 0x0800010e      mov   ebx, 0x01
+|       |   ;-- fcn_a4.b:
+|       `-> 0x08000113      mov   ecx, 0x01
+\           0x08000118      ret
+            ;-- fcn_b1:
+/ loc.pattern_b();
+\       ,=< 0x08000200      jmp   sym.fcn_b4
+/ sym.fcn_b2();
+|      ,==< 0x08000205      jmp   loc.fcn_b4.a
+/ sym.fcn_b3();
+|     ,===< 0x08000207      jmp   loc.fcn_b4.b
+      |||   ;-- fcn_b4:
+/ sym.fcn_b4();
+|     ||`-> 0x08000209      mov   eax, 0x01
+|     ||    ;-- fcn_b4.a:
+|     |`--> 0x0800020e      mov   ebx, 0x01
+|     |     ;-- fcn_b4.b:
+|     `---> 0x08000213      mov   ecx, 0x01
+\           0x08000218      ret
+            ;-- fcn_c1:
+/ loc.pattern_c();
+|       ,=< 0x08000300      jmp   loc.fcn_c4.a
+/ sym.fcn_c2();
+\      ,==< 0x08000302      jmp   sym.fcn_c4
+/ sym.fcn_c3();
+|     ,===< 0x08000307      jmp   loc.fcn_c4.b
+      |||   ;-- fcn_c4:
+/ sym.fcn_c4();
+|     |`--> 0x08000309      mov   eax, 0x01
+|     | |   ;-- fcn_c4.a:
+|     | `-> 0x0800030e      mov   ebx, 0x01
+|     |     ;-- fcn_c4.b:
+|     `---> 0x08000313      mov   ecx, 0x01
+\           0x08000318      ret
+
+     addr size traced ninstr jump       fail fcns                              calls       xrefs       
+-------------------------------------------------------------------------------------------------------
+0x8000100    2      0      1 0x08000113       0x08000100                                   
+0x8000102    2      0      1 0x0800010e       0x08000102                                   
+0x8000104    5      0      1                  0x08000104                        0x08000109 
+0x8000109    5      0      1                  0x08000109                                    0x08000104
+0x800010e    5      0      1                  0x08000102 0x08000109                         0x08000102
+0x8000113    6      0      2                  0x08000100 0x08000102 0x08000109              0x08000100
+0x8000200    5      0      1                  0x08000200                        0x08000209 
+0x8000205    2      0      1 0x0800020e       0x08000205                                   
+0x8000207    2      0      1 0x08000213       0x08000207                                   
+0x8000209    5      0      1                  0x08000209                                    0x08000200
+0x800020e    5      0      1                  0x08000205 0x08000209                         0x08000205
+0x8000213    6      0      2                  0x08000205 0x08000207 0x08000209              0x08000207
+0x8000300    2      0      1 0x0800030e       0x08000300                                   
+0x8000302    5      0      1                  0x08000302                        0x08000309 
+0x8000307    2      0      1 0x08000313       0x08000307                                   
+0x8000309    5      0      1                  0x08000309                                    0x08000302
+0x800030e    5      0      1                  0x08000300 0x08000309                         0x08000300
+0x8000313    6      0      2                  0x08000300 0x08000307 0x08000309              0x08000307
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000300 from io.
+EOF
+RUN
