@@ -542,13 +542,14 @@ static ut64 histogram_index_column(ut64 idx, ut64 n, ut64 cols) {
 	return (idx * cols + n - 1) / n;
 }
 
-// Render the top minimap: a window indicator framing the visible slice, above
-// a density-gradient row (block elements encode each slice's average byte).
+// Render the top minimap: a window indicator framing the visible slice and
+// marking the cursor, above a density-gradient row (block elements encode each
+// slice's average byte).
 // When hex_panel is set, a two-line px-style hex preview of hex_bytes is drawn
 // to the right of the two rows.
 static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	const ut8 *data, ut32 histogramwidth, ut32 map_w,
-	ut32 adder, ut32 visible_span, ut32 gutter_w,
+	ut32 adder, ut32 visible_span, ut32 cursor, ut32 gutter_w,
 	bool hex_panel, const ut8 *hex_bytes, ut32 hex_bytes_len) {
 	const char *levels_utf8[9] = {
 		" ",
@@ -561,9 +562,10 @@ static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	const char *win_left = opts->unicode ? RUNE_CORNER_TL_HEAVY : "[";
 	const char *win_right = opts->unicode ? RUNE_CORNER_TR_HEAVY : "]";
 	const char *win_mid = opts->unicode ? RUNE_LINE_HORIZ_HEAVY : "-";
+	const char *win_cursor = opts->unicode ? UTF_TRIANGLE_DOWN : "v";
 
 	// Window indicator, drawn above the density row: heavy corners ┏━━━┓
-	// bracket the visible slice.
+	// bracket the visible slice, ▼ points at the column of the cursor.
 	rz_strbuf_appendf(buf, "%*s", (int)gutter_w, "");
 	// Frame every column showing a visible index; the view may end inside a
 	// column, so the end is rounded up.
@@ -575,8 +577,11 @@ static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	if (win_end_col > (st32)map_w) {
 		win_end_col = (st32)map_w;
 	}
+	ut64 cursor_col = histogram_index_column(cursor, histogramwidth, map_w);
 	for (ut32 c = 0; c < map_w; c++) {
-		if ((st32)c < win_start_col || (st32)c >= win_end_col) {
+		if (c == cursor_col) {
+			rz_strbuf_append(buf, win_cursor);
+		} else if ((st32)c < win_start_col || (st32)c >= win_end_col) {
 			rz_strbuf_append(buf, " ");
 		} else if ((st32)c == win_start_col && win_end_col - win_start_col > 1) {
 			rz_strbuf_append(buf, win_left);
@@ -862,7 +867,7 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  *
  * The output combines five layers:
  *
- *   ┏━━━━━━━━━━━━━━━━━━━┓                                                       (1)
+ *   ┏━━━━━━━━━▼━━━━━━━━━┓                                                       (1)
  *   ▁▂▃▄▆█▇▆▄▂▁         ▁▂▃▄▅                                                   (2)
  *   8.0|              █                                                          (3)
  *      |             ██                █                                         (3)
@@ -877,7 +882,8 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  *      0x100000000   0x100000160    0x1000002c0    0x100000420                   (4)
  *   Index 42 data 196                                  0x100000540    35%        (5)
  *
- *   (1) Window indicator: `┏━━━┓` marks the visible slice on the minimap.
+ *   (1) Window indicator: `┏━━━┓` marks the visible slice on the minimap,
+ *       `▼` (`v` in ASCII) the column holding the cursor.
  *   (2) Minimap density row (block chars ▁..█ = per-slice average byte). On a
  *       wide terminal (`hist->w > 200`) with cursor_bytes, a two-line px-style
  *       hex preview of the 32 bytes at the cursor sits to its right.
@@ -1018,7 +1024,7 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 			map_w -= HEX_PANEL_W;
 		}
 		render_visual_minimap(buf, opts, data, histogramwidth, map_w,
-			adder, visible_span, gutter_w,
+			adder, visible_span, hist->barnumber, gutter_w,
 			show_hex, hist->cursor_bytes, hist->cursor_bytes_len);
 	}
 

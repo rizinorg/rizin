@@ -1201,6 +1201,122 @@ bool test_histogram_interactive_horizontal_minimap_window(void) {
 	mu_end;
 }
 
+// Number of `marker` bytes on the given line of res.
+static int marker_count(const char *res, int line, char marker) {
+	const char *p = res;
+	for (int l = 0; l < line && p; l++) {
+		p = strchr(p, '\n');
+		if (p) {
+			p++;
+		}
+	}
+	int count = 0;
+	for (int c = 0; p && p[c] && p[c] != '\n'; c++) {
+		count += p[c] == marker;
+	}
+	return count;
+}
+
+// The window row of the minimap carries one cursor marker, on the first
+// minimap column holding the cursor's index and inside the window frame.
+bool test_histogram_interactive_horizontal_minimap_cursor(void) {
+	static const struct {
+		int n, w, zoom;
+	} cases[] = {
+		{ 10, 4, 1 },
+		{ 10, 4, 2 },
+		{ 4, 10, 1 },
+		{ 4096, 95, 1 },
+		{ 4096, 95, 3 },
+		{ 4096, 95, 44 },
+	};
+	RzCons *cons = rz_cons_new();
+	ut8 *data = calloc(4096, 1);
+	mu_assert_notnull(data, "data");
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(cases); k++) {
+		int n = cases[k].n, w = cases[k].w, zoom = cases[k].zoom;
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(n, w, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = zoom;
+		for (int b = 0; b < n; b++) {
+			hist->barnumber = b;
+			char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+			mu_assert_notnull(res, "Render");
+			int got = marker_column(res, 0, 'v');
+			int count = marker_count(res, 0, 'v');
+			int start, end;
+			line_extent(res, 0, &start, &end);
+			free(res);
+			int expect = scan_column((ut64)b, (ut64)n, (ut64)w);
+			if (got != expect || count != 1 || got < start || got >= end) {
+				char msg[192];
+				rz_strf(msg, "n=%d w=%d zoom=%d cursor %d: %d marker(s), first at %d in frame [%d, %d), expected at %d",
+					n, w, zoom, b, count, got, start, end, expect);
+				mu_fail(msg);
+			}
+		}
+		free_visual_hist(hist);
+	}
+
+	// 3 columns per bar: block 44 is in minimap column 1, blocks 30..60 in view.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(4096, 95, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = 46;
+		hist->barnumber = 44;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(rz_str_startswith(res, "[v "), "Cursor on the last column of a two column frame");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	// The hex panel narrows the minimap to 220 - 43 columns.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		ut8 cursor_bytes[32] = { 0 };
+		hist->cursor_bytes = cursor_bytes;
+		hist->cursor_bytes_len = sizeof(cursor_bytes);
+		hist->barnumber = 32;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(strstr(res, "0000 0000") != NULL, "Hex panel shown");
+		mu_assert_eq(marker_column(res, 0, 'v'), scan_column(32, 64, 220 - 43), "Cursor on the narrowed minimap");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	// Unicode marker, on the window row rather than only on the chart.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		opts->unicode = true;
+		RzHistogramInteractive *hist = make_visual_hist(10, 4, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->barnumber = 9;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(rz_str_startswith(res, "\xe2\x94\x8f\xe2\x94\x81\xe2\x94\x81\xe2\x96\xbc\n"), "Window row ends with the cursor (┏━━▼)");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	free(data);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 // The hex preview panel kicks in only when:
 //   - hist->cursor_bytes is non-NULL and non-empty,
 //   - the terminal is wide (hist->w > 200), AND
@@ -1380,6 +1496,7 @@ bool all_tests() {
 	mu_run_test(test_histogram_interactive_horizontal_cursor_column);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_toggle);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_window);
+	mu_run_test(test_histogram_interactive_horizontal_minimap_cursor);
 	mu_run_test(test_histogram_interactive_horizontal_hex_preview);
 	return tests_passed != tests_run;
 }
