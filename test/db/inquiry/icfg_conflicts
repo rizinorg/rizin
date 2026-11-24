@@ -61,9 +61,7 @@ nth      paddr      vaddr bind   type   size lib name
 0x800004b    9      0      3                  0x0800004b                  
 0x8000054    2      0      2                  0x08000040 0x0800004b        0x08000040
 EOF
-EXPECT_ERR=<<EOF
-WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=Simple jumps tail-call a function symbol
@@ -120,7 +118,9 @@ nth      paddr      vaddr bind   type   size lib name
 0x800005b    5      0      1                  0x0800004e              0x08000052
 0x8000060    1      0      1                  0x0800004e              0x08000054
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
 RUN
 
 # This test will change once we solve tail call detection for entry popints
@@ -176,6 +176,73 @@ nth      paddr      vaddr bind   type   size lib name
 0x8000050    6      0      3 0x0800005b       0x08000050                        
 0x8000056    5      0      1                  0x0800004a                         0x0800004a
 0x800005b    2      0      2                  0x0800004a 0x08000050              0x08000050
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
+
+# Very similar to the test above.
+# But this one is correctly solved now, because the tail called
+# function is correctly identified, because of multiple memberships
+# and an function symbol
+NAME=Tail-called function with shared block (complete).
+FILE=bins/inquiry/icfg_conflicts/tailcalled_with_shared_cfg.s.obj
+CMDS=<<EOF
+is
+echo ""
+aIa
+pd 10
+echo ""
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type   size lib name   
+--------------------------------------------------------
+  1 0x00000059 0x08000059 LOCAL  NOTYPE    0     tc.b
+  2 0x00000052 0x08000052 LOCAL  NOTYPE    0     tc.a
+  3 0x0000005e 0x0800005e LOCAL  NOTYPE    0     tc.ret
+  4 0x00000040 0x08000040 GLOBAL FUNC      0     fcn_1
+  5 0x00000045 0x08000045 GLOBAL FUNC      0     fcn_2
+  6 0x0000004a 0x0800004a GLOBAL FUNC      0     fcn_3
+  7 0x0000004c 0x0800004c GLOBAL FUNC      0     fcn_tc
+
+            ;-- section..text:
+/ sym.fcn_1();
+\       ,=< 0x08000040      jmp   sym.fcn_tc                           ; RELOC 32 fcn_tc @ 0x0800004c - 0x8000045 ; [02] -r-x section size 31 named .text
+/ sym.fcn_2();
+\      ,==< 0x08000045      jmp   sym.fcn_tc                           ; RELOC 32 fcn_tc @ 0x0800004c - 0x800004a
+/ sym.fcn_3();
+|     ,===< 0x0800004a      jmp   loc.tc.b
+      |||   ; CALL XREF from sym.fcn_1 @ 0x8000040
+      |||   ; CALL XREF from sym.fcn_2 @ 0x8000045
+      |||   ;-- fcn_tc:
+/ sym.fcn_tc();
+|     |``-> 0x0800004c      test  edi, edi                             ; RELOC TARGET 32 fcn_tc @ 0x0800004c - 0x800004a
+|     | ,=< 0x0800004e      jz    loc.tc.a
+|     |,==< 0x08000050      jmp   loc.tc.b
+|     |||   ; CODE XREF from sym.fcn_tc @ 0x800004c
+|     |||   ;-- tc.a:
+|     ||`-> 0x08000052      mov   eax, 0x01
+|     ||,=< 0x08000057      jmp   loc.tc.ret
+|     |||   ; CODE XREF from sym.fcn_3 @ 0x800004a
+|     |||   ; CODE XREF from sym.fcn_tc @ 0x8000050
+|     |||   ;-- tc.b:
+|     ``--> 0x08000059      mov   eax, 0x02
+|       |   ; CODE XREF from sym.fcn_tc @ 0x8000052
+|       |   ;-- tc.ret:
+\       `-> 0x0800005e      ret
+
+     addr size traced ninstr jump       fail fcns                   calls       xrefs                  
+-------------------------------------------------------------------------------------------------------
+0x8000040    5      0      1                  0x08000040             0x0800004c 
+0x8000045    5      0      1                  0x08000045             0x0800004c 
+0x800004a    2      0      1 0x08000059       0x0800004a                        
+0x800004c    4      0      2 0x08000052       0x0800004c                         0x08000040 0x08000045
+0x8000050    2      0      1 0x08000059       0x0800004c                        
+0x8000052    7      0      2 0x0800005e       0x0800004c                         0x0800004c
+0x8000059    5      0      1                  0x0800004a 0x0800004c              0x0800004a 0x08000050
+0x800005e    1      0      1                  0x0800004a 0x0800004c              0x08000052
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
