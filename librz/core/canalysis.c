@@ -3347,6 +3347,9 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 			rz_core_recover_vars(core, fcn, true);
 		}
 		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+		if (rz_core_analysis_is_golang_fcn(core, fcn)) {
+			rz_core_analysis_resolve_golang_fcn_strings(core, fcn);
+		}
 	} else {
 		RZ_LOG_DEBUG("Unable to analyze function at 0x%08" PFMT64x "\n", addr);
 	}
