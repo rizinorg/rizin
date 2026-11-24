@@ -10,6 +10,7 @@ Run this whenever `undefined_ranges` is updated (e.g. on a Unicode version bump)
 
 Dependencies: pip install tree-sitter tree-sitter-c
 """
+
 import argparse
 import datetime
 import pathlib
@@ -26,12 +27,15 @@ BITS_PER_WORD = 64
 WORDS_PER_LINE = 3
 
 LANG = Language(tsc.language())
-QUERY = Query(LANG, """
+QUERY = Query(
+    LANG,
+    """
 (declaration
   declarator: (init_declarator
     declarator: (identifier) @name
     value: (initializer_list) @init))
-""")
+""",
+)
 
 
 def extract_ranges(src: bytes):
@@ -39,7 +43,7 @@ def extract_ranges(src: bytes):
     cursor = QueryCursor(QUERY)
     for _pattern_index, captures in cursor.matches(tree.root_node):
         name_node = captures["name"][0]
-        if src[name_node.start_byte:name_node.end_byte].decode() != TABLE_NAME:
+        if src[name_node.start_byte : name_node.end_byte].decode() != TABLE_NAME:
             continue
         init_node = captures["init"][0]
         ranges = []
@@ -49,7 +53,7 @@ def extract_ranges(src: bytes):
             nums = [c for c in pair.named_children if c.type == "number_literal"]
             if len(nums) != 2:
                 raise ValueError(f"unexpected range shape: {pair.text}")
-            lo, hi = (int(src[n.start_byte:n.end_byte], 0) for n in nums)
+            lo, hi = (int(src[n.start_byte : n.end_byte], 0) for n in nums)
             ranges.append((lo, hi))
         return ranges
     raise ValueError(f"could not find `{TABLE_NAME}` declaration")
@@ -77,8 +81,10 @@ def compute_skip_entries(ranges, size):
 def emit_inc(bitmap, skip_entries, unicode_version, author_name, author_email):
     year = datetime.date.today().year
     lines = [
+        # REUSE-IgnoreStart
         f"// SPDX-FileCopyrightText: {year} {author_name} <{author_email}>",
         "// SPDX-License-Identifier: LGPL-3.0-only",
+        # REUSE-IgnoreEnd
         "",
         "/**",
         " * \\brief A static bitmap indicating whether a Unicode code point is defined.",
@@ -93,13 +99,15 @@ def emit_inc(bitmap, skip_entries, unicode_version, author_name, author_email):
         f"static const ut64 undefined_ranges_bitmap[{len(bitmap)}] = {{",
     ]
     for i in range(0, len(bitmap), WORDS_PER_LINE):
-        row = bitmap[i:i + WORDS_PER_LINE]
+        row = bitmap[i : i + WORDS_PER_LINE]
         lines.append("\t" + " ".join(f"0x{w:016x}ULL," for w in row))
     lines.append("};")
     lines.append("// clang-format on")
     lines.append("")
     lines.append("/**")
-    lines.append(" * \\brief Number of leading entries of `undefined_ranges` to skip when falling back.")
+    lines.append(
+        " * \\brief Number of leading entries of `undefined_ranges` to skip when falling back."
+    )
     lines.append(" */")
     lines.append(f"static const ut32 undefined_ranges_skip_entries = {skip_entries};")
     lines.append("")
@@ -108,15 +116,39 @@ def emit_inc(bitmap, skip_entries, unicode_version, author_name, author_email):
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--author-name", required=True, help="Name for the SPDX-FileCopyrightText header")
-    parser.add_argument("--author-email", required=True, help="Email for the SPDX-FileCopyrightText header")
-    parser.add_argument("--unicode-version", default="16.0.0", help="Unicode version this table was generated from")
-    parser.add_argument("--input", type=pathlib.Path, default=DEFAULT_UNICODE_C,
-                         help=f"Path to unicode.c containing `{TABLE_NAME}` (default: {DEFAULT_UNICODE_C})")
-    parser.add_argument("--output", type=pathlib.Path, default=DEFAULT_OUT_INC,
-                         help=f"Path to write the generated .inc file (default: {DEFAULT_OUT_INC})")
-    parser.add_argument("--size", type=lambda s: int(s, 0), default=0x110000,
-                         help="Bitmap size in bits, i.e. how many code points it covers (default: 0x110000)")
+    parser.add_argument(
+        "--author-name",
+        required=True,
+        help="Name for the SPDX-FileCopyrightText header",
+    )
+    parser.add_argument(
+        "--author-email",
+        required=True,
+        help="Email for the SPDX-FileCopyrightText header",
+    )
+    parser.add_argument(
+        "--unicode-version",
+        default="16.0.0",
+        help="Unicode version this table was generated from",
+    )
+    parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        default=DEFAULT_UNICODE_C,
+        help=f"Path to unicode.c containing `{TABLE_NAME}` (default: {DEFAULT_UNICODE_C})",
+    )
+    parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        default=DEFAULT_OUT_INC,
+        help=f"Path to write the generated .inc file (default: {DEFAULT_OUT_INC})",
+    )
+    parser.add_argument(
+        "--size",
+        type=lambda s: int(s, 0),
+        default=0x110000,
+        help="Bitmap size in bits, i.e. how many code points it covers (default: 0x110000)",
+    )
     return parser.parse_args()
 
 
@@ -126,7 +158,15 @@ def main():
     ranges = extract_ranges(src)
     bitmap = build_bitmap(ranges, args.size)
     skip_entries = compute_skip_entries(ranges, args.size)
-    args.output.write_text(emit_inc(bitmap, skip_entries, args.unicode_version, args.author_name, args.author_email))
+    args.output.write_text(
+        emit_inc(
+            bitmap,
+            skip_entries,
+            args.unicode_version,
+            args.author_name,
+            args.author_email,
+        )
+    )
     print(f"wrote {args.output} ({len(bitmap)} words, {len(ranges)} ranges)")
 
 
