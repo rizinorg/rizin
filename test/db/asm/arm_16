@@ -215,6 +215,14 @@ d "blx sb" c847
 a "blx r9" c847
 d "bx sb" 4847
 a "bx r9" 4847
+d "bx lr" 7047 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
+d "blx r3" 9847 0x100 (seq (set lr (bv 32 0x103)) (jmp (& (var r3) (bv 32 0xfffffffe))))
+d "mov pc, lr" f746 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
+d "add pc, r0" 8744 0x0 (jmp (& (+ (bv 32 0x4) (var r0)) (bv 32 0xfffffffe)))
+d "pop {r4, pc}" 10bd 0x0 (seq (set base (var sp)) (set r4 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set tgt (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set sp (+ (var base) (bv 32 0x8))) (jmp (& (var tgt) (bv 32 0xfffffffe))))
+d "pop {pc}" 5df804fb 0x0 (seq (set tgt (loadw 0 32 (var sp))) (set sp (+ (var sp) (bv 32 0x4))) (jmp (& (var tgt) (bv 32 0xfffffffe))))
+d "pop.w {r4, pc}" bde81080 0x0 (seq (set base (var sp)) (set r4 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set tgt (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set sp (+ (var base) (bv 32 0x8))) (jmp (& (var tgt) (bv 32 0xfffffffe))))
+d "ldr.w pc, [r0, r1, lsl 2]" 50f821f0 0x0 (jmp (& (loadw 0 32 (+ (var r0) (<< (var r1) (bv 5 0x2) false))) (bv 32 0xfffffffe)))
 ad "cbnz r6, 0x76" cebb
 ad "cbz r3, 0x6c" a3b3
 ad "cbnz r6, 0x1076" cebb 0x1000 (branch (! (is_zero (var r6))) (jmp (bv 32 0x1076)) nop)
