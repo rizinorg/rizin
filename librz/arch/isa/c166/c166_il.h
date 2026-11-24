@@ -17,6 +17,11 @@
 		SHIFTL0(UNSIGNED(32, csp), U32(14)), \
 		UNSIGNED(32, ip))
 
+#define SEGMENTED_ADDR2(csp, ip) \
+	LOGOR( \
+		SHIFTL0(UNSIGNED(32, csp), U8(16)), \
+		UNSIGNED(32, ip))
+
 #define SET_Ex(x, b) SETG("e", ITE(EQ(x, U##b(1 << (b - 1))), IL_TRUE, IL_FALSE))
 #define SET_Nx(x, b) SETG("n", MSB(UNSIGNED(b, x)))
 
