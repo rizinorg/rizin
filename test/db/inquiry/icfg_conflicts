@@ -1,10 +1,10 @@
 # This file holds all tests about finding function control flow graphs (CFGs) within
 # the inter-procedural CFG (iCFG).
 #
-# The conflict to solve is whether a basic blocks, reachable from more than one
-# entry point, is shared between these entrypoints (shared by multiple functions),
-# or is itself an entry point of a new function.
-# The latter case happens if a function entry point is tail called function.
+# The conflict to solve is: whether a basic block, reachable from more than one
+# entry point, is shared between these entry points (is shared by multiple functions).
+# Or if it is an entry point of a new function.
+# The latter case happens if a function entry point is a tail called function.
 #
 # Especially for stripped or obfuscated binaries this distinction (shared vs. entry-point block)
 # is not clear. Because the binary might not give enough information for a
