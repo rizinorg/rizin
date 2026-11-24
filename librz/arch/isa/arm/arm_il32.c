@@ -3281,6 +3281,9 @@ static RzILOpEffect *vec_cmp(cs_insn *insn, bool is_thumb) {
 
 	// for integer number
 	ut32 vec_size = DT_WIDTH(insn);
+	if (!vec_size) {
+		return NULL;
+	}
 	RzILOpEffect *eff = EMPTY();
 	for (int i = 0; i < REG_WIDTH(0) / vec_size; ++i) {
 		RzILOpBitVector *l_elem = read_reg_lane(REGID(1), i, vec_size);
