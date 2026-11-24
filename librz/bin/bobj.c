@@ -329,9 +329,7 @@ RZ_API RZ_BORROW RzBinClass *rz_bin_object_add_class(RZ_NONNULL RzBinObject *o, 
 		rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
 		o->classes_sorted = true;
 	}
-	size_t index;
-	rz_pvector_upper_bound(o->classes, oclass, index, rz_bin_compare_class);
-	if (!rz_pvector_insert(o->classes, index, oclass)) {
+	if (!rz_pvector_insert_sorted(o->classes, oclass, (RzPVectorComparator)bin_compare_class, NULL)) {
 		rz_bin_class_free(oclass);
 		return NULL;
 	}
