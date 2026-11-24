@@ -1447,6 +1447,10 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		"gpr	ODP3	.16	61894	0\n"
 
+		"gpr	PLLCON	.16	61904	0\n" ///< F1D0; PLL Control Register
+		"gpr	SYSCON3	.16	61908	0\n" ///< F1D4; Power Management
+		"gpr	SYSCON1	.16	61916	0\n" ///< F1DC; System Configuration Register SYSCON1
+
 		"gpr	SP	.16	64512	0\n" ///< FC00 == SP | Temporarily moved here to avoid confusion in rzil
 
 		"gpr	r0	.16	65040	0\n" // FE10 == CP
@@ -1720,7 +1724,7 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	r_FFA4	.16	65444	0\n" ///< FFA4; RESERVED
 		"gpr	r_FFA6	.16	65446	0\n" ///< FFA6; RESERVED
 		"gpr	r_FFA8	.16	65448	0\n" ///< FFA8; RESERVED
-		"gpr	r_FFAA	.16	65450	0\n" ///< FFAA; RESERVED
+		"gpr	FOCON	.16	65450	0\n" ///< FFAA; Frequency Output Signal
 		"gpr	TFR	.16	65452	0\n" ///< FFAC; Trap Flag Register
 		"gpr	WDTCON	.16	65454	0\n" ///< FFAE; Watchdog Timer Control Register
 		"gpr	S0CON	.16	65456	0\n" ///< FFB0; Serial Channel 0 Control Register

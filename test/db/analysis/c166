@@ -418,7 +418,7 @@ EXPECT=<<EOF
 | ||:::||   0x00c00116      f034           mov   r3, r4                ; START_V2.A66:1775
 | ||:::||   0x00c00118      7c33           shr   r3, #0x03             ; START_V2.A66:1776
 | ||:::||   0x00c0011a      0ef3           bclr  r3.0                  ; START_V2.A66:1777
-| ||:::||   0x00c0011c      06f300fd       add   r3, #section.BI0_MEASURE_BIT0 ; START_V2.A66:1778
+| ||:::||   0x00c0011c      06f300fd       add   r3, #section.BI0_MEASURE_BIT0 ; START_V2.A66:1778 ; 0xfd00
 | ||:::||   0x00c00120      e015           mov   r5, #0x01             ; START_V2.A66:1779
 | ||:::||   0x00c00122      4c54           shl   r5, r4                ; START_V2.A66:1780
 | ||:::||   0x00c00124      9150           cpl   r5                    ; START_V2.A66:1781

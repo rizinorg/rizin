@@ -131,11 +131,24 @@ static RzPVector /*<RzBinMap *>*/ *maps(RzBinFile *bf) {
 	}
 
 	const rz_bin_omf166_obj *obj = bf->o->bin_obj;
-	RzBinMap *map = NULL;
+
+	RzBinMap *ram_sfr = RZ_NEW0(RzBinMap);
+	if (!ram_sfr) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+	ram_sfr->paddr = 0;
+	ram_sfr->vaddr = 0xF000;
+	ram_sfr->psize = 0;
+	ram_sfr->vsize = 0xFFF;
+	ram_sfr->perm = RZ_PERM_RW;
+	ram_sfr->name = rz_str_dup("ram_sfr");
+	rz_pvector_push(ret, ram_sfr);
+
 	void **it;
 	rz_pvector_foreach (obj->pe_vec, it) {
 		const OMF_pes *pe = (OMF_pes *)*it;
-		map = RZ_NEW0(RzBinMap);
+		RzBinMap *map = RZ_NEW0(RzBinMap);
 		if (!map) {
 			rz_pvector_free(ret);
 			return NULL;

@@ -16,7 +16,9 @@ static const char *c166_global_registers[] = {
 	"SP",
 	"CSP", "SGTDIS",
 	"e", "z", "v", "c", "n", "usr0", "usr1",
-	"BUSCON0", "SYSCON",
+	"BUSCON0",
+	"PLLCON", "FOCON",
+	"SYSCON", "SYSCON1", "SYSCON3",
 	"PSW", "P8",
 	NULL
 };
@@ -257,7 +259,7 @@ static RzILOpEffect *c166_il_cmpb_rbn_rbm(const RzAnalysis *analysis, const ut8 
 	const char *op1 = c166_get_word_reg_name(n);
 	const char *op2 = c166_get_word_reg_name(m);
 	const ut8 op1_reg_offset = c166_get_byte_offset(n);
-	const ut8 op2_reg_offset = c166_get_byte_offset(n);
+	const ut8 op2_reg_offset = c166_get_byte_offset(m);
 	return SEQ8(
 		SETL("op1", ITE(IS_ZERO(U8(op1_reg_offset)), READ_RL8(VARG(op1)), READ_RH8(VARG(op1)))),
 		SETL("op2", ITE(IS_ZERO(U8(op2_reg_offset)), READ_RL8(VARG(op2)), READ_RH8(VARG(op2)))),
@@ -331,7 +333,7 @@ static RzILOpEffect *c166_il_cmp_reg_mem(const RzAnalysis *analysis, const ut8 *
 		SETL("op2_val", LOADW(16, UNSIGNED(32, VARL("dpp_val")))),
 		SETL("res",
 			ITE(
-				ULT(VARL("dst"), VARL("op2_val")),
+				ULT(VARL("op1_val"), VARL("op2_val")),
 				SUB(UNSIGNED(16, VARL("op1_val")), UNSIGNED(16, VARL("op2_val"))),
 				UNSIGNED(16, SUB(VARL("op1_val"), VARL("op2_val"))))),
 		SEQ5(
@@ -424,7 +426,7 @@ static RzILOpEffect *c166_il_bfldhl_bitoff_x(RzAnalysis *analysis, const ut8 *bu
 	if (IS_GPR(bitoff)) {
 		const char *reg_name = c166_rw[L_NIB(bitoff)];
 		return SEQ6(SETL("old", VARG(reg_name)),
-			SETL("masked_old", LOGAND(VARL("old"), U16(~mask8))),
+			SETL("masked_old", LOGAND(VARL("old"), U16(~mask))),
 			SETL("masked_data", LOGAND(U16(data), U16(mask))),
 			SETL("res", LOGOR(VARL("masked_old"), VARL("masked_data"))),
 			SETG(reg_name, VARL("res")),
@@ -537,6 +539,56 @@ static RzILOpEffect *c166_il_jnb_bitaddr_rel(const RzAnalysis *analysis, const u
 	return BRANCH(IS_ZERO(_iar), JMP(U32(addr)), NOP());
 }
 
+static RzILOpEffect *c166_il_and_rwn_x(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	// 08 n:11ii
+	const ut8 reg = L_NIB(buf[1]);
+	const ut8 n = H_NIB(buf[1]);
+	const char *dst = c166_global_registers[n];
+
+	if (bitmask(reg, 0xC)) { ///< 0b1100  (Rwn, [Rwi+])
+		const ut8 ii = reg & 0x3;
+		const char *src = c166_global_registers[ii];
+		return SEQ7(SETL("op1", VARG(dst)),
+			SETL("addr", UNSIGNED(32, VARG(src))),
+			SETL("op2", LOADW(16, VARL("addr"))),
+			SETL("res", LOGAND(VARL("op1"), VARL("op2"))),
+			SETG(dst, VARL("res")),
+			SETG(src, ADD(UNSIGNED(16, VARL("addr")), U16(2))),
+			SEQ5(
+				SET_E8(VARL("op2")),
+				SET_Z(VARL("res")),
+				SET_C_ADD_16(VARL("op1"), VARL("op2")),
+				SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+				SET_N8(VARL("res"))));
+	}
+	if (bitmask(reg, 0x8)) { ///< 0b1000  (Rwn, [Rwi])
+		const ut8 ii = reg & 0x3;
+		const char *src = c166_global_registers[ii];
+		return SEQ6(SETL("op1", VARG(dst)),
+			SETL("addr", UNSIGNED(32, VARG(src))),
+			SETL("op2", LOADW(16, VARL("addr"))),
+			SETL("res", LOGAND(VARL("op1"), VARL("op2"))),
+			SETG(dst, VARL("res")),
+			SEQ5(
+				SET_E8(VARL("op2")),
+				SET_Z(VARL("res")),
+				SET_C_ADD_16(VARL("op1"), VARL("op2")),
+				SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+				SET_N8(VARL("res"))));
+	}
+	///< 0b0111  (Rwn, #data3)
+	return SEQ4(
+		SETL("op1", VARG(dst)),
+		SETL("res", LOGAND(VARL("op1"), U16(reg & 0x7))),
+		SETG(dst, VARL("res")),
+		SEQ5(
+			SET_E(U16(reg & 0x7)),
+			SET_Z(VARL("res")),
+			SET_V_ADD_16(VARL("op1"), U16(reg & 0x7), VARL("res")),
+			SET_C_ADD_16(VARL("op1"), U16(reg & 0x7)),
+			SET_N(VARL("res"))));
+}
+
 static RzILOpEffect *c166_il_and_reg_data16(const RzAnalysis *analysis, const ut8 *buf) {
 	const ut8 reg = buf[1];
 	const ut16 data = rz_read_at_le16(buf, 2);
@@ -587,21 +639,19 @@ static RzILOpEffect *c166_il_jb_bitaddr_rel(const RzAnalysis *analysis, const ut
 static RzILOpEffect *c166_il_or_reg_data16(const RzAnalysis *analysis, const ut8 *buf) {
 	const ut8 reg = buf[1];
 	const ut16 data = rz_read_at_le16(buf, 2);
-	const char *op1 = NULL;
 	CHECK_STATE;
 	if (IS_GPR(reg)) {
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
-		op1 = c166_rw[L_NIB(reg)];
-		RzILOpBitVector *val = LOGOR(VARG(op1), U16(data));
-		return SEQ6(
-			SET_E(U16(data)),
-			SET_DZ(val),
-			V_FALSE,
-			C_FALSE,
-			SET_DN(val),
-			SETG(op1, val));
+		const char *op1 = c166_rw[L_NIB(reg)];
+		return SEQ3(
+			SETL("res", LOGOR(VARG(op1), U16(data))),
+			SETG(op1, VARL("res")),
+			SEQ3(
+				SET_E(U16(data)),
+				SET_Z(VARL("res")),
+				SET_N(VARL("res"))));
 	}
-	return rz_il_op_new_nop();
+	NOT_IMPLEMENTED;
 }
 
 static RzILOpEffect *c166_il_or_rwn_x(void) {
@@ -767,11 +817,6 @@ static RzILOpEffect *c166_il_movbz_rwn_rbm(const ut8 *buf) {
 		SEQ3(E_FALSE, SET_Z(VARL("val")), N_FALSE));
 }
 
-static RzILOpEffect *c166_il_mov_orwm_rwn(void) {
-	NOT_IMPLEMENTED;
-	// return EMPTY();
-}
-
 static RzILOpEffect *c166_il_cpl_rwn(const ut8 *buf) {
 	const ut8 reg = buf[1];
 	const ut8 n = H_NIB(reg);
@@ -787,24 +832,46 @@ static RzILOpEffect *c166_il_cpl_rwn(const ut8 *buf) {
 			SET_N(VARL("res"))));
 }
 
-static RzILOpEffect *c166_il_shr_rwn_data4(void) {
-	NOT_IMPLEMENTED;
-	// return EMPTY();
+static RzILOpEffect *c166_il_shl_rwn_rwm(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	const ut8 m = L_NIB(buf[1]);
+	const ut8 n = H_NIB(buf[1]);
+	const char *dst = c166_global_registers[n];
+	const char *src = c166_global_registers[m];
+	return SEQ6(
+		SETL("op1", VARG(dst)),
+		SETL("cnt", VARG(src)),
+		SETL("cnt", LOGAND(VARL("cnt"), U16(0x000F))),
+		SETL("res", SHIFTL0(VARL("op1"), VARL("cnt"))),
+		SETG(dst, VARL("res")),
+		SEQ5(
+			E_FALSE,
+			SET_Z(VARL("res")),
+			V_FALSE,
+			SETG("c", ITE(IS_ZERO(VARL("cnt")), IL_FALSE, LSB(SHIFTR0(VARL("op1"), SUB(U16(16), VARL("cnt")))))),
+			SET_N(VARL("res"))));
 }
 
-static RzILOpEffect *c166_il_and_rwn_x(void) {
-	NOT_IMPLEMENTED;
-	// return EMPTY();
+static RzILOpEffect *c166_il_shr_rwn_data4(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	const ut8 n = L_NIB(buf[1]);
+	const ut8 data4 = H_NIB(buf[1]);
+	const char *dst = c166_global_registers[n];
+	return SEQ7(
+		SETL("op1", VARG(dst)),
+		SETL("raw_cnt", U16(data4)),
+		SETL("cnt", LOGAND(VARL("raw_cnt"), U16(0x000F))),
+		SETL("cnt_m1", SUB(VARL("cnt"), U16(1))), ///< Gemini
+		SETL("res", SHIFTR0(VARL("op1"), VARL("cnt"))),
+		SETG(dst, VARL("res")),
+		SEQ5(
+			E_FALSE,
+			SET_Z(VARL("res")),
+			SETG("c", ITE(IS_ZERO(VARL("cnt")), IL_FALSE, LSB(SHIFTR0(VARL("op1"), VARL("cnt_m1"))))),
+			SETG("v", ITE(ULE(VARL("cnt"), U16(1)), IL_FALSE, NON_ZERO(LOGAND(VARL("op1"), SUB(SHIFTL0(U16(1), VARL("cnt_m1")), U16(1)))))),
+			SET_N(VARL("res"))));
 }
 
 static RzILOpEffect *c166_il_divl_rwn(void) {
 	NOT_IMPLEMENTED;
-	// return EMPTY();
-}
-
-static RzILOpEffect *c166_il_shl_rwn_rwm(void) {
-	NOT_IMPLEMENTED;
-	// return EMPTY();
 }
 
 static RzILOpEffect *c166_il_add_rwn_x(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
@@ -1092,6 +1159,32 @@ static RzILOpEffect *c166_il_pop_reg(RzAnalysis *analysis, const ut8 *buf, const
 		SETL("tmp", SP_GET_VAL16),
 		SETG("SP", SP_INC),
 		SETG(resolved, VARL("tmp")));
+}
+
+static RzILOpEffect *c166_il_mov_orwm_rwn(const RzAnalysis *analysis, const ut8 *buf) {
+	CHECK_STATE;
+	const ut8 n = H_NIB(buf[1]);
+	const ut8 m = L_NIB(buf[1]);
+	const char *src = c166_global_registers[n];
+	if (state->ext.esfr && state->ext.mode == C166_EXT_MODE_REG) {
+		const char *dst = c166_rw[m];
+		return SEQ4(
+			SETL("addr", UNSIGNED(32, VARG(dst))),
+			SETL("val", VARG(src)),
+			STOREW(VARL("addr"), VARL("val")),
+			SEQ3(
+				SET_E(VARL("val")),
+				SET_Z(VARL("val")),
+				SET_N(VARL("val"))));
+	}
+	const char *dst = c166_global_registers[m];
+	return SEQ4(SETL("addr", UNSIGNED(32, VARG(dst))),
+		SETL("val", VARG(src)),
+		STOREW(VARL("addr"), VARL("val")),
+		SEQ3(
+			SET_E(VARL("val")),
+			SET_Z(VARL("val")),
+			SET_N(VARL("val"))));
 }
 
 static RzILOpEffect *c166_il_movb_rbn_rbm(void) {
@@ -1600,7 +1693,7 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 		op->il_op = c166_il_div_rwn();
 		break;
 	case C166_SHL_Rwn_Rwm:
-		op->il_op = c166_il_shl_rwn_rwm();
+		op->il_op = c166_il_shl_rwn_rwm(analysis, buf, op);
 		break;
 	case C166_XORB_Rbn_Rbm:
 		op->il_op = c166_il_xorb_rbn_rbm(buf);
@@ -1615,7 +1708,7 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 		op->il_op = c166_il_and_reg_data16(analysis, buf);
 		break;
 	case C166_AND_Rwn_x:
-		op->il_op = c166_il_and_rwn_x();
+		op->il_op = c166_il_and_rwn_x(analysis, buf, op);
 		break;
 	case C166_DIVL_Rwn:
 		op->il_op = c166_il_divl_rwn();
@@ -1633,7 +1726,7 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 		op->il_op = c166_il_orb_rbn_x();
 		break;
 	case C166_SHR_Rwn_data4:
-		op->il_op = c166_il_shr_rwn_data4();
+		op->il_op = c166_il_shr_rwn_data4(analysis, buf, op);
 		break;
 	case C166_JB_bitaddr_rel:
 		op->il_op = c166_il_jb_bitaddr_rel(analysis, buf, op);
@@ -1660,7 +1753,7 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 		op->il_op = c166_il_calli_cc_rwn(buf, op);
 		break;
 	case C166_MOV_oRwm_Rwn:
-		op->il_op = c166_il_mov_orwm_rwn();
+		op->il_op = c166_il_mov_orwm_rwn(analysis, buf);
 		break;
 	case C166_MOVB_oRwm_Rbn:
 		op->il_op = c166_il_movb_orwm_rbn(analysis, buf);

@@ -8,7 +8,7 @@ e io.cache=1
 s entry0
 aezi
 aezvt
-#aezsu 0x000001ac
+aezsu 0x000001ac
 sd +0x1a
 echo
 #ps @ obj._seckrit
@@ -30,11 +30,15 @@ DPP0     bitv 0x000
 DPP1     bitv 0x001
 DPP2     bitv 0x002
 DPP3     bitv 0x003
+FOCON    bitv 0x0000
 P8       bitv 0x0000
+PLLCON   bitv 0x0000
 PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xfc00
 SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -163,36 +167,40 @@ z        bool false
                                                                                                                               `------------'    `-----------------'                     `------------'                            `----------'    `------------'
 variable type value      
 -------------------------
-PC       bitv 0x00000000
-BUSCON0  bitv 0x0680
+PC       bitv 0x000001ac
+BUSCON0  bitv 0x06ae
 CSP      bitv 0x00
 DPP0     bitv 0x000
 DPP1     bitv 0x001
-DPP2     bitv 0x002
+DPP2     bitv 0x003
 DPP3     bitv 0x003
+FOCON    bitv 0x0000
 P8       bitv 0x0000
+PLLCON   bitv 0x0000
 PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xfc00
 SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
-r0       bitv 0xfc00
-r1       bitv 0xfc00
-r10      bitv 0x0000
+r0       bitv 0xa200
+r1       bitv 0x8058
+r10      bitv 0x000f
 r11      bitv 0x0000
 r12      bitv 0x0000
 r13      bitv 0x0000
 r14      bitv 0x0000
 r15      bitv 0x0000
-r2       bitv 0xfa00
-r3       bitv 0xfc00
-r4       bitv 0x0000
-r5       bitv 0x0000
-r6       bitv 0x0000
-r7       bitv 0x0000
-r8       bitv 0x0000
+r2       bitv 0x0000
+r3       bitv 0xe211
+r4       bitv 0x0001
+r5       bitv 0x000f
+r6       bitv 0x0065
+r7       bitv 0x0010
+r8       bitv 0x0004
 r9       bitv 0x0000
 usr0     bool false
 usr1     bool false
@@ -204,8 +212,8 @@ z        bool false
 0x00000004  416e 7943 6f6c 6f75 7259 6f75 4c69 6b65  AnyColourYouLike
 0x00000014  00                                       .
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x0000e200  ffff ffff ffff ffff ffff ffff ffff ffff  ................
-0x0000e210  ff                                       .
+0x0000e200  4865 6c6c 6f20 6672 6f6d 2052 7a49 4c21  Hello from RzIL!
+0x0000e210  00                                       .
 EOF
 RUN
 
@@ -241,11 +249,15 @@ DPP0     bitv 0x000
 DPP1     bitv 0x001
 DPP2     bitv 0x002
 DPP3     bitv 0x003
+FOCON    bitv 0x0000
 P8       bitv 0x0000
+PLLCON   bitv 0x0000
 PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xfc00
 SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -278,8 +290,8 @@ z        bool false
 0x00000014  00                                       .
 =======
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x0000fbfc  a001 00ff ffff ffff ffff ffff ffff ffff  ................
-0x0000fc0c  ff                                       .
+0x0000fbfc  a001 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000fc0c  00                                       .
 =======
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x0000e200  4865 6c6c 6f20 6672 6f6d 2052 7a49 4c21  Hello from RzIL!
@@ -302,8 +314,7 @@ aaa
 aezi
 aezvt
 echo =======
-aezsue 0x00c0146e
-echo =======
+aezsu 0x00c0146e
 EOF
 BROKEN=1
 EXPECT=<<EOF
@@ -316,12 +327,15 @@ DPP0     bitv 0x000
 DPP1     bitv 0x001
 DPP2     bitv 0x002
 DPP3     bitv 0x003
-IP       bitv 0x00c00000
+FOCON    bitv 0x0000
 P8       bitv 0x0000
+PLLCON   bitv 0x0000
 PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xfc00
 SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -341,25 +355,12 @@ r6       bitv 0x0000
 r7       bitv 0x0000
 r8       bitv 0x0000
 r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
 v        bool false
 z        bool false
 
 =======
-0x00c00000 [fac08400] jmps 0xc00084
-(seq (set CSP (ite (! (var SGTDIS)) (bv 8 0xc0) (bv 8 0x0))) (jmp (bv 32 0xc00084)))
-pc_write(old: 0xc00000, new: 0xc00004)
-var_read(name: SGTDIS, value: 0x0)
-var_write(name: CSP, old: 0xc0, new: 0xc0)
-pc_write(old: 0xc00004, new: 0xc00084)
-
-0x00c00084 [a55aa5a5] diswdt
-nop
-pc_write(old: 0xc00084, new: 0xc00088)
-
-0x00c00088 [d180] extr #1
-nop
-pc_write(old: 0xc00088, new: 0xc0008a)
-
 EOF
 RUN
 
@@ -390,7 +391,6 @@ wx CB00 @ 34
 aaa
 aezi
 aezsue 36
-#aoip 1
 EOF
 EXPECT=<<EOF
 0x00000000 [e6881300] mov 0xff10, #0x0013
@@ -529,8 +529,7 @@ e io.cache=1
 aaa
 aezi
 aezvt
-echo =======
-aezsue 0x00c0146e
+aezsu 0x00c0146e
 echo =======
 EOF
 EXPECT=<<EOF
@@ -538,17 +537,20 @@ variable type value
 -------------------------
 PC       bitv 0x00000000
 BUSCON0  bitv 0x0680
-CSP      bitv 0xc0
+CSP      bitv 0x08
 DPP0     bitv 0x000
 DPP1     bitv 0x001
 DPP2     bitv 0x002
 DPP3     bitv 0x003
-IP       bitv 0x00000000
+FOCON    bitv 0x0000
 P8       bitv 0x0000
+PLLCON   bitv 0x0000
 PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xfc00
 SYSCON   bitv 0x0000
+SYSCON1  bitv 0x0000
+SYSCON3  bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -568,10 +570,11 @@ r6       bitv 0x0000
 r7       bitv 0x0000
 r8       bitv 0x0000
 r9       bitv 0x0000
+usr0     bool false
+usr1     bool false
 v        bool false
 z        bool false
 
 =======
-
 EOF
 RUN
