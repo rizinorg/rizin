@@ -200,6 +200,19 @@ static bool table_query_resolve_column_or_log(RzTable *t, const char *name, size
 	if (table_query_resolve_column(t, name, index)) {
 		return true;
 	}
+	if (t->cols && !rz_vector_empty(t->cols)) {
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		RzTableColumn *col;
+		size_t i = 0;
+		rz_vector_foreach (t->cols, col) {
+			rz_strbuf_appendf(&sb, "%s%s", i++ ? ", " : "", rz_str_get(col->name));
+		}
+		RZ_LOG_ERROR("table: Invalid column (%s); available columns: %s\n",
+			name, rz_strbuf_get(&sb));
+		rz_strbuf_fini(&sb);
+		return false;
+	}
 	RZ_LOG_ERROR("table: Invalid column (%s)\n", name);
 	return false;
 }

@@ -484,6 +484,67 @@ bool test_rz_table_query_regressions(void) {
 	mu_end;
 }
 
+static char *last_table_log = NULL;
+
+static void table_log_capture_cb(const char *output, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) {
+	free(last_table_log);
+	last_table_log = rz_str_dup(output);
+}
+
+bool test_rz_table_query_invalid_column_log(void) {
+	int retval = MU_PASSED;
+	RzTable *t = NULL;
+	RzTable *empty = NULL;
+	RzLogLevel prev_level = rz_log_get_level();
+	rz_log_set_level(RZ_LOGLVL_ERROR);
+	rz_log_add_callback(table_log_capture_cb);
+
+	t = rz_table_new();
+	if (!t) {
+		mu_cleanup_fail(cleanup, "table allocation should succeed");
+	}
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "nth");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_NUMBER, "vaddr");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "lib");
+	rz_table_add_column(t, RZ_TABLE_COLUMN_TYPE_STRING, "name");
+	rz_table_add_row(t, "1", "0x1000", "kernel32.dll", "CreateFileW", NULL);
+
+	if (!rz_table_query(t, "libname/uniq")) {
+		mu_cleanup_fail(cleanup, "invalid column query keeps running");
+	}
+	if (!last_table_log) {
+		mu_cleanup_fail(cleanup, "invalid column should log an error");
+	}
+	if (strcmp(last_table_log,
+		    "ERROR: table: Invalid column (libname); available columns: nth, vaddr, lib, name\n")) {
+		mu_cleanup_fail(cleanup, "invalid column error should list available columns");
+	}
+	RZ_FREE(last_table_log);
+
+	empty = rz_table_new();
+	if (!empty) {
+		mu_cleanup_fail(cleanup, "empty table allocation should succeed");
+	}
+	if (!rz_table_query(empty, "missing/uniq")) {
+		mu_cleanup_fail(cleanup, "empty table invalid column query");
+	}
+	if (!last_table_log) {
+		mu_cleanup_fail(cleanup, "empty table invalid column should log an error");
+	}
+	if (strcmp(last_table_log, "ERROR: table: Invalid column (missing)\n")) {
+		mu_cleanup_fail(cleanup, "empty table invalid column error omits available columns list");
+	}
+
+cleanup:
+	RZ_FREE(last_table_log);
+	rz_table_free(empty);
+	rz_table_free(t);
+	rz_log_del_callback(table_log_capture_cb);
+	rz_log_set_level(prev_level);
+	mu_cleanup_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_table);
 	mu_run_test(test_rz_table_tostring);
@@ -495,6 +556,7 @@ bool all_tests() {
 	mu_run_test(test_rz_table_add_row_columnsf);
 	mu_run_test(test_rz_table_query);
 	mu_run_test(test_rz_table_query_regressions);
+	mu_run_test(test_rz_table_query_invalid_column_log);
 	return tests_passed != tests_run;
 }
 
