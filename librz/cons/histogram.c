@@ -642,7 +642,15 @@ static void render_visual_status(RzStrBuf *buf, const RzHistogramInteractive *hi
 	if (hist->size > 1) {
 		percent = (int)((ut64)hist->barnumber * 100 / (ut64)(hist->size - 1));
 	}
-	rz_strf(left, "Index %d data %d", hist->barnumber, data[hist->barnumber]);
+	char value[64];
+	if (opts->data_f) {
+		// data is scaled to 0..255; show the value in the ruler's units.
+		const char *unit = (opts->value_unit && *opts->value_unit) ? opts->value_unit : "";
+		format_ruler_label(opts, opts->data_f[hist->barnumber], unit, value, sizeof(value));
+	} else {
+		rz_strf(value, "%d", data[hist->barnumber]);
+	}
+	rz_strf(left, "Index %d data %s", hist->barnumber, value);
 	rz_strf(right, "0x%" PFMT64x "  %3d%%", cursor_off, percent);
 	left_len = (int)strlen(left);
 	right_len = (int)strlen(right);
@@ -894,7 +902,9 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  * The legacy 0..255 byte ruler is used when `opts->value_max == 0`. Otherwise
  * the chart honours `opts->value_min..value_max` with `value_precision`
  * decimals and an optional `value_unit` suffix (e.g. Shannon entropy uses
- * value_max=8, value_precision=1 → labels 8.0, 6.0, 4.0, 2.0, 0.0).
+ * value_max=8, value_precision=1 → labels 8.0, 6.0, 4.0, 2.0, 0.0). When
+ * `opts->data_f` is set, the status line shows its value at the cursor in the
+ * format of the labels; the bars still come from \p data.
  *
  * \param hist Information about the interactive histogram (canvas, cursor,
  *             zoom level, opts).

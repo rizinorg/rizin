@@ -5477,8 +5477,8 @@ static RzCmdStatus print_histogram_metric(RzCore *core, int argc, const char **a
 		return RZ_CMD_STATUS_ERROR;
 	}
 	ut8 *data = calloc(1, brange->nblocks);
-	// fp metric values feed the static horizontal ruler via opts->data_f; the
-	// ut8 copy keeps the visual / vertical paths working.
+	// fp metric values feed the static horizontal chart and the visual status
+	// line via opts->data_f; the ut8 copy draws the visual and vertical bars.
 	double *fdata = RZ_NEWS0(double, brange->nblocks);
 	ut8 *tmp = malloc(brange->blocksize);
 	if (!tmp || !fdata || !data) {
@@ -5540,9 +5540,10 @@ static RzCmdStatus print_histogram_metric(RzCore *core, int argc, const char **a
 			free(data);
 			return RZ_CMD_STATUS_ERROR;
 		}
-		opts->value_max = 8;
-		opts->value_precision = 1;
-		opts->data_f = fdata; // visual fp path uses Shannon directly
+		opts->value_min = imin;
+		opts->value_max = imax;
+		opts->value_precision = spec->precision;
+		opts->data_f = fdata;
 		if (print_visual_bytes(core, opts, data, brange) != RZ_CMD_STATUS_OK) {
 			RZ_LOG_ERROR("Cannot generate interactive histogram\n");
 			res = RZ_CMD_STATUS_ERROR;

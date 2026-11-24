@@ -1317,6 +1317,42 @@ bool test_histogram_interactive_horizontal_minimap_cursor(void) {
 	mu_end;
 }
 
+// Metric histograms pass their values in data_f and the same values scaled to
+// 0..255 in data: the status line shows the former, as the ruler labels do.
+bool test_histogram_interactive_horizontal_status_value(void) {
+	RzCons *cons = rz_cons_new();
+	const double values[3] = { 65280.0, 0.0, 32512.0 };
+	const ut8 data[3] = { 255, 0, 127 };
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	mu_assert_notnull(opts, "opts new");
+	opts->ruler = true;
+	opts->value_max = 65280;
+	opts->value_precision = 1;
+	opts->data_f = values;
+	RzHistogramInteractive *hist = make_visual_hist(3, 60, 10, opts, cons);
+	mu_assert_notnull(hist, "hist new");
+	char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 0 data 65280.0") != NULL, "Value of the top label");
+	mu_assert_true(strstr(res, " 65280.0|") != NULL, "Top label");
+	free(res);
+	hist->barnumber = 2;
+	res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 2 data 32512.0") != NULL, "Value, not the scaled byte");
+	free(res);
+
+	// Without data_f the byte itself is the value.
+	opts->data_f = NULL;
+	res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 2 data 127") != NULL, "Byte value");
+	free(res);
+	free_visual_hist(hist);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 // The hex preview panel kicks in only when:
 //   - hist->cursor_bytes is non-NULL and non-empty,
 //   - the terminal is wide (hist->w > 200), AND
@@ -1497,6 +1533,7 @@ bool all_tests() {
 	mu_run_test(test_histogram_interactive_horizontal_minimap_toggle);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_window);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_cursor);
+	mu_run_test(test_histogram_interactive_horizontal_status_value);
 	mu_run_test(test_histogram_interactive_horizontal_hex_preview);
 	return tests_passed != tests_run;
 }
