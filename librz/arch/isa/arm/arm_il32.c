@@ -1514,9 +1514,15 @@ static RzILOpEffect *bl(cs_insn *insn, bool is_thumb) {
 	if (!tgt) {
 		return NULL;
 	}
-	return SEQ2(
-		SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0))),
-		ISREG(0) ? bx_write_pc(tgt) : JMP(tgt));
+	RzILOpEffect *link = SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0)));
+	if (!ISREG(0)) {
+		return SEQ2(link, JMP(tgt));
+	}
+	if (REGID(0) == ARM_REG_LR) {
+		// blx lr branches to lr from before the link
+		return SEQ3(SETL("tgt", tgt), link, bx_write_pc(VARL("tgt")));
+	}
+	return SEQ2(link, bx_write_pc(tgt));
 }
 
 /**

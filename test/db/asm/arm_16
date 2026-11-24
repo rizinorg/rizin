@@ -217,6 +217,7 @@ d "bx sb" 4847
 a "bx r9" 4847
 d "bx lr" 7047 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
 d "blx r3" 9847 0x100 (seq (set lr (bv 32 0x103)) (jmp (& (var r3) (bv 32 0xfffffffe))))
+d "blx lr" f047 0x100 (seq (set tgt (var lr)) (set lr (bv 32 0x103)) (jmp (& (var tgt) (bv 32 0xfffffffe))))
 d "mov pc, lr" f746 0x0 (jmp (& (var lr) (bv 32 0xfffffffe)))
 d "add pc, r0" 8744 0x0 (jmp (& (+ (bv 32 0x4) (var r0)) (bv 32 0xfffffffe)))
 d "pop {r4, pc}" 10bd 0x0 (seq (set base (var sp)) (set r4 (loadw 0 32 (+ (var base) (bv 32 0x0)))) (set tgt (loadw 0 32 (+ (var base) (bv 32 0x4)))) (set sp (+ (var base) (bv 32 0x8))) (jmp (& (var tgt) (bv 32 0xfffffffe))))
