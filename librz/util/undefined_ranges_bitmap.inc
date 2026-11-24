@@ -10,6 +10,7 @@
  * Unicode version: 16.0.0.
  */
 
+// clang-format off
 static const ut64 undefined_ranges_bitmap[17408] = {
 	0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
 	0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
@@ -5815,6 +5816,7 @@ static const ut64 undefined_ranges_bitmap[17408] = {
 	0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL,
 	0x0000000000000000ULL, 0xc000000000000000ULL,
 };
+// clang-format on
 
 /**
  * \brief Number of leading entries of `undefined_ranges` to skip when falling back.

@@ -89,12 +89,14 @@ def emit_inc(bitmap, skip_entries, unicode_version, author_name, author_email):
         f" * Unicode version: {unicode_version}.",
         " */",
         "",
+        "// clang-format off",
         f"static const ut64 undefined_ranges_bitmap[{len(bitmap)}] = {{",
     ]
     for i in range(0, len(bitmap), WORDS_PER_LINE):
         row = bitmap[i:i + WORDS_PER_LINE]
         lines.append("\t" + " ".join(f"0x{w:016x}ULL," for w in row))
     lines.append("};")
+    lines.append("// clang-format on")
     lines.append("")
     lines.append("/**")
     lines.append(" * \\brief Number of leading entries of `undefined_ranges` to skip when falling back.")
