@@ -63,8 +63,12 @@ RUN
 
 NAME=objc method flags (icj)
 FILE=bins/mach0/TestMethods
-CMDS=icj~{[0].methods[1].flags[0]}
+CMDS=<<EOF
+icj~{[1].classname}
+icj~{[1].methods[1].flags[0]}
+EOF
 EXPECT=<<EOF
+ViewController
 class
 EOF
 RUN

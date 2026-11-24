@@ -14,15 +14,21 @@ static void fini_classes(RzBinObject *o) {
 	rz_pvector_free(o->classes);
 }
 
-static RzBinClass *plugin_class(RzBinObject *o, const char *name, ut64 addr) {
-	RzBinClass *c = RZ_NEW0(RzBinClass);
-	c->name = rz_str_dup(name);
-	c->addr = addr;
-	rz_pvector_push(o->classes, c);
-	if (!ht_sp_find(o->name_to_class_object, name, NULL)) {
-		ht_sp_insert(o->name_to_class_object, name, c);
+static bool load_classes_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	return true;
+}
+
+static RzPVector *plugin_classes(RzBinFile *bf) {
+	RzPVector *classes = rz_pvector_new((RzPVectorFree)rz_bin_class_free);
+	const char *names[] = { "Zulu", "Same", "Same", "Duplicate", "Duplicate" };
+	const ut64 addresses[] = { UT64_MAX, UT64_MAX, 0x200, 0x300, 0x100 };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(names); i++) {
+		RzBinClass *c = RZ_NEW0(RzBinClass);
+		c->name = rz_str_dup(names[i]);
+		c->addr = addresses[i];
+		rz_pvector_push(classes, c);
 	}
-	return c;
+	return classes;
 }
 
 bool test_class_insertion_order(void) {
@@ -64,23 +70,45 @@ bool test_class_duplicate_metadata(void) {
 }
 
 bool test_class_plugin_order_and_address_update(void) {
-	RzBinObject o = { 0 };
-	init_classes(&o);
-	RzBinClass *z = plugin_class(&o, "Zulu", UT64_MAX);
-	RzBinClass *missing = plugin_class(&o, "Same", UT64_MAX);
-	RzBinClass *known = plugin_class(&o, "Same", 0x200);
-	mu_assert_ptreq(rz_bin_object_add_class(&o, "Zulu", "Base", UT64_MAX), z, "reuse plugin class");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 0), z, "duplicate does not reorder plugin classes");
-	mu_assert_notnull(rz_bin_object_add_class(&o, "Alpha", NULL, UT64_MAX), "sort on first new class");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 1), missing, "initial duplicate address order");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 2), known, "initial known address order");
-	mu_assert_ptreq(rz_bin_object_add_class(&o, "Same", NULL, 0x300), missing, "update first plugin duplicate");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 1), missing, "metadata update does not immediately reorder");
-	mu_assert_notnull(rz_bin_object_add_class(&o, "Beta", NULL, UT64_MAX), "insert after address update");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 2), known, "reorder updated duplicate on insertion");
-	mu_assert_ptreq(rz_pvector_at(o.classes, 3), missing, "updated address sorts after known");
-	mu_assert_eq(rz_pvector_len(o.classes), 5, "preserve plugin duplicates");
-	fini_classes(&o);
+	RzBinPlugin plugin = {
+		.name = "test_classes",
+		.load_buffer = load_classes_buffer,
+		.classes = plugin_classes,
+	};
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "create bin");
+	mu_assert_true(rz_bin_plugin_add(bin, &plugin), "register plugin");
+	bin->filter_rules = RZ_BIN_REQ_CLASSES;
+	RzBuffer *buf = rz_buf_new_with_bytes((const ut8 *)"classes", 7);
+	RzBinOptions opt;
+	rz_bin_options_init(&opt, -1, 0, 0, false);
+	opt.filename = "classes.bin";
+	opt.pluginname = plugin.name;
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &opt);
+	mu_assert_notnull(bf, "load plugin classes");
+	RzBinObject *o = bf->o;
+	const char *sorted[] = { "Duplicate", "Duplicate", "Same", "Same", "Zulu" };
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(sorted); i++) {
+		RzBinClass *c = rz_pvector_at(o->classes, i);
+		mu_assert_streq(c->name, sorted[i], "sorted immediately on load");
+	}
+	RzBinClass *first = rz_bin_object_find_class(o, "Duplicate");
+	mu_assert_eq(first->addr, 0x300, "lookup preserves first plugin duplicate");
+	mu_assert_ptreq(rz_pvector_at(o->classes, 1), first, "duplicate addresses sorted on load");
+	RzBinClass *missing = rz_bin_object_find_class(o, "Same");
+	RzBinClass *known = rz_pvector_at(o->classes, 3);
+	mu_assert_ptreq(rz_pvector_at(o->classes, 2), missing, "initial missing address order");
+	mu_assert_ptreq(rz_bin_object_add_class(o, "Same", NULL, 0x300), missing, "update plugin duplicate");
+	mu_assert_ptreq(rz_pvector_at(o->classes, 2), known, "address update immediately restores order");
+	mu_assert_ptreq(rz_pvector_at(o->classes, 3), missing, "updated class follows known address");
+	mu_assert_ptreq(rz_bin_object_find_class(o, "Same"), missing, "update preserves lookup identity");
+	mu_assert_notnull(rz_bin_object_add_class(o, "Alpha", NULL, UT64_MAX), "insert before plugin classes");
+	mu_assert_notnull(rz_bin_object_add_class(o, "Beta", NULL, UT64_MAX), "insert among sorted classes");
+	mu_assert_ptreq(rz_pvector_at(o->classes, 4), known, "known address remains ordered");
+	mu_assert_ptreq(rz_pvector_at(o->classes, 5), missing, "updated address remains ordered");
+	mu_assert_eq(rz_pvector_len(o->classes), 7, "preserve plugin duplicates");
+	rz_bin_free(bin);
+	rz_buf_free(buf);
 	mu_end;
 }
 
