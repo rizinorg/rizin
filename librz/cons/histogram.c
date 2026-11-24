@@ -565,8 +565,10 @@ static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	// Window indicator, drawn above the density row: heavy corners ┏━━━┓
 	// bracket the visible slice.
 	rz_strbuf_appendf(buf, "%*s", (int)gutter_w, "");
-	st32 win_start_col = (st32)((ut64)adder * map_w / histogramwidth);
-	st32 win_end_col = (st32)((ut64)(adder + visible_span) * map_w / histogramwidth);
+	// Frame every column showing a visible index; the view may end inside a
+	// column, so the end is rounded up.
+	st32 win_start_col = (st32)histogram_index_column(adder, histogramwidth, map_w);
+	st32 win_end_col = (st32)(((ut64)(adder + visible_span) * map_w + histogramwidth - 1) / histogramwidth);
 	if (win_end_col <= win_start_col) {
 		win_end_col = win_start_col + 1;
 	}
