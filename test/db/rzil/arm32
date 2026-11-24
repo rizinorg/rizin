@@ -416,6 +416,107 @@ gef = 0xa
 EOF
 RUN
 
+NAME=thumb returns clear bit 0 of the pc
+FILE==
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+e asm.cpu=cortexm
+e cfg.bigendian=false
+o malloc://0x100 0x20000000 rw
+wx 00f002f8 @ 0x0 # bl 0x8
+wx 00bf @ 0x4 # nop
+wx fee7 @ 0x6 # b 0x6
+wx 00b5 @ 0x8 # push {lr}
+wx 00f001f8 @ 0xa # bl 0x10
+wx 00bd @ 0xe # pop {pc}
+wx 7047 @ 0x10 # bx lr
+aezi
+ar sp=0x20000100
+aezs 1
+ar pc
+ar lr
+aezs 3
+ar pc
+ar lr
+aezs 1
+ar pc
+ar sp
+aezs 1
+ar pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000008
+lr = 0x00000005
+pc = 0x0000000e
+lr = 0x0000000f
+pc = 0x00000004
+sp = 0x20000100
+pc = 0x00000006
+EOF
+RUN
+
+NAME=thumb loads and alu writes of the pc clear bit 0
+FILE=malloc://0x1000
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 7047 @ 0x100 # bx lr
+wx 00bd @ 0x102 # pop {pc}
+wx f746 @ 0x104 # mov pc, lr
+wx 5df804fb @ 0x106 # ldr pc, [sp], 4
+wx 9847 @ 0x10a # blx r3
+wx 50f821f0 @ 0x10c # ldr.w pc, [r0, r1, lsl 2]
+wx 8744 @ 0x110 # add pc, r0
+wv4 0x241 @ 0x800
+wv4 0x261 @ 0x804
+wv4 0x2a1 @ 0x90c
+aezi
+ar sp=0x800
+ar lr=0x221
+ar r3=0x281
+ar r0=0x900
+ar r1=3
+ar pc=0x100
+aezs 1
+ar pc
+ar pc=0x102
+aezs 1
+ar pc
+ar sp
+ar pc=0x104
+aezs 1
+ar pc
+ar pc=0x106
+aezs 1
+ar pc
+ar sp
+ar pc=0x10a
+aezs 1
+ar pc
+ar lr
+ar pc=0x10c
+aezs 1
+ar pc
+ar r0=0x11
+ar pc=0x110
+aezs 1
+ar pc
+EOF
+EXPECT=<<EOF
+pc = 0x00000220
+pc = 0x00000240
+sp = 0x00000804
+pc = 0x00000220
+pc = 0x00000260
+sp = 0x00000808
+pc = 0x00000280
+lr = 0x0000010d
+pc = 0x000002a0
+pc = 0x00000124
+EOF
+RUN
+
 NAME=emulateme_vfp
 FILE=bins/elf/emulateme_vfp.arm32
 TIMEOUT=60

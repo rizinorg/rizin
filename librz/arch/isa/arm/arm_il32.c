@@ -734,6 +734,16 @@ static RzILOpEffect *update_flags_from_cpsr(RzILOpBitVector *val, bool f, bool s
 }
 
 /**
+ * \brief BXWritePC(): jump to \p addr, of which bit 0 selects the instruction set and is not part of the PC
+ *
+ * LoadWritePC() and ALUWritePC() set the same PC as of Armv7 and in Thumb. The
+ * IL has no instruction set state, so it stays as it is.
+ */
+static RzILOpEffect *bx_write_pc(RZ_OWN RZ_NONNULL RzILOpBitVector *addr) {
+	return JMP(LOGAND(addr, U32(~1u)));
+}
+
+/**
  * Capstone: ARM_INS_MOV, ARM_INS_MOVW, ARM_INS_LSL, ARM_INS_LSR, ARM_INS_ASR, ARM_INS_RRX, ARM_INS_ROR, ARM_INS_MVN
  * ARM: mov, movs, movw, lsl, lsls, lsr, lsrs, asr, asrs, rrx, rrxs, ror, rors, mvn, mvns
  */
@@ -795,7 +805,7 @@ static RzILOpEffect *mov(cs_insn *insn, bool is_thumb) {
 			// ALUExceptionReturn()
 			goto err;
 		} else {
-			return JMP(val);
+			return bx_write_pc(val);
 		}
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), val);
@@ -901,7 +911,7 @@ static RzILOpEffect *add_sub(cs_insn *insn, bool is_thumb) {
 			rz_il_op_pure_free(res);
 			return NULL;
 		} else {
-			return JMP(res);
+			return bx_write_pc(res);
 		}
 	}
 	RzILOpEffect *set = write_reg(REGID(0), res);
@@ -1021,9 +1031,9 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 				return SEQ3(
 					SETL("tgt", data),
 					writeback_eff,
-					JMP(VARL("tgt")));
+					bx_write_pc(VARL("tgt")));
 			} else {
-				eff = JMP(data);
+				eff = bx_write_pc(data);
 			}
 		} else {
 			eff = write_reg(REGID(0), data);
@@ -1196,7 +1206,7 @@ static RzILOpEffect *bitwise(cs_insn *insn, bool is_thumb) {
 			rz_il_op_pure_free(carry);
 			return NULL;
 		} else {
-			return JMP(res);
+			return bx_write_pc(res);
 		}
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), res);
@@ -1457,7 +1467,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 		size_t idx = op_first + (op_count - 1 - i);
 		if (ISREG(idx) && REGID(idx) == ARM_REG_PC) {
 			// jmp goes last
-			eff = JMP(VARL("tgt"));
+			eff = bx_write_pc(VARL("tgt"));
 		}
 	}
 	bool decrement = insn->id == ARM_INS_LDMDA || insn->id == ARM_INS_LDMDB || insn->id == ARM_INS_VLDMDB;
@@ -1506,7 +1516,7 @@ static RzILOpEffect *bl(cs_insn *insn, bool is_thumb) {
 	}
 	return SEQ2(
 		SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0))),
-		JMP(tgt));
+		ISREG(0) ? bx_write_pc(tgt) : JMP(tgt));
 }
 
 /**
@@ -4417,11 +4427,14 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_DSB:
 	case ARM_INS_ISB:
 		return NOP();
-	case ARM_INS_B:
+	case ARM_INS_B: {
+		RzILOpBitVector *dst = ARG(0);
+		return dst ? JMP(dst) : NULL;
+	}
 	case ARM_INS_BX:
 	case ARM_INS_BXJ: {
 		RzILOpBitVector *dst = ARG(0);
-		return dst ? JMP(dst) : NULL;
+		return dst ? bx_write_pc(dst) : NULL;
 	}
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
