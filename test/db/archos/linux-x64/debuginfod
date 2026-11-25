@@ -2,7 +2,7 @@ NAME="Debugging Information in debuginfod"
 FILE=
 CMDS=<<EOF
 !sh -c "debuginfod -vvv -F bins/elf/float_ex1/float_ex1_buildid bins/elf/float_ex1/float_ex1_split-dwarf.debug &"
-!sh -c 'for i in $(seq 1 150); do curl -sf -o /dev/null http://127.0.0.1:8002/buildid/174fbe7291d83838e1d20cd0fc894a920b53b6f3/debuginfo && break; sleep 0.1; done'
+!sh -c 'printf "%s\n" "import sys, time, urllib.request" "for _ in range(150):" " try:" "  urllib.request.urlopen(sys.argv[1], timeout=1).close(); break" " except Exception:" "  time.sleep(0.1)" | python3 - http://127.0.0.1:8002/buildid/174fbe7291d83838e1d20cd0fc894a920b53b6f3/debuginfo'
 e bin.dbginfo.debuginfod=true
 e bin.dbginfo.debuginfod_urls=http://127.0.0.1:8002
 o bins/elf/float_ex1/float_ex1_buildid

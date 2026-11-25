@@ -337,11 +337,7 @@ jobs:
             export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
           fi
           cd test
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            rz-test -j `sysctl -n hw.activecpu` -LF bins/fuzzed @fuzz
-          else
-            rz-test -j `nproc` -LF bins/fuzzed @fuzz
-          fi
+          rz-test -LF bins/fuzzed @fuzz
           # some fuzzed bins are mem hungry and are killed by the runner.
           # running them one threaded allows to be check them
           rz-test -j1 -LF bins/fuzzed-memhungry @fuzz
