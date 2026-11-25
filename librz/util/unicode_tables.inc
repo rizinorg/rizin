@@ -861,5 +861,4 @@ static const RzUnicodeCaseMap uppercase_mapping = {
 	{ 125251, { 125217 }}
 };
 
-
 // clang-format on
