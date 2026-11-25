@@ -7,6 +7,9 @@
 #include <rz_main.h>
 #include <rz_windows.h>
 #include <rz_util/rz_print.h>
+#if __UNIX__
+#include <signal.h>
+#endif
 
 #define Color_INSERT   Color_BGREEN
 #define Color_DELETE   Color_BRED
@@ -221,6 +224,8 @@ int rz_test_main(int argc, const char **argv) {
 				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	}
+#elif __UNIX__
+	rz_sys_signal(SIGPIPE, SIG_IGN);
 #endif
 
 	if (!except_dir) {
@@ -505,6 +510,10 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	if (rz_pvector_len(&state.db->tests) != 0) {
+#if __WINDOWS__
+		// Pre-existing Windows subprocess_wait() overlapped I/O cancellation issues break persistent workers.
+		state.use_worker = false;
+#else
 		char *no_batch_env = rz_sys_getenv("RZ_TEST_NO_BATCH");
 		char *lsan_env = rz_sys_getenv("LSAN_OPTIONS");
 		// Keep per-test subprocesses under LSan log collection so leak stacks stay per-test.
@@ -512,6 +521,7 @@ int rz_test_main(int argc, const char **argv) {
 			RZ_STR_ISEMPTY(lsan_env);
 		free(no_batch_env);
 		free(lsan_env);
+#endif
 		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
 	} else {
 		eprintf("No tests discovered\n");

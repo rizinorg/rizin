@@ -194,12 +194,52 @@ bool test_rz_test_cmd_batchable(void) {
 	t->cmds.value = strdup("echo hi\n?v 1+2");
 	mu_assert_true(rz_test_cmd_test_batchable(t), "plain stateless cmd test should be batchable");
 
-	t->args.value = strdup("-a x86 -b 32 -e asm.bits=32");
+	t->args.value = strdup("-a x86 -b 32 -e bin.strings=false");
 	mu_assert_true(rz_test_cmd_test_batchable(t), "safe arch/config args should be batchable");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo hi | head\necho foo~bar");
+	mu_assert_true(rz_test_cmd_test_batchable(t), "plain pipe and grep ~ should remain batchable");
 
 	free(t->args.value);
 	t->args.value = strdup("-a x86 -d");
 	mu_assert_false(rz_test_cmd_test_batchable(t), "-d debug flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-c echo");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-c flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-i script.rz");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-i flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-I pre.rz");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-I flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-l plugin.so");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-l flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-r profile.rr2");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-r flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-R env=1");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-R flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-e dir.home=/tmp");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-e dir.home must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-e dir.tmp=/tmp");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-e dir.tmp must not be batched");
+
+	free(t->args.value);
+	t->args.value = strdup("-e cfg.debug=true");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-e cfg.debug must not be batched");
 
 	free(t->args.value);
 	t->args.value = NULL;
@@ -217,6 +257,62 @@ bool test_rz_test_cmd_batchable(void) {
 	mu_assert_false(rz_test_cmd_test_batchable(t), "shell escape ! must not be batched");
 
 	free(t->cmds.value);
+	t->cmds.value = strdup("echo `!cmd`");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "backtick shell escape must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo $(!id)");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "$() substitution must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo a | !cat");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "pipe to ! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo a && !cat");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "&& ! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo a || !cat");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "|| ! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("\"!ls\"");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "quoted ! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("ood");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "ood must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("do");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "do must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("o dbg:///bin/ls");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "o dbg:// must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("e cfg.debug=true");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "e cfg.debug must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("e dir.home=/tmp");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "e dir.home must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("e dir.tmp=/tmp");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "e dir.tmp must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("L /tmp/plugin.so");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "L plugin loader must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup(". scripts/map_clean.rz");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "dot script loader must not be batched");
+
+	free(t->cmds.value);
 	t->cmds.value = strdup("cd /tmp");
 	mu_assert_false(rz_test_cmd_test_batchable(t), "cd must not be batched");
 
@@ -229,6 +325,10 @@ bool test_rz_test_cmd_batchable(void) {
 	free(t->file.value);
 	t->file.value = strdup("-");
 	mu_assert_false(rz_test_cmd_test_batchable(t), "stdin file '-' must not be batched");
+
+	mu_assert_true(test_path_is_archos("db/archos/linux-x64/dbg_oo"), "posix archos path must be detected");
+	mu_assert_true(test_path_is_archos("db\\archos\\windows-x64\\dbg"), "windows archos path must be detected");
+	mu_assert_false(test_path_is_archos("db/cmd/cmd_math"), "regular cmd path is not archos");
 
 	rz_test_cmd_test_free(t);
 	mu_end;
@@ -247,9 +347,18 @@ bool test_rz_test_parse_worker_header(void) {
 	mu_assert_eq(olen, 0, "out_len 0");
 	mu_assert_eq(elen, 42, "err_len 42");
 
+	mu_assert_true(parse_worker_result_header("RESULT -1 0 0", &rc, &olen, &elen), "valid negative rc header");
+	mu_assert_eq(rc, -1, "rc -1");
+
 	mu_assert_false(parse_worker_result_header("BAD 0 0 0", &rc, &olen, &elen), "wrong prefix");
 	mu_assert_false(parse_worker_result_header("RESULT 0 12", &rc, &olen, &elen), "missing err_len");
 	mu_assert_false(parse_worker_result_header("RESULT 0 12 3 extra", &rc, &olen, &elen), "trailing garbage");
+	mu_assert_false(parse_worker_result_header("RESULT 0 -1 0", &rc, &olen, &elen), "negative out_len");
+	mu_assert_false(parse_worker_result_header("RESULT 0 0 -1", &rc, &olen, &elen), "negative err_len");
+	mu_assert_false(parse_worker_result_header("RESULT 0 18446744073709551615 0", &rc, &olen, &elen), "overflow out_len");
+	mu_assert_false(parse_worker_result_header("RESULT 0 2147483647 0", &rc, &olen, &elen), "INT_MAX out_len");
+	mu_assert_false(parse_worker_result_header("RESULT  0 0", &rc, &olen, &elen), "double space missing field");
+	mu_assert_false(parse_worker_result_header("RESULT  0 0 0", &rc, &olen, &elen), "leading space before rc");
 	mu_end;
 }
 
