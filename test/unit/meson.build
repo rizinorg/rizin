@@ -64,7 +64,7 @@ if get_option('enable_tests')
     'debruijn': [],
     'debug': [rz_cons_dep, rz_debug_dep, rz_io_dep, rz_reg_dep],
     'debug_session': [rz_debug_dep, rz_reg_dep],
-    'diff': [rz_diff_dep],
+    'diff': [rz_diff_dep, mth],
     'ebcdic': [rz_io_dep],
     'endian': [rz_io_dep],
     'encodings': [],
