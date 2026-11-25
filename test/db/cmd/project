@@ -441,3 +441,88 @@ nth       addr  vt_offset type    name
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=preserve session, logging, screen, and compression config across project load
+FILE=bins/other/0x3
+CMDS=<<EOF
+e prj.compress=false
+e scr.html=true
+e scr.null=true
+e log.level=4
+e log.colors=true
+e log.show.sources=true
+e log.events=true
+e log.file=.tmp_session_cfg.log
+e cfg.fortunes=true
+e cfg.fortunes.clippy=true
+e cfg.fortunes.file=fun
+e cfg.editor=saved_editor
+e cfg.user=saved_user
+e cfg.cpuaffinity=1
+Ps .tmp_session_cfg.rzdb
+e scr.null=false
+e log.file=
+rm .tmp_session_cfg.log
+e prj.compress=true
+e scr.html=false
+e log.level=2
+e log.colors=false
+e log.show.sources=false
+e log.events=false
+e cfg.fortunes=false
+e cfg.fortunes.clippy=false
+e cfg.fortunes.file=tips
+e cfg.editor=local_editor
+e cfg.user=local_user
+e cfg.cpuaffinity=0
+Poo .tmp_session_cfg.rzdb
+rm .tmp_session_cfg.rzdb
+e prj.compress
+e scr.html
+e scr.null
+e log.level
+e log.colors
+e log.show.sources
+e log.events
+e log.file
+e cfg.fortunes
+e cfg.fortunes.clippy
+e cfg.fortunes.file
+e cfg.editor
+e cfg.user
+e cfg.cpuaffinity
+EOF
+EXPECT=<<EOF
+true
+false
+false
+2
+false
+false
+false
+
+false
+false
+tips
+local_editor
+local_user
+0
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=preserve prj.compress=false when loading compressed project
+FILE=bins/other/0x3
+CMDS=<<EOF
+e prj.compress=true
+Ps .tmp_compress_on.rzdb
+e prj.compress=false
+Po .tmp_compress_on.rzdb
+rm .tmp_compress_on.rzdb
+e prj.compress
+EOF
+EXPECT=<<EOF
+false
+EOF
+EXPECT_ERR=
+RUN
