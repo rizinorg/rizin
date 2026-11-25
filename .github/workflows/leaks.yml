@@ -31,7 +31,7 @@ jobs:
             build_system: meson
             compiler: gcc
             cflags: "-DRZ_ASSERT_STDOUT=1 -ftrivial-auto-var-init=pattern -funsigned-char"
-            meson_options: -Dbuildtype=debug -Db_sanitize=leak --werror
+            meson_options: -Dbuildtype=debugoptimized -Db_sanitize=leak --werror
             timeout: 120
 
     env:
@@ -107,7 +107,7 @@ jobs:
           meson test -C build --suite unit -q || true
           meson test -C build --suite integration -q || true
           cd test
-          rz-test -q || true
+          rz-test -j $(nproc) -q || true
 
       - name: Archive logs
         run: |
