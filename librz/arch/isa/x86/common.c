@@ -1164,27 +1164,152 @@ RZ_IPI ILPureEffectPair x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBit
 	return ret;
 }
 
-RzILOpFloat *f2sint_floating_helper(RzFloatRMode rmode, ut32 width, RzILOpFloat *val) {
-	return F2SINT(width, rmode, val);
+/**
+ * \brief Construct an RzIL constant equal to \c +-2^exponent in \p format
+ * without relying on host floating-point representations.
+ *
+ * \param format Target IEEE-754 binary float format
+ * \param exponent Power-of-two exponent within \p format range
+ * \param sign Sign bit (\c true for negative, \c false for positive)
+ * \return RzILOpFloat* Constant float expression, or NULL on failure
+ */
+static RzILOpFloat *x86_il_float_power_of_two(
+	RzFloatFormat format, ut32 exponent, bool sign) {
+	RzBitVector *bv = rz_bv_new(exponent + 1);
+	if (!bv) {
+		return NULL;
+	}
+	rz_bv_set(bv, exponent, true);
+	RzFloat *fl = rz_float_cast_float(bv, format, RZ_FLOAT_RMODE_RNE);
+	rz_bv_free(bv);
+	if (!fl) {
+		return NULL;
+	}
+	if (sign) {
+		rz_float_set_sign(fl, true);
+	}
+	return rz_il_op_new_float_from_rz_float(fl);
 }
 
 /**
- * \brief Convert the floating \p float_val to a RzILOpBitVector of size \p width
- * You need to have initialized a local variable "_rmode" set with the rounding
- * mode before you call this function.
+ * \brief Convert local integral-rounded float \c f_rnd_rm of \p format into
+ * a signed \p width-bit integer, returning x86 indefinite (\c 1<<(width-1))
+ * for NaN, infinity, or out-of-range values.
  *
- * \param float_val Desirable that it is a small expression since it will be duped
- * \param width Output bitvector width
- * \param ctx use_rmode gets set to true
- * \return RzILOpBitVector*
+ * \param format IEEE-754 binary format of \c f_rnd_rm
+ * \param width Target integer bit width (16, 32, or 64)
+ * \return RzILOpBitVector* Converted signed integer or x86 integer indefinite
  */
-RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+static RzILOpBitVector *float_rnd_to_signed_int_or_indef(
+	RzFloatFormat format, ut32 width) {
+	rz_return_val_if_fail(width == 16 || width == 32 || width == 64, NULL);
+
+	RzILOpFloat *min_val = x86_il_float_power_of_two(format, width - 1, true);
+	RzILOpFloat *max_val = x86_il_float_power_of_two(format, width - 1, false);
+	if (!min_val || !max_val) {
+		rz_il_op_pure_free(min_val);
+		rz_il_op_pure_free(max_val);
+		return NULL;
+	}
+
+	// Compare after rounding: e.g., -2^31 - 0.25 with RTZ rounds to -2^31 (valid).
+	RzILOpBool *in_range = AND(
+		IS_FINITE(VARL("f_rnd_rm")),
+		AND(FGE(VARL("f_rnd_rm"), min_val), FLT(VARL("f_rnd_rm"), max_val)));
+	RzILOpBitVector *indefinite = SHIFTL0(UN(width, 1), UN(width, width - 1));
+	return ITE(in_range, F2SINT(width, RZ_FLOAT_RMODE_RTZ, VARL("f_rnd_rm")), indefinite);
+}
+
+/**
+ * \brief Round \p val to an integral binary80 float using the FPU control word
+ * rounding mode. Sets \c ctx->use_rmode so \c _rmode is initialized beforehand.
+ *
+ * \param val Floating-point expression to round
+ * \param ctx X86 IL context (sets \c use_rmode to true)
+ * \return ILPureEffectPair Effect binding \c f_val_rm and rounded RzILOpFloat*
+ */
+RZ_IPI ILPureEffectPair x86_il_round_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *val, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
 	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
-	rz_return_val_if_fail(float_val && ctx, ret);
+	rz_return_val_if_fail(val && ctx, ret);
 
 	ctx->use_rmode = true;
-	ret.eff = SETL("f_val_rm", float_val);
-	ret.val = EXEC_WITH_RMODE(f2sint_floating_helper, width, VARL("f_val_rm"));
+	ret.eff = SETL("f_val_rm", val);
+	ret.val = EXEC_WITH_RMODE(FROUND, VARL("f_val_rm"));
+
+	return ret;
+}
+
+static ILPureEffectPair int_from_floating_with_opt_sign_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width,
+	RZ_NULLABLE const char *is_neg_var, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(
+		float_val && ctx && (width == 16 || width == 32 || width == 64), ret);
+
+	ILPureEffectPair rounded = x86_il_round_floating_ctx(float_val, ctx);
+	RzILOpEffect *bind_rnd = SETL("f_rnd_rm", rounded.val);
+	ret.eff = is_neg_var
+		? SEQ3(rounded.eff, bind_rnd, SETL(is_neg_var, IS_FNEG(VARL("f_rnd_rm"))))
+		: SEQ2(rounded.eff, bind_rnd);
+	ret.val = float_rnd_to_signed_int_or_indef(RZ_FLOAT_IEEE754_BIN_80, width);
+
+	return ret;
+}
+
+/**
+ * \brief Convert floating-point \p float_val (binary80) to a signed integer of
+ * \p width bits using FPU \c _rmode. Returns x86 integer indefinite
+ * (\c 1<<(width-1)) for NaN, infinity, or out-of-range values.
+ *
+ * \param float_val Expression to convert (evaluated once into \c f_val_rm)
+ * \param width Output bitvector width (16, 32, or 64)
+ * \param ctx use_rmode gets set to true
+ * \return ILPureEffectPair Effect binding temporaries and RzILOpBitVector* result
+ */
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width,
+	RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	return int_from_floating_with_opt_sign_ctx(float_val, width, NULL, ctx);
+}
+
+/**
+ * \brief Convert floating-point \p float_val (binary80) to a signed integer of
+ * \p width bits using FPU \c _rmode and capture the rounded float sign bit into
+ * \p is_neg_var (preserving \c -0.0 sign for \c fbstp).
+ *
+ * \param float_val Expression to convert (evaluated once into \c f_val_rm)
+ * \param width Output bitvector width (16, 32, or 64)
+ * \param is_neg_var Local variable receiving \c IS_FNEG of the rounded float
+ * \param ctx use_rmode gets set to true
+ * \return ILPureEffectPair Effect binding temporaries/sign and RzILOpBitVector*
+ */
+RZ_IPI ILPureEffectPair x86_il_int_and_sign_from_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width,
+	RZ_NONNULL const char *is_neg_var, RZ_BORROW RZ_NONNULL X86ILContext *ctx) {
+	rz_return_val_if_fail(is_neg_var, ((ILPureEffectPair){ 0 }));
+	return int_from_floating_with_opt_sign_ctx(float_val, width, is_neg_var, ctx);
+}
+
+/**
+ * \brief Convert floating-point \p float_val of \p format to a signed integer of
+ * \p width bits using fixed rounding mode \p rmode. Returns x86 integer
+ * indefinite (\c 1<<(width-1)) for NaN, infinity, or out-of-range values.
+ *
+ * \param format IEEE-754 binary format of \p float_val
+ * \param width Output bitvector width (16, 32, or 64)
+ * \param rmode Explicit IEEE-754 rounding mode
+ * \param float_val Floating-point expression in \p format
+ * \return ILPureEffectPair Effect binding \c f_rnd_rm and RzILOpBitVector* result
+ */
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_rmode(
+	RzFloatFormat format, ut32 width, RzFloatRMode rmode,
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val) {
+	ILPureEffectPair ret = { .val = NULL, .eff = NULL };
+	rz_return_val_if_fail(float_val && (width == 16 || width == 32 || width == 64), ret);
+
+	ret.eff = SETL("f_rnd_rm", FROUND(rmode, float_val));
+	ret.val = float_rnd_to_signed_int_or_indef(format, width);
 
 	return ret;
 }
