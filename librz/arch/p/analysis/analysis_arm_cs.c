@@ -1791,6 +1791,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_MRS:
 	case ARM_INS_MSR:
+	case ARM_INS_CPS:
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
@@ -2293,7 +2294,7 @@ static int analysis_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 				rz_arm_cs_analysis_op_32_esil(a, op, addr, buf, len, &ctx->handle, insn, thumb);
 			}
 			if (mask & RZ_ANALYSIS_OP_MASK_IL) {
-				op->il_op = rz_arm_cs_32_il(&ctx->handle, insn, thumb);
+				op->il_op = rz_arm_cs_32_il(&ctx->handle, insn, thumb, mode & CS_MODE_MCLASS);
 			}
 		}
 		set_opdir(op);
