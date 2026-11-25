@@ -54,6 +54,64 @@ typedef struct rz_test_state_t {
 	RzPVector /*<RzTestResultInfo *>*/ results;
 } RzTestState;
 
+static ut64 test_schedule_priority(const RzTest *test) {
+	if (!test || test->type != RZ_TEST_TYPE_CMD || !test->cmd_test) {
+		return 0;
+	}
+	if (test->cmd_test->timeout.set && test->cmd_test->timeout.value > 0) {
+		return 1000000ULL + test->cmd_test->timeout.value;
+	}
+	if (test->path && (strstr(test->path, "db/rzil") || strstr(test->path, "db\\rzil"))) {
+		return 500000ULL;
+	}
+	return 0;
+}
+
+static int test_schedule_cmp(const void *a, const void *b, void *user) {
+	ut64 pa = test_schedule_priority((const RzTest *)a);
+	ut64 pb = test_schedule_priority((const RzTest *)b);
+	if (pa < pb) {
+		return -1;
+	}
+	if (pa > pb) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * \brief Place high-priority (long-running) tests at the back of \p queue so workers pop them first.
+ * Preserves relative order of normal (priority 0) tests.
+ */
+static void rz_test_schedule_queue(RzPVector /*<RzTest *>*/ *queue) {
+	if (!queue || rz_pvector_len(queue) < 2) {
+		return;
+	}
+	RzPVector normal;
+	RzPVector heavy;
+	rz_pvector_init(&normal, NULL);
+	rz_pvector_init(&heavy, NULL);
+	void **it;
+	rz_pvector_foreach (queue, it) {
+		RzTest *test = *it;
+		if (test_schedule_priority(test) > 0) {
+			rz_pvector_push(&heavy, test);
+		} else {
+			rz_pvector_push(&normal, test);
+		}
+	}
+	if (!rz_pvector_empty(&heavy)) {
+		rz_pvector_sort(&heavy, test_schedule_cmp, NULL);
+		rz_pvector_clear(queue);
+		if (!rz_pvector_empty(&normal)) {
+			rz_pvector_insert_range(queue, 0, normal.v.a, rz_pvector_len(&normal));
+		}
+		rz_pvector_insert_range(queue, rz_pvector_len(queue), heavy.v.a, rz_pvector_len(&heavy));
+	}
+	rz_pvector_fini(&normal);
+	rz_pvector_fini(&heavy);
+}
+
 static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
@@ -488,23 +546,9 @@ int rz_test_main(int argc, const char **argv) {
 		goto coast;
 	}
 
-	bool jq_available = rz_test_check_jq_available();
-	if (!jq_available) {
-		eprintf("Skipping json tests because jq is not available.\n");
-		size_t i;
-		for (i = 0; i < rz_pvector_len(&state.db->tests);) {
-			RzTest *test = rz_pvector_at(&state.db->tests, i);
-			if (test->type == RZ_TEST_TYPE_JSON) {
-				rz_test_test_free(test);
-				rz_pvector_remove_at(&state.db->tests, i);
-				continue;
-			}
-			i++;
-		}
-	}
-
 	if (rz_pvector_len(&state.db->tests) != 0) {
 		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+		rz_test_schedule_queue(&state.queue);
 	} else {
 		eprintf("No tests discovered\n");
 	}

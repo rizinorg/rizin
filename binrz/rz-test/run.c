@@ -376,30 +376,194 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 	return true;
 }
 
-#define JQ_CMD "jq"
+#define JSON_MAX_DEPTH 1024
 
-RZ_API bool rz_test_check_jq_available(void) {
-	const char *args[] = { "." };
-	const char *invalid_json = "this is not json lol";
-	char *jq_path = rz_file_path(JQ_CMD);
-	RzSubprocess *proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
-	if (proc) {
-		rz_subprocess_stdin_write(proc, (const ut8 *)invalid_json, strlen(invalid_json));
-		rz_subprocess_wait(proc, UT64_MAX);
-	}
-	bool invalid_detected = proc && rz_subprocess_ret(proc) != 0;
-	rz_subprocess_free(proc);
+static inline bool json_is_ws(char c) {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
 
-	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
-	proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
-	if (proc) {
-		rz_subprocess_stdin_write(proc, (const ut8 *)valid_json, strlen(valid_json));
-		rz_subprocess_wait(proc, UT64_MAX);
+static inline const char *json_skip_ws(const char *p) {
+	while (json_is_ws(*p)) {
+		p++;
 	}
-	bool valid_detected = proc && rz_subprocess_ret(proc) == 0;
-	rz_subprocess_free(proc);
-	free(jq_path);
-	return invalid_detected && valid_detected;
+	return p;
+}
+
+static inline bool json_is_hex(char c) {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+static const char *json_validate_string(const char *p) {
+	if (*p != '"') {
+		return NULL;
+	}
+	p++;
+	while (*p) {
+		ut8 c = (ut8)*p;
+		if (c == '"') {
+			return p + 1;
+		}
+		if (c < 0x20) {
+			return NULL;
+		}
+		if (c == '\\') {
+			p++;
+			switch (*p) {
+			case '"':
+			case '\\':
+			case '/':
+			case 'b':
+			case 'f':
+			case 'n':
+			case 'r':
+			case 't':
+				p++;
+				break;
+			case 'u':
+				if (!json_is_hex(p[1]) || !json_is_hex(p[2]) || !json_is_hex(p[3]) || !json_is_hex(p[4])) {
+					return NULL;
+				}
+				p += 5;
+				break;
+			default:
+				return NULL;
+			}
+		} else {
+			p++;
+		}
+	}
+	return NULL;
+}
+
+static const char *json_validate_number(const char *p) {
+	if (*p == '-') {
+		p++;
+	}
+	if (*p == '0') {
+		p++;
+	} else if (*p >= '1' && *p <= '9') {
+		while (*p >= '0' && *p <= '9') {
+			p++;
+		}
+	} else {
+		return NULL;
+	}
+	if (*p == '.') {
+		p++;
+		if (*p < '0' || *p > '9') {
+			return NULL;
+		}
+		while (*p >= '0' && *p <= '9') {
+			p++;
+		}
+	}
+	if (*p == 'e' || *p == 'E') {
+		p++;
+		if (*p == '+' || *p == '-') {
+			p++;
+		}
+		if (*p < '0' || *p > '9') {
+			return NULL;
+		}
+		while (*p >= '0' && *p <= '9') {
+			p++;
+		}
+	}
+	return p;
+}
+
+static const char *json_validate_value(const char *p, int depth) {
+	if (depth > JSON_MAX_DEPTH) {
+		return NULL;
+	}
+	p = json_skip_ws(p);
+	switch (*p) {
+	case '{':
+		p = json_skip_ws(p + 1);
+		if (*p == '}') {
+			return p + 1;
+		}
+		while (true) {
+			p = json_validate_string(p);
+			if (!p) {
+				return NULL;
+			}
+			p = json_skip_ws(p);
+			if (*p != ':') {
+				return NULL;
+			}
+			p = json_validate_value(p + 1, depth + 1);
+			if (!p) {
+				return NULL;
+			}
+			p = json_skip_ws(p);
+			if (*p == ',') {
+				p = json_skip_ws(p + 1);
+				continue;
+			}
+			if (*p == '}') {
+				return p + 1;
+			}
+			return NULL;
+		}
+	case '[':
+		p = json_skip_ws(p + 1);
+		if (*p == ']') {
+			return p + 1;
+		}
+		while (true) {
+			p = json_validate_value(p, depth + 1);
+			if (!p) {
+				return NULL;
+			}
+			p = json_skip_ws(p);
+			if (*p == ',') {
+				p = json_skip_ws(p + 1);
+				continue;
+			}
+			if (*p == ']') {
+				return p + 1;
+			}
+			return NULL;
+		}
+	case '"':
+		return json_validate_string(p);
+	case 't':
+		return !strncmp(p, "true", 4) ? p + 4 : NULL;
+	case 'f':
+		return !strncmp(p, "false", 5) ? p + 5 : NULL;
+	case 'n':
+		return !strncmp(p, "null", 4) ? p + 4 : NULL;
+	default:
+		if (*p == '-' || (*p >= '0' && *p <= '9')) {
+			return json_validate_number(p);
+		}
+		return NULL;
+	}
+}
+
+/**
+ * \brief Validate that \p str is a stream of zero or more strict RFC 8259 JSON values.
+ * \param str NUL-terminated output string to validate.
+ * \return true if every value in the stream is valid RFC 8259 JSON with no trailing garbage.
+ */
+RZ_API bool rz_test_validate_json(RZ_NONNULL const char *str) {
+	rz_return_val_if_fail(str, false);
+	const char *p = json_skip_ws(str);
+	while (*p) {
+		char start = *p;
+		p = json_validate_value(p, 0);
+		if (!p) {
+			return false;
+		}
+		if (start != '{' && start != '[' && start != '"') {
+			if (*p != '\0' && !json_is_ws(*p) && *p != '{' && *p != '[' && *p != '"') {
+				return false;
+			}
+		}
+		p = json_skip_ws(p);
+	}
+	return true;
 }
 
 /**
@@ -457,15 +621,7 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
-	const char *args[] = { "." };
-	char *jq_path = rz_file_path(JQ_CMD);
-	RzSubprocess *proc = rz_subprocess_start(jq_path, args, 1, NULL, NULL, 0);
-	rz_subprocess_stdin_write(proc, (const ut8 *)out->out, strlen((char *)out->out));
-	rz_subprocess_wait(proc, UT64_MAX);
-	bool ret = rz_subprocess_ret(proc) == 0;
-	rz_subprocess_free(proc);
-	free(jq_path);
-	return ret;
+	return rz_test_validate_json((const char *)out->out);
 }
 
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test) {

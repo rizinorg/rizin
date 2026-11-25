@@ -188,9 +188,137 @@ bool test_rz_test_fix(void) {
 	mu_end;
 }
 
+bool test_rz_test_validate_json_valid(void) {
+	const char *cases[] = {
+		"",
+		" \t\r\n ",
+		"{}",
+		"[]",
+		"null",
+		"true",
+		"false",
+		"0",
+		"-0",
+		"1234567890",
+		"-42.5e+10",
+		"1e-3",
+		"\"hello \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u0041\"",
+		"{\"a\":[1,true,false,null,{\"b\":\"c\"}]}",
+		"{\"a\":1}\n[2,3]\ntrue\nnull\n",
+		"{}[]\"s\"",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_true(rz_test_validate_json(cases[i]), cases[i]);
+	}
+	mu_end;
+}
+
+bool test_rz_test_validate_json_invalid(void) {
+	const char *cases[] = {
+		"this is not json lol",
+		"{",
+		"}",
+		"[",
+		"]",
+		"{\"a\":1,}",
+		"[1,]",
+		"{a:1}",
+		"{\"a\" 1}",
+		"01",
+		"-01",
+		"+1",
+		".5",
+		"1.",
+		"1e",
+		"1e+",
+		"\"unterminated",
+		"\"raw\nnewline\"",
+		"\"bad\\xescape\"",
+		"\"bad\\u123g\"",
+		"// comment\n{}",
+		"/* comment */ {}",
+		"{} garbage",
+		"truefalse",
+		"123abc",
+		"null1",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_false(rz_test_validate_json(cases[i]), cases[i]);
+	}
+
+	// Deep nesting beyond JSON_MAX_DEPTH must be rejected safely without stack overflow.
+	size_t depth = JSON_MAX_DEPTH + 10;
+	char *deep = malloc(depth * 2 + 1);
+	mu_assert_notnull(deep, "alloc deep");
+	memset(deep, '[', depth);
+	memset(deep + depth, ']', depth);
+	deep[depth * 2] = '\0';
+	mu_assert_false(rz_test_validate_json(deep), "excessive nesting rejected");
+	free(deep);
+	mu_end;
+}
+
+bool test_rz_test_schedule_queue_lpt(void) {
+	RzPVector tests;
+	rz_pvector_init(&tests, (RzPVectorFree)rz_test_test_free);
+
+	RzTest *t_norm1 = RZ_NEW0(RzTest);
+	t_norm1->type = RZ_TEST_TYPE_CMD;
+	t_norm1->path = "db/cmd/cmd_a";
+	t_norm1->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_norm1);
+
+	RzTest *t_heavy_1200 = RZ_NEW0(RzTest);
+	t_heavy_1200->type = RZ_TEST_TYPE_CMD;
+	t_heavy_1200->path = "db/archos/linux-x64/dbg_cont_back";
+	t_heavy_1200->cmd_test = rz_test_cmd_test_new();
+	t_heavy_1200->cmd_test->timeout.set = true;
+	t_heavy_1200->cmd_test->timeout.value = 1200;
+	rz_pvector_push(&tests, t_heavy_1200);
+
+	RzTest *t_rzil = RZ_NEW0(RzTest);
+	t_rzil->type = RZ_TEST_TYPE_CMD;
+	t_rzil->path = "db/rzil/hexagon";
+	t_rzil->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_rzil);
+
+	RzTest *t_norm2 = RZ_NEW0(RzTest);
+	t_norm2->type = RZ_TEST_TYPE_CMD;
+	t_norm2->path = "db/cmd/cmd_b";
+	t_norm2->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_norm2);
+
+	RzTest *t_heavy_2040 = RZ_NEW0(RzTest);
+	t_heavy_2040->type = RZ_TEST_TYPE_CMD;
+	t_heavy_2040->path = "db/cmd/cmd_aae";
+	t_heavy_2040->cmd_test = rz_test_cmd_test_new();
+	t_heavy_2040->cmd_test->timeout.set = true;
+	t_heavy_2040->cmd_test->timeout.value = 2040;
+	rz_pvector_push(&tests, t_heavy_2040);
+
+	RzPVector queue;
+	rz_pvector_init(&queue, NULL);
+	rz_pvector_insert_range(&queue, 0, tests.v.a, rz_pvector_len(&tests));
+	rz_test_schedule_queue(&queue);
+
+	// Pop order (back to front): 2040, 1200, rzil, norm2, norm1
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_2040, "pop 1: timeout 2040");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_1200, "pop 2: timeout 1200");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_rzil, "pop 3: db/rzil");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm2, "pop 4: norm2 order preserved");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm1, "pop 5: norm1 order preserved");
+
+	rz_pvector_fini(&queue);
+	rz_pvector_fini(&tests);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_test_database_load_cmd);
 	mu_run_test(test_rz_test_fix);
+	mu_run_test(test_rz_test_validate_json_valid);
+	mu_run_test(test_rz_test_validate_json_invalid);
+	mu_run_test(test_rz_test_schedule_queue_lpt);
 	return tests_passed != tests_run;
 }
 
