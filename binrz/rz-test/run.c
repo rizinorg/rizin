@@ -389,8 +389,30 @@ static inline const char *json_skip_ws(const char *p) {
 	return p;
 }
 
-static inline bool json_is_hex(char c) {
-	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+static inline int json_hex_val(char c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	if (c >= 'a' && c <= 'f') {
+		return 10 + (c - 'a');
+	}
+	if (c >= 'A' && c <= 'F') {
+		return 10 + (c - 'A');
+	}
+	return -1;
+}
+
+static inline bool json_parse_hex4(const char *p, ut16 *out) {
+	ut16 v = 0;
+	for (int i = 0; i < 4; i++) {
+		int d = json_hex_val(p[i]);
+		if (d < 0) {
+			return false;
+		}
+		v = (ut16)((v << 4) | (ut16)d);
+	}
+	*out = v;
+	return true;
 }
 
 static const char *json_validate_string(const char *p) {
@@ -419,12 +441,24 @@ static const char *json_validate_string(const char *p) {
 			case 't':
 				p++;
 				break;
-			case 'u':
-				if (!json_is_hex(p[1]) || !json_is_hex(p[2]) || !json_is_hex(p[3]) || !json_is_hex(p[4])) {
+			case 'u': {
+				ut16 cu = 0;
+				if (!json_parse_hex4(p + 1, &cu)) {
 					return NULL;
 				}
 				p += 5;
+				if (cu >= 0xDC00 && cu <= 0xDFFF) {
+					return NULL;
+				}
+				if (cu >= 0xD800 && cu <= 0xDBFF) {
+					ut16 low = 0;
+					if (p[0] != '\\' || p[1] != 'u' || !json_parse_hex4(p + 2, &low) || low < 0xDC00 || low > 0xDFFF) {
+						return NULL;
+					}
+					p += 6;
+				}
 				break;
+			}
 			default:
 				return NULL;
 			}
@@ -619,6 +653,9 @@ RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJson
 
 RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
+		return false;
+	}
+	if (out->out_len > 0 && memchr(out->out, '\0', out->out_len) != NULL) {
 		return false;
 	}
 	return rz_test_validate_json((const char *)out->out);

@@ -203,6 +203,8 @@ bool test_rz_test_validate_json_valid(void) {
 		"-42.5e+10",
 		"1e-3",
 		"\"hello \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u0041\"",
+		"\"\\uD83D\\uDE00\"",
+		"\"\\uD800\\uDC00\\uDBFF\\uDFFF\"",
 		"{\"a\":[1,true,false,null,{\"b\":\"c\"}]}",
 		"{\"a\":1}\n[2,3]\ntrue\nnull\n",
 		"{}[]\"s\"",
@@ -235,6 +237,10 @@ bool test_rz_test_validate_json_invalid(void) {
 		"\"raw\nnewline\"",
 		"\"bad\\xescape\"",
 		"\"bad\\u123g\"",
+		"\"\\uD800\"",
+		"\"\\uD800\\u0041\"",
+		"\"\\uDC00\"",
+		"\"\\uDFFF\"",
 		"// comment\n{}",
 		"/* comment */ {}",
 		"{} garbage",
@@ -245,6 +251,15 @@ bool test_rz_test_validate_json_invalid(void) {
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
 		mu_assert_false(rz_test_validate_json(cases[i]), cases[i]);
 	}
+
+	// Embedded NUL bytes in subprocess stdout must be rejected by rz_test_check_json_test().
+	ut8 nul_out[] = { '{', '}', '\0', 'x' };
+	RzSubprocessOutput out = { 0 };
+	out.out = nul_out;
+	out.out_len = sizeof(nul_out);
+	out.err = (ut8 *)"";
+	out.ret = 0;
+	mu_assert_false(rz_test_check_json_test(&out, NULL), "embedded NUL byte rejected");
 
 	// Deep nesting beyond JSON_MAX_DEPTH must be rejected safely without stack overflow.
 	size_t depth = JSON_MAX_DEPTH + 10;
@@ -296,17 +311,29 @@ bool test_rz_test_schedule_queue_lpt(void) {
 	t_heavy_2040->cmd_test->timeout.value = 2040;
 	rz_pvector_push(&tests, t_heavy_2040);
 
+	RzTest *t_heavy_max = RZ_NEW0(RzTest);
+	t_heavy_max->type = RZ_TEST_TYPE_CMD;
+	t_heavy_max->path = "db/cmd/cmd_max_timeout";
+	t_heavy_max->cmd_test = rz_test_cmd_test_new();
+	t_heavy_max->cmd_test->timeout.set = true;
+	t_heavy_max->cmd_test->timeout.value = UT64_MAX;
+	rz_pvector_push(&tests, t_heavy_max);
+
+	mu_assert_eq(test_schedule_priority(t_heavy_max), UT64_MAX, "max timeout priority clamped");
+
+	// Schedule the owning vector in-place to verify elements are not freed during reordering.
+	rz_test_schedule_queue(&tests);
 	RzPVector queue;
 	rz_pvector_init(&queue, NULL);
 	rz_pvector_insert_range(&queue, 0, tests.v.a, rz_pvector_len(&tests));
-	rz_test_schedule_queue(&queue);
 
-	// Pop order (back to front): 2040, 1200, rzil, norm2, norm1
-	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_2040, "pop 1: timeout 2040");
-	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_1200, "pop 2: timeout 1200");
-	mu_assert_ptreq(rz_pvector_pop(&queue), t_rzil, "pop 3: db/rzil");
-	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm2, "pop 4: norm2 order preserved");
-	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm1, "pop 5: norm1 order preserved");
+	// Pop order (back to front): UT64_MAX, 2040, 1200, rzil, norm2, norm1
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_max, "pop 1: timeout UT64_MAX clamped");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_2040, "pop 2: timeout 2040");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_1200, "pop 3: timeout 1200");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_rzil, "pop 4: db/rzil");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm2, "pop 5: norm2 order preserved");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm1, "pop 6: norm1 order preserved");
 
 	rz_pvector_fini(&queue);
 	rz_pvector_fini(&tests);
