@@ -441,6 +441,133 @@ pc_write(old: 0x6, new: 0x2)
 EOF
 RUN
 
+NAME=c166: DPP addresses use the selected page
+FILE=malloc://131072
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx F6F00040 @ 0
+wx 42F10040 @ 4
+wx F3F40040 @ 8
+
+wx ae @ 0x4000
+aezi
+aezv DPP1 5
+aezv r0 0x1234
+aezv r1 0
+aezv r2 0xabcd
+aezsue 0x8
+aezv DPP1 1
+aezsue 0xc
+px 2 @ 0x14000
+px 2 @ 0x4000
+aezv r2
+EOF
+EXPECT=<<EOF
+DPP1 = 0x5
+r0 = 0x1234
+r1 = 0x0
+r2 = 0xabcd
+0x00000000 [f6f00040] mov 0xfe02:0x0000, r0
+(seq (set src (var r0)) (set e (ite (== (var src) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var src)) true false)) (set n (msb (cast 16 false (var src)))) (storew 0 (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0)) (var src)))
+pc_write(old: 0x0, new: 0x4)
+var_read(name: r0, value: 0x1234)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+var_read(name: DPP1, value: 0x5)
+mem_write(addr: 0x14000, old: 0x0, new: 0x1234)
+
+0x00000004 [42f10040] cmp r1, 0xfe02:0x0000
+(seq (set op1_val (var r1)) (set dpp_val (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0))) (set op2_val (loadw 0 16 (cast 32 false (var dpp_val)))) (set res (ite (&& (ule (var op1_val) (var op2_val)) (! (== (var op1_val) (var op2_val)))) (- (cast 16 false (var op1_val)) (cast 16 false (var op2_val))) (cast 16 false (- (var op1_val) (var op2_val))))) (set e (ite (== (var op2_val) (bv 16 0x8000)) true false)) (set z (== (var op1_val) (var op2_val))) (set v (== (var res) (bv 16 0xffff))) (set c (&& (ule (var op1_val) (var op2_val)) (! (== (var op1_val) (var op2_val))))) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x4, new: 0x8)
+var_read(name: r1, value: 0x0)
+var_read(name: DPP1, value: 0x5)
+mem_read(addr: 0x14000, value: 0x1234)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x1)
+var_write(name: n, old: 0x0, new: 0x1)
+
+DPP1 = 0x1
+0x00000008 [f3f40040] movb rl2, 0xfe02:0x0000
+(seq (set dpp_val (+ (<< (& (cast 32 false (var DPP1)) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x0))) (set val (loadw 0 8 (cast 32 false (var dpp_val)))) (set rw (var r2)) (set rh (& (var rw) (bv 16 0xff00))) (set r2 (| (var rh) (cast 16 false (var val)))) (set e (ite (== (var val) (bv 8 0x80)) true false)) (set z (ite (is_zero (var val)) true false)) (set n (msb (cast 16 false (var val)))))
+pc_write(old: 0x8, new: 0xc)
+var_read(name: DPP1, value: 0x1)
+mem_read(addr: 0x4000, value: 0xae)
+var_read(name: r2, value: 0xabcd)
+var_write(name: r2, old: 0xabcd, new: 0xabae)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00014000  3412                                     4.
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00004000  ae00                                     ..
+ r2: 0xabae
+EOF
+RUN
+
+NAME=c166: EXTP indexed load uses the full page number
+FILE=malloc://131072
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx F4010022 @ 0   # movb rl0, [r1+#0x2200]
+wx A5 @ 0x2200
+wx 5A @ 0x12200
+aaa
+aezi
+aezv r1 0
+aezsue 0x4
+aezv r0
+echo ======
+wx D7400400 @ 0   # extp #0x0004, #1
+wx F4010022 @ 4   # movb rl0, [r1+#0x2200]
+wx A5 @ 0x2200
+wx 5A @ 0x12200
+aezi
+aezv r1 0
+aezsue 0x8
+aezv r0
+EOF
+EXPECT=<<EOF
+r1 = 0x0
+0x00000000 [f4010022] movb rl0, [r1+#0x2200]
+(seq (set addr (+ (cast 32 false (var r1)) (bv 32 0x2200))) (set load (loadw 0 8 (cast 32 false (var addr)))) (set rw (var r0)) (set rh (& (var rw) (bv 16 0xff00))) (set r0 (| (var rh) (cast 16 false (var load)))) (set e (ite (== (var load) (bv 8 0x80)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (cast 8 false (var load)))))
+pc_write(old: 0x0, new: 0x4)
+var_read(name: r1, value: 0x0)
+mem_read(addr: 0x2200, value: 0xa5)
+var_read(name: r0, value: 0xfc00)
+var_write(name: r0, old: 0xfc00, new: 0xfca5)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+ r0: 0xfca5
+======
+r1 = 0x0
+0x00000000 [d7400400] extp #0x0004, #1
+empty
+pc_write(old: 0x0, new: 0x4)
+
+0x00000004 [f4010022] movb rl0, [r1+#0x2200]
+(seq (set addr (+ (<< (& (bv 32 0x4) (bv 32 0x3ff)) (bv 32 0xe) false) (bv 32 0x2200))) (set addr (+ (var addr) (cast 32 false (var r1)))) (set load (loadw 0 8 (cast 32 false (var addr)))) (set rw (var r0)) (set rh (& (var rw) (bv 16 0xff00))) (set r0 (| (var rh) (cast 16 false (var load)))) (set e (ite (== (var load) (bv 8 0x80)) true false)) (set z (ite (is_zero (var load)) true false)) (set n (msb (cast 8 false (var load)))))
+pc_write(old: 0x4, new: 0x8)
+var_read(name: r1, value: 0x0)
+mem_read(addr: 0x12200, value: 0x5a)
+var_read(name: r0, value: 0xfc00)
+var_write(name: r0, old: 0xfc00, new: 0xfc5a)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x0)
+
+ r0: 0xfc5a
+EOF
+RUN
+
 NAME=Try testing real dump
 FILE=bins/c166/Lifan_X50_CVT_Bosch_M7.8.8_F01R00DP24_BSL_Combiloader.bin
 TIMEOUT=30

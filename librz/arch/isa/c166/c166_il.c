@@ -75,13 +75,15 @@ static char *get_dpp(const ut16 addr) {
 	}
 }
 
-static RzILOpBitVector *DPP_val(const ut16 DPP_addr) {
-	const char *DPP_src = get_dpp(DPP_addr);
-	return SHIFTL0(UNSIGNED(32, VARG(DPP_src)), U32(14));
-}
-
-static RzILOpBitVector *calc_DPP_mem(const ut16 DPP_addr, const ut16 mem) {
-	return ADD(DPP_val(DPP_addr), U16(mem & 0x3FFF));
+static RzILOpBitVector *calc_DPP_mem(const C166State *state, const ut16 DPP_addr, const ut16 mem) {
+	RzILOpBitVector *page;
+	if (state && state->ext.mode == C166_EXT_MODE_PAGE) {
+		page = U32(state->ext.value & 0x3FF);
+	} else {
+		const char *DPP_src = get_dpp(DPP_addr);
+		page = UNSIGNED(32, VARG(DPP_src));
+	}
+	return ADD(SHIFTL0(LOGAND(page, U32(0x3FF)), U32(14)), U32(mem & 0x3FFF));
 }
 
 static RzILOpBool *check_condition(const ut8 condition) {
@@ -301,6 +303,7 @@ static RzILOpEffect *c166_il_cmp_rwn_x(void) {
 }
 
 static RzILOpEffect *c166_il_cmp_reg_mem(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	CHECK_STATE;
 	const ut8 reg = buf[1];
 	const ut16 mem = rz_read_at_le16(buf, 2);
 
@@ -311,7 +314,7 @@ static RzILOpEffect *c166_il_cmp_reg_mem(const RzAnalysis *analysis, const ut8 *
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
 		const char *dst = c166_rw[L_NIB(reg)];
 		return SEQ5(SETL("op1_val", VARG(dst)),
-			SETL("dpp_val", calc_DPP_mem(DPP_addr, mem)),
+			SETL("dpp_val", calc_DPP_mem(state, DPP_addr, mem)),
 			SETL("op2_val", LOADW(16, UNSIGNED(32, VARL("dpp_val")))),
 			SETL("res",
 				ITE(
@@ -325,11 +328,10 @@ static RzILOpEffect *c166_il_cmp_reg_mem(const RzAnalysis *analysis, const ut8 *
 				SETG("c", ULT(VARL("op1_val"), VARL("op2_val"))),
 				SET_N(VARL("res"))));
 	}
-	CHECK_STATE;
 	const ut16 addr = state->ext.esfr ? ESFR_ADDR(reg) : SFR_ADDR(reg);
 	return SEQ5(
 		SETL("op1_val", LOADW(16, U32(addr))),
-		SETL("dpp_val", calc_DPP_mem(DPP_addr, mem)),
+		SETL("dpp_val", calc_DPP_mem(state, DPP_addr, mem)),
 		SETL("op2_val", LOADW(16, UNSIGNED(32, VARL("dpp_val")))),
 		SETL("res",
 			ITE(
@@ -497,12 +499,11 @@ static RzILOpEffect *c166_il_movb_rbn_orwm_data16(const RzAnalysis *analysis, co
 	const ut8 m = L_NIB(buf[1]);
 
 	if (state->ext.mode == C166_EXT_MODE_PAGE) {
-		const ut32 seg = (ut32)(state->ext.value & 0xFF);
 		const char *dst = c166_get_word_reg_name(n);
 		const ut8 reg_offset = c166_get_byte_offset(n);
 		return SEQ5(
-			SETL("addr", U16((seg << 14) + mem)),
-			SETL("addr", ADD(VARL("addr"), VARG(c166_rw[m]))),
+			SETL("addr", calc_DPP_mem(state, SFR_ADDR(((mem >> 14) & 0x3)), mem)),
+			SETL("addr", ADD(VARL("addr"), UNSIGNED(32, VARG(c166_rw[m])))),
 			SETL("load", LOADW(8, UNSIGNED(32, VARL("addr")))),
 			WRITE_RB(dst, reg_offset, UNSIGNED(16, VARL("load"))),
 			SEQ3(
@@ -1196,19 +1197,21 @@ static RzILOpEffect *c166_il_mov_mem_reg(const RzAnalysis *analysis, const ut8 *
 	const ut16 mem = rz_read_at_le16(buf, 2);
 
 	CHECK_STATE;
-	if (state->ext.mode == C166_EXT_MODE_REG || state->ext.mode == C166_EXT_MODE_NONE) {
-		const char *src = c166_global_registers[L_NIB(reg)];
-		return SEQ5(
-			SETL("src", VARG(src)),
-			SET_E(VARL("src")),
-			SET_Z(VARL("src")),
-			SET_N(VARL("src")),
-			STOREW(U32(mem), VARL("src")));
+	if (state->ext.mode == C166_EXT_MODE_SEG) {
+		NOT_IMPLEMENTED;
 	}
-	NOT_IMPLEMENTED;
+	const char *src = c166_global_registers[L_NIB(reg)];
+	const ut16 DPP_addr = SFR_ADDR(((mem >> 14) & 0x3));
+	return SEQ5(
+		SETL("src", VARG(src)),
+		SET_E(VARL("src")),
+		SET_Z(VARL("src")),
+		SET_N(VARL("src")),
+		STOREW(calc_DPP_mem(state, DPP_addr, mem), VARL("src")));
 }
 
 static RzILOpEffect *c166_il_movb_reg_mem(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	CHECK_STATE;
 	const ut8 reg = buf[1];
 	const ut16 mem = rz_read_at_le16(buf, 2);
 
@@ -1220,7 +1223,7 @@ static RzILOpEffect *c166_il_movb_reg_mem(const RzAnalysis *analysis, const ut8 
 		const char *dst = c166_get_word_reg_name(L_NIB(reg));
 		const bool hi_low = L_NIB(reg) & 1;
 
-		return SEQ4(SETL("dpp_val", calc_DPP_mem(DPP_addr, mem)),
+		return SEQ4(SETL("dpp_val", calc_DPP_mem(state, DPP_addr, mem)),
 			SETL("val", LOADW(8, UNSIGNED(32, VARL("dpp_val")))),
 			WRITE_RB(dst, hi_low, UNSIGNED(16, VARL("val"))),
 			SEQ3(
@@ -1228,7 +1231,6 @@ static RzILOpEffect *c166_il_movb_reg_mem(const RzAnalysis *analysis, const ut8 
 				SET_Z(VARL("val")),
 				SET_N(VARL("val"))));
 	}
-	CHECK_STATE;
 	const ut16 reg_addr = state->ext.esfr ? ESFR_ADDR(reg) : SFR_ADDR(reg);
 	(void)reg_addr;
 	NOT_IMPLEMENTED;
@@ -1269,10 +1271,9 @@ static RzILOpEffect *c166_il_movb_orwm_data16_rbn(const RzAnalysis *analysis, co
 	const char *src_reg = c166_get_word_reg_name(n);
 
 	if (state->ext.mode == C166_EXT_MODE_PAGE) {
-		const ut32 seg = (ut32)(state->ext.value & 0xFF);
 		return SEQ7(
 			SETL("val", READ_RL(VARG(src_reg))),
-			SETL("addr", ADD(SHIFTL0(U32(seg), U32(14)), UNSIGNED(32, U16(mem)))),
+			SETL("addr", calc_DPP_mem(state, SFR_ADDR(((mem >> 14) & 0x3)), mem)),
 			SETL("addr", ADD(VARL("addr"), UNSIGNED(32, VARG(c166_rw[m])))),
 			STORE(VARL("addr"), UNSIGNED(8, VARL("val"))),
 			SET_E8(VARL("val")),
