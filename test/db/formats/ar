@@ -95,7 +95,7 @@ nth      paddr      vaddr bind   type   size lib name
   1 ---------- 0x00000000 LOCAL  FILE      0     libgdbr.c
   2 0x00000040 0x08000040 LOCAL  SECT      0     .text
   3 0x00000444 0x08000444 LOCAL  SECT      0     .data
-  4 0x00000444 0x08000444 LOCAL  SECT      0     .bss
+  4 0x000036c0 0x080036c0 LOCAL  SECT      0     .bss
   5 0x00000450 0x08000450 LOCAL  SECT      0     .rodata
   6 0x000004b0 0x080004b0 LOCAL  OBJ      22     __func__.6092
   7 0x000004c6 0x080004c6 LOCAL  SECT      0     .debug_info
@@ -129,7 +129,7 @@ nth      paddr      vaddr bind   type size lib name
   1 ---------- 0x00000000 LOCAL  FILE    0     arch.c
   2 0x00000040 0x08020040 LOCAL  SECT    0     .text
   3 0x00000040 0x08020040 LOCAL  SECT    0     .data
-  4 0x000036b0 0x080236b0 LOCAL  SECT    0     .bss
+  4 0x00004388 0x08024388 LOCAL  SECT    0     .bss
   5 0x000036b0 0x080236b0 LOCAL  SECT    0     .debug_info
   6 0x00003781 0x08023781 LOCAL  SECT    0     .debug_abbrev
   7 0x00003805 0x08023805 LOCAL  SECT    0     .debug_aranges
@@ -149,16 +149,16 @@ nth      paddr      vaddr bind   type   size lib name
   1 ---------- 0x00000000 LOCAL  FILE      0     core.c
   2 0x00000040 0x08070040 LOCAL  SECT      0     .text
   3 0x00003c3c 0x08073c3c LOCAL  SECT      0     .data
-  4 0x00003c40 0x08073c40 LOCAL  SECT      0     .bss
+  4 0x0001b8a0 0x0808b8a0 LOCAL  SECT      0     .bss
   5 0x00000040 0x08070040 LOCAL  FUNC    276     set_interface_attribs
-  6 0x00003c40 0x08073c40 LOCAL  OBJ      32     reg_cache
+  6 0x0001b8a0 0x0808b8a0 LOCAL  OBJ      32     reg_cache
   7 0x00000154 0x08070154 LOCAL  FUNC     96     reg_cache_init
   8 0x00003c40 0x08073c40 LOCAL  SECT      0     .rodata
   9 0x000001b4 0x080701b4 LOCAL  FUNC    177     gdbr_connect_lldb
  10 0x00000f87 0x08070f87 LOCAL  FUNC    157     gdbr_read_registers_lldb
  11 0x00004080 0x08074080 LOCAL  OBJ      17     __func__.10461
  12 0x00003c3c 0x08073c3c LOCAL  OBJ       4     P.10515
- 13 0x00003c60 0x08073c60 LOCAL  OBJ       8     cur_desc
+ 13 0x0001b8c0 0x0808b8c0 LOCAL  OBJ       8     cur_desc
  14 0x000021cb 0x080721cb LOCAL  FUNC     57     _sigint_handler
  15 0x00004098 0x08074098 LOCAL  OBJ      15     __func__.10626
  16 0x000040a8 0x080740a8 LOCAL  OBJ      15     __func__.10638
