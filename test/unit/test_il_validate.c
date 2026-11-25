@@ -1639,6 +1639,120 @@ static bool test_il_validate_pure_float_hybridop_with_round() {
 	mu_end;
 }
 
+static bool test_il_validate_pure_float_math() {
+	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
+	RzILSortPure sort;
+	RzILValidateReport report = NULL;
+	char expected[128];
+
+	RzILOpFloat *(*const unops[])(RzFloatRMode, RzILOpFloat *) = {
+		rz_il_op_new_frsqrt,
+		rz_il_op_new_fexp,
+		rz_il_op_new_fexpm1,
+		rz_il_op_new_fexp2,
+		rz_il_op_new_fexp2m1,
+		rz_il_op_new_fexp10,
+		rz_il_op_new_fexp10m1,
+		rz_il_op_new_flog,
+		rz_il_op_new_flog2,
+		rz_il_op_new_flog10,
+		rz_il_op_new_flogp1,
+		rz_il_op_new_flog2p1,
+		rz_il_op_new_flog10p1,
+		rz_il_op_new_fsin,
+		rz_il_op_new_fcos,
+		rz_il_op_new_ftan,
+		rz_il_op_new_fsinpi,
+		rz_il_op_new_fcospi,
+		rz_il_op_new_ftanpi,
+		rz_il_op_new_fasin,
+		rz_il_op_new_facos,
+		rz_il_op_new_fatan,
+		rz_il_op_new_fasinpi,
+		rz_il_op_new_facospi,
+		rz_il_op_new_fatanpi,
+		rz_il_op_new_fsinh,
+		rz_il_op_new_fcosh,
+		rz_il_op_new_ftanh,
+		rz_il_op_new_fasinh,
+		rz_il_op_new_facosh,
+		rz_il_op_new_fatanh,
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(unops); i++) {
+		// the result keeps the format of the operand
+		RzILOpPure *op = unops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f80(0.5L));
+		const char *name = rz_il_op_pure_code_stringify(op->code);
+		mu_assert_true(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_80)), name);
+		mu_assert_null(report, name);
+		rz_il_op_pure_free(op);
+
+		op = unops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_bitv_from_ut64(32, 0));
+		mu_assert_false(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		rz_strf(expected, "operand of %s op is not a float.", name);
+		mu_assert_streq_free(report, expected, name);
+		rz_il_op_pure_free(op);
+	}
+
+	RzILOpFloat *(*const binops[])(RzFloatRMode, RzILOpFloat *, RzILOpFloat *) = {
+		rz_il_op_new_fhypot,
+		rz_il_op_new_fpow,
+		rz_il_op_new_fatan2,
+		rz_il_op_new_fatan2pi,
+		rz_il_op_new_fpowr,
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(binops); i++) {
+		RzILOpPure *op = binops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f));
+		const char *name = rz_il_op_pure_code_stringify(op->code);
+		mu_assert_true(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), name);
+		mu_assert_null(report, name);
+		rz_il_op_pure_free(op);
+
+		op = binops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_b0(), rz_il_op_new_float_from_f32(2.0f));
+		mu_assert_false(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		rz_strf(expected, "Left operand of %s op is not a float.", name);
+		mu_assert_streq_free(report, expected, name);
+		rz_il_op_pure_free(op);
+
+		op = binops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_bitv_from_ut64(32, 0));
+		mu_assert_false(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		rz_strf(expected, "Right operand of %s op is not a float.", name);
+		mu_assert_streq_free(report, expected, name);
+		rz_il_op_pure_free(op);
+
+		op = binops[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f64(1.0), rz_il_op_new_float_from_f32(2.0f));
+		mu_assert_false(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		rz_strf(expected, "Op %s formats of left operand (float:1) and right operand (float:0) do not agree.", name);
+		mu_assert_streq_free(report, expected, name);
+		rz_il_op_pure_free(op);
+	}
+
+	RzILOpFloat *(*const hybrids[])(RzFloatRMode, RzILOpFloat *, RzILOpBitVector *) = {
+		rz_il_op_new_frootn,
+		rz_il_op_new_fpown,
+		rz_il_op_new_fcompound,
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(hybrids); i++) {
+		// the integer operand may have any width
+		RzILOpPure *op = hybrids[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_bitv_from_st64(8, -3));
+		const char *name = rz_il_op_pure_code_stringify(op->code);
+		mu_assert_true(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		mu_assert_true(rz_il_sort_pure_eq(sort, rz_il_sort_pure_float(RZ_FLOAT_IEEE754_BIN_32)), name);
+		mu_assert_null(report, name);
+		rz_il_op_pure_free(op);
+
+		op = hybrids[i](RZ_FLOAT_RMODE_RNE, rz_il_op_new_float_from_f32(2.0f), rz_il_op_new_float_from_f32(3.0f));
+		mu_assert_false(rz_il_validate_pure(op, ctx, &sort, &report), name);
+		rz_strf(expected, "2nd operand of %s op is not a bitv.", name);
+		mu_assert_streq_free(report, expected, name);
+		rz_il_op_pure_free(op);
+	}
+
+	rz_il_validate_global_context_free(ctx);
+	mu_end;
+}
+
 static bool test_il_validate_pure_fcast_to_int() {
 	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_empty(24);
 
@@ -1799,6 +1913,18 @@ static bool test_il_validate_float_rmode_argument() {
 	CHECK_INVALID_STATIC_RMODE(
 		rz_il_op_new_fcompound(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_bitv_from_ut64(32, 2)),
 		"fcompound");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fexp(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f)),
+		"fexp");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fatanh(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(0.5f)),
+		"fatanh");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fatan2(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		"fatan2");
+	CHECK_INVALID_STATIC_RMODE(
+		rz_il_op_new_fpowr(RZ_FLOAT_RMODE_UNK, rz_il_op_new_float_from_f32(1.0f), rz_il_op_new_float_from_f32(2.0f)),
+		"fpowr");
 
 #undef CHECK_INVALID_STATIC_RMODE
 
@@ -1873,6 +1999,23 @@ static bool test_il_validate_float_rmode_argument() {
 		"report");
 	rz_il_op_pure_free(op);
 
+	op = rz_il_op_new_fsinh_dyn_rmode(
+		rz_il_op_new_bitv_from_ut64(16, RZ_FLOAT_RMODE_RNE),
+		rz_il_op_new_float_from_f32(1.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime rounding mode of a unary op must be 32-bit");
+	mu_assert_streq_free(report, "Rounding-mode operand of fsinh op must be 32 bits, got 16.", "report");
+	rz_il_op_pure_free(op);
+
+	op = rz_il_op_new_fatan2pi_dyn_rmode(
+		rz_il_op_new_b1(),
+		rz_il_op_new_float_from_f32(1.0f),
+		rz_il_op_new_float_from_f32(2.0f));
+	val = rz_il_validate_pure(op, ctx, &sort, &report);
+	mu_assert_false(val, "runtime rounding mode of a binary op must be a bitvector");
+	mu_assert_streq_free(report, "Rounding-mode operand of fatan2pi op is not a bitvector.", "report");
+	rz_il_op_pure_free(op);
+
 	op = rz_il_op_new_fconvert_dyn_rmode(
 		RZ_FLOAT_IEEE754_BIN_32,
 		rz_il_op_new_bitv_from_ut64(32, RZ_FLOAT_RMODE_RNE),
@@ -1936,6 +2079,7 @@ bool all_tests() {
 	mu_run_test(test_il_validate_pure_float_binop_with_round);
 	mu_run_test(test_il_validate_pure_float_terop_with_round);
 	mu_run_test(test_il_validate_pure_float_hybridop_with_round);
+	mu_run_test(test_il_validate_pure_float_math);
 	mu_run_test(test_il_validate_pure_fcast_to_int);
 	mu_run_test(test_il_validate_pure_icast_to_float);
 	mu_run_test(test_il_validate_pure_fconvert);

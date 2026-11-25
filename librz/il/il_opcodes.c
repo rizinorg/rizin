@@ -1051,6 +1051,546 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt_dyn_rmode(RZ_NONNULL RzILOpBitVec
 	return ret;
 }
 
+/** \brief [FEXP] exp m x is the closest floating-point number to e^x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP, RzILOpArgsFexp, fexp, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP, RzILOpArgsFexp, fexp, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXPM1] expm1 m x is the closest floating-point number to e^x - 1. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexpm1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXPM1, RzILOpArgsFexpm1, fexpm1, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXPM1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexpm1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXPM1, RzILOpArgsFexpm1, fexpm1, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP2] exp2 m x is the closest floating-point number to 2^x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP2, RzILOpArgsFexp2, fexp2, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP2] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP2, RzILOpArgsFexp2, fexp2, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP2M1] exp2m1 m x is the closest floating-point number to 2^x - 1. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2m1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP2M1, RzILOpArgsFexp2m1, fexp2m1, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP2M1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2m1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP2M1, RzILOpArgsFexp2m1, fexp2m1, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP10] exp10 m x is the closest floating-point number to 10^x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP10, RzILOpArgsFexp10, fexp10, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP10] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP10, RzILOpArgsFexp10, fexp10, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP10M1] exp10m1 m x is the closest floating-point number to 10^x - 1. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10m1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP10M1, RzILOpArgsFexp10m1, fexp10m1, rmode, f);
+	return ret;
+}
+
+/** \brief [FEXP10M1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10m1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FEXP10M1, RzILOpArgsFexp10m1, fexp10m1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG] log m x is the closest floating-point number to the natural logarithm of x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG, RzILOpArgsFlog, flog, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG, RzILOpArgsFlog, flog, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG2] log2 m x is the closest floating-point number to log2 x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG2, RzILOpArgsFlog2, flog2, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG2] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG2, RzILOpArgsFlog2, flog2, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG10] log10 m x is the closest floating-point number to log10 x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG10, RzILOpArgsFlog10, flog10, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG10] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG10, RzILOpArgsFlog10, flog10, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOGP1] logp1 m x is the closest floating-point number to log (1 + x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flogp1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOGP1, RzILOpArgsFlogp1, flogp1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOGP1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flogp1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOGP1, RzILOpArgsFlogp1, flogp1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG2P1] log2p1 m x is the closest floating-point number to log2 (1 + x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2p1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG2P1, RzILOpArgsFlog2p1, flog2p1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG2P1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2p1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG2P1, RzILOpArgsFlog2p1, flog2p1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG10P1] log10p1 m x is the closest floating-point number to log10 (1 + x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10p1(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG10P1, RzILOpArgsFlog10p1, flog10p1, rmode, f);
+	return ret;
+}
+
+/** \brief [FLOG10P1] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10p1_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FLOG10P1, RzILOpArgsFlog10p1, flog10p1, rmode, f);
+	return ret;
+}
+
+/** \brief [FSIN] sin m x is the closest floating-point number to sin x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsin(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSIN, RzILOpArgsFsin, fsin, rmode, f);
+	return ret;
+}
+
+/** \brief [FSIN] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsin_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSIN, RzILOpArgsFsin, fsin, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOS] cos m x is the closest floating-point number to cos x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcos(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOS, RzILOpArgsFcos, fcos, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOS] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcos_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOS, RzILOpArgsFcos, fcos, rmode, f);
+	return ret;
+}
+
+/** \brief [FTAN] tan m x is the closest floating-point number to tan x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftan(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTAN, RzILOpArgsFtan, ftan, rmode, f);
+	return ret;
+}
+
+/** \brief [FTAN] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftan_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTAN, RzILOpArgsFtan, ftan, rmode, f);
+	return ret;
+}
+
+/** \brief [FSINPI] sinpi m x is the closest floating-point number to sin (pi * x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinpi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSINPI, RzILOpArgsFsinpi, fsinpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FSINPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSINPI, RzILOpArgsFsinpi, fsinpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOSPI] cospi m x is the closest floating-point number to cos (pi * x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcospi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOSPI, RzILOpArgsFcospi, fcospi, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOSPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcospi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOSPI, RzILOpArgsFcospi, fcospi, rmode, f);
+	return ret;
+}
+
+/** \brief [FTANPI] tanpi m x is the closest floating-point number to tan (pi * x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanpi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTANPI, RzILOpArgsFtanpi, ftanpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FTANPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTANPI, RzILOpArgsFtanpi, ftanpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FASIN] asin m x is the closest floating-point number to asin x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasin(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASIN, RzILOpArgsFasin, fasin, rmode, f);
+	return ret;
+}
+
+/** \brief [FASIN] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasin_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASIN, RzILOpArgsFasin, fasin, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOS] acos m x is the closest floating-point number to acos x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facos(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOS, RzILOpArgsFacos, facos, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOS] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facos_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOS, RzILOpArgsFacos, facos, rmode, f);
+	return ret;
+}
+
+/** \brief [FATAN] atan m x is the closest floating-point number to atan x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATAN, RzILOpArgsFatan, fatan, rmode, f);
+	return ret;
+}
+
+/** \brief [FATAN] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATAN, RzILOpArgsFatan, fatan, rmode, f);
+	return ret;
+}
+
+/** \brief [FASINPI] asinpi m x is the closest floating-point number to asin x / pi. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinpi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASINPI, RzILOpArgsFasinpi, fasinpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FASINPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASINPI, RzILOpArgsFasinpi, fasinpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOSPI] acospi m x is the closest floating-point number to acos x / pi. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facospi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOSPI, RzILOpArgsFacospi, facospi, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOSPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facospi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOSPI, RzILOpArgsFacospi, facospi, rmode, f);
+	return ret;
+}
+
+/** \brief [FATANPI] atanpi m x is the closest floating-point number to atan x / pi. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanpi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATANPI, RzILOpArgsFatanpi, fatanpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FATANPI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATANPI, RzILOpArgsFatanpi, fatanpi, rmode, f);
+	return ret;
+}
+
+/** \brief [FSINH] sinh m x is the closest floating-point number to sinh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSINH, RzILOpArgsFsinh, fsinh, rmode, f);
+	return ret;
+}
+
+/** \brief [FSINH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FSINH, RzILOpArgsFsinh, fsinh, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOSH] cosh m x is the closest floating-point number to cosh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcosh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOSH, RzILOpArgsFcosh, fcosh, rmode, f);
+	return ret;
+}
+
+/** \brief [FCOSH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcosh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FCOSH, RzILOpArgsFcosh, fcosh, rmode, f);
+	return ret;
+}
+
+/** \brief [FTANH] tanh m x is the closest floating-point number to tanh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTANH, RzILOpArgsFtanh, ftanh, rmode, f);
+	return ret;
+}
+
+/** \brief [FTANH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FTANH, RzILOpArgsFtanh, ftanh, rmode, f);
+	return ret;
+}
+
+/** \brief [FASINH] asinh m x is the closest floating-point number to asinh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASINH, RzILOpArgsFasinh, fasinh, rmode, f);
+	return ret;
+}
+
+/** \brief [FASINH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FASINH, RzILOpArgsFasinh, fasinh, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOSH] acosh m x is the closest floating-point number to acosh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facosh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOSH, RzILOpArgsFacosh, facosh, rmode, f);
+	return ret;
+}
+
+/** \brief [FACOSH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facosh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FACOSH, RzILOpArgsFacosh, facosh, rmode, f);
+	return ret;
+}
+
+/** \brief [FATANH] atanh m x is the closest floating-point number to atanh x. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanh(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATANH, RzILOpArgsFatanh, fatanh, rmode, f);
+	return ret;
+}
+
+/** \brief [FATANH] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanh_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *f) {
+	rz_return_val_if_fail(mode && f, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_2(Float, RZ_IL_OP_FATANH, RzILOpArgsFatanh, fatanh, rmode, f);
+	return ret;
+}
+
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x) {
 	rz_return_val_if_fail(x, NULL);
 	RzILOpBool *ret;
@@ -1167,6 +1707,76 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow_dyn_rmode(RZ_NONNULL RzILOpBitVecto
 	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
 	RzILOpFloat *ret;
 	rz_il_op_new_3(Float, RZ_IL_OP_FPOW, RzILOpArgsFpow, fpow, rmode, x, y);
+	return ret;
+}
+
+/** \brief [FATAN2] atan2 m y x is the closest floating-point number to the angle of the point (x, y). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(y && x, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_0(Float, RZ_IL_OP_FATAN2);
+	ret->op.fatan2.rmode = rmode;
+	// operands are positional: the first one (member x) is the ordinate y
+	ret->op.fatan2.y = y;
+	ret->op.fatan2.x = x;
+	return ret;
+}
+
+/** \brief [FATAN2] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(mode && y && x, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_0(Float, RZ_IL_OP_FATAN2);
+	ret->op.fatan2.rmode = rmode;
+	// operands are positional: the first one (member x) is the ordinate y
+	ret->op.fatan2.y = y;
+	ret->op.fatan2.x = x;
+	return ret;
+}
+
+/** \brief [FATAN2PI] atan2pi m y x is the closest floating-point number to atan2 (y, x) / pi. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2pi(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(y && x, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_0(Float, RZ_IL_OP_FATAN2PI);
+	ret->op.fatan2pi.rmode = rmode;
+	// operands are positional: the first one (member x) is the ordinate y
+	ret->op.fatan2pi.y = y;
+	ret->op.fatan2pi.x = x;
+	return ret;
+}
+
+/** \brief [FATAN2PI] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2pi_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x) {
+	rz_return_val_if_fail(mode && y && x, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_0(Float, RZ_IL_OP_FATAN2PI);
+	ret->op.fatan2pi.rmode = rmode;
+	// operands are positional: the first one (member x) is the ordinate y
+	ret->op.fatan2pi.y = y;
+	ret->op.fatan2pi.x = x;
+	return ret;
+}
+
+/** \brief [FPOWR] powr m x y is the closest floating-point number to e^(y * log x). */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpowr(RzFloatRMode mode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(x && y, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_static(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FPOWR, RzILOpArgsFpowr, fpowr, rmode, x, y);
+	return ret;
+}
+
+/** \brief [FPOWR] with a rounding mode \p mode evaluated at run time. */
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpowr_dyn_rmode(RZ_NONNULL RzILOpBitVector *mode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y) {
+	rz_return_val_if_fail(mode && x && y, NULL);
+	RzILOpArgFloatRMode rmode = float_rmode_dynamic(mode);
+	RzILOpFloat *ret;
+	rz_il_op_new_3(Float, RZ_IL_OP_FPOWR, RzILOpArgsFpowr, fpowr, rmode, x, y);
 	return ret;
 }
 
@@ -1511,6 +2121,36 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	case RZ_IL_OP_FROUND:
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
+	case RZ_IL_OP_FEXP:
+	case RZ_IL_OP_FEXPM1:
+	case RZ_IL_OP_FEXP2:
+	case RZ_IL_OP_FEXP2M1:
+	case RZ_IL_OP_FEXP10:
+	case RZ_IL_OP_FEXP10M1:
+	case RZ_IL_OP_FLOG:
+	case RZ_IL_OP_FLOG2:
+	case RZ_IL_OP_FLOG10:
+	case RZ_IL_OP_FLOGP1:
+	case RZ_IL_OP_FLOG2P1:
+	case RZ_IL_OP_FLOG10P1:
+	case RZ_IL_OP_FSIN:
+	case RZ_IL_OP_FCOS:
+	case RZ_IL_OP_FTAN:
+	case RZ_IL_OP_FSINPI:
+	case RZ_IL_OP_FCOSPI:
+	case RZ_IL_OP_FTANPI:
+	case RZ_IL_OP_FASIN:
+	case RZ_IL_OP_FACOS:
+	case RZ_IL_OP_FATAN:
+	case RZ_IL_OP_FASINPI:
+	case RZ_IL_OP_FACOSPI:
+	case RZ_IL_OP_FATANPI:
+	case RZ_IL_OP_FSINH:
+	case RZ_IL_OP_FCOSH:
+	case RZ_IL_OP_FTANH:
+	case RZ_IL_OP_FASINH:
+	case RZ_IL_OP_FACOSH:
+	case RZ_IL_OP_FATANH:
 		DUP_OP1(fround, f);
 		if (!float_rmode_dup(&r->op.fround.rmode, &op->op.fround.rmode)) {
 			rz_il_op_pure_free(r->op.fround.f);
@@ -1529,6 +2169,9 @@ RZ_API RzILOpPure *rz_il_op_pure_dup(RZ_NONNULL RzILOpPure *op) {
 	case RZ_IL_OP_FMOD:
 	case RZ_IL_OP_FHYPOT:
 	case RZ_IL_OP_FPOW:
+	case RZ_IL_OP_FATAN2:
+	case RZ_IL_OP_FATAN2PI:
+	case RZ_IL_OP_FPOWR:
 		DUP_OP2(fadd, x, y);
 		if (!float_rmode_dup(&r->op.fadd.rmode, &op->op.fadd.rmode)) {
 			rz_il_op_pure_free(r->op.fadd.x);
@@ -1720,6 +2363,36 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_FROUND:
 	case RZ_IL_OP_FSQRT:
 	case RZ_IL_OP_FRSQRT:
+	case RZ_IL_OP_FEXP:
+	case RZ_IL_OP_FEXPM1:
+	case RZ_IL_OP_FEXP2:
+	case RZ_IL_OP_FEXP2M1:
+	case RZ_IL_OP_FEXP10:
+	case RZ_IL_OP_FEXP10M1:
+	case RZ_IL_OP_FLOG:
+	case RZ_IL_OP_FLOG2:
+	case RZ_IL_OP_FLOG10:
+	case RZ_IL_OP_FLOGP1:
+	case RZ_IL_OP_FLOG2P1:
+	case RZ_IL_OP_FLOG10P1:
+	case RZ_IL_OP_FSIN:
+	case RZ_IL_OP_FCOS:
+	case RZ_IL_OP_FTAN:
+	case RZ_IL_OP_FSINPI:
+	case RZ_IL_OP_FCOSPI:
+	case RZ_IL_OP_FTANPI:
+	case RZ_IL_OP_FASIN:
+	case RZ_IL_OP_FACOS:
+	case RZ_IL_OP_FATAN:
+	case RZ_IL_OP_FASINPI:
+	case RZ_IL_OP_FACOSPI:
+	case RZ_IL_OP_FATANPI:
+	case RZ_IL_OP_FSINH:
+	case RZ_IL_OP_FCOSH:
+	case RZ_IL_OP_FTANH:
+	case RZ_IL_OP_FASINH:
+	case RZ_IL_OP_FACOSH:
+	case RZ_IL_OP_FATANH:
 		float_rmode_fini(&op->op.fround.rmode);
 		rz_il_op_free_1(pure, fsqrt, f);
 		break;
@@ -1733,6 +2406,9 @@ RZ_API void rz_il_op_pure_free(RZ_NULLABLE RzILOpPure *op) {
 	case RZ_IL_OP_FMOD:
 	case RZ_IL_OP_FHYPOT:
 	case RZ_IL_OP_FPOW:
+	case RZ_IL_OP_FATAN2:
+	case RZ_IL_OP_FATAN2PI:
+	case RZ_IL_OP_FPOWR:
 		float_rmode_fini(&op->op.fadd.rmode);
 		rz_il_op_free_2(pure, fadd, x, y);
 		break;

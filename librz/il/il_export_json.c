@@ -492,6 +492,159 @@ static void il_opdmp_fcompound(RzILOpPure *op, PJ *pj) {
 	il_op_param_2_with_rmode_arg("fcompound", op->op.fcompound, pure, f, pure, n, rmode);
 }
 
+static void il_opdmp_fexp(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexp", op->op.fexp, f, rmode);
+}
+
+static void il_opdmp_fexpm1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexpm1", op->op.fexpm1, f, rmode);
+}
+
+static void il_opdmp_fexp2(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexp2", op->op.fexp2, f, rmode);
+}
+
+static void il_opdmp_fexp2m1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexp2m1", op->op.fexp2m1, f, rmode);
+}
+
+static void il_opdmp_fexp10(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexp10", op->op.fexp10, f, rmode);
+}
+
+static void il_opdmp_fexp10m1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fexp10m1", op->op.fexp10m1, f, rmode);
+}
+
+static void il_opdmp_flog(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flog", op->op.flog, f, rmode);
+}
+
+static void il_opdmp_flog2(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flog2", op->op.flog2, f, rmode);
+}
+
+static void il_opdmp_flog10(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flog10", op->op.flog10, f, rmode);
+}
+
+static void il_opdmp_flogp1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flogp1", op->op.flogp1, f, rmode);
+}
+
+static void il_opdmp_flog2p1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flog2p1", op->op.flog2p1, f, rmode);
+}
+
+static void il_opdmp_flog10p1(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("flog10p1", op->op.flog10p1, f, rmode);
+}
+
+static void il_opdmp_fsin(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fsin", op->op.fsin, f, rmode);
+}
+
+static void il_opdmp_fcos(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fcos", op->op.fcos, f, rmode);
+}
+
+static void il_opdmp_ftan(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("ftan", op->op.ftan, f, rmode);
+}
+
+static void il_opdmp_fsinpi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fsinpi", op->op.fsinpi, f, rmode);
+}
+
+static void il_opdmp_fcospi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fcospi", op->op.fcospi, f, rmode);
+}
+
+static void il_opdmp_ftanpi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("ftanpi", op->op.ftanpi, f, rmode);
+}
+
+static void il_opdmp_fasin(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fasin", op->op.fasin, f, rmode);
+}
+
+static void il_opdmp_facos(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("facos", op->op.facos, f, rmode);
+}
+
+static void il_opdmp_fatan(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fatan", op->op.fatan, f, rmode);
+}
+
+static void il_opdmp_fasinpi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fasinpi", op->op.fasinpi, f, rmode);
+}
+
+static void il_opdmp_facospi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("facospi", op->op.facospi, f, rmode);
+}
+
+static void il_opdmp_fatanpi(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fatanpi", op->op.fatanpi, f, rmode);
+}
+
+static void il_opdmp_fsinh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fsinh", op->op.fsinh, f, rmode);
+}
+
+static void il_opdmp_fcosh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fcosh", op->op.fcosh, f, rmode);
+}
+
+static void il_opdmp_ftanh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("ftanh", op->op.ftanh, f, rmode);
+}
+
+static void il_opdmp_fasinh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fasinh", op->op.fasinh, f, rmode);
+}
+
+static void il_opdmp_facosh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("facosh", op->op.facosh, f, rmode);
+}
+
+static void il_opdmp_fatanh(RzILOpPure *op, PJ *pj) {
+	il_op_param_1_with_rmode_arg("fatanh", op->op.fatanh, f, rmode);
+}
+
+static void il_opdmp_fexcept(RzILOpPure *op, PJ *pj) {
+	pj_o(pj);
+	pj_ks(pj, "opcode", "fexcept");
+	pj_ks(pj, "exception", rz_il_float_stringify_exception(op->op.fexcept.e));
+	pj_k(pj, "x");
+	il_op_pure_json_resolve(op->op.fexcept.x, pj);
+	pj_end(pj);
+}
+
+static void il_opdmp_atan2_family(const char *name, const RzILOpArgsFatan2 *opx, PJ *pj) {
+	pj_o(pj);
+	pj_ks(pj, "opcode", name);
+	pj_k(pj, "rmode");
+	il_op_float_rmode_json_resolve(&opx->rmode, pj);
+	pj_k(pj, "y");
+	il_op_pure_json_resolve(opx->y, pj);
+	pj_k(pj, "x");
+	il_op_pure_json_resolve(opx->x, pj);
+	pj_end(pj);
+}
+
+static void il_opdmp_fatan2(RzILOpPure *op, PJ *pj) {
+	il_opdmp_atan2_family("fatan2", &op->op.fatan2, pj);
+}
+
+static void il_opdmp_fatan2pi(RzILOpPure *op, PJ *pj) {
+	il_opdmp_atan2_family("fatan2pi", &op->op.fatan2pi, pj);
+}
+
+static void il_opdmp_fpowr(RzILOpPure *op, PJ *pj) {
+	il_op_param_2_with_rmode_arg("fpowr", op->op.fpowr, pure, x, pure, y, rmode);
+}
+
 static void il_opdmp_load(RzILOpPure *op, PJ *pj) {
 	RzILOpArgsLoad *opx = &op->op.load;
 	pj_o(pj);
@@ -768,6 +921,9 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 	case RZ_IL_OP_FRSQRT:
 		il_opdmp_frsqrt(op, pj);
 		return;
+	case RZ_IL_OP_FEXCEPT:
+		il_opdmp_fexcept(op, pj);
+		break;
 	case RZ_IL_OP_FADD:
 		il_opdmp_fadd(op, pj);
 		return;
@@ -800,6 +956,105 @@ static void il_op_pure_json_resolve(RzILOpPure *op, PJ *pj) {
 		return;
 	case RZ_IL_OP_FCOMPOUND:
 		il_opdmp_fcompound(op, pj);
+		return;
+	case RZ_IL_OP_FEXP:
+		il_opdmp_fexp(op, pj);
+		return;
+	case RZ_IL_OP_FEXPM1:
+		il_opdmp_fexpm1(op, pj);
+		return;
+	case RZ_IL_OP_FEXP2:
+		il_opdmp_fexp2(op, pj);
+		return;
+	case RZ_IL_OP_FEXP2M1:
+		il_opdmp_fexp2m1(op, pj);
+		return;
+	case RZ_IL_OP_FEXP10:
+		il_opdmp_fexp10(op, pj);
+		return;
+	case RZ_IL_OP_FEXP10M1:
+		il_opdmp_fexp10m1(op, pj);
+		return;
+	case RZ_IL_OP_FLOG:
+		il_opdmp_flog(op, pj);
+		return;
+	case RZ_IL_OP_FLOG2:
+		il_opdmp_flog2(op, pj);
+		return;
+	case RZ_IL_OP_FLOG10:
+		il_opdmp_flog10(op, pj);
+		return;
+	case RZ_IL_OP_FLOGP1:
+		il_opdmp_flogp1(op, pj);
+		return;
+	case RZ_IL_OP_FLOG2P1:
+		il_opdmp_flog2p1(op, pj);
+		return;
+	case RZ_IL_OP_FLOG10P1:
+		il_opdmp_flog10p1(op, pj);
+		return;
+	case RZ_IL_OP_FSIN:
+		il_opdmp_fsin(op, pj);
+		return;
+	case RZ_IL_OP_FCOS:
+		il_opdmp_fcos(op, pj);
+		return;
+	case RZ_IL_OP_FTAN:
+		il_opdmp_ftan(op, pj);
+		return;
+	case RZ_IL_OP_FSINPI:
+		il_opdmp_fsinpi(op, pj);
+		return;
+	case RZ_IL_OP_FCOSPI:
+		il_opdmp_fcospi(op, pj);
+		return;
+	case RZ_IL_OP_FTANPI:
+		il_opdmp_ftanpi(op, pj);
+		return;
+	case RZ_IL_OP_FASIN:
+		il_opdmp_fasin(op, pj);
+		return;
+	case RZ_IL_OP_FACOS:
+		il_opdmp_facos(op, pj);
+		return;
+	case RZ_IL_OP_FATAN:
+		il_opdmp_fatan(op, pj);
+		return;
+	case RZ_IL_OP_FASINPI:
+		il_opdmp_fasinpi(op, pj);
+		return;
+	case RZ_IL_OP_FACOSPI:
+		il_opdmp_facospi(op, pj);
+		return;
+	case RZ_IL_OP_FATANPI:
+		il_opdmp_fatanpi(op, pj);
+		return;
+	case RZ_IL_OP_FSINH:
+		il_opdmp_fsinh(op, pj);
+		return;
+	case RZ_IL_OP_FCOSH:
+		il_opdmp_fcosh(op, pj);
+		return;
+	case RZ_IL_OP_FTANH:
+		il_opdmp_ftanh(op, pj);
+		return;
+	case RZ_IL_OP_FASINH:
+		il_opdmp_fasinh(op, pj);
+		return;
+	case RZ_IL_OP_FACOSH:
+		il_opdmp_facosh(op, pj);
+		return;
+	case RZ_IL_OP_FATANH:
+		il_opdmp_fatanh(op, pj);
+		return;
+	case RZ_IL_OP_FATAN2:
+		il_opdmp_fatan2(op, pj);
+		return;
+	case RZ_IL_OP_FATAN2PI:
+		il_opdmp_fatan2pi(op, pj);
+		return;
+	case RZ_IL_OP_FPOWR:
+		il_opdmp_fpowr(op, pj);
 		return;
 
 	default: {

@@ -459,6 +459,36 @@ typedef struct rz_il_op_args_float_binop_t {
  * [FROUND]
  * [FSQRT] fsqrt m x returns the closest floating-point number to r, where r is such number that r*r is equal to x.
  * [FRSQRT] reverse sqrt, rsqrt m x is the closest floating-point number to 1 / sqrt x.
+ * [FEXP] exp m x is the closest floating-point number to e^x.
+ * [FEXPM1] expm1 m x is the closest floating-point number to e^x - 1.
+ * [FEXP2] exp2 m x is the closest floating-point number to 2^x.
+ * [FEXP2M1] exp2m1 m x is the closest floating-point number to 2^x - 1.
+ * [FEXP10] exp10 m x is the closest floating-point number to 10^x.
+ * [FEXP10M1] exp10m1 m x is the closest floating-point number to 10^x - 1.
+ * [FLOG] log m x is the closest floating-point number to the natural logarithm of x.
+ * [FLOG2] log2 m x is the closest floating-point number to log2 x.
+ * [FLOG10] log10 m x is the closest floating-point number to log10 x.
+ * [FLOGP1] logp1 m x is the closest floating-point number to log (1 + x).
+ * [FLOG2P1] log2p1 m x is the closest floating-point number to log2 (1 + x).
+ * [FLOG10P1] log10p1 m x is the closest floating-point number to log10 (1 + x).
+ * [FSIN] sin m x is the closest floating-point number to sin x.
+ * [FCOS] cos m x is the closest floating-point number to cos x.
+ * [FTAN] tan m x is the closest floating-point number to tan x.
+ * [FSINPI] sinpi m x is the closest floating-point number to sin (pi * x).
+ * [FCOSPI] cospi m x is the closest floating-point number to cos (pi * x).
+ * [FTANPI] tanpi m x is the closest floating-point number to tan (pi * x).
+ * [FASIN] asin m x is the closest floating-point number to asin x.
+ * [FACOS] acos m x is the closest floating-point number to acos x.
+ * [FATAN] atan m x is the closest floating-point number to atan x.
+ * [FASINPI] asinpi m x is the closest floating-point number to asin x / pi.
+ * [FACOSPI] acospi m x is the closest floating-point number to acos x / pi.
+ * [FATANPI] atanpi m x is the closest floating-point number to atan x / pi.
+ * [FSINH] sinh m x is the closest floating-point number to sinh x.
+ * [FCOSH] cosh m x is the closest floating-point number to cosh x.
+ * [FTANH] tanh m x is the closest floating-point number to tanh x.
+ * [FASINH] asinh m x is the closest floating-point number to asinh x.
+ * [FACOSH] acosh m x is the closest floating-point number to acosh x.
+ * [FATANH] atanh m x is the closest floating-point number to atanh x.
  */
 typedef struct rz_il_op_args_float_alg_unop_t {
 	RzILOpArgFloatRMode rmode;
@@ -468,6 +498,36 @@ typedef struct rz_il_op_args_float_alg_unop_t {
 typedef RzILOpArgsFloatAlgUnop RzILOpArgsFround;
 typedef RzILOpArgsFloatAlgUnop RzILOpArgsFsqrt;
 typedef RzILOpArgsFloatAlgUnop RzILOpArgsFrsqrt;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexp;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexpm1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexp2;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexp2m1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexp10;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFexp10m1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlog;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlog2;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlog10;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlogp1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlog2p1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFlog10p1;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFsin;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFcos;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFtan;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFsinpi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFcospi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFtanpi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFasin;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFacos;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFatan;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFasinpi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFacospi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFatanpi;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFsinh;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFcosh;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFtanh;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFasinh;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFacosh;
+typedef RzILOpArgsFloatAlgUnop RzILOpArgsFatanh;
 
 typedef struct rz_il_op_args_float_expect_t {
 	RzFloatException e;
@@ -482,8 +542,10 @@ typedef struct rz_il_op_args_float_expect_t {
  * [FMUL]
  * [FDIV]
  * [FMOD]
- * [FHYPOT]
- * [FPOW]
+ * [FHYPOT] hypot m x y is the closest floating-point number to sqrt (x * x + y * y).
+ * [FPOW] pow m x y is the closest floating-point number to x^y.
+ * [FPOWR] powr m x y is the closest floating-point number to x^y defined as e^(y * log x),
+ *   so x must not be negative.
  */
 typedef struct rz_il_op_args_float_alg_binop_t {
 	RzILOpArgFloatRMode rmode;
@@ -498,6 +560,25 @@ typedef RzILOpArgsFloatAlgBinop RzILOpArgsFdiv;
 typedef RzILOpArgsFloatAlgBinop RzILOpArgsFmod;
 typedef RzILOpArgsFloatAlgBinop RzILOpArgsFhypot;
 typedef RzILOpArgsFloatAlgBinop RzILOpArgsFpow;
+typedef RzILOpArgsFloatAlgBinop RzILOpArgsFpowr;
+
+/**
+ * \brief op structure for atan2 and atan2pi (binary op with rmode)
+ * rmode -> 'f float -> 'f float -> 'f float
+ * [FATAN2] atan2 m y x is the closest floating-point number to the angle of the point (x, y),
+ *   that is atan (y / x) taken in the quadrant of (x, y).
+ * [FATAN2PI] atan2pi m y x is the closest floating-point number to atan2 (y, x) / pi.
+ *
+ * The ordinate comes first, as in atan2. The layout matches RzILOpArgsFloatAlgBinop,
+ * so code handling binary float ops by position also applies.
+ */
+typedef struct rz_il_op_args_float_atan2_t {
+	RzILOpArgFloatRMode rmode;
+	RzILOpFloat *y; ///< ordinate, first operand
+	RzILOpFloat *x; ///< abscissa, second operand
+} RzILOpArgsFatan2;
+
+typedef RzILOpArgsFatan2 RzILOpArgsFatan2pi;
 
 /**
  * \brief op structure of ternary op in float
@@ -514,6 +595,10 @@ typedef RzILOpArgsFloatAlgTernop RzILOpArgsFmad;
 /**
  * \brief op structure for some float binary op requiring `int`
  * rmode -> 'f float -> 'a bitv -> 'f float
+ * The bitvector n is a signed (two's complement) integer.
+ * [FROOTN] rootn m x n is the closest floating-point number to the n-th root of x.
+ * [FPOWN] pown m x n is the closest floating-point number to x^n.
+ * [FCOMPOUND] compound m x n is the closest floating-point number to (1 + x)^n.
  */
 typedef struct rz_il_op_args_float_alg_hybrid_binop_t {
 	RzILOpArgFloatRMode rmode;
@@ -601,6 +686,39 @@ typedef enum {
 	RZ_IL_OP_FROOTN,
 	RZ_IL_OP_FPOWN,
 	RZ_IL_OP_FCOMPOUND,
+	RZ_IL_OP_FEXP,
+	RZ_IL_OP_FEXPM1,
+	RZ_IL_OP_FEXP2,
+	RZ_IL_OP_FEXP2M1,
+	RZ_IL_OP_FEXP10,
+	RZ_IL_OP_FEXP10M1,
+	RZ_IL_OP_FLOG,
+	RZ_IL_OP_FLOG2,
+	RZ_IL_OP_FLOG10,
+	RZ_IL_OP_FLOGP1,
+	RZ_IL_OP_FLOG2P1,
+	RZ_IL_OP_FLOG10P1,
+	RZ_IL_OP_FSIN,
+	RZ_IL_OP_FCOS,
+	RZ_IL_OP_FTAN,
+	RZ_IL_OP_FSINPI,
+	RZ_IL_OP_FCOSPI,
+	RZ_IL_OP_FTANPI,
+	RZ_IL_OP_FASIN,
+	RZ_IL_OP_FACOS,
+	RZ_IL_OP_FATAN,
+	RZ_IL_OP_FASINPI,
+	RZ_IL_OP_FACOSPI,
+	RZ_IL_OP_FATANPI,
+	RZ_IL_OP_FSINH,
+	RZ_IL_OP_FCOSH,
+	RZ_IL_OP_FTANH,
+	RZ_IL_OP_FASINH,
+	RZ_IL_OP_FACOSH,
+	RZ_IL_OP_FATANH,
+	RZ_IL_OP_FATAN2,
+	RZ_IL_OP_FATAN2PI,
+	RZ_IL_OP_FPOWR,
 	RZ_IL_OP_FEXCEPT,
 	// ...
 
@@ -724,10 +842,40 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFround fround; ///< RZ_IL_OP_FROUND
 		RzILOpArgsFsqrt fsqrt; ///< RZ_IL_OP_FSQRT
 		RzILOpArgsFrsqrt frsqrt; ///< RZ_IL_OP_FRSQRT
+		RzILOpArgsFexp fexp; ///< RZ_IL_OP_FEXP
+		RzILOpArgsFexpm1 fexpm1; ///< RZ_IL_OP_FEXPM1
+		RzILOpArgsFexp2 fexp2; ///< RZ_IL_OP_FEXP2
+		RzILOpArgsFexp2m1 fexp2m1; ///< RZ_IL_OP_FEXP2M1
+		RzILOpArgsFexp10 fexp10; ///< RZ_IL_OP_FEXP10
+		RzILOpArgsFexp10m1 fexp10m1; ///< RZ_IL_OP_FEXP10M1
+		RzILOpArgsFlog flog; ///< RZ_IL_OP_FLOG
+		RzILOpArgsFlog2 flog2; ///< RZ_IL_OP_FLOG2
+		RzILOpArgsFlog10 flog10; ///< RZ_IL_OP_FLOG10
+		RzILOpArgsFlogp1 flogp1; ///< RZ_IL_OP_FLOGP1
+		RzILOpArgsFlog2p1 flog2p1; ///< RZ_IL_OP_FLOG2P1
+		RzILOpArgsFlog10p1 flog10p1; ///< RZ_IL_OP_FLOG10P1
+		RzILOpArgsFsin fsin; ///< RZ_IL_OP_FSIN
+		RzILOpArgsFcos fcos; ///< RZ_IL_OP_FCOS
+		RzILOpArgsFtan ftan; ///< RZ_IL_OP_FTAN
+		RzILOpArgsFsinpi fsinpi; ///< RZ_IL_OP_FSINPI
+		RzILOpArgsFcospi fcospi; ///< RZ_IL_OP_FCOSPI
+		RzILOpArgsFtanpi ftanpi; ///< RZ_IL_OP_FTANPI
+		RzILOpArgsFasin fasin; ///< RZ_IL_OP_FASIN
+		RzILOpArgsFacos facos; ///< RZ_IL_OP_FACOS
+		RzILOpArgsFatan fatan; ///< RZ_IL_OP_FATAN
+		RzILOpArgsFasinpi fasinpi; ///< RZ_IL_OP_FASINPI
+		RzILOpArgsFacospi facospi; ///< RZ_IL_OP_FACOSPI
+		RzILOpArgsFatanpi fatanpi; ///< RZ_IL_OP_FATANPI
+		RzILOpArgsFsinh fsinh; ///< RZ_IL_OP_FSINH
+		RzILOpArgsFcosh fcosh; ///< RZ_IL_OP_FCOSH
+		RzILOpArgsFtanh ftanh; ///< RZ_IL_OP_FTANH
+		RzILOpArgsFasinh fasinh; ///< RZ_IL_OP_FASINH
+		RzILOpArgsFacosh facosh; ///< RZ_IL_OP_FACOSH
+		RzILOpArgsFatanh fatanh; ///< RZ_IL_OP_FATANH
 
 		/**
 		 * RZ_IL_OP_FADD, RZ_IL_OP_FSUB, RZ_IL_OP_FMUL, RZ_IL_OP_FDIV, RZ_IL_OP_FMOD,
-		 * RZ_IL_OP_FHYPOT, RZ_IL_OP_FPOW
+		 * RZ_IL_OP_FHYPOT, RZ_IL_OP_FPOW, RZ_IL_OP_FATAN2, RZ_IL_OP_FATAN2PI, RZ_IL_OP_FPOWR
 		 */
 		RzILOpArgsFloatAlgBinop binop_float_alg;
 		RzILOpArgsFadd fadd; ///< RZ_IL_OP_FADD
@@ -737,6 +885,9 @@ struct rz_il_op_pure_t {
 		RzILOpArgsFmod fmod; ///< RZ_IL_OP_FMOD
 		RzILOpArgsFhypot fhypot; ///< RZ_IL_OP_FHYPOT
 		RzILOpArgsFpow fpow; ///< RZ_IL_OP_FPOW
+		RzILOpArgsFatan2 fatan2; ///< RZ_IL_OP_FATAN2
+		RzILOpArgsFatan2pi fatan2pi; ///< RZ_IL_OP_FATAN2PI
+		RzILOpArgsFpowr fpowr; ///< RZ_IL_OP_FPOWR
 
 		RzILOpArgsFmad fmad; ///< RZ_IL_OP_FMAD
 
@@ -839,6 +990,66 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt(RzFloatRMode rmode, RZ_NONNULL Rz
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fround_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsqrt_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frsqrt_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexpm1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2m1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10m1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flogp1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2p1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10p1(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsin(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcos(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftan(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinpi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcospi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanpi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasin(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facos(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinpi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facospi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanpi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcosh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facosh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanh(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexpm1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp2m1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fexp10m1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flogp1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog2p1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_flog10p1_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsin_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcos_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftan_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcospi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasin_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facos_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facospi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanpi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsinh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fcosh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_ftanh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fasinh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_facosh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatanh_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *f);
 RZ_API RZ_OWN RzILOpBool *rz_il_op_new_fexcept(RzFloatException e, RZ_NONNULL RzILOpFloat *x);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fadd(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fsub(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
@@ -854,6 +1065,12 @@ RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot(RzFloatRMode rmode, RZ_NONNULL Rz
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fhypot_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpow_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2pi(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpowr(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fatan2pi_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *x);
+RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fpowr_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_fmad_dyn_rmode(RZ_NONNULL RzILOpBitVector *rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpFloat *y, RZ_NONNULL RzILOpFloat *z);
 RZ_API RZ_OWN RzILOpFloat *rz_il_op_new_frootn(RzFloatRMode rmode, RZ_NONNULL RzILOpFloat *x, RZ_NONNULL RzILOpBitVector *n);
