@@ -6,6 +6,7 @@
 #include "../unit/minunit.h"
 
 #if __UNIX__
+#include <errno.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -84,6 +85,10 @@ static bool test_rz_interrupt_process_signal(void) {
 	mu_assert("pipe failed", pipe(ready_pipe) == 0);
 
 	pid_t pid = fork();
+	if (pid < 0) {
+		close(ready_pipe[0]);
+		close(ready_pipe[1]);
+	}
 	mu_assert("fork failed", pid >= 0);
 
 	if (pid == 0) {
@@ -91,44 +96,62 @@ static bool test_rz_interrupt_process_signal(void) {
 		RzInterrupt *intr = rz_interrupt_new();
 		if (!intr) {
 			close(ready_pipe[1]);
-			exit(1);
+			_exit(1);
 		}
 		intr->hook_signals = true;
 		rz_interrupt_break_push(intr, NULL, NULL);
 
 		char ready = 1;
-		if (write(ready_pipe[1], &ready, 1) != 1) {
-			close(ready_pipe[1]);
+		ssize_t nwritten;
+		do {
+			nwritten = write(ready_pipe[1], &ready, 1);
+		} while (nwritten < 0 && errno == EINTR);
+		close(ready_pipe[1]);
+		if (nwritten != 1) {
 			rz_interrupt_break_pop(intr);
 			rz_interrupt_free(intr);
-			exit(3);
+			_exit(3);
 		}
-		close(ready_pipe[1]);
 
 		for (int i = 0; i < 200; i++) {
 			if (rz_interrupt_is_breaked(intr)) {
 				rz_interrupt_break_pop(intr);
 				rz_interrupt_free(intr);
-				exit(0);
+				_exit(0);
 			}
 			rz_sys_usleep(10000);
 		}
 
 		rz_interrupt_break_pop(intr);
 		rz_interrupt_free(intr);
-		exit(2);
+		_exit(2);
 	} else {
 		close(ready_pipe[1]);
 		char ready = 0;
-		ssize_t nread = read(ready_pipe[0], &ready, 1);
+		ssize_t nread;
+		do {
+			nread = read(ready_pipe[0], &ready, 1);
+		} while (nread < 0 && errno == EINTR);
 		close(ready_pipe[0]);
-		mu_assert_eq(nread, 1, "child signaled readiness");
+		if (nread != 1) {
+			kill(pid, SIGKILL);
+			int status = 0;
+			pid_t wpid;
+			do {
+				wpid = waitpid(pid, &status, 0);
+			} while (wpid < 0 && errno == EINTR);
+			mu_assert_eq(nread, 1, "child signaled readiness");
+		}
 
 		kill(pid, SIGINT);
 
 		int status = 0;
-		waitpid(pid, &status, 0);
+		pid_t wpid;
+		do {
+			wpid = waitpid(pid, &status, 0);
+		} while (wpid < 0 && errno == EINTR);
 
+		mu_assert_eq(wpid, pid, "waitpid succeeded");
 		mu_assert_true(WIFEXITED(status), "child exited normally");
 		mu_assert_eq(WEXITSTATUS(status), 0, "child caught SIGINT via rz_interrupt");
 	}

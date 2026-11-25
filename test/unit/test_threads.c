@@ -47,39 +47,85 @@ bool test_thread_pool_cores(void) {
 
 #define THREAD_WAIT_AT_LEAST_MICROSEC 100000
 #define THREAD_SLEEP_PUSH_MICROSEC    150000
-#define THREAD_TERMINATE_TIMEOUT_US   2000000
 #define THREAD_SETTLE_CHECK_US        10000
 
-static size_t wait_for_terminated_count(RzThread **ths, size_t n, size_t target) {
-	ut64 deadline = rz_time_now_mono() + THREAD_TERMINATE_TIMEOUT_US;
-	size_t termed = 0;
-	while (true) {
-		termed = 0;
-		for (size_t i = 0; i < n; i++) {
-			if (ths[i] && rz_th_terminated(ths[i])) {
-				termed++;
-			}
-		}
-		if (termed >= target || rz_time_now_mono() >= deadline) {
-			break;
-		}
-		rz_sys_usleep(1000);
+typedef struct {
+	RzThreadQueue *queue;
+	RzThreadLock *lock;
+	RzThreadCond *cond;
+	bool started;
+} QueuePushTimedCtx;
+
+typedef struct {
+	RzThreadLock *lock;
+	RzThreadCond *cond;
+	bool *done;
+	size_t n;
+	size_t done_count;
+} ThreadDoneTracker;
+
+typedef struct {
+	RzThreadRingBuf *rbuf;
+	ut64 val;
+	ThreadDoneTracker *tracker;
+	size_t idx;
+} RingBufWorkerArg;
+
+static bool thread_done_tracker_init(ThreadDoneTracker *tracker, bool *done, size_t n) {
+	tracker->lock = rz_th_lock_new(false);
+	tracker->cond = rz_th_cond_new();
+	tracker->done = done;
+	tracker->n = n;
+	tracker->done_count = 0;
+	if (!tracker->lock || !tracker->cond) {
+		rz_th_cond_free(tracker->cond);
+		rz_th_lock_free(tracker->lock);
+		tracker->cond = NULL;
+		tracker->lock = NULL;
+		return false;
 	}
-	// Give any unexpectedly woken thread a brief window to finish so excess wakeups are caught.
-	rz_sys_usleep(THREAD_SETTLE_CHECK_US);
-	termed = 0;
-	for (size_t i = 0; i < n; i++) {
-		if (ths[i] && rz_th_terminated(ths[i])) {
-			termed++;
-		}
-	}
-	return termed;
+	return true;
 }
 
-void *thread_queue_push_timed(RzThreadQueue *queue) {
+static void thread_done_tracker_fini(ThreadDoneTracker *tracker) {
+	rz_th_cond_free(tracker->cond);
+	rz_th_lock_free(tracker->lock);
+}
+
+static void thread_done_mark(ThreadDoneTracker *tracker, size_t idx) {
+	rz_th_lock_enter(tracker->lock);
+	tracker->done[idx] = true;
+	tracker->done_count++;
+	rz_th_cond_signal_all(tracker->cond);
+	rz_th_lock_leave(tracker->lock);
+}
+
+static size_t wait_for_done_count(ThreadDoneTracker *tracker, size_t target, bool *done_snapshot) {
+	rz_th_lock_enter(tracker->lock);
+	while (tracker->done_count < target) {
+		rz_th_cond_wait(tracker->cond, tracker->lock);
+	}
+	rz_th_lock_leave(tracker->lock);
+	// Give any unexpectedly woken thread a brief window to finish so excess wakeups are caught.
+	rz_sys_usleep(THREAD_SETTLE_CHECK_US);
+	rz_th_lock_enter(tracker->lock);
+	size_t count = tracker->done_count;
+	if (done_snapshot) {
+		memcpy(done_snapshot, tracker->done, tracker->n * sizeof(bool));
+	}
+	rz_th_lock_leave(tracker->lock);
+	return count;
+}
+
+static void *thread_queue_push_timed(void *user) {
+	QueuePushTimedCtx *ctx = (QueuePushTimedCtx *)user;
 	void *data = NULL;
 	ut64 start = rz_time_now_mono();
-	if (!rz_th_queue_pop(queue, true, &data)) {
+	rz_th_lock_enter(ctx->lock);
+	ctx->started = true;
+	rz_th_cond_signal(ctx->cond);
+	rz_th_lock_leave(ctx->lock);
+	if (!rz_th_queue_pop(ctx->queue, true, &data)) {
 		return NULL;
 	}
 	ut64 diff = rz_time_now_mono() - start;
@@ -135,9 +181,22 @@ bool test_thread_queue(void) {
 
 	// test queue
 	queue = rz_th_queue_new(RZ_THREAD_QUEUE_UNLIMITED, NULL);
-	RzThread *th = rz_th_new((RzThreadFunction)thread_queue_push_timed, queue);
+	QueuePushTimedCtx ctx = {
+		.queue = queue,
+		.lock = rz_th_lock_new(false),
+		.cond = rz_th_cond_new(),
+		.started = false,
+	};
+	mu_assert_notnull(ctx.lock, "rz_th_lock_new null check");
+	mu_assert_notnull(ctx.cond, "rz_th_cond_new null check");
+	RzThread *th = rz_th_new(thread_queue_push_timed, &ctx);
+	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, &ctx) null check");
+	rz_th_lock_enter(ctx.lock);
+	while (!ctx.started) {
+		rz_th_cond_wait(ctx.cond, ctx.lock);
+	}
+	rz_th_lock_leave(ctx.lock);
 	mu_assert_false(rz_th_terminated(th), "Thread should still sleep and count as running.");
-	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, queue) null check");
 
 	rz_sys_usleep(THREAD_SLEEP_PUSH_MICROSEC);
 	mu_assert_true(rz_th_queue_push(queue, "rizin", true), "queue can push an element after waiting");
@@ -151,6 +210,8 @@ bool test_thread_queue(void) {
 	mu_assert_true(rz_th_terminated(th), "Thread should count as terminated.");
 	mu_assert_true(rz_th_queue_is_closed(queue), "verify the queue is closed");
 	rz_th_free(th);
+	rz_th_cond_free(ctx.cond);
+	rz_th_lock_free(ctx.lock);
 	rz_th_queue_free(queue);
 
 	mu_end;
@@ -419,6 +480,16 @@ utptr thread_queue_put_100(RzThreadRingBuf *rbuf) {
 	return (utptr)rz_th_ring_buf_put(rbuf, &in_100);
 }
 
+static void *thread_rbuf_put_tracked(void *user) {
+	RingBufWorkerArg *arg = (RingBufWorkerArg *)user;
+	ut64 val = arg->val;
+	RzThreadRingBufResult r = rz_th_ring_buf_put(arg->rbuf, &val);
+	if (arg->tracker) {
+		thread_done_mark(arg->tracker, arg->idx);
+	}
+	return (void *)(utptr)r;
+}
+
 bool test_thread_ring_buf_writer_cond(bool size_one) {
 	// Full buffer + clear -> Signaling waiting
 	ut64 in_1 = 1;
@@ -435,41 +506,55 @@ bool test_thread_ring_buf_writer_cond(bool size_one) {
 		mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
 	}
 
+	bool done[2] = { false, false };
+	bool done_snap[2] = { false, false };
+	bool joined[2] = { false, false };
+	ThreadDoneTracker tracker;
+	mu_assert_true(thread_done_tracker_init(&tracker, done, RZ_ARRAY_SIZE(done)), "tracker init");
+
+	RingBufWorkerArg args[2] = {
+		{ .rbuf = rbuf, .val = 97, .tracker = &tracker, .idx = 0 },
+		{ .rbuf = rbuf, .val = 98, .tracker = &tracker, .idx = 1 },
+	};
+
 	// Start writers waiting on condition.
-	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
-	mu_assert_notnull(th_97, "rz_th_new 97 null check");
-	RzThread *th_98 = rz_th_new((RzThreadFunction)thread_queue_put_98, rbuf);
-	mu_assert_notnull(th_98, "rz_th_new 98 null check");
+	RzThread *writers[2] = {
+		rz_th_new(thread_rbuf_put_tracked, &args[0]),
+		rz_th_new(thread_rbuf_put_tracked, &args[1]),
+	};
+	mu_assert_notnull(writers[0], "rz_th_new 97 null check");
+	mu_assert_notnull(writers[1], "rz_th_new 98 null check");
 
 	// Take elements out of the buffer ensure they
 	// the write threads terminate in the right order.
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	mu_assert_eq(out, in_1, "Take mismatch");
-	RzThread *writers[] = { th_97, th_98 };
-	wait_for_terminated_count(writers, RZ_ARRAY_SIZE(writers), 1);
+	size_t done_count = wait_for_done_count(&tracker, 1, done_snap);
+	mu_assert_eq(done_count, 1, "Incorrect number of threads terminated");
 
 	int termed = 0;
-	if (rz_th_terminated(th_97)) {
-		printf("Thread 97 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
-	}
-	if (rz_th_terminated(th_98)) {
-		printf("Thread 98 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+		if (done_snap[i]) {
+			printf("Thread %" PFMT64u " terminated\n", args[i].val);
+			rz_th_wait(writers[i]);
+			joined[i] = true;
+			mu_assert_eq(rz_th_get_retv(writers[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+			termed++;
+		}
 	}
 	mu_assert_eq(termed, 1, "Incorrect number of threads terminated");
 
 	if (!size_one) {
 		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 		mu_assert_eq(out, in_2, "Take mismatch");
-		rz_th_wait(th_97);
-		rz_th_wait(th_98);
-
-		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
-		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+			if (!joined[i]) {
+				rz_th_wait(writers[i]);
+				joined[i] = true;
+			}
+			mu_assert_true(rz_th_terminated(writers[i]), "Both threads should be termined by now");
+			mu_assert_eq(rz_th_get_retv(writers[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		}
 
 		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 		mu_assert_eq(out, in_3, "Take mismatch");
@@ -487,15 +572,20 @@ bool test_thread_ring_buf_writer_cond(bool size_one) {
 	}
 
 	if (size_one) {
-		rz_th_wait(th_97);
-		rz_th_wait(th_98);
-		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
-		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+			if (!joined[i]) {
+				rz_th_wait(writers[i]);
+				joined[i] = true;
+			}
+			mu_assert_true(rz_th_terminated(writers[i]), "Both threads should be termined by now");
+			mu_assert_eq(rz_th_get_retv(writers[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+		}
 	}
 
-	rz_th_free(th_97);
-	rz_th_free(th_98);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+		rz_th_free(writers[i]);
+	}
+	thread_done_tracker_fini(&tracker);
 	rz_th_ring_buf_free(rbuf);
 
 	mu_end;
@@ -514,42 +604,46 @@ bool test_thread_ring_buf_writer_clear(void) {
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_3), RZ_THREAD_RING_BUF_OK, "put");
 
+	bool done[4] = { false, false, false, false };
+	bool done_snap[4] = { false, false, false, false };
+	bool joined[4] = { false, false, false, false };
+	ThreadDoneTracker tracker;
+	mu_assert_true(thread_done_tracker_init(&tracker, done, RZ_ARRAY_SIZE(done)), "tracker init");
+
+	RingBufWorkerArg args[4] = {
+		{ .rbuf = rbuf, .val = 97, .tracker = &tracker, .idx = 0 },
+		{ .rbuf = rbuf, .val = 98, .tracker = &tracker, .idx = 1 },
+		{ .rbuf = rbuf, .val = 99, .tracker = &tracker, .idx = 2 },
+		{ .rbuf = rbuf, .val = 100, .tracker = &tracker, .idx = 3 },
+	};
+
 	// Start writers waiting on condition.
-	RzThread *th_97 = rz_th_new((RzThreadFunction)thread_queue_put_97, rbuf);
-	mu_assert_notnull(th_97, "rz_th_new 97 null check");
-	RzThread *th_98 = rz_th_new((RzThreadFunction)thread_queue_put_98, rbuf);
-	mu_assert_notnull(th_98, "rz_th_new 98 null check");
-	RzThread *th_99 = rz_th_new((RzThreadFunction)thread_queue_put_99, rbuf);
-	mu_assert_notnull(th_99, "rz_th_new 99 null check");
-	RzThread *th_100 = rz_th_new((RzThreadFunction)thread_queue_put_100, rbuf);
-	mu_assert_notnull(th_100, "rz_th_new 100 null check");
+	RzThread *writers[4] = {
+		rz_th_new(thread_rbuf_put_tracked, &args[0]),
+		rz_th_new(thread_rbuf_put_tracked, &args[1]),
+		rz_th_new(thread_rbuf_put_tracked, &args[2]),
+		rz_th_new(thread_rbuf_put_tracked, &args[3]),
+	};
+	mu_assert_notnull(writers[0], "rz_th_new 97 null check");
+	mu_assert_notnull(writers[1], "rz_th_new 98 null check");
+	mu_assert_notnull(writers[2], "rz_th_new 99 null check");
+	mu_assert_notnull(writers[3], "rz_th_new 100 null check");
 
 	// Clear buffer signaling n writers.
 	mu_assert_eq(rz_th_ring_buf_clear(rbuf), RZ_THREAD_RING_BUF_OK, "clear");
-	RzThread *writers[] = { th_97, th_98, th_99, th_100 };
-	wait_for_terminated_count(writers, RZ_ARRAY_SIZE(writers), 3);
+	size_t done_count = wait_for_done_count(&tracker, 3, done_snap);
+	mu_assert_eq(done_count, 3, "Exactly 3 threads should have been woken up and terminated.");
 	// Check return value of the thread which terminated
 	// (Order is not guaranteed so check any of them).
 	int termed = 0;
-	if (rz_th_terminated(th_97)) {
-		printf("Thread 97 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
-	}
-	if (rz_th_terminated(th_98)) {
-		printf("Thread 98 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
-	}
-	if (rz_th_terminated(th_99)) {
-		printf("Thread 99 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_99), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
-	}
-	if (rz_th_terminated(th_100)) {
-		printf("Thread 100 terminated\n");
-		mu_assert_eq(rz_th_get_retv(th_100), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		termed++;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+		if (done_snap[i]) {
+			printf("Thread %" PFMT64u " terminated\n", args[i].val);
+			rz_th_wait(writers[i]);
+			joined[i] = true;
+			mu_assert_eq(rz_th_get_retv(writers[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+			termed++;
+		}
 	}
 	mu_assert_eq(termed, 3, "Exactly 3 threads should have been woken up and terminated.");
 
@@ -569,17 +663,14 @@ bool test_thread_ring_buf_writer_clear(void) {
 
 	mu_assert_eq(written, 3, "invalid number of values written.");
 
-	rz_th_wait(th_97);
-	rz_th_wait(th_98);
-	rz_th_wait(th_99);
-	rz_th_wait(th_100);
-
-	// Now the last one should be done
-	mu_assert_true(rz_th_terminated(th_97) &&
-			rz_th_terminated(th_98) &&
-			rz_th_terminated(th_99) &&
-			rz_th_terminated(th_100),
-		"All terminated");
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+		if (!joined[i]) {
+			rz_th_wait(writers[i]);
+			joined[i] = true;
+		}
+		mu_assert_true(rz_th_terminated(writers[i]), "All terminated");
+		mu_assert_eq(rz_th_get_retv(writers[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+	}
 
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	written = 0;
@@ -593,10 +684,10 @@ bool test_thread_ring_buf_writer_clear(void) {
 	}
 	mu_assert_eq(written, 1, "Last thread didn't write.");
 
-	rz_th_free(th_97);
-	rz_th_free(th_98);
-	rz_th_free(th_99);
-	rz_th_free(th_100);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(writers); i++) {
+		rz_th_free(writers[i]);
+	}
+	thread_done_tracker_fini(&tracker);
 	rz_th_ring_buf_free(rbuf);
 
 	mu_end;
@@ -680,10 +771,14 @@ utptr thread_rbuf_take_blocking_2(RzThreadRingBuf *rbuf) {
 	return (utptr)r;
 }
 
-utptr thread_rbuf_take_blocking(RzThreadRingBuf *rbuf) {
-	ut64 out;
-	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(rbuf, &out);
-	return (utptr)r;
+static void *thread_rbuf_take_blocking_tracked(void *user) {
+	RingBufWorkerArg *arg = (RingBufWorkerArg *)user;
+	ut64 out = 0;
+	RzThreadRingBufResult r = rz_th_ring_buf_take_blocking(arg->rbuf, &out);
+	if (arg->tracker) {
+		thread_done_mark(arg->tracker, arg->idx);
+	}
+	return (void *)(utptr)r;
 }
 
 bool test_thread_ring_buf_reader_cond(void) {
@@ -705,57 +800,57 @@ bool test_thread_ring_buf_reader_cond(void) {
 	mu_assert_true(rz_th_terminated(rblock_2), "Didn't terminated");
 	mu_assert_eq(rz_th_get_retv(rblock_2), RZ_THREAD_RING_BUF_OK, "Wrong return code");
 
+	bool done[4] = { false, false, false, false };
+	bool done_snap[4] = { false, false, false, false };
+	bool joined[4] = { false, false, false, false };
+	ThreadDoneTracker tracker;
+	mu_assert_true(thread_done_tracker_init(&tracker, done, RZ_ARRAY_SIZE(done)), "tracker init");
+
+	RingBufWorkerArg args[4] = {
+		{ .rbuf = rbuf, .val = 0, .tracker = &tracker, .idx = 0 },
+		{ .rbuf = rbuf, .val = 0, .tracker = &tracker, .idx = 1 },
+		{ .rbuf = rbuf, .val = 0, .tracker = &tracker, .idx = 2 },
+		{ .rbuf = rbuf, .val = 0, .tracker = &tracker, .idx = 3 },
+	};
+
 	// Spawn many
-	RzThread *rblock_n1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
-	RzThread *rblock_n2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
-	RzThread *rblock_n3 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
-	RzThread *rblock_n4 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking, rbuf);
-	RzThread *ths[] = { rblock_n1, rblock_n2, rblock_n3, rblock_n4 };
+	RzThread *ths[4] = {
+		rz_th_new(thread_rbuf_take_blocking_tracked, &args[0]),
+		rz_th_new(thread_rbuf_take_blocking_tracked, &args[1]),
+		rz_th_new(thread_rbuf_take_blocking_tracked, &args[2]),
+		rz_th_new(thread_rbuf_take_blocking_tracked, &args[3]),
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ths); i++) {
+		mu_assert_notnull(ths[i], "rz_th_new reader null check");
+	}
 
 	// Write two
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
 
-	wait_for_terminated_count(ths, RZ_ARRAY_SIZE(ths), 2);
+	size_t done_count = wait_for_done_count(&tracker, 2, done_snap);
+	mu_assert_eq(done_count, 2, "two should have terminated, two still waiting.");
 
 	size_t n_term = 0;
-	if (rz_th_terminated(rblock_n1)) {
-		printf("rblock_n1 terminated\n");
-		rz_th_wait(rblock_n1);
-		mu_assert_eq(rz_th_get_retv(rblock_n1), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		ths[0] = NULL;
-		n_term++;
-	}
-	if (rz_th_terminated(rblock_n2)) {
-		printf("rblock_n2 terminated\n");
-		rz_th_wait(rblock_n2);
-		mu_assert_eq(rz_th_get_retv(rblock_n2), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		ths[1] = NULL;
-		n_term++;
-	}
-	if (rz_th_terminated(rblock_n3)) {
-		printf("rblock_n3 terminated\n");
-		rz_th_wait(rblock_n3);
-		mu_assert_eq(rz_th_get_retv(rblock_n3), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		ths[2] = NULL;
-		n_term++;
-	}
-	if (rz_th_terminated(rblock_n4)) {
-		printf("rblock_n4 terminated\n");
-		rz_th_wait(rblock_n4);
-		mu_assert_eq(rz_th_get_retv(rblock_n4), RZ_THREAD_RING_BUF_OK, "Wrong return value");
-		ths[3] = NULL;
-		n_term++;
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ths); i++) {
+		if (done_snap[i]) {
+			printf("rblock_n%zu terminated\n", i + 1);
+			rz_th_wait(ths[i]);
+			joined[i] = true;
+			mu_assert_eq(rz_th_get_retv(ths[i]), RZ_THREAD_RING_BUF_OK, "Wrong return value");
+			n_term++;
+		}
 	}
 	mu_assert_eq(n_term, 2, "two should have terminated, two still waiting.");
 
 	rz_th_ring_buf_close(rbuf);
 
-	for (size_t i = 0; i < 4; ++i) {
-		if (!ths[i]) {
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ths); ++i) {
+		if (joined[i]) {
 			continue;
 		}
 		rz_th_wait(ths[i]);
+		joined[i] = true;
 		mu_assert_true(rz_th_terminated(ths[i]), "Should have terminated after close.");
 		mu_assert_eq(rz_th_get_retv(ths[i]), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value.");
 	}
@@ -763,10 +858,10 @@ bool test_thread_ring_buf_reader_cond(void) {
 	rz_th_ring_buf_free(rbuf);
 	rz_th_free(rblock_1);
 	rz_th_free(rblock_2);
-	rz_th_free(rblock_n1);
-	rz_th_free(rblock_n2);
-	rz_th_free(rblock_n3);
-	rz_th_free(rblock_n4);
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(ths); i++) {
+		rz_th_free(ths[i]);
+	}
+	thread_done_tracker_fini(&tracker);
 
 	mu_end;
 }
