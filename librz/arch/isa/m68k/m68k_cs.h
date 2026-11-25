@@ -121,6 +121,5 @@ RZ_IPI bool rz_m68k_fpu_size_is_packed(RZ_NONNULL const cs_m68k *m68k);
 RZ_IPI bool rz_m68k_op_detail_is_invalid(RZ_NULLABLE const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_fpu_op_is_illegal_read(RZ_NONNULL const cs_m68k *m68k, RZ_NONNULL const cs_m68k_op *op);
 RZ_IPI bool rz_m68k_fpu_op_is_illegal_write(RZ_NONNULL const cs_m68k *m68k, RZ_NONNULL const cs_m68k_op *op);
-RZ_IPI bool rz_m68k_fpu_insn_data_alias_has_dst(RZ_NONNULL const cs_insn *insn);
 
 #endif // RZ_M68K_CS_H

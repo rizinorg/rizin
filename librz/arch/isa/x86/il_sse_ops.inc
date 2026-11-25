@@ -164,9 +164,12 @@ IL_LIFTER(cvtsi2ss) {
 /* dest = (signed int) src[scalar], rounded using \p rmode */
 #define SSE_CVT_F2SI(fmt, rmode) \
 	do { \
-		RzILOpFloat *f = x86_il_get_scalar_floating_op(ins->operands[1], (fmt), analysis->bits, pc); \
+		RzFloatFormat _fmt = (fmt); \
+		RzILOpFloat *f = x86_il_get_scalar_floating_op( \
+			ins->operands[1], _fmt, analysis->bits, pc); \
 		ut32 width = ins->operands[0].size * BITS_PER_BYTE; \
-		return x86_il_set_op(0, F2SINT(width, rmode, f)); \
+		ILPureEffectPair conv = x86_il_int_from_floating_rmode(_fmt, width, (rmode), f); \
+		return SEQ2(conv.eff, x86_il_set_op(0, conv.val)); \
 	} while (0)
 
 /**
