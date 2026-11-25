@@ -188,9 +188,76 @@ bool test_rz_test_fix(void) {
 	mu_end;
 }
 
+bool test_rz_test_cmd_batchable(void) {
+	RzCmdTest *t = rz_test_cmd_test_new();
+	t->file.value = strdup("=");
+	t->cmds.value = strdup("echo hi\n?v 1+2");
+	mu_assert_true(rz_test_cmd_test_batchable(t), "plain stateless cmd test should be batchable");
+
+	t->args.value = strdup("-a x86 -b 32 -e asm.bits=32");
+	mu_assert_true(rz_test_cmd_test_batchable(t), "safe arch/config args should be batchable");
+
+	free(t->args.value);
+	t->args.value = strdup("-a x86 -d");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "-d debug flag must not be batched");
+
+	free(t->args.value);
+	t->args.value = NULL;
+	t->tool.value = strdup("rz-bin");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "custom TOOL must not be batched");
+
+	RZ_FREE(t->tool.value);
+	t->timeout.set = true;
+	t->timeout.value = 1200;
+	mu_assert_false(rz_test_cmd_test_batchable(t), "explicit TIMEOUT must not be batched");
+
+	t->timeout.set = false;
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo a; !ls");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "shell escape ! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("cd /tmp");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "cd must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("q!");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "q! must not be batched");
+
+	free(t->cmds.value);
+	t->cmds.value = strdup("echo ok");
+	free(t->file.value);
+	t->file.value = strdup("-");
+	mu_assert_false(rz_test_cmd_test_batchable(t), "stdin file '-' must not be batched");
+
+	rz_test_cmd_test_free(t);
+	mu_end;
+}
+
+bool test_rz_test_parse_worker_header(void) {
+	int rc = -1;
+	size_t olen = 0, elen = 0;
+	mu_assert_true(parse_worker_result_header("RESULT 0 12 0", &rc, &olen, &elen), "valid zero-rc header");
+	mu_assert_eq(rc, 0, "rc 0");
+	mu_assert_eq(olen, 12, "out_len 12");
+	mu_assert_eq(elen, 0, "err_len 0");
+
+	mu_assert_true(parse_worker_result_header("RESULT 1 0 42", &rc, &olen, &elen), "valid non-zero rc header");
+	mu_assert_eq(rc, 1, "rc 1");
+	mu_assert_eq(olen, 0, "out_len 0");
+	mu_assert_eq(elen, 42, "err_len 42");
+
+	mu_assert_false(parse_worker_result_header("BAD 0 0 0", &rc, &olen, &elen), "wrong prefix");
+	mu_assert_false(parse_worker_result_header("RESULT 0 12", &rc, &olen, &elen), "missing err_len");
+	mu_assert_false(parse_worker_result_header("RESULT 0 12 3 extra", &rc, &olen, &elen), "trailing garbage");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_test_database_load_cmd);
 	mu_run_test(test_rz_test_fix);
+	mu_run_test(test_rz_test_cmd_batchable);
+	mu_run_test(test_rz_test_parse_worker_header);
 	return tests_passed != tests_run;
 }
 
