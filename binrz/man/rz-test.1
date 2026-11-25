@@ -53,6 +53,10 @@ Exclude a particular directory while testing (this option can appear many times)
 Number of expected successful tests
 .It Fl x Ar num
 Number of expected failed tests
+.It Fl E
+Fail cmd tests on unexpected stderr when EXPECT_ERR is omitted
+.It Fl W
+Fail if any BROKEN test unexpectedly passes (FX > 0)
 .Pp
 Supported test types: @json @unit @fuzz @dasm @cmds
 .El

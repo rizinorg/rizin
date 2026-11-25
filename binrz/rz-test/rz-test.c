@@ -39,6 +39,7 @@ typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
 	bool no_diffing; // disable diffing unless the tests fails.
+	bool fail_on_fixed; // fail if any BROKEN test unexpectedly passes (FX > 0).
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -88,6 +89,8 @@ static int help(bool verbose) {
 			"-e",           "dir",            "Exclude a particular directory while testing (this option can appear many times)",
 			"-s",           "num",            "Number of expected successful tests",
 			"-x",           "num",            "Number of expected failed tests",
+			"-E",           "",               "Fail cmd tests on unexpected stderr when EXPECT_ERR is omitted",
+			"-W",           "",               "Fail if any BROKEN test unexpectedly passes (FX > 0)",
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
@@ -185,10 +188,25 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 
 static bool log_mode = false;
 
+static int rz_test_compute_exit_code(const RzTestState *state, st64 expect_succ, st64 expect_fail) {
+	if (expect_succ > 0 && (ut64)expect_succ != state->ok_count) {
+		return 1;
+	}
+	if (expect_fail > 0 && (ut64)expect_fail != state->xx_count) {
+		return 1;
+	}
+	if (expect_fail < 0 && expect_succ < 0 && (state->xx_count || (state->fail_on_fixed && state->fx_count))) {
+		return 1;
+	}
+	return 0;
+}
+
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool no_diffing = false;
+	bool strict_stderr = false;
+	bool fail_on_fixed = false;
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
@@ -229,7 +247,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:yEW");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -323,6 +341,12 @@ int rz_test_main(int argc, const char **argv) {
 				goto beach;
 			}
 			break;
+		case 'E':
+			strict_stderr = true;
+			break;
+		case 'W':
+			fail_on_fixed = true;
+			break;
 		default:
 			ret = help(false);
 			goto beach;
@@ -368,8 +392,10 @@ int rz_test_main(int argc, const char **argv) {
 	state.run_config.bin_path = bin_path;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
+	state.run_config.strict_stderr = strict_stderr;
 	state.verbose = verbose;
 	state.no_diffing = no_diffing;
+	state.fail_on_fixed = fail_on_fixed;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
 		ret = -1;
@@ -595,17 +621,7 @@ int rz_test_main(int argc, const char **argv) {
 		accept_all(&state);
 	}
 
-	if (expect_succ > 0 && expect_succ != state.ok_count) {
-		ret = 1;
-	}
-
-	if (expect_fail > 0 && expect_fail != state.xx_count) {
-		ret = 1;
-	}
-
-	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
-		ret = 1;
-	}
+	ret = rz_test_compute_exit_code(&state, expect_succ, expect_fail);
 
 coast:
 	rz_pvector_clear(&state.queue);
@@ -920,7 +936,10 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 		if (state->test_results) {
 			test_result_to_json(state->test_results, result);
 		}
-		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
+		if (!state->verbose &&
+			(result->result == RZ_TEST_RESULT_OK ||
+				result->result == RZ_TEST_RESULT_BROKEN ||
+				(!state->fail_on_fixed && result->result == RZ_TEST_RESULT_FIXED))) {
 			continue;
 		}
 		char *name = rz_test_test_name(result->test);
