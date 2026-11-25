@@ -309,6 +309,25 @@ bool test_rz_flag_realname_collision_unset(void) {
 	mu_assert_true(rz_flag_unset(flags, r2), "unset renamed flag");
 	mu_assert_null(rz_flag_get(flags, "reuse_real"), "renamed flag removed");
 
+	RzFlagItem *e_null = rz_flag_set(flags, "edge_null_real", 0x7000, 4);
+	mu_assert_notnull(e_null, "set edge_null_real");
+	rz_flag_item_set_realname(flags, e_null, NULL);
+	mu_assert_null(e_null->realname, "cleared realname is NULL");
+	mu_assert_true(rz_flag_unset(flags, e_null), "unset flag with NULL realname");
+
+	RzFlagItem *e_same = rz_flag_set(flags, "edge_same_str", 0x7100, 4);
+	mu_assert_notnull(e_same, "set edge_same_str");
+	rz_flag_item_set_realname(flags, e_same, "edge_same_str");
+	mu_assert_true(rz_flag_unset(flags, e_same), "unset flag with equal dup realname");
+
+	RzFlagItem *e_nf = rz_flag_set(flags, "edge_null_flag", 0x7200, 4);
+	mu_assert_notnull(e_nf, "set edge_null_flag");
+	rz_flag_item_set_realname(flags, e_nf, "foo");
+	rz_flag_item_set_realname(NULL, e_nf, "");
+	mu_assert_null(e_nf->realname, "cleared realname with NULL RzFlag");
+	mu_assert_ptreq(rz_flag_get(flags, "foo"), a, "foo preserved after NULL RzFlag realname clear");
+	mu_assert_true(rz_flag_unset(flags, e_nf), "unset edge_null_flag");
+
 	rz_flag_free(flags);
 	mu_end;
 }
