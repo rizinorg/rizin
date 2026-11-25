@@ -285,36 +285,28 @@ static bool edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to
 	if (n_procs == 0) {
 		return false;
 	}
-	size_t lo = 0, hi = n_procs;
 
 	ut64 low_addr = RZ_MIN(from, to);
 	ut64 high_addr = RZ_MAX(from, to);
 
-	// Find the procedure address closest to the lower address of the edge.
-	ut64 v;
-	size_t mid;
+	// Find the index of the first procedure entry point above the lower address of the edge.
+	size_t idx;
+	size_t lo = 0, hi = n_procs;
 	while (lo < hi) {
-		mid = lo + ((hi - lo) >> 1);
-		v = *(ut64 *)rz_vector_index_ptr(proc_entries, mid);
-		if (v == low_addr) {
-			break;
-		}
-		if (v < low_addr) {
-			lo = mid + 1;
+		idx = lo + ((hi - lo) >> 1);
+		if (*(ut64 *)rz_vector_index_ptr(proc_entries, idx) <= low_addr) {
+			lo = idx + 1;
 		} else {
-			hi = mid;
+			hi = idx;
 		}
+	}
+	if (lo == n_procs) {
+		return false;
 	}
 
-	// Check if there is a procedure address between the low and high address
-	// of the edge.
-	if (mid == n_procs - 1) {
-		return false;
-	} else if (v > low_addr || mid == 0) {
-		return v < high_addr;
-	} else {
-		return (*(ut64 *)rz_vector_index_ptr(proc_entries, mid - 1)) < high_addr;
-	}
+	// Check if this procedure entry point is between the low and high address of the edge.
+	ut64 v = *(ut64 *)rz_vector_index_ptr(proc_entries, lo);
+	return v > low_addr && v < high_addr;
 }
 
 static inline bool is_fcn_symb(const char *type) {
