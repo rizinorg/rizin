@@ -142,11 +142,22 @@ bool test_rz_project_load_and_compressed_overwrite(void) {
 	mu_assert_eq(rz_project_save_file(core, prj_path, false), RZ_PROJECT_ERR_SUCCESS, "save uncompressed");
 	st64 plain_sz = rz_file_size(prj_path);
 	mu_assert_true(plain_sz > 0, "uncompressed project non-empty");
+	RzProject *plain_loaded = rz_project_load_file_raw(prj_path);
+	mu_assert_notnull(plain_loaded, "reload uncompressed project");
+	rz_project_free(plain_loaded);
 
 	mu_assert_eq(rz_project_save_file(core, prj_path, true), RZ_PROJECT_ERR_SUCCESS, "overwrite compressed");
 	mu_assert_true(rz_file_is_deflated(prj_path), "overwritten project is gzip");
 	st64 gz_sz = rz_file_size(prj_path);
 	mu_assert_true(gz_sz > 0 && gz_sz < plain_sz, "compressed project truncated smaller than plaintext");
+
+#if !__WINDOWS__
+	char *old_tmpdir = rz_sys_getenv("TMPDIR");
+	rz_sys_setenv("TMPDIR", "/nonexistent_rz_project_tmpdir_test");
+	mu_assert_null(rz_project_load_file_raw(prj_path), "compressed load fails when tmpdir is invalid");
+	rz_sys_setenv("TMPDIR", old_tmpdir);
+	free(old_tmpdir);
+#endif
 
 	RzProject *loaded = rz_project_load_file_raw(prj_path);
 	mu_assert_notnull(loaded, "reload compressed project");
