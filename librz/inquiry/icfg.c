@@ -274,7 +274,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 	RzICFGNode *icfg_node = NULL;
 	RzGraphNode *graph_node = NULL;
 
-	// REMOVE: printf("Add node: 0x%lx\n", addr);
+	// printf("Add node: 0x%lx\n", addr);
 	// Search for any graph node intersection with the new one.
 	RzPVector /*<RzIntervalNode *>*/ overlaps = { 0 };
 	rz_pvector_init(&overlaps, NULL);

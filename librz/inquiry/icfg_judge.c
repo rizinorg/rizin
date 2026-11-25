@@ -266,10 +266,10 @@ ret_verdict:
 	// TODO Remove after debug.
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		rz_iterator_reset(&it);
-		// REMOVE: printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
-		//	s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
+		// printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
+			// s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
 	}
-	// REMOVE: printf("\n");
+	// printf("\n");
 	// END
 
 	rz_iterator_fini(&it);
