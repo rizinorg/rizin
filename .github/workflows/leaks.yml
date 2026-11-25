@@ -53,16 +53,7 @@ jobs:
           path: pr_changes.diff
 
       - name: Install python and other dependencies
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev ccache
-
-      - name: Cache ccache
-        uses: actions/cache@v6
-        with:
-          path: ${{ runner.temp }}/ccache
-          key: ccache-${{ matrix.name }}-${{ hashFiles('meson.build', 'librz/**/meson.build', 'subprojects/*.wrap') }}-${{ github.sha }}
-          restore-keys: |
-            ccache-${{ matrix.name }}-${{ hashFiles('meson.build', 'librz/**/meson.build', 'subprojects/*.wrap') }}-
-            ccache-${{ matrix.name }}-
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
 
       - name: Install meson and ninja
         if: matrix.build_system == 'meson'
@@ -93,15 +84,7 @@ jobs:
         if: matrix.build_system == 'meson'
         run: |
           export PATH=$(python3 -m site --user-base)/bin:${HOME}/.local/bin:${PATH}
-          export CCACHE_DIR="${{ runner.temp }}/ccache"
-          export CCACHE_BASEDIR="${GITHUB_WORKSPACE}"
-          export CCACHE_NOHASHDIR=1
-          export CCACHE_COMPRESS=1
-          export CCACHE_MAXSIZE=500M
-          export CC="ccache ${CC}"
-          ccache -z
           meson setup --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
-          ccache -s
 
       - name: Install with meson
         if: matrix.build_system == 'meson'

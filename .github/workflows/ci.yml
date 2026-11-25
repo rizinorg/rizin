@@ -198,18 +198,30 @@ jobs:
           fetch-depth: 2
       - name: Install python and other dependencies
         if: (matrix.run_tests || matrix.build_system == 'meson') && contains(matrix.os, 'macos') != true && matrix.enabled
-        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev ccache
+        run: sudo apt-get --assume-yes install python3-wheel python3-setuptools libcapstone4 libcapstone-dev
+      - name: Install ccache on Linux
+        if: matrix.build_system == 'meson' && contains(matrix.os, 'macos') != true && matrix.enabled && !matrix.coverage && !matrix.allow_failure
+        run: |
+          sudo apt-get update
+          sudo apt-get --assume-yes install --no-install-recommends ccache
       - name: Install ccache on macOS
-        if: matrix.build_system == 'meson' && contains(matrix.os, 'macos') && matrix.enabled && !matrix.coverage
-        run: brew install ccache
-      - name: Cache ccache
-        if: matrix.build_system == 'meson' && matrix.enabled && !matrix.coverage
+        if: matrix.build_system == 'meson' && contains(matrix.os, 'macos') && matrix.enabled && !matrix.coverage && !matrix.allow_failure
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache
+      - name: Cache ccache (push)
+        if: matrix.build_system == 'meson' && matrix.enabled && !matrix.coverage && !matrix.allow_failure && github.event_name == 'push'
         uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/ccache
-          key: ccache-${{ matrix.name }}-${{ hashFiles('meson.build', 'librz/**/meson.build', 'subprojects/*.wrap') }}-${{ github.sha }}
+          key: ccache-${{ matrix.name }}-${{ github.sha }}
           restore-keys: |
-            ccache-${{ matrix.name }}-${{ hashFiles('meson.build', 'librz/**/meson.build', 'subprojects/*.wrap') }}-
+            ccache-${{ matrix.name }}-
+      - name: Restore ccache (pull_request)
+        if: matrix.build_system == 'meson' && matrix.enabled && !matrix.coverage && !matrix.allow_failure && github.event_name == 'pull_request'
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ccache-${{ matrix.name }}-${{ github.sha }}
+          restore-keys: |
             ccache-${{ matrix.name }}-
       - name: Install meson and ninja
         if: matrix.build_system == 'meson' && matrix.enabled
@@ -254,7 +266,7 @@ jobs:
               export LD_LIBRARY_PATH=$(dirname $(clang -print-file-name=libclang_rt.asan-x86_64.so)):${LD_LIBRARY_PATH}
             fi
           fi
-          if [ "${{ matrix.coverage }}" != "true" ] && command -v ccache >/dev/null 2>&1; then
+          if [ "${{ matrix.coverage }}" != "true" ] && [ "${{ matrix.allow_failure }}" != "true" ] && command -v ccache >/dev/null 2>&1; then
             export CCACHE_DIR="${{ runner.temp }}/ccache"
             export CCACHE_BASEDIR="${GITHUB_WORKSPACE}"
             export CCACHE_NOHASHDIR=1
