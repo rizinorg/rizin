@@ -13,9 +13,9 @@ typedef struct conflict_node {
 	ut64 node_addr;
 	enum conflict_reason {
 		CONFLICT_REASON_INVALID = 0,
-		CONFLICT_REASON_CALL_IN,
-		CONFLICT_REASON_CROSSES_ENTRY,
-		CONFLICT_REASON_MULT_MEMBERS,
+		CONFLICT_REASON_CALL_IN = 1,
+		CONFLICT_REASON_CROSSES_ENTRY = 1 << 1,
+		CONFLICT_REASON_MULT_MEMBERS = 1 << 2,
 	} reason;
 } ConflictNode;
 

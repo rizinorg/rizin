@@ -2,15 +2,21 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /**
- * \file This file implements conflict resolution, for a iCFG nodes which are used by multiple functions.
+ * \file This file implements conflict resolution for iCFG nodes which can be
+ * shared or entry point nodes.
+ * This is the case for nodes which are:
+ * 1. Are reachable by a call and _another_ kind of edge (e.g. jump/fallthrough).
+ * 2. Are reachable by a jump edge which crosses a possible procedure entry point.
+ * 3. Reachable by more than one procedure entry point.
  *
- * There are a few reasons for a functions using the same node:
+ * Details case 3:
+ * There are a few reasons for functions using the same node:
  *
  * 1. The node is simply shared code. This is common in hand-written assembly.
  * 2. The node is not actually part of the function, but it is the target of a tail call
  *    and was mistakenly added to the function, because the tail call was not identified as such.
- *    In this case the node and its successors are their own function.
- *    And all the predecessors only call it.
+ *    In this case the conflict node and its successors are their own function
+ *    and all the predecessors only call it.
  *
  * The hint based system is inspired by https://dl.acm.org/doi/epdf/10.1145/3611643.3616366
  * It's a good read. Can recommend to take a look.
@@ -219,15 +225,15 @@ typedef struct {
 static void score_add(NodeObservations obs, NodeScore *score) {
 	rz_return_if_fail(obs < CFG_CONFLICT_OBSV_N);
 
-	// REMOVE: printf("Score add %s: ", hint_scores[obs].name);
+	// printf("Score add %s: ", hint_scores[obs].name);
 	score->total_obsv++;
 	for (size_t i = 0; hint_scores[obs].verdict[i].id != CFG_CONFLICT_VERDICT_N; ++i) {
 		ICFGNodeVerdict v = hint_scores[obs].verdict[i].id;
 		int s = hint_scores[obs].verdict[i].score;
-		// REMOVE: printf("%s=%d ", node_verdict_names[v], s);
+		// printf("%s=%d ", node_verdict_names[v], s);
 		score->verdict_score[v] += s;
 	}
-	// REMOVE: printf("\n");
+	// printf("\n");
 }
 
 static ICFGNodeVerdict pick_verdict(const NodeScore *s, double *verdict_p) {
@@ -267,7 +273,7 @@ ret_verdict:
 	for (size_t i = 0; i < CFG_CONFLICT_VERDICT_N; ++i) {
 		rz_iterator_reset(&it);
 		// printf("(%s s=%d, p=%.06f) ", node_verdict_names[i],
-			// s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
+		// 	s->verdict_score[i], rz_math_softmax_p_zi_st64(s->verdict_score[i], &it));
 	}
 	// printf("\n");
 	// END
@@ -292,11 +298,9 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	RzICFGConflictSolutionCfg config) {
 	RzVector *proc_entries = &icfg->proc_entries;
 
-	if (node->memberships_n <= 1) {
-		return CFG_CONFLICT_VERDICT_SKIP;
-	}
 	ut64 node_addr = node->addr;
 	ut64 node_addr_end = node->addr + node->size;
+	// TODO: Add other heuristics.
 	if (node_addr == 0x0 && (config & RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
 		// Clearly a malformed jump.
 		return CFG_CONFLICT_VERDICT_DROP;
@@ -434,8 +438,15 @@ static bool node_needs_judgement(RzICFG *icfg,
 	const ConflictNode *cf_node,
 	const RzICFGNode *cf_icfg_node) {
 	rz_return_val_if_fail(cf_node->reason != CONFLICT_REASON_INVALID, false);
+	if (cf_node->reason & CONFLICT_REASON_CALL_IN || cf_node->reason & CONFLICT_REASON_CROSSES_ENTRY) {
+		return true;
+	}
 
-	rz_return_val_if_fail(cf_icfg_node->memberships_n > 0, false); // Indicates that the algorithm has a bug.
+	if (cf_icfg_node->memberships_n <= 1) {
+		// Node was previously a multiple membership node,
+		// but is already resolved. Skip it.
+		return false;
+	}
 	RzSetU *inter_set = NULL;
 	inter_set = rz_set_u_new();
 	if (!inter_set) {
@@ -457,8 +468,8 @@ static bool node_needs_judgement(RzICFG *icfg,
 	rz_iterator_foreach(&iter, in_edge) {
 		const RzGraphNode *g_pnode = rz_graph_edge_get_from(in_edge);
 		const RzICFGNode *parent = rz_graph_node_get_data(g_pnode);
-		if (parent->memberships_n == 1) {
-			// The conflict node has at least 2 memberships, but the parent doesn't.
+		if (parent->memberships_n != cf_icfg_node->memberships_n) {
+			// The conflict node has at least n memberships, but the parent doesn't.
 			// So we know we have Case II here.
 			needs_judgement = true;
 			break;
@@ -473,7 +484,7 @@ static bool node_needs_judgement(RzICFG *icfg,
 	return needs_judgement;
 }
 
-static bool edge_selector(const RzGraphEdge *e, RzGraphVisitor *vis) {
+static bool dont_walk_call_edges(const RzGraphEdge *e, RzGraphVisitor *vis) {
 	RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
 	switch (type) {
 	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
@@ -488,15 +499,16 @@ static bool edge_selector(const RzGraphEdge *e, RzGraphVisitor *vis) {
 
 typedef struct {
 	RzICFG *icfg;
+	ut64 rm_m; // Only used in the case of single membership nodes.
 	ut64 new_m;
 	const RzSetU *rm_memberships;
 } VisitorBundle;
 
-static void change_membership(RzGraphNode *n, RzGraphVisitor *vis) {
+static void remove_memberships(RzGraphNode *n, RzGraphVisitor *vis) {
 	VisitorBundle *bundle = vis->visitor_data;
 	RzICFGNode *block = rz_graph_node_get_data_mut(n);
 	if (block->memberships_n == 1) {
-		// Blocks with a single membership never change.
+		// Blocks with a single membership loose members.
 		// They are already solved.
 		return;
 	}
@@ -516,6 +528,17 @@ static void change_membership(RzGraphNode *n, RzGraphVisitor *vis) {
 	}
 }
 
+static void replace_membership(RzGraphNode *n, RzGraphVisitor *vis) {
+	VisitorBundle *bundle = vis->visitor_data;
+	RzICFGNode *node = rz_graph_node_get_data_mut(n);
+	if (node->memberships_n == 1) {
+		node->proc_memberships.m = bundle->new_m;
+		return;
+	}
+	rz_set_u_delete(node->proc_memberships.set, bundle->rm_m);
+	rz_set_u_add(node->proc_memberships.set, bundle->new_m);
+}
+
 static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_node) {
 	// Make all incoming edges of the node "call" edges.
 	RzGraphNode *n = rz_graph_find_node(icfg->graph, cf_node->addr);
@@ -523,14 +546,30 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 		rz_warn_if_reached();
 		return false;
 	}
-	rz_warn_if_fail(cf_node->memberships_n > 1);
-
-	// Update membership of all its successors
-	VisitorBundle bundle = { .icfg = icfg, .new_m = cf_node->addr, .rm_memberships = cf_node->proc_memberships.set };
+	VisitorBundle bundle = { 0 };
 	RzGraphVisitor visitor = { 0 };
-	visitor.edge_selector = edge_selector;
-	visitor.finish_node = change_membership;
-	visitor.visitor_data = &bundle;
+	if (cf_node->memberships_n == 1) {
+		// The node was identified as a procedure entry point but has only one
+		// membership.
+		// Replace that one with the own address.
+		rz_warn_if_fail(cf_node->addr != cf_node->proc_memberships.m);
+		bundle.icfg = icfg;
+		bundle.new_m = cf_node->addr;
+		bundle.rm_m = cf_node->proc_memberships.m;
+
+		visitor.edge_selector = dont_walk_call_edges;
+		visitor.finish_node = replace_membership;
+		visitor.visitor_data = &bundle;
+	} else {
+		// Replace all the memberships of the current cf_node with the
+		// address of cf_node.
+		bundle.icfg = icfg;
+		bundle.new_m = cf_node->addr;
+		bundle.rm_memberships = cf_node->proc_memberships.set;
+		visitor.edge_selector = dont_walk_call_edges;
+		visitor.finish_node = remove_memberships;
+		visitor.visitor_data = &bundle;
+	}
 	rz_graph_dfs_from_node(icfg->graph, n, &visitor);
 
 	RzIterator iter = { 0 };
@@ -541,6 +580,7 @@ static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_nod
 	RzGraphEdge *e;
 	rz_iterator_foreach(&iter, e) {
 		// TODO: Should we really classify fall-through edges as calls?
+		// TODO: This has to handle the case of a function self-loop to its entry point.
 		rz_graph_edge_set_data(e, RZ_GRAPH_INT_AS_DATA(RZ_ICFG_EDGE_TYPE_CALL));
 	}
 	rz_iterator_fini(&iter);

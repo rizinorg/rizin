@@ -386,6 +386,15 @@ RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, u
 	rz_return_val_if_fail(icfg, false);
 	ICFGEdge edge = { .from = from, .to = to, .type = type };
 	rz_vector_push(&icfg->prepared_edges, &edge);
+
+	// The edge could give a hint if the node is a conflict node.
+	if (type == RZ_ICFG_EDGE_TYPE_CALL && rz_vector_find_sorted(&icfg->proc_entries, &to, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+		// Only nodes are called but not yet a procedure entry point.
+		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CALL_IN);
+	}
+	if (rz_icfg_edge_crosses_symbol(&icfg->proc_entries, from, to)) {
+		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CROSSES_ENTRY);
+	}
 	return true;
 }
 
