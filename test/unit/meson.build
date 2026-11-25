@@ -72,6 +72,7 @@ if get_option('enable_tests')
     'flags',
     'flirt',
     'float',
+    'float_trans',
     'glob',
     'graph',
     'graph_new',

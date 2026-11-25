@@ -213,6 +213,47 @@ RZ_API RZ_OWN RzFloat *rz_float_cast_sfloat(RZ_NONNULL RzBitVector *bv, RzFloatF
 RZ_API RZ_OWN RzBitVector *rz_float_cast_int(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
 RZ_API RZ_OWN RzBitVector *rz_float_cast_sint(RZ_NONNULL RzFloat *f, ut32 length, RzFloatRMode mode);
 RZ_API RZ_OWN RzFloat *rz_float_convert(RZ_NONNULL RzFloat *f, RzFloatFormat format, RzFloatRMode mode);
+/* IEEE 754-2019 9.2 recommended operations, correctly rounded */
+RZ_API RZ_OWN RzFloat *rz_float_exp(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_expm1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_exp2(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_exp2m1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_exp10(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_exp10m1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_log(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_log2(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_log10(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_logp1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_log2p1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_log10p1(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_rsqrt(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sin(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_cos(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_tan(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sinpi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_cospi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_tanpi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_asin(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_acos(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_atan(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_asinpi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_acospi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_atanpi(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_sinh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_cosh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_tanh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_asinh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_acosh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_atanh(RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_atan2(RZ_NONNULL RzFloat *y, RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_atan2pi(RZ_NONNULL RzFloat *y, RZ_NONNULL RzFloat *x, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_hypot(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_pow(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_powr(RZ_NONNULL RzFloat *x, RZ_NONNULL RzFloat *y, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_compound(RZ_NONNULL RzFloat *x, RZ_NONNULL RzBitVector *n, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_rootn(RZ_NONNULL RzFloat *x, RZ_NONNULL RzBitVector *n, RzFloatRMode mode);
+RZ_API RZ_OWN RzFloat *rz_float_pown(RZ_NONNULL RzFloat *x, RZ_NONNULL RzBitVector *n, RzFloatRMode mode);
+
 RZ_API RzFloatRPrecision rz_float_ext80_get_rounding_precision(void);
 RZ_API bool rz_float_ext80_set_rounding_precision(RzFloatRPrecision precision);
 #endif // RZ_FLOAT_H
