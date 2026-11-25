@@ -212,6 +212,19 @@ bool test_rz_test_strict_stderr(void) {
 	test->expect_err.value = rz_str_dup("expected error\n");
 	mu_assert_true(rz_test_check_cmd_test(&out, test, true), "strict stderr passes when EXPECT_ERR matches");
 
+	// interact_fix_cmd must refuse to silently succeed under -E when EXPECT_ERR is omitted and stderr is non-empty.
+	RZ_FREE(test->expect_err.value);
+	RzTest wrapped = { 0 };
+	wrapped.type = RZ_TEST_TYPE_CMD;
+	wrapped.cmd_test = test;
+	RzTestResultInfo res = { 0 };
+	res.test = &wrapped;
+	res.proc_out = &out;
+	RzPVector fixups;
+	rz_pvector_init(&fixups, NULL);
+	mu_assert_false(interact_fix_cmd(&res, &fixups, true), "interact_fix_cmd refuses unexpected stderr under -E");
+	rz_pvector_fini(&fixups);
+
 	rz_test_cmd_test_free(test);
 	mu_end;
 }
@@ -226,7 +239,13 @@ bool test_rz_test_fail_on_fixed_exit_code(void) {
 
 	st.fail_on_fixed = true;
 	mu_assert_eq(rz_test_compute_exit_code(&st, -1, -1), 1, "-W fails when FX > 0");
+	mu_assert_eq(rz_test_compute_exit_code(&st, 10, -1), 1, "-W fails when FX > 0 even with matching -s");
+	mu_assert_eq(rz_test_compute_exit_code(&st, 0, -1), 1, "-W fails when FX > 0 even with -s 0");
+	mu_assert_eq(rz_test_compute_exit_code(&st, -1, 0), 1, "-W fails when FX > 0 even with -x 0");
+	st.xx_count = 1;
+	mu_assert_eq(rz_test_compute_exit_code(&st, 10, 1), 1, "-W fails when FX > 0 even with matching -s and -x");
 
+	st.xx_count = 0;
 	st.fx_count = 0;
 	mu_assert_eq(rz_test_compute_exit_code(&st, -1, -1), 0, "-W passes when FX == 0 and XX == 0");
 

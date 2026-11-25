@@ -59,14 +59,14 @@ static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr);
 static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void accept_all(RzTestState *state);
 
 static int help(bool verbose) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf("rz-test [-qvVnLEW] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		const char *options[] = {
 			// clang-format off
@@ -189,13 +189,16 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 static bool log_mode = false;
 
 static int rz_test_compute_exit_code(const RzTestState *state, st64 expect_succ, st64 expect_fail) {
+	if (state->fail_on_fixed && state->fx_count) {
+		return 1;
+	}
 	if (expect_succ > 0 && (ut64)expect_succ != state->ok_count) {
 		return 1;
 	}
 	if (expect_fail > 0 && (ut64)expect_fail != state->xx_count) {
 		return 1;
 	}
-	if (expect_fail < 0 && expect_succ < 0 && (state->xx_count || (state->fail_on_fixed && state->fx_count))) {
+	if (expect_fail < 0 && expect_succ < 0 && state->xx_count) {
 		return 1;
 	}
 	return 0;
@@ -1086,7 +1089,7 @@ static void interact(RzTestState *state) {
 		}
 		switch (buf[0]) {
 		case 'f':
-			if (!interact_fix(result, &failed_results)) {
+			if (!interact_fix(result, &failed_results, state->run_config.strict_stderr)) {
 				printf("This test has failed too hard to be fixed.\n");
 				goto menu;
 			}
@@ -1136,7 +1139,7 @@ static void accept_all(RzTestState *state) {
 		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
 			continue;
 		}
-		if (!interact_fix(result, &failed_results)) {
+		if (!interact_fix(result, &failed_results, state->run_config.strict_stderr)) {
 			char *name = rz_test_test_name(result->test);
 			printf("This test %s has failed too hard to be fixed.\n", name ? name : "");
 			free(name);
@@ -1288,13 +1291,17 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free(newc);
 }
 
-static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
+static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	if (result->run_failed || result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 		return false;
 	}
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
+	if (strict_stderr && !test->expect_err.value && out && out->err && RZ_STR_ISNOTEMPTY((const char *)out->err)) {
+		eprintf("Cannot auto-fix test with unexpected stderr under -E when EXPECT_ERR is omitted.\n");
+		return false;
+	}
 	if (test->expect.value && out->out) {
 		const char *out_str = (char *)out->out;
 		const char *regexp = test->regexp_out.value;
@@ -1412,10 +1419,10 @@ static bool interact_fix_asm(RzTestResultInfo *result) {
 	return true;
 }
 
-static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
-		return interact_fix_cmd(result, fixup_results);
+		return interact_fix_cmd(result, fixup_results, strict_stderr);
 	case RZ_TEST_TYPE_ASM:
 		return interact_fix_asm(result);
 	default:
