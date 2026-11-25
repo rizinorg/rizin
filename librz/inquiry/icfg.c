@@ -5,7 +5,40 @@
 #include "icfg_priv.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_graph.h"
+#include "rz_util/rz_set.h"
 #include "rz_vector.h"
+
+RZ_IPI bool rz_icfg_edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to) {
+	if (from == to) {
+		return false;
+	}
+	size_t n_procs = rz_vector_len(proc_entries);
+	if (n_procs == 0) {
+		return false;
+	}
+
+	ut64 low_addr = RZ_MIN(from, to);
+	ut64 high_addr = RZ_MAX(from, to);
+
+	// Find the index of the first procedure entry point above the lower address of the edge.
+	size_t idx;
+	size_t lo = 0, hi = n_procs;
+	while (lo < hi) {
+		idx = lo + ((hi - lo) >> 1);
+		if (*(ut64 *)rz_vector_index_ptr(proc_entries, idx) <= low_addr) {
+			lo = idx + 1;
+		} else {
+			hi = idx;
+		}
+	}
+	if (lo == n_procs) {
+		return false;
+	}
+
+	// Check if this procedure entry point is between the low and high address of the edge.
+	ut64 v = *(ut64 *)rz_vector_index_ptr(proc_entries, lo);
+	return v > low_addr && v < high_addr;
+}
 
 RZ_IPI char *rz_icfg_node_str(const RzICFGNode *node) {
 	RzStrBuf sb = { 0 };
@@ -132,7 +165,7 @@ RZ_API RZ_OWN RzICFG *rz_icfg_new() {
 	rz_interval_tree_init(&m->itv_tree, NULL);
 	rz_vector_init(&m->prepared_edges, sizeof(ICFGEdge), NULL, NULL);
 	rz_vector_init(&m->proc_entries, sizeof(ut64), NULL, NULL);
-	m->node_conflicts = rz_set_u_new();
+	rz_vector_init(&m->node_conflicts, sizeof(ConflictNode), NULL, NULL);
 	return m;
 }
 
@@ -144,7 +177,7 @@ RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg) {
 	rz_graph_free(icfg->graph);
 	rz_vector_fini(&icfg->prepared_edges);
 	rz_vector_fini(&icfg->proc_entries);
-	rz_set_u_free(icfg->node_conflicts);
+	rz_vector_fini(&icfg->node_conflicts);
 	free(icfg);
 }
 
@@ -268,6 +301,26 @@ static RzGraphNode *get_already_solved(RzPVector /*<RzIntervalNode *>*/ *overlap
 	return NULL;
 }
 
+static int cf_node_cmp(const ConflictNode *a, const ConflictNode *b, void *user) {
+	return (a->node_addr > b->node_addr) - (a->node_addr < b->node_addr);
+}
+
+static void add_conflict_node(RzVector /*<ConflictNode>*/ *node_conflicts, ut64 addr, enum conflict_reason reason) {
+	rz_return_if_fail(reason != CONFLICT_REASON_INVALID);
+	ConflictNode cf = { 0 };
+	size_t idx = rz_vector_find_sorted(node_conflicts, &cf, (RzVectorComparator)cf_node_cmp, NULL);
+	if (idx != SZT_MAX) {
+		ConflictNode *existing = rz_vector_index_ptr(node_conflicts, idx);
+		existing->reason |= reason;
+		return;
+	}
+
+	cf.node_addr = addr;
+	cf.reason = reason;
+	rz_vector_insert_sorted(node_conflicts, &cf, (RzVectorComparator)cf_node_cmp, NULL);
+	return;
+}
+
 RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_t size, RZ_NONNULL const RzVector /*<ut16>*/ *insn_offsets, ut64 proc_membership) {
 	rz_return_val_if_fail(icfg && insn_offsets, false);
 
@@ -309,7 +362,7 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 		rz_warn_if_reached();
 	}
 	if (icfg_node->memberships_n > 1) {
-		rz_set_u_add(icfg->node_conflicts, (utptr)icfg_node);
+		add_conflict_node(&icfg->node_conflicts, icfg_node->addr, CONFLICT_REASON_MULT_MEMBERS);
 	}
 
 	if (rz_vector_find_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {

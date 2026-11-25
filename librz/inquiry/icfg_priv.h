@@ -9,10 +9,23 @@
 #include <rz_core.h>
 #include <rz_util/rz_set.h>
 
+typedef struct conflict_node {
+	ut64 node_addr;
+	enum conflict_reason {
+		CONFLICT_REASON_INVALID = 0,
+		CONFLICT_REASON_CALL_IN,
+		CONFLICT_REASON_CROSSES_ENTRY,
+		CONFLICT_REASON_MULT_MEMBERS,
+	} reason;
+} ConflictNode;
+
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
 	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
-	RzSetU /* const RzICFGNode * */ *node_conflicts; ///< Blocks which could be shared by procedures.
+	/**
+	 * \brief Nodes which have to be judged to be a shared block or an entry point.
+	 */
+	RzVector /*<ConflictNode>*/ node_conflicts;
 	RzGraph /*<RzCFGNode *, RzCFGEdgeType>*/ *graph;
 	/**
 	 * \brief An interval tree with all nodes of the graph.
@@ -82,5 +95,6 @@ typedef enum {
 } RzICFGConflictAddResult;
 
 RZ_IPI char *rz_icfg_node_str(const RzICFGNode *node);
+RZ_IPI bool rz_icfg_edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to);
 
 #endif
