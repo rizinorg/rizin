@@ -151,6 +151,7 @@ if get_option('enable_tests')
     'trie',
     'type',
     'uleb128',
+    'unicode',
     'unum',
     'util',
     'vector',
