@@ -1030,3 +1030,48 @@ struct stringStruct {
 };
 EOF
 RUN
+
+NAME=Lazy af on .abi0 and unflagged address when golang_abi0 CC is absent
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e analysis.cc=golang
+f sym.test.abi0 @ 0x0
+af @ 0x0
+afc @ 0x0
+af @ 0x40
+afc @ 0x40
+EOF
+EXPECT=<<EOF
+golang
+golang
+EOF
+RUN
+
+NAME=ARM64 Go ABI prologue vote ignores non-ABI stackguard registers (x0/x17)
+FILE=bins/golang/hello.mach0.stripped
+CMDS=<<EOF
+e io.cache=true
+e analysis.golang.fcns=false
+aalg
+wx 800b40f9 @ sym.go.runtime.panicwrap
+wx 910b40f9 @ main
+aalg
+e analysis.cc
+EOF
+EXPECT=<<EOF
+golang
+EOF
+RUN
+
+NAME=Recover Golang symbols on architecture without golang calling convention (mips)
+FILE=bins/golang/go-re-sample-linux-mips
+CMDS=<<EOF
+aalg
+afc @ main
+EOF
+EXPECT=<<EOF
+n32
+EOF
+RUN
