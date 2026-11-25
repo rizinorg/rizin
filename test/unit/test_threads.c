@@ -45,15 +45,44 @@ bool test_thread_pool_cores(void) {
 	mu_end;
 }
 
-#define THREAD_WAIT_AT_LEAST_MICROSEC 1500000
+#define THREAD_WAIT_AT_LEAST_MICROSEC 100000
+#define THREAD_SLEEP_PUSH_MICROSEC    150000
+#define THREAD_TERMINATE_TIMEOUT_US   2000000
+#define THREAD_SETTLE_CHECK_US        10000
+
+static size_t wait_for_terminated_count(RzThread **ths, size_t n, size_t target) {
+	ut64 deadline = rz_time_now_mono() + THREAD_TERMINATE_TIMEOUT_US;
+	size_t termed = 0;
+	while (true) {
+		termed = 0;
+		for (size_t i = 0; i < n; i++) {
+			if (ths[i] && rz_th_terminated(ths[i])) {
+				termed++;
+			}
+		}
+		if (termed >= target || rz_time_now_mono() >= deadline) {
+			break;
+		}
+		rz_sys_usleep(1000);
+	}
+	// Give any unexpectedly woken thread a brief window to finish so excess wakeups are caught.
+	rz_sys_usleep(THREAD_SETTLE_CHECK_US);
+	termed = 0;
+	for (size_t i = 0; i < n; i++) {
+		if (ths[i] && rz_th_terminated(ths[i])) {
+			termed++;
+		}
+	}
+	return termed;
+}
 
 void *thread_queue_push_timed(RzThreadQueue *queue) {
 	void *data = NULL;
-	ut64 start = rz_time_now();
+	ut64 start = rz_time_now_mono();
 	if (!rz_th_queue_pop(queue, true, &data)) {
 		return NULL;
 	}
-	ut64 diff = rz_time_now() - start;
+	ut64 diff = rz_time_now_mono() - start;
 	if (diff < THREAD_WAIT_AT_LEAST_MICROSEC) {
 		return "did not wait for " RZ_STR(THREAD_WAIT_AT_LEAST_MICROSEC) " microsec";
 	} else if (!strcmp((const char *)data, "rizin")) {
@@ -110,8 +139,8 @@ bool test_thread_queue(void) {
 	mu_assert_false(rz_th_terminated(th), "Thread should still sleep and count as running.");
 	mu_assert_notnull(th, "rz_th_new(thread_queue_push_timed, queue) null check");
 
-	rz_sys_sleep(2);
-	mu_assert_true(rz_th_queue_push(queue, "rizin", true), "queue can push an element after 2 sec of waiting");
+	rz_sys_usleep(THREAD_SLEEP_PUSH_MICROSEC);
+	mu_assert_true(rz_th_queue_push(queue, "rizin", true), "queue can push an element after waiting");
 	// we wait for the queue to be empty
 	rz_th_queue_close_when_empty(queue);
 	rz_th_wait(th);
@@ -416,7 +445,8 @@ bool test_thread_ring_buf_writer_cond(bool size_one) {
 	// the write threads terminate in the right order.
 	mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 	mu_assert_eq(out, in_1, "Take mismatch");
-	rz_sys_sleep(1);
+	RzThread *writers[] = { th_97, th_98 };
+	wait_for_terminated_count(writers, RZ_ARRAY_SIZE(writers), 1);
 
 	int termed = 0;
 	if (rz_th_terminated(th_97)) {
@@ -434,7 +464,8 @@ bool test_thread_ring_buf_writer_cond(bool size_one) {
 	if (!size_one) {
 		mu_assert_eq(rz_th_ring_buf_take(rbuf, &out), RZ_THREAD_RING_BUF_OK, "take failed");
 		mu_assert_eq(out, in_2, "Take mismatch");
-		rz_sys_sleep(1);
+		rz_th_wait(th_97);
+		rz_th_wait(th_98);
 
 		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
 		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
@@ -456,7 +487,8 @@ bool test_thread_ring_buf_writer_cond(bool size_one) {
 	}
 
 	if (size_one) {
-		rz_sys_sleep(1);
+		rz_th_wait(th_97);
+		rz_th_wait(th_98);
 		mu_assert_true(rz_th_terminated(th_97) && rz_th_terminated(th_98), "Both threads should be termined by now");
 		mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 		mu_assert_eq(rz_th_get_retv(th_98), RZ_THREAD_RING_BUF_OK, "Wrong return value");
@@ -494,7 +526,8 @@ bool test_thread_ring_buf_writer_clear(void) {
 
 	// Clear buffer signaling n writers.
 	mu_assert_eq(rz_th_ring_buf_clear(rbuf), RZ_THREAD_RING_BUF_OK, "clear");
-	rz_sys_sleep(1);
+	RzThread *writers[] = { th_97, th_98, th_99, th_100 };
+	wait_for_terminated_count(writers, RZ_ARRAY_SIZE(writers), 3);
 	// Check return value of the thread which terminated
 	// (Order is not guaranteed so check any of them).
 	int termed = 0;
@@ -536,7 +569,10 @@ bool test_thread_ring_buf_writer_clear(void) {
 
 	mu_assert_eq(written, 3, "invalid number of values written.");
 
-	rz_sys_sleep(1);
+	rz_th_wait(th_97);
+	rz_th_wait(th_98);
+	rz_th_wait(th_99);
+	rz_th_wait(th_100);
 
 	// Now the last one should be done
 	mu_assert_true(rz_th_terminated(th_97) &&
@@ -595,7 +631,10 @@ bool test_thread_ring_buf_writer_close(void) {
 	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_OK, "close");
 	mu_assert_eq(rz_th_ring_buf_close(rbuf), RZ_THREAD_RING_BUF_CLOSED, "close");
 
-	rz_sys_sleep(1);
+	rz_th_wait(th_97);
+	rz_th_wait(th_98);
+	rz_th_wait(th_99);
+	rz_th_wait(th_100);
 
 	mu_assert_true(rz_th_terminated(th_97), "Write thread 97 terminated");
 	mu_assert_eq(rz_th_get_retv(th_97), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value");
@@ -655,14 +694,14 @@ bool test_thread_ring_buf_reader_cond(void) {
 	RzThread *rblock_1 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_1, rbuf);
 	mu_assert_notnull(rblock_1, "rz_th_new 1 null check");
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
-	rz_sys_sleep(1);
+	rz_th_wait(rblock_1);
 	mu_assert_true(rz_th_terminated(rblock_1), "Didn't terminated");
 	mu_assert_eq(rz_th_get_retv(rblock_1), RZ_THREAD_RING_BUF_OK, "Wrong return code");
 
 	RzThread *rblock_2 = rz_th_new((RzThreadFunction)thread_rbuf_take_blocking_2, rbuf);
 	mu_assert_notnull(rblock_2, "rz_th_new 2 null check");
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_2), RZ_THREAD_RING_BUF_OK, "put");
-	rz_sys_sleep(1);
+	rz_th_wait(rblock_2);
 	mu_assert_true(rz_th_terminated(rblock_2), "Didn't terminated");
 	mu_assert_eq(rz_th_get_retv(rblock_2), RZ_THREAD_RING_BUF_OK, "Wrong return code");
 
@@ -677,29 +716,33 @@ bool test_thread_ring_buf_reader_cond(void) {
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
 	mu_assert_eq(rz_th_ring_buf_put(rbuf, &in_1), RZ_THREAD_RING_BUF_OK, "put");
 
-	rz_sys_sleep(1);
+	wait_for_terminated_count(ths, RZ_ARRAY_SIZE(ths), 2);
 
 	size_t n_term = 0;
 	if (rz_th_terminated(rblock_n1)) {
 		printf("rblock_n1 terminated\n");
+		rz_th_wait(rblock_n1);
 		mu_assert_eq(rz_th_get_retv(rblock_n1), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 		ths[0] = NULL;
 		n_term++;
 	}
 	if (rz_th_terminated(rblock_n2)) {
 		printf("rblock_n2 terminated\n");
+		rz_th_wait(rblock_n2);
 		mu_assert_eq(rz_th_get_retv(rblock_n2), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 		ths[1] = NULL;
 		n_term++;
 	}
 	if (rz_th_terminated(rblock_n3)) {
 		printf("rblock_n3 terminated\n");
+		rz_th_wait(rblock_n3);
 		mu_assert_eq(rz_th_get_retv(rblock_n3), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 		ths[2] = NULL;
 		n_term++;
 	}
 	if (rz_th_terminated(rblock_n4)) {
 		printf("rblock_n4 terminated\n");
+		rz_th_wait(rblock_n4);
 		mu_assert_eq(rz_th_get_retv(rblock_n4), RZ_THREAD_RING_BUF_OK, "Wrong return value");
 		ths[3] = NULL;
 		n_term++;
@@ -707,12 +750,12 @@ bool test_thread_ring_buf_reader_cond(void) {
 	mu_assert_eq(n_term, 2, "two should have terminated, two still waiting.");
 
 	rz_th_ring_buf_close(rbuf);
-	rz_sys_sleep(1);
 
 	for (size_t i = 0; i < 4; ++i) {
 		if (!ths[i]) {
 			continue;
 		}
+		rz_th_wait(ths[i]);
 		mu_assert_true(rz_th_terminated(ths[i]), "Should have terminated after close.");
 		mu_assert_eq(rz_th_get_retv(ths[i]), RZ_THREAD_RING_BUF_CLOSED, "Wrong return value.");
 	}

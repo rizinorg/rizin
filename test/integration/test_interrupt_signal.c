@@ -80,18 +80,32 @@ static bool test_rz_interrupt_process_signal(void) {
 
 	mu_assert_eq(exit_code, 0, "child caught signal via rz_interrupt");
 #elif __UNIX__
+	int ready_pipe[2] = { -1, -1 };
+	mu_assert("pipe failed", pipe(ready_pipe) == 0);
+
 	pid_t pid = fork();
 	mu_assert("fork failed", pid >= 0);
 
 	if (pid == 0) {
+		close(ready_pipe[0]);
 		RzInterrupt *intr = rz_interrupt_new();
 		if (!intr) {
+			close(ready_pipe[1]);
 			exit(1);
 		}
 		intr->hook_signals = true;
 		rz_interrupt_break_push(intr, NULL, NULL);
 
-		for (int i = 0; i < 50; i++) {
+		char ready = 1;
+		if (write(ready_pipe[1], &ready, 1) != 1) {
+			close(ready_pipe[1]);
+			rz_interrupt_break_pop(intr);
+			rz_interrupt_free(intr);
+			exit(3);
+		}
+		close(ready_pipe[1]);
+
+		for (int i = 0; i < 200; i++) {
 			if (rz_interrupt_is_breaked(intr)) {
 				rz_interrupt_break_pop(intr);
 				rz_interrupt_free(intr);
@@ -104,7 +118,12 @@ static bool test_rz_interrupt_process_signal(void) {
 		rz_interrupt_free(intr);
 		exit(2);
 	} else {
-		rz_sys_usleep(20000);
+		close(ready_pipe[1]);
+		char ready = 0;
+		ssize_t nread = read(ready_pipe[0], &ready, 1);
+		close(ready_pipe[0]);
+		mu_assert_eq(nread, 1, "child signaled readiness");
+
 		kill(pid, SIGINT);
 
 		int status = 0;
