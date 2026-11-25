@@ -16,6 +16,7 @@
 #define Color_HLDELETE Color_BGDELETE Color_DELETE
 
 #define WORKERS_DEFAULT        8
+#define ASM_BATCH_MAX          256
 #define RIZIN_CMD_DEFAULT      "rizin"
 #define RZ_ASM_CMD_DEFAULT     "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
@@ -25,6 +26,91 @@
 #define STR(x)              STRV(x)
 #define WORKERS_DEFAULT_STR STR(WORKERS_DEFAULT)
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
+
+typedef struct rz_test_work_item_t {
+	bool is_asm_batch;
+	RzTest *single;
+	RzPVector /*<RzTest *>*/ asm_tests;
+} RzTestWorkItem;
+
+static void rz_test_work_item_free(RzTestWorkItem *item) {
+	if (!item) {
+		return;
+	}
+	if (item->is_asm_batch) {
+		rz_pvector_fini(&item->asm_tests);
+	}
+	free(item);
+}
+
+static bool asm_test_is_batchable(const RzAsmTest *at) {
+	if ((at->mode & RZ_ASM_TEST_MODE_ASSEMBLE) && at->disasm &&
+		(strchr(at->disasm, '\n') || strchr(at->disasm, '\r'))) {
+		return false;
+	}
+	return true;
+}
+
+static bool asm_batch_enabled(void) {
+	// Disable batching when LeakSanitizer is active so sys/lsan_check.py does not
+	// attribute pre-existing plugin leaks to run_batch_file() frames, and allow
+	// explicit opt-out via RZ_TEST_NO_BATCH=1.
+	char *no_batch = rz_sys_getenv("RZ_TEST_NO_BATCH");
+	bool disabled = RZ_STR_ISNOTEMPTY(no_batch) && strcmp(no_batch, "0");
+	free(no_batch);
+	if (disabled) {
+		return false;
+	}
+	char *lsan_opts = rz_sys_getenv("LSAN_OPTIONS");
+	disabled = RZ_STR_ISNOTEMPTY(lsan_opts);
+	free(lsan_opts);
+	return !disabled;
+}
+
+static void rz_test_enqueue_tests_ex(RzPVector /*<RzTestWorkItem *>*/ *queue, RzPVector /*<RzTest *>*/ *tests, bool batch_enabled) {
+	HtSP *asm_batches = batch_enabled ? ht_sp_new(HT_STR_DUP, NULL, NULL) : NULL;
+	void **it;
+	rz_pvector_foreach (tests, it) {
+		RzTest *test = *it;
+		if (test->type == RZ_TEST_TYPE_ASM && asm_batches && asm_test_is_batchable(test->asm_test)) {
+			RzAsmTest *at = test->asm_test;
+			char *key = rz_str_newf("%s|%s|%s|%d|%d|%d",
+				rz_str_get(test->path),
+				rz_str_get(at->arch),
+				rz_str_get(at->cpu),
+				at->bits,
+				(at->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) ? 1 : 0,
+				at->load_plugins ? 1 : 0);
+			RzTestWorkItem *batch = key ? ht_sp_find(asm_batches, key, NULL) : NULL;
+			if (!batch || rz_pvector_len(&batch->asm_tests) >= ASM_BATCH_MAX) {
+				batch = RZ_NEW0(RzTestWorkItem);
+				if (batch) {
+					batch->is_asm_batch = true;
+					rz_pvector_init(&batch->asm_tests, NULL);
+					rz_pvector_push(queue, batch);
+					if (key) {
+						ht_sp_update(asm_batches, key, batch);
+					}
+				}
+			}
+			if (batch) {
+				rz_pvector_push(&batch->asm_tests, test);
+			}
+			free(key);
+		} else {
+			RzTestWorkItem *item = RZ_NEW0(RzTestWorkItem);
+			if (item) {
+				item->single = test;
+				rz_pvector_push(queue, item);
+			}
+		}
+	}
+	ht_sp_free(asm_batches);
+}
+
+static void rz_test_enqueue_tests(RzPVector /*<RzTestWorkItem *>*/ *queue, RzPVector /*<RzTest *>*/ *tests) {
+	rz_test_enqueue_tests_ex(queue, tests, asm_batch_enabled());
+}
 
 typedef struct rz_testfile_counts_t {
 	ut64 tests_left; // count of remaining tests
@@ -44,13 +130,14 @@ typedef struct rz_test_state_t {
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
+	size_t active_workers;
 	HtSP *path_left; // char * (path to test file) => RzTestFileCounts *
 	RzPVector /*<char *>*/ completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
 	ut64 br_count;
 	ut64 fx_count;
-	RzPVector /*<RzTest *>*/ queue;
+	RzPVector /*<RzTestWorkItem *>*/ queue;
 	RzPVector /*<RzTestResultInfo *>*/ results;
 } RzTestState;
 
@@ -375,7 +462,7 @@ int rz_test_main(int argc, const char **argv) {
 		ret = -1;
 		goto beach;
 	}
-	rz_pvector_init(&state.queue, NULL);
+	rz_pvector_init(&state.queue, (RzPVectorFree)rz_test_work_item_free);
 	rz_pvector_init(&state.results, (RzPVectorFree)rz_test_test_result_info_free);
 	rz_pvector_init(&state.completed_paths, NULL);
 	if (output_file) {
@@ -504,7 +591,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	if (rz_pvector_len(&state.db->tests) != 0) {
-		rz_pvector_insert_range(&state.queue, 0, state.db->tests.v.a, rz_pvector_len(&state.db->tests));
+		rz_test_enqueue_tests(&state.queue, &state.db->tests);
 	} else {
 		eprintf("No tests discovered\n");
 	}
@@ -515,7 +602,7 @@ int rz_test_main(int argc, const char **argv) {
 		state.path_left = ht_sp_new(HT_STR_DUP, NULL, free);
 		if (state.path_left) {
 			void **it;
-			rz_pvector_foreach (&state.queue, it) {
+			rz_pvector_foreach (&state.db->tests, it) {
 				RzTest *test = *it;
 				RzTestFileCounts *counts = ht_sp_find(state.path_left, test->path, NULL);
 				if (!counts) {
@@ -539,6 +626,7 @@ int rz_test_main(int argc, const char **argv) {
 			rz_th_lock_leave(state.lock);
 			exit(-1);
 		}
+		state.active_workers++;
 		rz_pvector_push(&workers, th);
 	}
 
@@ -553,7 +641,8 @@ int rz_test_main(int argc, const char **argv) {
 		}
 		prev_completed = completed;
 		prev_paths_completed = (ut64)rz_pvector_len(&state.completed_paths);
-		if (completed == rz_pvector_len(&state.db->tests)) {
+		if (completed == rz_pvector_len(&state.db->tests) ||
+			(state.active_workers == 0 && rz_pvector_empty(&state.queue))) {
 			break;
 		}
 		rz_th_cond_wait(state.cond, state.lock);
@@ -604,6 +693,12 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
+		ret = 1;
+	}
+
+	if (rz_pvector_len(&state.results) < rz_pvector_len(&state.db->tests)) {
+		eprintf("Error: Completed %" PFMTSZu " of %" PFMTSZu " tests.\n",
+			rz_pvector_len(&state.results), rz_pvector_len(&state.db->tests));
 		ret = 1;
 	}
 
@@ -695,61 +790,83 @@ static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
 	pj_end(pj);
 }
 
+static void record_test_result(RzTestState *state, RzTestResultInfo *result) {
+	rz_pvector_push(&state->results, result);
+	if (!log_mode) {
+		switch (result->result) {
+		case RZ_TEST_RESULT_OK:
+			state->ok_count++;
+			break;
+		case RZ_TEST_RESULT_FAILED:
+			state->xx_count++;
+			break;
+		case RZ_TEST_RESULT_BROKEN:
+			state->br_count++;
+			break;
+		case RZ_TEST_RESULT_FIXED:
+			state->fx_count++;
+			break;
+		}
+	}
+	if (state->path_left) {
+		RzTestFileCounts *counts = ht_sp_find(state->path_left, result->test->path, NULL);
+		if (counts) {
+			switch (result->result) {
+			case RZ_TEST_RESULT_OK:
+				counts->ok++;
+				break;
+			case RZ_TEST_RESULT_FAILED:
+				counts->xx++;
+				break;
+			case RZ_TEST_RESULT_BROKEN:
+				counts->br++;
+				break;
+			case RZ_TEST_RESULT_FIXED:
+				counts->fx++;
+				break;
+			}
+			counts->total_elapsed += result->time_elapsed;
+			counts->tests_left--;
+			if (!counts->tests_left) {
+				rz_pvector_push(&state->completed_paths, (void *)result->test->path);
+			}
+		}
+	}
+}
+
 static void *worker_th(RzTestState *state) {
 	rz_th_lock_enter(state->lock);
 	while (true) {
 		if (rz_pvector_empty(&state->queue)) {
 			break;
 		}
-		RzTest *test = rz_pvector_pop(&state->queue);
+		RzTestWorkItem *item = rz_pvector_pop(&state->queue);
 		rz_th_lock_leave(state->lock);
 
-		RzTestResultInfo *result = rz_test_run_test(&state->run_config, test);
-
-		rz_th_lock_enter(state->lock);
-		rz_pvector_push(&state->results, result);
-		if (!log_mode) {
-			switch (result->result) {
-			case RZ_TEST_RESULT_OK:
-				state->ok_count++;
-				break;
-			case RZ_TEST_RESULT_FAILED:
-				state->xx_count++;
-				break;
-			case RZ_TEST_RESULT_BROKEN:
-				state->br_count++;
-				break;
-			case RZ_TEST_RESULT_FIXED:
-				state->fx_count++;
-				break;
+		if (item->is_asm_batch) {
+			RzPVector *batch_results = rz_test_run_asm_batch(&state->run_config,
+				(RzTest **)item->asm_tests.v.a, rz_pvector_len(&item->asm_tests));
+			rz_th_lock_enter(state->lock);
+			if (batch_results) {
+				void **it;
+				rz_pvector_foreach (batch_results, it) {
+					record_test_result(state, *it);
+				}
+				batch_results->v.free = NULL;
+				rz_pvector_free(batch_results);
+			}
+		} else {
+			RzTestResultInfo *result = rz_test_run_test(&state->run_config, item->single);
+			rz_th_lock_enter(state->lock);
+			if (result) {
+				record_test_result(state, result);
 			}
 		}
-		if (state->path_left) {
-			RzTestFileCounts *counts = ht_sp_find(state->path_left, test->path, NULL);
-			if (counts) {
-				switch (result->result) {
-				case RZ_TEST_RESULT_OK:
-					counts->ok++;
-					break;
-				case RZ_TEST_RESULT_FAILED:
-					counts->xx++;
-					break;
-				case RZ_TEST_RESULT_BROKEN:
-					counts->br++;
-					break;
-				case RZ_TEST_RESULT_FIXED:
-					counts->fx++;
-					break;
-				}
-				counts->total_elapsed += result->time_elapsed;
-				counts->tests_left--;
-				if (!counts->tests_left) {
-					rz_pvector_push(&state->completed_paths, (void *)test->path);
-				}
-			}
-		}
+		rz_test_work_item_free(item);
 		rz_th_cond_signal(state->cond);
 	}
+	state->active_workers--;
+	rz_th_cond_signal(state->cond);
 	rz_th_lock_leave(state->lock);
 	return NULL;
 }

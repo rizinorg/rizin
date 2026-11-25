@@ -188,9 +188,177 @@ bool test_rz_test_fix(void) {
 	mu_end;
 }
 
+bool test_rz_test_parse_asm_batch_stream_ok(void) {
+	const char *stream =
+		"Warning: arch notice\n"
+		"\n\x1eRZ_ASM_BATCH_BEGIN\n"
+		"90\n"
+		"\n\x1eRZ_ASM_BATCH_ITEM 0 0\n"
+		"\n\x1eRZ_ASM_BATCH_ITEM 1 1\n"
+		"line1\nline2\n"
+		"\n\x1eRZ_ASM_BATCH_ITEM 2 0\n";
+	char *preamble = NULL;
+	AsmBatchItemSlice *slices = rz_test_parse_asm_batch_stream(stream, 3, &preamble);
+	mu_assert_notnull(slices, "parsed valid stream");
+	mu_assert_streq(preamble, "Warning: arch notice\n", "startup preamble preserved");
+	mu_assert_streq(slices[0].data, "90\n", "slice 0 data");
+	mu_assert_eq(slices[0].ret, 0, "slice 0 ret");
+	mu_assert_streq(slices[1].data, "", "slice 1 empty data");
+	mu_assert_eq(slices[1].ret, 1, "slice 1 ret");
+	mu_assert_streq(slices[2].data, "line1\nline2\n", "slice 2 multiline data");
+	mu_assert_eq(slices[2].ret, 0, "slice 2 ret");
+
+	char *joined = asm_batch_join_err(preamble, "item err\n");
+	mu_assert_streq(joined, "Warning: arch notice\nitem err", "joined stderr");
+	free(joined);
+	joined = asm_batch_join_err(NULL, "  only err \n");
+	mu_assert_streq(joined, "only err", "trimmed stderr without preamble");
+	free(joined);
+
+	asm_batch_slices_fini(slices, 3);
+	free(preamble);
+	mu_end;
+}
+
+bool test_rz_test_parse_asm_batch_stream_invalid(void) {
+	const char *cases[] = {
+		"no begin marker",
+		"pre\n\x1eRZ_ASM_BATCH_BEGIN\n90\n",
+		"\n\x1eRZ_ASM_BATCH_BEGIN\n90\n\n\x1eRZ_ASM_BATCH_ITEM 1 0\n",
+		"\n\x1eRZ_ASM_BATCH_BEGIN\n90\n\n\x1eRZ_ASM_BATCH_ITEM 0 bad\n",
+		"\n\x1eRZ_ASM_BATCH_BEGIN\n90\n\n\x1eRZ_ASM_BATCH_ITEM 0 0\ntrailing",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		char *preamble = (char *)0x1;
+		AsmBatchItemSlice *slices = rz_test_parse_asm_batch_stream(cases[i], 1, &preamble);
+		mu_assert_null(slices, "invalid stream rejected");
+		mu_assert_null(preamble, "preamble cleared on failure");
+	}
+	mu_end;
+}
+
+bool test_rz_test_enqueue_asm_batches(void) {
+	RzPVector tests;
+	rz_pvector_init(&tests, (RzPVectorFree)rz_test_test_free);
+
+	for (int i = 0; i < ASM_BATCH_MAX + 2; i++) {
+		RzTest *t = RZ_NEW0(RzTest);
+		t->type = RZ_TEST_TYPE_ASM;
+		t->path = "db/asm/x86_64";
+		t->asm_test = RZ_NEW0(RzAsmTest);
+		t->asm_test->arch = "x86";
+		t->asm_test->bits = 64;
+		t->asm_test->mode = RZ_ASM_TEST_MODE_DISASSEMBLE;
+		rz_pvector_push(&tests, t);
+	}
+
+	// Same file but big-endian -> separate batch
+	RzTest *t_be = RZ_NEW0(RzTest);
+	t_be->type = RZ_TEST_TYPE_ASM;
+	t_be->path = "db/asm/x86_64";
+	t_be->asm_test = RZ_NEW0(RzAsmTest);
+	t_be->asm_test->arch = "x86";
+	t_be->asm_test->bits = 64;
+	t_be->asm_test->mode = RZ_ASM_TEST_MODE_DISASSEMBLE | RZ_ASM_TEST_MODE_BIG_ENDIAN;
+	rz_pvector_push(&tests, t_be);
+
+	// Assemble test with embedded newline -> not batched (single work item)
+	RzTest *t_nl = RZ_NEW0(RzTest);
+	t_nl->type = RZ_TEST_TYPE_ASM;
+	t_nl->path = "db/asm/x86_64";
+	t_nl->asm_test = RZ_NEW0(RzAsmTest);
+	t_nl->asm_test->arch = "x86";
+	t_nl->asm_test->bits = 64;
+	t_nl->asm_test->mode = RZ_ASM_TEST_MODE_ASSEMBLE;
+	t_nl->asm_test->disasm = rz_str_dup("nop\nnop");
+	rz_pvector_push(&tests, t_nl);
+
+	RzPVector queue;
+	rz_pvector_init(&queue, (RzPVectorFree)rz_test_work_item_free);
+	rz_test_enqueue_tests_ex(&queue, &tests, true);
+
+	// Expect: batch(256), batch(2), batch(1, BE), single(newline)
+	mu_assert_eq(rz_pvector_len(&queue), 4, "work items count with batching enabled");
+	RzTestWorkItem *w0 = rz_pvector_at(&queue, 0);
+	RzTestWorkItem *w1 = rz_pvector_at(&queue, 1);
+	RzTestWorkItem *w2 = rz_pvector_at(&queue, 2);
+	RzTestWorkItem *w3 = rz_pvector_at(&queue, 3);
+	mu_assert_true(w0->is_asm_batch, "w0 is batch");
+	mu_assert_eq(rz_pvector_len(&w0->asm_tests), ASM_BATCH_MAX, "w0 capped at ASM_BATCH_MAX");
+	mu_assert_true(w1->is_asm_batch, "w1 is overflow batch");
+	mu_assert_eq(rz_pvector_len(&w1->asm_tests), 2, "w1 has remainder");
+	mu_assert_true(w2->is_asm_batch, "w2 is BE batch");
+	mu_assert_eq(rz_pvector_len(&w2->asm_tests), 1, "w2 has 1 BE test");
+	mu_assert_false(w3->is_asm_batch, "w3 newline test not batched");
+	mu_assert_ptreq(w3->single, t_nl, "w3 points to newline test");
+
+	rz_pvector_clear(&queue);
+	rz_test_enqueue_tests_ex(&queue, &tests, false);
+
+	// Expect: 260 single items when batching is disabled
+	mu_assert_eq(rz_pvector_len(&queue), ASM_BATCH_MAX + 4, "single work items count with batching disabled");
+	for (size_t i = 0; i < rz_pvector_len(&queue); i++) {
+		RzTestWorkItem *w = rz_pvector_at(&queue, i);
+		mu_assert_false(w->is_asm_batch, "item is not batched");
+		mu_assert_ptreq(w->single, rz_pvector_at(&tests, i), "item preserves test pointer");
+	}
+
+	rz_pvector_fini(&queue);
+	rz_pvector_fini(&tests);
+	mu_end;
+}
+
+bool test_rz_test_enqueue_asm_batches_load_plugins(void) {
+	RzPVector tests;
+	rz_pvector_init(&tests, (RzPVectorFree)rz_test_test_free);
+
+	for (int i = 0; i < 2; i++) {
+		RzTest *t = RZ_NEW0(RzTest);
+		t->type = RZ_TEST_TYPE_ASM;
+		t->path = "db/extras/asm/x86_64";
+		t->asm_test = RZ_NEW0(RzAsmTest);
+		t->asm_test->arch = "x86";
+		t->asm_test->bits = 64;
+		t->asm_test->mode = RZ_ASM_TEST_MODE_DISASSEMBLE;
+		t->asm_test->load_plugins = (i == 1);
+		rz_pvector_push(&tests, t);
+	}
+
+	RzPVector queue;
+	rz_pvector_init(&queue, (RzPVectorFree)rz_test_work_item_free);
+	rz_test_enqueue_tests_ex(&queue, &tests, true);
+
+	mu_assert_eq(rz_pvector_len(&queue), 2, "load_plugins splits asm batches");
+	RzTestWorkItem *w0 = rz_pvector_at(&queue, 0);
+	RzTestWorkItem *w1 = rz_pvector_at(&queue, 1);
+	mu_assert_true(w0->is_asm_batch, "w0 is batch");
+	mu_assert_eq(rz_pvector_len(&w0->asm_tests), 1, "w0 has load_plugins=false test");
+	mu_assert_true(w1->is_asm_batch, "w1 is batch");
+	mu_assert_eq(rz_pvector_len(&w1->asm_tests), 1, "w1 has load_plugins=true test");
+
+	rz_pvector_fini(&queue);
+	rz_pvector_fini(&tests);
+	mu_end;
+}
+
+bool test_rz_test_run_asm_batch_empty(void) {
+	RzTestRunConfig cfg = { 0 };
+	RzTest *dummy = NULL;
+	RzPVector *res = rz_test_run_asm_batch(&cfg, &dummy, 0);
+	mu_assert_notnull(res, "empty batch returns non-NULL vector");
+	mu_assert_eq(rz_pvector_len(res), 0, "empty batch returns 0 results");
+	rz_pvector_free(res);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_test_database_load_cmd);
 	mu_run_test(test_rz_test_fix);
+	mu_run_test(test_rz_test_parse_asm_batch_stream_ok);
+	mu_run_test(test_rz_test_parse_asm_batch_stream_invalid);
+	mu_run_test(test_rz_test_enqueue_asm_batches);
+	mu_run_test(test_rz_test_enqueue_asm_batches_load_plugins);
+	mu_run_test(test_rz_test_run_asm_batch_empty);
 	return tests_passed != tests_run;
 }
 

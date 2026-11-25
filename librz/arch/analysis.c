@@ -291,6 +291,25 @@ RZ_API RZ_BORROW HtSP /*<RzAnalysisPlugin *>*/ *rz_analysis_get_plugins(RZ_NONNU
 	return analysis->plugins;
 }
 
+/**
+ * \brief Reinitialize the currently active analysis plugin's per-stream state.
+ * \param analysis RzAnalysis instance whose active plugin state should be reset.
+ * \return true on success (or when the active plugin has no resettable state), false if init failed.
+ */
+RZ_API bool rz_analysis_plugin_reset(RZ_NONNULL RzAnalysis *analysis) {
+	rz_return_val_if_fail(analysis, false);
+	if (!analysis->cur || !analysis->cur->fini || !analysis->cur->init) {
+		return true;
+	}
+	plugin_fini(analysis);
+	if (!analysis->cur->init(&analysis->plugin_data)) {
+		RZ_LOG_ERROR("analysis plugin '%s' failed to reinitialize.\n", analysis->cur->name);
+		analysis->cur = NULL;
+		return false;
+	}
+	return true;
+}
+
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, false);
 	if (analysis->cur && !strcmp(analysis->cur->name, name)) {

@@ -121,6 +121,7 @@ typedef struct rz_test_asm_test_t {
 	RZ_NONNULL ut8 *bytes;
 	size_t bytes_size;
 	RZ_NULLABLE char *il;
+	bool load_plugins;
 } RzAsmTest;
 
 typedef struct rz_test_json_test_t {
@@ -227,6 +228,7 @@ RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *patt
 RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
 RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test);
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test);
+RZ_API RZ_OWN RzPVector /*<RzTestResultInfo *>*/ *rz_test_run_asm_batch(RZ_NONNULL RzTestRunConfig *config, RZ_NONNULL RzTest **tests, size_t n_tests);
 RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test);
 RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out);
 RZ_API RzSubprocessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user);
@@ -234,7 +236,7 @@ RZ_API bool rz_test_check_fuzz_test(RzSubprocessOutput *out);
 
 RZ_API void rz_test_test_free(RzTest *test);
 RZ_API char *rz_test_test_name(RzTest *test);
-RZ_API bool rz_test_test_broken(RzTest *test);
+RZ_API bool rz_test_broken(RzTest *test);
 RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test);
 RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result);
 

@@ -323,6 +323,7 @@ EXPECT=<<EOF
  [32m-p[0m          [0mRun SPP over input for assembly
  [32m-q[0m          [0mQuiet mode
  [32m-s[0m[33m syntax [0m  [0mSelect syntax (intel, att)
+ [32m-t[0m[33m file [0m    [0mRun batch operations from file
  [32m-v[0m          [0mShow version information
  [32m-x[0m          [0mUse hex dwords instead of hex pairs when assembling.
  [32m-w[0m          [0mDescribe opcode
