@@ -734,6 +734,16 @@ static RzILOpEffect *update_flags_from_cpsr(RzILOpBitVector *val, bool f, bool s
 }
 
 /**
+ * \brief BXWritePC(): jump to \p addr, of which bit 0 selects the instruction set and is not part of the PC
+ *
+ * LoadWritePC() and ALUWritePC() set the same PC as of Armv7 and in Thumb. The
+ * IL has no instruction set state, so it stays as it is.
+ */
+static RzILOpEffect *bx_write_pc(RZ_OWN RZ_NONNULL RzILOpBitVector *addr) {
+	return JMP(LOGAND(addr, U32(~1u)));
+}
+
+/**
  * Capstone: ARM_INS_MOV, ARM_INS_MOVW, ARM_INS_LSL, ARM_INS_LSR, ARM_INS_ASR, ARM_INS_RRX, ARM_INS_ROR, ARM_INS_MVN
  * ARM: mov, movs, movw, lsl, lsls, lsr, lsrs, asr, asrs, rrx, rrxs, ror, rors, mvn, mvns
  */
@@ -795,7 +805,7 @@ static RzILOpEffect *mov(cs_insn *insn, bool is_thumb) {
 			// ALUExceptionReturn()
 			goto err;
 		} else {
-			return JMP(val);
+			return bx_write_pc(val);
 		}
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), val);
@@ -901,7 +911,7 @@ static RzILOpEffect *add_sub(cs_insn *insn, bool is_thumb) {
 			rz_il_op_pure_free(res);
 			return NULL;
 		} else {
-			return JMP(res);
+			return bx_write_pc(res);
 		}
 	}
 	RzILOpEffect *set = write_reg(REGID(0), res);
@@ -1021,9 +1031,9 @@ static RzILOpEffect *ldr(cs_insn *insn, bool is_thumb) {
 				return SEQ3(
 					SETL("tgt", data),
 					writeback_eff,
-					JMP(VARL("tgt")));
+					bx_write_pc(VARL("tgt")));
 			} else {
-				eff = JMP(data);
+				eff = bx_write_pc(data);
 			}
 		} else {
 			eff = write_reg(REGID(0), data);
@@ -1196,7 +1206,7 @@ static RzILOpEffect *bitwise(cs_insn *insn, bool is_thumb) {
 			rz_il_op_pure_free(carry);
 			return NULL;
 		} else {
-			return JMP(res);
+			return bx_write_pc(res);
 		}
 	}
 	RzILOpEffect *eff = write_reg(REGID(0), res);
@@ -1457,7 +1467,7 @@ static RzILOpEffect *ldm(cs_insn *insn, bool is_thumb) {
 		size_t idx = op_first + (op_count - 1 - i);
 		if (ISREG(idx) && REGID(idx) == ARM_REG_PC) {
 			// jmp goes last
-			eff = JMP(VARL("tgt"));
+			eff = bx_write_pc(VARL("tgt"));
 		}
 	}
 	bool decrement = insn->id == ARM_INS_LDMDA || insn->id == ARM_INS_LDMDB || insn->id == ARM_INS_VLDMDB;
@@ -1504,9 +1514,15 @@ static RzILOpEffect *bl(cs_insn *insn, bool is_thumb) {
 	if (!tgt) {
 		return NULL;
 	}
-	return SEQ2(
-		SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0))),
-		JMP(tgt));
+	RzILOpEffect *link = SETG("lr", U32(((insn->address + insn->size) & ~1ul) | (is_thumb ? 1 : 0)));
+	if (!ISREG(0)) {
+		return SEQ2(link, JMP(tgt));
+	}
+	if (REGID(0) == ARM_REG_LR) {
+		// blx lr branches to lr from before the link
+		return SEQ3(SETL("tgt", tgt), link, bx_write_pc(VARL("tgt")));
+	}
+	return SEQ2(link, bx_write_pc(tgt));
 }
 
 /**
@@ -1642,36 +1658,6 @@ static RzILOpEffect *mla(cs_insn *insn, bool is_thumb) {
 }
 
 /**
- * Capstone: ARM_INS_MRS
- * ARM: mrs
- */
-static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
-#if CS_NEXT_VERSION >= 6
-	if (!ISREG(0) || !(ISREG(1) || ISPSRFLAGS(1))) {
-		return NULL;
-	}
-#else
-	if (!ISREG(0) || !(ISREG(1))) {
-		return NULL;
-	}
-#endif
-	if (REGID(1) == ARM_REG_SPSR) {
-		return write_reg(REGID(0), VARG("spsr"));
-	}
-	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_APSR) {
-		return NULL;
-	}
-	// There are more bits in ARM, but this is all we have:
-	return write_reg(REGID(0),
-		LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
-			LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
-				LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
-					LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
-						LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
-							SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16))))))));
-}
-
-/**
  * M-profile special registers, apart from the APSR
  */
 typedef enum {
@@ -1757,6 +1743,16 @@ static RzILOpBool *mprofile_sp_is_psp(void) {
 }
 
 /**
+ * \brief Whether FAULTMASK can be set: the execution priority is above -1
+ *
+ * It is not in the NMI (2) or HardFault (3) handler. With FAULTMASK set, it is
+ * -1 as well, but setting it again changes nothing.
+ */
+static RzILOpBool *mprofile_faultmask_settable(void) {
+	return AND(INV(EQ(VARG("ipsr"), U32(2))), INV(EQ(VARG("ipsr"), U32(3))));
+}
+
+/**
  * \brief MSR to an M-profile special register, apart from the APSR.
  *
  * As in Armv8-M without the Security and PACBTI Extensions.
@@ -1800,12 +1796,7 @@ static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
 			NOP());
 		break;
 	case MSYSREG_FAULTMASK:
-		// Setting it needs an execution priority above -1: not in the NMI (2)
-		// or HardFault (3) handler
-		eff = SETG("faultmask",
-			AND(LSB(val),
-				OR(VARG("faultmask"),
-					AND(INV(EQ(VARG("ipsr"), U32(2))), INV(EQ(VARG("ipsr"), U32(3)))))));
+		eff = SETG("faultmask", AND(LSB(val), OR(VARG("faultmask"), mprofile_faultmask_settable())));
 		break;
 	case MSYSREG_CONTROL:
 		// Switching SPSEL in Thread mode switches the stack pointer in use.
@@ -1824,6 +1815,147 @@ static RzILOpEffect *msr_mprofile(MSysReg reg, RZ_OWN RzILOpBitVector *val) {
 		return NULL;
 	}
 	return BRANCH(mprofile_privileged(), eff, NOP());
+}
+
+/**
+ * \brief Parts of the xPSR that an M-profile view of it holds
+ */
+typedef enum {
+	MPSR_NONE = 0, ///< Not a view of the xPSR
+	MPSR_APSR = 1 << 0, ///< The flags and GE
+	MPSR_IPSR = 1 << 1, ///< The exception number
+	MPSR_EPSR = 1 << 2, ///< The execution state, which reads as zero
+} MPsrPart;
+
+/**
+ * \brief Get the parts of the xPSR that \p op, the source of an M-profile MRS, views
+ *
+ * \return A combination of MPsrPart
+ */
+static ut32 mprofile_psr_parts(const cs_arm_op *op) {
+	if (op->type != ARM_OP_SYSREG) {
+		return MPSR_NONE;
+	}
+#if CS_NEXT_VERSION >= 6
+	switch (op->sysop.reg.mclasssysreg) {
+	case ARM_MCLASSSYSREG_APSR: return MPSR_APSR;
+	case ARM_MCLASSSYSREG_IAPSR: return MPSR_APSR | MPSR_IPSR;
+	case ARM_MCLASSSYSREG_EAPSR: return MPSR_APSR | MPSR_EPSR;
+	case ARM_MCLASSSYSREG_XPSR: return MPSR_APSR | MPSR_IPSR | MPSR_EPSR;
+	case ARM_MCLASSSYSREG_IPSR: return MPSR_IPSR;
+	case ARM_MCLASSSYSREG_EPSR: return MPSR_EPSR;
+	case ARM_MCLASSSYSREG_IEPSR: return MPSR_IPSR | MPSR_EPSR;
+	default: return MPSR_NONE;
+	}
+#else
+	switch (op->reg) {
+	case ARM_SYSREG_APSR: return MPSR_APSR;
+	case ARM_SYSREG_IAPSR: return MPSR_APSR | MPSR_IPSR;
+	case ARM_SYSREG_EAPSR: return MPSR_APSR | MPSR_EPSR;
+	case ARM_SYSREG_XPSR: return MPSR_APSR | MPSR_IPSR | MPSR_EPSR;
+	case ARM_SYSREG_IPSR: return MPSR_IPSR;
+	case ARM_SYSREG_EPSR: return MPSR_EPSR;
+	case ARM_SYSREG_IEPSR: return MPSR_IPSR | MPSR_EPSR;
+	default: return MPSR_NONE;
+	}
+#endif
+}
+
+/**
+ * \brief MRS of an M-profile special register, apart from the xPSR.
+ *
+ * As in Armv8-M without the Security and PACBTI Extensions: CONTROL reads in
+ * any mode, the others read as zero when unprivileged.
+ *
+ * \param reg The register, not MSYSREG_NONE
+ * \return The value read, NULL if the register is not in the IL
+ */
+static RzILOpBitVector *mrs_mprofile(MSysReg reg) {
+	RzILOpBitVector *val;
+	switch (reg) {
+	case MSYSREG_MSP:
+		// msp is only up to date while the process stack pointer is in use
+		val = ITE(mprofile_sp_is_psp(), VARG("msp"), VARG("sp"));
+		break;
+	case MSYSREG_PSP:
+		val = ITE(mprofile_sp_is_psp(), VARG("sp"), VARG("psp"));
+		break;
+	case MSYSREG_MSPLIM:
+		val = VARG("msplim");
+		break;
+	case MSYSREG_PSPLIM:
+		val = VARG("psplim");
+		break;
+	case MSYSREG_PRIMASK:
+		val = BOOL_TO_BV(VARG("primask"), 32);
+		break;
+	case MSYSREG_BASEPRI:
+	case MSYSREG_BASEPRI_MAX:
+		val = UNSIGNED(32, VARG("basepri"));
+		break;
+	case MSYSREG_FAULTMASK:
+		val = BOOL_TO_BV(VARG("faultmask"), 32);
+		break;
+	case MSYSREG_CONTROL:
+		// nPRIV, SPSEL and FPCA, the bits that MSR writes
+		return UNSIGNED(32, LOGAND(VARG("control"), UN(8, 0x7)));
+	default:
+		return NULL;
+	}
+	return ITE(mprofile_privileged(), val, U32(0));
+}
+
+/**
+ * \brief The APSR: the flags and GE
+ */
+static RzILOpBitVector *apsr_value(void) {
+	return LOGOR(ITE(VARG("nf"), U32(1ul << 31), U32(0)),
+		LOGOR(ITE(VARG("zf"), U32(1ul << 30), U32(0)),
+			LOGOR(ITE(VARG("cf"), U32(1ul << 29), U32(0)),
+				LOGOR(ITE(VARG("vf"), U32(1ul << 28), U32(0)),
+					LOGOR(ITE(VARG("qf"), U32(1ul << 27), U32(0)),
+						SHIFTL0(UNSIGNED(32, VARG("gef")), UN(5, 16)))))));
+}
+
+/**
+ * Capstone: ARM_INS_MRS
+ * ARM: mrs
+ */
+static RzILOpEffect *mrs(cs_insn *insn, bool is_thumb) {
+	if (OPCOUNT() < 2 || !ISREG(0)) {
+		return NULL;
+	}
+	ut32 psr_parts = mprofile_psr_parts(&INSOP(1));
+	if (psr_parts != MPSR_NONE) {
+		RzILOpBitVector *val = psr_parts & MPSR_APSR ? apsr_value() : NULL;
+		if (psr_parts & MPSR_IPSR) {
+			RzILOpBitVector *ipsr = LOGAND(VARG("ipsr"), U32(0x1ff));
+			val = val ? LOGOR(val, ipsr) : ipsr;
+		}
+		return write_reg(REGID(0), val ? val : U32(0));
+	}
+	MSysReg mreg = msysreg(&INSOP(1));
+	if (mreg != MSYSREG_NONE) {
+		RzILOpBitVector *val = mrs_mprofile(mreg);
+		return val ? write_reg(REGID(0), val) : NULL;
+	}
+#if CS_NEXT_VERSION >= 6
+	if (!(ISREG(1) || ISPSRFLAGS(1))) {
+		return NULL;
+	}
+#else
+	if (!ISREG(1)) {
+		return NULL;
+	}
+#endif
+	if (REGID(1) == ARM_REG_SPSR) {
+		return write_reg(REGID(0), VARG("spsr"));
+	}
+	if (REGID(1) != ARM_REG_CPSR && REGID(1) != ARM_REG_APSR) {
+		return NULL;
+	}
+	// There are more bits in ARM, but this is all we have:
+	return write_reg(REGID(0), apsr_value());
 }
 
 /**
@@ -1874,6 +2006,40 @@ static RzILOpEffect *msr(cs_insn *insn, bool is_thumb) {
 		return NULL;
 	}
 	return update_flags_from_cpsr(val, update_f, update_s);
+}
+
+/**
+ * Capstone: ARM_INS_CPS
+ * ARM: cpsie, cpsid
+ *
+ * \param insn The CPS
+ * \param mclass Whether it is of the M-profile, where the masks are PRIMASK and FAULTMASK
+ */
+static RzILOpEffect *cps(cs_insn *insn, bool mclass) {
+	arm_cpsmode_type imod = insn->detail->arm.cps_mode;
+	arm_cpsflag_type iflags = insn->detail->arm.cps_flag;
+	if ((imod != ARM_CPSMODE_IE && imod != ARM_CPSMODE_ID) || iflags == ARM_CPSFLAG_INVALID ||
+		iflags == ARM_CPSFLAG_NONE || OPCOUNT()) {
+		// Without flags it is unpredictable, a new mode would need the banked registers
+		return NULL;
+	}
+	if (!mclass) {
+		// Of the CPSR it only writes the A, I and F bits, which the IL lacks
+		return NOP();
+	}
+	if (insn->size != 2 || iflags & ARM_CPSFLAG_A) {
+		// The M-profile has only the 16-bit encoding, with I and F
+		return NULL;
+	}
+	bool enable = imod == ARM_CPSMODE_IE;
+	RzILOpEffect *pri = iflags & ARM_CPSFLAG_I ? SETG("primask", enable ? IL_FALSE : IL_TRUE) : NULL;
+	RzILOpEffect *fault = NULL;
+	if (iflags & ARM_CPSFLAG_F) {
+		fault = enable
+			? SETG("faultmask", IL_FALSE)
+			: BRANCH(mprofile_faultmask_settable(), SETG("faultmask", IL_TRUE), NOP());
+	}
+	return BRANCH(mprofile_privileged(), pri && fault ? SEQ2(pri, fault) : (pri ? pri : fault), NOP());
 }
 
 /**
@@ -3342,6 +3508,24 @@ static RzILOpEffect *vtst(cs_insn *insn, bool is_thumb) {
 	return eff;
 }
 
+/**
+ * \brief Whether the register list of a VLDn or VSTn, the operands before the memory one, holds only D registers
+ *
+ * A list running past d31 is unpredictable, and Capstone continues it with
+ * other registers. Writing a lane of those frees the loaded value, while the
+ * multiple element forms go on with its address. Capstone v4 and v5 give a
+ * post-index register after the memory operand.
+ */
+static bool neon_list_is_dregs(cs_insn *insn) {
+	ut32 i = 0;
+	for (; i < OPCOUNT() && !ISMEM(i); i++) {
+		if (!ISREG(i) || REGID(i) < ARM_REG_D0 || REGID(i) > ARM_REG_D31) {
+			return false;
+		}
+	}
+	return i > 0;
+}
+
 static RzILOpEffect *vldn_multiple_elem(cs_insn *insn, bool is_thumb) {
 	ut32 mem_idx;
 	ut32 regs = 0;
@@ -3603,7 +3787,7 @@ static RzILOpEffect *vldn_all_lane(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpEffect *vldn(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() < 2 || !ISREG(0)) {
+	if (OPCOUNT() < 2 || !neon_list_is_dregs(insn)) {
 		return NULL;
 	}
 
@@ -3791,7 +3975,7 @@ static RzILOpEffect *vstn_from_single_lane(cs_insn *insn, bool is_thumb) {
 }
 
 static RzILOpEffect *vstn(cs_insn *insn, bool is_thumb) {
-	if (OPCOUNT() < 2 || !ISREG(0)) {
+	if (OPCOUNT() < 2 || !neon_list_is_dregs(insn)) {
 		return NULL;
 	}
 
@@ -4384,7 +4568,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
  * Currently unimplemented:
  * - BKPT: causes a breakpoint instruction exception
  * - CLREX: clears the local monitor
- * - CPS, CPSID, CPSIE: changes interrupt mask bits and optionally PSTATE.M
+ * - CPS changing the mode: needs the banked registers
  * - CRC32, CRC32C: does crc32, new feature in armv8
  * - CSDB, DMB, DSB, ESB, ISB, PSSBB, SB, SSBB: synchronization, memory barriers
  * - DCPS1, DCPS2, DCPS3: for debuggers
@@ -4399,7 +4583,7 @@ static RzILOpEffect *vabs(cs_insn *insn, bool is_thumb) {
  * - UDF: permanently undefined
  * - WFE, WFI: wait
  */
-static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb) {
+static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb, bool mclass) {
 	switch (insn->id) {
 	// --
 	// Base Instruction Set
@@ -4417,11 +4601,14 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	case ARM_INS_DSB:
 	case ARM_INS_ISB:
 		return NOP();
-	case ARM_INS_B:
+	case ARM_INS_B: {
+		RzILOpBitVector *dst = ARG(0);
+		return dst ? JMP(dst) : NULL;
+	}
 	case ARM_INS_BX:
 	case ARM_INS_BXJ: {
 		RzILOpBitVector *dst = ARG(0);
-		return dst ? JMP(dst) : NULL;
+		return dst ? bx_write_pc(dst) : NULL;
 	}
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
@@ -4557,6 +4744,8 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 		return mrs(insn, is_thumb);
 	case ARM_INS_MSR:
 		return msr(insn, is_thumb);
+	case ARM_INS_CPS:
+		return cps(insn, mclass);
 	case ARM_INS_PKHBT:
 	case ARM_INS_PKHTB:
 		return pkhbt(insn, is_thumb);
@@ -4775,14 +4964,22 @@ static RzILOpEffect *il_unconditional(csh *handle, cs_insn *insn, bool is_thumb)
 	}
 }
 
-RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb) {
+/**
+ * \brief Lift a 32-bit ARM instruction to RzIL
+ *
+ * \param handle The Capstone handle that disassembled \p insn
+ * \param insn The instruction, with its details
+ * \param thumb Whether it is a Thumb instruction
+ * \param mclass Whether it is of the M-profile
+ */
+RZ_IPI RzILOpEffect *rz_arm_cs_32_il(csh *handle, cs_insn *insn, bool thumb, bool mclass) {
 	if (insn->id == ARM_INS_IT) {
 		// Note: IT is **not** a conditional branch!
 		// It's currently handled in analysis_arm_cs.c using ArmCSContext as a hack to turn the following instructions
 		// into conditional ones. So in the IL, we don't do anything for IT.
 		return NOP();
 	}
-	RzILOpEffect *eff = il_unconditional(handle, insn, thumb);
+	RzILOpEffect *eff = il_unconditional(handle, insn, thumb, mclass);
 	if (!eff) {
 		return NULL;
 	}

@@ -157,8 +157,7 @@ RZ_API bool rz_type_func_save(RzTypeDB *typedb, RZ_NONNULL RzCallable *callable)
 	if (rz_type_func_exist(typedb, callable->name)) {
 		return false;
 	}
-	ht_sp_insert(typedb->callables, callable->name, callable);
-	return true;
+	return ht_sp_insert(typedb->callables, callable->name, callable);
 }
 
 /**
@@ -666,7 +665,10 @@ RZ_API bool rz_type_func_noreturn_add(RzTypeDB *typedb, RZ_NONNULL const char *n
 			return false;
 		}
 		callable->noret = true;
-		rz_type_func_save(typedb, callable);
+		if (!rz_type_func_save(typedb, callable)) {
+			rz_type_callable_free(callable);
+			return false;
+		}
 	}
 	return true;
 }

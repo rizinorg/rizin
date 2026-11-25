@@ -2915,6 +2915,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB("analysis.sleep", 0, &cb_analysis_sleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETCB("analysis.ignbithints", "false", &cb_analysis_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
 	SETBPREF("analysis.calls", "false", "Make basic af analysis walk into calls");
+	SETBPREF("analysis.golang.fcns", "true", "Analyze all recovered sym.go.* functions during Golang recovery");
 	SETBPREF("analysis.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETBPREF("analysis.hasnext", "false", "Continue analysis after each function");
 	SETICB("analysis.nonull", 0, &cb_analysis_nonull, "Do not analyze regions of N null bytes");

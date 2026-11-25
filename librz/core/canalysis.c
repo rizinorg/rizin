@@ -3347,6 +3347,9 @@ RZ_API bool rz_core_analysis_function_add(RzCore *core, const char *name, ut64 a
 			rz_core_recover_vars(core, fcn, true);
 		}
 		rz_analysis_fcn_vars_add_types(core->analysis, fcn);
+		if (rz_core_analysis_is_golang_fcn(core, fcn)) {
+			rz_core_analysis_resolve_golang_fcn_strings(core, fcn);
+		}
 	} else {
 		RZ_LOG_DEBUG("Unable to analyze function at 0x%08" PFMT64x "\n", addr);
 	}
@@ -4974,8 +4977,9 @@ RZ_IPI bool rz_core_analysis_function_set_signature(RzCore *core, RzAnalysisFunc
 		(void)rz_core_analysis_function_rename(core, fcn->addr, fcnname);
 		fcn = rz_analysis_get_fcn_in(core->analysis, fcn->addr, -1);
 	}
-	rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
-	res = true;
+	if (fcn) {
+		res = rz_analysis_function_set_type_str(core->analysis, fcn, fcnstr);
+	}
 err:
 	free(fcnname);
 	free(fcnstr_copy);

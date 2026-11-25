@@ -365,8 +365,7 @@ RZ_IPI RzCmdStatus rz_type_list_c_nl_handler(RzCore *core, int argc, const char 
 
 RZ_IPI RzCmdStatus rz_type_define_handler(RzCore *core, int argc, const char **argv) {
 	const char *type = argc > 1 ? argv[1] : NULL;
-	rz_types_define(core, type);
-	return RZ_CMD_STATUS_OK;
+	return bool2status(rz_types_define(core, type));
 }
 
 RZ_IPI RzCmdStatus rz_type_define_from_format_handler(RzCore *core, int argc, const char **argv) {
@@ -619,7 +618,10 @@ RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const cha
 
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv) {
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
-	rz_type_db_load_sdb(typedb, argv[1]);
+	if (!rz_type_db_load_sdb(typedb, argv[1])) {
+		RZ_LOG_ERROR("core: Failed to load SDB types from '%s'\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return RZ_CMD_STATUS_OK;
 }
 
