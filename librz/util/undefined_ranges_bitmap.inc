@@ -7,7 +7,7 @@
  * AUTO-GENERATED FILE — DO NOT EDIT.
  * Regenerate with: python3 sys/gen_unicode_undefined_bitmap.py
  *
- * Unicode version: 16.0.0.
+ * Unicode version: 17.0.0.
  */
 
 // clang-format off

@@ -4,7 +4,7 @@
 
 """
 Regenerates librz/util/undefined_ranges_bitmap.inc from the `undefined_ranges`
-table in librz/util/unicode.c.
+table in librz/util/unicode_tables.inc.
 
 Run this whenever `undefined_ranges` is updated (e.g. on a Unicode version bump).
 
@@ -14,13 +14,14 @@ Dependencies: pip install tree-sitter tree-sitter-c
 import argparse
 import datetime
 import pathlib
+import re
 import sys
 
 from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_c as tsc
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_UNICODE_C = REPO_ROOT / "librz/util/unicode.c"
+DEFAULT_UNICODE_TABLES_INC = REPO_ROOT / "librz/util/unicode_tables.inc"
 DEFAULT_OUT_INC = REPO_ROOT / "librz/util/undefined_ranges_bitmap.inc"
 TABLE_NAME = "undefined_ranges"
 BITS_PER_WORD = 64
@@ -57,6 +58,16 @@ def extract_ranges(src: bytes):
             ranges.append((lo, hi))
         return ranges
     raise ValueError(f"could not find `{TABLE_NAME}` declaration")
+
+
+def detect_unicode_version(src: bytes):
+    """Scrapes the `Unicode version: X.Y.Z.` comment already present on the source tables,
+    so the emitted .inc can't silently drift from what they were actually generated from.
+    """
+    m = re.search(rb"Unicode version:\s*([0-9]+\.[0-9]+\.[0-9]+)\.", src)
+    if not m:
+        raise ValueError("could not detect `Unicode version: X.Y.Z.` in the input file")
+    return m.group(1).decode()
 
 
 def build_bitmap(ranges, size):
@@ -128,14 +139,15 @@ def parse_args():
     )
     parser.add_argument(
         "--unicode-version",
-        default="16.0.0",
-        help="Unicode version this table was generated from",
+        default=None,
+        help="Unicode version this table was generated from "
+        "(default: scraped from the `Unicode version: X.Y.Z.` comment in --input)",
     )
     parser.add_argument(
         "--input",
         type=pathlib.Path,
-        default=DEFAULT_UNICODE_C,
-        help=f"Path to unicode.c containing `{TABLE_NAME}` (default: {DEFAULT_UNICODE_C})",
+        default=DEFAULT_UNICODE_TABLES_INC,
+        help=f"Path to unicode_tables.inc containing `{TABLE_NAME}` (default: {DEFAULT_UNICODE_TABLES_INC})",
     )
     parser.add_argument(
         "--output",
@@ -158,11 +170,12 @@ def main():
     ranges = extract_ranges(src)
     bitmap = build_bitmap(ranges, args.size)
     skip_entries = compute_skip_entries(ranges, args.size)
+    unicode_version = args.unicode_version or detect_unicode_version(src)
     args.output.write_text(
         emit_inc(
             bitmap,
             skip_entries,
-            args.unicode_version,
+            unicode_version,
             args.author_name,
             args.author_email,
         )
