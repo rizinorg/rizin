@@ -619,7 +619,10 @@ static bool esil_cf(RzAnalysisEsil *esil) {
 		return false;
 	}
 	ut64 bit;
-	rz_analysis_esil_get_parm(esil, src, &bit);
+	if (!rz_analysis_esil_get_parm(esil, src, &bit)) {
+		free(src);
+		return false;
+	}
 	free(src);
 	// carry from bit <src>
 	// range of src goes from 0 to 63
@@ -642,7 +645,10 @@ static bool esil_bf(RzAnalysisEsil *esil) {
 		return false;
 	}
 	ut64 bit;
-	rz_analysis_esil_get_parm(esil, src, &bit);
+	if (!rz_analysis_esil_get_parm(esil, src, &bit)) {
+		free(src);
+		return false;
+	}
 	free(src);
 	// borrow from bit <src>
 	// range of src goes from 1 to 64
