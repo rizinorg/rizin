@@ -41,7 +41,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x08000044      mov   eax, 0x01
 |       ,=< 0x08000049      jmp   loc.epilogue_start
 ..
-|       |   ; CODE XREF from sym.fcn_1 @ 0x8000040
+|       |   ; CODE XREF from sym.fcn_1 @ 0x8000049
 |       |   ;-- epilogue_start:
 |       `-> 0x08000054      pop   rbp
 \           0x08000055      ret
@@ -50,7 +50,7 @@ nth      paddr      vaddr bind   type   size lib name
 |           0x0800004b      push  rbp
 |           0x0800004c      mov   rbp, rsp
 |           0x0800004f      mov   eax, 0x02
-|           ; CODE XREF from sym.fcn_1 @ 0x8000040
+|           ; CODE XREF from sym.fcn_1 @ 0x8000049
 |           ;-- epilogue_start:
 |           0x08000054      pop   rbp
 \           0x08000055      ret
@@ -59,7 +59,7 @@ nth      paddr      vaddr bind   type   size lib name
 --------------------------------------------------------------------------------------
 0x8000040   11      0      4 0x08000054       0x08000040                  
 0x800004b    9      0      3                  0x0800004b                  
-0x8000054    2      0      2                  0x08000040 0x0800004b        0x08000040
+0x8000054    2      0      2                  0x08000040 0x0800004b        0x08000049
 EOF
 EXPECT_ERR=
 RUN
@@ -91,20 +91,20 @@ nth      paddr      vaddr bind   type   size lib name
 / sym.fcn_2();
 |       |   0x08000047      mov   edi, 0x01
 \      ,==< 0x0800004c      jmp   sym.fcn_tc
-       ||   ; CALL XREF from sym.fcn_1 @ 0x8000040
-       ||   ; CALL XREF from sym.fcn_2 @ 0x8000047
+       ||   ; CALL XREF from sym.fcn_1 @ 0x8000045
+       ||   ; CALL XREF from sym.fcn_2 @ 0x800004c
 / sym.fcn_tc();
 |      ``-> 0x0800004e      test  edi, edi
 |       ,=< 0x08000050      jz    loc.tc.a
 |      ,==< 0x08000052      jmp   loc.tc.b
-|      ||   ; CODE XREF from sym.fcn_tc @ 0x800004e
+|      ||   ; CODE XREF from sym.fcn_tc @ 0x8000050
 |      ||   ;-- tc.a:
 |      |`-> 0x08000054      mov   eax, 0x01
 |      |,=< 0x08000059      jmp   loc.tc.ret
 |      ||   ; CODE XREF from sym.fcn_tc @ 0x8000052
 |      ||   ;-- tc.b:
 |      `--> 0x0800005b      mov   eax, 0x02
-|       |   ; CODE XREF from sym.fcn_tc @ 0x8000054
+|       |   ; CODE XREF from sym.fcn_tc @ 0x8000059
 |       |   ;-- tc.ret:
 \       `-> 0x08000060      ret
 
@@ -112,11 +112,11 @@ nth      paddr      vaddr bind   type   size lib name
 --------------------------------------------------------------------------------------------
 0x8000040    7      0      2                  0x08000040  0x0800004e 
 0x8000047    7      0      2                  0x08000047  0x0800004e 
-0x800004e    4      0      2 0x08000054       0x0800004e              0x08000040 0x08000047
+0x800004e    4      0      2 0x08000054       0x0800004e              0x08000045 0x0800004c
 0x8000052    2      0      1 0x0800005b       0x0800004e             
-0x8000054    7      0      2 0x08000060       0x0800004e              0x0800004e
+0x8000054    7      0      2 0x08000060       0x0800004e              0x08000050
 0x800005b    5      0      1                  0x0800004e              0x08000052
-0x8000060    1      0      1                  0x0800004e              0x08000054
+0x8000060    1      0      1                  0x0800004e              0x08000059
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
@@ -160,10 +160,10 @@ nth      paddr      vaddr bind   type   size lib name
 |       |   0x08000050      push  rbp
 |       |   0x08000051      mov   rbp, rsp
 |      ,==< 0x08000054      jmp   loc.shared_block
-|      ||   ; CODE XREF from sym.fcn_1 @ 0x800004a
+|      ||   ; CODE XREF from sym.fcn_1 @ 0x800004e
 |      ||   ;-- fcn_tc:
 |      |`-> 0x08000056      mov   eax, 0x01
-|      |    ; CODE XREF from sym.fcn_2 @ 0x8000050
+|      |    ; CODE XREF from sym.fcn_2 @ 0x8000054
 |      |    ;-- shared_block:
 |      `--> 0x0800005b      pop   rbp
 \           0x0800005c      ret
@@ -174,8 +174,8 @@ nth      paddr      vaddr bind   type   size lib name
 0x8000049    1      0      1                  0x08000040                        
 0x800004a    6      0      3 0x08000056       0x0800004a                        
 0x8000050    6      0      3 0x0800005b       0x08000050                        
-0x8000056    5      0      1                  0x0800004a                         0x0800004a
-0x800005b    2      0      2                  0x0800004a 0x08000050              0x08000050
+0x8000056    5      0      1                  0x0800004a                         0x0800004e
+0x800005b    2      0      2                  0x0800004a 0x08000050              0x08000054
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
@@ -221,7 +221,7 @@ nth      paddr      vaddr bind   type   size lib name
 |     |``-> 0x0800004c      test  edi, edi                             ; RELOC TARGET 32 fcn_tc @ 0x0800004c - 0x800004a
 |     | ,=< 0x0800004e      jz    loc.tc.a
 |     |,==< 0x08000050      jmp   loc.tc.b
-|     |||   ; CODE XREF from sym.fcn_tc @ 0x800004c
+|     |||   ; CODE XREF from sym.fcn_tc @ 0x800004e
 |     |||   ;-- tc.a:
 |     ||`-> 0x08000052      mov   eax, 0x01
 |     ||,=< 0x08000057      jmp   loc.tc.ret
@@ -229,7 +229,7 @@ nth      paddr      vaddr bind   type   size lib name
 |     |||   ; CODE XREF from sym.fcn_tc @ 0x8000050
 |     |||   ;-- tc.b:
 |     ``--> 0x08000059      mov   eax, 0x02
-|       |   ; CODE XREF from sym.fcn_tc @ 0x8000052
+|       |   ; CODE XREF from sym.fcn_tc @ 0x8000057
 |       |   ;-- tc.ret:
 \       `-> 0x0800005e      ret
 
@@ -240,9 +240,9 @@ nth      paddr      vaddr bind   type   size lib name
 0x800004a    2      0      1 0x08000059       0x0800004a                        
 0x800004c    4      0      2 0x08000052       0x0800004c                         0x08000040 0x08000045
 0x8000050    2      0      1 0x08000059       0x0800004c                        
-0x8000052    7      0      2 0x0800005e       0x0800004c                         0x0800004c
+0x8000052    7      0      2 0x0800005e       0x0800004c                         0x0800004e
 0x8000059    5      0      1                  0x0800004a 0x0800004c              0x0800004a 0x08000050
-0x800005e    1      0      1                  0x0800004a 0x0800004c              0x08000052
+0x800005e    1      0      1                  0x0800004a 0x0800004c              0x08000057
 EOF
 EXPECT_ERR=<<EOF
 WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.

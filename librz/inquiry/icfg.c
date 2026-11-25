@@ -417,11 +417,16 @@ bool handle_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
 	ut64 from_addr = rz_graph_node_get_id(from);
 	ut64 to_addr = rz_graph_node_get_id(to);
 
+	const RzICFGNode *from_icfg_node = rz_graph_node_get_data(from);
+	ut16 *last_insn_off = rz_vector_tail((RzVector *)&from_icfg_node->insn_offsets);
+	// Xrefs are from instruction to instruction.
+	// Our edges here are from block to block.
+	ut64 xref_from_addr = from_addr + (last_insn_off ? *last_insn_off : 0);
 	switch (type) {
 	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
 		return true;
 	case RZ_ICFG_EDGE_TYPE_JUMP:
-		if (!rz_analysis_xrefs_set(bundle->analysis, from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CODE)) {
+		if (!rz_analysis_xrefs_set(bundle->analysis, xref_from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CODE)) {
 			bundle->n_errors++;
 			rz_warn_if_reached();
 		}
@@ -438,7 +443,7 @@ bool handle_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
 		return true;
 	case RZ_ICFG_EDGE_TYPE_CALL:
 		// Don't follow call edges, just add them as xrefs.
-		if (!rz_analysis_xrefs_set(bundle->analysis, from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
+		if (!rz_analysis_xrefs_set(bundle->analysis, xref_from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CALL)) {
 			bundle->n_errors++;
 			rz_warn_if_reached();
 		}
