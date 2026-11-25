@@ -160,7 +160,17 @@ RZ_IPI RzILOpEffect *init_rmode();
 
 RZ_IPI ILPureEffectPair x86_il_resize_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 RZ_IPI ILPureEffectPair x86_il_floating_from_int_ctx(RZ_OWN RZ_NONNULL RzILOpBitVector *int_val, RzFloatFormat format, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
-RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_round_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *val, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width,
+	RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_int_and_sign_from_floating_ctx(
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val, ut32 width,
+	RZ_NONNULL const char *is_neg_var, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
+RZ_IPI ILPureEffectPair x86_il_int_from_floating_rmode(
+	RzFloatFormat format, ut32 width, RzFloatRMode rmode,
+	RZ_OWN RZ_NONNULL RzILOpFloat *float_val);
 
 RZ_IPI ILPureEffectPair x86_il_fadd_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
 RZ_IPI ILPureEffectPair x86_il_fmul_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloat *x, RZ_OWN RZ_NONNULL RzILOpFloat *y, RZ_BORROW RZ_NONNULL X86ILContext *ctx);
@@ -172,6 +182,7 @@ RZ_IPI ILPureEffectPair x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloa
 
 #define x86_il_resize_floating(val, format)        x86_il_resize_floating_ctx(val, format, ctx)
 #define x86_il_floating_from_int(int_val, format)  x86_il_floating_from_int_ctx(int_val, format, ctx)
+#define x86_il_round_floating(val)                 x86_il_round_floating_ctx(val, ctx)
 #define x86_il_int_from_floating(float_val, width) x86_il_int_from_floating_ctx(float_val, width, ctx)
 #define x86_il_fadd_with_rmode(x, y)               x86_il_fadd_with_rmode_ctx(x, y, ctx)
 #define x86_il_fmul_with_rmode(x, y)               x86_il_fmul_with_rmode_ctx(x, y, ctx)
@@ -180,6 +191,9 @@ RZ_IPI ILPureEffectPair x86_il_fsqrt_with_rmode_ctx(RZ_OWN RZ_NONNULL RzILOpFloa
 #define x86_il_fdiv_with_rmode(x, y)               x86_il_fdiv_with_rmode_ctx(x, y, ctx)
 #define x86_il_fdivr_with_rmode(x, y)              x86_il_fdivr_with_rmode_ctx(x, y, ctx)
 #define x86_il_fsqrt_with_rmode(x)                 x86_il_fsqrt_with_rmode_ctx(x, ctx)
+
+#define x86_il_int_and_sign_from_floating(float_val, width, is_neg_var) \
+	x86_il_int_and_sign_from_floating_ctx(float_val, width, is_neg_var, ctx)
 
 RZ_IPI RzILOpPure *x86_il_get_floating_operand_bits(X86Op op, int analysis_bits, ut64 pc);
 
