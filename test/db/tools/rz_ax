@@ -235,8 +235,6 @@ EOF
 RUN
 
 NAME=rz-ax 64bit binary number
-# BROKEN: trailing-suffix binary literal rejected by the new grammar (use a 0b prefix)
-BROKEN=1
 TOOL=rz-ax
 ARGS=1111111111111111000000000000000011111111111111110000000100000001b
 EXPECT=<<EOF
@@ -461,8 +459,6 @@ EOF
 RUN
 
 NAME=long number conversion
-# BROKEN: trailing-suffix binary literal rejected by the new grammar (use a 0b prefix)
-BROKEN=1
 TOOL=rz-ax
 ARGS=10000000000000000000000000000000000000000000000b
 EXPECT=<<EOF
@@ -712,8 +708,6 @@ EOF
 RUN
 
 NAME=rz-ax -o
-# BROKEN: 'rz-ax -o a b ...' now reads its arguments as decimal byte values, not octal
-BROKEN=1
 TOOL=rz-ax
 ARGS=-o 162 62
 EXPECT=r2

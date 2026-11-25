@@ -1606,7 +1606,6 @@ RUN
 
 NAME=Rust PE
 FILE=bins/pe/rust_any.exe
-BROKEN=1
 CMDS=<<EOF
 aaa
 avrr
