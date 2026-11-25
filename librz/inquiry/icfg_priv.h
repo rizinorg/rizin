@@ -53,11 +53,6 @@ struct rz_icfg_node_t {
 		RzSetU *set;
 		ut64 m;
 	} proc_memberships;
-	/**
-	 * \brief Block attributes. Kept in sync with the CFG.
-	 * Used for accessing most important information, without the need to access the CFG edges.
-	 */
-	RzICFGNodeAttr attrs;
 };
 
 struct rz_cfg_t {

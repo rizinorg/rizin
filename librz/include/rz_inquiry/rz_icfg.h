@@ -26,18 +26,6 @@ typedef struct rz_icfg_node_t RzICFGNode;
  */
 typedef struct rz_cfg_t RzCFG;
 
-typedef enum {
-	RZ_ICFG_NODE_NON = 0, ///< No attributes.
-	RZ_ICFG_NODE_JMP_IN = 1 << 1, ///< Block as *at least* one incoming jump edge.
-	RZ_ICFG_NODE_JMP_OUT = 1 << 2, ///< Block as *at least* one outgoing jump edge.
-	RZ_ICFG_NODE_CALL_IN = 1 << 3, ///< Block as *at least* one incoming call edge.
-	RZ_ICFG_NODE_CALL_OUT = 1 << 4, ///< Block as *at least* one outgoing call edge.
-	RZ_ICFG_NODE_FALLTRHU_IN = 1 << 5, ///< Block as *at least* one incoming fall through edge.
-	RZ_ICFG_NODE_FALLTRHU_OUT = 1 << 6, ///< Block as *at least* one outgoing fall through edge.
-	// TODO: Other attributes of interest could be:
-	// - Privilege level of that block (TEE, SM, hypervisor, guest, kernel, user etc.)
-} RzICFGNodeAttr;
-
 typedef enum rz_icfg_edge_type_t {
 	RZ_ICFG_EDGE_TYPE_FALLTHROUGH = 0, ///< Fall through between two blocks.
 	RZ_ICFG_EDGE_TYPE_JUMP, ///< Jumps to another address.
