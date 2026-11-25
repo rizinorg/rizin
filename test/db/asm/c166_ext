@@ -18,7 +18,7 @@ d "exts #0x008d, #2" d7108d00 # right (Keil)
 d "exts #0x008d, #3" d7208d00 # right (Keil)
 d "exts #0x008d, #4" d7308d00 # right (Keil)
 
-dB "" 9AEF0260 # warning A111: ACCESS TO EXTENDED SFR OUTSIDE AN 'EXT' SEQUENCE
+dB "jnb 0xffde.6, 0x000008" 9AEF0260 # warning A111: ACCESS TO EXTENDED SFR OUTSIDE AN 'EXT' SEQUENCE
 d "extr #1;jnb 0xf1de.6, 0x00000a" d1809AEF0260 # as 9AEF0260 JNB 0xEF.6,0x000222
 d "jnb 0xfd02.3, 0x00000c" 9a010430 0x0 (branch (is_zero (>> (& (loadw 0 16 (bv 32 0xfd02)) (bv 16 0x8)) (bv 16 0x3) false)) (jmp (bv 32 0xc)) nop)
 
@@ -132,7 +132,7 @@ d "bset r14.5;bclr r14.5;bclr r14.5;bclr 0xff7c.5" 5ffe5efe5efe5ebe 0x0 (seq (se
 d "xor 0xff10, 0xfe00:0x0200" 52880002 0x0 nop
 
 d "cmpb rl4, #0x0000" 4980 0x0 (seq (set op1 (& (cast 8 false (var r4)) (bv 8 0xff))) (set op2 (bv 8 0x0)) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 16 false (cast 8 false (var res))))))
-d "cmpb rl4, rh7" 418f 0x0 (seq (set op1 (ite (is_zero (bv 8 0x0)) (& (cast 8 false (var r4)) (bv 8 0xff)) (cast 8 false (>> (var r4) (bv 16 0x8) false)))) (set op2 (ite (is_zero (bv 8 0x0)) (& (cast 8 false (var r7)) (bv 8 0xff)) (cast 8 false (>> (var r7) (bv 16 0x8) false)))) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 8 false (var res)))))
+d "cmpb rl4, rh7" 418f 0x0 (seq (set op1 (ite (is_zero (bv 8 0x0)) (& (cast 8 false (var r4)) (bv 8 0xff)) (cast 8 false (>> (var r4) (bv 16 0x8) false)))) (set op2 (ite (is_zero (bv 8 0x8)) (& (cast 8 false (var r7)) (bv 8 0xff)) (cast 8 false (>> (var r7) (bv 16 0x8) false)))) (set res (ite (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2)))) (- (cast 16 false (var op1)) (cast 16 false (var op2))) (cast 16 false (- (var op1) (var op2))))) (set e (ite (== (var op2) (bv 8 0x80)) true false)) (set z (== (var op1) (var op2))) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (== (var res) (bv 16 0xff))) (set n (msb (cast 8 false (var res)))))
 d "cmpb rl4, [r0+]" 498c
 d "cmpb rl4, [r1+]" 498d
 d "cmpb rl4, [r2+]" 498e
@@ -142,8 +142,8 @@ d "cmpb rl4, [r1]" 4989
 d "sub r3, [r1+]" 283d 0x0 (seq (set op1 (var r3)) (set addr (cast 32 false (var r1))) (set op2 (loadw 0 16 (var addr))) (set res (- (var op1) (var op2))) (set r3 (var res)) (set r1 (+ (cast 16 false (var addr)) (bv 16 0x2))) (set e (ite (== (var op2) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (&& (^^ (is_zero (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false)) (is_zero (>> (& (var op2) (bv 16 0x8000)) (bv 16 0xf) false))) (^^ (is_zero (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false)) (is_zero (>> (& (var res) (bv 16 0x8000)) (bv 16 0xf) false))))) (set n (msb (cast 16 false (var res)))))
 d "sub r4, [r2]" 284a 0x0 (seq (set op1 (var r4)) (set addr (cast 32 false (var r2))) (set op2 (loadw 0 16 (var addr))) (set res (- (var op1) (var op2))) (set r4 (var res)) (set e (ite (== (var op2) (bv 16 0x8000)) true false)) (set z (ite (is_zero (var res)) true false)) (set c (&& (ule (var op1) (var op2)) (! (== (var op1) (var op2))))) (set v (&& (^^ (is_zero (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false)) (is_zero (>> (& (var op2) (bv 16 0x8000)) (bv 16 0xf) false))) (^^ (is_zero (>> (& (var op1) (bv 16 0x8000)) (bv 16 0xf) false)) (is_zero (>> (& (var res) (bv 16 0x8000)) (bv 16 0xf) false))))) (set n (msb (cast 16 false (var res)))))
 
-d "jmpa- cc_NUSR0, 0x000500" ea0b0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
-d "jmpa+ cc_NUSR0, 0x000500" ea0a0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
+d "jmpa- cc_NUSR0, 0x000500" ea0b0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (jmp (var addr)) nop))
+d "jmpa+ cc_NUSR0, 0x000500" ea0a0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (jmp (var addr)) nop))
 
 d "calla- cc_NUSR0, 0x000500" ca0b0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))
 d "calla+ cc_NUSR0, 0x000500" ca0a0005 0x0 (seq (set addr (bv 32 0x500)) (branch (! (var usr0)) (seq (set SP (var SP)) (set SP (- (var SP) (bv 16 0x2))) (set SP (var SP)) (storew 0 (cast 32 false (var SP)) (bv 16 0x4)) (jmp (var addr))) nop))

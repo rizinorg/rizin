@@ -1520,13 +1520,13 @@ static RzILOpEffect *c166_il_calli_cc_rwn(const ut8 *buf, const RzAnalysisOp *op
 				SETL("SP", VARG("SP")),
 				SETL("SP", SP_DEC),
 				SETG("SP", VARL("SP")),
-				STOREW(UNSIGNED(32, VARL("SP")), U16(op->addr + C166_BYTESIZE_4)),
+				STOREW(UNSIGNED(32, VARL("SP")), U16(op->addr + op->size)),
 				JMP(VARL("addr"))),
 			NOP()));
 }
 
 /**
- *
+ * CALLA:
  * IF (op1) THEN
  *	(SP) ← (SP) - 2
  *	((SP)) ← (IP)
@@ -1534,8 +1534,15 @@ static RzILOpEffect *c166_il_calli_cc_rwn(const ut8 *buf, const RzAnalysisOp *op
  * ELSE
  *	next instruction
  * END IF
+ *
+ * JMPA:
+ * IF ((op1) = 1) THEN
+ *	(IP) ← op2
+ * ELSE
+ *	Next Instruction
+ * END IF
  */
-static RzILOpEffect *c166_il_calla_cc_caddr(const ut8 *buf, const RzAnalysisOp *op) {
+static RzILOpEffect *c166_il_calla_cc_caddr(const ut8 *buf, const RzAnalysisOp *op, const bool is_call) {
 	const ut8 op1 = buf[1];
 	const ut32 seg = (ut32)op->addr & 0xFF0000;
 	const ut32 addr = seg | rz_read_at_le16(buf, 2);
@@ -1556,12 +1563,14 @@ static RzILOpEffect *c166_il_calla_cc_caddr(const ut8 *buf, const RzAnalysisOp *
 		SETL("addr", U32(addr)),
 		BRANCH(
 			check_condition(d),
-			SEQ5(
-				SETL("SP", VARG("SP")),
-				SETL("SP", SP_DEC),
-				SETG("SP", VARL("SP")),
-				STOREW(UNSIGNED(32, VARL("SP")), U16(op->addr + op->size)),
-				JMP(VARL("addr"))),
+			is_call
+				? SEQ5(
+					  SETL("SP", VARG("SP")),
+					  SETL("SP", SP_DEC),
+					  SETG("SP", VARL("SP")),
+					  STOREW(UNSIGNED(32, VARL("SP")), U16(op->addr + op->size)),
+					  JMP(VARL("addr")))
+				: JMP(VARL("addr")),
 			NOP()));
 }
 
@@ -1762,8 +1771,10 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 		op->il_op = c166_il_movbz_rwn_rbm(buf);
 		break;
 	case C166_CALLA_cc_caddr:
+		op->il_op = c166_il_calla_cc_caddr(buf, op, true);
+		break;
 	case C166_JMPA_cc_caddr:
-		op->il_op = c166_il_calla_cc_caddr(buf, op);
+		op->il_op = c166_il_calla_cc_caddr(buf, op, false);
 		break;
 	case C166_ATOMIC_or_EXTR_irang2:
 	case C166_EXTP_or_EXTS_pag10_or_seg8_irang2:
