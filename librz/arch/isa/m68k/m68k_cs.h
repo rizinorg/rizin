@@ -43,6 +43,11 @@ static inline cs_mode rz_m68k_cs_mode(RZ_NULLABLE const char *cpu) {
 		return CS_MODE_M68K_COLDFIRE;
 	}
 #endif
+#ifdef RZ_CAPSTONE_HAS_M68K_080
+	if (strstr(cpu, "68080")) {
+		return CS_MODE_M68K_080;
+	}
+#endif
 	if (strstr(cpu, "68000")) {
 		return CS_MODE_M68K_000;
 	}

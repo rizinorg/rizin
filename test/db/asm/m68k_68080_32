@@ -1,0 +1,110 @@
+d "addiw.l 0x8001, d0" 06c08001
+d "addiw.l 0x10, (a0)" 06d00010
+d "cmpiw.l 0x1234, d3" 4e031234
+d "moviw.l 0x8123, d0" 303d8123
+d "moviw.l 0x1, (a1)" 32bd0001
+d "extub.l d0" 4bc0
+d "extuw.l d5" 4dc5
+d "lea.l 0x1(a0), b1" 43680001
+d "lea.l (b2), a3" 47ca
+d "addq.l 0x8, b1" 5009
+d "subq.l 0x1, b7" 530f
+d "cmp.l b3, d2" c583
+d "move.l b0, d1" 1208
+d "movea.l (a0), b1" 1250
+d "invalid" 1248
+d "perm 0x6d5, a0, d1" 4cc816d5
+d "touch 0x10(a1, d1.w)" f6311010
+d "move2.w (a0), d2:d3" 0e5020d1
+d "move2.l d2:d3, (a1)+" 0e9928d1
+d "movz2.b (a0), d0:d1" 0e100052
+d "movex.l (a0), d1" 0e901010
+d "movex.w d2, (a0)" 0e502810
+d "moveh.w d3, (a0)" 0e503813
+d "moves.w d0, (a0)" 0e500800
+d "bra.b 0x10ca" 6049 0x1000
+d "beq.b 0xf7e" 67fd 0x1000
+d "bsr.b 0x1082" 6101 0x1000
+d "dbf.l d0, 0xffe" 51c8fffd 0x1000
+d "fdbeq.l d1, 0x1000" f2490001fffd 0x1000
+d "fmoverz.l fp1, d0" f2006081
+d "fmoveurz.w fp2, (a0)" f2107103
+d "movec d0, pcr" 4e7b0808
+d "movec ccc, d1" 4e7a1809
+d "movec iep3, d0" 4e7a000c
+d "add.l e6, d1" 7104d286
+d "addi.l 0x5, e1" 7105068100000005
+d "tst.l e14" 710a4a86
+d "tst.l e6" 71014a86
+d "fmul.w e4, fp3, e5" 7d14f20451a3
+d "perm 0x6d5, a0, e1" 71014cc816d5
+d "add.l d0, d1, d0" 7300d280
+d "invalid" 7181
+d "paddw d1, d2, d3" fe012311
+d "paddb e9, e1, e17" ff419910
+d "load (a0)+, d0" fe180001
+d "load 0x123456789abcdef0, d0" fe3c0001123456789abcdef0
+d "load 0x1234123412341234, d0" ff3c00011234
+d "loadi (b1), e0" ff111801
+d "store d1, (a0)" fe101004
+d "storei e3, -(a1)" fe21b104
+d "storem d0, d1, (a2)" fe120105
+d "storem3 d0, 0x3, (a0)" fe100326
+d "storec d2, d3, 0x10(a0)" fe2823240010
+d "storeilm d1, d2, (a0)+" fe181225
+d "packuswb d0, d1, d2" fe020106
+d "pack3216 d0, d1, (a0)" fe100107
+d "unpack1632 d0, d2:d3" fe00021e
+d "pand d0, d1, d2" fe001208
+d "por d0, d1, d2" fe001209
+d "peor d0, d1, d2" fe00120a
+d "pandn d0, d1, d2" fe00120b
+d "pavgb d0, d1, d2" fe00120c
+d "paddb d0, d1, d2" fe001210
+d "psubb d0, d1, d2" fe001212
+d "psubw d0, d1, d2" fe001213
+d "paddusb d0, d1, d2" fe001214
+d "paddusw d0, d1, d2" fe001215
+d "psubusb d0, d1, d2" fe001216
+d "psubusw d0, d1, d2" fe001217
+d "pmul88 d0, d1, d2" fe001218
+d "pmula d0, d1, d2" fe001219
+d "pmulh d0, d1, d2" fe00121a
+d "pmull d0, d1, d2" fe00121b
+d "bflyb d0, d1, d2:d3" fe00121c
+d "bflyw d0, d1, d2:d3" fe00121d
+d "pcmpeqb d0, d1, d2" fe001220
+d "pcmpeqw d0, d1, d2" fe001221
+d "pcmphib d0, d1, d2" fe001222
+d "pcmphiw d0, d1, d2" fe001223
+d "pcmpgeb d0, d1, d2" fe00122c
+d "pcmpgew d0, d1, d2" fe00122d
+d "pcmpgtb d0, d1, d2" fe00122e
+d "pcmpgtw d0, d1, d2" fe00122f
+d "c2p d0, d2" fe000228
+d "bsel d0, d1, d2" fe001229
+d "minterm d4-d7, d2" fe04022a
+d "transhi e0-e3, d4:d5" fe080402
+d "translo e0-e3, d4:d5" fe080403
+d "transhi e8-e11, d4:d5" ff000402
+d "pminsb d0, d1, d2" fe001230
+d "pminsw d0, d1, d2" fe001231
+d "pminub d0, d1, d2" fe001232
+d "pminuw d0, d1, d2" fe001233
+d "pmaxsb d0, d1, d2" fe001234
+d "pmaxsw d0, d1, d2" fe001235
+d "pmaxub d0, d1, d2" fe001236
+d "pmaxuw d0, d1, d2" fe001237
+d "lslq d0, d1, d2" fe001238
+d "lsrq d0, d1, d2" fe001239
+d "vperm 0x3210ab78, d0, e1, e6" fe3f9e003210ab78
+d "tex a0, a1, a2, d3, d4" fe30343ea009
+d "rex d4, a0, a1, a2, d3" fe30343fa009
+d "load 0x1012(pc), d0" fe3a00010010 0x1000
+d "fadd.s (a0), fp1, fp2" fc101228
+d "fmul fp3, fp4, e5" fc034d8b
+d "fsqrt.d 1.000000, fp0" fc3c004d3ff0000000000000
+d "fdiv.l d1, fp2, fp3" fc01230c
+d "fsub.s e9, fp0, fp1" fd010129
+d "bank 0x1, 0x0, 0x0" 7104
+d "bank 0x0, 0x1, 0x0" 7101

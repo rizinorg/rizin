@@ -1262,6 +1262,12 @@ static const cs_m68k_op *mmu_address_operand(M68KILCtx *ctx) {
 		return ctx->m68k->op_count ? &ctx->m68k->operands[0] : NULL;
 	case M68K_INS_PFLUSH:
 	case M68K_INS_PFLUSHN:
+		/* PFLUSH FC,#mask flushes by function code only; the
+		 * address is the third operand of PFLUSH FC,#mask,<ea> and
+		 * the only operand of the 68040 PFLUSH (An). */
+		if (ctx->m68k->op_count == 2) {
+			return NULL;
+		}
 		return ctx->m68k->op_count ? &ctx->m68k->operands[ctx->m68k->op_count - 1] : NULL;
 	case M68K_INS_PLPAR:
 	case M68K_INS_PLPAW:
@@ -1352,7 +1358,7 @@ static RzILOpEffect *append_mmu_operand_metadata(M68KILCtx *ctx, RzILOpEffect *s
 		break;
 	case M68K_INS_PFLUSH:
 	case M68K_INS_PFLUSHN:
-		if (ctx->m68k->op_count > 2) {
+		if (ctx->m68k->op_count >= 2) {
 			RzILOpPure *fc = mmu_function_code_value(ctx, &ctx->m68k->operands[0]);
 			if (fc) {
 				seq = SEQ2(seq, SETL("mmu_fc", fc));
@@ -7408,6 +7414,14 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 	if (ctx.m68k->op_count > RZ_ARRAY_SIZE(ctx.m68k->operands)) {
 		return NULL;
 	}
+#ifdef RZ_CAPSTONE_HAS_M68K_080
+	if (mode == CS_MODE_M68K_080) {
+		/* The 68080 differs from the 68060 in ways this lifter does not
+		 * model (user-mode MOVE from SR and MOVEC reads, the Apollo SR
+		 * bit, 64-bit and banked registers, AMMX), so it has no IL. */
+		return NULL;
+	}
+#endif
 	if (mode == CS_MODE_M68K_020 && insn->size >= 4 && ctx.m68k->op_count == 1 &&
 		ctx.m68k->operands[0].type == M68K_OP_BR_DISP && rz_m68k_insn_is_pmmu_branch(insn)) {
 		return m68k_guard_supervisor(m68k_label("m68k_mmu"));
@@ -7751,6 +7765,11 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 		return m68k_guard_supervisor(lift_pmove(&ctx));
 	case M68K_INS_PTESTR:
 	case M68K_INS_PTESTW:
+		if (ctx.m68k->op_count > 3) {
+			/* PTEST with An also writes the last descriptor address
+			 * to An, which the MMU model does not provide. */
+			return NULL;
+		}
 		return m68k_guard_supervisor(lift_mmu_address_effects(&ctx, 32));
 	case M68K_INS_FSAVE:
 	case M68K_INS_FRESTORE:
