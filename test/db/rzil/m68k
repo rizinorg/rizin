@@ -7807,7 +7807,7 @@ fp0 = 0x4000c90fdaa22168c234
 fpsr = 0x00000208
 EOF
 RUN
-NAME=m68k PMMU branch and unmodeled FPU operations
+NAME=m68k PMMU branch, unmodeled packed FPU operand and FSINCOS
 FILE=malloc://32
 ARGS=-a m68k -b 32 -E big
 CMDS=<<EOF
@@ -7822,6 +7822,375 @@ EXPECT=<<EOF
 rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 rzil: (branch (! (is_zero (& (cast 16 false (var sr)) (bv 16 0x2000)))) (goto m68k_mmu) (seq (set trap_op (bv 32 0x9)) (set trap_vector (bv 32 0x8)) (goto m68k_privilege)))
 rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xa)) empty) (set fpu_addr (cast 32 false (var a0))) (set a0 (cast 32 false (+ (var a0) (bv 32 0xc)))) (goto m68k_fpu))
-rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xe)) empty) (set fpu_addr (cast 32 false (var a0))) (set a0 (cast 32 false (+ (var a0) (bv 32 0x8)))) (goto m68k_fpu))
+rzil: (seq (set fpu_state (bv 32 0x0)) (branch (! (is_zero (& (var fpcr) (bv 32 0xff00)))) (set fpiar (bv 32 0xe)) empty) (set src_fp (float 1 (loadw 0 64 (var a0)) )) (set src_bits (ite (is_nan (var src_fp)) (let nan_source_bits (fbits (var src_fp)) (append (| (bv 16 0x7fff) (<< (cast 16 false (>> (var nan_source_bits) (bv 8 0x3f) false)) (bv 8 0xf) false)) (| (bv 64 0x8000000000000000) (<< (& (cast 64 false (var nan_source_bits)) (bv 64 0xfffffffffffff)) (bv 8 0xb) false)))) (fbits (fconvert ieee754-bin80 rne (var src_fp))))) (set a0 (cast 32 false (+ (var a0) (bv 32 0x8)))) (set round_mode (let fpcr_round_mode (& (>> (var fpcr) (bv 8 0x4) false) (bv 32 0x3)) (ite (== (var fpcr_round_mode) (bv 32 0x0)) (bv 32 0x0) (ite (== (var fpcr_round_mode) (bv 32 0x1)) (bv 32 0x4) (ite (== (var fpcr_round_mode) (bv 32 0x2)) (bv 32 0x3) (bv 32 0x2)))))) (set precision (& (>> (var fpcr) (bv 8 0x6) false) (bv 32 0x3))) (set trans_x (fconvert ieee754-bin128 rne (var src_fp))) (set trans_ax (fabs (var trans_x))) (set trans_xneg (is_fneg (var trans_x))) (set trans_operr (is_inf (var trans_x))) (set trans_dz false) (set trans_special (is_fzero (var trans_x))) (set trans_generic (&& (! (is_nan (var trans_x))) (&& (! (var trans_operr)) (! (var trans_special))))) (branch (var trans_generic) (seq (set trans_rz (fsin rtz (var trans_x))) (set trans_exact (! (fexcept e_inexact (var trans_rz)))) (set trans_v (float 3 (| (fbits (var trans_rz)) (ite (! (var trans_exact)) (bv 128 0x1) (bv 128 0x0))) )) (set trans_rz (fcos rtz (var trans_x))) (set trans_exactc (! (fexcept e_inexact (var trans_rz)))) (set trans_vc (float 3 (| (fbits (var trans_rz)) (ite (! (var trans_exactc)) (bv 128 0x1) (bv 128 0x0))) ))) (seq (set trans_v (float 3 (bv 128 0x0) )) (set trans_exact true) (set trans_vc (float 3 (append (bv 64 0x3fff000000000000) (bv 64 0x0)) )) (set trans_exactc true))) (set trans_resc (let unrounded_fp (var trans_vc) (ite (== (var precision) (bv 32 0x1)) (fconvert ieee754-bin80 rne (fconvert ieee754-bin32 (var round_mode) (var unrounded_fp))) (ite (== (var precision) (bv 32 0x2)) (fconvert ieee754-bin80 rne (fconvert ieee754-bin64 (var round_mode) (var unrounded_fp))) (fconvert ieee754-bin80 (var round_mode) (var unrounded_fp)))))) (set exact_exp (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rne (var trans_vc))) (bv 8 0x40) false) (bv 80 0x7fff)))) (set tiny_result (&& (&& (ule (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rtz (var trans_vc))) (bv 8 0x40) false) (bv 80 0x7fff))) (ite (== (var precision) (bv 32 0x1)) (bv 16 0x3f81) (ite (== (var precision) (bv 32 0x2)) (bv 16 0x3c01) (bv 16 0x1)))) (! (== (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rtz (var trans_vc))) (bv 8 0x40) false) (bv 80 0x7fff))) (ite (== (var precision) (bv 32 0x1)) (bv 16 0x3f81) (ite (== (var precision) (bv 32 0x2)) (bv 16 0x3c01) (bv 16 0x1)))))) (! (is_fzero (var trans_vc))))) (set trans_inex2c (|| (! (var trans_exactc)) (! (== (fbits (fconvert ieee754-bin128 rne (var trans_resc))) (fbits (var trans_vc)))))) (set res_fp (let unrounded_fp (var trans_v) (ite (== (var precision) (bv 32 0x1)) (fconvert ieee754-bin80 rne (fconvert ieee754-bin32 (var round_mode) (var unrounded_fp))) (ite (== (var precision) (bv 32 0x2)) (fconvert ieee754-bin80 rne (fconvert ieee754-bin64 (var round_mode) (var unrounded_fp))) (fconvert ieee754-bin80 (var round_mode) (var unrounded_fp)))))) (set exact_exp (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rne (var trans_v))) (bv 8 0x40) false) (bv 80 0x7fff)))) (set tiny_result (&& (&& (ule (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rtz (var trans_v))) (bv 8 0x40) false) (bv 80 0x7fff))) (ite (== (var precision) (bv 32 0x1)) (bv 16 0x3f81) (ite (== (var precision) (bv 32 0x2)) (bv 16 0x3c01) (bv 16 0x1)))) (! (== (cast 16 false (& (>> (fbits (fconvert ieee754-bin80 rtz (var trans_v))) (bv 8 0x40) false) (bv 80 0x7fff))) (ite (== (var precision) (bv 32 0x1)) (bv 16 0x3f81) (ite (== (var precision) (bv 32 0x2)) (bv 16 0x3c01) (bv 16 0x1)))))) (! (is_fzero (var trans_v))))) (set trans_inex2 (|| (! (var trans_exact)) (! (== (fbits (fconvert ieee754-bin128 rne (var res_fp))) (fbits (var trans_v)))))) (set trans_inex2 (|| (var trans_inex2) (var trans_inex2c))) (set trans_resc (ite (var trans_special) (float 2 (append (bv 16 0x3fff) (bv 64 0x8000000000000000)) ) (ite (var trans_operr) (float 2 (append (bv 16 0x7fff) (bv 64 0xffffffffffffffff)) ) (var trans_resc)))) (set trans_resc (ite (is_nan (var trans_x)) (float 2 (| (cast 80 false (var src_bits)) (bv 80 0x4000000000000000)) ) (var trans_resc))) (set res_fp (ite (var trans_special) (fconvert ieee754-bin80 rne (var trans_x)) (ite (var trans_operr) (float 2 (append (bv 16 0x7fff) (bv 64 0xffffffffffffffff)) ) (var res_fp)))) (set res_fp (ite (is_nan (var trans_x)) (float 2 (| (cast 80 false (var src_bits)) (bv 80 0x4000000000000000)) ) (var res_fp))) (set fp7 (cast 80 false (fbits (var trans_resc)))) (set fp0 (cast 80 false (fbits (var res_fp)))) (set fpsr (| (& (cast 32 false (var fpsr)) (bv 32 0xf0ffffff)) (| (| (| (<< (ite (is_fneg (var res_fp)) (bv 32 0x1) (bv 32 0x0)) (bv 8 0x1b) false) (<< (ite (is_fzero (var res_fp)) (bv 32 0x1) (bv 32 0x0)) (bv 8 0x1a) false)) (<< (ite (is_inf (var res_fp)) (bv 32 0x1) (bv 32 0x0)) (bv 8 0x19) false)) (<< (ite (is_nan (var res_fp)) (bv 32 0x1) (bv 32 0x0)) (bv 8 0x18) false)))) (set fpsr (| (& (var fpsr) (bv 32 0xffff00ff)) (ite (let snan_bits (cast 80 false (fbits (var src_fp))) (&& (is_nan (var src_fp)) (is_zero (& (var snan_bits) (ite (is_zero (>> (var snan_bits) (bv 8 0x20) false)) (bv 80 0x400000) (ite (is_zero (>> (var snan_bits) (bv 8 0x40) false)) (bv 80 0x8000000000000) (bv 80 0x4000000000000000))))))) (bv 32 0x4080) (| (| (ite (var trans_operr) (bv 32 0x2080) (bv 32 0x0)) (ite (var trans_dz) (bv 32 0x410) (bv 32 0x0))) (| (| (ite (&& (var trans_generic) false) (bv 32 0x1048) (bv 32 0x0)) (ite (&& (var trans_generic) (var tiny_result)) (bv 32 0x800) (bv 32 0x0))) (| (ite (&& (var trans_generic) (&& (var tiny_result) (var trans_inex2))) (bv 32 0x20) (bv 32 0x0)) (ite (&& (var trans_generic) (var trans_inex2)) (bv 32 0x208) (bv 32 0x0)))))))))
+EOF
+RUN
+NAME=m68k aez FSIN of 1.0 is the correctly rounded sine within the UM 4.3.2 bound
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c48803fff00008000000000000000f200050e @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x3ffed76aa47848677021
+fpsr = 0x00000208
+EOF
+RUN
+
+NAME=m68k aez FSIN of +infinity sets OPERR and returns the default NAN (PRM 5-118 note 2)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c48807fff00008000000000000000f200050e @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x7fffffffffffffffffff
+fpsr = 0x01002080
+EOF
+RUN
+
+NAME=m68k aez FSIN of -0 returns -0 exactly with N and Z (PRM 5-118 operation table)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880800000000000000000000000f200050e @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x80000000000000000000
+fpsr = 0x0c000000
+EOF
+RUN
+
+NAME=m68k aez FCOS of +0 returns +1.0 exactly (PRM FCOS operation table)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880000000000000000000000000f200051d @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x3fff8000000000000000
+fpsr = 0x00000000
+EOF
+RUN
+
+NAME=m68k aez FLOGN of +0 returns -infinity and sets DZ (PRM FLOGN note 3, UM 6.1.6)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880000000000000000000000000f2000514 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0xffff8000000000000000
+fpsr = 0x0a000410
+EOF
+RUN
+
+NAME=m68k aez FLOGN of -1 sets OPERR and returns the default NAN (UM Table 6-2)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880bfff00008000000000000000f2000514 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x7fffffffffffffffffff
+fpsr = 0x01002080
+EOF
+RUN
+
+NAME=m68k aez FLOGNP1 of -1 returns -infinity and sets DZ (UM 6.1.6 FLOGx result)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880bfff00008000000000000000f2000506 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0xffff8000000000000000
+fpsr = 0x0a000410
+EOF
+RUN
+
+NAME=m68k aez FATANH of +1 returns -infinity and sets DZ (PRM FATANH description, UM 6.1.6)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c48803fff00008000000000000000f2000509 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0xffff8000000000000000
+fpsr = 0x0a000410
+EOF
+RUN
+
+NAME=m68k aez FATANH of -1 returns +infinity and sets DZ (PRM FATANH description, UM 6.1.6)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880bfff00008000000000000000f2000509 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x7fff8000000000000000
+fpsr = 0x02000410
+EOF
+RUN
+
+NAME=m68k aez FASIN of 2 sets OPERR and returns the default NAN (UM Table 6-2)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880400000008000000000000000f200050c @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x7fffffffffffffffffff
+fpsr = 0x01002080
+EOF
+RUN
+
+NAME=m68k aez FETOX of -infinity returns +0 exactly (PRM FETOX operation table)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880ffff00008000000000000000f2000510 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x00000000000000000000
+fpsr = 0x04000000
+EOF
+RUN
+
+NAME=m68k aez FETOX overflow returns +infinity in RN with OVFL and INEX2 (UM 6.1.4)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880400d00009c40000000000000f2000510 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x7fff8000000000000000
+fpsr = 0x02001248
+EOF
+RUN
+
+NAME=m68k aez FETOX overflow returns the largest finite number in RZ (UM 6.1.4)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880400d00009c40000000000000f2000510 @ 0
+s 0
+aezi
+aezv fpcr 0x10
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x10
+fpsr = 0x0
+fp2 = 0x7ffeffffffffffffffff
+fpsr = 0x00001248
+EOF
+RUN
+
+NAME=m68k aez FCOSH of -1 rounds to extended precision with INEX2
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c4880bfff00008000000000000000f2000519 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x3fffc583aa8ecfaa8261
+fpsr = 0x00000208
+EOF
+RUN
+
+NAME=m68k aez FSINCOS rounds both results to the FPCR single precision (PRM 5-121)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c48803fff00008000000000000000f2000533 @ 0
+s 0
+aezi
+aezv fpcr 0x40
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fp3
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x40
+fpsr = 0x0
+fp2 = 0x3ffed76aa40000000000
+fp3 = 0x3ffe8a51400000000000
+fpsr = 0x00000208
+EOF
+RUN
+
+NAME=m68k aez FSINCOS with FPc equal to FPs keeps the sine (PRM 5-121)
+FILE=malloc://128
+ARGS=-a m68k -b 32 -E big
+CMDS=<<EOF
+e asm.cpu=68020
+wx f23c48803fff00008000000000000000f2000532 @ 0
+s 0
+aezi
+aezv fpcr 0
+aezv fpsr 0
+aezs
+aezs
+ar fp2
+ar fpsr
+EOF
+EXPECT=<<EOF
+fpcr = 0x0
+fpsr = 0x0
+fp2 = 0x3ffed76aa47848677021
+fpsr = 0x00000208
 EOF
 RUN
