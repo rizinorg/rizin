@@ -97,4 +97,8 @@ typedef enum {
 RZ_IPI char *rz_icfg_node_str(const RzICFGNode *node);
 RZ_IPI bool rz_icfg_edge_crosses_symbol(const RzVector *proc_entries, ut64 from, ut64 to);
 
+static inline int uint_cmp(ut64 *a, ut64 *b, void *user) {
+	return (*a > *b) - (*a < *b);
+}
+
 #endif

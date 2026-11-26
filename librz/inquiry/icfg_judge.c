@@ -537,6 +537,7 @@ static void replace_membership(RzGraphNode *n, RzGraphVisitor *vis) {
 	}
 	rz_set_u_delete(node->proc_memberships.set, bundle->rm_m);
 	rz_set_u_add(node->proc_memberships.set, bundle->new_m);
+	node->memberships_n = rz_set_u_size(node->proc_memberships.set);
 }
 
 static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_node) {
@@ -631,7 +632,7 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 
 	while (rz_vector_len(&icfg->node_conflicts) > 0) {
 		ConflictNode cf_node = { 0 };
-		rz_vector_pop(&icfg->node_conflicts, &cf_node);
+		rz_vector_pop_front(&icfg->node_conflicts, &cf_node);
 		if (cf_node.reason == CONFLICT_REASON_INVALID) {
 			rz_warn_if_reached();
 			continue;
@@ -639,6 +640,12 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 
 		// TODO lookup table for icfg node.
 		const RzGraphNode *cf_graph_node = rz_graph_find_node(icfg->graph, cf_node.node_addr);
+		if (!cf_graph_node) {
+			// Doesn't happen in the tests. AI review suggests CALL edges to non existing
+			// blocks could end up here. Let's see with bigger binaries.
+			rz_warn_if_reached();
+			continue;
+		}
 		const RzICFGNode *cf_icfg_node = rz_graph_node_get_data(cf_graph_node);
 		// END
 		if (!node_needs_judgement(icfg, &cf_node, cf_icfg_node)) {
@@ -646,14 +653,22 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 			continue;
 		}
 
+		ut64 proc_addr = cf_icfg_node->addr;
 		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_icfg_node, cfg);
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP:
 			rz_graph_del_node_by_id(icfg->graph, cf_icfg_node->addr);
+			size_t idx = rz_vector_find_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL);
+			if (idx != SZT_MAX) {
+				rz_vector_remove_at(&icfg->proc_entries, idx, NULL);
+			}
 			break;
 		case CFG_CONFLICT_VERDICT_FCN_ENTRY: {
 			if (!convert_subgraph_to_procedure(icfg, cf_icfg_node)) {
 				rz_warn_if_reached();
+			}
+			if (rz_vector_find_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+				rz_vector_insert_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL);
 			}
 			break;
 		}

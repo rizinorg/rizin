@@ -193,10 +193,6 @@ static RZ_OWN RzICFGNode *icfg_node_new(ut64 addr, size_t size, RZ_NONNULL const
 	return node;
 }
 
-static int uint_cmp(ut64 *a, ut64 *b, void *user) {
-	return (*a > *b) - (*a < *b);
-}
-
 typedef struct {
 	RzPVector /*<RzIntervalNode *>*/ *itv_node;
 } CoveringNodes;
@@ -307,7 +303,8 @@ static int cf_node_cmp(const ConflictNode *a, const ConflictNode *b, void *user)
 
 static void add_conflict_node(RzVector /*<ConflictNode>*/ *node_conflicts, ut64 addr, enum conflict_reason reason) {
 	rz_return_if_fail(reason != CONFLICT_REASON_INVALID);
-	ConflictNode cf = { 0 };
+	// printf("Add conflict 0x%lx type: %d\n", addr, reason);
+	ConflictNode cf = { .node_addr = addr, .reason = reason };
 	size_t idx = rz_vector_find_sorted(node_conflicts, &cf, (RzVectorComparator)cf_node_cmp, NULL);
 	if (idx != SZT_MAX) {
 		ConflictNode *existing = rz_vector_index_ptr(node_conflicts, idx);
@@ -392,7 +389,7 @@ RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, u
 		// Only nodes are called but not yet a procedure entry point.
 		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CALL_IN);
 	}
-	if (rz_icfg_edge_crosses_symbol(&icfg->proc_entries, from, to)) {
+	if (type == RZ_ICFG_EDGE_TYPE_JUMP && rz_icfg_edge_crosses_symbol(&icfg->proc_entries, from, to)) {
 		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CROSSES_ENTRY);
 	}
 	return true;
