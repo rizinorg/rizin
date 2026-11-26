@@ -74,6 +74,7 @@ cs_files = [
 
 capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
+capstone_header_args = ['-DCAPSTONE_NO_DEPRECATION_WARNING']
 libcapstone_c_args = [
   '-DCAPSTONE_X86_ATT_DISABLE_NO',
   '-DCAPSTONE_X86_REDUCE_NO',
@@ -93,12 +94,13 @@ libcapstone_c_args = [
 ]
 
 libcapstone = library('capstone', cs_files,
-  c_args: libcapstone_c_args,
+  c_args: libcapstone_c_args + capstone_header_args,
   include_directories: capstone_includes,
   implicit_include_directories: false
 )
 
 capstone_dep = declare_dependency(
   link_with: libcapstone,
+  compile_args: capstone_header_args,
   include_directories: capstone_includes
 )
