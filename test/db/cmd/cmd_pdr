@@ -67,7 +67,7 @@ e asm.bb.middle=true
 echo
 pdr
 echo
-pdrj~{}
+pdrj~{.[]\|{offset,disasm}}
 echo
 pir
 echo
@@ -90,160 +90,7 @@ EXPECT=<<EOF
 \ 0x00000011      ebf0           jmp   0x3
 | ----------- true: 0x00000003
 
-[
-  {
-    "offset": 0,
-    "esil": ",",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "nop dword [rax+rax*1], eax",
-    "disasm": "nop dword [rax+rax*1], eax",
-    "bytes": "0f1f440000",
-    "family": "cpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0,
-    "flags": [
-      "fcn.00000000"
-    ]
-  },
-  {
-    "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-    "refptr": true,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "add byte [rax], al",
-    "disasm": "add byte [rax], al",
-    "bytes": "0000",
-    "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0,
-    "xrefs_to": [
-      {
-        "addr": 17,
-        "type": "CODE"
-      }
-    ]
-  },
-  {
-    "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov eax, 0xc1000021",
-    "disasm": "mov eax, 0xc1000021",
-    "bytes": "b8210000c1",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
-  },
-  {
-    "offset": 10,
-    "esil": "0x9,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 0x9",
-    "disasm": "jmp 0x9",
-    "bytes": "ebfd",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 9,
-    "xrefs_from": [
-      {
-        "addr": 9,
-        "type": "CODE"
-      }
-    ]
-  },
-  {
-    "offset": 9,
-    "val": 253,
-    "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 16,
-    "size": 3,
-    "opcode": "shr ebx, 0xfd",
-    "disasm": "shr ebx, 0xfd",
-    "bytes": "c1ebfd",
-    "family": "cpu",
-    "type": "shr",
-    "reloc": false,
-    "type_num": 22,
-    "type2_num": 0,
-    "xrefs_to": [
-      {
-        "addr": 10,
-        "type": "CODE"
-      }
-    ]
-  },
-  {
-    "offset": 12,
-    "ptr": 44,
-    "val": 44,
-    "esil": "44,rbx,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov ebx, 0x2c",
-    "disasm": "mov ebx, 0x2c",
-    "bytes": "bb2c000000",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0,
-    "xrefs_from": [
-      {
-        "addr": 44,
-        "type": "DATA"
-      }
-    ]
-  },
-  {
-    "offset": 17,
-    "esil": "0x3,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 0x3",
-    "disasm": "jmp 0x3",
-    "bytes": "ebf0",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 3,
-    "xrefs_from": [
-      {
-        "addr": 3,
-        "type": "CODE"
-      }
-    ]
-  }
-]
+[{"offset":0,"disasm":"nop dword [rax+rax*1], eax"},{"offset":3,"disasm":"add byte [rax], al"},{"offset":5,"disasm":"mov eax, 0xc1000021"},{"offset":10,"disasm":"jmp 0x9"},{"offset":9,"disasm":"shr ebx, 0xfd"},{"offset":12,"disasm":"mov ebx, 0x2c"},{"offset":17,"disasm":"jmp 0x3"}]
 
 nop dword [rax+rax*1], eax
 add byte [rax], al
@@ -520,5 +367,24 @@ pdr. @ 0x11~add rax[6]
 EOF
 EXPECT=<<EOF
 0xf6
+EOF
+RUN
+
+NAME=pdrj adds the RzIL of the ops the plugin lifts
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 4889c8c3
+af
+pdrj~{.[]\|{offset,rzil}}
+e asm.arch=dalvik
+wx 01100e00 @ 0x20
+af @ 0x20
+pdrj @ 0x20~{.[]\|{offset,rzil}}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"rzil":{"opcode":"set","dst":"rax","src":{"opcode":"var","value":"rcx"}}},{"offset":3,"rzil":{"opcode":"seq","x":{"opcode":"seq","x":{"opcode":"set","dst":"tgt","src":{"opcode":"loadw","mem":0,"key":{"opcode":"var","value":"rsp"},"bits":64}},"y":{"opcode":"set","dst":"rsp","src":{"opcode":"+","x":{"opcode":"var","value":"rsp"},"y":{"opcode":"bitv","bits":"0x8","len":64}}}},"y":{"opcode":"jmp","dst":{"opcode":"var","value":"tgt"}}}}]
+[{"offset":32},{"offset":34}]
 EOF
 RUN

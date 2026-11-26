@@ -196,6 +196,7 @@ RZ_IPI RZ_OWN char *rz_core_print_cons_disassembly(RzCore *core, ut64 addr, ut32
 RZ_IPI RZ_OWN char *rz_core_print_format(RzCore *core, const char *fmt, int mode, ut64 address);
 RZ_IPI RZ_OWN char *rz_core_print_format_write(RzCore *core, const char *fmt, const char *value, ut64 address);
 RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len);
+RZ_IPI int rz_core_print_disasm_json_il(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj);
 RZ_IPI void rz_core_calc_subrel_addr(RZ_NONNULL RzCore *core, RZ_NONNULL const RzAnalysisOp *op);
 
 /* cmd_seek.c */
