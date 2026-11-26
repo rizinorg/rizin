@@ -834,7 +834,7 @@ static bool intra_bb_valid_target(RzAnalysis *analysis, RzAnalysisFunction *fcn,
 		return false;
 	}
 	if (analysis->opt.jmpabove) {
-		if (!UT64_SUB_OVFCHK(jmp_addr, maxoff) && target < jmp_addr - maxoff) {
+		if (jmp_addr >= maxoff && target < jmp_addr - maxoff) {
 			return false;
 		}
 	} else if (target < fcn->addr) {
