@@ -157,7 +157,7 @@ if get_option('enable_tests')
     'yank',
   ]
 
-  if capstone_dep.type_name() == 'internal'
+  if not use_system_capstone
     tests += ['analysis_op', 'analysis_m68k']
   endif
 

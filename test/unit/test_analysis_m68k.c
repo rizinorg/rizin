@@ -681,6 +681,9 @@ static bool test_m68k_address_metadata(void) {
 	mu_end;
 }
 
+/* Without the extended and packed FP operand formats, FPU instructions
+ * are not lifted. */
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
 static bool m68k_fp_load_pair(RzCore *core, ut16 exp0, ut64 mant0, ut16 exp1, ut64 mant1) {
 	rz_return_val_if_fail(core, false);
 	ut8 data[24] = { 0 };
@@ -905,6 +908,8 @@ static bool test_m68k_fpu_nan_payload(void) {
 	mu_end;
 }
 
+#endif
+
 int all_tests(void) {
 	mu_run_test(test_m68k_hidden_fpu_destination);
 #ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
@@ -923,9 +928,11 @@ int all_tests(void) {
 	mu_run_test(test_m68k_coldfire_values);
 #endif
 	mu_run_test(test_m68k_address_metadata);
+#ifdef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
 	mu_run_test(test_m68k_fpu_single_data_register);
 	mu_run_test(test_m68k_fpu_binary_rounding);
 	mu_run_test(test_m68k_fpu_nan_payload);
+#endif
 	return tests_passed != tests_run;
 }
 

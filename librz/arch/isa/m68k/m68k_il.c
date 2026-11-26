@@ -990,7 +990,7 @@ static RzILOpEffect *frestore_bind_frame_size(cs_mode mode) {
 
 static RzILOpPure *fpu_default_nan_bits(void) {
 	/* UM 3.2.5: an FPCP-created NAN has every mantissa bit set. */
-	return APPEND(U16(0x7fff), U64(0xffffffffffffffffULL));
+	return fpu_const80_bits(0x7fff, 0xffffffffffffffffULL);
 }
 
 static RzILOpFloat *fpu_default_nan(void) {
@@ -7415,6 +7415,14 @@ RZ_IPI RzILOpEffect *rz_m68k_cs_get_il_op(csh handle, cs_mode mode, RZ_NONNULL c
 #ifdef RZ_CAPSTONE_HAS_M68K_CPU32
 	if (mode == CS_MODE_M68K_CPU32 && insn->size >= 2 && (insn->bytes[0] & 0xfe) == 0xf2) {
 		return m68k_label("m68k_illegal");
+	}
+#endif
+#ifndef RZ_CAPSTONE_HAS_M68K_FP_FORMATS
+	/* Capstone without the extended and packed FP operand formats decodes
+	 * some FPU operands with the wrong length or type. Leave coprocessor
+	 * ID 1 (FPU) instructions unlifted rather than lift them incorrectly. */
+	if (insn->size >= 2 && (insn->bytes[0] & 0xfe) == 0xf2) {
+		return NULL;
 	}
 #endif
 	ut16 extension;
