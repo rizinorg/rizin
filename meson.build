@@ -191,10 +191,11 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 subproject_clean_error_msg = 'Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.'
 
 # handle capstone dependency
-capstone_check_deps = []
-capstone_check_includes = []
 capstone_dep = dependency('capstone', version: '>=4.0.2', required: get_option('use_sys_capstone'), static: is_static_build)
-if not capstone_dep.found()
+use_system_capstone = capstone_dep.found()
+# Meson < 1.3 ignores a declared dependency's include directories in compiler checks.
+capstone_check_includes = []
+if not use_system_capstone
   capstone_version = get_option('use_capstone_version')
   if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false)
@@ -208,13 +209,20 @@ if not capstone_dep.found()
   capstone_dep = capstone_proj.get_variable('capstone_dep')
   capstone_check_includes = capstone_proj.get_variable('capstone_includes')
 else
-  capstone_check_deps = [capstone_dep]
+  if capstone_dep.version().version_compare('>=5') and capstone_dep.version().version_compare('<6')
+    capstone_dep = declare_dependency(
+      dependencies: [capstone_dep],
+      version: capstone_dep.version(),
+      compile_args: ['-DCAPSTONE_NO_DEPRECATION_WARNING'],
+    )
+  endif
   # Package managers CS version has no meta programming macros for AArch64 -> ARM64 renaming
   # (because it is outdated).
   # With this define we includeour copy of those macros.
   add_project_arguments(['-DUSE_SYS_CAPSTONE'], language: 'c')
 endif
 
+capstone_headers = capstone_dep.partial_dependency(includes: true, compile_args: true)
 has_capstone_m68k_cpu32 = cc.compiles('''
 #include <capstone/capstone.h>
 int main(void) {
@@ -222,7 +230,7 @@ int main(void) {
 	return mode == 0;
 }
 ''',
-  dependencies: capstone_check_deps,
+  dependencies: capstone_headers,
   include_directories: capstone_check_includes,
   name: 'Capstone has M68K CPU32 mode'
 )
@@ -237,7 +245,7 @@ int main(void) {
 	return mode == 0;
 }
 ''',
-  dependencies: capstone_check_deps,
+  dependencies: capstone_headers,
   include_directories: capstone_check_includes,
   name: 'Capstone has M68K ColdFire modes'
 )
@@ -257,7 +265,7 @@ int main(void) {
 	return extended.sign_exp + packed.header + extended_type + packed_type + packed_size;
 }
 ''',
-  dependencies: capstone_check_deps,
+  dependencies: capstone_headers,
   include_directories: capstone_check_includes,
   name: 'Capstone has M68K extended and packed FP operand formats'
 )
@@ -992,7 +1000,7 @@ summary({
   'System libmspack library': libmspack_dep.found() and libmspack_dep.type_name() != 'internal',
   'System openssl library': sys_openssl.found() and sys_openssl.type_name() != 'internal',
   'System openssl has SM3': userconf.get('HAVE_OPENSSL_SM3', 0) != 0,
-  'System capstone library': capstone_dep.found() and capstone_dep.type_name() != 'internal',
+  'System capstone library': use_system_capstone,
   'System zydis library': zydis_dep.found() and zydis_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.found() and tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.found() and lz4_dep.type_name() != 'internal',
