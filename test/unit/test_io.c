@@ -748,6 +748,12 @@ bool test_rz_io_boundaries(void) {
 	mu_end;
 }
 
+static int noop_io_printf(void *user, const char *fmt, ...) {
+	(void)user;
+	(void)fmt;
+	return 0;
+}
+
 bool test_rz_io_zip_write_resize(void) {
 	static const ut8 minimal_zip[] = {
 		0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa1, 0x40,
@@ -804,9 +810,45 @@ bool test_rz_io_zip_write_resize(void) {
 	free(new_uri);
 
 	char *list_uri = rz_str_newf("zip://%s", zip_path);
+	io->cb_printf = noop_io_printf;
 	mu_assert_null(rz_io_open_nomap(io, list_uri, RZ_PERM_R, 0), "listing uri returns NULL without leak");
 	io->cb_printf = NULL;
 	mu_assert_null(rz_io_open_nomap(io, list_uri, RZ_PERM_R, 0), "listing uri with NULL cb_printf succeeds cleanly");
+
+	// Duplicate new entry flush triggers zip_file_add() failure and zip_source_free() cleanup
+	char *dup_uri = rz_str_newf("zip://%s//dup.txt", zip_path);
+	RzIODesc *dup1 = rz_io_open_nomap(io, dup_uri, RZ_PERM_RW, 0);
+	RzIODesc *dup2 = rz_io_open_nomap(io, dup_uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(dup1, "open first dup zip entry");
+	mu_assert_notnull(dup2, "open second dup zip entry");
+	mu_assert_eq(rz_io_desc_write_at(dup1, 0, patch, sizeof(patch)), (int)sizeof(patch), "write first dup entry");
+	mu_assert_true(rz_io_desc_close(dup1), "close first dup entry");
+	mu_assert_eq(rz_io_desc_write_at(dup2, 0, patch, sizeof(patch)), (int)sizeof(patch), "write second dup entry hits add failure cleanly");
+	mu_assert_true(rz_io_desc_close(dup2), "close second dup entry");
+	free(dup_uri);
+
+	// ipa:// entry hits !strcmp(zip_filename, filename_in_zipfile) false branch
+	char *ipa_entry_uri = rz_str_newf("zip://%s//Payload/app.app/app", zip_path);
+	desc = rz_io_open_nomap(io, ipa_entry_uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(desc, "open ipa payload entry");
+	mu_assert_eq(rz_io_desc_write_at(desc, 0, patch, sizeof(patch)), (int)sizeof(patch), "write ipa payload entry");
+	mu_assert_true(rz_io_desc_close(desc), "close ipa payload entry");
+	free(ipa_entry_uri);
+	char *ipa_uri = rz_str_newf("ipa://%s", zip_path);
+	desc = rz_io_open_nomap(io, ipa_uri, RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "open ipa:// uri");
+	mu_assert_true(rz_io_desc_close(desc), "close ipa:// uri");
+	free(ipa_uri);
+
+	// Exhausted fd pool triggers rz_io_desc_new() failure and rz_io_zip_free_zipfileobj(zfo)
+	RzIO *io_full = rz_io_new();
+	mu_assert_notnull(io_full, "rz_io_new for exhausted zip pool");
+	ut32 saved_next_id = io_full->files->pool->next_id;
+	io_full->files->pool->next_id = io_full->files->pool->last_id;
+	mu_assert_null(rz_io_open_nomap(io_full, uri, RZ_PERM_R, 0), "zip open fails cleanly when fd pool is full");
+	io_full->files->pool->next_id = saved_next_id;
+	rz_io_free(io_full);
+
 	RzIODesc *bad_desc = rz_io_open_nomap(io, "zip:///nonexistent_rz_zip_dir/missing.zip//foo.txt", RZ_PERM_RW, 0);
 	if (bad_desc) {
 		ut8 one = 'X';
@@ -832,13 +874,19 @@ bool test_rz_io_self_and_procpid(void) {
 	}
 
 	RzIO *io = rz_io_new();
+	RzIODesc empty_desc = { 0 };
 	RzIODesc *desc = rz_io_open_nomap(io, "self://", RZ_PERM_R, 0);
 	if (desc) {
 		ut8 code_bytes[4] = { 0 };
-		(void)rz_io_desc_read_at(desc, (ut64)(size_t)&test_rz_io_self_and_procpid, code_bytes, sizeof(code_bytes));
+		io->off = 0;
+		mu_assert_eq(desc->plugin->read(io, desc, code_bytes, sizeof(code_bytes)), 0, "self:// read at unmapped address returns 0");
+		io->off = (ut64)(size_t)&test_rz_io_self_and_procpid;
+		mu_assert_eq(desc->plugin->read(io, desc, code_bytes, sizeof(code_bytes)), (int)sizeof(code_bytes), "self:// read at code address succeeds");
 		if (desc->plugin && desc->plugin->system) {
 			free(desc->plugin->system(io, desc, "maps"));
 		}
+		mu_assert_eq(desc->plugin->close(NULL), 0, "self:// close(NULL) is a safe no-op");
+		mu_assert_eq(desc->plugin->close(&empty_desc), 0, "self:// close(NULL data) is a safe no-op");
 		mu_assert_true(rz_io_desc_close(desc), "close self://");
 	}
 
@@ -846,9 +894,21 @@ bool test_rz_io_self_and_procpid(void) {
 	snprintf(uri, sizeof(uri), "procpid://%d", getpid());
 	desc = rz_io_open_nomap(io, uri, RZ_PERM_R, 0);
 	if (desc) {
+		mu_assert_eq(desc->plugin->close(NULL), 0, "procpid:// close(NULL) is a safe no-op");
+		mu_assert_eq(desc->plugin->close(&empty_desc), 0, "procpid:// close(NULL data) is a safe no-op");
 		mu_assert_true(rz_io_desc_close(desc), "close procpid://");
 	}
 	rz_io_free(io);
+
+	// Exhausted fd pool triggers rz_io_desc_new() failure cleanup in both self:// and procpid://
+	RzIO *io_full = rz_io_new();
+	mu_assert_notnull(io_full, "rz_io_new for exhausted self/procpid pool");
+	ut32 saved_next_id = io_full->files->pool->next_id;
+	io_full->files->pool->next_id = io_full->files->pool->last_id;
+	mu_assert_null(rz_io_open_nomap(io_full, "self://", RZ_PERM_R, 0), "self:// fails cleanly when fd pool is full");
+	mu_assert_null(rz_io_open_nomap(io_full, uri, RZ_PERM_R, 0), "procpid:// fails cleanly when fd pool is full");
+	io_full->files->pool->next_id = saved_next_id;
+	rz_io_free(io_full);
 
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(maps); i++) {
 		if (maps[i] != MAP_FAILED) {
