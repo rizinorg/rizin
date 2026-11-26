@@ -3,14 +3,12 @@
 
 #include "riscv_il_fd_common.h"
 
-static const RzFloatFormat rz_riscv_il_fd_f32 = RZ_FLOAT_IEEE754_BIN_32;
-
 // F-extension entry points specialize the common core with the binary32 format.
 
 #define DEFINE_FD_PASSTHROUGH(wrapper, called) \
 	RzILOpEffect *wrapper(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, \
 		RZ_NONNULL RzAnalysisOp *op, RZ_NONNULL cs_insn *insn, ut64 current_addr, size_t size) { \
-		return called(rz_riscv_il_fd_f32, analysis, op, insn, current_addr, size); \
+		return called(RZ_FLOAT_IEEE754_BIN_32, analysis, op, insn, current_addr, size); \
 	}
 
 DEFINE_FD_PASSTHROUGH(rz_riscv_lift_flw, riscv_il_fd_lift_load)

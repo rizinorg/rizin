@@ -11,6 +11,7 @@
 #include "riscv_il_compressed.h"
 #include "riscv_il_fd_compressed.h"
 #include "riscv_il_priv.h"
+#include "riscv_il_float_reg_names.h"
 #include <rz_util/rz_assert.h>
 #include <rz_util/rz_log.h>
 
@@ -352,11 +353,39 @@ rz_riscv_lift_instr(RZ_BORROW RZ_NONNULL RzAnalysis *analysis, RZ_NONNULL RzAnal
 	return lifter(analysis, op, insn, current_addr, size);
 }
 
+/**
+ * NULL-terminated list of every register bound as an IL global:
+ * integer registers without x0 (hardwired zero, not in the profile),
+ * then the FP registers, then fcsr.
+ */
+static const char *riscv_bound_regs[(RZ_ARRAY_SIZE(riscv_integer_reg_names) - 2) // minus "zero" and NULL
+	+ RZ_ARRAY_SIZE(riscv_freg_names)
+	+ 1 // fcsr
+	+ 1]; // NULL
+
+static const char **riscv_reg_bindings(void) {
+	const size_t fcsr_idx = RZ_ARRAY_SIZE(riscv_bound_regs) - 2;
+	// fcsr is written last, so once it's there the whole list is filled
+	if (riscv_bound_regs[fcsr_idx]) {
+		return riscv_bound_regs;
+	}
+	size_t n = 0;
+	for (size_t i = 1; riscv_integer_reg_names[i]; i++) {
+		riscv_bound_regs[n++] = riscv_integer_reg_names[i];
+	}
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(riscv_freg_names); i++) {
+		riscv_bound_regs[n++] = riscv_freg_names[i];
+	}
+	rz_warn_if_fail(n == fcsr_idx);
+	riscv_bound_regs[fcsr_idx] = "fcsr";
+	return riscv_bound_regs;
+}
+
 RZ_IPI RzAnalysisILConfig *rz_riscv_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *conf = rz_analysis_il_config_new(rz_analysis_get_bits(analysis), rz_analysis_is_big_endian_set(analysis), rz_analysis_get_bits(analysis));
-	conf->reg_bindings = &riscv_integer_reg_names[1];
+	conf->reg_bindings = riscv_reg_bindings();
 
 	RzILEffectLabel *ecall_label = rz_il_effect_label_new("ecall", EFFECT_LABEL_SYSCALL);
 	ecall_label->hook = label_ecall;
