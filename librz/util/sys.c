@@ -2073,6 +2073,8 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 		if (perm & O_CREAT) {
 			if (perm & O_EXCL) {
 				creation = CREATE_NEW;
+			} else if (perm & O_TRUNC) {
+				creation = CREATE_ALWAYS;
 			} else {
 				creation = OPEN_ALWAYS;
 			}

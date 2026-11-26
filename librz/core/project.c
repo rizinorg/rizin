@@ -61,7 +61,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool co
 	err = rz_project_save(core, prj, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free(prj);
-		return err;
+		goto tmp_file_err;
 	}
 	if (!sdb_text_save(prj, save_file, true)) {
 		err = RZ_PROJECT_ERR_FILE;
@@ -80,40 +80,40 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file, bool co
 	rz_config_set(core->config, "prj.file", file);
 
 tmp_file_err:
-	rz_file_rm(tmp_file);
-	free(tmp_file);
+	if (tmp_file) {
+		rz_file_rm(tmp_file);
+		free(tmp_file);
+	}
 	return err;
 }
 
 /// Load a file into an RzProject but don't actually migrate anything or load it into an RzCore
 RZ_API RzProject *rz_project_load_file_raw(const char *file) {
+	if (!rz_file_exists(file)) {
+		return NULL;
+	}
 	RzProject *prj = sdb_new0();
 	if (!prj) {
 		return NULL;
 	}
 
-	char *tmp_file;
-	int mkstemp_fd = rz_file_mkstemp("ldprj", &tmp_file);
-	close(mkstemp_fd);
+	char *tmp_file = NULL;
+	const char *load_file = file;
 
-	if (mkstemp_fd == -1 || !tmp_file) {
-		free(tmp_file);
-		return NULL;
-	}
-
-	const char *load_file = tmp_file;
-
-	if (!rz_file_exists(file)) {
-		prj = NULL;
-		goto return_goto;
-	}
 	if (rz_file_is_deflated(file)) {
+		int mkstemp_fd = rz_file_mkstemp("ldprj", &tmp_file);
+		if (mkstemp_fd == -1 || !tmp_file) {
+			sdb_free(prj);
+			free(tmp_file);
+			return NULL;
+		}
+		close(mkstemp_fd);
 		if (!rz_file_inflate(file, tmp_file)) {
+			sdb_free(prj);
 			prj = NULL;
 			goto return_goto;
 		}
-	} else {
-		load_file = file;
+		load_file = tmp_file;
 	}
 
 	if (!sdb_text_load(prj, load_file)) {
@@ -122,8 +122,10 @@ RZ_API RzProject *rz_project_load_file_raw(const char *file) {
 	}
 
 return_goto:
-	rz_file_rm(tmp_file);
-	free(tmp_file);
+	if (tmp_file) {
+		rz_file_rm(tmp_file);
+		free(tmp_file);
+	}
 	return prj;
 }
 

@@ -1440,7 +1440,7 @@ RZ_API bool rz_file_deflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 	bool ret = false;
 
 	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
-	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 	if (!(src_buf && dst_buf)) {
 		goto return_goto;
@@ -1472,7 +1472,7 @@ RZ_API bool rz_file_inflate(RZ_NONNULL const char *src, RZ_NONNULL const char *d
 	bool ret = false;
 
 	RzBuffer *src_buf = rz_buf_new_file(src, O_RDONLY, 0);
-	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT, 0644);
+	RzBuffer *dst_buf = rz_buf_new_file(dst, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
 	if (!(src_buf && dst_buf)) {
 		goto return_goto;

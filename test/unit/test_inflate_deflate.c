@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Dhruv Maroo <dhruvmaru007@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_project.h>
 #include <rz_util.h>
 #include "minunit.h"
 
@@ -80,11 +81,101 @@ bool test_rz_deflate_buf(void) {
 	mu_end;
 }
 
+bool test_rz_file_deflate_inflate_truncates_dst(void) {
+	char *src = rz_file_temp("rz_src");
+	char *gz = rz_file_temp("rz_gz");
+	char *out = rz_file_temp("rz_out");
+	mu_assert_notnull(src, "src temp path");
+	mu_assert_notnull(gz, "gz temp path");
+	mu_assert_notnull(out, "out temp path");
+
+	const char *payload = test_cases[2].inflated;
+	const size_t payload_len = strlen(payload);
+	ut8 padding[4096];
+	memset(padding, 'Z', sizeof(padding));
+
+	mu_assert_true(rz_file_dump(src, (const ut8 *)payload, (int)payload_len, false), "dump src");
+	mu_assert_true(rz_file_dump(gz, padding, (int)sizeof(padding), false), "seed larger gz dst");
+	mu_assert_true(rz_file_deflate(src, gz), "rz_file_deflate overwrite");
+	mu_assert_true(rz_file_is_deflated(gz), "dst has gzip header");
+	mu_assert_eq(rz_file_size(gz), (st64)test_cases[2].deflated_length, "deflate truncated dst");
+
+	mu_assert_true(rz_file_dump(out, padding, (int)sizeof(padding), false), "seed larger out dst");
+	mu_assert_true(rz_file_inflate(gz, out), "rz_file_inflate overwrite");
+	mu_assert_eq(rz_file_size(out), (st64)payload_len, "inflate truncated dst");
+
+	size_t out_len = 0;
+	char *roundtrip = rz_file_slurp(out, &out_len);
+	mu_assert_notnull(roundtrip, "slurp inflated output");
+	mu_assert_eq(out_len, payload_len, "inflated byte length");
+	mu_assert_memeq((const ut8 *)roundtrip, (const ut8 *)payload, payload_len, "inflated content");
+
+	free(roundtrip);
+	rz_file_rm(src);
+	rz_file_rm(gz);
+	rz_file_rm(out);
+	free(src);
+	free(gz);
+	free(out);
+	mu_end;
+}
+
+bool test_rz_project_load_and_compressed_overwrite(void) {
+	char *missing = rz_file_temp("rz_missing");
+	mu_assert_notnull(missing, "missing temp path");
+	rz_file_rm(missing);
+	mu_assert_null(rz_project_load_file_raw(missing), "missing project returns NULL");
+	free(missing);
+
+	char *bad_gz = rz_file_temp("rz_badgz");
+	mu_assert_notnull(bad_gz, "bad_gz temp path");
+	const ut8 corrupt_gzip[] = { 0x1f, 0x8b, 0x08, 0xff, 0xff, 0xff, 0xff };
+	mu_assert_true(rz_file_dump(bad_gz, corrupt_gzip, (int)sizeof(corrupt_gzip), false), "dump bad gz");
+	mu_assert_null(rz_project_load_file_raw(bad_gz), "corrupt compressed project returns NULL");
+	rz_file_rm(bad_gz);
+	free(bad_gz);
+
+	char *prj_path = rz_file_temp("rz_prj");
+	mu_assert_notnull(prj_path, "prj temp path");
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core new");
+	mu_assert_eq(rz_project_save_file(core, prj_path, false), RZ_PROJECT_ERR_SUCCESS, "save uncompressed");
+	st64 plain_sz = rz_file_size(prj_path);
+	mu_assert_true(plain_sz > 0, "uncompressed project non-empty");
+	RzProject *plain_loaded = rz_project_load_file_raw(prj_path);
+	mu_assert_notnull(plain_loaded, "reload uncompressed project");
+	rz_project_free(plain_loaded);
+
+	mu_assert_eq(rz_project_save_file(core, prj_path, true), RZ_PROJECT_ERR_SUCCESS, "overwrite compressed");
+	mu_assert_true(rz_file_is_deflated(prj_path), "overwritten project is gzip");
+	st64 gz_sz = rz_file_size(prj_path);
+	mu_assert_true(gz_sz > 0 && gz_sz < plain_sz, "compressed project truncated smaller than plaintext");
+
+#if !__WINDOWS__
+	char *old_tmpdir = rz_sys_getenv("TMPDIR");
+	rz_sys_setenv("TMPDIR", "/nonexistent_rz_project_tmpdir_test");
+	mu_assert_null(rz_project_load_file_raw(prj_path), "compressed load fails when tmpdir is invalid");
+	rz_sys_setenv("TMPDIR", old_tmpdir);
+	free(old_tmpdir);
+#endif
+
+	RzProject *loaded = rz_project_load_file_raw(prj_path);
+	mu_assert_notnull(loaded, "reload compressed project");
+	rz_project_free(loaded);
+
+	rz_core_free(core);
+	rz_file_rm(prj_path);
+	free(prj_path);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_inflate);
 	mu_run_test(test_rz_deflate);
 	mu_run_test(test_rz_inflate_buf);
 	mu_run_test(test_rz_deflate_buf);
+	mu_run_test(test_rz_file_deflate_inflate_truncates_dst);
+	mu_run_test(test_rz_project_load_and_compressed_overwrite);
 
 	return tests_passed != tests_run;
 }
