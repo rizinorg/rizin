@@ -8,35 +8,38 @@
 #define VTABLE_BUFF_SIZE  10
 #define VTABLE_CHUNK_SIZE 65536
 
+static bool vtable_read_addr_8(RzAnalysis *analysis, ut64 addr, ut64 *buf) {
+	ut8 tmp[1];
+	if (!analysis->iob.read_at(analysis->iob.io, addr, tmp, 1)) {
+		return false;
+	}
+	*buf = rz_read_ble8(tmp);
+	return true;
+}
+
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
 	static bool fname(RzAnalysis *analysis, ut64 addr, ut64 *buf) { \
 		ut8 tmp[sz]; \
 		if (!analysis->iob.read_at(analysis->iob.io, addr, tmp, sz)) { \
 			return false; \
 		} \
-		*buf = read_fname(tmp); \
+		*buf = read_fname(tmp, analysis->big_endian); \
 		return true; \
 	}
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_le8, rz_read_le8, 1)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_le16, rz_read_le16, 2)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_le32, rz_read_le32, 4)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_le64, rz_read_le64, 8)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_be8, rz_read_be8, 1)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_be16, rz_read_be16, 2)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_be32, rz_read_be32, 4)
-VTABLE_READ_ADDR_FUNC(vtable_read_addr_be64, rz_read_be64, 8)
+VTABLE_READ_ADDR_FUNC(vtable_read_addr_16, rz_read_ble16, 2)
+VTABLE_READ_ADDR_FUNC(vtable_read_addr_32, rz_read_ble32, 4)
+VTABLE_READ_ADDR_FUNC(vtable_read_addr_64, rz_read_ble64, 8)
 
 static bool vtable_has_default_read_addr(const RVTableContext *context) {
-	const bool be = context->analysis->big_endian;
 	switch (context->word_size) {
 	case 1:
-		return context->read_addr == (be ? vtable_read_addr_be8 : vtable_read_addr_le8);
+		return context->read_addr == vtable_read_addr_8;
 	case 2:
-		return context->read_addr == (be ? vtable_read_addr_be16 : vtable_read_addr_le16);
+		return context->read_addr == vtable_read_addr_16;
 	case 4:
-		return context->read_addr == (be ? vtable_read_addr_be32 : vtable_read_addr_le32);
+		return context->read_addr == vtable_read_addr_32;
 	case 8:
-		return context->read_addr == (be ? vtable_read_addr_be64 : vtable_read_addr_le64);
+		return context->read_addr == vtable_read_addr_64;
 	default:
 		return false;
 	}
@@ -50,21 +53,19 @@ typedef struct vtable_section_interval_t {
 } VTableSectionInterval;
 
 typedef struct vtable_section_cache_t {
-	VTableSectionInterval *intervals;
-	size_t count;
+	RzVector /*<VTableSectionInterval>*/ intervals;
 	ut64 min_text;
 	ut64 max_text;
 	bool has_text;
 	bool overlaps;
 } VTableSectionCache;
 
-static int vtable_section_interval_cmp(const void *a, const void *b) {
+static int vtable_section_interval_cmp(const void *a, const void *b, void *user) {
+	(void)user;
 	const VTableSectionInterval *ia = a;
 	const VTableSectionInterval *ib = b;
-	if (ia->from != ib->from) {
-		return ia->from < ib->from ? -1 : 1;
-	}
-	return RZ_NUM_CMP(ia->to, ib->to);
+	int cmp = RZ_NUM_CMP(ia->from, ib->from);
+	return cmp ? cmp : RZ_NUM_CMP(ia->to, ib->to);
 }
 
 RZ_API void rz_analysis_vtable_info_free(RVTableInfo *vtable) {
@@ -89,16 +90,16 @@ RZ_API bool rz_analysis_vtable_begin(RzAnalysis *analysis, RVTableContext *conte
 	}
 	switch (context->word_size) {
 	case 1:
-		context->read_addr = analysis->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
+		context->read_addr = vtable_read_addr_8;
 		break;
 	case 2:
-		context->read_addr = analysis->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
+		context->read_addr = vtable_read_addr_16;
 		break;
 	case 4:
-		context->read_addr = analysis->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
+		context->read_addr = vtable_read_addr_32;
 		break;
 	case 8:
-		context->read_addr = analysis->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
+		context->read_addr = vtable_read_addr_64;
 		break;
 	default:
 		return false;
@@ -202,18 +203,18 @@ static void vtable_section_cache_init(
 	VTableSectionCache *cache,
 	RzBinObject *obj,
 	const RzPVector /*<RzBinSection *>*/ *sections) {
+	rz_return_if_fail(cache);
 	memset(cache, 0, sizeof(*cache));
+	rz_vector_init(&cache->intervals, sizeof(VTableSectionInterval), NULL, NULL);
 	cache->min_text = UT64_MAX;
-	if (rz_pvector_empty(sections)) {
+	rz_return_if_fail(sections);
+	size_t cap = rz_pvector_len(sections);
+	if (!cap) {
 		return;
 	}
-	size_t cap = rz_pvector_len(sections);
-	cache->intervals = RZ_NEWS(VTableSectionInterval, cap);
-	if (!cache->intervals) {
+	if (!rz_vector_reserve(&cache->intervals, cap)) {
 		cache->overlaps = true;
 		cache->has_text = true;
-		cache->min_text = 0;
-		cache->max_text = UT64_MAX;
 		return;
 	}
 	void **iter;
@@ -222,17 +223,13 @@ static void vtable_section_cache_init(
 		if (!sec || sec->is_segment || !sec->vsize) {
 			continue;
 		}
-		bool is_text = sec->name && strstr(sec->name, "text") && (sec->perm & 1) != 0;
+		bool is_text = sec->name && strstr(sec->name, "text") && (sec->perm & RZ_PERM_X) != 0;
 		ut64 from = rz_bin_object_addr_with_base(obj, sec->vaddr);
 		ut64 to = from + sec->vsize;
 		if (to < from) {
 			cache->overlaps = true;
 			if (is_text) {
 				cache->has_text = true;
-				if (from < cache->min_text) {
-					cache->min_text = from;
-				}
-				cache->max_text = UT64_MAX;
 			}
 			continue;
 		}
@@ -246,18 +243,25 @@ static void vtable_section_cache_init(
 				cache->max_text = to;
 			}
 		}
-		cache->intervals[cache->count++] = (VTableSectionInterval){
+		VTableSectionInterval interval = {
 			.from = from,
 			.to = to,
 			.is_text = is_text,
 			.is_rtti = is_rtti,
 		};
+		if (!rz_vector_push(&cache->intervals, &interval)) {
+			cache->overlaps = true;
+			cache->has_text = true;
+			return;
+		}
 	}
-	if (cache->count > 1) {
-		qsort(cache->intervals, cache->count,
-			sizeof(*cache->intervals), vtable_section_interval_cmp);
-		for (size_t i = 1; i < cache->count; i++) {
-			if (cache->intervals[i].from < cache->intervals[i - 1].to) {
+	size_t count = rz_vector_len(&cache->intervals);
+	if (count > 1) {
+		rz_vector_sort(&cache->intervals, vtable_section_interval_cmp, false, NULL);
+		for (size_t i = 1; i < count; i++) {
+			const VTableSectionInterval *prev = rz_vector_index_ptr(&cache->intervals, i - 1);
+			const VTableSectionInterval *curr = rz_vector_index_ptr(&cache->intervals, i);
+			if (curr->from < prev->to) {
 				cache->overlaps = true;
 				break;
 			}
@@ -266,9 +270,7 @@ static void vtable_section_cache_init(
 }
 
 static void vtable_section_cache_fini(VTableSectionCache *cache) {
-	free(cache->intervals);
-	cache->intervals = NULL;
-	cache->count = 0;
+	rz_vector_fini(&cache->intervals);
 }
 
 /**
@@ -280,10 +282,12 @@ static void vtable_section_cache_fini(VTableSectionCache *cache) {
  */
 static const VTableSectionInterval *vtable_section_cache_find(
 	const VTableSectionCache *cache, ut64 addr) {
-	size_t lo = 0, hi = cache->count;
+	rz_return_val_if_fail(cache, NULL);
+	size_t lo = 0, hi = rz_vector_len(&cache->intervals);
 	while (lo < hi) {
 		size_t mid = lo + (hi - lo) / 2;
-		if (cache->intervals[mid].from <= addr) {
+		const VTableSectionInterval *iv = rz_vector_index_ptr(&cache->intervals, mid);
+		if (iv->from <= addr) {
 			lo = mid + 1;
 		} else {
 			hi = mid;
@@ -292,11 +296,11 @@ static const VTableSectionInterval *vtable_section_cache_find(
 	if (!lo) {
 		return NULL;
 	}
-	const VTableSectionInterval *iv = &cache->intervals[lo - 1];
+	const VTableSectionInterval *iv = rz_vector_index_ptr(&cache->intervals, lo - 1);
 	return addr < iv->to ? iv : NULL;
 }
 
-static inline bool vtable_cache_addr_in_text(
+static bool vtable_cache_addr_in_text(
 	RZ_NULLABLE const VTableSectionCache *cache, RVTableContext *context, ut64 addr) {
 	if (!cache || cache->overlaps) {
 		return vtable_addr_in_text_section(context, addr);
@@ -308,7 +312,7 @@ static inline bool vtable_cache_addr_in_text(
 	return iv && iv->is_text;
 }
 
-static inline bool vtable_cache_addr_in_rtti(
+static bool vtable_cache_addr_in_rtti(
 	const VTableSectionCache *cache, RVTableContext *context, ut64 addr) {
 	if (!addr) {
 		return true;
@@ -358,14 +362,14 @@ static bool vtable_is_addr_vtable_start_itanium_cached(
 	if (!vtable_cache_addr_in_rtti(cache, context, rtti_val)) {
 		return false;
 	}
-	ut64 off_to_top;
+	ut64 offset_to_top;
 	if (chunk_valid && (curAddress - chunk_base) >= 2 * (ut64)ws) {
 		size_t top_off = (size_t)(curAddress - chunk_base - 2 * (ut64)ws);
-		off_to_top = rz_read_ble(chunk + top_off, be, ws * 8);
-	} else if (!context->read_addr(context->analysis, curAddress - 2 * (ut64)ws, &off_to_top)) {
+		offset_to_top = rz_read_ble(chunk + top_off, be, ws * 8);
+	} else if (!context->read_addr(context->analysis, curAddress - 2 * (ut64)ws, &offset_to_top)) {
 		return false;
 	}
-	if ((st32)off_to_top > 0) {
+	if ((st32)offset_to_top > 0) {
 		return false;
 	}
 	return true;
