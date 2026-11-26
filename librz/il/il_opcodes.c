@@ -662,6 +662,8 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seq(RZ_NONNULL RzILOpEffect *x, RZ_NONN
  *
  * \param n number of total opcodes given
  * \param ... \p num RzILOpEffect * ops to be executed in sequence
+ * \return the sequence, or NULL if an allocation fails. The sequence owns
+ *         all \p n ops, and they are freed when NULL is returned.
  */
 RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
 	if (!n) {
@@ -685,6 +687,14 @@ RZ_API RZ_OWN RzILOpEffect *rz_il_op_new_seqn(ut32 n, ...) {
 		}
 		RzILOpEffect *seq = RZ_NEW0(RzILOpEffect);
 		if (!seq) {
+			// Free the ops chained so far, this one and the ones not read yet,
+			// instead of returning a partial tree.
+			rz_il_op_effect_free(root);
+			rz_il_op_effect_free(cur_op);
+			for (ut32 j = i + 1; j < n; ++j) {
+				rz_il_op_effect_free(va_arg(args, RzILOpEffect *));
+			}
+			root = NULL;
 			break;
 		}
 		seq->code = RZ_IL_OP_SEQ;
