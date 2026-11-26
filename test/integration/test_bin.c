@@ -353,8 +353,8 @@ bool test_rz_bin_p2v2p(void) {
 
 bool test_rz_bin_wasm_custom_names(void) {
 	// clang-format off
-	// Minimal WebAssembly binary with 1 empty function and a "name" custom section
-	// containing Module (0), Function (1), and Local (2) subsections.
+	// Minimal WebAssembly binary with 1 exported empty function and a "name" custom section
+	// containing Module (0), Function (1), Local (2), and unknown (3) subsections.
 	static const ut8 wasm_valid[] = {
 		// Magic + version
 		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
@@ -362,10 +362,12 @@ bool test_rz_bin_wasm_custom_names(void) {
 		0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
 		// Function section: 1 func referencing type 0
 		0x03, 0x02, 0x01, 0x00,
+		// Export section: 1 export "main" -> func 0
+		0x07, 0x08, 0x01, 0x04, 'm', 'a', 'i', 'n', 0x00, 0x00,
 		// Code section: 1 body (size=2, 0 locals, end=0x0b)
 		0x0a, 0x04, 0x01, 0x02, 0x00, 0x0b,
-		// Custom "name" section (section size = 30 = 5 + 6 + 8 + 11)
-		0x00, 0x1e,
+		// Custom "name" section (section size = 32 = 5 + 6 + 8 + 11 + 2)
+		0x00, 0x20,
 		0x04, 'n', 'a', 'm', 'e',
 		// Subsection 0 (Module): size=4, name="mod"
 		0x00, 0x04, 0x03, 'm', 'o', 'd',
@@ -373,6 +375,8 @@ bool test_rz_bin_wasm_custom_names(void) {
 		0x01, 0x06, 0x01, 0x00, 0x03, 'f', 'n', '0',
 		// Subsection 2 (Local): size=9, count=1, func_idx=0, names_count=1, idx=0, name="loc0"
 		0x02, 0x09, 0x01, 0x00, 0x01, 0x00, 0x04, 'l', 'o', 'c', '0',
+		// Subsection 3 (unknown type): size=0
+		0x03, 0x00,
 	};
 	// Truncated "name" custom section: valid Module (0) followed by truncated Local (2)
 	// to exercise error-path cleanup in parse_custom_name_entry().
@@ -382,6 +386,27 @@ bool test_rz_bin_wasm_custom_names(void) {
 		0x04, 'n', 'a', 'm', 'e',
 		0x00, 0x04, 0x03, 'm', 'o', 'd',
 		0x02, 0x04, 0x01, 0x00, 0x01, 0x00,
+	};
+	// Truncated before subsection size for Function (1): exercises bin_wasm_custom_name_free() with func == NULL.
+	static const ut8 wasm_trunc_func_size[] = {
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		0x00, 0x07,
+		0x04, 'n', 'a', 'm', 'e',
+		0x81, 0x00,
+	};
+	// Truncated before subsection size for Local (2): exercises bin_wasm_custom_name_free() with local == NULL.
+	static const ut8 wasm_trunc_local_size[] = {
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		0x00, 0x07,
+		0x04, 'n', 'a', 'm', 'e',
+		0x82, 0x00,
+	};
+	// Truncated Local (2) before local_name->index: exercises bin_wasm_custom_name_local_free() with names == NULL.
+	static const ut8 wasm_trunc_local_idx[] = {
+		0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+		0x00, 0x08,
+		0x04, 'n', 'a', 'm', 'e',
+		0x02, 0x01, 0x01,
 	};
 	// clang-format on
 
@@ -404,17 +429,30 @@ bool test_rz_bin_wasm_custom_names(void) {
 	mu_assert_eq(rz_pvector_len(syms), 1, "one wasm function symbol");
 	RzBinSymbol *sym = rz_pvector_at(syms, 0);
 	mu_assert_streq(sym->name, "fn0", "function name resolved from custom name section");
+	mu_assert_streq(sym->bind, RZ_BIN_BIND_GLOBAL_STR, "exported function is global");
 
 	rz_bin_file_delete(bin, bf);
 	rz_buf_free(buf);
 
-	RzBuffer *trunc_buf = rz_buf_new_with_bytes(wasm_truncated, sizeof(wasm_truncated));
-	mu_assert_notnull(trunc_buf, "wasm truncated buffer");
-	opt.filename = "synthetic_truncated.wasm";
-	RzBinFile *trunc_bf = rz_bin_open_buf(bin, trunc_buf, &opt);
-	mu_assert_notnull(trunc_bf, "open truncated wasm without crash or leak");
-	rz_bin_file_delete(bin, trunc_bf);
-	rz_buf_free(trunc_buf);
+	struct {
+		const ut8 *data;
+		size_t size;
+		const char *name;
+	} trunc_cases[] = {
+		{ wasm_truncated, sizeof(wasm_truncated), "synthetic_truncated.wasm" },
+		{ wasm_trunc_func_size, sizeof(wasm_trunc_func_size), "synthetic_trunc_func_size.wasm" },
+		{ wasm_trunc_local_size, sizeof(wasm_trunc_local_size), "synthetic_trunc_local_size.wasm" },
+		{ wasm_trunc_local_idx, sizeof(wasm_trunc_local_idx), "synthetic_trunc_local_idx.wasm" },
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(trunc_cases); i++) {
+		RzBuffer *trunc_buf = rz_buf_new_with_bytes(trunc_cases[i].data, trunc_cases[i].size);
+		mu_assert_notnull(trunc_buf, "wasm truncated buffer");
+		opt.filename = trunc_cases[i].name;
+		RzBinFile *trunc_bf = rz_bin_open_buf(bin, trunc_buf, &opt);
+		mu_assert_notnull(trunc_bf, "open truncated wasm without crash or leak");
+		rz_bin_file_delete(bin, trunc_bf);
+		rz_buf_free(trunc_buf);
+	}
 
 	rz_bin_free(bin);
 	rz_io_free(io);
