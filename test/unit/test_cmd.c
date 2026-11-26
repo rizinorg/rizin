@@ -1879,6 +1879,205 @@ bool test_cmd_arg_choices_cb_and_group_hint(void) {
 	mu_end;
 }
 
+bool test_cmd_arg_choices_edge_cases(void) {
+	const char *mode_choices[] = { "a", "b", NULL };
+	const char *tail_choices[] = { "x", "y", NULL };
+
+	// Fake + non-choice + array choice arguments
+	RzCmdDescArg mixed_args[] = {
+		{ .name = "sep", .type = RZ_CMD_ARG_TYPE_FAKE },
+		{ .name = "prefix", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ .name = "modes",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.flags = RZ_CMD_ARG_FLAG_ARRAY,
+			.choices.choices = mode_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp mixed_help = {
+		.summary = "mixed args",
+		.args = mixed_args,
+		.args_str = " <custom_args>",
+	};
+
+	// Trailing argument after ARRAY triggers break in both has_arg_choices and fill_arg_choices
+	RzCmdDescArg after_arr_args[] = {
+		{ .name = "items",
+			.type = RZ_CMD_ARG_TYPE_STRING,
+			.flags = RZ_CMD_ARG_FLAG_ARRAY },
+		{ .name = "ignored",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = tail_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp after_arr_help = {
+		.summary = "after array",
+		.args = after_arr_args,
+	};
+
+	// Unnamed detail section with non-NULL empty entries array before real unnamed section
+	RzCmdDescDetailEntry empty_entries[] = {
+		{ 0 },
+	};
+	RzCmdDescDetailEntry real_entries[] = {
+		{ .text = "u", .arg_str = " 1", .comment = "row" },
+		{ 0 },
+	};
+	RzCmdDescDetail empty_arr_then_unnamed[] = {
+		{ .name = "", .entries = empty_entries },
+		{ .name = "", .entries = real_entries },
+		{ 0 },
+	};
+	RzCmdDescArg simple_choice_args[] = {
+		{ .name = "mode",
+			.type = RZ_CMD_ARG_TYPE_CHOICES,
+			.choices.choices = mode_choices },
+		{ 0 },
+	};
+	RzCmdDescHelp empty_arr_help = {
+		.summary = "empty arr details",
+		.args = simple_choice_args,
+		.details = empty_arr_then_unnamed,
+	};
+
+	// Group with own details and exec_cd with choices, plus group without exec_cd
+	RzCmdDescDetailEntry grp_entries[] = {
+		{ .text = "g", .comment = "group note" },
+		{ 0 },
+	};
+	RzCmdDescDetail grp_details[] = {
+		{ .name = "Notes", .entries = grp_entries },
+		{ 0 },
+	};
+	RzCmdDescHelp grp_with_details_help = {
+		.summary = "grp with details",
+		.details = grp_details,
+	};
+	RzCmdDescHelp grp_exec_help = {
+		.summary = "grp exec",
+		.args = simple_choice_args,
+	};
+	RzCmdDescHelp grp_no_exec_help = {
+		.summary = "grp no exec",
+	};
+	RzCmdDescHelp grp_exec_details_only_help = {
+		.summary = "grp exec details",
+		.args = fake_args,
+		.details = grp_details,
+	};
+	RzCmdDescHelp grp_plain_help = {
+		.summary = "grp plain",
+	};
+
+	RzCore *core = RZ_NEW0(RzCore);
+	core->cons = rz_cons_new();
+	RzCmd *cmd = rz_cmd_new(core, true);
+	RzCmdDesc *root = rz_cmd_get_root(cmd);
+	rz_cmd_desc_argv_new(cmd, root, "mx", NULL, &mixed_help);
+	rz_cmd_desc_argv_new(cmd, root, "aa", NULL, &after_arr_help);
+	rz_cmd_desc_argv_new(cmd, root, "ea", NULL, &empty_arr_help);
+	RzCmdDesc *gd = rz_cmd_desc_group_new(cmd, root, "gd", p_handler_argv,
+		&grp_exec_help, &grp_with_details_help);
+	rz_cmd_desc_argv_new(cmd, gd, "gd1", NULL, &fake_help);
+	RzCmdDesc *gn = rz_cmd_desc_group_new(cmd, root, "gn", NULL, NULL, &grp_no_exec_help);
+	rz_cmd_desc_argv_new(cmd, gn, "gn1", NULL, &fake_help);
+	RzCmdDesc *gp = rz_cmd_desc_group_new(cmd, root, "gp", p_handler_argv,
+		&grp_exec_details_only_help, &grp_plain_help);
+	rz_cmd_desc_argv_new(cmd, gp, "gp1", NULL, &fake_help);
+
+	// Custom args_str + non-color vs color hint
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("mx?");
+	char *h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "mx? help should not be null");
+	mu_assert_notnull(strstr(h, "\nDetailed help for mx <custom_args> is provided by mx??.\n"),
+		"mx? uses args_str in detailed help hint");
+	free(h);
+
+	h = rz_cmd_get_help(cmd, pa, true, 0);
+	mu_assert_notnull(h, "mx? colored help should not be null");
+	mu_assert_notnull(strstr(h, "Detailed help for "),
+		"mx? colored help includes detailed help hint");
+	mu_assert_notnull(strstr(h, core->cons->context->pal.input),
+		"mx? colored help uses input palette color");
+	mu_assert_notnull(strstr(h, "is provided by mx??."),
+		"mx? colored help references mx??");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("mx??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: mx <custom_args>   # mixed args\n"
+		"\n"
+		"Choices:\n"
+		"| modes # a, b\n",
+		"mx?? skips fake/non-choice args and prints array choices");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	// Choices after ARRAY are ignored
+	pa = rz_cmd_parsed_args_newcmd("aa?");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "aa? help should not be null");
+	mu_assert_null(strstr(h, "Detailed help for"),
+		"aa? stops scanning after ARRAY arg");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	pa = rz_cmd_parsed_args_newcmd("aa??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "aa?? help should not be null");
+	mu_assert_null(strstr(h, "Choices:"),
+		"aa?? stops scanning after ARRAY arg");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	// Non-NULL empty entries array skipped before separating unnamed detail section
+	pa = rz_cmd_parsed_args_newcmd("ea??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_streq(h,
+		"Usage: ea <mode>   # empty arr details\n"
+		"\n"
+		"Choices:\n"
+		"| mode # a, b\n"
+		"\n"
+		"| u 1 # row\n",
+		"ea?? skips empty entries array and separates unnamed section");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	// Group with own details still advertises ?? when exec_cd has choices
+	pa = rz_cmd_parsed_args_newcmd("gd?");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "gd? help should not be null");
+	mu_assert_notnull(strstr(h, "Notes:"), "gd? includes group details");
+	mu_assert_notnull(strstr(h, "\nDetailed help for gd <mode> is provided by gd??.\n"),
+		"gd? advertises gd?? even when group details are filled");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	// Group without exec_cd (NULL help->args) queried with ??
+	pa = rz_cmd_parsed_args_newcmd("gn??");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "gn?? help should not be null");
+	mu_assert_null(strstr(h, "Choices:"), "gn?? has no choices");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	// Group without own details advertises ?? when exec_cd has details (and no choices)
+	pa = rz_cmd_parsed_args_newcmd("gp?");
+	h = rz_cmd_get_help(cmd, pa, false, 0);
+	mu_assert_notnull(h, "gp? help should not be null");
+	mu_assert_notnull(strstr(h, "\nDetailed help for gp is provided by gp??.\n"),
+		"gp? advertises gp?? when exec_cd has details");
+	rz_cmd_parsed_args_free(pa);
+	free(h);
+
+	rz_cmd_free(cmd);
+	rz_cons_free(core->cons);
+	free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_cmd_status_tostring);
 	mu_run_test(test_parsed_args_noargs);
@@ -1927,6 +2126,7 @@ int all_tests() {
 	mu_run_test(test_cmd_descriptor_folder_arg);
 	mu_run_test(test_cmd_arg_choices_multiple_and_empty);
 	mu_run_test(test_cmd_arg_choices_cb_and_group_hint);
+	mu_run_test(test_cmd_arg_choices_edge_cases);
 	return tests_passed != tests_run;
 }
 
