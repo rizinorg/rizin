@@ -390,6 +390,14 @@ static bool test_il_var_set_reset() {
 	mu_assert_null(rz_il_var_set_get(&vs, "v_0"), "large var cleared");
 
 	rz_il_var_set_fini(&vs);
+
+	// Resetting a zero-initialized var set (NULL tables) allocates fresh tables.
+	RzILVarSet zero_vs = { 0 };
+	rz_il_var_set_reset(&zero_vs);
+	mu_assert_notnull(zero_vs.vars, "reset allocates vars ht when NULL");
+	mu_assert_notnull(zero_vs.contents, "reset allocates contents ht when NULL");
+	mu_assert_notnull(rz_il_var_set_create_var(&zero_vs, "z0", rz_il_sort_pure_bv(8)), "create var after NULL reset");
+	rz_il_var_set_fini(&zero_vs);
 	mu_end;
 }
 
