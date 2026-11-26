@@ -366,3 +366,44 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+# The binary contains symbols. So we would expect any of them be their own,
+# two instruction long, function.
+# This has to be fixed with heuristics.
+NAME=Circular tail calls
+BROKEN=1
+FILE=bins/inquiry/icfg_conflicts/circlular_tail_calls.s.obj
+CMDS=<<EOF
+e asm.comments=false
+is
+aIa
+pd 6
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name  
+-----------------------------------------------------
+  1 0x00000040 0x08000040 GLOBAL FUNC    0     fcn_a
+  2 0x0000004a 0x0800004a GLOBAL FUNC    0     fcn_b
+  3 0x00000054 0x08000054 GLOBAL FUNC    0     fcn_c
+            ;-- section..text:
+            ;-- fcn_a:
+/ sym.fcn_a();
+|       .-> 0x08000040      mov   eax, 0x01
+\      ,==< 0x08000045      jmp   sym.fcn_b
+       |:   ;-- fcn_b:
+/ sym.fcn_b();
+|      `--> 0x0800004a      mov   eax, 0x01
+\      ,==< 0x0800004f      jmp   sym.fcn_c
+       |:   ;-- fcn_c:
+/ sym.fcn_c();
+|      `--> 0x08000054      mov   eax, 0x01
+\       `=< 0x08000059      jmp   sym.fcn_a
+     addr size traced ninstr jump       fail fcns        calls xrefs       
+--------------------------------------------------------------------------
+0x8000040   10      0      2                  0x08000040        0x08000059
+0x800004a   10      0      2                  0x0800004a       
+0x8000054   10      0      2                  0x08000054       
+EOF
+EXPECT_ERR=
+RUN
