@@ -372,6 +372,8 @@ RZ_IPI RzCmdStatus rz_print_analysis_details_handler(RzCore *core, int argc, con
 RZ_IPI RzCmdStatus rz_analyze_all_unresolved_jumps_handler(RzCore *core, int argc, const char **argv);
 // "aalg"
 RZ_IPI RzCmdStatus rz_recover_all_golang_functions_strings_handler(RzCore *core, int argc, const char **argv);
+// "aalr"
+RZ_IPI RzCmdStatus rz_recover_all_rust_metadata_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "aalor"
 RZ_IPI RzCmdStatus rz_analyze_all_objc_references_handler(RzCore *core, int argc, const char **argv);
 // "aalos"
