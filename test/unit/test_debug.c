@@ -1156,6 +1156,8 @@ static bool test_debug_winkd_attach_and_read_ver(void) {
 
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "rz_core_new for winkd");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
 	core->dbg->corebind.cmdf = mock_winkd_cmdf;
 	rz_config_set(core->config, "pdb.symstore", symstore);
 	rz_config_set(core->config, "pdb.server", "");
