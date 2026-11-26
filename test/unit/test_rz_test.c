@@ -566,6 +566,12 @@ static int run_rz_asm_capture(int argc, const char **argv, char **out_str, char 
 	}
 	*out_str = rz_file_slurp(out_path, NULL);
 	*err_str = rz_file_slurp(err_path, NULL);
+	if (*out_str) {
+		*out_str = (char *)crlf2lf((ut8 *)*out_str);
+	}
+	if (*err_str) {
+		*err_str = (char *)crlf2lf((ut8 *)*err_str);
+	}
 	rz_file_rm(out_path);
 	rz_file_rm(err_path);
 	free(out_path);
