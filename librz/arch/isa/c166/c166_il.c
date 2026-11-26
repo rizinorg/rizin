@@ -497,21 +497,47 @@ static RzILOpEffect *c166_il_movb_rbn_orwm_data16(const RzAnalysis *analysis, co
 	const ut16 mem = rz_read_at_le16(buf, 2);
 	const ut8 n = H_NIB(buf[1]);
 	const ut8 m = L_NIB(buf[1]);
+	const char *dst = c166_get_word_reg_name(n);
+	RzILOpBitVector *base = UNSIGNED(32, VARG(c166_rw[m]));
+
+	const ut8 reg_offset = c166_get_byte_offset(n);
+
+	RzILOpEffect *flags = SEQ3(
+		SET_E8(VARL("load")),
+		SET_Z(VARL("load")),
+		SET_N8(VARL("load")));
 
 	if (state->ext.mode == C166_EXT_MODE_PAGE) {
-		const char *dst = c166_get_word_reg_name(n);
-		const ut8 reg_offset = c166_get_byte_offset(n);
 		return SEQ5(
 			SETL("addr", calc_DPP_mem(state, SFR_ADDR(((mem >> 14) & 0x3)), mem)),
-			SETL("addr", ADD(VARL("addr"), UNSIGNED(32, VARG(c166_rw[m])))),
+			SETL("addr", ADD(VARL("addr"), base)),
 			SETL("load", LOADW(8, UNSIGNED(32, VARL("addr")))),
 			WRITE_RB(dst, reg_offset, UNSIGNED(16, VARL("load"))),
-			SEQ3(
-				SET_E8(VARL("load")),
-				SET_Z(VARL("load")),
-				SET_N8(VARL("load"))));
+			flags);
 	}
-	return rz_il_op_new_nop();
+	if (state->ext.mode == C166_EXT_MODE_SEG) {
+		return SEQ5(
+			SETL("offset", LOGAND(ADD(base, U32(mem)), U32(0xFFFF))),
+			SETL("addr", LOGOR(SHIFTL0(U32(state->ext.value & 0xFF), U32(16)), VARL("offset"))),
+			SETL("load", LOADW(8, UNSIGNED(32, VARL("addr")))),
+			WRITE_RB(dst, reg_offset, UNSIGNED(16, VARL("load"))),
+			flags);
+	}
+	if (state->ext.esfr && state->ext.mode == C166_EXT_MODE_REG) {
+		const char *seg_reg = c166_global_registers[state->ext.value];
+		return SEQ6(
+			SETL("offset", LOGAND(ADD(base, U32(mem)), U32(0xFFFF))),
+			SETL("seg", LOGAND(UNSIGNED(32, VARG(seg_reg)), U32(0xFF))),
+			SETL("addr", LOGOR(SHIFTL0(VARL("seg"), U32(16)), VARL("offset"))),
+			SETL("load", LOADW(8, UNSIGNED(32, VARL("addr")))),
+			WRITE_RB(dst, reg_offset, UNSIGNED(16, VARL("load"))),
+			flags);
+	}
+	return SEQ4(
+		SETL("addr", ADD(base, U32(mem))),
+		SETL("load", LOADW(8, UNSIGNED(32, VARL("addr")))),
+		WRITE_RB(dst, reg_offset, UNSIGNED(16, VARL("load"))),
+		flags);
 }
 
 static RzILOpEffect *c166_il_jnb_bitaddr_rel(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
