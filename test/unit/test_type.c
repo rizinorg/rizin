@@ -2225,6 +2225,11 @@ static bool test_type_parser_leaks_and_errors(void) {
 	rz_type_free(standalone_type);
 	rz_type_parser_free(standalone);
 
+	// Parser initialized with NULL external tables allocates internal ones and frees them on purge
+	RzTypeParser *init_null = rz_type_parser_init(NULL, NULL);
+	mu_assert_notnull(init_null, "parser initialized with NULL tables");
+	rz_type_parser_free_purge(init_null);
+
 	RzTypeDB *typedb = rz_type_db_new();
 	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
 
@@ -2301,6 +2306,8 @@ static bool test_type_parser_leaks_and_errors(void) {
 		"int (*foo(int a))(struct );",
 		"void (*(*deep_fn(int a))(int b))(int c);",
 		"int fn_unclosed(;",
+		"int (__cdecl *bad_cc)(int);",
+		"void bad_abs_ptr(int * __unaligned);",
 	};
 	for (size_t i = 0; i < RZ_ARRAY_SIZE(bad_inputs); i++) {
 		errmsg = NULL;

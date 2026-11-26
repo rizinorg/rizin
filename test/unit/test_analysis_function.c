@@ -544,6 +544,22 @@ static bool test_rz_analysis_function_set_type_str(void) {
 	mu_assert_streq(after_dup_cb->ret->identifier.name, "int",
 		"dup_cb entry came from parsed parameter declarator");
 
+	// Trailing dot (empty suffix) must not detach or delete any callable
+	RzAnalysisFunction *trailing_dot = rz_analysis_create_function(analysis, "trailing.", 0x700, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(trailing_dot, "trailing dot function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, trailing_dot, "int trailing_sig(int x);"),
+		"trailing dot function signature succeeds");
+	mu_assert_notnull(trailing_dot->ret_type, "trailing dot ret type set");
+
+	// Pre-existing NULL-valued entry under dotted suffix is skipped safely
+	mu_assert_true(ht_sp_insert(analysis->typedb->callables, "nullval", NULL),
+		"insert NULL-valued callable placeholder");
+	RzAnalysisFunction *sym_nullval = rz_analysis_create_function(analysis, "sym.nullval", 0x800, RZ_ANALYSIS_FCN_TYPE_NULL);
+	mu_assert_notnull(sym_nullval, "sym.nullval function created");
+	mu_assert_true(rz_analysis_function_set_type_str(analysis, sym_nullval, "int nullval_sig(int x);"),
+		"dotted function with NULL-valued suffix entry succeeds");
+	ht_sp_delete(analysis->typedb->callables, "nullval");
+
 	rz_analysis_free(analysis);
 	mu_end;
 }
