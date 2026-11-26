@@ -755,6 +755,7 @@ bool test_dwarf_rnglists_startx(void) {
 	// Offset 0: valid DW_RLE_startx_endx(0,1) + DW_RLE_startx_length(0,0x40) + end
 	// Offset 7: DW_RLE_startx_endx(0,9 OOB) + end
 	// Offset 11: DW_RLE_startx_length(9 OOB,0x10) + end
+	// Offset 15: DW_RLE_startx_endx(9 OOB,0) + end
 	static const ut8 raw_rng[] = {
 		DW_RLE_startx_endx,
 		0,
@@ -770,6 +771,10 @@ bool test_dwarf_rnglists_startx(void) {
 		DW_RLE_startx_length,
 		9,
 		0x10,
+		DW_RLE_end_of_list,
+		DW_RLE_startx_endx,
+		9,
+		0,
 		DW_RLE_end_of_list,
 	};
 	ut8 *rng_data = malloc(sizeof(raw_rng));
@@ -813,6 +818,10 @@ bool test_dwarf_rnglists_startx(void) {
 	RzBinDwarfRngList *oob2 = rz_bin_dwarf_rnglists_get(dw->rnglists, dw->addr, &cu, 11);
 	mu_assert_notnull(oob2, "oob startx_length returns empty list without leak");
 	mu_assert_eq(rz_pvector_len(&oob2->entries), 0, "oob startx_length has no valid range");
+
+	RzBinDwarfRngList *oob3 = rz_bin_dwarf_rnglists_get(dw->rnglists, dw->addr, &cu, 15);
+	mu_assert_notnull(oob3, "oob startx_endx begin returns empty list without leak");
+	mu_assert_eq(rz_pvector_len(&oob3->entries), 0, "oob startx_endx begin has no valid range");
 
 	rz_bin_dwarf_free(dw);
 	mu_end;
