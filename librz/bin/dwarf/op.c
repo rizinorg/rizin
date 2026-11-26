@@ -1375,23 +1375,24 @@ static bool RzBinDwarfEvaluationResult_to_loc(
 		return true;
 	}
 
-	bool result = false;
 	RzVector *pieces = rz_bin_dwarf_evaluation_result(eval);
 	if (!pieces || rz_vector_empty(pieces)) {
-		goto beach;
+		// The expression is not empty, but ran to its end without leaving a value,
+		// so it is not a valid location description (or we misparsed it).
+		RZ_LOG_WARN("DWARF expression in unit 0x%" PFMT64x " yields no location, it is invalid or unsupported\n",
+			eval->unit->offset);
+		// Ownership of eval and eval_result stays with the caller on failure.
+		return false;
 	}
 	if (rz_vector_len(pieces) == 1) {
 		Location_cpy(loc, ((RzBinDwarfPiece *)rz_vector_index_ptr(pieces, 0))->location);
-		result = true;
 	} else {
 		loc->kind = RzBinDwarfLocationKind_COMPOSITE;
 		loc->composite = rz_vector_clonef(pieces, (RzVectorItemCpyFunc)RzBinDwarfPiece_cpy);
-		result = true;
 	}
-beach:
 	rz_bin_dwarf_evaluation_free(eval);
 	RzBinDwarfEvaluationResult_free(eval_result);
-	return result;
+	return true;
 }
 
 /**
@@ -1431,6 +1432,7 @@ RZ_API RZ_OWN RzBinDwarfLocation *rz_bin_dwarf_location_from_block(
 		eval = rz_bin_dwarf_evaluation_new_from_block(&R, dw, unit, die);
 		ERR_IF_FAIL(eval);
 		if (!(rz_bin_dwarf_evaluation_evaluate(eval, result) &&
+			    // eval is freed if RzBinDwarfEvaluationResult_to_loc succeeds
 			    RzBinDwarfEvaluationResult_to_loc(eval, result, loc))) {
 			goto err;
 		}
