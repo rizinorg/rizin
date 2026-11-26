@@ -1447,6 +1447,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 		"gpr	ODP3	.16	61894	0\n"
 
+		"gpr	XADRS5	.16	61468	0\n" ///< F01C; X-Peripheral Address Select Register 5
+
 		"gpr	PLLCON	.16	61904	0\n" ///< F1D0; PLL Control Register
 		"gpr	SYSCON3	.16	61908	0\n" ///< F1D4; Power Management
 		"gpr	SYSCON1	.16	61916	0\n" ///< F1DC; System Configuration Register SYSCON1
@@ -1509,8 +1511,8 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"flg	BP	.1	65048.1	0\n" ///< CPU Core: Enable Branch Prediction Unit
 		"flg	ZCJ	.1	65048.0	0\n" ///< CPU Core: Enable Zero Cycle Jump function
 		"gpr	CPUCON2	.16	65050	0\n" ///< FE1A; CPU Core Control Register 2
-		"gpr	r_FE1C	.16	65052	0\n" ///< FE1C; RESERVED
-		"gpr	r_FE1E	.16	65054	0\n" ///< FE1E; RESERVED
+		"gpr	CPUCON3	.16	65052	0\n" ///< FE1C; CPU Core Control Register 3
+		"gpr	CPUCON4	.16	65054	0\n" ///< FE1E; CPU Core Control Register 4
 		"gpr	r_FE20	.16	65056	0\n" ///< FE20; RESERVED
 		"gpr	r_FE22	.16	65058	0\n" ///< FE22; RESERVED
 		"gpr	r_FE24	.16	65060	0\n" ///< FE24; RESERVED

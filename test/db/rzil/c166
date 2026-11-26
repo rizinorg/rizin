@@ -25,6 +25,10 @@ variable type value
 -------------------------
 PC       bitv 0x00000000
 BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
 CSP      bitv 0x00
 DPP0     bitv 0x000
 DPP1     bitv 0x001
@@ -39,6 +43,7 @@ SP       bitv 0xfc00
 SYSCON   bitv 0x0000
 SYSCON1  bitv 0x0000
 SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -169,6 +174,10 @@ variable type value
 -------------------------
 PC       bitv 0x000001ac
 BUSCON0  bitv 0x06ae
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
 CSP      bitv 0x00
 DPP0     bitv 0x000
 DPP1     bitv 0x001
@@ -183,6 +192,7 @@ SP       bitv 0xfc00
 SYSCON   bitv 0x0000
 SYSCON1  bitv 0x0000
 SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -244,6 +254,10 @@ variable type value
 -------------------------
 PC       bitv 0x00000000
 BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
 CSP      bitv 0x00
 DPP0     bitv 0x000
 DPP1     bitv 0x001
@@ -258,6 +272,7 @@ SP       bitv 0xfc00
 SYSCON   bitv 0x0000
 SYSCON1  bitv 0x0000
 SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -322,6 +337,10 @@ variable type value
 -------------------------
 PC       bitv 0x00c00000
 BUSCON0  bitv 0x0680
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
 CSP      bitv 0xc0
 DPP0     bitv 0x000
 DPP1     bitv 0x001
@@ -336,6 +355,7 @@ SP       bitv 0xfc00
 SYSCON   bitv 0x0000
 SYSCON1  bitv 0x0000
 SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
 c        bool false
 e        bool false
 n        bool false
@@ -365,6 +385,10 @@ variable type value
 -------------------------
 PC       bitv 0x00c0146e
 BUSCON0  bitv 0x0000
+BUSCON1  bitv 0x0000
+BUSCON2  bitv 0x0000
+BUSCON3  bitv 0x0000
+BUSCON4  bitv 0x0000
 CSP      bitv 0xc0
 DPP0     bitv 0x004
 DPP1     bitv 0x005
@@ -379,6 +403,7 @@ SP       bitv 0xf800
 SYSCON   bitv 0x0000
 SYSCON1  bitv 0x0000
 SYSCON3  bitv 0x0000
+XADRS5   bitv 0x0000
 c        bool true
 e        bool false
 n        bool false

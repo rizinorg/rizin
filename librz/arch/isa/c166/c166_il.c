@@ -19,6 +19,10 @@ static const char *c166_global_registers[] = {
 	"BUSCON0",
 	"PLLCON", "FOCON",
 	"SYSCON", "SYSCON1", "SYSCON3",
+
+	"BUSCON1", "BUSCON2", "BUSCON3", "BUSCON4",
+	"XADRS5",
+
 	"PSW", "P8",
 	NULL
 };
@@ -1263,27 +1267,28 @@ static RzILOpEffect *c166_il_movb_reg_mem(const RzAnalysis *analysis, const ut8 
 }
 
 static RzILOpEffect *c166_il_add_reg_mem(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
+	CHECK_STATE;
 	const ut8 reg = buf[1];
 	const ut16 mem = rz_read_at_le16(buf, 2);
 
 	const st32 i = (mem >> 14) & 0x3;
 	const ut16 DPP_addr = SFR_ADDR(i);
-	(void)DPP_addr;
 	if (IS_GPR(reg)) {
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
 		const char *dst = c166_rw[L_NIB(reg)];
-		return SEQ5(SETL("addr", U32(mem)),
+		return SEQ6(
+			SETL("addr", calc_DPP_mem(state, DPP_addr, mem)),
 			SETL("op2", LOADW(16, VARL("addr"))),
-			SETL("dst", VARG(dst)),
-			SETL("dst", ADD(VARL("dst"), VARL("op2"))),
+			SETL("op1", VARG(dst)),
+			SETL("res", ADD(VARL("op1"), VARL("op2"))),
+			SETG(dst, VARL("res")),
 			SEQ5(
 				SET_E(VARL("op2")),
-				SET_Z(VARL("dst")),
-				SETG("v", AND(EQ(GET_BIT16(VARL("dst"), 15), GET_BIT16(VARL("op2"), 15)), NE(GET_BIT16(VARL("dst"), 15), GET_BIT16(VARL("res"), 15)))),
-				SETG("c", UGT(ADD(UNSIGNED(32, VARL("op1")), UNSIGNED(32, VARL("op2"))), U32(0xFFFF))),
-				SET_N(VARL("dst"))));
+				SET_Z(VARL("res")),
+				SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+				SET_C_ADD_16(VARL("op1"), VARL("op2")),
+				SET_N(VARL("res"))));
 	}
-	CHECK_STATE;
 	const ut16 reg_addr = state->ext.esfr ? ESFR_ADDR(reg) : SFR_ADDR(reg);
 	(void)reg_addr;
 	NOT_IMPLEMENTED;
@@ -1402,6 +1407,14 @@ static RzILOpEffect *c166_il_mov_reg_data16(RzAnalysis *analysis, const ut8 *buf
 	case 0xff10: ///< "PSW"
 		rz_il_op_effect_free(flags);
 		return SETG("PSW", UN(16, data));
+	case 0xfe18: ///< "CPUCON1"
+		return SEQ2(SETG("r4", U16(data)), flags);
+	case 0xfe1a: ///< "CPUCON2"
+		return SEQ2(SETG("r5", U16(data)), flags);
+	case 0xfe1c: ///< "CPUCON3"
+		return SEQ2(SETG("r6", U16(data)), flags);
+	case 0xfe1e: ///< "CPUCON4"
+		return SEQ2(SETG("r7", U16(data)), flags);
 	default:
 		break;
 	}
