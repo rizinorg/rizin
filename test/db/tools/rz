@@ -718,3 +718,37 @@ ERROR: [r] Cannot open 'winedbg://';id;''
 EOF
 EXIT_STATUS=1
 RUN
+
+NAME=rizin -R with -q -v
+FILE==
+CMDS=<<EOF
+!!rizin -R a=b -q -v~^[0-9]?
+EOF
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=rizin -d null://16
+TOOL=rizin
+ARGS=-N -qq -d null://16
+EXPECT=
+EXPECT_ERR=
+EXIT_STATUS=0
+RUN
+
+NAME=rizin -r missing -R -d gdb://
+TOOL=rizin
+ARGS=-Nq -r nonexistent_rz_profile -R a=b -d gdb://
+EXPECT=
+EXPECT_ERR=<<EOF
+Cannot read dbg.profile 'nonexistent_rz_profile'
+Invalid debugger URI. Port missing?
+Please use either
+ - gdb://host:port[/pid] for a network gdbserver.
+ - gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver.
+ERROR: [w] Cannot open 'gdb://' for writing.
+EOF
+EXIT_STATUS=1
+RUN

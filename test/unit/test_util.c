@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util.h>
+#include <rz_cons.h>
+#include <rz_util/rz_print.h>
 #include "minunit.h"
 
 bool test_file_slurp(void) {
@@ -223,6 +225,109 @@ bool test_path_normalize_expand(void) {
 	mu_end;
 }
 
+static RZ_OWN char *mock_print_offname(void *user, ut64 addr) {
+	(void)user;
+	if (addr == 0) {
+		return rz_str_dup("sym_start");
+	}
+	if (addr == 1) {
+		return rz_str_dup("");
+	}
+	if (addr == 4) {
+		return rz_str_dup("sym_zero");
+	}
+	return NULL;
+}
+
+static const char *mock_print_colorfor(void *user, ut64 addr, bool verbose) {
+	(void)user;
+	(void)verbose;
+	if (addr == 0) {
+		return Color_RED;
+	}
+	return NULL;
+}
+
+static RZ_OWN char *mock_print_get_comments(void *user, ut64 addr) {
+	(void)user;
+	(void)addr;
+	return NULL;
+}
+
+bool test_print_hexdump_offname(void) {
+	const ut8 buf[16] = {
+		0x01,
+		0x02,
+		0x03,
+		0x04,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+		0x05,
+		0x06,
+		0x07,
+		0x08,
+		0x00,
+		0x00,
+		0x00,
+		0x00,
+	};
+	RzPrint *p = rz_print_new();
+	mu_assert_notnull(p, "rz_print_new()");
+
+	// hex_style with NULL offname
+	p->flags = RZ_PRINT_FLAGS_STYLE | RZ_PRINT_FLAGS_OFFSET;
+	p->offname = NULL;
+	char *out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 16, 1, 1);
+	mu_assert_notnull(out, "hexdump with hex_style and NULL offname");
+	mu_assert_null(strstr(out, Color_INVERT), "no invert color when offname is NULL");
+	free(out);
+
+	// hex_style with offname returning non-empty, empty, and NULL
+	p->offname = mock_print_offname;
+	out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 16, 1, 1);
+	mu_assert_notnull(out, "hexdump with hex_style and mock offname");
+	mu_assert_notnull(strstr(out, Color_INVERT), "invert color applied for non-empty offname");
+	free(out);
+
+	// pxr null-byte lines with NULL offname and with mock offname (non-NULL and NULL hits)
+	p->flags = RZ_PRINT_FLAGS_REFS | RZ_PRINT_FLAGS_OFFSET;
+	p->cols = 4;
+	p->offname = NULL;
+	out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 32, 4, 1);
+	mu_assert_notnull(out, "pxr with NULL offname");
+	mu_assert_notnull(strstr(out, "..[ null bytes ].."), "pxr null bytes line emitted");
+	free(out);
+
+	p->offname = mock_print_offname;
+	out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 32, 4, 1);
+	mu_assert_notnull(out, "pxr with mock offname");
+	mu_assert_notnull(strstr(out, "sym_zero"), "pxr null bytes line includes offname");
+	free(out);
+
+	// comment column with offname: colorfor NULL vs colorfor returning color / NULL, empty / non-empty / NULL offname
+	p->flags = RZ_PRINT_FLAGS_OFFSET;
+	p->cols = 16;
+	p->use_comments = true;
+	p->get_comments = mock_print_get_comments;
+	p->colorfor = NULL;
+	out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 16, 1, 1);
+	mu_assert_notnull(out, "hexdump comments with NULL colorfor");
+	mu_assert_null(strstr(out, "; sym_start"), "no offname comment without colorfor");
+	free(out);
+
+	p->colorfor = mock_print_colorfor;
+	out = rz_print_hexdump_str(p, 0, buf, sizeof(buf), 16, 1, 1);
+	mu_assert_notnull(out, "hexdump comments with mock colorfor");
+	mu_assert_notnull(strstr(out, "; sym_start"), "offname comment emitted with color");
+	mu_assert_notnull(strstr(out, "; sym_zero"), "offname comment emitted without color");
+	free(out);
+
+	rz_print_free(p);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_file_slurp);
 	mu_run_test(test_leading_zeros);
@@ -230,6 +335,7 @@ int all_tests() {
 	mu_run_test(test_getopt_long_option);
 	mu_run_test(test_getopt_reentrant);
 	mu_run_test(test_path_normalize_expand);
+	mu_run_test(test_print_hexdump_offname);
 	return tests_passed != tests_run;
 }
 
