@@ -48,6 +48,7 @@ RZ_API void rz_parse_free(RzParse *p) {
 		}
 	}
 	rz_list_free(p->parsers);
+	free(p->retleave_asm);
 	free(p);
 }
 

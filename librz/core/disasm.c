@@ -616,7 +616,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
-	core->parser->retleave_asm = NULL;
+	RZ_FREE(core->parser->retleave_asm);
 	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
 	ds->show_fcnsig_location = rz_config_get_bool(core->config, "asm.fcn.signature.location");
 	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
