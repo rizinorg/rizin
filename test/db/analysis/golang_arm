@@ -201,6 +201,7 @@ FILE=bins/golang/btcctl-linux-arm64-v0.22.0-beta
 TIMEOUT=1200
 CMDS=<<EOF
 aalg
+afc @ main
 fl~sym.go.~?
 pdfs @ main ~str.
 # Attempt to get some reference strings when the count changes with izq.
@@ -211,6 +212,7 @@ izq~:-10..
 izq~?
 EOF
 EXPECT=<<EOF
+golang_abi0
 5070
 0x0026b000 str.s_command:__v
 0x0026b04c str.1.0
