@@ -213,7 +213,34 @@ bool test_egg_filter_c_assembly_labels_and_sections(void) {
 		"\t.ident\t\"a\\\"get_pc_thunk.bx\"\n"
 		"\t.ident\t\"a\\\\\" get_pc_thunk.bx\n"
 		"\tnop ; get_pc_thunk.bx\n"
-		"\tnop // get_pc_thunk.bx\n";
+		"\tnop // get_pc_thunk.bx\n"
+		"lbl_ws:   \n"
+		"\tcall   \n"
+		"foo:bar\n"
+		"\t.section   \n"
+		"\t.section\t__TEXT , __cstring\n"
+		"\t.section\t__TEXT\n"
+		"\t.section\t__TEXT foo\n"
+		"\t.section\tfoo/\n"
+		"\t.section\tfoo/bar\n"
+		"\t.section\t\".rodata\n"
+		"\t.section\t\"\n"
+		"\t.section\t.rodata_extra\n"
+		"\tcall\tfoo/\n"
+		"\tcall\tfoo/bar\n"
+		"\tcall\t*___main\n"
+		"\tnop\t/\n"
+		"\tnop\ta/b\n"
+		"\tcall\taget_pc_thunk.bx\n"
+		"\tcall\tget_pc_thunk.bx2\n"
+		"/\n"
+		"/foo\n"
+		"lbl_slash: /\n"
+		"lbl_slash2: /foo\n"
+		"\t.a\n"
+		"\t.a,1\n"
+		"\t.a#c\n"
+		"\t.a;c\n";
 
 	char *out = rz_egg_filter_c_assembly(input);
 	mu_assert_notnull(out, "filtered assembly must not be NULL");
@@ -250,7 +277,33 @@ bool test_egg_filter_c_assembly_labels_and_sections(void) {
 		"\t.ident\t\"a\\\"get_pc_thunk.bx\"\n"
 		"\t.ident\t\"a\\\\\" __getesp__\n"
 		"\tnop ; get_pc_thunk.bx\n"
-		"\tnop // get_pc_thunk.bx\n";
+		"\tnop // get_pc_thunk.bx\n"
+		"lbl_ws:   \n"
+		"\tcall   \n"
+		"foo:bar\n"
+		"\t.section   \n"
+		"\t.text\n"
+		"\t.section\t__TEXT\n"
+		"\t.section\t__TEXT foo\n"
+		"\t.section\tfoo/\n"
+		"\t.section\tfoo/bar\n"
+		"\t.section\t\".rodata\n"
+		"\t.section\t\"\n"
+		"\t.section\t.rodata_extra\n"
+		"\tcall\tfoo/\n"
+		"\tcall\tfoo/bar\n"
+		"\tnop\t/\n"
+		"\tnop\ta/b\n"
+		"\tcall\taget_pc_thunk.bx\n"
+		"\tcall\tget_pc_thunk.bx2\n"
+		"/\n"
+		"/foo\n"
+		"lbl_slash: /\n"
+		"lbl_slash2: /foo\n"
+		"\t.a\n"
+		"\t.a,1\n"
+		"\t.a#c\n"
+		"\t.a;c\n";
 	mu_assert_streq(out, expected,
 		"label-prefixed directives/stubs, sections, comments, and escapes must filter accurately");
 	free(out);
@@ -346,6 +399,30 @@ bool test_egg_compile_c_source_strings(void) {
 	mu_assert_true(mem_contains(bin, out_len, "zeroing"), "preserve zeroing string");
 	mu_assert_false(mem_contains(bin, out_len, "usetext"), "no rdata/text string corruption");
 	free(bin);
+
+	// Compiler succeeding without producing assembly hits missing-tmp error path.
+	char *true_exe = rz_file_path("true");
+	if (true_exe && !RZ_STR_EQ(true_exe, "true")) {
+		char *prev_cc = rz_sys_getenv("CC");
+		rz_sys_setenv("CC", true_exe);
+		char *fail_base = rz_file_temp("egg_fail");
+		mu_assert_notnull(fail_base, "temp fail base path");
+		char *fail_c = rz_str_newf("%s.c", fail_base);
+		mu_assert_notnull(fail_c, "temp fail c path");
+		mu_assert_true(rz_file_dump(fail_c, (const ut8 *)"int main(){return 0;}\n", 22, false), "write fail c");
+		RzPath *fail_path = rz_path_new();
+		mu_assert_notnull(fail_path, "fail sys_path");
+		char *fail_out = rz_egg_compile_c_source(fail_c, "x86", "linux", 64, fail_path);
+		mu_assert_null(fail_out, "missing compiler output must fail cleanly");
+		rz_path_free(fail_path);
+		rz_sys_setenv("CC", prev_cc);
+		free(prev_cc);
+		rz_file_rm(fail_c);
+		rz_file_rm(fail_base);
+		free(fail_c);
+		free(fail_base);
+	}
+	free(true_exe);
 #endif
 	mu_end;
 }
