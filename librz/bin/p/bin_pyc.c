@@ -33,33 +33,27 @@ static bool init_pyc_cache(RzBinPycObj *pyc, RzBuffer *buf) {
 	}
 	rz_list_append(shared, cobjs);
 	rz_list_append(shared, pyc->interned_table);
-	pyc->shared = shared;
 	RzPVector *sections = rz_pvector_new((RzPVectorFree)rz_bin_section_free);
 	if (!sections) {
 		rz_list_free(shared);
-		pyc->shared = NULL;
 		return false;
 	}
-	pyc->sections_cache = sections;
 	RzPVector *symbols = rz_pvector_new((RzPVectorFree)rz_bin_symbol_free);
 	if (!symbols) {
 		rz_list_free(shared);
-		pyc->shared = NULL;
 		rz_pvector_free(sections);
-		pyc->sections_cache = NULL;
 		return false;
 	}
-	pyc->symbols_cache = symbols;
 	RzPVector *strings = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
 	if (!strings) {
 		rz_list_free(shared);
-		pyc->shared = NULL;
 		rz_pvector_free(sections);
-		pyc->sections_cache = NULL;
 		rz_pvector_free(symbols);
-		pyc->symbols_cache = NULL;
 		return false;
 	}
+	pyc->shared = shared;
+	pyc->sections_cache = sections;
+	pyc->symbols_cache = symbols;
 	pyc->strings_cache = strings;
 
 	rz_buf_seek(buf, pyc->code_start_offset, RZ_BUF_SET);
@@ -169,33 +163,21 @@ static RzPVector /*<RzBinSymbol *>*/ *symbols(RzBinFile *arch) {
 	return ret;
 }
 
+static void bin_string_copy(void *dst, void *src) {
+	const RzBinString *s = *(const RzBinString **)src;
+	RzBinString *d = RZ_NEWCOPY(RzBinString, s);
+	if (d) {
+		d->string = rz_str_dup(s->string);
+	}
+	*(RzBinString **)dst = d;
+}
+
 static RzPVector /*<RzBinString *>*/ *strings(RzBinFile *bf) {
 	RzBinPycObj *pyc = bf->o->bin_obj;
 	if (!pyc || !pyc->strings_cache) {
 		return NULL;
 	}
-	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
-	if (!ret || !rz_pvector_reserve(ret, rz_pvector_len(pyc->strings_cache))) {
-		rz_pvector_free(ret);
-		return NULL;
-	}
-	void **it;
-	rz_pvector_foreach (pyc->strings_cache, it) {
-		const RzBinString *src = *it;
-		RzBinString *dst = RZ_NEWCOPY(RzBinString, src);
-		if (!dst) {
-			rz_pvector_free(ret);
-			return NULL;
-		}
-		dst->string = rz_str_dup(src->string);
-		if (src->string && !dst->string) {
-			free(dst);
-			rz_pvector_free(ret);
-			return NULL;
-		}
-		rz_pvector_push(ret, dst);
-	}
-	return ret;
+	return rz_pvector_clonef(pyc->strings_cache, bin_string_copy);
 }
 
 static void destroy(RzBinFile *bf) {

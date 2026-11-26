@@ -740,6 +740,198 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static void pyc_buf_append_u8(RzBuffer *b, ut8 v) {
+	rz_buf_append_bytes(b, &v, 1);
+}
+
+static void pyc_buf_append_le32(RzBuffer *b, ut32 v) {
+	ut8 tmp[4];
+	rz_write_le32(tmp, v);
+	rz_buf_append_bytes(b, tmp, sizeof(tmp));
+}
+
+static void pyc_buf_append_le64(RzBuffer *b, ut64 v) {
+	ut8 tmp[8];
+	rz_write_le64(tmp, v);
+	rz_buf_append_bytes(b, tmp, sizeof(tmp));
+}
+
+static void pyc_buf_append_typed_str32(RzBuffer *b, ut8 tag, const char *s) {
+	ut32 len = (ut32)strlen(s);
+	pyc_buf_append_u8(b, tag);
+	pyc_buf_append_le32(b, len);
+	rz_buf_append_bytes(b, (const ut8 *)s, len);
+}
+
+static void pyc_buf_append_short_ascii(RzBuffer *b, const char *s) {
+	ut8 len = (ut8)strlen(s);
+	pyc_buf_append_u8(b, 'z');
+	pyc_buf_append_u8(b, len);
+	rz_buf_append_bytes(b, (const ut8 *)s, len);
+}
+
+static RzBuffer *build_synthetic_pyc310(bool with_rich_consts) {
+	RzBuffer *b = rz_buf_new_with_bytes(NULL, 0);
+	if (!b) {
+		return NULL;
+	}
+	// Python 3.10.0 header (16 bytes): magic 0x0a0d0d6f + flags + timestamp + size
+	pyc_buf_append_le32(b, 0x0a0d0d6f);
+	pyc_buf_append_le32(b, 0);
+	pyc_buf_append_le32(b, 0);
+	pyc_buf_append_le32(b, 0);
+
+	// Root TYPE_CODE_v1 ('c') at offset 0x10
+	pyc_buf_append_u8(b, 'c');
+	pyc_buf_append_le32(b, 0); // argcount
+	pyc_buf_append_le32(b, 0); // posonlyargcount
+	pyc_buf_append_le32(b, 0); // kwonlyargcount
+	pyc_buf_append_le32(b, 0); // nlocals
+	pyc_buf_append_le32(b, 1); // stacksize
+	pyc_buf_append_le32(b, 0); // flags
+
+	// co_code: TYPE_STRING ('s'), 4 bytes (LOAD_CONST 0, RETURN_VALUE)
+	ut8 bytecode[4] = { 0x64, 0x00, 0x53, 0x00 };
+	pyc_buf_append_u8(b, 's');
+	pyc_buf_append_le32(b, sizeof(bytecode));
+	rz_buf_append_bytes(b, bytecode, sizeof(bytecode));
+
+	// co_consts: TYPE_SMALL_TUPLE (')')
+	if (with_rich_consts) {
+		pyc_buf_append_u8(b, ')');
+		pyc_buf_append_u8(b, 13);
+		pyc_buf_append_u8(b, 'S'); // TYPE_STOPITER
+		pyc_buf_append_u8(b, '.'); // TYPE_ELLIPSIS
+		// TYPE_LIST ('[') with 1 TYPE_INT ('i')
+		pyc_buf_append_u8(b, '[');
+		pyc_buf_append_le32(b, 1);
+		pyc_buf_append_u8(b, 'i');
+		pyc_buf_append_le32(b, 42);
+		// TYPE_SET ('<') with 1 TYPE_INT64 ('I')
+		pyc_buf_append_u8(b, '<');
+		pyc_buf_append_le32(b, 1);
+		pyc_buf_append_u8(b, 'I');
+		pyc_buf_append_le64(b, 100);
+		// TYPE_FROZENSET ('>') with 1 TYPE_LONG ('l') ndigits=0
+		pyc_buf_append_u8(b, '>');
+		pyc_buf_append_le32(b, 1);
+		pyc_buf_append_u8(b, 'l');
+		pyc_buf_append_le32(b, 0);
+		// TYPE_DICT ('{'): TYPE_FLOAT ('f') -> TYPE_BINARY_FLOAT ('g'), TYPE_NULL ('0')
+		pyc_buf_append_u8(b, '{');
+		pyc_buf_append_u8(b, 'f');
+		pyc_buf_append_u8(b, 3);
+		rz_buf_append_bytes(b, (const ut8 *)"1.5", 3);
+		pyc_buf_append_u8(b, 'g');
+		pyc_buf_append_le64(b, 0x4004000000000000ULL);
+		pyc_buf_append_u8(b, '0');
+		// TYPE_SLICE (':'): 3 elements (TYPE_COMPLEX, TYPE_BINARY_COMPLEX, TYPE_NONE)
+		pyc_buf_append_u8(b, ':');
+		pyc_buf_append_u8(b, 'x');
+		pyc_buf_append_u8(b, 1);
+		pyc_buf_append_u8(b, '1');
+		pyc_buf_append_u8(b, 1);
+		pyc_buf_append_u8(b, '2');
+		pyc_buf_append_u8(b, 'y');
+		pyc_buf_append_le64(b, 0x3ff0000000000000ULL);
+		pyc_buf_append_le64(b, 0x4000000000000000ULL);
+		pyc_buf_append_u8(b, 'N');
+		// TYPE_UNICODE ('u')
+		pyc_buf_append_typed_str32(b, 'u', "hello");
+		// TYPE_INTERNED ('t') + TYPE_STRINGREF ('R')
+		pyc_buf_append_typed_str32(b, 't', "foo");
+		pyc_buf_append_u8(b, 'R');
+		pyc_buf_append_le32(b, 0);
+		// TYPE_SHORT_ASCII ('z')
+		pyc_buf_append_short_ascii(b, "world");
+		// TYPE_TRUE / TYPE_FALSE
+		pyc_buf_append_u8(b, 'T');
+		pyc_buf_append_u8(b, 'F');
+	} else {
+		pyc_buf_append_u8(b, ')');
+		pyc_buf_append_u8(b, 1);
+		pyc_buf_append_u8(b, 'N');
+	}
+
+	// co_names, co_varnames, co_freevars, co_cellvars: empty small tuples
+	for (int i = 0; i < 4; i++) {
+		pyc_buf_append_u8(b, ')');
+		pyc_buf_append_u8(b, 0);
+	}
+
+	// co_filename, co_name
+	if (with_rich_consts) {
+		pyc_buf_append_short_ascii(b, "test.py");
+		pyc_buf_append_short_ascii(b, "<module>");
+	} else {
+		pyc_buf_append_typed_str32(b, 's', "test.py");
+		pyc_buf_append_typed_str32(b, 's', "<module>");
+	}
+
+	// co_firstlineno + co_lnotab
+	pyc_buf_append_le32(b, 1);
+	pyc_buf_append_typed_str32(b, 's', "");
+	return b;
+}
+
+bool test_bin_pyc_marshal_and_strings(void) {
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "rz_bin_new pyc");
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new pyc");
+	rz_io_bind(io, &bin->iob);
+
+	// 1. Rich synthetic Python 3.10 pyc exercising marshal types, strings clone, and destroy(NULL)
+	RzBuffer *buf = build_synthetic_pyc310(true);
+	mu_assert_notnull(buf, "build rich pyc");
+	RzBinOptions bopt;
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "synthetic.pyc";
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &bopt);
+	mu_assert_notnull(bf, "open rich pyc");
+	mu_assert_notnull(bf->o, "pyc bin object");
+	mu_assert_streq(bf->o->plugin->name, "pyc", "pyc plugin selected");
+
+	const RzPVector *strs = rz_bin_object_get_strings(bf->o);
+	mu_assert_notnull(strs, "pyc strings present");
+	mu_assert_true(rz_pvector_len(strs) >= 2, "pyc unicode and ascii strings extracted");
+
+	// Re-invoke plugin->strings() to verify deep-copy ownership from strings_cache
+	RzPVector *cloned = bf->o->plugin->strings(bf);
+	mu_assert_notnull(cloned, "pyc strings re-cloned");
+	mu_assert_eq(rz_pvector_len(cloned), rz_pvector_len(strs), "cloned strings count matches");
+	rz_pvector_free(cloned);
+
+	// Invoke destroy() once, then test strings() and destroy() with NULL bin_obj
+	bf->o->plugin->destroy(bf);
+	mu_assert_null(bf->o->bin_obj, "bin_obj cleared after destroy");
+	mu_assert_null(bf->o->plugin->strings(bf), "strings returns NULL when bin_obj is NULL");
+	bf->o->plugin->destroy(bf);
+	// Re-run load_buffer() without entries() so pyc != NULL && pyc->strings_cache == NULL
+	mu_assert_true(bf->o->plugin->load_buffer(bf, bf->o, buf, bf->o->kv), "reload pyc bin_obj without cache");
+	mu_assert_null(bf->o->plugin->strings(bf), "strings returns NULL when strings_cache is NULL");
+	rz_bin_file_delete(bin, bf);
+	rz_buf_free(buf);
+
+	// 2. Empty strings_cache pyc returns an empty RzPVector without failing
+	RzBuffer *empty_str_buf = build_synthetic_pyc310(false);
+	mu_assert_notnull(empty_str_buf, "build empty-strings pyc");
+	rz_bin_options_init(&bopt, -1, 0, 0, false);
+	bopt.filename = "empty_strings.pyc";
+	RzBinFile *ebf = rz_bin_open_buf(bin, empty_str_buf, &bopt);
+	mu_assert_notnull(ebf, "open empty-strings pyc");
+	RzPVector *empty_cloned = ebf->o->plugin->strings(ebf);
+	mu_assert_notnull(empty_cloned, "empty strings_cache clones to non-NULL empty vector");
+	mu_assert_eq(rz_pvector_len(empty_cloned), 0, "empty strings_cache clone has len 0");
+	rz_pvector_free(empty_cloned);
+	rz_bin_file_delete(bin, ebf);
+	rz_buf_free(empty_str_buf);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +943,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_pyc_marshal_and_strings);
 	return tests_passed != tests_run;
 }
 
