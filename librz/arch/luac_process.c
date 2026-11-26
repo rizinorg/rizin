@@ -213,6 +213,7 @@ RZ_API bool rz_core_bin_apply_luac_debug(RzCore *core, RzBinFile *binfile) {
 		binfile->o->lines->samples_count = lc;
 		binfile->o->lines->samples = RZ_NEWS0(RzBinSourceLineSample, lc);
 		if (!binfile->o->lines->samples) {
+			RZ_FREE(binfile->o->lines);
 			return false;
 		}
 
