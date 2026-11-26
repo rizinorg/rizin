@@ -616,7 +616,7 @@ static RzDisasmState *ds_init(RzCore *core) {
 	core->parser->subrel = rz_config_get_b(core->config, "asm.sub.rel");
 	core->parser->subreg = rz_config_get_b(core->config, "asm.sub.reg");
 	core->parser->localvar_only = rz_config_get_b(core->config, "asm.sub.varonly");
-	core->parser->retleave_asm = NULL;
+	RZ_FREE(core->parser->retleave_asm);
 	ds->show_fcnsig = rz_config_get_b(core->config, "asm.fcn.signature");
 	ds->show_fcnsig_location = rz_config_get_bool(core->config, "asm.fcn.signature.location");
 	ds->show_fcnsize = rz_config_get_b(core->config, "asm.fcn.size");
@@ -6215,15 +6215,7 @@ RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_
 	return ret;
 }
 
-/**
- * \brief Disassembles \p nb_opcodes ops, \p nb_bytes bytes or both at \p addr
- * into JSON objects added to \p pj; negative counts go backwards.
- *
- * \param buf The bytes at \p addr, or NULL to read them from io as needed
- * \param nb_bytes Number of bytes to disassemble, 0 for no limit with a NULL \p buf
- * \param nb_opcodes Number of ops to disassemble, 0 for no limit
- */
-RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+static int core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, bool il, PJ *pj) {
 	bool res = true;
 	RzIterator iter = (RzIterator){ 0 };
 	bool backward = nb_opcodes < 0 || nb_bytes < 0;
@@ -6261,6 +6253,10 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_k(pj, "esil"); // split key and value to allow empty strings
 		const char *esil = RZ_STRBUF_SAFEGET(&op->esil);
 		pj_s(pj, hint && hint->esil ? hint->esil : (esil ? esil : ""));
+		if (il && op->il_op) {
+			pj_k(pj, "rzil");
+			rz_il_op_effect_json(op->il_op, pj);
+		}
 
 		pj_kb(pj, "refptr", op->refptr);
 
@@ -6371,6 +6367,26 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 clean_return:
 	rz_iterator_fini(&iter);
 	return res;
+}
+
+/**
+ * \brief Disassembles \p nb_opcodes ops, \p nb_bytes bytes or both at \p addr
+ * into JSON objects added to \p pj; negative counts go backwards.
+ *
+ * \param buf The bytes at \p addr, or NULL to read them from io as needed
+ * \param nb_bytes Number of bytes to disassemble, 0 for no limit with a NULL \p buf
+ * \param nb_opcodes Number of ops to disassemble, 0 for no limit
+ */
+RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+	return core_print_disasm_json(core, addr, buf, nb_bytes, nb_opcodes, false, pj);
+}
+
+/**
+ * \brief Same as rz_core_print_disasm_json(), and adds the RzIL of each op the
+ * plugin lifts as "rzil", in the JSON form of aoj.
+ */
+RZ_IPI int rz_core_print_disasm_json_il(RzCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
+	return core_print_disasm_json(core, addr, buf, nb_bytes, nb_opcodes, true, pj);
 }
 
 RZ_IPI int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len) {

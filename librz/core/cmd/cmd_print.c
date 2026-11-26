@@ -3371,7 +3371,7 @@ static bool core_walk_function_blocks(RzCore *core, RzAnalysisFunction *f, RzCmd
 				return false;
 			}
 			(void)rz_io_read_at_mapped(core->io, b->addr, buf, b->size);
-			rz_core_print_disasm_json(core, b->addr, buf, b->size, 0, state->d.pj);
+			rz_core_print_disasm_json_il(core, b->addr, buf, b->size, 0, state->d.pj);
 			free(buf);
 		}
 	} else {
