@@ -806,6 +806,11 @@ static bool test_rz_debug_trace_reset(void) {
 	rz_debug_trace_reset(dbg);
 	mu_assert_eq(rz_list_length(dbg->trace->traces), 0, "traces empty after second reset");
 
+	RzDebugTrace *saved_trace = dbg->trace;
+	dbg->trace = NULL;
+	rz_debug_trace_reset(dbg);
+	dbg->trace = saved_trace;
+
 	rz_debug_trace_reset(NULL);
 	rz_debug_free(dbg);
 	mu_end;
@@ -877,6 +882,51 @@ static bool test_debug_fuzzy_bt_and_native_pids(void) {
 	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds 16-bit callret 0x1005");
 	rz_list_free(frames);
 
+	// Big-endian fuzzy backtrace (8/4/2-byte words)
+	ut8 be_stack_bytes[16] = { 0 };
+	rz_write_be64(be_stack_bytes, 0x1005);
+	rz_write_be32(be_stack_bytes + 8, 0x1005);
+	rz_write_be16(be_stack_bytes + 12, 0x1005);
+	rz_io_write_at(io, 0x2100, be_stack_bytes, sizeof(be_stack_bytes));
+	rz_analysis_set_big_endian(analysis, true);
+
+	dbg->bits = 8;
+	frames = rz_debug_frames(dbg, 0x2100);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 64-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 64-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 4;
+	frames = rz_debug_frames(dbg, 0x2108);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 32-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 32-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 2;
+	frames = rz_debug_frames(dbg, 0x210c);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 16-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 16-bit callret 0x1005");
+	rz_list_free(frames);
+	rz_analysis_set_big_endian(analysis, false);
+
+	// NULL dbg->analysis falls back to little-endian safely
+	dbg->analysis = NULL;
+	dbg->bits = 8;
+	frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_notnull(frames, "fuzzy bt with NULL analysis");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt with NULL analysis finds LE callret 0x1005");
+	rz_list_free(frames);
+	dbg->analysis = analysis;
+
+	// btdepth larger than 512 KB stack buffer must stop at stacksize bound
+	dbg->bits = 8;
+	dbg->btdepth = (1024 * 512 / 8) + 4;
+	frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_notnull(frames, "fuzzy bt bounded by stacksize");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt bounded scan finds callret 0x1005");
+	rz_list_free(frames);
+	dbg->btdepth = 4;
+
 	dbg->bits = 3;
 	frames = rz_debug_frames(dbg, 0x2000);
 	mu_assert_null(frames, "fuzzy bt rejects invalid wordsize without leaking stack");
@@ -893,6 +943,10 @@ static bool test_debug_fuzzy_bt_and_native_pids(void) {
 #if __linux__
 	if (rz_debug_use(dbg, "native") && dbg->cur && dbg->cur->pids) {
 		RzList *pids = dbg->cur->pids(dbg, getpid());
+		mu_assert_notnull(pids, "native pids(getpid())");
+		rz_list_free(pids);
+		pids = dbg->cur->pids(dbg, 0);
+		mu_assert_notnull(pids, "native pids(0)");
 		rz_list_free(pids);
 	}
 #endif
