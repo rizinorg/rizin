@@ -245,6 +245,93 @@ bool test_rz_flag_unset_all_off(void) {
 	mu_end;
 }
 
+bool test_rz_flag_realname_collision_unset(void) {
+	RzFlag *flags = rz_flag_new();
+	mu_assert_notnull(flags, "rz_flag_new() failed");
+
+	RzFlagItem *a = rz_flag_set(flags, "foo", 0x1000, 4);
+	RzFlagItem *b = rz_flag_set(flags, "bar", 0x2000, 4);
+	RzFlagItem *c = rz_flag_set(flags, "baz", 0x3000, 4);
+	RzFlagItem *d = rz_flag_set(flags, "qux", 0x4000, 4);
+	mu_assert_notnull(a, "set foo");
+	mu_assert_notnull(b, "set bar");
+	mu_assert_notnull(c, "set baz");
+	mu_assert_notnull(d, "set qux");
+
+	rz_flag_item_set_realname(flags, b, "foo");
+	rz_flag_item_set_realname(flags, c, "foo");
+	rz_flag_item_set_realname(flags, d, "qux::real1");
+
+	mu_assert_true(rz_flag_unset_all_off(flags, 0x2000), "unset bar at 0x2000");
+	mu_assert_ptreq(rz_flag_get(flags, "foo"), a, "foo preserved after unset_all_off");
+	const RzList *l1000 = rz_flag_get_list(flags, 0x1000);
+	mu_assert_notnull(l1000, "list at 0x1000 preserved");
+	mu_assert_streq(((RzFlagItem *)rz_list_first_val(l1000))->name, "foo", "foo item intact");
+
+	mu_assert_true(rz_flag_unset(flags, c), "unset baz");
+	mu_assert_ptreq(rz_flag_get(flags, "foo"), a, "foo preserved after rz_flag_unset");
+
+	rz_flag_item_set_realname(flags, d, "qux::real2");
+	mu_assert_null(rz_flag_get(flags, "qux::real1"), "old realname removed on replace");
+	mu_assert_ptreq(rz_flag_get(flags, "qux::real2"), d, "new realname registered");
+
+	rz_flag_item_set_realname(flags, d, "foo");
+	rz_flag_item_set_realname(flags, d, "qux::real3");
+	mu_assert_ptreq(rz_flag_get(flags, "foo"), a, "foo preserved when replacing colliding realname");
+	mu_assert_ptreq(rz_flag_get(flags, "qux::real3"), d, "updated realname registered");
+
+	mu_assert_true(rz_flag_rename(flags, d, "qux_renamed"), "rename flag with realname");
+	mu_assert_null(rz_flag_get(flags, "qux::real3"), "old realname removed on rename");
+	mu_assert_ptreq(rz_flag_get(flags, "qux_renamed"), d, "renamed flag registered");
+	mu_assert_true(rz_flag_unset(flags, d), "unset renamed flag");
+	mu_assert_null(rz_flag_get(flags, "qux_renamed"), "renamed flag unset");
+	mu_assert_null(rz_flag_get(flags, "qux::real3"), "old realname stays gone after unset");
+
+	RzFlagItem *s1 = rz_flag_set(flags, "same_x", 0x5000, 4);
+	RzFlagItem *s2 = rz_flag_set(flags, "same_y", 0x5000, 4);
+	mu_assert_notnull(s1, "set same_x");
+	mu_assert_notnull(s2, "set same_y");
+	rz_flag_item_set_realname(flags, s1, "same_y");
+	mu_assert_true(rz_flag_unset_all_off(flags, 0x5000), "unset colliding flags at same offset");
+	mu_assert_null(rz_flag_get(flags, "same_x"), "same_x unset");
+	mu_assert_null(rz_flag_get(flags, "same_y"), "same_y unset");
+
+	RzFlagItem *r1 = rz_flag_set(flags, "reuse_real", 0x6000, 4);
+	RzFlagItem *r2 = rz_flag_set(flags, "reuse_orig", 0x6100, 4);
+	mu_assert_notnull(r1, "set reuse_real");
+	mu_assert_notnull(r2, "set reuse_orig");
+	rz_flag_item_set_realname(flags, r2, "reuse_real");
+	mu_assert_true(rz_flag_unset(flags, r1), "unset reuse_real");
+	mu_assert_true(rz_flag_rename(flags, r2, "reuse_real"), "rename to freed colliding realname");
+	mu_assert_ptreq(rz_flag_get(flags, "reuse_real"), r2, "renamed flag preserved");
+	mu_assert_streq(r2->name, "reuse_real", "renamed flag name updated");
+	mu_assert_streq(r2->realname, "reuse_real", "renamed flag realname updated");
+	mu_assert_true(rz_flag_unset(flags, r2), "unset renamed flag");
+	mu_assert_null(rz_flag_get(flags, "reuse_real"), "renamed flag removed");
+
+	RzFlagItem *e_null = rz_flag_set(flags, "edge_null_real", 0x7000, 4);
+	mu_assert_notnull(e_null, "set edge_null_real");
+	rz_flag_item_set_realname(flags, e_null, NULL);
+	mu_assert_null(e_null->realname, "cleared realname is NULL");
+	mu_assert_true(rz_flag_unset(flags, e_null), "unset flag with NULL realname");
+
+	RzFlagItem *e_same = rz_flag_set(flags, "edge_same_str", 0x7100, 4);
+	mu_assert_notnull(e_same, "set edge_same_str");
+	rz_flag_item_set_realname(flags, e_same, "edge_same_str");
+	mu_assert_true(rz_flag_unset(flags, e_same), "unset flag with equal dup realname");
+
+	RzFlagItem *e_nf = rz_flag_set(flags, "edge_null_flag", 0x7200, 4);
+	mu_assert_notnull(e_nf, "set edge_null_flag");
+	rz_flag_item_set_realname(flags, e_nf, "foo");
+	rz_flag_item_set_realname(NULL, e_nf, "");
+	mu_assert_null(e_nf->realname, "cleared realname with NULL RzFlag");
+	mu_assert_ptreq(rz_flag_get(flags, "foo"), a, "foo preserved after NULL RzFlag realname clear");
+	mu_assert_true(rz_flag_unset(flags, e_nf), "unset edge_null_flag");
+
+	rz_flag_free(flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test(test_rz_flag_get_set);
 	mu_run_test(test_rz_flag_by_spaces);
@@ -254,6 +341,7 @@ int all_tests(void) {
 	mu_run_test(test_rz_flag_get_preferred_item_fallback_non_aav);
 	mu_run_test(test_rz_flag_get_preferred_item_keep_aav_when_only_aav);
 	mu_run_test(test_rz_flag_unset_all_off);
+	mu_run_test(test_rz_flag_realname_collision_unset);
 	return tests_passed != tests_run;
 }
 

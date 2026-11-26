@@ -77,6 +77,16 @@ static void free_item_name(RzFlagItem *item) {
 	}
 }
 
+static void delete_item_realname(RzFlag *f, RzFlagItem *item) {
+	// Check ownership in ht_name: another flag's name can match item->realname,
+	// and deleting that unrelated flag would leave hanging pointers.
+	if (f && item->realname && item->name != item->realname &&
+		strcmp(item->name, item->realname) &&
+		ht_sp_find(f->ht_name, item->realname, NULL) == item) {
+		ht_sp_delete(f->ht_name, item->realname);
+	}
+}
+
 /**
  * \brief Find an offset entry in the manager's skiplist.
  * \param dir -1 for an offset <= off, 0 for an exact match, 1 for an offset >= off.
@@ -146,9 +156,13 @@ static RZ_OWN char *filter_item_name(RZ_NONNULL const char *name) {
 	return res;
 }
 
-static void set_name(RzFlagItem *item, char *name) {
+static void set_name(RzFlag *f, RzFlagItem *item, char *name) {
+	bool had_realname = item->realname && item->name != item->realname;
 	free_item_name(item);
 	item->name = name;
+	if (had_realname) {
+		delete_item_realname(f, item);
+	}
 	free_item_realname(item);
 	item->realname = item->name;
 }
@@ -187,7 +201,7 @@ static bool update_flag_item_name(RzFlag *f, RzFlagItem *item, const char *newna
 		? ht_sp_update_key(f->ht_name, item->name, fname)
 		: ht_sp_insert(f->ht_name, fname, item);
 	if (res) {
-		set_name(item, fname);
+		set_name(f, item, fname);
 		return true;
 	}
 	free(fname);
@@ -848,12 +862,7 @@ RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 RZ_API void rz_flag_item_set_realname(RzFlag *f, RzFlagItem *item, const char *realname) {
 	rz_return_if_fail(item);
 	if (item->realname) { // item realname already exists
-		if (strcmp(item->name, item->realname)) {
-			// There appear to be too many cases where the following
-			// accidentally deletes a flag item whose name is the same as
-			// another item's realname, causing hanging pointers.
-			// ht_sp_delete(f->ht_name, item->realname);
-		}
+		delete_item_realname(f, item);
 		free_item_realname(item);
 	}
 	if (RZ_STR_ISEMPTY(realname)) {
@@ -892,9 +901,7 @@ RZ_API int rz_flag_rename(RzFlag *f, RzFlagItem *item, const char *name) {
 RZ_API bool rz_flag_unset(RzFlag *f, RzFlagItem *item) {
 	rz_return_val_if_fail(f && item, false);
 	remove_offsetmap(f, item);
-	if (item->realname && strcmp(item->name, item->realname)) {
-		ht_sp_delete(f->ht_name, item->realname);
-	}
+	delete_item_realname(f, item);
 	ht_sp_delete(f->ht_name, item->name);
 	return true;
 }
@@ -927,9 +934,7 @@ RZ_API bool rz_flag_unset_all_off(RzFlag *f, ut64 off) {
 	bool unset = false;
 	while (!rz_list_empty(flags->flags)) {
 		RzFlagItem *item = rz_list_pop_head(flags->flags);
-		if (item->realname && strcmp(item->name, item->realname)) {
-			ht_sp_delete(f->ht_name, item->realname);
-		}
+		delete_item_realname(f, item);
 		ht_sp_delete(f->ht_name, item->name);
 		unset = true;
 	}
