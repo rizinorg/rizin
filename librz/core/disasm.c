@@ -3034,6 +3034,7 @@ static void ds_print_stackptr(RzDisasmState *ds) {
 		for (; len < 6; len++) {
 			rz_cons_print(ds->core->cons, " ");
 		}
+		free(eff);
 	} else {
 		rz_cons_print(ds->core->cons, "      ");
 	}

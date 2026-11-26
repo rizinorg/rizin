@@ -327,3 +327,43 @@ EXPECT=<<EOF
 \    `====< 0x100000300      goto  0x1000002d0                          ; *middle* 1
 EOF
 RUN
+
+NAME=Dalvik if-test branch offsets are signed
+FILE=malloc://0x20000
+CMDS=<<EOF
+e asm.arch=dalvik
+wx 3800ff7f3210ff7f
+wx 3800008032100080 @ 0x10000
+aoj @ 0~{.[]\|{jump,fail}}
+aoj @ 4~{.[]\|{jump,fail}}
+aoj @ 0x10000~{.[]\|{jump,fail}}
+aoj @ 0x10004~{.[]\|{jump,fail}}
+EOF
+EXPECT=<<EOF
+[{"jump":65534,"fail":4}]
+[{"jump":65538,"fail":8}]
+[{"jump":0,"fail":65540}]
+[{"jump":4,"fail":65544}]
+EOF
+RUN
+
+NAME=Dalvik function with backward if-test branches
+FILE=malloc://0x20010
+CMDS=<<EOF
+e asm.arch=dalvik
+e asm.bytes=true
+e asm.flags=false
+wx 0110d80000013310feffd80101013901feff0e00
+af
+pdr
+EOF
+EXPECT=<<EOF
+/ fcn.00000000();
+| 0x00000000      0110           move  v0, v1
+| 0x00000002      d8000001       add-int/lit8 v0, v0, 0x1
+| 0x00000006      3310feff       if-ne v0, v1, 0x00000002
+| 0x0000000a      d8010101       add-int/lit8 v1, v1, 0x1
+| 0x0000000e      3901feff       if-nez v1, 0x0000000a
+\ 0x00000012      0e00           return-void
+EOF
+RUN
