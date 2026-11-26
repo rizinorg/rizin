@@ -669,6 +669,16 @@ bool test_rz_analysis_function_get_ret_var() {
 	mu_end;
 }
 
+static RzIOReadAt orig_indirect_read_at = NULL;
+static ut64 fail_indirect_read_addr = UT64_MAX;
+
+static bool failing_indirect_read_at(RzIO *io, ut64 addr, ut8 *buf, size_t len) {
+	if (addr == fail_indirect_read_addr) {
+		return false;
+	}
+	return orig_indirect_read_at(io, addr, buf, len);
+}
+
 static bool run_indirect_branch_test(const ut8 *img, size_t img_size,
 	ut64 exp_jump, ut64 exp_fail, size_t exp_bbs) {
 	RzCore *core = rz_core_new();
@@ -983,6 +993,621 @@ bool test_indirect_reg_branch_resolution(void) {
 		mu_assert_eq(entry->fail, UT64_MAX, "addr32 fail unset");
 		mu_assert_eq(rz_pvector_len(fcn->bbs), 2, "addr32 resolves only masked target");
 		rz_core_free(core);
+	}
+
+	// No-ops (endbr64, nop, cmp, test), untracked & cleared rbp stores,
+	// ds:/ss: loads, dst-only clobber ops, and invalid/untracked/16-bit operand paths
+	// on unrelated registers preserve the tracked jump target in rax
+	{
+		memset(img, 0x90, sizeof(img));
+		const ut8 noops_clobbers_segs[] = {
+			0xf3, 0x0f, 0x1e, 0xfa, // endbr64
+			0x90, // nop
+			0x83, 0xff, 0x00, // cmp edi, 0
+			0x85, 0xff, // test edi, edi
+			0x48, 0xc7, 0xc0, 0x80, 0x11, 0x00, 0x00, // mov rax, 0x1180
+			0x48, 0x89, 0x4d, 0xf8, // mov qword [rbp - 8], rcx (untracked rbp store)
+			0x48, 0xc7, 0xc5, 0x80, 0x11, 0x00, 0x00, // mov rbp, 0x1180
+			0x48, 0x31, 0xed, // xor rbp, rbp (clear rbp slot -> count == 0)
+			0x48, 0x89, 0x4d, 0xf8, // mov qword [rbp - 8], rcx (cleared rbp store)
+			0x36, 0x48, 0x8b, 0x40, 0x00, // mov rax, qword ss:[rax + 0] -> 0x1188
+			0x3e, 0x48, 0x8b, 0x40, 0x00, // mov rax, qword ds:[rax + 0] -> 0x11c0
+			0x48, 0xc7, 0xc1, 0x80, 0x11, 0x00, 0x00, // mov rcx, 0x1180
+			0x48, 0x83, 0xe1, 0x01, // and rcx, 1
+			0x48, 0x83, 0xc9, 0x01, // or rcx, 1
+			0x48, 0xd1, 0xe1, // shl rcx, 1
+			0x48, 0xd1, 0xe9, // shr rcx, 1
+			0x48, 0xd1, 0xf9, // sar rcx, 1
+			0x48, 0xf7, 0xd1, // not rcx
+			0x48, 0xf7, 0xd9, // neg rcx
+			0x48, 0x0f, 0xb6, 0xc9, // movzx rcx, cl
+			0x48, 0x0f, 0xbe, 0xc9, // movsx rcx, cl
+			0x0f, 0x94, 0xc1, // sete cl
+			0x48, 0x8d, 0x4b, 0x08, // lea rcx, [rbx + 8] (non-RIP lea -> clear rcx)
+			0x8e, 0xd8, // mov ds, ax (non-GPR dst -> intra_bb_clear reg->type != GPR)
+			0x48, 0x8c, 0xd9, // mov rcx, ds (non-GPR src -> intra_bb_reg_key reg->type != GPR)
+			0x48, 0x89, 0xe2, // mov rdx, rsp (untracked src reg)
+			0x48, 0xc7, 0xc6, 0x80, 0x11, 0x00, 0x00, // mov rsi, 0x1180
+			0x48, 0x31, 0xf6, // xor rsi, rsi (clear rsi slot -> count == 0)
+			0x48, 0x89, 0xce, // mov rsi, rcx (cleared src reg)
+			0x66, 0x89, 0xd9, // mov cx, bx (16-bit reg mov -> key < 0)
+			0x66, 0xb9, 0x80, 0x11, // mov cx, 0x1180 (16-bit imm -> intra_bb_set key < 0)
+			0x48, 0x8b, 0x0c, 0x50, // mov rcx, qword [rax + rdx*2] (regdelta/mul)
+			0x48, 0x8b, 0x0c, 0x25, 0x80, 0x11, 0x00, 0x00, // mov rcx, qword [0x1180] (!s0->reg)
+			0x49, 0x8b, 0x0c, 0x24, // mov rcx, qword [r12] (untracked base)
+			0x48, 0x8b, 0x0e, // mov rcx, qword [rsi] (cleared base -> count == 0)
+			0x66, 0x0f, 0x44, 0xcb, // cmove cx, bx (16-bit cmov)
+			0x4c, 0x0f, 0x44, 0xe0, // cmove r12, rax (untracked dst)
+			0x48, 0x0f, 0x44, 0xc8, // cmove rcx, rax (cleared dst)
+			0x48, 0xc7, 0xc2, 0x80, 0x11, 0x00, 0x00, // mov rdx, 0x1180
+			0x49, 0x0f, 0x44, 0xd4, // cmove rdx, r12 (untracked src)
+			0x48, 0xc7, 0xc2, 0x80, 0x11, 0x00, 0x00, // mov rdx, 0x1180
+			0x48, 0x0f, 0x44, 0xd1, // cmove rdx, rcx (cleared src)
+			0x66, 0x01, 0xd9, // add cx, bx (16-bit add)
+			0x49, 0x01, 0xc4, // add r12, rax (untracked dst)
+			0x48, 0x01, 0xc1, // add rcx, rax (cleared dst)
+			0x48, 0xc7, 0xc2, 0x80, 0x11, 0x00, 0x00, // mov rdx, 0x1180
+			0x4c, 0x01, 0xe2, // add rdx, r12 (untracked src)
+			0x48, 0xc7, 0xc2, 0x80, 0x11, 0x00, 0x00, // mov rdx, 0x1180
+			0x48, 0x01, 0xca, // add rdx, rcx (cleared src)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, noops_clobbers_segs, sizeof(noops_clobbers_segs));
+		rz_write_at_le64(img, 0x1188, 0x180);
+		rz_write_at_le64(img, 0x11c0, 0x188);
+		img[0x1c0] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x11c0, UT64_MAX, 2),
+			"noops, seg loads, clobbers, and unrelated invalid ops preserve rax");
+
+		// cmov with memory source and add with immediate source reset tracked state
+		memset(img, 0x90, sizeof(img));
+		const ut8 cmov_mem_reset[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x0f, 0x44, 0x08, // cmove rcx, qword [rax]
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, cmov_mem_reset, sizeof(cmov_mem_reset));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"cmov with mem src resets tracked state");
+
+		memset(img, 0x90, sizeof(img));
+		const ut8 add_imm_reset[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x83, 0xc1, 0x10, // add rcx, 0x10
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, add_imm_reset, sizeof(add_imm_reset));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"add with imm src resets tracked state");
+	}
+
+	// 2-way movsxd reg, reg and 2x2 cmov/add overflow exits
+	{
+		memset(img, 0x90, sizeof(img));
+		const ut8 movsxd_two[] = {
+			0xb9, 0x40, 0x00, 0x00, 0x00, // mov ecx, 0x40
+			0xba, 0x50, 0x00, 0x00, 0x00, // mov edx, 0x50
+			0x0f, 0x44, 0xca, // cmove ecx, edx
+			0x48, 0x63, 0xc9, // movsxd rcx, ecx
+			0x48, 0xc7, 0xc0, 0x40, 0x10, 0x00, 0x00, // mov rax, 0x1040
+			0x48, 0x01, 0xc8, // add rax, rcx
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, movsxd_two, sizeof(movsxd_two));
+		img[0x80] = img[0x90] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1080, 0x1090, 3),
+			"2-way movsxd reg, reg resolves both targets");
+
+		// 2-val cmov 2-val overflows mid-loop
+		memset(img, 0x90, sizeof(img));
+		const ut8 cmov_2x2[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0xc7, 0xc1, 0x90, 0x10, 0x00, 0x00, // mov rcx, 0x1090
+			0x48, 0x0f, 0x44, 0xc1, // cmove rax, rcx
+			0x48, 0xc7, 0xc2, 0xa0, 0x10, 0x00, 0x00, // mov rdx, 0x10a0
+			0x48, 0xc7, 0xc3, 0xb0, 0x10, 0x00, 0x00, // mov rbx, 0x10b0
+			0x48, 0x0f, 0x44, 0xd3, // cmove rdx, rbx
+			0x48, 0x0f, 0x45, 0xc2, // cmovne rax, rdx (>2 -> mid-loop overflow)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, cmov_2x2, sizeof(cmov_2x2));
+		img[0x80] = img[0x90] = img[0xa0] = img[0xb0] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"2x2 cmov overflow rejected");
+
+		// 2-val add 2-val overflows mid-loop
+		memset(img, 0x90, sizeof(img));
+		const ut8 add_2x2[] = {
+			0x48, 0xc7, 0xc0, 0x40, 0x10, 0x00, 0x00, // mov rax, 0x1040
+			0x48, 0xc7, 0xc1, 0x50, 0x10, 0x00, 0x00, // mov rcx, 0x1050
+			0x48, 0x0f, 0x44, 0xc1, // cmove rax, rcx
+			0x48, 0xc7, 0xc2, 0x40, 0x00, 0x00, 0x00, // mov rdx, 0x40
+			0x48, 0xc7, 0xc3, 0x60, 0x00, 0x00, 0x00, // mov rbx, 0x60
+			0x48, 0x0f, 0x44, 0xd3, // cmove rdx, rbx
+			0x48, 0x01, 0xd0, // add rax, rdx (4 values -> overflow)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, add_2x2, sizeof(add_2x2));
+		img[0x80] = img[0x90] = img[0xa0] = img[0xb0] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"2x2 add overflow rejected");
+	}
+
+	// Memory load failure paths: non-4/8 width, addr overflow, unmapped, straddling end of map
+	{
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_width2[] = {
+			0x48, 0xc7, 0xc0, 0x40, 0x10, 0x00, 0x00, // mov rax, 0x1040
+			0x66, 0x8b, 0x00, // mov ax, word [rax] (width 2)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_width2, sizeof(mem_width2));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"width-2 memory load rejected");
+
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_ovf[] = {
+			0x48, 0xb8, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // mov rax, -4
+			0x48, 0x8b, 0x00, // mov rax, qword [rax] (UT64_ADD_OVFCHK)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_ovf, sizeof(mem_ovf));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"overflowing memory load address rejected");
+
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_unmapped[] = {
+			0x48, 0xc7, 0xc0, 0x00, 0x00, 0x05, 0x00, // mov rax, 0x50000
+			0x48, 0x8b, 0x00, // mov rax, qword [rax]
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_unmapped, sizeof(mem_unmapped));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"unmapped memory load rejected");
+
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_straddle[] = {
+			0x48, 0xc7, 0xc0, 0xfc, 0x11, 0x00, 0x00, // mov rax, 0x11fc
+			0x48, 0x8b, 0x00, // mov rax, qword [rax] (0x11fc..0x1203 straddles map end)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_straddle, sizeof(mem_straddle));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"straddling end-of-map load rejected");
+	}
+
+	// Entry guards, non-CPU family, rsp write, non-simple mem stores, 3-operand has_s1
+	{
+		// Single-instruction BB (bb->ninstr < 2)
+		memset(img, 0x90, sizeof(img));
+		img[0] = 0xff;
+		img[1] = 0xe0; // jmp rax
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"single-instruction rjmp BB skipped");
+
+		// >128 instructions BB (bb->ninstr > INTRA_BB_MAX_INSTR)
+		memset(img, 0x90, sizeof(img));
+		for (size_t i = 0; i < 130; i++) {
+			img[i * 2] = 0x85;
+			img[i * 2 + 1] = 0xff; // test edi, edi
+		}
+		const ut8 tail_mov_jmp[] = {
+			0x48, 0xc7, 0xc0, 0xc0, 0x11, 0x00, 0x00, // mov rax, 0x11c0
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img + 260, tail_mov_jmp, sizeof(tail_mov_jmp));
+		img[0x1c0] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"over-128-instruction BB skipped");
+
+		// Non-CPU family instruction (lfence -> RZ_ANALYSIS_OP_FAMILY_THREAD) resets state
+		memset(img, 0x90, sizeof(img));
+		const ut8 fence_reset[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x0f, 0xae, 0xe8, // lfence (RZ_ANALYSIS_OP_FAMILY_THREAD)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, fence_reset, sizeof(fence_reset));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"non-CPU lfence op resets tracked state");
+
+		// Stack pointer write (sub rsp, 0x10) resets state
+		memset(img, 0x90, sizeof(img));
+		const ut8 rsp_write[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x83, 0xec, 0x10, // sub rsp, 0x10
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, rsp_write, sizeof(rsp_write));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"rsp modification resets tracked state");
+
+		// Indexed stack store [rsp + rcx] and absolute mem store [0x1040] reset state
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_store_idx[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x89, 0x14, 0x0c, // mov qword [rsp + rcx], rdx
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_store_idx, sizeof(mem_store_idx));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"indexed stack store resets tracked state");
+
+		memset(img, 0x90, sizeof(img));
+		const ut8 mem_store_abs[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x89, 0x14, 0x25, 0x40, 0x10, 0x00, 0x00, // mov qword [0x1040], rdx
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, mem_store_abs, sizeof(mem_store_abs));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"absolute mem store resets tracked state");
+
+		// 3-operand instruction (shld -> op_fillval populates src[1], has_s1 == true) resets state
+		memset(img, 0x90, sizeof(img));
+		const ut8 three_op[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x48, 0x0f, 0xa4, 0xd1, 0x01, // shld rcx, rdx, 1 (has_s1 == true)
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, three_op, sizeof(three_op));
+		img[0x80] = 0xc3;
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"3-operand shld resets tracked state");
+	}
+
+	// Target validation edge cases: 0, UT64_MAX, self-jmp, maxoff, jmpabove,
+	// self-fcn-entry recursion, noreturn, noncode, non-x86 / 32-bit / jmptbl=false
+	{
+		// target == 0
+		memset(img, 0x90, sizeof(img));
+		const ut8 tgt_zero[] = {
+			0x48, 0xc7, 0xc0, 0x00, 0x00, 0x00, 0x00, // mov rax, 0
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, tgt_zero, sizeof(tgt_zero));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"zero target rejected");
+
+		// target == UT64_MAX
+		memset(img, 0x90, sizeof(img));
+		const ut8 tgt_max[] = {
+			0x48, 0xc7, 0xc0, 0xff, 0xff, 0xff, 0xff, // mov rax, -1
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, tgt_max, sizeof(tgt_max));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"UT64_MAX target rejected");
+
+		// target == jmp_addr (self-loop at 0x1009)
+		memset(img, 0x90, sizeof(img));
+		const ut8 tgt_self_jmp[] = {
+			0x48, 0xc7, 0xc0, 0x09, 0x10, 0x00, 0x00, // mov rax, 0x1009
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, tgt_self_jmp, sizeof(tgt_self_jmp));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), UT64_MAX, UT64_MAX, 1),
+			"self-jmp target rejected");
+
+		// target == fcn->addr (self-entry jump allowed when jmpabove=true)
+		memset(img, 0x90, sizeof(img));
+		const ut8 tgt_fcn_entry[] = {
+			0x48, 0xc7, 0xc0, 0x00, 0x10, 0x00, 0x00, // mov rax, 0x1000
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		memcpy(img, tgt_fcn_entry, sizeof(tgt_fcn_entry));
+		mu_assert_true(run_indirect_branch_test(img, sizeof(img), 0x1000, UT64_MAX, 1),
+			"jump to own function entry allowed");
+
+		// Custom option tests: maxoffset, jmpabove=false, noreturn, noncode, jmptbl=false
+		const ut8 mov_1080_jmp[] = {
+			0x48, 0xc7, 0xc0, 0x80, 0x10, 0x00, 0x00, // mov rax, 0x1080
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+		const ut8 mov_1010_jmp[] = {
+			0x48, 0xc7, 0xc0, 0x10, 0x10, 0x00, 0x00, // mov rax, 0x1010
+			0x85, 0xff, // test edi, edi
+			0xff, 0xe0 // jmp rax
+		};
+
+		// target > jmp_addr + maxoff
+		{
+			memset(img, 0x90, sizeof(img));
+			memcpy(img, mov_1080_jmp, sizeof(mov_1080_jmp));
+			img[0x80] = 0xc3;
+			RzCore *core = rz_core_new();
+			mu_assert_notnull(core, "core");
+			RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+			mu_assert_notnull(cf, "open");
+			rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+			rz_config_set(core->config, "asm.arch", "x86");
+			rz_config_set_i(core->config, "asm.bits", 64);
+			core->analysis->opt.jmptbl = true;
+			core->analysis->opt.jmptbl_maxoffset = 0x20;
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write");
+			RzAnalysisFunction *fcn = rz_analysis_create_function(
+				core->analysis, "fcn_maxoff", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn, "fcn");
+			rz_analysis_fcn(core->analysis, fcn, 0x1000, sizeof(img), RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *entry = rz_analysis_get_block_at(core->analysis, 0x1000);
+			mu_assert_notnull(entry, "entry");
+			mu_assert_eq(entry->jump, UT64_MAX, "target > jmp_addr + maxoff rejected");
+
+			// target < jmp_addr - maxoff with jmpabove=true
+			memset(img, 0x90, sizeof(img));
+			img[0x10] = 0xc3;
+			memcpy(img + 0x80, mov_1010_jmp, sizeof(mov_1010_jmp));
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write");
+			RzAnalysisFunction *fcn2 = rz_analysis_create_function(
+				core->analysis, "fcn_minoff", 0x1080, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn2, "fcn2");
+			core->analysis->opt.jmpabove = true;
+			rz_analysis_fcn(core->analysis, fcn2, 0x1080, 0x80, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b2 = rz_analysis_get_block_at(core->analysis, 0x1080);
+			mu_assert_notnull(b2, "b2");
+			mu_assert_eq(b2->jump, UT64_MAX, "target < jmp_addr - maxoff rejected");
+			rz_core_free(core);
+		}
+
+		// jmpabove = false: reject target < fcn->addr, accept target >= fcn->addr
+		{
+			memset(img, 0x90, sizeof(img));
+			img[0x10] = 0xc3;
+			memcpy(img + 0x80, mov_1010_jmp, sizeof(mov_1010_jmp));
+			RzCore *core = rz_core_new();
+			mu_assert_notnull(core, "core");
+			RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+			mu_assert_notnull(cf, "open");
+			rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+			rz_config_set(core->config, "asm.arch", "x86");
+			rz_config_set_i(core->config, "asm.bits", 64);
+			core->analysis->opt.jmptbl = true;
+			core->analysis->opt.jmpabove = false;
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write");
+			RzAnalysisFunction *fcn_below = rz_analysis_create_function(
+				core->analysis, "fcn_below", 0x1080, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_below, "fcn_below");
+			rz_analysis_fcn(core->analysis, fcn_below, 0x1080, 0x80, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_below = rz_analysis_get_block_at(core->analysis, 0x1080);
+			mu_assert_notnull(b_below, "b_below");
+			mu_assert_eq(b_below->jump, UT64_MAX, "jmpabove=false rejects target < fcn->addr");
+
+			// Forward jump with jmpabove=false & noncode=true succeeds (jump to 0x10c0, avoiding fcn_below at 0x1080)
+			const ut8 mov_10c0_jmp[] = {
+				0x48, 0xc7, 0xc0, 0xc0, 0x10, 0x00, 0x00, // mov rax, 0x10c0
+				0x85, 0xff, // test edi, edi
+				0xff, 0xe0 // jmp rax
+			};
+			memset(img, 0x90, sizeof(img));
+			memcpy(img, mov_10c0_jmp, sizeof(mov_10c0_jmp));
+			img[0xc0] = 0xc3;
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write");
+			core->analysis->opt.noncode = true;
+			RzAnalysisFunction *fcn_fwd = rz_analysis_create_function(
+				core->analysis, "fcn_fwd", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_fwd, "fcn_fwd");
+			rz_analysis_fcn(core->analysis, fcn_fwd, 0x1000, 0x40, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_fwd = rz_analysis_get_block_at(core->analysis, 0x1000);
+			mu_assert_notnull(b_fwd, "b_fwd");
+			mu_assert_eq(b_fwd->jump, 0x10c0, "jmpabove=false + noncode=true accepts forward target");
+			rz_core_free(core);
+		}
+
+		// noreturn target rejected; jmptbl=false skipped; 32-bit x86 skipped; arm64 skipped
+		{
+			memset(img, 0x90, sizeof(img));
+			memcpy(img, mov_1080_jmp, sizeof(mov_1080_jmp));
+			img[0x80] = 0xc3;
+			RzCore *core = rz_core_new();
+			mu_assert_notnull(core, "core");
+			RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+			mu_assert_notnull(cf, "open");
+			rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+			rz_config_set(core->config, "asm.arch", "x86");
+			rz_config_set_i(core->config, "asm.bits", 64);
+			core->analysis->opt.jmptbl = true;
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)), "write");
+			rz_analysis_noreturn_add(core->analysis, NULL, 0x1080);
+			RzAnalysisFunction *fcn_nr = rz_analysis_create_function(
+				core->analysis, "fcn_nr", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_nr, "fcn_nr");
+			rz_analysis_fcn(core->analysis, fcn_nr, 0x1000, sizeof(img), RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_nr = rz_analysis_get_block_at(core->analysis, 0x1000);
+			mu_assert_notnull(b_nr, "b_nr");
+			mu_assert_eq(b_nr->jump, UT64_MAX, "noreturn target rejected");
+
+			// jmptbl = false
+			core->analysis->opt.jmptbl = false;
+			RzAnalysisFunction *fcn_nojt = rz_analysis_create_function(
+				core->analysis, "fcn_nojt", 0x1100, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_nojt, "fcn_nojt");
+			mu_assert_true(rz_io_write_at(core->io, 0x1100, mov_1080_jmp, sizeof(mov_1080_jmp)), "write nojt");
+			rz_analysis_fcn(core->analysis, fcn_nojt, 0x1100, 0x40, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_nojt = rz_analysis_get_block_at(core->analysis, 0x1100);
+			mu_assert_notnull(b_nojt, "b_nojt");
+			mu_assert_eq(b_nojt->jump, UT64_MAX, "jmptbl=false skips resolver");
+
+			// 32-bit x86 (with intervening test so op_is_known_reg_jump does not intercept)
+			core->analysis->opt.jmptbl = true;
+			rz_config_set_i(core->config, "asm.bits", 32);
+			const ut8 x86_32_jmp[] = { 0xb8, 0x80, 0x10, 0x00, 0x00, 0x85, 0xff, 0xff, 0xe0 }; // mov eax, 0x1080; test edi, edi; jmp eax
+			mu_assert_true(rz_io_write_at(core->io, 0x1140, x86_32_jmp, sizeof(x86_32_jmp)), "write x86-32");
+			RzAnalysisFunction *fcn_32 = rz_analysis_create_function(
+				core->analysis, "fcn_x86_32", 0x1140, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_32, "fcn_32");
+			rz_analysis_fcn(core->analysis, fcn_32, 0x1140, 0x20, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_32 = rz_analysis_get_block_at(core->analysis, 0x1140);
+			mu_assert_notnull(b_32, "b_32");
+			mu_assert_eq(b_32->jump, UT64_MAX, "x86-32 skips resolver");
+
+			// Huge jmptbl_maxoffset exercises UT64_SUB_OVFCHK (underflow) and high map exercises UT64_ADD_OVFCHK (overflow)
+			rz_config_set_i(core->config, "asm.bits", 64);
+			core->analysis->opt.jmptbl_maxoffset = UT32_MAX;
+			core->analysis->opt.jmpabove = true;
+			rz_analysis_noreturn_drop(core->analysis, "0x1080");
+			const ut8 mov_10a0_jmp[] = {
+				0x48, 0xc7, 0xc0, 0xa0, 0x10, 0x00, 0x00, // mov rax, 0x10a0
+				0x85, 0xff, // test edi, edi
+				0xff, 0xe0 // jmp rax
+			};
+			mu_assert_true(rz_io_write_at(core->io, 0x1160, mov_10a0_jmp, sizeof(mov_10a0_jmp)), "write ovf maxoff");
+			ut8 ret_op = 0xc3;
+			mu_assert_true(rz_io_write_at(core->io, 0x10a0, &ret_op, 1), "write ret at 0x10a0");
+			RzAnalysisFunction *fcn_ovf = rz_analysis_create_function(
+				core->analysis, "fcn_ovf_maxoff", 0x1160, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_ovf, "fcn_ovf");
+			rz_analysis_fcn(core->analysis, fcn_ovf, 0x1160, 0x20, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_ovf = rz_analysis_get_block_at(core->analysis, 0x1160);
+			mu_assert_notnull(b_ovf, "b_ovf");
+			mu_assert_eq(b_ovf->jump, 0x10a0, "huge maxoffset skips underflow check cleanly");
+
+			// High address near UT64_MAX exercises UT64_ADD_OVFCHK(jmp_addr, maxoff)
+			const ut64 hi_base = 0xfffffffffffff000ULL;
+			RzCoreFile *cf_top = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, hi_base);
+			mu_assert_notnull(cf_top, "open top map");
+			rz_io_map_add(core->io, cf_top->fd, RZ_PERM_RWX, 0, hi_base, 0x200);
+			const ut8 hi_lea_jmp[] = {
+				0x48, 0x8d, 0x05, 0x79, 0x00, 0x00, 0x00, // lea rax, [rip + 0x79] -> hi_base + 0x80
+				0x85, 0xff, // test edi, edi
+				0xff, 0xe0 // jmp rax
+			};
+			mu_assert_true(rz_io_write_at(core->io, hi_base, hi_lea_jmp, sizeof(hi_lea_jmp)), "write hi_lea_jmp");
+			mu_assert_true(rz_io_write_at(core->io, hi_base + 0x80, &ret_op, 1), "write hi ret");
+			RzAnalysisFunction *fcn_top = rz_analysis_create_function(
+				core->analysis, "fcn_top_ovf", hi_base, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_top, "fcn_top");
+			rz_analysis_fcn(core->analysis, fcn_top, hi_base, 0x100, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_top = rz_analysis_get_block_at(core->analysis, hi_base);
+			mu_assert_notnull(b_top, "b_top");
+			mu_assert_eq(b_top->jump, hi_base + 0x80, "high addr skips UT64_ADD_OVFCHK cleanly");
+
+			// Big-endian table load exercises rz_read_ble64/rz_read_ble32 big_endian=true branches
+			core->analysis->big_endian = true;
+			const ut8 be_loads[] = {
+				0x48, 0xc7, 0xc0, 0x40, 0x10, 0x00, 0x00, // mov rax, 0x1040
+				0x48, 0x8b, 0x48, 0x00, // mov rcx, qword [rax + 0] (BE 0x1050)
+				0x48, 0x63, 0x50, 0x08, // movsxd rdx, dword [rax + 8] (BE 0x50)
+				0x48, 0x01, 0xd1, // add rcx, rdx -> 0x10a0
+				0xff, 0xe1 // jmp rcx
+			};
+			ut8 be_tbl[12] = { 0 };
+			rz_write_be64(be_tbl, 0x1050);
+			rz_write_be32(be_tbl + 8, 0x50);
+			mu_assert_true(rz_io_write_at(core->io, 0x1040, be_tbl, sizeof(be_tbl)), "write be table");
+			mu_assert_true(rz_io_write_at(core->io, 0x11c0, be_loads, sizeof(be_loads)), "write be loads");
+			RzAnalysisFunction *fcn_be = rz_analysis_create_function(
+				core->analysis, "fcn_be", 0x11c0, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_be, "fcn_be");
+			rz_analysis_fcn(core->analysis, fcn_be, 0x11c0, 0x40, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_be = rz_analysis_get_block_at(core->analysis, 0x11c0);
+			mu_assert_notnull(b_be, "b_be");
+			mu_assert_eq(b_be->jump, 0x10a0, "big_endian=true loads resolve target");
+			core->analysis->big_endian = false;
+
+			// lea with iop.ptr == 0 at 0x1000 exercises iop.ptr == 0 branch
+			const ut8 lea_zero_ptr[] = {
+				0x48, 0x8d, 0x0d, 0xf9, 0xef, 0xff, 0xff, // lea rcx, [rip - 0x1007] -> ptr == 0
+				0x48, 0xc7, 0xc0, 0xa0, 0x10, 0x00, 0x00, // mov rax, 0x10a0
+				0x85, 0xff, // test edi, edi
+				0xff, 0xe0 // jmp rax
+			};
+			mu_assert_true(rz_io_write_at(core->io, 0x1000, lea_zero_ptr, sizeof(lea_zero_ptr)), "write lea_zero_ptr");
+			rz_analysis_function_delete(fcn_nr);
+			RzAnalysisFunction *fcn_zptr = rz_analysis_create_function(
+				core->analysis, "fcn_zptr", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_zptr, "fcn_zptr");
+			rz_analysis_fcn(core->analysis, fcn_zptr, 0x1000, 0x40, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_zptr = rz_analysis_get_block_at(core->analysis, 0x1000);
+			mu_assert_notnull(b_zptr, "b_zptr");
+			mu_assert_eq(b_zptr->jump, 0x10a0, "lea ptr==0 cleared rcx without breaking rax");
+
+			// read_at failure on a valid mapped offset exercises intra_bb_read_mem_val read_at failure
+			const ut8 read_fail_code[] = {
+				0x48, 0xc7, 0xc0, 0x40, 0x10, 0x00, 0x00, // mov rax, 0x1040
+				0x48, 0x8b, 0x00, // mov rax, qword [rax]
+				0xff, 0xe0 // jmp rax
+			};
+			mu_assert_true(rz_io_write_at(core->io, 0x1120, read_fail_code, sizeof(read_fail_code)), "write read_fail");
+			orig_indirect_read_at = core->analysis->iob.read_at;
+			fail_indirect_read_addr = 0x1040;
+			core->analysis->iob.read_at = failing_indirect_read_at;
+			RzAnalysisFunction *fcn_rf = rz_analysis_create_function(
+				core->analysis, "fcn_read_fail", 0x1120, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_rf, "fcn_rf");
+			rz_analysis_fcn(core->analysis, fcn_rf, 0x1120, 0x20, RZ_ANALYSIS_XREF_TYPE_NULL);
+			core->analysis->iob.read_at = orig_indirect_read_at;
+			fail_indirect_read_addr = UT64_MAX;
+			RzAnalysisBlock *b_rf = rz_analysis_get_block_at(core->analysis, 0x1120);
+			mu_assert_notnull(b_rf, "b_rf");
+			mu_assert_eq(b_rf->jump, UT64_MAX, "read_at failure rejects mem load");
+
+			// Overlapped RJMP (jumping into middle of mov eax, 0xe0ff9090) exercises !overlapped == false
+			const ut8 ovl_rjmp[] = {
+				0xb8, 0x90, 0x90, 0xff, 0xe0, // 0x1100: mov eax, 0xe0ff9090 (0x1103 is ff e0 = jmp rax)
+				0x85, 0xff, // 0x1105: test edi, edi
+				0x74, 0xfa, // 0x1107: je 0x1103
+				0xc3 // 0x1109: ret
+			};
+			rz_analysis_function_delete(fcn_nojt);
+			mu_assert_true(rz_io_write_at(core->io, 0x1100, ovl_rjmp, sizeof(ovl_rjmp)), "write ovl_rjmp");
+			RzAnalysisFunction *fcn_ovl = rz_analysis_create_function(
+				core->analysis, "fcn_ovl", 0x1100, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_ovl, "fcn_ovl");
+			rz_analysis_fcn(core->analysis, fcn_ovl, 0x1100, 0x20, RZ_ANALYSIS_XREF_TYPE_NULL);
+
+			// Standard switch jump table sets bb->switch_op != NULL, skipping intra-BB resolver
+			const ut8 jmptbl_code[] = {
+				0x83, 0xff, 0x01, // 0x1050: cmp edi, 1
+				0x77, 0x15, // 0x1053: ja 0x106a
+				0x48, 0x8d, 0x05, 0x14, 0x00, 0x00, 0x00, // 0x1055: lea rax, [rip + 0x14] -> 0x1070
+				0x48, 0x63, 0x14, 0xb8, // 0x105c: movsxd rdx, dword [rax + rdi*4]
+				0x48, 0x01, 0xd0, // 0x1060: add rax, rdx
+				0xff, 0xe0, // 0x1063: jmp rax
+				0x90, 0x90, 0x90, 0x90, 0x90, // pad to 0x106a
+				0xc3 // 0x106a: ret
+			};
+			ut8 jt_img[0x40];
+			memset(jt_img, 0x90, sizeof(jt_img));
+			memcpy(jt_img, jmptbl_code, sizeof(jmptbl_code));
+			rz_write_at_le32(jt_img, 0x10, 0x20); // 0x1070 + 0x10 = 0x1080
+			rz_write_at_le32(jt_img, 0x18, 0x24); // 0x1070 + 0x18 = 0x1088
+			jt_img[0x30] = 0xc3; // 0x1080
+			jt_img[0x38] = 0xc3; // 0x1088
+			mu_assert_true(rz_io_write_at(core->io, 0x1050, jt_img, sizeof(jt_img)), "write jmptbl");
+			RzAnalysisFunction *fcn_jt = rz_analysis_create_function(
+				core->analysis, "fcn_jt", 0x1050, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_jt, "fcn_jt");
+			rz_analysis_fcn(core->analysis, fcn_jt, 0x1050, sizeof(jt_img), RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_jt = rz_analysis_get_block_at(core->analysis, 0x1055);
+			mu_assert_notnull(b_jt, "b_jt");
+			mu_assert_notnull(b_jt->switch_op, "standard jmptbl sets bb->switch_op");
+
+			// Non-x86 (arm64 br x0)
+			rz_config_set(core->config, "asm.arch", "arm");
+			rz_config_set_i(core->config, "asm.bits", 64);
+			const ut8 arm64_br[] = { 0x00, 0x00, 0x1f, 0xd6 }; // br x0
+			mu_assert_true(rz_io_write_at(core->io, 0x1180, arm64_br, sizeof(arm64_br)), "write arm64");
+			RzAnalysisFunction *fcn_arm = rz_analysis_create_function(
+				core->analysis, "fcn_arm64", 0x1180, RZ_ANALYSIS_FCN_TYPE_FCN);
+			mu_assert_notnull(fcn_arm, "fcn_arm");
+			rz_analysis_fcn(core->analysis, fcn_arm, 0x1180, 0x20, RZ_ANALYSIS_XREF_TYPE_NULL);
+			RzAnalysisBlock *b_arm = rz_analysis_get_block_at(core->analysis, 0x1180);
+			mu_assert_notnull(b_arm, "b_arm");
+			mu_assert_eq(b_arm->jump, UT64_MAX, "arm64 skips resolver");
+			rz_core_free(core);
+		}
 	}
 
 	mu_end;
