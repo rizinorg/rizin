@@ -61,73 +61,115 @@ RZ_OVFCHK_SIGNED(ST32_MUL_OVFCHK, st32, mul)
 RZ_OVFCHK_SIGNED(ST16_MUL_OVFCHK, st16, mul)
 RZ_OVFCHK_SIGNED(ST8_MUL_OVFCHK, st8, mul)
 
-// ssize_t is absent on Windows, so these stay lazy macros as before.
-#define SSZT_ADD_OVFCHK(a, x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && (a) < SSIZE_MIN - (x)))
-#define SSZT_SUB_OVFCHK(a, b) SSZT_ADD_OVFCHK(a, -(b))
-
 #else
 
-// ADD
-// if ((x > 0) && (a > INT_MAX - x)) /* `a + x` would overflow */;
-// if ((x < 0) && (a < INT_MIN - x)) /* `a + x` would underflow */;
-#define SZT_ADD_OVFCHK(x, y)  ((SIZE_MAX - (x)) < (y))
-#define SSZT_ADD_OVFCHK(a, x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && (a) < SSIZE_MIN - (x)))
-#define UT64_ADD_OVFCHK(x, y) ((UT64_MAX - (x)) < (y))
-#define ST64_ADD_OVFCHK(a, x) ((((x) > 0) && ((a) > ST64_MAX - (x))) || (((x) < 0) && (a) < ST64_MIN - (x)))
-#define UT32_ADD_OVFCHK(x, y) ((UT32_MAX - (x)) < (y))
-#define ST32_ADD_OVFCHK(a, x) ((((x) > 0) && ((a) > ST32_MAX - (x))) || (((x) < 0) && (a) < ST32_MIN - (x)))
-#define UT16_ADD_OVFCHK(x, y) ((UT16_MAX - (x)) < (y))
-#define ST16_ADD_OVFCHK(a, b) ((((b) > 0) && ((a) > ST16_MAX - (b))) || (((b) < 0) && ((a) < ST16_MIN - (b))))
-#define UT8_ADD_OVFCHK(x, y)  ((UT8_MAX - (x)) < (y))
-#define ST8_ADD_OVFCHK(a, x)  ((((x) > 0) && ((a) > ST8_MAX - (x))) || ((x) < 0 && (a) < ST8_MIN - (x)))
+// Operands stay 64 bit so fallback behavior matches the builtin path above
+// without macro double-evaluation or signed negation UB.
 
-// SUB
-// if ((x < 0) && (a > INT_MAX + x)) /* `a - x` would overflow */;
-// if ((x > 0) && (a < INT_MIN + x)) /* `a - x` would underflow */;
-#define SZT_SUB_OVFCHK(a, b)  SZT_ADD_OVFCHK(a, -(b))
-#define SSZT_SUB_OVFCHK(a, b) SSZT_ADD_OVFCHK(a, -(b))
-#define UT64_SUB_OVFCHK(a, b) UT64_ADD_OVFCHK(a, -(b))
-#define ST64_SUB_OVFCHK(a, b) ST64_ADD_OVFCHK(a, -(b))
-#define UT32_SUB_OVFCHK(a, b) UT32_ADD_OVFCHK(a, -(b))
-#define ST32_SUB_OVFCHK(a, b) ST32_ADD_OVFCHK(a, -(b))
-#define UT16_SUB_OVFCHK(a, b) UT16_ADD_OVFCHK(a, -(b))
-#define ST16_SUB_OVFCHK(a, b) ST16_ADD_OVFCHK(a, -(b))
-#define UT8_SUB_OVFCHK(a, b)  UT8_ADD_OVFCHK(a, -(b))
-#define ST8_SUB_OVFCHK(a, b)  ST8_ADD_OVFCHK(a, -(b))
+static inline bool UT64_ADD_OVFCHK(ut64 a, ut64 b) {
+	return (UT64_MAX - a) < b;
+}
 
-// MUL
-#define UNSIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
-	static inline bool overflow_name(type_base a, type_base b) { \
-		return (a > 0 && b > 0 && a > type_max / b); \
+static inline bool UT64_SUB_OVFCHK(ut64 a, ut64 b) {
+	return a < b;
+}
+
+static inline bool ST64_ADD_OVFCHK(st64 a, st64 b) {
+	return (b > 0 && a > ST64_MAX - b) || (b < 0 && a < ST64_MIN - b);
+}
+
+static inline bool ST64_SUB_OVFCHK(st64 a, st64 b) {
+	return (b < 0 && a > ST64_MAX + b) || (b > 0 && a < ST64_MIN + b);
+}
+
+#define RZ_OVFCHK_UNSIGNED_ADD(name, type_max) \
+	static inline bool name(ut64 a, ut64 b) { \
+		const ut64 max = (ut64)(type_max); \
+		return a > max || b > max - a; \
 	}
 
-#define SIGNED_MUL_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
-	static inline bool overflow_name(type_base a, type_base b) { \
+#define RZ_OVFCHK_UNSIGNED_SUB(name, type_max) \
+	static inline bool name(ut64 a, ut64 b) { \
+		const ut64 max = (ut64)(type_max); \
+		return a < b || (a - b) > max; \
+	}
+
+#define RZ_OVFCHK_SIGNED_ADD(name, type_min, type_max) \
+	static inline bool name(st64 a, st64 b) { \
+		if (ST64_ADD_OVFCHK(a, b)) { \
+			return true; \
+		} \
+		const st64 res = a + b; \
+		return res < (st64)(type_min) || res > (st64)(type_max); \
+	}
+
+#define RZ_OVFCHK_SIGNED_SUB(name, type_min, type_max) \
+	static inline bool name(st64 a, st64 b) { \
+		if (ST64_SUB_OVFCHK(a, b)) { \
+			return true; \
+		} \
+		const st64 res = a - b; \
+		return res < (st64)(type_min) || res > (st64)(type_max); \
+	}
+
+#define RZ_OVFCHK_UNSIGNED_MUL(name, type_max) \
+	static inline bool name(ut64 a, ut64 b) { \
+		return a > 0 && b > 0 && a > (ut64)(type_max) / b; \
+	}
+
+#define RZ_OVFCHK_SIGNED_MUL(name, type_min, type_max) \
+	static inline bool name(st64 a, st64 b) { \
+		if (!a || !b) { \
+			return false; \
+		} \
 		if (a > 0) { \
 			if (b > 0) { \
-				return a > type_max / b; \
+				return a > (st64)(type_max) / b; \
 			} \
-			return b < type_min / a; \
+			return b < (st64)(type_min) / a; \
 		} \
 		if (b > 0) { \
-			return a < type_min / b; \
+			return a < (st64)(type_min) / b; \
 		} \
-		return a && b < type_max / a; \
+		return a < (st64)(type_max) / b; \
 	}
 
+// ADD
+RZ_OVFCHK_UNSIGNED_ADD(SZT_ADD_OVFCHK, SIZE_MAX)
+RZ_OVFCHK_UNSIGNED_ADD(UT32_ADD_OVFCHK, UT32_MAX)
+RZ_OVFCHK_UNSIGNED_ADD(UT16_ADD_OVFCHK, UT16_MAX)
+RZ_OVFCHK_UNSIGNED_ADD(UT8_ADD_OVFCHK, UT8_MAX)
+RZ_OVFCHK_SIGNED_ADD(ST32_ADD_OVFCHK, ST32_MIN, ST32_MAX)
+RZ_OVFCHK_SIGNED_ADD(ST16_ADD_OVFCHK, ST16_MIN, ST16_MAX)
+RZ_OVFCHK_SIGNED_ADD(ST8_ADD_OVFCHK, ST8_MIN, ST8_MAX)
+
+// SUB
+RZ_OVFCHK_UNSIGNED_SUB(SZT_SUB_OVFCHK, SIZE_MAX)
+RZ_OVFCHK_UNSIGNED_SUB(UT32_SUB_OVFCHK, UT32_MAX)
+RZ_OVFCHK_UNSIGNED_SUB(UT16_SUB_OVFCHK, UT16_MAX)
+RZ_OVFCHK_UNSIGNED_SUB(UT8_SUB_OVFCHK, UT8_MAX)
+RZ_OVFCHK_SIGNED_SUB(ST32_SUB_OVFCHK, ST32_MIN, ST32_MAX)
+RZ_OVFCHK_SIGNED_SUB(ST16_SUB_OVFCHK, ST16_MIN, ST16_MAX)
+RZ_OVFCHK_SIGNED_SUB(ST8_SUB_OVFCHK, ST8_MIN, ST8_MAX)
+
+// MUL
 // TODO: Windows doesn't have ssize_t, and we don't need this check yet
-// SIGNED_MUL_OVERFLOW_CHECK(SSZT_MUL_OVFCHK, ssize_t, SSZT_MIN, SSZT_MAX)
-SIGNED_MUL_OVERFLOW_CHECK(ST8_MUL_OVFCHK, st8, ST8_MIN, ST8_MAX)
-SIGNED_MUL_OVERFLOW_CHECK(ST16_MUL_OVFCHK, st16, ST16_MIN, ST16_MAX)
-SIGNED_MUL_OVERFLOW_CHECK(ST32_MUL_OVFCHK, st32, ST32_MIN, ST32_MAX)
-SIGNED_MUL_OVERFLOW_CHECK(ST64_MUL_OVFCHK, st64, ST64_MIN, ST64_MAX)
-UNSIGNED_MUL_OVERFLOW_CHECK(SZT_MUL_OVFCHK, size_t, SZT_MIN, SZT_MAX)
-UNSIGNED_MUL_OVERFLOW_CHECK(UT8_MUL_OVFCHK, ut8, UT8_MIN, UT8_MAX)
-UNSIGNED_MUL_OVERFLOW_CHECK(UT16_MUL_OVFCHK, ut16, UT16_MIN, UT16_MAX)
-UNSIGNED_MUL_OVERFLOW_CHECK(UT32_MUL_OVFCHK, ut32, UT32_MIN, UT32_MAX)
-UNSIGNED_MUL_OVERFLOW_CHECK(UT64_MUL_OVFCHK, ut64, UT64_MIN, UT64_MAX)
+// RZ_OVFCHK_SIGNED_MUL(SSZT_MUL_OVFCHK, SSZT_MIN, SSZT_MAX)
+RZ_OVFCHK_SIGNED_MUL(ST8_MUL_OVFCHK, ST8_MIN, ST8_MAX)
+RZ_OVFCHK_SIGNED_MUL(ST16_MUL_OVFCHK, ST16_MIN, ST16_MAX)
+RZ_OVFCHK_SIGNED_MUL(ST32_MUL_OVFCHK, ST32_MIN, ST32_MAX)
+RZ_OVFCHK_SIGNED_MUL(ST64_MUL_OVFCHK, ST64_MIN, ST64_MAX)
+RZ_OVFCHK_UNSIGNED_MUL(SZT_MUL_OVFCHK, SIZE_MAX)
+RZ_OVFCHK_UNSIGNED_MUL(UT8_MUL_OVFCHK, UT8_MAX)
+RZ_OVFCHK_UNSIGNED_MUL(UT16_MUL_OVFCHK, UT16_MAX)
+RZ_OVFCHK_UNSIGNED_MUL(UT32_MUL_OVFCHK, UT32_MAX)
+RZ_OVFCHK_UNSIGNED_MUL(UT64_MUL_OVFCHK, UT64_MAX)
 
 #endif /* RZ_HAVE_OVERFLOW_BUILTINS */
+
+// ssize_t is absent on Windows, so these stay lazy macros as before.
+#define SSZT_ADD_OVFCHK(a, x) ((((x) > 0) && ((a) > SSIZE_MAX - (x))) || (((x) < 0) && ((a) < SSIZE_MIN - (x))))
+#define SSZT_SUB_OVFCHK(a, b) ((((b) < 0) && ((a) > SSIZE_MAX + (b))) || (((b) > 0) && ((a) < SSIZE_MIN + (b))))
 
 // No compiler builtin exists for division.
 #define SIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_mid, type_max) \
