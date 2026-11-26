@@ -92,3 +92,177 @@ EXPECT=<<EOF
 0x140099ed0 0x000994d0 ---------- 0x000baa38 tls
 EOF
 RUN
+
+NAME=PE32: tls bounds, zero SizeOfImage, and truncated directory
+FILE=malloc://0x280
+CMDS=<<EOF
+e io.va=false
+wx 4d5a @ 0x00
+wx 40000000 @ 0x3c
+wx 50450000 @ 0x40
+wx 4c010100 @ 0x44
+wx e0000201 @ 0x54
+wx 0b01 @ 0x58
+wx 00100000 @ 0x68
+wx 000040000010000000020000 @ 0x74
+wx 0020000000020000 @ 0x90
+wx 10000000 @ 0xb4
+wx 0010000018000000 @ 0x100
+wx 2e7465787400000000020000001000000002000000020000 @ 0x138
+wx 20000060 @ 0x15c
+wx 00104000001040004010400020104000 @ 0x200
+wx 50104000ffff3f00 @ 0x220
+e io.va=true
+oba 0 @ 0x400000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+wx 00304000 @ 0x224
+e io.va=true
+oba 0 @ 0x400000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+wx ffff3f00 @ 0x20c
+e io.va=true
+oba 0 @ 0x400000
+iee~tls?
+e io.va=false
+op 3
+wx 00000000 @ 0x90
+wx 20104000 @ 0x20c
+wx 5010400000000000 @ 0x220
+e io.va=true
+oba 0 @ 0x400000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+r 0x216
+oba 0 @ 0x400000
+iee~tls?
+op 3
+r 0x212
+oba 0 @ 0x400000
+iee~tls?
+op 3
+r 0x20e
+oba 0 @ 0x400000
+iee~tls?
+op 3
+r 0x20a
+oba 0 @ 0x400000
+iee~tls?
+op 3
+r 0x206
+oba 0 @ 0x400000
+iee~tls?
+op 3
+r 0x202
+oba 0 @ 0x400000
+iee~tls?
+op 3
+wx 00000000 @ 0x100
+oba 0 @ 0x400000
+iee~tls?
+EOF
+EXPECT=<<EOF
+0x00401050 0x00000250 0x00000220
+0x00401050 0x00000250 0x00000220
+0
+0x00401050 0x00000250 0x00000220
+0
+0
+0
+0
+0
+0
+0
+EOF
+RUN
+
+NAME=PE64: tls bounds, zero SizeOfImage, and truncated directory
+FILE=malloc://0x280
+CMDS=<<EOF
+e io.va=false
+wx 4d5a @ 0x00
+wx 40000000 @ 0x3c
+wx 50450000 @ 0x40
+wx 64860100 @ 0x44
+wx f0002200 @ 0x54
+wx 0b02 @ 0x58
+wx 00100000 @ 0x68
+wx 00000040010000000010000000020000 @ 0x70
+wx 0020000000020000 @ 0x90
+wx 10000000 @ 0xc4
+wx 0010000028000000 @ 0x110
+wx 2e7465787400000000020000001000000002000000020000 @ 0x148
+wx 20000060 @ 0x16c
+wx 0010004001000000001000400100000060100040010000003010004001000000 @ 0x200
+wx 80100040010000000030004001000000 @ 0x230
+e io.va=true
+oba 0 @ 0x140000000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+wx f0ffff3f01000000 @ 0x238
+e io.va=true
+oba 0 @ 0x140000000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+wx f0ffff3f01000000 @ 0x218
+e io.va=true
+oba 0 @ 0x140000000
+iee~tls?
+e io.va=false
+op 3
+wx 00000000 @ 0x90
+wx 3010004001000000 @ 0x218
+wx 80100040010000000000000000000000 @ 0x230
+e io.va=true
+oba 0 @ 0x140000000
+iee~tls[0,1,3]
+e io.va=false
+op 3
+r 0x226
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+r 0x222
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+r 0x21c
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+r 0x214
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+r 0x20c
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+r 0x204
+oba 0 @ 0x140000000
+iee~tls?
+op 3
+wx 00000000 @ 0x110
+oba 0 @ 0x140000000
+iee~tls?
+EOF
+EXPECT=<<EOF
+0x140001080 0x00000280 0x00000230
+0x140001080 0x00000280 0x00000230
+0
+0x140001080 0x00000280 0x00000230
+0
+0
+0
+0
+0
+0
+0
+EOF
+RUN
