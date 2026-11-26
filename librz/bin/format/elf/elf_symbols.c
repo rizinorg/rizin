@@ -478,12 +478,11 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_symbol)(RZ_NONNULL ELFOBJ *bin, ut
 
 	if (!bin->symbol_ordinal_idx) {
 		HtUUOptions opt = { 0 };
-		size_t len = rz_vector_len(bin->symbols);
-		bin->symbol_ordinal_idx = ht_uu_new_opt_size(&opt, (ut32)RZ_MIN(len, UT32_MAX));
+		bin->symbol_ordinal_idx = ht_uu_new_opt_size(&opt, (ut32)rz_vector_len(bin->symbols));
 		if (bin->symbol_ordinal_idx) {
 			size_t idx = 0;
 			RzBinElfSymbol *symbol;
-			rz_bin_elf_foreach_symbols(bin, symbol) {
+			rz_vector_foreach (bin->symbols, symbol) {
 				ht_uu_insert(bin->symbol_ordinal_idx, symbol->ordinal, idx);
 				idx++;
 			}

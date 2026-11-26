@@ -598,15 +598,15 @@ static int trycatch_entry_cmp_from(const void *a, const void *b) {
 	const RzBinTrycatchEntry *ea = a;
 	const RzBinTrycatchEntry *eb = b;
 	if (ea->tc->from != eb->tc->from) {
-		return RZ_NUM_CMP(ea->tc->from, eb->tc->from);
+		return (ea->tc->from > eb->tc->from) - (ea->tc->from < eb->tc->from);
 	}
-	return RZ_NUM_CMP(ea->orig_idx, eb->orig_idx);
+	return (ea->orig_idx > eb->orig_idx) - (ea->orig_idx < eb->orig_idx);
 }
 
 static int trycatch_entry_cmp_orig(const void *a, const void *b) {
 	const RzBinTrycatchEntry *ea = a;
 	const RzBinTrycatchEntry *eb = b;
-	return RZ_NUM_CMP(ea->orig_idx, eb->orig_idx);
+	return (ea->orig_idx > eb->orig_idx) - (ea->orig_idx < eb->orig_idx);
 }
 
 RZ_IPI void rz_bin_trycatch_index_free(RZ_NULLABLE RzBinTrycatchIndex *idx) {

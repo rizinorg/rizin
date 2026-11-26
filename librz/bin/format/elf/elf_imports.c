@@ -397,43 +397,6 @@ static ut64 get_import_addr_aux(ELFOBJ *bin, RzBinElfReloc *reloc) {
 	}
 }
 
-static ut64 get_import_addr(ELFOBJ *bin, ut64 symbol) {
-	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !Elf_(rz_bin_elf_has_relocs)(bin)) {
-		return UT64_MAX;
-	}
-
-	RzBinElfReloc *reloc;
-	rz_bin_elf_foreach_relocs(bin, reloc) {
-		if (reloc->sym != symbol) {
-			continue;
-		}
-
-		ut64 tmp = get_import_addr_aux(bin, reloc);
-		if (tmp != UT64_MAX) {
-			return tmp;
-		}
-	}
-
-	return UT64_MAX;
-}
-
-static ut64 get_import_offset(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	return get_import_addr(bin, symbol->ordinal);
-}
-
-static void convert_elf_symbol_to_elf_import(ELFOBJ *bin, RzBinElfSymbol *symbol) {
-	if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
-		return;
-	}
-
-	symbol->vaddr = get_import_offset(bin, symbol);
-	if (symbol->vaddr == UT64_MAX) {
-		return;
-	}
-	symbol->size = 16;
-	symbol->paddr = Elf_(rz_bin_elf_v2p)(bin, symbol->vaddr);
-}
-
 static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector /*<RzBinElfSymbol>*/ *symbols) {
 	if (!Elf_(rz_bin_elf_has_dt_dynamic)(bin) || !Elf_(rz_bin_elf_has_relocs)(bin)) {
 		RzBinElfSymbol *symbol;
@@ -446,39 +409,30 @@ static void convert_elf_symbols_to_elf_imports(ELFOBJ *bin, RzVector /*<RzBinElf
 	}
 
 	HtUUOptions opt = { 0 };
-	size_t len = rz_vector_len(symbols);
-	HtUU *import_addrs = ht_uu_new_opt_size(&opt, (ut32)RZ_MIN(len, UT32_MAX));
+	HtUU *import_addrs = ht_uu_new_opt_size(&opt, (ut32)rz_vector_len(symbols));
 	if (!import_addrs) {
-		RzBinElfSymbol *symbol;
-		rz_vector_foreach (symbols, symbol) {
-			convert_elf_symbol_to_elf_import(bin, symbol);
-		}
 		return;
 	}
 
-	bool has_unresolved = false;
 	RzBinElfSymbol *symbol;
 	rz_vector_foreach (symbols, symbol) {
 		if (symbol->vaddr && symbol->vaddr != UT64_MAX) {
 			continue;
 		}
-		has_unresolved = true;
 		ht_uu_insert(import_addrs, symbol->ordinal, UT64_MAX);
 	}
 
-	if (has_unresolved) {
-		if (ht_uu_size(import_addrs) > 0) {
-			RzBinElfReloc *reloc;
-			rz_bin_elf_foreach_relocs(bin, reloc) {
-				bool found = false;
-				ut64 cur = ht_uu_find(import_addrs, reloc->sym, &found);
-				if (!found || cur != UT64_MAX) {
-					continue;
-				}
-				ut64 tmp = get_import_addr_aux(bin, reloc);
-				if (tmp != UT64_MAX) {
-					ht_uu_update(import_addrs, reloc->sym, tmp);
-				}
+	if (ht_uu_size(import_addrs) > 0) {
+		RzBinElfReloc *reloc;
+		rz_vector_foreach (bin->relocs, reloc) {
+			bool found = false;
+			ut64 cur = ht_uu_find(import_addrs, reloc->sym, &found);
+			if (!found || cur != UT64_MAX) {
+				continue;
+			}
+			ut64 tmp = get_import_addr_aux(bin, reloc);
+			if (tmp != UT64_MAX) {
+				ht_uu_update(import_addrs, reloc->sym, tmp);
 			}
 		}
 
@@ -513,12 +467,11 @@ RZ_BORROW RzBinElfSymbol *Elf_(rz_bin_elf_get_import)(RZ_NONNULL ELFOBJ *bin, ut
 
 	if (!bin->import_ordinal_idx) {
 		HtUUOptions opt = { 0 };
-		size_t len = rz_vector_len(bin->imports);
-		bin->import_ordinal_idx = ht_uu_new_opt_size(&opt, (ut32)RZ_MIN(len, UT32_MAX));
+		bin->import_ordinal_idx = ht_uu_new_opt_size(&opt, (ut32)rz_vector_len(bin->imports));
 		if (bin->import_ordinal_idx) {
 			size_t idx = 0;
 			RzBinElfSymbol *import;
-			rz_bin_elf_foreach_imports(bin, import) {
+			rz_vector_foreach (bin->imports, import) {
 				ht_uu_insert(bin->import_ordinal_idx, import->ordinal, idx);
 				idx++;
 			}

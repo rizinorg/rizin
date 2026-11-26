@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include "analysis_private.h"
 #include "minunit.h"
 
 // --------------------------
@@ -741,7 +742,7 @@ bool test_golang_oversized_bb_strings(void) {
 }
 
 typedef struct trycatch_collect_ctx_t {
-	ut64 handlers[32];
+	ut64 handlers[64];
 	size_t count;
 	size_t stop_after;
 } TrycatchCollectCtx;
@@ -768,9 +769,17 @@ bool test_bin_classes_lazy_sort(void) {
 	mu_assert_notnull(bf, "binfile");
 	RzBinObject *o = bf->o;
 
+	mu_assert_null(rz_bin_object_find_class(o, "Missing"), "missing class returns NULL");
+
 	mu_assert_notnull(rz_bin_object_add_class(o, "Zeta", NULL, 0x300), "add Zeta");
 	mu_assert_notnull(rz_bin_object_add_class(o, "Alpha", NULL, 0x100), "add Alpha");
 	mu_assert_notnull(rz_bin_object_add_class(o, "Mid", NULL, 0x200), "add Mid");
+	RzBinClass *empty = rz_bin_object_add_class(o, "Empty", NULL, 0x150);
+	mu_assert_notnull(empty, "add Empty");
+	rz_list_free(empty->methods);
+	empty->methods = NULL;
+	rz_list_free(empty->fields);
+	empty->fields = NULL;
 
 	mu_assert_notnull(rz_bin_object_add_method(o, "Alpha", "m2", 0x20, 0x120), "add m2");
 	mu_assert_notnull(rz_bin_object_add_method(o, "Alpha", "m1", 0x10, 0x110), "add m1");
@@ -780,6 +789,8 @@ bool test_bin_classes_lazy_sort(void) {
 	mu_assert_notnull(rz_bin_object_add_method(o, "Mid", "mm1", 0x50, 0x210), "add Mid mm1");
 	mu_assert_notnull(rz_bin_object_add_field(o, "Mid", "mf2", 0x80, 0x240), "add Mid mf2");
 	mu_assert_notnull(rz_bin_object_add_field(o, "Mid", "mf1", 0x70, 0x230), "add Mid mf1");
+
+	mu_assert_ptreq(rz_bin_object_find_class(o, "Empty"), empty, "find class with NULL members");
 
 	RzBinClass *found = rz_bin_object_find_class(o, "Alpha");
 	mu_assert_notnull(found, "find Alpha");
@@ -794,19 +805,38 @@ bool test_bin_classes_lazy_sort(void) {
 	mu_assert_streq(f1->name, "f2", "second field sorted by vaddr");
 
 	const RzPVector *classes = rz_bin_object_get_classes(o);
-	mu_assert_eq(rz_pvector_len(classes), 3, "3 classes");
+	mu_assert_eq(rz_pvector_len(classes), 4, "4 classes");
 	RzBinClass *c0 = rz_pvector_at(classes, 0);
 	RzBinClass *c1 = rz_pvector_at(classes, 1);
 	RzBinClass *c2 = rz_pvector_at(classes, 2);
+	RzBinClass *c3 = rz_pvector_at(classes, 3);
 	mu_assert_streq(c0->name, "Alpha", "class 0 sorted");
-	mu_assert_streq(c1->name, "Mid", "class 1 sorted");
-	mu_assert_streq(c2->name, "Zeta", "class 2 sorted");
-	mu_assert_eq(rz_list_length(c1->methods), 2, "Mid has 2 methods");
-	mu_assert_streq(((RzBinSymbol *)rz_list_first_val(c1->methods))->name, "mm1", "Mid first method sorted");
-	mu_assert_streq(((RzBinSymbol *)rz_list_last_val(c1->methods))->name, "mm2", "Mid second method sorted");
-	mu_assert_eq(rz_list_length(c1->fields), 2, "Mid has 2 fields");
-	mu_assert_streq(((RzBinClassField *)rz_list_first_val(c1->fields))->name, "mf1", "Mid first field sorted");
-	mu_assert_streq(((RzBinClassField *)rz_list_last_val(c1->fields))->name, "mf2", "Mid second field sorted");
+	mu_assert_streq(c1->name, "Empty", "class 1 sorted");
+	mu_assert_streq(c2->name, "Mid", "class 2 sorted");
+	mu_assert_streq(c3->name, "Zeta", "class 3 sorted");
+	mu_assert_eq(rz_list_length(c2->methods), 2, "Mid has 2 methods");
+	mu_assert_streq(((RzBinSymbol *)rz_list_first_val(c2->methods))->name, "mm1", "Mid first method sorted");
+	mu_assert_streq(((RzBinSymbol *)rz_list_last_val(c2->methods))->name, "mm2", "Mid second method sorted");
+	mu_assert_eq(rz_list_length(c2->fields), 2, "Mid has 2 fields");
+	mu_assert_streq(((RzBinClassField *)rz_list_first_val(c2->fields))->name, "mf1", "Mid first field sorted");
+	mu_assert_streq(((RzBinClassField *)rz_list_last_val(c2->fields))->name, "mf2", "Mid second field sorted");
+
+	// Second call when already sorted takes the clean fast path.
+	mu_assert_ptreq(rz_bin_object_get_classes(o), classes, "already sorted classes");
+
+	// Apply classes to core flags, and verify NULL bin object handling.
+	mu_assert_true(rz_core_bin_apply_classes(core, bf), "apply classes");
+	RzBinFile empty_bf = { 0 };
+	mu_assert_false(rz_core_bin_apply_classes(core, &empty_bf), "apply classes with NULL bin object");
+
+	// Demangle hook re-sorts classes if needed.
+	rz_bin_demangle_with_flags(core->bin, RZ_DEMANGLER_FLAG_ENABLE_ALL);
+
+	// NULL classes vector returns NULL cleanly.
+	RzPVector *saved_classes = o->classes;
+	o->classes = NULL;
+	mu_assert_null(rz_bin_object_get_classes(o), "NULL classes vector");
+	o->classes = saved_classes;
 
 	rz_core_free(core);
 	mu_end;
@@ -845,6 +875,20 @@ bool test_bin_trycatch_index(void) {
 	mu_assert_eq(ctx.handlers[0], 0x1066, "exact match 0");
 	mu_assert_eq(ctx.handlers[1], 0x1060, "exact match 1");
 
+	// Exact from match at last entry (0x2000), miss in middle (0x1050), and past end (0x9000).
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x2000, true, collect_trycatch_cb, &ctx), "exact last entry");
+	mu_assert_eq(ctx.count, 1, "1 exact match at last entry");
+	mu_assert_eq(ctx.handlers[0], 0x2050, "last entry handler");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1050, true, collect_trycatch_cb, &ctx), "exact middle miss");
+	mu_assert_eq(ctx.count, 0, "0 exact matches in middle");
+
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x9000, true, collect_trycatch_cb, &ctx), "exact past end");
+	mu_assert_eq(ctx.count, 0, "0 exact matches past end");
+
 	// Early stop on exact match.
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.stop_after = 1;
@@ -859,27 +903,689 @@ bool test_bin_trycatch_index(void) {
 	mu_assert_eq(ctx.handlers[1], 0x1076, "outer handler second");
 	mu_assert_eq(ctx.handlers[2], 0x1060, "third handler third");
 
-	// Range match inside outer only (0x1030) and miss between intervals (0x1500).
+	// Early stop on range match.
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.stop_after = 1;
+	mu_assert_false(rz_bin_file_trycatch_foreach_at(bf, 0x1050, false, collect_trycatch_cb, &ctx), "range early stop");
+	mu_assert_eq(ctx.count, 1, "range stopped after 1");
+
+	// Range match at 0x1070 skips ended inner intervals (addr >= tc->to) while matching outer [0x1022, 0x1076).
+	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1070, false, collect_trycatch_cb, &ctx), "range 0x1070");
+	mu_assert_eq(ctx.count, 1, "1 match at 0x1070");
+	mu_assert_eq(ctx.handlers[0], 0x1076, "outer handler after ended inner");
+
+	// Range match inside outer only (0x1030), before all (0x500), and miss between intervals (0x1500).
 	memset(&ctx, 0, sizeof(ctx));
 	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1030, false, collect_trycatch_cb, &ctx), "range 0x1030");
 	mu_assert_eq(ctx.count, 1, "1 match at 0x1030");
 	mu_assert_eq(ctx.handlers[0], 0x1076, "outer handler");
 
 	memset(&ctx, 0, sizeof(ctx));
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x500, false, collect_trycatch_cb, &ctx), "range before all");
+	mu_assert_eq(ctx.count, 0, "0 matches before all");
+
+	memset(&ctx, 0, sizeof(ctx));
 	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x1500, false, collect_trycatch_cb, &ctx), "range miss");
 	mu_assert_eq(ctx.count, 0, "0 matches at 0x1500");
 
-	// >16 overlapping records exercises heap growth and qsort restoration of orig_idx order.
-	for (ut64 i = 0; i < 20; i++) {
-		rz_pvector_push(tcs, rz_bin_trycatch_new(0x3000, 0x3000 + (19 - i), 0x3100, 0x4000 + i, 0));
+	// >32 overlapping records exercises both malloc (16->32) and realloc (32->64) plus qsort restoration.
+	for (ut64 i = 0; i < 36; i++) {
+		rz_pvector_push(tcs, rz_bin_trycatch_new(0x3000, 0x3000 + (35 - i), 0x3100, 0x4000 + i, 0));
 	}
 	memset(&ctx, 0, sizeof(ctx));
-	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x3050, false, collect_trycatch_cb, &ctx), "20 overlapping");
-	mu_assert_eq(ctx.count, 20, "all 20 matches");
+	mu_assert_true(rz_bin_file_trycatch_foreach_at(bf, 0x3050, false, collect_trycatch_cb, &ctx), "36 overlapping");
+	mu_assert_eq(ctx.count, 36, "all 36 matches");
 	mu_assert_eq(ctx.handlers[0], 0x4000, "orig_idx 0 preserved after qsort");
-	mu_assert_eq(ctx.handlers[19], 0x4013, "orig_idx 19 preserved after qsort");
+	mu_assert_eq(ctx.handlers[35], 0x4023, "orig_idx 35 preserved after qsort");
+
+	// Early stop on heap-allocated match list frees buffer cleanly.
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.stop_after = 2;
+	mu_assert_false(rz_bin_file_trycatch_foreach_at(bf, 0x3050, false, collect_trycatch_cb, &ctx), "heap early stop");
+	mu_assert_eq(ctx.count, 2, "heap stopped after 2");
 
 	rz_core_free(core);
+	mu_end;
+}
+
+bool test_analysis_trycatch_handlers(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	rz_config_set_b(core->config, "analysis.trycatch", true);
+	rz_config_set_b(core->config, "analysis.nopskip", false);
+
+	RzIODesc *code_desc = rz_io_open_at(core->io, "malloc://0x200", RZ_PERM_RWX, 0, 0x1000, NULL);
+	mu_assert_notnull(code_desc, "open code buffer");
+
+	// 0x1000: nop; call 0x1080 (noreturn CALL)
+	const ut8 fcn_call[] = { 0x90, 0xe8, 0x7a, 0x00, 0x00, 0x00 };
+	// 0x1010: nop; call 0x1080 (for overlapped block analysis)
+	const ut8 fcn_ovlp[] = { 0x90, 0xe8, 0x6a, 0x00, 0x00, 0x00 };
+	// 0x1020: jmp 0x1080 (noreturn JMP)
+	const ut8 fcn_jmp[] = { 0xe9, 0x5b, 0x00, 0x00, 0x00 };
+	// 0x1030: call qword [rip + 0x4a] -> 0x1036 + 0x4a = 0x1080 (noreturn UCALL)
+	const ut8 fcn_ucall[] = { 0xff, 0x15, 0x4a, 0x00, 0x00, 0x00 };
+	const ut8 ret_op[] = { 0xc3 };
+	rz_io_write_at(core->io, 0x1000, fcn_call, sizeof(fcn_call));
+	rz_io_write_at(core->io, 0x1010, fcn_ovlp, sizeof(fcn_ovlp));
+	rz_io_write_at(core->io, 0x1020, fcn_jmp, sizeof(fcn_jmp));
+	rz_io_write_at(core->io, 0x1030, fcn_ucall, sizeof(fcn_ucall));
+	rz_io_write_at(core->io, 0x1040, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1050, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1060, ret_op, sizeof(ret_op));
+	rz_io_write_at(core->io, 0x1080, ret_op, sizeof(ret_op));
+	rz_analysis_noreturn_add(core->analysis, NULL, 0x1080);
+
+	// 1. No current binfile: analysis succeeds without trycatch handlers.
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn without binfile");
+	rz_analysis_function_delete(fcn);
+
+	// 2. Loaded binfile with empty trycatch vector.
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open mock bin");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load mock bin");
+
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn with empty trycatch");
+	rz_analysis_function_delete(fcn);
+
+	// 3. Loaded binfile with temporarily NULL bf->o.
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	RzBinObject *saved_o = bf->o;
+	bf->o = NULL;
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn with NULL bf->o");
+	rz_analysis_function_delete(fcn);
+	bf->o = saved_o;
+
+	// 4. Populate trycatch records covering zero-handler, filter+handler, second handler, JMP, UCALL, and overlap.
+	RzPVector *tcs = rz_bin_file_get_trycatch(bf);
+	mu_assert_notnull(tcs, "trycatch vector");
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0x1040, 0x1060));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1000, 0x1000, 0x1008, 0x1050, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1010, 0x1010, 0x1018, 0x1040, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1020, 0x1020, 0x1028, 0x1040, 0));
+	rz_pvector_push(tcs, rz_bin_trycatch_new(0x1030, 0x1030, 0x1038, 0x1040, 0));
+
+	// Noreturn CALL at 0x1001 with op-start trycatch at 0x1000.
+	rz_core_analysis_fcn(core, 0x1000, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	fcn = rz_analysis_get_function_at(core->analysis, 0x1000);
+	mu_assert_notnull(fcn, "fcn at 0x1000");
+	RzAnalysisBlock *bb0 = rz_analysis_get_block_at(core->analysis, 0x1000);
+	mu_assert_notnull(bb0, "bb at 0x1000");
+	mu_assert_eq(bb0->jump, 0x1040, "first non-zero handler sets bb->jump");
+	mu_assert_notnull(rz_analysis_get_block_at(core->analysis, 0x1040), "handler1 block analyzed");
+	mu_assert_notnull(rz_analysis_get_block_at(core->analysis, 0x1050), "handler2 block analyzed");
+	RzList *xrefs = rz_analysis_xrefs_get_from(core->analysis, 0x1000);
+	mu_assert_notnull(xrefs, "xrefs from 0x1000");
+	mu_assert_true(rz_list_length(xrefs) >= 2, "filter and handler xrefs created");
+	rz_list_free(xrefs);
+
+	// Overlapped block hitting noreturn CALL at 0x1011.
+	rz_core_analysis_fcn(core, 0x1011, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	rz_core_analysis_fcn(core, 0x1010, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x1010), "overlapped fcn at 0x1010");
+
+	// Noreturn JMP at 0x1020.
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisBlock *bb_jmp = rz_analysis_get_block_at(core->analysis, 0x1020);
+	mu_assert_notnull(bb_jmp, "bb at 0x1020");
+	mu_assert_eq(bb_jmp->jump, 0x1040, "noreturn jmp routes to trycatch handler");
+
+	// Noreturn UCALL at 0x1030.
+	rz_core_analysis_fcn(core, 0x1030, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	RzAnalysisBlock *bb_ucall = rz_analysis_get_block_at(core->analysis, 0x1030);
+	mu_assert_notnull(bb_ucall, "bb at 0x1030");
+	mu_assert_eq(bb_ucall->jump, 0x1040, "noreturn ucall routes to trycatch handler");
+
+	// Missing bin binding (binb.bin == NULL and binb.get_trycatch == NULL) skips trycatch cleanly.
+	rz_analysis_function_delete_address(core->analysis, 0x1020);
+	RzBin *saved_bin = core->analysis->binb.bin;
+	core->analysis->binb.bin = NULL;
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	core->analysis->binb.bin = saved_bin;
+	rz_analysis_function_delete_address(core->analysis, 0x1020);
+	RzBinGetTrycatch saved_get_tc = core->analysis->binb.get_trycatch;
+	core->analysis->binb.get_trycatch = NULL;
+	rz_core_analysis_fcn(core, 0x1020, UT64_MAX, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+	core->analysis->binb.get_trycatch = saved_get_tc;
+
+	rz_core_free(core);
+	mu_end;
+}
+
+enum {
+	SYNTH_ELF_REL = 1u << 0,
+	SYNTH_ELF_NO_IMPORTS = 1u << 1,
+	SYNTH_ELF_RUST_SYM = 1u << 2,
+	SYNTH_ELF_RUST_IMP = 1u << 3,
+	SYNTH_ELF_RETGUARD_PROGBITS = 1u << 4,
+	SYNTH_ELF_RETGUARD_NOBITS = 1u << 5,
+	SYNTH_ELF_NO_RELOCS = 1u << 6,
+	SYNTH_ELF_RESOLVED_ONLY = 1u << 7,
+};
+
+static void synth_elf_fill_strtabs(ut8 *raw) {
+	// .dynstr / .strtab at 0x300
+	static const char strtab[] =
+		"\0"
+		"imp_res\0" // 1
+		"imp_unres\0" // 9
+		"_NSConcreteGlobalBlock\0" // 19
+		"__rust_oom\0" // 42
+		"def_sym\0"; // 53
+	memcpy(raw + 0x300, strtab, sizeof(strtab));
+
+	// .shstrtab at 0x880
+	static const char shstrtab[] =
+		"\0"
+		".shstrtab\0" // 1
+		".text\0" // 11
+		".strtab\0" // 17
+		".symtab\0" // 25
+		".openbsd.randomdata\0"; // 33
+	memcpy(raw + 0x880, shstrtab, sizeof(shstrtab));
+}
+
+static RzBuffer *build_synth_elf64(ut32 flags) {
+	ut8 raw[0x1000] = { 0 };
+	const ut64 base = 0x400000;
+	const bool is_rel = (flags & SYNTH_ELF_REL) != 0;
+	const bool no_imp = (flags & SYNTH_ELF_NO_IMPORTS) != 0;
+	const bool res_only = (flags & SYNTH_ELF_RESOLVED_ONLY) != 0;
+	const bool has_rg = (flags & (SYNTH_ELF_RETGUARD_PROGBITS | SYNTH_ELF_RETGUARD_NOBITS)) != 0;
+	const ut16 nsh = res_only ? 4 : (has_rg ? 6 : 5);
+
+	synth_elf_fill_strtabs(raw);
+
+	// Elf64_Ehdr
+	static const ut8 elf_magic[4] = { 0x7f, 'E', 'L', 'F' };
+	memcpy(raw, elf_magic, sizeof(elf_magic));
+	raw[4] = 2; // ELFCLASS64
+	raw[5] = 1; // ELFDATA2LSB
+	raw[6] = 1; // EV_CURRENT
+	rz_write_le16(raw + 16, is_rel ? 1 : 2); // ET_REL / ET_EXEC
+	rz_write_le16(raw + 18, 62); // EM_X86_64
+	rz_write_le32(raw + 20, 1);
+	rz_write_le64(raw + 24, base + 0x800); // e_entry
+	rz_write_le64(raw + 32, is_rel ? 0 : 0x40); // e_phoff
+	rz_write_le64(raw + 40, 0x900); // e_shoff
+	rz_write_le16(raw + 52, 64); // e_ehsize
+	rz_write_le16(raw + 54, 56); // e_phentsize
+	rz_write_le16(raw + 56, is_rel ? 0 : 2); // e_phnum
+	rz_write_le16(raw + 58, 64); // e_shentsize
+	rz_write_le16(raw + 60, nsh); // e_shnum
+	rz_write_le16(raw + 62, 1); // e_shstrndx
+
+	if (!is_rel) {
+		// Phdr 0: PT_LOAD covering the whole buffer
+		ut8 *p0 = raw + 0x40;
+		rz_write_le32(p0 + 0, 1); // PT_LOAD
+		rz_write_le32(p0 + 4, 5); // PF_R | PF_X
+		rz_write_le64(p0 + 8, 0); // p_offset
+		rz_write_le64(p0 + 16, base); // p_vaddr
+		rz_write_le64(p0 + 24, base); // p_paddr
+		rz_write_le64(p0 + 32, sizeof(raw)); // p_filesz
+		rz_write_le64(p0 + 40, sizeof(raw)); // p_memsz
+		rz_write_le64(p0 + 48, 0x1000); // p_align
+
+		// Phdr 1: PT_DYNAMIC at 0x200
+		ut8 *p1 = raw + 0x40 + 56;
+		rz_write_le32(p1 + 0, 2); // PT_DYNAMIC
+		rz_write_le32(p1 + 4, 6); // PF_R | PF_W
+		rz_write_le64(p1 + 8, 0x200);
+		rz_write_le64(p1 + 16, base + 0x200);
+		rz_write_le64(p1 + 24, base + 0x200);
+		rz_write_le64(p1 + 32, 0x100);
+		rz_write_le64(p1 + 40, 0x100);
+		rz_write_le64(p1 + 48, 8);
+
+		const ut32 nsyms = (no_imp || res_only) ? 2 : 6;
+		const ut32 nrelocs = (flags & SYNTH_ELF_NO_RELOCS) ? 0 : ((no_imp || res_only) ? 1 : 5);
+
+		// Elf64_Dyn at 0x200
+		ut8 *d = raw + 0x200;
+		const ut64 dyn_entries[][2] = {
+			{ 5, base + 0x300 }, // DT_STRTAB
+			{ 10, 0x100 }, // DT_STRSZ
+			{ 6, base + 0x400 }, // DT_SYMTAB
+			{ 11, 24 }, // DT_SYMENT
+			{ 4, base + 0x500 }, // DT_HASH
+			{ nrelocs ? 20u : 0u, 7 }, // DT_PLTREL = DT_RELA
+			{ nrelocs ? 23u : 0u, base + 0x580 }, // DT_JMPREL
+			{ nrelocs ? 2u : 0u, (ut64)nrelocs * 24 }, // DT_PLTRELSZ
+			{ 0, 0 }, // DT_NULL
+		};
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(dyn_entries); i++) {
+			rz_write_le64(d + i * 16, dyn_entries[i][0]);
+			rz_write_le64(d + i * 16 + 8, dyn_entries[i][1]);
+		}
+
+		// DT_HASH at 0x500
+		rz_write_le32(raw + 0x500, 1); // nbuckets
+		rz_write_le32(raw + 0x504, nsyms); // nchains
+
+		// .dynsym at 0x400 (Elf64_Sym: 24 bytes)
+		if (no_imp) {
+			ut8 *s1 = raw + 0x400 + 24;
+			rz_write_le32(s1 + 0, 53); // "def_sym"
+			s1[4] = 0x12; // STB_GLOBAL | STT_FUNC
+			rz_write_le16(s1 + 6, 2); // .text
+			rz_write_le64(s1 + 8, base + 0x800);
+		} else if (res_only) {
+			// Single pre-resolved undefined import (no defined symbols -> bin->symbols == NULL)
+			ut8 *s1 = raw + 0x400 + 24;
+			rz_write_le32(s1 + 0, 1); // "imp_res"
+			s1[4] = 0x12;
+			rz_write_le16(s1 + 6, 0);
+			rz_write_le64(s1 + 8, base + 0x820);
+		} else {
+			// sym 1: empty name undefined import (st_size=4 -> initial vaddr==0)
+			ut8 *s = raw + 0x400 + 1 * 24;
+			rz_write_le32(s + 0, 0);
+			s[4] = 0x12;
+			rz_write_le16(s + 6, 0);
+			rz_write_le64(s + 16, 4);
+			// sym 2: "imp_res" undefined import (resolved via GOT)
+			s = raw + 0x400 + 2 * 24;
+			rz_write_le32(s + 0, 1);
+			s[4] = 0x12;
+			rz_write_le16(s + 6, 0);
+			// sym 3: "imp_unres" undefined import (zero GOT entry -> UT64_MAX)
+			s = raw + 0x400 + 3 * 24;
+			rz_write_le32(s + 0, 9);
+			s[4] = 0x12;
+			rz_write_le16(s + 6, 0);
+			// sym 4: "_NSConcreteGlobalBlock" or "__rust_oom" (non-zero st_value exercises pre-resolved import)
+			s = raw + 0x400 + 4 * 24;
+			rz_write_le32(s + 0, (flags & SYNTH_ELF_RUST_IMP) ? 42 : 19);
+			s[4] = 0x12;
+			rz_write_le16(s + 6, 0);
+			rz_write_le64(s + 8, base + 0x820);
+			// sym 5: "def_sym" defined symbol
+			s = raw + 0x400 + 5 * 24;
+			rz_write_le32(s + 0, 53);
+			s[4] = 0x12;
+			rz_write_le16(s + 6, 2);
+			rz_write_le64(s + 8, base + 0x800);
+		}
+
+		// .rela.plt at 0x580 (Elf64_Rela: 24 bytes) & GOT at 0x700
+		if ((no_imp || res_only) && nrelocs) {
+			ut8 *r = raw + 0x580;
+			rz_write_le64(r + 0, base + 0x700);
+			rz_write_le64(r + 8, ((res_only ? 2ULL : 1ULL) << 32) | 7); // R_X86_64_JUMP_SLOT
+		} else if (nrelocs) {
+			rz_write_le64(raw + 0x700, base + 0x806); // GOT slot 0 -> PLT 0x400800
+			rz_write_le64(raw + 0x708, base + 0x816); // GOT slot 1 (duplicate sym 2)
+			rz_write_le64(raw + 0x710, 0); // GOT slot 2 -> unresolved (0)
+			const struct {
+				ut64 off;
+				ut32 sym;
+				ut32 type;
+			} rels[5] = {
+				{ base + 0x700, 2, 7 }, // R_X86_64_JUMP_SLOT -> imp_res
+				{ base + 0x708, 2, 7 }, // duplicate reloc for already-resolved imp_res
+				{ base + 0x710, 3, 7 }, // imp_unres with GOT=0
+				{ base + 0x718, 5, 7 }, // defined sym (not in import_addrs)
+				{ base + 0x720, 99, 7 }, // missing ordinal
+			};
+			for (size_t i = 0; i < 5; i++) {
+				ut8 *r = raw + 0x580 + i * 24;
+				rz_write_le64(r + 0, rels[i].off);
+				rz_write_le64(r + 8, (((ut64)rels[i].sym) << 32) | rels[i].type);
+			}
+		}
+	}
+
+	// .symtab at 0x780 (3 entries)
+	if (is_rel) {
+		// Undefined symbol with st_value=0, st_size=4 (vaddr==0 -> UT64_MAX)
+		ut8 *s1 = raw + 0x780 + 1 * 24;
+		rz_write_le32(s1 + 0, 9); // "imp_unres"
+		s1[4] = 0x12;
+		rz_write_le16(s1 + 6, 0);
+		rz_write_le64(s1 + 8, 0);
+		rz_write_le64(s1 + 16, 4);
+		// Undefined symbol with non-zero st_value=0x100
+		ut8 *s2 = raw + 0x780 + 2 * 24;
+		rz_write_le32(s2 + 0, 1); // "imp_res"
+		s2[4] = 0x12;
+		rz_write_le16(s2 + 6, 0);
+		rz_write_le64(s2 + 8, 0x100);
+		rz_write_le64(s2 + 16, 4);
+	} else {
+		// sym 1: empty name defined symbol
+		ut8 *s1 = raw + 0x780 + 1 * 24;
+		rz_write_le32(s1 + 0, 0);
+		s1[4] = 0x12;
+		rz_write_le16(s1 + 6, 2);
+		rz_write_le64(s1 + 8, base + 0x800);
+		// sym 2: "__rust_oom" or "def_sym"
+		ut8 *s2 = raw + 0x780 + 2 * 24;
+		rz_write_le32(s2 + 0, (flags & SYNTH_ELF_RUST_SYM) ? 42 : 53);
+		s2[4] = 0x12;
+		rz_write_le16(s2 + 6, 2);
+		rz_write_le64(s2 + 8, base + 0x810);
+	}
+
+	// Section headers at 0x900 (Elf64_Shdr: 64 bytes)
+	// sh 1: .shstrtab
+	ut8 *sh = raw + 0x900 + 1 * 64;
+	rz_write_le32(sh + 0, 1);
+	rz_write_le32(sh + 4, 3); // SHT_STRTAB
+	rz_write_le64(sh + 24, 0x880);
+	rz_write_le64(sh + 32, 0x80);
+	// sh 2: .text
+	sh = raw + 0x900 + 2 * 64;
+	rz_write_le32(sh + 0, 11);
+	rz_write_le32(sh + 4, 1); // SHT_PROGBITS
+	rz_write_le64(sh + 8, 6); // SHF_ALLOC | SHF_EXECINSTR
+	rz_write_le64(sh + 16, base + 0x800);
+	rz_write_le64(sh + 24, 0x800);
+	rz_write_le64(sh + 32, 0x80);
+	// sh 3: .strtab
+	sh = raw + 0x900 + 3 * 64;
+	rz_write_le32(sh + 0, 17);
+	rz_write_le32(sh + 4, 3); // SHT_STRTAB
+	rz_write_le64(sh + 24, 0x300);
+	rz_write_le64(sh + 32, 0x100);
+	// sh 4: .symtab
+	sh = raw + 0x900 + 4 * 64;
+	rz_write_le32(sh + 0, 25);
+	rz_write_le32(sh + 4, 2); // SHT_SYMTAB
+	rz_write_le64(sh + 24, 0x780);
+	rz_write_le64(sh + 32, 3 * 24);
+	rz_write_le32(sh + 40, 3); // sh_link = .strtab
+	rz_write_le64(sh + 56, 24); // sh_entsize
+	if (has_rg) {
+		// sh 5: .openbsd.randomdata
+		sh = raw + 0x900 + 5 * 64;
+		rz_write_le32(sh + 0, 33);
+		rz_write_le32(sh + 4, (flags & SYNTH_ELF_RETGUARD_NOBITS) ? 8 : 1); // SHT_NOBITS : SHT_PROGBITS
+		rz_write_le64(sh + 8, 2); // SHF_ALLOC
+		rz_write_le64(sh + 16, base + 0x800);
+		rz_write_le64(sh + 24, 0x800);
+		rz_write_le64(sh + 32, 64);
+	}
+
+	return rz_buf_new_with_bytes(raw, sizeof(raw));
+}
+
+static RzBuffer *build_synth_elf32(ut32 flags) {
+	ut8 raw[0x1000] = { 0 };
+	const ut32 base = 0x08048000;
+	const bool is_rel = (flags & SYNTH_ELF_REL) != 0;
+	const bool no_imp = (flags & SYNTH_ELF_NO_IMPORTS) != 0;
+	const bool res_only = (flags & SYNTH_ELF_RESOLVED_ONLY) != 0;
+	const bool has_rg = (flags & (SYNTH_ELF_RETGUARD_PROGBITS | SYNTH_ELF_RETGUARD_NOBITS)) != 0;
+	const ut16 nsh = res_only ? 4 : (has_rg ? 6 : 5);
+
+	synth_elf_fill_strtabs(raw);
+
+	// Elf32_Ehdr (52 bytes)
+	static const ut8 elf_magic[4] = { 0x7f, 'E', 'L', 'F' };
+	memcpy(raw, elf_magic, sizeof(elf_magic));
+	raw[4] = 1; // ELFCLASS32
+	raw[5] = 1; // ELFDATA2LSB
+	raw[6] = 1; // EV_CURRENT
+	rz_write_le16(raw + 16, is_rel ? 1 : 2); // ET_REL / ET_EXEC
+	rz_write_le16(raw + 18, 3); // EM_386
+	rz_write_le32(raw + 20, 1);
+	rz_write_le32(raw + 24, base + 0x800); // e_entry
+	rz_write_le32(raw + 28, is_rel ? 0 : 0x40); // e_phoff
+	rz_write_le32(raw + 32, 0x900); // e_shoff
+	rz_write_le16(raw + 40, 52); // e_ehsize
+	rz_write_le16(raw + 42, 32); // e_phentsize
+	rz_write_le16(raw + 44, is_rel ? 0 : 2); // e_phnum
+	rz_write_le16(raw + 46, 40); // e_shentsize
+	rz_write_le16(raw + 48, nsh); // e_shnum
+	rz_write_le16(raw + 50, 1); // e_shstrndx
+
+	if (!is_rel) {
+		// Phdr 0: PT_LOAD (32 bytes)
+		ut8 *p0 = raw + 0x40;
+		rz_write_le32(p0 + 0, 1); // PT_LOAD
+		rz_write_le32(p0 + 4, 0); // p_offset
+		rz_write_le32(p0 + 8, base); // p_vaddr
+		rz_write_le32(p0 + 12, base); // p_paddr
+		rz_write_le32(p0 + 16, sizeof(raw)); // p_filesz
+		rz_write_le32(p0 + 20, sizeof(raw)); // p_memsz
+		rz_write_le32(p0 + 24, 5); // PF_R | PF_X
+		rz_write_le32(p0 + 28, 0x1000); // p_align
+
+		// Phdr 1: PT_DYNAMIC
+		ut8 *p1 = raw + 0x40 + 32;
+		rz_write_le32(p1 + 0, 2); // PT_DYNAMIC
+		rz_write_le32(p1 + 4, 0x200);
+		rz_write_le32(p1 + 8, base + 0x200);
+		rz_write_le32(p1 + 12, base + 0x200);
+		rz_write_le32(p1 + 16, 0x100);
+		rz_write_le32(p1 + 20, 0x100);
+		rz_write_le32(p1 + 24, 6); // PF_R | PF_W
+		rz_write_le32(p1 + 28, 4);
+
+		const ut32 nsyms = (no_imp || res_only) ? 2 : 6;
+		const ut32 nrelocs = (flags & SYNTH_ELF_NO_RELOCS) ? 0 : ((no_imp || res_only) ? 1 : 5);
+
+		// Elf32_Dyn at 0x200 (8 bytes each)
+		ut8 *d = raw + 0x200;
+		const ut32 dyn_entries[][2] = {
+			{ 5, base + 0x300 }, // DT_STRTAB
+			{ 10, 0x100 }, // DT_STRSZ
+			{ 6, base + 0x400 }, // DT_SYMTAB
+			{ 11, 16 }, // DT_SYMENT
+			{ 4, base + 0x500 }, // DT_HASH
+			{ nrelocs ? 20u : 0u, 17 }, // DT_PLTREL = DT_REL
+			{ nrelocs ? 23u : 0u, base + 0x580 }, // DT_JMPREL
+			{ nrelocs ? 2u : 0u, nrelocs * 8 }, // DT_PLTRELSZ
+			{ 0, 0 }, // DT_NULL
+		};
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(dyn_entries); i++) {
+			rz_write_le32(d + i * 8, dyn_entries[i][0]);
+			rz_write_le32(d + i * 8 + 4, dyn_entries[i][1]);
+		}
+
+		// DT_HASH at 0x500
+		rz_write_le32(raw + 0x500, 1);
+		rz_write_le32(raw + 0x504, nsyms);
+
+		// .dynsym at 0x400 (Elf32_Sym: 16 bytes: name, value, size, info, other, shndx)
+		if (no_imp) {
+			ut8 *s1 = raw + 0x400 + 16;
+			rz_write_le32(s1 + 0, 53); // "def_sym"
+			rz_write_le32(s1 + 4, base + 0x800);
+			s1[12] = 0x12;
+			rz_write_le16(s1 + 14, 2);
+		} else if (res_only) {
+			// Single pre-resolved undefined import (no defined symbols -> bin->symbols == NULL)
+			ut8 *s1 = raw + 0x400 + 16;
+			rz_write_le32(s1 + 0, 1); // "imp_res"
+			rz_write_le32(s1 + 4, base + 0x820);
+			s1[12] = 0x12;
+		} else {
+			ut8 *s = raw + 0x400 + 1 * 16;
+			rz_write_le32(s + 0, 0);
+			rz_write_le32(s + 8, 4); // st_size=4 -> initial vaddr==0
+			s[12] = 0x12;
+			s = raw + 0x400 + 2 * 16;
+			rz_write_le32(s + 0, 1); // "imp_res"
+			s[12] = 0x12;
+			s = raw + 0x400 + 3 * 16;
+			rz_write_le32(s + 0, 9); // "imp_unres"
+			s[12] = 0x12;
+			s = raw + 0x400 + 4 * 16;
+			rz_write_le32(s + 0, (flags & SYNTH_ELF_RUST_IMP) ? 42 : 19);
+			rz_write_le32(s + 4, base + 0x820);
+			s[12] = 0x12;
+			s = raw + 0x400 + 5 * 16;
+			rz_write_le32(s + 0, 53); // "def_sym"
+			rz_write_le32(s + 4, base + 0x800);
+			s[12] = 0x12;
+			rz_write_le16(s + 14, 2);
+		}
+
+		// .rel.plt at 0x580 (Elf32_Rel: 8 bytes) & GOT at 0x700
+		if ((no_imp || res_only) && nrelocs) {
+			ut8 *r = raw + 0x580;
+			rz_write_le32(r + 0, base + 0x700);
+			rz_write_le32(r + 4, ((res_only ? 2u : 1u) << 8) | 7); // R_386_JMP_SLOT
+		} else if (nrelocs) {
+			rz_write_le32(raw + 0x700, base + 0x806);
+			rz_write_le32(raw + 0x704, base + 0x816);
+			rz_write_le32(raw + 0x708, 0);
+			const struct {
+				ut32 off;
+				ut32 sym;
+				ut32 type;
+			} rels[5] = {
+				{ base + 0x700, 2, 7 }, // R_386_JMP_SLOT
+				{ base + 0x704, 2, 7 }, // duplicate
+				{ base + 0x708, 3, 7 }, // unresolved GOT=0
+				{ base + 0x70c, 5, 7 }, // defined sym
+				{ base + 0x710, 99, 7 }, // missing ordinal
+			};
+			for (size_t i = 0; i < 5; i++) {
+				ut8 *r = raw + 0x580 + i * 8;
+				rz_write_le32(r + 0, rels[i].off);
+				rz_write_le32(r + 4, (rels[i].sym << 8) | rels[i].type);
+			}
+		}
+	}
+
+	// .symtab at 0x780 (3 entries, 16 bytes each)
+	if (is_rel) {
+		ut8 *s1 = raw + 0x780 + 1 * 16;
+		rz_write_le32(s1 + 0, 9);
+		rz_write_le32(s1 + 4, 0);
+		rz_write_le32(s1 + 8, 4);
+		s1[12] = 0x12;
+		ut8 *s2 = raw + 0x780 + 2 * 16;
+		rz_write_le32(s2 + 0, 1);
+		rz_write_le32(s2 + 4, 0x100);
+		rz_write_le32(s2 + 8, 4);
+		s2[12] = 0x12;
+	} else {
+		ut8 *s1 = raw + 0x780 + 1 * 16;
+		rz_write_le32(s1 + 0, 0);
+		rz_write_le32(s1 + 4, base + 0x800);
+		s1[12] = 0x12;
+		rz_write_le16(s1 + 14, 2);
+		ut8 *s2 = raw + 0x780 + 2 * 16;
+		rz_write_le32(s2 + 0, (flags & SYNTH_ELF_RUST_SYM) ? 42 : 53);
+		rz_write_le32(s2 + 4, base + 0x810);
+		s2[12] = 0x12;
+		rz_write_le16(s2 + 14, 2);
+	}
+
+	// Section headers at 0x900 (Elf32_Shdr: 40 bytes)
+	ut8 *sh = raw + 0x900 + 1 * 40;
+	rz_write_le32(sh + 0, 1);
+	rz_write_le32(sh + 4, 3); // SHT_STRTAB
+	rz_write_le32(sh + 16, 0x880);
+	rz_write_le32(sh + 20, 0x80);
+	sh = raw + 0x900 + 2 * 40;
+	rz_write_le32(sh + 0, 11);
+	rz_write_le32(sh + 4, 1); // SHT_PROGBITS
+	rz_write_le32(sh + 8, 6);
+	rz_write_le32(sh + 12, base + 0x800);
+	rz_write_le32(sh + 16, 0x800);
+	rz_write_le32(sh + 20, 0x80);
+	sh = raw + 0x900 + 3 * 40;
+	rz_write_le32(sh + 0, 17);
+	rz_write_le32(sh + 4, 3); // SHT_STRTAB
+	rz_write_le32(sh + 16, 0x300);
+	rz_write_le32(sh + 20, 0x100);
+	sh = raw + 0x900 + 4 * 40;
+	rz_write_le32(sh + 0, 25);
+	rz_write_le32(sh + 4, 2); // SHT_SYMTAB
+	rz_write_le32(sh + 16, 0x780);
+	rz_write_le32(sh + 20, 3 * 16);
+	rz_write_le32(sh + 24, 3); // sh_link = .strtab
+	rz_write_le32(sh + 36, 16); // sh_entsize
+	if (has_rg) {
+		sh = raw + 0x900 + 5 * 40;
+		rz_write_le32(sh + 0, 33);
+		rz_write_le32(sh + 4, (flags & SYNTH_ELF_RETGUARD_NOBITS) ? 8 : 1);
+		rz_write_le32(sh + 8, 2);
+		rz_write_le32(sh + 12, base + 0x800);
+		rz_write_le32(sh + 16, 0x800);
+		rz_write_le32(sh + 20, 64);
+	}
+
+	return rz_buf_new_with_bytes(raw, sizeof(raw));
+}
+
+static bool check_synth_elf_variant(bool is64, ut32 flags, const char *expect_lang, bool expect_retguard) {
+	RzBin *bin = rz_bin_new();
+	mu_assert_notnull(bin, "rz_bin_new");
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new");
+	rz_io_bind(io, &bin->iob);
+
+	RzBuffer *buf = is64 ? build_synth_elf64(flags) : build_synth_elf32(flags);
+	mu_assert_notnull(buf, "synth elf buf");
+	RzBinOptions bopt;
+	rz_bin_options_init(&bopt, -1, UT64_MAX, 0, false);
+	bopt.filename = is64 ? "synth64.elf" : "synth32.elf";
+
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &bopt);
+	mu_assert_notnull(bf, "open synth elf");
+	mu_assert_notnull(bf->o, "elf bin object");
+	const RzBinInfo *binfo = rz_bin_object_get_info(bf->o);
+	mu_assert_notnull(binfo, "elf bin info");
+	if (expect_lang) {
+		mu_assert_streq(binfo->lang, expect_lang, "detected lang");
+	}
+	mu_assert_eq(binfo->has_retguard, expect_retguard, "retguard detection");
+
+	// Access imports, symbols, and relocs to exercise ordinal index lookups.
+	const RzPVector *imps = rz_bin_object_get_imports(bf->o);
+	mu_assert_notnull(imps, "imports");
+	const RzPVector *syms = rz_bin_object_get_symbols(bf->o);
+	mu_assert_notnull(syms, "symbols");
+	RzBinRelocStorage *relocs = rz_bin_object_patch_relocs(bf, bf->o);
+	mu_assert_notnull(relocs, "relocs");
+
+	if (!(flags & (SYNTH_ELF_REL | SYNTH_ELF_NO_IMPORTS | SYNTH_ELF_NO_RELOCS | SYNTH_ELF_RESOLVED_ONLY))) {
+		bool saw_resolved = false;
+		void **it;
+		rz_pvector_foreach (syms, it) {
+			RzBinSymbol *sym = *it;
+			if (sym->name && !strcmp(sym->name, "imp_res") && sym->is_imported) {
+				saw_resolved = (sym->vaddr == (is64 ? 0x400800 : 0x08048800));
+			}
+		}
+		mu_assert_true(saw_resolved, "resolved import PLT vaddr");
+	}
+
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	return true;
+}
+
+bool test_bin_elf_indexing_and_info(void) {
+	for (int mode = 0; mode < 2; mode++) {
+		bool is64 = mode == 1;
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_RETGUARD_PROGBITS, "c blocks ext.", true), "blocks + retguard progbits");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_RETGUARD_NOBITS | SYNTH_ELF_RUST_SYM, "rust", false), "rust sym + retguard nobits");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_RUST_IMP, "rust", false), "rust import + no retguard");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_NO_IMPORTS, NULL, false), "dynamic relocs with no imports");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_NO_RELOCS, NULL, false), "dynamic without relocs");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_NO_RELOCS | SYNTH_ELF_NO_IMPORTS, NULL, false), "dynamic without relocs or imports");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_RESOLVED_ONLY, NULL, false), "pre-resolved import with no defined symbols");
+		mu_assert_true(check_synth_elf_variant(is64, SYNTH_ELF_REL, NULL, false), "ET_REL without dynamic/relocs");
+	}
 	mu_end;
 }
 
@@ -896,6 +1602,8 @@ bool all_tests() {
 	mu_run_test(test_golang_oversized_bb_strings);
 	mu_run_test(test_bin_classes_lazy_sort);
 	mu_run_test(test_bin_trycatch_index);
+	mu_run_test(test_analysis_trycatch_handlers);
+	mu_run_test(test_bin_elf_indexing_and_info);
 	return tests_passed != tests_run;
 }
 

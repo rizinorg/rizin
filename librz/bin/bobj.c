@@ -240,11 +240,14 @@ static void bin_class_sort_members(RzBinClass *c) {
 }
 
 static void bin_object_sort_classes(RzBinObject *o) {
-	if (o->classes_unsorted && o->classes) {
+	if (!o->classes) {
+		return;
+	}
+	if (o->classes_unsorted) {
 		rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
 		o->classes_unsorted = false;
 	}
-	if (o->class_members_unsorted && o->classes) {
+	if (o->class_members_unsorted) {
 		void **it;
 		rz_pvector_foreach (o->classes, it) {
 			bin_class_sort_members(*it);

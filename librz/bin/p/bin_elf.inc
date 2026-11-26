@@ -1098,14 +1098,9 @@ static RzPVector /*<RzBinReloc *>*/ *relocs(RzBinFile *bf) {
 	return relocs_obj(bin, bf->o->opts.baseaddr, bf->buf);
 }
 
-static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
-	ELFOBJ *bin = (bf && bf->o) ? bf->o->bin_obj : NULL;
-	if (!bin) {
-		return;
-	}
-
+static bool lookup_symbols_vec(const RzVector /*<RzBinElfSymbol>*/ *syms, RzBinInfo *ret) {
 	RzBinElfSymbol *symbol;
-	rz_bin_elf_foreach_symbols(bin, symbol) {
+	rz_vector_foreach (syms, symbol) {
 		if (RZ_STR_ISEMPTY(symbol->name)) {
 			continue;
 		}
@@ -1113,30 +1108,21 @@ static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
 		} else if (!strcmp(symbol->name, "__rust_oom")) {
 			ret->lang = "rust";
-			return;
+			return true;
 		}
 	}
-
-	RzBinElfSymbol *import;
-	rz_bin_elf_foreach_imports(bin, import) {
-		if (RZ_STR_ISEMPTY(import->name)) {
-			continue;
-		}
-		if (!strcmp(import->name, "_NSConcreteGlobalBlock")) {
-			ret->lang = (ret->lang && !strcmp(ret->lang, "c++")) ? "c++ blocks ext." : "c blocks ext.";
-		} else if (!strcmp(import->name, "__rust_oom")) {
-			ret->lang = "rust";
-			return;
-		}
-	}
+	return false;
 }
 
-static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
-	if (ret->has_retguard) {
+static void lookup_symbols(ELFOBJ *bin, RzBinInfo *ret) {
+	if (lookup_symbols_vec(bin->symbols, ret)) {
 		return;
 	}
-	ELFOBJ *bin = (bf && bf->o) ? bf->o->bin_obj : NULL;
-	if (!bin) {
+	lookup_symbols_vec(bin->imports, ret);
+}
+
+static void lookup_sections(ELFOBJ *bin, RzBinInfo *ret) {
+	if (ret->has_retguard) {
 		return;
 	}
 	RzBinElfSection *section = Elf_(rz_bin_elf_get_section_with_name)(bin, ".openbsd.randomdata");
@@ -1232,8 +1218,8 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (Elf_(rz_bin_elf_is_static)(obj)) {
 		ret->dbg_info |= RZ_BIN_DBG_STATIC;
 	}
-	lookup_sections(bf, ret);
-	lookup_symbols(bf, ret);
+	lookup_sections(obj, ret);
+	lookup_symbols(obj, ret);
 
 	return ret;
 }
