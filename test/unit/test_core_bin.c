@@ -911,6 +911,13 @@ bool test_bin_apply_strings_prefix(void) {
 	int flags_after = rz_flag_count(core->flags, NULL);
 	mu_assert_eq(flags_after, flags_before, "filtered-prefix re-apply should be idempotent");
 
+	// Empty prefix behaves like no prefix
+	free(core->bin->prefix);
+	core->bin->prefix = rz_str_dup("");
+	mu_assert_notnull(core->bin->prefix, "dup empty prefix");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings with empty prefix");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.hello"), "empty prefix creates unprefixed flag");
+
 	free(core->bin->prefix);
 	core->bin->prefix = orig_prefix;
 	rz_core_free(core);
@@ -919,6 +926,30 @@ bool test_bin_apply_strings_prefix(void) {
 
 static int core_file_type(RzBinFile *bf) {
 	return RZ_BIN_TYPE_CORE;
+}
+
+static int exec_file_type(RzBinFile *bf) {
+	return RZ_BIN_TYPE_DEFAULT;
+}
+
+static RzPVector /*<RzBinString *>*/ *mock_plugin_strings(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzBinString *s = RZ_NEW0(RzBinString);
+	if (!s) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+	s->string = rz_str_dup("plugin_str");
+	s->paddr = 0;
+	s->vaddr = 0;
+	s->size = 11;
+	s->length = 10;
+	s->type = RZ_STRING_ENC_8BIT;
+	rz_pvector_push(ret, s);
+	return ret;
 }
 
 static RzBinInfo *core_info(RzBinFile *bf) {
@@ -940,6 +971,27 @@ static RzBinPlugin mock_core_plugin = {
 	.file_type = core_file_type,
 };
 
+static RzBinPlugin mock_core_with_strings_plugin = {
+	.name = "mock_core_strings",
+	.desc = "Mock Core Dump Plugin With Strings Callback",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.info = core_info,
+	.file_type = core_file_type,
+	.strings = mock_plugin_strings,
+};
+
+static RzBinPlugin mock_exec_plugin = {
+	.name = "mock_exec",
+	.desc = "Mock Sectionless Exec Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.info = core_info,
+	.file_type = exec_file_type,
+};
+
 bool test_bin_apply_strings_core_dump_raw_mode(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "create core");
@@ -956,11 +1008,112 @@ bool test_bin_apply_strings_core_dump_raw_mode(void) {
 	mu_assert_eq(rz_flag_count(core->flags, "str.*"), 0, "no auto str flags on core");
 	mu_assert_null(rz_meta_get_string(core->analysis, RZ_META_TYPE_STRING, 0), "no auto meta");
 
+	// NULL sections vector is also treated as sectionless in auto mode
+	RzPVector *orig_sections = bf->o->sections;
+	bf->o->sections = NULL;
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "auto mode skips core flagging with NULL sections");
+	bf->o->sections = orig_sections;
+
+	// Missing plugin returns false cleanly
+	RzBinPlugin *orig_plugin = bf->o->plugin;
+	bf->o->plugin = NULL;
+	mu_assert_false(rz_core_bin_apply_strings(core, bf), "apply strings fails cleanly with NULL plugin");
+	bf->o->plugin = orig_plugin;
+
 	mu_assert_true(rz_config_set(core->config, "str.search.mode", "raw"), "set raw mode");
 	mu_assert_true(rz_core_bin_apply_strings(core, bf), "raw mode applies core strings");
 	RzFlagItem *fi = rz_flag_get(core->flags, "str.hello_world");
 	mu_assert_notnull(fi, "raw mode creates str.hello_world");
 	mu_assert_eq(fi->offset, 0, "raw mode flag offset");
+
+	rz_core_free(core);
+
+	// Sectionless core plugin WITH dedicated strings callback is NOT skipped in auto mode
+	core = rz_core_new();
+	mu_assert_notnull(core, "create core for core-with-strings");
+	rz_bin_plugin_add(core->bin, &mock_core_with_strings_plugin);
+	f = rz_core_file_open(core, "hex://68656c6c6f5f776f726c6400", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open core-with-strings file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load core-with-strings");
+	bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "core-with-strings binfile");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings with dedicated callback");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.plugin_str"), "plugin string flagged");
+	rz_core_free(core);
+
+	// Sectionless non-core plugin (file_type != RZ_BIN_TYPE_CORE) is NOT skipped in auto mode
+	core = rz_core_new();
+	mu_assert_notnull(core, "create core for sectionless exec");
+	rz_bin_plugin_add(core->bin, &mock_exec_plugin);
+	f = rz_core_file_open(core, "hex://68656c6c6f5f776f726c6400", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open exec file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load exec");
+	bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "exec binfile");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings for non-core plugin");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.hello_world"), "non-core string flagged");
+	rz_core_free(core);
+
+	mu_end;
+}
+
+bool test_analysis_string_xref_flags_and_flagspace(void) {
+	// x86_64 code at 0x0:
+	//   0x00: 48 8d 05 09 00 00 00   lea rax, [rip + 9]    -> 0x10 ("dup_xref")
+	//   0x07: 48 8d 1d 12 00 00 00   lea rbx, [rip + 0x12] -> 0x20 ("dup_xref")
+	//   0x0e: 90 90                  nop; nop
+	//   0x10: "dup_xref\0"
+	//   0x20: "dup_xref\0"
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	rz_bin_plugin_add(core->bin, &mock_exec_plugin);
+
+	RzCoreFile *f = rz_core_file_open(
+		core,
+		"hex://488d0509000000488d1d120000009090"
+		"6475705f787265660000000000000000"
+		"6475705f787265660000000000000000",
+		RZ_PERM_RWX, 0);
+	mu_assert_notnull(f, "open xref code+strings buffer");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load bin for xref test");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+
+	// Clear initial flags and select a non-strings flagspace to verify push/pop preservation
+	rz_flag_unset_all(core->flags);
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+
+	// Exercise set_new_xref() -> rz_core_bin_set_string_flag() from non-strings flagspace
+	rz_core_seek(core, 0, true);
+	rz_core_analysis_refs(core, 0x10);
+	const RzSpace *cur = rz_flag_space_cur(core->flags);
+	mu_assert_notnull(cur, "flagspace preserved");
+	mu_assert_streq(cur->name, RZ_FLAGS_FS_FUNCTIONS, "active flagspace still functions");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	RzFlagItem *fi1 = rz_flag_get(core->flags, "str.dup_xref");
+	mu_assert_notnull(fi1, "first xref string flag created");
+	mu_assert_eq(fi1->offset, 0x10, "first xref string flag offset");
+	RzFlagItem *fi2 = rz_flag_get(core->flags, "str.dup_xref.20");
+	mu_assert_notnull(fi2, "second duplicate xref string flag suffixed");
+	mu_assert_eq(fi2->offset, 0x20, "second xref string flag offset");
+
+	// Exercise rz_core_add_string_ref() via ESIL analysis
+	rz_flag_unset_all(core->flags);
+	rz_config_set_b(core->config, "analysis.strings", true);
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+	rz_core_analysis_esil(core, 0, 0x10, NULL);
+	cur = rz_flag_space_cur(core->flags);
+	mu_assert_notnull(cur, "flagspace preserved after esil");
+	mu_assert_streq(cur->name, RZ_FLAGS_FS_FUNCTIONS, "active flagspace still functions after esil");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	fi1 = rz_flag_get(core->flags, "str.dup_xref");
+	mu_assert_notnull(fi1, "esil first string flag created");
+	mu_assert_eq(fi1->offset, 0x10, "esil first string flag offset");
+	fi2 = rz_flag_get(core->flags, "str.dup_xref.20");
+	mu_assert_notnull(fi2, "esil second duplicate string flag suffixed");
+	mu_assert_eq(fi2->offset, 0x20, "esil second string flag offset");
 
 	rz_core_free(core);
 	mu_end;
@@ -980,6 +1133,7 @@ bool all_tests() {
 	mu_run_test(test_bin_apply_strings_duplicates_and_fallbacks);
 	mu_run_test(test_bin_apply_strings_prefix);
 	mu_run_test(test_bin_apply_strings_core_dump_raw_mode);
+	mu_run_test(test_analysis_string_xref_flags_and_flagspace);
 	return tests_passed != tests_run;
 }
 
