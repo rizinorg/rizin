@@ -273,6 +273,43 @@ bool test_rz_test_validate_json_invalid(void) {
 	mu_end;
 }
 
+bool test_rz_test_crlf2lf_buf(void) {
+	// CRLF normalization must shrink out_len so rz_test_check_json_test() accepts the output.
+	ut8 crlf_json[] = "{\"a\":1}\r\n[2,3]\r\n";
+	int len = (int)strlen((const char *)crlf_json);
+	rz_test_crlf2lf_buf(crlf_json, &len);
+	mu_assert_streq((const char *)crlf_json, "{\"a\":1}\n[2,3]\n", "crlf normalized");
+	mu_assert_eq(len, 14, "out_len updated after crlf strip");
+	RzSubprocessOutput out = { 0 };
+	out.out = crlf_json;
+	out.out_len = len;
+	out.err = (ut8 *)"";
+	out.ret = 0;
+	mu_assert_true(rz_test_check_json_test(&out, NULL), "normalized CRLF json accepted");
+
+	// Embedded NUL bytes must be preserved across CRLF normalization and rejected.
+	ut8 nul_crlf[] = { '{', '}', '\0', '\r', '\n', 'x', '\0' };
+	int nul_len = 6;
+	rz_test_crlf2lf_buf(nul_crlf, &nul_len);
+	mu_assert_eq(nul_len, 5, "embedded NUL length updated");
+	out.out = nul_crlf;
+	out.out_len = nul_len;
+	mu_assert_false(rz_test_check_json_test(&out, NULL), "embedded NUL still rejected after crlf");
+
+	// Trailing bare CR and edge inputs must not read out of bounds.
+	ut8 bare_cr[] = "a\r\r\nb\r";
+	int cr_len = (int)strlen((const char *)bare_cr);
+	rz_test_crlf2lf_buf(bare_cr, &cr_len);
+	mu_assert_streq((const char *)bare_cr, "a\r\nb\r", "bare CR preserved");
+	mu_assert_eq(cr_len, 5, "bare CR length");
+
+	int zero = 0;
+	rz_test_crlf2lf_buf(NULL, &zero);
+	rz_test_crlf2lf_buf(bare_cr, NULL);
+	rz_test_crlf2lf_buf(bare_cr, &zero);
+	mu_end;
+}
+
 bool test_rz_test_schedule_queue_lpt(void) {
 	RzPVector tests;
 	rz_pvector_init(&tests, (RzPVectorFree)rz_test_test_free);
@@ -345,6 +382,7 @@ int all_tests() {
 	mu_run_test(test_rz_test_fix);
 	mu_run_test(test_rz_test_validate_json_valid);
 	mu_run_test(test_rz_test_validate_json_invalid);
+	mu_run_test(test_rz_test_crlf2lf_buf);
 	mu_run_test(test_rz_test_schedule_queue_lpt);
 	return tests_passed != tests_run;
 }

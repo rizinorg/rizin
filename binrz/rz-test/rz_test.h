@@ -222,6 +222,7 @@ typedef RzSubprocessOutput *(*RzTestCmdRunner)(const char *file, const char *arg
 RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp);
+RZ_API void rz_test_crlf2lf_buf(RZ_NULLABLE ut8 *buf, RZ_NULLABLE int *len);
 RZ_API bool rz_test_validate_json(RZ_NONNULL const char *str);
 RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text);
 RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);

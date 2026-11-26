@@ -6,6 +6,29 @@
 #include <rz_util/rz_regex.h>
 #include <rz_cons.h>
 
+/**
+ * \brief Normalize CRLF ("\\r\\n") sequences to LF ("\\n") in-place while updating \p len.
+ *
+ * Scans all \p len bytes so embedded NUL bytes are preserved instead of truncating early,
+ * and NUL-terminates \p buf at the updated length.
+ */
+RZ_API void rz_test_crlf2lf_buf(RZ_NULLABLE ut8 *buf, RZ_NULLABLE int *len) {
+	if (!buf || !len || *len <= 0) {
+		return;
+	}
+	int src = 0;
+	int dst = 0;
+	while (src < *len) {
+		if (buf[src] == '\r' && src + 1 < *len && buf[src + 1] == '\n') {
+			src++;
+			continue;
+		}
+		buf[dst++] = buf[src++];
+	}
+	buf[dst] = '\0';
+	*len = dst;
+}
+
 #if __WINDOWS__
 static ut8 *crlf2lf(ut8 *str) {
 	char *src = (char *)str;
@@ -39,8 +62,10 @@ static RzSubprocessOutput *subprocess_runner(const char *file, const char *args[
 	RzSubprocessOutput *out = rz_subprocess_drain(proc);
 	if (out) {
 		out->timeout = r == RZ_SUBPROCESS_TIMEDOUT;
-		out->out = crlf2lf(out->out);
-		out->err = crlf2lf(out->err);
+#if __WINDOWS__
+		rz_test_crlf2lf_buf(out->out, &out->out_len);
+		rz_test_crlf2lf_buf(out->err, &out->err_len);
+#endif
 	}
 	rz_subprocess_free(proc);
 	return out;
