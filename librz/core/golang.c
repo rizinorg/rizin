@@ -2139,7 +2139,8 @@ static bool resolve_golang_strings_in_fcn(GoStrRecover *ctx, RzAnalysisFunction 
 			continue;
 		}
 
-		if (block->ninstr > 0) {
+		if (block->ninstr > 0 && block->size <= UT16_MAX &&
+			block->ninstr - 1 <= block->op_pos_size) {
 			ctx->op_size = 1;
 			for (int idx = 0; idx < block->ninstr; idx++) {
 				ut16 i = rz_analysis_block_get_op_offset(block, idx);
