@@ -2044,6 +2044,10 @@ RZ_IPI RzAnalysisILConfig *rz_c166_il_config(RZ_NONNULL RzAnalysis *analysis) {
 	rz_return_val_if_fail(analysis, NULL);
 
 	RzAnalysisILConfig *r = rz_analysis_il_config_new(32, analysis->big_endian, C166_ADDR_SIZE);
+	if (!r) {
+		RZ_LOG_FATAL("RzAnalysisILConfig was NULL.");
+		return NULL;
+	}
 	r->reg_bindings = c166_global_registers;
 	r->init_state = rz_analysis_il_init_state_new();
 	if (!r->init_state) {
