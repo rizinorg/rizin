@@ -407,3 +407,51 @@ nth      paddr      vaddr bind   type size lib name
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=Tail calls into circular functions
+FILE=bins/inquiry/icfg_conflicts/circlular_tail_calls_with_entry.s.obj
+CMDS=<<EOF
+e asm.comments=false
+is
+aIa
+pd 9
+ablt
+EOF
+EXPECT=<<EOF
+nth      paddr      vaddr bind   type size lib name   
+------------------------------------------------------
+  1 0x00000046 0x08000046 LOCAL  OBJ     0     loop_a
+  2 0x0000004d 0x0800004d LOCAL  OBJ     0     loop_b
+  3 0x00000054 0x08000054 LOCAL  OBJ     0     loop_c
+  4 0x00000040 0x08000040 GLOBAL FUNC    0     fcn_a
+  5 0x00000042 0x08000042 GLOBAL FUNC    0     fcn_b
+  6 0x00000044 0x08000044 GLOBAL FUNC    0     fcn_c
+            ;-- section..text:
+/ sym.fcn_a();
+|       ,=< 0x08000040      jmp   obj.loop_a
+/ sym.fcn_b();
+|      ,==< 0x08000042      jmp   obj.loop_b
+/ sym.fcn_c();
+|     ,===< 0x08000044      jmp   obj.loop_c
+|     |||   ;-- loop_a:
+|    .--`-> 0x08000046      mov   eax, 0x01
+|    :||,=< 0x0800004b      jmp   obj.loop_b
+|    :|||   ;-- loop_b:
+|    :|``-> 0x0800004d      mov   eax, 0x01
+|    :| ,=< 0x08000052      jmp   obj.loop_c
+|    :| |   ;-- loop_c:
+|    :`-`-> 0x08000054      mov   eax, 0x01
+\    `====< 0x08000059      jmp   obj.loop_a
+     addr size traced ninstr jump       fail fcns                              calls xrefs                  
+------------------------------------------------------------------------------------------------------------
+0x8000040    2      0      1 0x08000046       0x08000040                             
+0x8000042    2      0      1 0x0800004d       0x08000042                             
+0x8000044    2      0      1 0x08000054       0x08000044                             
+0x8000046    7      0      2                  0x08000040 0x08000042 0x08000044        0x08000040 0x08000059
+0x800004d    7      0      2                  0x08000040 0x08000042 0x08000044        0x08000042
+0x8000054    7      0      2 0x08000046       0x08000040 0x08000042 0x08000044        0x08000044
+EOF
+EXPECT_ERR=<<EOF
+WARNING: Failed to read chunk of size 0x101 at 0x8000040 from io.
+EOF
+RUN
