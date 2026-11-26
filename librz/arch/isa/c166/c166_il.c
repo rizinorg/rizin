@@ -175,16 +175,15 @@ static RzILOpEffect *c166_il_add_rwn_rwm(const ut8 *buf) {
 	const ut8 n = H_NIB(buf[1]);
 	const char *dst = c166_global_registers[n];
 	const char *src = c166_global_registers[m];
-	return SEQN(10,
+	return SEQN(9,
 		SETL("op2", VARG(src)),
 		SETL("op1", VARG(dst)),
 		SETL("res", ADD(VARL("op1"), VARL("op2"))),
 		SETG(dst, VARL("res")),
 		SET_E(VARL("op2")),
 		SET_Z(VARL("res")),
-		SETG("v", AND(EQ(GET_BIT16(VARL("op1"), 15), GET_BIT16(VARL("op2"), 15)), NE(GET_BIT16(VARL("op1"), 15), GET_BIT16(VARL("res"), 15)))),
-		SETG("c", UGT(ADD(UNSIGNED(32, VARL("op1")), UNSIGNED(32, VARL("op2"))), U32(0xFFFF))),
-		SET_C(VARL("res")),
+		SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+		SET_C_ADD_16(VARL("op1"), VARL("op2")),
 		SET_N(VARL("res")));
 }
 
@@ -717,7 +716,7 @@ static RzILOpEffect *c166_il_addc_rwn_x(const RzAnalysis *analysis, const ut8 *b
 			SETG(src, ADD(UNSIGNED(16, VARL("addr")), U16(2))),
 			SEQ5(
 				SET_E(VARL("op2")),
-				SET_Z_CARRY(VARL("res"), VARL("carry_in")),
+				SET_Z_CARRY(VARL("res"), VARG("z")),
 				SET_V_ADD_16(VARL("op1"), VARL("op2_c"), VARL("res")),
 				SET_C_ADD_16(VARL("op1"), VARL("op2_c")),
 				SET_N(VARL("res"))));
@@ -734,7 +733,7 @@ static RzILOpEffect *c166_il_addc_rwn_x(const RzAnalysis *analysis, const ut8 *b
 			SETG(dst, VARL("res")),
 			SEQ5(
 				SET_E(VARL("op2")),
-				SET_Z_CARRY(VARL("res"), VARL("carry_in")),
+				SET_Z_CARRY(VARL("res"), VARG("z")),
 				SET_V_ADD_16(VARL("op1"), VARL("op2_c"), VARL("res")),
 				SET_C_ADD_16(VARL("op1"), VARL("op2_c")),
 				SET_N(VARL("res"))));
@@ -748,7 +747,7 @@ static RzILOpEffect *c166_il_addc_rwn_x(const RzAnalysis *analysis, const ut8 *b
 		SETG(dst, VARL("res")),
 		SEQ5(
 			SET_E(U16(reg & 0x7)),
-			SET_Z_CARRY(VARL("res"), VARL("carry_in")),
+			SET_Z_CARRY(VARL("res"), VARG("z")),
 			SET_V_ADD_16(VARL("op1"), VARL("op2_c"), VARL("res")),
 			SET_C_ADD_16(VARL("op1"), VARL("op2_c")),
 			SET_N(VARL("res"))));
@@ -1010,21 +1009,40 @@ static RzILOpEffect *c166_il_add_reg_data16(const RzAnalysis *analysis, const ut
 	if (IS_GPR(reg)) {
 		// Short ‘reg’ addresses from F0 to FF always specify GPRs.
 		const char *dst = c166_global_registers[L_NIB(reg)];
-		RzILOpBitVector *val = ADD(VARL("op1"), U16(data));
-		return SEQ3(
+		return SEQ9(
 			SETL("op1", VARG(dst)),
-			SETG(dst, val),
-			SEQ5(
-				SET_E(U16(data)),
-				SET_DZ(val),
-				V_FALSE,
-				C_FALSE,
-				SET_DN(val)));
+			SETL("op2", U16(data)),
+			SETL("res", ADD(VARL("op1"), VARL("op2"))),
+			SETG(dst, VARL("res")),
+			SET_E(VARL("op2")),
+			SET_Z(VARL("res")),
+			SET_C_ADD_16(VARL("op1"), VARL("op2")),
+			SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+			SET_N(VARL("res")));
 	}
 	CHECK_STATE;
 	const ut16 addr = state->ext.esfr ? ESFR_ADDR(reg) : SFR_ADDR(reg);
 	(void)addr;
 	NOT_IMPLEMENTED;
+}
+
+static RzILOpEffect *c166_il_addc_reg_data16(const ut8 *buf) {
+	const ut8 reg = buf[1];
+	const ut16 data = rz_read_at_le16(buf, 2);
+	const char *dst = c166_global_registers[L_NIB(reg)];
+	return SEQ7(
+		SETL("op1", VARG(dst)),
+		SETL("op2", U16(data)),
+		SETL("carry_in", BOOL_TO_BV(VARG("c"), 32)),
+		SETL("sum", ADD(ADD(UNSIGNED(32, VARL("op1")), UNSIGNED(32, VARL("op2"))), VARL("carry_in"))),
+		SETL("res", UNSIGNED(16, VARL("sum"))),
+		SETG(dst, VARL("res")),
+		SEQ5(
+			SET_E(VARL("op2")),
+			SET_Z_CARRY(VARL("res"), VARG("z")),
+			SET_V_ADD_16(VARL("op1"), VARL("op2"), VARL("res")),
+			SET_C_ADD_16(ADD(VARL("op1"), VARL("carry_in")), VARL("op2")),
+			SET_N(VARL("res"))));
 }
 
 /*
@@ -1708,6 +1726,9 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 	case C166_ADDC_Rwn_x:
 		op->il_op = c166_il_addc_rwn_x(analysis, buf, op);
 		break;
+	case C166_ADDC_reg_data16:
+		op->il_op = c166_il_addc_reg_data16(buf);
+		break;
 	case C166_ADD_reg_mem:
 		op->il_op = c166_il_add_reg_mem(analysis, buf, op);
 		break;
@@ -1904,7 +1925,6 @@ RZ_IPI bool rz_c166_il_opcode(RzAnalysis *analysis, RzAnalysisOp *op, const ut8 
 	case C166_ADDCB_reg_mem:
 	case C166_ADDC_mem_reg:
 	case C166_ADDCB_mem_reg:
-	case C166_ADDC_reg_data16:
 	case C166_ADDCB_reg_data8:
 	case C166_ADDCB_Rbn_x:
 	case C166_MULU_Rwn_Rwm:
