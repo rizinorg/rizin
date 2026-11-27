@@ -38,20 +38,15 @@ c88
 EOF
 RUN
 
-NAME=dpa issue
+NAME=dpa attaches to its own process and reads registers and memory
 FILE==
 CMDS=<<EOF
-!sh -c "./bins/mach0/sleep-macos-arm64 100 >/dev/null 2>&1 &"
-dpa $(!pgrep sleep-macos-arm64)
-pi 3 @ pc
-!pkill sleep-macos-arm64
+!python3 scripts/darwin-attach.py
 EOF
-REGEXP_FILTER_OUT=((b\.lo)|(pacibsp)|(stp fp, lr, \[sp, -0x10\]!))
 EXPECT=<<EOF
-b.lo
-pacibsp
-stp fp, lr, [sp, -0x10]!
+attach, read registers and memory, reattach: OK
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=dg gcore issue 3054

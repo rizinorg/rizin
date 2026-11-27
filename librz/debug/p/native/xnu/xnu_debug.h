@@ -13,6 +13,7 @@
 
 #include <rz_util/rz_log.h>
 #include <rz_debug.h>
+#include "xnu_wait.h"
 
 #define LOG_MACH_ERROR(name, rc) \
 	do { \
@@ -256,7 +257,6 @@ static const coredump_thread_state_flavor_t
 
 #define MAX_TSTATE_FLAVORS                   10
 #define DEFAULT_COREFILE_DEST                "core.%u"
-#define RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
 
 typedef struct {
 	vm_offset_t header;
@@ -286,6 +286,7 @@ typedef struct rz_xnu_debug_t {
 	task_t task_dbg; ///< Mach task port for the process with pid `old_pid`. Cache for `pid_to_task`.
 	int old_pid; ///< Previously observed PID, related to `task_dbg`. Cache for `pid_to_task`.
 	int last_attached_pid; ///< Last PID the plugin attached to.
+	bool task_suspended; ///< A task suspension owned by this debugger and released on resume or detach.
 	xnu_exception_info ex; ///< Exception handling state (ports, masks, flavors).
 } RzXnuDebug;
 
