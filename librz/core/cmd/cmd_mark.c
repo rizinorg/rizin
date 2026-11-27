@@ -55,18 +55,9 @@ static void mark_add_flag(RzFlag *f, RzMarkItem *bi) {
 	if (!f || !bi) {
 		return;
 	}
-	RzSpace *prev_space = rz_flag_space_cur(f);
-	RzSpace *mark_space = rz_flag_space_get(f, "marks");
-	if (!mark_space) {
-		mark_space = rz_flag_space_set(f, "marks");
-	} else {
-		rz_flag_space_set(f, "marks");
-	}
-
+	rz_flag_space_push(f, "marks");
 	rz_flag_set(f, bi->name, bi->from, (ut32)(bi->to - bi->from));
-	if (prev_space) {
-		rz_flag_space_set(f, prev_space->name);
-	}
+	rz_flag_space_pop(f);
 }
 
 RZ_IPI RzCmdStatus rz_mark_add_handler(RzCore *core, int argc, const char **argv) {
@@ -248,7 +239,7 @@ RZ_IPI RzCmdStatus rz_mark_move_handler(RzCore *core, int argc, const char **arg
 			"Cannot move mark \"%s\" to 0x%" PFMT64x " - 0x%" PFMT64x "\n", argv[1], new_start, new_end);
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_flag_set(core->flags, item->name, new_start, (ut32)(new_end - new_start));
+	mark_add_flag(core->flags, new_item);
 	return RZ_CMD_STATUS_OK;
 }
 
