@@ -1942,7 +1942,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->hash, rz_hash_free);
 	RZ_FREE_CUSTOM(c->ropchain, rz_list_free);
 	RZ_FREE_CUSTOM(c->ev, rz_event_free);
-	RZ_FREE_CUSTOM(c->intr, rz_interrupt_free);
 	RZ_FREE(c->cmdlog);
 	RZ_FREE(c->lastsearch);
 	RZ_FREE(c->cons->pager);
@@ -1989,6 +1988,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE_CUSTOM(c->warnings_after, rz_list_free);
 	RZ_FREE_CUSTOM(c->sys_path, rz_path_free);
 	RZ_FREE_CUSTOM(c->marks, rz_mark_free);
+	RZ_FREE_CUSTOM(c->intr, rz_interrupt_free);
 }
 
 RZ_API void rz_core_free(RzCore *c) {

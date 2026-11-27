@@ -4,6 +4,9 @@
 #include <rz_debug.h>
 #include "minunit.h"
 #if __linux__
+#include <unistd.h>
+#endif
+#if __linux__
 #include <sys/user.h>
 
 #ifndef offsetof
@@ -781,6 +784,179 @@ static bool test_debug_reg_sync_flg(void) {
 	mu_end;
 }
 
+static bool test_rz_debug_trace_reset(void) {
+	RzBreakpointContext bp_ctx = { 0 };
+	RzDebug *dbg = rz_debug_new(&bp_ctx);
+	mu_assert_notnull(dbg, "rz_debug_new() failed");
+	mu_assert_notnull(dbg->trace, "dbg->trace should be initialized");
+
+	RzDebugTracepoint *tp = RZ_NEW0(RzDebugTracepoint);
+	mu_assert_notnull(tp, "tracepoint alloc");
+	rz_list_append(dbg->trace->traces, tp);
+	mu_assert_eq(rz_list_length(dbg->trace->traces), 1, "one tracepoint before reset");
+
+	rz_debug_trace_reset(dbg);
+	mu_assert_notnull(dbg->trace->traces, "traces list preserved after reset");
+	mu_assert_notnull(dbg->trace->ht, "trace ht recreated after reset");
+	mu_assert_eq(rz_list_length(dbg->trace->traces), 0, "traces empty after first reset");
+
+	tp = RZ_NEW0(RzDebugTracepoint);
+	mu_assert_notnull(tp, "second tracepoint alloc");
+	rz_list_append(dbg->trace->traces, tp);
+	rz_debug_trace_reset(dbg);
+	mu_assert_eq(rz_list_length(dbg->trace->traces), 0, "traces empty after second reset");
+
+	RzDebugTrace *saved_trace = dbg->trace;
+	dbg->trace = NULL;
+	rz_debug_trace_reset(dbg);
+	dbg->trace = saved_trace;
+
+	rz_debug_trace_reset(NULL);
+	rz_debug_free(dbg);
+	mu_end;
+}
+
+static bool has_frame_addr(RzList /*<RzDebugFrame *>*/ *frames, ut64 addr) {
+	RzListIter *it;
+	RzDebugFrame *frame;
+	rz_list_foreach (frames, it, frame) {
+		if (frame->addr == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool test_debug_fuzzy_bt_and_native_pids(void) {
+	RzBreakpointContext local_bp_ctx = { 0 };
+	RzDebug *dbg = rz_debug_new(&local_bp_ctx);
+	mu_assert_notnull(dbg, "rz_debug_new()");
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new()");
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	dbg->analysis = analysis;
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new()");
+	rz_io_bind(io, &dbg->iob);
+	rz_io_bind(io, &dbg->bp->iob);
+	if (!rz_debug_use(dbg, "native")) {
+		rz_debug_free(dbg);
+		rz_analysis_free(analysis);
+		rz_io_free(io);
+		mu_end;
+	}
+	RzIODesc *mem_desc = rz_io_open_at(io, "malloc://0x10000", RZ_PERM_RWX, 0644, 0x1000, NULL);
+	mu_assert_notnull(mem_desc, "open malloc:// for fuzzy test");
+
+	// Fuzzy backtrace (fuzzy-all.c): verify callret addr 0x1005 for 8/4/2-byte words and cleanup
+	ut8 call_insn[5] = { 0xe8, 0x00, 0x00, 0x00, 0x00 };
+	rz_io_write_at(io, 0x1000, call_insn, sizeof(call_insn));
+	ut8 stack_bytes[16] = { 0 };
+	rz_write_le64(stack_bytes, 0x1005);
+	rz_write_le32(stack_bytes + 8, 0x1005);
+	rz_write_le16(stack_bytes + 12, 0x1005);
+	rz_io_write_at(io, 0x2000, stack_bytes, sizeof(stack_bytes));
+
+	free(dbg->arch);
+	dbg->arch = rz_str_dup("x86");
+	free(dbg->btalgo);
+	dbg->btalgo = rz_str_dup("fuzzy");
+	dbg->btdepth = 4;
+
+	dbg->bits = 8;
+	RzList *frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_notnull(frames, "fuzzy bt 64-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds 64-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 4;
+	frames = rz_debug_frames(dbg, 0x2008);
+	mu_assert_notnull(frames, "fuzzy bt 32-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds 32-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 2;
+	frames = rz_debug_frames(dbg, 0x200c);
+	mu_assert_notnull(frames, "fuzzy bt 16-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds 16-bit callret 0x1005");
+	rz_list_free(frames);
+
+	// Big-endian fuzzy backtrace (8/4/2-byte words)
+	ut8 be_stack_bytes[16] = { 0 };
+	rz_write_be64(be_stack_bytes, 0x1005);
+	rz_write_be32(be_stack_bytes + 8, 0x1005);
+	rz_write_be16(be_stack_bytes + 12, 0x1005);
+	rz_io_write_at(io, 0x2100, be_stack_bytes, sizeof(be_stack_bytes));
+	rz_analysis_set_big_endian(analysis, true);
+
+	dbg->bits = 8;
+	frames = rz_debug_frames(dbg, 0x2100);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 64-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 64-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 4;
+	frames = rz_debug_frames(dbg, 0x2108);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 32-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 32-bit callret 0x1005");
+	rz_list_free(frames);
+
+	dbg->bits = 2;
+	frames = rz_debug_frames(dbg, 0x210c);
+	mu_assert_notnull(frames, "fuzzy bt big-endian 16-bit");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt finds big-endian 16-bit callret 0x1005");
+	rz_list_free(frames);
+	rz_analysis_set_big_endian(analysis, false);
+
+	// NULL dbg->analysis falls back to little-endian safely
+	dbg->analysis = NULL;
+	dbg->bits = 8;
+	frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_notnull(frames, "fuzzy bt with NULL analysis");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt with NULL analysis finds LE callret 0x1005");
+	rz_list_free(frames);
+	dbg->analysis = analysis;
+
+	// btdepth larger than 512 KB stack buffer must stop at stacksize bound
+	dbg->bits = 8;
+	dbg->btdepth = (1024 * 512 / 8) + 4;
+	frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_notnull(frames, "fuzzy bt bounded by stacksize");
+	mu_assert_true(has_frame_addr(frames, 0x1005), "fuzzy bt bounded scan finds callret 0x1005");
+	rz_list_free(frames);
+	dbg->btdepth = 4;
+
+	dbg->bits = 3;
+	frames = rz_debug_frames(dbg, 0x2000);
+	mu_assert_null(frames, "fuzzy bt rejects invalid wordsize without leaking stack");
+
+	// Missing SP register with at == UT64_MAX must free 512 KB stack buffer
+	RzReg *saved_reg = dbg->reg;
+	dbg->reg = rz_reg_new();
+	dbg->bits = 8;
+	frames = rz_debug_frames(dbg, UT64_MAX);
+	mu_assert_null(frames, "fuzzy bt returns NULL without SP reg");
+	rz_reg_free(dbg->reg);
+	dbg->reg = saved_reg;
+
+#if __linux__
+	if (rz_debug_use(dbg, "native") && dbg->cur && dbg->cur->pids) {
+		RzList *pids = dbg->cur->pids(dbg, getpid());
+		mu_assert_notnull(pids, "native pids(getpid())");
+		rz_list_free(pids);
+		pids = dbg->cur->pids(dbg, 0);
+		mu_assert_notnull(pids, "native pids(0)");
+		rz_list_free(pids);
+	}
+#endif
+
+	rz_debug_free(dbg);
+	rz_analysis_free(analysis);
+	rz_io_free(io);
+	mu_end;
+}
+
 int all_tests() {
 	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
@@ -790,6 +966,8 @@ int all_tests() {
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
 	mu_run_test(test_debug_reg_sync_flg);
+	mu_run_test(test_rz_debug_trace_reset);
+	mu_run_test(test_debug_fuzzy_bt_and_native_pids);
 	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }
