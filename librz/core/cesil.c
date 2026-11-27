@@ -1153,9 +1153,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				} while (!bbit && !rz_list_empty(ctx->path));
 			}
 			if (!bbit) {
-				rz_list_free(ctx->path);
-				rz_list_free(ctx->switch_path);
-				rz_list_free(ctx->bbl);
+				RZ_FREE_CUSTOM(ctx->path, rz_list_free);
+				RZ_FREE_CUSTOM(ctx->switch_path, rz_list_free);
+				RZ_FREE_CUSTOM(ctx->bbl, rz_list_free);
 				return false;
 			}
 			ctx->cur_bb = rz_list_val(bbit);
@@ -1533,6 +1533,9 @@ RZ_API void rz_core_analysis_esil(RzCore *core, ut64 addr, ut64 size, RZ_NULLABL
 		}
 	} while (get_next_i(&ictx, &i));
 #undef CHECKREF
+	rz_list_free(ictx.path);
+	rz_list_free(ictx.switch_path);
+	rz_list_free(ictx.bbl);
 	free(buf);
 	esil->cb.hook_mem_read = NULL;
 	esil->cb.hook_mem_write = NULL;

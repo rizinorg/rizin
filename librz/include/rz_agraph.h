@@ -52,6 +52,7 @@ typedef struct rz_ascii_graph_t {
 	char *title;
 	Sdb *db;
 	HtSP *nodes; // HT with title(key)=RzANode*(value)
+	// Owns layout dummy nodes as well as non-ht-indexed nodes (is_il and empty-title).
 	RzList /*<RzANode *>*/ *dummy_nodes;
 
 	int layout;

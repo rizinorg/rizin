@@ -151,11 +151,9 @@ RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **ar
 		size_t i;
 		for (i = 0; RzEggConfigOptions[i]; i++) {
 			const char *p = RzEggConfigOptions[i];
-			if (rz_egg_option_get(egg, p)) {
-				rz_cons_printf(core->cons, "%s : %s\n", p, rz_egg_option_get(egg, p));
-			} else {
-				rz_cons_printf(core->cons, "%s : %s\n", p, "");
-			}
+			char *val = rz_egg_option_get(egg, p);
+			rz_cons_printf(core->cons, "%s : %s\n", p, val ? val : "");
+			free(val);
 		}
 		return RZ_CMD_STATUS_OK;
 	}
@@ -168,6 +166,7 @@ RZ_IPI RzCmdStatus rz_egg_config_handler(RzCore *core, int argc, const char **ar
 		}
 		size_t llen = rz_list_length(l);
 		if (!llen) {
+			rz_list_free(l);
 			return RZ_CMD_STATUS_ERROR;
 		}
 		char *key = rz_list_get_n(l, 0);

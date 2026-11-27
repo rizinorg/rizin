@@ -6621,25 +6621,23 @@ RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut3
 				rz_cons_newline(core->cons);
 			} else if (!asm_immtrim && (decode || esil)) {
 				RzAnalysisOp analysis_op;
-				char *tmpopstr, *opstr = NULL;
+				char *tmpopstr = NULL, *opstr = NULL;
 				rz_analysis_op_init(&analysis_op);
 				rz_analysis_op(core->analysis, &analysis_op, address + i,
 					buf + i, nb_bytes - i, RZ_ANALYSIS_OP_MASK_ALL);
-				tmpopstr = rz_analysis_op_to_string(core->analysis, &analysis_op);
 				if (fmt == 'e') { // pie
 					char *esil = (RZ_STRBUF_SAFEGET(&analysis_op.esil));
 					rz_cons_println(core->cons, esil);
 				} else {
 					if (decode) {
+						tmpopstr = rz_analysis_op_to_string(core->analysis, &analysis_op);
 						opstr = tmpopstr ? tmpopstr : rz_asm_op_get_asm(&(asmop));
 					} else if (esil) {
 						opstr = (RZ_STRBUF_SAFEGET(&analysis_op.esil));
 					}
-					if (asm_immtrim) {
-						rz_parse_immtrim(opstr);
-					}
 					rz_cons_println(core->cons, opstr);
 				}
+				free(tmpopstr);
 				rz_analysis_op_fini(&analysis_op);
 				rz_asm_op_fini(&asmop);
 			} else {
