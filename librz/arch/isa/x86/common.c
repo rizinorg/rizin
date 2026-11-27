@@ -602,7 +602,7 @@ int get_extreg_ind(X86Reg reg) {
  */
 RZ_IPI RzILOpPure *x86_il_get_reg_bits(X86Reg reg, int bits, uint64_t pc) {
 	if (is_pc_reg(reg)) {
-		return UN(bits, pc);
+		return rz_il_op_new_bitv_from_ut64_pc(bits, pc);
 	}
 
 	int ind = -1;

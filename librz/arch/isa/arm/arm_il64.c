@@ -658,7 +658,7 @@ static RzILOpEffect *bl(cs_insn *insn) {
 		return NULL;
 	}
 	return SEQ2(
-		SETG("x30", U64(insn->address + 4)),
+		SETG("x30", rz_il_op_new_bitv_from_ut64_pc(64, insn->address + 4)),
 		JMP(a));
 }
 
