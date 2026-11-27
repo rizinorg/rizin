@@ -692,3 +692,47 @@ EXPECT_ERR=<<EOF
 ERROR: Unknown asm plugin 'ic'
 EOF
 RUN
+
+NAME=rz-asm arm32 ldr/str rejects offset out of range
+TOOL=rz-asm
+FILE=ldr r0, [r1, 4096]
+ARGS=-a arm -b 32
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldr r0, [r1, 4096]' at line 3
+EOF
+RUN
+
+NAME=rz-asm arm32 ldr/str rejects offset is not a number
+TOOL=rz-asm
+FILE=ldr r0, [r1, foo]
+ARGS=-a arm -b 32
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ldr r0, [r1, foo]' at line 3
+EOF
+RUN
+
+NAME=rz-asm arm32 ldr/str rejects writeback on a post-indexed address
+TOOL=rz-asm
+FILE=str r0, [r1], 8!
+ARGS=-a arm -b 32
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'str r0, [r1], 8!' at line 3
+EOF
+RUN
+
+NAME=rz-asm arm32 ldr/str rejects pre-indexed strbt
+TOOL=rz-asm
+FILE=strbt r1, [r2, 4]
+ARGS=-a arm -b 32
+EXIT_STATUS=1
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'strbt r1, [r2, 4]' at line 3
+EOF
+RUN
