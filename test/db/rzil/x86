@@ -1,3 +1,116 @@
+NAME=x86 DIV 32-bit writeback in 64-bit mode
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f7f3
+aezi
+ar rax=0xdeadbeef00020000
+ar rdx=0xdeadbeef00000000
+ar rbx=3
+aezs
+ar rax
+ar rdx
+wx f733 @ 0
+wv4 0x10001 @ 0x40
+s 0
+aezi
+ar rax=0xdeadbeef00000001
+ar rdx=0xdeadbeef00000001
+ar rbx=0x40
+aezs
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+rax = 0x000000000000aaaa
+rdx = 0x0000000000000002
+rax = 0x000000000000ffff
+rdx = 0x0000000000000002
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=x86 DIV 64-bit writeback
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx 48f7f3
+aezi
+ar rax=0x20000
+ar rdx=0
+ar rbx=2
+aezs
+ar rax
+ar rdx
+s 0
+aezi
+ar rax=0x20001
+ar rdx=0x10000
+ar rbx=0x100000003
+aezs
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+rax = 0x0000000000010000
+rdx = 0x0000000000000000
+rax = 0x0000fffffffd0000
+rdx = 0x00000000000b0001
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=x86 DIV 32-bit writeback in 32-bit mode
+FILE=malloc://0x100
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx f7f3
+aezi
+ar eax=0x20000
+ar edx=0
+ar ebx=3
+aezs
+ar eax
+ar edx
+EOF
+EXPECT=<<EOF
+eax = 0x0000aaaa
+edx = 0x00000002
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=x86 DIV preserves upper bits for 8-bit and 16-bit operands
+FILE=malloc://0x100
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+wx f6f3
+aezi
+ar rax=0xdeadbeef00000007
+ar rdx=0xdeadbeef00000005
+ar rbx=3
+aezs
+ar rax
+ar rdx
+wx 66f7f3 @ 0
+s 0
+aezi
+ar rax=0xdeadbeef00000007
+ar rdx=0xdeadbeef00000000
+ar rbx=3
+aezs
+ar rax
+ar rdx
+EOF
+EXPECT=<<EOF
+rax = 0xdeadbeef00000102
+rdx = 0xdeadbeef00000005
+rax = 0xdeadbeef00000002
+rdx = 0xdeadbeef00000001
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=Printing IL ops in various formats
 FILE=bins/elf/emulateme.x86
 CMDS=<<EOF

@@ -615,7 +615,7 @@ IL_LIFTER(div) {
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(32, DIV(VARL("_edxeax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(32, 0xffffffffULL));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, MOD(VARL("_edxeax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_EAX, VARL("_temp")), x86_il_set_reg(X86_REG_EDX, UNSIGNED(32, MOD(VARL("_edxeax"), VARL("_src")))));
 
 		ret = SEQ3(edxeax, temp, BRANCH(cond, NULL, else_cond));
 		break;
@@ -626,7 +626,7 @@ IL_LIFTER(div) {
 		RzILOpEffect *temp = SETL("_temp", UNSIGNED(64, DIV(VARL("_rdxrax"), VARL("_src"))));
 
 		RzILOpPure *cond = UGT(VARL("_temp"), UN(64, 0xffffffffffffffffULL));
-		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_AX, VARL("_temp")), x86_il_set_reg(X86_REG_DX, MOD(VARL("_rdxrax"), VARL("_src"))));
+		RzILOpEffect *else_cond = SEQ2(x86_il_set_reg(X86_REG_RAX, VARL("_temp")), x86_il_set_reg(X86_REG_RDX, UNSIGNED(64, MOD(VARL("_rdxrax"), VARL("_src")))));
 
 		ret = SEQ3(rdxrax, temp, BRANCH(cond, NULL, else_cond));
 		break;
