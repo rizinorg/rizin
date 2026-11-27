@@ -204,9 +204,6 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 		return;
 	}
 	int access_type = type == 'R' ? RZ_ANALYSIS_VAR_ACCESS_TYPE_READ : RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE;
-	if (pj) {
-		pj_a(pj);
-	}
 	if (name && *name) {
 		RzAnalysisVar *var = rz_analysis_function_get_var_byname(fcn, name);
 		if (var) {
@@ -221,9 +218,6 @@ static void list_vars(RzCore *core, RzAnalysisFunction *fcn, PJ *pj, int type, c
 				var_accesses_list(fcn, var, pj, access_type, var->name, core->cons);
 			}
 		}
-	}
-	if (pj) {
-		pj_end(pj);
 	}
 }
 
@@ -2761,8 +2755,11 @@ RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core
 	PJ *pj = NULL;
 	if (mode == RZ_OUTPUT_MODE_JSON) {
 		pj = pj_new();
+		if (!pj) {
+			return RZ_CMD_STATUS_ERROR;
+		}
 		pj_o(pj);
-		pj_k(pj, "reads");
+		pj_ka(pj, "reads");
 	} else {
 		rz_cons_printf(core->cons, "afvR\n");
 	}
@@ -2773,7 +2770,8 @@ RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core
 		list_vars(core, fcn, pj, 'R', argv[1], IS_VAR);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
-		pj_k(pj, "writes");
+		pj_end(pj);
+		pj_ka(pj, "writes");
 	} else {
 		rz_cons_printf(core->cons, "afvW\n");
 	}
@@ -2784,6 +2782,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_args_and_vars_xrefs_handler(RzCore *core
 		list_vars(core, fcn, pj, 'W', argv[1], IS_VAR);
 	}
 	if (mode == RZ_OUTPUT_MODE_JSON) {
+		pj_end(pj);
 		pj_end(pj);
 		char *j = pj_drain(pj);
 		rz_cons_printf(core->cons, "%s\n", j);
