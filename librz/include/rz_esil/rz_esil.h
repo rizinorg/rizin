@@ -289,6 +289,7 @@ RZ_API void rz_analysis_esil_stats(RzAnalysisEsil *esil, int enable);
 struct rz_cons_t; // forward declaration
 RZ_API RZ_BORROW void /*RzILTraceInstruction*/ *rz_analysis_esil_get_instruction_trace(RZ_NONNULL RzAnalysisEsilTrace *etrace, int idx);
 RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil);
+RZ_API RZ_OWN RzAnalysisEsilTrace *rz_analysis_esil_trace_new_no_snapshot(RZ_NONNULL RzAnalysisEsil *esil);
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace);
 RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE const char *esil_expr);
 RZ_API void rz_analysis_esil_trace_list(RzAnalysisEsil *esil, RZ_NONNULL RZ_BORROW struct rz_cons_t *cons);

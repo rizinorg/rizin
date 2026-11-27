@@ -20,13 +20,24 @@ static inline bool esil_add_reg_trace(RzAnalysisEsilTrace *etrace, RzILTraceRegO
 	return rz_analysis_il_trace_add_reg(instr_trace, reg);
 }
 
-RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
-	rz_return_val_if_fail(esil && esil->config && esil->config->stack_addr > 0 && esil->config->stack_size > 0, NULL);
+static RzAnalysisEsilTrace *esil_trace_new(RzAnalysisEsil *esil, bool save_state) {
+	rz_return_val_if_fail(esil && esil->config, NULL);
+	if (save_state) {
+		rz_return_val_if_fail(esil->config->stack_addr > 0 && esil->config->stack_size > 0, NULL);
+	}
 	RzAnalysis *analysis = esil->panalysis;
 	size_t i;
 	RzAnalysisEsilTrace *trace = RZ_NEW0(RzAnalysisEsilTrace);
 	if (!trace) {
 		return NULL;
+	}
+	trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
+	if (!trace->instructions) {
+		RZ_LOG_ERROR("esil: Cannot allocate vector for trace instructions\n");
+		goto error;
+	}
+	if (!save_state) {
+		return trace;
 	}
 	trace->registers = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->registers) {
@@ -36,11 +47,6 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	trace->memory = ht_up_new(NULL, (HtUPFreeValue)rz_vector_free);
 	if (!trace->memory) {
 		RZ_LOG_ERROR("esil: Cannot allocate hashmap for trace memory\n");
-		goto error;
-	}
-	trace->instructions = rz_pvector_new((RzPVectorFree)rz_analysis_il_trace_instruction_free);
-	if (!trace->instructions) {
-		RZ_LOG_ERROR("esil: Cannot allocate vector for trace instructions\n");
 		goto error;
 	}
 	// Save initial ESIL stack memory
@@ -71,6 +77,23 @@ error:
 	return NULL;
 }
 
+RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
+	return esil_trace_new(esil, true);
+}
+
+/**
+ * \brief Create an ESIL trace that records per-instruction IL trace entries without snapshotting stack or register state.
+ *
+ * Intended for callers such as type propagation that inspect `trace->instructions`
+ * and never invoke `rz_analysis_esil_trace_restore()`.
+ *
+ * \param esil ESIL instance
+ * \return Newly allocated RzAnalysisEsilTrace, or NULL on failure
+ */
+RZ_API RZ_OWN RzAnalysisEsilTrace *rz_analysis_esil_trace_new_no_snapshot(RZ_NONNULL RzAnalysisEsil *esil) {
+	return esil_trace_new(esil, false);
+}
+
 RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 	if (!trace) {
 		return;
@@ -88,6 +111,9 @@ RZ_API void rz_analysis_esil_trace_free(RzAnalysisEsilTrace *trace) {
 }
 
 static void add_reg_change(RzAnalysisEsilTrace *trace, int idx, RzRegItem *ri, ut64 data) {
+	if (!ri) {
+		return;
+	}
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RzVector *vreg = ht_up_find(trace->registers, addr, NULL);
 	if (!vreg) {
@@ -166,11 +192,13 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 		RZ_FREE(reg_write);
 	}
 
-	RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
-	if (!ri) {
-		return ret;
+	if (esil->trace->registers) {
+		RzRegItem *ri = rz_reg_get(analysis->reg, name, -1);
+		if (!ri) {
+			return ret;
+		}
+		add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
 	}
-	add_reg_change(esil->trace, esil->trace->idx + 1, ri, *val);
 	if (esil->esilinterstate->callbacks.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
 		esil->cb = esil->esilinterstate->callbacks;
@@ -241,8 +269,10 @@ static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf,
 		RZ_FREE(mem_write);
 	}
 
-	for (i = 0; i < len; i++) {
-		add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
+	if (esil->trace->memory) {
+		for (i = 0; i < len; i++) {
+			add_mem_change(esil->trace, esil->trace->idx + 1, addr + i, buf[i]);
+		}
 	}
 
 	if (esil->esilinterstate->callbacks.hook_mem_write) {
@@ -296,9 +326,11 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, ut64 pc, RZ_NULLABLE
 	RzILTraceInstruction *instruction = rz_analysis_il_trace_instruction_new(pc);
 	rz_pvector_push(esil->trace->instructions, instruction);
 
-	RzAnalysis *analysis = esil->panalysis;
-	RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
-	add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
+	if (esil->trace->registers) {
+		RzAnalysis *analysis = esil->panalysis;
+		RzRegItem *pc_ri = rz_reg_get(analysis->reg, "PC", -1);
+		add_reg_change(esil->trace, esil->trace->idx, pc_ri, pc);
+	}
 	/* set hooks */
 	const ut64 verbose_save = config->verbose;
 	config->verbose = 0;
@@ -352,13 +384,16 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	size_t i;
 	RzAnalysis *analysis = esil->panalysis;
 	RzAnalysisEsilTrace *trace = esil->trace;
+	if (!trace || !trace->registers) {
+		return;
+	}
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			RzRegArena *a = analysis->reg->regset[i].arena;
 			RzRegArena *b = trace->arena[i];
-			if (a && b) {
+			if (a && b && a->bytes && b->bytes && a->size > 0) {
 				memcpy(a->bytes, b->bytes, a->size);
 			}
 		}

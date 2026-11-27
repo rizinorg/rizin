@@ -778,6 +778,352 @@ static bool test_alpha_branch_values(void) {
 	mu_end;
 }
 
+static bool test_rz_analysis_esil_trace_no_snapshot(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+	mu_assert_false(rz_core_esil_continue_back(core), "continue_back returns false before aei");
+	rz_core_cmd0(core, "aei");
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	mu_assert_notnull(esil, "esil initialized");
+	RzAnalysisEsilTrace *no_stack_trace = rz_analysis_esil_trace_new_no_snapshot(esil);
+	mu_assert_notnull(no_stack_trace, "no-snapshot trace works before aeim stack init");
+	rz_analysis_esil_trace_free(no_stack_trace);
+	rz_core_cmd0(core, "aeim");
+	mu_assert_false(rz_core_esil_continue_back(core), "continue_back false without trace");
+	rz_analysis_esil_trace_restore(esil, 0);
+
+	RzAnalysisEsilTrace *trace = rz_analysis_esil_trace_new_no_snapshot(esil);
+	mu_assert_notnull(trace, "no-snapshot trace created");
+	mu_assert_notnull(trace->instructions, "instructions vector present");
+	mu_assert_null(trace->registers, "registers map skipped");
+	mu_assert_null(trace->memory, "memory map skipped");
+	mu_assert_null(trace->stack_data, "stack snapshot skipped");
+
+	esil->trace = trace;
+	rz_analysis_esil_trace_op(esil, 0x1000, "0x42,rax,=");
+	mu_assert_eq(rz_pvector_len(trace->instructions), 1, "instruction traced");
+	mu_assert_eq(trace->idx, 1, "idx advanced after first op");
+	mu_assert_eq(trace->end_idx, 1, "end_idx advanced after first op");
+	RzILTraceInstruction *ins = rz_analysis_esil_get_instruction_trace(trace, 0);
+	mu_assert_notnull(ins, "instruction trace entry");
+	mu_assert_true(rz_analysis_il_reg_trace_contains(ins, "rax", true), "rax write recorded");
+
+	// Memory writes and reads are still recorded in IL trace entries without a snapshot map.
+	rz_analysis_esil_trace_op(esil, 0x1004, "0x11223344,rsp,=[4]");
+	mu_assert_eq(rz_pvector_len(trace->instructions), 2, "memory write traced");
+	ins = rz_analysis_esil_get_instruction_trace(trace, 1);
+	mu_assert_notnull(ins, "memory write instruction trace entry");
+	mu_assert_true(ins->stats & RZ_IL_TRACE_INS_HAS_MEM_W, "memory write flag recorded");
+
+	// Restoring, stepping back, or continuing back on a no-snapshot trace must be a safe no-op
+	// without modifying trace->idx so subsequent trace_op() calls still execute.
+	rz_analysis_esil_trace_restore(esil, 0);
+	mu_assert_eq(trace->idx, 2, "restore leaves idx unchanged on no-snapshot trace");
+	mu_assert_eq(trace->end_idx, 2, "restore leaves end_idx unchanged on no-snapshot trace");
+	mu_assert_eq(rz_core_esil_step_back(core), 0, "step_back returns 0 on no-snapshot trace");
+	mu_assert_eq(trace->idx, 2, "step_back leaves idx unchanged on no-snapshot trace");
+	mu_assert_false(rz_core_esil_continue_back(core), "continue_back returns false on no-snapshot trace");
+	mu_assert_eq(trace->idx, 2, "continue_back leaves idx unchanged on no-snapshot trace");
+
+	rz_analysis_esil_trace_op(esil, 0x1008, "0x99,rbx,=");
+	mu_assert_eq(rz_pvector_len(trace->instructions), 3, "third op traced after restore no-op");
+	mu_assert_eq(trace->idx, 3, "idx advanced after third op");
+	mu_assert_eq(trace->end_idx, 3, "end_idx advanced after third op");
+	ins = rz_analysis_esil_get_instruction_trace(trace, 2);
+	mu_assert_notnull(ins, "third instruction trace entry");
+	mu_assert_true(rz_analysis_il_reg_trace_contains(ins, "rbx", true), "rbx write recorded");
+
+	rz_analysis_esil_trace_free(trace);
+	esil->trace = NULL;
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_rz_analysis_esil_trace_snapshot_and_continue_back(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+	rz_core_cmd0(core, "aei; aeim");
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	mu_assert_notnull(esil, "esil initialized");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	ut64 sp = rz_reg_getv(reg, "rsp");
+
+	RzAnalysisEsilTrace *trace = rz_analysis_esil_trace_new(esil);
+	mu_assert_notnull(trace, "snapshot trace created");
+	mu_assert_notnull(trace->registers, "registers map present");
+	mu_assert_notnull(trace->memory, "memory map present");
+	mu_assert_notnull(trace->stack_data, "stack snapshot present");
+
+	esil->trace = trace;
+	rz_analysis_esil_trace_op(esil, 0x1000, "0x42,rax,=");
+	rz_analysis_esil_trace_op(esil, 0x1004, "0x11223344,rsp,=[4]");
+	mu_assert_eq(rz_reg_getv(reg, "rax"), 0x42, "rax updated by trace op");
+	ut32 mem_val = 0;
+	rz_io_nread_at(core->io, sp, (ut8 *)&mem_val, sizeof(mem_val));
+	mu_assert_eq(mem_val, 0x11223344, "stack memory updated by trace op");
+
+	mu_assert_true(rz_core_esil_continue_back(core), "continue_back succeeds on snapshot");
+	mu_assert_eq(trace->idx, 0, "continue_back restores idx to 0");
+	mu_assert_eq(rz_reg_getv(reg, "rax"), 0, "rax restored to initial value");
+	rz_io_nread_at(core->io, sp, (ut8 *)&mem_val, sizeof(mem_val));
+	mu_assert_eq(mem_val, 0, "stack memory restored to initial value");
+
+	// Forward restore replays recorded register and memory changes.
+	rz_analysis_esil_trace_restore(esil, 2);
+	mu_assert_eq(trace->idx, 2, "forward restore sets idx to 2");
+	mu_assert_eq(rz_reg_getv(reg, "rax"), 0x42, "rax restored to step 2");
+	rz_io_nread_at(core->io, sp, (ut8 *)&mem_val, sizeof(mem_val));
+	mu_assert_eq(mem_val, 0x11223344, "stack memory restored to step 2");
+
+	rz_analysis_esil_trace_free(trace);
+	esil->trace = NULL;
+
+	// Verify add_reg_change handles NULL RzRegItem when PC alias is absent.
+	const char *no_pc_profile = "=SP rsp\ngpr rax .64 0 0\ngpr rsp .64 8 0\n";
+	mu_assert_true(rz_reg_set_profile_string(reg, no_pc_profile), "set profile without PC");
+	trace = rz_analysis_esil_trace_new(esil);
+	mu_assert_notnull(trace, "snapshot trace without PC alias");
+	esil->trace = trace;
+	rz_analysis_esil_trace_op(esil, 0x1000, "0x7,rax,=");
+	mu_assert_eq(rz_reg_getv(reg, "rax"), 0x7, "rax written without PC alias");
+	rz_analysis_esil_trace_free(trace);
+	esil->trace = NULL;
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_rz_core_analysis_type_match_stepping(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
+	rz_type_db_init(typedb, TEST_BUILD_TYPES_DIR, "x86", 64, "linux");
+	rz_core_analysis_cc_init_by_path(core, TEST_BUILD_TYPES_DIR, NULL);
+
+	RzIOMap *map = NULL;
+	RzIODesc *desc = rz_io_open_at(core->io, "malloc://0x300", RZ_PERM_RWX, 0, 0x1000, &map);
+	mu_assert_notnull(desc, "open rwx malloc buffer");
+	mu_assert_notnull(map, "io map created");
+
+	// Caller at 0x1000..0x104b calling strncmp at 0x1100; string "hello" at 0x1200.
+	static const char *caller_hex =
+		"554889e54883ec30488d05f1010000488985f8ffffffb934120000"
+		"48898df0ffffff48898de0ffffff488b4df04889ca4889d74089ce"
+		"4089cae8c200000090909090488b55d8488902c9c3";
+	ut8 code[128];
+	int code_len = rz_hex_str2bin(caller_hex, code);
+	mu_assert_eq(code_len, 0x4b, "caller code length");
+	rz_io_write_at(core->io, 0x1000, code, code_len);
+	const ut8 ret_op = 0xc3;
+	rz_io_write_at(core->io, 0x1100, &ret_op, 1);
+	rz_io_write_at(core->io, 0x1200, (const ut8 *)"hello", 6);
+	rz_flag_set(core->flags, "str.hello", 0x1200, 6);
+
+	rz_core_cmd0(core, "af @ 0x1100; afn strncmp @ 0x1100; af @ 0x1000");
+	RzAnalysisFunction *callee = rz_analysis_get_function_byname(core->analysis, "strncmp");
+	mu_assert_notnull(callee, "callee renamed to strncmp");
+	mu_assert_true(rz_type_func_exist(typedb, "strncmp"), "strncmp type loaded");
+	mu_assert_notnull(rz_analysis_cc_func(core->analysis, "strncmp"), "strncmp cc loaded");
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in(core->analysis, 0x1000, 0);
+	mu_assert_notnull(fcn, "caller function analyzed");
+	RzAnalysisBlock *bb = rz_analysis_get_block_at(core->analysis, 0x1000);
+	mu_assert_notnull(bb, "caller basic block");
+
+	rz_core_cmd0(core, "aei; aeim");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	ut64 saved_rbp = rz_reg_getv(reg, "rbp");
+	ut64 saved_rsp = rz_reg_getv(reg, "rsp");
+
+	// Uninitialized stack registers trigger analysis_emul_init() early exit.
+	rz_reg_setv(reg, "rbp", 0);
+	rz_reg_setv(reg, "rsp", 0);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_false(bb->traced, "block not traced when stack regs are zero");
+	rz_reg_setv(reg, "rbp", saved_rbp);
+	rz_reg_setv(reg, "rsp", saved_rsp);
+
+	// exectrap on non-executable map returns false from type_match_esil_step().
+	map->perm = RZ_PERM_R;
+	rz_config_set_b(core->config, "esil.exectrap", true);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_false(bb->traced, "block not traced when exectrap rejects non-exec map");
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	mu_assert_eq(esil->trap, RZ_ANALYSIS_TRAP_EXEC_ERR, "exectrap sets TRAP_EXEC_ERR");
+
+	// Mark executable and test step_size < 1 with breakoninvalid=true and false.
+	map->perm = RZ_PERM_RWX;
+	rz_analysis_hint_set_size(core->analysis, 0x1000, (ut64)-1);
+	rz_config_set_b(core->config, "esil.breakoninvalid", true);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_false(bb->traced, "block not traced when breakoninvalid aborts step_size < 1");
+
+	rz_config_set_b(core->config, "esil.breakoninvalid", false);
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_true(bb->traced, "block traced when breakoninvalid=false clamps step_size");
+	rz_analysis_hint_unset_size(core->analysis, 0x1000);
+	bb->traced = false;
+
+	// Exercise get_src_regname_op edge cases on the post-call nop sled:
+	// 32-bit reg without 64-bit alias, no-comma token, overlong (>=64) token, and empty ESIL.
+	rz_analysis_hint_set_esil(core->analysis, 0x103e, "mxcr_mask,r10,=");
+	rz_analysis_hint_set_esil(core->analysis, 0x103f, "r10");
+	rz_analysis_hint_set_esil(core->analysis, 0x1040,
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,r10,=");
+
+	// Run full type_match with exectrap=true on executable map.
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_true(bb->traced, "block traced on valid executable map");
+
+	RzAnalysisVar *val_var = rz_analysis_function_get_stack_var_at(fcn, -0x28);
+	mu_assert_notnull(val_var, "value-propagated stack variable exists");
+	char *val_type = rz_type_as_string(typedb, val_var->type);
+	mu_assert_streq(val_type, "const char *", "value propagation sets var_20h type");
+	free(val_type);
+
+	RzAnalysisVar *ptr_var = rz_analysis_function_get_stack_var_at(fcn, -0x30);
+	mu_assert_notnull(ptr_var, "return-pointer stack variable exists");
+	char *ptr_type = rz_type_as_string(typedb, ptr_var->type);
+	mu_assert_streq(ptr_type, "int *", "return type pointer propagated to var_28h");
+	free(ptr_type);
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_rz_core_analysis_type_match_block_fcns_and_cache_eviction(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+
+	RzIODesc *desc = rz_io_open_at(core->io, "malloc://0x2200", RZ_PERM_RWX, 0, 0x10000, NULL);
+	mu_assert_notnull(desc, "open malloc buffer");
+	ut8 nops[0x2100];
+	memset(nops, 0x90, sizeof(nops));
+	// Put a short sequence at 0x10000 for multi-function overlap testing.
+	static const ut8 seq[] = { 0xb8, 0x01, 0x00, 0x00, 0x00, 0x90, 0x90, 0xc3 };
+	memcpy(nops, seq, sizeof(seq));
+	rz_io_write_at(core->io, 0x10000, nops, sizeof(nops));
+	rz_core_cmd0(core, "aei; aeim");
+
+	// Overlapping blocks owned by fcn_0 hit dedup in type_match_block_fcns_cb().
+	RzAnalysisBlock *bb1 = rz_analysis_create_block(core->analysis, 0x10000, sizeof(seq));
+	RzAnalysisBlock *bb2 = rz_analysis_create_block(core->analysis, 0x10005, 3);
+	mu_assert_notnull(bb1, "bb1 created");
+	mu_assert_notnull(bb2, "bb2 created");
+	RzAnalysisFunction *fcns[9];
+	fcns[0] = rz_analysis_create_function(core->analysis, "fcn_shared_0", 0x10000,
+		RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcns[0], "primary shared function created");
+	rz_analysis_function_add_block(fcns[0], bb1);
+	rz_analysis_function_add_block(fcns[0], bb2);
+
+	// Step once before overflow so overlapping blocks bb1 and bb2 deduplicate fcn_shared_0.
+	rz_core_analysis_type_match(core, fcns[0], NULL);
+	mu_assert_true(bb1->traced, "overlapping blocks traced for single function");
+
+	for (size_t i = 1; i < RZ_ARRAY_SIZE(fcns); i++) {
+		char name[32];
+		snprintf(name, sizeof(name), "fcn_shared_%zu", i);
+		fcns[i] = rz_analysis_create_function(core->analysis, name, 0x10000 + i,
+			RZ_ANALYSIS_FCN_TYPE_FCN);
+		mu_assert_notnull(fcns[i], "shared function created");
+		rz_analysis_function_add_block(fcns[i], bb1);
+	}
+	rz_analysis_block_unref(bb1);
+	rz_analysis_block_unref(bb2);
+
+	// 9 functions sharing bb1 trigger fctx.overflow fallback to rz_analysis_get_functions_in().
+	bb1->traced = false;
+	rz_core_analysis_type_match(core, fcns[0], NULL);
+	mu_assert_true(bb1->traced, "shared block traced across >8 functions");
+
+	// Single block with > OP_CACHE_LIMIT (8192) instructions exercises op_cache reset.
+	RzAnalysisFunction *big_fcn = rz_analysis_create_function(core->analysis, "fcn_big",
+		0x10020, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(big_fcn, "big function created");
+	RzAnalysisBlock *big_bb = rz_analysis_create_block(core->analysis, 0x10020, 8208);
+	mu_assert_notnull(big_bb, "big block created");
+	rz_analysis_function_add_block(big_fcn, big_bb);
+	rz_analysis_block_unref(big_bb);
+
+	rz_core_analysis_type_match(core, big_fcn, NULL);
+	mu_assert_true(big_bb->traced, "big block traced past OP_CACHE_LIMIT");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+static bool test_rz_core_analysis_type_match_mips_delay_and_pcalign(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "mips", 32, NULL, NULL, NULL);
+	rz_config_set_b(core->config, "cfg.bigendian", false);
+	mu_assert_eq(rz_analysis_get_pc_align(core->analysis), 4, "mips32 pc align is 4");
+
+	RzIODesc *desc = rz_io_open_at(core->io, "malloc://0x100", RZ_PERM_RWX, 0, 0x1000, NULL);
+	mu_assert_notnull(desc, "open mips malloc buffer");
+	rz_core_cmd0(core, "aei; aeim");
+
+	// 0x1000: lw v0, 0(sp) (linear, delay=1); 0x1004: addiu v1, zero, 7 (non-empty delay slot)
+	// 0x1008: lw v0, 0(sp) (linear, delay=1); 0x100c: nop (hinted empty delay slot)
+	// 0x1010: lw v0, 0(sp) (linear, delay=1); 0x1014: jr ra (RET in delay slot -> trap)
+	// 0x1020: lw v0, 0(sp) (linear, delay=1); 0x1024: nop (hinted size < 1 -> op2->size <= 0)
+	// 0x10fc: lw v0, 0(sp) (delay slot at 0x1100 is unmapped -> op2 == NULL)
+	ut8 buf[24];
+	int len = rz_hex_str2bin("0000a28f070003240000a28f000000000000a28f0800e003", buf);
+	mu_assert_eq(len, 24, "mips test bytes length");
+	rz_io_write_at(core->io, 0x1000, buf, len);
+	rz_io_write_at(core->io, 0x1020, buf + 8, 8);
+	rz_io_write_at(core->io, 0x10fc, buf, 4);
+	rz_analysis_hint_set_esil(core->analysis, 0x100c, "");
+	rz_analysis_hint_set_size(core->analysis, 0x1024, (ut64)-1);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(core->analysis, "mips_delay",
+		0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "mips function created");
+	RzAnalysisBlock *bb_exec = rz_analysis_create_block(core->analysis, 0x1000, 16);
+	RzAnalysisBlock *bb_trap = rz_analysis_create_block(core->analysis, 0x1010, 4);
+	RzAnalysisBlock *bb_bad = rz_analysis_create_block(core->analysis, 0x1020, 4);
+	RzAnalysisBlock *bb_edge = rz_analysis_create_block(core->analysis, 0x10fc, 4);
+	mu_assert_notnull(bb_exec, "bb_exec created");
+	mu_assert_notnull(bb_trap, "bb_trap created");
+	mu_assert_notnull(bb_bad, "bb_bad created");
+	mu_assert_notnull(bb_edge, "bb_edge created");
+	rz_analysis_function_add_block(fcn, bb_exec);
+	rz_analysis_function_add_block(fcn, bb_trap);
+	rz_analysis_function_add_block(fcn, bb_bad);
+	rz_analysis_function_add_block(fcn, bb_edge);
+	rz_analysis_block_unref(bb_exec);
+	rz_analysis_block_unref(bb_trap);
+	rz_analysis_block_unref(bb_bad);
+	rz_analysis_block_unref(bb_edge);
+
+	rz_core_analysis_type_match(core, fcn, NULL);
+	mu_assert_true(bb_exec->traced, "mips delay-slot block traced");
+	mu_assert_true(bb_trap->traced, "mips branch-in-delay-slot block traced");
+	mu_assert_true(bb_bad->traced, "mips invalid-size-delay-slot block traced");
+	mu_assert_true(bb_edge->traced, "mips unmapped-delay-slot block traced");
+	RzReg *reg = rz_analysis_get_reg(core->analysis);
+	mu_assert_eq(rz_reg_getv(reg, "v1"), 7, "delay slot addiu executed");
+
+	// Verify trap flag directly on the single-block branch-in-delay-slot case.
+	RzAnalysisFunction *trap_fcn = rz_analysis_create_function(core->analysis, "mips_trap",
+		0x1010, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(trap_fcn, "mips_trap function created");
+	rz_analysis_function_add_block(trap_fcn, bb_trap);
+	rz_core_analysis_type_match(core, trap_fcn, NULL);
+	RzAnalysisEsil *esil = rz_analysis_get_esil(core->analysis);
+	mu_assert_eq(esil->trap, RZ_ANALYSIS_TRAP_EXEC_ERR, "branch in delay slot traps");
+	mu_assert_eq(esil->trap_code, 0x1010, "trap_code records delayed instruction address");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_analysis_read_cache);
 	mu_run_test(test_dalvik_switch_offsets);
@@ -796,6 +1142,11 @@ int all_tests() {
 	mu_run_test(test_avr_op_input_size);
 	mu_run_test(test_rz_core_print_disasm_resolve_aav_symbols);
 	mu_run_test(test_rz_core_il_print_rzil);
+	mu_run_test(test_rz_analysis_esil_trace_no_snapshot);
+	mu_run_test(test_rz_analysis_esil_trace_snapshot_and_continue_back);
+	mu_run_test(test_rz_core_analysis_type_match_stepping);
+	mu_run_test(test_rz_core_analysis_type_match_block_fcns_and_cache_eviction);
+	mu_run_test(test_rz_core_analysis_type_match_mips_delay_and_pcalign);
 	return tests_passed != tests_run;
 }
 
