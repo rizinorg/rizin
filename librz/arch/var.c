@@ -1169,9 +1169,15 @@ static const char *get_regname(RzAnalysis *analysis, RzAnalysisValue *value) {
 	const char *name = NULL;
 	if (value && value->reg && value->reg->name) {
 		name = value->reg->name;
-		RzRegItem *ri = rz_reg_get(analysis->reg, value->reg->name, -1);
-		if (ri && (ri->size == 32) && (analysis->bits == 64)) {
-			name = rz_reg_32_to_64(analysis->reg, value->reg->name);
+		if (analysis->bits == 64) {
+			int reg_size = value->reg->size;
+			if (!reg_size) {
+				RzRegItem *ri = rz_reg_get(analysis->reg, value->reg->name, -1);
+				reg_size = ri ? ri->size : 0;
+			}
+			if (reg_size == 32) {
+				name = rz_reg_32_to_64(analysis->reg, value->reg->name);
+			}
 		}
 	}
 	return name;

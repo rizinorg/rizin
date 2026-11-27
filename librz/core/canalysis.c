@@ -1578,12 +1578,32 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 	rz_pvector_push(&ctx->reg_set, reg_set);
 	RzAnalysisFunction *fcn = ctx->fcn;
 	RzStackAddr sp = bb->sp_entry;
-	ut64 pos = bb->addr;
-	while (pos < bb->addr + bb->size) {
+	ut8 stack_buf[4096];
+	ut8 *bb_buf = NULL;
+	bool has_bb_buf = false;
+	if (bb->size >= 32 && bb->size <= INT_MAX) {
+		bb_buf = bb->size <= sizeof(stack_buf) ? stack_buf : malloc(bb->size);
+		has_bb_buf = bb_buf && rz_io_nread_at(core->io, bb->addr, bb_buf, bb->size) == (int)bb->size;
+	}
+	ut64 off = 0;
+	while (off < bb->size) {
 		if (rz_interrupt_is_breaked(core->intr)) {
 			break;
 		}
-		RzAnalysisOp *op = rz_core_analysis_op(core, pos, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT);
+		const RzAnalysisOpMask mask = RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_VAL | RZ_ANALYSIS_OP_MASK_HINT;
+		ut64 pos = bb->addr + off;
+		ut64 rem = bb->size - off;
+		RzAnalysisOp stack_op = { 0 };
+		RzAnalysisOp *op = NULL;
+		if (has_bb_buf && rem >= 32) {
+			if (rz_analysis_op(core->analysis, &stack_op, pos, bb_buf + off, rem, mask) > 0) {
+				op = &stack_op;
+			} else {
+				rz_analysis_op_fini(&stack_op);
+			}
+		} else {
+			op = rz_core_analysis_op(core, pos, mask);
+		}
 		if (!op) {
 			break;
 		}
@@ -1596,7 +1616,11 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		int opsize = op->size;
 		int optype = op->type;
-		rz_analysis_op_free(op);
+		if (op == &stack_op) {
+			rz_analysis_op_fini(&stack_op);
+		} else {
+			rz_analysis_op_free(op);
+		}
 		if (opsize < 1) {
 			break;
 		}
@@ -1607,7 +1631,13 @@ static bool analysis_block_cb(RzAnalysisBlock *bb, BlockRecurseCtx *ctx) {
 				reg_set[i] = 2;
 			}
 		}
-		pos += opsize;
+		if ((ut64)opsize > bb->size - off) {
+			break;
+		}
+		off += opsize;
+	}
+	if (bb_buf != stack_buf) {
+		free(bb_buf);
 	}
 	return true;
 }
