@@ -119,3 +119,25 @@ EXPECT=<<EOF
 {"reads":[{"name":"var_8h","addrs":[12]}],"writes":[{"name":"var_8h","addrs":[9]}]}
 EOF
 RUN
+
+NAME=afv=, afvR, afvW and afvf in JSON
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 5589e583ec088b45088945fc8b45fc85c07402c9c331c0c9c3
+af
+afv=j
+afvRj
+afvWj
+afvRj var_8h
+afvfj
+EOF
+EXPECT=<<EOF
+[{"name":"arg_4h","reads":[{"addr":6,"disasm":"mov eax, dword [arg_4h]"}],"writes":[]},{"name":"var_8h","reads":[{"addr":12,"disasm":"mov eax, dword [var_8h]"}],"writes":[{"addr":9,"disasm":"mov dword [var_8h], eax"}]}]
+[{"name":"arg_4h","addrs":[6]},{"name":"var_8h","addrs":[12]}]
+[{"name":"arg_4h","addrs":[]},{"name":"var_8h","addrs":[9]}]
+[{"name":"var_8h","addrs":[12]}]
+[{"name":"arg_4h","arg":true,"type":"int32_t","storage":{"type":"stack","stack":4}},{"name":"var_8h","arg":false,"type":"int32_t","storage":{"type":"stack","stack":-8}}]
+EOF
+RUN

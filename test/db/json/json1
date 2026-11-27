@@ -27,10 +27,14 @@ aflj
 afl.j @ sym.main
 aflmj
 afnsj @ sym.main
+afv=j @ sym.main
+afvfj @ sym.main
 afvlj @ sym.main
+afvRj @ sym.main
 afvrj @ sym.main
 afvsj @ sym.main
 afvxj @ sym.main
+afvWj @ sym.main
 agc j @ sym.main
 agg j
 ag J

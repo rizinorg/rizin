@@ -452,6 +452,10 @@ commands:
           - name: afv=
             cname: analysis_function_vars_dis_refs
             summary: List function variables and arguments with disasm refs
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: afv-
             cname: analysis_function_vars_del
@@ -473,6 +477,10 @@ commands:
           - name: afvf
             cname: analysis_function_vars_stackframe
             summary: Show BP relative stackframe variables
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: afvn
             cname: analysis_function_vars_rename
@@ -486,6 +494,10 @@ commands:
           - name: afvR
             cname: analysis_function_vars_reads
             summary: List addresses where vars are accessed (READ)
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args:
               - name: varname
                 type: RZ_CMD_ARG_TYPE_FCN_VAR
@@ -493,6 +505,10 @@ commands:
           - name: afvW
             cname: analysis_function_vars_writes
             summary: List addresses where vars are accessed (WRITE)
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args:
               - name: varname
                 type: RZ_CMD_ARG_TYPE_FCN_VAR

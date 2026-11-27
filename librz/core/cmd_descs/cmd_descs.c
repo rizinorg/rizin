@@ -23329,7 +23329,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afvl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE | RZ_OUTPUT_MODE_LONG, rz_analysis_function_vars_handler, &analysis_function_vars_help);
 	rz_warn_if_fail(analysis_function_vars_cd);
 
-	RzCmdDesc *analysis_function_vars_dis_refs_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afv=", rz_analysis_function_vars_dis_refs_handler, &analysis_function_vars_dis_refs_help);
+	RzCmdDesc *analysis_function_vars_dis_refs_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afv=", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_dis_refs_handler, &analysis_function_vars_dis_refs_help);
 	rz_warn_if_fail(analysis_function_vars_dis_refs_cd);
 
 	RzCmdDesc *analysis_function_vars_del_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afv-", rz_analysis_function_vars_del_handler, &analysis_function_vars_del_help);
@@ -23341,16 +23341,16 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_vars_display_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvd", rz_analysis_function_vars_display_handler, &analysis_function_vars_display_help);
 	rz_warn_if_fail(analysis_function_vars_display_cd);
 
-	RzCmdDesc *analysis_function_vars_stackframe_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvf", rz_analysis_function_vars_stackframe_handler, &analysis_function_vars_stackframe_help);
+	RzCmdDesc *analysis_function_vars_stackframe_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afvf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_stackframe_handler, &analysis_function_vars_stackframe_help);
 	rz_warn_if_fail(analysis_function_vars_stackframe_cd);
 
 	RzCmdDesc *analysis_function_vars_rename_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvn", rz_analysis_function_vars_rename_handler, &analysis_function_vars_rename_help);
 	rz_warn_if_fail(analysis_function_vars_rename_cd);
 
-	RzCmdDesc *analysis_function_vars_reads_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvR", rz_analysis_function_vars_reads_handler, &analysis_function_vars_reads_help);
+	RzCmdDesc *analysis_function_vars_reads_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afvR", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_reads_handler, &analysis_function_vars_reads_help);
 	rz_warn_if_fail(analysis_function_vars_reads_cd);
 
-	RzCmdDesc *analysis_function_vars_writes_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvW", rz_analysis_function_vars_writes_handler, &analysis_function_vars_writes_help);
+	RzCmdDesc *analysis_function_vars_writes_cd = rz_cmd_desc_argv_state_new(core->rcmd, afv_cd, "afvW", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_vars_writes_handler, &analysis_function_vars_writes_help);
 	rz_warn_if_fail(analysis_function_vars_writes_cd);
 
 	RzCmdDesc *analysis_function_vars_type_cd = rz_cmd_desc_argv_new(core->rcmd, afv_cd, "afvt", rz_analysis_function_vars_type_handler, &analysis_function_vars_type_help);
