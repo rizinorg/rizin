@@ -5,6 +5,18 @@
 
 #include "pe.h"
 
+static bool tls_va_to_rva(RzBinPEObj *bin, PE_DWord va, PE_DWord *rva_out) {
+	PE_DWord rva = PE_(bin_pe_va_to_rva)(bin, va);
+	if (bin->optional_header->SizeOfImage) {
+		PE_DWord image_base = PE_(rz_bin_pe_get_image_base)(bin);
+		if (va < image_base || rva >= bin->optional_header->SizeOfImage) {
+			return false;
+		}
+	}
+	*rva_out = rva;
+	return true;
+}
+
 static void bin_pe_store_tls_callbacks(RzBinPEObj *bin, PE_DWord callbacks) {
 	PE_DWord paddr, haddr;
 	int count = 0;
@@ -20,16 +32,14 @@ static void bin_pe_store_tls_callbacks(RzBinPEObj *bin, PE_DWord callbacks) {
 		if (!addressOfTLSCallback) {
 			break;
 		}
-		if (bin->optional_header->SizeOfImage) {
-			int rva_callback = PE_(bin_pe_va_to_rva)(bin, (PE_DWord)addressOfTLSCallback);
-			if (rva_callback > bin->optional_header->SizeOfImage) {
-				break;
-			}
+		PE_DWord rva_callback = 0;
+		if (!tls_va_to_rva(bin, addressOfTLSCallback, &rva_callback)) {
+			break;
 		}
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_vaddr", count);
 		sdb_num_set(bin->kv, key, addressOfTLSCallback);
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_paddr", count);
-		paddr = PE_(bin_pe_rva_to_paddr)(bin, PE_(bin_pe_va_to_rva)(bin, (PE_DWord)addressOfTLSCallback));
+		paddr = PE_(bin_pe_rva_to_paddr)(bin, rva_callback);
 		sdb_num_set(bin->kv, key, paddr);
 		key = rz_strf(tmpbuf, "pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
@@ -40,10 +50,10 @@ static void bin_pe_store_tls_callbacks(RzBinPEObj *bin, PE_DWord callbacks) {
 }
 
 static bool read_tls_directory_aux(RzBuffer *b, PE_(image_tls_directory) * tls_directory) {
-	return rz_buf_read_le32(b, &tls_directory->StartAddressOfRawData) &&
-		rz_buf_read_le32(b, &tls_directory->EndAddressOfRawData) &&
-		rz_buf_read_le32(b, &tls_directory->AddressOfIndex) &&
-		rz_buf_read_le32(b, &tls_directory->AddressOfCallBacks) &&
+	return RZ_BUF_READ_PE_DWORD(b, &tls_directory->StartAddressOfRawData) &&
+		RZ_BUF_READ_PE_DWORD(b, &tls_directory->EndAddressOfRawData) &&
+		RZ_BUF_READ_PE_DWORD(b, &tls_directory->AddressOfIndex) &&
+		RZ_BUF_READ_PE_DWORD(b, &tls_directory->AddressOfCallBacks) &&
 		rz_buf_read_le32(b, &tls_directory->SizeOfZeroFill) &&
 		rz_buf_read_le32(b, &tls_directory->Characteristics);
 }
@@ -72,6 +82,9 @@ static int read_tls_directory(RzBuffer *b, ut64 addr, PE_(image_tls_directory) *
 int PE_(bin_pe_init_tls)(RzBinPEObj *bin) {
 	PE_(image_tls_directory) * image_tls_directory;
 	PE_(image_data_directory) *data_dir_tls = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_TLS];
+	if (!data_dir_tls->VirtualAddress) {
+		return 0;
+	}
 	PE_DWord tls_paddr = PE_(bin_pe_rva_to_paddr)(bin, data_dir_tls->VirtualAddress);
 
 	image_tls_directory = RZ_NEW0(PE_(image_tls_directory));
@@ -87,7 +100,10 @@ int PE_(bin_pe_init_tls)(RzBinPEObj *bin) {
 	if (image_tls_directory->EndAddressOfRawData < image_tls_directory->StartAddressOfRawData) {
 		return 0;
 	}
-	PE_DWord callbacks_paddr = PE_(bin_pe_rva_to_paddr)(bin, PE_(bin_pe_va_to_rva)(bin, (PE_DWord)image_tls_directory->AddressOfCallBacks));
-	bin_pe_store_tls_callbacks(bin, callbacks_paddr);
+	PE_DWord callbacks_rva = 0;
+	if (tls_va_to_rva(bin, image_tls_directory->AddressOfCallBacks, &callbacks_rva)) {
+		PE_DWord callbacks_paddr = PE_(bin_pe_rva_to_paddr)(bin, callbacks_rva);
+		bin_pe_store_tls_callbacks(bin, callbacks_paddr);
+	}
 	return 0;
 }

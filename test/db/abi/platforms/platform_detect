@@ -180,6 +180,8 @@ EXPECT=<<EOF
      vaddr      paddr     hvaddr      haddr type    
 ----------------------------------------------------
 0x004014d0 0x00000ad0 ---------- 0x000000a8 program
+0x004017e0 0x00000de0 ---------- 0x00004240 tls
+0x004017b0 0x00000db0 ---------- 0x00004248 tls
 arch     x86
 bits     64
 machine  AMD 64
