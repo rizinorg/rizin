@@ -195,7 +195,7 @@ if get_option('enable_tests')
         rz_mark_dep,
         rzheap_dep,
         lrt,
-      ] + (test in ['unum', 'json'] ? [mth] : []),
+      ] + (test in ['unum', 'json'] ? [mth] : []) + (test == 'debug' ? [dependency('rzgdb')] : []),
       install: false,
       install_rpath: rpath_exe,
       implicit_include_directories: false,

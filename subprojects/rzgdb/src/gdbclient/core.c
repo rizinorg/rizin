@@ -81,6 +81,7 @@ static void reg_cache_init(libgdbr_t *g) {
 	reg_cache.buflen = 0;
 	reg_cache.valid = false;
 	reg_cache.init = false;
+	free(reg_cache.buf);
 	if ((reg_cache.buf = malloc(reg_cache.maxlen))) {
 		reg_cache.init = true;
 	}
@@ -305,23 +306,29 @@ end:
 
 int gdbr_disconnect(libgdbr_t *g) {
 	// TODO Disconnect maybe send something to gdbserver
-	if (!g || !rz_socket_close(g->sock)) {
+	if (!g) {
 		return -1;
 	}
-	if (!gdbr_lock_enter(g)) {
-		goto end;
+	int close_ret = rz_socket_close(g->sock);
+	// Acquire the recursive mutex directly instead of gdbr_lock_enter():
+	// teardown may run during rz_core_fini() after core->intr is freed or
+	// while a break is active, and must not push an interrupt handler or skip cleanup.
+	if (g->gdbr_lock) {
+		rz_th_lock_enter(g->gdbr_lock);
 	}
 	reg_cache.valid = false;
+	reg_cache.init = false;
+	reg_cache.buflen = 0;
+	RZ_FREE(reg_cache.buf);
 	g->stop_reason.is_valid = false;
-	free(reg_cache.buf);
-	if (g->target.valid) {
-		free(g->target.regprofile);
-		free(g->registers);
-	}
+	RZ_FREE(g->target.regprofile);
+	RZ_FREE(g->registers);
+	g->target.valid = false;
 	g->connected = 0;
-end:
-	gdbr_lock_leave(g);
-	return 0;
+	if (g->gdbr_lock) {
+		rz_th_lock_leave(g->gdbr_lock);
+	}
+	return close_ret == 0 ? 0 : -1;
 }
 
 int gdbr_select(libgdbr_t *g, int pid, int tid) {
@@ -1756,12 +1763,29 @@ end:
 	return ret;
 }
 
+// Free a list of RzDebugPid entries allocated by rzgdb
+// (rz_debug_pid_free is unavailable inside subprojects/rzgdb).
+static void gdbr_pid_list_free(RzList /*<RzDebugPid *>*/ *list) {
+	if (!list) {
+		return;
+	}
+	RzListIter *iter;
+	RzDebugPid *entry;
+	rz_list_foreach (list, iter, entry) {
+		free(entry->path);
+		free(entry);
+	}
+	rz_list_free(list);
+}
+
 RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
-	char *ptr, *ptr2, *exec_file;
+	char *ptr, *ptr2, *exec_file_owned = NULL;
+	const char *exec_file = "";
 	RzDebugPid *dpid = NULL;
+	RzDebugPid *existing = NULL;
 	RzListIter *iter = NULL;
 
 	if (!g) {
@@ -1787,8 +1811,8 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 	// gdb `info inferiors` behavior that can only be avoided using xml.
 	eprintf("WARNING: Showing possibly incomplete pid list due to xml protocol failure\n");
 
-	if (!g->stub_features.qXfer_exec_file_read || !(exec_file = gdbr_exec_file_read(g, pid))) {
-		exec_file = "";
+	if (g->stub_features.qXfer_exec_file_read && (exec_file_owned = gdbr_exec_file_read(g, pid))) {
+		exec_file = exec_file_owned;
 	}
 	if (send_msg(g, "qfThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 || g->data_len == 0 || g->data[0] != 'm') {
 		ret = -1;
@@ -1807,10 +1831,16 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 				continue;
 			}
 			// Avoid adding the same pid twice(could show more than once if it has threads)
-			rz_list_foreach (list, iter, dpid) {
-				if (tpid == dpid->pid) {
-					goto next;
+			bool dup = false;
+			rz_list_foreach (list, iter, existing) {
+				if (tpid == existing->pid) {
+					dup = true;
+					break;
 				}
+			}
+			if (dup) {
+				ptr = ptr2;
+				continue;
 			}
 			if (!(dpid = RZ_NEW0(RzDebugPid)) || !(dpid->path = strdup(exec_file))) {
 				ret = -1;
@@ -1825,6 +1855,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 			dpid->runnable = true;
 			dpid->status = RZ_DBG_PROC_STOP;
 			rz_list_append(list, dpid);
+			dpid = NULL;
 			ptr = ptr2;
 		}
 		if (send_msg(g, "qsThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 || g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
@@ -1834,28 +1865,19 @@ RzList /*<RzDebugPid *>*/ *gdbr_pids_list(libgdbr_t *g, int pid) {
 		if (g->data[0] == 'l') {
 			break;
 		}
-
-	next:
-		continue;
 	}
 
 	ret = 0;
 end:
+	free(exec_file_owned);
 	gdbr_lock_leave(g);
 	if (ret != 0) {
 		if (dpid) {
+			free(dpid->path);
 			free(dpid);
 		}
 		// We can't use rz_debug_pid_free here
-		if (list) {
-			rz_list_foreach (list, iter, dpid) {
-				if (dpid->path) {
-					free(dpid->path);
-				}
-				free(dpid);
-			}
-			rz_list_free(list);
-		}
+		gdbr_pid_list_free(list);
 		return NULL;
 	}
 	return list;
@@ -1865,8 +1887,10 @@ RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
 	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
-	char *ptr, *ptr2, *exec_file;
+	char *ptr, *ptr2, *exec_file_owned = NULL;
+	const char *exec_file = "";
 	RzDebugPid *dpid = NULL;
+	RzDebugPid *existing = NULL;
 	RzListIter *iter = NULL;
 
 	if (!g) {
@@ -1876,8 +1900,8 @@ RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 	if (!gdbr_lock_enter(g)) {
 		goto end;
 	}
-	if (!g->stub_features.qXfer_exec_file_read || !(exec_file = gdbr_exec_file_read(g, pid))) {
-		exec_file = "";
+	if (g->stub_features.qXfer_exec_file_read && (exec_file_owned = gdbr_exec_file_read(g, pid))) {
+		exec_file = exec_file_owned;
 	}
 	if (g->stub_features.qXfer_threads_read) {
 		// XML thread description is supported
@@ -1920,6 +1944,7 @@ RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 			// TODO: Implement getting correct thread status from GDB
 			dpid->status = RZ_DBG_PROC_STOP;
 			rz_list_append(list, dpid);
+			dpid = NULL;
 			ptr = ptr2;
 		}
 		if (send_msg(g, "qsThreadInfo") < 0 || read_packet(g, false) < 0 || send_ack(g) < 0 || g->data_len == 0 || (g->data[0] != 'm' && g->data[0] != 'l')) {
@@ -1931,29 +1956,23 @@ RzList /*<RzDebugPid *>*/ *gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 	}
 	// This is the all I've been able to extract from gdb so far
-	rz_list_foreach (list, iter, dpid) {
-		if (gdbr_is_thread_dead(g, pid, dpid->pid)) {
-			dpid->status = RZ_DBG_PROC_DEAD;
+	rz_list_foreach (list, iter, existing) {
+		if (gdbr_is_thread_dead(g, pid, existing->pid)) {
+			existing->status = RZ_DBG_PROC_DEAD;
 		}
 	}
 
 	ret = 0;
 end:
+	free(exec_file_owned);
 	gdbr_lock_leave(g);
 	if (ret != 0) {
 		if (dpid) {
+			free(dpid->path);
 			free(dpid);
 		}
 		// We can't use rz_debug_pid_free here
-		if (list) {
-			rz_list_foreach (list, iter, dpid) {
-				if (dpid->path) {
-					free(dpid->path);
-				}
-				free(dpid);
-			}
-			rz_list_free(list);
-		}
+		gdbr_pid_list_free(list);
 		return NULL;
 	}
 	return list;
