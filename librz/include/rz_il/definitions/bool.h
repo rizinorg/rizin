@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 typedef struct rz_il_bool_t {
-	bool b;
+	const bool b; ///< immutable: all instances are shared, see rz_il_bool_new()
 } RzILBool;
 
 RZ_API RzILBool *rz_il_bool_new(bool true_or_false);

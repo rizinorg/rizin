@@ -69,8 +69,21 @@ RZ_API void rz_il_var_set_fini(RzILVarSet *vs) {
 }
 
 RZ_API void rz_il_var_set_reset(RzILVarSet *vs) {
-	rz_il_var_set_fini(vs);
-	rz_il_var_set_init(vs);
+	if (!vs->vars || !vs->contents) {
+		// a previous init failed, retry it from scratch
+		rz_il_var_set_fini(vs);
+		rz_il_var_set_init(vs);
+		return;
+	}
+	// This runs after every VM step, so empty the tables in place (same
+	// destructors as ht_sp_free()) instead of freeing and re-allocating them,
+	// and skip them entirely when nothing was bound.
+	if (vs->vars->size) {
+		ht_sp_clear(vs->vars);
+	}
+	if (vs->contents->size) {
+		ht_sp_clear(vs->contents);
+	}
 }
 
 /**
@@ -128,7 +141,15 @@ RZ_API bool rz_il_var_set_bind(RzILVarSet *vs, const char *name, RZ_OWN RzILVal 
 		rz_il_value_free(val);
 		return false;
 	}
-	ht_sp_update(vs->contents, name, val);
+	// If the variable is already bound, only swap the value. ht_sp_update() would
+	// free and re-strdup() the key on every write.
+	HtSPKv *kv = ht_sp_find_kv(vs->contents, name, NULL);
+	if (kv) {
+		rz_il_value_free(kv->value);
+		kv->value = val;
+		return true;
+	}
+	ht_sp_insert(vs->contents, name, val);
 	return true;
 }
 
