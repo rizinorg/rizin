@@ -316,6 +316,131 @@ beach:
 	mu_cleanup_end;
 }
 
+static char *first_seek_log = NULL;
+
+static void seek_log_capture_cb(const char *output, const char *funcname, const char *filename,
+	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) {
+	if (!first_seek_log) {
+		first_seek_log = rz_str_dup(output);
+	}
+}
+
+static bool test_tmp_seek_unknown_flag_hint(void) {
+	int retval = MU_PASSED;
+	RzCore *core = rz_core_new();
+	bool log_hooked = false;
+	RzLogLevel prev_level = rz_log_get_level();
+	if (!core) {
+		mu_cleanup_fail(cleanup, "core");
+	}
+
+	if (rz_core_cmd0_rzshell(core, "o malloc://256") != RZ_CMD_STATUS_OK) {
+		mu_cleanup_fail(cleanup, "setup");
+	}
+	rz_flag_set(core->flags, "sym.go.runtime.main", 0x10, 4);
+	rz_flag_set(core->flags, "sym.go.main.main", 0x20, 4);
+	rz_flag_set(core->flags, "sym.go.main.main.func1", 0x30, 4);
+
+	rz_log_set_level(RZ_LOGLVL_ERROR);
+	rz_log_add_callback(seek_log_capture_cb);
+	log_hooked = true;
+
+	// Suffix fallback: sym.main.main suggests sym.go.main.main* without runtime.main
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ sym.main.main") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "unknown sym.main.main fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (sym.main.main); "
+			"similar flags: sym.go.main.main, sym.go.main.main.func1\n")) {
+		mu_cleanup_fail(cleanup, "suffix fallback suggests matching Go flags");
+	}
+
+	// Full query match takes precedence over suffix fallback
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ main.main") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "unknown main.main fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (main.main); "
+			"similar flags: sym.go.main.main, sym.go.main.main.func1\n")) {
+		mu_cleanup_fail(cleanup, "full query match overrides suffix fallback");
+	}
+
+	// No matches omits suggestion suffix
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ sym.missing_xyz") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "missing flag fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (sym.missing_xyz)\n")) {
+		mu_cleanup_fail(cleanup, "missing flag with no candidates omits similar flags");
+	}
+
+	// Single-char query and single-char suffix skip noisy fallback scans
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ x") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "single-char unknown flag fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (x)\n")) {
+		mu_cleanup_fail(cleanup, "single-char query omits suggestions");
+	}
+
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ foo.a") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "single-char suffix fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (foo.a)\n")) {
+		mu_cleanup_fail(cleanup, "single-char suffix omits noisy suggestions");
+	}
+
+	// Overflow cap (>5 matches) appends ellipsis on both full and fallback paths
+	for (ut64 i = 0; i < 6; i++) {
+		char name[32];
+		rz_strf(name, "sym.go.worker_%u", (unsigned int)i);
+		rz_flag_set(core->flags, name, 0x40 + i * 4, 4);
+	}
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ worker_") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "capped full match fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (worker_); "
+			"similar flags: sym.go.worker_0, sym.go.worker_1, sym.go.worker_2, "
+			"sym.go.worker_3, sym.go.worker_4, ...\n")) {
+		mu_cleanup_fail(cleanup, "full matches cap at 5 with ellipsis");
+	}
+
+	RZ_FREE(first_seek_log);
+	if (rz_core_cmd0_rzshell(core, "axt @ fcn.worker_") != RZ_CMD_STATUS_INVALID) {
+		mu_cleanup_fail(cleanup, "capped fallback match fails");
+	}
+	if (!first_seek_log ||
+		strcmp(first_seek_log,
+			"ERROR: core: Invalid address or unknown flag (fcn.worker_); "
+			"similar flags: sym.go.worker_0, sym.go.worker_1, sym.go.worker_2, "
+			"sym.go.worker_3, sym.go.worker_4, ...\n")) {
+		mu_cleanup_fail(cleanup, "fallback matches cap at 5 with ellipsis");
+	}
+
+cleanup:
+	RZ_FREE(first_seek_log);
+	if (log_hooked) {
+		rz_log_del_callback(seek_log_capture_cb);
+		rz_log_set_level(prev_level);
+	}
+	rz_core_free(core);
+	mu_cleanup_end;
+}
+
 static bool test_disasm_until_ret_json(void) {
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "core");
@@ -604,6 +729,7 @@ int all_tests() {
 	mu_run_test(test_arg_cmd_last);
 	mu_run_test(test_arg_cmd_last_with_at);
 	mu_run_test(test_arg_cmd_last_opt);
+	mu_run_test(test_tmp_seek_unknown_flag_hint);
 	mu_run_test(test_last_cmd_status);
 	mu_run_test(test_cmd_str_status);
 	mu_run_test(test_disasm_until_ret_json);
