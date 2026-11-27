@@ -50,6 +50,16 @@ typedef struct zydis_x86_context_t {
 	ZydisDecodedInstruction *zydecode;
 	ZydisDecodedOperand *zydeop;
 	ut64 addr;
+	ZydisDecoder decoder;
+	bool decoder_initialized;
+	ZydisMachineMode decoder_mode;
+	ZydisStackWidth decoder_st_mode;
+	ZydisFormatter formatter;
+	bool formatter_initialized;
+	RzReg *reg_cache_owner;
+	ut64 reg_cache_gen;
+	RzRegItem *reg_cache[ZYDIS_REGISTER_MAX_VALUE + 1];
+	bool reg_cache_valid[ZYDIS_REGISTER_MAX_VALUE + 1];
 } X86ZYDISContext;
 
 struct Getarg {
@@ -1864,14 +1874,26 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len, 
 	}
 }
 
-static RzRegItem *zydis_reg2reg(RzReg *reg, int type) {
-	if (type == X86_REG_NONE) {
+static RzRegItem *zydis_reg2reg(X86ZYDISContext *zydx, RzReg *reg, int type) {
+	if (type == X86_REG_NONE || !reg) {
 		return NULL;
+	}
+	if (type > 0 && type <= ZYDIS_REGISTER_MAX_VALUE) {
+		if (zydx->reg_cache_owner != reg || zydx->reg_cache_gen != reg->profile_gen) {
+			memset(zydx->reg_cache_valid, 0, sizeof(zydx->reg_cache_valid));
+			zydx->reg_cache_owner = reg;
+			zydx->reg_cache_gen = reg->profile_gen;
+		}
+		if (!zydx->reg_cache_valid[type]) {
+			zydx->reg_cache[type] = rz_reg_get(reg, ZydisRegisterGetString(type), -1);
+			zydx->reg_cache_valid[type] = true;
+		}
+		return zydx->reg_cache[type];
 	}
 	return rz_reg_get(reg, ZydisRegisterGetString(type), -1);
 }
 
-static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext *zydx, int mode) {
+static void set_access_info(RzReg *reg, RzAnalysisOp *op, X86ZYDISContext *zydx, int mode) {
 	RzAnalysisValue *val;
 	size_t regsz;
 	ZydisRegister sp, ip;
@@ -1896,7 +1918,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 	val = rz_analysis_value_new();
 	val->type = RZ_ANALYSIS_VAL_REG;
 	val->access = RZ_ANALYSIS_ACC_W;
-	val->reg = zydis_reg2reg(reg, ip);
+	val->reg = zydis_reg2reg(zydx, reg, ip);
 	rz_list_append(ret, val);
 
 	// Register access info
@@ -1921,7 +1943,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 			val = rz_analysis_value_new();
 			val->type = RZ_ANALYSIS_VAL_REG;
 			val->access = RZ_ANALYSIS_ACC_R;
-			val->reg = zydis_reg2reg(reg, regs_read[i]);
+			val->reg = zydis_reg2reg(zydx, reg, regs_read[i]);
 			rz_list_append(ret, val);
 		}
 	}
@@ -1930,7 +1952,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 			val = rz_analysis_value_new();
 			val->type = RZ_ANALYSIS_VAL_REG;
 			val->access = RZ_ANALYSIS_ACC_W;
-			val->reg = zydis_reg2reg(reg, regs_write[i]);
+			val->reg = zydis_reg2reg(zydx, reg, regs_write[i]);
 			rz_list_append(ret, val);
 		}
 	}
@@ -1940,7 +1962,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
-		val->reg = zydis_reg2reg(reg, sp);
+		val->reg = zydis_reg2reg(zydx, reg, sp);
 		val->delta = -INSOP(0).size;
 		val->memref = INSOP(0).size;
 		rz_list_append(ret, val);
@@ -1950,7 +1972,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
-		val->reg = zydis_reg2reg(reg, sp);
+		val->reg = zydis_reg2reg(zydx, reg, sp);
 		val->delta = -2;
 		val->memref = 2;
 		rz_list_append(ret, val);
@@ -1959,7 +1981,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
-		val->reg = zydis_reg2reg(reg, sp);
+		val->reg = zydis_reg2reg(zydx, reg, sp);
 		val->delta = -4;
 		val->memref = 4;
 		rz_list_append(ret, val);
@@ -1968,7 +1990,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
-		val->reg = zydis_reg2reg(reg, sp);
+		val->reg = zydis_reg2reg(zydx, reg, sp);
 		val->delta = -8;
 		val->memref = 8;
 		rz_list_append(ret, val);
@@ -1977,7 +1999,7 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 		val = rz_analysis_value_new();
 		val->type = RZ_ANALYSIS_VAL_MEM;
 		val->access = RZ_ANALYSIS_ACC_W;
-		val->reg = zydis_reg2reg(reg, sp);
+		val->reg = zydis_reg2reg(zydx, reg, sp);
 		val->delta = -regsz;
 		val->memref = regsz;
 		rz_list_append(ret, val);
@@ -2008,24 +2030,22 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, const X86ZYDISContext 
 				val->delta += zydx->zydecode->length;
 			}
 			val->memref = INSOP(i).size;
-			val->seg = zydis_reg2reg(reg, INSOP(i).mem.segment);
-			val->reg = zydis_reg2reg(reg, INSOP(i).mem.base);
-			val->regdelta = zydis_reg2reg(reg, INSOP(i).mem.index);
+			val->seg = zydis_reg2reg(zydx, reg, INSOP(i).mem.segment);
+			val->reg = zydis_reg2reg(zydx, reg, INSOP(i).mem.base);
+			val->regdelta = zydis_reg2reg(zydx, reg, INSOP(i).mem.index);
 			rz_list_append(ret, val);
 		}
 	}
 	op->access = ret;
 }
 
-#define CREATE_SRC_DST(op) \
-	(op)->src[0] = rz_analysis_value_new(); \
-	(op)->src[1] = rz_analysis_value_new(); \
-	(op)->src[2] = rz_analysis_value_new(); \
-	(op)->dst = rz_analysis_value_new();
-
-static void set_src_dst(RzReg *reg, RzAnalysisValue *val, X86ZYDISContext *zydx, int x, int bitness) {
+static RzAnalysisValue *create_src_dst(RzReg *reg, X86ZYDISContext *zydx, int x, int bitness) {
 	if (x >= zydx->zydecode->operand_count_visible) {
-		return;
+		return NULL;
+	}
+	RzAnalysisValue *val = rz_analysis_value_new();
+	if (!val) {
+		return NULL;
 	}
 	switch (INSOP(x).type) {
 	case X86_OP_MEM:
@@ -2033,13 +2053,13 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, X86ZYDISContext *zydx,
 		val->mul = INSOP(x).mem.scale;
 		val->delta = INSOP(x).mem.disp.value;
 		val->memref = INSOP(x).size;
-		val->seg = zydis_reg2reg(reg, INSOP(x).mem.segment);
-		val->reg = zydis_reg2reg(reg, INSOP(x).mem.base);
-		val->regdelta = zydis_reg2reg(reg, INSOP(x).mem.index);
+		val->seg = zydis_reg2reg(zydx, reg, INSOP(x).mem.segment);
+		val->reg = zydis_reg2reg(zydx, reg, INSOP(x).mem.base);
+		val->regdelta = zydis_reg2reg(zydx, reg, INSOP(x).mem.index);
 		break;
 	case X86_OP_REG:
 		val->type = RZ_ANALYSIS_VAL_REG;
-		val->reg = zydis_reg2reg(reg, INSOP(x).reg.value);
+		val->reg = zydis_reg2reg(zydx, reg, INSOP(x).reg.value);
 		break;
 	case X86_OP_IMM:
 		val->type = RZ_ANALYSIS_VAL_IMM;
@@ -2048,6 +2068,7 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, X86ZYDISContext *zydx,
 	default:
 		break;
 	}
+	return val;
 }
 
 static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, int mode, X86ZYDISContext *zydx) {
@@ -2072,16 +2093,14 @@ static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, int mode, X86ZYDISContex
 	case RZ_ANALYSIS_OP_TYPE_POP:
 	case RZ_ANALYSIS_OP_TYPE_NOT:
 	case RZ_ANALYSIS_OP_TYPE_ACMP:
-		CREATE_SRC_DST(op);
-		set_src_dst(a->reg, op->dst, zydx, 0, a->bits);
-		set_src_dst(a->reg, op->src[0], zydx, 1, a->bits);
-		set_src_dst(a->reg, op->src[1], zydx, 2, a->bits);
-		set_src_dst(a->reg, op->src[2], zydx, 3, a->bits);
+		op->dst = create_src_dst(a->reg, zydx, 0, a->bits);
+		op->src[0] = create_src_dst(a->reg, zydx, 1, a->bits);
+		op->src[1] = create_src_dst(a->reg, zydx, 2, a->bits);
+		op->src[2] = create_src_dst(a->reg, zydx, 3, a->bits);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_UPUSH:
 		if ((op->type & RZ_ANALYSIS_OP_TYPE_REG)) {
-			CREATE_SRC_DST(op);
-			set_src_dst(a->reg, op->src[0], zydx, 0, a->bits);
+			op->src[0] = create_src_dst(a->reg, zydx, 0, a->bits);
 		}
 		break;
 	default:
@@ -3214,22 +3233,23 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		break;
 	}
 
-	ZydisDecoder decoder;
-	ZyanStatus ret = ZydisDecoderInit(&decoder, mode, st_mode);
-	if (!ZYAN_SUCCESS(ret)) {
-		return 0;
+	if (!zydx->decoder_initialized || zydx->decoder_mode != mode || zydx->decoder_st_mode != st_mode) {
+		zydx->decoder_initialized = false;
+		ZyanStatus ret = ZydisDecoderInit(&zydx->decoder, mode, st_mode);
+		if (!ZYAN_SUCCESS(ret)) {
+			return 0;
+		}
+		zydx->decoder_initialized = true;
+		zydx->decoder_mode = mode;
+		zydx->decoder_st_mode = st_mode;
 	}
 	zydx->addr = addr;
 	ZydisDecodedInstruction zydecode;
 	ZydisDecodedOperand zydeop[ZYDIS_MAX_OPERAND_COUNT];
 	zydx->zydecode = &zydecode;
 	zydx->zydeop = zydeop;
-	bool check = false;
-	while (ZYAN_SUCCESS(ZydisDecoderDecodeFull(
-		&decoder, buf, len, zydx->zydecode, zydx->zydeop))) {
-		check = true;
-		break;
-	}
+	bool check = ZYAN_SUCCESS(ZydisDecoderDecodeFull(
+		&zydx->decoder, buf, len, zydx->zydecode, zydx->zydeop));
 	if (!check) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
@@ -3240,13 +3260,16 @@ static int analyze_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		return 0;
 	}
 	change_size(a, zydx);
-	op->mnemonic = calloc(256, sizeof(char));
 	if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
-		ZydisFormatter formatter;
-		ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
-		ZydisFormatterFormatInstruction(&formatter, zydx->zydecode, zydx->zydeop,
-			zydx->zydecode->operand_count, op->mnemonic, 256, addr, NULL);
-		ZydisFormatterSetProperty(&formatter, ZYDIS_FORMATTER_PROP_FORCE_SIZE, ZYAN_TRUE);
+		op->mnemonic = calloc(256, sizeof(char));
+		if (op->mnemonic) {
+			if (!zydx->formatter_initialized) {
+				ZydisFormatterInit(&zydx->formatter, ZYDIS_FORMATTER_STYLE_INTEL);
+				zydx->formatter_initialized = true;
+			}
+			ZydisFormatterFormatInstruction(&zydx->formatter, zydx->zydecode, zydx->zydeop,
+				zydx->zydecode->operand_count, op->mnemonic, 256, addr, NULL);
+		}
 	}
 	op->cycles = 1;
 	op->nopcode = zydx->zydecode->raw.prefix_count + zydx->zydecode->opcode_map;

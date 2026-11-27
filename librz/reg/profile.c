@@ -423,6 +423,7 @@ RZ_API bool rz_reg_set_reg_profile(RZ_BORROW RzReg *reg) {
 	rz_return_val_if_fail(reg, false);
 	rz_return_val_if_fail(reg->reg_profile.alias && reg->reg_profile.defs, false);
 
+	reg->profile_gen = rz_reg_next_profile_gen();
 	RzListIter *it;
 	RzRegProfileDef *def;
 	rz_list_foreach (reg->reg_profile.defs, it, def) {

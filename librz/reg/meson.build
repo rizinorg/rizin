@@ -8,7 +8,7 @@ rz_reg_sources = [
 
 rz_reg = library('rz_reg', rz_reg_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_util_dep],
+  dependencies: [rz_util_dep, th],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
