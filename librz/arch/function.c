@@ -328,13 +328,17 @@ RZ_API RZ_BORROW const char *rz_analysis_function_force_rename(RZ_NONNULL RzAnal
 	return ok ? fcn->name : NULL;
 }
 
+static int bb_cmp(const RzAnalysisBlock *a, const RzAnalysisBlock *b, void *user) {
+	return (a->addr > b->addr) - (a->addr < b->addr);
+}
+
 RZ_API void rz_analysis_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
 	if (rz_list_contains(bb->fcns, fcn)) {
 		return;
 	}
 	rz_list_append(bb->fcns, fcn); // associate the given fcn with this bb
 	rz_analysis_block_ref(bb);
-	rz_pvector_push(fcn->bbs, bb);
+	rz_pvector_insert_sorted(fcn->bbs, bb, (RzPVectorComparator)bb_cmp, NULL);
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {

@@ -533,6 +533,7 @@ static void remove_memberships(RzGraphNode *n, RzGraphVisitor *vis) {
 		rz_set_u_add(block->proc_memberships.set, bundle->new_m);
 		block->memberships_n = rz_set_u_size(block->proc_memberships.set);
 	}
+	// TODO: Check if node was part of know_entries, remove it from it.
 }
 
 static void replace_membership(RzGraphNode *n, RzGraphVisitor *vis) {
@@ -545,6 +546,7 @@ static void replace_membership(RzGraphNode *n, RzGraphVisitor *vis) {
 	rz_set_u_delete(node->proc_memberships.set, bundle->rm_m);
 	rz_set_u_add(node->proc_memberships.set, bundle->new_m);
 	node->memberships_n = rz_set_u_size(node->proc_memberships.set);
+	// TODO: Check if node was part of know_entries, remove it from it.
 }
 
 static bool convert_subgraph_to_procedure(RzICFG *icfg, const RzICFGNode *cf_node) {

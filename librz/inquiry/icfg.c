@@ -584,5 +584,13 @@ RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL R
 
 RZ_API RzICFGHeuristics rz_icfg_heuristics_from_core(RzCore *core) {
 	// TODO Check properly the binary characteristics.
-	return RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0 | RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE;
+	RzICFGHeuristics h = RZ_ICFG_HEURISTIC_NONE;
+	RzIOMap *map;
+	if ((map = rz_io_map_get(core->io, 0)) && !(map->perm & RZ_PERM_X)) {
+		h |= RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0;
+	}
+	if (!rz_pvector_empty(rz_bin_object_get_symbols(rz_bin_cur_object(core->bin)))) {
+		h |= RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE;
+	}
+	return h;
 }
