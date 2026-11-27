@@ -1001,6 +1001,375 @@ bool test_histogram_interactive_horizontal_cursor_width(void) {
 	mu_end;
 }
 
+// Index range [*lo, *hi) shown by column c when n indices are spread over cols
+// columns, as the visual renderer slices them.
+static void column_slice(ut64 c, ut64 n, ut64 cols, ut64 *lo, ut64 *hi) {
+	*lo = c * n / cols;
+	*hi = (c + 1) * n / cols;
+	if (*hi <= *lo) {
+		*hi = *lo + 1;
+	}
+}
+
+// First column whose slice holds idx, found by scanning every slice.
+static int scan_column(ut64 idx, ut64 n, ut64 cols) {
+	for (ut64 c = 0; c < cols; c++) {
+		ut64 lo, hi;
+		column_slice(c, n, cols, &lo, &hi);
+		if (lo <= idx && idx < hi) {
+			return (int)c;
+		}
+	}
+	return -1;
+}
+
+// Origin of the zoomed-out view: centred on the cursor, clamped to the data.
+static int view_origin(int cursor, int n, int zoom) {
+	int span = n / zoom;
+	if (span <= 0) {
+		span = 1;
+	}
+	if (span >= n) {
+		return 0;
+	}
+	int adder = cursor - span / 2;
+	if (adder + span > n) {
+		adder = n - span;
+	}
+	return adder < 0 ? 0 : adder;
+}
+
+// Column of the first `marker` byte on the given line of res, or -1.
+static int marker_column(const char *res, int line, char marker) {
+	const char *p = res;
+	for (int l = 0; l < line && p; l++) {
+		p = strchr(p, '\n');
+		if (p) {
+			p++;
+		}
+	}
+	if (!p) {
+		return -1;
+	}
+	for (int c = 0; p[c] && p[c] != '\n'; c++) {
+		if (p[c] == marker) {
+			return c;
+		}
+	}
+	return -1;
+}
+
+// The cursor is drawn on the column holding its index: the first one when
+// several columns show it, the next one when it opens a column whose boundary
+// is not an integer (index 2 of 10 on 4 columns is in column 1, not 0).
+bool test_histogram_interactive_horizontal_cursor_column(void) {
+	static const struct {
+		int n, w, zoom;
+	} cases[] = {
+		{ 10, 4, 1 }, // 2.5 indices per column
+		{ 4, 10, 1 }, // 2.5 columns per index
+		{ 4096, 95, 1 }, // 1 MiB of 0x100 blocks on a 100-column terminal
+		{ 4096, 95, 3 }, // zoomed out, view moves with the cursor
+		{ 4096, 95, 44 }, // zoomed in to fewer indices than columns
+	};
+	RzCons *cons = rz_cons_new();
+	ut8 *data = calloc(4096, 1);
+	mu_assert_notnull(data, "data");
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(cases); k++) {
+		int n = cases[k].n, w = cases[k].w, zoom = cases[k].zoom;
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		RzHistogramInteractive *hist = make_visual_hist(n, w, 6, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = zoom;
+		for (int b = 0; b < n; b++) {
+			hist->barnumber = b;
+			char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+			mu_assert_notnull(res, "Render");
+			int got = marker_column(res, 0, 'v');
+			int adder = view_origin(b, n, zoom);
+			int expect = scan_column((ut64)(b - adder), (ut64)n, (ut64)zoom * w);
+			free(res);
+			if (got != expect) {
+				char msg[128];
+				rz_strf(msg, "n=%d w=%d zoom=%d cursor %d: column %d, expected %d", n, w, zoom, b, got, expect);
+				mu_fail(msg);
+			}
+		}
+		free_visual_hist(hist);
+	}
+	free(data);
+	rz_cons_free(cons);
+	mu_end;
+}
+
+// Columns [*start, *end) between the first and the last non-blank byte of the
+// given line of res; both -1 when the line is blank.
+static void line_extent(const char *res, int line, int *start, int *end) {
+	*start = *end = -1;
+	const char *p = res;
+	for (int l = 0; l < line && p; l++) {
+		p = strchr(p, '\n');
+		if (p) {
+			p++;
+		}
+	}
+	for (int c = 0; p && p[c] && p[c] != '\n'; c++) {
+		if (p[c] != ' ') {
+			if (*start < 0) {
+				*start = c;
+			}
+			*end = c + 1;
+		}
+	}
+}
+
+// The minimap window frames exactly the columns showing a visible index.
+// Rounding both of its ends down dropped the last column whenever the view
+// ended inside it, so at high zoom the one or two column frame lagged behind.
+bool test_histogram_interactive_horizontal_minimap_window(void) {
+	static const struct {
+		int n, w, zoom;
+	} cases[] = {
+		{ 10, 4, 2 },
+		{ 4, 10, 1 },
+		{ 4096, 95, 3 },
+		{ 4096, 95, 40 },
+		{ 4096, 95, 44 },
+	};
+	RzCons *cons = rz_cons_new();
+	ut8 *data = calloc(4096, 1);
+	mu_assert_notnull(data, "data");
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(cases); k++) {
+		int n = cases[k].n, w = cases[k].w, zoom = cases[k].zoom;
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(n, w, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = zoom;
+		int span = RZ_MAX(n / zoom, 1);
+		for (int b = 0; b < n; b++) {
+			hist->barnumber = b;
+			char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+			mu_assert_notnull(res, "Render");
+			int start, end;
+			line_extent(res, 0, &start, &end);
+			free(res);
+			int adder = view_origin(b, n, zoom);
+			int expect_start = -1, expect_end = -1;
+			for (int c = 0; c < w; c++) {
+				ut64 lo, hi;
+				column_slice(c, n, w, &lo, &hi);
+				if (lo < (ut64)(adder + span) && hi > (ut64)adder) {
+					if (expect_start < 0) {
+						expect_start = c;
+					}
+					expect_end = c + 1;
+				}
+			}
+			if (start != expect_start || end != expect_end) {
+				char msg[160];
+				rz_strf(msg, "n=%d w=%d zoom=%d cursor %d: frame [%d, %d), expected [%d, %d)",
+					n, w, zoom, b, start, end, expect_start, expect_end);
+				mu_fail(msg);
+			}
+		}
+		free_visual_hist(hist);
+	}
+
+	// Zoomed past one column per block (3 columns per bar): blocks 30..60 are
+	// in view, in minimap columns 0 and 1.
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	mu_assert_notnull(opts, "opts new");
+	opts->minimap = true;
+	RzHistogramInteractive *hist = make_visual_hist(4096, 95, 10, opts, cons);
+	mu_assert_notnull(hist, "hist new");
+	hist->zoom = 46;
+	hist->barnumber = 44;
+	char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	int start, end;
+	line_extent(res, 0, &start, &end);
+	mu_assert_eq(start, 0, "Frame starts on the column of block 30");
+	mu_assert_eq(end, 2, "Frame ends on the column of block 60");
+	free(res);
+	free_visual_hist(hist);
+
+	free(data);
+	rz_cons_free(cons);
+	mu_end;
+}
+
+// Number of `marker` bytes on the given line of res.
+static int marker_count(const char *res, int line, char marker) {
+	const char *p = res;
+	for (int l = 0; l < line && p; l++) {
+		p = strchr(p, '\n');
+		if (p) {
+			p++;
+		}
+	}
+	int count = 0;
+	for (int c = 0; p && p[c] && p[c] != '\n'; c++) {
+		count += p[c] == marker;
+	}
+	return count;
+}
+
+// The window row of the minimap carries one cursor marker, on the first
+// minimap column holding the cursor's index and inside the window frame.
+bool test_histogram_interactive_horizontal_minimap_cursor(void) {
+	static const struct {
+		int n, w, zoom;
+	} cases[] = {
+		{ 10, 4, 1 },
+		{ 10, 4, 2 },
+		{ 4, 10, 1 },
+		{ 4096, 95, 1 },
+		{ 4096, 95, 3 },
+		{ 4096, 95, 44 },
+	};
+	RzCons *cons = rz_cons_new();
+	ut8 *data = calloc(4096, 1);
+	mu_assert_notnull(data, "data");
+	for (size_t k = 0; k < RZ_ARRAY_SIZE(cases); k++) {
+		int n = cases[k].n, w = cases[k].w, zoom = cases[k].zoom;
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(n, w, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = zoom;
+		for (int b = 0; b < n; b++) {
+			hist->barnumber = b;
+			char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+			mu_assert_notnull(res, "Render");
+			int got = marker_column(res, 0, 'v');
+			int count = marker_count(res, 0, 'v');
+			int start, end;
+			line_extent(res, 0, &start, &end);
+			free(res);
+			int expect = scan_column((ut64)b, (ut64)n, (ut64)w);
+			if (got != expect || count != 1 || got < start || got >= end) {
+				char msg[192];
+				rz_strf(msg, "n=%d w=%d zoom=%d cursor %d: %d marker(s), first at %d in frame [%d, %d), expected at %d",
+					n, w, zoom, b, count, got, start, end, expect);
+				mu_fail(msg);
+			}
+		}
+		free_visual_hist(hist);
+	}
+
+	// 3 columns per bar: block 44 is in minimap column 1, blocks 30..60 in view.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(4096, 95, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->zoom = 46;
+		hist->barnumber = 44;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(rz_str_startswith(res, "[v "), "Cursor on the last column of a two column frame");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	// The hex panel narrows the minimap to 220 - 43 columns.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		RzHistogramInteractive *hist = make_visual_hist(64, 220, 18, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		ut8 cursor_bytes[32] = { 0 };
+		hist->cursor_bytes = cursor_bytes;
+		hist->cursor_bytes_len = sizeof(cursor_bytes);
+		hist->barnumber = 32;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(strstr(res, "0000 0000") != NULL, "Hex panel shown");
+		mu_assert_eq(marker_column(res, 0, 'v'), scan_column(32, 64, 220 - 43), "Cursor on the narrowed minimap");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	// Unicode marker, on the window row rather than only on the chart.
+	{
+		RzHistogramOptions *opts = rz_histogram_options_new();
+		mu_assert_notnull(opts, "opts new");
+		opts->minimap = true;
+		opts->unicode = true;
+		RzHistogramInteractive *hist = make_visual_hist(10, 4, 10, opts, cons);
+		mu_assert_notnull(hist, "hist new");
+		hist->barnumber = 9;
+		char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+		mu_assert_notnull(res, "Render");
+		mu_assert_true(rz_str_startswith(res, "\xe2\x94\x8f\xe2\x94\x81\xe2\x94\x81\xe2\x96\xbc\n"), "Window row ends with the cursor (┏━━▼)");
+		free(res);
+		free_visual_hist(hist);
+	}
+
+	free(data);
+	rz_cons_free(cons);
+	mu_end;
+}
+
+// With no value there is nothing to render: NULL rather than a division by
+// zero, which p==v on a file smaller than a block used to reach.
+bool test_histogram_interactive_horizontal_empty(void) {
+	RzCons *cons = rz_cons_new();
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	mu_assert_notnull(opts, "opts new");
+	opts->ruler = true;
+	opts->minimap = true;
+	const ut8 data[1] = { 0 };
+	RzHistogramInteractive *hist = make_visual_hist(0, 80, 20, opts, cons);
+	mu_assert_notnull(hist, "hist new");
+	mu_assert_null(rz_histogram_interactive_horizontal(hist, data), "No value, no chart");
+	free_visual_hist(hist);
+	rz_cons_free(cons);
+	mu_end;
+}
+
+// Metric histograms pass their values in data_f and the same values scaled to
+// 0..255 in data: the status line shows the former, as the ruler labels do.
+bool test_histogram_interactive_horizontal_status_value(void) {
+	RzCons *cons = rz_cons_new();
+	const double values[3] = { 65280.0, 0.0, 32512.0 };
+	const ut8 data[3] = { 255, 0, 127 };
+	RzHistogramOptions *opts = rz_histogram_options_new();
+	mu_assert_notnull(opts, "opts new");
+	opts->ruler = true;
+	opts->value_max = 65280;
+	opts->value_precision = 1;
+	opts->data_f = values;
+	RzHistogramInteractive *hist = make_visual_hist(3, 60, 10, opts, cons);
+	mu_assert_notnull(hist, "hist new");
+	char *res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 0 data 65280.0") != NULL, "Value of the top label");
+	mu_assert_true(strstr(res, " 65280.0|") != NULL, "Top label");
+	free(res);
+	hist->barnumber = 2;
+	res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 2 data 32512.0") != NULL, "Value, not the scaled byte");
+	free(res);
+
+	// Without data_f the byte itself is the value.
+	opts->data_f = NULL;
+	res = rz_strbuf_drain(rz_histogram_interactive_horizontal(hist, data));
+	mu_assert_notnull(res, "Render");
+	mu_assert_true(strstr(res, "Index 2 data 127") != NULL, "Byte value");
+	free(res);
+	free_visual_hist(hist);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 // The hex preview panel kicks in only when:
 //   - hist->cursor_bytes is non-NULL and non-empty,
 //   - the terminal is wide (hist->w > 200), AND
@@ -1177,7 +1546,12 @@ bool all_tests() {
 	mu_run_test(test_histogram_interactive_horizontal_cursor_markers);
 	mu_run_test(test_histogram_interactive_horizontal_cursor_full_line);
 	mu_run_test(test_histogram_interactive_horizontal_cursor_width);
+	mu_run_test(test_histogram_interactive_horizontal_cursor_column);
 	mu_run_test(test_histogram_interactive_horizontal_minimap_toggle);
+	mu_run_test(test_histogram_interactive_horizontal_minimap_window);
+	mu_run_test(test_histogram_interactive_horizontal_minimap_cursor);
+	mu_run_test(test_histogram_interactive_horizontal_empty);
+	mu_run_test(test_histogram_interactive_horizontal_status_value);
 	mu_run_test(test_histogram_interactive_horizontal_hex_preview);
 	return tests_passed != tests_run;
 }

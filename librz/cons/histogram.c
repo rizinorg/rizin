@@ -531,13 +531,25 @@ static void append_hex_preview_row(RzStrBuf *buf, const RzHistogramOptions *opts
 	rz_strbuf_append(buf, " ");
 }
 
-// Render the top minimap: a window indicator framing the visible slice, above
-// a density-gradient row (block elements encode each slice's average byte).
+// First of `cols` columns showing index `idx` of `n`. Column c shows the
+// indices [c * n / cols, (c + 1) * n / cols), or index c * n / cols alone when
+// n < cols. Rounding idx * cols / n instead lands one column early whenever a
+// column boundary is not an integer.
+static ut64 histogram_index_column(ut64 idx, ut64 n, ut64 cols) {
+	if (n >= cols) {
+		return ((idx + 1) * cols - 1) / n;
+	}
+	return (idx * cols + n - 1) / n;
+}
+
+// Render the top minimap: a window indicator framing the visible slice and
+// marking the cursor, above a density-gradient row (block elements encode each
+// slice's average byte).
 // When hex_panel is set, a two-line px-style hex preview of hex_bytes is drawn
 // to the right of the two rows.
 static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	const ut8 *data, ut32 histogramwidth, ut32 map_w,
-	ut32 adder, ut32 visible_span, ut32 gutter_w,
+	ut32 adder, ut32 visible_span, ut32 cursor, ut32 gutter_w,
 	bool hex_panel, const ut8 *hex_bytes, ut32 hex_bytes_len) {
 	const char *levels_utf8[9] = {
 		" ",
@@ -550,20 +562,26 @@ static void render_visual_minimap(RzStrBuf *buf, const RzHistogramOptions *opts,
 	const char *win_left = opts->unicode ? RUNE_CORNER_TL_HEAVY : "[";
 	const char *win_right = opts->unicode ? RUNE_CORNER_TR_HEAVY : "]";
 	const char *win_mid = opts->unicode ? RUNE_LINE_HORIZ_HEAVY : "-";
+	const char *win_cursor = opts->unicode ? UTF_TRIANGLE_DOWN : "v";
 
 	// Window indicator, drawn above the density row: heavy corners ┏━━━┓
-	// bracket the visible slice.
+	// bracket the visible slice, ▼ points at the column of the cursor.
 	rz_strbuf_appendf(buf, "%*s", (int)gutter_w, "");
-	st32 win_start_col = (st32)((ut64)adder * map_w / histogramwidth);
-	st32 win_end_col = (st32)((ut64)(adder + visible_span) * map_w / histogramwidth);
+	// Frame every column showing a visible index; the view may end inside a
+	// column, so the end is rounded up.
+	st32 win_start_col = (st32)histogram_index_column(adder, histogramwidth, map_w);
+	st32 win_end_col = (st32)(((ut64)(adder + visible_span) * map_w + histogramwidth - 1) / histogramwidth);
 	if (win_end_col <= win_start_col) {
 		win_end_col = win_start_col + 1;
 	}
 	if (win_end_col > (st32)map_w) {
 		win_end_col = (st32)map_w;
 	}
+	ut64 cursor_col = histogram_index_column(cursor, histogramwidth, map_w);
 	for (ut32 c = 0; c < map_w; c++) {
-		if ((st32)c < win_start_col || (st32)c >= win_end_col) {
+		if (c == cursor_col) {
+			rz_strbuf_append(buf, win_cursor);
+		} else if ((st32)c < win_start_col || (st32)c >= win_end_col) {
 			rz_strbuf_append(buf, " ");
 		} else if ((st32)c == win_start_col && win_end_col - win_start_col > 1) {
 			rz_strbuf_append(buf, win_left);
@@ -624,7 +642,15 @@ static void render_visual_status(RzStrBuf *buf, const RzHistogramInteractive *hi
 	if (hist->size > 1) {
 		percent = (int)((ut64)hist->barnumber * 100 / (ut64)(hist->size - 1));
 	}
-	rz_strf(left, "Index %d data %d", hist->barnumber, data[hist->barnumber]);
+	char value[64];
+	if (opts->data_f) {
+		// data is scaled to 0..255; show the value in the ruler's units.
+		const char *unit = (opts->value_unit && *opts->value_unit) ? opts->value_unit : "";
+		format_ruler_label(opts, opts->data_f[hist->barnumber], unit, value, sizeof(value));
+	} else {
+		rz_strf(value, "%d", data[hist->barnumber]);
+	}
+	rz_strf(left, "Index %d data %s", hist->barnumber, value);
 	rz_strf(right, "0x%" PFMT64x "  %3d%%", cursor_off, percent);
 	left_len = (int)strlen(left);
 	right_len = (int)strlen(right);
@@ -818,7 +844,7 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
 		if (rel < 0) {
 			rel = 0;
 		}
-		j_cursor = (int)((ut64)rel * (ut64)zoom * (ut64)width / (ut64)histogramwidth);
+		j_cursor = (int)histogram_index_column((ut64)rel, (ut64)histogramwidth, (ut64)zoom * width);
 	} else {
 		j_cursor = -1;
 	}
@@ -849,7 +875,7 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  *
  * The output combines five layers:
  *
- *   ┏━━━━━━━━━━━━━━━━━━━┓                                                       (1)
+ *   ┏━━━━━━━━━▼━━━━━━━━━┓                                                       (1)
  *   ▁▂▃▄▆█▇▆▄▂▁         ▁▂▃▄▅                                                   (2)
  *   8.0|              █                                                          (3)
  *      |             ██                █                                         (3)
@@ -864,7 +890,8 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  *      0x100000000   0x100000160    0x1000002c0    0x100000420                   (4)
  *   Index 42 data 196                                  0x100000540    35%        (5)
  *
- *   (1) Window indicator: `┏━━━┓` marks the visible slice on the minimap.
+ *   (1) Window indicator: `┏━━━┓` marks the visible slice on the minimap,
+ *       `▼` (`v` in ASCII) the column holding the cursor.
  *   (2) Minimap density row (block chars ▁..█ = per-slice average byte). On a
  *       wide terminal (`hist->w > 200`) with cursor_bytes, a two-line px-style
  *       hex preview of the 32 bytes at the cursor sits to its right.
@@ -875,15 +902,17 @@ static void render_visual_chart_body(RzStrBuf *buf, const RzHistogramInteractive
  * The legacy 0..255 byte ruler is used when `opts->value_max == 0`. Otherwise
  * the chart honours `opts->value_min..value_max` with `value_precision`
  * decimals and an optional `value_unit` suffix (e.g. Shannon entropy uses
- * value_max=8, value_precision=1 → labels 8.0, 6.0, 4.0, 2.0, 0.0).
+ * value_max=8, value_precision=1 → labels 8.0, 6.0, 4.0, 2.0, 0.0). When
+ * `opts->data_f` is set, the status line shows its value at the cursor in the
+ * format of the labels; the bars still come from \p data.
  *
  * \param hist Information about the interactive histogram (canvas, cursor,
- *             zoom level, opts).
+ *             zoom level, opts), with at least one value.
  * \param data A buffer with the numerical data in the format of one byte per
  *             value (already quantised to [0..255] by the caller).
  */
 RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogramInteractive *hist, RZ_NONNULL const ut8 *data) {
-	rz_return_val_if_fail(hist && data, NULL);
+	rz_return_val_if_fail(hist && data && hist->size > 0, NULL);
 	RzStrBuf *buf = rz_strbuf_new("");
 	if (!buf) {
 		return NULL;
@@ -1005,7 +1034,7 @@ RZ_API RZ_OWN RzStrBuf *rz_histogram_interactive_horizontal(RZ_NONNULL RzHistogr
 			map_w -= HEX_PANEL_W;
 		}
 		render_visual_minimap(buf, opts, data, histogramwidth, map_w,
-			adder, visible_span, gutter_w,
+			adder, visible_span, hist->barnumber, gutter_w,
 			show_hex, hist->cursor_bytes, hist->cursor_bytes_len);
 	}
 

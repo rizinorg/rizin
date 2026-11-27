@@ -1079,7 +1079,12 @@ RZ_API void rz_cons_visual_write(RZ_NONNULL RZ_BORROW RzCons *cons, char *buffer
 		int lines_needed = 0;
 
 		*nl = 0;
-		alen = real_strlen(ptr, len);
+		// A carriage return goes back to the first column, so only what follows
+		// the last one takes columns: the clear sequences (every redraw starts
+		// with RZ_CONS_CLEAR_SCREEN) end with one.
+		const char *vis = strrchr(ptr, '\r');
+		vis = vis ? vis + 1 : ptr;
+		alen = real_strlen(vis, len - (int)(vis - ptr));
 		*nl = '\n';
 		pptr = ptr > buffer ? ptr - 1 : ptr;
 		plen = ptr > buffer ? len : len - 1;
@@ -1089,7 +1094,7 @@ RZ_API void rz_cons_visual_write(RZ_NONNULL RZ_BORROW RzCons *cons, char *buffer
 		}
 		if ((break_lines && lines < lines_needed && lines > 0) || (!break_lines && alen > cols)) {
 			int olen = len;
-			endptr = rz_str_ansi_chrn(ptr, (break_lines ? cols * lines : cols) + 1);
+			endptr = rz_str_ansi_chrn(vis, (break_lines ? cols * lines : cols) + 1);
 			endptr++;
 			len = endptr - ptr;
 			plen = ptr > buffer ? len : len - 1;

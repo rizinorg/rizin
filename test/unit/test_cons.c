@@ -348,6 +348,43 @@ static bool test_cons_last_sizes(void) {
 	mu_end;
 }
 
+// A redraw starts with RZ_CONS_CLEAR_SCREEN, whose carriage return takes no
+// column: a line as wide as the console stays whole, a wider one keeps as many
+// columns as a line without it.
+static bool test_cons_visual_write_carriage_return(void) {
+#define CLEAR Color_RESET RZ_CONS_CLEAR_SCREEN "\x1b[0;0H"
+	// The line that fits is written twice, as every line homing the cursor;
+	// the wider one is cut after 10 columns, as the line without the clear.
+	static const char expect[] = CLEAR "0123456789" CLEAR "0123456789"
+					   "\n" CLEAR "0123456789" RZ_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET
+					   "\nabcdefghij" RZ_CONS_CLEAR_FROM_CURSOR_TO_END Color_RESET;
+	char screen[] = CLEAR "0123456789\n" CLEAR "0123456789AB\nabcdefghijXY\n";
+#undef CLEAR
+	char *name = NULL;
+	int fd = rz_file_mkstemp("rzcons", &name);
+	mu_assert_neq((ut64)fd, (ut64)-1, "temporary output");
+	RzCons *cons = rz_cons_new();
+	mu_assert_notnull(cons, "create console");
+	cons->fdout = fd;
+	cons->columns = 10;
+	cons->rows = 3;
+	cons->blankline = false;
+	cons->break_lines = false;
+	rz_cons_visual_write(cons, screen);
+	cons->fdout = 1;
+	close(fd);
+	size_t size = 0;
+	char *out = rz_file_slurp(name, &size);
+	rz_file_rm(name);
+	free(name);
+	mu_assert_notnull(out, "read output");
+	mu_assert_eq(size, sizeof(expect) - 1, "length of the output");
+	mu_assert_memeq((const ut8 *)out, (const ut8 *)expect, size, "columns of the lines");
+	free(out);
+	rz_cons_free(cons);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_justify);
@@ -357,6 +394,7 @@ bool all_tests() {
 	mu_run_test(test_cons_last_filtered);
 	mu_run_test(test_cons_last_capture);
 	mu_run_test(test_cons_last_sizes);
+	mu_run_test(test_cons_visual_write_carriage_return);
 	return tests_passed != tests_run;
 }
 

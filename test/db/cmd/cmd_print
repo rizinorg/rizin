@@ -1012,3 +1012,145 @@ EXPECT=<<EOF
      0x0                                    0x4e                               0x9e
 EOF
 RUN
+
+NAME=p==v minimap cursor with more blocks than columns
+FILE=malloc://0x10000
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=80
+e scr.rows=12
+e scr.color=0
+e scr.hist.minimap=true
+wb ff @ 0x4000 @! 0x2000
+wb 80 @ 0x9000 @! 0x1000
+wb 40 @ 0xc000 @! 0x3000
+< +Kq; p==v
+echo END
+EOF
+EXPECT=<<EOF
+[?25l     ▼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                        █████████▂             ▂▄▄▄▄         ▁▂▂▂▂▂▂▂▂▂▂▂▂▂▁    
+ 255│▼                                                                          
+ 213│█                  █████████                                               
+    │█                  █████████                                               
+ 128│█                  █████████                                               
+  85│█                  █████████               ████                            
+    │█                  ██████████             █████                            
+   0│▲██████████████████████████████████████████████████████████████████████████
+     ^        ^         ^         ^         ^         ^         ^         ^     
+     0x0      0x1e00    0x4000    0x6200    0x8500    0xa700    0xc900    0xeb00
+Index 0 data 0                                                         0x0    0%[?25l[0m[2J[0;0H     ▼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                     [0m[2J[0;0H     ▼━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                        █████████▂             ▂▄▄▄▄         ▁▂▂▂▂▂▂▂▂▂▂▂▂▂▁    
+ 255│▼                                                                          
+ 213│█                                     ██████████████████                   
+    │█                                     ██████████████████                   
+ 128│█                                     ██████████████████                   
+  85│█                                     ███████████████████                  
+    │█                                     ███████████████████                  
+   0│▲██████████████████████████████████████████████████████████████████████████
+     ^        ^         ^         ^         ^         ^         ^         ^     
+     0x0      0xf00     0x2000    0x3100    0x4200    0x5300    0x6400    0x7500
+Index 0 data 0                                                         0x0    0%[?25l[0m[2J[0;0H                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▼━━━━━━┓[0m[2J[0;0H                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▼━━━━━━┓
+                        █████████▂             ▂▄▄▄▄         ▁▂▂▂▂▂▂▂▂▂▂▂▂▂▁    
+ 255│                                                            ▼              
+ 213│                                                            █              
+    │                                                            █              
+ 128│                                                            █              
+  85│          █████████                                         █              
+    │          █████████                                         █              
+   0│████████████████████████████████████████████████████████████▲██████████████
+     ^        ^         ^         ^         ^         ^         ^         ^     
+     0x8000   0x8f00    0xa000    0xb100    0xc200    0xd300    0xe400    0xf500
+Index 231 data 64                                                   0xe700   90%[?25h[0m[2J[0;0HEND
+EOF
+RUN
+
+NAME=p==Cv and p==Sv rulers and status in the units of the metric
+FILE=malloc://0x400
+CMDS=<<EOF
+e scr.interactive=true
+e scr.utf8=true
+e scr.columns=60
+e scr.rows=10
+e scr.color=0
+e scr.hist.minimap=false
+woe 0 255 1 @ 0x100 @! 0x100
+wb 4142 @ 0x200 @! 0x100
+< lq; p==Cv
+< q; p==Sv
+echo END
+EOF
+EXPECT=<<EOF
+[?25l 65280.0│▼                                                  
+ 54400.0│█████████████                          ████████████
+        │█████████████                          ████████████
+ 32640.0│█████████████                          ████████████
+ 21760.0│█████████████             █████████████████████████
+        │█████████████             █████████████████████████
+     0.0│▲██████████████████████████████████████████████████
+         ^        ^        ^        ^        ^         ^    
+         0x0      0x0      0x100    0x200    0x200     0x300
+Index 0 data 65280.0                               0x0    0%[?25l[0m[2J[0;0H 65280.0│             ▼                                     [0m[2J[0;0H 65280.0│             ▼
+ 54400.0│██████████████                         ████████████
+        │██████████████                         ████████████
+ 32640.0│██████████████                         ████████████
+ 21760.0│██████████████            █████████████████████████
+        │██████████████            █████████████████████████
+     0.0│█████████████▲█████████████████████████████████████
+         ^        ^        ^        ^        ^         ^    
+         0x0      0x0      0x100    0x200    0x200     0x300
+Index 1 data 0.0                                 0x100   33%[?25h[0m[2J[0;0H[?25l  1.00│▼                                                    
+  0.67│█             █████████████                          
+      │█             █████████████                          
+  0.00│█             █████████████                          
+ -0.33│███████████████████████████             █████████████
+      │███████████████████████████             █████████████
+ -1.00│▲████████████████████████████████████████████████████
+       ^        ^         ^        ^         ^         ^    
+       0x0      0x0       0x100    0x200     0x200     0x300
+Index 0 data 0.00                                  0x0    0%[?25h[0m[2J[0;0HEND
+EOF
+RUN
+
+NAME=p= histograms of a range smaller than a block
+FILE=malloc://0x80
+CMDS=<<EOF
+p=
+p==
+p==e
+e scr.interactive=true
+p==v
+p==Cv
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 128 bytes is smaller than a block of 256 bytes
+ERROR: Cannot calculate blocks range
+EOF
+RUN
+
+NAME=p= histograms of a range of more blocks than an int holds
+FILE=null://0x8000000000
+ARGS=-n
+CMDS=<<EOF
+p==
+e scr.interactive=true
+p==v
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: core: the range of 549755813888 bytes holds more than 2147483647 blocks of 256 bytes
+ERROR: Cannot calculate blocks range
+ERROR: core: the range of 549755813888 bytes holds more than 2147483647 blocks of 256 bytes
+ERROR: Cannot calculate blocks range
+EOF
+RUN
