@@ -740,6 +740,385 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static bool add_mock_string(RzBinFile *bf, const char *text, ut64 vaddr, ut32 size) {
+	RzBinString *bstr = RZ_NEW0(RzBinString);
+	if (!bstr) {
+		return false;
+	}
+	bstr->string = strdup(text);
+	if (!bstr->string) {
+		free(bstr);
+		return false;
+	}
+	bstr->vaddr = vaddr;
+	bstr->paddr = vaddr;
+	bstr->size = size;
+	bstr->length = (ut32)strlen(text);
+	bstr->type = RZ_STRING_ENC_8BIT;
+	if (!rz_bin_string_database_add(bf->o->strings, bstr)) {
+		free(bstr->string);
+		free(bstr);
+		return false;
+	}
+	return true;
+}
+
+bool test_bin_apply_strings_duplicates_and_fallbacks(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "current binfile");
+	mu_assert_notnull(bf->o->strings, "bin strings db");
+
+	mu_assert_true(add_mock_string(bf, "duplicate_me", 0x100, 13), "add duplicate 1");
+	mu_assert_true(add_mock_string(bf, "duplicate_me", 0x200, 13), "add duplicate 2");
+	mu_assert_true(add_mock_string(bf, "a+b", 0x300, 4), "add colliding 1");
+	mu_assert_true(add_mock_string(bf, "a/b", 0x310, 4), "add colliding 2");
+	mu_assert_true(add_mock_string(bf, "   ", 0x400, 4), "add spaces");
+	mu_assert_true(add_mock_string(bf, "\t\n", 0x410, 3), "add tabs");
+	mu_assert_true(add_mock_string(bf, "___", 0x420, 4), "add underscores 1");
+	mu_assert_true(add_mock_string(bf, "___", 0x430, 4), "add underscores 2");
+	mu_assert_true(add_mock_string(bf, "---", 0x440, 4), "add punctuation");
+	mu_assert_true(add_mock_string(bf, "...", 0x450, 4), "add dots");
+	mu_assert_true(add_mock_string(bf, ":::", 0x460, 4), "add colons");
+
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	RzFlagItem *fi = rz_flag_get(core->flags, "str.duplicate_me");
+	mu_assert_notnull(fi, "first duplicate flag");
+	mu_assert_eq(fi->offset, 0x100, "first duplicate keeps original address");
+	fi = rz_flag_get(core->flags, "str.duplicate_me.200");
+	mu_assert_notnull(fi, "second duplicate gets address suffix");
+	mu_assert_eq(fi->offset, 0x200, "second duplicate address");
+
+	fi = rz_flag_get(core->flags, "str.a_b");
+	mu_assert_notnull(fi, "first colliding filtered flag");
+	mu_assert_eq(fi->offset, 0x300, "first colliding keeps original address");
+	fi = rz_flag_get(core->flags, "str.a_b.310");
+	mu_assert_notnull(fi, "second colliding gets address suffix");
+	mu_assert_eq(fi->offset, 0x310, "second colliding address");
+
+	mu_assert_null(rz_flag_get(core->flags, "str."), "bare str. must not be created");
+	mu_assert_null(rz_flag_get(core->flags, "str.___"),
+		"underscore-only flag must not be created");
+	mu_assert_null(rz_flag_get(core->flags, "str...."),
+		"dot-only flag must not be created");
+	mu_assert_null(rz_flag_get(core->flags, "str.:::"),
+		"colon-only flag must not be created");
+
+	fi = rz_flag_get(core->flags, "str.00000400");
+	mu_assert_notnull(fi, "spaces fallback flag");
+	mu_assert_eq(fi->offset, 0x400, "spaces fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000410");
+	mu_assert_notnull(fi, "tabs fallback flag");
+	mu_assert_eq(fi->offset, 0x410, "tabs fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000420");
+	mu_assert_notnull(fi, "underscores 1 fallback flag");
+	mu_assert_eq(fi->offset, 0x420, "underscores 1 fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000430");
+	mu_assert_notnull(fi, "underscores 2 fallback flag");
+	mu_assert_eq(fi->offset, 0x430, "underscores 2 fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000440");
+	mu_assert_notnull(fi, "punctuation fallback flag");
+	mu_assert_eq(fi->offset, 0x440, "punctuation fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000450");
+	mu_assert_notnull(fi, "dots fallback flag");
+	mu_assert_eq(fi->offset, 0x450, "dots fallback offset");
+	fi = rz_flag_get(core->flags, "str.00000460");
+	mu_assert_notnull(fi, "colons fallback flag");
+	mu_assert_eq(fi->offset, 0x460, "colons fallback offset");
+
+	int flags_before = rz_flag_count(core->flags, NULL);
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "re-apply strings idempotently");
+	int flags_after = rz_flag_count(core->flags, NULL);
+	mu_assert_eq(flags_after, flags_before, "re-apply should not add duplicate flags");
+	mu_assert_null(rz_flag_get(core->flags, "str.duplicate_me.0"), "no .0 suffix on re-apply");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+bool test_bin_apply_strings_prefix(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "current binfile");
+	mu_assert_notnull(bf->o->strings, "bin strings db");
+
+	char *orig_prefix = core->bin->prefix;
+	core->bin->prefix = strdup("sub");
+	mu_assert_notnull(core->bin->prefix, "dup prefix");
+
+	mu_assert_true(add_mock_string(bf, "hello", 0x500, 6), "add prefixed 1");
+	mu_assert_true(add_mock_string(bf, "hello", 0x510, 6), "add prefixed 2");
+	mu_assert_true(add_mock_string(bf, "___", 0x520, 4), "add prefixed underscores");
+	mu_assert_true(add_mock_string(bf, "   ", 0x530, 4), "add prefixed spaces");
+
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply prefixed strings");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	RzFlagItem *fi = rz_flag_get(core->flags, "sub.str.hello");
+	mu_assert_notnull(fi, "first prefixed duplicate");
+	mu_assert_eq(fi->offset, 0x500, "first prefixed offset");
+	fi = rz_flag_get(core->flags, "sub.str.hello.510");
+	mu_assert_notnull(fi, "second prefixed duplicate");
+	mu_assert_eq(fi->offset, 0x510, "second prefixed offset");
+
+	mu_assert_null(rz_flag_get(core->flags, "sub.str."), "bare prefixed str. must not exist");
+	mu_assert_null(rz_flag_get(core->flags, "sub.str.___"),
+		"underscore prefixed str.___ must not exist");
+
+	fi = rz_flag_get(core->flags, "sub.str.00000520");
+	mu_assert_notnull(fi, "prefixed underscore fallback");
+	mu_assert_eq(fi->offset, 0x520, "prefixed underscore fallback offset");
+	fi = rz_flag_get(core->flags, "sub.str.00000530");
+	mu_assert_notnull(fi, "prefixed spaces fallback");
+	mu_assert_eq(fi->offset, 0x530, "prefixed spaces fallback offset");
+
+	free(core->bin->prefix);
+	core->bin->prefix = rz_str_dup("my-mod");
+	mu_assert_notnull(core->bin->prefix, "dup filtered prefix");
+
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings with filtered prefix");
+	fi = rz_flag_get(core->flags, "my_mod.str.hello");
+	mu_assert_notnull(fi, "first filtered-prefix duplicate");
+	mu_assert_eq(fi->offset, 0x500, "first filtered-prefix offset");
+	fi = rz_flag_get(core->flags, "my_mod.str.hello.510");
+	mu_assert_notnull(fi, "second filtered-prefix duplicate");
+	mu_assert_eq(fi->offset, 0x510, "second filtered-prefix offset");
+	fi = rz_flag_get(core->flags, "my_mod.str.00000520");
+	mu_assert_notnull(fi, "filtered-prefix underscore fallback");
+	mu_assert_eq(fi->offset, 0x520, "filtered-prefix underscore fallback offset");
+	fi = rz_flag_get(core->flags, "my_mod.str.00000530");
+	mu_assert_notnull(fi, "filtered-prefix spaces fallback");
+	mu_assert_eq(fi->offset, 0x530, "filtered-prefix spaces fallback offset");
+
+	int flags_before = rz_flag_count(core->flags, NULL);
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "re-apply filtered-prefix strings");
+	int flags_after = rz_flag_count(core->flags, NULL);
+	mu_assert_eq(flags_after, flags_before, "filtered-prefix re-apply should be idempotent");
+
+	// Empty prefix behaves like no prefix
+	free(core->bin->prefix);
+	core->bin->prefix = rz_str_dup("");
+	mu_assert_notnull(core->bin->prefix, "dup empty prefix");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings with empty prefix");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.hello"), "empty prefix creates unprefixed flag");
+
+	free(core->bin->prefix);
+	core->bin->prefix = orig_prefix;
+	rz_core_free(core);
+	mu_end;
+}
+
+static int core_file_type(RzBinFile *bf) {
+	return RZ_BIN_TYPE_CORE;
+}
+
+static int exec_file_type(RzBinFile *bf) {
+	return RZ_BIN_TYPE_DEFAULT;
+}
+
+static RzPVector /*<RzBinString *>*/ *mock_plugin_strings(RzBinFile *bf) {
+	RzPVector *ret = rz_pvector_new((RzPVectorFree)rz_bin_string_free);
+	if (!ret) {
+		return NULL;
+	}
+	RzBinString *s = RZ_NEW0(RzBinString);
+	if (!s) {
+		rz_pvector_free(ret);
+		return NULL;
+	}
+	s->string = rz_str_dup("plugin_str");
+	s->paddr = 0;
+	s->vaddr = 0;
+	s->size = 11;
+	s->length = 10;
+	s->type = RZ_STRING_ENC_8BIT;
+	rz_pvector_push(ret, s);
+	return ret;
+}
+
+static RzBinInfo *core_info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
+	if (ret) {
+		ret->arch = strdup("x86");
+		ret->bits = 64;
+	}
+	return ret;
+}
+
+static RzBinPlugin mock_core_plugin = {
+	.name = "mock_core",
+	.desc = "Mock Core Dump Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.info = core_info,
+	.file_type = core_file_type,
+};
+
+static RzBinPlugin mock_core_with_strings_plugin = {
+	.name = "mock_core_strings",
+	.desc = "Mock Core Dump Plugin With Strings Callback",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.info = core_info,
+	.file_type = core_file_type,
+	.strings = mock_plugin_strings,
+};
+
+static RzBinPlugin mock_exec_plugin = {
+	.name = "mock_exec",
+	.desc = "Mock Sectionless Exec Plugin",
+	.license = "LGPL3",
+	.load_buffer = load_buffer,
+	.check_buffer = check_buffer,
+	.info = core_info,
+	.file_type = exec_file_type,
+};
+
+bool test_bin_apply_strings_core_dump_raw_mode(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	rz_bin_plugin_add(core->bin, &mock_core_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://68656c6c6f5f776f726c6400", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "current binfile");
+	mu_assert_eq(rz_pvector_len(rz_bin_object_get_strings(bf->o)), 1, "raw strings scanned");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "auto mode skips core flagging");
+	mu_assert_eq(rz_flag_count(core->flags, "str.*"), 0, "no auto str flags on core");
+	mu_assert_null(rz_meta_get_string(core->analysis, RZ_META_TYPE_STRING, 0), "no auto meta");
+
+	// NULL sections vector is also treated as sectionless in auto mode
+	RzPVector *orig_sections = bf->o->sections;
+	bf->o->sections = NULL;
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "auto mode skips core flagging with NULL sections");
+	bf->o->sections = orig_sections;
+
+	// Missing plugin returns false cleanly
+	RzBinPlugin *orig_plugin = bf->o->plugin;
+	bf->o->plugin = NULL;
+	mu_assert_false(rz_core_bin_apply_strings(core, bf), "apply strings fails cleanly with NULL plugin");
+	bf->o->plugin = orig_plugin;
+
+	mu_assert_true(rz_config_set(core->config, "str.search.mode", "raw"), "set raw mode");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "raw mode applies core strings");
+	RzFlagItem *fi = rz_flag_get(core->flags, "str.hello_world");
+	mu_assert_notnull(fi, "raw mode creates str.hello_world");
+	mu_assert_eq(fi->offset, 0, "raw mode flag offset");
+
+	rz_core_free(core);
+
+	// Sectionless core plugin WITH dedicated strings callback is NOT skipped in auto mode
+	core = rz_core_new();
+	mu_assert_notnull(core, "create core for core-with-strings");
+	rz_bin_plugin_add(core->bin, &mock_core_with_strings_plugin);
+	f = rz_core_file_open(core, "hex://68656c6c6f5f776f726c6400", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open core-with-strings file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load core-with-strings");
+	bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "core-with-strings binfile");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings with dedicated callback");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.plugin_str"), "plugin string flagged");
+	rz_core_free(core);
+
+	// Sectionless non-core plugin (file_type != RZ_BIN_TYPE_CORE) is NOT skipped in auto mode
+	core = rz_core_new();
+	mu_assert_notnull(core, "create core for sectionless exec");
+	rz_bin_plugin_add(core->bin, &mock_exec_plugin);
+	f = rz_core_file_open(core, "hex://68656c6c6f5f776f726c6400", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "open exec file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load exec");
+	bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "exec binfile");
+	mu_assert_true(rz_core_bin_apply_strings(core, bf), "apply strings for non-core plugin");
+	mu_assert_notnull(rz_flag_get(core->flags, "str.hello_world"), "non-core string flagged");
+	rz_core_free(core);
+
+	mu_end;
+}
+
+bool test_analysis_string_xref_flags_and_flagspace(void) {
+	// x86_64 code at 0x0:
+	//   0x00: 48 8d 05 09 00 00 00   lea rax, [rip + 9]    -> 0x10 ("dup_xref")
+	//   0x07: 48 8d 1d 12 00 00 00   lea rbx, [rip + 0x12] -> 0x20 ("dup_xref")
+	//   0x0e: 90 90                  nop; nop
+	//   0x10: "dup_xref\0"
+	//   0x20: "dup_xref\0"
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "create core");
+	rz_bin_plugin_add(core->bin, &mock_exec_plugin);
+
+	RzCoreFile *f = rz_core_file_open(
+		core,
+		"hex://488d0509000000488d1d120000009090"
+		"6475705f787265660000000000000000"
+		"6475705f787265660000000000000000",
+		RZ_PERM_RWX, 0);
+	mu_assert_notnull(f, "open xref code+strings buffer");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "load bin for xref test");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+
+	// Clear initial flags and select a non-strings flagspace to verify push/pop preservation
+	rz_flag_unset_all(core->flags);
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+
+	// Exercise set_new_xref() -> rz_core_bin_set_string_flag() from non-strings flagspace
+	rz_core_seek(core, 0, true);
+	rz_core_analysis_refs(core, 0x10);
+	const RzSpace *cur = rz_flag_space_cur(core->flags);
+	mu_assert_notnull(cur, "flagspace preserved");
+	mu_assert_streq(cur->name, RZ_FLAGS_FS_FUNCTIONS, "active flagspace still functions");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	RzFlagItem *fi1 = rz_flag_get(core->flags, "str.dup_xref");
+	mu_assert_notnull(fi1, "first xref string flag created");
+	mu_assert_eq(fi1->offset, 0x10, "first xref string flag offset");
+	RzFlagItem *fi2 = rz_flag_get(core->flags, "str.dup_xref.20");
+	mu_assert_notnull(fi2, "second duplicate xref string flag suffixed");
+	mu_assert_eq(fi2->offset, 0x20, "second xref string flag offset");
+
+	// Exercise rz_core_add_string_ref() via ESIL analysis
+	rz_flag_unset_all(core->flags);
+	rz_config_set_b(core->config, "analysis.strings", true);
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_FUNCTIONS);
+	rz_core_analysis_esil(core, 0, 0x10, NULL);
+	cur = rz_flag_space_cur(core->flags);
+	mu_assert_notnull(cur, "flagspace preserved after esil");
+	mu_assert_streq(cur->name, RZ_FLAGS_FS_FUNCTIONS, "active flagspace still functions after esil");
+
+	rz_flag_space_set(core->flags, RZ_FLAGS_FS_STRINGS);
+	fi1 = rz_flag_get(core->flags, "str.dup_xref");
+	mu_assert_notnull(fi1, "esil first string flag created");
+	mu_assert_eq(fi1->offset, 0x10, "esil first string flag offset");
+	fi2 = rz_flag_get(core->flags, "str.dup_xref.20");
+	mu_assert_notnull(fi2, "esil second duplicate string flag suffixed");
+	mu_assert_eq(fi2->offset, 0x20, "esil second string flag offset");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +1130,10 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_apply_strings_duplicates_and_fallbacks);
+	mu_run_test(test_bin_apply_strings_prefix);
+	mu_run_test(test_bin_apply_strings_core_dump_raw_mode);
+	mu_run_test(test_analysis_string_xref_flags_and_flagspace);
 	return tests_passed != tests_run;
 }
 

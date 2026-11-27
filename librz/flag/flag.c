@@ -756,16 +756,24 @@ RZ_API RZ_OWN char *rz_flag_get_liststr(RZ_BORROW RZ_NONNULL RzFlag *f, ut64 off
  * \return whether to stop searching for another name, using bool instead of returning
  *         a pointer to distinguish between existing name and failed malloc.
  */
-bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem **r) {
-	RzFlagItem *fi = rz_flag_get(f, name);
+static bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem **r) {
+	char *filtered = filter_item_name(name);
+	if (!filtered || !*filtered) {
+		free(filtered);
+		*r = NULL;
+		return true;
+	}
+	RzFlagItem *fi = rz_flag_get(f, filtered);
 	if (fi) {
+		free(filtered);
 		if (fi->offset == off && fi->size == size) {
 			*r = fi;
 			return true;
 		}
 		return false;
 	}
-	*r = rz_flag_set(f, name, off, size);
+	*r = rz_flag_set(f, filtered, off, size);
+	free(filtered);
 	return true;
 }
 
@@ -779,17 +787,25 @@ bool try_set_flag(RzFlag *f, const char *name, ut64 off, ut32 size, RzFlagItem *
  */
 RZ_API RZ_BORROW RzFlagItem *rz_flag_set_next(RZ_BORROW RZ_NONNULL RzFlag *f, RZ_NONNULL const char *name, ut64 off, ut32 size) {
 	rz_return_val_if_fail(f && name, NULL);
+	char *filtered_name = filter_item_name(name);
+	if (!filtered_name || !*filtered_name) {
+		free(filtered_name);
+		return NULL;
+	}
 	RzFlagItem *r = NULL;
-	if (try_set_flag(f, name, off, size, &r)) {
+	if (try_set_flag(f, filtered_name, off, size, &r)) {
+		free(filtered_name);
 		return r;
 	}
-	size_t name_len = strlen(name);
+	size_t name_len = strlen(filtered_name);
 	static const size_t suffix_size = 16 + 2; // max size of a 64bit addr + '.' + '\0'
 	char *new_name = malloc(name_len + suffix_size);
 	if (!new_name) {
+		free(filtered_name);
 		return NULL;
 	}
-	memcpy(new_name, name, name_len);
+	memcpy(new_name, filtered_name, name_len);
+	free(filtered_name);
 	snprintf(new_name + name_len, suffix_size, ".%" PFMT64x, off);
 	if (!try_set_flag(f, new_name, off, size, &r)) {
 		for (int i = 0; i < 1024 /* some upper bound to prevent unreasonable looping */; i++) {

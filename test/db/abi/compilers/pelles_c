@@ -12,14 +12,14 @@ machine  i386
   108 * functions
    38 * imports
     0 * platform.ports
-   66 * pointers
+   64 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio
   916 * relocs
     4 * sections
     0 * segments
-  174 * strings
+  186 * strings
     1 * symbols
 EOF
 RUN
@@ -47,14 +47,14 @@ machine  AMD 64
    87 * functions
    38 * imports
     0 * platform.ports
-   80 * pointers
+   78 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio
   420 * relocs
     5 * sections
     0 * segments
-  125 * strings
+  133 * strings
     1 * symbols
 EOF
 RUN

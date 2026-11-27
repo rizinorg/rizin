@@ -702,12 +702,12 @@ CMDS=<<EOF
 Csl
 EOF
 EXPECT=<<EOF
-0x08002364 ascii[23] "Bare_Metal_Crackme_01"
-0x0800237c ascii[59] "Enter_the_correct_combination_of_signals_and_press_button."
-0x080023b8 ascii[19] "__________________"
-0x080023cc ascii[19] "Success"
-0x080023e0 ascii[33] "The_flag_is:_XXXXXXXXXXXXXXXXXX"
-0x08002404 ascii[36] "Unlock_criteria_not_met._Try_again"
+0x08002364 ascii[23] "\nBare Metal Crackme 01"
+0x0800237c ascii[59] "Enter the correct combination of signals and press button."
+0x080023b8 ascii[19] "******************"
+0x080023cc ascii[19] "*** Success!!! ***"
+0x080023e0 ascii[33] "\tThe flag is: XXXXXXXXXXXXXXXXXX"
+0x08002404 ascii[36] "Unlock criteria not met. Try again!"
 EOF
 RUN
 
