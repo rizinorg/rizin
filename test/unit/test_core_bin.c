@@ -740,6 +740,36 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+bool test_bin_set_obj_closes_vfiles(void) {
+	RzCore *core = rz_core_new();
+	rz_bin_plugin_add(core->bin, &mock_plugin);
+
+	RzCoreFile *f = rz_core_file_open(core, "hex://424213374242", RZ_PERM_R, 0);
+	mu_assert_notnull(f, "load core file");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0), "core bin load");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "binfile");
+	mu_assert_eq(bf->id, 0, "binfile id");
+
+	RzIOMap *vmap = NULL;
+	RzIODesc *vdesc = rz_io_open_at(core->io, "vfile://0/vfile0", 0644, RZ_PERM_R, 0x8000, &vmap);
+	mu_assert_notnull(vdesc, "vfile open");
+	mu_assert_notnull(vmap, "vfile mapped");
+	int vfd = vdesc->fd;
+
+	RzBinObject *replacement = RZ_NEW0(RzBinObject);
+	mu_assert_notnull(replacement, "alloc replacement object");
+	replacement->info = RZ_NEW0(RzBinInfo);
+	mu_assert_notnull(replacement->info, "alloc replacement info");
+	mu_assert_true(rz_bin_file_set_obj(bf, replacement), "replace bin object");
+
+	mu_assert_null(rz_io_desc_get(core->io, vfd), "vfile desc closed on RZ_EVENT_BIN_OBJECT_DEL");
+
+	rz_core_free(core);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +781,7 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_set_obj_closes_vfiles);
 	return tests_passed != tests_run;
 }
 

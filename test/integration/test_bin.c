@@ -351,11 +351,187 @@ bool test_rz_bin_p2v2p(void) {
 	mu_end;
 }
 
+typedef struct {
+	RzBinFile *expected_bf;
+	RzBinObject *expected_obj;
+	int event_count;
+	int destroy_count;
+	bool destroy_after_event;
+	bool failed_unexpected;
+} ObjDelTracker;
+
+static void event_obj_del_cb(RzEvent *ev, int type, void *user, void *data) {
+	ObjDelTracker *tracker = user;
+	if (type != RZ_EVENT_BIN_OBJECT_DEL) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	RzEventBinFileDel *bev = data;
+	if (!bev || bev->bf != tracker->expected_bf || bev->bf->o != tracker->expected_obj) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	tracker->event_count++;
+}
+
+static void mock_bin_plugin_destroy(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return;
+	}
+	ObjDelTracker *tracker = bf->o->bin_obj;
+	if (bf != tracker->expected_bf || bf->o != tracker->expected_obj) {
+		tracker->failed_unexpected = true;
+		return;
+	}
+	tracker->destroy_after_event = (tracker->event_count == 2);
+	tracker->destroy_count++;
+	bf->o->bin_obj = NULL;
+}
+
+static RzBinPlugin mock_obj_del_plugin = {
+	.name = "mock_obj_del",
+	.desc = "Mock plugin for rz_bin_file_set_obj event test",
+	.destroy = &mock_bin_plugin_destroy,
+};
+
+static RzBinPlugin mock_no_destroy_plugin = {
+	.name = "mock_no_destroy",
+	.desc = "Mock plugin without destroy callback",
+};
+
+static bool mock_fail_check_buffer(RzBuffer *b) {
+	ut8 magic[8] = { 0 };
+	return rz_buf_read_at(b, 0, magic, sizeof(magic)) == sizeof(magic) &&
+		!memcmp(magic, "FAILXTR!", sizeof(magic));
+}
+
+static bool mock_fail_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
+	return false;
+}
+
+static RzBinPlugin mock_fail_load_plugin = {
+	.name = "mock_fail_load",
+	.desc = "Mock plugin whose load_buffer fails",
+	.check_buffer = &mock_fail_check_buffer,
+	.load_buffer = &mock_fail_load_buffer,
+};
+
+static RzBinObject *make_empty_bin_obj(void) {
+	RzBinObject *obj = RZ_NEW0(RzBinObject);
+	if (!obj) {
+		return NULL;
+	}
+	obj->info = RZ_NEW0(RzBinInfo);
+	if (!obj->info) {
+		free(obj);
+		return NULL;
+	}
+	return obj;
+}
+
+bool test_rz_bin_file_set_obj_event(void) {
+	RzIO *io = rz_io_new();
+	RzBin *bin = rz_bin_new();
+	rz_io_bind(io, &bin->iob);
+
+	ObjDelTracker tracker = { 0 };
+	rz_event_hook(bin->event, RZ_EVENT_BIN_OBJECT_DEL, event_obj_del_cb, &tracker);
+
+	RzBinOptions opt = { 0 };
+	RzBinFile *bf = rz_bin_open(bin, "hex://42424242424242", &opt);
+	mu_assert_notnull(bf, "open file");
+	mu_assert_notnull(bf->o, "initial bin object");
+	mu_assert_eq(tracker.event_count, 0, "no object del event on initial open");
+	mu_assert_false(tracker.failed_unexpected, "no unexpected event on open");
+
+	// Re-applying the same object or updating with NULL must not emit RZ_EVENT_BIN_OBJECT_DEL
+	mu_assert_true(rz_bin_file_set_obj(bf, bf->o), "setting same obj succeeds");
+	mu_assert_true(rz_bin_file_set_obj(bf, NULL), "updating current obj succeeds");
+	mu_assert_eq(tracker.event_count, 0, "no event when object is unchanged");
+
+	// Replace initial object with obj1 (backed by mock plugin with destroy hook)
+	RzBinObject *obj1 = make_empty_bin_obj();
+	mu_assert_notnull(obj1, "alloc obj1");
+	obj1->plugin = &mock_obj_del_plugin;
+	obj1->bin_obj = &tracker;
+
+	tracker.expected_bf = bf;
+	tracker.expected_obj = bf->o;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj1), "replace initial object with obj1");
+	mu_assert_ptreq(bf->o, obj1, "bf->o updated to obj1");
+	mu_assert_eq(tracker.event_count, 1, "RZ_EVENT_BIN_OBJECT_DEL emitted once");
+	mu_assert_eq(tracker.destroy_count, 0, "original any plugin has no mock destroy");
+	mu_assert_false(tracker.failed_unexpected, "event matched expected bf and old obj");
+
+	// Replace obj1 with obj2 (plugin with NULL destroy) and verify event precedes plugin->destroy(bf)
+	RzBinObject *obj2 = make_empty_bin_obj();
+	mu_assert_notnull(obj2, "alloc obj2");
+	obj2->plugin = &mock_no_destroy_plugin;
+
+	tracker.expected_obj = obj1;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj2), "replace obj1 with obj2");
+	mu_assert_ptreq(bf->o, obj2, "bf->o updated to obj2");
+	mu_assert_eq(tracker.event_count, 2, "RZ_EVENT_BIN_OBJECT_DEL emitted twice");
+	mu_assert_eq(tracker.destroy_count, 1, "superseded plugin->destroy invoked once");
+	mu_assert_true(tracker.destroy_after_event, "RZ_EVENT_BIN_OBJECT_DEL sent before destroy");
+	mu_assert_false(tracker.failed_unexpected, "no unexpected callbacks");
+
+	// Replace obj2 (plugin with destroy == NULL) with obj3 (plugin == NULL)
+	RzBinObject *obj3 = make_empty_bin_obj();
+	mu_assert_notnull(obj3, "alloc obj3");
+	tracker.expected_obj = obj2;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj3), "replace obj2 (no destroy) with obj3");
+	mu_assert_ptreq(bf->o, obj3, "bf->o updated to obj3");
+	mu_assert_eq(tracker.event_count, 3, "RZ_EVENT_BIN_OBJECT_DEL emitted thrice");
+	mu_assert_false(tracker.failed_unexpected, "no unexpected callbacks");
+
+	// Replace obj3 (plugin == NULL) when bf->rbin->event is NULL
+	RzBinObject *obj4 = make_empty_bin_obj();
+	mu_assert_notnull(obj4, "alloc obj4");
+	RzEvent *saved_event = bin->event;
+	bin->event = NULL;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj4), "replace obj3 without bin->event");
+	bin->event = saved_event;
+	mu_assert_ptreq(bf->o, obj4, "bf->o updated to obj4");
+	mu_assert_eq(tracker.event_count, 3, "no event emitted when bin->event is NULL");
+
+	// Replace obj4 when bf->rbin is NULL
+	RzBinObject *obj5 = make_empty_bin_obj();
+	mu_assert_notnull(obj5, "alloc obj5");
+	RzBin *saved_rbin = bf->rbin;
+	bf->rbin = NULL;
+	mu_assert_true(rz_bin_file_set_obj(bf, obj5), "replace obj4 without bf->rbin");
+	bf->rbin = saved_rbin;
+	mu_assert_ptreq(bf->o, obj5, "bf->o updated to obj5");
+	mu_assert_eq(tracker.event_count, 3, "no event emitted when bf->rbin is NULL");
+
+	// Failed rz_bin_file_set_xtr_data_as_current_obj restores bf->buf without leaking data->buf
+	mu_assert_true(rz_bin_plugin_add(bin, &mock_fail_load_plugin), "register mock_fail_load");
+	RzBuffer *orig_buf = bf->buf;
+	RzBinXtrData xtr_data = {
+		.buf = rz_buf_new_with_bytes((const ut8 *)"FAILXTR!", 8),
+		.size = 8,
+		.offset = 0,
+	};
+	mu_assert_notnull(xtr_data.buf, "alloc failing xtr buf");
+	RzBinObjectLoadOptions load_opts = { 0 };
+	mu_assert_false(rz_bin_file_set_xtr_data_as_current_obj(bin, bf, &load_opts, &xtr_data),
+		"xtr switch fails when plugin load_buffer returns false");
+	mu_assert_ptreq(bf->buf, orig_buf, "bf->buf restored on xtr object load failure");
+	mu_assert_ptreq(bf->o, obj5, "bf->o unchanged on xtr object load failure");
+	rz_buf_free(xtr_data.buf);
+
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_bin);
 	mu_run_test(test_rz_bin_reloc_storage);
 	mu_run_test(test_rz_bin_file_delete);
 	mu_run_test(test_rz_bin_file_delete_all);
+	mu_run_test(test_rz_bin_file_set_obj_event);
 	mu_run_test(test_rz_bin_sections_mapping);
 	mu_run_test(test_rz_bin_p2v2p);
 	return tests_passed != tests_run;
