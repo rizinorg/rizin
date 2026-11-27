@@ -2210,6 +2210,7 @@ commands:
         args:
           - name: class_name
             type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
       - name: acm
         summary: Class methods
         subcommands:

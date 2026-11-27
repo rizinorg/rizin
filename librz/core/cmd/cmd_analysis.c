@@ -5131,7 +5131,15 @@ RZ_IPI RzCmdStatus rz_analysis_class_rename_handler(RzCore *core, int argc, cons
 }
 
 RZ_IPI RzCmdStatus rz_analysis_class_graph_handler(RzCore *core, int argc, const char **argv) {
-	RzGraph *graph = rz_analysis_class_get_inheritance_graph(core->analysis);
+	RzGraph *graph = NULL;
+	if (argc > 1) {
+		if (!rz_analysis_class_exists(core->analysis, argv[1])) {
+			return class_error(RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS);
+		}
+		graph = rz_analysis_class_get_inheritance_graph_by_name(core->analysis, argv[1]);
+	} else {
+		graph = rz_analysis_class_get_inheritance_graph(core->analysis);
+	}
 	if (!graph) {
 		RZ_LOG_ERROR("Couldn't create graph.\n");
 		return RZ_CMD_STATUS_ERROR;
