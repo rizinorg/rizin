@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_io.h>
 #include <rz_util.h>
 #include "minunit.h"
 #include "test_config.h"
@@ -668,6 +669,140 @@ bool test_rz_analysis_function_get_ret_var() {
 	mu_end;
 }
 
+static bool test_jmptbl_read_at(RzAnalysis *analysis, ut64 addr, ut8 *buf, int len) {
+	if (!buf || len <= 0) {
+		return false;
+	}
+	memset(buf, 0, len);
+	return true;
+}
+
+static RzBinSection *test_jmptbl_get_vsect_at(RzBin *bin, ut64 vaddr) {
+	return NULL;
+}
+
+bool test_rz_analysis_delta_jmptbl_bounds(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	analysis->intr = rz_interrupt_new();
+	mu_assert_notnull(analysis->intr, "rz_interrupt_new");
+	rz_analysis_use(analysis, "x86");
+	rz_analysis_set_bits(analysis, 64);
+	analysis->cb.read_at = test_jmptbl_read_at;
+	analysis->binb.get_vsect_at = test_jmptbl_get_vsect_at;
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new");
+	io->va = true;
+	mu_assert_notnull(rz_io_open_at(io, "malloc://64", RZ_PERM_RX, 0, 0, NULL), "open malloc");
+	rz_io_bind(io, &analysis->iob);
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(analysis, "testfunc", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "rz_analysis_create_function");
+
+	RzAnalysisJmpTableParams params = { 0 };
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x80000000ULL, 0, &params),
+		"rejects >= 2 GiB search window");
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x10000000ULL, 0, &params),
+		"rejects 256 MiB search window");
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x10, 0x20, &params),
+		"rejects inverted lea/jmp addresses");
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x10, 0x10, &params),
+		"rejects zero-size search window");
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x1020, 0x1000, &params),
+		"rejects unmapped delta search range");
+
+	RzAnalysisBlock *prev_bb = rz_analysis_create_block(analysis, 0x0, 16);
+	RzAnalysisBlock *block = rz_analysis_create_block(analysis, 0x20, 4);
+	mu_assert_notnull(prev_bb, "prev_bb");
+	mu_assert_notnull(block, "block");
+	rz_analysis_function_add_block(fcn, prev_bb);
+	rz_analysis_function_add_block(fcn, block);
+	rz_analysis_block_unref(prev_bb);
+	rz_analysis_block_unref(block);
+	prev_bb->jump = 0x20;
+	prev_bb->fail = 0x30;
+	rz_analysis_hint_set_val(analysis, 0x20, 4);
+	memset(&params, 0, sizeof(params));
+	mu_assert_true(rz_analysis_get_jmptbl_info(analysis, fcn, block, 0x20, &params),
+		"hinted jmptbl_info succeeds");
+	mu_assert_eq(params.table_count, 4, "hinted table count");
+	mu_assert_eq(params.default_case, 0x30, "default case from predecessor fail");
+
+	RzAnalysisFunction *unmapped_fcn = rz_analysis_create_function(analysis, "unmappedfunc", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(unmapped_fcn, "unmapped_fcn");
+	RzAnalysisBlock *unmapped_prev = rz_analysis_create_block(analysis, 0x1000, 16);
+	RzAnalysisBlock *unmapped_bb = rz_analysis_create_block(analysis, 0x1020, 4);
+	mu_assert_notnull(unmapped_prev, "unmapped_prev");
+	mu_assert_notnull(unmapped_bb, "unmapped_bb");
+	rz_analysis_function_add_block(unmapped_fcn, unmapped_prev);
+	rz_analysis_function_add_block(unmapped_fcn, unmapped_bb);
+	rz_analysis_block_unref(unmapped_prev);
+	rz_analysis_block_unref(unmapped_bb);
+	unmapped_prev->jump = 0x1020;
+	unmapped_prev->fail = 0x1030;
+	memset(&params, 0, sizeof(params));
+	mu_assert_false(rz_analysis_get_jmptbl_info(analysis, unmapped_fcn, unmapped_bb, 0x1020, &params),
+		"unhinted jmptbl_info rejects unreadable predecessor block");
+
+	RzIODesc *guard_desc = rz_io_open_nomap(io, "malloc://64", RZ_PERM_R, 0);
+	mu_assert_notnull(guard_desc, "open guard desc");
+	mu_assert_notnull(rz_io_map_add(io, guard_desc->fd, 0, 0, 0x40, 64), "map non-readable guard");
+	ut8 jmptbl_entries[8];
+	rz_write_le32(jmptbl_entries, 0x10);
+	rz_write_le32(jmptbl_entries + 4, 0x14);
+	mu_assert_true(rz_io_write_at(io, 0x38, jmptbl_entries, sizeof(jmptbl_entries)), "write jmptbl entries");
+
+	RzVector tasks;
+	rz_vector_init(&tasks, sizeof(RzAnalysisTaskItem), NULL, NULL);
+	analysis->opt.jmptbl_maxcount = 512;
+	memset(&params, 0, sizeof(params));
+	params.jmp_address = 0x20;
+	params.jmptbl_loc = 0x38;
+	params.jmptbl_off = 0x38;
+	params.entry_size = 4;
+	params.table_count = 0;
+	params.tasks = &tasks;
+	mu_assert_true(rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params),
+		"walkthrough_jmptbl clamps speculative read before non-readable guard map");
+	mu_assert_eq(params.table_count, 2, "table_count clamped to readable prefix");
+	mu_assert_eq(rz_vector_len(&tasks), 2, "both jump table targets queued");
+
+	params.jmptbl_loc = 0x3e;
+	params.table_count = 0;
+	mu_assert_false(rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params),
+		"walkthrough_jmptbl rejects partial entry shorter than entry_size");
+	rz_vector_fini(&tasks);
+
+	params.jmptbl_loc = 0x1000;
+	params.casetbl_loc = 0x1010;
+	params.entry_size = 4;
+	params.table_count = 2;
+	params.tasks = NULL;
+	mu_assert_false(rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params),
+		"walkthrough_jmptbl rejects unmapped table");
+
+	params.jmptbl_loc = 0x0;
+	params.casetbl_loc = 0x10;
+	rz_interrupt_raise(analysis->intr);
+	mu_assert_false(rz_analysis_walkthrough_casetbl(analysis, fcn, block, &params),
+		"walkthrough_casetbl stops when breaked");
+	mu_assert_false(rz_analysis_walkthrough_jmptbl(analysis, fcn, block, &params),
+		"walkthrough_jmptbl stops when breaked");
+	mu_assert_false(rz_analysis_get_delta_jmptbl_info(analysis, fcn, 0x20, 0x0, &params),
+		"delta_jmptbl_info aborts when breaked");
+	mu_assert_false(rz_analysis_walkthrough_arm_jmptbl_style(analysis, fcn, block, &params),
+		"walkthrough_arm_jmptbl_style stops when breaked");
+	mu_assert_false(rz_analysis_walkthrough_arm_thumb1_case_uqi_table(analysis, fcn, block, &params),
+		"walkthrough_arm_thumb1_case_uqi_table stops when breaked");
+	rz_interrupt_break_clear(analysis->intr);
+	rz_interrupt_free(analysis->intr);
+	analysis->intr = NULL;
+
+	rz_analysis_free(analysis);
+	rz_io_free(io);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -682,6 +817,7 @@ int all_tests() {
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
 	mu_run_test(test_rz_analysis_function_get_ret_var);
+	mu_run_test(test_rz_analysis_delta_jmptbl_bounds);
 	return tests_passed != tests_run;
 }
 
