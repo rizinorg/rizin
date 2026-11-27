@@ -359,7 +359,14 @@ RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const
 	return !strcmp(expect, output);
 }
 
-RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
+/**
+ * \brief Validate a command test's subprocess output against expected exit status, stdout, and stderr.
+ * \param out           Captured subprocess output.
+ * \param test          Command test specification.
+ * \param strict_stderr When true, fail if stderr is non-empty and the test does not specify EXPECT_ERR.
+ * \return true if all assertions pass, false otherwise.
+ */
+RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test, bool strict_stderr) {
 	if (!out || out->ret != test->exit_status.value || !out->out || !out->err || out->timeout) {
 		return false;
 	}
@@ -370,7 +377,11 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 	}
 	const char *expect_err = test->expect_err.value;
 	const char *regexp_err = test->regexp_err.value;
-	if (expect_err && !rz_test_cmp_cmd_output((char *)out->err, expect_err, regexp_err)) {
+	if (expect_err) {
+		if (!rz_test_cmp_cmd_output((char *)out->err, expect_err, regexp_err)) {
+			return false;
+		}
+	} else if (strict_stderr && RZ_STR_ISNOTEMPTY((const char *)out->err)) {
 		return false;
 	}
 	return true;
@@ -727,7 +738,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	case RZ_TEST_TYPE_CMD: {
 		RzCmdTest *cmd_test = test->cmd_test;
 		RzSubprocessOutput *out = rz_test_run_cmd_test(config, cmd_test, subprocess_runner, NULL);
-		success = rz_test_check_cmd_test(out, cmd_test);
+		success = rz_test_check_cmd_test(out, cmd_test, config->strict_stderr);
 		ret->proc_out = out;
 		ret->timeout = out && out->timeout;
 		ret->run_failed = !out;

@@ -39,6 +39,7 @@ typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
 	bool no_diffing; // disable diffing unless the tests fails.
+	bool fail_on_fixed; // fail if any BROKEN test unexpectedly passes (FX > 0).
 	RzTestDatabase *db;
 	PJ *test_results;
 
@@ -58,14 +59,14 @@ static void *worker_th(RzTestState *state);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr);
 static void interact_break(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void interact_commands(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results);
 static void accept_all(RzTestState *state);
 
 static int help(bool verbose) {
 	printf("%s%s%s", Color_CYAN, "Usage: ", Color_RESET);
-	printf("rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf("rz-test [-qvVnLEW] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		const char *options[] = {
 			// clang-format off
@@ -88,6 +89,8 @@ static int help(bool verbose) {
 			"-e",           "dir",            "Exclude a particular directory while testing (this option can appear many times)",
 			"-s",           "num",            "Number of expected successful tests",
 			"-x",           "num",            "Number of expected failed tests",
+			"-E",           "",               "Fail cmd tests on unexpected stderr when EXPECT_ERR is omitted",
+			"-W",           "",               "Fail if any BROKEN test unexpectedly passes (FX > 0)",
 			// clang-format on
 		};
 		rz_print_colored_help(options, RZ_ARRAY_SIZE(options), false);
@@ -185,10 +188,28 @@ static bool rz_test_can_find_rizin(const char *bin_path) {
 
 static bool log_mode = false;
 
+static int rz_test_compute_exit_code(const RzTestState *state, st64 expect_succ, st64 expect_fail) {
+	if (state->fail_on_fixed && state->fx_count) {
+		return 1;
+	}
+	if (expect_succ > 0 && (ut64)expect_succ != state->ok_count) {
+		return 1;
+	}
+	if (expect_fail > 0 && (ut64)expect_fail != state->xx_count) {
+		return 1;
+	}
+	if (expect_fail < 0 && expect_succ < 0 && state->xx_count) {
+		return 1;
+	}
+	return 0;
+}
+
 int rz_test_main(int argc, const char **argv) {
 	int workers_count = WORKERS_DEFAULT;
 	bool verbose = false;
 	bool no_diffing = false;
+	bool strict_stderr = false;
+	bool fail_on_fixed = false;
 	bool nothing = false;
 	bool quiet = false;
 	bool interactive = false;
@@ -229,7 +250,7 @@ int rz_test_main(int argc, const char **argv) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:y");
+	rz_getopt_init(&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVNt:F:io:e:s:x:yEW");
 
 	int c;
 	while ((c = rz_getopt_next(&opt)) != -1) {
@@ -323,6 +344,12 @@ int rz_test_main(int argc, const char **argv) {
 				goto beach;
 			}
 			break;
+		case 'E':
+			strict_stderr = true;
+			break;
+		case 'W':
+			fail_on_fixed = true;
+			break;
 		default:
 			ret = help(false);
 			goto beach;
@@ -368,8 +395,10 @@ int rz_test_main(int argc, const char **argv) {
 	state.run_config.bin_path = bin_path;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
+	state.run_config.strict_stderr = strict_stderr;
 	state.verbose = verbose;
 	state.no_diffing = no_diffing;
+	state.fail_on_fixed = fail_on_fixed;
 	state.db = rz_test_test_database_new();
 	if (!state.db) {
 		ret = -1;
@@ -595,17 +624,7 @@ int rz_test_main(int argc, const char **argv) {
 		accept_all(&state);
 	}
 
-	if (expect_succ > 0 && expect_succ != state.ok_count) {
-		ret = 1;
-	}
-
-	if (expect_fail > 0 && expect_fail != state.xx_count) {
-		ret = 1;
-	}
-
-	if (expect_fail < 0 && expect_succ < 0 && state.xx_count) {
-		ret = 1;
-	}
+	ret = rz_test_compute_exit_code(&state, expect_succ, expect_fail);
 
 coast:
 	rz_pvector_clear(&state.queue);
@@ -920,7 +939,10 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 		if (state->test_results) {
 			test_result_to_json(state->test_results, result);
 		}
-		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
+		if (!state->verbose &&
+			(result->result == RZ_TEST_RESULT_OK ||
+				result->result == RZ_TEST_RESULT_BROKEN ||
+				(!state->fail_on_fixed && result->result == RZ_TEST_RESULT_FIXED))) {
 			continue;
 		}
 		char *name = rz_test_test_name(result->test);
@@ -1067,7 +1089,7 @@ static void interact(RzTestState *state) {
 		}
 		switch (buf[0]) {
 		case 'f':
-			if (!interact_fix(result, &failed_results)) {
+			if (!interact_fix(result, &failed_results, state->run_config.strict_stderr)) {
 				printf("This test has failed too hard to be fixed.\n");
 				goto menu;
 			}
@@ -1117,7 +1139,7 @@ static void accept_all(RzTestState *state) {
 		if (result->test->type != RZ_TEST_TYPE_CMD && result->test->type != RZ_TEST_TYPE_ASM) {
 			continue;
 		}
-		if (!interact_fix(result, &failed_results)) {
+		if (!interact_fix(result, &failed_results, state->run_config.strict_stderr)) {
 			char *name = rz_test_test_name(result->test);
 			printf("This test %s has failed too hard to be fixed.\n", name ? name : "");
 			free(name);
@@ -1269,13 +1291,17 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free(newc);
 }
 
-static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
+static bool interact_fix_cmd(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr) {
 	assert(result->test->type == RZ_TEST_TYPE_CMD);
 	if (result->run_failed || result->proc_out->ret != result->test->cmd_test->exit_status.value) {
 		return false;
 	}
 	RzCmdTest *test = result->test->cmd_test;
 	RzSubprocessOutput *out = result->proc_out;
+	if (strict_stderr && !test->expect_err.value && out && out->err && RZ_STR_ISNOTEMPTY((const char *)out->err)) {
+		eprintf("Cannot auto-fix test with unexpected stderr under -E when EXPECT_ERR is omitted.\n");
+		return false;
+	}
 	if (test->expect.value && out->out) {
 		const char *out_str = (char *)out->out;
 		const char *regexp = test->regexp_out.value;
@@ -1393,10 +1419,10 @@ static bool interact_fix_asm(RzTestResultInfo *result) {
 	return true;
 }
 
-static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results) {
+static bool interact_fix(RzTestResultInfo *result, RzPVector /*<RzTestResultInfo *>*/ *fixup_results, bool strict_stderr) {
 	switch (result->test->type) {
 	case RZ_TEST_TYPE_CMD:
-		return interact_fix_cmd(result, fixup_results);
+		return interact_fix_cmd(result, fixup_results, strict_stderr);
 	case RZ_TEST_TYPE_ASM:
 		return interact_fix_asm(result);
 	default:

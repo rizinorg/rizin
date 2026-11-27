@@ -161,6 +161,7 @@ typedef struct rz_test_run_config_t {
 	const char *bin_path;
 	const char *json_test_file;
 	ut64 timeout_ms;
+	bool strict_stderr;
 } RzTestRunConfig;
 
 typedef struct rz_test_asm_test_output_t {
@@ -220,7 +221,7 @@ typedef RzSubprocessOutput *(*RzTestCmdRunner)(const char *file, const char *arg
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user);
 
 RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
-RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
+RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test, bool strict_stderr);
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp);
 RZ_API bool rz_test_check_jq_available(void);
 RZ_API RZ_OWN RzStrBuf *rz_test_regex_full_match_str(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text);
