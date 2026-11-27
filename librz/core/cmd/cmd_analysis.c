@@ -4959,7 +4959,7 @@ RZ_IPI RzCmdStatus rz_analysis_hint_del_offset_handler(RzCore *core, int argc, c
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	ut64 toff = rz_num_math(core->num, argv[1]);
 	if (!toff) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -4968,10 +4968,20 @@ RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int arg
 	RzList *typeoffs = rz_type_db_get_by_offset(typedb, toff);
 	RzListIter *iter;
 	RzTypePath *ty;
-	// We only print type paths here
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (typeoffs, iter, ty) {
-		rz_cons_printf(core->cons, "%s\n", ty->path);
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			char *type = rz_type_as_string(typedb, ty->typ);
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "path", ty->path);
+			pj_ks(state->d.pj, "type", rz_str_get(type));
+			pj_end(state->d.pj);
+			free(type);
+		} else {
+			rz_cons_printf(core->cons, "%s\n", ty->path);
+		}
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(typeoffs);
 	return RZ_CMD_STATUS_OK;
 }

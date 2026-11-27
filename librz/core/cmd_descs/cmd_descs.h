@@ -860,7 +860,7 @@ RZ_IPI RzCmdStatus rz_analysis_hint_set_offset_handler(RzCore *core, int argc, c
 // "aht-"
 RZ_IPI RzCmdStatus rz_analysis_hint_del_offset_handler(RzCore *core, int argc, const char **argv);
 // "ahts"
-RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_analysis_list_struct_offsets_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "ac"
 RZ_IPI RzCmdStatus rz_analysis_class_add_handler(RzCore *core, int argc, const char **argv);
 // "ac-"
@@ -2116,7 +2116,7 @@ RZ_IPI RzCmdStatus rz_cmd_print_format_dot_handler(RzCore *core, int argc, const
 // "pf."
 RZ_IPI RzCmdStatus rz_cmd_print_format_named_dot_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pfn"
-RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_print_format_named_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "pfo"
 RZ_IPI RzCmdStatus rz_cmd_print_format_file_handler(RzCore *core, int argc, const char **argv);
 // "pfs"
@@ -2568,7 +2568,7 @@ RZ_IPI RzCmdStatus rz_type_enum_c_handler(RzCore *core, int argc, const char **a
 // "ted"
 RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char **argv);
 // "tef"
-RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "tf"
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tf-"

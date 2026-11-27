@@ -8672,3 +8672,24 @@ EXPECT=<<EOF
 [{"name":"a","type":"signed","size":4,"offset":0,"endian":"little","value":2},{"name":"b","type":"int8_t","size":1,"offset":4,"value":"A"}]
 EOF
 RUN
+
+NAME=tef, ahts and pfn in JSON
+FILE==
+CMDS=<<EOF
+td "enum FOO { A=1, B=0x7a5a5 };"
+td "enum BAR { X=0x7a5a5 };"
+tefj 0x7a5a5
+td "struct pfnjs { char pad[0x1230]; int z; };"
+ahtsj 0x1230
+pfnj int
+pfnj mine "dd a b"
+pfn mine
+EOF
+EXPECT=<<EOF
+[{"enum":"FOO","member":"B"},{"enum":"BAR","member":"X"}]
+[{"path":"pfnjs.z","type":"int"}]
+{"name":"int","format":"d4"}
+{"name":"mine","format":"dd a b"}
+dd a b
+EOF
+RUN

@@ -77,20 +77,36 @@ static RzCmdStatus types_enum_member_find(RzCore *core, const char *enum_name, c
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value) {
+static RzCmdStatus types_enum_member_find_all(RzCore *core, const char *enum_value, RzCmdStateOutput *state) {
 	rz_return_val_if_fail(enum_value, RZ_CMD_STATUS_ERROR);
 	ut64 value = rz_num_math(core->num, enum_value);
 	RzTypeDB *typedb = rz_analysis_get_type_db(core->analysis);
 	RzList *matches = rz_type_db_find_enums_by_val(typedb, value);
 	if (!matches || rz_list_empty(matches)) {
 		RZ_LOG_ERROR("Cannot find matching enum member\n");
+		rz_list_free(matches);
 		return RZ_CMD_STATUS_ERROR;
 	}
 	RzListIter *iter;
 	char *match;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (matches, iter, match) {
-		rz_cons_println(core->cons, match);
+		if (state->mode != RZ_OUTPUT_MODE_JSON) {
+			rz_cons_println(core->cons, match);
+			continue;
+		}
+		// matches are "enum.member", and a member name has no dot
+		char *dot = strrchr(match, '.');
+		if (!dot) {
+			continue;
+		}
+		*dot = '\0';
+		pj_o(state->d.pj);
+		pj_ks(state->d.pj, "enum", match);
+		pj_ks(state->d.pj, "member", dot + 1);
+		pj_end(state->d.pj);
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(matches);
 	return RZ_CMD_STATUS_OK;
 }
@@ -636,9 +652,9 @@ RZ_IPI RzCmdStatus rz_type_enum_c_nl_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_type_enum_find_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	const char *enum_value = argc > 1 ? argv[1] : NULL;
-	return types_enum_member_find_all(core, enum_value);
+	return types_enum_member_find_all(core, enum_value, state);
 }
 
 RZ_IPI RzCmdStatus rz_type_list_function_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {

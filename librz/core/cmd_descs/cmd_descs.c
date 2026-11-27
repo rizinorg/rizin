@@ -23909,7 +23909,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_hint_del_offset_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "aht-", rz_analysis_hint_del_offset_handler, &analysis_hint_del_offset_help);
 	rz_warn_if_fail(analysis_hint_del_offset_cd);
 
-	RzCmdDesc *analysis_list_struct_offsets_cd = rz_cmd_desc_argv_new(core->rcmd, ah_cd, "ahts", rz_analysis_list_struct_offsets_handler, &analysis_list_struct_offsets_help);
+	RzCmdDesc *analysis_list_struct_offsets_cd = rz_cmd_desc_argv_state_new(core->rcmd, ah_cd, "ahts", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_list_struct_offsets_handler, &analysis_list_struct_offsets_help);
 	rz_warn_if_fail(analysis_list_struct_offsets_cd);
 
 	RzCmdDesc *ac_cd = rz_cmd_desc_group_new(core->rcmd, cmd_analysis_cd, "ac", rz_analysis_class_add_handler, &analysis_class_add_help, &ac_help);
@@ -25754,7 +25754,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_print_format_named_dot_cd = rz_cmd_desc_argv_state_new(core->rcmd, pf_cd, "pf.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, rz_cmd_print_format_named_dot_handler, &cmd_print_format_named_dot_help);
 	rz_warn_if_fail(cmd_print_format_named_dot_cd);
 
-	RzCmdDesc *cmd_print_format_named_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfn", rz_cmd_print_format_named_handler, &cmd_print_format_named_help);
+	RzCmdDesc *cmd_print_format_named_cd = rz_cmd_desc_argv_state_new(core->rcmd, pf_cd, "pfn", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_print_format_named_handler, &cmd_print_format_named_help);
 	rz_warn_if_fail(cmd_print_format_named_cd);
 
 	RzCmdDesc *cmd_print_format_file_cd = rz_cmd_desc_argv_new(core->rcmd, pf_cd, "pfo", rz_cmd_print_format_file_handler, &cmd_print_format_file_help);
@@ -26409,7 +26409,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_enum_c_nl_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "ted", rz_type_enum_c_nl_handler, &type_enum_c_nl_help);
 	rz_warn_if_fail(type_enum_c_nl_cd);
 
-	RzCmdDesc *type_enum_find_cd = rz_cmd_desc_argv_new(core->rcmd, te_cd, "tef", rz_type_enum_find_handler, &type_enum_find_help);
+	RzCmdDesc *type_enum_find_cd = rz_cmd_desc_argv_state_new(core->rcmd, te_cd, "tef", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_enum_find_handler, &type_enum_find_help);
 	rz_warn_if_fail(type_enum_find_cd);
 
 	RzCmdDesc *tf_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tf", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_list_function_handler, &type_list_function_help, &tf_help);

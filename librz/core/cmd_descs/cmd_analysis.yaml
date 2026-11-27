@@ -2190,6 +2190,10 @@ commands:
       - name: ahts
         summary: List all matching structure offsets
         cname: analysis_list_struct_offsets
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: offset
             type: RZ_CMD_ARG_TYPE_RZNUM
