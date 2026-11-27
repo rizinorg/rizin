@@ -414,6 +414,9 @@ static ut64 get_main_offset_from_symbol(ELFOBJ *bin) {
 }
 
 static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
+	if (bin->ehdr.e_machine != EM_X86_64) {
+		return UT64_MAX;
+	}
 	/* linux64 pie main -- probably buggy in some cases */
 	int bo = 29; // Begin offset may vary depending on the entry prelude
 	// endbr64 - fedora bins have this
@@ -427,7 +430,7 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];
-		if (ch == 0x8d) { // lea rdi, qword [rip + MAINDELTA]
+		if (ch == 0x8d && buf[bo + 2] == 0x3d) { // lea rdi, qword [rip + MAINDELTA]
 			ut8 *p = buf + bo + 3;
 			st32 maindelta = (st32)rz_read_le32(p);
 			ut64 ventry = Elf_(rz_bin_elf_p2v)(bin, entry);
@@ -436,7 +439,7 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 			}
 			ut64 vmain = (ut64)(ventry + bo + maindelta) + 7;
 			return Elf_(rz_bin_elf_v2p)(bin, vmain);
-		} else if (ch == 0xc7) { // mov rdi, 0xADDR
+		} else if (ch == 0xc7 && buf[bo + 2] == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
 			ut64 addr = (ut64)rz_read_le32(p);
 			return Elf_(rz_bin_elf_v2p)(bin, addr);
@@ -444,6 +447,30 @@ static ut64 get_main_offset_linux_64_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
 	}
 
 	return UT64_MAX;
+}
+
+/**
+ * \brief Find PASCALMAIN in the Free Pascal Linux x86-64 startup code.
+ *
+ * Stripped executables have no PASCALMAIN symbol. Match the argument and stack
+ * setup before its call so unrelated calls at the entry point are not mistaken
+ * for the main function. The addresses of the runtime globals may vary.
+ */
+static ut64 get_main_offset_x86_64_freepascal(ELFOBJ *bin, ut64 entry, const ut8 *buf) {
+	if (bin->ehdr.e_machine != EM_X86_64 ||
+		memcmp(buf, "\x5e\x48\xc7\xc0", 4) ||
+		memcmp(buf + 8, "\x48\x89\x30\x48\xc7\xc0", 6) ||
+		memcmp(buf + 18, "\x48\x89\x20\x48\x8d\x04\xf5\x08\x00\x00\x00\x48\x01\xe0\x48\xc7\xc1", 17) ||
+		memcmp(buf + 39, "\x48\x89\x01\x48\x83\xe4\xf0\x48\xc7\xc0", 10) ||
+		memcmp(buf + 53, "\x48\x89\x20\x48\x31\xed\xe8", 7)) {
+		return UT64_MAX;
+	}
+
+	ut64 ventry = Elf_(rz_bin_elf_p2v)(bin, entry);
+	if (ventry == UT64_MAX) {
+		return UT64_MAX;
+	}
+	return Elf_(rz_bin_elf_v2p)(bin, ventry + 64 + (st32)rz_read_le32(buf + 60));
 }
 
 static ut64 get_main_offset_x86_non_pie(ELFOBJ *bin, ut64 entry, ut8 *buf) {
@@ -2676,6 +2703,11 @@ ut64 Elf_(rz_bin_elf_get_main_offset)(RZ_NONNULL ELFOBJ *bin) {
 	}
 
 	main_addr = get_main_offset_mips(bin, entry, buf, RZ_ARRAY_SIZE(buf));
+	if (main_addr != UT64_MAX) {
+		return main_addr;
+	}
+
+	main_addr = get_main_offset_x86_64_freepascal(bin, entry, buf);
 	if (main_addr != UT64_MAX) {
 		return main_addr;
 	}
