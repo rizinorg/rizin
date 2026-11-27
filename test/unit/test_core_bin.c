@@ -745,6 +745,7 @@ static bool test_vtable_api_and_edge_cases(void) {
 
 	RzCore *core = rz_core_new();
 	mu_assert_notnull(core, "rz_core_new");
+	rz_config_set(core->config, "asm.arch", "x86");
 	RzCoreFile *cf = rz_core_file_open(core, "malloc://16", RZ_PERM_RWX, 0);
 	mu_assert_notnull(cf, "open malloc://16");
 	mu_assert_notnull(rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0, 16), "map malloc://16");
