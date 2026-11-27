@@ -1863,6 +1863,8 @@ RZ_API bool rz_bv_set_from_st64(RZ_NONNULL RzBitVector *bv, st64 value) {
 RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
 	rz_return_if_fail(bv && buf && size);
 	size = RZ_MIN(size, bv->len);
+	buf += bit_offset >> 3;
+	bit_offset &= 7;
 	if (!bit_offset && size <= 64) {
 		ut64 val = 0;
 		for (ut32 i = 0; i < (size + 7) / 8; i++) {
@@ -1894,6 +1896,16 @@ RZ_API void rz_bv_set_from_bytes_le(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL
 RZ_API void rz_bv_set_from_bytes_be(RZ_NONNULL RzBitVector *bv, RZ_IN RZ_NONNULL const ut8 *buf, ut32 bit_offset, ut32 size) {
 	rz_return_if_fail(bv && buf && size);
 	size = RZ_MIN(size, bv->len);
+	buf += bit_offset >> 3;
+	bit_offset &= 7;
+	if (!bit_offset && size == bv->len && size <= 64 && !(size & 7)) {
+		ut64 val = 0;
+		for (ut32 i = 0; i < size / 8; i++) {
+			val = (val << 8) | buf[i];
+		}
+		rz_bv_set_from_ut64(bv, val);
+		return;
+	}
 	// upper bits goes always in the upper bit of the bitv
 	for (ut32 i = 0; i < bv->len; i++) {
 		bool bit = false;

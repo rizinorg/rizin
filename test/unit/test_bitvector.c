@@ -932,6 +932,17 @@ bool test_rz_bv_set_from_bytes_be(void) {
 	mu_assert_streq_free(rz_bv_as_hex_string(hbv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_free(hbv);
 
+	rz_bv_init(&bv, 64);
+	rz_bv_set_from_bytes_be(&bv, data, 8, 64);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xcdab896745230110", "off+8 64");
+	rz_bv_set_from_bytes_be(&bv, data, 64, 64);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1032547698badcfe", "off+64 64");
+	rz_bv_fini(&bv);
+	rz_bv_init(&bv, 32);
+	rz_bv_set_from_bytes_be(&bv, data, 16, 32);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xab896745", "off+16 32");
+	rz_bv_fini(&bv);
+
 	mu_end;
 }
 
@@ -1030,6 +1041,21 @@ bool test_rz_bv_set_from_bytes_le(void) {
 	RzBitVector *hbv = rz_bv_new_from_bytes_le(data, 0, 64);
 	mu_assert_streq_free(rz_bv_as_hex_string(hbv, true), "0xefcdab8967452301", "aligned 64");
 	rz_bv_free(hbv);
+
+	rz_bv_init(&bv, 64);
+	rz_bv_set_from_bytes_le(&bv, data, 8, 64);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xfeefcdab89674523", "off+8 64");
+	rz_bv_set_from_bytes_le(&bv, data, 64, 64);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x1032547698badcfe", "off+64 64");
+	rz_bv_fini(&bv);
+	rz_bv_init(&bv, 32);
+	rz_bv_set_from_bytes_le(&bv, data, 16, 32);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0xab896745", "off+16 32");
+	rz_bv_fini(&bv);
+	rz_bv_init(&bv, 42);
+	rz_bv_set_from_bytes_le(&bv, data, 16, 42);
+	mu_assert_streq_free(rz_bv_as_hex_string(&bv, true), "0x3cdab896745", "off+16 42");
+	rz_bv_fini(&bv);
 
 	mu_end;
 }
