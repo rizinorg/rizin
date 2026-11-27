@@ -76,9 +76,6 @@ static bool icfg_proc_memberships_contains(const RzICFGNode *node, ut64 proc_mem
 /**
  * \brief Adds a procedure entry point to the memberships of \p node.
  *
- * Memberships are kept inline in an array as long as there are at most RZ_ICFG_PROC_MEMBERSHIPS_DEFAULT of them.
- * Only if more are needed, a set is allocated and all members are moved into it.
- *
  * \return True if \p proc_membership was newly added, false if it was already a member or on allocation failure.
  */
 static bool icfg_proc_memberships_add(RZ_NONNULL RzICFGNode *node, ut64 proc_membership) {
