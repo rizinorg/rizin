@@ -3008,7 +3008,7 @@ RZ_IPI RzCmdStatus rz_cmd_disassembly_function_handler(RzCore *core, int argc, c
 		return RZ_CMD_STATUS_ERROR;
 	}
 
-	ut64 start = function->addr; // For pdf, start disassembling at the entrypoint
+	ut64 start = rz_analysis_function_min_addr(function);
 	ut64 end = rz_analysis_function_max_addr(function);
 	if (end <= start) {
 		RZ_LOG_ERROR("Cannot print function because the end offset is less or equal to the start offset\n");

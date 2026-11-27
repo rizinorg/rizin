@@ -612,3 +612,29 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=pdf with blocks before function entry point
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx b801000000e900000000 @ 0x40
+wx b801000000e900000000 @ 0x4a
+wx b801000000e9e2ffffff @ 0x54
+s 0x54
+af
+pdf
+EOF
+EXPECT=<<EOF
+|           ; CODE XREF from fcn.00000054 @ 0x59
+|       .-> 0x00000040      mov   eax, 0x01
+|      ,==< 0x00000045      jmp   0x4a
+|      |:   ; CODE XREF from fcn.00000054 @ 0x45
+|      `--> 0x0000004a      mov   eax, 0x01
+|      ,==< 0x0000004f      jmp   fcn.00000054
+       |:   ; CODE XREF from fcn.00000054 @ 0x4f
+/ fcn.00000054();
+|      `--> 0x00000054      mov   eax, 0x01
+|       `=< 0x00000059      jmp   0x40
+EOF
+RUN
