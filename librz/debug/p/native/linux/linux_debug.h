@@ -194,5 +194,6 @@ RzDebugMap *linux_map_alloc(RzDebug *dbg, ut64 addr, int size, bool thp);
 int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size);
 RzList /*<RzDebugMap *>*/ *linux_map_get(RzDebug *dbg);
 int linux_map_protect(RzDebug *dbg, ut64 addr, int size, int perms);
+int linux_detach(RzDebug *dbg, int pid);
 
 #endif

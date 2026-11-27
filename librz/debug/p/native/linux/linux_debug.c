@@ -54,7 +54,6 @@ long rz_debug_ptrace_get_x86_xstate(RzDebug *dbg, pid_t pid, struct iovec *iov) 
 }
 #endif
 
-static void linux_detach_all(RzDebug *dbg);
 static char *read_link(int pid, const char *file);
 static bool linux_attach_single_pid(RzDebug *dbg, int ptid);
 static void linux_add_new_thread(RzDebug *dbg, int pid, int tid);
@@ -386,25 +385,32 @@ bool linux_set_options(RzDebug *dbg, int pid) {
 	return true;
 }
 
-static void linux_detach_all(RzDebug *dbg) {
-	RzList *th_list = linux_cur_threads(dbg);
+int linux_detach(RzDebug *dbg, int pid) {
+	RzDebugProcess *proc = rz_debug_process_find(dbg, pid);
 	RzDebugThread *th;
 	RzListIter *it;
-	rz_list_foreach (th_list, it, th) {
-		if (th->tid != dbg->pid) {
-			if (rz_debug_ptrace(dbg, PTRACE_DETACH, th->tid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
-				perror("PTRACE_DETACH");
+	int ret = 0;
+	if (proc && proc->threads) {
+		rz_list_foreach (proc->threads, it, th) {
+			if (th->tid == pid) {
+				continue;
+			}
+			if (rz_debug_ptrace(dbg, PTRACE_DETACH, th->tid, NULL, 0) == -1 && errno != ESRCH) {
+				rz_sys_perror("PTRACE_DETACH");
+				ret = -1;
 			}
 		}
 	}
-	if (rz_debug_ptrace(dbg, PTRACE_DETACH, dbg->pid, NULL, (rz_ptrace_data_t)(size_t)NULL) == -1) {
-		perror("PTRACE_DETACH");
+	if (rz_debug_ptrace(dbg, PTRACE_DETACH, pid, NULL, 0) == -1) {
+		rz_sys_perror("PTRACE_DETACH");
+		return -1;
 	}
+	rz_debug_process_remove(dbg, pid);
+	return ret;
 }
 
 bool linux_attach_new_process(RzDebug *dbg, int pid) {
-	linux_detach_all(dbg);
-	rz_debug_process_remove(dbg, dbg->pid); // unindexes its threads, then frees them
+	linux_detach(dbg, dbg->pid);
 
 	if (linux_attach(dbg, pid) < 0) {
 		return false;

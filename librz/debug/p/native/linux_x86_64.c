@@ -40,7 +40,7 @@ static int rz_debug_native_attach(RzDebug *dbg, int pid) {
 }
 
 static int rz_debug_native_detach(RzDebug *dbg, int pid) {
-	return rz_debug_ptrace(dbg, PTRACE_DETACH, pid, NULL, (rz_ptrace_data_t)(size_t)0);
+	return linux_detach(dbg, pid);
 }
 
 static int rz_debug_native_select(RzDebug *dbg, int pid, int tid) {
@@ -73,7 +73,7 @@ static int rz_debug_native_continue(RzDebug *dbg, int pid, int tid, int sig) {
 		rz_interrupt_break_push(dbg->intr, (RzInterruptBreakCallback)interrupt_process, dbg);
 	}
 
-	RzDebugProcess *proc = rz_debug_process_find(dbg, dbg->pid);
+	RzDebugProcess *proc = rz_debug_process_find(dbg, pid);
 	if (dbg->continue_all_threads && proc && !rz_list_empty(proc->threads)) {
 		RzDebugThread *th;
 		RzListIter *it;
@@ -112,16 +112,16 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RzList /*<RzDebugPid *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+static RzList /*<RzDebugProcess *>*/ *rz_debug_native_pids(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_process_free);
 	if (!list) {
 		return NULL;
 	}
 	return linux_pid_list(pid, list);
 }
 
-RZ_API RZ_OWN RzList /*<RzDebugPid *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
-	RzList *list = rz_list_new();
+RZ_API RZ_OWN RzList /*<RzDebugProcess *>*/ *rz_debug_native_threads(RzDebug *dbg, int pid) {
+	RzList *list = rz_list_newf((RzListFree)rz_debug_thread_free);
 	if (!list) {
 		RZ_LOG_ERROR("Cannot create list\n");
 		return NULL;
