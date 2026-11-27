@@ -33,18 +33,24 @@ TSLanguage *tree_sitter_c();
 
 CParserState *c_parser_state_new(HtSP *base_types, HtSP *callable_types) {
 	CParserState *state = RZ_NEW0(CParserState);
-	if (!base_types) {
-		state->types = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	} else {
-		state->types = base_types;
+	if (!state) {
+		return NULL;
 	}
-	if (!callable_types) {
-		state->callables = ht_sp_new(HT_STR_DUP, NULL, NULL);
-	} else {
-		state->callables = callable_types;
-	}
+	state->types = base_types ? base_types : ht_sp_new(HT_STR_DUP, NULL, NULL);
+	state->callables = callable_types ? callable_types : ht_sp_new(HT_STR_DUP, NULL, NULL);
 	// Forward definitions require to have a special hashtable
 	state->forward = ht_sp_new(HT_STR_DUP, NULL, NULL);
+	if (!state->types || !state->callables || !state->forward) {
+		if (!base_types) {
+			ht_sp_free(state->types);
+		}
+		if (!callable_types) {
+			ht_sp_free(state->callables);
+		}
+		ht_sp_free(state->forward);
+		free(state);
+		return NULL;
+	}
 	// Initializing error/warning/debug messages buffers
 	state->errors = rz_strbuf_new("");
 	state->warnings = rz_strbuf_new("");
@@ -87,6 +93,7 @@ void c_parser_state_reset_keep_ht(CParserState *state) {
 struct rz_type_parser_t {
 	CParserState *state;
 	RzTypeDB *typedb; ///< Owner of the hashtables in state, its pending loads are applied before parsing
+	bool owns_hts; ///< True when parser created its own types/callables hash tables
 };
 
 /**
@@ -114,7 +121,15 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_new() {
 	if (!parser) {
 		return NULL;
 	}
-	parser->state = c_parser_state_new(NULL, NULL);
+	HtSP *types = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_base_type_free);
+	HtSP *callables = ht_sp_new(HT_STR_DUP, NULL, (HtSPFreeValue)rz_type_callable_free);
+	if (!types || !callables || !(parser->state = c_parser_state_new(types, callables))) {
+		ht_sp_free(types);
+		ht_sp_free(callables);
+		free(parser);
+		return NULL;
+	}
+	parser->owns_hts = true;
 	return parser;
 }
 
@@ -138,11 +153,15 @@ RZ_API RZ_OWN RzTypeParser *rz_type_parser_init(HtSP *types, HtSP *callables) {
 }
 
 /**
- * \brief Frees the instance of the C type parser without destroying hashtables
+ * \brief Frees the instance of the C type parser without destroying external hashtables
  */
 RZ_API void rz_type_parser_free(RZ_NONNULL RzTypeParser *parser) {
-	// We do not destroy HT by default since it might be used after
-	c_parser_state_free_keep_ht(parser->state);
+	if (parser->owns_hts) {
+		c_parser_state_free(parser->state);
+	} else {
+		// Do not destroy external hashtables owned by RzTypeDB
+		c_parser_state_free_keep_ht(parser->state);
+	}
 	free(parser);
 }
 
@@ -316,7 +335,8 @@ RZ_API int rz_type_parse_string(RzTypeDB *typedb, const char *code, char **error
  */
 RZ_API void rz_type_parse_reset(RzTypeDB *typedb) {
 	rz_type_parser_free(typedb->parser);
-	typedb->parser = rz_type_parser_new();
+	typedb->parser = rz_type_parser_init(typedb->types, typedb->callables);
+	rz_type_parser_set_typedb(typedb->parser, typedb);
 }
 
 /**
@@ -472,12 +492,13 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *pars
 	// And only after that - run the normal C/C++ syntax parsing
 
 	// Filter types function prototypes and start parsing
-	int i = 0, result = 0;
+	int i = 0, result = -1;
 	ParserTypePair *tpair = NULL;
 	for (i = 0; i < root_node_child_count; i++) {
 		parser_debug(parser->state, "Processing %d child...\n", i);
 		TSNode child = ts_node_named_child(root_node, i);
-		if (!parse_declaration_node(parser->state, child, code, &tpair)) {
+		result = parse_declaration_node(parser->state, child, code, &tpair);
+		if (!result) {
 			break;
 		}
 	}
@@ -507,5 +528,14 @@ RZ_API RZ_OWN RzType *rz_type_parse_string_declaration_single(RzTypeParser *pars
 	c_parser_state_reset_keep_ht(parser->state);
 	ts_tree_delete(tree);
 	ts_parser_delete(tsparser);
-	return tpair ? tpair->type : NULL;
+	if (result) {
+		if (tpair) {
+			rz_type_free(tpair->type);
+			free(tpair);
+		}
+		return NULL;
+	}
+	RzType *ret = tpair ? tpair->type : NULL;
+	free(tpair);
+	return ret;
 }
