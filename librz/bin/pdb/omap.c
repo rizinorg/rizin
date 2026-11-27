@@ -17,7 +17,7 @@ RZ_IPI bool omap_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		return false;
 	}
 	if (!s->entries) {
-		s->entries = rz_list_new();
+		s->entries = rz_list_newf(free);
 	}
 	ut32 size = rz_buf_size(buf);
 	ut32 read_len = 0;
@@ -25,12 +25,14 @@ RZ_IPI bool omap_stream_parse(RzPdb *pdb, RzPdbMsfStream *stream) {
 		OmapEntry *entry = RZ_NEW0(OmapEntry);
 		if (!entry) {
 			rz_list_free(s->entries);
+			s->entries = NULL;
 			return false;
 		}
 		if (!rz_buf_read_le32(buf, &entry->from) ||
 			!rz_buf_read_le32(buf, &entry->to)) {
 			free(entry);
 			rz_list_free(s->entries);
+			s->entries = NULL;
 			return false;
 		}
 		read_len += sizeof(ut32) * 2;
@@ -43,12 +45,8 @@ RZ_IPI void omap_stream_free(RzPdbOmapStream *stream) {
 	if (!stream) {
 		return;
 	}
-	OmapEntry *entry;
-	RzListIter *it;
-	rz_list_foreach (stream->entries, it, entry) {
-		RZ_FREE(entry);
-	}
 	rz_list_free(stream->entries);
+	free(stream->froms);
 	free(stream);
 }
 

@@ -29,3 +29,17 @@ EXPECT=<<EOF
 Hello from RzIL!
 EOF
 RUN
+
+NAME=xtensa rfi out-of-range level
+FILE=malloc://9
+ARGS=-a xtensa
+CMDS=<<EOF
+wx 103800103000103200
+aoi 1 @ 0
+aoi 1 @ 3
+aoi 1 @ 6
+EOF
+EXPECT=<<EOF
+0x6 (seq (set ps (var eps2)) (jmp (var epc2)))
+EOF
+RUN

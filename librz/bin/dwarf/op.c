@@ -1008,6 +1008,7 @@ static bool Evaluation_evaluate_one_operation(
 				loc->kind = RzBinDwarfLocationKind_REGISTER_OFFSET;
 				loc->offset += operation.frame_offset.offset;
 			} else {
+				rz_bin_dwarf_location_free(loc);
 				self->state.kind = EVALUATION_STATE_WAITING;
 				out->kind = OperationEvaluationResult_WAITING;
 				out->waiting._1 = EvaluationStateWaiting_FbReg;

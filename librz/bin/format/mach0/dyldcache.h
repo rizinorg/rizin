@@ -194,6 +194,7 @@ typedef struct rz_dyld_rebase_info_1_t {
 	ut16 *toc;
 	ut32 toc_count;
 	ut8 *entries;
+	ut32 entries_count;
 	ut32 entries_size;
 } RzDyldRebaseInfo1;
 
