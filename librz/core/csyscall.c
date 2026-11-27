@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2009-2021 pancake <pancake@nopcode.org>
 // SPDX-FileCopyrightText: 2009-2021 maijin <maijin21@gmail.com>
+// SPDX-FileCopyrightText: 2026 Abdallh <abdallhdawi3@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
@@ -32,12 +33,9 @@ RZ_API RZ_OWN char *rz_core_syscall_as_string(RzCore *core, st64 n, ut64 addr) {
 	RzReg *rreg = rz_analysis_get_reg(core->analysis);
 	RzSyscall *sysc = rz_analysis_get_syscall(core->analysis);
 	int defVector = rz_syscall_get_swi(sysc);
-	if (defVector > 0) {
-		n = -1;
-	}
-	if (n == -1 || defVector > 0) {
+	if (n < 1 || n == defVector) {
 		n = (int)rz_core_reg_getv_by_role_or_name(core, "oeax");
-		if (!n || n == -1) {
+		if (n < 1) {
 			const char *a0 = rz_reg_get_name(rreg, RZ_REG_NAME_SN);
 			n = (a0 == NULL) ? -1 : (int)rz_core_reg_getv_by_role_or_name(core, a0);
 		}
