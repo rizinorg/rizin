@@ -224,6 +224,74 @@ bool test_rz_bv_set_from(void) {
 	mu_end;
 }
 
+bool test_rz_bv_to_ut(void) {
+	static const ut8 pattern[32] = {
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
+		0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
+	};
+	static const ut32 widths[] = { 64, 65, 80, 128, 256 };
+
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(widths); i++) {
+		ut32 w = widths[i];
+		RzBitVector *bv = rz_bv_new(w);
+		mu_assert_eq(rz_bv_to_ut8(bv), 0, "zero bv to_ut8");
+		mu_assert_eq(rz_bv_to_ut16(bv), 0, "zero bv to_ut16");
+		mu_assert_eq(rz_bv_to_ut32(bv), 0, "zero bv to_ut32");
+		mu_assert_eq(rz_bv_to_ut64(bv), 0, "zero bv to_ut64");
+
+		rz_bv_set_from_bytes_le(bv, pattern, 0, w);
+		mu_assert_eq(rz_bv_to_ut8(bv), 0x01, "pattern bv to_ut8");
+		mu_assert_eq(rz_bv_to_ut16(bv), 0x2301, "pattern bv to_ut16");
+		mu_assert_eq(rz_bv_to_ut32(bv), 0x67452301, "pattern bv to_ut32");
+		mu_assert_eq(rz_bv_to_ut64(bv), 0xefcdab8967452301ULL, "pattern bv to_ut64");
+
+		rz_bv_set_all(bv, true);
+		mu_assert_eq(rz_bv_to_ut8(bv), UT8_MAX, "all-ones bv to_ut8");
+		mu_assert_eq(rz_bv_to_ut16(bv), UT16_MAX, "all-ones bv to_ut16");
+		mu_assert_eq(rz_bv_to_ut32(bv), UT32_MAX, "all-ones bv to_ut32");
+		mu_assert_eq(rz_bv_to_ut64(bv), UT64_MAX, "all-ones bv to_ut64");
+		rz_bv_free(bv);
+
+		if (w > 64) {
+			RzBitVector *hi = rz_bv_new_from_ut64(w, 0x0102030405060708ULL);
+			rz_bv_set(hi, 64, true);
+			rz_bv_set(hi, w - 1, true);
+			mu_assert_eq(rz_bv_to_ut8(hi), 0x08, "upper bits must not leak to ut8");
+			mu_assert_eq(rz_bv_to_ut16(hi), 0x0708, "upper bits must not leak to ut16");
+			mu_assert_eq(rz_bv_to_ut32(hi), 0x05060708,
+				"upper bits must not leak to ut32");
+			mu_assert_eq(rz_bv_to_ut64(hi), 0x0102030405060708ULL,
+				"upper bits must not leak to ut64");
+			rz_bv_free(hi);
+		}
+	}
+
+	RzBitVector *be65 = rz_bv_new(65);
+	rz_bv_set_from_bytes_be(be65, pattern, 0, 65);
+	mu_assert_eq(rz_bv_to_ut8(be65), 0xdf, "be 65-bit bv to_ut8");
+	mu_assert_eq(rz_bv_to_ut16(be65), 0x9bdf, "be 65-bit bv to_ut16");
+	mu_assert_eq(rz_bv_to_ut32(be65), 0x13579bdf, "be 65-bit bv to_ut32");
+	mu_assert_eq(rz_bv_to_ut64(be65), 0x02468acf13579bdfULL, "be 65-bit bv to_ut64");
+	rz_bv_free(be65);
+
+	RzBitVector *be80 = rz_bv_new(80);
+	rz_bv_set_from_bytes_be(be80, pattern, 0, 80);
+	mu_assert_eq(rz_bv_to_ut8(be80), 0xdc, "be 80-bit bv to_ut8");
+	mu_assert_eq(rz_bv_to_ut16(be80), 0xfedc, "be 80-bit bv to_ut16");
+	mu_assert_eq(rz_bv_to_ut32(be80), 0xcdeffedc, "be 80-bit bv to_ut32");
+	mu_assert_eq(rz_bv_to_ut64(be80), 0x456789abcdeffedcULL, "be 80-bit bv to_ut64");
+	rz_bv_set_from_bytes_be(be80, pattern, 0, 76);
+	mu_assert_eq(rz_bv_to_ut8(be80), 0xd0, "be 76-bit padded bv to_ut8");
+	mu_assert_eq(rz_bv_to_ut16(be80), 0xfed0, "be 76-bit padded bv to_ut16");
+	mu_assert_eq(rz_bv_to_ut32(be80), 0xcdeffed0, "be 76-bit padded bv to_ut32");
+	mu_assert_eq(rz_bv_to_ut64(be80), 0x456789abcdeffed0ULL, "be 76-bit padded bv to_ut64");
+	rz_bv_free(be80);
+
+	mu_end;
+}
+
 bool test_rz_bv_logic_large(void) {
 	RzBitVector *x, *y, *z;
 	RzBitVector *result;
@@ -2024,6 +2092,7 @@ bool all_tests() {
 	mu_run_test(test_rz_bv_init70);
 	mu_run_test(test_rz_bv_init_signed);
 	mu_run_test(test_rz_bv_set_from);
+	mu_run_test(test_rz_bv_to_ut);
 	mu_run_test(test_rz_bv_cmp);
 	mu_run_test(test_rz_bv_eq);
 	mu_run_test(test_rz_bv_cast);

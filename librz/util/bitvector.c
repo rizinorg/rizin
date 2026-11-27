@@ -2130,13 +2130,7 @@ RZ_API ut8 rz_bv_to_ut8(RZ_NONNULL const RzBitVector *x) {
 	if (x->len <= 64) {
 		return (ut8)x->bits.small_u & UT8_MAX;
 	}
-	ut8 ret = 0;
-	for (ut32 i = 0; i < x->len && i < 8; ++i) {
-		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
-		}
-	}
-	return ret;
+	return x->bits.large_a[0];
 }
 
 /**
@@ -2149,13 +2143,7 @@ RZ_API ut16 rz_bv_to_ut16(RZ_NONNULL const RzBitVector *x) {
 	if (x->len <= 64) {
 		return (ut16)x->bits.small_u & UT16_MAX;
 	}
-	ut16 ret = 0;
-	for (ut32 i = 0; i < x->len && i < 16; ++i) {
-		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
-		}
-	}
-	return ret;
+	return rz_read_le16(x->bits.large_a);
 }
 
 /**
@@ -2168,13 +2156,7 @@ RZ_API ut32 rz_bv_to_ut32(RZ_NONNULL const RzBitVector *x) {
 	if (x->len <= 64) {
 		return (ut32)x->bits.small_u & UT32_MAX;
 	}
-	ut32 ret = 0;
-	for (ut32 i = 0; i < x->len && i < 32; ++i) {
-		if (rz_bv_get(x, i)) {
-			ret |= 1 << i;
-		}
-	}
-	return ret;
+	return rz_read_le32(x->bits.large_a);
 }
 
 /**
@@ -2187,13 +2169,7 @@ RZ_API ut64 rz_bv_to_ut64(RZ_NONNULL const RzBitVector *x) {
 	if (x->len <= 64) {
 		return x->bits.small_u;
 	}
-	ut64 ret = 0;
-	for (ut32 i = 0; i < x->len && i < 64; ++i) {
-		if (rz_bv_get(x, i)) {
-			ret |= 1ULL << i;
-		}
-	}
-	return ret;
+	return rz_read_le64(x->bits.large_a);
 }
 
 /**
