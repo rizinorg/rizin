@@ -911,6 +911,10 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 		return RZ_ANALYSIS_RET_ERROR; // MUST BE NOT FOUND
 	}
 
+	if (rz_analysis_is_beyond_limits(analysis, addr)) {
+		return RZ_ANALYSIS_RET_END;
+	}
+
 	if (!bb) {
 		RzAnalysisBlock *existing_bb = bbget(analysis, addr, can_jmpmid);
 		if (existing_bb) {
@@ -950,9 +954,6 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 	bool last_is_mov_lr_pc = false;
 	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
-	if (rz_analysis_has_valid_limits(analysis) && addr + idx < rz_itv_begin(analysis->limit)) {
-		gotoBeach(RZ_ANALYSIS_RET_END);
-	}
 	RzAnalysisFunction *tmp_fcn = rz_analysis_get_fcn_in(analysis, addr, 0);
 	if (tmp_fcn) {
 		// Checks if var is already analyzed at given addr
@@ -991,7 +992,7 @@ static RzAnalysisBBEndCause run_basic_block_analysis(RzAnalysisTaskItem *item, R
 			last_reg_mov_lea_name = NULL;
 		}
 		if (rz_analysis_has_valid_limits(analysis) && rz_itv_end(analysis->limit) <= addr + idx) {
-			break;
+			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
 	repeat:
 		at_delta = idx;

@@ -630,7 +630,6 @@ bool test_bin_set_export_info(void) {
 	rz_core_free(core);
 	mu_end;
 }
-
 static void emit_x64_go_lea_mov(ut8 *code, ut64 pc, ut64 str_addr, ut32 str_len) {
 	st32 disp = (st32)((st64)str_addr - (st64)(pc + 7));
 	code[0] = 0x48;
@@ -739,7 +738,237 @@ bool test_golang_oversized_bb_strings(void) {
 	rz_core_free(core);
 	mu_end;
 }
+static void build_synthetic_pe64(ut8 *buf, ut16 machine) {
+	/* DOS header */
+	buf[0] = 'M';
+	buf[1] = 'Z';
+	rz_write_le32(buf + 0x3c, 0x80); /* e_lfanew */
 
+	/* NT signature + FileHeader at 0x80 */
+	buf[0x80] = 'P';
+	buf[0x81] = 'E';
+	rz_write_le16(buf + 0x84, machine); /* Machine */
+	rz_write_le16(buf + 0x86, 3); /* NumberOfSections */
+	rz_write_le16(buf + 0x94, 0xf0); /* SizeOfOptionalHeader */
+	rz_write_le16(buf + 0x96, 0x0022); /* Characteristics */
+
+	/* OptionalHeader (PE32+) at 0x98 */
+	rz_write_le16(buf + 0x98, 0x020b); /* Magic = PE32+ */
+	rz_write_le32(buf + 0xa8, 0x1000); /* AddressOfEntryPoint */
+	rz_write_le64(buf + 0xb0, 0x140000000ULL); /* ImageBase */
+	rz_write_le32(buf + 0xb8, 0x1000); /* SectionAlignment */
+	rz_write_le32(buf + 0xbc, 0x200); /* FileAlignment */
+	rz_write_le32(buf + 0xd0, 0x4000); /* SizeOfImage */
+	rz_write_le32(buf + 0xd4, 0x200); /* SizeOfHeaders */
+	rz_write_le16(buf + 0xdc, 3); /* Subsystem = CUI */
+	rz_write_le32(buf + 0x104, 16); /* NumberOfRvaAndSizes */
+
+	/* DataDirectory[3] (EXCEPTION / .pdata) at 0x120 */
+	rz_write_le32(buf + 0x120, 0x3000); /* VirtualAddress */
+	rz_write_le32(buf + 0x124, 6 * 12); /* Size = 6 RUNTIME_FUNCTION entries */
+
+	/* Section 0: .text (executable) at 0x188 */
+	memcpy(buf + 0x188, ".text", 5);
+	rz_write_le32(buf + 0x188 + 8, 0x200);
+	rz_write_le32(buf + 0x188 + 12, 0x1000);
+	rz_write_le32(buf + 0x188 + 16, 0x200);
+	rz_write_le32(buf + 0x188 + 20, 0x200);
+	rz_write_le32(buf + 0x188 + 36, 0x60000020); /* CODE | EXECUTE | READ */
+
+	/* Section 1: .rdata (non-executable, unwind info) at 0x1b0 */
+	memcpy(buf + 0x1b0, ".rdata", 6);
+	rz_write_le32(buf + 0x1b0 + 8, 0x200);
+	rz_write_le32(buf + 0x1b0 + 12, 0x2000);
+	rz_write_le32(buf + 0x1b0 + 16, 0x200);
+	rz_write_le32(buf + 0x1b0 + 20, 0x400);
+	rz_write_le32(buf + 0x1b0 + 36, 0x40000040); /* INITIALIZED_DATA | READ */
+
+	/* Section 2: .pdata at 0x1d8 */
+	memcpy(buf + 0x1d8, ".pdata", 6);
+	rz_write_le32(buf + 0x1d8 + 8, 0x200);
+	rz_write_le32(buf + 0x1d8 + 12, 0x3000);
+	rz_write_le32(buf + 0x1d8 + 16, 0x200);
+	rz_write_le32(buf + 0x1d8 + 20, 0x600);
+	rz_write_le32(buf + 0x1d8 + 36, 0x40000040);
+
+	/* .text body at 0x200 */
+	/* Entry 0 at RVA 0x1000: tail-jmp to RVA 0x1010 (entry 1) */
+	buf[0x200] = 0xeb;
+	buf[0x201] = 0x0e;
+	buf[0x210] = 0xc3; /* ret at RVA 0x1010 (unreferenced function) */
+
+	/* .rdata body at 0x400: UNWIND_INFO structs */
+	buf[0x400] = 0x01; /* RVA 0x2000: Version=1, Flags=0 (normal) */
+	buf[0x410] = 0x21; /* RVA 0x2010: Version=1, Flags=4 (UNW_FLAG_CHAININFO) */
+
+	/* .pdata body at 0x600: 6 RUNTIME_FUNCTION entries */
+	/* Entry 0: valid executable function (entry0) */
+	rz_write_le32(buf + 0x600, 0x1000);
+	rz_write_le32(buf + 0x604, 0x1010);
+	rz_write_le32(buf + 0x608, 0x2000);
+	/* Entry 1: valid unreferenced executable function */
+	rz_write_le32(buf + 0x60c, 0x1010);
+	rz_write_le32(buf + 0x610, 0x1020);
+	rz_write_le32(buf + 0x614, 0x2000);
+	/* Entry 2: skipped (UNW_FLAG_CHAININFO) */
+	rz_write_le32(buf + 0x618, 0x1020);
+	rz_write_le32(buf + 0x61c, 0x1040);
+	rz_write_le32(buf + 0x620, 0x2010);
+	/* Entry 3: skipped (UnwindData & 1) */
+	rz_write_le32(buf + 0x624, 0x1040);
+	rz_write_le32(buf + 0x628, 0x1060);
+	rz_write_le32(buf + 0x62c, 0x3001);
+	/* Entry 4: skipped (BeginAddress in non-executable .rdata) */
+	rz_write_le32(buf + 0x630, 0x2040);
+	rz_write_le32(buf + 0x634, 0x2060);
+	rz_write_le32(buf + 0x638, 0x2000);
+	/* Entry 5: skipped (EndAddress past .text vaddr + vsize) */
+	rz_write_le32(buf + 0x63c, 0x1060);
+	rz_write_le32(buf + 0x640, 0x2100);
+	rz_write_le32(buf + 0x644, 0x2000);
+}
+
+bool test_bin_function_ranges_api(void) {
+	RzBinFunctionRange *fr = rz_bin_function_range_new(0x1000, 0x1050);
+	mu_assert_notnull(fr, "rz_bin_function_range_new");
+	mu_assert_eq(fr->start, 0x1000, "function range start");
+	mu_assert_eq(fr->end, 0x1050, "function range end");
+	rz_bin_function_range_free(fr);
+	rz_bin_function_range_free(NULL);
+	mu_end;
+}
+
+bool test_bin_pe64_function_ranges(void) {
+	ut8 buf[0x800] = { 0 };
+
+	/* 1. AMD64 PE64: normal entry kept, CHAININFO / bit-0 / non-exec skipped */
+	build_synthetic_pe64(buf, 0x8664);
+	RzCore *core = rz_core_new();
+	RzCoreFile *f = rz_core_file_open(core, "malloc://2048", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc file for amd64 pe64");
+	mu_assert_true(rz_io_pwrite_at(core->io, 0, buf, sizeof(buf)), "write pe64");
+	mu_assert_true(rz_core_bin_load(core, NULL, UT64_MAX), "load amd64 pe64");
+
+	RzBinFile *bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "cur binfile");
+	mu_assert_streq(bf->o->plugin->name, "pe64", "pe64 plugin loaded");
+	const RzPVector *franges = rz_bin_file_get_function_ranges(bf);
+	mu_assert_notnull(franges, "function ranges vector");
+	mu_assert_eq(rz_pvector_len(franges), 2, "two valid executable non-chained entries");
+	mu_assert_ptreq(rz_bin_file_get_function_ranges(bf), franges, "cached function ranges pointer");
+	const RzBinFunctionRange *fr0 = rz_pvector_at(franges, 0);
+	const RzBinFunctionRange *fr1 = rz_pvector_at(franges, 1);
+	mu_assert_notnull(fr0, "first function range");
+	mu_assert_notnull(fr1, "second function range");
+	mu_assert_eq(fr0->start, 0x140001000ULL, "range 0 start");
+	mu_assert_eq(fr0->end, 0x140001010ULL, "range 0 end");
+	mu_assert_eq(fr1->start, 0x140001010ULL, "range 1 start");
+	mu_assert_eq(fr1->end, 0x140001020ULL, "range 1 end");
+
+	/* Verify aa discovers unreferenced .pdata function in io.va=true */
+	rz_core_analysis_all(core);
+	RzAnalysisFunction *fcn0 = rz_analysis_get_function_at(core->analysis, 0x140001000ULL);
+	RzAnalysisFunction *fcn1 = rz_analysis_get_function_at(core->analysis, 0x140001010ULL);
+	mu_assert_notnull(fcn0, "aa finds entry 0");
+	mu_assert_notnull(fcn1, "aa finds unreferenced .pdata function (io.va=true)");
+	mu_assert_true(rz_analysis_function_max_addr(fcn0) <= 0x140001010ULL, "entry 0 bounded by fr->end");
+	rz_core_free(core);
+
+	/* 2. AMD64 PE64 with io.va=false: aa discovers unreferenced function at paddr 0x210 */
+	core = rz_core_new();
+	rz_config_set_b(core->config, "io.va", false);
+	f = rz_core_file_open(core, "malloc://2048", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc file for io.va=false");
+	mu_assert_true(rz_io_pwrite_at(core->io, 0, buf, sizeof(buf)), "write pe64 for io.va=false");
+	mu_assert_true(rz_core_bin_load(core, NULL, 0x200000000ULL), "load pe64 with io.va=false and shifted base");
+	rz_core_analysis_all(core);
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x210), "aa finds unreferenced .pdata function (io.va=false)");
+	rz_core_free(core);
+	/* 3. ARM64 PE64: packed + .xdata entries parsed, reserved skipped, aa discovers */
+	memset(buf, 0, sizeof(buf));
+	build_synthetic_pe64(buf, 0xaa64);
+	rz_write_le32(buf + 0x124, 4 * 8); /* Size = 4 8-byte ARM64 .pdata entries */
+	/* ARM64 ret (0xd65f03c0) at RVA 0x1000 and 0x1010 */
+	rz_write_le32(buf + 0x200, 0xd65f03c0);
+	rz_write_le32(buf + 0x210, 0xd65f03c0);
+	/* .xdata header at RVA 0x2000: vers=0, func_len=4 words (16 bytes) */
+	rz_write_le32(buf + 0x400, 0x00000004);
+	/* Entry 0: packed (flag=1, len=4 words = 16 bytes) -> [0x1000, 0x1010) */
+	rz_write_le32(buf + 0x600, 0x1000);
+	rz_write_le32(buf + 0x604, (4u << 2) | 1u);
+	/* Entry 1: .xdata (flag=0, RVA 0x2000) -> [0x1010, 0x1020) */
+	rz_write_le32(buf + 0x608, 0x1010);
+	rz_write_le32(buf + 0x60c, 0x2000);
+	/* Entry 2: reserved (flag=3) -> skipped */
+	rz_write_le32(buf + 0x610, 0x1020);
+	rz_write_le32(buf + 0x614, (4u << 2) | 3u);
+	/* Entry 3: separated segment (flag=2) -> skipped */
+	rz_write_le32(buf + 0x618, 0x1030);
+	rz_write_le32(buf + 0x61c, (4u << 2) | 2u);
+
+	core = rz_core_new();
+	f = rz_core_file_open(core, "malloc://2048", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc file for arm64 pe64");
+	mu_assert_true(rz_io_pwrite_at(core->io, 0, buf, sizeof(buf)), "write arm64 pe64");
+	mu_assert_true(rz_core_bin_load(core, NULL, UT64_MAX), "load arm64 pe64");
+
+	bf = rz_bin_cur(core->bin);
+	mu_assert_notnull(bf, "cur binfile arm64");
+	franges = rz_bin_file_get_function_ranges(bf);
+	mu_assert_notnull(franges, "arm64 function ranges vector");
+	mu_assert_eq(rz_pvector_len(franges), 2, "two valid arm64 entries (packed + .xdata)");
+	fr0 = rz_pvector_at(franges, 0);
+	fr1 = rz_pvector_at(franges, 1);
+	mu_assert_eq(fr0->start, 0x140001000ULL, "arm64 range 0 start");
+	mu_assert_eq(fr0->end, 0x140001010ULL, "arm64 range 0 end");
+	mu_assert_eq(fr1->start, 0x140001010ULL, "arm64 range 1 start");
+	mu_assert_eq(fr1->end, 0x140001020ULL, "arm64 range 1 end");
+	rz_core_analysis_all(core);
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x140001010ULL), "aa finds unreferenced arm64 .pdata function");
+	rz_core_free(core);
+	/* 4. Linear fallthrough past fr->end, Loop 2 direct CALL & tail-JMP leaf recovery, and limits intersection */
+	memset(buf, 0, sizeof(buf));
+	build_synthetic_pe64(buf, 0x8664);
+	/* Entry 0 [0x140001000, 0x140001010): call 0x140001030 (rel32=0x2b) + 11 NOPs (linear fallthrough) */
+	buf[0x200] = 0xe8;
+	rz_write_le32(buf + 0x201, 0x2b);
+	memset(buf + 0x205, 0x90, 11);
+	/* Entry 1 [0x140001010, 0x140001020): tail-jmp 0x140001040 (rel8=0x2e) */
+	buf[0x210] = 0xeb;
+	buf[0x211] = 0x2e;
+	/* Leaf 1 at 0x140001030 and Leaf 2 at 0x140001040 (no .pdata entries): ret */
+	buf[0x230] = 0xc3;
+	buf[0x240] = 0xc3;
+
+	core = rz_core_new();
+	f = rz_core_file_open(core, "malloc://2048", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc file for leaf/fallthrough test");
+	mu_assert_true(rz_io_pwrite_at(core->io, 0, buf, sizeof(buf)), "write pe64");
+	mu_assert_true(rz_core_bin_load(core, NULL, UT64_MAX), "load pe64");
+	rz_core_analysis_all(core);
+	fcn0 = rz_analysis_get_function_at(core->analysis, 0x140001000ULL);
+	mu_assert_notnull(fcn0, "entry 0 recovered");
+	mu_assert_true(rz_analysis_function_max_addr(fcn0) <= 0x140001010ULL, "linear fallthrough bounded by fr->end");
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x140001030ULL), "direct CALL leaf recovered");
+	mu_assert_notnull(rz_analysis_get_function_at(core->analysis, 0x140001040ULL), "tail-JMP leaf recovered");
+	rz_core_free(core);
+
+	/* 5. analysis.limits intersection */
+	core = rz_core_new();
+	f = rz_core_file_open(core, "malloc://2048", RZ_PERM_RW, 0);
+	mu_assert_notnull(f, "open malloc file for limits test");
+	mu_assert_true(rz_io_pwrite_at(core->io, 0, buf, sizeof(buf)), "write pe64");
+	mu_assert_true(rz_core_bin_load(core, NULL, UT64_MAX), "load pe64");
+	rz_analysis_set_limits(core->analysis, 0x140001000ULL, 0x140001008ULL);
+	rz_core_analysis_all(core);
+	fcn0 = rz_analysis_get_function_at(core->analysis, 0x140001000ULL);
+	mu_assert_notnull(fcn0, "in-limit entry 0 recovered");
+	mu_assert_true(rz_analysis_function_max_addr(fcn0) <= 0x140001008ULL, "entry 0 intersected with analysis.to");
+	mu_assert_null(rz_analysis_get_function_at(core->analysis, 0x140001010ULL), "out-of-limit entry 1 skipped");
+	mu_assert_null(rz_analysis_get_function_at(core->analysis, 0x140001030ULL), "out-of-limit leaf skipped");
+	rz_core_free(core);
+	mu_end;
+}
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +980,8 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_function_ranges_api);
+	mu_run_test(test_bin_pe64_function_ranges);
 	return tests_passed != tests_run;
 }
 

@@ -604,6 +604,27 @@ RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NO
 	}
 	return bf->o->trycatch;
 }
+/**
+ * \brief Get the function ranges information from the given binary file.
+ *
+ * If the function ranges have not been parsed yet, it will call the plugin's
+ * function_ranges method to load them. If that fails then an empty vector will be returned.
+ *
+ * \param bf Binary file
+ * \return Borrowed vector of RzBinFunctionRange pointers
+ */
+RZ_API RZ_BORROW RzPVector /*<RzBinFunctionRange *>*/ *rz_bin_file_get_function_ranges(RZ_NONNULL RzBinFile *bf) {
+	rz_return_val_if_fail(bf && bf->o, NULL);
+	if (!bf->o->function_ranges) {
+		if (bf->o->plugin && bf->o->plugin->function_ranges) {
+			bf->o->function_ranges = bf->o->plugin->function_ranges(bf);
+		}
+		if (!bf->o->function_ranges) {
+			bf->o->function_ranges = rz_pvector_new((RzPVectorFree)rz_bin_function_range_free);
+		}
+	}
+	return bf->o->function_ranges;
+}
 
 RZ_API RzPVector /*<RzBinSymbol *>*/ *rz_bin_file_get_symbols(RzBinFile *bf) {
 	rz_return_val_if_fail(bf, NULL);
