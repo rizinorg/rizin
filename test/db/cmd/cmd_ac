@@ -830,3 +830,55 @@ impl_rust_any::Dog_as_rust_any::Pet:
      0 vtable 0x512f8 @ +0x0 size:+0x20
 EOF
 RUN
+
+NAME=Detect stripped Rust ELF64 and recover anonymous trait vtables
+FILE=bins/elf/rust_stripped
+CMDS=<<EOF
+i~^lang
+i~^stripped
+avrr
+acl~?
+acil impl_anon_0x4a338_as_trait_0x4a338
+acvl impl_anon_0x4a338_as_trait_0x4a338
+EOF
+EXPECT=<<EOF
+lang     rust
+stripped true
+24
+[impl_anon_0x4a338_as_trait_0x4a338]
+  (vtable at 0x4a338)
+nth       addr  vt_offset type    name                                         
+-------------------------------------------------------------------------------
+  1 0x0000ffcf 0x00000018 VIRTUAL <anon_0x4a338 as trait_0x4a338>::method_0x18
+  2 0x0000ffca 0x00000020 VIRTUAL <anon_0x4a338 as trait_0x4a338>::method_0x20
+
+impl_anon_0x4a338_as_trait_0x4a338:
+     0 vtable 0x4a338 @ +0x0 size:+0x28
+EOF
+RUN
+
+NAME=Detect stripped Rust PE64 and recover anonymous trait vtables
+FILE=bins/pe/rust_stripped.exe
+CMDS=<<EOF
+i~^lang
+i~^stripped
+avrr
+acl~?
+acil impl_anon_0x140036880_as_trait_0x140036880
+acvl impl_anon_0x140036880_as_trait_0x140036880
+EOF
+EXPECT=<<EOF
+lang     rust
+stripped true
+25
+[impl_anon_0x140036880_as_trait_0x140036880]
+  (vtable at 0x140036880)
+nth        addr  vt_offset type    name                                                 
+----------------------------------------------------------------------------------------
+  1 0x140002481 0x00000018 VIRTUAL <anon_0x140036880 as trait_0x140036880>::method_0x18
+  2 0x14000247c 0x00000020 VIRTUAL <anon_0x140036880 as trait_0x140036880>::method_0x20
+
+impl_anon_0x140036880_as_trait_0x140036880:
+     0 vtable 0x140036880 @ +0x0 size:+0x28
+EOF
+RUN
