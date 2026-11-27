@@ -1685,6 +1685,7 @@ static const RzCmdDescArg cmd_search_assemble_fl_args[] = {
 		.name = "family",
 		.type = RZ_CMD_ARG_TYPE_STRING,
 		.flags = RZ_CMD_ARG_FLAG_LAST,
+		.optional = true,
 
 	},
 	{ 0 },
@@ -22770,10 +22771,10 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_assemble_d_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ad", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_d_handler, &cmd_search_assemble_d_help);
 	rz_warn_if_fail(cmd_search_assemble_d_cd);
 
-	RzCmdDesc *cmd_search_assemble_d_slash_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ad/", rz_cmd_search_assemble_d_slash_handler, &cmd_search_assemble_d_slash_help);
+	RzCmdDesc *cmd_search_assemble_d_slash_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ad/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_d_slash_handler, &cmd_search_assemble_d_slash_help);
 	rz_warn_if_fail(cmd_search_assemble_d_slash_cd);
 
-	RzCmdDesc *cmd_search_assemble_d_slasha_cd = rz_cmd_desc_argv_new(core->rcmd, slash_a_cd, "/ad/a", rz_cmd_search_assemble_d_slasha_handler, &cmd_search_assemble_d_slasha_help);
+	RzCmdDesc *cmd_search_assemble_d_slasha_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ad/a", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_d_slasha_handler, &cmd_search_assemble_d_slasha_help);
 	rz_warn_if_fail(cmd_search_assemble_d_slasha_cd);
 
 	RzCmdDesc *cmd_search_assemble_e_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ae", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_e_handler, &cmd_search_assemble_e_help);
@@ -22781,7 +22782,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_af_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/af", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_f_handler, &cmd_search_assemble_f_help, &slash_af_help);
 	rz_warn_if_fail(slash_af_cd);
-	RzCmdDesc *cmd_search_assemble_fl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_af_cd, "/afl", rz_cmd_search_assemble_fl_handler, &cmd_search_assemble_fl_help);
+	RzCmdDesc *cmd_search_assemble_fl_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_af_cd, "/afl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_fl_handler, &cmd_search_assemble_fl_help);
 	rz_warn_if_fail(cmd_search_assemble_fl_cd);
 
 	RzCmdDesc *cmd_search_assemble_i_cd = rz_cmd_desc_argv_modes_new(core->rcmd, slash_a_cd, "/ai", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_i_handler, &cmd_search_assemble_i_help);
@@ -22798,12 +22799,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *slash_as_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/as", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_s_handler, &cmd_search_assemble_s_help, &slash_as_help);
 	rz_warn_if_fail(slash_as_cd);
-	RzCmdDesc *cmd_search_assemble_sl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_as_cd, "/asl", rz_cmd_search_assemble_sl_handler, &cmd_search_assemble_sl_help);
+	RzCmdDesc *cmd_search_assemble_sl_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_as_cd, "/asl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_sl_handler, &cmd_search_assemble_sl_help);
 	rz_warn_if_fail(cmd_search_assemble_sl_cd);
 
 	RzCmdDesc *slash_at_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash_a_cd, "/at", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_t_handler, &cmd_search_assemble_t_help, &slash_at_help);
 	rz_warn_if_fail(slash_at_cd);
-	RzCmdDesc *cmd_search_assemble_tl_cd = rz_cmd_desc_argv_new(core->rcmd, slash_at_cd, "/atl", rz_cmd_search_assemble_tl_handler, &cmd_search_assemble_tl_help);
+	RzCmdDesc *cmd_search_assemble_tl_cd = rz_cmd_desc_argv_state_new(core->rcmd, slash_at_cd, "/atl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_assemble_tl_handler, &cmd_search_assemble_tl_help);
 	rz_warn_if_fail(cmd_search_assemble_tl_cd);
 
 	RzCmdDesc *slash_c_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/c", NULL, NULL, &slash_c_help);

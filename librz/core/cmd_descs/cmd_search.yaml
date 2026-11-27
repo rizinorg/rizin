@@ -75,12 +75,18 @@ commands:
     - name: "/ad/"
       summary: "Search for regex instruction 'ins1' followed by regex 'ins2'"
       cname: cmd_search_assemble_d_slash
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
       args:
         - name: "ins1;ins2"
           type: RZ_CMD_ARG_TYPE_STRING
     - name: "/ad/a"
       summary: "Search for every byte instruction that matches regexp 'instr'"
       cname: cmd_search_assemble_d_slasha
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
       args:
         - name: "instr"
           type: RZ_CMD_ARG_TYPE_STRING
@@ -108,9 +114,14 @@ commands:
       - name: "/afl"
         summary: "Search for instruction of specific family. List mode."
         cname: cmd_search_assemble_fl
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: "family"
             type: RZ_CMD_ARG_TYPE_STRING
+            optional: true
     - name: "/ai"
       summary: "Find all the instructions using that immediate (in range)"
       cname: cmd_search_assemble_i
@@ -164,6 +175,10 @@ commands:
       - name: "/asl"
         summary: "Search for syscalls (See /at swi and /af priv). List mode."
         cname: cmd_search_assemble_sl
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: "type"
             optional: true
@@ -184,6 +199,10 @@ commands:
       - name: "/atl"
         summary: "Search for instructions of given type. List mode."
         cname: cmd_search_assemble_tl
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: "type"
             optional: true

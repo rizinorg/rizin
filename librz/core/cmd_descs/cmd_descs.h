@@ -78,15 +78,15 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_c_handler(RzCore *core, int argc, cons
 // "/ad"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/ad/"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slash_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/ad/a"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_d_slasha_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/ae"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_e_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/af"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_f_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/afl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_fl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/ai"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_i_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/al"
@@ -98,11 +98,11 @@ RZ_IPI RzCmdStatus rz_cmd_search_assemble_o_handler(RzCore *core, int argc, cons
 // "/as"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_s_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/asl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_sl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/at"
 RZ_IPI RzCmdStatus rz_cmd_search_assemble_t_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/atl"
-RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_assemble_tl_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/ch"
 RZ_IPI RzCmdStatus rz_cmd_search_hash_block_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state);
 // "/ce"

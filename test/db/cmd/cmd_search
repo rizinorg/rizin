@@ -1063,3 +1063,29 @@ fcn.00000000; first line 0x0 [CALL] call 0x10
 []
 EOF
 RUN
+
+NAME=/ad/, /ad/a, /afl, /asl and /atl in JSON
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e asm.os=linux
+wx 5589e55dc3
+/ad/j push e.p
+/ad/aj pop e.p
+/aflj
+/afl~?
+/atlj~{[1]}
+/aslj~{[0]}
+aslj~{[0]}
+EOF
+EXPECT=<<EOF
+[{"offset":0,"len":1,"code":"push ebp"}]
+[{"offset":3,"len":1,"code":"pop ebp"}]
+["cpu","fpu","mmx","sse","priv","crpt","thread","virt","sec","io"]
+10
+jmp
+{"name":"mmap","swi":128,"num":90}
+{"name":"mmap","swi":128,"num":90}
+EOF
+RUN
