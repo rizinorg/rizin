@@ -11,3 +11,35 @@ EXPECT=<<EOF
 0x08048409
 EOF
 RUN
+
+NAME=write watchpoint traps after the store
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+s obj.completed.6661
+dbw w 1
+dc
+s rip
+fs symbols
+fd
+EOF
+EXPECT=<<EOF
+entry.fini0 + 26
+EOF
+RUN
+
+NAME=rw watchpoint traps at the first access (the read)
+FILE=bins/elf/analysis/calls_x64
+ARGS=-d
+CMDS=<<EOF
+s obj.completed.6661
+dbw rw 1
+dc
+s rip
+fs symbols
+fd
+EOF
+EXPECT=<<EOF
+entry.fini0 + 7
+EOF
+RUN
