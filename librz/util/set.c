@@ -48,10 +48,15 @@ RZ_API RZ_OWN RzSetS *rz_str_split_dupset(RZ_NONNULL const char *_str, RZ_NONNUL
 
 /**
  * \brief Add element \p str to hash set \p set.
+ *
+ * \param set The set to add the str to.
+ * \param str The str to add.
+ *
+ * \return True if \p str was added, false in case of error.
  */
-RZ_API void rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
-	rz_return_if_fail(set);
-	ht_sp_insert(set, str, (void *)1);
+RZ_API bool rz_set_s_add(RZ_NONNULL RzSetS *set, const char *str) {
+	rz_return_val_if_fail(set, false);
+	return ht_sp_insert_ex(set, str, (void *)1, NULL) != HT_RC_ERROR;
 }
 
 /**
@@ -138,10 +143,15 @@ RZ_API RZ_OWN RzSetU *rz_set_u_new(void) {
 
 /**
  * \brief Add element \p u to hash set \p set.
+ *
+ * \param set The set to add the value to.
+ * \param u The value to add.
+ *
+ * \return True if \p u was added, false in case of error.
  */
-RZ_API void rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
-	rz_return_if_fail(set);
-	ht_up_insert(set, u, (void *)1);
+RZ_API bool rz_set_u_add(RZ_NONNULL RzSetU *set, ut64 u) {
+	rz_return_val_if_fail(set, false);
+	return ht_up_insert_ex(set, u, (void *)1, NULL) != HT_RC_ERROR;
 }
 
 static bool take_first(void *user, const ut64 k, const void *v) {
@@ -243,13 +253,15 @@ RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
 			return SZT_MAX;
 		}
 	}
-
+	size_t lsize = 0;
 	bool failed = false;
 	for (;;) {
 		const RzSetU *cur = va_arg(ap, const RzSetU *);
 		if (!cur) {
+			failed = lsize == 0;
 			break;
 		}
+		lsize++;
 		if (cur == s) {
 			// Its elements are already part of the union and inserting
 			// them would modify the set we are iterating over.
@@ -263,7 +275,11 @@ RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
 		}
 		const ut64 *u;
 		rz_iterator_foreach(&it, u) {
-			rz_set_u_add(s, *u);
+			if (!rz_set_u_add(s, *u)) {
+				failed = true;
+				rz_warn_if_reached();
+				break;
+			}
 		}
 		rz_iterator_fini(&it);
 		if (failed) {
@@ -277,6 +293,163 @@ RZ_API size_t rz_set_u_union(RZ_OUT RZ_NULLABLE RzSetU *union_set, ...) {
 		rz_set_u_free(s);
 	}
 	return failed ? SZT_MAX : size;
+}
+
+static size_t add_to_difference(const RzSetU *first, RzSetU *diff_set, va_list ap) {
+	if (!first) {
+		// The list is empty, thus the difference is empty.
+		return diff_set ? rz_set_u_size(diff_set) : 0;
+	}
+
+	size_t count = 0;
+	RzIterator it = (RzIterator){ 0 };
+	if (!rz_set_u_as_iter(first, &it)) {
+		rz_warn_if_reached();
+		return SZT_MAX;
+	}
+	const ut64 *u;
+	rz_iterator_foreach(&it, u) {
+		bool in_any = false;
+		va_list ap3;
+		va_copy(ap3, ap);
+		for (const RzSetU *cur = va_arg(ap3, const RzSetU *); cur; cur = va_arg(ap3, const RzSetU *)) {
+			if (rz_set_u_contains(cur, *u)) {
+				in_any = true;
+				break;
+			}
+		}
+		va_end(ap3);
+		if (!in_any) {
+			count++;
+			if (diff_set) {
+				if (!rz_set_u_add(diff_set, *u)) {
+					rz_iterator_fini(&it);
+					rz_warn_if_reached();
+					return SZT_MAX;
+				}
+			}
+		}
+	}
+	rz_iterator_fini(&it);
+
+	return diff_set ? rz_set_u_size(diff_set) : count;
+}
+
+/**
+ * \brief Determines the difference set of all given sets.
+ *
+ * The difference set consists of all elements of the first given set that
+ * are not contained in any of the other given sets.
+ *
+ * \param diff_set Optional pointer to the set where the difference is written to.
+ *                 If it is the first of the given sets, it is reduced to the
+ *                 difference instead, otherwise the elements of the difference
+ *                 are added to it. If it is one of the other given sets, its
+ *                 content is replaced by the difference.
+ * \param ... The sets to build the difference from. The first set is the one
+ *            the other sets are subtracted from. They are of type (const RzSetU *).
+ *            The list must be terminated by NULL.
+ *
+ * \return The size of the difference set or SZT_MAX in case of error.
+ *
+ * Examples:
+ * ```
+ * A = {1, 2, 3} B = {2, 3, 4} C = {5, 6} X = {} Y = {5} Z = {1, 6}
+ * rz_set_u_difference(X, A, B, NULL);
+ * // X = {1}
+ * rz_set_u_difference(Y, A, B, NULL);
+ * // Y = {5, 1}
+ * rz_set_u_difference(A, A, B, NULL);
+ * // A = {1}
+ * rz_set_u_difference(Z, C, Z, NULL);
+ * // Z = {5}
+ * ```
+ */
+RZ_API size_t rz_set_u_difference(RZ_OUT RZ_NULLABLE RzSetU *diff_set, ...) {
+	va_list ap;
+	va_start(ap, diff_set);
+
+	const RzSetU *first = va_arg(ap, const RzSetU *);
+	if (!first) {
+		return SZT_MAX;
+	}
+
+	if (diff_set && first == diff_set) {
+		// diff_set is the set to subtract from, thus all elements of the
+		// difference are already contained in it. Reduce it by deleting
+		// every element that is contained in any of the other sets.
+		RzIterator it = (RzIterator){ 0 };
+		if (!rz_set_u_as_iter(diff_set, &it)) {
+			va_end(ap);
+			rz_warn_if_reached();
+			return SZT_MAX;
+		}
+		const ut64 *u;
+		rz_iterator_foreach(&it, u) {
+			va_list ap3;
+			va_copy(ap3, ap);
+			for (const RzSetU *cur = va_arg(ap3, const RzSetU *); cur; cur = va_arg(ap3, const RzSetU *)) {
+				if (rz_set_u_contains(cur, *u)) {
+					rz_set_u_delete(diff_set, *u);
+					break;
+				}
+			}
+			va_end(ap3);
+		}
+		rz_iterator_fini(&it);
+		va_end(ap);
+		return rz_set_u_size(diff_set);
+	}
+
+	// Check whether diff_set is one of the sets to subtract.
+	bool diff_in_rest = false;
+	va_list ap2;
+	va_copy(ap2, ap);
+	for (const RzSetU *cur = va_arg(ap2, const RzSetU *); cur; cur = va_arg(ap2, const RzSetU *)) {
+		if (cur == diff_set) {
+			diff_in_rest = true;
+			break;
+		}
+	}
+	va_end(ap2);
+
+	if (diff_set && diff_in_rest) {
+		// diff_set is one of the sets to subtract, thus its previous content
+		// is not part of the difference. Determine the difference in a
+		// temporary set and replace the content of diff_set with it.
+		RzSetU *tmp = rz_set_u_new();
+		if (!tmp) {
+			va_end(ap);
+			rz_warn_if_reached();
+			return SZT_MAX;
+		}
+		bool failed = add_to_difference(first, tmp, ap) == SZT_MAX;
+		if (!failed) {
+			rz_set_u_clear(diff_set);
+			RzIterator it = (RzIterator){ 0 };
+			if (rz_set_u_as_iter(tmp, &it)) {
+				const ut64 *u;
+				rz_iterator_foreach(&it, u) {
+					if (!rz_set_u_add(diff_set, *u)) {
+						failed = true;
+						rz_warn_if_reached();
+						break;
+					}
+				}
+				rz_iterator_fini(&it);
+			} else {
+				failed = true;
+				rz_warn_if_reached();
+			}
+		}
+		rz_set_u_free(tmp);
+		va_end(ap);
+		return failed ? SZT_MAX : rz_set_u_size(diff_set);
+	}
+
+	size_t size = add_to_difference(first, diff_set, ap);
+	va_end(ap);
+	return size;
 }
 
 static size_t add_to_intersection(const RzSetU *smallest, RzSetU *inter_set, va_list ap) {
@@ -312,7 +485,11 @@ static size_t add_to_intersection(const RzSetU *smallest, RzSetU *inter_set, va_
 		}
 		count++;
 		if (inter_set) {
-			rz_set_u_add(inter_set, *u);
+			if (!rz_set_u_add(inter_set, *u)) {
+				failed = true;
+				rz_warn_if_reached();
+				break;
+			}
 		}
 	}
 	rz_iterator_fini(&it);
@@ -337,6 +514,7 @@ RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...) {
 	va_list ap;
 	va_start(ap, inter_set);
 
+	size_t lsize = 0;
 	// Find the smallest set as candidate source and check whether inter_set
 	// is one of the given sets.
 	bool inter_in_list = false;
@@ -350,8 +528,12 @@ RZ_API size_t rz_set_u_intersection(RZ_OUT RZ_NULLABLE RzSetU *inter_set, ...) {
 		if (!smallest || rz_set_u_size(cur) < rz_set_u_size(smallest)) {
 			smallest = cur;
 		}
+		lsize++;
 	}
 	va_end(ap2);
+	if (!lsize) {
+		return SZT_MAX;
+	}
 
 	if (!inter_in_list) {
 		// inter_set is not one of the given sets, thus the elements of the

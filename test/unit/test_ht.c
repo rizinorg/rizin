@@ -872,11 +872,11 @@ bool test_ht_ss_iter(void) {
 
 bool test_set_u(void) {
 	RzSetU *set_u = rz_set_u_new();
-	rz_set_u_add(set_u, 0x5050505);
-	rz_set_u_add(set_u, 0x5050505);
-	rz_set_u_add(set_u, 0x6060606);
-	rz_set_u_add(set_u, 0x7070707);
-	rz_set_u_add(set_u, 0x7070707);
+	mu_assert_true(rz_set_u_add(set_u, 0x5050505), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x5050505), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x6060606), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x7070707), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x7070707), "Allocation failure");
 	mu_assert_eq(rz_set_u_size(set_u), 3, "Length wrong.");
 	mu_assert_true(rz_set_u_contains(set_u, 0x5050505), "Value was not added.");
 	mu_assert_true(rz_set_u_contains(set_u, 0x6060606), "Value was not added.");
@@ -913,15 +913,15 @@ bool test_set_u(void) {
 		mu_assert("Should not be reached.", false);
 	}
 	rz_iterator_fini(&it);
-	rz_set_u_add(set_u, 0x53e0);
-	rz_set_u_add(set_u, 0x53bc);
+	mu_assert_true(rz_set_u_add(set_u, 0x53e0), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x53bc), "Allocation failure");
 
 	mu_assert_eq(rz_set_u_size(set_u), 2, "Wrong size");
 	rz_set_u_clear(set_u);
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Wrong size");
 
-	rz_set_u_add(set_u, 0x53e0);
-	rz_set_u_add(set_u, 0x53bc);
+	mu_assert_true(rz_set_u_add(set_u, 0x53e0), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 0x53bc), "Allocation failure");
 
 	x = 0;
 	it = (RzIterator){ 0 };
@@ -934,13 +934,13 @@ bool test_set_u(void) {
 	rz_set_u_delete(set_u, 0x53e0);
 	rz_set_u_delete(set_u, 0x53bc);
 
-	rz_set_u_add(set_u, 0);
-	rz_set_u_add(set_u, 1);
-	rz_set_u_add(set_u, 2);
-	rz_set_u_add(set_u, 3);
+	mu_assert_true(rz_set_u_add(set_u, 0), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 1), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(set_u, 3), "Allocation failure");
 
 	// Add an address as key which is far away from the heap addresses.
-	rz_set_u_add(set_u, 100000000);
+	mu_assert_true(rz_set_u_add(set_u, 100000000), "Allocation failure");
 	mu_assert_true(rz_set_u_contains(set_u, 100000000), "Not contained.");
 	mu_assert_eq(rz_set_u_size(set_u), 5, "count");
 	mu_assert_false(rz_set_u_contains(set_u, 6), "should not be here.");
@@ -956,7 +956,7 @@ bool test_set_u(void) {
 
 	rz_set_u_clear(set_u);
 	mu_assert_eq(rz_set_u_take(set_u), UT64_MAX, "Invalid take should return UT64_MAX");
-	rz_set_u_add(set_u, 100000000);
+	mu_assert_true(rz_set_u_add(set_u, 100000000), "Allocation failure");
 	mu_assert_eq(rz_set_u_size(set_u), 1, "Add failed");
 	mu_assert_eq(rz_set_u_take(set_u), 100000000, "Take failed");
 	mu_assert_eq(rz_set_u_size(set_u), 0, "Take did not remove element");
@@ -969,23 +969,23 @@ bool test_set_u_union(void) {
 	RzSetU *a = rz_set_u_new();
 	RzSetU *b = rz_set_u_new();
 	RzSetU *c = rz_set_u_new();
-	rz_set_u_add(a, 1);
-	rz_set_u_add(a, 2);
-	rz_set_u_add(a, 3);
-	rz_set_u_add(b, 2);
-	rz_set_u_add(b, 3);
-	rz_set_u_add(b, 4);
-	rz_set_u_add(c, 5);
+	mu_assert_true(rz_set_u_add(a, 1), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 4), "Allocation failure");
+	mu_assert_true(rz_set_u_add(c, 5), "Allocation failure");
 
 	// Compute union into a freshly allocated set
 	size_t union_size = rz_set_u_union(NULL, a, b, c, NULL);
 	mu_assert_eq(union_size, 5, "Wrong union size");
 	union_size = rz_set_u_union(NULL, NULL);
-	mu_assert_eq(union_size, 0, "Wrong union size for empty list");
+	mu_assert_eq(union_size, SZT_MAX, "NULL check failed.");
 
 	// Compute union into a caller-provided set
 	RzSetU *u = rz_set_u_new();
-	rz_set_u_add(u, 100);
+	mu_assert_true(rz_set_u_add(u, 100), "Allocation failure");
 	union_size = rz_set_u_union(u, a, b, c, NULL);
 	mu_assert_eq(union_size, 6, "Wrong union size");
 	mu_assert_true(rz_set_u_contains(u, 100), "Union did not keep previous elements");
@@ -1021,13 +1021,13 @@ bool test_set_u_intersection(void) {
 	RzSetU *a = rz_set_u_new();
 	RzSetU *b = rz_set_u_new();
 	RzSetU *c = rz_set_u_new();
-	rz_set_u_add(a, 1);
-	rz_set_u_add(a, 2);
-	rz_set_u_add(a, 3);
-	rz_set_u_add(b, 2);
-	rz_set_u_add(b, 3);
-	rz_set_u_add(b, 4);
-	rz_set_u_add(c, 3);
+	mu_assert_true(rz_set_u_add(a, 1), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 4), "Allocation failure");
+	mu_assert_true(rz_set_u_add(c, 3), "Allocation failure");
 
 	// Count only, without a destination set
 	size_t inter_size = rz_set_u_intersection(NULL, a, b, NULL);
@@ -1035,7 +1035,7 @@ bool test_set_u_intersection(void) {
 	inter_size = rz_set_u_intersection(NULL, a, b, c, NULL);
 	mu_assert_eq(inter_size, 1, "Wrong intersection size");
 	inter_size = rz_set_u_intersection(NULL, NULL);
-	mu_assert_eq(inter_size, 0, "Wrong intersection size for empty list");
+	mu_assert_eq(inter_size, SZT_MAX, "NULL check failed.");
 
 	// Passing the same set multiple times must not change the result
 	inter_size = rz_set_u_intersection(NULL, a, a, a, NULL);
@@ -1045,7 +1045,7 @@ bool test_set_u_intersection(void) {
 
 	// Compute intersection into a caller-provided set
 	RzSetU *i = rz_set_u_new();
-	rz_set_u_add(i, 100);
+	mu_assert_true(rz_set_u_add(i, 100), "Allocation failure");
 	inter_size = rz_set_u_intersection(i, a, b, NULL);
 	mu_assert_eq(inter_size, 3, "Wrong intersection size");
 	mu_assert_true(rz_set_u_contains(i, 100), "Intersection did not keep previous elements");
@@ -1082,17 +1082,17 @@ bool test_set_u_intersection_reduce(void) {
 
 	// i = { 0, 1, 2, 3, 4, 5 }
 	for (ut64 k = 0; k < 6; k++) {
-		rz_set_u_add(i, k);
+		mu_assert_true(rz_set_u_add(i, k), "Allocation failure");
 	}
 	// s3 = { 1, 2, 3 }
-	rz_set_u_add(s3, 1);
-	rz_set_u_add(s3, 2);
-	rz_set_u_add(s3, 3);
+	mu_assert_true(rz_set_u_add(s3, 1), "Allocation failure");
+	mu_assert_true(rz_set_u_add(s3, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(s3, 3), "Allocation failure");
 	// s2 = { 2, 3 }
-	rz_set_u_add(s2, 2);
-	rz_set_u_add(s2, 3);
+	mu_assert_true(rz_set_u_add(s2, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(s2, 3), "Allocation failure");
 	// s1 = { 3 }
-	rz_set_u_add(s1, 3);
+	mu_assert_true(rz_set_u_add(s1, 3), "Allocation failure");
 	// s0 = { }
 
 	// Gradually reduce i by intersecting it with gradually smaller sets
@@ -1144,13 +1144,80 @@ bool test_set_u_intersection_reduce(void) {
 	mu_end;
 }
 
+bool test_set_u_difference(void) {
+	RzSetU *a = rz_set_u_new();
+	RzSetU *b = rz_set_u_new();
+	RzSetU *c = rz_set_u_new();
+	mu_assert_true(rz_set_u_add(a, 1), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 3), "Allocation failure");
+	mu_assert_true(rz_set_u_add(b, 4), "Allocation failure");
+	mu_assert_true(rz_set_u_add(c, 5), "Allocation failure");
+
+	// Count only, without a destination set
+	size_t diff_size = rz_set_u_difference(NULL, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	diff_size = rz_set_u_difference(NULL, NULL);
+	mu_assert_eq(diff_size, SZT_MAX, "NULL check failed.");
+
+	// Passing the same set multiple times must not change the result
+	diff_size = rz_set_u_difference(NULL, a, a, a, NULL);
+	mu_assert_eq(diff_size, 0, "Wrong difference size when passing a set multiple times");
+	diff_size = rz_set_u_difference(NULL, a, b, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size when passing sets multiple times");
+
+	// Compute difference into a caller-provided set
+	RzSetU *d = rz_set_u_new();
+	mu_assert_true(rz_set_u_add(d, 100), "Allocation failure");
+	diff_size = rz_set_u_difference(d, a, b, NULL);
+	mu_assert_eq(diff_size, 2, "Wrong difference size");
+	mu_assert_true(rz_set_u_contains(d, 100), "Difference did not keep previous elements");
+	mu_assert_true(rz_set_u_contains(d, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(d, 2), "Element not part of the difference was added");
+	mu_assert_false(rz_set_u_contains(d, 3), "Element not part of the difference was added");
+
+	// If diff_set is the set to subtract from, it is reduced to the difference
+	diff_size = rz_set_u_difference(a, a, b, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(a), 1, "Wrong size after reduction");
+	mu_assert_true(rz_set_u_contains(a, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(a, 2), "Element not part of the difference was not deleted");
+	mu_assert_false(rz_set_u_contains(a, 3), "Element not part of the difference was not deleted");
+
+	// Rebuild a = { 1, 2, 3 }
+	mu_assert_true(rz_set_u_add(a, 2), "Allocation failure");
+	mu_assert_true(rz_set_u_add(a, 3), "Allocation failure");
+
+	// If diff_set is one of the sets to subtract, its content is replaced
+	mu_assert_true(rz_set_u_add(b, 10), "Allocation failure");
+	diff_size = rz_set_u_difference(b, a, b, c, NULL);
+	mu_assert_eq(diff_size, 1, "Wrong difference size");
+	mu_assert_eq(rz_set_u_size(b), 1, "Wrong size after replacement");
+	mu_assert_true(rz_set_u_contains(b, 1), "Difference does not contain all elements");
+	mu_assert_false(rz_set_u_contains(b, 10), "Previous content was not replaced");
+
+	// The source sets must not be modified
+	mu_assert_eq(rz_set_u_size(a), 3, "Source set was modified");
+	mu_assert_eq(rz_set_u_size(c), 1, "Source set was modified");
+
+	rz_set_u_free(b);
+	rz_set_u_free(d);
+	rz_set_u_free(c);
+	rz_set_u_free(a);
+	mu_end;
+}
+
 bool test_set_s(void) {
 	RzSetS *set_s = rz_set_s_new(HT_STR_CONST);
-	rz_set_s_add(set_s, "0x5050505");
-	rz_set_s_add(set_s, "0x5050505");
-	rz_set_s_add(set_s, "0x6060606");
-	rz_set_s_add(set_s, "0x7070707");
-	rz_set_s_add(set_s, "0x7070707");
+	mu_assert_true(rz_set_s_add(set_s, "0x5050505"), "Allocation failure");
+	mu_assert_true(rz_set_s_add(set_s, "0x5050505"), "Allocation failure");
+	mu_assert_true(rz_set_s_add(set_s, "0x6060606"), "Allocation failure");
+	mu_assert_true(rz_set_s_add(set_s, "0x7070707"), "Allocation failure");
+	mu_assert_true(rz_set_s_add(set_s, "0x7070707"), "Allocation failure");
 	mu_assert_eq(rz_set_s_size(set_s), 3, "Length wrong.");
 	mu_assert_true(rz_set_s_contains(set_s, "0x5050505"), "Value was not added.");
 	mu_assert_true(rz_set_s_contains(set_s, "0x6060606"), "Value was not added.");
@@ -1187,8 +1254,8 @@ bool test_set_s(void) {
 		mu_assert("Should not be reached.", false);
 	}
 	rz_iterator_fini(&it);
-	rz_set_s_add(set_s, "0x53e0");
-	rz_set_s_add(set_s, "0x53bc");
+	mu_assert_true(rz_set_s_add(set_s, "0x53e0"), "Allocation failure");
+	mu_assert_true(rz_set_s_add(set_s, "0x53bc"), "Allocation failure");
 	x = 0;
 	mu_assert_true(rz_set_s_as_iter(set_s, &it), "rz_set_s_as_iter failed");
 	rz_iterator_foreach(&it, im_elem) {
@@ -1235,6 +1302,7 @@ int all_tests() {
 	mu_run_test(test_set_u_union);
 	mu_run_test(test_set_u_intersection);
 	mu_run_test(test_set_u_intersection_reduce);
+	mu_run_test(test_set_u_difference);
 	mu_run_test(test_set_s);
 	return tests_passed != tests_run;
 }
