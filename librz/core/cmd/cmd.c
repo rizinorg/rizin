@@ -2926,14 +2926,38 @@ RZ_API RzCmd *rz_core_cmd_new(RzCore *core, bool has_cons) {
 		*sym_ptr = ts_language_symbol_for_name(lang, entry->name, strlen(entry->name), true);
 		entry++;
 	}
+	TSParser *parser = ts_parser_new();
+	if (parser && ts_parser_set_language(parser, lang)) {
+		res->ts_parser = parser;
+	} else {
+		ts_parser_delete(parser);
+	}
 	return res;
 }
 
+/**
+ * \brief Return a `TSParser` to `core->rcmd->ts_parser` if unoccupied, otherwise free it.
+ */
+static void cmd_ts_parser_return(RzCore *core, TSParser *parser) {
+	if (core->rcmd && !core->rcmd->ts_parser) {
+		core->rcmd->ts_parser = parser;
+	} else {
+		ts_parser_delete(parser);
+	}
+}
+
 static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_lines, bool log) {
-	TSParser *parser = ts_parser_new();
-	bool language_ok = ts_parser_set_language(parser, (TSLanguage *)core->rcmd->language);
-	if (!language_ok) {
-		rz_return_val_if_reached(RZ_CMD_STATUS_INVALID);
+	RzCmd *rcmd = core->rcmd;
+	TSParser *parser = (TSParser *)rcmd->ts_parser;
+	if (parser) {
+		rcmd->ts_parser = NULL;
+		ts_parser_reset(parser);
+	} else {
+		parser = ts_parser_new();
+		if (!parser || !ts_parser_set_language(parser, (TSLanguage *)rcmd->language)) {
+			ts_parser_delete(parser);
+			rz_return_val_if_reached(RZ_CMD_STATUS_INVALID);
+		}
 	}
 
 	char *input = rz_str_dup(rz_str_trim_head_ro(cstr));
@@ -2941,6 +2965,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	TSTree *tree = ts_parser_parse_string(parser, NULL, input, strlen(input));
 	if (!tree) {
 		rz_warn_if_reached();
+		cmd_ts_parser_return(core, parser);
 		free(input);
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -2964,9 +2989,13 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 		rz_line_hist_add(line, state.input);
 	}
 
-	char *ts_str = ts_node_string(root);
-	RZ_LOG_DEBUG("s-expr %s\n", ts_str);
-	free(ts_str);
+#if RZ_BUILD_DEBUG
+	if (rz_log_get_level() <= RZ_LOGLVL_DEBUG) {
+		char *ts_str = ts_node_string(root);
+		RZ_LOG_DEBUG("s-expr %s\n", ts_str);
+		free(ts_str);
+	}
+#endif
 
 	if (is_ts_statements(root) && !ts_node_has_error(root)) {
 		res = handle_ts_statements(&state, root);
@@ -2977,7 +3006,7 @@ static RzCmdStatus core_cmd_tsrzcmd(RzCore *core, const char *cstr, bool split_l
 	}
 
 	ts_tree_delete(tree);
-	ts_parser_delete(parser);
+	cmd_ts_parser_return(core, parser);
 	free(input);
 	rz_pvector_fini(&state.saved_input);
 	rz_pvector_fini(&state.saved_tree);

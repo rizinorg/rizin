@@ -504,6 +504,7 @@ typedef struct rz_cmd_t {
 	 * False by default.
 	 */
 	bool batch;
+	void *ts_parser; ///< Cached TSParser * reused across non-nested commands
 } RzCmd;
 
 // TODO: remove this once transitioned to RzCmdDesc
