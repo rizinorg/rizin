@@ -850,7 +850,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus res = cd->d.argv_state_data.cb(cmd->core, args->argc, (const char **)args->argv, &state);
-		if (args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
+		if (res == RZ_CMD_STATUS_OK && args->extra && state.mode == RZ_OUTPUT_MODE_TABLE) {
 			if (!rz_table_query(state.d.t, args->extra)) {
 				rz_cmd_state_output_fini(&state);
 				return res;
