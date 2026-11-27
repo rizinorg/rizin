@@ -65,6 +65,7 @@ if get_option('enable_tests')
     'debug_session',
     'diff',
     'ebcdic',
+    'egg',
     'endian',
     'encodings',
     'event',

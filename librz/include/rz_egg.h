@@ -223,6 +223,7 @@ RZ_API bool rz_egg_patch_num(RzEgg *egg, int off, ut64 val, ut32 bits);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
 /* egg_c_compile.c */
+RZ_API RZ_OWN char *rz_egg_filter_c_assembly(RZ_NONNULL const char *asm_str);
 RZ_API RZ_OWN char *rz_egg_compile_c_source(RZ_NONNULL const char *source_file, RZ_NONNULL const char *arch, RZ_NONNULL const char *os, int bits, RZ_BORROW RZ_NONNULL RzPath *sys_path);
 
 /* egg_lang.c */
