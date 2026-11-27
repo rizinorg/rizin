@@ -93,3 +93,145 @@ EXPECT=<<EOF
 [{"offset":4197608,"methods":[{"offset":4197064,"name":"method.A.greet"},{"offset":4197368,"name":"method.C.printValue"}]},{"offset":4197640,"methods":[{"offset":4197064,"name":"method.A.greet"},{"offset":4197250,"name":"method.B.printValue"}]},{"offset":4197672,"methods":[{"offset":4197064,"name":"method.A.greet"},{"offset":4197108,"name":"method.A.printValue"}]}]
 EOF
 RUN
+
+NAME=av big-endian 32-bit ELF (ppc_classes)
+FILE=bins/elf/ppc_classes
+CMDS=av
+EXPECT=<<EOF
+
+Vtable Found at 0x100016d4
+0x100016d4 : No Name found
+0x100016d8 : No Name found
+0x100016dc : No Name found
+
+
+Vtable Found at 0x100016e8
+0x100016e8 : No Name found
+0x100016ec : No Name found
+0x100016f0 : No Name found
+
+
+Vtable Found at 0x100016fc
+0x100016fc : No Name found
+0x10001700 : No Name found
+0x10001704 : No Name found
+
+
+Vtable Found at 0x10001710
+0x10001710 : No Name found
+0x10001714 : No Name found
+0x10001718 : No Name found
+0x1000171c : No Name found
+0x10001720 : No Name found
+
+
+Vtable Found at 0x1000172c
+0x1000172c : No Name found
+0x10001730 : No Name found
+0x10001734 : No Name found
+0x10001738 : No Name found
+0x1000173c : No Name found
+
+
+Vtable Found at 0x10001748
+0x10001748 : No Name found
+0x1000174c : No Name found
+0x10001750 : No Name found
+0x10001754 : No Name found
+0x10001758 : No Name found
+
+
+Vtable Found at 0x10001764
+0x10001764 : No Name found
+0x10001768 : No Name found
+0x1000176c : No Name found
+
+EOF
+RUN
+
+NAME=av big-endian 64-bit ELF (emulateme-ppc64be)
+FILE=bins/elf/ppc/emulateme-ppc64be
+CMDS=av
+EXPECT=<<EOF
+
+Vtable Found at 0x00104938
+0x00104938 : No Name found
+
+EOF
+RUN
+
+NAME=av multi-chunk >64KB .rodata (a.out.asan)
+FILE=bins/elf/analysis/a.out.asan
+CMDS=av~Vtable
+EXPECT=<<EOF
+Vtable Found at 0x00549970
+Vtable Found at 0x00549988
+Vtable Found at 0x005499a0
+Vtable Found at 0x00549a40
+Vtable Found at 0x00549a78
+Vtable Found at 0x00549ac0
+Vtable Found at 0x00549b20
+Vtable Found at 0x00549b38
+Vtable Found at 0x00549b50
+Vtable Found at 0x00549b68
+Vtable Found at 0x00549b98
+Vtable Found at 0x00549be0
+Vtable Found at 0x00549c10
+Vtable Found at 0x00549c38
+Vtable Found at 0x00549c68
+Vtable Found at 0x00549c90
+Vtable Found at 0x00549cb8
+Vtable Found at 0x00549ce8
+EOF
+RUN
+
+NAME=av small .rodata (< word_size) no underflow
+FILE=bins/elf/struct_sample
+CMDS=av
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=av with no sections (no_sections.elf)
+FILE=bins/elf/analysis/no_sections.elf
+CMDS=av
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=av with io.pcache.write and unreadable map hole
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+e io.pcache.write=true
+av~Vtable
+om 3 0x00400d08 8 0 -
+av~Vtable
+EOF
+EXPECT=<<EOF
+Vtable Found at 0x00400ce8
+Vtable Found at 0x00400d08
+Vtable Found at 0x00400d28
+Vtable Found at 0x00400ce8
+EOF
+RUN
+
+NAME=av with io.va=false on PIE ELF (classes_Polygon)
+FILE=bins/elf/analysis/classes_Polygon
+CMDS=<<EOF
+av~Vtable
+e io.va=false
+av~Vtable
+EOF
+EXPECT=<<EOF
+Vtable Found at 0x00003ce0
+Vtable Found at 0x00003d00
+Vtable Found at 0x00003d20
+EOF
+RUN
+
+NAME=av 16-bit ELF (msp430.elf)
+FILE=bins/elf/msp430.elf
+CMDS=av
+EXPECT=<<EOF
+EOF
+RUN
