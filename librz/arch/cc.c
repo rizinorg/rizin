@@ -22,6 +22,73 @@
 		sdb_set(x, key, y); \
 	} while (0)
 
+/**
+ * \brief Look up a calling-convention SDB property for \p cc and \p suffix.
+ *
+ * Uses a stack buffer for typical key lengths and falls back to heap allocation
+ * for long convention or suffix names.
+ *
+ * \param db Calling-convention SDB instance
+ * \param cc Calling-convention name
+ * \param suffix Property suffix (e.g. `ret`, `argn`, `self`, `error`, `maxargs`)
+ * \return Const SDB value string, or NULL if not found
+ */
+static const char *cc_sdb_get(Sdb *db, const char *cc, const char *suffix) {
+	size_t clen = strlen(cc);
+	size_t slen = strlen(suffix);
+	char buf[256];
+	if (3 + clen + 1 + slen + 1 <= sizeof(buf)) {
+		char *p = buf;
+		memcpy(p, "cc.", 3);
+		p += 3;
+		memcpy(p, cc, clen);
+		p += clen;
+		*p++ = '.';
+		memcpy(p, suffix, slen + 1);
+		return sdb_const_get(db, buf);
+	}
+	char *query = rz_str_newf("cc.%s.%s", cc, suffix);
+	const char *ret = query ? sdb_const_get(db, query) : NULL;
+	free(query);
+	return ret;
+}
+
+/**
+ * \brief Look up argument \p n of calling convention \p cc in SDB.
+ *
+ * Uses a stack buffer with a single-digit fast path for `0 <= n < 10` and falls back
+ * to heap allocation for long convention names.
+ *
+ * \param db Calling-convention SDB instance
+ * \param cc Calling-convention name
+ * \param n Zero-based argument index
+ * \return Const SDB value string, or NULL if not found
+ */
+static const char *cc_sdb_get_arg(Sdb *db, const char *cc, int n) {
+	size_t clen = strlen(cc);
+	char buf[256];
+	if (3 + clen + 4 + 12 + 1 <= sizeof(buf)) {
+		char *p = buf;
+		memcpy(p, "cc.", 3);
+		p += 3;
+		memcpy(p, cc, clen);
+		p += clen;
+		memcpy(p, ".arg", 4);
+		p += 4;
+		if (n >= 0 && n < 10) {
+			*p++ = (char)('0' + n);
+			*p = '\0';
+		} else {
+			snprintf(p, sizeof(buf) - (size_t)(p - buf), "%d", n);
+		}
+		return sdb_const_get(db, buf);
+	}
+	char *query = rz_str_newf("cc.%s.arg%d", cc, n);
+	const char *ret = query ? sdb_const_get(db, query) : NULL;
+	free(query);
+	return ret;
+}
+
 RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 	rz_return_if_fail(analysis && name);
 	sdb_unset(DB, name);
@@ -98,15 +165,12 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 
 RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	rz_return_val_if_fail(analysis && name, NULL);
-	char *tmp_cc = NULL;
 	// get cc by name and print the expr
 	if (rz_str_cmp(sdb_const_get(DB, name), "cc", -1)) {
 		RZ_LOG_ERROR("analysis: '%s' is not a valid calling convention name\n", name);
 		return NULL;
 	}
-	tmp_cc = rz_str_newf("cc.%s.ret", name);
-	const char *ret = tmp_cc ? sdb_const_get(DB, tmp_cc) : NULL;
-	free(tmp_cc);
+	const char *ret = cc_sdb_get(DB, name, "ret");
 	if (!ret) {
 		RZ_LOG_ERROR("analysis: Cannot find return key in calling convention named '%s'\n", name);
 		return NULL;
@@ -116,18 +180,14 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	rz_strbuf_appendf(sb, "%s %s%s%s (", ret, self ? self : "", self ? "." : "", name);
 	bool isFirst = true;
 	for (int i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
-		char *k = rz_str_newf("cc.%s.arg%d", name, i);
-		const char *arg = k ? sdb_const_get(DB, k) : NULL;
-		free(k);
+		const char *arg = cc_sdb_get_arg(DB, name, i);
 		if (!arg) {
 			break;
 		}
 		rz_strbuf_appendf(sb, "%s%s", isFirst ? "" : ", ", arg);
 		isFirst = false;
 	}
-	tmp_cc = rz_str_newf("cc.%s.argn", name);
-	const char *argn = tmp_cc ? sdb_const_get(DB, tmp_cc) : NULL;
-	free(tmp_cc);
+	const char *argn = cc_sdb_get(DB, name, "argn");
 	if (argn) {
 		rz_strbuf_appendf(sb, "%s%s", isFirst ? "" : ", ", argn);
 	}
@@ -155,22 +215,16 @@ RZ_API const char *rz_analysis_cc_arg(RzAnalysis *analysis, const char *conventi
 		return NULL;
 	}
 
-	char *query = rz_str_newf("cc.%s.arg%d", convention, n);
-	const char *ret = query ? sdb_const_get(DB, query) : NULL;
-	free(query);
+	const char *ret = cc_sdb_get_arg(DB, convention, n);
 	if (!ret) {
-		query = rz_str_newf("cc.%s.argn", convention);
-		ret = query ? sdb_const_get(DB, query) : NULL;
-		free(query);
+		ret = cc_sdb_get(DB, convention, "argn");
 	}
 	return ret ? rz_str_constpool_get(&analysis->constpool, ret) : NULL;
 }
 
 RZ_API const char *rz_analysis_cc_self(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
-	char *query = rz_str_newf("cc.%s.self", convention);
-	const char *self = query ? sdb_const_get(DB, query) : NULL;
-	free(query);
+	const char *self = cc_sdb_get(DB, convention, "self");
 	return self ? rz_str_constpool_get(&analysis->constpool, self) : NULL;
 }
 
@@ -179,20 +233,12 @@ RZ_API void rz_analysis_cc_set_self(RzAnalysis *analysis, const char *convention
 	if (!rz_analysis_cc_exist(analysis, convention)) {
 		return;
 	}
-	char *query = rz_str_newf("cc.%s.self", convention);
-	if (!query) {
-		RZ_LOG_ERROR("analysis: Cannot allocate key for sdb_set\n");
-		return;
-	}
-	sdb_set(analysis->sdb_cc, query, self);
-	free(query);
+	cc_sdb_setf(analysis->sdb_cc, self, "cc.%s.self", convention);
 }
 
 RZ_API const char *rz_analysis_cc_error(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
-	char *query = rz_str_newf("cc.%s.error", convention);
-	const char *error = query ? sdb_const_get(DB, query) : NULL;
-	free(query);
+	const char *error = cc_sdb_get(DB, convention, "error");
 	return error ? rz_str_constpool_get(&analysis->constpool, error) : NULL;
 }
 
@@ -200,23 +246,12 @@ RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *conventio
 	if (!rz_analysis_cc_exist(analysis, convention)) {
 		return;
 	}
-	char *key = rz_str_newf("cc.%s.error", convention);
-	if (!key) {
-		RZ_LOG_ERROR("analysis: Cannot allocate key for sdb_set\n");
-		return;
-	}
-	sdb_set(analysis->sdb_cc, key, error);
-	free(key);
+	cc_sdb_setf(analysis->sdb_cc, error, "cc.%s.error", convention);
 }
 
 RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
 	rz_return_val_if_fail(analysis && DB && cc, 0);
-	char *query = rz_str_newf("cc.%s.maxargs", cc);
-	if (!query) {
-		return 0;
-	}
-	const char *res = sdb_const_get(DB, query);
-	free(query);
+	const char *res = cc_sdb_get(DB, cc, "maxargs");
 	int maxargs = res ? atoi(res) : 0;
 	if (maxargs < 0 || maxargs > RZ_ANALYSIS_CC_MAXARG) {
 		return 0;
@@ -226,10 +261,7 @@ RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
 
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention) {
 	rz_return_val_if_fail(analysis && convention, NULL);
-	char *query = rz_str_newf("cc.%s.ret", convention);
-	const char *res = query ? sdb_const_get(DB, query) : NULL;
-	free(query);
-	return res;
+	return cc_sdb_get(DB, convention, "ret");
 }
 
 /**

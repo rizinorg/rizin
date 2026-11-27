@@ -114,12 +114,44 @@ bool test_rz_analysis_cc_del() {
 	mu_end;
 }
 
+static bool test_rz_analysis_cc_args_and_long_name(void) {
+	RzAnalysis *analysis = rz_analysis_new(NULL);
+	mu_assert_notnull(analysis, "rz_analysis_new");
+	mu_assert_true(rz_analysis_cc_set(analysis,
+			       "rax many(r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, stack)"),
+		"set 12-arg cc");
+	mu_assert_eq(rz_analysis_cc_max_arg(analysis, "many"), 12, "max_arg");
+	mu_assert_streq(rz_analysis_cc_ret(analysis, "many"), "rax", "ret");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "many", 0), "r0", "arg0");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "many", 9), "r9", "arg9");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "many", 10), "r10", "arg10");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "many", 11), "r11", "arg11");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, "many", 12), "stack", "argn fallback");
+
+	// Exercise heap fallback for calling convention names longer than the stack key buffer
+	char long_name[260];
+	memset(long_name, 'c', sizeof(long_name) - 1);
+	long_name[sizeof(long_name) - 1] = '\0';
+	char *expr = rz_str_newf("rax %s(rdi, rsi, stack)", long_name);
+	mu_assert_notnull(expr, "long expr");
+	mu_assert_true(rz_analysis_cc_set(analysis, expr), "set long cc");
+	free(expr);
+	mu_assert_eq(rz_analysis_cc_max_arg(analysis, long_name), 2, "long max_arg");
+	mu_assert_streq(rz_analysis_cc_ret(analysis, long_name), "rax", "long ret");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, long_name, 0), "rdi", "long arg0");
+	mu_assert_streq(rz_analysis_cc_arg(analysis, long_name, 2), "stack", "long argn");
+
+	rz_analysis_free(analysis);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_rz_analysis_cc_set);
 	mu_run_test(test_rz_analysis_cc_set_self_err);
 	mu_run_test(test_rz_analysis_cc_get);
 	mu_run_test(test_rz_analysis_cc_get_self_err);
 	mu_run_test(test_rz_analysis_cc_del);
+	mu_run_test(test_rz_analysis_cc_args_and_long_name);
 	return tests_passed != tests_run;
 }
 
