@@ -18,7 +18,7 @@ NAME=dmhg allocated
 FILE=bins/elf/simple_malloc_x86_64
 ARGS=-d
 CMDS=<<EOF
-(dmhg_tail n; dmhg~:-${n}.. | sed 's/11c\|120/1__/;  s/xf1\|xed/x__/')
+(dmhg_tail n; dmhg~:-${n}.. | sed 's/size=0x11c/size=0x1__/; s/size=0x120/size=0x1__/; s/size=0xf1/size=0x__/; s/size=0xed/size=0x__/')
 dcu main
 .(dmhg_tail 2)
 echo ----
