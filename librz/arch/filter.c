@@ -648,9 +648,6 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 // DEPRECATE
 RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter(p, addr, f, hint, data, str, len, big_endian);
-	if (p->cur && p->cur->filter) {
-		return p->cur->filter(p, addr, f, data, str, len, big_endian);
-	}
 	return false;
 }
 
