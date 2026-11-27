@@ -356,6 +356,51 @@ static bool test_il_value_eq() {
 	mu_end;
 }
 
+static bool test_il_var_set_reset() {
+	RzILVarSet vs;
+	mu_assert_true(rz_il_var_set_init(&vs), "init var set");
+
+	// Empty reset keeps the existing small hash tables without reallocating.
+	HtSP *orig_vars = vs.vars;
+	HtSP *orig_contents = vs.contents;
+	rz_il_var_set_reset(&vs);
+	mu_assert_ptreq(vs.vars, orig_vars, "empty reset reuses vars ht");
+	mu_assert_ptreq(vs.contents, orig_contents, "empty reset reuses contents ht");
+
+	// Small populated reset clears in-place and allows clean rebinding.
+	mu_assert_notnull(rz_il_var_set_create_var(&vs, "tmp0", rz_il_sort_pure_bv(32)), "create tmp0");
+	mu_assert_true(rz_il_var_set_bind(&vs, "tmp0", rz_il_value_new_bitv(rz_bv_new_from_ut64(32, 0x1234))), "bind tmp0");
+	mu_assert_notnull(rz_il_var_set_get_value(&vs, "tmp0"), "tmp0 bound");
+	rz_il_var_set_reset(&vs);
+	mu_assert_ptreq(vs.vars, orig_vars, "small reset reuses vars ht");
+	mu_assert_null(rz_il_var_set_get(&vs, "tmp0"), "tmp0 cleared after reset");
+	mu_assert_null(rz_il_var_set_get_value(&vs, "tmp0"), "tmp0 value cleared after reset");
+
+	// Large var set (> 64 capacity) shrinks back on reset.
+	char name[32];
+	for (int i = 0; i < 100; i++) {
+		rz_strf(name, "v_%d", i);
+		mu_assert_notnull(rz_il_var_set_create_var(&vs, name, rz_il_sort_pure_bv(8)), "create large var");
+		mu_assert_true(rz_il_var_set_bind(&vs, name, rz_il_value_new_bitv(rz_bv_new_from_ut64(8, i))), "bind large var");
+	}
+	mu_assert_true(vs.vars->capacity > 64, "vars ht grew past shrink threshold");
+	rz_il_var_set_reset(&vs);
+	mu_assert_true(vs.vars->capacity <= 64, "vars ht shrunk on reset");
+	mu_assert_true(vs.contents->capacity <= 64, "contents ht shrunk on reset");
+	mu_assert_null(rz_il_var_set_get(&vs, "v_0"), "large var cleared");
+
+	rz_il_var_set_fini(&vs);
+
+	// Resetting a zero-initialized var set (NULL tables) allocates fresh tables.
+	RzILVarSet zero_vs = { 0 };
+	rz_il_var_set_reset(&zero_vs);
+	mu_assert_notnull(zero_vs.vars, "reset allocates vars ht when NULL");
+	mu_assert_notnull(zero_vs.contents, "reset allocates contents ht when NULL");
+	mu_assert_notnull(rz_il_var_set_create_var(&zero_vs, "z0", rz_il_sort_pure_bv(8)), "create var after NULL reset");
+	rz_il_var_set_fini(&zero_vs);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_il_bool_init);
 	mu_run_test(test_il_bool_logic);
@@ -366,6 +411,7 @@ bool all_tests() {
 	mu_run_test(test_il_seqn);
 	mu_run_test(test_il_sort_pure_eq);
 	mu_run_test(test_il_value_eq);
+	mu_run_test(test_il_var_set_reset);
 	return tests_passed != tests_run;
 }
 
