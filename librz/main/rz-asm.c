@@ -18,6 +18,8 @@ typedef struct {
 	RzAsm *a;
 	RzAnalysis *analysis;
 	RzPath *sys_path;
+	RzAnalysisILVM *il_vm;
+	RzILValidateGlobalContext *il_ctx;
 	bool oneliner;
 	bool coutput;
 	bool json;
@@ -49,6 +51,8 @@ static RzAsmState *asm_as_new(void) {
 }
 
 static void asm_as_free(RzAsmState *as) {
+	rz_il_validate_global_context_free(as->il_ctx);
+	rz_analysis_il_vm_free(as->il_vm);
 	rz_asm_free(as->a);
 	rz_analysis_free(as->analysis);
 	rz_lib_free(as->l);
@@ -200,6 +204,7 @@ static int rasm_show_help(int v) {
 		"-p",       "",                 "Run SPP over input for assembly",
 		"-q",       "",                 "Quiet mode",
 		"-s",       "syntax",           "Select syntax (intel, att)",
+		"-t",       "file",             "Run batch operations from file",
 		"-v",       "",                 "Show version information",
 		"-x",       "",                 "Use hex dwords instead of hex pairs when assembling.",
 		"-w",       "",                 "Describe opcode",
@@ -238,18 +243,21 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		eprintf("Invalid instruction of lifting not implemented.\n");
 		return false;
 	}
-	RzAnalysisILVM *vm = rz_analysis_il_vm_new(as->analysis, NULL);
-	if (!vm) {
-		eprintf("Failed to initialize IL VM for this architecture.\n");
-		return false;
+	if (!as->il_vm) {
+		as->il_vm = rz_analysis_il_vm_new(as->analysis, NULL);
+		if (!as->il_vm) {
+			eprintf("Failed to initialize IL VM for this architecture.\n");
+			return false;
+		}
+		as->il_ctx = rz_il_validate_global_context_new_from_vm(as->il_vm->vm);
+		if (!as->il_ctx) {
+			eprintf("Failed to derive context from IL VM.\n");
+			rz_analysis_il_vm_free(as->il_vm);
+			as->il_vm = NULL;
+			return false;
+		}
 	}
 	bool ret = true;
-	RzILValidateGlobalContext *ctx = rz_il_validate_global_context_new_from_vm(vm->vm);
-	if (!ctx) {
-		eprintf("Failed to derive context from IL VM.\n");
-		ret = false;
-		goto error_vm;
-	}
 	RzILOpEffect *il_op = op->il_op;
 	if (il_op) {
 		RzStrBuf sb;
@@ -260,7 +268,7 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		rz_strbuf_fini(&sb);
 	}
 	char *report;
-	if (!rz_il_validate_effect(il_op, ctx, NULL, NULL, &report)) {
+	if (!rz_il_validate_effect(il_op, as->il_ctx, NULL, NULL, &report)) {
 		ret = false;
 		eprintf("IL Validation failed%c\n", report ? ':' : '.');
 	}
@@ -268,9 +276,6 @@ static bool print_and_check_il(RzAsmState *as, RzAnalysisOp *op) {
 		eprintf("%s\n", report);
 		free(report);
 	}
-	rz_il_validate_global_context_free(ctx);
-error_vm:
-	rz_analysis_il_vm_free(vm);
 	return ret;
 }
 
@@ -519,6 +524,121 @@ static void asm_load_plugins(RzAsmState *as) {
 	free(path);
 }
 
+static int run_batch_file(RzAsmState *as, const char *batch_file, bool use_spp, bool hexwords) {
+	size_t content_len = 0;
+	char *content = rz_file_slurp(batch_file, &content_len);
+	if (!content) {
+		eprintf("rz-asm: Cannot open batch file %s\n", batch_file);
+		return 1;
+	}
+	int ret = 0;
+	const RzAsmPlugin *saved_cur = rz_asm_plugin_current(as->a);
+	const char *init_cpu = rz_asm_get_cpu(as->a);
+	char *saved_cpu = init_cpu ? rz_str_dup(init_cpu) : NULL;
+	if (init_cpu && !saved_cpu) {
+		ret = 1;
+		goto beach;
+	}
+	int saved_bits = rz_asm_get_bits(as->a);
+	bool saved_big_endian = rz_asm_is_big_endian_set(as->a);
+	RzAsmSyntax saved_syntax = rz_asm_get_syntax(as->a);
+
+	fflush(stdout);
+	printf("\n\x1eRZ_ASM_BATCH_BEGIN\n");
+	fflush(stdout);
+	fflush(stderr);
+	fprintf(stderr, "\n\x1eRZ_ASM_BATCH_BEGIN\n");
+	fflush(stderr);
+
+	size_t item_idx = 0;
+	char *line = content;
+	while (line && *line) {
+		char *next = strchr(line, '\n');
+		if (next) {
+			*next = '\0';
+			next++;
+		}
+		size_t line_len = strlen(line);
+		if (line_len > 0 && line[line_len - 1] == '\r') {
+			line[--line_len] = '\0';
+		}
+		if (!line_len) {
+			line = next;
+			continue;
+		}
+		char op = line[0];
+		if ((op != 'a' && op != 'd' && op != 'I') || line[1] != ' ') {
+			eprintf("rz-asm: Invalid batch line %" PFMTSZu "\n", item_idx);
+			ret = 1;
+			goto beach;
+		}
+		char *end = NULL;
+		ut64 offset = strtoull(line + 2, &end, 16);
+		if (!end || end == line + 2 || *end != ' ') {
+			eprintf("rz-asm: Invalid batch offset on line %" PFMTSZu "\n", item_idx);
+			ret = 1;
+			goto beach;
+		}
+		const char *payload = end + 1;
+		if ((op == 'd' || op == 'I') && !strncmp(payload, "0x", 2)) {
+			payload += 2;
+		}
+		int op_ok = 0;
+		if (op == 'a') {
+			op_ok = print_assembly_output(as, payload, offset, 0, 0, use_spp, hexwords);
+			bool arch_changed = rz_asm_plugin_current(as->a) != saved_cur;
+			if (arch_changed) {
+				if (!saved_cur || !rz_asm_use(as->a, saved_cur->name) ||
+					rz_asm_plugin_current(as->a) != saved_cur) {
+					ret = 1;
+					goto beach;
+				}
+			}
+			if (arch_changed || !RZ_STR_EQ(rz_asm_get_cpu(as->a), saved_cpu)) {
+				rz_asm_set_cpu(as->a, saved_cpu);
+			}
+			if (arch_changed || rz_asm_get_bits(as->a) != saved_bits) {
+				rz_asm_set_bits(as->a, saved_bits);
+			}
+			if (arch_changed || rz_asm_is_big_endian_set(as->a) != saved_big_endian) {
+				rz_asm_set_big_endian(as->a, saved_big_endian);
+			}
+			if (rz_asm_get_syntax(as->a) != saved_syntax) {
+				rz_asm_set_syntax(as->a, saved_syntax);
+			}
+			if (!rz_asm_plugin_reset(as->a)) {
+				ret = 1;
+				goto beach;
+			}
+		} else if (op == 'd') {
+			op_ok = print_disassembly_output(as, offset, payload, (int)strlen(payload), 0, DISASM_MODE_DEFAULT);
+			if (!rz_asm_plugin_reset(as->a)) {
+				ret = 1;
+				goto beach;
+			}
+		} else {
+			op_ok = print_disassembly_output(as, offset, payload, (int)strlen(payload), 0, DISASM_MODE_IL);
+			if (!rz_analysis_plugin_reset(as->analysis)) {
+				ret = 1;
+				goto beach;
+			}
+		}
+		int item_ret = !op_ok;
+		fflush(stdout);
+		printf("\n\x1eRZ_ASM_BATCH_ITEM %" PFMTSZu " %d\n", item_idx, item_ret);
+		fflush(stdout);
+		fflush(stderr);
+		fprintf(stderr, "\n\x1eRZ_ASM_BATCH_ITEM %" PFMTSZu " %d\n", item_idx, item_ret);
+		fflush(stderr);
+		item_idx++;
+		line = next;
+	}
+beach:
+	free(saved_cpu);
+	free(content);
+	return ret;
+}
+
 RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	const char *env_arch = rz_sys_getenv("RZ_ASM_ARCH");
 	const char *env_bits = rz_sys_getenv("RZ_ASM_BITS");
@@ -527,6 +647,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	const char *kernel = NULL;
 	const char *filters = NULL;
 	const char *file = NULL;
+	const char *batch_file = NULL;
 	bool isbig = false;
 	bool use_spp = false;
 	bool hexwords = false;
@@ -555,7 +676,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 
 	RzGetopt opt;
-	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqs:vwx");
+	rz_getopt_init(&opt, argc, argv, "a:Ab:Bc:CdDeEIf:F:hi:jk:l:Lm:@:o:O:pqs:t:vwx");
 	while ((c = rz_getopt_next(&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -676,6 +797,9 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				rz_asm_set_syntax(as->a, syntax);
 			}
 			break;
+		case 't':
+			batch_file = opt.arg;
+			break;
 		case 'v': {
 			if (as->quiet) {
 				printf("%s\n", RZ_VERSION);
@@ -761,6 +885,11 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 				rz_asm_sub_names_input(as->a, filters);
 			}
 		}
+	}
+
+	if (batch_file) {
+		ret = run_batch_file(as, batch_file, use_spp, hexwords);
+		goto beach;
 	}
 
 	if (file) {

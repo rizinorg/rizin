@@ -692,3 +692,12 @@ EXPECT_ERR=<<EOF
 ERROR: Unknown asm plugin 'ic'
 EOF
 RUN
+
+NAME=rz-asm -t nonexistent batch file
+TOOL=rz-asm
+ARGS=-t nonexistent_rz_asm_batch_file
+EXIT_STATUS=1
+EXPECT_ERR=<<EOF
+rz-asm: Cannot open batch file nonexistent_rz_asm_batch_file
+EOF
+RUN

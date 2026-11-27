@@ -5,6 +5,9 @@
 #include <rz_util/rz_str.h>
 #include <rz_util/rz_regex.h>
 #include <rz_cons.h>
+#if __WINDOWS__
+#include <io.h>
+#endif
 
 #if __WINDOWS__
 static ut8 *crlf2lf(ut8 *str) {
@@ -468,37 +471,145 @@ RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test) {
 	return ret;
 }
 
+#define ASM_BATCH_BEGIN_MARKER "\n\x1eRZ_ASM_BATCH_BEGIN\n"
+#define ASM_BATCH_ITEM_PREFIX  "\n\x1eRZ_ASM_BATCH_ITEM "
+
+typedef enum {
+	ASM_BATCH_OP_ASM = 0,
+	ASM_BATCH_OP_DISASM,
+	ASM_BATCH_OP_IL,
+} AsmBatchOpKind;
+
+typedef struct {
+	size_t test_idx;
+	AsmBatchOpKind kind;
+} AsmBatchReq;
+
+typedef struct {
+	char *data;
+	int ret;
+} AsmBatchItemSlice;
+
+static void asm_batch_slices_fini(AsmBatchItemSlice *slices, size_t n) {
+	if (!slices) {
+		return;
+	}
+	for (size_t i = 0; i < n; i++) {
+		free(slices[i].data);
+	}
+	free(slices);
+}
+
+/**
+ * \brief Split a framed rz-asm batch stdout or stderr stream into per-request slices.
+ * \param stream      Raw captured stdout/stderr string from `rz-asm -t`.
+ * \param n_reqs      Expected number of batch request items.
+ * \param preamble_o  Optional output receiving text emitted before the batch begin marker.
+ * \return Array of \p n_reqs slices to free with asm_batch_slices_fini(), or NULL on mismatch.
+ */
+static RZ_OWN AsmBatchItemSlice *rz_test_parse_asm_batch_stream(RZ_NONNULL const char *stream, size_t n_reqs, RZ_NULLABLE RZ_OUT char **preamble_o) {
+	if (preamble_o) {
+		*preamble_o = NULL;
+	}
+	const char *begin = strstr(stream, ASM_BATCH_BEGIN_MARKER);
+	if (!begin) {
+		return NULL;
+	}
+	if (preamble_o && begin > stream) {
+		*preamble_o = rz_str_ndup(stream, (size_t)(begin - stream));
+		if (!*preamble_o) {
+			return NULL;
+		}
+	}
+	AsmBatchItemSlice *slices = RZ_NEWS0(AsmBatchItemSlice, n_reqs);
+	if (!slices) {
+		if (preamble_o) {
+			RZ_FREE(*preamble_o);
+		}
+		return NULL;
+	}
+	const char *cur = begin + strlen(ASM_BATCH_BEGIN_MARKER);
+	const size_t prefix_len = strlen(ASM_BATCH_ITEM_PREFIX);
+	for (size_t i = 0; i < n_reqs; i++) {
+		const char *marker = strstr(cur, ASM_BATCH_ITEM_PREFIX);
+		if (!marker) {
+			goto fail;
+		}
+		const char *meta = marker + prefix_len;
+		char *end_idx = NULL;
+		unsigned long long parsed_idx = strtoull(meta, &end_idx, 10);
+		if (!end_idx || end_idx == meta || *end_idx != ' ' || (size_t)parsed_idx != i) {
+			goto fail;
+		}
+		char *end_ret = NULL;
+		long parsed_ret = strtol(end_idx + 1, &end_ret, 10);
+		if (!end_ret || end_ret == end_idx + 1 || *end_ret != '\n') {
+			goto fail;
+		}
+		slices[i].data = rz_str_ndup(cur, (size_t)(marker - cur));
+		if (!slices[i].data) {
+			goto fail;
+		}
+		slices[i].ret = (int)parsed_ret;
+		cur = end_ret + 1;
+	}
+	if (*cur != '\0') {
+		goto fail;
+	}
+	return slices;
+fail:
+	asm_batch_slices_fini(slices, n_reqs);
+	if (preamble_o) {
+		RZ_FREE(*preamble_o);
+	}
+	return NULL;
+}
+
+static char *asm_batch_join_err(RZ_NULLABLE const char *preamble, RZ_NONNULL const char *err) {
+	char *joined = RZ_STR_ISNOTEMPTY(preamble)
+		? rz_str_newf("%s%s", preamble, err)
+		: rz_str_dup(err);
+	if (joined) {
+		rz_str_trim(joined);
+	}
+	return joined;
+}
+
+static void asm_push_common_args(RzPVector /*<const char *>*/ *args, const RzAsmTest *test, char *bits_buf, size_t bits_sz) {
+	if (test->arch) {
+		rz_pvector_push(args, "-a");
+		rz_pvector_push(args, (void *)test->arch);
+	}
+	if (test->cpu) {
+		rz_pvector_push(args, "-c");
+		rz_pvector_push(args, (void *)test->cpu);
+	}
+	if (test->bits) {
+		snprintf(bits_buf, bits_sz, "%d", test->bits);
+		rz_pvector_push(args, "-b");
+		rz_pvector_push(args, bits_buf);
+	}
+	if (test->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) {
+		rz_pvector_push(args, "-e");
+	}
+}
+
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test) {
 	RzAsmTestOutput *out = RZ_NEW0(RzAsmTestOutput);
 	if (!out) {
 		return NULL;
 	}
 	out->as_ret = out->disas_ret = out->il_ret = INT_MAX;
-	char *rz_asm_exe = rz_file_path("rz-asm");
+	char *rz_asm_exe = rz_test_find_executable("rz-asm", config->bin_path);
+	const char *envvars[] = { "RZ_NOPLUGINS" };
+	const char *envvals[] = { "1" };
+	size_t env_size = test->load_plugins ? 0 : 1;
 
 	RzPVector args;
 	rz_pvector_init(&args, NULL);
 
-	if (test->arch) {
-		rz_pvector_push(&args, "-a");
-		rz_pvector_push(&args, (void *)test->arch);
-	}
-
-	if (test->cpu) {
-		rz_pvector_push(&args, "-c");
-		rz_pvector_push(&args, (void *)test->cpu);
-	}
-
 	char bits[0x20];
-	if (test->bits) {
-		snprintf(bits, sizeof(bits), "%d", test->bits);
-		rz_pvector_push(&args, "-b");
-		rz_pvector_push(&args, bits);
-	}
-
-	if (test->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) {
-		rz_pvector_push(&args, "-e");
-	}
+	asm_push_common_args(&args, test, bits, sizeof(bits));
 
 	char offset[0x20];
 	if (test->offset) {
@@ -509,7 +620,11 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push(&args, test->disasm);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args),
+			env_size ? envvars : NULL, env_size ? envvals : NULL, env_size);
+		if (!proc) {
+			goto rip;
+		}
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->as_timeout = true;
@@ -525,6 +640,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		char *hex = (char *)crlf2lf(rz_subprocess_out(proc, NULL));
 		size_t hexlen = strlen(hex);
 		if (!hexlen) {
+			free(hex);
 			goto rip;
 		}
 		ut8 *bytes = malloc(hexlen);
@@ -547,7 +663,11 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-d");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args),
+			env_size ? envvars : NULL, env_size ? envvals : NULL, env_size);
+		if (!proc) {
+			goto ship;
+		}
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->disas_timeout = true;
@@ -577,7 +697,14 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		}
 		rz_pvector_push(&args, "-I");
 		rz_pvector_push(&args, hex);
-		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args), NULL, NULL, 0);
+		RzSubprocess *proc = rz_subprocess_start(rz_asm_exe, args.v.a, rz_pvector_len(&args),
+			env_size ? envvars : NULL, env_size ? envvals : NULL, env_size);
+		if (!proc) {
+			free(hex);
+			rz_pvector_pop(&args);
+			rz_pvector_pop(&args);
+			goto beach;
+		}
 		if (rz_subprocess_wait(proc, config->timeout_ms) == RZ_SUBPROCESS_TIMEDOUT) {
 			rz_subprocess_kill(proc);
 			out->il_timeout = true;
@@ -604,6 +731,267 @@ beach:
 	return out;
 }
 
+static RZ_OWN RzPVector /*<RzTestResultInfo *>*/ *rz_test_run_asm_batch_fallback(RZ_NONNULL RzTestRunConfig *config, RZ_NONNULL RzTest **tests, size_t n_tests) {
+	RzPVector *results = rz_pvector_new((RzPVectorFree)rz_test_test_result_info_free);
+	if (!results) {
+		return NULL;
+	}
+	for (size_t i = 0; i < n_tests; i++) {
+		RzTestResultInfo *res = rz_test_run_test(config, tests[i]);
+		if (res) {
+			rz_pvector_push(results, res);
+		}
+	}
+	return results;
+}
+
+/**
+ * \brief Run a batch of RZ_TEST_TYPE_ASM tests sharing (arch, cpu, bits, endian, load_plugins) in one rz-asm process.
+ * Falls back to running each test individually if the batch process crashes, times out, or mismatches framing.
+ */
+RZ_API RZ_OWN RzPVector /*<RzTestResultInfo *>*/ *rz_test_run_asm_batch(RZ_NONNULL RzTestRunConfig *config, RZ_NONNULL RzTest **tests, size_t n_tests) {
+	rz_return_val_if_fail(config && tests, NULL);
+	if (!n_tests) {
+		return rz_pvector_new((RzPVectorFree)rz_test_test_result_info_free);
+	}
+	if (n_tests == 1) {
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+
+	ut64 start_time = rz_time_now_mono();
+	RzStrBuf batch_in;
+	rz_strbuf_init(&batch_in);
+	RzVector reqs;
+	rz_vector_init(&reqs, sizeof(AsmBatchReq), NULL, NULL);
+
+	for (size_t i = 0; i < n_tests; i++) {
+		RzAsmTest *t = tests[i]->asm_test;
+		if (t->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
+			AsmBatchReq req = { .test_idx = i, .kind = ASM_BATCH_OP_ASM };
+			rz_vector_push(&reqs, &req);
+			rz_strbuf_appendf(&batch_in, "a %" PFMT64x " %s\n", t->offset, t->disasm);
+		}
+		if ((t->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) || t->il) {
+			char *hex = rz_hex_bin2strdup(t->bytes, t->bytes_size);
+			if (!hex) {
+				rz_strbuf_fini(&batch_in);
+				rz_vector_fini(&reqs);
+				return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+			}
+			if (t->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+				AsmBatchReq req = { .test_idx = i, .kind = ASM_BATCH_OP_DISASM };
+				rz_vector_push(&reqs, &req);
+				rz_strbuf_appendf(&batch_in, "d %" PFMT64x " %s\n", t->offset, hex);
+			}
+			if (t->il) {
+				AsmBatchReq req = { .test_idx = i, .kind = ASM_BATCH_OP_IL };
+				rz_vector_push(&reqs, &req);
+				rz_strbuf_appendf(&batch_in, "I %" PFMT64x " %s\n", t->offset, hex);
+			}
+			free(hex);
+		}
+	}
+
+	size_t n_reqs = rz_vector_len(&reqs);
+	if (!n_reqs) {
+		rz_strbuf_fini(&batch_in);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+
+	char *tmp_path = NULL;
+	int fd = rz_file_mkstemp("rz-test-asm-batch", &tmp_path);
+	if (fd != -1) {
+#if __WINDOWS__
+		_close(fd);
+#else
+		close(fd);
+#endif
+	}
+	if (fd == -1 || !tmp_path) {
+		free(tmp_path);
+		rz_strbuf_fini(&batch_in);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+
+	bool dumped = rz_file_dump(tmp_path, (const ut8 *)rz_strbuf_get(&batch_in), (int)rz_strbuf_length(&batch_in), false);
+	rz_strbuf_fini(&batch_in);
+	if (!dumped) {
+		rz_file_rm(tmp_path);
+		free(tmp_path);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+
+	char *rz_asm_exe = rz_test_find_executable("rz-asm", config->bin_path);
+	const char *envvars[] = { "RZ_NOPLUGINS" };
+	const char *envvals[] = { "1" };
+	size_t env_size = tests[0]->asm_test->load_plugins ? 0 : 1;
+	RzPVector args;
+	rz_pvector_init(&args, NULL);
+	char bits[0x20];
+	asm_push_common_args(&args, tests[0]->asm_test, bits, sizeof(bits));
+	rz_pvector_push(&args, "-t");
+	rz_pvector_push(&args, tmp_path);
+
+	RzSubprocessOutput *proc_out = subprocess_runner(rz_asm_exe, args.v.a, rz_pvector_len(&args),
+		env_size ? envvars : NULL, env_size ? envvals : NULL, env_size, config->timeout_ms, NULL);
+	rz_pvector_clear(&args);
+	free(rz_asm_exe);
+	rz_file_rm(tmp_path);
+	free(tmp_path);
+
+	if (!proc_out || proc_out->timeout || proc_out->ret != 0 || !proc_out->out || !proc_out->err) {
+		rz_subprocess_output_free(proc_out);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+
+	char *out_preamble = NULL;
+	char *err_preamble = NULL;
+	AsmBatchItemSlice *out_slices = rz_test_parse_asm_batch_stream((const char *)proc_out->out, n_reqs, &out_preamble);
+	AsmBatchItemSlice *err_slices = (out_slices && RZ_STR_ISEMPTY(out_preamble))
+		? rz_test_parse_asm_batch_stream((const char *)proc_out->err, n_reqs, &err_preamble)
+		: NULL;
+	rz_subprocess_output_free(proc_out);
+
+	if (!out_slices || !err_slices || RZ_STR_ISNOTEMPTY(out_preamble)) {
+		asm_batch_slices_fini(out_slices, n_reqs);
+		asm_batch_slices_fini(err_slices, n_reqs);
+		free(out_preamble);
+		free(err_preamble);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+	free(out_preamble);
+
+	RzAsmTestOutput **outs = RZ_NEWS0(RzAsmTestOutput *, n_tests);
+	if (!outs) {
+		asm_batch_slices_fini(out_slices, n_reqs);
+		asm_batch_slices_fini(err_slices, n_reqs);
+		free(err_preamble);
+		rz_vector_fini(&reqs);
+		return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+	}
+	for (size_t i = 0; i < n_tests; i++) {
+		outs[i] = RZ_NEW0(RzAsmTestOutput);
+		if (!outs[i]) {
+			for (size_t j = 0; j < i; j++) {
+				rz_test_asm_test_output_free(outs[j]);
+			}
+			free(outs);
+			asm_batch_slices_fini(out_slices, n_reqs);
+			asm_batch_slices_fini(err_slices, n_reqs);
+			free(err_preamble);
+			rz_vector_fini(&reqs);
+			return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+		}
+		outs[i]->as_ret = outs[i]->disas_ret = outs[i]->il_ret = INT_MAX;
+	}
+
+	for (size_t r = 0; r < n_reqs; r++) {
+		if (out_slices[r].ret != err_slices[r].ret) {
+			for (size_t j = 0; j < n_tests; j++) {
+				rz_test_asm_test_output_free(outs[j]);
+			}
+			free(outs);
+			asm_batch_slices_fini(out_slices, n_reqs);
+			asm_batch_slices_fini(err_slices, n_reqs);
+			free(err_preamble);
+			rz_vector_fini(&reqs);
+			return rz_test_run_asm_batch_fallback(config, tests, n_tests);
+		}
+		AsmBatchReq *req = rz_vector_index_ptr(&reqs, r);
+		RzAsmTestOutput *out = outs[req->test_idx];
+		int ret_code = out_slices[r].ret;
+		switch (req->kind) {
+		case ASM_BATCH_OP_ASM: {
+			out->as_err = asm_batch_join_err(err_preamble, err_slices[r].data);
+			out->as_ret = ret_code;
+			if (ret_code == 0) {
+				const char *hex = out_slices[r].data;
+				size_t hexlen = strlen(hex);
+				if (hexlen > 0) {
+					ut8 *bytes = malloc(hexlen);
+					if (bytes) {
+						int byteslen = rz_hex_str2bin(hex, bytes);
+						if (byteslen > 0) {
+							out->bytes = bytes;
+							out->bytes_size = (size_t)byteslen;
+						} else {
+							free(bytes);
+						}
+					}
+				}
+			}
+			break;
+		}
+		case ASM_BATCH_OP_DISASM: {
+			out->disas_err = asm_batch_join_err(err_preamble, err_slices[r].data);
+			out->disas_ret = ret_code;
+			if (ret_code == 0) {
+				char *disasm = rz_str_dup(out_slices[r].data);
+				if (disasm) {
+					rz_str_trim(disasm);
+					rz_str_replace_char(disasm, '\n', ';');
+				}
+				out->disasm = disasm;
+			}
+			break;
+		}
+		case ASM_BATCH_OP_IL: {
+			char *il = rz_str_dup(out_slices[r].data);
+			if (il) {
+				rz_str_trim(il);
+				rz_str_replace_char(il, '\n', ';');
+			}
+			out->il = il;
+			out->il_err = asm_batch_join_err(err_preamble, err_slices[r].data);
+			out->il_ret = ret_code;
+			out->il_failed = ret_code != 0;
+			break;
+		}
+		}
+	}
+
+	asm_batch_slices_fini(out_slices, n_reqs);
+	asm_batch_slices_fini(err_slices, n_reqs);
+	free(err_preamble);
+	rz_vector_fini(&reqs);
+
+	ut64 elapsed = rz_time_now_mono() - start_time;
+	ut64 per_test_elapsed = elapsed / n_tests;
+	RzPVector *results = rz_pvector_new((RzPVectorFree)rz_test_test_result_info_free);
+	if (!results) {
+		for (size_t i = 0; i < n_tests; i++) {
+			rz_test_asm_test_output_free(outs[i]);
+		}
+		free(outs);
+		return NULL;
+	}
+	for (size_t i = 0; i < n_tests; i++) {
+		RzTestResultInfo *res = RZ_NEW0(RzTestResultInfo);
+		if (!res) {
+			rz_test_asm_test_output_free(outs[i]);
+			continue;
+		}
+		res->test = tests[i];
+		res->asm_out = outs[i];
+		res->time_elapsed = per_test_elapsed;
+		bool success = rz_test_check_asm_test(outs[i], tests[i]->asm_test);
+		bool broken = rz_test_broken(tests[i]);
+		if (!success) {
+			res->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
+		} else {
+			res->result = broken ? RZ_TEST_RESULT_FIXED : RZ_TEST_RESULT_OK;
+		}
+		rz_pvector_push(results, res);
+	}
+	free(outs);
+	return results;
+}
+
 RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 	if (!out) {
 		return false;
@@ -617,7 +1005,7 @@ RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 		}
 	}
 	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
-		if (!out->disasm || !test->disasm || out->as_timeout) {
+		if (!out->disasm || !test->disasm || out->disas_timeout) {
 			return false;
 		}
 		if (strcmp(out->disasm, test->disasm) != 0) {

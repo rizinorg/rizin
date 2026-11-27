@@ -400,6 +400,25 @@ RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNU
 	return NULL;
 }
 
+/**
+ * \brief Reinitialize the currently active asm plugin's per-stream state.
+ * \param a RzAsm instance whose active plugin state should be reset.
+ * \return true on success (or when the active plugin has no resettable state), false if init failed.
+ */
+RZ_API bool rz_asm_plugin_reset(RZ_NONNULL RzAsm *a) {
+	rz_return_val_if_fail(a, false);
+	if (!a->cur || !a->cur->fini || !a->cur->init) {
+		return true;
+	}
+	plugin_fini(a);
+	if (!a->cur->init(&a->plugin_data)) {
+		RZ_LOG_ERROR("asm plugin '%s' failed to reinitialize.\n", a->cur->name);
+		a->cur = NULL;
+		return false;
+	}
+	return true;
+}
+
 RZ_API bool rz_asm_is_valid(const RzAsm *a, const char *name) {
 	if (RZ_STR_ISEMPTY(name)) {
 		return false;

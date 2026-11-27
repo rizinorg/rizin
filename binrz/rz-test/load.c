@@ -767,6 +767,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 			test->type = RZ_TEST_TYPE_ASM;
 			test->path = pooled_path;
 			test->asm_test = *it;
+			test->asm_test->load_plugins = load_plugins;
 			rz_pvector_push(&db->tests, test);
 		}
 		rz_pvector_free(asm_tests);

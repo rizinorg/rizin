@@ -140,6 +140,7 @@ RZ_API bool rz_asm_plugin_del(RzAsm *a, RZ_NONNULL RzAsmPlugin *foo);
 RZ_API bool rz_asm_plugin_iterator(RZ_NONNULL const RzAsm *a, RZ_OUT RZ_NONNULL RzIterator *iter);
 RZ_API const RzAsmPlugin *rz_asm_plugin_current(RZ_NONNULL const RzAsm *a);
 RZ_API const RzAsmPlugin *rz_asm_plugin_find(RZ_NONNULL const RzAsm *a, RZ_NONNULL const char *name);
+RZ_API bool rz_asm_plugin_reset(RZ_NONNULL RzAsm *a);
 RZ_API bool rz_asm_setup(RzAsm *a, const char *arch, int bits, int big_endian);
 RZ_API bool rz_asm_is_valid(const RzAsm *a, const char *name);
 RZ_API bool rz_asm_use(RzAsm *a, RZ_NULLABLE const char *name);
