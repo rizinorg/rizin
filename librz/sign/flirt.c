@@ -410,13 +410,16 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			ut32 next_module_function_size;
 
 			// get function size from flirt signature
-			ut64 flirt_fcn_size = module->length - flirt_func->offset;
+			ut64 flirt_fcn_size = module->length > flirt_func->offset ? module->length - flirt_func->offset : 0;
 			RzFlirtFunction *next_flirt_func;
 			RzListIter *next_it;
-			rz_list_foreach_iter(rz_list_next(it), next_it, next_flirt_func) {
-				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset) {
-					flirt_fcn_size = next_flirt_func->offset - flirt_func->offset;
-					break;
+			rz_list_foreach (module->public_functions, next_it, next_flirt_func) {
+				if (!next_flirt_func->is_local && !next_flirt_func->negative_offset &&
+					next_flirt_func->offset > flirt_func->offset) {
+					ut64 delta = next_flirt_func->offset - flirt_func->offset;
+					if (!flirt_fcn_size || delta < flirt_fcn_size) {
+						flirt_fcn_size = delta;
+					}
 				}
 			}
 			// resize function if needed
