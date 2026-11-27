@@ -38,6 +38,10 @@ static int bin_compare_method(RzBinSymbol *a, RzBinSymbol *b, void *user) {
 	return rz_bin_compare_method(a, b);
 }
 
+static int bin_compare_class(RzBinClass *a, RzBinClass *b, void *user) {
+	return rz_bin_compare_class(a, b);
+}
+
 static int bin_compare_class_field(RzBinClassField *a, RzBinClassField *b, void *user) {
 	return rz_bin_compare_class_field(a, b);
 }
@@ -96,4 +100,6 @@ RZ_IPI void rz_bin_set_and_process_classes(RzBinFile *bf, RzBinObject *o) {
 		element = *it;
 		process_handle_class(o, element);
 	}
+	// Build lookups before sorting to preserve the first plugin class for each name.
+	rz_pvector_sort(o->classes, (RzPVectorComparator)bin_compare_class, NULL);
 }
