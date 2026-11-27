@@ -142,6 +142,18 @@ SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
 SPDX-License-Identifier = "LGPL-3.0-only OR CC-BY-SA-4.0"
 
 [[annotations]]
+path = "assets/logo.png"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only OR CC-BY-SA-4.0"
+
+[[annotations]]
+path = [".agents/**", ".codex-plugin/**", ".claude-plugin/**", ".mcp.json"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2021 RizinOrg <info@rizin.re>"
+SPDX-License-Identifier = "LGPL-3.0-only"
+
+[[annotations]]
 path = "test/notworking_db/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2009 RadareOrg <pancake@nopcode.org>"
