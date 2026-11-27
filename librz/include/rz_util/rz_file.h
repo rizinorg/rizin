@@ -30,7 +30,7 @@ RZ_API bool rz_file_truncate(const char *filename, ut64 newsize);
 RZ_API ut64 rz_file_size(const char *str);
 RZ_API char *rz_file_root(const char *root, const char *path);
 RZ_API RzMmap *rz_file_mmap(const char *file, int perm, int mode, ut64 base);
-RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize);
+RZ_API RZ_BORROW void *rz_file_mmap_resize(RZ_BORROW RZ_NONNULL RzMmap *m, ut64 newsize);
 RZ_API void rz_file_mmap_free(RzMmap *m);
 RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive);
 RZ_API char *rz_file_temp(const char *prefix);

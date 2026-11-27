@@ -142,7 +142,17 @@ bool test_rz_buf_bytes(void) {
 		mu_fail("test failed");
 	}
 
+	ut64 prev_sz = rz_buf_size(b);
+	mu_assert_eq(rz_buf_write(b, (const ut8 *)"x", 0), 0, "0-byte write on bytes buffer");
+	mu_assert_eq(rz_buf_size(b), prev_sz, "size unchanged after 0-byte write");
+
 	// Cleanup
+	rz_buf_free(b);
+
+	b = rz_buf_new_with_bytes(NULL, 0);
+	mu_assert_notnull(b, "rz_buf_new_with_bytes empty");
+	mu_assert_eq(rz_buf_write(b, (const ut8 *)"x", 0), 0, "0-byte write on empty bytes buffer");
+	mu_assert_eq(rz_buf_size(b), 0, "empty bytes buffer stays 0");
 	rz_buf_free(b);
 	mu_end;
 }
@@ -188,6 +198,11 @@ bool test_rz_buf_mmap(void) {
 		free(filename);
 		mu_fail("test failed");
 	}
+
+	mu_assert_true(rz_buf_resize(b, 0), "mmap resize to 0");
+	mu_assert_eq(rz_buf_write(b, (const ut8 *)"x", 0), 0, "0-byte write on 0-length mmap buf");
+	mu_assert_eq(rz_buf_size(b), 0, "mmap buf size stays 0");
+	mu_assert_true(rz_buf_resize(b, 0x10), "mmap resize back from 0");
 
 	rz_buf_free(b);
 	unlink(filename);
