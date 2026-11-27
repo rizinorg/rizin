@@ -34,18 +34,29 @@ RZ_API st64 rz_big_to_int(RzNumBig *b) {
 }
 
 RZ_API void rz_big_from_hexstr(RzNumBig *b, const char *str) {
+	bool negative = false;
+	if (*str == '-') {
+		negative = true;
+		str++;
+	}
 	if (rz_str_startswith(str, "0x")) {
 		str += 2;
-		mpz_set_str(*b, str, 16);
-	} else if (rz_str_startswith(str, "-0x")) {
-		str += 3;
-		mpz_set_str(*b, str, 16);
-		mpz_mul_si(*b, *b, -1);
+	}
+
+	mpz_set_ui(*b, 0);
+	mpz_set_str(*b, str, 16);
+	if (negative) {
+		mpz_neg(*b, *b);
 	}
 }
 
-RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
+RZ_API RZ_OWN char *rz_big_to_hexstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
 	char *tmp = mpz_get_str(NULL, 16, *b);
+	if (!tmp) {
+		return NULL;
+	}
 	char *res;
 	if (tmp[0] == '-') {
 		res = rz_str_newf("-0x%s", &tmp[1]);
@@ -54,6 +65,12 @@ RZ_API char *rz_big_to_hexstr(RzNumBig *b) {
 	}
 	free(tmp);
 	return res;
+}
+
+RZ_API RZ_OWN char *rz_big_to_decstr(RZ_NONNULL RzNumBig *b) {
+	rz_return_val_if_fail(b, NULL);
+
+	return mpz_get_str(NULL, 10, *b);
 }
 
 RZ_API void rz_big_assign(RzNumBig *dst, RzNumBig *src) {
@@ -120,19 +137,46 @@ RZ_API int rz_big_is_zero(RzNumBig *a) {
 }
 
 RZ_API void rz_big_inc(RzNumBig *a) {
-	RzNumBig tmp;
-	mpz_init_set_si(tmp, 1);
-	mpz_add(*a, *a, tmp);
+	mpz_add_ui(*a, *a, 1);
 }
 
 RZ_API void rz_big_dec(RzNumBig *a) {
-	RzNumBig tmp;
-	mpz_init_set_si(tmp, 1);
-	mpz_sub(*a, *a, tmp);
+	mpz_sub_ui(*a, *a, 1);
 }
 
 RZ_API void rz_big_powm(RzNumBig *c, RzNumBig *a, RzNumBig *b, RzNumBig *m) {
 	mpz_powm(*c, *a, *b, *m);
+}
+
+RZ_API void rz_big_pow(RZ_NONNULL RzNumBig *c, RZ_NONNULL RzNumBig *a, RZ_NONNULL RzNumBig *b) {
+	rz_return_if_fail(a && b && c);
+
+	if (mpz_sgn(*b) < 0) {
+		mpz_set_ui(*c, 0);
+		return;
+	}
+
+	// fast path
+	if (mpz_fits_ulong_p(*b)) {
+		mpz_pow_ui(*c, *a, mpz_get_ui(*b));
+		return;
+	}
+
+	RzNumBig base, exp;
+	mpz_init_set(base, *a);
+	mpz_init_set(exp, *b);
+	mpz_set_ui(*c, 1);
+	while (mpz_sgn(exp) > 0) {
+		if (mpz_odd_p(exp)) {
+			mpz_mul(*c, *c, base);
+		}
+		mpz_fdiv_q_2exp(exp, exp, 1);
+		if (mpz_sgn(exp) > 0) {
+			mpz_mul(base, base, base);
+		}
+	}
+	mpz_clear(base);
+	mpz_clear(exp);
 }
 
 RZ_API void rz_big_isqrt(RzNumBig *c, RzNumBig *a) {
