@@ -666,3 +666,33 @@ EXPECT=<<EOF
 [{"name":"fcn.00000000","addr":0,"stats":{"mov":2,"pop":1,"ret":1,"rpush":1}},{"name":"fcn.00000010","addr":16,"stats":{"ret":1,"xor":1}}]
 EOF
 RUN
+
+NAME=afl., afd and afii in JSON
+FILE==
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 5589e583ec088b45088945fc8b45fc85c07402c9c331c0c9c3
+wx 31c0c3 @ 0x20
+af
+af @ 0x20
+afl.j @ 0x21~{.[]\|{offset,name,size}}
+afl.j @ 0x100
+afdj @ 0x6
+afdj @ 0x20
+afiij
+afii imp1
+afiij imp2
+afii
+EOF
+EXPECT=<<EOF
+[{"offset":32,"name":"fcn.00000020","size":3}]
+[]
+[{"name":"fcn.00000000","addr":0,"delta":6}]
+[{"name":"fcn.00000020","addr":32,"delta":0}]
+[]
+["imp1","imp2"]
+imp1
+imp2
+EOF
+RUN

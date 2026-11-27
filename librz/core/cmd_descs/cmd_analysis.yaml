@@ -324,6 +324,10 @@ commands:
           - name: afbr
             summary: Show addresses of instructions which leave the function
             cname: analysis_function_returns
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: afb=
             summary: Display ascii-art bars for basic block regions
@@ -669,6 +673,10 @@ commands:
           - name: afl.
             summary: List functions in current seek
             cname: analysis_function_list_in
+            type: RZ_CMD_DESC_TYPE_ARGV_STATE
+            modes:
+              - RZ_OUTPUT_MODE_STANDARD
+              - RZ_OUTPUT_MODE_JSON
             args: []
           - name: aflc
             summary: Display count of all functions
@@ -709,6 +717,10 @@ commands:
               - name: afii
                 summary: Show/add imports used in function in current seek
                 cname: analysis_function_import_list
+                type: RZ_CMD_DESC_TYPE_ARGV_STATE
+                modes:
+                  - RZ_OUTPUT_MODE_STANDARD
+                  - RZ_OUTPUT_MODE_JSON
                 args:
                   - name: import
                     type: RZ_CMD_ARG_TYPE_STRING
@@ -823,6 +835,10 @@ commands:
       - name: afd
         summary: Show function + delta for given offset
         cname: analysis_function_describe_offset
+        type: RZ_CMD_DESC_TYPE_ARGV_STATE
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args: []
   - name: aF
     summary: Analyze function non-recursively

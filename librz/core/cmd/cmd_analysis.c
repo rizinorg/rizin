@@ -1836,12 +1836,12 @@ RZ_IPI RzCmdStatus rz_analysis_function_blocks_switch_type_handler(RzCore *core,
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_function_returns_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_analysis_fcn_returns(core, fcn);
+	rz_core_analysis_fcn_returns(core, fcn, state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -3674,9 +3674,13 @@ RZ_IPI RzCmdStatus rz_analysis_function_list_handler(RzCore *core, int argc, con
 	return res;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_list_in_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_function_list_in_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
-	function_list_print_quiet(core, list);
+	if (state->mode == RZ_OUTPUT_MODE_JSON) {
+		function_list_print_to_json(core, list, state);
+	} else {
+		function_list_print_quiet(core, list);
+	}
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }
@@ -3954,7 +3958,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_info_handler(RzCore *core, int argc, con
 	return res;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_import_list_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_function_import_list_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzAnalysisFunction *fcn = analysis_get_function_in(core->analysis, core->offset);
 	if (!fcn) {
 		return RZ_CMD_STATUS_ERROR;
@@ -3971,13 +3975,22 @@ RZ_IPI RzCmdStatus rz_analysis_function_import_list_handler(RzCore *core, int ar
 			free(import);
 			return RZ_CMD_STATUS_ERROR;
 		}
-	} else {
-		char *imp;
-		RzListIter *iter;
-		rz_list_foreach (fcn->imports, iter, imp) {
+		// an addition in JSON mode prints the resulting list, not an empty line
+		if (state->mode != RZ_OUTPUT_MODE_JSON) {
+			return RZ_CMD_STATUS_OK;
+		}
+	}
+	char *imp;
+	RzListIter *iter;
+	rz_cmd_state_output_array_start(state);
+	rz_list_foreach (fcn->imports, iter, imp) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_s(state->d.pj, imp);
+		} else {
 			rz_cons_printf(core->cons, "%s\n", imp);
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -4373,7 +4386,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_cc_reg_usage_handler(RzCore *core, int a
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, int argc, const char **argv, RzCmdStateOutput *state) {
 	RzList *list = rz_analysis_get_functions_in(core->analysis, core->offset);
 	if (rz_list_empty(list)) {
 		RZ_LOG_ERROR("No function found in 0x%08" PFMT64x ".\n", core->offset);
@@ -4382,9 +4395,16 @@ RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, in
 	}
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
+	rz_cmd_state_output_array_start(state);
 	rz_list_foreach (list, it, fcn) {
 		st64 delta = core->offset - fcn->addr;
-		if (delta > 0) {
+		if (state->mode == RZ_OUTPUT_MODE_JSON) {
+			pj_o(state->d.pj);
+			pj_ks(state->d.pj, "name", fcn->name);
+			pj_kn(state->d.pj, "addr", fcn->addr);
+			pj_kN(state->d.pj, "delta", delta);
+			pj_end(state->d.pj);
+		} else if (delta > 0) {
 			rz_cons_printf(core->cons, "%s + %" PFMT64d "\n", fcn->name, delta);
 		} else if (delta < 0) {
 			rz_cons_printf(core->cons, "%s - %" PFMT64d "\n", fcn->name, -delta);
@@ -4392,6 +4412,7 @@ RZ_IPI RzCmdStatus rz_analysis_function_describe_offset_handler(RzCore *core, in
 			rz_cons_printf(core->cons, "%s\n", fcn->name);
 		}
 	}
+	rz_cmd_state_output_array_end(state);
 	rz_list_free(list);
 	return RZ_CMD_STATUS_OK;
 }

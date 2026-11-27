@@ -23283,7 +23283,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_blocks_switch_type_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbet", rz_analysis_function_blocks_switch_type_handler, &analysis_function_blocks_switch_type_help);
 	rz_warn_if_fail(analysis_function_blocks_switch_type_cd);
 
-	RzCmdDesc *analysis_function_returns_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afbr", rz_analysis_function_returns_handler, &analysis_function_returns_help);
+	RzCmdDesc *analysis_function_returns_cd = rz_cmd_desc_argv_state_new(core->rcmd, afb_cd, "afbr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_returns_handler, &analysis_function_returns_help);
 	rz_warn_if_fail(analysis_function_returns_cd);
 
 	RzCmdDesc *analysis_function_blocks_asciiart_cd = rz_cmd_desc_argv_new(core->rcmd, afb_cd, "afb=", rz_analysis_function_blocks_asciiart_handler, &analysis_function_blocks_asciiart_help);
@@ -23402,7 +23402,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *afl_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afl", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_list_handler, &analysis_function_list_help, &afl_help);
 	rz_warn_if_fail(afl_cd);
-	RzCmdDesc *analysis_function_list_in_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "afl.", rz_analysis_function_list_in_handler, &analysis_function_list_in_help);
+	RzCmdDesc *analysis_function_list_in_cd = rz_cmd_desc_argv_state_new(core->rcmd, afl_cd, "afl.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_list_in_handler, &analysis_function_list_in_help);
 	rz_warn_if_fail(analysis_function_list_in_cd);
 
 	RzCmdDesc *analysis_function_count_cd = rz_cmd_desc_argv_new(core->rcmd, afl_cd, "aflc", rz_analysis_function_count_handler, &analysis_function_count_help);
@@ -23419,7 +23419,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *afi_cd = rz_cmd_desc_group_state_new(core->rcmd, af_cd, "afi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_TABLE, rz_analysis_function_info_handler, &analysis_function_info_help, &afi_help);
 	rz_warn_if_fail(afi_cd);
-	RzCmdDesc *afii_cd = rz_cmd_desc_group_new(core->rcmd, afi_cd, "afii", rz_analysis_function_import_list_handler, &analysis_function_import_list_help, &afii_help);
+	RzCmdDesc *afii_cd = rz_cmd_desc_group_state_new(core->rcmd, afi_cd, "afii", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_import_list_handler, &analysis_function_import_list_help, &afii_help);
 	rz_warn_if_fail(afii_cd);
 	RzCmdDesc *analysis_function_import_list_del_cd = rz_cmd_desc_argv_new(core->rcmd, afii_cd, "afii-", rz_analysis_function_import_list_del_handler, &analysis_function_import_list_del_help);
 	rz_warn_if_fail(analysis_function_import_list_del_cd);
@@ -23458,7 +23458,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *analysis_function_cc_reg_usage_cd = rz_cmd_desc_argv_state_new(core->rcmd, afc_cd, "afcr", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_cc_reg_usage_handler, &analysis_function_cc_reg_usage_help);
 	rz_warn_if_fail(analysis_function_cc_reg_usage_cd);
 
-	RzCmdDesc *analysis_function_describe_offset_cd = rz_cmd_desc_argv_new(core->rcmd, af_cd, "afd", rz_analysis_function_describe_offset_handler, &analysis_function_describe_offset_help);
+	RzCmdDesc *analysis_function_describe_offset_cd = rz_cmd_desc_argv_state_new(core->rcmd, af_cd, "afd", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_analysis_function_describe_offset_handler, &analysis_function_describe_offset_help);
 	rz_warn_if_fail(analysis_function_describe_offset_cd);
 
 	RzCmdDesc *analysis_function_add_nodepth_cd = rz_cmd_desc_argv_new(core->rcmd, cmd_analysis_cd, "aF", rz_analysis_function_add_nodepth_handler, &analysis_function_add_nodepth_help);
