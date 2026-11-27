@@ -224,10 +224,7 @@ RZ_API void rz_interrupt_break_pop(RZ_NULLABLE RzInterrupt *intr) {
  * \param timeout Timeout in ms, or 0 to disable.
  */
 RZ_API void rz_interrupt_timeout(RZ_NULLABLE RzInterrupt *intr, int timeout) {
-	if (!intr) {
-		return;
-	}
-	intr->timeout = (timeout && !intr->timeout) ? rz_time_now_mono() + ((ut64)timeout << 20) : 0;
+	rz_interrupt_break_timeout(intr, timeout);
 }
 
 /**
@@ -303,7 +300,7 @@ RZ_API void rz_interrupt_break_timeout(RZ_NULLABLE RzInterrupt *intr, int timeou
 	if (!intr) {
 		return;
 	}
-	intr->timeout = (timeout && !intr->timeout)
-		? rz_time_now_mono() + ((ut64)timeout << 20)
+	intr->timeout = timeout > 0
+		? rz_time_now_mono() + (ut64)timeout * RZ_USEC_PER_MSEC
 		: 0;
 }

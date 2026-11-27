@@ -51,8 +51,116 @@ bool test_stats_bounds(void) {
 	mu_end;
 }
 
+bool test_core_auto_analysis_clears_timeout(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e asm.arch=x86; e asm.bits=64; o malloc://64; wx c3 @ 0; e analysis.timeout=2"),
+		RZ_CMD_STATUS_OK, "setup");
+
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
+	mu_assert_eq(core->intr->timeout, 0, "completed auto analysis must disarm timeout");
+	mu_assert_false(rz_interrupt_is_breaked(core->intr), "not breaked after analysis");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core, "e analysis.timeout=-1"), RZ_CMD_STATUS_OK, "negative timeout setup");
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_DEEP);
+	mu_assert_eq(core->intr->timeout, 0, "negative analysis.timeout keeps timeout disabled");
+	mu_assert_false(rz_interrupt_is_breaked(core->intr), "negative analysis.timeout must not break");
+
+	rz_core_free(core);
+	mu_end;
+}
+
+typedef struct {
+	RzCore *core;
+	int remaining;
+	RzCoreTaskContextSwitch prev_cb;
+	void *prev_user;
+} YieldBreakCtx;
+
+static void test_noop_oneshot(void *user) {
+	(void)user;
+}
+
+static void test_yield_break_cb(RzCoreTask *next, void *user) {
+	YieldBreakCtx *ctx = user;
+	if (ctx->prev_cb) {
+		ctx->prev_cb(next, ctx->prev_user);
+	}
+	if (ctx->remaining > 0) {
+		ctx->remaining--;
+		if (ctx->remaining == 0) {
+			rz_interrupt_raise(ctx->core->intr);
+		} else {
+			rz_core_task_enqueue_oneshot(&ctx->core->tasks, test_noop_oneshot, NULL);
+		}
+	}
+}
+
+bool test_core_auto_analysis_timeout_clamp_and_interrupt(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+
+	mu_assert_eq(rz_core_cmd0_rzshell(core,
+			     "e asm.arch=x86; e asm.bits=64; o malloc://64; wx c3 @ 0; "
+			     "e analysis.autoname=true; e analysis.vars=true; "
+			     "e analysis.apply.signature=true; e analysis.resolve.pointers=true; "
+			     "e analysis.timeout=100000000"),
+		RZ_CMD_STATUS_OK, "setup");
+
+	rz_core_perform_auto_analysis(core, RZ_CORE_ANALYSIS_EXPERIMENTAL);
+	mu_assert_eq(core->intr->timeout, 0, "experimental auto analysis clears clamped timeout");
+	mu_assert_false(rz_interrupt_is_breaked(core->intr), "not breaked after clamped timeout analysis");
+
+	rz_interrupt_raise(core->intr);
+	mu_assert_false(rz_core_analysis_everything(core, true, NULL), "pre-breaked analysis returns false");
+	rz_interrupt_break_clear(core->intr);
+
+	// Interrupt deterministically on each successive rz_core_task_yield() boundary
+	bool started_sync = !rz_core_task_self(&core->tasks);
+	if (started_sync) {
+		rz_core_task_sync_begin(&core->tasks);
+	}
+	YieldBreakCtx ctx = {
+		.core = core,
+		.remaining = 0,
+		.prev_cb = core->tasks.ctx_switch,
+		.prev_user = core->tasks.ctx_switch_user,
+	};
+	core->tasks.ctx_switch = test_yield_break_cb;
+	core->tasks.ctx_switch_user = &ctx;
+
+	int breaks_hit = 0;
+	for (int target = 1; target <= 16; target++) {
+		rz_interrupt_break_clear(core->intr);
+		ctx.remaining = target;
+		rz_core_task_enqueue_oneshot(&core->tasks, test_noop_oneshot, NULL);
+		bool completed = rz_core_analysis_everything(core, true, NULL);
+		rz_interrupt_break_clear(core->intr);
+		if (completed) {
+			// Reached end of all passes; drain any pending oneshot and stop
+			ctx.remaining = 0;
+			rz_core_task_yield(&core->tasks);
+			break;
+		}
+		breaks_hit++;
+	}
+	core->tasks.ctx_switch = ctx.prev_cb;
+	core->tasks.ctx_switch_user = ctx.prev_user;
+	rz_core_task_yield(&core->tasks);
+	if (started_sync) {
+		rz_core_task_sync_end(&core->tasks);
+	}
+	mu_assert("interrupts hit across analysis passes", breaks_hit >= 8);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_stats_bounds);
+	mu_run_test(test_core_auto_analysis_clears_timeout);
+	mu_run_test(test_core_auto_analysis_timeout_clamp_and_interrupt);
 	return tests_passed != tests_run;
 }
 
