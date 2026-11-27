@@ -4,6 +4,7 @@
 #ifndef RZ_REGEX_H
 #define RZ_REGEX_H
 
+#include <rz_util/rz_iterator.h>
 #include <rz_util/rz_strbuf.h>
 #include <rz_vector.h>
 #include <rz_types.h>
@@ -84,6 +85,7 @@ typedef struct {
 } RzRegexMulti;
 
 typedef struct {
+	RzRegexSize match_idx; ///< Match index (0-based across all matches).
 	RzRegexSize group_idx; ///< Index of the group. Used to determine name if any was given.
 	/**
 	 * \brief Start offset into the text where the match starts.
@@ -95,7 +97,7 @@ typedef struct {
 	 * \brief The length of the match in number of code units.
 	 * One code unit is 1 byte for UTF-8, 2 bytes for UTF-16, and 4 bytes for UTF-32.
 	 */
-	RzRegexSize len; ///< Length of match in bytes.
+	RzRegexSize len; ///< Length of match in code units.
 } RzRegexMatch;
 
 typedef void RzRegexMatchData; ///< PCRE2 internal match data type
@@ -195,6 +197,62 @@ RZ_API RZ_OWN RzPVector /*<RzVector<RzRegexMatch *> *>*/ *rz_regex_match_all_ove
 	RzRegexSize text_size,
 	RzRegexSize text_offset,
 	RzRegexFlags mflags);
+RZ_API bool rz_regex_match_iter(
+	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_overlap(
+	RZ_NONNULL const RzRegex *regex,
+	RZ_NONNULL const char *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut16 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_overlap_16(
+	RZ_NONNULL const RzRegex16 *regex,
+	RZ_NONNULL const ut16 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut32 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_overlap_32(
+	RZ_NONNULL const RzRegex32 *regex,
+	RZ_NONNULL const ut32 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
+RZ_API bool rz_regex_match_iter_overlap_multi(
+	RZ_NONNULL const RzRegexMulti *regex,
+	RZ_NONNULL const ut8 *text,
+	RzRegexSize text_size,
+	RzRegexSize text_offset,
+	RzRegexFlags mflags,
+	RZ_OUT RZ_NONNULL RzIterator *iterator);
 RZ_API bool rz_regex_contains(RZ_NONNULL const char *pattern, RZ_NONNULL const char *text,
 	RzRegexSize text_size,
 	RzRegexFlags cflags, RzRegexFlags mflags);

@@ -222,14 +222,20 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 	rz_pvector_foreach (patterns, it) {
 		RzSearchBytesPattern *hp = (RzSearchBytesPattern *)*it;
 		if (hp->regex) {
-			RzRegexMulti *re = rz_regex_multi_clone(hp->regex, true);
-			RzPVector *matches = fopts->match_overlap ? rz_regex_match_all_overlap(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT) : rz_regex_match_all(hp->regex, (const char *)raw_buf, size, 0, RZ_REGEX_DEFAULT);
-			rz_regex_free_multi_clone(re);
-			void **it;
-			RzPVector *match;
-			rz_pvector_foreach (matches, it) {
-				match = *it;
-				RzRegexMatch *group0 = rz_pvector_at(match, 0);
+			RzIterator match_it;
+			bool ok = fopts->match_overlap
+				? rz_regex_match_iter_overlap(hp->regex, (const char *)raw_buf,
+					  size, 0, RZ_REGEX_DEFAULT, &match_it)
+				: rz_regex_match_iter(hp->regex, (const char *)raw_buf, size, 0,
+					  RZ_REGEX_DEFAULT, &match_it);
+			if (!ok) {
+				return false;
+			}
+			RzRegexMatch *group0;
+			rz_iterator_foreach(&match_it, group0) {
+				if (group0->group_idx != 0) {
+					continue;
+				}
 				if (fopts->alignment > 1 && rz_mem_align_padding(address + group0->start, fopts->alignment) != 0) {
 					// Match has not the correct alignment in memory.
 					continue;
@@ -237,12 +243,12 @@ static bool bytes_find(RzSearchFindOpt *fopts, void *user, ut64 address, const R
 				RzSearchHit *hit = rz_search_hit_new(hp->pattern_desc, address + group0->start, group0->len, NULL);
 				if (!hit || !rz_th_queue_push(hits, hit, true)) {
 					rz_search_hit_free(hit);
-					rz_pvector_free(matches);
+					rz_iterator_fini(&match_it);
 					return false;
 				}
 				(*n_hits)++;
 			}
-			rz_pvector_free(matches);
+			rz_iterator_fini(&match_it);
 			continue;
 		}
 		for (size_t offset = 0; offset < size;) {
