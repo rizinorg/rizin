@@ -33,6 +33,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	DmpCtx *ctx = dbg->plugin_data;
 	ctx->bf = core->bin->cur;
 
+	RZ_FREE(ctx->context);
 	ctx->context = malloc((strlen(core->bin->cur->o->regstate) / 2) + 1);
 	if (!ctx->context) {
 		return false;
@@ -111,6 +112,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 
 	ut32 bits = ctx->windctx.is_64bit ? 64 : 32;
 
+	Profile *old_profile = ctx->windctx.profile;
 	ctx->windctx.profile = winkd_get_profile(bits, MinorVersion, ServicePackBuild);
 
 	// Find ntoskrnl.exe module
@@ -166,8 +168,10 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 		}
 	}
 	rz_list_free(modules);
+	free(old_profile);
 
 	if (!ctx->windctx.profile) {
+		free(kernel_pdb);
 		RZ_LOG_ERROR("Could not find a profile for this Windows: %s %" PFMT32d "-bit %" PFMT32u " SP %" PFMT32u "\n",
 			ctx->windctx.is_arm ? "ARM" : "x86", bits, MinorVersion, ServicePackBuild);
 		return false;
@@ -189,6 +193,7 @@ static bool rz_debug_dmp_init(RzDebug *dbg, void **user) {
 	}
 	const ut64 KiProcessorBlock = dbg->corebind.numGet(dbg->corebind.core, kpb_flag_name);
 	free(kpb_flag_name);
+	rz_vector_clear(&ctx->KiProcessorBlock);
 	ut64 i;
 	for (i = 0; i < NumberProcessors; i++) {
 		ut64 address = KiProcessorBlock + i * (ctx->windctx.is_64bit ? 8 : 4);

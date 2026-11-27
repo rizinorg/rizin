@@ -1,8 +1,16 @@
 // SPDX-FileCopyrightText: 2020 Khairulmizam Samsudin <xource@gmail.com>
 // SPDX-License-Identifier: LGPL-3.0-only
 
+#include <rz_core.h>
 #include <rz_debug.h>
+#include <dmp_specs.h>
+#include <pe_specs.h>
 #include "minunit.h"
+#if __UNIX__
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
 #if __linux__
 #include <sys/user.h>
 
@@ -781,6 +789,429 @@ static bool test_debug_reg_sync_flg(void) {
 	mu_end;
 }
 
+static bool dmp_mock_check(RzIO *io, const char *file, bool many) {
+	(void)io;
+	(void)many;
+	return !strncmp(file, "dmpnoclose://", 13);
+}
+
+static RzIOPlugin dmp_mock_noclose_plugin;
+
+static RzIODesc *dmp_mock_open(RzIO *io, const char *file, int rw, int mode) {
+	(void)mode;
+	RzIODesc *d = rz_io_desc_new(io, &dmp_mock_noclose_plugin, file, rw, NULL);
+	if (d && !strcmp(file, "dmpnoclose://noplug")) {
+		d->plugin = NULL;
+	}
+	return d;
+}
+
+static RzIOPlugin dmp_mock_noclose_plugin = {
+	.name = "dmp_mock_noclose",
+	.desc = "Mock IO plugin without close callback",
+	.uris = "dmpnoclose://",
+	.license = "LGPL3",
+	.open = dmp_mock_open,
+	.check = dmp_mock_check,
+};
+
+static bool test_io_dmp_open_close(void) {
+	RzIO *io = rz_io_new();
+	mu_assert_notnull(io, "rz_io_new()");
+	mu_assert_true(rz_io_plugin_add(io, &dmp_mock_noclose_plugin), "add mock dmp backend plugin");
+
+	mu_assert_null(rz_io_open_nomap(io, "dmp:///nonexistent_rz_dmp_dir/missing.dmp", RZ_PERM_R, 0),
+		"dmp:// open fails cleanly when backend fails");
+
+	RzIODesc *desc = rz_io_open_nomap(io, "dmp://malloc://64", RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "dmp://malloc://64 opens");
+	RzIOPlugin *dmp_plugin = desc->plugin;
+	mu_assert_notnull(dmp_plugin, "dmp plugin");
+	mu_assert_eq(dmp_plugin->close(NULL), 0, "dmp close(NULL) is a safe no-op");
+	RzIODesc empty_desc = { 0 };
+	mu_assert_eq(dmp_plugin->close(&empty_desc), 0, "dmp close(NULL data) is a safe no-op");
+	mu_assert_true(rz_io_desc_close(desc), "dmp:// close returns success and frees backend");
+
+	desc = rz_io_open_nomap(io, "dmp://dmpnoclose://close", RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "dmp://dmpnoclose://close opens");
+	mu_assert_true(rz_io_desc_close(desc), "dmp:// close handles backend without close callback");
+
+	desc = rz_io_open_nomap(io, "dmp://dmpnoclose://noplug", RZ_PERM_R, 0);
+	mu_assert_notnull(desc, "dmp://dmpnoclose://noplug opens");
+	mu_assert_true(rz_io_desc_close(desc), "dmp:// close handles backend with NULL plugin");
+
+	// Leave exactly 1 fd in the pool so backend open succeeds and outer rz_io_desc_new() fails
+	RzIO *io_full = rz_io_new();
+	mu_assert_notnull(io_full, "rz_io_new for exhausted dmp pool");
+	ut32 saved_next_id = io_full->files->pool->next_id;
+	io_full->files->pool->next_id = io_full->files->pool->last_id - 1;
+	mu_assert_null(rz_io_open_nomap(io_full, "dmp://malloc://64", RZ_PERM_R, 0),
+		"dmp:// open cleans up backend when outer desc allocation fails");
+	io_full->files->pool->next_id = saved_next_id;
+	rz_io_free(io_full);
+
+	rz_io_free(io);
+	mu_end;
+}
+
+static bool test_debug_dmp_reinit(void) {
+	ut8 *raw = calloc(1, sizeof(dmp64_header));
+	if (!raw) {
+		return false;
+	}
+	memcpy(raw, DMP64_MAGIC, 8);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MajorVersion), 15);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MinorVersion), 19041);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MachineImageType), PE_IMAGE_FILE_MACHINE_AMD64);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, NumberProcessors), 0);
+	memcpy(raw + rz_offsetof(dmp64_header, PhysicalMemoryBlockBuffer), DMP_UNUSED_MAGIC, 4);
+	rz_write_le32(raw + rz_offsetof(dmp64_header, DumpType), DMP_DUMPTYPE_HEADER);
+
+	char *uri = rz_str_newf("dmp://malloc://%" PFMT64u, (ut64)sizeof(dmp64_header));
+	if (!uri) {
+		free(raw);
+		return false;
+	}
+
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new for dmp reinit");
+	RzCoreFile *cf = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open synthetic dmp://malloc://");
+	mu_assert_eq(rz_io_desc_write_at(core->io->desc, 0, raw, sizeof(dmp64_header)),
+		(int)sizeof(dmp64_header), "write dmp64 header");
+	mu_assert_true(rz_core_bin_load(core, uri, UT64_MAX), "load synthetic dmp64 bin");
+
+	mu_assert_true(rz_debug_use(core->dbg, "dmp"), "first debug_dmp init");
+	mu_assert_true(rz_debug_use(core->dbg, "dmp"), "second debug_dmp re-init without leaks");
+	rz_core_free(core);
+
+	// Unknown Windows build with no built-in profile must fail cleanly without leaks
+	rz_write_le32(raw + rz_offsetof(dmp64_header, MinorVersion), 99999);
+	RzCore *core2 = rz_core_new();
+	mu_assert_notnull(core2, "rz_core_new for unknown dmp build");
+	cf = rz_core_file_open(core2, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open synthetic dmp://malloc:// 2");
+	mu_assert_eq(rz_io_desc_write_at(core2->io->desc, 0, raw, sizeof(dmp64_header)),
+		(int)sizeof(dmp64_header), "write dmp64 header 2");
+	mu_assert_true(rz_core_bin_load(core2, uri, UT64_MAX), "load synthetic dmp64 bin 2");
+	mu_assert_false(rz_debug_use(core2->dbg, "dmp"), "unknown build fails dmp init cleanly");
+	rz_core_free(core2);
+
+	free(uri);
+	free(raw);
+	mu_end;
+}
+
+#if __UNIX__
+#define MOCK_KD_KERNEL_BASE 0xfffff80000000000ULL
+#define MOCK_KD_DBG_PTR     0xfffff80000010000ULL
+#define MOCK_KD_DBG_BLOCK   0xfffff80000020000ULL
+#define MOCK_KD_CSD_PTR     0xfffff80000030000ULL
+#define MOCK_KD_TIMESTAMP   0x11223344U
+#define MOCK_KD_SIZEOFIMAGE 0x2000U
+
+typedef struct {
+	int listen_fd;
+	ut8 pe_image[0x400];
+} MockKdServer;
+
+static void build_mock_ntoskrnl_pe(ut8 *buf, size_t sz) {
+	memset(buf, 0, sz);
+	// DOS header
+	buf[0] = 'M';
+	buf[1] = 'Z';
+	rz_write_le32(buf + 0x3c, 0x40);
+	// PE signature + COFF header at 0x40
+	memcpy(buf + 0x40, "PE\0\0", 4);
+	rz_write_le16(buf + 0x44, PE_IMAGE_FILE_MACHINE_AMD64);
+	rz_write_le16(buf + 0x46, 1); // NumberOfSections
+	rz_write_le32(buf + 0x48, MOCK_KD_TIMESTAMP);
+	rz_write_le16(buf + 0x54, 0xf0); // SizeOfOptionalHeader (PE32+)
+	rz_write_le16(buf + 0x56, 0x0022); // Characteristics
+	// PE32+ OptionalHeader at 0x58
+	rz_write_le16(buf + 0x58, PE_IMAGE_FILE_TYPE_PE32PLUS);
+	rz_write_le64(buf + 0x70, 0x140000000ULL); // ImageBase
+	rz_write_le32(buf + 0x78, 0x1000); // SectionAlignment
+	rz_write_le32(buf + 0x7c, 0x200); // FileAlignment
+	rz_write_le32(buf + 0x90, MOCK_KD_SIZEOFIMAGE); // SizeOfImage (pe_off + 0x50)
+	rz_write_le32(buf + 0x94, 0x200); // SizeOfHeaders
+	rz_write_le16(buf + 0x9c, PE_IMAGE_SUBSYSTEM_NATIVE);
+	rz_write_le32(buf + 0xc4, 16); // NumberOfRvaAndSizes
+	// DataDirectory[6] (DEBUG) at 0x58 + 112 + 6 * 8 = 0xf8
+	rz_write_le32(buf + 0xf8, 0x1000); // VirtualAddress
+	rz_write_le32(buf + 0xfc, 28); // Size
+	// Section header ".rdata" at 0x148
+	memcpy(buf + 0x148, ".rdata", 6);
+	rz_write_le32(buf + 0x150, 0x200); // VirtualSize
+	rz_write_le32(buf + 0x154, 0x1000); // VirtualAddress
+	rz_write_le32(buf + 0x158, 0x200); // SizeOfRawData
+	rz_write_le32(buf + 0x15c, 0x200); // PointerToRawData
+	rz_write_le32(buf + 0x16c, PE_IMAGE_SCN_MEM_READ);
+	// Debug directory entry at 0x200
+	rz_write_le32(buf + 0x204, MOCK_KD_TIMESTAMP);
+	rz_write_le32(buf + 0x20c, IMAGE_DEBUG_TYPE_CODEVIEW);
+	rz_write_le32(buf + 0x210, 37); // SizeOfData
+	rz_write_le32(buf + 0x214, 0x1020); // AddressOfRawData
+	rz_write_le32(buf + 0x218, 0x220); // PointerToRawData
+	// CodeView RSDS record at 0x220
+	memcpy(buf + 0x220, "RSDS", 4);
+	rz_write_le32(buf + 0x224, 0x01020304);
+	rz_write_le16(buf + 0x228, 0x0506);
+	rz_write_le16(buf + 0x22a, 0x0708);
+	const ut8 d4[8] = { 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10 };
+	memcpy(buf + 0x22c, d4, sizeof(d4));
+	rz_write_le32(buf + 0x234, 1); // age
+	memcpy(buf + 0x238, "ntkrnlmp.pdb", 13);
+}
+
+static bool mock_kd_recv_all(int fd, ut8 *buf, size_t len) {
+	size_t off = 0;
+	while (off < len) {
+		ssize_t r = recv(fd, buf + off, len - off, 0);
+		if (r <= 0) {
+			return false;
+		}
+		off += (size_t)r;
+	}
+	return true;
+}
+
+static bool mock_kd_send_all(int fd, const ut8 *buf, size_t len) {
+	size_t off = 0;
+	while (off < len) {
+		ssize_t w = send(fd, buf + off, len - off, 0);
+		if (w <= 0) {
+			return false;
+		}
+		off += (size_t)w;
+	}
+	return true;
+}
+
+static bool mock_kd_send_pkt(int fd, ut32 leader, ut16 type, ut32 id, const ut8 *data, ut16 len) {
+	ut32 csum = 0;
+	for (ut16 i = 0; i < len; i++) {
+		csum += data[i];
+	}
+	ut8 hdr[16];
+	rz_write_le32(hdr + 0, leader);
+	rz_write_le16(hdr + 4, type);
+	rz_write_le16(hdr + 6, len);
+	rz_write_le32(hdr + 8, id);
+	rz_write_le32(hdr + 12, csum);
+	if (!mock_kd_send_all(fd, hdr, sizeof(hdr))) {
+		return false;
+	}
+	if (len && !mock_kd_send_all(fd, data, len)) {
+		return false;
+	}
+	if (leader == 0x30303030U) {
+		const ut8 trailer = 0xAA;
+		if (!mock_kd_send_all(fd, &trailer, 1)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void *mock_kd_server_fn(void *user) {
+	MockKdServer *srv = user;
+	int cfd = accept(srv->listen_fd, NULL, NULL);
+	if (cfd < 0) {
+		return NULL;
+	}
+	ut32 srv_id = 0x80800001U;
+	for (;;) {
+		ut8 hdr[16];
+		if (!mock_kd_recv_all(cfd, hdr, 1)) {
+			break;
+		}
+		if (hdr[0] == 'b') {
+			continue;
+		}
+		if (!mock_kd_recv_all(cfd, hdr + 1, sizeof(hdr) - 1)) {
+			break;
+		}
+		ut32 leader = rz_read_le32(hdr + 0);
+		ut16 type = rz_read_le16(hdr + 4);
+		ut16 len = rz_read_le16(hdr + 6);
+		ut32 id = rz_read_le32(hdr + 8);
+		if (leader == 0x69696969U) { // KD_PACKET_CTRL
+			if (type == 6) { // KD_PACKET_TYPE_RESET
+				if (!mock_kd_send_pkt(cfd, 0x69696969U, 6, 0x80800000U, NULL, 0)) {
+					break;
+				}
+				ut8 stc[64] = { 0 };
+				rz_write_le32(stc + 0, 0x00003030U); // DbgKdExceptionStateChange
+				rz_write_le32(stc + 8, 1); // cpu_count
+				if (!mock_kd_send_pkt(cfd, 0x30303030U, 7, srv_id++, stc, sizeof(stc))) {
+					break;
+				}
+			}
+			continue;
+		}
+		if (leader != 0x30303030U || len > 0x480) {
+			break;
+		}
+		ut8 payload[0x480];
+		ut8 trailer = 0;
+		if (len && !mock_kd_recv_all(cfd, payload, len)) {
+			break;
+		}
+		if (!mock_kd_recv_all(cfd, &trailer, 1)) {
+			break;
+		}
+		// Acknowledge client's data packet
+		if (!mock_kd_send_pkt(cfd, 0x69696969U, 4, id, NULL, 0)) {
+			break;
+		}
+		if (len < 56) {
+			continue;
+		}
+		ut32 req = rz_read_le32(payload);
+		if (req == 0x00003146U) { // DbgKdGetVersionApi
+			ut8 resp[56] = { 0 };
+			rz_write_le32(resp + 0, 0x00003146U);
+			rz_write_le16(resp + 16, 15); // major
+			rz_write_le16(resp + 18, 19041); // minor (Win10 20H2 x64)
+			resp[20] = 2; // proto_major
+			rz_write_le16(resp + 22, 0x0006); // DBGKD_VERS_FLAG_DATA | DBGKD_VERS_FLAG_PTR64
+			rz_write_le16(resp + 24, 0x8664); // KD_MACH_AMD64
+			rz_write_le64(resp + 32, MOCK_KD_KERNEL_BASE);
+			rz_write_le64(resp + 48, MOCK_KD_DBG_PTR);
+			if (!mock_kd_send_pkt(cfd, 0x30303030U, 2, srv_id++, resp, sizeof(resp))) {
+				break;
+			}
+		} else if (req == 0x00003130U) { // DbgKdReadVirtualMemoryApi
+			ut64 addr = rz_read_le64(payload + 16);
+			ut32 rlen = rz_read_le32(payload + 24);
+			if (rlen > 0x400) {
+				rlen = 0x400;
+			}
+			ut8 resp[56 + 0x400] = { 0 };
+			rz_write_le32(resp + 0, 0x00003130U);
+			rz_write_le64(resp + 16, addr);
+			rz_write_le32(resp + 24, rlen);
+			rz_write_le32(resp + 28, rlen);
+			if (addr == MOCK_KD_DBG_PTR && rlen >= 8) {
+				rz_write_le64(resp + 56, MOCK_KD_DBG_BLOCK);
+			} else if (addr == MOCK_KD_DBG_BLOCK + 0x036 && rlen >= 2) {
+				rz_write_le16(resp + 56, 1); // K_PaeEnabled
+			} else if (addr == MOCK_KD_DBG_BLOCK + 0x268 && rlen >= 8) {
+				rz_write_le64(resp + 56, MOCK_KD_CSD_PTR); // K_CmNtCSDVersion
+			} else if (addr >= MOCK_KD_KERNEL_BASE && addr + rlen <= MOCK_KD_KERNEL_BASE + sizeof(srv->pe_image)) {
+				memcpy(resp + 56, srv->pe_image + (addr - MOCK_KD_KERNEL_BASE), rlen);
+			}
+			if (!mock_kd_send_pkt(cfd, 0x30303030U, 2, srv_id++, resp, (ut16)(56 + rlen))) {
+				break;
+			}
+		} else {
+			ut8 resp[56] = { 0 };
+			rz_write_le32(resp + 0, req);
+			rz_write_le32(resp + 8, 0xC0000001U); // KD_RET_ERR
+			if (!mock_kd_send_pkt(cfd, 0x30303030U, 2, srv_id++, resp, sizeof(resp))) {
+				break;
+			}
+		}
+	}
+	close(cfd);
+	return NULL;
+}
+
+static int mock_winkd_cmdf(void *core, const char *fmt, ...) {
+	(void)core;
+	(void)fmt;
+	return 0;
+}
+
+static bool test_debug_winkd_attach_and_read_ver(void) {
+	char *tmp_base = rz_file_temp("rz_winkd");
+	mu_assert_notnull(tmp_base, "rz_file_temp for winkd test");
+	rz_file_rm(tmp_base);
+	mu_assert_true(rz_sys_mkdirp(tmp_base), "mkdir winkd temp dir");
+
+	char *sock_path = rz_str_newf("%s/kd.sock", tmp_base);
+	char *symstore = rz_str_newf("%s/sym", tmp_base);
+	char *exe_dir = rz_str_newf("%s/ntoskrnl.exe/112233442000", symstore);
+	char *exe_path = rz_str_newf("%s/ntoskrnl.exe", exe_dir);
+	char *pdb_dir = rz_str_newf("%s/ntkrnlmp.pdb/0102030405060708090A0B0C0D0E0F101", symstore);
+	char *pdb_path = rz_str_newf("%s/ntkrnlmp.pdb", pdb_dir);
+	char *exe_parent = rz_str_newf("%s/ntoskrnl.exe", symstore);
+	char *pdb_parent = rz_str_newf("%s/ntkrnlmp.pdb", symstore);
+	char *uri = rz_str_newf("winkd://%s", sock_path);
+
+	MockKdServer srv = { .listen_fd = -1 };
+	build_mock_ntoskrnl_pe(srv.pe_image, sizeof(srv.pe_image));
+
+	srv.listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	mu_assert_neq(srv.listen_fd, -1, "create AF_UNIX socket");
+	struct sockaddr_un sa = { 0 };
+	sa.sun_family = AF_UNIX;
+	rz_str_ncpy(sa.sun_path, sock_path, sizeof(sa.sun_path));
+	mu_assert_eq(bind(srv.listen_fd, (struct sockaddr *)&sa, sizeof(sa)), 0, "bind AF_UNIX socket");
+	mu_assert_eq(listen(srv.listen_fd, 1), 0, "listen AF_UNIX socket");
+
+	RzThread *th = rz_th_new(mock_kd_server_fn, &srv);
+	mu_assert_notnull(th, "start mock KD server thread");
+
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new for winkd");
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	core->dbg->corebind.cmdf = mock_winkd_cmdf;
+	rz_config_set(core->config, "pdb.symstore", symstore);
+	rz_config_set(core->config, "pdb.server", "");
+
+	RzCoreFile *cf = rz_core_file_open(core, uri, RZ_PERM_RW, 0);
+	mu_assert_notnull(cf, "open winkd:// mock socket");
+	// rz_debug_use() triggers reg_profile -> winkd_attach (which syncs, runs winkd_read_ver, and fails download)
+	mu_assert_true(rz_debug_use(core->dbg, "winkd"), "select winkd debug plugin");
+
+	// Detach resets syncd so explicit attach re-runs winkd_read_ver (replacing old profile) and hits download failure
+	mu_assert_true(rz_debug_detach(core->dbg, 0), "winkd detach before explicit fail attach");
+	mu_assert_false(rz_debug_attach(core->dbg, 0), "winkd attach fails when pdb.server is empty");
+
+	// Populate local symstore cache so download succeeds without network traffic
+	mu_assert_true(rz_sys_mkdirp(exe_dir), "mkdir cached ntoskrnl.exe dir");
+	mu_assert_true(rz_file_dump(exe_path, srv.pe_image, sizeof(srv.pe_image), false), "dump cached ntoskrnl.exe");
+	mu_assert_true(rz_sys_mkdirp(pdb_dir), "mkdir cached pdb dir");
+	const ut8 dummy_pdb[4] = { 'P', 'D', 'B', 0 };
+	mu_assert_true(rz_file_dump(pdb_path, dummy_pdb, sizeof(dummy_pdb), false), "dump cached pdb");
+
+	// Detach resets syncd so second attach re-runs winkd_read_ver (replacing old profile) and succeeds
+	mu_assert_true(rz_debug_detach(core->dbg, 0), "winkd detach");
+	rz_config_set(core->config, "pdb.server", "http://127.0.0.1:1");
+	mu_assert_true(rz_debug_attach(core->dbg, 0), "winkd attach succeeds with cached module and pdb");
+
+	rz_core_free(core);
+	rz_th_wait(th);
+	rz_th_free(th);
+	close(srv.listen_fd);
+
+	rz_file_rm(exe_path);
+	rz_file_rm(pdb_path);
+	unlink(sock_path);
+	rmdir(exe_dir);
+	rmdir(exe_parent);
+	rmdir(pdb_dir);
+	rmdir(pdb_parent);
+	rmdir(symstore);
+	rmdir(tmp_base);
+
+	free(uri);
+	free(pdb_parent);
+	free(exe_parent);
+	free(pdb_path);
+	free(pdb_dir);
+	free(exe_path);
+	free(exe_dir);
+	free(symstore);
+	free(sock_path);
+	free(tmp_base);
+	mu_end;
+}
+#endif
+
 int all_tests() {
 	RzCons *cons = rz_cons_new(); // there is some windows-specific code in debug that accesses the cons singleton
 	mu_run_test(test_rz_debug_use);
@@ -790,6 +1221,11 @@ int all_tests() {
 	mu_run_test(test_debug_hw_bp);
 	mu_run_test(test_debug_hw_watch);
 	mu_run_test(test_debug_reg_sync_flg);
+	mu_run_test(test_io_dmp_open_close);
+	mu_run_test(test_debug_dmp_reinit);
+#if __UNIX__
+	mu_run_test(test_debug_winkd_attach_and_read_ver);
+#endif
 	rz_cons_free(cons);
 	return tests_passed != tests_run;
 }
