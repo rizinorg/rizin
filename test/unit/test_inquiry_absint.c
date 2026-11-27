@@ -137,6 +137,112 @@ static size_t blocks_count(RzAbsIntRunContext *ctx) {
 	return r;
 }
 
+/**
+ * Lift callback serving a single prebuilt IL block. Every other address fails to lift,
+ * which leaves successors as uninterpreted blocks, but still records the edge to them
+ * and their entry state.
+ */
+static RzAbsIntLiftBlockResult lift_handmade_block(ut64 addr, const RzILCacheBlock **block_out, void *user) {
+	const RzILCacheBlock *block = user;
+	if (addr != block->addr) {
+		return RZ_ABSINT_LIFT_BLOCK_RESULT_FAILED;
+	}
+	*block_out = block;
+	return RZ_ABSINT_LIFT_BLOCK_RESULT_OK;
+}
+
+typedef bool (*SingleEffectCheck)(RzAbsIntInstance *inst, RzAbsIntResult *res, void *user);
+
+/**
+ * Run the interpreter on a program consisting of a single instruction whose IL
+ * is \p effect, then run \p check on the result.
+ *
+ * The globals are the AArch64 registers, all top when \p effect is evaluated.
+ *
+ * \return true iff the interpreter succeeded and \p check returned true
+ */
+static bool run_single_effect_check(RZ_OWN RzILOpEffect *effect, SingleEffectCheck check, void *user) {
+	bool ret = false;
+	TestInterp *interp = interp_new("arm", 64, 0, "hex://1f2003d5");
+	if (!interp) {
+		rz_il_op_effect_free(effect);
+		return false;
+	}
+	RzILCacheInsnPkt pkt = { .effect = effect, .insn_pkt_size = 4 };
+	RzILCacheBlock block = { .il_ops = rz_pvector_new(NULL), .size = 4, .addr = 0 };
+	rz_pvector_push(block.il_ops, &pkt);
+	interp->inst->config.lift_block = lift_handmade_block;
+	interp->inst->config.cb_user = &block;
+
+	RzAbsIntResult *res = NULL;
+	if (rz_absint_run(interp->inst, 0, RZ_ABSINT_RESULT_DIMEN_BASE, &res) == RZ_ABSINT_RESULT_OK && res) {
+		ret = check(interp->inst, res, user);
+	}
+	rz_absint_result_free(interp->inst, res);
+	rz_pvector_free(block.il_ops);
+	rz_il_op_effect_free(effect);
+	interp_free(interp);
+	return ret;
+}
+
+typedef struct {
+	const char *name; ///< name of the global variable (register) to inspect
+	bool top; ///< expect the variable to be top, value is ignored
+	ut64 value; ///< expect the variable to be exactly this constant
+} GlobalExpectation;
+
+static bool check_global(RzAbsIntInstance *inst, RzAbsIntResult *res, void *user) {
+	const GlobalExpectation *expect = user;
+	// The state after the effect is the entry state of the block it falls through to.
+	RzAbsIntBlock *entry = rz_interval_tree_at(&res->blocks, res->entry);
+	RzAbsIntBlock *next = entry ? rz_interval_tree_at(&res->blocks, block_end(entry)) : NULL;
+	if (!next) {
+		return false;
+	}
+	RzAbsIntVal *val = ht_up_find(next->entry_state->globals, rz_str_djb2_hash(expect->name), NULL);
+	if (!val) {
+		return false;
+	}
+	if (expect->top) {
+		return val_domain(inst)->is_top(val);
+	}
+	RzBitVector bv;
+	rz_bv_init(&bv, 64);
+	bool ret = val_domain(inst)->to_concrete_const(val, &bv) && rz_bv_len(&bv) <= 64 && rz_bv_to_ut64(&bv) == expect->value;
+	rz_bv_fini(&bv);
+	return ret;
+}
+
+/**
+ * Evaluate \p effect and check that the global variable \p name is exactly the constant \p value afterwards.
+ * \p effect must fall through, i.e. not jump.
+ */
+static bool single_effect_sets_global(RZ_OWN RzILOpEffect *effect, const char *name, ut64 value) {
+	return run_single_effect_check(effect, check_global, &(GlobalExpectation){ .name = name, .value = value });
+}
+
+/**
+ * Evaluate \p effect and check that the global variable \p name is top afterwards.
+ * \p effect must fall through, i.e. not jump.
+ */
+static bool single_effect_sets_global_top(RZ_OWN RzILOpEffect *effect, const char *name) {
+	return run_single_effect_check(effect, check_global, &(GlobalExpectation){ .name = name, .top = true });
+}
+
+bool check_jump_target(RzAbsIntInstance *inst, RzAbsIntResult *res, void *user) {
+	ut64 target = *(ut64 *)user;
+	RzAbsIntBlock *entry = rz_interval_tree_at(&res->blocks, res->entry);
+	return entry && !entry->is_fallthrough && rz_vector_len(&entry->jump_targets) == 1 &&
+		*(ut64 *)rz_vector_index_ptr(&entry->jump_targets, 0) == target;
+}
+
+/**
+ * Evaluate \p effect and check that the only control flow edge recorded for it is a jump to \p target.
+ */
+bool single_effect_jumps_to(RZ_OWN RzILOpEffect *effect, ut64 target) {
+	return run_single_effect_check(effect, check_jump_target, &target);
+}
+
 bool test_absint_block_resolve_bounds_single(void) {
 	TestInterp *interp = interp_new("arm", 64, 0x10000, "hex://" // clang-format off
 		"000080d2"  // 0x00  mov   x0, 0
@@ -1016,6 +1122,149 @@ bool test_absint_driver(size_t n_threads) {
 	mu_end;
 }
 
+#include <rz_il/rz_il_opbuilder_begin.h>
+
+/**
+ * With an unknown condition, both arms are evaluated and joined.
+ * Identical arms join to the same constant:
+ *   x1 := (ite (is_zero x0) 0x10 0x10)   ==> x1 = 0x10
+ */
+bool test_absint_ite_top_cond_identical_arms(void) {
+	RzILOpEffect *eff = SETG("x1", ITE(IS_ZERO(VARG("x0")), U64(0x10), U64(0x10)));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x10), "identical arms join to their common constant");
+	mu_end;
+}
+
+/**
+ * Arms that differ syntactically but evaluate to the same constant also join to it:
+ *   x1 := (ite (is_zero x0) 0x10 (0x8 + 0x8))   ==> x1 = 0x10
+ */
+bool test_absint_ite_top_cond_equal_valued_arms(void) {
+	RzILOpEffect *eff = SETG("x1", ITE(IS_ZERO(VARG("x0")), U64(0x10), ADD(U64(0x8), U64(0x8))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x10), "equal-valued arms join to their common constant");
+	mu_end;
+}
+
+/**
+ * Arms with different constants join to top:
+ *   x1 := (ite (is_zero x0) 0x10 0x20)   ==> x1 = top
+ */
+bool test_absint_ite_top_cond_different_arms(void) {
+	RzILOpEffect *eff = SETG("x1", ITE(IS_ZERO(VARG("x0")), U64(0x10), U64(0x20)));
+	mu_assert_true(single_effect_sets_global_top(eff, "x1"), "different arms join to top");
+	mu_end;
+}
+
+/**
+ * A constant condition selects exactly one arm:
+ *   x1 := (ite (is_zero 0) 0x10 0x20)   ==> x1 = 0x10
+ */
+bool test_absint_ite_const_cond(void) {
+	RzILOpEffect *eff = SETG("x1", ITE(IS_ZERO(U64(0)), U64(0x10), U64(0x20)));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x10), "constant condition selects the true arm");
+	mu_end;
+}
+
+/**
+ * Nested LETs with distinct names do not interfere:
+ *   x1 := (let a 1 (let b 2 (a + b)))   ==> x1 = 3
+ */
+bool test_absint_let_nested_distinct(void) {
+	RzILOpEffect *eff = SETG("x1", LET("a", U64(1), LET("b", U64(2), ADD(VARLP("a"), VARLP("b")))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 3), "nested LETs with distinct names");
+	mu_end;
+}
+
+/**
+ * An inner LET shadowing an outer one must not leak out of its body.
+ * The outer variable is read after the inner LET was evaluated:
+ *   x1 := (let a 1 ((let a 2 a) + a))   ==> x1 = 3
+ */
+bool test_absint_let_shadow_restored_after_body(void) {
+	RzILOpEffect *eff = SETG("x1", LET("a", U64(1), ADD(LET("a", U64(2), VARLP("a")), VARLP("a"))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 3), "outer binding is visible again after the shadowing LET");
+	mu_end;
+}
+
+/**
+ * Same, but the shadowing LET sits in the bound expression of another LET:
+ *   x1 := (let a 1 (let b (let a 2 a) (a + b)))   ==> x1 = 3
+ */
+bool test_absint_let_shadow_in_bound_exp(void) {
+	RzILOpEffect *eff = SETG("x1", LET("a", U64(1), LET("b", LET("a", U64(2), VARLP("a")), ADD(VARLP("a"), VARLP("b")))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 3), "shadowing LET in a bound expression does not leak");
+	mu_end;
+}
+
+/**
+ * Three levels of the same name, each level reads its own binding after the deeper one is done:
+ *   x1 := (let a 1 ((let a 2 ((let a 4 a) + a)) + a))   ==> x1 = 4 + 2 + 1 = 7
+ */
+bool test_absint_let_shadow_three_levels(void) {
+	RzILOpEffect *eff = SETG("x1",
+		LET("a", U64(1),
+			ADD(LET("a", U64(2),
+					ADD(LET("a", U64(4), VARLP("a")), VARLP("a"))),
+				VARLP("a"))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 7), "every level sees its own binding again");
+	mu_end;
+}
+
+/**
+ * The shadowing LET binds a value of a different width, restoring must bring back the width too:
+ *   x1 := (let a 0x1122334455667700 ((cast 64 false (let a 0xff:8 a)) + a))   ==> x1 = 0x11223344556677ff
+ */
+bool test_absint_let_shadow_different_width(void) {
+	RzILOpEffect *eff = SETG("x1",
+		LET("a", U64(0x1122334455667700ULL),
+			ADD(UNSIGNED(64, LET("a", U8(0xff), VARLP("a"))), VARLP("a"))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x11223344556677ffULL), "outer binding is restored with its width");
+	mu_end;
+}
+
+/**
+ * With an unknown condition both arms are evaluated one after the other.
+ * A LET in the true arm must not be visible in the false arm.
+ * Here a leak would make both arms 0x20 and wrongly yield a constant:
+ *   x1 := (let a 0x10 (ite (is_zero x0) (let a 0x20 a) a))   ==> x1 = top (0x20 or 0x10)
+ */
+bool test_absint_let_ite_top_cond_no_leak_between_arms_top(void) {
+	RzILOpEffect *eff = SETG("x1",
+		LET("a", U64(0x10),
+			ITE(IS_ZERO(VARG("x0")), LET("a", U64(0x20), VARLP("a")), VARLP("a"))));
+	mu_assert_true(single_effect_sets_global_top(eff, "x1"), "arms differ, a leaked binding must not make them equal");
+	mu_end;
+}
+
+/**
+ * The other direction, a leak would make equal arms differ and lose the constant:
+ *   x1 := (let a 0x10 (ite (is_zero x0) ((let a 0x20 a) - 0x10) a))   ==> x1 = 0x10
+ */
+bool test_absint_let_ite_top_cond_no_leak_between_arms_const(void) {
+	RzILOpEffect *eff = SETG("x1",
+		LET("a", U64(0x10),
+			ITE(IS_ZERO(VARG("x0")), SUB(LET("a", U64(0x20), VARLP("a")), U64(0x10)), VARLP("a"))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x10), "arms are equal, a leaked binding must not make them differ");
+	mu_end;
+}
+
+/**
+ * Independent LETs of the same name in both arms of an ITE with unknown condition:
+ *   x1 := (ite (is_zero x0) (let a 0x10 a) (let a 0x8 (a + a)))   ==> x1 = 0x10
+ *   x1 := (ite (is_zero x0) (let a 0x10 a) (let a 0x20 a))        ==> x1 = top
+ */
+bool test_absint_let_ite_top_cond_same_name_in_arms(void) {
+	RzILOpEffect *eff = SETG("x1",
+		ITE(IS_ZERO(VARG("x0")), LET("a", U64(0x10), VARLP("a")), LET("a", U64(0x8), ADD(VARLP("a"), VARLP("a")))));
+	mu_assert_true(single_effect_sets_global(eff, "x1", 0x10), "equal-valued arms with their own LETs join to the constant");
+	eff = SETG("x1",
+		ITE(IS_ZERO(VARG("x0")), LET("a", U64(0x10), VARLP("a")), LET("a", U64(0x20), VARLP("a"))));
+	mu_assert_true(single_effect_sets_global_top(eff, "x1"), "different-valued arms with their own LETs join to top");
+	mu_end;
+}
+
+#include <rz_il/rz_il_opbuilder_end.h>
+
 bool all_tests() {
 	mu_run_test(test_absint_block_resolve_bounds_single);
 	mu_run_test(test_absint_block_resolve_bounds_prepend, false, false);
@@ -1043,6 +1292,18 @@ bool all_tests() {
 	mu_run_test(test_absint_repeat_unknown);
 	mu_run_test(test_absint_repeat_known);
 	mu_run_test(test_absint_comments);
+	mu_run_test(test_absint_ite_top_cond_identical_arms);
+	mu_run_test(test_absint_ite_top_cond_equal_valued_arms);
+	mu_run_test(test_absint_ite_top_cond_different_arms);
+	mu_run_test(test_absint_ite_const_cond);
+	mu_run_test(test_absint_let_nested_distinct);
+	mu_run_test(test_absint_let_shadow_restored_after_body);
+	mu_run_test(test_absint_let_shadow_in_bound_exp);
+	mu_run_test(test_absint_let_shadow_three_levels);
+	mu_run_test(test_absint_let_shadow_different_width);
+	mu_run_test(test_absint_let_ite_top_cond_no_leak_between_arms_top);
+	mu_run_test(test_absint_let_ite_top_cond_no_leak_between_arms_const);
+	mu_run_test(test_absint_let_ite_top_cond_same_name_in_arms);
 	mu_run_test(test_absint_driver, 1);
 	mu_run_test(test_absint_driver, 8);
 	return tests_passed != tests_run;
