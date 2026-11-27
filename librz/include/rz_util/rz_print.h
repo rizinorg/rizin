@@ -35,7 +35,7 @@ extern "C" {
 #define RZ_PRINT_FLAGS_SECTION  0x00200000
 #define RZ_PRINT_FLAGS_NODOT    0x00400000 /* hide the dot before printable characters */
 
-typedef const char *(*RzPrintNameCallback)(void *user, ut64 addr);
+typedef RZ_OWN char *(*RzPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
