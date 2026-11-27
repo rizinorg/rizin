@@ -201,3 +201,82 @@ EXPECT=<<EOF
  28 0x00001139 0x00001139 GLOBAL FUNC     15     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 EOF
 RUN
+
+NAME=ELF32 OpenBSD retguard and ordinal import/reloc indexing
+FILE=bins/abi_bins/elf/platforms/macppc-openbsd-echo
+CMDS=<<EOF
+i~bits,lang,retguard
+ii~?
+ir~?
+EOF
+EXPECT=<<EOF
+bits     32
+lang     c
+retguard true
+3
+586
+EOF
+RUN
+
+NAME=ELF64 OpenBSD retguard and ordinal import/reloc indexing
+FILE=bins/elf/openbsd-hello-x64
+CMDS=<<EOF
+i~bits,lang,retguard
+ii~?
+ir~?
+EOF
+EXPECT=<<EOF
+bits     64
+lang     c
+retguard true
+7
+9
+EOF
+RUN
+
+NAME=ELF64 Rust lang detection and ordinal import/reloc indexing
+FILE=bins/elf/rust
+CMDS=<<EOF
+i~bits,lang
+ii~?
+ir~?
+EOF
+EXPECT=<<EOF
+bits     64
+lang     rust
+68
+247
+EOF
+RUN
+
+NAME=ELF32 ET_REL imports without dynamic section
+FILE=bins/elf/pngrutil_o
+CMDS=<<EOF
+i~bits,type
+ii~?
+ir~?
+EOF
+EXPECT=<<EOF
+type     REL (Relocatable file)
+bintype  elf
+bits     32
+47
+625
+EOF
+RUN
+
+NAME=ELF64 ET_REL imports without dynamic section
+FILE=bins/elf/analysis/filetime.c-clang-x64-O0.o
+CMDS=<<EOF
+i~bits,type
+ii~?
+ir~?
+EOF
+EXPECT=<<EOF
+type     REL (Relocatable file)
+bintype  elf
+bits     64
+11
+34
+EOF
+RUN
