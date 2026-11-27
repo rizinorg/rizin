@@ -18,6 +18,7 @@ static RzAbsIntBlock *interp_block_new(RzAbsIntInstance *inst, RZ_BORROW RZ_NONN
 	}
 	rz_vector_init(&block->insn_offsets, sizeof(ut16), NULL, NULL);
 	rz_vector_init(&block->jump_targets, sizeof(ut64), NULL, NULL);
+	rz_vector_init(&block->call_targets, sizeof(ut64), NULL, NULL);
 	return block;
 }
 
