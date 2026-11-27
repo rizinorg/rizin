@@ -13,6 +13,7 @@
 #include <rz_util/rz_path.h>
 
 #include "core_private.h"
+#include "rz_inquiry/rz_icfg.h"
 #include "rz_util/rz_assert.h"
 #include "rz_util/rz_iterator.h"
 
@@ -6608,6 +6609,7 @@ static bool cinquiry_absint_run(RzCore *core, RzSetU *fcn_entry_points) {
 	if (!icfg) {
 		return false;
 	}
+	rz_icfg_set_heuristics(icfg, rz_icfg_heuristics_from_core(core));
 	RzAbsIntDriverConfig config = {
 		.intr = core->intr,
 		.analysis = core->analysis,

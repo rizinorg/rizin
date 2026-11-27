@@ -295,7 +295,7 @@ RZ_API bool rz_absint_apply_icfg_to_analysis(
 	if (missing_nodes > 0) {
 		RZ_LOG_WARN("The analysis didn't find nodes for all edges.\n");
 	}
-	if (!rz_icfg_solve_conflicts(icfg, bin, io, RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
+	if (!rz_icfg_solve_conflicts(icfg, bin, io)) {
 		RZ_LOG_WARN("Some errors occurred during iCFG conflict solving.\n");
 	}
 

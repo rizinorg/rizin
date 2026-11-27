@@ -21,7 +21,19 @@ typedef struct conflict_node {
 
 struct rz_icfg_t {
 	RzVector /* ICFGEdge */ prepared_edges;
-	RzVector /* ut64 */ proc_entries; ///< Sorted vector of all procedure entry points in the icfg.
+	/**
+	 * \brief Sorted vector of all procedure entry points in the icfg.
+	 * This is a vector and no set, so we can do O(log n) search for
+	 * procedure entry points which are crossed by JUMP edges.
+	 *
+	 * Before the analysis starts, this vector either contains all function
+	 * symbol locations and/or all detected function prologues.
+	 * It gets extended with newly detected function entrypoints.
+	 *
+	 * If RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE is _not_ enabled,
+	 * the node classification will also remove elements from it.
+	 */
+	RzVector /* ut64 */ known_entries;
 	/**
 	 * \brief Nodes which have to be judged to be a shared block or an entry point.
 	 */
@@ -34,6 +46,7 @@ struct rz_icfg_t {
 	 * end + 1 is the first byte of the next block.
 	 */
 	RzIntervalTree /* RzGraphNode */ itv_tree;
+	RzICFGHeuristics heuristics; ///< The classification heuristics for the blocks.
 };
 
 typedef struct {

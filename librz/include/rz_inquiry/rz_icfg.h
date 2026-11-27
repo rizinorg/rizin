@@ -47,13 +47,30 @@ typedef enum rz_icfg_edge_type_t {
 	RZ_ICFG_EDGE_TYPE_RETURN, ///< Return from procedure.
 } RzICFGEdgeType;
 
+/**
+ * \brief These flags are heuristics used for iCFG node classification.
+ * Heuristics are classification shortcuts, which are enforced.
+ * Any basic block in the iCFG which matches one of them, is classified according
+ * to the heuristic. No further classification will be applied.
+ */
 typedef enum {
-	RZ_ICFG_CONFLICT_SOLUTION_DEFAULT = 0,
-	RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR = 1 << 0, ///< Totally reject any block at address 0x0.
-} RzICFGConflictSolutionCfg;
+	RZ_ICFG_HEURISTIC_NONE = 0,
+	/**
+	 * \brief Drop any block located at 0x0 from the iCFG.
+	 */
+	RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0 = 1 << 0,
+	/**
+	 * \brief If the binary provides function/method symbols, and a block is
+	 * located at a one, the block will always be marked as function entry point.
+	 */
+	RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE = 1 << 1,
+} RzICFGHeuristics;
+
+RZ_API RzICFGHeuristics rz_icfg_heuristics_from_core(RzCore *core);
 
 RZ_API RZ_OWN RzICFG *rz_icfg_new();
 RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg);
+RZ_API void rz_icfg_set_heuristics(RZ_BORROW RzICFG *icfg, RzICFGHeuristics heuristics);
 
 RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_t size, RZ_NONNULL const RzVector /*<ut16>*/ *insn_offsets, ut64 fcn_membership);
 RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, ut64 to, RzICFGEdgeType type);
@@ -61,8 +78,7 @@ RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg);
 
 RZ_API bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	RZ_NONNULL RzBin *bin,
-	RZ_NONNULL RzIO *io,
-	RzICFGConflictSolutionCfg cfg);
+	RZ_NONNULL RzIO *io);
 
 RZ_API bool rz_icfg_get_cfg(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 entry_point, RZ_OUT RzCFG *cfg_out);
 RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg);

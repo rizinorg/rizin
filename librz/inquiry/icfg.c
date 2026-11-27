@@ -164,7 +164,7 @@ RZ_API RZ_OWN RzICFG *rz_icfg_new() {
 	m->graph = icfg;
 	rz_interval_tree_init(&m->itv_tree, NULL);
 	rz_vector_init(&m->prepared_edges, sizeof(ICFGEdge), NULL, NULL);
-	rz_vector_init(&m->proc_entries, sizeof(ut64), NULL, NULL);
+	rz_vector_init(&m->known_entries, sizeof(ut64), NULL, NULL);
 	rz_vector_init(&m->node_conflicts, sizeof(ConflictNode), NULL, NULL);
 	return m;
 }
@@ -176,9 +176,14 @@ RZ_API void rz_icfg_free(RZ_NULLABLE RZ_OWN RzICFG *icfg) {
 	rz_interval_tree_fini(&icfg->itv_tree);
 	rz_graph_free(icfg->graph);
 	rz_vector_fini(&icfg->prepared_edges);
-	rz_vector_fini(&icfg->proc_entries);
+	rz_vector_fini(&icfg->known_entries);
 	rz_vector_fini(&icfg->node_conflicts);
 	free(icfg);
+}
+
+RZ_API void rz_icfg_set_heuristics(RZ_BORROW RzICFG *icfg, RzICFGHeuristics heuristics) {
+	rz_return_if_fail(icfg);
+	icfg->heuristics = heuristics;
 }
 
 static RZ_OWN RzICFGNode *icfg_node_new(ut64 addr, size_t size, RZ_NONNULL const RzVector *insn_offsets) {
@@ -320,6 +325,9 @@ static void add_conflict_node(RzVector /*<ConflictNode>*/ *node_conflicts, ut64 
 
 RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_t size, RZ_NONNULL const RzVector /*<ut16>*/ *insn_offsets, ut64 proc_membership) {
 	rz_return_val_if_fail(icfg && insn_offsets, false);
+	if (icfg->heuristics & RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0 && addr == 0) {
+		return true;
+	}
 
 	RzICFGNode *icfg_node = NULL;
 	RzGraphNode *graph_node = NULL;
@@ -362,8 +370,8 @@ RZ_API bool rz_icfg_add_node(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 addr, size_
 		add_conflict_node(&icfg->node_conflicts, icfg_node->addr, CONFLICT_REASON_MULT_MEMBERS);
 	}
 
-	if (rz_vector_find_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
-		rz_vector_insert_sorted(&icfg->proc_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL);
+	if (rz_vector_find_sorted(&icfg->known_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+		rz_vector_insert_sorted(&icfg->known_entries, &proc_membership, (RzVectorComparator)uint_cmp, NULL);
 	}
 	rz_pvector_fini(&overlaps);
 	return true;
@@ -385,11 +393,11 @@ RZ_API bool rz_icfg_prepare_edge(RZ_NONNULL RZ_BORROW RzICFG *icfg, ut64 from, u
 	rz_vector_push(&icfg->prepared_edges, &edge);
 
 	// The edge could give a hint if the node is a conflict node.
-	if (type == RZ_ICFG_EDGE_TYPE_CALL && rz_vector_find_sorted(&icfg->proc_entries, &to, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+	if (type == RZ_ICFG_EDGE_TYPE_CALL && rz_vector_find_sorted(&icfg->known_entries, &to, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
 		// Only nodes are called but not yet a procedure entry point.
 		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CALL_IN);
 	}
-	if (type == RZ_ICFG_EDGE_TYPE_JUMP && rz_icfg_edge_crosses_symbol(&icfg->proc_entries, from, to)) {
+	if (type == RZ_ICFG_EDGE_TYPE_JUMP && rz_icfg_edge_crosses_symbol(&icfg->known_entries, from, to)) {
 		add_conflict_node(&icfg->node_conflicts, to, CONFLICT_REASON_CROSSES_ENTRY);
 	}
 	return true;
@@ -409,6 +417,9 @@ RZ_API size_t rz_icfg_apply(RZ_NONNULL RZ_BORROW RzICFG *icfg) {
 	size_t missing_node = 0;
 	ICFGEdge *edge;
 	rz_vector_foreach (&icfg->prepared_edges, edge) {
+		if (icfg->heuristics & RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0 && (edge->to == 0 || edge->from == 0)) {
+			continue;
+		}
 		RzGraphStatus status = rz_graph_add_edge_by_id(icfg->graph, edge->from, edge->to, RZ_GRAPH_INT_AS_DATA(edge->type));
 		switch (status) {
 		case RZ_GRAPH_STATUS_OK:
@@ -543,7 +554,7 @@ RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL R
 	size_t n_errors = 0;
 
 	ut64 *addr_it;
-	rz_vector_foreach (&icfg->proc_entries, addr_it) {
+	rz_vector_foreach (&icfg->known_entries, addr_it) {
 		ut64 addr = *addr_it;
 		char name_alt[32] = { 0 };
 		char *fcn_name = chooser ? chooser(addr, chooser_priv) : rz_strf(name_alt, "inquiry.0x%" PFMT64x, addr);
@@ -569,4 +580,9 @@ RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL R
 		n_errors += bundle.n_errors;
 	}
 	return n_errors == 0;
+}
+
+RZ_API RzICFGHeuristics rz_icfg_heuristics_from_core(RzCore *core) {
+	// TODO Check properly the binary characteristics.
+	return RZ_ICFG_HEURISTIC_DROP_BLOCK_AT_0 | RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE;
 }

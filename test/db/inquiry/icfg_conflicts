@@ -341,7 +341,6 @@ RUN
 # has only a single incoming edge from one function and is
 # not added to the conflict list.
 NAME=Test dropping of block at 0x0
-BROKEN=1
 FILE==
 ARGS=-a x86
 CMDS=<<EOF
@@ -352,29 +351,25 @@ pd 5 @ 0
 ablt
 EOF
 EXPECT=<<EOF
-            ; CODE XREF from inq.0x2 @ 0x2
-            0x00000000      mov   eax, 0x1
+            0x00000000      mov   eax, 0x01
 / inq.0x5();
-|           0x00000007      push  rbp
-|           0x00000008      mov   rbp, rsp
-|           0x0000000b      mov   eax, 0x02
-|           0x0000000e      jmp   0x0
-addr size traced ninstr jump       fail fcns        calls xrefs       
-----------------------------------------------------------------------
- 0x5   11      0      4 0x00000000       0x00000005       
+|           0x00000005      push  rbp
+|           0x00000006      mov   rbp, rsp
+|           0x00000009      mov   eax, 0x02
+\           0x0000000e      jmp   0x0
+addr size traced ninstr jump fail fcns        calls xrefs 
+----------------------------------------------------------
+ 0x5   11      0      4            0x00000005       
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
-# The binary contains symbols. So we would expect any of them be their own,
-# two instruction long, function.
-# This has to be fixed with heuristics.
+# The binary contains symbols. So we would expect any of them to be their own,
+# two instruction long, function. This is because the function symbol heuristic
+# makes any function symbol location a unique function.
 NAME=Circular tail calls
-BROKEN=1
 FILE=bins/inquiry/icfg_conflicts/circlular_tail_calls.s.obj
 CMDS=<<EOF
-e asm.comments=false
 is
 aIa
 pd 6
@@ -386,24 +381,27 @@ nth      paddr      vaddr bind   type size lib name
   1 0x00000040 0x08000040 GLOBAL FUNC    0     fcn_a
   2 0x0000004a 0x0800004a GLOBAL FUNC    0     fcn_b
   3 0x00000054 0x08000054 GLOBAL FUNC    0     fcn_c
+            ; CALL XREF from sym.fcn_c @ 0x8000059
             ;-- section..text:
             ;-- fcn_a:
 / sym.fcn_a();
-|       .-> 0x08000040      mov   eax, 0x01
-\      ,==< 0x08000045      jmp   sym.fcn_b
+|       .-> 0x08000040      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_a @ 0x08000040 - 0x800005e ; [02] -r-x section size 30 named .text
+\      ,==< 0x08000045      jmp   sym.fcn_b                            ; RELOC 32 fcn_b @ 0x0800004a - 0x800004a
+       |:   ; CALL XREF from sym.fcn_a @ 0x8000045
        |:   ;-- fcn_b:
 / sym.fcn_b();
-|      `--> 0x0800004a      mov   eax, 0x01
-\      ,==< 0x0800004f      jmp   sym.fcn_c
+|      `--> 0x0800004a      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_b @ 0x0800004a - 0x800004a
+\      ,==< 0x0800004f      jmp   sym.fcn_c                            ; RELOC 32 fcn_c @ 0x08000054 - 0x8000054
+       |:   ; CALL XREF from sym.fcn_b @ 0x800004f
        |:   ;-- fcn_c:
 / sym.fcn_c();
-|      `--> 0x08000054      mov   eax, 0x01
-\       `=< 0x08000059      jmp   sym.fcn_a
-     addr size traced ninstr jump       fail fcns        calls xrefs       
---------------------------------------------------------------------------
-0x8000040   10      0      2                  0x08000040        0x08000059
-0x800004a   10      0      2                  0x0800004a       
-0x8000054   10      0      2                  0x08000054       
+|      `--> 0x08000054      mov   eax, 0x01                            ; RELOC TARGET 32 fcn_c @ 0x08000054 - 0x8000054
+\       `=< 0x08000059      jmp   sym.fcn_a                            ; RELOC 32 fcn_a @ 0x08000040 - 0x800005e
+     addr size traced ninstr jump fail fcns        calls       xrefs       
+---------------------------------------------------------------------------
+0x8000040   10      0      2            0x08000040  0x0800004a  0x08000059
+0x800004a   10      0      2            0x0800004a  0x08000054  0x08000045
+0x8000054   10      0      2            0x08000054  0x08000040  0x0800004f
 EOF
 EXPECT_ERR=
 RUN

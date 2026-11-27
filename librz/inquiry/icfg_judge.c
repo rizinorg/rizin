@@ -294,20 +294,28 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 	RzICFG *icfg,
 	RZ_NONNULL RzBin *bin,
 	RZ_NONNULL RzIO *io,
-	const RzICFGNode *node,
-	RzICFGConflictSolutionCfg config) {
-	RzVector *proc_entries = &icfg->proc_entries;
+	const RzICFGNode *node) {
+	RzVector *proc_entries = &icfg->known_entries;
 
 	ut64 node_addr = node->addr;
 	ut64 node_addr_end = node->addr + node->size;
-	// TODO: Add other heuristics.
-	if (node_addr == 0x0 && (config & RZ_ICFG_CONFLICT_SOLUTION_REJECT_0_ADDR)) {
-		// Clearly a malformed jump.
-		return CFG_CONFLICT_VERDICT_DROP;
-	}
 	RzBinObject *obj = rz_bin_cur_object(bin);
 
 	NodeScore score = { 0 };
+
+	const RzBinSymbol *symb;
+	if ((symb = rz_bin_object_get_symbol_at(obj, node_addr, true)) && is_fcn_symb(symb->type)) {
+		if (icfg->heuristics & RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE) {
+			// Early return due to heuristic.
+			return CFG_CONFLICT_VERDICT_FCN_ENTRY;
+		}
+		score_add(CFG_CONFLICT_OBSV_FCN_SYMBOL, &score);
+		if (symb->is_imported) {
+			score_add(CFG_CONFLICT_OBSV_IMPORT, &score);
+		}
+	} else if (rz_pvector_len(obj->symbols) != 0) {
+		score_add(CFG_CONFLICT_OBSV_NO_SYMB, &score);
+	}
 
 	// CHARACTERISTICS: Block
 	RzIOMap *map = rz_io_map_get(io, node_addr);
@@ -317,16 +325,6 @@ static ICFGNodeVerdict rz_icfg_node_judge(
 		goto verdict;
 	} else if (!(map->perm & RZ_PERM_X)) {
 		score_add(CFG_CONFLICT_OBSV_NOT_X_MAPPED, &score);
-	}
-
-	const RzBinSymbol *symb;
-	if ((symb = rz_bin_object_get_symbol_at(obj, node_addr, true)) && is_fcn_symb(symb->type)) {
-		score_add(CFG_CONFLICT_OBSV_FCN_SYMBOL, &score);
-		if (symb->is_imported) {
-			score_add(CFG_CONFLICT_OBSV_IMPORT, &score);
-		}
-	} else if (rz_pvector_len(obj->symbols) != 0) {
-		score_add(CFG_CONFLICT_OBSV_NO_SYMB, &score);
 	}
 
 	ut64 bin_entry = rz_bin_get_first_entrypoint(obj);
@@ -484,7 +482,23 @@ static bool node_needs_judgement(RzICFG *icfg,
 	return needs_judgement;
 }
 
+typedef struct {
+	RzICFG *icfg;
+	ut64 rm_m; // Only used in the case of single membership nodes.
+	ut64 new_m;
+	const RzSetU *rm_memberships;
+} VisitorBundle;
+
 static bool dont_walk_call_edges(const RzGraphEdge *e, RzGraphVisitor *vis) {
+	VisitorBundle *bundle = vis->visitor_data;
+	ut64 to_addr = rz_graph_node_get_id(rz_graph_edge_get_to(e));
+	if (bundle->icfg->heuristics & RZ_ICFG_HEURISTIC_FCN_SYMB_OVERWRITE &&
+		rz_vector_find_sorted(&bundle->icfg->known_entries, &to_addr, (RzVectorComparator)uint_cmp, NULL) != SZT_MAX) {
+		// The to-node of this edge is a known entry point.
+		// This edge is not walked for that reason, because the node will be enforced
+		// to stay an entry point. So it can not, under no circumstances, change membership.
+		return false;
+	}
 	RzICFGEdgeType type = (utptr)rz_graph_edge_get_data(e);
 	switch (type) {
 	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
@@ -496,13 +510,6 @@ static bool dont_walk_call_edges(const RzGraphEdge *e, RzGraphVisitor *vis) {
 	}
 	return false;
 }
-
-typedef struct {
-	RzICFG *icfg;
-	ut64 rm_m; // Only used in the case of single membership nodes.
-	ut64 new_m;
-	const RzSetU *rm_memberships;
-} VisitorBundle;
 
 static void remove_memberships(RzGraphNode *n, RzGraphVisitor *vis) {
 	VisitorBundle *bundle = vis->visitor_data;
@@ -615,8 +622,7 @@ RZ_OWN char *edge_fmt(const RzGraphEdge *e) {
  */
 RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 	RZ_NONNULL RzBin *bin,
-	RZ_NONNULL RzIO *io,
-	RzICFGConflictSolutionCfg cfg) {
+	RZ_NONNULL RzIO *io) {
 	rz_return_val_if_fail(bin && io, false);
 	// REMOVE:
 	// char *icfg_dot = rz_graph_as_dot_str(icfg->graph, "ICFG", node_fmt, edge_fmt);
@@ -653,22 +659,22 @@ RZ_IPI bool rz_icfg_solve_conflicts(RZ_NONNULL RzICFG *icfg,
 			continue;
 		}
 
-		ut64 proc_addr = cf_icfg_node->addr;
-		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_icfg_node, cfg);
+		ut64 possible_fcn_addr = cf_icfg_node->addr;
+		ICFGNodeVerdict verdict = rz_icfg_node_judge(icfg, bin, io, cf_icfg_node);
 		switch (verdict) {
 		case CFG_CONFLICT_VERDICT_DROP:
 			rz_graph_del_node_by_id(icfg->graph, cf_icfg_node->addr);
-			size_t idx = rz_vector_find_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL);
+			size_t idx = rz_vector_find_sorted(&icfg->known_entries, &possible_fcn_addr, (RzVectorComparator)uint_cmp, NULL);
 			if (idx != SZT_MAX) {
-				rz_vector_remove_at(&icfg->proc_entries, idx, NULL);
+				rz_vector_remove_at(&icfg->known_entries, idx, NULL);
 			}
 			break;
 		case CFG_CONFLICT_VERDICT_FCN_ENTRY: {
 			if (!convert_subgraph_to_procedure(icfg, cf_icfg_node)) {
 				rz_warn_if_reached();
 			}
-			if (rz_vector_find_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
-				rz_vector_insert_sorted(&icfg->proc_entries, &proc_addr, (RzVectorComparator)uint_cmp, NULL);
+			if (rz_vector_find_sorted(&icfg->known_entries, &possible_fcn_addr, (RzVectorComparator)uint_cmp, NULL) == SZT_MAX) {
+				rz_vector_insert_sorted(&icfg->known_entries, &possible_fcn_addr, (RzVectorComparator)uint_cmp, NULL);
 			}
 			break;
 		}
