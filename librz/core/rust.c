@@ -867,6 +867,21 @@ static void scan_x64_insn_window(RustRecoverCtx *ctx, ut64 pc, const ut8 *b, siz
 		return;
 	}
 
+	// 3b. PUSH imm8; POP r64: 6a imm8 (58..5f | 41 58..5f) — LLVM -Os/-Oz idiom
+	if (len >= 3 && b[0] == 0x6a && (st8)b[1] > 0) {
+		int reg = -1;
+		if (b[2] >= 0x58 && b[2] <= 0x5f) {
+			reg = b[2] - 0x58;
+		} else if (len >= 4 && b[2] == 0x41 && b[3] >= 0x58 && b[3] <= 0x5f) {
+			reg = 8 + (b[3] - 0x58);
+		}
+		if (reg >= 0) {
+			regs[reg] = (RustRegVal){ .has_imm = true, .imm_val = (ut64)(st8)b[1] };
+			try_emit_x64_reg_pairs(ctx, regs);
+			return;
+		}
+	}
+
 	// 4. MOV [rsp/rbp + disp], r64: 48|4c 89 modrm ...
 	if (len >= 4 && (b[0] == 0x48 || b[0] == 0x4c) && b[1] == 0x89) {
 		int src_reg = ((b[0] & 0x04) << 1) | ((b[2] >> 3) & 7);
@@ -1328,6 +1343,7 @@ static bool inspect_x64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_va,
 	bool has_vtable_arg1 = false;
 	ut64 call_target = UT64_MAX;
 	ut32 calls = 0;
+	ut32 calls_after_arg = 0;
 	for (size_t off = 0; off < (size_t)nr;) {
 		ut64 pc = wrapper_va + off;
 		// LEA r64, [rip + disp32]
@@ -1346,6 +1362,26 @@ static bool inspect_x64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_va,
 				// Inlined lang_start_internal passes trait vtable in rdx (Win64) or rsi (SysV)
 				if ((ctx->is_pe && reg == 2) || (!ctx->is_pe && (reg == 6 || reg == 2))) {
 					has_vtable_arg1 = true;
+				}
+			}
+		} else if (off + 3 <= (size_t)nr && (code[off] == 0x48 || code[off] == 0x49 || code[off] == 0x4c || code[off] == 0x4d) &&
+			(code[off + 1] == 0x89 || code[off + 1] == 0x8b) && (code[off + 2] & 0xc0) == 0xc0) {
+			// MOV r64, r64: propagate text ptr or match MOV rdi/rcx, rsp for [rsp+0] fat pointer
+			int r_reg = ((code[off] & 0x04) << 1) | ((code[off + 2] >> 3) & 7);
+			int r_rm = ((code[off] & 0x01) << 3) | (code[off + 2] & 7);
+			int src_reg = code[off + 1] == 0x89 ? r_reg : r_rm;
+			int dst_reg = code[off + 1] == 0x89 ? r_rm : r_reg;
+			if (src_reg == 4 && stack_fn_va != UT64_MAX && !stack_fn_is_rbp && stack_fn_disp == 0 &&
+				((ctx->is_pe && dst_reg == 1) || (!ctx->is_pe && (dst_reg == 7 || dst_reg == 1)))) {
+				arg0_points_to_stack_fn = true;
+			} else {
+				reg_text[dst_reg] = reg_text[src_reg];
+				if (reg_text[dst_reg] != UT64_MAX) {
+					if (dst_reg == 1) {
+						cand_rcx = reg_text[dst_reg];
+					} else if (dst_reg == 7) {
+						cand_rdi = reg_text[dst_reg];
+					}
 				}
 			}
 		} else if (off + 4 <= (size_t)nr && (code[off] == 0x48 || code[off] == 0x4c) &&
@@ -1374,14 +1410,32 @@ static bool inspect_x64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_va,
 				arg0_points_to_stack_fn = true;
 			}
 		}
-		// Direct CALL rel32 or tail JMP rel32
+		// Direct CALL/JMP rel32 or RIP-relative GOT indirect CALL/JMP [rip + disp32]
+		ut64 t = UT64_MAX;
+		bool is_tail = false;
 		if (off + 5 <= (size_t)nr && (code[off] == 0xe8 || code[off] == 0xe9)) {
-			ut64 t = pc + 5 + (st64)(st32)rz_read_le32(code + off + 1);
-			if (range_contains(&ctx->exec_ranges, t, 1)) {
-				call_target = t;
-				calls++;
+			t = pc + 5 + (st64)(st32)rz_read_le32(code + off + 1);
+			is_tail = code[off] == 0xe9;
+		} else if (off + 6 <= (size_t)nr && code[off] == 0xff &&
+			(code[off + 1] == 0x15 || code[off + 1] == 0x25)) {
+			ut64 got_va = pc + 6 + (st64)(st32)rz_read_le32(code + off + 2);
+			ut8 ptr_buf[8];
+			if (rz_io_nread_at(ctx->core->io, got_va, ptr_buf, 8) == 8) {
+				t = rz_read_ble64(ptr_buf, ctx->big_endian);
 			}
-			if (code[off] == 0xe9) {
+			is_tail = code[off + 1] == 0x25;
+		}
+		if (t != UT64_MAX) {
+			if (range_contains(&ctx->exec_ranges, t, 1)) {
+				calls++;
+				bool arg_ready = (ctx->is_pe ? cand_rcx != UT64_MAX : (cand_rdi != UT64_MAX || cand_rcx != UT64_MAX)) ||
+					(arg0_points_to_stack_fn && has_vtable_arg1);
+				if (arg_ready) {
+					call_target = t;
+					calls_after_arg++;
+				}
+			}
+			if (is_tail) {
 				break;
 			}
 		}
@@ -1402,7 +1456,7 @@ static bool inspect_x64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_va,
 	if (user_main == UT64_MAX && arg0_points_to_stack_fn && has_vtable_arg1) {
 		user_main = stack_fn_va;
 	}
-	if (calls == 1 && user_main != UT64_MAX && call_target != UT64_MAX &&
+	if (calls <= 2 && calls_after_arg == 1 && user_main != UT64_MAX && call_target != UT64_MAX &&
 		user_main != wrapper_va && user_main != call_target) {
 		*user_main_out = user_main;
 		*lang_start_out = call_target;
@@ -1421,31 +1475,56 @@ static bool inspect_arm64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_v
 	if (nr < 12) {
 		return false;
 	}
-	ut64 x0_page = 0;
-	bool x0_has_page = false;
-	ut64 cand_x0 = UT64_MAX;
+	ut64 reg_page[32] = { 0 };
+	bool reg_has_page[32] = { 0 };
+	ut64 reg_text[32];
+	for (size_t i = 0; i < 32; i++) {
+		reg_text[i] = UT64_MAX;
+	}
+	ut64 stack_fn_va = UT64_MAX;
+	ut64 stack_fn_disp = 0;
+	bool arg0_is_sp = false;
+	ut64 arg0_sp_disp = 0;
+	bool has_vtable_arg1 = false;
 	ut64 call_target = UT64_MAX;
 	ut32 calls = 0;
 	for (size_t off = 0; off + 4 <= (size_t)nr; off += 4) {
 		ut64 pc = wrapper_va + off;
 		ut32 insn = rz_read_ble32(code + off, ctx->big_endian);
-		if ((insn & 0x9f00001f) == 0x90000000) {
+		ut32 rd = insn & 0x1f;
+		if ((insn & 0x9f000000) == 0x90000000) {
+			// ADRP Xd, page
 			ut64 immlo = (insn >> 29) & 0x3;
 			ut64 immhi = (insn >> 5) & 0x7ffff;
 			st64 imm21 = (st64)((immhi << 2) | immlo);
 			if (imm21 & (1LL << 20)) {
 				imm21 |= ~((1LL << 21) - 1);
 			}
-			x0_page = (pc & ~0xfffULL) + ((ut64)imm21 << 12);
-			x0_has_page = true;
-		} else if ((insn & 0xff8003ff) == 0x91000000 && x0_has_page) {
+			reg_page[rd] = (pc & ~0xfffULL) + ((ut64)imm21 << 12);
+			reg_has_page[rd] = true;
+		} else if ((insn & 0xff800000) == 0x91000000) {
+			// ADD Xd, Xn, #imm12 (either page+offset or sp+disp)
+			ut32 rn = (insn >> 5) & 0x1f;
 			ut64 imm12 = (insn >> 10) & 0xfff;
 			if (insn & (1U << 22)) {
 				imm12 <<= 12;
 			}
-			ut64 t = x0_page + imm12;
-			if (range_contains(&ctx->exec_ranges, t, 1)) {
-				cand_x0 = t;
+			if (rn == 31 && rd == 0) {
+				arg0_is_sp = true;
+				arg0_sp_disp = imm12;
+			} else if (reg_has_page[rn]) {
+				ut64 t = reg_page[rn] + imm12;
+				if (range_contains(&ctx->exec_ranges, t, 1)) {
+					reg_text[rd] = t;
+				} else if (rd == 1 && range_contains(&ctx->data_ranges, t, 1)) {
+					has_vtable_arg1 = true;
+				}
+			}
+		} else if ((insn & 0xffc003e0) == 0xf90003e0) {
+			// STR Xt, [sp, #uimm12*8]
+			if (reg_text[rd] != UT64_MAX) {
+				stack_fn_va = reg_text[rd];
+				stack_fn_disp = ((insn >> 10) & 0xfff) * 8;
 			}
 		} else if ((insn & 0x7c000000) == 0x14000000) {
 			st64 imm26 = (st64)(insn & 0x03ffffff);
@@ -1464,9 +1543,14 @@ static bool inspect_arm64_lang_start_wrapper(RustRecoverCtx *ctx, ut64 wrapper_v
 			break;
 		}
 	}
-	if (calls == 1 && cand_x0 != UT64_MAX && call_target != UT64_MAX &&
-		cand_x0 != wrapper_va && cand_x0 != call_target) {
-		*user_main_out = cand_x0;
+	ut64 user_main = reg_text[0];
+	if (user_main == UT64_MAX && arg0_is_sp && stack_fn_va != UT64_MAX &&
+		arg0_sp_disp == stack_fn_disp && has_vtable_arg1) {
+		user_main = stack_fn_va;
+	}
+	if (calls == 1 && user_main != UT64_MAX && call_target != UT64_MAX &&
+		user_main != wrapper_va && user_main != call_target) {
+		*user_main_out = user_main;
 		*lang_start_out = call_target;
 		return true;
 	}
