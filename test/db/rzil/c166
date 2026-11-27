@@ -8,13 +8,18 @@ e io.cache=1
 s entry0
 aezi
 aezvt
-aezsu 0x000001ac
+echo "== sd +0x1a"
 sd +0x1a
-echo
-#ps @ obj._seckrit
 aoip 1
-agI
-aezvt
+aezvt~BUSCON0
+aezsu 0x0000001e
+aezvt~BUSCON0
+aezsu 0x00000022
+aezvt~BUSCON0
+echo "== run to 0x000001ac"
+aezsu 0x000001ac
+echo
+aezvt~BUSCON0
 echo
 s sym.decrypt
 px @ 0x4 @! 0x11
@@ -68,7 +73,7 @@ usr1     bool false
 v        bool false
 z        bool false
 
-
+== sd +0x1a
 0x1a
 (seq
   (set old
@@ -76,24 +81,16 @@ z        bool false
   (set masked_old
     (&
       (var old)
-      (bv 16 0xffc0)))
-  (set masked_data
-    (&
-      (bv 16 0x2e)
-      (bv 16 0x3f)))
+      (~
+        (bv 16 0x3f))))
   (set res
     (|
       (var masked_old)
-      (var masked_data)))
+      (bv 16 0x2e)))
   (set BUSCON0
     (var res))
   (set e
-    (ite
-      (==
-        (var res)
-        (bv 16 0x8000))
-      true
-      false))
+    false)
   (set z
     (ite
       (is_zero
@@ -109,114 +106,12 @@ z        bool false
       (cast 16
         false
         (var res)))))
-                                                                                                                         .------------------------------.
-                                                                                                                         |  bfldl 0xff0c, #0x3f, #0x2e  |
-                                                                                                                         `------------------------------'
-                                                                                                                              v v v v v v v v v v
-                                                                                                                              | | | | | | | | | |
-                                                                                                                              | | | | | | | | | '---------------------------------------------------------------------------------------------.
-      .-----------------------------------------------------------------------------------------------------------------------' | | | | | | | '-------------------------------------------------------------------------------.               |
-      |                 .-------------------------------------------------------------------------------------------------------' | | | | | '-----------------------------------------------------------------.               |               |
-      |                 |                                 .-----------------------------------------------------------------------' | | | '--------------------------------------------------.                |               |               |
-      |                 |                                 |                                                .------------------------' | '--------------------.                               |                |               |               |
-      |                 |                                 |                                                |                 .--------'                      |                               |                |               |               |
-      |                 |                                 |                                                |                 |                               |                               |                |               |               |
-      |                 |                                 |                                                |                 |                               |                               |                |               |               |
-      |                 |                                 |                                                |                 |                               |                               |                |               |               |
-      |                 |                                 |                                                |                 |                               |                               |                |               |               |
-  .------------.    .-------------------.             .--------------------.                           .------------.    .----------------.              .----------.                    .----------.     .----------.    .----------.    .----------.
-  |  set: old  |    |  set: masked_old  |             |  set: masked_data  |                           |  set: res  |    |  set: BUSCON0  |              |  set: e  |                    |  set: z  |     |  set: v  |    |  set: c  |    |  set: n  |
-  `------------'    `-------------------'             `--------------------'                           `------------'    `----------------'              `----------'                    `----------'     `----------'    `----------'    `----------'
-      v                 v                                 v                                                v                 v                               v                               v                v               v               v
-      |                 |                                 |                                                |                 |                               |                               |                |               |               |
-    .-'                 |                                 |                                                |                 |                               |                               |                |               |               |
-    |                   '---.                             |                                                |                 |                               |                               |                |               |               |
-    |                       |                             '----.                                           |                 |                               |                               |                |               |               |
-    |                       |                                  |                                           '.                |                               |                               |                |               |               |
-    |                       |                                  |                                            |                '-.                             |                               |                |               |               |
-    |                       |                                  |                                            |                  |                            .'                               |                |               |               |
-    |                       |                                  |                                            |                  |                            |                               .'                |               |               |
-    |                       |                                  |                                            |                  |                            |                               |                 |               |               |
-.----------------.      .-----------.                      .-----------.                                .-----------.      .------------.               .-------------.                 .-------------.   .----------.    .----------.    .----------.
-|  var: BUSCON0  |      |  and      |                      |  and      |                                |  or       |      |  var: res  |               |  ite        |                 |  ite        |   |  false   |    |  false   |    |  msb     |
-`----------------'      `-----------'                      `-----------'                                `-----------'      `------------'               `-------------'                 `-------------'   `----------'    `----------'    `----------'
-                              v v                                v v                                          v v                                          v v v                           v v v                                              v
-                              | |                                | |                                          | |                                          | | |                           | | |                                              |
-           .------------------' |                                | |                                          | |                                          | | '-------------.             | | '-----------------------------.                |
-           |                 .--'                                | |                                          | |                            .-------------' |               |             | '---------------.               |                |
-           |                 |                     .-------------' |                                          | |                            |               |               |             '-.               |               |                |
-           |                 |                     |               '---.                                      | |                            |               |               |               |               |               |                |
-           |                 |                     |                   |                   .------------------' |                            |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                    '--.                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |                |
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |               .'
-           |                 |                     |                   |                   |                       |                         |               |               |               |               |               |               |
-       .------------.    .-----------------.   .---------------.   .---------------.   .-------------------.   .--------------------.    .-----------.   .----------.    .----------.    .-----------.   .----------.    .----------.    .------------.
-       |  var: old  |    |  bv: 16 0xffc0  |   |  bv: 16 0x2e  |   |  bv: 16 0x3f  |   |  var: masked_old  |   |  var: masked_data  |    |  eq       |   |  true    |    |  false   |    |  is_zero  |   |  true    |    |  false   |    |  cast: 16  |
-       `------------'    `-----------------'   `---------------'   `---------------'   `-------------------'   `--------------------'    `-----------'   `----------'    `----------'    `-----------'   `----------'    `----------'    `------------'
-                                                                                                                                               v v                                           v                                                 v v
-                                                                                                                                               | |                                           |                                                 | |
-                                                                                                                                  .------------' |                                           |                                                 | |
-                                                                                                                                  |              '--.                                        |                                                 | |
-                                                                                                                                  |                 |                                       .'                                                 | |
-                                                                                                                                  |                 |                                       |                                         .--------' |
-                                                                                                                                  |                 |                                       |                                         |          '----.
-                                                                                                                                  |                 |                                       |                                         |               |
-                                                                                                                              .------------.    .-----------------.                     .------------.                            .----------.    .------------.
-                                                                                                                              |  var: res  |    |  bv: 16 0x8000  |                     |  var: res  |                            |  false   |    |  var: res  |
-                                                                                                                              `------------'    `-----------------'                     `------------'                            `----------'    `------------'
-variable type value      
--------------------------
-PC       bitv 0x000001ac
+BUSCON0  bitv 0x0680
 BUSCON0  bitv 0x06ae
-BUSCON1  bitv 0x0000
-BUSCON2  bitv 0x0000
-BUSCON3  bitv 0x0000
-BUSCON4  bitv 0x0000
-CSP      bitv 0x00
-DPP0     bitv 0x000
-DPP1     bitv 0x001
-DPP2     bitv 0x003
-DPP3     bitv 0x003
-FOCON    bitv 0x0000
-P8       bitv 0x0000
-PLLCON   bitv 0x0000
-PSW      bitv 0x0000
-SGTDIS   bool false
-SP       bitv 0xfc00
-SYSCON   bitv 0x0000
-SYSCON1  bitv 0x0000
-SYSCON3  bitv 0x0000
-XADRS5   bitv 0x0000
-c        bool false
-e        bool false
-n        bool false
-r0       bitv 0xa200
-r1       bitv 0x8058
-r10      bitv 0x000f
-r11      bitv 0x0000
-r12      bitv 0x0000
-r13      bitv 0x0000
-r14      bitv 0x0000
-r15      bitv 0x0000
-r2       bitv 0x0000
-r3       bitv 0xe211
-r4       bitv 0x0001
-r5       bitv 0x000f
-r6       bitv 0x0065
-r7       bitv 0x0010
-r8       bitv 0x0004
-r9       bitv 0x0000
-usr0     bool false
-usr1     bool false
-v        bool false
-z        bool false
+BUSCON0  bitv 0x04ae
+== run to 0x000001ac
 
+BUSCON0  bitv 0x04ae
 
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0x00000004  416e 7943 6f6c 6f75 7259 6f75 4c69 6b65  AnyColourYouLike
@@ -397,7 +292,7 @@ DPP3     bitv 0x003
 FOCON    bitv 0x0000
 P8       bitv 0x0000
 PLLCON   bitv 0x7889
-PSW      bitv 0x0300
+PSW      bitv 0x0000
 SGTDIS   bool false
 SP       bitv 0xf800
 SYSCON   bitv 0x0000
@@ -590,6 +485,53 @@ var_write(name: z, old: 0x0, new: 0x0)
 var_write(name: n, old: 0x0, new: 0x0)
 
  r0: 0xfc5a
+EOF
+RUN
+
+NAME=c166: BFLDH and BFLDL update masked RAM bits
+FILE=malloc://65536
+CMDS=<<EOF
+e asm.arch=c166
+e asm.cpu=c166-generic
+wx 0A0C030F1A0C0F03 @ 0
+wx ABCD @ 0xFD18
+aezi
+aezsue 0x4
+px 2 @ 0xFD18
+aezv e
+aezsue 0x8
+px 2 @ 0xFD18
+aezv e
+EOF
+EXPECT=<<EOF
+0x00000000 [0a0c030f] bfldl 0xfd18, #0x03, #0x0f
+(seq (set addr (cast 32 false (bv 16 0xfd18))) (set old (loadw 0 16 (var addr))) (set masked_old (& (var old) (~ (bv 16 0x3)))) (set res (| (var masked_old) (bv 16 0xf))) (storew 0 (var addr) (var res)) (set e false) (set z (ite (is_zero (var res)) true false)) (set v false) (set c false) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x0, new: 0x4)
+mem_read(addr: 0xfd18, value: 0xcdab)
+mem_write(addr: 0xfd18, old: 0xcdab, new: 0xcdaf)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fd18  afcd                                     ..
+ e: false
+0x00000004 [1a0c0f03] bfldh 0xfd18, #0x03, #0x0f
+(seq (set addr (cast 32 false (bv 16 0xfd18))) (set old (loadw 0 16 (var addr))) (set masked_old (& (var old) (~ (bv 16 0x300)))) (set res (| (var masked_old) (bv 16 0xf00))) (storew 0 (var addr) (var res)) (set e false) (set z (ite (is_zero (var res)) true false)) (set v false) (set c false) (set n (msb (cast 16 false (var res)))))
+pc_write(old: 0x4, new: 0x8)
+mem_read(addr: 0xfd18, value: 0xcdaf)
+mem_write(addr: 0xfd18, old: 0xcdaf, new: 0xcfaf)
+var_write(name: e, old: 0x0, new: 0x0)
+var_write(name: z, old: 0x0, new: 0x0)
+var_write(name: v, old: 0x0, new: 0x0)
+var_write(name: c, old: 0x0, new: 0x0)
+var_write(name: n, old: 0x0, new: 0x1)
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0000fd18  afcf                                     ..
+ e: false
 EOF
 RUN
 

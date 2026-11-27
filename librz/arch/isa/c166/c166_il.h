@@ -13,11 +13,6 @@
 #define C166_CSP_SIZE 16
 
 #define SEGMENTED_ADDR(csp, ip) \
-	ADD( \
-		SHIFTL0(UNSIGNED(32, csp), U32(14)), \
-		UNSIGNED(32, ip))
-
-#define SEGMENTED_ADDR2(csp, ip) \
 	LOGOR( \
 		SHIFTL0(UNSIGNED(32, csp), U8(16)), \
 		UNSIGNED(32, ip))

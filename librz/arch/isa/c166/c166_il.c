@@ -407,22 +407,36 @@ static RzILOpEffect *c166_il_mov_rwn_orwm(const RzAnalysis *analysis, const ut8 
  * (count) ← 0
  * DO WHILE ((count) <8)
  *	IF op2[(count)] = 1
- *		(op1[(count)]) ← op3[(count)]
+ *		(op1[(count)]) ← op3[(count)]  or  (op1[(count) + 8]) ← op3[(count)] if high
  *	ENDIF
  * (count) ← (count) + 1
  * END WHILE
  *
+ * From User Manual:
+ * BFLDL bitoff.Q, #mask8, #data8	0A QQ @@ ##	4
+ * BFLDH bitoff.Q, #mask8, #data8	1A QQ ## @@	4
+ *
+ * From Keil:
+ * 0000001A 0A863F2E  BFLDL    BUSCON0,#0x3F,#0x2E
+ *    691:            BFLDL    BUSCON0,#03FH,#BCON0L
+ * 0000001E 1A8600D2  BFLDH    BUSCON0,#0xD2,#0x00
+ *    692:            BFLDH    BUSCON0,#0D2H,#BCON0H
+ *
+ *
+ *    0x0000001a      4       0a 86 3f 2e   bfldl BUSCON0, #0x3f, #0x2e ; START167.A66:691
+ *    0x0000001e      4       1a 86 00 d2   bfldh BUSCON0, #0xd2, #0x00 ; START167.A66:692
  */
 static RzILOpEffect *c166_il_bfldhl_bitoff_x(RzAnalysis *analysis, const ut8 *buf, bool is_high) {
 	const ut8 bitoff = buf[1];
-	const ut8 mask8 = buf[2]; // #mask8  ##
-	const ut8 data8 = buf[3]; // #data8  @@
+	// BFLDH encodes the immediate bytes in the reverse order from BFLDL.-
+	const ut8 mask8 = is_high ? buf[3] : buf[2];
+	const ut8 data8 = is_high ? buf[2] : buf[3];
 
 	const ut16 mask = is_high ? (ut16)mask8 << 8 : (ut16)mask8;
 	const ut16 data = is_high ? (ut16)data8 << 8 : (ut16)data8;
 
 	RzILOpEffect *flags = SEQ5(
-		SET_E(VARL("res")),
+		E_FALSE,
 		SET_Z(VARL("res")),
 		V_FALSE,
 		C_FALSE,
@@ -430,21 +444,19 @@ static RzILOpEffect *c166_il_bfldhl_bitoff_x(RzAnalysis *analysis, const ut8 *bu
 
 	if (IS_GPR(bitoff)) {
 		const char *reg_name = c166_rw[L_NIB(bitoff)];
-		return SEQ6(SETL("old", VARG(reg_name)),
-			SETL("masked_old", LOGAND(VARL("old"), U16(~mask))),
-			SETL("masked_data", LOGAND(U16(data), U16(mask))),
-			SETL("res", LOGOR(VARL("masked_old"), VARL("masked_data"))),
+		return SEQ5(SETL("old", VARG(reg_name)),
+			SETL("masked_old", LOGAND(VARL("old"), LOGNOT(U16(mask)))),
+			SETL("res", LOGOR(VARL("masked_old"), U16(data))),
 			SETG(reg_name, VARL("res")),
 			flags);
 	}
 	if (IS_RAM(bitoff)) {
 		const ut16 addr = RAM_B_ADDR(bitoff);
-		return SEQ7(
+		return SEQ6(
 			SETL("addr", UNSIGNED(32, U16(addr))),
 			SETL("old", LOADW(16, VARL("addr"))),
-			SETL("masked_old", LOGAND(VARL("old"), U16(~mask))),
-			SETL("masked_data", LOGAND(U16(data), U16(mask))),
-			SETL("res", LOGOR(VARL("masked_old"), VARL("masked_data"))),
+			SETL("masked_old", LOGAND(VARL("old"), LOGNOT(U16(mask)))),
+			SETL("res", LOGOR(VARL("masked_old"), U16(data))),
 			STOREW(VARL("addr"), VARL("res")),
 			flags);
 	}
@@ -456,20 +468,17 @@ static RzILOpEffect *c166_il_bfldhl_bitoff_x(RzAnalysis *analysis, const ut8 *bu
 		if (!resolved) {
 			rz_il_op_effect_free(flags);
 			NOT_IMPLEMENTED;
-			// return EMPTY();
 		}
 
-		return SEQ6(
+		return SEQ5(
 			SETL("old", VARG(resolved)),
-			SETL("masked_old", LOGAND(VARL("old"), U16(~mask))),
-			SETL("masked_data", LOGAND(U16(data), U16(mask))),
-			SETL("res", LOGOR(VARL("masked_old"), VARL("masked_data"))),
+			SETL("masked_old", LOGAND(VARL("old"), LOGNOT(U16(mask)))),
+			SETL("res", LOGOR(VARL("masked_old"), U16(data))),
 			SETG(resolved, VARL("res")),
 			flags);
 	}
 	rz_il_op_effect_free(flags);
 	NOT_IMPLEMENTED;
-	// return EMPTY();
 }
 
 static RzILOpEffect *c166_il_movb_rbn_oRwm(const RzAnalysis *analysis, const ut8 *buf, const RzAnalysisOp *op) {
