@@ -58,6 +58,36 @@ bool test_rz_io_nread_at(void) {
 	mu_end;
 }
 
+bool test_rz_io_nread_at_new_buf(void) {
+	RzIO *io = rz_io_new();
+	io->va = true;
+	rz_io_open_at(io, "malloc://8", RZ_PERM_RW, 0, 0x10, NULL);
+	rz_io_write_at(io, 0x10, (ut8 *)"abcdefgh", 8);
+
+	// request 16 bytes from an 8-byte mapping: the returned buffer must
+	// report only the 8 actually read bytes, not the 16 requested
+	RzBuffer *buf = rz_io_nread_at_new_buf(io, 0x10, 16);
+	mu_assert_notnull(buf, "nread_at_new_buf should succeed");
+	mu_assert_eq(rz_buf_size(buf), 8, "nread_at_new_buf must size the buffer to the bytes actually read");
+	ut8 tmp[16] = { 0 };
+	mu_assert_eq(rz_buf_read(buf, tmp, sizeof(tmp)), 8, "nread_at_new_buf buffer read size");
+	mu_assert_memeq(tmp, (const ut8 *)"abcdefgh", 8, "nread_at_new_buf content");
+	rz_buf_free(buf);
+
+	// full read: the buffer reports exactly the request size
+	buf = rz_io_nread_at_new_buf(io, 0x10, 4);
+	mu_assert_notnull(buf, "nread_at_new_buf full read should succeed");
+	mu_assert_eq(rz_buf_size(buf), 4, "nread_at_new_buf full read buffer size");
+	rz_buf_free(buf);
+
+	// unmapped address: the read fails and the function returns NULL
+	buf = rz_io_nread_at_new_buf(io, 0xdeadbeef, 4);
+	mu_assert_null(buf, "nread_at_new_buf should fail on unmapped address");
+
+	rz_io_free(io);
+	mu_end;
+}
+
 bool test_rz_io_cache(void) {
 	RzIO *io = rz_io_new();
 	rz_io_open(io, "malloc://15", RZ_PERM_RW, 0);
@@ -747,6 +777,7 @@ bool test_rz_io_boundaries(void) {
 bool all_tests(void) {
 	mu_run_test(test_rz_io_read_at_mapped);
 	mu_run_test(test_rz_io_nread_at);
+	mu_run_test(test_rz_io_nread_at_new_buf);
 	mu_run_test(test_rz_io_cache);
 	mu_run_test(test_rz_io_mapsplit);
 	mu_run_test(test_rz_io_mapsplit2);
