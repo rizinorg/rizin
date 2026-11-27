@@ -457,8 +457,8 @@ RZ_API void rz_cfg_fini(RZ_NULLABLE RZ_BORROW RzCFG *cfg) {
 	rz_iterator_fini(cfg->cfg_nodes);
 }
 
-static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
-	if (abb->jump == UT64_MAX && abb->fail != target) {
+static void bb_add_target(RzAnalysisBlock *abb, ut64 target, bool is_fail) {
+	if (abb->jump == UT64_MAX && abb->fail != target && !is_fail) {
 		abb->jump = target;
 	} else if (abb->fail == UT64_MAX && abb->jump != target) {
 		abb->fail = target;
@@ -471,6 +471,7 @@ static void bb_add_target(RzAnalysisBlock *abb, ut64 target) {
 }
 
 typedef struct {
+	const RzICFG *icfg;
 	size_t n_errors;
 	RzAnalysis *analysis;
 	RzAnalysisFunction *fcn;
@@ -490,8 +491,16 @@ bool handle_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
 	// Our edges here are from block to block.
 	ut64 xref_from_addr = from_addr + (last_insn_off ? *last_insn_off : 0);
 	switch (type) {
-	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH:
+	case RZ_ICFG_EDGE_TYPE_FALLTHROUGH: {
+		RzAnalysisBlock *ablock = rz_analysis_get_block_at(bundle->analysis, from_addr);
+		if (ablock) {
+			bb_add_target(ablock, to_addr, rz_graph_out_degree(bundle->icfg->graph, from) > 1);
+		} else {
+			bundle->n_errors++;
+			rz_warn_if_reached();
+		}
 		return true;
+	}
 	case RZ_ICFG_EDGE_TYPE_JUMP:
 		if (!rz_analysis_xrefs_set(bundle->analysis, xref_from_addr, to_addr, RZ_ANALYSIS_XREF_TYPE_CODE)) {
 			bundle->n_errors++;
@@ -502,7 +511,7 @@ bool handle_edge(const RzGraphEdge *e, RzGraphVisitor *vis) {
 		// when this outgoing edge is walked.
 		RzAnalysisBlock *ablock = rz_analysis_get_block_at(bundle->analysis, from_addr);
 		if (ablock) {
-			bb_add_target(ablock, to_addr);
+			bb_add_target(ablock, to_addr, false);
 		} else {
 			bundle->n_errors++;
 			rz_warn_if_reached();
@@ -567,7 +576,7 @@ RZ_API bool rz_icfg_copy_to_analysis(const RZ_NONNULL RzICFG *icfg, RZ_NONNULL R
 			continue;
 		}
 		RzGraphNode *fcn_entry = rz_graph_find_node(icfg->graph, addr);
-		ConvertBundle bundle = { .analysis = analysis, .fcn = fcn };
+		ConvertBundle bundle = { .analysis = analysis, .fcn = fcn, .n_errors = 0, .icfg = icfg };
 		RzGraphVisitor visitor = { 0 };
 		visitor.edge_selector = handle_edge;
 		visitor.discover_node = handle_node;
