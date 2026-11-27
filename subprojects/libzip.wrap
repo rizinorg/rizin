@@ -1,7 +1,7 @@
 [wrap-file]
 directory = libzip-1.11.4
 source_url = https://libzip.org/download/libzip-1.11.4.tar.gz
-source_fallback_url = https://github.com/nih-at/libzip/releases/download/v1.11.4/libzip-1.11.4.tar.gz
+source_fallback_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/libzip-1.11.4.tar.gz
 source_filename = libzip-1.11.4.tar.gz
 source_hash = 82e9f2f2421f9d7c2466bbc3173cd09595a88ea37db0d559a9d0a2dc60dc722e
 patch_directory = libzip-1.11.4

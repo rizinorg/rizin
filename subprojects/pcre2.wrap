@@ -1,5 +1,6 @@
 [wrap-file]
 source_url = https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.49/pcre2-10.49.tar.gz
+source_fallback_url = https://raw.githubusercontent.com/rizinorg/fallback-repo/main/pcre2-10.49.tar.gz
 source_filename = pcre2-10.49.tar.gz
 source_hash = 929f0b20e62879252a15886b06c89f1edef61a363cbd5826fb041080a5e557ae
 directory = pcre2-10.49

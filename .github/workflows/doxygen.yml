@@ -16,6 +16,7 @@ on:
     - 'sys/doxygen.py'
     - 'subprojects/doxygen-awesome-css.wrap'
     - '.github/workflows/doxygen.yml'
+    - '.github/actions/cache-subprojects/**'
   pull_request:
     paths: *doc_paths
 
@@ -32,6 +33,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
+
+    - name: Cache and pre-download subprojects
+      uses: ./.github/actions/cache-subprojects
+      with:
+        skip-wraps: capstone-v6.wrap
+        cache-suffix: doc
 
     - name: Install dependencies
       run: |
