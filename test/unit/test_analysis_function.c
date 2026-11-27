@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_core.h>
 #include <rz_util.h>
 #include "minunit.h"
 #include "test_config.h"
@@ -668,6 +669,58 @@ bool test_rz_analysis_function_get_ret_var() {
 	mu_end;
 }
 
+static bool test_rz_analysis_match_functions(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_arch_configure(core, "x86", 64, NULL, NULL, NULL);
+	bool opened = rz_core_file_open_load(core, "malloc://64", 0, RZ_PERM_RWX, true);
+	mu_assert_true(opened, "open malloc");
+	const ut8 code[] = { 0x55, 0x48, 0x89, 0xe5, 0x5d, 0xc3 };
+	mu_assert_true(rz_io_write_at(core->io, 0x0, code, sizeof(code)), "write fcn1");
+	mu_assert_true(rz_io_write_at(core->io, 0x20, code, sizeof(code)), "write fcn2");
+
+	RzAnalysis *analysis = core->analysis;
+	RzAnalysisFunction *f1 = rz_analysis_create_function(
+		analysis, "f1", 0x0, RZ_ANALYSIS_FCN_TYPE_FCN);
+	RzAnalysisFunction *f2 = rz_analysis_create_function(
+		analysis, "f2", 0x20, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(f1, "create f1");
+	mu_assert_notnull(f2, "create f2");
+	RzAnalysisBlock *b1 = rz_analysis_create_block(analysis, 0x0, sizeof(code));
+	RzAnalysisBlock *b2 = rz_analysis_create_block(analysis, 0x20, sizeof(code));
+	mu_assert_notnull(b1, "create b1");
+	mu_assert_notnull(b2, "create b2");
+	rz_analysis_function_add_block(f1, b1);
+	rz_analysis_function_add_block(f2, b2);
+	rz_analysis_block_unref(b1);
+	rz_analysis_block_unref(b2);
+
+	RzList *list_a = rz_list_new();
+	RzList *list_b = rz_list_new();
+	mu_assert_notnull(list_a, "list_a");
+	mu_assert_notnull(list_b, "list_b");
+	rz_list_append(list_a, f1);
+	rz_list_append(list_a, f2);
+	rz_list_append(list_b, f1);
+	rz_list_append(list_b, f2);
+
+	RzAnalysisMatchOpt opt = {
+		.analysis_a = analysis,
+		.analysis_b = analysis,
+		.callback = NULL,
+		.user = NULL,
+	};
+	RzAnalysisMatchResult *res = rz_analysis_match_functions(list_a, list_b, &opt);
+	mu_assert_notnull(res, "match functions result");
+	mu_assert_eq(rz_list_length(res->matches), 2, "two identical functions match");
+	rz_analysis_match_result_free(res);
+
+	rz_list_free(list_a);
+	rz_list_free(list_b);
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -682,6 +735,7 @@ int all_tests() {
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
 	mu_run_test(test_rz_analysis_function_get_ret_var);
+	mu_run_test(test_rz_analysis_match_functions);
 	return tests_passed != tests_run;
 }
 

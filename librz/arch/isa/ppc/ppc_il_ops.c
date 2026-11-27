@@ -859,7 +859,16 @@ static RzILOpEffect *div_mul_op(RZ_BORROW csh handle, RZ_BORROW cs_insn *insn, c
 		prod = SHIFTR0(prod, U8(64));
 	}
 
-	RzILOpEffect *cr0 = set_cr0 ? ppc_cmp_set_cr(VARG(rT), UA(0), true, "cr0", mode) : EMPTY();
+	RzILOpEffect *cr0 = NULL;
+	if (set_cr0) {
+		RzILOpPure *rt = VARG(rT);
+		RzILOpPure *zero = UA(0);
+		cr0 = ppc_cmp_set_cr(rt, zero, true, "cr0", mode);
+		rz_il_op_pure_free(rt);
+		rz_il_op_pure_free(zero);
+	} else {
+		cr0 = EMPTY();
+	}
 	return SEQ2(SETG(rT, CAST(PPC_ARCH_BITS, IL_FALSE, prod)), cr0);
 }
 

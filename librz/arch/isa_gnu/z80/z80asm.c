@@ -742,6 +742,9 @@ static int assemble(const char *str, unsigned char *_obuf) {
 	int r, s; /* registers */
 	int cmd;
 
+	if (!state.z80buffer) {
+		return 0;
+	}
 	for (bufptr = state.z80buffer; (bufptr = strchr(bufptr, '\n'));) {
 		*bufptr = ' ';
 	}
@@ -754,6 +757,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 
 	ptr = delspc (ptr);
 	if (!*ptr) {
+		free(state.z80buffer);
 		return state.obuflen;
 	}
 
@@ -761,6 +765,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 
 	ptr = delspc (ptr);
 	if (!*ptr) {
+		free(state.z80buffer);
 		return state.obuflen;
 	}
 
@@ -1455,9 +1460,11 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		default:
 			// RZ_LOG_ERROR("assembler: z80: command or comment expected (was %s)\n", ptr);
+			free(state.z80buffer);
 			return 0;
 	}
 
+	free(state.z80buffer);
 	return state.obuflen;
 }
 

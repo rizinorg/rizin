@@ -105,8 +105,32 @@ bool test_inherit_graph_creation() {
 	mu_end;
 }
 
+static bool test_analysis_class_rename_with_attrs(void) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "rz_core_new");
+	rz_core_cmd0(core, "ac Base");
+	rz_core_cmd0(core, "ac OldClass");
+	rz_core_cmd0(core, "acb OldClass Base");
+
+	RzAnalysisClassErr err = rz_analysis_class_rename(core->analysis, "OldClass", "NewClass");
+	mu_assert_eq(err, RZ_ANALYSIS_CLASS_ERR_SUCCESS, "rename class with attrs");
+	mu_assert_false(rz_analysis_class_exists(core->analysis, "OldClass"), "old class removed");
+	mu_assert_true(rz_analysis_class_exists(core->analysis, "NewClass"), "new class exists");
+
+	RzVector *bases = rz_analysis_class_base_get_all(core->analysis, "NewClass");
+	mu_assert_notnull(bases, "bases vector");
+	mu_assert_eq(rz_vector_len(bases), 1, "one base preserved after rename");
+	RzAnalysisBaseClass *base = rz_vector_index_ptr(bases, 0);
+	mu_assert_streq(base->class_name, "Base", "base class name preserved");
+	rz_vector_free(bases);
+
+	rz_core_free(core);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_inherit_graph_creation);
+	mu_run_test(test_analysis_class_rename_with_attrs);
 	return tests_passed != tests_run;
 }
 
