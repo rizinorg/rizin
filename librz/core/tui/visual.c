@@ -53,20 +53,21 @@ RZ_IPI void rz_core_visual_applyHexMode(RzCore *core, int hexMode) {
 	switch (visual->currentFormat) {
 	case 0: /* px */
 	case 3: /* prx */
-	case 6: /* pxw */
-	case 9: /* pxr */
+	case 7: /* pxw */
+	case 10: /* pxr */
 		rz_config_set(core->config, "hex.compact", "false");
 		rz_config_set(core->config, "hex.comments", "true");
 		break;
 	case 1: /* pxa */
 	case 4: /* pxb */
-	case 7: /* pxq */
+	case 5: /* pxB */
+	case 8: /* pxq */
 		rz_config_set(core->config, "hex.compact", "true");
 		rz_config_set(core->config, "hex.comments", "true");
 		break;
 	case 2: /* pxr */
-	case 5: /* pxh */
-	case 8: /* pxd */
+	case 6: /* pxh */
+	case 9: /* pxd */
 		rz_config_set(core->config, "hex.compact", "false");
 		rz_config_set(core->config, "hex.comments", "false");
 		break;
@@ -222,6 +223,26 @@ static const char *__core_visual_print_command(RzCore *core) {
 	return printfmtSingle[PIDX];
 }
 
+static bool is_bitstream_view(RzCore *core) {
+	RzCoreVisual *visual = core->visual;
+	if (!visual) {
+		return false;
+	}
+	const char *cmd = __core_visual_print_command(core);
+	if (cmd) {
+		if (!strcmp(cmd, "pxB") || rz_str_startswith(cmd, "pxB ") || rz_str_startswith(cmd, "pxB\t")) {
+			return true;
+		}
+	}
+	if (visual->printidx == RZ_CORE_VISUAL_MODE_PX) {
+		int fmt = RZ_ABS(visual->hexMode) % PRINT_HEX_FORMATS;
+		if (fmt < PRINT_HEX_FORMATS && !strcmp(printHexFormats[fmt], "pxB")) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool __core_visual_gogo(RzCore *core, int ch) {
 	RzIOMap *map;
 	switch (ch) {
@@ -300,6 +321,7 @@ static const char *help_msg_visual[] = {
 	"[1-9]", "", "follow jmp/call identified by shortcut (like ;[1])",
 	",file", "", "add a link to the text file",
 	"/*+-[]", "", "change block size, [] = resize hex.cols",
+	"{}", "", "shift bitstream 1 bit left/right (in bitstream mode)",
 	"<,>", "", "seek aligned to block size (in cursor slurp or dump files)",
 	"a/A", "", "(a)ssemble code, visual (A)ssembler",
 	"b", "", "browse evals, symbols, flags, evals, classes, ...",
@@ -2803,6 +2825,40 @@ RZ_IPI int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				rz_config_set_i(core->config, "hex.cols", scrcols + 1);
 			}
 			break;
+		case '{':
+		case '}':
+			if (is_bitstream_view(core)) {
+				int distance = numbuf_pull(&visual->util);
+				int shift = rz_config_get_i(core->config, "hex.bitshift");
+				for (i = 0; i < distance; i++) {
+					if (ch == '}') {
+						shift++;
+						if (shift >= 8) {
+							if (core->offset < UT64_MAX) {
+								core->offset += 1;
+								shift = 0;
+							} else {
+								shift = 7;
+								break;
+							}
+						}
+					} else { // ch == '{'
+						shift--;
+						if (shift < 0) {
+							if (core->offset > 0) {
+								core->offset -= 1;
+								shift = 7;
+							} else {
+								shift = 0;
+								break;
+							}
+						}
+					}
+				}
+				rz_config_set_i(core->config, "hex.bitshift", shift);
+				return true;
+			}
+			break;
 		case 's':
 			key_s = rz_config_get(core->config, "key.s");
 			if (key_s && *key_s) {
@@ -3146,7 +3202,7 @@ RZ_IPI void rz_core_visual_title(RzCore *core, int color) {
 	if (visual->autoblocksize) {
 		switch (visual->printidx) {
 		case RZ_CORE_VISUAL_MODE_PX: // x
-			if (visual->currentFormat == 3 || visual->currentFormat == 9 || visual->currentFormat == 5) { // prx
+			if (visual->currentFormat == 3 || visual->currentFormat == 10 || visual->currentFormat == 6) { // prx, pxr, pxh
 				rz_core_block_size(core, (int)(core->cons->rows * hexcols * 4));
 			} else if ((RZ_ABS(visual->hexMode) % 3) == 0) { // prx
 				rz_core_block_size(core, (int)(core->cons->rows * hexcols));
