@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_analysis.h>
+#include <rz_core.h>
 #include <rz_util.h>
 #include "minunit.h"
 #include "test_config.h"
@@ -668,6 +669,74 @@ bool test_rz_analysis_function_get_ret_var() {
 	mu_end;
 }
 
+static bool run_delta_jmptbl_case(st32 e0, st32 e1, st32 e2, bool expect_switch) {
+	RzCore *core = rz_core_new();
+	mu_assert_notnull(core, "core");
+	RzCoreFile *cf = rz_core_file_open(core, "malloc://0x200", RZ_PERM_RWX, 0x1000);
+	mu_assert_notnull(cf, "open malloc://0x200");
+	rz_io_map_add(core->io, cf->fd, RZ_PERM_RWX, 0, 0x1000, 0x200);
+	rz_config_set(core->config, "asm.arch", "x86");
+	rz_config_set_i(core->config, "asm.bits", 64);
+	core->analysis->opt.jmptbl = true;
+
+	ut8 img[0x200];
+	memset(img, 0x90, sizeof(img));
+	// 0x1000: cmp ecx, 2; ja 0x101c
+	// 0x1005: lea rax, [rip + 0x34]  -> 0x1040
+	// 0x100c: lea rdx, [rax + rcx*4]
+	// 0x1010: movsxd rdx, dword [rdx]
+	// 0x1013: add rdx, rax
+	// 0x1016: jmp rdx
+	// 0x101c: ret
+	const ut8 code[] = {
+		0x83, 0xf9, 0x02,
+		0x77, 0x17,
+		0x48, 0x8d, 0x05, 0x34, 0x00, 0x00, 0x00,
+		0x48, 0x8d, 0x14, 0x88,
+		0x48, 0x63, 0x12,
+		0x48, 0x01, 0xc2,
+		0xff, 0xe2
+	};
+	memcpy(img, code, sizeof(code));
+	img[0x1c] = 0xc3;
+	rz_write_at_le32(img, (ut32)e0, 0x40);
+	rz_write_at_le32(img, (ut32)e1, 0x44);
+	rz_write_at_le32(img, (ut32)e2, 0x48);
+	img[0x80] = 0xc3;
+	img[0x84] = 0xc3;
+	img[0x88] = 0xc3;
+	mu_assert_true(rz_io_write_at(core->io, 0x1000, img, sizeof(img)),
+		"write synthetic switch");
+
+	RzAnalysisFunction *fcn = rz_analysis_create_function(
+		core->analysis, "fcn_delta", 0x1000, RZ_ANALYSIS_FCN_TYPE_FCN);
+	mu_assert_notnull(fcn, "create function");
+	rz_analysis_fcn(core->analysis, fcn, 0x1000, sizeof(img), RZ_ANALYSIS_XREF_TYPE_NULL);
+
+	RzAnalysisBlock *dispatch = rz_analysis_get_block_at(core->analysis, 0x1005);
+	mu_assert_notnull(dispatch, "dispatch block exists");
+	if (expect_switch) {
+		mu_assert_notnull(dispatch->switch_op,
+			"valid 3-entry delta table creates switch_op");
+		mu_assert_eq(rz_list_length(dispatch->switch_op->cases), 3,
+			"expected 3 switch cases");
+	} else {
+		mu_assert_null(dispatch->switch_op, "corrupt entry must reject delta table");
+	}
+
+	rz_core_free(core);
+	return true;
+}
+
+bool test_delta_jmptbl_validates_all_entries(void) {
+	mu_assert_true(run_delta_jmptbl_case(0x40, 0x44, 0x48, true), "valid delta table");
+	mu_assert_true(run_delta_jmptbl_case(0x40, 0x70000000, 0x48, false),
+		"invalid entry 1 rejected");
+	mu_assert_true(run_delta_jmptbl_case(0x40, 0x44, 0x70000000, false),
+		"invalid entry 2 rejected");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_analysis_function_relocate);
 	mu_run_test(test_rz_analysis_function_labels);
@@ -682,6 +751,7 @@ int all_tests() {
 	mu_run_test(test_analysis_function_rename);
 	mu_run_test(test_analysis_function_force_rename);
 	mu_run_test(test_rz_analysis_function_get_ret_var);
+	mu_run_test(test_delta_jmptbl_validates_all_entries);
 	return tests_passed != tests_run;
 }
 
