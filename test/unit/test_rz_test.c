@@ -188,9 +188,202 @@ bool test_rz_test_fix(void) {
 	mu_end;
 }
 
+bool test_rz_test_validate_json_valid(void) {
+	const char *cases[] = {
+		"",
+		" \t\r\n ",
+		"{}",
+		"[]",
+		"null",
+		"true",
+		"false",
+		"0",
+		"-0",
+		"1234567890",
+		"-42.5e+10",
+		"1e-3",
+		"\"hello \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u0041\"",
+		"\"\\uD83D\\uDE00\"",
+		"\"\\uD800\\uDC00\\uDBFF\\uDFFF\"",
+		"{\"a\":[1,true,false,null,{\"b\":\"c\"}]}",
+		"{\"a\":1}\n[2,3]\ntrue\nnull\n",
+		"{}[]\"s\"",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_true(rz_test_validate_json(cases[i]), cases[i]);
+	}
+	mu_end;
+}
+
+bool test_rz_test_validate_json_invalid(void) {
+	const char *cases[] = {
+		"this is not json lol",
+		"{",
+		"}",
+		"[",
+		"]",
+		"{\"a\":1,}",
+		"[1,]",
+		"{a:1}",
+		"{\"a\" 1}",
+		"01",
+		"-01",
+		"+1",
+		".5",
+		"1.",
+		"1e",
+		"1e+",
+		"\"unterminated",
+		"\"raw\nnewline\"",
+		"\"bad\\xescape\"",
+		"\"bad\\u123g\"",
+		"\"\\uD800\"",
+		"\"\\uD800\\u0041\"",
+		"\"\\uDC00\"",
+		"\"\\uDFFF\"",
+		"// comment\n{}",
+		"/* comment */ {}",
+		"{} garbage",
+		"truefalse",
+		"123abc",
+		"null1",
+	};
+	for (size_t i = 0; i < RZ_ARRAY_SIZE(cases); i++) {
+		mu_assert_false(rz_test_validate_json(cases[i]), cases[i]);
+	}
+
+	// Embedded NUL bytes in subprocess stdout must be rejected by rz_test_check_json_test().
+	ut8 nul_out[] = { '{', '}', '\0', 'x' };
+	RzSubprocessOutput out = { 0 };
+	out.out = nul_out;
+	out.out_len = sizeof(nul_out);
+	out.err = (ut8 *)"";
+	out.ret = 0;
+	mu_assert_false(rz_test_check_json_test(&out, NULL), "embedded NUL byte rejected");
+
+	// Deep nesting beyond JSON_MAX_DEPTH must be rejected safely without stack overflow.
+	size_t depth = JSON_MAX_DEPTH + 10;
+	char *deep = malloc(depth * 2 + 1);
+	mu_assert_notnull(deep, "alloc deep");
+	memset(deep, '[', depth);
+	memset(deep + depth, ']', depth);
+	deep[depth * 2] = '\0';
+	mu_assert_false(rz_test_validate_json(deep), "excessive nesting rejected");
+	free(deep);
+	mu_end;
+}
+
+bool test_rz_test_crlf2lf_buf(void) {
+	// CRLF normalization must shrink out_len so rz_test_check_json_test() accepts the output.
+	ut8 crlf_json[] = "{\"a\":1}\r\n[2,3]\r\n";
+	int len = (int)strlen((const char *)crlf_json);
+	rz_test_crlf2lf_buf(crlf_json, &len);
+	mu_assert_streq((const char *)crlf_json, "{\"a\":1}\n[2,3]\n", "crlf normalized");
+	mu_assert_eq(len, 14, "out_len updated after crlf strip");
+	RzSubprocessOutput out = { 0 };
+	out.out = crlf_json;
+	out.out_len = len;
+	out.err = (ut8 *)"";
+	out.ret = 0;
+	mu_assert_true(rz_test_check_json_test(&out, NULL), "normalized CRLF json accepted");
+
+	// Embedded NUL bytes must be preserved across CRLF normalization and rejected.
+	ut8 nul_crlf[] = { '{', '}', '\0', '\r', '\n', 'x', '\0' };
+	int nul_len = 6;
+	rz_test_crlf2lf_buf(nul_crlf, &nul_len);
+	mu_assert_eq(nul_len, 5, "embedded NUL length updated");
+	out.out = nul_crlf;
+	out.out_len = nul_len;
+	mu_assert_false(rz_test_check_json_test(&out, NULL), "embedded NUL still rejected after crlf");
+
+	// Trailing bare CR and edge inputs must not read out of bounds.
+	ut8 bare_cr[] = "a\r\r\nb\r";
+	int cr_len = (int)strlen((const char *)bare_cr);
+	rz_test_crlf2lf_buf(bare_cr, &cr_len);
+	mu_assert_streq((const char *)bare_cr, "a\r\nb\r", "bare CR preserved");
+	mu_assert_eq(cr_len, 5, "bare CR length");
+
+	int zero = 0;
+	rz_test_crlf2lf_buf(NULL, &zero);
+	rz_test_crlf2lf_buf(bare_cr, NULL);
+	rz_test_crlf2lf_buf(bare_cr, &zero);
+	mu_end;
+}
+
+bool test_rz_test_schedule_queue_lpt(void) {
+	RzPVector tests;
+	rz_pvector_init(&tests, (RzPVectorFree)rz_test_test_free);
+
+	RzTest *t_norm1 = RZ_NEW0(RzTest);
+	t_norm1->type = RZ_TEST_TYPE_CMD;
+	t_norm1->path = "db/cmd/cmd_a";
+	t_norm1->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_norm1);
+
+	RzTest *t_heavy_1200 = RZ_NEW0(RzTest);
+	t_heavy_1200->type = RZ_TEST_TYPE_CMD;
+	t_heavy_1200->path = "db/archos/linux-x64/dbg_cont_back";
+	t_heavy_1200->cmd_test = rz_test_cmd_test_new();
+	t_heavy_1200->cmd_test->timeout.set = true;
+	t_heavy_1200->cmd_test->timeout.value = 1200;
+	rz_pvector_push(&tests, t_heavy_1200);
+
+	RzTest *t_rzil = RZ_NEW0(RzTest);
+	t_rzil->type = RZ_TEST_TYPE_CMD;
+	t_rzil->path = "db/rzil/hexagon";
+	t_rzil->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_rzil);
+
+	RzTest *t_norm2 = RZ_NEW0(RzTest);
+	t_norm2->type = RZ_TEST_TYPE_CMD;
+	t_norm2->path = "db/cmd/cmd_b";
+	t_norm2->cmd_test = rz_test_cmd_test_new();
+	rz_pvector_push(&tests, t_norm2);
+
+	RzTest *t_heavy_2040 = RZ_NEW0(RzTest);
+	t_heavy_2040->type = RZ_TEST_TYPE_CMD;
+	t_heavy_2040->path = "db/cmd/cmd_aae";
+	t_heavy_2040->cmd_test = rz_test_cmd_test_new();
+	t_heavy_2040->cmd_test->timeout.set = true;
+	t_heavy_2040->cmd_test->timeout.value = 2040;
+	rz_pvector_push(&tests, t_heavy_2040);
+
+	RzTest *t_heavy_max = RZ_NEW0(RzTest);
+	t_heavy_max->type = RZ_TEST_TYPE_CMD;
+	t_heavy_max->path = "db/cmd/cmd_max_timeout";
+	t_heavy_max->cmd_test = rz_test_cmd_test_new();
+	t_heavy_max->cmd_test->timeout.set = true;
+	t_heavy_max->cmd_test->timeout.value = UT64_MAX;
+	rz_pvector_push(&tests, t_heavy_max);
+
+	mu_assert_eq(test_schedule_priority(t_heavy_max), UT64_MAX, "max timeout priority clamped");
+
+	// Schedule the owning vector in-place to verify elements are not freed during reordering.
+	rz_test_schedule_queue(&tests);
+	RzPVector queue;
+	rz_pvector_init(&queue, NULL);
+	rz_pvector_insert_range(&queue, 0, tests.v.a, rz_pvector_len(&tests));
+
+	// Pop order (back to front): UT64_MAX, 2040, 1200, rzil, norm2, norm1
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_max, "pop 1: timeout UT64_MAX clamped");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_2040, "pop 2: timeout 2040");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_heavy_1200, "pop 3: timeout 1200");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_rzil, "pop 4: db/rzil");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm2, "pop 5: norm2 order preserved");
+	mu_assert_ptreq(rz_pvector_pop(&queue), t_norm1, "pop 6: norm1 order preserved");
+
+	rz_pvector_fini(&queue);
+	rz_pvector_fini(&tests);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test(test_rz_test_database_load_cmd);
 	mu_run_test(test_rz_test_fix);
+	mu_run_test(test_rz_test_validate_json_valid);
+	mu_run_test(test_rz_test_validate_json_invalid);
+	mu_run_test(test_rz_test_crlf2lf_buf);
+	mu_run_test(test_rz_test_schedule_queue_lpt);
 	return tests_passed != tests_run;
 }
 
