@@ -60,6 +60,7 @@ static void qnx_destroy(RzBinFile *bf) {
 	rz_pvector_free(qo->sections);
 	rz_pvector_free(qo->maps);
 	rz_list_free(qo->fixups);
+	sdb_free(qo->kv);
 	bf->o->bin_obj = NULL;
 	free(qo);
 }
@@ -213,6 +214,7 @@ static bool qnx_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb 
 	obj->bin_obj = qo;
 	return true;
 beach:
+	sdb_free(qo->kv);
 	free(qo);
 	rz_list_free(fixups);
 	rz_pvector_free(maps);

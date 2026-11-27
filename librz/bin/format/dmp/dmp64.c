@@ -410,6 +410,9 @@ void rz_bin_dmp64_free(struct rz_bin_dmp64_obj_t *obj) {
 	free(obj->runs);
 	free(obj->bitmap);
 	rz_list_free(obj->pages);
+	rz_list_free(obj->datablocks);
+	rz_list_free(obj->drivers);
+	sdb_free(obj->kv);
 	free(obj);
 }
 

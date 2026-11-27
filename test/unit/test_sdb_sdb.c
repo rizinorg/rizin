@@ -655,11 +655,25 @@ bool test_sdb_sync_disk() {
 	mu_end;
 }
 
+bool test_sdb_namespace_self_cycle(void) {
+	Sdb *db = sdb_new0();
+	mu_assert_notnull(db, "sdb_new0");
+	mu_assert_eq(sdb_ns_set(NULL, "self", db), 0, "NULL parent must be rejected");
+	mu_assert_eq(sdb_ns_set(db, "self", NULL), 0, "NULL child must be rejected");
+	mu_assert_eq(sdb_ns_set(db, NULL, db), 0, "NULL name must be rejected");
+	mu_assert_eq(sdb_ns_set(db, "self", db), 0, "self-reference namespace must be rejected");
+	mu_assert_eq(db->refs, 1, "refs unchanged after rejected self-reference");
+	mu_assert_null(sdb_ns(db, "self", 0), "self namespace must not be registered");
+	sdb_free(db);
+	mu_end;
+}
+
 int all_tests() {
 	// XXX two bugs found with crash
 	mu_run_test(test_sdb_kv_list);
 	mu_run_test(test_sdb_namespace);
 	mu_run_test(test_sdb_namespace_multiref);
+	mu_run_test(test_sdb_namespace_self_cycle);
 	mu_run_test(test_sdb_foreach_delete);
 	mu_run_test(test_sdb_list_delete);
 	mu_run_test(test_sdb_delete_none);

@@ -64,10 +64,6 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static Sdb *get_sdb(RzBinFile *bf) {
-	return bf->sdb;
-}
-
 static RzPVector /*<RzBinClass *>*/ *classes(RzBinFile *bf) {
 	RzBinDex *dex = rz_bin_file_get_dex(bf);
 	if (!dex) {
@@ -704,7 +700,6 @@ RzBinPlugin rz_bin_plugin_dex = {
 	.desc = "DEX (Dalvik Executable)",
 	.license = "LGPL3",
 	.author = "deroad",
-	.get_sdb = &get_sdb,
 	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_buffer = &check_buffer,

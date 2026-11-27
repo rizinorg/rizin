@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
+#include <rz_endian.h>
 #include "minunit.h"
 
 // --------------------------
@@ -740,6 +741,334 @@ bool test_golang_oversized_bb_strings(void) {
 	mu_end;
 }
 
+static RzBinFile *open_synthetic_bin(RzIO **io_out, RzBin **bin_out, RzBuffer **buf_out,
+	const ut8 *bytes, size_t size, const char *force_plugin) {
+	RzIO *io = rz_io_new();
+	RzBin *bin = rz_bin_new();
+	RzBuffer *buf = rz_buf_new_with_bytes(bytes, size);
+	if (!io || !bin || !buf) {
+		rz_buf_free(buf);
+		rz_bin_free(bin);
+		rz_io_free(io);
+		return NULL;
+	}
+	rz_io_bind(io, &bin->iob);
+	if (force_plugin) {
+		rz_bin_force_plugin(bin, force_plugin);
+	}
+	RzBinOptions bopt = { 0 };
+	rz_bin_options_init(&bopt, 0, 0, 0, false);
+	bopt.filename = "synthetic.bin";
+	RzBinFile *bf = rz_bin_open_buf(bin, buf, &bopt);
+	*io_out = io;
+	*bin_out = bin;
+	*buf_out = buf;
+	return bf;
+}
+
+bool test_bin_mdmp_duplicate_and_eof_modules(void) {
+	ut8 raw[0x700] = { 0 };
+
+	// MiniDmpHeader (32 bytes): "MDMP\x93\xa7", 3 streams at RVA 0x20
+	memcpy(raw, "MDMP\x93\xa7", 6);
+	rz_write_at_le32(raw, 3, 0x08); // number_of_streams
+	rz_write_at_le32(raw, 0x20, 0x0c); // stream_directory_rva
+
+	// Stream directory (3 * 12 bytes at 0x20)
+	// [0] MEMORY_64_LIST_STREAM (9): 16 + 3 * 16 = 64 bytes at 0x50
+	rz_write_at_le32(raw, 9, 0x20);
+	rz_write_at_le32(raw, 64, 0x24);
+	rz_write_at_le32(raw, 0x50, 0x28);
+	// [1] MODULE_LIST_STREAM (4): 4 + 5 * 108 = 544 bytes at 0xa0
+	rz_write_at_le32(raw, 4, 0x2c);
+	rz_write_at_le32(raw, 4 + 5 * 108, 0x30);
+	rz_write_at_le32(raw, 0xa0, 0x34);
+	// [2] THREAD_EX_LIST_STREAM (8): 4 + 64 = 68 bytes at 0x300
+	rz_write_at_le32(raw, 8, 0x38);
+	rz_write_at_le32(raw, 68, 0x3c);
+	rz_write_at_le32(raw, 0x300, 0x40);
+
+	// MEMORY_64_LIST_STREAM at 0x50: base_rva = 0x400, 3 ranges
+	// Range 0 -> paddr 0x400 (PE32), Range 1 -> paddr 0x500 (PE64),
+	// Range 2 -> paddr 0x900 (past EOF -> rz_buf_read_at returns 0)
+	rz_write_at_le64(raw, 3, 0x50);
+	rz_write_at_le64(raw, 0x400, 0x58);
+	rz_write_at_le64(raw, 0x10000000, 0x60);
+	rz_write_at_le64(raw, 0x100, 0x68);
+	rz_write_at_le64(raw, 0x20000000, 0x70);
+	rz_write_at_le64(raw, 0x400, 0x78);
+	rz_write_at_le64(raw, 0x30000000, 0x80);
+	rz_write_at_le64(raw, 0x100, 0x88);
+
+	// UTF-16LE module name "ab" at 0x380 (length = 4 bytes)
+	rz_write_at_le32(raw, 4, 0x380);
+	raw[0x384] = 'a';
+	raw[0x386] = 'b';
+
+	// MODULE_LIST_STREAM at 0xa0: PE32, dup PE32, PE64, dup PE64, past-EOF module
+	rz_write_at_le32(raw, 5, 0xa0);
+	static const ut64 mod_bases[5] = {
+		0x10000000, 0x10000000, 0x20000000, 0x20000000, 0x30000000
+	};
+	for (size_t i = 0; i < 5; i++) {
+		size_t off = 0xa4 + i * 108;
+		rz_write_at_le64(raw, mod_bases[i], off);
+		rz_write_at_le32(raw, 0x100, off + 8);
+		rz_write_at_le32(raw, 0x380, off + 20);
+	}
+
+	// THREAD_EX_LIST_STREAM at 0x300: 1 entry to exercise ex_threads cleanup
+	rz_write_at_le32(raw, 1, 0x300);
+
+	// Minimal PE32 header at 0x400 and PE64 header at 0x500
+	memcpy(raw + 0x400, "MZ", 2);
+	rz_write_at_le16(raw, 0x40, 0x43c);
+	memcpy(raw + 0x440, "PE\0\0", 4);
+	rz_write_at_le16(raw, 0x010b, 0x458);
+
+	memcpy(raw + 0x500, "MZ", 2);
+	rz_write_at_le16(raw, 0x40, 0x53c);
+	memcpy(raw + 0x540, "PE\0\0", 4);
+	rz_write_at_le16(raw, 0x020b, 0x558);
+
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, raw, sizeof(raw), NULL);
+	mu_assert_notnull(bf, "open synthetic mdmp");
+	mu_assert_notnull(bf->o, "mdmp bin object");
+	mu_assert_streq(bf->o->plugin->name, "mdmp", "mdmp plugin selected");
+
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_bin_mz_error_paths(void) {
+	// Truncated MZ buffer (< sizeof(MZ_image_dos_header))
+	const ut8 trunc[4] = { 'M', 'Z', 0, 0 };
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, trunc, sizeof(trunc), "mz");
+	mu_assert_null(bf, "truncated MZ must fail load cleanly");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+
+	// MZ header with blocks_in_file == 0
+	ut8 zero_blocks[64] = { 'M', 'Z' };
+	io = NULL;
+	bin = NULL;
+	buf = NULL;
+	bf = open_synthetic_bin(&io, &bin, &buf, zero_blocks, sizeof(zero_blocks), "mz");
+	mu_assert_null(bf, "MZ with zero blocks_in_file must fail load cleanly");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_bin_vsf_truncated_and_null_obj(void) {
+	// Header (37B) + two MAINCPU modules (41B each) + 4B truncated module header
+	ut8 trunc[123] = { 0 };
+	memcpy(trunc, "VICE Snapshot File\032", 19);
+	trunc[19] = 1;
+	trunc[20] = 1;
+	memcpy(trunc + 21, "C64", 3);
+
+	size_t off = 37;
+	for (size_t i = 0; i < 2; i++) {
+		memcpy(trunc + off, "MAINCPU", 7);
+		trunc[off + 16] = 1; // major == 1
+		rz_write_at_le32(trunc, 41, off + 18); // 22B header + 19B vsf_maincpu
+		off += 41;
+	}
+
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, trunc, sizeof(trunc), NULL);
+	mu_assert_null(bf, "VSF with truncated trailing module header must fail load");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+
+	// Valid minimal VSF (header + 1 MAINCPU module) + destroy(NULL bin_obj) guard
+	io = NULL;
+	bin = NULL;
+	buf = NULL;
+	bf = open_synthetic_bin(&io, &bin, &buf, trunc, 78, NULL);
+	mu_assert_notnull(bf, "open valid minimal VSF");
+	mu_assert_streq(bf->o->plugin->name, "vsf", "vsf plugin selected");
+	RzBinObject empty_obj = { 0 };
+	RzBinFile empty_bf = { .o = &empty_obj };
+	bf->o->plugin->destroy(&empty_bf);
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_bin_qnx_truncated_and_valid(void) {
+	// QNX magic only -> passes check_buffer, fails lmf_header_load, hits beach cleanup
+	const ut8 trunc[6] = { 0x00, 0x00, 0x38, 0x00, 0x00, 0x00 };
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, trunc, sizeof(trunc), NULL);
+	mu_assert_null(bf, "truncated QNX must fail load cleanly");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+
+	// Minimal valid QNX: 6B header record + 0x38B header + 6B LMF_IMAGE_END_REC (type 5)
+	ut8 valid[6 + 0x38 + 6] = { 0 };
+	memcpy(valid, trunc, sizeof(trunc));
+	valid[6 + 0x38] = 5; // LMF_IMAGE_END_REC
+	io = NULL;
+	bin = NULL;
+	buf = NULL;
+	bf = open_synthetic_bin(&io, &bin, &buf, valid, sizeof(valid), NULL);
+	mu_assert_notnull(bf, "open minimal valid QNX");
+	mu_assert_streq(bf->o->plugin->name, "qnx", "qnx plugin selected");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_bin_art_te_java_cleanup(void) {
+	// ART: 56-byte header + destroy(NULL bin_obj) guard
+	ut8 art_raw[56] = { 'a', 'r', 't', '\n', '0', '0', '9', '\0' };
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, art_raw, sizeof(art_raw), NULL);
+	mu_assert_notnull(bf, "open synthetic ART");
+	mu_assert_streq(bf->o->plugin->name, "art", "art plugin selected");
+	RzBinObject empty_obj = { 0 };
+	RzBinFile empty_bf = { .o = &empty_obj };
+	bf->o->plugin->destroy(&empty_bf);
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+
+	// TE: 40-byte header with 0 sections
+	ut8 te_raw[40] = { 'V', 'Z' };
+	io = NULL;
+	bin = NULL;
+	buf = NULL;
+	bf = open_synthetic_bin(&io, &bin, &buf, te_raw, sizeof(te_raw), NULL);
+	mu_assert_notnull(bf, "open synthetic TE");
+	mu_assert_streq(bf->o->plugin->name, "te", "te plugin selected");
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+
+	// Java: minimal class > 32 bytes + get_sdb NULL/empty-sdb + load_buffer NULL sdb
+	ut8 java_raw[36] = { 0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, 0x34, 0x00, 0x01 };
+	io = NULL;
+	bin = NULL;
+	buf = NULL;
+	bf = open_synthetic_bin(&io, &bin, &buf, java_raw, sizeof(java_raw), NULL);
+	mu_assert_notnull(bf, "open synthetic Java class");
+	mu_assert_streq(bf->o->plugin->name, "java", "java plugin selected");
+	RzBinPlugin *jplug = bf->o->plugin;
+	mu_assert_notnull(jplug->get_sdb(bf), "java get_sdb returns info namespace");
+	mu_assert_null(jplug->get_sdb(NULL), "java get_sdb(NULL) returns NULL");
+	mu_assert_null(jplug->get_sdb(&empty_bf), "java get_sdb(bf with NULL sdb) returns NULL");
+	RzBuffer *empty_buf = rz_buf_new_with_bytes((const ut8 *)"", 0);
+	mu_assert_false(jplug->load_buffer(NULL, &empty_obj, empty_buf, NULL),
+		"java load_buffer with NULL sdb and empty buffer returns false");
+	rz_buf_free(empty_buf);
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
+bool test_bin_pe_rsrc_zero_length_version_info(void) {
+	ut8 image[0x600] = { 0 };
+
+	// Minimal PE32 with .text (RVA 0x1000, raw 0x200) and .rsrc (RVA 0x2000, raw 0x400)
+	rz_write_at_le16(image, 0x5a4d, 0x00); // "MZ"
+	rz_write_at_le32(image, 0x40, 0x3c); // e_lfanew
+	rz_write_at_le32(image, 0x00004550, 0x40); // "PE\0\0"
+	rz_write_at_le16(image, 0x014c, 0x44); // IMAGE_FILE_MACHINE_I386
+	rz_write_at_le16(image, 2, 0x46); // NumberOfSections
+	rz_write_at_le16(image, 0x00e0, 0x54); // SizeOfOptionalHeader
+	rz_write_at_le16(image, 0x0102, 0x56); // Characteristics
+	rz_write_at_le16(image, 0x010b, 0x58); // PE32 magic
+	rz_write_at_le32(image, 0x200, 0x5c); // SizeOfCode
+	rz_write_at_le32(image, 0x200, 0x60); // SizeOfInitializedData
+	rz_write_at_le32(image, 0x1000, 0x68); // AddressOfEntryPoint
+	rz_write_at_le32(image, 0x1000, 0x6c); // BaseOfCode
+	rz_write_at_le32(image, 0x2000, 0x70); // BaseOfData
+	rz_write_at_le32(image, 0x00400000, 0x74); // ImageBase
+	rz_write_at_le32(image, 0x1000, 0x78); // SectionAlignment
+	rz_write_at_le32(image, 0x200, 0x7c); // FileAlignment
+	rz_write_at_le16(image, 4, 0x88); // MajorSubsystemVersion
+	rz_write_at_le32(image, 0x3000, 0x90); // SizeOfImage
+	rz_write_at_le32(image, 0x200, 0x94); // SizeOfHeaders
+	rz_write_at_le16(image, 3, 0x9c); // WINDOWS_CUI
+	rz_write_at_le32(image, 16, 0xb4); // NumberOfRvaAndSizes
+	rz_write_at_le32(image, 0x2000, 0xc8); // DataDirectory[RESOURCE].VirtualAddress
+	rz_write_at_le32(image, 0x100, 0xcc); // DataDirectory[RESOURCE].Size
+
+	// Section 0: .text
+	memcpy(image + 0x138, ".text", 5);
+	rz_write_at_le32(image, 0x100, 0x140);
+	rz_write_at_le32(image, 0x1000, 0x144);
+	rz_write_at_le32(image, 0x200, 0x148);
+	rz_write_at_le32(image, 0x200, 0x14c);
+	rz_write_at_le32(image, 0x60000020, 0x15c);
+	image[0x200] = 0xc3;
+
+	// Section 1: .rsrc
+	memcpy(image + 0x160, ".rsrc", 5);
+	rz_write_at_le32(image, 0x100, 0x168);
+	rz_write_at_le32(image, 0x2000, 0x16c);
+	rz_write_at_le32(image, 0x200, 0x170);
+	rz_write_at_le32(image, 0x400, 0x174);
+	rz_write_at_le32(image, 0x40000040, 0x184);
+
+	// Root resource directory (0x400): 1 ID entry -> VERSION (16) subdir at +0x18
+	rz_write_at_le16(image, 1, 0x40e);
+	rz_write_at_le32(image, 16, 0x410);
+	rz_write_at_le32(image, 0x80000018, 0x414);
+	// Subdirectory (0x418): 1 ID entry -> leaf data entry at +0x30
+	rz_write_at_le16(image, 1, 0x426);
+	rz_write_at_le32(image, 1033, 0x428);
+	rz_write_at_le32(image, 0x30, 0x42c);
+	// Resource data entry (0x430): RVA 0x2040 -> paddr 0x440, size 0x28
+	rz_write_at_le32(image, 0x2040, 0x430);
+	rz_write_at_le32(image, 0x28, 0x434);
+	// VS_VERSIONINFO (0x440): wLength=0, szKey=L"VS_VERSION_INFO"
+	static const ut8 vs_key[30] = {
+		'V', 0, 'S', 0, '_', 0, 'V', 0, 'E', 0, 'R', 0, 'S', 0, 'I', 0,
+		'O', 0, 'N', 0, '_', 0, 'I', 0, 'N', 0, 'F', 0, 'O', 0
+	};
+	memcpy(image + 0x446, vs_key, sizeof(vs_key));
+
+	RzIO *io = NULL;
+	RzBin *bin = NULL;
+	RzBuffer *buf = NULL;
+	RzBinFile *bf = open_synthetic_bin(&io, &bin, &buf, image, sizeof(image), NULL);
+	mu_assert_notnull(bf, "open synthetic PE32 with zero-length version info");
+	mu_assert_notnull(bf->o, "pe bin object");
+	mu_assert_streq(bf->o->plugin->name, "pe", "pe plugin selected");
+	Sdb *kv = bf->o->plugin->get_sdb(bf);
+	mu_assert_notnull(kv, "pe sdb");
+	mu_assert_notnull(sdb_ns(kv, "vs_version_info", 0), "vs_version_info namespace created");
+
+	rz_buf_free(buf);
+	rz_bin_free(bin);
+	rz_io_free(io);
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test(test_map);
 	mu_run_test(test_cfile_close);
@@ -751,6 +1080,12 @@ bool all_tests() {
 	mu_run_test(test_cfile_close_manual_cfile_map_multiple);
 	mu_run_test(test_bin_set_export_info);
 	mu_run_test(test_golang_oversized_bb_strings);
+	mu_run_test(test_bin_mdmp_duplicate_and_eof_modules);
+	mu_run_test(test_bin_mz_error_paths);
+	mu_run_test(test_bin_vsf_truncated_and_null_obj);
+	mu_run_test(test_bin_qnx_truncated_and_valid);
+	mu_run_test(test_bin_art_te_java_cleanup);
+	mu_run_test(test_bin_pe_rsrc_zero_length_version_info);
 	return tests_passed != tests_run;
 }
 

@@ -38,7 +38,8 @@ static RzBinInfo *java_info(RzBinFile *bf) {
 }
 
 static bool java_load_buffer(RzBinFile *bf, RzBinObject *obj, RzBuffer *buf, Sdb *sdb) {
-	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, obj->opts.loadaddr, sdb);
+	Sdb *info = sdb_ns(sdb, "info", 1);
+	RzBinJavaClass *jclass = rz_bin_java_class_new(buf, obj->opts.loadaddr, info ? info : sdb);
 	if (!jclass) {
 		return false;
 	}
@@ -64,7 +65,7 @@ static ut64 java_baddr(RzBinFile *bf) {
 }
 
 static Sdb *java_get_sdb(RzBinFile *bf) {
-	return bf->sdb;
+	return bf && bf->sdb ? sdb_ns(bf->sdb, "info", 0) : NULL;
 }
 
 static RzPVector /*<RzBinClass *>*/ *java_classes(RzBinFile *bf) {
