@@ -11,6 +11,9 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+#define RZ_ANSI_OSC_RGB_PREFIX_LEN 5
+#define RZ_ANSI_OSC_RGB_LEN 18
+
 // TODO: simplify this horrible loop
 RZ_API void rz_str_trim_path(char *s) {
 	char *src, *dst, *p;
@@ -227,8 +230,9 @@ RZ_API int rz_str_ansi_trim(char *str, int str_len, int n) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (!strncmp(str + 2 + 5, "rgb:", 4)) {
-					i += 18;
+				int rgb_off = strlen("\x1b]") + RZ_ANSI_OSC_RGB_PREFIX_LEN; /* ESC ] + opaque 5-byte prefix */
+				if (i + rgb_off + strlen("rgb:") <= str_len && !strncmp(str + i + rgb_off, "rgb:", 4)) {  
+					i += RZ_ANSI_OSC_RGB_LEN; /* whole OSC rgb: sequence incl. terminator */
 				}
 			} else if (ch2 == '[') {
 				for (++i; (i < str_len) && str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H';
@@ -240,7 +244,7 @@ RZ_API int rz_str_ansi_trim(char *str, int str_len, int n) {
 			len++;
 		}
 		i++;
-		back = i; /* index in the original array */
+		back = (i < str_len) ? i : str_len; /* index in the original array */
 	}
 	str[back] = 0;
 	return back;
