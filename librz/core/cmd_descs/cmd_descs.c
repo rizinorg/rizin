@@ -22888,7 +22888,7 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *cmd_search_magic_bin_headers_cd = rz_cmd_desc_argv_new(core->rcmd, slash_m_cd, "/mb", rz_cmd_search_magic_bin_headers_handler, &cmd_search_magic_bin_headers_help);
 	rz_warn_if_fail(cmd_search_magic_bin_headers_cd);
 
-	RzCmdDesc *slash_r_cd = rz_cmd_desc_group_new(core->rcmd, slash__cd, "/r", rz_cmd_search_reference_handler, &cmd_search_reference_help, &slash_r_help);
+	RzCmdDesc *slash_r_cd = rz_cmd_desc_group_modes_new(core->rcmd, slash__cd, "/r", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_cmd_search_reference_handler, &cmd_search_reference_help, &slash_r_help);
 	rz_warn_if_fail(slash_r_cd);
 	RzCmdDesc *cmd_search_reference_all_cd = rz_cmd_desc_argv_new(core->rcmd, slash_r_cd, "/ra", rz_cmd_search_reference_all_handler, &cmd_search_reference_all_help);
 	rz_warn_if_fail(cmd_search_reference_all_cd);

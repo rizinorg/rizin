@@ -737,6 +737,9 @@ commands:
     - name: "/r"
       summary: Reference search.
       cname: cmd_search_reference
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_JSON
       args:
         - name: address
           type: RZ_CMD_ARG_TYPE_STRING

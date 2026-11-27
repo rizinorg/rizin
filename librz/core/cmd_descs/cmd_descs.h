@@ -160,7 +160,7 @@ RZ_IPI RzCmdStatus rz_cmd_search_magic_const_handler(RzCore *core, int argc, con
 // "/mb"
 RZ_IPI RzCmdStatus rz_cmd_search_magic_bin_headers_handler(RzCore *core, int argc, const char **argv);
 // "/r"
-RZ_IPI RzCmdStatus rz_cmd_search_reference_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_cmd_search_reference_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "/ra"
 RZ_IPI RzCmdStatus rz_cmd_search_reference_all_handler(RzCore *core, int argc, const char **argv);
 // "/rc"
