@@ -227,6 +227,9 @@ commands:
       - name: tp
         cname: type_print
         summary: Print formatted type casted to the address or variable
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_ANY_TYPE
@@ -236,6 +239,9 @@ commands:
       - name: tpv
         cname: type_print_value
         summary: Print formatted type casted to the value
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_ANY_TYPE
@@ -245,6 +251,9 @@ commands:
       - name: tpx
         cname: type_print_hexstring
         summary: Print formatted type casted to the hexadecimal sequence
+        modes:
+          - RZ_OUTPUT_MODE_STANDARD
+          - RZ_OUTPUT_MODE_JSON
         args:
           - name: type
             type: RZ_CMD_ARG_TYPE_ANY_TYPE

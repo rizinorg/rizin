@@ -29,6 +29,9 @@ tej
 tfj
 Tj
 tj
+tpj int
+tpvj int 0x10
+tpxj int 01020304
 tsj
 ttj
 tuj

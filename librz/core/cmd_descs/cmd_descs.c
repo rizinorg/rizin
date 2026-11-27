@@ -26439,12 +26439,12 @@ RZ_IPI void rzshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *type_open_sdb_cd = rz_cmd_desc_argv_new(core->rcmd, to_cd, "tos", rz_type_open_sdb_handler, &type_open_sdb_help);
 	rz_warn_if_fail(type_open_sdb_cd);
 
-	RzCmdDesc *tp_cd = rz_cmd_desc_group_new(core->rcmd, t_cd, "tp", rz_type_print_handler, &type_print_help, &tp_help);
+	RzCmdDesc *tp_cd = rz_cmd_desc_group_modes_new(core->rcmd, t_cd, "tp", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_print_handler, &type_print_help, &tp_help);
 	rz_warn_if_fail(tp_cd);
-	RzCmdDesc *type_print_value_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpv", rz_type_print_value_handler, &type_print_value_help);
+	RzCmdDesc *type_print_value_cd = rz_cmd_desc_argv_modes_new(core->rcmd, tp_cd, "tpv", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_print_value_handler, &type_print_value_help);
 	rz_warn_if_fail(type_print_value_cd);
 
-	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_new(core->rcmd, tp_cd, "tpx", rz_type_print_hexstring_handler, &type_print_hexstring_help);
+	RzCmdDesc *type_print_hexstring_cd = rz_cmd_desc_argv_modes_new(core->rcmd, tp_cd, "tpx", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_type_print_hexstring_handler, &type_print_hexstring_help);
 	rz_warn_if_fail(type_print_hexstring_cd);
 
 	RzCmdDesc *type_rename_cd = rz_cmd_desc_argv_new(core->rcmd, t_cd, "tr", rz_type_rename_handler, &type_rename_help);

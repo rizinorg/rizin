@@ -8656,3 +8656,19 @@ struct pixtype {
 };
 EOF
 RUN
+
+NAME=tp, tpv and tpx in JSON
+FILE==
+CMDS=<<EOF
+td "struct S { int a; char b; };"
+wx 01000000ff
+tpj S
+tpvj int 0x1234
+tpxj S 0200000041
+EOF
+EXPECT=<<EOF
+[{"name":"a","type":"signed","size":4,"offset":0,"endian":"little","value":1},{"name":"b","type":"int8_t","size":1,"offset":4,"value":"."}]
+[{"name":"int","type":"signed","size":4,"offset":0,"endian":"little","value":4660}]
+[{"name":"a","type":"signed","size":4,"offset":0,"endian":"little","value":2},{"name":"b","type":"int8_t","size":1,"offset":4,"value":"A"}]
+EOF
+RUN

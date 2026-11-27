@@ -2590,11 +2590,11 @@ RZ_IPI RzCmdStatus rz_type_open_editor_handler(RzCore *core, int argc, const cha
 // "tos"
 RZ_IPI RzCmdStatus rz_type_open_sdb_handler(RzCore *core, int argc, const char **argv);
 // "tp"
-RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_print_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tpv"
-RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_print_value_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tpx"
-RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_type_print_hexstring_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 // "tr"
 RZ_IPI RzCmdStatus rz_type_rename_handler(RzCore *core, int argc, const char **argv);
 // "ts"
