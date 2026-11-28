@@ -34,6 +34,30 @@ ERROR: RzIL: lifting not implemented at address 0x00000004
 EOF
 RUN
 
+NAME=aezsu: RzIL step until bounded by rzil.step.max
+FILE==
+ARGS=-a x86 -b 64
+TIMEOUT=20
+CMDS=<<EOF
+e io.cache=true
+wx ebfe @ 0x10
+s 0x10
+aezi
+e rzil.step.max=3
+aezsu 0x100
+_sj
+EOF
+EXPECT=<<EOF
+{"error":{"code":"ERROR","message":"Command execution failed"}}
+EOF
+REGEXP_FILTER_ERR=<<EOF
+ERROR:.+
+EOF
+EXPECT_ERR=<<EOF
+ERROR: RzIL: reached rzil.step.max limit (3) before reaching 0x100
+EOF
+RUN
+
 NAME=aezs: RzIL step many failure
 FILE==
 ARGS=-a bf

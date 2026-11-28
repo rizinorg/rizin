@@ -808,10 +808,12 @@ EXPECT=<<EOF
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
           asm.cmt.il: Show RzIL expressions as comments
 EOF
@@ -831,11 +833,13 @@ EXPECT=<<EOF
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
           asm.cmt.il: Show RzIL expressions as comments
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
           asm.cmt.il: Show RzIL expressions as comments
 EOF
@@ -856,15 +860,18 @@ EXPECT=<<EOF
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 ---
           asm.cmt.il: Show RzIL expressions as comments
 rzil.step.events.halt_on_exc: Enables/disable exceptions the VM should halt if reached.
 rzil.step.events.read: enables/disables printing aezse read event
 rzil.step.events.write: enables/disables printing aezse write event
+       rzil.step.max: Maximum number of steps for aezsu/aezsue (0 = unlimited)
 EOF
 RUN
 

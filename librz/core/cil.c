@@ -81,11 +81,19 @@ static int compare_strings(const RzILVar *v1, const RzILVar *v2, RZ_UNUSED void 
 	return strcmp(v1->name, v2->name);
 }
 
-RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
+/**
+ * \brief Print the current RzIL VM variable state (or a single variable).
+ *
+ * \param core RzCore instance
+ * \param var_name Optional variable name to print, or NULL for all variables
+ * \param mode Output formatting mode
+ * \return true on success, or false if the RzIL VM is not initialized
+ */
+RZ_IPI bool rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, RzOutputMode mode) {
 	RzAnalysisILVM *vm = rz_analysis_get_il_vm(core->analysis);
 	if (!vm) {
 		RZ_LOG_ERROR("RzIL: Run 'aezi' first to initialize the VM\n");
-		return;
+		return false;
 	}
 
 	ILPrint p = { 0 };
@@ -158,7 +166,7 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 			out = rz_strbuf_drain(p_sb(p.ptr));
 		} else {
 			rz_strbuf_free(p_sb(p.ptr));
-			return;
+			return true;
 		}
 		break;
 	case RZ_OUTPUT_MODE_TABLE:
@@ -170,11 +178,12 @@ RZ_IPI void rz_core_analysis_il_vm_status(RzCore *core, const char *var_name, Rz
 		out = pj_drain(p_pj(p.ptr));
 		break;
 	default:
-		return;
+		return true;
 	}
 
 	rz_cons_printf(core->cons, "%s\n", out);
 	free(out);
+	return true;
 }
 #undef p_sb
 #undef p_tbl
@@ -252,60 +261,103 @@ RZ_API bool rz_core_il_step(RZ_NONNULL RzCore *core, ut64 n) {
 	return step_handle_result(core, r);
 }
 
+typedef struct step_until_ctx_t {
+	RzCore *core;
+	ut64 until;
+	ut64 remaining;
+	bool has_limit;
+	bool limit_exceeded;
+} StepUntilCtx;
+
+/**
+ * \brief Step condition callback enforcing destination PC, interrupt flag, and `rzil.step.max`.
+ */
 static bool step_cond_until(RzAnalysisILVM *vm, void *user) {
-	StepCondCtx *ctx = (StepCondCtx *)user;
-	ut64 until = ctx->val;
+	StepUntilCtx *ctx = (StepUntilCtx *)user;
 	if (rz_interrupt_is_breaked(ctx->core->intr)) {
 		rz_cons_printf(ctx->core->cons, "Stepping was interrupted.\n");
 		return false;
 	}
 	ut64 pc = rz_bv_to_ut64(vm->vm->pc);
-	return pc != until;
+	if (pc == ctx->until) {
+		return false;
+	}
+	if (ctx->has_limit) {
+		if (!ctx->remaining) {
+			ctx->limit_exceeded = true;
+			return false;
+		}
+		ctx->remaining--;
+	}
+	return true;
 }
 
 /**
- * Perform zero or more steps starting at the PC given by analysis->reg in RzIL
- * until reaching the given PC
+ * \brief Step the RzIL VM until \p until is reached or \c rzil.step.max is exceeded.
+ */
+static bool core_il_step_until(RZ_NONNULL RzCore *core, ut64 until, bool with_events) {
+	if (!step_assert_vm(core)) {
+		return false;
+	}
+	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
+	RzReg *rreg = rz_analysis_get_reg(core->analysis);
+	st64 max_steps = (st64)rz_config_get_i(core->config, "rzil.step.max");
+	StepUntilCtx ctx = {
+		.core = core,
+		.until = until,
+		.remaining = max_steps > 0 ? (ut64)max_steps : 0,
+		.has_limit = max_steps > 0,
+		.limit_exceeded = false,
+	};
+	RzAnalysisILStepResult r;
+	if (with_events) {
+		r = rz_analysis_il_vm_step_while_with_events(core->analysis, il_vm, rreg, core->cons,
+			step_cond_until, &ctx);
+	} else {
+		r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg, core->cons,
+			step_cond_until, &ctx);
+	}
+	if (!step_handle_result(core, r)) {
+		return false;
+	}
+	if (ctx.limit_exceeded) {
+		RZ_LOG_ERROR("RzIL: reached rzil.step.max limit (%" PFMT64u ") before reaching 0x%" PFMT64x "\n",
+			(ut64)max_steps, until);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * \brief Perform zero or more steps starting at the PC given by analysis->reg in RzIL
+ * until reaching the given PC.
+ *
+ * Stepping stops with an error if \c rzil.step.max (when greater than 0) is reached
+ * before \p until.
+ *
+ * \param core RzCore instance
  * \param until destination address where to stop
- * \return false if an error occured (e.g. invalid op)
+ * \return false if an error occurred (e.g. invalid op or \c rzil.step.max exceeded)
  */
 RZ_API bool rz_core_il_step_until(RZ_NONNULL RzCore *core, ut64 until) {
 	rz_return_val_if_fail(core && until, false);
-	if (!step_assert_vm(core)) {
-		return false;
-	}
-	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
-	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	StepCondCtx ctx = {
-		.core = core,
-		.val = until
-	};
-	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while(core->analysis, il_vm, rreg, core->cons,
-		step_cond_until, &ctx);
-	return step_handle_result(core, r);
+	return core_il_step_until(core, until, false);
 }
 
 /**
- * Perform zero or more steps starting at the PC given by analysis->reg in RzIL
- * until reaching the given PC and output VM changes (read & write)
+ * \brief Perform zero or more steps starting at the PC given by analysis->reg in RzIL
+ * until reaching the given PC and output VM changes (read & write).
+ *
+ * Stepping stops with an error if \c rzil.step.max (when greater than 0) is reached
+ * before \p until.
+ *
+ * \param core RzCore instance
  * \param until destination address where to stop
- * \return false if an error occured (e.g. invalid op)
+ * \return false if an error occurred (e.g. invalid op or \c rzil.step.max exceeded)
  */
 RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 until) {
 	rz_return_val_if_fail(core && until, false);
-	if (!step_assert_vm(core)) {
-		return false;
-	}
-	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
-	RzReg *rreg = rz_analysis_get_reg(core->analysis);
-	StepCondCtx ctx = {
-		.core = core,
-		.val = until
-	};
-	RzAnalysisILStepResult r = rz_analysis_il_vm_step_while_with_events(
-		core->analysis, il_vm, rreg, core->cons,
-		step_cond_until, &ctx);
-	return step_handle_result(core, r);
+	return core_il_step_until(core, until, true);
 }
 
 /**
@@ -313,10 +365,10 @@ RZ_API bool rz_core_il_step_until_with_events(RZ_NONNULL RzCore *core, ut64 unti
  * \return false if an error occured (e.g. invalid op)
  */
 RZ_IPI bool rz_core_analysis_il_step_with_events(RzCore *core, PJ *pj) {
-	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
-	if (!il_vm) {
+	if (!step_assert_vm(core)) {
 		return false;
 	}
+	RzAnalysisILVM *il_vm = rz_analysis_get_il_vm(core->analysis);
 
 	if (!rz_core_il_step(core, 1)) {
 		return false;
