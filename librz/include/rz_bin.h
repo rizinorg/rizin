@@ -340,6 +340,7 @@ typedef struct rz_bin_object_t {
 	RzPVector /*<RzBinImport *>*/ *imports;
 	RzPVector /*<RzBinSymbol *>*/ *symbols;
 	RzPVector /*<RzBinTrycatch *>*/ *trycatch;
+	RzPVector /*<RzBinFunctionRange *>*/ *function_ranges;
 	RzPVector /*<RzBinResource *>*/ *resources;
 	/**
 	 * \brief Acceleration structure for fast access of the symbol for a given import.
@@ -503,6 +504,17 @@ typedef struct rz_bin_trycatch_t {
 
 RZ_API RzBinTrycatch *rz_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter);
 RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc);
+/**
+ * \brief Represents a function address range discovered from binary metadata
+ * (e.g., PE32+ .pdata, ELF .eh_frame, Mach-O LC_FUNCTION_STARTS).
+ */
+typedef struct rz_bin_function_range_t {
+	ut64 start; ///< Start virtual address of the function
+	ut64 end; ///< End virtual address of the function (exclusive), or UT64_MAX if unknown
+} RzBinFunctionRange;
+
+RZ_API RZ_OWN RzBinFunctionRange *rz_bin_function_range_new(ut64 start, ut64 end);
+RZ_API void rz_bin_function_range_free(RZ_NULLABLE RzBinFunctionRange *fr);
 
 typedef struct rz_bin_plugin_t {
 	char *name;
@@ -549,6 +561,7 @@ typedef struct rz_bin_plugin_t {
 	RzPVector /*<char *>*/ *(*libs)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*relocs)(RzBinFile *bf);
 	RzPVector /*<RzBinTrycatch *>*/ *(*trycatch)(RzBinFile *bf);
+	RzPVector /*<RzBinFunctionRange *>*/ *(*function_ranges)(RzBinFile *bf);
 	RzPVector /*<RzBinClass *>*/ *(*classes)(RzBinFile *bf);
 	RzPVector /*<RzBinMem *>*/ *(*mem)(RzBinFile *bf);
 	RzPVector /*<RzBinReloc *>*/ *(*patch_relocs)(RzBinFile *bf);
@@ -1026,6 +1039,7 @@ RZ_API RZ_OWN RzPVector /*<RzBinString *>*/ *rz_bin_file_strings(RZ_NONNULL RzBi
 // use RzBinFile instead
 RZ_DEPRECATE RZ_API int rz_bin_is_static(RZ_NONNULL RzBin *bin);
 RZ_API RZ_BORROW RzPVector /*<RzBinTrycatch *>*/ *rz_bin_file_get_trycatch(RZ_NONNULL RzBinFile *bf);
+RZ_API RZ_BORROW RzPVector /*<RzBinFunctionRange *>*/ *rz_bin_file_get_function_ranges(RZ_NONNULL RzBinFile *bf);
 
 RZ_API RZ_BORROW const RzPVector /*<RzBinAddr *>*/ *rz_bin_object_get_entries(RZ_NONNULL RzBinObject *obj);
 RZ_API const RzPVector /*<RzBinField *>*/ *rz_bin_object_get_fields(RZ_NONNULL RzBinObject *obj);

@@ -2284,8 +2284,94 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzAnalysisOptions *aopt = rz_analysis_get_options(core->analysis);
 	int depth = aopt->depth;
 	bool analysis_vars = rz_config_get_i(core->config, "analysis.vars");
+	rz_interrupt_break_push(core->intr, NULL, NULL);
 
-	/* Analyze Functions */
+	RzBinFile *bf = core->bin->cur;
+	RzBinObject *o = bf ? bf->o : NULL;
+	const RzPVector /*<RzBinFunctionRange *>*/ *franges = o ? rz_bin_file_get_function_ranges(bf) : NULL;
+	if (depth > 0 && franges && !rz_pvector_empty(franges)) {
+		bool va = core->io->va;
+		bool prev_hasnext = rz_config_get_b(core->config, "analysis.hasnext");
+		bool had_limits = rz_analysis_has_valid_limits(core->analysis);
+		ut64 prev_from = UT64_MAX, prev_to = UT64_MAX;
+		if (had_limits) {
+			rz_analysis_get_limits(core->analysis, &prev_from, &prev_to);
+		}
+		rz_config_set_b(core->config, "analysis.hasnext", false);
+		void **fr_it;
+		rz_pvector_foreach (franges, fr_it) {
+			if (rz_interrupt_is_breaked(core->intr)) {
+				break;
+			}
+			const RzBinFunctionRange *fr = *fr_it;
+			if (!fr || fr->start == UT64_MAX || (fr->end != UT64_MAX && fr->end <= fr->start)) {
+				continue;
+			}
+			ut64 addr = va ? fr->start : rz_bin_object_v2p(o, fr->start);
+			if (addr == UT64_MAX || (had_limits && (addr < prev_from || addr >= prev_to))) {
+				continue;
+			}
+			if (rz_analysis_get_function_at(core->analysis, addr)) {
+				continue;
+			}
+			ut64 end = UT64_MAX;
+			if (fr->end != UT64_MAX) {
+				ut64 size = fr->end - fr->start;
+				if (!UT64_ADD_OVFCHK(addr, size)) {
+					end = addr + size;
+				}
+			}
+			if (had_limits) {
+				end = (end != UT64_MAX) ? RZ_MIN(end, prev_to) : prev_to;
+			}
+			if (end != UT64_MAX) {
+				rz_analysis_set_limits(core->analysis, addr, end);
+			}
+			rz_core_analysis_fcn(core, addr, -1, RZ_ANALYSIS_XREF_TYPE_NULL, 1);
+			if (end != UT64_MAX) {
+				if (had_limits) {
+					rz_analysis_set_limits(core->analysis, prev_from, prev_to);
+				} else {
+					rz_analysis_unset_limits(core->analysis);
+				}
+			}
+		}
+		/* Recover direct CALL targets (leaf functions / IAT thunks) without .pdata entries */
+		rz_pvector_foreach (franges, fr_it) {
+			if (rz_interrupt_is_breaked(core->intr)) {
+				break;
+			}
+			const RzBinFunctionRange *fr = *fr_it;
+			if (!fr || fr->start == UT64_MAX || (fr->end != UT64_MAX && fr->end <= fr->start)) {
+				continue;
+			}
+			ut64 addr = va ? fr->start : rz_bin_object_v2p(o, fr->start);
+			if (addr == UT64_MAX || (had_limits && (addr < prev_from || addr >= prev_to))) {
+				continue;
+			}
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, addr);
+			if (!fcn) {
+				continue;
+			}
+			RzList /*<RzAnalysisXRef *>*/ *xrefs = rz_analysis_function_get_xrefs_from(fcn);
+			RzAnalysisXRef *xref;
+			rz_list_foreach (xrefs, iter, xref) {
+				if (xref->to == UT64_MAX || (xref->type != RZ_ANALYSIS_XREF_TYPE_CALL && xref->type != RZ_ANALYSIS_XREF_TYPE_CODE)) {
+					continue;
+				}
+				if (had_limits && (xref->to < prev_from || xref->to >= prev_to)) {
+					continue;
+				}
+				if (!rz_analysis_get_fcn_in(core->analysis, xref->to, 0)) {
+					rz_core_analysis_fcn(core, xref->to, xref->from, xref->type, depth - 1);
+				}
+			}
+			rz_list_free(xrefs);
+		}
+		rz_config_set_b(core->config, "analysis.hasnext", prev_hasnext);
+	}
+
+	rz_core_task_yield(&core->tasks);
 	/* Entries */
 	item = rz_flag_get(core->flags, "entry0");
 	if (item) {
@@ -2301,10 +2387,6 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 
 	rz_core_task_yield(&core->tasks);
 
-	rz_interrupt_break_push(core->intr, NULL, NULL);
-
-	RzBinFile *bf = core->bin->cur;
-	RzBinObject *o = bf ? bf->o : NULL;
 	/* Symbols (Imports are already analyzed by rz_bin on init) */
 	void **it;
 	if (o && (vector = o->symbols) != NULL) {

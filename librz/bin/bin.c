@@ -1485,6 +1485,31 @@ RZ_API RzBinTrycatch *rz_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 
 	}
 	return tc;
 }
+/**
+ * \brief Allocate a new RzBinFunctionRange.
+ *
+ * \param start Start virtual address of the function
+ * \param end End virtual address of the function (exclusive), or UT64_MAX if unknown
+ * \return Newly allocated RzBinFunctionRange, or NULL on allocation failure
+ */
+RZ_API RZ_OWN RzBinFunctionRange *rz_bin_function_range_new(ut64 start, ut64 end) {
+	RzBinFunctionRange *fr = RZ_NEW0(RzBinFunctionRange);
+	if (!fr) {
+		return NULL;
+	}
+	fr->start = start;
+	fr->end = end;
+	return fr;
+}
+
+/**
+ * \brief Free an RzBinFunctionRange.
+ *
+ * \param fr Function range to free
+ */
+RZ_API void rz_bin_function_range_free(RZ_NULLABLE RzBinFunctionRange *fr) {
+	free(fr);
+}
 
 RZ_API void rz_bin_trycatch_free(RzBinTrycatch *tc) {
 	free(tc);

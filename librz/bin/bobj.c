@@ -208,6 +208,7 @@ RZ_IPI void rz_bin_object_free(RzBinObject *o) {
 	rz_pvector_free(o->sections);
 	rz_pvector_free(o->symbols);
 	rz_pvector_free(o->trycatch);
+	rz_pvector_free(o->function_ranges);
 	rz_pvector_free(o->vfiles);
 	rz_pvector_free(o->resources);
 	for (ut32 i = 0; i < RZ_BIN_SPECIAL_SYMBOL_LAST; i++) {
@@ -966,7 +967,7 @@ RZ_API ut64 rz_bin_object_v2p(RZ_NONNULL RzBinObject *obj, ut64 vaddr) {
 		return UT64_MAX;
 	}
 
-	ut64 delta = vaddr - m->vaddr;
+	ut64 delta = vaddr - rz_bin_object_addr_with_base(obj, m->vaddr);
 	if (delta >= m->psize) {
 		return UT64_MAX;
 	}

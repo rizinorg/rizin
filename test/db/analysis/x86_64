@@ -4418,7 +4418,7 @@ aaa
 pdf @ main
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from entry0 @ 0x1400019cb
+            ; CALL XREF from fcn.1400018c4 @ 0x1400019cb
 / int main(int argc, char **argv, char **envp);
 |           0x140001770      sub   rsp, 0x28
 |           0x140001774      call  fcn.140001590
@@ -4442,7 +4442,7 @@ aaa
 pdf @ main
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from entry0 @ 0x140001433
+            ; CALL XREF from fcn.14000132c @ 0x140001433
 / int main(int argc @ rcx, char **argv @ rdx, char **envp);
 |           ; var int32_t var_18h @ stack - 0x18
 |           ; var int64_t var_8h @ stack + 0x8

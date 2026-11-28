@@ -462,7 +462,7 @@ static inline ut64 rva_to_paddr(const struct rz_bin_pe_section_t *section, ut64 
 }
 
 static inline const struct rz_bin_pe_section_t *get_section(RzBinPEObj *bin, const struct rz_bin_pe_section_t *unwind_data_section, PE_DWord rva) {
-	if (!unwind_data_section || (rva < unwind_data_section->vaddr || rva > unwind_data_section->vaddr + unwind_data_section->vsize)) {
+	if (!unwind_data_section || (rva < unwind_data_section->vaddr || rva >= unwind_data_section->vaddr + unwind_data_section->vsize)) {
 		const int section_idx = find_section(bin, rva);
 		if (section_idx == -1) {
 			return NULL;
@@ -495,6 +495,9 @@ static RzPVector /*<RzBinTrycatch *>*/ *pe64_trycatch(RzBinFile *bf) {
 	ut64 offset;
 
 	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	if (!bin->nt_headers || bin->nt_headers->file_header.Machine != PE_IMAGE_FILE_MACHINE_AMD64) {
+		return NULL;
+	}
 	if (bin->optional_header->NumberOfRvaAndSizes < PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION) {
 		return NULL;
 	}
@@ -601,6 +604,9 @@ static RzPVector /*<RzBinTrycatch *>*/ *pe64_trycatch(RzBinFile *bf) {
 		if (!rz_buf_read_ble32_at(bin->b, exceptionDataOff, &tbl.Count, bin->big_endian)) {
 			continue;
 		}
+		if (!unwind_data_section) {
+			continue;
+		}
 		const ut64 last_scope_addr = RZ_MIN(rz_buf_size(bin->b), unwind_data_section->paddr + unwind_data_section->size) - sizeof(PE64_SCOPE_RECORD);
 		PE64_SCOPE_RECORD scope;
 		ut64 scopeRecOff = exceptionDataOff + sizeof(tbl);
@@ -632,7 +638,179 @@ static RzPVector /*<RzBinTrycatch *>*/ *pe64_trycatch(RzBinFile *bf) {
 	}
 	return tc_vec;
 }
+static RzPVector /*<RzBinFunctionRange *>*/ *pe64_function_ranges(RzBinFile *bf) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+	struct PE_(rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
+	if (!bin->nt_headers || !bin->optional_header) {
+		return NULL;
+	}
+	const ut16 machine = bin->nt_headers->file_header.Machine;
+	if (machine != PE_IMAGE_FILE_MACHINE_AMD64 && machine != PE_IMAGE_FILE_MACHINE_ARM64) {
+		return NULL;
+	}
+	if (bin->optional_header->NumberOfRvaAndSizes <= PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION) {
+		return NULL;
+	}
+	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
+	if (!expdir->VirtualAddress || !expdir->Size) {
+		return NULL;
+	}
+	if (!bin->sections || bin->num_sections < 1) {
+		return NULL;
+	}
 
+	const struct rz_bin_pe_section_t *pdata = get_section(bin, NULL, expdir->VirtualAddress);
+	if (!pdata) {
+		return NULL;
+	}
+	const ut64 paddr = rva_to_paddr(pdata, expdir->VirtualAddress);
+	const ut64 buf_size = rz_buf_size(bin->b);
+	if (paddr >= buf_size) {
+		return NULL;
+	}
+
+	RzPVector /*<RzBinFunctionRange *>*/ *res = rz_pvector_new((RzPVectorFree)rz_bin_function_range_free);
+	if (!res) {
+		return NULL;
+	}
+
+	const ut64 baseAddr = bf->o->opts.baseaddr;
+	const ut64 dir_end = UT64_ADD_OVFCHK(paddr, expdir->Size) ? buf_size : paddr + expdir->Size;
+	const ut64 sec_end = UT64_ADD_OVFCHK(pdata->paddr, pdata->size) ? buf_size : pdata->paddr + pdata->size;
+	const ut64 end = RZ_MIN(buf_size, RZ_MIN(dir_end, sec_end));
+	const struct rz_bin_pe_section_t *code_section = NULL;
+	const struct rz_bin_pe_section_t *unwind_data_section = NULL;
+
+	if (machine == PE_IMAGE_FILE_MACHINE_ARM64) {
+		for (ut64 offset = paddr; offset + 8 <= end; offset += 8) {
+			ut32 begin_rva = 0, unwind_data = 0;
+			ut64 pos = offset;
+			if (!rz_buf_read_ble32_offset(bin->b, &pos, &begin_rva, bin->big_endian) ||
+				!rz_buf_read_ble32_offset(bin->b, &pos, &unwind_data, bin->big_endian)) {
+				break;
+			}
+			if (!begin_rva) {
+				break;
+			}
+			ut32 flag = unwind_data & 0x3;
+			ut64 func_len = 0;
+			if (flag == 1) {
+				func_len = (ut64)((unwind_data >> 2) & 0x7ff) * 4;
+			} else if (flag == 0) {
+				ut32 xdata_rva = unwind_data & ~3u;
+				if (!xdata_rva) {
+					continue;
+				}
+				unwind_data_section = get_section(bin, unwind_data_section, xdata_rva);
+				if (!unwind_data_section) {
+					continue;
+				}
+				ut64 xdata_paddr = rva_to_paddr(unwind_data_section, xdata_rva);
+				ut64 xdata_sec_end = UT64_ADD_OVFCHK(unwind_data_section->paddr, unwind_data_section->size)
+					? buf_size
+					: RZ_MIN(buf_size, unwind_data_section->paddr + unwind_data_section->size);
+				if (UT64_ADD_OVFCHK(xdata_paddr, 4) || xdata_paddr + 4 > xdata_sec_end) {
+					continue;
+				}
+				ut32 hdr = 0;
+				ut64 xdata_pos = xdata_paddr;
+				if (!rz_buf_read_ble32_offset(bin->b, &xdata_pos, &hdr, bin->big_endian)) {
+					continue;
+				}
+				if (((hdr >> 18) & 0x3) != 0) {
+					continue;
+				}
+				func_len = (ut64)(hdr & 0x3ffff) * 4;
+			} else {
+				/* flag == 2 (separated segment) or flag == 3 (reserved): skip */
+				continue;
+			}
+			if (!func_len || UT64_ADD_OVFCHK(begin_rva, func_len)) {
+				continue;
+			}
+			ut64 end_rva = begin_rva + func_len;
+			code_section = get_section(bin, code_section, begin_rva);
+			if (!code_section || !(code_section->perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
+				continue;
+			}
+			if (UT64_ADD_OVFCHK(code_section->vaddr, code_section->vsize) ||
+				end_rva > (ut64)code_section->vaddr + code_section->vsize) {
+				continue;
+			}
+			if (UT64_ADD_OVFCHK(baseAddr, begin_rva) ||
+				UT64_ADD_OVFCHK(baseAddr, end_rva)) {
+				continue;
+			}
+			RzBinFunctionRange *fr = rz_bin_function_range_new(baseAddr + begin_rva, baseAddr + end_rva);
+			if (!fr) {
+				break;
+			}
+			if (!rz_pvector_push(res, fr)) {
+				rz_bin_function_range_free(fr);
+				break;
+			}
+		}
+		return res;
+	}
+
+	for (ut64 offset = paddr; offset + sizeof(PE64_RUNTIME_FUNCTION) <= end; offset += sizeof(PE64_RUNTIME_FUNCTION)) {
+		PE64_RUNTIME_FUNCTION rfcn = { 0 };
+		if (!read_pe64_runtime_function(bin->b, offset, &rfcn, bin->big_endian)) {
+			break;
+		}
+		if (!rfcn.BeginAddress) {
+			break;
+		}
+		if (rfcn.EndAddress <= rfcn.BeginAddress) {
+			continue;
+		}
+		/* Validate that BeginAddress lies inside an executable section */
+		code_section = get_section(bin, code_section, rfcn.BeginAddress);
+		if (!code_section || !(code_section->perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
+			continue;
+		}
+		if (UT64_ADD_OVFCHK(code_section->vaddr, code_section->vsize) ||
+			rfcn.EndAddress > (ut64)code_section->vaddr + code_section->vsize) {
+			continue;
+		}
+		if (UT64_ADD_OVFCHK(baseAddr, rfcn.BeginAddress) ||
+			UT64_ADD_OVFCHK(baseAddr, rfcn.EndAddress)) {
+			continue;
+		}
+		/* Skip chained unwind entries (secondary chunks of split functions) */
+		if (rfcn.UnwindData & 1) {
+			continue;
+		}
+		unwind_data_section = get_section(bin, unwind_data_section, rfcn.UnwindData);
+		if (unwind_data_section) {
+			ut64 unwind_data_paddr = rva_to_paddr(unwind_data_section, rfcn.UnwindData);
+			ut64 unwind_sec_end = UT64_ADD_OVFCHK(unwind_data_section->paddr, unwind_data_section->size)
+				? buf_size
+				: RZ_MIN(buf_size, unwind_data_section->paddr + unwind_data_section->size);
+			if (!UT64_ADD_OVFCHK(unwind_data_paddr, sizeof(PE64_UNWIND_INFO)) &&
+				unwind_data_paddr + sizeof(PE64_UNWIND_INFO) <= unwind_sec_end) {
+				WinUnwindInfo info;
+				if (windows_unwind_info_read(&info, bin->b, unwind_data_paddr) &&
+					(info.Version == 1 || info.Version == 2) &&
+					(info.Flags & PE64_UNW_FLAG_CHAININFO)) {
+					continue;
+				}
+			}
+		}
+
+		RzBinFunctionRange *fr = rz_bin_function_range_new(baseAddr + rfcn.BeginAddress, baseAddr + rfcn.EndAddress);
+		if (!fr) {
+			break;
+		}
+		if (!rz_pvector_push(res, fr)) {
+			rz_bin_function_range_free(fr);
+			break;
+		}
+	}
+	return res;
+}
 RzBinPlugin rz_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) binary",
@@ -657,6 +835,7 @@ RzBinPlugin rz_bin_plugin_pe64 = {
 	.get_offset = &pe_get_offset,
 	.get_vaddr = &pe_get_vaddr,
 	.trycatch = &pe64_trycatch,
+	.function_ranges = &pe64_function_ranges,
 	.hashes = &pe_compute_hashes,
 	.resources = &pe_resources,
 	.strings = &pe_strings,

@@ -44,10 +44,10 @@ EXPECT=<<EOF
 arch     x86
 machine  AMD 64
     0 * classes
-   87 * functions
+  108 * functions
    38 * imports
     0 * platform.ports
-   80 * pointers
+   77 * pointers
     0 * registers
     0 * registers.extended
     0 * registers.mmio
