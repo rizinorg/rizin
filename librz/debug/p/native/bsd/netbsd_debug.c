@@ -34,7 +34,13 @@
 static RzDebugSignalSource find_signal_source(int signal_code) {
 	if (signal_code == SI_USER ||
 		signal_code == SI_QUEUE ||
-		signal_code == SI_LWP) {
+		signal_code == SI_TIMER ||
+		signal_code == SI_MESGQ ||
+		signal_code == SI_ASYNCIO
+#ifdef SI_LWP
+		|| signal_code == SI_LWP
+#endif
+	) {
 		return RZ_DEBUG_SIGNAL_SOURCE_EXTERNAL;
 	}
 	return RZ_DEBUG_SIGNAL_SOURCE_INTERNAL;
