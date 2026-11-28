@@ -4,6 +4,9 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
+#if __UNIX__
+#include <unistd.h>
+#endif
 #include "minunit.h"
 
 bool test_rz_cons() {
@@ -348,6 +351,38 @@ static bool test_cons_last_sizes(void) {
 	mu_end;
 }
 
+#if __UNIX__
+static bool test_cons_unix_columns_env(void) {
+	if (isatty(0)) {
+		mu_end;
+	}
+	char *saved = rz_sys_getenv("COLUMNS");
+	RzCons *cons = rz_cons_new();
+	mu_assert_notnull(cons, "create console");
+
+	rz_sys_setenv("COLUMNS", NULL);
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 80, "unset COLUMNS defaults to 80");
+
+	rz_sys_setenv("COLUMNS", "240");
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 240, "valid COLUMNS sets non-TTY width");
+
+	rz_sys_setenv("COLUMNS", "invalid");
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 80, "invalid COLUMNS falls back to 80");
+
+	rz_sys_setenv("COLUMNS", "0");
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 80, "non-positive COLUMNS falls back to 80");
+
+	rz_sys_setenv("COLUMNS", "240");
+	cons->force_columns = 120;
+	mu_assert_eq(rz_cons_get_size(cons, NULL), 120, "force_columns overrides COLUMNS");
+
+	rz_sys_setenv("COLUMNS", saved);
+	free(saved);
+	rz_cons_free(cons);
+	mu_end;
+}
+#endif
+
 bool all_tests() {
 	mu_run_test(test_rz_cons);
 	mu_run_test(test_cons_justify);
@@ -357,6 +392,9 @@ bool all_tests() {
 	mu_run_test(test_cons_last_filtered);
 	mu_run_test(test_cons_last_capture);
 	mu_run_test(test_cons_last_sizes);
+#if __UNIX__
+	mu_run_test(test_cons_unix_columns_env);
+#endif
 	return tests_passed != tests_run;
 }
 

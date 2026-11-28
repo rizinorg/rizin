@@ -178,7 +178,7 @@ static void run_rz_test_init_envs(const RunRzTest *rrt, const char ***envvars_o,
 	RzListIter *it = NULL;
 	char *env = NULL;
 	size_t env_size = 0;
-	const size_t reserve = 4 + rz_list_length(rrt->envs);
+	const size_t reserve = 5 + rz_list_length(rrt->envs);
 	const char **envvars = RZ_NEWS0(const char *, reserve);
 	const char **envvals = RZ_NEWS0(const char *, reserve);
 
@@ -192,6 +192,7 @@ static void run_rz_test_init_envs(const RunRzTest *rrt, const char ***envvars_o,
 #if __WINDOWS__
 	RUN_RZ_TEST_ENV_SET("ANSICON", "1");
 #endif
+	RUN_RZ_TEST_ENV_SET("COLUMNS", "80");
 	RUN_RZ_TEST_ENV_SET("RZ_COLOR", rrt->color ? "1" : "0");
 	RUN_RZ_TEST_ENV_SET("RZ_UTF8", rrt->utf8 ? "1" : "0");
 	if (!rrt->load_plugins) {
