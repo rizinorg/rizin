@@ -1102,7 +1102,7 @@ static const RzCmdDescArg last_cmd_status_args[] = {
 };
 static const RzCmdDescHelp last_cmd_status_help = {
 	.summary = "Print the status of the last executed command",
-	.description = "Print the status of the previous statement of the same command line, or of the previous command line: OK, WRONG_ARGS, ERROR, INVALID, NONEXISTINGCMD or EXIT. It is INVALID until a command runs. The JSON mode prints {\"error\":null} on success and {\"error\":{\"code\":\"...\",\"message\":\"...\"}} otherwise.",
+	.description = "Print the status of the previous statement of the same command line, or of the previous command line: OK, WRONG_ARGS, ERROR, INVALID, NONEXISTINGCMD or EXIT. It is INVALID until a command runs. The JSON mode prints {\"error\":null} on success and {\"error\":{\"code\":\"...\",\"message\":\"...\"}} otherwise. When cfg.cmd.diagnostics is true, it also includes the failing command/args, captured warning/error diagnostics, and closest command suggestions.",
 	.args = last_cmd_status_args,
 };
 

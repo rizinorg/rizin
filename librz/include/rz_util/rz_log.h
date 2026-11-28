@@ -29,6 +29,13 @@ typedef enum rz_log_level {
 
 typedef void (*RzLogCallback)(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RzLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
+/**
+ * \brief Non-consuming log observer callback.
+ *
+ * Invoked while holding the internal log lock; implementations must not
+ * re-enter rz_log* or rz_log_*_observer().
+ */
+typedef void (*RzLogObserver)(RzLogLevel level, const char *msg, void *user);
 
 #define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, NULL, fmtstr, args);
@@ -70,6 +77,8 @@ RZ_API void rz_log_set_colors(bool show_colors);
 // Functions for adding log callbacks
 RZ_API void rz_log_add_callback(RZ_NULLABLE RzLogCallback cbfunc);
 RZ_API void rz_log_del_callback(RZ_NULLABLE RzLogCallback cbfunc);
+RZ_API void rz_log_add_observer(RZ_NULLABLE RzLogObserver observer, RZ_NULLABLE void *user);
+RZ_API void rz_log_del_observer(RZ_NULLABLE RzLogObserver observer, RZ_NULLABLE void *user);
 // TODO: rz_log_get_callbacks()
 
 /* Define rz_log as weak so it can be 'overwritten' externally

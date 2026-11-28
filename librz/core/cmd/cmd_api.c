@@ -910,8 +910,17 @@ static bool cmd_output_is_consumed(RzCore *core) {
 }
 
 static bool cmd_has_json_status(RzCmd *cmd, RzCmdDesc *cd, const char *cmdid) {
-	return core_config_get_b(cmd->core, "cfg.json.status") && !cmd_output_is_consumed(cmd->core) &&
-		cmd_runs_in_json_mode(cd, cmdid);
+	return core_config_get_b(cmd->core, "cfg.json.status") && !cmd->core->cmd_diagnostics &&
+		!cmd_output_is_consumed(cmd->core) && cmd_runs_in_json_mode(cd, cmdid);
+}
+
+static void cmd_print_json_status_pj(RzCons *cons, PJ *pj, bool force_newline) {
+	// Consumers read the status from the last line, but e.g. `tj int` ends without a newline
+	int len = rz_cons_get_buffer_len(cons);
+	if (force_newline || (len > 0 && rz_cons_get_buffer(cons)[len - 1] != '\n')) {
+		rz_cons_newline(cons);
+	}
+	rz_cons_println(cons, pj_string(pj));
 }
 
 static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status, RzCons *cons) {
@@ -920,12 +929,7 @@ static void cmd_print_json_status(RzCmdParsedArgs *args, RzCmdStatus status, RzC
 		return;
 	}
 	rz_cmd_status_json(pj, status, args);
-	// Consumers read the status from the last line, but e.g. `tj int` ends without a newline
-	int len = rz_cons_get_buffer_len(cons);
-	if (len > 0 && rz_cons_get_buffer(cons)[len - 1] != '\n') {
-		rz_cons_newline(cons);
-	}
-	rz_cons_println(cons, pj_string(pj));
+	cmd_print_json_status_pj(cons, pj, false);
 	pj_free(pj);
 }
 
@@ -1708,6 +1712,171 @@ RZ_API bool rz_cmd_get_help_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL const RzCmdDe
 	fill_details_json(cd->help->details, j);
 	pj_end(j);
 	return true;
+}
+
+static const char *log_level_name(RzLogLevel level) {
+	if (level == RZ_LOGLVL_WARN) {
+		return "warning";
+	}
+	if (level == RZ_LOGLVL_FATAL) {
+		return "fatal";
+	}
+	return "error";
+}
+
+static void cmd_status_diagnostics_json(PJ *pj, const RzPVector /*<RzCoreCmdDiag *>*/ *diags) {
+	pj_ka(pj, "diagnostics");
+	void **it;
+	rz_pvector_foreach (diags, it) {
+		const RzCoreCmdDiag *diag = *it;
+		pj_o(pj);
+		pj_ks(pj, "level", log_level_name(diag->level));
+		pj_ks(pj, "message", rz_str_get(diag->message));
+		pj_end(pj);
+	}
+	pj_end(pj);
+}
+
+static void cmd_status_suggestion_json(RzCmd *cmd, PJ *pj, const char *suggestion_cmd) {
+	RzCmdDesc *scd = rz_cmd_get_desc(cmd, suggestion_cmd);
+	if (!scd) {
+		return;
+	}
+	pj_ko(pj, "suggestion");
+	pj_ks(pj, "command", scd->name);
+	if (scd->help->summary) {
+		pj_ks(pj, "summary", scd->help->summary);
+	}
+	const RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(scd);
+	const RzCmdDesc *args_cd = exec_cd ? exec_cd : scd;
+	if (args_cd->help->args_str) {
+		pj_ks(pj, "args_str", args_cd->help->args_str);
+	} else {
+		RzStrBuf sb;
+		rz_strbuf_init(&sb);
+		fill_args(&sb, args_cd);
+		char *args_s = rz_strbuf_drain_nofree(&sb);
+		if (args_s) {
+			rz_str_trim(args_s);
+			if (*args_s) {
+				pj_ks(pj, "args_str", args_s);
+			}
+			free(args_s);
+		}
+	}
+	if (exec_cd && has_cd_submodes(exec_cd)) {
+		int modes = exec_cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES
+			? exec_cd->d.argv_modes_data.modes
+			: exec_cd->d.argv_state_data.modes;
+		pj_ka(pj, "modes");
+		for (size_t i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+			if (modes & argv_modes[i].mode) {
+				pj_s(pj, argv_modes[i].suffix);
+			}
+		}
+		pj_end(pj);
+	}
+	if (scd->n_children > 0) {
+		void **it;
+		size_t count = 0;
+		rz_cmd_desc_children_foreach(scd, it) {
+			const RzCmdDesc *child = *it;
+			if (!strcmp(child->name, scd->name)) {
+				continue;
+			}
+			if (count == 0) {
+				pj_ka(pj, "subcommands");
+			}
+			pj_s(pj, child->name);
+			if (++count >= 24) {
+				break;
+			}
+		}
+		if (count > 0) {
+			pj_end(pj);
+		}
+	}
+	pj_end(pj);
+}
+
+/**
+ * \brief Print the verbose status object reported by `_sj` and `cfg.json.status`
+ *        when `cfg.cmd.diagnostics` is true.
+ *
+ * Includes the standard `_sj` status envelope plus captured warning/error
+ * diagnostics, the failing command and arguments, and the closest valid
+ * command descriptor metadata when available.
+ *
+ * \param cmd RzCmd instance used to resolve command suggestions
+ * \param pj Destination JSON builder
+ * \param status Status of the last executed command
+ * \param info Optional captured diagnostics and command metadata
+ * \param args Optional fallback command and arguments when \p info has none
+ */
+RZ_IPI void rz_cmd_status_verbose_json(RZ_NONNULL RzCmd *cmd, RZ_NONNULL PJ *pj,
+	RzCmdStatus status, RZ_NULLABLE const RzCoreCmdStatusInfo *info,
+	RZ_NULLABLE RzCmdParsedArgs *args) {
+	pj_o(pj);
+	if (status == RZ_CMD_STATUS_OK) {
+		pj_knull(pj, "error");
+		if (info && !rz_pvector_empty(&info->diagnostics)) {
+			cmd_status_diagnostics_json(pj, &info->diagnostics);
+		}
+	} else {
+		pj_ko(pj, "error");
+		pj_ks(pj, "code", rz_cmd_status_tostring(status));
+		pj_ks(pj, "message", cmd_status_message(status));
+		if (info && info->command) {
+			pj_ks(pj, "command", info->command);
+			pj_ka(pj, "args");
+			void **it;
+			rz_pvector_foreach (&info->args, it) {
+				pj_s(pj, *it);
+			}
+			pj_end(pj);
+		} else if (args) {
+			pj_ks(pj, "command", rz_cmd_parsed_args_cmd(args));
+			pj_ka(pj, "args");
+			int i;
+			const char *arg;
+			rz_cmd_parsed_args_foreach_arg(args, i, arg) {
+				pj_s(pj, arg);
+			}
+			pj_end(pj);
+		}
+		if (info && !rz_pvector_empty(&info->diagnostics)) {
+			cmd_status_diagnostics_json(pj, &info->diagnostics);
+		}
+		if (info && info->suggestion_cmd) {
+			cmd_status_suggestion_json(cmd, pj, info->suggestion_cmd);
+		}
+		pj_end(pj);
+	}
+	pj_end(pj);
+}
+
+/**
+ * \brief Print the `cfg.json.status` line with captured diagnostics when
+ *        `cfg.cmd.diagnostics` is true.
+ */
+RZ_IPI void rz_cmd_print_json_status_diag(RZ_NONNULL RzCmd *cmd,
+	RZ_NONNULL RzCmdParsedArgs *args, RzCmdStatus status,
+	RZ_NULLABLE const RzCoreCmdStatusInfo *info, bool force_newline) {
+	if (!core_config_get_b(cmd->core, "cfg.json.status") || cmd_output_is_consumed(cmd->core)) {
+		return;
+	}
+	const char *cmdid = rz_cmd_parsed_args_cmd(args);
+	RzCmdDesc *cd = rz_cmd_get_desc(cmd, cmdid);
+	if (!cmd_runs_in_json_mode(cd, cmdid)) {
+		return;
+	}
+	PJ *pj = pj_new();
+	if (!pj) {
+		return;
+	}
+	rz_cmd_status_verbose_json(cmd, pj, status, info, args);
+	cmd_print_json_status_pj(cmd->core->cons, pj, force_newline);
+	pj_free(pj);
 }
 
 /**

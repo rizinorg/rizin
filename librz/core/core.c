@@ -1709,6 +1709,9 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->times = RZ_NEW0(RzCoreTimes);
 	core->vmode = false;
 	core->lastcmd = NULL;
+	core->cmd_diagnostics = false;
+	core->last_cmd_info = NULL;
+	core->cmd_capture = NULL;
 	core->cmdlog = NULL;
 	core->stkcmd = NULL;
 	core->cmdqueue = NULL;
@@ -1907,6 +1910,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_core_analysis_type_init(core);
 	// No user command ran yet. Set only now, since running tags.rz sets it too.
 	core->last_cmd_status = RZ_CMD_STATUS_INVALID;
+	RZ_FREE_CUSTOM(core->last_cmd_info, rz_core_cmd_status_info_free);
 	return 0;
 }
 
@@ -1948,6 +1952,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	RZ_FREE(c->cons->pager);
 	RZ_FREE(c->cmdqueue);
 	RZ_FREE(c->lastcmd);
+	RZ_FREE_CUSTOM(c->last_cmd_info, rz_core_cmd_status_info_free);
 	RZ_FREE(c->stkcmd);
 	RZ_FREE(c->block);
 
@@ -2083,6 +2088,8 @@ static void set_prompt(RzCore *r) {
 	const char *remote = "";
 	// `_s` reports the last command of the user, not the ones run for the prompt
 	RzCmdStatus last_cmd_status = r->last_cmd_status;
+	RzCoreCmdStatusInfo *last_cmd_info = r->last_cmd_info;
+	r->last_cmd_info = NULL;
 
 	if (cmdprompt && *cmdprompt) {
 		rz_core_cmd(r, cmdprompt, 0);
@@ -2095,6 +2102,8 @@ static void set_prompt(RzCore *r) {
 		remote = "R!";
 	}
 	r->last_cmd_status = last_cmd_status;
+	rz_core_cmd_status_info_free(r->last_cmd_info);
+	r->last_cmd_info = last_cmd_info;
 
 	if (rz_config_get_i(r->config, "scr.color")) {
 		BEGIN = r->cons->context->pal.prompt;
