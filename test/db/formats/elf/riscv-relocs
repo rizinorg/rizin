@@ -611,7 +611,7 @@ nth      paddr      vaddr bind   type   size lib name
   1 ---------- 0x00000000 LOCAL  FILE      0     riscv_relocations_relative_32_64.c
   2 0x00000040 0x08000040 LOCAL  SECT      0     .text
   3 0x0000006a 0x0800006a LOCAL  SECT      0     .data
-  4 0x0000006a 0x0800006a LOCAL  SECT      0     .bss
+  4 0x00000a20 0x08000a20 LOCAL  SECT      0     .bss
   5 0x00000070 0x08000070 LOCAL  SECT      0     .sdata
   6 0x00000080 0x08000080 LOCAL  OBJ       8     ptr
   7 0x00000040 0x08000040 LOCAL  NOTYPE    0     $xrv64i2p1_m2p0_a2p1_f2p2_d2p2_c2p0_v1p0_zicsr2p0_zifencei2p0_zmmul1p0_zaamo1p0_zalrsc1p0_zca1p0_zcd1p0_zve32f1p0_zve32x1p0_zve64d1p0_zve64f1p0_zve64x1p0_zvl128b1p0_zvl32b1p0_zvl64b1p0

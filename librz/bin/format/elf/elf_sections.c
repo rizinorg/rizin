@@ -336,9 +336,17 @@ static RzVector /*<RzBinElfSection>*/ *convert_sections_from_shdr(ELFOBJ *bin, R
 		return NULL;
 	}
 
+	ut64 next_nobits = bin->size;
+
 	size_t i;
 	Elf_(Shdr) * section;
 	rz_vector_enumerate (sections, section, i) {
+		if (Elf_(rz_bin_elf_is_relocatable)(bin) && section->sh_type == SHT_NOBITS) {
+			next_nobits += rz_num_align_delta(next_nobits, section->sh_addralign);
+			section->sh_offset = next_nobits;
+			next_nobits += section->sh_size;
+		}
+
 		RzBinElfSection tmp = convert_elf_section(bin, options, section, i);
 		if (!rz_vector_push(result, &tmp)) {
 			rz_vector_free(result);
