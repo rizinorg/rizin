@@ -379,3 +379,79 @@ RzTableQuery> colon-separated (e.g. <cmd>t:c/gt/0x800:c/sort/rev:*/head/10). 'c'
  :quiet            do not print column names header, implies :simple
 EOF
 RUN
+
+NAME=argument choices help on ??
+FILE=--
+CMDS=<<EOF
+afisa?
+EOF
+EXPECT=<<EOF
+Usage: afisa[jt] [<mode>]   # Enumerate unique opcodes/opcode families/opcode types in all functions (table mode)
+| afisaj [<mode>]     # Enumerate unique opcodes/opcode families/opcode types in all functions (JSON mode)
+| afisat [<mode>]     # Enumerate unique opcodes/opcode families/opcode types in all functions (table mode)
+
+Detailed help for afisa [<mode>] is provided by afisa??.
+
+Table queries are colon-attached (e.g. afisa:<query>). Run 'afisa:?' for query help.
+EOF
+RUN
+
+NAME=argument choices extended help on ?? (static and dynamic)
+FILE=--
+CMDS=<<EOF
+afisa??
+iD??
+EOF
+EXPECT=<<EOF
+Usage: afisa[jt] [<mode>]   # Enumerate unique opcodes/opcode families/opcode types in all functions (table mode)
+| afisaj [<mode>]     # Enumerate unique opcodes/opcode families/opcode types in all functions (JSON mode)
+| afisat [<mode>]     # Enumerate unique opcodes/opcode families/opcode types in all functions (table mode)
+
+Choices:
+| mode # family, type
+
+Table queries are colon-attached (e.g. afisa:<query>). Run 'afisa:?' for query help.
+Usage: iD <lang> <symbol>   # Demangle symbol for given language
+
+Choices:
+| lang # java, msvc, objc, pascal, c++, rust, dlang
+EOF
+RUN
+
+NAME=argument choices extended help on ?? before unnamed details
+FILE=--
+CMDS=<<EOF
+ahi??
+EOF
+EXPECT=<<EOF
+Usage: ahi[?] <type> [<nword>]   # Set immediate base hint
+| ahi <type> [<nword>]     # Set immediate base hint
+
+Choices:
+| type # 2, 8, 10, 10u, 16, b, o, h, i, p, S, s
+
+| ahi <base> # Set numeric <base> (2, 8, 10, 16)
+| ahi 10|d   # Set base to signed decimal (10), sign bit should depend on receiver size
+| ahi 10u|du # Set base to unsigned decimal (11)
+| ahi b      # Set base to binary (2)
+| ahi o      # Set base to octal (8)
+| ahi h      # Set base to hexadecimal (16)
+| ahi i      # Set base to IP address (32)
+| ahi p      # Set base to htons(port) (3)
+| ahi S      # Set base to syscall (80)
+| ahi s      # Set base to string (1)
+
+Set base of the N-th immediate (indexing starts from 0):
+| ahi 16 1 # Set base of the 1-st immediate to hexadecimal
+EOF
+RUN
+
+NAME=argument choices hint on group help with own details
+FILE=--
+CMDS=<<EOF
+/z?~Detailed help for
+EOF
+EXPECT=<<EOF
+Detailed help for /z <pattern> <regex_flags>=l <encoding>=settings is provided by /z??.
+EOF
+RUN
